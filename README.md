@@ -1,64 +1,75 @@
 # roc-apps
 
-Roc programs on this box, and the tooling around them: the Roc compiler
-built from source, its test suite run as our installation check, and
-safari, emitted from Codex by rust-codex-compiler's `rocemit` into
-`safari/roc/` and graded by `safari/emitted.sh` against the Codex verdicts.
+Safari, our browser screensaver, as Roc: the chapter modules emitted from
+the Codex source by rust-codex-compiler's `rocemit`, the spec apps that grade
+them against the Codex verdicts, a wasm platform and app that run them in
+the browser page the Codex version used, and the first Roc-only flair, a
+Roc on the fifth tree on the right of every segment.
+
+## The map
+
+| where | what | written by |
+|---|---|---|
+| `safari/roc/*.roc` | one type module per Codex chapter, whole, as written; one app per spec (`*Spec.roc`) | `rocemit`, via `safari/emitted.sh` |
+| `safari/roc/{StillsDecode,CatStillsData,EmojiStillsData}.roc` | the stills as strings with a decoder | `safari/bake_stills.py` |
+| `safari/roc/SafariApp.roc` | the screensaver: the ride as a boxed model, the frame packed into the blitter's words | hand |
+| `safari/roc/RocBird.roc` | the bird | hand |
+| `safari/roc/FrameBench.roc` | a native loop over the frame, for `perf` | hand |
+| `safari/wasm/` | the platform: `platform/main.roc` provides the page's sixteen exports over `Box(Model)`; `platform/host.zig` is the host; `build.zig` builds it against the roc checkout; `build.sh` builds host and app into `web/driving/safari.wasm` | hand |
+| `safari/web/` | the page: safari-codex's `blitter.js` by symlink, `serve.py` on :9201 with no-store | hand, one copy |
+| `safari/emitted.sh` | THE GATE: every unit emitted, chapter identity checked, roc run two at a time, output against the verdict; a compile error is a FAIL | hand |
+| `safari/retest.sh` | the targeted sweep: emit all, diff against the tracked Roc, run only what changed | hand |
+| `wasm/*.mjs` | Node drivers: run a module, drive the screensaver headless with timings | hand |
+| `docs/codex-subset.md` | the forms safari uses, counted over the 54 IRs | hand |
+
+The units come from `~/showell_repos/safari-codex/units/` (`<Spec>.codex`
+resolved, `<Spec>.expected` the verdict the Rust interpreter froze).
 
 ## The Roc is tracked; everything else the tools write is not
 
-`safari/roc/` holds the emitted Roc -- one module per Codex chapter, the spec
-apps, and the baked stills -- and is committed, because those files are the
-point: they are the code the screensaver will import and the specs grade.
-`safari/emitted.sh` rewrites the directory; a diff there is a change in what
-the emitter says, and it is reviewed like any other change.
+`safari/roc/` is generated and committed, because those files are the point.
+A full `emitted.sh` rewrites every emitted file and leaves the hand-written
+ones; a diff there is a change in what the emitter says, reviewed like any
+other. Roc's own output, the built module and the caches live under
+`~/build/roc-apps/`, and `safari/web/driving/` is ignored.
 
-## Outputs live OUTSIDE this repository
+## The loop
 
-Nothing the compiler writes lands here. The Roc checkout is
-`~/showell_repos/roc` (roc-lang/roc, main); its build goes to
-`~/build/roc/out` with caches in `~/build/roc/zig-cache` and
-`~/build/zig-global`; every program's build and run output goes under
-`~/build/roc-apps/`. A `git status` that shows a generated file is a
-mistake to fix, not a file to commit.
+    safari/emitted.sh              # 54 units, ~27 s; the gate before a commit of safari/roc
+    safari/retest.sh               # after a rocemit change: only what changed
+    safari/wasm/build.sh           # host + app -> web/driving/safari.wasm, ~15 s
+    safari/web/serve.py            # http://<box>:9201/, no-store
+    wasm/drive_smoke.mjs safari/web/driving/safari.wasm 120   # frame bytes, stages, ms per frame
+
+`ROCEMIT=~/build/rust-target/debug/rocemit` points the sweeps at a debug
+build of the emitter; the default is the release one.
 
 ## The compiler
 
 **Use the nightly.** roc-lang/nightlies publishes a release build of the new
 compiler every day (`gh release list -R roc-lang/nightlies`); the tarball's
-`roc` is installed as `~/build/roc-nightly/roc`, and it is what the sweeps
-and the wasm build use. It checks a 4,000-literal file in a third of a
-second where the debug build below takes thirty, and the 54-unit sweep in
-27 seconds where the debug build takes five minutes.
+`roc` is installed as `~/build/roc-nightly/roc` and is what everything here
+uses. roc-lang/roc's own releases page is the OLD compiler.
 
     cd ~/build/roc-nightly
     gh release download <tag> -R roc-lang/nightlies -p 'roc_nightly-linux_x86_64-*.tar.gz'
     tar xzf roc_nightly-linux_x86_64-<tag>.tar.gz
     ln -sfn roc_nightly-linux_x86_64-<tag>/roc roc
 
-The build from source is for working ON the compiler:
-
-Roc's new compiler (zig, `roc-lang/roc` main) needs zig 0.16.0, which this
-box has at `~/zig-0.16.0/zig`. The build on this box is a DEBUG build:
+The checkout `~/showell_repos/roc` (main, zig 0.16.0 at `~/zig-0.16.0/zig`)
+is for working ON the compiler, and the wasm host builds against its
+`src/builtins`. Its debug build goes to `~/build/roc/out/bin/roc`:
 
     cd ~/showell_repos/roc
-    ~/zig-0.16.0/zig build \
-      --prefix ~/build/roc/out --cache-dir ~/build/roc/zig-cache \
-      --global-cache-dir ~/build/zig-global
+    ~/zig-0.16.0/zig build --prefix ~/build/roc/out --cache-dir ~/build/roc/zig-cache --global-cache-dir ~/build/zig-global
 
-The binary is `~/build/roc/out/bin/roc` (2.6 GB, `roc version` prints
-`debug-<sha>`). `-Doptimize=ReleaseFast` does not finish here: the final
-`roc` link (all of LLVM, statically) is terminated on this 8 GB box, twice
-(`~/build/roc/build.log`, `build2.log`). Debug is fast enough for the specs:
-a small one runs in about three seconds, the 54 in about five minutes.
+`-Doptimize=ReleaseFast` does not link on this 8 GB box. The debug build's
+checker is quadratic in a file's literals (the nightly's is not); Roc's eval
+suite is its installation check (`zig build run-test-eval`, 47 minutes).
 
-The installation check is Roc's own eval suite, run in two processes:
+## What is known to be slow, and why
 
-    ~/zig-0.16.0/zig build run-test-eval \
-      --prefix ~/build/roc/out --cache-dir ~/build/roc/zig-cache \
-      --global-cache-dir ~/build/zig-global
-
-At 68267ddd: 2086 passed, 0 failed, 47 minutes (`~/build/roc/eval.log`).
-
-The release page's `alpha4` tarballs are the OLD compiler and are not what
-the ports were written against.
+`http://143.244.172.148:9100/notes/what-is-slow.md`. In one line: a Codex
+list built by `x & f rest` is quadratic in Roc, and the emitter writes an
+accumulator loop for that shape; the stills are strings because a debug
+compiler could not check them as literals; everything else is the nightly.
