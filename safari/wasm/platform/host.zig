@@ -73,14 +73,10 @@ fn roc_dealloc(ptr: *anyopaque, alignment: usize) callconv(.c) void {
 fn roc_realloc(ptr: *anyopaque, new_length: usize, alignment: usize) callconv(.c) ?*anyopaque {
     return host_alloc.realloc(wasm_allocator, ptr, new_length, alignment);
 }
-fn roc_dbg(bytes: [*]const u8, len: usize) callconv(.c) void {
-    env.roc_dbg(bytes, len);
-}
-fn roc_expect_failed(bytes: [*]const u8, len: usize) callconv(.c) void {
-    env.roc_dbg(bytes, len);
-}
-fn roc_crashed(bytes: [*]const u8, len: usize) callconv(.c) void {
-    env.roc_panic(bytes, len);
+fn roc_dbg(_: [*]const u8, _: usize) callconv(.c) void {}
+fn roc_expect_failed(_: [*]const u8, _: usize) callconv(.c) void {}
+fn roc_crashed(_: [*]const u8, _: usize) callconv(.c) void {
+    @trap();
 }
 
 fn rocOpsAlloc(_: *RocOps, length: usize, alignment: usize) callconv(.c) ?*anyopaque {
