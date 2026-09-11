@@ -48,7 +48,7 @@ many : I64 -> List(Stills.StillPt)
 many = |n| many_acc(n, [])
 
 many_acc : I64, List(Stills.StillPt) -> List(Stills.StillPt)
-many_acc = |n, acc| (if (n <= 0) { acc } else { many_acc((n - 1), List.concat(acc, [{ x: 0.0, y: 0.0 }])) })
+many_acc = |n, acc| (if (n <= 0) { acc } else { many_acc((n - 1), List.append(acc, { x: 0.0, y: 0.0 })) })
 
 poly_of : I64 -> Stills.StillPoly
 poly_of = |n| { color: 9, grad: [], pts: many(n) }

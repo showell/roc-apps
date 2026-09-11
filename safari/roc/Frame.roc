@@ -20,7 +20,7 @@ Frame :: [].{
 	chain_from = |segs, s, n| chain_from_acc(segs, s, n, [])
 
 	chain_from_acc : List(World.Segment), I64, I64, List(I64) -> List(I64)
-	chain_from_acc = |segs, s, n, acc| (if (n >= look_ahead) { acc } else { (if (n >= max_chain) { acc } else { (if (List.get(segs, I64.to_u64_wrap(s)) ?? crash("list-at out of range")).terminates { List.concat(acc, [s]) } else { chain_from_acc(segs, (List.get(segs, I64.to_u64_wrap(s)) ?? crash("list-at out of range")).exit_to, (n + 1), List.concat(acc, [s])) }) }) })
+	chain_from_acc = |segs, s, n, acc| (if (n >= look_ahead) { acc } else { (if (n >= max_chain) { acc } else { (if (List.get(segs, I64.to_u64_wrap(s)) ?? crash("list-at out of range")).terminates { List.append(acc, s) } else { chain_from_acc(segs, (List.get(segs, I64.to_u64_wrap(s)) ?? crash("list-at out of range")).exit_to, (n + 1), List.append(acc, s)) }) }) })
 
 	compose_down : List(World.Segment), List(I64), I64, F64, F64 -> Geom.AX
 	compose_down = |segs, ch, k, a, x| (if (k <= 0) { { a: a, x: x } } else { ({

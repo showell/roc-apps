@@ -22,7 +22,7 @@ seg_list : I64 -> List(World.Segment)
 seg_list = |i| seg_list_acc(i, [])
 
 seg_list_acc : I64, List(World.Segment) -> List(World.Segment)
-seg_list_acc = |i, acc| (if (i >= U64.to_i64_wrap(List.len(World.route))) { acc } else { seg_list_acc((i + 1), List.concat(acc, [World.segment_at(i)])) })
+seg_list_acc = |i, acc| (if (i >= U64.to_i64_wrap(List.len(World.route))) { acc } else { seg_list_acc((i + 1), List.append(acc, World.segment_at(i))) })
 
 start_got : List(F64)
 start_got = [Safari.ride_initial.clock, Safari.ride_initial.rider.along, Safari.ride_initial.rider.across, Safari.ride_initial.rider.v, Safari.ride_initial.truck.pos, Safari.ride_initial.truck.v]

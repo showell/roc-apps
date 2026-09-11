@@ -23,7 +23,7 @@ RailPlan :: [].{
 	leg_points_acc : Geom.RiderPt, F64, F64, I64, I64, List(Geom.RiderPt) -> List(Geom.RiderPt)
 	leg_points_acc = |from, dr, df, steps, i, acc| (if (i > steps) { acc } else { ({
 		t = (I64.to_f64(i) / I64.to_f64(steps))
-		leg_points_acc(from, dr, df, steps, (i + 1), List.concat(acc, [{ right: (from.right + (dr * t)), forward: (from.forward + (df * t)) }]))
+		leg_points_acc(from, dr, df, steps, (i + 1), List.append(acc, { right: (from.right + (dr * t)), forward: (from.forward + (df * t)) }))
 	}) })
 
 	push_leg : Geom.RiderPt, Geom.RiderPt -> List(Geom.RiderPt)
@@ -38,14 +38,14 @@ RailPlan :: [].{
 	rail_run_up = |segs, ch, pose, m, from_len, cu, k| rail_run_up_acc(segs, ch, pose, m, from_len, cu, k, [])
 
 	rail_run_up_acc : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, F64, I64, List(Geom.RiderPt) -> List(Geom.RiderPt)
-	rail_run_up_acc = |segs, ch, pose, m, from_len, cu, k, acc| (if (k < 0) { acc } else { rail_run_up_acc(segs, ch, pose, m, from_len, cu, (k - 1), List.concat(acc, [Frame.map_pt(segs, ch, pose, m, (from_len - I64.to_f64(k)), cu)])) })
+	rail_run_up_acc = |segs, ch, pose, m, from_len, cu, k, acc| (if (k < 0) { acc } else { rail_run_up_acc(segs, ch, pose, m, from_len, cu, (k - 1), List.append(acc, Frame.map_pt(segs, ch, pose, m, (from_len - I64.to_f64(k)), cu))) })
 
 	# rail_run_out builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	rail_run_out : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, I64 -> List(Geom.RiderPt)
 	rail_run_out = |segs, ch, pose, m, x, k| rail_run_out_acc(segs, ch, pose, m, x, k, [])
 
 	rail_run_out_acc : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, I64, List(Geom.RiderPt) -> List(Geom.RiderPt)
-	rail_run_out_acc = |segs, ch, pose, m, x, k, acc| (if (k > GuardRail.rail_runout) { acc } else { rail_run_out_acc(segs, ch, pose, m, x, (k + 1), List.concat(acc, [Frame.map_pt(segs, ch, pose, m, I64.to_f64(k), x)])) })
+	rail_run_out_acc = |segs, ch, pose, m, x, k, acc| (if (k > GuardRail.rail_runout) { acc } else { rail_run_out_acc(segs, ch, pose, m, x, (k + 1), List.append(acc, Frame.map_pt(segs, ch, pose, m, I64.to_f64(k), x))) })
 
 	joint_rail_path : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, Frame.Mapper, F64, F64, F64, Bool -> List(Geom.RiderPt)
 	joint_rail_path = |segs, ch, pose, from_map, to_map, from_len, from_w, to_w, exit_right| ({
@@ -81,5 +81,5 @@ RailPlan :: [].{
 	rail_items = |rs, i| rail_items_acc(rs, i, [])
 
 	rail_items_acc : List(GuardRail.RailPoly), I64, List(DepthSort.Item) -> List(DepthSort.Item)
-	rail_items_acc = |rs, i, acc| (if (i >= U64.to_i64_wrap(List.len(rs))) { acc } else { rail_items_acc(rs, (i + 1), List.concat(acc, [{ fwd: (List.get(rs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd, kind: KRail, i: i }])) })
+	rail_items_acc = |rs, i, acc| (if (i >= U64.to_i64_wrap(List.len(rs))) { acc } else { rail_items_acc(rs, (i + 1), List.append(acc, { fwd: (List.get(rs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd, kind: KRail, i: i })) })
 }

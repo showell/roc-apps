@@ -24,7 +24,7 @@ placed_all : I64 -> List(Billboards.Placed)
 placed_all = |i| placed_all_acc(i, [])
 
 placed_all_acc : I64, List(Billboards.Placed) -> List(Billboards.Placed)
-placed_all_acc = |i, acc| (if (i >= U64.to_i64_wrap(List.len(fwd_in))) { acc } else { placed_all_acc((i + 1), List.concat(acc, [placed_at(i)])) })
+placed_all_acc = |i, acc| (if (i >= U64.to_i64_wrap(List.len(fwd_in))) { acc } else { placed_all_acc((i + 1), List.append(acc, placed_at(i))) })
 
 kept_got : List(Bool)
 kept_got = ListUtils.list_map(lam_0, placed_all(0))

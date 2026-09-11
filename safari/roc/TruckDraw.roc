@@ -183,14 +183,14 @@ TruckDraw :: [].{
 	tire_pts = |segs, ch, pose, d, ac, x, i| tire_pts_acc(segs, ch, pose, d, ac, x, i, [])
 
 	tire_pts_acc : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64, I64, List(Geom.Vec3) -> List(Geom.Vec3)
-	tire_pts_acc = |segs, ch, pose, d, ac, x, i, acc| (if (i >= tire_sides) { acc } else { tire_pts_acc(segs, ch, pose, d, ac, x, (i + 1), List.concat(acc, [tire_pt(segs, ch, pose, d, ac, x, i)])) })
+	tire_pts_acc = |segs, ch, pose, d, ac, x, i, acc| (if (i >= tire_sides) { acc } else { tire_pts_acc(segs, ch, pose, d, ac, x, (i + 1), List.append(acc, tire_pt(segs, ch, pose, d, ac, x, i))) })
 
 	# side_tires builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	side_tires : List(World.Segment), List(I64), Frame.Pose, I64, List(F64), F64, I64 -> List(TruckDraw.TruckFace)
 	side_tires = |segs, ch, pose, d, axles, x, i| side_tires_acc(segs, ch, pose, d, axles, x, i, [])
 
 	side_tires_acc : List(World.Segment), List(I64), Frame.Pose, I64, List(F64), F64, I64, List(TruckDraw.TruckFace) -> List(TruckDraw.TruckFace)
-	side_tires_acc = |segs, ch, pose, d, axles, x, i, acc| (if (i >= U64.to_i64_wrap(List.len(axles))) { acc } else { side_tires_acc(segs, ch, pose, d, axles, x, (i + 1), List.concat(acc, [truck_face(tire_color, tire_pts(segs, ch, pose, d, (List.get(axles, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), x, 0))])) })
+	side_tires_acc = |segs, ch, pose, d, axles, x, i, acc| (if (i >= U64.to_i64_wrap(List.len(axles))) { acc } else { side_tires_acc(segs, ch, pose, d, axles, x, (i + 1), List.append(acc, truck_face(tire_color, tire_pts(segs, ch, pose, d, (List.get(axles, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), x, 0)))) })
 
 	truck_faces : List(World.Segment), List(I64), Frame.Pose, I64, TruckDraw.TruckBox -> List(TruckDraw.TruckFace)
 	truck_faces = |segs, ch, pose, d, bx| ({
@@ -203,14 +203,14 @@ TruckDraw :: [].{
 	face_rest = |ys, j| face_rest_acc(ys, j, [])
 
 	face_rest_acc : List(TruckDraw.TruckFace), I64, List(TruckDraw.TruckFace) -> List(TruckDraw.TruckFace)
-	face_rest_acc = |ys, j, acc| (if (j >= U64.to_i64_wrap(List.len(ys))) { acc } else { face_rest_acc(ys, (j + 1), List.concat(acc, [(List.get(ys, I64.to_u64_wrap(j)) ?? crash("list-at out of range"))])) })
+	face_rest_acc = |ys, j, acc| (if (j >= U64.to_i64_wrap(List.len(ys))) { acc } else { face_rest_acc(ys, (j + 1), List.append(acc, (List.get(ys, I64.to_u64_wrap(j)) ?? crash("list-at out of range")))) })
 
 	# merge_faces builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	merge_faces : List(TruckDraw.TruckFace), List(TruckDraw.TruckFace), I64, I64 -> List(TruckDraw.TruckFace)
 	merge_faces = |a, b, i, j| merge_faces_acc(a, b, i, j, [])
 
 	merge_faces_acc : List(TruckDraw.TruckFace), List(TruckDraw.TruckFace), I64, I64, List(TruckDraw.TruckFace) -> List(TruckDraw.TruckFace)
-	merge_faces_acc = |a, b, i, j, acc| (if (i >= U64.to_i64_wrap(List.len(a))) { List.concat(acc, face_rest(b, j)) } else { (if (j >= U64.to_i64_wrap(List.len(b))) { List.concat(acc, face_rest(a, i)) } else { (if DepthSort.deeper_than((List.get(b, I64.to_u64_wrap(j)) ?? crash("list-at out of range")).fwd, (List.get(a, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd) { merge_faces_acc(a, b, i, (j + 1), List.concat(acc, [(List.get(b, I64.to_u64_wrap(j)) ?? crash("list-at out of range"))])) } else { merge_faces_acc(a, b, (i + 1), j, List.concat(acc, [(List.get(a, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))])) }) }) })
+	merge_faces_acc = |a, b, i, j, acc| (if (i >= U64.to_i64_wrap(List.len(a))) { List.concat(acc, face_rest(b, j)) } else { (if (j >= U64.to_i64_wrap(List.len(b))) { List.concat(acc, face_rest(a, i)) } else { (if DepthSort.deeper_than((List.get(b, I64.to_u64_wrap(j)) ?? crash("list-at out of range")).fwd, (List.get(a, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd) { merge_faces_acc(a, b, i, (j + 1), List.append(acc, (List.get(b, I64.to_u64_wrap(j)) ?? crash("list-at out of range")))) } else { merge_faces_acc(a, b, (i + 1), j, List.append(acc, (List.get(a, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))) }) }) })
 
 	sort_faces : List(TruckDraw.TruckFace) -> List(TruckDraw.TruckFace)
 	sort_faces = |xs| (if (U64.to_i64_wrap(List.len(xs)) <= 1) { xs } else { merge_faces(sort_faces(ListUtils.list_take(xs, I64.div_trunc_by(U64.to_i64_wrap(List.len(xs)), 2))), sort_faces(ListUtils.list_drop(xs, I64.div_trunc_by(U64.to_i64_wrap(List.len(xs)), 2))), 0, 0) })
@@ -276,7 +276,7 @@ TruckDraw :: [].{
 	glow_circle = |cx, cy, rad, i| glow_circle_acc(cx, cy, rad, i, [])
 
 	glow_circle_acc : F64, F64, F64, I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
-	glow_circle_acc = |cx, cy, rad, i, acc| (if (i >= glow_sides) { acc } else { glow_circle_acc(cx, cy, rad, (i + 1), List.concat(acc, [glow_pt(cx, cy, rad, i)])) })
+	glow_circle_acc = |cx, cy, rad, i, acc| (if (i >= glow_sides) { acc } else { glow_circle_acc(cx, cy, rad, (i + 1), List.append(acc, glow_pt(cx, cy, rad, i))) })
 
 	brake_glow : List(Geom.Vec3), F64, F64 -> List(Paint.DrawCmd)
 	brake_glow = |panel, cf, view_w| (if any_behind(panel, 0) { [] } else { glow_cmd(panel, cf, view_w) })

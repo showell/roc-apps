@@ -41,7 +41,7 @@ wide : I64 -> List(Geom.RiderPt)
 wide = |n| wide_acc(n, [])
 
 wide_acc : I64, List(Geom.RiderPt) -> List(Geom.RiderPt)
-wide_acc = |n, acc| (if (n <= 0) { acc } else { wide_acc((n - 1), List.concat(acc, [{ right: I64.to_f64(n), forward: (10.0 + I64.to_f64(n)) }])) })
+wide_acc = |n, acc| (if (n <= 0) { acc } else { wide_acc((n - 1), List.append(acc, { right: I64.to_f64(n), forward: (10.0 + I64.to_f64(n)) })) })
 
 drawn : List(Geom.RiderPt) -> List(Paint.DrawCmd)
 drawn = |ps| Ground.emit_ground_color(ps, 3112588, 685.5110432362151, 960.0)

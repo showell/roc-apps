@@ -42,7 +42,7 @@ ItemDraw :: [].{
 	tower_base = |w, ch, pose, tw, k| tower_base_acc(w, ch, pose, tw, k, [])
 
 	tower_base_acc : List(World.Segment), List(I64), Frame.Pose, TowerPlan.TowerItem, I64, List(Geom.RiderPt) -> List(Geom.RiderPt)
-	tower_base_acc = |w, ch, pose, tw, k, acc| (if (k >= 4) { acc } else { tower_base_acc(w, ch, pose, tw, (k + 1), List.concat(acc, [Frame.map_pt(w, ch, pose, tw.map, Tower.base_corner_ax(k, tw.a0, tw.x0, tw.yaw).a, Tower.base_corner_ax(k, tw.a0, tw.x0, tw.yaw).x)])) })
+	tower_base_acc = |w, ch, pose, tw, k, acc| (if (k >= 4) { acc } else { tower_base_acc(w, ch, pose, tw, (k + 1), List.append(acc, Frame.map_pt(w, ch, pose, tw.map, Tower.base_corner_ax(k, tw.a0, tw.x0, tw.yaw).a, Tower.base_corner_ax(k, tw.a0, tw.x0, tw.yaw).x))) })
 
 	draw_one_tower : List(World.Segment), List(I64), Frame.Pose, TowerPlan.TowerItem, F64, F64 -> List(Paint.DrawCmd)
 	draw_one_tower = |w, ch, pose, tw, cf, step| Tower.draw_flat(tower_base(w, ch, pose, tw, 0), Frame.map_pt(w, ch, pose, tw.map, tw.a0, tw.x0), cf, Lens.camera_w, (step + tw.off))

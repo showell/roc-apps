@@ -36,7 +36,7 @@ mod_inner : F64, List(F64), I64 -> List(F64)
 mod_inner = |m, xs, j| mod_inner_acc(m, xs, j, [])
 
 mod_inner_acc : F64, List(F64), I64, List(F64) -> List(F64)
-mod_inner_acc = |m, xs, j, acc| (if (j >= U64.to_i64_wrap(List.len(xs))) { acc } else { mod_inner_acc(m, xs, (j + 1), List.concat(acc, [Num.mod_real((List.get(xs, I64.to_u64_wrap(j)) ?? crash("list-at out of range")), m)])) })
+mod_inner_acc = |m, xs, j, acc| (if (j >= U64.to_i64_wrap(List.len(xs))) { acc } else { mod_inner_acc(m, xs, (j + 1), List.append(acc, Num.mod_real((List.get(xs, I64.to_u64_wrap(j)) ?? crash("list-at out of range")), m))) })
 
 # mod_outer builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 mod_outer : List(F64), List(F64), I64 -> List(F64)

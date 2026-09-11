@@ -27,7 +27,7 @@ roll_walk : I64 -> List(F64)
 roll_walk = |i| roll_walk_acc(i, [])
 
 roll_walk_acc : I64, List(F64) -> List(F64)
-roll_walk_acc = |i, acc| (if (i >= U64.to_i64_wrap(List.len(tilt_in))) { acc } else { roll_walk_acc((i + 1), List.concat(acc, [CanvasRoll.rider_roll(as_rider((List.get(tilt_in, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))])) })
+roll_walk_acc = |i, acc| (if (i >= U64.to_i64_wrap(List.len(tilt_in))) { acc } else { roll_walk_acc((i + 1), List.append(acc, CanvasRoll.rider_roll(as_rider((List.get(tilt_in, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))) })
 
 eq_tup2 : Tuple.Tup2(a, b), Tuple.Tup2(a, b) -> Bool
 eq_tup2 = |ex, ey| (match ex {

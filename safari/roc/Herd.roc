@@ -52,7 +52,7 @@ Herd :: [].{
 	cows_from = |i| cows_from_acc(i, [])
 
 	cows_from_acc : I64, List(Scenery.Critter) -> List(Scenery.Critter)
-	cows_from_acc = |i, acc| (if (i >= 14) { acc } else { cows_from_acc((i + 1), List.concat(acc, [cow_at(i)])) })
+	cows_from_acc = |i, acc| (if (i >= 14) { acc } else { cows_from_acc((i + 1), List.append(acc, cow_at(i))) })
 
 	cow_at : I64 -> Scenery.Critter
 	cow_at = |i| ({

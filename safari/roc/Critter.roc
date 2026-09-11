@@ -17,7 +17,7 @@ Critter :: [].{
 	mapped_pts = |b, s, ht, ps, i| mapped_pts_acc(b, s, ht, ps, i, [])
 
 	mapped_pts_acc : Camera.ScreenPt, F64, F64, List(Stills.StillPt), I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
-	mapped_pts_acc = |b, s, ht, ps, i, acc| (if (i >= U64.to_i64_wrap(List.len(ps))) { acc } else { mapped_pts_acc(b, s, ht, ps, (i + 1), List.concat(acc, [map_p(b, s, ht, (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).y)])) })
+	mapped_pts_acc = |b, s, ht, ps, i, acc| (if (i >= U64.to_i64_wrap(List.len(ps))) { acc } else { mapped_pts_acc(b, s, ht, ps, (i + 1), List.append(acc, map_p(b, s, ht, (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).y))) })
 
 	max_critter_pts : I64
 	max_critter_pts = 512

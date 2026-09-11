@@ -70,7 +70,7 @@ colours_of : List(TruckDraw.TruckFace), I64 -> List(I64)
 colours_of = |fs, i| colours_of_acc(fs, i, [])
 
 colours_of_acc : List(TruckDraw.TruckFace), I64, List(I64) -> List(I64)
-colours_of_acc = |fs, i, acc| (if (i >= U64.to_i64_wrap(List.len(fs))) { acc } else { colours_of_acc(fs, (i + 1), List.concat(acc, [(List.get(fs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).color])) })
+colours_of_acc = |fs, i, acc| (if (i >= U64.to_i64_wrap(List.len(fs))) { acc } else { colours_of_acc(fs, (i + 1), List.append(acc, (List.get(fs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).color)) })
 
 tied : List(TruckDraw.TruckFace)
 tied = [mark(1, 30.0), mark(2, 10.0), mark(3, 30.0), mark(4, 20.0), mark(5, 30.0)]

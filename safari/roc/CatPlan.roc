@@ -40,5 +40,5 @@ CatPlan :: [].{
 	cat_items = |cs, i| cat_items_acc(cs, i, [])
 
 	cat_items_acc : List(CatPlan.CatItem), I64, List(DepthSort.Item) -> List(DepthSort.Item)
-	cat_items_acc = |cs, i, acc| (if (i >= U64.to_i64_wrap(List.len(cs))) { acc } else { cat_items_acc(cs, (i + 1), List.concat(acc, [{ fwd: (List.get(cs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd, kind: KCat, i: i }])) })
+	cat_items_acc = |cs, i, acc| (if (i >= U64.to_i64_wrap(List.len(cs))) { acc } else { cat_items_acc(cs, (i + 1), List.append(acc, { fwd: (List.get(cs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd, kind: KCat, i: i })) })
 }

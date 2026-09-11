@@ -26,7 +26,7 @@ seg_list : I64 -> List(World.Segment)
 seg_list = |i| seg_list_acc(i, [])
 
 seg_list_acc : I64, List(World.Segment) -> List(World.Segment)
-seg_list_acc = |i, acc| (if (i >= U64.to_i64_wrap(List.len(World.route))) { acc } else { seg_list_acc((i + 1), List.concat(acc, [World.segment_at(i)])) })
+seg_list_acc = |i, acc| (if (i >= U64.to_i64_wrap(List.len(World.route))) { acc } else { seg_list_acc((i + 1), List.append(acc, World.segment_at(i))) })
 
 origin : Frame.Pose
 origin = { along: 0.0, across: 0.0, yaw: 0.0, hw: 2.0 }

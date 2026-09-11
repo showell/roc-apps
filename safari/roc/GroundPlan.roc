@@ -69,7 +69,7 @@ GroundPlan :: [].{
 	pond_shape = |segs, ch, pose, m, from_len, ps, i| pond_shape_acc(segs, ch, pose, m, from_len, ps, i, [])
 
 	pond_shape_acc : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, List(Pond.PondPt), I64, List(Geom.RiderPt) -> List(Geom.RiderPt)
-	pond_shape_acc = |segs, ch, pose, m, from_len, ps, i, acc| (if (i >= U64.to_i64_wrap(List.len(ps))) { acc } else { pond_shape_acc(segs, ch, pose, m, from_len, ps, (i + 1), List.concat(acc, [Frame.map_pt(segs, ch, pose, m, (from_len + (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).cv), (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).cu)])) })
+	pond_shape_acc = |segs, ch, pose, m, from_len, ps, i, acc| (if (i >= U64.to_i64_wrap(List.len(ps))) { acc } else { pond_shape_acc(segs, ch, pose, m, from_len, ps, (i + 1), List.append(acc, Frame.map_pt(segs, ch, pose, m, (from_len + (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).cv), (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).cu))) })
 
 	emit_pond_ground : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, F64, F64 -> List(Paint.DrawCmd)
 	emit_pond_ground = |segs, ch, pose, m, from_len, cf, view_w| List.concat(Ground.emit_ground_color(pond_shape(segs, ch, pose, m, from_len, Pond.water_outline, 0), Pond.water_color, cf, view_w), Ground.emit_ground_color(pond_shape(segs, ch, pose, m, from_len, Pond.bank, 0), Pond.bank_color, cf, view_w))

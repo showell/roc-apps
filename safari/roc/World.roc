@@ -66,7 +66,7 @@ World :: [].{
 	segments_from = |i| segments_from_acc(i, [])
 
 	segments_from_acc : I64, List(World.Segment) -> List(World.Segment)
-	segments_from_acc = |i, acc| (if (i >= U64.to_i64_wrap(List.len(route))) { acc } else { segments_from_acc((i + 1), List.concat(acc, [segment_at(i)])) })
+	segments_from_acc = |i, acc| (if (i >= U64.to_i64_wrap(List.len(route))) { acc } else { segments_from_acc((i + 1), List.append(acc, segment_at(i))) })
 
 	build_world : List(World.Segment)
 	build_world = segments_from(0)

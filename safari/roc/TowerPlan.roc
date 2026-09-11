@@ -62,5 +62,5 @@ TowerPlan :: [].{
 	tower_items = |ts, i| tower_items_acc(ts, i, [])
 
 	tower_items_acc : List(TowerPlan.TowerItem), I64, List(DepthSort.Item) -> List(DepthSort.Item)
-	tower_items_acc = |ts, i, acc| (if (i >= U64.to_i64_wrap(List.len(ts))) { acc } else { tower_items_acc(ts, (i + 1), List.concat(acc, [{ fwd: (List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd, kind: KTower, i: i }])) })
+	tower_items_acc = |ts, i, acc| (if (i >= U64.to_i64_wrap(List.len(ts))) { acc } else { tower_items_acc(ts, (i + 1), List.append(acc, { fwd: (List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd, kind: KTower, i: i })) })
 }

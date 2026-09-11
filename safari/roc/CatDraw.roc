@@ -17,7 +17,7 @@ CatDraw :: [].{
 	cat_pts = |b, h, lift, ps, i| cat_pts_acc(b, h, lift, ps, i, [])
 
 	cat_pts_acc : Camera.ScreenPt, F64, F64, List(Stills.StillPt), I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
-	cat_pts_acc = |b, h, lift, ps, i, acc| (if (i >= U64.to_i64_wrap(List.len(ps))) { acc } else { cat_pts_acc(b, h, lift, ps, (i + 1), List.concat(acc, [cat_pt(b, h, lift, (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))])) })
+	cat_pts_acc = |b, h, lift, ps, i, acc| (if (i >= U64.to_i64_wrap(List.len(ps))) { acc } else { cat_pts_acc(b, h, lift, ps, (i + 1), List.append(acc, cat_pt(b, h, lift, (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))) })
 
 	cat_poly : Camera.ScreenPt, F64, F64, Stills.StillPoly -> List(Paint.DrawCmd)
 	cat_poly = |b, h, lift, poly| (if (U64.to_i64_wrap(List.len(poly.pts)) > max_cat_pts) { [] } else { Paint.push_poly(poly.color, cat_pts(b, h, lift, poly.pts, 0)) })

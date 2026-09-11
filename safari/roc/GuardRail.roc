@@ -58,7 +58,7 @@ GuardRail :: [].{
 	bars = |path, i| bars_acc(path, i, [])
 
 	bars_acc : List(Geom.RiderPt), I64, List(GuardRail.RailPoly) -> List(GuardRail.RailPoly)
-	bars_acc = |path, i, acc| (if ((i + 1) >= U64.to_i64_wrap(List.len(path))) { acc } else { bars_acc(path, (i + 1), List.concat(acc, [bar_quad((List.get(path, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), (List.get(path, I64.to_u64_wrap((i + 1))) ?? crash("list-at out of range")))])) })
+	bars_acc = |path, i, acc| (if ((i + 1) >= U64.to_i64_wrap(List.len(path))) { acc } else { bars_acc(path, (i + 1), List.append(acc, bar_quad((List.get(path, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), (List.get(path, I64.to_u64_wrap((i + 1))) ?? crash("list-at out of range"))))) })
 
 	post_box : Geom.RiderPt, F64, F64 -> GuardRail.RailPoly
 	post_box = |p, ox, ofwd| ({
@@ -90,7 +90,7 @@ GuardRail :: [].{
 	posts = |path, i| posts_acc(path, i, [])
 
 	posts_acc : List(Geom.RiderPt), I64, List(GuardRail.RailPoly) -> List(GuardRail.RailPoly)
-	posts_acc = |path, i, acc| (if (i >= U64.to_i64_wrap(List.len(path))) { acc } else { posts_acc(path, (i + 1), List.concat(acc, [post_quad(path, i)])) })
+	posts_acc = |path, i, acc| (if (i >= U64.to_i64_wrap(List.len(path))) { acc } else { posts_acc(path, (i + 1), List.append(acc, post_quad(path, i))) })
 
 	rail_emit : List(Geom.RiderPt) -> List(GuardRail.RailPoly)
 	rail_emit = |path| (if (U64.to_i64_wrap(List.len(path)) < 2) { [] } else { ListUtils.list_take(List.concat(bars(path, 0), posts(path, 0)), max_rail_polys) })

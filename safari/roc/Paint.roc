@@ -11,7 +11,7 @@ Paint :: [].{
 	flatten_screen_acc : List(Camera.ScreenPt), I64, List(F64) -> List(F64)
 	flatten_screen_acc = |ps, i, acc| (if (i >= U64.to_i64_wrap(List.len(ps))) { acc } else { ({
 		p = (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
-		flatten_screen_acc(ps, (i + 1), List.concat(acc, [p.x, p.y]))
+		flatten_screen_acc(ps, (i + 1), List.append(List.append(acc, p.x), p.y))
 	}) })
 
 	push_poly : I64, List(Camera.ScreenPt) -> List(Paint.DrawCmd)

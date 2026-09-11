@@ -66,7 +66,7 @@ Tree :: [].{
 	cone_ring_acc : F64, F64, F64, F64, F64, F64, I64, F64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
 	cone_ring_acc = |r0, f0, rad, h_base, cf, view_w, i, a, acc| (if (i >= ring_n) { acc } else { ({
 		p = { right: (r0 + (rad * Trig.r_cos(a))), forward: (f0 + (rad * Trig.r_sin(a))), height: h_base }
-		cone_ring_acc(r0, f0, rad, h_base, cf, view_w, (i + 1), (a + (Trig.two_pi / 16.0)), List.concat(acc, [Camera.project(p, cf, view_w)]))
+		cone_ring_acc(r0, f0, rad, h_base, cf, view_w, (i + 1), (a + (Trig.two_pi / 16.0)), List.append(acc, Camera.project(p, cf, view_w)))
 	}) })
 
 	less_xy : Camera.ScreenPt, Camera.ScreenPt -> Bool

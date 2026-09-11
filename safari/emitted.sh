@@ -59,9 +59,11 @@ for u in "$UNITS"/*Spec.codex; do
         cp "$f" "$ROC_DIR/$b"; wrote[$b]="$n"
     done
     [ -z "$clash" ] || { fail=$((fail + 1)); echo "FAIL $n  chapter text differs:$clash"; continue; }
+    t0=$(date +%s)
     "$ROC" run "$ROC_DIR/$app" > "$OUT/$n.out" 2> "$OUT/$n.err"
+    secs=$(( $(date +%s) - t0 ))
     if diff -q "$OUT/$n.out" "$UNITS/$n.expected" > /dev/null; then
-        pass=$((pass + 1)); echo "PASS $n"
+        pass=$((pass + 1)); echo "PASS $n  ${secs}s"
     else
         fail=$((fail + 1)); echo "FAIL $n"; grep -m1 -E "✗|crashed" -A3 "$OUT/$n.err" | head -4; diff "$OUT/$n.out" "$UNITS/$n.expected" | head -4
     fi

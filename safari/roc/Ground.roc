@@ -13,7 +13,7 @@ Ground :: [].{
 	ground_verts = |ps, i| ground_verts_acc(ps, i, [])
 
 	ground_verts_acc : List(Geom.RiderPt), I64, List(Geom.Vec3) -> List(Geom.Vec3)
-	ground_verts_acc = |ps, i, acc| (if (i >= U64.to_i64_wrap(List.len(ps))) { acc } else { ground_verts_acc(ps, (i + 1), List.concat(acc, [ground_vert((List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))])) })
+	ground_verts_acc = |ps, i, acc| (if (i >= U64.to_i64_wrap(List.len(ps))) { acc } else { ground_verts_acc(ps, (i + 1), List.append(acc, ground_vert((List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))) })
 
 	emit_ground_color : List(Geom.RiderPt), I64, F64, F64 -> List(Paint.DrawCmd)
 	emit_ground_color = |ps, color, cf, view_w| (if (U64.to_i64_wrap(List.len(ps)) > 8) { [] } else { ground_clip(Geom.clip_near(ground_verts(ps, 0), Geom.near), color, cf, view_w) })

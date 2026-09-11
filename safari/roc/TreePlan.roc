@@ -37,5 +37,5 @@ TreePlan :: [].{
 	tree_items = |ts, i| tree_items_acc(ts, i, [])
 
 	tree_items_acc : List(TreePlan.TreeItem), I64, List(DepthSort.Item) -> List(DepthSort.Item)
-	tree_items_acc = |ts, i, acc| (if (i >= U64.to_i64_wrap(List.len(ts))) { acc } else { tree_items_acc(ts, (i + 1), List.concat(acc, [{ fwd: (List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd, kind: KTree, i: i }])) })
+	tree_items_acc = |ts, i, acc| (if (i >= U64.to_i64_wrap(List.len(ts))) { acc } else { tree_items_acc(ts, (i + 1), List.append(acc, { fwd: (List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd, kind: KTree, i: i })) })
 }
