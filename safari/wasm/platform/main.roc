@@ -1,3 +1,8 @@
+# The safari platform: the sixteen exports web/blitter.js binds, over one
+# boxed model the host keeps (host.zig). probe_frame and probe_expand are
+# two more, for the Node smoke run only: the command count before and after
+# expansion, so the three stages of a frame can be timed apart, since a
+# wasm profile has no names.
 platform ""
 	requires {
 		[Model : model] for program : {
