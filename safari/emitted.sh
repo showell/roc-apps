@@ -36,7 +36,9 @@ mkdir -p "$OUT"
 [ -d "$UNITS" ] || { echo "no units at $UNITS"; exit 2; }
 ROC_DIR="$HERE/roc"
 mkdir -p "$ROC_DIR"
-[ $# -eq 0 ] && rm -f "$ROC_DIR"/*.roc
+# A full run starts clean, but only of what a tool wrote: the hand-written
+# app (SafariApp.roc) lives here too, beside the modules it imports.
+[ $# -eq 0 ] && grep -l -m1 "emitted from Codex by rocemit\|baked by roc-apps" "$ROC_DIR"/*.roc 2>/dev/null | xargs -r rm -f
 "$HERE/bake_stills.py" > /dev/null || { echo "bake_stills.py failed"; exit 2; }
 declare -A wrote
 pass=0; fail=0; refused=0

@@ -47,8 +47,12 @@ Herd :: [].{
 	bull_of : Bool -> List(Scenery.Critter)
 	bull_of = |bull| (if bull { [{ along: bull_dist, across: (0.0 - ((((Scenery.lane_width / 2.0) + Trees.tree_road_offset) + (bull_height / 2.0)) + bull_tree_gap)), codepoint: bull_cp, height: bull_height, face_right: False }] } else { [] })
 
+	# cows_from builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	cows_from : I64 -> List(Scenery.Critter)
-	cows_from = |i| (if (i >= 14) { [] } else { List.concat([cow_at(i)], cows_from((i + 1))) })
+	cows_from = |i| cows_from_acc(i, [])
+
+	cows_from_acc : I64, List(Scenery.Critter) -> List(Scenery.Critter)
+	cows_from_acc = |i, acc| (if (i >= 14) { acc } else { cows_from_acc((i + 1), List.concat(acc, [cow_at(i)])) })
 
 	cow_at : I64 -> Scenery.Critter
 	cow_at = |i| ({

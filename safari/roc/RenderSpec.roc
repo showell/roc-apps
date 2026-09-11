@@ -21,8 +21,12 @@ line! = |s| echo!(Str.concat(s, "\n"))
 segs : List(World.Segment)
 segs = seg_list(0)
 
+# seg_list builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 seg_list : I64 -> List(World.Segment)
-seg_list = |i| (if (i >= U64.to_i64_wrap(List.len(World.route))) { [] } else { List.concat([World.segment_at(i)], seg_list((i + 1))) })
+seg_list = |i| seg_list_acc(i, [])
+
+seg_list_acc : I64, List(World.Segment) -> List(World.Segment)
+seg_list_acc = |i, acc| (if (i >= U64.to_i64_wrap(List.len(World.route))) { acc } else { seg_list_acc((i + 1), List.concat(acc, [World.segment_at(i)])) })
 
 origin : Frame.Pose
 origin = { along: 0.0, across: 0.0, yaw: 0.0, hw: 2.0 }

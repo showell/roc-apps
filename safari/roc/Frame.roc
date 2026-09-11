@@ -15,8 +15,12 @@ Frame :: [].{
 	build_chain : List(World.Segment), I64 -> List(I64)
 	build_chain = |segs, start| chain_from(segs, start, 0)
 
+	# chain_from builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	chain_from : List(World.Segment), I64, I64 -> List(I64)
-	chain_from = |segs, s, n| (if (n >= look_ahead) { [] } else { (if (n >= max_chain) { [] } else { (if (List.get(segs, I64.to_u64_wrap(s)) ?? crash("list-at out of range")).terminates { [s] } else { List.concat([s], chain_from(segs, (List.get(segs, I64.to_u64_wrap(s)) ?? crash("list-at out of range")).exit_to, (n + 1))) }) }) })
+	chain_from = |segs, s, n| chain_from_acc(segs, s, n, [])
+
+	chain_from_acc : List(World.Segment), I64, I64, List(I64) -> List(I64)
+	chain_from_acc = |segs, s, n, acc| (if (n >= look_ahead) { acc } else { (if (n >= max_chain) { acc } else { (if (List.get(segs, I64.to_u64_wrap(s)) ?? crash("list-at out of range")).terminates { List.concat(acc, [s]) } else { chain_from_acc(segs, (List.get(segs, I64.to_u64_wrap(s)) ?? crash("list-at out of range")).exit_to, (n + 1), List.concat(acc, [s])) }) }) })
 
 	compose_down : List(World.Segment), List(I64), I64, F64, F64 -> Geom.AX
 	compose_down = |segs, ch, k, a, x| (if (k <= 0) { { a: a, x: x } } else { ({

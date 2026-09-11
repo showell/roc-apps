@@ -64,17 +64,21 @@ Geom :: [].{
 	both_sides : Bool, Bool -> Bool
 	both_sides = |a_in, b_in| (if a_in { b_in } else { (if b_in { False } else { True }) })
 
+	# clip_near_edge builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	clip_near_edge : List(Geom.Vec3), F64, I64 -> List(Geom.Vec3)
-	clip_near_edge = |poly, near_, i| ({
+	clip_near_edge = |poly, near_, i| clip_near_edge_acc(poly, near_, i, [])
+
+	clip_near_edge_acc : List(Geom.Vec3), F64, I64, List(Geom.Vec3) -> List(Geom.Vec3)
+	clip_near_edge_acc = |poly, near_, i, acc| ({
 		n = U64.to_i64_wrap(List.len(poly))
-		(if (i >= n) { [] } else { ({
+		(if (i >= n) { acc } else { ({
 			a = (List.get(poly, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 			b = (List.get(poly, I64.to_u64_wrap(((i + 1) - (I64.div_trunc_by((i + 1), n) * n)))) ?? crash("list-at out of range"))
 			a_in = (a.forward >= near_)
 			b_in = (b.forward >= near_)
 			kept = (if a_in { [a] } else { [] })
 			crossed = (if both_sides(a_in, b_in) { [] } else { clip_cross(a, b, near_) })
-			List.concat(List.concat(kept, crossed), clip_near_edge(poly, near_, (i + 1)))
+			clip_near_edge_acc(poly, near_, (i + 1), List.concat(acc, List.concat(kept, crossed)))
 		}) })
 	})
 

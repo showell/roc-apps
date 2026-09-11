@@ -61,8 +61,12 @@ World :: [].{
 		{ length: c.length, width: Scenery.lane_width, trees: trees, cows: Herd.fill_cows(c.bull), pigs: (if c.pigs { (if distract { Pigs.fill_pig_herd(c.length) } else { Pigs.fill_pig_row(c.length) }) } else { [] }), pigs_distract: distract, exit_angle: angle, exit_right: (c.turn_deg >= 0.0), exit_to: (if c.terminates { i } else { (i + 1) }), commit_along: (if c.terminates { c.length } else { (c.length - ((Scenery.lane_width / 2.0) / Trig.r_tan(angle))) }), north_heading: heading_at(i), has_mid_tower: (c.length > mid_tower_min_length), has_cat: c.cat, cat: Cat.cat_make((Scenery.lane_width / 2.0), Trees.tree_road_offset, next_tree_along(trees, Cat.cat_along)), terminates: c.terminates, exit_creature: (if c.terminates { NoCreature } else { c.creature }) }
 	})
 
+	# segments_from builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	segments_from : I64 -> List(World.Segment)
-	segments_from = |i| (if (i >= U64.to_i64_wrap(List.len(route))) { [] } else { List.concat([segment_at(i)], segments_from((i + 1))) })
+	segments_from = |i| segments_from_acc(i, [])
+
+	segments_from_acc : I64, List(World.Segment) -> List(World.Segment)
+	segments_from_acc = |i, acc| (if (i >= U64.to_i64_wrap(List.len(route))) { acc } else { segments_from_acc((i + 1), List.concat(acc, [segment_at(i)])) })
 
 	build_world : List(World.Segment)
 	build_world = segments_from(0)

@@ -83,6 +83,10 @@ Blit :: [].{
 	expand_cmd : Paint.DrawCmd -> List(Paint.DrawCmd)
 	expand_cmd = |c| (if (c.tag == 1) { [expand_shade(c)] } else { (if (c.tag == 3) { (if disc_visible((List.get(c.geom, I64.to_u64_wrap(2)) ?? crash("list-at out of range")), c.strength) { [c] } else { [] }) } else { (if (c.tag == 4) { (if radial_visible((List.get(c.geom, I64.to_u64_wrap(2)) ?? crash("list-at out of range"))) { [c] } else { [] }) } else { [c] }) }) })
 
+	# blit_expand builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	blit_expand : List(Paint.DrawCmd), I64 -> List(Paint.DrawCmd)
-	blit_expand = |cs, i| (if (i >= U64.to_i64_wrap(List.len(cs))) { [] } else { List.concat(expand_cmd((List.get(cs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))), blit_expand(cs, (i + 1))) })
+	blit_expand = |cs, i| blit_expand_acc(cs, i, [])
+
+	blit_expand_acc : List(Paint.DrawCmd), I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
+	blit_expand_acc = |cs, i, acc| (if (i >= U64.to_i64_wrap(List.len(cs))) { acc } else { blit_expand_acc(cs, (i + 1), List.concat(acc, expand_cmd((List.get(cs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))) })
 }

@@ -53,8 +53,12 @@ GuardRail :: [].{
 		rail_poly(p_bot, q_bot, q_top, p_top, rail_metal)
 	})
 
+	# bars builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	bars : List(Geom.RiderPt), I64 -> List(GuardRail.RailPoly)
-	bars = |path, i| (if ((i + 1) >= U64.to_i64_wrap(List.len(path))) { [] } else { List.concat([bar_quad((List.get(path, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), (List.get(path, I64.to_u64_wrap((i + 1))) ?? crash("list-at out of range")))], bars(path, (i + 1))) })
+	bars = |path, i| bars_acc(path, i, [])
+
+	bars_acc : List(Geom.RiderPt), I64, List(GuardRail.RailPoly) -> List(GuardRail.RailPoly)
+	bars_acc = |path, i, acc| (if ((i + 1) >= U64.to_i64_wrap(List.len(path))) { acc } else { bars_acc(path, (i + 1), List.concat(acc, [bar_quad((List.get(path, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), (List.get(path, I64.to_u64_wrap((i + 1))) ?? crash("list-at out of range")))])) })
 
 	post_box : Geom.RiderPt, F64, F64 -> GuardRail.RailPoly
 	post_box = |p, ox, ofwd| ({
@@ -81,8 +85,12 @@ GuardRail :: [].{
 		post_box((List.get(path, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), ox, ofwd)
 	})
 
+	# posts builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	posts : List(Geom.RiderPt), I64 -> List(GuardRail.RailPoly)
-	posts = |path, i| (if (i >= U64.to_i64_wrap(List.len(path))) { [] } else { List.concat([post_quad(path, i)], posts(path, (i + 1))) })
+	posts = |path, i| posts_acc(path, i, [])
+
+	posts_acc : List(Geom.RiderPt), I64, List(GuardRail.RailPoly) -> List(GuardRail.RailPoly)
+	posts_acc = |path, i, acc| (if (i >= U64.to_i64_wrap(List.len(path))) { acc } else { posts_acc(path, (i + 1), List.concat(acc, [post_quad(path, i)])) })
 
 	rail_emit : List(Geom.RiderPt) -> List(GuardRail.RailPoly)
 	rail_emit = |path| (if (U64.to_i64_wrap(List.len(path)) < 2) { [] } else { ListUtils.list_take(List.concat(bars(path, 0), posts(path, 0)), max_rail_polys) })
@@ -93,6 +101,10 @@ GuardRail :: [].{
 		(if (U64.to_i64_wrap(List.len(clipped)) < 3) { [] } else { Paint.push_poly(rp.color, Camera.project_all(clipped, cf, view_w, 0)) })
 	})
 
+	# rail_draw_all builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	rail_draw_all : List(GuardRail.RailPoly), F64, F64, I64 -> List(Paint.DrawCmd)
-	rail_draw_all = |ps, cf, view_w, i| (if (i >= U64.to_i64_wrap(List.len(ps))) { [] } else { List.concat(rail_draw_poly((List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), cf, view_w), rail_draw_all(ps, cf, view_w, (i + 1))) })
+	rail_draw_all = |ps, cf, view_w, i| rail_draw_all_acc(ps, cf, view_w, i, [])
+
+	rail_draw_all_acc : List(GuardRail.RailPoly), F64, F64, I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
+	rail_draw_all_acc = |ps, cf, view_w, i, acc| (if (i >= U64.to_i64_wrap(List.len(ps))) { acc } else { rail_draw_all_acc(ps, cf, view_w, (i + 1), List.concat(acc, rail_draw_poly((List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), cf, view_w))) })
 }

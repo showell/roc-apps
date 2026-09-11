@@ -4,10 +4,14 @@ import Camera
 Paint :: [].{
 	DrawCmd : { tag : I64, color : I64, color2 : I64, strength : F64, geom : List(F64), pts : List(F64) }
 
+	# flatten_screen builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	flatten_screen : List(Camera.ScreenPt), I64 -> List(F64)
-	flatten_screen = |ps, i| (if (i >= U64.to_i64_wrap(List.len(ps))) { [] } else { ({
+	flatten_screen = |ps, i| flatten_screen_acc(ps, i, [])
+
+	flatten_screen_acc : List(Camera.ScreenPt), I64, List(F64) -> List(F64)
+	flatten_screen_acc = |ps, i, acc| (if (i >= U64.to_i64_wrap(List.len(ps))) { acc } else { ({
 		p = (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
-		List.concat([p.x, p.y], flatten_screen(ps, (i + 1)))
+		flatten_screen_acc(ps, (i + 1), List.concat(acc, [p.x, p.y]))
 	}) })
 
 	push_poly : I64, List(Camera.ScreenPt) -> List(Paint.DrawCmd)

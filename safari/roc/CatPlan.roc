@@ -25,12 +25,20 @@ CatPlan :: [].{
 		(if sg.has_cat { cat_item(w, ch, pose, d, cf, chain_gap(w, ch, along, d), sg, v) } else { [] })
 	})
 
+	# walk_cats builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	walk_cats : List(World.Segment), List(I64), Frame.Pose, F64, F64, F64, I64 -> List(CatPlan.CatItem)
-	walk_cats = |w, ch, pose, cf, along, v, d| (if (d >= U64.to_i64_wrap(List.len(ch))) { [] } else { List.concat(seg_cat(w, ch, pose, d, cf, along, v), walk_cats(w, ch, pose, cf, along, v, (d + 1))) })
+	walk_cats = |w, ch, pose, cf, along, v, d| walk_cats_acc(w, ch, pose, cf, along, v, d, [])
+
+	walk_cats_acc : List(World.Segment), List(I64), Frame.Pose, F64, F64, F64, I64, List(CatPlan.CatItem) -> List(CatPlan.CatItem)
+	walk_cats_acc = |w, ch, pose, cf, along, v, d, acc| (if (d >= U64.to_i64_wrap(List.len(ch))) { acc } else { walk_cats_acc(w, ch, pose, cf, along, v, (d + 1), List.concat(acc, seg_cat(w, ch, pose, d, cf, along, v))) })
 
 	max_vis_cats : I64
 	max_vis_cats = 8
 
+	# cat_items builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	cat_items : List(CatPlan.CatItem), I64 -> List(DepthSort.Item)
-	cat_items = |cs, i| (if (i >= U64.to_i64_wrap(List.len(cs))) { [] } else { List.concat([{ fwd: (List.get(cs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd, kind: KCat, i: i }], cat_items(cs, (i + 1))) })
+	cat_items = |cs, i| cat_items_acc(cs, i, [])
+
+	cat_items_acc : List(CatPlan.CatItem), I64, List(DepthSort.Item) -> List(DepthSort.Item)
+	cat_items_acc = |cs, i, acc| (if (i >= U64.to_i64_wrap(List.len(cs))) { acc } else { cat_items_acc(cs, (i + 1), List.concat(acc, [{ fwd: (List.get(cs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd, kind: KCat, i: i }])) })
 }

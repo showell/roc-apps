@@ -36,8 +36,12 @@ behind = [{ right: (-5.0), forward: (-10.0) }, { right: 5.0, forward: (-10.0) },
 two_points : List(Geom.RiderPt)
 two_points = [{ right: (-5.0), forward: 10.0 }, { right: 5.0, forward: 10.0 }]
 
+# wide builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 wide : I64 -> List(Geom.RiderPt)
-wide = |n| (if (n <= 0) { [] } else { List.concat([{ right: I64.to_f64(n), forward: (10.0 + I64.to_f64(n)) }], wide((n - 1))) })
+wide = |n| wide_acc(n, [])
+
+wide_acc : I64, List(Geom.RiderPt) -> List(Geom.RiderPt)
+wide_acc = |n, acc| (if (n <= 0) { acc } else { wide_acc((n - 1), List.concat(acc, [{ right: I64.to_f64(n), forward: (10.0 + I64.to_f64(n)) }])) })
 
 drawn : List(Geom.RiderPt) -> List(Paint.DrawCmd)
 drawn = |ps| Ground.emit_ground_color(ps, 3112588, 685.5110432362151, 960.0)

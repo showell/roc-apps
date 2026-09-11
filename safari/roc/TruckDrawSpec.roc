@@ -65,8 +65,12 @@ face_carry_want = [1846886, 4, 1381658, 3]
 mark : I64, F64 -> TruckDraw.TruckFace
 mark = |c, f| { color: c, fwd: f, v: [] }
 
+# colours_of builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 colours_of : List(TruckDraw.TruckFace), I64 -> List(I64)
-colours_of = |fs, i| (if (i >= U64.to_i64_wrap(List.len(fs))) { [] } else { List.concat([(List.get(fs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).color], colours_of(fs, (i + 1))) })
+colours_of = |fs, i| colours_of_acc(fs, i, [])
+
+colours_of_acc : List(TruckDraw.TruckFace), I64, List(I64) -> List(I64)
+colours_of_acc = |fs, i, acc| (if (i >= U64.to_i64_wrap(List.len(fs))) { acc } else { colours_of_acc(fs, (i + 1), List.concat(acc, [(List.get(fs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).color])) })
 
 tied : List(TruckDraw.TruckFace)
 tied = [mark(1, 30.0), mark(2, 10.0), mark(3, 30.0), mark(4, 20.0), mark(5, 30.0)]

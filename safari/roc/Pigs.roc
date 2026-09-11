@@ -56,11 +56,19 @@ Pigs :: [].{
 		{ along: along, across: across, codepoint: pig_cp, height: pig_height, face_right: False }
 	})
 
+	# herd_cols_from builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	herd_cols_from : F64, I64, I64 -> List(Scenery.Critter)
-	herd_cols_from = |base, r, c| (if (c >= big_herd_cols) { [] } else { List.concat([herd_pig_at(base, r, c)], herd_cols_from(base, r, (c + 1))) })
+	herd_cols_from = |base, r, c| herd_cols_from_acc(base, r, c, [])
 
+	herd_cols_from_acc : F64, I64, I64, List(Scenery.Critter) -> List(Scenery.Critter)
+	herd_cols_from_acc = |base, r, c, acc| (if (c >= big_herd_cols) { acc } else { herd_cols_from_acc(base, r, (c + 1), List.concat(acc, [herd_pig_at(base, r, c)])) })
+
+	# herd_rows_from builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	herd_rows_from : F64, I64 -> List(Scenery.Critter)
-	herd_rows_from = |base, r| (if (r >= big_herd_rows) { [] } else { List.concat(herd_cols_from(base, r, 0), herd_rows_from(base, (r + 1))) })
+	herd_rows_from = |base, r| herd_rows_from_acc(base, r, [])
+
+	herd_rows_from_acc : F64, I64, List(Scenery.Critter) -> List(Scenery.Critter)
+	herd_rows_from_acc = |base, r, acc| (if (r >= big_herd_rows) { acc } else { herd_rows_from_acc(base, (r + 1), List.concat(acc, herd_cols_from(base, r, 0))) })
 
 	fill_pig_herd : F64 -> List(Scenery.Critter)
 	fill_pig_herd = |length| herd_rows_from((length - pig_dist_before_end), 0)
@@ -71,8 +79,12 @@ Pigs :: [].{
 	pig_row_back : List(F64)
 	pig_row_back = [(0.0 - 10.0), (0.0 - 6.0), (0.0 - 2.0), 2.0, 6.0, 10.0]
 
+	# row_pigs_at builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	row_pigs_at : F64, F64, List(F64), I64 -> List(Scenery.Critter)
-	row_pigs_at = |base, across, ds, i| (if (i >= U64.to_i64_wrap(List.len(ds))) { [] } else { List.concat([{ along: (base + (List.get(ds, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))), across: across, codepoint: pig_cp, height: pig_height, face_right: False }], row_pigs_at(base, across, ds, (i + 1))) })
+	row_pigs_at = |base, across, ds, i| row_pigs_at_acc(base, across, ds, i, [])
+
+	row_pigs_at_acc : F64, F64, List(F64), I64, List(Scenery.Critter) -> List(Scenery.Critter)
+	row_pigs_at_acc = |base, across, ds, i, acc| (if (i >= U64.to_i64_wrap(List.len(ds))) { acc } else { row_pigs_at_acc(base, across, ds, (i + 1), List.concat(acc, [{ along: (base + (List.get(ds, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))), across: across, codepoint: pig_cp, height: pig_height, face_right: False }])) })
 
 	fill_pig_row : F64 -> List(Scenery.Critter)
 	fill_pig_row = |length| ({

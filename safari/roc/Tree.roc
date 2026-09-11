@@ -59,10 +59,14 @@ Tree :: [].{
 		Paint.push_poly(color, tri)
 	})
 
+	# cone_ring builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	cone_ring : F64, F64, F64, F64, F64, F64, I64, F64 -> List(Camera.ScreenPt)
-	cone_ring = |r0, f0, rad, h_base, cf, view_w, i, a| (if (i >= ring_n) { [] } else { ({
+	cone_ring = |r0, f0, rad, h_base, cf, view_w, i, a| cone_ring_acc(r0, f0, rad, h_base, cf, view_w, i, a, [])
+
+	cone_ring_acc : F64, F64, F64, F64, F64, F64, I64, F64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
+	cone_ring_acc = |r0, f0, rad, h_base, cf, view_w, i, a, acc| (if (i >= ring_n) { acc } else { ({
 		p = { right: (r0 + (rad * Trig.r_cos(a))), forward: (f0 + (rad * Trig.r_sin(a))), height: h_base }
-		List.concat([Camera.project(p, cf, view_w)], cone_ring(r0, f0, rad, h_base, cf, view_w, (i + 1), (a + (Trig.two_pi / 16.0))))
+		cone_ring_acc(r0, f0, rad, h_base, cf, view_w, (i + 1), (a + (Trig.two_pi / 16.0)), List.concat(acc, [Camera.project(p, cf, view_w)]))
 	}) })
 
 	less_xy : Camera.ScreenPt, Camera.ScreenPt -> Bool
@@ -121,10 +125,14 @@ Tree :: [].{
 		}) })
 	})
 
+	# tiers builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	tiers : F64, F64, F64, I64, F64, F64, Tree.Metrics, Bool, F64, I64 -> List(Paint.DrawCmd)
-	tiers = |r0, f0, height, color, cf, view_w, m, near_crown, shade, k| (if (k >= 8) { [] } else { ({
+	tiers = |r0, f0, height, color, cf, view_w, m, near_crown, shade, k| tiers_acc(r0, f0, height, color, cf, view_w, m, near_crown, shade, k, [])
+
+	tiers_acc : F64, F64, F64, I64, F64, F64, Tree.Metrics, Bool, F64, I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
+	tiers_acc = |r0, f0, height, color, cf, view_w, m, near_crown, shade, k, acc| (if (k >= 8) { acc } else { ({
 		one = (if near_crown { tier_cone(r0, f0, height, color, cf, view_w, m, k, shade) } else { tier_triangle(m, k, color) })
-		List.concat(one, tiers(r0, f0, height, color, cf, view_w, m, near_crown, shade, (k + 1)))
+		tiers_acc(r0, f0, height, color, cf, view_w, m, near_crown, shade, (k + 1), List.concat(acc, one))
 	}) })
 
 	tree_draw : F64, F64, F64, I64, F64, F64, Bool, Bool, F64 -> List(Paint.DrawCmd)

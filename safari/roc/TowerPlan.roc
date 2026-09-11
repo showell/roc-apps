@@ -38,8 +38,12 @@ TowerPlan :: [].{
 		(if sg.has_mid_tower { tower_if_ahead(segs, ch, pose, Frame.chain_map(d), (sg.length / 2.0), ((sg.width / 2.0) - seg_tower_left), 0.0, ((List.get(ch, I64.to_u64_wrap(d)) ?? crash("list-at out of range")) + 60)) } else { [] })
 	})
 
+	# walk_towers builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	walk_towers : List(World.Segment), List(I64), Frame.Pose, I64 -> List(TowerPlan.TowerItem)
-	walk_towers = |segs, ch, pose, d| (if (d >= U64.to_i64_wrap(List.len(ch))) { [] } else { List.concat(seg_towers(segs, ch, pose, d), walk_towers(segs, ch, pose, (d + 1))) })
+	walk_towers = |segs, ch, pose, d| walk_towers_acc(segs, ch, pose, d, [])
+
+	walk_towers_acc : List(World.Segment), List(I64), Frame.Pose, I64, List(TowerPlan.TowerItem) -> List(TowerPlan.TowerItem)
+	walk_towers_acc = |segs, ch, pose, d, acc| (if (d >= U64.to_i64_wrap(List.len(ch))) { acc } else { walk_towers_acc(segs, ch, pose, (d + 1), List.concat(acc, seg_towers(segs, ch, pose, d))) })
 
 	behind_tower : List(World.Segment), List(I64), Frame.Pose, I64 -> List(TowerPlan.TowerItem)
 	behind_tower = |segs, ch, pose, prev_idx| ({
@@ -53,6 +57,10 @@ TowerPlan :: [].{
 	max_vis_towers : I64
 	max_vis_towers = 16
 
+	# tower_items builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	tower_items : List(TowerPlan.TowerItem), I64 -> List(DepthSort.Item)
-	tower_items = |ts, i| (if (i >= U64.to_i64_wrap(List.len(ts))) { [] } else { List.concat([{ fwd: (List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd, kind: KTower, i: i }], tower_items(ts, (i + 1))) })
+	tower_items = |ts, i| tower_items_acc(ts, i, [])
+
+	tower_items_acc : List(TowerPlan.TowerItem), I64, List(DepthSort.Item) -> List(DepthSort.Item)
+	tower_items_acc = |ts, i, acc| (if (i >= U64.to_i64_wrap(List.len(ts))) { acc } else { tower_items_acc(ts, (i + 1), List.concat(acc, [{ fwd: (List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd, kind: KTower, i: i }])) })
 }

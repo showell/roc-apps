@@ -34,8 +34,12 @@ cam_gaze = [0.0, 0.0, 1.0, 0.3, 1.4, 0.5]
 cam_want : List(F64)
 cam_want = [685.5110432362151, 239.92886513267527, 418.16173637409116, 574.1154987103301, 311.2220136292417, 525.1014591189407]
 
+# cam_walk builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 cam_walk : I64 -> List(F64)
-cam_walk = |i| (if (i >= U64.to_i64_wrap(List.len(cam_lean))) { [] } else { List.concat([Lens.cam_focal((List.get(cam_lean, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), (List.get(cam_gaze, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))], cam_walk((i + 1))) })
+cam_walk = |i| cam_walk_acc(i, [])
+
+cam_walk_acc : I64, List(F64) -> List(F64)
+cam_walk_acc = |i, acc| (if (i >= U64.to_i64_wrap(List.len(cam_lean))) { acc } else { cam_walk_acc((i + 1), List.concat(acc, [Lens.cam_focal((List.get(cam_lean, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), (List.get(cam_gaze, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))])) })
 
 eq_tup2 : Tuple.Tup2(a, b), Tuple.Tup2(a, b) -> Bool
 eq_tup2 = |ex, ey| (match ex {
