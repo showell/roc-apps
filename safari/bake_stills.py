@@ -2,7 +2,7 @@
 """The stills as Roc modules: one string constant per still, and the decoder
 that reads them back into Stills records at run time.
 
-    safari/bake_stills.py    writes ~/build/roc-apps/gen/baked/{StillsDecode,CatStillsData,EmojiStillsData}.roc
+    safari/bake_stills.py    writes safari/roc/{StillsDecode,CatStillsData,EmojiStillsData}.roc
 
 WHY STRINGS. Roc's type checker is superlinear in the number of literal
 elements in a file, whatever their type and however they are grouped: 1k,
@@ -30,7 +30,7 @@ import re
 import sys
 
 SAFARI = pathlib.Path(os.environ.get("SAFARI_ROOT", "~/showell_repos/safari-codex")).expanduser()
-OUT = pathlib.Path("~/build/roc-apps/gen/baked").expanduser()
+OUT = pathlib.Path(__file__).resolve().parent / "roc"
 
 DECODER = '''# StillsDecode -- the decoder for baked stills; see roc-apps/safari/bake_stills.py.
 import Stills

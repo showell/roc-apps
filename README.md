@@ -4,6 +4,14 @@ Roc programs on this box, and the tooling around them: the Roc compiler
 built from source, its test suite run as our installation check, and the
 apps ported here from Codex.
 
+## The Roc is tracked; everything else the tools write is not
+
+`safari/roc/` holds the emitted Roc -- one module per Codex chapter, the spec
+apps, and the baked stills -- and is committed, because those files are the
+point: they are the code the screensaver will import and the specs grade.
+`safari/emitted.sh` rewrites the directory; a diff there is a change in what
+the emitter says, and it is reviewed like any other change.
+
 ## Outputs live OUTSIDE this repository
 
 Nothing the compiler writes lands here. The Roc checkout is
