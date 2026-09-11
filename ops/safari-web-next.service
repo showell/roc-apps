@@ -1,0 +1,10 @@
+[Unit]
+Description=safari, the previewed build, in the browser (port 9203)
+
+[Service]
+ExecStart=/usr/bin/python3 %h/showell_repos/roc-apps/safari/web/serve.py 9203 %h/build/roc-apps/next
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target

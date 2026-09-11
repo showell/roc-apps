@@ -15,8 +15,10 @@ Roc on the fifth tree on the right of every segment.
 | `safari/roc/SafariApp.roc` | the screensaver: the ride as a boxed model, the frame packed into the blitter's words | hand |
 | `safari/roc/RocBird.roc` | the bird | hand |
 | `safari/roc/FrameBench.roc` | a native loop over the frame, for `perf` | hand |
-| `safari/wasm/` | the platform: `platform/main.roc` provides the page's sixteen exports over `Box(Model)`; `platform/host.zig` is the host; `build.zig` builds it against the roc checkout; `build.sh` builds host and app into `web/driving/safari.wasm` | hand |
-| `safari/web/` | the page: safari-codex's `blitter.js` by symlink, `serve.py` on :9201 with no-store | hand, one copy |
+| `safari/wasm/` | the platform: `platform/main.roc` provides the page's sixteen exports over `Box(Model)`; `platform/host.zig` is the host; `build.zig` builds it against the roc checkout; `build.sh` builds host and app into the PREVIEW root | hand |
+| `safari/web/` | the demo page: a copy of safari-codex's `blitter.js`, `index.html`, `serve.py`, and `driving/safari.wasm` with its `PROVENANCE`, which only `safari/publish.sh` writes | hand; the module by publish |
+| `safari/publish.sh` | THE MANUAL STEP: the previewed module into the demo, with provenance, committed and pushed | hand |
+| `ops/` | two systemd --user services: `safari-web` :9201 over `safari/web/` (the demo), `safari-web-next` :9203 over `~/build/roc-apps/next/` (the preview); `install.sh` | hand |
 | `safari/emitted.sh` | THE GATE: every unit emitted, chapter identity checked, roc run two at a time, output against the verdict; a compile error is a FAIL | hand |
 | `safari/retest.sh` | the targeted sweep: emit all, diff against the tracked Roc, run only what changed | hand |
 | `wasm/*.mjs` | Node drivers: run a module, drive the screensaver headless with timings | hand |
@@ -30,16 +32,21 @@ resolved, `<Spec>.expected` the verdict the Rust interpreter froze).
 `safari/roc/` is generated and committed, because those files are the point.
 A full `emitted.sh` rewrites every emitted file and leaves the hand-written
 ones; a diff there is a change in what the emitter says, reviewed like any
-other. Roc's own output, the built module and the caches live under
-`~/build/roc-apps/`, and `safari/web/driving/` is ignored.
+other. The published module `safari/web/driving/safari.wasm` is committed
+too, with its provenance, so a clone has the demo. Roc's own output, the
+previewed module and the caches live under `~/build/roc-apps/`.
 
 ## The loop
 
-    safari/emitted.sh              # 54 units, ~27 s; the gate before a commit of safari/roc
+    safari/emitted.sh              # 54 units, ~10-27 s; the gate before a commit of safari/roc
     safari/retest.sh               # after a rocemit change: only what changed
-    safari/wasm/build.sh           # host + app -> web/driving/safari.wasm, ~15 s
-    safari/web/serve.py            # http://<box>:9201/, no-store
-    wasm/drive_smoke.mjs safari/web/driving/safari.wasm 120   # frame bytes, stages, ms per frame
+    safari/wasm/build.sh           # host + app -> the preview, http://<box>:9203/, ~15 s
+    wasm/drive_smoke.mjs ~/build/roc-apps/next/driving/safari.wasm 120   # frame bytes, stages, ms per frame
+    safari/publish.sh              # when the preview looks right: the demo, http://<box>:9201/
+
+The demo never changes under you: a build goes to the preview, and only a
+publish, a deliberate copy with a provenance file and a commit, moves it to
+the demo. Both pages send no-store, so each is live the moment its file is.
 
 `ROCEMIT=~/build/rust-target/debug/rocemit` points the sweeps at a debug
 build of the emitter; the default is the release one.

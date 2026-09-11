@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Serve this directory for an eye test, no-store on everything.
 
-    safari/web/serve.py [port]        # default 9201
+    safari/web/serve.py [port] [root]     # default 9201, this directory
 
-A copy of safari-codex's harness/serve.py with this directory as root: the
-no-store header is the point, because a cached safari.wasm looks exactly like
-a build that changed nothing. blitter.js is a symlink to safari-codex's fork,
-the same JavaScript that draws the Codex module; only driving/safari.wasm is
-ours.
+A copy of safari-codex's harness/serve.py: the no-store header is the point,
+because a cached safari.wasm looks exactly like a build that changed nothing.
+Two services run it: safari-web on :9201 over this directory (the demo, whose
+module only safari/publish.sh writes) and safari-web-next on :9203 over
+~/build/roc-apps/next (whatever safari/wasm/build.sh last built).
 """
 import functools
 import http.server
@@ -25,9 +25,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
 def main():
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 9201
-    handler = functools.partial(Handler, directory=str(ROOT))
+    root = pathlib.Path(sys.argv[2]).expanduser() if len(sys.argv) > 2 else ROOT
+    handler = functools.partial(Handler, directory=str(root))
     with http.server.ThreadingHTTPServer(('0.0.0.0', port), handler) as httpd:
-        print(f'serving {ROOT} on http://0.0.0.0:{port}  (no-store)', flush=True)
+        print(f'serving {root} on http://0.0.0.0:{port}  (no-store)', flush=True)
         httpd.serve_forever()
 
 
