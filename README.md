@@ -16,13 +16,26 @@ mistake to fix, not a file to commit.
 ## The compiler
 
 Roc's new compiler (zig, `roc-lang/roc` main) needs zig 0.16.0, which this
-box has at `~/zig-0.16.0/zig`. Build:
+box has at `~/zig-0.16.0/zig`. The build on this box is a DEBUG build:
 
     cd ~/showell_repos/roc
-    ~/zig-0.16.0/zig build -Doptimize=ReleaseFast \
+    ~/zig-0.16.0/zig build \
       --prefix ~/build/roc/out --cache-dir ~/build/roc/zig-cache \
       --global-cache-dir ~/build/zig-global
 
-The binary is `~/build/roc/out/bin/roc`. The release page's `alpha4`
-tarballs are the OLD compiler and are not what the ports were written
-against.
+The binary is `~/build/roc/out/bin/roc` (2.6 GB, `roc version` prints
+`debug-<sha>`). `-Doptimize=ReleaseFast` does not finish here: the final
+`roc` link (all of LLVM, statically) is terminated on this 8 GB box, twice
+(`~/build/roc/build.log`, `build2.log`). Debug is fast enough for the specs:
+ViewYawSpec runs in about three seconds.
+
+The installation check is Roc's own eval suite, run in two processes:
+
+    ~/zig-0.16.0/zig build run-test-eval \
+      --prefix ~/build/roc/out --cache-dir ~/build/roc/zig-cache \
+      --global-cache-dir ~/build/zig-global
+
+At 68267ddd: 2086 passed, 0 failed, 47 minutes (`~/build/roc/eval.log`).
+
+The release page's `alpha4` tarballs are the OLD compiler and are not what
+the ports were written against.
