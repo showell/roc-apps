@@ -17,6 +17,10 @@ import Sky
 import Rider
 import CanvasRoll
 import RideFocal
+import ViewYaw
+import Frame
+import Lens
+import RocBird
 
 Model : { world : List(World.Segment), ride : Safari.Ride, hist : List(Safari.Ride) }
 
@@ -83,10 +87,15 @@ probe_expand = |b| {
 	U64.to_u32_wrap(List.len(Blit.blit_expand(Safari.ride_frame(m.world, m.ride), 0)))
 }
 
+# The frame, then the Roc flair: a bird on the fifth tree on the right of
+# every segment (RocBird), appended after the Codex frame so it paints on top.
 render : Box(Model) -> List(U32)
 render = |b| {
 	m = Box.unbox(b)
-	cmds = Blit.blit_expand(Safari.ride_frame(m.world, m.ride), 0)
+	s = m.ride.rider
+	cf = RideFocal.ride_focal(m.world, s)
+	birds = RocBird.draw_all(m.world, Frame.build_chain(m.world, s.segment), ViewYaw.pose_for(m.world, s), cf, Lens.camera_w)
+	cmds = Blit.blit_expand(List.concat(Safari.ride_frame(m.world, m.ride), birds), 0)
 	List.join_map(cmds, pack_cmd)
 }
 
