@@ -1,0 +1,10 @@
+[Unit]
+Description=safari, the Roc module, in the browser (port 9201)
+
+[Service]
+ExecStart=/usr/bin/python3 %h/showell_repos/roc-apps/safari/web/serve.py 9201
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target
