@@ -100,8 +100,12 @@ head_want = [0.0, 4.89375, 0.825, -1.9875, 0.6875]
 
 # --- Entry -------------------------------------------------------------------
 
-main! = || {
-	echo!(grade_reals("vy-frac", frac_got, frac_want, 0.0))
-	echo!(grade_reals("vy-yaw ", yaw_got, yaw_want, 0.0))
-	echo!(grade_reals("vy-head", head_got, head_want, 0.0))
+# The Echo platform's echo! writes no newline; a verdict is one line.
+line! = |s| echo!(Str.concat(s, "\n"))
+
+main! = |_args| {
+	line!(grade_reals("vy-frac", frac_got, frac_want, 0.0))
+	line!(grade_reals("vy-yaw ", yaw_got, yaw_want, 0.0))
+	line!(grade_reals("vy-head", head_got, head_want, 0.0))
+	Ok({})
 }
