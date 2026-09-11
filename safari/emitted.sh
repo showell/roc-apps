@@ -6,15 +6,17 @@
 #
 # The units are safari-codex's `units/<Spec>.codex` (the resolved program) and
 # `units/<Spec>.expected` (the verdict the Rust interpreter froze). rocemit is
-# rust-codex-compiler's Roc emitter. Three outcomes, counted apart: PASS and
-# FAIL are roc's output against the verdict; REFUSED is rocemit declining a
-# form it has not built, with the reason -- not a failure and not a pass.
+# rust-codex-compiler's Roc emitter, and it writes ONE TYPE MODULE PER CODEX
+# CHAPTER plus the spec's app into gen/<Spec>/. Three outcomes, counted apart:
+# PASS and FAIL are roc's output against the verdict; REFUSED is rocemit
+# declining a form it has not built, with the reason -- not a failure and not
+# a pass.
 #
-# THE STILLS ARE BAKED, NOT EMITTED. rocemit leaves a data table out and writes
-# a `# baked:` line naming it and its chapter; safari/bake_stills.py writes
-# that chapter's constants as strings under gen/baked/, and this appends the
-# decoder and each named chapter. A named chapter with no baked file is a FAIL
-# here, and a baked file missing a name is Roc's undefined-name error.
+# THE STILLS ARE BAKED, NOT EMITTED. rocemit forwards a data table to
+# `<Chapter>Data.name`; safari/bake_stills.py writes those modules and the
+# decoder under gen/baked/, and every unit's directory gets a copy, because a
+# Roc import resolves beside the importing file. A unit that never imports
+# them never compiles them.
 #
 # Outputs go under ~/build/roc-apps/gen, never here.
 set -u
@@ -33,20 +35,13 @@ pass=0; fail=0; refused=0
 for u in "$UNITS"/*Spec.codex; do
     n="$(basename "$u" .codex)"
     [ $# -eq 0 ] || [ "$n" = "$1Spec" ] || continue
-    if ! "$ROCEMIT" "$u" > "$OUT/$n.roc" 2> "$OUT/$n.refused"; then
-        refused=$((refused + 1)); echo "REFUSED $n  $(head -1 "$OUT/$n.refused")"; rm -f "$OUT/$n.roc"; continue
+    d="$OUT/$n"
+    if ! app="$("$ROCEMIT" "$u" "$d" 2> "$OUT/$n.refused")"; then
+        refused=$((refused + 1)); echo "REFUSED $n  $(head -1 "$OUT/$n.refused")"; continue
     fi
     rm -f "$OUT/$n.refused"
-    slugs="$(grep '^# baked: ' "$OUT/$n.roc" | sed 's/.* -- \([A-Za-z0-9]*\) .*/\1/' | sort -u)"
-    if [ -n "$slugs" ]; then
-        cat "$BAKED/Stills.roc" >> "$OUT/$n.roc"
-        missing=""
-        for s in $slugs; do
-            [ -f "$BAKED/$s.roc" ] && cat "$BAKED/$s.roc" >> "$OUT/$n.roc" || missing="$missing $s"
-        done
-        [ -z "$missing" ] || { fail=$((fail + 1)); echo "FAIL $n  no baked chapter for:$missing"; continue; }
-    fi
-    "$ROC" run "$OUT/$n.roc" > "$OUT/$n.out" 2> "$OUT/$n.err"
+    cp "$BAKED"/*.roc "$d/"
+    "$ROC" run "$d/$app" > "$OUT/$n.out" 2> "$OUT/$n.err"
     if diff -q "$OUT/$n.out" "$UNITS/$n.expected" > /dev/null; then
         pass=$((pass + 1)); echo "PASS $n"
     else
