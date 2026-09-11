@@ -32,4 +32,16 @@ Maybe :: [].{
 		Just(x) => f(x)
 		None => None
 	})
+
+	eq_maybe : Maybe.Maybe(a), Maybe.Maybe(a) -> Bool where [a.is_eq : a, a -> Bool]
+	eq_maybe = |ex, ey| (match ex {
+		Just(exf0) => (match ey {
+			Just(eyf0) => (exf0 == eyf0)
+			_ => False
+		})
+		None => (match ey {
+			None => True
+			_ => False
+		})
+	})
 }

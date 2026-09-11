@@ -2,7 +2,6 @@
 import Grade
 import ListUtils
 import Num
-import Tuple
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
@@ -56,38 +55,6 @@ exp_in = [(-100.0), (-50.0), (-20.0), (-5.0), (-2.5), (-1.0), (-0.69314718055994
 
 exp_want : List(F64)
 exp_want = [F64.from_bits(3957129287720677213), F64.from_bits(4282120040917895231), F64.from_bits(4477057993643618919), 0.006737946999085467, 0.0820849986238988, 0.36787944117144233, 0.5, 0.7071067811865475, 0.7071067811865475, 0.951229424500714, 1.0, 1.0512710963760241, 1.4142135623730951, 2.0, 2.7182818284590455, 12.182493960703473, 148.4131591025766, 485165195.4097903]
-
-eq_tup2 : Tuple.Tup2(a, b), Tuple.Tup2(a, b) -> Bool
-eq_tup2 = |ex, ey| (match ex {
-	MkTup2(exf0, exf1) => (match ey {
-		MkTup2(eyf0, eyf1) => ((exf0 == eyf0) and (exf1 == eyf1))
-		_ => False
-	})
-})
-
-eq_tup3 : Tuple.Tup3(a, b, c), Tuple.Tup3(a, b, c) -> Bool
-eq_tup3 = |ex, ey| (match ex {
-	MkTup3(exf0, exf1, exf2) => (match ey {
-		MkTup3(eyf0, eyf1, eyf2) => (((exf0 == eyf0) and (exf1 == eyf1)) and (exf2 == eyf2))
-		_ => False
-	})
-})
-
-eq_tup4 : Tuple.Tup4(a, b, c, d), Tuple.Tup4(a, b, c, d) -> Bool
-eq_tup4 = |ex, ey| (match ex {
-	MkTup4(exf0, exf1, exf2, exf3) => (match ey {
-		MkTup4(eyf0, eyf1, eyf2, eyf3) => ((((exf0 == eyf0) and (exf1 == eyf1)) and (exf2 == eyf2)) and (exf3 == eyf3))
-		_ => False
-	})
-})
-
-eq_tup5 : Tuple.Tup5(a, b, c, d, e), Tuple.Tup5(a, b, c, d, e) -> Bool
-eq_tup5 = |ex, ey| (match ex {
-	MkTup5(exf0, exf1, exf2, exf3, exf4) => (match ey {
-		MkTup5(eyf0, eyf1, eyf2, eyf3, eyf4) => (((((exf0 == eyf0) and (exf1 == eyf1)) and (exf2 == eyf2)) and (exf3 == eyf3)) and (exf4 == eyf4))
-		_ => False
-	})
-})
 
 # --- Entry ---
 

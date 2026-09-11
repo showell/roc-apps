@@ -39,4 +39,20 @@ Arc :: [].{
 		left_bound = DeviceMath.real_min((0.0 - inset_hw), state.across)
 		sim_loop(state, left_bound, right_bound, Trig.r_sign(state.across), state.along, False, 0, state)
 	})
+
+	eq_shoulder : Arc.Shoulder, Arc.Shoulder -> Bool
+	eq_shoulder = |ex, ey| (match ex {
+		ShoulderLeft => (match ey {
+			ShoulderLeft => True
+			_ => False
+		})
+		ShoulderNone => (match ey {
+			ShoulderNone => True
+			_ => False
+		})
+		ShoulderRight => (match ey {
+			ShoulderRight => True
+			_ => False
+		})
+	})
 }

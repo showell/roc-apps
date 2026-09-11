@@ -24,6 +24,20 @@ mistake to fix, not a file to commit.
 
 ## The compiler
 
+**Use the nightly.** roc-lang/nightlies publishes a release build of the new
+compiler every day (`gh release list -R roc-lang/nightlies`); the tarball's
+`roc` is installed as `~/build/roc-nightly/roc`, and it is what the sweeps
+and the wasm build use. It checks a 4,000-literal file in a third of a
+second where the debug build below takes thirty, and the 54-unit sweep in
+27 seconds where the debug build takes five minutes.
+
+    cd ~/build/roc-nightly
+    gh release download <tag> -R roc-lang/nightlies -p 'roc_nightly-linux_x86_64-*.tar.gz'
+    tar xzf roc_nightly-linux_x86_64-<tag>.tar.gz
+    ln -sfn roc_nightly-linux_x86_64-<tag>/roc roc
+
+The build from source is for working ON the compiler:
+
 Roc's new compiler (zig, `roc-lang/roc` main) needs zig 0.16.0, which this
 box has at `~/zig-0.16.0/zig`. The build on this box is a DEBUG build:
 

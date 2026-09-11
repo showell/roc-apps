@@ -47,15 +47,19 @@ extern fn roc_rider_v(model: ?[*]u8) callconv(.c) f32;
 extern fn roc_truck_lead(model: ?[*]u8) callconv(.c) f32;
 extern fn roc_truck_v(model: ?[*]u8) callconv(.c) f32;
 
-// Imports from the page: a panic reaches the console as text.
+// NO IMPORTS. web/blitter.js instantiates the module with an empty import
+// object, as it does the Codex-built one, so a panic is a wasm trap -- the
+// page sees a RuntimeError -- and dbg output goes nowhere.
 const env = struct {
-    extern "env" fn roc_panic(ptr: [*]const u8, len: usize) noreturn;
-    extern "env" fn roc_dbg(ptr: [*]const u8, len: usize) void;
+    fn roc_panic(_: [*]const u8, _: usize) noreturn {
+        @trap();
+    }
+    fn roc_dbg(_: [*]const u8, _: usize) void {}
 };
 
 pub const panic = std.debug.FullPanic(panicImpl);
-fn panicImpl(msg: []const u8, _: ?usize) noreturn {
-    env.roc_panic(msg.ptr, msg.len);
+fn panicImpl(_: []const u8, _: ?usize) noreturn {
+    @trap();
 }
 
 const wasm_allocator = std.heap.wasm_allocator;
