@@ -10,8 +10,15 @@
 # FAIL are roc's output against the verdict; REFUSED is rocemit declining a
 # form it has not built, with the reason -- not a failure and not a pass.
 #
+# THE STILLS ARE BAKED, NOT EMITTED. rocemit leaves a data table out and writes
+# a `# baked:` line naming it and its chapter; safari/bake_stills.py writes
+# that chapter's constants as strings under gen/baked/, and this appends the
+# decoder and each named chapter. A named chapter with no baked file is a FAIL
+# here, and a baked file missing a name is Roc's undefined-name error.
+#
 # Outputs go under ~/build/roc-apps/gen, never here.
 set -u
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROC="${ROC:-$HOME/build/roc/out/bin/roc}"
 ROCEMIT="${ROCEMIT:-$HOME/build/rust-target/release/rocemit}"
 UNITS="${SAFARI_UNITS:-$HOME/showell_repos/safari-codex/units}"
@@ -20,6 +27,8 @@ mkdir -p "$OUT"
 [ -x "$ROC" ] || { echo "no roc at $ROC"; exit 2; }
 [ -x "$ROCEMIT" ] || { echo "no rocemit at $ROCEMIT; cargo build --release --bin rocemit, or set ROCEMIT"; exit 2; }
 [ -d "$UNITS" ] || { echo "no units at $UNITS"; exit 2; }
+BAKED="$OUT/baked"
+"$HERE/bake_stills.py" > /dev/null || { echo "bake_stills.py failed"; exit 2; }
 pass=0; fail=0; refused=0
 for u in "$UNITS"/*Spec.codex; do
     n="$(basename "$u" .codex)"
@@ -28,6 +37,15 @@ for u in "$UNITS"/*Spec.codex; do
         refused=$((refused + 1)); echo "REFUSED $n  $(head -1 "$OUT/$n.refused")"; rm -f "$OUT/$n.roc"; continue
     fi
     rm -f "$OUT/$n.refused"
+    slugs="$(grep '^# baked: ' "$OUT/$n.roc" | sed 's/.* -- \([A-Za-z0-9]*\) .*/\1/' | sort -u)"
+    if [ -n "$slugs" ]; then
+        cat "$BAKED/Stills.roc" >> "$OUT/$n.roc"
+        missing=""
+        for s in $slugs; do
+            [ -f "$BAKED/$s.roc" ] && cat "$BAKED/$s.roc" >> "$OUT/$n.roc" || missing="$missing $s"
+        done
+        [ -z "$missing" ] || { fail=$((fail + 1)); echo "FAIL $n  no baked chapter for:$missing"; continue; }
+    fi
     "$ROC" run "$OUT/$n.roc" > "$OUT/$n.out" 2> "$OUT/$n.err"
     if diff -q "$OUT/$n.out" "$UNITS/$n.expected" > /dev/null; then
         pass=$((pass + 1)); echo "PASS $n"
