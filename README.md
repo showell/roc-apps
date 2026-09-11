@@ -1,8 +1,9 @@
 # roc-apps
 
 Roc programs on this box, and the tooling around them: the Roc compiler
-built from source, its test suite run as our installation check, and the
-apps ported here from Codex.
+built from source, its test suite run as our installation check, and
+safari, emitted from Codex by rust-codex-compiler's `rocemit` into
+`safari/roc/` and graded by `safari/emitted.sh` against the Codex verdicts.
 
 ## The Roc is tracked; everything else the tools write is not
 
@@ -35,7 +36,7 @@ The binary is `~/build/roc/out/bin/roc` (2.6 GB, `roc version` prints
 `debug-<sha>`). `-Doptimize=ReleaseFast` does not finish here: the final
 `roc` link (all of LLVM, statically) is terminated on this 8 GB box, twice
 (`~/build/roc/build.log`, `build2.log`). Debug is fast enough for the specs:
-ViewYawSpec runs in about three seconds.
+a small one runs in about three seconds, the 54 in about five minutes.
 
 The installation check is Roc's own eval suite, run in two processes:
 
