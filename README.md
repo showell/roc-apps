@@ -33,25 +33,26 @@ resolved, `<Spec>.expected` the verdict the Rust interpreter froze).
 `apps/*/kernels` (46 chapters the wgsl plug lowers to WebGPU compute
 shaders), run in Roc on the CPU, one gid after another, with the pixels put
 on a 2d canvas. Started 2026-09-12 with hand ports of plasma and the
-fountain; the same day every kernel was emitted and the 33 pixel-writing
-demos became one gallery module. The essay is `:9100/notes/plasma-in-roc.md`.
+fountain; the same day every kernel was emitted and 38 of the 39 demo
+pages became one gallery module. The essay is `:9100/notes/plasma-in-roc.md`.
 
 | where | what | written by |
 |---|---|---|
 | `gpu/roc/Device.roc` | the Device effect as state: buffers by handle and the thread's gid, `load`/`store`/index reads threading the record, `dispatch` over the gids; WGSL's total `div`/`rem`. I32 and F32 throughout, as the plug's WGSL is, and rocemit spells a unit with a kernel in those types with wrapping arithmetic | hand |
 | `gpu/roc/*Kernel*.roc`, `DeviceMath.roc`, `Thread.roc`, `ListUtils.roc`, `Tuple.roc` | the 46 kernel chapters and what they cite, one module each; a `[Device]` definition takes the device first and answers `(Device.Device, T)` | `rocemit`, via `gpu/emitted.sh` |
-| `gpu/roc/GalleryApp.roc`, `gpu/web/gallery.js` | the gallery: `render(kernel, frame)` running one of the 33 pixel-writing demos, its buffers, its passes in order and the buffer the page reads, and the manifest the page reads | `gpu/gallery.py`, from the gpushow pages and kernel sources; a two-pass page's plan (buffers, passes, bindings) is a table in the script; `--table` prints what qualifies and why the rest do not |
-| `gpu/roc/Seeds.roc` | what texture.html and gltf.html upload before their first dispatch (a procedural texture, an icosahedron), ported from their JavaScript | hand |
+| `gpu/roc/GalleryApp.roc`, `gpu/web/gallery.js` | the gallery: a boxed model of one demo's device; `step(model, demo, frame)` makes the buffers when the demo changes, runs its passes over their gids (ping-pong on odd frames for the simulations) and remembers the buffer the page reads; `view` answers it as words; the manifest names the demos and says how to draw each | `gpu/gallery.py`, from the gpushow pages and kernel sources; a page with two passes, a seeded buffer, a state across frames or a particle draw has its plan as a table in the script; `--table` prints what qualifies and why the rest do not |
+| `gpu/roc/Seeds.roc` | what pages upload before their first dispatch, ported from their JavaScript: a procedural texture, an icosahedron, and the four particle states from the pages' own linear congruential generator, emulated in F64 to the word | hand |
 | `gpu/roc/{Plasma,CpuParticles}Bench.roc` | two native benches that print a checksum a Python evaluation of the Codex source matches | hand |
-| `gpu/wasm/` | the platform: two exports, `renderFrame(kernel, frame)` and `bufPtr`; host, build.zig as safari's; `smoke.mjs` renders every kernel from Node with its checksum and ms per frame | hand |
-| `gpu/web/gallery.html` | the page: a kernel selector (`?k=plasma`), the words as an ImageData; no WebGPU, so no secure context | hand |
+| `gpu/wasm/` | the platform: `step(demo, frame)`, `view()` and `bufPtr` over one boxed model, as safari's; host, build.zig as safari's; `smoke.mjs` renders every demo from Node with its checksum and ms per frame, or the named ones | hand |
+| `gpu/web/gallery.html` | the page: a demo selector (`?k=plasma`); pixels as an ImageData, particles as additive quads the way each page's vertex shader drew them; no WebGPU, so no secure context | hand |
 | `gpu/build.sh` | host + app + page into the preview, `http://<box>:9203/gpu/gallery.html` | hand |
 | `gpu/emitted.sh` | THE GATE: every kernel under `$KERNELS_ROOT/apps/*/kernels` (default `~/showell_repos/cobblestone-u58`) emitted, chapter identity checked, `roc check`ed; on green, written to `gpu/roc/` | hand |
 
     gpu/emitted.sh                 # 46 kernels, ~4 s
     gpu/gallery.py                 # after a page or kernel changes: the app and the manifest
     gpu/build.sh                   # ~6 s
-    node gpu/wasm/smoke.mjs ~/build/roc-apps/next/gpu/gallery.wasm 2   # 33 of 33 render; plasma's frame 0 is 6293600626746
+    node gpu/wasm/smoke.mjs ~/build/roc-apps/next/gpu/gallery.wasm 2   # 38 of 38 render; plasma's frame 0 is 6293600626746
+    node gpu/wasm/smoke.mjs ~/build/roc-apps/next/gpu/gallery.wasm 30 cpuparticles swarm   # the named demos; the fountain's frame 0 is 91143764817938
 
 ## The Roc is tracked; everything else the tools write is not
 

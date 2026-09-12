@@ -1,7 +1,8 @@
-//! The gpu wasm host: two exports over one Roc function. renderFrame(kernel,
-//! frame) calls the app's render and keeps the returned List until the next
-//! frame; bufPtr is where its words are. web/gallery.html reads them as u32
-//! pixels.
+//! The gpu wasm host: three exports over one boxed Roc model, as the safari
+//! host keeps its ride. step(kernel, frame) moves the model through the
+//! app's step, which owns the old one and answers the new; view() borrows
+//! it (an increment the callee's decrement restores) and keeps the returned
+//! List until the next view; bufPtr is where its words are.
 //!
 //! The runtime scaffolding (allocator, RocOps, no imports) is the safari
 //! host's, safari/wasm/platform/host.zig, which explains it.
@@ -13,7 +14,9 @@ const host_alloc = @import("host_alloc");
 const RocOps = builtins.host_abi.RocOps;
 const RocList = builtins.list.RocList;
 
-extern fn roc_render(kernel: i64, frame: i64) callconv(.c) RocList;
+extern fn roc_init() callconv(.c) ?[*]u8;
+extern fn roc_step(model: ?[*]u8, kernel: i64, frame: i64) callconv(.c) ?[*]u8;
+extern fn roc_view(model: ?[*]u8) callconv(.c) RocList;
 
 pub const panic = std.debug.FullPanic(panicImpl);
 fn panicImpl(_: []const u8, _: ?usize) noreturn {
@@ -79,15 +82,29 @@ var roc_ops = RocOps{
     .hosted_fns = builtins.host_abi.emptyHostedFunctions(),
 };
 
-// The last frame's pixels, owned until the next frame replaces them.
+// THE MODEL, one reference the host owns.
+var model: ?[*]u8 = null;
+// The last view's words, owned until the next view replaces them.
 var frame: RocList = RocList.empty();
 
 fn noDec(_: ?*anyopaque, _: ?[*]u8) callconv(.c) void {}
 
-/// Render frame `n` of kernel `k`; the byte length of the pixel words.
-pub export fn renderFrame(k: u32, n: u32) u32 {
+fn ensure() void {
+    if (model == null) model = roc_init();
+}
+
+/// Frame `n` of demo `k`: the model moves on.
+pub export fn step(k: u32, n: u32) void {
+    ensure();
+    model = roc_step(model, @intCast(k), @intCast(n));
+}
+
+/// The words to draw; their byte length.
+pub export fn view() u32 {
+    ensure();
     frame.decref(@alignOf(u32), @sizeOf(u32), false, null, noDec, &roc_ops);
-    frame = roc_render(@intCast(k), @intCast(n));
+    builtins.utils.increfDataPtrC(model, 1, &roc_ops);
+    frame = roc_view(model);
     return @intCast(frame.length * 4);
 }
 pub export fn bufPtr() u32 {

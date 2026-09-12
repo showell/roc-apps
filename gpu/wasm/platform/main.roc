@@ -1,18 +1,31 @@
-# The gpu platform: the gallery is one function from a kernel number and
-# the frame number to the pixels, packed 0xRRGGBB as the Codex kernels pack
-# them. The host (host.zig) keeps the last frame's list alive for the page.
+# The gpu platform: the gallery is one boxed model the host keeps. step
+# takes it with a demo number and the frame and answers the next model;
+# view answers the words the page draws, packed 0xRRGGBB pixels or a
+# particle buffer as gallery.js says. The host (host.zig) keeps the last
+# view's list alive for the page.
 platform ""
-	requires {} { render : I64, I64 -> List(U32) }
+	requires {
+		[Model : model] for program : {
+			init : {} -> Box(model),
+			step : Box(model), I64, I64 -> Box(model),
+			view : Box(model) -> List(U32),
+		}
+	}
 	exposes []
 	packages {}
-	provides { "roc_render": render_for_host }
+	provides {
+		"roc_init": init_for_host,
+		"roc_step": step_for_host,
+		"roc_view": view_for_host,
+	}
 	targets: {
 		inputs_dir: "targets/",
 		wasm32: {
 			inputs: ["host.wasm", app],
-			exports: ["renderFrame", "bufPtr"],
+			exports: ["step", "view", "bufPtr"],
 		},
 	}
 
-render_for_host : I64, I64 -> List(U32)
-render_for_host = render
+init_for_host = program.init
+step_for_host = program.step
+view_for_host = program.view
