@@ -9,12 +9,12 @@ PASS arith-operand-order |
 REFUSED arithmetic | an act outside opening
 PASS arm64-boot-test |
 PASS arm64-encoder |
-REFUSED arm64-http-test | type char
+REFUSED arm64-http-test | builtin `raw-bytes-to-text`
 REFUSED arm64-net-gate | builtin `process-get-pid` used as a value
 REFUSED arm64-proc-cells | builtin `process-get-pid` used as a value
 REFUSED arm64-send-refusal | builtin `peek-32`
 PASS arp-cache-bound |
-REFUSED asn1-der | builtin `char-at`
+REFUSED asn1-der | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED atomic-smoke | builtin `memory-fence`
 REFUSED audio-diffusion-test | unit type `Duration`
 REFUSED av-codec-test | unit type `Duration`
@@ -25,13 +25,13 @@ PASS ble-att-encode |
 REFUSED block-gate-restrict | builtin `peek-32`
 REFUSED block-sector-count | builtin `block-sector-count` used as a value
 REFUSED block-select-drives | an act outside opening
-REFUSED bloom-spread | builtin `char-at`
+PASS bloom-spread |
 REFUSED board-types | builtin `peek-32`
 REFUSED bounded-integer-ops | chapter `Bounded Integer Ops` is not a Roc module name
 PASS bounded-sig-runtime |
 SKIP bounded-sig-static | expects a diagnostic
 REFUSED bounds-proof | chapter `Bounds Proof` is not a Roc module name
-REFUSED bounds-prover | builtin `int-mod`
+REFUSED bounds-prover | builtin `negate`
 PASS bs3-smoke |
 SKIP builtin-narrow-proven | expects a diagnostic
 PASS call-clobber |
@@ -51,59 +51,59 @@ REFUSED cap-network-denied | builtin `poke-32`
 REFUSED cap-process-family | builtin `process-get-pid` used as a value
 PASS capability-doors |
 PASS carddeck-shuffle |
-REFUSED cce-roundtrip | type char
-REFUSED cce-tier1 | type char
+REFUSED cce-roundtrip | builtin `raw-bytes-to-text`
+REFUSED cce-tier1 | builtin `raw-bytes-to-text`
 PASS chacha20poly1305 |
 PASS chapter-pages |
 PASS circbuf-test |
 PASS cite-override-quire |
 PASS cmac-test |
-REFUSED cms-spread | builtin `char-at`
-REFUSED coap-block | type char
-REFUSED coap-packet | type char
-REFUSED coap-parse | type char
+PASS cms-spread |
+REFUSED coap-block | builtin `raw-bytes-to-text`
+REFUSED coap-packet | builtin `raw-bytes-to-text`
+REFUSED coap-parse | builtin `raw-bytes-to-text`
 SKIP collide-chapters | expects a diagnostic
 PASS color-test |
 PASS compliance-evidence |
 PASS compliance-report |
 REFUSED concurrent-test | `__lam_0` applied to 3 of 4 arguments
-REFUSED consistent-hash-balance | builtin `char-at`
+PASS consistent-hash-balance |
 REFUSED console-readline-cite | builtin `read-line` used as a value
 SKIP const-narrow-proven | expects a diagnostic
 PASS convolution-identity |
 REFUSED cross-port-refused | builtin `port-out-byte`
 PASS crypto-test |
-REFUSED crypto-vectors | builtin `char-at`
+REFUSED crypto-vectors | builtin `peek-byte`
 REFUSED cryptobig | `cb-shl1-step` writes its list parameter `x` and answers something else
 PASS ctor-narrow-warn |
-REFUSED db-csv-roundtrip | builtin `char-at`
+REFUSED db-csv-roundtrip | builtin `alloc-bytes`
 REFUSED db-full-test | builtin `alloc-bytes`
-REFUSED db-row-update | builtin `char-at`
+REFUSED db-row-update | builtin `alloc-bytes`
 REFUSED dce-reach | type error
 REFUSED deck-bracket-contract | builtin `__deck-set`
 REFUSED deck-cell-contract | builtin `__deck-set`
 REFUSED deck-record-contract | builtin `__deck-set`
 REFUSED deriving-eq-recursive | chapter `Deriving Eq Recursive` is not a Roc module name
-REFUSED desk-hover | type char
-REFUSED desk-parse | type char
-REFUSED desk-root-guard | type char
-REFUSED desk-span | type char
+REFUSED desk-hover | builtin `raw-bytes-to-text`
+REFUSED desk-parse | builtin `raw-bytes-to-text`
+REFUSED desk-root-guard | builtin `raw-bytes-to-text`
+REFUSED desk-span | builtin `raw-bytes-to-text`
 REFUSED device-buffer-alloc | builtin `gpu-mem-read`
 REFUSED dhcp-acquire | builtin `poke-byte`
 REFUSED dhcp-acquire-e1000 | builtin `poke-byte`
 REFUSED dhcp-renew | builtin `poke-byte`
 REFUSED diag-pci-map-judge | builtin `port-out-32`
 REFUSED disk-enum-parse | builtin `port-out-32`
-REFUSED diskfacts-unpack-large | builtin `char-at`
+REFUSED diskfacts-unpack-large | builtin `peek-byte`
 PASS dnp3-encode |
-REFUSED dns-answer-count | builtin `char-at`
-REFUSED dtls-fragment | type char
-REFUSED dtls-handshake | builtin `char-at`
-REFUSED dtls-hello | type char
-REFUSED dtls-message | type char
-REFUSED dtls-openssl-fragments | builtin `char-at`
-REFUSED dtls-random | builtin `char-at`
-REFUSED dtls-record | builtin `char-at`
+REFUSED dns-answer-count | builtin `raw-bytes-to-text`
+REFUSED dtls-fragment | builtin `raw-bytes-to-text`
+REFUSED dtls-handshake | builtin `peek-byte`
+REFUSED dtls-hello | builtin `raw-bytes-to-text`
+REFUSED dtls-message | builtin `raw-bytes-to-text`
+REFUSED dtls-openssl-fragments | builtin `peek-byte`
+REFUSED dtls-random | builtin `peek-byte`
+REFUSED dtls-record | builtin `peek-byte`
 REFUSED e1000-aneg-budget | builtin `peek-32`
 REFUSED e1000-asde-arms | builtin `peek-32`
 REFUSED e1000-asde-nolink | builtin `peek-32`
@@ -133,12 +133,12 @@ REFUSED e1000-swflag-strict | builtin `peek-32`
 REFUSED e1000-tx-deadline | builtin `peek-32`
 REFUSED e1000-ulp-entry | builtin `peek-32`
 REFUSED e1000-unresettable | builtin `peek-32`
-REFUSED ecdsa-cert | builtin `char-at`
+REFUSED ecdsa-cert | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED ecdsa-p256 | `cb-shl1-step` writes its list parameter `x` and answers something else
 REFUSED ecdsa-p384 | `cb-shl1-step` writes its list parameter `x` and answers something else
 REFUSED ecdsa-sha384 | `cb-shl1-step` writes its list parameter `x` and answers something else
 DIVERGES edalias | list-set-at mutates in place; Roc's List.set answers a new list
-REFUSED edcurve | builtin `char-at`
+REFUSED edcurve | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED edge-mesh-admit | binary approx-eq
 REFUSED edge-mesh-bracket | binary approx-eq
 REFUSED edge-mesh-discover | binary approx-eq
@@ -151,8 +151,8 @@ REFUSED edge-mesh-planes | binary approx-eq
 REFUSED edge-mesh-prewarm | binary approx-eq
 REFUSED edge-mesh-rewards | binary approx-eq
 REFUSED edge-mesh-route | binary approx-eq
-REFUSED edit-distance-test | builtin `char-at`
-REFUSED edvector | builtin `char-at`
+REFUSED edit-distance-test | builtin `raw-bytes-to-text`
+REFUSED edvector | `fe-carry-pass` writes its list parameter `o` and answers something else
 PASS effect-dotted-allow |
 REFUSED effect-handler-nested-same | handle
 REFUSED effect-map-effctx | an act outside opening
@@ -162,7 +162,7 @@ REFUSED effect-smoke | handle
 REFUSED effect-value-poly | type (effectful (effs "Console") (scopes "") (ctd "Maybe" (args (tvar 50))))
 PASS effect-widen-arg |
 REFUSED effect-widen-scope | an act outside opening
-REFUSED effect-widen-scope-narrow | type char
+REFUSED effect-widen-scope-narrow | builtin `raw-bytes-to-text`
 REFUSED engine-animation | binary approx-eq
 REFUSED engine-culling-cost | binary approx-eq
 REFUSED engine-fill-guard | binary approx-eq
@@ -182,23 +182,23 @@ PASS eventbus-test |
 REFUSED expr-calculator | chapter `Expr Calculator` is not a Roc module name
 REFUSED factlog-layout | builtin `peek-byte`
 REFUSED factorial | show on a real
-REFUSED fat16-alloc | type char
-REFUSED fat16-cluster-guard | type char
-REFUSED fat16-cycle-guard | type char
-REFUSED fat16-dirgrow | type char
-REFUSED fat16-lfn-record | type char
-REFUSED fat16-list | type char
-REFUSED fat16-longname | type char
-REFUSED fat16-mkdir | type char
-REFUSED fat16-overwrite | type char
-REFUSED fat16-source-cr | type char
-REFUSED fat16-subdir | type char
-REFUSED fat16-write | type char
-REFUSED fat32-cluster-guard | type char
-REFUSED fat32-cluster-lfn | type char
-REFUSED fat32-img-longname | type char
-REFUSED fat32-longname | type char
-REFUSED fat32-longwrite | type char
+REFUSED fat16-alloc | builtin `raw-bytes-to-text`
+REFUSED fat16-cluster-guard | builtin `raw-bytes-to-text`
+REFUSED fat16-cycle-guard | builtin `raw-bytes-to-text`
+REFUSED fat16-dirgrow | builtin `raw-bytes-to-text`
+REFUSED fat16-lfn-record | builtin `raw-bytes-to-text`
+REFUSED fat16-list | builtin `raw-bytes-to-text`
+REFUSED fat16-longname | builtin `raw-bytes-to-text`
+REFUSED fat16-mkdir | builtin `raw-bytes-to-text`
+REFUSED fat16-overwrite | builtin `raw-bytes-to-text`
+REFUSED fat16-source-cr | builtin `raw-bytes-to-text`
+REFUSED fat16-subdir | builtin `raw-bytes-to-text`
+REFUSED fat16-write | builtin `raw-bytes-to-text`
+REFUSED fat32-cluster-guard | builtin `raw-bytes-to-text`
+REFUSED fat32-cluster-lfn | builtin `raw-bytes-to-text`
+REFUSED fat32-img-longname | builtin `raw-bytes-to-text`
+REFUSED fat32-longname | builtin `raw-bytes-to-text`
+REFUSED fat32-longwrite | builtin `raw-bytes-to-text`
 REFUSED fat32-parse | builtin `port-out-32`
 REFUSED fe310-drivers | builtin `peek-32`
 REFUSED field-cache-shape | field-store
@@ -206,21 +206,21 @@ REFUSED field-cache-text-lit | an act outside opening
 SKIP field-guard-refine | expects a diagnostic
 SKIP field-range-proven | expects a diagnostic
 REFUSED files-parse | builtin `port-out-32`
-REFUSED final-batch-test | type char
+REFUSED final-batch-test | builtin `raw-bytes-to-text`
 PASS fins-encode |
 REFUSED fork-nested | builtin `fork`
 REFUSED fork-reclaim | `__lam_0` applied to 1 of 2 arguments
-REFUSED frame-short-buffer | builtin `char-at`
+REFUSED frame-short-buffer | builtin `peek-byte`
 PASS frameless-leaf-probe |
 SKIP fresh-alloc-narrow | expects a diagnostic
-REFUSED fs-deny-runtime | builtin `substring`
-REFUSED fs-handler-install | builtin `substring`
-REFUSED fs-layer | builtin `substring`
-REFUSED fs-servicer | builtin `substring`
-REFUSED fs-spawn-inherits | builtin `substring`
-REFUSED ga-core | builtin `int-mod`
+REFUSED fs-deny-runtime | builtin `raw-bytes-to-text`
+REFUSED fs-handler-install | builtin `raw-bytes-to-text`
+REFUSED fs-layer | builtin `raw-bytes-to-text`
+REFUSED fs-servicer | builtin `raw-bytes-to-text`
+REFUSED fs-spawn-inherits | builtin `raw-bytes-to-text`
+PASS ga-core |
 REFUSED geometry-test | binary approx-eq
-REFUSED goose-encode | type char
+REFUSED goose-encode | builtin `raw-bytes-to-text`
 REFUSED gop-composite-clamp | builtin `alloc-bytes`
 REFUSED gop-composite-clip | builtin `alloc-bytes`
 REFUSED gop-composite-kinds | builtin `alloc-bytes`
@@ -234,11 +234,11 @@ REFUSED gop-scene-viewport | binary approx-eq
 REFUSED gop-stride | builtin `alloc-bytes`
 REFUSED gop-text-field | builtin `alloc-bytes`
 REFUSED gpu-depth-tree | binary approx-eq
-REFUSED gpu-doorbell | type char
+REFUSED gpu-doorbell | builtin `raw-bytes-to-text`
 REFUSED gpu-gauge-clamp | binary approx-eq
 REFUSED gpu-input-cursor | binary approx-eq
 REFUSED gpu-panel-border | binary approx-eq
-REFUSED gpu-ptx | type char
+REFUSED gpu-ptx | builtin `raw-bytes-to-text`
 REFUSED grounds-port | builtin `port-out-byte`
 REFUSED hal-board-sleep | builtin `peek-32`
 REFUSED hal-device-declared | builtin `peek-32`
@@ -248,7 +248,7 @@ REFUSED hal-i2c-adc-linear | builtin `peek-32`
 REFUSED hal-peripheral-linear | builtin `peek-32`
 REFUSED hal-spi-linear | builtin `peek-32`
 REFUSED hal-tuple-linear | builtin `peek-32`
-REFUSED hamt-test | builtin `char-at`
+REFUSED hamt-test | chapter `Hamt Test` is not a Roc module name
 REFUSED handler-dotted-discharge | handle
 REFUSED handler-nested-ops | handle
 REFUSED handler-smoke | type (effectful (effs "Config") (scopes "") int-default)
@@ -257,20 +257,20 @@ REFUSED heap-bracket-shape | an act outside opening
 REFUSED heap-frame-reclaim | binary approx-eq
 REFUSED heap-scrub | builtin `poke-byte`
 REFUSED hid-decode | builtin `peek-byte`
-REFUSED history-test | type char
+REFUSED history-test | builtin `raw-bytes-to-text`
 REFUSED hpet-interrupt | builtin `peek-32`
 REFUSED i219-k1-mechanism | builtin `peek-32`
 REFUSED ident-letters | name `café` cannot be a Roc identifier
-REFUSED idm-key-tests | builtin `char-at`
-REFUSED idm-read-line | builtin `char-at`
-REFUSED idm-salt-iv-distinct | builtin `char-at`
+REFUSED idm-key-tests | builtin `peek-byte`
+REFUSED idm-read-line | builtin `peek-byte`
+REFUSED idm-salt-iv-distinct | builtin `peek-byte`
 REFUSED iec104-encode | type real-approx
 PASS ieee802154-encode |
 PASS if-in-arith |
 REFUSED if-let-join | chapter `If Let Join` is not a Roc module name
-REFUSED image-codec-test | type char
-REFUSED imap-wire | type char
-REFUSED img-longname | type char
+REFUSED image-codec-test | builtin `raw-bytes-to-text`
+REFUSED imap-wire | builtin `raw-bytes-to-text`
+REFUSED img-longname | builtin `raw-bytes-to-text`
 REFUSED implicit-convert | unit type `Duration`
 SKIP induction-assoc | expects a diagnostic
 SKIP induction-list | expects a diagnostic
@@ -289,21 +289,21 @@ REFUSED iterate-test | an act outside opening
 REFUSED iterate-zip-test | an act outside opening
 PASS j1939-encode |
 REFUSED keyboard-layout-test | builtin `poke-byte`
-REFUSED keys-collision | type char
-REFUSED keys-mods | type char
-REFUSED keys-numpad | type char
-REFUSED keys-shift | type char
-REFUSED keys-sidecar | type char
+REFUSED keys-collision | builtin `raw-bytes-to-text`
+REFUSED keys-mods | builtin `raw-bytes-to-text`
+REFUSED keys-numpad | builtin `raw-bytes-to-text`
+REFUSED keys-shift | builtin `raw-bytes-to-text`
+REFUSED keys-sidecar | builtin `raw-bytes-to-text`
 PASS klondike-test |
 PASS knx-encode |
-REFUSED kvstore-test | builtin `char-at`
-REFUSED lang-smoke | builtin `char-at`
+PASS kvstore-test |
+REFUSED lang-smoke | an act outside opening
 REFUSED lapic-regs | builtin `peek-32`
 REFUSED lazy-smoke | opening: Lazy
 PASS leaf-let-if |
 PASS leaf-mispredict |
 PASS lease-handoff |
-REFUSED let-dest-scope | type char
+REFUSED let-dest-scope | builtin `raw-bytes-to-text`
 PASS let-else-scope |
 PASS let-shadow-scope |
 PASS linear-branch |
@@ -328,12 +328,12 @@ REFUSED list-literal-o1 | chapter `List O1 Probe` is not a Roc module name
 PASS list-pattern |
 REFUSED list-tail-empty | an act outside opening
 REFUSED list-test | chapter `List Test` is not a Roc module name
-REFUSED list-view-probe | type char
+REFUSED list-view-probe | builtin `raw-bytes-to-text`
 PASS literal-subpattern |
 SKIP local-narrow-proven | expects a diagnostic
 REFUSED location-sensors-stub | type (effectful (effs "Location") (scopes "") boolean)
 PASS lorawan-encode |
-REFUSED lwm2m-encode | type char
+REFUSED lwm2m-encode | builtin `raw-bytes-to-text`
 CRASH magic-sim-fixes | overflowed its stack memory
 REFUSED manifest-pin | an act outside opening
 REFUSED mask-ops | type (effectful (effs "Console") (scopes "") nothing)
@@ -344,12 +344,12 @@ REFUSED media-codec-test | unit type `Duration`
 PASS melsec-encode |
 REFUSED mini-bootstrap | chapter `Mini Bootstrap Test` is not a Roc module name
 PASS mix-bits |
-REFUSED mod-bound-return | builtin `int-mod`
+PASS mod-bound-return |
 PASS modbus-encode |
-REFUSED modprobe | builtin `int-mod`
+PASS modprobe |
 REFUSED mouse-decode | builtin `port-out-32`
 REFUSED mqtt-encode | unit type `Duration`
-REFUSED mqttsn-encode | type char
+REFUSED mqttsn-encode | builtin `raw-bytes-to-text`
 PASS mut-borrow-transitive |
 REFUSED mutable-smoke | a call whose head is not a name
 PASS neg-int-parse |
@@ -362,7 +362,7 @@ REFUSED net-driver-seam-no-av | builtin `poke-byte`
 REFUSED net-io-clock | builtin `poke-byte`
 REFUSED net-poll-calibrated | builtin `poke-byte`
 REFUSED net-poll-clamped | builtin `poke-byte`
-REFUSED net-recv-heap | builtin `char-at`
+REFUSED net-recv-heap | builtin `peek-byte`
 REFUSED network-effect | builtin `poke-byte`
 REFUSED network-scope-deny | builtin `poke-byte`
 REFUSED network-scope-open | builtin `poke-byte`
@@ -373,19 +373,19 @@ REFUSED normalize-eq | type (propeq (ctd "Off" (args)) (ctd "Off" (args)))
 REFUSED nrf52840-drivers | builtin `peek-32`
 REFUSED nrf9160-drivers | builtin `peek-32`
 REFUSED nvme-encode | builtin `port-out-32`
-REFUSED oauth-island | builtin `char-at`
+REFUSED oauth-island | builtin `peek-byte`
 REFUSED occurrence-check | an act outside opening
-REFUSED opcua-encode | type char
+REFUSED opcua-encode | builtin `raw-bytes-to-text`
 REFUSED osc-noise | unit type `Duration`
-REFUSED ota-gate-block | builtin `char-at`
-REFUSED ota-gate-real | builtin `char-at`
-REFUSED ota-state-machine | builtin `char-at`
-REFUSED ota-update | builtin `char-at`
+REFUSED ota-gate-block | builtin `peek-byte`
+REFUSED ota-gate-real | builtin `peek-byte`
+REFUSED ota-state-machine | builtin `peek-byte`
+REFUSED ota-update | builtin `peek-byte`
 REFUSED par-map | builtin `fork`
 REFUSED par-nested | builtin `fork`
-REFUSED parse-test | type char
+REFUSED parse-test | builtin `raw-bytes-to-text`
 PASS particle-spread |
-REFUSED path-real | builtin `substring`
+PASS path-real |
 REFUSED pci-bridge-backward | builtin `port-out-32`
 REFUSED pci-bridge-cap | builtin `port-out-32`
 REFUSED pci-bridge-cap-under | builtin `port-out-32`
@@ -396,7 +396,7 @@ REFUSED peek32-sign | builtin `alloc-bytes`
 REFUSED pi4-drivers | builtin `peek-32`
 REFUSED pipe-unique-test | `__lam_0` applied to 1 of 2 arguments
 REFUSED pit-latch | builtin `peek-32`
-REFUSED plug-oracle-arith | builtin `code-to-char`
+REFUSED plug-oracle-arith | field-store
 REFUSED poke16-width | builtin `peek-byte`
 PASS poly1305 |
 REFUSED port-in-32-width | builtin `port-out-32`
@@ -423,7 +423,7 @@ SKIP range-let-carry | expects a diagnostic
 SKIP range-refine-if | expects a diagnostic
 REFUSED rasterizer-test | binary approx-eq
 REFUSED raytracer-test | binary approx-eq
-REFUSED real-cert | builtin `char-at`
+REFUSED real-cert | `fe-carry-pass` writes its list parameter `o` and answers something else
 PASS real-literal-boundary |
 REFUSED real-show-wide | show on a real
 REFUSED record-smoke | `__lam_0` applied to 2 of 3 arguments
@@ -454,13 +454,13 @@ PASS rv-frameless-temp |
 PASS rv-param-bind |
 PASS rv-param-order |
 PASS s7comm-encode |
-REFUSED scope-allow | type char
+REFUSED scope-allow | builtin `raw-bytes-to-text`
 PASS scope-console |
 REFUSED scope-handler-clause | handle
 PASS scope-let-arm-global |
-REFUSED scope-runtime-deny | type char
-REFUSED scope-runtime-open | type char
-REFUSED scope-runtime-spawn | type char
+REFUSED scope-runtime-deny | builtin `raw-bytes-to-text`
+REFUSED scope-runtime-open | builtin `raw-bytes-to-text`
+REFUSED scope-runtime-spawn | builtin `raw-bytes-to-text`
 REFUSED scope-try-region | builtin `poke-byte`
 REFUSED sector-read-list-growth | builtin `peek-byte`
 REFUSED sensor-data | an act outside opening
@@ -479,12 +479,12 @@ REFUSED smp-preempt | builtin `process-spawn`
 REFUSED smp-proc0-pinned | builtin `atomic-load`
 REFUSED smp-riscv-boot | builtin `peek-qword`
 REFUSED smp-tss | builtin `atomic-load`
-REFUSED smtp-md-test | type char
+REFUSED smtp-md-test | builtin `raw-bytes-to-text`
 PASS sntp-encode |
 REFUSED sort-test | an act outside opening
 REFUSED sound-test | unit type `Duration`
 REFUSED sparkplug-encode | unit type `Duration`
-REFUSED spawn-memo-table | type char
+REFUSED spawn-memo-table | builtin `raw-bytes-to-text`
 REFUSED spawn-reuse | builtin `poke-byte`
 REFUSED sprite-test | binary approx-eq
 SKIP stale-sibling | expects a diagnostic
@@ -494,41 +494,41 @@ REFUSED stm32l4-drivers | builtin `peek-32`
 PASS string-escape-quote |
 REFUSED stringbuilder-independence | field-store
 REFUSED stringbuilder-test | field-store
-REFUSED stringutils-test | type char
+REFUSED stringutils-test | builtin `raw-bytes-to-text`
 REFUSED suggested-width | builtin `suggested-vector-width`
 REFUSED sum-field-eq | builtin `print-line`
 REFUSED synth-test | unit type `Duration`
 REFUSED tag-equal | builtin `tag-equal`
-REFUSED tco-bitop-loop | builtin `int-mod`
+PASS tco-bitop-loop |
 PASS tco-direct-arg-reads |
 PASS tco-framed-append |
 PASS tco-nested-if |
-REFUSED tco-shuffle-spill | builtin `int-mod`
+PASS tco-shuffle-spill |
 PASS tcp-checksum-refuse |
 PASS tcp-listen-reclaim |
 REFUSED tcp-reliability | an act outside opening
 REFUSED tcp-seqwrap | an act outside opening
-REFUSED text-append-alias | builtin `char-at`
+REFUSED text-append-alias | builtin `peek-byte`
 PASS text-eq-branches |
-REFUSED text-fold-indexed | type char
+REFUSED text-fold-indexed | an act outside opening
 REFUSED text-helper-native | builtin `text-split`
-REFUSED text-helper-spec | type char
-REFUSED textfield-typing | builtin `char-at`
-REFUSED textscan-test | type char
-REFUSED textsearch-test | type char
+REFUSED text-helper-spec | builtin `raw-bytes-to-text`
+REFUSED textfield-typing | builtin `raw-bytes-to-text`
+REFUSED textscan-test | builtin `raw-bytes-to-text`
+REFUSED textsearch-test | builtin `raw-bytes-to-text`
 PASS thumb2-encoder |
 REFUSED timer-registers | builtin `peek-32`
-REFUSED tls-cert | type char
-REFUSED tls-cv-schemes | type char
+REFUSED tls-cert | builtin `raw-bytes-to-text`
+REFUSED tls-cv-schemes | builtin `raw-bytes-to-text`
 REFUSED tls-record-framing | builtin `poke-byte`
-REFUSED tls-test | type char
-REFUSED tls13-record | type char
-REFUSED tls13-schedule | type char
-REFUSED transport-cocite | builtin `char-at`
-REFUSED trie-prefix-test | type char
-REFUSED truetype-bridge-test | builtin `char-code-at`
-REFUSED truetype-render-test | type char
-REFUSED truetype-test | builtin `char-code-at`
+REFUSED tls-test | builtin `raw-bytes-to-text`
+REFUSED tls13-record | builtin `raw-bytes-to-text`
+REFUSED tls13-schedule | builtin `raw-bytes-to-text`
+REFUSED transport-cocite | builtin `peek-byte`
+REFUSED trie-prefix-test | builtin `raw-bytes-to-text`
+REFUSED truetype-bridge-test | binary approx-eq
+REFUSED truetype-render-test | builtin `raw-bytes-to-text`
+PASS truetype-test |
 REFUSED try-smoke | try
 REFUSED ttf-debug | an act outside opening
 PASS ttt-perfect |
@@ -558,10 +558,10 @@ REFUSED unit-family | unit type `Length`
 REFUSED unit-family-mixed | unit type `Length`
 REFUSED unit-smoke | unit type `Second`
 REFUSED units-foreword | unit type `Duration`
-REFUSED uri-encode | type char
+REFUSED uri-encode | builtin `raw-bytes-to-text`
 PASS usb-desc-guard |
 REFUSED usb-test | builtin `port-out-32`
-REFUSED validation-rules | type char
+REFUSED validation-rules | builtin `raw-bytes-to-text`
 REFUSED value-eq | type (propeq (ctd "xs" (args)) (ctd "xs" (args)))
 REFUSED vbe-mode-set | builtin `alloc-bytes`
 REFUSED vec-arith-hazards | type (vector 2 real)
@@ -579,7 +579,7 @@ REFUSED vector-int | builtin `vec-splat`
 REFUSED wavelet-sort-aliasing | an act outside opening
 SKIP wcet-budget-unchecked | expects a diagnostic
 SKIP wcet-probe | expects a diagnostic
-REFUSED web-chain | builtin `char-at`
+REFUSED web-chain | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED web-mux-concurrent | builtin `poke-byte`
 REFUSED web-mux-heap | builtin `poke-byte`
 REFUSED web-mux-idle-reap | builtin `poke-byte`
@@ -588,10 +588,10 @@ REFUSED web-mux-reassembly | builtin `poke-byte`
 REFUSED when-arm-nontail | an act outside opening
 PASS when-arm-tail-call |
 PASS when-bool-cross |
-REFUSED when-bool-pattern | char literal
+PASS when-bool-pattern |
 REFUSED when-generic-field | an act outside opening
 REFUSED with-timeout-test | chapter `With-Timeout Test` is not a Roc module name
-REFUSED workflow-parse-int | builtin `char-at`
-REFUSED x509-chain | builtin `char-at`
-REFUSED x509-parse | builtin `char-at`
+REFUSED workflow-parse-int | builtin `alloc-bytes`
+REFUSED x509-chain | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED x509-parse | `fe-carry-pass` writes its list parameter `o` and answers something else
 PASS zigbee-encode |

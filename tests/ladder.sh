@@ -13,8 +13,8 @@
 # ledger is the summary this prints, by outcome and refusal reason, and
 # tests/ledger.txt when a full run writes it.
 #
-# A verdict is compared as text: a leading 0x01 byte and carriage returns in
-# an .expected file are the console capture's, not the program's.
+# The verdicts are CLEANED ONCE by tests/verdicts.sh, which explains what it
+# strips and why; the comparison here is then byte for byte.
 #
 # A unit whose verdict pins a semantics Roc does not have is DIVERGES, by
 # name and with the reason, never a silent FAIL: see DIVERGE below.
@@ -30,6 +30,8 @@ TESTS_ROOT="${TESTS_ROOT:-$HOME/showell_repos/cobblestone-u58}"
 export CODEX_ROOT="$TESTS_ROOT"
 SRC="$TESTS_ROOT/codex/test"
 GEN="$HOME/build/roc-apps/gen/tests"
+VERDICTS="$HOME/build/roc-apps/gen/verdicts"
+"$HERE/verdicts.sh" > "$GEN/.verdicts.log" 2>&1 || { echo "verdicts.sh failed"; exit 2; }
 mkdir -p "$GEN"
 if [ $# -gt 0 ]; then units=("$@"); full=no; else
     mapfile -t units < <(cd "$SRC" && ls *.expected | sed 's/\.expected$//' | sort); full=yes
@@ -60,15 +62,12 @@ one() {
     ( cd "$d" && timeout 120 "$ROC" run "$app" > out 2> err ); rc=$?
     if [ $rc -eq 124 ]; then echo "TIMEOUT $n |" > "$d/verdict"
     elif grep -q "✗" "$d/err"; then echo "FAIL $n | compile: $(grep -m1 -A2 '✗' "$d/err" | tr '\n' ' ' | cut -c1-110)" > "$d/verdict"
-    elif diff -q "$d/out" <(verdict_text "$n") > /dev/null; then echo "PASS $n |" > "$d/verdict"
+    elif cmp -s "$d/out" "$VERDICTS/$n.expected"; then echo "PASS $n |" > "$d/verdict"
     elif grep -q "crashed\|Backtrace\|overflowed" "$d/err"; then echo "CRASH $n | $(grep -m1 -hoE 'crashed[^\n]*|overflowed[^\n]*' "$d/err" | head -1 | cut -c1-100)" > "$d/verdict"
-    else echo "FAIL $n | output: $(diff "$d/out" <(verdict_text "$n") | grep -m1 '^[<>]' | cut -c1-100)" > "$d/verdict"; fi
+    else echo "FAIL $n | output: $(diff "$d/out" "$VERDICTS/$n.expected" | grep -m1 '^[<>]' | cut -c1-100)" > "$d/verdict"; fi
 }
-# The verdict as text: 86 of the 597 .expected files start with a 0x01 byte
-# and 46 carry carriage returns, the console capture's, not the program's.
-verdict_text() { sed '1s/^\x01//' "$SRC/$1.expected" | tr -d '\r'; }
-export -f verdict_text
-export -f one verdict_text diverges; export ROC ROCEMIT SRC GEN
+
+export -f one diverges; export ROC ROCEMIT SRC GEN VERDICTS
 printf '%s\n' "${units[@]}" | xargs -P "${JOBS:-2}" -I{} bash -c 'one {}'
 ledger="$( for n in "${units[@]}"; do cat "$GEN/$n/verdict"; done )"
 [ "$full" = yes ] && echo "$ledger" > "$HERE/ledger.txt"
