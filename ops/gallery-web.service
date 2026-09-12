@@ -1,0 +1,10 @@
+[Unit]
+Description=the gpu gallery, the Roc module, in the browser (port 9204)
+
+[Service]
+ExecStart=/usr/bin/python3 %h/showell_repos/roc-apps/safari/web/serve.py 9204 %h/showell_repos/roc-apps/gpu/live
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target

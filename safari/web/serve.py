@@ -5,9 +5,10 @@
 
 A copy of safari-codex's harness/serve.py: the no-store header is the point,
 because a cached safari.wasm looks exactly like a build that changed nothing.
-Two services run it: safari-web on :9201 over this directory (the demo, whose
-module only safari/publish.sh writes) and safari-web-next on :9203 over
-~/build/roc-apps/next (whatever safari/wasm/build.sh last built).
+Three services run it: safari-web on :9201 over this directory (the demo,
+whose module only safari/publish.sh writes), safari-web-next on :9203 over
+~/build/roc-apps/next (whatever the build scripts last built), and
+gallery-web on :9204 over gpu/live (which only gpu/publish.sh writes).
 """
 import functools
 import http.server

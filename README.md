@@ -18,7 +18,7 @@ Roc on the fifth tree on the right of every segment.
 | `safari/wasm/` | the platform: `platform/main.roc` provides the page's sixteen exports over `Box(Model)`; `platform/host.zig` is the host; `build.zig` builds it against the roc checkout; `build.sh` builds host and app into the PREVIEW root | hand |
 | `safari/web/` | the demo page: a copy of safari-codex's `blitter.js`, `index.html`, `serve.py`, and `driving/safari.wasm` with its `PROVENANCE`, which only `safari/publish.sh` writes | hand; the module by publish |
 | `safari/publish.sh` | THE MANUAL STEP: the previewed module into the demo, with provenance, committed and pushed | hand |
-| `ops/` | two systemd --user services: `safari-web` :9201 over `safari/web/` (the demo), `safari-web-next` :9203 over `~/build/roc-apps/next/` (the preview); `install.sh` | hand |
+| `ops/` | three systemd --user services: `safari-web` :9201 over `safari/web/` (the safari demo), `safari-web-next` :9203 over `~/build/roc-apps/next/` (the preview of both apps), `gallery-web` :9204 over `gpu/live/` (the gallery demo); `install.sh` | hand |
 | `safari/emitted.sh` | THE GATE: every unit emitted, chapter identity checked, roc run two at a time, output against the verdict; a compile error is a FAIL | hand |
 | `safari/retest.sh` | the targeted sweep: emit all, diff against the tracked Roc, run only what changed | hand |
 | `wasm/*.mjs` | Node drivers: run a module, drive the screensaver headless with timings | hand |
@@ -46,11 +46,13 @@ became one gallery module. The essay is `:9100/notes/plasma-in-roc.md`.
 | `gpu/wasm/` | the platform: `step(demo, frame)`, `view()` and `bufPtr` over one boxed model, as safari's; host, build.zig as safari's; `smoke.mjs` renders every demo from Node with its checksum and ms per frame, or the named ones | hand |
 | `gpu/web/gallery.html` | the page: a demo selector (`?k=plasma`); pixels as an ImageData, particles as additive quads the way each page's vertex shader drew them; no WebGPU, so no secure context | hand |
 | `gpu/build.sh` | host + app + page into the preview, `http://<box>:9203/gpu/gallery.html` | hand |
+| `gpu/publish.sh`, `gpu/live/` | THE MANUAL STEP for the gallery: the previewed page, manifest and module into `gpu/live/` with a `PROVENANCE`, committed and pushed; `gallery-web` (:9204) serves only that | hand; the files by publish |
 | `gpu/emitted.sh` | THE GATE: every kernel under `$KERNELS_ROOT/apps/*/kernels` (default `~/showell_repos/cobblestone-u58`) emitted, chapter identity checked, `roc check`ed; on green, written to `gpu/roc/` | hand |
 
     gpu/emitted.sh                 # 46 kernels, ~4 s
     gpu/gallery.py                 # after a page or kernel changes: the app and the manifest
-    gpu/build.sh                   # ~6 s
+    gpu/build.sh                   # ~10 s; the preview at :9203/gpu/
+    gpu/publish.sh                 # when the preview looks right: the demo, http://<box>:9204/gallery.html
     node gpu/wasm/smoke.mjs ~/build/roc-apps/next/gpu/gallery.wasm 2   # 39 of 39 render; plasma's frame 0 is 6293600626746
     node gpu/wasm/smoke.mjs ~/build/roc-apps/next/gpu/gallery.wasm 30 cpuparticles swarm   # the named demos; the fountain's frame 0 is 91143764817938
 
