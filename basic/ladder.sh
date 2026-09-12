@@ -63,10 +63,16 @@ one() {
         done < <(echo "$row" | cut -s -d'|' -f3- | tr '|' '\n' | sed 's/^ *//; s/ *$//')
         error_program=""
         grep -m1 'PROGRAM FILE' "$CORPUS/$suite/$n.BAS" | grep -q ': *ERROR' && error_program=1
+        # A row of kind `ignores` names instruction lines that read as verdicts.
+        verdicts="$d/out"
+        if [ "$kind" = ignores ]; then
+            sed 's/^ *//; s/ *$//' "$d/out" | grep -vxF -f <(echo "$row" | cut -s -d'|' -f3- | tr '|' '\n' | sed 's/^ *//; s/ *$//' | grep -v '^$') > "$d/verdicts"
+            verdicts="$d/verdicts"
+        fi
         if grep -q '^\*\*\* REJECTED' "$d/out" && [ "$kind" != rejects ]; then
             echo "FAIL $n | $(grep -m1 'REJECTED' "$d/out" | cut -c1-90)" > "$d/verdict"
-        elif [ "$kind" != judged ] && [ "$kind" != rejects ] && grep -q "TEST FAILED\|TEST FAILS" "$d/out"; then
-            echo "FAIL $n | $(grep -m1 'TEST FAIL' "$d/out" | cut -c1-90)" > "$d/verdict"
+        elif [ "$kind" != judged ] && [ "$kind" != rejects ] && grep -q "TEST FAILED\|TEST FAILS" "$verdicts"; then
+            echo "FAIL $n | $(grep -m1 'TEST FAIL' "$verdicts" | cut -c1-90)" > "$d/verdict"
         elif grep -q "UNSUPPORTED" "$d/out"; then
             echo "FAIL $n | $(grep -m1 'UNSUPPORTED' "$d/out" | cut -c1-90)" > "$d/verdict"
         # **A HALT PASSES ONLY WHERE THE ROW REQUIRES ONE.** A program stopped

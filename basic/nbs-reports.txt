@@ -20,6 +20,10 @@
 # ECMA-55 allows when the processor documents it. The documentation is
 # basic/README.md's "Accepted past ECMA-55".
 # An ERROR program with no row is UNJUDGED, whatever it prints.
+# KIND `ignores`: the TEXT lines are instructions the program prints
+# whatever happens ("IF THE PROCESSOR REJECTS ANY OF THEM, / *** TEST
+# FAILED ***"). A transcript line that is exactly one of them is not a
+# verdict; the program's other TEST FAILED lines count.
 # KIND `reader`: a program whose only verdict is a reader comparing lines
 # ("IF ALL THE ABOVE PAIRS ARE IDENTICAL, THEN TEST PASSED"), printed
 # whatever the lines say. It is UNJUDGED however it runs.
@@ -91,6 +95,12 @@ P103 | rejects | *** REJECTED: Text after a quoted datum
 P104 | rejects | *** REJECTED: Text after a quoted datum
 P105 | rejects | *** REJECTED: An empty datum in DATA
 P106 | rejects | *** REJECTED: An empty entry in the READ list
+P107 | ignores | ***  TEST FAILED  ***
+P108 | ignores | *** IF NOT ALLOWED TO RE-SUPPLY INPUT, TEST FAILS ***
+P109 | ignores | ***  TEST FAILED  ***
+P110 | ignores | ***  TEST FAILED  ***
+P111 | ignores | ***  TEST FAILS  ***
+P112 | judged | ?Too many items in the reply | ?Too few items in the reply | ?Overflow in a reply item | ?A reply item is not a string | ?A reply item is not a number
 P113 | rejects | *** REJECTED: An empty entry in the INPUT list
 P118 | also | *** HALTED: SQR of a negative number
 P122 | judged | ?Overflow

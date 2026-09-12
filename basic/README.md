@@ -85,6 +85,9 @@ these are the forms it runs instead, each a row marked `accepts` in
 - **A sign after an operator** (P038: `4 ^ -2` is `4 ^ (-2)`).
 - **Lowercase** (P204, P205): upper-cased outside quotes, kept inside.
 - **`<`, `>`, `<=` and `>=` between strings** (P206): byte order.
+- **A string of any length** in an INPUT reply (P112): ECMA-55's limit is
+  at least 18 characters, and this one has none, so there is no string
+  overflow to report.
 - **THEN followed by a statement** rather than a line number, a quoted
   **prompt on INPUT**, `+` joining strings, and the extension statements
   and functions (POKE, PLOT, SLEEP, PEEK, CHR$ and the rest), which the

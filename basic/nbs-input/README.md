@@ -12,6 +12,9 @@ interpreter IS, not what a test wants to hear:
 - **P108** -- the listing names every reply: `PLEASE ENTER: 0` to `10`,
   then `500,6,600,2,200`, the two lines of section 108.3 (the first must
   be refused and re-asked), then `2,3,999`.
+- **P107** -- each number to type is `A$`, continued by the next datum
+  when the one after it is `X`. The corpus's file stops after 28 of them
+  and splits `000001.2300000E-000009`.
 - **P109, P110, P112** -- each case's reply is in the listing's DATA, with
   `=` standing for a space and `#` for a quote, and joined as it is
   printed. P112's replies must each be refused and re-asked, so each is

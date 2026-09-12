@@ -620,10 +620,19 @@ Basic :: [].{
 		}
 	}
 
+	# **A LEADING SIGN NEGATES THE FIRST TERM** (ECMA-55 7): `-2^2` is -4,
+	# not 4. The sign `primary` also takes is the microcomputer's, for
+	# `X^-1` and `A*-B`, which ECMA-55 does not allow.
 	sum : M, List(U8), U64 -> R
 	sum = |m, b, i| {
-		r = Basic.term(m, b, i)
-		if r.m.done { r } else { Basic.sum_rest(r.m, b, r.at, Basic.num_of(r.v)) }
+		j = Basic.skip_ws(b, i)
+		c = Basic.byte(b, j)
+		r = Basic.term(m, b, if c == 45 or c == 43 { j + 1 } else { i })
+		if r.m.done {
+			r
+		} else {
+			Basic.sum_rest(r.m, b, r.at, if c == 45 { 0.0 - Basic.num_of(r.v) } else { Basic.num_of(r.v) })
+		}
 	}
 
 	# **`+` JOINS TWO STRINGS.** ECMA-55 has no string operator at all; the
@@ -688,20 +697,23 @@ Basic :: [].{
 		}
 	}
 
-	# `^` binds tighter than `*` and associates to the right.
+	# `^` binds tighter than `*` and groups to the LEFT (ECMA-55 7):
+	# `2^3^2` is 64. A primary with no `^` after it comes back untouched,
+	# so a string passes through.
 	power : M, List(U8), U64 -> R
 	power = |m, b, i| {
 		r = Basic.primary(m, b, i)
-		if r.m.done {
+		if r.m.done { r } else { Basic.power_rest(r, b) }
+	}
+
+	power_rest : R, List(U8) -> R
+	power_rest = |r, b| {
+		j = Basic.skip_ws(b, r.at)
+		if Basic.byte(b, j) != 94 {
 			r
 		} else {
-			j = Basic.skip_ws(b, r.at)
-			if Basic.byte(b, j) != 94 {
-				r
-			} else {
-				e = Basic.power(r.m, b, j + 1)
-				if e.m.done { e } else { Basic.raise(e.m, Basic.num_of(r.v), Basic.num_of(e.v), e.at) }
-			}
+			e = Basic.primary(r.m, b, j + 1)
+			if e.m.done { e } else { Basic.power_rest(Basic.raise(e.m, Basic.num_of(r.v), Basic.num_of(e.v), e.at), b) }
 		}
 	}
 
@@ -732,17 +744,55 @@ Basic :: [].{
 	# bytes as it is scanned: integer part, fraction, then an exponent.
 	number : M, List(U8), U64 -> R
 	number = |m, b, i| {
+		n = Basic.numeral(b, i)
+		Basic.finite(m, n.v, n.at)
+	}
+
+	# **A NUMERAL IS ITS DIGITS AS ONE INTEGER, SCALED ONCE.** Summing
+	# tenths drifts: `0.7E1` came out a hair over 7, and a negative number
+	# raised to that is an exception.
+	numeral : List(U8), U64 -> { v : F64, at : U64 }
+	numeral = |b, i| {
 		w = Basic.whole(b, i, 0.0)
-		f = if Basic.byte(b, w.at) == 46 { Basic.frac(b, w.at + 1, w.v, 0.1) } else { w }
+		point = Basic.byte(b, w.at) == 46
+		f = if point { Basic.whole(b, w.at + 1, w.v) } else { w }
+		places = if point { I64.to_f64(U64.to_i64_wrap(f.at - w.at - 1)) } else { 0.0 }
 		if Basic.byte(b, f.at) != 69 {
-			{ m: m, v: N(f.v), at: f.at }
+			{ v: Basic.scaled(f.v, 0.0 - places), at: f.at }
 		} else {
 			neg = Basic.byte(b, f.at + 1) == 45
 			g = if neg or Basic.byte(b, f.at + 1) == 43 { f.at + 2 } else { f.at + 1 }
 			x = Basic.whole(b, g, 0.0)
-			e = F64.pow(10.0, if neg { 0.0 - x.v } else { x.v })
-			# `0E99999` is zero, not zero times infinity.
-			Basic.finite(m, if f.v == 0.0 { 0.0 } else { f.v * e }, x.at)
+			{ v: Basic.scaled(f.v, (if neg { 0.0 - x.v } else { x.v }) - places), at: x.at }
+		}
+	}
+
+	# `digits` times ten to the `e`, dividing where `e` is negative: ten to
+	# a negative power has no exact F64. `0E99999` is zero, not zero times
+	# infinity.
+	scaled : F64, F64 -> F64
+	scaled = |digits, e|
+		if digits == 0.0 or e == 0.0 {
+			digits
+		} else if e > 0.0 {
+			digits * F64.pow(10.0, e)
+		} else {
+			digits / F64.pow(10.0, 0.0 - e)
+		}
+
+	# **A DATUM OR A REPLY MAY CARRY A SIGN** (ECMA-55 14, 13): `DATA -2`
+	# is minus two. In an expression the sign is an operator, so only READ,
+	# INPUT and VAL read numbers this way.
+	signed : M, List(U8), U64 -> R
+	signed = |m, b, i| {
+		c = Basic.byte(b, i)
+		if c == 45 {
+			n = Basic.number(m, b, i + 1)
+			{ m: n.m, v: N(0.0 - Basic.num_of(n.v)), at: n.at }
+		} else if c == 43 {
+			Basic.number(m, b, i + 1)
+		} else {
+			Basic.number(m, b, i)
 		}
 	}
 
@@ -750,14 +800,6 @@ Basic :: [].{
 	whole = |b, i, acc|
 		if Basic.is_digit(Basic.byte(b, i)) {
 			Basic.whole(b, i + 1, acc * 10.0 + I64.to_f64(U8.to_i64(Basic.byte(b, i)) - 48))
-		} else {
-			{ v: acc, at: i }
-		}
-
-	frac : List(U8), U64, F64, F64 -> { v : F64, at : U64 }
-	frac = |b, i, acc, scale|
-		if Basic.is_digit(Basic.byte(b, i)) {
-			Basic.frac(b, i + 1, acc + I64.to_f64(U8.to_i64(Basic.byte(b, i)) - 48) * scale, scale / 10.0)
 		} else {
 			{ v: acc, at: i }
 		}
@@ -834,7 +876,7 @@ Basic :: [].{
 				{ m: r.m, v: N(I64.to_f64(U8.to_i64(Basic.byte(Str.to_utf8(Basic.str_of(r.v)), 0)))), at: e + 1 }
 			} else if k == "VAL" {
 				vb = Str.to_utf8(Basic.str_of(r.v))
-				n = Basic.number(r.m, vb, Basic.skip_ws(vb, 0))
+				n = Basic.signed(r.m, vb, Basic.skip_ws(vb, 0))
 				{ m: n.m, v: n.v, at: e + 1 }
 			} else if k == "LOG" and Basic.num_of(r.v) <= 0.0 {
 				Basic.halt(r.m, "LOG of a number that is not positive", e + 1)
@@ -1709,7 +1751,17 @@ Basic :: [].{
 		} else {
 			line = List.get(m0.inp, m0.ip) ?? ""
 			m1 = Basic.emit(Basic.emit(m0, line), "\n")
-			Basic.input_vars({ ..m1, ip: m1.ip + 1, asked: False }, b, vars, Basic.split_commas(Str.to_utf8(line), 0, []), 0)
+			taken = { ..m1, ip: m1.ip + 1, asked: False }
+			if m1.ecma {
+				# **NOTHING IS ASSIGNED UNTIL THE WHOLE REPLY FITS** (ECMA-55
+				# 13.5). A reply that does not is reported, and the statement
+				# runs again from its prompt.
+				vals = Basic.reply_items(Str.to_utf8(line), 0, [])
+				why = Basic.reply_fault(b, vars, vals, 0)
+				if why != "" { Basic.emit(taken, Str.concat(Str.concat("?", why), "\n")) } else { Basic.input_vars(taken, b, vars, vals, 0) }
+			} else {
+				Basic.input_vars(taken, b, vars, Basic.split_commas(Str.to_utf8(line), 0, []), 0)
+			}
 		}
 	}
 
@@ -1719,7 +1771,7 @@ Basic :: [].{
 		if nm.k == "" {
 			Basic.advance(m, Basic.stmt_end(b, at))
 		} else {
-			raw = List.get(vals, k) ?? ""
+			raw = if m.ecma { Basic.unquote(List.get(vals, k) ?? "") } else { List.get(vals, k) ?? "" }
 			s = Basic.store(m, b, nm, raw)
 			c = Basic.skip_ws(b, s.at)
 			if s.m.done { s.m } else if Basic.byte(b, c) == 44 { Basic.input_vars(s.m, b, c + 1, vals, k + 1) } else { Basic.advance(s.m, s.at) }
@@ -1737,7 +1789,7 @@ Basic :: [].{
 			{ m: Basic.set_str(m, nm.k, raw), at: nm.at }
 		} else {
 			rb = Str.to_utf8(raw)
-			n = Basic.number(m, rb, Basic.skip_ws(rb, 0))
+			n = Basic.signed(m, rb, Basic.skip_ws(rb, 0))
 			if Basic.byte(b, j) == 40 {
 				sub = Basic.subscripts(n.m, b, j)
 				if sub.m.done {
@@ -1754,6 +1806,122 @@ Basic :: [].{
 				{ m: Basic.set_num(n.m, nm.k, Basic.num_of(n.v)), at: nm.at }
 			}
 		}
+	}
+
+	# ---- an INPUT reply, as ECMA-55 13 reads it ---------------------------
+
+	# The items of a reply: split on the commas outside quotes, with the
+	# spaces around each dropped and its quotes kept, so it can be judged.
+	reply_items : List(U8), U64, List(Str) -> List(Str)
+	reply_items = |b, i, acc| {
+		s = Basic.skip_ws(b, i)
+		e = Basic.item_end(b, if Basic.byte(b, s) == 34 { Basic.quote_end(b, s + 1, List.len(b)) } else { s })
+		next = List.append(acc, Basic.trim_right(b, s, e))
+		if e >= List.len(b) { next } else { Basic.reply_items(b, e + 1, next) }
+	}
+
+	# Why a reply does not fit the variables from `at` on, or "" when it
+	# does. A subscript is skipped, not evaluated: it is evaluated when its
+	# item is stored.
+	reply_fault : List(U8), U64, List(Str), U64 -> Str
+	reply_fault = |b, at, vals, k| {
+		nm = Basic.name_at(b, at)
+		if nm.k == "" {
+			""
+		} else if k >= List.len(vals) {
+			"Too few items in the reply"
+		} else {
+			datum = Str.to_utf8(List.get(vals, k) ?? "")
+			why = if Basic.is_str_name(nm.k) {
+				if Basic.is_string_datum(datum) { "" } else { "A reply item is not a string" }
+			} else if !Basic.is_numeric_datum(datum) {
+				"A reply item is not a number"
+			} else if Basic.datum_overflows(datum) {
+				"Overflow in a reply item"
+			} else {
+				""
+			}
+			e = Basic.skip_ws(b, nm.at)
+			c = Basic.skip_ws(b, if Basic.byte(b, e) == 40 { Basic.paren_end(b, e + 1, 1) } else { e })
+			if why != "" {
+				why
+			} else if Basic.byte(b, c) == 44 {
+				Basic.reply_fault(b, c + 1, vals, k + 1)
+			} else if k + 1 < List.len(vals) {
+				"Too many items in the reply"
+			} else {
+				""
+			}
+		}
+	}
+
+	# Past the `)` closing a `(` already passed.
+	paren_end : List(U8), U64, I64 -> U64
+	paren_end = |b, i, depth|
+		if i >= List.len(b) {
+			i
+		} else if Basic.byte(b, i) == 41 {
+			if depth == 1 { i + 1 } else { Basic.paren_end(b, i + 1, depth - 1) }
+		} else if Basic.byte(b, i) == 40 {
+			Basic.paren_end(b, i + 1, depth + 1)
+		} else {
+			Basic.paren_end(b, i + 1, depth)
+		}
+
+	# A numeric constant and nothing else: a sign, digits with at most one
+	# point and at least one digit, then an optional E, sign and digits.
+	is_numeric_datum : List(U8) -> Bool
+	is_numeric_datum = |b| {
+		s = Basic.sign_len(b)
+		w = Basic.digits_end(b, s)
+		f = if Basic.byte(b, w) == 46 { Basic.digits_end(b, w + 1) } else { w }
+		past = if Basic.byte(b, f) != 69 {
+			f
+		} else {
+			g = if Basic.byte(b, f + 1) == 45 or Basic.byte(b, f + 1) == 43 { f + 2 } else { f + 1 }
+			d = Basic.digits_end(b, g)
+			if d > g { d } else { 0 }
+		}
+		(w > s or f > w + 1) and past > 0 and past == List.len(b)
+	}
+
+	sign_len : List(U8) -> U64
+	sign_len = |b| if Basic.byte(b, 0) == 45 or Basic.byte(b, 0) == 43 { 1 } else { 0 }
+
+	# `1E99999` is a numeric constant whose value is no number.
+	datum_overflows : List(U8) -> Bool
+	datum_overflows = |b| Basic.numeral(b, Basic.sign_len(b)).v > Basic.huge
+
+	# A quoted string with no quote inside it, or an unquoted one: letters,
+	# digits, `+ - .` and spaces. The item's outer spaces are gone already.
+	is_string_datum : List(U8) -> Bool
+	is_string_datum = |b| {
+		n = List.len(b)
+		if n >= 2 and Basic.byte(b, 0) == 34 and Basic.byte(b, n - 1) == 34 {
+			Basic.no_quote(b, 1, n - 1)
+		} else {
+			n > 0 and Basic.plain_chars(b, 0, n)
+		}
+	}
+
+	no_quote : List(U8), U64, U64 -> Bool
+	no_quote = |b, i, e|
+		if i >= e { True } else if Basic.byte(b, i) == 34 { False } else { Basic.no_quote(b, i + 1, e) }
+
+	plain_chars : List(U8), U64, U64 -> Bool
+	plain_chars = |b, i, e|
+		if i >= e {
+			True
+		} else {
+			c = Basic.byte(b, i)
+			if Basic.is_alpha(c) or Basic.is_digit(c) or c == 43 or c == 45 or c == 46 or c == 32 { Basic.plain_chars(b, i + 1, e) } else { False }
+		}
+
+	unquote : Str -> Str
+	unquote = |t| {
+		b = Str.to_utf8(t)
+		n = List.len(b)
+		if n >= 2 and Basic.byte(b, 0) == 34 and Basic.byte(b, n - 1) == 34 { Basic.text_of(b, 1, n - 1) } else { t }
 	}
 
 	split_commas : List(U8), U64, List(Str) -> List(Str)
