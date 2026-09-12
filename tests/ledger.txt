@@ -1,0 +1,597 @@
+REFUSED acpi-parse | builtin `peek-qword`
+REFUSED act-let-scope | an act outside opening
+REFUSED act-tco-loop | an act outside opening
+FAIL aesgcm256 | compile: ── ✗ file not found ────────────────────────────
+PASS amp-after-call |
+REFUSED approx-eq | an act outside opening
+SKIP arith-narrow-proven | expects a diagnostic
+FAIL arith-operand-order | compile: ── ✗ module not imported ──────────────────────────�
+REFUSED arithmetic | an act outside opening
+PASS arm64-boot-test |
+FAIL arm64-encoder | output: < add x0,x1,x2=8B020020
+REFUSED arm64-http-test | type char
+REFUSED arm64-net-gate | builtin `process-get-pid` used as a value
+REFUSED arm64-proc-cells | builtin `process-get-pid` used as a value
+REFUSED arm64-send-refusal | builtin `peek-32`
+REFUSED arp-cache-bound | builtin `__narrow`
+REFUSED asn1-der | builtin `text-length`
+REFUSED atomic-smoke | builtin `memory-fence`
+REFUSED audio-diffusion-test | unit type `Duration`
+REFUSED av-codec-test | unit type `Duration`
+REFUSED bacnet-encode | type real-approx
+PASS bezier-identity |
+PASS bitop-if-cond |
+REFUSED ble-att-encode | opening is not an act
+REFUSED block-gate-restrict | builtin `peek-32`
+REFUSED block-sector-count | opening is not an act
+REFUSED block-select-drives | an act outside opening
+REFUSED bloom-spread | builtin `__narrow`
+REFUSED board-types | builtin `peek-32`
+REFUSED bounded-integer-ops | chapter `Bounded Integer Ops` is not a Roc module name
+REFUSED bounded-sig-runtime | builtin `__narrow`
+SKIP bounded-sig-static | expects a diagnostic
+REFUSED bounds-proof | chapter `Bounds Proof` is not a Roc module name
+REFUSED bounds-prover | builtin `__narrow`
+FAIL bs3-smoke | compile: ── ✗ module not imported ──────────────────────────�
+SKIP builtin-narrow-proven | expects a diagnostic
+REFUSED call-clobber | show on a boolean
+REFUSED canopen-encode | opening is not an act
+REFUSED cap-audio | builtin `process-get-pid` used as a value
+REFUSED cap-block-denied | builtin `poke-32`
+REFUSED cap-device-declared | builtin `port-in-byte`
+REFUSED cap-direction | builtin `process-get-pid` used as a value
+REFUSED cap-gpu-byte-denied | builtin `poke-32`
+REFUSED cap-gpu-family | builtin `gpu-mem-write`
+REFUSED cap-gpu-mem-denied | builtin `poke-32`
+REFUSED cap-heap-poke-pure | builtin `poke-byte`
+REFUSED cap-identity-denied | builtin `poke-32`
+PASS cap-manifest-derived |
+REFUSED cap-media-families | builtin `process-get-pid` used as a value
+REFUSED cap-network-denied | builtin `poke-32`
+REFUSED cap-process-family | builtin `process-get-pid` used as a value
+PASS capability-doors |
+REFUSED carddeck-shuffle | opening is not an act
+REFUSED cce-roundtrip | type char
+REFUSED cce-tier1 | type char
+FAIL chacha20poly1305 | compile: ── ✗ file not found ────────────────────────────
+PASS chapter-pages |
+PASS circbuf-test |
+PASS cite-override-quire |
+REFUSED cmac-test | opening is not an act
+REFUSED cms-spread | builtin `text-length`
+REFUSED coap-block | type char
+REFUSED coap-packet | type char
+REFUSED coap-parse | type char
+SKIP collide-chapters | expects a diagnostic
+REFUSED color-test | builtin `__narrow`
+REFUSED compliance-evidence | builtin `text-length`
+REFUSED compliance-report | builtin `text-length`
+REFUSED concurrent-test | `__lam_0` applied to 3 of 4 arguments
+REFUSED consistent-hash-balance | builtin `text-length`
+REFUSED console-readline-cite | builtin `read-line` used as a value
+SKIP const-narrow-proven | expects a diagnostic
+PASS convolution-identity |
+REFUSED cross-port-refused | builtin `port-out-byte`
+FAIL crypto-test | compile: ── ✗ file not found ────────────────────────────
+REFUSED crypto-vectors | builtin `text-length`
+REFUSED cryptobig | show on a boolean
+REFUSED ctor-narrow-warn | builtin `__narrow`
+REFUSED db-csv-roundtrip | builtin `__narrow`
+REFUSED db-full-test | builtin `__narrow`
+REFUSED db-row-update | builtin `__narrow`
+REFUSED dce-reach | type error
+REFUSED deck-bracket-contract | builtin `__deck-set`
+REFUSED deck-cell-contract | builtin `__deck-set`
+REFUSED deck-record-contract | builtin `__deck-set`
+REFUSED deriving-eq-recursive | chapter `Deriving Eq Recursive` is not a Roc module name
+REFUSED desk-hover | type char
+REFUSED desk-parse | type char
+REFUSED desk-root-guard | type char
+REFUSED desk-span | type char
+REFUSED device-buffer-alloc | builtin `gpu-mem-read`
+REFUSED dhcp-acquire | builtin `__narrow`
+REFUSED dhcp-acquire-e1000 | builtin `__narrow`
+REFUSED dhcp-renew | builtin `__narrow`
+REFUSED diag-pci-map-judge | builtin `__narrow`
+REFUSED disk-enum-parse | builtin `__narrow`
+REFUSED diskfacts-unpack-large | builtin `text-length`
+REFUSED dnp3-encode | opening is not an act
+REFUSED dns-answer-count | builtin `__narrow`
+REFUSED dtls-fragment | type char
+REFUSED dtls-handshake | builtin `text-length`
+REFUSED dtls-hello | type char
+REFUSED dtls-message | type char
+REFUSED dtls-openssl-fragments | builtin `text-length`
+REFUSED dtls-random | builtin `text-length`
+REFUSED dtls-record | builtin `text-length`
+REFUSED e1000-aneg-budget | builtin `peek-32`
+REFUSED e1000-asde-arms | builtin `peek-32`
+REFUSED e1000-asde-nolink | builtin `peek-32`
+REFUSED e1000-asde-speed | builtin `peek-32`
+REFUSED e1000-bringup | builtin `peek-32`
+REFUSED e1000-ctrl-ro | builtin `peek-32`
+REFUSED e1000-lcd-reload | builtin `peek-32`
+REFUSED e1000-link-budget | builtin `peek-32`
+REFUSED e1000-link-deadline | builtin `peek-32`
+REFUSED e1000-match | builtin `peek-32`
+REFUSED e1000-mdio-slow | builtin `peek-32`
+REFUSED e1000-mdio-window | builtin `peek-32`
+REFUSED e1000-pch-k1 | builtin `peek-32`
+REFUSED e1000-pch-k1-off | builtin `peek-32`
+REFUSED e1000-phy | builtin `peek-32`
+REFUSED e1000-phy-absent | builtin `peek-32`
+REFUSED e1000-reset-live | builtin `peek-32`
+REFUSED e1000-reset-wedged | builtin `peek-32`
+REFUSED e1000-ring-wrap | builtin `peek-32`
+REFUSED e1000-rx-invisible | builtin `peek-32`
+REFUSED e1000-rx-invisible-off | builtin `peek-32`
+REFUSED e1000-swflag | builtin `peek-32`
+REFUSED e1000-swflag-k1 | builtin `peek-32`
+REFUSED e1000-swflag-mng | builtin `peek-32`
+REFUSED e1000-swflag-refused | builtin `peek-32`
+REFUSED e1000-swflag-strict | builtin `peek-32`
+REFUSED e1000-tx-deadline | builtin `peek-32`
+REFUSED e1000-ulp-entry | builtin `peek-32`
+REFUSED e1000-unresettable | builtin `peek-32`
+REFUSED ecdsa-cert | builtin `text-length`
+REFUSED ecdsa-p256 | builtin `text-length`
+REFUSED ecdsa-p384 | builtin `text-length`
+REFUSED ecdsa-sha384 | builtin `text-length`
+FAIL edalias | output: < inplace=10
+REFUSED edcurve | builtin `text-length`
+REFUSED edge-mesh-admit | binary approx-eq
+REFUSED edge-mesh-bracket | binary approx-eq
+REFUSED edge-mesh-discover | binary approx-eq
+REFUSED edge-mesh-failover | binary approx-eq
+REFUSED edge-mesh-federate | binary approx-eq
+REFUSED edge-mesh-live | binary approx-eq
+REFUSED edge-mesh-mint | binary approx-eq
+REFUSED edge-mesh-place | binary approx-eq
+REFUSED edge-mesh-planes | binary approx-eq
+REFUSED edge-mesh-prewarm | binary approx-eq
+REFUSED edge-mesh-rewards | binary approx-eq
+REFUSED edge-mesh-route | binary approx-eq
+REFUSED edit-distance-test | builtin `text-length`
+REFUSED edvector | builtin `text-length`
+FAIL effect-dotted-allow | output: < result 42
+REFUSED effect-handler-nested-same | handle
+REFUSED effect-map-effctx | an act outside opening
+REFUSED effect-positive | an act outside opening
+REFUSED effect-row-var-syntax | an act outside opening
+REFUSED effect-smoke | opening is not an act
+REFUSED effect-value-poly | type (effectful (effs "Console") (scopes "") (ctd "Maybe" (args (tvar 50))))
+FAIL effect-widen-arg | compile: ── ✗ type mismatch ────────────────────────────�
+REFUSED effect-widen-scope | an act outside opening
+REFUSED effect-widen-scope-narrow | type char
+REFUSED engine-animation | binary approx-eq
+REFUSED engine-culling-cost | binary approx-eq
+REFUSED engine-fill-guard | binary approx-eq
+REFUSED engine-mesh-gen | binary approx-eq
+REFUSED engine-near-clip | binary approx-eq
+REFUSED engine-render-heap | binary approx-eq
+REFUSED engine-shading | binary approx-eq
+REFUSED engine-shadow | binary approx-eq
+REFUSED engine-software-render | binary approx-eq
+REFUSED engine-texture-cost | binary approx-eq
+REFUSED enip-encode | opening is not an act
+FAIL eq-generic-fields | compile: ── ✗ module not imported ──────────────────────────�
+FAIL eq-generic-recursive | compile: ── ✗ module not imported ──────────────────────────�
+FAIL eq-plain-sum | compile: ── ✗ module not imported ──────────────────────────�
+REFUSED esp32c6-drivers | builtin `peek-32`
+PASS eventbus-test |
+REFUSED expr-calculator | chapter `Expr Calculator` is not a Roc module name
+REFUSED factlog-layout | builtin `peek-byte`
+REFUSED factorial | show on a real
+REFUSED fat16-alloc | type char
+REFUSED fat16-cluster-guard | type char
+REFUSED fat16-cycle-guard | type char
+REFUSED fat16-dirgrow | type char
+REFUSED fat16-lfn-record | type char
+REFUSED fat16-list | type char
+REFUSED fat16-longname | type char
+REFUSED fat16-mkdir | type char
+REFUSED fat16-overwrite | type char
+REFUSED fat16-source-cr | type char
+REFUSED fat16-subdir | type char
+REFUSED fat16-write | type char
+REFUSED fat32-cluster-guard | type char
+REFUSED fat32-cluster-lfn | type char
+REFUSED fat32-img-longname | type char
+REFUSED fat32-longname | type char
+REFUSED fat32-longwrite | type char
+REFUSED fat32-parse | builtin `__narrow`
+REFUSED fe310-drivers | builtin `peek-32`
+REFUSED field-cache-shape | field-store
+REFUSED field-cache-text-lit | an act outside opening
+SKIP field-guard-refine | expects a diagnostic
+SKIP field-range-proven | expects a diagnostic
+REFUSED files-parse | builtin `__narrow`
+REFUSED final-batch-test | type char
+REFUSED fins-encode | opening is not an act
+REFUSED fork-nested | builtin `fork`
+REFUSED fork-reclaim | `__lam_0` applied to 1 of 2 arguments
+REFUSED frame-short-buffer | builtin `text-length`
+PASS frameless-leaf-probe |
+SKIP fresh-alloc-narrow | expects a diagnostic
+REFUSED fs-deny-runtime | builtin `text-length`
+REFUSED fs-handler-install | builtin `text-length`
+REFUSED fs-layer | builtin `text-length`
+REFUSED fs-servicer | builtin `text-length`
+REFUSED fs-spawn-inherits | builtin `text-length`
+REFUSED ga-core | builtin `int-mod`
+REFUSED geometry-test | binary approx-eq
+REFUSED goose-encode | type char
+REFUSED gop-composite-clamp | builtin `alloc-bytes`
+REFUSED gop-composite-clip | builtin `alloc-bytes`
+REFUSED gop-composite-kinds | builtin `alloc-bytes`
+REFUSED gop-composite-stride | builtin `alloc-bytes`
+REFUSED gop-composite-translate | builtin `alloc-bytes`
+REFUSED gop-composite-vclip | builtin `alloc-bytes`
+REFUSED gop-corner-ramp | builtin `alloc-bytes`
+REFUSED gop-padded-stride | binary approx-eq
+REFUSED gop-scene-backbuffer | builtin `alloc-bytes`
+REFUSED gop-scene-viewport | binary approx-eq
+REFUSED gop-stride | builtin `alloc-bytes`
+REFUSED gop-text-field | builtin `alloc-bytes`
+REFUSED gpu-depth-tree | builtin `__narrow`
+REFUSED gpu-doorbell | type char
+REFUSED gpu-gauge-clamp | builtin `__narrow`
+REFUSED gpu-input-cursor | builtin `__narrow`
+REFUSED gpu-panel-border | builtin `__narrow`
+REFUSED gpu-ptx | type char
+REFUSED grounds-port | builtin `port-out-byte`
+REFUSED hal-board-sleep | builtin `peek-32`
+REFUSED hal-device-declared | builtin `peek-32`
+REFUSED hal-flash-linear | builtin `peek-32`
+REFUSED hal-gpio-linear | builtin `peek-32`
+REFUSED hal-i2c-adc-linear | builtin `peek-32`
+REFUSED hal-peripheral-linear | builtin `peek-32`
+REFUSED hal-spi-linear | builtin `peek-32`
+REFUSED hal-tuple-linear | builtin `peek-32`
+REFUSED hamt-test | builtin `text-length`
+REFUSED handler-dotted-discharge | handle
+REFUSED handler-nested-ops | opening is not an act
+REFUSED handler-smoke | type (effectful (effs "Config") (scopes "") int-default)
+REFUSED hart-encode | opening is not an act
+REFUSED heap-bracket-shape | an act outside opening
+REFUSED heap-frame-reclaim | binary approx-eq
+REFUSED heap-scrub | builtin `poke-byte`
+REFUSED hid-decode | builtin `peek-byte`
+REFUSED history-test | type char
+REFUSED hpet-interrupt | builtin `peek-32`
+REFUSED i219-k1-mechanism | builtin `peek-32`
+REFUSED ident-letters | name `café` cannot be a Roc identifier
+REFUSED idm-key-tests | builtin `text-length`
+REFUSED idm-read-line | builtin `text-length`
+REFUSED idm-salt-iv-distinct | builtin `text-length`
+REFUSED iec104-encode | type real-approx
+REFUSED ieee802154-encode | opening is not an act
+PASS if-in-arith |
+REFUSED if-let-join | chapter `If Let Join` is not a Roc module name
+REFUSED image-codec-test | builtin `__narrow`
+REFUSED imap-wire | type char
+REFUSED img-longname | type char
+REFUSED implicit-convert | unit type `Duration`
+SKIP induction-assoc | expects a diagnostic
+SKIP induction-list | expects a diagnostic
+SKIP induction-param | expects a diagnostic
+SKIP induction-parse | expects a diagnostic
+REFUSED inductive-list | type proof
+REFUSED infra-test | unit type `Duration`
+FAIL inline-cost-based | compile: ── ✗ module not imported ──────────────────────────�
+FAIL inline-single-caller | output: < wide 5
+REFUSED input-metal | builtin `__narrow`
+PASS int-literal-underscore |
+REFUSED interval-exhaustive | chapter `Interval Exhaustive` is not a Roc module name
+REFUSED ip-checksum-odd | builtin `__narrow`
+REFUSED ir-check-clean | `__lam_1` applied to 1 of 2 arguments
+REFUSED iterate-test | an act outside opening
+REFUSED iterate-zip-test | an act outside opening
+REFUSED j1939-encode | opening is not an act
+REFUSED keyboard-layout-test | builtin `poke-byte`
+REFUSED keys-collision | type char
+REFUSED keys-mods | type char
+REFUSED keys-numpad | type char
+REFUSED keys-shift | type char
+REFUSED keys-sidecar | type char
+REFUSED klondike-test | show on a boolean
+REFUSED knx-encode | opening is not an act
+REFUSED kvstore-test | builtin `text-length`
+REFUSED lang-smoke | builtin `text-length`
+REFUSED lapic-regs | builtin `peek-32`
+REFUSED lazy-smoke | opening: Lazy
+PASS leaf-let-if |
+PASS leaf-mispredict |
+REFUSED lease-handoff | builtin `text-length`
+REFUSED let-dest-scope | type char
+PASS let-else-scope |
+PASS let-shadow-scope |
+REFUSED linear-branch | opening is not an act
+REFUSED linear-capture-once | `__lam_0` applied to 1 of 2 arguments
+PASS linear-mint-container |
+REFUSED linear-poly-freeze | opening is not an act
+REFUSED linear-smoke | opening is not an act
+FAIL lir-binop-cross | output: < diff: 5
+FAIL lir-branch-cross | output: < mn: 3
+PASS lir-call-cross |
+FAIL lir-check | compile: ── ✗ module not imported ──────────────────────────�
+FAIL lir-frame-cross | output: < regs-only: 6
+FAIL lir-join-cross | output: < 3
+FAIL lir-load-cross | compile: ── ✗ module not imported ──────────────────────────�
+FAIL lir-nullary-cross | output: < ident: 7
+PASS lir-selector-smoke |
+FAIL lir-test-cross | output: < 1
+REFUSED list-comprehension-copy | chapter `List Comprehension Copy` is not a Roc module name
+REFUSED list-cons-tail | binary cons-list
+REFUSED list-induction | type proof
+REFUSED list-literal-o1 | chapter `List O1 Probe` is not a Roc module name
+FAIL list-pattern | compile: ── ✗ type mismatch ────────────────────────────�
+REFUSED list-tail-empty | an act outside opening
+REFUSED list-test | chapter `List Test` is not a Roc module name
+REFUSED list-view-probe | type char
+FAIL literal-subpattern | compile: ── ✗ module not imported ──────────────────────────�
+SKIP local-narrow-proven | expects a diagnostic
+REFUSED location-sensors-stub | type (effectful (effs "Location") (scopes "") boolean)
+REFUSED lorawan-encode | opening is not an act
+REFUSED lwm2m-encode | type char
+REFUSED magic-sim-fixes | opening is not an act
+REFUSED manifest-pin | an act outside opening
+REFUSED mask-ops | type (effectful (effs "Console") (scopes "") nothing)
+PASS match-arms-per-line |
+REFUSED matrix3-test | binary approx-eq
+REFUSED mbus-encode | opening is not an act
+REFUSED media-codec-test | builtin `__narrow`
+REFUSED melsec-encode | opening is not an act
+REFUSED mini-bootstrap | chapter `Mini Bootstrap Test` is not a Roc module name
+REFUSED mix-bits | opening is not an act
+REFUSED mod-bound-return | builtin `int-mod`
+REFUSED modbus-encode | opening is not an act
+REFUSED modprobe | builtin `int-mod`
+REFUSED mouse-decode | builtin `__narrow`
+REFUSED mqtt-encode | unit type `Duration`
+REFUSED mqttsn-encode | type char
+REFUSED mut-borrow-transitive | opening is not an act
+REFUSED mutable-smoke | a call whose head is not a name
+REFUSED neg-int-parse | opening is not an act
+REFUSED neg-real-repro | opening is not an act
+PASS negation-abutment |
+REFUSED nested-spawn | builtin `poke-byte`
+REFUSED net-drain-budget | builtin `poke-byte`
+REFUSED net-driver-seam-bound | builtin `poke-byte`
+REFUSED net-driver-seam-no-av | builtin `poke-byte`
+REFUSED net-io-clock | builtin `poke-byte`
+REFUSED net-poll-calibrated | builtin `poke-byte`
+REFUSED net-poll-clamped | builtin `poke-byte`
+REFUSED net-recv-heap | builtin `__narrow`
+REFUSED network-effect | builtin `poke-byte`
+REFUSED network-scope-deny | builtin `poke-byte`
+REFUSED network-scope-open | builtin `poke-byte`
+REFUSED network-scope-spawn | builtin `poke-byte`
+SKIP noalias-linear-param | expects a diagnostic
+REFUSED noise-test | show on a boolean
+REFUSED normalize-eq | type (propeq (ctd "Off" (args)) (ctd "Off" (args)))
+REFUSED nrf52840-drivers | builtin `peek-32`
+REFUSED nrf9160-drivers | builtin `peek-32`
+REFUSED nvme-encode | builtin `__narrow`
+REFUSED oauth-island | builtin `text-length`
+REFUSED occurrence-check | an act outside opening
+REFUSED opcua-encode | type char
+REFUSED osc-noise | unit type `Duration`
+REFUSED ota-gate-block | builtin `text-length`
+REFUSED ota-gate-real | builtin `text-length`
+REFUSED ota-state-machine | builtin `text-length`
+REFUSED ota-update | builtin `text-length`
+REFUSED par-map | builtin `fork`
+REFUSED par-nested | builtin `fork`
+REFUSED parse-test | type char
+REFUSED particle-spread | builtin `__narrow`
+REFUSED path-real | builtin `text-length`
+REFUSED pci-bridge-backward | builtin `__narrow`
+REFUSED pci-bridge-cap | builtin `__narrow`
+REFUSED pci-bridge-cap-under | builtin `__narrow`
+REFUSED pci-bridge-deep | builtin `__narrow`
+REFUSED pci-bridge-scan | builtin `__narrow`
+REFUSED pci-bus-master | builtin `__narrow`
+REFUSED peek32-sign | builtin `alloc-bytes`
+REFUSED pi4-drivers | builtin `peek-32`
+REFUSED pipe-unique-test | `__lam_0` applied to 1 of 2 arguments
+REFUSED pit-latch | builtin `peek-32`
+REFUSED plug-oracle-arith | builtin `code-to-char`
+REFUSED poke16-width | builtin `peek-byte`
+REFUSED poly1305 | show on a boolean
+REFUSED port-in-32-width | builtin `__narrow`
+REFUSED proc-state-running | builtin `peek-qword`
+REFUSED process-exit-status | an act outside opening
+SKIP proof-assume-axiom | expects a diagnostic
+SKIP proof-smoke | expects a diagnostic
+REFUSED prop-arith | type (propeq (ctd "2" (args)) (ctd "2" (args)))
+SKIP prose-anchor | expects a diagnostic
+REFUSED prose-consistency | an act outside opening
+REFUSED prose-smoke | opening is not an act
+PASS punctual-fastmath |
+REFUSED punctual-iot | an act outside opening
+REFUSED punctual-quire | show on a boolean
+PASS punctual-smoke |
+REFUSED qemu-rng | builtin `peek-32`
+REFUSED qemu-rng-absent | builtin `peek-32`
+REFUSED qemu-virt-board | builtin `peek-32`
+REFUSED qr-encode | builtin `alloc-bytes`
+REFUSED queue-test | chapter `Queue Test` is not a Roc module name
+REFUSED quotes-gate | CODEGEN-HALTED: 1 error(s); no IR emitted; first CDX1000 Expected token kind mismatch, got 'WORK'
+REFUSED quotes-parse | CODEGEN-HALTED: 1 error(s); no IR emitted; first CDX1000 Expected token kind mismatch, got 'WORK'
+SKIP range-let-carry | expects a diagnostic
+SKIP range-refine-if | expects a diagnostic
+REFUSED rasterizer-test | binary approx-eq
+REFUSED raytracer-test | binary approx-eq
+REFUSED real-cert | builtin `text-length`
+PASS real-literal-boundary |
+REFUSED real-show-wide | show on a real
+REFUSED record-smoke | `__lam_0` applied to 2 of 3 arguments
+REFUSED recursive-eq | chapter `Recursive Eq` is not a Roc module name
+REFUSED reservoir-uniform | builtin `__narrow`
+SKIP return-narrow-proven | expects a diagnostic
+REFUSED revised-narrow | builtin `__narrow`
+REFUSED riscv-encoder | an act outside opening
+FAIL riscv32c-encoder | output: < c.nop=0001
+REFUSED roc-closure-captures-list | `__lam_0` applied to 1 of 2 arguments
+REFUSED roc-early-return-predicate | show on a boolean
+PASS roc-fold-count |
+PASS roc-fold-empty |
+PASS roc-fold-product |
+PASS roc-fold-sum |
+REFUSED roc-iter-drop-if | `__lam_0` applied to 2 of 3 arguments
+REFUSED roc-iter-keep-if | `__lam_0` applied to 2 of 3 arguments
+REFUSED roc-iter-map | `__lam_0` applied to 2 of 3 arguments
+PASS roc-recursive-var |
+REFUSED roc-returned-closure | `__lam_0` applied to 1 of 2 arguments
+REFUSED rp2040-drivers | builtin `peek-32`
+REFUSED rsa-pss | builtin `text-length`
+REFUSED rsa-verify | builtin `text-length`
+PASS rv-arg-order |
+PASS rv-big-literal |
+FAIL rv-frameless-imm | output: < 254
+PASS rv-frameless-temp |
+PASS rv-param-bind |
+FAIL rv-param-order | compile: ── ✗ module not imported ──────────────────────────�
+REFUSED s7comm-encode | opening is not an act
+REFUSED scope-allow | type char
+FAIL scope-console | compile: ── ✗ type mismatch ────────────────────────────�
+REFUSED scope-handler-clause | opening is not an act
+PASS scope-let-arm-global |
+REFUSED scope-runtime-deny | type char
+REFUSED scope-runtime-open | type char
+REFUSED scope-runtime-spawn | type char
+REFUSED scope-try-region | builtin `poke-byte`
+REFUSED sector-read-list-growth | builtin `peek-byte`
+REFUSED sensor-data | an act outside opening
+REFUSED serial-line | builtin `peek-32`
+SKIP shadow-builtin-fold | expects a diagnostic
+FAIL shell-build-keep | compile: ── ✗ mutually recursive type aliases ────────────────────── 
+REFUSED simplify-check | builtin `text-length`
+REFUSED sixlowpan-encode | opening is not an act
+REFUSED smp-affinity | builtin `process-get-pid` used as a value
+REFUSED smp-ap-port-io | an act outside opening
+REFUSED smp-arm64-boot | builtin `peek-qword`
+REFUSED smp-cores | builtin `atomic-load`
+REFUSED smp-dispatch | builtin `process-spawn`
+REFUSED smp-halt | builtin `process-spawn`
+REFUSED smp-preempt | builtin `process-spawn`
+REFUSED smp-proc0-pinned | builtin `atomic-load`
+REFUSED smp-riscv-boot | builtin `peek-qword`
+REFUSED smp-tss | builtin `atomic-load`
+REFUSED smtp-md-test | type char
+REFUSED sntp-encode | opening is not an act
+REFUSED sort-test | an act outside opening
+REFUSED sound-test | unit type `Duration`
+REFUSED sparkplug-encode | unit type `Duration`
+REFUSED spawn-memo-table | type char
+REFUSED spawn-reuse | builtin `poke-byte`
+REFUSED sprite-test | binary approx-eq
+SKIP stale-sibling | expects a diagnostic
+REFUSED stats-wrap-test | builtin `text-split`
+REFUSED stm32f4-drivers | builtin `peek-32`
+REFUSED stm32l4-drivers | builtin `peek-32`
+PASS string-escape-quote |
+REFUSED stringbuilder-independence | builtin `text-length`
+REFUSED stringbuilder-test | builtin `text-length`
+REFUSED stringutils-test | type char
+REFUSED suggested-width | builtin `suggested-vector-width`
+REFUSED sum-field-eq | builtin `print-line`
+REFUSED synth-test | unit type `Duration`
+REFUSED tag-equal | builtin `tag-equal`
+REFUSED tco-bitop-loop | builtin `int-mod`
+FAIL tco-direct-arg-reads | compile: ── ✗ module not imported ──────────────────────────�
+REFUSED tco-framed-append | builtin `text-length`
+PASS tco-nested-if |
+REFUSED tco-shuffle-spill | builtin `int-mod`
+REFUSED tcp-checksum-refuse | builtin `__narrow`
+REFUSED tcp-listen-reclaim | builtin `__narrow`
+REFUSED tcp-reliability | builtin `__narrow`
+REFUSED tcp-seqwrap | builtin `__narrow`
+REFUSED text-append-alias | builtin `text-length`
+FAIL text-eq-branches | output: < eq-int same    1
+REFUSED text-fold-indexed | type char
+REFUSED text-helper-native | builtin `text-split`
+REFUSED text-helper-spec | type char
+REFUSED textfield-typing | builtin `__narrow`
+REFUSED textscan-test | type char
+REFUSED textsearch-test | type char
+FAIL thumb2-encoder | output: < nop=BF00
+REFUSED timer-registers | builtin `peek-32`
+REFUSED tls-cert | type char
+REFUSED tls-cv-schemes | type char
+REFUSED tls-record-framing | builtin `poke-byte`
+REFUSED tls-test | type char
+REFUSED tls13-record | type char
+REFUSED tls13-schedule | type char
+REFUSED transport-cocite | builtin `__narrow`
+REFUSED trie-prefix-test | type char
+REFUSED truetype-bridge-test | builtin `text-length`
+REFUSED truetype-render-test | type char
+REFUSED truetype-test | builtin `text-length`
+REFUSED try-smoke | try
+REFUSED ttf-debug | an act outside opening
+REFUSED ttt-perfect | opening is not an act
+REFUSED tuple-syntax | an act outside opening
+FAIL tvar-in-declared-type | compile: ── ✗ module not imported ────────────────────────── 
+REFUSED type-checker-test | chapter `Type Checker Smoke Test` is not a Roc module name
+REFUSED type-name-existence | a type applied to a non-name
+REFUSED typeclass-compound-head | builtin `to-text`
+REFUSED typeclass-poly | a call whose head is not a name
+REFUSED typeclass-smoke | `__compare_Integer` belongs to no chapter
+REFUSED udp-frame-guard | builtin `poke-byte`
+REFUSED uefi-read-key-nofirmware | builtin `uefi-read-key` used as a value
+REFUSED ui-anim-test | builtin `__narrow`
+REFUSED ui-dialog-test | builtin `__narrow`
+REFUSED ui-event-test | builtin `__narrow`
+REFUSED ui-focus-test | builtin `__narrow`
+REFUSED ui-font-cce-order | binary approx-eq
+REFUSED ui-font-test | binary approx-eq
+REFUSED ui-icon-test | binary approx-eq
+REFUSED ui-layout-test | builtin `__narrow`
+REFUSED ui-orchestrator-test | builtin `__narrow`
+REFUSED ui-scroll-test | builtin `__narrow`
+REFUSED ui-sound-test | builtin `__narrow`
+REFUSED ui-surface-test | builtin `__narrow`
+REFUSED ui-theme-test | builtin `__narrow`
+REFUSED unit-family | unit type `Length`
+REFUSED unit-family-mixed | unit type `Length`
+REFUSED unit-smoke | unit type `Second`
+REFUSED units-foreword | unit type `Duration`
+REFUSED uri-encode | type char
+REFUSED usb-desc-guard | builtin `__narrow`
+REFUSED usb-test | builtin `__narrow`
+REFUSED validation-rules | builtin `__narrow`
+REFUSED value-eq | type (propeq (ctd "xs" (args)) (ctd "xs" (args)))
+REFUSED vbe-mode-set | builtin `__narrow`
+REFUSED vec-arith-hazards | type (vector 2 real)
+REFUSED vec-array | type (vector 2 real)
+REFUSED vec-extract-hazards | type (vector 2 real)
+REFUSED vec-mask-hazards | builtin `poke-byte`
+REFUSED vec-nest-probe | type (vector 2 real)
+REFUSED vec-nested-binop | type (vector 2 real)
+REFUSED vec-pattern | classify: vector pattern
+REFUSED vec-reduce-add | builtin `vec-splat`
+REFUSED vec-select | type (effectful (effs "Console") (scopes "") nothing)
+REFUSED vector-basic | builtin `vec-splat`
+REFUSED vector-f32 | builtin `to-real-approx`
+REFUSED vector-int | builtin `vec-splat`
+REFUSED wavelet-sort-aliasing | an act outside opening
+SKIP wcet-budget-unchecked | expects a diagnostic
+SKIP wcet-probe | expects a diagnostic
+REFUSED web-chain | builtin `text-length`
+REFUSED web-mux-concurrent | builtin `poke-byte`
+REFUSED web-mux-heap | builtin `poke-byte`
+REFUSED web-mux-idle-reap | builtin `poke-byte`
+REFUSED web-mux-lifecycle | builtin `poke-byte`
+REFUSED web-mux-reassembly | builtin `poke-byte`
+REFUSED when-arm-nontail | an act outside opening
+FAIL when-arm-tail-call | compile: ── ✗ module not imported ───────────────────────── Whe
+FAIL when-bool-cross | compile: ── ✗ non exhaustive match ──────────────────────────
+REFUSED when-bool-pattern | char literal
+REFUSED when-generic-field | an act outside opening
+REFUSED with-timeout-test | chapter `With-Timeout Test` is not a Roc module name
+REFUSED workflow-parse-int | builtin `text-length`
+REFUSED x509-chain | builtin `text-length`
+REFUSED x509-parse | builtin `text-length`
+REFUSED zigbee-encode | opening is not an act
