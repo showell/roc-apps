@@ -22,6 +22,13 @@
   #src { height: 300px; }
   #keys { height: 76px; }
   pre { height: 394px; overflow: auto; margin: 0; white-space: pre; }
+  /* The screen is 40x25 cells of a Commodore's memory, drawn as text so
+     that a cell is exactly a cell. */
+  #screen { background: #3e31a2; color: #7c70da; border: 8px solid #7c70da; border-radius: 4px;
+            padding: 8px; margin: 0 0 12px; overflow-x: auto;
+            font: 13px/1.1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  #screen div { white-space: pre; }
+  #screen span { display: inline-block; }
   .bar { display: flex; gap: 10px; align-items: center; margin: 14px 0; flex-wrap: wrap; }
   button { font: inherit; padding: 6px 16px; border: 1px solid var(--line); border-radius: 4px;
            background: transparent; color: inherit; cursor: pointer; }
@@ -51,6 +58,8 @@ Everything below runs in this tab.</p>
     <textarea id="keys" spellcheck="false"></textarea>
   </div>
   <div class="col">
+    <label for="screen" id="screenlab" hidden>Screen &mdash; 40&times;25 at address 1024</label>
+    <div id="screen" hidden></div>
     <label for="out">Transcript</label>
     <pre id="out"></pre>
   </div>
@@ -72,6 +81,9 @@ const SAMPLES = {
   "Guess a number": '10 PRINT "I AM THINKING OF A NUMBER FROM 1 TO 100."\n20 LET N = INT(RND(1)*100) + 1\n30 FOR T = 1 TO 7\n40 PRINT "YOUR GUESS";\n50 INPUT G\n60 IF G = N THEN 200\n70 IF G < N THEN 100\n80 PRINT "TOO HIGH."\n90 GOTO 110\n100 PRINT "TOO LOW."\n110 NEXT T\n120 PRINT "OUT OF GUESSES. IT WAS"; N\n130 END\n200 PRINT "RIGHT, IN"; T; "GUESSES!"\n210 END\n',
   "Sieve of Eratosthenes": '10 DIM S(200)\n20 FOR I = 2 TO 200\n30 IF S(I) = 1 THEN 80\n40 PRINT I;\n50 FOR J = I+I TO 200 STEP I\n60 LET S(J) = 1\n70 NEXT J\n80 NEXT I\n90 PRINT\n99 END\n',
   "Fibonacci": '10 LET A = 0\n20 LET B = 1\n30 FOR I = 1 TO 20\n40 PRINT A;\n50 LET C = A + B\n60 LET A = B\n70 LET B = C\n80 NEXT I\n90 PRINT\n99 END\n',
+  "Screen: colour bars": '10 REM THE SCREEN IS MEMORY: 40x25 CODES AT 1024,\n11 REM COLOUR AT 55296. POKE IS HOW A PROGRAM DRAWS.\n20 FOR Y = 0 TO 24\n30 FOR X = 0 TO 39\n40 LET P = X + 40*Y\n50 POKE 1024 + P, 160\n60 POKE 55296 + P, INT(X/2.5)\n70 NEXT X\n80 NEXT Y\n90 PRINT "SIXTEEN COLOURS, POKED ONE CELL AT A TIME."\n99 END\n',
+  "Screen: sine wave": '10 FOR X = 0 TO 39\n20 LET Y = INT(12 + 11*SIN(X/3.2))\n30 LET P = X + 40*Y\n40 POKE 1024 + P, 81\n50 POKE 55296 + P, 7\n60 NEXT X\n70 FOR X = 0 TO 39\n80 POKE 1024 + X + 480, 64\n90 POKE 55296 + X + 480, 11\n100 NEXT X\n110 PRINT "A SINE, PLOTTED BY POKE."\n199 END\n',
+  "Screen: Mandelbrot": '10 FOR R = 0 TO 24\n20 FOR C = 0 TO 39\n30 LET A = -2.2 + C*3.0/39\n40 LET B = -1.2 + R*2.4/24\n50 LET X = 0\n60 LET Y = 0\n70 LET N = 0\n80 IF X*X + Y*Y > 4 THEN 140\n90 IF N >= 15 THEN 140\n100 LET T = X*X - Y*Y + A\n110 LET Y = 2*X*Y + B\n120 LET X = T\n130 LET N = N + 1\n135 GOTO 80\n140 LET P = C + 40*R\n150 POKE 1024 + P, 160\n160 POKE 55296 + P, N\n170 NEXT C\n180 NEXT R\n190 PRINT "MANDELBROT, SIXTEEN ITERATIONS DEEP."\n199 END\n',
   "Square roots by Newton": '10 PRINT "N", "SQR(N)", "NEWTON"\n20 FOR N = 1 TO 10\n30 LET X = N\n40 FOR K = 1 TO 12\n50 LET X = (X + N/X)/2\n60 NEXT K\n70 PRINT N, SQR(N), X\n80 NEXT N\n90 END\n',
 };
 const KEYS = { "Guess a number": "50\n25\n37\n43\n40\n41\n42\n" };
@@ -96,6 +108,49 @@ async function boot() {
   go();
 }
 
+// ---- the screen ---------------------------------------------------------
+//
+// A Commodore's screen IS memory: 1,000 screen codes from 1024 and 1,000
+// colour cells from 55296. Codes 0-63 are exact; the graphics half is an
+// approximation, since PETSCII has glyphs Unicode does not.
+const SC = "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\u00a3]\u2191\u2190 !\"#$%&'()*+,-./0123456789:;<=>?";
+const GFX = "\u2500\u2660\u2502\u2500\u2500\u2500\u2500\u2502\u2502\u256e\u2570\u256f\u2598\u2572\u2571\u2596" +
+            "\u259d\u25cf\u2584\u2665\u258c\u256d\u2573\u25cb\u2663\u258e\u2666\u253c\u2592\u2502\u03c0\u25e5" +
+            " \u258c\u2584\u2594\u2581\u258f\u2592\u2595\u2592\u25e4\u2595\u251c\u2597\u2514\u2510\u2582" +
+            "\u250c\u2534\u252c\u2524\u258e\u258d\u258a\u258b\u258a\u2587\u2586\u2585\u2584\u2502\u2592\u2592";
+const PAL = ["#000000","#ffffff","#813338","#75cec8","#8e3c97","#56ac4d","#2e2c9b","#edf171",
+             "#8e5029","#553800","#c46c71","#4a4a4a","#7b7b7b","#a9ff9f","#706deb","#b2b2b2"];
+
+function glyph(c) {
+  const rev = c >= 128;
+  const k = rev ? c - 128 : c;
+  return { ch: k < 64 ? SC[k] : GFX[k - 64] || "\u00b7", rev: rev };
+}
+
+function paint(cells) {
+  const lab = document.getElementById("screenlab"), box = $("screen");
+  // An untouched screen is 2,000 zero bytes; a program that never drew
+  // does not get a blank purple rectangle.
+  let drew = false;
+  for (let i = 0; i < 2000; i++) if (cells[i] !== 0) { drew = true; break; }
+  lab.hidden = !drew; box.hidden = !drew;
+  if (!drew) return;
+  box.textContent = "";
+  for (let y = 0; y < 25; y++) {
+    const row = document.createElement("div");
+    for (let x = 0; x < 40; x++) {
+      const i = y * 40 + x;
+      const g = glyph(cells[i]);
+      const fg = PAL[cells[1000 + i] & 15];
+      const sp = document.createElement("span");
+      sp.textContent = g.ch;
+      if (g.rev) { sp.style.background = fg; sp.style.color = "#3e31a2"; } else { sp.style.color = fg; }
+      row.appendChild(sp);
+    }
+    box.appendChild(row);
+  }
+}
+
 function go() {
   if (!x) return;
   const src = enc.encode($("src").value);
@@ -111,8 +166,11 @@ function go() {
   const t0 = performance.now();
   const n = x.runIt(src.length, keys.length, (Date.now() & 0x7fffffff) || 1);
   const ms = performance.now() - t0;
-  $("out").textContent = dec.decode(new Uint8Array(x.memory.buffer, x.outPtr(), n));
-  $("status").textContent = n + " bytes in " + ms.toFixed(1) + " ms";
+  const sb = x.screenBytes();
+  const all = new Uint8Array(x.memory.buffer, x.outPtr(), n);
+  paint(all.subarray(0, sb));
+  $("out").textContent = dec.decode(all.subarray(sb));
+  $("status").textContent = (n - sb) + " bytes in " + ms.toFixed(1) + " ms";
 }
 
 $("run").onclick = go;

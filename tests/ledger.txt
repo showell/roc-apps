@@ -168,13 +168,13 @@ REFUSED effect-widen-scope-narrow | builtin `block-read-sector`
 REFUSED engine-animation | unit type `Duration`
 FAIL engine-culling-cost | output: < culled costs less        : no
 PASS engine-fill-guard |
-TIMEOUT engine-mesh-gen |
+PASS engine-mesh-gen |
 PASS engine-near-clip |
-TIMEOUT engine-render-heap |
-TIMEOUT engine-shading |
-TIMEOUT engine-shadow |
+FAIL engine-render-heap | output: < frame cost is nonzero       : no
+PASS engine-shading |
+PASS engine-shadow |
 PASS engine-software-render |
-TIMEOUT engine-texture-cost |
+PASS engine-texture-cost |
 PASS enip-encode |
 PASS eq-generic-fields |
 PASS eq-generic-recursive |

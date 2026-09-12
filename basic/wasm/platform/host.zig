@@ -120,3 +120,10 @@ pub export fn runIt(src_len: u32, keys_len: u32, seed: i32) u32 {
 pub export fn outPtr() u32 {
     return @intCast(@intFromPtr(out.bytes orelse return 0));
 }
+
+/// The screen is the first 2,000 bytes of what came back: 1,000 screen
+/// codes from address 1024, then 1,000 colour cells from 55296. The
+/// transcript is everything after them.
+pub export fn screenBytes() u32 {
+    return 2000;
+}

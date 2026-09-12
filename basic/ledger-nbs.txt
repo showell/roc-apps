@@ -26,9 +26,9 @@ PASS P025 |
 FAIL P026 | 21             64            512          TEST FAILS
 PASS P027 |
 PASS P028 |
-FAIL P029 | *** TEST PASSED *** OTHERWISE *** TEST FAILED ***
-FAIL P030 | *** TEST PASSED *** OTHERWISE *** TEST FAILED ***
-PASS P031 |
+TIMEOUT P029 |
+TIMEOUT P030 |
+TIMEOUT P031 |
 FAIL P032 | *** TEST FAILED: EXECUTION DID NOT TERMINATE. ***
 PASS P033 |
 PASS P034 |
@@ -53,29 +53,29 @@ FAIL P052 | *** HALTED: NEXT out of order: J
 FAIL P053 | *** HALTED: NEXT out of order: I
 FAIL P054 | *** HALTED: NEXT without FOR
 FAIL P055 | *** HALTED: NEXT without FOR
-FAIL P056 | ***  TEST FAILED  ***
-FAIL P057 | ***  TEST FAILED  ***
-FAIL P058 | ***  TEST FAILED  ***
+FAIL P056 | *** HALTED: Subscript out of range: B
+FAIL P057 | *** HALTED: Subscript out of range: B
+FAIL P058 | *** HALTED: Subscript out of range: B
 PASS P059 |
 PASS P060 |
-FAIL P061 |  6            -2             .285714      TEST FAILS
+FAIL P061 | *** HALTED: Subscript out of range: Q
 PASS P062 |
 FAIL P063 | *** HALTED: Subscript out of range: A
-FAIL P064 | ASSIGNMENT TO SUBSCRIPT < 0 - *** TEST FAILS ***
-FAIL P065 | ASSIGNMENT TO SUBSCRIPT < 1 - ***  TEST FAILS  ***
-FAIL P066 | ASSIGNMENT TO SUBSCRIPT > 12 - *** TEST FAILS ***
-FAIL P067 | ASSIGNMENT TO SUBSCRIPT < 1 - *** TEST FAILS ***
+FAIL P064 | *** HALTED: Subscript out of range: B
+FAIL P065 | *** HALTED: Subscript out of range: A
+FAIL P066 | *** HALTED: Subscript out of range: B
+FAIL P067 | *** HALTED: Subscript out of range: A
 FAIL P068 | *** HALTED: Subscript out of range: A
-FAIL P069 | ASSIGNMENT TO SUBSCRIPT > 12 - *** TEST FAILS ***
-FAIL P070 | ASSIGNMENT TO SUBSCRIPT < 0 - *** TEST FAILS ***
-FAIL P071 | ASSIGNMENT TO SUBSCRIPT < 0 - *** TEST FAILS ***
-FAIL P072 | ASSIGNMENT TO SUBSCRIPT < 1 - *** TEST FAILS ***
-FAIL P073 | *** HALTED: Out of input
-PASS P074 |
+FAIL P069 | *** HALTED: Subscript out of range: B
+FAIL P070 | *** HALTED: Subscript out of range: A
+FAIL P071 | *** HALTED: Subscript out of range: B
+FAIL P072 | *** HALTED: Subscript out of range: B
+FAIL P073 | *** HALTED: Bad DIM bound: A
+FAIL P074 | *** HALTED: Subscript out of range: A
 PASS P075 |
 FAIL P076 | *** HALTED: Subscript out of range: A
 PASS P077 |
-PASS P078 |
+FAIL P078 | *** HALTED: Subscript out of range: A
 PASS P079 |
 PASS P080 |
 FAIL P081 | *** HALTED: OPTION BASE after an array is used
@@ -91,7 +91,7 @@ FAIL P090 | *** HALTED: ON index out of range
 FAIL P091 | *** HALTED: No such line: 295
 FAIL P092 | *** HALTED: Out of DATA
 PASS P093 |
-PASS P094 |
+FAIL P094 | *** HALTED: Subscript out of range: C
 PASS P095 |
 PASS P096 |
 FAIL P097 | *** HALTED: Out of DATA
@@ -161,8 +161,8 @@ PASS P160 |
 PASS P161 |
 FAIL P162 | *** HALTED: Undefined function: FND
 FAIL P163 | *** HALTED: Undefined function: FNA
-FAIL P164 | *** TEST FAILED IN  1  CASE(S) ***
-PASS P165 |
+FAIL P164 | *** HALTED: Subscript out of range: Q
+FAIL P165 | *** HALTED: Subscript out of range: Q
 PASS P166 |
 PASS P167 |
 FAIL P168 | *** TEST FAILED: EXECUTION DID NOT TERMINATE. ***

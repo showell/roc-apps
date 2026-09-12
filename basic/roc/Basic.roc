@@ -44,6 +44,13 @@ Basic :: [].{
 		# OPTION BASE: the lowest subscript an array has. ECMA-55 allows
 		# 0 or 1 and one OPTION statement, before any DIM.
 		base : U64,
+		# **THE ADDRESS SPACE.** ECMA-55 has no PEEK and no POKE -- it is a
+		# teletype language and its only output is PRINT. Every
+		# microcomputer BASIC added them, and on a Commodore the screen IS
+		# memory: 40x25 screen codes at 1024, colour at 55296. So a
+		# program draws by writing bytes, and the page reads those bytes
+		# back out. Sixteen pages of 4 KB is the 64 KB such a machine had.
+		mem : List(List(U8)),
 		# DEF FNx(v) = expr, kept as the parameter's name and the bytes of
 		# the body, so calling one is just evaluating that expression with
 		# the parameter bound.
@@ -478,18 +485,30 @@ Basic :: [].{
 	fail : M, Str, U64 -> R
 	fail = |m, why, at| { m: { ..m, done: True, err: why }, v: N(0.0), at: at }
 
+	# **THE STRING PATH IS DECIDED FIRST.** A string literal, a `$`
+	# variable and a `$` function all answer text, and everything else
+	# goes down the numeric grammar. Taking the numeric path with a string
+	# in hand silently reads it as zero, which is the failure this shape
+	# exists to prevent.
 	expr : M, List(U8), U64 -> R
 	expr = |m, b, i| {
 		j = Basic.skip_ws(b, i)
 		if Basic.byte(b, j) == 34 {
 			e = Basic.quote_end(b, j + 1, List.len(b))
-			{ m: m, v: S(Basic.text_of(b, j + 1, U64.minus_wrap(e, 1))), at: e }
+			Basic.str_sum(m, b, e, Basic.text_of(b, j + 1, U64.minus_wrap(e, 1)))
 		} else {
-			nm = Basic.name_at(b, j)
-			if nm.k != "" and Basic.is_str_name(nm.k) {
-				{ m: m, v: S(Basic.get_str(m, nm.k)), at: nm.at }
+			w = Basic.word_end(b, j)
+			k = Basic.text_of(b, j, w)
+			if Basic.is_str_fn(k) and Basic.byte(b, w) == 36 {
+				r = Basic.call_str_fn(m, b, w + 1, k)
+				if r.m.done { r } else { Basic.str_sum(r.m, b, r.at, Basic.str_of(r.v)) }
 			} else {
-				Basic.sum(m, b, j)
+				nm = Basic.name_at(b, j)
+				if nm.k != "" and Basic.is_str_name(nm.k) {
+					Basic.str_sum(m, b, nm.at, Basic.get_str(m, nm.k))
+				} else {
+					Basic.sum(m, b, j)
+				}
 			}
 		}
 	}
@@ -498,6 +517,19 @@ Basic :: [].{
 	sum = |m, b, i| {
 		r = Basic.term(m, b, i)
 		if r.m.done { r } else { Basic.sum_rest(r.m, b, r.at, Basic.num_of(r.v)) }
+	}
+
+	# **`+` JOINS TWO STRINGS.** ECMA-55 has no string operator at all; the
+	# listings all assume the microcomputer one.
+	str_sum : M, List(U8), U64, Str -> R
+	str_sum = |m, b, i, acc| {
+		j = Basic.skip_ws(b, i)
+		if Basic.byte(b, j) != 43 {
+			{ m: m, v: S(acc), at: i }
+		} else {
+			r = Basic.expr(m, b, j + 1)
+			if r.m.done { r } else { { m: r.m, v: S(Str.concat(acc, Basic.str_of(r.v))), at: r.at } }
+		}
 	}
 
 	sum_rest : M, List(U8), U64, F64 -> R
@@ -627,7 +659,9 @@ Basic :: [].{
 	name_or_call = |m, b, i| {
 		w = Basic.word_end(b, i)
 		k = Basic.text_of(b, i, w)
-		if Basic.is_fn(k) {
+		if Basic.is_str_fn(k) and Basic.byte(b, w) == 36 {
+			Basic.call_str_fn(m, b, w + 1, k)
+		} else if Basic.is_fn(k) {
 			Basic.call_fn(m, b, w, k)
 		} else if Basic.kw(Str.to_utf8(k), 0, "FN") == 2 and List.len(Str.to_utf8(k)) == 3 {
 			Basic.call_def(m, b, w, k)
@@ -659,7 +693,12 @@ Basic :: [].{
 	word_end = |b, i| if Basic.is_alpha(Basic.byte(b, i)) { Basic.word_end(b, i + 1) } else { i }
 
 	is_fn : Str -> Bool
-	is_fn = |k| k == "ABS" or k == "ATN" or k == "COS" or k == "EXP" or k == "INT" or k == "LOG" or k == "RND" or k == "SGN" or k == "SIN" or k == "SQR" or k == "TAN"
+	is_fn = |k| k == "ABS" or k == "ATN" or k == "COS" or k == "EXP" or k == "INT" or k == "LOG" or k == "RND" or k == "SGN" or k == "SIN" or k == "SQR" or k == "TAN" or k == "PEEK" or k == "LEN" or k == "ASC" or k == "VAL"
+
+	# The functions that answer a string. Not ECMA-55; the 1978 listings
+	# are full of them.
+	is_str_fn : Str -> Bool
+	is_str_fn = |k| k == "CHR" or k == "STR" or k == "LEFT" or k == "RIGHT" or k == "MID"
 
 	call_fn : M, List(U8), U64, Str -> R
 	call_fn = |m, b, i, k| {
@@ -667,17 +706,89 @@ Basic :: [].{
 		if Basic.byte(b, j) != 40 {
 			if k == "RND" { Basic.rnd(m, j) } else { Basic.fail(m, Str.concat("Expected ( after ", k), j) }
 		} else {
-			r = Basic.sum(m, b, j + 1)
+			# LEN, ASC and VAL take a STRING, so their argument goes down
+			# the string path; everything else is numeric.
+			r = if k == "LEN" or k == "ASC" or k == "VAL" { Basic.expr(m, b, j + 1) } else { Basic.sum(m, b, j + 1) }
 			e = Basic.skip_ws(b, r.at)
 			if Basic.byte(b, e) != 41 {
 				Basic.fail(r.m, "Expected )", e)
 			} else if k == "RND" {
 				Basic.rnd(r.m, e + 1)
+			} else if k == "PEEK" {
+				{ m: r.m, v: N(I64.to_f64(U8.to_i64(Basic.peek(r.m, Basic.addr_of(Basic.num_of(r.v)))))), at: e + 1 }
+			} else if k == "LEN" {
+				{ m: r.m, v: N(I64.to_f64(U64.to_i64_wrap(List.len(Str.to_utf8(Basic.str_of(r.v)))))), at: e + 1 }
+			} else if k == "ASC" {
+				{ m: r.m, v: N(I64.to_f64(U8.to_i64(Basic.byte(Str.to_utf8(Basic.str_of(r.v)), 0)))), at: e + 1 }
+			} else if k == "VAL" {
+				vb = Str.to_utf8(Basic.str_of(r.v))
+				n = Basic.number(r.m, vb, Basic.skip_ws(vb, 0))
+				{ m: n.m, v: n.v, at: e + 1 }
 			} else {
 				{ m: r.m, v: N(Basic.apply_fn(k, Basic.num_of(r.v))), at: e + 1 }
 			}
 		}
 	}
+
+	call_str_fn : M, List(U8), U64, Str -> R
+	call_str_fn = |m, b, i, k| {
+		j = Basic.skip_ws(b, i)
+		if Basic.byte(b, j) != 40 {
+			Basic.fail(m, Str.concat("Expected ( after ", k), j)
+		} else {
+			a = Basic.expr(m, b, j + 1)
+			if a.m.done {
+				a
+			} else {
+				c = Basic.skip_ws(b, a.at)
+				if k == "CHR" or k == "STR" {
+					if Basic.byte(b, c) != 41 {
+						Basic.fail(a.m, "Expected )", c)
+					} else if k == "CHR" {
+						code = I64.bitwise_and(F64.to_i64_wrap(Basic.floor(Basic.num_of(a.v))), 255)
+						{ m: a.m, v: S(Str.from_utf8([U64.to_u8_wrap(I64.to_u64_wrap(code))]) ?? "?"), at: c + 1 }
+					} else {
+						{ m: a.m, v: S(Basic.fmt_num(Basic.num_of(a.v))), at: c + 1 }
+					}
+				} else if Basic.byte(b, c) != 44 {
+					Basic.fail(a.m, "Expected , ", c)
+				} else {
+					n1 = Basic.sum(a.m, b, c + 1)
+					src = Str.to_utf8(Basic.str_of(a.v))
+					len = List.len(src)
+					cut = Basic.clamp(Basic.idx(Basic.num_of(n1.v)), len)
+					d = Basic.skip_ws(b, n1.at)
+					if k == "LEFT" {
+						{ m: n1.m, v: S(Basic.slice(src, 0, cut)), at: if Basic.byte(b, d) == 41 { d + 1 } else { d } }
+					} else if k == "RIGHT" {
+						{ m: n1.m, v: S(Basic.slice(src, len - cut, cut)), at: if Basic.byte(b, d) == 41 { d + 1 } else { d } }
+					} else if Basic.byte(b, d) != 44 {
+						# MID$(s, from) runs to the end.
+						from = if cut == 0 { 0 } else { cut - 1 }
+						{ m: n1.m, v: S(Basic.slice(src, from, len - from)), at: if Basic.byte(b, d) == 41 { d + 1 } else { d } }
+					} else {
+						n2 = Basic.sum(n1.m, b, d + 1)
+						e = Basic.skip_ws(b, n2.at)
+						from = if cut == 0 { 0 } else { cut - 1 }
+						span = Basic.clamp(Basic.idx(Basic.num_of(n2.v)), len - from)
+						{ m: n2.m, v: S(Basic.slice(src, from, span)), at: if Basic.byte(b, e) == 41 { e + 1 } else { e } }
+					}
+				}
+			}
+		}
+	}
+
+	clamp : I64, U64 -> U64
+	clamp = |n, hi| if n <= 0 { 0 } else if I64.to_u64_wrap(n) > hi { hi } else { I64.to_u64_wrap(n) }
+
+	slice : List(U8), U64, U64 -> Str
+	slice = |b, from, n|
+		if from >= List.len(b) or n == 0 {
+			""
+		} else {
+			fit = if from + n > List.len(b) { List.len(b) - from } else { n }
+			Str.from_utf8(List.sublist(b, { start: from, len: fit })) ?? ""
+		}
 
 	apply_fn : Str, F64 -> F64
 	apply_fn = |k, x|
@@ -840,6 +951,8 @@ Basic :: [].{
 			Basic.advance({ ..m, dp: 0 }, w)
 		} else if k == "INPUT" {
 			Basic.do_input(m, b, w)
+		} else if k == "POKE" {
+			Basic.do_poke(m, b, w)
 		} else if k == "ON" {
 			Basic.do_on(m, b, w)
 		} else if k == "OPTION" {
@@ -1114,6 +1227,29 @@ Basic :: [].{
 					Basic.advance({ ..m1, loops: List.drop_last(m1.loops, 1) }, if nm.k == "" { w } else { nm.at })
 				} else {
 					{ ..m1, pc: f.pc, at: f.at }
+				}
+			}
+		}
+	}
+
+	# POKE <address>, <value>. Not ECMA-55 -- every microcomputer BASIC had
+	# it, and on a Commodore it is how a program draws.
+	do_poke : M, List(U8), U64 -> M
+	do_poke = |m, b, w| {
+		a = Basic.sum(m, b, w)
+		if a.m.done {
+			a.m
+		} else {
+			c = Basic.skip_ws(b, a.at)
+			if Basic.byte(b, c) != 44 {
+				{ ..a.m, done: True, err: "Expected , after the POKE address" }
+			} else {
+				v = Basic.sum(a.m, b, c + 1)
+				if v.m.done {
+					v.m
+				} else {
+					cell = U64.to_u8_wrap(I64.to_u64_wrap(I64.bitwise_and(F64.to_i64_wrap(Basic.floor(Basic.num_of(v.v))), 255)))
+					Basic.advance(Basic.poke_at(v.m, Basic.addr_of(Basic.num_of(a.v)), cell), v.at)
 				}
 			}
 		}
@@ -1417,6 +1553,7 @@ Basic :: [].{
 		seed: seed,
 		fuel: 2000000,
 		base: 0,
+		mem: List.repeat([], 16),
 		fns: [],
 	}
 
@@ -1432,8 +1569,10 @@ Basic :: [].{
 		}
 
 	run : Str, List(Str), U64 -> Str
-	run = |src, inp, seed| {
-		m = Basic.loop(Basic.new(Basic.load(src), inp, seed))
+	run = |src, inp, seed| Basic.transcript(Basic.loop(Basic.new(Basic.load(src), inp, seed)))
+
+	transcript : M -> Str
+	transcript = |m| {
 		body = Str.join_with(m.out, "")
 		# **A REPORTED EXCEPTION IS NOT A HALT.** ECMA-55 has exceptions
 		# that are printed and carried on from -- a division by zero is
@@ -1466,4 +1605,48 @@ Basic :: [].{
 			t = if e > i and Basic.byte(b, U64.minus_wrap(e, 1)) == 13 { U64.minus_wrap(e, 1) } else { e }
 			Basic.lines_from(b, e + 1, List.append(acc, Basic.text_of(b, i, t)))
 		}
+
+	# ---- the machine's memory -------------------------------------------
+
+	page_bytes : U64
+	page_bytes = 4096
+
+	# A 16-bit address, as a machine with a 64 KB space has.
+	addr_of : F64 -> U64
+	addr_of = |x| I64.to_u64_wrap(I64.bitwise_and(F64.to_i64_wrap(Basic.floor(x)), 65535))
+
+	peek : M, U64 -> U8
+	peek = |m, a| List.get(List.get(m.mem, a / Basic.page_bytes) ?? [], I64.to_u64_wrap(I64.rem_by(U64.to_i64_wrap(a), 4096))) ?? 0
+
+	# **THE PAGE COMES OUT OF THE TABLE BEFORE IT IS WRITTEN.** The list
+	# handed to a List.update closure is not uniquely owned, so writing
+	# through one copies the whole page on every byte. Taking it out with
+	# List.replace, leaving an empty placeholder, writes in place.
+	# `tests/copycheck.sh` is the instrument that tells the two apart.
+	poke_at : M, U64, U8 -> M
+	poke_at = |m, a, v| {
+		p = a / Basic.page_bytes
+		off = I64.to_u64_wrap(I64.rem_by(U64.to_i64_wrap(a), 4096))
+		taken = List.replace(m.mem, p, []) ?? crash("poke: address outside the 64 KB space")
+		page = if List.is_empty(taken.prev) { List.repeat(0.U8, 4096) } else { taken.prev }
+		{ ..m, mem: List.set(taken.list, p, List.set(page, off, v) ?? crash("poke: offset outside a page")) ?? crash("poke: address outside the 64 KB space") }
+	}
+
+	# The screen and its colour, as a page wants them: 1,000 bytes from
+	# 1024 then 1,000 from 55296.
+	screen_base : U64
+	screen_base = 1024
+
+	colour_base : U64
+	colour_base = 55296
+
+	screen_cells : U64
+	screen_cells = 1000
+
+	screen : M -> List(U8)
+	screen = |m| Basic.window(m, Basic.colour_base, 0, Basic.window(m, Basic.screen_base, 0, []))
+
+	window : M, U64, U64, List(U8) -> List(U8)
+	window = |m, from, i, acc|
+		if i >= Basic.screen_cells { acc } else { Basic.window(m, from, i + 1, List.append(acc, Basic.peek(m, from + i))) }
 }
