@@ -11,7 +11,6 @@ Roc on the fifth tree on the right of every segment.
 | where | what | written by |
 |---|---|---|
 | `safari/roc/*.roc` | one type module per Codex chapter, whole, as written; one app per spec (`*Spec.roc`) | `rocemit`, via `safari/emitted.sh` |
-| `safari/roc/{StillsDecode,CatStillsData,EmojiStillsData}.roc` | the stills as strings with a decoder | `safari/bake_stills.py` |
 | `safari/roc/SafariApp.roc` | the screensaver: the ride as a boxed model, the frame packed into the blitter's words | hand |
 | `safari/roc/RocBird.roc` | the bird | hand |
 | `safari/roc/FrameBench.roc` | a native loop over the frame, for `perf` | hand |
@@ -135,5 +134,7 @@ suite is its installation check (`zig build run-test-eval`, 47 minutes).
 
 `http://143.244.172.148:9100/notes/what-is-slow.md`. In one line: a Codex
 list built by `x & f rest` is quadratic in Roc, and the emitter writes an
-accumulator loop for that shape; the stills are strings because a debug
-compiler could not check them as literals; everything else is the nightly.
+accumulator loop for that shape; everything else is the nightly. (The
+stills were once strings with a decoder, because the debug compiler's
+checker was quadratic in a file's literals; the nightly's is linear and
+they are literals again, 2026-09-12.)
