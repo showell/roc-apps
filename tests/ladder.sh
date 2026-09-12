@@ -16,6 +16,9 @@
 # A verdict is compared as text: a leading 0x01 byte and carriage returns in
 # an .expected file are the console capture's, not the program's.
 #
+# A unit whose verdict pins a semantics Roc does not have is DIVERGES, by
+# name and with the reason, never a silent FAIL: see DIVERGE below.
+#
 # Outcomes: PASS (output equals the verdict), FAIL (it does not, or roc
 # printed ✗), CRASH (roc run died), REFUSED (rocemit said no, by reason),
 # TIMEOUT.
@@ -31,9 +34,23 @@ mkdir -p "$GEN"
 if [ $# -gt 0 ]; then units=("$@"); full=no; else
     mapfile -t units < <(cd "$SRC" && ls *.expected | sed 's/\.expected$//' | sort); full=yes
 fi
+# **THE VERDICT PINS A SEMANTICS ROC DOES NOT HAVE.** Codex's list-set-at
+# mutates in place, so two names for one list see each other's writes;
+# Roc's List.set answers a new list and the old name keeps its value. A
+# program that reads a list it has already written THROUGH ANOTHER NAME
+# therefore cannot be ported, and this one exists to pin that behaviour.
+# (A case, not an array: the runner is `bash -c` per unit and an array
+# does not cross that.)
+diverges() {
+    case "$1" in
+        edalias) echo "list-set-at mutates in place; Roc's List.set answers a new list" ;;
+    esac
+}
 one() {
     n="$1"; d="$GEN/$n"; rm -rf "$d"; mkdir -p "$d"
     if [ -f "$SRC/$n.diag" ]; then echo "SKIP $n | expects a diagnostic" > "$d/verdict"; return; fi
+    why="$(diverges "$n")"
+    if [ -n "$why" ]; then echo "DIVERGES $n | $why" > "$d/verdict"; return; fi
     if ! app=$("$ROCEMIT" "$SRC/$n.codex" "$d" 2> "$d/emit.err"); then
         echo "REFUSED $n | $(head -1 "$d/emit.err" | sed 's/^REFUSED: //' | cut -c1-110)" > "$d/verdict"; return
     fi
@@ -50,7 +67,7 @@ one() {
 # and 46 carry carriage returns, the console capture's, not the program's.
 verdict_text() { sed '1s/^\x01//' "$SRC/$1.expected" | tr -d '\r'; }
 export -f verdict_text
-export -f one; export ROC ROCEMIT SRC GEN
+export -f one verdict_text diverges; export ROC ROCEMIT SRC GEN
 printf '%s\n' "${units[@]}" | xargs -P "${JOBS:-2}" -I{} bash -c 'one {}'
 ledger="$( for n in "${units[@]}"; do cat "$GEN/$n/verdict"; done )"
 [ "$full" = yes ] && echo "$ledger" > "$HERE/ledger.txt"

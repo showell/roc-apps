@@ -1,7 +1,10 @@
 # List -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 List :: [].{
-	ConsList(a) := [Cons(a, List.ConsList(a)), Nil]
+	ConsList(a) := [Cons(a, List.ConsList(a)), Nil].{
+		is_eq : List.ConsList(a), List.ConsList(a) -> Bool where [a.is_eq : a, a -> Bool]
+		is_eq = |a, b| eq_conslist(a, b)
+	}
 
 	cl_nil : List.ConsList(a)
 	cl_nil = Nil

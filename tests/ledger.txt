@@ -137,7 +137,7 @@ REFUSED ecdsa-cert | builtin `text-length`
 REFUSED ecdsa-p256 | builtin `text-length`
 REFUSED ecdsa-p384 | builtin `text-length`
 REFUSED ecdsa-sha384 | builtin `text-length`
-FAIL edalias | output: < inplace=10
+DIVERGES edalias | list-set-at mutates in place; Roc's List.set answers a new list
 REFUSED edcurve | builtin `text-length`
 REFUSED edge-mesh-admit | binary approx-eq
 REFUSED edge-mesh-bracket | binary approx-eq
@@ -160,7 +160,7 @@ REFUSED effect-positive | an act outside opening
 REFUSED effect-row-var-syntax | an act outside opening
 REFUSED effect-smoke | opening is not an act
 REFUSED effect-value-poly | type (effectful (effs "Console") (scopes "") (ctd "Maybe" (args (tvar 50))))
-FAIL effect-widen-arg | compile: ── ✗ type mismatch ────────────────────────────�
+PASS effect-widen-arg |
 REFUSED effect-widen-scope | an act outside opening
 REFUSED effect-widen-scope-narrow | type char
 REFUSED engine-animation | binary approx-eq
@@ -175,7 +175,7 @@ REFUSED engine-software-render | binary approx-eq
 REFUSED engine-texture-cost | binary approx-eq
 REFUSED enip-encode | opening is not an act
 PASS eq-generic-fields |
-FAIL eq-generic-recursive | compile: ── ✗ type mismatch ────────────────────────────�
+PASS eq-generic-recursive |
 PASS eq-plain-sum |
 REFUSED esp32c6-drivers | builtin `peek-32`
 PASS eventbus-test |
@@ -325,11 +325,11 @@ REFUSED list-comprehension-copy | chapter `List Comprehension Copy` is not a Roc
 REFUSED list-cons-tail | binary cons-list
 REFUSED list-induction | type proof
 REFUSED list-literal-o1 | chapter `List O1 Probe` is not a Roc module name
-FAIL list-pattern | compile: ── ✗ type mismatch ────────────────────────────�
+PASS list-pattern |
 REFUSED list-tail-empty | an act outside opening
 REFUSED list-test | chapter `List Test` is not a Roc module name
 REFUSED list-view-probe | type char
-FAIL literal-subpattern | compile: ── ✗ too few args ────────────────────────────�
+PASS literal-subpattern |
 SKIP local-narrow-proven | expects a diagnostic
 REFUSED location-sensors-stub | type (effectful (effs "Location") (scopes "") boolean)
 REFUSED lorawan-encode | opening is not an act
@@ -455,7 +455,7 @@ PASS rv-param-bind |
 PASS rv-param-order |
 REFUSED s7comm-encode | opening is not an act
 REFUSED scope-allow | type char
-FAIL scope-console | compile: ── ✗ type mismatch ────────────────────────────�
+PASS scope-console |
 REFUSED scope-handler-clause | opening is not an act
 PASS scope-let-arm-global |
 REFUSED scope-runtime-deny | type char
@@ -466,7 +466,7 @@ REFUSED sector-read-list-growth | builtin `peek-byte`
 REFUSED sensor-data | an act outside opening
 REFUSED serial-line | builtin `peek-32`
 SKIP shadow-builtin-fold | expects a diagnostic
-FAIL shell-build-keep | compile: ── ✗ missing method ────────────────────────────
+PASS shell-build-keep |
 REFUSED simplify-check | builtin `text-length`
 REFUSED sixlowpan-encode | opening is not an act
 REFUSED smp-affinity | builtin `process-get-pid` used as a value
@@ -500,7 +500,7 @@ REFUSED sum-field-eq | builtin `print-line`
 REFUSED synth-test | unit type `Duration`
 REFUSED tag-equal | builtin `tag-equal`
 REFUSED tco-bitop-loop | builtin `int-mod`
-FAIL tco-direct-arg-reads | compile: ── ✗ too few args ────────────────────────────�
+PASS tco-direct-arg-reads |
 REFUSED tco-framed-append | builtin `text-length`
 PASS tco-nested-if |
 REFUSED tco-shuffle-spill | builtin `int-mod`
