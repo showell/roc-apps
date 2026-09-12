@@ -49,10 +49,18 @@ one() {
     elif [ $rc -eq 124 ]; then echo "TIMEOUT $n |" > "$d/verdict"
     elif grep -q "✗" "$d/err"; then echo "CRASH $n | compile: $(grep -m1 -A2 '✗' "$d/err" | tr '\n' ' ' | cut -c1-90)" > "$d/verdict"
     elif [ "$suite" = nbs ]; then
-        if grep -q "TEST FAILED\|TEST FAILS" "$d/out"; then
+        row="$(grep "^$n |" "$HERE/nbs-reports.txt")"
+        kind="$(echo "$row" | cut -s -d'|' -f2 | tr -d ' ')"
+        missing=""
+        while IFS= read -r want; do
+            [ -n "$want" ] && ! grep -qF -- "$want" "$d/out" && missing="$want"
+        done < <(echo "$row" | cut -s -d'|' -f3- | tr '|' '\n' | sed 's/^ *//; s/ *$//')
+        if [ "$kind" != judged ] && grep -q "TEST FAILED\|TEST FAILS" "$d/out"; then
             echo "FAIL $n | $(grep -m1 'TEST FAIL' "$d/out" | cut -c1-90)" > "$d/verdict"
         elif grep -q "UNSUPPORTED" "$d/out"; then
             echo "FAIL $n | $(grep -m1 'UNSUPPORTED' "$d/out" | cut -c1-90)" > "$d/verdict"
+        elif [ -n "$missing" ]; then
+            echo "FAIL $n | no report: $missing" > "$d/verdict"
         else echo "PASS $n |" > "$d/verdict"; fi
     elif cmp -s "$d/out" "$CORPUS/$suite/$n.output"; then echo "PASS $n |" > "$d/verdict"
     else echo "FAIL $n | $(diff "$d/out" "$CORPUS/$suite/$n.output" | grep -m1 '^[<>]' | cut -c1-90)" > "$d/verdict"; fi

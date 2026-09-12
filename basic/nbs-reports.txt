@@ -1,0 +1,57 @@
+# THE REPORTS THE NBS PROGRAMS REQUIRE, and the ones whose verdict line
+# cannot be read by a grep. Read by basic/ladder.sh.
+#
+#   NAME | KIND | TEXT | TEXT ...
+#
+# Every TEXT must appear in the transcript (a fixed string). A program
+# that stops on an exception or reports one has no other way to say so:
+# its own verdict lines are the same whether the report was there or not.
+#
+# KIND `also`: the program's own TEST FAILED lines still count.
+# KIND `judged`: they do not. The verdict is prose a reader resolves ("IF
+# SO, TEST PASSED, OTHERWISE TEST FAILED") and holds both words whatever
+# happens, so only the TEXT decides. A judged row with no TEXT is a
+# program whose exception cannot occur in an F64.
+#
+# The requirement comes from the listing's TO PASS THIS TEST section, not
+# from what this interpreter prints.
+P008 | also | ?TAB argument less than one
+P028 | also | ?Division by zero
+P029 | judged | ?Overflow
+P030 | judged | ?Overflow
+P031 | also | ?Zero raised to a negative power
+P032 | also | *** HALTED: Negative number raised to a non-integral power
+P035 | judged | ?Overflow
+P063 | also | *** HALTED: Subscript out of range
+P064 | also | *** HALTED: Subscript out of range
+P065 | also | *** HALTED: Subscript out of range
+P066 | also | *** HALTED: Subscript out of range
+P067 | also | *** HALTED: Subscript out of range
+P068 | also | *** HALTED: Subscript out of range
+P069 | also | *** HALTED: Subscript out of range
+P070 | also | *** HALTED: Subscript out of range
+P071 | also | *** HALTED: Subscript out of range
+P072 | also | *** HALTED: Subscript out of range
+P086 | also | *** HALTED: RETURN without GOSUB
+P089 | also | *** HALTED: ON index out of range
+P090 | also | *** HALTED: ON index out of range
+P097 | also | *** HALTED: Out of DATA
+P101 | judged | ?Overflow
+P118 | also | *** HALTED: SQR of a negative number
+P122 | judged | ?Overflow
+P125 | also | *** HALTED: LOG of a number that is not positive
+P126 | also | *** HALTED: LOG of a number that is not positive
+P129 | judged |
+P167 | also | ?Division by zero | ?Zero raised to a negative power
+P168 | also | ?Overflow | *** HALTED: Subscript out of range
+P170 | also | *** HALTED: Negative number raised to a non-integral power
+P171 | also | *** HALTED: LOG of a number that is not positive
+P172 | also | *** HALTED: SQR of a negative number
+P173 | also | *** HALTED: Negative number raised to a non-integral power
+P174 | also | ?Overflow | ?Division by zero | ?Zero raised to a negative power
+P176 | also | *** HALTED: Negative number raised to a non-integral power
+P177 | also | ?Overflow | ?Zero raised to a negative power
+P179 | also | *** HALTED: LOG of a number that is not positive
+P180 | also | ?Division by zero | *** HALTED: ON index out of range
+P182 | also | *** HALTED: Negative number raised to a non-integral power
+P183 | also | ?Division by zero
