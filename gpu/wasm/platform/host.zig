@@ -1,6 +1,7 @@
-//! The gpu wasm host: two exports over one Roc function. renderFrame(frame)
-//! calls the app's render and keeps the returned List until the next frame;
-//! bufPtr is where its words are. web/plasma.html reads them as u32 pixels.
+//! The gpu wasm host: two exports over one Roc function. renderFrame(kernel,
+//! frame) calls the app's render and keeps the returned List until the next
+//! frame; bufPtr is where its words are. web/gallery.html reads them as u32
+//! pixels.
 //!
 //! The runtime scaffolding (allocator, RocOps, no imports) is the safari
 //! host's, safari/wasm/platform/host.zig, which explains it.
@@ -12,7 +13,7 @@ const host_alloc = @import("host_alloc");
 const RocOps = builtins.host_abi.RocOps;
 const RocList = builtins.list.RocList;
 
-extern fn roc_render(frame: i64) callconv(.c) RocList;
+extern fn roc_render(kernel: i64, frame: i64) callconv(.c) RocList;
 
 pub const panic = std.debug.FullPanic(panicImpl);
 fn panicImpl(_: []const u8, _: ?usize) noreturn {
@@ -83,10 +84,10 @@ var frame: RocList = RocList.empty();
 
 fn noDec(_: ?*anyopaque, _: ?[*]u8) callconv(.c) void {}
 
-/// Render frame number `n`; the byte length of the pixel words.
-pub export fn renderFrame(n: u32) u32 {
+/// Render frame `n` of kernel `k`; the byte length of the pixel words.
+pub export fn renderFrame(k: u32, n: u32) u32 {
     frame.decref(@alignOf(u32), @sizeOf(u32), false, null, noDec, &roc_ops);
-    frame = roc_render(@intCast(n));
+    frame = roc_render(@intCast(k), @intCast(n));
     return @intCast(frame.length * 4);
 }
 pub export fn bufPtr() u32 {

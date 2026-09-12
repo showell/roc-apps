@@ -1,0 +1,46 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Cobblestone's GPU kernels, in Roc, on the CPU</title>
+<style>
+  html,body { margin:0; background:#05060c; color:#8aa; font:13px system-ui,sans-serif; }
+  #wrap { display:flex; flex-direction:column; align-items:center; gap:8px; padding:10px; }
+  canvas { border:1px solid #182a4a; max-width:100%; }
+  #bar { display:flex; gap:12px; align-items:center; }
+  select { background:#080c16; color:#cde; border:1px solid #182a4a; padding:4px 6px; font:inherit; }
+  #status { opacity:.7; }
+  a { color:#7c9; }
+</style>
+<div id="wrap">
+  <div id="bar"><label>kernel <select id="k"></select></label><span id="status">loading gallery.wasm...</span></div>
+  <canvas id="c" width="1024" height="768"></canvas>
+  <div>The same Codex <code>[Device]</code> kernels Cobblestone's <a href="https://github.com/damiant3/Cobblestone/tree/master/apps/gpushow">gpushow</a> runs as WebGPU compute shaders, emitted to Roc by <a href="https://github.com/showell/roc-apps">roc-apps</a> and dispatched one gid at a time in wasm. No WebGPU: any browser, plain http.</div>
+</div>
+<script type="module">
+import { kernels } from './gallery.js';
+const sel = document.getElementById('k'), status = document.getElementById('status');
+for (const k of kernels) { const o = document.createElement('option'); o.value = k.id; o.textContent = k.page; sel.appendChild(o); }
+const want = new URLSearchParams(location.search).get('k');
+let cur = kernels.find(k => k.page === want) ?? kernels.find(k => k.page === 'plasma') ?? kernels[0];
+sel.value = cur.id;
+sel.onchange = () => { cur = kernels[Number(sel.value)]; frame = 0; ms = 0; history.replaceState(null, '', '?k=' + cur.page); };
+const { instance } = await WebAssembly.instantiateStreaming(fetch('gallery.wasm'), {});
+const x = instance.exports;
+const canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
+let img = null, px = null, frame = 0, ms = 0;
+function tick() {
+  if (canvas.width !== cur.w || canvas.height !== cur.h || !img) {
+    canvas.width = cur.w; canvas.height = cur.h; img = ctx.createImageData(cur.w, cur.h); px = new Uint32Array(img.data.buffer);
+  }
+  const t0 = performance.now();
+  const bytes = x.renderFrame(cur.id, frame);
+  const src = new Uint32Array(x.memory.buffer, x.bufPtr(), bytes / 4);
+  const n = Math.min(src.length, px.length);
+  for (let i = 0; i < n; i++) { const c = src[i]; px[i] = 0xff000000 | ((c & 255) << 16) | (c & 0xff00) | ((c >>> 16) & 255); }
+  ctx.putImageData(img, 0, 0);
+  const t = performance.now() - t0; ms = ms ? ms * 0.9 + t * 0.1 : t;
+  frame++;
+  status.textContent = `${cur.kernel} -- ${cur.w}x${cur.h}, frame ${frame}, ${ms.toFixed(1)} ms`;
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+</script>

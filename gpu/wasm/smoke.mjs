@@ -1,21 +1,32 @@
 #!/usr/bin/env node
-// Drive the gpu wasm module from Node: render frame 0, checksum its words,
-// time a run of frames.
+// Drive the gallery wasm module from Node: every kernel's frame 0, its word
+// count, checksum and time, so a kernel that traps or answers nothing is
+// found here and not in the browser.
 //
-//   gpu/wasm/smoke.mjs <plasma.wasm> [frames]
+//   gpu/wasm/smoke.mjs <gallery.wasm> [frames]     frames per kernel, default 3
 import { readFileSync } from "node:fs";
-const [path, framesArg = "10"] = process.argv.slice(2);
-if (!path) { console.error("usage: smoke.mjs <plasma.wasm> [frames]"); process.exit(2); }
+const [path, framesArg = "3"] = process.argv.slice(2);
+if (!path) { console.error("usage: smoke.mjs <gallery.wasm> [frames]"); process.exit(2); }
+const { kernels } = await import(new URL("../web/gallery.js", import.meta.url));
 const mod = new WebAssembly.Module(readFileSync(path));
 const imports = WebAssembly.Module.imports(mod);
 if (imports.length) { console.error("module has imports:", imports); process.exit(1); }
 const x = new WebAssembly.Instance(mod, {}).exports;
-const bytes = x.renderFrame(0);
-const words = new Uint32Array(x.memory.buffer, x.bufPtr(), bytes / 4);
-let sum = 0n;
-for (const w of words) sum += BigInt(w);
-console.log(`frame 0: ${bytes / 4} words, checksum ${sum}`);
 const n = Number(framesArg);
-const t0 = performance.now();
-for (let f = 1; f <= n; f++) x.renderFrame(f);
-console.log(`${n} frames: ${((performance.now() - t0) / n).toFixed(1)} ms per frame`);
+let bad = 0;
+for (const k of kernels) {
+  try {
+    const t0 = performance.now();
+    let bytes = 0, sum = 0n;
+    for (let f = 0; f < n; f++) {
+      bytes = x.renderFrame(k.id, f);
+      if (f === 0) for (const w of new Uint32Array(x.memory.buffer, x.bufPtr(), bytes / 4)) sum += BigInt(w);
+    }
+    const ms = (performance.now() - t0) / n;
+    const ok = bytes / 4 === k.w * k.h;
+    if (!ok) bad++;
+    console.log(`${ok ? "ok  " : "BAD "} ${k.page.padEnd(12)} ${String(bytes / 4).padStart(7)} words  checksum ${String(sum).padStart(14)}  ${ms.toFixed(1).padStart(7)} ms/frame`);
+  } catch (e) { bad++; console.log(`TRAP ${k.page}: ${e.message}`); }
+}
+console.log(`${kernels.length - bad} of ${kernels.length} kernels render`);
+process.exit(bad ? 1 : 0);

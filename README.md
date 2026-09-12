@@ -33,22 +33,24 @@ resolved, `<Spec>.expected` the verdict the Rust interpreter froze).
 `apps/*/kernels` (46 chapters the wgsl plug lowers to WebGPU compute
 shaders), run in Roc on the CPU, one gid after another, with the pixels put
 on a 2d canvas. Started 2026-09-12 with hand ports of plasma and the
-fountain; since the same day every kernel is emitted. The essay is
-`:9100/notes/plasma-in-roc.md`.
+fountain; the same day every kernel was emitted and the 26 pixel-writing
+demos became one gallery module. The essay is `:9100/notes/plasma-in-roc.md`.
 
 | where | what | written by |
 |---|---|---|
 | `gpu/roc/Device.roc` | the Device effect as state: buffers by handle and the thread's gid, `load`/`store`/index reads threading the record, `dispatch` over the gids; WGSL's total `div`/`rem`. I32 and F32 throughout, as the plug's WGSL is, and rocemit spells a unit with a kernel in those types with wrapping arithmetic | hand |
 | `gpu/roc/*Kernel*.roc`, `DeviceMath.roc`, `Thread.roc`, `ListUtils.roc`, `Tuple.roc` | the 46 kernel chapters and what they cite, one module each; a `[Device]` definition takes the device first and answers `(Device.Device, T)` | `rocemit`, via `gpu/emitted.sh` |
-| `gpu/roc/PlasmaApp.roc`, `gpu/roc/{Plasma,CpuParticles}Bench.roc` | the app (`render : frame -> pixels`) and two native benches that print a checksum a Python evaluation of the Codex source matches | hand |
-| `gpu/wasm/` | the platform: two exports, `renderFrame(n)` and `bufPtr`; host, build.zig as safari's; `smoke.mjs` checksums frame 0 from Node | hand |
-| `gpu/web/plasma.html` | the page: the words as an ImageData; no WebGPU, so no secure context | hand |
-| `gpu/build.sh` | host + app + page into the preview, `http://<box>:9203/gpu/plasma.html` | hand |
+| `gpu/roc/GalleryApp.roc`, `gpu/web/gallery.js` | the gallery: `render(kernel, frame)` dispatching one of the 26 pixel-writing kernels over its W*H gids, and the manifest the page reads | `gpu/gallery.py`, from the gpushow pages and kernel sources; `--table` prints what qualifies and why the rest do not |
+| `gpu/roc/{Plasma,CpuParticles}Bench.roc` | two native benches that print a checksum a Python evaluation of the Codex source matches | hand |
+| `gpu/wasm/` | the platform: two exports, `renderFrame(kernel, frame)` and `bufPtr`; host, build.zig as safari's; `smoke.mjs` renders every kernel from Node with its checksum and ms per frame | hand |
+| `gpu/web/gallery.html` | the page: a kernel selector (`?k=plasma`), the words as an ImageData; no WebGPU, so no secure context | hand |
+| `gpu/build.sh` | host + app + page into the preview, `http://<box>:9203/gpu/gallery.html` | hand |
 | `gpu/emitted.sh` | THE GATE: every kernel under `$KERNELS_ROOT/apps/*/kernels` (default `~/showell_repos/cobblestone-u58`) emitted, chapter identity checked, `roc check`ed; on green, written to `gpu/roc/` | hand |
 
     gpu/emitted.sh                 # 46 kernels, ~4 s
-    gpu/build.sh
-    node gpu/wasm/smoke.mjs ~/build/roc-apps/next/gpu/plasma.wasm 20   # checksum 6293600626746 for frame 0
+    gpu/gallery.py                 # after a page or kernel changes: the app and the manifest
+    gpu/build.sh                   # ~6 s
+    node gpu/wasm/smoke.mjs ~/build/roc-apps/next/gpu/gallery.wasm 3   # 26 of 26 render; plasma's frame 0 is 6293600626746
 
 ## The Roc is tracked; everything else the tools write is not
 
