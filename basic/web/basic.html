@@ -236,6 +236,8 @@ async function pump() {
       running = false;
       return;
     }
+    // A SLEEP, or the millisecond every PRINT ends in: still running.
+    $("status").textContent = "running  ·  " + x.depth() + " states";
     await delay(Math.min(x.pauseMs(), 2000));
     if (stopped) break;
     x.wake();

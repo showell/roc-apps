@@ -70,6 +70,13 @@ Basic :: [].{
 		steps : I64,
 		seed : U64,
 		fuel : I64,
+		# The fuel one resume gets. The batch door runs a tankful at a time;
+		# the page hands the tab back far more often.
+		tank : I64,
+		# **A LIVE MACHINE PRINTS LIKE A TERMINAL.** On the page every PRINT
+		# ends in a millisecond's sleep, so the machine hands itself back a
+		# line at a time and the page paints each one as it comes.
+		live : Bool,
 		# OPTION BASE: the lowest subscript an array has. ECMA-55 allows
 		# 0 or 1 and one OPTION statement, before any DIM.
 		base : U64,
@@ -1723,7 +1730,10 @@ Basic :: [].{
 	# ---- PRINT -----------------------------------------------------------
 
 	do_print : M, List(U8), U64 -> M
-	do_print = |m, b, w| Basic.print_items(m, b, w, True)
+	do_print = |m, b, w| {
+		p = Basic.print_items(m, b, w, True)
+		if p.live and !p.done and !p.waiting { { ..p, pause: 1 } } else { p }
+	}
 
 	print_items : M, List(U8), U64, Bool -> M
 	print_items = |m, b, i, newline| {
@@ -1837,6 +1847,8 @@ Basic :: [].{
 		steps: 0,
 		seed: seed,
 		fuel: Basic.full_tank,
+		tank: Basic.full_tank,
+		live: False,
 		base: 0,
 		ecma: False,
 		rejected: False,
@@ -1857,6 +1869,13 @@ Basic :: [].{
 	full_tank : I64
 	full_tank = 250000
 
+	# **THE PAGE'S TANK IS SMALL.** A resume runs inside the tab's one
+	# thread, and a tankful of PRINT-heavy statements held it for ten
+	# seconds. Five thousand is milliseconds even at PRINT's cost, so Stop
+	# and the screen answer promptly whatever the program is doing.
+	page_tank : I64
+	page_tank = 5000
+
 	# **FUEL, NOT FAITH.** A BASIC listing loops forever on purpose often
 	# enough, and a subject that hangs the harness is worse than one that
 	# reports a bound.
@@ -1873,7 +1892,7 @@ Basic :: [].{
 	# A program that has not been fed anything yet. It runs until it wants
 	# a line, or until it is done.
 	start : Str, U64 -> M
-	start = |src, seed| Basic.loop(Basic.new(Basic.load(src), [], seed))
+	start = |src, seed| Basic.loop({ ..Basic.new(Basic.load(src), [], seed), fuel: Basic.page_tank, tank: Basic.page_tank, live: True })
 
 	# One more line, and on until the next time it wants one. A line given
 	# to a machine that is not waiting is kept for the next INPUT rather
@@ -1891,9 +1910,9 @@ Basic :: [].{
 		if m.done {
 			m
 		} else if m.pause > 0 or (m.fuel <= 0 and !m.waiting) {
-			Basic.loop({ ..m, pause: 0, fuel: Basic.full_tank })
+			Basic.loop({ ..m, pause: 0, fuel: m.tank })
 		} else {
-			Basic.loop({ ..m, inp: List.append(m.inp, line), waiting: False, fuel: Basic.full_tank })
+			Basic.loop({ ..m, inp: List.append(m.inp, line), waiting: False, fuel: m.tank })
 		}
 
 	pause_ms : M -> I64
@@ -1952,7 +1971,7 @@ Basic :: [].{
 		if tanks <= 0 or m.done or m.waiting or m.fuel > 0 {
 			m
 		} else {
-			Basic.batch(Basic.loop({ ..m, fuel: Basic.full_tank, pause: 0 }), tanks - 1)
+			Basic.batch(Basic.loop({ ..m, fuel: m.tank, pause: 0 }), tanks - 1)
 		}
 
 	transcript : M -> Str
