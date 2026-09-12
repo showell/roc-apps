@@ -82,6 +82,7 @@ extern fn roc_view(model: Model) callconv(.c) RocList;
 extern fn roc_status(model: Model) callconv(.c) i64;
 extern fn roc_pause(model: Model) callconv(.c) i64;
 extern fn roc_drop(model: Model) callconv(.c) void;
+extern fn roc_batch(src: RocList, keys: RocList, ecma: i64, seed: i64) callconv(.c) RocList;
 
 /// A reference for a call that keeps nothing: Roc's decrement restores ours.
 fn borrowed(m: Model) Model {
@@ -191,5 +192,20 @@ pub export fn outPtr() u32 {
 }
 
 pub export fn outLen() u32 {
+    return @intCast(frame.length);
+}
+
+/// One listing through a batch door, for a runner outside the page: the
+/// source and keystroke buffers in, the transcript into the frame (read it
+/// with outPtr and outLen). No machine is kept.
+pub export fn runBatch(src_len: u32, keys_len: u32, ecma: i32, seed: i32) u32 {
+    if (src_len > src_cap or keys_len > keys_cap) @trap();
+    frame.decref(@alignOf(u8), @sizeOf(u8), false, null, noDec, &roc_ops);
+    frame = roc_batch(
+        RocList.fromSlice(u8, src_buf[0..src_len], false, &roc_ops),
+        RocList.fromSlice(u8, keys_buf[0..keys_len], false, &roc_ops),
+        ecma,
+        seed,
+    );
     return @intCast(frame.length);
 }

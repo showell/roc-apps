@@ -37,7 +37,9 @@ Basic :: [].{
 		num : List({ k : Str, v : F64 }),
 		str : List({ k : Str, v : Str }),
 		arr : List(Arr),
-		ret : List(U64),
+		# Where each RETURN goes back to: the line and the byte just past its
+		# GOSUB, which need not end the line.
+		ret : List({ pc : U64, at : U64 }),
 		loops : List(Frame),
 		data : List(Str),
 		dp : U64,
@@ -1251,7 +1253,7 @@ Basic :: [].{
 			r.m
 		} else {
 			back = Basic.advance(r.m, r.at)
-			Basic.jump({ ..back, ret: List.append(back.ret, back.pc) }, F64.to_i64_wrap(Basic.num_of(r.v)))
+			Basic.jump({ ..back, ret: List.append(back.ret, { pc: back.pc, at: back.at }) }, F64.to_i64_wrap(Basic.num_of(r.v)))
 		}
 	}
 
@@ -1261,7 +1263,8 @@ Basic :: [].{
 		if n == 0 {
 			{ ..m, done: True, err: "RETURN without GOSUB", gap: False}
 		} else {
-			{ ..m, pc: List.get(m.ret, n - 1) ?? 0, at: 0, ret: List.drop_last(m.ret, 1) }
+			to = List.get(m.ret, n - 1) ?? { pc: 0, at: 0 }
+			{ ..m, pc: to.pc, at: to.at, ret: List.drop_last(m.ret, 1) }
 		}
 	}
 
@@ -1613,7 +1616,7 @@ Basic :: [].{
 					{ ..r.m, done: True, err: "ON index out of range", gap: False}
 				} else if g == r.at {
 					back = Basic.advance(r.m, pick.at)
-					Basic.jump({ ..back, ret: List.append(back.ret, back.pc) }, pick.n)
+					Basic.jump({ ..back, ret: List.append(back.ret, { pc: back.pc, at: back.at }) }, pick.n)
 				} else {
 					Basic.jump(r.m, pick.n)
 				}
@@ -2243,8 +2246,12 @@ Basic :: [].{
 	# number of times and then reported as a program that did not stop --
 	# which is what the suite calls it too.
 	batch : M, I64 -> M
+	# A SLEEP in batch has no page waiting to paint a frame, so it takes no
+	# time and the run carries on.
 	batch = |m, tanks|
-		if tanks <= 0 or m.done or m.waiting or m.fuel > 0 {
+		if m.pause > 0 and !m.done {
+			Basic.batch(Basic.loop({ ..m, pause: 0 }), tanks)
+		} else if tanks <= 0 or m.done or m.waiting or m.fuel > 0 {
 			m
 		} else {
 			Basic.batch(Basic.loop({ ..m, fuel: m.tank, pause: 0 }), tanks - 1)

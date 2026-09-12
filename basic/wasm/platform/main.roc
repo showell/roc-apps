@@ -23,6 +23,7 @@ platform ""
 			status : Box(model) -> I64,
 			pause : Box(model) -> I64,
 			drop : Box(model) -> {},
+			batch : List(U8), List(U8), I64, I64 -> List(U8),
 		}
 	}
 	exposes []
@@ -34,12 +35,13 @@ platform ""
 		"roc_status": status_for_host,
 		"roc_pause": pause_for_host,
 		"roc_drop": drop_for_host,
+		"roc_batch": batch_for_host,
 	}
 	targets: {
 		inputs_dir: "targets/",
 		wasm32: {
 			inputs: ["host.wasm", app],
-			exports: ["srcPtr", "keysPtr", "capacity", "screenBytes", "newRun", "send", "wake", "back", "depth", "runStatus", "pauseMs", "view", "outPtr", "outLen"],
+			exports: ["srcPtr", "keysPtr", "capacity", "screenBytes", "newRun", "send", "wake", "back", "depth", "runStatus", "pauseMs", "view", "outPtr", "outLen", "runBatch"],
 		},
 	}
 
@@ -49,3 +51,4 @@ view_for_host = program.view
 status_for_host = program.status
 pause_for_host = program.pause
 drop_for_host = program.drop
+batch_for_host = program.batch
