@@ -1,7 +1,8 @@
-published 2026-09-12T03:30:39Z
+published 2026-09-12T03:46:23Z
 roc nightly-2026-09-11-793f9d8
-roc-apps ab4de5b
+roc-apps de54820
 rocemit f69acdc
 games 075a4550 /home/steve/showell_repos/cobblestone-u58
-sha256 5094f522dab2bdfa  91593 bytes  2048.wasm
-sha256 2d4d830998b07e61  50075 bytes  minesweeper.wasm
+sha256 8cc93944f3bedf77  94705 bytes  2048.wasm
+sha256 8412ace28999d3cc  128215 bytes  klondike.wasm
+sha256 bbd966610e691dad  55213 bytes  minesweeper.wasm
