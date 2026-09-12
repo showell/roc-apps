@@ -1148,6 +1148,8 @@ Basic :: [].{
 			Basic.do_gosub(m, b, w)
 		} else if k == "RETURN" {
 			Basic.do_return(m, w)
+		} else if (k == "DIM" or k == "OPTION") and m.ecma {
+			Basic.advance(m, Basic.stmt_end(b, w))
 		} else if k == "DIM" {
 			Basic.do_dim(m, b, w)
 		} else if k == "READ" {
@@ -1359,7 +1361,7 @@ Basic :: [].{
 				m1 = Basic.set_num(stepped.m, nm.k, Basic.num_of(from.v))
 				after = Basic.advance(m1, stepped.at)
 				frame = { v: nm.k, limit: Basic.num_of(lim.v), step: Basic.num_of(stepped.v), pc: after.pc, at: after.at }
-				Basic.enter_for({ ..after, loops: List.append(Basic.drop_frame(after.loops, nm.k), frame) })
+				Basic.enter_for({ ..after, loops: List.append(Basic.loops_outside(after.loops, after.pc, after.at, 0), frame) })
 			}
 		}
 	}
@@ -1409,36 +1411,49 @@ Basic :: [].{
 			}
 		}
 
-	drop_frame : List(Frame), Str -> List(Frame)
-	drop_frame = |fs, v| Basic.drop_frame_from(fs, v, 0, [])
-
-	drop_frame_from : List(Frame), Str, U64, List(Frame) -> List(Frame)
-	drop_frame_from = |fs, v, i, acc|
+	# **A LOOP IS ITS FOR STATEMENT, NOT ITS VARIABLE.** A subroutine called
+	# from a loop may loop on the same variable (the outer loop carries on
+	# from the value the inner one left), and a loop left by a jump stays
+	# until something closes it. A FOR run again restarts its own loop and
+	# abandons the loops entered inside it.
+	loops_outside : List(Frame), U64, U64, U64 -> List(Frame)
+	loops_outside = |fs, pc, at, i|
 		if i >= List.len(fs) {
-			acc
+			fs
 		} else {
 			f = List.get(fs, i) ?? { v: "", limit: 0.0, step: 1.0, pc: 0, at: 0 }
-			Basic.drop_frame_from(fs, v, i + 1, if f.v == v { acc } else { List.append(acc, f) })
+			if f.pc == pc and f.at == at { List.sublist(fs, { start: 0, len: i }) } else { Basic.loops_outside(fs, pc, at, i + 1) }
 		}
 
+	# The innermost loop on `v`, counting down from `i`; -1 when none is open.
+	loop_on : List(Frame), Str, I64 -> I64
+	loop_on = |fs, v, i|
+		if i < 0 {
+			-1
+		} else if (List.get(fs, I64.to_u64_wrap(i)) ?? { v: "", limit: 0.0, step: 1.0, pc: 0, at: 0 }).v == v {
+			i
+		} else {
+			Basic.loop_on(fs, v, i - 1)
+		}
+
+	# NEXT closes the innermost loop on its variable, or the innermost loop
+	# when it names none; the loops above that one were left by a jump.
 	do_next : M, List(U8), U64 -> M
 	do_next = |m, b, w| {
 		nm = Basic.name_at(b, w)
-		n = List.len(m.loops)
-		if n == 0 {
+		top = U64.to_i64_wrap(List.len(m.loops)) - 1
+		found = if nm.k == "" { top } else { Basic.loop_on(m.loops, nm.k, top) }
+		if found < 0 {
 			{ ..m, done: True, err: "NEXT without FOR", gap: False}
 		} else {
-			f = List.get(m.loops, n - 1) ?? { v: "", limit: 0.0, step: 1.0, pc: 0, at: 0 }
-			if nm.k != "" and nm.k != f.v {
-				{ ..m, done: True, err: Str.concat("NEXT out of order: ", nm.k), gap: False}
+			k = I64.to_u64_wrap(found)
+			f = List.get(m.loops, k) ?? { v: "", limit: 0.0, step: 1.0, pc: 0, at: 0 }
+			x = Basic.get_num(m, f.v) + f.step
+			m1 = Basic.set_num(m, f.v, x)
+			if (f.step >= 0.0 and x > f.limit) or (f.step < 0.0 and x < f.limit) {
+				Basic.advance({ ..m1, loops: List.sublist(m1.loops, { start: 0, len: k }) }, if nm.k == "" { w } else { nm.at })
 			} else {
-				x = Basic.get_num(m, f.v) + f.step
-				m1 = Basic.set_num(m, f.v, x)
-				if (f.step >= 0.0 and x > f.limit) or (f.step < 0.0 and x < f.limit) {
-					Basic.advance({ ..m1, loops: List.drop_last(m1.loops, 1) }, if nm.k == "" { w } else { nm.at })
-				} else {
-					{ ..m1, pc: f.pc, at: f.at }
-				}
+				{ ..m1, loops: List.sublist(m1.loops, { start: 0, len: k + 1 }), pc: f.pc, at: f.at }
 			}
 		}
 	}
@@ -1839,6 +1854,26 @@ Basic :: [].{
 			Basic.collect_data(ls, i + 1, if j == 0 { acc } else { Basic.data_items(b, j, acc) })
 		}
 
+	# **DIM AND OPTION ARE DECLARATIONS IN ECMA-55** (15): an array has its
+	# bounds wherever control goes, even past a DIM it jumped over. They are
+	# applied before the first statement, in line order, and passing through
+	# one does nothing. A microcomputer runs a DIM where it stands, and its
+	# bounds may be computed.
+	declared : M -> M
+	declared = |m| if m.ecma { Basic.declare(m, 0) } else { m }
+
+	declare : M, U64 -> M
+	declare = |m, i|
+		if i >= List.len(m.prog) or m.done {
+			m
+		} else {
+			b = (List.get(m.prog, i) ?? { num: -1, src: [] }).src
+			d = Basic.kw(b, 0, "DIM")
+			o = Basic.kw(b, 0, "OPTION")
+			r = if d != 0 { Basic.do_dim({ ..m, pc: i, at: 0 }, b, d) } else if o != 0 { Basic.do_option({ ..m, pc: i, at: 0 }, b, o) } else { m }
+			Basic.declare({ ..r, pc: 0, at: 0 }, i + 1)
+		}
+
 	data_items : List(U8), U64, List(Str) -> List(Str)
 	data_items = |b, i, acc| {
 		j = Basic.skip_ws(b, i)
@@ -1998,7 +2033,7 @@ Basic :: [].{
 		# every line is well formed.
 		line_fault = if ecma { Listing.check(src) } else { { why: "", num: -1 } }
 		bad = if ecma and line_fault.why == "" { Program.check(src) } else { line_fault }
-		m = if bad.why != "" { Basic.refuse(bad) } else { Basic.batch(Basic.loop({ ..Basic.new(Basic.load(src), inp, seed), ecma: ecma }), 10) }
+		m = if bad.why != "" { Basic.refuse(bad) } else { Basic.batch(Basic.loop(Basic.declared({ ..Basic.new(Basic.load(src), inp, seed), ecma: ecma })), 10) }
 		Basic.transcript(
 			if m.waiting {
 				{ ..m, done: True, gap: True, err: "Out of input" }
