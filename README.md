@@ -56,6 +56,29 @@ became one gallery module. The essay is `:9100/notes/plasma-in-roc.md`.
     node gpu/wasm/smoke.mjs ~/build/roc-apps/next/gpu/gallery.wasm 2   # 39 of 39 render; plasma's frame 0 is 6293600626746
     node gpu/wasm/smoke.mjs ~/build/roc-apps/next/gpu/gallery.wasm 30 cpuparticles swarm   # the named demos; the fountain's frame 0 is 91143764817938
 
+## games: Damian's 2048, with the browser as the platform
+
+`games/` is the third app: the classic games of Cobblestone's `apps/games`,
+starting with 2048 (2026-09-12). The engine and its wasm shell chapter are
+emitted; the seam to the browser is a MESSAGE: the page turns a key into
+one small integer and `step(message)` is the only door into the generated
+Roc, `view()` answers the board as words. Damian's own grader for the game
+runs against our module through his export contract, served by the same
+host over a handle table.
+
+| where | what | written by |
+|---|---|---|
+| `games/roc/{Game2048,Game2048Wasm,Rng,Random,Wrap64,List,ListUtils,Tuple}.roc` | the engine, its shell and what they cite | `rocemit`, via `games/emitted.sh` |
+| `games/roc/G2048App.roc` | the app: `init(seed)`, `step(message)` (0..3 slide, 4 the engine's AI), `view` (16 tiles, score, moves, done, best, empty, sum); the shell's queries and `move` for the grader; `drop` | hand |
+| `games/wasm/` | the platform and host: the page's door (`newGame`, `step`, `view`, `bufPtr`) over one model, and the grader's door (`g2_new`, `g2_move`, `g2_cell`, ...) over a table of boxed models, a refused move answering the same handle; `__heap_reset` | hand |
+| `games/web/2048.html` | the page: the key table, the message, the tiles | hand |
+| `games/emitted.sh` | THE GATE: the shell chapters emitted from `$GAMES_ROOT` (cites resolved from the same tree), chapter identity, `roc check`; on green written to `games/roc/` | hand |
+| `games/build.sh`, `games/verify.sh` | host + app + page into the preview, `http://<box>:9203/games/2048.html`; then Damian's `g2-verify.mjs` against our module, 20 arms | hand |
+
+    games/emitted.sh
+    games/build.sh
+    games/verify.sh                # PASS: 2048 merges without losing or inventing a tile (20 arms)
+
 ## The Roc is tracked; everything else the tools write is not
 
 `safari/roc/` is generated and committed, because those files are the point.
