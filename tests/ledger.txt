@@ -1,14 +1,14 @@
 REFUSED acpi-parse | builtin `peek-qword`
 REFUSED act-let-scope | an act outside opening
 REFUSED act-tco-loop | an act outside opening
-FAIL aesgcm256 | compile: ── ✗ file not found ────────────────────────────
+PASS aesgcm256 |
 PASS amp-after-call |
 REFUSED approx-eq | an act outside opening
 SKIP arith-narrow-proven | expects a diagnostic
-FAIL arith-operand-order | compile: ── ✗ module not imported ──────────────────────────�
+PASS arith-operand-order |
 REFUSED arithmetic | an act outside opening
 PASS arm64-boot-test |
-FAIL arm64-encoder | output: < add x0,x1,x2=8B020020
+PASS arm64-encoder |
 REFUSED arm64-http-test | type char
 REFUSED arm64-net-gate | builtin `process-get-pid` used as a value
 REFUSED arm64-proc-cells | builtin `process-get-pid` used as a value
@@ -32,7 +32,7 @@ REFUSED bounded-sig-runtime | builtin `__narrow`
 SKIP bounded-sig-static | expects a diagnostic
 REFUSED bounds-proof | chapter `Bounds Proof` is not a Roc module name
 REFUSED bounds-prover | builtin `__narrow`
-FAIL bs3-smoke | compile: ── ✗ module not imported ──────────────────────────�
+PASS bs3-smoke |
 SKIP builtin-narrow-proven | expects a diagnostic
 REFUSED call-clobber | show on a boolean
 REFUSED canopen-encode | opening is not an act
@@ -53,7 +53,7 @@ PASS capability-doors |
 REFUSED carddeck-shuffle | opening is not an act
 REFUSED cce-roundtrip | type char
 REFUSED cce-tier1 | type char
-FAIL chacha20poly1305 | compile: ── ✗ file not found ────────────────────────────
+PASS chacha20poly1305 |
 PASS chapter-pages |
 PASS circbuf-test |
 PASS cite-override-quire |
@@ -72,7 +72,7 @@ REFUSED console-readline-cite | builtin `read-line` used as a value
 SKIP const-narrow-proven | expects a diagnostic
 PASS convolution-identity |
 REFUSED cross-port-refused | builtin `port-out-byte`
-FAIL crypto-test | compile: ── ✗ file not found ────────────────────────────
+PASS crypto-test |
 REFUSED crypto-vectors | builtin `text-length`
 REFUSED cryptobig | show on a boolean
 REFUSED ctor-narrow-warn | builtin `__narrow`
@@ -153,7 +153,7 @@ REFUSED edge-mesh-rewards | binary approx-eq
 REFUSED edge-mesh-route | binary approx-eq
 REFUSED edit-distance-test | builtin `text-length`
 REFUSED edvector | builtin `text-length`
-FAIL effect-dotted-allow | output: < result 42
+PASS effect-dotted-allow |
 REFUSED effect-handler-nested-same | handle
 REFUSED effect-map-effctx | an act outside opening
 REFUSED effect-positive | an act outside opening
@@ -174,9 +174,9 @@ REFUSED engine-shadow | binary approx-eq
 REFUSED engine-software-render | binary approx-eq
 REFUSED engine-texture-cost | binary approx-eq
 REFUSED enip-encode | opening is not an act
-FAIL eq-generic-fields | compile: ── ✗ module not imported ──────────────────────────�
-FAIL eq-generic-recursive | compile: ── ✗ module not imported ──────────────────────────�
-FAIL eq-plain-sum | compile: ── ✗ module not imported ──────────────────────────�
+PASS eq-generic-fields |
+FAIL eq-generic-recursive | compile: ── ✗ recursive alias ───────────────────────────�
+PASS eq-plain-sum |
 REFUSED esp32c6-drivers | builtin `peek-32`
 PASS eventbus-test |
 REFUSED expr-calculator | chapter `Expr Calculator` is not a Roc module name
@@ -278,8 +278,8 @@ SKIP induction-param | expects a diagnostic
 SKIP induction-parse | expects a diagnostic
 REFUSED inductive-list | type proof
 REFUSED infra-test | unit type `Duration`
-FAIL inline-cost-based | compile: ── ✗ module not imported ──────────────────────────�
-FAIL inline-single-caller | output: < wide 5
+PASS inline-cost-based |
+PASS inline-single-caller |
 REFUSED input-metal | builtin `__narrow`
 PASS int-literal-underscore |
 REFUSED interval-exhaustive | chapter `Interval Exhaustive` is not a Roc module name
@@ -311,16 +311,16 @@ REFUSED linear-capture-once | `__lam_0` applied to 1 of 2 arguments
 PASS linear-mint-container |
 REFUSED linear-poly-freeze | opening is not an act
 REFUSED linear-smoke | opening is not an act
-FAIL lir-binop-cross | output: < diff: 5
-FAIL lir-branch-cross | output: < mn: 3
+PASS lir-binop-cross |
+PASS lir-branch-cross |
 PASS lir-call-cross |
-FAIL lir-check | compile: ── ✗ module not imported ──────────────────────────�
-FAIL lir-frame-cross | output: < regs-only: 6
-FAIL lir-join-cross | output: < 3
-FAIL lir-load-cross | compile: ── ✗ module not imported ──────────────────────────�
-FAIL lir-nullary-cross | output: < ident: 7
+PASS lir-check |
+PASS lir-frame-cross |
+PASS lir-join-cross |
+PASS lir-load-cross |
+PASS lir-nullary-cross |
 PASS lir-selector-smoke |
-FAIL lir-test-cross | output: < 1
+PASS lir-test-cross |
 REFUSED list-comprehension-copy | chapter `List Comprehension Copy` is not a Roc module name
 REFUSED list-cons-tail | binary cons-list
 REFUSED list-induction | type proof
@@ -329,7 +329,7 @@ FAIL list-pattern | compile: ── ✗ type mismatch ────────�
 REFUSED list-tail-empty | an act outside opening
 REFUSED list-test | chapter `List Test` is not a Roc module name
 REFUSED list-view-probe | type char
-FAIL literal-subpattern | compile: ── ✗ module not imported ──────────────────────────�
+FAIL literal-subpattern | compile: ── ✗ too few args ────────────────────────────�
 SKIP local-narrow-proven | expects a diagnostic
 REFUSED location-sensors-stub | type (effectful (effs "Location") (scopes "") boolean)
 REFUSED lorawan-encode | opening is not an act
@@ -432,7 +432,7 @@ REFUSED reservoir-uniform | builtin `__narrow`
 SKIP return-narrow-proven | expects a diagnostic
 REFUSED revised-narrow | builtin `__narrow`
 REFUSED riscv-encoder | an act outside opening
-FAIL riscv32c-encoder | output: < c.nop=0001
+PASS riscv32c-encoder |
 REFUSED roc-closure-captures-list | `__lam_0` applied to 1 of 2 arguments
 REFUSED roc-early-return-predicate | show on a boolean
 PASS roc-fold-count |
@@ -449,10 +449,10 @@ REFUSED rsa-pss | builtin `text-length`
 REFUSED rsa-verify | builtin `text-length`
 PASS rv-arg-order |
 PASS rv-big-literal |
-FAIL rv-frameless-imm | output: < 254
+PASS rv-frameless-imm |
 PASS rv-frameless-temp |
 PASS rv-param-bind |
-FAIL rv-param-order | compile: ── ✗ module not imported ──────────────────────────�
+FAIL rv-param-order | compile: ── ✗ recursive alias ───────────────────────────�
 REFUSED s7comm-encode | opening is not an act
 REFUSED scope-allow | type char
 FAIL scope-console | compile: ── ✗ type mismatch ────────────────────────────�
@@ -500,7 +500,7 @@ REFUSED sum-field-eq | builtin `print-line`
 REFUSED synth-test | unit type `Duration`
 REFUSED tag-equal | builtin `tag-equal`
 REFUSED tco-bitop-loop | builtin `int-mod`
-FAIL tco-direct-arg-reads | compile: ── ✗ module not imported ──────────────────────────�
+FAIL tco-direct-arg-reads | compile: ── ✗ too few args ────────────────────────────�
 REFUSED tco-framed-append | builtin `text-length`
 PASS tco-nested-if |
 REFUSED tco-shuffle-spill | builtin `int-mod`
@@ -509,14 +509,14 @@ REFUSED tcp-listen-reclaim | builtin `__narrow`
 REFUSED tcp-reliability | builtin `__narrow`
 REFUSED tcp-seqwrap | builtin `__narrow`
 REFUSED text-append-alias | builtin `text-length`
-FAIL text-eq-branches | output: < eq-int same    1
+PASS text-eq-branches |
 REFUSED text-fold-indexed | type char
 REFUSED text-helper-native | builtin `text-split`
 REFUSED text-helper-spec | type char
 REFUSED textfield-typing | builtin `__narrow`
 REFUSED textscan-test | type char
 REFUSED textsearch-test | type char
-FAIL thumb2-encoder | output: < nop=BF00
+PASS thumb2-encoder |
 REFUSED timer-registers | builtin `peek-32`
 REFUSED tls-cert | type char
 REFUSED tls-cv-schemes | type char
@@ -533,7 +533,7 @@ REFUSED try-smoke | try
 REFUSED ttf-debug | an act outside opening
 REFUSED ttt-perfect | opening is not an act
 REFUSED tuple-syntax | an act outside opening
-FAIL tvar-in-declared-type | compile: ── ✗ module not imported ────────────────────────── 
+PASS tvar-in-declared-type |
 REFUSED type-checker-test | chapter `Type Checker Smoke Test` is not a Roc module name
 REFUSED type-name-existence | a type applied to a non-name
 REFUSED typeclass-compound-head | builtin `to-text`
@@ -586,7 +586,7 @@ REFUSED web-mux-idle-reap | builtin `poke-byte`
 REFUSED web-mux-lifecycle | builtin `poke-byte`
 REFUSED web-mux-reassembly | builtin `poke-byte`
 REFUSED when-arm-nontail | an act outside opening
-FAIL when-arm-tail-call | compile: ── ✗ module not imported ───────────────────────── Whe
+PASS when-arm-tail-call |
 FAIL when-bool-cross | compile: ── ✗ non exhaustive match ──────────────────────────
 REFUSED when-bool-pattern | char literal
 REFUSED when-generic-field | an act outside opening
