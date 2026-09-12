@@ -76,6 +76,37 @@ where Codex prints the integer part in full and truncates the fraction. Every is
 carries the exact nightly, the timings, and a reduced program that stands
 alone.
 
+## What this covers that Roc's own suite does not, and what it does not
+
+Roc tests floats thoroughly at the unit level: the `F32` and `F64` sections
+of the builtins carry about 130 executable `expect` examples each, and they
+are exact by construction -- `to_bits` of a constant, `to_str` of a value
+that prints cleanly, `is_float_eq` on representable numbers, `sqrt` of a
+perfect square, and the transcendental functions at points where the answer
+is exact, `sin(0)`, `cos(0)`, `atan(0)`. There is an `is_float_eq`, which is
+IEEE equality that handles NaN, and nothing approximate anywhere.
+
+The Codex corpus is a different shape. Its comparison operator `~=` is a
+distance of four ULPs on the monotone ordinal of the two doubles, so a test
+can assert on an INEXACT result without choosing an epsilon that is wrong at
+some magnitude; seventeen of the programs use it. And the programs are whole
+computations whose printed decimals pin a long chain of arithmetic --
+geometry, a rasteriser, a ray-sphere intersection -- rather than one
+operation at a friendly point. Cobblestone implements its own sine, cosine,
+arc tangent and square root in Codex, so the emitted Roc computes them from
+multiplication and addition, and never calls Roc's math library: what these
+exercise is arithmetic, rounding, comparison, conversion and printing.
+
+**And the honest caveat.** Roc evaluates a call whose arguments are known at
+compile time, and these programs take no arguments, so most of that
+arithmetic is done by the compiler's evaluator rather than by generated
+code: the printed answer is a literal in the binary and the binary runs in
+three milliseconds. That still tests a real component, and it is the one
+`roc check` uses, but it is not a test of the backends. Roc's own
+`test/fx/float_comparison.roc` shows the way around it -- it routes a value
+through the host so the comparison must happen at run time -- and doing the
+same here would be a second pass over the same programs.
+
 ## What we have filed
 
 - [#11334](https://github.com/roc-lang/roc/issues/11334) -- compile-time
