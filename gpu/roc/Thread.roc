@@ -1,7 +1,7 @@
 # Thread -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 Thread :: [].{
-	ThreadIndex : { ti_value : I64 }
+	ThreadIndex : { ti_value : I32 }
 
 	make_thread_index : I32 -> Thread.ThreadIndex
 	make_thread_index = |val| { ti_value: val }
