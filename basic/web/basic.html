@@ -53,7 +53,6 @@ with a thin JavaScript layer for the page. Everything below runs in this tab.</p
 <div class="bar">
   <button id="run">Run</button>
   <button id="stop">Stop</button>
-  <button id="back">Back</button>
   <select id="sample"></select>
   <select id="theme" title="Screen colours"></select>
   <span id="status" class="sub" style="margin:0"></span>
@@ -69,8 +68,6 @@ with a thin JavaScript layer for the page. Everything below runs in this tab.</p
     <div id="screen" hidden></div>
     <label for="pix" id="pixlab" hidden>Framebuffer &mdash; 320&times;200 at address 131072</label>
     <canvas id="pix" width="320" height="200" hidden></canvas>
-    <label for="out">Transcript</label>
-    <pre id="out"></pre>
     <input id="line" type="text" spellcheck="false" placeholder="the program is not asking for anything" disabled>
   </div>
 </div>
@@ -78,8 +75,7 @@ with a thin JavaScript layer for the page. Everything below runs in this tab.</p
 <p class="note">
   The machine is a Roc value. The page starts it with the listing and a seed, and the machine
   hands itself back whenever it wants a line typed, sleeps, prints a line, or has run a few
-  thousand statements; the page paints what it drew and resumes it. Every state is kept, so
-  Back is exact rather than replayed. Graded against the National Bureau of Standards' Minimal
+  thousand statements; the page paints what it drew and resumes it. Graded against the National Bureau of Standards' Minimal
   BASIC test programs and the 1978 <em>BASIC Computer Games</em> listings.
   Source: <a href="https://github.com/showell/roc-apps/tree/master/basic">github.com/showell/roc-apps</a>
   (<code>basic/</code>).
@@ -107,11 +103,13 @@ const SAMPLES = {
 
 const $ = (id) => document.getElementById(id);
 const sel = $("sample");
-for (const name of Object.keys(SAMPLES)) {
+for (const name of Object.keys(SAMPLES).sort()) {
   const o = document.createElement("option");
   o.value = name; o.textContent = name; sel.appendChild(o);
 }
-sel.onchange = () => { $("src").value = SAMPLES[sel.value]; };
+// Choosing a sample runs it: the old run is dropped and the display shows
+// only what the new program draws.
+sel.onchange = () => { $("src").value = SAMPLES[sel.value]; go(); };
 
 // ---- the screen ---------------------------------------------------------
 //
@@ -180,12 +178,7 @@ function glyph(c) {
 
 function paint(cells) {
   const lab = document.getElementById("screenlab"), box = $("screen");
-  // An untouched screen is 2,000 zero bytes; a program that never drew
-  // does not get a blank purple rectangle.
-  let drew = false;
-  for (let i = 0; i < 2000; i++) if (cells[i] !== 0) { drew = true; break; }
-  lab.hidden = !drew; box.hidden = !drew;
-  if (!drew) return;
+  lab.hidden = false; box.hidden = false;
   box.textContent = "";
   for (let y = 0; y < 25; y++) {
     const row = document.createElement("div");
@@ -203,11 +196,13 @@ function paint(cells) {
   }
 }
 
-let x = null, running = false, stopped = false;
+// `run` numbers the runs: a pump that finds a newer number has been
+// replaced, and stops without touching the page.
+let x = null, running = false, stopped = false, run = 0, note = "";
 const enc = new TextEncoder(), dec = new TextDecoder();
 const STATUS = { 0: "finished", 1: "waiting for a line", 2: "stopped on an exception",
                  3: "stopped: a form the interpreter has not built", 4: "sleeping",
-                 5: "running" };
+                 5: "running", 6: "rejected before it ran" };
 
 async function boot() {
   $("status").textContent = "loading\u2026";
@@ -224,8 +219,8 @@ async function boot() {
   th.value = THEMES[saved] ? saved : "Green on black";
   th.onchange = () => applyTheme(th.value);
   applyTheme(th.value);
+  sel.value = "Hello";
   sel.onchange();
-  go();
 }
 
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -246,10 +241,11 @@ function render() {
     paint(all.subarray(0, sb));
   }
   paintPixels(all.subarray(sb, sb + hires));
-  const out = $("out");
-  const stuck = out.scrollTop + out.clientHeight >= out.scrollHeight - 4;
-  out.textContent = dec.decode(all.subarray(sb + hires));
-  if (stuck) out.scrollTop = out.scrollHeight;
+  // The screen shows what PRINT drew. What is left of the transcript's
+  // use is its last line, where a stopped machine says why.
+  const text = dec.decode(all.subarray(sb + hires)).trimEnd();
+  const last = text.slice(text.lastIndexOf("\n") + 1);
+  note = last.startsWith("*** ") ? last.slice(4) : "";
 }
 
 // **RUN UNTIL THE MACHINE WANTS SOMETHING.** A suspended machine comes
@@ -258,34 +254,31 @@ function render() {
 // other two paint a frame and carry on -- a sleep after its delay, a
 // yield at once -- which is what makes an animation an animation and a
 // program that never ends a program that keeps going until Stop.
-async function pump() {
+async function pump(id) {
   running = true;
-  while (!stopped) {
+  while (!stopped && id === run) {
     const st = x.runStatus();
     render();
-    if (st === 5) {
-      $("status").textContent = STATUS[st] + "  ·  " + x.depth() + " states";
-      await delay(0);
-      if (stopped) break;
+    if (st === 5 || st === 4) {
+      // A spent tank, a SLEEP, or the millisecond every PRINT ends in:
+      // still running.
+      $("status").textContent = "running";
+      await delay(st === 4 ? Math.min(x.pauseMs(), 2000) : 0);
+      if (stopped || id !== run) break;
       x.wake();
       continue;
     }
-    if (st !== 4) {
-      $("status").textContent = STATUS[st] + "  \u00b7  " + x.depth() + " states";
-      $("line").disabled = st !== 1;
-      $("line").placeholder = st === 1 ? "type a line and press Enter" : "the program is not asking for anything";
-      if (st === 1) $("line").focus();
-      running = false;
-      return;
-    }
-    // A SLEEP, or the millisecond every PRINT ends in: still running.
-    $("status").textContent = "running  ·  " + x.depth() + " states";
-    await delay(Math.min(x.pauseMs(), 2000));
-    if (stopped) break;
-    x.wake();
+    const why = (st === 2 || st === 3 || st === 6) && note ? "  \u2014  " + note : "";
+    $("status").textContent = STATUS[st] + why;
+    $("line").disabled = st !== 1;
+    $("line").placeholder = st === 1 ? "type a line and press Enter" : "the program is not asking for anything";
+    if (st === 1) $("line").focus();
+    running = false;
+    return;
   }
+  if (id !== run) return;
   running = false;
-  $("status").textContent = "stopped  \u00b7  " + x.depth() + " states";
+  $("status").textContent = "stopped";
 }
 
 function feed(text) {
@@ -297,28 +290,21 @@ function feed(text) {
 
 function go() {
   if (!x) return;
-  stopped = false;
   const src = enc.encode($("src").value);
-  if (src.length > x.capacity(0)) { $("out").textContent = "listing too long for this module"; return; }
+  if (src.length > x.capacity(0)) { $("status").textContent = "listing too long for this module"; return; }
+  run += 1;
+  stopped = false;
   new Uint8Array(x.memory.buffer).set(src, x.srcPtr());
   x.newRun(src.length, (Date.now() & 0x7fffffff) || 1);
-  pump();
+  pump(run);
 }
 
 $("stop").onclick = () => { stopped = true; };
-$("back").onclick = () => {
-  if (!x || running) return;
-  // **THE MACHINE IS A VALUE**, so every state it has been in is still a
-  // state and going back is a pop. Nothing is replayed.
-  x.back();
-  stopped = false;
-  pump();
-};
 $("line").addEventListener("keydown", (e) => {
   if (e.key !== "Enter" || !x || running) return;
   feed($("line").value);
   $("line").value = "";
-  pump();
+  pump(run);
 });
 
 $("run").onclick = go;
