@@ -18,7 +18,7 @@ Roc on the fifth tree on the right of every segment.
 | `safari/wasm/` | the platform: `platform/main.roc` provides the page's sixteen exports over `Box(Model)`; `platform/host.zig` is the host; `build.zig` builds it against the roc checkout; `build.sh` builds host and app into the PREVIEW root | hand |
 | `safari/web/` | the demo page: a copy of safari-codex's `blitter.js`, `index.html`, `serve.py`, and `driving/safari.wasm` with its `PROVENANCE`, which only `safari/publish.sh` writes | hand; the module by publish |
 | `safari/publish.sh` | THE MANUAL STEP: the previewed module into the demo, with provenance, committed and pushed | hand |
-| `ops/` | three systemd --user services: `safari-web` :9201 over `safari/web/` (the safari demo), `safari-web-next` :9203 over `~/build/roc-apps/next/` (the preview of both apps), `gallery-web` :9204 over `gpu/live/` (the gallery demo); `install.sh` | hand |
+| `ops/` | four systemd --user services: `safari-web` :9201 over `safari/web/` (the safari demo), `safari-web-next` :9203 over `~/build/roc-apps/next/` (the preview of every app), `gallery-web` :9204 over `gpu/live/` (the gallery demo), `games-web` :9205 over `games/live/` (the games demo); `install.sh` | hand |
 | `safari/emitted.sh` | THE GATE: every unit emitted, chapter identity checked, roc run two at a time, output against the verdict; a compile error is a FAIL | hand |
 | `safari/retest.sh` | the targeted sweep: emit all, diff against the tracked Roc, run only what changed | hand |
 | `wasm/*.mjs` | Node drivers: run a module, drive the screensaver headless with timings | hand |
@@ -74,10 +74,12 @@ export contract, which the same host serves over a handle table.
 | `games/web/<game>.html` | the pages: the key table or the click, the message, the board | hand |
 | `games/emitted.sh` | THE GATE: the shell chapters emitted from `$GAMES_ROOT` (cites resolved from the same tree), chapter identity, `roc check`; on green written to `games/roc/` | hand |
 | `games/build.sh`, `games/verify.sh` | hosts + apps + pages into the preview, `http://<box>:9203/games/<game>.html`; then Damian's `<xx>-verify.mjs` against each module | hand |
+| `games/publish.sh`, `games/live/` | THE MANUAL STEP for the games: the previewed pages and modules into `games/live/` with a `PROVENANCE`, committed and pushed; `games-web` (:9205) serves only that | hand; the files by publish |
 
     games/emitted.sh
     games/build.sh                 # runs gen.py first
     games/verify.sh                # PASS 20 arms for 2048, PASS 20 arms for Minesweeper
+    games/publish.sh               # when the preview looks right: the demo, http://<box>:9205/2048.html
 
 Adding a game: its row in `gen.py` (from `apps/games/build-wasm.ps1`), its
 shell in `emitted.sh`, an app, a page, and its grader in `verify.sh`.
