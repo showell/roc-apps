@@ -19,8 +19,7 @@
                   border: 1px solid var(--line); border-radius: 4px; padding: 10px;
                   font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   textarea { resize: vertical; }
-  #src { height: 300px; }
-  #keys { height: 76px; }
+  #src { height: 388px; }
   pre { height: 394px; overflow: auto; margin: 0; white-space: pre; }
   /* The screen is 40x25 cells of a Commodore's memory, drawn as text so
      that a cell is exactly a cell. */
@@ -29,6 +28,8 @@
             font: 13px/1.1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   #screen div { white-space: pre; }
   #screen span { display: inline-block; }
+  #pix { width: 100%; max-width: 640px; image-rendering: pixelated; display: block;
+         background: #000; border: 8px solid #7c70da; border-radius: 4px; margin: 0 0 12px; }
   #line { width: 100%; box-sizing: border-box; margin-top: 8px; padding: 8px 10px;
           background: transparent; color: inherit; border: 1px solid var(--line); border-radius: 4px;
           font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
@@ -61,12 +62,12 @@ Everything below runs in this tab.</p>
   <div class="col">
     <label for="src">Listing</label>
     <textarea id="src" spellcheck="false"></textarea>
-    <label for="keys" style="margin-top:12px">Keystrokes — one per INPUT</label>
-    <textarea id="keys" spellcheck="false"></textarea>
   </div>
   <div class="col">
     <label for="screen" id="screenlab" hidden>Screen &mdash; 40&times;25 at address 1024</label>
     <div id="screen" hidden></div>
+    <label for="pix" id="pixlab" hidden>Framebuffer &mdash; 320&times;200 at address 131072</label>
+    <canvas id="pix" width="320" height="200" hidden></canvas>
     <label for="out">Transcript</label>
     <pre id="out"></pre>
     <input id="line" type="text" spellcheck="false" placeholder="the program is not asking for anything" disabled>
@@ -89,15 +90,14 @@ const SAMPLES = {
   "Guess a number (type your own)": '10 PRINT "I AM THINKING OF A NUMBER FROM 1 TO 100."\n20 LET N = INT(RND(1)*100) + 1\n30 FOR T = 1 TO 7\n40 PRINT "YOUR GUESS";\n50 INPUT G\n60 IF G = N THEN 200\n70 IF G < N THEN 100\n80 PRINT "TOO HIGH."\n90 GOTO 110\n100 PRINT "TOO LOW."\n110 NEXT T\n120 PRINT "OUT OF GUESSES. IT WAS"; N\n130 END\n200 PRINT "RIGHT, IN"; T; "GUESSES!"\n210 END\n',
   "Sieve of Eratosthenes": '10 DIM S(200)\n20 FOR I = 2 TO 200\n30 IF S(I) = 1 THEN 80\n40 PRINT I;\n50 FOR J = I+I TO 200 STEP I\n60 LET S(J) = 1\n70 NEXT J\n80 NEXT I\n90 PRINT\n99 END\n',
   "Fibonacci": '10 LET A = 0\n20 LET B = 1\n30 FOR I = 1 TO 20\n40 PRINT A;\n50 LET C = A + B\n60 LET A = B\n70 LET B = C\n80 NEXT I\n90 PRINT\n99 END\n',
-  "Screen: colour bars": '10 REM THE SCREEN IS MEMORY: 40x25 CODES AT 1024,\n11 REM COLOUR AT 55296. POKE IS HOW A PROGRAM DRAWS.\n20 FOR Y = 0 TO 24\n30 FOR X = 0 TO 39\n40 LET P = X + 40*Y\n50 POKE 1024 + P, 160\n60 POKE 55296 + P, INT(X/2.5)\n70 NEXT X\n80 NEXT Y\n90 PRINT "SIXTEEN COLOURS, POKED ONE CELL AT A TIME."\n99 END\n',
-  "Screen: sine wave": '10 FOR X = 0 TO 39\n20 LET Y = INT(12 + 11*SIN(X/3.2))\n30 LET P = X + 40*Y\n40 POKE 1024 + P, 81\n50 POKE 55296 + P, 7\n60 NEXT X\n70 FOR X = 0 TO 39\n80 POKE 1024 + X + 480, 64\n90 POKE 55296 + X + 480, 11\n100 NEXT X\n110 PRINT "A SINE, PLOTTED BY POKE."\n199 END\n',
-  "Screen: Mandelbrot": '10 FOR R = 0 TO 24\n20 FOR C = 0 TO 39\n30 LET A = -2.2 + C*3.0/39\n40 LET B = -1.2 + R*2.4/24\n50 LET X = 0\n60 LET Y = 0\n70 LET N = 0\n80 IF X*X + Y*Y > 4 THEN 140\n90 IF N >= 15 THEN 140\n100 LET T = X*X - Y*Y + A\n110 LET Y = 2*X*Y + B\n120 LET X = T\n130 LET N = N + 1\n135 GOTO 80\n140 LET P = C + 40*R\n150 POKE 1024 + P, 160\n160 POKE 55296 + P, N\n170 NEXT C\n180 NEXT R\n190 PRINT "MANDELBROT, SIXTEEN ITERATIONS DEEP."\n199 END\n',
-  "Screen: Mandelbrot zoom (SLEEP)": '10 REM SLEEP HANDS THE MACHINE BACK TO THE PAGE,\n11 REM WHICH PAINTS A FRAME AND RESUMES IT.\n20 LET Z = 1\n30 FOR F = 1 TO 24\n40 FOR R = 0 TO 24\n50 FOR C = 0 TO 39\n60 LET A = -0.743 + (C-19.5)*3.0/39/Z\n70 LET B = 0.131 + (R-12)*2.4/24/Z\n80 LET X = 0\n90 LET Y = 0\n100 LET N = 0\n110 IF X*X + Y*Y > 4 THEN 170\n120 IF N >= 14 THEN 170\n130 LET T = X*X - Y*Y + A\n140 LET Y = 2*X*Y + B\n150 LET X = T\n160 LET N = N + 1\n165 GOTO 110\n170 LET P = C + 40*R\n180 POKE 1024 + P, 160\n190 POKE 55296 + P, N + 1\n200 NEXT C\n210 NEXT R\n220 SLEEP 0.05\n230 LET Z = Z * 1.35\n240 NEXT F\n250 PRINT "TWENTY-FOUR FRAMES, ONE SLEEP EACH."\n299 END\n',
+  "Screen: colour bars": '5 PRINT "SIXTEEN COLOURS, POKED ONE CELL AT A TIME."\n10 REM THE SCREEN IS MEMORY: 40x25 CODES AT 1024,\n11 REM COLOUR AT 55296. POKE IS HOW A PROGRAM DRAWS.\n20 FOR Y = 0 TO 24\n30 FOR X = 0 TO 39\n40 LET P = X + 40*Y\n50 POKE 1024 + P, 160\n60 POKE 55296 + P, INT(X/2.5)\n70 NEXT X\n80 NEXT Y\n99 END\n',
+  "Screen: sine wave": '5 PRINT "A SINE, PLOTTED BY POKE."\n10 FOR X = 0 TO 39\n20 LET Y = INT(12 + 11*SIN(X/3.2))\n30 LET P = X + 40*Y\n40 POKE 1024 + P, 81\n50 POKE 55296 + P, 7\n60 NEXT X\n70 FOR X = 0 TO 39\n80 POKE 1024 + X + 480, 64\n90 POKE 55296 + X + 480, 11\n100 NEXT X\n199 END\n',
+  "Screen: Mandelbrot": '5 PRINT "MANDELBROT, SIXTEEN ITERATIONS DEEP."\n10 FOR R = 0 TO 24\n20 FOR C = 0 TO 39\n30 LET A = -2.2 + C*3.0/39\n40 LET B = -1.2 + R*2.4/24\n50 LET X = 0\n60 LET Y = 0\n70 LET N = 0\n80 IF X*X + Y*Y > 4 THEN 140\n90 IF N >= 15 THEN 140\n100 LET T = X*X - Y*Y + A\n110 LET Y = 2*X*Y + B\n120 LET X = T\n130 LET N = N + 1\n135 GOTO 80\n140 LET P = C + 40*R\n150 POKE 1024 + P, 160\n160 POKE 55296 + P, N\n170 NEXT C\n180 NEXT R\n199 END\n',
+  "Screen: Mandelbrot zoom (SLEEP)": '5 PRINT "TWENTY-FOUR FRAMES, ONE SLEEP EACH."\n10 REM SLEEP HANDS THE MACHINE BACK TO THE PAGE,\n11 REM WHICH PAINTS A FRAME AND RESUMES IT.\n20 LET Z = 1\n30 FOR F = 1 TO 24\n40 FOR R = 0 TO 24\n50 FOR C = 0 TO 39\n60 LET A = -0.743 + (C-19.5)*3.0/39/Z\n70 LET B = 0.131 + (R-12)*2.4/24/Z\n80 LET X = 0\n90 LET Y = 0\n100 LET N = 0\n110 IF X*X + Y*Y > 4 THEN 170\n120 IF N >= 14 THEN 170\n130 LET T = X*X - Y*Y + A\n140 LET Y = 2*X*Y + B\n150 LET X = T\n160 LET N = N + 1\n165 GOTO 110\n170 LET P = C + 40*R\n180 POKE 1024 + P, 160\n190 POKE 55296 + P, N + 1\n200 NEXT C\n210 NEXT R\n220 SLEEP 0.05\n230 LET Z = Z * 1.35\n240 NEXT F\n299 END\n',
+  "Pixels: plasma (PLOT)": '5 PRINT "A PLASMA, ONE PIXEL AT A TIME."\n10 REM 320x200, ONE BYTE A PIXEL FROM 131072.\n11 REM PLOT X,Y,C IS THAT POKE WITH THE SUM DONE.\n20 FOR Y = 0 TO 199 STEP 2\n30 FOR X = 0 TO 319 STEP 2\n40 LET C = 128 + 120*SIN(X/24)*COS(Y/17)\n50 PLOT X, Y, C\n60 PLOT X+1, Y, C\n70 PLOT X, Y+1, C\n80 PLOT X+1, Y+1, C\n90 NEXT X\n100 NEXT Y\n199 END\n',
+  "Pixels: the maze one-liner": '10 REM THE CLASSIC. IT NEVER ENDS ON PURPOSE --\n11 REM THE MACHINE YIELDS EVERY 250,000 STEPS AND\n12 REM THE PAGE DECIDES WHETHER TO CARRY ON.\n20 POKE 1024 + INT(RND(1)*1000), 77 + INT(RND(1)*2)\n30 GOTO 20\n',
   "Square roots by Newton": '10 PRINT "N", "SQR(N)", "NEWTON"\n20 FOR N = 1 TO 10\n30 LET X = N\n40 FOR K = 1 TO 12\n50 LET X = (X + N/X)/2\n60 NEXT K\n70 PRINT N, SQR(N), X\n80 NEXT N\n90 END\n',
 };
-// Type-ahead, for a sample that wants some. Leave it empty and the page
-// will ask you instead.
-const KEYS = {};
 
 const $ = (id) => document.getElementById(id);
 const sel = $("sample");
@@ -105,7 +105,7 @@ for (const name of Object.keys(SAMPLES)) {
   const o = document.createElement("option");
   o.value = name; o.textContent = name; sel.appendChild(o);
 }
-sel.onchange = () => { $("src").value = SAMPLES[sel.value]; $("keys").value = KEYS[sel.value] || ""; };
+sel.onchange = () => { $("src").value = SAMPLES[sel.value]; };
 
 // ---- the screen ---------------------------------------------------------
 //
@@ -117,6 +117,32 @@ const GFX = "─♠│────││╮╰╯▘╲╱▖" +
             "▝●▄♥▌╭╳○♣▎♦┼▒│π◥" +
             " ▌▄▔▁▏▒▕▒◤▕├▗└┐▂" +
             "┌┴┬┤▎▍▊▋▊▇▆▅▄│▒▒";
+// 0-15 are the Commodore's; the rest is a ramp, so a program that plots
+// an escape count gets a gradient without having to invent one.
+function palette() {
+  const p = PAL.map((h) => [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)]);
+  for (let i = 16; i < 256; i++) {
+    const t = (i - 16) / 239, a = t * Math.PI * 2;
+    p.push([Math.round(127 + 127*Math.sin(a)), Math.round(127 + 127*Math.sin(a + 2.094)), Math.round(127 + 127*Math.sin(a + 4.188))]);
+  }
+  return p;
+}
+let RGB = null;
+
+function paintPixels(cells) {
+  const lab = $("pixlab"), cv = $("pix");
+  if (cells.length === 0) { lab.hidden = true; cv.hidden = true; return; }
+  lab.hidden = false; cv.hidden = false;
+  if (!RGB) RGB = palette();
+  const ctx = cv.getContext("2d");
+  const img = ctx.createImageData(320, 200);
+  for (let i = 0; i < 64000; i++) {
+    const c = RGB[cells[i]];
+    img.data[i*4] = c[0]; img.data[i*4+1] = c[1]; img.data[i*4+2] = c[2]; img.data[i*4+3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
 const PAL = ["#000000","#ffffff","#813338","#75cec8","#8e3c97","#56ac4d","#2e2c9b","#edf171",
              "#8e5029","#553800","#c46c71","#4a4a4a","#7b7b7b","#a9ff9f","#706deb","#b2b2b2"];
 
@@ -170,10 +196,14 @@ function render() {
   const n = x.view();
   const sb = x.screenBytes();
   const all = new Uint8Array(x.memory.buffer, x.outPtr(), n);
+  // screen codes and colour, then the framebuffer when a program drew on
+  // it, then the transcript.
+  const hires = n >= sb + 64000 ? 64000 : 0;
   paint(all.subarray(0, sb));
+  paintPixels(all.subarray(sb, sb + hires));
   const out = $("out");
   const stuck = out.scrollTop + out.clientHeight >= out.scrollHeight - 4;
-  out.textContent = dec.decode(all.subarray(sb));
+  out.textContent = dec.decode(all.subarray(sb + hires));
   if (stuck) out.scrollTop = out.scrollHeight;
 }
 
@@ -216,9 +246,6 @@ function go() {
   if (src.length > x.capacity(0)) { $("out").textContent = "listing too long for this module"; return; }
   new Uint8Array(x.memory.buffer).set(src, x.srcPtr());
   x.newRun(src.length, (Date.now() & 0x7fffffff) || 1);
-  // Type-ahead goes in before the program has asked for anything; a
-  // machine that is not waiting keeps the line for its next INPUT.
-  for (const l of $("keys").value.split("\n")) if (l !== "") feed(l);
   pump();
 }
 

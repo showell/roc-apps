@@ -59,6 +59,13 @@ Basic :: [].{
 		# hands back a machine, the page paints and waits, and resumes.
 		# Milliseconds, and zero means the machine is not sleeping.
 		pause : I64,
+		# **AN INFINITE LOOP IS A FEATURE.** `10 PRINT ...` / `20 GOTO 10`
+		# is the canonical BASIC one-liner and it never ends on purpose.
+		# So running out of fuel is a YIELD, not a death: the machine hands
+		# itself back with what it has drawn so far and the page decides
+		# whether to carry on. `steps` is the count across every resume,
+		# which is the honest measure of how long a program has run.
+		steps : I64,
 		seed : U64,
 		fuel : I64,
 		# OPTION BASE: the lowest subscript an array has. ECMA-55 allows
@@ -71,6 +78,27 @@ Basic :: [].{
 		# program draws by writing bytes, and the page reads those bytes
 		# back out. Sixteen pages of 4 KB is the 64 KB such a machine had.
 		mem : List(List(U8)),
+		# **THE SCREEN IS A FLAT THOUSAND BYTES, AND STILL MEMORY.**
+		# Addresses 1024..2023 and 55296..56295 route here rather than
+		# into the page table: PRINT draws a character at a time, so the
+		# hot path has to be one List.set on a short list rather than five
+		# levels of trie. PEEK and POKE see exactly these bytes, which is
+		# what makes `POKE 1024+P, 81` and `PRINT "X"` the same display.
+		scr : List(U8),
+		col_ram : List(U8),
+		# Where PRINT writes next. A C64 screen is forty wide and
+		# twenty-five tall, and the twenty-sixth line scrolls the rest up.
+		crow : I64,
+		ccol : I64,
+		# **A LINEAR FRAMEBUFFER, WHICH NO REAL MACHINE HAD.** 40x25 is a
+		# Commodore's constraint, not the standard's -- ECMA-55 has no
+		# screen at all -- so this one is 320x200 at one byte a pixel from
+		# 16384, laid out the obvious way: the pixel at (x, y) is at
+		# 16384 + y*320 + x. A C64's bitmap is interleaved by character
+		# cell and a listing has to compute its way in; this one is a POKE
+		# and nothing else. Flat, for the same reason the text screen is.
+		pix : List(U8),
+		drew : Bool,
 		# DEF FNx(v) = expr, kept as the parameter's name and the bytes of
 		# the body, so calling one is just evaluating that expression with
 		# the parameter bound.
@@ -865,11 +893,91 @@ Basic :: [].{
 	zone : I64
 	zone = 14
 
+	# **PRINT AND POKE SHARE ONE DISPLAY.** A character goes into the
+	# transcript and onto the text screen at the cursor, which is what a
+	# terminal is: forty columns, twenty-five rows, and the twenty-sixth
+	# line scrolls the rest up.
 	emit : M, Str -> M
 	emit = |m, t| {
 		b = Str.to_utf8(t)
-		{ ..m, out: List.append(m.out, t), col: Basic.col_after(b, 0, m.col) }
+		{ ..Basic.draw(m, b, 0), out: Basic.append_out(m.out, t), col: Basic.col_after(b, 0, m.col) }
 	}
+
+	# **A PROGRAM THAT PRINTS FOREVER MUST NOT GROW FOREVER.** The maze
+	# one-liner runs until it is stopped, so the transcript is a window on
+	# the end of it rather than all of it -- which is what a terminal's
+	# scrollback is, and the screen shows the live part anyway.
+	scrollback : U64
+	scrollback = 8000
+
+	# Trimmed when it has grown to twice the window, not on every
+	# character: otherwise a program that prints forever pays the whole
+	# window's length per character printed, which is 132 microseconds a
+	# step where it should be under one.
+	append_out : List(Str), Str -> List(Str)
+	append_out = |out, t|
+		if List.len(out) < Basic.scrollback * 2 {
+			List.append(out, t)
+		} else {
+			List.append(List.sublist(out, { start: Basic.scrollback, len: List.len(out) - Basic.scrollback }), t)
+		}
+
+	screen_w : I64
+	screen_w = 40
+
+	screen_h : I64
+	screen_h = 25
+
+	draw : M, List(U8), U64 -> M
+	draw = |m, b, i|
+		if i >= List.len(b) {
+			m
+		} else {
+			c = Basic.byte(b, i)
+			Basic.draw(if c == 10 { Basic.line_feed(m) } else { Basic.put_char(m, c) }, b, i + 1)
+		}
+
+	put_char : M, U8 -> M
+	put_char = |m, c| {
+		at = I64.to_u64_wrap(m.crow * Basic.screen_w + m.ccol)
+		m1 = if at >= Basic.screen_cells {
+			m
+		} else {
+			{ ..m, scr: List.set(m.scr, at, Basic.screen_code(c)) ?? crash("draw: outside the screen") }
+		}
+		if m1.ccol + 1 >= Basic.screen_w { Basic.line_feed(m1) } else { { ..m1, ccol: m1.ccol + 1 } }
+	}
+
+	line_feed : M -> M
+	line_feed = |m|
+		if m.crow + 1 >= Basic.screen_h {
+			{ ..Basic.scroll(m), ccol: 0 }
+		} else {
+			{ ..m, crow: m.crow + 1, ccol: 0 }
+		}
+
+	# Rows one upward, and a blank row at the foot.
+	scroll : M -> M
+	scroll = |m| {
+		keep = I64.to_u64_wrap((Basic.screen_h - 1) * Basic.screen_w)
+		{
+			..m,
+			scr: List.concat(List.sublist(m.scr, { start: I64.to_u64_wrap(Basic.screen_w), len: keep }), List.repeat(32.U8, I64.to_u64_wrap(Basic.screen_w))),
+			col_ram: List.concat(List.sublist(m.col_ram, { start: I64.to_u64_wrap(Basic.screen_w), len: keep }), List.repeat(14.U8, I64.to_u64_wrap(Basic.screen_w))),
+		}
+	}
+
+	# A Commodore screen code from a character. 64..95 are the letters
+	# and 32..63 are themselves; lower case shows as upper, since this
+	# screen has the upper-case set; 128 and up are the graphics, which
+	# is where CHR$(205) -- the one in the maze one-liner -- comes from.
+	screen_code : U8 -> U8
+	screen_code = |c|
+		if c >= 64 and c <= 95 { c - 64 }
+		else if c >= 97 and c <= 122 { c - 96 }
+		else if c >= 32 and c <= 63 { c }
+		else if c >= 128 { c - 128 }
+		else { 32 }
 
 	col_after : List(U8), U64, I64 -> I64
 	col_after = |b, i, c|
@@ -975,6 +1083,8 @@ Basic :: [].{
 			Basic.do_input(m, b, w)
 		} else if k == "SLEEP" or k == "PAUSE" {
 			Basic.do_sleep(m, b, w)
+		} else if k == "PLOT" {
+			Basic.do_plot(m, b, w)
 		} else if k == "POKE" {
 			Basic.do_poke(m, b, w)
 		} else if k == "ON" {
@@ -1271,6 +1381,41 @@ Basic :: [].{
 			{ ..stepped, pause: if ms < 0 { 0 } else { ms } }
 		}
 	}
+
+	# PLOT <x>, <y>, <colour>: a pixel in the framebuffer, which is the
+	# same POKE with the address worked out. Off the edge is ignored
+	# rather than an error, as every plotting BASIC did.
+	do_plot : M, List(U8), U64 -> M
+	do_plot = |m, b, w| {
+		xr = Basic.sum(m, b, w)
+		if xr.m.done { return_early(xr.m) } else {
+			cx = Basic.skip_ws(b, xr.at)
+			if Basic.byte(b, cx) != 44 {
+				{ ..xr.m, done: True, err: "Expected , after the PLOT x", gap: True }
+			} else {
+				yr = Basic.sum(xr.m, b, cx + 1)
+				cy = Basic.skip_ws(b, yr.at)
+				if Basic.byte(b, cy) != 44 {
+					{ ..yr.m, done: True, err: "Expected , after the PLOT y", gap: True }
+				} else {
+					cr = Basic.sum(yr.m, b, cy + 1)
+					x = Basic.idx(Basic.num_of(xr.v))
+					y = Basic.idx(Basic.num_of(yr.v))
+					c = U64.to_u8_wrap(I64.to_u64_wrap(I64.bitwise_and(F64.to_i64_wrap(Basic.floor(Basic.num_of(cr.v))), 255)))
+					inside = x >= 0 and y >= 0 and I64.to_u64_wrap(x) < Basic.hires_w and I64.to_u64_wrap(y) < Basic.hires_h
+					m2 = if inside {
+						Basic.poke_at(cr.m, Basic.hires_base + I64.to_u64_wrap(y) * Basic.hires_w + I64.to_u64_wrap(x), c)
+					} else {
+						cr.m
+					}
+					Basic.advance(m2, cr.at)
+				}
+			}
+		}
+	}
+
+	return_early : M -> M
+	return_early = |m| m
 
 	# POKE <address>, <value>. Not ECMA-55 -- every microcomputer BASIC had
 	# it, and on a Commodore it is how a program draws.
@@ -1598,15 +1743,26 @@ Basic :: [].{
 		waiting: False,
 		asked: False,
 		pause: 0,
+		steps: 0,
 		seed: seed,
 		fuel: Basic.full_tank,
 		base: 0,
-		mem: List.repeat([], 16),
+		mem: List.repeat([], 4096),
+		scr: List.repeat(32.U8, 1000),
+		col_ram: List.repeat(14.U8, 1000),
+		crow: 0,
+		ccol: 0,
+		pix: [],
+		drew: False,
 		fns: [],
 	}
 
+	# A tankful is what one resume runs before handing the machine back.
+	# Small enough that an animation is smooth and a runaway loop is seen
+	# quickly; ten tankfuls is what the batch door allows before it calls
+	# a program non-terminating.
 	full_tank : I64
-	full_tank = 2000000
+	full_tank = 250000
 
 	# **FUEL, NOT FAITH.** A BASIC listing loops forever on purpose often
 	# enough, and a subject that hangs the harness is worse than one that
@@ -1616,7 +1772,7 @@ Basic :: [].{
 		if m.done or m.waiting or m.pause > 0 or m.fuel <= 0 {
 			m
 		} else {
-			Basic.loop(Basic.step({ ..m, fuel: m.fuel - 1 }))
+			Basic.loop(Basic.step({ ..m, fuel: m.fuel - 1, steps: m.steps + 1 }))
 		}
 
 	# ---- the suspended machine -------------------------------------------
@@ -1641,7 +1797,7 @@ Basic :: [].{
 	resume = |m, line|
 		if m.done {
 			m
-		} else if m.pause > 0 {
+		} else if m.pause > 0 or (m.fuel <= 0 and !m.waiting) {
 			Basic.loop({ ..m, pause: 0, fuel: Basic.full_tank })
 		} else {
 			Basic.loop({ ..m, inp: List.append(m.inp, line), waiting: False, fuel: Basic.full_tank })
@@ -1650,11 +1806,15 @@ Basic :: [].{
 	pause_ms : M -> I64
 	pause_ms = |m| m.pause
 
+	steps_taken : M -> I64
+	steps_taken = |m| m.steps
+
 	# 0 finished, 1 waiting for a line, 2 stopped on an exception,
-	# 3 stopped on a form this interpreter has not built, 4 sleeping.
+	# 3 stopped on a form this interpreter has not built, 4 sleeping,
+	# 5 yielded with fuel spent and more to do.
 	status : M -> I64
 	status = |m|
-		if m.waiting { 1 } else if m.pause > 0 { 4 } else if m.gap or m.fuel <= 0 { 3 } else if m.err != "" { 2 } else { 0 }
+		if m.waiting { 1 } else if m.pause > 0 { 4 } else if m.fuel <= 0 { 5 } else if m.gap { 3 } else if m.err != "" { 2 } else { 0 }
 
 	# **THE BATCH DOOR.** Every keystroke up front and the transcript back:
 	# what the corpus ladder grades. A machine that runs dry here has no
@@ -1662,9 +1822,28 @@ Basic :: [].{
 	# interactive door (`start`/`resume`) is where waiting means waiting.
 	run : Str, List(Str), U64 -> Str
 	run = |src, inp, seed| {
-		m = Basic.loop(Basic.new(Basic.load(src), inp, seed))
-		Basic.transcript(if m.waiting { { ..m, done: True, gap: True, err: "Out of input" } } else { m })
+		m = Basic.batch(Basic.loop(Basic.new(Basic.load(src), inp, seed)), 10)
+		Basic.transcript(
+			if m.waiting {
+				{ ..m, done: True, gap: True, err: "Out of input" }
+			} else if m.fuel <= 0 {
+				{ ..m, done: True, gap: True, err: "Did not terminate" }
+			} else {
+				m
+			},
+		)
 	}
+
+	# A yield has nobody to ask in batch, so it is refuelled a bounded
+	# number of times and then reported as a program that did not stop --
+	# which is what the suite calls it too.
+	batch : M, I64 -> M
+	batch = |m, tanks|
+		if tanks <= 0 or m.done or m.waiting or m.fuel > 0 {
+			m
+		} else {
+			Basic.batch(Basic.loop({ ..m, fuel: Basic.full_tank, pause: 0 }), tanks - 1)
+		}
 
 	transcript : M -> Str
 	transcript = |m| {
@@ -1678,8 +1857,6 @@ Basic :: [].{
 			Str.concat(Str.concat(body, "\n*** UNSUPPORTED: "), m.err)
 		} else if m.err != "" {
 			Str.concat(Str.concat(body, "\n*** HALTED: "), m.err)
-		} else if m.fuel <= 0 {
-			Str.concat(body, "\n*** UNSUPPORTED: out of fuel")
 		} else {
 			body
 		}
@@ -1708,29 +1885,31 @@ Basic :: [].{
 	page_bytes : U64
 	page_bytes = 4096
 
-	# A 16-bit address, as a machine with a 64 KB space has.
+	# **WIDER THAN A REAL MACHINE, BECAUSE THE FRAMEBUFFER IS.** A C64
+	# masked to sixteen bits; 320x200 at a byte a pixel does not fit under
+	# 64 KB, so this masks to twenty-four. A listing that relied on POKE
+	# wrapping at 65536 would notice, and none does.
 	addr_of : F64 -> U64
-	addr_of = |x| I64.to_u64_wrap(I64.bitwise_and(F64.to_i64_wrap(Basic.floor(x)), 65535))
+	addr_of = |x| I64.to_u64_wrap(I64.bitwise_and(F64.to_i64_wrap(Basic.floor(x)), 16777215))
 
-	peek : M, U64 -> U8
-	peek = |m, a| List.get(List.get(m.mem, a / Basic.page_bytes) ?? [], I64.to_u64_wrap(I64.rem_by(U64.to_i64_wrap(a), 4096))) ?? 0
+	# **ABOVE EVERYTHING ELSE, AND CHECKED LAST.** The first home for this
+	# was 16384, which put 16384..80383 straight across the colour cells
+	# at 55296: every colour POKE landed in the framebuffer around row 121
+	# and the picture was three lit rows in the middle of a black screen.
+	# The small windows are matched before this one as well, so an overlap
+	# cannot silently win again.
+	hires_base : U64
+	hires_base = 131072
 
-	# **THE PAGE COMES OUT OF THE TABLE BEFORE IT IS WRITTEN.** The list
-	# handed to a List.update closure is not uniquely owned, so writing
-	# through one copies the whole page on every byte. Taking it out with
-	# List.replace, leaving an empty placeholder, writes in place.
-	# `tests/copycheck.sh` is the instrument that tells the two apart.
-	poke_at : M, U64, U8 -> M
-	poke_at = |m, a, v| {
-		p = a / Basic.page_bytes
-		off = I64.to_u64_wrap(I64.rem_by(U64.to_i64_wrap(a), 4096))
-		taken = List.replace(m.mem, p, []) ?? crash("poke: address outside the 64 KB space")
-		page = if List.is_empty(taken.prev) { List.repeat(0.U8, 4096) } else { taken.prev }
-		{ ..m, mem: List.set(taken.list, p, List.set(page, off, v) ?? crash("poke: offset outside a page")) ?? crash("poke: address outside the 64 KB space") }
-	}
+	hires_w : U64
+	hires_w = 320
 
-	# The screen and its colour, as a page wants them: 1,000 bytes from
-	# 1024 then 1,000 from 55296.
+	hires_h : U64
+	hires_h = 200
+
+	hires_cells : U64
+	hires_cells = 64000
+
 	screen_base : U64
 	screen_base = 1024
 
@@ -1740,10 +1919,52 @@ Basic :: [].{
 	screen_cells : U64
 	screen_cells = 1000
 
-	screen : M -> List(U8)
-	screen = |m| Basic.window(m, Basic.colour_base, 0, Basic.window(m, Basic.screen_base, 0, []))
+	peek : M, U64 -> U8
+	peek = |m, a|
+		if a >= Basic.screen_base and a < Basic.screen_base + Basic.screen_cells {
+			List.get(m.scr, a - Basic.screen_base) ?? 0
+		} else if a >= Basic.colour_base and a < Basic.colour_base + Basic.screen_cells {
+			List.get(m.col_ram, a - Basic.colour_base) ?? 0
+		} else if a >= Basic.hires_base and a < Basic.hires_base + Basic.hires_cells {
+			List.get(m.pix, a - Basic.hires_base) ?? 0
+		} else {
+			List.get(List.get(m.mem, a / Basic.page_bytes) ?? [], I64.to_u64_wrap(I64.rem_by(U64.to_i64_wrap(a), 4096))) ?? 0
+		}
 
-	window : M, U64, U64, List(U8) -> List(U8)
-	window = |m, from, i, acc|
-		if i >= Basic.screen_cells { acc } else { Basic.window(m, from, i + 1, List.append(acc, Basic.peek(m, from + i))) }
+	# **THE PAGE COMES OUT OF THE TABLE BEFORE IT IS WRITTEN.** The list
+	# handed to a List.update closure is not uniquely owned, so writing
+	# through one copies the whole page on every byte. Taking it out with
+	# List.replace, leaving an empty placeholder, writes in place.
+	# `tests/copycheck.sh` is the instrument that tells the two apart.
+	poke_at : M, U64, U8 -> M
+	poke_at = |m, a, v|
+		if a >= Basic.screen_base and a < Basic.screen_base + Basic.screen_cells {
+			{ ..m, scr: List.set(m.scr, a - Basic.screen_base, v) ?? crash("poke: screen") }
+		} else if a >= Basic.colour_base and a < Basic.colour_base + Basic.screen_cells {
+			{ ..m, col_ram: List.set(m.col_ram, a - Basic.colour_base, v) ?? crash("poke: colour") }
+		} else if a >= Basic.hires_base and a < Basic.hires_base + Basic.hires_cells {
+			# The framebuffer is only made when something draws on it, so
+			# a text program costs nothing for having one available.
+			lit = if m.drew { m.pix } else { List.repeat(0.U8, Basic.hires_cells) }
+			{ ..m, pix: List.set(lit, a - Basic.hires_base, v) ?? crash("poke: hires"), drew: True }
+		} else {
+			Basic.poke_mem(m, a, v)
+		}
+
+	poke_mem : M, U64, U8 -> M
+	poke_mem = |m, a, v| {
+		p = a / Basic.page_bytes
+		off = I64.to_u64_wrap(I64.rem_by(U64.to_i64_wrap(a), 4096))
+		taken = List.replace(m.mem, p, []) ?? crash("poke: address outside the 64 KB space")
+		page = if List.is_empty(taken.prev) { List.repeat(0.U8, 4096) } else { taken.prev }
+		{ ..m, mem: List.set(taken.list, p, List.set(page, off, v) ?? crash("poke: offset outside a page")) ?? crash("poke: address outside the 64 KB space") }
+	}
+
+	# The screen and its colour, as a page wants them: the thousand screen
+	# codes then the thousand colour cells.
+	# The thousand screen codes, the thousand colour cells, then the
+	# framebuffer -- empty when nothing drew on it, so a text program
+	# ships 2,000 bytes and a plotting one ships 66,000.
+	screen : M -> List(U8)
+	screen = |m| List.concat(List.concat(m.scr, m.col_ram), m.pix)
 }

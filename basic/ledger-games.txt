@@ -1,35 +1,35 @@
 FAIL 23-match | < TAILS! YOU GO FIRST. 
 PASS 3dplot |
 FAIL aceyducy | <  8 
-FAIL amazing | < ?Expected THEN
-FAIL animal | > DOES IT SWIM? YES
-FAIL awari | < MY MOVE IS  1  13  49 
-FAIL bagels | < ?Expected a relational operator
-FAIL banner | >                                                        FFFFFFFFFFFFFFFFFF
+FAIL amazing | < *** UNSUPPORTED: Expected THEN
+FAIL animal | > ARE YOU THINKING OF AN ANIMAL? Y
+FAIL awari | < *** UNSUPPORTED: Out of input
+FAIL bagels | < FERMI 
+FAIL banner | <                                                        
 FAIL basketbl | > SHOT IS MISSED.
-FAIL batnum | < ENTER PILE SIZE
-FAIL battle | < ?Expected =
+FAIL batnum | > Too few items, try again
+FAIL battle | < *** HALTED: Subscript out of range: F
 FAIL blackjck | > THIS IS THE GAME OF 21. AS MANY AS 7 PLAYERS MAY PLAY THE
 FAIL bombard | < YOU GOT ONE OF MY OUTPOSTS!
-FAIL bounce | < TIME INCREMENT (SEC)
+FAIL bounce | < *** UNSUPPORTED: Out of input
 FAIL bowling | > PLAYER: 1 FRAME: 1 BALL: 1 
 FAIL boxing | < GLASSJAW GARY JABS AT ROCKEM SOCKEM ROBOT'S HEAD GLASSJAW GARY'S PUNCH? 1
 FAIL bug | > YOU ROLLED A 4 
 FAIL bullfght | < YOU HAVE DRAWN A AWFUL 3  BULL.
 FAIL bullseye | < FOO 1 'S THROW? 1
-FAIL bunny | <  0  0  10  0  0  10  0  0  10  0  0  10  0  0  10  0  0  10 
+FAIL bunny | <                      @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 FAIL buzzword | < ABILITY 7  ABILITY 23  ABILITY 27 
-FAIL calendar | <  0  0  10  0  0  10  0  0  10  0  0  10  0  0  10  0  0  10 
-FAIL change | < YOUR CHANGE, $ 199.99999999999994 
+FAIL calendar | <     
+FAIL change | <  19 TEN DOLLAR BILL(S)
 FAIL checkers | > FROM 1  5 TO 0  4 
 FAIL chemist | <  23 LITERS OF KRYPTOCYANIC ACID.  HOW MUCH WATER? 63.0
 PASS chief |
 FAIL chomp | >  8     * * * * 
-FAIL combat | > WE HAD A DOGFIGHT. YOU WON - AND FINISHED YOUR MISSION.
+PASS combat |
 FAIL craps | < 
 FAIL cube | < IT'S YOUR MOVE:  ? 1
 FAIL depthchg | < SONAR REPORTS SHOT WAS SOUTHEAST
-FAIL diamond | <          
+FAIL diamond | < 
 FAIL dice | <  2             5 
 FAIL digits | <    0              0          RIGHT         1 
 FAIL evenwin1 | > Not numeric: "NO", try again
@@ -45,55 +45,55 @@ FAIL gunner | < MAXIMUM RANGE OF YOUR GUN IS 38916  YARDS.
 FAIL hamurabi | < LAND IS TRADING AT 21 BUSHELS PER ACRE.
 FAIL hangman | <  1 
 PASS hello |
-FAIL hexapawn | < INSTRUCTIONS (Y-N)? 7,4
+FAIL hexapawn | < *** UNSUPPORTED: Expected THEN
 FAIL hi-q | < ILLEGAL MOVE, TRY AGAIN...
 FAIL hilo | < YOUR GUESS IS TOO HIGH.
 FAIL hockey | < WOULD THE FOO 7  COACH ENTER HIS TEAM
 FAIL horsrace | <  1                           1             7.4 :1
 FAIL hurkle | < GO NORTHWEST
 FAIL kinema | < A BALL IS THROWN UPWARDS AT 21 METERS PER SECOND.
-FAIL king | < ?Expected a relational operator
-FAIL lem | <   0        364800      -19283024      0           5301.63807168  750 
-FAIL letter | > 
+FAIL king | < YOU NOW HAVE  59734  RALLODS IN THE TREASURY.
+FAIL lem | <   0        364800      -19283024      0           5301.64    750 
+FAIL letter | < 
 FAIL life | > ?  **  *
-FAIL life2 | < XXXXXX 0  0  13 $$$$$$ 0  0  13 &&&&&& 0  0  13 ? 1,1
+FAIL life2 | < ILLEGAL COORDS. RETYPE
 FAIL litquiz | > Break in line 96
-FAIL love | < ?Division by zero
+FAIL love | <  1  2  3  4  5  6  7  8  9  10  11  12  13  14  15  16  17  18  19  20  21  22  23  24  
 TIMEOUT lunar |
-FAIL mastrmnd | < BLACK         0  0 
+FAIL mastrmnd | > YOU HAVE  0  BLACKS AND  0  WHITES.
 FAIL mathdice | < I *   I
 FAIL mugwump | < YOU ARE 4.1 UNITS FROM MUGWUMP 1 
-FAIL name | < THANK YOU, .
-FAIL nicoma | < YOUR NUMBER DIVIDED BY 3 HAS A REMAINDER OF
+FAIL name | < THANK YOU,  14  13  12  11  10  9  8  7  6  5  4  3  2  1 .
+FAIL nicoma | < *** UNSUPPORTED: Out of input
 FAIL nim | <  1 ? 6
 FAIL number | < YOU HIT THE JACKPOT!!!
-FAIL onecheck | < JUMP FROM
-FAIL orbit | < YOUR PHOTON BOMB EXPLODED 546.9999999995533 *10^2 MILES FROM THE
+FAIL onecheck | < *** UNSUPPORTED: Out of input
+FAIL orbit | < YOUR PHOTON BOMB EXPLODED 547 *10^2 MILES FROM THE
 FAIL pizza | < 4 4      P 13      P 14      P 15      P 16      4 4 
 FAIL poetry | > MIDNIGHT DREARY
 FAIL poker | <  1 --  KING OF HEARTS        2 --   8  OF DIAMONDS      
 FAIL queen | <  0  0  0  0  0  0  0  0 
 FAIL reverse | <  5  7  1  4  2  3  8  9  6 
-FAIL rocket | < TOUCHDOWN AT 16.863636363636363 SECONDS.
-FAIL rocksp | > ...SCISSORS
-FAIL roulette | < ?Expected a relational operator
+FAIL rocket | < TOUCHDOWN AT 16.8636 SECONDS.
+FAIL rocksp | > WOW!  I WIN!!!
+FAIL roulette | > NUMBER 1 ? 45,10
 FAIL rusrou | < - CLICK -
 FAIL salvo | > YOU HAVE 7 SHOTS.
 FAIL sinewave | < 
-FAIL slalom | < TYPE  0  0  34 INS 0  0  34  FOR INSTRUCTIONS
-FAIL slots | <  0  0  7  0  0  7  0  0  7  0  0  7  0  0  7  0  0  7  0  0  7  0  0  7  0  0  7  0  0  
+FAIL slalom | < HERE COMES GATE # 1 :
+FAIL slots | < ORANGE PLUM BAR
 FAIL splat | > OK.  TERMINAL VELOCITY = 715 MI/HR
-FAIL stars | > I AM THINKING OF A WHOLE NUMBER FROM 1 TO 100 
+FAIL stars | < ******
 FAIL stock | < INT. BALLISTIC MISSILES       IBM          98.25 
-FAIL superstartrek | < ?Expected BASE
+FAIL superstartrek | < *** UNSUPPORTED: Expected BASE
 PASS superstartrekins |
 FAIL synonym | <      WHAT IS A SYNONYM OF STANDSTILL 1 ? DWELLING
-FAIL target | < RADIANS FROM X AXIS = 2.971318276367188    FROM Z AXIS = 4.640287963867188 
-FAIL tictac1 | < YOUR MOVE
+FAIL target | < RADIANS FROM X AXIS = 2.97132    FROM Z AXIS = 4.64029 
+FAIL tictac1 | < *** UNSUPPORTED: Out of input
 FAIL tictac2 | <  X 
 PASS towers |
 FAIL train | <  A CAR TRAVELING 51 MPH CAN MAKE A CERTAIN TRIP IN
-FAIL trap | > I AM THINKING OF A NUMBER BETWEEN 1 AND 100 
+FAIL trap | > YOU HAVE TRAPPED MY NUMBER.
 FAIL war | < YOU: D-A 25   COMPUTER: D-A 39 
 PASS weekday |
 FAIL word | 
