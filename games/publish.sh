@@ -29,4 +29,4 @@ git -C "$HERE" commit -q -m "games: publish to the demo
 
 $(cat "$HERE/live/PROVENANCE")"
 git -C "$HERE" push -q
-echo "live: http://143.244.172.148:9205/2048.html and /minesweeper.html"
+echo "live: http://143.244.172.148:9205/<game>.html for $(ls "$HERE"/live/*.wasm | xargs -n1 basename | sed "s/.wasm//" | tr "\n" " ")"
