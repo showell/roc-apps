@@ -44,6 +44,9 @@ def lit(s):
     return '"' + "".join(out) + '"'
 
 
+# The NBS suite grades ECMA-55; the games' captures are a microcomputer BASIC.
+door = "run_ecma" if suite == "nbs" else "run"
+
 lines = [l for l in inp.split("\n")]
 if lines and lines[-1] == "":
     lines.pop()
@@ -59,7 +62,7 @@ keystrokes = [{", ".join(lit(l) for l in lines)}]
 
 main! = |args| {{
 \tseed = U64.plus_wrap(1, List.len(args))
-\techo!(Basic.run(program, keystrokes, seed))
+\techo!(Basic.{door}(program, keystrokes, seed))
 \tOk({{}})
 }}
 """

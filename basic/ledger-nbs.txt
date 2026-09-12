@@ -5,7 +5,7 @@ PASS P004 |
 PASS P005 |
 PASS P006 |
 PASS P007 |
-FAIL P008 | no report: ?TAB argument less than one
+PASS P008 |
 PASS P009 |
 PASS P010 |
 PASS P011 |

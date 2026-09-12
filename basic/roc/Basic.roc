@@ -71,6 +71,12 @@ Basic :: [].{
 		# OPTION BASE: the lowest subscript an array has. ECMA-55 allows
 		# 0 or 1 and one OPTION statement, before any DIM.
 		base : U64,
+		# **TWO DIALECTS.** ECMA-55 is what the NBS suite grades; the 1978
+		# listings and the captures beside them are a microcomputer BASIC,
+		# and the two disagree where the microcomputers did not follow the
+		# standard: TAB(30) is column 30 in ECMA-55 and thirty spaces in
+		# the captures. True is ECMA-55.
+		ecma : Bool,
 		# **THE ADDRESS SPACE.** ECMA-55 has no PEEK and no POKE -- it is a
 		# teletype language and its only output is PRINT. Every
 		# microcomputer BASIC added them, and on a Commodore the screen IS
@@ -1729,13 +1735,36 @@ Basic :: [].{
 			if t != j {
 				r = Basic.sum(m, b, t + 1)
 				e = Basic.skip_ws(b, r.at)
-				n = F64.to_i64_wrap(Basic.num_of(r.v))
-				if r.m.done { r.m } else { Basic.print_items(Basic.emit(r.m, Basic.spaces(n - r.m.col)), b, if Basic.byte(b, e) == 41 { e + 1 } else { e }, True) }
+				past = if Basic.byte(b, e) == 41 { e + 1 } else { e }
+				if r.m.done {
+					r.m
+				} else if r.m.ecma {
+					Basic.print_items(Basic.tab_ecma(r.m, Basic.num_of(r.v)), b, past, True)
+				} else {
+					Basic.print_items(Basic.emit(r.m, Basic.spaces(F64.to_i64_wrap(Basic.num_of(r.v)) - r.m.col)), b, past, True)
+				}
 			} else {
 				r = Basic.expr(m, b, j)
 				if r.m.done { r.m } else { Basic.print_items(Basic.emit(r.m, Basic.str_of(r.v)), b, r.at, True) }
 			}
 		}
+	}
+
+	# **ECMA-55 COUNTS COLUMNS FROM ONE** (12.4): TAB(n) moves to column n,
+	# so the next character is the n-th on the line. The argument is
+	# rounded; below one it is an exception, reported and taken as one;
+	# past the margin it is reduced by the margin; and a column already
+	# passed starts a new line.
+	margin : I64
+	margin = 80
+
+	tab_ecma : M, F64 -> M
+	tab_ecma = |m, x| {
+		n = Basic.idx(x)
+		m1 = if n < 1 { Basic.emit(m, "\n?TAB argument less than one\n") } else { m }
+		want = if n < 1 { 1 } else { I64.rem_by(n - 1, Basic.margin) + 1 }
+		m2 = if m1.col > want - 1 { Basic.emit(m1, "\n") } else { m1 }
+		Basic.emit(m2, Basic.spaces(want - 1 - m2.col))
 	}
 
 	# ---- running ---------------------------------------------------------
@@ -1805,6 +1834,7 @@ Basic :: [].{
 		seed: seed,
 		fuel: Basic.full_tank,
 		base: 0,
+		ecma: False,
 		mem: List.repeat([], 4096),
 		scr: List.repeat(32.U8, 1000),
 		col_ram: List.repeat(14.U8, 1000),
@@ -1879,8 +1909,16 @@ Basic :: [].{
 	# page to ask, so suspending is a gap rather than a pause -- the
 	# interactive door (`start`/`resume`) is where waiting means waiting.
 	run : Str, List(Str), U64 -> Str
-	run = |src, inp, seed| {
-		m = Basic.batch(Basic.loop(Basic.new(Basic.load(src), inp, seed)), 10)
+	run = |src, inp, seed| Basic.run_in(src, inp, seed, False)
+
+	# The same door in ECMA-55, where the microcomputers differ from it:
+	# what the NBS suite grades.
+	run_ecma : Str, List(Str), U64 -> Str
+	run_ecma = |src, inp, seed| Basic.run_in(src, inp, seed, True)
+
+	run_in : Str, List(Str), U64, Bool -> Str
+	run_in = |src, inp, seed, ecma| {
+		m = Basic.batch(Basic.loop({ ..Basic.new(Basic.load(src), inp, seed), ecma: ecma }), 10)
 		Basic.transcript(
 			if m.waiting {
 				{ ..m, done: True, gap: True, err: "Out of input" }
