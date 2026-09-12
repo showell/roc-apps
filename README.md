@@ -83,6 +83,35 @@ export contract, which the same host serves over a handle table.
 Adding a game: its row in `gen.py` (from `apps/games/build-wasm.ps1`), its
 shell in `emitted.sh`, an app, a page, and its grader in `verify.sh`.
 
+## tests: Cobblestone's own suite as the emitter's ladder
+
+`tests/ladder.sh` emits every program in `codex/test` that sits beside an
+`.expected` verdict, runs it on the Echo platform and diffs the output:
+597 programs in about forty seconds. It is where rocemit's next rung comes
+from, and where a wrong emission shows up as a wrong number rather than a
+compile error.
+
+    tests/ladder.sh                # the whole corpus; writes tests/ledger.txt
+    tests/ladder.sh effect-smoke   # named units
+
+Outcomes are counted apart, because they mean different things: PASS,
+FAIL (wrong output, or roc printed an error), REFUSED with the reason,
+SKIP for a diagnostic test, DIVERGES for a verdict that pins a semantics
+Roc does not have, CRASH, TIMEOUT. **A verdict is compared as text**: 86 of
+the files begin with a stray `0x01` byte and 46 carry carriage returns,
+the console capture's rather than the program's.
+
+At 2026-09-12: 125 pass, 0 fail, 445 refused by reason, 24 diagnostic tests
+skipped, 2 named divergences, 1 stack overflow. The essay is
+`:9100/notes/the-corpus-that-argues-back.md`.
+
+**The divergence, which is not a bug:** a Codex list is written in place and
+a Roc list is a value, so a program that writes a list through one name and
+reads it through another cannot be ported. The emitter refuses the clearest
+shape by name (a definition that writes one of its own list parameters and
+answers something else, as the foreword's bignum does), and the ladder
+names the rest. Nothing we ship does this.
+
 ## The Roc is tracked; everything else the tools write is not
 
 `safari/roc/` is generated and committed, because those files are the point.
