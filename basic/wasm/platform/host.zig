@@ -74,28 +74,51 @@ var roc_ops = RocOps{
     .hosted_fns = builtins.host_abi.emptyHostedFunctions(),
 };
 
-extern fn roc_run(src: RocList, keys: RocList, seed: i64) callconv(.c) RocList;
+const Model = ?[*]u8;
+
+extern fn roc_start(src: RocList, seed: i64) callconv(.c) Model;
+extern fn roc_resume(model: Model, line: RocList) callconv(.c) Model;
+extern fn roc_view(model: Model) callconv(.c) RocList;
+extern fn roc_status(model: Model) callconv(.c) i64;
+extern fn roc_pause(model: Model) callconv(.c) i64;
+extern fn roc_drop(model: Model) callconv(.c) void;
+
+/// A reference for a call that keeps nothing: Roc's decrement restores ours.
+fn borrowed(m: Model) Model {
+    builtins.utils.increfDataPtrC(m, 1, &roc_ops);
+    return m;
+}
 
 // ---- the page's door ---------------------------------------------------
 //
-// A BASIC run is a pure function of its listing, its keystrokes and a
-// seed, so the seam is three buffers and one call. The page writes the
-// listing at `srcPtr` and the keystrokes at `keysPtr`, says how long each
-// is, and reads the transcript back at `outPtr`.
+// **THE MACHINE CROSSES THE SEAM, NOT THE TRANSCRIPT.** A BASIC program
+// stops in the middle of itself -- an INPUT with nothing to read prints
+// its prompt and suspends, a SLEEP asks for a delay -- so the page holds a
+// machine and feeds it, rather than handing over every keystroke in
+// advance and reading a printout.
 //
-// The input buffers are static and fixed: the longest listing in the 1978
-// corpus is under 32 KB and the keystrokes are a few hundred bytes, so a
-// page that overruns them is a page with a bug, and `capacity` is there
-// so it can find out rather than guess.
+// And because the machine is a VALUE, every state it has been in is still
+// a state: `history` keeps them all and `back` is a pop. Time travel costs
+// one pointer per line typed.
 
 const src_cap: usize = 128 * 1024;
-const keys_cap: usize = 32 * 1024;
+const keys_cap: usize = 4 * 1024;
 
 var src_buf: [src_cap]u8 = undefined;
 var keys_buf: [keys_cap]u8 = undefined;
 
-/// The transcript of the last run, owned until the next one replaces it.
-var out: RocList = RocList.empty();
+var history: std.ArrayList(Model) = .empty;
+/// The last view's bytes, owned until the next view replaces them.
+var frame: RocList = RocList.empty();
+
+fn top() Model {
+    if (history.items.len == 0) return null;
+    return history.items[history.items.len - 1];
+}
+
+fn push(m: Model) void {
+    history.append(wasm_allocator, m) catch @trap();
+}
 
 pub export fn srcPtr() u32 {
     return @intCast(@intFromPtr(&src_buf));
@@ -106,24 +129,57 @@ pub export fn keysPtr() u32 {
 pub export fn capacity(which: u32) u32 {
     return if (which == 0) @intCast(src_cap) else @intCast(keys_cap);
 }
+pub export fn screenBytes() u32 {
+    return 2000;
+}
 
-/// Run, and answer how many bytes of transcript there are.
-pub export fn runIt(src_len: u32, keys_len: u32, seed: i32) u32 {
-    if (src_len > src_cap or keys_len > keys_cap) return 0;
-    out.decref(@alignOf(u8), @sizeOf(u8), false, null, noDec, &roc_ops);
-    const s = RocList.fromSlice(u8, src_buf[0..src_len], false, &roc_ops);
-    const k = RocList.fromSlice(u8, keys_buf[0..keys_len], false, &roc_ops);
-    out = roc_run(s, k, seed);
-    return @intCast(out.length);
+/// Start the listing in the source buffer. Everything before is dropped.
+pub export fn newRun(src_len: u32, seed: i32) void {
+    if (src_len > src_cap) @trap();
+    for (history.items) |m| roc_drop(m);
+    history.clearRetainingCapacity();
+    push(roc_start(RocList.fromSlice(u8, src_buf[0..src_len], false, &roc_ops), seed));
+}
+
+/// One line into a waiting machine, or a wake for a sleeping one.
+pub export fn send(line_len: u32) void {
+    const cur = top() orelse return;
+    if (line_len > keys_cap) @trap();
+    push(roc_resume(borrowed(cur), RocList.fromSlice(u8, keys_buf[0..line_len], false, &roc_ops)));
+}
+
+/// Undo one line. The first state is kept, so `back` at the start is a
+/// no-op rather than an empty machine.
+pub export fn back() u32 {
+    if (history.items.len <= 1) return 0;
+    roc_drop(history.pop() orelse return 0);
+    return 1;
+}
+
+pub export fn depth() u32 {
+    return @intCast(history.items.len);
+}
+
+pub export fn runStatus() i32 {
+    return @intCast(roc_status(borrowed(top() orelse return -1)));
+}
+
+pub export fn pauseMs() i32 {
+    return @intCast(roc_pause(borrowed(top() orelse return 0)));
+}
+
+/// The screen (2,000 bytes) and then the transcript, as one buffer.
+pub export fn view() u32 {
+    const cur = top() orelse return 0;
+    frame.decref(@alignOf(u8), @sizeOf(u8), false, null, noDec, &roc_ops);
+    frame = roc_view(borrowed(cur));
+    return @intCast(frame.length);
 }
 
 pub export fn outPtr() u32 {
-    return @intCast(@intFromPtr(out.bytes orelse return 0));
+    return @intCast(@intFromPtr(frame.bytes orelse return 0));
 }
 
-/// The screen is the first 2,000 bytes of what came back: 1,000 screen
-/// codes from address 1024, then 1,000 colour cells from 55296. The
-/// transcript is everything after them.
-pub export fn screenBytes() u32 {
-    return 2000;
+pub export fn outLen() u32 {
+    return @intCast(frame.length);
 }

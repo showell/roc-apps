@@ -46,6 +46,19 @@ Basic :: [].{
 		# built is a different thing, and counting the two together would
 		# let every unbuilt form read as a pass.
 		gap : Bool,
+		# **A SUSPENDED MACHINE.** An INPUT with nothing left to read does
+		# not fail: it stops, having printed its prompt, and `resume` hands
+		# it a line and carries on. `asked` is how it knows, on the way
+		# back in, that the prompt is already on the screen -- the
+		# statement re-executes from its start, which keeps `step` a
+		# dispatch on a keyword and nothing more.
+		waiting : Bool,
+		asked : Bool,
+		# **SLEEP SUSPENDS THE SAME WAY INPUT DOES.** A program that draws
+		# a frame and then sleeps is a program the page can animate: it
+		# hands back a machine, the page paints and waits, and resumes.
+		# Milliseconds, and zero means the machine is not sleeping.
+		pause : I64,
 		seed : U64,
 		fuel : I64,
 		# OPTION BASE: the lowest subscript an array has. ECMA-55 allows
@@ -960,6 +973,8 @@ Basic :: [].{
 			Basic.advance({ ..m, dp: 0 }, w)
 		} else if k == "INPUT" {
 			Basic.do_input(m, b, w)
+		} else if k == "SLEEP" or k == "PAUSE" {
+			Basic.do_sleep(m, b, w)
 		} else if k == "POKE" {
 			Basic.do_poke(m, b, w)
 		} else if k == "ON" {
@@ -1241,6 +1256,22 @@ Basic :: [].{
 		}
 	}
 
+	# SLEEP <seconds>, fractions allowed. PAUSE is the same thing, since
+	# half the listings spell it that way. The statement is stepped past
+	# BEFORE the machine suspends, so waking it carries on rather than
+	# sleeping again.
+	do_sleep : M, List(U8), U64 -> M
+	do_sleep = |m, b, w| {
+		r = Basic.sum(m, b, w)
+		if r.m.done {
+			r.m
+		} else {
+			ms = F64.to_i64_wrap(Basic.floor(Basic.num_of(r.v) * 1000.0 + 0.5))
+			stepped = Basic.advance(r.m, r.at)
+			{ ..stepped, pause: if ms < 0 { 0 } else { ms } }
+		}
+	}
+
 	# POKE <address>, <value>. Not ECMA-55 -- every microcomputer BASIC had
 	# it, and on a Commodore it is how a program draws.
 	do_poke : M, List(U8), U64 -> M
@@ -1429,20 +1460,24 @@ Basic :: [].{
 	do_input : M, List(U8), U64 -> M
 	do_input = |m, b, w| {
 		j = Basic.skip_ws(b, w)
-		after_prompt = if Basic.byte(b, j) == 34 {
-			e = Basic.quote_end(b, j + 1, List.len(b))
-			k = Basic.skip_ws(b, e)
-			{ m: Basic.emit(m, Basic.text_of(b, j + 1, U64.minus_wrap(e, 1))), at: if Basic.byte(b, k) == 59 or Basic.byte(b, k) == 44 { k + 1 } else { k } }
+		quoted = Basic.byte(b, j) == 34
+		e = if quoted { Basic.quote_end(b, j + 1, List.len(b)) } else { j }
+		k = Basic.skip_ws(b, e)
+		vars = if quoted and (Basic.byte(b, k) == 59 or Basic.byte(b, k) == 44) { k + 1 } else { k }
+		# The prompt goes out once, even though a suspended statement runs
+		# again from its start when the line arrives.
+		m0 = if m.asked {
+			m
 		} else {
-			{ m: m, at: j }
+			shown = if quoted { Basic.emit(m, Basic.text_of(b, j + 1, U64.minus_wrap(e, 1))) } else { m }
+			{ ..Basic.emit(shown, "? "), asked: True }
 		}
-		m0 = after_prompt.m
 		if m0.ip >= List.len(m0.inp) {
-			{ ..m0, done: True, err: "Out of input", gap: True}
+			{ ..m0, waiting: True }
 		} else {
 			line = List.get(m0.inp, m0.ip) ?? ""
-			m1 = Basic.emit(Basic.emit(Basic.emit(m0, "? "), line), "\n")
-			Basic.input_vars({ ..m1, ip: m1.ip + 1 }, b, after_prompt.at, Basic.split_commas(Str.to_utf8(line), 0, []), 0)
+			m1 = Basic.emit(Basic.emit(m0, line), "\n")
+			Basic.input_vars({ ..m1, ip: m1.ip + 1, asked: False }, b, vars, Basic.split_commas(Str.to_utf8(line), 0, []), 0)
 		}
 	}
 
@@ -1560,26 +1595,76 @@ Basic :: [].{
 		done: False,
 		err: "",
 		gap: False,
+		waiting: False,
+		asked: False,
+		pause: 0,
 		seed: seed,
-		fuel: 2000000,
+		fuel: Basic.full_tank,
 		base: 0,
 		mem: List.repeat([], 16),
 		fns: [],
 	}
+
+	full_tank : I64
+	full_tank = 2000000
 
 	# **FUEL, NOT FAITH.** A BASIC listing loops forever on purpose often
 	# enough, and a subject that hangs the harness is worse than one that
 	# reports a bound.
 	loop : M -> M
 	loop = |m|
-		if m.done or m.fuel <= 0 {
+		if m.done or m.waiting or m.pause > 0 or m.fuel <= 0 {
 			m
 		} else {
 			Basic.loop(Basic.step({ ..m, fuel: m.fuel - 1 }))
 		}
 
+	# ---- the suspended machine -------------------------------------------
+
+	# A program that has not been fed anything yet. It runs until it wants
+	# a line, or until it is done.
+	start : Str, U64 -> M
+	start = |src, seed| Basic.loop(Basic.new(Basic.load(src), [], seed))
+
+	# One more line, and on until the next time it wants one. A line given
+	# to a machine that is not waiting is kept for the next INPUT rather
+	# than dropped, so a page that types ahead does not lose it.
+	# A machine that was SLEEPING wakes; one that was waiting for a line
+	# is given this one. The two are told apart here so that waking a
+	# sleeper does not push an empty line into its INPUT queue.
+	# **THE FUEL IS PER RESUME, NOT PER PROGRAM.** It exists so that a
+	# listing which loops forever cannot hang whatever is driving it, and
+	# a suspended machine is already chunked into pieces the driver can
+	# see between. An animation of a thousand frames is a thousand short
+	# runs, and each one is bounded on its own.
+	resume : M, Str -> M
+	resume = |m, line|
+		if m.done {
+			m
+		} else if m.pause > 0 {
+			Basic.loop({ ..m, pause: 0, fuel: Basic.full_tank })
+		} else {
+			Basic.loop({ ..m, inp: List.append(m.inp, line), waiting: False, fuel: Basic.full_tank })
+		}
+
+	pause_ms : M -> I64
+	pause_ms = |m| m.pause
+
+	# 0 finished, 1 waiting for a line, 2 stopped on an exception,
+	# 3 stopped on a form this interpreter has not built, 4 sleeping.
+	status : M -> I64
+	status = |m|
+		if m.waiting { 1 } else if m.pause > 0 { 4 } else if m.gap or m.fuel <= 0 { 3 } else if m.err != "" { 2 } else { 0 }
+
+	# **THE BATCH DOOR.** Every keystroke up front and the transcript back:
+	# what the corpus ladder grades. A machine that runs dry here has no
+	# page to ask, so suspending is a gap rather than a pause -- the
+	# interactive door (`start`/`resume`) is where waiting means waiting.
 	run : Str, List(Str), U64 -> Str
-	run = |src, inp, seed| Basic.transcript(Basic.loop(Basic.new(Basic.load(src), inp, seed)))
+	run = |src, inp, seed| {
+		m = Basic.loop(Basic.new(Basic.load(src), inp, seed))
+		Basic.transcript(if m.waiting { { ..m, done: True, gap: True, err: "Out of input" } } else { m })
+	}
 
 	transcript : M -> Str
 	transcript = |m| {

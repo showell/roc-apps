@@ -29,6 +29,11 @@
             font: 13px/1.1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   #screen div { white-space: pre; }
   #screen span { display: inline-block; }
+  #line { width: 100%; box-sizing: border-box; margin-top: 8px; padding: 8px 10px;
+          background: transparent; color: inherit; border: 1px solid var(--line); border-radius: 4px;
+          font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  #line:enabled { border-color: var(--ink); }
+  #line:disabled { color: var(--dim); }
   .bar { display: flex; gap: 10px; align-items: center; margin: 14px 0; flex-wrap: wrap; }
   button { font: inherit; padding: 6px 16px; border: 1px solid var(--line); border-radius: 4px;
            background: transparent; color: inherit; cursor: pointer; }
@@ -46,6 +51,8 @@ Everything below runs in this tab.</p>
 
 <div class="bar">
   <button id="run">Run</button>
+  <button id="stop">Stop</button>
+  <button id="back">Back</button>
   <select id="sample"></select>
   <span id="status" class="sub" style="margin:0"></span>
 </div>
@@ -62,6 +69,7 @@ Everything below runs in this tab.</p>
     <div id="screen" hidden></div>
     <label for="out">Transcript</label>
     <pre id="out"></pre>
+    <input id="line" type="text" spellcheck="false" placeholder="the program is not asking for anything" disabled>
   </div>
 </div>
 
@@ -78,15 +86,18 @@ const SAMPLES = {
   "Hello": '10 PRINT "HELLO, WORLD"\n20 END\n',
   "Squares": '10 FOR I = 1 TO 10\n20 PRINT I, I*I, I*I*I\n30 NEXT I\n40 END\n',
   "Temperature table": '10 PRINT "C", "F"\n20 FOR C = -40 TO 100 STEP 20\n30 PRINT C, C*9/5+32\n40 NEXT C\n50 END\n',
-  "Guess a number": '10 PRINT "I AM THINKING OF A NUMBER FROM 1 TO 100."\n20 LET N = INT(RND(1)*100) + 1\n30 FOR T = 1 TO 7\n40 PRINT "YOUR GUESS";\n50 INPUT G\n60 IF G = N THEN 200\n70 IF G < N THEN 100\n80 PRINT "TOO HIGH."\n90 GOTO 110\n100 PRINT "TOO LOW."\n110 NEXT T\n120 PRINT "OUT OF GUESSES. IT WAS"; N\n130 END\n200 PRINT "RIGHT, IN"; T; "GUESSES!"\n210 END\n',
+  "Guess a number (type your own)": '10 PRINT "I AM THINKING OF A NUMBER FROM 1 TO 100."\n20 LET N = INT(RND(1)*100) + 1\n30 FOR T = 1 TO 7\n40 PRINT "YOUR GUESS";\n50 INPUT G\n60 IF G = N THEN 200\n70 IF G < N THEN 100\n80 PRINT "TOO HIGH."\n90 GOTO 110\n100 PRINT "TOO LOW."\n110 NEXT T\n120 PRINT "OUT OF GUESSES. IT WAS"; N\n130 END\n200 PRINT "RIGHT, IN"; T; "GUESSES!"\n210 END\n',
   "Sieve of Eratosthenes": '10 DIM S(200)\n20 FOR I = 2 TO 200\n30 IF S(I) = 1 THEN 80\n40 PRINT I;\n50 FOR J = I+I TO 200 STEP I\n60 LET S(J) = 1\n70 NEXT J\n80 NEXT I\n90 PRINT\n99 END\n',
   "Fibonacci": '10 LET A = 0\n20 LET B = 1\n30 FOR I = 1 TO 20\n40 PRINT A;\n50 LET C = A + B\n60 LET A = B\n70 LET B = C\n80 NEXT I\n90 PRINT\n99 END\n',
   "Screen: colour bars": '10 REM THE SCREEN IS MEMORY: 40x25 CODES AT 1024,\n11 REM COLOUR AT 55296. POKE IS HOW A PROGRAM DRAWS.\n20 FOR Y = 0 TO 24\n30 FOR X = 0 TO 39\n40 LET P = X + 40*Y\n50 POKE 1024 + P, 160\n60 POKE 55296 + P, INT(X/2.5)\n70 NEXT X\n80 NEXT Y\n90 PRINT "SIXTEEN COLOURS, POKED ONE CELL AT A TIME."\n99 END\n',
   "Screen: sine wave": '10 FOR X = 0 TO 39\n20 LET Y = INT(12 + 11*SIN(X/3.2))\n30 LET P = X + 40*Y\n40 POKE 1024 + P, 81\n50 POKE 55296 + P, 7\n60 NEXT X\n70 FOR X = 0 TO 39\n80 POKE 1024 + X + 480, 64\n90 POKE 55296 + X + 480, 11\n100 NEXT X\n110 PRINT "A SINE, PLOTTED BY POKE."\n199 END\n',
   "Screen: Mandelbrot": '10 FOR R = 0 TO 24\n20 FOR C = 0 TO 39\n30 LET A = -2.2 + C*3.0/39\n40 LET B = -1.2 + R*2.4/24\n50 LET X = 0\n60 LET Y = 0\n70 LET N = 0\n80 IF X*X + Y*Y > 4 THEN 140\n90 IF N >= 15 THEN 140\n100 LET T = X*X - Y*Y + A\n110 LET Y = 2*X*Y + B\n120 LET X = T\n130 LET N = N + 1\n135 GOTO 80\n140 LET P = C + 40*R\n150 POKE 1024 + P, 160\n160 POKE 55296 + P, N\n170 NEXT C\n180 NEXT R\n190 PRINT "MANDELBROT, SIXTEEN ITERATIONS DEEP."\n199 END\n',
+  "Screen: Mandelbrot zoom (SLEEP)": '10 REM SLEEP HANDS THE MACHINE BACK TO THE PAGE,\n11 REM WHICH PAINTS A FRAME AND RESUMES IT.\n20 LET Z = 1\n30 FOR F = 1 TO 24\n40 FOR R = 0 TO 24\n50 FOR C = 0 TO 39\n60 LET A = -0.743 + (C-19.5)*3.0/39/Z\n70 LET B = 0.131 + (R-12)*2.4/24/Z\n80 LET X = 0\n90 LET Y = 0\n100 LET N = 0\n110 IF X*X + Y*Y > 4 THEN 170\n120 IF N >= 14 THEN 170\n130 LET T = X*X - Y*Y + A\n140 LET Y = 2*X*Y + B\n150 LET X = T\n160 LET N = N + 1\n165 GOTO 110\n170 LET P = C + 40*R\n180 POKE 1024 + P, 160\n190 POKE 55296 + P, N + 1\n200 NEXT C\n210 NEXT R\n220 SLEEP 0.05\n230 LET Z = Z * 1.35\n240 NEXT F\n250 PRINT "TWENTY-FOUR FRAMES, ONE SLEEP EACH."\n299 END\n',
   "Square roots by Newton": '10 PRINT "N", "SQR(N)", "NEWTON"\n20 FOR N = 1 TO 10\n30 LET X = N\n40 FOR K = 1 TO 12\n50 LET X = (X + N/X)/2\n60 NEXT K\n70 PRINT N, SQR(N), X\n80 NEXT N\n90 END\n',
 };
-const KEYS = { "Guess a number": "50\n25\n37\n43\n40\n41\n42\n" };
+// Type-ahead, for a sample that wants some. Leave it empty and the page
+// will ask you instead.
+const KEYS = {};
 
 const $ = (id) => document.getElementById(id);
 const sel = $("sample");
@@ -96,35 +107,23 @@ for (const name of Object.keys(SAMPLES)) {
 }
 sel.onchange = () => { $("src").value = SAMPLES[sel.value]; $("keys").value = KEYS[sel.value] || ""; };
 
-let x = null;
-const enc = new TextEncoder(), dec = new TextDecoder();
-
-async function boot() {
-  $("status").textContent = "loading…";
-  const { instance } = await WebAssembly.instantiateStreaming(fetch("basic.wasm"), {});
-  x = instance.exports;
-  $("status").textContent = "";
-  sel.onchange();
-  go();
-}
-
 // ---- the screen ---------------------------------------------------------
 //
 // A Commodore's screen IS memory: 1,000 screen codes from 1024 and 1,000
 // colour cells from 55296. Codes 0-63 are exact; the graphics half is an
 // approximation, since PETSCII has glyphs Unicode does not.
-const SC = "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\u00a3]\u2191\u2190 !\"#$%&'()*+,-./0123456789:;<=>?";
-const GFX = "\u2500\u2660\u2502\u2500\u2500\u2500\u2500\u2502\u2502\u256e\u2570\u256f\u2598\u2572\u2571\u2596" +
-            "\u259d\u25cf\u2584\u2665\u258c\u256d\u2573\u25cb\u2663\u258e\u2666\u253c\u2592\u2502\u03c0\u25e5" +
-            " \u258c\u2584\u2594\u2581\u258f\u2592\u2595\u2592\u25e4\u2595\u251c\u2597\u2514\u2510\u2582" +
-            "\u250c\u2534\u252c\u2524\u258e\u258d\u258a\u258b\u258a\u2587\u2586\u2585\u2584\u2502\u2592\u2592";
+const SC = "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[£]↑← !\"#$%&'()*+,-./0123456789:;<=>?";
+const GFX = "─♠│────││╮╰╯▘╲╱▖" +
+            "▝●▄♥▌╭╳○♣▎♦┼▒│π◥" +
+            " ▌▄▔▁▏▒▕▒◤▕├▗└┐▂" +
+            "┌┴┬┤▎▍▊▋▊▇▆▅▄│▒▒";
 const PAL = ["#000000","#ffffff","#813338","#75cec8","#8e3c97","#56ac4d","#2e2c9b","#edf171",
              "#8e5029","#553800","#c46c71","#4a4a4a","#7b7b7b","#a9ff9f","#706deb","#b2b2b2"];
 
 function glyph(c) {
   const rev = c >= 128;
   const k = rev ? c - 128 : c;
-  return { ch: k < 64 ? SC[k] : GFX[k - 64] || "\u00b7", rev: rev };
+  return { ch: k < 64 ? SC[k] : GFX[k - 64] || "·", rev: rev };
 }
 
 function paint(cells) {
@@ -151,27 +150,93 @@ function paint(cells) {
   }
 }
 
-function go() {
-  if (!x) return;
-  const src = enc.encode($("src").value);
-  const keys = enc.encode($("keys").value);
-  if (src.length > x.capacity(0) || keys.length > x.capacity(1)) {
-    $("out").textContent = "listing or keystrokes too long for this module";
-    return;
-  }
-  // The module's memory can be replaced by a growth during the run, so
-  // every view is taken fresh from the buffer it is about to read.
-  new Uint8Array(x.memory.buffer).set(src, x.srcPtr());
-  new Uint8Array(x.memory.buffer).set(keys, x.keysPtr());
-  const t0 = performance.now();
-  const n = x.runIt(src.length, keys.length, (Date.now() & 0x7fffffff) || 1);
-  const ms = performance.now() - t0;
+let x = null, running = false, stopped = false;
+const enc = new TextEncoder(), dec = new TextDecoder();
+const STATUS = { 0: "finished", 1: "waiting for a line", 2: "stopped on an exception",
+                 3: "stopped: a form the interpreter has not built", 4: "sleeping" };
+
+async function boot() {
+  $("status").textContent = "loading\u2026";
+  const { instance } = await WebAssembly.instantiateStreaming(fetch("basic.wasm"), {});
+  x = instance.exports;
+  $("status").textContent = "";
+  sel.onchange();
+  go();
+}
+
+const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function render() {
+  const n = x.view();
   const sb = x.screenBytes();
   const all = new Uint8Array(x.memory.buffer, x.outPtr(), n);
   paint(all.subarray(0, sb));
-  $("out").textContent = dec.decode(all.subarray(sb));
-  $("status").textContent = (n - sb) + " bytes in " + ms.toFixed(1) + " ms";
+  const out = $("out");
+  const stuck = out.scrollTop + out.clientHeight >= out.scrollHeight - 4;
+  out.textContent = dec.decode(all.subarray(sb));
+  if (stuck) out.scrollTop = out.scrollHeight;
 }
+
+// **RUN UNTIL THE MACHINE WANTS SOMETHING.** A suspended machine comes
+// back for one of two reasons: it printed an INPUT prompt, or it asked to
+// sleep. The first waits for the reader; the second paints a frame and
+// carries on, which is what makes an animation an animation.
+async function pump() {
+  running = true;
+  while (!stopped) {
+    const st = x.runStatus();
+    render();
+    if (st !== 4) {
+      $("status").textContent = STATUS[st] + "  \u00b7  " + x.depth() + " states";
+      $("line").disabled = st !== 1;
+      $("line").placeholder = st === 1 ? "type a line and press Enter" : "the program is not asking for anything";
+      if (st === 1) $("line").focus();
+      running = false;
+      return;
+    }
+    await delay(Math.min(x.pauseMs(), 2000));
+    if (stopped) break;
+    x.send(0);
+  }
+  running = false;
+  $("status").textContent = "stopped  \u00b7  " + x.depth() + " states";
+}
+
+function feed(text) {
+  const b = enc.encode(text);
+  if (b.length > x.capacity(1)) return;
+  new Uint8Array(x.memory.buffer).set(b, x.keysPtr());
+  x.send(b.length);
+}
+
+function go() {
+  if (!x) return;
+  stopped = false;
+  const src = enc.encode($("src").value);
+  if (src.length > x.capacity(0)) { $("out").textContent = "listing too long for this module"; return; }
+  new Uint8Array(x.memory.buffer).set(src, x.srcPtr());
+  x.newRun(src.length, (Date.now() & 0x7fffffff) || 1);
+  // Type-ahead goes in before the program has asked for anything; a
+  // machine that is not waiting keeps the line for its next INPUT.
+  for (const l of $("keys").value.split("\n")) if (l !== "") feed(l);
+  pump();
+}
+
+$("stop").onclick = () => { stopped = true; };
+$("back").onclick = () => {
+  if (!x || running) return;
+  // **THE MACHINE IS A VALUE**, so every state it has been in is still a
+  // state and going back is a pop. Nothing is replayed.
+  x.back();
+  stopped = false;
+  pump();
+};
+$("line").addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" || !x || running) return;
+  feed($("line").value);
+  $("line").value = "";
+  pump();
+});
 
 $("run").onclick = go;
 $("src").addEventListener("keydown", (e) => {
