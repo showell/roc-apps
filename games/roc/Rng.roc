@@ -10,7 +10,7 @@ Rng :: [].{
 	rng_next : Rng.Rng -> Rng.Rng
 	rng_next = |r| ({
 		h = I64.plus_wrap(I64.times_wrap(r.state, 1103515245), 12345)
-		positive = (if (h < 0) { (-h) } else { h })
+		positive = (if (h < 0) { I64.minus_wrap(0, h) } else { h })
 		{ state: positive }
 	})
 

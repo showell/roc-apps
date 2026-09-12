@@ -69,6 +69,7 @@ diverges() {
         edalias) echo "list-set-at mutates in place; Roc's List.set answers a new list" ;;
         ui-event-test) echo "list-push mutates a list two siblings share; Roc's List.append answers a new one" ;;
         real-show-wide) echo "the verdict pins Codex's own printer: it reads 12345678901234567.0 as ...566, we print the double" ;;
+        cost@accumulator-corpus|ops@list-growth) echo "measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero" ;;
     esac
 }
 # **THE RUN IS THE EXPENSIVE PART, THE EMIT IS NOT.** rocemit is a Rust

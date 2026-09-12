@@ -71,7 +71,7 @@ PASS consistent-hash-balance |
 REFUSED console-readline-cite | builtin `read-line` used as a value
 SKIP const-narrow-proven | expects a diagnostic
 PASS convolution-identity |
-FAIL cost@accumulator-corpus | output: < p-append-one        n=0 2n=0 4n=0 x0.0 degenerate
+DIVERGES cost@accumulator-corpus | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
 REFUSED cost@giveup-beats-fuel | builtin `poke-byte`
 REFUSED cross-port-refused | builtin `port-out-byte`
 PASS crypto-test |
@@ -634,7 +634,7 @@ REFUSED lib@brotli-ctx2-test | `lz77-count-distinct` writes its list parameter `
 REFUSED lib@brotli-dict-test | builtin `__list-with-capacity`
 REFUSED lib@brotli-test | `lz77-count-distinct` writes its list parameter `seen` and answers something else
 PASS lib@canvas-viewport |
-FAIL lib@cbor-test | compile: ── ✗ missing method ────────────────────────────
+PASS lib@cbor-test |
 REFUSED lib@data-table-rows | builtin `text-compare`
 PASS lib@decimal-test |
 REFUSED lib@deflate-dynamic-test | `lz77-count-distinct` writes its list parameter `seen` and answers something else
@@ -650,7 +650,7 @@ PASS lib@locale-test |
 PASS lib@loss-test |
 PASS lib@lz4-test |
 REFUSED lib@markdown-ordered | builtin `raw-bytes-to-text`
-FAIL lib@msgpack-test | compile: ── ✗ missing method ────────────────────────────
+PASS lib@msgpack-test |
 PASS lib@number-theory-test |
 PASS lib@numeric-test |
 REFUSED lib@palette-filter | builtin `raw-bytes-to-text`
@@ -750,10 +750,10 @@ PASS ops@div-negative-pow2 |
 PASS ops@int-add-wrapping |
 PASS ops@int-min-literal |
 PASS ops@int-mul-wrapping |
-CRASH ops@int-pow | crashed with this message:
+PASS ops@int-pow |
 PASS ops@int-rem |
-FAIL ops@int-wrapping-spelling | compile: ── ✗ compile time crash ────────────────────────── I
-FAIL ops@list-growth | output: < quad 100->200 : LINEAR
+PASS ops@int-wrapping-spelling |
+DIVERGES ops@list-growth | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
 REFUSED ops@list-index-bounds | builtin `list-insert-at`
 PASS ops@list-view-bounds |
 PASS ops@match-nested-pattern |

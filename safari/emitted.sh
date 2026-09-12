@@ -59,7 +59,8 @@ for u in "$UNITS"/*Spec.codex; do
         cp "$f" "$ROC_DIR/$b"; wrote[$b]="$n"
     done
     [ -z "$clash" ] || { fail=$((fail + 1)); echo "FAIL $n  chapter text differs:$clash"; continue; }
-    echo "$app" > "$OUT/$n.app"
+    # rocemit prints the app's name and then a digest of what it wrote.
+    echo "${app%%$'\n'*}" > "$OUT/$n.app"
     units+=("$n")
 done
 # PHASE TWO, two at a time: roc on every unit, each timed. The box has two
