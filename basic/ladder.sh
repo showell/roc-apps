@@ -50,6 +50,10 @@ one() {
     if [ $rc -ge 128 ]; then echo "KILLED $n | signal $((rc - 128))" > "$d/verdict"
     elif [ $rc -eq 124 ]; then echo "TIMEOUT $n |" > "$d/verdict"
     elif grep -q "✗" "$d/err"; then echo "CRASH $n | compile: $(grep -m1 -A2 '✗' "$d/err" | tr '\n' ' ' | cut -c1-90)" > "$d/verdict"
+    # **AN EMPTY TRANSCRIPT IS A CRASH.** A stack overflow prints no ✗ and
+    # no TEST FAILED, so without this it grades as a pass.
+    elif [ ! -s "$d/out" ] || { [ $rc -ne 0 ] && grep -q 'Roc application\|crashed' "$d/err"; }; then
+        echo "CRASH $n | exit $rc: $(grep -v '^$' "$d/err" | head -1 | cut -c1-80)" > "$d/verdict"
     elif [ "$suite" = nbs ]; then
         row="$(grep "^$n |" "$HERE/nbs-reports.txt")"
         kind="$(echo "$row" | cut -s -d'|' -f2 | tr -d ' ')"

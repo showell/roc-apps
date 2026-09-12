@@ -25,13 +25,12 @@
      that a cell is exactly a cell. */
   #screen { background: var(--scr-bg, #000); color: var(--scr-fg, #33ff66); border: 8px solid var(--scr-edge, #1d4d2a); border-radius: 4px;
             padding: 8px; margin: 0 0 12px; overflow-x: auto;
+            width: max-content; max-width: 100%; box-sizing: content-box;
             font: 13px/1.1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   #screen div { white-space: pre; }
   #screen span { display: inline-block; }
   #pix { width: 100%; max-width: 640px; image-rendering: pixelated; display: block;
          background: #000; border: 8px solid var(--scr-edge, #1d4d2a); border-radius: 4px; margin: 0 0 12px; }
-  /* `display: block` above would otherwise beat the hidden attribute. */
-  #pix[hidden], #screen[hidden] { display: none; }
   #line { width: 100%; box-sizing: border-box; margin-top: 8px; padding: 8px 10px;
           background: transparent; color: inherit; border: 1px solid var(--line); border-radius: 4px;
           font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
@@ -46,10 +45,21 @@
   .note { color: var(--dim); font-size: 12px; margin-top: 22px; border-top: 1px solid var(--line); padding-top: 14px; }
   code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   a { color: inherit; }
+  /* Rules above that set `display` would otherwise beat the hidden attribute. */
+  [hidden] { display: none !important; }
+  #status.done { display: inline-block; color: var(--ink); animation: done-jiggle .6s ease-in-out; }
+  @keyframes done-jiggle {
+    0%, 100% { transform: translateX(0) rotate(0); }
+    20% { transform: translateX(-3px) rotate(-3deg); }
+    40% { transform: translateX(3px) rotate(3deg); }
+    60% { transform: translateX(-2px) rotate(-2deg); }
+    80% { transform: translateX(2px) rotate(1deg); }
+  }
+  @media (prefers-reduced-motion: reduce) { #status.done { animation: none; } }
 </style>
 <div class="wrap">
-<h1>BASIC, in Roc</h1>
-<p class="sub">An ECMA-55 Minimal BASIC interpreter, hand-written in Roc and compiled to WebAssembly,
+<h1>BASIC, in <a href="https://www.roc-lang.org/">Roc</a></h1>
+<p class="sub">An ECMA-55 Minimal BASIC interpreter, hand-written in <a href="https://www.roc-lang.org/">Roc</a> and compiled to WebAssembly,
 with a thin JavaScript layer for the page. Everything below runs in this tab.</p>
 
 <div class="bar">
@@ -81,6 +91,7 @@ with a thin JavaScript layer for the page. Everything below runs in this tab.</p
   BASIC test programs and the 1978 <em>BASIC Computer Games</em> listings.
   Source: <a href="https://github.com/showell/roc-apps/tree/master/basic">github.com/showell/roc-apps</a>
   (<code>basic/</code>).
+  This page was authored by Steve Howell with Claude in September 2026.
 </p>
 </div>
 
@@ -202,7 +213,7 @@ function paint(cells) {
 // replaced, and stops without touching the page.
 let x = null, running = false, stopped = false, run = 0, note = "";
 const enc = new TextEncoder(), dec = new TextDecoder();
-const STATUS = { 0: "finished", 1: "waiting for a line", 2: "stopped on an exception",
+const STATUS = { 0: "finished \u2713", 1: "waiting for a line", 2: "stopped on an exception",
                  3: "stopped: a form the interpreter has not built", 4: "sleeping",
                  5: "running", 6: "rejected before it ran" };
 
@@ -265,13 +276,18 @@ async function pump(id) {
       // A spent tank, a SLEEP, or the millisecond every PRINT ends in:
       // still running.
       $("status").textContent = "running";
+      $("status").classList.remove("done");
       await delay(st === 4 ? Math.min(x.pauseMs(), 2000) : 0);
       if (stopped || id !== run) break;
       x.wake();
       continue;
     }
     const why = (st === 2 || st === 3 || st === 6) && note ? "  \u2014  " + note : "";
-    $("status").textContent = STATUS[st] + why;
+    const bar = $("status");
+    bar.textContent = STATUS[st] + why;
+    // A little ceremony for a program that ran to its end.
+    bar.classList.remove("done");
+    if (st === 0) { void bar.offsetWidth; bar.classList.add("done"); }
     $("line").disabled = st !== 1;
     $("line").placeholder = st === 1 ? "type a line and press Enter" : "the program is not asking for anything";
     if (st === 1) $("line").focus();
