@@ -4,7 +4,6 @@ package
 	[
 		Bezier,
 		BleAtt,
-		BloomFilter,
 		Canopen,
 		CardDeck,
 		Cce,

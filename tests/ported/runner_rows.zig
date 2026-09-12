@@ -40,15 +40,6 @@ const codex_ble_att_encode_stdout =
     \\5
     ++ "\n";
 
-const codex_bloom_spread_stdout =
-    \\fp-int-1024=5
-    \\fp-int-1021=5
-    \\fill-pct-1024=31
-    \\fill-pct-1021=31
-    \\fp-text-1024=7
-    \\fp-text-1021=2
-    ++ "\n";
-
 const codex_bounded_sig_runtime_stdout =
     \\6
     \\9
@@ -804,7 +795,6 @@ const codex_zigbee_encode_stdout =
     .{ .id = 0, .suite = .codex, .name = "codex: bezier-identity", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_bezier_identity.roc", .stdout_exact = codex_bezier_identity_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: bitop-if-cond", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_bitop_if_cond.roc", .stdout_exact = codex_bitop_if_cond_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: ble-att-encode", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ble_att_encode.roc", .stdout_exact = codex_ble_att_encode_stdout } } },
-    .{ .id = 0, .suite = .codex, .name = "codex: bloom-spread", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_bloom_spread.roc", .stdout_exact = codex_bloom_spread_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: bounded-sig-runtime", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_bounded_sig_runtime.roc", .stdout_exact = codex_bounded_sig_runtime_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: bs3-smoke", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_bs3_smoke.roc", .stdout_exact = codex_bs3_smoke_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: call-clobber", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_call_clobber.roc", .stdout_exact = codex_call_clobber_stdout } } },

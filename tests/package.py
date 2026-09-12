@@ -153,10 +153,14 @@ README = """# Codex tests, ported to Roc
 from Codex to Roc and checked against the output Cobblestone records for
 each one.
 
-{n} of the {all_n} the emitter runs to their verdict are here: a Codex
-chapter can be 28 KB and needed by exactly one program, so a test is left
-out when it would add more than {cap} KB of chapter text nobody else
-needs. The rest are in [roc-apps]({apps}).
+{n} of the {all_n} the emitter runs to their verdict are here. Two kinds
+are left out. Eleven take more than a quarter of a second, and the reason
+is the compiler rather than the program -- ten of them in compile-time
+evaluation and one in the allocator -- so they are held back by name
+rather than being a performance report inside a regression suite. The
+rest are left out on size: a Codex chapter can be 28 KB and needed by
+exactly one program, so a test goes when it would add more than {cap} KB
+of chapter text nobody else needs. Everything is in [roc-apps]({apps}).
 
 **These were not written for Roc.** They are one compiler's test suite for
 another language, translated; they may or may not be valuable here, and
@@ -206,10 +210,11 @@ them RUNS in about 3 ms; the rest is the compiler. The slowest:
 
 The compiler EVALUATES a call whose arguments are known, so for these
 programs the compile time is largely the program's own work and the run is
-then a few milliseconds. `ttt-perfect`, outside the default cap, is the
-clearest case: 2.7 seconds to check, because the compiler plays the
-whole-tree tic-tac-toe search, and 3 ms to run, because by then the answer
-is a constant. See roc-apps `findings/roc-check-hang`.
+then two or three milliseconds. The eleven where that adds up to more than
+a quarter of a second are held back by name, and the slowest of them,
+`ttt-perfect`, is the clearest case: 2.5 seconds to compile, because the
+compiler plays the whole-tree tic-tac-toe search, and 3 ms to run, because
+by then the answer is a constant.
 
 ## The tests
 
@@ -219,6 +224,27 @@ is a constant. See roc-apps `findings/roc-check-hang`.
 """
 
 
+# **SLOW PROGRAMS ARE HELD BACK BY NAME.** A regression suite should not
+# also be a performance report: these each take more than a quarter of a
+# second, and the reason is the compiler rather than the test. Ten of the
+# eleven spend it in compile-time evaluation, which is roc-lang/roc#11334;
+# bloom-spread spends it in the allocator, which is #11335. They are good
+# programs and they are in roc-apps; they are simply not regression tests.
+SLOW = {
+    "ttt-perfect": "2.5 s: the compiler plays the whole tic-tac-toe game tree (#11334)",
+    "tcp-checksum-refuse": "1.3 s in compile-time evaluation (#11334)",
+    "lorawan-encode": "1.0 s in compile-time evaluation (#11334)",
+    "chacha20poly1305": "0.8 s in compile-time evaluation (#11334)",
+    "aesgcm256": "0.6 s in compile-time evaluation (#11334)",
+    "arp-cache-bound": "0.5 s in compile-time evaluation (#11334)",
+    "poly1305": "0.45 s in compile-time evaluation (#11334)",
+    "shell-build-keep": "0.44 s in compile-time evaluation (#11334)",
+    "ga-core": "0.43 s in compile-time evaluation (#11334)",
+    "kvstore-test": "0.36 s in compile-time evaluation (#11334)",
+    "bloom-spread": "0.4 s, and 240 ms of it at run time in the allocator (#11335)",
+}
+
+
 def pick(order, cap):
     """The tests to package, cheapest first, under a per-test byte cap.
 
@@ -226,6 +252,7 @@ def pick(order, cap):
     already needed, so a test that shares everything is nearly free and one
     that drags in a 28 KB chapter of its own is not.
     """
+    order = [u for u in order if u not in SLOW]
     sizes = {}
     for u in order:
         _, chapters, why = modules(u)
@@ -313,7 +340,7 @@ def main():
     if not check_only:
         write_artifacts(kept, times, shared, cap)
     slow = sorted(((t, u) for u, t in times.items() if u in kept), reverse=True)[:8]
-    print(f"{len(kept)} packaged, {len(dropped)} dropped, {len(skipped)} over the {cap} KB cap")
+    print(f"{len(kept)} packaged, {len(dropped)} dropped, {len(skipped)} over the {cap} KB cap, {len(SLOW)} held back as slow")
     for u, why in dropped:
         print(f"  dropped {u}: {why}")
     total = sum(times[u] for u in kept)
