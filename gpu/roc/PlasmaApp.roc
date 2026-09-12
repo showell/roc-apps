@@ -10,14 +10,15 @@ app [render] { pf: platform "../wasm/platform/main.roc" }
 import Device
 import PlasmaKernel
 
-w : I64
+w : I32
 w = 1024
-h : I64
+h : I32
 h = 768
 
 render : I64 -> List(U32)
 render = |frame| {
-	dev = Device.new([List.repeat(0, I64.to_u64_wrap(w * h))])
-	out = Device.dispatch(dev, w * h, |d, gid| PlasmaKernel.plasma_step(d, 0, frame, gid))
-	List.map(Device.buffer(out, 0), |v| I64.to_u32_wrap(v))
+	f = I64.to_i32_wrap(frame)
+	dev = Device.new([List.repeat(0, I32.to_u64_wrap(w * h))])
+	out = Device.dispatch(dev, w * h, |d, gid| PlasmaKernel.plasma_step(d, 0, f, gid))
+	List.map(Device.buffer(out, 0), |v| I32.to_u32_wrap(v))
 }

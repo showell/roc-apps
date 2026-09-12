@@ -4,20 +4,20 @@ import DeviceMath
 
 GlobeKernels :: [].{
 
-	cordic_sin : F64 -> F64
+	cordic_sin : F32 -> F32
 	cordic_sin = |x| DeviceMath.real_sin(x)
 
-	cordic_cos : F64 -> F64
+	cordic_cos : F32 -> F32
 	cordic_cos = |x| DeviceMath.real_cos(x)
 
-	opening : Device.Device -> (Device.Device, I64)
+	opening : Device.Device -> (Device.Device, I32)
 	opening = |dev| ({
 		(dev1, a) = earth_pixel(dev, 0, 0, 0, 0, 0, 0, 0, 0)
 		(dev2, b) = bh_pixel(dev1, 0, 0, 0, 0, 0)
-		(dev2, (a + b))
+		(dev2, I32.plus_wrap(a, b))
 	})
 
-	earth_pixel : Device.Device, I64, I64, I64, I64, I64, I64, I64, I64 -> (Device.Device, I64)
+	earth_pixel : Device.Device, I32, I32, I32, I32, I32, I32, I32, I32 -> (Device.Device, I32)
 	earth_pixel = |dev, framebuf, tex, params, tw, th, w, h, gid| ({
 		(dev1, i_aspect) = Device.load(dev, params, 0)
 		(dev2, i_zoom) = Device.load(dev1, params, 1)
@@ -28,8 +28,8 @@ GlobeKernels :: [].{
 		(dev7, i_sun_y) = Device.load(dev6, params, 6)
 		(dev8, i_sun_z) = Device.load(dev7, params, 7)
 		({
-			px = (gid - (I64.div_trunc_by(gid, w) * w))
-			py = I64.div_trunc_by(gid, w)
+			px = I32.minus_wrap(gid, I32.times_wrap(Device.div(gid, w), w))
+			py = Device.div(gid, w)
 			aspect = (int_to_real(i_aspect) / 1000.0)
 			zoom = (int_to_real(i_zoom) / 1000.0)
 			cam_pitch = (int_to_real(i_cam_pitch) / 1000.0)
@@ -74,13 +74,13 @@ GlobeKernels :: [].{
 				gz = ((0.0 - (sin_ey * hx)) + (cos_ey * rz))
 				lat = asin_approx(gy)
 				lon = atan2_approx(gx, gz)
-				pi = 3.14159265358979
+				pi = 3.1415927
 				u = (1.0 - (((lon / pi) + 1.0) * 0.5))
 				v = (0.5 - (lat / pi))
 				tx_raw = real_to_int((u * int_to_real(tw)))
-				tx_idx = (tx_raw - (I64.div_trunc_by(tx_raw, tw) * tw))
-				ty_idx = clamp_int(real_to_int((v * int_to_real(th))), 0, (th - 1))
-				ti = (((ty_idx * tw) + tx_idx) * 3)
+				tx_idx = I32.minus_wrap(tx_raw, I32.times_wrap(Device.div(tx_raw, tw), tw))
+				ty_idx = clamp_int(real_to_int((v * int_to_real(th))), 0, I32.minus_wrap(th, 1))
+				ti = I32.times_wrap(I32.plus_wrap(I32.times_wrap(ty_idx, tw), tx_idx), 3)
 				earth_shade_pixel(dev8, framebuf, tex, gid, ti, hx, hy, hz, sun_x, sun_y, sun_z)
 			}) } else { ({
 				miss = (DeviceMath.real_sqrt(DeviceMath.real_max(0.0, ((c + 1.0) - ((b * b) / 4.0)))) - 1.0)
@@ -89,11 +89,11 @@ GlobeKernels :: [].{
 		})
 	})
 
-	earth_shade_pixel : Device.Device, I64, I64, I64, I64, F64, F64, F64, F64, F64, F64 -> (Device.Device, I64)
+	earth_shade_pixel : Device.Device, I32, I32, I32, I32, F32, F32, F32, F32, F32, F32 -> (Device.Device, I32)
 	earth_shade_pixel = |dev, framebuf, tex, gid, ti, hx, hy, hz, sx, sy, sz| ({
 		(dev1, tr) = Device.load(dev, tex, ti)
-		(dev2, tg) = Device.load(dev1, tex, (ti + 1))
-		(dev3, tb) = Device.load(dev2, tex, (ti + 2))
+		(dev2, tg) = Device.load(dev1, tex, I32.plus_wrap(ti, 1))
+		(dev3, tb) = Device.load(dev2, tex, I32.plus_wrap(ti, 2))
 		({
 			dot = (((hx * sx) + (hy * sy)) + (hz * sz))
 			sun = DeviceMath.real_max(0.0, dot)
@@ -103,23 +103,23 @@ GlobeKernels :: [].{
 			cr = clamp_int(real_to_int(((int_to_real(tr) * diff) + (atmo * 70.0))), 0, 255)
 			cg = clamp_int(real_to_int(((int_to_real(tg) * diff) + (atmo * 130.0))), 0, 255)
 			cb = clamp_int(real_to_int(((int_to_real(tb) * diff) + (atmo * 255.0))), 0, 255)
-			pixel = ((((cr * 65536) + (cg * 256)) + cb) + (255 * 16777216))
+			pixel = I32.plus_wrap(I32.plus_wrap(I32.plus_wrap(I32.times_wrap(cr, 65536), I32.times_wrap(cg, 256)), cb), I32.times_wrap(255, 16777216))
 			Device.store(dev3, framebuf, gid, pixel)
 		})
 	})
 
-	earth_sky_pixel : Device.Device, I64, I64, F64 -> (Device.Device, I64)
+	earth_sky_pixel : Device.Device, I32, I32, F32 -> (Device.Device, I32)
 	earth_sky_pixel = |dev, framebuf, gid, miss| ({
 		glow = DeviceMath.real_max(0.0, (1.0 - (miss * 12.0)))
 		g2 = (glow * glow)
 		cr = clamp_int(real_to_int((g2 * 25.0)), 0, 255)
 		cg = clamp_int(real_to_int((g2 * 50.0)), 0, 255)
 		cb = clamp_int(real_to_int((g2 * 160.0)), 0, 255)
-		pixel = ((((cr * 65536) + (cg * 256)) + cb) + (255 * 16777216))
+		pixel = I32.plus_wrap(I32.plus_wrap(I32.plus_wrap(I32.times_wrap(cr, 65536), I32.times_wrap(cg, 256)), cb), I32.times_wrap(255, 16777216))
 		Device.store(dev, framebuf, gid, pixel)
 	})
 
-	bh_pixel : Device.Device, I64, I64, I64, I64, I64 -> (Device.Device, I64)
+	bh_pixel : Device.Device, I32, I32, I32, I32, I32 -> (Device.Device, I32)
 	bh_pixel = |dev, framebuf, params, w, h, gid| ({
 		(dev1, i_aspect) = Device.load(dev, params, 0)
 		(dev2, i_zoom) = Device.load(dev1, params, 1)
@@ -127,8 +127,8 @@ GlobeKernels :: [].{
 		(dev4, i_cam_yaw) = Device.load(dev3, params, 3)
 		(dev5, i_bh_time) = Device.load(dev4, params, 4)
 		({
-			px = (gid - (I64.div_trunc_by(gid, w) * w))
-			py = I64.div_trunc_by(gid, w)
+			px = I32.minus_wrap(gid, I32.times_wrap(Device.div(gid, w), w))
+			py = Device.div(gid, w)
 			aspect = (int_to_real(i_aspect) / 1000.0)
 			zoom = (int_to_real(i_zoom) / 1000.0)
 			cp = (int_to_real(i_cam_pitch) / 1000.0)
@@ -159,7 +159,7 @@ GlobeKernels :: [].{
 		})
 	})
 
-	bh_march : Device.Device, I64, I64, F64, F64, F64, F64, F64, F64, F64, I64, F64, F64, F64, F64 -> (Device.Device, I64)
+	bh_march : Device.Device, I32, I32, F32, F32, F32, F32, F32, F32, F32, I32, F32, F32, F32, F32 -> (Device.Device, I32)
 	bh_march = |dev, framebuf, gid, px, py, pz, vx, vy, vz, time, step, cr, cg, cb, opacity| (if (step >= 250) { bh_write(dev, framebuf, gid, cr, cg, cb, opacity, vx, vy, vz) } else { (if (opacity > 0.99) { bh_write(dev, framebuf, gid, cr, cg, cb, opacity, vx, vy, vz) } else { ({
 		r = DeviceMath.real_sqrt((((px * px) + (py * py)) + (pz * pz)))
 		(if (r < 0.32) { bh_write(dev, framebuf, gid, cr, cg, cb, 1.0, vx, vy, vz) } else { (if (r > 50.0) { bh_write(dev, framebuf, gid, cr, cg, cb, opacity, vx, vy, vz) } else { ({
@@ -210,22 +210,22 @@ GlobeKernels :: [].{
 					ncg = (cg + ((bright * (0.9 + (temp * 0.5))) * rem))
 					ncb = (cb + ((bright * (0.5 + (t2 * 0.4))) * rem))
 					nop = DeviceMath.real_min((opacity + (density * 0.5)), 1.0)
-					bh_march(dev, framebuf, gid, npx, npy, npz, nvx2, nvy2, nvz2, time, (step + 1), ncr, ncg, ncb, nop)
-				}) } else { bh_march(dev, framebuf, gid, npx, npy, npz, nvx2, nvy2, nvz2, time, (step + 1), cr, cg, cb, opacity) })
-			}) } else { bh_march(dev, framebuf, gid, npx, npy, npz, nvx2, nvy2, nvz2, time, (step + 1), cr, cg, cb, opacity) })
+					bh_march(dev, framebuf, gid, npx, npy, npz, nvx2, nvy2, nvz2, time, I32.plus_wrap(step, 1), ncr, ncg, ncb, nop)
+				}) } else { bh_march(dev, framebuf, gid, npx, npy, npz, nvx2, nvy2, nvz2, time, I32.plus_wrap(step, 1), cr, cg, cb, opacity) })
+			}) } else { bh_march(dev, framebuf, gid, npx, npy, npz, nvx2, nvy2, nvz2, time, I32.plus_wrap(step, 1), cr, cg, cb, opacity) })
 		}) }) })
 	}) }) })
 
-	bh_write : Device.Device, I64, I64, F64, F64, F64, F64, F64, F64, F64 -> (Device.Device, I64)
+	bh_write : Device.Device, I32, I32, F32, F32, F32, F32, F32, F32, F32 -> (Device.Device, I32)
 	bh_write = |dev, framebuf, gid, cr, cg, cb, _opacity, _vx, _vy, _vz| ({
 		gr = gamma_byte(cr)
 		gg = gamma_byte(cg)
 		gb = gamma_byte(cb)
-		pixel = ((((gr * 65536) + (gg * 256)) + gb) + (255 * 16777216))
+		pixel = I32.plus_wrap(I32.plus_wrap(I32.plus_wrap(I32.times_wrap(gr, 65536), I32.times_wrap(gg, 256)), gb), I32.times_wrap(255, 16777216))
 		Device.store(dev, framebuf, gid, pixel)
 	})
 
-	sphere_hit : F64, F64, F64, F64, F64, F64, F64 -> F64
+	sphere_hit : F32, F32, F32, F32, F32, F32, F32 -> F32
 	sphere_hit = |ox, oy, oz, dx, dy, dz, r| ({
 		b = (2.0 * (((ox * dx) + (oy * dy)) + (oz * dz)))
 		c = ((((ox * ox) + (oy * oy)) + (oz * oz)) - (r * r))
@@ -236,32 +236,32 @@ GlobeKernels :: [].{
 		}) })
 	})
 
-	asin_approx : F64 -> F64
+	asin_approx : F32 -> F32
 	asin_approx = |x| ({
 		clamped = DeviceMath.real_min(0.999, DeviceMath.real_max((0.0 - 0.999), x))
 		atan2_approx(clamped, DeviceMath.real_sqrt((1.0 - (clamped * clamped))))
 	})
 
-	atan2_approx : F64, F64 -> F64
+	atan2_approx : F32, F32 -> F32
 	atan2_approx = |y, x| cordic_atan2(y, x)
 
-	gamma_byte : F64 -> I64
+	gamma_byte : F32 -> I32
 	gamma_byte = |v| ({
 		clamped = DeviceMath.real_max(0.0, v)
 		g = (DeviceMath.real_sqrt(DeviceMath.real_sqrt(clamped)) * DeviceMath.real_sqrt(clamped))
 		clamp_int(real_to_int((g * 255.0)), 0, 255)
 	})
 
-	clamp_int : I64, I64, I64 -> I64
+	clamp_int : I32, I32, I32 -> I32
 	clamp_int = |v, lo, hi| (if (v < lo) { lo } else { (if (v > hi) { hi } else { v }) })
 
-	int_to_real : I64 -> F64
-	int_to_real = |n| I64.to_f64(n)
+	int_to_real : I32 -> F32
+	int_to_real = |n| I32.to_f32(n)
 
-	real_to_int : F64 -> I64
-	real_to_int = |r| F64.to_i64_wrap(r)
+	real_to_int : F32 -> I32
+	real_to_int = |r| F32.to_i32_wrap(r)
 
-	cordic_atan2 : F64, F64 -> F64
+	cordic_atan2 : F32, F32 -> F32
 	cordic_atan2 = |y, x| ({
 		ax = DeviceMath.real_abs(x)
 		ay = DeviceMath.real_abs(y)
@@ -273,8 +273,8 @@ GlobeKernels :: [].{
 		denom = (105.0 + (a2 * (90.0 + (9.0 * a2))))
 		t = (a * numer)
 		base = (t / denom)
-		r1 = (if (ay > ax) { (1.5707963267949 - base) } else { base })
-		r2 = (if (x < 0.0) { (3.14159265358979 - r1) } else { r1 })
+		r1 = (if (ay > ax) { (1.5707964 - base) } else { base })
+		r2 = (if (x < 0.0) { (3.1415927 - r1) } else { r1 })
 		(if (y < 0.0) { (0.0 - r2) } else { r2 })
 	})
 }

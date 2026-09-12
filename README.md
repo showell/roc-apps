@@ -38,7 +38,7 @@ fountain; since the same day every kernel is emitted. The essay is
 
 | where | what | written by |
 |---|---|---|
-| `gpu/roc/Device.roc` | the Device effect as state: buffers by handle and the thread's gid, `load`/`store`/index reads threading the record, `dispatch` over the gids | hand |
+| `gpu/roc/Device.roc` | the Device effect as state: buffers by handle and the thread's gid, `load`/`store`/index reads threading the record, `dispatch` over the gids; WGSL's total `div`/`rem`. I32 and F32 throughout, as the plug's WGSL is, and rocemit spells a unit with a kernel in those types with wrapping arithmetic | hand |
 | `gpu/roc/*Kernel*.roc`, `DeviceMath.roc`, `Thread.roc`, `ListUtils.roc`, `Tuple.roc` | the 46 kernel chapters and what they cite, one module each; a `[Device]` definition takes the device first and answers `(Device.Device, T)` | `rocemit`, via `gpu/emitted.sh` |
 | `gpu/roc/PlasmaApp.roc`, `gpu/roc/{Plasma,CpuParticles}Bench.roc` | the app (`render : frame -> pixels`) and two native benches that print a checksum a Python evaluation of the Codex source matches | hand |
 | `gpu/wasm/` | the platform: two exports, `renderFrame(n)` and `bufPtr`; host, build.zig as safari's; `smoke.mjs` checksums frame 0 from Node | hand |

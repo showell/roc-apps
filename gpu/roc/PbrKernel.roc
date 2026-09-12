@@ -4,28 +4,28 @@ import DeviceMath
 
 PbrKernel :: [].{
 
-	pb_width : I64
+	pb_width : I32
 	pb_width = 1024
 
-	pb_half_w : I64
+	pb_half_w : I32
 	pb_half_w = 512
 
-	pb_half_h : I64
+	pb_half_h : I32
 	pb_half_h = 384
 
-	pb_count : I64
+	pb_count : I32
 	pb_count = 7
 
-	pb_cx : I64 -> F64
-	pb_cx = |i| ((I64.to_f64(i) * 1.15) - 3.45)
+	pb_cx : I32 -> F32
+	pb_cx = |i| ((I32.to_f32(i) * 1.15) - 3.45)
 
-	pb_rough : I64 -> F64
-	pb_rough = |i| (0.06 + (I64.to_f64(i) * 0.145))
+	pb_rough : I32 -> F32
+	pb_rough = |i| (0.06 + (I32.to_f32(i) * 0.145))
 
-	pb_rad : F64
+	pb_rad : F32
 	pb_rad = 0.52
 
-	pb_sphere_hit : F64, F64, F64, F64, F64, F64, I64 -> F64
+	pb_sphere_hit : F32, F32, F32, F32, F32, F32, I32 -> F32
 	pb_sphere_hit = |ox, oy, oz, dx, dy, dz, i| ({
 		lx = (ox - pb_cx(i))
 		ly = oy
@@ -39,52 +39,52 @@ PbrKernel :: [].{
 		}) })
 	})
 
-	pb_nearest : F64, F64, F64, F64, F64, F64, I64, I64, F64 -> I64
+	pb_nearest : F32, F32, F32, F32, F32, F32, I32, I32, F32 -> I32
 	pb_nearest = |ox, oy, oz, dx, dy, dz, i, best_id, best_t| (if (i >= pb_count) { best_id } else { ({
 		t = pb_sphere_hit(ox, oy, oz, dx, dy, dz, i)
 		take = (if (t > 0.001) { (if (best_t < 0.0) { 1 } else { (if (t < best_t) { 1 } else { 0 }) }) } else { 0 })
-		(if (take == 1) { pb_nearest(ox, oy, oz, dx, dy, dz, (i + 1), i, t) } else { pb_nearest(ox, oy, oz, dx, dy, dz, (i + 1), best_id, best_t) })
+		(if (take == 1) { pb_nearest(ox, oy, oz, dx, dy, dz, I32.plus_wrap(i, 1), i, t) } else { pb_nearest(ox, oy, oz, dx, dy, dz, I32.plus_wrap(i, 1), best_id, best_t) })
 	}) })
 
-	pb_clamp01 : F64 -> F64
+	pb_clamp01 : F32 -> F32
 	pb_clamp01 = |x| DeviceMath.real_max(0.0, DeviceMath.real_min(1.0, x))
 
-	pb_pow5 : F64 -> F64
+	pb_pow5 : F32 -> F32
 	pb_pow5 = |x| ({
 		x2 = (x * x)
 		((x2 * x2) * x)
 	})
 
-	pb_ggx : F64, F64 -> F64
+	pb_ggx : F32, F32 -> F32
 	pb_ggx = |ndh, a| ({
 		a2 = (a * a)
 		d = (((ndh * ndh) * (a2 - 1.0)) + 1.0)
 		(a2 / ((d * d) + 0.0001))
 	})
 
-	pb_g1 : F64, F64 -> F64
+	pb_g1 : F32, F32 -> F32
 	pb_g1 = |nx, k| (nx / (((nx * (1.0 - k)) + k) + 0.0001))
 
-	pb_pack : F64, F64, F64 -> I64
+	pb_pack : F32, F32, F32 -> I32
 	pb_pack = |r, g, b| ({
-		ri = F64.to_i64_wrap((pb_clamp01(r) * 255.0))
-		gi = F64.to_i64_wrap((pb_clamp01(g) * 255.0))
-		bi = F64.to_i64_wrap((pb_clamp01(b) * 255.0))
-		(((ri * 65536) + (gi * 256)) + bi)
+		ri = F32.to_i32_wrap((pb_clamp01(r) * 255.0))
+		gi = F32.to_i32_wrap((pb_clamp01(g) * 255.0))
+		bi = F32.to_i32_wrap((pb_clamp01(b) * 255.0))
+		I32.plus_wrap(I32.plus_wrap(I32.times_wrap(ri, 65536), I32.times_wrap(gi, 256)), bi)
 	})
 
-	pb_bg : I64 -> I64
+	pb_bg : I32 -> I32
 	pb_bg = |py| ({
-		h = (I64.to_f64(py) / 768.0)
+		h = (I32.to_f32(py) / 768.0)
 		pb_pack((0.03 + (h * 0.05)), (0.04 + (h * 0.06)), (0.06 + (h * 0.1)))
 	})
 
-	pb_render : I64, I64 -> I64
+	pb_render : I32, I32 -> I32
 	pb_render = |gid, frame| ({
-		px = (gid - (I64.div_trunc_by(gid, pb_width) * pb_width))
-		py = I64.div_trunc_by(gid, pb_width)
-		fx = (I64.to_f64((px - pb_half_w)) / 384.0)
-		fy = (I64.to_f64((pb_half_h - py)) / 384.0)
+		px = I32.minus_wrap(gid, I32.times_wrap(Device.div(gid, pb_width), pb_width))
+		py = Device.div(gid, pb_width)
+		fx = (I32.to_f32(I32.minus_wrap(px, pb_half_w)) / 384.0)
+		fy = (I32.to_f32(I32.minus_wrap(pb_half_h, py)) / 384.0)
 		rl = DeviceMath.real_sqrt((((fx * fx) + (fy * fy)) + 4.0))
 		dx = (fx / rl)
 		dy = (fy / rl)
@@ -92,7 +92,7 @@ PbrKernel :: [].{
 		ox = 0.0
 		oy = 0.0
 		oz = (0.0 - 5.0)
-		id = pb_nearest(ox, oy, oz, dx, dy, dz, 0, (0 - 1), (0.0 - 1.0))
+		id = pb_nearest(ox, oy, oz, dx, dy, dz, 0, I32.minus_wrap(0, 1), (0.0 - 1.0))
 		(if (id < 0) { pb_bg(py) } else { ({
 			t = pb_sphere_hit(ox, oy, oz, dx, dy, dz, id)
 			hx = (ox + (dx * t))
@@ -101,7 +101,7 @@ PbrKernel :: [].{
 			nx = ((hx - pb_cx(id)) / pb_rad)
 			ny = (hy / pb_rad)
 			nz = (hz / pb_rad)
-			ang = (I64.to_f64(frame) / 40.0)
+			ang = (I32.to_f32(frame) / 40.0)
 			lx0 = ((DeviceMath.real_cos(ang) * 0.5) + 0.3)
 			ly0 = 0.7
 			lz0 = ((DeviceMath.real_sin(ang) * 0.5) - 0.5)
@@ -141,7 +141,7 @@ PbrKernel :: [].{
 		}) })
 	})
 
-	pbr_step : Device.Device, I64, I64, I64 -> (Device.Device, I64)
+	pbr_step : Device.Device, I32, I32, I32 -> (Device.Device, I32)
 	pbr_step = |dev, outb, frame, gid| ({
 		Device.store(dev, outb, gid, pb_render(gid, frame))
 	})

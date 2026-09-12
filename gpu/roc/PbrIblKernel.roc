@@ -4,28 +4,28 @@ import DeviceMath
 
 PbrIblKernel :: [].{
 
-	pi_width : I64
+	pi_width : I32
 	pi_width = 1024
 
-	pi_half_w : I64
+	pi_half_w : I32
 	pi_half_w = 512
 
-	pi_half_h : I64
+	pi_half_h : I32
 	pi_half_h = 384
 
-	pi_count : I64
+	pi_count : I32
 	pi_count = 6
 
-	pi_env_r : F64 -> F64
+	pi_env_r : F32 -> F32
 	pi_env_r = |dy| (if (dy > 0.0) { (0.22 + (dy * 0.25)) } else { (0.28 - (dy * 0.1)) })
 
-	pi_env_g : F64 -> F64
+	pi_env_g : F32 -> F32
 	pi_env_g = |dy| (if (dy > 0.0) { (0.38 + (dy * 0.4)) } else { (0.24 - (dy * 0.06)) })
 
-	pi_env_b : F64 -> F64
+	pi_env_b : F32 -> F32
 	pi_env_b = |dy| (if (dy > 0.0) { (0.62 + (dy * 0.35)) } else { (0.16 - (dy * 0.02)) })
 
-	pi_sun : F64, F64, F64 -> F64
+	pi_sun : F32, F32, F32 -> F32
 	pi_sun = |dx, dy, dz| ({
 		d = (((dx * 0.6) + (dy * 0.68)) + (dz * (0.0 - 0.68)))
 		(if (d > 0.0) { ({
@@ -34,13 +34,13 @@ PbrIblKernel :: [].{
 		}) } else { 0.0 })
 	})
 
-	pi_cx : I64 -> F64
-	pi_cx = |i| ((I64.to_f64(i) * 1.15) - 2.9)
+	pi_cx : I32 -> F32
+	pi_cx = |i| ((I32.to_f32(i) * 1.15) - 2.9)
 
-	pi_rough : I64 -> F64
-	pi_rough = |i| (0.04 + (I64.to_f64(i) * 0.17))
+	pi_rough : I32 -> F32
+	pi_rough = |i| (0.04 + (I32.to_f32(i) * 0.17))
 
-	pi_hit : F64, F64, F64, F64, F64, F64, I64 -> F64
+	pi_hit : F32, F32, F32, F32, F32, F32, I32 -> F32
 	pi_hit = |ox, oy, oz, dx, dy, dz, i| ({
 		lx = (ox - pi_cx(i))
 		b = (((dx * lx) + (dy * oy)) + (dz * oz))
@@ -52,31 +52,31 @@ PbrIblKernel :: [].{
 		}) })
 	})
 
-	pi_nearest : F64, F64, F64, F64, F64, F64, I64, I64, F64 -> I64
+	pi_nearest : F32, F32, F32, F32, F32, F32, I32, I32, F32 -> I32
 	pi_nearest = |ox, oy, oz, dx, dy, dz, i, bid, bt| (if (i >= pi_count) { bid } else { ({
 		t = pi_hit(ox, oy, oz, dx, dy, dz, i)
 		take = (if (t > 0.001) { (if (bt < 0.0) { 1 } else { (if (t < bt) { 1 } else { 0 }) }) } else { 0 })
-		(if (take == 1) { pi_nearest(ox, oy, oz, dx, dy, dz, (i + 1), i, t) } else { pi_nearest(ox, oy, oz, dx, dy, dz, (i + 1), bid, bt) })
+		(if (take == 1) { pi_nearest(ox, oy, oz, dx, dy, dz, I32.plus_wrap(i, 1), i, t) } else { pi_nearest(ox, oy, oz, dx, dy, dz, I32.plus_wrap(i, 1), bid, bt) })
 	}) })
 
-	pi_clamp01 : F64 -> F64
+	pi_clamp01 : F32 -> F32
 	pi_clamp01 = |x| DeviceMath.real_max(0.0, DeviceMath.real_min(1.0, x))
 
-	pi_pack : F64, F64, F64 -> I64
-	pi_pack = |r, g, b| (((F64.to_i64_wrap((pi_clamp01(r) * 255.0)) * 65536) + (F64.to_i64_wrap((pi_clamp01(g) * 255.0)) * 256)) + F64.to_i64_wrap((pi_clamp01(b) * 255.0)))
+	pi_pack : F32, F32, F32 -> I32
+	pi_pack = |r, g, b| I32.plus_wrap(I32.plus_wrap(I32.times_wrap(F32.to_i32_wrap((pi_clamp01(r) * 255.0)), 65536), I32.times_wrap(F32.to_i32_wrap((pi_clamp01(g) * 255.0)), 256)), F32.to_i32_wrap((pi_clamp01(b) * 255.0)))
 
-	pi_render : I64, I64 -> I64
+	pi_render : I32, I32 -> I32
 	pi_render = |gid, _frame| ({
-		px = (gid - (I64.div_trunc_by(gid, pi_width) * pi_width))
-		py = I64.div_trunc_by(gid, pi_width)
-		fx = (I64.to_f64((px - pi_half_w)) / 384.0)
-		fy = (I64.to_f64((pi_half_h - py)) / 384.0)
+		px = I32.minus_wrap(gid, I32.times_wrap(Device.div(gid, pi_width), pi_width))
+		py = Device.div(gid, pi_width)
+		fx = (I32.to_f32(I32.minus_wrap(px, pi_half_w)) / 384.0)
+		fy = (I32.to_f32(I32.minus_wrap(pi_half_h, py)) / 384.0)
 		rl = DeviceMath.real_sqrt((((fx * fx) + (fy * fy)) + 4.0))
 		dx = (fx / rl)
 		dy = (fy / rl)
 		dz = (2.0 / rl)
 		oz = (0.0 - 5.0)
-		id = pi_nearest(0.0, 0.0, oz, dx, dy, dz, 0, (0 - 1), (0.0 - 1.0))
+		id = pi_nearest(0.0, 0.0, oz, dx, dy, dz, 0, I32.minus_wrap(0, 1), (0.0 - 1.0))
 		(if (id < 0) { pi_pack((pi_env_r(dy) + pi_sun(dx, dy, dz)), (pi_env_g(dy) + pi_sun(dx, dy, dz)), (pi_env_b(dy) + pi_sun(dx, dy, dz))) } else { ({
 			t = pi_hit(0.0, 0.0, oz, dx, dy, dz, id)
 			hx = (dx * t)
@@ -104,7 +104,7 @@ PbrIblKernel :: [].{
 		}) })
 	})
 
-	pbribl_step : Device.Device, I64, I64, I64 -> (Device.Device, I64)
+	pbribl_step : Device.Device, I32, I32, I32 -> (Device.Device, I32)
 	pbribl_step = |dev, outb, frame, gid| ({
 		Device.store(dev, outb, gid, pi_render(gid, frame))
 	})

@@ -4,44 +4,44 @@ import DeviceMath
 
 CubeKernel :: [].{
 
-	cu_width : I64
+	cu_width : I32
 	cu_width = 1024
 
-	cu_half_w : I64
+	cu_half_w : I32
 	cu_half_w = 512
 
-	cu_half_h : I64
+	cu_half_h : I32
 	cu_half_h = 384
 
-	cu_clamp01 : F64 -> F64
+	cu_clamp01 : F32 -> F32
 	cu_clamp01 = |x| DeviceMath.real_max(0.0, DeviceMath.real_min(1.0, x))
 
-	cu_pack : F64, F64, F64 -> I64
+	cu_pack : F32, F32, F32 -> I32
 	cu_pack = |r, g, b| ({
-		ri = F64.to_i64_wrap((cu_clamp01(r) * 255.0))
-		gi = F64.to_i64_wrap((cu_clamp01(g) * 255.0))
-		bi = F64.to_i64_wrap((cu_clamp01(b) * 255.0))
-		(((ri * 65536) + (gi * 256)) + bi)
+		ri = F32.to_i32_wrap((cu_clamp01(r) * 255.0))
+		gi = F32.to_i32_wrap((cu_clamp01(g) * 255.0))
+		bi = F32.to_i32_wrap((cu_clamp01(b) * 255.0))
+		I32.plus_wrap(I32.plus_wrap(I32.times_wrap(ri, 65536), I32.times_wrap(gi, 256)), bi)
 	})
 
-	cu_bg : I64 -> I64
+	cu_bg : I32 -> I32
 	cu_bg = |py| ({
-		h = (I64.to_f64(py) / 768.0)
+		h = (I32.to_f32(py) / 768.0)
 		cu_pack((0.04 + (h * 0.05)), (0.05 + (h * 0.08)), (0.09 + (h * 0.16)))
 	})
 
-	cu_render : I64, I64 -> I64
+	cu_render : I32, I32 -> I32
 	cu_render = |gid, frame| ({
-		px = (gid - (I64.div_trunc_by(gid, cu_width) * cu_width))
-		py = I64.div_trunc_by(gid, cu_width)
-		fx = (I64.to_f64((px - cu_half_w)) / 384.0)
-		fy = (I64.to_f64((cu_half_h - py)) / 384.0)
+		px = I32.minus_wrap(gid, I32.times_wrap(Device.div(gid, cu_width), cu_width))
+		py = Device.div(gid, cu_width)
+		fx = (I32.to_f32(I32.minus_wrap(px, cu_half_w)) / 384.0)
+		fy = (I32.to_f32(I32.minus_wrap(cu_half_h, py)) / 384.0)
 		rl = DeviceMath.real_sqrt((((fx * fx) + (fy * fy)) + 2.56))
 		dx = (fx / rl)
 		dy = (fy / rl)
 		dz = (1.6 / rl)
-		ay = (I64.to_f64(frame) / 34.0)
-		ax = (I64.to_f64(frame) / 51.0)
+		ay = (I32.to_f32(frame) / 34.0)
+		ax = (I32.to_f32(frame) / 51.0)
 		cy = DeviceMath.real_cos(ay)
 		sy = DeviceMath.real_sin(ay)
 		cx = DeviceMath.real_cos(ax)
@@ -87,7 +87,7 @@ CubeKernel :: [].{
 		}) }) })
 	})
 
-	cube_step : Device.Device, I64, I64, I64 -> (Device.Device, I64)
+	cube_step : Device.Device, I32, I32, I32 -> (Device.Device, I32)
 	cube_step = |dev, outb, frame, gid| ({
 		Device.store(dev, outb, gid, cu_render(gid, frame))
 	})
