@@ -99,6 +99,10 @@ def as_app(text, chapters):
     return "\n".join([head, ""] + ["import cdx." + m for m in imports] + ([""] if imports else []) + body)
 
 
+def trimmed(text):
+    return text.rstrip("\n") + "\n" if text.strip() else text
+
+
 def zig_name(unit):
     return "codex_" + unit.replace("-", "_")
 
@@ -326,7 +330,9 @@ def main():
         t0 = time.time()
         r = subprocess.run([ROC, "run", path], capture_output=True, text=True, timeout=300)
         times[unit] = time.time() - t0
-        if r.stdout != expect:
+        # The verdicts lost a trailing blank line in the capture, so the
+        # comparison strips them from both sides, as the ladder does.
+        if trimmed(r.stdout) != trimmed(expect):
             dropped.append((unit, "output differs after flattening"))
             if not check_only:
                 os.remove(path)

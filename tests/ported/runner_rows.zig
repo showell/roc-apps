@@ -803,6 +803,26 @@ const codex_sntp_encode_stdout =
     \\5
     ++ "\n";
 
+const codex_sort_test_stdout =
+    \\1
+    \\2
+    \\3
+    \\4
+    \\5
+    \\6
+    \\7
+    \\8
+    \\9
+    \\
+    \\0
+    \\42
+    \\1
+    \\1
+    \\3
+    \\4
+    \\5
+    ++ "\n";
+
 const codex_string_escape_quote_stdout =
     \\she said "hi" loudly
     ++ "\n";
@@ -1039,6 +1059,7 @@ const codex_zigbee_encode_stdout =
     .{ .id = 0, .suite = .codex, .name = "codex: simplify-check", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_simplify_check.roc", .stdout_exact = codex_simplify_check_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: sixlowpan-encode", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_sixlowpan_encode.roc", .stdout_exact = codex_sixlowpan_encode_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: sntp-encode", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_sntp_encode.roc", .stdout_exact = codex_sntp_encode_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: sort-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_sort_test.roc", .stdout_exact = codex_sort_test_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: string-escape-quote", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_string_escape_quote.roc", .stdout_exact = codex_string_escape_quote_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: tco-bitop-loop", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_tco_bitop_loop.roc", .stdout_exact = codex_tco_bitop_loop_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: tco-direct-arg-reads", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_tco_direct_arg_reads.roc", .stdout_exact = codex_tco_direct_arg_reads_stdout } } },
