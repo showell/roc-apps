@@ -3,7 +3,7 @@
 #
 # Hand-written; the seam between the browser and the interpreter. A
 # machine that wants a line says so (`status` answers 1) and the page
-# resumes it with one. `view` answers the screen and then the transcript,
+# resumes it with one. `view` answers a flag byte, the screen and then the transcript,
 # in that order, because a Commodore's screen IS memory and the page reads
 # it straight out.
 app [Model, program] { pf: platform "../wasm/platform/main.roc" }
@@ -21,7 +21,10 @@ resume = |boxed, line| Box.box(Basic.resume(Box.unbox(boxed), Str.from_utf8(line
 view : Box(Model) -> List(U8)
 view = |boxed| {
 	m = Box.unbox(boxed)
-	List.concat(Basic.screen(m), Str.to_utf8(Basic.transcript(m)))
+	# A flag byte first, 1 when the program drew pixels, so the page knows
+	# which display to show rather than guessing from a length.
+	flag = if m.drew { 1 } else { 0 }
+	List.concat(List.concat([flag], Basic.screen(m)), Str.to_utf8(Basic.transcript(m)))
 }
 
 status : Box(Model) -> I64

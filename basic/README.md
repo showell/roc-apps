@@ -1,54 +1,67 @@
 # BASIC, in Roc
 
-A BASIC interpreter, hand-written in Roc, and the corpus that grades it.
+A BASIC interpreter written by hand in Roc, a web page that runs it, and
+the corpora that grade it.
 
-The dialect is **ECMA-55 Minimal BASIC** — an actual published standard,
-which matters because it comes with an actual acceptance suite. The
-extensions past it are the ones the 1978 Creative Computing listings need,
-and each is marked `EXT` where it is implemented.
+The dialect is **ECMA-55 Minimal BASIC** — a published standard with a
+published acceptance suite. The extensions past it are the ones the 1978
+Creative Computing listings and the page need, and each is marked `EXT`
+where it is implemented.
 
 ## Why this subject
 
-Everything we had shown Roc until now came out of a generator: emitted
-Codex, in shapes no human writes. Both issues we filed had to be reduced
-to a hand-written form before they were filable. This is the other kind of
-subject — idiomatic Roc, written by hand, with two ready-made graded
-corpora behind it.
-
-It is also a program with a small amount of code and an enormous state
-space, which is the shape that finds compiler bugs: every run is thousands
-of iterations of the same dispatch over a different machine, and a wrong
-answer is a single wrong value that the corpus catches.
+A BASIC interpreter is a small program with an enormous state space: every
+run is thousands of iterations of the same dispatch over a different
+machine, and a wrong answer is a single wrong value that a graded corpus
+catches. It is idiomatic Roc throughout, so whatever it turns up in the
+compiler is already in the form a report needs.
 
 ## Laying it out
 
-    basic/roc/Basic.roc   the interpreter
-    basic/roc/Listing.roc ECMA-55's check of a whole listing, before it runs
-    basic/nbs-reports.txt what each NBS exception and ERROR program must show
-    basic/gen.py          one BASIC program as its own Roc app
-    basic/ladder.sh       run the corpus, diff, count
-    basic/fetch.sh        the corpora, into ~/build/basic-corpus
+    basic/roc/Basic.roc     the interpreter: the machine, the statements, the doors
+    basic/roc/Listing.roc   ECMA-55's check of each line and statement, before a run
+    basic/roc/Program.roc   ECMA-55's check of the whole program: jumps, loops, DEFs, arrays
+    basic/roc/BasicApp.roc  the interpreter behind one boxed machine, for the page
+    basic/wasm/             the page's platform and host
+    basic/web/basic.html    the page
+    basic/build.sh          the page and its module, into the preview
+    basic/gen.py            one corpus program as its own Roc app
+    basic/ladder.sh         run a corpus, grade, count
+    basic/nbs-reports.txt   what each NBS program must show that its own verdict cannot
+    basic/nbs-input/        replies for NBS programs whose corpus replies are placeholders
+    basic/fetch.sh          the corpora, into ~/build/basic-corpus
 
-Roc's default platform has no file or stdin effect, so a program travels
-as a string literal and its keystrokes as a list of them. The interpreter
-is a pure function: listing, keystrokes and a seed in, output text out.
+## The doors
+
+- **`run`** — a microcomputer's BASIC, as a batch: listing, keystrokes and
+  a seed in, output text out. The games are graded through it.
+- **`run_ecma`** — the same in ECMA-55: the listing is checked before its
+  first statement, and TAB counts columns the standard's way. The NBS
+  suite is graded through it.
+- **`start` / `resume`** — the page's door. The machine suspends when it
+  wants a line, sleeps, prints a line, or has run a few thousand
+  statements; the page paints what it drew and resumes it.
+
+Roc's default platform has no file or stdin effect, so for the batch doors
+a program travels as a string literal and its keystrokes as a list of them.
 
 ## The corpora
 
-**`nbs/`** — 219 National Bureau of Standards Minimal BASIC test programs.
-These **grade themselves**: a conformant interpreter never prints the
-words `TEST FAILED`. That is the byte-exact grader.
+**`nbs/`** — the National Bureau of Standards' 208 Minimal BASIC test
+programs. Most grade themselves: a conformant run never prints
+`TEST FAILED`. The rest cannot say so on their own — an exception that must
+be reported, a malformed program that must be rejected, a verdict only a
+reader can resolve — and `nbs-reports.txt` says what each must show.
 
 **`games/`** — 99 listings from *BASIC Computer Games* (David Ahl, 1978),
 public domain, each with a capture of what a real BASIC printed for the
 keystrokes beside it. A listing that calls `RND` cannot match byte for
-byte, since the captured run had its own generator; those are a smoke
-test, and the ones without `RND` are graded.
+byte, since the captured run had its own random numbers; the rest are
+graded.
 
 ## What Roc does not have
 
-Written down as it was met, because each one is a thing a real program
-needs and a synthetic benchmark does not:
+Each is something a real program needs and a synthetic benchmark does not:
 
 - **No `exp`, no `log`, no `floor`, no `round` on `F64`.** There is `abs`,
   `sqrt`, `sin`, `cos`, `tan`, `atan` and `pow`, and that is the list. So

@@ -30,6 +30,8 @@
   #screen span { display: inline-block; }
   #pix { width: 100%; max-width: 640px; image-rendering: pixelated; display: block;
          background: #000; border: 8px solid var(--scr-edge, #1d4d2a); border-radius: 4px; margin: 0 0 12px; }
+  /* `display: block` above would otherwise beat the hidden attribute. */
+  #pix[hidden], #screen[hidden] { display: none; }
   #line { width: 100%; box-sizing: border-box; margin-top: 8px; padding: 8px 10px;
           background: transparent; color: inherit; border: 1px solid var(--line); border-radius: 4px;
           font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
@@ -229,21 +231,21 @@ function render() {
   const n = x.view();
   const sb = x.screenBytes();
   const all = new Uint8Array(x.memory.buffer, x.outPtr(), n);
-  // screen codes and colour, then the framebuffer when a program drew on
-  // it, then the transcript.
-  const hires = n >= sb + 64000 ? 64000 : 0;
+  // A flag byte, 1 when the program drew pixels; the screen codes and
+  // colour; the framebuffer when there is one; then the transcript.
+  const hires = all[0] === 1 ? 64000 : 0;
   // ONE DISPLAY AT A TIME: a program that drew pixels shows the
   // framebuffer, and every other program the text screen.
   if (hires) {
     $("screenlab").hidden = true;
     $("screen").hidden = true;
   } else {
-    paint(all.subarray(0, sb));
+    paint(all.subarray(1, 1 + sb));
   }
-  paintPixels(all.subarray(sb, sb + hires));
+  paintPixels(all.subarray(1 + sb, 1 + sb + hires));
   // The screen shows what PRINT drew. What is left of the transcript's
   // use is its last line, where a stopped machine says why.
-  const text = dec.decode(all.subarray(sb + hires)).trimEnd();
+  const text = dec.decode(all.subarray(1 + sb + hires)).trimEnd();
   const last = text.slice(text.lastIndexOf("\n") + 1);
   note = last.startsWith("*** ") ? last.slice(4) : "";
 }
