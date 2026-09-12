@@ -18,6 +18,11 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROC="${ROC:-$HOME/build/roc-nightly/roc}"
 ROCEMIT="${ROCEMIT:-$HOME/build/rust-target/release/rocemit}"
 KERNELS_ROOT="${KERNELS_ROOT:-$HOME/showell_repos/cobblestone-u58}"
+# rocemit resolves a kernel's cites (DeviceMath, DeviceEffect, ...) from
+# $CODEX_ROOT; they must come from the same tree as the kernel. The first
+# sweeps inherited the box's CODEX_ROOT and took DeviceMath from Damian's
+# Sep 8 tree, 139 lines behind u58's.
+export CODEX_ROOT="$KERNELS_ROOT"
 GEN="$HOME/build/roc-apps/gen/gpu"
 mkdir -p "$GEN"
 if [ $# -gt 0 ]; then
