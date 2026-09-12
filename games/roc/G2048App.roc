@@ -8,7 +8,7 @@
 # tiles, then score, moves, done, best tile, empty cells and the grid sum.
 # The rest of the record are the shell's own queries, one per export, for
 # Damian's grader (apps/games/g2-verify.mjs) to drive by handle.
-app [Model, program] { pf: platform "../wasm/platform/main.roc" }
+app [Model, program] { pf: platform "../wasm/2048/platform/main.roc" }
 
 import Game2048
 import Game2048Wasm

@@ -1,24 +1,8 @@
-//! The games wasm host. Two doors onto the same Roc functions.
-//!
-//! THE PAGE'S DOOR is one model: newGame(seed), step(message) and view(),
-//! the seam web/2048.html drives from the keyboard. A message is a small
-//! integer the app decodes; the host knows nothing of keys.
-//!
-//! THE GRADER'S DOOR is Damian's export contract for the game
-//! (apps/games/build-wasm.ps1, the handle contract): g2_new answers a
-//! handle, g2_move(h, d) answers the handle of the state after the move,
-//! and the queries read a handle. Here a handle is an index into a table of
-//! boxed models the host owns; old handles stay valid, as the arcade's undo
-//! assumes. A refused move answers the SAME handle, which the grader
-//! requires and the engine makes decidable: an accepted move is the one
-//! that advances the move counter. __heap_reset frees the table, which the
-//! arcade calls at a new game. Roc frees each model on the way out, so
-//! nothing leaks across a long autoplay.
-//!
-//! OWNERSHIP: a Roc function that takes a Box owns that reference, so a
-//! call that must leave the host's reference alive increments the count
-//! first (`borrowed`), as the safari host does. The runtime scaffolding is
-//! the safari host's too (safari/wasm/platform/host.zig).
+//! The minesweeper wasm host. Written by games/gen.py from the export table. Do not edit.
+//! Two doors onto the same Roc functions: the page's (one model, a message)
+//! and the grader's (Damian's export contract, by handle over a table of
+//! boxed models; a refused transition answers the same handle, decided by
+//! the move counter `moves`). See games/gen.py.
 
 const std = @import("std");
 const builtins = @import("builtins");
@@ -31,17 +15,18 @@ const Model = ?[*]u8;
 extern fn roc_init(seed: i64) callconv(.c) Model;
 extern fn roc_step(model: Model, msg: i64) callconv(.c) Model;
 extern fn roc_view(model: Model) callconv(.c) RocList;
-extern fn roc_move(model: Model, d: i64) callconv(.c) Model;
-extern fn roc_cell(model: Model, i: i64) callconv(.c) i64;
-extern fn roc_score(model: Model) callconv(.c) i64;
+extern fn roc_drop(model: Model) callconv(.c) void;
+extern fn roc_mine(model: Model, a0: i64) callconv(.c) i64;
+extern fn roc_shown(model: Model, a0: i64) callconv(.c) i64;
+extern fn roc_adj(model: Model, a0: i64) callconv(.c) i64;
+extern fn roc_count(model: Model) callconv(.c) i64;
+extern fn roc_hits(model: Model) callconv(.c) i64;
 extern fn roc_moves(model: Model) callconv(.c) i64;
 extern fn roc_done(model: Model) callconv(.c) i64;
-extern fn roc_max(model: Model) callconv(.c) i64;
-extern fn roc_empty(model: Model) callconv(.c) i64;
-extern fn roc_sum(model: Model) callconv(.c) i64;
-extern fn roc_can(model: Model, d: i64) callconv(.c) i64;
+extern fn roc_won(model: Model) callconv(.c) i64;
+extern fn roc_safe(model: Model) callconv(.c) i64;
+extern fn roc_open(model: Model, a0: i64) callconv(.c) Model;
 extern fn roc_ai(model: Model) callconv(.c) i64;
-extern fn roc_drop(model: Model) callconv(.c) void;
 
 pub const panic = std.debug.FullPanic(panicImpl);
 fn panicImpl(_: []const u8, _: ?usize) noreturn {
@@ -152,45 +137,47 @@ fn at(h: i32) Model {
     return table.items[@intCast(h)];
 }
 
-pub export fn g2_new(seed: i32) i32 {
+
+pub export fn ms_new(seed: i32) i32 {
     return push(roc_init(seed));
 }
-pub export fn g2_move(h: i32, d: i32) i32 {
+pub export fn ms_mine(h: i32, a0: i32) i32 {
+    return @intCast(roc_mine(borrowed(at(h)), a0));
+}
+pub export fn ms_shown(h: i32, a0: i32) i32 {
+    return @intCast(roc_shown(borrowed(at(h)), a0));
+}
+pub export fn ms_adj(h: i32, a0: i32) i32 {
+    return @intCast(roc_adj(borrowed(at(h)), a0));
+}
+pub export fn ms_count(h: i32) i32 {
+    return @intCast(roc_count(borrowed(at(h))));
+}
+pub export fn ms_hits(h: i32) i32 {
+    return @intCast(roc_hits(borrowed(at(h))));
+}
+pub export fn ms_moves(h: i32) i32 {
+    return @intCast(roc_moves(borrowed(at(h))));
+}
+pub export fn ms_done(h: i32) i32 {
+    return @intCast(roc_done(borrowed(at(h))));
+}
+pub export fn ms_won(h: i32) i32 {
+    return @intCast(roc_won(borrowed(at(h))));
+}
+pub export fn ms_safe(h: i32) i32 {
+    return @intCast(roc_safe(borrowed(at(h))));
+}
+pub export fn ms_open(h: i32, a0: i32) i32 {
     const old = at(h);
-    const next = roc_move(borrowed(old), d);
-    // A refused direction leaves the move counter alone; an accepted one
-    // advances it. The engine says so, and so the handle can.
+    const next = roc_open(borrowed(old), a0);
     if (roc_moves(borrowed(next)) == roc_moves(borrowed(old))) {
         roc_drop(next);
         return h;
     }
     return push(next);
 }
-pub export fn g2_cell(h: i32, i: i32) i32 {
-    return @intCast(roc_cell(borrowed(at(h)), i));
-}
-pub export fn g2_score(h: i32) i32 {
-    return @intCast(roc_score(borrowed(at(h))));
-}
-pub export fn g2_moves(h: i32) i32 {
-    return @intCast(roc_moves(borrowed(at(h))));
-}
-pub export fn g2_done(h: i32) i32 {
-    return @intCast(roc_done(borrowed(at(h))));
-}
-pub export fn g2_max(h: i32) i32 {
-    return @intCast(roc_max(borrowed(at(h))));
-}
-pub export fn g2_empty(h: i32) i32 {
-    return @intCast(roc_empty(borrowed(at(h))));
-}
-pub export fn g2_sum(h: i32) i32 {
-    return @intCast(roc_sum(borrowed(at(h))));
-}
-pub export fn g2_can(h: i32, d: i32) i32 {
-    return @intCast(roc_can(borrowed(at(h)), d));
-}
-pub export fn g2_ai(h: i32) i32 {
+pub export fn ms_ai(h: i32) i32 {
     return @intCast(roc_ai(borrowed(at(h))));
 }
 /// What the arcade calls at a new game: every handle freed.
