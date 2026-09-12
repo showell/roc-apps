@@ -26,12 +26,16 @@
 P003 | rejects | *** REJECTED: END is not the last line
 P004 | rejects | *** REJECTED: The last line is not END
 P008 | also | ?TAB argument less than one
+P020 | rejects | *** REJECTED: A string compared with a number
 P028 | also | ?Division by zero
 P029 | judged | ?Overflow
 P030 | judged | ?Overflow
 P031 | also | ?Zero raised to a negative power
 P032 | also | *** HALTED: Negative number raised to a non-integral power
 P035 | judged | ?Overflow
+P036 | rejects | *** REJECTED: An unmatched parenthesis
+P037 | rejects | *** REJECTED: The ** operator
+P038 | accepts |
 P063 | also | *** HALTED: Subscript out of range
 P064 | also | *** HALTED: Subscript out of range
 P065 | also | *** HALTED: Subscript out of range
@@ -42,16 +46,38 @@ P069 | also | *** HALTED: Subscript out of range
 P070 | also | *** HALTED: Subscript out of range
 P071 | also | *** HALTED: Subscript out of range
 P072 | also | *** HALTED: Subscript out of range
+P079 | rejects | *** REJECTED: An array name that is not a single letter
 P086 | also | *** HALTED: RETURN without GOSUB
 P089 | also | *** HALTED: ON index out of range
 P090 | also | *** HALTED: ON index out of range
 P097 | also | *** HALTED: Out of DATA
 P101 | judged | ?Overflow
+P102 | rejects | *** REJECTED: A character not allowed in an unquoted datum
+P103 | rejects | *** REJECTED: Text after a quoted datum
+P104 | rejects | *** REJECTED: Text after a quoted datum
+P105 | rejects | *** REJECTED: An empty datum in DATA
+P106 | rejects | *** REJECTED: An empty entry in the READ list
+P113 | rejects | *** REJECTED: An empty entry in the INPUT list
 P118 | also | *** HALTED: SQR of a negative number
 P122 | judged | ?Overflow
 P125 | also | *** HALTED: LOG of a number that is not positive
 P126 | also | *** HALTED: LOG of a number that is not positive
 P129 | judged |
+P143 | rejects | *** REJECTED: SIN given the wrong number of arguments
+P144 | rejects | *** REJECTED: ATN given the wrong number of arguments
+P145 | rejects | *** REJECTED: RND given the wrong number of arguments
+P146 | rejects | *** REJECTED: RND given the wrong number of arguments
+P147 | rejects | *** REJECTED: INT given the wrong number of arguments
+P148 | rejects | *** REJECTED: TAN given the wrong number of arguments
+P149 | rejects | *** REJECTED: RND given the wrong number of arguments
+P150 | rejects | *** REJECTED: A string where a number is expected
+P153 | rejects | *** REJECTED: FNP given the wrong number of arguments
+P154 | rejects | *** REJECTED: FND given the wrong number of arguments
+P155 | rejects | *** REJECTED: FNP given the wrong number of arguments
+P156 | rejects | *** REJECTED: FNA given the wrong number of arguments
+P157 | rejects | *** REJECTED: A DEF with more than one parameter
+P158 | rejects | *** REJECTED: A string where a number is expected
+P159 | rejects | *** REJECTED: A DEF whose parameter is a string
 P167 | also | ?Division by zero | ?Zero raised to a negative power
 P168 | also | ?Overflow | *** HALTED: Subscript out of range
 P170 | also | *** HALTED: Negative number raised to a non-integral power
@@ -65,11 +91,24 @@ P179 | also | *** HALTED: LOG of a number that is not positive
 P180 | also | ?Division by zero | *** HALTED: ON index out of range
 P182 | also | *** HALTED: Negative number raised to a non-integral power
 P183 | also | ?Division by zero
+P185 | rejects | *** REJECTED: A statement with no keyword
 P187 | accepts |
 P188 | rejects | *** REJECTED: A space inside a line number
+P189 | rejects | *** REJECTED: A statement with no keyword
+P190 | accepts |
+P191 | rejects | *** REJECTED: A keyword run together with the word after it
+P192 | rejects | *** REJECTED: Text after a PRINT item
+P193 | rejects | *** REJECTED: Two PRINT items with nothing between them
+P194 | rejects | *** REJECTED: Text after the end of a statement
+P195 | rejects | *** REJECTED: Text after the end of a statement
 P197 | rejects | *** REJECTED: A line number used twice
 P198 | rejects | *** REJECTED: A line number out of order
 P199 | rejects | *** REJECTED: A line number longer than four digits
 P200 | rejects | *** REJECTED: Line number 0
 P201 | rejects | *** REJECTED: A line has no line number
 P202 | rejects | *** REJECTED: A line longer than 72 characters
+P204 | accepts |
+P205 | accepts |
+P206 | accepts |
+P207 | rejects | *** REJECTED: A string where a number is expected
+P208 | rejects | *** REJECTED: A number where a string is expected

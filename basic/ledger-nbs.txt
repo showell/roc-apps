@@ -17,7 +17,7 @@ UNJUDGED P016 | an ERROR program with no row in nbs-reports.txt
 PASS P017 |
 PASS P018 |
 PASS P019 |
-UNJUDGED P020 | an ERROR program with no row in nbs-reports.txt
+PASS P020 |
 UNJUDGED P021 | an ERROR program with no row in nbs-reports.txt
 PASS P022 |
 PASS P023 |
@@ -33,9 +33,9 @@ PASS P032 |
 PASS P033 |
 PASS P034 |
 PASS P035 |
-FAIL P036 | *** UNSUPPORTED: Expected )
-FAIL P037 | *** UNSUPPORTED: Expected an expression
-UNJUDGED P038 | an ERROR program with no row in nbs-reports.txt
+PASS P036 |
+PASS P037 |
+PASS P038 |
 FAIL P039 | *** INFORMATIVE TEST FAILED IN  9  CASE(S) ***
 FAIL P040 | *** INFORMATIVE TEST FAILED IN  16  CASE(S) ***
 FAIL P041 | *** INFORMATIVE TEST FAILED IN  1  CASE(S) ***
@@ -76,7 +76,7 @@ UNJUDGED P075 | an ERROR program with no row in nbs-reports.txt
 UNJUDGED P076 | an ERROR program with no row in nbs-reports.txt
 UNJUDGED P077 | an ERROR program with no row in nbs-reports.txt
 UNJUDGED P078 | an ERROR program with no row in nbs-reports.txt
-UNJUDGED P079 | an ERROR program with no row in nbs-reports.txt
+PASS P079 |
 UNJUDGED P080 | an ERROR program with no row in nbs-reports.txt
 UNJUDGED P081 | an ERROR program with no row in nbs-reports.txt
 UNJUDGED P082 | an ERROR program with no row in nbs-reports.txt
@@ -99,18 +99,18 @@ FAIL P098 | ***  TEST FAILED  ***
 FAIL P099 | ***  TEST FAILED  ***
 FAIL P100 | ***  TEST FAILS  ***
 PASS P101 |
-UNJUDGED P102 | an ERROR program with no row in nbs-reports.txt
-UNJUDGED P103 | an ERROR program with no row in nbs-reports.txt
-UNJUDGED P104 | an ERROR program with no row in nbs-reports.txt
-UNJUDGED P105 | an ERROR program with no row in nbs-reports.txt
-UNJUDGED P106 | an ERROR program with no row in nbs-reports.txt
+PASS P102 |
+PASS P103 |
+PASS P104 |
+PASS P105 |
+PASS P106 |
 FAIL P107 | ***  TEST FAILED  ***
 FAIL P108 | *** UNSUPPORTED: Out of input
 FAIL P109 | ***  TEST FAILED  ***
 FAIL P110 | ***  TEST FAILED  ***
 FAIL P111 | ***  TEST FAILS  ***
 FAIL P112 | *** IF NOT ALLOWED TO RE-SUPPLY INPUT, TEST FAILS ***
-UNJUDGED P113 | an ERROR program with no row in nbs-reports.txt
+PASS P113 |
 FAIL P114 | *** TEST FAILED IN  10  CASE(S) ***
 PASS P115 |
 FAIL P116 | *** TEST FAILED IN  1  CASE(S) ***
@@ -140,23 +140,23 @@ PASS P139 |
 PASS P140 |
 PASS P141 |
 FAIL P142 | *** INFORMATIVE TEST FAILED ***
-FAIL P143 | *** UNSUPPORTED: Expected )
-FAIL P144 | *** UNSUPPORTED: Expected )
-FAIL P145 | *** UNSUPPORTED: Expected )
-UNJUDGED P146 | an ERROR program with no row in nbs-reports.txt
-FAIL P147 | *** UNSUPPORTED: Expected an expression
-FAIL P148 | *** UNSUPPORTED: Expected ( after TAN
-FAIL P149 | *** UNSUPPORTED: Expected an expression
-UNJUDGED P150 | an ERROR program with no row in nbs-reports.txt
+PASS P143 |
+PASS P144 |
+PASS P145 |
+PASS P146 |
+PASS P147 |
+PASS P148 |
+PASS P149 |
+PASS P150 |
 PASS P151 |
 PASS P152 |
-UNJUDGED P153 | an ERROR program with no row in nbs-reports.txt
-FAIL P154 | *** UNSUPPORTED: Expected ( after FND
-UNJUDGED P155 | an ERROR program with no row in nbs-reports.txt
-FAIL P156 | *** UNSUPPORTED: Expected )
-FAIL P157 | *** UNSUPPORTED: Malformed DEF
-UNJUDGED P158 | an ERROR program with no row in nbs-reports.txt
-UNJUDGED P159 | an ERROR program with no row in nbs-reports.txt
+PASS P153 |
+PASS P154 |
+PASS P155 |
+PASS P156 |
+PASS P157 |
+PASS P158 |
+PASS P159 |
 UNJUDGED P160 | an ERROR program with no row in nbs-reports.txt
 UNJUDGED P161 | an ERROR program with no row in nbs-reports.txt
 FAIL P162 | *** UNSUPPORTED: Undefined function: FND
@@ -182,17 +182,17 @@ PASS P181 |
 PASS P182 |
 PASS P183 |
 PASS P184 |
-UNJUDGED P185 | an ERROR program with no row in nbs-reports.txt
+PASS P185 |
 PASS P186 |
 PASS P187 |
 PASS P188 |
-FAIL P189 | *** UNSUPPORTED: Expected =
-UNJUDGED P190 | an ERROR program with no row in nbs-reports.txt
-FAIL P191 | *** UNSUPPORTED: Expected =
-FAIL P192 | *** UNSUPPORTED: Expected an expression
-UNJUDGED P193 | an ERROR program with no row in nbs-reports.txt
-UNJUDGED P194 | an ERROR program with no row in nbs-reports.txt
-UNJUDGED P195 | an ERROR program with no row in nbs-reports.txt
+PASS P189 |
+PASS P190 |
+PASS P191 |
+PASS P192 |
+PASS P193 |
+PASS P194 |
+PASS P195 |
 PASS P196 |
 PASS P197 |
 PASS P198 |
@@ -201,8 +201,8 @@ PASS P200 |
 PASS P201 |
 PASS P202 |
 FAIL P203 | *** UNSUPPORTED: Out of input
-UNJUDGED P204 | an ERROR program with no row in nbs-reports.txt
-UNJUDGED P205 | an ERROR program with no row in nbs-reports.txt
-UNJUDGED P206 | an ERROR program with no row in nbs-reports.txt
-UNJUDGED P207 | an ERROR program with no row in nbs-reports.txt
-UNJUDGED P208 | an ERROR program with no row in nbs-reports.txt
+PASS P204 |
+PASS P205 |
+PASS P206 |
+PASS P207 |
+PASS P208 |

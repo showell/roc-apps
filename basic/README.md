@@ -67,3 +67,12 @@ these are the forms it runs instead, each a row marked `accepts` in
 `nbs-reports.txt`:
 
 - **Spaces before a line number** (P187) are skipped.
+- **No space between a line number and its keyword**, or before THEN
+  (P190: `250LET`, `10THEN`).
+- **A sign after an operator** (P038: `4 ^ -2` is `4 ^ (-2)`).
+- **Lowercase** (P204, P205): upper-cased outside quotes, kept inside.
+- **`<`, `>`, `<=` and `>=` between strings** (P206): byte order.
+- **THEN followed by a statement** rather than a line number, a quoted
+  **prompt on INPUT**, `+` joining strings, and the extension statements
+  and functions (POKE, PLOT, SLEEP, PEEK, CHR$ and the rest), which the
+  check does not look inside.
