@@ -23,13 +23,13 @@
   pre { height: 394px; overflow: auto; margin: 0; white-space: pre; }
   /* The screen is 40x25 cells of a Commodore's memory, drawn as text so
      that a cell is exactly a cell. */
-  #screen { background: #3e31a2; color: #7c70da; border: 8px solid #7c70da; border-radius: 4px;
+  #screen { background: var(--scr-bg, #000); color: var(--scr-fg, #33ff66); border: 8px solid var(--scr-edge, #1d4d2a); border-radius: 4px;
             padding: 8px; margin: 0 0 12px; overflow-x: auto;
             font: 13px/1.1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   #screen div { white-space: pre; }
   #screen span { display: inline-block; }
   #pix { width: 100%; max-width: 640px; image-rendering: pixelated; display: block;
-         background: #000; border: 8px solid #7c70da; border-radius: 4px; margin: 0 0 12px; }
+         background: #000; border: 8px solid var(--scr-edge, #1d4d2a); border-radius: 4px; margin: 0 0 12px; }
   #line { width: 100%; box-sizing: border-box; margin-top: 8px; padding: 8px 10px;
           background: transparent; color: inherit; border: 1px solid var(--line); border-radius: 4px;
           font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
@@ -47,14 +47,15 @@
 </style>
 <div class="wrap">
 <h1>BASIC, in Roc</h1>
-<p class="sub">An ECMA-55 Minimal BASIC interpreter, hand-written in Roc, compiled to WebAssembly.
-Everything below runs in this tab.</p>
+<p class="sub">An ECMA-55 Minimal BASIC interpreter, hand-written in Roc and compiled to WebAssembly,
+with a thin JavaScript layer for the page. Everything below runs in this tab.</p>
 
 <div class="bar">
   <button id="run">Run</button>
   <button id="stop">Stop</button>
   <button id="back">Back</button>
   <select id="sample"></select>
+  <select id="theme" title="Screen colours"></select>
   <span id="status" class="sub" style="margin:0"></span>
 </div>
 
@@ -75,10 +76,13 @@ Everything below runs in this tab.</p>
 </div>
 
 <p class="note">
-  The interpreter is one Roc module with no dependencies. A run is a pure function of the
-  listing, the keystrokes and a seed, so the page hands over three buffers and reads one back.
-  Graded against the National Bureau of Standards' Minimal BASIC test programs and the 1978
-  <em>BASIC Computer Games</em> listings.
+  The machine is a Roc value. The page starts it with the listing and a seed, and the machine
+  hands itself back whenever it wants a line typed, sleeps, prints a line, or has run a few
+  thousand statements; the page paints what it drew and resumes it. Every state is kept, so
+  Back is exact rather than replayed. Graded against the National Bureau of Standards' Minimal
+  BASIC test programs and the 1978 <em>BASIC Computer Games</em> listings.
+  Source: <a href="https://github.com/showell/roc-apps/tree/master/basic">github.com/showell/roc-apps</a>
+  (<code>basic/</code>).
 </p>
 </div>
 
@@ -148,6 +152,26 @@ function paintPixels(cells) {
 const PAL = ["#000000","#ffffff","#813338","#75cec8","#8e3c97","#56ac4d","#2e2c9b","#edf171",
              "#8e5029","#553800","#c46c71","#4a4a4a","#7b7b7b","#a9ff9f","#706deb","#b2b2b2"];
 
+// The screen's look. Colour 14 is what a cell holds until a program POKEs
+// its colour, so it is the theme's text colour; every other code is the
+// Commodore's own.
+const THEMES = {
+  "Green on black": { bg: "#000000", fg: "#33ff66", edge: "#1d4d2a" },
+  "Black on white": { bg: "#ffffff", fg: "#111111", edge: "#b8b4ac" },
+  "Commodore blue": { bg: "#3e31a2", fg: "#7c70da", edge: "#7c70da" },
+};
+let THEME = THEMES["Green on black"];
+
+function applyTheme(name) {
+  THEME = THEMES[name] || THEMES["Green on black"];
+  const s = document.documentElement.style;
+  s.setProperty("--scr-bg", THEME.bg);
+  s.setProperty("--scr-fg", THEME.fg);
+  s.setProperty("--scr-edge", THEME.edge);
+  try { localStorage.setItem("basic-theme", name); } catch (e) {}
+  if (x) render();
+}
+
 function glyph(c) {
   const rev = c >= 128;
   const k = rev ? c - 128 : c;
@@ -168,10 +192,11 @@ function paint(cells) {
     for (let x = 0; x < 40; x++) {
       const i = y * 40 + x;
       const g = glyph(cells[i]);
-      const fg = PAL[cells[1000 + i] & 15];
+      const code = cells[1000 + i] & 15;
+      const fg = code === 14 ? THEME.fg : PAL[code];
       const sp = document.createElement("span");
       sp.textContent = g.ch;
-      if (g.rev) { sp.style.background = fg; sp.style.color = "#3e31a2"; } else { sp.style.color = fg; }
+      if (g.rev) { sp.style.background = fg; sp.style.color = THEME.bg; } else { sp.style.color = fg; }
       row.appendChild(sp);
     }
     box.appendChild(row);
@@ -189,6 +214,16 @@ async function boot() {
   const { instance } = await WebAssembly.instantiateStreaming(fetch("basic.wasm"), {});
   x = instance.exports;
   $("status").textContent = "";
+  const th = $("theme");
+  for (const name of Object.keys(THEMES)) {
+    const o = document.createElement("option");
+    o.value = name; o.textContent = name; th.appendChild(o);
+  }
+  let saved = null;
+  try { saved = localStorage.getItem("basic-theme"); } catch (e) {}
+  th.value = THEMES[saved] ? saved : "Green on black";
+  th.onchange = () => applyTheme(th.value);
+  applyTheme(th.value);
   sel.onchange();
   go();
 }
@@ -202,7 +237,14 @@ function render() {
   // screen codes and colour, then the framebuffer when a program drew on
   // it, then the transcript.
   const hires = n >= sb + 64000 ? 64000 : 0;
-  paint(all.subarray(0, sb));
+  // ONE DISPLAY AT A TIME: a program that drew pixels shows the
+  // framebuffer, and every other program the text screen.
+  if (hires) {
+    $("screenlab").hidden = true;
+    $("screen").hidden = true;
+  } else {
+    paint(all.subarray(0, sb));
+  }
   paintPixels(all.subarray(sb, sb + hires));
   const out = $("out");
   const stuck = out.scrollTop + out.clientHeight >= out.scrollHeight - 4;
