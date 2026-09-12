@@ -353,12 +353,13 @@ Basic :: [].{
 		if rows <= 0 or (d2 >= 0 and cols <= 0) or n <= 0 {
 			{ ..m, done: True, err: Str.concat("Bad DIM bound: ", k), gap: False}
 		} else {
-			fresh = { k: k, w: w, cells: List.repeat(0.0, I64.to_u64_wrap(n)) }
-			at = Basic.arr_index(m.arr, k, 0)
-			if at < 0 {
-				{ ..m, arr: List.append(m.arr, fresh) }
+			# **A DIM IS A DECLARATION** (ECMA-55 15): control may pass through
+			# one again, in a loop or a subroutine, and the array keeps its
+			# values. A second DIM for the same array is rejected at load.
+			if Basic.arr_index(m.arr, k, 0) >= 0 {
+				m
 			} else {
-				{ ..m, arr: List.set(m.arr, I64.to_u64_wrap(at), fresh) ?? crash("dim") }
+				{ ..m, arr: List.append(m.arr, { k: k, w: w, cells: List.repeat(0.0, I64.to_u64_wrap(n)) }) }
 			}
 		}
 	}

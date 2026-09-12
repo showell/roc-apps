@@ -69,6 +69,10 @@ one() {
             echo "FAIL $n | $(grep -m1 'TEST FAIL' "$d/out" | cut -c1-90)" > "$d/verdict"
         elif grep -q "UNSUPPORTED" "$d/out"; then
             echo "FAIL $n | $(grep -m1 'UNSUPPORTED' "$d/out" | cut -c1-90)" > "$d/verdict"
+        # **A HALT PASSES ONLY WHERE THE ROW REQUIRES ONE.** A program stopped
+        # before its verdict prints no TEST FAILED either.
+        elif grep -q '^\*\*\* HALTED' "$d/out" && ! echo "$row" | grep -qF '*** HALTED'; then
+            echo "FAIL $n | $(grep -m1 'HALTED' "$d/out" | cut -c1-90)" > "$d/verdict"
         elif [ -n "$missing" ]; then
             echo "FAIL $n | no report: $missing" > "$d/verdict"
         elif [ "$kind" = reader ]; then

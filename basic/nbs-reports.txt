@@ -128,6 +128,7 @@ P176 | also | *** HALTED: Negative number raised to a non-integral power
 P177 | also | ?Overflow | ?Zero raised to a negative power
 P179 | also | *** HALTED: LOG of a number that is not positive
 P180 | also | ?Division by zero | *** HALTED: ON index out of range
+P181 | also | *** HALTED: ON index out of range
 P182 | also | *** HALTED: Negative number raised to a non-integral power
 P183 | also | ?Division by zero
 P185 | rejects | *** REJECTED: A statement with no keyword

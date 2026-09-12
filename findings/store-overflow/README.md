@@ -32,3 +32,15 @@ the expression evaluator between `ensure_arr` and `set_arr`.
 
 To reduce: shrink the machine record and the call chain while `repro.sh`'s
 `direct` still overflows, and check at each step that `fresh` still runs.
+
+## A second site: `dim` replacing an array
+
+The same shape overflowed in `dim` when control reached a DIM for an array
+that already existed: `{ ..m, arr: List.set(m.arr, at, fresh) ?? crash("dim") }`.
+On roc-apps master `122bf35` this listing overflows:
+
+    10 LET T=1 / 20 DIM B(12) / 30 IF T<>1 THEN 60 / 40 LET T=2
+    50 GOTO 20 / 60 PRINT T / 70 END
+
+That branch is gone: a DIM is a declaration and does not replace anything.
+To reproduce, check out `122bf35`.
