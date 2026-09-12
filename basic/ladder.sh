@@ -47,8 +47,8 @@ one() {
     elif [ "$suite" = nbs ]; then
         if grep -q "TEST FAILED\|TEST FAILS" "$d/out"; then
             echo "FAIL $n | $(grep -m1 'TEST FAIL' "$d/out" | cut -c1-90)" > "$d/verdict"
-        elif grep -q "^?" "$d/out"; then
-            echo "FAIL $n | $(grep -m1 '^?' "$d/out" | cut -c1-90)" > "$d/verdict"
+        elif grep -q "HALTED" "$d/out"; then
+            echo "FAIL $n | $(grep -m1 'HALTED' "$d/out" | cut -c1-90)" > "$d/verdict"
         else echo "PASS $n |" > "$d/verdict"; fi
     elif cmp -s "$d/out" "$CORPUS/$suite/$n.output"; then echo "PASS $n |" > "$d/verdict"
     else echo "FAIL $n | $(diff "$d/out" "$CORPUS/$suite/$n.output" | grep -m1 '^[<>]' | cut -c1-90)" > "$d/verdict"; fi

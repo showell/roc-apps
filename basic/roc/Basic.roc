@@ -321,6 +321,11 @@ Basic :: [].{
 	ln2 : F64
 	ln2 = 0.6931471805599453
 
+	# The largest number this BASIC has, which a reported exception
+	# continues with (ECMA-55 12.4).
+	huge : F64
+	huge = 1.7976931348623157e308
+
 	floor : F64 -> F64
 	floor = |x| {
 		t = I64.to_f64(F64.to_i64_wrap(x))
@@ -362,16 +367,73 @@ Basic :: [].{
 		Str.concat(Str.concat(sign, Basic.fmt_mag(a)), " ")
 	}
 
+	# **ECMA-55 PRINTS SIX SIGNIFICANT DIGITS**, an integer with no point,
+	# and a value below one with no leading zero: one third is `.333333`,
+	# not `0.3333333333333333`. Outside the fixed-point range it is one
+	# digit, a point, the rest, and an exponent.
+	sig : I64
+	sig = 6
+
 	fmt_mag : F64 -> Str
 	fmt_mag = |a|
-		if a == Basic.floor(a) and a < 1000000000.0 {
+		if a == 0.0 {
+			"0"
+		} else if a == Basic.floor(a) and a < 1000000000.0 {
 			I64.to_str(F64.to_i64_wrap(a))
 		} else {
-			Basic.trim_float(F64.to_str(a))
+			n = Basic.normal(a, 0)
+			d = Basic.round_to(n.m * 100000.0)
+			r = if d >= 1000000 { { d: 100000, e: n.e + 1 } } else { { d: d, e: n.e } }
+			Basic.lay_out(I64.to_str(r.d), r.e)
 		}
 
-	trim_float : Str -> Str
-	trim_float = |s| s
+	normal : F64, I64 -> { m : F64, e : I64 }
+	normal = |a, e|
+		if a >= 10.0 {
+			Basic.normal(a / 10.0, e + 1)
+		} else if a < 1.0 {
+			Basic.normal(a * 10.0, e - 1)
+		} else {
+			{ m: a, e: e }
+		}
+
+	round_to : F64 -> I64
+	round_to = |x| F64.to_i64_wrap(Basic.floor(x + 0.5))
+
+	# `ds` is exactly `sig` digits and `e` is the power of ten the first
+	# of them stands for.
+	lay_out : Str, I64 -> Str
+	lay_out = |ds, e|
+		if e >= 0 and e < Basic.sig {
+			whole = Basic.take(ds, I64.to_u64_wrap(e + 1))
+			frac = Basic.no_zeros(Basic.drop(ds, I64.to_u64_wrap(e + 1)))
+			if frac == "" { whole } else { Str.concat(Str.concat(whole, "."), frac) }
+		} else if e == -1 {
+			Str.concat(".", Basic.no_zeros(ds))
+		} else {
+			frac = Basic.no_zeros(Basic.drop(ds, 1))
+			mant = if frac == "" { Basic.take(ds, 1) } else { Str.concat(Str.concat(Basic.take(ds, 1), "."), frac) }
+			Str.concat(Str.concat(mant, if e < 0 { "E-" } else { "E+" }), I64.to_str(I64.abs(e)))
+		}
+
+	take : Str, U64 -> Str
+	take = |t, n| Str.from_utf8(List.sublist(Str.to_utf8(t), { start: 0, len: n })) ?? ""
+
+	drop : Str, U64 -> Str
+	drop = |t, n| {
+		b = Str.to_utf8(t)
+		if n >= List.len(b) { "" } else { Str.from_utf8(List.sublist(b, { start: n, len: List.len(b) - n })) ?? "" }
+	}
+
+	no_zeros : Str -> Str
+	no_zeros = |t| {
+		b = Str.to_utf8(t)
+		if List.len(b) > 0 and Basic.byte(b, U64.minus_wrap(List.len(b), 1)) == 48 {
+			Basic.no_zeros(Basic.take(t, U64.minus_wrap(List.len(b), 1)))
+		} else {
+			t
+		}
+	}
 
 	# ---- the expression evaluator ---------------------------------------
 
@@ -449,7 +511,11 @@ Basic :: [].{
 			} else {
 				d = Basic.num_of(r.v)
 				if c == 47 and d == 0.0 {
-					Basic.fail(r.m, "Division by zero", r.at)
+					# ECMA-55 12.4: a division by zero is reported and the
+					# program continues with the largest number, so a test
+					# for it can go on to test the next thing.
+					big = if acc < 0.0 { 0.0 - Basic.huge } else { Basic.huge }
+					Basic.term_rest(Basic.emit(r.m, "\n?Division by zero\n"), b, r.at, big)
 				} else {
 					Basic.term_rest(r.m, b, r.at, if c == 42 { acc * d } else { acc / d })
 				}
@@ -749,6 +815,8 @@ Basic :: [].{
 			Basic.advance({ ..m, dp: 0 }, w)
 		} else if k == "INPUT" {
 			Basic.do_input(m, b, w)
+		} else if k == "ON" {
+			Basic.do_on(m, b, w)
 		} else if k == "OPTION" {
 			Basic.do_option(m, b, w)
 		} else if k == "DEF" {
@@ -1026,6 +1094,54 @@ Basic :: [].{
 		}
 	}
 
+	# ON <expr> GOTO n1,n2,... picks the nth line, counting from one. An
+	# index outside the list is an error in ECMA-55 rather than a fall
+	# through, and the suite checks that it is reported.
+	do_on : M, List(U8), U64 -> M
+	do_on = |m, b, w| {
+		r = Basic.sum(m, b, w)
+		if r.m.done {
+			r.m
+		} else {
+			g = Basic.kw(b, r.at, "GOTO")
+			sub = if g == r.at { Basic.kw(b, r.at, "GOSUB") } else { g }
+			if sub == r.at {
+				{ ..r.m, done: True, err: "Expected GOTO or GOSUB" }
+			} else {
+				n = Basic.idx(Basic.num_of(r.v))
+				pick = Basic.nth_line(b, sub, n, 1)
+				if pick.n < 0 {
+					{ ..r.m, done: True, err: "ON index out of range" }
+				} else if g == r.at {
+					back = Basic.advance(r.m, pick.at)
+					Basic.jump({ ..back, ret: List.append(back.ret, back.pc) }, pick.n)
+				} else {
+					Basic.jump(r.m, pick.n)
+				}
+			}
+		}
+	}
+
+	nth_line : List(U8), U64, U64, U64 -> { n : I64, at : U64 }
+	nth_line = |b, i, want, k| {
+		j = Basic.skip_ws(b, i)
+		e = Basic.digits_end(b, j)
+		if e == j {
+			{ n: -1, at: j }
+		} else if k == want {
+			{ n: Basic.digits_val(b, j, e, 0), at: Basic.line_list_end(b, e) }
+		} else {
+			c = Basic.skip_ws(b, e)
+			if Basic.byte(b, c) != 44 { { n: -1, at: c } } else { Basic.nth_line(b, c + 1, want, k + 1) }
+		}
+	}
+
+	line_list_end : List(U8), U64 -> U64
+	line_list_end = |b, i| {
+		c = Basic.skip_ws(b, i)
+		if Basic.byte(b, c) != 44 { c } else { Basic.line_list_end(b, Basic.digits_end(b, Basic.skip_ws(b, c + 1))) }
+	}
+
 	# OPTION BASE 0 or 1. More than one is an error in ECMA-55 and the
 	# suite checks that it is reported.
 	do_option : M, List(U8), U64 -> M
@@ -1054,7 +1170,11 @@ Basic :: [].{
 		e = Basic.word_end(b, j)
 		k = Basic.text_of(b, j, e)
 		q = Basic.skip_ws(b, e)
-		if Basic.byte(b, q) != 40 {
+		if Basic.byte(b, q) == 61 {
+			stop = Basic.stmt_end(b, q + 1)
+			body = List.sublist(b, { start: q + 1, len: stop - (q + 1) })
+			Basic.advance({ ..m, fns: List.append(m.fns, { k: k, p: "", body: body }) }, stop)
+		} else if Basic.byte(b, q) != 40 {
 			{ ..m, done: True, err: "Expected ( after DEF" }
 		} else {
 			pm = Basic.name_at(b, q + 1)
@@ -1088,7 +1208,10 @@ Basic :: [].{
 		} else {
 			f = List.get(m.fns, I64.to_u64_wrap(at)) ?? { k: "", p: "", body: [] }
 			j = Basic.skip_ws(b, i)
-			if Basic.byte(b, j) != 40 {
+			if f.p == "" {
+				inner = Basic.expr(m, f.body, 0)
+				{ m: inner.m, v: inner.v, at: if Basic.byte(b, j) == 40 and Basic.byte(b, j + 1) == 41 { j + 2 } else { i } }
+			} else if Basic.byte(b, j) != 40 {
 				Basic.fail(m, Str.concat("Expected ( after ", k), j)
 			} else {
 				a = Basic.sum(m, b, j + 1)
@@ -1287,10 +1410,17 @@ Basic :: [].{
 	run = |src, inp, seed| {
 		m = Basic.loop(Basic.new(Basic.load(src), inp, seed))
 		body = Str.join_with(m.out, "")
-		if m.err == "" {
-			body
+		# **A REPORTED EXCEPTION IS NOT A HALT.** ECMA-55 has exceptions
+		# that are printed and carried on from -- a division by zero is
+		# one -- and those print with the `?` a BASIC uses. What stops the
+		# program gets a marker of its own so a harness can tell them
+		# apart.
+		if m.err != "" {
+			Str.concat(Str.concat(body, "\n*** HALTED: "), m.err)
+		} else if m.fuel <= 0 {
+			Str.concat(body, "\n*** HALTED: out of fuel")
 		} else {
-			Str.concat(Str.concat(body, "\n?"), m.err)
+			body
 		}
 	}
 }
