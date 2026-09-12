@@ -1,5 +1,9 @@
 # A plan for `peek-byte` and `poke-byte`
 
+**DONE, 2026-09-12.** What it cost and what it moved is at the end; the
+reasoning, with diagrams, is in the essay
+[memory as a value](http://143.244.172.148:9100/notes/memory-as-a-value.md).
+
 204 of the 526 refused programs are blocked first by a memory builtin.
 This is what it would take, and what it would cost.
 
@@ -90,3 +94,26 @@ bump pointer, `load`/`store` for 1, 2, 4 and 8 bytes little-endian, and
 4. `diskfacts-unpack-large`, which is the 262 KB fill, as the performance
    probe.
 5. The sweep, and a count of what moved from memory to the next blocker.
+
+## What happened
+
+All five steps landed. Two things the plan did not anticipate, both from
+the empty effect row letting a poke stand where a `[Device]` act could
+not: a call that pokes can be an ARGUMENT, so it is lifted to a binding
+ahead of the expression that reads it; and a call's state has to be read
+AFTER its arguments are emitted, since one of them may have written.
+
+`Mem.roc` is a fixed 16,384-page table rather than one that grows, because
+a length check on the way to a store is a second look at the page table
+and a list Roc has looked at twice is a list it copies. Same reason every
+`??` fallback in it crashes rather than answering the list. The 262,144-byte
+fill: 18.3 s with the naming fallbacks, 3.5 s without.
+
+Of the 204 units blocked first on a memory builtin: 24 pass, 1 fails on
+our CCE-unit modelling, 1 diverges on `__heap-save`, 178 moved to the next
+blocker. Of those 178, 88 want hardware (`port-out-32`, `read-mmio-32`,
+`net-send-raw`), 52 are our own named gaps (a short-circuit operand or a
+match arm that pokes, a match under the threaded state), 14 write a list
+parameter, 24 assorted. The ladder went 459 -> 483 of 1,017.
+
+The corpus's memory users are, overwhelmingly, device drivers.
