@@ -21,8 +21,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 WEB = os.path.join(ROOT, "apps/gpushow/web")
 KER = os.path.join(ROOT, "apps/gpushow/kernels")
 
-# The two-pass pages, from their bind groups. A buffer is (name, size), a
-# pass is (kernel, entry, gids, [buffer per binding]).
+# The pages with a plan of their own, from their bind groups: two passes,
+# or a buffer the page uploads before the first dispatch (a Seeds function
+# names it). A buffer is (name, size or the Roc expression that fills it),
+# a pass is (kernel, entry, gids, [buffer per binding]).
 N, SM = 1024 * 768, 1024 * 1024
 GBUF = [("galb", N), ("gnrm", N), ("gdep", N), ("outBuf", N)]
 PLANS = {
@@ -38,6 +40,10 @@ PLANS = {
     "ssao": dict(buffers=GBUF,
                  passes=[("GbufKernel", "gbuf_step", N, ["galb", "gnrm", "gdep"]),
                          ("SsaoKernel", "ssao_step", N, ["gdep", "galb", "gnrm", "outBuf"])]),
+    "texture": dict(buffers=[("texBuf", "Seeds.texture({})"), ("outBuf", N)],
+                    passes=[("TextureKernel", "texture_step", N, ["texBuf", "outBuf"])]),
+    "gltf": dict(buffers=[("meshBuf", "Seeds.icosahedron({})"), ("outBuf", N)],
+                 passes=[("GltfKernel", "gltf_step", N, ["meshBuf", "outBuf"])]),
     "shadowmap": dict(buffers=[("shadowBuf", SM), ("outBuf", N)],
                       passes=[("ShadowMapKernel", "shadowmap_step", SM, ["shadowBuf"]),
                               ("ShadowSceneKernel", "shadowmain_step", N, ["shadowBuf", "outBuf"])]),
@@ -105,6 +111,7 @@ if "--table" in sys.argv:
     sys.exit(0)
 
 mods = sorted({k for r in rows for k in r["kernels"]})
+if any(isinstance(n, str) for r in rows for _, n in r["buffers"]): mods.append("Seeds")
 roc = ["# The gallery app: every pixel-writing gpushow demo behind one render.",
        "# Written by gpu/gallery.py from the Cobblestone pages and kernels. Do not edit.",
        "#",
@@ -118,7 +125,8 @@ roc += ["", "pixels : Device.Device, I32 -> List(U32)",
         "render : I64, I64 -> List(U32)", "render = |kernel, frame| {", "\tf = I64.to_i32_wrap(frame)", "\tmatch kernel {"]
 for i, r in enumerate(rows):
     roc.append(f"\t\t{i} => ({{")
-    roc.append(f"\t\t\tdev0 = Device.new([{', '.join(f'List.repeat(0, {n})' for _, n in r['buffers'])}])")
+    fill = [n if isinstance(n, str) else f"List.repeat(0, {n})" for _, n in r["buffers"]]
+    roc.append(f"\t\t\tdev0 = Device.new([{', '.join(fill)}])")
     for j, (gids, call) in enumerate(r["calls"]):
         roc.append(f"\t\t\tdev{j + 1} = Device.dispatch(dev{j}, {gids}, |d, gid| {call})")
     roc.append(f"\t\t\tpixels(dev{len(r['calls'])}, {[b for b, _ in r['buffers']].index(r['out'])})")
