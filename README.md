@@ -30,21 +30,23 @@ resolved, `<Spec>.expected` the verdict the Rust interpreter froze).
 ## gpu: Cobblestone's WGSL kernels, on the CPU
 
 `gpu/` is the second app: the Codex `[Device]` kernels of Cobblestone's
-`apps/gpushow` (46 chapters the wgsl plug lowers to WebGPU compute shaders),
-run in Roc on the CPU, one gid after another, with the pixels put on a 2d
-canvas. Started 2026-09-12 with a hand port of the plasma kernel; the
-essay is `:9100/notes/plasma-in-roc.md`.
+`apps/*/kernels` (46 chapters the wgsl plug lowers to WebGPU compute
+shaders), run in Roc on the CPU, one gid after another, with the pixels put
+on a 2d canvas. Started 2026-09-12 with hand ports of plasma and the
+fountain; since the same day every kernel is emitted. The essay is
+`:9100/notes/plasma-in-roc.md`.
 
 | where | what | written by |
 |---|---|---|
-| `gpu/roc/Device.roc` | the Device effect as state: buffers by handle, `load`/`store` threading the record, `dispatch` over the gids | hand |
-| `gpu/roc/PlasmaKernel.roc` | `apps/gpushow/kernels/PlasmaKernel.codex`, in the shape rocemit writes | hand, for now |
-| `gpu/roc/PlasmaApp.roc`, `gpu/roc/PlasmaBench.roc` | the app (`render : frame -> pixels`) and a native bench that prints a checksum | hand |
-| `gpu/roc/CpuParticlesKernel.roc`, `gpu/roc/CpuParticlesBench.roc` | the fountain: an act with four loads and four stores over two ping-pong buffers, the bind chain the emitter must write; its bench | hand, for now |
+| `gpu/roc/Device.roc` | the Device effect as state: buffers by handle and the thread's gid, `load`/`store`/index reads threading the record, `dispatch` over the gids | hand |
+| `gpu/roc/*Kernel*.roc`, `DeviceMath.roc`, `Thread.roc`, `ListUtils.roc`, `Tuple.roc` | the 46 kernel chapters and what they cite, one module each; a `[Device]` definition takes the device first and answers `(Device.Device, T)` | `rocemit`, via `gpu/emitted.sh` |
+| `gpu/roc/PlasmaApp.roc`, `gpu/roc/{Plasma,CpuParticles}Bench.roc` | the app (`render : frame -> pixels`) and two native benches that print a checksum a Python evaluation of the Codex source matches | hand |
 | `gpu/wasm/` | the platform: two exports, `renderFrame(n)` and `bufPtr`; host, build.zig as safari's; `smoke.mjs` checksums frame 0 from Node | hand |
 | `gpu/web/plasma.html` | the page: the words as an ImageData; no WebGPU, so no secure context | hand |
 | `gpu/build.sh` | host + app + page into the preview, `http://<box>:9203/gpu/plasma.html` | hand |
+| `gpu/emitted.sh` | THE GATE: every kernel under `$KERNELS_ROOT/apps/*/kernels` (default `~/showell_repos/cobblestone-u58`) emitted, chapter identity checked, `roc check`ed; on green, written to `gpu/roc/` | hand |
 
+    gpu/emitted.sh                 # 46 kernels, ~4 s
     gpu/build.sh
     node gpu/wasm/smoke.mjs ~/build/roc-apps/next/gpu/plasma.wasm 20   # checksum 6293600626746 for frame 0
 

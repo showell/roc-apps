@@ -6,10 +6,24 @@
 #
 # Out of bounds reads 0 and writes nothing, as a WGSL storage access does.
 Device :: [].{
-	Device : { bufs : List(List(I64)) }
+	# `gid` is the thread being run, set by dispatch; the index operations
+	# read it as WGSL's global_invocation_id over workgroups of 64.
+	Device : { bufs : List(List(I64)), gid : I64 }
 
 	new : List(List(I64)) -> Device.Device
-	new = |bufs| { bufs: bufs }
+	new = |bufs| { bufs: bufs, gid: 0 }
+
+	workgroup : I64
+	workgroup = 64
+
+	thread_idx_x : Device.Device -> (Device.Device, I64)
+	thread_idx_x = |dev| (dev, I64.rem_by(dev.gid, workgroup))
+
+	block_idx_x : Device.Device -> (Device.Device, I64)
+	block_idx_x = |dev| (dev, I64.div_trunc_by(dev.gid, workgroup))
+
+	block_dim_x : Device.Device -> (Device.Device, I64)
+	block_dim_x = |dev| (dev, workgroup)
 
 	buffer : Device.Device, I64 -> List(I64)
 	buffer = |dev, buf| List.get(dev.bufs, I64.to_u64_wrap(buf)) ?? []
@@ -24,7 +38,7 @@ Device :: [].{
 	store : Device.Device, I64, I64, I64 -> (Device.Device, I64)
 	store = |dev, buf, i, v| {
 		bufs = List.update(dev.bufs, I64.to_u64_wrap(buf), |b| List.set(b, I64.to_u64_wrap(i), v) ?? b) ?? dev.bufs
-		({ bufs: bufs }, v)
+		({ bufs: bufs, gid: dev.gid }, v)
 	}
 
 	# One dispatch: the kernel over gid 0..n-1, in order, threading the
@@ -35,7 +49,7 @@ Device :: [].{
 	dispatch_from : Device.Device, I64, I64, (Device.Device, I64 -> (Device.Device, I64)) -> Device.Device
 	dispatch_from = |dev, gid, n, kernel|
 		if gid >= n { dev } else {
-			(dev1, _) = kernel(dev, gid)
+			(dev1, _) = kernel({ bufs: dev.bufs, gid: gid }, gid)
 			dispatch_from(dev1, gid + 1, n, kernel)
 		}
 }
