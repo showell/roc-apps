@@ -5,14 +5,14 @@ import Frame
 import Geom
 import GuardRail
 import Joint
-import Num
+import Num_
 import World
 
 RailPlan :: [].{
 
 	leg_steps : F64 -> I64
 	leg_steps = |dist| ({
-		r = Num.round_real(dist)
+		r = Num_.round_real(dist)
 		F64.to_i64_wrap((if (r < 1.0) { 1.0 } else { r }))
 	})
 

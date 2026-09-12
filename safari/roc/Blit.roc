@@ -1,5 +1,5 @@
 # Blit -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
-import Num
+import Num_
 import Paint
 
 Blit :: [].{
@@ -18,7 +18,7 @@ Blit :: [].{
 
 	shade_chan : I64, F64 -> I64
 	shade_chan = |v, f| ({
-		scaled = F64.to_i64_wrap(Num.round_real((I64.to_f64(v) * f)))
+		scaled = F64.to_i64_wrap(Num_.round_real((I64.to_f64(v) * f)))
 		(if (scaled > 255) { 255 } else { scaled })
 	})
 

@@ -107,6 +107,23 @@ three milliseconds. That still tests a real component, and it is the one
 through the host so the comparison must happen at run time -- and doing the
 same here would be a second pass over the same programs.
 
+## What our emitter does not model
+
+Two limits are worth stating, because both would otherwise look like Roc
+bugs.
+
+**A Codex `Text` is a sequence of CCE units, and we model it as a Roc
+`Str`.** The two agree exactly over the alphabet Codex encodes in one unit
+each -- ASCII, accented Latin, Cyrillic, 127 characters whose codes we
+carry -- and part company on anything else, which Codex writes as a
+multi-unit sequence and we keep as UTF-8. A program that walks those units
+with `char-at` therefore reads different bytes from us; two do, and they
+are failures in the ledger rather than anything of Roc's.
+
+**A Codex list is written in place**, so a program that writes a list
+through one name and reads it through another cannot be ported at all;
+that is the DIVERGES column.
+
 ## What we have filed
 
 - [#11334](https://github.com/roc-lang/roc/issues/11334) -- compile-time

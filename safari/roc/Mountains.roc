@@ -2,7 +2,7 @@
 import Camera
 import DeviceMath
 import Lens
-import Num
+import Num_
 import Paint
 import Sky
 import Trig
@@ -33,9 +33,9 @@ Mountains :: [].{
 	dimmed : I64, F64 -> I64
 	dimmed = |color, dusk| ({
 		f = (1.0 - (rock_night_dim * dusk))
-		r = F64.to_i64_wrap(Num.round_real((chan(color, 16) * f)))
-		g = F64.to_i64_wrap(Num.round_real((chan(color, 8) * f)))
-		b = F64.to_i64_wrap(Num.round_real((chan(color, 0) * f)))
+		r = F64.to_i64_wrap(Num_.round_real((chan(color, 16) * f)))
+		g = F64.to_i64_wrap(Num_.round_real((chan(color, 8) * f)))
+		b = F64.to_i64_wrap(Num_.round_real((chan(color, 0) * f)))
 		I64.bitwise_or(I64.bitwise_or(U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(r), U64.pow(2, I64.to_u64_wrap(16)))), U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(g), U64.pow(2, I64.to_u64_wrap(8))))), b)
 	})
 

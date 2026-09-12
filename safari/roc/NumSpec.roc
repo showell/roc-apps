@@ -1,7 +1,7 @@
 # NumSpec -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 import Grade
 import ListUtils
-import Num
+import Num_
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
@@ -35,7 +35,7 @@ mod_inner : F64, List(F64), I64 -> List(F64)
 mod_inner = |m, xs, j| mod_inner_acc(m, xs, j, [])
 
 mod_inner_acc : F64, List(F64), I64, List(F64) -> List(F64)
-mod_inner_acc = |m, xs, j, acc| (if (j >= U64.to_i64_wrap(List.len(xs))) { acc } else { mod_inner_acc(m, xs, (j + 1), List.append(acc, Num.mod_real((List.get(xs, I64.to_u64_wrap(j)) ?? crash("list-at out of range")), m))) })
+mod_inner_acc = |m, xs, j, acc| (if (j >= U64.to_i64_wrap(List.len(xs))) { acc } else { mod_inner_acc(m, xs, (j + 1), List.append(acc, Num_.mod_real((List.get(xs, I64.to_u64_wrap(j)) ?? crash("list-at out of range")), m))) })
 
 # mod_outer builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 mod_outer : List(F64), List(F64), I64 -> List(F64)
@@ -59,11 +59,11 @@ exp_want = [F64.from_bits(3957129287720677213), F64.from_bits(428212004091789523
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("n-round", ListUtils.list_map(Num.round_real, round_in), round_want, 0.0))
-	line!(Grade.grade_reals("n-floor", ListUtils.list_map(Num.floor_real, floor_in), floor_want, 0.0))
-	line!(Grade.grade_reals("n-ceil ", ListUtils.list_map(Num.ceil_real, floor_in), ceil_want, 0.0))
+	line!(Grade.grade_reals("n-round", ListUtils.list_map(Num_.round_real, round_in), round_want, 0.0))
+	line!(Grade.grade_reals("n-floor", ListUtils.list_map(Num_.floor_real, floor_in), floor_want, 0.0))
+	line!(Grade.grade_reals("n-ceil ", ListUtils.list_map(Num_.ceil_real, floor_in), ceil_want, 0.0))
 	line!(Grade.grade_reals("n-mod  ", mod_outer(mod_m, mod_x, 0), mod_want, 0.0))
-	line!(Grade.grade_reals("n-pow2 ", ListUtils.list_map(Num.pow2_int, pow2_k), pow2_want, 0.0))
-	line!(Grade.grade_rel("n-exp  ", ListUtils.list_map(Num.exp_real, exp_in), exp_want, F64.from_bits(4382569440205035030)))
+	line!(Grade.grade_reals("n-pow2 ", ListUtils.list_map(Num_.pow2_int, pow2_k), pow2_want, 0.0))
+	line!(Grade.grade_rel("n-exp  ", ListUtils.list_map(Num_.exp_real, exp_in), exp_want, F64.from_bits(4382569440205035030)))
 	Ok({})
 }

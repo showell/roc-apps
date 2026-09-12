@@ -2,7 +2,7 @@
 import Camera
 import DeviceMath
 import Lens
-import Num
+import Num_
 import Trig
 
 Sky :: [].{
@@ -67,7 +67,7 @@ Sky :: [].{
 	sunset_glow = 0.85
 
 	lerp3 : Sky.Rgb, Sky.Rgb, F64 -> Sky.Rgb
-	lerp3 = |a, b, t| { r: Num.round_real((a.r + ((b.r - a.r) * t))), g: Num.round_real((a.g + ((b.g - a.g) * t))), b: Num.round_real((a.b + ((b.b - a.b) * t))) }
+	lerp3 = |a, b, t| { r: Num_.round_real((a.r + ((b.r - a.r) * t))), g: Num_.round_real((a.g + ((b.g - a.g) * t))), b: Num_.round_real((a.b + ((b.b - a.b) * t))) }
 
 	pack : Sky.Rgb -> I64
 	pack = |c| I64.bitwise_or(I64.bitwise_or(U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(F64.to_i64_wrap(c.r)), U64.pow(2, I64.to_u64_wrap(16)))), U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(F64.to_i64_wrap(c.g)), U64.pow(2, I64.to_u64_wrap(8))))), F64.to_i64_wrap(c.b))

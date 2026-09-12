@@ -1,6 +1,6 @@
-# Num -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+# Num_ -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
-Num :: [].{
+Num_ :: [].{
 
 	round_real : F64 -> F64
 	round_real = |x| ({

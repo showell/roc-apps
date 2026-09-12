@@ -1,6 +1,6 @@
 # Cat -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 import DeviceMath
-import Num
+import Num_
 import Trig
 
 Cat :: [].{
@@ -87,7 +87,7 @@ Cat :: [].{
 
 	gait : F64, F64 -> F64
 	gait = |p, phase_len| ({
-		c = Num.round_real((phase_len / stride_steps))
+		c = Num_.round_real((phase_len / stride_steps))
 		((p * (if (c < 1.0) { 1.0 } else { c })) * Trig.two_pi)
 	})
 

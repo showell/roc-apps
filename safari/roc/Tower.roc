@@ -2,7 +2,7 @@
 import Camera
 import DeviceMath
 import Geom
-import Num
+import Num_
 import Paint
 import Trig
 
@@ -46,7 +46,7 @@ Tower :: [].{
 
 	beacon_brightness : F64 -> F64
 	beacon_brightness = |phase| ({
-		wrapped = Num.mod_real((Num.mod_real(phase, beacon_period) + beacon_period), beacon_period)
+		wrapped = Num_.mod_real((Num_.mod_real(phase, beacon_period) + beacon_period), beacon_period)
 		((1.0 - Trig.r_cos((((2.0 * Trig.pi) * wrapped) / beacon_period))) / 2.0)
 	})
 

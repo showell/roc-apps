@@ -3,7 +3,7 @@ import Frame
 import Geom
 import Ground
 import Joint
-import Num
+import Num_
 import Paint
 import Pond
 import Scenery
@@ -25,7 +25,7 @@ GroundPlan :: [].{
 
 	chunks_for : F64 -> I64
 	chunks_for = |len| ({
-		c = Num.ceil_real((len / road_chunk))
+		c = Num_.ceil_real((len / road_chunk))
 		F64.to_i64_wrap((if (c < 1.0) { 1.0 } else { c }))
 	})
 

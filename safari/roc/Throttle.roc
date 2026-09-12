@@ -3,7 +3,7 @@ import Arc
 import Cat
 import DeviceMath
 import Gaze
-import Num
+import Num_
 import Pose
 import Trig
 import VehicleLimits
@@ -49,7 +49,7 @@ Throttle :: [].{
 	shoulder_brake_at : Pose.RiderState, Arc.ArcOutcome, F64 -> F64
 	shoulder_brake_at = |state, sim, a| ({
 		n = sim.frames
-		sa = (((0.0 - state.v) / (2.0 * DeviceMath.real_max(n, 1.0))) * Num.exp_real(((0.0 - n) / brake_decay)))
+		sa = (((0.0 - state.v) / (2.0 * DeviceMath.real_max(n, 1.0))) * Num_.exp_real(((0.0 - n) / brake_decay)))
 		(if (sa < a) { sa } else { a })
 	})
 
