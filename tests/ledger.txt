@@ -1,4 +1,4 @@
-REFUSED acpi-parse | builtin `peek-qword`
+REFUSED acpi-parse | a short-circuit operand that touches memory
 PASS act-let-scope |
 REFUSED act-tco-loop | builtin `port-in-byte`
 PASS aesgcm256 |
@@ -12,7 +12,7 @@ PASS arm64-encoder |
 FAIL arm64-http-test | output: < parse: method=7'( path=Q valid=True
 REFUSED arm64-net-gate | builtin `process-get-pid` used as a value
 REFUSED arm64-proc-cells | builtin `process-get-pid` used as a value
-REFUSED arm64-send-refusal | builtin `peek-32`
+REFUSED arm64-send-refusal | builtin `__heap-advance`
 PASS arp-cache-bound |
 REFUSED asn1-der | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED atomic-smoke | builtin `memory-fence`
@@ -22,11 +22,11 @@ REFUSED bacnet-encode | type real-approx
 PASS bezier-identity |
 PASS bitop-if-cond |
 PASS ble-att-encode |
-REFUSED block-gate-restrict | builtin `peek-32`
+REFUSED block-gate-restrict | builtin `block-sector-count` used as a value
 REFUSED block-sector-count | builtin `block-sector-count` used as a value
 REFUSED block-select-drives | builtin `block-select`
 PASS bloom-spread |
-REFUSED board-types | builtin `peek-32`
+REFUSED board-types | builtin `read-mmio-32`
 REFUSED bounded-integer-ops | chapter `Bounded Integer Ops` is not a Roc module name
 PASS bounded-sig-runtime |
 SKIP bounded-sig-static | expects a diagnostic
@@ -37,17 +37,17 @@ SKIP builtin-narrow-proven | expects a diagnostic
 PASS call-clobber |
 PASS canopen-encode |
 REFUSED cap-audio | builtin `process-get-pid` used as a value
-REFUSED cap-block-denied | builtin `poke-32`
+REFUSED cap-block-denied | builtin `block-sector-count` used as a value
 REFUSED cap-device-declared | builtin `port-in-byte`
 REFUSED cap-direction | builtin `process-get-pid` used as a value
-REFUSED cap-gpu-byte-denied | builtin `poke-32`
+REFUSED cap-gpu-byte-denied | builtin `gpu-mem-write`
 REFUSED cap-gpu-family | builtin `gpu-mem-write`
-REFUSED cap-gpu-mem-denied | builtin `poke-32`
-REFUSED cap-heap-poke-pure | builtin `poke-byte`
-REFUSED cap-identity-denied | builtin `poke-32`
+REFUSED cap-gpu-mem-denied | builtin `gpu-mem-write`
+PASS cap-heap-poke-pure |
+REFUSED cap-identity-denied | builtin `key-load`
 PASS cap-manifest-derived |
 REFUSED cap-media-families | builtin `process-get-pid` used as a value
-REFUSED cap-network-denied | builtin `poke-32`
+REFUSED cap-network-denied | builtin `net-status` used as a value
 REFUSED cap-process-family | builtin `process-get-pid` used as a value
 PASS capability-doors |
 PASS carddeck-shuffle |
@@ -72,15 +72,15 @@ REFUSED console-readline-cite | builtin `read-line` used as a value
 SKIP const-narrow-proven | expects a diagnostic
 PASS convolution-identity |
 DIVERGES cost@accumulator-corpus | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
-REFUSED cost@giveup-beats-fuel | builtin `poke-byte`
+REFUSED cost@giveup-beats-fuel | builtin `net-send-raw`
 REFUSED cross-port-refused | builtin `port-out-byte`
 PASS crypto-test |
-REFUSED crypto-vectors | builtin `peek-byte`
+PASS crypto-vectors |
 REFUSED cryptobig | `cb-shl1-step` writes its list parameter `x` and answers something else
 PASS ctor-narrow-warn |
-REFUSED db-csv-roundtrip | builtin `alloc-bytes`
-REFUSED db-full-test | builtin `alloc-bytes`
-REFUSED db-row-update | builtin `alloc-bytes`
+REFUSED db-csv-roundtrip | a match arm that touches memory
+REFUSED db-full-test | a match arm that touches memory
+REFUSED db-row-update | a match arm that touches memory
 REFUSED dce-reach | type error
 REFUSED deck-bracket-contract | builtin `__deck-set`
 REFUSED deck-cell-contract | builtin `__deck-set`
@@ -91,50 +91,50 @@ REFUSED desk-parse | builtin `port-out-32`
 REFUSED desk-root-guard | builtin `port-out-32`
 REFUSED desk-span | builtin `port-out-32`
 REFUSED device-buffer-alloc | builtin `gpu-mem-read`
-REFUSED dhcp-acquire | builtin `poke-byte`
-REFUSED dhcp-acquire-e1000 | builtin `poke-byte`
-REFUSED dhcp-renew | builtin `poke-byte`
+REFUSED dhcp-acquire | builtin `net-send-raw`
+REFUSED dhcp-acquire-e1000 | builtin `net-send-raw`
+REFUSED dhcp-renew | builtin `net-send-raw`
 REFUSED diag-pci-map-judge | builtin `port-out-32`
 REFUSED disk-enum-parse | builtin `port-out-32`
-REFUSED diskfacts-unpack-large | builtin `peek-byte`
+REFUSED diskfacts-unpack-large | a short-circuit operand that touches memory
 PASS dnp3-encode |
 PASS dns-answer-count |
-REFUSED dtls-fragment | builtin `peek-byte`
-REFUSED dtls-handshake | builtin `peek-byte`
-REFUSED dtls-hello | builtin `peek-byte`
-REFUSED dtls-message | builtin `peek-byte`
-REFUSED dtls-openssl-fragments | builtin `peek-byte`
-REFUSED dtls-random | builtin `peek-byte`
-REFUSED dtls-record | builtin `peek-byte`
-REFUSED e1000-aneg-budget | builtin `peek-32`
-REFUSED e1000-asde-arms | builtin `peek-32`
-REFUSED e1000-asde-nolink | builtin `peek-32`
-REFUSED e1000-asde-speed | builtin `peek-32`
-REFUSED e1000-bringup | builtin `peek-32`
-REFUSED e1000-ctrl-ro | builtin `peek-32`
-REFUSED e1000-lcd-reload | builtin `peek-32`
-REFUSED e1000-link-budget | builtin `peek-32`
-REFUSED e1000-link-deadline | builtin `peek-32`
-REFUSED e1000-match | builtin `peek-32`
-REFUSED e1000-mdio-slow | builtin `peek-32`
-REFUSED e1000-mdio-window | builtin `peek-32`
-REFUSED e1000-pch-k1 | builtin `peek-32`
-REFUSED e1000-pch-k1-off | builtin `peek-32`
-REFUSED e1000-phy | builtin `peek-32`
-REFUSED e1000-phy-absent | builtin `peek-32`
-REFUSED e1000-reset-live | builtin `peek-32`
-REFUSED e1000-reset-wedged | builtin `peek-32`
-REFUSED e1000-ring-wrap | builtin `peek-32`
-REFUSED e1000-rx-invisible | builtin `peek-32`
-REFUSED e1000-rx-invisible-off | builtin `peek-32`
-REFUSED e1000-swflag | builtin `peek-32`
-REFUSED e1000-swflag-k1 | builtin `peek-32`
-REFUSED e1000-swflag-mng | builtin `peek-32`
-REFUSED e1000-swflag-refused | builtin `peek-32`
-REFUSED e1000-swflag-strict | builtin `peek-32`
-REFUSED e1000-tx-deadline | builtin `peek-32`
-REFUSED e1000-ulp-entry | builtin `peek-32`
-REFUSED e1000-unresettable | builtin `peek-32`
+REFUSED dtls-fragment | `fe-carry-pass` writes its list parameter `o` and answers something else
+PASS dtls-handshake |
+REFUSED dtls-hello | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED dtls-message | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED dtls-openssl-fragments | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED dtls-random | `fe-carry-pass` writes its list parameter `o` and answers something else
+PASS dtls-record |
+REFUSED e1000-aneg-budget | builtin `port-out-32`
+REFUSED e1000-asde-arms | builtin `port-out-32`
+REFUSED e1000-asde-nolink | builtin `port-out-32`
+REFUSED e1000-asde-speed | builtin `port-out-32`
+REFUSED e1000-bringup | builtin `port-out-32`
+REFUSED e1000-ctrl-ro | builtin `port-out-32`
+REFUSED e1000-lcd-reload | builtin `port-out-32`
+REFUSED e1000-link-budget | builtin `port-out-32`
+REFUSED e1000-link-deadline | builtin `port-out-32`
+REFUSED e1000-match | builtin `port-out-32`
+REFUSED e1000-mdio-slow | builtin `port-out-32`
+REFUSED e1000-mdio-window | builtin `port-out-32`
+REFUSED e1000-pch-k1 | builtin `port-out-32`
+REFUSED e1000-pch-k1-off | builtin `port-out-32`
+REFUSED e1000-phy | builtin `port-out-32`
+REFUSED e1000-phy-absent | builtin `port-out-32`
+REFUSED e1000-reset-live | builtin `port-out-32`
+REFUSED e1000-reset-wedged | builtin `port-out-32`
+REFUSED e1000-ring-wrap | builtin `port-out-32`
+REFUSED e1000-rx-invisible | builtin `port-out-32`
+REFUSED e1000-rx-invisible-off | builtin `port-out-32`
+REFUSED e1000-swflag | builtin `port-out-32`
+REFUSED e1000-swflag-k1 | builtin `port-out-32`
+REFUSED e1000-swflag-mng | builtin `port-out-32`
+REFUSED e1000-swflag-refused | builtin `port-out-32`
+REFUSED e1000-swflag-strict | builtin `port-out-32`
+REFUSED e1000-tx-deadline | builtin `port-out-32`
+REFUSED e1000-ulp-entry | builtin `port-out-32`
+REFUSED e1000-unresettable | builtin `port-out-32`
 REFUSED ecdsa-cert | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED ecdsa-p256 | `cb-shl1-step` writes its list parameter `x` and answers something else
 REFUSED ecdsa-p384 | `cb-shl1-step` writes its list parameter `x` and answers something else
@@ -164,46 +164,46 @@ REFUSED effect-smoke | handle
 REFUSED effect-value-poly | type (effectful (effs "Console") (scopes "") (ctd "Maybe" (args (tvar 50))))
 PASS effect-widen-arg |
 PASS effect-widen-scope |
-REFUSED effect-widen-scope-narrow | builtin `peek-byte`
+REFUSED effect-widen-scope-narrow | a short-circuit operand that touches memory
 REFUSED engine-animation | unit type `Duration`
-REFUSED engine-culling-cost | builtin `poke-32`
-REFUSED engine-fill-guard | builtin `poke-32`
-REFUSED engine-mesh-gen | builtin `poke-32`
-REFUSED engine-near-clip | builtin `poke-32`
-REFUSED engine-render-heap | builtin `poke-32`
-REFUSED engine-shading | builtin `poke-32`
-REFUSED engine-shadow | builtin `poke-32`
-REFUSED engine-software-render | builtin `poke-32`
-REFUSED engine-texture-cost | builtin `poke-32`
+REFUSED engine-culling-cost | a match under the Device effect
+REFUSED engine-fill-guard | a match under the Device effect
+REFUSED engine-mesh-gen | a match under the Device effect
+REFUSED engine-near-clip | a match under the Device effect
+REFUSED engine-render-heap | a match under the Device effect
+REFUSED engine-shading | a match under the Device effect
+REFUSED engine-shadow | a match under the Device effect
+REFUSED engine-software-render | a match under the Device effect
+REFUSED engine-texture-cost | a match under the Device effect
 PASS enip-encode |
 PASS eq-generic-fields |
 PASS eq-generic-recursive |
 PASS eq-plain-sum |
-REFUSED esp32c6-drivers | builtin `peek-32`
+REFUSED esp32c6-drivers | builtin `read-mmio-32`
 PASS eventbus-test |
 PASS examples@missile-warning |
 REFUSED expr-calculator | chapter `Expr Calculator` is not a Roc module name
-REFUSED factlog-layout | builtin `peek-byte`
+FAIL factlog-layout | output: < text-cps=0 1 0 len=3
 PASS factorial |
-REFUSED fat16-alloc | builtin `peek-byte`
-REFUSED fat16-cluster-guard | builtin `peek-byte`
-REFUSED fat16-cycle-guard | builtin `peek-byte`
-REFUSED fat16-dirgrow | builtin `peek-byte`
-REFUSED fat16-lfn-record | builtin `peek-byte`
-REFUSED fat16-list | builtin `peek-byte`
-REFUSED fat16-longname | builtin `peek-byte`
-REFUSED fat16-mkdir | builtin `peek-byte`
-REFUSED fat16-overwrite | builtin `peek-byte`
-REFUSED fat16-source-cr | builtin `peek-byte`
-REFUSED fat16-subdir | builtin `peek-byte`
-REFUSED fat16-write | builtin `peek-byte`
-REFUSED fat32-cluster-guard | builtin `peek-byte`
-REFUSED fat32-cluster-lfn | builtin `peek-byte`
-REFUSED fat32-img-longname | builtin `peek-byte`
-REFUSED fat32-longname | builtin `peek-byte`
-REFUSED fat32-longwrite | builtin `peek-byte`
+REFUSED fat16-alloc | a short-circuit operand that touches memory
+REFUSED fat16-cluster-guard | a short-circuit operand that touches memory
+REFUSED fat16-cycle-guard | a short-circuit operand that touches memory
+REFUSED fat16-dirgrow | a short-circuit operand that touches memory
+REFUSED fat16-lfn-record | a short-circuit operand that touches memory
+REFUSED fat16-list | a short-circuit operand that touches memory
+REFUSED fat16-longname | a short-circuit operand that touches memory
+REFUSED fat16-mkdir | a short-circuit operand that touches memory
+REFUSED fat16-overwrite | a short-circuit operand that touches memory
+REFUSED fat16-source-cr | a short-circuit operand that touches memory
+REFUSED fat16-subdir | a short-circuit operand that touches memory
+REFUSED fat16-write | a short-circuit operand that touches memory
+REFUSED fat32-cluster-guard | a short-circuit operand that touches memory
+REFUSED fat32-cluster-lfn | a short-circuit operand that touches memory
+REFUSED fat32-img-longname | a short-circuit operand that touches memory
+REFUSED fat32-longname | a short-circuit operand that touches memory
+REFUSED fat32-longwrite | a short-circuit operand that touches memory
 REFUSED fat32-parse | builtin `port-out-32`
-REFUSED fe310-drivers | builtin `peek-32`
+REFUSED fe310-drivers | builtin `read-mmio-32`
 REFUSED field-cache-shape | field-store
 PASS field-cache-text-lit |
 SKIP field-guard-refine | expects a diagnostic
@@ -290,7 +290,7 @@ PASS forewords@encode-uri |
 PASS forewords@encode-uuid |
 PASS forewords@encode-video-codec |
 REFUSED forewords@encode-wav | unit type `Duration`
-REFUSED forewords@encode-web-socket | builtin `peek-byte`
+PASS forewords@encode-web-socket |
 REFUSED forewords@encode-yaml | builtin `text-starts-with`
 PASS forewords@engine-ability-system |
 PASS forewords@engine-anim-blend |
@@ -321,7 +321,7 @@ REFUSED forewords@engine-nav-mesh | `nm-astar` writes its list parameter `closed
 PASS forewords@engine-particle-renderer |
 REFUSED forewords@engine-physics-joint | unit type `Duration`
 PASS forewords@engine-post-process |
-REFUSED forewords@engine-renderer3d | builtin `poke-32`
+REFUSED forewords@engine-renderer3d | a match under the Device effect
 PASS forewords@engine-scene3d |
 PASS forewords@engine-signal |
 PASS forewords@engine-skin-shader |
@@ -361,19 +361,19 @@ PASS forewords@foreword-either |
 PASS forewords@foreword-elastic-bloom |
 PASS forewords@foreword-elastic-hash |
 PASS forewords@foreword-event-bus |
-REFUSED forewords@foreword-fact-store | builtin `peek-byte`
-REFUSED forewords@foreword-fat16 | builtin `peek-byte`
-REFUSED forewords@foreword-fat32 | builtin `peek-byte`
-REFUSED forewords@foreword-file-system | builtin `peek-byte`
+PASS forewords@foreword-fact-store |
+REFUSED forewords@foreword-fat16 | a short-circuit operand that touches memory
+REFUSED forewords@foreword-fat32 | a short-circuit operand that touches memory
+REFUSED forewords@foreword-file-system | a short-circuit operand that touches memory
 PASS forewords@foreword-format |
 PASS forewords@foreword-fuel |
 PASS forewords@foreword-funnel-hash |
-REFUSED forewords@foreword-gpt | builtin `peek-byte`
+REFUSED forewords@foreword-gpt | a short-circuit operand that touches memory
 REFUSED forewords@foreword-graph | `graph-bfs-expand` writes its list parameter `visited` and answers something else
 PASS forewords@foreword-hamt |
 PASS forewords@foreword-history |
-REFUSED forewords@foreword-hkdf | builtin `peek-byte`
-REFUSED forewords@foreword-hmac | builtin `peek-byte`
+PASS forewords@foreword-hkdf |
+PASS forewords@foreword-hmac |
 REFUSED forewords@foreword-identity | `fe-carry-pass` writes its list parameter `o` and answers something else
 PASS forewords@foreword-image-tensor |
 PASS forewords@foreword-interval-tree |
@@ -393,11 +393,11 @@ PASS forewords@foreword-number-theory |
 PASS forewords@foreword-pair |
 PASS forewords@foreword-path |
 PASS forewords@foreword-pattern |
-REFUSED forewords@foreword-pbkdf | builtin `peek-byte`
+PASS forewords@foreword-pbkdf |
 REFUSED forewords@foreword-pipeline | `__lam_0` applied to 1 of 2 arguments
 PASS forewords@foreword-priority-queue |
 PASS forewords@foreword-probability |
-REFUSED forewords@foreword-proof-of-work | builtin `peek-byte`
+PASS forewords@foreword-proof-of-work |
 PASS forewords@foreword-queue |
 PASS forewords@foreword-random |
 REFUSED forewords@foreword-ranked-text-set | `rts-build-update-loop` writes its list parameter `nodes` and answers something else
@@ -412,8 +412,8 @@ PASS forewords@foreword-schedule |
 REFUSED forewords@foreword-scheduler | unit type `Duration`
 PASS forewords@foreword-sensors |
 REFUSED forewords@foreword-set | `set-fold-wrapper` applied to 1 of 4 arguments
-REFUSED forewords@foreword-sha1 | builtin `peek-byte`
-REFUSED forewords@foreword-sha256 | builtin `peek-byte`
+PASS forewords@foreword-sha1 |
+PASS forewords@foreword-sha256 |
 PASS forewords@foreword-sha512 |
 PASS forewords@foreword-sort |
 PASS forewords@foreword-source-def-wire |
@@ -426,7 +426,7 @@ PASS forewords@foreword-text-search |
 PASS forewords@foreword-text-wrap |
 PASS forewords@foreword-time |
 REFUSED forewords@foreword-timing-wheel | unit type `Duration`
-REFUSED forewords@foreword-tls | builtin `peek-byte`
+REFUSED forewords@foreword-tls | `fe-carry-pass` writes its list parameter `o` and answers something else
 PASS forewords@foreword-trie |
 PASS forewords@foreword-tuple |
 PASS forewords@foreword-unicode |
@@ -450,7 +450,7 @@ REFUSED forewords@game-pathfinding | `dijk-loop` writes its list parameter `visi
 PASS forewords@game-quadtree |
 PASS forewords@game-rasterizer |
 PASS forewords@game-raytracer |
-REFUSED forewords@game-save-slot | builtin `peek-byte`
+PASS forewords@game-save-slot |
 PASS forewords@game-scene2-d |
 PASS forewords@game-sprite |
 PASS forewords@game-state-machine |
@@ -531,44 +531,44 @@ PASS forewords@ui-vector |
 PASS forewords@ui-widget |
 REFUSED fork-nested | builtin `fork`
 REFUSED fork-reclaim | `__lam_0` applied to 1 of 2 arguments
-REFUSED frame-short-buffer | builtin `peek-byte`
+PASS frame-short-buffer |
 PASS frameless-leaf-probe |
 SKIP fresh-alloc-narrow | expects a diagnostic
-REFUSED fs-deny-runtime | builtin `peek-byte`
-REFUSED fs-handler-install | builtin `peek-byte`
-REFUSED fs-layer | builtin `peek-byte`
-REFUSED fs-servicer | builtin `peek-byte`
-REFUSED fs-spawn-inherits | builtin `peek-byte`
+REFUSED fs-deny-runtime | a short-circuit operand that touches memory
+REFUSED fs-handler-install | a short-circuit operand that touches memory
+REFUSED fs-layer | a short-circuit operand that touches memory
+REFUSED fs-servicer | a short-circuit operand that touches memory
+REFUSED fs-spawn-inherits | a short-circuit operand that touches memory
 PASS ga-core |
 PASS geometry-test |
 PASS goose-encode |
-REFUSED gop-composite-clamp | builtin `alloc-bytes`
-REFUSED gop-composite-clip | builtin `alloc-bytes`
-REFUSED gop-composite-kinds | builtin `alloc-bytes`
-REFUSED gop-composite-stride | builtin `alloc-bytes`
-REFUSED gop-composite-translate | builtin `alloc-bytes`
-REFUSED gop-composite-vclip | builtin `alloc-bytes`
-REFUSED gop-corner-ramp | builtin `alloc-bytes`
-REFUSED gop-padded-stride | builtin `poke-32`
-REFUSED gop-scene-backbuffer | builtin `alloc-bytes`
-REFUSED gop-scene-viewport | builtin `poke-32`
-REFUSED gop-stride | builtin `alloc-bytes`
-REFUSED gop-text-field | builtin `alloc-bytes`
+REFUSED gop-composite-clamp | builtin `port-out-32`
+REFUSED gop-composite-clip | builtin `port-out-32`
+REFUSED gop-composite-kinds | builtin `port-out-32`
+REFUSED gop-composite-stride | builtin `port-out-32`
+REFUSED gop-composite-translate | builtin `port-out-32`
+REFUSED gop-composite-vclip | builtin `port-out-32`
+REFUSED gop-corner-ramp | builtin `port-out-32`
+REFUSED gop-padded-stride | a match under the Device effect
+REFUSED gop-scene-backbuffer | builtin `port-out-32`
+REFUSED gop-scene-viewport | a match under the Device effect
+REFUSED gop-stride | builtin `__heap-advance`
+REFUSED gop-text-field | builtin `atomic-exchange`
 REFUSED gpu-depth-tree | builtin `gpu-mem-write`
-REFUSED gpu-doorbell | builtin `poke-byte`
+REFUSED gpu-doorbell | builtin `port-out-32`
 REFUSED gpu-gauge-clamp | builtin `gpu-mem-write`
 REFUSED gpu-input-cursor | builtin `gpu-mem-write`
 REFUSED gpu-panel-border | builtin `gpu-mem-write`
-REFUSED gpu-ptx | builtin `poke-byte`
+REFUSED gpu-ptx | builtin `port-out-32`
 REFUSED grounds-port | builtin `port-out-byte`
-REFUSED hal-board-sleep | builtin `peek-32`
-REFUSED hal-device-declared | builtin `peek-32`
-REFUSED hal-flash-linear | builtin `peek-32`
-REFUSED hal-gpio-linear | builtin `peek-32`
-REFUSED hal-i2c-adc-linear | builtin `peek-32`
-REFUSED hal-peripheral-linear | builtin `peek-32`
-REFUSED hal-spi-linear | builtin `peek-32`
-REFUSED hal-tuple-linear | builtin `peek-32`
+REFUSED hal-board-sleep | builtin `read-mmio-32`
+REFUSED hal-device-declared | builtin `read-mmio-32`
+REFUSED hal-flash-linear | builtin `read-mmio-32`
+REFUSED hal-gpio-linear | builtin `read-mmio-32`
+REFUSED hal-i2c-adc-linear | builtin `read-mmio-32`
+REFUSED hal-peripheral-linear | builtin `read-mmio-32`
+REFUSED hal-spi-linear | builtin `read-mmio-32`
+REFUSED hal-tuple-linear | builtin `read-mmio-32`
 REFUSED hamt-test | chapter `Hamt Test` is not a Roc module name
 REFUSED handler-dotted-discharge | handle
 REFUSED handler-nested-ops | handle
@@ -576,22 +576,22 @@ REFUSED handler-smoke | type (effectful (effs "Config") (scopes "") int-default)
 PASS hart-encode |
 REFUSED heap-bracket-shape | builtin `port-out-byte`
 PASS heap-frame-reclaim |
-REFUSED heap-scrub | builtin `poke-byte`
-REFUSED hid-decode | builtin `peek-byte`
+DIVERGES heap-scrub | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
+REFUSED hid-decode | a short-circuit operand that touches memory
 PASS history-test |
-REFUSED hpet-interrupt | builtin `peek-32`
-REFUSED i219-k1-mechanism | builtin `peek-32`
+REFUSED hpet-interrupt | builtin `read-mmio-32`
+REFUSED i219-k1-mechanism | builtin `port-out-32`
 REFUSED ident-letters | name `café` cannot be a Roc identifier
-REFUSED idm-key-tests | builtin `peek-byte`
-REFUSED idm-read-line | builtin `peek-byte`
-REFUSED idm-salt-iv-distinct | builtin `peek-byte`
+REFUSED idm-key-tests | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED idm-read-line | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED idm-salt-iv-distinct | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED iec104-encode | type real-approx
 PASS ieee802154-encode |
 PASS if-in-arith |
 REFUSED if-let-join | chapter `If Let Join` is not a Roc module name
 PASS image-codec-test |
 PASS imap-wire |
-REFUSED img-longname | builtin `peek-byte`
+REFUSED img-longname | a short-circuit operand that touches memory
 REFUSED implicit-convert | unit type `Duration`
 SKIP induction-assoc | expects a diagnostic
 SKIP induction-list | expects a diagnostic
@@ -609,7 +609,7 @@ REFUSED ir-check-clean | `__lam_1` applied to 1 of 2 arguments
 PASS iterate-test |
 PASS iterate-zip-test |
 PASS j1939-encode |
-REFUSED keyboard-layout-test | builtin `poke-byte`
+PASS keyboard-layout-test |
 REFUSED keys-collision | builtin `uefi-read-key-ex` used as a value
 REFUSED keys-mods | builtin `uefi-read-key-ex` used as a value
 REFUSED keys-numpad | builtin `uefi-read-key-ex` used as a value
@@ -619,7 +619,7 @@ PASS klondike-test |
 PASS knx-encode |
 PASS kvstore-test |
 REFUSED lang-smoke | `make-adder` applied to 1 of 2 arguments
-REFUSED lapic-regs | builtin `peek-32`
+REFUSED lapic-regs | builtin `read-mmio-32`
 REFUSED lazy-smoke | opening: Lazy
 PASS leaf-let-if |
 PASS leaf-mispredict |
@@ -643,7 +643,7 @@ PASS lib@device-math |
 REFUSED lib@dropdown-options | builtin `uefi-read-key-ex` used as a value
 PASS lib@flex-layout-geometry |
 PASS lib@format-test |
-REFUSED lib@hkdf-test | builtin `peek-byte`
+PASS lib@hkdf-test |
 REFUSED lib@key-tab-single | builtin `uefi-read-key-ex` used as a value
 REFUSED lib@linalg-test | `__lam_0` applied to 1 of 2 arguments
 PASS lib@locale-test |
@@ -655,17 +655,17 @@ PASS lib@number-theory-test |
 PASS lib@numeric-test |
 REFUSED lib@palette-filter | builtin `uefi-read-key-ex` used as a value
 PASS lib@path-test |
-REFUSED lib@pixel-buf | builtin `alloc-bytes`
+PASS lib@pixel-buf |
 PASS lib@probability-test |
 REFUSED lib@settings-panel-render | builtin `uefi-read-key-ex` used as a value
 PASS lib@status-badge-priority |
 PASS lib@text-overflow |
-REFUSED lib@text-overflow-render | builtin `alloc-bytes`
-REFUSED lib@text-trim-test | builtin `peek-byte`
+PASS lib@text-overflow-render |
+REFUSED lib@text-trim-test | field-store
 REFUSED lib@toml-test | builtin `text-starts-with`
 REFUSED lib@tree-view-nav | builtin `uefi-read-key-ex` used as a value
 FAIL lib@utf8-cce-test | output: < utf8-3byte-one-char=fail
-REFUSED lib@widget-tone | builtin `alloc-bytes`
+REFUSED lib@widget-tone | builtin `port-out-32`
 REFUSED lib@yaml-test | builtin `text-starts-with`
 PASS linear-branch |
 REFUSED linear-capture-once | `__lam_0` applied to 1 of 2 arguments
@@ -716,30 +716,30 @@ REFUSED mutable-smoke | a call whose head is not a name
 PASS neg-int-parse |
 REFUSED neg-real-repro | an opening of type real
 PASS negation-abutment |
-REFUSED nested-spawn | builtin `poke-byte`
-REFUSED net-drain-budget | builtin `poke-byte`
-REFUSED net-driver-seam-bound | builtin `poke-byte`
-REFUSED net-driver-seam-no-av | builtin `poke-byte`
-REFUSED net-io-clock | builtin `poke-byte`
-REFUSED net-poll-calibrated | builtin `poke-byte`
-REFUSED net-poll-clamped | builtin `poke-byte`
-REFUSED net-recv-heap | builtin `peek-byte`
-REFUSED network-effect | builtin `poke-byte`
-REFUSED network-scope-deny | builtin `poke-byte`
-REFUSED network-scope-open | builtin `poke-byte`
-REFUSED network-scope-spawn | builtin `poke-byte`
+REFUSED nested-spawn | `__lam_0` applied to 0 of 1 arguments under Device
+REFUSED net-drain-budget | builtin `net-send-raw`
+REFUSED net-driver-seam-bound | builtin `net-send-raw`
+REFUSED net-driver-seam-no-av | builtin `net-send-raw`
+REFUSED net-io-clock | builtin `net-send-raw`
+REFUSED net-poll-calibrated | builtin `net-send-raw`
+REFUSED net-poll-clamped | builtin `net-send-raw`
+REFUSED net-recv-heap | builtin `__heap-advance`
+REFUSED network-effect | builtin `net-send-raw`
+REFUSED network-scope-deny | builtin `net-send-raw`
+REFUSED network-scope-open | builtin `net-send-raw`
+REFUSED network-scope-spawn | builtin `net-send-raw`
 SKIP noalias-linear-param | expects a diagnostic
 PASS noise-test |
 REFUSED normalize-eq | type (propeq (ctd "Off" (args)) (ctd "Off" (args)))
-REFUSED nrf52840-drivers | builtin `peek-32`
-REFUSED nrf9160-drivers | builtin `peek-32`
+REFUSED nrf52840-drivers | builtin `read-mmio-32`
+REFUSED nrf9160-drivers | builtin `read-mmio-32`
 REFUSED nvme-encode | builtin `port-out-32`
-REFUSED oauth-island | builtin `peek-byte`
+PASS oauth-island |
 REFUSED occurrence-check | builtin `port-in-byte`
 PASS opcua-encode |
 REFUSED ops@bounded-modes-smoke | chapter `Bounded Modes Smoke` is not a Roc module name
 PASS ops@builtin-name-shadow |
-REFUSED ops@cap-word-64 | builtin `alloc-bytes`
+PASS ops@cap-word-64 |
 REFUSED ops@cce-bounds-smoke | chapter `Cce Bounds Smoke` is not a Roc module name
 REFUSED ops@cce-builtin-bounds | chapter `Cce Builtin Bounds` is not a Roc module name
 PASS ops@char-at-bounds |
@@ -767,8 +767,8 @@ PASS ops@real-bitcast-f64 |
 PASS ops@real-compare-negative |
 PASS ops@real-literal-rounding |
 REFUSED ops@real-mode-compare | type real-approx
-REFUSED ops@real-mode-fields | an opening of type (sum "Sample" (args))
-REFUSED ops@real-mode-opening | an opening of type real-trapping
+REFUSED ops@real-mode-fields | builtin `to-real-approx`
+REFUSED ops@real-mode-opening | builtin `to-real-trapping`
 REFUSED ops@real-mode-show | builtin `to-real-approx`
 PASS ops@real-neg-neg |
 PASS ops@real-negate |
@@ -790,10 +790,10 @@ REFUSED ops@unit-show | unit type `Name`
 REFUSED ops@vec-lanes-smoke | chapter `Vec Lanes Smoke` is not a Roc module name
 REFUSED ops@vec-sized | type (vector 1 int-default)
 REFUSED osc-noise | unit type `Duration`
-REFUSED ota-gate-block | builtin `peek-byte`
-REFUSED ota-gate-real | builtin `peek-byte`
-REFUSED ota-state-machine | builtin `peek-byte`
-REFUSED ota-update | builtin `peek-byte`
+REFUSED ota-gate-block | unit type `Duration`
+REFUSED ota-gate-real | unit type `Duration`
+REFUSED ota-state-machine | unit type `Duration`
+REFUSED ota-update | unit type `Duration`
 REFUSED par-map | builtin `fork`
 REFUSED par-nested | builtin `fork`
 REFUSED parse-test | builtin `negate`
@@ -805,15 +805,15 @@ REFUSED pci-bridge-cap-under | builtin `port-out-32`
 REFUSED pci-bridge-deep | builtin `port-out-32`
 REFUSED pci-bridge-scan | builtin `port-out-32`
 REFUSED pci-bus-master | builtin `port-out-32`
-REFUSED peek32-sign | builtin `alloc-bytes`
-REFUSED pi4-drivers | builtin `peek-32`
+PASS peek32-sign |
+REFUSED pi4-drivers | builtin `read-mmio-32`
 REFUSED pipe-unique-test | `__lam_0` applied to 1 of 2 arguments
-REFUSED pit-latch | builtin `peek-32`
+REFUSED pit-latch | builtin `read-mmio-32`
 REFUSED plug-oracle-arith | field-store
-REFUSED poke16-width | builtin `peek-byte`
+PASS poke16-width |
 PASS poly1305 |
 REFUSED port-in-32-width | builtin `port-out-32`
-REFUSED proc-state-running | builtin `peek-qword`
+REFUSED proc-state-running | `__lam_0` applied to 0 of 1 arguments under Device
 REFUSED process-exit-status | builtin `process-exit`
 SKIP proof-assume-axiom | expects a diagnostic
 SKIP proof-smoke | expects a diagnostic
@@ -825,10 +825,10 @@ PASS punctual-fastmath |
 PASS punctual-iot |
 PASS punctual-quire |
 PASS punctual-smoke |
-REFUSED qemu-rng | builtin `peek-32`
-REFUSED qemu-rng-absent | builtin `peek-32`
-REFUSED qemu-virt-board | builtin `peek-32`
-REFUSED qr-encode | builtin `alloc-bytes`
+REFUSED qemu-rng | builtin `read-mmio-32`
+REFUSED qemu-rng-absent | builtin `read-mmio-32`
+REFUSED qemu-virt-board | builtin `read-mmio-32`
+REFUSED qr-encode | builtin `port-out-32`
 REFUSED queue-test | chapter `Queue Test` is not a Roc module name
 REFUSED quotes-gate | CODEGEN-HALTED: 1 error(s); no IR emitted; first CDX1000 Expected token kind mismatch, got 'WORK'
 REFUSED quotes-parse | CODEGEN-HALTED: 1 error(s); no IR emitted; first CDX1000 Expected token kind mismatch, got 'WORK'
@@ -857,7 +857,7 @@ REFUSED roc-iter-keep-if | `__lam_0` applied to 2 of 3 arguments
 REFUSED roc-iter-map | `__lam_0` applied to 2 of 3 arguments
 PASS roc-recursive-var |
 REFUSED roc-returned-closure | `__lam_0` applied to 1 of 2 arguments
-REFUSED rp2040-drivers | builtin `peek-32`
+REFUSED rp2040-drivers | builtin `read-mmio-32`
 REFUSED rsa-pss | `cb-shl1-step` writes its list parameter `x` and answers something else
 REFUSED rsa-verify | `cb-shl1-step` writes its list parameter `x` and answers something else
 PASS rv-arg-order |
@@ -867,43 +867,43 @@ PASS rv-frameless-temp |
 PASS rv-param-bind |
 PASS rv-param-order |
 PASS s7comm-encode |
-REFUSED scope-allow | builtin `peek-byte`
+REFUSED scope-allow | a short-circuit operand that touches memory
 PASS scope-console |
 REFUSED scope-handler-clause | handle
 PASS scope-let-arm-global |
-REFUSED scope-runtime-deny | builtin `peek-byte`
-REFUSED scope-runtime-open | builtin `peek-byte`
-REFUSED scope-runtime-spawn | builtin `peek-byte`
-REFUSED scope-try-region | builtin `poke-byte`
-REFUSED sector-read-list-growth | builtin `peek-byte`
+REFUSED scope-runtime-deny | a short-circuit operand that touches memory
+REFUSED scope-runtime-open | a short-circuit operand that touches memory
+REFUSED scope-runtime-spawn | a short-circuit operand that touches memory
+REFUSED scope-try-region | try
+REFUSED sector-read-list-growth | builtin `block-read-sector`
 PASS sensor-data |
-REFUSED serial-line | builtin `peek-32`
+REFUSED serial-line | builtin `read-mmio-32`
 SKIP shadow-builtin-fold | expects a diagnostic
 PASS shell-build-keep |
 PASS simplify-check |
 PASS sixlowpan-encode |
 REFUSED smp-affinity | builtin `process-get-pid` used as a value
 REFUSED smp-ap-port-io | builtin `port-in-byte`
-REFUSED smp-arm64-boot | builtin `peek-qword`
+REFUSED smp-arm64-boot | builtin `print-line`
 REFUSED smp-cores | builtin `atomic-load`
 REFUSED smp-dispatch | builtin `process-spawn`
 REFUSED smp-halt | builtin `process-spawn`
 REFUSED smp-preempt | builtin `process-spawn`
 REFUSED smp-proc0-pinned | builtin `atomic-load`
-REFUSED smp-riscv-boot | builtin `peek-qword`
+REFUSED smp-riscv-boot | builtin `print-line`
 REFUSED smp-tss | builtin `atomic-load`
 PASS smtp-md-test |
 PASS sntp-encode |
 PASS sort-test |
 REFUSED sound-test | unit type `Duration`
 REFUSED sparkplug-encode | unit type `Duration`
-REFUSED spawn-memo-table | builtin `process-spawn`
-REFUSED spawn-reuse | builtin `poke-byte`
+REFUSED spawn-memo-table | `__lam_0` applied to 0 of 1 arguments under Device
+REFUSED spawn-reuse | `__lam_0` applied to 0 of 1 arguments under Device
 PASS sprite-test |
 SKIP stale-sibling | expects a diagnostic
 PASS stats-wrap-test |
-REFUSED stm32f4-drivers | builtin `peek-32`
-REFUSED stm32l4-drivers | builtin `peek-32`
+REFUSED stm32f4-drivers | builtin `read-mmio-32`
+REFUSED stm32l4-drivers | builtin `read-mmio-32`
 PASS string-escape-quote |
 REFUSED stringbuilder-independence | field-store
 REFUSED stringbuilder-test | field-store
@@ -921,7 +921,7 @@ PASS tcp-checksum-refuse |
 PASS tcp-listen-reclaim |
 PASS tcp-reliability |
 PASS tcp-seqwrap |
-REFUSED text-append-alias | builtin `peek-byte`
+PASS text-append-alias |
 PASS text-eq-branches |
 PASS text-fold-indexed |
 REFUSED text-helper-native | builtin `text-starts-with`
@@ -930,17 +930,17 @@ REFUSED textfield-typing | builtin `uefi-read-key-ex` used as a value
 PASS textscan-test |
 REFUSED textsearch-test | chapter `TextSearch Test` is not a Roc module name
 PASS thumb2-encoder |
-REFUSED timer-registers | builtin `peek-32`
-REFUSED tls-cert | builtin `peek-byte`
-REFUSED tls-cv-schemes | builtin `peek-byte`
-REFUSED tls-record-framing | builtin `poke-byte`
-REFUSED tls-test | builtin `peek-byte`
-REFUSED tls13-record | builtin `peek-byte`
-REFUSED tls13-schedule | builtin `peek-byte`
-REFUSED transport-cocite | builtin `peek-byte`
+REFUSED timer-registers | builtin `read-mmio-32`
+REFUSED tls-cert | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED tls-cv-schemes | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED tls-record-framing | builtin `net-send-raw`
+REFUSED tls-test | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED tls13-record | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED tls13-schedule | `fe-carry-pass` writes its list parameter `o` and answers something else
+PASS transport-cocite |
 PASS trie-prefix-test |
 PASS truetype-bridge-test |
-REFUSED truetype-render-test | builtin `peek-byte`
+REFUSED truetype-render-test | a short-circuit operand that touches memory
 PASS truetype-test |
 REFUSED try-smoke | try
 PASS ttf-debug |
@@ -952,7 +952,7 @@ REFUSED type-name-existence | a type applied to a non-name
 REFUSED typeclass-compound-head | builtin `to-text`
 REFUSED typeclass-poly | a call whose head is not a name
 REFUSED typeclass-smoke | `__compare_Integer` belongs to no chapter
-REFUSED udp-frame-guard | builtin `poke-byte`
+REFUSED udp-frame-guard | builtin `net-send-raw`
 REFUSED uefi-read-key-nofirmware | builtin `uefi-read-key` used as a value
 REFUSED ui-anim-test | `__lam_0` applied to 1 of 2 arguments
 PASS ui-dialog-test |
@@ -983,11 +983,11 @@ PASS usb-desc-guard |
 REFUSED usb-test | builtin `port-out-32`
 REFUSED validation-rules | builtin `text-contains`
 REFUSED value-eq | type (propeq (ctd "xs" (args)) (ctd "xs" (args)))
-REFUSED vbe-mode-set | builtin `alloc-bytes`
+REFUSED vbe-mode-set | builtin `port-out-16`
 REFUSED vec-arith-hazards | type (vector 2 real)
 REFUSED vec-array | type (vector 2 real)
 REFUSED vec-extract-hazards | type (vector 2 real)
-REFUSED vec-mask-hazards | builtin `poke-byte`
+REFUSED vec-mask-hazards | type (vector 2 real)
 REFUSED vec-nest-probe | type (vector 2 real)
 REFUSED vec-nested-binop | type (vector 2 real)
 REFUSED vec-pattern | classify: vector pattern
@@ -1000,18 +1000,18 @@ PASS wavelet-sort-aliasing |
 SKIP wcet-budget-unchecked | expects a diagnostic
 SKIP wcet-probe | expects a diagnostic
 REFUSED web-chain | `fe-carry-pass` writes its list parameter `o` and answers something else
-REFUSED web-mux-concurrent | builtin `poke-byte`
-REFUSED web-mux-heap | builtin `poke-byte`
-REFUSED web-mux-idle-reap | builtin `poke-byte`
-REFUSED web-mux-lifecycle | builtin `poke-byte`
-REFUSED web-mux-reassembly | builtin `poke-byte`
+REFUSED web-mux-concurrent | builtin `net-send-raw`
+REFUSED web-mux-heap | builtin `net-send-raw`
+REFUSED web-mux-idle-reap | builtin `net-send-raw`
+REFUSED web-mux-lifecycle | builtin `net-send-raw`
+REFUSED web-mux-reassembly | builtin `net-send-raw`
 PASS when-arm-nontail |
 PASS when-arm-tail-call |
 PASS when-bool-cross |
 PASS when-bool-pattern |
 PASS when-generic-field |
 REFUSED with-timeout-test | chapter `With-Timeout Test` is not a Roc module name
-REFUSED workflow-parse-int | builtin `alloc-bytes`
+REFUSED workflow-parse-int | a match arm that touches memory
 REFUSED x509-chain | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED x509-parse | `fe-carry-pass` writes its list parameter `o` and answers something else
 PASS zigbee-encode |
