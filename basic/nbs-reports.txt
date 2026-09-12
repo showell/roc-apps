@@ -111,6 +111,8 @@ P122 | judged | ?Overflow
 P125 | also | *** HALTED: LOG of a number that is not positive
 P126 | also | *** HALTED: LOG of a number that is not positive
 P129 | judged |
+P133 | ignores | THE TEST FAILS.
+P134 | ignores | OF THE RESULTING STATISTICS, THEN THE TEST FAILS.
 P143 | rejects | *** REJECTED: SIN given the wrong number of arguments
 P144 | rejects | *** REJECTED: ATN given the wrong number of arguments
 P145 | rejects | *** REJECTED: RND given the wrong number of arguments

@@ -20,6 +20,7 @@ compiler is already in the form a report needs.
 
     basic/roc/Basic.roc     the interpreter: the machine, the statements, the doors
     basic/roc/Listing.roc   ECMA-55's check of each line and statement, before a run
+    basic/roc/Pages.roc     cells written one at a time, in pages: POKE's memory and each array
     basic/roc/Program.roc   ECMA-55's check of the whole program: jumps, loops, DEFs, arrays
     basic/roc/BasicApp.roc  the interpreter behind one boxed machine, for the page
     basic/wasm/             the page's platform and host

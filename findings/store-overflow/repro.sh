@@ -10,7 +10,7 @@ T="$(mktemp -d)"
 trap 'rm -rf "$T"' EXIT
 for way in direct fresh; do
     mkdir -p "$T/$way"
-    cp "$HERE/../../basic/roc/"{Basic,Listing,Program}.roc "$HERE/Run.roc" "$T/$way/"
+    cp "$HERE/../../basic/roc/"{Basic,Listing,Pages,Program}.roc "$HERE/Run.roc" "$T/$way/"
 done
 python3 - "$T/direct/Basic.roc" <<'PY'
 import sys, pathlib

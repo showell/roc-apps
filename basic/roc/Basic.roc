@@ -14,6 +14,7 @@
 # a lexer wants to index, and Roc's Str is not an array.
 
 import Listing
+import Pages
 import Program
 
 Basic :: [].{
@@ -25,13 +26,17 @@ Basic :: [].{
 	# offset just past the FOR statement itself.
 	Frame : { v : Str, limit : F64, step : F64, pc : U64, at : U64 }
 
+	# An array: its name, its width (0 for one dimension), how many cells
+	# it has, and the cells, in Pages.
+	Arr : { k : Str, w : U64, n : U64, cells : List(List(F64)) }
+
 	M : {
 		prog : List(Line),
 		pc : U64,
 		at : U64,
 		num : List({ k : Str, v : F64 }),
 		str : List({ k : Str, v : Str }),
-		arr : List({ k : Str, w : U64, cells : List(F64) }),
+		arr : List(Arr),
 		ret : List(U64),
 		loops : List(Frame),
 		data : List(Str),
@@ -94,7 +99,8 @@ Basic :: [].{
 		# microcomputer BASIC added them, and on a Commodore the screen IS
 		# memory: 40x25 screen codes at 1024, colour at 55296. So a
 		# program draws by writing bytes, and the page reads those bytes
-		# back out. Sixteen pages of 4 KB is the 64 KB such a machine had.
+		# back out. The space is 16 MB in Pages, and costs nothing until a
+		# page of it is written.
 		mem : List(List(U8)),
 		# **THE SCREEN IS A FLAT THOUSAND BYTES, AND STILL MEMORY.**
 		# Addresses 1024..2023 and 55296..56295 route here rather than
@@ -333,15 +339,18 @@ Basic :: [].{
 	# through 10, which is what ECMA-55 says and what every listing
 	# assumes. `hi` is the declared upper bound; cells are indexed from
 	# the base.
-	arr_index : List({ k : Str, w : U64, cells : List(F64) }), Str, U64 -> I64
+	arr_index : List(Arr), Str, U64 -> I64
 	arr_index = |xs, k, i|
 		if i >= List.len(xs) {
 			-1
-		} else if (List.get(xs, i) ?? { k: "", w: 0, cells: [] }).k == k {
+		} else if (List.get(xs, i) ?? Basic.no_arr).k == k {
 			U64.to_i64_wrap(i)
 		} else {
 			Basic.arr_index(xs, k, i + 1)
 		}
+
+	no_arr : Arr
+	no_arr = { k: "", w: 0, n: 0, cells: [] }
 
 	dim : M, Str, I64, I64 -> M
 	dim = |m, k, d1, d2| {
@@ -359,7 +368,7 @@ Basic :: [].{
 			if Basic.arr_index(m.arr, k, 0) >= 0 {
 				m
 			} else {
-				{ ..m, arr: List.append(m.arr, { k: k, w: w, cells: List.repeat(0.0, I64.to_u64_wrap(n)) }) }
+				{ ..m, arr: List.append(m.arr, { k: k, w: w, n: I64.to_u64_wrap(n), cells: Pages.new(I64.to_u64_wrap(n)) }) }
 			}
 		}
 	}
@@ -372,7 +381,7 @@ Basic :: [].{
 	# Where a subscript pair lands, or -1 when it is outside the array.
 	cell_at : M, Str, I64, I64 -> I64
 	cell_at = |m, k, i, j| {
-		a = List.get(m.arr, I64.to_u64_wrap(Basic.arr_index(m.arr, k, 0))) ?? { k: "", w: 0, cells: [] }
+		a = List.get(m.arr, I64.to_u64_wrap(Basic.arr_index(m.arr, k, 0))) ?? Basic.no_arr
 		base = U64.to_i64_wrap(m.base)
 		r = i - base
 		c = j - base
@@ -387,24 +396,32 @@ Basic :: [].{
 
 	get_arr : M, Str, I64, I64 -> { m : M, v : F64 }
 	get_arr = |m, k, i, j| {
-		a = List.get(m.arr, I64.to_u64_wrap(Basic.arr_index(m.arr, k, 0))) ?? { k: "", w: 0, cells: [] }
+		a = List.get(m.arr, I64.to_u64_wrap(Basic.arr_index(m.arr, k, 0))) ?? Basic.no_arr
 		c = Basic.cell_at(m, k, i, j)
-		if c < 0 or I64.to_u64_wrap(c) >= List.len(a.cells) {
+		if c < 0 or I64.to_u64_wrap(c) >= a.n {
 			{ m: { ..m, done: True, err: Str.concat("Subscript out of range: ", k), gap: False}, v: 0.0 }
 		} else {
-			{ m: m, v: List.get(a.cells, I64.to_u64_wrap(c)) ?? 0.0 }
+			{ m: m, v: Pages.get(a.cells, I64.to_u64_wrap(c), 0.0) }
 		}
 	}
 
 	set_arr : M, Str, I64, I64, F64 -> M
+	# **THE ARRAY COMES OUT OF THE LIST BEFORE IT IS WRITTEN**, as a page
+	# comes out of its table in Pages.set: an array still reachable from
+	# `m.arr` would copy its pages.
 	set_arr = |m, k, i, j, v| {
 		at = I64.to_u64_wrap(Basic.arr_index(m.arr, k, 0))
 		c = Basic.cell_at(m, k, i, j)
-		a = List.get(m.arr, at) ?? { k: "", w: 0, cells: [] }
-		if c < 0 or I64.to_u64_wrap(c) >= List.len(a.cells) {
+		n = (List.get(m.arr, at) ?? Basic.no_arr).n
+		if c < 0 or I64.to_u64_wrap(c) >= n {
 			{ ..m, done: True, err: Str.concat("Subscript out of range: ", k), gap: False}
 		} else {
-			{ ..m, arr: List.set(m.arr, at, { k: a.k, w: a.w, cells: List.set(a.cells, I64.to_u64_wrap(c), v) ?? crash("set_arr") }) ?? crash("set_arr") }
+			taken = List.replace(m.arr, at, Basic.no_arr) ?? crash("set_arr: no such array")
+			a = taken.prev
+			name = a.k
+			w = a.w
+			cells = Pages.set(a.cells, I64.to_u64_wrap(c), v, 0.0)
+			{ ..m, arr: List.set(taken.list, at, { k: name, w: w, n: n, cells: cells }) ?? crash("set_arr: no such array") }
 		}
 	}
 
@@ -961,12 +978,14 @@ Basic :: [].{
 		else if k == "SQR" { F64.sqrt(x) }
 		else { F64.tan(x) }
 
-	# A linear congruential generator, so a run is reproducible and a
-	# verdict is a verdict. The constants are Numerical Recipes'.
+	# A linear congruential generator over 64 bits, so a run is reproducible
+	# and a verdict is a verdict; the constants are Knuth's (MMIX). **THE
+	# NUMBER IS THE TOP 53 BITS**: an LCG's low bits repeat with short
+	# periods, and 53 is what an F64 holds exactly.
 	rnd : M, U64 -> R
 	rnd = |m, at| {
-		s = U64.plus_wrap(U64.times_wrap(m.seed, 1664525), 1013904223)
-		{ m: { ..m, seed: s }, v: N(I64.to_f64(U64.to_i64_wrap(U64.rem_by(U64.div_trunc_by(s, 65536), 32768))) / 32768.0), at: at }
+		s = U64.plus_wrap(U64.times_wrap(m.seed, 6364136223846793005), 1442695040888963407)
+		{ m: { ..m, seed: s }, v: N(I64.to_f64(U64.to_i64_wrap(U64.div_trunc_by(s, 2048))) / 9007199254740992.0), at: at }
 	}
 
 	# Subscripts: `(i)` or `(i,j)`, each rounded as ECMA-55 says.
@@ -2106,7 +2125,7 @@ Basic :: [].{
 		base: 0,
 		ecma: False,
 		rejected: False,
-		mem: List.repeat([], 4096),
+		mem: Pages.new(16777216),
 		scr: List.repeat(32.U8, 1000),
 		col_ram: List.repeat(14.U8, 1000),
 		crow: 0,
@@ -2270,9 +2289,6 @@ Basic :: [].{
 
 	# ---- the machine's memory -------------------------------------------
 
-	page_bytes : U64
-	page_bytes = 4096
-
 	# **WIDER THAN A REAL MACHINE, BECAUSE THE FRAMEBUFFER IS.** A C64
 	# masked to sixteen bits; 320x200 at a byte a pixel does not fit under
 	# 64 KB, so this masks to twenty-four. A listing that relied on POKE
@@ -2316,14 +2332,9 @@ Basic :: [].{
 		} else if a >= Basic.hires_base and a < Basic.hires_base + Basic.hires_cells {
 			List.get(m.pix, a - Basic.hires_base) ?? 0
 		} else {
-			List.get(List.get(m.mem, a / Basic.page_bytes) ?? [], I64.to_u64_wrap(I64.rem_by(U64.to_i64_wrap(a), 4096))) ?? 0
+			Pages.get(m.mem, a, 0)
 		}
 
-	# **THE PAGE COMES OUT OF THE TABLE BEFORE IT IS WRITTEN.** The list
-	# handed to a List.update closure is not uniquely owned, so writing
-	# through one copies the whole page on every byte. Taking it out with
-	# List.replace, leaving an empty placeholder, writes in place.
-	# `tests/copycheck.sh` is the instrument that tells the two apart.
 	poke_at : M, U64, U8 -> M
 	poke_at = |m, a, v|
 		if a >= Basic.screen_base and a < Basic.screen_base + Basic.screen_cells {
@@ -2340,13 +2351,7 @@ Basic :: [].{
 		}
 
 	poke_mem : M, U64, U8 -> M
-	poke_mem = |m, a, v| {
-		p = a / Basic.page_bytes
-		off = I64.to_u64_wrap(I64.rem_by(U64.to_i64_wrap(a), 4096))
-		taken = List.replace(m.mem, p, []) ?? crash("poke: address outside the 64 KB space")
-		page = if List.is_empty(taken.prev) { List.repeat(0.U8, 4096) } else { taken.prev }
-		{ ..m, mem: List.set(taken.list, p, List.set(page, off, v) ?? crash("poke: offset outside a page")) ?? crash("poke: address outside the 64 KB space") }
-	}
+	poke_mem = |m, a, v| { ..m, mem: Pages.set(m.mem, a, v, 0) }
 
 	# The screen and its colour, as a page wants them: the thousand screen
 	# codes then the thousand colour cells.
