@@ -11,3 +11,18 @@
   19 lines    705 bytes  after dropping line 6
   18 lines    653 bytes  after dropping line 6
   17 lines    652 bytes  after dropping line 7
+  16 lines    631 bytes  after dropping line 7
+  15 lines    630 bytes  after dropping line 8
+  14 lines    629 bytes  after dropping line 13
+  13 lines    628 bytes  after dropping line 14
+  13 lines    627 bytes  after dropping line 14
+  12 lines    538 bytes  after dropping line 1
+  11 lines    469 bytes  after dropping line 1
+  11 lines    458 bytes  after replacing ', winner: 0'
+  11 lines    448 bytes  after replacing ', draws: 0'
+  11 lines    437 bytes  after replacing ', losses: 0'
+  11 lines    428 bytes  after replacing ', wins: 0'
+  11 lines    390 bytes  after replacing 'squares: [0, 0, 0, 0, 0, 0, 0, 0, 0],'
+  11 lines    374 bytes  after replacing 'ttt_perfect_ai(b)'
+  11 lines    361 bytes  after replacing 'ttt_move(b, 0)'
+done

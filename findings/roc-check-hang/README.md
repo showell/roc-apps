@@ -1,52 +1,73 @@
-# `roc check` spins on a small program
+# `roc check` and `roc build` do not terminate on a program that does not
 
-**Not filed yet.** The reproducer and the reduction that found it, kept
-here so the numbers and the file are one thing.
+**Corrected 2026-09-12.** The first reading of this, written earlier the
+same day, said the cost was type checking and grew with the number of call
+sites into mutually recursive functions. **That was wrong.** The measurement
+below is what it actually is.
 
 ## What happens
 
-`hang.roc` is 29 lines and self-contained. `roc check` on it does not
-finish: killed after ten minutes at 100% of one core and 80 MB, which is
-a loop rather than an allocation blow-up.
+`spins.roc` is seven lines. `roc check` on it does not finish: killed at ten
+minutes, 100% of one core, 80 MB flat, no diagnostic.
 
-    $ roc --version
+```roc
+app [main!] {}
+
+loop_forever = |n| if n < 0 { 0 } else { loop_forever(n) }
+
+main! = |_args| {
+	echo!(I64.to_str(loop_forever(1)))
+	Ok({})
+}
+```
+
+`finishes.roc` is the same program with the argument taken from `args`
+instead of written as a literal, and it checks in 34 ms and builds in
+190 ms. So the compiler is EVALUATING the call, because its argument is
+known, and the evaluation has no step limit.
+
+## The measurements
+
+    roc --version
     Roc compiler version nightly-2026-09-11-793f9d8
-    $ time roc check --no-cache hang.roc
-    (killed at 600s)
 
-The build is the release tarball from roc-lang/nightlies
-(`roc_nightly-linux_x86_64-2026-09-11-793f9d8`), not a debug build of our
-own, on x86-64 Linux.
+The release tarball from roc-lang/nightlies
+(`roc_nightly-linux_x86_64-2026-09-11-793f9d8`), x86-64 Linux, on an
+otherwise idle 8 GB box.
+
+| program | `roc check` | `roc build` |
+|---|---|---|
+| `loop_forever(1)`, the argument a literal | never finishes | never finishes |
+| `loop_forever(List.len(args))` | 34 ms | 190 ms |
+| `loop_forever` defined but never called | 23 ms | |
+| `count(1_000_000, 0)`, terminating | 60 ms | |
+| `count(4_000_000, 0)` | 146 ms | |
+| `count(16_000_000, 0)` | 487 ms | |
+| a loop of 8,000,000 steps carrying a `List` | 83 ms | |
+
+The middle rows are the same finding from the other side: check time
+tracks the number of steps the program itself takes, because the compiler
+is running it. The last row is the shape that issue #10297 reported as an
+OOM; on this nightly it is not evaluated at all, so the value size is
+bounded now and the step count is not.
 
 ## Where it came from
 
-It is a reduction of a program in a corpus we emit from Codex, which took
-2.7 seconds to check as it shipped. The 2.7 seconds was already odd: the
-file is 40 lines and its run takes 3 ms. Inlining the three imported
-modules into one file, which should have changed nothing, turned the 2.7
-seconds into a hang, so the same definitions cost seconds when the
-compiler solves them as four modules and do not terminate when it solves
-them as one.
+An emitted Codex program in our corpus took 2.7 seconds to `roc check` and
+3 ms to run. The 2.7 seconds is the compiler playing a whole-tree
+tic-tac-toe search, which is what that program does; the run is 3 ms
+because the answer was already a constant by then. Inlining its modules
+into one file, which should change nothing, turned the seconds into a
+hang, and that turned out to be because the inlining made a helper answer
+a constant, which made the search never terminate -- a program bug in the
+reduction, which is exactly the case this reports.
 
-## The reduction
+## Reducing
 
-`reduce.py` shrinks the file while checking at every step that it still
-spins, so nothing in `smallest.roc` is incidental. It removes a line, or a
-record field, or an argument, keeps the removal only when the timeout
-still fires, and writes the smallest file it has reached along with a log.
+`reduce.py` shrinks a file while checking at every step that it still
+spins, so nothing it leaves behind is incidental.
 
     findings/roc-check-hang/reduce.py hang.roc 15
 
-## What is already ruled out
-
-Each of these was tested on its own and is NOT the cause:
-
-- mutual recursion between the functions (removing it still spins);
-- the record update `{ ..b, field: x }` (replacing it still spins);
-- the nested `if` (flattening it still spins);
-- a `List` field in the record (an `I64` field still spins);
-- an undefined name, which errors in 28 ms as it should.
-
-What remains in the smallest file so far: three record type aliases, a
-self-recursive function over one of them whose recursive call rebuilds its
-argument through two other functions, and an app that calls it once.
+`hang.roc` is the 29-line starting point and `smallest.roc` is where that
+run stopped; `spins.roc` is the hand-reduced seven lines above.

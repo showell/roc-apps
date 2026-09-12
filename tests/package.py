@@ -204,11 +204,12 @@ them RUNS in about 3 ms; the rest is the compiler. The slowest:
 |---|---|
 {slow}
 
-`ttt-perfect` is the outlier, and the cost is in checking its 40-line app
-rather than the chapters it imports: the app calls three small mutually
-recursive functions that return a record, and check time grows with the
-number of call sites into them. It is a whole-tree tic-tac-toe search, so
-it is also the most work here, and that work takes 3 ms at run time.
+The compiler EVALUATES a call whose arguments are known, so for these
+programs the compile time is largely the program's own work and the run is
+then a few milliseconds. `ttt-perfect`, outside the default cap, is the
+clearest case: 2.7 seconds to check, because the compiler plays the
+whole-tree tic-tac-toe search, and 3 ms to run, because by then the answer
+is a constant. See roc-apps `findings/roc-check-hang`.
 
 ## The tests
 
