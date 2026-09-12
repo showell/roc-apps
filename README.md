@@ -27,6 +27,26 @@ Roc on the fifth tree on the right of every segment.
 The units come from `~/showell_repos/safari-codex/units/` (`<Spec>.codex`
 resolved, `<Spec>.expected` the verdict the Rust interpreter froze).
 
+## gpu: Cobblestone's WGSL kernels, on the CPU
+
+`gpu/` is the second app: the Codex `[Device]` kernels of Cobblestone's
+`apps/gpushow` (46 chapters the wgsl plug lowers to WebGPU compute shaders),
+run in Roc on the CPU, one gid after another, with the pixels put on a 2d
+canvas. Started 2026-09-12 with a hand port of the plasma kernel; the
+essay is `:9100/notes/plasma-in-roc.md`.
+
+| where | what | written by |
+|---|---|---|
+| `gpu/roc/Device.roc` | the Device effect as state: buffers by handle, `load`/`store` threading the record, `dispatch` over the gids | hand |
+| `gpu/roc/PlasmaKernel.roc` | `apps/gpushow/kernels/PlasmaKernel.codex`, in the shape rocemit writes | hand, for now |
+| `gpu/roc/PlasmaApp.roc`, `gpu/roc/PlasmaBench.roc` | the app (`render : frame -> pixels`) and a native bench that prints a checksum | hand |
+| `gpu/wasm/` | the platform: two exports, `renderFrame(n)` and `bufPtr`; host, build.zig as safari's; `smoke.mjs` checksums frame 0 from Node | hand |
+| `gpu/web/plasma.html` | the page: the words as an ImageData; no WebGPU, so no secure context | hand |
+| `gpu/build.sh` | host + app + page into the preview, `http://<box>:9203/gpu/plasma.html` | hand |
+
+    gpu/build.sh
+    node gpu/wasm/smoke.mjs ~/build/roc-apps/next/gpu/plasma.wasm 20   # checksum 6293600626746 for frame 0
+
 ## The Roc is tracked; everything else the tools write is not
 
 `safari/roc/` is generated and committed, because those files are the point.
