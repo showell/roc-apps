@@ -90,10 +90,41 @@ main! = |args| {
 	Ok({})
 }
 '
+TRIE='Node := [Empty, Leaf(List(U8)), Branch(List(Node))]
+p32 : I64 -> I64
+p32 = |k| if k <= 0 { 1 } else { 32 * p32(k - 1) }
+set_at : Node, I64, I64, U8 -> Node
+set_at = |node, a, level, v|
+	if level <= 0 {
+		match node {
+			Leaf(bytes) => Leaf(List.set(bytes, I64.to_u64_wrap(I64.bitwise_and(a, 63)), v) ?? crash("oob"))
+			_ => Leaf(List.set(List.repeat(0.U8, 64), I64.to_u64_wrap(I64.bitwise_and(a, 63)), v) ?? crash("oob"))
+		}
+	} else {
+		i = I64.to_u64_wrap(I64.bitwise_and(I64.div_trunc_by(a, 64 * p32(level - 1)), 31))
+		kids = match node {
+			Branch(cs) => cs
+			_ => List.repeat(Empty, 32)
+		}
+		taken = List.replace(kids, i, Empty) ?? crash("oob")
+		Branch(List.set(taken.list, i, set_at(taken.prev, a, level - 1, v)) ?? crash("oob"))
+	}
+spin : Node, I64, I64 -> Node
+spin = |n, i, stop| if i >= stop { n } else { spin(set_at(n, I64.rem_by(i, @SIZE@), 5, 7.U8), i + 1, stop) }
+main! = |args| {
+	stop = @WRITES@ + (List.len(args) |> U64.to_i64_wrap)
+	n = spin(Empty, 0, stop)
+	echo!(Str.concat(I64.to_str(match n { Empty => 0, Leaf(_) => 1, Branch(_) => 2 }), "\n"))
+	Ok({})
+}
+'
 echo "$WRITES writes, list sizes: $SIZES"
 want="${1:-all}"
 [ "$want" = all ] || [ "$want" = naming ] && probe naming "$NAMING"
 [ "$want" = all ] || [ "$want" = crashing ] && probe crashing "$CRASHING"
 [ "$want" = all ] || [ "$want" = update ] && probe update "$UPDATE"
 [ "$want" = all ] || [ "$want" = take ] && probe take "$TAKE"
+# The trie rebuilds its spine every time, so it has no fast path to fall
+# off: what varies with the size is only how deep it is asked to go.
+[ "$want" = all ] || [ "$want" = trie ] && probe trie "$TRIE"
 exit 0

@@ -62,6 +62,30 @@ better fit than either:
 - `alloc-bytes` starting at 6 MB stops being a special case worth a
   paragraph of comment.
 
+## What it measured
+
+Built and measured, 2026-09-12. Five levels of 32 over 64-byte leaves, a
+2 GB space. Best of three, CPU seconds, on the 262,144-byte fill:
+
+| | array of pages | persistent trie |
+|---|---|---|
+| best case | 0.32 s | **0.38 s** |
+| uniqueness deliberately broken | 137.8 s | **12.25 s** |
+| ratio worst to best | 430x | **32x** |
+| address cap | 64 MB | none |
+| read past the end | 0, where a write crashes | same everywhere |
+
+**The trie does NOT remove the cliff, and I said it would.** Copy-on-
+shared applies at every level; what the trie changes is the SIZE of what
+gets copied -- 32-wide nodes and 64-byte leaves instead of a
+16,384-entry table and 4 KB pages. So the worst case is eleven times
+better, not absent, and the claim to make is "bounded damage", not
+"O(log N) always".
+
+That is still the right trade: nineteen per cent on the good case buys an
+eleven-fold better bad case, no cap, and no read/write asymmetry. Taken
+2026-09-12.
+
 ## What would decide it
 
 Extend `tests/copycheck.sh` with a trie probe and compare three things on
