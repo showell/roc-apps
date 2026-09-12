@@ -1,0 +1,65 @@
+# ConsistentHash -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+import Cce
+import Random
+
+ConsistentHash :: [].{
+	HashRingEntry : { hr_hash : I64, hr_node : I64 }
+	ConsistentHashRing : { hr_entries : List(ConsistentHash.HashRingEntry), hr_count : I64, hr_vnodes : I64 }
+
+	chr_new : I64 -> ConsistentHash.ConsistentHashRing
+	chr_new = |vnodes| { hr_entries: [], hr_count: 0, hr_vnodes: vnodes }
+
+	chr_add_node : ConsistentHash.ConsistentHashRing, I64 -> ConsistentHash.ConsistentHashRing
+	chr_add_node = |ring, node_id| chr_add_vnodes(ring, node_id, 0, ring.hr_vnodes)
+
+	chr_add_vnodes : ConsistentHash.ConsistentHashRing, I64, I64, I64 -> ConsistentHash.ConsistentHashRing
+	chr_add_vnodes = |ring, node_id, i, limit| (if (i >= limit) { ring } else { ({
+		h = chr_hash_pair(node_id, i)
+		entry = { hr_hash: h, hr_node: node_id }
+		pos = chr_find_insert(ring.hr_entries, h, 0, ring.hr_count)
+		new_entries = chr_insert_at(ring.hr_entries, pos, entry, ring.hr_count)
+		chr_add_vnodes({ hr_entries: new_entries, hr_count: (ring.hr_count + 1), hr_vnodes: ring.hr_vnodes }, node_id, (i + 1), limit)
+	}) })
+
+	chr_find_insert : List(ConsistentHash.HashRingEntry), I64, I64, I64 -> I64
+	chr_find_insert = |entries, h, i, len| (if (i >= len) { len } else { (if ((List.get(entries, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).hr_hash > h) { i } else { chr_find_insert(entries, h, (i + 1), len) }) })
+
+	chr_insert_at : List(ConsistentHash.HashRingEntry), I64, ConsistentHash.HashRingEntry, I64 -> List(ConsistentHash.HashRingEntry)
+	chr_insert_at = |entries, pos, entry, len| chr_splice(entries, pos, entry, 0, len, [])
+
+	chr_splice : List(ConsistentHash.HashRingEntry), I64, ConsistentHash.HashRingEntry, I64, I64, List(ConsistentHash.HashRingEntry) -> List(ConsistentHash.HashRingEntry)
+	chr_splice = |entries, pos, entry, i, len, acc| (if (i > len) { acc } else { (if (i == pos) { chr_splice(entries, pos, entry, (i + 1), len, List.append(List.append(acc, entry), (if (i < len) { (List.get(entries, I64.to_u64_wrap(i)) ?? crash("list-at out of range")) } else { entry }))) } else { (if (i < len) { chr_splice(entries, pos, entry, (i + 1), len, List.append(acc, (List.get(entries, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))) } else { acc }) }) })
+
+	chr_get_node : ConsistentHash.ConsistentHashRing, I64 -> I64
+	chr_get_node = |ring, key| (if (ring.hr_count == 0) { (0 - 1) } else { ({
+		h = chr_hash_key(key)
+		chr_find_node(ring.hr_entries, h, 0, ring.hr_count)
+	}) })
+
+	chr_find_node : List(ConsistentHash.HashRingEntry), I64, I64, I64 -> I64
+	chr_find_node = |entries, h, i, len| (if (i >= len) { (List.get(entries, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).hr_node } else { (if ((List.get(entries, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).hr_hash >= h) { (List.get(entries, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).hr_node } else { chr_find_node(entries, h, (i + 1), len) }) })
+
+	chr_hash_key : I64 -> I64
+	chr_hash_key = |key| ({
+		h = Random.mix_bits(key, 1013904223)
+		(if (h < 0) { (-h) } else { h })
+	})
+
+	chr_hash_text : Str -> I64
+	chr_hash_text = |key| chr_hash_key(chr_text_fold(key, 0, Cce.length(key), 5381))
+
+	chr_text_fold : Str, I64, I64, I64 -> I64
+	chr_text_fold = |key, i, len, acc| (if (i >= len) { acc } else { chr_text_fold(key, (i + 1), len, I64.plus_wrap(I64.times_wrap(acc, 33), Cce.at_or_crash(key, i))) })
+
+	chr_hash_pair : I64, I64 -> I64
+	chr_hash_pair = |node, vnode| ({
+		h = Random.mix_bits(node, (vnode + 1))
+		(if (h < 0) { (-h) } else { h })
+	})
+
+	chr_node_count : ConsistentHash.ConsistentHashRing -> I64
+	chr_node_count = |ring| I64.div_trunc_by(ring.hr_count, ring.hr_vnodes)
+
+	chr_entry_count : ConsistentHash.ConsistentHashRing -> I64
+	chr_entry_count = |ring| ring.hr_count
+}
