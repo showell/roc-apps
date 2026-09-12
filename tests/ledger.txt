@@ -3,7 +3,7 @@ PASS act-let-scope |
 REFUSED act-tco-loop | builtin `port-in-byte`
 PASS aesgcm256 |
 PASS amp-after-call |
-REFUSED approx-eq | binary approx-eq
+PASS approx-eq |
 SKIP arith-narrow-proven | expects a diagnostic
 PASS arith-operand-order |
 PASS arithmetic |
@@ -139,18 +139,18 @@ REFUSED ecdsa-p384 | `cb-shl1-step` writes its list parameter `x` and answers so
 REFUSED ecdsa-sha384 | `cb-shl1-step` writes its list parameter `x` and answers something else
 DIVERGES edalias | list-set-at mutates in place; Roc's List.set answers a new list
 REFUSED edcurve | `fe-carry-pass` writes its list parameter `o` and answers something else
-REFUSED edge-mesh-admit | binary approx-eq
-REFUSED edge-mesh-bracket | binary approx-eq
-REFUSED edge-mesh-discover | binary approx-eq
-REFUSED edge-mesh-failover | binary approx-eq
-REFUSED edge-mesh-federate | binary approx-eq
-REFUSED edge-mesh-live | binary approx-eq
-REFUSED edge-mesh-mint | binary approx-eq
-REFUSED edge-mesh-place | binary approx-eq
-REFUSED edge-mesh-planes | binary approx-eq
-REFUSED edge-mesh-prewarm | binary approx-eq
-REFUSED edge-mesh-rewards | binary approx-eq
-REFUSED edge-mesh-route | binary approx-eq
+REFUSED edge-mesh-admit | builtin `raw-bytes-to-text`
+REFUSED edge-mesh-bracket | builtin `raw-bytes-to-text`
+REFUSED edge-mesh-discover | builtin `raw-bytes-to-text`
+REFUSED edge-mesh-failover | builtin `raw-bytes-to-text`
+REFUSED edge-mesh-federate | builtin `raw-bytes-to-text`
+REFUSED edge-mesh-live | builtin `raw-bytes-to-text`
+REFUSED edge-mesh-mint | builtin `raw-bytes-to-text`
+REFUSED edge-mesh-place | builtin `raw-bytes-to-text`
+REFUSED edge-mesh-planes | builtin `raw-bytes-to-text`
+REFUSED edge-mesh-prewarm | builtin `raw-bytes-to-text`
+REFUSED edge-mesh-rewards | builtin `raw-bytes-to-text`
+REFUSED edge-mesh-route | builtin `raw-bytes-to-text`
 REFUSED edit-distance-test | builtin `raw-bytes-to-text`
 REFUSED edvector | `fe-carry-pass` writes its list parameter `o` and answers something else
 PASS effect-dotted-allow |
@@ -163,16 +163,16 @@ REFUSED effect-value-poly | type (effectful (effs "Console") (scopes "") (ctd "M
 PASS effect-widen-arg |
 PASS effect-widen-scope |
 REFUSED effect-widen-scope-narrow | builtin `raw-bytes-to-text`
-REFUSED engine-animation | binary approx-eq
-REFUSED engine-culling-cost | binary approx-eq
-REFUSED engine-fill-guard | binary approx-eq
-REFUSED engine-mesh-gen | binary approx-eq
-REFUSED engine-near-clip | binary approx-eq
-REFUSED engine-render-heap | binary approx-eq
-REFUSED engine-shading | binary approx-eq
-REFUSED engine-shadow | binary approx-eq
-REFUSED engine-software-render | binary approx-eq
-REFUSED engine-texture-cost | binary approx-eq
+REFUSED engine-animation | unit type `Duration`
+REFUSED engine-culling-cost | builtin `poke-32`
+REFUSED engine-fill-guard | builtin `poke-32`
+REFUSED engine-mesh-gen | builtin `poke-32`
+REFUSED engine-near-clip | builtin `poke-32`
+REFUSED engine-render-heap | builtin `poke-32`
+REFUSED engine-shading | builtin `poke-32`
+REFUSED engine-shadow | builtin `poke-32`
+REFUSED engine-software-render | builtin `poke-32`
+REFUSED engine-texture-cost | builtin `poke-32`
 PASS enip-encode |
 PASS eq-generic-fields |
 PASS eq-generic-recursive |
@@ -181,7 +181,7 @@ REFUSED esp32c6-drivers | builtin `peek-32`
 PASS eventbus-test |
 REFUSED expr-calculator | chapter `Expr Calculator` is not a Roc module name
 REFUSED factlog-layout | builtin `peek-byte`
-REFUSED factorial | show on a real
+PASS factorial |
 REFUSED fat16-alloc | builtin `raw-bytes-to-text`
 REFUSED fat16-cluster-guard | builtin `raw-bytes-to-text`
 REFUSED fat16-cycle-guard | builtin `raw-bytes-to-text`
@@ -219,7 +219,7 @@ REFUSED fs-layer | builtin `raw-bytes-to-text`
 REFUSED fs-servicer | builtin `raw-bytes-to-text`
 REFUSED fs-spawn-inherits | builtin `raw-bytes-to-text`
 PASS ga-core |
-REFUSED geometry-test | binary approx-eq
+PASS geometry-test |
 REFUSED goose-encode | builtin `raw-bytes-to-text`
 REFUSED gop-composite-clamp | builtin `alloc-bytes`
 REFUSED gop-composite-clip | builtin `alloc-bytes`
@@ -228,16 +228,16 @@ REFUSED gop-composite-stride | builtin `alloc-bytes`
 REFUSED gop-composite-translate | builtin `alloc-bytes`
 REFUSED gop-composite-vclip | builtin `alloc-bytes`
 REFUSED gop-corner-ramp | builtin `alloc-bytes`
-REFUSED gop-padded-stride | binary approx-eq
+REFUSED gop-padded-stride | builtin `poke-32`
 REFUSED gop-scene-backbuffer | builtin `alloc-bytes`
-REFUSED gop-scene-viewport | binary approx-eq
+REFUSED gop-scene-viewport | builtin `poke-32`
 REFUSED gop-stride | builtin `alloc-bytes`
 REFUSED gop-text-field | builtin `alloc-bytes`
-REFUSED gpu-depth-tree | binary approx-eq
+REFUSED gpu-depth-tree | builtin `gpu-mem-write`
 REFUSED gpu-doorbell | builtin `raw-bytes-to-text`
-REFUSED gpu-gauge-clamp | binary approx-eq
-REFUSED gpu-input-cursor | binary approx-eq
-REFUSED gpu-panel-border | binary approx-eq
+REFUSED gpu-gauge-clamp | builtin `gpu-mem-write`
+REFUSED gpu-input-cursor | builtin `gpu-mem-write`
+REFUSED gpu-panel-border | builtin `gpu-mem-write`
 REFUSED gpu-ptx | builtin `raw-bytes-to-text`
 REFUSED grounds-port | builtin `port-out-byte`
 REFUSED hal-board-sleep | builtin `peek-32`
@@ -254,7 +254,7 @@ REFUSED handler-nested-ops | handle
 REFUSED handler-smoke | type (effectful (effs "Config") (scopes "") int-default)
 PASS hart-encode |
 REFUSED heap-bracket-shape | builtin `port-out-byte`
-REFUSED heap-frame-reclaim | binary approx-eq
+PASS heap-frame-reclaim |
 REFUSED heap-scrub | builtin `poke-byte`
 REFUSED hid-decode | builtin `peek-byte`
 REFUSED history-test | builtin `raw-bytes-to-text`
@@ -338,7 +338,7 @@ CRASH magic-sim-fixes | overflowed its stack memory
 REFUSED manifest-pin | builtin `block-read-sector`
 REFUSED mask-ops | type (effectful (effs "Console") (scopes "") nothing)
 PASS match-arms-per-line |
-REFUSED matrix3-test | binary approx-eq
+REFUSED matrix3-test | `__lam_0` applied to 1 of 2 arguments
 PASS mbus-encode |
 REFUSED media-codec-test | unit type `Duration`
 PASS melsec-encode |
@@ -421,11 +421,11 @@ REFUSED quotes-gate | CODEGEN-HALTED: 1 error(s); no IR emitted; first CDX1000 E
 REFUSED quotes-parse | CODEGEN-HALTED: 1 error(s); no IR emitted; first CDX1000 Expected token kind mismatch, got 'WORK'
 SKIP range-let-carry | expects a diagnostic
 SKIP range-refine-if | expects a diagnostic
-REFUSED rasterizer-test | binary approx-eq
-REFUSED raytracer-test | binary approx-eq
+PASS rasterizer-test |
+PASS raytracer-test |
 REFUSED real-cert | `fe-carry-pass` writes its list parameter `o` and answers something else
 PASS real-literal-boundary |
-REFUSED real-show-wide | show on a real
+DIVERGES real-show-wide | the verdict pins Codex's own printer: it reads 12345678901234567.0 as ...566, we print the double
 REFUSED record-smoke | `__lam_0` applied to 2 of 3 arguments
 REFUSED recursive-eq | chapter `Recursive Eq` is not a Roc module name
 PASS reservoir-uniform |
@@ -486,7 +486,7 @@ REFUSED sound-test | unit type `Duration`
 REFUSED sparkplug-encode | unit type `Duration`
 REFUSED spawn-memo-table | builtin `raw-bytes-to-text`
 REFUSED spawn-reuse | builtin `poke-byte`
-REFUSED sprite-test | binary approx-eq
+PASS sprite-test |
 SKIP stale-sibling | expects a diagnostic
 REFUSED stats-wrap-test | builtin `text-split`
 REFUSED stm32f4-drivers | builtin `peek-32`
@@ -526,7 +526,7 @@ REFUSED tls13-record | builtin `raw-bytes-to-text`
 REFUSED tls13-schedule | builtin `raw-bytes-to-text`
 REFUSED transport-cocite | builtin `peek-byte`
 REFUSED trie-prefix-test | builtin `raw-bytes-to-text`
-REFUSED truetype-bridge-test | binary approx-eq
+PASS truetype-bridge-test |
 REFUSED truetype-render-test | builtin `raw-bytes-to-text`
 PASS truetype-test |
 REFUSED try-smoke | try
@@ -541,18 +541,18 @@ REFUSED typeclass-poly | a call whose head is not a name
 REFUSED typeclass-smoke | `__compare_Integer` belongs to no chapter
 REFUSED udp-frame-guard | builtin `poke-byte`
 REFUSED uefi-read-key-nofirmware | builtin `uefi-read-key` used as a value
-REFUSED ui-anim-test | binary approx-eq
-REFUSED ui-dialog-test | binary approx-eq
+REFUSED ui-anim-test | `__lam_0` applied to 1 of 2 arguments
+PASS ui-dialog-test |
 DIVERGES ui-event-test | list-push mutates a list two siblings share; Roc's List.append answers a new one
 PASS ui-focus-test |
-REFUSED ui-font-cce-order | binary approx-eq
-REFUSED ui-font-test | binary approx-eq
-REFUSED ui-icon-test | binary approx-eq
+PASS ui-font-cce-order |
+PASS ui-font-test |
+PASS ui-icon-test |
 PASS ui-layout-test |
-REFUSED ui-orchestrator-test | binary approx-eq
+REFUSED ui-orchestrator-test | `__lam_0` applied to 1 of 2 arguments
 PASS ui-scroll-test |
 PASS ui-sound-test |
-REFUSED ui-surface-test | binary approx-eq
+PASS ui-surface-test |
 PASS ui-theme-test |
 REFUSED unit-family | unit type `Length`
 REFUSED unit-family-mixed | unit type `Length`

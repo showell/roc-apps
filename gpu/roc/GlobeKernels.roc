@@ -152,10 +152,10 @@ GlobeKernels :: [].{
 			neg_zoom = (0.0 - zoom)
 			o1x = (sin_y * neg_zoom)
 			o1z = (cos_y * neg_zoom)
-			posx = o1x
-			posy = (0.0 - (sin_p * o1z))
-			posz = (cos_p * o1z)
-			bh_march(dev5, framebuf, gid, posx, posy, posz, vx, vy, vz, time, 0, 0.0, 0.0, 0.0, 0.0)
+			posX = o1x
+			posY = (0.0 - (sin_p * o1z))
+			posZ = (cos_p * o1z)
+			bh_march(dev5, framebuf, gid, posX, posY, posZ, vx, vy, vz, time, 0, 0.0, 0.0, 0.0, 0.0)
 		})
 	})
 

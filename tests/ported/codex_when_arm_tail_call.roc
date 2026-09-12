@@ -45,8 +45,8 @@ by_when_bare = |s, acc| (match s {
 	Stop => acc
 })
 
-eq_step : Step, Step -> Bool
-eq_step = |ex, ey| (match ex {
+eq_Step : Step, Step -> Bool
+eq_Step = |ex, ey| (match ex {
 	Go(exf0) => (match ey {
 		Go(eyf0) => (exf0 == eyf0)
 		_ => False

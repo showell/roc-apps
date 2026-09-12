@@ -21,7 +21,7 @@ app [main!] {}
 line! = |s| echo!(Str.concat(s, "\n"))
 IntList := [INil, ICons(I64, IntList)].{
 	is_eq : IntList, IntList -> Bool
-	is_eq = |a, b| eq_intlist(a, b)
+	is_eq = |a, b| eq_IntList(a, b)
 }
 
 is_even : I64 -> Bool
@@ -54,14 +54,14 @@ sum_real = |xs, acc| (match xs {
 	INil => acc
 })
 
-eq_intlist : IntList, IntList -> Bool
-eq_intlist = |ex, ey| (match ex {
+eq_IntList : IntList, IntList -> Bool
+eq_IntList = |ex, ey| (match ex {
 	INil => (match ey {
 		INil => True
 		_ => False
 	})
 	ICons(exf0, exf1) => (match ey {
-		ICons(eyf0, eyf1) => ((exf0 == eyf0) and eq_intlist(exf1, eyf1))
+		ICons(eyf0, eyf1) => ((exf0 == eyf0) and eq_IntList(exf1, eyf1))
 		_ => False
 	})
 })

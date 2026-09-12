@@ -47,6 +47,7 @@ diverges() {
     case "$1" in
         edalias) echo "list-set-at mutates in place; Roc's List.set answers a new list" ;;
         ui-event-test) echo "list-push mutates a list two siblings share; Roc's List.append answers a new one" ;;
+        real-show-wide) echo "the verdict pins Codex's own printer: it reads 12345678901234567.0 as ...566, we print the double" ;;
     esac
 }
 one() {

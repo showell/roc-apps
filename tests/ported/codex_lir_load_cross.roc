@@ -78,8 +78,8 @@ pk_hi = |p| (match p {
 	Big(n) => n
 })
 
-eq_shape : Shape, Shape -> Bool
-eq_shape = |ex, ey| (match ex {
+eq_Shape : Shape, Shape -> Bool
+eq_Shape = |ex, ey| (match ex {
 	Circle(exf0) => (match ey {
 		Circle(eyf0) => (exf0 == eyf0)
 		_ => False
@@ -94,8 +94,8 @@ eq_shape = |ex, ey| (match ex {
 	})
 })
 
-eq_packed : Packed, Packed -> Bool
-eq_packed = |ex, ey| (match ex {
+eq_Packed : Packed, Packed -> Bool
+eq_Packed = |ex, ey| (match ex {
 	Bytes(exf0, exf1) => (match ey {
 		Bytes(eyf0, eyf1) => ((exf0 == eyf0) and (exf1 == eyf1))
 		_ => False

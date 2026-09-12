@@ -41,8 +41,8 @@ extract_box = |m| (match m {
 	Box2(t) => t.th_name
 })
 
-eq_maybe2 : Maybe2(a), Maybe2(a) -> Bool where [a.is_eq : a, a -> Bool]
-eq_maybe2 = |ex, ey| (match ex {
+eq_Maybe2 : Maybe2(a), Maybe2(a) -> Bool where [a.is_eq : a, a -> Bool]
+eq_Maybe2 = |ex, ey| (match ex {
 	Just2(exf0) => (match ey {
 		Just2(eyf0) => (exf0 == eyf0)
 		_ => False
@@ -53,16 +53,16 @@ eq_maybe2 = |ex, ey| (match ex {
 	})
 })
 
-eq_holder : Holder, Holder -> Bool
-eq_holder = |ex, ey| (match ex {
+eq_Holder : Holder, Holder -> Bool
+eq_Holder = |ex, ey| (match ex {
 	Plain(exf0) => (match ey {
 		Plain(eyf0) => (exf0 == eyf0)
 		_ => False
 	})
 })
 
-eq_box2 : Box2(a), Box2(a) -> Bool where [a.is_eq : a, a -> Bool]
-eq_box2 = |ex, ey| (match ex {
+eq_Box2 : Box2(a), Box2(a) -> Bool where [a.is_eq : a, a -> Bool]
+eq_Box2 = |ex, ey| (match ex {
 	Box2(exf0) => (match ey {
 		Box2(eyf0) => (exf0 == eyf0)
 		_ => False

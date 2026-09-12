@@ -27,8 +27,8 @@ use_byte = |b| (match b {
 make_byte_narrowed : I64 -> Byteish
 make_byte_narrowed = |n| MkByte(n)
 
-eq_byteish : Byteish, Byteish -> Bool
-eq_byteish = |ex, ey| (match ex {
+eq_Byteish : Byteish, Byteish -> Bool
+eq_Byteish = |ex, ey| (match ex {
 	MkByte(exf0) => (match ey {
 		MkByte(eyf0) => (exf0 == eyf0)
 		_ => False

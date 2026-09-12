@@ -28,8 +28,8 @@ ProbeOp : [OpScan(Str), OpFilter(Str, I64)]
 lookup_like : I64 -> Pair.Pair(I64, Maybe.Maybe(ProbeOp))
 lookup_like = |k| (if (k == 1) { Pair.make_pair(10, Just(OpScan("emp"))) } else { Pair.make_pair(20, None) })
 
-eq_probeop : ProbeOp, ProbeOp -> Bool
-eq_probeop = |ex, ey| (match ex {
+eq_ProbeOp : ProbeOp, ProbeOp -> Bool
+eq_ProbeOp = |ex, ey| (match ex {
 	OpScan(exf0) => (match ey {
 		OpScan(eyf0) => (exf0 == eyf0)
 		_ => False

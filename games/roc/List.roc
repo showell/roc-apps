@@ -3,7 +3,7 @@
 List :: [].{
 	ConsList(a) := [Cons(a, List.ConsList(a)), Nil].{
 		is_eq : List.ConsList(a), List.ConsList(a) -> Bool where [a.is_eq : a, a -> Bool]
-		is_eq = |a, b| eq_conslist(a, b)
+		is_eq = |a, b| eq_ConsList(a, b)
 	}
 
 	cl_nil : List.ConsList(a)
@@ -114,10 +114,10 @@ List :: [].{
 	cl_add_int : I64, I64 -> I64
 	cl_add_int = |a, b| (a + b)
 
-	eq_conslist : List.ConsList(a), List.ConsList(a) -> Bool where [a.is_eq : a, a -> Bool]
-	eq_conslist = |ex, ey| (match ex {
+	eq_ConsList : List.ConsList(a), List.ConsList(a) -> Bool where [a.is_eq : a, a -> Bool]
+	eq_ConsList = |ex, ey| (match ex {
 		Cons(exf0, exf1) => (match ey {
-			Cons(eyf0, eyf1) => ((exf0 == eyf0) and eq_conslist(exf1, eyf1))
+			Cons(eyf0, eyf1) => ((exf0 == eyf0) and eq_ConsList(exf1, eyf1))
 			_ => False
 		})
 		Nil => (match ey {

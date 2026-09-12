@@ -42,8 +42,8 @@ field_sum = ((0 + 4) + 8)
 greet : Str -> Str
 greet = |name| Str.concat(Str.concat("Hello, ", name), "!")
 
-eq_proseresult : ProseResult, ProseResult -> Bool
-eq_proseresult = |ex, ey| (match ex {
+eq_ProseResult : ProseResult, ProseResult -> Bool
+eq_ProseResult = |ex, ey| (match ex {
 	Ok(exf0) => (match ey {
 		Ok(eyf0) => (exf0 == eyf0)
 		_ => False

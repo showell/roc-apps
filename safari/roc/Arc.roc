@@ -40,8 +40,8 @@ Arc :: [].{
 		sim_loop(state, left_bound, right_bound, Trig.r_sign(state.across), state.along, False, 0, state)
 	})
 
-	eq_shoulder : Arc.Shoulder, Arc.Shoulder -> Bool
-	eq_shoulder = |ex, ey| (match ex {
+	eq_Shoulder : Arc.Shoulder, Arc.Shoulder -> Bool
+	eq_Shoulder = |ex, ey| (match ex {
 		ShoulderLeft => (match ey {
 			ShoulderLeft => True
 			_ => False

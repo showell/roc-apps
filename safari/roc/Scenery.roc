@@ -22,8 +22,8 @@ Scenery :: [].{
 		Rhino => False
 	})
 
-	eq_scheme : Scenery.Scheme, Scenery.Scheme -> Bool
-	eq_scheme = |ex, ey| (match ex {
+	eq_Scheme : Scenery.Scheme, Scenery.Scheme -> Bool
+	eq_Scheme = |ex, ey| (match ex {
 		AllGreen => (match ey {
 			AllGreen => True
 			_ => False
@@ -38,8 +38,8 @@ Scenery :: [].{
 		})
 	})
 
-	eq_creature : Scenery.Creature, Scenery.Creature -> Bool
-	eq_creature = |ex, ey| (match ex {
+	eq_Creature : Scenery.Creature, Scenery.Creature -> Bool
+	eq_Creature = |ex, ey| (match ex {
 		NoCreature => (match ey {
 			NoCreature => True
 			_ => False

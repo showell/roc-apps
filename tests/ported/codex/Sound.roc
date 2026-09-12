@@ -83,8 +83,8 @@ Sound :: [].{
 	format_sound : Sound.SoundEffect -> Str
 	format_sound = |s| Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(s.snd_name, " "), waveform_name(s.snd_wave)), " "), I64.to_str(s.snd_freq)), "hz "), I64.to_str(s.snd_duration)), "ms vol="), I64.to_str(s.snd_volume))
 
-	eq_waveform : Sound.Waveform, Sound.Waveform -> Bool
-	eq_waveform = |ex, ey| (match ex {
+	eq_Waveform : Sound.Waveform, Sound.Waveform -> Bool
+	eq_Waveform = |ex, ey| (match ex {
 		WavSine => (match ey {
 			WavSine => True
 			_ => False

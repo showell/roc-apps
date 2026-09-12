@@ -83,8 +83,8 @@ bare_text = |t| (match t {
 	_ => 69
 })
 
-eq_box : Box_, Box_ -> Bool
-eq_box = |ex, ey| (match ex {
+eq_Box : Box_, Box_ -> Bool
+eq_Box = |ex, ey| (match ex {
 	BInt(exf0) => (match ey {
 		BInt(eyf0) => (exf0 == eyf0)
 		_ => False

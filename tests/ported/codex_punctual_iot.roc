@@ -60,8 +60,8 @@ encode_telemetry_byte = |channel, temp, threat| ({
 checksum_byte : I64, I64 -> I64
 checksum_byte = |a, b| I64.bitwise_and((a + b), 255)
 
-eq_threatlevel : ThreatLevel, ThreatLevel -> Bool
-eq_threatlevel = |ex, ey| (match ex {
+eq_ThreatLevel : ThreatLevel, ThreatLevel -> Bool
+eq_ThreatLevel = |ex, ey| (match ex {
 	ThreatNone => (match ey {
 		ThreatNone => True
 		_ => False

@@ -136,8 +136,8 @@ if_mod3 = |n| (if (MathLib.math_mod(n, 3) == 0) { 1 } else { 0 })
 if_mod_one : I64 -> I64
 if_mod_one = |n| (if (MathLib.math_mod(n, 2) == 1) { 1 } else { 0 })
 
-eq_sw : Sw, Sw -> Bool
-eq_sw = |ex, ey| (match ex {
+eq_Sw : Sw, Sw -> Bool
+eq_Sw = |ex, ey| (match ex {
 	SwA(exf0) => (match ey {
 		SwA(eyf0) => (exf0 == eyf0)
 		_ => False

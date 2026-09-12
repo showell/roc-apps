@@ -32,8 +32,8 @@ by_append_text = |n, acc| (match step_of(n) {
 	Go => by_append_text((n - 1), Str.concat(acc, "x"))
 })
 
-eq_step : Step, Step -> Bool
-eq_step = |ex, ey| (match ex {
+eq_Step : Step, Step -> Bool
+eq_Step = |ex, ey| (match ex {
 	Go => (match ey {
 		Go => True
 		_ => False

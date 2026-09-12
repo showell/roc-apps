@@ -29,8 +29,8 @@ DepthSort :: [].{
 	sort_items : List(DepthSort.Item) -> List(DepthSort.Item)
 	sort_items = |xs| (if (U64.to_i64_wrap(List.len(xs)) <= 1) { xs } else { merge_items(sort_items(ListUtils.list_take(xs, I64.div_trunc_by(U64.to_i64_wrap(List.len(xs)), 2))), sort_items(ListUtils.list_drop(xs, I64.div_trunc_by(U64.to_i64_wrap(List.len(xs)), 2))), 0, 0) })
 
-	eq_kind : DepthSort.Kind, DepthSort.Kind -> Bool
-	eq_kind = |ex, ey| (match ex {
+	eq_Kind : DepthSort.Kind, DepthSort.Kind -> Bool
+	eq_Kind = |ex, ey| (match ex {
 		KTree => (match ey {
 			KTree => True
 			_ => False

@@ -41,11 +41,12 @@ Three outcomes matter, and we count them apart:
   compiler did something we did not expect. **This is the interesting
   column, and it is where the issues come from.**
 
-A fourth, **DIVERGES**, names a program whose verdict pins a semantics Roc
-does not have: a Codex list is written in place, so a program that writes
-a list through one name and reads it through another cannot be ported.
-Two programs in the corpus do that deliberately, and we name them rather
-than counting them as failures.
+A fourth, **DIVERGES**, names a program whose verdict pins something the
+port cannot reproduce, with the reason written down: two of them because a
+Codex list is written in place, so a program that writes a list through
+one name and reads it through another cannot be ported, and one because
+its verdict records a rounding quirk in Codex's own decimal printer. We
+name those rather than counting them as failures.
 
 ## Why this finds things
 
@@ -65,7 +66,13 @@ turns out to be a good shape for finding compiler bugs:
 
 We check every finding against the Codex side before reporting it: the
 same program is run by Cobblestone's own compiler, so we can tell "Roc is
-wrong" from "our emitter is wrong", and we say which. Every issue we file
+wrong" from "our emitter is wrong", and we say which. So far the count is
+lopsided in the honest direction -- most of what the corpus catches is
+ours. Emitting real arithmetic alone caught three of our own bugs before
+it caught anything else: a record field with declared bounds was not
+clamped where the record is built, two Codex names differing only in case
+became one Roc name, and reals printed the shortest round-trip decimal
+where Codex prints the integer part in full and truncates the fraction. Every issue we file
 carries the exact nightly, the timings, and a reduced program that stands
 alone.
 

@@ -73,8 +73,8 @@ SensorData :: [].{
 		RateOfChange(_max_delta) => False
 	})
 
-	eq_sensorkind : SensorData.SensorKind, SensorData.SensorKind -> Bool
-	eq_sensorkind = |ex, ey| (match ex {
+	eq_SensorKind : SensorData.SensorKind, SensorData.SensorKind -> Bool
+	eq_SensorKind = |ex, ey| (match ex {
 		Temperature => (match ey {
 			Temperature => True
 			_ => False
@@ -117,8 +117,8 @@ SensorData :: [].{
 		})
 	})
 
-	eq_sensorvalue : SensorData.SensorValue, SensorData.SensorValue -> Bool
-	eq_sensorvalue = |ex, ey| (match ex {
+	eq_SensorValue : SensorData.SensorValue, SensorData.SensorValue -> Bool
+	eq_SensorValue = |ex, ey| (match ex {
 		IntValue(exf0) => (match ey {
 			IntValue(eyf0) => (exf0 == eyf0)
 			_ => False
@@ -137,8 +137,8 @@ SensorData :: [].{
 		})
 	})
 
-	eq_alertcondition : SensorData.AlertCondition, SensorData.AlertCondition -> Bool
-	eq_alertcondition = |ex, ey| (match ex {
+	eq_AlertCondition : SensorData.AlertCondition, SensorData.AlertCondition -> Bool
+	eq_AlertCondition = |ex, ey| (match ex {
 		AboveThreshold(exf0) => (match ey {
 			AboveThreshold(eyf0) => (exf0 == eyf0)
 			_ => False

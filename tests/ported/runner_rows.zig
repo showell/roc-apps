@@ -19,6 +19,15 @@ const codex_amp_after_call_stdout =
     \\n=7
     ++ "\n";
 
+const codex_approx_eq_stdout =
+    \\approx-same: PASS
+    \\approx-zero: PASS
+    \\approx-far: PASS
+    \\exact-same: PASS
+    \\exact-zero: PASS
+    \\exact-far: PASS
+    ++ "\n";
+
 const codex_arith_operand_order_stdout =
     \\43
     \\43
@@ -214,6 +223,29 @@ const codex_eventbus_test_stdout =
     \\last=[20] b: 2
     \\since-200=2
     \\overflow=3/3 events
+    ++ "\n";
+
+const codex_factorial_stdout =
+    \\literal: 42
+    \\mul: 12
+    \\if: 77
+    \\call: 10
+    \\rec: 0
+    \\square: 25
+    \\fact1: 1
+    \\fact2: 2
+    \\fact3: 6
+    \\fact5: 120
+    \\fact10: 3628800
+    \\fib20: 6765
+    \\greeting: Hello, World!
+    \\wrap: Wrap 7
+    \\unwrap: 7
+    \\area: 78.5
+    \\person: Hello, Alice!
+    \\number: PASS
+    \\safe-divide: got 6
+    \\paren-field: 99
     ++ "\n";
 
 const codex_field_cache_text_lit_stdout =
@@ -958,6 +990,7 @@ const codex_zigbee_encode_stdout =
 
     .{ .id = 0, .suite = .codex, .name = "codex: act-let-scope", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_act_let_scope.roc", .stdout_exact = codex_act_let_scope_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: amp-after-call", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_amp_after_call.roc", .stdout_exact = codex_amp_after_call_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: approx-eq", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_approx_eq.roc", .stdout_exact = codex_approx_eq_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: arith-operand-order", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_arith_operand_order.roc", .stdout_exact = codex_arith_operand_order_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: arithmetic", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_arithmetic.roc", .stdout_exact = codex_arithmetic_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: arm64-boot-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_arm64_boot_test.roc", .stdout_exact = codex_arm64_boot_test_stdout } } },
@@ -988,6 +1021,7 @@ const codex_zigbee_encode_stdout =
     .{ .id = 0, .suite = .codex, .name = "codex: eq-generic-recursive", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_eq_generic_recursive.roc", .stdout_exact = codex_eq_generic_recursive_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: eq-plain-sum", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_eq_plain_sum.roc", .stdout_exact = codex_eq_plain_sum_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: eventbus-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_eventbus_test.roc", .stdout_exact = codex_eventbus_test_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: factorial", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_factorial.roc", .stdout_exact = codex_factorial_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: field-cache-text-lit", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_field_cache_text_lit.roc", .stdout_exact = codex_field_cache_text_lit_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: fins-encode", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_fins_encode.roc", .stdout_exact = codex_fins_encode_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: frameless-leaf-probe", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_frameless_leaf_probe.roc", .stdout_exact = codex_frameless_leaf_probe_stdout } } },

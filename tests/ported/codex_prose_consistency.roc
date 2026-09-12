@@ -42,8 +42,8 @@ account_size = 16
 sum_balances : List(Account), I64, I64 -> I64
 sum_balances = |accounts, i, acc| (if (i >= U64.to_i64_wrap(List.len(accounts))) { acc } else { sum_balances(accounts, (i + 1), (acc + (List.get(accounts, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).balance)) })
 
-eq_status : Status, Status -> Bool
-eq_status = |ex, ey| (match ex {
+eq_Status : Status, Status -> Bool
+eq_Status = |ex, ey| (match ex {
 	Active => (match ey {
 		Active => True
 		_ => False

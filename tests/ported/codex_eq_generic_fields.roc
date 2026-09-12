@@ -29,24 +29,24 @@ Plain : [Q(Str, Str)]
 yn : Bool -> Str
 yn = |b| (if b { "yes" } else { "no" })
 
-eq_pair : Pair(a), Pair(a) -> Bool where [a.is_eq : a, a -> Bool]
-eq_pair = |ex, ey| (match ex {
+eq_Pair : Pair(a), Pair(a) -> Bool where [a.is_eq : a, a -> Bool]
+eq_Pair = |ex, ey| (match ex {
 	P(exf0, exf1) => (match ey {
 		P(eyf0, eyf1) => ((exf0 == eyf0) and (exf1 == eyf1))
 		_ => False
 	})
 })
 
-eq_holder : Holder(a, b), Holder(a, b) -> Bool where [a.is_eq : a, a -> Bool, b.is_eq : b, b -> Bool]
-eq_holder = |ex, ey| (match ex {
+eq_Holder : Holder(a, b), Holder(a, b) -> Bool where [a.is_eq : a, a -> Bool, b.is_eq : b, b -> Bool]
+eq_Holder = |ex, ey| (match ex {
 	H(exf0, exf1) => (match ey {
 		H(eyf0, eyf1) => ((exf0 == eyf0) and (exf1 == eyf1))
 		_ => False
 	})
 })
 
-eq_plain : Plain, Plain -> Bool
-eq_plain = |ex, ey| (match ex {
+eq_Plain : Plain, Plain -> Bool
+eq_Plain = |ex, ey| (match ex {
 	Q(exf0, exf1) => (match ey {
 		Q(eyf0, eyf1) => ((exf0 == eyf0) and (exf1 == eyf1))
 		_ => False
@@ -57,10 +57,10 @@ eq_plain = |ex, ey| (match ex {
 
 main! = |_args| {
 	line!(Str.concat("text-control     : ", yn(("12" == I64.to_str(12)))))
-	line!(Str.concat("concrete-control : ", yn(eq_plain(Q("12", "9"), Q(I64.to_str(12), "9")))))
-	line!(Str.concat("one-param eq     : ", yn(eq_pair(P("12", "9"), P(I64.to_str(12), "9")))))
-	line!(Str.concat("one-param ne     : ", yn(eq_pair(P("12", "9"), P(I64.to_str(13), "9")))))
-	line!(Str.concat("second param     : ", yn(eq_holder(H(7, "12"), H(7, I64.to_str(12))))))
-	line!(Str.concat("second param ne  : ", yn(eq_holder(H(7, "12"), H(8, I64.to_str(12))))))
+	line!(Str.concat("concrete-control : ", yn(eq_Plain(Q("12", "9"), Q(I64.to_str(12), "9")))))
+	line!(Str.concat("one-param eq     : ", yn(eq_Pair(P("12", "9"), P(I64.to_str(12), "9")))))
+	line!(Str.concat("one-param ne     : ", yn(eq_Pair(P("12", "9"), P(I64.to_str(13), "9")))))
+	line!(Str.concat("second param     : ", yn(eq_Holder(H(7, "12"), H(7, I64.to_str(12))))))
+	line!(Str.concat("second param ne  : ", yn(eq_Holder(H(7, "12"), H(8, I64.to_str(12))))))
 	Ok({})
 }
