@@ -18,10 +18,6 @@
 # of a chapter differs from the copy already written this run is a FAIL naming
 # both units. Roc output (stdout, stderr) stays under ~/build/roc-apps/gen.
 #
-# THE STILLS ARE BAKED, NOT EMITTED. rocemit forwards a data table to
-# `<Chapter>Data.name`; safari/bake_stills.py writes those modules and the
-# decoder into safari/roc/ beside the chapters.
-#
 # Three outcomes, counted apart: PASS and FAIL are roc's output against the
 # verdict; REFUSED is rocemit declining a form it has not built, with the
 # reason -- not a failure and not a pass.
@@ -42,7 +38,6 @@ mkdir -p "$ROC_DIR"
 # A full run starts clean, but only of what a tool wrote: the hand-written
 # app (SafariApp.roc) lives here too, beside the modules it imports.
 [ $# -eq 0 ] && grep -l -m1 "emitted from Codex by rocemit" "$ROC_DIR"/*.roc 2>/dev/null | xargs -r rm -f
-"$HERE/bake_stills.py" > /dev/null || { echo "bake_stills.py failed"; exit 2; }
 declare -A wrote
 pass=0; fail=0; refused=0
 units=()
