@@ -44,6 +44,7 @@ fi
 diverges() {
     case "$1" in
         edalias) echo "list-set-at mutates in place; Roc's List.set answers a new list" ;;
+        ui-event-test) echo "list-push mutates a list two siblings share; Roc's List.append answers a new one" ;;
     esac
 }
 one() {
@@ -60,7 +61,7 @@ one() {
     if [ $rc -eq 124 ]; then echo "TIMEOUT $n |" > "$d/verdict"
     elif grep -q "✗" "$d/err"; then echo "FAIL $n | compile: $(grep -m1 -A2 '✗' "$d/err" | tr '\n' ' ' | cut -c1-110)" > "$d/verdict"
     elif diff -q "$d/out" <(verdict_text "$n") > /dev/null; then echo "PASS $n |" > "$d/verdict"
-    elif grep -q "crashed\|Backtrace" "$d/err"; then echo "CRASH $n | $(grep -m1 -A1 'crashed' "$d/err" | tail -1 | tr -d '\t' | cut -c1-100)" > "$d/verdict"
+    elif grep -q "crashed\|Backtrace\|overflowed" "$d/err"; then echo "CRASH $n | $(grep -m1 -hoE 'crashed[^\n]*|overflowed[^\n]*' "$d/err" | head -1 | cut -c1-100)" > "$d/verdict"
     else echo "FAIL $n | output: $(diff "$d/out" <(verdict_text "$n") | grep -m1 '^[<>]' | cut -c1-100)" > "$d/verdict"; fi
 }
 # The verdict as text: 86 of the 597 .expected files start with a 0x01 byte
