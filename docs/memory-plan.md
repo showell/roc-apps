@@ -26,7 +26,7 @@ reads; the write IS the point.
 ## What the programs do with them
 
 Of the 204: 23 call `alloc-bytes` and poke into what it returns, and 6
-poke a literal address, the largest of which is 20,536 -- a kernel test
+poke a literal address, the largest of which is 786,432 -- a kernel test
 laying out a capability table, not a hardware register. The rest take a
 base from a caller. **Nothing in this set pokes a device.** The programs
 that do talk to hardware are blocked on `port-out-32` and `uefi-read-key`
@@ -62,9 +62,10 @@ threads the GPU device today. Two extensions are needed:
 2. **The trigger set**, from the closure above, in place of "the type
    carries `[Device]`".
 
-**`Mem.roc` is hand-written**, beside `Device.roc`: a `List(U8)` and a
-bump pointer, `load`/`store` for 1, 2, 4 and 8 bytes little-endian, and
-`alloc` that extends the list and answers the old top. Sixty lines.
+**`Mem.roc` is written by rocemit** (a `const MEM` string in
+`roc_emit.rs`), as `Device.roc` is: a byte store and a bump pointer,
+`load`/`store` for 1, 2, 4 and 8 bytes little-endian, and `alloc` that
+answers the old top and moves it. Under a hundred lines.
 
 ## What it costs, and what could go wrong
 
@@ -91,8 +92,9 @@ bump pointer, `load`/`store` for 1, 2, 4 and 8 bytes little-endian, and
 2. `Mem.roc`, and the builtins mapped onto it.
 3. One program end to end: `cap-heap-poke-pure` prints `42` and is four
    lines of memory work.
-4. `diskfacts-unpack-large`, which is the 262 KB fill, as the performance
-   probe.
+4. A 262 KB fill as the performance probe. (`diskfacts-unpack-large`, the
+   unit this named, turned out to be refused for `block-read-sector`
+   before it reaches any memory, so the probe is a standalone program.)
 5. The sweep, and a count of what moved from memory to the next blocker.
 
 ## What happened
@@ -103,15 +105,31 @@ not: a call that pokes can be an ARGUMENT, so it is lifted to a binding
 ahead of the expression that reads it; and a call's state has to be read
 AFTER its arguments are emitted, since one of them may have written.
 
-`Mem.roc` is a fixed 16,384-page table rather than one that grows, because
-a length check on the way to a store is a second look at the page table
-and a list Roc has looked at twice is a list it copies. Same reason every
-`??` fallback in it crashes rather than answering the list. The 262,144-byte
-fill: 18.3 s with the naming fallbacks, 3.5 s without.
+**The plan proposed a flat byte array and what shipped is the page map**,
+because `alloc-bytes` starts at 6 MB while literal pokes sit near zero: a
+flat array is megabytes of zeros, and the compile-time evaluator
+MATERIALISES a 64 MB `List.repeat` where `List.repeat([], 16384)` is
+nearly free.
+
+**A list still reachable after a write is copied**, so every `??` fallback
+in `Mem.roc` crashes rather than answering the list it was setting: that
+one spelling on the page table is 137.8 s of CPU against 3.5 s.
+
+**And a nested list is not unique inside `List.update`**, which is the
+plan's own top risk -- "if uniqueness is ever lost, every store copies the
+whole buffer" -- and it shipped that way, undiagnosed, until a cold review
+measured it. `put` now TAKES the page out of the table with `List.replace`,
+writes it while it is genuinely its own, and puts it back: the
+262,144-byte fill went from 3.5 s to 0.3 s of CPU.
+
+A length check on the way to a store costs NOTHING, contrary to what this
+document said before: `List.set` already calls `List.len` on the list it
+then writes in place. `tests/copycheck.sh` is the standing instrument --
+hold the write count fixed, vary the size, and read the slope.
 
 Of the 204 units blocked first on a memory builtin: 24 pass, 1 fails on
 our CCE-unit modelling, 1 diverges on `__heap-save`, 178 moved to the next
-blocker. Of those 178, 88 want hardware (`port-out-32`, `read-mmio-32`,
+blocker; the numbers are as of 2026-09-12. Of those 178, 88 want hardware (`port-out-32`, `read-mmio-32`,
 `net-send-raw`), 52 are our own named gaps (a short-circuit operand or a
 match arm that pokes, a match under the threaded state), 14 write a list
 parameter, 24 assorted. The ladder went 459 -> 483 of 1,017.

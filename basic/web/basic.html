@@ -1,0 +1,123 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>BASIC, in Roc</title>
+<style>
+  :root { color-scheme: light dark; --ink: #1b1b1b; --dim: #6a6a6a; --line: #d8d4cc; --paper: #faf8f4; }
+  @media (prefers-color-scheme: dark) {
+    :root { --ink: #e8e6e1; --dim: #9a968e; --line: #3a3833; --paper: #1a1917; }
+  }
+  body { margin: 0; background: var(--paper); color: var(--ink);
+         font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding-block: 28px; padding-left: 20px; padding-right: 20px; }
+  h1 { font-size: 20px; margin: 0 0 4px; font-weight: 600; }
+  .sub { color: var(--dim); font-size: 13px; margin: 0 0 20px; }
+  .cols { display: flex; gap: 18px; flex-wrap: wrap; }
+  .col { flex: 1 1 380px; min-width: 0; }
+  label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .06em;
+          color: var(--dim); margin: 0 0 6px; }
+  textarea, pre { width: 100%; box-sizing: border-box; background: transparent; color: inherit;
+                  border: 1px solid var(--line); border-radius: 4px; padding: 10px;
+                  font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  textarea { resize: vertical; }
+  #src { height: 300px; }
+  #keys { height: 76px; }
+  pre { height: 394px; overflow: auto; margin: 0; white-space: pre; }
+  .bar { display: flex; gap: 10px; align-items: center; margin: 14px 0; flex-wrap: wrap; }
+  button { font: inherit; padding: 6px 16px; border: 1px solid var(--line); border-radius: 4px;
+           background: transparent; color: inherit; cursor: pointer; }
+  button:hover { border-color: var(--ink); }
+  select { font: inherit; padding: 5px; background: transparent; color: inherit;
+           border: 1px solid var(--line); border-radius: 4px; }
+  .note { color: var(--dim); font-size: 12px; margin-top: 22px; border-top: 1px solid var(--line); padding-top: 14px; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  a { color: inherit; }
+</style>
+<div class="wrap">
+<h1>BASIC, in Roc</h1>
+<p class="sub">An ECMA-55 Minimal BASIC interpreter, hand-written in Roc, compiled to WebAssembly.
+Everything below runs in this tab.</p>
+
+<div class="bar">
+  <button id="run">Run</button>
+  <select id="sample"></select>
+  <span id="status" class="sub" style="margin:0"></span>
+</div>
+
+<div class="cols">
+  <div class="col">
+    <label for="src">Listing</label>
+    <textarea id="src" spellcheck="false"></textarea>
+    <label for="keys" style="margin-top:12px">Keystrokes — one per INPUT</label>
+    <textarea id="keys" spellcheck="false"></textarea>
+  </div>
+  <div class="col">
+    <label for="out">Transcript</label>
+    <pre id="out"></pre>
+  </div>
+</div>
+
+<p class="note">
+  The interpreter is one Roc module with no dependencies. A run is a pure function of the
+  listing, the keystrokes and a seed, so the page hands over three buffers and reads one back.
+  Graded against the National Bureau of Standards' Minimal BASIC test programs and the 1978
+  <em>BASIC Computer Games</em> listings.
+</p>
+</div>
+
+<script>
+const SAMPLES = {
+  "Hello": '10 PRINT "HELLO, WORLD"\n20 END\n',
+  "Squares": '10 FOR I = 1 TO 10\n20 PRINT I, I*I, I*I*I\n30 NEXT I\n40 END\n',
+  "Temperature table": '10 PRINT "C", "F"\n20 FOR C = -40 TO 100 STEP 20\n30 PRINT C, C*9/5+32\n40 NEXT C\n50 END\n',
+  "Guess a number": '10 PRINT "I AM THINKING OF A NUMBER FROM 1 TO 100."\n20 LET N = INT(RND(1)*100) + 1\n30 FOR T = 1 TO 7\n40 PRINT "YOUR GUESS";\n50 INPUT G\n60 IF G = N THEN 200\n70 IF G < N THEN 100\n80 PRINT "TOO HIGH."\n90 GOTO 110\n100 PRINT "TOO LOW."\n110 NEXT T\n120 PRINT "OUT OF GUESSES. IT WAS"; N\n130 END\n200 PRINT "RIGHT, IN"; T; "GUESSES!"\n210 END\n',
+  "Sieve of Eratosthenes": '10 DIM S(200)\n20 FOR I = 2 TO 200\n30 IF S(I) = 1 THEN 80\n40 PRINT I;\n50 FOR J = I+I TO 200 STEP I\n60 LET S(J) = 1\n70 NEXT J\n80 NEXT I\n90 PRINT\n99 END\n',
+  "Fibonacci": '10 LET A = 0\n20 LET B = 1\n30 FOR I = 1 TO 20\n40 PRINT A;\n50 LET C = A + B\n60 LET A = B\n70 LET B = C\n80 NEXT I\n90 PRINT\n99 END\n',
+  "Square roots by Newton": '10 PRINT "N", "SQR(N)", "NEWTON"\n20 FOR N = 1 TO 10\n30 LET X = N\n40 FOR K = 1 TO 12\n50 LET X = (X + N/X)/2\n60 NEXT K\n70 PRINT N, SQR(N), X\n80 NEXT N\n90 END\n',
+};
+const KEYS = { "Guess a number": "50\n25\n37\n43\n40\n41\n42\n" };
+
+const $ = (id) => document.getElementById(id);
+const sel = $("sample");
+for (const name of Object.keys(SAMPLES)) {
+  const o = document.createElement("option");
+  o.value = name; o.textContent = name; sel.appendChild(o);
+}
+sel.onchange = () => { $("src").value = SAMPLES[sel.value]; $("keys").value = KEYS[sel.value] || ""; };
+
+let x = null;
+const enc = new TextEncoder(), dec = new TextDecoder();
+
+async function boot() {
+  $("status").textContent = "loading…";
+  const { instance } = await WebAssembly.instantiateStreaming(fetch("basic.wasm"), {});
+  x = instance.exports;
+  $("status").textContent = "";
+  sel.onchange();
+  go();
+}
+
+function go() {
+  if (!x) return;
+  const src = enc.encode($("src").value);
+  const keys = enc.encode($("keys").value);
+  if (src.length > x.capacity(0) || keys.length > x.capacity(1)) {
+    $("out").textContent = "listing or keystrokes too long for this module";
+    return;
+  }
+  // The module's memory can be replaced by a growth during the run, so
+  // every view is taken fresh from the buffer it is about to read.
+  new Uint8Array(x.memory.buffer).set(src, x.srcPtr());
+  new Uint8Array(x.memory.buffer).set(keys, x.keysPtr());
+  const t0 = performance.now();
+  const n = x.runIt(src.length, keys.length, (Date.now() & 0x7fffffff) || 1);
+  const ms = performance.now() - t0;
+  $("out").textContent = dec.decode(new Uint8Array(x.memory.buffer, x.outPtr(), n));
+  $("status").textContent = n + " bytes in " + ms.toFixed(1) + " ms";
+}
+
+$("run").onclick = go;
+$("src").addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); go(); }
+});
+boot();
+</script>

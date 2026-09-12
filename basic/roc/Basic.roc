@@ -256,8 +256,10 @@ Basic :: [].{
 			Basic.put_str(vs, k, v, i + 1)
 		}
 
-	# An array not named by DIM has subscripts 0 through 10, which is what
-	# ECMA-55 says and what every listing assumes.
+	# An array not named by DIM has subscripts from the OPTION BASE
+	# through 10, which is what ECMA-55 says and what every listing
+	# assumes. `hi` is the declared upper bound; cells are indexed from
+	# the base.
 	arr_index : List({ k : Str, w : U64, cells : List(F64) }), Str, U64 -> I64
 	arr_index = |xs, k, i|
 		if i >= List.len(xs) {
@@ -268,43 +270,65 @@ Basic :: [].{
 			Basic.arr_index(xs, k, i + 1)
 		}
 
-	dim : M, Str, U64, U64 -> M
+	dim : M, Str, I64, I64 -> M
 	dim = |m, k, d1, d2| {
-		w = if d2 == 0 { 0 } else { d2 + 1 }
-		n = if d2 == 0 { d1 + 1 } else { (d1 + 1) * (d2 + 1) }
-		fresh = { k: k, w: w, cells: List.repeat(0.0, n) }
-		at = Basic.arr_index(m.arr, k, 0)
-		if at < 0 {
-			{ ..m, arr: List.append(m.arr, fresh) }
+		base = U64.to_i64_wrap(m.base)
+		rows = d1 - base + 1
+		cols = d2 - base + 1
+		w = if d2 < 0 { 0 } else { I64.to_u64_wrap(cols) }
+		n = if d2 < 0 { rows } else { rows * cols }
+		if rows <= 0 or (d2 >= 0 and cols <= 0) or n <= 0 {
+			{ ..m, done: True, err: Str.concat("Bad DIM bound: ", k) }
 		} else {
-			{ ..m, arr: List.set(m.arr, I64.to_u64_wrap(at), fresh) ?? crash("dim") }
+			fresh = { k: k, w: w, cells: List.repeat(0.0, I64.to_u64_wrap(n)) }
+			at = Basic.arr_index(m.arr, k, 0)
+			if at < 0 {
+				{ ..m, arr: List.append(m.arr, fresh) }
+			} else {
+				{ ..m, arr: List.set(m.arr, I64.to_u64_wrap(at), fresh) ?? crash("dim") }
+			}
 		}
 	}
 
 	ensure_arr : M, Str -> M
-	ensure_arr = |m, k| if Basic.arr_index(m.arr, k, 0) < 0 { Basic.dim(m, k, 10, 0) } else { m }
+	ensure_arr = |m, k| if Basic.arr_index(m.arr, k, 0) < 0 { Basic.dim(m, k, 10, -1) } else { m }
 
-	cell_at : M, Str, U64, U64 -> U64
+	# Where a subscript pair lands, or -1 when it is outside the array.
+	cell_at : M, Str, I64, I64 -> I64
 	cell_at = |m, k, i, j| {
-		a = List.get(m.arr, I64.to_u64_wrap(Basic.arr_index(m.arr, k, 0)) ) ?? { k: "", w: 0, cells: [] }
-		if a.w == 0 { i } else { i * a.w + j }
+		a = List.get(m.arr, I64.to_u64_wrap(Basic.arr_index(m.arr, k, 0))) ?? { k: "", w: 0, cells: [] }
+		base = U64.to_i64_wrap(m.base)
+		r = i - base
+		c = j - base
+		if r < 0 or c < 0 {
+			-1
+		} else if a.w == 0 {
+			if j != base and j != 0 { -1 } else { r }
+		} else {
+			if c >= U64.to_i64_wrap(a.w) { -1 } else { r * U64.to_i64_wrap(a.w) + c }
+		}
 	}
 
-	get_arr : M, Str, U64, U64 -> F64
+	get_arr : M, Str, I64, I64 -> { m : M, v : F64 }
 	get_arr = |m, k, i, j| {
 		a = List.get(m.arr, I64.to_u64_wrap(Basic.arr_index(m.arr, k, 0))) ?? { k: "", w: 0, cells: [] }
-		List.get(a.cells, Basic.cell_at(m, k, i, j)) ?? 0.0
+		c = Basic.cell_at(m, k, i, j)
+		if c < 0 or I64.to_u64_wrap(c) >= List.len(a.cells) {
+			{ m: { ..m, done: True, err: Str.concat("Subscript out of range: ", k) }, v: 0.0 }
+		} else {
+			{ m: m, v: List.get(a.cells, I64.to_u64_wrap(c)) ?? 0.0 }
+		}
 	}
 
-	set_arr : M, Str, U64, U64, F64 -> M
+	set_arr : M, Str, I64, I64, F64 -> M
 	set_arr = |m, k, i, j, v| {
 		at = I64.to_u64_wrap(Basic.arr_index(m.arr, k, 0))
 		c = Basic.cell_at(m, k, i, j)
 		a = List.get(m.arr, at) ?? { k: "", w: 0, cells: [] }
-		if c >= List.len(a.cells) {
+		if c < 0 or I64.to_u64_wrap(c) >= List.len(a.cells) {
 			{ ..m, done: True, err: Str.concat("Subscript out of range: ", k) }
 		} else {
-			{ ..m, arr: List.set(m.arr, at, { k: a.k, w: a.w, cells: List.set(a.cells, c, v) ?? crash("set_arr") }) ?? crash("set_arr") }
+			{ ..m, arr: List.set(m.arr, at, { k: a.k, w: a.w, cells: List.set(a.cells, I64.to_u64_wrap(c), v) ?? crash("set_arr") }) ?? crash("set_arr") }
 		}
 	}
 
@@ -623,7 +647,8 @@ Basic :: [].{
 						{ m: s.m, v: N(0.0), at: s.at }
 					} else {
 						m1 = Basic.ensure_arr(s.m, nm.k)
-						{ m: m1, v: N(Basic.get_arr(m1, nm.k, s.i, s.j)), at: s.at }
+						g = Basic.get_arr(m1, nm.k, s.i, s.j)
+						{ m: g.m, v: N(g.v), at: s.at }
 					}
 				}
 			}
@@ -676,7 +701,7 @@ Basic :: [].{
 	}
 
 	# Subscripts: `(i)` or `(i,j)`, each rounded as ECMA-55 says.
-	subscripts : M, List(U8), U64 -> { m : M, i : U64, j : U64, at : U64 }
+	subscripts : M, List(U8), U64 -> { m : M, i : I64, j : I64, at : U64 }
 	subscripts = |m, b, i| {
 		r = Basic.sum(m, b, i + 1)
 		if r.m.done {
@@ -688,16 +713,16 @@ Basic :: [].{
 				e = Basic.skip_ws(b, r2.at)
 				{ m: r2.m, i: Basic.idx(Basic.num_of(r.v)), j: Basic.idx(Basic.num_of(r2.v)), at: if Basic.byte(b, e) == 41 { e + 1 } else { e } }
 			} else {
-				{ m: r.m, i: Basic.idx(Basic.num_of(r.v)), j: 0, at: if Basic.byte(b, k) == 41 { k + 1 } else { k } }
+				{ m: r.m, i: Basic.idx(Basic.num_of(r.v)), j: U64.to_i64_wrap(r.m.base), at: if Basic.byte(b, k) == 41 { k + 1 } else { k } }
 			}
 		}
 	}
 
-	idx : F64 -> U64
-	idx = |x| {
-		t = Basic.floor(x + 0.5)
-		if t < 0.0 { 0 } else { I64.to_u64_wrap(F64.to_i64_wrap(t)) }
-	}
+	# ECMA-55 rounds a subscript to the nearest integer. It does NOT clamp
+	# it: a subscript outside the array's bounds is an exception, and the
+	# suite has seven programs that check exactly that.
+	idx : F64 -> I64
+	idx = |x| F64.to_i64_wrap(Basic.floor(x + 0.5))
 
 	# ---- output ---------------------------------------------------------
 
@@ -1109,7 +1134,7 @@ Basic :: [].{
 				{ ..r.m, done: True, err: "Expected GOTO or GOSUB" }
 			} else {
 				n = Basic.idx(Basic.num_of(r.v))
-				pick = Basic.nth_line(b, sub, n, 1)
+				pick = if n < 1 { { n: -1, at: sub } } else { Basic.nth_line(b, sub, I64.to_u64_wrap(n), 1) }
 				if pick.n < 0 {
 					{ ..r.m, done: True, err: "ON index out of range" }
 				} else if g == r.at {
@@ -1152,12 +1177,12 @@ Basic :: [].{
 		} else {
 			r = Basic.sum(m, b, j)
 			n = Basic.idx(Basic.num_of(r.v))
-			if n > 1 {
+			if n > 1 or n < 0 {
 				{ ..r.m, done: True, err: "OPTION BASE must be 0 or 1" }
 			} else if List.len(r.m.arr) > 0 {
 				{ ..r.m, done: True, err: "OPTION BASE after an array is used" }
 			} else {
-				Basic.advance({ ..r.m, base: n }, r.at)
+				Basic.advance({ ..r.m, base: I64.to_u64_wrap(n) }, r.at)
 			}
 		}
 	}
@@ -1423,4 +1448,22 @@ Basic :: [].{
 			body
 		}
 	}
+
+	# A Str as its lines, which is how keystrokes arrive from a page or a
+	# file. A trailing newline does not make an empty last line.
+	lines : Str -> List(Str)
+	lines = |t| {
+		b = Str.to_utf8(t)
+		if List.len(b) == 0 { [] } else { Basic.lines_from(b, 0, []) }
+	}
+
+	lines_from : List(U8), U64, List(Str) -> List(Str)
+	lines_from = |b, i, acc|
+		if i >= List.len(b) {
+			acc
+		} else {
+			e = Basic.eol(b, i)
+			t = if e > i and Basic.byte(b, U64.minus_wrap(e, 1)) == 13 { U64.minus_wrap(e, 1) } else { e }
+			Basic.lines_from(b, e + 1, List.append(acc, Basic.text_of(b, i, t)))
+		}
 }
