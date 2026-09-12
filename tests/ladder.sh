@@ -29,8 +29,9 @@
 # name and with the reason, never a silent FAIL: see DIVERGE below.
 #
 # Outcomes: PASS (output equals the verdict), FAIL (it does not, or roc
-# printed ✗), CRASH (roc run died), REFUSED (rocemit said no, by reason),
-# TIMEOUT.
+# printed ✗), CRASH (roc run died), KILLED (a signal -- 9 is the OOM
+# killer stopping compile-time evaluation), REFUSED (rocemit said no, by
+# reason), TIMEOUT.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROC="${ROC:-$HOME/build/roc-nightly/roc}"
@@ -66,7 +67,7 @@ fi
 # does not cross that.)
 diverges() {
     case "$1" in
-        edalias) echo "list-set-at mutates in place; Roc's List.set answers a new list" ;;
+        edalias|db-row-update) echo "list-set-at mutates in place; Roc's List.set answers a new list" ;;
         ui-event-test) echo "list-push mutates a list two siblings share; Roc's List.append answers a new one" ;;
         real-show-wide) echo "the verdict pins Codex's own printer: it reads 12345678901234567.0 as ...566, we print the double" ;;
         cost@accumulator-corpus|ops@list-growth|heap-scrub) echo "measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero" ;;
@@ -102,7 +103,12 @@ one() {
     # The capture behind a verdict drops a trailing blank line, so the
     # comparison strips them from our side too (tests/verdicts.sh).
     awk 'BEGIN{n=0} /^$/{n++; next} {while (n-- > 0) print ""; n=0; print}' "$d/out" > "$d/out.cmp"
-    if [ $rc -eq 124 ]; then echo "TIMEOUT $n |" > "$d/verdict"
+    # **THE COMPILER RUNS THE PROGRAM, AND NOTHING BOUNDS IT.** A call
+    # whose arguments are known is evaluated at compile time with no step
+    # limit (roc-lang/roc#11334) and no memory limit either: a software
+    # renderer reaches the OOM killer, which is signal 9, which is 137.
+    if [ $rc -ge 128 ]; then echo "KILLED $n | signal $((rc - 128))$(grep -m1 -oE 'Evaluating .{0,60}' "$d/err" | sed 's/^/ while /')" > "$d/verdict"
+    elif [ $rc -eq 124 ]; then echo "TIMEOUT $n |" > "$d/verdict"
     elif grep -q "✗" "$d/err"; then echo "FAIL $n | compile: $(grep -m1 -A2 '✗' "$d/err" | tr '\n' ' ' | cut -c1-110)" > "$d/verdict"
     elif cmp -s "$d/out.cmp" "$VERDICTS/$n.expected"; then echo "PASS $n |" > "$d/verdict"
     elif grep -q "crashed\|Backtrace\|overflowed" "$d/err"; then echo "CRASH $n | $(grep -m1 -hoE 'crashed[^\n]*|overflowed[^\n]*' "$d/err" | head -1 | cut -c1-100)" > "$d/verdict"
