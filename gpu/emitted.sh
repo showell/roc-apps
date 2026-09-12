@@ -54,8 +54,16 @@ for src in "${kernels[@]}"; do
     done
     # The nightly says "0 errors and 0 warnings" when clean and marks a
     # diagnostic with ✗; only the mark, or a non-zero exit, is a failure.
-    out=$(cd "$dir" && "$ROC" check --no-cache "$k.roc" 2>&1); rc=$?
-    if [ "$rc" -ne 0 ] || echo "$out" | grep -q '✗'; then
+    # Every module, not just the kernel: `roc check` reports only the file
+    # it was given, and a broken import compiles to a crash at its own site.
+    # Warnings (●) are tolerated, errors (✗) are not, and roc exits 2 for
+    # either -- so the marker is the judge, as safari's gate has it.
+    out=""
+    for m in "$dir"/*.roc; do
+        [ "$(basename "$m")" = Device.roc ] && continue
+        out="$out$(cd "$dir" && "$ROC" check --no-cache "$(basename "$m")" 2>&1)"
+    done
+    if echo "$out" | grep -q '✗'; then
         echo "FAIL $k: $(echo "$out" | grep -m1 -A2 '✗' | tr '\n' ' ' | cut -c1-200)"; fail=$((fail+1)); failed+=("$k"); continue
     fi
     pass=$((pass+1))

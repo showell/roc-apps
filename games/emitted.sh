@@ -37,8 +37,17 @@ for k in "${shells[@]}"; do
         fi
         seen[$c]="$h"
     done
-    out=$(cd "$dir" && "$ROC" check --no-cache "$k.roc" 2>&1); rc=$?
-    if [ "$rc" -ne 0 ] || echo "$out" | grep -q '✗'; then
+    # **EVERY MODULE, NOT JUST THE SHELL.** `roc check` reports only the
+    # file it was given; a broken import compiles to a runtime crash at its
+    # own site and says nothing here. Two real defects in the emitted List
+    # sat under a green gate that checked the shell alone (2026-09-12).
+    # Warnings (●) are tolerated, errors (✗) are not, and roc exits 2 for
+    # either -- so the marker is the judge, as safari's gate has it.
+    out=""
+    for m in "$dir"/*.roc; do
+        out="$out$(cd "$dir" && "$ROC" check --no-cache "$(basename "$m")" 2>&1)"
+    done
+    if echo "$out" | grep -q '✗'; then
         echo "FAIL $k: $(echo "$out" | grep -m1 -A2 '✗' | tr '\n' ' ' | cut -c1-200)"; fail=$((fail+1)); failed+=("$k"); continue
     fi
     pass=$((pass+1))

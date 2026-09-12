@@ -175,7 +175,7 @@ REFUSED engine-software-render | binary approx-eq
 REFUSED engine-texture-cost | binary approx-eq
 REFUSED enip-encode | opening is not an act
 PASS eq-generic-fields |
-FAIL eq-generic-recursive | compile: ── ✗ recursive alias ───────────────────────────�
+FAIL eq-generic-recursive | compile: ── ✗ type mismatch ────────────────────────────�
 PASS eq-plain-sum |
 REFUSED esp32c6-drivers | builtin `peek-32`
 PASS eventbus-test |
@@ -452,7 +452,7 @@ PASS rv-big-literal |
 PASS rv-frameless-imm |
 PASS rv-frameless-temp |
 PASS rv-param-bind |
-FAIL rv-param-order | compile: ── ✗ recursive alias ───────────────────────────�
+PASS rv-param-order |
 REFUSED s7comm-encode | opening is not an act
 REFUSED scope-allow | type char
 FAIL scope-console | compile: ── ✗ type mismatch ────────────────────────────�
@@ -466,7 +466,7 @@ REFUSED sector-read-list-growth | builtin `peek-byte`
 REFUSED sensor-data | an act outside opening
 REFUSED serial-line | builtin `peek-32`
 SKIP shadow-builtin-fold | expects a diagnostic
-FAIL shell-build-keep | compile: ── ✗ mutually recursive type aliases ────────────────────── 
+FAIL shell-build-keep | compile: ── ✗ missing method ────────────────────────────
 REFUSED simplify-check | builtin `text-length`
 REFUSED sixlowpan-encode | opening is not an act
 REFUSED smp-affinity | builtin `process-get-pid` used as a value
@@ -587,7 +587,7 @@ REFUSED web-mux-lifecycle | builtin `poke-byte`
 REFUSED web-mux-reassembly | builtin `poke-byte`
 REFUSED when-arm-nontail | an act outside opening
 PASS when-arm-tail-call |
-FAIL when-bool-cross | compile: ── ✗ non exhaustive match ──────────────────────────
+PASS when-bool-cross |
 REFUSED when-bool-pattern | char literal
 REFUSED when-generic-field | an act outside opening
 REFUSED with-timeout-test | chapter `With-Timeout Test` is not a Roc module name
