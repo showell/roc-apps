@@ -1,5 +1,8 @@
 # `roc check` and `roc build` do not terminate on a program that does not
 
+**Filed as [roc-lang/roc#11334](https://github.com/roc-lang/roc/issues/11334),
+2026-09-12.** `ISSUE.md` is the text as posted.
+
 **Corrected 2026-09-12.** The first reading of this, written earlier the
 same day, said the cost was type checking and grew with the number of call
 sites into mutually recursive functions. **That was wrong.** The measurement
