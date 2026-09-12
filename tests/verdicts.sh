@@ -10,7 +10,11 @@
 # "^\x01", ''` and the expected is `-replace "`r", ''`):
 #
 #   * a leading 0x01, in 86 of the 597 files, always exactly one, at byte 0;
-#   * carriage returns, in 46 of them, always at a line end.
+#   * carriage returns, in 46 of them, always at a line end;
+#   * a trailing EMPTY LINE, which the capture drops: two programs end by
+#     printing a blank line, the verdict does not have it, and the same
+#     blank line inside the output is there. The ladder strips trailing
+#     blank lines from both sides for that reason.
 #
 # No Codex source in the corpus prints either: none contains a \r escape
 # and none writes character code 1. So the cleaning is sound, and doing it
@@ -29,7 +33,7 @@ for f in "$SRC"/*.expected; do
     [ "$(head -c1 "$f" | od -An -tx1 | tr -d ' ')" = 01 ] && soh=$((soh + 1))
     LC_ALL=C grep -qa $'\r' "$f" && cr=$((cr + 1))
     [ "$report_only" = yes ] && continue
-    sed '1s/^\x01//' "$f" | tr -d '\r' > "$OUT/$b"
+    sed '1s/^\x01//' "$f" | tr -d '\r' | awk 'BEGIN{n=0} /^$/{n++; next} {while (n-- > 0) print ""; n=0; print} END{}' > "$OUT/$b"
 done
 echo "$n verdicts: $soh carry a leading 0x01, $cr carry carriage returns"
 [ "$report_only" = yes ] || echo "cleaned into $OUT"

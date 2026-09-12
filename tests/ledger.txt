@@ -1,12 +1,12 @@
 REFUSED acpi-parse | builtin `peek-qword`
-REFUSED act-let-scope | an act outside opening
-REFUSED act-tco-loop | an act outside opening
+PASS act-let-scope |
+REFUSED act-tco-loop | builtin `port-in-byte`
 PASS aesgcm256 |
 PASS amp-after-call |
-REFUSED approx-eq | an act outside opening
+REFUSED approx-eq | binary approx-eq
 SKIP arith-narrow-proven | expects a diagnostic
 PASS arith-operand-order |
-REFUSED arithmetic | an act outside opening
+PASS arithmetic |
 PASS arm64-boot-test |
 PASS arm64-encoder |
 REFUSED arm64-http-test | builtin `raw-bytes-to-text`
@@ -24,7 +24,7 @@ PASS bitop-if-cond |
 PASS ble-att-encode |
 REFUSED block-gate-restrict | builtin `peek-32`
 REFUSED block-sector-count | builtin `block-sector-count` used as a value
-REFUSED block-select-drives | an act outside opening
+REFUSED block-select-drives | builtin `block-select`
 PASS bloom-spread |
 REFUSED board-types | builtin `peek-32`
 REFUSED bounded-integer-ops | chapter `Bounded Integer Ops` is not a Roc module name
@@ -155,13 +155,13 @@ REFUSED edit-distance-test | builtin `raw-bytes-to-text`
 REFUSED edvector | `fe-carry-pass` writes its list parameter `o` and answers something else
 PASS effect-dotted-allow |
 REFUSED effect-handler-nested-same | handle
-REFUSED effect-map-effctx | an act outside opening
-REFUSED effect-positive | an act outside opening
-REFUSED effect-row-var-syntax | an act outside opening
+REFUSED effect-map-effctx | `shout`, an effectful function, handed to `list-map`, which takes a pure one
+PASS effect-positive |
+PASS effect-row-var-syntax |
 REFUSED effect-smoke | handle
 REFUSED effect-value-poly | type (effectful (effs "Console") (scopes "") (ctd "Maybe" (args (tvar 50))))
 PASS effect-widen-arg |
-REFUSED effect-widen-scope | an act outside opening
+PASS effect-widen-scope |
 REFUSED effect-widen-scope-narrow | builtin `raw-bytes-to-text`
 REFUSED engine-animation | binary approx-eq
 REFUSED engine-culling-cost | binary approx-eq
@@ -202,7 +202,7 @@ REFUSED fat32-longwrite | builtin `raw-bytes-to-text`
 REFUSED fat32-parse | builtin `port-out-32`
 REFUSED fe310-drivers | builtin `peek-32`
 REFUSED field-cache-shape | field-store
-REFUSED field-cache-text-lit | an act outside opening
+PASS field-cache-text-lit |
 SKIP field-guard-refine | expects a diagnostic
 SKIP field-range-proven | expects a diagnostic
 REFUSED files-parse | builtin `port-out-32`
@@ -253,7 +253,7 @@ REFUSED handler-dotted-discharge | handle
 REFUSED handler-nested-ops | handle
 REFUSED handler-smoke | type (effectful (effs "Config") (scopes "") int-default)
 PASS hart-encode |
-REFUSED heap-bracket-shape | an act outside opening
+REFUSED heap-bracket-shape | builtin `port-out-byte`
 REFUSED heap-frame-reclaim | binary approx-eq
 REFUSED heap-scrub | builtin `poke-byte`
 REFUSED hid-decode | builtin `peek-byte`
@@ -280,13 +280,13 @@ REFUSED inductive-list | type proof
 REFUSED infra-test | unit type `Duration`
 PASS inline-cost-based |
 PASS inline-single-caller |
-REFUSED input-metal | an act outside opening
+REFUSED input-metal | builtin `port-in-byte`
 PASS int-literal-underscore |
 REFUSED interval-exhaustive | chapter `Interval Exhaustive` is not a Roc module name
 PASS ip-checksum-odd |
 REFUSED ir-check-clean | `__lam_1` applied to 1 of 2 arguments
-REFUSED iterate-test | an act outside opening
-REFUSED iterate-zip-test | an act outside opening
+PASS iterate-test |
+PASS iterate-zip-test |
 PASS j1939-encode |
 REFUSED keyboard-layout-test | builtin `poke-byte`
 REFUSED keys-collision | builtin `raw-bytes-to-text`
@@ -297,7 +297,7 @@ REFUSED keys-sidecar | builtin `raw-bytes-to-text`
 PASS klondike-test |
 PASS knx-encode |
 PASS kvstore-test |
-REFUSED lang-smoke | an act outside opening
+REFUSED lang-smoke | `make-adder` applied to 1 of 2 arguments
 REFUSED lapic-regs | builtin `peek-32`
 REFUSED lazy-smoke | opening: Lazy
 PASS leaf-let-if |
@@ -326,7 +326,7 @@ REFUSED list-cons-tail | binary cons-list
 REFUSED list-induction | type proof
 REFUSED list-literal-o1 | chapter `List O1 Probe` is not a Roc module name
 PASS list-pattern |
-REFUSED list-tail-empty | an act outside opening
+PASS list-tail-empty |
 REFUSED list-test | chapter `List Test` is not a Roc module name
 REFUSED list-view-probe | builtin `raw-bytes-to-text`
 PASS literal-subpattern |
@@ -335,7 +335,7 @@ REFUSED location-sensors-stub | type (effectful (effs "Location") (scopes "") bo
 PASS lorawan-encode |
 REFUSED lwm2m-encode | builtin `raw-bytes-to-text`
 CRASH magic-sim-fixes | overflowed its stack memory
-REFUSED manifest-pin | an act outside opening
+REFUSED manifest-pin | builtin `block-read-sector`
 REFUSED mask-ops | type (effectful (effs "Console") (scopes "") nothing)
 PASS match-arms-per-line |
 REFUSED matrix3-test | binary approx-eq
@@ -374,7 +374,7 @@ REFUSED nrf52840-drivers | builtin `peek-32`
 REFUSED nrf9160-drivers | builtin `peek-32`
 REFUSED nvme-encode | builtin `port-out-32`
 REFUSED oauth-island | builtin `peek-byte`
-REFUSED occurrence-check | an act outside opening
+REFUSED occurrence-check | builtin `port-in-byte`
 REFUSED opcua-encode | builtin `raw-bytes-to-text`
 REFUSED osc-noise | unit type `Duration`
 REFUSED ota-gate-block | builtin `peek-byte`
@@ -401,15 +401,15 @@ REFUSED poke16-width | builtin `peek-byte`
 PASS poly1305 |
 REFUSED port-in-32-width | builtin `port-out-32`
 REFUSED proc-state-running | builtin `peek-qword`
-REFUSED process-exit-status | an act outside opening
+REFUSED process-exit-status | builtin `process-exit`
 SKIP proof-assume-axiom | expects a diagnostic
 SKIP proof-smoke | expects a diagnostic
 REFUSED prop-arith | type (propeq (ctd "2" (args)) (ctd "2" (args)))
 SKIP prose-anchor | expects a diagnostic
-REFUSED prose-consistency | an act outside opening
+PASS prose-consistency |
 PASS prose-smoke |
 PASS punctual-fastmath |
-REFUSED punctual-iot | an act outside opening
+PASS punctual-iot |
 PASS punctual-quire |
 PASS punctual-smoke |
 REFUSED qemu-rng | builtin `peek-32`
@@ -430,8 +430,8 @@ REFUSED record-smoke | `__lam_0` applied to 2 of 3 arguments
 REFUSED recursive-eq | chapter `Recursive Eq` is not a Roc module name
 PASS reservoir-uniform |
 SKIP return-narrow-proven | expects a diagnostic
-REFUSED revised-narrow | an act outside opening
-REFUSED riscv-encoder | an act outside opening
+PASS revised-narrow |
+PASS riscv-encoder |
 PASS riscv32c-encoder |
 REFUSED roc-closure-captures-list | `__lam_0` applied to 1 of 2 arguments
 PASS roc-early-return-predicate |
@@ -463,14 +463,14 @@ REFUSED scope-runtime-open | builtin `raw-bytes-to-text`
 REFUSED scope-runtime-spawn | builtin `raw-bytes-to-text`
 REFUSED scope-try-region | builtin `poke-byte`
 REFUSED sector-read-list-growth | builtin `peek-byte`
-REFUSED sensor-data | an act outside opening
+PASS sensor-data |
 REFUSED serial-line | builtin `peek-32`
 SKIP shadow-builtin-fold | expects a diagnostic
 PASS shell-build-keep |
 PASS simplify-check |
 PASS sixlowpan-encode |
 REFUSED smp-affinity | builtin `process-get-pid` used as a value
-REFUSED smp-ap-port-io | an act outside opening
+REFUSED smp-ap-port-io | builtin `port-in-byte`
 REFUSED smp-arm64-boot | builtin `peek-qword`
 REFUSED smp-cores | builtin `atomic-load`
 REFUSED smp-dispatch | builtin `process-spawn`
@@ -481,7 +481,7 @@ REFUSED smp-riscv-boot | builtin `peek-qword`
 REFUSED smp-tss | builtin `atomic-load`
 REFUSED smtp-md-test | builtin `raw-bytes-to-text`
 PASS sntp-encode |
-REFUSED sort-test | an act outside opening
+PASS sort-test |
 REFUSED sound-test | unit type `Duration`
 REFUSED sparkplug-encode | unit type `Duration`
 REFUSED spawn-memo-table | builtin `raw-bytes-to-text`
@@ -506,11 +506,11 @@ PASS tco-nested-if |
 PASS tco-shuffle-spill |
 PASS tcp-checksum-refuse |
 PASS tcp-listen-reclaim |
-REFUSED tcp-reliability | an act outside opening
-REFUSED tcp-seqwrap | an act outside opening
+PASS tcp-reliability |
+PASS tcp-seqwrap |
 REFUSED text-append-alias | builtin `peek-byte`
 PASS text-eq-branches |
-REFUSED text-fold-indexed | an act outside opening
+PASS text-fold-indexed |
 REFUSED text-helper-native | builtin `text-split`
 REFUSED text-helper-spec | builtin `raw-bytes-to-text`
 REFUSED textfield-typing | builtin `raw-bytes-to-text`
@@ -530,9 +530,9 @@ REFUSED truetype-bridge-test | binary approx-eq
 REFUSED truetype-render-test | builtin `raw-bytes-to-text`
 PASS truetype-test |
 REFUSED try-smoke | try
-REFUSED ttf-debug | an act outside opening
+PASS ttf-debug |
 PASS ttt-perfect |
-REFUSED tuple-syntax | an act outside opening
+PASS tuple-syntax |
 PASS tvar-in-declared-type |
 REFUSED type-checker-test | chapter `Type Checker Smoke Test` is not a Roc module name
 REFUSED type-name-existence | a type applied to a non-name
@@ -576,7 +576,7 @@ REFUSED vec-select | type (effectful (effs "Console") (scopes "") nothing)
 REFUSED vector-basic | builtin `vec-splat`
 REFUSED vector-f32 | builtin `to-real-approx`
 REFUSED vector-int | builtin `vec-splat`
-REFUSED wavelet-sort-aliasing | an act outside opening
+PASS wavelet-sort-aliasing |
 SKIP wcet-budget-unchecked | expects a diagnostic
 SKIP wcet-probe | expects a diagnostic
 REFUSED web-chain | `fe-carry-pass` writes its list parameter `o` and answers something else
@@ -585,11 +585,11 @@ REFUSED web-mux-heap | builtin `poke-byte`
 REFUSED web-mux-idle-reap | builtin `poke-byte`
 REFUSED web-mux-lifecycle | builtin `poke-byte`
 REFUSED web-mux-reassembly | builtin `poke-byte`
-REFUSED when-arm-nontail | an act outside opening
+PASS when-arm-nontail |
 PASS when-arm-tail-call |
 PASS when-bool-cross |
 PASS when-bool-pattern |
-REFUSED when-generic-field | an act outside opening
+PASS when-generic-field |
 REFUSED with-timeout-test | chapter `With-Timeout Test` is not a Roc module name
 REFUSED workflow-parse-int | builtin `alloc-bytes`
 REFUSED x509-chain | `fe-carry-pass` writes its list parameter `o` and answers something else

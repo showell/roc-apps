@@ -60,11 +60,14 @@ one() {
     app="$(echo "$app" | head -1)"
     if [ "$app" = library ]; then echo "REFUSED $n | no opening" > "$d/verdict"; return; fi
     ( cd "$d" && timeout 120 "$ROC" run "$app" > out 2> err ); rc=$?
+    # The capture behind a verdict drops a trailing blank line, so the
+    # comparison strips them from our side too (tests/verdicts.sh).
+    awk 'BEGIN{n=0} /^$/{n++; next} {while (n-- > 0) print ""; n=0; print}' "$d/out" > "$d/out.cmp"
     if [ $rc -eq 124 ]; then echo "TIMEOUT $n |" > "$d/verdict"
     elif grep -q "✗" "$d/err"; then echo "FAIL $n | compile: $(grep -m1 -A2 '✗' "$d/err" | tr '\n' ' ' | cut -c1-110)" > "$d/verdict"
-    elif cmp -s "$d/out" "$VERDICTS/$n.expected"; then echo "PASS $n |" > "$d/verdict"
+    elif cmp -s "$d/out.cmp" "$VERDICTS/$n.expected"; then echo "PASS $n |" > "$d/verdict"
     elif grep -q "crashed\|Backtrace\|overflowed" "$d/err"; then echo "CRASH $n | $(grep -m1 -hoE 'crashed[^\n]*|overflowed[^\n]*' "$d/err" | head -1 | cut -c1-100)" > "$d/verdict"
-    else echo "FAIL $n | output: $(diff "$d/out" "$VERDICTS/$n.expected" | grep -m1 '^[<>]' | cut -c1-100)" > "$d/verdict"; fi
+    else echo "FAIL $n | output: $(diff "$d/out.cmp" "$VERDICTS/$n.expected" | grep -m1 '^[<>]' | cut -c1-100)" > "$d/verdict"; fi
 }
 
 export -f one diverges; export ROC ROCEMIT SRC GEN VERDICTS

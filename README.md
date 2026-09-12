@@ -83,6 +83,12 @@ export contract, which the same host serves over a handle table.
 Adding a game: its row in `gen.py` (from `apps/games/build-wasm.ps1`), its
 shell in `emitted.sh`, an app, a page, and its grader in `verify.sh`.
 
+## Why any of this exists
+
+[`BUGHUNT.md`](BUGHUNT.md) is the short version for someone arriving from a
+roc-lang issue: what Cobblestone and Codex are, what the corpus is, how we
+run it against Roc, and what we have filed.
+
 ## tests: Cobblestone's own suite as the emitter's ladder
 
 `tests/ladder.sh` emits every program in `codex/test` that sits beside an
@@ -101,7 +107,7 @@ Roc does not have, CRASH, TIMEOUT. **A verdict is compared as text**: 86 of
 the files begin with a stray `0x01` byte and 46 carry carriage returns,
 the console capture's rather than the program's.
 
-At 2026-09-12: 125 pass, 0 fail, 445 refused by reason, 24 diagnostic tests
+At 2026-09-12: 160 pass, 0 fail, 410 refused by reason, 24 diagnostic tests
 skipped, 2 named divergences, 1 stack overflow. The essay is
 `:9100/notes/the-corpus-that-argues-back.md`.
 
