@@ -41,6 +41,13 @@ Basic :: [].{
 		err : Str,
 		seed : U64,
 		fuel : I64,
+		# OPTION BASE: the lowest subscript an array has. ECMA-55 allows
+		# 0 or 1 and one OPTION statement, before any DIM.
+		base : U64,
+		# DEF FNx(v) = expr, kept as the parameter's name and the bytes of
+		# the body, so calling one is just evaluating that expression with
+		# the parameter bound.
+		fns : List({ k : Str, p : Str, body : List(U8) }),
 	}
 
 	# ---- bytes ---------------------------------------------------------
@@ -532,6 +539,8 @@ Basic :: [].{
 		k = Basic.text_of(b, i, w)
 		if Basic.is_fn(k) {
 			Basic.call_fn(m, b, w, k)
+		} else if Basic.kw(Str.to_utf8(k), 0, "FN") == 2 and List.len(Str.to_utf8(k)) == 3 {
+			Basic.call_def(m, b, w, k)
 		} else {
 			nm = Basic.name_at(b, i)
 			if nm.k == "" {
@@ -740,6 +749,10 @@ Basic :: [].{
 			Basic.advance({ ..m, dp: 0 }, w)
 		} else if k == "INPUT" {
 			Basic.do_input(m, b, w)
+		} else if k == "OPTION" {
+			Basic.do_option(m, b, w)
+		} else if k == "DEF" {
+			Basic.do_def(m, b, w)
 		} else if k == "RANDOMIZE" {
 			Basic.advance(m, Basic.stmt_end(b, w))
 		} else {
@@ -948,17 +961,34 @@ Basic :: [].{
 		}
 	}
 
+	# **A LOOP BODY MAY CONTAIN LOOPS.** Scanning forward for the word
+	# NEXT finds the inner one first, so the scan counts FORs on the way.
 	skip_to_next : M, Str -> M
-	skip_to_next = |m, v|
+	skip_to_next = |m, v| Basic.skip_scan(m, v, 0)
+
+	skip_scan : M, Str, I64 -> M
+	skip_scan = |m, v, depth|
 		if m.pc >= List.len(m.prog) {
 			{ ..m, done: True, err: Str.concat("FOR without NEXT: ", v) }
 		} else {
 			b = Basic.cur(m)
-			j = Basic.kw(b, Basic.skip_ws(b, m.at), "NEXT")
-			if j != Basic.skip_ws(b, m.at) {
-				{ ..m, pc: m.pc + 1, at: 0 }
+			i = Basic.skip_ws(b, m.at)
+			if i >= List.len(b) {
+				Basic.skip_scan({ ..m, pc: m.pc + 1, at: 0 }, v, depth)
 			} else {
-				Basic.skip_to_next({ ..m, pc: m.pc + 1, at: 0 }, v)
+				e = Basic.stmt_end(b, i)
+				w = Basic.word_end(b, i)
+				k = Basic.text_of(b, i, w)
+				at = { ..m, at: if e < List.len(b) { e + 1 } else { e } }
+				if k == "FOR" {
+					Basic.skip_scan(at, v, depth + 1)
+				} else if k != "NEXT" {
+					Basic.skip_scan(at, v, depth)
+				} else if depth > 0 {
+					Basic.skip_scan(at, v, depth - 1)
+				} else {
+					at
+				}
 			}
 		}
 
@@ -996,6 +1026,86 @@ Basic :: [].{
 		}
 	}
 
+	# OPTION BASE 0 or 1. More than one is an error in ECMA-55 and the
+	# suite checks that it is reported.
+	do_option : M, List(U8), U64 -> M
+	do_option = |m, b, w| {
+		j = Basic.kw(b, w, "BASE")
+		if j == w {
+			{ ..m, done: True, err: "Expected BASE" }
+		} else {
+			r = Basic.sum(m, b, j)
+			n = Basic.idx(Basic.num_of(r.v))
+			if n > 1 {
+				{ ..r.m, done: True, err: "OPTION BASE must be 0 or 1" }
+			} else if List.len(r.m.arr) > 0 {
+				{ ..r.m, done: True, err: "OPTION BASE after an array is used" }
+			} else {
+				Basic.advance({ ..r.m, base: n }, r.at)
+			}
+		}
+	}
+
+	# DEF FNx(v) = expr. The body is kept as bytes and evaluated at the
+	# call, which is what a one-line definition means.
+	do_def : M, List(U8), U64 -> M
+	do_def = |m, b, w| {
+		j = Basic.skip_ws(b, w)
+		e = Basic.word_end(b, j)
+		k = Basic.text_of(b, j, e)
+		q = Basic.skip_ws(b, e)
+		if Basic.byte(b, q) != 40 {
+			{ ..m, done: True, err: "Expected ( after DEF" }
+		} else {
+			pm = Basic.name_at(b, q + 1)
+			c = Basic.skip_ws(b, pm.at)
+			eq = Basic.skip_ws(b, c + 1)
+			if Basic.byte(b, c) != 41 or Basic.byte(b, eq) != 61 {
+				{ ..m, done: True, err: "Malformed DEF" }
+			} else {
+				stop = Basic.stmt_end(b, eq + 1)
+				body = List.sublist(b, { start: eq + 1, len: stop - (eq + 1) })
+				Basic.advance({ ..m, fns: List.append(m.fns, { k: k, p: pm.k, body: body }) }, stop)
+			}
+		}
+	}
+
+	fn_index : List({ k : Str, p : Str, body : List(U8) }), Str, U64 -> I64
+	fn_index = |fs, k, i|
+		if i >= List.len(fs) {
+			-1
+		} else if (List.get(fs, i) ?? { k: "", p: "", body: [] }).k == k {
+			U64.to_i64_wrap(i)
+		} else {
+			Basic.fn_index(fs, k, i + 1)
+		}
+
+	call_def : M, List(U8), U64, Str -> R
+	call_def = |m, b, i, k| {
+		at = Basic.fn_index(m.fns, k, 0)
+		if at < 0 {
+			Basic.fail(m, Str.concat("Undefined function: ", k), i)
+		} else {
+			f = List.get(m.fns, I64.to_u64_wrap(at)) ?? { k: "", p: "", body: [] }
+			j = Basic.skip_ws(b, i)
+			if Basic.byte(b, j) != 40 {
+				Basic.fail(m, Str.concat("Expected ( after ", k), j)
+			} else {
+				a = Basic.sum(m, b, j + 1)
+				e = Basic.skip_ws(b, a.at)
+				if Basic.byte(b, e) != 41 {
+					Basic.fail(a.m, "Expected )", e)
+				} else {
+					# The parameter shadows the variable of the same name
+					# for the length of the call and is put back after.
+					saved = Basic.get_num(a.m, f.p)
+					inner = Basic.expr(Basic.set_num(a.m, f.p, Basic.num_of(a.v)), f.body, 0)
+					{ m: Basic.set_num(inner.m, f.p, saved), v: inner.v, at: e + 1 }
+				}
+			}
+		}
+	}
+
 	do_read : M, List(U8), U64 -> M
 	do_read = |m, b, w| {
 		nm = Basic.name_at(b, w)
@@ -1018,34 +1128,55 @@ Basic :: [].{
 		}
 	}
 
+	# **INPUT PRINTS `? ` AND ECHOES THE LINE.** That is what a terminal
+	# running BASIC looked like, and it is what the captured game output
+	# has in it: the prompt, the typed characters, and a newline. One
+	# INPUT statement consumes one line, however many variables it names,
+	# and the line is split on commas between them.
 	do_input : M, List(U8), U64 -> M
 	do_input = |m, b, w| {
 		j = Basic.skip_ws(b, w)
-		if Basic.byte(b, j) == 34 {
+		after_prompt = if Basic.byte(b, j) == 34 {
 			e = Basic.quote_end(b, j + 1, List.len(b))
-			m1 = Basic.emit(m, Basic.text_of(b, j + 1, U64.minus_wrap(e, 1)))
 			k = Basic.skip_ws(b, e)
-			Basic.do_input(m1, b, if Basic.byte(b, k) == 59 or Basic.byte(b, k) == 44 { k + 1 } else { k })
+			{ m: Basic.emit(m, Basic.text_of(b, j + 1, U64.minus_wrap(e, 1))), at: if Basic.byte(b, k) == 59 or Basic.byte(b, k) == 44 { k + 1 } else { k } }
 		} else {
-			nm = Basic.name_at(b, j)
-			if nm.k == "" {
-				Basic.advance(m, Basic.stmt_end(b, w))
-			} else if m.ip >= List.len(m.inp) {
-				{ ..m, done: True, err: "Out of input" }
-			} else {
-				raw = List.get(m.inp, m.ip) ?? ""
-				m1 = { ..m, ip: m.ip + 1 }
-				m2 = if Basic.is_str_name(nm.k) {
-					Basic.set_str(m1, nm.k, raw)
-				} else {
-					rb = Str.to_utf8(raw)
-					n = Basic.number(m1, rb, Basic.skip_ws(rb, 0))
-					Basic.set_num(n.m, nm.k, Basic.num_of(n.v))
-				}
-				c = Basic.skip_ws(b, nm.at)
-				if Basic.byte(b, c) == 44 { Basic.do_input(m2, b, c + 1) } else { Basic.advance(m2, nm.at) }
-			}
+			{ m: m, at: j }
 		}
+		m0 = after_prompt.m
+		if m0.ip >= List.len(m0.inp) {
+			{ ..m0, done: True, err: "Out of input" }
+		} else {
+			line = List.get(m0.inp, m0.ip) ?? ""
+			m1 = Basic.emit(Basic.emit(Basic.emit(m0, "? "), line), "\n")
+			Basic.input_vars({ ..m1, ip: m1.ip + 1 }, b, after_prompt.at, Basic.split_commas(Str.to_utf8(line), 0, []), 0)
+		}
+	}
+
+	input_vars : M, List(U8), U64, List(Str), U64 -> M
+	input_vars = |m, b, at, vals, k| {
+		nm = Basic.name_at(b, at)
+		if nm.k == "" {
+			Basic.advance(m, Basic.stmt_end(b, at))
+		} else {
+			raw = List.get(vals, k) ?? ""
+			m2 = if Basic.is_str_name(nm.k) {
+				Basic.set_str(m, nm.k, raw)
+			} else {
+				rb = Str.to_utf8(raw)
+				n = Basic.number(m, rb, Basic.skip_ws(rb, 0))
+				Basic.set_num(n.m, nm.k, Basic.num_of(n.v))
+			}
+			c = Basic.skip_ws(b, nm.at)
+			if Basic.byte(b, c) == 44 { Basic.input_vars(m2, b, c + 1, vals, k + 1) } else { Basic.advance(m2, nm.at) }
+		}
+	}
+
+	split_commas : List(U8), U64, List(Str) -> List(Str)
+	split_commas = |b, i, acc| {
+		e = Basic.item_end(b, i)
+		next = List.append(acc, Basic.trim_right(b, Basic.skip_ws(b, i), e))
+		if e >= List.len(b) { next } else { Basic.split_commas(b, e + 1, next) }
 	}
 
 	# ---- PRINT -----------------------------------------------------------
@@ -1137,6 +1268,8 @@ Basic :: [].{
 		err: "",
 		seed: seed,
 		fuel: 2000000,
+		base: 0,
+		fns: [],
 	}
 
 	# **FUEL, NOT FAITH.** A BASIC listing loops forever on purpose often

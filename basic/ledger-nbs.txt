@@ -54,32 +54,32 @@ FAIL P053 | ?NEXT out of order: I
 FAIL P054 | ?NEXT without FOR
 FAIL P055 | ?NEXT without FOR
 FAIL P056 | ***  TEST FAILED  ***
-FAIL P057 | ?Expected =
+FAIL P057 | ***  TEST FAILED  ***
 FAIL P058 | ***  TEST FAILED  ***
 PASS P059 |
 PASS P060 |
 FAIL P061 |  6            -2             0.2857142857142857         TEST FAILS
-FAIL P062 | ?Expected =
+PASS P062 |
 FAIL P063 | ?Subscript out of range: A
 FAIL P064 | ASSIGNMENT TO SUBSCRIPT < 0 - *** TEST FAILS ***
 FAIL P065 | ASSIGNMENT TO SUBSCRIPT < 1 - ***  TEST FAILS  ***
 FAIL P066 | ASSIGNMENT TO SUBSCRIPT > 12 - *** TEST FAILS ***
-FAIL P067 | ?Expected =
-FAIL P068 | ?Expected =
-FAIL P069 | ?Expected =
-FAIL P070 | ?Expected =
-FAIL P071 | ?Expected =
-FAIL P072 | ?Expected =
-FAIL P073 | ?Expected =
+FAIL P067 | ASSIGNMENT TO SUBSCRIPT < 1 - *** TEST FAILS ***
+FAIL P068 | ?Subscript out of range: A
+FAIL P069 | ASSIGNMENT TO SUBSCRIPT > 12 - *** TEST FAILS ***
+FAIL P070 | ASSIGNMENT TO SUBSCRIPT < 0 - *** TEST FAILS ***
+FAIL P071 | ASSIGNMENT TO SUBSCRIPT < 0 - *** TEST FAILS ***
+FAIL P072 | ASSIGNMENT TO SUBSCRIPT < 1 - *** TEST FAILS ***
+FAIL P073 | ?Out of input
 PASS P074 |
 PASS P075 |
 FAIL P076 | ?Subscript out of range: A
 PASS P077 |
 PASS P078 |
 PASS P079 |
-FAIL P080 | ?Expected =
-FAIL P081 | ?Expected =
-FAIL P082 | ?Expected =
+PASS P080 |
+FAIL P081 | ?OPTION BASE after an array is used
+FAIL P082 | ?OPTION BASE after an array is used
 PASS P083 |
 FAIL P084 | ?Out of input
 PASS P085 |
@@ -148,27 +148,27 @@ FAIL P147 | ?Expected an expression
 FAIL P148 | ?Expected ( after TAN
 FAIL P149 | ?Expected an expression
 PASS P150 |
-FAIL P151 | ?Expected =
-FAIL P152 | ?Expected =
-FAIL P153 | ?Expected =
-FAIL P154 | ?Expected =
-FAIL P155 | ?Expected =
-FAIL P156 | ?Expected =
-FAIL P157 | ?Expected =
-FAIL P158 | ?Expected =
-FAIL P159 | ?Expected =
-FAIL P160 | ?Expected =
-FAIL P161 | ?Expected =
-FAIL P162 | ?Expected =
-PASS P163 |
-FAIL P164 | ?Expected =
-FAIL P165 | ?Expected =
+FAIL P151 | ?Expected ( after DEF
+PASS P152 |
+FAIL P153 | ?Expected ( after DEF
+FAIL P154 | ?Expected ( after FND
+FAIL P155 | ?Expected ( after DEF
+FAIL P156 | ?Expected )
+FAIL P157 | ?Malformed DEF
+PASS P158 |
+PASS P159 |
+PASS P160 |
+PASS P161 |
+FAIL P162 | ?Undefined function: FND
+FAIL P163 | ?Undefined function: FNA
+FAIL P164 | *** TEST FAILED IN  1  CASE(S) ***
+PASS P165 |
 FAIL P166 | ?Expected =
-FAIL P167 | ?Expected =
+FAIL P167 | ?Division by zero
 FAIL P168 | *** TEST FAILED: EXECUTION DID NOT TERMINATE. ***
 PASS P169 |
 FAIL P170 | *** TEST FAILED: EXECUTION DID NOT TERMINATE. ***
-FAIL P171 | ?Expected =
+FAIL P171 | *** TEST FAILED: EXECUTION DID NOT TERMINATE. ***
 FAIL P172 | *** TEST FAILED: EXECUTION DID NOT TERMINATE. ***
 FAIL P173 | *** TEST FAILED: EXECUTION DID NOT TERMINATE. ***
 FAIL P174 | ?Division by zero
