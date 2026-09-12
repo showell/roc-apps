@@ -40,6 +40,7 @@ essay is `:9100/notes/plasma-in-roc.md`.
 | `gpu/roc/Device.roc` | the Device effect as state: buffers by handle, `load`/`store` threading the record, `dispatch` over the gids | hand |
 | `gpu/roc/PlasmaKernel.roc` | `apps/gpushow/kernels/PlasmaKernel.codex`, in the shape rocemit writes | hand, for now |
 | `gpu/roc/PlasmaApp.roc`, `gpu/roc/PlasmaBench.roc` | the app (`render : frame -> pixels`) and a native bench that prints a checksum | hand |
+| `gpu/roc/CpuParticlesKernel.roc`, `gpu/roc/CpuParticlesBench.roc` | the fountain: an act with four loads and four stores over two ping-pong buffers, the bind chain the emitter must write; its bench | hand, for now |
 | `gpu/wasm/` | the platform: two exports, `renderFrame(n)` and `bufPtr`; host, build.zig as safari's; `smoke.mjs` checksums frame 0 from Node | hand |
 | `gpu/web/plasma.html` | the page: the words as an ImageData; no WebGPU, so no secure context | hand |
 | `gpu/build.sh` | host + app + page into the preview, `http://<box>:9203/gpu/plasma.html` | hand |
