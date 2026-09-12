@@ -8,6 +8,8 @@ platform ""
 			step : Box(model), I64 -> Box(model),
 			view : Box(model) -> List(U32),
 			drop : Box(model) -> {},
+			same : Box(model), Box(model) -> I64,
+			new : I64 -> Box(model),
 			mine : Box(model), I64 -> I64,
 			shown : Box(model), I64 -> I64,
 			adj : Box(model), I64 -> I64,
@@ -28,6 +30,8 @@ platform ""
 		"roc_step": step_for_host,
 		"roc_view": view_for_host,
 		"roc_drop": drop_for_host,
+		"roc_same": same_for_host,
+		"roc_new": new_for_host,
 		"roc_mine": mine_for_host,
 		"roc_shown": shown_for_host,
 		"roc_adj": adj_for_host,
@@ -52,6 +56,8 @@ init_for_host = program.init
 step_for_host = program.step
 view_for_host = program.view
 drop_for_host = program.drop
+same_for_host = program.same
+new_for_host = program.new
 mine_for_host = program.mine
 shown_for_host = program.shown
 adj_for_host = program.adj

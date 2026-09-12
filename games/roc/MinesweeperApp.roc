@@ -17,6 +17,13 @@ Model : Minesweeper.MinesweeperState
 init : I64 -> Box(Model)
 init = |seed| Box.box(MinesweeperWasm.ms_wasm_new(seed))
 
+new : I64 -> Box(Model)
+new = init
+
+# A refused transition answers the state it was given; the host asks.
+same : Box(Model), Box(Model) -> I64
+same = |a, b| if Box.unbox(a) == Box.unbox(b) { 1 } else { 0 }
+
 step : Box(Model), I64 -> Box(Model)
 step = |boxed, msg| {
 	st = Box.unbox(boxed)
@@ -78,4 +85,4 @@ drop = |boxed| {
 	{}
 }
 
-program = { init, step, view, mine, shown, adj, count, hits, moves, done, won, safe, open, ai, drop }
+program = { init, step, view, new, mine, shown, adj, count, hits, moves, done, won, safe, open, ai, drop, same }

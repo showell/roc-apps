@@ -2,7 +2,7 @@
 //! Two doors onto the same Roc functions: the page's (one model, a message)
 //! and the grader's (Damian's export contract, by handle over a table of
 //! boxed models; a refused transition answers the same handle, decided by
-//! the move counter `moves`). See games/gen.py.
+//! the app's structural `same`). See games/gen.py.
 
 const std = @import("std");
 const builtins = @import("builtins");
@@ -16,6 +16,8 @@ extern fn roc_init(seed: i64) callconv(.c) Model;
 extern fn roc_step(model: Model, msg: i64) callconv(.c) Model;
 extern fn roc_view(model: Model) callconv(.c) RocList;
 extern fn roc_drop(model: Model) callconv(.c) void;
+extern fn roc_same(a: Model, b: Model) callconv(.c) i64;
+extern fn roc_new(a0: i64) callconv(.c) Model;
 extern fn roc_mine(model: Model, a0: i64) callconv(.c) i64;
 extern fn roc_shown(model: Model, a0: i64) callconv(.c) i64;
 extern fn roc_adj(model: Model, a0: i64) callconv(.c) i64;
@@ -138,8 +140,8 @@ fn at(h: i32) Model {
 }
 
 
-pub export fn ms_new(seed: i32) i32 {
-    return push(roc_init(seed));
+pub export fn ms_new(a0: i32) i32 {
+    return push(roc_new(a0));
 }
 pub export fn ms_mine(h: i32, a0: i32) i32 {
     return @intCast(roc_mine(borrowed(at(h)), a0));
@@ -171,7 +173,8 @@ pub export fn ms_safe(h: i32) i32 {
 pub export fn ms_open(h: i32, a0: i32) i32 {
     const old = at(h);
     const next = roc_open(borrowed(old), a0);
-    if (roc_moves(borrowed(next)) == roc_moves(borrowed(old))) {
+    // A refusal answers the state it was given; the same handle, then.
+    if (roc_same(borrowed(old), borrowed(next)) == 1) {
         roc_drop(next);
         return h;
     }

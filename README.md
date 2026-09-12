@@ -59,7 +59,7 @@ became one gallery module. The essay is `:9100/notes/plasma-in-roc.md`.
 ## games: Damian's classic games, with the browser as the platform
 
 `games/` is the third app: the classic games of Cobblestone's `apps/games`,
-2048 and Minesweeper so far (2026-09-12). Each game's engine and wasm
+2048, Minesweeper and Klondike so far (2026-09-12). Each game's engine and wasm
 shell chapter are emitted; the seam to the browser is a MESSAGE: the page
 turns a key or a click into one small integer and `step(message)` is the
 only door into the generated Roc, `view()` answers the board as words.
@@ -69,8 +69,8 @@ export contract, which the same host serves over a handle table.
 | where | what | written by |
 |---|---|---|
 | `games/roc/*.roc` (engines, shells, `Rng`, `List`, ...) | the emitted chapters | `rocemit`, via `games/emitted.sh` |
-| `games/roc/{G2048App,MinesweeperApp}.roc` | the apps: `init(seed)`, `step(message)`, `view`, `drop`, and the shell's queries and transitions under their short names for the grader's door | hand |
-| `games/gen.py` -> `games/wasm/<game>/` | per game the platform and host from Damian's export table: the page's door (`newGame`, `step`, `view`, `bufPtr`) over one model, the grader's door (`g2_new`, `ms_open`, ...) over a table of boxed models, a refused transition answering the same handle by the move counter; `__heap_reset` | generated; `host_head.zig`/`host_body.zig` are the fixed parts |
+| `games/roc/{G2048App,MinesweeperApp,KlondikeApp}.roc` | the apps: `init(seed)`, `step(message)`, `view`, `drop`, `same`, and the shell's exports under their short names for the grader's door; Klondike's model holds the selection, so a two-click move is two messages and the page only draws | hand |
+| `games/gen.py` -> `games/wasm/<game>/` | per game the platform and host from Damian's export table, an export's kind (query, transition, make, pure) read off the emitted shell's signature: the page's door (`newGame`, `step`, `view`, `bufPtr`) over one model, the grader's door (`g2_new`, `ms_open`, `kd_run`, ...) over a table of boxed models, a refused transition answering the same handle by the app's structural `same`; `__heap_reset` | generated; `host_head.zig`/`host_body.zig` are the fixed parts |
 | `games/web/<game>.html` | the pages: the key table or the click, the message, the board | hand |
 | `games/emitted.sh` | THE GATE: the shell chapters emitted from `$GAMES_ROOT` (cites resolved from the same tree), chapter identity, `roc check`; on green written to `games/roc/` | hand |
 | `games/build.sh`, `games/verify.sh` | hosts + apps + pages into the preview, `http://<box>:9203/games/<game>.html`; then Damian's `<xx>-verify.mjs` against each module | hand |
@@ -78,7 +78,7 @@ export contract, which the same host serves over a handle table.
 
     games/emitted.sh
     games/build.sh                 # runs gen.py first
-    games/verify.sh                # PASS 20 arms for 2048, PASS 20 arms for Minesweeper
+    games/verify.sh                # PASS 20 arms for 2048, 20 for Minesweeper, 42 for Klondike
     games/publish.sh               # when the preview looks right: the demo, http://<box>:9205/2048.html
 
 Adding a game: its row in `gen.py` (from `apps/games/build-wasm.ps1`), its

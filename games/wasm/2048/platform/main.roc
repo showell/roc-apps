@@ -8,6 +8,8 @@ platform ""
 			step : Box(model), I64 -> Box(model),
 			view : Box(model) -> List(U32),
 			drop : Box(model) -> {},
+			same : Box(model), Box(model) -> I64,
+			new : I64 -> Box(model),
 			cell : Box(model), I64 -> I64,
 			score : Box(model) -> I64,
 			moves : Box(model) -> I64,
@@ -27,6 +29,8 @@ platform ""
 		"roc_step": step_for_host,
 		"roc_view": view_for_host,
 		"roc_drop": drop_for_host,
+		"roc_same": same_for_host,
+		"roc_new": new_for_host,
 		"roc_cell": cell_for_host,
 		"roc_score": score_for_host,
 		"roc_moves": moves_for_host,
@@ -50,6 +54,8 @@ init_for_host = program.init
 step_for_host = program.step
 view_for_host = program.view
 drop_for_host = program.drop
+same_for_host = program.same
+new_for_host = program.new
 cell_for_host = program.cell
 score_for_host = program.score
 moves_for_host = program.moves

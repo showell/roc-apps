@@ -17,7 +17,7 @@ ROCEMIT="${ROCEMIT:-$HOME/build/rust-target/release/rocemit}"
 GAMES_ROOT="${GAMES_ROOT:-$HOME/showell_repos/cobblestone-u58}"
 export CODEX_ROOT="$GAMES_ROOT"
 GEN="$HOME/build/roc-apps/gen/games"
-GAMES=(Game2048Wasm MinesweeperWasm)
+GAMES=(Game2048Wasm MinesweeperWasm KlondikeWasm)
 if [ $# -gt 0 ]; then shells=("$@"); write=no; else shells=("${GAMES[@]}"); write=yes; fi
 mkdir -p "$GEN"
 declare -A seen

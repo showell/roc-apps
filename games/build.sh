@@ -14,8 +14,8 @@ ZIG="${ZIG:-$HOME/zig-0.16.0/zig}"
 NEXT="$HOME/build/roc-apps/next/games"
 mkdir -p "$NEXT"
 python3 "$HERE/gen.py" >/dev/null
-games=("$@"); [ ${#games[@]} -eq 0 ] && games=(2048 minesweeper)
-declare -A APP=([2048]=G2048App [minesweeper]=MinesweeperApp)
+games=("$@"); [ ${#games[@]} -eq 0 ] && games=(2048 minesweeper klondike)
+declare -A APP=([2048]=G2048App [minesweeper]=MinesweeperApp [klondike]=KlondikeApp)
 for g in "${games[@]}"; do
     (cd "$HERE/wasm/$g" && "$ZIG" build --cache-dir "$HOME/build/roc-apps/zig-cache" --global-cache-dir "$HOME/build/zig-global")
     (cd "$HERE/roc" && "$ROC" build "${APP[$g]}.roc" --target=wasm32 --opt=speed --output="$NEXT/$g.wasm")
