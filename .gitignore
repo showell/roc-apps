@@ -1,0 +1,3 @@
+
+# The wasm host object, rebuilt by every build.sh run.
+basic/wasm/platform/targets/
