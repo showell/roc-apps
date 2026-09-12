@@ -22,7 +22,9 @@ answer is a single wrong value that the corpus catches.
 
 ## Laying it out
 
-    basic/roc/Basic.roc   the interpreter: one module, no dependencies
+    basic/roc/Basic.roc   the interpreter
+    basic/roc/Listing.roc ECMA-55's check of a whole listing, before it runs
+    basic/nbs-reports.txt what each NBS exception and ERROR program must show
     basic/gen.py          one BASIC program as its own Roc app
     basic/ladder.sh       run the corpus, diff, count
     basic/fetch.sh        the corpora, into ~/build/basic-corpus
@@ -55,3 +57,13 @@ needs and a synthetic benchmark does not:
 - **No number parsing on `Str`.** No `to_f64`, no `to_i64`. A numeric
   literal is accumulated from its bytes as it is scanned.
 - **No `List.walk`.** Every fold in here is an explicit recursion.
+
+## Accepted past ECMA-55
+
+The NBS suite's ERROR programs are malformed on purpose, and ECMA-55 lets
+a processor either reject such a program or run it and document what it
+does. The ECMA-55 door (`run_ecma`) rejects before the first statement;
+these are the forms it runs instead, each a row marked `accepts` in
+`nbs-reports.txt`:
+
+- **Spaces before a line number** (P187) are skipped.

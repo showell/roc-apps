@@ -25,7 +25,9 @@
 #
 # Outcomes: PASS, FAIL (output differs, or the NBS program said so), CRASH,
 # TIMEOUT, KILLED (a signal -- 9 is the OOM killer stopping compile-time
-# evaluation).
+# evaluation), UNJUDGED (an NBS ERROR program with no row in
+# nbs-reports.txt: it is malformed on purpose and prints no verdict, so
+# running clean says nothing either way).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROC="${ROC:-$HOME/build/roc-nightly/roc}"
@@ -43,7 +45,7 @@ one() {
     if ! "$HERE/gen.py" "$suite" "$n" "$d" 2> "$d/gen.err"; then
         echo "FAIL $n | generate: $(head -1 "$d/gen.err" | cut -c1-90)" > "$d/verdict"; return
     fi
-    cp "$HERE/roc/Basic.roc" "$d/Basic.roc"
+    cp "$HERE/roc/Basic.roc" "$HERE/roc/Listing.roc" "$d/"
     ( cd "$d" && timeout 120 "$ROC" run Run.roc > out 2> err ); rc=$?
     if [ $rc -ge 128 ]; then echo "KILLED $n | signal $((rc - 128))" > "$d/verdict"
     elif [ $rc -eq 124 ]; then echo "TIMEOUT $n |" > "$d/verdict"
@@ -55,12 +57,18 @@ one() {
         while IFS= read -r want; do
             [ -n "$want" ] && ! grep -qF -- "$want" "$d/out" && missing="$want"
         done < <(echo "$row" | cut -s -d'|' -f3- | tr '|' '\n' | sed 's/^ *//; s/ *$//')
-        if [ "$kind" != judged ] && grep -q "TEST FAILED\|TEST FAILS" "$d/out"; then
+        error_program=""
+        grep -m1 'PROGRAM FILE' "$CORPUS/$suite/$n.BAS" | grep -q ': *ERROR' && error_program=1
+        if grep -q '^\*\*\* REJECTED' "$d/out" && [ "$kind" != rejects ]; then
+            echo "FAIL $n | $(grep -m1 'REJECTED' "$d/out" | cut -c1-90)" > "$d/verdict"
+        elif [ "$kind" != judged ] && [ "$kind" != rejects ] && grep -q "TEST FAILED\|TEST FAILS" "$d/out"; then
             echo "FAIL $n | $(grep -m1 'TEST FAIL' "$d/out" | cut -c1-90)" > "$d/verdict"
         elif grep -q "UNSUPPORTED" "$d/out"; then
             echo "FAIL $n | $(grep -m1 'UNSUPPORTED' "$d/out" | cut -c1-90)" > "$d/verdict"
         elif [ -n "$missing" ]; then
             echo "FAIL $n | no report: $missing" > "$d/verdict"
+        elif [ -n "$error_program" ] && [ -z "$row" ]; then
+            echo "UNJUDGED $n | an ERROR program with no row in nbs-reports.txt" > "$d/verdict"
         else echo "PASS $n |" > "$d/verdict"; fi
     elif cmp -s "$d/out" "$CORPUS/$suite/$n.output"; then echo "PASS $n |" > "$d/verdict"
     else echo "FAIL $n | $(diff "$d/out" "$CORPUS/$suite/$n.output" | grep -m1 '^[<>]' | cut -c1-90)" > "$d/verdict"; fi

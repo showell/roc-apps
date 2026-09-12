@@ -13,6 +13,8 @@
 # Text is handled as `List(U8)` rather than `Str`: BASIC source is ASCII,
 # a lexer wants to index, and Roc's Str is not an array.
 
+import Listing
+
 Basic :: [].{
 	Val : [N(F64), S(Str)]
 
@@ -77,6 +79,8 @@ Basic :: [].{
 		# standard: TAB(30) is column 30 in ECMA-55 and thirty spaces in
 		# the captures. True is ECMA-55.
 		ecma : Bool,
+		# A listing ECMA-55 refuses before its first statement (Listing).
+		rejected : Bool,
 		# **THE ADDRESS SPACE.** ECMA-55 has no PEEK and no POKE -- it is a
 		# teletype language and its only output is PRINT. Every
 		# microcomputer BASIC added them, and on a Commodore the screen IS
@@ -1835,6 +1839,7 @@ Basic :: [].{
 		fuel: Basic.full_tank,
 		base: 0,
 		ecma: False,
+		rejected: False,
 		mem: List.repeat([], 4096),
 		scr: List.repeat(32.U8, 1000),
 		col_ram: List.repeat(14.U8, 1000),
@@ -1899,10 +1904,10 @@ Basic :: [].{
 
 	# 0 finished, 1 waiting for a line, 2 stopped on an exception,
 	# 3 stopped on a form this interpreter has not built, 4 sleeping,
-	# 5 yielded with fuel spent and more to do.
+	# 5 yielded with fuel spent and more to do, 6 rejected before it ran.
 	status : M -> I64
 	status = |m|
-		if m.waiting { 1 } else if m.pause > 0 { 4 } else if m.fuel <= 0 { 5 } else if m.gap { 3 } else if m.err != "" { 2 } else { 0 }
+		if m.rejected { 6 } else if m.waiting { 1 } else if m.pause > 0 { 4 } else if m.fuel <= 0 { 5 } else if m.gap { 3 } else if m.err != "" { 2 } else { 0 }
 
 	# **THE BATCH DOOR.** Every keystroke up front and the transcript back:
 	# what the corpus ladder grades. A machine that runs dry here has no
@@ -1916,9 +1921,18 @@ Basic :: [].{
 	run_ecma : Str, List(Str), U64 -> Str
 	run_ecma = |src, inp, seed| Basic.run_in(src, inp, seed, True)
 
+	# A listing refused before it runs: nothing has executed, so nothing
+	# has printed, and the reason is the whole transcript.
+	refuse : Listing.Rejection -> M
+	refuse = |bad| {
+		why = if bad.num < 0 { bad.why } else { Str.concat(Str.concat(Str.concat(bad.why, " (line "), I64.to_str(bad.num)), ")") }
+		{ ..Basic.new([], [], 1), done: True, rejected: True, err: why }
+	}
+
 	run_in : Str, List(Str), U64, Bool -> Str
 	run_in = |src, inp, seed, ecma| {
-		m = Basic.batch(Basic.loop({ ..Basic.new(Basic.load(src), inp, seed), ecma: ecma }), 10)
+		bad = if ecma { Listing.check(src) } else { { why: "", num: -1 } }
+		m = if bad.why != "" { Basic.refuse(bad) } else { Basic.batch(Basic.loop({ ..Basic.new(Basic.load(src), inp, seed), ecma: ecma }), 10) }
 		Basic.transcript(
 			if m.waiting {
 				{ ..m, done: True, gap: True, err: "Out of input" }
@@ -1949,7 +1963,9 @@ Basic :: [].{
 		# one -- and those print with the `?` a BASIC uses. What stops the
 		# program gets a marker of its own so a harness can tell them
 		# apart.
-		if m.err != "" and m.gap {
+		if m.rejected {
+			Str.concat("*** REJECTED: ", m.err)
+		} else if m.err != "" and m.gap {
 			Str.concat(Str.concat(body, "\n*** UNSUPPORTED: "), m.err)
 		} else if m.err != "" {
 			Str.concat(Str.concat(body, "\n*** HALTED: "), m.err)

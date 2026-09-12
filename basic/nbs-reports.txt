@@ -13,8 +13,18 @@
 # happens, so only the TEXT decides. A judged row with no TEXT is a
 # program whose exception cannot occur in an F64.
 #
+# KIND `rejects`: an ERROR program, malformed on purpose, which ECMA-55
+# refuses before its first statement. The TEXT is the rejection; nothing
+# else is in the transcript.
+# KIND `accepts`: an ERROR program this interpreter runs on purpose, which
+# ECMA-55 allows when the processor documents it. The documentation is
+# basic/README.md's "Accepted past ECMA-55".
+# An ERROR program with no row is UNJUDGED, whatever it prints.
+#
 # The requirement comes from the listing's TO PASS THIS TEST section, not
 # from what this interpreter prints.
+P003 | rejects | *** REJECTED: END is not the last line
+P004 | rejects | *** REJECTED: The last line is not END
 P008 | also | ?TAB argument less than one
 P028 | also | ?Division by zero
 P029 | judged | ?Overflow
@@ -55,3 +65,11 @@ P179 | also | *** HALTED: LOG of a number that is not positive
 P180 | also | ?Division by zero | *** HALTED: ON index out of range
 P182 | also | *** HALTED: Negative number raised to a non-integral power
 P183 | also | ?Division by zero
+P187 | accepts |
+P188 | rejects | *** REJECTED: A space inside a line number
+P197 | rejects | *** REJECTED: A line number used twice
+P198 | rejects | *** REJECTED: A line number out of order
+P199 | rejects | *** REJECTED: A line number longer than four digits
+P200 | rejects | *** REJECTED: Line number 0
+P201 | rejects | *** REJECTED: A line has no line number
+P202 | rejects | *** REJECTED: A line longer than 72 characters

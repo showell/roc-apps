@@ -21,7 +21,12 @@ for ext in (".bas", ".BAS"):
         break
 if src is None:
     sys.exit(f"no listing for {name}")
-inp = (corpus / (name + ".input")).read_text(errors="replace") if (corpus / (name + ".input")).exists() else ""
+# The games carry their keystrokes in .input, the NBS programs in .in.
+inp = ""
+for ext in (".input", ".in"):
+    if (corpus / (name + ext)).exists():
+        inp = (corpus / (name + ext)).read_text(errors="replace")
+        break
 
 
 def lit(s):
