@@ -39,6 +39,13 @@ Basic :: [].{
 		col : I64,
 		done : Bool,
 		err : Str,
+		# **AN EXCEPTION IS NOT A GAP.** ECMA-55 defines exceptions that
+		# stop a program, and seven of the NBS tests exist to check that a
+		# subscript out of range DOES stop it -- so halting there is the
+		# program behaving correctly. A form this interpreter has not
+		# built is a different thing, and counting the two together would
+		# let every unbuilt form read as a pass.
+		gap : Bool,
 		seed : U64,
 		fuel : I64,
 		# OPTION BASE: the lowest subscript an array has. ECMA-55 allows
@@ -285,7 +292,7 @@ Basic :: [].{
 		w = if d2 < 0 { 0 } else { I64.to_u64_wrap(cols) }
 		n = if d2 < 0 { rows } else { rows * cols }
 		if rows <= 0 or (d2 >= 0 and cols <= 0) or n <= 0 {
-			{ ..m, done: True, err: Str.concat("Bad DIM bound: ", k) }
+			{ ..m, done: True, err: Str.concat("Bad DIM bound: ", k), gap: False}
 		} else {
 			fresh = { k: k, w: w, cells: List.repeat(0.0, I64.to_u64_wrap(n)) }
 			at = Basic.arr_index(m.arr, k, 0)
@@ -321,7 +328,7 @@ Basic :: [].{
 		a = List.get(m.arr, I64.to_u64_wrap(Basic.arr_index(m.arr, k, 0))) ?? { k: "", w: 0, cells: [] }
 		c = Basic.cell_at(m, k, i, j)
 		if c < 0 or I64.to_u64_wrap(c) >= List.len(a.cells) {
-			{ m: { ..m, done: True, err: Str.concat("Subscript out of range: ", k) }, v: 0.0 }
+			{ m: { ..m, done: True, err: Str.concat("Subscript out of range: ", k), gap: False}, v: 0.0 }
 		} else {
 			{ m: m, v: List.get(a.cells, I64.to_u64_wrap(c)) ?? 0.0 }
 		}
@@ -333,7 +340,7 @@ Basic :: [].{
 		c = Basic.cell_at(m, k, i, j)
 		a = List.get(m.arr, at) ?? { k: "", w: 0, cells: [] }
 		if c < 0 or I64.to_u64_wrap(c) >= List.len(a.cells) {
-			{ ..m, done: True, err: Str.concat("Subscript out of range: ", k) }
+			{ ..m, done: True, err: Str.concat("Subscript out of range: ", k), gap: False}
 		} else {
 			{ ..m, arr: List.set(m.arr, at, { k: a.k, w: a.w, cells: List.set(a.cells, I64.to_u64_wrap(c), v) ?? crash("set_arr") }) ?? crash("set_arr") }
 		}
@@ -482,8 +489,10 @@ Basic :: [].{
 		S(s) => s
 	}
 
+	# Every reason `fail` is reached is a form the expression grammar does
+	# not know, which is this interpreter's gap and not the program's.
 	fail : M, Str, U64 -> R
-	fail = |m, why, at| { m: { ..m, done: True, err: why }, v: N(0.0), at: at }
+	fail = |m, why, at| { m: { ..m, done: True, err: why, gap: True }, v: N(0.0), at: at }
 
 	# **THE STRING PATH IS DECIDED FIRST.** A string literal, a `$`
 	# variable and a `$` function all answer text, and everything else
@@ -895,7 +904,7 @@ Basic :: [].{
 	jump = |m, n| {
 		i = Basic.index_of_line(m.prog, n, 0)
 		if i < 0 {
-			{ ..m, done: True, err: Str.concat("No such line: ", I64.to_str(n)) }
+			{ ..m, done: True, err: Str.concat("No such line: ", I64.to_str(n)), gap: False }
 		} else {
 			{ ..m, pc: I64.to_u64_wrap(i), at: 0 }
 		}
@@ -987,7 +996,7 @@ Basic :: [].{
 	do_return = |m, _w| {
 		n = List.len(m.ret)
 		if n == 0 {
-			{ ..m, done: True, err: "RETURN without GOSUB" }
+			{ ..m, done: True, err: "RETURN without GOSUB", gap: False}
 		} else {
 			{ ..m, pc: List.get(m.ret, n - 1) ?? 0, at: 0, ret: List.drop_last(m.ret, 1) }
 		}
@@ -997,20 +1006,20 @@ Basic :: [].{
 	do_let = |m, b, w| {
 		nm = Basic.name_at(b, w)
 		if nm.k == "" {
-			{ ..m, done: True, err: "Expected a variable" }
+			{ ..m, done: True, err: "Expected a variable", gap: True}
 		} else {
 			j = Basic.skip_ws(b, nm.at)
 			if Basic.byte(b, j) == 40 {
 				sub = Basic.subscripts(m, b, j)
 				e = Basic.skip_ws(b, sub.at)
 				if Basic.byte(b, e) != 61 {
-					{ ..sub.m, done: True, err: "Expected =" }
+					{ ..sub.m, done: True, err: "Expected =", gap: True}
 				} else {
 					r = Basic.expr(Basic.ensure_arr(sub.m, nm.k), b, e + 1)
 					if r.m.done { r.m } else { Basic.advance(Basic.set_arr(r.m, nm.k, sub.i, sub.j, Basic.num_of(r.v)), r.at) }
 				}
 			} else if Basic.byte(b, j) != 61 {
-				{ ..m, done: True, err: "Expected =" }
+				{ ..m, done: True, err: "Expected =", gap: True}
 			} else {
 				r = Basic.expr(m, b, j + 1)
 				if r.m.done {
@@ -1046,7 +1055,7 @@ Basic :: [].{
 		} else {
 			op = Basic.relop(b, l.at)
 			if op.k == "" {
-				{ ..l.m, done: True, err: "Expected a relational operator" }
+				{ ..l.m, done: True, err: "Expected a relational operator", gap: True}
 			} else {
 				r = Basic.expr(l.m, b, op.at)
 				if r.m.done {
@@ -1055,7 +1064,7 @@ Basic :: [].{
 					yes = Basic.compare(op.k, l.v, r.v)
 					t = Basic.kw(b, r.at, "THEN")
 					if t == r.at {
-						{ ..r.m, done: True, err: "Expected THEN" }
+						{ ..r.m, done: True, err: "Expected THEN", gap: True}
 					} else if !yes {
 						{ ..r.m, pc: r.m.pc + 1, at: 0 }
 					} else {
@@ -1135,12 +1144,12 @@ Basic :: [].{
 		nm = Basic.name_at(b, w)
 		j = Basic.skip_ws(b, nm.at)
 		if nm.k == "" or Basic.byte(b, j) != 61 {
-			{ ..m, done: True, err: "Malformed FOR" }
+			{ ..m, done: True, err: "Malformed FOR", gap: True}
 		} else {
 			from = Basic.sum(m, b, j + 1)
 			t = Basic.kw(b, from.at, "TO")
 			if t == from.at {
-				{ ..from.m, done: True, err: "Expected TO" }
+				{ ..from.m, done: True, err: "Expected TO", gap: True}
 			} else {
 				lim = Basic.sum(from.m, b, t)
 				st = Basic.kw(b, lim.at, "STEP")
@@ -1175,7 +1184,7 @@ Basic :: [].{
 	skip_scan : M, Str, I64 -> M
 	skip_scan = |m, v, depth|
 		if m.pc >= List.len(m.prog) {
-			{ ..m, done: True, err: Str.concat("FOR without NEXT: ", v) }
+			{ ..m, done: True, err: Str.concat("FOR without NEXT: ", v), gap: False}
 		} else {
 			b = Basic.cur(m)
 			i = Basic.skip_ws(b, m.at)
@@ -1215,11 +1224,11 @@ Basic :: [].{
 		nm = Basic.name_at(b, w)
 		n = List.len(m.loops)
 		if n == 0 {
-			{ ..m, done: True, err: "NEXT without FOR" }
+			{ ..m, done: True, err: "NEXT without FOR", gap: False}
 		} else {
 			f = List.get(m.loops, n - 1) ?? { v: "", limit: 0.0, step: 1.0, pc: 0, at: 0 }
 			if nm.k != "" and nm.k != f.v {
-				{ ..m, done: True, err: Str.concat("NEXT out of order: ", nm.k) }
+				{ ..m, done: True, err: Str.concat("NEXT out of order: ", nm.k), gap: False}
 			} else {
 				x = Basic.get_num(m, f.v) + f.step
 				m1 = Basic.set_num(m, f.v, x)
@@ -1242,7 +1251,7 @@ Basic :: [].{
 		} else {
 			c = Basic.skip_ws(b, a.at)
 			if Basic.byte(b, c) != 44 {
-				{ ..a.m, done: True, err: "Expected , after the POKE address" }
+				{ ..a.m, done: True, err: "Expected , after the POKE address", gap: True}
 			} else {
 				v = Basic.sum(a.m, b, c + 1)
 				if v.m.done {
@@ -1267,12 +1276,12 @@ Basic :: [].{
 			g = Basic.kw(b, r.at, "GOTO")
 			sub = if g == r.at { Basic.kw(b, r.at, "GOSUB") } else { g }
 			if sub == r.at {
-				{ ..r.m, done: True, err: "Expected GOTO or GOSUB" }
+				{ ..r.m, done: True, err: "Expected GOTO or GOSUB", gap: True}
 			} else {
 				n = Basic.idx(Basic.num_of(r.v))
 				pick = if n < 1 { { n: -1, at: sub } } else { Basic.nth_line(b, sub, I64.to_u64_wrap(n), 1) }
 				if pick.n < 0 {
-					{ ..r.m, done: True, err: "ON index out of range" }
+					{ ..r.m, done: True, err: "ON index out of range", gap: False}
 				} else if g == r.at {
 					back = Basic.advance(r.m, pick.at)
 					Basic.jump({ ..back, ret: List.append(back.ret, back.pc) }, pick.n)
@@ -1309,14 +1318,14 @@ Basic :: [].{
 	do_option = |m, b, w| {
 		j = Basic.kw(b, w, "BASE")
 		if j == w {
-			{ ..m, done: True, err: "Expected BASE" }
+			{ ..m, done: True, err: "Expected BASE", gap: True}
 		} else {
 			r = Basic.sum(m, b, j)
 			n = Basic.idx(Basic.num_of(r.v))
 			if n > 1 or n < 0 {
-				{ ..r.m, done: True, err: "OPTION BASE must be 0 or 1" }
+				{ ..r.m, done: True, err: "OPTION BASE must be 0 or 1", gap: False}
 			} else if List.len(r.m.arr) > 0 {
-				{ ..r.m, done: True, err: "OPTION BASE after an array is used" }
+				{ ..r.m, done: True, err: "OPTION BASE after an array is used", gap: False}
 			} else {
 				Basic.advance({ ..r.m, base: I64.to_u64_wrap(n) }, r.at)
 			}
@@ -1336,13 +1345,13 @@ Basic :: [].{
 			body = List.sublist(b, { start: q + 1, len: stop - (q + 1) })
 			Basic.advance({ ..m, fns: List.append(m.fns, { k: k, p: "", body: body }) }, stop)
 		} else if Basic.byte(b, q) != 40 {
-			{ ..m, done: True, err: "Expected ( after DEF" }
+			{ ..m, done: True, err: "Expected ( after DEF", gap: True}
 		} else {
 			pm = Basic.name_at(b, q + 1)
 			c = Basic.skip_ws(b, pm.at)
 			eq = Basic.skip_ws(b, c + 1)
 			if Basic.byte(b, c) != 41 or Basic.byte(b, eq) != 61 {
-				{ ..m, done: True, err: "Malformed DEF" }
+				{ ..m, done: True, err: "Malformed DEF", gap: True}
 			} else {
 				stop = Basic.stmt_end(b, eq + 1)
 				body = List.sublist(b, { start: eq + 1, len: stop - (eq + 1) })
@@ -1396,7 +1405,7 @@ Basic :: [].{
 		if nm.k == "" {
 			Basic.advance(m, Basic.stmt_end(b, w))
 		} else if m.dp >= List.len(m.data) {
-			{ ..m, done: True, err: "Out of DATA" }
+			{ ..m, done: True, err: "Out of DATA", gap: False}
 		} else {
 			raw = List.get(m.data, m.dp) ?? ""
 			m1 = { ..m, dp: m.dp + 1 }
@@ -1429,7 +1438,7 @@ Basic :: [].{
 		}
 		m0 = after_prompt.m
 		if m0.ip >= List.len(m0.inp) {
-			{ ..m0, done: True, err: "Out of input" }
+			{ ..m0, done: True, err: "Out of input", gap: True}
 		} else {
 			line = List.get(m0.inp, m0.ip) ?? ""
 			m1 = Basic.emit(Basic.emit(Basic.emit(m0, "? "), line), "\n")
@@ -1550,6 +1559,7 @@ Basic :: [].{
 		col: 0,
 		done: False,
 		err: "",
+		gap: False,
 		seed: seed,
 		fuel: 2000000,
 		base: 0,
@@ -1579,10 +1589,12 @@ Basic :: [].{
 		# one -- and those print with the `?` a BASIC uses. What stops the
 		# program gets a marker of its own so a harness can tell them
 		# apart.
-		if m.err != "" {
+		if m.err != "" and m.gap {
+			Str.concat(Str.concat(body, "\n*** UNSUPPORTED: "), m.err)
+		} else if m.err != "" {
 			Str.concat(Str.concat(body, "\n*** HALTED: "), m.err)
 		} else if m.fuel <= 0 {
-			Str.concat(body, "\n*** HALTED: out of fuel")
+			Str.concat(body, "\n*** UNSUPPORTED: out of fuel")
 		} else {
 			body
 		}

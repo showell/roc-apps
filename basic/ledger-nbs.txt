@@ -13,12 +13,12 @@ PASS P012 |
 PASS P013 |
 PASS P014 |
 PASS P015 |
-FAIL P016 | *** HALTED: No such line: 275
+PASS P016 |
 PASS P017 |
 PASS P018 |
 PASS P019 |
 PASS P020 |
-FAIL P021 | *** HALTED: No such line: 295
+PASS P021 |
 PASS P022 |
 PASS P023 |
 PASS P024 |
@@ -33,8 +33,8 @@ FAIL P032 | *** TEST FAILED: EXECUTION DID NOT TERMINATE. ***
 PASS P033 |
 PASS P034 |
 TIMEOUT P035 |
-FAIL P036 | *** HALTED: Expected )
-FAIL P037 | *** HALTED: Expected an expression
+FAIL P036 | *** UNSUPPORTED: Expected )
+FAIL P037 | *** UNSUPPORTED: Expected an expression
 PASS P038 |
 FAIL P039 | *** INFORMATIVE TEST FAILED IN  9  CASE(S) ***
 FAIL P040 | *** INFORMATIVE TEST FAILED IN  16  CASE(S) ***
@@ -43,58 +43,58 @@ FAIL P042 | *** INFORMATIVE TEST FAILED IN  6  CASE(S) ***
 FAIL P043 | *** INFORMATIVE TEST FAILED IN  20  CASE(S) ***
 PASS P044 |
 PASS P045 |
-FAIL P046 | *** HALTED: NEXT without FOR
+PASS P046 |
 PASS P047 |
 PASS P048 |
 PASS P049 |
 PASS P050 |
 PASS P051 |
-FAIL P052 | *** HALTED: NEXT out of order: J
-FAIL P053 | *** HALTED: NEXT out of order: I
-FAIL P054 | *** HALTED: NEXT without FOR
-FAIL P055 | *** HALTED: NEXT without FOR
-FAIL P056 | *** HALTED: Subscript out of range: B
-FAIL P057 | *** HALTED: Subscript out of range: B
-FAIL P058 | *** HALTED: Subscript out of range: B
+PASS P052 |
+PASS P053 |
+PASS P054 |
+PASS P055 |
+PASS P056 |
+PASS P057 |
+PASS P058 |
 PASS P059 |
 PASS P060 |
-FAIL P061 | *** HALTED: Subscript out of range: Q
+PASS P061 |
 PASS P062 |
-FAIL P063 | *** HALTED: Subscript out of range: A
-FAIL P064 | *** HALTED: Subscript out of range: B
-FAIL P065 | *** HALTED: Subscript out of range: A
-FAIL P066 | *** HALTED: Subscript out of range: B
-FAIL P067 | *** HALTED: Subscript out of range: A
-FAIL P068 | *** HALTED: Subscript out of range: A
-FAIL P069 | *** HALTED: Subscript out of range: B
-FAIL P070 | *** HALTED: Subscript out of range: A
-FAIL P071 | *** HALTED: Subscript out of range: B
-FAIL P072 | *** HALTED: Subscript out of range: B
-FAIL P073 | *** HALTED: Bad DIM bound: A
-FAIL P074 | *** HALTED: Subscript out of range: A
+PASS P063 |
+PASS P064 |
+PASS P065 |
+PASS P066 |
+PASS P067 |
+PASS P068 |
+PASS P069 |
+PASS P070 |
+PASS P071 |
+PASS P072 |
+PASS P073 |
+PASS P074 |
 PASS P075 |
-FAIL P076 | *** HALTED: Subscript out of range: A
+PASS P076 |
 PASS P077 |
-FAIL P078 | *** HALTED: Subscript out of range: A
+PASS P078 |
 PASS P079 |
 PASS P080 |
-FAIL P081 | *** HALTED: OPTION BASE after an array is used
-FAIL P082 | *** HALTED: OPTION BASE after an array is used
+PASS P081 |
+PASS P082 |
 PASS P083 |
-FAIL P084 | *** HALTED: Out of input
+FAIL P084 | *** UNSUPPORTED: Out of input
 PASS P085 |
-FAIL P086 | *** HALTED: RETURN without GOSUB
-FAIL P087 | *** HALTED: No such line: 285
+PASS P086 |
+PASS P087 |
 PASS P088 |
-FAIL P089 | *** HALTED: ON index out of range
-FAIL P090 | *** HALTED: ON index out of range
-FAIL P091 | *** HALTED: No such line: 295
-FAIL P092 | *** HALTED: Out of DATA
+PASS P089 |
+PASS P090 |
+PASS P091 |
+PASS P092 |
 PASS P093 |
-FAIL P094 | *** HALTED: Subscript out of range: C
+PASS P094 |
 PASS P095 |
 PASS P096 |
-FAIL P097 | *** HALTED: Out of DATA
+PASS P097 |
 FAIL P098 | ***  TEST FAILED  ***
 FAIL P099 | ***  TEST FAILED  ***
 FAIL P100 | ***  TEST FAILS  ***
@@ -105,12 +105,12 @@ PASS P104 |
 PASS P105 |
 PASS P106 |
 FAIL P107 | ***  TEST FAILED  ***
-FAIL P108 | *** HALTED: Out of input
+FAIL P108 | *** UNSUPPORTED: Out of input
 FAIL P109 | ***  TEST FAILED  ***
 FAIL P110 | ***  TEST FAILED  ***
 FAIL P111 | ***  TEST FAILS  ***
 FAIL P112 | *** IF NOT ALLOWED TO RE-SUPPLY INPUT, TEST FAILS ***
-FAIL P113 | *** HALTED: Out of input
+FAIL P113 | *** UNSUPPORTED: Out of input
 FAIL P114 | *** TEST FAILED IN  10  CASE(S) ***
 PASS P115 |
 FAIL P116 | *** TEST FAILED IN  1  CASE(S) ***
@@ -138,31 +138,31 @@ PASS P137 |
 PASS P138 |
 PASS P139 |
 PASS P140 |
-FAIL P141 | *** HALTED: NEXT out of order: I
+PASS P141 |
 FAIL P142 | *** INFORMATIVE TEST FAILED ***
-FAIL P143 | *** HALTED: Expected )
-FAIL P144 | *** HALTED: Expected )
-FAIL P145 | *** HALTED: Expected )
+FAIL P143 | *** UNSUPPORTED: Expected )
+FAIL P144 | *** UNSUPPORTED: Expected )
+FAIL P145 | *** UNSUPPORTED: Expected )
 PASS P146 |
-FAIL P147 | *** HALTED: Expected an expression
-FAIL P148 | *** HALTED: Expected ( after TAN
-FAIL P149 | *** HALTED: Expected an expression
+FAIL P147 | *** UNSUPPORTED: Expected an expression
+FAIL P148 | *** UNSUPPORTED: Expected ( after TAN
+FAIL P149 | *** UNSUPPORTED: Expected an expression
 PASS P150 |
 PASS P151 |
 PASS P152 |
 PASS P153 |
-FAIL P154 | *** HALTED: Expected ( after FND
+FAIL P154 | *** UNSUPPORTED: Expected ( after FND
 PASS P155 |
-FAIL P156 | *** HALTED: Expected )
-FAIL P157 | *** HALTED: Malformed DEF
+FAIL P156 | *** UNSUPPORTED: Expected )
+FAIL P157 | *** UNSUPPORTED: Malformed DEF
 PASS P158 |
 PASS P159 |
 PASS P160 |
 PASS P161 |
-FAIL P162 | *** HALTED: Undefined function: FND
-FAIL P163 | *** HALTED: Undefined function: FNA
-FAIL P164 | *** HALTED: Subscript out of range: Q
-FAIL P165 | *** HALTED: Subscript out of range: Q
+FAIL P162 | *** UNSUPPORTED: Undefined function: FND
+FAIL P163 | *** UNSUPPORTED: Undefined function: FNA
+PASS P164 |
+PASS P165 |
 PASS P166 |
 PASS P167 |
 FAIL P168 | *** TEST FAILED: EXECUTION DID NOT TERMINATE. ***
@@ -176,20 +176,20 @@ PASS P175 |
 FAIL P176 | *** TEST FAILED: EXECUTION DID NOT TERMINATE. ***
 PASS P177 |
 PASS P178 |
-FAIL P179 | *** HALTED: ON index out of range
-FAIL P180 | *** HALTED: ON index out of range
-FAIL P181 | *** HALTED: ON index out of range
+PASS P179 |
+PASS P180 |
+PASS P181 |
 FAIL P182 | *** TEST FAILED: EXECUTION DID NOT TERMINATE. ***
 PASS P183 |
 PASS P184 |
 PASS P185 |
 PASS P186 |
 PASS P187 |
-FAIL P188 | *** HALTED: Expected a variable
-FAIL P189 | *** HALTED: Expected =
+FAIL P188 | *** UNSUPPORTED: Expected a variable
+FAIL P189 | *** UNSUPPORTED: Expected =
 PASS P190 |
-FAIL P191 | *** HALTED: Expected =
-FAIL P192 | *** HALTED: Expected an expression
+FAIL P191 | *** UNSUPPORTED: Expected =
+FAIL P192 | *** UNSUPPORTED: Expected an expression
 PASS P193 |
 PASS P194 |
 PASS P195 |
@@ -200,7 +200,7 @@ PASS P199 |
 PASS P200 |
 PASS P201 |
 PASS P202 |
-FAIL P203 | *** HALTED: Out of input
+FAIL P203 | *** UNSUPPORTED: Out of input
 PASS P204 |
 PASS P205 |
 PASS P206 |

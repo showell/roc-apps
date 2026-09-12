@@ -13,7 +13,11 @@
 #           BASIC printed. Byte-exact grading.
 #   nbs/    the National Bureau of Standards Minimal BASIC test programs.
 #           These GRADE THEMSELVES: a conformant interpreter never prints
-#           the words TEST FAILED.
+#           the words TEST FAILED. **A PROGRAM THAT STOPS ON AN EXCEPTION
+#           MAY STILL HAVE PASSED** -- seven of them exist to check that a
+#           subscript out of range DOES stop it -- so the interpreter says
+#           HALTED for an ECMA-55 exception and UNSUPPORTED for a form it
+#           has not built, and only the second is a failure here.
 #
 # Roc has no file or stdin effect on the default platform, so each program
 # becomes its own app with the listing and the keystrokes as literals; the
@@ -47,8 +51,8 @@ one() {
     elif [ "$suite" = nbs ]; then
         if grep -q "TEST FAILED\|TEST FAILS" "$d/out"; then
             echo "FAIL $n | $(grep -m1 'TEST FAIL' "$d/out" | cut -c1-90)" > "$d/verdict"
-        elif grep -q "HALTED" "$d/out"; then
-            echo "FAIL $n | $(grep -m1 'HALTED' "$d/out" | cut -c1-90)" > "$d/verdict"
+        elif grep -q "UNSUPPORTED" "$d/out"; then
+            echo "FAIL $n | $(grep -m1 'UNSUPPORTED' "$d/out" | cut -c1-90)" > "$d/verdict"
         else echo "PASS $n |" > "$d/verdict"; fi
     elif cmp -s "$d/out" "$CORPUS/$suite/$n.output"; then echo "PASS $n |" > "$d/verdict"
     else echo "FAIL $n | $(diff "$d/out" "$CORPUS/$suite/$n.output" | grep -m1 '^[<>]' | cut -c1-90)" > "$d/verdict"; fi

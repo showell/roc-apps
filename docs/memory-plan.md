@@ -1,6 +1,6 @@
 # A plan for `peek-byte` and `poke-byte`
 
-**DONE, 2026-09-12.** What it cost and what it moved is at the end; the
+**DONE, 2026-09-12.** Whether the page array should be a persistent trie instead is [memory-structures.md](memory-structures.md). What it cost and what it moved is at the end; the
 reasoning, with diagrams, is in the essay
 [memory as a value](http://143.244.172.148:9100/notes/memory-as-a-value.md).
 
