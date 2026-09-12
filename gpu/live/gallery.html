@@ -13,7 +13,8 @@
 <div id="wrap">
   <div id="bar"><label>demo <select id="k"></select></label><span id="status">loading gallery.wasm...</span></div>
   <canvas id="c" width="1024" height="768"></canvas>
-  <div>The same Codex <code>[Device]</code> kernels Cobblestone's <a href="https://github.com/damiant3/Cobblestone/tree/master/apps/gpushow">gpushow</a> runs as WebGPU compute shaders, emitted to Roc by <a href="https://github.com/showell/roc-apps">roc-apps</a> and dispatched one gid at a time in wasm. No WebGPU: any browser, plain http.</div>
+  <div id="src"></div>
+  <div>The same Codex <code>[Device]</code> kernels Cobblestone's <a href="https://github.com/damiant3/Cobblestone/tree/master/apps/gpushow">gpushow</a> runs as WebGPU compute shaders, emitted to Roc by <a href="https://github.com/showell/roc-apps">roc-apps</a> and dispatched one gid at a time in wasm. No WebGPU: any browser, plain http. The generated Roc is <a href="https://github.com/showell/roc-apps/tree/master/gpu/roc">gpu/roc</a>.</div>
 </div>
 <script type="module">
 // step(demo, frame) moves the Roc model; view() answers the words. A pixel
@@ -25,7 +26,14 @@ for (const k of kernels) { const o = document.createElement('option'); o.value =
 const want = new URLSearchParams(location.search).get('k');
 let cur = kernels.find(k => k.page === want) ?? kernels.find(k => k.page === 'plasma') ?? kernels[0];
 sel.value = cur.id;
-sel.onchange = () => { cur = kernels[Number(sel.value)]; frame = 0; ms = 0; history.replaceState(null, '', '?k=' + cur.page); };
+const ROC = 'https://github.com/showell/roc-apps/blob/master/gpu/roc/', CODEX = 'https://github.com/damiant3/Cobblestone/blob/master/apps/gpushow/kernels/';
+function showSource() {
+  const mods = cur.kernel.split(' + ');
+  document.getElementById('src').innerHTML = 'this demo in Roc: ' + mods.map(m => `<a href="${ROC}${m}.roc">${m}.roc</a>`).join(', ')
+    + ' &nbsp; from Codex: ' + mods.map(m => `<a href="${CODEX}${m}.codex">${m}.codex</a>`).join(', ');
+}
+sel.onchange = () => { cur = kernels[Number(sel.value)]; frame = 0; ms = 0; history.replaceState(null, '', '?k=' + cur.page); showSource(); };
+showSource();
 const { instance } = await WebAssembly.instantiateStreaming(fetch('gallery.wasm'), {});
 const x = instance.exports;
 const canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
