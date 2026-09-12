@@ -95,7 +95,8 @@ const SAMPLES = {
   "Screen: Mandelbrot": '5 PRINT "MANDELBROT, SIXTEEN ITERATIONS DEEP."\n10 FOR R = 0 TO 24\n20 FOR C = 0 TO 39\n30 LET A = -2.2 + C*3.0/39\n40 LET B = -1.2 + R*2.4/24\n50 LET X = 0\n60 LET Y = 0\n70 LET N = 0\n80 IF X*X + Y*Y > 4 THEN 140\n90 IF N >= 15 THEN 140\n100 LET T = X*X - Y*Y + A\n110 LET Y = 2*X*Y + B\n120 LET X = T\n130 LET N = N + 1\n135 GOTO 80\n140 LET P = C + 40*R\n150 POKE 1024 + P, 160\n160 POKE 55296 + P, N\n170 NEXT C\n180 NEXT R\n199 END\n',
   "Screen: Mandelbrot zoom (SLEEP)": '5 PRINT "TWENTY-FOUR FRAMES, ONE SLEEP EACH."\n10 REM SLEEP HANDS THE MACHINE BACK TO THE PAGE,\n11 REM WHICH PAINTS A FRAME AND RESUMES IT.\n20 LET Z = 1\n30 FOR F = 1 TO 24\n40 FOR R = 0 TO 24\n50 FOR C = 0 TO 39\n60 LET A = -0.743 + (C-19.5)*3.0/39/Z\n70 LET B = 0.131 + (R-12)*2.4/24/Z\n80 LET X = 0\n90 LET Y = 0\n100 LET N = 0\n110 IF X*X + Y*Y > 4 THEN 170\n120 IF N >= 14 THEN 170\n130 LET T = X*X - Y*Y + A\n140 LET Y = 2*X*Y + B\n150 LET X = T\n160 LET N = N + 1\n165 GOTO 110\n170 LET P = C + 40*R\n180 POKE 1024 + P, 160\n190 POKE 55296 + P, N + 1\n200 NEXT C\n210 NEXT R\n220 SLEEP 0.05\n230 LET Z = Z * 1.35\n240 NEXT F\n299 END\n',
   "Pixels: plasma (PLOT)": '5 PRINT "A PLASMA, ONE PIXEL AT A TIME."\n10 REM 320x200, ONE BYTE A PIXEL FROM 131072.\n11 REM PLOT X,Y,C IS THAT POKE WITH THE SUM DONE.\n20 FOR Y = 0 TO 199 STEP 2\n30 FOR X = 0 TO 319 STEP 2\n40 LET C = 128 + 120*SIN(X/24)*COS(Y/17)\n50 PLOT X, Y, C\n60 PLOT X+1, Y, C\n70 PLOT X, Y+1, C\n80 PLOT X+1, Y+1, C\n90 NEXT X\n100 NEXT Y\n199 END\n',
-  "Pixels: the maze one-liner": '10 REM THE CLASSIC. IT NEVER ENDS ON PURPOSE --\n11 REM THE MACHINE YIELDS EVERY 250,000 STEPS AND\n12 REM THE PAGE DECIDES WHETHER TO CARRY ON.\n20 POKE 1024 + INT(RND(1)*1000), 77 + INT(RND(1)*2)\n30 GOTO 20\n',
+  "Counting forever": '1 REM IT NEVER ENDS ON PURPOSE. THE MACHINE HANDS\n2 REM ITSELF BACK EVERY 250,000 STEPS, THE PAGE\n3 REM PAINTS AND CARRIES ON UNTIL YOU PRESS STOP.\n10 I = 0\n20 PRINT I\n30 I = I + 1\n40 GOTO 20\n',
+  "Screen: the maze, forever": '1 REM THE CLASSIC: A RANDOM DIAGONAL POKED INTO A\n2 REM RANDOM CELL, AGAIN AND AGAIN, UNTIL STOP.\n20 POKE 1024 + INT(RND(1)*1000), 77 + INT(RND(1)*2)\n30 GOTO 20\n',
   "Square roots by Newton": '10 PRINT "N", "SQR(N)", "NEWTON"\n20 FOR N = 1 TO 10\n30 LET X = N\n40 FOR K = 1 TO 12\n50 LET X = (X + N/X)/2\n60 NEXT K\n70 PRINT N, SQR(N), X\n80 NEXT N\n90 END\n',
 };
 
@@ -179,7 +180,8 @@ function paint(cells) {
 let x = null, running = false, stopped = false;
 const enc = new TextEncoder(), dec = new TextDecoder();
 const STATUS = { 0: "finished", 1: "waiting for a line", 2: "stopped on an exception",
-                 3: "stopped: a form the interpreter has not built", 4: "sleeping" };
+                 3: "stopped: a form the interpreter has not built", 4: "sleeping",
+                 5: "running" };
 
 async function boot() {
   $("status").textContent = "loading\u2026";
@@ -208,14 +210,23 @@ function render() {
 }
 
 // **RUN UNTIL THE MACHINE WANTS SOMETHING.** A suspended machine comes
-// back for one of two reasons: it printed an INPUT prompt, or it asked to
-// sleep. The first waits for the reader; the second paints a frame and
-// carries on, which is what makes an animation an animation.
+// back for one of three reasons: it printed an INPUT prompt, it asked to
+// sleep, or it spent a tank of fuel. The first waits for the reader; the
+// other two paint a frame and carry on -- a sleep after its delay, a
+// yield at once -- which is what makes an animation an animation and a
+// program that never ends a program that keeps going until Stop.
 async function pump() {
   running = true;
   while (!stopped) {
     const st = x.runStatus();
     render();
+    if (st === 5) {
+      $("status").textContent = STATUS[st] + "  ·  " + x.depth() + " states";
+      await delay(0);
+      if (stopped) break;
+      x.wake();
+      continue;
+    }
     if (st !== 4) {
       $("status").textContent = STATUS[st] + "  \u00b7  " + x.depth() + " states";
       $("line").disabled = st !== 1;
@@ -226,7 +237,7 @@ async function pump() {
     }
     await delay(Math.min(x.pauseMs(), 2000));
     if (stopped) break;
-    x.send(0);
+    x.wake();
   }
   running = false;
   $("status").textContent = "stopped  \u00b7  " + x.depth() + " states";

@@ -39,7 +39,7 @@ platform ""
 		inputs_dir: "targets/",
 		wasm32: {
 			inputs: ["host.wasm", app],
-			exports: ["srcPtr", "keysPtr", "capacity", "screenBytes", "newRun", "send", "back", "depth", "runStatus", "pauseMs", "view", "outPtr", "outLen"],
+			exports: ["srcPtr", "keysPtr", "capacity", "screenBytes", "newRun", "send", "wake", "back", "depth", "runStatus", "pauseMs", "view", "outPtr", "outLen"],
 		},
 	}
 

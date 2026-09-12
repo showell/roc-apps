@@ -148,6 +148,16 @@ pub export fn send(line_len: u32) void {
     push(roc_resume(borrowed(cur), RocList.fromSlice(u8, keys_buf[0..line_len], false, &roc_ops)));
 }
 
+/// Carry on a machine that slept or spent its fuel. Nobody typed anything,
+/// so the new state REPLACES the old one instead of stacking on it, and the
+/// old one is handed over OWNED: a borrowed machine is still reachable, and
+/// Roc copies a list it can still reach, which here is the framebuffer and
+/// the transcript once a tank, forever.
+pub export fn wake() void {
+    const cur = history.pop() orelse return;
+    push(roc_resume(cur, RocList.empty()));
+}
+
 /// Undo one line. The first state is kept, so `back` at the start is a
 /// no-op rather than an empty machine.
 pub export fn back() u32 {
