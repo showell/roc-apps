@@ -67,6 +67,8 @@ PLANS = {
                     passes=[("TextureKernel", "texture_step", N, ["texBuf", "outBuf"])]),
     "gltf": dict(buffers=[("meshBuf", "Seeds.icosahedron({})"), ("outBuf", N)],
                  passes=[("GltfKernel", "gltf_step", N, ["meshBuf", "outBuf"])]),
+    "d20": dict(buffers=[("meshBuf", "Seeds.icosahedron({})"), ("outBuf", N)],
+                passes=[("D20Kernel", "d20_step", N, ["meshBuf", "outBuf"])]),
     "shadowmap": dict(buffers=[("shadowBuf", SM), ("outBuf", N)],
                       passes=[("ShadowMapKernel", "shadowmap_step", SM, ["shadowBuf"]),
                               ("ShadowSceneKernel", "shadowmain_step", N, ["shadowBuf", "outBuf"])]),
@@ -84,7 +86,7 @@ def page_plan(path):
         return dict(PLANS[page], w=w, h=h, out="outBuf"), None
     if page in PARTICLES:
         return dict(PARTICLES[page], w=1024, h=768), None
-    m = re.search(r"kernels/([A-Za-z]+Kernel)\.wgsl", html)
+    m = re.search(r"kernels/([A-Za-z0-9]+Kernel)\.wgsl", html)
     if not m: return None, "no kernel fetched"
     entries = [e for e in re.findall(r"entryPoint: '([a-z_0-9]+)'", html) if e.endswith("_main")]
     if len(entries) != 1: return None, f"{len(entries)} compute entries and no plan"

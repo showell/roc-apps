@@ -33,8 +33,8 @@ resolved, `<Spec>.expected` the verdict the Rust interpreter froze).
 `apps/*/kernels` (46 chapters the wgsl plug lowers to WebGPU compute
 shaders), run in Roc on the CPU, one gid after another, with the pixels put
 on a 2d canvas. Started 2026-09-12 with hand ports of plasma and the
-fountain; the same day every kernel was emitted and 38 of the 39 demo
-pages became one gallery module. The essay is `:9100/notes/plasma-in-roc.md`.
+fountain; the same day every kernel was emitted and all 39 demo pages
+became one gallery module. The essay is `:9100/notes/plasma-in-roc.md`.
 
 | where | what | written by |
 |---|---|---|
@@ -51,7 +51,7 @@ pages became one gallery module. The essay is `:9100/notes/plasma-in-roc.md`.
     gpu/emitted.sh                 # 46 kernels, ~4 s
     gpu/gallery.py                 # after a page or kernel changes: the app and the manifest
     gpu/build.sh                   # ~6 s
-    node gpu/wasm/smoke.mjs ~/build/roc-apps/next/gpu/gallery.wasm 2   # 38 of 38 render; plasma's frame 0 is 6293600626746
+    node gpu/wasm/smoke.mjs ~/build/roc-apps/next/gpu/gallery.wasm 2   # 39 of 39 render; plasma's frame 0 is 6293600626746
     node gpu/wasm/smoke.mjs ~/build/roc-apps/next/gpu/gallery.wasm 30 cpuparticles swarm   # the named demos; the fountain's frame 0 is 91143764817938
 
 ## The Roc is tracked; everything else the tools write is not

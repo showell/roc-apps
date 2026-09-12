@@ -14,6 +14,7 @@ import BloomSceneKernel
 import CpuParticlesKernel
 import CubeKernel
 import CubemapKernel
+import D20Kernel
 import DeferredKernel
 import FireworksKernel
 import GbufKernel
@@ -89,138 +90,142 @@ step = |boxed, kernel, frame| {
 			Box.box({ kernel: kernel, dev: dev1, out: 0 })
 		})
 		5 => ({
+			dev1 = Device.dispatch(dev0, 786432, |d, gid| D20Kernel.d20_step(d, 0, 1, f, gid))
+			Box.box({ kernel: kernel, dev: dev1, out: 1 })
+		})
+		6 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| GbufKernel.gbuf_step(d, 0, 1, 2, gid))
 			dev2 = Device.dispatch(dev1, 786432, |d, gid| DeferredKernel.deferred_step(d, 0, 1, 2, 3, f, gid))
 			Box.box({ kernel: kernel, dev: dev2, out: 3 })
 		})
-		6 => ({
+		7 => ({
 			dev1 = Device.dispatch(dev0, 2600, |d, gid| FireworksKernel.fw_burst_spark(d, 0, 512, 300, f, 2600, gid))
 			Box.box({ kernel: kernel, dev: dev1, out: 0 })
 		})
-		7 => ({
+		8 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| GearsKernel.gears_step(d, 0, f, gid))
 			Box.box({ kernel: kernel, dev: dev1, out: 0 })
 		})
-		8 => ({
+		9 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| GltfKernel.gltf_step(d, 0, 1, f, gid))
 			Box.box({ kernel: kernel, dev: dev1, out: 1 })
 		})
-		9 => ({
+		10 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| InstancingKernel.instancing_step(d, 0, f, gid))
 			Box.box({ kernel: kernel, dev: dev1, out: 0 })
 		})
-		10 => ({
+		11 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| JuliaKernel.julia_step(d, 0, f, gid))
 			Box.box({ kernel: kernel, dev: dev1, out: 0 })
 		})
-		11 => ({
+		12 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| MandelKernel.mandel_step(d, 0, f, gid))
 			Box.box({ kernel: kernel, dev: dev1, out: 0 })
 		})
-		12 => ({
+		13 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| MultisampleKernel.multisample_step(d, 0, f, gid))
 			Box.box({ kernel: kernel, dev: dev1, out: 0 })
 		})
-		13 => ({
+		14 => ({
 			dev1 = if odd { Device.dispatch(dev0, 1024, |d, gid| NbodyKernel.nbody_step(d, 1, 0, f, gid)) } else { Device.dispatch(dev0, 1024, |d, gid| NbodyKernel.nbody_step(d, 0, 1, f, gid)) }
 			Box.box({ kernel: kernel, dev: dev1, out: (if odd { 0 } else { 1 }) })
 		})
-		14 => ({
+		15 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| OcclusionKernel.occlusion_step(d, 0, f, gid))
 			Box.box({ kernel: kernel, dev: dev1, out: 0 })
 		})
-		15 => ({
+		16 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| OmniShadowKernel.omnishadow_step(d, 0, f, gid))
 			Box.box({ kernel: kernel, dev: dev1, out: 0 })
 		})
-		16 => ({
+		17 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| ParallaxKernel.parallax_step(d, 0, f, gid))
 			Box.box({ kernel: kernel, dev: dev1, out: 0 })
 		})
-		17 => ({
+		18 => ({
 			dev1 = if odd { Device.dispatch(dev0, 20000, |d, gid| ParticlesKernel.particles_step(d, 1, 0, f, gid)) } else { Device.dispatch(dev0, 20000, |d, gid| ParticlesKernel.particles_step(d, 0, 1, f, gid)) }
 			Box.box({ kernel: kernel, dev: dev1, out: (if odd { 0 } else { 1 }) })
 		})
-		18 => ({
+		19 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| PbrKernel.pbr_step(d, 0, f, gid))
 			Box.box({ kernel: kernel, dev: dev1, out: 0 })
 		})
-		19 => ({
+		20 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| PbrIblKernel.pbribl_step(d, 0, f, gid))
 			Box.box({ kernel: kernel, dev: dev1, out: 0 })
 		})
-		20 => ({
+		21 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| PbrTexKernel.pbrtex_step(d, 0, f, gid))
 			Box.box({ kernel: kernel, dev: dev1, out: 0 })
 		})
-		21 => ({
+		22 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| PipelinesKernel.pipelines_step(d, 0, f, gid))
 			Box.box({ kernel: kernel, dev: dev1, out: 0 })
 		})
-		22 => ({
+		23 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| PlasmaKernel.plasma_step(d, 0, f, gid))
 			Box.box({ kernel: kernel, dev: dev1, out: 0 })
 		})
-		23 => ({
+		24 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| BloomSceneKernel.bloom_scene_step(d, 0, f, gid))
 			dev2 = Device.dispatch(dev1, 786432, |d, gid| RadialKernel.radial_step(d, 0, 1, f, gid))
 			Box.box({ kernel: kernel, dev: dev2, out: 1 })
 		})
-		24 => ({
+		25 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| RaymarchKernel.raymarch_step(d, 0, f, gid))
 			Box.box({ kernel: kernel, dev: dev1, out: 0 })
 		})
-		25 => ({
+		26 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| RaytraceKernel.raytrace_step(d, 0, f, gid))
 			Box.box({ kernel: kernel, dev: dev1, out: 0 })
 		})
-		26 => ({
+		27 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| ReflectKernel.reflect_step(d, 0, f, gid))
 			Box.box({ kernel: kernel, dev: dev1, out: 0 })
 		})
-		27 => ({
+		28 => ({
 			dev1 = Device.dispatch(dev0, 1048576, |d, gid| ShadowMapKernel.shadowmap_step(d, 0, f, gid))
 			dev2 = Device.dispatch(dev1, 786432, |d, gid| ShadowSceneKernel.shadowmain_step(d, 0, 1, f, gid))
 			Box.box({ kernel: kernel, dev: dev2, out: 1 })
 		})
-		28 => ({
+		29 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| ShadowKernel.shadow_step(d, 0, f, gid))
 			Box.box({ kernel: kernel, dev: dev1, out: 0 })
 		})
-		29 => ({
+		30 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| GbufKernel.gbuf_step(d, 0, 1, 2, gid))
 			dev2 = Device.dispatch(dev1, 786432, |d, gid| SsaoKernel.ssao_step(d, 0, 1, 2, 3, f, gid))
 			Box.box({ kernel: kernel, dev: dev2, out: 3 })
 		})
-		30 => ({
+		31 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| StencilKernel.stencil_step(d, 0, f, gid))
 			Box.box({ kernel: kernel, dev: dev1, out: 0 })
 		})
-		31 => ({
+		32 => ({
 			dev1 = if odd { Device.dispatch(dev0, 8000, |d, gid| SwarmKernel.swarm_step(d, 1, 0, f, gid)) } else { Device.dispatch(dev0, 8000, |d, gid| SwarmKernel.swarm_step(d, 0, 1, f, gid)) }
 			Box.box({ kernel: kernel, dev: dev1, out: (if odd { 0 } else { 1 }) })
 		})
-		32 => ({
+		33 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| TexArrayKernel.texarray_step(d, 0, f, gid))
 			Box.box({ kernel: kernel, dev: dev1, out: 0 })
 		})
-		33 => ({
+		34 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| TexMipmapKernel.texmipmap_step(d, 0, f, gid))
 			Box.box({ kernel: kernel, dev: dev1, out: 0 })
 		})
-		34 => ({
+		35 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| TextKernel.text_step(d, 0, f, gid))
 			Box.box({ kernel: kernel, dev: dev1, out: 0 })
 		})
-		35 => ({
+		36 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| TextureKernel.texture_step(d, 0, 1, f, gid))
 			Box.box({ kernel: kernel, dev: dev1, out: 1 })
 		})
-		36 => ({
+		37 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| TriangleKernel.triangle_step(d, 0, f, gid))
 			Box.box({ kernel: kernel, dev: dev1, out: 0 })
 		})
-		37 => ({
+		38 => ({
 			dev1 = Device.dispatch(dev0, 786432, |d, gid| VertexAttrKernel.vertexattr_step(d, 0, f, gid))
 			Box.box({ kernel: kernel, dev: dev1, out: 0 })
 		})
@@ -236,39 +241,40 @@ make = |kernel| match kernel {
 	2 => Device.new([Seeds.cpu_particles({}), List.repeat(0, 56000)])
 	3 => Device.new([List.repeat(0, 786432)])
 	4 => Device.new([List.repeat(0, 786432)])
-	5 => Device.new([List.repeat(0, 786432), List.repeat(0, 786432), List.repeat(0, 786432), List.repeat(0, 786432)])
-	6 => Device.new([List.repeat(0, 2600)])
-	7 => Device.new([List.repeat(0, 786432)])
-	8 => Device.new([Seeds.icosahedron({}), List.repeat(0, 786432)])
-	9 => Device.new([List.repeat(0, 786432)])
+	5 => Device.new([Seeds.icosahedron({}), List.repeat(0, 786432)])
+	6 => Device.new([List.repeat(0, 786432), List.repeat(0, 786432), List.repeat(0, 786432), List.repeat(0, 786432)])
+	7 => Device.new([List.repeat(0, 2600)])
+	8 => Device.new([List.repeat(0, 786432)])
+	9 => Device.new([Seeds.icosahedron({}), List.repeat(0, 786432)])
 	10 => Device.new([List.repeat(0, 786432)])
 	11 => Device.new([List.repeat(0, 786432)])
 	12 => Device.new([List.repeat(0, 786432)])
-	13 => Device.new([Seeds.nbody({}), List.repeat(0, 4096)])
-	14 => Device.new([List.repeat(0, 786432)])
+	13 => Device.new([List.repeat(0, 786432)])
+	14 => Device.new([Seeds.nbody({}), List.repeat(0, 4096)])
 	15 => Device.new([List.repeat(0, 786432)])
 	16 => Device.new([List.repeat(0, 786432)])
-	17 => Device.new([Seeds.particles_page({}), List.repeat(0, 80000)])
-	18 => Device.new([List.repeat(0, 786432)])
+	17 => Device.new([List.repeat(0, 786432)])
+	18 => Device.new([Seeds.particles_page({}), List.repeat(0, 80000)])
 	19 => Device.new([List.repeat(0, 786432)])
 	20 => Device.new([List.repeat(0, 786432)])
 	21 => Device.new([List.repeat(0, 786432)])
 	22 => Device.new([List.repeat(0, 786432)])
-	23 => Device.new([List.repeat(0, 786432), List.repeat(0, 786432)])
-	24 => Device.new([List.repeat(0, 786432)])
+	23 => Device.new([List.repeat(0, 786432)])
+	24 => Device.new([List.repeat(0, 786432), List.repeat(0, 786432)])
 	25 => Device.new([List.repeat(0, 786432)])
 	26 => Device.new([List.repeat(0, 786432)])
-	27 => Device.new([List.repeat(0, 1048576), List.repeat(0, 786432)])
-	28 => Device.new([List.repeat(0, 786432)])
-	29 => Device.new([List.repeat(0, 786432), List.repeat(0, 786432), List.repeat(0, 786432), List.repeat(0, 786432)])
-	30 => Device.new([List.repeat(0, 786432)])
-	31 => Device.new([Seeds.swarm({}), List.repeat(0, 32000)])
-	32 => Device.new([List.repeat(0, 786432)])
+	27 => Device.new([List.repeat(0, 786432)])
+	28 => Device.new([List.repeat(0, 1048576), List.repeat(0, 786432)])
+	29 => Device.new([List.repeat(0, 786432)])
+	30 => Device.new([List.repeat(0, 786432), List.repeat(0, 786432), List.repeat(0, 786432), List.repeat(0, 786432)])
+	31 => Device.new([List.repeat(0, 786432)])
+	32 => Device.new([Seeds.swarm({}), List.repeat(0, 32000)])
 	33 => Device.new([List.repeat(0, 786432)])
 	34 => Device.new([List.repeat(0, 786432)])
-	35 => Device.new([Seeds.texture({}), List.repeat(0, 786432)])
-	36 => Device.new([List.repeat(0, 786432)])
+	35 => Device.new([List.repeat(0, 786432)])
+	36 => Device.new([Seeds.texture({}), List.repeat(0, 786432)])
 	37 => Device.new([List.repeat(0, 786432)])
+	38 => Device.new([List.repeat(0, 786432)])
 	_ => Device.new([])
 }
 
