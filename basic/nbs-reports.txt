@@ -26,7 +26,8 @@
 # verdict; the program's other TEST FAILED lines count.
 # KIND `reader`: a program whose only verdict is a reader comparing lines
 # ("IF ALL THE ABOVE PAIRS ARE IDENTICAL, THEN TEST PASSED"), printed
-# whatever the lines say. It is UNJUDGED however it runs.
+# whatever the lines say, verdict words included. It is UNJUDGED however
+# it runs.
 #
 # The requirement comes from the listing's TO PASS THIS TEST section, not
 # from what this interpreter prints.
@@ -89,6 +90,9 @@ P089 | also | *** HALTED: ON index out of range
 P090 | also | *** HALTED: ON index out of range
 P091 | rejects | *** REJECTED: A jump to a line that does not exist
 P097 | also | *** HALTED: Out of DATA
+P098 | also | *** HALTED: A string read into a numeric variable
+P099 | also | *** HALTED: A string read into a numeric variable
+P100 | reader |
 P101 | judged | ?Overflow
 P102 | rejects | *** REJECTED: A character not allowed in an unquoted datum
 P103 | rejects | *** REJECTED: Text after a quoted datum

@@ -71,7 +71,7 @@ one() {
         fi
         if grep -q '^\*\*\* REJECTED' "$d/out" && [ "$kind" != rejects ]; then
             echo "FAIL $n | $(grep -m1 'REJECTED' "$d/out" | cut -c1-90)" > "$d/verdict"
-        elif [ "$kind" != judged ] && [ "$kind" != rejects ] && grep -q "TEST FAILED\|TEST FAILS" "$verdicts"; then
+        elif [ "$kind" != judged ] && [ "$kind" != rejects ] && [ "$kind" != reader ] && grep -q "TEST FAILED\|TEST FAILS" "$verdicts"; then
             echo "FAIL $n | $(grep -m1 'TEST FAIL' "$verdicts" | cut -c1-90)" > "$d/verdict"
         elif grep -q "UNSUPPORTED" "$d/out"; then
             echo "FAIL $n | $(grep -m1 'UNSUPPORTED' "$d/out" | cut -c1-90)" > "$d/verdict"

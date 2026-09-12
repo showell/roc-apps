@@ -1719,10 +1719,17 @@ Basic :: [].{
 		} else if m.dp >= List.len(m.data) {
 			{ ..m, done: True, err: "Out of DATA", gap: False}
 		} else {
+			# A datum keeps its quotes in the list, so READ can tell a string
+			# from a number (ECMA-55 14.5: a string into a numeric variable
+			# is fatal).
 			raw = List.get(m.data, m.dp) ?? ""
-			s = Basic.store({ ..m, dp: m.dp + 1 }, b, nm, raw)
-			j = Basic.skip_ws(b, s.at)
-			if s.m.done { s.m } else if Basic.byte(b, j) == 44 { Basic.do_read(s.m, b, j + 1) } else { Basic.advance(s.m, s.at) }
+			if m.ecma and !Basic.is_str_name(nm.k) and !Basic.is_numeric_datum(Str.to_utf8(raw)) {
+				{ ..m, done: True, err: "A string read into a numeric variable", gap: False }
+			} else {
+				s = Basic.store({ ..m, dp: m.dp + 1 }, b, nm, Basic.unquote(raw))
+				j = Basic.skip_ws(b, s.at)
+				if s.m.done { s.m } else if Basic.byte(b, j) == 44 { Basic.do_read(s.m, b, j + 1) } else { Basic.advance(s.m, s.at) }
+			}
 		}
 	}
 
@@ -2050,7 +2057,7 @@ Basic :: [].{
 		} else if Basic.byte(b, j) == 34 {
 			e = Basic.quote_end(b, j + 1, List.len(b))
 			k = Basic.skip_ws(b, e)
-			Basic.data_items(b, if Basic.byte(b, k) == 44 { k + 1 } else { List.len(b) }, List.append(acc, Basic.text_of(b, j + 1, U64.minus_wrap(e, 1))))
+			Basic.data_items(b, if Basic.byte(b, k) == 44 { k + 1 } else { List.len(b) }, List.append(acc, Basic.text_of(b, j, e)))
 		} else {
 			e = Basic.item_end(b, j)
 			Basic.data_items(b, e + 1, List.append(acc, Basic.trim_right(b, j, e)))
