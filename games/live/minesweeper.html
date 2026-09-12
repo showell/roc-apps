@@ -1,0 +1,68 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Minesweeper in Roc</title>
+<style>
+  html,body { margin:0; background:#1b1f27; color:#c9d1d9; font:16px system-ui,sans-serif; }
+  #wrap { display:flex; flex-direction:column; align-items:center; gap:12px; padding:16px; }
+  #bar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:center; }
+  button { background:#30363d; color:#c9d1d9; border:1px solid #444c56; border-radius:4px; padding:8px 14px; font:inherit; cursor:pointer; }
+  #grid { display:grid; grid-template-columns:repeat(9, 48px); gap:3px; background:#0d1117; padding:6px; border-radius:6px; }
+  .c { width:48px; height:48px; border-radius:3px; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:20px; user-select:none; }
+  .hidden { background:#3d444d; cursor:pointer; box-shadow: inset 0 2px 0 #59636e; }
+  .hidden:hover { background:#4a525c; }
+  .open { background:#161b22; color:#8b949e; }
+  .n1{color:#58a6ff}.n2{color:#3fb950}.n3{color:#f85149}.n4{color:#bc8cff}.n5{color:#d29922}.n6{color:#39c5cf}.n7{color:#c9d1d9}.n8{color:#8b949e}
+  .boom { background:#f85149; }
+  #status { min-height:1.4em; }
+  .note { max-width:460px; font-size:13px; color:#8b949e; line-height:1.5; }
+  a { color:#58a6ff; }
+</style>
+<div id="wrap">
+  <div id="bar">
+    <button id="new">New game</button>
+    <button id="ai">AI move</button>
+    <button id="auto">Autoplay</button>
+    <span id="status">click a cell</span>
+  </div>
+  <div id="grid"></div>
+  <div class="note">Damian's Minesweeper engine, 9x9 with ten mines, Codex emitted to Roc and run in wasm. A click
+    becomes a message, the cell's number, and <code>step</code> is the only door; <code>view</code> answers
+    the board as words. The AI only opens a square it can prove safe. The generated Roc is
+    <a href="https://github.com/showell/roc-apps/tree/master/games/roc">games/roc</a>; the engine's Codex is
+    <a href="https://github.com/damiant3/Cobblestone/blob/master/apps/games/classic/Minesweeper.codex">Minesweeper.codex</a>.</div>
+</div>
+<script type="module">
+// THE SEAM. A click on cell i is the message i (0..80); 81 asks the AI.
+// view() answers 87 words: per cell mine | shown<<1 | adjacent<<2, then
+// revealed count, mines hit, moves, done, won, safe cells.
+const AI = 81;
+const { instance } = await WebAssembly.instantiateStreaming(fetch('minesweeper.wasm'), {});
+const x = instance.exports;
+const grid = document.getElementById('grid'), status = document.getElementById('status');
+let auto = null;
+function draw() {
+  const n = x.view();
+  const w = new Uint32Array(x.memory.buffer, x.bufPtr(), n / 4);
+  const [count, hits, moves, done, won] = [w[81], w[82], w[83], w[84], w[85]];
+  grid.innerHTML = '';
+  for (let i = 0; i < 81; i++) {
+    const mine = w[i] & 1, shown = (w[i] >> 1) & 1, adj = w[i] >> 2;
+    const d = document.createElement('div');
+    if (!shown) { d.className = 'c hidden'; d.textContent = done && mine ? '💣' : ''; d.onclick = () => send(i); }
+    else if (mine) { d.className = 'c boom'; d.textContent = '💣'; }
+    else { d.className = 'c open n' + adj; d.textContent = adj || ''; }
+    grid.appendChild(d);
+  }
+  status.textContent = `${count} open · ${hits} mines hit · ${moves} moves` + (done ? (won ? ' · cleared' : ' · over') : '');
+  if (done && auto) { clearInterval(auto); auto = null; }
+}
+function send(msg) { x.step(msg); draw(); }
+document.getElementById('new').onclick = () => { x.newGame((Date.now() % 90000) + 1); draw(); };
+document.getElementById('ai').onclick = () => send(AI);
+document.getElementById('auto').onclick = () => {
+  if (auto) { clearInterval(auto); auto = null; return; }
+  auto = setInterval(() => send(AI), 150);
+};
+x.newGame((Date.now() % 90000) + 1);
+draw();
+</script>
