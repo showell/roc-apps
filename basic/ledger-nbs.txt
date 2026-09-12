@@ -59,7 +59,7 @@ PASS P058 |
 PASS P059 |
 PASS P060 |
 PASS P061 |
-CRASH P062 | exit 1: Roc application overflowed its stack memory
+PASS P062 |
 PASS P063 |
 PASS P064 |
 PASS P065 |
@@ -89,7 +89,7 @@ PASS P088 |
 PASS P089 |
 PASS P090 |
 PASS P091 |
-PASS P092 |
+FAIL P092 | *** HALTED: Out of DATA
 PASS P093 |
 PASS P094 |
 PASS P095 |
@@ -131,11 +131,11 @@ PASS P130 |
 PASS P131 |
 PASS P132 |
 FAIL P133 | THE TEST FAILS.
-FAIL P134 | OF THE RESULTING STATISTICS, THEN THE TEST FAILS.
+TIMEOUT P134 |
 PASS P135 |
 PASS P136 |
-CRASH P137 | exit 1: Roc application overflowed its stack memory
-CRASH P138 | exit 1: Roc application overflowed its stack memory
+PASS P137 |
+PASS P138 |
 PASS P139 |
 PASS P140 |
 PASS P141 |
