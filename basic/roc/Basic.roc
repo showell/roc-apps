@@ -457,6 +457,11 @@ Basic :: [].{
 	fmt_mag = |a|
 		if a == 0.0 {
 			"0"
+		} else if !(a <= Basic.huge) {
+			# Normalising an infinity or a NaN by tens never ends, and Roc
+			# evaluates a literal program at compile time with no step
+			# limit, so this shows instead of hanging the build.
+			"INF"
 		} else if a == Basic.floor(a) and a < 1000000000.0 {
 			I64.to_str(F64.to_i64_wrap(a))
 		} else {
@@ -535,6 +540,37 @@ Basic :: [].{
 	fail : M, Str, U64 -> R
 	fail = |m, why, at| { m: { ..m, done: True, err: why, gap: True }, v: N(0.0), at: at }
 
+	# A FATAL EXCEPTION is the program's, not the interpreter's: ECMA-55
+	# stops on it, and the suite checks that it does.
+	halt : M, Str, U64 -> R
+	halt = |m, why, at| { m: { ..m, done: True, err: why, gap: False }, v: N(0.0), at: at }
+
+	# ECMA-55 7.4: an overflow is reported and the program continues with
+	# the largest number of the right sign. An infinity is never a value.
+	finite : M, F64, U64 -> R
+	finite = |m, x, at|
+		if x > Basic.huge {
+			{ m: Basic.emit(m, "\n?Overflow\n"), v: N(Basic.huge), at: at }
+		} else if x < 0.0 - Basic.huge {
+			{ m: Basic.emit(m, "\n?Overflow\n"), v: N(0.0 - Basic.huge), at: at }
+		} else {
+			{ m: m, v: N(x), at: at }
+		}
+
+	# ECMA-55 7.5: a negative number to a non-integral power stops the
+	# program; zero to a negative power is reported and continues with the
+	# largest number. Above 2^52 every F64 is an integer, and `floor`
+	# truncates through I64, so it is not asked there.
+	raise : M, F64, F64, U64 -> R
+	raise = |m, x, y, at|
+		if x < 0.0 and F64.abs(y) < 4503599627370496.0 and y != Basic.floor(y) {
+			Basic.halt(m, "Negative number raised to a non-integral power", at)
+		} else if x == 0.0 and y < 0.0 {
+			{ m: Basic.emit(m, "\n?Zero raised to a negative power\n"), v: N(Basic.huge), at: at }
+		} else {
+			Basic.finite(m, F64.pow(x, y), at)
+		}
+
 	# **THE STRING PATH IS DECIDED FIRST.** A string literal, a `$`
 	# variable and a `$` function all answer text, and everything else
 	# goes down the numeric grammar. Taking the numeric path with a string
@@ -593,7 +629,8 @@ Basic :: [].{
 			if r.m.done {
 				r
 			} else {
-				Basic.sum_rest(r.m, b, r.at, if c == 43 { acc + Basic.num_of(r.v) } else { acc - Basic.num_of(r.v) })
+				s = Basic.finite(r.m, if c == 43 { acc + Basic.num_of(r.v) } else { acc - Basic.num_of(r.v) }, r.at)
+				Basic.sum_rest(s.m, b, s.at, Basic.num_of(s.v))
 			}
 		}
 	}
@@ -623,7 +660,8 @@ Basic :: [].{
 					big = if acc < 0.0 { 0.0 - Basic.huge } else { Basic.huge }
 					Basic.term_rest(Basic.emit(r.m, "\n?Division by zero\n"), b, r.at, big)
 				} else {
-					Basic.term_rest(r.m, b, r.at, if c == 42 { acc * d } else { acc / d })
+					p = Basic.finite(r.m, if c == 42 { acc * d } else { acc / d }, r.at)
+					Basic.term_rest(p.m, b, p.at, Basic.num_of(p.v))
 				}
 			}
 		}
@@ -641,7 +679,7 @@ Basic :: [].{
 				r
 			} else {
 				e = Basic.power(r.m, b, j + 1)
-				if e.m.done { e } else { { m: e.m, v: N(F64.pow(Basic.num_of(r.v), Basic.num_of(e.v))), at: e.at } }
+				if e.m.done { e } else { Basic.raise(e.m, Basic.num_of(r.v), Basic.num_of(e.v), e.at) }
 			}
 		}
 	}
@@ -658,7 +696,7 @@ Basic :: [].{
 		} else if c == 40 {
 			r = Basic.sum(m, b, j + 1)
 			k = Basic.skip_ws(b, r.at)
-			if Basic.byte(b, k) != 41 { Basic.fail(r.m, "Expected )", k) } else { { m: r.m, v: r.v, at: k + 1 } }
+			if r.m.done { r } else if Basic.byte(b, k) != 41 { Basic.fail(r.m, "Expected )", k) } else { { m: r.m, v: r.v, at: k + 1 } }
 		} else if Basic.is_digit(c) or c == 46 {
 			Basic.number(m, b, j)
 		} else if Basic.is_alpha(c) {
@@ -682,7 +720,8 @@ Basic :: [].{
 			g = if neg or Basic.byte(b, f.at + 1) == 43 { f.at + 2 } else { f.at + 1 }
 			x = Basic.whole(b, g, 0.0)
 			e = F64.pow(10.0, if neg { 0.0 - x.v } else { x.v })
-			{ m: m, v: N(f.v * e), at: x.at }
+			# `0E99999` is zero, not zero times infinity.
+			Basic.finite(m, if f.v == 0.0 { 0.0 } else { f.v * e }, x.at)
 		}
 	}
 
@@ -760,7 +799,9 @@ Basic :: [].{
 			# the string path; everything else is numeric.
 			r = if k == "LEN" or k == "ASC" or k == "VAL" { Basic.expr(m, b, j + 1) } else { Basic.sum(m, b, j + 1) }
 			e = Basic.skip_ws(b, r.at)
-			if Basic.byte(b, e) != 41 {
+			if r.m.done {
+				r
+			} else if Basic.byte(b, e) != 41 {
 				Basic.fail(r.m, "Expected )", e)
 			} else if k == "RND" {
 				Basic.rnd(r.m, e + 1)
@@ -774,8 +815,12 @@ Basic :: [].{
 				vb = Str.to_utf8(Basic.str_of(r.v))
 				n = Basic.number(r.m, vb, Basic.skip_ws(vb, 0))
 				{ m: n.m, v: n.v, at: e + 1 }
+			} else if k == "LOG" and Basic.num_of(r.v) <= 0.0 {
+				Basic.halt(r.m, "LOG of a number that is not positive", e + 1)
+			} else if k == "SQR" and Basic.num_of(r.v) < 0.0 {
+				Basic.halt(r.m, "SQR of a negative number", e + 1)
 			} else {
-				{ m: r.m, v: N(Basic.apply_fn(k, Basic.num_of(r.v))), at: e + 1 }
+				Basic.finite(r.m, Basic.apply_fn(k, Basic.num_of(r.v)), e + 1)
 			}
 		}
 	}
@@ -850,7 +895,7 @@ Basic :: [].{
 		else if k == "LOG" { Basic.ln(x) }
 		else if k == "SGN" { if x > 0.0 { 1.0 } else if x < 0.0 { -1.0 } else { 0.0 } }
 		else if k == "SIN" { F64.sin(x) }
-		else if k == "SQR" { F64.sqrt(F64.abs(x)) }
+		else if k == "SQR" { F64.sqrt(x) }
 		else { F64.tan(x) }
 
 	# A linear congruential generator, so a run is reproducible and a
@@ -882,8 +927,17 @@ Basic :: [].{
 	# ECMA-55 rounds a subscript to the nearest integer. It does NOT clamp
 	# it: a subscript outside the array's bounds is an exception, and the
 	# suite has seven programs that check exactly that.
+	# A subscript too big for an I64 stays out of range rather than
+	# wrapping into it: `Z(9999^9999)` is not `Z(0)`.
 	idx : F64 -> I64
-	idx = |x| F64.to_i64_wrap(Basic.floor(x + 0.5))
+	idx = |x|
+		if x >= 1.0e12 {
+			1000000000000
+		} else if x <= -1.0e12 {
+			-1000000000000
+		} else {
+			F64.to_i64_wrap(Basic.floor(x + 0.5))
+		}
 
 	# ---- output ---------------------------------------------------------
 
@@ -1273,7 +1327,9 @@ Basic :: [].{
 		} else {
 			from = Basic.sum(m, b, j + 1)
 			t = Basic.kw(b, from.at, "TO")
-			if t == from.at {
+			if from.m.done {
+				from.m
+			} else if t == from.at {
 				{ ..from.m, done: True, err: "Expected TO", gap: True}
 			} else {
 				lim = Basic.sum(from.m, b, t)
@@ -1562,7 +1618,9 @@ Basic :: [].{
 			} else {
 				a = Basic.sum(m, b, j + 1)
 				e = Basic.skip_ws(b, a.at)
-				if Basic.byte(b, e) != 41 {
+				if a.m.done {
+					a
+				} else if Basic.byte(b, e) != 41 {
 					Basic.fail(a.m, "Expected )", e)
 				} else {
 					# The parameter shadows the variable of the same name
@@ -1672,7 +1730,7 @@ Basic :: [].{
 				r = Basic.sum(m, b, t + 1)
 				e = Basic.skip_ws(b, r.at)
 				n = F64.to_i64_wrap(Basic.num_of(r.v))
-				Basic.print_items(Basic.emit(r.m, Basic.spaces(n - r.m.col)), b, if Basic.byte(b, e) == 41 { e + 1 } else { e }, True)
+				if r.m.done { r.m } else { Basic.print_items(Basic.emit(r.m, Basic.spaces(n - r.m.col)), b, if Basic.byte(b, e) == 41 { e + 1 } else { e }, True) }
 			} else {
 				r = Basic.expr(m, b, j)
 				if r.m.done { r.m } else { Basic.print_items(Basic.emit(r.m, Basic.str_of(r.v)), b, r.at, True) }
