@@ -3,8 +3,17 @@
 # program beside an .expected verdict emitted to Roc, run on the Echo
 # platform, and its output diffed against the verdict.
 #
-#   tests/ladder.sh                 the whole corpus (~600 units)
+#   tests/ladder.sh                 the corpus, apps/ left out (1,017 units)
 #   tests/ladder.sh effect-smoke    named units
+#   tests/ladder.sh --like 'unit type'   the units whose last verdict says that
+#
+# The corpus is every .expected under codex/test, the top level and the
+# subdirectories alike; a unit is named by its path with '/' written as
+# '@'.
+#
+# **apps/ IS LEFT OUT**, 499 of the 1,516: it was a rabbit hole the last
+# time we worked this corpus (Steve, 2026-09-13), and the rest is not
+# asymptotic yet. `SKIP_DIRS= tests/ladder.sh` puts it back.
 #
 # Cites resolve from $TESTS_ROOT (exported as CODEX_ROOT for rocemit; the
 # box's own CODEX_ROOT names another tree). A unit with a .diag beside it
@@ -31,10 +40,22 @@ export CODEX_ROOT="$TESTS_ROOT"
 SRC="$TESTS_ROOT/codex/test"
 GEN="$HOME/build/roc-apps/gen/tests"
 VERDICTS="$HOME/build/roc-apps/gen/verdicts"
-"$HERE/verdicts.sh" > "$GEN/.verdicts.log" 2>&1 || { echo "verdicts.sh failed"; exit 2; }
+# The verdicts change when Cobblestone's tree does, which is rarely, so
+# they are cleaned only when one is newer than the copy.
+if [ ! -d "$VERDICTS" ] || [ -n "$(find "$SRC" -name '*.expected' -newer "$VERDICTS" -print -quit)" ]; then
+    "$HERE/verdicts.py" > "$GEN/.verdicts.log" 2>&1 || { echo "verdicts.py failed"; exit 2; }
+fi
 mkdir -p "$GEN"
-if [ $# -gt 0 ]; then units=("$@"); full=no; else
-    mapfile -t units < <(cd "$SRC" && ls *.expected | sed 's/\.expected$//' | sort); full=yes
+if [ "${1:-}" = --like ]; then
+    # Rerun one family: the units whose last verdict says this. The whole
+    # sweep is a minute and a half, and most of that is the emit; picking
+    # a family off the ledger is how to iterate on one refusal.
+    mapfile -t units < <(LC_ALL=C grep -a -- "$2" "$HERE/ledger.txt" | cut -d' ' -f2)
+    full=no
+    echo "${#units[@]} units whose verdict says: $2"
+elif [ $# -gt 0 ]; then units=("$@"); full=no; else
+    skip="${SKIP_DIRS-apps}"
+    mapfile -t units < <(cd "$SRC" && find . -name '*.expected' | sed 's|^\./||; s/\.expected$//' | tr '/' '@' | sort | { [ -n "$skip" ] && grep -v "^\($(echo "$skip" | tr ' ' '|')\)@" || cat; }); full=yes
 fi
 # **THE VERDICT PINS A SEMANTICS ROC DOES NOT HAVE.** Codex's list-set-at
 # mutates in place, so two names for one list see each other's writes;
@@ -50,16 +71,32 @@ diverges() {
         real-show-wide) echo "the verdict pins Codex's own printer: it reads 12345678901234567.0 as ...566, we print the double" ;;
     esac
 }
+# **THE RUN IS THE EXPENSIVE PART, THE EMIT IS NOT.** rocemit is a Rust
+# binary and takes milliseconds; `roc run` takes a compile. So a unit
+# whose emitted text is byte for byte what it was when we last ran it
+# keeps that verdict, and only what the emitter now writes differently is
+# run again. `FRESH=1` ignores the cache; `EMIT_ONLY=1` stops after the
+# emit, which is the fast way to see the refusal queue.
 one() {
-    n="$1"; d="$GEN/$n"; rm -rf "$d"; mkdir -p "$d"
-    if [ -f "$SRC/$n.diag" ]; then echo "SKIP $n | expects a diagnostic" > "$d/verdict"; return; fi
+    n="$1"; d="$GEN/$n"; old=""
+    [ -f "$GEN/$n.stamp" ] && old="$(cat "$GEN/$n.stamp")"
+    mkdir -p "$d"
+    src="$SRC/$(echo "$n" | tr '@' '/')"
+    if [ -f "$src.diag" ]; then echo "SKIP $n | expects a diagnostic" > "$d/verdict"; return; fi
     why="$(diverges "$n")"
     if [ -n "$why" ]; then echo "DIVERGES $n | $why" > "$d/verdict"; return; fi
-    if ! app=$("$ROCEMIT" "$SRC/$n.codex" "$d" 2> "$d/emit.err"); then
+    # rocemit prints the app's name and a digest of everything it wrote,
+    # so telling "this is what it was last time" costs no processes.
+    if ! said=$("$ROCEMIT" "$src.codex" "$d" 2> "$d/emit.err"); then
         echo "REFUSED $n | $(head -1 "$d/emit.err" | sed 's/^REFUSED: //' | cut -c1-110)" > "$d/verdict"; return
     fi
-    app="$(echo "$app" | head -1)"
+    app="${said%%$'\n'*}"; stamp="${said##*$'\n'}"
     if [ "$app" = library ]; then echo "REFUSED $n | no opening" > "$d/verdict"; return; fi
+    echo "$stamp" > "$GEN/$n.stamp"
+    if [ -n "$old" ] && [ "$old" = "$stamp" ] && [ -f "$GEN/$n.verdict" ] && [ -z "${FRESH:-}" ]; then
+        cp "$GEN/$n.verdict" "$d/verdict"; return
+    fi
+    [ -n "${EMIT_ONLY:-}" ] && { echo "EMITTED $n |" > "$d/verdict"; return; }
     ( cd "$d" && timeout 120 "$ROC" run "$app" > out 2> err ); rc=$?
     # The capture behind a verdict drops a trailing blank line, so the
     # comparison strips them from our side too (tests/verdicts.sh).
@@ -69,6 +106,7 @@ one() {
     elif cmp -s "$d/out.cmp" "$VERDICTS/$n.expected"; then echo "PASS $n |" > "$d/verdict"
     elif grep -q "crashed\|Backtrace\|overflowed" "$d/err"; then echo "CRASH $n | $(grep -m1 -hoE 'crashed[^\n]*|overflowed[^\n]*' "$d/err" | head -1 | cut -c1-100)" > "$d/verdict"
     else echo "FAIL $n | output: $(diff "$d/out.cmp" "$VERDICTS/$n.expected" | grep -m1 '^[<>]' | cut -c1-100)" > "$d/verdict"; fi
+    cp "$d/verdict" "$GEN/$n.verdict"
 }
 
 export -f one diverges; export ROC ROCEMIT SRC GEN VERDICTS

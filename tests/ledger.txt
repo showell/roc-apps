@@ -71,6 +71,8 @@ PASS consistent-hash-balance |
 REFUSED console-readline-cite | builtin `read-line` used as a value
 SKIP const-narrow-proven | expects a diagnostic
 PASS convolution-identity |
+FAIL cost@accumulator-corpus | output: < p-append-one        n=0 2n=0 4n=0 x0.0 degenerate
+REFUSED cost@giveup-beats-fuel | builtin `poke-byte`
 REFUSED cross-port-refused | builtin `port-out-byte`
 PASS crypto-test |
 REFUSED crypto-vectors | builtin `peek-byte`
@@ -179,6 +181,7 @@ PASS eq-generic-recursive |
 PASS eq-plain-sum |
 REFUSED esp32c6-drivers | builtin `peek-32`
 PASS eventbus-test |
+PASS examples@missile-warning |
 REFUSED expr-calculator | chapter `Expr Calculator` is not a Roc module name
 REFUSED factlog-layout | builtin `peek-byte`
 PASS factorial |
@@ -208,6 +211,324 @@ SKIP field-range-proven | expects a diagnostic
 REFUSED files-parse | builtin `port-out-32`
 REFUSED final-batch-test | builtin `raw-bytes-to-text`
 PASS fins-encode |
+REFUSED forewords@ai-activation | `__lam_1` applied to 1 of 2 arguments
+REFUSED forewords@ai-activation-range | `__lam_1` applied to 1 of 2 arguments
+REFUSED forewords@ai-attention | `__lam_1` applied to 1 of 2 arguments
+REFUSED forewords@ai-clip-interrogator | `__lam_1` applied to 1 of 2 arguments
+REFUSED forewords@ai-control-net | `__lam_1` applied to 1 of 2 arguments
+PASS forewords@ai-conv2d |
+PASS forewords@ai-decision-tree |
+REFUSED forewords@ai-diffusion-pipeline | `__lam_1` applied to 1 of 2 arguments
+PASS forewords@ai-diffusion-scheduler |
+PASS forewords@ai-embedding |
+REFUSED forewords@ai-exp-approximations | `__lam_1` applied to 1 of 2 arguments
+REFUSED forewords@ai-flux-pipeline | `__lam_1` applied to 1 of 2 arguments
+PASS forewords@ai-genetic-algorithm |
+REFUSED forewords@ai-gguf | builtin `raw-bytes-to-text`
+PASS forewords@ai-gpu-proxy |
+REFUSED forewords@ai-hires-fix | `__lam_1` applied to 1 of 2 arguments
+REFUSED forewords@ai-inpainting | `__lam_1` applied to 1 of 2 arguments
+PASS forewords@ai-k-nearest-neighbor |
+PASS forewords@ai-kv-cache |
+REFUSED forewords@ai-lora-loader | builtin `raw-bytes-to-text`
+PASS forewords@ai-loss |
+REFUSED forewords@ai-neural-net | `__lam_1` applied to 1 of 2 arguments
+REFUSED forewords@ai-normalization | `__lam_1` applied to 1 of 2 arguments
+PASS forewords@ai-optimizer |
+REFUSED forewords@ai-png-metadata | builtin `raw-bytes-to-text`
+REFUSED forewords@ai-prompt-parser | builtin `raw-bytes-to-text`
+PASS forewords@ai-reservoir |
+REFUSED forewords@ai-sampling | `__lam_1` applied to 1 of 2 arguments
+PASS forewords@ai-sparse-lattice |
+PASS forewords@ai-tensor |
+REFUSED forewords@ai-text-encoder | `__lam_1` applied to 1 of 2 arguments
+REFUSED forewords@ai-text-encoder-xl | `__lam_1` applied to 1 of 2 arguments
+PASS forewords@ai-tokenizer |
+REFUSED forewords@ai-transformer | `__lam_1` applied to 1 of 2 arguments
+REFUSED forewords@ai-unet-timestep | `__lam_1` applied to 1 of 2 arguments
+REFUSED forewords@ai-unet-xl | `__lam_1` applied to 1 of 2 arguments
+REFUSED forewords@ai-upscaler | `__lam_1` applied to 1 of 2 arguments
+REFUSED forewords@cce-tier2 | builtin `raw-bytes-to-text`
+REFUSED forewords@compress-brotli | `lz77-count-distinct` writes its list parameter `seen` and answers something else
+REFUSED forewords@compress-deflate | `lz77-count-distinct` writes its list parameter `seen` and answers something else
+PASS forewords@compress-huffman |
+PASS forewords@compress-lz4 |
+REFUSED forewords@compress-lz77 | `lz77-count-distinct` writes its list parameter `seen` and answers something else
+PASS forewords@compress-rle |
+PASS forewords@core-bigint |
+PASS forewords@encode-avi |
+REFUSED forewords@encode-base64 | builtin `raw-bytes-to-text`
+REFUSED forewords@encode-bencode | builtin `raw-bytes-to-text`
+PASS forewords@encode-bmp |
+PASS forewords@encode-cbor |
+REFUSED forewords@encode-crc32 | builtin `raw-bytes-to-text`
+PASS forewords@encode-csv |
+REFUSED forewords@encode-flac | unit type `Duration`
+PASS forewords@encode-gif |
+REFUSED forewords@encode-gltf-bounds | builtin `raw-bytes-to-text`
+PASS forewords@encode-gray-code |
+PASS forewords@encode-hex |
+REFUSED forewords@encode-ini | builtin `raw-bytes-to-text`
+PASS forewords@encode-jpeg |
+REFUSED forewords@encode-json | builtin `raw-bytes-to-text`
+REFUSED forewords@encode-json-escapes | builtin `raw-bytes-to-text`
+REFUSED forewords@encode-json-numbers | builtin `raw-bytes-to-text`
+REFUSED forewords@encode-lwm2m | builtin `raw-bytes-to-text`
+REFUSED forewords@encode-markdown | builtin `text-split`
+PASS forewords@encode-message-pack |
+REFUSED forewords@encode-midi | unit type `Duration`
+REFUSED forewords@encode-mp3 | unit type `Duration`
+PASS forewords@encode-mp4 |
+PASS forewords@encode-ogg |
+REFUSED forewords@encode-png | builtin `raw-bytes-to-text`
+REFUSED forewords@encode-protobuf | builtin `raw-bytes-to-text`
+PASS forewords@encode-qoi |
+REFUSED forewords@encode-smtp | builtin `raw-bytes-to-text`
+PASS forewords@encode-tiff |
+REFUSED forewords@encode-toml | builtin `text-split`
+REFUSED forewords@encode-uri | builtin `raw-bytes-to-text`
+PASS forewords@encode-uuid |
+PASS forewords@encode-video-codec |
+REFUSED forewords@encode-wav | unit type `Duration`
+REFUSED forewords@encode-web-socket | builtin `raw-bytes-to-text`
+REFUSED forewords@encode-yaml | builtin `text-split`
+REFUSED forewords@engine-ability-system | builtin `raw-bytes-to-text`
+PASS forewords@engine-anim-blend |
+PASS forewords@engine-asset-table |
+PASS forewords@engine-audio-bus |
+PASS forewords@engine-audio3d |
+PASS forewords@engine-biome |
+REFUSED forewords@engine-cloth-sim | unit type `Duration`
+PASS forewords@engine-collision3d |
+PASS forewords@engine-culling |
+PASS forewords@engine-cutscene |
+REFUSED forewords@engine-damage-system | builtin `raw-bytes-to-text`
+PASS forewords@engine-debug-draw |
+REFUSED forewords@engine-edge-mesh | builtin `raw-bytes-to-text`
+PASS forewords@engine-facial-anim |
+PASS forewords@engine-fog |
+PASS forewords@engine-fractal-plant |
+PASS forewords@engine-game-loop |
+REFUSED forewords@engine-gameplay-tags | builtin `raw-bytes-to-text`
+REFUSED forewords@engine-hair-sim | unit type `Duration`
+PASS forewords@engine-helm-bridge |
+PASS forewords@engine-input |
+PASS forewords@engine-lod |
+PASS forewords@engine-material |
+PASS forewords@engine-mesh |
+REFUSED forewords@engine-musculature | unit type `Duration`
+REFUSED forewords@engine-nav-mesh | `nm-astar` writes its list parameter `closed` and answers something else
+PASS forewords@engine-particle-renderer |
+REFUSED forewords@engine-physics-joint | unit type `Duration`
+PASS forewords@engine-post-process |
+REFUSED forewords@engine-renderer3d | builtin `poke-32`
+PASS forewords@engine-scene3d |
+PASS forewords@engine-signal |
+PASS forewords@engine-skin-shader |
+PASS forewords@engine-skinning |
+REFUSED forewords@engine-soft-body | unit type `Duration`
+PASS forewords@engine-spline-path |
+PASS forewords@engine-terrain |
+PASS forewords@engine-texture |
+PASS forewords@engine-time-of-day |
+PASS forewords@engine-water |
+PASS forewords@engine-world-gen |
+PASS forewords@engine-world-hud |
+PASS forewords@foreword-aes |
+PASS forewords@foreword-aes-gcm |
+PASS forewords@foreword-aes256 |
+REFUSED forewords@foreword-apprunner | `__lam_0` applied to 1 of 2 arguments
+PASS forewords@foreword-b-plus-tree |
+PASS forewords@foreword-bit-set |
+PASS forewords@foreword-bloom-filter |
+REFUSED forewords@foreword-c-c-e | builtin `raw-bytes-to-text`
+PASS forewords@foreword-camera |
+PASS forewords@foreword-cha-cha20 |
+PASS forewords@foreword-channel |
+PASS forewords@foreword-circular-buffer |
+REFUSED forewords@foreword-concurrent | `__lam_0` applied to 3 of 4 arguments
+PASS forewords@foreword-consistent-hash |
+PASS forewords@foreword-console |
+PASS forewords@foreword-count-min-sketch |
+REFUSED forewords@foreword-date-time | unit type `Timestamp`
+PASS forewords@foreword-decimal |
+PASS forewords@foreword-deque |
+REFUSED forewords@foreword-diffie-hellman | `fe-carry-pass` writes its list parameter `o` and answers something else
+PASS forewords@foreword-display |
+REFUSED forewords@foreword-ed25519 | `fe-carry-pass` writes its list parameter `o` and answers something else
+PASS forewords@foreword-edit-distance |
+PASS forewords@foreword-either |
+PASS forewords@foreword-elastic-bloom |
+PASS forewords@foreword-elastic-hash |
+PASS forewords@foreword-event-bus |
+REFUSED forewords@foreword-fact-store | builtin `peek-byte`
+REFUSED forewords@foreword-fat16 | builtin `raw-bytes-to-text`
+REFUSED forewords@foreword-fat32 | builtin `raw-bytes-to-text`
+REFUSED forewords@foreword-file-system | builtin `raw-bytes-to-text`
+PASS forewords@foreword-format |
+PASS forewords@foreword-fuel |
+PASS forewords@foreword-funnel-hash |
+REFUSED forewords@foreword-gpt | builtin `peek-byte`
+REFUSED forewords@foreword-graph | `graph-bfs-expand` writes its list parameter `visited` and answers something else
+PASS forewords@foreword-hamt |
+REFUSED forewords@foreword-history | builtin `raw-bytes-to-text`
+REFUSED forewords@foreword-hkdf | builtin `peek-byte`
+REFUSED forewords@foreword-hmac | builtin `peek-byte`
+REFUSED forewords@foreword-identity | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED forewords@foreword-image-tensor | builtin `raw-bytes-to-text`
+PASS forewords@foreword-interval-tree |
+PASS forewords@foreword-kv-store |
+PASS forewords@foreword-list |
+PASS forewords@foreword-list-utils |
+REFUSED forewords@foreword-load-test | builtin `raw-bytes-to-text`
+PASS forewords@foreword-locale |
+PASS forewords@foreword-location |
+PASS forewords@foreword-logger |
+PASS forewords@foreword-lru-cache |
+PASS forewords@foreword-math-lib |
+PASS forewords@foreword-maybe |
+PASS forewords@foreword-microphone |
+PASS forewords@foreword-network |
+PASS forewords@foreword-number-theory |
+PASS forewords@foreword-pair |
+PASS forewords@foreword-path |
+REFUSED forewords@foreword-pattern | builtin `raw-bytes-to-text`
+REFUSED forewords@foreword-pbkdf | builtin `peek-byte`
+REFUSED forewords@foreword-pipeline | `__lam_0` applied to 1 of 2 arguments
+PASS forewords@foreword-priority-queue |
+PASS forewords@foreword-probability |
+REFUSED forewords@foreword-proof-of-work | builtin `peek-byte`
+PASS forewords@foreword-queue |
+PASS forewords@foreword-random |
+REFUSED forewords@foreword-ranked-text-set | builtin `text-compare`
+REFUSED forewords@foreword-ranked-text-set-surface | builtin `text-compare`
+REFUSED forewords@foreword-rate-limiter | unit type `Timestamp`
+PASS forewords@foreword-regex |
+PASS forewords@foreword-result |
+PASS forewords@foreword-ring-buffer |
+PASS forewords@foreword-rope |
+REFUSED forewords@foreword-safetensors | builtin `raw-bytes-to-text`
+REFUSED forewords@foreword-schedule | builtin `raw-bytes-to-text`
+REFUSED forewords@foreword-scheduler | unit type `Duration`
+PASS forewords@foreword-sensors |
+REFUSED forewords@foreword-set | `set-fold-wrapper` applied to 1 of 4 arguments
+REFUSED forewords@foreword-sha1 | builtin `peek-byte`
+REFUSED forewords@foreword-sha256 | builtin `peek-byte`
+PASS forewords@foreword-sha512 |
+PASS forewords@foreword-sort |
+REFUSED forewords@foreword-source-def-wire | builtin `raw-bytes-to-text`
+PASS forewords@foreword-state |
+PASS forewords@foreword-statistics |
+REFUSED forewords@foreword-string-builder | field-store
+REFUSED forewords@foreword-string-utils | builtin `raw-bytes-to-text`
+REFUSED forewords@foreword-tab-complete | builtin `raw-bytes-to-text`
+REFUSED forewords@foreword-text-search | builtin `raw-bytes-to-text`
+REFUSED forewords@foreword-text-wrap | builtin `text-split`
+PASS forewords@foreword-time |
+REFUSED forewords@foreword-timing-wheel | unit type `Duration`
+REFUSED forewords@foreword-tls | builtin `raw-bytes-to-text`
+REFUSED forewords@foreword-trie | builtin `raw-bytes-to-text`
+PASS forewords@foreword-tuple |
+REFUSED forewords@foreword-unicode | builtin `raw-bytes-to-text`
+PASS forewords@foreword-union-find |
+REFUSED forewords@game-a-star | `astar-loop` writes its list parameter `closed` and answers something else
+PASS forewords@game-bresenham |
+PASS forewords@game-card-deck |
+PASS forewords@game-cellular-automata |
+PASS forewords@game-color |
+PASS forewords@game-diamond-square |
+PASS forewords@game-e-c-s |
+PASS forewords@game-easing |
+PASS forewords@game-flood-fill |
+PASS forewords@game-game-camera |
+PASS forewords@game-hex-map |
+PASS forewords@game-inventory |
+PASS forewords@game-klondike |
+REFUSED forewords@game-netcode | `nc-try-insert` writes its list parameter `history` and answers something else
+PASS forewords@game-octree |
+REFUSED forewords@game-pathfinding | `dijk-loop` writes its list parameter `visited` and answers something else
+PASS forewords@game-quadtree |
+PASS forewords@game-rasterizer |
+PASS forewords@game-raytracer |
+REFUSED forewords@game-save-slot | builtin `peek-byte`
+PASS forewords@game-scene2-d |
+PASS forewords@game-sprite |
+PASS forewords@game-state-machine |
+PASS forewords@game-tile-map |
+PASS forewords@game-tween |
+PASS forewords@game-voronoi |
+PASS forewords@gpu-atomic |
+PASS forewords@gpu-barrier |
+REFUSED forewords@gpu-device-buffer | builtin `gpu-mem-read`
+PASS forewords@gpu-device-effect |
+PASS forewords@gpu-devicemath-atan |
+PASS forewords@gpu-disjoint-slice |
+REFUSED forewords@gpu-effect | builtin `gpu-mem-read`
+PASS forewords@gpu-launch-config |
+PASS forewords@gpu-shared |
+PASS forewords@gpu-thread |
+PASS forewords@gpu-warp |
+PASS forewords@math-bezier |
+PASS forewords@math-complex |
+PASS forewords@math-cordic |
+PASS forewords@math-cordic-accuracy |
+PASS forewords@math-cordic-quadrants |
+REFUSED forewords@math-geodesic | unit type `Duration`
+PASS forewords@math-geometry |
+REFUSED forewords@math-linear-algebra | `__lam_0` applied to 1 of 2 arguments
+REFUSED forewords@math-matrix3 | `__lam_0` applied to 1 of 2 arguments
+PASS forewords@math-matrix4 |
+PASS forewords@math-numeric |
+PASS forewords@math-optimize |
+PASS forewords@math-quaternion |
+PASS forewords@math-spline |
+REFUSED forewords@signal-audio-analysis | unit type `Duration`
+PASS forewords@signal-audio-effect |
+PASS forewords@signal-convolution |
+PASS forewords@signal-envelope |
+REFUSED forewords@signal-f-f-t | `fft-brc-loop` writes its list parameter `re` and answers something else
+REFUSED forewords@signal-filter | unit type `Duration`
+PASS forewords@signal-music-theory |
+PASS forewords@signal-noise |
+REFUSED forewords@signal-oscillator | unit type `Duration`
+PASS forewords@signal-perlin |
+REFUSED forewords@signal-pitch | unit type `Duration`
+REFUSED forewords@signal-resample | unit type `Duration`
+REFUSED forewords@signal-synth | unit type `Duration`
+PASS forewords@sim-collision |
+PASS forewords@sim-constraint |
+REFUSED forewords@sim-kinematics | unit type `Duration`
+PASS forewords@sim-particle-system |
+REFUSED forewords@sim-physics | unit type `Duration`
+REFUSED forewords@sim-spatial-hash | `sh-insert-into-cells` writes its list parameter `cells` and answers something else
+REFUSED forewords@sim-steering | unit type `Duration`
+PASS forewords@ui-accessibility |
+REFUSED forewords@ui-animation | `__lam_0` applied to 1 of 2 arguments
+PASS forewords@ui-binding |
+PASS forewords@ui-box-model |
+REFUSED forewords@ui-charts | binary cons-list
+PASS forewords@ui-clipboard |
+PASS forewords@ui-cursor |
+PASS forewords@ui-dialog |
+PASS forewords@ui-drag |
+PASS forewords@ui-event |
+PASS forewords@ui-focus |
+PASS forewords@ui-font |
+PASS forewords@ui-icon |
+PASS forewords@ui-layout |
+REFUSED forewords@ui-orchestrator | `__lam_0` applied to 1 of 2 arguments
+PASS forewords@ui-overlay |
+PASS forewords@ui-render |
+PASS forewords@ui-rich-text |
+PASS forewords@ui-scroll |
+PASS forewords@ui-selection |
+PASS forewords@ui-sound |
+PASS forewords@ui-surface |
+REFUSED forewords@ui-text-field | builtin `raw-bytes-to-text`
+PASS forewords@ui-theme |
+PASS forewords@ui-touch |
+PASS forewords@ui-vector |
+PASS forewords@ui-widget |
 REFUSED fork-nested | builtin `fork`
 REFUSED fork-reclaim | `__lam_0` applied to 1 of 2 arguments
 REFUSED frame-short-buffer | builtin `peek-byte`
@@ -306,6 +627,46 @@ PASS lease-handoff |
 REFUSED let-dest-scope | builtin `raw-bytes-to-text`
 PASS let-else-scope |
 PASS let-shadow-scope |
+PASS lib@aesgcm-test |
+REFUSED lib@app-runner-frame | `__lam_0` applied to 1 of 2 arguments
+PASS lib@badge-tone |
+REFUSED lib@brotli-ctx2-test | `lz77-count-distinct` writes its list parameter `seen` and answers something else
+REFUSED lib@brotli-dict-test | builtin `__list-with-capacity`
+REFUSED lib@brotli-test | `lz77-count-distinct` writes its list parameter `seen` and answers something else
+PASS lib@canvas-viewport |
+FAIL lib@cbor-test | compile: ── ✗ missing method ────────────────────────────
+REFUSED lib@data-table-rows | builtin `text-compare`
+PASS lib@decimal-test |
+REFUSED lib@deflate-dynamic-test | `lz77-count-distinct` writes its list parameter `seen` and answers something else
+REFUSED lib@detail-pane | builtin `raw-bytes-to-text`
+PASS lib@device-math |
+REFUSED lib@dropdown-options | builtin `raw-bytes-to-text`
+PASS lib@flex-layout-geometry |
+PASS lib@format-test |
+REFUSED lib@hkdf-test | builtin `peek-byte`
+REFUSED lib@key-tab-single | builtin `raw-bytes-to-text`
+REFUSED lib@linalg-test | `__lam_0` applied to 1 of 2 arguments
+PASS lib@locale-test |
+PASS lib@loss-test |
+PASS lib@lz4-test |
+REFUSED lib@markdown-ordered | builtin `raw-bytes-to-text`
+FAIL lib@msgpack-test | compile: ── ✗ missing method ────────────────────────────
+PASS lib@number-theory-test |
+PASS lib@numeric-test |
+REFUSED lib@palette-filter | builtin `raw-bytes-to-text`
+PASS lib@path-test |
+REFUSED lib@pixel-buf | builtin `alloc-bytes`
+PASS lib@probability-test |
+REFUSED lib@settings-panel-render | builtin `raw-bytes-to-text`
+PASS lib@status-badge-priority |
+PASS lib@text-overflow |
+REFUSED lib@text-overflow-render | builtin `alloc-bytes`
+REFUSED lib@text-trim-test | builtin `peek-byte`
+REFUSED lib@toml-test | builtin `text-split`
+REFUSED lib@tree-view-nav | builtin `raw-bytes-to-text`
+REFUSED lib@utf8-cce-test | builtin `raw-bytes-to-text`
+REFUSED lib@widget-tone | builtin `alloc-bytes`
+REFUSED lib@yaml-test | builtin `text-split`
 PASS linear-branch |
 REFUSED linear-capture-once | `__lam_0` applied to 1 of 2 arguments
 PASS linear-mint-container |
@@ -376,6 +737,58 @@ REFUSED nvme-encode | builtin `port-out-32`
 REFUSED oauth-island | builtin `peek-byte`
 REFUSED occurrence-check | builtin `port-in-byte`
 REFUSED opcua-encode | builtin `raw-bytes-to-text`
+REFUSED ops@bounded-modes-smoke | chapter `Bounded Modes Smoke` is not a Roc module name
+PASS ops@builtin-name-shadow |
+REFUSED ops@cap-word-64 | builtin `alloc-bytes`
+REFUSED ops@cce-bounds-smoke | builtin `raw-bytes-to-text`
+REFUSED ops@cce-builtin-bounds | chapter `Cce Builtin Bounds` is not a Roc module name
+PASS ops@char-at-bounds |
+REFUSED ops@char-encode-bands | builtin `raw-bytes-to-text`
+REFUSED ops@closure-under-apply | chapter `Closure Under Apply` is not a Roc module name
+REFUSED ops@collate-order | builtin `text-compare`
+PASS ops@div-negative-pow2 |
+PASS ops@int-add-wrapping |
+PASS ops@int-min-literal |
+PASS ops@int-mul-wrapping |
+CRASH ops@int-pow | crashed with this message:
+PASS ops@int-rem |
+FAIL ops@int-wrapping-spelling | compile: ── ✗ compile time crash ────────────────────────── I
+FAIL ops@list-growth | output: < quad 100->200 : LINEAR
+REFUSED ops@list-index-bounds | builtin `list-insert-at`
+PASS ops@list-view-bounds |
+PASS ops@match-nested-pattern |
+REFUSED ops@match-shadowed-arm | builtin `print-line`
+REFUSED ops@real-approx | type real-approx
+REFUSED ops@real-approx-equality | type real-approx
+REFUSED ops@real-approx-modes | type real-approx
+REFUSED ops@real-approx-negate | type real-approx
+REFUSED ops@real-bitcast | builtin `to-real-approx`
+PASS ops@real-bitcast-f64 |
+PASS ops@real-compare-negative |
+PASS ops@real-literal-rounding |
+REFUSED ops@real-mode-compare | type real-approx
+REFUSED ops@real-mode-fields | an opening of type (sum "Sample" (args))
+REFUSED ops@real-mode-opening | an opening of type real-trapping
+REFUSED ops@real-mode-show | builtin `to-real-approx`
+PASS ops@real-neg-neg |
+PASS ops@real-negate |
+REFUSED ops@real-saturating | binary add-real-saturating
+REFUSED ops@real-saturating-finite | builtin `to-real-saturating`
+REFUSED ops@real-to-int-wide | builtin `to-real-approx`
+REFUSED ops@real-trapping | binary add-real-trapping
+REFUSED ops@record-closure-field-poly | `__lam_0` applied to 1 of 2 arguments
+REFUSED ops@saturated-call-returning-function | chapter `Saturated Call Returning Function` is not a Roc module name
+PASS ops@substring-bounds |
+REFUSED ops@text-order-allowed | builtin `text-compare`
+REFUSED ops@text-to-unicode-bytes-tier0 | builtin `raw-bytes-to-text`
+REFUSED ops@tier0-cyrillic-print | chapter `Tier Zero Cyrillic Print` is not a Roc module name
+REFUSED ops@unicode-bytes-roundtrip | builtin `raw-bytes-to-text`
+REFUSED ops@unit-pattern-lit | unit type `Name`
+REFUSED ops@unit-real-arith | unit type `Metre`
+REFUSED ops@unit-real-compare | unit type `Metre`
+REFUSED ops@unit-show | unit type `Name`
+REFUSED ops@vec-lanes-smoke | chapter `Vec Lanes Smoke` is not a Roc module name
+REFUSED ops@vec-sized | type (vector 1 int-default)
 REFUSED osc-noise | unit type `Duration`
 REFUSED ota-gate-block | builtin `peek-byte`
 REFUSED ota-gate-real | builtin `peek-byte`
@@ -554,6 +967,13 @@ PASS ui-scroll-test |
 PASS ui-sound-test |
 PASS ui-surface-test |
 PASS ui-theme-test |
+REFUSED ui@data-table-fit | builtin `text-compare`
+REFUSED ui@data-table-hit | builtin `text-compare`
+REFUSED ui@data-table-width | builtin `text-compare`
+REFUSED ui@fixed-row | builtin `raw-bytes-to-text`
+PASS ui@theme-ink-on |
+PASS ui@vector-raster |
+REFUSED ui@widget-panel-min | builtin `text-compare`
 REFUSED unit-family | unit type `Length`
 REFUSED unit-family-mixed | unit type `Length`
 REFUSED unit-smoke | unit type `Second`
