@@ -1,18 +1,18 @@
-PASS P001 |
-PASS P002 |
+UNJUDGED P001 | a reader compares its output; no grep can
+UNJUDGED P002 | a reader compares its output; no grep can
 PASS P003 |
 PASS P004 |
 PASS P005 |
-PASS P006 |
+UNJUDGED P006 | a reader compares its output; no grep can
 PASS P007 |
 PASS P008 |
-PASS P009 |
-PASS P010 |
-PASS P011 |
-PASS P012 |
-PASS P013 |
-PASS P014 |
-PASS P015 |
+UNJUDGED P009 | a reader compares its output; no grep can
+UNJUDGED P010 | a reader compares its output; no grep can
+UNJUDGED P011 | a reader compares its output; no grep can
+UNJUDGED P012 | a reader compares its output; no grep can
+UNJUDGED P013 | a reader compares its output; no grep can
+UNJUDGED P014 | a reader compares its output; no grep can
+UNJUDGED P015 | a reader compares its output; no grep can
 PASS P016 |
 PASS P017 |
 PASS P018 |
@@ -59,7 +59,7 @@ PASS P058 |
 PASS P059 |
 PASS P060 |
 PASS P061 |
-PASS P062 |
+CRASH P062 | exit 1: Roc application overflowed its stack memory
 PASS P063 |
 PASS P064 |
 PASS P065 |
@@ -105,7 +105,7 @@ PASS P104 |
 PASS P105 |
 PASS P106 |
 FAIL P107 | ***  TEST FAILED  ***
-FAIL P108 | ***  TEST FAILED IN  3 CASE(S)  ***
+FAIL P108 | *** IF NOT ALLOWED TO RE-SUPPLY INPUT, TEST FAILS ***
 FAIL P109 | ***  TEST FAILED  ***
 FAIL P110 | ***  TEST FAILED  ***
 FAIL P111 | ***  TEST FAILS  ***
@@ -134,8 +134,8 @@ FAIL P133 | THE TEST FAILS.
 FAIL P134 | OF THE RESULTING STATISTICS, THEN THE TEST FAILS.
 PASS P135 |
 PASS P136 |
-PASS P137 |
-PASS P138 |
+CRASH P137 | exit 1: Roc application overflowed its stack memory
+CRASH P138 | exit 1: Roc application overflowed its stack memory
 PASS P139 |
 PASS P140 |
 PASS P141 |
@@ -162,7 +162,7 @@ PASS P161 |
 PASS P162 |
 PASS P163 |
 PASS P164 |
-PASS P165 |
+UNJUDGED P165 | a reader compares its output; no grep can
 PASS P166 |
 PASS P167 |
 PASS P168 |

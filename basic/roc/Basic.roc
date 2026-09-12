@@ -363,8 +363,10 @@ Basic :: [].{
 		}
 	}
 
-	ensure_arr : M, Str -> M
-	ensure_arr = |m, k| if Basic.arr_index(m.arr, k, 0) < 0 { Basic.dim(m, k, 10, -1) } else { m }
+	# ECMA-55: an array with no DIM has a bound of 10 in each dimension its
+	# first use gives it.
+	ensure_arr : M, Str, Bool -> M
+	ensure_arr = |m, k, two| if Basic.arr_index(m.arr, k, 0) < 0 { Basic.dim(m, k, 10, if two { 10 } else { -1 }) } else { m }
 
 	# Where a subscript pair lands, or -1 when it is outside the array.
 	cell_at : M, Str, I64, I64 -> I64
@@ -787,7 +789,7 @@ Basic :: [].{
 					if s.m.done {
 						{ m: s.m, v: N(0.0), at: s.at }
 					} else {
-						m1 = Basic.ensure_arr(s.m, nm.k)
+						m1 = Basic.ensure_arr(s.m, nm.k, s.two)
 						g = Basic.get_arr(m1, nm.k, s.i, s.j)
 						{ m: g.m, v: N(g.v), at: s.at }
 					}
@@ -925,19 +927,19 @@ Basic :: [].{
 	}
 
 	# Subscripts: `(i)` or `(i,j)`, each rounded as ECMA-55 says.
-	subscripts : M, List(U8), U64 -> { m : M, i : I64, j : I64, at : U64 }
+	subscripts : M, List(U8), U64 -> { m : M, i : I64, j : I64, at : U64, two : Bool }
 	subscripts = |m, b, i| {
 		r = Basic.sum(m, b, i + 1)
 		if r.m.done {
-			{ m: r.m, i: 0, j: 0, at: r.at }
+			{ m: r.m, i: 0, j: 0, at: r.at, two: False }
 		} else {
 			k = Basic.skip_ws(b, r.at)
 			if Basic.byte(b, k) == 44 {
 				r2 = Basic.sum(r.m, b, k + 1)
 				e = Basic.skip_ws(b, r2.at)
-				{ m: r2.m, i: Basic.idx(Basic.num_of(r.v)), j: Basic.idx(Basic.num_of(r2.v)), at: if Basic.byte(b, e) == 41 { e + 1 } else { e } }
+				{ m: r2.m, i: Basic.idx(Basic.num_of(r.v)), j: Basic.idx(Basic.num_of(r2.v)), at: if Basic.byte(b, e) == 41 { e + 1 } else { e }, two: True }
 			} else {
-				{ m: r.m, i: Basic.idx(Basic.num_of(r.v)), j: U64.to_i64_wrap(r.m.base), at: if Basic.byte(b, k) == 41 { k + 1 } else { k } }
+				{ m: r.m, i: Basic.idx(Basic.num_of(r.v)), j: U64.to_i64_wrap(r.m.base), at: if Basic.byte(b, k) == 41 { k + 1 } else { k }, two: False }
 			}
 		}
 	}
@@ -1212,7 +1214,7 @@ Basic :: [].{
 				if Basic.byte(b, e) != 61 {
 					{ ..sub.m, done: True, err: "Expected =", gap: True}
 				} else {
-					r = Basic.expr(Basic.ensure_arr(sub.m, nm.k), b, e + 1)
+					r = Basic.expr(Basic.ensure_arr(sub.m, nm.k, sub.two), b, e + 1)
 					if r.m.done { r.m } else { Basic.advance(Basic.set_arr(r.m, nm.k, sub.i, sub.j, Basic.num_of(r.v)), r.at) }
 				}
 			} else if Basic.byte(b, j) != 61 {
@@ -1660,16 +1662,9 @@ Basic :: [].{
 			{ ..m, done: True, err: "Out of DATA", gap: False}
 		} else {
 			raw = List.get(m.data, m.dp) ?? ""
-			m1 = { ..m, dp: m.dp + 1 }
-			m2 = if Basic.is_str_name(nm.k) {
-				Basic.set_str(m1, nm.k, raw)
-			} else {
-				rb = Str.to_utf8(raw)
-				n = Basic.number(m1, rb, Basic.skip_ws(rb, 0))
-				Basic.set_num(n.m, nm.k, Basic.num_of(n.v))
-			}
-			j = Basic.skip_ws(b, nm.at)
-			if Basic.byte(b, j) == 44 { Basic.do_read(m2, b, j + 1) } else { Basic.advance(m2, nm.at) }
+			s = Basic.store({ ..m, dp: m.dp + 1 }, b, nm, raw)
+			j = Basic.skip_ws(b, s.at)
+			if s.m.done { s.m } else if Basic.byte(b, j) == 44 { Basic.do_read(s.m, b, j + 1) } else { Basic.advance(s.m, s.at) }
 		}
 	}
 
@@ -1709,15 +1704,39 @@ Basic :: [].{
 			Basic.advance(m, Basic.stmt_end(b, at))
 		} else {
 			raw = List.get(vals, k) ?? ""
-			m2 = if Basic.is_str_name(nm.k) {
-				Basic.set_str(m, nm.k, raw)
+			s = Basic.store(m, b, nm, raw)
+			c = Basic.skip_ws(b, s.at)
+			if s.m.done { s.m } else if Basic.byte(b, c) == 44 { Basic.input_vars(s.m, b, c + 1, vals, k + 1) } else { Basic.advance(s.m, s.at) }
+		}
+	}
+
+	# **A READ OR INPUT TARGET MAY BE AN ARRAY ELEMENT**, and its subscripts
+	# are evaluated when it is reached, after the targets before it have
+	# been stored: `INPUT A(I),I,A(I)` stores into the old I, then I, then
+	# the new I.
+	store : M, List(U8), { k : Str, at : U64 }, Str -> { m : M, at : U64 }
+	store = |m, b, nm, raw| {
+		j = Basic.skip_ws(b, nm.at)
+		if Basic.is_str_name(nm.k) {
+			{ m: Basic.set_str(m, nm.k, raw), at: nm.at }
+		} else {
+			rb = Str.to_utf8(raw)
+			n = Basic.number(m, rb, Basic.skip_ws(rb, 0))
+			if Basic.byte(b, j) == 40 {
+				sub = Basic.subscripts(n.m, b, j)
+				if sub.m.done {
+					{ m: sub.m, at: sub.at }
+				} else {
+					# **THE FRESH RECORD IS LOAD-BEARING.** Handed the machine
+					# straight from `ensure_arr`, `set_arr` overflows the stack on
+					# the nightly, for READ and INPUT alike; handed a copy, it does
+					# not. Not yet reduced: findings/store-overflow/.
+					ready = Basic.ensure_arr(sub.m, nm.k, sub.two)
+					{ m: Basic.set_arr({ ..ready, steps: ready.steps }, nm.k, sub.i, sub.j, Basic.num_of(n.v)), at: sub.at }
+				}
 			} else {
-				rb = Str.to_utf8(raw)
-				n = Basic.number(m, rb, Basic.skip_ws(rb, 0))
-				Basic.set_num(n.m, nm.k, Basic.num_of(n.v))
+				{ m: Basic.set_num(n.m, nm.k, Basic.num_of(n.v)), at: nm.at }
 			}
-			c = Basic.skip_ws(b, nm.at)
-			if Basic.byte(b, c) == 44 { Basic.input_vars(m2, b, c + 1, vals, k + 1) } else { Basic.advance(m2, nm.at) }
 		}
 	}
 
@@ -1744,7 +1763,7 @@ Basic :: [].{
 		} else if Basic.byte(b, j) == 59 {
 			Basic.print_items(m, b, j + 1, False)
 		} else if Basic.byte(b, j) == 44 {
-			Basic.print_items(Basic.emit(m, Basic.spaces(Basic.zone - I64.rem_by(m.col, Basic.zone))), b, j + 1, False)
+			Basic.print_items(Basic.comma(m), b, j + 1, False)
 		} else {
 			t = Basic.kw(b, j, "TAB")
 			if t != j {
@@ -1760,9 +1779,32 @@ Basic :: [].{
 				}
 			} else {
 				r = Basic.expr(m, b, j)
-				if r.m.done { r.m } else { Basic.print_items(Basic.emit(r.m, Basic.str_of(r.v)), b, r.at, True) }
+				if r.m.done { r.m } else { Basic.print_items(Basic.item(r.m, Basic.str_of(r.v)), b, r.at, True) }
 			}
 		}
+	}
+
+	# **PRINT WRAPS AT A MARGIN** where there is one: ECMA-55's (12.4), or the
+	# page's forty-column screen. A microcomputer's batch run has none -- the
+	# game captures come from a wider terminal. An item that does not fit in
+	# the rest of the line starts a new one first, and one that fills it
+	# exactly does not; a comma whose next zone would start at or past the
+	# margin starts a new line.
+	wrap_at : M -> I64
+	wrap_at = |m| if m.ecma { Basic.margin } else if m.live { Basic.screen_w } else { 0 }
+
+	comma : M -> M
+	comma = |m| {
+		next = m.col + Basic.zone - I64.rem_by(m.col, Basic.zone)
+		w = Basic.wrap_at(m)
+		if w > 0 and next >= w { Basic.emit(m, "\n") } else { Basic.emit(m, Basic.spaces(next - m.col)) }
+	}
+
+	item : M, Str -> M
+	item = |m, t| {
+		width = U64.to_i64_wrap(List.len(Str.to_utf8(t)))
+		w = Basic.wrap_at(m)
+		if w > 0 and m.col > 0 and m.col + width > w { Basic.emit(Basic.emit(m, "\n"), t) } else { Basic.emit(m, t) }
 	}
 
 	# **ECMA-55 COUNTS COLUMNS FROM ONE** (12.4): TAB(n) moves to column n,

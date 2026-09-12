@@ -26,9 +26,19 @@
 #
 # The requirement comes from the listing's TO PASS THIS TEST section, not
 # from what this interpreter prints.
+P001 | reader |
+P002 | reader |
 P003 | rejects | *** REJECTED: END is not the last line
 P004 | rejects | *** REJECTED: The last line is not END
+P006 | reader |
 P008 | also | ?TAB argument less than one
+P009 | reader |
+P010 | reader |
+P011 | reader |
+P012 | reader |
+P013 | reader |
+P014 | reader |
+P015 | reader |
 P016 | rejects | *** REJECTED: A jump to a line that does not exist
 P020 | rejects | *** REJECTED: A string compared with a number
 P021 | rejects | *** REJECTED: A jump to a line that does not exist
@@ -106,6 +116,7 @@ P160 | rejects | *** REJECTED: A function defined twice
 P161 | rejects | *** REJECTED: A function that refers to itself
 P162 | rejects | *** REJECTED: A function used before its DEF
 P163 | rejects | *** REJECTED: A function with no DEF
+P165 | reader |
 P167 | also | ?Division by zero | ?Zero raised to a negative power
 P168 | also | ?Overflow | *** HALTED: Subscript out of range
 P170 | also | *** HALTED: Negative number raised to a non-integral power
