@@ -21,12 +21,16 @@ for ext in (".bas", ".BAS"):
         break
 if src is None:
     sys.exit(f"no listing for {name}")
-# The games carry their keystrokes in .input, the NBS programs in .in.
-inp = ""
-for ext in (".input", ".in"):
-    if (corpus / (name + ext)).exists():
-        inp = (corpus / (name + ext)).read_text(errors="replace")
-        break
+# The games carry their keystrokes in .input, the NBS programs in .in. A
+# reply in basic/nbs-input, written from the listing's own prompts, replaces
+# the corpus's -- which for some programs is a placeholder "0".
+ours = pathlib.Path(__file__).resolve().parent / "nbs-input" / (name + ".in")
+inp = ours.read_text() if suite == "nbs" and ours.exists() else ""
+if not inp:
+    for ext in (".input", ".in"):
+        if (corpus / (name + ext)).exists():
+            inp = (corpus / (name + ext)).read_text(errors="replace")
+            break
 
 
 def lit(s):

@@ -14,6 +14,7 @@
 # a lexer wants to index, and Roc's Str is not an array.
 
 import Listing
+import Program
 
 Basic :: [].{
 	Val : [N(F64), S(Str)]
@@ -1950,7 +1951,10 @@ Basic :: [].{
 
 	run_in : Str, List(Str), U64, Bool -> Str
 	run_in = |src, inp, seed, ecma| {
-		bad = if ecma { Listing.check(src) } else { { why: "", num: -1 } }
+		# The lines and statements first; the program as a whole only when
+		# every line is well formed.
+		line_fault = if ecma { Listing.check(src) } else { { why: "", num: -1 } }
+		bad = if ecma and line_fault.why == "" { Program.check(src) } else { line_fault }
 		m = if bad.why != "" { Basic.refuse(bad) } else { Basic.batch(Basic.loop({ ..Basic.new(Basic.load(src), inp, seed), ecma: ecma }), 10) }
 		Basic.transcript(
 			if m.waiting {

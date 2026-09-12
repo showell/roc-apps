@@ -45,7 +45,7 @@ one() {
     if ! "$HERE/gen.py" "$suite" "$n" "$d" 2> "$d/gen.err"; then
         echo "FAIL $n | generate: $(head -1 "$d/gen.err" | cut -c1-90)" > "$d/verdict"; return
     fi
-    cp "$HERE/roc/Basic.roc" "$HERE/roc/Listing.roc" "$d/"
+    cp "$HERE/roc/Basic.roc" "$HERE/roc/Listing.roc" "$HERE/roc/Program.roc" "$d/"
     ( cd "$d" && timeout 120 "$ROC" run Run.roc > out 2> err ); rc=$?
     if [ $rc -ge 128 ]; then echo "KILLED $n | signal $((rc - 128))" > "$d/verdict"
     elif [ $rc -eq 124 ]; then echo "TIMEOUT $n |" > "$d/verdict"
@@ -67,6 +67,8 @@ one() {
             echo "FAIL $n | $(grep -m1 'UNSUPPORTED' "$d/out" | cut -c1-90)" > "$d/verdict"
         elif [ -n "$missing" ]; then
             echo "FAIL $n | no report: $missing" > "$d/verdict"
+        elif [ "$kind" = reader ]; then
+            echo "UNJUDGED $n | a reader compares its output; no grep can" > "$d/verdict"
         elif [ -n "$error_program" ] && [ -z "$row" ]; then
             echo "UNJUDGED $n | an ERROR program with no row in nbs-reports.txt" > "$d/verdict"
         else echo "PASS $n |" > "$d/verdict"; fi

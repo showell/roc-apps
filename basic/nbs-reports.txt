@@ -20,13 +20,18 @@
 # ECMA-55 allows when the processor documents it. The documentation is
 # basic/README.md's "Accepted past ECMA-55".
 # An ERROR program with no row is UNJUDGED, whatever it prints.
+# KIND `reader`: a program whose only verdict is a reader comparing lines
+# ("IF ALL THE ABOVE PAIRS ARE IDENTICAL, THEN TEST PASSED"), printed
+# whatever the lines say. It is UNJUDGED however it runs.
 #
 # The requirement comes from the listing's TO PASS THIS TEST section, not
 # from what this interpreter prints.
 P003 | rejects | *** REJECTED: END is not the last line
 P004 | rejects | *** REJECTED: The last line is not END
 P008 | also | ?TAB argument less than one
+P016 | rejects | *** REJECTED: A jump to a line that does not exist
 P020 | rejects | *** REJECTED: A string compared with a number
+P021 | rejects | *** REJECTED: A jump to a line that does not exist
 P028 | also | ?Division by zero
 P029 | judged | ?Overflow
 P030 | judged | ?Overflow
@@ -36,6 +41,12 @@ P035 | judged | ?Overflow
 P036 | rejects | *** REJECTED: An unmatched parenthesis
 P037 | rejects | *** REJECTED: The ** operator
 P038 | accepts |
+P050 | rejects | *** REJECTED: A FOR without a NEXT
+P051 | rejects | *** REJECTED: A NEXT without a FOR
+P052 | rejects | *** REJECTED: A NEXT that does not match its FOR
+P053 | rejects | *** REJECTED: A NEXT that does not match its FOR
+P054 | rejects | *** REJECTED: A FOR inside a FOR with the same variable
+P055 | rejects | *** REJECTED: A jump into a FOR block
 P063 | also | *** HALTED: Subscript out of range
 P064 | also | *** HALTED: Subscript out of range
 P065 | also | *** HALTED: Subscript out of range
@@ -46,10 +57,23 @@ P069 | also | *** HALTED: Subscript out of range
 P070 | also | *** HALTED: Subscript out of range
 P071 | also | *** HALTED: Subscript out of range
 P072 | also | *** HALTED: Subscript out of range
+P073 | rejects | *** REJECTED: A DIM bound below OPTION BASE
+P074 | rejects | *** REJECTED: An array used with different numbers of subscripts
+P075 | rejects | *** REJECTED: A name used for both an array and a simple variable
+P076 | rejects | *** REJECTED: An array used with different numbers of subscripts
+P077 | rejects | *** REJECTED: A name used for both an array and a simple variable
+P078 | rejects | *** REJECTED: An array used with different numbers of subscripts
 P079 | rejects | *** REJECTED: An array name that is not a single letter
+P080 | rejects | *** REJECTED: OPTION BASE twice
+P081 | rejects | *** REJECTED: OPTION BASE after a DIM
+P082 | rejects | *** REJECTED: OPTION BASE after an array is used
+P083 | rejects | *** REJECTED: An array used before its DIM
+P084 | rejects | *** REJECTED: An array dimensioned twice
 P086 | also | *** HALTED: RETURN without GOSUB
+P087 | rejects | *** REJECTED: A jump to a line that does not exist
 P089 | also | *** HALTED: ON index out of range
 P090 | also | *** HALTED: ON index out of range
+P091 | rejects | *** REJECTED: A jump to a line that does not exist
 P097 | also | *** HALTED: Out of DATA
 P101 | judged | ?Overflow
 P102 | rejects | *** REJECTED: A character not allowed in an unquoted datum
@@ -78,6 +102,10 @@ P156 | rejects | *** REJECTED: FNA given the wrong number of arguments
 P157 | rejects | *** REJECTED: A DEF with more than one parameter
 P158 | rejects | *** REJECTED: A string where a number is expected
 P159 | rejects | *** REJECTED: A DEF whose parameter is a string
+P160 | rejects | *** REJECTED: A function defined twice
+P161 | rejects | *** REJECTED: A function that refers to itself
+P162 | rejects | *** REJECTED: A function used before its DEF
+P163 | rejects | *** REJECTED: A function with no DEF
 P167 | also | ?Division by zero | ?Zero raised to a negative power
 P168 | also | ?Overflow | *** HALTED: Subscript out of range
 P170 | also | *** HALTED: Negative number raised to a non-integral power
@@ -107,6 +135,7 @@ P199 | rejects | *** REJECTED: A line number longer than four digits
 P200 | rejects | *** REJECTED: Line number 0
 P201 | rejects | *** REJECTED: A line has no line number
 P202 | rejects | *** REJECTED: A line longer than 72 characters
+P203 | reader |
 P204 | accepts |
 P205 | accepts |
 P206 | accepts |
