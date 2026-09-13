@@ -18,14 +18,25 @@ compiler is already in the form a report needs.
 
 ## Laying it out
 
-    basic/roc/Basic.roc     the interpreter: the machine, the statements, the doors
+    basic/roc/Parse.roc     a listing as the program the machine runs: each statement parsed once
+    basic/roc/Machine.roc   the machine: a read-only evaluator, the statements, the run loop, the doors
+    basic/roc/Vec.roc       a persistent vector, 32-way: variables, arrays and memory
     basic/roc/Listing.roc   ECMA-55's check of each line and statement, before a run
-    basic/roc/Pages.roc     cells written one at a time, in pages: POKE's memory and each array
     basic/roc/Program.roc   ECMA-55's check of the whole program: jumps, loops, DEFs, arrays
-    basic/roc/BasicApp.roc  the interpreter behind one boxed machine, for the page
+    basic/roc/BasicRun.roc  basic-run, the command: a listing and its replies in, the transcript out
+    basic/roc/Basic.roc     the interpreter the page still runs
+    basic/roc/Pages.roc     Basic.roc's memory and arrays
+    basic/roc/BasicApp.roc  Basic.roc behind one boxed machine, for the page
     basic/wasm/             the page's platform and host
     basic/web/basic.html    the page
     basic/build.sh          the page and its module, into the preview
+    basic/build-run.sh      basic-run, built once (the dev backend)
+    basic/run.sh            corpus programs through basic-run, one process each, timed
+    basic/compare.sh        two runs' transcripts, byte for byte: the gate for a new interpreter
+    basic/controls/         the ladder: the smallest programs, each adding one thing
+    basic/controls.sh       what one iteration of each allocates, against controls/expected.txt
+    basic/pathological/     programs that stress one cost each, at scale
+    basic/allocs.sh         their times and allocations
     basic/gen.py            one corpus program as its own Roc app
     basic/ladder.sh         run a corpus, grade, count
     basic/nbs-reports.txt   what each NBS program must show that its own verdict cannot
@@ -43,8 +54,22 @@ compiler is already in the form a report needs.
   wants a line, sleeps, prints a line, or has run a few thousand
   statements; the page paints what it drew and resumes it.
 
-Roc's default platform has no file or stdin effect, so for the batch doors
-a program travels as a string literal and its keystrokes as a list of them.
+`basic-run` is the batch doors as a command on Roc's default platform:
+`basic-run ecma "<listing>" "<replies>"`, or `micro`. It is built once, and
+each corpus program is its own process.
+
+## Measuring it
+
+**Built with the dev backend only.** The LLVM backend spends minutes on this
+interpreter, and what is slow here is the shape of the code, which the dev
+backend shows the same.
+
+**A heap allocation is an `mmap` call** on the default platform, so
+`strace -c` counts allocations without timing anything. `controls.sh` runs
+each control at 1,000 and at 10,000 iterations; the difference is what one
+iteration allocates, and each control is held to 0 or to a number written
+beside its reason. A change that makes a control start allocating names the
+feature it broke, which a slow program alone does not.
 
 ## The corpora
 
