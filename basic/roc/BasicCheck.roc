@@ -130,6 +130,7 @@ Seen : {
 
 seen : Machine.M, [Var(U64), Cells(U64, I64, I64, I64, I64), Control] -> Seen
 seen = |m, look| {
+	d = Machine.devices_of(m)
 	named = match look {
 		Var(slot) => { one: F64.to_bits(Vec.get(m.nums, slot, 0.0)), two: 0 }
 		Cells(slot, i, j, k, n) => { one: cell(m, slot, i, j), two: cell(m, slot, k, n) }
@@ -146,9 +147,9 @@ seen = |m, look| {
 		mtat: m.mtat,
 		rlast: F64.to_bits(m.rlast),
 		arrays: m.arr_count,
-		outs: List.len(m.out),
-		last: if List.is_empty(m.out) { "" } else { List.get(m.out, List.len(m.out) - 1) ?? "" },
-		col: m.col,
+		outs: List.len(d.out),
+		last: if List.is_empty(d.out) { "" } else { List.get(d.out, List.len(d.out) - 1) ?? "" },
+		col: d.col,
 		rdepth: m.rdepth,
 		ldepth: m.ldepth,
 		one: named.one,

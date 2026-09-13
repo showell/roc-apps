@@ -20,6 +20,7 @@
 # arrays and memory are persistent vectors (Vec), so when Roc does copy, it
 # copies a path of 32-entry nodes and never a whole table.
 
+import Devices
 import Listing
 import Parse
 import Program
@@ -37,11 +38,13 @@ Machine :: [].{
 	# the FOR, where each pass starts.
 	Frame : { v : U64, limit : F64, step : F64, after : U64 }
 
+	# **WHAT A STATEMENT CHANGES.** The program it runs is not here
+	# (Parse.Program, which nothing writes), and the devices, which change only
+	# when a statement uses one, are behind one reference.
 	M : {
 		pc : U64,
-		# The item of a READ, INPUT or DIM next to store, and INPUT's reply.
+		# The item of a READ, INPUT or DIM next to store.
 		part : U64,
-		reply : List(Str),
 		nums : Vec.V(F64),
 		strs : Vec.V(Str),
 		arrs : Vec.V(Arr),
@@ -56,20 +59,14 @@ Machine :: [].{
 		loops : List(Frame),
 		ldepth : U64,
 		dp : U64,
-		inp : List(Str),
-		ip : U64,
-		out : List(Str),
-		col : I64,
 		done : Bool,
 		err : Str,
 		# **AN EXCEPTION IS NOT A GAP.** An ECMA-55 exception stops a program
 		# correctly; a form this interpreter has not built is a gap.
 		gap : Bool,
 		# **A SUSPENDED MACHINE.** An INPUT with no line to read stops, having
-		# printed its prompt; `asked` keeps the prompt from printing twice
-		# when the statement runs again with the line.
+		# printed its prompt.
 		waiting : Bool,
-		asked : Bool,
 		# Milliseconds a SLEEP asked for; zero when not sleeping.
 		pause : I64,
 		# **RUNNING OUT OF FUEL IS A YIELD.** `steps` counts across resumes.
@@ -83,19 +80,13 @@ Machine :: [].{
 		fuel : I64,
 		base : U64,
 		rejected : Bool,
-		# **THE ADDRESS SPACE**, 16 MB, which costs nothing until written.
-		mem : Vec.V(U8),
-		# **THE SCREEN IS A FLAT THOUSAND BYTES, AND STILL MEMORY**: 40x25 at
-		# 1024, colour at 55296. Its rows are a ring: `top` is the row shown
-		# first, so a scroll moves `top` and blanks one row.
-		scr : List(U8),
-		col_ram : List(U8),
-		top : I64,
-		crow : I64,
-		ccol : I64,
-		# **A LINEAR FRAMEBUFFER**, 320x200 from 131072, made when first drawn.
-		pix : List(U8),
-		drew : Bool,
+		# **THE DEVICES ARE BEHIND ONE REFERENCE**, a list of exactly one. Every
+		# record update of the machine counts each list in it up and down, and
+		# the devices' seven lists count as one here: padding the machine with
+		# fifteen lists made P134 35% slower, and the same fifteen behind one
+		# reference no slower. A statement that uses a device takes them out,
+		# writes them while nothing else refers to them, and puts them back.
+		devices : List(Devices.D),
 	}
 
 	# What an evaluation did besides its value: the seed it leaves, the
@@ -121,7 +112,6 @@ Machine :: [].{
 	new = |inp, seed| {
 		pc: 0,
 		part: 0,
-		reply: [],
 		nums: Vec.repeat(Parse.names, 0.0),
 		strs: Vec.repeat(Parse.names, ""),
 		arrs: Vec.repeat(Parse.names, Machine.no_arr),
@@ -132,15 +122,10 @@ Machine :: [].{
 		loops: [],
 		ldepth: 0,
 		dp: 0,
-		inp: inp,
-		ip: 0,
-		out: [],
-		col: 0,
 		done: False,
 		err: "",
 		gap: False,
 		waiting: False,
-		asked: False,
 		pause: 0,
 		steps: 0,
 		seed: seed,
@@ -150,14 +135,7 @@ Machine :: [].{
 		fuel: Machine.full_tank,
 		base: 0,
 		rejected: False,
-		mem: Vec.repeat(16777216, 0),
-		scr: List.repeat(32, 1000),
-		col_ram: List.repeat(14, 1000),
-		top: 0,
-		crow: 0,
-		ccol: 0,
-		pix: [],
-		drew: False,
+		devices: [Devices.fresh(inp)],
 	}
 
 	full_tank : I64
@@ -664,109 +642,18 @@ Machine :: [].{
 
 	# ---- output -------------------------------------------------------------------
 
-	# **PRINT AND POKE SHARE ONE DISPLAY.** Text goes into the transcript and
-	# onto the screen at the cursor; the twenty-sixth line scrolls.
+	# The devices, to read.
+	devices_of : M -> Devices.D
+	devices_of = |m| List.get(m.devices, 0) ?? crash("the machine has no devices")
+
+
+	# **PRINT AND POKE SHARE ONE DISPLAY** (Devices.written).
 	emit : M, Str -> M
 	emit = |m, t|
 		if t == "" {
 			m
 		} else {
-			b = Str.to_utf8(t)
-			d = Machine.draw(m.scr, m.col_ram, m.top, m.crow, m.ccol, b)
-			{ ..m, scr: d.scr, col_ram: d.col_ram, top: d.top, crow: d.crow, ccol: d.ccol, out: Machine.append_out(m.out, t), col: Machine.col_after(b, m.col) }
-		}
-
-	Drawn : { scr : List(U8), col_ram : List(U8), top : I64, crow : I64, ccol : I64 }
-
-	draw : List(U8), List(U8), I64, I64, I64, List(U8) -> Drawn
-	draw = |scr, col_ram, top, crow, ccol, b| {
-		var $scr = scr
-		var $col_ram = col_ram
-		var $top = top
-		var $row = crow
-		var $col = ccol
-		for c in b {
-			if c != 10 {
-				$scr = List.set($scr, Machine.cell(Machine.row_at($top, $row), $col), Machine.screen_code(c)) ?? crash("draw: outside the screen")
-			} else {
-				{}
-			}
-			if c == 10 or $col + 1 >= Machine.screen_w {
-				$col = 0
-				if $row + 1 >= Machine.screen_h {
-					# The row at the top becomes the blank row at the foot.
-					bottom = Machine.row_at($top, 0)
-					$scr = Machine.fill_row($scr, bottom, 32)
-					$col_ram = Machine.fill_row($col_ram, bottom, 14)
-					$top = I64.rem_by($top + 1, Machine.screen_h)
-				} else {
-					$row = $row + 1
-				}
-			} else {
-				$col = $col + 1
-			}
-		}
-		{ scr: $scr, col_ram: $col_ram, top: $top, crow: $row, ccol: $col }
-	}
-
-	screen_w : I64
-	screen_w = 40
-
-	screen_h : I64
-	screen_h = 25
-
-	# Where a screen row is kept, given the row shown first.
-	row_at : I64, I64 -> I64
-	row_at = |top, row| I64.rem_by(top + row, Machine.screen_h)
-
-	cell : I64, I64 -> U64
-	cell = |kept_row, col| I64.to_u64_wrap(kept_row * Machine.screen_w + col)
-
-	fill_row : List(U8), I64, U8 -> List(U8)
-	fill_row = |bytes, kept_row, v| {
-		var $b = bytes
-		var $c = 0
-		while $c < Machine.screen_w {
-			$b = List.set($b, Machine.cell(kept_row, $c), v) ?? crash("fill_row: outside the screen")
-			$c = $c + 1
-		}
-		$b
-	}
-
-	# A Commodore screen code: letters from 64, lower case as upper, 32..63
-	# themselves, graphics from 128.
-	screen_code : U8 -> U8
-	screen_code = |c|
-		if c >= 64 and c <= 95 { c - 64 }
-		else if c >= 97 and c <= 122 { c - 96 }
-		else if c >= 32 and c <= 63 { c }
-		else if c >= 128 { c - 128 }
-		else { 32 }
-
-	col_after : List(U8), I64 -> I64
-	col_after = |b, col| {
-		var $c = col
-		for x in b {
-			$c = if x == 10 { 0 } else { $c + 1 }
-		}
-		$c
-	}
-
-	# The column after text, without making its bytes when it has no newline.
-	col_after_text : Str, I64 -> I64
-	col_after_text = |t, col| if Str.contains(t, "\n") { Machine.col_after(Str.to_utf8(t), col) } else { col + U64.to_i64_wrap(Str.count_utf8_bytes(t)) }
-
-	# **A PROGRAM THAT PRINTS FOREVER MUST NOT GROW FOREVER**: the transcript
-	# is trimmed to its last 8,000 pieces once it has twice that.
-	scrollback : U64
-	scrollback = 8000
-
-	append_out : List(Str), Str -> List(Str)
-	append_out = |out, t|
-		if List.len(out) < Machine.scrollback * 2 {
-			List.append(out, t)
-		} else {
-			List.append(List.sublist(out, { start: Machine.scrollback, len: List.len(out) - Machine.scrollback }), t)
+			{ ..m, devices: Devices.write_text(m.devices, t) }
 		}
 
 	spaces : I64 -> Str
@@ -781,7 +668,7 @@ Machine :: [].{
 	# **PRINT WRAPS AT A MARGIN** where there is one: ECMA-55's, or the
 	# page's forty columns. A microcomputer's batch run has none.
 	wrap_at : Parse.Program, M -> I64
-	wrap_at = |pg, m| if pg.ecma { Machine.margin } else if pg.live { Machine.screen_w } else { 0 }
+	wrap_at = |pg, m| if pg.ecma { Machine.margin } else if pg.live { Devices.screen_w } else { 0 }
 
 	# A PRINT's text, reports and all, built without touching the machine:
 	# its items are evaluated in order against the column they move.
@@ -789,7 +676,7 @@ Machine :: [].{
 	print_text = |pg, m, items, newline| {
 		w = Machine.wrap_at(pg, m)
 		var $text = ""
-		var $col = m.col
+		var $col = (Machine.devices_of(m)).col
 		var $fx = Machine.fresh(m)
 		for it in items {
 			if Machine.stopped($fx) {
@@ -804,19 +691,19 @@ Machine :: [].{
 					Tab(e) => {
 						r = Machine.eval(pg, m, [], $fx, e)
 						x = Machine.num_of(r.v)
-						{ said: r.fx.said, t: if Machine.stopped(r.fx) { "" } else if pg.ecma { Machine.tab_ecma(x, Machine.col_after_text(r.fx.said, $col)) } else { Machine.spaces(F64.to_i64_wrap(x) - Machine.col_after_text(r.fx.said, $col)) }, fx: r.fx }
+						{ said: r.fx.said, t: if Machine.stopped(r.fx) { "" } else if pg.ecma { Machine.tab_ecma(x, Devices.col_after_text(r.fx.said, $col)) } else { Machine.spaces(F64.to_i64_wrap(x) - Devices.col_after_text(r.fx.said, $col)) }, fx: r.fx }
 					}
 					Show(e) => {
 						r = Machine.eval(pg, m, [], $fx, e)
 						t = Machine.shown(pg, r.v)
-						c = Machine.col_after_text(r.fx.said, $col)
+						c = Devices.col_after_text(r.fx.said, $col)
 						wrapped = w > 0 and c > 0 and c + U64.to_i64_wrap(Str.count_utf8_bytes(t)) > w
 						{ said: r.fx.said, t: if Machine.stopped(r.fx) { "" } else if wrapped { Str.concat("\n", t) } else { t }, fx: r.fx }
 					}
 				}
 				both = Str.concat(piece.said, piece.t)
 				$text = Str.concat($text, both)
-				$col = Machine.col_after_text(both, $col)
+				$col = Devices.col_after_text(both, $col)
 				$fx = { ..piece.fx, said: "" }
 			}
 		}
@@ -1452,11 +1339,11 @@ Machine :: [].{
 		px = Machine.idx(Machine.num_of(rx.v))
 		py = Machine.idx(Machine.num_of(ry.v))
 		# Off the edge is ignored, as every plotting BASIC did.
-		inside = px >= 0 and py >= 0 and I64.to_u64_wrap(px) < Machine.hires_w and I64.to_u64_wrap(py) < Machine.hires_h
+		inside = px >= 0 and py >= 0 and I64.to_u64_wrap(px) < Devices.hires_w and I64.to_u64_wrap(py) < Devices.hires_h
 		if d.done {
 			d
 		} else if inside {
-			Machine.next(Machine.poke_at(d, Machine.hires_base + I64.to_u64_wrap(py) * Machine.hires_w + I64.to_u64_wrap(px), Machine.byte_of(Machine.num_of(rc.v))))
+			Machine.next(Machine.poke_at(d, Devices.hires_base + I64.to_u64_wrap(py) * Devices.hires_w + I64.to_u64_wrap(px), Machine.byte_of(Machine.num_of(rc.v))))
 		} else {
 			Machine.next(d)
 		}
@@ -1576,17 +1463,17 @@ Machine :: [].{
 		} else {
 			# The prompt goes out once, though the statement runs again when
 			# its line arrives.
-			m0 = if m.asked { m } else { { ..Machine.emit(Machine.emit(m, prompt), "? "), asked: True } }
-			if m0.ip >= List.len(m0.inp) {
+			m0 = if Machine.prompt_shown(m) { m } else { Machine.prompted(Machine.emit(Machine.emit(m, prompt), "? ")) }
+			if Machine.untyped(m0) {
 				{ ..m0, waiting: True }
 			} else {
-				line = List.get(m0.inp, m0.ip) ?? ""
+				line = Machine.typed(m0)
 				m1 = Machine.emit(Machine.emit(m0, line), "\n")
 				vals = if pg.ecma { Machine.reply_items(Str.to_utf8(line), 0, []) } else { Machine.split_commas(Str.to_utf8(line), 0, []) }
 				# **NOTHING IS ASSIGNED UNTIL THE WHOLE REPLY FITS** (ECMA-55
 				# 13.5); a reply that does not is reported and asked again.
 				why = if pg.ecma { Machine.reply_fault(ts, vals) } else { "" }
-				taken = { ..m1, ip: m1.ip + 1, asked: False, reply: vals }
+				taken = Machine.replied(m1, vals)
 				if why != "" {
 					Machine.emit(taken, Str.concat(Str.concat("?", why), "\n"))
 				} else if List.is_empty(ts) {
@@ -1599,9 +1486,35 @@ Machine :: [].{
 
 	reply_value : Parse.Program, M, U64 -> Str
 	reply_value = |pg, m, k| {
-		raw = List.get(m.reply, k) ?? ""
+		raw = List.get((Machine.devices_of(m)).reply, k) ?? ""
 		if pg.ecma { Machine.unquote(raw) } else { raw }
 	}
+
+	# INPUT's prompt has gone out, and is not printed again when the statement
+	# runs again with its line.
+	prompt_shown : M -> Bool
+	prompt_shown = |m| (Machine.devices_of(m)).asked
+
+	prompted : M -> M
+	prompted = |m| { ..m, devices: Devices.prompt_out(m.devices) }
+
+	# No line is typed for INPUT to read.
+	untyped : M -> Bool
+	untyped = |m| {
+		d = Machine.devices_of(m)
+		d.ip >= List.len(d.inp)
+	}
+
+	# The next line typed.
+	typed : M -> Str
+	typed = |m| {
+		d = Machine.devices_of(m)
+		List.get(d.inp, d.ip) ?? ""
+	}
+
+	# A line read: its items kept, and the line after it next.
+	replied : M, List(Str) -> M
+	replied = |m, vals| { ..m, devices: Devices.reply_in(m.devices, vals) }
 
 	# ON <expr> GOTO or GOSUB picks the nth line from one; outside the list
 	# is an exception.
@@ -1869,7 +1782,7 @@ Machine :: [].{
 	# **A REPORTED EXCEPTION IS NOT A HALT**; what stops gets its own marker.
 	transcript : M -> Str
 	transcript = |m| {
-		body = Str.join_with(m.out, "")
+		body = Str.join_with((Machine.devices_of(m)).out, "")
 		if m.rejected {
 			Str.concat("*** REJECTED: ", m.err)
 		} else if m.err != "" and m.gap {
@@ -1900,7 +1813,7 @@ Machine :: [].{
 			} else if m.pause > 0 or (m.fuel <= 0 and !m.waiting) {
 				Machine.machine_state_at_next_effect(pg, { ..m, pause: 0, fuel: pg.tank })
 			} else {
-				Machine.machine_state_at_next_effect(pg, { ..m, inp: List.append(m.inp, line), waiting: False, fuel: pg.tank })
+				Machine.machine_state_at_next_effect(pg, { ..m, devices: Devices.line_in(m.devices, line), waiting: False, fuel: pg.tank })
 			}
 		{ pg: pg, m: resumed }
 	}
@@ -1919,18 +1832,7 @@ Machine :: [].{
 
 	# The screen codes and colours in the order shown, then the framebuffer.
 	screen : M -> List(U8)
-	screen = |m| {
-		var $codes = List.with_capacity(2000)
-		var $colours = List.with_capacity(1000)
-		var $row = 0
-		while $row < Machine.screen_h {
-			start_at = Machine.cell(Machine.row_at(m.top, $row), 0)
-			$codes = List.concat($codes, List.sublist(m.scr, { start: start_at, len: 40 }))
-			$colours = List.concat($colours, List.sublist(m.col_ram, { start: start_at, len: 40 }))
-			$row = $row + 1
-		}
-		List.concat(List.concat($codes, $colours), m.pix)
-	}
+	screen = |m| Devices.view(Machine.devices_of(m))
 
 	# ---- memory -----------------------------------------------------------------------
 
@@ -1938,54 +1840,9 @@ Machine :: [].{
 	addr_of : F64 -> U64
 	addr_of = |x| I64.to_u64_wrap(I64.bitwise_and(F64.to_i64_wrap(Machine.floor(x)), 16777215))
 
-	# **THE SMALL WINDOWS ARE MATCHED FIRST**, the framebuffer last.
-	hires_base : U64
-	hires_base = 131072
-
-	hires_w : U64
-	hires_w = 320
-
-	hires_h : U64
-	hires_h = 200
-
-	hires_cells : U64
-	hires_cells = 64000
-
-	screen_base : U64
-	screen_base = 1024
-
-	colour_base : U64
-	colour_base = 55296
-
-	screen_cells : U64
-	screen_cells = 1000
-
-	# A screen address as the cell it is kept in.
-	kept : M, U64 -> U64
-	kept = |m, i| Machine.cell(Machine.row_at(m.top, U64.to_i64_wrap(U64.div_trunc_by(i, 40))), U64.to_i64_wrap(U64.rem_by(i, 40)))
-
 	peek : M, U64 -> U8
-	peek = |m, a|
-		if a >= Machine.screen_base and a < Machine.screen_base + Machine.screen_cells {
-			List.get(m.scr, Machine.kept(m, a - Machine.screen_base)) ?? 0
-		} else if a >= Machine.colour_base and a < Machine.colour_base + Machine.screen_cells {
-			List.get(m.col_ram, Machine.kept(m, a - Machine.colour_base)) ?? 0
-		} else if a >= Machine.hires_base and a < Machine.hires_base + Machine.hires_cells {
-			List.get(m.pix, a - Machine.hires_base) ?? 0
-		} else {
-			Vec.get(m.mem, a, 0)
-		}
+	peek = |m, a| Devices.peek(Machine.devices_of(m), a)
 
 	poke_at : M, U64, U8 -> M
-	poke_at = |m, a, v|
-		if a >= Machine.screen_base and a < Machine.screen_base + Machine.screen_cells {
-			{ ..m, scr: List.set(m.scr, Machine.kept(m, a - Machine.screen_base), v) ?? crash("poke: screen") }
-		} else if a >= Machine.colour_base and a < Machine.colour_base + Machine.screen_cells {
-			{ ..m, col_ram: List.set(m.col_ram, Machine.kept(m, a - Machine.colour_base), v) ?? crash("poke: colour") }
-		} else if a >= Machine.hires_base and a < Machine.hires_base + Machine.hires_cells {
-			lit = if m.drew { m.pix } else { List.repeat(0, Machine.hires_cells) }
-			{ ..m, pix: List.set(lit, a - Machine.hires_base, v) ?? crash("poke: hires"), drew: True }
-		} else {
-			{ ..m, mem: Vec.set(m.mem, a, v) }
-		}
+	poke_at = |m, a, v| { ..m, devices: Devices.poke_into(m.devices, a, v) }
 }
