@@ -350,7 +350,7 @@ Machine :: [].{
 		Chr(a) => {
 			r = Machine.eval(pg, m, env, fx, a)
 			code = I64.bitwise_and(F64.to_i64_wrap(Machine.floor(Machine.num_of(r.v))), 255)
-			if Machine.stopped(r.fx) { r } else { { v: S(Str.from_utf8([U64.to_u8_wrap(I64.to_u64_wrap(code))]) ?? "?"), fx: r.fx } }
+			if Machine.stopped(r.fx) { r } else { { v: S(List.get(Machine.chars, I64.to_u64_wrap(code)) ?? "?"), fx: r.fx } }
 		}
 		StrOf(a) => {
 			r = Machine.eval(pg, m, env, fx, a)
@@ -367,6 +367,15 @@ Machine :: [].{
 		}
 		Fail(why) => Machine.gap_stop(fx, why)
 	}
+
+	# **CHR$ INDEXES A TABLE.** The one-character strings are made once, so a
+	# CHR$ in a loop makes no list to turn into a string. A byte that is not
+	# UTF-8 on its own is `?`.
+	chars : List(Str)
+	chars = Machine.char_table(0, [])
+
+	char_table : U64, List(Str) -> List(Str)
+	char_table = |c, acc| if c >= 256 { acc } else { Machine.char_table(c + 1, List.append(acc, Str.from_utf8([U64.to_u8_wrap(c)]) ?? "?")) }
 
 	# A parameter bound by a call hides the variable of its name.
 	num_var : M, Env, U64 -> F64
@@ -793,14 +802,21 @@ Machine :: [].{
 	# An array's bounds from the OPTION BASE; `ok` False when they leave no cells.
 	shaped : U64, I64, I64 -> { arr : Arr, ok : Bool }
 	shaped = |base64, d1, d2| {
+		b = Machine.bounds(base64, d1, d2)
+		if !b.ok { { arr: Machine.no_arr, ok: False } } else { { arr: { w: b.w, n: b.n, cells: Vec.repeat(b.n, 0.0) }, ok: True } }
+	}
+
+	# An array's width and cell count from its bounds, without its cells.
+	bounds : U64, I64, I64 -> { w : U64, n : U64, ok : Bool }
+	bounds = |base64, d1, d2| {
 		base = U64.to_i64_wrap(base64)
 		rows = d1 - base + 1
 		cols = d2 - base + 1
 		n = if d2 < 0 { rows } else { rows * cols }
 		if rows <= 0 or (d2 >= 0 and cols <= 0) or n <= 0 {
-			{ arr: Machine.no_arr, ok: False }
+			{ w: 0, n: 0, ok: False }
 		} else {
-			{ arr: { w: if d2 < 0 { 0 } else { I64.to_u64_wrap(cols) }, n: I64.to_u64_wrap(n), cells: Vec.repeat(I64.to_u64_wrap(n), 0.0) }, ok: True }
+			{ w: if d2 < 0 { 0 } else { I64.to_u64_wrap(cols) }, n: I64.to_u64_wrap(n), ok: True }
 		}
 	}
 
@@ -1198,15 +1214,15 @@ Machine :: [].{
 	dim_one = |pg, m, item| {
 		at = Machine.subs(pg, m, [], Machine.fresh(m), item.one, item.two, item.pair)
 		d = Machine.settle(m, at.fx)
-		shape = Machine.shaped(d.base, at.i, at.j)
+		b = Machine.bounds(d.base, at.i, at.j)
 		if d.done {
 			d
-		} else if !shape.ok {
+		} else if !b.ok {
 			Machine.fail(d, Str.concat("Bad DIM bound: ", Parse.name_of(item.slot)))
 		} else if (Vec.get(d.arrs, item.slot, Machine.no_arr)).n > 0 {
 			d
 		} else {
-			{ ..d, arrs: Vec.set(d.arrs, item.slot, shape.arr), arr_count: d.arr_count + 1 }
+			{ ..d, arrs: Vec.set(d.arrs, item.slot, { w: b.w, n: b.n, cells: Vec.repeat(b.n, 0.0) }), arr_count: d.arr_count + 1 }
 		}
 	}
 
