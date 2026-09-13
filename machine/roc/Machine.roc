@@ -6,6 +6,12 @@
 # notes/codex-devices-in-roc.md): memory, PCI configuration space, the block
 # device, the keyboard, a console. The clock counts steps, not wall time, so a
 # run is reproducible.
+#
+# Two programs drive it. Codex emitted by rocemit calls the doors named for
+# Codex builtins, which take and answer Codex's Integer, and its opening boots
+# the machine from the command line, where a test's .vmargs arrive. The page's
+# app (MachineApp.roc) builds one with a disk image and calls the same doors
+# and the ones below them.
 
 import Disk
 import Mem
@@ -27,10 +33,49 @@ Machine :: [].{
 		landed_len : I64,
 	}
 
+	Flags : { bridge : Bool, deep : Bool, levels : U64, backward : Bool }
+
+	# The page's machine: codex-vm's default devices, and one drive.
 	new : List(U8) -> Machine.M
-	new = |image| {
-		mem: Mem.new(U64.to_i64_wrap(List.len(image))),
-		pci: Pci.default,
+	new = |image| Machine.make(Mem.new(U64.to_i64_wrap(List.len(image))), Pci.table(0, False), image)
+
+	# A batch run's machine, from codex-vm's command line. The PCI bridge flags
+	# are modelled; any other flag names a device this machine does not have,
+	# and a verdict that depends on that device cannot be reproduced, so the
+	# run stops there. The memory's base moves with the argument count, as
+	# rocemit's Mem.new does, to keep the program out of compile-time reach.
+	boot : List(Str) -> Machine.M
+	boot = |args| {
+		f = Machine.flags(args, 0, { bridge: False, deep: False, levels: 0, backward: False })
+		levels = if !f.bridge { 0 } else if f.levels != 0 { f.levels } else if f.deep { 2 } else { 1 }
+		Machine.make(Mem.new(U64.to_i64_wrap(List.len(args))), Pci.table(levels, f.backward), [])
+	}
+
+	# -pci-bridge is one level, -pci-bridge-deep two, -pci-bridge-levels N
+	# is N, and -pci-bridge-backward points the deepest bridge at bus 0.
+	flags : List(Str), U64, Machine.Flags -> Machine.Flags
+	flags = |args, i, f|
+		match List.get(args, i) {
+			Err(_) => f
+			Ok(a) =>
+				if a == "-pci-bridge" {
+					Machine.flags(args, i + 1, { ..f, bridge: True })
+				} else if a == "-pci-bridge-deep" {
+					Machine.flags(args, i + 1, { ..f, bridge: True, deep: True })
+				} else if a == "-pci-bridge-backward" {
+					Machine.flags(args, i + 1, { ..f, bridge: True, backward: True })
+				} else if a == "-pci-bridge-levels" {
+					n = U64.from_str(List.get(args, i + 1) ?? "") ?? crash("machine: -pci-bridge-levels wants a number")
+					Machine.flags(args, i + 2, { ..f, bridge: True, levels: n })
+				} else {
+					crash("machine: ${a} is not a codex-vm flag this machine models")
+				}
+		}
+
+	make : Mem.Mem, Pci.Pci, List(U8) -> Machine.M
+	make = |mem, pci, image| {
+		mem: mem,
+		pci: pci,
 		drives: Disk.with_image(image),
 		keys: [],
 		key_at: 0,
@@ -43,13 +88,50 @@ Machine :: [].{
 	tick : Machine.M -> Machine.M
 	tick = |m| { ..m, steps: m.steps + 1 }
 
-	# ---- ports ----------------------------------------------------------
+	# ---- the doors emitted Codex calls ----------------------------------
+	#
+	# A Codex builtin with the machine threaded through: the machine first, and
+	# answered back beside the builtin's own answer, in Codex's Integer.
 
-	port_out_32 : Machine.M, U64, U64 -> Machine.M
-	port_out_32 = |m, port, value| { ..m, pci: Pci.write_port(m.pci, port, value) }
+	# `peek-byte` .. `peek-qword`: `width` bytes, little-endian.
+	load : Machine.M, I64, I64, I64 -> (Machine.M, I64)
+	load = |m, base, off, width| (m, U64.to_i64_wrap(Mem.read(m.mem, base + off, width - 1, 0)))
 
-	port_in_32 : Machine.M, U64 -> (Machine.M, U64)
-	port_in_32 = |m, port| (m, Pci.read_port(m.pci, port))
+	# `poke-byte` .. `poke-qword` answer 0.
+	store : Machine.M, I64, I64, I64, I64 -> (Machine.M, I64)
+	store = |m, base, off, v, width| ({ ..m, mem: Mem.write(m.mem, base + off, I64.to_u64_wrap(v), width) }, 0)
+
+	alloc : Machine.M, I64 -> (Machine.M, I64)
+	alloc = |m, n| {
+		(mem, at) = Mem.alloc(m.mem, n)
+		({ ..m, mem: mem }, at)
+	}
+
+	# `port-out-32` answers 0, as it does on x86. 0xCF8 latches a PCI address
+	# and 0xCFC..0xCFF write the register it names.
+	port_out_32 : Machine.M, I64, I64 -> (Machine.M, I64)
+	port_out_32 = |m, port, value| {
+		p = I64.to_u64_wrap(port)
+		v = U64.bitwise_and(I64.to_u64_wrap(value), Pci.all_ones)
+		if p == Pci.config_addr {
+			({ ..m, pci: Pci.latch(m.pci, v) }, 0)
+		} else if p >= Pci.config_data and p <= Pci.config_data + 3 {
+			({ ..m, pci: Pci.write(m.pci, v) }, 0)
+		} else {
+			crash("machine: port-out-32 to port ${U64.to_str(p)}, which no modelled device claims")
+		}
+	}
+
+	# `port-in-32`: 0xCFC..0xCFF read the register the latched address names.
+	port_in_32 : Machine.M, I64 -> (Machine.M, I64)
+	port_in_32 = |m, port| {
+		p = I64.to_u64_wrap(port)
+		if p >= Pci.config_data and p <= Pci.config_data + 3 {
+			(m, U64.to_i64_wrap(Pci.read(m.pci, p - Pci.config_data)))
+		} else {
+			crash("machine: port-in-32 from port ${U64.to_str(p)}, which no modelled device claims")
+		}
+	}
 
 	# ---- the block device -----------------------------------------------
 

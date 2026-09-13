@@ -8,6 +8,13 @@ app [Model, program] { pf: platform "../wasm/platform/main.roc" }
 import Machine
 import Pci
 
+# PCI's address and data ports, 0xCF8 and 0xCFC, in the doors' Integer.
+cf8 : I64
+cf8 = U64.to_i64_wrap(Pci.config_addr)
+
+cfc : I64
+cfc = U64.to_i64_wrap(Pci.config_data)
+
 Phase : [Scan(U64), Sector, Keys]
 
 Found : { slot : U64, vendor : U64, device : U64, class : U64, sub : U64, progif : U64, irq : U64 }
@@ -51,16 +58,19 @@ one = |model| {
 				n = U64.to_str(List.len(model.found))
 				{ ..model, m: Machine.print_line(m, "PCI: ${n} devices on bus 0; reading sector 0"), phase: Sector }
 			} else {
-				at = 2147483648 + slot * 2048
-				m1 = Machine.port_out_32(m, Pci.config_addr, at)
-				(m2, id) = Machine.port_in_32(m1, Pci.config_data)
+				at = 2147483648 + U64.to_i64_wrap(slot) * 2048
+				(m1, _w1) = Machine.port_out_32(m, cf8, at)
+				(m2, id_reg) = Machine.port_in_32(m1, cfc)
+				id = I64.to_u64_wrap(id_reg)
 				if id == Pci.all_ones {
 					{ ..model, m: m2, phase: Scan(slot + 1) }
 				} else {
-					m3 = Machine.port_out_32(m2, Pci.config_addr, at + 8)
-					(m4, class) = Machine.port_in_32(m3, Pci.config_data)
-					m5 = Machine.port_out_32(m4, Pci.config_addr, at + 60)
-					(m6, irq) = Machine.port_in_32(m5, Pci.config_data)
+					(m3, _w3) = Machine.port_out_32(m2, cf8, at + 8)
+					(m4, class_reg) = Machine.port_in_32(m3, cfc)
+					(m5, _w5) = Machine.port_out_32(m4, cf8, at + 60)
+					(m6, irq_reg) = Machine.port_in_32(m5, cfc)
+					class = I64.to_u64_wrap(class_reg)
+					irq = I64.to_u64_wrap(irq_reg)
 					f = {
 						slot: slot,
 						vendor: U64.bitwise_and(id, 65535),
