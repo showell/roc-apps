@@ -9,7 +9,7 @@ PASS arith-operand-order |
 PASS arithmetic |
 PASS arm64-boot-test |
 PASS arm64-encoder |
-FAIL arm64-http-test | output: < parse: method=7'( path=Q valid=True
+PASS arm64-http-test |
 REFUSED arm64-net-gate | builtin `process-get-pid` used as a value
 REFUSED arm64-proc-cells | builtin `process-get-pid` used as a value
 REFUSED arm64-send-refusal | builtin `__heap-advance`
@@ -88,12 +88,12 @@ REFUSED deck-bracket-contract | builtin `__deck-set`
 REFUSED deck-cell-contract | builtin `__deck-set`
 REFUSED deck-record-contract | builtin `__deck-set`
 PASS deriving-eq-recursive |
-REFUSED desk-hole | 
-REFUSED desk-hover | 
-REFUSED desk-parse | 
-REFUSED desk-reuse | 
-REFUSED desk-root-guard | 
-REFUSED desk-span | 
+REFUSED desk-hole | builtin `port-out-32`
+REFUSED desk-hover | builtin `port-out-32`
+REFUSED desk-parse | builtin `port-out-32`
+REFUSED desk-reuse | builtin `port-out-32`
+REFUSED desk-root-guard | builtin `port-out-32`
+REFUSED desk-span | builtin `port-out-32`
 REFUSED device-buffer-alloc | builtin `gpu-mem-read`
 REFUSED dhcp-acquire | builtin `net-send-raw`
 REFUSED dhcp-acquire-e1000 | builtin `net-send-raw`
@@ -792,7 +792,7 @@ PASS ops@substring-bounds |
 PASS ops@text-order-allowed |
 PASS ops@text-to-unicode-bytes-tier0 |
 PASS ops@tier0-cyrillic-print |
-FAIL ops@unicode-bytes-roundtrip | output: < 65 units=[ 75 ] n=1 back=41 cnt=1
+FAIL ops@unicode-bytes-roundtrip | output: < 192 units=[ 0 0 ] n=2 back=0 cnt=2
 REFUSED ops@unit-pattern-lit | unit type `Name`
 REFUSED ops@unit-real-arith | unit type `Metre`
 REFUSED ops@unit-real-compare | unit type `Metre`
