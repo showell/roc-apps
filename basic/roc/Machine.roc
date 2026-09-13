@@ -1184,8 +1184,179 @@ Machine :: [].{
 		if d.done { d } else if pg.live { { ..d, pc: d.pc + 1, pause: 1 } } else { Machine.next(d) }
 	}
 
+	# **THE COMMON CASE CARRIES NO EFFECTS.** A numeric expression that reports
+	# nothing, draws no random number, makes no array and stops nothing has only
+	# a value, so `fast` answers the value, or Slow the moment anything else could
+	# happen. On Slow the statement evaluates again in full: evaluation only reads
+	# the machine, so doing it twice changes nothing.
+	Quick : [Got(F64), Slow]
+
+	fast : M, Parse.Expr -> Quick
+	fast = |m, e| match e {
+		Num(x) => Machine.quick(x)
+		NumVar(s) => Got(Vec.get(m.nums, s, 0.0))
+		Elem(s, one, two, pair) => Machine.fast_elem(m, s, one, two, pair)
+		Neg(a) => Machine.fast_neg(m, a)
+		Add(a, b) => Machine.fast_arith(m, a, b, 1)
+		Sub(a, b) => Machine.fast_arith(m, a, b, 2)
+		Mul(a, b) => Machine.fast_arith(m, a, b, 3)
+		Div(a, b) => Machine.fast_arith(m, a, b, 4)
+		Pow(a, b) => Machine.fast_arith(m, a, b, 5)
+		Call(code, a) => if code <= 11 { Machine.fast_call(m, code, a) } else { Slow }
+		_ => Slow
+	}
+
+	# A value `finite` would pass without a report.
+	quick : F64 -> Quick
+	quick = |x| if x > Machine.huge or x < 0.0 - Machine.huge { Slow } else { Got(x) }
+
+	fast_neg : M, Parse.Expr -> Quick
+	fast_neg = |m, a| match Machine.fast(m, a) {
+		Got(x) => Got(0.0 - x)
+		Slow => Slow
+	}
+
+	fast_arith : M, Parse.Expr, Parse.Expr, U8 -> Quick
+	fast_arith = |m, a, b, op| match Machine.fast(m, a) {
+		Slow => Slow
+		Got(x) => match Machine.fast(m, b) {
+			Slow => Slow
+			Got(d) =>
+				if op == 1 {
+					Machine.quick(x + d)
+				} else if op == 2 {
+					Machine.quick(x - d)
+				} else if op == 3 {
+					Machine.quick(x * d)
+				} else if op == 4 {
+					if d == 0.0 { Slow } else { Machine.quick(x / d) }
+				} else if x < 0.0 and F64.abs(d) < 4503599627370496.0 and d != Machine.floor(d) {
+					Slow
+				} else if x == 0.0 and d < 0.0 {
+					Slow
+				} else {
+					Machine.quick(F64.pow(x, d))
+				}
+		}
+	}
+
+	fast_call : M, U8, Parse.Expr -> Quick
+	fast_call = |m, code, a| match Machine.fast(m, a) {
+		Slow => Slow
+		Got(x) =>
+			if code == 11 {
+				Got(I64.to_f64(U8.to_i64(Machine.peek(m, Machine.addr_of(x)))))
+			} else if code == 6 and x <= 0.0 {
+				Slow
+			} else if code == 9 and x < 0.0 {
+				Slow
+			} else {
+				Machine.quick(Machine.apply_fn(code, x))
+			}
+	}
+
+	Where : [Cell(I64, I64), Nowhere]
+
+	# The subscripts of an element, evaluated fast.
+	fast_subs : M, Parse.Expr, Parse.Expr, Bool -> Where
+	fast_subs = |m, one, two, pair| match Machine.fast(m, one) {
+		Slow => Nowhere
+		Got(x) =>
+			if !pair {
+				Cell(Machine.idx(x), U64.to_i64_wrap(m.base))
+			} else {
+				match Machine.fast(m, two) {
+					Slow => Nowhere
+					Got(y) => Cell(Machine.idx(x), Machine.idx(y))
+				}
+			}
+	}
+
+	fast_elem : M, U64, Parse.Expr, Parse.Expr, Bool -> Quick
+	fast_elem = |m, s, one, two, pair| match Machine.fast_subs(m, one, two, pair) {
+		Nowhere => Slow
+		Cell(i, j) => {
+			a = Vec.at(m.arrs, s)
+			c = Machine.cell_at(a.w, m.base, i, j)
+			if a.n == 0 or c < 0 or I64.to_u64_wrap(c) >= a.n { Slow } else { Got(Vec.at(a.cells, I64.to_u64_wrap(c))) }
+		}
+	}
+
+	Verdict : [Yes, No, Unknown]
+
+	fast_test : M, Parse.Expr, U8, Parse.Expr -> Verdict
+	fast_test = |m, l, op, r| match Machine.fast(m, l) {
+		Slow => Unknown
+		Got(x) => match Machine.fast(m, r) {
+			Slow => Unknown
+			Got(y) => if Machine.cmp_num(op, x, y) { Yes } else { No }
+		}
+	}
+
+	same : F64, F64 -> Bool
+	same = |a, b| a == b or (a != a and b != b)
+
 	do_set_num : Parse.Program, M, U64, Parse.Expr -> M
-	do_set_num = |pg, m, slot, e| {
+	do_set_num = |pg, m, slot, e| match Machine.fast(m, e) {
+		Got(x) => {
+			{ ..m, nums: Vec.set(m.nums, slot, x), pc: m.pc + 1 }
+		}
+		Slow => Machine.do_set_num_slow(pg, m, slot, e)
+	}
+
+	do_if_go : Parse.Program, M, Parse.Expr, U8, Parse.Expr, Parse.Jump, U64 -> M
+	do_if_go = |pg, m, l, op, r, j, line| match Machine.fast_test(m, l, op, r) {
+		Yes => {
+			Machine.took(pg, m, l, op, r, j, line)
+		}
+		No => {
+			{ ..m, pc: List.get(pg.firsts, line + 1) ?? List.len(pg.prog) }
+		}
+		Unknown => Machine.do_if_go_slow(pg, m, l, op, r, j, line)
+	}
+
+	# A constant jump is taken at once; any other goes the full way.
+	took : Parse.Program, M, Parse.Expr, U8, Parse.Expr, Parse.Jump, U64 -> M
+	took = |pg, m, l, op, r, j, line| match j {
+		To(i) => { ..m, pc: i }
+		_ => Machine.do_if_go_slow(pg, m, l, op, r, j, line)
+	}
+
+	do_if_then : Parse.Program, M, Parse.Expr, U8, Parse.Expr, U64 -> M
+	do_if_then = |pg, m, l, op, r, line| match Machine.fast_test(m, l, op, r) {
+		Yes => {
+			{ ..m, pc: m.pc + 1 }
+		}
+		No => {
+			{ ..m, pc: List.get(pg.firsts, line + 1) ?? List.len(pg.prog) }
+		}
+		Unknown => Machine.do_if_then_slow(pg, m, l, op, r, line)
+	}
+
+	do_set_elem : Parse.Program, M, U64, Parse.Expr, Parse.Expr, Bool, Parse.Expr -> M
+	do_set_elem = |pg, m, slot, one, two, pair, e| match Machine.fast_place(m, slot, one, two, pair, e) {
+		Place(i, j, x) => {
+			Machine.next(Machine.set_arr(m, slot, i, j, x))
+		}
+		Nothing => Machine.do_set_elem_slow(pg, m, slot, one, two, pair, e)
+	}
+
+	fast_place : M, U64, Parse.Expr, Parse.Expr, Bool, Parse.Expr -> [Place(I64, I64, F64), Nothing]
+	fast_place = |m, slot, one, two, pair, e| match Machine.fast_subs(m, one, two, pair) {
+		Nowhere => Nothing
+		Cell(i, j) =>
+			if (Vec.at(m.arrs, slot)).n == 0 {
+				Nothing
+			} else {
+				match Machine.fast(m, e) {
+					Slow => Nothing
+					Got(x) => Place(i, j, x)
+				}
+			}
+	}
+
+	do_set_num_slow : Parse.Program, M, U64, Parse.Expr -> M
+	do_set_num_slow = |pg, m, slot, e| {
 		r = Machine.eval(pg, m, [], Machine.fresh(m), e)
 		v = Machine.num_of(r.v)
 		if Machine.quiet(r.fx) and !r.fx.drew {
@@ -1212,8 +1383,8 @@ Machine :: [].{
 		}
 	}
 
-	do_set_elem : Parse.Program, M, U64, Parse.Expr, Parse.Expr, Bool, Parse.Expr -> M
-	do_set_elem = |pg, m, slot, one, two, pair, e| {
+	do_set_elem_slow : Parse.Program, M, U64, Parse.Expr, Parse.Expr, Bool, Parse.Expr -> M
+	do_set_elem_slow = |pg, m, slot, one, two, pair, e| {
 		at = Machine.subs(pg, m, [], Machine.fresh(m), one, two, pair)
 		# The array is made before the value is evaluated.
 		exists = (Vec.at(m.arrs, slot)).n > 0
@@ -1236,8 +1407,8 @@ Machine :: [].{
 			{ ..m, pc: List.get(m.ret, m.rdepth - 1) ?? 0, rdepth: m.rdepth - 1 }
 		}
 
-	do_if_go : Parse.Program, M, Parse.Expr, U8, Parse.Expr, Parse.Jump, U64 -> M
-	do_if_go = |pg, m, l, op, r, j, line| {
+	do_if_go_slow : Parse.Program, M, Parse.Expr, U8, Parse.Expr, Parse.Jump, U64 -> M
+	do_if_go_slow = |pg, m, l, op, r, j, line| {
 		c = Machine.condition(pg, m, l, op, r)
 		if Machine.plain(m, c.fx) and c.yes {
 			Machine.go(m, Machine.landing(pg, m, j), Parse.none)
@@ -1249,8 +1420,8 @@ Machine :: [].{
 		}
 	}
 
-	do_if_then : Parse.Program, M, Parse.Expr, U8, Parse.Expr, U64 -> M
-	do_if_then = |pg, m, l, op, r, line| {
+	do_if_then_slow : Parse.Program, M, Parse.Expr, U8, Parse.Expr, U64 -> M
+	do_if_then_slow = |pg, m, l, op, r, line| {
 		c = Machine.condition(pg, m, l, op, r)
 		if Machine.plain(m, c.fx) {
 			{ ..m, pc: if c.yes { m.pc + 1 } else { List.get(pg.firsts, line + 1) ?? List.len(pg.prog) } }
