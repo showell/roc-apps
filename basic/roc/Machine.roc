@@ -802,14 +802,28 @@ Machine :: [].{
 	# **THE ARRAY COMES OUT OF ITS VECTOR BEFORE IT IS WRITTEN**, and goes back.
 	set_arr : M, U64, I64, I64, F64 -> M
 	set_arr = |m, slot, i, j, x| {
-		taken = Vec.replace(m.arrs, slot, Machine.no_arr, Machine.no_arr)
-		{ w, n, cells } = taken.prev
-		c = Machine.cell_at(w, m.base, i, j)
-		if c < 0 or I64.to_u64_wrap(c) >= n {
-			{ ..m, arrs: Vec.set(taken.v, slot, { w: w, n: n, cells: cells }), done: True, err: Str.concat("Subscript out of range: ", Parse.name_of(slot)), gap: False }
+		c = Machine.cell_of(m.arrs, m.base, slot, i, j)
+		if c < 0 {
+			Machine.fail(m, Str.concat("Subscript out of range: ", Parse.name_of(slot)))
 		} else {
-			{ ..m, arrs: Vec.set(taken.v, slot, { w: w, n: n, cells: Vec.set(cells, I64.to_u64_wrap(c), x) }) }
+			{ ..m, arrs: Machine.arr_store(m.arrs, slot, I64.to_u64_wrap(c), x) }
 		}
+	}
+
+	# The cell a subscript pair names, or -1 outside the array.
+	cell_of : Vec.V(Arr), U64, U64, I64, I64 -> I64
+	cell_of = |arrs, base, slot, i, j| {
+		a = Vec.get(arrs, slot, Machine.no_arr)
+		c = Machine.cell_at(a.w, base, i, j)
+		if c < 0 or I64.to_u64_wrap(c) >= a.n { -1 } else { c }
+	}
+
+	# **THE ARRAY COMES OUT OF ITS VECTOR BEFORE IT IS WRITTEN**, and goes back.
+	arr_store : Vec.V(Arr), U64, U64, F64 -> Vec.V(Arr)
+	arr_store = |arrs, slot, c, x| {
+		r = Vec.replace(arrs, slot, Machine.no_arr, Machine.no_arr)
+		{ w, n, cells } = r.prev
+		Vec.set(r.v, slot, { w: w, n: n, cells: Vec.set(cells, c, x) })
 	}
 
 	# ---- control ------------------------------------------------------------------
@@ -1038,10 +1052,16 @@ Machine :: [].{
 	do_set_elem = |pg, m, slot, one, two, pair, e| {
 		at = Machine.subs(pg, m, [], Machine.fresh(m), one, two, pair)
 		# The array is made before the value is evaluated.
-		fx = if (Vec.get(m.arrs, slot, Machine.no_arr)).n == 0 { { ..at.fx, made: List.append(at.fx.made, { slot: slot, pair: pair }) } } else { at.fx }
+		exists = (Vec.get(m.arrs, slot, Machine.no_arr)).n > 0
+		fx = if exists { at.fx } else { { ..at.fx, made: List.append(at.fx.made, { slot: slot, pair: pair }) } }
 		r = if Machine.stopped(fx) { { v: N(0.0), fx: fx } } else { Machine.eval(pg, m, [], fx, e) }
-		d = Machine.settle(m, r.fx)
-		if d.done { d } else { Machine.next(Machine.set_arr(d, slot, at.i, at.j, Machine.num_of(r.v))) }
+		x = Machine.num_of(r.v)
+		if Machine.plain(m, r.fx) {
+			Machine.next(Machine.set_arr(m, slot, at.i, at.j, x))
+		} else {
+			d = Machine.settle(m, r.fx)
+			if d.done { d } else { Machine.next(Machine.set_arr(d, slot, at.i, at.j, x)) }
+		}
 	}
 
 	do_return : M -> M
@@ -1181,13 +1201,22 @@ Machine :: [].{
 			n = Machine.signed(Machine.fresh(m), rb, Parse.skip_ws(rb, 0))
 			x = Machine.num_of(n.v)
 			if t.kind == 0 {
-				d = Machine.settle(m, n.fx)
-				if d.done { d } else { { ..d, nums: Vec.set(d.nums, t.slot, x) } }
+				if Machine.plain(m, n.fx) {
+					{ ..m, nums: Vec.set(m.nums, t.slot, x) }
+				} else {
+					d = Machine.settle(m, n.fx)
+					if d.done { d } else { { ..d, nums: Vec.set(d.nums, t.slot, x) } }
+				}
 			} else {
 				at = Machine.subs(pg, m, [], n.fx, t.one, t.two, t.pair)
-				fx = if (Vec.get(m.arrs, t.slot, Machine.no_arr)).n == 0 { { ..at.fx, made: List.append(at.fx.made, { slot: t.slot, pair: t.pair }) } } else { at.fx }
-				d = Machine.settle(m, fx)
-				if d.done { d } else { Machine.set_arr(d, t.slot, at.i, at.j, x) }
+				exists = (Vec.get(m.arrs, t.slot, Machine.no_arr)).n > 0
+				fx = if exists { at.fx } else { { ..at.fx, made: List.append(at.fx.made, { slot: t.slot, pair: t.pair }) } }
+				if Machine.plain(m, fx) {
+					Machine.set_arr(m, t.slot, at.i, at.j, x)
+				} else {
+					d = Machine.settle(m, fx)
+					if d.done { d } else { Machine.set_arr(d, t.slot, at.i, at.j, x) }
+				}
 			}
 		}
 
