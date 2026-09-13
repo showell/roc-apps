@@ -1731,6 +1731,11 @@ Machine :: [].{
 	# **THE RUN LOOP AS ONE PURE FUNCTION.** Statements run until one needs
 	# the world -- a line of input, a SLEEP, the end, a stop -- or the fuel
 	# runs out, and the machine is answered as it stands there.
+	# **THE STEP IS GIVEN A FRESH RECORD**, and that is load-bearing. Handed
+	# `$m` itself, with the fuel counted outside the record or not at all,
+	# every store a statement makes copies the path it writes: 2 allocations
+	# a NEXT, and P134 five times slower. Measured by mmap count on the
+	# controls; the mechanism is Roc's, not known.
 	machine_state_at_next_effect : Parse.Program, M -> M
 	machine_state_at_next_effect = |pg, m| {
 		var $m = m
