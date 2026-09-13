@@ -20,8 +20,11 @@ main! = |args| {
 	replies = lines_of(Str.to_utf8(clean(List.get(args, 2) ?? "")), 0, 0, [])
 	# A generated app's seed was 1 plus its argument count, and it had none.
 	seed = 1
-	transcript = if dialect == "ecma" { Machine.run_ecma(listing, replies, seed) } else { Machine.run(listing, replies, seed) }
-	echo!(transcript)
+	r = Machine.run_measured(listing, replies, seed, dialect == "ecma")
+	# **THE COUNTS GO TO STDERR** (dbg), so the transcript on stdout stays
+	# the program's own: the statements it executed, and the program's size.
+	dbg { steps: r.steps, statements: r.statements }
+	echo!(r.transcript)
 	Ok({})
 }
 

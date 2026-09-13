@@ -1601,29 +1601,36 @@ Machine :: [].{
 	}
 
 	run_in : Str, List(Str), U64, Bool -> Str
-	run_in = |src, inp, seed, ecma| {
+	run_in = |src, inp, seed, ecma| Machine.run_measured(src, inp, seed, ecma).transcript
+
+	# The transcript, the statements the run executed, and how many statements
+	# the program has.
+	run_measured : Str, List(Str), U64, Bool -> { transcript : Str, steps : I64, statements : U64 }
+	run_measured = |src, inp, seed, ecma| {
 		line_fault = if ecma { Listing.check(src) } else { { why: "", num: -1 } }
 		bad = if ecma and line_fault.why == "" { Program.check(src) } else { line_fault }
 		pg = Parse.load(if bad.why != "" { "" } else { src }, ecma)
 		m = if bad.why != "" { Machine.refuse(bad) } else { Machine.batch(pg, Machine.machine_state_at_next_effect(pg, Machine.declared(pg, Machine.new(inp, seed))), 10) }
-		if !ecma and !m.gap and Str.starts_with(m.err, "No such line: ") {
-			# basic101's words for a jump to a line that is not there.
-			Str.concat(Machine.transcript({ ..m, err: "" }), Str.concat(Str.concat(Str.concat("Error on line ", I64.to_str(Machine.line_of(pg, m.pc))), Str.concat(": Undefined line number ", Str.drop_prefix(m.err, "No such line: "))), "\n"))
-		} else if m.waiting and !ecma {
-			# **A MICROCOMPUTER'S BATCH RUN ENDS AS basic101's DOES** when its
-			# replies run out: the games' captures are basic101's output.
-			Str.concat(Machine.transcript(m), Str.concat(Str.concat("\nError on line ", I64.to_str(Machine.line_of(pg, m.pc))), ": No more input\n"))
-		} else {
-		Machine.transcript(
-			if m.waiting {
-				{ ..m, done: True, gap: True, err: "Out of input" }
-			} else if m.fuel <= 0 {
-				{ ..m, done: True, gap: True, err: "Did not terminate" }
+		text =
+			if !ecma and !m.gap and Str.starts_with(m.err, "No such line: ") {
+				# basic101's words for a jump to a line that is not there.
+				Str.concat(Machine.transcript({ ..m, err: "" }), Str.concat(Str.concat(Str.concat("Error on line ", I64.to_str(Machine.line_of(pg, m.pc))), Str.concat(": Undefined line number ", Str.drop_prefix(m.err, "No such line: "))), "\n"))
+			} else if m.waiting and !ecma {
+				# **A MICROCOMPUTER'S BATCH RUN ENDS AS basic101's DOES** when its
+				# replies run out: the games' captures are basic101's output.
+				Str.concat(Machine.transcript(m), Str.concat(Str.concat("\nError on line ", I64.to_str(Machine.line_of(pg, m.pc))), ": No more input\n"))
 			} else {
-				m
-			},
-		)
-		}
+			Machine.transcript(
+				if m.waiting {
+					{ ..m, done: True, gap: True, err: "Out of input" }
+				} else if m.fuel <= 0 {
+					{ ..m, done: True, gap: True, err: "Did not terminate" }
+				} else {
+					m
+				},
+			)
+			}
+		{ transcript: text, steps: m.steps, statements: List.len(pg.prog) }
 	}
 
 	# The line number of the statement at `pc`: the last line whose first

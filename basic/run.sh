@@ -14,8 +14,9 @@
 # ~/build/roc-apps/gen/basic-native unless set; BIN is the interpreter.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BASIC_HERE="$HERE"
+. "$HERE/corpus.sh"
 BIN="${BIN:-$HOME/build/roc-apps/gen/basic/basic-run}"
-CORPUS="${BASIC_CORPUS:-$HOME/build/basic-corpus}"
 LIMIT="${LIMIT:-2}"
 suite="$1"; shift
 OUT="${OUT:-$HOME/build/roc-apps/gen/basic-native}/$suite"
@@ -23,24 +24,14 @@ mkdir -p "$OUT"
 [ -x "$BIN" ] || { echo "no $BIN -- run basic/build-run.sh"; exit 2; }
 dialect=micro; [ "$suite" = nbs ] && dialect=ecma
 names=("$@")
-[ ${#names[@]} -gt 0 ] || mapfile -t names < <(ls "$CORPUS/$suite" | grep -iE '\.bas$' | sed 's/\.[^.]*$//' | sort -u)
+[ ${#names[@]} -gt 0 ] || mapfile -t names < <(names_of "$suite")
 for n in "${names[@]}"; do
-    listing=""
-    for ext in bas BAS; do [ -f "$CORPUS/$suite/$n.$ext" ] && listing="$CORPUS/$suite/$n.$ext"; done
+    listing="$(listing_of "$suite" "$n")"
     [ -n "$listing" ] || { printf '%-16s no listing\n' "$n"; continue; }
-    # The replies basic/gen.py chose: ours for an NBS program, then the
-    # corpus's .input, then its .in.
-    replies=""
-    if [ "$suite" = nbs ] && [ -s "$HERE/nbs-input/$n.in" ]; then replies="$HERE/nbs-input/$n.in"
-    elif [ -f "$CORPUS/$suite/$n.input" ]; then replies="$CORPUS/$suite/$n.input"
-    elif [ -f "$CORPUS/$suite/$n.in" ]; then replies="$CORPUS/$suite/$n.in"
-    fi
-    # **A COMMAND SUBSTITUTION DROPS TRAILING NEWLINES**, and a reply file that
-    # ends in an empty line (banner's answer to SET PAGE is Enter) would lose
-    # its last reply: each text is read with a marker after it, then cut.
-    text="$(cat "$listing"; printf x)"; text="${text%x}"
+    replies="$(replies_of "$suite" "$n")"
+    read_text text "$listing"
     keys=""
-    if [ -n "$replies" ]; then keys="$(cat "$replies"; printf x)"; keys="${keys%x}"; fi
+    [ -n "$replies" ] && read_text keys "$replies"
     t0=$EPOCHREALTIME
     timeout "$LIMIT" "$BIN" "$dialect" "$text" "$keys" > "$OUT/$n.out" 2> "$OUT/$n.err"
     rc=$?
