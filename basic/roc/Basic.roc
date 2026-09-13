@@ -150,10 +150,14 @@ Basic :: [].{
 	# Whether `word` stands at `i` (after spaces). Answers the position
 	# past it, or the position it was given when it does not.
 	kw : List(U8), U64, Str -> U64
+	# **A KEYWORD IS COMPARED AS TEXT, NOT CONVERTED TO BYTES.** Every
+	# Str.to_utf8 is a heap list, and on the default platform every heap
+	# value is its own mmap: converting the keyword on each call cost a
+	# system call per keyword checked.
 	kw = |b, i, word| {
 		j = Basic.skip_ws(b, i)
-		w = Str.to_utf8(word)
-		if Basic.kw_at(b, j, w, 0) { j + List.len(w) } else { i }
+		n = Str.count_utf8_bytes(word)
+		if Basic.text_of(b, j, j + n) == word { j + n } else { i }
 	}
 
 	kw_at : List(U8), U64, List(U8), U64 -> Bool
@@ -283,7 +287,7 @@ Basic :: [].{
 	}
 
 	is_str_name : Str -> Bool
-	is_str_name = |k| Basic.byte(Str.to_utf8(k), U64.minus_wrap(List.len(Str.to_utf8(k)), 1)) == 36
+	is_str_name = |k| Str.ends_with(k, "$")
 
 	get_num : M, Str -> F64
 	get_num = |m, k| Basic.find_num(m.num, k, 0)
@@ -832,7 +836,7 @@ Basic :: [].{
 			Basic.call_str_fn(m, b, w + 1, k)
 		} else if Basic.is_fn(k) {
 			Basic.call_fn(m, b, w, k)
-		} else if Basic.kw(Str.to_utf8(k), 0, "FN") == 2 and List.len(Str.to_utf8(k)) == 3 {
+		} else if Str.starts_with(k, "FN") and Str.count_utf8_bytes(k) == 3 {
 			Basic.call_def(m, b, w, k)
 		} else {
 			nm = Basic.name_at(b, i)
@@ -2012,7 +2016,7 @@ Basic :: [].{
 
 	item : M, Str -> M
 	item = |m, t| {
-		width = U64.to_i64_wrap(List.len(Str.to_utf8(t)))
+		width = U64.to_i64_wrap(Str.count_utf8_bytes(t))
 		w = Basic.wrap_at(m)
 		if w > 0 and m.col > 0 and m.col + width > w { Basic.emit(Basic.emit(m, "\n"), t) } else { Basic.emit(m, t) }
 	}
@@ -2243,8 +2247,12 @@ Basic :: [].{
 	# number of times and then reported as a program that did not stop --
 	# which is what the suite calls it too.
 	batch : M, I64 -> M
+	# A SLEEP in batch has no page waiting to paint a frame, so it takes no
+	# time and the run carries on.
 	batch = |m, tanks|
-		if tanks <= 0 or m.done or m.waiting or m.fuel > 0 {
+		if m.pause > 0 and !m.done {
+			Basic.batch(Basic.loop({ ..m, pause: 0 }), tanks)
+		} else if tanks <= 0 or m.done or m.waiting or m.fuel > 0 {
 			m
 		} else {
 			Basic.batch(Basic.loop({ ..m, fuel: m.tank, pause: 0 }), tanks - 1)
