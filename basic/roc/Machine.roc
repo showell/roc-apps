@@ -1806,19 +1806,37 @@ Machine :: [].{
 	# the program has.
 	run_measured : Str, List(Str), U64, Bool -> { transcript : Str, steps : I64, statements : U64 }
 	run_measured = |src, inp, seed, ecma| {
+		l = Machine.loaded(src, ecma)
+		m = Machine.batch(l.pg, Machine.machine_state_at_next_effect(l.pg, Machine.started(l, inp, seed)), 10)
+		{ transcript: Machine.ended(l.pg, m), steps: m.steps, statements: List.len(l.pg.prog) }
+	}
+
+	# A listing checked and parsed: the program, and the fault that refuses the
+	# listing (`why` empty when there is none). A refused listing parses as empty.
+	Loaded : { pg : Parse.Program, bad : Listing.Rejection }
+
+	loaded : Str, Bool -> Loaded
+	loaded = |src, ecma| {
 		line_fault = if ecma { Listing.check(src) } else { { why: "", num: -1 } }
 		bad = if ecma and line_fault.why == "" { Program.check(src) } else { line_fault }
-		pg = Parse.load(if bad.why != "" { "" } else { src }, ecma)
-		m = if bad.why != "" { Machine.refuse(bad) } else { Machine.batch(pg, Machine.machine_state_at_next_effect(pg, Machine.declared(pg, Machine.new(inp, seed))), 10) }
-		text =
-			if !ecma and !m.gap and Str.starts_with(m.err, "No such line: ") {
-				# basic101's words for a jump to a line that is not there.
-				Str.concat(Machine.transcript({ ..m, err: "" }), Str.concat(Str.concat(Str.concat("Error on line ", I64.to_str(Machine.line_of(pg, m.pc))), Str.concat(": Undefined line number ", Str.drop_prefix(m.err, "No such line: "))), "\n"))
-			} else if m.waiting and !ecma {
-				# **A MICROCOMPUTER'S BATCH RUN ENDS AS basic101's DOES** when its
-				# replies run out: the games' captures are basic101's output.
-				Str.concat(Machine.transcript(m), Str.concat(Str.concat("\nError on line ", I64.to_str(Machine.line_of(pg, m.pc))), ": No more input\n"))
-			} else {
+		{ pg: Parse.load(if bad.why != "" { "" } else { src }, ecma), bad: bad }
+	}
+
+	# The machine before its first statement: refused, or declared.
+	started : Loaded, List(Str), U64 -> M
+	started = |l, inp, seed| if l.bad.why != "" { Machine.refuse(l.bad) } else { Machine.declared(l.pg, Machine.new(inp, seed)) }
+
+	# A batch run's transcript, from the machine it ended as.
+	ended : Parse.Program, M -> Str
+	ended = |pg, m|
+		if !pg.ecma and !m.gap and Str.starts_with(m.err, "No such line: ") {
+			# basic101's words for a jump to a line that is not there.
+			Str.concat(Machine.transcript({ ..m, err: "" }), Str.concat(Str.concat(Str.concat("Error on line ", I64.to_str(Machine.line_of(pg, m.pc))), Str.concat(": Undefined line number ", Str.drop_prefix(m.err, "No such line: "))), "\n"))
+		} else if m.waiting and !pg.ecma {
+			# **A MICROCOMPUTER'S BATCH RUN ENDS AS basic101's DOES** when its
+			# replies run out: the games' captures are basic101's output.
+			Str.concat(Machine.transcript(m), Str.concat(Str.concat("\nError on line ", I64.to_str(Machine.line_of(pg, m.pc))), ": No more input\n"))
+		} else {
 			Machine.transcript(
 				if m.waiting {
 					{ ..m, done: True, gap: True, err: "Out of input" }
@@ -1828,9 +1846,7 @@ Machine :: [].{
 					m
 				},
 			)
-			}
-		{ transcript: text, steps: m.steps, statements: List.len(pg.prog) }
-	}
+		}
 
 	# The line number of the statement at `pc`: the last line whose first
 	# statement is at or before it.

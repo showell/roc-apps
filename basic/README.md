@@ -25,15 +25,18 @@ compiler is already in the form a report needs.
     basic/roc/Listing.roc   ECMA-55's check of each line and statement, before a run
     basic/roc/Program.roc   ECMA-55's check of the whole program: jumps, loops, DEFs, arrays
     basic/roc/BasicRun.roc  basic-run, the command: a listing and its replies in, the transcript out
+    basic/roc/BasicCheck.roc  basic-check: basic-run with the fast path compared to the full evaluator
+    basic/roc/CommandLine.roc  the texts on basic-run's and basic-check's command lines
     basic/roc/Basic.roc     the interpreter the page still runs
     basic/roc/Pages.roc     Basic.roc's memory and arrays
     basic/roc/BasicApp.roc  Basic.roc behind one boxed machine, for the page
     basic/wasm/             the page's platform and host
     basic/web/basic.html    the page
     basic/build.sh          the page and its module, into the preview
-    basic/build-run.sh      basic-run, built once (the dev backend)
+    basic/build-run.sh      basic-run and basic-check, built once (the dev backend)
     basic/run.sh            corpus programs through basic-run, one process each, timed
     basic/compare.sh        two runs' transcripts, byte for byte: the gate for a new interpreter
+    basic/check-fast.sh     the corpus and the controls through basic-check and basic-run
     basic/controls/         the ladder: the smallest programs, each adding one thing
     basic/controls.sh       what one iteration of each allocates, against controls/expected.txt
     basic/pathological/     programs that stress one cost each, at scale
@@ -71,6 +74,15 @@ each control at 1,000 and at 10,000 iterations; the difference is what one
 iteration allocates, and each control is held to 0 or to a number written
 beside its reason. A change that makes a control start allocating names the
 feature it broke, which a slow program alone does not.
+
+**The fast path is held to the full evaluator.** A LET, an IF or an array
+store whose expression can only produce a value takes a fast path that
+carries no effects record, and hands anything else to the full evaluator.
+`check-fast.sh` runs every corpus program and every control through
+`basic-check`, which runs each such statement both ways from the same machine
+and stops the program with `fast differs` where the two machines disagree.
+It reports how many fast answers it compared, and any transcript that is not
+basic-run's.
 
 ## The corpora
 
