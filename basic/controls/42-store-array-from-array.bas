@@ -1,0 +1,5 @@
+5 DIM P(10)
+10 FOR I=1 TO @N@
+20 LET P(5)=P(6)
+30 NEXT I
+40 END
