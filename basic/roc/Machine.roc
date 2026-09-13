@@ -1301,7 +1301,7 @@ Machine :: [].{
 		for t in ts {
 			if $why == "" {
 				datum = Str.to_utf8(List.get(vals, $k) ?? "")
-				$why =
+				item =
 					if $k >= List.len(vals) {
 						"Too few items in the reply"
 					} else if t.kind == 1 {
@@ -1310,11 +1310,11 @@ Machine :: [].{
 						"A reply item is not a number"
 					} else if Machine.datum_overflows(datum) {
 						"Overflow in a reply item"
-					} else if $k + 1 == List.len(ts) and $k + 1 < List.len(vals) {
-						"Too many items in the reply"
 					} else {
 						""
 					}
+				# After the last variable, whatever its kind: items left over.
+				$why = if item == "" and $k + 1 == List.len(ts) and $k + 1 < List.len(vals) { "Too many items in the reply" } else { item }
 			} else {
 				{}
 			}
