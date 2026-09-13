@@ -94,12 +94,16 @@ reader can resolve — and `nbs-reports.txt` says what each must show.
 
 **`games/`** — 99 listings from *BASIC Computer Games* (David Ahl, 1978),
 public domain, each with a capture of what a BASIC printed for the
-keystrokes beside it. The captures are the expected output of
-[basic101](https://github.com/wconrad/basic101), a BASIC-80 interpreter, so
+keystrokes beside it, taken from the tests of
+[basic101](https://github.com/wconrad/basic101), a BASIC-80 interpreter.
+The captures are basic101's output, so the listings are basic101's too, and
 the microcomputer dialect follows basic101 where the two differ: numbers to
 seven digits, its messages for STOP, a missing line and running out of
 replies, and its RND — the Mersenne Twister of Ruby's `Random.new(0)` —
 which makes a game that calls `RND` gradeable byte for byte like the rest.
+Two games never end; their `.options` name the output lines basic101's test
+harness allowed, and they pass when the capture, less the harness's own last
+line, is where the transcript starts.
 
 ## What Roc does not have
 

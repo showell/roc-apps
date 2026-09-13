@@ -56,7 +56,7 @@ PASS king |
 PASS lem |
 PASS letter |
 FAIL life | > ?  **  *
-FAIL life2 | > Error on line 575: Undefined line number 800
+PASS life2 |
 PASS litquiz |
 FAIL love | <  1  2  3  4  5  6  7  8  9  10  11  12  13  14  15  16  17  18  19  20  21  22  23  24  
 PASS lunar |
@@ -85,7 +85,7 @@ PASS slots |
 FAIL splat | > OK.  TERMINAL VELOCITY = 715 MI/HR
 PASS stars |
 PASS stock |
-FAIL superstartrek | < *** UNSUPPORTED: Expected BASE
+FAIL superstartrek | > YOUR ORDERS ARE AS FOLLOWS:
 PASS superstartrekins |
 FAIL synonym | <      WHAT IS A SYNONYM OF HABITATION 1 ? DWELLING
 FAIL target | < 

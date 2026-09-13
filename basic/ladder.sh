@@ -85,6 +85,15 @@ grade() {
         elif [ -n "$error_program" ] && [ -z "$row" ]; then
             echo "UNJUDGED $n | an ERROR program with no row in nbs-reports.txt"
         else echo "PASS $n |"; fi
+    # **A GAME WITH max_output_lines DOES NOT END** (its .options): the
+    # capture is what basic101 printed until its test harness stopped it,
+    # then the harness's own line. The game passes when the capture without
+    # that line is where the transcript starts.
+    elif [ -f "$CORPUS/$suite/$n.options" ]; then
+        want="$RUNS/$suite/$n.want"
+        sed -E '$ s/Error on line [0-9]+: Maximum output lines reached$//' "$CORPUS/$suite/$n.output" | head -c -1 > "$want"
+        if [ "$(wc -c < "$out")" -ge "$(wc -c < "$want")" ] && cmp -s -n "$(wc -c < "$want")" "$want" "$out"; then echo "PASS $n | the capture's first $(wc -l < "$want") lines"
+        else echo "FAIL $n | $(diff <(head -n "$(wc -l < "$want")" "$out") "$want" | grep -m1 '^[<>]' | cut -c1-90)"; fi
     elif cmp -s "$out" "$CORPUS/$suite/$n.output"; then echo "PASS $n |"
     else echo "FAIL $n | $(diff "$out" "$CORPUS/$suite/$n.output" | grep -m1 '^[<>]' | cut -c1-90)"; fi
 }
