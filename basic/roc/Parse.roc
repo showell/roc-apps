@@ -287,16 +287,16 @@ Parse :: [].{
 
 	resolve : Stmt, List(I64), List(U64) -> Stmt
 	resolve = |s, lines, firsts| match s {
-		Goto(j) => Goto(Parse.to(j, lines, firsts))
-		Gosub(j) => Gosub(Parse.to(j, lines, firsts))
-		IfGo(l, op, r, j, line) => IfGo(l, op, r, Parse.to(j, lines, firsts), line)
-		OnGo(e, js) => OnGo(e, List.map(js, |j| Parse.to(j, lines, firsts)))
-		OnGosub(e, js) => OnGosub(e, List.map(js, |j| Parse.to(j, lines, firsts)))
+		Goto(j) => Goto(Parse.resolved(j, lines, firsts))
+		Gosub(j) => Gosub(Parse.resolved(j, lines, firsts))
+		IfGo(l, op, r, j, line) => IfGo(l, op, r, Parse.resolved(j, lines, firsts), line)
+		OnGo(e, js) => OnGo(e, List.map(js, |j| Parse.resolved(j, lines, firsts)))
+		OnGosub(e, js) => OnGosub(e, List.map(js, |j| Parse.resolved(j, lines, firsts)))
 		_ => s
 	}
 
-	to : Jump, List(I64), List(U64) -> Jump
-	to = |j, lines, firsts| match j {
+	resolved : Jump, List(I64), List(U64) -> Jump
+	resolved = |j, lines, firsts| match j {
 		Line(n) => {
 			k = Parse.find_line(lines, n)
 			if k < 0 { Missing(n) } else { To(List.get(firsts, I64.to_u64_wrap(k)) ?? 0) }
