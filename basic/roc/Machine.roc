@@ -23,6 +23,7 @@
 import Listing
 import Parse
 import Program
+import Twister
 import Vec
 
 Machine :: [].{
@@ -74,6 +75,11 @@ Machine :: [].{
 		# **RUNNING OUT OF FUEL IS A YIELD.** `steps` counts across resumes.
 		steps : I64,
 		seed : U64,
+		# **A MICROCOMPUTER'S RND IS basic101's**: the Mersenne Twister of Ruby's
+		# `Random.new(0)`, its position, and the last number drawn.
+		mt : List(U32),
+		mtat : U64,
+		rlast : F64,
 		fuel : I64,
 		base : U64,
 		rejected : Bool,
@@ -101,7 +107,7 @@ Machine :: [].{
 	# copies the whole machine, and it was 728 bytes with the program in it.
 	Run : { pg : Parse.Program, m : M }
 
-	Fx : { seed : U64, said : Str, stop : Str, gap : Bool, made : List({ slot : U64, pair : Bool }) }
+	Fx : { seed : U64, said : Str, stop : Str, gap : Bool, made : List({ slot : U64, pair : Bool }), drew : Bool, mt : List(U32), mtat : U64, rlast : F64 }
 
 	Ev : { v : Val, fx : Fx }
 
@@ -138,6 +144,9 @@ Machine :: [].{
 		pause: 0,
 		steps: 0,
 		seed: seed,
+		mt: Twister.by_seed(0),
+		mtat: 624,
+		rlast: 0.0,
 		fuel: Machine.full_tank,
 		base: 0,
 		rejected: False,
@@ -395,7 +404,17 @@ Machine :: [].{
 			r = Machine.eval(pg, m, env, fx, a)
 			if Machine.stopped(r.fx) { r } else { Machine.call(m, r.fx, code, r.v) }
 		}
-		Rnd => Machine.rnd(fx)
+		Rnd => Machine.draw_rnd(pg, m, fx)
+		RndOf(a) => {
+			r = Machine.eval(pg, m, env, fx, a)
+			if Machine.stopped(r.fx) {
+				r
+			} else if pg.ecma or Machine.num_of(r.v) > 0.0 {
+				Machine.draw_rnd(pg, m, r.fx)
+			} else {
+				{ v: N(if r.fx.drew { r.fx.rlast } else { m.rlast }), fx: r.fx }
+			}
+		}
 		Chr(a) => {
 			r = Machine.eval(pg, m, env, fx, a)
 			code = I64.bitwise_and(F64.to_i64_wrap(Machine.floor(Machine.num_of(r.v))), 255)
@@ -477,6 +496,17 @@ Machine :: [].{
 			{ v: N(Machine.huge), fx: { ..fx, said: Str.concat(fx.said, "\n?Zero raised to a negative power\n") } }
 		} else {
 			Machine.finite(fx, F64.pow(x, y))
+		}
+
+	# ECMA-55's RND is the LCG below; a microcomputer's draws from the Twister,
+	# continuing from what this evaluation has drawn already.
+	draw_rnd : Parse.Program, M, Fx -> Ev
+	draw_rnd = |pg, m, fx|
+		if pg.ecma {
+			Machine.rnd(fx)
+		} else {
+			d = if fx.drew { Twister.res53(fx.mt, fx.mtat) } else { Twister.res53(m.mt, m.mtat) }
+			{ v: N(d.v), fx: { ..fx, drew: True, mt: d.mt, mtat: d.at, rlast: d.v } }
 		}
 
 	# A 64-bit LCG (Knuth's MMIX constants); **THE NUMBER IS THE TOP 53 BITS.**
@@ -809,7 +839,7 @@ Machine :: [].{
 	# ---- applying an evaluation ---------------------------------------------------
 
 	fresh : M -> Fx
-	fresh = |m| { seed: m.seed, said: "", stop: "", gap: False, made: [] }
+	fresh = |m| { seed: m.seed, said: "", stop: "", gap: False, made: [], drew: False, mt: [], mtat: 0, rlast: 0.0 }
 
 	# What an evaluation did, applied once: its reports printed, its seed
 	# kept, the arrays it used made, and its stop.
@@ -819,16 +849,17 @@ Machine :: [].{
 	# POKE writing the machine `settle` answered copied the whole path of
 	# memory it wrote, every time (measured; the mechanism is Roc's).
 	plain : M, Fx -> Bool
-	plain = |m, fx| fx.said == "" and fx.stop == "" and List.is_empty(fx.made) and fx.seed == m.seed
+	plain = |m, fx| fx.said == "" and fx.stop == "" and List.is_empty(fx.made) and fx.seed == m.seed and !fx.drew
 
 	settle : M, Fx -> M
 	settle = |m, fx| {
 		shown = Machine.emit(m, fx.said)
-		made = if List.is_empty(fx.made) { { arrs: shown.arrs, count: shown.arr_count } } else { Machine.make_arrays(shown.arrs, shown.arr_count, shown.base, fx.made) }
+		drawn = if fx.drew { { ..shown, mt: fx.mt, mtat: fx.mtat, rlast: fx.rlast } } else { shown }
+		made = if List.is_empty(fx.made) { { arrs: drawn.arrs, count: drawn.arr_count } } else { Machine.make_arrays(drawn.arrs, drawn.arr_count, drawn.base, fx.made) }
 		if Machine.stopped(fx) {
-			{ ..shown, seed: fx.seed, arrs: made.arrs, arr_count: made.count, done: True, err: fx.stop, gap: fx.gap }
+			{ ..drawn, seed: fx.seed, arrs: made.arrs, arr_count: made.count, done: True, err: fx.stop, gap: fx.gap }
 		} else {
-			{ ..shown, seed: fx.seed, arrs: made.arrs, arr_count: made.count }
+			{ ..drawn, seed: fx.seed, arrs: made.arrs, arr_count: made.count }
 		}
 	}
 

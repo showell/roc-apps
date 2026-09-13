@@ -21,6 +21,7 @@ compiler is already in the form a report needs.
     basic/roc/Parse.roc     a listing as the program the machine runs: each statement parsed once
     basic/roc/Machine.roc   the machine: a read-only evaluator, the statements, the run loop, the doors
     basic/roc/Vec.roc       a persistent vector, 32-way: variables, arrays and memory
+    basic/roc/Twister.roc   the Mersenne Twister: a microcomputer's RND, as basic101 draws it
     basic/roc/Listing.roc   ECMA-55's check of each line and statement, before a run
     basic/roc/Program.roc   ECMA-55's check of the whole program: jumps, loops, DEFs, arrays
     basic/roc/BasicRun.roc  basic-run, the command: a listing and its replies in, the transcript out

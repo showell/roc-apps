@@ -40,6 +40,8 @@ Parse :: [].{
 		# A numeric function by its code (`fn_code`) and its argument.
 		Call(U8, Expr),
 		Rnd,
+		# RND with its argument: a microcomputer draws only when it is positive.
+		RndOf(Expr),
 		Chr(Expr),
 		StrOf(Expr),
 		Left(Expr, Expr),
@@ -1068,7 +1070,7 @@ Parse :: [].{
 			} else if Parse.byte(b, e) != 41 {
 				{ e: Seq(r.e, Fail("Expected )")), at: e, ok: False }
 			} else if k == "RND" {
-				{ e: Seq(r.e, Rnd), at: e + 1, ok: True }
+				{ e: RndOf(r.e), at: e + 1, ok: True }
 			} else {
 				{ e: Call(Parse.fn_code(k), r.e), at: e + 1, ok: True }
 			}

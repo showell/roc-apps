@@ -1,99 +1,99 @@
-FAIL 23-match | < TAILS! YOU GO FIRST. 
+PASS 23-match |
 PASS 3dplot |
-FAIL aceyducy | <  7 
+PASS aceyducy |
 FAIL amazing | < *** UNSUPPORTED: Expected THEN
 FAIL animal | > ARE YOU THINKING OF AN ANIMAL? Y
 PASS awari |
-FAIL bagels | > PICO FERMI 
+PASS bagels |
 PASS banner |
-FAIL basketbl | > YALE CONTROLS THE REBOUND.
+FAIL basketbl | > JUMP SHOT
 FAIL batnum | > Too few items, try again
 FAIL battle | < *** UNSUPPORTED: Expected THEN
 FAIL blackjck | > THIS IS THE GAME OF 21. AS MANY AS 7 PLAYERS MAY PLAY THE
-FAIL bombard | < I MISSED YOU, YOU DIRTY RAT. I PICKED 20 . YOUR TURN:
+PASS bombard |
 PASS bounce |
-FAIL bowling | < O + O + 
-FAIL boxing | < ROCKEM SOCKEM ROBOT GETS GLASSJAW GARY IN THE JAW (OUCH!)
-FAIL bug | > YOU ROLLED A 4 
+FAIL bowling | > ROLL YOUR 2ND BALL
+PASS boxing |
+FAIL bug | > I ROLLED A 5 
 FAIL bullfght | < YOU HAVE DRAWN A AWFUL 3  BULL.
 FAIL bullseye | < FOO 1 'S THROW? 1
 PASS bunny |
-FAIL buzzword | < ABILITY 6  ABILITY 20  ABILITY 35 
+FAIL buzzword | < ABILITY 8  ABILITY 23  ABILITY 34 
 FAIL calendar | <     
 PASS change |
 FAIL checkers | > FROM 1  5 TO 0  4 
-FAIL chemist | <  21 LITERS OF KRYPTOCYANIC ACID.  HOW MUCH WATER? 63.0
+PASS chemist |
 PASS chief |
 PASS chomp |
 PASS combat |
 FAIL craps | < 
 FAIL cube | < IT'S YOUR MOVE:  ? 1
-FAIL depthchg | < SONAR REPORTS SHOT WAS EAST
+FAIL depthchg | < SONAR REPORTS SHOT WAS SOUTH
 PASS diamond |
-FAIL dice | <  2             1 
-FAIL digits | <    0              0          RIGHT         1 
+PASS dice |
+PASS digits |
 FAIL evenwin1 | > Not numeric: "NO", try again
-FAIL evenwin2 | < THERE ARE 15 CHIPS ON THE BOARD.
+PASS evenwin2 |
 FAIL flipflop | < 
-FAIL footbal1 | < FOOBAR 0  WON THE TOSS
+FAIL footbal1 | < FOOBAR 1  WON THE TOSS
 FAIL footbal2 | <  17   PITCHOUT 1 
-FAIL furtradr | < YOUR BEAVER SOLD FOR $ 54.6 YOUR FOX SOLD FOR $ 0 
-FAIL golf | < SHOT WENT 261 YARDS.  IT'S 100 YARDS FROM THE CUP.
+PASS furtradr |
+PASS golf |
 PASS gomoko |
-FAIL guess | < TOO HIGH. TRY A SMALLER ANSWER.
-FAIL gunner | < MAXIMUM RANGE OF YOUR GUN IS 36928  YARDS.
-FAIL hamurabi | < LAND IS TRADING AT 21 BUSHELS PER ACRE.
+PASS guess |
+PASS gunner |
+PASS hamurabi |
 FAIL hangman | <  1 
 PASS hello |
 FAIL hexapawn | < *** UNSUPPORTED: Expected THEN
 FAIL hi-q | < ILLEGAL MOVE, TRY AGAIN...
-FAIL hilo | < YOUR GUESS IS TOO HIGH.
+PASS hilo |
 FAIL hockey | < WOULD THE FOO 7  COACH ENTER HIS TEAM
-FAIL horsrace | <  1                           1             8.6 :1
-FAIL hurkle | < GO WEST
-FAIL kinema | < A BALL IS THROWN UPWARDS AT 19 METERS PER SECOND.
-FAIL king | < YOU NOW HAVE  59913  RALLODS IN THE TREASURY.
+FAIL horsrace | <  1                           1             8.833333 :1
+PASS hurkle |
+PASS kinema |
+PASS king |
 PASS lem |
-FAIL letter | < TOO HIGH.  TRY A LOWER LETTER.
+PASS letter |
 FAIL life | > ?  **  *
 FAIL life2 | > Error on line 575: Undefined line number 800
 PASS litquiz |
 FAIL love | <  1  2  3  4  5  6  7  8  9  10  11  12  13  14  15  16  17  18  19  20  21  22  23  24  
 PASS lunar |
 FAIL mastrmnd | > YOU HAVE  0  BLACKS AND  0  WHITES.
-FAIL mathdice | < I *   I
-FAIL mugwump | < YOU ARE 8 UNITS FROM MUGWUMP 1 
+PASS mathdice |
+PASS mugwump |
 FAIL name | < THANK YOU,  14  13  12  11  10  9  8  7  6  5  4  3  2  1 .
 PASS nicoma |
 FAIL nim | < 
-FAIL number | < YOU HAVE 90 POINTS.
+PASS number |
 PASS onecheck |
-FAIL orbit | < YOUR PHOTON BOMB EXPLODED 500.3413 *10^2 MILES FROM THE
+PASS orbit |
 FAIL pizza | < 4 4      P 13      P 14      P 15      P 16      4 4 
 FAIL poetry | > MIDNIGHT DREARY
-FAIL poker | <  1 --   8  OF HEARTS         2 --   7  OF HEARTS        
+PASS poker |
 PASS queen |
-FAIL reverse | <  5  6  4  8  1  2  7  3  9 
+PASS reverse |
 PASS rocket |
 FAIL rocksp | > WOW!  I WIN!!!
 FAIL roulette | > NUMBER 1 ? 45,10
-FAIL rusrou | < - CLICK -
-FAIL salvo | <  4  9 
+PASS rusrou |
+PASS salvo |
 FAIL sinewave | < 
 FAIL slalom | < HERE COMES GATE # 1 :
-FAIL slots | < ORANGE LEMON LEMON
+PASS slots |
 FAIL splat | > OK.  TERMINAL VELOCITY = 715 MI/HR
-FAIL stars | < **
-FAIL stock | < INT. BALLISTIC MISSILES       IBM          102.25 
+PASS stars |
+PASS stock |
 FAIL superstartrek | < *** UNSUPPORTED: Expected BASE
 PASS superstartrekins |
-FAIL synonym | <      WHAT IS A SYNONYM OF STANDSTILL 1 ? DWELLING
-FAIL target | < RADIANS FROM X AXIS = 2.659099    FROM Z AXIS = 3.200699 
+FAIL synonym | <      WHAT IS A SYNONYM OF HABITATION 1 ? DWELLING
+FAIL target | < 
 PASS tictac1 |
 FAIL tictac2 | <  X 
 PASS towers |
-FAIL train | <  A CAR TRAVELING 50 MPH CAN MAKE A CERTAIN TRIP IN
+PASS train |
 FAIL trap | > YOU HAVE TRAPPED MY NUMBER.
-FAIL war | < YOU: D-A 23   COMPUTER: D-A 27 
+FAIL war | < YOU: D-A 29   COMPUTER: D-A 38 
 PASS weekday |
 FAIL word | 
