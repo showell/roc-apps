@@ -15,8 +15,8 @@
 # time we worked this corpus (Steve, 2026-09-13), and the rest is not
 # asymptotic yet. `SKIP_DIRS= tests/ladder.sh` puts it back.
 #
-# Cites resolve from $TESTS_ROOT (exported as CODEX_ROOT for rocemit; the
-# box's own CODEX_ROOT names another tree). A unit with a .diag beside it
+# rocemit resolves each program's cites from the checkout it sits in,
+# $TESTS_ROOT. A unit with a .diag beside it
 # expects a diagnostic, not output, and is skipped by name. Outputs land in
 # ~/build/roc-apps/gen/tests/<unit>/ and nothing here is tracked: the
 # ledger is the summary this prints, by outcome and refusal reason, and
@@ -37,7 +37,6 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROC="${ROC:-$HOME/build/roc-nightly/roc}"
 ROCEMIT="${ROCEMIT:-$HOME/build/rust-target/release/rocemit}"
 TESTS_ROOT="${TESTS_ROOT:-$HOME/showell_repos/cobblestone-u58}"
-export CODEX_ROOT="$TESTS_ROOT"
 SRC="$TESTS_ROOT/codex/test"
 GEN="$HOME/build/roc-apps/gen/tests"
 VERDICTS="$HOME/build/roc-apps/gen/verdicts"
@@ -95,7 +94,6 @@ one() {
     fi
     app="${said%%$'\n'*}"; stamp="${said##*$'\n'}"
     if [ "$app" = library ]; then echo "REFUSED $n | no opening" > "$d/verdict"; return; fi
-    echo "$stamp" > "$GEN/$n.stamp"
     if [ -n "$old" ] && [ "$old" = "$stamp" ] && [ -f "$GEN/$n.verdict" ] && [ -z "${FRESH:-}" ]; then
         cp "$GEN/$n.verdict" "$d/verdict"; return
     fi
@@ -115,6 +113,10 @@ one() {
     elif grep -q "crashed\|Backtrace\|overflowed" "$d/err"; then echo "CRASH $n | $(grep -m1 -hoE 'crashed[^\n]*|overflowed[^\n]*' "$d/err" | head -1 | cut -c1-100)" > "$d/verdict"
     else echo "FAIL $n | output: $(diff "$d/out.cmp" "$VERDICTS/$n.expected" | grep -m1 '^[<>]' | cut -c1-100)" > "$d/verdict"; fi
     cp "$d/verdict" "$GEN/$n.verdict"
+    # The stamp is written WITH the verdict it names. Written at the emit, an
+    # EMIT_ONLY run left a new stamp beside an old verdict, and the next full
+    # run reused that verdict for text it had never run.
+    echo "$stamp" > "$GEN/$n.stamp"
 }
 
 export -f one diverges; export ROC ROCEMIT SRC GEN VERDICTS

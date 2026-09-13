@@ -6,8 +6,7 @@
 #   games/emitted.sh                     the games in GAMES below
 #   games/emitted.sh Game2048Wasm        named shell chapters, no write
 #
-# Cites resolve from $GAMES_ROOT (the same tree as the games, exported as
-# CODEX_ROOT for rocemit: the box's own CODEX_ROOT names another tree).
+# Cites resolve from $GAMES_ROOT, the checkout the games sit in.
 # A chapter two games share (Rng, List, ListUtils, Tuple) must emit to the
 # same text from both.
 set -u
@@ -15,7 +14,6 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROC="${ROC:-$HOME/build/roc-nightly/roc}"
 ROCEMIT="${ROCEMIT:-$HOME/build/rust-target/release/rocemit}"
 GAMES_ROOT="${GAMES_ROOT:-$HOME/showell_repos/cobblestone-u58}"
-export CODEX_ROOT="$GAMES_ROOT"
 GEN="$HOME/build/roc-apps/gen/games"
 GAMES=(Game2048Wasm MinesweeperWasm KlondikeWasm)
 if [ $# -gt 0 ]; then shells=("$@"); write=no; else shells=("${GAMES[@]}"); write=yes; fi

@@ -1,8 +1,6 @@
 #!/bin/bash
 # THE GATE for the kernels: every Codex [Device] kernel chapter under
 # $KERNELS_ROOT/apps/*/kernels emitted to Roc and checked by the nightly.
-# (Not $CODEX_ROOT: this box exports that for Damian's repository, and a
-# sweep that silently read it ran over the wrong tree once.)
 #
 #   gpu/emitted.sh                 all 46 kernels; writes gpu/roc/ when green
 #   gpu/emitted.sh Plasma Nbody    named kernels, no write
@@ -18,11 +16,8 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROC="${ROC:-$HOME/build/roc-nightly/roc}"
 ROCEMIT="${ROCEMIT:-$HOME/build/rust-target/release/rocemit}"
 KERNELS_ROOT="${KERNELS_ROOT:-$HOME/showell_repos/cobblestone-u58}"
-# rocemit resolves a kernel's cites (DeviceMath, DeviceEffect, ...) from
-# $CODEX_ROOT; they must come from the same tree as the kernel. The first
-# sweeps inherited the box's CODEX_ROOT and took DeviceMath from Damian's
-# Sep 8 tree, 139 lines behind u58's.
-export CODEX_ROOT="$KERNELS_ROOT"
+# rocemit resolves a kernel's cites (DeviceMath, DeviceEffect, ...) from the
+# checkout the kernel sits in, so they come from $KERNELS_ROOT too.
 GEN="$HOME/build/roc-apps/gen/gpu"
 mkdir -p "$GEN"
 if [ $# -gt 0 ]; then
