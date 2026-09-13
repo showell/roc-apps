@@ -9,11 +9,12 @@
 #
 # Two programs drive it. Codex emitted by rocemit calls the doors named for
 # Codex builtins, which take and answer Codex's Integer, and its opening boots
-# the machine from the command line, where a test's .vmargs arrive. The page's
-# app (MachineApp.roc) builds one with a disk image and calls the same doors
-# and the ones below them.
+# the machine from the command line, where a test's .vmargs arrive, with the
+# drives MachineMedia attaches. The page's app (MachineApp.roc) builds one
+# with a disk image and calls the same doors and the ones below them.
 
 import MachineDisk
+import MachineMedia
 import MachineMem
 import MachinePci
 
@@ -37,19 +38,19 @@ Machine :: [].{
 
 	# The page's machine: codex-vm's default devices, and one drive.
 	new : List(U8) -> Machine.Machine
-	new = |image| Machine.make(MachineMem.new(U64.to_i64_wrap(List.len(image))), MachinePci.table(0, False), image)
+	new = |image| Machine.make(MachineMem.new(U64.to_i64_wrap(List.len(image))), MachinePci.table(0, False), MachineDisk.attach([Attached(image), Absent]))
 
-	# A batch run's machine, from codex-vm's command line. The PCI bridge flags
-	# are modelled; any other flag names a device this machine does not have,
-	# and a verdict that depends on that device cannot be reproduced, so the
-	# run stops there. The memory's base moves with the argument count, as it
-	# does where rocemit threads Mem alone, to keep the program out of
-	# compile-time reach.
+	# A batch run's machine, from codex-vm's command line and the drives
+	# MachineMedia attaches. The PCI bridge flags are modelled; any other flag
+	# names a device this machine does not have, and a verdict that depends on
+	# that device cannot be reproduced, so the run stops there. The memory's
+	# base moves with the argument count, as it does where rocemit threads Mem
+	# alone, to keep the program out of compile-time reach.
 	boot : List(Str) -> Machine.Machine
 	boot = |args| {
 		f = Machine.flags(args, 0, { bridge: False, deep: False, levels: 0, backward: False })
 		levels = if !f.bridge { 0 } else if f.levels != 0 { f.levels } else if f.deep { 2 } else { 1 }
-		Machine.make(MachineMem.new(U64.to_i64_wrap(List.len(args))), MachinePci.table(levels, f.backward), [])
+		Machine.make(MachineMem.new(U64.to_i64_wrap(List.len(args))), MachinePci.table(levels, f.backward), MachineDisk.attach(MachineMedia.drives))
 	}
 
 	# -pci-bridge is one level, -pci-bridge-deep two, -pci-bridge-levels N
@@ -73,11 +74,11 @@ Machine :: [].{
 				}
 		}
 
-	make : MachineMem.Mem, MachinePci.Pci, List(U8) -> Machine.Machine
-	make = |mem, pci, image| {
+	make : MachineMem.Mem, MachinePci.Pci, MachineDisk.Drives -> Machine.Machine
+	make = |mem, pci, drives| {
 		mem: mem,
 		pci: pci,
-		drives: MachineDisk.with_image(image),
+		drives: drives,
 		keys: [],
 		key_at: 0,
 		console: [],
@@ -134,17 +135,45 @@ Machine :: [].{
 		}
 	}
 
-	# ---- the block device -----------------------------------------------
+	# `block-select` chooses the drive the next block request addresses, and
+	# answers 0.
+	block_select : Machine.Machine, I64 -> (Machine.Machine, I64)
+	block_select = |m, n| ({ ..m, drives: MachineDisk.select(m.drives, I64.to_u64_wrap(n)) }, 0)
 
-	# `block-read-sector` as bare metal answers it: 512 bytes allocated in
-	# memory, the sector copied in, the address handed back.
-	block_read_sector : Machine.Machine, U64 -> (Machine.Machine, I64)
+	# `block-sector-count`: the selected drive's size in sectors, 0 with nothing
+	# on that position.
+	block_sector_count : Machine.Machine -> (Machine.Machine, I64)
+	block_sector_count = |m| (m, U64.to_i64_wrap(MachineDisk.sector_count(m.drives)))
+
+	# `block-read-sector` as x86 answers it: 512 bytes bump-allocated in memory,
+	# the sector copied in, the address handed back.
+	block_read_sector : Machine.Machine, I64 -> (Machine.Machine, I64)
 	block_read_sector = |m, lba| {
-		bytes = MachineDisk.sector(m.drives, lba)
+		bytes = MachineDisk.read(m.drives, I64.to_u64_wrap(lba))
 		(mem1, base) = MachineMem.alloc(m.mem, 512)
 		mem2 = Machine.copy_in(mem1, base, bytes, 0)
 		({ ..m, mem: mem2, landed: base, landed_len: 512 }, base)
 	}
+
+	# `block-write-sector`: the 512 bytes at `buf` become the sector; answers 0.
+	block_write_sector : Machine.Machine, I64, I64 -> (Machine.Machine, I64)
+	block_write_sector = |m, lba, buf| ({ ..m, drives: MachineDisk.write(m.drives, I64.to_u64_wrap(lba), Machine.copy_out(m.mem, buf, 0, [])) }, 0)
+
+	# ---- the process ----------------------------------------------------
+	#
+	# One process, the boot program, unscoped: nothing that spawns a process or
+	# narrows a scope is modelled, so these are the kernel's answers before
+	# anything has.
+
+	# `process-get-pid`: the boot program's stack is outside the spawn pool,
+	# which x86 answers as slot 0.
+	process_get_pid : Machine.Machine -> (Machine.Machine, I64)
+	process_get_pid = |m| (m, 0)
+
+	# `process-get-scope`: an unset scope cell reads as the empty text, which
+	# admits every path.
+	process_get_scope : Machine.Machine, I64 -> (Machine.Machine, Str)
+	process_get_scope = |m, _pid| (m, "")
 
 	copy_in : MachineMem.Mem, I64, List(U8), U64 -> MachineMem.Mem
 	copy_in = |mem, base, bytes, i|
@@ -153,8 +182,13 @@ Machine :: [].{
 			Err(_) => mem
 		}
 
-	block_sector_count : Machine.Machine -> U64
-	block_sector_count = |m| MachineDisk.sector_count(m.drives)
+	copy_out : MachineMem.Mem, I64, I64, List(U8) -> List(U8)
+	copy_out = |mem, base, i, acc|
+		if i >= 512 {
+			acc
+		} else {
+			Machine.copy_out(mem, base, i + 1, List.append(acc, U64.to_u8_wrap(MachineMem.read(mem, base + i, 0, 0))))
+		}
 
 	# ---- memory ---------------------------------------------------------
 

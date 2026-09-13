@@ -23,8 +23,8 @@ Model : { m : Machine.Machine, phase : Phase, found : List(Found) }
 
 new : List(U8) -> Box(Model)
 new = |image| {
-	m0 = Machine.new(image)
-	count = U64.to_str(Machine.block_sector_count(m0))
+	(m0, sectors) = Machine.block_sector_count(Machine.new(image))
+	count = I64.to_str(sectors)
 	Box.box({ m: Machine.print_line(m0, "machine: drive 0 holds ${count} sectors; scanning PCI bus 0"), phase: Scan(0), found: [] })
 }
 

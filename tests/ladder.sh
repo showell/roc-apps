@@ -76,6 +76,21 @@ diverges() {
         gop-padded-stride) echo "reads its geometry from cells codex-vm publishes at fixed addresses at boot; on any other host those addresses were never written" ;;
     esac
 }
+# The drives a machine unit boots with, as a Roc module: a program on the
+# Echo platform reads no files, so an attached image is a file IMPORT, and the
+# position with nothing on it is Absent. Arguments: yes/no for drive0.disk and
+# drive1.disk.
+media() {
+    echo "# MachineMedia -- the drives attached for this unit, written by tests/ladder.sh."
+    [ "$1" = yes ] && echo 'import "drive0.disk" as drive0 : List(U8)'
+    [ "$2" = yes ] && echo 'import "drive1.disk" as drive1 : List(U8)'
+    echo 'import MachineDisk'
+    echo
+    echo 'MachineMedia :: [].{'
+    echo '	drives : List(MachineDisk.Drive)'
+    printf '\tdrives = [%s, %s]\n' "$( [ "$1" = yes ] && echo 'Attached(drive0)' || echo Absent )" "$( [ "$2" = yes ] && echo 'Attached(drive1)' || echo Absent )"
+    echo '}'
+}
 # **THE RUN IS THE EXPENSIVE PART, THE EMIT IS NOT.** rocemit is a Rust
 # binary and takes milliseconds; `roc run` takes a compile. So a unit
 # whose emitted text is byte for byte what it was when we last ran it
@@ -91,6 +106,9 @@ one() {
     # A .skip is upstream's claim that its own battery cannot run the test
     # (a cross-architecture boot, say); its first line is the reason.
     if [ -f "$src.skip" ]; then echo "SKIP $n | $(head -1 "$src.skip" | cut -c1-100)" > "$d/verdict"; return; fi
+    # A .disk-src names a program upstream's harness compiles onto the disk at
+    # test time; with no Cobblestone compiler here there is no such disk.
+    if [ -f "$src.disk-src" ]; then echo "SKIP $n | its disk is compiled from $(grep -v '^#' "$src.disk-src" | head -1 | cut -c1-60) by the Cobblestone compiler at test time" > "$d/verdict"; return; fi
     why="$(diverges "$n")"
     if [ -n "$why" ]; then echo "DIVERGES $n | $why" > "$d/verdict"; return; fi
     # rocemit prints the app's name and a digest of everything it wrote,
@@ -102,16 +120,23 @@ one() {
     # A kept verdict was judged against one checkout's verdicts.
     stamp="$stamp $TESTS_ROOT"
     if [ "$app" = library ]; then echo "REFUSED $n | no opening" > "$d/verdict"; return; fi
-    # **A UNIT THAT REACHES A PORT RUNS ON THE MACHINE.** rocemit threads
+    # **A UNIT THAT REACHES A DEVICE RUNS ON THE MACHINE.** rocemit threads
     # Machine through it and writes no Machine module: the machine is
     # machine/roc, copied in beside the emitted modules, and the test's
-    # .vmargs are its command line, as they are codex-vm's. Both are part of
-    # what the verdict came from, so both join the stamp.
+    # .vmargs are its command line, as they are codex-vm's. Its .disk and
+    # .disk2 are the primary master and slave, linked in and imported by a
+    # generated MachineMedia. All of it is part of what the verdict came
+    # from, so all of it joins the stamp.
     vmargs=()
     if grep -qx 'import Machine' "$d"/*.roc; then
         cp "$MACHINE"/{Machine,MachineMem,MachinePci,MachineDisk}.roc "$d/"
         [ -f "$src.vmargs" ] && read -ra vmargs <<< "$(grep -v '^#' "$src.vmargs" | tr '\n' ' ')"
-        stamp="$stamp machine $( { cat "$MACHINE"/{Machine,MachineMem,MachinePci,MachineDisk}.roc; echo "${vmargs[*]}"; } | md5sum | cut -c1-16)"
+        rm -f "$d/drive0.disk" "$d/drive1.disk"
+        a0=no; a1=no
+        [ -f "$src.disk" ] && { ln -s "$src.disk" "$d/drive0.disk"; a0=yes; }
+        [ -f "$src.disk2" ] && { ln -s "$src.disk2" "$d/drive1.disk"; a1=yes; }
+        media $a0 $a1 > "$d/MachineMedia.roc"
+        stamp="$stamp machine $( { cat "$MACHINE"/{Machine,MachineMem,MachinePci,MachineDisk}.roc "$d/MachineMedia.roc"; echo "${vmargs[*]}"; stat -L -c '%s %Y' "$d"/drive*.disk 2>/dev/null; } | md5sum | cut -c1-16)"
     fi
     if [ -n "$old" ] && [ "$old" = "$stamp" ] && [ -f "$GEN/$n.verdict" ] && [ -z "${FRESH:-}" ]; then
         cp "$GEN/$n.verdict" "$d/verdict"; return
@@ -140,7 +165,7 @@ one() {
 }
 
 MACHINE="$(cd "$HERE/../machine/roc" && pwd)"
-export -f one diverges; export ROC ROCEMIT SRC GEN VERDICTS MACHINE TESTS_ROOT
+export -f one diverges media; export ROC ROCEMIT SRC GEN VERDICTS MACHINE TESTS_ROOT
 printf '%s\n' "${units[@]}" | xargs -P "${JOBS:-2}" -I{} bash -c 'one {}'
 ledger="$( for n in "${units[@]}"; do cat "$GEN/$n/verdict"; done )"
 [ "$full" = yes ] && echo "$ledger" > "$HERE/ledger.txt"
