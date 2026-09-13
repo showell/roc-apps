@@ -48,8 +48,12 @@ Machine :: [].{
 		arr_count : U64,
 		# Which DEF FNx have run, by letter.
 		defined : List(Bool),
+		# **A STACK IS A LIST AND A DEPTH**: the return points and the open loops
+		# below `rdepth` and `ldepth` are live, and the entries above are reused.
 		ret : List(U64),
+		rdepth : U64,
 		loops : List(Frame),
+		ldepth : U64,
 		dp : U64,
 		inp : List(Str),
 		ip : U64,
@@ -118,7 +122,9 @@ Machine :: [].{
 		arr_count: 0,
 		defined: List.repeat(False, 26),
 		ret: [],
+		rdepth: 0,
 		loops: [],
+		ldepth: 0,
 		dp: 0,
 		inp: inp,
 		ip: 0,
@@ -509,9 +515,8 @@ Machine :: [].{
 	call_def : Parse.Program, M, Env, Fx, U64, Bool, Parse.Expr -> Ev
 	call_def = |pg, m, env, fx, letter, param, arg| {
 		f = List.get(pg.fns, letter) ?? Parse.no_fn
-		name = Str.concat("FN", Str.from_utf8([U64.to_u8_wrap(65 + letter)]) ?? "")
 		if !(List.get(m.defined, letter) ?? False) {
-			Machine.gap_stop(fx, Str.concat("Undefined function: ", name))
+			Machine.gap_stop(fx, Str.concat("Undefined function: FN", Str.from_utf8([U64.to_u8_wrap(65 + letter)]) ?? ""))
 		} else if !param {
 			Machine.eval(pg, m, env, fx, f.body)
 		} else {
@@ -850,20 +855,31 @@ Machine :: [].{
 		}
 	}
 
-	# Taken, with the return point pushed first when `back` is not `none`.
 	go : M, Landing, U64 -> M
-	go = |m, l, back| {
-		s = Machine.settle(m, l.fx)
-		if s.done {
-			s
-		} else if l.at < 0 {
-			Machine.fail(s, Str.concat("No such line: ", I64.to_str(l.n)))
-		} else if back == Parse.none {
-			{ ..s, pc: I64.to_u64_wrap(l.at) }
+	go = |m, l, back|
+		if Machine.plain(m, l.fx) {
+			Machine.land(m, l, back)
 		} else {
-			{ ..s, pc: I64.to_u64_wrap(l.at), ret: List.append(s.ret, back) }
+			s = Machine.settle(m, l.fx)
+			if s.done { s } else { Machine.land(s, l, back) }
 		}
-	}
+
+	# Taken, with the return point pushed first when `back` is not `none`.
+	land : M, Landing, U64 -> M
+	land = |m, l, back|
+		if l.at < 0 {
+			Machine.fail(m, Str.concat("No such line: ", I64.to_str(l.n)))
+		} else if back == Parse.none {
+			{ ..m, pc: I64.to_u64_wrap(l.at) }
+		} else {
+			{ ..m, pc: I64.to_u64_wrap(l.at), ret: Machine.push(m.ret, m.rdepth, back), rdepth: m.rdepth + 1 }
+		}
+
+	# **POPPING LOWERS THE DEPTH AND KEEPS THE ENTRY; PUSHING OVERWRITES IT.**
+	# A GOSUB and its RETURN, or a loop entered and left, reuse the same cells:
+	# a list pushed and popped back to empty allocated every time.
+	push : List(a), U64, a -> List(a)
+	push = |xs, depth, x| if depth < List.len(xs) { List.set(xs, depth, x) ?? crash("push: inside the list") } else { List.append(xs, x) }
 
 	next_line : Parse.Program, M, U64 -> U64
 	next_line = |pg, m, line| List.get(pg.firsts, line + 1) ?? List.len(pg.prog)
@@ -922,57 +938,75 @@ Machine :: [].{
 		f = Machine.eval(pg, m, [], Machine.fresh(m), from)
 		l = if Machine.stopped(f.fx) { f } else { Machine.eval(pg, m, [], f.fx, lim) }
 		s = if Machine.stopped(l.fx) { l } else { Machine.eval(pg, m, [], l.fx, st) }
-		m1 = Machine.settle(m, s.fx)
 		x = Machine.num_of(f.v)
-		limit = Machine.num_of(l.v)
-		step = Machine.num_of(s.v)
-		after = m1.pc + 1
-		outside = Machine.loops_outside(m1.loops, after)
-		if m1.done {
-			m1
-		} else if (step >= 0.0 and x > limit) or (step < 0.0 and x < limit) {
-			# A loop whose body must not run lands past the NEXT that closes it.
-			skip = List.get(pg.skips, m1.pc) ?? Parse.none
-			stored = { ..m1, nums: Vec.set(m1.nums, v, x), loops: outside }
-			if skip == Parse.none { Machine.fail(stored, Str.concat("FOR without NEXT: ", Parse.name_of(v))) } else { { ..stored, pc: skip } }
+		frame = { v: v, limit: Machine.num_of(l.v), step: Machine.num_of(s.v), after: m.pc + 1 }
+		if Machine.plain(m, s.fx) {
+			Machine.enter_for(pg, m, frame, x)
 		} else {
-			{ ..m1, nums: Vec.set(m1.nums, v, x), loops: List.append(outside, { v: v, limit: limit, step: step, after: after }), pc: after }
+			d = Machine.settle(m, s.fx)
+			if d.done { d } else { Machine.enter_for(pg, d, frame, x) }
 		}
 	}
 
-	loops_outside : List(Frame), U64 -> List(Frame)
-	loops_outside = |fs, after| {
-		var $keep = List.len(fs)
+	# A loop whose body must not run lands past the NEXT that closes it.
+	enter_for : Parse.Program, M, Frame, F64 -> M
+	enter_for = |pg, m, f, x| {
+		keep = Machine.outside(m.loops, m.ldepth, f.after)
+		if (f.step >= 0.0 and x > f.limit) or (f.step < 0.0 and x < f.limit) {
+			skip = List.get(pg.skips, m.pc) ?? Parse.none
+			if skip == Parse.none {
+				Machine.fail({ ..m, nums: Vec.set(m.nums, f.v, x), ldepth: keep }, Str.concat("FOR without NEXT: ", Parse.name_of(f.v)))
+			} else {
+				{ ..m, nums: Vec.set(m.nums, f.v, x), ldepth: keep, pc: skip }
+			}
+		} else {
+			{ ..m, nums: Vec.set(m.nums, f.v, x), loops: Machine.push(m.loops, keep, f), ldepth: keep + 1, pc: f.after }
+		}
+	}
+
+	# How many open loops lie outside the one whose body starts at `after`.
+	outside : List(Frame), U64, U64 -> U64
+	outside = |fs, depth, after| {
+		var $keep = depth
 		var $i = 0
-		for f in fs {
-			if f.after == after and $keep == List.len(fs) { $keep = $i } else { {} }
+		for fr in fs {
+			if $i < depth and fr.after == after and $keep == depth { $keep = $i } else { {} }
 			$i = $i + 1
 		}
-		if $keep == List.len(fs) { fs } else { List.sublist(fs, { start: 0, len: $keep }) }
+		$keep
 	}
+
 
 	# NEXT closes the innermost loop on its variable, or the innermost loop
 	# when it names none; the loops above that one were left by a jump.
 	do_next : M, U64, Bool -> M
 	do_next = |m, v, named| {
-		var $found = -1
-		var $i = 0
-		for f in m.loops {
-			if !named or f.v == v { $found = $i } else { {} }
-			$i = $i + 1
-		}
-		if $found < 0 {
+		found = Machine.loop_on(m.loops, m.ldepth, v, named)
+		if found < 0 {
 			Machine.fail(m, "NEXT without FOR")
 		} else {
-			k = I64.to_u64_wrap($found)
+			k = I64.to_u64_wrap(found)
 			f = List.get(m.loops, k) ?? { v: 0, limit: 0.0, step: 1.0, after: 0 }
 			x = Vec.get(m.nums, f.v, 0.0) + f.step
 			if (f.step >= 0.0 and x > f.limit) or (f.step < 0.0 and x < f.limit) {
-				{ ..m, nums: Vec.set(m.nums, f.v, x), loops: List.sublist(m.loops, { start: 0, len: k }), pc: m.pc + 1 }
+				{ ..m, nums: Vec.set(m.nums, f.v, x), ldepth: k, pc: m.pc + 1 }
 			} else {
-				{ ..m, nums: Vec.set(m.nums, f.v, x), loops: List.sublist(m.loops, { start: 0, len: k + 1 }), pc: f.after }
+				{ ..m, nums: Vec.set(m.nums, f.v, x), ldepth: k + 1, pc: f.after }
 			}
 		}
+	}
+
+	# The innermost open loop on `v`, or the innermost of all when NEXT names
+	# none; -1 when there is none.
+	loop_on : List(Frame), U64, U64, Bool -> I64
+	loop_on = |fs, depth, v, named| {
+		var $found = -1
+		var $i = 0
+		for f in fs {
+			if $i < depth and (!named or f.v == v) { $found = U64.to_i64_wrap($i) } else { {} }
+			$i = $i + 1
+		}
+		$found
 	}
 
 	# ---- statements ---------------------------------------------------------------
@@ -1065,10 +1099,12 @@ Machine :: [].{
 	}
 
 	do_return : M -> M
-	do_return = |m| {
-		n = List.len(m.ret)
-		if n == 0 { Machine.fail(m, "RETURN without GOSUB") } else { { ..m, pc: List.get(m.ret, n - 1) ?? 0, ret: List.drop_last(m.ret, 1) } }
-	}
+	do_return = |m|
+		if m.rdepth == 0 {
+			Machine.fail(m, "RETURN without GOSUB")
+		} else {
+			{ ..m, pc: List.get(m.ret, m.rdepth - 1) ?? 0, rdepth: m.rdepth - 1 }
+		}
 
 	do_if_go : Parse.Program, M, Parse.Expr, U8, Parse.Expr, Parse.Jump, U64 -> M
 	do_if_go = |pg, m, l, op, r, j, line| {
