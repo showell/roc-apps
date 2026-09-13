@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A Roc machine</title>
+<style>
+  :root { --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --hi: #ffe08a; --pane: #ffffff; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --hi: #6b5a1a; --pane: #242422; }
+  }
+  body { margin: 0; padding: 16px; background: var(--bg); color: var(--fg); font: 14px/1.4 system-ui, sans-serif; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  p.lede { margin: 0 0 12px; color: var(--muted); max-width: 70ch; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+  button { font: inherit; padding: 4px 12px; border: 1px solid var(--edge); background: var(--pane); color: var(--fg); border-radius: 4px; cursor: pointer; }
+  #status { color: var(--muted); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; }
+  section { background: var(--pane); border: 1px solid var(--edge); border-radius: 6px; padding: 8px 10px; min-width: 0; }
+  section h2 { font-size: 13px; margin: 0 0 6px; color: var(--muted); font-weight: 600; }
+  pre { margin: 0; font: 12px/1.35 ui-monospace, monospace; white-space: pre-wrap; overflow-x: auto; }
+  table { border-collapse: collapse; font: 12px ui-monospace, monospace; width: 100%; }
+  td, th { text-align: left; padding: 2px 6px; border-bottom: 1px solid var(--edge); }
+  .hex span.hi { background: var(--hi); }
+</style>
+</head>
+<body>
+<h1>A Roc machine</h1>
+<p class="lede">One Roc value holds the devices: memory, PCI configuration space, a drive, a keyboard queue, a console.
+A hand-written Roc program scans PCI bus 0 through ports 0xCF8/0xCFC, reads sector 0 through the block door into memory,
+then echoes the keys you type. The drive is upstream's <code>block-select-drives.disk</code>.</p>
+<div class="bar">
+  <button id="run">Run</button>
+  <button id="step">Step</button>
+  <button id="reset">Reset</button>
+  <span id="status">loading…</span>
+</div>
+<div class="grid">
+  <section><h2>Console</h2><pre id="console"></pre></section>
+  <section><h2>PCI bus 0</h2><table id="pci"><thead><tr><th>slot</th><th>vendor:device</th><th>class</th><th>irq</th></tr></thead><tbody></tbody></table></section>
+  <section><h2 id="memlab">Memory</h2><pre id="mem" class="hex"></pre></section>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+// PS/2 set-1 scancodes for the keys the echo names.
+const PS2 = { KeyQ: 0x10, KeyW: 0x11, KeyE: 0x12, KeyR: 0x13, KeyT: 0x14, KeyY: 0x15, KeyU: 0x16, KeyI: 0x17, KeyO: 0x18, KeyP: 0x19,
+  KeyA: 0x1e, KeyS: 0x1f, KeyD: 0x20, KeyF: 0x21, KeyG: 0x22, KeyH: 0x23, KeyJ: 0x24, KeyK: 0x25, KeyL: 0x26,
+  KeyZ: 0x2c, KeyX: 0x2d, KeyC: 0x2e, KeyV: 0x2f, KeyB: 0x30, KeyN: 0x31, KeyM: 0x32, Space: 0x39, Enter: 0x1c };
+const hex = (v, n) => v.toString(16).toUpperCase().padStart(n, "0");
+let x = null, image = null, running = false;
+
+function view() {
+  const n = x.view();
+  const b = new Uint8Array(x.memory.buffer, x.outPtr(), n).slice();
+  let p = 0;
+  const u32 = () => { const v = (b[p] | (b[p + 1] << 8) | (b[p + 2] << 16) | (b[p + 3] << 24)) >>> 0; p += 4; return v; };
+  const status = b[p++], steps = u32();
+  const clen = u32();
+  const text = new TextDecoder().decode(b.subarray(p, p + clen)); p += clen;
+  const count = u32(), rows = [];
+  for (let i = 0; i < count; i++, p += 12) {
+    rows.push({ slot: b[p], cls: b[p + 1], sub: b[p + 2], progif: b[p + 3], irq: b[p + 4],
+                vendor: b[p + 8] | (b[p + 9] << 8), device: b[p + 10] | (b[p + 11] << 8) });
+  }
+  const addr = u32(), len = u32();
+  return { status, steps, text, rows, addr, span: b.subarray(p, p + len) };
+}
+
+function render() {
+  const v = view();
+  $("status").textContent = `${v.status === 1 ? "waiting for a key" : running ? "running" : "paused"} · ${v.steps} steps`;
+  $("console").textContent = v.text;
+  $("pci").tBodies[0].innerHTML = v.rows.map((r) =>
+    `<tr><td>00:${String(r.slot).padStart(2, "0")}.0</td><td>${hex(r.vendor, 4)}:${hex(r.device, 4)}</td><td>${hex(r.cls, 2)}${hex(r.sub, 2)}${hex(r.progif, 2)}</td><td>${r.irq}</td></tr>`).join("");
+  if (v.span.length === 0) { $("memlab").textContent = "Memory (nothing read yet)"; $("mem").textContent = ""; return v; }
+  $("memlab").textContent = `Memory at 0x${hex(v.addr, 8)}: the sector the block door copied in`;
+  const lines = [];
+  for (let off = 0; off < v.span.length; off += 16) {
+    const cells = Array.from(v.span.subarray(off, off + 16)).map((c, i) =>
+      (off + i >= 510) ? `<span class="hi">${hex(c, 2)}</span>` : hex(c, 2));
+    lines.push(`${hex(v.addr + off, 8)}  ${cells.join(" ")}`);
+  }
+  $("mem").innerHTML = lines.join("\n");
+  return v;
+}
+
+function frame() {
+  if (!running) return;
+  x.step(4);
+  const v = render();
+  if (v.status === 1) { running = false; render(); return; }
+  requestAnimationFrame(frame);
+}
+
+function reset() {
+  running = false;
+  new Uint8Array(x.memory.buffer, x.diskPtr(), image.length).set(image);
+  x.newMachine(image.length);
+  render();
+}
+
+$("run").onclick = () => { if (!running) { running = true; requestAnimationFrame(frame); } };
+$("step").onclick = () => { running = false; x.step(1); render(); };
+$("reset").onclick = reset;
+addEventListener("keydown", (e) => {
+  if (!x || !(e.code in PS2) || e.target.tagName === "INPUT") return;
+  e.preventDefault();
+  x.key(PS2[e.code]);
+  x.step(64);
+  render();
+});
+
+(async () => {
+  const { instance } = await WebAssembly.instantiate(await (await fetch("machine.wasm")).arrayBuffer(), {});
+  x = instance.exports;
+  image = new Uint8Array(await (await fetch("drive0.img")).arrayBuffer());
+  reset();
+})();
+</script>
+</body>
+</html>

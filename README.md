@@ -83,6 +83,18 @@ export contract, which the same host serves over a handle table.
 Adding a game: its row in `gen.py` (from `apps/games/build-wasm.ps1`), its
 shell in `emitted.sh`, an app, a page, and its grader in `verify.sh`.
 
+## machine: simulated devices in one Roc value
+
+`machine/` is the start of the devices plan
+(`:9100/notes/codex-devices-in-roc.md`, `:9100/notes/roc-machine-emulator.md`):
+a Roc machine holding the devices upstream's codex-vm models (memory, PCI
+configuration space, a drive, a keyboard queue, a console), each behind a door
+that takes the machine and hands it back. Step 1 is a hand-written program on
+it, watched by a page. `machine/README.md` is the map.
+
+    machine/build.sh               # host + app + page + disk image into the preview, :9203/machine/machine.html
+    node machine/wasm/smoke.mjs ~/build/roc-apps/next/machine
+
 ## Why any of this exists
 
 [`BUGHUNT.md`](BUGHUNT.md) is the short version for someone arriving from a
