@@ -17,7 +17,7 @@ FAIL boxing | < ROCKEM SOCKEM ROBOT GETS GLASSJAW GARY IN THE JAW (OUCH!)
 FAIL bug | > YOU ROLLED A 4 
 FAIL bullfght | < YOU HAVE DRAWN A AWFUL 3  BULL.
 FAIL bullseye | < FOO 1 'S THROW? 1
-TIMEOUT bunny |
+PASS bunny |
 FAIL buzzword | < ABILITY 6  ABILITY 20  ABILITY 35 
 FAIL calendar | <     
 FAIL change | < *** UNSUPPORTED: Out of input
@@ -36,10 +36,10 @@ FAIL evenwin1 | > Not numeric: "NO", try again
 FAIL evenwin2 | < THERE ARE 15 CHIPS ON THE BOARD.
 FAIL flipflop | < 
 FAIL footbal1 | < FOOBAR 0  WON THE TOSS
-TIMEOUT footbal2 |
+FAIL footbal2 | <  17   PITCHOUT 1 
 FAIL furtradr | < YOUR BEAVER SOLD FOR $ 54.6 YOUR FOX SOLD FOR $ 0 
 FAIL golf | < SHOT WENT 261 YARDS.  IT'S 100 YARDS FROM THE CUP.
-TIMEOUT gomoko |
+FAIL gomoko | < *** UNSUPPORTED: Out of input
 FAIL guess | < TOO HIGH. TRY A SMALLER ANSWER.
 FAIL gunner | < MAXIMUM RANGE OF YOUR GUN IS 36928  YARDS.
 FAIL hamurabi | < LAND IS TRADING AT 21 BUSHELS PER ACRE.
@@ -59,7 +59,7 @@ FAIL life | > ?  **  *
 FAIL life2 | > Error on line 575: Undefined line number 800
 FAIL litquiz | > Break in line 96
 FAIL love | <  1  2  3  4  5  6  7  8  9  10  11  12  13  14  15  16  17  18  19  20  21  22  23  24  
-TIMEOUT lunar |
+FAIL lunar | <  60            59  1656      3410.87       14500        ? 100
 FAIL mastrmnd | > YOU HAVE  0  BLACKS AND  0  WHITES.
 FAIL mathdice | < I *   I
 FAIL mugwump | < YOU ARE 8 UNITS FROM MUGWUMP 1 

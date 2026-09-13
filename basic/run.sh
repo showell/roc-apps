@@ -35,8 +35,14 @@ for n in "${names[@]}"; do
     elif [ -f "$CORPUS/$suite/$n.input" ]; then replies="$CORPUS/$suite/$n.input"
     elif [ -f "$CORPUS/$suite/$n.in" ]; then replies="$CORPUS/$suite/$n.in"
     fi
+    # **A COMMAND SUBSTITUTION DROPS TRAILING NEWLINES**, and a reply file that
+    # ends in an empty line (banner's answer to SET PAGE is Enter) would lose
+    # its last reply: each text is read with a marker after it, then cut.
+    text="$(cat "$listing"; printf x)"; text="${text%x}"
+    keys=""
+    if [ -n "$replies" ]; then keys="$(cat "$replies"; printf x)"; keys="${keys%x}"; fi
     t0=$EPOCHREALTIME
-    timeout "$LIMIT" "$BIN" "$dialect" "$(cat "$listing")" "$([ -n "$replies" ] && cat "$replies")" > "$OUT/$n.out" 2> "$OUT/$n.err"
+    timeout "$LIMIT" "$BIN" "$dialect" "$text" "$keys" > "$OUT/$n.out" 2> "$OUT/$n.err"
     rc=$?
     t1=$EPOCHREALTIME
     ms=$(echo "($t1 - $t0) * 1000" | bc)

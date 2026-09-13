@@ -1,9 +1,9 @@
 #!/bin/bash
 # THE BASIC LADDER: every program in the corpus run by our Roc interpreter
-# and diffed against the output a real BASIC produced.
+# and graded against what it must show.
 #
 #   basic/ladder.sh                 the games corpus (99 programs)
-#   basic/ladder.sh nbs             the NBS conformance suite (219)
+#   basic/ladder.sh nbs             the NBS conformance suite (208)
 #   basic/ladder.sh games 23-match  named programs
 #
 # The corpus is ~/build/basic-corpus, fetched by basic/fetch.sh:
@@ -19,79 +19,76 @@
 #           HALTED for an ECMA-55 exception and UNSUPPORTED for a form it
 #           has not built, and only the second is a failure here.
 #
-# Roc has no file or stdin effect on the default platform, so each program
-# becomes its own app with the listing and the keystrokes as literals; the
-# generator is basic/gen.py.
+# Each program runs through basic-run (basic/build-run.sh builds it once),
+# one process each, by basic/run.sh; this script grades the transcripts.
 #
 # Outcomes: PASS, FAIL (output differs, or the NBS program said so), CRASH,
-# TIMEOUT, KILLED (a signal -- 9 is the OOM killer stopping compile-time
-# evaluation), UNJUDGED (an NBS ERROR program with no row in
+# TIMEOUT, KILLED (a signal), UNJUDGED (an NBS ERROR program with no row in
 # nbs-reports.txt: it is malformed on purpose and prints no verdict, so
 # running clean says nothing either way).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROC="${ROC:-$HOME/build/roc-nightly/roc}"
 CORPUS="${BASIC_CORPUS:-$HOME/build/basic-corpus}"
-GEN="$HOME/build/roc-apps/gen/basic"
+RUNS="$HOME/build/roc-apps/gen/basic-ladder"
 suite="${1:-games}"; shift || true
-mkdir -p "$GEN"
 [ -d "$CORPUS/$suite" ] || { echo "no corpus at $CORPUS/$suite -- run basic/fetch.sh"; exit 2; }
 if [ $# -gt 0 ]; then names=("$@"); else
     mapfile -t names < <(cd "$CORPUS/$suite" && ls *.bas *.BAS 2>/dev/null | sed 's/\.[bB][aA][sS]$//' | sort)
 fi
-one() {
-    n="$1"; d="$GEN/$suite/$n"
-    mkdir -p "$d"
-    if ! "$HERE/gen.py" "$suite" "$n" "$d" 2> "$d/gen.err"; then
-        echo "FAIL $n | generate: $(head -1 "$d/gen.err" | cut -c1-90)" > "$d/verdict"; return
-    fi
-    cp "$HERE/roc/Basic.roc" "$HERE/roc/Listing.roc" "$HERE/roc/Pages.roc" "$HERE/roc/Program.roc" "$d/"
-    ( cd "$d" && timeout 120 "$ROC" run Run.roc > out 2> err ); rc=$?
-    if [ $rc -ge 128 ]; then echo "KILLED $n | signal $((rc - 128))" > "$d/verdict"
-    elif [ $rc -eq 124 ]; then echo "TIMEOUT $n |" > "$d/verdict"
-    elif grep -q "✗" "$d/err"; then echo "CRASH $n | compile: $(grep -m1 -A2 '✗' "$d/err" | tr '\n' ' ' | cut -c1-90)" > "$d/verdict"
-    # **AN EMPTY TRANSCRIPT IS A CRASH.** A stack overflow prints no ✗ and
-    # no TEST FAILED, so without this it grades as a pass.
-    elif [ ! -s "$d/out" ] || { [ $rc -ne 0 ] && grep -q 'Roc application\|crashed' "$d/err"; }; then
-        echo "CRASH $n | exit $rc: $(grep -v '^$' "$d/err" | head -1 | cut -c1-80)" > "$d/verdict"
+mkdir -p "$RUNS"
+OUT="$RUNS" LIMIT="${LIMIT:-60}" "$HERE/run.sh" "$suite" "${names[@]}" > "$RUNS/$suite.log"
+
+# What run.sh said of a program after its name, time and size: TIMEOUT,
+# EXIT n: ..., SLOW, or nothing.
+mark_of() { awk -v n="$1" '$1==n { $1=$2=$3=$4=$5=""; sub(/^ +/, ""); print; exit }' "$RUNS/$suite.log"; }
+
+grade() {
+    n="$1"; out="$RUNS/$suite/$n.out"; err="$RUNS/$suite/$n.err"
+    mark="$(mark_of "$n")"
+    rc=0
+    case "$mark" in EXIT\ *) rc="${mark#EXIT }"; rc="${rc%%:*}";; esac
+    if [ "$mark" = TIMEOUT ]; then echo "TIMEOUT $n |"
+    elif [ "$rc" -ge 128 ]; then echo "KILLED $n | signal $((rc - 128))"
+    # **AN EMPTY TRANSCRIPT IS A CRASH.** A stack overflow prints no TEST
+    # FAILED, so without this it grades as a pass.
+    elif [ ! -s "$out" ] || { [ "$rc" -ne 0 ] && grep -q 'Roc application\|crashed' "$err"; }; then
+        echo "CRASH $n | exit $rc: $(grep -v '^$' "$err" | head -1 | cut -c1-80)"
     elif [ "$suite" = nbs ]; then
         row="$(grep "^$n |" "$HERE/nbs-reports.txt")"
         kind="$(echo "$row" | cut -s -d'|' -f2 | tr -d ' ')"
         missing=""
         while IFS= read -r want; do
-            [ -n "$want" ] && ! grep -qF -- "$want" "$d/out" && missing="$want"
+            [ -n "$want" ] && ! grep -qF -- "$want" "$out" && missing="$want"
         done < <(echo "$row" | cut -s -d'|' -f3- | tr '|' '\n' | sed 's/^ *//; s/ *$//')
         error_program=""
         grep -m1 'PROGRAM FILE' "$CORPUS/$suite/$n.BAS" | grep -q ': *ERROR' && error_program=1
         # A row of kind `ignores` names instruction lines that read as verdicts.
-        verdicts="$d/out"
+        verdicts="$out"
         if [ "$kind" = ignores ]; then
-            sed 's/^ *//; s/ *$//' "$d/out" | grep -vxF -f <(echo "$row" | cut -s -d'|' -f3- | tr '|' '\n' | sed 's/^ *//; s/ *$//' | grep -v '^$') > "$d/verdicts"
-            verdicts="$d/verdicts"
+            verdicts="$RUNS/$suite/$n.verdicts"
+            sed 's/^ *//; s/ *$//' "$out" | grep -vxF -f <(echo "$row" | cut -s -d'|' -f3- | tr '|' '\n' | sed 's/^ *//; s/ *$//' | grep -v '^$') > "$verdicts"
         fi
-        if grep -q '^\*\*\* REJECTED' "$d/out" && [ "$kind" != rejects ]; then
-            echo "FAIL $n | $(grep -m1 'REJECTED' "$d/out" | cut -c1-90)" > "$d/verdict"
+        if grep -q '^\*\*\* REJECTED' "$out" && [ "$kind" != rejects ]; then
+            echo "FAIL $n | $(grep -m1 'REJECTED' "$out" | cut -c1-90)"
         elif [ "$kind" != judged ] && [ "$kind" != rejects ] && [ "$kind" != reader ] && grep -q "TEST FAILED\|TEST FAILS" "$verdicts"; then
-            echo "FAIL $n | $(grep -m1 'TEST FAIL' "$verdicts" | cut -c1-90)" > "$d/verdict"
-        elif grep -q "UNSUPPORTED" "$d/out"; then
-            echo "FAIL $n | $(grep -m1 'UNSUPPORTED' "$d/out" | cut -c1-90)" > "$d/verdict"
+            echo "FAIL $n | $(grep -m1 'TEST FAIL' "$verdicts" | cut -c1-90)"
+        elif grep -q "UNSUPPORTED" "$out"; then
+            echo "FAIL $n | $(grep -m1 'UNSUPPORTED' "$out" | cut -c1-90)"
         # **A HALT PASSES ONLY WHERE THE ROW REQUIRES ONE.** A program stopped
         # before its verdict prints no TEST FAILED either.
-        elif grep -q '^\*\*\* HALTED' "$d/out" && ! echo "$row" | grep -qF '*** HALTED'; then
-            echo "FAIL $n | $(grep -m1 'HALTED' "$d/out" | cut -c1-90)" > "$d/verdict"
+        elif grep -q '^\*\*\* HALTED' "$out" && ! echo "$row" | grep -qF '*** HALTED'; then
+            echo "FAIL $n | $(grep -m1 'HALTED' "$out" | cut -c1-90)"
         elif [ -n "$missing" ]; then
-            echo "FAIL $n | no report: $missing" > "$d/verdict"
+            echo "FAIL $n | no report: $missing"
         elif [ "$kind" = reader ]; then
-            echo "UNJUDGED $n | a reader compares its output; no grep can" > "$d/verdict"
+            echo "UNJUDGED $n | a reader compares its output; no grep can"
         elif [ -n "$error_program" ] && [ -z "$row" ]; then
-            echo "UNJUDGED $n | an ERROR program with no row in nbs-reports.txt" > "$d/verdict"
-        else echo "PASS $n |" > "$d/verdict"; fi
-    elif cmp -s "$d/out" "$CORPUS/$suite/$n.output"; then echo "PASS $n |" > "$d/verdict"
-    else echo "FAIL $n | $(diff "$d/out" "$CORPUS/$suite/$n.output" | grep -m1 '^[<>]' | cut -c1-90)" > "$d/verdict"; fi
+            echo "UNJUDGED $n | an ERROR program with no row in nbs-reports.txt"
+        else echo "PASS $n |"; fi
+    elif cmp -s "$out" "$CORPUS/$suite/$n.output"; then echo "PASS $n |"
+    else echo "FAIL $n | $(diff "$out" "$CORPUS/$suite/$n.output" | grep -m1 '^[<>]' | cut -c1-90)"; fi
 }
-export -f one; export ROC CORPUS GEN HERE suite
-printf '%s\n' "${names[@]}" | xargs -P "${JOBS:-3}" -I{} bash -c 'one {}'
-ledger="$( for n in "${names[@]}"; do cat "$GEN/$suite/$n/verdict"; done )"
+ledger="$( for n in "${names[@]}"; do grade "$n"; done )"
 echo "$ledger" > "$HERE/ledger-$suite.txt"
 echo "$ledger" | grep -v '^PASS' | sort | head -40
 echo "--- by outcome:"; echo "$ledger" | cut -d' ' -f1 | sort | uniq -c | sort -rn

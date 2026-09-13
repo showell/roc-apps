@@ -37,8 +37,8 @@ compiler is already in the form a report needs.
     basic/controls.sh       what one iteration of each allocates, against controls/expected.txt
     basic/pathological/     programs that stress one cost each, at scale
     basic/allocs.sh         their times and allocations
-    basic/gen.py            one corpus program as its own Roc app
-    basic/ladder.sh         run a corpus, grade, count
+    basic/ladder.sh         run a corpus through run.sh, grade the transcripts, count
+    basic/gen.py            one corpus program as its own Roc app (the ladder no longer uses it)
     basic/nbs-reports.txt   what each NBS program must show that its own verdict cannot
     basic/nbs-input/        replies for NBS programs whose corpus replies are placeholders
     basic/fetch.sh          the corpora, into ~/build/basic-corpus
