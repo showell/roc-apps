@@ -6,20 +6,25 @@
 #
 #   basic/run.sh nbs P005 P007
 #   basic/run.sh games bunny
+#   basic/run.sh nbs              every program in the suite
 #
 # **A SECOND IS A LONG TIME.** A program over one is marked SLOW, and one
-# still running at two is stopped and marked TIMEOUT. Transcripts land in
-# ~/build/roc-apps/gen/basic-native/<suite>/<name>.out.
+# still running at LIMIT seconds (2) is stopped and marked TIMEOUT.
+# Transcripts land in OUT/<suite>/<name>.out, OUT being
+# ~/build/roc-apps/gen/basic-native unless set; BIN is the interpreter.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BIN="$HOME/build/roc-apps/gen/basic/basic-run"
+BIN="${BIN:-$HOME/build/roc-apps/gen/basic/basic-run}"
 CORPUS="${BASIC_CORPUS:-$HOME/build/basic-corpus}"
+LIMIT="${LIMIT:-2}"
 suite="$1"; shift
-OUT="$HOME/build/roc-apps/gen/basic-native/$suite"
+OUT="${OUT:-$HOME/build/roc-apps/gen/basic-native}/$suite"
 mkdir -p "$OUT"
 [ -x "$BIN" ] || { echo "no $BIN -- run basic/build-run.sh"; exit 2; }
 dialect=micro; [ "$suite" = nbs ] && dialect=ecma
-for n in "$@"; do
+names=("$@")
+[ ${#names[@]} -gt 0 ] || mapfile -t names < <(ls "$CORPUS/$suite" | grep -iE '\.bas$' | sed 's/\.[^.]*$//' | sort -u)
+for n in "${names[@]}"; do
     listing=""
     for ext in bas BAS; do [ -f "$CORPUS/$suite/$n.$ext" ] && listing="$CORPUS/$suite/$n.$ext"; done
     [ -n "$listing" ] || { printf '%-16s no listing\n' "$n"; continue; }
@@ -31,7 +36,7 @@ for n in "$@"; do
     elif [ -f "$CORPUS/$suite/$n.in" ]; then replies="$CORPUS/$suite/$n.in"
     fi
     t0=$EPOCHREALTIME
-    timeout 2 "$BIN" "$dialect" "$(cat "$listing")" "$([ -n "$replies" ] && cat "$replies")" > "$OUT/$n.out" 2> "$OUT/$n.err"
+    timeout "$LIMIT" "$BIN" "$dialect" "$(cat "$listing")" "$([ -n "$replies" ] && cat "$replies")" > "$OUT/$n.out" 2> "$OUT/$n.err"
     rc=$?
     t1=$EPOCHREALTIME
     ms=$(echo "($t1 - $t0) * 1000" | bc)
