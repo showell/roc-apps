@@ -45,9 +45,11 @@ Machine :: [].{
 		e1000 : MachineE1000.E1000,
 		hpet : MachineHpet.Hpet,
 		clock : U64,
+		# -board-mmio: RAM behind the three board peripheral windows.
+		board_mmio : Bool,
 	}
 
-	Flags : { bridge : Bool, deep : Bool, levels : U64, backward : Bool, disks : List(Str), e1000 : MachineE1000.E1000, hpet : MachineHpet.Hpet }
+	Flags : { bridge : Bool, deep : Bool, levels : U64, backward : Bool, disks : List(Str), e1000 : MachineE1000.E1000, hpet : MachineHpet.Hpet, board_mmio : Bool }
 
 	# A batch run's machine, from codex-vm's command line and the effects the
 	# program's opening declares. The PCI bridge flags, the NIC's and the
@@ -60,12 +62,12 @@ Machine :: [].{
 	# threads Mem alone, to keep the program out of compile-time reach.
 	boot! : List(Str), List(Str) => Machine.Machine
 	boot! = |args, effects| {
-		f = Machine.flags(args, 0, { bridge: False, deep: False, levels: 0, backward: False, disks: ["", ""], e1000: MachineE1000.new, hpet: MachineHpet.new })
+		f = Machine.flags(args, 0, { bridge: False, deep: False, levels: 0, backward: False, disks: ["", ""], e1000: MachineE1000.new, hpet: MachineHpet.new, board_mmio: False })
 		levels = if !f.bridge { 0 } else if f.levels != 0 { f.levels } else if f.deep { 2 } else { 1 }
 		mem = MachineMem.write(MachineMem.new(U64.to_i64_wrap(List.len(args))), MachineCaps.word_addr, MachineCaps.grant(effects), 8)
 		nic = if f.e1000.present { Nic(if f.e1000.i219 { 0x15B8 } else { 0x100E }, f.e1000.faults.bme_clear) } else { NoNic }
 		made = Machine.make(mem, MachinePci.table(levels, f.backward, nic), MachineDisk.boot!(f.disks))
-		{ ..made, e1000: if f.e1000.present { MachineE1000.power_on(f.e1000) } else { f.e1000 }, hpet: f.hpet }
+		{ ..made, e1000: if f.e1000.present { MachineE1000.power_on(f.e1000) } else { f.e1000 }, hpet: f.hpet, board_mmio: f.board_mmio }
 	}
 
 	# -pci-bridge is one level, -pci-bridge-deep two, -pci-bridge-levels N
@@ -84,6 +86,8 @@ Machine :: [].{
 				} else if a == "-pci-bridge-levels" {
 					n = U64.from_str(List.get(args, i + 1) ?? "") ?? crash("machine: -pci-bridge-levels wants a number")
 					Machine.flags(args, i + 2, { ..f, bridge: True, levels: n })
+				} else if a == "-board-mmio" {
+					Machine.flags(args, i + 1, { ..f, board_mmio: True })
 				} else if a == "-disk" or a == "-disk2" {
 					path = List.get(args, i + 1) ?? crash("machine: ${a} wants a file")
 					at = if a == "-disk" { 0 } else { 1 }
@@ -114,6 +118,7 @@ Machine :: [].{
 		e1000: MachineE1000.new,
 		hpet: MachineHpet.new,
 		clock: 0,
+		board_mmio: False,
 	}
 
 	tick : Machine.Machine -> Machine.Machine
@@ -136,54 +141,114 @@ Machine :: [].{
 	access_cost : U64
 	access_cost = 1432
 
-	# `peek-byte` .. `peek-qword`: `width` bytes, little-endian. The NIC's
-	# register window, while the NIC is on the bus, and the HPET's answer
-	# instead of memory, 32 bits at a time; everything else is memory, as it
-	# is where codex-vm's guest memory is demand-paged.
+	# **THE ADDRESS SPACE IS WHAT CODEX-VM BACKS, AND NOTHING ELSE.** Guest RAM
+	# is the low 3 GB, codex-vm's default. Above it are the device windows
+	# codex-vm traps, and under -board-mmio the three board peripheral windows it
+	# maps as RAM, over any device window they cover. An address none of these
+	# claims is one codex-vm faults on, or a device this machine does not model,
+	# so a load or store there stops the run and names the address rather than
+	# answering from memory.
+	region : Machine.Machine, I64 -> [Ram, Nic, Hpet, Nothing(Str)]
+	region = |m, a|
+		if a >= 0 and a < Machine.ram_size {
+			Ram
+		} else if m.board_mmio and Machine.board_window(a) {
+			Ram
+		} else if m.e1000.present and MachineE1000.claims(a) {
+			Nic
+		} else if MachineHpet.claims(a) {
+			Hpet
+		} else {
+			Nothing(Machine.unbacked(m, a))
+		}
+
+	ram_size : I64
+	ram_size = 0xC0000000
+
+	# RP2040 SIO, the Cortex-M PPB and SCB, and the BCM2711 peripherals.
+	board_window : I64 -> Bool
+	board_window = |a|
+		(a >= 0xD0000000 and a < 0xD0010000) or (a >= 0xE0000000 and a < 0xE0010000) or (a >= 0xFE000000 and a < 0xFE900000)
+
+	unbacked : Machine.Machine, I64 -> Str
+	unbacked = |m, a|
+		if a >= 0xFEE00000 and a < 0xFEE01000 {
+			"the local APIC's registers, which this machine does not model"
+		} else if a >= 0xFEC00000 and a < 0xFEC01000 {
+			"the IOAPIC's registers, which this machine does not model"
+		} else if a >= 0xFE000000 and a < 0xFE004000 and !m.board_mmio {
+			"the HDA controller's registers, which this machine does not model"
+		} else if a >= 0xFE800000 and a < 0xFE804000 and !m.board_mmio {
+			"the xHCI controller's registers, which this machine does not model"
+		} else if MachineE1000.claims(a) {
+			"the e1000's window, with no NIC on the bus"
+		} else if Machine.board_window(a) {
+			"a board peripheral window, which is memory only under -board-mmio"
+		} else {
+			"which nothing backs"
+		}
+
+	hex : U64 -> Str
+	hex = |v| Machine.hex_go(v, 8, "")
+
+	hex_go : U64, U64, Str -> Str
+	hex_go = |v, left, acc|
+		if left == 0 {
+			"0x${acc}"
+		} else {
+			d = Str.from_utf8([U64.to_u8_wrap(if U64.bitwise_and(v, 15) < 10 { 48 + U64.bitwise_and(v, 15) } else { 55 + U64.bitwise_and(v, 15) })]) ?? "?"
+			Machine.hex_go(U64.shr_zf_wrap(v, 4), left - 1, Str.concat(d, acc))
+		}
+
+	# `peek-byte` .. `peek-qword`, and `read-mmio` and `read-mmio-32`: `width`
+	# bytes, little-endian, from whatever backs the address. The NIC's and the
+	# HPET's registers answer 32 bits at a time.
 	load : Machine.Machine, I64, I64, I64 -> (Machine.Machine, I64)
 	load = |m, base, off, width| {
 		a = base + off
-		if m.e1000.present and MachineE1000.claims(a) {
-			if width != 4 {
-				crash("machine: a ${I64.to_str(width)}-byte read of the e1000's registers, which this machine answers 32 bits at a time")
-			} else {
-				(e, mem, v) = MachineE1000.read(m.e1000, m.mem, I64.to_u64_wrap(a - MachineE1000.bar), Machine.nic_dma(m))
-				({ ..m, e1000: e, mem: mem, clock: m.clock + Machine.access_cost }, U64.to_i64_wrap(v))
-			}
-		} else if MachineHpet.claims(a) {
-			if width != 4 {
-				crash("machine: a ${I64.to_str(width)}-byte read of the HPET's registers, which this machine answers 32 bits at a time")
-			} else {
-				clock = m.clock + Machine.access_cost
-				({ ..m, clock: clock }, U64.to_i64_wrap(MachineHpet.read(m.hpet, clock, I64.to_u64_wrap(a - MachineHpet.base))))
-			}
-		} else {
-			(m, U64.to_i64_wrap(MachineMem.read(m.mem, a, width - 1, 0)))
+		match Machine.region(m, a) {
+			Ram => (m, U64.to_i64_wrap(MachineMem.read(m.mem, a, width - 1, 0)))
+			Nic =>
+				if width != 4 {
+					crash("machine: a ${I64.to_str(width)}-byte read of the e1000's registers, which this machine answers 32 bits at a time")
+				} else {
+					(e, mem, v) = MachineE1000.read(m.e1000, m.mem, I64.to_u64_wrap(a - MachineE1000.bar), Machine.nic_dma(m))
+					({ ..m, e1000: e, mem: mem, clock: m.clock + Machine.access_cost }, U64.to_i64_wrap(v))
+				}
+			Hpet =>
+				if width != 4 {
+					crash("machine: a ${I64.to_str(width)}-byte read of the HPET's registers, which this machine answers 32 bits at a time")
+				} else {
+					clock = m.clock + Machine.access_cost
+					({ ..m, clock: clock }, U64.to_i64_wrap(MachineHpet.read(m.hpet, clock, I64.to_u64_wrap(a - MachineHpet.base))))
+				}
+			Nothing(what) => crash("machine: a read at ${Machine.hex(I64.to_u64_wrap(a))}, ${what}")
 		}
 	}
 
-	# `poke-byte` .. `poke-qword` answer 0.
+	# `poke-byte` .. `poke-qword`, and `poke-mmio` and `poke-mmio-32`, answer 0.
 	store : Machine.Machine, I64, I64, I64, I64 -> (Machine.Machine, I64)
 	store = |m, base, off, v, width| {
 		a = base + off
 		u = I64.to_u64_wrap(v)
-		if m.e1000.present and MachineE1000.claims(a) {
-			if width != 4 {
-				crash("machine: a ${I64.to_str(width)}-byte write to the e1000's registers, which this machine takes 32 bits at a time")
-			} else {
-				clock = m.clock + Machine.access_cost
-				(e, mem) = MachineE1000.write(m.e1000, m.mem, I64.to_u64_wrap(a - MachineE1000.bar), U64.bitwise_and(u, 0xFFFFFFFF), Machine.nic_dma(m), clock)
-				({ ..m, e1000: e, mem: mem, clock: clock }, 0)
-			}
-		} else if MachineHpet.claims(a) {
-			if width != 4 {
-				crash("machine: a ${I64.to_str(width)}-byte write to the HPET's registers, which this machine takes 32 bits at a time")
-			} else {
-				clock = m.clock + Machine.access_cost
-				({ ..m, clock: clock, hpet: MachineHpet.write(m.hpet, clock, I64.to_u64_wrap(a - MachineHpet.base), U64.bitwise_and(u, 0xFFFFFFFF)) }, 0)
-			}
-		} else {
-			({ ..m, mem: MachineMem.write(m.mem, a, u, width) }, 0)
+		match Machine.region(m, a) {
+			Ram => ({ ..m, mem: MachineMem.write(m.mem, a, u, width) }, 0)
+			Nic =>
+				if width != 4 {
+					crash("machine: a ${I64.to_str(width)}-byte write to the e1000's registers, which this machine takes 32 bits at a time")
+				} else {
+					clock = m.clock + Machine.access_cost
+					(e, mem) = MachineE1000.write(m.e1000, m.mem, I64.to_u64_wrap(a - MachineE1000.bar), U64.bitwise_and(u, 0xFFFFFFFF), Machine.nic_dma(m), clock)
+					({ ..m, e1000: e, mem: mem, clock: clock }, 0)
+				}
+			Hpet =>
+				if width != 4 {
+					crash("machine: a ${I64.to_str(width)}-byte write to the HPET's registers, which this machine takes 32 bits at a time")
+				} else {
+					clock = m.clock + Machine.access_cost
+					({ ..m, clock: clock, hpet: MachineHpet.write(m.hpet, clock, I64.to_u64_wrap(a - MachineHpet.base), U64.bitwise_and(u, 0xFFFFFFFF)) }, 0)
+				}
+			Nothing(what) => crash("machine: a write at ${Machine.hex(I64.to_u64_wrap(a))}, ${what}")
 		}
 	}
 

@@ -27,7 +27,7 @@ REFUSED block-gate-restrict | builtin `process-restrict-cap`
 PASS block-sector-count |
 PASS block-select-drives |
 PASS bloom-spread |
-REFUSED board-types | builtin `read-mmio-32`
+PASS board-types |
 PASS bounded-integer-ops |
 PASS bounded-sig-runtime |
 SKIP bounded-sig-static | expects a diagnostic
@@ -183,7 +183,7 @@ PASS enip-encode |
 PASS eq-generic-fields |
 PASS eq-generic-recursive |
 PASS eq-plain-sum |
-REFUSED esp32c6-drivers | builtin `read-mmio-32`
+REFUSED esp32c6-drivers | unit type `Duration`
 PASS eventbus-test |
 PASS examples@eight-queens |
 PASS examples@missile-warning |
@@ -208,7 +208,7 @@ PASS fat32-img-longname |
 PASS fat32-longname |
 PASS fat32-longwrite |
 REFUSED fat32-parse | builtin `__heap-advance`
-REFUSED fe310-drivers | builtin `read-mmio-32`
+REFUSED fe310-drivers | unit type `Duration`
 REFUSED field-cache-shape | field-store
 PASS field-cache-text-lit |
 SKIP field-guard-refine | expects a diagnostic
@@ -566,14 +566,14 @@ REFUSED gpu-input-cursor | builtin `gpu-mem-write`
 REFUSED gpu-panel-border | builtin `gpu-mem-write`
 CRASH gpu-ptx | machine: port-out-32 to port 1056, which no modelled device claims
 REFUSED grounds-port | builtin `port-out-byte`
-REFUSED hal-board-sleep | builtin `read-mmio-32`
-REFUSED hal-device-declared | builtin `read-mmio-32`
-REFUSED hal-flash-linear | builtin `read-mmio-32`
-REFUSED hal-gpio-linear | builtin `read-mmio-32`
-REFUSED hal-i2c-adc-linear | builtin `read-mmio-32`
-REFUSED hal-peripheral-linear | builtin `read-mmio-32`
-REFUSED hal-spi-linear | builtin `read-mmio-32`
-REFUSED hal-tuple-linear | builtin `read-mmio-32`
+PASS hal-board-sleep |
+PASS hal-device-declared |
+PASS hal-flash-linear |
+PASS hal-gpio-linear |
+PASS hal-i2c-adc-linear |
+PASS hal-peripheral-linear |
+PASS hal-spi-linear |
+PASS hal-tuple-linear |
 PASS hamt-test |
 REFUSED handler-dotted-discharge | handle
 REFUSED handler-nested-ops | handle
@@ -584,7 +584,7 @@ PASS heap-frame-reclaim |
 DIVERGES heap-scrub | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
 REFUSED hid-decode | builtin `__heap-advance`
 PASS history-test |
-REFUSED hpet-interrupt | builtin `read-mmio-32`
+CRASH hpet-interrupt | machine: a write at 0xFEC00000, the IOAPIC's registers, which this machine does not model
 PASS i219-k1-mechanism |
 REFUSED ident-letters | name `café` cannot be a Roc identifier
 REFUSED idm-key-tests | `fe-carry-pass` writes its list parameter `o` and answers something else
@@ -624,7 +624,7 @@ PASS klondike-test |
 PASS knx-encode |
 PASS kvstore-test |
 REFUSED lang-smoke | `make-adder` applied to 1 of 2 arguments
-REFUSED lapic-regs | builtin `read-mmio-32`
+CRASH lapic-regs | machine: a read at 0xFEE00030, the local APIC's registers, which this machine does not model
 REFUSED lazy-smoke | opening: Lazy
 PASS leaf-let-if |
 PASS leaf-mispredict |
@@ -736,8 +736,8 @@ REFUSED network-scope-spawn | builtin `net-send-raw`
 SKIP noalias-linear-param | expects a diagnostic
 PASS noise-test |
 REFUSED normalize-eq | type (propeq (ctd "Off" (args)) (ctd "Off" (args)))
-REFUSED nrf52840-drivers | builtin `read-mmio-32`
-REFUSED nrf9160-drivers | builtin `read-mmio-32`
+REFUSED nrf52840-drivers | unit type `Duration`
+REFUSED nrf9160-drivers | unit type `Duration`
 REFUSED nvme-encode | builtin `__heap-advance`
 PASS oauth-island |
 REFUSED occurrence-check | builtin `port-in-byte`
@@ -818,9 +818,9 @@ PASS pci-bridge-deep |
 PASS pci-bridge-scan |
 PASS pci-bus-master |
 PASS peek32-sign |
-REFUSED pi4-drivers | builtin `read-mmio-32`
+REFUSED pi4-drivers | unit type `Duration`
 REFUSED pipe-unique-test | `__lam_0` applied to 1 of 2 arguments
-REFUSED pit-latch | builtin `read-mmio-32`
+REFUSED pit-latch | builtin `port-out-byte`
 REFUSED plug-oracle-arith | field-store
 PASS poke16-width |
 PASS poly1305 |
@@ -841,7 +841,7 @@ PASS punctual-quire |
 PASS punctual-smoke |
 SKIP qemu-rng | cross bed only: reads QEMU virt's virtio-mmio slots, which codex-vm does not model; the arm64 lane r
 SKIP qemu-rng-absent | cross bed only: the same program as qemu-rng with NO device attached (an empty .qemudev), so rng-ope
-REFUSED qemu-virt-board | builtin `read-mmio-32`
+PASS qemu-virt-board |
 REFUSED qr-encode | builtin `__heap-advance`
 PASS queue-test |
 REFUSED quotes-gate | CODEGEN-HALTED: 1 error(s); no IR emitted; first CDX1000 Expected token kind mismatch, got 'WORK'
@@ -871,7 +871,7 @@ REFUSED roc-iter-keep-if | `__lam_0` applied to 2 of 3 arguments
 REFUSED roc-iter-map | `__lam_0` applied to 2 of 3 arguments
 PASS roc-recursive-var |
 REFUSED roc-returned-closure | `__lam_0` applied to 1 of 2 arguments
-REFUSED rp2040-drivers | builtin `read-mmio-32`
+REFUSED rp2040-drivers | unit type `Duration`
 REFUSED rsa-pss | `cb-shl1-step` writes its list parameter `x` and answers something else
 REFUSED rsa-verify | `cb-shl1-step` writes its list parameter `x` and answers something else
 PASS rv-arg-order |
@@ -891,7 +891,7 @@ REFUSED scope-runtime-spawn | an opening scoped to FileSystem.Read "OK"
 REFUSED scope-try-region | try
 PASS sector-read-list-growth |
 PASS sensor-data |
-REFUSED serial-line | builtin `read-mmio-32`
+REFUSED serial-line | field-store
 SKIP shadow-builtin-fold | expects a diagnostic
 PASS shell-build-keep |
 PASS simplify-check |
@@ -916,8 +916,8 @@ REFUSED spawn-reuse | `__lam_0` applied to 0 of 1 arguments under Device
 PASS sprite-test |
 SKIP stale-sibling | expects a diagnostic
 PASS stats-wrap-test |
-REFUSED stm32f4-drivers | builtin `read-mmio-32`
-REFUSED stm32l4-drivers | builtin `read-mmio-32`
+REFUSED stm32f4-drivers | unit type `Duration`
+REFUSED stm32l4-drivers | unit type `Duration`
 PASS string-escape-quote |
 REFUSED stringbuilder-independence | field-store
 REFUSED stringbuilder-test | field-store
@@ -944,7 +944,7 @@ REFUSED textfield-typing | builtin `uefi-read-key-ex` used as a value
 PASS textscan-test |
 PASS textsearch-test |
 PASS thumb2-encoder |
-REFUSED timer-registers | builtin `read-mmio-32`
+REFUSED timer-registers | builtin `port-out-byte`
 REFUSED tls-cert | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED tls-cv-schemes | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED tls-record-framing | builtin `net-send-raw`

@@ -8,9 +8,10 @@
 # nothing in the source says which one you got: the difference between
 # the two is one extra mention of a name. A trie is O(depth) BY
 # CONSTRUCTION -- the spine is rebuilt every time, so there is no fast
-# path to fall off. Five levels of 32 over 64-byte leaves is a 2 GB space
-# in which a write touches five 32-wide nodes and one 64-byte leaf,
-# whatever the compiler decides about sharing.
+# path to fall off. Six levels of 32 over 64-byte leaves is a 64 GB space,
+# room for codex-vm's 3 GB of RAM and the device windows above it, in which a
+# write touches six 32-wide nodes and one 64-byte leaf, whatever the
+# compiler decides about sharing.
 #
 # It also removes the cap. There is no page table to size, so there is no
 # address that reads zero and crashes when written, and an untouched
@@ -21,7 +22,7 @@ MachineMem :: [].{
 
 	Mem : { root : MachineMem.Node, top : I64 }
 
-	# 6 bits of leaf, 5 levels of 5 bits: 2^31 bytes.
+	# 6 bits of leaf, 6 levels of 5 bits: 2^36 bytes.
 	leaf_bits : U64
 	leaf_bits = 6
 
@@ -32,7 +33,7 @@ MachineMem :: [].{
 	fan = 32
 
 	depth : I64
-	depth = 5
+	depth = 6
 
 	new : I64 -> MachineMem.Mem
 	new = |z| { root: Empty, top: 6291456 + z }

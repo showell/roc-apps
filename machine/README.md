@@ -23,9 +23,9 @@ Two programs drive it:
 
 | path | what it is |
 |---|---|
-| `roc/Machine.roc` | the machine record, `boot!` from codex-vm flags, and the doors: Codex's memory, port, block and process builtins, keys, the console, a step clock |
+| `roc/Machine.roc` | the machine record, `boot!` from codex-vm flags, the address map (RAM below 3 GB, board windows under `-board-mmio`, the device windows, and a named stop anywhere else), the doors for Codex's memory, MMIO, port, block and process builtins, keys, the console, and the machine's clock |
 | `roc/MachineCaps.roc` | the boot process's capability word: the grant x86's boot writes from the opening's effects, through `Capability.codex`'s table, which the block doors check |
-| `roc/MachineMem.roc` | the address space, a persistent trie (the module rocemit writes as `Mem` for units without devices) |
+| `roc/MachineMem.roc` | memory, a persistent trie over 2^36 bytes, taken from the `Mem` rocemit writes for units without devices, which covers 2^31 |
 | `roc/MachinePci.roc` | PCI configuration space as codex-vm models it: the 0xCF8 latch, the ten-device table with its bridge chain, command and BAR writes |
 | `roc/MachineE1000.roc` | Intel gigabit Ethernet as codex-vm models it: the register window at 0xFE400000 behind `peek-32`/`poke-32`, the PHY through MDIC, the I219's K1, ULP and MDIO semaphore, the rings in memory, and the fault flags (`-e1000*`, `-i219*`, `-nic-bme-clear`) |
 | `roc/MachineHpet.roc` | the HPET at 0xFED00000, counting the machine's own clock, which every device register access moves 100 µs (`Machine.access_cost`) |
