@@ -3,3 +3,4 @@
 20-print-loop 1 PRINT turns its line into bytes to draw it (Str.to_utf8); the builtins have no byte walk over a Str
 21-string-grow 1 the string grows by one byte an iteration
 23-print-semicolon 1 PRINT turns its text into bytes to draw it (Str.to_utf8), as 20-print-loop does
+34-print-tab 1 PRINT turns its text into bytes to draw it (Str.to_utf8); the TAB adds nothing

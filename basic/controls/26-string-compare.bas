@@ -1,0 +1,5 @@
+5 A$="X"
+10 FOR I=1 TO @N@
+20 IF A$="X" THEN 30
+30 NEXT I
+40 END

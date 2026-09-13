@@ -1,0 +1,4 @@
+10 FOR I=1 TO @N@
+20 X=INT(I/3)
+30 NEXT I
+40 END

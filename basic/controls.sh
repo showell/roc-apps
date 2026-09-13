@@ -16,17 +16,20 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BIN="${BIN:-$HOME/build/roc-apps/gen/basic/basic-run}"
 T="$(mktemp -d)"
 trap 'rm -rf "$T"' EXIT
-count() { # listing
-    strace -c -f -o "$T/st" timeout 20 "$BIN" micro "$1" "" > "$T/out" 2>&1
+# A control with an INPUT gets one reply line, 7, per iteration.
+count() { # listing, iterations
+    local replies=""
+    [[ "$1" == *INPUT* ]] && replies="$(yes 7 | head -n "$2")"
+    strace -c -f -o "$T/st" timeout 20 "$BIN" micro "$1" "$replies" > "$T/out" 2>&1
     awk '$NF=="mmap"{print $4}' "$T/st"
 }
 bad=0
 for f in "$HERE"/controls/*.bas; do
     n="$(basename "$f" .bas)"
     src="$(cat "$f")"
-    small="$(count "${src//@N@/1000}")"
+    small="$(count "${src//@N@/1000}" 1000)"
     if [[ "$src" == *@N@* ]]; then
-        big="$(count "${src//@N@/10000}")"
+        big="$(count "${src//@N@/10000}" 10000)"
         per="$(echo "scale=2; ($big - $small) / 9000" | bc)"
     else
         big="-"; per="-"
