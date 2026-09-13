@@ -13,8 +13,11 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROC="${ROC:-$HOME/build/roc-nightly/roc}"
 OUT="$HOME/build/roc-apps/gen/basic"
-mkdir -p "$OUT"
+mkdir -p "$OUT/tmp"
 rm -f "$OUT/basic-run"
+# The Roc compiler keeps its build files under TMPDIR; a build of its own
+# there cannot collide with another build running at the same time.
+export TMPDIR="$OUT/tmp"
 t0=$EPOCHREALTIME
 # **THE ROC COMPILER EXITS NON-ZERO FOR A WARNING**, so its exit code is not
 # the verdict: an error is marked ✗, and a failed build leaves no executable.
