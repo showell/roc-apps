@@ -81,10 +81,13 @@ be reported, a malformed program that must be rejected, a verdict only a
 reader can resolve — and `nbs-reports.txt` says what each must show.
 
 **`games/`** — 99 listings from *BASIC Computer Games* (David Ahl, 1978),
-public domain, each with a capture of what a real BASIC printed for the
-keystrokes beside it. A listing that calls `RND` cannot match byte for
-byte, since the captured run had its own random numbers; the rest are
-graded.
+public domain, each with a capture of what a BASIC printed for the
+keystrokes beside it. The captures are the expected output of
+[basic101](https://github.com/wconrad/basic101), a BASIC-80 interpreter, so
+the microcomputer dialect follows basic101 where the two differ: numbers to
+seven digits, its messages for STOP, a missing line and running out of
+replies, and its RND — the Mersenne Twister of Ruby's `Random.new(0)` —
+which makes a game that calls `RND` gradeable byte for byte like the rest.
 
 ## What Roc does not have
 
