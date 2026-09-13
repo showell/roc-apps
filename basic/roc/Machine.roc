@@ -626,7 +626,7 @@ Machine :: [].{
 	# and the statement makes it.
 	elem : M, Fx, U64, I64, I64, Bool -> Ev
 	elem = |m, fx, slot, i, j, pair| {
-		a = Vec.get(m.arrs, slot, Machine.no_arr)
+		a = Vec.at(m.arrs, slot)
 		shape = if a.n == 0 { Machine.default_shape(m.base, pair) } else { { w: a.w, n: a.n } }
 		c = Machine.cell_at(shape.w, m.base, i, j)
 		fx1 = if a.n == 0 { { ..fx, made: List.append(fx.made, { slot: slot, pair: pair }) } } else { fx }
@@ -635,7 +635,7 @@ Machine :: [].{
 		} else if a.n == 0 {
 			{ v: N(0.0), fx: fx1 }
 		} else {
-			{ v: N(Vec.get(a.cells, I64.to_u64_wrap(c), 0.0)), fx: fx1 }
+			{ v: N(Vec.at(a.cells, I64.to_u64_wrap(c))), fx: fx1 }
 		}
 	}
 
@@ -1216,7 +1216,7 @@ Machine :: [].{
 	do_set_elem = |pg, m, slot, one, two, pair, e| {
 		at = Machine.subs(pg, m, [], Machine.fresh(m), one, two, pair)
 		# The array is made before the value is evaluated.
-		exists = (Vec.get(m.arrs, slot, Machine.no_arr)).n > 0
+		exists = (Vec.at(m.arrs, slot)).n > 0
 		fx = if exists { at.fx } else { { ..at.fx, made: List.append(at.fx.made, { slot: slot, pair: pair }) } }
 		r = if Machine.stopped(fx) { { v: N(0.0), fx: fx } } else { Machine.eval(pg, m, [], fx, e) }
 		x = Machine.num_of(r.v)
@@ -1343,7 +1343,7 @@ Machine :: [].{
 			d
 		} else if !b.ok {
 			Machine.fail(d, Str.concat("Bad DIM bound: ", Parse.name_of(item.slot)))
-		} else if (Vec.get(d.arrs, item.slot, Machine.no_arr)).n > 0 {
+		} else if (Vec.at(d.arrs, item.slot)).n > 0 {
 			d
 		} else {
 			{ ..d, arrs: Vec.set(d.arrs, item.slot, { w: b.w, n: b.n, cells: Vec.repeat(b.n, 0.0) }), arr_count: d.arr_count + 1 }
@@ -1385,7 +1385,7 @@ Machine :: [].{
 				}
 			} else {
 				at = Machine.subs(pg, m, [], n.fx, t.one, t.two, t.pair)
-				exists = (Vec.get(m.arrs, t.slot, Machine.no_arr)).n > 0
+				exists = (Vec.at(m.arrs, t.slot)).n > 0
 				fx = if exists { at.fx } else { { ..at.fx, made: List.append(at.fx.made, { slot: t.slot, pair: t.pair }) } }
 				if Machine.plain(m, fx) {
 					Machine.set_arr(m, t.slot, at.i, at.j, x)

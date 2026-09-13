@@ -38,6 +38,16 @@ Vec :: [].{
 	len : V(a) -> U64
 	len = |v| v.n
 
+	# The entry at `i`, which must be inside the vector: no fill value to carry.
+	at : V(a), U64 -> a
+	at = |v, i| Vec.at_in(v.root, v.unit, i)
+
+	at_in : Tree(a), U64, U64 -> a
+	at_in = |t, unit, i| match t {
+		Leaf(xs) => List.get(xs, i) ?? crash("Vec.at: outside the vector")
+		Node(ks) => Vec.at_in(List.get(ks, U64.div_trunc_by(i, unit)) ?? crash("Vec.at: outside the vector"), U64.div_trunc_by(unit, Vec.width), U64.rem_by(i, unit))
+	}
+
 	# `fill` past the end.
 	get : V(a), U64, a -> a
 	get = |v, i, fill| if i >= v.n { fill } else { Vec.get_in(v.root, v.unit, i, fill) }
