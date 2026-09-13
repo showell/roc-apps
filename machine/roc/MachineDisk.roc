@@ -3,21 +3,21 @@
 # the wasm plug's host does; codex-vm's IDE model sets an error status there,
 # which this does not model yet.
 
-Disk :: [].{
+MachineDisk :: [].{
 	Drives : { images : List(List(U8)), selected : U64 }
 
-	with_image : List(U8) -> Disk.Drives
+	with_image : List(U8) -> MachineDisk.Drives
 	with_image = |bytes| { images: [bytes], selected: 0 }
 
-	image : Disk.Drives -> List(U8)
+	image : MachineDisk.Drives -> List(U8)
 	image = |ds| List.get(ds.images, ds.selected) ?? []
 
-	sector_count : Disk.Drives -> U64
-	sector_count = |ds| U64.div_trunc_by(List.len(Disk.image(ds)), 512)
+	sector_count : MachineDisk.Drives -> U64
+	sector_count = |ds| U64.div_trunc_by(List.len(MachineDisk.image(ds)), 512)
 
-	sector : Disk.Drives, U64 -> List(U8)
+	sector : MachineDisk.Drives, U64 -> List(U8)
 	sector = |ds, lba| {
-		img = Disk.image(ds)
+		img = MachineDisk.image(ds)
 		start = lba * 512
 		if start + 512 <= List.len(img) {
 			List.sublist(img, { start: start, len: 512 })

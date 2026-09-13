@@ -6,20 +6,20 @@
 app [Model, program] { pf: platform "../wasm/platform/main.roc" }
 
 import Machine
-import Pci
+import MachinePci
 
 # PCI's address and data ports, 0xCF8 and 0xCFC, in the doors' Integer.
 cf8 : I64
-cf8 = U64.to_i64_wrap(Pci.config_addr)
+cf8 = U64.to_i64_wrap(MachinePci.config_addr)
 
 cfc : I64
-cfc = U64.to_i64_wrap(Pci.config_data)
+cfc = U64.to_i64_wrap(MachinePci.config_data)
 
 Phase : [Scan(U64), Sector, Keys]
 
 Found : { slot : U64, vendor : U64, device : U64, class : U64, sub : U64, progif : U64, irq : U64 }
 
-Model : { m : Machine.M, phase : Phase, found : List(Found) }
+Model : { m : Machine.Machine, phase : Phase, found : List(Found) }
 
 new : List(U8) -> Box(Model)
 new = |image| {
@@ -62,7 +62,7 @@ one = |model| {
 				(m1, _w1) = Machine.port_out_32(m, cf8, at)
 				(m2, id_reg) = Machine.port_in_32(m1, cfc)
 				id = I64.to_u64_wrap(id_reg)
-				if id == Pci.all_ones {
+				if id == MachinePci.all_ones {
 					{ ..model, m: m2, phase: Scan(slot + 1) }
 				} else {
 					(m3, _w3) = Machine.port_out_32(m2, cf8, at + 8)
@@ -136,7 +136,7 @@ rows = |fs, i, acc|
 		Err(_) => acc
 	}
 
-window : Machine.M, I64, List(U8) -> List(U8)
+window : Machine.Machine, I64, List(U8) -> List(U8)
 window = |m, i, acc|
 	if i >= m.landed_len {
 		acc

@@ -3,7 +3,7 @@
 # program beside an .expected verdict emitted to Roc, run on the Echo
 # platform, and its output diffed against the verdict.
 #
-#   tests/ladder.sh                 the corpus, apps/ left out (1,017 units)
+#   tests/ladder.sh                 the corpus, apps/ left out (1,032 units)
 #   tests/ladder.sh effect-smoke    named units
 #   tests/ladder.sh --like 'unit type'   the units whose last verdict says that
 #
@@ -36,14 +36,17 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROC="${ROC:-$HOME/build/roc-nightly/roc}"
 ROCEMIT="${ROCEMIT:-$HOME/build/rust-target/release/rocemit}"
-TESTS_ROOT="${TESTS_ROOT:-$HOME/showell_repos/cobblestone-u58}"
+TESTS_ROOT="${TESTS_ROOT:-$HOME/showell_repos/cobblestone-u60rel}"
 SRC="$TESTS_ROOT/codex/test"
 GEN="$HOME/build/roc-apps/gen/tests"
 VERDICTS="$HOME/build/roc-apps/gen/verdicts"
 # The verdicts change when Cobblestone's tree does, which is rarely, so
-# they are cleaned only when one is newer than the copy.
-if [ ! -d "$VERDICTS" ] || [ -n "$(find "$SRC" -name '*.expected' -newer "$VERDICTS" -print -quit)" ]; then
-    "$HERE/verdicts.py" > "$GEN/.verdicts.log" 2>&1 || { echo "verdicts.py failed"; exit 2; }
+# they are cleaned only when one is newer than the copy, or when the copy was
+# cleaned from another checkout: an older checkout's files are never newer,
+# so a switch alone would compare against the wrong verdicts.
+if [ ! -d "$VERDICTS" ] || [ "$(cat "$VERDICTS/.root" 2>/dev/null)" != "$TESTS_ROOT" ] || [ -n "$(find "$SRC" -name '*.expected' -newer "$VERDICTS" -print -quit)" ]; then
+    TESTS_ROOT="$TESTS_ROOT" "$HERE/verdicts.py" > "$GEN/.verdicts.log" 2>&1 || { echo "verdicts.py failed"; exit 2; }
+    echo "$TESTS_ROOT" > "$VERDICTS/.root"
 fi
 mkdir -p "$GEN"
 if [ "${1:-}" = --like ]; then
@@ -96,12 +99,26 @@ one() {
         echo "REFUSED $n | $(head -1 "$d/emit.err" | sed 's/^REFUSED: //' | cut -c1-110)" > "$d/verdict"; return
     fi
     app="${said%%$'\n'*}"; stamp="${said##*$'\n'}"
+    # A kept verdict was judged against one checkout's verdicts.
+    stamp="$stamp $TESTS_ROOT"
     if [ "$app" = library ]; then echo "REFUSED $n | no opening" > "$d/verdict"; return; fi
+    # **A UNIT THAT REACHES A PORT RUNS ON THE MACHINE.** rocemit threads
+    # Machine through it and writes no Machine module: the machine is
+    # machine/roc, copied in beside the emitted modules, and the test's
+    # .vmargs are its command line, as they are codex-vm's. Both are part of
+    # what the verdict came from, so both join the stamp.
+    vmargs=()
+    if grep -qx 'import Machine' "$d"/*.roc; then
+        cp "$MACHINE"/{Machine,MachineMem,MachinePci,MachineDisk}.roc "$d/"
+        [ -f "$src.vmargs" ] && read -ra vmargs <<< "$(grep -v '^#' "$src.vmargs" | tr '\n' ' ')"
+        stamp="$stamp machine $( { cat "$MACHINE"/{Machine,MachineMem,MachinePci,MachineDisk}.roc; echo "${vmargs[*]}"; } | md5sum | cut -c1-16)"
+    fi
     if [ -n "$old" ] && [ "$old" = "$stamp" ] && [ -f "$GEN/$n.verdict" ] && [ -z "${FRESH:-}" ]; then
         cp "$GEN/$n.verdict" "$d/verdict"; return
     fi
     [ -n "${EMIT_ONLY:-}" ] && { echo "EMITTED $n |" > "$d/verdict"; return; }
-    ( cd "$d" && timeout 120 "$ROC" run "$app" > out 2> err ); rc=$?
+    run=("$ROC" run "$app"); [ ${#vmargs[@]} -gt 0 ] && run+=(-- "${vmargs[@]}")
+    ( cd "$d" && timeout 120 "${run[@]}" > out 2> err ); rc=$?
     # The capture behind a verdict drops a trailing blank line, so the
     # comparison strips them from our side too (tests/verdicts.sh).
     awk 'BEGIN{n=0} /^$/{n++; next} {while (n-- > 0) print ""; n=0; print}' "$d/out" > "$d/out.cmp"
@@ -111,9 +128,9 @@ one() {
     # renderer reaches the OOM killer, which is signal 9, which is 137.
     if [ $rc -ge 128 ]; then echo "KILLED $n | signal $((rc - 128))$(grep -m1 -oE 'Evaluating .{0,60}' "$d/err" | sed 's/^/ while /')" > "$d/verdict"
     elif [ $rc -eq 124 ]; then echo "TIMEOUT $n |" > "$d/verdict"
-    elif grep -q "✗" "$d/err"; then echo "FAIL $n | compile: $(grep -m1 -A2 '✗' "$d/err" | tr '\n' ' ' | cut -c1-110)" > "$d/verdict"
+    elif grep -q "✗" "$d/err"; then echo "FAIL $n | compile: $(grep -a -m1 -A2 '✗' "$d/err" | tr '\n' ' ' | sed 's/─//g; s/  */ /g' | cut -c1-110)" > "$d/verdict"
     elif cmp -s "$d/out.cmp" "$VERDICTS/$n.expected"; then echo "PASS $n |" > "$d/verdict"
-    elif grep -q "crashed\|Backtrace\|overflowed" "$d/err"; then echo "CRASH $n | $(grep -m1 -hoE 'crashed[^\n]*|overflowed[^\n]*' "$d/err" | head -1 | cut -c1-100)" > "$d/verdict"
+    elif grep -q "crashed\|Backtrace\|overflowed" "$d/err"; then echo "CRASH $n | $( { awk '/crashed with this message:/ {f=1; next} f && NF {sub(/^[ \t]+/, ""); print; exit}' "$d/err"; grep -m1 -hoE 'crashed[^\n]*|overflowed[^\n]*' "$d/err"; } | head -1 | cut -c1-100)" > "$d/verdict"
     else echo "FAIL $n | output: $(diff "$d/out.cmp" "$VERDICTS/$n.expected" | grep -m1 '^[<>]' | cut -c1-100)" > "$d/verdict"; fi
     cp "$d/verdict" "$GEN/$n.verdict"
     # The stamp is written WITH the verdict it names. Written at the emit, an
@@ -122,11 +139,12 @@ one() {
     echo "$stamp" > "$GEN/$n.stamp"
 }
 
-export -f one diverges; export ROC ROCEMIT SRC GEN VERDICTS
+MACHINE="$(cd "$HERE/../machine/roc" && pwd)"
+export -f one diverges; export ROC ROCEMIT SRC GEN VERDICTS MACHINE TESTS_ROOT
 printf '%s\n' "${units[@]}" | xargs -P "${JOBS:-2}" -I{} bash -c 'one {}'
 ledger="$( for n in "${units[@]}"; do cat "$GEN/$n/verdict"; done )"
 [ "$full" = yes ] && echo "$ledger" > "$HERE/ledger.txt"
-echo "$ledger" | grep -v '^PASS' | sort
+echo "$ledger" | grep -av '^PASS' | sort
 echo "--- by outcome:"; echo "$ledger" | cut -d' ' -f1 | sort | uniq -c | sort -rn
-echo "--- refusals by reason:"; echo "$ledger" | grep '^REFUSED' | cut -d'|' -f2 | sed 's/`[^`]*`/`_`/g' | sort | uniq -c | sort -rn | head -20
-echo "$(echo "$ledger" | grep -c '^PASS') pass of ${#units[@]} -- tests from $TESTS_ROOT"
+echo "--- refusals by reason:"; echo "$ledger" | grep -a '^REFUSED' | cut -d'|' -f2 | sed 's/`[^`]*`/`_`/g' | sort | uniq -c | sort -rn | head -20
+echo "$(echo "$ledger" | grep -ac '^PASS') pass of ${#units[@]} -- tests from $TESTS_ROOT"

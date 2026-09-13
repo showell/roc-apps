@@ -25,7 +25,7 @@ shell version was seventeen seconds of every ladder run.
 """
 import os, sys, pathlib
 
-ROOT = os.environ.get("TESTS_ROOT", os.path.expanduser("~/showell_repos/cobblestone-u58"))
+ROOT = os.environ.get("TESTS_ROOT", os.path.expanduser("~/showell_repos/cobblestone-u60rel"))
 SRC = pathlib.Path(ROOT) / "codex/test"
 OUT = pathlib.Path(os.path.expanduser("~/build/roc-apps/gen/verdicts"))
 report_only = "--report" in sys.argv

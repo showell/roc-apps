@@ -10,7 +10,7 @@
 # behind it, in codex-vm's creation order, so the ten-device cap drops the
 # devices it drops there.
 
-Pci :: [].{
+MachinePci :: [].{
 	Device : {
 		bus : U64,
 		slot : U64,
@@ -32,7 +32,7 @@ Pci :: [].{
 		subordinate : U64,
 	}
 
-	Pci : { addr : U64, devices : List(Pci.Device) }
+	Pci : { addr : U64, devices : List(MachinePci.Device) }
 
 	# 0xCF8, and the first of the four data ports from 0xCFC.
 	config_addr : U64
@@ -53,23 +53,23 @@ Pci :: [].{
 	# on the next bus-0 slot and the rest on slot 1, forwards to its level's
 	# bus, and names the deepest bus as subordinate; the endpoint behind it
 	# takes slot 0. `backward` points the deepest bridge at bus 0.
-	table : U64, Bool -> Pci.Pci
+	table : U64, Bool -> MachinePci.Pci
 	table = |levels, backward| {
-		(t1, _vga) = Pci.add([], Pci.fresh(4660, 4369, 3, 0, 0, 4244635648, 0))
-		xhci = Pci.fresh(4147, 404, 12, 3, 48, 4269801472, 10)
-		(t2, _xhci) = Pci.add(t1, { ..xhci, sizes: [16384, 0, 0, 0, 0, 0] })
-		(t3, _hda) = Pci.add(t2, Pci.fresh(32902, 9832, 4, 3, 0, 4261412864, 11))
-		{ addr: 0, devices: Pci.bridges(t3, 1, levels, backward) }
+		(t1, _vga) = MachinePci.add([], MachinePci.fresh(4660, 4369, 3, 0, 0, 4244635648, 0))
+		xhci = MachinePci.fresh(4147, 404, 12, 3, 48, 4269801472, 10)
+		(t2, _xhci) = MachinePci.add(t1, { ..xhci, sizes: [16384, 0, 0, 0, 0, 0] })
+		(t3, _hda) = MachinePci.add(t2, MachinePci.fresh(32902, 9832, 4, 3, 0, 4261412864, 11))
+		{ addr: 0, devices: MachinePci.bridges(t3, 1, levels, backward) }
 	}
 
-	bridges : List(Pci.Device), U64, U64, Bool -> List(Pci.Device)
+	bridges : List(MachinePci.Device), U64, U64, Bool -> List(MachinePci.Device)
 	bridges = |ds, lv, levels, backward|
 		if lv > levels {
 			ds
 		} else {
-			(with_bridge, b) = Pci.add(ds, Pci.fresh(6966, 12, 6, 4, 0, 0, 0))
+			(with_bridge, b) = MachinePci.add(ds, MachinePci.fresh(6966, 12, 6, 4, 0, 0, 0))
 			placed = match b {
-				At(i) => Pci.change(with_bridge, i, |d| {
+				At(i) => MachinePci.change(with_bridge, i, |d| {
 					..d,
 					header: 1,
 					bus: lv - 1,
@@ -79,17 +79,17 @@ Pci :: [].{
 				})
 				Full => with_bridge
 			}
-			(with_endpoint, e) = Pci.add(placed, Pci.fresh(6900, 4161, 2, 0, 0, 0, 0))
+			(with_endpoint, e) = MachinePci.add(placed, MachinePci.fresh(6900, 4161, 2, 0, 0, 0, 0))
 			behind = match e {
-				At(i) => Pci.change(with_endpoint, i, |d| { ..d, bus: lv, slot: 0 })
+				At(i) => MachinePci.change(with_endpoint, i, |d| { ..d, bus: lv, slot: 0 })
 				Full => with_endpoint
 			}
-			Pci.bridges(behind, lv + 1, levels, backward)
+			MachinePci.bridges(behind, lv + 1, levels, backward)
 		}
 
 	# A device as `pci_add_device` makes one: I/O and memory decoding on, and
 	# one BAR, which decodes 64 KB when it has a base.
-	fresh : U64, U64, U64, U64, U64, U64, U64 -> Pci.Device
+	fresh : U64, U64, U64, U64, U64, U64, U64 -> MachinePci.Device
 	fresh = |vendor, device, class, sub, progif, bar0, irq| {
 		bus: 0,
 		slot: 0,
@@ -110,23 +110,23 @@ Pci :: [].{
 
 	# `pci_add_device`: the device answers on bus 0 at the slot equal to its
 	# index, and once the table is full nothing is added.
-	add : List(Pci.Device), Pci.Device -> (List(Pci.Device), [At(U64), Full])
+	add : List(MachinePci.Device), MachinePci.Device -> (List(MachinePci.Device), [At(U64), Full])
 	add = |ds, d| {
 		i = List.len(ds)
-		if i >= Pci.max_devices { (ds, Full) } else { (List.append(ds, { ..d, slot: i }), At(i)) }
+		if i >= MachinePci.max_devices { (ds, Full) } else { (List.append(ds, { ..d, slot: i }), At(i)) }
 	}
 
-	change : List(Pci.Device), U64, (Pci.Device -> Pci.Device) -> List(Pci.Device)
+	change : List(MachinePci.Device), U64, (MachinePci.Device -> MachinePci.Device) -> List(MachinePci.Device)
 	change = |ds, i, f| List.update(ds, i, f) ?? crash("Pci: no device at that index")
 
 	# ---- the ports --------------------------------------------------------
 
-	latch : Pci.Pci, U64 -> Pci.Pci
+	latch : MachinePci.Pci, U64 -> MachinePci.Pci
 	latch = |pci, v| { ..pci, addr: v }
 
 	# The latched address: enable bit 31, bus 23..16, slot 15..11, function
 	# 10..8, register 7..2.
-	target : Pci.Pci -> [Off, Empty, Hit(U64, Pci.Device, U64)]
+	target : MachinePci.Pci -> [Off, Empty, Hit(U64, MachinePci.Device, U64)]
 	target = |pci| {
 		a = pci.addr
 		if U64.bitwise_and(a, 2147483648) == 0 {
@@ -136,34 +136,34 @@ Pci :: [].{
 		} else {
 			bus = U64.bitwise_and(U64.div_trunc_by(a, 65536), 255)
 			slot = U64.bitwise_and(U64.div_trunc_by(a, 2048), 31)
-			match Pci.find(pci.devices, bus, slot, 0) {
+			match MachinePci.find(pci.devices, bus, slot, 0) {
 				Found(i, d) => Hit(i, d, U64.bitwise_and(a, 252))
 				Missing => Empty
 			}
 		}
 	}
 
-	find : List(Pci.Device), U64, U64, U64 -> [Found(U64, Pci.Device), Missing]
+	find : List(MachinePci.Device), U64, U64, U64 -> [Found(U64, MachinePci.Device), Missing]
 	find = |ds, bus, slot, i|
 		match List.get(ds, i) {
-			Ok(d) => if d.bus == bus and d.slot == slot { Found(i, d) } else { Pci.find(ds, bus, slot, i + 1) }
+			Ok(d) => if d.bus == bus and d.slot == slot { Found(i, d) } else { MachinePci.find(ds, bus, slot, i + 1) }
 			Err(_) => Missing
 		}
 
 	# A read through the data port `k` bytes past 0xCFC: the register, shifted
 	# down by those bytes.
-	read : Pci.Pci, U64 -> U64
+	read : MachinePci.Pci, U64 -> U64
 	read = |pci, k|
-		match Pci.target(pci) {
+		match MachinePci.target(pci) {
 			Off => 255
-			Empty => U64.div_trunc_by(Pci.all_ones, U64.pow(256, k))
-			Hit(_i, d, off) => U64.div_trunc_by(Pci.register(d, off), U64.pow(256, k))
+			Empty => U64.div_trunc_by(MachinePci.all_ones, U64.pow(256, k))
+			Hit(_i, d, off) => U64.div_trunc_by(MachinePci.register(d, off), U64.pow(256, k))
 		}
 
 	# Ids at 0x00, command at 0x04, class at 0x08 and header type at 0x0C, on
 	# every device. A bridge has its bus numbers at 0x18 and nothing else; an
 	# endpoint has BARs at 0x10..0x24 and its IRQ line at 0x3C.
-	register : Pci.Device, U64 -> U64
+	register : MachinePci.Device, U64 -> U64
 	register = |d, off|
 		if off == 0 {
 			d.vendor + d.device * 65536
@@ -176,7 +176,7 @@ Pci :: [].{
 		} else if d.header == 1 {
 			if off == 24 { d.bus + d.secondary * 256 + d.subordinate * 65536 } else { 0 }
 		} else if off >= 16 and off <= 36 {
-			Pci.bar(d, U64.div_trunc_by(off - 16, 4))
+			MachinePci.bar(d, U64.div_trunc_by(off - 16, 4))
 		} else if off == 60 {
 			d.irq
 		} else {
@@ -185,7 +185,7 @@ Pci :: [].{
 
 	# A BAR reads its base; while it is being sized, all ones above its window
 	# with its four type bits kept, and 0 when it decodes nothing.
-	bar : Pci.Device, U64 -> U64
+	bar : MachinePci.Device, U64 -> U64
 	bar = |d, k| {
 		base = List.get(d.bars, k) ?? 0
 		size = List.get(d.sizes, k) ?? 0
@@ -194,21 +194,21 @@ Pci :: [].{
 		} else if size == 0 {
 			0
 		} else {
-			U64.bitwise_or(Pci.all_ones - (size - 1), U64.bitwise_and(base, 15))
+			U64.bitwise_or(MachinePci.all_ones - (size - 1), U64.bitwise_and(base, 15))
 		}
 	}
 
 	# A write through a data port. A bridge takes a command and nothing else,
 	# since its bus numbers are fixed; an endpoint takes a command, or a BAR,
 	# where all ones asks the size and keeps the base.
-	write : Pci.Pci, U64 -> Pci.Pci
+	write : MachinePci.Pci, U64 -> MachinePci.Pci
 	write = |pci, v|
-		match Pci.target(pci) {
-			Hit(i, d, off) => { ..pci, devices: List.set(pci.devices, i, Pci.written(d, off, v)) ?? crash("Pci: no device at that index") }
+		match MachinePci.target(pci) {
+			Hit(i, d, off) => { ..pci, devices: List.set(pci.devices, i, MachinePci.written(d, off, v)) ?? crash("Pci: no device at that index") }
 			_ => pci
 		}
 
-	written : Pci.Device, U64, U64 -> Pci.Device
+	written : MachinePci.Device, U64, U64 -> MachinePci.Device
 	written = |d, off, v|
 		if off == 4 {
 			{ ..d, command: U64.bitwise_and(v, 65535) }
@@ -216,7 +216,7 @@ Pci :: [].{
 			d
 		} else {
 			k = U64.div_trunc_by(off - 16, 4)
-			sizing = v == Pci.all_ones
+			sizing = v == MachinePci.all_ones
 			probing = List.set(d.probing, k, sizing) ?? crash("Pci: no such BAR")
 			if sizing { { ..d, probing: probing } } else { { ..d, probing: probing, bars: List.set(d.bars, k, v) ?? crash("Pci: no such BAR") } }
 		}
