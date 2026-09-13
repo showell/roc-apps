@@ -69,6 +69,8 @@ Parse :: [].{
 	Stmt : [
 		Nop,
 		End,
+		# ECMA-55's STOP is END; a microcomputer's says where it stopped.
+		Stop,
 		# The expression runs, then the machine stops for the reason (the
 		# expression's own, when it stops first).
 		Bad(Expr, Str),
@@ -494,8 +496,10 @@ Parse :: [].{
 	statement = |b, i, k, w, line, cx|
 		if k == "REM" or k == "DATA" {
 			Parse.last(Nop)
-		} else if k == "END" or k == "STOP" {
+		} else if k == "END" {
 			Parse.last(End)
+		} else if k == "STOP" {
+			Parse.last(Stop)
 		} else if k == "PRINT" {
 			p = Parse.print_items(b, w, True, cx, [])
 			Parse.on(Print(p.items, p.newline), p.at)

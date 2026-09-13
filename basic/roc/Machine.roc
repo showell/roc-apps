@@ -1095,6 +1095,7 @@ Machine :: [].{
 	exec = |pg, m, s| match s {
 		Nop => Machine.next(m)
 		End => Machine.do_end(m)
+		Stop => Machine.do_stop(pg, m)
 		Bad(e, why) => Machine.do_bad(pg, m, e, why)
 		Print(items, newline) => Machine.do_print(pg, m, items, newline)
 		SetNum(slot, e) => Machine.do_set_num(pg, m, slot, e)
@@ -1119,6 +1120,16 @@ Machine :: [].{
 		Option(e) => Machine.do_option(pg, m, e)
 		Def(letter) => Machine.do_def(m, letter)
 	}
+
+	# **A MICROCOMPUTER'S STOP SAYS WHERE**, as basic101 does: `Break in line N`.
+	do_stop : Parse.Program, M -> M
+	do_stop = |pg, m|
+		if pg.ecma {
+			{ ..m, done: True }
+		} else {
+			said = Machine.emit(m, Str.concat(Str.concat("Break in line ", I64.to_str(Machine.line_of(pg, m.pc))), "\n"))
+			{ ..said, done: True }
+		}
 
 	do_end : M -> M
 	do_end = |m|
@@ -1564,7 +1575,10 @@ Machine :: [].{
 		bad = if ecma and line_fault.why == "" { Program.check(src) } else { line_fault }
 		pg = Parse.load(if bad.why != "" { "" } else { src }, ecma)
 		m = if bad.why != "" { Machine.refuse(bad) } else { Machine.batch(pg, Machine.machine_state_at_next_effect(pg, Machine.declared(pg, Machine.new(inp, seed))), 10) }
-		if m.waiting and !ecma {
+		if !ecma and !m.gap and Str.starts_with(m.err, "No such line: ") {
+			# basic101's words for a jump to a line that is not there.
+			Str.concat(Machine.transcript({ ..m, err: "" }), Str.concat(Str.concat(Str.concat("Error on line ", I64.to_str(Machine.line_of(pg, m.pc))), Str.concat(": Undefined line number ", Str.drop_prefix(m.err, "No such line: "))), "\n"))
+		} else if m.waiting and !ecma {
 			# **A MICROCOMPUTER'S BATCH RUN ENDS AS basic101's DOES** when its
 			# replies run out: the games' captures are basic101's output.
 			Str.concat(Machine.transcript(m), Str.concat(Str.concat("\nError on line ", I64.to_str(Machine.line_of(pg, m.pc))), ": No more input\n"))
