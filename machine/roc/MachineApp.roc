@@ -6,6 +6,8 @@
 app [Model, program] { pf: platform "../wasm/platform/main.roc" }
 
 import Machine
+import MachineDisk
+import MachineMem
 import MachinePci
 
 # PCI's address and data ports, 0xCF8 and 0xCFC, in the doors' Integer.
@@ -23,8 +25,9 @@ Model : { m : Machine.Machine, phase : Phase, found : List(Found) }
 
 new : List(U8) -> Box(Model)
 new = |image| {
-	(m0, sectors) = Machine.block_sector_count(Machine.new(image))
-	count = I64.to_str(sectors)
+	drives = MachineDisk.attach([Attached(image), Absent])
+	m0 = Machine.make(MachineMem.new(U64.to_i64_wrap(List.len(image))), MachinePci.table(0, False), drives)
+	count = U64.to_str(MachineDisk.sector_count(drives))
 	Box.box({ m: Machine.print_line(m0, "machine: drive 0 holds ${count} sectors; scanning PCI bus 0"), phase: Scan(0), found: [] })
 }
 
@@ -85,7 +88,7 @@ one = |model| {
 				}
 			}
 		Sector => {
-			(m1, base) = Machine.block_read_sector(m, 0)
+			(m1, base) = Machine.land(m, MachineDisk.read(m.drives, 0))
 			# `lba0` is what upstream's block-select-drives prints for the same
 			# image on bare metal: `drive 0 sectors 128 lba0 161`.
 			first = U64.to_str(Machine.peek_byte(m1, base))

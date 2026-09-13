@@ -7,14 +7,14 @@
 # device, the keyboard, a console. The clock counts steps, not wall time, so a
 # run is reproducible.
 #
-# Two programs drive it. Codex emitted by rocemit calls the doors named for
-# Codex builtins, which take and answer Codex's Integer, and its opening boots
-# the machine from the command line, where a test's .vmargs arrive, with the
-# drives MachineMedia attaches. The page's app (MachineApp.roc) builds one
-# with a disk image and calls the same doors and the ones below them.
+# Codex emitted by rocemit calls the doors named for Codex builtins, which take
+# and answer Codex's Integer, and its opening boots the machine from the
+# command line, where a test's .vmargs arrive. The block doors end in `!`:
+# MachineDisk is either the model (machine/roc) or the host's files
+# (machine/native), and a door the host may answer is an effect. The page's
+# app (MachineApp.roc) builds a machine with `make` and calls the rest.
 
 import MachineDisk
-import MachineMedia
 import MachineMem
 import MachinePci
 
@@ -34,23 +34,19 @@ Machine :: [].{
 		landed_len : I64,
 	}
 
-	Flags : { bridge : Bool, deep : Bool, levels : U64, backward : Bool }
+	Flags : { bridge : Bool, deep : Bool, levels : U64, backward : Bool, disks : List(Str) }
 
-	# The page's machine: codex-vm's default devices, and one drive.
-	new : List(U8) -> Machine.Machine
-	new = |image| Machine.make(MachineMem.new(U64.to_i64_wrap(List.len(image))), MachinePci.table(0, False), MachineDisk.attach([Attached(image), Absent]))
-
-	# A batch run's machine, from codex-vm's command line and the drives
-	# MachineMedia attaches. The PCI bridge flags are modelled; any other flag
-	# names a device this machine does not have, and a verdict that depends on
-	# that device cannot be reproduced, so the run stops there. The memory's
-	# base moves with the argument count, as it does where rocemit threads Mem
-	# alone, to keep the program out of compile-time reach.
-	boot : List(Str) -> Machine.Machine
-	boot = |args| {
-		f = Machine.flags(args, 0, { bridge: False, deep: False, levels: 0, backward: False })
+	# A batch run's machine, from codex-vm's command line. The PCI bridge flags
+	# are modelled, and -disk and -disk2 name the files the drives are; any
+	# other flag names a device this machine does not have, and a verdict that
+	# depends on that device cannot be reproduced, so the run stops there. The
+	# memory's base moves with the argument count, as it does where rocemit
+	# threads Mem alone, to keep the program out of compile-time reach.
+	boot! : List(Str) => Machine.Machine
+	boot! = |args| {
+		f = Machine.flags(args, 0, { bridge: False, deep: False, levels: 0, backward: False, disks: ["", ""] })
 		levels = if !f.bridge { 0 } else if f.levels != 0 { f.levels } else if f.deep { 2 } else { 1 }
-		Machine.make(MachineMem.new(U64.to_i64_wrap(List.len(args))), MachinePci.table(levels, f.backward), MachineDisk.attach(MachineMedia.drives))
+		Machine.make(MachineMem.new(U64.to_i64_wrap(List.len(args))), MachinePci.table(levels, f.backward), MachineDisk.boot!(f.disks))
 	}
 
 	# -pci-bridge is one level, -pci-bridge-deep two, -pci-bridge-levels N
@@ -69,6 +65,10 @@ Machine :: [].{
 				} else if a == "-pci-bridge-levels" {
 					n = U64.from_str(List.get(args, i + 1) ?? "") ?? crash("machine: -pci-bridge-levels wants a number")
 					Machine.flags(args, i + 2, { ..f, bridge: True, levels: n })
+				} else if a == "-disk" or a == "-disk2" {
+					path = List.get(args, i + 1) ?? crash("machine: ${a} wants a file")
+					at = if a == "-disk" { 0 } else { 1 }
+					Machine.flags(args, i + 2, { ..f, disks: List.set(f.disks, at, path) ?? crash("machine: no such drive position") })
 				} else {
 					crash("machine: ${a} is not a codex-vm flag this machine models")
 				}
@@ -137,27 +137,31 @@ Machine :: [].{
 
 	# `block-select` chooses the drive the next block request addresses, and
 	# answers 0.
-	block_select : Machine.Machine, I64 -> (Machine.Machine, I64)
-	block_select = |m, n| ({ ..m, drives: MachineDisk.select(m.drives, I64.to_u64_wrap(n)) }, 0)
+	block_select! : Machine.Machine, I64 => (Machine.Machine, I64)
+	block_select! = |m, n| ({ ..m, drives: MachineDisk.select(m.drives, I64.to_u64_wrap(n)) }, 0)
 
 	# `block-sector-count`: the selected drive's size in sectors, 0 with nothing
 	# on that position.
-	block_sector_count : Machine.Machine -> (Machine.Machine, I64)
-	block_sector_count = |m| (m, U64.to_i64_wrap(MachineDisk.sector_count(m.drives)))
+	block_sector_count! : Machine.Machine => (Machine.Machine, I64)
+	block_sector_count! = |m| (m, U64.to_i64_wrap(MachineDisk.sector_count!(m.drives)))
 
 	# `block-read-sector` as x86 answers it: 512 bytes bump-allocated in memory,
 	# the sector copied in, the address handed back.
-	block_read_sector : Machine.Machine, I64 -> (Machine.Machine, I64)
-	block_read_sector = |m, lba| {
-		bytes = MachineDisk.read(m.drives, I64.to_u64_wrap(lba))
+	block_read_sector! : Machine.Machine, I64 => (Machine.Machine, I64)
+	block_read_sector! = |m, lba| Machine.land(m, MachineDisk.read!(m.drives, I64.to_u64_wrap(lba)))
+
+	# `block-write-sector`: the 512 bytes at `buf` become the sector; answers 0.
+	block_write_sector! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
+	block_write_sector! = |m, lba, buf| ({ ..m, drives: MachineDisk.write!(m.drives, I64.to_u64_wrap(lba), Machine.copy_out(m.mem, buf, 0, [])) }, 0)
+
+	# A sector's bytes into freshly allocated memory: the address, and the
+	# machine that remembers where they landed.
+	land : Machine.Machine, List(U8) -> (Machine.Machine, I64)
+	land = |m, bytes| {
 		(mem1, base) = MachineMem.alloc(m.mem, 512)
 		mem2 = Machine.copy_in(mem1, base, bytes, 0)
 		({ ..m, mem: mem2, landed: base, landed_len: 512 }, base)
 	}
-
-	# `block-write-sector`: the 512 bytes at `buf` become the sector; answers 0.
-	block_write_sector : Machine.Machine, I64, I64 -> (Machine.Machine, I64)
-	block_write_sector = |m, lba, buf| ({ ..m, drives: MachineDisk.write(m.drives, I64.to_u64_wrap(lba), Machine.copy_out(m.mem, buf, 0, [])) }, 0)
 
 	# ---- the process ----------------------------------------------------
 	#

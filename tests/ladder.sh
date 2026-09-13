@@ -84,10 +84,9 @@ media() {
     echo "# MachineMedia -- the drives attached for this unit, written by tests/ladder.sh."
     [ "$1" = yes ] && echo 'import "drive0.disk" as drive0 : List(U8)'
     [ "$2" = yes ] && echo 'import "drive1.disk" as drive1 : List(U8)'
-    echo 'import MachineDisk'
     echo
     echo 'MachineMedia :: [].{'
-    echo '	drives : List(MachineDisk.Drive)'
+    echo '	drives : List([Attached(List(U8)), Absent])'
     printf '\tdrives = [%s, %s]\n' "$( [ "$1" = yes ] && echo 'Attached(drive0)' || echo Absent )" "$( [ "$2" = yes ] && echo 'Attached(drive1)' || echo Absent )"
     echo '}'
 }
