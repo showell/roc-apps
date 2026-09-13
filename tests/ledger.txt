@@ -38,7 +38,7 @@ SKIP builtin-narrow-proven | expects a diagnostic
 PASS call-clobber |
 PASS canopen-encode |
 REFUSED cap-audio | builtin `process-get-cap`
-FAIL cap-block-denied | output: < denied: 0
+PASS cap-block-denied |
 REFUSED cap-device-declared | builtin `port-in-byte`
 REFUSED cap-direction | builtin `process-get-cap`
 REFUSED cap-gpu-byte-denied | builtin `gpu-mem-write`

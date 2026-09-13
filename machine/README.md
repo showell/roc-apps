@@ -8,7 +8,8 @@ Two programs drive it:
 
 - **Codex, emitted by rocemit.** A unit that reaches a port, block or
   process builtin threads `Machine` through every definition that touches
-  memory or a device, and its opening boots the machine (`Machine.boot`). The
+  memory or a device, and its opening boots the machine (`Machine.boot!`) with
+  the effects it declares, which grant the boot process its capabilities. The
   ladder copies these modules in beside the emitted ones, passes the test's
   `.vmargs` as the command line, and links its `.disk` and `.disk2` in as the
   primary master and slave, imported by a `MachineMedia.roc` it writes. A
@@ -23,6 +24,7 @@ Two programs drive it:
 | path | what it is |
 |---|---|
 | `roc/Machine.roc` | the machine record, `boot!` from codex-vm flags, and the doors: Codex's memory, port, block and process builtins, keys, the console, a step clock |
+| `roc/MachineCaps.roc` | the boot process's capability word: the grant x86's boot writes from the opening's effects, through `Capability.codex`'s table, which the block doors check |
 | `roc/MachineMem.roc` | the address space, a persistent trie (the module rocemit writes as `Mem` for units without devices) |
 | `roc/MachinePci.roc` | PCI configuration space as codex-vm models it: the 0xCF8 latch, the ten-device table with its bridge chain, command and BAR writes |
 | `roc/MachineDisk.roc` | the modelled disk: the primary channel's master and slave, each an image or nothing, as codex-vm's IDE model answers: 255 from an empty position, zeros past the end, writes in an overlay of sectors |

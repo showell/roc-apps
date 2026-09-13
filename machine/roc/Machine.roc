@@ -11,9 +11,13 @@
 # and answer Codex's Integer, and its opening boots the machine from the
 # command line, where a test's .vmargs arrive. The block doors end in `!`:
 # MachineDisk is either the model (machine/roc) or the host's files
-# (machine/native), and a door the host may answer is an effect. The page's
-# app (MachineApp.roc) builds a machine with `make` and calls the rest.
+# (machine/native), and a door the host may answer is an effect. They answer
+# as x86's block syscalls do, behind the boot process's capability word
+# (MachineCaps), which `boot!` writes from the effects the opening declares.
+# The page's app (MachineApp.roc) builds a machine with `make` and calls the
+# rest.
 
+import MachineCaps
 import MachineDisk
 import MachineMem
 import MachinePci
@@ -36,17 +40,20 @@ Machine :: [].{
 
 	Flags : { bridge : Bool, deep : Bool, levels : U64, backward : Bool, disks : List(Str) }
 
-	# A batch run's machine, from codex-vm's command line. The PCI bridge flags
-	# are modelled, and -disk and -disk2 name the files the drives are; any
-	# other flag names a device this machine does not have, and a verdict that
-	# depends on that device cannot be reproduced, so the run stops there. The
+	# A batch run's machine, from codex-vm's command line and the effects the
+	# program's opening declares. The PCI bridge flags are modelled, and -disk
+	# and -disk2 name the files the drives are; any other flag names a device
+	# this machine does not have, and a verdict that depends on that device
+	# cannot be reproduced, so the run stops there. The opening's grant goes
+	# into the boot process's capability word, as x86's boot writes it. The
 	# memory's base moves with the argument count, as it does where rocemit
 	# threads Mem alone, to keep the program out of compile-time reach.
-	boot! : List(Str) => Machine.Machine
-	boot! = |args| {
+	boot! : List(Str), List(Str) => Machine.Machine
+	boot! = |args, effects| {
 		f = Machine.flags(args, 0, { bridge: False, deep: False, levels: 0, backward: False, disks: ["", ""] })
 		levels = if !f.bridge { 0 } else if f.levels != 0 { f.levels } else if f.deep { 2 } else { 1 }
-		Machine.make(MachineMem.new(U64.to_i64_wrap(List.len(args))), MachinePci.table(levels, f.backward), MachineDisk.boot!(f.disks))
+		mem = MachineMem.write(MachineMem.new(U64.to_i64_wrap(List.len(args))), MachineCaps.word_addr, MachineCaps.grant(effects), 8)
+		Machine.make(mem, MachinePci.table(levels, f.backward), MachineDisk.boot!(f.disks))
 	}
 
 	# -pci-bridge is one level, -pci-bridge-deep two, -pci-bridge-levels N
@@ -135,24 +142,56 @@ Machine :: [].{
 		}
 	}
 
+	# **THE BLOCK DOORS ASK THE CAPABILITY WORD FIRST**, as x86's block
+	# syscalls do (X86_64Boot's emit-block-elev-gate): the boot process holds
+	# the block-device bit, or the filesystem servicer's cell is set. The word
+	# is memory, so a program that clears its own grant is denied from then on.
+	block_granted : Machine.Machine -> Bool
+	block_granted = |m| {
+		word = MachineMem.read(m.mem, MachineCaps.word_addr, 7, 0)
+		U64.bitwise_and(word, MachineCaps.bit(MachineCaps.block_device)) != 0 or MachineMem.read(m.mem, MachineCaps.fs_elevated_addr, 7, 0) != 0
+	}
+
 	# `block-select` chooses the drive the next block request addresses, and
-	# answers 0.
+	# answers 0; denied, it chooses nothing and answers -1.
 	block_select! : Machine.Machine, I64 => (Machine.Machine, I64)
-	block_select! = |m, n| ({ ..m, drives: MachineDisk.select(m.drives, I64.to_u64_wrap(n)) }, 0)
+	block_select! = |m, n|
+		if Machine.block_granted(m) {
+			({ ..m, drives: MachineDisk.select(m.drives, I64.to_u64_wrap(n)) }, 0)
+		} else {
+			(m, -1)
+		}
 
 	# `block-sector-count`: the selected drive's size in sectors, 0 with nothing
-	# on that position.
+	# on that position; denied, -1.
 	block_sector_count! : Machine.Machine => (Machine.Machine, I64)
-	block_sector_count! = |m| (m, U64.to_i64_wrap(MachineDisk.sector_count!(m.drives)))
+	block_sector_count! = |m|
+		if Machine.block_granted(m) {
+			(m, U64.to_i64_wrap(MachineDisk.sector_count!(m.drives)))
+		} else {
+			(m, -1)
+		}
 
 	# `block-read-sector` as x86 answers it: 512 bytes bump-allocated in memory,
-	# the sector copied in, the address handed back.
+	# the sector copied in, the address handed back. Denied, the buffer is
+	# allocated and handed back all the same, with nothing read into it.
 	block_read_sector! : Machine.Machine, I64 => (Machine.Machine, I64)
-	block_read_sector! = |m, lba| Machine.land(m, MachineDisk.read!(m.drives, I64.to_u64_wrap(lba)))
+	block_read_sector! = |m, lba|
+		if Machine.block_granted(m) {
+			Machine.land(m, MachineDisk.read!(m.drives, I64.to_u64_wrap(lba)))
+		} else {
+			Machine.alloc(m, 512)
+		}
 
-	# `block-write-sector`: the 512 bytes at `buf` become the sector; answers 0.
+	# `block-write-sector`: the 512 bytes at `buf` become the sector. It
+	# answers 0 whether or not it was denied, and a denied write writes nothing.
 	block_write_sector! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
-	block_write_sector! = |m, lba, buf| ({ ..m, drives: MachineDisk.write!(m.drives, I64.to_u64_wrap(lba), Machine.copy_out(m.mem, buf, 0, [])) }, 0)
+	block_write_sector! = |m, lba, buf|
+		if Machine.block_granted(m) {
+			({ ..m, drives: MachineDisk.write!(m.drives, I64.to_u64_wrap(lba), Machine.copy_out(m.mem, buf, 0, [])) }, 0)
+		} else {
+			(m, 0)
+		}
 
 	# A sector's bytes into freshly allocated memory: the address, and the
 	# machine that remembers where they landed.
