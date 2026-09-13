@@ -1,0 +1,4 @@
+# Allocations per iteration each control is held to, and why when it is not 0.
+# A control not listed here is held to 0.
+20-print-loop 1 PRINT turns its line into bytes to draw it (Str.to_utf8); the builtins have no byte walk over a Str
+21-string-grow 1 the string grows by one byte an iteration

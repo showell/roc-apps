@@ -1,0 +1,3 @@
+10 FOR I=1 TO @N@
+20 NEXT I
+30 END

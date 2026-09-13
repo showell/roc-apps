@@ -1,0 +1,5 @@
+5 DIM A(10)
+10 FOR I=1 TO @N@
+20 A(5)=I
+30 NEXT I
+40 END
