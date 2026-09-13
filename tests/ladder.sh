@@ -128,14 +128,14 @@ one() {
     # from, so all of it joins the stamp.
     vmargs=()
     if grep -qx 'import Machine' "$d"/*.roc; then
-        cp "$MACHINE"/{Machine,MachineCaps,MachineMem,MachinePci,MachineDisk}.roc "$d/"
+        cp "$MACHINE"/{Machine,MachineCaps,MachineE1000,MachineHpet,MachineMem,MachinePci,MachineDisk}.roc "$d/"
         [ -f "$src.vmargs" ] && read -ra vmargs <<< "$(grep -v '^#' "$src.vmargs" | tr '\n' ' ')"
         rm -f "$d/drive0.disk" "$d/drive1.disk"
         a0=no; a1=no
         [ -f "$src.disk" ] && { ln -s "$src.disk" "$d/drive0.disk"; a0=yes; }
         [ -f "$src.disk2" ] && { ln -s "$src.disk2" "$d/drive1.disk"; a1=yes; }
         media $a0 $a1 > "$d/MachineMedia.roc"
-        stamp="$stamp machine $( { cat "$MACHINE"/{Machine,MachineCaps,MachineMem,MachinePci,MachineDisk}.roc "$d/MachineMedia.roc"; echo "${vmargs[*]}"; stat -L -c '%s %Y' "$d"/drive*.disk 2>/dev/null; } | md5sum | cut -c1-16)"
+        stamp="$stamp machine $( { cat "$MACHINE"/{Machine,MachineCaps,MachineE1000,MachineHpet,MachineMem,MachinePci,MachineDisk}.roc "$d/MachineMedia.roc"; echo "${vmargs[*]}"; stat -L -c '%s %Y' "$d"/drive*.disk 2>/dev/null; } | md5sum | cut -c1-16)"
     fi
     if [ -n "$old" ] && [ "$old" = "$stamp" ] && [ -f "$GEN/$n.verdict" ] && [ -z "${FRESH:-}" ]; then
         cp "$GEN/$n.verdict" "$d/verdict"; return

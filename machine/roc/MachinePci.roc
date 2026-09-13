@@ -27,6 +27,8 @@ MachinePci :: [].{
 		probing : List(Bool),
 		irq : U64,
 		command : U64,
+		# Under -nic-bme-clear, the NIC's bus-master bit cannot be set.
+		bme_locked : Bool,
 		# A bridge's secondary and subordinate buses.
 		secondary : U64,
 		subordinate : U64,
@@ -48,18 +50,28 @@ MachinePci :: [].{
 	max_devices = 10
 
 	# codex-vm's table: Bochs VGA 1234:1111, the NEC xHCI 1033:0194 with its
-	# 16 KB register window, Intel HDA 8086:2668, on bus 0 slots 0..2, then
-	# `levels` bridges. Each bridge sits on the bus before its level, the first
-	# on the next bus-0 slot and the rest on slot 1, forwards to its level's
-	# bus, and names the deepest bus as subordinate; the endpoint behind it
-	# takes slot 0. `backward` points the deepest bridge at bus 0.
-	table : U64, Bool -> MachinePci.Pci
-	table = |levels, backward| {
+	# 16 KB register window, Intel HDA 8086:2668, on bus 0 slots 0..2; then,
+	# when a NIC is on the bus, Intel gigabit Ethernet with its 128 KB register
+	# window at 0xFE400000, 8086:100E or the I219's 8086:15B8; then `levels`
+	# bridges. Each bridge sits on the bus before its level, the first on the
+	# next bus-0 slot and the rest on slot 1, forwards to its level's bus, and
+	# names the deepest bus as subordinate; the endpoint behind it takes slot 0.
+	# `backward` points the deepest bridge at bus 0.
+	table : U64, Bool, [NoNic, Nic(U64, Bool)] -> MachinePci.Pci
+	table = |levels, backward, nic| {
 		(t1, _vga) = MachinePci.add([], MachinePci.fresh(4660, 4369, 3, 0, 0, 4244635648, 0))
 		xhci = MachinePci.fresh(4147, 404, 12, 3, 48, 4269801472, 10)
 		(t2, _xhci) = MachinePci.add(t1, { ..xhci, sizes: [16384, 0, 0, 0, 0, 0] })
 		(t3, _hda) = MachinePci.add(t2, MachinePci.fresh(32902, 9832, 4, 3, 0, 4261412864, 11))
-		{ addr: 0, devices: MachinePci.bridges(t3, 1, levels, backward) }
+		t4 = match nic {
+			NoNic => t3
+			Nic(id, locked) => {
+				e1000 = MachinePci.fresh(32902, id, 2, 0, 0, 0xFE400000, 12)
+				(with_nic, _nic) = MachinePci.add(t3, { ..e1000, sizes: [0x20000, 0, 0, 0, 0, 0], bme_locked: locked })
+				with_nic
+			}
+		}
+		{ addr: 0, devices: MachinePci.bridges(t4, 1, levels, backward) }
 	}
 
 	bridges : List(MachinePci.Device), U64, U64, Bool -> List(MachinePci.Device)
@@ -104,6 +116,7 @@ MachinePci :: [].{
 		probing: [False, False, False, False, False, False],
 		irq: irq,
 		command: 3,
+		bme_locked: False,
 		secondary: 0,
 		subordinate: 0,
 	}
@@ -198,9 +211,21 @@ MachinePci :: [].{
 		}
 	}
 
+	# Whether the first device with this vendor and class may master the bus.
+	bus_master : MachinePci.Pci, U64, U64 -> Bool
+	bus_master = |pci, vendor, class| MachinePci.master_of(pci.devices, vendor, class, 0)
+
+	master_of : List(MachinePci.Device), U64, U64, U64 -> Bool
+	master_of = |ds, vendor, class, i|
+		match List.get(ds, i) {
+			Ok(d) => if d.vendor == vendor and d.class == class { U64.bitwise_and(d.command, 4) != 0 } else { MachinePci.master_of(ds, vendor, class, i + 1) }
+			Err(_) => False
+		}
+
 	# A write through a data port. A bridge takes a command and nothing else,
-	# since its bus numbers are fixed; an endpoint takes a command, or a BAR,
-	# where all ones asks the size and keeps the base.
+	# since its bus numbers are fixed; an endpoint takes a command, whose
+	# bus-master bit stays clear when it is locked, or a BAR, where all ones
+	# asks the size and keeps the base.
 	write : MachinePci.Pci, U64 -> MachinePci.Pci
 	write = |pci, v|
 		match MachinePci.target(pci) {
@@ -211,7 +236,8 @@ MachinePci :: [].{
 	written : MachinePci.Device, U64, U64 -> MachinePci.Device
 	written = |d, off, v|
 		if off == 4 {
-			{ ..d, command: U64.bitwise_and(v, 65535) }
+			cmd = U64.bitwise_and(v, 65535)
+			{ ..d, command: if d.bme_locked { U64.bitwise_and(cmd, 0xFFFB) } else { cmd } }
 		} else if d.header == 1 or off < 16 or off > 36 {
 			d
 		} else {

@@ -26,7 +26,7 @@ Model : { m : Machine.Machine, phase : Phase, found : List(Found) }
 new : List(U8) -> Box(Model)
 new = |image| {
 	drives = MachineDisk.attach([Attached(image), Absent])
-	m0 = Machine.make(MachineMem.new(U64.to_i64_wrap(List.len(image))), MachinePci.table(0, False), drives)
+	m0 = Machine.make(MachineMem.new(U64.to_i64_wrap(List.len(image))), MachinePci.table(0, False, NoNic), drives)
 	count = U64.to_str(MachineDisk.sector_count(drives))
 	Box.box({ m: Machine.print_line(m0, "machine: drive 0 holds ${count} sectors; scanning PCI bus 0"), phase: Scan(0), found: [] })
 }

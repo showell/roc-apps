@@ -4,8 +4,10 @@
 #
 # The devices are the ones codex-vm models for upstream's tests (essay
 # notes/codex-devices-in-roc.md): memory, PCI configuration space, the block
-# device, the keyboard, a console. The clock counts steps, not wall time, so a
-# run is reproducible.
+# device, Intel gigabit Ethernet, the HPET, the keyboard, a console. No clock
+# follows wall time, so a run is reproducible: the page counts steps, and the
+# HPET counts the machine's own clock, which device register accesses move
+# (`access_cost`).
 #
 # Codex emitted by rocemit calls the doors named for Codex builtins, which take
 # and answer Codex's Integer, and its opening boots the machine from the
@@ -19,6 +21,8 @@
 
 import MachineCaps
 import MachineDisk
+import MachineE1000
+import MachineHpet
 import MachineMem
 import MachinePci
 
@@ -36,24 +40,32 @@ Machine :: [].{
 		# Where the last block read landed in memory, and how long it is.
 		landed : I64,
 		landed_len : I64,
+		# The NIC, absent unless a flag puts it on the bus; the HPET; and the
+		# machine's clock, in the HPET's counter ticks.
+		e1000 : MachineE1000.E1000,
+		hpet : MachineHpet.Hpet,
+		clock : U64,
 	}
 
-	Flags : { bridge : Bool, deep : Bool, levels : U64, backward : Bool, disks : List(Str) }
+	Flags : { bridge : Bool, deep : Bool, levels : U64, backward : Bool, disks : List(Str), e1000 : MachineE1000.E1000, hpet : MachineHpet.Hpet }
 
 	# A batch run's machine, from codex-vm's command line and the effects the
-	# program's opening declares. The PCI bridge flags are modelled, and -disk
-	# and -disk2 name the files the drives are; any other flag names a device
-	# this machine does not have, and a verdict that depends on that device
-	# cannot be reproduced, so the run stops there. The opening's grant goes
+	# program's opening declares. The PCI bridge flags, the NIC's and the
+	# HPET's are modelled, and -disk and -disk2 name the files the drives are;
+	# any other flag names a device this machine does not have, and a verdict
+	# that depends on that device cannot be reproduced, so the run stops there.
+	# The opening's grant goes
 	# into the boot process's capability word, as x86's boot writes it. The
 	# memory's base moves with the argument count, as it does where rocemit
 	# threads Mem alone, to keep the program out of compile-time reach.
 	boot! : List(Str), List(Str) => Machine.Machine
 	boot! = |args, effects| {
-		f = Machine.flags(args, 0, { bridge: False, deep: False, levels: 0, backward: False, disks: ["", ""] })
+		f = Machine.flags(args, 0, { bridge: False, deep: False, levels: 0, backward: False, disks: ["", ""], e1000: MachineE1000.new, hpet: MachineHpet.new })
 		levels = if !f.bridge { 0 } else if f.levels != 0 { f.levels } else if f.deep { 2 } else { 1 }
 		mem = MachineMem.write(MachineMem.new(U64.to_i64_wrap(List.len(args))), MachineCaps.word_addr, MachineCaps.grant(effects), 8)
-		Machine.make(mem, MachinePci.table(levels, f.backward), MachineDisk.boot!(f.disks))
+		nic = if f.e1000.present { Nic(if f.e1000.i219 { 0x15B8 } else { 0x100E }, f.e1000.faults.bme_clear) } else { NoNic }
+		made = Machine.make(mem, MachinePci.table(levels, f.backward, nic), MachineDisk.boot!(f.disks))
+		{ ..made, e1000: if f.e1000.present { MachineE1000.power_on(f.e1000) } else { f.e1000 }, hpet: f.hpet }
 	}
 
 	# -pci-bridge is one level, -pci-bridge-deep two, -pci-bridge-levels N
@@ -77,7 +89,14 @@ Machine :: [].{
 					at = if a == "-disk" { 0 } else { 1 }
 					Machine.flags(args, i + 2, { ..f, disks: List.set(f.disks, at, path) ?? crash("machine: no such drive position") })
 				} else {
-					crash("machine: ${a} is not a codex-vm flag this machine models")
+					match MachineE1000.flag(f.e1000, a, List.get(args, i + 1) ?? "") {
+						Took(e, n) => Machine.flags(args, i + n, { ..f, e1000: e })
+						NotMine =>
+							match MachineHpet.flag(f.hpet, a) {
+								Took(h) => Machine.flags(args, i + 1, { ..f, hpet: h })
+								NotMine => crash("machine: ${a} is not a codex-vm flag this machine models")
+							}
+					}
 				}
 		}
 
@@ -92,6 +111,9 @@ Machine :: [].{
 		steps: 0,
 		landed: 0,
 		landed_len: 0,
+		e1000: MachineE1000.new,
+		hpet: MachineHpet.new,
+		clock: 0,
 	}
 
 	tick : Machine.Machine -> Machine.Machine
@@ -102,13 +124,73 @@ Machine :: [].{
 	# A Codex builtin with the machine threaded through: the machine first, and
 	# answered back beside the builtin's own answer, in Codex's Integer.
 
-	# `peek-byte` .. `peek-qword`: `width` bytes, little-endian.
+	# **THE MACHINE'S CLOCK MOVES WHEN THE PROGRAM TOUCHES A DEVICE REGISTER.**
+	# Each read or write in the NIC's or the HPET's window costs 100 µs, in the
+	# HPET's counter ticks; memory costs nothing. codex-vm's counter follows the
+	# host's clock, and the verdicts judge durations by bands the constant has
+	# to land in: e1000-tx-deadline wants two clock readings with nothing
+	# between them under 5 ms apart, and a million memory reads under 5 ms
+	# too, so a register access costs less than 1.6 ms and memory none; a
+	# no-link bring-up waits 8 s by the clock across batches of 4,096 STATUS
+	# reads, which 100 µs keeps to tens of thousands of reads.
+	access_cost : U64
+	access_cost = 1432
+
+	# `peek-byte` .. `peek-qword`: `width` bytes, little-endian. The NIC's
+	# register window, while the NIC is on the bus, and the HPET's answer
+	# instead of memory, 32 bits at a time; everything else is memory, as it
+	# is where codex-vm's guest memory is demand-paged.
 	load : Machine.Machine, I64, I64, I64 -> (Machine.Machine, I64)
-	load = |m, base, off, width| (m, U64.to_i64_wrap(MachineMem.read(m.mem, base + off, width - 1, 0)))
+	load = |m, base, off, width| {
+		a = base + off
+		if m.e1000.present and MachineE1000.claims(a) {
+			if width != 4 {
+				crash("machine: a ${I64.to_str(width)}-byte read of the e1000's registers, which this machine answers 32 bits at a time")
+			} else {
+				(e, mem, v) = MachineE1000.read(m.e1000, m.mem, I64.to_u64_wrap(a - MachineE1000.bar), Machine.nic_dma(m))
+				({ ..m, e1000: e, mem: mem, clock: m.clock + Machine.access_cost }, U64.to_i64_wrap(v))
+			}
+		} else if MachineHpet.claims(a) {
+			if width != 4 {
+				crash("machine: a ${I64.to_str(width)}-byte read of the HPET's registers, which this machine answers 32 bits at a time")
+			} else {
+				clock = m.clock + Machine.access_cost
+				({ ..m, clock: clock }, U64.to_i64_wrap(MachineHpet.read(m.hpet, clock, I64.to_u64_wrap(a - MachineHpet.base))))
+			}
+		} else {
+			(m, U64.to_i64_wrap(MachineMem.read(m.mem, a, width - 1, 0)))
+		}
+	}
 
 	# `poke-byte` .. `poke-qword` answer 0.
 	store : Machine.Machine, I64, I64, I64, I64 -> (Machine.Machine, I64)
-	store = |m, base, off, v, width| ({ ..m, mem: MachineMem.write(m.mem, base + off, I64.to_u64_wrap(v), width) }, 0)
+	store = |m, base, off, v, width| {
+		a = base + off
+		u = I64.to_u64_wrap(v)
+		if m.e1000.present and MachineE1000.claims(a) {
+			if width != 4 {
+				crash("machine: a ${I64.to_str(width)}-byte write to the e1000's registers, which this machine takes 32 bits at a time")
+			} else {
+				clock = m.clock + Machine.access_cost
+				(e, mem) = MachineE1000.write(m.e1000, m.mem, I64.to_u64_wrap(a - MachineE1000.bar), U64.bitwise_and(u, 0xFFFFFFFF), Machine.nic_dma(m), clock)
+				({ ..m, e1000: e, mem: mem, clock: clock }, 0)
+			}
+		} else if MachineHpet.claims(a) {
+			if width != 4 {
+				crash("machine: a ${I64.to_str(width)}-byte write to the HPET's registers, which this machine takes 32 bits at a time")
+			} else {
+				clock = m.clock + Machine.access_cost
+				({ ..m, clock: clock, hpet: MachineHpet.write(m.hpet, clock, I64.to_u64_wrap(a - MachineHpet.base), U64.bitwise_and(u, 0xFFFFFFFF)) }, 0)
+			}
+		} else {
+			({ ..m, mem: MachineMem.write(m.mem, a, u, width) }, 0)
+		}
+	}
+
+	# The NIC may touch memory unless -nic-bme-clear has left its bus-master
+	# bit clear.
+	nic_dma : Machine.Machine -> Bool
+	nic_dma = |m| !m.e1000.faults.bme_clear or MachinePci.bus_master(m.pci, 32902, 2)
 
 	alloc : Machine.Machine, I64 -> (Machine.Machine, I64)
 	alloc = |m, n| {

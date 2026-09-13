@@ -111,34 +111,34 @@ REFUSED dtls-openssl-fragments | `fe-carry-pass` writes its list parameter `o` a
 REFUSED dtls-random | `fe-carry-pass` writes its list parameter `o` and answers something else
 PASS dtls-record |
 PASS e1000-aneg-budget |
-CRASH e1000-asde-arms | machine: -e1000 is not a codex-vm flag this machine models
-CRASH e1000-asde-nolink | machine: -e1000 is not a codex-vm flag this machine models
-CRASH e1000-asde-speed | machine: -e1000 is not a codex-vm flag this machine models
-CRASH e1000-bringup | machine: -e1000-inject is not a codex-vm flag this machine models
-CRASH e1000-ctrl-ro | machine: -e1000-ctrl-ro is not a codex-vm flag this machine models
-CRASH e1000-lcd-reload | machine: -i219 is not a codex-vm flag this machine models
+PASS e1000-asde-arms |
+PASS e1000-asde-nolink |
+PASS e1000-asde-speed |
+PASS e1000-bringup |
+PASS e1000-ctrl-ro |
+PASS e1000-lcd-reload |
 PASS e1000-link-budget |
-CRASH e1000-link-deadline | machine: -e1000 is not a codex-vm flag this machine models
+PASS e1000-link-deadline |
 PASS e1000-match |
-CRASH e1000-mdio-slow | machine: -e1000-mdio-slow is not a codex-vm flag this machine models
-CRASH e1000-mdio-window | machine: -e1000-mdio-window is not a codex-vm flag this machine models
-CRASH e1000-pch-k1 | machine: -i219 is not a codex-vm flag this machine models
-CRASH e1000-pch-k1-off | machine: -i219 is not a codex-vm flag this machine models
-CRASH e1000-phy | machine: -e1000-phy-link is not a codex-vm flag this machine models
-CRASH e1000-phy-absent | machine: -e1000-no-phy is not a codex-vm flag this machine models
-CRASH e1000-reset-live | machine: -i219 is not a codex-vm flag this machine models
-CRASH e1000-reset-wedged | machine: -e1000-no-reset is not a codex-vm flag this machine models
-CRASH e1000-ring-wrap | machine: -e1000-inject is not a codex-vm flag this machine models
-CRASH e1000-rx-invisible | machine: -e1000-inject is not a codex-vm flag this machine models
-CRASH e1000-rx-invisible-off | machine: -e1000-inject is not a codex-vm flag this machine models
-CRASH e1000-swflag | machine: -i219-swflag is not a codex-vm flag this machine models
-CRASH e1000-swflag-k1 | machine: -i219-swflag is not a codex-vm flag this machine models
-CRASH e1000-swflag-mng | machine: -i219-mng-holds is not a codex-vm flag this machine models
-CRASH e1000-swflag-refused | machine: -i219-swflag is not a codex-vm flag this machine models
-CRASH e1000-swflag-strict | machine: -i219-extcnf-strict is not a codex-vm flag this machine models
-FAIL e1000-tx-deadline | output: < clocked ms      : out of band
-CRASH e1000-ulp-entry | machine: -i219-ulp-armed is not a codex-vm flag this machine models
-CRASH e1000-unresettable | machine: -e1000-inject is not a codex-vm flag this machine models
+PASS e1000-mdio-slow |
+PASS e1000-mdio-window |
+PASS e1000-pch-k1 |
+PASS e1000-pch-k1-off |
+PASS e1000-phy |
+PASS e1000-phy-absent |
+PASS e1000-reset-live |
+PASS e1000-reset-wedged |
+PASS e1000-ring-wrap |
+PASS e1000-rx-invisible |
+PASS e1000-rx-invisible-off |
+PASS e1000-swflag |
+PASS e1000-swflag-k1 |
+PASS e1000-swflag-mng |
+PASS e1000-swflag-refused |
+PASS e1000-swflag-strict |
+PASS e1000-tx-deadline |
+PASS e1000-ulp-entry |
+PASS e1000-unresettable |
 REFUSED ecdsa-cert | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED ecdsa-p256 | `cb-shl1-step` writes its list parameter `x` and answers something else
 REFUSED ecdsa-p384 | `cb-shl1-step` writes its list parameter `x` and answers something else
@@ -585,7 +585,7 @@ DIVERGES heap-scrub | measures Codex's bump pointer with __heap-save; Roc counts
 REFUSED hid-decode | builtin `__heap-advance`
 PASS history-test |
 REFUSED hpet-interrupt | builtin `read-mmio-32`
-CRASH i219-k1-mechanism | machine: -i219 is not a codex-vm flag this machine models
+PASS i219-k1-mechanism |
 REFUSED ident-letters | name `café` cannot be a Roc identifier
 REFUSED idm-key-tests | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED idm-read-line | `fe-carry-pass` writes its list parameter `o` and answers something else

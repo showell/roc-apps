@@ -27,6 +27,8 @@ Two programs drive it:
 | `roc/MachineCaps.roc` | the boot process's capability word: the grant x86's boot writes from the opening's effects, through `Capability.codex`'s table, which the block doors check |
 | `roc/MachineMem.roc` | the address space, a persistent trie (the module rocemit writes as `Mem` for units without devices) |
 | `roc/MachinePci.roc` | PCI configuration space as codex-vm models it: the 0xCF8 latch, the ten-device table with its bridge chain, command and BAR writes |
+| `roc/MachineE1000.roc` | Intel gigabit Ethernet as codex-vm models it: the register window at 0xFE400000 behind `peek-32`/`poke-32`, the PHY through MDIC, the I219's K1, ULP and MDIO semaphore, the rings in memory, and the fault flags (`-e1000*`, `-i219*`, `-nic-bme-clear`) |
+| `roc/MachineHpet.roc` | the HPET at 0xFED00000, counting the machine's own clock, which every device register access moves 100 µs (`Machine.access_cost`) |
 | `roc/MachineDisk.roc` | the modelled disk: the primary channel's master and slave, each an image or nothing, as codex-vm's IDE model answers: 255 from an empty position, zeros past the end, writes in an overlay of sectors |
 | `roc/MachineMedia.roc` | the images the modelled disk attaches: none here; the ladder writes one per unit from its `.disk` and `.disk2` |
 | `roc/MachineApp.roc` | the program the page runs: a PCI bus-0 scan, sector 0 into memory, a key echo |
