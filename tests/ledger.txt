@@ -28,11 +28,11 @@ REFUSED block-sector-count | builtin `block-sector-count` used as a value
 REFUSED block-select-drives | builtin `block-select`
 PASS bloom-spread |
 REFUSED board-types | builtin `read-mmio-32`
-REFUSED bounded-integer-ops | chapter `Bounded Integer Ops` is not a Roc module name
+PASS bounded-integer-ops |
 PASS bounded-sig-runtime |
 SKIP bounded-sig-static | expects a diagnostic
-REFUSED bounds-proof | chapter `Bounds Proof` is not a Roc module name
-REFUSED bounds-prover | builtin `negate`
+PASS bounds-proof |
+PASS bounds-prover |
 PASS bs3-smoke |
 SKIP builtin-narrow-proven | expects a diagnostic
 PASS call-clobber |
@@ -80,20 +80,20 @@ PASS crypto-test |
 PASS crypto-vectors |
 REFUSED cryptobig | `cb-shl1-step` writes its list parameter `x` and answers something else
 PASS ctor-narrow-warn |
-REFUSED db-csv-roundtrip | builtin `negate`
+PASS db-csv-roundtrip |
 REFUSED db-full-test | unit type `Timestamp`
 DIVERGES db-row-update | list-set-at mutates in place; Roc's List.set answers a new list
 REFUSED dce-reach | type error
 REFUSED deck-bracket-contract | builtin `__deck-set`
 REFUSED deck-cell-contract | builtin `__deck-set`
 REFUSED deck-record-contract | builtin `__deck-set`
-REFUSED deriving-eq-recursive | chapter `Deriving Eq Recursive` is not a Roc module name
-REFUSED desk-hole | builtin `port-out-32`
-REFUSED desk-hover | builtin `port-out-32`
-REFUSED desk-parse | builtin `port-out-32`
-REFUSED desk-reuse | builtin `port-out-32`
-REFUSED desk-root-guard | builtin `port-out-32`
-REFUSED desk-span | builtin `port-out-32`
+PASS deriving-eq-recursive |
+REFUSED desk-hole | 
+REFUSED desk-hover | 
+REFUSED desk-parse | 
+REFUSED desk-reuse | 
+REFUSED desk-root-guard | 
+REFUSED desk-span | 
 REFUSED device-buffer-alloc | builtin `gpu-mem-read`
 REFUSED dhcp-acquire | builtin `net-send-raw`
 REFUSED dhcp-acquire-e1000 | builtin `net-send-raw`
@@ -187,7 +187,7 @@ REFUSED esp32c6-drivers | builtin `read-mmio-32`
 PASS eventbus-test |
 PASS examples@eight-queens |
 PASS examples@missile-warning |
-REFUSED expr-calculator | chapter `Expr Calculator` is not a Roc module name
+PASS expr-calculator |
 FAIL factlog-layout | output: < text-cps=0 1 0 len=3
 PASS factorial |
 REFUSED fat16-alloc | builtin `block-read-sector`
@@ -270,13 +270,13 @@ PASS forewords@encode-crc32 |
 PASS forewords@encode-csv |
 REFUSED forewords@encode-flac | unit type `Duration`
 PASS forewords@encode-gif |
-REFUSED forewords@encode-gltf-bounds | builtin `text-contains`
+PASS forewords@encode-gltf-bounds |
 PASS forewords@encode-gray-code |
 PASS forewords@encode-hex |
 PASS forewords@encode-ini |
 PASS forewords@encode-jpeg |
 PASS forewords@encode-json |
-REFUSED forewords@encode-json-escapes | builtin `print-line`
+FAIL forewords@encode-json-escapes | output: < u00C0  len=3 units= 15 0 32
 PASS forewords@encode-json-numbers |
 PASS forewords@encode-lwm2m |
 PASS forewords@encode-markdown |
@@ -290,13 +290,13 @@ PASS forewords@encode-protobuf |
 PASS forewords@encode-qoi |
 PASS forewords@encode-smtp |
 PASS forewords@encode-tiff |
-REFUSED forewords@encode-toml | builtin `text-starts-with`
+PASS forewords@encode-toml |
 PASS forewords@encode-uri |
 PASS forewords@encode-uuid |
 PASS forewords@encode-video-codec |
 REFUSED forewords@encode-wav | unit type `Duration`
 PASS forewords@encode-web-socket |
-REFUSED forewords@encode-yaml | builtin `text-starts-with`
+PASS forewords@encode-yaml |
 PASS forewords@engine-ability-system |
 PASS forewords@engine-anim-blend |
 PASS forewords@engine-asset-table |
@@ -543,7 +543,7 @@ REFUSED fs-deny-runtime | builtin `block-read-sector`
 REFUSED fs-handler-install | builtin `block-read-sector`
 REFUSED fs-layer | builtin `block-read-sector`
 REFUSED fs-servicer | builtin `block-read-sector`
-REFUSED fs-spawn-inherits | builtin `block-read-sector`
+SKIP fs-spawn-inherits | child reaches the write path and faults inside it: the trail measures verdict 0 with alive 71, write
 PASS ga-core |
 PASS geometry-test |
 PASS goose-encode |
@@ -574,7 +574,7 @@ REFUSED hal-i2c-adc-linear | builtin `read-mmio-32`
 REFUSED hal-peripheral-linear | builtin `read-mmio-32`
 REFUSED hal-spi-linear | builtin `read-mmio-32`
 REFUSED hal-tuple-linear | builtin `read-mmio-32`
-REFUSED hamt-test | chapter `Hamt Test` is not a Roc module name
+PASS hamt-test |
 REFUSED handler-dotted-discharge | handle
 REFUSED handler-nested-ops | handle
 REFUSED handler-smoke | type (effectful (effs "Config") (scopes "") int-default)
@@ -593,7 +593,7 @@ REFUSED idm-salt-iv-distinct | `fe-carry-pass` writes its list parameter `o` and
 REFUSED iec104-encode | type real-approx
 PASS ieee802154-encode |
 PASS if-in-arith |
-REFUSED if-let-join | chapter `If Let Join` is not a Roc module name
+PASS if-let-join |
 PASS image-codec-test |
 PASS imap-wire |
 REFUSED img-longname | builtin `block-read-sector`
@@ -608,7 +608,7 @@ PASS inline-cost-based |
 PASS inline-single-caller |
 REFUSED input-metal | builtin `port-in-byte`
 PASS int-literal-underscore |
-REFUSED interval-exhaustive | chapter `Interval Exhaustive` is not a Roc module name
+PASS interval-exhaustive |
 PASS ip-checksum-odd |
 REFUSED ir-check-clean | `__lam_1` applied to 1 of 2 arguments
 PASS iterate-test |
@@ -640,10 +640,10 @@ REFUSED lib@brotli-dict-test | builtin `__list-with-capacity`
 REFUSED lib@brotli-test | `lz77-count-distinct` writes its list parameter `seen` and answers something else
 PASS lib@canvas-viewport |
 PASS lib@cbor-test |
-REFUSED lib@data-table-rows | builtin `negate`
+REFUSED lib@data-table-rows | builtin `uefi-read-key-ex` used as a value
 PASS lib@decimal-test |
 REFUSED lib@deflate-dynamic-test | `lz77-count-distinct` writes its list parameter `seen` and answers something else
-REFUSED lib@detail-pane | builtin `negate`
+REFUSED lib@detail-pane | builtin `uefi-read-key-ex` used as a value
 PASS lib@device-math |
 REFUSED lib@dropdown-options | builtin `uefi-read-key-ex` used as a value
 PASS lib@flex-layout-geometry |
@@ -654,7 +654,7 @@ REFUSED lib@linalg-test | `__lam_0` applied to 1 of 2 arguments
 PASS lib@locale-test |
 PASS lib@loss-test |
 PASS lib@lz4-test |
-REFUSED lib@markdown-ordered | builtin `negate`
+PASS lib@markdown-ordered |
 PASS lib@msgpack-test |
 PASS lib@number-theory-test |
 PASS lib@numeric-test |
@@ -667,11 +667,11 @@ PASS lib@status-badge-priority |
 PASS lib@text-overflow |
 PASS lib@text-overflow-render |
 REFUSED lib@text-trim-test | field-store
-REFUSED lib@toml-test | builtin `text-starts-with`
+PASS lib@toml-test |
 REFUSED lib@tree-view-nav | builtin `uefi-read-key-ex` used as a value
 FAIL lib@utf8-cce-test | output: < utf8-3byte-one-char=fail
 REFUSED lib@widget-tone | builtin `port-out-32`
-REFUSED lib@yaml-test | builtin `text-starts-with`
+PASS lib@yaml-test |
 PASS linear-branch |
 REFUSED linear-capture-once | `__lam_0` applied to 1 of 2 arguments
 PASS linear-mint-container |
@@ -687,13 +687,13 @@ PASS lir-load-cross |
 PASS lir-nullary-cross |
 PASS lir-selector-smoke |
 PASS lir-test-cross |
-REFUSED list-comprehension-copy | chapter `List Comprehension Copy` is not a Roc module name
+PASS list-comprehension-copy |
 REFUSED list-cons-tail | binary cons-list
 REFUSED list-induction | type proof
-REFUSED list-literal-o1 | chapter `List O1 Probe` is not a Roc module name
+PASS list-literal-o1 |
 PASS list-pattern |
 PASS list-tail-empty |
-REFUSED list-test | chapter `List Test` is not a Roc module name
+PASS list-test |
 REFUSED list-view-probe | builtin `__list-len`
 PASS literal-subpattern |
 SKIP local-narrow-proven | expects a diagnostic
@@ -708,7 +708,7 @@ REFUSED matrix3-test | `__lam_0` applied to 1 of 2 arguments
 PASS mbus-encode |
 REFUSED media-codec-test | unit type `Duration`
 PASS melsec-encode |
-REFUSED mini-bootstrap | chapter `Mini Bootstrap Test` is not a Roc module name
+PASS mini-bootstrap |
 PASS mix-bits |
 PASS mod-bound-return |
 PASS modbus-encode |
@@ -742,14 +742,14 @@ REFUSED nvme-encode | builtin `port-out-32`
 PASS oauth-island |
 REFUSED occurrence-check | builtin `port-in-byte`
 PASS opcua-encode |
-REFUSED ops@bounded-modes-smoke | chapter `Bounded Modes Smoke` is not a Roc module name
+PASS ops@bounded-modes-smoke |
 PASS ops@builtin-name-shadow |
 PASS ops@cap-word-64 |
-REFUSED ops@cce-bounds-smoke | chapter `Cce Bounds Smoke` is not a Roc module name
-REFUSED ops@cce-builtin-bounds | chapter `Cce Builtin Bounds` is not a Roc module name
+PASS ops@cce-bounds-smoke |
+PASS ops@cce-builtin-bounds |
 PASS ops@char-at-bounds |
-REFUSED ops@char-encode-bands | builtin `print-line`
-REFUSED ops@closure-under-apply | chapter `Closure Under Apply` is not a Roc module name
+FAIL ops@char-encode-bands | output: < 128 len=1 decoded=0 LEN-BAD RT-BAD
+REFUSED ops@closure-under-apply | `add3` applied to 1 of 3 arguments
 REFUSED ops@collate-order | `sort-run` writes its list parameter `ks` and answers something else
 PASS ops@div-negative-pow2 |
 PASS ops@int-add-wrapping |
@@ -762,7 +762,7 @@ REFUSED ops@list-equality | constructor `Nothing-Held` is not a Roc tag name
 DIVERGES ops@list-growth | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
 PASS ops@list-index-bounds |
 PASS ops@list-view-bounds |
-REFUSED ops@match-shadowed-arm | builtin `print-line`
+PASS ops@match-shadowed-arm |
 PASS ops@native-nested-pattern |
 PASS ops@native-nested-tags |
 REFUSED ops@real-approx | type real-approx
@@ -786,20 +786,20 @@ REFUSED ops@real-trapping | binary add-real-trapping
 REFUSED ops@record-closure-field-poly | `__lam_0` applied to 1 of 2 arguments
 PASS ops@record-equality |
 REFUSED ops@record-equality-vector | CODEGEN-HALTED: 3 error(s); no IR emitted; first CDX3008 Undefined type name: SizedVec
-REFUSED ops@saturated-call-returning-function | chapter `Saturated Call Returning Function` is not a Roc module name
+REFUSED ops@saturated-call-returning-function | `add3` applied to 1 of 3 arguments
 REFUSED ops@section-title-keywords | type error
 PASS ops@substring-bounds |
 PASS ops@text-order-allowed |
-REFUSED ops@text-to-unicode-bytes-tier0 | chapter `Text To Unicode Bytes Tier Zero` is not a Roc module name
-REFUSED ops@tier0-cyrillic-print | chapter `Tier Zero Cyrillic Print` is not a Roc module name
-REFUSED ops@unicode-bytes-roundtrip | chapter `Unicode Bytes Roundtrip` is not a Roc module name
+PASS ops@text-to-unicode-bytes-tier0 |
+PASS ops@tier0-cyrillic-print |
+FAIL ops@unicode-bytes-roundtrip | output: < 65 units=[ 75 ] n=1 back=41 cnt=1
 REFUSED ops@unit-pattern-lit | unit type `Name`
 REFUSED ops@unit-real-arith | unit type `Metre`
 REFUSED ops@unit-real-compare | unit type `Metre`
 REFUSED ops@unit-show | unit type `Name`
-REFUSED ops@unused-let-alias-discard | chapter `Unused Let Alias Discard` is not a Roc module name
+PASS ops@unused-let-alias-discard |
 REFUSED ops@variant-address | builtin `address-of`
-REFUSED ops@vec-lanes-smoke | chapter `Vec Lanes Smoke` is not a Roc module name
+REFUSED ops@vec-lanes-smoke | type (vector 2 real)
 REFUSED ops@vec-sized | CODEGEN-HALTED: 3 error(s); no IR emitted; first CDX3008 Undefined type name: SizedVec
 REFUSED osc-noise | unit type `Duration`
 REFUSED ota-gate-block | unit type `Duration`
@@ -808,7 +808,7 @@ REFUSED ota-state-machine | unit type `Duration`
 REFUSED ota-update | unit type `Duration`
 REFUSED par-map | builtin `fork`
 REFUSED par-nested | builtin `fork`
-REFUSED parse-test | builtin `negate`
+PASS parse-test |
 PASS particle-spread |
 PASS path-real |
 REFUSED pci-bridge-backward | builtin `port-out-32`
@@ -839,11 +839,11 @@ PASS punctual-fastmath |
 PASS punctual-iot |
 PASS punctual-quire |
 PASS punctual-smoke |
-REFUSED qemu-rng | builtin `read-mmio-32`
-REFUSED qemu-rng-absent | builtin `read-mmio-32`
+SKIP qemu-rng | cross bed only: reads QEMU virt's virtio-mmio slots, which codex-vm does not model; the arm64 lane r
+SKIP qemu-rng-absent | cross bed only: the same program as qemu-rng with NO device attached (an empty .qemudev), so rng-ope
 REFUSED qemu-virt-board | builtin `read-mmio-32`
 REFUSED qr-encode | builtin `port-out-32`
-REFUSED queue-test | chapter `Queue Test` is not a Roc module name
+PASS queue-test |
 REFUSED quotes-gate | CODEGEN-HALTED: 1 error(s); no IR emitted; first CDX1000 Expected token kind mismatch, got 'WORK'
 REFUSED quotes-parse | CODEGEN-HALTED: 1 error(s); no IR emitted; first CDX1000 Expected token kind mismatch, got 'WORK'
 SKIP range-let-carry | expects a diagnostic
@@ -854,7 +854,7 @@ REFUSED real-cert | `fe-carry-pass` writes its list parameter `o` and answers so
 PASS real-literal-boundary |
 DIVERGES real-show-wide | the verdict pins Codex's own printer: it reads 12345678901234567.0 as ...566, we print the double
 REFUSED record-smoke | `__lam_0` applied to 2 of 3 arguments
-REFUSED recursive-eq | chapter `Recursive Eq` is not a Roc module name
+PASS recursive-eq |
 PASS reservoir-uniform |
 SKIP return-narrow-proven | expects a diagnostic
 PASS revised-narrow |
@@ -898,13 +898,13 @@ PASS simplify-check |
 PASS sixlowpan-encode |
 REFUSED smp-affinity | builtin `process-get-pid` used as a value
 REFUSED smp-ap-port-io | builtin `port-in-byte`
-REFUSED smp-arm64-boot | builtin `print-line`
+SKIP smp-arm64-boot | cross-arch (ARM64) SMP boot test; runs only under build/test-cross-smp.ps1 (QEMU -smp 2), never the 
 REFUSED smp-cores | builtin `atomic-load`
 REFUSED smp-dispatch | builtin `process-spawn`
 REFUSED smp-halt | builtin `process-spawn`
 REFUSED smp-preempt | builtin `process-spawn`
 REFUSED smp-proc0-pinned | builtin `atomic-load`
-REFUSED smp-riscv-boot | builtin `print-line`
+SKIP smp-riscv-boot | cross-arch (RISC-V) SMP boot test; runs only under build/test-cross-smp.ps1 (QEMU -smp 2), never the
 REFUSED smp-tss | builtin `atomic-load`
 PASS smtp-md-test |
 PASS sntp-encode |
@@ -923,7 +923,7 @@ REFUSED stringbuilder-independence | field-store
 REFUSED stringbuilder-test | field-store
 PASS stringutils-test |
 REFUSED suggested-width | builtin `suggested-vector-width`
-REFUSED sum-field-eq | builtin `print-line`
+PASS sum-field-eq |
 REFUSED synth-test | unit type `Duration`
 REFUSED tag-equal | builtin `tag-equal`
 PASS tco-bitop-loop |
@@ -938,11 +938,11 @@ PASS tcp-seqwrap |
 PASS text-append-alias |
 PASS text-eq-branches |
 PASS text-fold-indexed |
-REFUSED text-helper-native | builtin `text-starts-with`
-REFUSED text-helper-spec | builtin `negate`
+REFUSED text-helper-native | builtin `text-replace`
+PASS text-helper-spec |
 REFUSED textfield-typing | builtin `uefi-read-key-ex` used as a value
 PASS textscan-test |
-REFUSED textsearch-test | chapter `TextSearch Test` is not a Roc module name
+PASS textsearch-test |
 PASS thumb2-encoder |
 REFUSED timer-registers | builtin `read-mmio-32`
 REFUSED tls-cert | `fe-carry-pass` writes its list parameter `o` and answers something else
@@ -961,7 +961,7 @@ PASS ttf-debug |
 PASS ttt-perfect |
 PASS tuple-syntax |
 PASS tvar-in-declared-type |
-REFUSED type-checker-test | chapter `Type Checker Smoke Test` is not a Roc module name
+PASS type-checker-test |
 REFUSED type-name-existence | a type applied to a non-name
 REFUSED typeclass-compound-head | builtin `to-text`
 REFUSED typeclass-poly | a call whose head is not a name
@@ -981,13 +981,13 @@ PASS ui-scroll-test |
 PASS ui-sound-test |
 PASS ui-surface-test |
 PASS ui-theme-test |
-REFUSED ui@data-table-fit | builtin `negate`
-REFUSED ui@data-table-hit | builtin `negate`
-REFUSED ui@data-table-width | builtin `negate`
+REFUSED ui@data-table-fit | builtin `uefi-read-key-ex` used as a value
+REFUSED ui@data-table-hit | builtin `uefi-read-key-ex` used as a value
+REFUSED ui@data-table-width | builtin `uefi-read-key-ex` used as a value
 REFUSED ui@fixed-row | builtin `uefi-read-key-ex` used as a value
 PASS ui@theme-ink-on |
 PASS ui@vector-raster |
-REFUSED ui@widget-panel-min | builtin `negate`
+REFUSED ui@widget-panel-min | builtin `uefi-read-key-ex` used as a value
 REFUSED unit-family | unit type `Length`
 REFUSED unit-family-mixed | unit type `Length`
 REFUSED unit-smoke | unit type `Second`
@@ -995,7 +995,7 @@ REFUSED units-foreword | unit type `Duration`
 PASS uri-encode |
 PASS usb-desc-guard |
 REFUSED usb-test | builtin `port-out-32`
-REFUSED validation-rules | builtin `text-contains`
+FAIL validation-rules | output: < alpha-scripts: accented=ok cyrillic=ok greek=ERR punct=ERR
 REFUSED value-eq | type (propeq (ctd "xs" (args)) (ctd "xs" (args)))
 REFUSED vbe-mode-set | builtin `port-out-16`
 REFUSED vec-arith-hazards | type (vector 2 real)
@@ -1025,7 +1025,7 @@ PASS when-arm-tail-call |
 PASS when-bool-cross |
 PASS when-bool-pattern |
 PASS when-generic-field |
-REFUSED with-timeout-test | chapter `With-Timeout Test` is not a Roc module name
+REFUSED with-timeout-test | with-timeout
 REFUSED workflow-parse-int | unit type `Timestamp`
 REFUSED x509-chain | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED x509-parse | `fe-carry-pass` writes its list parameter `o` and answers something else

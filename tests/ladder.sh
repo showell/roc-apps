@@ -85,6 +85,9 @@ one() {
     mkdir -p "$d"
     src="$SRC/$(echo "$n" | tr '@' '/')"
     if [ -f "$src.diag" ]; then echo "SKIP $n | expects a diagnostic" > "$d/verdict"; return; fi
+    # A .skip is upstream's claim that its own battery cannot run the test
+    # (a cross-architecture boot, say); its first line is the reason.
+    if [ -f "$src.skip" ]; then echo "SKIP $n | $(head -1 "$src.skip" | cut -c1-100)" > "$d/verdict"; return; fi
     why="$(diverges "$n")"
     if [ -n "$why" ]; then echo "DIVERGES $n | $why" > "$d/verdict"; return; fi
     # rocemit prints the app's name and a digest of everything it wrote,
