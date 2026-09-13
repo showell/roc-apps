@@ -1564,6 +1564,11 @@ Machine :: [].{
 		bad = if ecma and line_fault.why == "" { Program.check(src) } else { line_fault }
 		pg = Parse.load(if bad.why != "" { "" } else { src }, ecma)
 		m = if bad.why != "" { Machine.refuse(bad) } else { Machine.batch(pg, Machine.machine_state_at_next_effect(pg, Machine.declared(pg, Machine.new(inp, seed))), 10) }
+		if m.waiting and !ecma {
+			# **A MICROCOMPUTER'S BATCH RUN ENDS AS basic101's DOES** when its
+			# replies run out: the games' captures are basic101's output.
+			Str.concat(Machine.transcript(m), Str.concat(Str.concat("\nError on line ", I64.to_str(Machine.line_of(pg, m.pc))), ": No more input\n"))
+		} else {
 		Machine.transcript(
 			if m.waiting {
 				{ ..m, done: True, gap: True, err: "Out of input" }
@@ -1573,6 +1578,20 @@ Machine :: [].{
 				m
 			},
 		)
+		}
+	}
+
+	# The line number of the statement at `pc`: the last line whose first
+	# statement is at or before it.
+	line_of : Parse.Program, U64 -> I64
+	line_of = |pg, pc| {
+		var $k = 0
+		var $i = 0
+		for first in pg.firsts {
+			if first <= pc { $k = $i } else { {} }
+			$i = $i + 1
+		}
+		List.get(pg.lines, $k) ?? 0
 	}
 
 	# **A REPORTED EXCEPTION IS NOT A HALT**; what stops gets its own marker.
