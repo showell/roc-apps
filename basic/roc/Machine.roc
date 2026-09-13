@@ -223,6 +223,55 @@ Machine :: [].{
 		Str.concat(Str.concat(sign, Machine.fmt_mag(F64.abs(x))), " ")
 	}
 
+	# What PRINT shows for a value: a number in its dialect's format.
+	shown : Parse.Program, Val -> Str
+	shown = |pg, v| match v {
+		N(x) => if pg.ecma { Machine.fmt_num(x) } else { Machine.fmt_g7(x) }
+		S(t) => t
+	}
+
+	# **A MICROCOMPUTER PRINTS SEVEN DIGITS.** The games' captures are the
+	# expected output of basic101, a BASIC-80 interpreter: an integer prints
+	# its digits, and any other number C's `%.7g` -- seven significant digits,
+	# a zero before the point below one, an exponent below 1e-4 and from 1e7 --
+	# with a space for the sign before it and a space after.
+	fmt_g7 : F64 -> Str
+	fmt_g7 = |x| {
+		sign = if x < 0.0 { "-" } else { " " }
+		a = F64.abs(x)
+		mag =
+			if !(a <= Machine.huge) {
+				"INF"
+			} else if a == Machine.floor(a) and a < 9.0e18 {
+				I64.to_str(F64.to_i64_wrap(a))
+			} else {
+				Machine.g7(a)
+			}
+		Str.concat(Str.concat(sign, mag), " ")
+	}
+
+	g7 : F64 -> Str
+	g7 = |a| {
+		e0 = Machine.normal(a, 0).e
+		scaled = if e0 >= 0 { a / F64.pow(10.0, I64.to_f64(e0)) } else { a * F64.pow(10.0, I64.to_f64(0 - e0)) }
+		d0 = F64.to_i64_wrap(Machine.floor(scaled * 1000000.0 + 0.5))
+		r = if d0 >= 10000000 { { d: 1000000, e: e0 + 1 } } else { { d: d0, e: e0 } }
+		ds = I64.to_str(r.d)
+		if r.e < -4 or r.e >= 7 {
+			frac = Machine.no_zeros(Machine.drop(ds, 1))
+			mant = if frac == "" { Machine.take(ds, 1) } else { Str.concat(Str.concat(Machine.take(ds, 1), "."), frac) }
+			power = I64.abs(r.e)
+			digits = if power < 10 { Str.concat("0", I64.to_str(power)) } else { I64.to_str(power) }
+			Str.concat(Str.concat(mant, if r.e < 0 { "e-" } else { "e+" }), digits)
+		} else if r.e >= 0 {
+			whole = Machine.take(ds, I64.to_u64_wrap(r.e + 1))
+			frac = Machine.no_zeros(Machine.drop(ds, I64.to_u64_wrap(r.e + 1)))
+			if frac == "" { whole } else { Str.concat(Str.concat(whole, "."), frac) }
+		} else {
+			Str.concat(Str.concat("0.", Str.repeat("0", I64.to_u64_wrap(0 - r.e - 1))), Machine.no_zeros(ds))
+		}
+	}
+
 	fmt_mag : F64 -> Str
 	fmt_mag = |a|
 		if a == 0.0 {
@@ -729,7 +778,7 @@ Machine :: [].{
 					}
 					Show(e) => {
 						r = Machine.eval(pg, m, [], $fx, e)
-						t = Machine.str_of(r.v)
+						t = Machine.shown(pg, r.v)
 						c = Machine.col_after_text(r.fx.said, $col)
 						wrapped = w > 0 and c > 0 and c + U64.to_i64_wrap(Str.count_utf8_bytes(t)) > w
 						{ said: r.fx.said, t: if Machine.stopped(r.fx) { "" } else if wrapped { Str.concat("\n", t) } else { t }, fx: r.fx }
@@ -955,18 +1004,23 @@ Machine :: [].{
 		l = if Machine.stopped(f.fx) { f } else { Machine.eval(pg, m, [], f.fx, lim) }
 		s = if Machine.stopped(l.fx) { l } else { Machine.eval(pg, m, [], l.fx, st) }
 		x = Machine.num_of(f.v)
-		frame = { v: v, limit: Machine.num_of(l.v), step: Machine.num_of(s.v), after: m.pc + 1 }
+		limit = Machine.num_of(l.v)
+		step = Machine.num_of(s.v)
 		if Machine.plain(m, s.fx) {
-			Machine.enter_for(pg, m, frame, x)
+			Machine.enter_for(pg, m, v, limit, step, x)
 		} else {
 			d = Machine.settle(m, s.fx)
-			if d.done { d } else { Machine.enter_for(pg, d, frame, x) }
+			if d.done { d } else { Machine.enter_for(pg, d, v, limit, step, x) }
 		}
 	}
 
 	# A loop whose body must not run lands past the NEXT that closes it.
-	enter_for : Parse.Program, M, Frame, F64 -> M
-	enter_for = |pg, m, f, x| {
+	# **A HELPER GIVEN THE MACHINE IS NOT GIVEN WHAT WAS READ FROM IT.** The
+	# statement after the FOR is read here, from the machine itself: passed
+	# in beside it, it made every store in here copy (findings/helper-arg-copy).
+	enter_for : Parse.Program, M, U64, F64, F64, F64 -> M
+	enter_for = |pg, m, v, limit, step, x| {
+		f = { v: v, limit: limit, step: step, after: m.pc + 1 }
 		keep = Machine.outside(m.loops, m.ldepth, f.after)
 		if (f.step >= 0.0 and x > f.limit) or (f.step < 0.0 and x < f.limit) {
 			skip = List.get(pg.skips, m.pc) ?? Parse.none

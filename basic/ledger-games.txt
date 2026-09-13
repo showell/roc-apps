@@ -53,13 +53,13 @@ FAIL horsrace | <  1                           1             8.6 :1
 FAIL hurkle | < GO WEST
 FAIL kinema | < A BALL IS THROWN UPWARDS AT 19 METERS PER SECOND.
 FAIL king | < YOU NOW HAVE  59913  RALLODS IN THE TREASURY.
-FAIL lem | <   0        364800      -19283024      0           5301.64    750 
+FAIL lem | < *** UNSUPPORTED: Out of input
 FAIL letter | < TOO HIGH.  TRY A LOWER LETTER.
 FAIL life | > ?  **  *
 FAIL life2 | > Error on line 575: Undefined line number 800
 FAIL litquiz | > Break in line 96
 FAIL love | <  1  2  3  4  5  6  7  8  9  10  11  12  13  14  15  16  17  18  19  20  21  22  23  24  
-FAIL lunar | <  60            59  1656      3410.87       14500        ? 100
+FAIL lunar | < *** UNSUPPORTED: Out of input
 FAIL mastrmnd | > YOU HAVE  0  BLACKS AND  0  WHITES.
 FAIL mathdice | < I *   I
 FAIL mugwump | < YOU ARE 8 UNITS FROM MUGWUMP 1 
@@ -68,13 +68,13 @@ FAIL nicoma | < *** UNSUPPORTED: Out of input
 FAIL nim | < 
 FAIL number | < YOU HAVE 90 POINTS.
 FAIL onecheck | < *** UNSUPPORTED: Out of input
-FAIL orbit | < YOUR PHOTON BOMB EXPLODED 500.341 *10^2 MILES FROM THE
+FAIL orbit | < YOUR PHOTON BOMB EXPLODED 500.3413 *10^2 MILES FROM THE
 FAIL pizza | < 4 4      P 13      P 14      P 15      P 16      4 4 
 FAIL poetry | > MIDNIGHT DREARY
 FAIL poker | <  1 --   8  OF HEARTS         2 --   7  OF HEARTS        
 FAIL queen | > Break in line 4060
 FAIL reverse | <  5  6  4  8  1  2  7  3  9 
-FAIL rocket | < TOUCHDOWN AT 16.8636 SECONDS.
+PASS rocket |
 FAIL rocksp | > WOW!  I WIN!!!
 FAIL roulette | > NUMBER 1 ? 45,10
 FAIL rusrou | < - CLICK -
@@ -88,7 +88,7 @@ FAIL stock | < INT. BALLISTIC MISSILES       IBM          102.25
 FAIL superstartrek | < *** UNSUPPORTED: Expected BASE
 PASS superstartrekins |
 FAIL synonym | <      WHAT IS A SYNONYM OF STANDSTILL 1 ? DWELLING
-FAIL target | < RADIANS FROM X AXIS = 2.6591    FROM Z AXIS = 3.2007 
+FAIL target | < RADIANS FROM X AXIS = 2.659099    FROM Z AXIS = 3.200699 
 FAIL tictac1 | < *** UNSUPPORTED: Out of input
 FAIL tictac2 | <  X 
 PASS towers |
