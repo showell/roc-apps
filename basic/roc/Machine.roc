@@ -851,6 +851,10 @@ Machine :: [].{
 	plain : M, Fx -> Bool
 	plain = |m, fx| fx.said == "" and fx.stop == "" and List.is_empty(fx.made) and fx.seed == m.seed and !fx.drew
 
+	# Nothing to apply but random numbers drawn: no report, no stop, no array.
+	quiet : Fx -> Bool
+	quiet = |fx| fx.said == "" and fx.stop == "" and List.is_empty(fx.made)
+
 	settle : M, Fx -> M
 	settle = |m, fx| {
 		shown = Machine.emit(m, fx.said)
@@ -1183,15 +1187,29 @@ Machine :: [].{
 	do_set_num : Parse.Program, M, U64, Parse.Expr -> M
 	do_set_num = |pg, m, slot, e| {
 		r = Machine.eval(pg, m, [], Machine.fresh(m), e)
-		d = Machine.settle(m, r.fx)
-		if d.done { d } else { { ..d, nums: Vec.set(d.nums, slot, Machine.num_of(r.v)), pc: d.pc + 1 } }
+		v = Machine.num_of(r.v)
+		if Machine.quiet(r.fx) and !r.fx.drew {
+			{ ..m, nums: Vec.set(m.nums, slot, v), seed: r.fx.seed, pc: m.pc + 1 }
+		} else if Machine.quiet(r.fx) {
+			{ ..m, nums: Vec.set(m.nums, slot, v), seed: r.fx.seed, mt: r.fx.mt, mtat: r.fx.mtat, rlast: r.fx.rlast, pc: m.pc + 1 }
+		} else {
+			d = Machine.settle(m, r.fx)
+			if d.done { d } else { { ..d, nums: Vec.set(d.nums, slot, v), pc: d.pc + 1 } }
+		}
 	}
 
 	do_set_str : Parse.Program, M, U64, Parse.Expr -> M
 	do_set_str = |pg, m, slot, e| {
 		r = Machine.eval(pg, m, [], Machine.fresh(m), e)
-		d = Machine.settle(m, r.fx)
-		if d.done { d } else { { ..d, strs: Vec.set(d.strs, slot, Machine.str_of(r.v)), pc: d.pc + 1 } }
+		v = Machine.str_of(r.v)
+		if Machine.quiet(r.fx) and !r.fx.drew {
+			{ ..m, strs: Vec.set(m.strs, slot, v), seed: r.fx.seed, pc: m.pc + 1 }
+		} else if Machine.quiet(r.fx) {
+			{ ..m, strs: Vec.set(m.strs, slot, v), seed: r.fx.seed, mt: r.fx.mt, mtat: r.fx.mtat, rlast: r.fx.rlast, pc: m.pc + 1 }
+		} else {
+			d = Machine.settle(m, r.fx)
+			if d.done { d } else { { ..d, strs: Vec.set(d.strs, slot, v), pc: d.pc + 1 } }
+		}
 	}
 
 	do_set_elem : Parse.Program, M, U64, Parse.Expr, Parse.Expr, Bool, Parse.Expr -> M
@@ -1221,15 +1239,25 @@ Machine :: [].{
 	do_if_go : Parse.Program, M, Parse.Expr, U8, Parse.Expr, Parse.Jump, U64 -> M
 	do_if_go = |pg, m, l, op, r, j, line| {
 		c = Machine.condition(pg, m, l, op, r)
-		d = Machine.settle(m, c.fx)
-		if d.done { d } else if !c.yes { { ..d, pc: Machine.next_line(pg, d, line) } } else { Machine.go(d, Machine.landing(pg, d, j), Parse.none) }
+		if Machine.plain(m, c.fx) and c.yes {
+			Machine.go(m, Machine.landing(pg, m, j), Parse.none)
+		} else if Machine.plain(m, c.fx) {
+			{ ..m, pc: List.get(pg.firsts, line + 1) ?? List.len(pg.prog) }
+		} else {
+			d = Machine.settle(m, c.fx)
+			if d.done { d } else if !c.yes { { ..d, pc: Machine.next_line(pg, d, line) } } else { Machine.go(d, Machine.landing(pg, d, j), Parse.none) }
+		}
 	}
 
 	do_if_then : Parse.Program, M, Parse.Expr, U8, Parse.Expr, U64 -> M
 	do_if_then = |pg, m, l, op, r, line| {
 		c = Machine.condition(pg, m, l, op, r)
-		d = Machine.settle(m, c.fx)
-		if d.done { d } else if !c.yes { { ..d, pc: Machine.next_line(pg, d, line) } } else { Machine.next(d) }
+		if Machine.plain(m, c.fx) {
+			{ ..m, pc: if c.yes { m.pc + 1 } else { List.get(pg.firsts, line + 1) ?? List.len(pg.prog) } }
+		} else {
+			d = Machine.settle(m, c.fx)
+			if d.done { d } else if !c.yes { { ..d, pc: Machine.next_line(pg, d, line) } } else { Machine.next(d) }
+		}
 	}
 
 	do_restore : M -> M
