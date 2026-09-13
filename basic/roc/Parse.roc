@@ -109,6 +109,9 @@ Parse :: [].{
 	# A user function by letter. `known` when a DEF for it is in the listing.
 	FnDef : { known : Bool, param : Bool, pslot : U64, body : Expr }
 
+	# **EVERYTHING THAT DOES NOT CHANGE ONCE THE LISTING IS READ**: the
+	# statements and their tables, the DATA, the dialect, and how the run is
+	# driven. The machine's state is kept apart from it.
 	Program : {
 		prog : List(Stmt),
 		# Line numbers in order, and each line's first statement.
@@ -120,6 +123,14 @@ Parse :: [].{
 		data : List(Str),
 		decls : List(Decl),
 		fns : List(FnDef),
+		# **TWO DIALECTS.** True is ECMA-55; false is the microcomputer BASIC of
+		# the 1978 listings.
+		ecma : Bool,
+		# **A LIVE MACHINE PRINTS LIKE A TERMINAL**: each PRINT sleeps a
+		# millisecond, so the page paints a line at a time.
+		live : Bool,
+		# The steps one resume runs.
+		tank : I64,
 	}
 
 	Line : { num : I64, src : List(U8) }
@@ -191,6 +202,9 @@ Parse :: [].{
 			data: $data,
 			decls: $decls,
 			fns: $fns,
+			ecma: ecma,
+			live: False,
+			tank: 250000,
 		}
 	}
 

@@ -92,33 +92,10 @@ Machine :: [].{
 	# reports it printed, and why it stopped (empty when it did not).
 	# `made` is each array it used before one existed, with whether it was
 	# used with two subscripts.
-	# **THE PROGRAM IS NOT STATE.** What no statement writes -- the parsed
-	# program and its tables, the DATA, the dialect -- is passed beside the
-	# machine rather than kept in it: every record update copies the whole
-	# machine, and it was 728 bytes with these in it.
-	Code : {
-		prog : List(Parse.Stmt),
-		lines : List(I64),
-		firsts : List(U64),
-		skips : List(U64),
-		fns : List(Parse.FnDef),
-		decls : List(Parse.Decl),
-		data : List(Str),
-		# **TWO DIALECTS.** True is ECMA-55; false is the microcomputer BASIC of
-		# the 1978 listings.
-		ecma : Bool,
-		# **A LIVE MACHINE PRINTS LIKE A TERMINAL**: each PRINT sleeps a
-		# millisecond, so the page paints a line at a time.
-		live : Bool,
-		# The fuel one resume gets.
-		tank : I64,
-	}
-
-	# A machine and the program it runs, as the page holds them.
-	Run : { pg : Code, m : M }
-
-	code_of : Parse.Program, Bool, Bool, I64 -> Code
-	code_of = |p, ecma, live, tank| { prog: p.prog, lines: p.lines, firsts: p.firsts, skips: p.skips, fns: p.fns, decls: p.decls, data: p.data, ecma: ecma, live: live, tank: tank }
+	# **THE PROGRAM IS NOT STATE.** What no statement writes (Parse.Program) is
+	# passed beside the machine rather than kept in it: every record update
+	# copies the whole machine, and it was 728 bytes with the program in it.
+	Run : { pg : Parse.Program, m : M }
 
 	Fx : { seed : U64, said : Str, stop : Str, gap : Bool, made : List({ slot : U64, pair : Bool }) }
 
@@ -327,7 +304,7 @@ Machine :: [].{
 	gap_stop : Fx, Str -> Ev
 	gap_stop = |fx, why| { v: N(0.0), fx: { ..fx, stop: why, gap: True } }
 
-	eval : Code, M, Env, Fx, Parse.Expr -> Ev
+	eval : Parse.Program, M, Env, Fx, Parse.Expr -> Ev
 	eval = |pg, m, env, fx, e| match e {
 		Num(x) => Machine.finite(fx, x)
 		Text(s) => { v: S(s), fx: fx }
@@ -396,7 +373,7 @@ Machine :: [].{
 	}
 
 	# 1 +, 2 -, 3 *, 4 /, 5 ^.
-	arith : Code, M, Env, Fx, Parse.Expr, Parse.Expr, U8 -> Ev
+	arith : Parse.Program, M, Env, Fx, Parse.Expr, Parse.Expr, U8 -> Ev
 	arith = |pg, m, env, fx, a, b, op| {
 		l = Machine.eval(pg, m, env, fx, a)
 		if Machine.stopped(l.fx) {
@@ -489,7 +466,7 @@ Machine :: [].{
 	}
 
 	# LEFT$ 1, RIGHT$ 2, MID$ to the end 3, MID$ with a length 4.
-	cut : Code, M, Env, Fx, Parse.Expr, Parse.Expr, Parse.Expr, U8 -> Ev
+	cut : Parse.Program, M, Env, Fx, Parse.Expr, Parse.Expr, Parse.Expr, U8 -> Ev
 	cut = |pg, m, env, fx, a, n, k, which| {
 		s = Machine.eval(pg, m, env, fx, a)
 		c = if Machine.stopped(s.fx) { s } else { Machine.eval(pg, m, env, s.fx, n) }
@@ -529,7 +506,7 @@ Machine :: [].{
 
 	# The body is evaluated with the parameter bound; a call before its DEF
 	# has run is an unsupported form.
-	call_def : Code, M, Env, Fx, U64, Bool, Parse.Expr -> Ev
+	call_def : Parse.Program, M, Env, Fx, U64, Bool, Parse.Expr -> Ev
 	call_def = |pg, m, env, fx, letter, param, arg| {
 		f = List.get(pg.fns, letter) ?? Parse.no_fn
 		name = Str.concat("FN", Str.from_utf8([U64.to_u8_wrap(65 + letter)]) ?? "")
@@ -544,7 +521,7 @@ Machine :: [].{
 	}
 
 	# Subscripts: the second is the OPTION BASE when there is one.
-	subs : Code, M, Env, Fx, Parse.Expr, Parse.Expr, Bool -> { i : I64, j : I64, fx : Fx }
+	subs : Parse.Program, M, Env, Fx, Parse.Expr, Parse.Expr, Bool -> { i : I64, j : I64, fx : Fx }
 	subs = |pg, m, env, fx, one, two, pair| {
 		r = Machine.eval(pg, m, env, fx, one)
 		r2 = if pair and !Machine.stopped(r.fx) { Machine.eval(pg, m, env, r.fx, two) } else { r }
@@ -710,12 +687,12 @@ Machine :: [].{
 
 	# **PRINT WRAPS AT A MARGIN** where there is one: ECMA-55's, or the
 	# page's forty columns. A microcomputer's batch run has none.
-	wrap_at : Code, M -> I64
+	wrap_at : Parse.Program, M -> I64
 	wrap_at = |pg, m| if pg.ecma { Machine.margin } else if pg.live { Machine.screen_w } else { 0 }
 
 	# A PRINT's text, reports and all, built without touching the machine:
 	# its items are evaluated in order against the column they move.
-	print_text : Code, M, List(Parse.Item), Bool -> { text : Str, fx : Fx }
+	print_text : Parse.Program, M, List(Parse.Item), Bool -> { text : Str, fx : Fx }
 	print_text = |pg, m, items, newline| {
 		w = Machine.wrap_at(pg, m)
 		var $text = ""
@@ -773,6 +750,14 @@ Machine :: [].{
 
 	# What an evaluation did, applied once: its reports printed, its seed
 	# kept, the arrays it used made, and its stop.
+	# **A PLAIN EVALUATION IS APPLIED BY NOT APPLYING IT.** One that printed
+	# nothing, stopped nothing, made no array and drew no random number leaves
+	# the machine as it was, so a statement can write the machine it was given.
+	# POKE writing the machine `settle` answered copied the whole path of
+	# memory it wrote, every time (measured; the mechanism is Roc's).
+	plain : M, Fx -> Bool
+	plain = |m, fx| fx.said == "" and fx.stop == "" and List.is_empty(fx.made) and fx.seed == m.seed
+
 	settle : M, Fx -> M
 	settle = |m, fx| {
 		shown = Machine.emit(m, fx.said)
@@ -838,7 +823,7 @@ Machine :: [].{
 	# Where a jump lands: the statement index, or -1 with the line it wanted.
 	Landing : { at : I64, n : I64, fx : Fx }
 
-	landing : Code, M, Parse.Jump -> Landing
+	landing : Parse.Program, M, Parse.Jump -> Landing
 	landing = |pg, m, jump| match jump {
 		To(i) => { at: U64.to_i64_wrap(i), n: 0, fx: Machine.fresh(m) }
 		Missing(n) => { at: -1, n: n, fx: Machine.fresh(m) }
@@ -866,11 +851,11 @@ Machine :: [].{
 		}
 	}
 
-	next_line : Code, M, U64 -> U64
+	next_line : Parse.Program, M, U64 -> U64
 	next_line = |pg, m, line| List.get(pg.firsts, line + 1) ?? List.len(pg.prog)
 
 	# Both sides, then the comparison.
-	condition : Code, M, Parse.Expr, U8, Parse.Expr -> { yes : Bool, fx : Fx }
+	condition : Parse.Program, M, Parse.Expr, U8, Parse.Expr -> { yes : Bool, fx : Fx }
 	condition = |pg, m, a, op, b| {
 		l = Machine.eval(pg, m, [], Machine.fresh(m), a)
 		r = if Machine.stopped(l.fx) { l } else { Machine.eval(pg, m, [], l.fx, b) }
@@ -918,7 +903,7 @@ Machine :: [].{
 
 	# **A LOOP IS ITS FOR STATEMENT, NOT ITS VARIABLE.** A FOR run again
 	# restarts its own loop and abandons the loops entered inside it.
-	do_for : Code, M, U64, Parse.Expr, Parse.Expr, Parse.Expr -> M
+	do_for : Parse.Program, M, U64, Parse.Expr, Parse.Expr, Parse.Expr -> M
 	do_for = |pg, m, v, from, lim, st| {
 		f = Machine.eval(pg, m, [], Machine.fresh(m), from)
 		l = if Machine.stopped(f.fx) { f } else { Machine.eval(pg, m, [], f.fx, lim) }
@@ -978,7 +963,7 @@ Machine :: [].{
 
 	# ---- statements ---------------------------------------------------------------
 
-	step : Code, M -> M
+	step : Parse.Program, M -> M
 	step = |pg, m| match List.get(pg.prog, m.pc) {
 		Ok(s) => Machine.exec(pg, m, s)
 		Err(_) => { ..m, done: True }
@@ -988,7 +973,7 @@ Machine :: [].{
 	# arms, every store after it copied a path of the vector it wrote (two
 	# allocations a NEXT); with each body its own function, none does. Measured
 	# by mmap count on a FOR/NEXT loop; the mechanism is Roc's, not known.
-	exec : Code, M, Parse.Stmt -> M
+	exec : Parse.Program, M, Parse.Stmt -> M
 	exec = |pg, m, s| match s {
 		Nop => Machine.next(m)
 		End => Machine.do_end(m)
@@ -1021,35 +1006,35 @@ Machine :: [].{
 	do_end = |m|
 		{ ..m, done: True }
 
-	do_bad : Code, M, Parse.Expr, Str -> M
+	do_bad : Parse.Program, M, Parse.Expr, Str -> M
 	do_bad = |pg, m, e, why| {
 		r = Machine.eval(pg, m, [], Machine.fresh(m), e)
 		d = Machine.settle(m, r.fx)
 		if d.done { d } else { { ..d, done: True, err: why, gap: True } }
 	}
 
-	do_print : Code, M, List(Parse.Item), Bool -> M
+	do_print : Parse.Program, M, List(Parse.Item), Bool -> M
 	do_print = |pg, m, items, newline| {
 		p = Machine.print_text(pg, m, items, newline)
 		d = Machine.settle(Machine.emit(m, p.text), p.fx)
 		if d.done { d } else if pg.live { { ..d, pc: d.pc + 1, pause: 1 } } else { Machine.next(d) }
 	}
 
-	do_set_num : Code, M, U64, Parse.Expr -> M
+	do_set_num : Parse.Program, M, U64, Parse.Expr -> M
 	do_set_num = |pg, m, slot, e| {
 		r = Machine.eval(pg, m, [], Machine.fresh(m), e)
 		d = Machine.settle(m, r.fx)
 		if d.done { d } else { { ..d, nums: Vec.set(d.nums, slot, Machine.num_of(r.v)), pc: d.pc + 1 } }
 	}
 
-	do_set_str : Code, M, U64, Parse.Expr -> M
+	do_set_str : Parse.Program, M, U64, Parse.Expr -> M
 	do_set_str = |pg, m, slot, e| {
 		r = Machine.eval(pg, m, [], Machine.fresh(m), e)
 		d = Machine.settle(m, r.fx)
 		if d.done { d } else { { ..d, strs: Vec.set(d.strs, slot, Machine.str_of(r.v)), pc: d.pc + 1 } }
 	}
 
-	do_set_elem : Code, M, U64, Parse.Expr, Parse.Expr, Bool, Parse.Expr -> M
+	do_set_elem : Parse.Program, M, U64, Parse.Expr, Parse.Expr, Bool, Parse.Expr -> M
 	do_set_elem = |pg, m, slot, one, two, pair, e| {
 		at = Machine.subs(pg, m, [], Machine.fresh(m), one, two, pair)
 		# The array is made before the value is evaluated.
@@ -1065,14 +1050,14 @@ Machine :: [].{
 		if n == 0 { Machine.fail(m, "RETURN without GOSUB") } else { { ..m, pc: List.get(m.ret, n - 1) ?? 0, ret: List.drop_last(m.ret, 1) } }
 	}
 
-	do_if_go : Code, M, Parse.Expr, U8, Parse.Expr, Parse.Jump, U64 -> M
+	do_if_go : Parse.Program, M, Parse.Expr, U8, Parse.Expr, Parse.Jump, U64 -> M
 	do_if_go = |pg, m, l, op, r, j, line| {
 		c = Machine.condition(pg, m, l, op, r)
 		d = Machine.settle(m, c.fx)
 		if d.done { d } else if !c.yes { { ..d, pc: Machine.next_line(pg, d, line) } } else { Machine.go(d, Machine.landing(pg, d, j), Parse.none) }
 	}
 
-	do_if_then : Code, M, Parse.Expr, U8, Parse.Expr, U64 -> M
+	do_if_then : Parse.Program, M, Parse.Expr, U8, Parse.Expr, U64 -> M
 	do_if_then = |pg, m, l, op, r, line| {
 		c = Machine.condition(pg, m, l, op, r)
 		d = Machine.settle(m, c.fx)
@@ -1083,7 +1068,7 @@ Machine :: [].{
 	do_restore = |m|
 		{ ..m, dp: 0, pc: m.pc + 1 }
 
-	do_sleep : Code, M, Parse.Expr -> M
+	do_sleep : Parse.Program, M, Parse.Expr -> M
 	do_sleep = |pg, m, e| {
 		r = Machine.eval(pg, m, [], Machine.fresh(m), e)
 		d = Machine.settle(m, r.fx)
@@ -1091,7 +1076,7 @@ Machine :: [].{
 		if d.done { d } else { { ..d, pc: d.pc + 1, pause: if ms < 0 { 0 } else { ms } } }
 	}
 
-	do_plot : Code, M, Parse.Expr, Parse.Expr, Parse.Expr -> M
+	do_plot : Parse.Program, M, Parse.Expr, Parse.Expr, Parse.Expr -> M
 	do_plot = |pg, m, x, y, c| {
 		rx = Machine.eval(pg, m, [], Machine.fresh(m), x)
 		ry = if Machine.stopped(rx.fx) { rx } else { Machine.eval(pg, m, [], rx.fx, y) }
@@ -1110,12 +1095,18 @@ Machine :: [].{
 		}
 	}
 
-	do_poke : Code, M, Parse.Expr, Parse.Expr -> M
+	do_poke : Parse.Program, M, Parse.Expr, Parse.Expr -> M
 	do_poke = |pg, m, a, v| {
 		ra = Machine.eval(pg, m, [], Machine.fresh(m), a)
 		rv = if Machine.stopped(ra.fx) { ra } else { Machine.eval(pg, m, [], ra.fx, v) }
-		d = Machine.settle(m, rv.fx)
-		if d.done { d } else { Machine.next(Machine.poke_at(d, Machine.addr_of(Machine.num_of(ra.v)), Machine.byte_of(Machine.num_of(rv.v)))) }
+		addr = Machine.addr_of(Machine.num_of(ra.v))
+		byte = Machine.byte_of(Machine.num_of(rv.v))
+		if Machine.plain(m, rv.fx) {
+			Machine.next(Machine.poke_at(m, addr, byte))
+		} else {
+			d = Machine.settle(m, rv.fx)
+			if d.done { d } else { Machine.next(Machine.poke_at(d, addr, byte)) }
+		}
 	}
 
 	do_def : M, U64 -> M
@@ -1147,7 +1138,7 @@ Machine :: [].{
 	# **A DIM IS A DECLARATION** (ECMA-55 15): an array that exists keeps
 	# its values when control passes through its DIM again. Bounds are
 	# judged first.
-	dim_one : Code, M, Parse.DimItem -> M
+	dim_one : Parse.Program, M, Parse.DimItem -> M
 	dim_one = |pg, m, item| {
 		at = Machine.subs(pg, m, [], Machine.fresh(m), item.one, item.two, item.pair)
 		d = Machine.settle(m, at.fx)
@@ -1163,7 +1154,7 @@ Machine :: [].{
 		}
 	}
 
-	read_one : Code, M, Parse.Target -> M
+	read_one : Parse.Program, M, Parse.Target -> M
 	read_one = |pg, m, t|
 		if t.kind == 3 {
 			m
@@ -1181,7 +1172,7 @@ Machine :: [].{
 
 	# **A TARGET MAY BE AN ARRAY ELEMENT**, its subscripts evaluated when it
 	# is reached, after the targets before it are stored.
-	store : Code, M, Parse.Target, Str -> M
+	store : Parse.Program, M, Parse.Target, Str -> M
 	store = |pg, m, t, raw|
 		if t.kind == 1 {
 			{ ..m, strs: Vec.set(m.strs, t.slot, raw) }
@@ -1202,7 +1193,7 @@ Machine :: [].{
 
 	# **INPUT PRINTS `? ` AND ECHOES THE LINE**, as the captured games show.
 	# One INPUT takes one line, split on commas between its variables.
-	do_input : Code, M, Str, List(Parse.Target) -> M
+	do_input : Parse.Program, M, Str, List(Parse.Target) -> M
 	do_input = |pg, m, prompt, ts|
 		if m.part > 0 {
 			Machine.parted(Machine.store(pg, m, List.get(ts, m.part) ?? Machine.no_target, Machine.reply_value(pg, m, m.part)), List.len(ts))
@@ -1230,7 +1221,7 @@ Machine :: [].{
 			}
 		}
 
-	reply_value : Code, M, U64 -> Str
+	reply_value : Parse.Program, M, U64 -> Str
 	reply_value = |pg, m, k| {
 		raw = List.get(m.reply, k) ?? ""
 		if pg.ecma { Machine.unquote(raw) } else { raw }
@@ -1238,7 +1229,7 @@ Machine :: [].{
 
 	# ON <expr> GOTO or GOSUB picks the nth line from one; outside the list
 	# is an exception.
-	do_on : Code, M, Parse.Expr, List(Parse.Jump), U64 -> M
+	do_on : Parse.Program, M, Parse.Expr, List(Parse.Jump), U64 -> M
 	do_on = |pg, m, e, js, back| {
 		r = Machine.eval(pg, m, [], Machine.fresh(m), e)
 		d = Machine.settle(m, r.fx)
@@ -1252,7 +1243,7 @@ Machine :: [].{
 		}
 	}
 
-	do_option : Code, M, Parse.Expr -> M
+	do_option : Parse.Program, M, Parse.Expr -> M
 	do_option = |pg, m, e| {
 		r = Machine.eval(pg, m, [], Machine.fresh(m), e)
 		d = Machine.settle(m, r.fx)
@@ -1364,7 +1355,7 @@ Machine :: [].{
 	# **THE RUN LOOP AS ONE PURE FUNCTION.** Statements run until one needs
 	# the world -- a line of input, a SLEEP, the end, a stop -- or the fuel
 	# runs out, and the machine is answered as it stands there.
-	machine_state_at_next_effect : Code, M -> M
+	machine_state_at_next_effect : Parse.Program, M -> M
 	machine_state_at_next_effect = |pg, m| {
 		var $m = m
 		while !($m.done or $m.waiting or $m.pause > 0 or $m.fuel <= 0) {
@@ -1375,7 +1366,7 @@ Machine :: [].{
 
 	# **DIM AND OPTION ARE DECLARATIONS IN ECMA-55** (15), applied in line
 	# order before the first statement. This loop runs once, before the run.
-	declared : Code, M -> M
+	declared : Parse.Program, M -> M
 	declared = |pg, m|
 		if !pg.ecma {
 			m
@@ -1405,7 +1396,7 @@ Machine :: [].{
 
 	# **THE BATCH DOOR.** A SLEEP takes no time, and a yield is refuelled a
 	# bounded number of times before the program is called non-terminating.
-	batch : Code, M, I64 -> M
+	batch : Parse.Program, M, I64 -> M
 	batch = |pg, m, tanks| {
 		var $m = m
 		var $t = tanks
@@ -1436,7 +1427,7 @@ Machine :: [].{
 	run_in = |src, inp, seed, ecma| {
 		line_fault = if ecma { Listing.check(src) } else { { why: "", num: -1 } }
 		bad = if ecma and line_fault.why == "" { Program.check(src) } else { line_fault }
-		pg = Machine.code_of(Parse.load(if bad.why != "" { "" } else { src }, ecma), ecma, False, Machine.full_tank)
+		pg = Parse.load(if bad.why != "" { "" } else { src }, ecma)
 		m = if bad.why != "" { Machine.refuse(bad) } else { Machine.batch(pg, Machine.machine_state_at_next_effect(pg, Machine.declared(pg, Machine.new(inp, seed))), 10) }
 		Machine.transcript(
 			if m.waiting {
@@ -1468,7 +1459,7 @@ Machine :: [].{
 
 	start : Str, U64 -> Run
 	start = |src, seed| {
-		pg = Machine.code_of(Parse.load(src, False), False, True, Machine.page_tank)
+		pg = { ..Parse.load(src, False), live: True, tank: Machine.page_tank }
 		{ pg: pg, m: Machine.machine_state_at_next_effect(pg, { ..Machine.new([], seed), fuel: Machine.page_tank }) }
 	}
 
