@@ -15,6 +15,7 @@ REFUSED arm64-proc-cells | builtin `process-get-pid` used as a value
 REFUSED arm64-send-refusal | builtin `__heap-advance`
 PASS arp-cache-bound |
 REFUSED asn1-der | `fe-carry-pass` writes its list parameter `o` and answers something else
+PASS asn1-der-write |
 REFUSED atomic-smoke | builtin `memory-fence`
 REFUSED audio-diffusion-test | unit type `Duration`
 REFUSED av-codec-test | unit type `Duration`
@@ -53,6 +54,7 @@ PASS capability-doors |
 PASS carddeck-shuffle |
 PASS cce-roundtrip |
 REFUSED cce-tier1 | type (effectful (effs "Console") (scopes "") nothing)
+REFUSED cdx-export-retention | an opening of type nothing
 PASS chacha20poly1305 |
 PASS chapter-pages |
 PASS circbuf-test |
@@ -86,8 +88,10 @@ REFUSED deck-bracket-contract | builtin `__deck-set`
 REFUSED deck-cell-contract | builtin `__deck-set`
 REFUSED deck-record-contract | builtin `__deck-set`
 REFUSED deriving-eq-recursive | chapter `Deriving Eq Recursive` is not a Roc module name
+REFUSED desk-hole | builtin `port-out-32`
 REFUSED desk-hover | builtin `port-out-32`
 REFUSED desk-parse | builtin `port-out-32`
+REFUSED desk-reuse | builtin `port-out-32`
 REFUSED desk-root-guard | builtin `port-out-32`
 REFUSED desk-span | builtin `port-out-32`
 REFUSED device-buffer-alloc | builtin `gpu-mem-read`
@@ -166,11 +170,11 @@ PASS effect-widen-arg |
 PASS effect-widen-scope |
 REFUSED effect-widen-scope-narrow | builtin `block-read-sector`
 REFUSED engine-animation | unit type `Duration`
-FAIL engine-culling-cost | output: < culled costs less        : no
+DIVERGES engine-culling-cost | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
 PASS engine-fill-guard |
 PASS engine-mesh-gen |
 PASS engine-near-clip |
-FAIL engine-render-heap | output: < frame cost is nonzero       : no
+DIVERGES engine-render-heap | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
 PASS engine-shading |
 PASS engine-shadow |
 PASS engine-software-render |
@@ -181,6 +185,7 @@ PASS eq-generic-recursive |
 PASS eq-plain-sum |
 REFUSED esp32c6-drivers | builtin `read-mmio-32`
 PASS eventbus-test |
+PASS examples@eight-queens |
 PASS examples@missile-warning |
 REFUSED expr-calculator | chapter `Expr Calculator` is not a Roc module name
 FAIL factlog-layout | output: < text-cps=0 1 0 len=3
@@ -549,7 +554,7 @@ REFUSED gop-composite-stride | builtin `port-out-32`
 REFUSED gop-composite-translate | builtin `port-out-32`
 REFUSED gop-composite-vclip | builtin `port-out-32`
 REFUSED gop-corner-ramp | builtin `port-out-32`
-FAIL gop-padded-stride | output: < stride exceeds width   : no
+DIVERGES gop-padded-stride | reads its geometry from cells codex-vm publishes at fixed addresses at boot; on any other host those addresses were never written
 REFUSED gop-scene-backbuffer | builtin `port-out-32`
 PASS gop-scene-viewport |
 REFUSED gop-stride | builtin `__heap-advance`
@@ -753,11 +758,13 @@ PASS ops@int-mul-wrapping |
 PASS ops@int-pow |
 PASS ops@int-rem |
 PASS ops@int-wrapping-spelling |
+REFUSED ops@list-equality | constructor `Nothing-Held` is not a Roc tag name
 DIVERGES ops@list-growth | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
 PASS ops@list-index-bounds |
 PASS ops@list-view-bounds |
-PASS ops@match-nested-pattern |
 REFUSED ops@match-shadowed-arm | builtin `print-line`
+PASS ops@native-nested-pattern |
+PASS ops@native-nested-tags |
 REFUSED ops@real-approx | type real-approx
 REFUSED ops@real-approx-equality | type real-approx
 REFUSED ops@real-approx-modes | type real-approx
@@ -765,7 +772,7 @@ REFUSED ops@real-approx-negate | type real-approx
 REFUSED ops@real-bitcast | builtin `to-real-approx`
 PASS ops@real-bitcast-f64 |
 PASS ops@real-compare-negative |
-PASS ops@real-literal-rounding |
+REFUSED ops@real-literal-rounding | builtin `text-to-double-bits`
 REFUSED ops@real-mode-compare | type real-approx
 REFUSED ops@real-mode-fields | builtin `to-real-approx`
 REFUSED ops@real-mode-opening | builtin `to-real-trapping`
@@ -777,7 +784,10 @@ REFUSED ops@real-saturating-finite | builtin `to-real-saturating`
 REFUSED ops@real-to-int-wide | builtin `to-real-approx`
 REFUSED ops@real-trapping | binary add-real-trapping
 REFUSED ops@record-closure-field-poly | `__lam_0` applied to 1 of 2 arguments
+PASS ops@record-equality |
+REFUSED ops@record-equality-vector | CODEGEN-HALTED: 3 error(s); no IR emitted; first CDX3008 Undefined type name: SizedVec
 REFUSED ops@saturated-call-returning-function | chapter `Saturated Call Returning Function` is not a Roc module name
+REFUSED ops@section-title-keywords | type error
 PASS ops@substring-bounds |
 PASS ops@text-order-allowed |
 REFUSED ops@text-to-unicode-bytes-tier0 | chapter `Text To Unicode Bytes Tier Zero` is not a Roc module name
@@ -787,8 +797,10 @@ REFUSED ops@unit-pattern-lit | unit type `Name`
 REFUSED ops@unit-real-arith | unit type `Metre`
 REFUSED ops@unit-real-compare | unit type `Metre`
 REFUSED ops@unit-show | unit type `Name`
+REFUSED ops@unused-let-alias-discard | chapter `Unused Let Alias Discard` is not a Roc module name
+REFUSED ops@variant-address | builtin `address-of`
 REFUSED ops@vec-lanes-smoke | chapter `Vec Lanes Smoke` is not a Roc module name
-REFUSED ops@vec-sized | type (vector 1 int-default)
+REFUSED ops@vec-sized | CODEGEN-HALTED: 3 error(s); no IR emitted; first CDX3008 Undefined type name: SizedVec
 REFUSED osc-noise | unit type `Duration`
 REFUSED ota-gate-block | unit type `Duration`
 REFUSED ota-gate-real | unit type `Duration`
@@ -819,6 +831,8 @@ SKIP proof-assume-axiom | expects a diagnostic
 SKIP proof-smoke | expects a diagnostic
 REFUSED prop-arith | type (propeq (ctd "2" (args)) (ctd "2" (args)))
 SKIP prose-anchor | expects a diagnostic
+SKIP prose-binary-continuation | expects a diagnostic
+PASS prose-binary-control |
 PASS prose-consistency |
 PASS prose-smoke |
 PASS punctual-fastmath |
@@ -995,6 +1009,7 @@ REFUSED vec-reduce-add | builtin `vec-splat`
 REFUSED vec-select | type (effectful (effs "Console") (scopes "") nothing)
 REFUSED vector-basic | builtin `vec-splat`
 REFUSED vector-f32 | builtin `to-real-approx`
+REFUSED vector-f32-mask | CODEGEN-HALTED: 20 error(s); no IR emitted; first CDX3002 Undefined name: mask4-count
 REFUSED vector-int | builtin `vec-splat`
 PASS wavelet-sort-aliasing |
 SKIP wcet-budget-unchecked | expects a diagnostic
