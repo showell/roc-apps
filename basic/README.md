@@ -13,27 +13,29 @@ where it is implemented.
 A BASIC interpreter is a small program with an enormous state space: every
 run is thousands of iterations of the same dispatch over a different
 machine, and a wrong answer is a single wrong value that a graded corpus
-catches. It is idiomatic Roc throughout, so whatever it turns up in the
-compiler is already in the form a report needs.
+catches. It is also a long series of small writes, which Roc makes in place
+only when nothing else refers to what is written. **Where the code's shape
+departs from the obvious, a comment says which copy it avoids**, and the
+control ladder (below) is how each one was found.
 
 ## Laying it out
 
     basic/roc/Parse.roc     a listing as the program the machine runs: each statement parsed once
     basic/roc/Machine.roc   the machine: a read-only evaluator, the statements, the run loop, the doors
     basic/roc/Vec.roc       a persistent vector, 32-way: variables, arrays and memory
+    basic/roc/Devices.roc   the terminal, screen, memory and framebuffer, behind one reference in the machine
     basic/roc/Twister.roc   the Mersenne Twister: a microcomputer's RND, as basic101 draws it
     basic/roc/Listing.roc   ECMA-55's check of each line and statement, before a run
     basic/roc/Program.roc   ECMA-55's check of the whole program: jumps, loops, DEFs, arrays
     basic/roc/BasicRun.roc  basic-run, the command: a listing and its replies in, the transcript out
     basic/roc/BasicCheck.roc  basic-check: basic-run with the fast path compared to the full evaluator
     basic/roc/CommandLine.roc  the texts on basic-run's and basic-check's command lines
-    basic/roc/Basic.roc     the interpreter the page still runs
-    basic/roc/Pages.roc     Basic.roc's memory and arrays
-    basic/roc/BasicApp.roc  Basic.roc behind one boxed machine, for the page
+    basic/roc/BasicApp.roc  the machine behind one box, for the page
     basic/wasm/             the page's platform and host
     basic/web/basic.html    the page
     basic/build.sh          the page and its module, into the preview
     basic/build-run.sh      basic-run and basic-check, built once (the dev backend)
+    basic/corpus.sh         the corpus as the scripts read it: a program's listing and replies
     basic/run.sh            corpus programs through basic-run, one process each, timed
     basic/compare.sh        two runs' transcripts, byte for byte: the gate for a new interpreter
     basic/check-fast.sh     the corpus and the controls through basic-check and basic-run
@@ -41,8 +43,11 @@ compiler is already in the form a report needs.
     basic/controls.sh       what one iteration of each allocates, against controls/expected.txt
     basic/pathological/     programs that stress one cost each, at scale
     basic/allocs.sh         their times and allocations
+    basic/timings.sh        every corpus program timed, with the statements it ran and its allocations
+    basic/controls-time.sh  what one statement of each kind costs, from the controls
+    basic/stacks.py         which builtin asked for each allocation, from an strace trace
     basic/ladder.sh         run a corpus through run.sh, grade the transcripts, count
-    basic/gen.py            one corpus program as its own Roc app (the ladder no longer uses it)
+    basic/ledger-*.txt      the ladder's last grades, one line a program
     basic/nbs-reports.txt   what each NBS program must show that its own verdict cannot
     basic/nbs-input/        replies for NBS programs whose corpus replies are placeholders
     basic/fetch.sh          the corpora, into ~/build/basic-corpus
@@ -64,9 +69,9 @@ each corpus program is its own process.
 
 ## Measuring it
 
-**Built with the dev backend only.** The LLVM backend spends minutes on this
-interpreter, and what is slow here is the shape of the code, which the dev
-backend shows the same.
+**Built with the dev backend only**, the page too. The LLVM backend takes
+about 24 minutes to build this interpreter, and what is slow here is the
+shape of the code, which the dev backend shows the same.
 
 **A heap allocation is an `mmap` call** on the default platform, so
 `strace -c` counts allocations without timing anything. `controls.sh` runs
@@ -109,13 +114,13 @@ line, is where the transcript starts.
 
 Each is something a real program needs and a synthetic benchmark does not:
 
-- **No `exp`, no `log`, no `floor`, no `round` on `F64`.** There is `abs`,
-  `sqrt`, `sin`, `cos`, `tan`, `atan` and `pow`, and that is the list. So
-  `EXP` is `pow` on e, `LOG` is an atanh series after a reduction by
-  powers of two, and `INT` is truncation corrected downward.
-- **No number parsing on `Str`.** No `to_f64`, no `to_i64`. A numeric
-  literal is accumulated from its bytes as it is scanned.
-- **No `List.walk`.** Every fold in here is an explicit recursion.
+- **No `exp`, no `log`, no `floor`, no `round` on `F64`.** So `EXP` is
+  `pow` on e, `LOG` is an atanh series after a reduction by powers of two,
+  and `INT` is truncation corrected downward.
+- **No way to require a write in place.** Roc writes a list in place only
+  when nothing else refers to it, and says nothing when it copies. The
+  control ladder is how this code finds out, and the comments name each
+  shape that copied.
 
 ## Accepted past ECMA-55
 

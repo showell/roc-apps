@@ -6,7 +6,7 @@ program asks for. P203 asks for a zone width of at least 14 and loops
 until it gets one, so a `0` stops it at its first prompt.
 
 The files here are the replies, written from each listing's own prompts,
-and `gen.py` prefers them to the corpus's. A reply says what this
+and `basic/corpus.sh` prefers them to the corpus's. A reply says what this
 interpreter IS, not what a test wants to hear:
 
 - **P108** -- the listing names every reply: `PLEASE ENTER: 0` to `10`,

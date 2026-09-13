@@ -1,8 +1,7 @@
 # A batch command's texts, as basic-run and basic-check take them.
 #
-# Each text is cleaned as basic/gen.py cleaned the string literals it
-# generated: a carriage return is dropped, a newline and a tab are kept, and
-# any other byte outside printable ASCII becomes a space.
+# Each text is cleaned: a carriage return is dropped, a newline and a tab are
+# kept, and any other byte outside printable ASCII becomes a space.
 CommandLine :: [].{
 	clean : Str -> Str
 	clean = |text| Str.from_utf8(CommandLine.clean_bytes(Str.to_utf8(text), 0, [])) ?? ""

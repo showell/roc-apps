@@ -1,5 +1,5 @@
 # The corpus as the scripts read it, sourced by run.sh and timings.sh:
-# a program's listing, the replies basic/gen.py chose for it, the names in a
+# a program's listing, the replies chosen for it (ours, then the corpus's), the names in a
 # suite, and a text read whole. BASIC_HERE is basic/.
 CORPUS="${BASIC_CORPUS:-$HOME/build/basic-corpus}"
 

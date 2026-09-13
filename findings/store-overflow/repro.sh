@@ -8,9 +8,14 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROC="${ROC:-$HOME/build/roc-nightly/roc}"
 T="$(mktemp -d)"
 trap 'rm -rf "$T"' EXIT
+# The old interpreter is no longer in the tree; its modules come from 33e04d7,
+# the last commit that has them.
 for way in direct fresh; do
     mkdir -p "$T/$way"
-    cp "$HERE/../../basic/roc/"{Basic,Listing,Pages,Program}.roc "$HERE/Run.roc" "$T/$way/"
+    for m in Basic Listing Pages Program; do
+        git -C "$HERE/../.." show "33e04d7:basic/roc/$m.roc" > "$T/$way/$m.roc"
+    done
+    cp "$HERE/Run.roc" "$T/$way/"
 done
 python3 - "$T/direct/Basic.roc" <<'PY'
 import sys, pathlib

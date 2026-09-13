@@ -16,7 +16,7 @@ main! = |args| {
 	dialect = List.get(args, 0) ?? ""
 	listing = CommandLine.clean(List.get(args, 1) ?? "")
 	replies = CommandLine.lines_of(CommandLine.clean(List.get(args, 2) ?? ""))
-	# A generated app's seed was 1 plus its argument count, and it had none.
+	# Every batch run starts from the same seed, so its transcript repeats.
 	seed = 1
 	r = Machine.run_measured(listing, replies, seed, dialect == "ecma")
 	# **THE COUNTS GO TO STDERR** (dbg), so the transcript on stdout stays

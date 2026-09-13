@@ -1,7 +1,9 @@
 # A record update that overflows the stack
 
 **Not reduced, not reported.** Found in `basic/roc/Basic.roc`'s `store`, which
-puts a READ datum or an INPUT reply into an array element.
+puts a READ datum or an INPUT reply into an array element. `Basic.roc` is the
+interpreter before `Machine.roc`; it is not in the tree, and `repro.sh` takes
+it from 33e04d7.
 
 `repro.sh` runs `10 READ A(1) / 20 DATA 9 / 30 PRINT A(1) / 40 END` twice
 on the nightly compiler (`~/build/roc-nightly/roc`):
