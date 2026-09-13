@@ -12,7 +12,7 @@
 # Each text is cleaned as basic/gen.py cleaned the string literals it
 # generated: a carriage return is dropped, a newline and a tab are kept,
 # and any other byte outside printable ASCII becomes a space.
-import Basic
+import Machine
 
 main! = |args| {
 	dialect = List.get(args, 0) ?? ""
@@ -20,7 +20,7 @@ main! = |args| {
 	replies = lines_of(Str.to_utf8(clean(List.get(args, 2) ?? "")), 0, 0, [])
 	# A generated app's seed was 1 plus its argument count, and it had none.
 	seed = 1
-	transcript = if dialect == "ecma" { Basic.run_ecma(listing, replies, seed) } else { Basic.run(listing, replies, seed) }
+	transcript = if dialect == "ecma" { Machine.run_ecma(listing, replies, seed) } else { Machine.run(listing, replies, seed) }
 	echo!(transcript)
 	Ok({})
 }
