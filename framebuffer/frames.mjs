@@ -4,6 +4,7 @@
 // console of the last frame.
 //
 //   node framebuffer/frames.mjs <program> [frames]
+//   node framebuffer/frames.mjs <path/to/program.wasm> [frames]
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -11,7 +12,8 @@ import { join } from "node:path";
 const dir = join(homedir(), "build/roc-apps/next/framebuffer");
 const [n, count = "3"] = process.argv.slice(2);
 const W = 320, H = 240, TICK = 100;
-const { instance } = await WebAssembly.instantiate(readFileSync(join(dir, `${n}.wasm`)), {});
+const wasm = n.endsWith(".wasm") ? n : join(dir, `${n}.wasm`);
+const { instance } = await WebAssembly.instantiate(readFileSync(wasm), {});
 const x = instance.exports;
 const text = (ptr, len) => new TextDecoder().decode(new Uint8Array(x.memory.buffer, ptr, len));
 if (!x.screen(W, H, W)) throw new Error(`no ${W} x ${H} screen`);
