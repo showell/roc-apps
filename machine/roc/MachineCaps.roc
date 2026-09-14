@@ -20,6 +20,9 @@ MachineCaps :: [].{
 	block_device : I64
 	block_device = 10
 
+	gpu_memory : I64
+	gpu_memory = 18
+
 	# A row names its base bit, its read and write bits if the family has a
 	# direction, and any further bits the family implies; -1 is no such bit.
 	Row : { name : Str, base : I64, read : I64, write : I64, extra : List(I64) }

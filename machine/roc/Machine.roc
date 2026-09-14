@@ -24,6 +24,7 @@ import MachineCaps
 import MachineDisk
 import MachineE1000
 import MachineHpet
+import MachineIde
 import MachineMedia
 import MachineMem
 import MachinePci
@@ -34,6 +35,8 @@ Machine :: [].{
 		mem : MachineMem.Mem,
 		pci : MachinePci.Pci,
 		drives : MachineDisk.Drives,
+		# The IDE channel's registers over those drives.
+		ide : MachineIde.Ide,
 		# Scancodes in the order they arrived, and the next one to read.
 		keys : List(U8),
 		key_at : U64,
@@ -87,7 +90,7 @@ Machine :: [].{
 		mem = MachineMem.write(granted, Machine.cap_addr(1), 1, 8)
 		nic = if f.e1000.present { Nic(if f.e1000.i219 { 0x15B8 } else { 0x100E }, f.e1000.faults.bme_clear) } else { NoNic }
 		made = Machine.make(mem, MachinePci.table(levels, f.backward, nic), MachineDisk.boot!(f.disks))
-		{ ..made, e1000: if f.e1000.present { MachineE1000.power_on(f.e1000) } else { f.e1000 }, hpet: f.hpet, board_mmio: f.board_mmio, timeline: Machine.timeline_of(MachineMedia.keys) }
+		{ ..made, ide: MachineIde.attach!(made.drives), e1000: if f.e1000.present { MachineE1000.power_on(f.e1000) } else { f.e1000 }, hpet: f.hpet, board_mmio: f.board_mmio, timeline: Machine.timeline_of(MachineMedia.keys) }
 	}
 
 	# -pci-bridge is one level, -pci-bridge-deep two, -pci-bridge-levels N
@@ -129,6 +132,7 @@ Machine :: [].{
 		mem: mem,
 		pci: pci,
 		drives: drives,
+		ide: MachineIde.new,
 		keys: [],
 		key_at: 0,
 		console: [],
@@ -398,17 +402,87 @@ Machine :: [].{
 		}
 	}
 
-	port_out_byte : Machine.Machine, I64, I64 -> (Machine.Machine, I64)
-	port_out_byte = |m, port, value| Machine.port_write(m, I64.to_u64_wrap(port), U64.bitwise_and(I64.to_u64_wrap(value), 0xFF), "port-out-byte")
+	# **THE BYTE AND 16-BIT DOORS ARE EFFECTS.** They reach the IDE channel,
+	# whose commands load and store sectors through MachineDisk's doors, which
+	# on the native platform are the host's files. The 32-bit doors reach PCI
+	# and the port map, and are not.
+	port_out_byte! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
+	port_out_byte! = |m, port, value| Machine.port_out!(m, I64.to_u64_wrap(port), U64.bitwise_and(I64.to_u64_wrap(value), 0xFF), "port-out-byte")
 
-	port_out_16 : Machine.Machine, I64, I64 -> (Machine.Machine, I64)
-	port_out_16 = |m, port, value| Machine.port_write(m, I64.to_u64_wrap(port), U64.bitwise_and(I64.to_u64_wrap(value), 0xFFFF), "port-out-16")
+	port_out_16! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
+	port_out_16! = |m, port, value| Machine.port_out!(m, I64.to_u64_wrap(port), U64.bitwise_and(I64.to_u64_wrap(value), 0xFFFF), "port-out-16")
 
-	port_in_byte : Machine.Machine, I64 -> (Machine.Machine, I64)
-	port_in_byte = |m, port| Machine.port_read(m, I64.to_u64_wrap(port), 0xFF, "port-in-byte")
+	port_in_byte! : Machine.Machine, I64 => (Machine.Machine, I64)
+	port_in_byte! = |m, port| Machine.port_in!(m, I64.to_u64_wrap(port), 0xFF, "port-in-byte")
 
-	port_in_16 : Machine.Machine, I64 -> (Machine.Machine, I64)
-	port_in_16 = |m, port| Machine.port_read(m, I64.to_u64_wrap(port), 0xFFFF, "port-in-16")
+	port_in_16! : Machine.Machine, I64 => (Machine.Machine, I64)
+	port_in_16! = |m, port| Machine.port_in!(m, I64.to_u64_wrap(port), 0xFFFF, "port-in-16")
+
+	# A byte or 16-bit access: the IDE channel's registers, or the port map.
+	port_out! : Machine.Machine, U64, U64, Str => (Machine.Machine, I64)
+	port_out! = |m, p, v, builtin|
+		if MachineIde.claims(p) {
+			(ide, drives) = MachineIde.write!(m.ide, m.drives, p, v)
+			({ ..m, ide: ide, drives: drives, clock: m.clock + Machine.access_cost }, 0)
+		} else {
+			Machine.port_write(m, p, v, builtin)
+		}
+
+	port_in! : Machine.Machine, U64, U64, Str => (Machine.Machine, I64)
+	port_in! = |m, p, mask, builtin|
+		if MachineIde.claims(p) {
+			(ide, v) = MachineIde.read!(m.ide, m.drives, p)
+			({ ..m, ide: ide, clock: m.clock + Machine.access_cost }, U64.to_i64_wrap(U64.bitwise_and(v, mask)))
+		} else {
+			Machine.port_read(m, p, mask, builtin)
+		}
+
+	# `port-in-16-block addr count port` is x86's `rep insw`: `count` words from
+	# the port into memory at `addr`, answering 0; `port-out-16-block` is `rep
+	# outsw`, the other way. A buffer in the GPU's memory page (addresses whose
+	# top bits are 190) needs the running process's gpu-memory capability, and
+	# without it nothing moves and the answer is -1 (X86_64Boot's
+	# emit-gpu-mem-guard). Each word is one access to the port.
+	port_in_16_block! : Machine.Machine, I64, I64, I64 => (Machine.Machine, I64)
+	port_in_16_block! = |m, addr, count, port|
+		if Machine.gpu_page_denied(m, addr) {
+			(m, -1)
+		} else {
+			Machine.insw!(m, addr, 0, count, port)
+		}
+
+	port_out_16_block! : Machine.Machine, I64, I64, I64 => (Machine.Machine, I64)
+	port_out_16_block! = |m, addr, count, port|
+		if Machine.gpu_page_denied(m, addr) {
+			(m, -1)
+		} else {
+			Machine.outsw!(m, addr, 0, count, port)
+		}
+
+	insw! : Machine.Machine, I64, I64, I64, I64 => (Machine.Machine, I64)
+	insw! = |m, addr, i, count, port|
+		if i >= count {
+			(m, 0)
+		} else {
+			(m1, w) = Machine.port_in_16!(m, port)
+			(m2, _) = Machine.store(m1, addr, i * 2, w, 2)
+			Machine.insw!(m2, addr, i + 1, count, port)
+		}
+
+	outsw! : Machine.Machine, I64, I64, I64, I64 => (Machine.Machine, I64)
+	outsw! = |m, addr, i, count, port|
+		if i >= count {
+			(m, 0)
+		} else {
+			(m1, w) = Machine.load(m, addr, i * 2, 2)
+			(m2, _) = Machine.port_out_16!(m1, port, w)
+			Machine.outsw!(m2, addr, i + 1, count, port)
+		}
+
+	gpu_page_denied : Machine.Machine, I64 -> Bool
+	gpu_page_denied = |m, addr|
+		U64.div_trunc_by(I64.to_u64_wrap(addr), 0x1000000) == 190
+		and U64.bitwise_and(MachineMem.read(m.mem, MachineCaps.word_addr, 7, 0), MachineCaps.bit(MachineCaps.gpu_memory)) == 0
 
 	port_write : Machine.Machine, U64, U64, Str -> (Machine.Machine, I64)
 	port_write = |m, p, v, builtin| {

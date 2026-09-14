@@ -73,6 +73,7 @@ diverges() {
         ui-event-test) echo "list-push mutates a list two siblings share; Roc's List.append answers a new one" ;;
         lib@detail-pane|lib@tree-view-nav) echo "pins what a caller still holding the old record sees after its list is written in place; a Roc list is a value, so the caller keeps what it held" ;;
         lib@data-table-rows) echo "DataTable's dt-swap writes the keys list in place and drops the answer, and dt-insert reads the keys through its own name; in Roc the swap is lost and the sort compares stale keys" ;;
+        gop-composite-translate) echo "comp-translate moves each child with __record-set and drops the answers; Codex writes the record in place, so the parent's children list sees the move, and a Roc record is a value" ;;
         db-full-test) echo "test-bulk-load and test-import insert 5 rows through heap-insert-encoded's list-set-at on the catalog's pages and answer only Text; the backup then scans the same catalog, which in Roc still holds the old pages (rows=21, not 26)" ;;
         real-show-wide) echo "the verdict pins Codex's own printer: it reads 12345678901234567.0 as ...566, we print the double" ;;
         cost@accumulator-corpus|ops@list-growth|heap-scrub|engine-culling-cost|engine-render-heap) echo "measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero" ;;
@@ -140,7 +141,7 @@ one() {
     # from, so all of it joins the stamp.
     vmargs=()
     if grep -qx 'import Machine' "$d"/*.roc; then
-        cp "$MACHINE"/{Machine,MachineApic,MachineCaps,MachineE1000,MachineHpet,MachineMem,MachinePci,MachinePorts,MachineDisk}.roc "$d/"
+        cp "$MACHINE"/{Machine,MachineApic,MachineCaps,MachineE1000,MachineHpet,MachineIde,MachineMem,MachinePci,MachinePorts,MachineDisk}.roc "$d/"
         [ -f "$src.vmargs" ] && read -ra vmargs <<< "$(grep -v '^#' "$src.vmargs" | tr '\n' ' ')"
         rm -f "$d/drive0.disk" "$d/drive1.disk" "$d/keys.txt"
         a0=no; a1=no; k=no
@@ -148,7 +149,7 @@ one() {
         [ -f "$src.disk2" ] && { ln -s "$src.disk2" "$d/drive1.disk"; a1=yes; }
         [ -f "$src.keys" ] && { ln -s "$src.keys" "$d/keys.txt"; k=yes; }
         media $a0 $a1 $k > "$d/MachineMedia.roc"
-        stamp="$stamp machine $( { cat "$MACHINE"/{Machine,MachineApic,MachineCaps,MachineE1000,MachineHpet,MachineMem,MachinePci,MachinePorts,MachineDisk}.roc "$d/MachineMedia.roc"; echo "${vmargs[*]}"; stat -L -c '%s %Y' "$d"/drive*.disk "$d"/keys.txt 2>/dev/null; } | md5sum | cut -c1-16)"
+        stamp="$stamp machine $( { cat "$MACHINE"/{Machine,MachineApic,MachineCaps,MachineE1000,MachineHpet,MachineIde,MachineMem,MachinePci,MachinePorts,MachineDisk}.roc "$d/MachineMedia.roc"; echo "${vmargs[*]}"; stat -L -c '%s %Y' "$d"/drive*.disk "$d"/keys.txt 2>/dev/null; } | md5sum | cut -c1-16)"
     fi
     if [ -n "$old" ] && [ "$old" = "$stamp" ] && [ -f "$GEN/$n.verdict" ] && [ -z "${FRESH:-}" ]; then
         cp "$GEN/$n.verdict" "$d/verdict"; return

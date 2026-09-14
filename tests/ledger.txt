@@ -98,8 +98,8 @@ REFUSED device-buffer-alloc | builtin `gpu-mem-read`
 REFUSED dhcp-acquire | builtin `net-send-raw`
 REFUSED dhcp-acquire-e1000 | builtin `net-send-raw`
 REFUSED dhcp-renew | builtin `net-send-raw`
-REFUSED diag-pci-map-judge | builtin `port-in-16-block`
-REFUSED disk-enum-parse | builtin `port-in-16-block`
+PASS diag-pci-map-judge |
+PASS disk-enum-parse |
 PASS diskfacts-unpack-large |
 PASS dnp3-encode |
 PASS dns-answer-count |
@@ -207,13 +207,13 @@ PASS fat32-cluster-lfn |
 PASS fat32-img-longname |
 PASS fat32-longname |
 PASS fat32-longwrite |
-REFUSED fat32-parse | builtin `port-in-16-block`
+PASS fat32-parse |
 PASS fe310-drivers |
 REFUSED field-cache-shape | field-store
 PASS field-cache-text-lit |
 SKIP field-guard-refine | expects a diagnostic
 SKIP field-range-proven | expects a diagnostic
-REFUSED files-parse | builtin `port-in-16-block`
+PASS files-parse |
 PASS final-batch-test |
 PASS fins-encode |
 PASS forewords@ai-activation |
@@ -547,15 +547,15 @@ SKIP fs-spawn-inherits | child reaches the write path and faults inside it: the 
 PASS ga-core |
 PASS geometry-test |
 PASS goose-encode |
-REFUSED gop-composite-clamp | builtin `port-in-16-block`
-REFUSED gop-composite-clip | builtin `port-in-16-block`
-REFUSED gop-composite-kinds | builtin `port-in-16-block`
-REFUSED gop-composite-stride | builtin `port-in-16-block`
-REFUSED gop-composite-translate | builtin `port-in-16-block`
-REFUSED gop-composite-vclip | builtin `port-in-16-block`
-REFUSED gop-corner-ramp | builtin `port-in-16-block`
+PASS gop-composite-clamp |
+PASS gop-composite-clip |
+PASS gop-composite-kinds |
+PASS gop-composite-stride |
+DIVERGES gop-composite-translate | comp-translate moves each child with __record-set and drops the answers; Codex writes the record in place, so the parent's children list sees the move, and a Roc record is a value
+PASS gop-composite-vclip |
+PASS gop-corner-ramp |
 DIVERGES gop-padded-stride | reads its geometry from cells codex-vm publishes at fixed addresses at boot; on any other host those addresses were never written
-REFUSED gop-scene-backbuffer | builtin `port-in-16-block`
+REFUSED gop-scene-backbuffer | builtin `gpu-out`
 PASS gop-scene-viewport |
 PASS gop-stride |
 PASS gop-text-field |
@@ -670,7 +670,7 @@ REFUSED lib@text-trim-test | field-store
 PASS lib@toml-test |
 DIVERGES lib@tree-view-nav | pins what a caller still holding the old record sees after its list is written in place; a Roc list is a value, so the caller keeps what it held
 FAIL lib@utf8-cce-test | output: < utf8-3byte-one-char=fail
-REFUSED lib@widget-tone | builtin `port-in-16-block`
+PASS lib@widget-tone |
 PASS lib@yaml-test |
 PASS linear-branch |
 PASS linear-capture-once |

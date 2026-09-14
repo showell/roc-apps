@@ -35,7 +35,7 @@ MachinePorts :: [].{
 		} else if p == 0x20 or p == 0x21 or p == 0xA0 or p == 0xA1 {
 			Device("the interrupt controllers")
 		} else if (p >= 0x1F0 and p <= 0x1F7) or p == 0x3F6 {
-			Device("the IDE channel")
+			Device("the IDE channel at 32 bits")
 		} else if p >= 0x3F8 and p <= 0x3FF {
 			Device("COM1")
 		} else if p >= 0x2F8 and p <= 0x2FF {
