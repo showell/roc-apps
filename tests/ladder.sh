@@ -71,23 +71,29 @@ diverges() {
     case "$1" in
         edalias|db-row-update) echo "list-set-at mutates in place; Roc's List.set answers a new list" ;;
         ui-event-test) echo "list-push mutates a list two siblings share; Roc's List.append answers a new one" ;;
+        lib@detail-pane|lib@tree-view-nav) echo "pins what a caller still holding the old record sees after its list is written in place; a Roc list is a value, so the caller keeps what it held" ;;
+        lib@data-table-rows) echo "DataTable's dt-swap writes the keys list in place and drops the answer, and dt-insert reads the keys through its own name; in Roc the swap is lost and the sort compares stale keys" ;;
         real-show-wide) echo "the verdict pins Codex's own printer: it reads 12345678901234567.0 as ...566, we print the double" ;;
         cost@accumulator-corpus|ops@list-growth|heap-scrub|engine-culling-cost|engine-render-heap) echo "measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero" ;;
         gop-padded-stride) echo "reads its geometry from cells codex-vm publishes at fixed addresses at boot; on any other host those addresses were never written" ;;
     esac
 }
-# The drives a machine unit boots with, as a Roc module: a program on the
-# Echo platform reads no files, so an attached image is a file IMPORT, and the
-# position with nothing on it is Absent. Arguments: yes/no for drive0.disk and
-# drive1.disk.
+# The drives a machine unit boots with and the keys typed during its run, as a
+# Roc module: a program on the Echo platform reads no files, so an attached
+# image and a .keys timeline are file IMPORTS, and the position with nothing
+# on it is Absent. Arguments: yes/no for drive0.disk, drive1.disk and keys.txt.
 media() {
-    echo "# MachineMedia -- the drives attached for this unit, written by tests/ladder.sh."
+    echo "# MachineMedia -- the drives attached and the keys typed for this unit, written by tests/ladder.sh."
     [ "$1" = yes ] && echo 'import "drive0.disk" as drive0 : List(U8)'
     [ "$2" = yes ] && echo 'import "drive1.disk" as drive1 : List(U8)'
+    [ "$3" = yes ] && echo 'import "keys.txt" as typed : List(U8)'
     echo
     echo 'MachineMedia :: [].{'
     echo '	drives : List([Attached(List(U8)), Absent])'
     printf '\tdrives = [%s, %s]\n' "$( [ "$1" = yes ] && echo 'Attached(drive0)' || echo Absent )" "$( [ "$2" = yes ] && echo 'Attached(drive1)' || echo Absent )"
+    echo
+    echo '	keys : List(U8)'
+    printf '\tkeys = %s\n' "$( [ "$3" = yes ] && echo typed || echo '[]' )"
     echo '}'
 }
 # **THE RUN IS THE EXPENSIVE PART, THE EMIT IS NOT.** rocemit is a Rust
@@ -108,6 +114,11 @@ one() {
     # A .disk-src names a program upstream's harness compiles onto the disk at
     # test time; with no Cobblestone compiler here there is no such disk.
     if [ -f "$src.disk-src" ]; then echo "SKIP $n | its disk is compiled from $(grep -v '^#' "$src.disk-src" | head -1 | cut -c1-60) by the Cobblestone compiler at test time" > "$d/verdict"; return; fi
+    # A .smp above 1 is the cores upstream's harness boots codex-vm with
+    # (bvt.ps1 passes -smp N), and the verdict is theirs: the application
+    # processors publish what the test reads. This harness runs one core.
+    cores="$( [ -f "$src.smp" ] && head -1 "$src.smp" | tr -d ' \r\n' )"
+    if [ -n "$cores" ] && [ "$cores" -gt 1 ] 2>/dev/null; then echo "SKIP $n | codex-vm boots it with $cores cores (.smp); this harness runs one" > "$d/verdict"; return; fi
     why="$(diverges "$n")"
     if [ -n "$why" ]; then echo "DIVERGES $n | $why" > "$d/verdict"; return; fi
     # rocemit prints the app's name and a digest of everything it wrote,
@@ -130,12 +141,13 @@ one() {
     if grep -qx 'import Machine' "$d"/*.roc; then
         cp "$MACHINE"/{Machine,MachineCaps,MachineE1000,MachineHpet,MachineMem,MachinePci,MachineDisk}.roc "$d/"
         [ -f "$src.vmargs" ] && read -ra vmargs <<< "$(grep -v '^#' "$src.vmargs" | tr '\n' ' ')"
-        rm -f "$d/drive0.disk" "$d/drive1.disk"
-        a0=no; a1=no
+        rm -f "$d/drive0.disk" "$d/drive1.disk" "$d/keys.txt"
+        a0=no; a1=no; k=no
         [ -f "$src.disk" ] && { ln -s "$src.disk" "$d/drive0.disk"; a0=yes; }
         [ -f "$src.disk2" ] && { ln -s "$src.disk2" "$d/drive1.disk"; a1=yes; }
-        media $a0 $a1 > "$d/MachineMedia.roc"
-        stamp="$stamp machine $( { cat "$MACHINE"/{Machine,MachineCaps,MachineE1000,MachineHpet,MachineMem,MachinePci,MachineDisk}.roc "$d/MachineMedia.roc"; echo "${vmargs[*]}"; stat -L -c '%s %Y' "$d"/drive*.disk 2>/dev/null; } | md5sum | cut -c1-16)"
+        [ -f "$src.keys" ] && { ln -s "$src.keys" "$d/keys.txt"; k=yes; }
+        media $a0 $a1 $k > "$d/MachineMedia.roc"
+        stamp="$stamp machine $( { cat "$MACHINE"/{Machine,MachineCaps,MachineE1000,MachineHpet,MachineMem,MachinePci,MachineDisk}.roc "$d/MachineMedia.roc"; echo "${vmargs[*]}"; stat -L -c '%s %Y' "$d"/drive*.disk "$d"/keys.txt 2>/dev/null; } | md5sum | cut -c1-16)"
     fi
     if [ -n "$old" ] && [ "$old" = "$stamp" ] && [ -f "$GEN/$n.verdict" ] && [ -z "${FRESH:-}" ]; then
         cp "$GEN/$n.verdict" "$d/verdict"; return

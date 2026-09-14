@@ -23,6 +23,7 @@ import MachineCaps
 import MachineDisk
 import MachineE1000
 import MachineHpet
+import MachineMedia
 import MachineMem
 import MachinePci
 
@@ -47,6 +48,10 @@ Machine :: [].{
 		clock : U64,
 		# -board-mmio: RAM behind the three board peripheral windows.
 		board_mmio : Bool,
+		# The keystrokes a test types (its .keys), in the machine's clock, and
+		# how many have been delivered.
+		timeline : List({ at : U64, code : U8 }),
+		typed : U64,
 	}
 
 	Flags : { bridge : Bool, deep : Bool, levels : U64, backward : Bool, disks : List(Str), e1000 : MachineE1000.E1000, hpet : MachineHpet.Hpet, board_mmio : Bool }
@@ -67,7 +72,7 @@ Machine :: [].{
 		mem = MachineMem.write(MachineMem.new(U64.to_i64_wrap(List.len(args))), MachineCaps.word_addr, MachineCaps.grant(effects), 8)
 		nic = if f.e1000.present { Nic(if f.e1000.i219 { 0x15B8 } else { 0x100E }, f.e1000.faults.bme_clear) } else { NoNic }
 		made = Machine.make(mem, MachinePci.table(levels, f.backward, nic), MachineDisk.boot!(f.disks))
-		{ ..made, e1000: if f.e1000.present { MachineE1000.power_on(f.e1000) } else { f.e1000 }, hpet: f.hpet, board_mmio: f.board_mmio }
+		{ ..made, e1000: if f.e1000.present { MachineE1000.power_on(f.e1000) } else { f.e1000 }, hpet: f.hpet, board_mmio: f.board_mmio, timeline: Machine.timeline_of(MachineMedia.keys) }
 	}
 
 	# -pci-bridge is one level, -pci-bridge-deep two, -pci-bridge-levels N
@@ -119,6 +124,8 @@ Machine :: [].{
 		hpet: MachineHpet.new,
 		clock: 0,
 		board_mmio: False,
+		timeline: [],
+		typed: 0,
 	}
 
 	tick : Machine.Machine -> Machine.Machine
@@ -386,6 +393,98 @@ Machine :: [].{
 	peek_byte = |m, addr| U64.bitwise_and(MachineMem.read(m.mem, addr, 0, 0), 255)
 
 	# ---- the keyboard ---------------------------------------------------
+
+	# **A KEYSTROKE ARRIVES AT ITS TIME, AND A PROGRAM WAITING FOR ONE WAITS
+	# UNTIL THEN.** codex-vm types a test's .keys timeline (`ms:scancode`
+	# events, read by -keys-file) by the host's clock, writing each scancode
+	# into the key cell at 28680 when its time comes. Here the timeline arrives
+	# as MachineMedia.keys and runs on the machine's clock. A program polling an
+	# empty cell never touches a device register, so that clock would not move
+	# and the key would never come; instead a read that finds the cell empty
+	# moves the clock to the next keystroke's time, and the next read finds it.
+	# Keystrokes whose time has passed are written in order, so the last one due
+	# is the one in the cell, as there.
+
+	# `uefi-read-key-ex` asks UEFI's ConIn through the system table whose
+	# address sits at 30704; without one, as on codex-vm's bare-metal boot, it
+	# answers -1.
+	uefi_read_key_ex : Machine.Machine -> (Machine.Machine, I64)
+	uefi_read_key_ex = |m|
+		if MachineMem.read(m.mem, 30704, 7, 0) == 0 {
+			(m, -1)
+		} else {
+			crash("machine: uefi-read-key-ex with a UEFI system table, which this machine does not model")
+		}
+
+	# `uefi-read-key`: the key cell exchanged with zero, as its scancode byte.
+	uefi_read_key : Machine.Machine -> (Machine.Machine, I64)
+	uefi_read_key = |m| {
+		due = Machine.type_due(m)
+		code = U64.bitwise_and(MachineMem.read(due.mem, Machine.key_cell, 7, 0), 255)
+		taken = { ..due, mem: MachineMem.write(due.mem, Machine.key_cell, 0, 8) }
+		if code == 0 {
+			match List.get(taken.timeline, taken.typed) {
+				Ok(next) => ({ ..taken, clock: if next.at > taken.clock { next.at } else { taken.clock } }, 0)
+				Err(_) => (taken, 0)
+			}
+		} else {
+			(taken, U64.to_i64_wrap(code))
+		}
+	}
+
+	key_cell : I64
+	key_cell = 28680
+
+	type_due : Machine.Machine -> Machine.Machine
+	type_due = |m|
+		match List.get(m.timeline, m.typed) {
+			Ok(k) =>
+				if k.at <= m.clock {
+					Machine.type_due({ ..m, mem: MachineMem.write(m.mem, Machine.key_cell, U8.to_u64(k.code), 1), typed: m.typed + 1 })
+				} else {
+					m
+				}
+			Err(_) => m
+		}
+
+	# codex-vm's -keys-file format: `t:scancode` events, t in milliseconds,
+	# separated by newlines or semicolons; `#` starts a comment that runs to
+	# the end of the line.
+	timeline_of : List(U8) -> List({ at : U64, code : U8 })
+	timeline_of = |bytes| {
+		text = Str.from_utf8(bytes) ?? crash("machine: the .keys timeline is not UTF-8")
+		Machine.events_of(Str.split_on(text, "\n"), 0, [])
+	}
+
+	events_of : List(Str), U64, List({ at : U64, code : U8 }) -> List({ at : U64, code : U8 })
+	events_of = |lines, i, acc|
+		match List.get(lines, i) {
+			Err(_) => acc
+			Ok(line) => Machine.events_of(lines, i + 1, Machine.line_events(Str.split_on(line, ";"), 0, acc))
+		}
+
+	line_events : List(Str), U64, List({ at : U64, code : U8 }) -> List({ at : U64, code : U8 })
+	line_events = |parts, i, acc|
+		match List.get(parts, i) {
+			Err(_) => acc
+			Ok(part) => {
+				event = Str.trim(part)
+				if event == "" {
+					Machine.line_events(parts, i + 1, acc)
+				} else if Str.starts_with(event, "#") {
+					acc
+				} else {
+					match Str.split_first(event, ":") {
+						Ok(halves) => {
+							ms = U64.from_str(Str.trim(halves.before)) ?? crash("machine: .keys time `${halves.before}`, which this machine reads in whole milliseconds")
+							code = U8.from_str(Str.trim(halves.after)) ?? crash("machine: .keys scancode `${halves.after}`")
+							Machine.line_events(parts, i + 1, List.append(acc, { at: U64.div_trunc_by(ms * MachineHpet.hz, 1000), code: code }))
+						}
+						Err(_) => crash("machine: .keys event `${event}` is not time:scancode")
+					}
+				}
+			}
+		}
 
 	key_in : Machine.Machine, U8 -> Machine.Machine
 	key_in = |m, code| { ..m, keys: List.append(m.keys, code) }

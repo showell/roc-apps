@@ -529,7 +529,7 @@ PASS forewords@ui-scroll |
 PASS forewords@ui-selection |
 PASS forewords@ui-sound |
 PASS forewords@ui-surface |
-REFUSED forewords@ui-text-field | builtin `uefi-read-key-ex` used as a value
+PASS forewords@ui-text-field |
 PASS forewords@ui-theme |
 PASS forewords@ui-touch |
 PASS forewords@ui-vector |
@@ -615,11 +615,11 @@ PASS iterate-test |
 PASS iterate-zip-test |
 PASS j1939-encode |
 PASS keyboard-layout-test |
-REFUSED keys-collision | builtin `uefi-read-key-ex` used as a value
-REFUSED keys-mods | builtin `uefi-read-key-ex` used as a value
-REFUSED keys-numpad | builtin `uefi-read-key-ex` used as a value
-REFUSED keys-shift | builtin `uefi-read-key-ex` used as a value
-REFUSED keys-sidecar | builtin `uefi-read-key-ex` used as a value
+PASS keys-collision |
+PASS keys-mods |
+PASS keys-numpad |
+PASS keys-shift |
+PASS keys-sidecar |
 PASS klondike-test |
 PASS knx-encode |
 PASS kvstore-test |
@@ -640,16 +640,16 @@ REFUSED lib@brotli-dict-test | builtin `__list-with-capacity`
 REFUSED lib@brotli-test | `lz77-count-distinct` writes its list parameter `seen` and answers something else
 PASS lib@canvas-viewport |
 PASS lib@cbor-test |
-REFUSED lib@data-table-rows | builtin `uefi-read-key-ex` used as a value
+DIVERGES lib@data-table-rows | DataTable's dt-swap writes the keys list in place and drops the answer, and dt-insert reads the keys through its own name; in Roc the swap is lost and the sort compares stale keys
 PASS lib@decimal-test |
 REFUSED lib@deflate-dynamic-test | `lz77-count-distinct` writes its list parameter `seen` and answers something else
-REFUSED lib@detail-pane | builtin `uefi-read-key-ex` used as a value
+DIVERGES lib@detail-pane | pins what a caller still holding the old record sees after its list is written in place; a Roc list is a value, so the caller keeps what it held
 PASS lib@device-math |
-REFUSED lib@dropdown-options | builtin `uefi-read-key-ex` used as a value
+PASS lib@dropdown-options |
 PASS lib@flex-layout-geometry |
 PASS lib@format-test |
 PASS lib@hkdf-test |
-REFUSED lib@key-tab-single | builtin `uefi-read-key-ex` used as a value
+PASS lib@key-tab-single |
 REFUSED lib@linalg-test | `__lam_0` applied to 1 of 2 arguments
 PASS lib@locale-test |
 PASS lib@loss-test |
@@ -658,17 +658,17 @@ PASS lib@markdown-ordered |
 PASS lib@msgpack-test |
 PASS lib@number-theory-test |
 PASS lib@numeric-test |
-REFUSED lib@palette-filter | builtin `uefi-read-key-ex` used as a value
+PASS lib@palette-filter |
 PASS lib@path-test |
 PASS lib@pixel-buf |
 PASS lib@probability-test |
-REFUSED lib@settings-panel-render | builtin `uefi-read-key-ex` used as a value
+PASS lib@settings-panel-render |
 PASS lib@status-badge-priority |
 PASS lib@text-overflow |
 PASS lib@text-overflow-render |
 REFUSED lib@text-trim-test | field-store
 PASS lib@toml-test |
-REFUSED lib@tree-view-nav | builtin `uefi-read-key-ex` used as a value
+DIVERGES lib@tree-view-nav | pins what a caller still holding the old record sees after its list is written in place; a Roc list is a value, so the caller keeps what it held
 FAIL lib@utf8-cce-test | output: < utf8-3byte-one-char=fail
 REFUSED lib@widget-tone | builtin `__heap-advance`
 PASS lib@yaml-test |
@@ -896,16 +896,16 @@ SKIP shadow-builtin-fold | expects a diagnostic
 PASS shell-build-keep |
 PASS simplify-check |
 PASS sixlowpan-encode |
-REFUSED smp-affinity | builtin `atomic-load`
-REFUSED smp-ap-port-io | builtin `port-in-byte`
+SKIP smp-affinity | codex-vm boots it with 4 cores (.smp); this harness runs one
+SKIP smp-ap-port-io | codex-vm boots it with 4 cores (.smp); this harness runs one
 SKIP smp-arm64-boot | cross-arch (ARM64) SMP boot test; runs only under build/test-cross-smp.ps1 (QEMU -smp 2), never the 
-REFUSED smp-cores | builtin `atomic-load`
-REFUSED smp-dispatch | builtin `process-spawn`
-REFUSED smp-halt | builtin `process-spawn`
-REFUSED smp-preempt | builtin `process-spawn`
-REFUSED smp-proc0-pinned | builtin `atomic-load`
+SKIP smp-cores | codex-vm boots it with 4 cores (.smp); this harness runs one
+SKIP smp-dispatch | codex-vm boots it with 4 cores (.smp); this harness runs one
+SKIP smp-halt | codex-vm boots it with 4 cores (.smp); this harness runs one
+SKIP smp-preempt | codex-vm boots it with 4 cores (.smp); this harness runs one
+SKIP smp-proc0-pinned | codex-vm boots it with 4 cores (.smp); this harness runs one
 SKIP smp-riscv-boot | cross-arch (RISC-V) SMP boot test; runs only under build/test-cross-smp.ps1 (QEMU -smp 2), never the
-REFUSED smp-tss | builtin `atomic-load`
+SKIP smp-tss | codex-vm boots it with 4 cores (.smp); this harness runs one
 PASS smtp-md-test |
 PASS sntp-encode |
 PASS sort-test |
@@ -940,7 +940,7 @@ PASS text-eq-branches |
 PASS text-fold-indexed |
 REFUSED text-helper-native | builtin `text-replace`
 PASS text-helper-spec |
-REFUSED textfield-typing | builtin `uefi-read-key-ex` used as a value
+PASS textfield-typing |
 PASS textscan-test |
 PASS textsearch-test |
 PASS thumb2-encoder |
@@ -967,7 +967,7 @@ REFUSED typeclass-compound-head | builtin `to-text`
 REFUSED typeclass-poly | a call whose head is not a name
 REFUSED typeclass-smoke | `__compare_Integer` belongs to no chapter
 REFUSED udp-frame-guard | builtin `net-send-raw`
-REFUSED uefi-read-key-nofirmware | builtin `uefi-read-key` used as a value
+PASS uefi-read-key-nofirmware |
 REFUSED ui-anim-test | `__lam_0` applied to 1 of 2 arguments
 PASS ui-dialog-test |
 DIVERGES ui-event-test | list-push mutates a list two siblings share; Roc's List.append answers a new one
@@ -981,13 +981,13 @@ PASS ui-scroll-test |
 PASS ui-sound-test |
 PASS ui-surface-test |
 PASS ui-theme-test |
-REFUSED ui@data-table-fit | builtin `uefi-read-key-ex` used as a value
-REFUSED ui@data-table-hit | builtin `uefi-read-key-ex` used as a value
-REFUSED ui@data-table-width | builtin `uefi-read-key-ex` used as a value
-REFUSED ui@fixed-row | builtin `uefi-read-key-ex` used as a value
+PASS ui@data-table-fit |
+PASS ui@data-table-hit |
+PASS ui@data-table-width |
+PASS ui@fixed-row |
 PASS ui@theme-ink-on |
 PASS ui@vector-raster |
-REFUSED ui@widget-panel-min | builtin `uefi-read-key-ex` used as a value
+PASS ui@widget-panel-min |
 REFUSED unit-family | unit type `Length`
 REFUSED unit-family-mixed | unit type `Length`
 REFUSED unit-smoke | unit type `Second`

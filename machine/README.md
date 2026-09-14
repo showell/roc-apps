@@ -30,7 +30,7 @@ Two programs drive it:
 | `roc/MachineE1000.roc` | Intel gigabit Ethernet as codex-vm models it: the register window at 0xFE400000 behind `peek-32`/`poke-32`, the PHY through MDIC, the I219's K1, ULP and MDIO semaphore, the rings in memory, and the fault flags (`-e1000*`, `-i219*`, `-nic-bme-clear`) |
 | `roc/MachineHpet.roc` | the HPET at 0xFED00000, counting the machine's own clock, which every device register access moves 100 µs (`Machine.access_cost`) |
 | `roc/MachineDisk.roc` | the modelled disk: the primary channel's master and slave, each an image or nothing, as codex-vm's IDE model answers: 255 from an empty position, zeros past the end, writes in an overlay of sectors |
-| `roc/MachineMedia.roc` | the images the modelled disk attaches: none here; the ladder writes one per unit from its `.disk` and `.disk2` |
+| `roc/MachineMedia.roc` | what a run brings with it: the images the modelled disk attaches and the keystrokes typed, none here; the ladder writes one per unit from its `.disk`, `.disk2` and `.keys` |
 | `roc/MachineApp.roc` | the program the page runs: a PCI bus-0 scan, sector 0 into memory, a key echo |
 | `wasm/platform/` | the page's platform (`main.roc`) and its host (`host.zig`): `newMachine`, `step`, `key`, `view` |
 | `native/platform/` | the native platform: Echo's shape plus a hosted `Drive` (`open!`, `sector_count!`, `read!`, `write!`) over files, and its host (`host.zig`, x86_64-linux-musl) |
