@@ -717,7 +717,7 @@ PASS mouse-decode |
 PASS mqtt-encode |
 PASS mqttsn-encode |
 PASS mut-borrow-transitive |
-REFUSED mutable-smoke | a call whose head is not a name
+REFUSED mutable-smoke | field-store
 PASS neg-int-parse |
 REFUSED neg-real-repro | an opening of type real
 PASS negation-abutment |
@@ -783,7 +783,7 @@ REFUSED ops@real-saturating | binary add-real-saturating
 REFUSED ops@real-saturating-finite | builtin `to-real-saturating`
 REFUSED ops@real-to-int-wide | builtin `to-real-approx`
 REFUSED ops@real-trapping | binary add-real-trapping
-REFUSED ops@record-closure-field-poly | a call whose head is not a name
+PASS ops@record-closure-field-poly |
 PASS ops@record-equality |
 REFUSED ops@record-equality-vector | CODEGEN-HALTED: 3 error(s); no IR emitted; first CDX3008 Undefined type name: SizedVec
 PASS ops@saturated-call-returning-function |
@@ -853,7 +853,7 @@ PASS raytracer-test |
 REFUSED real-cert | `fe-carry-pass` writes its list parameter `o` and answers something else
 PASS real-literal-boundary |
 DIVERGES real-show-wide | the verdict pins Codex's own printer: it reads 12345678901234567.0 as ...566, we print the double
-REFUSED record-smoke | a call whose head is not a name
+PASS record-smoke |
 PASS recursive-eq |
 PASS reservoir-uniform |
 SKIP return-narrow-proven | expects a diagnostic
@@ -866,11 +866,11 @@ PASS roc-fold-count |
 PASS roc-fold-empty |
 PASS roc-fold-product |
 PASS roc-fold-sum |
-REFUSED roc-iter-drop-if | a call whose head is not a name
-REFUSED roc-iter-keep-if | a call whose head is not a name
-REFUSED roc-iter-map | a call whose head is not a name
+PASS roc-iter-drop-if |
+PASS roc-iter-keep-if |
+PASS roc-iter-map |
 PASS roc-recursive-var |
-REFUSED roc-returned-closure | a call whose head is not a name
+PASS roc-returned-closure |
 PASS rp2040-drivers |
 REFUSED rsa-pss | `cb-shl1-step` writes its list parameter `x` and answers something else
 REFUSED rsa-verify | `cb-shl1-step` writes its list parameter `x` and answers something else
@@ -964,7 +964,7 @@ PASS tvar-in-declared-type |
 PASS type-checker-test |
 REFUSED type-name-existence | a type applied to a non-name
 REFUSED typeclass-compound-head | builtin `to-text`
-REFUSED typeclass-poly | a call whose head is not a name
+REFUSED typeclass-poly | type error
 REFUSED typeclass-smoke | `__compare_Integer` belongs to no chapter
 REFUSED udp-frame-guard | builtin `net-send-raw`
 PASS uefi-read-key-nofirmware |
