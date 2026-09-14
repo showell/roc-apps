@@ -1,6 +1,6 @@
-REFUSED acpi-parse | builtin `__heap-advance`
+PASS acpi-parse |
 PASS act-let-scope |
-REFUSED act-tco-loop | builtin `__heap-advance`
+PASS act-tco-loop |
 PASS aesgcm256 |
 PASS amp-after-call |
 PASS approx-eq |
@@ -12,7 +12,7 @@ PASS arm64-encoder |
 PASS arm64-http-test |
 REFUSED arm64-net-gate | builtin `net-status` used as a value
 PASS arm64-proc-cells |
-REFUSED arm64-send-refusal | builtin `__heap-advance`
+REFUSED arm64-send-refusal | builtin `__buf-write-bytes`
 PASS arp-cache-bound |
 REFUSED asn1-der | `fe-carry-pass` writes its list parameter `o` and answers something else
 PASS asn1-der-write |
@@ -88,18 +88,18 @@ REFUSED deck-bracket-contract | builtin `__deck-set`
 REFUSED deck-cell-contract | builtin `__deck-set`
 REFUSED deck-record-contract | builtin `__deck-set`
 PASS deriving-eq-recursive |
-REFUSED desk-hole | builtin `__heap-advance`
-REFUSED desk-hover | builtin `__heap-advance`
-REFUSED desk-parse | builtin `__heap-advance`
-REFUSED desk-reuse | builtin `__heap-advance`
-REFUSED desk-root-guard | builtin `__heap-advance`
-REFUSED desk-span | builtin `__heap-advance`
+REFUSED desk-hole | builtin `net-send-raw`
+REFUSED desk-hover | builtin `net-send-raw`
+REFUSED desk-parse | builtin `net-send-raw`
+REFUSED desk-reuse | builtin `net-send-raw`
+REFUSED desk-root-guard | builtin `net-send-raw`
+REFUSED desk-span | builtin `net-send-raw`
 REFUSED device-buffer-alloc | builtin `gpu-mem-read`
 REFUSED dhcp-acquire | builtin `net-send-raw`
 REFUSED dhcp-acquire-e1000 | builtin `net-send-raw`
 REFUSED dhcp-renew | builtin `net-send-raw`
-REFUSED diag-pci-map-judge | builtin `__heap-advance`
-REFUSED disk-enum-parse | builtin `__heap-advance`
+REFUSED diag-pci-map-judge | builtin `port-in-16-block`
+REFUSED disk-enum-parse | builtin `port-in-16-block`
 PASS diskfacts-unpack-large |
 PASS dnp3-encode |
 PASS dns-answer-count |
@@ -202,18 +202,18 @@ PASS fat16-overwrite |
 FAIL fat16-source-cr | output: < text codes 41 58 0 1 50 48
 PASS fat16-subdir |
 PASS fat16-write |
-REFUSED fat32-cluster-guard | builtin `__heap-advance`
+PASS fat32-cluster-guard |
 PASS fat32-cluster-lfn |
 PASS fat32-img-longname |
 PASS fat32-longname |
 PASS fat32-longwrite |
-REFUSED fat32-parse | builtin `__heap-advance`
+REFUSED fat32-parse | builtin `port-in-16-block`
 REFUSED fe310-drivers | unit type `Duration`
 REFUSED field-cache-shape | field-store
 PASS field-cache-text-lit |
 SKIP field-guard-refine | expects a diagnostic
 SKIP field-range-proven | expects a diagnostic
-REFUSED files-parse | builtin `__heap-advance`
+REFUSED files-parse | builtin `port-in-16-block`
 REFUSED final-batch-test | unit type `Timestamp`
 PASS fins-encode |
 REFUSED forewords@ai-activation | `__lam_1` applied to 1 of 2 arguments
@@ -547,18 +547,18 @@ SKIP fs-spawn-inherits | child reaches the write path and faults inside it: the 
 PASS ga-core |
 PASS geometry-test |
 PASS goose-encode |
-REFUSED gop-composite-clamp | builtin `__heap-advance`
-REFUSED gop-composite-clip | builtin `__heap-advance`
-REFUSED gop-composite-kinds | builtin `__heap-advance`
-REFUSED gop-composite-stride | builtin `__heap-advance`
-REFUSED gop-composite-translate | builtin `__heap-advance`
-REFUSED gop-composite-vclip | builtin `__heap-advance`
-REFUSED gop-corner-ramp | builtin `__heap-advance`
+REFUSED gop-composite-clamp | builtin `port-in-16-block`
+REFUSED gop-composite-clip | builtin `port-in-16-block`
+REFUSED gop-composite-kinds | builtin `port-in-16-block`
+REFUSED gop-composite-stride | builtin `port-in-16-block`
+REFUSED gop-composite-translate | builtin `port-in-16-block`
+REFUSED gop-composite-vclip | builtin `port-in-16-block`
+REFUSED gop-corner-ramp | builtin `port-in-16-block`
 DIVERGES gop-padded-stride | reads its geometry from cells codex-vm publishes at fixed addresses at boot; on any other host those addresses were never written
-REFUSED gop-scene-backbuffer | builtin `__heap-advance`
+REFUSED gop-scene-backbuffer | builtin `port-in-16-block`
 PASS gop-scene-viewport |
-REFUSED gop-stride | builtin `__heap-advance`
-REFUSED gop-text-field | builtin `__heap-advance`
+PASS gop-stride |
+PASS gop-text-field |
 REFUSED gpu-depth-tree | builtin `gpu-mem-write`
 CRASH gpu-doorbell | machine: port-out-32 to port 0x00000420, the COM3 mailbox, which this machine does not model
 REFUSED gpu-gauge-clamp | builtin `gpu-mem-write`
@@ -582,7 +582,7 @@ PASS hart-encode |
 CRASH heap-bracket-shape | machine: port-in-byte from port 0x00000071, the CMOS clock (the host's local time), which this machi
 PASS heap-frame-reclaim |
 DIVERGES heap-scrub | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
-REFUSED hid-decode | builtin `__heap-advance`
+PASS hid-decode |
 PASS history-test |
 CRASH hpet-interrupt | machine: the HPET raised IOAPIC line 2 on vector 80, and this machine delivers no interrupts
 PASS i219-k1-mechanism |
@@ -670,7 +670,7 @@ REFUSED lib@text-trim-test | field-store
 PASS lib@toml-test |
 DIVERGES lib@tree-view-nav | pins what a caller still holding the old record sees after its list is written in place; a Roc list is a value, so the caller keeps what it held
 FAIL lib@utf8-cce-test | output: < utf8-3byte-one-char=fail
-REFUSED lib@widget-tone | builtin `__heap-advance`
+REFUSED lib@widget-tone | builtin `port-in-16-block`
 PASS lib@yaml-test |
 PASS linear-branch |
 REFUSED linear-capture-once | `__lam_0` applied to 1 of 2 arguments
@@ -713,7 +713,7 @@ PASS mix-bits |
 PASS mod-bound-return |
 PASS modbus-encode |
 PASS modprobe |
-REFUSED mouse-decode | builtin `__heap-advance`
+PASS mouse-decode |
 REFUSED mqtt-encode | unit type `Duration`
 PASS mqttsn-encode |
 PASS mut-borrow-transitive |
@@ -728,7 +728,7 @@ REFUSED net-driver-seam-no-av | builtin `net-send-raw`
 REFUSED net-io-clock | builtin `net-send-raw`
 REFUSED net-poll-calibrated | builtin `net-send-raw`
 REFUSED net-poll-clamped | builtin `net-send-raw`
-REFUSED net-recv-heap | builtin `__heap-advance`
+REFUSED net-recv-heap | builtin `__buf-write-bytes`
 REFUSED network-effect | builtin `net-send-raw`
 REFUSED network-scope-deny | builtin `net-send-raw`
 REFUSED network-scope-open | builtin `net-send-raw`
@@ -738,7 +738,7 @@ PASS noise-test |
 REFUSED normalize-eq | type (propeq (ctd "Off" (args)) (ctd "Off" (args)))
 REFUSED nrf52840-drivers | unit type `Duration`
 REFUSED nrf9160-drivers | unit type `Duration`
-REFUSED nvme-encode | builtin `__heap-advance`
+PASS nvme-encode |
 PASS oauth-island |
 PASS occurrence-check |
 PASS opcua-encode |
@@ -842,7 +842,7 @@ PASS punctual-smoke |
 SKIP qemu-rng | cross bed only: reads QEMU virt's virtio-mmio slots, which codex-vm does not model; the arm64 lane r
 SKIP qemu-rng-absent | cross bed only: the same program as qemu-rng with NO device attached (an empty .qemudev), so rng-ope
 PASS qemu-virt-board |
-REFUSED qr-encode | builtin `__heap-advance`
+PASS qr-encode |
 PASS queue-test |
 REFUSED quotes-gate | CODEGEN-HALTED: 1 error(s); no IR emitted; first CDX1000 Expected token kind mismatch, got 'WORK'
 REFUSED quotes-parse | CODEGEN-HALTED: 1 error(s); no IR emitted; first CDX1000 Expected token kind mismatch, got 'WORK'

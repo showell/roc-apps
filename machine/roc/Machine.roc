@@ -350,6 +350,22 @@ Machine :: [].{
 		({ ..m, mem: mem }, at)
 	}
 
+	# `__heap-advance`: the bump pointer moves past `n` bytes, and the answer is
+	# Nothing.
+	advance : Machine.Machine, I64 -> (Machine.Machine, {})
+	advance = |m, n| {
+		(mem, _at) = MachineMem.alloc(m.mem, n)
+		({ ..m, mem: mem }, {})
+	}
+
+	# `__heap-save` answers the bump pointer, and `__heap-restore` rewinds to it
+	# and answers 0, as x86's r10 does.
+	mark : Machine.Machine -> (Machine.Machine, I64)
+	mark = |m| (m, m.mem.top)
+
+	release : Machine.Machine, I64 -> (Machine.Machine, I64)
+	release = |m, h| ({ ..m, mem: { root: m.mem.root, top: h } }, 0)
+
 	# **A PORT IS A DEVICE REGISTER.** Every port read or write moves the
 	# machine's clock by `access_cost`, as a register access in an MMIO window
 	# does, and answers as codex-vm does at that port (MachinePorts), at the
