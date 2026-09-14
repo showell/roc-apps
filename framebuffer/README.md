@@ -104,6 +104,8 @@ Drawing these showed three things about the chapters under them:
   thousand times larger and it draws at its full grey. Both are the scale of
   the fixed-point Raytracer, where a unit vector was 1000 long and `vec3-dot`
   divided by 1000, left in place when Update 26 made its geometry Real.
+  Cobblestone PR 149 proposes the fix; under it `raytrace-on-screen` passes a
+  field of 1000 and a unit floor normal.
 - GlyphRasterizer's `gr-make-row` builds a glyph's buffer by pushing onto its
   own recursive call, as deep as the buffer is long, and the 4 x 4 supersampled
   buffer of an anti-aliased glyph overflowed the browser's stack. rocemit now
