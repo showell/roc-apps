@@ -23,6 +23,12 @@ MachineCaps :: [].{
 	gpu_memory : I64
 	gpu_memory = 18
 
+	network_read : I64
+	network_read = 8
+
+	network_write : I64
+	network_write = 9
+
 	# A row names its base bit, its read and write bits if the family has a
 	# direction, and any further bits the family implies; -1 is no such bit.
 	Row : { name : Str, base : I64, read : I64, write : I64, extra : List(I64) }

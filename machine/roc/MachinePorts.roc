@@ -47,7 +47,7 @@ MachinePorts :: [].{
 		} else if p == 0x60 or p == 0x64 {
 			Device("the PS/2 keyboard controller")
 		} else if p >= 0x300 and p < 0x320 {
-			Device("the NE2000")
+			Device("the NE2000 at 32 bits")
 		} else if (p >= 0x3C0 and p <= 0x3CF) or p == 0x3D4 or p == 0x3D5 or p == 0x3DA {
 			Device("the VGA registers")
 		} else if p == 0x1CE or p == 0x1CF {

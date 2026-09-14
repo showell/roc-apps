@@ -27,6 +27,8 @@ import MachineHpet
 import MachineIde
 import MachineMedia
 import MachineMem
+import MachineNat
+import MachineNe2k
 import MachinePci
 import MachinePorts
 
@@ -37,6 +39,11 @@ Machine :: [].{
 		drives : MachineDisk.Drives,
 		# The IDE channel's registers over those drives.
 		ide : MachineIde.Ide,
+		# The NE2000, the frames the NAT has queued for its ring, and the
+		# lease the NAT's DHCP offers, in seconds.
+		ne2k : MachineNe2k.Card,
+		rx : List(List(U8)),
+		lease : U64,
 		# Scancodes in the order they arrived, and the next one to read.
 		keys : List(U8),
 		key_at : U64,
@@ -67,7 +74,7 @@ Machine :: [].{
 		apic : MachineApic.Apic,
 	}
 
-	Flags : { bridge : Bool, deep : Bool, levels : U64, backward : Bool, disks : List(Str), e1000 : MachineE1000.E1000, hpet : MachineHpet.Hpet, board_mmio : Bool }
+	Flags : { bridge : Bool, deep : Bool, levels : U64, backward : Bool, disks : List(Str), e1000 : MachineE1000.E1000, hpet : MachineHpet.Hpet, board_mmio : Bool, lease : U64 }
 
 	# A batch run's machine, from codex-vm's command line and the effects the
 	# program's opening declares. The PCI bridge flags, the NIC's and the
@@ -80,7 +87,7 @@ Machine :: [].{
 	# threads Mem alone, to keep the program out of compile-time reach.
 	boot! : List(Str), List(Str) => Machine.Machine
 	boot! = |args, effects| {
-		f = Machine.flags(args, 0, { bridge: False, deep: False, levels: 0, backward: False, disks: ["", ""], e1000: MachineE1000.new, hpet: MachineHpet.new, board_mmio: False })
+		f = Machine.flags(args, 0, { bridge: False, deep: False, levels: 0, backward: False, disks: ["", ""], e1000: MachineE1000.new, hpet: MachineHpet.new, board_mmio: False, lease: 3600 })
 		levels = if !f.bridge { 0 } else if f.levels != 0 { f.levels } else if f.deep { 2 } else { 1 }
 		# The process table as the boot leaves it: the boot program's entry
 		# marked running (2) with the opening's grant, and process 1 granted the
@@ -89,8 +96,12 @@ Machine :: [].{
 		granted = MachineMem.write(table, MachineCaps.word_addr, MachineCaps.grant(effects), 8)
 		mem = MachineMem.write(granted, Machine.cap_addr(1), 1, 8)
 		nic = if f.e1000.present { Nic(if f.e1000.i219 { 0x15B8 } else { 0x100E }, f.e1000.faults.bme_clear) } else { NoNic }
-		made = Machine.make(mem, MachinePci.table(levels, f.backward, nic), MachineDisk.boot!(f.disks))
-		{ ..made, ide: MachineIde.attach!(made.drives), e1000: if f.e1000.present { MachineE1000.power_on(f.e1000) } else { f.e1000 }, hpet: f.hpet, board_mmio: f.board_mmio, timeline: Machine.timeline_of(MachineMedia.keys) }
+		# The boot probes the NE2000 and copies its station address out
+		# (X86_64Boot's emit-nic-init); every run starts with that done.
+		(card, address) = MachineNe2k.booted
+		nic_mem = Machine.copy_in(MachineMem.write(mem, Machine.nic_present_addr, 1, 8), Machine.nic_mac_addr, address, 0)
+		made = Machine.make(nic_mem, MachinePci.table(levels, f.backward, nic), MachineDisk.boot!(f.disks))
+		{ ..made, ide: MachineIde.attach!(made.drives), ne2k: card, lease: f.lease, e1000: if f.e1000.present { MachineE1000.power_on(f.e1000) } else { f.e1000 }, hpet: f.hpet, board_mmio: f.board_mmio, timeline: Machine.timeline_of(MachineMedia.keys) }
 	}
 
 	# -pci-bridge is one level, -pci-bridge-deep two, -pci-bridge-levels N
@@ -111,6 +122,9 @@ Machine :: [].{
 					Machine.flags(args, i + 2, { ..f, bridge: True, levels: n })
 				} else if a == "-board-mmio" {
 					Machine.flags(args, i + 1, { ..f, board_mmio: True })
+				} else if a == "-dhcp-lease" {
+					n = U64.from_str(List.get(args, i + 1) ?? "") ?? crash("machine: -dhcp-lease wants a number")
+					Machine.flags(args, i + 2, { ..f, lease: n })
 				} else if a == "-disk" or a == "-disk2" {
 					path = List.get(args, i + 1) ?? crash("machine: ${a} wants a file")
 					at = if a == "-disk" { 0 } else { 1 }
@@ -133,6 +147,9 @@ Machine :: [].{
 		pci: pci,
 		drives: drives,
 		ide: MachineIde.new,
+		ne2k: MachineNe2k.reset,
+		rx: [],
+		lease: 3600,
 		keys: [],
 		key_at: 0,
 		console: [],
@@ -341,6 +358,22 @@ Machine :: [].{
 
 	# `atomic-exchange`: the qword at the address becomes `value`, and the old
 	# one is the answer, as x86's xchg.
+	# `__buf-write-bytes base off bytes`: the low byte of each element from
+	# base + off on, to whatever backs each address; answers off plus the
+	# count, the offset past the last.
+	write_bytes : Machine.Machine, I64, I64, List(I64) -> (Machine.Machine, I64)
+	write_bytes = |m, base, off, bytes| (Machine.write_each(m, base + off, bytes, 0), off + U64.to_i64_wrap(List.len(bytes)))
+
+	write_each : Machine.Machine, I64, List(I64), U64 -> Machine.Machine
+	write_each = |m, at, bytes, i|
+		match List.get(bytes, i) {
+			Err(_) => m
+			Ok(b) => {
+				(next, _) = Machine.store(m, at, U64.to_i64_wrap(i), b, 1)
+				Machine.write_each(next, at, bytes, i + 1)
+			}
+		}
+
 	exchange : Machine.Machine, I64, I64 -> (Machine.Machine, I64)
 	exchange = |m, addr, value| {
 		(read, old) = Machine.load(m, addr, 0, 8)
@@ -418,12 +451,15 @@ Machine :: [].{
 	port_in_16! : Machine.Machine, I64 => (Machine.Machine, I64)
 	port_in_16! = |m, port| Machine.port_in!(m, I64.to_u64_wrap(port), 0xFFFF, "port-in-16")
 
-	# A byte or 16-bit access: the IDE channel's registers, or the port map.
+	# A byte or 16-bit access: the IDE channel's registers, the NE2000's, or
+	# the port map.
 	port_out! : Machine.Machine, U64, U64, Str => (Machine.Machine, I64)
 	port_out! = |m, p, v, builtin|
 		if MachineIde.claims(p) {
 			(ide, drives) = MachineIde.write!(m.ide, m.drives, p, v)
 			({ ..m, ide: ide, drives: drives, clock: m.clock + Machine.access_cost }, 0)
+		} else if p >= 0x300 and p < 0x320 {
+			Machine.ne2k_write(m, p - 0x300, v, if builtin == "port-out-byte" { 1 } else { 2 })
 		} else {
 			Machine.port_write(m, p, v, builtin)
 		}
@@ -433,8 +469,126 @@ Machine :: [].{
 		if MachineIde.claims(p) {
 			(ide, v) = MachineIde.read!(m.ide, m.drives, p)
 			({ ..m, ide: ide, clock: m.clock + Machine.access_cost }, U64.to_i64_wrap(U64.bitwise_and(v, mask)))
+		} else if p >= 0x300 and p < 0x320 {
+			(card, v) = MachineNe2k.read(m.ne2k, p - 0x300, if mask == 0xFF { 1 } else { 2 })
+			({ ..m, ne2k: card, clock: m.clock + Machine.access_cost }, U64.to_i64_wrap(U64.bitwise_and(v, mask)))
 		} else {
 			Machine.port_read(m, p, mask, builtin)
+		}
+
+	# A write to the NE2000. A transmit hands the frame to the NAT, and what
+	# the NAT answers is queued, at most 256 frames; a transmit or a BNRY write
+	# lays the queue into the ring.
+	ne2k_write : Machine.Machine, U64, U64, U64 -> (Machine.Machine, I64)
+	ne2k_write = |m, off, v, size| {
+		(card, effect) = MachineNe2k.write(m.ne2k, off, v, size)
+		queue =
+			match effect {
+				Transmit(frame) =>
+					match MachineNat.tx(frame, m.lease) {
+						Replies(frames) => List.sublist(List.concat(m.rx, frames), { start: 0, len: 256 })
+						Host(what) => crash("machine: the program sent a frame to ${what}, which this machine does not have")
+					}
+				_ => m.rx
+			}
+		(laid, rest) =
+			match effect {
+				Nothing => (card, queue)
+				_ => MachineNe2k.inject(card, queue)
+			}
+		({ ..m, ne2k: laid, rx: rest, clock: m.clock + Machine.access_cost }, 0)
+	}
+
+	# ---- the network ----------------------------------------------------
+	#
+	# x86's network builtins are kernel helpers that drive the NE2000 through
+	# its ports (X86_64IPCHelpers), once the running process's capability word
+	# allows it: network-read, bit 8, or network-write, bit 9; otherwise they
+	# answer -1, as they do when the boot found no card. The boot leaves the
+	# card's presence at 33024 and its station address at 33032.
+
+	nic_present_addr : I64
+	nic_present_addr = 33024
+
+	nic_mac_addr : I64
+	nic_mac_addr = 33032
+
+	net_allowed : Machine.Machine, I64 -> Bool
+	net_allowed = |m, bit| U64.bitwise_and(MachineMem.read(m.mem, MachineCaps.word_addr, 7, 0), MachineCaps.bit(bit)) != 0
+
+	# `net-status`: whether the boot found the card.
+	net_status : Machine.Machine -> (Machine.Machine, I64)
+	net_status = |m|
+		if Machine.net_allowed(m, MachineCaps.network_read) {
+			(m, U64.to_i64_wrap(MachineMem.read(m.mem, Machine.nic_present_addr, 7, 0)))
+		} else {
+			(m, -1)
+		}
+
+	# `net-get-hwaddr i`: byte `i` of the station address; -1 from 6 on.
+	net_get_hwaddr : Machine.Machine, I64 -> (Machine.Machine, I64)
+	net_get_hwaddr = |m, i|
+		if !Machine.net_allowed(m, MachineCaps.network_read) or i >= 6 {
+			(m, -1)
+		} else {
+			(m, U64.to_i64_wrap(MachineMem.read(m.mem, Machine.nic_mac_addr + i, 0, 0)))
+		}
+
+	# `net-send-raw buf len`: the frame into card memory at page 64 by remote
+	# DMA, `len` halved in words, then transmitted; answers `len`.
+	net_send_raw! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
+	net_send_raw! = |m, buf, len|
+		if !Machine.net_allowed(m, MachineCaps.network_write) or MachineMem.read(m.mem, Machine.nic_present_addr, 7, 0) == 0 {
+			(m, -1)
+		} else {
+			n = I64.to_u64_wrap(len)
+			hi = U64.to_i64_wrap(U64.div_trunc_by(n, 256))
+			staged = Machine.outs!(m, [(0x300, 0x22), (0x308, 0), (0x309, 64), (0x30A, len), (0x30B, hi), (0x300, 0x12)])
+			(copied, _) = Machine.outsw!(staged, buf, 0, U64.to_i64_wrap(U64.div_trunc_by(n, 2)), 0x310)
+			(Machine.outs!(copied, [(0x304, 64), (0x305, len), (0x306, hi), (0x300, 0x26)]), len)
+		}
+
+	# `net-recv-raw buf`: the next frame in the ring, if CURR has moved past
+	# BNRY, into `buf` a word at a time, BNRY moved on; answers its length, 0
+	# when there is none or its header's length is past 1,536.
+	net_recv_raw! : Machine.Machine, I64 => (Machine.Machine, I64)
+	net_recv_raw! = |m, buf|
+		if !Machine.net_allowed(m, MachineCaps.network_read) or MachineMem.read(m.mem, Machine.nic_present_addr, 7, 0) == 0 {
+			(m, -1)
+		} else {
+			(m1, curr) = Machine.port_in_byte!(Machine.outs!(m, [(0x300, 0x62)]), 0x307)
+			(m2, bnry) = Machine.port_in_byte!(Machine.outs!(m1, [(0x300, 0x22)]), 0x303)
+			if bnry == curr {
+				(m2, 0)
+			} else {
+				m3 = Machine.outs!(m2, [(0x308, 0), (0x309, bnry), (0x30A, 4), (0x30B, 0), (0x300, 0x0A)])
+				(m4, head) = Machine.port_in_16!(m3, 0x310)
+				(m5, total) = Machine.port_in_16!(m4, 0x310)
+				body = U64.minus_wrap(I64.to_u64_wrap(total), 4)
+				if body > 1536 {
+					(m5, 0)
+				} else {
+					even = U64.bitwise_and(body + 1, 0xFFFFFFFFFFFFFFFE)
+					m6 = Machine.outs!(m5, [(0x308, 4), (0x30A, U64.to_i64_wrap(even)), (0x30B, U64.to_i64_wrap(U64.div_trunc_by(even, 256))), (0x300, 0x0A)])
+					(m7, _) = Machine.insw!(m6, buf, 0, U64.to_i64_wrap(U64.div_trunc_by(even, 2)), 0x310)
+					(Machine.outs!(m7, [(0x303, I64.div_trunc_by(head, 256))]), U64.to_i64_wrap(body))
+				}
+			}
+		}
+
+	# Bytes out to ports, in order.
+	outs! : Machine.Machine, List((I64, I64)) => Machine.Machine
+	outs! = |m, writes| Machine.outs_from!(m, writes, 0)
+
+	outs_from! : Machine.Machine, List((I64, I64)), U64 => Machine.Machine
+	outs_from! = |m, writes, i|
+		match List.get(writes, i) {
+			Err(_) => m
+			Ok(w) => {
+				(port, v) = w
+				(next, _) = Machine.port_out_byte!(m, port, v)
+				Machine.outs_from!(next, writes, i + 1)
+			}
 		}
 
 	# `port-in-16-block addr count port` is x86's `rep insw`: `count` words from
