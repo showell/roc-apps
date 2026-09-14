@@ -52,8 +52,8 @@ Section: Scene
  Raytracer turns a pixel into a ray whose sideways reach, against a forward
  reach of 1, runs from minus to plus half the camera's field of view. A field
  of 1 sees about 67 degrees across; raytracer-test's camera of 1000 sees nearly
- half the sphere of directions, so at this size each sphere falls between its
- rays.
+ half the sphere of directions, where at this size the red sphere is one
+ traced pixel and the green one falls between rays.
 
   camera : RtCamera = rt-camera-new (vec3-new 0.0 0.0 0.0) 1
 
