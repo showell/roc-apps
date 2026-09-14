@@ -1,0 +1,56 @@
+Chapter: WidgetsOnScreen
+  cites Foreword chapter Console
+  cites Works chapter GopDraw
+  cites Works chapter GopComposite
+  cites Works chapter GopFont
+  cites UI chapter Widget
+  cites UI chapter Theme
+  cites UI chapter Layout
+  cites UI chapter BoxModel
+  cites Kernel chapter BitmapFont
+
+ A panel of Cobblestone's widgets, laid out by Layout and drawn by
+ GopComposite straight into the screen that UEFI's GOP protocol describes, as
+ codex/test/gop-composite-kinds draws them into memory of its own. The gauge
+ fills a step every 100 milliseconds of the clock the framebuffer platform
+ writes, and starts again when it is full.
+
+ We say:
+
+Section: Screen
+
+  fb-base : Integer = 3204448256
+  cell-width : Integer = 1988
+  cell-height : Integer = 1992
+  cell-stride : Integer = 2016
+  cell-clock : Integer = 2032
+
+  gauge-steps : Integer = 40
+
+Section: Tree
+
+  demo-tree : Integer -> WidgetNode
+  demo-tree (step) =
+    widget-panel "root" DirColumn 8 [widget-label "title" "Cobblestone widgets, drawn by GopComposite", widget-separator "sep", widget-input "field" "hello from Codex" 16, widget-set-min (widget-gauge "gauge" step gauge-steps) 0 24, widget-button "ok" "OK", widget-custom "dot" "event-dot" 20 20]
+
+Section: Entry
+
+ The screen is cleared to the theme's background first: the widgets paint
+ their own boxes, and what lies between them would otherwise keep the last
+ frame.
+
+  opening : [Console] Nothing = act
+    let w = peek-32 cell-width 0
+    in let h = peek-32 cell-height 0
+    in let stride = peek-32 cell-stride 0
+    in let ticks = (peek-32 cell-clock 0) / 100
+    in let step = ticks - (ticks / (gauge-steps + 1)) * (gauge-steps + 1)
+    in let th = theme-terminal
+    in let pal = th.th-palette
+    in let bg = gop-fill-rect fb-base stride h 0 0 w h (pal.pal-bg)
+    in let font = cbf-init
+    in let laid = comp-render fb-base stride h font gfont-none (demo-tree step) th w h 1
+    in act
+      print-line-uni ("gauge : " & show step & " of " & show gauge-steps)
+    end
+  end

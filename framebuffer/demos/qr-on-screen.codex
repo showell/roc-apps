@@ -1,0 +1,55 @@
+Chapter: QrOnScreen
+  cites Foreword chapter Console
+  cites Works chapter GopQr
+  cites Works chapter GopDraw
+
+ codex/test/qr-encode's payload encoded by GopQr as a 37 by 37 module QR code,
+ the modules drawn with GopDraw's bulk fill onto the screen that UEFI's GOP
+ protocol describes: dark on light, as large as the screen allows with the
+ four-module quiet zone the standard asks for on every side.
+
+ We say:
+
+Section: Screen
+
+  fb-base : Integer = 3204448256
+  cell-width : Integer = 1988
+  cell-height : Integer = 1992
+  cell-stride : Integer = 2016
+
+  light : Integer = #F4F1E8
+  dark : Integer = #1D1D1B
+
+  payload : Text = "KBDDIAG v8 qr telemetry test 0123456789 the quick brown fox"
+
+Section: Drawing
+
+  draw-cols : Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer -> Integer
+  draw-cols (m) (stride) (h) (x0) (y0) (module-px) (r) (c) =
+    if c >= qr-size then 0
+    else let d = if peek-byte m (qr-at r c) == 0 then 0 else gop-fill-rect fb-base stride h (x0 + c * module-px) (y0 + r * module-px) module-px module-px dark
+    in draw-cols m stride h x0 y0 module-px r (c + 1)
+
+  draw-rows : Integer, Integer, Integer, Integer, Integer, Integer, Integer -> Integer
+  draw-rows (m) (stride) (h) (x0) (y0) (module-px) (r) =
+    if r >= qr-size then 0
+    else let d = draw-cols m stride h x0 y0 module-px r 0
+    in draw-rows m stride h x0 y0 module-px (r + 1)
+
+Section: Entry
+
+  opening : [Console] Nothing = act
+    let w = peek-32 cell-width 0
+    in let h = peek-32 cell-height 0
+    in let stride = peek-32 cell-stride 0
+    in let side = if w < h then w else h
+    in let module-px = side / (qr-size + 8)
+    in let x0 = (w - module-px * qr-size) / 2
+    in let y0 = (h - module-px * qr-size) / 2
+    in let bg = gop-fill-rect fb-base stride h 0 0 w h light
+    in let m = qr5-encode payload
+    in let d = draw-rows m stride h x0 y0 module-px 0
+    in act
+      print-line-uni ("qr : " & show qr-size & " modules, " & show module-px & " pixels each")
+    end
+  end

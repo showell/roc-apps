@@ -1,0 +1,62 @@
+Chapter: ShadowSpin
+  cites Foreword chapter Console
+  cites Engine chapter Renderer3D
+  cites Engine chapter Scene3D
+  cites Engine chapter Mesh
+  cites Engine chapter Material
+  cites Math chapter Matrix4
+  cites Math chapter Cordic
+  cites Game chapter Color
+
+ The scene of codex/test/engine-shadow, a cube on a plane under one key light,
+ rendered by Renderer3D with its shadow map into the screen that UEFI's GOP
+ protocol describes. The light turns about the cube by the clock the
+ framebuffer platform writes before each frame, one milliradian a millisecond,
+ so the shadow sweeps round the plane. At angle 0 the light stands where
+ engine-shadow's does.
+
+ We say:
+
+Section: Screen
+
+  fb-base : Integer = 3204448256
+  cell-width : Integer = 1988
+  cell-height : Integer = 1992
+  cell-stride : Integer = 2016
+  cell-clock : Integer = 2032
+
+  sky : Integer = #14141E
+
+  shadow-map : Integer = 256
+
+Section: Scene
+
+ engine-shadow's key light sits at (-400, 800, 400): 566 from the cube's axis,
+ at minus 785 milliradians round it. Here it keeps its height and distance and
+ turns; Cordic's sine and cosine are thousandths.
+
+  scene-at : Integer -> Scene3DState
+  scene-at (angle) =
+    let lx = real-from-int (566 * cordic-sin (angle - 785) / 1000)
+    in let lz = real-from-int (566 * cordic-cos (angle - 785) / 1000)
+    in let cam = camera3d-new (vec3-new 0.0 2600.0 5200.0) (vec3-new 0.0 300.0 0.0) 0.785
+    in let stage = scene3d-new cam
+    in let ground = sn3-with-mesh "ground" (mesh-plane 2500 2500) (emat-flat (rgb 90 80 62))
+    in let cube = sn3-set-pos (sn3-with-mesh "cube" (mesh-cube 450) (emat-shiny (rgb 90 130 210) 32)) 0.0 450.0 0.0
+    in let s2 = scene3d-add (scene3d-add stage ground) cube
+    in let key = dir-light (vec3-new lx 800.0 lz) (rgb 255 250 235) 850
+    in scene3d-set-ambient (scene3d-add-light s2 key) 260
+
+Section: Entry
+
+  opening : [Console] Nothing = act
+    let w = peek-32 cell-width 0
+    in let h = peek-32 cell-height 0
+    in let stride = peek-32 cell-stride 0
+    in let angle = peek-32 cell-clock 0
+    in let tgt = r3d-target-at fb-base stride w h sky
+    in let d = r3d-render-shadowed tgt (scene-at angle) shadow-map
+    in act
+      print-line-uni ("light : " & show angle & " milliradians round the cube")
+    end
+  end

@@ -1,0 +1,64 @@
+Chapter: MeshesSpin
+  cites Foreword chapter Console
+  cites Engine chapter Renderer3D
+  cites Engine chapter Scene3D
+  cites Engine chapter Mesh
+  cites Engine chapter Material
+  cites Math chapter Matrix4
+  cites Math chapter Cordic
+  cites Game chapter Color
+
+ The four meshes codex/test/engine-mesh-gen builds, a sphere, a cylinder, a
+ cone and a torus, standing in a row on a plane and rendered by Renderer3D
+ with Gouraud shading into the screen that UEFI's GOP protocol describes. The
+ camera circles them by the clock the framebuffer platform writes before each
+ frame, one milliradian a millisecond.
+
+ We say:
+
+Section: Screen
+
+  fb-base : Integer = 3204448256
+  cell-width : Integer = 1988
+  cell-height : Integer = 1992
+  cell-stride : Integer = 2016
+  cell-clock : Integer = 2032
+
+  sky : Integer = #101828
+
+Section: Scene
+
+ Each mesh is engine-mesh-gen's, lifted so it stands on the plane: the sphere
+ by its radius, the cylinder by its half height, the torus by its thickness.
+
+  shaded : Rgb -> EngineMaterial
+  shaded (c) = emat-set-shading (emat-shiny c 24) GouraudShaded
+
+  scene-at : Integer -> Scene3DState
+  scene-at (angle) =
+    let ex = real-from-int (7000 * cordic-sin angle / 1000)
+    in let ez = real-from-int (7000 * cordic-cos angle / 1000)
+    in let cam = camera3d-new (vec3-new ex 2400.0 ez) (vec3-new 0.0 400.0 0.0) 0.785
+    in let stage = scene3d-new cam
+    in let ground = sn3-with-mesh "ground" (mesh-plane 6000 6000) (emat-flat (rgb 70 70 80))
+    in let sphere = sn3-set-pos (sn3-with-mesh "sphere" (mesh-sphere 800 8 6) (shaded (rgb 200 160 90))) (-2700.0) 800.0 0.0
+    in let cylinder = sn3-set-pos (sn3-with-mesh "cylinder" (mesh-cylinder 500 400 8) (shaded (rgb 90 170 220))) (-900.0) 400.0 0.0
+    in let cone = sn3-set-pos (sn3-with-mesh "cone" (mesh-cone 500 900 8) (shaded (rgb 220 90 90))) 900.0 0.0 0.0
+    in let torus = sn3-set-pos (sn3-with-mesh "torus" (mesh-torus 700 200 8 6) (shaded (rgb 120 210 120))) 2700.0 200.0 0.0
+    in let s2 = scene3d-add (scene3d-add (scene3d-add (scene3d-add (scene3d-add stage ground) sphere) cylinder) cone) torus
+    in let key = dir-light (vec3-new (-400.0) 800.0 600.0) (rgb 255 250 235) 850
+    in scene3d-set-ambient (scene3d-add-light s2 key) 250
+
+Section: Entry
+
+  opening : [Console] Nothing = act
+    let w = peek-32 cell-width 0
+    in let h = peek-32 cell-height 0
+    in let stride = peek-32 cell-stride 0
+    in let angle = peek-32 cell-clock 0
+    in let tgt = r3d-target-at fb-base stride w h sky
+    in let d = r3d-render-into tgt (scene-at angle)
+    in act
+      print-line-uni ("camera : " & show angle & " milliradians round the meshes")
+    end
+  end
