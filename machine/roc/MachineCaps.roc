@@ -20,6 +20,9 @@ MachineCaps :: [].{
 	block_device : I64
 	block_device = 10
 
+	gpu_compute : I64
+	gpu_compute = 17
+
 	gpu_memory : I64
 	gpu_memory = 18
 

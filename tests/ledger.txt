@@ -41,9 +41,9 @@ PASS cap-audio |
 PASS cap-block-denied |
 PASS cap-device-declared |
 PASS cap-direction |
-REFUSED cap-gpu-byte-denied | builtin `gpu-mem-write`
-REFUSED cap-gpu-family | builtin `gpu-mem-write`
-REFUSED cap-gpu-mem-denied | builtin `gpu-mem-write`
+PASS cap-gpu-byte-denied |
+PASS cap-gpu-family |
+PASS cap-gpu-mem-denied |
 PASS cap-heap-poke-pure |
 REFUSED cap-identity-denied | builtin `key-load`
 PASS cap-manifest-derived |
@@ -75,7 +75,7 @@ SKIP const-narrow-proven | expects a diagnostic
 PASS convolution-identity |
 DIVERGES cost@accumulator-corpus | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
 REFUSED cost@giveup-beats-fuel | an opening of type (effectful (effs "Console") (scopes "") nothing)
-REFUSED cross-port-refused | builtin `gpu-out`
+PASS cross-port-refused |
 PASS crypto-test |
 PASS crypto-vectors |
 REFUSED cryptobig | `cb-shl1-step` writes its list parameter `x` and answers something else
@@ -94,7 +94,7 @@ REFUSED desk-parse | a function value from `__lam_0` (1 of 2 arguments), which r
 REFUSED desk-reuse | a function value from `__lam_0` (1 of 2 arguments), which reaches the machine; a function value carries no sta
 REFUSED desk-root-guard | a function value from `__lam_0` (1 of 2 arguments), which reaches the machine; a function value carries no sta
 REFUSED desk-span | a function value from `__lam_0` (1 of 2 arguments), which reaches the machine; a function value carries no sta
-REFUSED device-buffer-alloc | builtin `gpu-mem-read`
+PASS device-buffer-alloc |
 PASS dhcp-acquire |
 CRASH dhcp-acquire-e1000 | machine: -e1000-nat is not a codex-vm flag this machine models
 PASS dhcp-renew |
@@ -342,7 +342,7 @@ PASS forewords@engine-world-hud |
 PASS forewords@foreword-aes |
 PASS forewords@foreword-aes-gcm |
 PASS forewords@foreword-aes256 |
-REFUSED forewords@foreword-apprunner | builtin `gpu-mem-write`
+PASS forewords@foreword-apprunner |
 PASS forewords@foreword-b-plus-tree |
 PASS forewords@foreword-bit-set |
 PASS forewords@foreword-bloom-filter |
@@ -464,11 +464,11 @@ PASS forewords@game-tween |
 PASS forewords@game-voronoi |
 PASS forewords@gpu-atomic |
 PASS forewords@gpu-barrier |
-REFUSED forewords@gpu-device-buffer | builtin `gpu-mem-read`
+PASS forewords@gpu-device-buffer |
 PASS forewords@gpu-device-effect |
 PASS forewords@gpu-devicemath-atan |
 PASS forewords@gpu-disjoint-slice |
-REFUSED forewords@gpu-effect | builtin `gpu-mem-read`
+PASS forewords@gpu-effect |
 PASS forewords@gpu-launch-config |
 PASS forewords@gpu-shared |
 PASS forewords@gpu-thread |
@@ -555,15 +555,15 @@ DIVERGES gop-composite-translate | comp-translate moves each child with __record
 PASS gop-composite-vclip |
 PASS gop-corner-ramp |
 PASS gop-padded-stride |
-REFUSED gop-scene-backbuffer | builtin `gpu-out`
+PASS gop-scene-backbuffer |
 PASS gop-scene-viewport |
 PASS gop-stride |
 PASS gop-text-field |
-REFUSED gpu-depth-tree | builtin `gpu-mem-write`
+PASS gpu-depth-tree |
 CRASH gpu-doorbell | machine: port-out-32 to port 0x00000420, the COM3 mailbox, which this machine does not model
-REFUSED gpu-gauge-clamp | builtin `gpu-mem-write`
-REFUSED gpu-input-cursor | builtin `gpu-mem-write`
-REFUSED gpu-panel-border | builtin `gpu-mem-write`
+PASS gpu-gauge-clamp |
+PASS gpu-input-cursor |
+PASS gpu-panel-border |
 CRASH gpu-ptx | machine: port-out-32 to port 0x00000420, the COM3 mailbox, which this machine does not model
 PASS grounds-port |
 PASS hal-board-sleep |
@@ -633,7 +633,7 @@ PASS let-dest-scope |
 PASS let-else-scope |
 PASS let-shadow-scope |
 PASS lib@aesgcm-test |
-REFUSED lib@app-runner-frame | builtin `gpu-mem-write`
+PASS lib@app-runner-frame |
 PASS lib@badge-tone |
 REFUSED lib@brotli-ctx2-test | `lz77-count-distinct` writes its list parameter `seen` and answers something else
 REFUSED lib@brotli-dict-test | builtin `__list-with-capacity`

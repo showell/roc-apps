@@ -8,6 +8,6 @@ MachineScreen :: [].{
 	shown : Bool
 	shown = True
 
-	present! : U64, U64, U64, List(U8) => {}
+	present! : U64, U64, U64, List(U32) => {}
 	present! = |width, height, stride, pixels| Screen.present!(width, height, stride, pixels)
 }

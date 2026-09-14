@@ -23,6 +23,7 @@ import MachineApic
 import MachineCaps
 import MachineDisk
 import MachineE1000
+import MachineGpu
 import MachineHpet
 import MachineIde
 import MachineMedia
@@ -62,9 +63,9 @@ Machine :: [].{
 		clock : U64,
 		# -board-mmio: RAM behind the three board peripheral windows.
 		board_mmio : Bool,
-		# codex-vm's -gop screen: whether a flag asked for one, its width and
-		# height in pixels, and its stride, the pixels a row takes in memory.
-		screen : { active : Bool, width : U64, height : U64, stride : U64 },
+		# codex-vm's -gop screen and the GPU that draws on it: the command buffer,
+		# the depth buffer and the framebuffer, or nothing without a screen.
+		gpu : MachineGpu.Gpu,
 		# The keystrokes a test types (its .keys), in the machine's clock, and
 		# how many have been delivered.
 		timeline : List({ at : U64, code : U8 }),
@@ -113,7 +114,7 @@ Machine :: [].{
 		(card, address) = MachineNe2k.booted
 		nic_mem = Machine.copy_in(MachineMem.write(mem, Machine.nic_present_addr, 1, 8), Machine.nic_mac_addr, address, 0)
 		made = Machine.make(nic_mem, MachinePci.table(levels, f.backward, nic), MachineDisk.boot!(f.disks))
-		{ ..made, ide: MachineIde.attach!(made.drives), ne2k: card, lease: f.lease, e1000: if fe1000.present { MachineE1000.power_on(fe1000) } else { fe1000 }, hpet: fhpet, board_mmio: f.board_mmio, screen: { active: f.gop, width: f.gop_width, height: f.gop_height, stride: screen_stride }, timeline: Machine.timeline_of(MachineMedia.keys) }
+		{ ..made, ide: MachineIde.attach!(made.drives), ne2k: card, lease: f.lease, e1000: if fe1000.present { MachineE1000.power_on(fe1000) } else { fe1000 }, hpet: fhpet, board_mmio: f.board_mmio, gpu: if f.gop { MachineGpu.new(f.gop_width, f.gop_height, screen_stride) } else { MachineGpu.none }, timeline: Machine.timeline_of(MachineMedia.keys) }
 	}
 
 	# -pci-bridge is one level, -pci-bridge-deep two, -pci-bridge-levels N
@@ -187,7 +188,7 @@ Machine :: [].{
 		hpet: MachineHpet.new,
 		clock: 0,
 		board_mmio: False,
-		screen: { active: False, width: 0, height: 0, stride: 0 },
+		gpu: MachineGpu.none,
 		timeline: [],
 		typed: 0,
 		scopes: Dict.empty(),
@@ -196,30 +197,15 @@ Machine :: [].{
 		apic: MachineApic.new,
 	}
 
-	fb_addr : I64
-	fb_addr = 0xBF000000
-
 	# The end of a run. A platform that shows the screen gets the framebuffer
-	# as the run left it, stride pixels a row for height rows; on one that
-	# shows nothing (MachineScreen.shown), the framebuffer is not read.
+	# as the run left it, stride pixels a row for height rows.
 	halt! : Machine.Machine => {}
 	halt! = |m|
-		if m.screen.active and MachineScreen.shown {
-			n = U64.to_i64_wrap(m.screen.stride * m.screen.height * 4)
-			MachineScreen.present!(m.screen.width, m.screen.height, m.screen.stride, Machine.read_span(m.mem, Machine.fb_addr, n, List.with_capacity(I64.to_u64_wrap(n))))
+		if MachineGpu.active(m.gpu) and MachineScreen.shown {
+			MachineScreen.present!(m.gpu.width, m.gpu.height, m.gpu.stride, MachineGpu.framebuffer(m.gpu))
 		} else {
 			{}
 		}
-
-	read_span : MachineMem.Mem, I64, I64, List(U8) -> List(U8)
-	read_span = |mem, base, n, acc| {
-		i = U64.to_i64_wrap(List.len(acc))
-		if i >= n {
-			acc
-		} else {
-			Machine.read_span(mem, base, n, List.append(acc, U64.to_u8_wrap(MachineMem.read(mem, base + i, 0, 0))))
-		}
-	}
 
 	tick : Machine.Machine -> Machine.Machine
 	tick = |m| { ..m, steps: m.steps + 1 }
@@ -252,9 +238,14 @@ Machine :: [].{
 	# claims is one codex-vm faults on, or a device this machine does not model,
 	# so a load or store there stops the run and names the address rather than
 	# answering from memory.
-	region : Machine.Machine, I64 -> [Ram, Nic, Hpet, Lapic, Ioapic, Nothing(Str)]
+	# With a screen, the GPU's command buffer, depth buffer and framebuffer are
+	# RAM that MachineGpu keeps (flat, where a pixel is one word written in
+	# place), ahead of the rest of RAM.
+	region : Machine.Machine, I64 -> [Ram, Gpu, Nic, Hpet, Lapic, Ioapic, Nothing(Str)]
 	region = |m, a|
-		if a >= 0 and a < Machine.ram_size {
+		if a >= MachineGpu.cmd_base and a < Machine.ram_size and MachineGpu.active(m.gpu) and MachineGpu.claims(m.gpu, a) {
+			Gpu
+		} else if a >= 0 and a < Machine.ram_size {
 			Ram
 		} else if m.board_mmio and Machine.board_window(a) {
 			Ram
@@ -304,14 +295,36 @@ Machine :: [].{
 			Machine.hex_go(U64.shr_zf_wrap(v, 4), left - 1, Str.concat(d, acc))
 		}
 
-	# `peek-byte` .. `peek-qword`, and `read-mmio` and `read-mmio-32`: `width`
-	# bytes, little-endian, from whatever backs the address. The NIC's and the
-	# HPET's registers answer 32 bits at a time.
+	# **THE GPU'S PAGE CARRIES THE AUTHORITY.** x86's peek and poke helpers, at
+	# every width, and read-mmio-32 and poke-mmio-32 answer -1 for an address
+	# in the page 0xBE000000-0xBEFFFFFF, and write nothing, to a process without
+	# gpu-memory, bit 18 (X86_64Boot's emit-gpu-mem-guard). The byte-width
+	# read-mmio and poke-mmio, the buffer and atomic builtins, and the machine's
+	# own reads go unguarded.
 	load : Machine.Machine, I64, I64, I64 -> (Machine.Machine, I64)
-	load = |m, base, off, width| {
+	load = |m, base, off, width|
+		if Machine.gpu_page_denied(m, base + off) {
+			(m, -1)
+		} else {
+			Machine.load_unguarded(m, base, off, width)
+		}
+
+	store : Machine.Machine, I64, I64, I64, I64 -> (Machine.Machine, I64)
+	store = |m, base, off, v, width|
+		if Machine.gpu_page_denied(m, base + off) {
+			(m, -1)
+		} else {
+			Machine.store_unguarded(m, base, off, v, width)
+		}
+
+	# `width` bytes, little-endian, from whatever backs the address. The NIC's
+	# and the HPET's registers answer 32 bits at a time.
+	load_unguarded : Machine.Machine, I64, I64, I64 -> (Machine.Machine, I64)
+	load_unguarded = |m, base, off, width| {
 		a = base + off
 		match Machine.region(m, a) {
 			Ram => (m, U64.to_i64_wrap(MachineMem.read(m.mem, a, width - 1, 0)))
+			Gpu => (m, U64.to_i64_wrap(MachineGpu.load(m.gpu, a, width)))
 			Nic =>
 				if width != 4 {
 					crash("machine: a ${I64.to_str(width)}-byte read of the e1000's registers, which this machine answers 32 bits at a time")
@@ -344,13 +357,14 @@ Machine :: [].{
 		}
 	}
 
-	# `poke-byte` .. `poke-qword`, and `poke-mmio` and `poke-mmio-32`, answer 0.
-	store : Machine.Machine, I64, I64, I64, I64 -> (Machine.Machine, I64)
-	store = |m, base, off, v, width| {
+	# The low `width` bytes of the value to whatever backs the address; answers 0.
+	store_unguarded : Machine.Machine, I64, I64, I64, I64 -> (Machine.Machine, I64)
+	store_unguarded = |m, base, off, v, width| {
 		a = base + off
 		u = I64.to_u64_wrap(v)
 		match Machine.region(m, a) {
 			Ram => ({ ..m, mem: MachineMem.write(m.mem, a, u, width) }, 0)
+			Gpu => ({ ..m, gpu: MachineGpu.store(m.gpu, a, u, width) }, 0)
 			Nic =>
 				if width != 4 {
 					crash("machine: a ${I64.to_str(width)}-byte write to the e1000's registers, which this machine takes 32 bits at a time")
@@ -415,7 +429,7 @@ Machine :: [].{
 	# whatever backs the address; answers off + 1.
 	write_byte : Machine.Machine, I64, I64, I64 -> (Machine.Machine, I64)
 	write_byte = |m, base, off, v| {
-		(next, _) = Machine.store(m, base, off, v, 1)
+		(next, _) = Machine.store_unguarded(m, base, off, v, 1)
 		(next, off + 1)
 	}
 
@@ -430,7 +444,7 @@ Machine :: [].{
 		match List.get(bytes, i) {
 			Err(_) => m
 			Ok(b) => {
-				(next, _) = Machine.store(m, at, U64.to_i64_wrap(i), b, 1)
+				(next, _) = Machine.store_unguarded(m, at, U64.to_i64_wrap(i), b, 1)
 				Machine.write_each(next, at, bytes, i + 1)
 			}
 		}
@@ -448,15 +462,15 @@ Machine :: [].{
 		if i >= count {
 			(m, acc)
 		} else {
-			(next, b) = Machine.load(m, at, i, 1)
+			(next, b) = Machine.load_unguarded(m, at, i, 1)
 			Machine.read_each(next, at, count, List.append(acc, b))
 		}
 	}
 
 	exchange : Machine.Machine, I64, I64 -> (Machine.Machine, I64)
 	exchange = |m, addr, value| {
-		(read, old) = Machine.load(m, addr, 0, 8)
-		(written, _) = Machine.store(read, addr, 0, value, 8)
+		(read, old) = Machine.load_unguarded(m, addr, 0, 8)
+		(written, _) = Machine.store_unguarded(read, addr, 0, value, 8)
 		(written, old)
 	}
 
@@ -494,7 +508,13 @@ Machine :: [].{
 		p = I64.to_u64_wrap(port)
 		v = U64.bitwise_and(I64.to_u64_wrap(value), MachinePci.all_ones)
 		clock = m.clock + Machine.access_cost
-		if p == MachinePci.config_addr {
+		if p >= Machine.gpu_port_lo and p <= Machine.gpu_port_hi {
+			if Machine.gpu_compute_denied(m) {
+				(m, -1)
+			} else {
+				Machine.gpu_port_out(m, p, v)
+			}
+		} else if p == MachinePci.config_addr {
 			({ ..m, pci: MachinePci.latch(m.pci, v), clock: clock }, 0)
 		} else if p >= MachinePci.config_data and p <= MachinePci.config_data + 3 {
 			({ ..m, pci: MachinePci.write(m.pci, v), clock: clock }, 0)
@@ -507,7 +527,13 @@ Machine :: [].{
 	port_in_32 : Machine.Machine, I64 -> (Machine.Machine, I64)
 	port_in_32 = |m, port| {
 		p = I64.to_u64_wrap(port)
-		if p >= MachinePci.config_data and p <= MachinePci.config_data + 3 {
+		if p >= Machine.gpu_port_lo and p <= Machine.gpu_port_hi {
+			if Machine.gpu_compute_denied(m) {
+				(m, -1)
+			} else {
+				({ ..m, clock: m.clock + Machine.access_cost }, U64.to_i64_wrap(MachineGpu.port_in(p)))
+			}
+		} else if p >= MachinePci.config_data and p <= MachinePci.config_data + 3 {
 			({ ..m, clock: m.clock + Machine.access_cost }, U64.to_i64_wrap(MachinePci.read(m.pci, p - MachinePci.config_data)))
 		} else {
 			Machine.port_read(m, p, MachinePci.all_ones, "port-in-32")
@@ -714,7 +740,7 @@ Machine :: [].{
 			(m, 0)
 		} else {
 			(m1, w) = Machine.port_in_16!(m, port)
-			(m2, _) = Machine.store(m1, addr, i * 2, w, 2)
+			(m2, _) = Machine.store_unguarded(m1, addr, i * 2, w, 2)
 			Machine.insw!(m2, addr, i + 1, count, port)
 		}
 
@@ -723,10 +749,51 @@ Machine :: [].{
 		if i >= count {
 			(m, 0)
 		} else {
-			(m1, w) = Machine.load(m, addr, i * 2, 2)
+			(m1, w) = Machine.load_unguarded(m, addr, i * 2, 2)
 			(m2, _) = Machine.port_out_16!(m1, port, w)
 			Machine.outsw!(m2, addr, i + 1, count, port)
 		}
+
+	# **THE GPU'S PORTS ARE 0x400-0x417, AND THE WINDOW CARRIES THE AUTHORITY.**
+	# x86's port-out-32 and port-in-32 answer -1 there to a process without
+	# gpu-compute, bit 17 (X86_64Boot's emit-gpu-port-guard); gpu-out and
+	# gpu-in are the same two doors.
+	gpu_port_lo : U64
+	gpu_port_lo = 0x400
+
+	gpu_port_hi : U64
+	gpu_port_hi = 0x417
+
+	gpu_compute_denied : Machine.Machine -> Bool
+	gpu_compute_denied = |m| U64.bitwise_and(MachineMem.read(m.mem, MachineCaps.word_addr, 7, 0), MachineCaps.bit(MachineCaps.gpu_compute)) == 0
+
+	# A write to a GPU port. With a screen, MachineGpu draws. Without one
+	# codex-vm draws nothing, but still clears the depth buffer, which is then
+	# RAM at 0xBE800000, for its default 640 x 480.
+	gpu_port_out : Machine.Machine, U64, U64 -> (Machine.Machine, I64)
+	gpu_port_out = |m, p, v| {
+		clock = m.clock + Machine.access_cost
+		if MachineGpu.active(m.gpu) {
+			({ ..m, gpu: MachineGpu.port_out(m.gpu, p, v), clock: clock }, 0)
+		} else if p == 0x402 and U64.bitwise_and(v, 0xFFFFFFFF) == 0 {
+			({ ..m, mem: Machine.far_depth(m.mem, 640 * 480), clock: clock }, 0)
+		} else if p == 0x400 or p == 0x401 {
+			({ ..m, clock: clock }, 0)
+		} else {
+			({ ..m, gpu: MachineGpu.port_out(m.gpu, p, v), clock: clock }, 0)
+		}
+	}
+
+	far_depth : MachineMem.Mem, I64 -> MachineMem.Mem
+	far_depth = |mem0, n| {
+		var $mem = mem0
+		var $i = 0
+		while $i < n {
+			$mem = MachineMem.write($mem, MachineGpu.depth_base + $i * 4, U32.to_u64(MachineGpu.depth_far), 4)
+			$i = $i + 1
+		}
+		$mem
+	}
 
 	gpu_page_denied : Machine.Machine, I64 -> Bool
 	gpu_page_denied = |m, addr|
@@ -859,7 +926,7 @@ Machine :: [].{
 
 	# `process-get-cap`: a process's capability word; -1 past the table.
 	process_get_cap : Machine.Machine, I64 -> (Machine.Machine, I64)
-	process_get_cap = |m, pid| if pid >= 16 { (m, -1) } else { Machine.load(m, Machine.cap_addr(pid), 0, 8) }
+	process_get_cap = |m, pid| if pid >= 16 { (m, -1) } else { Machine.load_unguarded(m, Machine.cap_addr(pid), 0, 8) }
 
 	# `process-restrict-cap`: clears one bit of a process's word and answers 0,
 	# or answers -1 when the running process lacks capability-admin or the pid

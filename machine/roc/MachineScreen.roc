@@ -6,8 +6,8 @@ MachineScreen :: [].{
 	shown : Bool
 	shown = False
 
-	# Width and height in pixels, the stride in pixels a row, and the bytes:
-	# stride times height rows of four bytes a pixel (blue, green, red, unused).
-	present! : U64, U64, U64, List(U8) => {}
+	# Width and height in pixels, the stride in pixels a row, and the pixels:
+	# stride times height words of 0x00RRGGBB.
+	present! : U64, U64, U64, List(U32) => {}
 	present! = |_width, _height, _stride, _pixels| {}
 }

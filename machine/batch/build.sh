@@ -28,7 +28,7 @@ for src in "$@"; do
     grep -qx 'import Machine' "$d"/*.roc || { echo "$n does not run on the machine"; exit 2; }
     # The modules rocemit wrote, the app first, which the page shows.
     emitted=("$app" $(cd "$d" && ls *.roc | grep -vx "$app" || true))
-    cp "$HERE/../roc/"{Machine,MachineApic,MachineCaps,MachineE1000,MachineHpet,MachineIde,MachineMedia,MachineMem,MachineNat,MachineNe2k,MachinePci,MachinePorts}.roc "$d/"
+    cp "$HERE/../roc/"{Machine,MachineApic,MachineCaps,MachineE1000,MachineGpu,MachineHpet,MachineIde,MachineMedia,MachineMem,MachineNat,MachineNe2k,MachinePci,MachinePorts}.roc "$d/"
     cp "$HERE/../native/MachineDisk.roc" "$HERE/MachineScreen.roc" "$HERE/MachineWire.roc" "$d/"
     # Roc takes a platform only by a relative path.
     rel="$(python3 -c 'import os, sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$HERE/platform/main.roc" "$d")"

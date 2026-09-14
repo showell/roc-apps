@@ -194,11 +194,12 @@ fn forgetScreen() void {
 }
 
 fn hostedScreenPresent(width: u64, height: u64, stride: u64, pixels: RocList) callconv(.c) void {
-    defer pixels.decref(@alignOf(u8), @sizeOf(u8), false, null, noDec, &roc_ops);
+    defer pixels.decref(@alignOf(u32), @sizeOf(u32), false, null, noDec, &roc_ops);
     forgetScreen();
     const bytes = pixels.bytes orelse return;
-    const buf = wasm_allocator.alloc(u8, pixels.length) catch return;
-    @memcpy(buf, bytes[0..pixels.length]);
+    const n = pixels.length * 4;
+    const buf = wasm_allocator.alloc(u8, n) catch return;
+    @memcpy(buf, bytes[0..n]);
     screen = buf;
     screen_width = @intCast(width);
     screen_height = @intCast(height);

@@ -57,3 +57,21 @@ stays inside a 64-byte leaf, rather than once a byte
 On the ladder, `net-driver-seam-bound` went from TIMEOUT (120 s) to PASS with
 nothing else changed: the unit was never wrong, only slower than the limit.
 Ladder 765.
+
+## 2026-09-14: MachineGpu writes its planes in place
+
+`MachineGpu` keeps the depth buffer and the framebuffer in one `List(U32)`,
+read only inside the record update that writes it back. A probe app
+(`Probe.roc`, built `--opt=dev`, run natively on Roc's default platform) runs
+a whole frame at a width from its command line: clear, clear the depth buffer,
+two triangles covering the screen written a word at a time into the command
+buffer, flush with the glow. The `mmap` count is the allocation count.
+
+| width | pixels | clear only: mmap, time | whole frame: mmap, time |
+|---|---|---|---|
+| 160 | 19,200 | 4, 0.00 s | 7, 0.02 s |
+| 320 | 76,800 | 4, 0.01 s | 7, 0.09 s |
+| 640 | 307,200 | 4, 0.06 s | 7, 0.37 s |
+
+Flat allocations at every size, so nothing is copied per pixel; a whole
+640x480 frame is about 1.2 microseconds a pixel natively on the dev build.
