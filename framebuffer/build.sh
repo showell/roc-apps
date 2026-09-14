@@ -1,0 +1,69 @@
+#!/bin/bash
+# Codex programs, emitted by rocemit, built for the framebuffer platform: the
+# wasm host (zig, against the roc checkout), then each program's modules with
+# this platform's Mem (roc/Mem.roc) in place of the one rocemit writes, wired
+# to the platform and built for wasm into the preview root.
+#
+#   framebuffer/build.sh <program.codex>...
+#
+# A program is emitted from a copy, beside a copy of the nearest quires.tsv
+# above it, in ~/build/roc-apps/gen/framebuffer/<program>/codex/, so a .vmargs
+# beside the original (which asks rocemit for the machine) stays behind. That
+# quires.tsv has to name the checkout its cites come from. The wasm, the
+# modules the page shows and the page land in
+# ~/build/roc-apps/next/framebuffer/, served on :9203.
+set -eu
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROC="${ROC:-$HOME/build/roc-nightly/roc}"
+ROCEMIT="${ROCEMIT:-$HOME/build/rust-target/release/rocemit}"
+ZIG="${ZIG:-$HOME/zig-0.16.0/zig}"
+NEXT="$HOME/build/roc-apps/next/framebuffer"
+mkdir -p "$NEXT"
+# **THE HOST IS BUILT FAST, NOT DEBUG**: every read and write of the program's
+# memory is a call into it.
+(cd "$HERE" && "$ZIG" build -Drelease --cache-dir "$HOME/build/roc-apps/zig-cache" --global-cache-dir "$HOME/build/zig-global")
+for src in "$@"; do
+    src="$(realpath "$src")"
+    n="$(basename "$src" .codex)"
+    d="$HOME/build/roc-apps/gen/framebuffer/$n"
+    rm -rf "$d"; mkdir -p "$d/codex" "$d/roc"
+    q="$(dirname "$src")"
+    while [ "$q" != / ] && [ ! -f "$q/quires.tsv" ]; do q="$(dirname "$q")"; done
+    if ! grep -q '^checkout ' "$q/quires.tsv" 2>/dev/null; then
+        echo "$n: no quires.tsv above it names a checkout"; exit 2
+    fi
+    cp "$src" "$q/quires.tsv" "$d/codex/"
+    said="$("$ROCEMIT" "$d/codex/$n.codex" "$d/roc")"
+    app="${said%%$'\n'*}"
+    if [ "$app" = library ]; then echo "$n has no opening to run"; exit 2; fi
+    if grep -qx 'import Machine' "$d/roc"/*.roc; then echo "$n reaches the machine; machine/batch/build.sh builds it"; exit 2; fi
+    if [ ! -f "$d/roc/Mem.roc" ]; then echo "$n never touches memory, so it cannot draw on the screen"; exit 2; fi
+    # The modules the page shows: the app first, then its chapters, then the
+    # platform's Mem.
+    emitted=("$app" $(cd "$d/roc" && ls *.roc | grep -vx "$app" | grep -vx Mem.roc || true) Mem.roc)
+    cp "$HERE/roc/Mem.roc" "$d/roc/Mem.roc"
+    # Roc takes a platform only by a relative path.
+    rel="$(python3 -c 'import os, sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$HERE/platform/main.roc" "$d/roc")"
+    { printf 'app [main!] { pf: platform "%s" }\n\nimport pf.Echo\n\necho! = |msg| Echo.line!(msg)\n\n' "$rel"; cat "$d/roc/$app"; } > "$d/roc/$app.wired"
+    mv "$d/roc/$app.wired" "$d/roc/$app"
+    # **THE ROC COMPILER EXITS NON-ZERO FOR A WARNING**, so its exit code is
+    # not the verdict: an error is marked ✗, and a failed build leaves no wasm.
+    rm -f "$NEXT/$n.wasm"
+    (cd "$d/roc" && "$ROC" build "$app" --target=wasm32 --opt=dev --output="$NEXT/$n.wasm") > "$d/build.log" 2>&1 || true
+    if grep -q "✗" "$d/build.log" || [ ! -s "$NEXT/$n.wasm" ]; then
+        grep -a -m3 -A3 "✗" "$d/build.log" || tail -20 "$d/build.log"
+        echo "$n: build failed"; exit 1
+    fi
+    rm -rf "$NEXT/$n.roc"; mkdir -p "$NEXT/$n.roc"
+    for f in "${emitted[@]}"; do cp "$d/roc/$f" "$NEXT/$n.roc/"; done
+    printf '%s\n' "${emitted[@]}" > "$NEXT/$n.files"
+    ls -la "$NEXT/$n.wasm"
+done
+# The page, and its list of every program built here with the Roc modules it
+# shows.
+cp "$HERE/web/index.html" "$NEXT/"
+(cd "$NEXT" && python3 -c '
+import glob, json
+print(json.dumps([{"name": w[:-5], "roc": open(w[:-5] + ".files").read().split()} for w in sorted(glob.glob("*.wasm"))]))
+' > programs.json)
+echo "page: http://143.244.172.148:9203/framebuffer/"

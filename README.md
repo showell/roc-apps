@@ -95,6 +95,16 @@ it, watched by a page. `machine/README.md` is the map.
     machine/build.sh               # host + app + page + disk image into the preview, :9203/machine/machine.html
     node machine/wasm/smoke.mjs ~/build/roc-apps/next/machine
 
+## framebuffer: Codex drawing on a screen, with no machine under it
+
+`framebuffer/` runs a Codex program that only touches memory, with the bytes
+kept by the platform's host and the screen a part of them where UEFI's GOP
+protocol puts it. The page runs the program once a frame. `framebuffer/README.md`
+is the map.
+
+    framebuffer/build.sh framebuffer/demos/scene-spin.codex   # the preview, :9203/framebuffer/
+    node framebuffer/frames.mjs scene-spin 5
+
 ## Why any of this exists
 
 [`BUGHUNT.md`](BUGHUNT.md) is the short version for someone arriving from a

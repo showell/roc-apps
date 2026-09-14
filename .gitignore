@@ -4,3 +4,4 @@ basic/wasm/platform/targets/
 machine/wasm/platform/targets/
 machine/native/platform/targets/
 machine/batch/platform/targets/
+framebuffer/platform/targets/

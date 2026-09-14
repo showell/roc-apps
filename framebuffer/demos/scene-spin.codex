@@ -1,0 +1,61 @@
+Chapter: SceneSpin
+  cites Foreword chapter Console
+  cites Engine chapter Renderer3D
+  cites Engine chapter Scene3D
+  cites Engine chapter Mesh
+  cites Engine chapter Material
+  cites Math chapter Quaternion
+  cites Math chapter Cordic
+  cites Game chapter Color
+
+ The scene of codex/test/engine-software-render, the ground, a shiny cube and
+ a red pyramid, seen by a camera that circles it, rendered by Renderer3D into
+ the screen that UEFI's GOP protocol describes. The camera's angle is the
+ clock the framebuffer platform writes before each frame, one milliradian a
+ millisecond. On the machine nothing writes that cell, and the camera stays at
+ angle 0.
+
+ We say:
+
+Section: Screen
+
+  fb-base : Integer = 3204448256
+  cell-width : Integer = 1988
+  cell-height : Integer = 1992
+  cell-stride : Integer = 2016
+  cell-clock : Integer = 2032
+
+  sky : Integer
+  sky = rgb-to-packed (rgb 20 20 30)
+
+Section: Scene
+
+ The camera circles at engine-software-render's distance and height, looking
+ at the same point; Cordic's sine and cosine are thousandths.
+
+  scene-at : Integer -> Scene3DState
+  scene-at (angle) =
+    let ex = real-from-int (5200 * cordic-sin angle / 1000)
+    in let ez = real-from-int (5200 * cordic-cos angle / 1000)
+    in let cam = camera3d-new (vec3-new ex 2200.0 ez) (vec3-new 0.0 300.0 0.0) 0.785
+    in let stage = scene3d-new cam
+    in let ground = sn3-with-mesh "ground" (mesh-plane 3000 3000) (emat-flat (rgb 90 80 62))
+    in let cube = sn3-set-pos (sn3-with-mesh "cube" (mesh-cube 900) (emat-shiny (rgb 90 130 210) 32)) (-900.0) 450.0 0.0
+    in let pyr = sn3-set-pos (sn3-with-mesh "pyr" (mesh-pyramid 600 1100) emat-red) 1100.0 0.0 (-300.0)
+    in let s2 = scene3d-add (scene3d-add (scene3d-add stage ground) cube) pyr
+    in let key = dir-light (vec3-new (-400.0) 800.0 400.0) (rgb 255 250 235) 850
+    in scene3d-set-ambient (scene3d-add-light s2 key) 260
+
+Section: Entry
+
+  opening : [Console] Nothing = act
+    let w = peek-32 cell-width 0
+    in let h = peek-32 cell-height 0
+    in let stride = peek-32 cell-stride 0
+    in let angle = peek-32 cell-clock 0
+    in let tgt = r3d-target-at fb-base stride w h sky
+    in let d = r3d-render-into tgt (scene-at angle)
+    in act
+      print-line-uni ("camera : " & show angle & " milliradians round the scene")
+    end
+  end
