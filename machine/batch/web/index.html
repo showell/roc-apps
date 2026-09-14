@@ -10,10 +10,13 @@
     :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --hi: #6b5a1a; --pane: #242422; --ok: #7cc47f; --bad: #f2a29b; --sel: #34332e; }
   }
   body { margin: 0; padding: 16px; background: var(--bg); color: var(--fg); font: 14px/1.45 system-ui, sans-serif; }
-  main { max-width: 1100px; margin: 0 auto; }
+  main { max-width: 1400px; margin: 0 auto; }
+  .layout { display: grid; grid-template-columns: minmax(200px, 260px) minmax(0, 1fr); gap: 16px; align-items: start; }
+  .work { min-width: 0; }
+  @media (max-width: 720px) { .layout { grid-template-columns: minmax(0, 1fr); } .units { position: static; } }
   h1 { font-size: 20px; margin: 0 0 6px; }
   p.lede { margin: 0 0 14px; color: var(--muted); max-width: 72ch; }
-  .units { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; margin-bottom: 12px; }
+  .units { display: flex; flex-direction: column; gap: 8px; position: sticky; top: 16px; }
   .unit { text-align: left; font: inherit; padding: 8px 10px; border: 1px solid var(--edge); background: var(--pane); color: var(--fg); border-radius: 6px; cursor: pointer; }
   .unit[aria-pressed="true"] { background: var(--sel); border-color: var(--muted); }
   .unit b { display: block; font-family: ui-monospace, monospace; font-size: 13px; }
@@ -51,7 +54,9 @@
 WebAssembly. It runs from start to finish on a Roc model of the machine those tests run on: the disk
 drives, the NE2000 network card and the small network behind it. Pick one and press Run.
 <a href="about.html">How the machine works, and where each program's files come from.</a></p>
-<div class="units" id="units"></div>
+<div class="layout">
+<aside class="units" id="units"></aside>
+<div class="work">
 <div class="bar">
   <button class="run" id="run" disabled>Run</button>
   <span id="status">loading…</span>
@@ -62,6 +67,8 @@ drives, the NE2000 network card and the small network behind it. Pick one and pr
   <section><h2 id="disklab">Disk</h2><div id="disk" class="muted">The sectors a run writes appear here.</div><div class="sectors" id="sectors"></div><div class="hexwrap"><pre id="hex" class="hex"></pre></div></section>
   <section><h2 id="wirelab">Network</h2><div id="wire" class="muted">The frames a run sends, and the network's answers, appear here.</div><pre id="frames"></pre></section>
   <section class="code"><h2 id="codelab">Roc</h2><div class="muted">What rocemit wrote for this program: the test's own module first, then a module for each Codex chapter it cites. The machine it runs on is hand-written Roc, the same for every program: <a href="https://github.com/showell/roc-apps/tree/master/machine/roc">machine/roc</a>.</div><div class="tabs" id="tabs"></div><pre id="src" class="src"></pre></section>
+</div>
+</div>
 </div>
 </main>
 <script>
@@ -92,7 +99,26 @@ function choose(u) {
   $("run").disabled = false;
   $("status").classList.remove("ok", "bad");
   $("status").textContent = `${u.name} is ready`;
+  resetPanes();
   showCode(u);
+}
+
+// Choosing a program clears what the last run left in every pane.
+function resetPanes() {
+  $("console").classList.add("muted");
+  $("console").textContent = "Nothing has run yet.";
+  $("expectlab").hidden = true;
+  $("expected").textContent = "";
+  $("screen").hidden = true;
+  $("screenlab").textContent = "Screen";
+  $("screennote").textContent = "What a program leaves on the screen appears here.";
+  $("disklab").textContent = "Disk";
+  $("disk").textContent = "The sectors a run writes appear here.";
+  $("sectors").innerHTML = "";
+  $("hex").innerHTML = "";
+  $("wirelab").textContent = "Network";
+  $("wire").textContent = "The frames a run sends, and the network's answers, appear here.";
+  $("frames").textContent = "";
 }
 
 // The modules rocemit wrote for a program, one tab each, the app first.
