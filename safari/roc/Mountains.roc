@@ -28,7 +28,7 @@ Mountains :: [].{
 	snow_night = { r: 70.0, g: 84.0, b: 104.0 }
 
 	chan : I64, I64 -> F64
-	chan = |color, sh| I64.to_f64(I64.bitwise_and(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(color), U64.pow(2, I64.to_u64_wrap(sh)))), 255))
+	chan = |color, sh| I64.to_f64(I64.bitwise_and(I64.shr_zf_wrap(color, I64.to_u8_wrap(sh)), 255))
 
 	dimmed : I64, F64 -> I64
 	dimmed = |color, dusk| ({
@@ -36,7 +36,7 @@ Mountains :: [].{
 		r = F64.to_i64_wrap(Num_.round_real((chan(color, 16) * f)))
 		g = F64.to_i64_wrap(Num_.round_real((chan(color, 8) * f)))
 		b = F64.to_i64_wrap(Num_.round_real((chan(color, 0) * f)))
-		I64.bitwise_or(I64.bitwise_or(U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(r), U64.pow(2, I64.to_u64_wrap(16)))), U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(g), U64.pow(2, I64.to_u64_wrap(8))))), b)
+		I64.bitwise_or(I64.bitwise_or(I64.shl_wrap(r, I64.to_u8_wrap(16)), I64.shl_wrap(g, I64.to_u8_wrap(8))), b)
 	})
 
 	snow_color : F64 -> I64

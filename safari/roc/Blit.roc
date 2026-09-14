@@ -5,16 +5,16 @@ import Paint
 Blit :: [].{
 
 	chan_r : I64 -> I64
-	chan_r = |c| I64.bitwise_and(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(c), U64.pow(2, I64.to_u64_wrap(16)))), 255)
+	chan_r = |c| I64.bitwise_and(I64.shr_zf_wrap(c, I64.to_u8_wrap(16)), 255)
 
 	chan_g : I64 -> I64
-	chan_g = |c| I64.bitwise_and(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(c), U64.pow(2, I64.to_u64_wrap(8)))), 255)
+	chan_g = |c| I64.bitwise_and(I64.shr_zf_wrap(c, I64.to_u8_wrap(8)), 255)
 
 	chan_b : I64 -> I64
 	chan_b = |c| I64.bitwise_and(c, 255)
 
 	pack_rgb : I64, I64, I64 -> I64
-	pack_rgb = |r, g, b| I64.bitwise_or(I64.bitwise_or(U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(r), U64.pow(2, I64.to_u64_wrap(16)))), U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(g), U64.pow(2, I64.to_u64_wrap(8))))), b)
+	pack_rgb = |r, g, b| I64.bitwise_or(I64.bitwise_or(I64.shl_wrap(r, I64.to_u8_wrap(16)), I64.shl_wrap(g, I64.to_u8_wrap(8))), b)
 
 	shade_chan : I64, F64 -> I64
 	shade_chan = |v, f| ({
