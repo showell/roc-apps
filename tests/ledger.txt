@@ -12,7 +12,7 @@ PASS arm64-encoder |
 PASS arm64-http-test |
 PASS arm64-net-gate |
 PASS arm64-proc-cells |
-REFUSED arm64-send-refusal | builtin `__buf-read-bytes`
+PASS arm64-send-refusal |
 PASS arp-cache-bound |
 REFUSED asn1-der | `fe-carry-pass` writes its list parameter `o` and answers something else
 PASS asn1-der-write |
@@ -74,7 +74,7 @@ REFUSED console-readline-cite | builtin `read-line` used as a value
 SKIP const-narrow-proven | expects a diagnostic
 PASS convolution-identity |
 DIVERGES cost@accumulator-corpus | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
-REFUSED cost@giveup-beats-fuel | builtin `__buf-read-bytes`
+REFUSED cost@giveup-beats-fuel | an opening of type (effectful (effs "Console") (scopes "") nothing)
 REFUSED cross-port-refused | builtin `gpu-out`
 PASS crypto-test |
 PASS crypto-vectors |
@@ -88,12 +88,12 @@ REFUSED deck-bracket-contract | builtin `__deck-set`
 REFUSED deck-cell-contract | builtin `__deck-set`
 REFUSED deck-record-contract | builtin `__deck-set`
 PASS deriving-eq-recursive |
-REFUSED desk-hole | builtin `__buf-read-bytes`
-REFUSED desk-hover | builtin `__buf-read-bytes`
-REFUSED desk-parse | builtin `__buf-read-bytes`
-REFUSED desk-reuse | builtin `__buf-read-bytes`
-REFUSED desk-root-guard | builtin `__buf-read-bytes`
-REFUSED desk-span | builtin `__buf-read-bytes`
+REFUSED desk-hole | `__lam_0` applied to 1 of 2 arguments under Device
+REFUSED desk-hover | `__lam_0` applied to 1 of 2 arguments under Device
+REFUSED desk-parse | `__lam_0` applied to 1 of 2 arguments under Device
+REFUSED desk-reuse | `__lam_0` applied to 1 of 2 arguments under Device
+REFUSED desk-root-guard | `__lam_0` applied to 1 of 2 arguments under Device
+REFUSED desk-span | `__lam_0` applied to 1 of 2 arguments under Device
 REFUSED device-buffer-alloc | builtin `gpu-mem-read`
 PASS dhcp-acquire |
 CRASH dhcp-acquire-e1000 | machine: -e1000-nat is not a codex-vm flag this machine models
@@ -722,17 +722,17 @@ PASS neg-int-parse |
 REFUSED neg-real-repro | an opening of type real
 PASS negation-abutment |
 REFUSED nested-spawn | `__lam_0` applied to 0 of 1 arguments under Device
-REFUSED net-drain-budget | builtin `__buf-read-bytes`
+PASS net-drain-budget |
 TIMEOUT net-driver-seam-bound |
 PASS net-driver-seam-no-av |
-REFUSED net-io-clock | builtin `__buf-read-bytes`
-REFUSED net-poll-calibrated | builtin `__buf-read-bytes`
+CRASH net-io-clock | machine: the program sent a frame to a TCP connection to the host, which this machine does not have
+CRASH net-poll-calibrated | machine: -e1000-nat is not a codex-vm flag this machine models
 PASS net-poll-clamped |
-REFUSED net-recv-heap | builtin `__buf-read-bytes`
-REFUSED network-effect | builtin `__buf-read-bytes`
-REFUSED network-scope-deny | builtin `__buf-read-bytes`
-REFUSED network-scope-open | builtin `__buf-read-bytes`
-REFUSED network-scope-spawn | builtin `__buf-read-bytes`
+DIVERGES net-recv-heap | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
+REFUSED network-effect | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED network-scope-deny | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED network-scope-open | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED network-scope-spawn | `fe-carry-pass` writes its list parameter `o` and answers something else
 SKIP noalias-linear-param | expects a diagnostic
 PASS noise-test |
 REFUSED normalize-eq | type (propeq (ctd "Off" (args)) (ctd "Off" (args)))
@@ -947,7 +947,7 @@ PASS thumb2-encoder |
 PASS timer-registers |
 REFUSED tls-cert | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED tls-cv-schemes | `fe-carry-pass` writes its list parameter `o` and answers something else
-REFUSED tls-record-framing | builtin `__buf-read-bytes`
+REFUSED tls-record-framing | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED tls-test | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED tls13-record | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED tls13-schedule | `fe-carry-pass` writes its list parameter `o` and answers something else
@@ -1015,11 +1015,11 @@ PASS wavelet-sort-aliasing |
 SKIP wcet-budget-unchecked | expects a diagnostic
 SKIP wcet-probe | expects a diagnostic
 REFUSED web-chain | `fe-carry-pass` writes its list parameter `o` and answers something else
-REFUSED web-mux-concurrent | builtin `__buf-read-bytes`
-REFUSED web-mux-heap | builtin `__buf-read-bytes`
-REFUSED web-mux-idle-reap | builtin `__buf-read-bytes`
-REFUSED web-mux-lifecycle | builtin `__buf-read-bytes`
-REFUSED web-mux-reassembly | builtin `__buf-read-bytes`
+CRASH web-mux-concurrent | overflowed its stack memory
+DIVERGES web-mux-heap | measures Codex's bump pointer with __heap-save; the machine's pointer moves for alloc-bytes, so each 65536-byte receive buffer shows, but no Roc list lives on it, so every reading lacks the lists' bytes
+PASS web-mux-idle-reap |
+PASS web-mux-lifecycle |
+CRASH web-mux-reassembly | overflowed its stack memory
 PASS when-arm-nontail |
 PASS when-arm-tail-call |
 PASS when-bool-cross |

@@ -358,6 +358,14 @@ Machine :: [].{
 
 	# `atomic-exchange`: the qword at the address becomes `value`, and the old
 	# one is the answer, as x86's xchg.
+	# `__buf-write-byte base off v`: the low byte of `v` at base + off, to
+	# whatever backs the address; answers off + 1.
+	write_byte : Machine.Machine, I64, I64, I64 -> (Machine.Machine, I64)
+	write_byte = |m, base, off, v| {
+		(next, _) = Machine.store(m, base, off, v, 1)
+		(next, off + 1)
+	}
+
 	# `__buf-write-bytes base off bytes`: the low byte of each element from
 	# base + off on, to whatever backs each address; answers off plus the
 	# count, the offset past the last.
@@ -373,6 +381,24 @@ Machine :: [].{
 				Machine.write_each(next, at, bytes, i + 1)
 			}
 		}
+
+	# `__buf-read-bytes base off count`: the `count` bytes from base + off on,
+	# each as an unsigned value from whatever backs its address; a count of
+	# zero or less reads none. The list is a Roc value, so the heap's bump
+	# pointer does not move for it, as it moves for no list.
+	read_bytes : Machine.Machine, I64, I64, I64 -> (Machine.Machine, List(I64))
+	read_bytes = |m, base, off, count| Machine.read_each(m, base + off, count, List.with_capacity(I64.to_u64_wrap(I64.max(count, 0))))
+
+	read_each : Machine.Machine, I64, I64, List(I64) -> (Machine.Machine, List(I64))
+	read_each = |m, at, count, acc| {
+		i = U64.to_i64_wrap(List.len(acc))
+		if i >= count {
+			(m, acc)
+		} else {
+			(next, b) = Machine.load(m, at, i, 1)
+			Machine.read_each(next, at, count, List.append(acc, b))
+		}
+	}
 
 	exchange : Machine.Machine, I64, I64 -> (Machine.Machine, I64)
 	exchange = |m, addr, value| {
@@ -735,6 +761,32 @@ Machine :: [].{
 	# which x86 answers as slot 0.
 	process_get_pid : Machine.Machine -> (Machine.Machine, I64)
 	process_get_pid = |m| (m, 0)
+
+	# `process-yield`: x86 scans the table from the slot after the running one
+	# for a READY process (state 1) whose affinity (offset 16) is -1 or the
+	# running process's core (offset 8), and answers 0 when it finds none. No
+	# process but the booted one runs here, so a READY slot stops the run.
+	process_yield : Machine.Machine -> (Machine.Machine, I64)
+	process_yield = |m|
+		match Machine.ready_slot(m, 1) {
+			Ok(pid) => crash("machine: process-yield found process ${I64.to_str(pid)} ready, and this machine runs no process but the booted one")
+			Err(_) => (m, 0)
+		}
+
+	ready_slot : Machine.Machine, I64 -> Try(I64, [NoneReady])
+	ready_slot = |m, pid|
+		if pid >= 16 {
+			Err(NoneReady)
+		} else {
+			entry = Machine.proc_table + pid * 256
+			affinity = U64.to_i64_wrap(MachineMem.read(m.mem, entry + 16, 7, 0))
+			core = U64.to_i64_wrap(MachineMem.read(m.mem, Machine.proc_table + 8, 7, 0))
+			if MachineMem.read(m.mem, entry, 7, 0) == 1 and (affinity == -1 or affinity == core) {
+				Ok(pid)
+			} else {
+				Machine.ready_slot(m, pid + 1)
+			}
+		}
 
 	# `process-get-cap`: a process's capability word; -1 past the table.
 	process_get_cap : Machine.Machine, I64 -> (Machine.Machine, I64)
