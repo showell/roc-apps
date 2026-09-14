@@ -26,6 +26,7 @@ import MachineHpet
 import MachineMedia
 import MachineMem
 import MachinePci
+import MachinePorts
 
 Machine :: [].{
 	Machine : {
@@ -56,6 +57,8 @@ Machine :: [].{
 		# keeps a text pointer in each entry, and this machine keeps the text.
 		scopes : Dict(U64, Str),
 		net_scopes : Dict(U64, Str),
+		# The I/O ports below PCI's.
+		ports : MachinePorts.Ports,
 	}
 
 	Flags : { bridge : Bool, deep : Bool, levels : U64, backward : Bool, disks : List(Str), e1000 : MachineE1000.E1000, hpet : MachineHpet.Hpet, board_mmio : Bool }
@@ -137,6 +140,7 @@ Machine :: [].{
 		typed: 0,
 		scopes: Dict.empty(),
 		net_scopes: Dict.empty(),
+		ports: MachinePorts.new,
 	}
 
 	tick : Machine.Machine -> Machine.Machine
@@ -275,24 +279,39 @@ Machine :: [].{
 	nic_dma : Machine.Machine -> Bool
 	nic_dma = |m| !m.e1000.faults.bme_clear or MachinePci.bus_master(m.pci, 32902, 2)
 
+	# `atomic-exchange`: the qword at the address becomes `value`, and the old
+	# one is the answer, as x86's xchg.
+	exchange : Machine.Machine, I64, I64 -> (Machine.Machine, I64)
+	exchange = |m, addr, value| {
+		(read, old) = Machine.load(m, addr, 0, 8)
+		(written, _) = Machine.store(read, addr, 0, value, 8)
+		(written, old)
+	}
+
 	alloc : Machine.Machine, I64 -> (Machine.Machine, I64)
 	alloc = |m, n| {
 		(mem, at) = MachineMem.alloc(m.mem, n)
 		({ ..m, mem: mem }, at)
 	}
 
-	# `port-out-32` answers 0, as it does on x86. 0xCF8 latches a PCI address
-	# and 0xCFC..0xCFF write the register it names.
+	# **A PORT IS A DEVICE REGISTER.** Every port read or write moves the
+	# machine's clock by `access_cost`, as a register access in an MMIO window
+	# does, and answers as codex-vm does at that port (MachinePorts), at the
+	# width the builtin names. The writes answer 0, as they do on x86.
+
+	# `port-out-32`: 0xCF8 latches a PCI address and 0xCFC..0xCFF write the
+	# register it names; any other port is the port map's.
 	port_out_32 : Machine.Machine, I64, I64 -> (Machine.Machine, I64)
 	port_out_32 = |m, port, value| {
 		p = I64.to_u64_wrap(port)
 		v = U64.bitwise_and(I64.to_u64_wrap(value), MachinePci.all_ones)
+		clock = m.clock + Machine.access_cost
 		if p == MachinePci.config_addr {
-			({ ..m, pci: MachinePci.latch(m.pci, v) }, 0)
+			({ ..m, pci: MachinePci.latch(m.pci, v), clock: clock }, 0)
 		} else if p >= MachinePci.config_data and p <= MachinePci.config_data + 3 {
-			({ ..m, pci: MachinePci.write(m.pci, v) }, 0)
+			({ ..m, pci: MachinePci.write(m.pci, v), clock: clock }, 0)
 		} else {
-			crash("machine: port-out-32 to port ${U64.to_str(p)}, which no modelled device claims")
+			Machine.port_write(m, p, v, "port-out-32")
 		}
 	}
 
@@ -301,9 +320,39 @@ Machine :: [].{
 	port_in_32 = |m, port| {
 		p = I64.to_u64_wrap(port)
 		if p >= MachinePci.config_data and p <= MachinePci.config_data + 3 {
-			(m, U64.to_i64_wrap(MachinePci.read(m.pci, p - MachinePci.config_data)))
+			({ ..m, clock: m.clock + Machine.access_cost }, U64.to_i64_wrap(MachinePci.read(m.pci, p - MachinePci.config_data)))
 		} else {
-			crash("machine: port-in-32 from port ${U64.to_str(p)}, which no modelled device claims")
+			Machine.port_read(m, p, MachinePci.all_ones, "port-in-32")
+		}
+	}
+
+	port_out_byte : Machine.Machine, I64, I64 -> (Machine.Machine, I64)
+	port_out_byte = |m, port, value| Machine.port_write(m, I64.to_u64_wrap(port), U64.bitwise_and(I64.to_u64_wrap(value), 0xFF), "port-out-byte")
+
+	port_out_16 : Machine.Machine, I64, I64 -> (Machine.Machine, I64)
+	port_out_16 = |m, port, value| Machine.port_write(m, I64.to_u64_wrap(port), U64.bitwise_and(I64.to_u64_wrap(value), 0xFFFF), "port-out-16")
+
+	port_in_byte : Machine.Machine, I64 -> (Machine.Machine, I64)
+	port_in_byte = |m, port| Machine.port_read(m, I64.to_u64_wrap(port), 0xFF, "port-in-byte")
+
+	port_in_16 : Machine.Machine, I64 -> (Machine.Machine, I64)
+	port_in_16 = |m, port| Machine.port_read(m, I64.to_u64_wrap(port), 0xFFFF, "port-in-16")
+
+	port_write : Machine.Machine, U64, U64, Str -> (Machine.Machine, I64)
+	port_write = |m, p, v, builtin| {
+		clock = m.clock + Machine.access_cost
+		match MachinePorts.write(m.ports, clock, p, v) {
+			Wrote(ports) => ({ ..m, ports: ports, clock: clock }, 0)
+			Claimed(device) => crash("machine: ${builtin} to port ${Machine.hex(p)}, ${device}, which this machine does not model")
+		}
+	}
+
+	port_read : Machine.Machine, U64, U64, Str -> (Machine.Machine, I64)
+	port_read = |m, p, mask, builtin| {
+		clock = m.clock + Machine.access_cost
+		match MachinePorts.read(m.ports, clock, p) {
+			Read(ports, v) => ({ ..m, ports: ports, clock: clock }, U64.to_i64_wrap(U64.bitwise_and(v, mask)))
+			Claimed(device) => crash("machine: ${builtin} from port ${Machine.hex(p)}, ${device}, which this machine does not model")
 		}
 	}
 

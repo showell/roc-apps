@@ -21,7 +21,7 @@ rm -rf "$d"; mkdir -p "$d"
 said="$("$ROCEMIT" "$src" "$d")"
 app="${said%%$'\n'*}"
 grep -qx 'import Machine' "$d"/*.roc || { echo "$n does not run on the machine"; exit 2; }
-cp "$HERE/../roc/"{Machine,MachineCaps,MachineE1000,MachineHpet,MachineMedia,MachineMem,MachinePci}.roc "$d/"
+cp "$HERE/../roc/"{Machine,MachineCaps,MachineE1000,MachineHpet,MachineMedia,MachineMem,MachinePci,MachinePorts}.roc "$d/"
 cp "$HERE/MachineDisk.roc" "$d/"
 # Roc takes a platform only by a relative path.
 rel="$(python3 -c 'import os, sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$HERE/platform/main.roc" "$d")"

@@ -1,6 +1,6 @@
-REFUSED acpi-parse | builtin `port-out-16`
+REFUSED acpi-parse | builtin `__heap-advance`
 PASS act-let-scope |
-REFUSED act-tco-loop | builtin `port-in-byte`
+REFUSED act-tco-loop | builtin `__heap-advance`
 PASS aesgcm256 |
 PASS amp-after-call |
 PASS approx-eq |
@@ -39,7 +39,7 @@ PASS call-clobber |
 PASS canopen-encode |
 PASS cap-audio |
 PASS cap-block-denied |
-REFUSED cap-device-declared | builtin `port-in-byte`
+PASS cap-device-declared |
 PASS cap-direction |
 REFUSED cap-gpu-byte-denied | builtin `gpu-mem-write`
 REFUSED cap-gpu-family | builtin `gpu-mem-write`
@@ -75,7 +75,7 @@ SKIP const-narrow-proven | expects a diagnostic
 PASS convolution-identity |
 DIVERGES cost@accumulator-corpus | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
 REFUSED cost@giveup-beats-fuel | builtin `net-send-raw`
-REFUSED cross-port-refused | builtin `port-out-byte`
+REFUSED cross-port-refused | builtin `gpu-out`
 PASS crypto-test |
 PASS crypto-vectors |
 REFUSED cryptobig | `cb-shl1-step` writes its list parameter `x` and answers something else
@@ -558,14 +558,14 @@ DIVERGES gop-padded-stride | reads its geometry from cells codex-vm publishes at
 REFUSED gop-scene-backbuffer | builtin `__heap-advance`
 PASS gop-scene-viewport |
 REFUSED gop-stride | builtin `__heap-advance`
-REFUSED gop-text-field | builtin `atomic-exchange`
+REFUSED gop-text-field | builtin `__heap-advance`
 REFUSED gpu-depth-tree | builtin `gpu-mem-write`
-CRASH gpu-doorbell | machine: port-out-32 to port 1056, which no modelled device claims
+CRASH gpu-doorbell | machine: port-out-32 to port 0x00000420, the COM3 mailbox, which this machine does not model
 REFUSED gpu-gauge-clamp | builtin `gpu-mem-write`
 REFUSED gpu-input-cursor | builtin `gpu-mem-write`
 REFUSED gpu-panel-border | builtin `gpu-mem-write`
-CRASH gpu-ptx | machine: port-out-32 to port 1056, which no modelled device claims
-REFUSED grounds-port | builtin `port-out-byte`
+CRASH gpu-ptx | machine: port-out-32 to port 0x00000420, the COM3 mailbox, which this machine does not model
+PASS grounds-port |
 PASS hal-board-sleep |
 PASS hal-device-declared |
 PASS hal-flash-linear |
@@ -579,7 +579,7 @@ REFUSED handler-dotted-discharge | handle
 REFUSED handler-nested-ops | handle
 REFUSED handler-smoke | type (effectful (effs "Config") (scopes "") int-default)
 PASS hart-encode |
-REFUSED heap-bracket-shape | builtin `port-out-byte`
+CRASH heap-bracket-shape | machine: port-in-byte from port 0x00000071, the CMOS clock (the host's local time), which this machi
 PASS heap-frame-reclaim |
 DIVERGES heap-scrub | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
 REFUSED hid-decode | builtin `__heap-advance`
@@ -606,7 +606,7 @@ REFUSED inductive-list | type proof
 REFUSED infra-test | unit type `Duration`
 PASS inline-cost-based |
 PASS inline-single-caller |
-REFUSED input-metal | builtin `port-in-byte`
+PASS input-metal |
 PASS int-literal-underscore |
 PASS interval-exhaustive |
 PASS ip-checksum-odd |
@@ -740,7 +740,7 @@ REFUSED nrf52840-drivers | unit type `Duration`
 REFUSED nrf9160-drivers | unit type `Duration`
 REFUSED nvme-encode | builtin `__heap-advance`
 PASS oauth-island |
-REFUSED occurrence-check | builtin `port-in-byte`
+PASS occurrence-check |
 PASS opcua-encode |
 PASS ops@bounded-modes-smoke |
 PASS ops@builtin-name-shadow |
@@ -820,7 +820,7 @@ PASS pci-bus-master |
 PASS peek32-sign |
 REFUSED pi4-drivers | unit type `Duration`
 REFUSED pipe-unique-test | `__lam_0` applied to 1 of 2 arguments
-REFUSED pit-latch | builtin `port-out-byte`
+CRASH pit-latch | machine: a write at 0xFEE003E0, the local APIC's registers, which this machine does not model
 REFUSED plug-oracle-arith | field-store
 PASS poke16-width |
 PASS poly1305 |
@@ -944,7 +944,7 @@ PASS textfield-typing |
 PASS textscan-test |
 PASS textsearch-test |
 PASS thumb2-encoder |
-REFUSED timer-registers | builtin `port-out-byte`
+CRASH timer-registers | machine: a write at 0xFEE003E0, the local APIC's registers, which this machine does not model
 REFUSED tls-cert | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED tls-cv-schemes | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED tls-record-framing | builtin `net-send-raw`
@@ -997,7 +997,7 @@ PASS usb-desc-guard |
 PASS usb-test |
 FAIL validation-rules | output: < alpha-scripts: accented=ok cyrillic=ok greek=ERR punct=ERR
 REFUSED value-eq | type (propeq (ctd "xs" (args)) (ctd "xs" (args)))
-REFUSED vbe-mode-set | builtin `port-out-16`
+CRASH vbe-mode-set | machine: port-out-16 to port 0x000001CE, Bochs VBE, which this machine does not model
 REFUSED vec-arith-hazards | type (vector 2 real)
 REFUSED vec-array | type (vector 2 real)
 REFUSED vec-extract-hazards | type (vector 2 real)
