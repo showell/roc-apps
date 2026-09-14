@@ -74,7 +74,7 @@ Machine :: [].{
 		apic : MachineApic.Apic,
 	}
 
-	Flags : { bridge : Bool, deep : Bool, levels : U64, backward : Bool, disks : List(Str), e1000 : MachineE1000.E1000, hpet : MachineHpet.Hpet, board_mmio : Bool, lease : U64 }
+	Flags : { bridge : Bool, deep : Bool, levels : U64, backward : Bool, disks : List(Str), board_mmio : Bool, lease : U64 }
 
 	# A batch run's machine, from codex-vm's command line and the effects the
 	# program's opening declares. The PCI bridge flags, the NIC's and the
@@ -87,7 +87,7 @@ Machine :: [].{
 	# threads Mem alone, to keep the program out of compile-time reach.
 	boot! : List(Str), List(Str) => Machine.Machine
 	boot! = |args, effects| {
-		f = Machine.flags(args, 0, { bridge: False, deep: False, levels: 0, backward: False, disks: ["", ""], e1000: MachineE1000.new, hpet: MachineHpet.new, board_mmio: False, lease: 3600 })
+		(f, fe1000, fhpet) = Machine.flags(args, 0, { bridge: False, deep: False, levels: 0, backward: False, disks: ["", ""], board_mmio: False, lease: 3600 }, MachineE1000.new, MachineHpet.new)
 		levels = if !f.bridge { 0 } else if f.levels != 0 { f.levels } else if f.deep { 2 } else { 1 }
 		# The process table as the boot leaves it: the boot program's entry
 		# marked running (2) with the opening's grant, and process 1 granted the
@@ -95,46 +95,50 @@ Machine :: [].{
 		table = MachineMem.write(MachineMem.new(U64.to_i64_wrap(List.len(args))), Machine.proc_table, 2, 8)
 		granted = MachineMem.write(table, MachineCaps.word_addr, MachineCaps.grant(effects), 8)
 		mem = MachineMem.write(granted, Machine.cap_addr(1), 1, 8)
-		nic = if f.e1000.present { Nic(if f.e1000.i219 { 0x15B8 } else { 0x100E }, f.e1000.faults.bme_clear) } else { NoNic }
+		nic = if fe1000.present { Nic(if fe1000.i219 { 0x15B8 } else { 0x100E }, fe1000.faults.bme_clear) } else { NoNic }
 		# The boot probes the NE2000 and copies its station address out
 		# (X86_64Boot's emit-nic-init); every run starts with that done.
 		(card, address) = MachineNe2k.booted
 		nic_mem = Machine.copy_in(MachineMem.write(mem, Machine.nic_present_addr, 1, 8), Machine.nic_mac_addr, address, 0)
 		made = Machine.make(nic_mem, MachinePci.table(levels, f.backward, nic), MachineDisk.boot!(f.disks))
-		{ ..made, ide: MachineIde.attach!(made.drives), ne2k: card, lease: f.lease, e1000: if f.e1000.present { MachineE1000.power_on(f.e1000) } else { f.e1000 }, hpet: f.hpet, board_mmio: f.board_mmio, timeline: Machine.timeline_of(MachineMedia.keys) }
+		{ ..made, ide: MachineIde.attach!(made.drives), ne2k: card, lease: f.lease, e1000: if fe1000.present { MachineE1000.power_on(fe1000) } else { fe1000 }, hpet: fhpet, board_mmio: f.board_mmio, timeline: Machine.timeline_of(MachineMedia.keys) }
 	}
 
 	# -pci-bridge is one level, -pci-bridge-deep two, -pci-bridge-levels N
 	# is N, and -pci-bridge-backward points the deepest bridge at bus 0.
-	flags : List(Str), U64, Machine.Flags -> Machine.Flags
-	flags = |args, i, f|
+	#
+	# The e1000 and the HPET travel beside the flags, not inside them: on Roc's
+	# dev backend for wasm, this function copying a record that holds them in
+	# every branch fails to link ("relocations not in offset order").
+	flags : List(Str), U64, Machine.Flags, MachineE1000.E1000, MachineHpet.Hpet -> (Machine.Flags, MachineE1000.E1000, MachineHpet.Hpet)
+	flags = |args, i, f, e1000, hpet|
 		match List.get(args, i) {
-			Err(_) => f
+			Err(_) => (f, e1000, hpet)
 			Ok(a) =>
 				if a == "-pci-bridge" {
-					Machine.flags(args, i + 1, { ..f, bridge: True })
+					Machine.flags(args, i + 1, { ..f, bridge: True }, e1000, hpet)
 				} else if a == "-pci-bridge-deep" {
-					Machine.flags(args, i + 1, { ..f, bridge: True, deep: True })
+					Machine.flags(args, i + 1, { ..f, bridge: True, deep: True }, e1000, hpet)
 				} else if a == "-pci-bridge-backward" {
-					Machine.flags(args, i + 1, { ..f, bridge: True, backward: True })
+					Machine.flags(args, i + 1, { ..f, bridge: True, backward: True }, e1000, hpet)
 				} else if a == "-pci-bridge-levels" {
 					n = U64.from_str(List.get(args, i + 1) ?? "") ?? crash("machine: -pci-bridge-levels wants a number")
-					Machine.flags(args, i + 2, { ..f, bridge: True, levels: n })
+					Machine.flags(args, i + 2, { ..f, bridge: True, levels: n }, e1000, hpet)
 				} else if a == "-board-mmio" {
-					Machine.flags(args, i + 1, { ..f, board_mmio: True })
+					Machine.flags(args, i + 1, { ..f, board_mmio: True }, e1000, hpet)
 				} else if a == "-dhcp-lease" {
 					n = U64.from_str(List.get(args, i + 1) ?? "") ?? crash("machine: -dhcp-lease wants a number")
-					Machine.flags(args, i + 2, { ..f, lease: n })
+					Machine.flags(args, i + 2, { ..f, lease: n }, e1000, hpet)
 				} else if a == "-disk" or a == "-disk2" {
 					path = List.get(args, i + 1) ?? crash("machine: ${a} wants a file")
 					at = if a == "-disk" { 0 } else { 1 }
-					Machine.flags(args, i + 2, { ..f, disks: List.set(f.disks, at, path) ?? crash("machine: no such drive position") })
+					Machine.flags(args, i + 2, { ..f, disks: List.set(f.disks, at, path) ?? crash("machine: no such drive position") }, e1000, hpet)
 				} else {
-					match MachineE1000.flag(f.e1000, a, List.get(args, i + 1) ?? "") {
-						Took(e, n) => Machine.flags(args, i + n, { ..f, e1000: e })
+					match MachineE1000.flag(e1000, a, List.get(args, i + 1) ?? "") {
+						Took(e, n) => Machine.flags(args, i + n, f, e, hpet)
 						NotMine =>
-							match MachineHpet.flag(f.hpet, a) {
-								Took(h) => Machine.flags(args, i + 1, { ..f, hpet: h })
+							match MachineHpet.flag(hpet, a) {
+								Took(h) => Machine.flags(args, i + 1, f, e1000, h)
 								NotMine => crash("machine: ${a} is not a codex-vm flag this machine models")
 							}
 					}
