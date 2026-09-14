@@ -610,7 +610,7 @@ PASS input-metal |
 PASS int-literal-underscore |
 PASS interval-exhaustive |
 PASS ip-checksum-odd |
-REFUSED ir-check-clean | builtin `abs`
+PASS ir-check-clean |
 PASS iterate-test |
 PASS iterate-zip-test |
 PASS j1939-encode |
@@ -623,7 +623,7 @@ PASS keys-sidecar |
 PASS klondike-test |
 PASS knx-encode |
 PASS kvstore-test |
-REFUSED lang-smoke | builtin `abs`
+PASS lang-smoke |
 PASS lapic-regs |
 REFUSED lazy-smoke | opening: Lazy
 PASS leaf-let-if |
