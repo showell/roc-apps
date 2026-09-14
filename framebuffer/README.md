@@ -86,17 +86,24 @@ machine page's MachineGpu and this platform's GPU agreed.
 | `demos/widgets-on-screen.codex` | a panel of widgets drawn by GopComposite onto the screen, as `codex/test/gop-composite-kinds` draws them into memory, the gauge filling with the clock |
 | `demos/qr-on-screen.codex` | `codex/test/qr-encode`'s payload encoded by GopQr and drawn with GopDraw's fill |
 | `demos/sketch-on-screen.codex` | what `codex/test/rasterizer-test` and `sprite-test` draw, in one 80 x 60 Framebuf copied to the screen: lines, a rectangle, a filled circle and a triangle, keyed and flipped sprites, a blinking face |
-| `demos/raytrace-on-screen.codex` | `codex/test/raytracer-test`'s spheres and floor traced by Raytracer at 160 x 120 and copied to the screen, the red sphere bobbing by the clock; Raytracer lights every hit at its ambient level, so the spheres are flat |
+| `demos/raytrace-on-screen.codex` | `codex/test/raytracer-test`'s spheres and floor traced by Raytracer at 160 x 120 and copied to the screen, the red sphere bobbing by the clock; the spheres are lit at the ambient level alone and the floor at its full grey |
 | `demos/glyphs-on-screen.codex` | the A of `codex/test/truetype-render-test`'s embedded font, rasterized by GlyphRasterizer plain and anti-aliased at 16, 24 and 32 pixels to the em, each glyph pixel a 3 by 3 block |
 
 Drawing these showed three things about the chapters under them:
 
-- Raytracer's camera spreads its rays over half its field of view against a
-  forward reach of 1, so `raytracer-test`'s field of 1000 sees nearly half the
-  sphere of directions; `raytrace-on-screen` uses a field of 1.
-- Raytracer's `rt-shade` adds the ambient level, in thousandths, to diffuse
-  and specular terms that reach at most one, so every hit is lit at the ambient
-  level alone; `raytracer-test`'s verdict, rgb(51, 0, 0), pins it.
+- Raytracer's `rt-pixel-ray` reaches sideways half the camera's field of view
+  against a forward reach of 1, so `raytracer-test`'s field of 1000 sees nearly
+  half the sphere of directions; `raytrace-on-screen` uses a field of 1. With a
+  forward reach of 1000, `raytracer-test`'s 16 x 12 render hits 110 pixels, not
+  81.
+- Raytracer's `rt-shade` divides its diffuse and specular terms by 1000, and
+  for a unit normal they reach at most one, so a sphere is lit at the scene's
+  ambient level alone wherever the light stands: `raytracer-test`'s verdict,
+  rgb(51, 0, 0), pins it, and without the division it is rgb(92, 0, 0).
+  `raytracer-test`'s floor normal is 1000 long, so the floor's terms are a
+  thousand times larger and it draws at its full grey. Both are the scale of
+  the fixed-point Raytracer, where a unit vector was 1000 long and `vec3-dot`
+  divided by 1000, left in place when Update 26 made its geometry Real.
 - GlyphRasterizer's `gr-make-row` builds a glyph's buffer by pushing onto its
   own recursive call, as deep as the buffer is long, and the 4 x 4 supersampled
   buffer of an anti-aliased glyph overflowed the browser's stack. rocemit now

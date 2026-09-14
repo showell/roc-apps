@@ -14,11 +14,12 @@ Chapter: RaytraceOnScreen
  describes, each traced pixel a block of the screen's. The red sphere rises
  and falls by the clock the framebuffer platform writes before each frame.
 
- Raytracer lights every hit at the scene's ambient level: `rt-shade` adds the
- ambient, 200 in thousandths, to diffuse and specular terms that reach at most
- one, so a hit is its material's colour at a fifth of its brightness wherever
- the light stands. raytracer-test's verdict pins that colour, rgb(51, 0, 0)
- for the red sphere.
+ `rt-shade` adds the ambient, 200 in thousandths, to diffuse and specular terms
+ it divides by 1000. For a sphere's unit normal those terms reach at most one,
+ so a sphere is its material's colour at a fifth of its brightness wherever the
+ light stands; raytracer-test's verdict pins that colour, rgb(51, 0, 0) for the
+ red sphere. The floor's normal is 1000 long, so its terms are a thousand times
+ larger and the floor is its full grey.
 
  We say:
 
