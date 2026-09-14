@@ -50,7 +50,44 @@ scene-on-screen, 20 frames, 2,553 ms sampled:
 | Roc's reference-count helpers | 63 ms | 2.5% |
 | `host.present`, the copy the page draws | 4 ms | 0.2% |
 
-The frame is the renderer's own Roc. Of the hot function's constants, 1000000
-is the one the emitted Roc also writes, and it writes it only in Renderer3D's
-light contribution and shadow lookups; which procedure that is has not been
-established.
+The frame is the renderer's own Roc.
+
+## 2026-09-14: the hot function is Renderer3D's column loop
+
+`ROC_LIR_DUMP=` (empty: every procedure) makes `roc build` print the final
+LIR of each procedure under its source name, with its calls as `call pN`. The
+ids in the wasm are not those numbers, so the two were matched by what each
+procedure holds:
+
+| wasm | its constants | LIR procedure | its literals |
+|---|---|---|---|
+| `roc__proc_dee`, 61 KB | 255, 256, 1000, 65536, 1000000 | `Renderer3D.r3d_scan_cols_sh!`, 1,053 lines, the largest by far | 255, 256, 1000, 65536, 1000000 |
+| `roc__proc_df9`, 22 KB, called by `dee` | 255, 256, 1000, 65536 | `Renderer3D.r3d_shade_px`, called by it | 255, 256, 1000, 65536 |
+| `roc__proc_e02`, 22 KB, called by `df9` | 255, 1000 | `Renderer3D.r3d_phong_accum`, called by that | 255, 1000 |
+
+Each wasm function also holds 4294967295 (and `dee` 4227), which no LIR
+literal has. `r3d_scan_cols_sh!` is the loop along a row of a shaded triangle:
+per pixel it works out the barycentric weights and calls `r3d_cover_sh!`, which
+the LIR has folded in along with the shadow lookup. Its self-call is already a
+loop (`transform=tce`).
+
+Inside it are 15 calls to Roc's `U64.pow`, a checked loop (`unsigned_pow_try_step`
+in the LIR). They are Codex's bit shifts: rocemit writes `bit-shr x 16` as
+`U64.div_by(x, U64.pow(2, 16))` and `bit-shl` as a multiply by the same, and
+`r3d_chan` and every colour packed back together shift once per pixel.
+
+## 2026-09-14: shifts as Roc's shifts
+
+Roc has shifts (`I64.shl_wrap`, `I64.shr_zf_wrap`), and they take the count
+modulo the width, as the interpreter's `count & 63` does; a probe over counts
+3, 60, 63, 64, 70 and 300 agreed with the interpreter's rule on every one.
+rocemit now writes `bit-shl a b` as `I64.shl_wrap(a, I64.to_u8_wrap(b))` and
+both right shifts as `I64.shr_zf_wrap`. A shift by 64 or more used to crash in
+`U64.pow`; it now shifts as the interpreter does.
+
+| program | before | after |
+|---|---|---|
+| scene-on-screen, frames 1 to 4 | 113 to 117 ms | 98 to 105 ms |
+| scene-spin, frames 1 to 5 | 108 to 113 ms | 95 to 98 ms |
+
+Every frame's hash is the same as before, so the images are identical.
