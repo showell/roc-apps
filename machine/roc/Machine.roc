@@ -36,8 +36,23 @@ import MachineScreen
 import MachineWire
 
 Machine :: [].{
+	# **A PIXEL TOUCHES FOUR FIELDS.** Every door hands back a new machine
+	# record, and Roc copies a record's inline fields whole, nested records
+	# included: a one-field update of a record beside a 512-byte record costs as
+	# much as copying the 512 bytes (machine/batch/PERF.md). So the fields a
+	# memory or GPU access touches stay here, and every other device sits
+	# behind one reference, a list of one.
 	Machine : {
 		mem : MachineMem.Mem,
+		# codex-vm's -gop screen and the GPU that draws on it: the command buffer,
+		# the depth buffer and the framebuffer, or nothing without a screen.
+		gpu : MachineGpu.Gpu,
+		# The machine's clock, in the HPET's counter ticks.
+		clock : U64,
+		devices : List(Machine.Devices),
+	}
+
+	Devices : {
 		pci : MachinePci.Pci,
 		drives : MachineDisk.Drives,
 		# The IDE channel's registers over those drives.
@@ -56,16 +71,11 @@ Machine :: [].{
 		# Where the last block read landed in memory, and how long it is.
 		landed : I64,
 		landed_len : I64,
-		# The NIC, absent unless a flag puts it on the bus; the HPET; and the
-		# machine's clock, in the HPET's counter ticks.
+		# The NIC, absent unless a flag puts it on the bus, and the HPET.
 		e1000 : MachineE1000.E1000,
 		hpet : MachineHpet.Hpet,
-		clock : U64,
 		# -board-mmio: RAM behind the three board peripheral windows.
 		board_mmio : Bool,
-		# codex-vm's -gop screen and the GPU that draws on it: the command buffer,
-		# the depth buffer and the framebuffer, or nothing without a screen.
-		gpu : MachineGpu.Gpu,
 		# The keystrokes a test types (its .keys), in the machine's clock, and
 		# how many have been delivered.
 		timeline : List({ at : U64, code : U8 }),
@@ -79,6 +89,29 @@ Machine :: [].{
 		# The local APIC and the IOAPIC.
 		apic : MachineApic.Apic,
 	}
+
+	# **A DOOR THAT CHANGES A DEVICE OPENS THE MACHINE.** It takes the devices
+	# out of their list, leaving `vacant` in the slot, so nothing but the door
+	# holds them while it writes them (Roc writes a list in place only when
+	# nothing else can reach it), and closes the machine with them put back. A
+	# door that only reads a device reads `devices_of`.
+	Opened : { mem : MachineMem.Mem, gpu : MachineGpu.Gpu, clock : U64, slot : List(Machine.Devices), d : Machine.Devices }
+
+	open : Machine.Machine -> Machine.Opened
+	open = |m| {
+		{ mem, gpu, clock, devices } = m
+		taken = List.replace(devices, 0, Machine.vacant) ?? crash("machine: the devices' slot")
+		{ mem: mem, gpu: gpu, clock: clock, slot: taken.list, d: taken.prev }
+	}
+
+	close : Machine.Opened -> Machine.Machine
+	close = |o| { mem: o.mem, gpu: o.gpu, clock: o.clock, devices: List.set(o.slot, 0, o.d) ?? crash("machine: the devices' slot") }
+
+	devices_of : Machine.Machine -> Machine.Devices
+	devices_of = |m| List.get(m.devices, 0) ?? crash("machine: the devices' slot")
+
+	vacant : Machine.Devices
+	vacant = Machine.devices_new(MachinePci.table(0, False, NoNic), MachineDisk.none)
 
 	Flags : { bridge : Bool, deep : Bool, levels : U64, backward : Bool, disks : List(Str), board_mmio : Bool, lease : U64, gop : Bool, gop_width : U64, gop_height : U64, gop_stride : U64, gop_stride_opt : U64 }
 
@@ -113,8 +146,11 @@ Machine :: [].{
 		# (X86_64Boot's emit-nic-init); every run starts with that done.
 		(card, address) = MachineNe2k.booted
 		nic_mem = Machine.copy_in(MachineMem.write(mem, Machine.nic_present_addr, 1, 8), Machine.nic_mac_addr, address, 0)
-		made = Machine.make(nic_mem, MachinePci.table(levels, f.backward, nic), MachineDisk.boot!(f.disks))
-		{ ..made, ide: MachineIde.attach!(made.drives), ne2k: card, lease: f.lease, e1000: if fe1000.present { MachineE1000.power_on(fe1000) } else { fe1000 }, hpet: fhpet, board_mmio: f.board_mmio, gpu: if f.gop { MachineGpu.new(f.gop_width, f.gop_height, screen_stride) } else { MachineGpu.none }, timeline: Machine.timeline_of(MachineMedia.keys) }
+		drives = MachineDisk.boot!(f.disks)
+		ide = MachineIde.attach!(drives)
+		d = Machine.devices_new(MachinePci.table(levels, f.backward, nic), drives)
+		booted = { ..d, ide: ide, ne2k: card, lease: f.lease, e1000: if fe1000.present { MachineE1000.power_on(fe1000) } else { fe1000 }, hpet: fhpet, board_mmio: f.board_mmio, timeline: Machine.timeline_of(MachineMedia.keys) }
+		{ mem: nic_mem, gpu: if f.gop { MachineGpu.new(f.gop_width, f.gop_height, screen_stride) } else { MachineGpu.none }, clock: 0, devices: [booted] }
 	}
 
 	# -pci-bridge is one level, -pci-bridge-deep two, -pci-bridge-levels N
@@ -170,8 +206,10 @@ Machine :: [].{
 		}
 
 	make : MachineMem.Mem, MachinePci.Pci, MachineDisk.Drives -> Machine.Machine
-	make = |mem, pci, drives| {
-		mem: mem,
+	make = |mem, pci, drives| { mem: mem, gpu: MachineGpu.none, clock: 0, devices: [Machine.devices_new(pci, drives)] }
+
+	devices_new : MachinePci.Pci, MachineDisk.Drives -> Machine.Devices
+	devices_new = |pci, drives| {
 		pci: pci,
 		drives: drives,
 		ide: MachineIde.new,
@@ -186,9 +224,7 @@ Machine :: [].{
 		landed_len: 0,
 		e1000: MachineE1000.new,
 		hpet: MachineHpet.new,
-		clock: 0,
 		board_mmio: False,
-		gpu: MachineGpu.none,
 		timeline: [],
 		typed: 0,
 		scopes: Dict.empty(),
@@ -208,7 +244,10 @@ Machine :: [].{
 		}
 
 	tick : Machine.Machine -> Machine.Machine
-	tick = |m| { ..m, steps: m.steps + 1 }
+	tick = |m| {
+		o = Machine.open(m)
+		Machine.close({ ..o, d: { ..o.d, steps: o.d.steps + 1 } })
+	}
 
 	# ---- the doors emitted Codex calls ----------------------------------
 	#
@@ -240,16 +279,25 @@ Machine :: [].{
 	# answering from memory.
 	# With a screen, the GPU's command buffer, depth buffer and framebuffer are
 	# RAM that MachineGpu keeps (flat, where a pixel is one word written in
-	# place), ahead of the rest of RAM.
-	region : Machine.Machine, I64 -> [Ram, Gpu, Nic, Hpet, Lapic, Ioapic, Nothing(Str)]
+	# place), ahead of the rest of RAM. Only an address above RAM reads the
+	# devices.
+	Region : [Ram, Gpu, Nic, Hpet, Lapic, Ioapic, Nothing(Str)]
+
+	region : Machine.Machine, I64 -> Machine.Region
 	region = |m, a|
 		if a >= MachineGpu.cmd_base and a < Machine.ram_size and MachineGpu.active(m.gpu) and MachineGpu.claims(m.gpu, a) {
 			Gpu
 		} else if a >= 0 and a < Machine.ram_size {
 			Ram
-		} else if m.board_mmio and Machine.board_window(a) {
+		} else {
+			Machine.device_region(Machine.devices_of(m), a)
+		}
+
+	device_region : Machine.Devices, I64 -> Machine.Region
+	device_region = |d, a|
+		if d.board_mmio and Machine.board_window(a) {
 			Ram
-		} else if m.e1000.present and MachineE1000.claims(a) {
+		} else if d.e1000.present and MachineE1000.claims(a) {
 			Nic
 		} else if MachineHpet.claims(a) {
 			Hpet
@@ -258,7 +306,7 @@ Machine :: [].{
 		} else if MachineApic.claims_ioapic(a) {
 			Ioapic
 		} else {
-			Nothing(Machine.unbacked(m, a))
+			Nothing(Machine.unbacked(d, a))
 		}
 
 	ram_size : I64
@@ -269,11 +317,11 @@ Machine :: [].{
 	board_window = |a|
 		(a >= 0xD0000000 and a < 0xD0010000) or (a >= 0xE0000000 and a < 0xE0010000) or (a >= 0xFE000000 and a < 0xFE900000)
 
-	unbacked : Machine.Machine, I64 -> Str
-	unbacked = |m, a|
-		if a >= 0xFE000000 and a < 0xFE004000 and !m.board_mmio {
+	unbacked : Machine.Devices, I64 -> Str
+	unbacked = |d, a|
+		if a >= 0xFE000000 and a < 0xFE004000 and !d.board_mmio {
 			"the HDA controller's registers, which this machine does not model"
-		} else if a >= 0xFE800000 and a < 0xFE804000 and !m.board_mmio {
+		} else if a >= 0xFE800000 and a < 0xFE804000 and !d.board_mmio {
 			"the xHCI controller's registers, which this machine does not model"
 		} else if MachineE1000.claims(a) {
 			"the e1000's window, with no NIC on the bus"
@@ -325,34 +373,10 @@ Machine :: [].{
 		match Machine.region(m, a) {
 			Ram => (m, U64.to_i64_wrap(MachineMem.read(m.mem, a, width - 1, 0)))
 			Gpu => (m, U64.to_i64_wrap(MachineGpu.load(m.gpu, a, width)))
-			Nic =>
-				if width != 4 {
-					crash("machine: a ${I64.to_str(width)}-byte read of the e1000's registers, which this machine answers 32 bits at a time")
-				} else {
-					(e, mem, v) = MachineE1000.read(m.e1000, m.mem, I64.to_u64_wrap(a - MachineE1000.bar), Machine.nic_dma(m))
-					({ ..m, e1000: e, mem: mem, clock: m.clock + Machine.access_cost }, U64.to_i64_wrap(v))
-				}
-			Hpet =>
-				if width != 4 {
-					crash("machine: a ${I64.to_str(width)}-byte read of the HPET's registers, which this machine answers 32 bits at a time")
-				} else {
-					clock = m.clock + Machine.access_cost
-					h = Machine.hpet_polled(m, clock)
-					({ ..m, clock: clock, hpet: h }, U64.to_i64_wrap(MachineHpet.read(h, clock, I64.to_u64_wrap(a - MachineHpet.base))))
-				}
-			Lapic =>
-				if width != 4 {
-					crash("machine: a ${I64.to_str(width)}-byte read of the local APIC's registers, which this machine answers 32 bits at a time")
-				} else {
-					clock = m.clock + Machine.access_cost
-					({ ..m, clock: clock }, U64.to_i64_wrap(MachineApic.lapic_read(m.apic, clock, I64.to_u64_wrap(a - MachineApic.lapic_base))))
-				}
-			Ioapic =>
-				if width != 4 {
-					crash("machine: a ${I64.to_str(width)}-byte read of the IOAPIC's registers, which this machine answers 32 bits at a time")
-				} else {
-					({ ..m, clock: m.clock + Machine.access_cost }, U64.to_i64_wrap(MachineApic.ioapic_read(m.apic, I64.to_u64_wrap(a - MachineApic.ioapic_base))))
-				}
+			Nic => Machine.nic_load(m, Machine.register_width("read of the e1000's registers", width, a))
+			Hpet => Machine.hpet_load(m, Machine.register_width("read of the HPET's registers", width, a))
+			Lapic => Machine.lapic_load(m, Machine.register_width("read of the local APIC's registers", width, a))
+			Ioapic => Machine.ioapic_load(m, Machine.register_width("read of the IOAPIC's registers", width, a))
 			Nothing(what) => crash("machine: a read at ${Machine.hex(I64.to_u64_wrap(a))}, ${what}")
 		}
 	}
@@ -365,53 +389,103 @@ Machine :: [].{
 		match Machine.region(m, a) {
 			Ram => ({ ..m, mem: MachineMem.write(m.mem, a, u, width) }, 0)
 			Gpu => ({ ..m, gpu: MachineGpu.store(m.gpu, a, u, width) }, 0)
-			Nic =>
-				if width != 4 {
-					crash("machine: a ${I64.to_str(width)}-byte write to the e1000's registers, which this machine takes 32 bits at a time")
-				} else {
-					clock = m.clock + Machine.access_cost
-					(e, mem) = MachineE1000.write(m.e1000, m.mem, I64.to_u64_wrap(a - MachineE1000.bar), U64.bitwise_and(u, 0xFFFFFFFF), Machine.nic_dma(m), clock)
-					({ ..m, e1000: e, mem: mem, clock: clock }, 0)
-				}
-			Hpet =>
-				if width != 4 {
-					crash("machine: a ${I64.to_str(width)}-byte write to the HPET's registers, which this machine takes 32 bits at a time")
-				} else {
-					clock = m.clock + Machine.access_cost
-					h = Machine.hpet_polled(m, clock)
-					({ ..m, clock: clock, hpet: MachineHpet.write(h, clock, I64.to_u64_wrap(a - MachineHpet.base), U64.bitwise_and(u, 0xFFFFFFFF)) }, 0)
-				}
-			Lapic =>
-				if width != 4 {
-					crash("machine: a ${I64.to_str(width)}-byte write to the local APIC's registers, which this machine takes 32 bits at a time")
-				} else {
-					clock = m.clock + Machine.access_cost
-					match MachineApic.lapic_write(m.apic, clock, I64.to_u64_wrap(a - MachineApic.lapic_base), U64.bitwise_and(u, 0xFFFFFFFF)) {
-						Wrote(apic) => ({ ..m, clock: clock, apic: apic }, 0)
-						StartsCores => crash("machine: a start-up IPI, which starts the application processors, and this machine has one core")
-					}
-				}
-			Ioapic =>
-				if width != 4 {
-					crash("machine: a ${I64.to_str(width)}-byte write to the IOAPIC's registers, which this machine takes 32 bits at a time")
-				} else {
-					({ ..m, clock: m.clock + Machine.access_cost, apic: MachineApic.ioapic_write(m.apic, I64.to_u64_wrap(a - MachineApic.ioapic_base), U64.bitwise_and(u, 0xFFFFFFFF)) }, 0)
-				}
+			Nic => (Machine.nic_store(m, Machine.register_width("write to the e1000's registers", width, a), U64.bitwise_and(u, 0xFFFFFFFF)), 0)
+			Hpet => (Machine.hpet_store(m, Machine.register_width("write to the HPET's registers", width, a), U64.bitwise_and(u, 0xFFFFFFFF)), 0)
+			Lapic => (Machine.lapic_store(m, Machine.register_width("write to the local APIC's registers", width, a), U64.bitwise_and(u, 0xFFFFFFFF)), 0)
+			Ioapic => (Machine.ioapic_store(m, Machine.register_width("write to the IOAPIC's registers", width, a), U64.bitwise_and(u, 0xFFFFFFFF)), 0)
 			Nothing(what) => crash("machine: a write at ${Machine.hex(I64.to_u64_wrap(a))}, ${what}")
 		}
+	}
+
+	# A device's registers answer 32 bits at a time: the address, or the run
+	# stops naming the access.
+	register_width : Str, I64, I64 -> I64
+	register_width = |what, width, a|
+		if width != 4 {
+			crash("machine: a ${I64.to_str(width)}-byte ${what}, which this machine takes 32 bits at a time")
+		} else {
+			a
+		}
+
+	nic_load : Machine.Machine, I64 -> (Machine.Machine, I64)
+	nic_load = |m, a| {
+		dma = Machine.nic_dma(m)
+		o = Machine.open(m)
+		(e, mem, v) = MachineE1000.read(o.d.e1000, o.mem, I64.to_u64_wrap(a - MachineE1000.bar), dma)
+		(Machine.close({ ..o, mem: mem, clock: o.clock + Machine.access_cost, d: { ..o.d, e1000: e } }), U64.to_i64_wrap(v))
+	}
+
+	nic_store : Machine.Machine, I64, U64 -> Machine.Machine
+	nic_store = |m, a, u| {
+		dma = Machine.nic_dma(m)
+		clock = m.clock + Machine.access_cost
+		o = Machine.open(m)
+		(e, mem) = MachineE1000.write(o.d.e1000, o.mem, I64.to_u64_wrap(a - MachineE1000.bar), u, dma, clock)
+		Machine.close({ ..o, mem: mem, clock: clock, d: { ..o.d, e1000: e } })
+	}
+
+	hpet_load : Machine.Machine, I64 -> (Machine.Machine, I64)
+	hpet_load = |m, a| {
+		clock = m.clock + Machine.access_cost
+		h = Machine.hpet_polled(Machine.devices_of(m), clock)
+		v = MachineHpet.read(h, clock, I64.to_u64_wrap(a - MachineHpet.base))
+		o = Machine.open(m)
+		(Machine.close({ ..o, clock: clock, d: { ..o.d, hpet: h } }), U64.to_i64_wrap(v))
+	}
+
+	hpet_store : Machine.Machine, I64, U64 -> Machine.Machine
+	hpet_store = |m, a, u| {
+		clock = m.clock + Machine.access_cost
+		h = MachineHpet.write(Machine.hpet_polled(Machine.devices_of(m), clock), clock, I64.to_u64_wrap(a - MachineHpet.base), u)
+		o = Machine.open(m)
+		Machine.close({ ..o, clock: clock, d: { ..o.d, hpet: h } })
+	}
+
+	lapic_load : Machine.Machine, I64 -> (Machine.Machine, I64)
+	lapic_load = |m, a| {
+		clock = m.clock + Machine.access_cost
+		v = MachineApic.lapic_read(Machine.devices_of(m).apic, clock, I64.to_u64_wrap(a - MachineApic.lapic_base))
+		({ ..m, clock: clock }, U64.to_i64_wrap(v))
+	}
+
+	lapic_store : Machine.Machine, I64, U64 -> Machine.Machine
+	lapic_store = |m, a, u| {
+		clock = m.clock + Machine.access_cost
+		match MachineApic.lapic_write(Machine.devices_of(m).apic, clock, I64.to_u64_wrap(a - MachineApic.lapic_base), u) {
+			Wrote(apic) => Machine.with_apic(m, clock, apic)
+			StartsCores => crash("machine: a start-up IPI, which starts the application processors, and this machine has one core")
+		}
+	}
+
+	with_apic : Machine.Machine, U64, MachineApic.Apic -> Machine.Machine
+	with_apic = |m, clock, apic| {
+		o = Machine.open(m)
+		Machine.close({ ..o, clock: clock, d: { ..o.d, apic: apic } })
+	}
+
+	ioapic_load : Machine.Machine, I64 -> (Machine.Machine, I64)
+	ioapic_load = |m, a| {
+		v = MachineApic.ioapic_read(Machine.devices_of(m).apic, I64.to_u64_wrap(a - MachineApic.ioapic_base))
+		({ ..m, clock: m.clock + Machine.access_cost }, U64.to_i64_wrap(v))
+	}
+
+	ioapic_store : Machine.Machine, I64, U64 -> Machine.Machine
+	ioapic_store = |m, a, u| {
+		apic = MachineApic.ioapic_write(Machine.devices_of(m).apic, I64.to_u64_wrap(a - MachineApic.ioapic_base), u)
+		Machine.with_apic(m, m.clock + Machine.access_cost, apic)
 	}
 
 	# The HPET's timer 0, checked when the clock reads `clock`. An interrupt it
 	# raises on an IOAPIC line whose entry is unmasked would reach the kernel's
 	# device-interrupt handler, and this machine delivers no interrupts, so the
 	# run stops there.
-	hpet_polled : Machine.Machine, U64 -> MachineHpet.Hpet
-	hpet_polled = |m, clock| {
-		(h, raised) = MachineHpet.poll(m.hpet, clock)
+	hpet_polled : Machine.Devices, U64 -> MachineHpet.Hpet
+	hpet_polled = |d, clock| {
+		(h, raised) = MachineHpet.poll(d.hpet, clock)
 		match raised {
 			Quiet => h
 			Raised(line) =>
-				match MachineApic.delivers(m.apic, line) {
+				match MachineApic.delivers(d.apic, line) {
 					Nowhere => h
 					Vector(v) => crash("machine: the HPET raised IOAPIC line ${U64.to_str(line)} on vector ${U64.to_str(v)}, and this machine delivers no interrupts")
 				}
@@ -421,7 +495,10 @@ Machine :: [].{
 	# The NIC may touch memory unless -nic-bme-clear has left its bus-master
 	# bit clear.
 	nic_dma : Machine.Machine -> Bool
-	nic_dma = |m| !m.e1000.faults.bme_clear or MachinePci.bus_master(m.pci, 32902, 2)
+	nic_dma = |m| {
+		d = Machine.devices_of(m)
+		!d.e1000.faults.bme_clear or MachinePci.bus_master(d.pci, 32902, 2)
+	}
 
 	# `atomic-exchange`: the qword at the address becomes `value`, and the old
 	# one is the answer, as x86's xchg.
@@ -507,7 +584,6 @@ Machine :: [].{
 	port_out_32 = |m, port, value| {
 		p = I64.to_u64_wrap(port)
 		v = U64.bitwise_and(I64.to_u64_wrap(value), MachinePci.all_ones)
-		clock = m.clock + Machine.access_cost
 		if p >= Machine.gpu_port_lo and p <= Machine.gpu_port_hi {
 			if Machine.gpu_compute_denied(m) {
 				(m, -1)
@@ -515,12 +591,24 @@ Machine :: [].{
 				Machine.gpu_port_out(m, p, v)
 			}
 		} else if p == MachinePci.config_addr {
-			({ ..m, pci: MachinePci.latch(m.pci, v), clock: clock }, 0)
+			(Machine.pci_latch(m, v), 0)
 		} else if p >= MachinePci.config_data and p <= MachinePci.config_data + 3 {
-			({ ..m, pci: MachinePci.write(m.pci, v), clock: clock }, 0)
+			(Machine.pci_write(m, v), 0)
 		} else {
 			Machine.port_write(m, p, v, "port-out-32")
 		}
+	}
+
+	pci_latch : Machine.Machine, U64 -> Machine.Machine
+	pci_latch = |m, v| {
+		o = Machine.open(m)
+		Machine.close({ ..o, clock: o.clock + Machine.access_cost, d: { ..o.d, pci: MachinePci.latch(o.d.pci, v) } })
+	}
+
+	pci_write : Machine.Machine, U64 -> Machine.Machine
+	pci_write = |m, v| {
+		o = Machine.open(m)
+		Machine.close({ ..o, clock: o.clock + Machine.access_cost, d: { ..o.d, pci: MachinePci.write(o.d.pci, v) } })
 	}
 
 	# `port-in-32`: 0xCFC..0xCFF read the register the latched address names.
@@ -534,7 +622,8 @@ Machine :: [].{
 				({ ..m, clock: m.clock + Machine.access_cost }, U64.to_i64_wrap(MachineGpu.port_in(p)))
 			}
 		} else if p >= MachinePci.config_data and p <= MachinePci.config_data + 3 {
-			({ ..m, clock: m.clock + Machine.access_cost }, U64.to_i64_wrap(MachinePci.read(m.pci, p - MachinePci.config_data)))
+			v = MachinePci.read(Machine.devices_of(m).pci, p - MachinePci.config_data)
+			({ ..m, clock: m.clock + Machine.access_cost }, U64.to_i64_wrap(v))
 		} else {
 			Machine.port_read(m, p, MachinePci.all_ones, "port-in-32")
 		}
@@ -561,8 +650,7 @@ Machine :: [].{
 	port_out! : Machine.Machine, U64, U64, Str => (Machine.Machine, I64)
 	port_out! = |m, p, v, builtin|
 		if MachineIde.claims(p) {
-			(ide, drives) = MachineIde.write!(m.ide, m.drives, p, v)
-			({ ..m, ide: ide, drives: drives, clock: m.clock + Machine.access_cost }, 0)
+			(Machine.ide_out!(m, p, v), 0)
 		} else if p >= 0x300 and p < 0x320 {
 			Machine.ne2k_write!(m, p - 0x300, v, if builtin == "port-out-byte" { 1 } else { 2 })
 		} else {
@@ -572,14 +660,33 @@ Machine :: [].{
 	port_in! : Machine.Machine, U64, U64, Str => (Machine.Machine, I64)
 	port_in! = |m, p, mask, builtin|
 		if MachineIde.claims(p) {
-			(ide, v) = MachineIde.read!(m.ide, m.drives, p)
-			({ ..m, ide: ide, clock: m.clock + Machine.access_cost }, U64.to_i64_wrap(U64.bitwise_and(v, mask)))
+			Machine.ide_in!(m, p, mask)
 		} else if p >= 0x300 and p < 0x320 {
-			(card, v) = MachineNe2k.read(m.ne2k, p - 0x300, if mask == 0xFF { 1 } else { 2 })
-			({ ..m, ne2k: card, clock: m.clock + Machine.access_cost }, U64.to_i64_wrap(U64.bitwise_and(v, mask)))
+			Machine.ne2k_read(m, p - 0x300, mask)
 		} else {
 			Machine.port_read(m, p, mask, builtin)
 		}
+
+	ide_out! : Machine.Machine, U64, U64 => Machine.Machine
+	ide_out! = |m, p, v| {
+		o = Machine.open(m)
+		(ide, drives) = MachineIde.write!(o.d.ide, o.d.drives, p, v)
+		Machine.close({ ..o, clock: o.clock + Machine.access_cost, d: { ..o.d, ide: ide, drives: drives } })
+	}
+
+	ide_in! : Machine.Machine, U64, U64 => (Machine.Machine, I64)
+	ide_in! = |m, p, mask| {
+		o = Machine.open(m)
+		(ide, v) = MachineIde.read!(o.d.ide, o.d.drives, p)
+		(Machine.close({ ..o, clock: o.clock + Machine.access_cost, d: { ..o.d, ide: ide } }), U64.to_i64_wrap(U64.bitwise_and(v, mask)))
+	}
+
+	ne2k_read : Machine.Machine, U64, U64 -> (Machine.Machine, I64)
+	ne2k_read = |m, off, mask| {
+		o = Machine.open(m)
+		(card, v) = MachineNe2k.read(o.d.ne2k, off, if mask == 0xFF { 1 } else { 2 })
+		(Machine.close({ ..o, clock: o.clock + Machine.access_cost, d: { ..o.d, ne2k: card } }), U64.to_i64_wrap(U64.bitwise_and(v, mask)))
+	}
 
 	# A write to the NE2000. A transmit hands the frame to the NAT, and what
 	# the NAT answers is queued, at most 256 frames; a transmit or a BNRY write
@@ -587,27 +694,28 @@ Machine :: [].{
 	# MachineWire.
 	ne2k_write! : Machine.Machine, U64, U64, U64 => (Machine.Machine, I64)
 	ne2k_write! = |m, off, v, size| {
-		(card, effect) = MachineNe2k.write(m.ne2k, off, v, size)
+		o = Machine.open(m)
+		(card, effect) = MachineNe2k.write(o.d.ne2k, off, v, size)
 		queue =
 			match effect {
 				Transmit(frame) => {
 					MachineWire.sent!(frame)
-					match MachineNat.tx(frame, m.lease) {
+					match MachineNat.tx(frame, o.d.lease) {
 						Replies(frames) => {
 							Machine.answered!(frames, 0)
-							List.sublist(List.concat(m.rx, frames), { start: 0, len: 256 })
+							List.sublist(List.concat(o.d.rx, frames), { start: 0, len: 256 })
 						}
 						Host(what) => crash("machine: the program sent a frame to ${what}, which this machine does not have")
 					}
 				}
-				_ => m.rx
+				_ => o.d.rx
 			}
 		(laid, rest) =
 			match effect {
 				Nothing => (card, queue)
 				_ => MachineNe2k.inject(card, queue)
 			}
-		({ ..m, ne2k: laid, rx: rest, clock: m.clock + Machine.access_cost }, 0)
+		(Machine.close({ ..o, clock: o.clock + Machine.access_cost, d: { ..o.d, ne2k: laid, rx: rest } }), 0)
 	}
 
 	answered! : List(List(U8)), U64 => {}
@@ -803,8 +911,8 @@ Machine :: [].{
 	port_write : Machine.Machine, U64, U64, Str -> (Machine.Machine, I64)
 	port_write = |m, p, v, builtin| {
 		clock = m.clock + Machine.access_cost
-		match MachinePorts.write(m.ports, clock, p, v) {
-			Wrote(ports) => ({ ..m, ports: ports, clock: clock }, 0)
+		match MachinePorts.write(Machine.devices_of(m).ports, clock, p, v) {
+			Wrote(ports) => (Machine.with_ports(m, clock, ports), 0)
 			Claimed(device) => crash("machine: ${builtin} to port ${Machine.hex(p)}, ${device}, which this machine does not model")
 		}
 	}
@@ -812,10 +920,16 @@ Machine :: [].{
 	port_read : Machine.Machine, U64, U64, Str -> (Machine.Machine, I64)
 	port_read = |m, p, mask, builtin| {
 		clock = m.clock + Machine.access_cost
-		match MachinePorts.read(m.ports, clock, p) {
-			Read(ports, v) => ({ ..m, ports: ports, clock: clock }, U64.to_i64_wrap(U64.bitwise_and(v, mask)))
+		match MachinePorts.read(Machine.devices_of(m).ports, clock, p) {
+			Read(ports, v) => (Machine.with_ports(m, clock, ports), U64.to_i64_wrap(U64.bitwise_and(v, mask)))
 			Claimed(device) => crash("machine: ${builtin} from port ${Machine.hex(p)}, ${device}, which this machine does not model")
 		}
+	}
+
+	with_ports : Machine.Machine, U64, MachinePorts.Ports -> Machine.Machine
+	with_ports = |m, clock, ports| {
+		o = Machine.open(m)
+		Machine.close({ ..o, clock: clock, d: { ..o.d, ports: ports } })
 	}
 
 	# **THE BLOCK DOORS ASK THE CAPABILITY WORD FIRST**, as x86's block
@@ -833,17 +947,23 @@ Machine :: [].{
 	block_select! : Machine.Machine, I64 => (Machine.Machine, I64)
 	block_select! = |m, n|
 		if Machine.block_granted(m) {
-			({ ..m, drives: MachineDisk.select(m.drives, I64.to_u64_wrap(n)) }, 0)
+			(Machine.select_drive(m, I64.to_u64_wrap(n)), 0)
 		} else {
 			(m, -1)
 		}
+
+	select_drive : Machine.Machine, U64 -> Machine.Machine
+	select_drive = |m, n| {
+		o = Machine.open(m)
+		Machine.close({ ..o, d: { ..o.d, drives: MachineDisk.select(o.d.drives, n) } })
+	}
 
 	# `block-sector-count`: the selected drive's size in sectors, 0 with nothing
 	# on that position; denied, -1.
 	block_sector_count! : Machine.Machine => (Machine.Machine, I64)
 	block_sector_count! = |m|
 		if Machine.block_granted(m) {
-			(m, U64.to_i64_wrap(MachineDisk.sector_count!(m.drives)))
+			(m, U64.to_i64_wrap(MachineDisk.sector_count!(Machine.devices_of(m).drives)))
 		} else {
 			(m, -1)
 		}
@@ -854,7 +974,7 @@ Machine :: [].{
 	block_read_sector! : Machine.Machine, I64 => (Machine.Machine, I64)
 	block_read_sector! = |m, lba|
 		if Machine.block_granted(m) {
-			Machine.land(m, MachineDisk.read!(m.drives, I64.to_u64_wrap(lba)))
+			Machine.land(m, MachineDisk.read!(Machine.devices_of(m).drives, I64.to_u64_wrap(lba)))
 		} else {
 			Machine.alloc(m, 512)
 		}
@@ -864,18 +984,26 @@ Machine :: [].{
 	block_write_sector! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
 	block_write_sector! = |m, lba, buf|
 		if Machine.block_granted(m) {
-			({ ..m, drives: MachineDisk.write!(m.drives, I64.to_u64_wrap(lba), Machine.copy_out(m.mem, buf, 0, [])) }, 0)
+			(Machine.write_sector!(m, I64.to_u64_wrap(lba), Machine.copy_out(m.mem, buf, 0, [])), 0)
 		} else {
 			(m, 0)
 		}
+
+	write_sector! : Machine.Machine, U64, List(U8) => Machine.Machine
+	write_sector! = |m, lba, sector| {
+		o = Machine.open(m)
+		drives = MachineDisk.write!(o.d.drives, lba, sector)
+		Machine.close({ ..o, d: { ..o.d, drives: drives } })
+	}
 
 	# A sector's bytes into freshly allocated memory: the address, and the
 	# machine that remembers where they landed.
 	land : Machine.Machine, List(U8) -> (Machine.Machine, I64)
 	land = |m, bytes| {
-		(mem1, base) = MachineMem.alloc(m.mem, 512)
+		o = Machine.open(m)
+		(mem1, base) = MachineMem.alloc(o.mem, 512)
 		mem2 = Machine.copy_in(mem1, base, bytes, 0)
-		({ ..m, mem: mem2, landed: base, landed_len: 512 }, base)
+		(Machine.close({ ..o, mem: mem2, d: { ..o.d, landed: base, landed_len: 512 } }), base)
 	}
 
 	# ---- the process ----------------------------------------------------
@@ -949,17 +1077,23 @@ Machine :: [].{
 		if !Machine.admin(m) or pid >= 16 {
 			(m, -1)
 		} else {
-			({ ..m, scopes: Dict.insert(m.scopes, I64.to_u64_wrap(pid), scope) }, 0)
+			(Machine.with_scope(m, I64.to_u64_wrap(pid), scope), 0)
 		}
+
+	with_scope : Machine.Machine, U64, Str -> Machine.Machine
+	with_scope = |m, pid, scope| {
+		o = Machine.open(m)
+		Machine.close({ ..o, d: { ..o.d, scopes: Dict.insert(o.d.scopes, pid, scope) } })
+	}
 
 	# `process-get-scope` and `process-get-network-scope`: the scope given, and
 	# the empty text, which admits everything, when none was or the pid is past
 	# the table.
 	process_get_scope : Machine.Machine, I64 -> (Machine.Machine, Str)
-	process_get_scope = |m, pid| (m, if pid >= 16 { "" } else { Dict.get(m.scopes, I64.to_u64_wrap(pid)) ?? "" })
+	process_get_scope = |m, pid| (m, if pid >= 16 { "" } else { Dict.get(Machine.devices_of(m).scopes, I64.to_u64_wrap(pid)) ?? "" })
 
 	process_get_network_scope : Machine.Machine, I64 -> (Machine.Machine, Str)
-	process_get_network_scope = |m, pid| (m, if pid >= 16 { "" } else { Dict.get(m.net_scopes, I64.to_u64_wrap(pid)) ?? "" })
+	process_get_network_scope = |m, pid| (m, if pid >= 16 { "" } else { Dict.get(Machine.devices_of(m).net_scopes, I64.to_u64_wrap(pid)) ?? "" })
 
 	copy_in : MachineMem.Mem, I64, List(U8), U64 -> MachineMem.Mem
 	copy_in = |mem, base, bytes, i|
@@ -1008,32 +1142,35 @@ Machine :: [].{
 	# `uefi-read-key`: the key cell exchanged with zero, as its scancode byte.
 	uefi_read_key : Machine.Machine -> (Machine.Machine, I64)
 	uefi_read_key = |m| {
-		due = Machine.type_due(m)
+		due = Machine.type_due(Machine.open(m))
 		code = U64.bitwise_and(MachineMem.read(due.mem, Machine.key_cell, 7, 0), 255)
-		taken = { ..due, mem: MachineMem.write(due.mem, Machine.key_cell, 0, 8) }
-		if code == 0 {
-			match List.get(taken.timeline, taken.typed) {
-				Ok(next) => ({ ..taken, clock: if next.at > taken.clock { next.at } else { taken.clock } }, 0)
-				Err(_) => (taken, 0)
+		# An empty cell moves the clock to the next keystroke's time, if one is
+		# still to come.
+		clock =
+			if code == 0 {
+				match List.get(due.d.timeline, due.d.typed) {
+					Ok(next) => if next.at > due.clock { next.at } else { due.clock }
+					Err(_) => due.clock
+				}
+			} else {
+				due.clock
 			}
-		} else {
-			(taken, U64.to_i64_wrap(code))
-		}
+		(Machine.close({ ..due, mem: MachineMem.write(due.mem, Machine.key_cell, 0, 8), clock: clock }), U64.to_i64_wrap(code))
 	}
 
 	key_cell : I64
 	key_cell = 28680
 
-	type_due : Machine.Machine -> Machine.Machine
-	type_due = |m|
-		match List.get(m.timeline, m.typed) {
+	type_due : Machine.Opened -> Machine.Opened
+	type_due = |o|
+		match List.get(o.d.timeline, o.d.typed) {
 			Ok(k) =>
-				if k.at <= m.clock {
-					Machine.type_due({ ..m, mem: MachineMem.write(m.mem, Machine.key_cell, U8.to_u64(k.code), 1), typed: m.typed + 1 })
+				if k.at <= o.clock {
+					Machine.type_due({ ..o, mem: MachineMem.write(o.mem, Machine.key_cell, U8.to_u64(k.code), 1), d: { ..o.d, typed: o.d.typed + 1 } })
 				} else {
-					m
+					o
 				}
-			Err(_) => m
+			Err(_) => o
 		}
 
 	# codex-vm's -keys-file format: `t:scancode` events, t in milliseconds,
@@ -1076,21 +1213,38 @@ Machine :: [].{
 		}
 
 	key_in : Machine.Machine, U8 -> Machine.Machine
-	key_in = |m, code| { ..m, keys: List.append(m.keys, code) }
+	key_in = |m, code| {
+		o = Machine.open(m)
+		Machine.close({ ..o, d: { ..o.d, keys: List.append(o.d.keys, code) } })
+	}
 
 	# The next scancode, or -1 when none is waiting.
 	key_next : Machine.Machine -> (Machine.Machine, I64)
-	key_next = |m|
-		match List.get(m.keys, m.key_at) {
-			Ok(k) => ({ ..m, key_at: m.key_at + 1 }, U64.to_i64_wrap(U8.to_u64(k)))
+	key_next = |m| {
+		d = Machine.devices_of(m)
+		match List.get(d.keys, d.key_at) {
+			Ok(k) => (Machine.key_taken(m), U64.to_i64_wrap(U8.to_u64(k)))
 			Err(_) => (m, -1)
 		}
+	}
+
+	key_taken : Machine.Machine -> Machine.Machine
+	key_taken = |m| {
+		o = Machine.open(m)
+		Machine.close({ ..o, d: { ..o.d, key_at: o.d.key_at + 1 } })
+	}
 
 	keys_waiting : Machine.Machine -> Bool
-	keys_waiting = |m| m.key_at < List.len(m.keys)
+	keys_waiting = |m| {
+		d = Machine.devices_of(m)
+		d.key_at < List.len(d.keys)
+	}
 
 	# ---- the console ----------------------------------------------------
 
 	print_line : Machine.Machine, Str -> Machine.Machine
-	print_line = |m, s| { ..m, console: List.append(List.concat(m.console, Str.to_utf8(s)), 10) }
+	print_line = |m, s| {
+		o = Machine.open(m)
+		Machine.close({ ..o, d: { ..o.d, console: List.append(List.concat(o.d.console, Str.to_utf8(s)), 10) } })
+	}
 }

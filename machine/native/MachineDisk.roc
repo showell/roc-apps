@@ -10,6 +10,10 @@ import pf.Drive
 MachineDisk :: [].{
 	Drives : { selected : U64 }
 
+	# No drives at all, for the machine's slot while a door holds the devices.
+	none : MachineDisk.Drives
+	none = { selected: 0 }
+
 	# Attach each named file to its position; a file that will not open stops
 	# the run by name.
 	boot! : List(Str) => MachineDisk.Drives

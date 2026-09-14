@@ -88,7 +88,7 @@ one = |model| {
 				}
 			}
 		Sector => {
-			(m1, base) = Machine.land(m, MachineDisk.read(m.drives, 0))
+			(m1, base) = Machine.land(m, MachineDisk.read(Machine.devices_of(m).drives, 0))
 			# `lba0` is what upstream's block-select-drives prints for the same
 			# image on bare metal: `drive 0 sectors 128 lba0 161`.
 			first = U64.to_str(Machine.peek_byte(m1, base))
@@ -118,13 +118,14 @@ view : Box(Model) -> List(U8)
 view = |boxed| {
 	model = Box.unbox(boxed)
 	m = model.m
+	d = Machine.devices_of(m)
 	status = if idle(model) { 1 } else { 5 }
-	head = List.concat([status], u32(m.steps))
-	con = List.concat(u32(List.len(m.console)), m.console)
+	head = List.concat([status], u32(d.steps))
+	con = List.concat(u32(List.len(d.console)), d.console)
 	pci = List.concat(u32(List.len(model.found)), rows(model.found, 0, []))
 	span = List.concat(
-		List.concat(u32(I64.to_u64_wrap(m.landed)), u32(I64.to_u64_wrap(m.landed_len))),
-		window(m, 0, []),
+		List.concat(u32(I64.to_u64_wrap(d.landed)), u32(I64.to_u64_wrap(d.landed_len))),
+		window(m, d.landed, d.landed_len, 0, []),
 	)
 	List.concat(List.concat(head, con), List.concat(pci, span))
 }
@@ -139,12 +140,12 @@ rows = |fs, i, acc|
 		Err(_) => acc
 	}
 
-window : Machine.Machine, I64, List(U8) -> List(U8)
-window = |m, i, acc|
-	if i >= m.landed_len {
+window : Machine.Machine, I64, I64, I64, List(U8) -> List(U8)
+window = |m, landed, len, i, acc|
+	if i >= len {
 		acc
 	} else {
-		window(m, i + 1, List.append(acc, lo(Machine.peek_byte(m, m.landed + i))))
+		window(m, landed, len, i + 1, List.append(acc, lo(Machine.peek_byte(m, landed + i))))
 	}
 
 lo : U64 -> U8

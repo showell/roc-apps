@@ -47,6 +47,10 @@ MachineDisk :: [].{
 
 	# ---- the model -------------------------------------------------------
 
+	# No drives at all, for the machine's slot while a door holds the devices.
+	none : MachineDisk.Drives
+	none = { drives: [], selected: 0, written: Dict.empty() }
+
 	attach : List(MachineDisk.Drive) -> MachineDisk.Drives
 	attach = |drives| { drives: drives, selected: 0, written: Dict.empty() }
 
