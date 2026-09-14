@@ -31,6 +31,7 @@ import MachineNat
 import MachineNe2k
 import MachinePci
 import MachinePorts
+import MachineWire
 
 Machine :: [].{
 	Machine : {
@@ -489,7 +490,7 @@ Machine :: [].{
 			(ide, drives) = MachineIde.write!(m.ide, m.drives, p, v)
 			({ ..m, ide: ide, drives: drives, clock: m.clock + Machine.access_cost }, 0)
 		} else if p >= 0x300 and p < 0x320 {
-			Machine.ne2k_write(m, p - 0x300, v, if builtin == "port-out-byte" { 1 } else { 2 })
+			Machine.ne2k_write!(m, p - 0x300, v, if builtin == "port-out-byte" { 1 } else { 2 })
 		} else {
 			Machine.port_write(m, p, v, builtin)
 		}
@@ -508,17 +509,23 @@ Machine :: [].{
 
 	# A write to the NE2000. A transmit hands the frame to the NAT, and what
 	# the NAT answers is queued, at most 256 frames; a transmit or a BNRY write
-	# lays the queue into the ring.
-	ne2k_write : Machine.Machine, U64, U64, U64 -> (Machine.Machine, I64)
-	ne2k_write = |m, off, v, size| {
+	# lays the queue into the ring. Each frame sent and each answer passes
+	# MachineWire.
+	ne2k_write! : Machine.Machine, U64, U64, U64 => (Machine.Machine, I64)
+	ne2k_write! = |m, off, v, size| {
 		(card, effect) = MachineNe2k.write(m.ne2k, off, v, size)
 		queue =
 			match effect {
-				Transmit(frame) =>
+				Transmit(frame) => {
+					MachineWire.sent!(frame)
 					match MachineNat.tx(frame, m.lease) {
-						Replies(frames) => List.sublist(List.concat(m.rx, frames), { start: 0, len: 256 })
+						Replies(frames) => {
+							Machine.answered!(frames, 0)
+							List.sublist(List.concat(m.rx, frames), { start: 0, len: 256 })
+						}
 						Host(what) => crash("machine: the program sent a frame to ${what}, which this machine does not have")
 					}
+				}
 				_ => m.rx
 			}
 		(laid, rest) =
@@ -528,6 +535,16 @@ Machine :: [].{
 			}
 		({ ..m, ne2k: laid, rx: rest, clock: m.clock + Machine.access_cost }, 0)
 	}
+
+	answered! : List(List(U8)), U64 => {}
+	answered! = |frames, i|
+		match List.get(frames, i) {
+			Err(_) => {}
+			Ok(frame) => {
+				MachineWire.answered!(frame)
+				Machine.answered!(frames, i + 1)
+			}
+		}
 
 	# ---- the network ----------------------------------------------------
 	#

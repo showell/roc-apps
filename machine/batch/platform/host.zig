@@ -29,6 +29,13 @@ const crash_cap: usize = 4096;
 var crash_buf: [crash_cap]u8 = undefined;
 var crash_len: usize = 0;
 
+/// The frames that crossed the wire, in order: a byte for the direction (0
+/// sent by the program, 1 answered by the network), the length as four bytes
+/// low first, then the frame. A frame that does not fit is dropped.
+const wire_cap: usize = 1 << 20;
+var wire_buf: [wire_cap]u8 = undefined;
+var wire_len: usize = 0;
+
 /// Appends what fits; a console past its capacity keeps its first megabyte.
 fn keep(buf: []u8, len: *usize, bytes: []const u8) void {
     const n = @min(bytes.len, buf.len - len.*);
@@ -171,12 +178,24 @@ fn hostedEchoLine(line: RocStr) callconv(.c) void {
     keep(&console_buf, &console_len, line.asSlice());
 }
 
+fn hostedWireFrame(direction: u64, frame: RocList) callconv(.c) void {
+    defer frame.decref(@alignOf(u8), @sizeOf(u8), false, null, noDec, &roc_ops);
+    const bytes = frame.bytes orelse return;
+    const n = frame.length;
+    if (wire_len + 5 + n > wire_cap) return;
+    wire_buf[wire_len] = @intCast(direction & 1);
+    std.mem.writeInt(u32, wire_buf[wire_len + 1 ..][0..4], @intCast(n), .little);
+    @memcpy(wire_buf[wire_len + 5 ..][0..n], bytes[0..n]);
+    wire_len += 5 + n;
+}
+
 comptime {
     @export(&hostedDriveOpen, .{ .name = "roc_drive_open", .visibility = .hidden });
     @export(&hostedDriveRead, .{ .name = "roc_drive_read", .visibility = .hidden });
     @export(&hostedDriveSectorCount, .{ .name = "roc_drive_sector_count", .visibility = .hidden });
     @export(&hostedDriveWrite, .{ .name = "roc_drive_write", .visibility = .hidden });
     @export(&hostedEchoLine, .{ .name = "roc_echo_line", .visibility = .hidden });
+    @export(&hostedWireFrame, .{ .name = "roc_wire_frame", .visibility = .hidden });
 }
 
 // ---- the run -------------------------------------------------------------
@@ -199,6 +218,7 @@ extern fn roc_main(args: RocList) callconv(.c) i8;
 pub export fn run(len: u32) i32 {
     console_len = 0;
     crash_len = 0;
+    wire_len = 0;
     if (len > args_cap) @trap();
     const words = args_buf[0..len];
     var count: usize = 0;
@@ -232,4 +252,12 @@ pub export fn crashPtr() u32 {
 
 pub export fn crashLen() u32 {
     return @intCast(crash_len);
+}
+
+pub export fn wirePtr() u32 {
+    return @intCast(@intFromPtr(&wire_buf));
+}
+
+pub export fn wireLen() u32 {
+    return @intCast(wire_len);
 }

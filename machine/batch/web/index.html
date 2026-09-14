@@ -29,12 +29,18 @@
   .hexwrap { overflow-x: auto; }
   pre.hex { white-space: pre; }
   .hex span.hi { background: var(--hi); }
-  .verdict.ok { color: var(--ok); }
-  .verdict.bad { color: var(--bad); }
   .sectors { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 8px; }
   .sectors button { font: 12px ui-monospace, monospace; padding: 2px 6px; border: 1px solid var(--edge); background: var(--pane); color: var(--fg); border-radius: 3px; cursor: pointer; }
   .sectors button[aria-pressed="true"] { background: var(--sel); border-color: var(--muted); }
   .muted { color: var(--muted); }
+  #status.ok { color: var(--ok); }
+  #status.bad { color: var(--bad); }
+  .code { grid-column: 1 / -1; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 8px; }
+  .tabs button { font: 12px ui-monospace, monospace; padding: 2px 8px; border: 1px solid var(--edge); background: var(--pane); color: var(--fg); border-radius: 3px; cursor: pointer; }
+  .tabs button[aria-pressed="true"] { background: var(--sel); border-color: var(--muted); }
+  pre.src { white-space: pre; max-height: 36em; overflow: auto; tab-size: 4; }
+  a { color: inherit; }
 </style>
 </head>
 <body>
@@ -49,9 +55,10 @@ drives, the NE2000 network card and the small network behind it. Pick one and pr
   <span id="status">loading…</span>
 </div>
 <div class="grid">
-  <section><h2>Console</h2><pre id="console" class="muted">Nothing has run yet.</pre></section>
-  <section><h2>Verdict</h2><div id="verdict" class="verdict muted">The test's expected output appears here after a run.</div><pre id="expected"></pre></section>
+  <section><h2>Console</h2><pre id="console" class="muted">Nothing has run yet.</pre><h2 id="expectlab" hidden>The test expects</h2><pre id="expected"></pre></section>
   <section><h2 id="disklab">Disk</h2><div id="disk" class="muted">The sectors a run writes appear here.</div><div class="sectors" id="sectors"></div><div class="hexwrap"><pre id="hex" class="hex"></pre></div></section>
+  <section><h2 id="wirelab">Network</h2><div id="wire" class="muted">The frames a run sends, and the network's answers, appear here.</div><pre id="frames"></pre></section>
+  <section class="code"><h2 id="codelab">Roc</h2><div class="muted">What rocemit wrote for this program: the test's own module first, then a module for each Codex chapter it cites. The machine it runs on is hand-written Roc, the same for every program: <a href="https://github.com/showell/roc-apps/tree/master/machine/roc">machine/roc</a>.</div><div class="tabs" id="tabs"></div><pre id="src" class="src"></pre></section>
 </div>
 </main>
 <script>
@@ -78,12 +85,35 @@ function choose(u) {
   chosen = u;
   for (const b of $("units").children) b.setAttribute("aria-pressed", String(b.dataset.name === u.name));
   $("run").disabled = false;
+  $("status").classList.remove("ok", "bad");
   $("status").textContent = `${u.name} is ready`;
+  showCode(u);
+}
+
+// The modules rocemit wrote for a program, one tab each, the app first.
+function showCode(u) {
+  const files = u.roc || [];
+  $("codelab").textContent = `Roc: ${files.length} module${files.length === 1 ? "" : "s"} for ${u.name}`;
+  $("tabs").innerHTML = "";
+  $("src").textContent = "";
+  const open = async (name, button) => {
+    for (const b of $("tabs").children) b.setAttribute("aria-pressed", String(b === button));
+    const text = await fetchText(`${u.name}.roc/${name}`);
+    if (chosen === u) $("src").textContent = text;
+  };
+  files.forEach((name, i) => {
+    const b = document.createElement("button");
+    b.textContent = name;
+    b.onclick = () => open(name, b);
+    $("tabs").appendChild(b);
+    if (i === 0) open(name, b);
+  });
 }
 
 async function run() {
   const u = chosen;
   $("run").disabled = true;
+  $("status").classList.remove("ok", "bad");
   $("status").textContent = `loading ${u.name}…`;
   const [wasm, images, expected] = await Promise.all([
     fetchBytes(`${u.name}.wasm`),
@@ -116,19 +146,26 @@ async function run() {
   const crash = new TextDecoder().decode(bytes(x.crashPtr(), x.crashLen()));
   $("console").classList.remove("muted");
   $("console").textContent = text + (trapped ? `\n[stopped: ${crash || trapped.message}]` : "");
-  $("status").textContent = trapped ? `${u.name} stopped after ${ms.toFixed(0)} ms` : `${u.name} finished in ${ms.toFixed(0)} ms (exit ${code})`;
-
-  const v = $("verdict");
-  v.classList.remove("muted", "ok", "bad");
+  // The verdict goes on the status line; a console that differs from the
+  // test's expected output shows that output under it.
+  const took = trapped ? `${u.name} stopped after ${ms.toFixed(0)} ms` : `${u.name} finished in ${ms.toFixed(0)} ms (exit ${code})`;
+  const st = $("status");
+  $("expectlab").hidden = true;
+  $("expected").textContent = "";
   if (expected === null) {
-    v.textContent = "This test has no expected output here."; $("expected").textContent = "";
+    st.textContent = `${took} · this test has no expected output here`;
   } else if (!trapped && text.replace(/\n+$/, "\n") === expected) {
-    v.classList.add("ok"); v.textContent = "✓ The console matches the output the test expects."; $("expected").textContent = "";
+    st.classList.add("ok");
+    st.textContent = `${took} · ✓ matches the test's expected output`;
   } else {
-    v.classList.add("bad"); v.textContent = "✗ The console differs from the output the test expects:"; $("expected").textContent = expected;
+    st.classList.add("bad");
+    st.textContent = `${took} · ✗ differs from the test's expected output`;
+    $("expectlab").hidden = false;
+    $("expected").textContent = expected;
   }
 
   showDisk(u, images, x);
+  showWire(x);
   $("run").disabled = false;
 }
 
@@ -172,6 +209,65 @@ function showDisk(u, images, x) {
     $("sectors").appendChild(b);
     if (i === 0) pick(c, b);
   });
+}
+
+// The host keeps each frame as a direction byte (0 sent, 1 answered), its
+// length as four bytes low first, and the frame.
+function wireFrames(x) {
+  const b = new Uint8Array(x.memory.buffer, x.wirePtr(), x.wireLen()).slice();
+  const out = [];
+  for (let p = 0; p + 5 <= b.length; ) {
+    const n = (b[p + 1] | (b[p + 2] << 8) | (b[p + 3] << 16) | (b[p + 4] << 24)) >>> 0;
+    out.push({ sent: b[p] === 0, f: b.subarray(p + 5, p + 5 + n) });
+    p += 5 + n;
+  }
+  return out;
+}
+
+const mac = (f, o) => Array.from(f.subarray(o, o + 6), (v) => hex(v, 2).toLowerCase()).join(":");
+const ip = (f, o) => Array.from(f.subarray(o, o + 4)).join(".");
+const be16 = (f, o) => (f[o] << 8) | f[o + 1];
+const DHCP = { 1: "DISCOVER", 2: "OFFER", 3: "REQUEST", 4: "DECLINE", 5: "ACK", 6: "NAK", 7: "RELEASE", 8: "INFORM" };
+
+// One line for a frame, in the words of the protocol it carries.
+function describe(f) {
+  if (f.length < 14) return `a ${f.length}-byte runt`;
+  const type = be16(f, 12);
+  if (type === 0x0806 && f.length >= 42) {
+    const op = be16(f, 20);
+    if (op === 1) return `ARP: who has ${ip(f, 38)}? tell ${ip(f, 28)}`;
+    if (op === 2) return `ARP: ${ip(f, 28)} is at ${mac(f, 22)}`;
+    return `ARP operation ${op}`;
+  }
+  if (type !== 0x0800 || f.length < 34) return `ethertype 0x${hex(type, 4)}, ${f.length} bytes`;
+  const l4 = 14 + (f[14] & 15) * 4, proto = f[23], src = ip(f, 26), dst = ip(f, 30);
+  if (proto === 17 && f.length >= l4 + 8) {
+    const sport = be16(f, l4), dport = be16(f, l4 + 2), d = l4 + 8;
+    if ((sport === 68 || sport === 67) && (dport === 67 || dport === 68) && f.length >= d + 240) {
+      let kind = "?";
+      for (let o = d + 240; o + 2 < f.length; ) {
+        if (f[o] === 255) break;
+        if (f[o] === 0) { o++; continue; }
+        if (f[o] === 53) { kind = DHCP[f[o + 2]] || String(f[o + 2]); break; }
+        o += 2 + f[o + 1];
+      }
+      return f[d] === 1 ? `DHCP ${kind} from ${mac(f, d + 28)}` : `DHCP ${kind}: ${ip(f, d + 16)} for ${mac(f, d + 28)}, from ${src}`;
+    }
+    return `UDP ${src}:${sport} → ${dst}:${dport}, ${f.length - d} bytes of data`;
+  }
+  if (proto === 6 && f.length >= l4 + 20) {
+    const flags = f[l4 + 13], names = [[2, "SYN"], [16, "ACK"], [8, "PSH"], [1, "FIN"], [4, "RST"]].filter(([m]) => flags & m).map(([, n]) => n);
+    return `TCP ${src}:${be16(f, l4)} → ${dst}:${be16(f, l4 + 2)} ${names.join(" ")}`;
+  }
+  return `IPv4 protocol ${proto}, ${src} → ${dst}`;
+}
+
+function showWire(x) {
+  const frames = wireFrames(x);
+  const sent = frames.filter((w) => w.sent).length;
+  $("wirelab").textContent = `Network: ${sent} sent, ${frames.length - sent} answered`;
+  $("wire").textContent = frames.length === 0 ? "The run put nothing on the wire." : "In order, what the program sent and what the network behind the card answered:";
+  $("frames").textContent = frames.map((w) => `${w.sent ? "sent     →" : "answered ←"} ${describe(w.f)}`).join("\n");
 }
 
 $("run").onclick = run;

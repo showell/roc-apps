@@ -44,6 +44,12 @@ if (trapped) {
 } else {
   console.log(`-- exit ${code} after ${ms} ms`);
 }
+let sent = 0, answered = 0;
+const wire = bytes(x.wirePtr(), x.wireLen());
+for (let p = 0; p + 5 <= wire.length; p += 5 + ((wire[p + 1] | (wire[p + 2] << 8) | (wire[p + 3] << 16) | (wire[p + 4] << 24)) >>> 0)) {
+  if (wire[p] === 0) sent++; else answered++;
+}
+console.log(`-- the wire: ${sent} sent, ${answered} answered`);
 const verdict = join(dir, `${n}.expected`);
 if (existsSync(verdict)) {
   const want = readFileSync(verdict, "utf8");

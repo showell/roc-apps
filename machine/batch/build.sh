@@ -26,8 +26,10 @@ for src in "$@"; do
     said="$("$ROCEMIT" "$src" "$d")"
     app="${said%%$'\n'*}"
     grep -qx 'import Machine' "$d"/*.roc || { echo "$n does not run on the machine"; exit 2; }
+    # The modules rocemit wrote, the app first, which the page shows.
+    emitted=("$app" $(cd "$d" && ls *.roc | grep -vx "$app" || true))
     cp "$HERE/../roc/"{Machine,MachineApic,MachineCaps,MachineE1000,MachineHpet,MachineIde,MachineMedia,MachineMem,MachineNat,MachineNe2k,MachinePci,MachinePorts}.roc "$d/"
-    cp "$HERE/../native/MachineDisk.roc" "$d/"
+    cp "$HERE/../native/MachineDisk.roc" "$HERE/MachineWire.roc" "$d/"
     # Roc takes a platform only by a relative path.
     rel="$(python3 -c 'import os, sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$HERE/platform/main.roc" "$d")"
     { printf 'app [main!] { pf: platform "%s" }\n\nimport pf.Echo\n\necho! = |msg| Echo.line!(msg)\n\n' "$rel"; cat "$d/$app"; } > "$d/$app.wired"
@@ -45,14 +47,23 @@ for src in "$@"; do
         if [ -f "$base.$ext" ]; then cp "$base.$ext" "$NEXT/$n.$ext"; else rm -f "$NEXT/$n.$ext"; fi
     done
     if [ -f "$VERDICTS/$n.expected" ]; then cp "$VERDICTS/$n.expected" "$NEXT/$n.expected"; else rm -f "$NEXT/$n.expected"; fi
+    rm -rf "$NEXT/$n.roc"; mkdir -p "$NEXT/$n.roc"
+    for f in "${emitted[@]}"; do cp "$d/$f" "$NEXT/$n.roc/"; done
+    printf '%s\n' "${emitted[@]}" > "$NEXT/$n.files"
     ls -la "$NEXT/$n.wasm"
 done
-# The page, and its list of every unit built here: the images each brings and
-# whether its verdict came with it.
+# The page, and its list of every unit built here: the images each brings,
+# whether its verdict came with it, and the Roc modules rocemit wrote for it.
 cp "$HERE/web/index.html" "$NEXT/index.html"
 (cd "$NEXT" && python3 -c '
 import glob, json, os
-units = [{"name": w[:-5], "disks": [e for e in ("disk", "disk2") if os.path.exists(w[:-5] + "." + e)], "expected": os.path.exists(w[:-5] + ".expected")} for w in sorted(glob.glob("*.wasm"))]
-print(json.dumps(units))
+def unit(n):
+    return {
+        "name": n,
+        "disks": [e for e in ("disk", "disk2") if os.path.exists(n + "." + e)],
+        "expected": os.path.exists(n + ".expected"),
+        "roc": open(n + ".files").read().split() if os.path.exists(n + ".files") else [],
+    }
+print(json.dumps([unit(w[:-5]) for w in sorted(glob.glob("*.wasm"))]))
 ' > units.json)
 echo "page: http://143.244.172.148:9203/machine/batch/"

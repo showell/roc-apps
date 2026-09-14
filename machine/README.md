@@ -19,7 +19,9 @@ Two programs drive it:
   runs to its end in the browser: the page loads its disk images into the
   host's buffers, runs it, and reads back the console and the drives.
   `machine/batch/build.sh fat16-write.codex` builds it into the preview root,
-  and `node machine/batch/smoke.mjs fat16-write` runs it against its verdict.
+  and `node machine/batch/smoke.mjs fat16-write` runs it against its verdict;
+  `node machine/batch/page.mjs` runs the page's own script over every built
+  unit and prints its panes.
 - **A real device.** On the native platform the block doors are answered by
   the host, from the files codex-vm's `-disk` and `-disk2` name, written in
   place: `machine/native/run.sh fat16-write.codex -disk copy.img`. The block
@@ -40,6 +42,7 @@ Two programs drive it:
 | `roc/MachineIde.roc` | the IDE channel's task-file registers at 0x1F0–0x1F7 and 0x3F6 as codex-vm models them: the drive/head register selects the position, READ SECTORS and WRITE SECTORS move `MachineDisk`'s sectors a word at a time through the data register, IDENTIFY names the drive, and a position with no medium answers 0x00 from status and 0xFF elsewhere; `port-in-16-block` and `port-out-16-block` are `rep insw` and `rep outsw` over it |
 | `roc/MachineNe2k.roc` | the NE2000 at 0x300–0x31F as codex-vm models it: the page-selected registers, 32 KB of card memory by remote DMA, the receive ring the NAT's answers are laid into, and the card as x86's boot leaves it; the network builtins (`net-send-raw`, `net-recv-raw`, `net-status`, `net-get-hwaddr`) drive it from `Machine.roc` as x86's kernel helpers do |
 | `roc/MachineNat.roc` | the NAT behind the wire, as codex-vm answers a transmitted frame: ARP from the gateway, a DHCP offer and ack for `-dhcp-lease`; DNS, other UDP and a TCP SYN reach the host, which this machine does not have, and stop the run by name |
+| `roc/MachineWire.roc` | the wire between the NE2000 and the NAT: a door for each frame sent and each frame answered, which keeps nothing here; `batch/MachineWire.roc` hands them to the page |
 | `roc/MachineMedia.roc` | what a run brings with it: the images the modelled disk attaches and the keystrokes typed, none here; the ladder writes one per unit from its `.disk`, `.disk2` and `.keys` |
 | `roc/MachineApp.roc` | the program the page runs: a PCI bus-0 scan, sector 0 into memory, a key echo |
 | `wasm/platform/` | the page's platform (`main.roc`) and its host (`host.zig`): `newMachine`, `step`, `key`, `view` |

@@ -4,7 +4,7 @@
 # the console, the drives as the program left them, and a crash's message.
 platform ""
 	requires {} { main! : List(Str) => Try(_, [Exit(I8), ..]) }
-	exposes [Drive, Echo]
+	exposes [Drive, Echo, Wire]
 	packages {}
 	provides { "roc_main": main_for_host! }
 	hosted {
@@ -13,17 +13,19 @@ platform ""
 		"roc_drive_sector_count": Drive.sector_count!,
 		"roc_drive_write": Drive.write!,
 		"roc_echo_line": Echo.line!,
+		"roc_wire_frame": Wire.frame!,
 	}
 	targets: {
 		inputs_dir: "targets/",
 		wasm32: {
 			inputs: ["host.wasm", app],
-			exports: ["driveBuffer", "drivePtr", "driveLen", "argsBuffer", "argsCapacity", "run", "consolePtr", "consoleLen", "crashPtr", "crashLen"],
+			exports: ["driveBuffer", "drivePtr", "driveLen", "argsBuffer", "argsCapacity", "run", "consolePtr", "consoleLen", "crashPtr", "crashLen", "wirePtr", "wireLen"],
 		},
 	}
 
 import Drive
 import Echo
+import Wire
 
 main_for_host! : List(Str) => I8
 main_for_host! = |args|
