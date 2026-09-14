@@ -246,6 +246,43 @@ pub fn keyPush(scancode: u8) void {
     keys_len += 1;
 }
 
+/// codex-vm's mouse, as the ports it keeps for the absolute pointer: 0xE1 the
+/// buttons (the live level with the presses latched since the last read, which
+/// the read clears), 0xE2 and 0xE3 the position (a read of 0xE3 takes the news
+/// away), and 0xE4 whether the position is news. The host's root moves it
+/// (`mousePush`); until then nothing is pressed and nothing is news.
+const mouse_first: u64 = 0xE1;
+const mouse_last: u64 = 0xE4;
+var mouse_x: u32 = 0;
+var mouse_y: u32 = 0;
+var mouse_buttons: u32 = 0;
+var mouse_latch: u32 = 0;
+var mouse_news: u32 = 0;
+
+pub fn mousePush(x: u32, y: u32, buttons: u32) void {
+    mouse_x = x;
+    mouse_y = y;
+    mouse_buttons = buttons;
+    mouse_latch |= buttons;
+    mouse_news = 1;
+}
+
+fn mouseRead(port: u64) u64 {
+    switch (port) {
+        0xE1 => {
+            const b = mouse_buttons | mouse_latch;
+            mouse_latch = 0;
+            return b;
+        },
+        0xE2 => return mouse_x & 0xFFFF,
+        0xE3 => {
+            mouse_news = 0;
+            return mouse_y & 0xFFFF;
+        },
+        else => return mouse_news,
+    }
+}
+
 var port_msg: [160]u8 = undefined;
 
 fn noDevice(what: []const u8, port: u64, width: u64) noreturn {
@@ -271,6 +308,7 @@ fn hostedPortIn(port: u64, width: u64) callconv(.c) u64 {
         return k;
     }
     if (port == kbd_status and width == 1) return if (keys_len > 0) 1 else 0;
+    if (port >= mouse_first and port <= mouse_last and width <= 2) return mouseRead(port);
     noDevice("read from", port, width);
 }
 

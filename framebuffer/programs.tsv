@@ -6,3 +6,4 @@
 #
 # program     frame   width  height  stride
 EngineDemo    flush   640    480     640
+GuiOpening    flush   1024   768     1024

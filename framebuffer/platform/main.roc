@@ -21,7 +21,7 @@ platform ""
 		x64musl: { inputs: ["crt1.o", "libhost.a", app, "libc.a"] },
 		wasm32: {
 			inputs: ["host.wasm", app],
-			exports: ["run", "screen", "clock", "present", "key", "pagesMade", "consolePtr", "consoleLen", "crashPtr", "crashLen"],
+			exports: ["run", "screen", "clock", "present", "key", "mouse", "pagesMade", "consolePtr", "consoleLen", "crashPtr", "crashLen"],
 		},
 	}
 

@@ -27,12 +27,14 @@ cp "$ROC_CHECKOUT/test/fx/platform/targets/x64musl/crt1.o" "$ROC_CHECKOUT/test/f
 for src in "$@"; do
     src="$(realpath "$src")"
     n="$(basename "$src" .codex)"
+    # An app's program is often its opening.codex; the app's directory names it.
+    [ "$n" = opening ] && n="$(basename "$(dirname "$src")")"
     d="$HOME/build/roc-apps/gen/framebuffer/$n"
     rm -rf "$d"; mkdir -p "$d/codex" "$d/roc"
     # The copy resolves its cites where the original does: in the Cobblestone
     # checkout it sits in (the directory holding codex/compiler/opening.codex),
     # or in the checkout the nearest quires.tsv above it names.
-    cp "$src" "$d/codex/"
+    cp "$src" "$d/codex/$n.codex"
     q="$(dirname "$src")"
     while [ "$q" != / ] && [ ! -f "$q/codex/compiler/opening.codex" ] && [ ! -f "$q/quires.tsv" ]; do q="$(dirname "$q")"; done
     if [ -f "$q/codex/compiler/opening.codex" ]; then

@@ -39,6 +39,11 @@ pub export fn key(scancode: u32) void {
     core.keyPush(@truncate(scancode));
 }
 
+/// The mouse at a screen position with these buttons down.
+pub export fn mouse(x: u32, y: u32, buttons: u32) void {
+    core.mousePush(x, y, buttons);
+}
+
 /// Runs the program once, from the memory the last run left. Answers its exit
 /// code.
 pub export fn run() i32 {

@@ -54,6 +54,8 @@ for row in "${rows[@]}"; do
         *) mode=(-flushes "${count#flushes=}") ;;
     esac
     n="$(basename "$path" .codex)"
+    # As build.sh names it: an app's opening.codex by the app's directory.
+    [ "$n" = opening ] && n="$(basename "$(dirname "$path")")"
     d="$GEN/$n"
     app="$(head -1 "$NEXT/$n.files")"
     rm -f "$d/native"

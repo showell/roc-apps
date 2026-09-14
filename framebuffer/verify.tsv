@@ -20,3 +20,6 @@ roc-apps:framebuffer/demos/scene-spin.codex        runs=3     f9771881
 # engine-demo reads the keyboard controller, which the machine page does not
 # model, so its hash is the one the native and wasm builds both drew.
 cobblestone:apps/engine-demo/EngineDemo.codex      flushes=30 fa25d97e
+# cvmm's GuiOS shell polls the mouse ports, which the machine page does not
+# model either; its hash is the native and wasm builds' too.
+cobblestone:apps/cvmm/GuiOpening.codex             flushes=3  1f50b26c
