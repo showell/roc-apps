@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codex on the Roc machine</title>
+<style>
+  :root { --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --hi: #ffe08a; --pane: #ffffff; --ok: #2f7d32; --bad: #b3261e; --sel: #e8e2d2; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --hi: #6b5a1a; --pane: #242422; --ok: #7cc47f; --bad: #f2a29b; --sel: #34332e; }
+  }
+  body { margin: 0; padding: 16px; background: var(--bg); color: var(--fg); font: 14px/1.45 system-ui, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 20px; margin: 0 0 6px; }
+  p.lede { margin: 0 0 14px; color: var(--muted); max-width: 72ch; }
+  .units { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; margin-bottom: 12px; }
+  .unit { text-align: left; font: inherit; padding: 8px 10px; border: 1px solid var(--edge); background: var(--pane); color: var(--fg); border-radius: 6px; cursor: pointer; }
+  .unit[aria-pressed="true"] { background: var(--sel); border-color: var(--muted); }
+  .unit b { display: block; font-family: ui-monospace, monospace; font-size: 13px; }
+  .unit span { color: var(--muted); font-size: 13px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+  button.run { font: inherit; padding: 5px 16px; border: 1px solid var(--edge); background: var(--pane); color: var(--fg); border-radius: 4px; cursor: pointer; }
+  button.run:disabled { opacity: 0.5; cursor: default; }
+  #status { color: var(--muted); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 12px; }
+  section { background: var(--pane); border: 1px solid var(--edge); border-radius: 6px; padding: 8px 10px; min-width: 0; }
+  section h2 { font-size: 13px; margin: 0 0 6px; color: var(--muted); font-weight: 600; }
+  pre { margin: 0; font: 12px/1.35 ui-monospace, monospace; white-space: pre-wrap; overflow-x: auto; }
+  .hexwrap { overflow-x: auto; }
+  pre.hex { white-space: pre; }
+  .hex span.hi { background: var(--hi); }
+  .verdict.ok { color: var(--ok); }
+  .verdict.bad { color: var(--bad); }
+  .sectors { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 8px; }
+  .sectors button { font: 12px ui-monospace, monospace; padding: 2px 6px; border: 1px solid var(--edge); background: var(--pane); color: var(--fg); border-radius: 3px; cursor: pointer; }
+  .sectors button[aria-pressed="true"] { background: var(--sel); border-color: var(--muted); }
+  .muted { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+<h1>Codex on the Roc machine</h1>
+<p class="lede">Each program below is a Codex test from Cobblestone, turned into Roc by rocemit and built for
+WebAssembly. It runs from start to finish on a Roc model of the machine those tests run on: the disk
+drives, the NE2000 network card and the small network behind it. Pick one and press Run.</p>
+<div class="units" id="units"></div>
+<div class="bar">
+  <button class="run" id="run" disabled>Run</button>
+  <span id="status">loading…</span>
+</div>
+<div class="grid">
+  <section><h2>Console</h2><pre id="console" class="muted">Nothing has run yet.</pre></section>
+  <section><h2>Verdict</h2><div id="verdict" class="verdict muted">The test's expected output appears here after a run.</div><pre id="expected"></pre></section>
+  <section><h2 id="disklab">Disk</h2><div id="disk" class="muted">The sectors a run writes appear here.</div><div class="sectors" id="sectors"></div><div class="hexwrap"><pre id="hex" class="hex"></pre></div></section>
+</div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const hex = (v, n) => v.toString(16).toUpperCase().padStart(n, "0");
+const esc = (s) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
+
+// What each program does, in a line.
+const ABOUT = {
+  "fat16-write": "writes a file onto a FAT16 disk image, then reads it back",
+  "fat16-list": "lists the directories of a FAT16 disk image",
+  "dhcp-acquire": "asks the network for an address through the NE2000 card",
+};
+
+let units = [], chosen = null;
+const cache = new Map();
+const fetchBytes = async (path) => {
+  if (!cache.has(path)) cache.set(path, (async () => new Uint8Array(await (await fetch(path)).arrayBuffer()))());
+  return cache.get(path);
+};
+const fetchText = async (path) => new TextDecoder().decode(await fetchBytes(path));
+
+function choose(u) {
+  chosen = u;
+  for (const b of $("units").children) b.setAttribute("aria-pressed", String(b.dataset.name === u.name));
+  $("run").disabled = false;
+  $("status").textContent = `${u.name} is ready`;
+}
+
+async function run() {
+  const u = chosen;
+  $("run").disabled = true;
+  $("status").textContent = `loading ${u.name}…`;
+  const [wasm, images, expected] = await Promise.all([
+    fetchBytes(`${u.name}.wasm`),
+    Promise.all(u.disks.map((ext) => fetchBytes(`${u.name}.${ext}`))),
+    u.expected ? fetchText(`${u.name}.expected`) : Promise.resolve(null),
+  ]);
+  $("status").textContent = `running ${u.name}…`;
+  await new Promise(requestAnimationFrame);
+
+  // A fresh instance each run: a crash stops the instance it happens in.
+  const { instance } = await WebAssembly.instantiate(wasm, {});
+  const x = instance.exports;
+  const bytes = (ptr, len) => new Uint8Array(x.memory.buffer, ptr, len);
+  const words = [];
+  u.disks.forEach((ext, i) => {
+    const p = ext === "disk" ? 0 : 1;
+    const at = x.driveBuffer(p, images[i].length);
+    bytes(at, images[i].length).set(images[i]);
+    words.push(p === 0 ? "-disk" : "-disk2", `drive${p}`);
+  });
+  const line = new TextEncoder().encode(words.map((w) => w + "\0").join(""));
+  bytes(x.argsBuffer(), line.length).set(line);
+
+  let code = null, trapped = null;
+  const t0 = performance.now();
+  try { code = x.run(line.length); } catch (e) { trapped = e; }
+  const ms = performance.now() - t0;
+
+  const text = new TextDecoder().decode(bytes(x.consolePtr(), x.consoleLen()));
+  const crash = new TextDecoder().decode(bytes(x.crashPtr(), x.crashLen()));
+  $("console").classList.remove("muted");
+  $("console").textContent = text + (trapped ? `\n[stopped: ${crash || trapped.message}]` : "");
+  $("status").textContent = trapped ? `${u.name} stopped after ${ms.toFixed(0)} ms` : `${u.name} finished in ${ms.toFixed(0)} ms (exit ${code})`;
+
+  const v = $("verdict");
+  v.classList.remove("muted", "ok", "bad");
+  if (expected === null) {
+    v.textContent = "This test has no expected output here."; $("expected").textContent = "";
+  } else if (!trapped && text.replace(/\n+$/, "\n") === expected) {
+    v.classList.add("ok"); v.textContent = "✓ The console matches the output the test expects."; $("expected").textContent = "";
+  } else {
+    v.classList.add("bad"); v.textContent = "✗ The console differs from the output the test expects:"; $("expected").textContent = expected;
+  }
+
+  showDisk(u, images, x);
+  $("run").disabled = false;
+}
+
+function showDisk(u, images, x) {
+  $("sectors").innerHTML = ""; $("hex").innerHTML = "";
+  if (u.disks.length === 0) { $("disklab").textContent = "Disk"; $("disk").textContent = "This program has no disk attached."; return; }
+  const changes = [];
+  u.disks.forEach((ext, i) => {
+    const p = ext === "disk" ? 0 : 1;
+    const after = new Uint8Array(x.memory.buffer, x.drivePtr(p), x.driveLen(p));
+    const before = images[i];
+    for (let s = 0; s * 512 < before.length; s++) {
+      const off = s * 512;
+      for (let k = 0; k < 512; k++) {
+        if (before[off + k] !== after[off + k]) { changes.push({ p, s, before: before.slice(off, off + 512), after: after.slice(off, off + 512) }); break; }
+      }
+    }
+  });
+  $("disklab").textContent = `Disk: ${changes.length} sector${changes.length === 1 ? "" : "s"} written`;
+  if (changes.length === 0) { $("disk").textContent = "The run read the disk and wrote nothing to it."; return; }
+  $("disk").textContent = "Pick a sector to see its bytes after the run; the bytes that changed are marked.";
+  const pick = (c, button) => {
+    for (const b of $("sectors").children) b.setAttribute("aria-pressed", String(b === button));
+    const rows = [];
+    for (let r = 0; r < 512; r += 16) {
+      const cells = [], chars = [];
+      for (let k = r; k < r + 16; k++) {
+        const b = c.after[k], cell = hex(b, 2), ch = b >= 32 && b < 127 ? esc(String.fromCharCode(b)) : ".";
+        const changed = b !== c.before[k];
+        cells.push(changed ? `<span class="hi">${cell}</span>` : cell);
+        chars.push(changed ? `<span class="hi">${ch}</span>` : ch);
+      }
+      rows.push(`${hex(c.s * 512 + r, 8)}  ${cells.join(" ")}  ${chars.join("")}`);
+    }
+    $("hex").innerHTML = rows.join("\n");
+  };
+  changes.slice(0, 64).forEach((c, i) => {
+    const b = document.createElement("button");
+    b.textContent = `${c.p === 0 ? "" : "drive 1 · "}sector ${c.s}`;
+    b.onclick = () => pick(c, b);
+    $("sectors").appendChild(b);
+    if (i === 0) pick(c, b);
+  });
+}
+
+$("run").onclick = run;
+(async () => {
+  units = await (await fetch("units.json")).json();
+  for (const u of units) {
+    const b = document.createElement("button");
+    b.className = "unit"; b.dataset.name = u.name; b.setAttribute("aria-pressed", "false");
+    b.innerHTML = `<b>${esc(u.name)}</b><span>${esc(ABOUT[u.name] || "")}</span>`;
+    b.onclick = () => choose(u);
+    $("units").appendChild(b);
+  }
+  if (units.length) choose(units[0]); else $("status").textContent = "no programs are built";
+})();
+</script>
+</body>
+</html>

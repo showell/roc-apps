@@ -15,6 +15,11 @@ Two programs drive it:
   primary master and slave, imported by a `MachineMedia.roc` it writes. A
   batch run is `tests/ladder.sh fat16-list`.
 - **The page's app**, which builds a machine with a disk image and steps it.
+- **The batch page.** An emitted unit built for wasm on `batch/`'s platform
+  runs to its end in the browser: the page loads its disk images into the
+  host's buffers, runs it, and reads back the console and the drives.
+  `machine/batch/build.sh fat16-write.codex` builds it into the preview root,
+  and `node machine/batch/smoke.mjs fat16-write` runs it against its verdict.
 - **A real device.** On the native platform the block doors are answered by
   the host, from the files codex-vm's `-disk` and `-disk2` name, written in
   place: `machine/native/run.sh fat16-write.codex -disk copy.img`. The block
@@ -38,6 +43,7 @@ Two programs drive it:
 | `roc/MachineMedia.roc` | what a run brings with it: the images the modelled disk attaches and the keystrokes typed, none here; the ladder writes one per unit from its `.disk`, `.disk2` and `.keys` |
 | `roc/MachineApp.roc` | the program the page runs: a PCI bus-0 scan, sector 0 into memory, a key echo |
 | `wasm/platform/` | the page's platform (`main.roc`) and its host (`host.zig`): `newMachine`, `step`, `key`, `view` |
+| `batch/` | the batch page's platform: Echo's shape in wasm, the drives answered from buffers the page fills (`platform/`); `build.sh` wires emitted units to it with the native `MachineDisk`, and `smoke.mjs` runs one from Node |
 | `native/platform/` | the native platform: Echo's shape plus a hosted `Drive` (`open!`, `sector_count!`, `read!`, `write!`) over files, and its host (`host.zig`, x86_64-linux-musl) |
 | `native/MachineDisk.roc` | the host's disk: the same doors as the model, answered by `Drive` |
 | `native/build.sh` | the host library into `platform/targets/x64musl/`, beside the fx test platform's musl runtime |
