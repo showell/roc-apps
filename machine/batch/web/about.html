@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Roc machine</title>
+<style>
+  :root { --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --pane: #ffffff; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --pane: #242422; }
+  }
+  body { margin: 0; padding: 16px; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 26px 0 6px; }
+  p { margin: 0 0 12px; }
+  .back { color: var(--muted); font-size: 14px; }
+  a { color: inherit; }
+  code { font: 13px ui-monospace, monospace; }
+  .tablewrap { overflow-x: auto; margin: 8px 0 12px; }
+  table { border-collapse: collapse; width: 100%; background: var(--pane); border: 1px solid var(--edge); font-size: 14px; }
+  th, td { text-align: left; vertical-align: top; padding: 6px 8px; border-bottom: 1px solid var(--edge); }
+  th { color: var(--muted); font-weight: 600; }
+  ul { margin: 0 0 12px; padding-left: 20px; }
+</style>
+</head>
+<body>
+<main>
+<p class="back"><a href="./">← back to the programs</a></p>
+<h1>The Roc machine</h1>
+<p>Each program on the page is a test from Cobblestone, an operating system written in Codex. In
+Cobblestone's own test runs these programs are compiled to x86 and run in QEMU or in codex-vm,
+Cobblestone's emulator. Here they run on a machine written in Roc instead, and this page describes
+that machine.</p>
+
+<h2>What runs, and what does not</h2>
+<p>rocemit turns each Codex program into Roc, one module for the test and one for each Codex chapter
+it uses; the page's Roc pane shows them. That Roc is built for WebAssembly together with the machine.
+Nothing here imitates x86 instructions. Cobblestone's lowest layer (booting, interrupts, the
+scheduler) is x86 code that Codex's compiler writes, not Codex, so the machine stands in for it.</p>
+
+<h2>One value holding every device</h2>
+<p>The machine is a single Roc record with a field for each device. Every Codex builtin that touches
+hardware, such as reading a disk sector, writing a byte to an I/O port or sending a network frame,
+becomes a function that takes the machine and hands back the machine as it is afterwards. The program
+passes the machine along from call to call, so a run is an ordinary Roc computation from the first
+machine to the last.</p>
+
+<h2>What "boot" means here</h2>
+<p>A run starts from the state that Cobblestone's x86 boot code leaves behind, and nothing more:</p>
+<ul>
+  <li>a process table whose first entry is the running program;</li>
+  <li>that program's <em>capability word</em>, the bits saying what it may do (use the console, the
+    disk, the network), granted from the effects its Codex entry point declares;</li>
+  <li>the network card found, and its hardware address copied into memory where the kernel keeps it.</li>
+</ul>
+<p>The machine puts no files, programs or data anywhere. Whatever a program finds, it brought with it.</p>
+
+<h2>Where a program's inputs come from</h2>
+<p>A Cobblestone test is a <code>.codex</code> file with an <code>.expected</code> file beside it
+holding the output it must print. It may also bring:</p>
+<ul>
+  <li><code>.disk</code> and <code>.disk2</code>: disk image files, attached as the first and second
+    drive;</li>
+  <li><code>.keys</code>: keystrokes typed while it runs;</li>
+  <li><code>.vmargs</code>: codex-vm command-line flags that choose device options, such as which
+    network card is present.</li>
+</ul>
+<p><strong>fat16-list's files are on its disk image.</strong> <code>fat16-list.disk</code> is a 16 MB
+image committed beside the test in Cobblestone's tree. It is partitioned like a boot disk, and its
+partition holds a FAT16 volume with an <code>EFI</code> directory, <code>EFI/BOOT/BOOTX64.EFI</code>
+and <code>CODEX.CDX</code>. The page fetches the image and loads it into drive 0 before the run; the
+program's FAT16 code, which is Codex turned into Roc, reads the partition table, the file allocation
+table and the directory sectors through the disk. fat16-write brings an image of its own, writes a
+file into the page's copy of it, and the Disk pane shows the sectors that changed. Reloading the page
+starts from the original image again.</p>
+
+<h2>The devices</h2>
+<div class="tablewrap">
+<table>
+  <tr><th>device</th><th>what the machine does</th></tr>
+  <tr><td>memory</td><td>Bytes addressed up to 2<sup>36</sup>, stored sparsely, so a program can use
+    the addresses Cobblestone's kernel uses. An address no device claims stops the run by name.</td></tr>
+  <tr><td>disk drives</td><td>The IDE channel, the classic PC disk interface: two drive positions, each
+    an image or empty, answering the commands to read a sector, write a sector and identify the drive.
+    On this page a drive is the page's copy of the image, read and written a sector at a time.</td></tr>
+  <tr><td>PCI configuration space</td><td>The table a driver scans to discover what hardware is
+    plugged in, with the devices codex-vm lists.</td></tr>
+  <tr><td>NE2000 network card</td><td>The card's registers, its 32 KB of on-card memory and its receive
+    ring, as codex-vm models them.</td></tr>
+  <tr><td>the network behind the card</td><td>A small stand-in for codex-vm's network address
+    translation: it answers ARP (which hardware address has this IP address?) and DHCP (please give
+    me an IP address) itself. Anything that would need the real internet, such as a DNS lookup or a
+    TCP connection, stops the run with a message saying so.</td></tr>
+  <tr><td>Intel e1000 network card</td><td>The other card codex-vm offers, with its fault-injection
+    options, for the tests that choose it.</td></tr>
+  <tr><td>timers</td><td>The PIT, the HPET and the local APIC timer, the PC's three timer chips,
+    counting the machine's own clock rather than wall time.</td></tr>
+  <tr><td>keyboard</td><td>A queue of the keystrokes a test brings, delivered as the clock reaches
+    them.</td></tr>
+  <tr><td>console</td><td>The lines a program prints, which is what its test checks.</td></tr>
+</table>
+</div>
+<p>A program that reaches a device codex-vm has and this machine does not, such as the real-time
+clock or the Bochs graphics adapter, stops with a message naming that device rather than getting a
+made-up answer.</p>
+
+<h2>The machine's clock</h2>
+<p>Time on the machine is a counter: every access to a device register moves it forward 10
+microseconds, and reading or writing plain memory does not. A run therefore takes the same machine
+time on every computer, which is what lets tests that measure time pass here.</p>
+
+<h2>What is hand-written</h2>
+<p>The machine is hand-written Roc, in
+<a href="https://github.com/showell/roc-apps/tree/master/machine/roc">roc-apps/machine/roc</a>, one
+module per device. The programs are not: their Roc is exactly what rocemit wrote from the Codex
+source, apart from three lines connecting the program to the page.</p>
+</main>
+</body>
+</html>

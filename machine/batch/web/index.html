@@ -48,7 +48,8 @@
 <h1>Codex on the Roc machine</h1>
 <p class="lede">Each program below is a Codex test from Cobblestone, turned into Roc by rocemit and built for
 WebAssembly. It runs from start to finish on a Roc model of the machine those tests run on: the disk
-drives, the NE2000 network card and the small network behind it. Pick one and press Run.</p>
+drives, the NE2000 network card and the small network behind it. Pick one and press Run.
+<a href="about.html">How the machine works, and where each program's files come from.</a></p>
 <div class="units" id="units"></div>
 <div class="bar">
   <button class="run" id="run" disabled>Run</button>
@@ -68,8 +69,8 @@ const esc = (s) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">":
 
 // What each program does, in a line.
 const ABOUT = {
-  "fat16-write": "writes a file onto a FAT16 disk image, then reads it back",
-  "fat16-list": "lists the directories of a FAT16 disk image",
+  "fat16-write": "writes a file onto the FAT16 disk image it comes with, then reads it back",
+  "fat16-list": "lists the directories and files on the FAT16 disk image it comes with",
   "dhcp-acquire": "asks the network for an address through the NE2000 card",
 };
 
@@ -184,9 +185,11 @@ function showDisk(u, images, x) {
       }
     }
   });
+  // The images are the test's own files, loaded into the drives before the run.
+  const given = u.disks.map((ext, i) => `${u.name}.${ext} (${(images[i].length / 1048576).toFixed(0)} MB) as drive ${ext === "disk" ? 0 : 1}`).join(" and ");
   $("disklab").textContent = `Disk: ${changes.length} sector${changes.length === 1 ? "" : "s"} written`;
-  if (changes.length === 0) { $("disk").textContent = "The run read the disk and wrote nothing to it."; return; }
-  $("disk").textContent = "Pick a sector to see its bytes after the run; the bytes that changed are marked.";
+  if (changes.length === 0) { $("disk").textContent = `The test's disk image ${given}: the run read it and wrote nothing to it.`; return; }
+  $("disk").textContent = `The test's disk image ${given}. Pick a sector to see its bytes after the run; the bytes that changed are marked.`;
   const pick = (c, button) => {
     for (const b of $("sectors").children) b.setAttribute("aria-pressed", String(b === button));
     const rows = [];

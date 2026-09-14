@@ -54,7 +54,7 @@ for src in "$@"; do
 done
 # The page, and its list of every unit built here: the images each brings,
 # whether its verdict came with it, and the Roc modules rocemit wrote for it.
-cp "$HERE/web/index.html" "$NEXT/index.html"
+cp "$HERE/web/index.html" "$HERE/web/about.html" "$NEXT/"
 (cd "$NEXT" && python3 -c '
 import glob, json, os
 def unit(n):
