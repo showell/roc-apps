@@ -58,7 +58,7 @@ flush is a frame. Pausing a looping program stops it, and Play starts it again f
   <span id="status">loading…</span>
 </div>
 <div class="grid">
-  <section class="wide"><h2 id="screenlab">Screen</h2><canvas id="screen" class="screen" width="320" height="240"></canvas></section>
+  <section class="wide"><h2 id="screenlab">Screen</h2><canvas id="screen" class="screen" width="320" height="240" tabindex="0"></canvas><div id="inputnote" class="muted"></div></section>
   <section class="wide"><h2>Console</h2><pre id="console" class="muted">Nothing has run yet.</pre></section>
   <section class="code"><h2 id="codelab">Roc</h2><div class="muted">What rocemit wrote for this program: its own module first, then a module for each Codex chapter it cites. The last, Mem.roc or Machine.roc, is the platform's: every read and write of memory, and every port, goes through it to the host.</div><div class="tabs" id="tabs"></div><pre id="src" class="src"></pre></section>
 </div>
@@ -84,9 +84,61 @@ const ABOUT = {
   "meshes-spin": "engine-mesh-gen's sphere, cylinder, cone and torus, Gouraud shaded, the camera circling them",
   "widgets-on-screen": "a panel of Cobblestone's widgets drawn by GopComposite onto the screen, the gauge filling with the clock",
   "qr-on-screen": "qr-encode's payload as a QR code, drawn module by module with GopDraw's fill",
+  "sketch-on-screen": "Rasterizer's lines and shapes and Sprite's blits in one small image: arrows cross and a face blinks",
+  "raytrace-on-screen": "raytracer-test's spheres and floor, traced by Raytracer, the red sphere rising and falling",
+  "glyphs-on-screen": "the letter A of truetype-render-test's font, rasterized by GlyphRasterizer plain and anti-aliased",
 };
 
 let programs = [], chosen = null, worker = null, playing = false, nextRun = 0, shown = 0, spent = 0;
+
+// Keys and the mouse reach a running program through memory shared with the
+// runner: a ring of four-int events after a head and a tail (runner.js). A
+// browser shares memory only with a cross-origin isolated page.
+const SLOTS = 256;
+const input = self.crossOriginIsolated ? new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * (2 + SLOTS * 4)) : null;
+const ring = input ? new Int32Array(input) : null;
+$("inputnote").textContent = input
+  ? "Click the screen, then type or point: keys go to the program as PC scancodes, and the mouse as its position and buttons."
+  : "This page is not cross-origin isolated, so keys and the mouse cannot reach a running program.";
+
+function send(kind, a, b = 0, c = 0) {
+  if (!ring || !worker) return;
+  const head = Atomics.load(ring, 0);
+  const tail = Atomics.load(ring, 1);
+  const next = (tail + 1) % SLOTS;
+  if (next === head) return;
+  const at = 2 + tail * 4;
+  ring[at] = kind; ring[at + 1] = a; ring[at + 2] = b; ring[at + 3] = c;
+  Atomics.store(ring, 1, next);
+}
+
+// A key's make code in scancode set 1, which a PC keyboard controller and
+// Cobblestone's keyboard chapters speak; the arrows are the keypad's codes.
+const SCANCODES = {
+  Escape: 1, Digit1: 2, Digit2: 3, Digit3: 4, Digit4: 5, Digit5: 6, Digit6: 7, Digit7: 8, Digit8: 9, Digit9: 10, Digit0: 11,
+  Minus: 12, Equal: 13, Backspace: 14, Tab: 15, KeyQ: 16, KeyW: 17, KeyE: 18, KeyR: 19, KeyT: 20, KeyY: 21, KeyU: 22,
+  KeyI: 23, KeyO: 24, KeyP: 25, BracketLeft: 26, BracketRight: 27, Enter: 28, KeyA: 30, KeyS: 31, KeyD: 32, KeyF: 33,
+  KeyG: 34, KeyH: 35, KeyJ: 36, KeyK: 37, KeyL: 38, Semicolon: 39, Quote: 40, Backquote: 41, Backslash: 43, KeyZ: 44,
+  KeyX: 45, KeyC: 46, KeyV: 47, KeyB: 48, KeyN: 49, KeyM: 50, Comma: 51, Period: 52, Slash: 53, Space: 57,
+  ArrowUp: 72, ArrowLeft: 75, ArrowRight: 77, ArrowDown: 80, NumpadAdd: 78, NumpadSubtract: 74,
+};
+
+$("screen").addEventListener("keydown", (e) => {
+  const code = SCANCODES[e.code];
+  if (code === undefined) return;
+  e.preventDefault();
+  send(1, code);
+});
+
+// The mouse in the screen's own pixels, whatever size the canvas is shown at.
+function pointer(e) {
+  const canvas = $("screen");
+  const r = canvas.getBoundingClientRect();
+  const x = Math.min(canvas.width - 1, Math.max(0, Math.floor((e.clientX - r.left) * canvas.width / r.width)));
+  const y = Math.min(canvas.height - 1, Math.max(0, Math.floor((e.clientY - r.top) * canvas.height / r.height)));
+  send(2, x, y, e.buttons);
+}
+for (const kind of ["mousemove", "mousedown", "mouseup"]) $("screen").addEventListener(kind, pointer);
 const cache = new Map();
 const fetchText = async (path) => {
   if (!cache.has(path)) cache.set(path, (async () => (await fetch(path)).text())());
@@ -188,7 +240,8 @@ function start(frames) {
       controls();
     }
   };
-  worker.postMessage({ name: p.name, kind, screen: size(), firstRun: kind === "run" ? nextRun : 0, frames });
+  if (ring) { Atomics.store(ring, 0, 0); Atomics.store(ring, 1, 0); }
+  worker.postMessage({ name: p.name, kind, screen: size(), firstRun: kind === "run" ? nextRun : 0, frames, input });
   controls();
 }
 

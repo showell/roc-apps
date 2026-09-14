@@ -5,6 +5,10 @@
 
 A copy of safari-codex's harness/serve.py: the no-store header is the point,
 because a cached safari.wasm looks exactly like a build that changed nothing.
+Every response also asks for cross-origin isolation (COOP and COEP): the
+framebuffer page shares memory with its runner, a Web Worker, through a
+SharedArrayBuffer, which a browser gives only an isolated page. The pages here
+load nothing from another origin, and a plain link is not affected.
 Four services run it: safari-web on :9201 over this directory (the demo,
 whose module only safari/publish.sh writes), safari-web-next on :9203 over
 ~/build/roc-apps/next (whatever the build scripts last built), gallery-web
@@ -22,6 +26,8 @@ ROOT = pathlib.Path(__file__).resolve().parent
 class Handler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
         self.send_header('Cache-Control', 'no-store, must-revalidate')
+        self.send_header('Cross-Origin-Opener-Policy', 'same-origin')
+        self.send_header('Cross-Origin-Embedder-Policy', 'require-corp')
         super().end_headers()
 
 

@@ -1,0 +1,89 @@
+Chapter: RaytraceOnScreen
+  cites Foreword chapter Console
+  cites Game chapter Raytracer
+  cites Game chapter Rasterizer
+  cites Game chapter Color
+  cites Game chapter Bresenham
+  cites Math chapter Geometry
+  cites Math chapter Quaternion
+  cites Math chapter Cordic
+
+ codex/test/raytracer-test's scene, a shiny red sphere and a matte green one
+ over a grey floor under raytracer-test's light, traced by Raytracer into a
+ Framebuf of its own and copied onto the screen that UEFI's GOP protocol
+ describes, each traced pixel a block of the screen's. The red sphere rises
+ and falls by the clock the framebuffer platform writes before each frame.
+
+ Raytracer lights every hit at the scene's ambient level: `rt-shade` adds the
+ ambient, 200 in thousandths, to diffuse and specular terms that reach at most
+ one, so a hit is its material's colour at a fifth of its brightness wherever
+ the light stands. raytracer-test's verdict pins that colour, rgb(51, 0, 0)
+ for the red sphere.
+
+ We say:
+
+Section: Screen
+
+  fb-base : Integer = 3204448256
+  cell-width : Integer = 1988
+  cell-height : Integer = 1992
+  cell-stride : Integer = 2016
+  cell-clock : Integer = 2032
+
+  trace-w : Integer = 160
+  trace-h : Integer = 120
+
+Section: Scene
+
+ The red sphere's centre rises and falls 600 about raytracer-test's, a full
+ cycle every 6,283 milliseconds; Cordic's sine is thousandths.
+
+  scene-at : Integer -> RtScene
+  scene-at (t) =
+    let bob = real-from-int (600 * cordic-sin t / 1000)
+    in let s1 = ObjSphere (RtSphere { rt-center = vec3-new 0.0 bob 5000.0, rt-radius = 1000.0, rt-mat = mat-shiny rgb-red })
+    in let s2 = ObjSphere (RtSphere { rt-center = vec3-new 2000.0 0.0 6000.0, rt-radius = 1500.0, rt-mat = mat-matte rgb-green })
+    in let floor = ObjPlane (RtPlane { rt-point = vec3-new 0.0 (0.0 - 1000.0) 0.0, rt-normal = vec3-new 0.0 1000.0 0.0, rt-mat = mat-matte (rgb 128 128 128) })
+    in let light = vec3-new (0.0 - 3000.0) 5000.0 2000.0
+    in let sc = scene-new light rgb-white 200 (rgb 32 32 64)
+    in scene-add (scene-add (scene-add sc s1) s2) floor
+
+ Raytracer turns a pixel into a ray whose sideways reach, against a forward
+ reach of 1, runs from minus to plus half the camera's field of view. A field
+ of 1 sees about 67 degrees across; raytracer-test's camera of 1000 sees nearly
+ half the sphere of directions, so at this size each sphere falls between its
+ rays.
+
+  camera : RtCamera = rt-camera-new (vec3-new 0.0 0.0 0.0) 1
+
+Section: Copy
+
+ Each screen pixel takes the traced pixel it falls in, so the trace fills the
+ screen whatever its size.
+
+  copy-cols : Framebuf, Integer, Integer, Integer, Integer, Integer -> Integer
+  copy-cols (src) (stride) (w) (h) (y) (x) =
+    if x >= w then 0
+    else let c = fb-get src (x * (src.fb-width) / w) (y * (src.fb-height) / h)
+    in let p = poke-32 fb-base ((y * stride + x) * 4) c
+    in copy-cols src stride w h y (x + 1)
+
+  copy-rows : Framebuf, Integer, Integer, Integer, Integer -> Integer
+  copy-rows (src) (stride) (w) (h) (y) =
+    if y >= h then 0
+    else let d = copy-cols src stride w h y 0
+    in copy-rows src stride w h (y + 1)
+
+Section: Entry
+
+  opening : [Console] Nothing = act
+    let w = peek-32 cell-width 0
+    in let h = peek-32 cell-height 0
+    in let stride = peek-32 cell-stride 0
+    in let t = peek-32 cell-clock 0
+    in let traced = rt-render (scene-at t) camera trace-w trace-h
+    in let d = copy-rows traced stride w h 0
+    in act
+      print-line-uni ("clock : " & show t & " ms")
+    end
+  end

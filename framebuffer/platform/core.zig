@@ -239,8 +239,14 @@ var keys: [64]u8 = undefined;
 var keys_head: usize = 0;
 var keys_len: usize = 0;
 
-/// A scancode for the program; one past the 64 waiting is dropped.
+/// The key cell, where codex-vm's keyboard interrupt leaves the last scancode
+/// for a kernel's readers (uefi-read-key, InputSource's atomic exchange).
+const key_cell: u64 = 28680;
+
+/// A scancode for the program: it lands in the key cell, as the last one there,
+/// and it waits in the controller's queue, where one past 64 is dropped.
 pub fn keyPush(scancode: u8) void {
+    store(key_cell, scancode, 8);
     if (keys_len == keys.len) return;
     keys[(keys_head + keys_len) % keys.len] = scancode;
     keys_len += 1;

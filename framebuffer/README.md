@@ -28,6 +28,13 @@ emitted Roc, and this platform answers it in the host.
   stops the run, naming it and its width.
 - **The clock** is the platform's own cell, 0x7F0: before each run the page
   writes the frame's time there, in milliseconds.
+- **Keys and the mouse** reach a running program through memory the page shares
+  with its runner (a SharedArrayBuffer, so the page must be cross-origin
+  isolated, which `safari/web/serve.py` asks for). A key's set-1 make code lands
+  in the key cell at 28680, where codex-vm's keyboard interrupt leaves it, and
+  in the keyboard controller's queue; the mouse's position and buttons land in
+  codex-vm's mouse ports. The runner hands them to the host before each run and
+  at every GPU flush.
 - **A frame** is one run of the program's opening, or, for a program that draws
   in a loop of its own and never ends its run, one GPU flush (`programs.tsv`
   says which). The page runs the program in a Web Worker (`web/runner.js`),
@@ -78,6 +85,22 @@ machine page's MachineGpu and this platform's GPU agreed.
 | `demos/meshes-spin.codex` | `codex/test/engine-mesh-gen`'s sphere, cylinder, cone and torus, Gouraud shaded, the camera circling them |
 | `demos/widgets-on-screen.codex` | a panel of widgets drawn by GopComposite onto the screen, as `codex/test/gop-composite-kinds` draws them into memory, the gauge filling with the clock |
 | `demos/qr-on-screen.codex` | `codex/test/qr-encode`'s payload encoded by GopQr and drawn with GopDraw's fill |
+| `demos/sketch-on-screen.codex` | what `codex/test/rasterizer-test` and `sprite-test` draw, in one 80 x 60 Framebuf copied to the screen: lines, a rectangle, a filled circle and a triangle, keyed and flipped sprites, a blinking face |
+| `demos/raytrace-on-screen.codex` | `codex/test/raytracer-test`'s spheres and floor traced by Raytracer at 160 x 120 and copied to the screen, the red sphere bobbing by the clock; Raytracer lights every hit at its ambient level, so the spheres are flat |
+| `demos/glyphs-on-screen.codex` | the A of `codex/test/truetype-render-test`'s embedded font, rasterized by GlyphRasterizer plain and anti-aliased at 16, 24 and 32 pixels to the em, each glyph pixel a 3 by 3 block |
+
+Drawing these showed three things about the chapters under them:
+
+- Raytracer's camera spreads its rays over half its field of view against a
+  forward reach of 1, so `raytracer-test`'s field of 1000 sees nearly half the
+  sphere of directions; `raytrace-on-screen` uses a field of 1.
+- Raytracer's `rt-shade` adds the ambient level, in thousandths, to diffuse
+  and specular terms that reach at most one, so every hit is lit at the ambient
+  level alone; `raytracer-test`'s verdict, rgb(51, 0, 0), pins it.
+- GlyphRasterizer's `gr-make-row` builds a glyph's buffer by pushing onto its
+  own recursive call, as deep as the buffer is long, and the 4 x 4 supersampled
+  buffer of an anti-aliased glyph overflowed the browser's stack. rocemit now
+  writes that shape as a loop.
 
 Cobblestone's other drawing apps do not run here yet:
 

@@ -29,3 +29,6 @@ roc-apps:framebuffer/demos/shadow-spin.codex       runs=2     7e8c02aa
 roc-apps:framebuffer/demos/meshes-spin.codex       runs=2     5154c50a
 roc-apps:framebuffer/demos/widgets-on-screen.codex runs=2     5489e731
 roc-apps:framebuffer/demos/qr-on-screen.codex      runs=1     e4f6b335
+roc-apps:framebuffer/demos/sketch-on-screen.codex  runs=2     eec762a5
+roc-apps:framebuffer/demos/raytrace-on-screen.codex runs=2    dc47f30d
+roc-apps:framebuffer/demos/glyphs-on-screen.codex  runs=1     13afd485

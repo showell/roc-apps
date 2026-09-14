@@ -1,0 +1,101 @@
+Chapter: GlyphsOnScreen
+  cites Foreword chapter Console
+  cites Encode chapter TrueType
+  cites Ui chapter GlyphRasterizer
+  cites Works chapter GopDraw
+
+ The small TrueType font codex/test/truetype-render-test embeds, parsed by
+ TrueType and its letter A rasterized by GlyphRasterizer at 16, 24 and 32
+ pixels to the em, onto the screen that UEFI's GOP protocol describes with each
+ glyph pixel a 3 by 3 block: plain coverage along the top row, and the
+ anti-aliased render, its coverage as grey, along the bottom.
+
+ We say:
+
+Section: Screen
+
+  fb-base : Integer = 3204448256
+  cell-width : Integer = 1988
+  cell-height : Integer = 1992
+  cell-stride : Integer = 2016
+
+  paper : Integer = #1B1F2A
+  chalk : Integer = #F4F1E8
+
+Section: Font
+
+ truetype-render-test's font, byte for byte: a cmap, a glyph table holding a
+ space and an A, and the tables they need.
+
+  test-font-bytes : List Integer
+  test-font-bytes = [0, 1, 0, 0, 0, 7, 0, 64, 0, 2, 0, 48, 99, 109, 97, 112, 0, 0, 0, 0,
+    0, 0, 0, 124, 0, 0, 0, 52, 103, 108, 121, 102, 0, 0, 0, 0, 0, 0, 0, 176,
+    0, 0, 0, 52, 104, 101, 97, 100, 0, 0, 0, 0, 0, 0, 0, 228, 0, 0, 0, 54,
+    104, 104, 101, 97, 0, 0, 0, 0, 0, 0, 1, 28, 0, 0, 0, 36, 104, 109, 116, 120,
+    0, 0, 0, 0, 0, 0, 1, 64, 0, 0, 0, 12, 108, 111, 99, 97, 0, 0, 0, 0,
+    0, 0, 1, 76, 0, 0, 0, 16, 109, 97, 120, 112, 0, 0, 0, 0, 0, 0, 1, 92,
+    0, 0, 0, 6, 0, 0, 0, 1, 0, 3, 0, 1, 0, 0, 0, 12, 0, 4, 0, 40,
+    0, 0, 0, 6, 0, 4, 0, 1, 0, 2, 0, 32, 0, 65, 255, 255, 0, 0, 0, 32,
+    0, 65, 255, 255, 255, 225, 255, 193, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
+    0, 0, 2, 0, 2, 188, 0, 2, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0,
+    0, 2, 188, 253, 68, 0, 0, 0, 0, 1, 0, 0, 0, 0, 80, 0, 0, 0, 0, 0,
+    95, 15, 60, 245, 0, 11, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 188, 0, 0, 0, 8, 0, 2, 0, 1,
+    0, 0, 0, 0, 0, 1, 0, 0, 2, 188, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0,
+    2, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3,
+    2, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10,
+    0, 0, 0, 20, 0, 0, 0, 52, 0, 1, 0, 0, 0, 3, 0, 0]
+
+Section: Drawing
+
+ A glyph's coverage pixel by pixel, where it is not zero: the plain render as
+ chalk, the anti-aliased one as a grey as bright as its coverage.
+
+  zoom : Integer = 3
+
+  put-glyph-row : List Integer, Integer, Integer, Integer, Integer, Integer, Boolean, Integer, Integer -> Integer
+  put-glyph-row (px) (gw) (stride) (rows) (x0) (y0) (aa) (y) (x) =
+    if x >= gw then 0
+    else let v = list-at px (y * gw + x)
+    in let grey = (if v > 255 then 255 else v) * 65793
+    in let d = if v <= 0 then 0 else gop-fill-rect fb-base stride rows (x0 + x * zoom) (y0 + y * zoom) zoom zoom (if aa then grey else chalk)
+    in put-glyph-row px gw stride rows x0 y0 aa y (x + 1)
+
+  put-glyph-rows : List Integer, Integer, Integer, Integer, Integer, Integer, Integer, Boolean, Integer -> Integer
+  put-glyph-rows (px) (gw) (gh) (stride) (rows) (x0) (y0) (aa) (y) =
+    if y >= gh then 0
+    else let d = put-glyph-row px gw stride rows x0 y0 aa y 0
+    in put-glyph-rows px gw gh stride rows x0 y0 aa (y + 1)
+
+  put-glyph : RasterGlyph, Integer, Integer, Integer, Integer, Boolean -> Integer
+  put-glyph (rg) (stride) (rows) (x0) (y0) (aa) = put-glyph-rows (rg.rg-pixels) (rg.rg-width) (rg.rg-height) stride rows x0 y0 aa 0
+
+  size-text : RasterGlyph -> Text
+  size-text (rg) = show (rg.rg-width) & " x " & show (rg.rg-height)
+
+Section: Entry
+
+  opening : [Console] Nothing = act
+    let w = peek-32 cell-width 0
+    in let h = peek-32 cell-height 0
+    in let stride = peek-32 cell-stride 0
+    in let bg = gop-fill-rect fb-base stride h 0 0 w h paper
+    in let font = ttf-parse test-font-bytes
+    in let p16 = gr-render-glyph font 65 16
+    in let p24 = gr-render-glyph font 65 24
+    in let p32 = gr-render-glyph font 65 32
+    in let a16 = gr-render-glyph-aa font 65 16
+    in let a24 = gr-render-glyph-aa font 65 24
+    in let a32 = gr-render-glyph-aa font 65 32
+    in let d1 = put-glyph p16 stride h 10 10 False
+    in let d2 = put-glyph p24 stride h 70 10 False
+    in let d3 = put-glyph p32 stride h 156 10 False
+    in let d4 = put-glyph a16 stride h 10 125 True
+    in let d5 = put-glyph a24 stride h 70 125 True
+    in let d6 = put-glyph a32 stride h 156 125 True
+    in act
+      print-line-uni ("plain       : " & size-text p16 & ", " & size-text p24 & ", " & size-text p32)
+      print-line-uni ("anti-aliased: " & size-text a16 & ", " & size-text a24 & ", " & size-text a32)
+    end
+  end

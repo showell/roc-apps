@@ -1,0 +1,121 @@
+Chapter: SketchOnScreen
+  cites Foreword chapter Console
+  cites Game chapter Rasterizer
+  cites Game chapter Sprite
+  cites Game chapter Color
+  cites Game chapter Bresenham
+  cites Math chapter Geometry
+  cites Math chapter Quaternion
+
+ What codex/test/rasterizer-test and codex/test/sprite-test draw, at a size
+ worth seeing: Rasterizer's lines, rectangle, filled circle and triangle, and
+ Sprite's keyed blit, horizontal flip and two-frame animation, all into one 80
+ by 60 Framebuf, copied onto the screen that UEFI's GOP protocol describes
+ with each of its pixels a block of the screen's. The arrows cross and the
+ face blinks by the clock the framebuffer platform writes before each frame.
+
+ We say:
+
+Section: Screen
+
+  fb-base : Integer = 3204448256
+  cell-width : Integer = 1988
+  cell-height : Integer = 1992
+  cell-stride : Integer = 2016
+  cell-clock : Integer = 2032
+
+  sketch-w : Integer = 80
+  sketch-h : Integer = 60
+
+  paper : Integer = #1B1F2A
+  gold : Integer = #F2C14E
+  teal : Integer = #3FB6A8
+  coral : Integer = #F26D5B
+  lilac : Integer = #9D8DF1
+  chalk : Integer = #F4F1E8
+
+Section: Sprites
+
+ Every sprite here is blitted keyed on 0, so its zero pixels show what lies
+ beneath.
+
+  arrow : Sprite
+  arrow = sprite-from-pixels 7 5 [
+    0, 0, 0, 0, chalk, 0, 0,
+    0, 0, 0, 0, chalk, chalk, 0,
+    chalk, chalk, chalk, chalk, chalk, chalk, chalk,
+    0, 0, 0, 0, chalk, chalk, 0,
+    0, 0, 0, 0, chalk, 0, 0
+  ]
+
+  face-open : Sprite
+  face-open = sprite-from-pixels 6 6 [
+    0, gold, gold, gold, gold, 0,
+    gold, gold, gold, gold, gold, gold,
+    gold, paper, gold, gold, paper, gold,
+    gold, gold, gold, gold, gold, gold,
+    gold, paper, paper, paper, paper, gold,
+    0, gold, gold, gold, gold, 0
+  ]
+
+  face-shut : Sprite
+  face-shut = sprite-from-pixels 6 6 [
+    0, gold, gold, gold, gold, 0,
+    gold, gold, gold, gold, gold, gold,
+    gold, gold, gold, gold, gold, gold,
+    gold, paper, gold, gold, paper, gold,
+    gold, paper, paper, paper, paper, gold,
+    0, gold, gold, gold, gold, 0
+  ]
+
+ The face stays open for 900 milliseconds and shut for 150, and loops.
+
+  blink : SpriteAnim
+  blink = anim-new [anim-frame 900 face-open, anim-frame 150 face-shut] True
+
+Section: Sketch
+
+  sketch-at : Integer -> Framebuf
+  sketch-at (t) =
+    let bg = fb-new sketch-w sketch-h paper
+    in let l1 = fb-line bg 2 2 77 57 teal
+    in let l2 = fb-line l1 2 57 77 2 teal
+    in let r1 = fb-rect l2 4 4 20 14 lilac
+    in let c1 = fb-circle-filled r1 62 15 10 coral
+    in let t1 = fb-tri c1 40 20 24 50 56 50 lilac
+    in let x = 2 + (t / 60) - ((t / 60) / 70) * 70
+    in let s1 = sprite-blit-keyed t1 arrow x 52 0
+    in let s2 = sprite-blit-keyed s1 (sprite-flip-h arrow) (72 - x) 2 0
+    in let face = anim-current-sprite (spr-anim-tick blink (t - (t / 1050) * 1050))
+    in sprite-blit-keyed s2 face 37 34 0
+
+Section: Copy
+
+ Each screen pixel takes the sketch's pixel it falls in, so the sketch fills
+ the screen whatever its size.
+
+  copy-cols : Framebuf, Integer, Integer, Integer, Integer, Integer -> Integer
+  copy-cols (src) (stride) (w) (h) (y) (x) =
+    if x >= w then 0
+    else let c = fb-get src (x * (src.fb-width) / w) (y * (src.fb-height) / h)
+    in let p = poke-32 fb-base ((y * stride + x) * 4) c
+    in copy-cols src stride w h y (x + 1)
+
+  copy-rows : Framebuf, Integer, Integer, Integer, Integer -> Integer
+  copy-rows (src) (stride) (w) (h) (y) =
+    if y >= h then 0
+    else let d = copy-cols src stride w h y 0
+    in copy-rows src stride w h (y + 1)
+
+Section: Entry
+
+  opening : [Console] Nothing = act
+    let w = peek-32 cell-width 0
+    in let h = peek-32 cell-height 0
+    in let stride = peek-32 cell-stride 0
+    in let t = peek-32 cell-clock 0
+    in let d = copy-rows (sketch-at t) stride w h 0
+    in act
+      print-line-uni ("clock : " & show t & " ms")
+    end
+  end
