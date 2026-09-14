@@ -38,18 +38,27 @@ hold: safe here because the host stops at any address it does not back.
 |---|---|
 | `platform/main.roc` | the platform: `main!` in Echo's shape, the hosted `Echo`, `Gpu` and `Heap` doors, and the wasm exports the page calls |
 | `platform/Heap.roc`, `platform/Gpu.roc`, `platform/Echo.roc` | the hosted doors: a load and a store of 1, 2, 4 or 8 bytes; a GPU port read and write; a line of text |
-| `platform/host.zig` | the host: memory in pages, the screen and clock cells, `run`, `present`, the console |
+| `platform/core.zig` | what both hosts share: memory in pages, the screen and clock cells, the GPU's doors, a run, the visible pixels and their hash |
+| `platform/host.zig` | the browser's host (wasm): the exports the page calls, and a crash kept for the page |
+| `platform/native.zig` | the checker's host (x86-64 Linux): runs the program for its frames and prints the last console and every frame's time and hash |
 | `platform/gpu.zig` | codex-vm's GPU over the program's memory |
 | `roc/Mem.roc`, `roc/Machine.roc` | the platform's side of the two states: the bump pointer as a value, every other door through the host |
 | `build.sh` | host, then each program emitted from a copy (so a `.vmargs` beside it stays behind), wired to the platform and built for wasm into the preview |
 | `frames.mjs` | a program's frames from Node: each frame's time, pixels drawn and a hash of the image |
+| `verify.sh`, `verify.tsv` | screen mode 2: every program in the table built natively and run for its frames; the last frame's hash must be the table's, and a test's console its verdict |
 | `web/index.html` | the page: the programs, Play, one frame at a time, the screen size, the console, the Roc |
 | `demos/` | Codex programs written for this platform; `quires.tsv` names the checkout they cite |
 
     framebuffer/build.sh framebuffer/demos/scene-spin.codex machine/batch/demos/scene-on-screen.codex
     framebuffer/build.sh ~/showell_repos/cobblestone-u60rel/codex/test/gpu-panel-border.codex
     node framebuffer/frames.mjs scene-spin 5
+    framebuffer/verify.sh        # mode 2: the table's programs, natively, against their hashes
     # the preview: http://143.244.172.148:9203/framebuffer/
+
+**Mode 2 checks what mode 3 shows.** The browser's host and the checker's are
+two thin roots over one `core.zig` and one `gpu.zig`, so a program draws the
+same image in both; `verify.tsv` holds that image's hash, first taken where the
+machine page's MachineGpu and this platform's GPU agreed.
 
 | program | what it draws |
 |---|---|

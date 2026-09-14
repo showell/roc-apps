@@ -1,0 +1,17 @@
+# The framebuffer platform's checks, run natively by verify.sh: a program, how
+# many frames to run it, and the hash of the last frame's visible pixels
+# (FNV-1a over red, green, blue and 255 a pixel, as frames.mjs and
+# machine/batch/screenhash.mjs print it). A path is under the Cobblestone
+# checkout (cobblestone:) or under roc-apps (roc-apps:).
+#
+# The GPU tests' hashes are the ones the machine page's MachineGpu and this
+# platform's gpu.zig both drew, 2026-09-14.
+#
+# program                                          frames  hash
+cobblestone:codex/test/gpu-panel-border.codex      1       fee5df14
+cobblestone:codex/test/gpu-depth-tree.codex        1       2c7c1dc1
+cobblestone:codex/test/gpu-gauge-clamp.codex       1       c990fa29
+cobblestone:codex/test/gpu-input-cursor.codex      1       dbf102b2
+cobblestone:codex/test/gop-padded-stride.codex     1       1989e38f
+roc-apps:machine/batch/demos/scene-on-screen.codex 1       1271e425
+roc-apps:framebuffer/demos/scene-spin.codex        3       f9771881

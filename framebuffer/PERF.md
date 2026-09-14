@@ -113,3 +113,23 @@ The two GPUs agree on every pixel of every image, and every program's console
 matches its test's verdict. The widget tests run on this platform's `Machine`
 (memory and the GPU's ports); gop-padded-stride reaches only memory and runs on
 its `Mem`.
+
+## 2026-09-14: the native checker
+
+`verify.sh` builds each program in `verify.tsv` natively (Roc's dev backend,
+x86-64, the host in zig linked with musl) and runs it for its frames; every
+hash matched the table. The time is the last frame's, one run each, beside
+the same frame in Node from the wasm build.
+
+| program | native | wasm in Node |
+|---|---|---|
+| gpu-panel-border | 17 ms | 30 ms |
+| gpu-depth-tree | 18 ms | 32 ms |
+| gpu-gauge-clamp | 16 ms | 25 ms |
+| gpu-input-cursor | 25 ms | 30 ms |
+| gop-padded-stride | 12 ms | 18 ms |
+| scene-on-screen | 69 ms | 104 ms |
+| scene-spin, frame 3 | 63 ms | 95 ms |
+
+The whole run of `verify.sh`, the wasm and native builds of all seven included,
+took 21 s.
