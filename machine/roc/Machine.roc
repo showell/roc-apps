@@ -31,6 +31,7 @@ import MachineNat
 import MachineNe2k
 import MachinePci
 import MachinePorts
+import MachineScreen
 import MachineWire
 
 Machine :: [].{
@@ -61,6 +62,9 @@ Machine :: [].{
 		clock : U64,
 		# -board-mmio: RAM behind the three board peripheral windows.
 		board_mmio : Bool,
+		# codex-vm's -gop screen: whether a flag asked for one, its width and
+		# height in pixels, and its stride, the pixels a row takes in memory.
+		screen : { active : Bool, width : U64, height : U64, stride : U64 },
 		# The keystrokes a test types (its .keys), in the machine's clock, and
 		# how many have been delivered.
 		timeline : List({ at : U64, code : U8 }),
@@ -75,7 +79,7 @@ Machine :: [].{
 		apic : MachineApic.Apic,
 	}
 
-	Flags : { bridge : Bool, deep : Bool, levels : U64, backward : Bool, disks : List(Str), board_mmio : Bool, lease : U64 }
+	Flags : { bridge : Bool, deep : Bool, levels : U64, backward : Bool, disks : List(Str), board_mmio : Bool, lease : U64, gop : Bool, gop_width : U64, gop_height : U64, gop_stride : U64, gop_stride_opt : U64 }
 
 	# A batch run's machine, from codex-vm's command line and the effects the
 	# program's opening declares. The PCI bridge flags, the NIC's and the
@@ -88,21 +92,28 @@ Machine :: [].{
 	# threads Mem alone, to keep the program out of compile-time reach.
 	boot! : List(Str), List(Str) => Machine.Machine
 	boot! = |args, effects| {
-		(f, fe1000, fhpet) = Machine.flags(args, 0, { bridge: False, deep: False, levels: 0, backward: False, disks: ["", ""], board_mmio: False, lease: 3600 }, MachineE1000.new, MachineHpet.new)
+		(f, fe1000, fhpet) = Machine.flags(args, 0, { bridge: False, deep: False, levels: 0, backward: False, disks: ["", ""], board_mmio: False, lease: 3600, gop: False, gop_width: 640, gop_height: 480, gop_stride: 640, gop_stride_opt: 0 }, MachineE1000.new, MachineHpet.new)
 		levels = if !f.bridge { 0 } else if f.levels != 0 { f.levels } else if f.deep { 2 } else { 1 }
 		# The process table as the boot leaves it: the boot program's entry
 		# marked running (2) with the opening's grant, and process 1 granted the
 		# console bit (X86_64Chapter's emit-start).
 		table = MachineMem.write(MachineMem.new(U64.to_i64_wrap(List.len(args))), Machine.proc_table, 2, 8)
 		granted = MachineMem.write(table, MachineCaps.word_addr, MachineCaps.grant(effects), 8)
-		mem = MachineMem.write(granted, Machine.cap_addr(1), 1, 8)
+		console_granted = MachineMem.write(granted, Machine.cap_addr(1), 1, 8)
+		# codex-vm's -gop screen: a stride below the width is refused and one past
+		# 2048 clamped, and the width, height and stride go at 0x7C4, 0x7C8 and
+		# 0x7E0, where a guest booted without UEFI reads them. The framebuffer
+		# itself is RAM at 0xBF000000.
+		opt = if f.gop_stride_opt < f.gop_width { 0 } else if f.gop_stride_opt > 2048 { 2048 } else { f.gop_stride_opt }
+		screen_stride = if opt > f.gop_width { opt } else { f.gop_stride }
+		mem = if f.gop { MachineMem.write(MachineMem.write(MachineMem.write(console_granted, 0x7C4, f.gop_width, 4), 0x7C8, f.gop_height, 4), 0x7E0, screen_stride, 4) } else { console_granted }
 		nic = if fe1000.present { Nic(if fe1000.i219 { 0x15B8 } else { 0x100E }, fe1000.faults.bme_clear) } else { NoNic }
 		# The boot probes the NE2000 and copies its station address out
 		# (X86_64Boot's emit-nic-init); every run starts with that done.
 		(card, address) = MachineNe2k.booted
 		nic_mem = Machine.copy_in(MachineMem.write(mem, Machine.nic_present_addr, 1, 8), Machine.nic_mac_addr, address, 0)
 		made = Machine.make(nic_mem, MachinePci.table(levels, f.backward, nic), MachineDisk.boot!(f.disks))
-		{ ..made, ide: MachineIde.attach!(made.drives), ne2k: card, lease: f.lease, e1000: if fe1000.present { MachineE1000.power_on(fe1000) } else { fe1000 }, hpet: fhpet, board_mmio: f.board_mmio, timeline: Machine.timeline_of(MachineMedia.keys) }
+		{ ..made, ide: MachineIde.attach!(made.drives), ne2k: card, lease: f.lease, e1000: if fe1000.present { MachineE1000.power_on(fe1000) } else { fe1000 }, hpet: fhpet, board_mmio: f.board_mmio, screen: { active: f.gop, width: f.gop_width, height: f.gop_height, stride: screen_stride }, timeline: Machine.timeline_of(MachineMedia.keys) }
 	}
 
 	# -pci-bridge is one level, -pci-bridge-deep two, -pci-bridge-levels N
@@ -130,6 +141,17 @@ Machine :: [].{
 				} else if a == "-dhcp-lease" {
 					n = U64.from_str(List.get(args, i + 1) ?? "") ?? crash("machine: -dhcp-lease wants a number")
 					Machine.flags(args, i + 2, { ..f, lease: n }, e1000, hpet)
+				} else if a == "-gop" {
+					Machine.flags(args, i + 1, { ..f, gop: True }, e1000, hpet)
+				} else if a == "-gop-width" {
+					n = U64.from_str(List.get(args, i + 1) ?? "") ?? crash("machine: -gop-width wants a number")
+					Machine.flags(args, i + 2, { ..f, gop: True, gop_width: n, gop_stride: n }, e1000, hpet)
+				} else if a == "-gop-height" {
+					n = U64.from_str(List.get(args, i + 1) ?? "") ?? crash("machine: -gop-height wants a number")
+					Machine.flags(args, i + 2, { ..f, gop: True, gop_height: n }, e1000, hpet)
+				} else if a == "-gop-stride" {
+					n = U64.from_str(List.get(args, i + 1) ?? "") ?? crash("machine: -gop-stride wants a number")
+					Machine.flags(args, i + 2, { ..f, gop: True, gop_stride_opt: n }, e1000, hpet)
 				} else if a == "-disk" or a == "-disk2" {
 					path = List.get(args, i + 1) ?? crash("machine: ${a} wants a file")
 					at = if a == "-disk" { 0 } else { 1 }
@@ -165,12 +187,38 @@ Machine :: [].{
 		hpet: MachineHpet.new,
 		clock: 0,
 		board_mmio: False,
+		screen: { active: False, width: 0, height: 0, stride: 0 },
 		timeline: [],
 		typed: 0,
 		scopes: Dict.empty(),
 		net_scopes: Dict.empty(),
 		ports: MachinePorts.new,
 		apic: MachineApic.new,
+	}
+
+	fb_addr : I64
+	fb_addr = 0xBF000000
+
+	# The end of a run. A platform that shows the screen gets the framebuffer
+	# as the run left it, stride pixels a row for height rows; on one that
+	# shows nothing (MachineScreen.shown), the framebuffer is not read.
+	halt! : Machine.Machine => {}
+	halt! = |m|
+		if m.screen.active and MachineScreen.shown {
+			n = U64.to_i64_wrap(m.screen.stride * m.screen.height * 4)
+			MachineScreen.present!(m.screen.width, m.screen.height, m.screen.stride, Machine.read_span(m.mem, Machine.fb_addr, n, List.with_capacity(I64.to_u64_wrap(n))))
+		} else {
+			{}
+		}
+
+	read_span : MachineMem.Mem, I64, I64, List(U8) -> List(U8)
+	read_span = |mem, base, n, acc| {
+		i = U64.to_i64_wrap(List.len(acc))
+		if i >= n {
+			acc
+		} else {
+			Machine.read_span(mem, base, n, List.append(acc, U64.to_u8_wrap(MachineMem.read(mem, base + i, 0, 0))))
+		}
 	}
 
 	tick : Machine.Machine -> Machine.Machine

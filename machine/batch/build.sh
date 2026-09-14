@@ -29,7 +29,7 @@ for src in "$@"; do
     # The modules rocemit wrote, the app first, which the page shows.
     emitted=("$app" $(cd "$d" && ls *.roc | grep -vx "$app" || true))
     cp "$HERE/../roc/"{Machine,MachineApic,MachineCaps,MachineE1000,MachineHpet,MachineIde,MachineMedia,MachineMem,MachineNat,MachineNe2k,MachinePci,MachinePorts}.roc "$d/"
-    cp "$HERE/../native/MachineDisk.roc" "$HERE/MachineWire.roc" "$d/"
+    cp "$HERE/../native/MachineDisk.roc" "$HERE/MachineScreen.roc" "$HERE/MachineWire.roc" "$d/"
     # Roc takes a platform only by a relative path.
     rel="$(python3 -c 'import os, sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$HERE/platform/main.roc" "$d")"
     { printf 'app [main!] { pf: platform "%s" }\n\nimport pf.Echo\n\necho! = |msg| Echo.line!(msg)\n\n' "$rel"; cat "$d/$app"; } > "$d/$app.wired"
@@ -43,7 +43,7 @@ for src in "$@"; do
         echo "$n: build failed"; exit 1
     fi
     base="${src%.codex}"
-    for ext in disk disk2; do
+    for ext in disk disk2 vmargs; do
         if [ -f "$base.$ext" ]; then cp "$base.$ext" "$NEXT/$n.$ext"; else rm -f "$NEXT/$n.$ext"; fi
     done
     if [ -f "$VERDICTS/$n.expected" ]; then cp "$VERDICTS/$n.expected" "$NEXT/$n.expected"; else rm -f "$NEXT/$n.expected"; fi
@@ -53,7 +53,8 @@ for src in "$@"; do
     ls -la "$NEXT/$n.wasm"
 done
 # The page, and its list of every unit built here: the images each brings,
-# whether its verdict came with it, and the Roc modules rocemit wrote for it.
+# whether its verdict came with it, its codex-vm flags, and the Roc modules
+# rocemit wrote for it.
 cp "$HERE/web/index.html" "$HERE/web/about.html" "$NEXT/"
 (cd "$NEXT" && python3 -c '
 import glob, json, os
@@ -62,6 +63,7 @@ def unit(n):
         "name": n,
         "disks": [e for e in ("disk", "disk2") if os.path.exists(n + "." + e)],
         "expected": os.path.exists(n + ".expected"),
+        "vmargs": [w for line in open(n + ".vmargs") if not line.startswith("#") for w in line.split()] if os.path.exists(n + ".vmargs") else [],
         "roc": open(n + ".files").read().split() if os.path.exists(n + ".files") else [],
     }
 print(json.dumps([unit(w[:-5]) for w in sorted(glob.glob("*.wasm"))]))

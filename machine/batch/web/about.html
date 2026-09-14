@@ -52,7 +52,9 @@ machine to the last.</p>
   <li>a process table whose first entry is the running program;</li>
   <li>that program's <em>capability word</em>, the bits saying what it may do (use the console, the
     disk, the network), granted from the effects its Codex entry point declares;</li>
-  <li>the network card found, and its hardware address copied into memory where the kernel keeps it.</li>
+  <li>the network card found, and its hardware address copied into memory where the kernel keeps it;</li>
+  <li>for a test that asks for a screen, the screen's width, height and row length in memory, written
+    where codex-vm writes them.</li>
 </ul>
 <p>The machine puts no files, programs or data anywhere. Whatever a program finds, it brought with it.</p>
 
@@ -98,6 +100,10 @@ starts from the original image again.</p>
     counting the machine's own clock rather than wall time.</td></tr>
   <tr><td>keyboard</td><td>A queue of the keystrokes a test brings, delivered as the clock reaches
     them.</td></tr>
+  <tr><td>screen</td><td>codex-vm's framebuffer: a block of ordinary memory at a fixed address that a
+    program draws into, four bytes a pixel. A test's <code>-gop</code> flags choose its width, height and
+    how many pixels each row takes in memory. When the run ends, the page draws what the program left
+    there.</td></tr>
   <tr><td>console</td><td>The lines a program prints, which is what its test checks.</td></tr>
 </table>
 </div>

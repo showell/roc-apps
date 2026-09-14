@@ -12,7 +12,16 @@ const html = readFileSync(join(dir, "index.html"), "utf8");
 const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
 const units = JSON.parse(readFileSync(join(dir, "units.json"), "utf8"));
 
-const el = () => ({ children: [], classList: { add() {}, remove() {} }, setAttribute() {}, appendChild() {}, dataset: {}, textContent: "", innerHTML: "", disabled: false });
+const painted = { pixels: 0, colours: new Set() };
+const context = {
+  createImageData: (w, h) => ({ width: w, height: h, data: new Uint8ClampedArray(w * h * 4) }),
+  putImageData: (img) => {
+    painted.pixels = img.width * img.height;
+    painted.colours = new Set();
+    for (let i = 0; i < img.data.length; i += 4) painted.colours.add((img.data[i] << 16) | (img.data[i + 1] << 8) | img.data[i + 2]);
+  },
+};
+const el = () => ({ children: [], classList: { add() {}, remove() {} }, setAttribute() {}, appendChild() {}, getContext: () => context, dataset: {}, textContent: "", innerHTML: "", disabled: false, hidden: false });
 const els = new Map();
 globalThis.document = { getElementById: (id) => { if (!els.has(id)) els.set(id, el()); return els.get(id); }, createElement: el };
 globalThis.requestAnimationFrame = (f) => setTimeout(f, 0);
@@ -28,6 +37,7 @@ for (const u of units) {
   await page.run();
   console.log(`== ${u.name}`);
   console.log(`status : ${pane("status")}`);
+  console.log(`screen : ${pane("screenlab")} -- ${pane("screennote")}${els.get("screen")?.hidden === false ? ` (${painted.pixels} pixels painted, ${painted.colours.size} colours)` : ""}`);
   if (pane("expected")) console.log(`expected:\n${pane("expected")}`);
   console.log(`roc    : ${pane("codelab")}; the first tab has ${pane("src").split("\n").length} lines`);
   console.log(`disk   : ${pane("disklab")} -- ${pane("disk")}`);

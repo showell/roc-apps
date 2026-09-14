@@ -36,6 +36,7 @@
   #status.ok { color: var(--ok); }
   #status.bad { color: var(--bad); }
   .code { grid-column: 1 / -1; }
+  canvas.screen { display: block; max-width: 100%; image-rendering: pixelated; border: 1px solid var(--edge); background: #000; }
   .tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 8px; }
   .tabs button { font: 12px ui-monospace, monospace; padding: 2px 8px; border: 1px solid var(--edge); background: var(--pane); color: var(--fg); border-radius: 3px; cursor: pointer; }
   .tabs button[aria-pressed="true"] { background: var(--sel); border-color: var(--muted); }
@@ -56,6 +57,7 @@ drives, the NE2000 network card and the small network behind it. Pick one and pr
   <span id="status">loading…</span>
 </div>
 <div class="grid">
+  <section><h2 id="screenlab">Screen</h2><div id="screennote" class="muted">What a program leaves on the screen appears here.</div><canvas id="screen" class="screen" width="1" height="1" hidden></canvas></section>
   <section><h2>Console</h2><pre id="console" class="muted">Nothing has run yet.</pre><h2 id="expectlab" hidden>The test expects</h2><pre id="expected"></pre></section>
   <section><h2 id="disklab">Disk</h2><div id="disk" class="muted">The sectors a run writes appear here.</div><div class="sectors" id="sectors"></div><div class="hexwrap"><pre id="hex" class="hex"></pre></div></section>
   <section><h2 id="wirelab">Network</h2><div id="wire" class="muted">The frames a run sends, and the network's answers, appear here.</div><pre id="frames"></pre></section>
@@ -72,6 +74,8 @@ const ABOUT = {
   "fat16-write": "writes a file onto the FAT16 disk image it comes with, then reads it back",
   "fat16-list": "lists the directories and files on the FAT16 disk image it comes with",
   "dhcp-acquire": "asks the network for an address through the NE2000 card",
+  "gop-padded-stride": "paints a screen whose rows are longer in memory than on the glass, and checks the hidden ends stay untouched",
+  "scene-on-screen": "renders a small 3D scene onto the screen with Cobblestone's renderer (a demo written for this page, not a test)",
 };
 
 let units = [], chosen = null;
@@ -128,7 +132,7 @@ async function run() {
   const { instance } = await WebAssembly.instantiate(wasm, {});
   const x = instance.exports;
   const bytes = (ptr, len) => new Uint8Array(x.memory.buffer, ptr, len);
-  const words = [];
+  const words = [...(u.vmargs || [])];
   u.disks.forEach((ext, i) => {
     const p = ext === "disk" ? 0 : 1;
     const at = x.driveBuffer(p, images[i].length);
@@ -154,7 +158,7 @@ async function run() {
   $("expectlab").hidden = true;
   $("expected").textContent = "";
   if (expected === null) {
-    st.textContent = `${took} · this test has no expected output here`;
+    st.textContent = `${took} · no expected output to compare with`;
   } else if (!trapped && text.replace(/\n+$/, "\n") === expected) {
     st.classList.add("ok");
     st.textContent = `${took} · ✓ matches the test's expected output`;
@@ -165,6 +169,7 @@ async function run() {
     $("expected").textContent = expected;
   }
 
+  showScreen(u, x);
   showDisk(u, images, x);
   showWire(x);
   $("run").disabled = false;
@@ -212,6 +217,36 @@ function showDisk(u, images, x) {
     $("sectors").appendChild(b);
     if (i === 0) pick(c, b);
   });
+}
+
+// The framebuffer as the run left it: stride pixels a row, four bytes a pixel
+// (blue, green, red, unused). The screen shows the first `width` of each row.
+function showScreen(u, x) {
+  const canvas = $("screen");
+  const len = x.screenLen();
+  if (len === 0) {
+    canvas.hidden = true;
+    $("screenlab").textContent = "Screen";
+    $("screennote").textContent = u.vmargs && u.vmargs.some((w) => w.startsWith("-gop"))
+      ? "The run asked for a screen and left nothing on it."
+      : "This program runs without a screen.";
+    return;
+  }
+  const w = x.screenWidth(), h = x.screenHeight(), stride = x.screenStride();
+  const px = new Uint8Array(x.memory.buffer, x.screenPtr(), len);
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  const img = ctx.createImageData(w, h);
+  for (let y = 0; y < h; y++) {
+    for (let c = 0; c < w; c++) {
+      const s = (y * stride + c) * 4, d = (y * w + c) * 4;
+      img.data[d] = px[s + 2]; img.data[d + 1] = px[s + 1]; img.data[d + 2] = px[s]; img.data[d + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  canvas.hidden = false;
+  $("screenlab").textContent = `Screen: ${w} × ${h}`;
+  $("screennote").textContent = stride === w ? "The framebuffer as the run left it." : `The framebuffer as the run left it; each row is ${stride} pixels in memory, and the ${stride - w} past the edge are not shown.`;
 }
 
 // The host keeps each frame as a direction byte (0 sent, 1 answered), its

@@ -78,7 +78,6 @@ diverges() {
         real-show-wide) echo "the verdict pins Codex's own printer: it reads 12345678901234567.0 as ...566, we print the double" ;;
         cost@accumulator-corpus|ops@list-growth|heap-scrub|engine-culling-cost|engine-render-heap|net-recv-heap) echo "measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero" ;;
         web-mux-heap) echo "measures Codex's bump pointer with __heap-save; the machine's pointer moves for alloc-bytes, so each 65536-byte receive buffer shows, but no Roc list lives on it, so every reading lacks the lists' bytes" ;;
-        gop-padded-stride) echo "reads its geometry from cells codex-vm publishes at fixed addresses at boot; on any other host those addresses were never written" ;;
     esac
 }
 # The drives a machine unit boots with and the keys typed during its run, as a
@@ -142,7 +141,7 @@ one() {
     # from, so all of it joins the stamp.
     vmargs=()
     if grep -qx 'import Machine' "$d"/*.roc; then
-        cp "$MACHINE"/{Machine,MachineApic,MachineCaps,MachineE1000,MachineHpet,MachineIde,MachineMem,MachineNat,MachineNe2k,MachinePci,MachinePorts,MachineWire,MachineDisk}.roc "$d/"
+        cp "$MACHINE"/{Machine,MachineApic,MachineCaps,MachineE1000,MachineHpet,MachineIde,MachineMem,MachineNat,MachineNe2k,MachinePci,MachinePorts,MachineScreen,MachineWire,MachineDisk}.roc "$d/"
         [ -f "$src.vmargs" ] && read -ra vmargs <<< "$(grep -v '^#' "$src.vmargs" | tr '\n' ' ')"
         rm -f "$d/drive0.disk" "$d/drive1.disk" "$d/keys.txt"
         a0=no; a1=no; k=no
@@ -150,7 +149,7 @@ one() {
         [ -f "$src.disk2" ] && { ln -s "$src.disk2" "$d/drive1.disk"; a1=yes; }
         [ -f "$src.keys" ] && { ln -s "$src.keys" "$d/keys.txt"; k=yes; }
         media $a0 $a1 $k > "$d/MachineMedia.roc"
-        stamp="$stamp machine $( { cat "$MACHINE"/{Machine,MachineApic,MachineCaps,MachineE1000,MachineHpet,MachineIde,MachineMem,MachineNat,MachineNe2k,MachinePci,MachinePorts,MachineWire,MachineDisk}.roc "$d/MachineMedia.roc"; echo "${vmargs[*]}"; stat -L -c '%s %Y' "$d"/drive*.disk "$d"/keys.txt 2>/dev/null; } | md5sum | cut -c1-16)"
+        stamp="$stamp machine $( { cat "$MACHINE"/{Machine,MachineApic,MachineCaps,MachineE1000,MachineHpet,MachineIde,MachineMem,MachineNat,MachineNe2k,MachinePci,MachinePorts,MachineScreen,MachineWire,MachineDisk}.roc "$d/MachineMedia.roc"; echo "${vmargs[*]}"; stat -L -c '%s %Y' "$d"/drive*.disk "$d"/keys.txt 2>/dev/null; } | md5sum | cut -c1-16)"
     fi
     if [ -n "$old" ] && [ "$old" = "$stamp" ] && [ -f "$GEN/$n.verdict" ] && [ -z "${FRESH:-}" ]; then
         cp "$GEN/$n.verdict" "$d/verdict"; return

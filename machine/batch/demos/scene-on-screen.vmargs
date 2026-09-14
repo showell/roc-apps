@@ -1,0 +1,2 @@
+# A 320x240 screen, the size engine-software-render renders at.
+-gop -gop-width 320 -gop-height 240

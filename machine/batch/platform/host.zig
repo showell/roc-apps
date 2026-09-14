@@ -36,6 +36,13 @@ const wire_cap: usize = 1 << 20;
 var wire_buf: [wire_cap]u8 = undefined;
 var wire_len: usize = 0;
 
+/// The screen a run left, if it drew on one: its geometry, and the
+/// framebuffer's bytes, stride pixels a row, four bytes a pixel.
+var screen: ?[]u8 = null;
+var screen_width: u32 = 0;
+var screen_height: u32 = 0;
+var screen_stride: u32 = 0;
+
 /// Appends what fits; a console past its capacity keeps its first megabyte.
 fn keep(buf: []u8, len: *usize, bytes: []const u8) void {
     const n = @min(bytes.len, buf.len - len.*);
@@ -178,6 +185,26 @@ fn hostedEchoLine(line: RocStr) callconv(.c) void {
     keep(&console_buf, &console_len, line.asSlice());
 }
 
+fn forgetScreen() void {
+    if (screen) |old| wasm_allocator.free(old);
+    screen = null;
+    screen_width = 0;
+    screen_height = 0;
+    screen_stride = 0;
+}
+
+fn hostedScreenPresent(width: u64, height: u64, stride: u64, pixels: RocList) callconv(.c) void {
+    defer pixels.decref(@alignOf(u8), @sizeOf(u8), false, null, noDec, &roc_ops);
+    forgetScreen();
+    const bytes = pixels.bytes orelse return;
+    const buf = wasm_allocator.alloc(u8, pixels.length) catch return;
+    @memcpy(buf, bytes[0..pixels.length]);
+    screen = buf;
+    screen_width = @intCast(width);
+    screen_height = @intCast(height);
+    screen_stride = @intCast(stride);
+}
+
 fn hostedWireFrame(direction: u64, frame: RocList) callconv(.c) void {
     defer frame.decref(@alignOf(u8), @sizeOf(u8), false, null, noDec, &roc_ops);
     const bytes = frame.bytes orelse return;
@@ -195,6 +222,7 @@ comptime {
     @export(&hostedDriveSectorCount, .{ .name = "roc_drive_sector_count", .visibility = .hidden });
     @export(&hostedDriveWrite, .{ .name = "roc_drive_write", .visibility = .hidden });
     @export(&hostedEchoLine, .{ .name = "roc_echo_line", .visibility = .hidden });
+    @export(&hostedScreenPresent, .{ .name = "roc_screen_present", .visibility = .hidden });
     @export(&hostedWireFrame, .{ .name = "roc_wire_frame", .visibility = .hidden });
 }
 
@@ -219,6 +247,7 @@ pub export fn run(len: u32) i32 {
     console_len = 0;
     crash_len = 0;
     wire_len = 0;
+    forgetScreen();
     if (len > args_cap) @trap();
     const words = args_buf[0..len];
     var count: usize = 0;
@@ -260,4 +289,26 @@ pub export fn wirePtr() u32 {
 
 pub export fn wireLen() u32 {
     return @intCast(wire_len);
+}
+
+pub export fn screenPtr() u32 {
+    const s = screen orelse return 0;
+    return @intCast(@intFromPtr(s.ptr));
+}
+
+pub export fn screenLen() u32 {
+    const s = screen orelse return 0;
+    return @intCast(s.len);
+}
+
+pub export fn screenWidth() u32 {
+    return screen_width;
+}
+
+pub export fn screenHeight() u32 {
+    return screen_height;
+}
+
+pub export fn screenStride() u32 {
+    return screen_stride;
 }

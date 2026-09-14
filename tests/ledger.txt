@@ -554,7 +554,7 @@ PASS gop-composite-stride |
 DIVERGES gop-composite-translate | comp-translate moves each child with __record-set and drops the answers; Codex writes the record in place, so the parent's children list sees the move, and a Roc record is a value
 PASS gop-composite-vclip |
 PASS gop-corner-ramp |
-DIVERGES gop-padded-stride | reads its geometry from cells codex-vm publishes at fixed addresses at boot; on any other host those addresses were never written
+PASS gop-padded-stride |
 REFUSED gop-scene-backbuffer | builtin `gpu-out`
 PASS gop-scene-viewport |
 PASS gop-stride |

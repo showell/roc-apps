@@ -13,9 +13,13 @@ const { instance } = await WebAssembly.instantiate(readFileSync(join(dir, `${n}.
 const x = instance.exports;
 const bytes = (ptr, len) => new Uint8Array(x.memory.buffer, ptr, len);
 
-// Each image the unit brings goes in its drive's buffer, and the command line
-// names it as codex-vm's flags do.
+// The command line is the unit's codex-vm flags, and each image it brings goes
+// in its drive's buffer, named on the command line as codex-vm's flags do.
 const words = [];
+const vmargs = join(dir, `${n}.vmargs`);
+if (existsSync(vmargs)) {
+  for (const l of readFileSync(vmargs, "utf8").split("\n")) if (!l.startsWith("#")) words.push(...l.split(/\s+/).filter(Boolean));
+}
 for (const [p, ext, flag] of [[0, "disk", "-disk"], [1, "disk2", "-disk2"]]) {
   const path = join(dir, `${n}.${ext}`);
   if (!existsSync(path)) continue;
@@ -50,6 +54,12 @@ for (let p = 0; p + 5 <= wire.length; p += 5 + ((wire[p + 1] | (wire[p + 2] << 8
   if (wire[p] === 0) sent++; else answered++;
 }
 console.log(`-- the wire: ${sent} sent, ${answered} answered`);
+if (x.screenLen() > 0) {
+  const px = bytes(x.screenPtr(), x.screenLen());
+  const colours = new Set();
+  for (let i = 0; i < px.length; i += 4) colours.add((px[i + 2] << 16) | (px[i + 1] << 8) | px[i]);
+  console.log(`-- the screen: ${x.screenWidth()}x${x.screenHeight()}, stride ${x.screenStride()}, ${colours.size} colours`);
+}
 const verdict = join(dir, `${n}.expected`);
 if (existsSync(verdict)) {
   const want = readFileSync(verdict, "utf8");

@@ -1,0 +1,70 @@
+Chapter: SceneOnScreen
+  cites Foreword chapter Console
+  cites Engine chapter Renderer3D
+  cites Engine chapter Scene3D
+  cites Engine chapter Mesh
+  cites Engine chapter Material
+  cites Math chapter Quaternion
+  cites Game chapter Color
+
+ A small scene drawn on the screen: the ground, a shiny cube and a red
+ pyramid of codex/test/engine-software-render, rendered by Renderer3D into
+ the framebuffer that codex-vm's -gop flags describe rather than into memory
+ of its own. The width, height and stride come from the cells published at
+ boot, where codex/test/gop-padded-stride reads them.
+
+ We say:
+
+Section: Screen
+
+  fb-base : Integer = 3204448256
+  cell-width : Integer = 1988
+  cell-height : Integer = 1992
+  cell-stride : Integer = 2016
+
+  sky : Integer
+  sky = rgb-to-packed (rgb 20 20 30)
+
+Section: Scene
+
+  demo-scene : Scene3DState
+  demo-scene =
+    let cam = camera3d-new (vec3-new 0.0 2200.0 5200.0) (vec3-new 0.0 300.0 0.0) 0.785
+    in let stage = scene3d-new cam
+    in let ground = sn3-with-mesh "ground" (mesh-plane 3000 3000) (emat-flat (rgb 90 80 62))
+    in let cube = sn3-set-pos (sn3-with-mesh "cube" (mesh-cube 900) (emat-shiny (rgb 90 130 210) 32)) (-900.0) 450.0 0.0
+    in let pyr = sn3-set-pos (sn3-with-mesh "pyr" (mesh-pyramid 600 1100) emat-red) 1100.0 0.0 (-300.0)
+    in let s2 = scene3d-add (scene3d-add (scene3d-add stage ground) cube) pyr
+    in let key = dir-light (vec3-new (-400.0) 800.0 400.0) (rgb 255 250 235) 850
+    in scene3d-set-ambient (scene3d-add-light s2 key) 260
+
+Section: Counting
+
+ A pixel is drawn when it is not the sky the target was cleared to; the
+ columns past the width are never looked at.
+
+  drawn-cols : Integer, Integer, Integer, Integer, Integer -> Integer
+  drawn-cols (stride) (w) (y) (x) (acc) =
+    if x >= w then acc
+    else if peek-32 fb-base ((y * stride + x) * 4) == sky then drawn-cols stride w y (x + 1) acc
+    else drawn-cols stride w y (x + 1) (acc + 1)
+
+  drawn-rows : Integer, Integer, Integer, Integer, Integer -> Integer
+  drawn-rows (stride) (w) (h) (y) (acc) =
+    if y >= h then acc
+    else drawn-rows stride w h (y + 1) (drawn-cols stride w y 0 acc)
+
+Section: Entry
+
+  opening : [Console] Nothing = act
+    let w = peek-32 cell-width 0
+    in let h = peek-32 cell-height 0
+    in let stride = peek-32 cell-stride 0
+    in let tgt = r3d-target-at fb-base stride w h sky
+    in let d = r3d-render-into tgt demo-scene
+    in let drawn = drawn-rows stride w h 0 0
+    in act
+      print-line-uni ("screen : " & show w & " x " & show h & ", stride " & show stride)
+      print-line-uni ("drawn  : " & show drawn & " of " & show (w * h) & " pixels")
+    end
+  end
