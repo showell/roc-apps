@@ -68,7 +68,7 @@ SKIP collide-chapters | expects a diagnostic
 PASS color-test |
 PASS compliance-evidence |
 PASS compliance-report |
-REFUSED concurrent-test | `__lam_0` applied to 3 of 4 arguments
+REFUSED concurrent-test | builtin `fork`
 PASS consistent-hash-balance |
 REFUSED console-readline-cite | builtin `read-line` used as a value
 SKIP const-narrow-proven | expects a diagnostic
@@ -81,7 +81,7 @@ PASS crypto-vectors |
 REFUSED cryptobig | `cb-shl1-step` writes its list parameter `x` and answers something else
 PASS ctor-narrow-warn |
 PASS db-csv-roundtrip |
-REFUSED db-full-test | `exec-sort-cmp` applied to 1 of 3 arguments
+DIVERGES db-full-test | test-bulk-load and test-import insert 5 rows through heap-insert-encoded's list-set-at on the catalog's pages and answer only Text; the backup then scans the same catalog, which in Roc still holds the old pages (rows=21, not 26)
 DIVERGES db-row-update | list-set-at mutates in place; Roc's List.set answers a new list
 REFUSED dce-reach | type error
 REFUSED deck-bracket-contract | builtin `__deck-set`
@@ -216,43 +216,43 @@ SKIP field-range-proven | expects a diagnostic
 REFUSED files-parse | builtin `port-in-16-block`
 PASS final-batch-test |
 PASS fins-encode |
-REFUSED forewords@ai-activation | `__lam_1` applied to 1 of 2 arguments
-REFUSED forewords@ai-activation-range | `__lam_1` applied to 1 of 2 arguments
-REFUSED forewords@ai-attention | `__lam_1` applied to 1 of 2 arguments
-REFUSED forewords@ai-clip-interrogator | `__lam_1` applied to 1 of 2 arguments
-REFUSED forewords@ai-control-net | `__lam_1` applied to 1 of 2 arguments
+PASS forewords@ai-activation |
+PASS forewords@ai-activation-range |
+PASS forewords@ai-attention |
+PASS forewords@ai-clip-interrogator |
+PASS forewords@ai-control-net |
 PASS forewords@ai-conv2d |
 PASS forewords@ai-decision-tree |
-REFUSED forewords@ai-diffusion-pipeline | `__lam_1` applied to 1 of 2 arguments
+PASS forewords@ai-diffusion-pipeline |
 PASS forewords@ai-diffusion-scheduler |
 PASS forewords@ai-embedding |
-REFUSED forewords@ai-exp-approximations | `__lam_1` applied to 1 of 2 arguments
-REFUSED forewords@ai-flux-pipeline | `__lam_1` applied to 1 of 2 arguments
+PASS forewords@ai-exp-approximations |
+PASS forewords@ai-flux-pipeline |
 PASS forewords@ai-genetic-algorithm |
 PASS forewords@ai-gguf |
 PASS forewords@ai-gpu-proxy |
-REFUSED forewords@ai-hires-fix | `__lam_1` applied to 1 of 2 arguments
-REFUSED forewords@ai-inpainting | `__lam_1` applied to 1 of 2 arguments
+PASS forewords@ai-hires-fix |
+PASS forewords@ai-inpainting |
 PASS forewords@ai-k-nearest-neighbor |
 PASS forewords@ai-kv-cache |
-REFUSED forewords@ai-lora-loader | `__lam_1` applied to 1 of 2 arguments
+PASS forewords@ai-lora-loader |
 PASS forewords@ai-loss |
-REFUSED forewords@ai-neural-net | `__lam_1` applied to 1 of 2 arguments
-REFUSED forewords@ai-normalization | `__lam_1` applied to 1 of 2 arguments
+PASS forewords@ai-neural-net |
+PASS forewords@ai-normalization |
 PASS forewords@ai-optimizer |
 PASS forewords@ai-png-metadata |
 PASS forewords@ai-prompt-parser |
 PASS forewords@ai-reservoir |
-REFUSED forewords@ai-sampling | `__lam_1` applied to 1 of 2 arguments
+PASS forewords@ai-sampling |
 PASS forewords@ai-sparse-lattice |
 PASS forewords@ai-tensor |
-REFUSED forewords@ai-text-encoder | `__lam_1` applied to 1 of 2 arguments
-REFUSED forewords@ai-text-encoder-xl | `__lam_1` applied to 1 of 2 arguments
+PASS forewords@ai-text-encoder |
+PASS forewords@ai-text-encoder-xl |
 PASS forewords@ai-tokenizer |
-REFUSED forewords@ai-transformer | `__lam_1` applied to 1 of 2 arguments
-REFUSED forewords@ai-unet-timestep | `__lam_1` applied to 1 of 2 arguments
-REFUSED forewords@ai-unet-xl | `__lam_1` applied to 1 of 2 arguments
-REFUSED forewords@ai-upscaler | `__lam_1` applied to 1 of 2 arguments
+PASS forewords@ai-transformer |
+PASS forewords@ai-unet-timestep |
+PASS forewords@ai-unet-xl |
+PASS forewords@ai-upscaler |
 PASS forewords@cce-tier2 |
 REFUSED forewords@compress-brotli | `lz77-count-distinct` writes its list parameter `seen` and answers something else
 REFUSED forewords@compress-deflate | `lz77-count-distinct` writes its list parameter `seen` and answers something else
@@ -342,7 +342,7 @@ PASS forewords@engine-world-hud |
 PASS forewords@foreword-aes |
 PASS forewords@foreword-aes-gcm |
 PASS forewords@foreword-aes256 |
-REFUSED forewords@foreword-apprunner | `__lam_0` applied to 1 of 2 arguments
+REFUSED forewords@foreword-apprunner | builtin `gpu-mem-write`
 PASS forewords@foreword-b-plus-tree |
 PASS forewords@foreword-bit-set |
 PASS forewords@foreword-bloom-filter |
@@ -351,7 +351,7 @@ PASS forewords@foreword-camera |
 PASS forewords@foreword-cha-cha20 |
 PASS forewords@foreword-channel |
 PASS forewords@foreword-circular-buffer |
-REFUSED forewords@foreword-concurrent | `__lam_0` applied to 3 of 4 arguments
+REFUSED forewords@foreword-concurrent | builtin `fork`
 PASS forewords@foreword-consistent-hash |
 PASS forewords@foreword-console |
 PASS forewords@foreword-count-min-sketch |
@@ -399,7 +399,7 @@ PASS forewords@foreword-pair |
 PASS forewords@foreword-path |
 PASS forewords@foreword-pattern |
 PASS forewords@foreword-pbkdf |
-REFUSED forewords@foreword-pipeline | `__lam_0` applied to 1 of 2 arguments
+PASS forewords@foreword-pipeline |
 PASS forewords@foreword-priority-queue |
 PASS forewords@foreword-probability |
 PASS forewords@foreword-proof-of-work |
@@ -416,7 +416,7 @@ PASS forewords@foreword-safetensors |
 PASS forewords@foreword-schedule |
 PASS forewords@foreword-scheduler |
 PASS forewords@foreword-sensors |
-REFUSED forewords@foreword-set | `set-fold-wrapper` applied to 1 of 4 arguments
+PASS forewords@foreword-set |
 PASS forewords@foreword-sha1 |
 PASS forewords@foreword-sha256 |
 PASS forewords@foreword-sha512 |
@@ -480,8 +480,8 @@ PASS forewords@math-cordic-accuracy |
 PASS forewords@math-cordic-quadrants |
 PASS forewords@math-geodesic |
 PASS forewords@math-geometry |
-REFUSED forewords@math-linear-algebra | `__lam_0` applied to 1 of 2 arguments
-REFUSED forewords@math-matrix3 | `__lam_0` applied to 1 of 2 arguments
+PASS forewords@math-linear-algebra |
+PASS forewords@math-matrix3 |
 PASS forewords@math-matrix4 |
 PASS forewords@math-numeric |
 PASS forewords@math-optimize |
@@ -508,7 +508,7 @@ PASS forewords@sim-physics |
 REFUSED forewords@sim-spatial-hash | `sh-insert-into-cells` writes its list parameter `cells` and answers something else
 PASS forewords@sim-steering |
 PASS forewords@ui-accessibility |
-REFUSED forewords@ui-animation | `__lam_0` applied to 1 of 2 arguments
+PASS forewords@ui-animation |
 PASS forewords@ui-binding |
 PASS forewords@ui-box-model |
 REFUSED forewords@ui-charts | binary cons-list
@@ -521,7 +521,7 @@ PASS forewords@ui-focus |
 PASS forewords@ui-font |
 PASS forewords@ui-icon |
 PASS forewords@ui-layout |
-REFUSED forewords@ui-orchestrator | `__lam_0` applied to 1 of 2 arguments
+PASS forewords@ui-orchestrator |
 PASS forewords@ui-overlay |
 PASS forewords@ui-render |
 PASS forewords@ui-rich-text |
@@ -535,7 +535,7 @@ PASS forewords@ui-touch |
 PASS forewords@ui-vector |
 PASS forewords@ui-widget |
 REFUSED fork-nested | builtin `fork`
-REFUSED fork-reclaim | `__lam_0` applied to 1 of 2 arguments
+REFUSED fork-reclaim | builtin `fork`
 PASS frame-short-buffer |
 PASS frameless-leaf-probe |
 SKIP fresh-alloc-narrow | expects a diagnostic
@@ -603,14 +603,14 @@ SKIP induction-list | expects a diagnostic
 SKIP induction-param | expects a diagnostic
 SKIP induction-parse | expects a diagnostic
 REFUSED inductive-list | type proof
-REFUSED infra-test | `__lam_0` applied to 1 of 2 arguments
+PASS infra-test |
 PASS inline-cost-based |
 PASS inline-single-caller |
 PASS input-metal |
 PASS int-literal-underscore |
 PASS interval-exhaustive |
 PASS ip-checksum-odd |
-REFUSED ir-check-clean | `__lam_1` applied to 1 of 2 arguments
+REFUSED ir-check-clean | builtin `abs`
 PASS iterate-test |
 PASS iterate-zip-test |
 PASS j1939-encode |
@@ -623,7 +623,7 @@ PASS keys-sidecar |
 PASS klondike-test |
 PASS knx-encode |
 PASS kvstore-test |
-REFUSED lang-smoke | `make-adder` applied to 1 of 2 arguments
+REFUSED lang-smoke | builtin `abs`
 PASS lapic-regs |
 REFUSED lazy-smoke | opening: Lazy
 PASS leaf-let-if |
@@ -633,7 +633,7 @@ PASS let-dest-scope |
 PASS let-else-scope |
 PASS let-shadow-scope |
 PASS lib@aesgcm-test |
-REFUSED lib@app-runner-frame | `__lam_0` applied to 1 of 2 arguments
+REFUSED lib@app-runner-frame | builtin `gpu-mem-write`
 PASS lib@badge-tone |
 REFUSED lib@brotli-ctx2-test | `lz77-count-distinct` writes its list parameter `seen` and answers something else
 REFUSED lib@brotli-dict-test | builtin `__list-with-capacity`
@@ -650,7 +650,7 @@ PASS lib@flex-layout-geometry |
 PASS lib@format-test |
 PASS lib@hkdf-test |
 PASS lib@key-tab-single |
-REFUSED lib@linalg-test | `__lam_0` applied to 1 of 2 arguments
+PASS lib@linalg-test |
 PASS lib@locale-test |
 PASS lib@loss-test |
 PASS lib@lz4-test |
@@ -673,7 +673,7 @@ FAIL lib@utf8-cce-test | output: < utf8-3byte-one-char=fail
 REFUSED lib@widget-tone | builtin `port-in-16-block`
 PASS lib@yaml-test |
 PASS linear-branch |
-REFUSED linear-capture-once | `__lam_0` applied to 1 of 2 arguments
+PASS linear-capture-once |
 PASS linear-mint-container |
 PASS linear-poly-freeze |
 PASS linear-smoke |
@@ -704,7 +704,7 @@ CRASH magic-sim-fixes | overflowed its stack memory
 SKIP manifest-pin | its disk is compiled from manifest-subject by the Cobblestone compiler at test time
 REFUSED mask-ops | type (effectful (effs "Console") (scopes "") nothing)
 PASS match-arms-per-line |
-REFUSED matrix3-test | `__lam_0` applied to 1 of 2 arguments
+PASS matrix3-test |
 PASS mbus-encode |
 PASS media-codec-test |
 PASS melsec-encode |
@@ -749,7 +749,7 @@ PASS ops@cce-bounds-smoke |
 PASS ops@cce-builtin-bounds |
 PASS ops@char-at-bounds |
 FAIL ops@char-encode-bands | output: < 128 len=1 decoded=0 LEN-BAD RT-BAD
-REFUSED ops@closure-under-apply | `add3` applied to 1 of 3 arguments
+PASS ops@closure-under-apply |
 REFUSED ops@collate-order | `sort-run` writes its list parameter `ks` and answers something else
 PASS ops@div-negative-pow2 |
 PASS ops@int-add-wrapping |
@@ -783,10 +783,10 @@ REFUSED ops@real-saturating | binary add-real-saturating
 REFUSED ops@real-saturating-finite | builtin `to-real-saturating`
 REFUSED ops@real-to-int-wide | builtin `to-real-approx`
 REFUSED ops@real-trapping | binary add-real-trapping
-REFUSED ops@record-closure-field-poly | `__lam_0` applied to 1 of 2 arguments
+REFUSED ops@record-closure-field-poly | a call whose head is not a name
 PASS ops@record-equality |
 REFUSED ops@record-equality-vector | CODEGEN-HALTED: 3 error(s); no IR emitted; first CDX3008 Undefined type name: SizedVec
-REFUSED ops@saturated-call-returning-function | `add3` applied to 1 of 3 arguments
+PASS ops@saturated-call-returning-function |
 REFUSED ops@section-title-keywords | type error
 PASS ops@substring-bounds |
 PASS ops@text-order-allowed |
@@ -819,7 +819,7 @@ PASS pci-bridge-scan |
 PASS pci-bus-master |
 PASS peek32-sign |
 PASS pi4-drivers |
-REFUSED pipe-unique-test | `__lam_0` applied to 1 of 2 arguments
+PASS pipe-unique-test |
 PASS pit-latch |
 REFUSED plug-oracle-arith | field-store
 PASS poke16-width |
@@ -853,24 +853,24 @@ PASS raytracer-test |
 REFUSED real-cert | `fe-carry-pass` writes its list parameter `o` and answers something else
 PASS real-literal-boundary |
 DIVERGES real-show-wide | the verdict pins Codex's own printer: it reads 12345678901234567.0 as ...566, we print the double
-REFUSED record-smoke | `__lam_0` applied to 2 of 3 arguments
+REFUSED record-smoke | a call whose head is not a name
 PASS recursive-eq |
 PASS reservoir-uniform |
 SKIP return-narrow-proven | expects a diagnostic
 PASS revised-narrow |
 PASS riscv-encoder |
 PASS riscv32c-encoder |
-REFUSED roc-closure-captures-list | `__lam_0` applied to 1 of 2 arguments
+PASS roc-closure-captures-list |
 PASS roc-early-return-predicate |
 PASS roc-fold-count |
 PASS roc-fold-empty |
 PASS roc-fold-product |
 PASS roc-fold-sum |
-REFUSED roc-iter-drop-if | `__lam_0` applied to 2 of 3 arguments
-REFUSED roc-iter-keep-if | `__lam_0` applied to 2 of 3 arguments
-REFUSED roc-iter-map | `__lam_0` applied to 2 of 3 arguments
+REFUSED roc-iter-drop-if | a call whose head is not a name
+REFUSED roc-iter-keep-if | a call whose head is not a name
+REFUSED roc-iter-map | a call whose head is not a name
 PASS roc-recursive-var |
-REFUSED roc-returned-closure | `__lam_0` applied to 1 of 2 arguments
+REFUSED roc-returned-closure | a call whose head is not a name
 PASS rp2040-drivers |
 REFUSED rsa-pss | `cb-shl1-step` writes its list parameter `x` and answers something else
 REFUSED rsa-verify | `cb-shl1-step` writes its list parameter `x` and answers something else
@@ -968,7 +968,7 @@ REFUSED typeclass-poly | a call whose head is not a name
 REFUSED typeclass-smoke | `__compare_Integer` belongs to no chapter
 REFUSED udp-frame-guard | builtin `net-send-raw`
 PASS uefi-read-key-nofirmware |
-REFUSED ui-anim-test | `__lam_0` applied to 1 of 2 arguments
+PASS ui-anim-test |
 PASS ui-dialog-test |
 DIVERGES ui-event-test | list-push mutates a list two siblings share; Roc's List.append answers a new one
 PASS ui-focus-test |
@@ -976,7 +976,7 @@ PASS ui-font-cce-order |
 PASS ui-font-test |
 PASS ui-icon-test |
 PASS ui-layout-test |
-REFUSED ui-orchestrator-test | `__lam_0` applied to 1 of 2 arguments
+PASS ui-orchestrator-test |
 PASS ui-scroll-test |
 PASS ui-sound-test |
 PASS ui-surface-test |
@@ -1026,7 +1026,7 @@ PASS when-bool-cross |
 PASS when-bool-pattern |
 PASS when-generic-field |
 REFUSED with-timeout-test | with-timeout
-REFUSED workflow-parse-int | `exec-sort-cmp` applied to 1 of 3 arguments
+PASS workflow-parse-int |
 REFUSED x509-chain | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED x509-parse | `fe-carry-pass` writes its list parameter `o` and answers something else
 PASS zigbee-encode |

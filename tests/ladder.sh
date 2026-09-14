@@ -73,6 +73,7 @@ diverges() {
         ui-event-test) echo "list-push mutates a list two siblings share; Roc's List.append answers a new one" ;;
         lib@detail-pane|lib@tree-view-nav) echo "pins what a caller still holding the old record sees after its list is written in place; a Roc list is a value, so the caller keeps what it held" ;;
         lib@data-table-rows) echo "DataTable's dt-swap writes the keys list in place and drops the answer, and dt-insert reads the keys through its own name; in Roc the swap is lost and the sort compares stale keys" ;;
+        db-full-test) echo "test-bulk-load and test-import insert 5 rows through heap-insert-encoded's list-set-at on the catalog's pages and answer only Text; the backup then scans the same catalog, which in Roc still holds the old pages (rows=21, not 26)" ;;
         real-show-wide) echo "the verdict pins Codex's own printer: it reads 12345678901234567.0 as ...566, we print the double" ;;
         cost@accumulator-corpus|ops@list-growth|heap-scrub|engine-culling-cost|engine-render-heap) echo "measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero" ;;
         gop-padded-stride) echo "reads its geometry from cells codex-vm publishes at fixed addresses at boot; on any other host those addresses were never written" ;;
