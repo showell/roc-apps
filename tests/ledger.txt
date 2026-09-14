@@ -88,12 +88,12 @@ REFUSED deck-bracket-contract | builtin `__deck-set`
 REFUSED deck-cell-contract | builtin `__deck-set`
 REFUSED deck-record-contract | builtin `__deck-set`
 PASS deriving-eq-recursive |
-REFUSED desk-hole | `__lam_0` applied to 1 of 2 arguments under Device
-REFUSED desk-hover | `__lam_0` applied to 1 of 2 arguments under Device
-REFUSED desk-parse | `__lam_0` applied to 1 of 2 arguments under Device
-REFUSED desk-reuse | `__lam_0` applied to 1 of 2 arguments under Device
-REFUSED desk-root-guard | `__lam_0` applied to 1 of 2 arguments under Device
-REFUSED desk-span | `__lam_0` applied to 1 of 2 arguments under Device
+REFUSED desk-hole | a function value from `__lam_0` (1 of 2 arguments), which reaches the machine; a function value carries no sta
+REFUSED desk-hover | a function value from `__lam_0` (1 of 2 arguments), which reaches the machine; a function value carries no sta
+REFUSED desk-parse | a function value from `__lam_0` (1 of 2 arguments), which reaches the machine; a function value carries no sta
+REFUSED desk-reuse | a function value from `__lam_0` (1 of 2 arguments), which reaches the machine; a function value carries no sta
+REFUSED desk-root-guard | a function value from `__lam_0` (1 of 2 arguments), which reaches the machine; a function value carries no sta
+REFUSED desk-span | a function value from `__lam_0` (1 of 2 arguments), which reaches the machine; a function value carries no sta
 REFUSED device-buffer-alloc | builtin `gpu-mem-read`
 PASS dhcp-acquire |
 CRASH dhcp-acquire-e1000 | machine: -e1000-nat is not a codex-vm flag this machine models
@@ -721,7 +721,7 @@ REFUSED mutable-smoke | field-store
 PASS neg-int-parse |
 REFUSED neg-real-repro | an opening of type real
 PASS negation-abutment |
-REFUSED nested-spawn | `__lam_0` applied to 0 of 1 arguments under Device
+REFUSED nested-spawn | a function value from `__lam_0` (0 of 1 arguments), which reaches memory; a function value carries no state
 PASS net-drain-budget |
 TIMEOUT net-driver-seam-bound |
 PASS net-driver-seam-no-av |
@@ -825,7 +825,7 @@ REFUSED plug-oracle-arith | field-store
 PASS poke16-width |
 PASS poly1305 |
 PASS port-in-32-width |
-REFUSED proc-state-running | `__lam_0` applied to 0 of 1 arguments under Device
+REFUSED proc-state-running | a function value from `__lam_0` (0 of 1 arguments), which reaches memory; a function value carries no state
 REFUSED process-exit-status | builtin `process-exit`
 SKIP proof-assume-axiom | expects a diagnostic
 SKIP proof-smoke | expects a diagnostic
@@ -911,8 +911,8 @@ PASS sntp-encode |
 PASS sort-test |
 PASS sound-test |
 REFUSED sparkplug-encode | builtin `real-approx-to-bits`
-REFUSED spawn-memo-table | `__lam_0` applied to 0 of 1 arguments under Device
-REFUSED spawn-reuse | `__lam_0` applied to 0 of 1 arguments under Device
+REFUSED spawn-memo-table | a function value from `__lam_0` (0 of 1 arguments), which reaches the machine; a function value carries no sta
+REFUSED spawn-reuse | a function value from `__lam_0` (0 of 1 arguments), which reaches memory; a function value carries no state
 PASS sprite-test |
 SKIP stale-sibling | expects a diagnostic
 PASS stats-wrap-test |
