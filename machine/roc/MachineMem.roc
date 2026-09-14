@@ -65,13 +65,35 @@ MachineMem :: [].{
 	load : MachineMem.Mem, I64, I64, I64 -> (MachineMem.Mem, I64)
 	load = |mem, base, off, width| (mem, U64.to_i64_wrap(MachineMem.read(mem, base + off, width - 1, 0)))
 
+	# The bytes addr .. addr + j, little-endian, onto `acc`. Bytes that share a
+	# leaf are found with one walk down the trie; a span across a leaf's edge
+	# takes a walk a byte.
 	read : MachineMem.Mem, I64, I64, U64 -> U64
 	read = |mem, addr, j, acc|
 		if j < 0 {
 			acc
+		} else if MachineMem.part(I64.to_u64_wrap(addr), 0) + I64.to_u64_wrap(j) < MachineMem.leaf_size {
+			MachineMem.leaf_read(MachineMem.leaf_at(mem.root, I64.to_u64_wrap(addr), MachineMem.depth), MachineMem.part(I64.to_u64_wrap(addr), 0), j, acc)
 		} else {
 			b = MachineMem.byte_at(mem.root, I64.to_u64_wrap(addr + j), MachineMem.depth)
 			MachineMem.read(mem, addr, j - 1, U64.plus_wrap(U64.times_wrap(acc, 256), U8.to_u64(b)))
+		}
+
+	# The leaf holding `a`, or no bytes where nothing was written.
+	leaf_at : MachineMem.Node, U64, I64 -> List(U8)
+	leaf_at = |node, a, level| match node {
+		Empty => []
+		Leaf(bytes) => bytes
+		Branch(kids) => MachineMem.leaf_at(List.get(kids, MachineMem.part(a, level)) ?? Empty, a, level - 1)
+	}
+
+	leaf_read : List(U8), U64, I64, U64 -> U64
+	leaf_read = |bytes, start, j, acc|
+		if j < 0 {
+			acc
+		} else {
+			b = List.get(bytes, start + I64.to_u64_wrap(j)) ?? 0
+			MachineMem.leaf_read(bytes, start, j - 1, U64.plus_wrap(U64.times_wrap(acc, 256), U8.to_u64(b)))
 		}
 
 	# ---- writing --------------------------------------------------------
@@ -79,10 +101,15 @@ MachineMem :: [].{
 	store : MachineMem.Mem, I64, I64, I64, I64 -> (MachineMem.Mem, I64)
 	store = |mem, base, off, v, width| (MachineMem.write(mem, base + off, I64.to_u64_wrap(v), width), 0)
 
+	# The low `left` bytes of `u`, little-endian, from addr on. Bytes that
+	# share a leaf go in with one walk down the trie, rebuilding one spine; a
+	# span across a leaf's edge takes a walk a byte.
 	write : MachineMem.Mem, I64, U64, I64 -> MachineMem.Mem
 	write = |mem, addr, u, left|
 		if left <= 0 {
 			mem
+		} else if MachineMem.part(I64.to_u64_wrap(addr), 0) + I64.to_u64_wrap(left) <= MachineMem.leaf_size {
+			{ root: MachineMem.set_span(mem.root, I64.to_u64_wrap(addr), MachineMem.depth, u, left), top: mem.top }
 		} else {
 			put = MachineMem.set_at(mem.root, I64.to_u64_wrap(addr), MachineMem.depth, U64.to_u8_wrap(u))
 			MachineMem.write({ root: put, top: mem.top }, addr + 1, U64.div_trunc_by(u, 256), left - 1)
@@ -108,5 +135,31 @@ MachineMem :: [].{
 			}
 			taken = List.replace(kids, i, Empty) ?? crash("Mem: index outside a node")
 			Branch(List.set(taken.list, i, MachineMem.set_at(taken.prev, a, level - 1, v)) ?? crash("Mem: index outside a node"))
+		}
+
+	# `set_at` for `width` bytes of `u` that share the leaf `a` is in.
+	set_span : MachineMem.Node, U64, I64, U64, I64 -> MachineMem.Node
+	set_span = |node, a, level, u, width|
+		if level <= 0 {
+			match node {
+				Leaf(bytes) => Leaf(MachineMem.put_bytes(bytes, MachineMem.part(a, 0), u, width))
+				_ => Leaf(MachineMem.put_bytes(List.repeat(0.U8, MachineMem.leaf_size), MachineMem.part(a, 0), u, width))
+			}
+		} else {
+			i = MachineMem.part(a, level)
+			kids = match node {
+				Branch(cs) => cs
+				_ => List.repeat(Empty, MachineMem.fan)
+			}
+			taken = List.replace(kids, i, Empty) ?? crash("Mem: index outside a node")
+			Branch(List.set(taken.list, i, MachineMem.set_span(taken.prev, a, level - 1, u, width)) ?? crash("Mem: index outside a node"))
+		}
+
+	put_bytes : List(U8), U64, U64, I64 -> List(U8)
+	put_bytes = |bytes, i, u, left|
+		if left <= 0 {
+			bytes
+		} else {
+			MachineMem.put_bytes(List.set(bytes, i, U64.to_u8_wrap(u)) ?? crash("Mem: offset outside a leaf"), i + 1, U64.div_trunc_by(u, 256), left - 1)
 		}
 }

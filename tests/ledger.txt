@@ -723,7 +723,7 @@ REFUSED neg-real-repro | an opening of type real
 PASS negation-abutment |
 REFUSED nested-spawn | a function value from `__lam_0` (0 of 1 arguments), which reaches memory; a function value carries no state
 PASS net-drain-budget |
-TIMEOUT net-driver-seam-bound |
+PASS net-driver-seam-bound |
 PASS net-driver-seam-no-av |
 CRASH net-io-clock | machine: the program sent a frame to a TCP connection to the host, which this machine does not have
 CRASH net-poll-calibrated | machine: -e1000-nat is not a codex-vm flag this machine models
