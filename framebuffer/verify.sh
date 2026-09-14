@@ -1,10 +1,10 @@
 #!/bin/bash
 # Screen mode 2: the framebuffer platform's native host checks every program in
 # verify.tsv. Each is built by build.sh, which also refreshes the page's
-# preview, then natively in the same directory, and run for its frames with the
-# screen its -gop flags name (320 x 240 when it names none). The last frame's
-# hash must be the table's, and a Cobblestone test's console must match its
-# verdict as tests/ladder.sh cleaned it.
+# preview, then natively in the same directory, and run with the screen
+# build.sh found for it (320 x 240 when none) for its runs or GPU flushes. The
+# last frame's hash must be the table's, and a Cobblestone test's console must
+# match its verdict as tests/ladder.sh cleaned it.
 #
 #   framebuffer/verify.sh
 #
@@ -22,14 +22,18 @@ mkdir -p "$GEN"
 
 rows=()
 paths=()
-while read -r prog frames want; do
+while read -r prog count want; do
     case "$prog" in ''|'#'*) continue ;; esac
     case "$prog" in
         cobblestone:*) path="$CHECKOUT/${prog#cobblestone:}" ;;
         roc-apps:*) path="$REPO/${prog#roc-apps:}" ;;
         *) echo "verify.tsv: $prog is neither cobblestone: nor roc-apps:"; exit 2 ;;
     esac
-    rows+=("$path $frames $want")
+    case "$count" in
+        runs=[0-9]*|flushes=[0-9]*) ;;
+        *) echo "verify.tsv: $count is neither runs=N nor flushes=N"; exit 2 ;;
+    esac
+    rows+=("$path $count $want")
     paths+=("$path")
 done < "$HERE/verify.tsv"
 
@@ -44,7 +48,11 @@ trimmed() { sed -e :a -e '/^\n*$/{$d;N;ba' -e '}'; }
 
 failed=0
 for row in "${rows[@]}"; do
-    read -r path frames want <<< "$row"
+    read -r path count want <<< "$row"
+    case "$count" in
+        runs=*) mode=(-frames "${count#runs=}") ;;
+        *) mode=(-flushes "${count#flushes=}") ;;
+    esac
     n="$(basename "$path" .codex)"
     d="$GEN/$n"
     app="$(head -1 "$NEXT/$n.files")"
@@ -57,7 +65,7 @@ for row in "${rows[@]}"; do
     fi
     screen=(320 240 320)
     [ -f "$NEXT/$n.screen" ] && read -ra screen < "$NEXT/$n.screen"
-    "$d/native" -screen "${screen[@]}" -frames "$frames" > "$d/native.out" 2> "$d/native.err"
+    "$d/native" -screen "${screen[@]}" "${mode[@]}" > "$d/native.out" 2> "$d/native.err"
     code=$?
     last="$(grep '^-- frame' "$d/native.out" | tail -1)"
     got="${last##*hash }"
@@ -79,7 +87,7 @@ for row in "${rows[@]}"; do
         echo "FAIL $n | $why"
         failed=1
     else
-        echo "PASS $n | hash $got, $frames frame(s), the last in $ms ms${unit:+, console matches its verdict}"
+        echo "PASS $n | hash $got at $count, the last frame in $ms ms${unit:+, console matches its verdict}"
     fi
 done
 exit $failed

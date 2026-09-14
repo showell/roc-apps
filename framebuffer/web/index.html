@@ -44,9 +44,10 @@
 <main>
 <h1>Codex on the framebuffer platform</h1>
 <p class="lede">Each program below is Codex, turned into Roc by rocemit and built for WebAssembly. Its memory
-lives in the platform's host, and the screen is part of that memory, where a UEFI machine keeps its
-framebuffer. The page runs the program once a frame, with the clock 100 milliseconds further on each time,
-and shows what the run left on the screen.</p>
+and its devices, a GPU and a keyboard controller, live in the platform's host, and the screen is part of that
+memory, where a UEFI machine keeps its framebuffer. A program that draws once is run again for every frame, with
+the clock 100 milliseconds further on each time; one that draws in a loop of its own runs once, and each GPU
+flush is a frame. Pausing a looping program stops it, and Play starts it again from the beginning.</p>
 <div class="layout">
 <aside class="units" id="units"></aside>
 <div class="work">
@@ -59,7 +60,7 @@ and shows what the run left on the screen.</p>
 <div class="grid">
   <section class="wide"><h2 id="screenlab">Screen</h2><canvas id="screen" class="screen" width="320" height="240"></canvas></section>
   <section class="wide"><h2>Console</h2><pre id="console" class="muted">Nothing has run yet.</pre></section>
-  <section class="code"><h2 id="codelab">Roc</h2><div class="muted">What rocemit wrote for this program: its own module first, then a module for each Codex chapter it cites. The last, Mem.roc, is the platform's: every read and write of memory goes through it to the host.</div><div class="tabs" id="tabs"></div><pre id="src" class="src"></pre></section>
+  <section class="code"><h2 id="codelab">Roc</h2><div class="muted">What rocemit wrote for this program: its own module first, then a module for each Codex chapter it cites. The last, Mem.roc or Machine.roc, is the platform's: every read and write of memory, and every port, goes through it to the host.</div><div class="tabs" id="tabs"></div><pre id="src" class="src"></pre></section>
 </div>
 </div>
 </div>
@@ -77,30 +78,37 @@ const ABOUT = {
   "gpu-gauge-clamp": "a gauge filled to 150 of 100, whose fill must stay inside its box",
   "gpu-input-cursor": "an input box drawn by the GPU, whose cursor must stay inside it",
   "gop-padded-stride": "a screen whose rows are longer in memory than on the glass; the hidden ends must stay untouched",
+  "EngineDemo": "Cobblestone's engine demo (apps/engine-demo): Codex lights and transforms a scene and the GPU draws it, the camera orbiting in a loop that never ends",
 };
-// The clock the program reads moves this many milliseconds a frame.
-const TICK = 100;
 
-let programs = [], chosen = null, inst = null, playing = false, busy = false;
+let programs = [], chosen = null, worker = null, playing = false, nextRun = 0, shown = 0, spent = 0;
 const cache = new Map();
-const fetchBytes = async (path) => {
-  if (!cache.has(path)) cache.set(path, (async () => new Uint8Array(await (await fetch(path)).arrayBuffer()))());
+const fetchText = async (path) => {
+  if (!cache.has(path)) cache.set(path, (async () => (await fetch(path)).text())());
   return cache.get(path);
 };
-const fetchText = async (path) => new TextDecoder().decode(await fetchBytes(path));
-// The screen a program brings as codex-vm's -gop flags, or the one picked.
+
+// The screen a program brings, or the one picked.
 const size = () => {
   if (chosen && chosen.screen) return chosen.screen;
   const [w, h] = $("size").value.split("×").map((s) => Number(s.trim()));
   return [w, h, w];
 };
 
-// Choosing a program, or a screen size, stops what was playing and starts the
+function stopWorker() {
+  if (worker) worker.terminate();
+  worker = null;
+}
+
+// Choosing a program, or a screen size, stops what was running and starts the
 // next run from fresh memory.
 function choose(p) {
+  stopWorker();
   playing = false;
-  inst = null;
   chosen = p;
+  nextRun = 0;
+  shown = 0;
+  spent = 0;
   $("size").disabled = Boolean(p.screen);
   for (const b of $("units").children) b.setAttribute("aria-pressed", String(b.dataset.name === p.name));
   const [w, h] = size();
@@ -119,7 +127,7 @@ function choose(p) {
 function controls() {
   $("play").disabled = !chosen;
   $("play").textContent = playing ? "Pause" : "Play";
-  $("step").disabled = !chosen || playing;
+  $("step").disabled = !chosen || playing || worker !== null;
 }
 
 function showCode(p) {
@@ -141,70 +149,58 @@ function showCode(p) {
   });
 }
 
-async function instance(p) {
-  const { instance } = await WebAssembly.instantiate(await fetchBytes(`${p.name}.wasm`), {});
-  const x = instance.exports;
-  const [w, h, s] = size();
-  if (!x.screen(w, h, s)) throw new Error(`the host has no room for a ${w} × ${h} screen`);
-  return { p, x, w, h, frame: 0, spent: 0 };
+// Starts the runner on `frames` frames of the chosen program. A looping
+// program always starts from its beginning; one that draws once a run picks up
+// at the next run's clock.
+function start(frames) {
+  const p = chosen;
+  stopWorker();
+  const kind = p.frame || "run";
+  worker = new Worker("runner.js");
+  worker.onmessage = ({ data: m }) => {
+    if (chosen !== p) return;
+    if (m.kind === "frame") {
+      $("screen").getContext("2d").putImageData(new ImageData(m.pixels, m.width, m.height), 0, 0);
+      $("console").classList.remove("muted");
+      $("console").textContent = m.console;
+      shown += 1;
+      spent += m.ms;
+      if (kind === "run") nextRun = m.run + 1;
+      const what = kind === "run" ? `frame ${shown} ran in ${m.ms.toFixed(0)} ms` : `frame ${shown}, ${m.ms.toFixed(0)} ms after the flush before it`;
+      $("status").textContent = `${what} · ${(1000 * shown / spent).toFixed(1)} frames a second so far`;
+    } else if (m.kind === "stopped") {
+      $("console").classList.remove("muted");
+      $("console").textContent = `${m.console}\n[stopped: ${m.why}]`;
+      $("status").classList.add("bad");
+      $("status").textContent = `${p.name} stopped`;
+      stopWorker();
+      playing = false;
+      nextRun = 0;
+      controls();
+    } else if (m.kind === "done") {
+      stopWorker();
+      playing = false;
+      controls();
+    }
+  };
+  worker.postMessage({ name: p.name, kind, screen: size(), firstRun: kind === "run" ? nextRun : 0, frames });
+  controls();
 }
 
-// One frame: the clock moves on, the program runs, and the screen shows what
-// the run left. Answers whether the program is still running.
-async function frame() {
-  const p = chosen;
-  if (!inst) inst = await instance(p);
-  if (chosen !== p) return false;
-  const it = inst, x = it.x;
-  const decode = (ptr, len) => new TextDecoder().decode(new Uint8Array(x.memory.buffer, ptr, len));
-  x.clock(it.frame * TICK);
-  const t0 = performance.now();
-  let trapped = null;
-  try { x.run(); } catch (e) { trapped = e; }
-  const ms = performance.now() - t0;
-  const text = decode(x.consolePtr(), x.consoleLen());
-  $("console").classList.remove("muted");
-  if (trapped) {
-    // A crash stops the instance it happens in; the next frame starts afresh.
-    $("console").textContent = `${text}\n[stopped: ${decode(x.crashPtr(), x.crashLen()) || trapped.message}]`;
-    $("status").classList.add("bad");
-    $("status").textContent = `${p.name} stopped in frame ${it.frame + 1}`;
-    inst = null;
+function play() {
+  if (!chosen) return;
+  if (playing) {
+    stopWorker();
     playing = false;
     controls();
-    return false;
+    return;
   }
-  $("console").textContent = text;
-  const px = new Uint8ClampedArray(x.memory.buffer, x.present(), it.w * it.h * 4).slice();
-  $("screen").getContext("2d").putImageData(new ImageData(px, it.w, it.h), 0, 0);
-  it.frame += 1;
-  it.spent += ms;
-  $("status").textContent = `frame ${it.frame} ran in ${ms.toFixed(0)} ms · ${(1000 * it.frame / it.spent).toFixed(1)} frames a second so far`;
-  return true;
-}
-
-async function once() {
-  if (busy) return;
-  busy = true;
-  try { await frame(); } finally { busy = false; }
-}
-
-async function play() {
-  if (playing) { playing = false; controls(); return; }
-  if (busy) return;
   playing = true;
-  controls();
-  const p = chosen;
-  busy = true;
-  try {
-    while (playing && chosen === p && await frame()) await new Promise(requestAnimationFrame);
-  } finally {
-    busy = false;
-  }
+  start(Infinity);
 }
 
 $("play").onclick = play;
-$("step").onclick = once;
+$("step").onclick = () => { if (chosen && !playing && !worker) start(1); };
 $("size").onchange = () => { if (chosen) choose(chosen); };
 (async () => {
   programs = await (await fetch("programs.json")).json();

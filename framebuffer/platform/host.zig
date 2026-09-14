@@ -26,6 +26,19 @@ comptime {
     core.exportSymbols();
 }
 
+/// The page's runner, told that a GPU flush ended a frame. It may read the
+/// pixels, and it may throw to end the run there.
+extern "env" fn frameFlushed() void;
+
+pub fn flushed() void {
+    frameFlushed();
+}
+
+/// A scancode for the program's keyboard controller.
+pub export fn key(scancode: u32) void {
+    core.keyPush(@truncate(scancode));
+}
+
 /// Runs the program once, from the memory the last run left. Answers its exit
 /// code.
 pub export fn run() i32 {

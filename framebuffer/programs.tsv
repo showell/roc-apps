@@ -1,0 +1,8 @@
+# What the page needs to know about a program that its sources do not say: its
+# name (the .codex file's); what a frame is, `run` (a run of its opening) or
+# `flush` (a GPU flush, for a program that draws in a loop of its own); and the
+# screen it expects, width, height and stride, or `-` for a program whose
+# codex-vm -gop flags name one. A program not listed here draws once a run.
+#
+# program     frame   width  height  stride
+EngineDemo    flush   640    480     640

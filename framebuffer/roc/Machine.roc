@@ -1,13 +1,13 @@
 # Machine -- what the framebuffer platform gives a Codex program that reaches a
-# device: its memory (pf.Heap) and the GPU codex-vm models behind ports
-# 0x400-0x417 (pf.Gpu), both kept by the host. It stands in for machine/roc's
-# Machine door for door, where a door is here; a program that reaches any other
-# device does not build against it, and a 32-bit port outside the GPU's window
-# stops the run, naming the port. The value carries only the heap's bump
-# pointer. There is no process table, so every capability is held and no door
-# answers -1.
-import pf.Gpu
+# device: its memory (pf.Heap) and the ports the host answers (pf.Port):
+# codex-vm's GPU at 0x400-0x417 and its keyboard controller at 0x60 and 0x64.
+# It stands in for machine/roc's Machine door for door, where a door is here;
+# a program that reaches any other device does not build against it, and a
+# port no device here answers stops the run, naming the port. The value carries
+# only the heap's bump pointer. There is no process table, so every capability
+# is held and no door answers -1.
 import pf.Heap
+import pf.Port
 
 Machine :: [].{
 	Machine : { top : I64 }
@@ -16,7 +16,7 @@ Machine :: [].{
 	boot! : List(Str), List(Str) => Machine.Machine
 	boot! = |args, _effects| { top: 6291456 + U64.to_i64_wrap(List.len(args)) }
 
-	# The page shows the screen after every run.
+	# The page shows the screen itself.
 	halt! : Machine.Machine => {}
 	halt! = |_m| {}
 
@@ -97,32 +97,33 @@ Machine :: [].{
 		(m, $acc)
 	}
 
-	gpu_lo : U64
-	gpu_lo = 0x400
-
-	gpu_hi : U64
-	gpu_hi = 0x417
-
-	# `port-out-32`, and `gpu-out` with it: a port in the GPU's window is the
-	# host's GPU, and the write answers 0.
-	port_out_32! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
-	port_out_32! = |m, port, value| {
-		p = I64.to_u64_wrap(port)
-		if p >= Machine.gpu_lo and p <= Machine.gpu_hi {
-			Gpu.out!(p, U64.bitwise_and(I64.to_u64_wrap(value), 0xFFFFFFFF))
-			(m, 0)
-		} else {
-			crash("framebuffer: port-out-32 to port ${Str.inspect(p)}, a device this platform does not have")
-		}
+	# A port write answers 0, as it does on x86; the host masks the value to the
+	# port's width.
+	port_write! : Machine.Machine, I64, I64, U64 => (Machine.Machine, I64)
+	port_write! = |m, port, value, width| {
+		Port.out!(Machine.at(port), I64.to_u64_wrap(value), width)
+		(m, 0)
 	}
+
+	port_read! : Machine.Machine, I64, U64 => (Machine.Machine, I64)
+	port_read! = |m, port, width| (m, U64.to_i64_wrap(Port.in!(Machine.at(port), width)))
+
+	# `port-out-32`, and `gpu-out` with it.
+	port_out_32! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
+	port_out_32! = |m, port, value| Machine.port_write!(m, port, value, 4)
 
 	port_in_32! : Machine.Machine, I64 => (Machine.Machine, I64)
-	port_in_32! = |m, port| {
-		p = I64.to_u64_wrap(port)
-		if p >= Machine.gpu_lo and p <= Machine.gpu_hi {
-			(m, U64.to_i64_wrap(Gpu.in!(p)))
-		} else {
-			crash("framebuffer: port-in-32 from port ${Str.inspect(p)}, a device this platform does not have")
-		}
-	}
+	port_in_32! = |m, port| Machine.port_read!(m, port, 4)
+
+	port_out_16! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
+	port_out_16! = |m, port, value| Machine.port_write!(m, port, value, 2)
+
+	port_in_16! : Machine.Machine, I64 => (Machine.Machine, I64)
+	port_in_16! = |m, port| Machine.port_read!(m, port, 2)
+
+	port_out_byte! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
+	port_out_byte! = |m, port, value| Machine.port_write!(m, port, value, 1)
+
+	port_in_byte! : Machine.Machine, I64 => (Machine.Machine, I64)
+	port_in_byte! = |m, port| Machine.port_read!(m, port, 1)
 }

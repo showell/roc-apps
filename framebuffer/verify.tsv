@@ -1,17 +1,22 @@
 # The framebuffer platform's checks, run natively by verify.sh: a program, how
-# many frames to run it, and the hash of the last frame's visible pixels
-# (FNV-1a over red, green, blue and 255 a pixel, as frames.mjs and
+# far to run it, and the hash of the last frame's visible pixels (FNV-1a over
+# red, green, blue and 255 a pixel, as frames.mjs and
 # machine/batch/screenhash.mjs print it). A path is under the Cobblestone
-# checkout (cobblestone:) or under roc-apps (roc-apps:).
+# checkout (cobblestone:) or under roc-apps (roc-apps:). `runs=N` runs the
+# opening N times, a frame a run; `flushes=N` stops at the Nth GPU flush, for a
+# program that draws in a loop of its own.
 #
 # The GPU tests' hashes are the ones the machine page's MachineGpu and this
 # platform's gpu.zig both drew, 2026-09-14.
 #
-# program                                          frames  hash
-cobblestone:codex/test/gpu-panel-border.codex      1       fee5df14
-cobblestone:codex/test/gpu-depth-tree.codex        1       2c7c1dc1
-cobblestone:codex/test/gpu-gauge-clamp.codex       1       c990fa29
-cobblestone:codex/test/gpu-input-cursor.codex      1       dbf102b2
-cobblestone:codex/test/gop-padded-stride.codex     1       1989e38f
-roc-apps:machine/batch/demos/scene-on-screen.codex 1       1271e425
-roc-apps:framebuffer/demos/scene-spin.codex        3       f9771881
+# program                                          how far    hash
+cobblestone:codex/test/gpu-panel-border.codex      runs=1     fee5df14
+cobblestone:codex/test/gpu-depth-tree.codex        runs=1     2c7c1dc1
+cobblestone:codex/test/gpu-gauge-clamp.codex       runs=1     c990fa29
+cobblestone:codex/test/gpu-input-cursor.codex      runs=1     dbf102b2
+cobblestone:codex/test/gop-padded-stride.codex     runs=1     1989e38f
+roc-apps:machine/batch/demos/scene-on-screen.codex runs=1     1271e425
+roc-apps:framebuffer/demos/scene-spin.codex        runs=3     f9771881
+# engine-demo reads the keyboard controller, which the machine page does not
+# model, so its hash is the one the native and wasm builds both drew.
+cobblestone:apps/engine-demo/EngineDemo.codex      flushes=30 fa25d97e

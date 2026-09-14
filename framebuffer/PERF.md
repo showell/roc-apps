@@ -133,3 +133,18 @@ the same frame in Node from the wasm build.
 
 The whole run of `verify.sh`, the wasm and native builds of all seven included,
 took 21 s.
+
+## 2026-09-14: engine-demo, a program that draws in a loop
+
+Cobblestone's `apps/engine-demo` lights and transforms its scene in Codex and
+writes 640 x 480's triangles to the GPU, in a loop that never ends; a frame is
+a GPU flush. Flushes 1 to 4, one run each:
+
+| build | a flush |
+|---|---|
+| wasm in Node (`frames.mjs EngineDemo flushes:5`) | 10 to 13 ms |
+| native (`-flushes 5`) | 6 to 8 ms |
+
+Every flush's hash is the same in both. The machine's page cannot run it: its
+loop reads the keyboard controller's port 0x60, which the machine does not
+model. `verify.sh` with engine-demo's 30 flushes added: all eight pass, 15 s.

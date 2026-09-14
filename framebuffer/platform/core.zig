@@ -7,14 +7,15 @@
 //! The screen is part of that memory, as a UEFI GOP framebuffer is part of a
 //! machine's. The host publishes its geometry where UEFI's GOP protocol keeps
 //! it (the cells codex-vm writes), codex-vm's GPU (gpu.zig) draws into it
-//! through the Gpu doors, and after a run the host reads the pixels back out.
+//! through the Port doors, and the host reads the pixels back out.
 //!
 //! A run is one pass of the program's opening. Memory outlives a run, so a
 //! frame starts from what the last one left; the clock cell is what the host
-//! writes between them.
+//! writes between them. A program that draws in a loop of its own never ends
+//! its run, and each GPU flush is its frame instead.
 //!
-//! The root file supplies `allocator`, and `stop`, which ends the run with a
-//! message the way that host reports one.
+//! The root file supplies `allocator`; `stop`, which ends the run with a
+//! message the way that host reports one; and `flushed`, told of each flush.
 
 const std = @import("std");
 const builtins = @import("builtins");
@@ -226,18 +227,65 @@ fn region(base: u64, n_words: usize) ?[]u32 {
     return words[0..n_words];
 }
 
-fn hostedGpuOut(port: u64, value: u64) callconv(.c) void {
-    if (the_gpu) |*g| {
-        if (g.portOut(port, @truncate(value), &gpu_msg)) |why| root.stop(why);
-    } else {
-        root.stop("gpu: a GPU port written before the program has a screen");
-    }
+// ---- the ports -----------------------------------------------------------
+
+/// codex-vm's keyboard controller: a read of 0x60 takes the next scancode
+/// waiting (0 when none), a read of 0x64 has bit 0 set while one waits, and a
+/// write to either is accepted and ignored. Scancodes arrive from the host's
+/// root (`keyPush`).
+const kbd_data: u64 = 0x60;
+const kbd_status: u64 = 0x64;
+var keys: [64]u8 = undefined;
+var keys_head: usize = 0;
+var keys_len: usize = 0;
+
+/// A scancode for the program; one past the 64 waiting is dropped.
+pub fn keyPush(scancode: u8) void {
+    if (keys_len == keys.len) return;
+    keys[(keys_head + keys_len) % keys.len] = scancode;
+    keys_len += 1;
 }
 
-fn hostedGpuIn(port: u64) callconv(.c) u64 {
-    if (the_gpu == null) root.stop("gpu: a GPU port read before the program has a screen");
-    return gpu.Gpu.portIn(port) orelse
-        root.stop(std.fmt.bufPrint(&gpu_msg, "gpu: port-in-32 from GPU port 0x{X}, which this platform does not model", .{port}) catch "gpu: port-in-32 from a GPU port this platform does not model");
+var port_msg: [160]u8 = undefined;
+
+fn noDevice(what: []const u8, port: u64, width: u64) noreturn {
+    root.stop(std.fmt.bufPrint(&port_msg, "port: a {d}-bit {s} port 0x{X}, where this platform has no device", .{ width * 8, what, port }) catch "port: a port where this platform has no device");
+}
+
+fn gpuPort(port: u64) bool {
+    return port >= gpu.port_lo and port <= gpu.port_hi;
+}
+
+/// The `width` bytes a port answers.
+fn hostedPortIn(port: u64, width: u64) callconv(.c) u64 {
+    if (gpuPort(port) and width == 4) {
+        if (the_gpu == null) root.stop("gpu: a GPU port read before the program has a screen");
+        return gpu.Gpu.portIn(port) orelse
+            root.stop(std.fmt.bufPrint(&gpu_msg, "gpu: port-in-32 from GPU port 0x{X}, which this platform does not model", .{port}) catch "gpu: port-in-32 from a GPU port this platform does not model");
+    }
+    if (port == kbd_data and width == 1) {
+        if (keys_len == 0) return 0;
+        const k = keys[keys_head];
+        keys_head = (keys_head + 1) % keys.len;
+        keys_len -= 1;
+        return k;
+    }
+    if (port == kbd_status and width == 1) return if (keys_len > 0) 1 else 0;
+    noDevice("read from", port, width);
+}
+
+/// The low `width` bytes of `value` to a port. A write to the GPU's port 0x400
+/// is a flush, and the root hears of it (`flushed`): for a program that draws
+/// in a loop of its own, a flush is where a frame ends.
+fn hostedPortOut(port: u64, value: u64, width: u64) callconv(.c) void {
+    if (gpuPort(port) and width == 4) {
+        const g = if (the_gpu) |*it| it else root.stop("gpu: a GPU port written before the program has a screen");
+        if (g.portOut(port, @truncate(value), &gpu_msg)) |why| root.stop(why);
+        if (port == 0x400) root.flushed();
+        return;
+    }
+    if ((port == kbd_data or port == kbd_status) and width == 1) return;
+    noDevice("write to", port, width);
 }
 
 /// Gives the program a screen `width` by `height` pixels, with rows `stride`
@@ -327,8 +375,8 @@ pub fn exportSymbols() void {
         .crashed = &roc_crashed,
     });
     @export(&hostedEchoLine, .{ .name = "roc_echo_line", .visibility = .hidden });
-    @export(&hostedGpuIn, .{ .name = "roc_gpu_in", .visibility = .hidden });
-    @export(&hostedGpuOut, .{ .name = "roc_gpu_out", .visibility = .hidden });
     @export(&hostedHeapLoad, .{ .name = "roc_heap_load", .visibility = .hidden });
     @export(&hostedHeapStore, .{ .name = "roc_heap_store", .visibility = .hidden });
+    @export(&hostedPortIn, .{ .name = "roc_port_in", .visibility = .hidden });
+    @export(&hostedPortOut, .{ .name = "roc_port_out", .visibility = .hidden });
 }

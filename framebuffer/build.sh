@@ -63,7 +63,11 @@ for src in "$@"; do
     # A screen size the program brings as codex-vm's -gop flags, which the page
     # and frames.mjs then use: a stride below the width is the width, and one
     # past 2048 is 2048, as codex-vm has it.
-    rm -f "$NEXT/$n.screen"
+    # What a frame is, and a screen for a program that names none, come from
+    # programs.tsv.
+    row="$(awk -v n="$n" '$1 == n' "$HERE/programs.tsv")"
+    rm -f "$NEXT/$n.screen" "$NEXT/$n.frame"
+    [ -n "$row" ] && awk '{ print $2 }' <<< "$row" > "$NEXT/$n.frame"
     if [ -f "${src%.codex}.vmargs" ] && grep -q -- '-gop' "${src%.codex}.vmargs"; then
         python3 -c '
 import sys
@@ -73,6 +77,8 @@ w, h = flag("-gop-width", 640), flag("-gop-height", 480)
 s = flag("-gop-stride", w)
 print(w, h, w if s < w else min(s, 2048))
 ' "${src%.codex}.vmargs" > "$NEXT/$n.screen"
+    elif [ -n "$row" ] && [ "$(awk '{ print $3 }' <<< "$row")" != - ]; then
+        awk '{ print $3, $4, $5 }' <<< "$row" > "$NEXT/$n.screen"
     fi
     # Roc takes a platform only by a relative path.
     rel="$(python3 -c 'import os, sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$HERE/platform/main.roc" "$d/roc")"
@@ -93,12 +99,13 @@ print(w, h, w if s < w else min(s, 2048))
 done
 # The page, and its list of every program built here with the Roc modules it
 # shows.
-cp "$HERE/web/index.html" "$NEXT/"
+cp "$HERE/web/index.html" "$HERE/web/runner.js" "$NEXT/"
 (cd "$NEXT" && python3 -c '
 import glob, json, os
 def program(n):
     screen = [int(v) for v in open(n + ".screen").read().split()] if os.path.exists(n + ".screen") else None
-    return {"name": n, "roc": open(n + ".files").read().split(), "screen": screen}
+    frame = open(n + ".frame").read().strip() if os.path.exists(n + ".frame") else "run"
+    return {"name": n, "roc": open(n + ".files").read().split(), "screen": screen, "frame": frame}
 print(json.dumps([program(w[:-5]) for w in sorted(glob.glob("*.wasm"))]))
 ' > programs.json)
 echo "page: http://143.244.172.148:9203/framebuffer/"
