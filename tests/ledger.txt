@@ -17,8 +17,8 @@ PASS arp-cache-bound |
 REFUSED asn1-der | `fe-carry-pass` writes its list parameter `o` and answers something else
 PASS asn1-der-write |
 REFUSED atomic-smoke | builtin `memory-fence`
-REFUSED audio-diffusion-test | unit type `Duration`
-REFUSED av-codec-test | unit type `Duration`
+PASS audio-diffusion-test |
+PASS av-codec-test |
 REFUSED bacnet-encode | type real-approx
 PASS bezier-identity |
 PASS bitop-if-cond |
@@ -81,7 +81,7 @@ PASS crypto-vectors |
 REFUSED cryptobig | `cb-shl1-step` writes its list parameter `x` and answers something else
 PASS ctor-narrow-warn |
 PASS db-csv-roundtrip |
-REFUSED db-full-test | unit type `Timestamp`
+REFUSED db-full-test | `exec-sort-cmp` applied to 1 of 3 arguments
 DIVERGES db-row-update | list-set-at mutates in place; Roc's List.set answers a new list
 REFUSED dce-reach | type error
 REFUSED deck-bracket-contract | builtin `__deck-set`
@@ -169,7 +169,7 @@ REFUSED effect-value-poly | type (effectful (effs "Console") (scopes "") (ctd "M
 PASS effect-widen-arg |
 PASS effect-widen-scope |
 REFUSED effect-widen-scope-narrow | an opening scoped to FileSystem.Read "/config/"
-REFUSED engine-animation | unit type `Duration`
+PASS engine-animation |
 DIVERGES engine-culling-cost | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
 PASS engine-fill-guard |
 PASS engine-mesh-gen |
@@ -183,7 +183,7 @@ PASS enip-encode |
 PASS eq-generic-fields |
 PASS eq-generic-recursive |
 PASS eq-plain-sum |
-REFUSED esp32c6-drivers | unit type `Duration`
+PASS esp32c6-drivers |
 PASS eventbus-test |
 PASS examples@eight-queens |
 PASS examples@missile-warning |
@@ -208,13 +208,13 @@ PASS fat32-img-longname |
 PASS fat32-longname |
 PASS fat32-longwrite |
 REFUSED fat32-parse | builtin `port-in-16-block`
-REFUSED fe310-drivers | unit type `Duration`
+PASS fe310-drivers |
 REFUSED field-cache-shape | field-store
 PASS field-cache-text-lit |
 SKIP field-guard-refine | expects a diagnostic
 SKIP field-range-proven | expects a diagnostic
 REFUSED files-parse | builtin `port-in-16-block`
-REFUSED final-batch-test | unit type `Timestamp`
+PASS final-batch-test |
 PASS fins-encode |
 REFUSED forewords@ai-activation | `__lam_1` applied to 1 of 2 arguments
 REFUSED forewords@ai-activation-range | `__lam_1` applied to 1 of 2 arguments
@@ -268,7 +268,7 @@ PASS forewords@encode-bmp |
 PASS forewords@encode-cbor |
 PASS forewords@encode-crc32 |
 PASS forewords@encode-csv |
-REFUSED forewords@encode-flac | unit type `Duration`
+PASS forewords@encode-flac |
 PASS forewords@encode-gif |
 PASS forewords@encode-gltf-bounds |
 PASS forewords@encode-gray-code |
@@ -281,8 +281,8 @@ PASS forewords@encode-json-numbers |
 PASS forewords@encode-lwm2m |
 PASS forewords@encode-markdown |
 PASS forewords@encode-message-pack |
-REFUSED forewords@encode-midi | unit type `Duration`
-REFUSED forewords@encode-mp3 | unit type `Duration`
+PASS forewords@encode-midi |
+PASS forewords@encode-mp3 |
 PASS forewords@encode-mp4 |
 PASS forewords@encode-ogg |
 PASS forewords@encode-png |
@@ -294,7 +294,7 @@ PASS forewords@encode-toml |
 PASS forewords@encode-uri |
 PASS forewords@encode-uuid |
 PASS forewords@encode-video-codec |
-REFUSED forewords@encode-wav | unit type `Duration`
+PASS forewords@encode-wav |
 PASS forewords@encode-web-socket |
 PASS forewords@encode-yaml |
 PASS forewords@engine-ability-system |
@@ -303,7 +303,7 @@ PASS forewords@engine-asset-table |
 PASS forewords@engine-audio-bus |
 PASS forewords@engine-audio3d |
 PASS forewords@engine-biome |
-REFUSED forewords@engine-cloth-sim | unit type `Duration`
+PASS forewords@engine-cloth-sim |
 PASS forewords@engine-collision3d |
 PASS forewords@engine-culling |
 PASS forewords@engine-cutscene |
@@ -315,23 +315,23 @@ PASS forewords@engine-fog |
 PASS forewords@engine-fractal-plant |
 PASS forewords@engine-game-loop |
 PASS forewords@engine-gameplay-tags |
-REFUSED forewords@engine-hair-sim | unit type `Duration`
+PASS forewords@engine-hair-sim |
 PASS forewords@engine-helm-bridge |
 PASS forewords@engine-input |
 PASS forewords@engine-lod |
 PASS forewords@engine-material |
 PASS forewords@engine-mesh |
-REFUSED forewords@engine-musculature | unit type `Duration`
+PASS forewords@engine-musculature |
 REFUSED forewords@engine-nav-mesh | `nm-astar` writes its list parameter `closed` and answers something else
 PASS forewords@engine-particle-renderer |
-REFUSED forewords@engine-physics-joint | unit type `Duration`
+PASS forewords@engine-physics-joint |
 PASS forewords@engine-post-process |
 PASS forewords@engine-renderer3d |
 PASS forewords@engine-scene3d |
 PASS forewords@engine-signal |
 PASS forewords@engine-skin-shader |
 PASS forewords@engine-skinning |
-REFUSED forewords@engine-soft-body | unit type `Duration`
+PASS forewords@engine-soft-body |
 PASS forewords@engine-spline-path |
 PASS forewords@engine-terrain |
 PASS forewords@engine-texture |
@@ -355,7 +355,7 @@ REFUSED forewords@foreword-concurrent | `__lam_0` applied to 3 of 4 arguments
 PASS forewords@foreword-consistent-hash |
 PASS forewords@foreword-console |
 PASS forewords@foreword-count-min-sketch |
-REFUSED forewords@foreword-date-time | unit type `Timestamp`
+PASS forewords@foreword-date-time |
 PASS forewords@foreword-decimal |
 PASS forewords@foreword-deque |
 REFUSED forewords@foreword-diffie-hellman | `fe-carry-pass` writes its list parameter `o` and answers something else
@@ -407,14 +407,14 @@ PASS forewords@foreword-queue |
 PASS forewords@foreword-random |
 REFUSED forewords@foreword-ranked-text-set | `rts-build-update-loop` writes its list parameter `nodes` and answers something else
 REFUSED forewords@foreword-ranked-text-set-surface | `rts-build-update-loop` writes its list parameter `nodes` and answers something else
-REFUSED forewords@foreword-rate-limiter | unit type `Timestamp`
+PASS forewords@foreword-rate-limiter |
 PASS forewords@foreword-regex |
 PASS forewords@foreword-result |
 PASS forewords@foreword-ring-buffer |
 PASS forewords@foreword-rope |
 PASS forewords@foreword-safetensors |
 PASS forewords@foreword-schedule |
-REFUSED forewords@foreword-scheduler | unit type `Duration`
+PASS forewords@foreword-scheduler |
 PASS forewords@foreword-sensors |
 REFUSED forewords@foreword-set | `set-fold-wrapper` applied to 1 of 4 arguments
 PASS forewords@foreword-sha1 |
@@ -430,7 +430,7 @@ PASS forewords@foreword-tab-complete |
 PASS forewords@foreword-text-search |
 PASS forewords@foreword-text-wrap |
 PASS forewords@foreword-time |
-REFUSED forewords@foreword-timing-wheel | unit type `Duration`
+PASS forewords@foreword-timing-wheel |
 REFUSED forewords@foreword-tls | `fe-carry-pass` writes its list parameter `o` and answers something else
 PASS forewords@foreword-trie |
 PASS forewords@foreword-tuple |
@@ -478,7 +478,7 @@ PASS forewords@math-complex |
 PASS forewords@math-cordic |
 PASS forewords@math-cordic-accuracy |
 PASS forewords@math-cordic-quadrants |
-REFUSED forewords@math-geodesic | unit type `Duration`
+PASS forewords@math-geodesic |
 PASS forewords@math-geometry |
 REFUSED forewords@math-linear-algebra | `__lam_0` applied to 1 of 2 arguments
 REFUSED forewords@math-matrix3 | `__lam_0` applied to 1 of 2 arguments
@@ -487,26 +487,26 @@ PASS forewords@math-numeric |
 PASS forewords@math-optimize |
 PASS forewords@math-quaternion |
 PASS forewords@math-spline |
-REFUSED forewords@signal-audio-analysis | unit type `Duration`
+PASS forewords@signal-audio-analysis |
 PASS forewords@signal-audio-effect |
 PASS forewords@signal-convolution |
 PASS forewords@signal-envelope |
 REFUSED forewords@signal-f-f-t | `fft-brc-loop` writes its list parameter `re` and answers something else
-REFUSED forewords@signal-filter | unit type `Duration`
+PASS forewords@signal-filter |
 PASS forewords@signal-music-theory |
 PASS forewords@signal-noise |
-REFUSED forewords@signal-oscillator | unit type `Duration`
+PASS forewords@signal-oscillator |
 PASS forewords@signal-perlin |
-REFUSED forewords@signal-pitch | unit type `Duration`
-REFUSED forewords@signal-resample | unit type `Duration`
-REFUSED forewords@signal-synth | unit type `Duration`
+PASS forewords@signal-pitch |
+PASS forewords@signal-resample |
+PASS forewords@signal-synth |
 PASS forewords@sim-collision |
 PASS forewords@sim-constraint |
-REFUSED forewords@sim-kinematics | unit type `Duration`
+PASS forewords@sim-kinematics |
 PASS forewords@sim-particle-system |
-REFUSED forewords@sim-physics | unit type `Duration`
+PASS forewords@sim-physics |
 REFUSED forewords@sim-spatial-hash | `sh-insert-into-cells` writes its list parameter `cells` and answers something else
-REFUSED forewords@sim-steering | unit type `Duration`
+PASS forewords@sim-steering |
 PASS forewords@ui-accessibility |
 REFUSED forewords@ui-animation | `__lam_0` applied to 1 of 2 arguments
 PASS forewords@ui-binding |
@@ -597,13 +597,13 @@ PASS if-let-join |
 PASS image-codec-test |
 PASS imap-wire |
 PASS img-longname |
-REFUSED implicit-convert | unit type `Duration`
+PASS implicit-convert |
 SKIP induction-assoc | expects a diagnostic
 SKIP induction-list | expects a diagnostic
 SKIP induction-param | expects a diagnostic
 SKIP induction-parse | expects a diagnostic
 REFUSED inductive-list | type proof
-REFUSED infra-test | unit type `Duration`
+REFUSED infra-test | `__lam_0` applied to 1 of 2 arguments
 PASS inline-cost-based |
 PASS inline-single-caller |
 PASS input-metal |
@@ -706,7 +706,7 @@ REFUSED mask-ops | type (effectful (effs "Console") (scopes "") nothing)
 PASS match-arms-per-line |
 REFUSED matrix3-test | `__lam_0` applied to 1 of 2 arguments
 PASS mbus-encode |
-REFUSED media-codec-test | unit type `Duration`
+PASS media-codec-test |
 PASS melsec-encode |
 PASS mini-bootstrap |
 PASS mix-bits |
@@ -714,7 +714,7 @@ PASS mod-bound-return |
 PASS modbus-encode |
 PASS modprobe |
 PASS mouse-decode |
-REFUSED mqtt-encode | unit type `Duration`
+PASS mqtt-encode |
 PASS mqttsn-encode |
 PASS mut-borrow-transitive |
 REFUSED mutable-smoke | a call whose head is not a name
@@ -736,8 +736,8 @@ REFUSED network-scope-spawn | builtin `net-send-raw`
 SKIP noalias-linear-param | expects a diagnostic
 PASS noise-test |
 REFUSED normalize-eq | type (propeq (ctd "Off" (args)) (ctd "Off" (args)))
-REFUSED nrf52840-drivers | unit type `Duration`
-REFUSED nrf9160-drivers | unit type `Duration`
+PASS nrf52840-drivers |
+PASS nrf9160-drivers |
 PASS nvme-encode |
 PASS oauth-island |
 PASS occurrence-check |
@@ -793,19 +793,19 @@ PASS ops@text-order-allowed |
 PASS ops@text-to-unicode-bytes-tier0 |
 PASS ops@tier0-cyrillic-print |
 FAIL ops@unicode-bytes-roundtrip | output: < 192 units=[ 0 0 ] n=2 back=0 cnt=2
-REFUSED ops@unit-pattern-lit | unit type `Name`
-REFUSED ops@unit-real-arith | unit type `Metre`
-REFUSED ops@unit-real-compare | unit type `Metre`
-REFUSED ops@unit-show | unit type `Name`
+PASS ops@unit-pattern-lit |
+PASS ops@unit-real-arith |
+PASS ops@unit-real-compare |
+PASS ops@unit-show |
 PASS ops@unused-let-alias-discard |
 REFUSED ops@variant-address | builtin `address-of`
 REFUSED ops@vec-lanes-smoke | type (vector 2 real)
 REFUSED ops@vec-sized | CODEGEN-HALTED: 3 error(s); no IR emitted; first CDX3008 Undefined type name: SizedVec
-REFUSED osc-noise | unit type `Duration`
-REFUSED ota-gate-block | unit type `Duration`
-REFUSED ota-gate-real | unit type `Duration`
-REFUSED ota-state-machine | unit type `Duration`
-REFUSED ota-update | unit type `Duration`
+PASS osc-noise |
+PASS ota-gate-block |
+PASS ota-gate-real |
+PASS ota-state-machine |
+PASS ota-update |
 REFUSED par-map | builtin `fork`
 REFUSED par-nested | builtin `fork`
 PASS parse-test |
@@ -818,7 +818,7 @@ PASS pci-bridge-deep |
 PASS pci-bridge-scan |
 PASS pci-bus-master |
 PASS peek32-sign |
-REFUSED pi4-drivers | unit type `Duration`
+PASS pi4-drivers |
 REFUSED pipe-unique-test | `__lam_0` applied to 1 of 2 arguments
 PASS pit-latch |
 REFUSED plug-oracle-arith | field-store
@@ -871,7 +871,7 @@ REFUSED roc-iter-keep-if | `__lam_0` applied to 2 of 3 arguments
 REFUSED roc-iter-map | `__lam_0` applied to 2 of 3 arguments
 PASS roc-recursive-var |
 REFUSED roc-returned-closure | `__lam_0` applied to 1 of 2 arguments
-REFUSED rp2040-drivers | unit type `Duration`
+PASS rp2040-drivers |
 REFUSED rsa-pss | `cb-shl1-step` writes its list parameter `x` and answers something else
 REFUSED rsa-verify | `cb-shl1-step` writes its list parameter `x` and answers something else
 PASS rv-arg-order |
@@ -909,22 +909,22 @@ SKIP smp-tss | codex-vm boots it with 4 cores (.smp); this harness runs one
 PASS smtp-md-test |
 PASS sntp-encode |
 PASS sort-test |
-REFUSED sound-test | unit type `Duration`
-REFUSED sparkplug-encode | unit type `Duration`
+PASS sound-test |
+REFUSED sparkplug-encode | builtin `real-approx-to-bits`
 REFUSED spawn-memo-table | `__lam_0` applied to 0 of 1 arguments under Device
 REFUSED spawn-reuse | `__lam_0` applied to 0 of 1 arguments under Device
 PASS sprite-test |
 SKIP stale-sibling | expects a diagnostic
 PASS stats-wrap-test |
-REFUSED stm32f4-drivers | unit type `Duration`
-REFUSED stm32l4-drivers | unit type `Duration`
+PASS stm32f4-drivers |
+PASS stm32l4-drivers |
 PASS string-escape-quote |
 REFUSED stringbuilder-independence | field-store
 REFUSED stringbuilder-test | field-store
 PASS stringutils-test |
 REFUSED suggested-width | builtin `suggested-vector-width`
 PASS sum-field-eq |
-REFUSED synth-test | unit type `Duration`
+PASS synth-test |
 REFUSED tag-equal | builtin `tag-equal`
 PASS tco-bitop-loop |
 PASS tco-direct-arg-reads |
@@ -988,10 +988,10 @@ PASS ui@fixed-row |
 PASS ui@theme-ink-on |
 PASS ui@vector-raster |
 PASS ui@widget-panel-min |
-REFUSED unit-family | unit type `Length`
-REFUSED unit-family-mixed | unit type `Length`
-REFUSED unit-smoke | unit type `Second`
-REFUSED units-foreword | unit type `Duration`
+PASS unit-family |
+PASS unit-family-mixed |
+PASS unit-smoke |
+PASS units-foreword |
 PASS uri-encode |
 PASS usb-desc-guard |
 PASS usb-test |
@@ -1026,7 +1026,7 @@ PASS when-bool-cross |
 PASS when-bool-pattern |
 PASS when-generic-field |
 REFUSED with-timeout-test | with-timeout
-REFUSED workflow-parse-int | unit type `Timestamp`
+REFUSED workflow-parse-int | `exec-sort-cmp` applied to 1 of 3 arguments
 REFUSED x509-chain | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED x509-parse | `fe-carry-pass` writes its list parameter `o` and answers something else
 PASS zigbee-encode |
