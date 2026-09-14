@@ -29,13 +29,15 @@ MachineHpet :: [].{
 		int_status : U64,
 		t0_config : U64,
 		t0_comparator : U64,
+		# The comparator was written since it last fired.
+		t0_armed : Bool,
 		# The count banked at the last stop, and the clock at the last start.
 		banked : U64,
 		epoch : U64,
 	}
 
 	new : MachineHpet.Hpet
-	new = { absent: False, all_ones: False, config: 0, int_status: 0, t0_config: 0, t0_comparator: 0, banked: 0, epoch: 0 }
+	new = { absent: False, all_ones: False, config: 0, int_status: 0, t0_config: 0, t0_comparator: 0, t0_armed: False, banked: 0, epoch: 0 }
 
 	flag : MachineHpet.Hpet, Str -> [Took(MachineHpet.Hpet), NotMine]
 	flag = |h, a|
@@ -111,12 +113,37 @@ MachineHpet :: [].{
 		} else if off == 0x104 {
 			{ ..h, t0_config: MachineHpet.with_high(h.t0_config, val) }
 		} else if off == 0x108 {
-			{ ..h, t0_comparator: MachineHpet.with_low(h.t0_comparator, val) }
+			{ ..h, t0_comparator: MachineHpet.with_low(h.t0_comparator, val), t0_armed: True }
 		} else if off == 0x10C {
-			{ ..h, t0_comparator: MachineHpet.with_high(h.t0_comparator, val) }
+			{ ..h, t0_comparator: MachineHpet.with_high(h.t0_comparator, val), t0_armed: True }
 		} else {
 			h
 		}
+
+	# Timer 0, as codex-vm's hpet_poll checks it on every pass of its run loop;
+	# this machine checks it whenever the program touches the HPET. Once the
+	# running counter reaches an armed comparator, the interrupt status bit is
+	# set and, with the timer's interrupt enabled (bit 2), its IOAPIC line (bits
+	# 9..13) is raised. A periodic timer (bit 3) re-arms whole periods on; a
+	# one-shot disarms.
+	poll : MachineHpet.Hpet, U64 -> (MachineHpet.Hpet, [Quiet, Raised(U64)])
+	poll = |h, clock| {
+		now = MachineHpet.count(h, clock)
+		if U64.bitwise_and(h.config, 1) == 0 or !h.t0_armed or now < h.t0_comparator {
+			(h, Quiet)
+		} else {
+			fired = { ..h, int_status: U64.bitwise_or(h.int_status, 1) }
+			raised = if U64.bitwise_and(U64.shr_zf_wrap(h.t0_config, 2), 1) == 1 { Raised(U64.bitwise_and(U64.shr_zf_wrap(h.t0_config, 9), 0x1F)) } else { Quiet }
+			step = h.t0_comparator
+			rearmed =
+				if U64.bitwise_and(U64.shr_zf_wrap(h.t0_config, 3), 1) == 1 and step != 0 {
+					{ ..fired, t0_comparator: step + step * (U64.div_trunc_by(now - step, step) + 1) }
+				} else {
+					{ ..fired, t0_armed: False }
+				}
+			(rearmed, raised)
+		}
+	}
 
 	low : U64 -> U64
 	low = |v| U64.bitwise_and(v, 0xFFFFFFFF)

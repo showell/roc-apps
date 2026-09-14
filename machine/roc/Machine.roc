@@ -19,6 +19,7 @@
 # The page's app (MachineApp.roc) builds a machine with `make` and calls the
 # rest.
 
+import MachineApic
 import MachineCaps
 import MachineDisk
 import MachineE1000
@@ -59,6 +60,8 @@ Machine :: [].{
 		net_scopes : Dict(U64, Str),
 		# The I/O ports below PCI's.
 		ports : MachinePorts.Ports,
+		# The local APIC and the IOAPIC.
+		apic : MachineApic.Apic,
 	}
 
 	Flags : { bridge : Bool, deep : Bool, levels : U64, backward : Bool, disks : List(Str), e1000 : MachineE1000.E1000, hpet : MachineHpet.Hpet, board_mmio : Bool }
@@ -141,6 +144,7 @@ Machine :: [].{
 		scopes: Dict.empty(),
 		net_scopes: Dict.empty(),
 		ports: MachinePorts.new,
+		apic: MachineApic.new,
 	}
 
 	tick : Machine.Machine -> Machine.Machine
@@ -152,16 +156,20 @@ Machine :: [].{
 	# answered back beside the builtin's own answer, in Codex's Integer.
 
 	# **THE MACHINE'S CLOCK MOVES WHEN THE PROGRAM TOUCHES A DEVICE REGISTER.**
-	# Each read or write in the NIC's or the HPET's window costs 100 µs, in the
-	# HPET's counter ticks; memory costs nothing. codex-vm's counter follows the
-	# host's clock, and the verdicts judge durations by bands the constant has
-	# to land in: e1000-tx-deadline wants two clock readings with nothing
-	# between them under 5 ms apart, and a million memory reads under 5 ms
-	# too, so a register access costs less than 1.6 ms and memory none; a
-	# no-link bring-up waits 8 s by the clock across batches of 4,096 STATUS
-	# reads, which 100 µs keeps to tens of thousands of reads.
+	# Each read or write of a device register, in an MMIO window or at a port,
+	# costs 10 µs, in the HPET's counter ticks; memory costs nothing. codex-vm's
+	# clocks follow the host's, and the verdicts judge durations by bands the
+	# constant has to land in:
+	# - e1000-tx-deadline wants two clock readings with nothing between them,
+	#   and a million memory reads, under 5 ms: under 1.6 ms a register access,
+	#   and memory free.
+	# - timer-registers arms the local APIC for 160 ms and spins 8,000 register
+	#   reads before sampling it again, expecting the count still falling:
+	#   under 20 µs a register access.
+	# - e1000-link-deadline waits 8 s by the clock across batches of 4,096
+	#   STATUS reads, which 10 µs keeps to about half a million reads.
 	access_cost : U64
-	access_cost = 1432
+	access_cost = 143
 
 	# **THE ADDRESS SPACE IS WHAT CODEX-VM BACKS, AND NOTHING ELSE.** Guest RAM
 	# is the low 3 GB, codex-vm's default. Above it are the device windows
@@ -170,7 +178,7 @@ Machine :: [].{
 	# claims is one codex-vm faults on, or a device this machine does not model,
 	# so a load or store there stops the run and names the address rather than
 	# answering from memory.
-	region : Machine.Machine, I64 -> [Ram, Nic, Hpet, Nothing(Str)]
+	region : Machine.Machine, I64 -> [Ram, Nic, Hpet, Lapic, Ioapic, Nothing(Str)]
 	region = |m, a|
 		if a >= 0 and a < Machine.ram_size {
 			Ram
@@ -180,6 +188,10 @@ Machine :: [].{
 			Nic
 		} else if MachineHpet.claims(a) {
 			Hpet
+		} else if MachineApic.claims_lapic(a) {
+			Lapic
+		} else if MachineApic.claims_ioapic(a) {
+			Ioapic
 		} else {
 			Nothing(Machine.unbacked(m, a))
 		}
@@ -194,11 +206,7 @@ Machine :: [].{
 
 	unbacked : Machine.Machine, I64 -> Str
 	unbacked = |m, a|
-		if a >= 0xFEE00000 and a < 0xFEE01000 {
-			"the local APIC's registers, which this machine does not model"
-		} else if a >= 0xFEC00000 and a < 0xFEC01000 {
-			"the IOAPIC's registers, which this machine does not model"
-		} else if a >= 0xFE000000 and a < 0xFE004000 and !m.board_mmio {
+		if a >= 0xFE000000 and a < 0xFE004000 and !m.board_mmio {
 			"the HDA controller's registers, which this machine does not model"
 		} else if a >= 0xFE800000 and a < 0xFE804000 and !m.board_mmio {
 			"the xHCI controller's registers, which this machine does not model"
@@ -242,7 +250,21 @@ Machine :: [].{
 					crash("machine: a ${I64.to_str(width)}-byte read of the HPET's registers, which this machine answers 32 bits at a time")
 				} else {
 					clock = m.clock + Machine.access_cost
-					({ ..m, clock: clock }, U64.to_i64_wrap(MachineHpet.read(m.hpet, clock, I64.to_u64_wrap(a - MachineHpet.base))))
+					h = Machine.hpet_polled(m, clock)
+					({ ..m, clock: clock, hpet: h }, U64.to_i64_wrap(MachineHpet.read(h, clock, I64.to_u64_wrap(a - MachineHpet.base))))
+				}
+			Lapic =>
+				if width != 4 {
+					crash("machine: a ${I64.to_str(width)}-byte read of the local APIC's registers, which this machine answers 32 bits at a time")
+				} else {
+					clock = m.clock + Machine.access_cost
+					({ ..m, clock: clock }, U64.to_i64_wrap(MachineApic.lapic_read(m.apic, clock, I64.to_u64_wrap(a - MachineApic.lapic_base))))
+				}
+			Ioapic =>
+				if width != 4 {
+					crash("machine: a ${I64.to_str(width)}-byte read of the IOAPIC's registers, which this machine answers 32 bits at a time")
+				} else {
+					({ ..m, clock: m.clock + Machine.access_cost }, U64.to_i64_wrap(MachineApic.ioapic_read(m.apic, I64.to_u64_wrap(a - MachineApic.ioapic_base))))
 				}
 			Nothing(what) => crash("machine: a read at ${Machine.hex(I64.to_u64_wrap(a))}, ${what}")
 		}
@@ -268,9 +290,43 @@ Machine :: [].{
 					crash("machine: a ${I64.to_str(width)}-byte write to the HPET's registers, which this machine takes 32 bits at a time")
 				} else {
 					clock = m.clock + Machine.access_cost
-					({ ..m, clock: clock, hpet: MachineHpet.write(m.hpet, clock, I64.to_u64_wrap(a - MachineHpet.base), U64.bitwise_and(u, 0xFFFFFFFF)) }, 0)
+					h = Machine.hpet_polled(m, clock)
+					({ ..m, clock: clock, hpet: MachineHpet.write(h, clock, I64.to_u64_wrap(a - MachineHpet.base), U64.bitwise_and(u, 0xFFFFFFFF)) }, 0)
+				}
+			Lapic =>
+				if width != 4 {
+					crash("machine: a ${I64.to_str(width)}-byte write to the local APIC's registers, which this machine takes 32 bits at a time")
+				} else {
+					clock = m.clock + Machine.access_cost
+					match MachineApic.lapic_write(m.apic, clock, I64.to_u64_wrap(a - MachineApic.lapic_base), U64.bitwise_and(u, 0xFFFFFFFF)) {
+						Wrote(apic) => ({ ..m, clock: clock, apic: apic }, 0)
+						StartsCores => crash("machine: a start-up IPI, which starts the application processors, and this machine has one core")
+					}
+				}
+			Ioapic =>
+				if width != 4 {
+					crash("machine: a ${I64.to_str(width)}-byte write to the IOAPIC's registers, which this machine takes 32 bits at a time")
+				} else {
+					({ ..m, clock: m.clock + Machine.access_cost, apic: MachineApic.ioapic_write(m.apic, I64.to_u64_wrap(a - MachineApic.ioapic_base), U64.bitwise_and(u, 0xFFFFFFFF)) }, 0)
 				}
 			Nothing(what) => crash("machine: a write at ${Machine.hex(I64.to_u64_wrap(a))}, ${what}")
+		}
+	}
+
+	# The HPET's timer 0, checked when the clock reads `clock`. An interrupt it
+	# raises on an IOAPIC line whose entry is unmasked would reach the kernel's
+	# device-interrupt handler, and this machine delivers no interrupts, so the
+	# run stops there.
+	hpet_polled : Machine.Machine, U64 -> MachineHpet.Hpet
+	hpet_polled = |m, clock| {
+		(h, raised) = MachineHpet.poll(m.hpet, clock)
+		match raised {
+			Quiet => h
+			Raised(line) =>
+				match MachineApic.delivers(m.apic, line) {
+					Nowhere => h
+					Vector(v) => crash("machine: the HPET raised IOAPIC line ${U64.to_str(line)} on vector ${U64.to_str(v)}, and this machine delivers no interrupts")
+				}
 		}
 	}
 

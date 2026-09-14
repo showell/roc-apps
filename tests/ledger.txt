@@ -584,7 +584,7 @@ PASS heap-frame-reclaim |
 DIVERGES heap-scrub | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
 REFUSED hid-decode | builtin `__heap-advance`
 PASS history-test |
-CRASH hpet-interrupt | machine: a write at 0xFEC00000, the IOAPIC's registers, which this machine does not model
+CRASH hpet-interrupt | machine: the HPET raised IOAPIC line 2 on vector 80, and this machine delivers no interrupts
 PASS i219-k1-mechanism |
 REFUSED ident-letters | name `café` cannot be a Roc identifier
 REFUSED idm-key-tests | `fe-carry-pass` writes its list parameter `o` and answers something else
@@ -624,7 +624,7 @@ PASS klondike-test |
 PASS knx-encode |
 PASS kvstore-test |
 REFUSED lang-smoke | `make-adder` applied to 1 of 2 arguments
-CRASH lapic-regs | machine: a read at 0xFEE00030, the local APIC's registers, which this machine does not model
+PASS lapic-regs |
 REFUSED lazy-smoke | opening: Lazy
 PASS leaf-let-if |
 PASS leaf-mispredict |
@@ -820,7 +820,7 @@ PASS pci-bus-master |
 PASS peek32-sign |
 REFUSED pi4-drivers | unit type `Duration`
 REFUSED pipe-unique-test | `__lam_0` applied to 1 of 2 arguments
-CRASH pit-latch | machine: a write at 0xFEE003E0, the local APIC's registers, which this machine does not model
+PASS pit-latch |
 REFUSED plug-oracle-arith | field-store
 PASS poke16-width |
 PASS poly1305 |
@@ -944,7 +944,7 @@ PASS textfield-typing |
 PASS textscan-test |
 PASS textsearch-test |
 PASS thumb2-encoder |
-CRASH timer-registers | machine: a write at 0xFEE003E0, the local APIC's registers, which this machine does not model
+PASS timer-registers |
 REFUSED tls-cert | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED tls-cv-schemes | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED tls-record-framing | builtin `net-send-raw`
