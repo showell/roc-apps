@@ -11,7 +11,7 @@ PASS arm64-boot-test |
 PASS arm64-encoder |
 PASS arm64-http-test |
 REFUSED arm64-net-gate | builtin `net-status` used as a value
-REFUSED arm64-proc-cells | builtin `process-get-cap`
+PASS arm64-proc-cells |
 REFUSED arm64-send-refusal | builtin `__heap-advance`
 PASS arp-cache-bound |
 REFUSED asn1-der | `fe-carry-pass` writes its list parameter `o` and answers something else
@@ -23,7 +23,7 @@ REFUSED bacnet-encode | type real-approx
 PASS bezier-identity |
 PASS bitop-if-cond |
 PASS ble-att-encode |
-REFUSED block-gate-restrict | builtin `process-restrict-cap`
+PASS block-gate-restrict |
 PASS block-sector-count |
 PASS block-select-drives |
 PASS bloom-spread |
@@ -37,19 +37,19 @@ PASS bs3-smoke |
 SKIP builtin-narrow-proven | expects a diagnostic
 PASS call-clobber |
 PASS canopen-encode |
-REFUSED cap-audio | builtin `process-get-cap`
+PASS cap-audio |
 PASS cap-block-denied |
 REFUSED cap-device-declared | builtin `port-in-byte`
-REFUSED cap-direction | builtin `process-get-cap`
+PASS cap-direction |
 REFUSED cap-gpu-byte-denied | builtin `gpu-mem-write`
 REFUSED cap-gpu-family | builtin `gpu-mem-write`
 REFUSED cap-gpu-mem-denied | builtin `gpu-mem-write`
 PASS cap-heap-poke-pure |
 REFUSED cap-identity-denied | builtin `key-load`
 PASS cap-manifest-derived |
-REFUSED cap-media-families | builtin `process-get-cap`
+PASS cap-media-families |
 REFUSED cap-network-denied | builtin `net-status` used as a value
-REFUSED cap-process-family | builtin `process-get-cap`
+PASS cap-process-family |
 PASS capability-doors |
 PASS carddeck-shuffle |
 PASS cce-roundtrip |

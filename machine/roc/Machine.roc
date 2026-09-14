@@ -52,6 +52,10 @@ Machine :: [].{
 		# how many have been delivered.
 		timeline : List({ at : U64, code : U8 }),
 		typed : U64,
+		# The filesystem and network scopes processes were given, by pid; x86
+		# keeps a text pointer in each entry, and this machine keeps the text.
+		scopes : Dict(U64, Str),
+		net_scopes : Dict(U64, Str),
 	}
 
 	Flags : { bridge : Bool, deep : Bool, levels : U64, backward : Bool, disks : List(Str), e1000 : MachineE1000.E1000, hpet : MachineHpet.Hpet, board_mmio : Bool }
@@ -69,7 +73,12 @@ Machine :: [].{
 	boot! = |args, effects| {
 		f = Machine.flags(args, 0, { bridge: False, deep: False, levels: 0, backward: False, disks: ["", ""], e1000: MachineE1000.new, hpet: MachineHpet.new, board_mmio: False })
 		levels = if !f.bridge { 0 } else if f.levels != 0 { f.levels } else if f.deep { 2 } else { 1 }
-		mem = MachineMem.write(MachineMem.new(U64.to_i64_wrap(List.len(args))), MachineCaps.word_addr, MachineCaps.grant(effects), 8)
+		# The process table as the boot leaves it: the boot program's entry
+		# marked running (2) with the opening's grant, and process 1 granted the
+		# console bit (X86_64Chapter's emit-start).
+		table = MachineMem.write(MachineMem.new(U64.to_i64_wrap(List.len(args))), Machine.proc_table, 2, 8)
+		granted = MachineMem.write(table, MachineCaps.word_addr, MachineCaps.grant(effects), 8)
+		mem = MachineMem.write(granted, Machine.cap_addr(1), 1, 8)
 		nic = if f.e1000.present { Nic(if f.e1000.i219 { 0x15B8 } else { 0x100E }, f.e1000.faults.bme_clear) } else { NoNic }
 		made = Machine.make(mem, MachinePci.table(levels, f.backward, nic), MachineDisk.boot!(f.disks))
 		{ ..made, e1000: if f.e1000.present { MachineE1000.power_on(f.e1000) } else { f.e1000 }, hpet: f.hpet, board_mmio: f.board_mmio, timeline: Machine.timeline_of(MachineMedia.keys) }
@@ -126,6 +135,8 @@ Machine :: [].{
 		board_mmio: False,
 		timeline: [],
 		typed: 0,
+		scopes: Dict.empty(),
+		net_scopes: Dict.empty(),
 	}
 
 	tick : Machine.Machine -> Machine.Machine
@@ -358,19 +369,60 @@ Machine :: [].{
 
 	# ---- the process ----------------------------------------------------
 	#
-	# One process, the boot program, unscoped: nothing that spawns a process or
-	# narrows a scope is modelled, so these are the kernel's answers before
-	# anything has.
+	# One process runs, the boot program; nothing spawns another. The table has
+	# 16 entries of 256 bytes at 20480, and a pid past it is refused.
+
+	proc_table : I64
+	proc_table = 20480
+
+	cap_addr : I64 -> I64
+	cap_addr = |pid| Machine.proc_table + pid * 256 + 56
+
+	# The running process holds capability-admin, bit 14.
+	admin : Machine.Machine -> Bool
+	admin = |m| U64.bitwise_and(MachineMem.read(m.mem, MachineCaps.word_addr, 7, 0), 0x4000) != 0
 
 	# `process-get-pid`: the boot program's stack is outside the spawn pool,
 	# which x86 answers as slot 0.
 	process_get_pid : Machine.Machine -> (Machine.Machine, I64)
 	process_get_pid = |m| (m, 0)
 
-	# `process-get-scope`: an unset scope cell reads as the empty text, which
-	# admits every path.
+	# `process-get-cap`: a process's capability word; -1 past the table.
+	process_get_cap : Machine.Machine, I64 -> (Machine.Machine, I64)
+	process_get_cap = |m, pid| if pid >= 16 { (m, -1) } else { Machine.load(m, Machine.cap_addr(pid), 0, 8) }
+
+	# `process-restrict-cap`: clears one bit of a process's word and answers 0,
+	# or answers -1 when the running process lacks capability-admin or the pid
+	# is past the table.
+	process_restrict_cap : Machine.Machine, I64, I64 -> (Machine.Machine, I64)
+	process_restrict_cap = |m, pid, bit|
+		if !Machine.admin(m) or pid >= 16 {
+			(m, -1)
+		} else {
+			a = Machine.cap_addr(pid)
+			word = MachineMem.read(m.mem, a, 7, 0)
+			cleared = U64.bitwise_and(word, U64.bitwise_xor(U64.shl_wrap(1, U64.to_u8_wrap(I64.to_u64_wrap(bit))), 0xFFFFFFFFFFFFFFFF))
+			({ ..m, mem: MachineMem.write(m.mem, a, cleared, 8) }, 0)
+		}
+
+	# `process-set-scope`: a process's filesystem scope, under the same two
+	# refusals as `process-restrict-cap`; answers 0.
+	process_set_scope : Machine.Machine, I64, Str -> (Machine.Machine, I64)
+	process_set_scope = |m, pid, scope|
+		if !Machine.admin(m) or pid >= 16 {
+			(m, -1)
+		} else {
+			({ ..m, scopes: Dict.insert(m.scopes, I64.to_u64_wrap(pid), scope) }, 0)
+		}
+
+	# `process-get-scope` and `process-get-network-scope`: the scope given, and
+	# the empty text, which admits everything, when none was or the pid is past
+	# the table.
 	process_get_scope : Machine.Machine, I64 -> (Machine.Machine, Str)
-	process_get_scope = |m, _pid| (m, "")
+	process_get_scope = |m, pid| (m, if pid >= 16 { "" } else { Dict.get(m.scopes, I64.to_u64_wrap(pid)) ?? "" })
+
+	process_get_network_scope : Machine.Machine, I64 -> (Machine.Machine, Str)
+	process_get_network_scope = |m, pid| (m, if pid >= 16 { "" } else { Dict.get(m.net_scopes, I64.to_u64_wrap(pid)) ?? "" })
 
 	copy_in : MachineMem.Mem, I64, List(U8), U64 -> MachineMem.Mem
 	copy_in = |mem, base, bytes, i|
