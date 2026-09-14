@@ -74,4 +74,13 @@ machine page's MachineGpu and this platform's GPU agreed.
 | `codex/test/gop-padded-stride` | a 320 x 240 screen whose rows are 512 pixels in memory; the hidden ends stay untouched |
 | `apps/engine-demo/EngineDemo.codex` | Cobblestone's engine demo: Codex lights and transforms a scene and hands the triangles to the GPU, the camera orbiting in a loop that never ends; a frame is a flush |
 
+Cobblestone's other drawing apps do not run here yet:
+
+| app | what stops it |
+|---|---|
+| `apps/circuits` | BitmapFont's GPU text path calls `gpu-rect-top`, `gpu-rect-chrome` and `gpu-seq`, which the app defines, so the emitted modules import each other; `roc check` names the cycle and `roc build` crashes on it |
+| `apps/fireworks` | `rnd` multiplies a plain `Integer` past 64 bits before the first flush. A plain `Integer` traps on overflow in Cobblestone's x86 code (`int-trap-after`, `int-ty-default` is `OvError`), and Roc's `*` crashes the same way; its `hsh` is declared `wrapping` and `rnd` is not. The cinematic pass, the fade clear and the additive sprites it draws with are in `gpu.zig`, not yet exercised |
+| `apps/globe` | loads its earth texture through the GPU's asset ports (0x408-0x40D, 0x417) |
+| `apps/c64` | plays its SID through the HDA sound card's MMIO |
+
 `PERF.md` is what a frame costs and where the time goes.

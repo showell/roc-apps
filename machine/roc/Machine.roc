@@ -606,6 +606,12 @@ Machine :: [].{
 	port_in_32! : Machine.Machine, I64 => (Machine.Machine, I64)
 	port_in_32! = |m, port| Machine.port_in_32(m, port)
 
+	uefi_read_key! : Machine.Machine => (Machine.Machine, I64)
+	uefi_read_key! = |m| Machine.uefi_read_key(m)
+
+	uefi_read_key_ex! : Machine.Machine => (Machine.Machine, I64)
+	uefi_read_key_ex! = |m| Machine.uefi_read_key_ex(m)
+
 	# **A PORT IS A DEVICE REGISTER.** Every port read or write moves the
 	# machine's clock by `access_cost`, as a register access in an MMIO window
 	# does, and answers as codex-vm does at that port (MachinePorts), at the

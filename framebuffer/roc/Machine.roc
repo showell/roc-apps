@@ -97,6 +97,28 @@ Machine :: [].{
 		(m, $acc)
 	}
 
+	# `uefi-read-key-ex` asks UEFI's ConIn through the system table whose
+	# address sits at 30704; with none there, as on codex-vm's bare-metal boot,
+	# it answers -1.
+	uefi_read_key_ex! : Machine.Machine => (Machine.Machine, I64)
+	uefi_read_key_ex! = |m| {
+		table = Heap.load!(30704, 8)
+		if table == 0 {
+			(m, -1)
+		} else {
+			crash("framebuffer: uefi-read-key-ex with a UEFI system table, which this platform does not model")
+		}
+	}
+
+	# `uefi-read-key`: the key cell at 28680 exchanged with zero, as its
+	# scancode byte.
+	uefi_read_key! : Machine.Machine => (Machine.Machine, I64)
+	uefi_read_key! = |m| {
+		cell = Heap.load!(28680, 8)
+		Heap.store!(28680, 0, 8)
+		(m, U64.to_i64_wrap(U64.bitwise_and(cell, 255)))
+	}
+
 	# A port write answers 0, as it does on x86; the host masks the value to the
 	# port's width.
 	port_write! : Machine.Machine, I64, I64, U64 => (Machine.Machine, I64)

@@ -346,8 +346,12 @@ pub fn screen(width: u32, height: u32, stride: u32) bool {
     const db = region(gpu.depth_base, w * h) orelse return false;
     const fb = region(gpu.fb_base, s * h) orelse return false;
     const glow = root.allocator.alloc(u8, w * h) catch return false;
+    const bloom = root.allocator.alloc(f32, gpu.bloomLen(w, h)) catch return false;
+    const bloom_tmp = root.allocator.alloc(f32, gpu.bloomLen(w, h)) catch return false;
+    @memset(bloom, 0);
+    @memset(bloom_tmp, 0);
     pixels = root.allocator.alloc(u8, w * h * 4) catch return false;
-    the_gpu = .{ .w = w, .h = h, .stride = s, .fb = fb, .db = db, .cmd = cmd, .glow = glow };
+    the_gpu = .{ .w = w, .h = h, .stride = s, .fb = fb, .db = db, .cmd = cmd, .glow = glow, .bloom = bloom, .bloom_tmp = bloom_tmp };
     screen_width = w;
     screen_height = h;
     screen_stride = s;
