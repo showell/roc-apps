@@ -91,3 +91,25 @@ both right shifts as `I64.shr_zf_wrap`. A shift by 64 or more used to crash in
 | scene-spin, frames 1 to 5 | 108 to 113 ms | 95 to 98 ms |
 
 Every frame's hash is the same as before, so the images are identical.
+
+## 2026-09-14: codex-vm's GPU, in zig
+
+The four GPU widget tests and gop-padded-stride, from cobblestone-u60rel's
+`codex/test`, on this platform (`platform/gpu.zig`) and on the machine's page
+(`MachineGpu`, Roc), both wasm on Roc's dev backend in Node, one run each. Here
+the time is frame 1, from `frames.mjs`; on the machine's page it is the whole
+run, boot included, from `machine/batch/screenhash.mjs`. Both hash the visible
+pixels the same way.
+
+| program | here, a frame | machine page, a run | image hash on both |
+|---|---|---|---|
+| gpu-panel-border | 30 ms | 2,078 ms | fee5df14 |
+| gpu-depth-tree | 32 ms | 1,967 ms | 2c7c1dc1 |
+| gpu-gauge-clamp | 25 ms | 2,060 ms | c990fa29 |
+| gpu-input-cursor | 30 ms | 2,298 ms | dbf102b2 |
+| gop-padded-stride | 18 ms | 1,428 ms | 1989e38f |
+
+The two GPUs agree on every pixel of every image, and every program's console
+matches its test's verdict. The widget tests run on this platform's `Machine`
+(memory and the GPU's ports); gop-padded-stride reaches only memory and runs on
+its `Mem`.

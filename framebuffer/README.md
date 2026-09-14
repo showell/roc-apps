@@ -51,4 +51,11 @@ hold: safe here because the host stops at any address it does not back.
     node framebuffer/frames.mjs scene-spin 5
     # the preview: http://143.244.172.148:9203/framebuffer/
 
+| program | what it draws |
+|---|---|
+| `demos/scene-spin.codex` | `codex/test/engine-software-render`'s scene with Renderer3D, the camera circling it by the clock |
+| `machine/batch/demos/scene-on-screen.codex` | the same scene from its test's camera; 48,614 pixels drawn, as on the machine and in the test |
+| `codex/test/gpu-panel-border`, `gpu-depth-tree`, `gpu-gauge-clamp`, `gpu-input-cursor` | Cobblestone's widgets, laid out and drawn as triangles by the GPU at 640 x 480; each console matches its verdict, and each image is the machine page's, pixel for pixel |
+| `codex/test/gop-padded-stride` | a 320 x 240 screen whose rows are 512 pixels in memory; the hidden ends stay untouched |
+
 `PERF.md` is what a frame costs and where the time goes.
