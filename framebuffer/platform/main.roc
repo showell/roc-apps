@@ -1,14 +1,16 @@
 # The framebuffer platform: a Codex program whose memory the host keeps, run
 # once per frame. Echo's shape for what it prints; Heap's doors for every byte
-# it reads or writes. The screen is the part of that memory UEFI's GOP
-# protocol describes, and the page shows it after each run.
+# it reads or writes; Gpu's for the GPU's ports. The screen is the part of that
+# memory UEFI's GOP protocol describes, and the page shows it after each run.
 platform ""
 	requires {} { main! : List(Str) => Try(_, [Exit(I8), ..]) }
-	exposes [Echo, Heap]
+	exposes [Echo, Gpu, Heap]
 	packages {}
 	provides { "roc_main": main_for_host! }
 	hosted {
 		"roc_echo_line": Echo.line!,
+		"roc_gpu_in": Gpu.in!,
+		"roc_gpu_out": Gpu.out!,
 		"roc_heap_load": Heap.load!,
 		"roc_heap_store": Heap.store!,
 	}
@@ -21,6 +23,7 @@ platform ""
 	}
 
 import Echo
+import Gpu
 import Heap
 
 main_for_host! : List(Str) => I8

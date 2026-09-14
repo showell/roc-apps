@@ -573,6 +573,39 @@ Machine :: [].{
 	release : Machine.Machine, I64 -> (Machine.Machine, I64)
 	release = |m, h| ({ ..m, mem: { root: m.mem.root, top: h } }, 0)
 
+	# **THE DOORS ROCEMIT CALLS ARE EFFECTS**, spelled `!`: a platform may keep
+	# the memory, and the GPU its ports reach (roc-apps framebuffer/roc/Machine.roc).
+	# This machine keeps both in its value, so each is its pure namesake.
+	load! : Machine.Machine, I64, I64, I64 => (Machine.Machine, I64)
+	load! = |m, base, off, width| Machine.load(m, base, off, width)
+
+	store! : Machine.Machine, I64, I64, I64, I64 => (Machine.Machine, I64)
+	store! = |m, base, off, v, width| Machine.store(m, base, off, v, width)
+
+	load_unguarded! : Machine.Machine, I64, I64, I64 => (Machine.Machine, I64)
+	load_unguarded! = |m, base, off, width| Machine.load_unguarded(m, base, off, width)
+
+	store_unguarded! : Machine.Machine, I64, I64, I64, I64 => (Machine.Machine, I64)
+	store_unguarded! = |m, base, off, v, width| Machine.store_unguarded(m, base, off, v, width)
+
+	write_byte! : Machine.Machine, I64, I64, I64 => (Machine.Machine, I64)
+	write_byte! = |m, base, off, v| Machine.write_byte(m, base, off, v)
+
+	write_bytes! : Machine.Machine, I64, I64, List(I64) => (Machine.Machine, I64)
+	write_bytes! = |m, base, off, bytes| Machine.write_bytes(m, base, off, bytes)
+
+	read_bytes! : Machine.Machine, I64, I64, I64 => (Machine.Machine, List(I64))
+	read_bytes! = |m, base, off, count| Machine.read_bytes(m, base, off, count)
+
+	exchange! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
+	exchange! = |m, addr, value| Machine.exchange(m, addr, value)
+
+	port_out_32! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
+	port_out_32! = |m, port, value| Machine.port_out_32(m, port, value)
+
+	port_in_32! : Machine.Machine, I64 => (Machine.Machine, I64)
+	port_in_32! = |m, port| Machine.port_in_32(m, port)
+
 	# **A PORT IS A DEVICE REGISTER.** Every port read or write moves the
 	# machine's clock by `access_cost`, as a register access in an MMIO window
 	# does, and answers as codex-vm does at that port (MachinePorts), at the

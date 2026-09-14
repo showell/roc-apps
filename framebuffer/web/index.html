@@ -72,6 +72,11 @@ const esc = (s) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">":
 const ABOUT = {
   "scene-spin": "Cobblestone's 3D renderer drawing a small scene as the camera circles it",
   "scene-on-screen": "the same scene from a still camera; it draws 48,614 pixels, as on the machine",
+  "gpu-panel-border": "a panel holding a label, laid out by Cobblestone's widgets and drawn as triangles by the GPU",
+  "gpu-depth-tree": "a separator and a gauge drawn by the GPU, one over another in its depth buffer",
+  "gpu-gauge-clamp": "a gauge filled to 150 of 100, whose fill must stay inside its box",
+  "gpu-input-cursor": "an input box drawn by the GPU, whose cursor must stay inside it",
+  "gop-padded-stride": "a screen whose rows are longer in memory than on the glass; the hidden ends must stay untouched",
 };
 // The clock the program reads moves this many milliseconds a frame.
 const TICK = 100;
@@ -83,7 +88,12 @@ const fetchBytes = async (path) => {
   return cache.get(path);
 };
 const fetchText = async (path) => new TextDecoder().decode(await fetchBytes(path));
-const size = () => $("size").value.split("×").map((s) => Number(s.trim()));
+// The screen a program brings as codex-vm's -gop flags, or the one picked.
+const size = () => {
+  if (chosen && chosen.screen) return chosen.screen;
+  const [w, h] = $("size").value.split("×").map((s) => Number(s.trim()));
+  return [w, h, w];
+};
 
 // Choosing a program, or a screen size, stops what was playing and starts the
 // next run from fresh memory.
@@ -91,6 +101,7 @@ function choose(p) {
   playing = false;
   inst = null;
   chosen = p;
+  $("size").disabled = Boolean(p.screen);
   for (const b of $("units").children) b.setAttribute("aria-pressed", String(b.dataset.name === p.name));
   const [w, h] = size();
   const canvas = $("screen");
@@ -133,8 +144,8 @@ function showCode(p) {
 async function instance(p) {
   const { instance } = await WebAssembly.instantiate(await fetchBytes(`${p.name}.wasm`), {});
   const x = instance.exports;
-  const [w, h] = size();
-  if (!x.screen(w, h, w)) throw new Error(`the host has no room for a ${w} × ${h} screen`);
+  const [w, h, s] = size();
+  if (!x.screen(w, h, s)) throw new Error(`the host has no room for a ${w} × ${h} screen`);
   return { p, x, w, h, frame: 0, spent: 0 };
 }
 

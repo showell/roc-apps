@@ -15,6 +15,7 @@
 const std = @import("std");
 const builtins = @import("builtins");
 const host_alloc = @import("host_alloc");
+const gpu = @import("gpu.zig");
 
 const RocOps = builtins.host_abi.RocOps;
 const RocList = builtins.list.RocList;
@@ -121,10 +122,16 @@ const page_count: usize = 1 << (32 - page_bits);
 var pages: [page_count]?[*]u8 = [_]?[*]u8{null} ** page_count;
 var pages_made: u32 = 0;
 
+/// RAM ends at 3 GB, where it ends on the machine (machine/roc's
+/// `Machine.ram_size`). Above it a machine keeps device registers, the HPET's,
+/// the APICs', a network card's, and this platform has none, so a read or
+/// write there stops the run rather than finding memory.
+const ram_top: u64 = 0xC0000000;
+
 fn page(addr: u64) [*]u8 {
-    if (addr >> 32 != 0) {
-        var msg: [96]u8 = undefined;
-        stop(std.fmt.bufPrint(&msg, "memory: address 0x{X} is past the platform's 4 GB", .{addr}) catch "memory: an address past 4 GB");
+    if (addr >= ram_top) {
+        var msg: [128]u8 = undefined;
+        stop(std.fmt.bufPrint(&msg, "memory: address 0x{X} is past 3 GB, where a machine keeps its devices, and this platform has none", .{addr}) catch "memory: an address past 3 GB, where a machine keeps its devices");
     }
     const i: usize = @intCast(addr >> page_bits);
     if (pages[i]) |p| return p;
@@ -198,11 +205,14 @@ fn hostedEchoLine(line: RocStr) callconv(.c) void {
 
 comptime {
     @export(&hostedEchoLine, .{ .name = "roc_echo_line", .visibility = .hidden });
+    @export(&hostedGpuIn, .{ .name = "roc_gpu_in", .visibility = .hidden });
+    @export(&hostedGpuOut, .{ .name = "roc_gpu_out", .visibility = .hidden });
     @export(&hostedHeapLoad, .{ .name = "roc_heap_load", .visibility = .hidden });
     @export(&hostedHeapStore, .{ .name = "roc_heap_store", .visibility = .hidden });
 }
 
-/// How many 1 MB pages the program has touched.
+/// How many 1 MB pages the host holds for the program's memory: those it has
+/// touched, and the GPU's.
 pub export fn pagesMade() u32 {
     return pages_made;
 }
@@ -211,7 +221,42 @@ pub export fn pagesMade() u32 {
 
 /// Where codex-vm maps the GOP framebuffer, and where UEFI's mode block says
 /// it is.
-const fb_base: u64 = 0xBF000000;
+const fb_base = gpu.fb_base;
+
+/// The GPU, from the moment the program has a screen.
+var the_gpu: ?gpu.Gpu = null;
+var gpu_msg: [160]u8 = undefined;
+
+/// `n_words` zeroed words at `base`, whole pages of them in place of whatever
+/// the page table held: the GPU reads and writes its buffers as words, and the
+/// program reaches the same bytes through Heap.
+fn region(base: u64, n_words: usize) ?[]u32 {
+    const words_per_page = page_size / 4;
+    const n_pages = (n_words + words_per_page - 1) / words_per_page;
+    const words = wasm_allocator.alloc(u32, n_pages * words_per_page) catch return null;
+    @memset(words, 0);
+    const bytes = std.mem.sliceAsBytes(words);
+    const first: usize = @intCast(base >> page_bits);
+    for (0..n_pages) |k| {
+        pages[first + k] = bytes.ptr + k * page_size;
+        pages_made += 1;
+    }
+    return words[0..n_words];
+}
+
+fn hostedGpuOut(port: u64, value: u64) callconv(.c) void {
+    if (the_gpu) |*g| {
+        if (g.portOut(port, @truncate(value), &gpu_msg)) |why| stop(why);
+    } else {
+        stop("gpu: a GPU port written before the program has a screen");
+    }
+}
+
+fn hostedGpuIn(port: u64) callconv(.c) u64 {
+    if (the_gpu == null) stop("gpu: a GPU port read before the program has a screen");
+    return gpu.Gpu.portIn(port) orelse
+        stop(std.fmt.bufPrint(&gpu_msg, "gpu: port-in-32 from GPU port 0x{X}, which this platform does not model", .{port}) catch "gpu: port-in-32 from a GPU port this platform does not model");
+}
 
 /// The frame's clock, in milliseconds. This cell is the framebuffer
 /// platform's own, just past the GOP mode block; UEFI and codex-vm write
@@ -229,14 +274,24 @@ var pixels: []u8 = &.{};
 /// pixels long in memory, published as UEFI's GOP protocol and codex-vm
 /// publish it: the framebuffer's base and size at 0x798 and 0x7A0, and the
 /// resolution, the pixel format (1, blue-green-red) and the stride at 0x7C4,
-/// 0x7C8, 0x7CC and 0x7E0. Answers 0 for a size the host cannot hold.
+/// 0x7C8, 0x7CC and 0x7E0. The GPU's command buffer, depth buffer and
+/// framebuffer are made then, as whole pages at 0xBE000000, 0xBE800000 and
+/// 0xBF000000. Answers 0 for a size the host cannot hold, or a second screen.
 pub export fn screen(width: u32, height: u32, stride: u32) u32 {
+    if (the_gpu != null) return 0;
     if (width == 0 or height == 0 or stride < width) return 0;
-    const bytes = @as(u64, stride) * height * 4;
-    if (bytes > (1 << 32) - fb_base) return 0;
-    if (pixels.len > 0) wasm_allocator.free(pixels);
-    pixels = &.{};
-    pixels = wasm_allocator.alloc(u8, @as(usize, width) * height * 4) catch return 0;
+    const w: usize = width;
+    const h: usize = height;
+    const s: usize = stride;
+    const bytes = @as(u64, s) * h * 4;
+    if (bytes > ram_top - fb_base) return 0;
+    if (@as(u64, w) * h * 4 > gpu.fb_base - gpu.depth_base) return 0;
+    const cmd = region(gpu.cmd_base, gpu.max_tris * 18) orelse return 0;
+    const db = region(gpu.depth_base, w * h) orelse return 0;
+    const fb = region(gpu.fb_base, s * h) orelse return 0;
+    const glow = wasm_allocator.alloc(u8, w * h) catch return 0;
+    pixels = wasm_allocator.alloc(u8, w * h * 4) catch return 0;
+    the_gpu = .{ .w = w, .h = h, .stride = s, .fb = fb, .db = db, .cmd = cmd, .glow = glow };
     screen_width = width;
     screen_height = height;
     screen_stride = stride;
