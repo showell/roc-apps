@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A BASIC interpreter in Roc</title>
+<script src="../shared/home.js"></script>
+<style>
+  :root { color-scheme: light dark; --ink: #1b1b1b; --dim: #6a6a6a; --line: #d8d4cc; --paper: #faf8f4; }
+  @media (prefers-color-scheme: dark) {
+    :root { --ink: #e8e6e1; --dim: #9a968e; --line: #3a3833; --paper: #1a1917; }
+  }
+  body { margin: 0; background: var(--paper); color: var(--ink);
+         font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  .wrap { max-width: 720px; margin: 0 auto; padding-block: 36px 56px; padding-left: 20px; padding-right: 20px; }
+  h1 { font-size: 28px; line-height: 1.25; margin: 0 0 12px; font-weight: 650; }
+  h2 { font-size: 19px; margin: 36px 0 10px; font-weight: 650; }
+  p, ul { margin: 0 0 14px; }
+  ul { padding-left: 22px; }
+  li { margin: 0 0 6px; }
+  .lede { font-size: 17px; }
+  .open { display: inline-block; margin: 6px 0 8px; padding: 8px 18px; border: 1px solid var(--ink);
+          border-radius: 4px; text-decoration: none; font-weight: 600; }
+  .open:hover { background: var(--ink); color: var(--paper); }
+  code { font: 14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  a { color: inherit; }
+  footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--dim); font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>A BASIC interpreter in <a href="https://www.roc-lang.org/">Roc</a></h1>
+<p class="lede">This is a BASIC interpreter in pure Roc. It runs two dialects: ECMA-55 Minimal BASIC, and the
+microcomputer BASIC of the 1978 Creative Computing games. It runs as a command on the desktop and as a
+web REPL in the browser, where a program draws on a memory-mapped screen and waits for typed input.</p>
+<p><a class="open" href="basic.html">Open the REPL</a></p>
+
+<h2>What it is</h2>
+<ul>
+  <li><strong>A listing is parsed once</strong> into statements, and every variable name becomes a slot
+    before the program runs.</li>
+  <li><strong>The evaluator only reads the machine.</strong> An expression answers its value and its effects
+    (a report, a stop, a random number drawn), and the statement that asks applies them.</li>
+  <li><strong>The machine is three structures.</strong> What never changes during a run is the program. What a
+    statement changes is the machine: the program counter, variables, arrays, loops, return points. The
+    devices sit behind one reference: the terminal, the screen, the address space and the framebuffer.</li>
+  <li><strong>The run loop is one pure function</strong>, <code>machine_state_at_next_effect</code>. It runs
+    statements until the program needs the world: a line of input, a sleep, the end. The web page resumes it
+    from there.</li>
+</ul>
+
+<p>It is a fairly complete implementation:</p>
+<ul>
+  <li>all of ECMA-55, with the standard's load-time checks, and its exceptions reported as the standard
+    requires;</li>
+  <li>the games' extensions: string functions, DEF FN, ON GOTO and GOSUB, POKE and PEEK into screen and colour
+    memory, a plotting framebuffer, SLEEP, and RND drawn as basic101 draws it, so a game that uses random
+    numbers can be graded byte for byte.</li>
+</ul>
+
+<p><strong>It passes the NBS conformance suite: 195 programs pass, none fail, and 13 print no verdict a script
+can judge. 55 of the 99 games match their captured output exactly.</strong> The rest of the games are ordinary
+interpreter work, one game at a time.</p>
+
+<h2>What Roc makes hard</h2>
+<p><strong>Roc is not an ideal platform for interpreting a mutable language like BASIC, unless you are content
+with memory allocations that are hard to predict.</strong></p>
+
+<p>A BASIC program is a long series of small writes: a variable here, an array cell there, a character onto the
+screen. In Roc every value is immutable, and the compiler writes a structure in place only when it can see that
+nothing else refers to it. When it cannot see that, it copies silently. The language has no way to say "this must
+be written in place", and no warning when it is not.</p>
+
+<p>On Roc's default platform every heap allocation is a system call, which makes an honest instrument. A ladder
+of tiny programs, each adding one feature, counts the allocations per statement, and holds each rung to zero.
+The ladder shows a set of rules no one would guess from reading the code. Each of these makes a write copy:</p>
+<ul>
+  <li>a fallback value that names the list being written;</li>
+  <li>a value passed down a recursion and handed back;</li>
+  <li>a helper function given a record together with something read from that record;</li>
+  <li>a <code>match</code> whose arms carry their bodies inline rather than calling a function;</li>
+  <li>a field taken out of a record in one statement and put back in the next.</li>
+</ul>
+<p>None of these changes what the program computes; each changes whether a write copies. Two versions of the same
+statement that look equally harmless can differ by a copy per execution. One corner is still unexplained: INPUT
+makes two allocations more than it should.</p>
+
+<p><strong>Well-chosen data structures remedy the worst of it:</strong></p>
+<ul>
+  <li><strong>persistent vectors</strong> of 32-way nodes for variables, arrays and memory, so a copy that does
+    happen is a short path of small nodes, never a whole table;</li>
+  <li><strong>stacks as a list and a depth</strong>, so a return or a loop exit reuses a cell instead of shrinking
+    the list;</li>
+  <li><strong>a read-only evaluator</strong>, so the machine is never threaded through a recursion;</li>
+  <li><strong>the devices behind one reference.</strong> A record update in Roc touches every list in the record,
+    so the width of the machine record is a cost on every statement. With the rarely written parts behind one
+    reference, every statement is about a quarter cheaper.</li>
+</ul>
+<p>Roc still makes odd decisions about when to copy. The data structures bound the damage, but they do not make
+the behaviour predictable.</p>
+
+<p><strong>For the web REPL the performance is more than sufficient.</strong> A statement costs a few
+microseconds, and the page already sleeps a millisecond after every PRINT on purpose. The cost shows in the
+longest NBS runs, and in loading, where the standard's checks allocate heavily.</p>
+
+<h2>What it stands on</h2>
+<p>The project leans on resources other people put on the web:</p>
+<ul>
+  <li><strong>The NBS Minimal BASIC test programs</strong>, as compiled by John Gatewood Ham and published in
+    <a href="https://github.com/sehugg/nbs-ecma55-test">sehugg/nbs-ecma55-test</a>, with the ECMA-55 standard
+    itself.</li>
+  <li><strong>David Ahl's <em>BASIC Computer Games</em></strong>, the listings from
+    <a href="https://github.com/coding-horror/basic-computer-games">coding-horror/basic-computer-games</a>.</li>
+  <li><strong><a href="https://github.com/wconrad/basic101">basic101</a></strong>, a Ruby BASIC-80 interpreter.
+    Its test captures are the expected output for the games. It settles dozens of questions of dialect: how a
+    number prints, what STOP says, and how RND draws from Ruby's Mersenne Twister.</li>
+  <li><strong>The Mersenne Twister reference algorithm</strong>, and <strong>Elm's Array</strong>, the shape of the
+    persistent vector here.</li>
+</ul>
+<p><strong>The NBS suite serves well.</strong> It grades itself and it is thorough, and passing it means
+something. It leans toward statistical programs, though: its longest runs sort arrays and test the distribution
+of random numbers. That is not the kind of program the REPL is for. The games and the screen are, and there the
+captures from basic101 are the better judge.</p>
+
+<h2>Where it could go</h2>
+<p>There is more here than time allows. Deeper into this project: the last 44 games, the load checks'
+allocations, and whether the INPUT puzzle and the other copying rules reduce to something worth reporting to the
+Roc maintainers. Beside it: other languages from the same era, or BASIC's own relatives, on the same machine
+shape. Or the same interpreter in another functional language, to see whether the copying surprises are Roc's own
+or come with the territory. Any of those would make a good side project, and this one is a working interpreter, a
+test ladder and a set of hard-won rules to start from.</p>
+
+<p><a class="open" href="basic.html">Open the REPL</a></p>
+
+<footer>The interpreter, its tests and this page are in
+<a href="https://github.com/showell/roc-apps/tree/master/basic">roc-apps/basic</a>.</footer>
+</div>
+</body>
+</html>
