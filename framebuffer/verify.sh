@@ -8,8 +8,10 @@
 #
 #   framebuffer/verify.sh
 #
-# Prints a line a program and exits 1 when any fails. Each program's native
-# build log, output and errors stay in ~/build/roc-apps/gen/framebuffer/<program>/.
+# Prints a line a program and exits 1 when any fails. A row that ends
+# `blocked: <why>` is neither built nor run: it prints BLOCKED with its why and
+# does not fail the check. Each program's native build log, output and errors
+# stay in ~/build/roc-apps/gen/framebuffer/<program>/.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$HERE/.." && pwd)"
@@ -22,7 +24,7 @@ mkdir -p "$GEN"
 
 rows=()
 paths=()
-while read -r prog count want; do
+while read -r prog count want blocked; do
     case "$prog" in ''|'#'*) continue ;; esac
     case "$prog" in
         cobblestone:*) path="$CHECKOUT/${prog#cobblestone:}" ;;
@@ -33,8 +35,12 @@ while read -r prog count want; do
         runs=[0-9]*|flushes=[0-9]*) ;;
         *) echo "verify.tsv: $count is neither runs=N nor flushes=N"; exit 2 ;;
     esac
-    rows+=("$path $count $want")
-    paths+=("$path")
+    case "$blocked" in
+        ''|'blocked: '*) ;;
+        *) echo "verify.tsv: after $prog's hash, $blocked is not blocked: <why>"; exit 2 ;;
+    esac
+    rows+=("$path $count $want $blocked")
+    [ -z "$blocked" ] && paths+=("$path")
 done < "$HERE/verify.tsv"
 
 if ! "$HERE/build.sh" "${paths[@]}" > "$GEN/verify-build.log" 2>&1; then
@@ -48,7 +54,7 @@ trimmed() { sed -e :a -e '/^\n*$/{$d;N;ba' -e '}'; }
 
 failed=0
 for row in "${rows[@]}"; do
-    read -r path count want <<< "$row"
+    read -r path count want blocked <<< "$row"
     case "$count" in
         runs=*) mode=(-frames "${count#runs=}") ;;
         *) mode=(-flushes "${count#flushes=}") ;;
@@ -56,6 +62,10 @@ for row in "${rows[@]}"; do
     n="$(basename "$path" .codex)"
     # As build.sh names it: an app's opening.codex by the app's directory.
     [ "$n" = opening ] && n="$(basename "$(dirname "$path")")"
+    if [ -n "$blocked" ]; then
+        echo "BLOCKED $n | ${blocked#blocked: }"
+        continue
+    fi
     d="$GEN/$n"
     app="$(head -1 "$NEXT/$n.files")"
     rm -f "$d/native"

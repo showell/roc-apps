@@ -6,6 +6,12 @@
 # opening N times, a frame a run; `flushes=N` stops at the Nth GPU flush, for a
 # program that draws in a loop of its own.
 #
+# A row may end `blocked: <why>`: verify.sh reports it BLOCKED, neither builds
+# nor runs it, and keeps its hash for when it builds again. The blocked rows
+# build a constant WidgetNode (Widget.widget_label), whose two texts' pointer
+# relocations the Roc nightly writes in field-name order rather than offset
+# order, and wasm-ld refuses the wasm build.
+#
 # The GPU tests' hashes are the ones the machine page's MachineGpu and this
 # platform's gpu.zig both drew, 2026-09-14.
 #
@@ -22,12 +28,12 @@ roc-apps:framebuffer/demos/scene-spin.codex        runs=3     f9771881
 cobblestone:apps/engine-demo/EngineDemo.codex      flushes=30 fa25d97e
 # cvmm's GuiOS shell polls the mouse ports, which the machine page does not
 # model either; its hash is the native and wasm builds' too.
-cobblestone:apps/cvmm/GuiOpening.codex             flushes=3  1f50b26c
+cobblestone:apps/cvmm/GuiOpening.codex             flushes=3  1f50b26c  blocked: wasm-ld: relocations not in offset order
 # The demos that draw codex/test's images on the screen; their hashes are the
 # wasm builds' first, which the native builds must match.
 roc-apps:framebuffer/demos/shadow-spin.codex       runs=2     7e8c02aa
 roc-apps:framebuffer/demos/meshes-spin.codex       runs=2     5154c50a
-roc-apps:framebuffer/demos/widgets-on-screen.codex runs=2     5489e731
+roc-apps:framebuffer/demos/widgets-on-screen.codex runs=2     5489e731  blocked: wasm-ld: relocations not in offset order
 roc-apps:framebuffer/demos/qr-on-screen.codex      runs=1     e4f6b335
 roc-apps:framebuffer/demos/sketch-on-screen.codex  runs=2     eec762a5
 roc-apps:framebuffer/demos/raytrace-on-screen.codex runs=2    6e85daf5

@@ -69,7 +69,7 @@ hold: safe here because the host stops at any address it does not back.
 | `build.sh` | host, then each program emitted from a copy (so a `.vmargs` beside it stays behind), wired to the platform and built for wasm into the dev channel |
 | `programs.tsv` | what a frame is for a program, the screen it expects when its sources name none, and the files its asset loads read |
 | `frames.mjs` | a program's frames from Node, runs or (`flushes:N`) GPU flushes: each frame's time, pixels drawn and a hash of the image, and the last frame as a PNG |
-| `verify.sh`, `verify.tsv` | screen mode 2: every program in the table built natively and run for its runs or flushes; the last frame's hash must be the table's, and a test's console its verdict |
+| `verify.sh`, `verify.tsv` | screen mode 2: every program in the table built natively and run for its runs or flushes; the last frame's hash must be the table's, and a test's console its verdict; a row that ends `blocked: <why>` is reported BLOCKED with its why, neither built nor run |
 | `web/index.html`, `web/runner.js` | the page: the programs, Play, one frame at a time, the screen size, the console, the Roc; and its runner, the Web Worker that runs the program and posts its frames |
 | `demos/` | Codex programs written for this platform; `quires.tsv` names the checkout they cite |
 | `bench/RayBench.roc`, `bench/raybench.sh` | raytrace-on-screen's trace as a native bench: the demo's scene and camera over the modules rocemit writes for it, timed with a checksum that must not move (`PERF.md`) |
