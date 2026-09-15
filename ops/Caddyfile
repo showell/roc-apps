@@ -1,13 +1,15 @@
 # Cobblestone Roc Projects on this box: one Caddy, a path per app, a port per
-# channel. Run by the roc-site user service (ops/roc-site.service).
+# channel. Run by the roc-site user service (ops/roc-site.service). Prod is
+# https://roc.lynrummy.com, on the prod droplet (ops/roc.lynrummy.com.caddy).
 #
 #   :9210  dev      ~/build/roc-apps/next/, what the build scripts last wrote
 #   :9200  staging  roc-apps/site/live/, what site/publish.sh last moved there
 #
-# The ports announced before the site answer with redirects, 302 because their
-# targets move to prod: :9201 (Safari) to staging's safari/; :9203 (the old
-# preview) to staging for basic/ and to dev at the same path for the rest;
-# :9204 and :9205 (the gallery and the games) to staging's gpu/ and games/.
+# The ports announced before the site answer with redirects, 302 so that a
+# later change of target reaches a browser that followed one before: :9201
+# (Safari) to prod's safari/; :9203 (the old preview) to prod for basic/ and to
+# dev at the same path for the rest; :9204 and :9205 (the gallery and the
+# games, never announced) to staging's gpu/ and games/.
 #
 # Every response is no-store, because a cached module looks exactly like a
 # build that changed nothing, and asks for cross-origin isolation, because the
@@ -35,12 +37,12 @@
 }
 
 :9201 {
-	redir http://{host}:9200/safari/ 302
+	redir https://roc.lynrummy.com/safari/ 302
 }
 
 :9203 {
 	@basic path /basic /basic/*
-	redir @basic http://{host}:9200{uri} 302
+	redir @basic https://roc.lynrummy.com{uri} 302
 	redir http://{host}:9210{uri} 302
 }
 
