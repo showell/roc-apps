@@ -111,6 +111,49 @@ Two games never end; their `.options` name the output lines basic101's test
 harness allowed, and they pass when the capture, less the harness's own last
 line, is where the transcript starts.
 
+## What is easy to break
+
+- **The NBS suite's self-grading is blind both ways.** A program that must
+  report an exception prints the same verdict whether the report came or not,
+  and "IF SO, TEST PASSED, OTHERWISE TEST FAILED" holds both words.
+  `nbs-reports.txt` names what each such program must show, taken from its TO
+  PASS section and never from our output. An exception program gets a row there
+  when it is worked on.
+- **"EXECUTION DID NOT TERMINATE" is the program's own words**, printed when a
+  fatal exception was not raised; it is not a hang. A TIMEOUT is a hang. An
+  infinity is never a value.
+- **`*** HALTED:` is an ECMA-55 exception and `*** UNSUPPORTED:` is a form not
+  built.** Only the second is a failure: seven NBS programs exist to check that
+  a subscript out of range does stop the program.
+- **An empty transcript is a CRASH.** The runtime's stack overflow message
+  carries no ✗, and an empty transcript prints no TEST FAILED.
+- **The copy in `store`** (READ or INPUT into an array element) is load-bearing:
+  handing `set_arr` the machine straight from `ensure_arr` overflows the stack
+  (`findings/store-overflow/`).
+- **The string path is decided before the numeric grammar**, or a string read
+  down the numeric path becomes zero.
+- **The text screen (1,000 bytes at 1024) and the framebuffer (64,000 at
+  131072) are flat**, routed out of the memory trie by address, and the small
+  windows are matched first: the framebuffer's window must not swallow colour
+  RAM at 55296.
+- **The page's door runs on fuel per resume.** Running out is a yield (status
+  5), not a death. `wake` hands the suspended state over owned and replaces it;
+  a borrowed state copies the machine once a tank.
+- **The transcript is trimmed at twice the window**, not per character, or a
+  program that prints forever pays for the window on every character.
+- **P108 and P203 ship placeholder replies.** `nbs-input/` holds replies written
+  from their own prompts. P203's zones at margin 80 are six, not five, and its
+  arithmetic cannot catch a wrong reply.
+- **A new host export is declared in the platform's `exports:` too**, or it
+  silently is not one.
+- **In the page's CSS, `[hidden]` needs `display: none !important`**: any rule
+  that sets `display` beats the attribute.
+
+The page reads a status after each resume: 0 finished, 1 waiting for a line, 2
+exception, 3 unbuilt form, 4 sleeping, 5 yielded, 6 rejected before it ran.
+`view` answers a flag byte (1: pixels drawn), the screen, the framebuffer when
+drawn, then the transcript.
+
 ## What Roc does not have
 
 Each is something a real program needs and a synthetic benchmark does not:

@@ -60,6 +60,7 @@ saves a screenshot to `shots/`, ESCAPE quits.
     ray/build.sh safari                    # Linux, dev backend, into ~/build/roc-apps/ray/safari/
     OPT=speed ray/build.sh safari          # LLVM
     TARGET=x64win ray/build.sh safari      # Windows; links only where a Windows SDK is installed
+    TARGET=arm64mac ray/build.sh safari    # Apple Silicon (x64mac: Intel); links here, runs only on a Mac
 
 `build.sh` stages the app and the module directories its `modules` file names,
 points the app's platform reference at a roc-ray checkout, and runs `roc build`.
