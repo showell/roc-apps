@@ -8,8 +8,10 @@
 # An app is ray/apps/<name>/: its main.roc and any sibling modules. The app's
 # modules are staged into the output directory with the platform reference
 # rewritten to the roc-ray checkout's platform/main.roc, as a RELATIVE path
-# (`roc run` refuses an absolute one). The checkout must have run `zig build`,
-# which writes the host libraries platform/targets/ names.
+# (`roc run` refuses an absolute one). The checkout must have run
+# `zig build -Doptimize=ReleaseFast` (276 s here, every target), which writes the
+# host libraries platform/targets/ names. A plain `zig build` is a Debug host:
+# Safari's headless frame is 65 ms on it and 34 ms on ReleaseFast.
 #
 # The environment names everything that differs between this box and a CI
 # runner: ROC (the compiler roc-ray pins, nightly-2026-09-07-14d9829), ROC_RAY

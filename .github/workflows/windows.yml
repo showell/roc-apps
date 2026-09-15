@@ -41,9 +41,11 @@ jobs:
           version: nightly-new-compiler
           nightly-tag: nightly-2026-09-07-14d9829
 
+      # ReleaseFast: a plain `zig build` is a Debug host, whose checked
+      # arithmetic and resource-heap checks took a third of Safari's frame.
       - name: Build roc-ray's host libraries
         working-directory: roc-ray
-        run: zig build
+        run: zig build -Doptimize=ReleaseFast
 
       - name: Build the apps
         env:
