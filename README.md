@@ -1,42 +1,25 @@
 # roc-apps
 
-Safari, our browser screensaver, as Roc: the chapter modules emitted from
-the Codex source by rust-codex-compiler's `rocemit`, the spec apps that grade
-them against the Codex verdicts, a wasm platform and app that run them in
-the browser page the Codex version used, and the first Roc-only flair, a
-Roc on the fifth tree on the right of every segment.
+Programs in Roc from the Cobblestone world. Most are Codex emitted as Roc by
+rust-codex-compiler's `rocemit` and run on platforms of our own, in the browser
+or natively; BASIC is written in Roc by hand. An app with a README keeps its map
+there; the others are mapped below.
 
-## The map
+## The apps
 
-| where | what | written by |
+| where | what | map |
 |---|---|---|
-| `safari/roc/*.roc` | one type module per Codex chapter, whole, as written; one app per spec (`*Spec.roc`) | `rocemit`, via `safari/emitted.sh` |
-| `safari/roc/SafariRide.roc` | the screensaver for any platform: the ride between frames, the history for stepping back, and what a frame shows (commands after blit expansion, roll, sky colours, sun) | hand |
-| `safari/roc/SafariApp.roc` | the wasm edge of SafariRide: the model boxed for the page, the frame packed into the blitter's words, the readouts | hand |
-| `safari/roc/RocBird.roc` | the bird | hand |
-| `safari/roc/FrameBench.roc` | a native loop over the frame, for `perf` | hand |
-| `safari/wasm/` | the platform: `platform/main.roc` provides the page's sixteen exports over `Box(Model)`; `platform/host.zig` is the host; `build.zig` builds it against the roc checkout; `drive_smoke.mjs` drives the built module from Node as the page does (first frame, readouts, ms per step, `back`); `frame_hash.mjs` hashes every frame's bytes and readouts over a fixed ride, so a change that should move no pixel is held to that; `run_wasm.mjs` runs any Roc module's `wasm_main` with logged `env` imports | hand |
-| `safari/web/` | the page: a copy of safari-codex's `blitter.js`, and its `index.html` | hand |
-| `safari/build.sh` | host + app + page into the dev channel, `http://<box>:9210/safari/` | hand |
-| `ops/` | `Caddyfile` and `roc-site.service`: one Caddy serving the site (below) and redirecting the ports announced before it; `install.sh` | hand |
-| `safari/emitted.sh` | THE GATE: every unit emitted, chapter identity checked, roc run two at a time, output against the verdict; a compile error is a FAIL | hand |
-| `safari/retest.sh` | the targeted sweep: emit all, diff against the tracked Roc, run only what changed | hand |
-| `wasm/*.mjs` | Node drivers: run a module, drive the screensaver headless with timings | hand |
-| `docs/codex-subset.md` | the forms safari uses, counted over the 54 IRs | hand |
-| `ray/README.md` | Safari on roc-ray: what is shared with the web and what is not, the two painters, building, the checks | hand |
-| `ray/build.sh` | an app on [roc-ray](https://github.com/lukewilliamboswell/roc-ray) (raylib; native only) for one target, from a roc-ray checkout's platform source: stages `ray/apps/<name>/` with its platform reference rewritten, and builds with the nightly roc-ray pins (09-07) | hand |
-| `ray/apps/hello/` | the smallest roc-ray app, proving a build end to end | hand |
-| `ray/apps/safari/` | Safari on roc-ray: roc-ray draws Shapes' frame under a camera turned by the roll, gradients through one fragment shader; R switches to the first iteration, Raster's pixels shown as one texture; P saves a screenshot; the page's keys; `modules` names `safari/roc` for `ray/build.sh` to stage | hand |
-| `safari/roc/Brush.roc` | a command's paint decoded once, a flat colour or one of the blitter's gradients, and `shade`, the colour it gives a scene point; Raster uses it, and the app's shader does the same arithmetic | hand |
-| `safari/roc/Shapes.roc` | a frame as shapes a drawing platform fills itself, each with its brush: convex polygons, ear-clipped triangles wound for raylib, discs, rectangles; the blitter's sky and clipped sun | hand |
-| `safari/roc/ShapesFrame.roc` | the check on Shapes: Raster paints the frame itself and again from Shapes' pieces with their brushes, and the pixels that differ are counted | hand |
-| `safari/roc/Raster.roc` | a frame painted into 960x600 pixels in Roc, as blitter.js paints the canvas: backdrop, sun, commands, under the roll; nonzero fills, no anti-aliasing | hand |
-| `ray/png_diff.mjs` | two screenshots compared pixel by pixel: how many differ, how many by more than a tolerance, the largest difference; for the Windows runner's shots of the two painters | hand |
-| `safari/roc/RasterFrame.roc` | one frame painted natively and printed as hex with its hash; `ray/pixels_png.mjs` turns that into a PNG | hand |
-| `.github/workflows/windows.yml` | the Windows executables, built on a hosted Windows runner because Roc's `x64win` link needs an installed Windows SDK; uploaded as the `windows-exe` artifact; run by hand | hand |
-
-The units come from `~/showell_repos/safari-codex/units/` (`<Spec>.codex`
-resolved, `<Spec>.expected` the verdict the Rust interpreter froze).
+| `safari/` | our driving screensaver: its Codex chapters emitted as Roc, graded by their specs, run in the browser | `safari/README.md` |
+| `ray/` | apps as native programs on roc-ray (raylib), Safari among them, and the Windows build | `ray/README.md` |
+| `basic/` | a BASIC interpreter written by hand in Roc, a web page that runs it, and the corpora that grade it | `basic/README.md` |
+| `gpu/` | Cobblestone's WGSL kernels, on the CPU | below |
+| `games/` | Damian's classic games, with the browser as the platform | below |
+| `machine/` | simulated devices in one Roc value | `machine/README.md` |
+| `framebuffer/` | Codex drawing on a screen, with no machine under it | `framebuffer/README.md` |
+| `tests/` | Cobblestone's own suite as the emitter's ladder | below |
+| `site/`, `ops/` | the site that serves the apps: dev, staging and prod | below |
+| `findings/` | Roc behaviours we found, each with a program that shows it | |
+| `docs/` | the Codex forms safari uses; the machine's memory plan and structures | |
 
 ## The site: Cobblestone Roc Projects
 
@@ -57,6 +40,7 @@ The ports announced before the site redirect: :9201 to prod's `safari/`;
 
 | where | what | written by |
 |---|---|---|
+| `ops/` | `Caddyfile` and `roc-site.service`: one Caddy serving the site and redirecting the ports announced before it; `install.sh` | hand |
 | `site/web/index.html` | the landing page: Finished, In progress, and the date each app on the channel was published | hand |
 | `site/web/shared/home.js` | the link home, and the banner on dev (whose root alone has a `channel` file); every page loads it with one relative line | hand |
 | `site/build.sh` | the landing page, `shared/` and the `channel` file into dev | hand |
@@ -68,6 +52,10 @@ The ports announced before the site redirect: :9201 to prod's `safari/`;
     site/build.sh                  # the root into dev, http://<box>:9210/
     site/publish.sh safari         # when dev looks right: staging, http://<box>:9200/safari/
     site/deploy.sh                 # when staging looks right: prod, https://roc.lynrummy.com/
+
+Staging never changes under you: a build goes to dev, and only a publish, a
+deliberate copy with a provenance file and a commit, moves it to staging.
+Both channels send no-store, so each is live the moment its file is.
 
 Every page's URLs are relative, so the site works under any prefix.
 
@@ -186,27 +174,15 @@ names the rest. Nothing we ship does this.
 
 ## The Roc is tracked; everything else the tools write is not
 
-`safari/roc/` is generated and committed, because those files are the point.
-A full `emitted.sh` rewrites every emitted file and leaves the hand-written
-ones; a diff there is a change in what the emitter says, reviewed like any
-other. What staging serves, `site/live/`, is committed too, each app with its
-provenance, so a clone has the published site. Roc's own output, the dev
-channel and the caches live under `~/build/roc-apps/`.
+Each app's emitted Roc (`safari/roc/`, `gpu/roc/`, `games/roc/`) is generated
+and committed, because those files are the point: a diff there is a change in
+what the emitter says, reviewed like any other. What staging serves,
+`site/live/`, is committed too, each app with its provenance, so a clone has
+the published site. Roc's own output, the dev channel and the caches live
+under `~/build/roc-apps/`.
 
-## The loop
-
-    safari/emitted.sh              # 54 units, ~10-27 s; the gate before a commit of safari/roc
-    safari/retest.sh               # after a rocemit change: only what changed
-    safari/build.sh                # host + app + page -> dev, http://<box>:9210/safari/, ~15 s
-    wasm/drive_smoke.mjs ~/build/roc-apps/next/safari/safari.wasm 120   # frame bytes, stages, ms per frame
-    site/publish.sh safari         # when dev looks right: staging, http://<box>:9200/safari/
-
-Staging never changes under you: a build goes to dev, and only a publish, a
-deliberate copy with a provenance file and a commit, moves it to staging.
-Both channels send no-store, so each is live the moment its file is.
-
-`ROCEMIT=~/build/rust-target/debug/rocemit` points the sweeps at a debug
-build of the emitter; the default is the release one.
+`ROCEMIT=~/build/rust-target/debug/rocemit` points the gates and the ladder at
+a debug build of the emitter; the default is the release one.
 
 ## The compiler
 

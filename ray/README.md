@@ -17,8 +17,19 @@ platform. The bulk of the code is shared; each platform has a thin edge.
 | the web edge | `safari/roc/SafariApp.roc` (exports over a boxed model) and `safari/web/blitter.js` (paints the canvas) | wasm |
 | the roc-ray edge | `apps/safari/main.roc`: each shape becomes one draw call, under a camera turned by the ride's roll | roc-ray |
 
-No module under `safari/roc/` imports a platform. The roc-ray app is about 180
-lines: `init!`, `update!` for the keys, and `render!`.
+No module under `safari/roc/` imports a platform. The roc-ray app is one file:
+`init!`, `update!` for the keys, and `render!`.
+
+## The files
+
+| where | what |
+|---|---|
+| `build.sh` | an app for one target, from a roc-ray checkout's platform source: stages `apps/<name>/` and the module directories its `modules` file names, with its platform reference rewritten, and builds with the nightly roc-ray pins (09-07) |
+| `apps/hello/` | the smallest roc-ray app, proving a build end to end |
+| `apps/safari/` | Safari: roc-ray draws Shapes' frame under a camera turned by the roll, gradients through one fragment shader; R switches to Raster's pixels shown as one texture; P saves a screenshot; `modules` names `safari/roc` |
+| `pixels_png.mjs` | the frame `safari/roc/RasterFrame.roc` or `ShapesFrame.roc` prints, as a PNG |
+| `png_diff.mjs` | two screenshots compared pixel by pixel: how many differ, how many by more than a tolerance, the largest difference |
+| `../.github/workflows/windows.yml` | the Windows executables, built on a hosted Windows runner, and each painter's screenshots from a real window on Mesa's llvmpipe; run by hand |
 
 ## Two painters
 
