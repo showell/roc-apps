@@ -72,6 +72,7 @@ hold: safe here because the host stops at any address it does not back.
 | `verify.sh`, `verify.tsv` | screen mode 2: every program in the table built natively and run for its runs or flushes; the last frame's hash must be the table's, and a test's console its verdict |
 | `web/index.html`, `web/runner.js` | the page: the programs, Play, one frame at a time, the screen size, the console, the Roc; and its runner, the Web Worker that runs the program and posts its frames |
 | `demos/` | Codex programs written for this platform; `quires.tsv` names the checkout they cite |
+| `bench/RayBench.roc`, `bench/raybench.sh` | raytrace-on-screen's trace as a native bench: the demo's scene and camera over the modules rocemit writes for it, timed with a checksum that must not move (`PERF.md`) |
 
     framebuffer/build.sh framebuffer/demos/scene-spin.codex machine/batch/demos/scene-on-screen.codex
     framebuffer/build.sh ~/showell_repos/cobblestone-u61/codex/test/gpu-panel-border.codex

@@ -188,3 +188,22 @@ things in it are this program's shape rather than Roc's:
 - The copy costs a tenth though the host's store, `roc_heap_store`, is not in
   the top 25: the time is the Roc around each pixel, `fb-get`'s `List.get` on
   the Framebuf and the door's wrapper.
+
+## 2026-09-15: a square root as Roc's
+
+rocemit writes Geometry's `geo-sqrt` and Quaternion's `quat-real-sqrt` as
+`F64.sqrt` behind their own guard (rust-codex-compiler `ad24db4`). Every
+`verify.sh` hash is the same as before.
+
+| raytrace-on-screen | the Newton loop | Roc's `sqrt` |
+|---|---|---|
+| a frame, wasm in Node (`frames.mjs`, frames 1 to 11) | 96 to 101 ms | 61 to 69 ms |
+| `bench/raybench.sh`, 30 frames of `trace`, native | 0.86 to 1.12 s | 0.58 to 0.60 s |
+| `bench/raybench.sh`, 30 frames of `render`, native | 1.26 to 1.35 s | 0.80 to 0.81 s |
+
+`bench/RayBench.roc` is the demo's scene and camera over the modules rocemit
+writes for it, without the screen: `trace` finds each pixel's closest hit and
+nothing else, `render` is the whole `rt-render`, and each prints a checksum
+that stays the same. The case study that goes on from here, what `rt-closest`
+carries and what the dev backend's code is, is the essay
+`:9100/notes/raytrace-case-study.md`.
