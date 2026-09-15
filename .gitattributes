@@ -1,0 +1,4 @@
+# Text is checked out with LF everywhere, the Windows runner included: Git for
+# Windows would otherwise write CRLF, and a bash `read` of a file such as
+# ray/apps/safari/modules keeps the carriage return.
+* text=auto eol=lf
