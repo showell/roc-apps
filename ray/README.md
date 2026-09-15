@@ -30,6 +30,7 @@ No module under `safari/roc/` imports a platform. The roc-ray app is one file:
 | `pixels_png.mjs` | the frame `safari/roc/RasterFrame.roc` or `ShapesFrame.roc` prints, as a PNG |
 | `png_diff.mjs` | two screenshots compared pixel by pixel: how many differ, how many by more than a tolerance, the largest difference |
 | `../.github/workflows/windows.yml` | the Windows executables, built on a hosted Windows runner, and each painter's screenshots from a real window on Mesa's llvmpipe; run by hand |
+| `../.github/workflows/macos.yml` | the macOS executables, built and run headless on hosted Apple Silicon and Intel runners, which have no GPU; run by hand |
 
 ## Two painters
 
@@ -75,6 +76,12 @@ builds `hello` and `safari`, runs both headless, and uploads them. Then it runs
 Safari in a real hidden window on Mesa's llvmpipe with scripted keys, pausing at
 four places on the route and saving each frame three ways (Shapes anti-aliased,
 Shapes plain, Pixels), and uploads the screenshots as `safari-shots`.
+
+The macOS executables are built by `.github/workflows/macos.yml` on hosted
+Apple Silicon (`arm64mac`) and Intel (`x64mac`) runners, the two roc-ray's own
+CI uses. Each job builds `hello` and `safari`, shows their code signatures, runs
+both headless and uploads them. The runners have no GPU, so the drawing is
+tested only on a real Mac.
 
 ## The checks
 

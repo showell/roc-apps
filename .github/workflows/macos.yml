@@ -1,0 +1,88 @@
+# Build the roc-ray apps as macOS executables on hosted Apple Silicon and Intel
+# runners, run each headless, and upload them. The runners have no GPU, so
+# nothing here opens a window: a real Mac is the only test of the drawing. The
+# steps follow roc-ray's own CI, which builds and runs its examples on the same
+# two runners. Run by hand:
+#
+#   gh workflow run macos.yml
+#   gh run download <run-id> -n macos-arm64mac -D ~/build/roc-apps/ray/macos
+name: macOS executables
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            target: arm64mac
+          - os: macos-15-intel
+            target: x64mac
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout roc-apps
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Checkout roc-ray
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: lukewilliamboswell/roc-ray
+          ref: e100c9548b903ee5c7363f5997251980c4355c7b
+          path: roc-ray
+
+      - name: Install Zig
+        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
+        with:
+          version: 0.16.0
+
+      - name: Install Roc
+        uses: roc-lang/setup-roc@cbe782d6f165b89c87d99f50a59ac4f5f73b4427
+        with:
+          version: nightly-new-compiler
+          nightly-tag: nightly-2026-09-07-14d9829
+
+      # ReleaseFast: a plain `zig build` is a Debug host, whose checked
+      # arithmetic and resource-heap checks took a third of Safari's frame.
+      - name: Build roc-ray's host libraries
+        working-directory: roc-ray
+        run: zig build -Doptimize=ReleaseFast
+
+      - name: Build the apps
+        env:
+          ROC: roc
+          ROC_RAY: roc-ray
+          OUT: out
+          TARGET: ${{ matrix.target }}
+        run: |
+          ray/build.sh hello
+          OPT=speed ray/build.sh safari
+          file out/hello/hello out/safari/safari
+
+      # Apple Silicon runs nothing without at least an ad-hoc signature.
+      - name: Show the code signatures
+        run: |
+          codesign -dv out/hello/hello 2>&1 || true
+          codesign -dv out/safari/safari 2>&1 || true
+
+      # No window: the headless host draws nothing, so this proves each
+      # executable links, loads and runs its cycles (Safari paints every one).
+      - name: Run the apps headless
+        run: |
+          out/hello/hello --host-headless --host-headless-frames=5
+          out/safari/safari --host-headless --host-headless-frames=3
+
+      - name: Upload the executables
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: macos-${{ matrix.target }}
+          path: |
+            out/hello/hello
+            out/safari/safari
+          if-no-files-found: error

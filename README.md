@@ -10,7 +10,7 @@ there; the others are mapped below.
 | where | what | map |
 |---|---|---|
 | `safari/` | our driving screensaver: its Codex chapters emitted as Roc, graded by their specs, run in the browser | `safari/README.md` |
-| `ray/` | apps as native programs on roc-ray (raylib), Safari among them, and the Windows build | `ray/README.md` |
+| `ray/` | apps as native programs on roc-ray (raylib), Safari among them, and the Windows and macOS builds | `ray/README.md` |
 | `basic/` | a BASIC interpreter written by hand in Roc, a web page that runs it, and the corpora that grade it | `basic/README.md` |
 | `gpu/` | Cobblestone's WGSL kernels, on the CPU | below |
 | `games/` | Damian's classic games, with the browser as the platform | below |

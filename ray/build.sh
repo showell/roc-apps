@@ -49,8 +49,11 @@ if [ -f "$app/modules" ]; then
     done < "$app/modules"
 fi
 cp "$app"/*.roc "$stage/"
-platform="$(realpath --relative-to="$stage" "$ROC_RAY/platform/main.roc")"
-sed -i -E "0,/platform \"[^\"]*\"/s##platform \"$platform\"#" "$stage/main.roc"
+# Perl for the relative path and the rewrite: macOS has neither GNU realpath's
+# --relative-to nor GNU sed, and Perl is on macOS, Linux and the Windows
+# runner's Git Bash alike. The substitution replaces the first reference only.
+platform="$(perl -MFile::Spec -e 'print File::Spec->abs2rel($ARGV[0], $ARGV[1])' "$ROC_RAY/platform/main.roc" "$stage")"
+PLATFORM="$platform" perl -0pi -e 's/platform "[^"]*"/platform "$ENV{PLATFORM}"/' "$stage/main.roc"
 grep -q "platform \"$platform\"" "$stage/main.roc" || { echo "no platform reference to rewrite in $app/main.roc"; exit 2; }
 
 exe="$dest/$name$suffix"
