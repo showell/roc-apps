@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codex on the framebuffer platform</title>
+<script src="../shared/home.js"></script>
+<style>
+  :root { --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --pane: #ffffff; --ok: #2f7d32; --bad: #b3261e; --sel: #e8e2d2; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --pane: #242422; --ok: #7cc47f; --bad: #f2a29b; --sel: #34332e; }
+  }
+  body { margin: 0; padding: 16px; background: var(--bg); color: var(--fg); font: 14px/1.45 system-ui, sans-serif; }
+  main { max-width: 1400px; margin: 0 auto; }
+  .layout { display: grid; grid-template-columns: minmax(200px, 260px) minmax(0, 1fr); gap: 16px; align-items: start; }
+  .work { min-width: 0; }
+  @media (max-width: 720px) { .layout { grid-template-columns: minmax(0, 1fr); } .units { position: static; max-height: none; overflow: visible; } }
+  h1 { font-size: 20px; margin: 0 0 6px; }
+  p.lede { margin: 0 0 14px; color: var(--muted); max-width: 72ch; }
+  .units { display: flex; flex-direction: column; gap: 8px; position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; }
+  .unit { text-align: left; font: inherit; padding: 8px 10px; border: 1px solid var(--edge); background: var(--pane); color: var(--fg); border-radius: 6px; cursor: pointer; }
+  .unit[aria-pressed="true"] { background: var(--sel); border-color: var(--muted); }
+  .unit b { display: block; font-family: ui-monospace, monospace; font-size: 13px; }
+  .unit span { color: var(--muted); font-size: 13px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+  button.run, select { font: inherit; padding: 5px 12px; border: 1px solid var(--edge); background: var(--pane); color: var(--fg); border-radius: 4px; }
+  button.run { cursor: pointer; }
+  button.run:disabled { opacity: 0.5; cursor: default; }
+  #status { color: var(--muted); }
+  #status.bad { color: var(--bad); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 12px; }
+  section { background: var(--pane); border: 1px solid var(--edge); border-radius: 6px; padding: 8px 10px; min-width: 0; }
+  section h2 { font-size: 13px; margin: 0 0 6px; color: var(--muted); font-weight: 600; }
+  pre { margin: 0; font: 12px/1.35 ui-monospace, monospace; white-space: pre-wrap; overflow-x: auto; }
+  .muted { color: var(--muted); }
+  .wide, .code { grid-column: 1 / -1; }
+  canvas.screen { display: block; max-width: 100%; image-rendering: pixelated; border: 1px solid var(--edge); background: #000; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 8px; }
+  .tabs button { font: 12px ui-monospace, monospace; padding: 2px 8px; border: 1px solid var(--edge); background: var(--pane); color: var(--fg); border-radius: 3px; cursor: pointer; }
+  .tabs button[aria-pressed="true"] { background: var(--sel); border-color: var(--muted); }
+  pre.src { white-space: pre; max-height: 36em; overflow: auto; tab-size: 4; }
+</style>
+</head>
+<body>
+<main>
+<h1>Codex on the framebuffer platform</h1>
+<p class="lede">Each program below is Codex, turned into Roc by rocemit and built for WebAssembly. Its memory
+and its devices, a GPU and a keyboard controller, live in the platform's host, and the screen is part of that
+memory, where a UEFI machine keeps its framebuffer. A program that draws once is run again for every frame, with
+the clock 100 milliseconds further on each time; one that draws in a loop of its own runs once, and each GPU
+flush is a frame. Pausing a looping program stops it, and Play starts it again from the beginning.</p>
+<div class="layout">
+<aside class="units" id="units"></aside>
+<div class="work">
+<div class="bar">
+  <button class="run" id="play" disabled>Play</button>
+  <button class="run" id="step" disabled>One frame</button>
+  <select id="size" aria-label="Screen size"><option>160 × 120</option><option selected>320 × 240</option><option>640 × 480</option></select>
+  <span id="status">loading…</span>
+</div>
+<div class="grid">
+  <section class="wide"><h2 id="screenlab">Screen</h2><canvas id="screen" class="screen" width="320" height="240" tabindex="0"></canvas><div id="inputnote" class="muted"></div></section>
+  <section class="wide"><h2>Console</h2><pre id="console" class="muted">Nothing has run yet.</pre></section>
+  <section class="code"><h2 id="codelab">Roc</h2><div class="muted">What rocemit wrote for this program: its own module first, then a module for each Codex chapter it cites. The last, Mem.roc or Machine.roc, is the platform's: every read and write of memory, and every port, goes through it to the host.</div><div class="tabs" id="tabs"></div><pre id="src" class="src"></pre></section>
+</div>
+</div>
+</div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
+
+// What each program does, in a line.
+const ABOUT = {
+  "scene-spin": "Cobblestone's 3D renderer drawing a small scene as the camera circles it",
+  "scene-on-screen": "the same scene from a still camera; it draws 48,614 pixels, as on the machine",
+  "gpu-panel-border": "a panel holding a label, laid out by Cobblestone's widgets and drawn as triangles by the GPU",
+  "gpu-depth-tree": "a separator and a gauge drawn by the GPU, one over another in its depth buffer",
+  "gpu-gauge-clamp": "a gauge filled to 150 of 100, whose fill must stay inside its box",
+  "gpu-input-cursor": "an input box drawn by the GPU, whose cursor must stay inside it",
+  "gop-padded-stride": "a screen whose rows are longer in memory than on the glass; the hidden ends must stay untouched",
+  "EngineDemo": "Cobblestone's engine demo (apps/engine-demo): Codex lights and transforms a scene and the GPU draws it, the camera orbiting in a loop that never ends",
+  "GuiOpening": "the GuiOS desktop of Cobblestone's cvmm app, drawn by its widgets through the GPU; a click on the sidebar opens that pane",
+  "shadow-spin": "engine-shadow's cube and plane, rendered with a shadow map as the light circles the cube",
+  "meshes-spin": "engine-mesh-gen's sphere, cylinder, cone and torus, Gouraud shaded, the camera circling them",
+  "widgets-on-screen": "a panel of Cobblestone's widgets drawn by GopComposite onto the screen, the gauge filling with the clock",
+  "qr-on-screen": "qr-encode's payload as a QR code, drawn module by module with GopDraw's fill",
+  "sketch-on-screen": "Rasterizer's lines and shapes and Sprite's blits in one small image: arrows cross and a face blinks",
+  "raytrace-on-screen": "raytracer-test's spheres and floor, traced by Raytracer, the red sphere rising and falling",
+  "glyphs-on-screen": "the glyph for A in truetype-render-test's small font, a single triangle, rasterized by GlyphRasterizer plain and anti-aliased at three sizes",
+  "GlobeDemo": "Cobblestone's globe (apps/globe): an icosphere wrapped in the earth image the app loads from disk and shaded by codex-vm's globe shader, turning on its own; the arrows turn and tilt it, keypad + and - zoom, and E, M and R paint an Earth, a Mars or a random planet in Codex",
+  "Fireworks": "Cobblestone's fireworks (apps/fireworks): shells launched, simulated and drawn with the GPU's additive sprites and cinematic pass, a show in a loop of its own; F1 switches how each frame clears, and Q ends the show",
+};
+
+let programs = [], chosen = null, worker = null, playing = false, nextRun = 0, shown = 0, spent = 0;
+
+// Keys and the mouse reach a running program through memory shared with the
+// runner: a ring of four-int events after a head and a tail (runner.js). A
+// browser shares memory only with a cross-origin isolated page.
+const SLOTS = 256;
+const input = self.crossOriginIsolated ? new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * (2 + SLOTS * 4)) : null;
+const ring = input ? new Int32Array(input) : null;
+$("inputnote").textContent = input
+  ? "Click the screen, then type or point: keys go to the program as PC scancodes, and the mouse as its position and buttons."
+  : !self.isSecureContext
+  ? `Keys and the mouse need memory shared with the runner, which a browser allows only on a secure page. Open this one as http://localhost:${location.port}${location.pathname} through an SSH tunnel to this port, or over HTTPS.`
+  : "This page is not cross-origin isolated, so keys and the mouse cannot reach a running program.";
+
+function send(kind, a, b = 0, c = 0) {
+  if (!ring || !worker) return;
+  const head = Atomics.load(ring, 0);
+  const tail = Atomics.load(ring, 1);
+  const next = (tail + 1) % SLOTS;
+  if (next === head) return;
+  const at = 2 + tail * 4;
+  ring[at] = kind; ring[at + 1] = a; ring[at + 2] = b; ring[at + 3] = c;
+  Atomics.store(ring, 1, next);
+}
+
+// A key's make code in scancode set 1, which a PC keyboard controller and
+// Cobblestone's keyboard chapters speak; the arrows are the keypad's codes.
+const SCANCODES = {
+  Escape: 1, Digit1: 2, Digit2: 3, Digit3: 4, Digit4: 5, Digit5: 6, Digit6: 7, Digit7: 8, Digit8: 9, Digit9: 10, Digit0: 11,
+  Minus: 12, Equal: 13, Backspace: 14, Tab: 15, KeyQ: 16, KeyW: 17, KeyE: 18, KeyR: 19, KeyT: 20, KeyY: 21, KeyU: 22,
+  KeyI: 23, KeyO: 24, KeyP: 25, BracketLeft: 26, BracketRight: 27, Enter: 28, KeyA: 30, KeyS: 31, KeyD: 32, KeyF: 33,
+  KeyG: 34, KeyH: 35, KeyJ: 36, KeyK: 37, KeyL: 38, Semicolon: 39, Quote: 40, Backquote: 41, Backslash: 43, KeyZ: 44,
+  KeyX: 45, KeyC: 46, KeyV: 47, KeyB: 48, KeyN: 49, KeyM: 50, Comma: 51, Period: 52, Slash: 53, Space: 57,
+  ArrowUp: 72, ArrowLeft: 75, ArrowRight: 77, ArrowDown: 80, NumpadAdd: 78, NumpadSubtract: 74,
+};
+
+$("screen").addEventListener("keydown", (e) => {
+  const code = SCANCODES[e.code];
+  if (code === undefined) return;
+  e.preventDefault();
+  send(1, code);
+});
+
+// The mouse in the screen's own pixels, whatever size the canvas is shown at.
+function pointer(e) {
+  const canvas = $("screen");
+  const r = canvas.getBoundingClientRect();
+  const x = Math.min(canvas.width - 1, Math.max(0, Math.floor((e.clientX - r.left) * canvas.width / r.width)));
+  const y = Math.min(canvas.height - 1, Math.max(0, Math.floor((e.clientY - r.top) * canvas.height / r.height)));
+  send(2, x, y, e.buttons);
+}
+for (const kind of ["mousemove", "mousedown", "mouseup"]) $("screen").addEventListener(kind, pointer);
+const cache = new Map();
+const fetchText = async (path) => {
+  if (!cache.has(path)) cache.set(path, (async () => (await fetch(path)).text())());
+  return cache.get(path);
+};
+
+// The screen a program brings, or the one picked.
+const size = () => {
+  if (chosen && chosen.screen) return chosen.screen;
+  const [w, h] = $("size").value.split("×").map((s) => Number(s.trim()));
+  return [w, h, w];
+};
+
+function stopWorker() {
+  if (worker) worker.terminate();
+  worker = null;
+}
+
+// Choosing a program, or a screen size, stops what was running and starts the
+// next run from fresh memory.
+function choose(p) {
+  stopWorker();
+  playing = false;
+  chosen = p;
+  nextRun = 0;
+  shown = 0;
+  spent = 0;
+  $("size").disabled = Boolean(p.screen);
+  for (const b of $("units").children) b.setAttribute("aria-pressed", String(b.dataset.name === p.name));
+  const [w, h] = size();
+  const canvas = $("screen");
+  canvas.width = w; canvas.height = h; canvas.style.width = `${w <= 320 ? w * 2 : w}px`;
+  canvas.getContext("2d").clearRect(0, 0, w, h);
+  $("screenlab").textContent = `Screen: ${w} × ${h}`;
+  $("console").classList.add("muted");
+  $("console").textContent = "Nothing has run yet.";
+  $("status").classList.remove("bad");
+  $("status").textContent = `${p.name} is ready`;
+  controls();
+  showCode(p);
+}
+
+function controls() {
+  $("play").disabled = !chosen;
+  $("play").textContent = playing ? "Pause" : "Play";
+  $("step").disabled = !chosen || playing || worker !== null;
+}
+
+function showCode(p) {
+  const files = p.roc || [];
+  $("codelab").textContent = `Roc: ${files.length} module${files.length === 1 ? "" : "s"} for ${p.name}`;
+  $("tabs").innerHTML = "";
+  $("src").textContent = "";
+  const open = async (name, button) => {
+    for (const b of $("tabs").children) b.setAttribute("aria-pressed", String(b === button));
+    const text = await fetchText(`${p.name}.roc/${name}`);
+    if (chosen === p) $("src").textContent = text;
+  };
+  files.forEach((name, i) => {
+    const b = document.createElement("button");
+    b.textContent = name;
+    b.onclick = () => open(name, b);
+    $("tabs").appendChild(b);
+    if (i === 0) open(name, b);
+  });
+}
+
+// Starts the runner on `frames` frames of the chosen program. A looping
+// program always starts from its beginning; one that draws once a run picks up
+// at the next run's clock.
+function start(frames) {
+  const p = chosen;
+  stopWorker();
+  const kind = p.frame || "run";
+  worker = new Worker("runner.js");
+  worker.onmessage = ({ data: m }) => {
+    if (chosen !== p) return;
+    if (m.kind === "frame") {
+      $("screen").getContext("2d").putImageData(new ImageData(m.pixels, m.width, m.height), 0, 0);
+      $("console").classList.remove("muted");
+      $("console").textContent = m.console;
+      shown += 1;
+      spent += m.ms;
+      if (kind === "run") nextRun = m.run + 1;
+      const what = kind === "run" ? `frame ${shown} ran in ${m.ms.toFixed(0)} ms` : `frame ${shown}, ${m.ms.toFixed(0)} ms after the flush before it`;
+      $("status").textContent = `${what} · ${(1000 * shown / spent).toFixed(1)} frames a second so far`;
+    } else if (m.kind === "stopped") {
+      $("console").classList.remove("muted");
+      $("console").textContent = `${m.console}\n[stopped: ${m.why}]`;
+      $("status").classList.add("bad");
+      $("status").textContent = `${p.name} stopped`;
+      stopWorker();
+      playing = false;
+      nextRun = 0;
+      controls();
+    } else if (m.kind === "done") {
+      stopWorker();
+      playing = false;
+      controls();
+    }
+  };
+  if (ring) { Atomics.store(ring, 0, 0); Atomics.store(ring, 1, 0); }
+  worker.postMessage({ name: p.name, kind, screen: size(), firstRun: kind === "run" ? nextRun : 0, frames, input });
+  controls();
+}
+
+function play() {
+  if (!chosen) return;
+  if (playing) {
+    stopWorker();
+    playing = false;
+    controls();
+    return;
+  }
+  playing = true;
+  start(Infinity);
+}
+
+$("play").onclick = play;
+$("step").onclick = () => { if (chosen && !playing && !worker) start(1); };
+$("size").onchange = () => { if (chosen) choose(chosen); };
+(async () => {
+  programs = await (await fetch("programs.json")).json();
+  for (const p of programs) {
+    const b = document.createElement("button");
+    b.className = "unit"; b.dataset.name = p.name; b.setAttribute("aria-pressed", "false");
+    b.innerHTML = `<b>${esc(p.name)}</b><span>${esc(ABOUT[p.name] || "")}</span>`;
+    b.onclick = () => choose(p);
+    $("units").appendChild(b);
+  }
+  if (programs.length) choose(programs[0]); else $("status").textContent = "no programs are built";
+})();
+</script>
+</body>
+</html>
