@@ -7,8 +7,11 @@ the link:
 wasm-ld: error: ~/.cache/roc/nightly-2026-09-11-793f9d8/src/roc_build/roc_app_unsealed_wasm32.o: relocations not in offset order
 ```
 
-The nightly is `nightly-2026-09-11-793f9d8`. Not reported upstream; that is
-Steve's call.
+The nightly is `nightly-2026-09-11-793f9d8`. **This is almost certainly
+[roc-lang/roc#11419](https://github.com/roc-lang/roc/issues/11419):** `Repro.roc`
+links with a debug build of Roc's `main` (68267ddd06) patched with that issue's
+fix, a sort of each constant's relocations by offset (2026-09-15). The unpatched
+debug build was not tried.
 
 ## Reproduce
 
