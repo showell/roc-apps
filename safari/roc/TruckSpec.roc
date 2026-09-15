@@ -1,5 +1,6 @@
 # TruckSpec -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 import Grade
+import Text
 import Truck
 import VehicleLimits
 import World
@@ -142,21 +143,21 @@ boundary_want = [True, False]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("tk-fixed ", fixed_got, fixed_want, 0.0))
-	line!(Grade.grade_reals("tk-ratio ", ratio_got, ratio_want, F64.from_bits(4427486594234968593)))
-	line!(Grade.grade_reals("tk-init  ", initial_got, initial_want, 0.0))
-	line!(Grade.grade_bools("tk-iflag ", initial_flag_got, initial_flag_want))
-	line!(Grade.grade_reals("tk-sched ", sched_got, sched_want, 0.0))
-	line!(Grade.grade_reals("tk-turn  ", turn_got, turn_want, 0.0))
-	line!(Grade.grade_reals("tk-none  ", none_got, none_want, 0.0))
-	line!(Grade.grade_reals("tk-chain ", chain_got, chain_want, 0.0))
-	line!(Grade.grade_reals("tk-free  ", free_got, free_want, F64.from_bits(4427486594234968593)))
-	line!(Grade.grade_reals("tk-ahead ", ahead_got, ahead_want, F64.from_bits(4427486594234968593)))
-	line!(Grade.grade_reals("tk-cap   ", capped_got, capped_want, 0.0))
-	line!(Grade.grade_bools("tk-fflag ", free_flag_got, free_flag_want))
-	line!(Grade.grade_reals("tk-brake ", brake_got, brake_want, F64.from_bits(4427486594234968593)))
-	line!(Grade.grade_bools("tk-bflag ", brake_flag_got, brake_flag_want))
-	line!(Grade.grade_bools("tk-settle", settled_got, settled_want))
-	line!(Grade.grade_bools("tk-bound ", boundary_got, boundary_want))
+	line!(Text.printed(Grade.grade_reals([14, 34, 73, 28, 17, 36, 13, 22, 2], fixed_got, fixed_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([14, 34, 73, 21, 15, 14, 17, 16, 2], ratio_got, ratio_want, F64.from_bits(4427486594234968593))))
+	line!(Text.printed(Grade.grade_reals([14, 34, 73, 17, 18, 17, 14, 2, 2], initial_got, initial_want, 0.0)))
+	line!(Text.printed(Grade.grade_bools([14, 34, 73, 17, 28, 23, 15, 29, 2], initial_flag_got, initial_flag_want)))
+	line!(Text.printed(Grade.grade_reals([14, 34, 73, 19, 24, 20, 13, 22, 2], sched_got, sched_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([14, 34, 73, 14, 25, 21, 18, 2, 2], turn_got, turn_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([14, 34, 73, 18, 16, 18, 13, 2, 2], none_got, none_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([14, 34, 73, 24, 20, 15, 17, 18, 2], chain_got, chain_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([14, 34, 73, 28, 21, 13, 13, 2, 2], free_got, free_want, F64.from_bits(4427486594234968593))))
+	line!(Text.printed(Grade.grade_reals([14, 34, 73, 15, 20, 13, 15, 22, 2], ahead_got, ahead_want, F64.from_bits(4427486594234968593))))
+	line!(Text.printed(Grade.grade_reals([14, 34, 73, 24, 15, 31, 2, 2, 2], capped_got, capped_want, 0.0)))
+	line!(Text.printed(Grade.grade_bools([14, 34, 73, 28, 28, 23, 15, 29, 2], free_flag_got, free_flag_want)))
+	line!(Text.printed(Grade.grade_reals([14, 34, 73, 32, 21, 15, 34, 13, 2], brake_got, brake_want, F64.from_bits(4427486594234968593))))
+	line!(Text.printed(Grade.grade_bools([14, 34, 73, 32, 28, 23, 15, 29, 2], brake_flag_got, brake_flag_want)))
+	line!(Text.printed(Grade.grade_bools([14, 34, 73, 19, 13, 14, 14, 23, 13], settled_got, settled_want)))
+	line!(Text.printed(Grade.grade_bools([14, 34, 73, 32, 16, 25, 18, 22, 2], boundary_got, boundary_want)))
 	Ok({})
 }

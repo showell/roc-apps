@@ -4,6 +4,7 @@ import CatDraw
 import CatStills
 import Grade
 import Stills
+import Text
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
@@ -97,14 +98,14 @@ table_want = [True, True, True, True, True, True, True]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("cd-pt    ", pt_got, pt_want, 0.0))
-	line!(Grade.grade_reals("cd-lift  ", lift_got, lift_want, 0.0))
-	line!(Grade.grade_reals("cd-pts   ", pts_got, pts_want, 0.0))
-	line!(Grade.grade_ints("cd-guard ", guard_got, guard_want))
-	line!(Grade.grade_ints("cd-solid ", solid_got, solid_want))
-	line!(Grade.grade_ints("cd-polys ", polys_got, polys_want))
-	line!(Grade.grade_ints("cd-size  ", size_got, size_want))
-	line!(Grade.grade_ints("cd-count ", count_got, count_want))
-	line!(Grade.grade_bools("cd-table ", table_got, table_want))
+	line!(Text.printed(Grade.grade_reals([24, 22, 73, 31, 14, 2, 2, 2, 2], pt_got, pt_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([24, 22, 73, 23, 17, 28, 14, 2, 2], lift_got, lift_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([24, 22, 73, 31, 14, 19, 2, 2, 2], pts_got, pts_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([24, 22, 73, 29, 25, 15, 21, 22, 2], guard_got, guard_want)))
+	line!(Text.printed(Grade.grade_ints([24, 22, 73, 19, 16, 23, 17, 22, 2], solid_got, solid_want)))
+	line!(Text.printed(Grade.grade_ints([24, 22, 73, 31, 16, 23, 30, 19, 2], polys_got, polys_want)))
+	line!(Text.printed(Grade.grade_ints([24, 22, 73, 19, 17, 38, 13, 2, 2], size_got, size_want)))
+	line!(Text.printed(Grade.grade_ints([24, 22, 73, 24, 16, 25, 18, 14, 2], count_got, count_want)))
+	line!(Text.printed(Grade.grade_bools([24, 22, 73, 14, 15, 32, 23, 13, 2], table_got, table_want)))
 	Ok({})
 }

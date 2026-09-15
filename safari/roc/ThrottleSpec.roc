@@ -2,6 +2,7 @@
 import Arc
 import Grade
 import Pose
+import Text
 import Throttle
 import Trig
 import VehicleLimits
@@ -111,16 +112,16 @@ compose_want = [True, True, True]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("th-fixed ", fixed_got, fixed_want, F64.from_bits(4427486594234968593)))
-	line!(Grade.grade_reals("th-corner", corner_got, corner_want, 0.0))
-	line!(Grade.grade_bools("th-cmin  ", corner_min_got, corner_min_want))
-	line!(Grade.grade_reals("th-cat   ", cat_got, cat_want, 0.0))
-	line!(Grade.grade_bools("th-road  ", road_got, road_want))
-	line!(Grade.grade_bools("th-brake ", brake_got, brake_want))
-	line!(Grade.grade_bools("th-zero  ", zero_frames_got, zero_frames_want))
-	line!(Grade.grade_reals("th-clamp ", clamp_got, clamp_want, 0.0))
-	line!(Grade.grade_reals("th-whole ", whole_got, whole_want, F64.from_bits(4427486594234968593)))
-	line!(Grade.grade_reals("th-tilt  ", tilt_got, tilt_want, F64.from_bits(4427486594234968593)))
-	line!(Grade.grade_bools("th-comp  ", compose_got, compose_want))
+	line!(Text.printed(Grade.grade_reals([14, 20, 73, 28, 17, 36, 13, 22, 2], fixed_got, fixed_want, F64.from_bits(4427486594234968593))))
+	line!(Text.printed(Grade.grade_reals([14, 20, 73, 24, 16, 21, 18, 13, 21], corner_got, corner_want, 0.0)))
+	line!(Text.printed(Grade.grade_bools([14, 20, 73, 24, 26, 17, 18, 2, 2], corner_min_got, corner_min_want)))
+	line!(Text.printed(Grade.grade_reals([14, 20, 73, 24, 15, 14, 2, 2, 2], cat_got, cat_want, 0.0)))
+	line!(Text.printed(Grade.grade_bools([14, 20, 73, 21, 16, 15, 22, 2, 2], road_got, road_want)))
+	line!(Text.printed(Grade.grade_bools([14, 20, 73, 32, 21, 15, 34, 13, 2], brake_got, brake_want)))
+	line!(Text.printed(Grade.grade_bools([14, 20, 73, 38, 13, 21, 16, 2, 2], zero_frames_got, zero_frames_want)))
+	line!(Text.printed(Grade.grade_reals([14, 20, 73, 24, 23, 15, 26, 31, 2], clamp_got, clamp_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([14, 20, 73, 27, 20, 16, 23, 13, 2], whole_got, whole_want, F64.from_bits(4427486594234968593))))
+	line!(Text.printed(Grade.grade_reals([14, 20, 73, 14, 17, 23, 14, 2, 2], tilt_got, tilt_want, F64.from_bits(4427486594234968593))))
+	line!(Text.printed(Grade.grade_bools([14, 20, 73, 24, 16, 26, 31, 2, 2], compose_got, compose_want)))
 	Ok({})
 }

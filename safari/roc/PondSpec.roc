@@ -2,6 +2,7 @@
 import Grade
 import ListUtils
 import Pond
+import Text
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
@@ -36,9 +37,9 @@ face_want = [True, False, True, True, False, True]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_ints("pd-size", size_got, size_want))
-	line!(Grade.grade_reals("pd-spot", spot_got, spot_want, 0.0))
-	line!(Grade.grade_bools("pd-in  ", inside_got, inside_want))
-	line!(Grade.grade_bools("pd-face", face_got, face_want))
+	line!(Text.printed(Grade.grade_ints([31, 22, 73, 19, 17, 38, 13], size_got, size_want)))
+	line!(Text.printed(Grade.grade_reals([31, 22, 73, 19, 31, 16, 14], spot_got, spot_want, 0.0)))
+	line!(Text.printed(Grade.grade_bools([31, 22, 73, 17, 18, 2, 2], inside_got, inside_want)))
+	line!(Text.printed(Grade.grade_bools([31, 22, 73, 28, 15, 24, 13], face_got, face_want)))
 	Ok({})
 }

@@ -1,5 +1,6 @@
 # Game2048 -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 import Rng
+import Text
 
 Game2048 :: [].{
 	G2048State : { grid : List(I64), score : I64, moves : I64, game_over : Bool, rng : Rng.Rng }
@@ -228,6 +229,6 @@ Game2048 :: [].{
 		g2048_loop(next)
 	}) }) })
 
-	format_2048_result : Game2048.G2048Result -> Str
-	format_2048_result = |r| Str.concat(Str.concat(Str.concat(Str.concat(Str.concat("2048: max-tile=", I64.to_str(r.max_tile)), " score="), I64.to_str(r.score)), " moves="), I64.to_str(r.moves))
+	format_2048_result : Game2048.G2048Result -> List(U8)
+	format_2048_result = |r| List.concat(List.concat(List.concat(List.concat(List.concat([5, 3, 7, 11, 69, 2, 26, 15, 36, 73, 14, 17, 23, 13, 77], Text.show_int(r.max_tile)), [2, 19, 24, 16, 21, 13, 77]), Text.show_int(r.score)), [2, 26, 16, 33, 13, 19, 77]), Text.show_int(r.moves))
 }

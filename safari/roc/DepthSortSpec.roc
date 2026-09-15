@@ -1,6 +1,7 @@
 # DepthSortSpec -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 import DepthSort
 import Grade
+import Text
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
@@ -69,9 +70,9 @@ slack_want = [0, 1, 1, 0, 0, 1, 1, 0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("d-order ", fwds(DepthSort.sort_items(mixed), 0), order_want, 0.0))
-	line!(Grade.grade_ints("d-stable", idxs(DepthSort.sort_items(mixed), 0), stable_want))
-	line!(Grade.grade_ints("d-kind  ", kinds(DepthSort.sort_items(mixed), 0), kind_want))
-	line!(Grade.grade_ints("d-slack ", slack_got, slack_want))
+	line!(Text.printed(Grade.grade_reals([22, 73, 16, 21, 22, 13, 21, 2], fwds(DepthSort.sort_items(mixed), 0), order_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([22, 73, 19, 14, 15, 32, 23, 13], idxs(DepthSort.sort_items(mixed), 0), stable_want)))
+	line!(Text.printed(Grade.grade_ints([22, 73, 34, 17, 18, 22, 2, 2], kinds(DepthSort.sort_items(mixed), 0), kind_want)))
+	line!(Text.printed(Grade.grade_ints([22, 73, 19, 23, 15, 24, 34, 2], slack_got, slack_want)))
 	Ok({})
 }

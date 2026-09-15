@@ -188,7 +188,7 @@ PASS eventbus-test |
 PASS examples@eight-queens |
 PASS examples@missile-warning |
 PASS expr-calculator |
-FAIL factlog-layout | output: < text-cps=0 1 0 len=3
+PASS factlog-layout |
 PASS factorial |
 PASS fat16-alloc |
 PASS fat16-cluster-guard |
@@ -199,7 +199,7 @@ PASS fat16-list |
 PASS fat16-longname |
 PASS fat16-mkdir |
 PASS fat16-overwrite |
-FAIL fat16-source-cr | output: < text codes 41 58 0 1 50 48
+PASS fat16-source-cr |
 PASS fat16-subdir |
 PASS fat16-write |
 PASS fat32-cluster-guard |
@@ -276,7 +276,7 @@ PASS forewords@encode-hex |
 PASS forewords@encode-ini |
 PASS forewords@encode-jpeg |
 PASS forewords@encode-json |
-FAIL forewords@encode-json-escapes | output: < u00C0  len=3 units= 15 0 32
+PASS forewords@encode-json-escapes |
 PASS forewords@encode-json-numbers |
 PASS forewords@encode-lwm2m |
 PASS forewords@encode-markdown |
@@ -669,7 +669,7 @@ PASS lib@text-overflow-render |
 REFUSED lib@text-trim-test | field-store
 PASS lib@toml-test |
 DIVERGES lib@tree-view-nav | pins what a caller still holding the old record sees after its list is written in place; a Roc list is a value, so the caller keeps what it held
-FAIL lib@utf8-cce-test | output: < utf8-3byte-one-char=fail
+PASS lib@utf8-cce-test |
 PASS lib@widget-tone |
 PASS lib@yaml-test |
 PASS linear-branch |
@@ -748,7 +748,7 @@ PASS ops@cap-word-64 |
 PASS ops@cce-bounds-smoke |
 PASS ops@cce-builtin-bounds |
 PASS ops@char-at-bounds |
-FAIL ops@char-encode-bands | output: < 128 len=1 decoded=0 LEN-BAD RT-BAD
+PASS ops@char-encode-bands |
 PASS ops@closure-under-apply |
 REFUSED ops@collate-order | `sort-run` writes its list parameter `ks` and answers something else
 PASS ops@div-negative-pow2 |
@@ -792,7 +792,7 @@ PASS ops@substring-bounds |
 PASS ops@text-order-allowed |
 PASS ops@text-to-unicode-bytes-tier0 |
 PASS ops@tier0-cyrillic-print |
-FAIL ops@unicode-bytes-roundtrip | output: < 192 units=[ 0 0 ] n=2 back=0 cnt=2
+PASS ops@unicode-bytes-roundtrip |
 PASS ops@unit-pattern-lit |
 PASS ops@unit-real-arith |
 PASS ops@unit-real-compare |
@@ -938,7 +938,7 @@ PASS tcp-seqwrap |
 PASS text-append-alias |
 PASS text-eq-branches |
 PASS text-fold-indexed |
-REFUSED text-helper-native | builtin `text-replace`
+PASS text-helper-native |
 PASS text-helper-spec |
 PASS textfield-typing |
 PASS textscan-test |
@@ -995,7 +995,7 @@ PASS units-foreword |
 PASS uri-encode |
 PASS usb-desc-guard |
 PASS usb-test |
-FAIL validation-rules | output: < alpha-scripts: accented=ok cyrillic=ok greek=ERR punct=ERR
+PASS validation-rules |
 REFUSED value-eq | type (propeq (ctd "xs" (args)) (ctd "xs" (args)))
 CRASH vbe-mode-set | machine: port-out-16 to port 0x000001CE, Bochs VBE, which this machine does not model
 REFUSED vec-arith-hazards | type (vector 2 real)

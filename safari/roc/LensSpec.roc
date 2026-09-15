@@ -2,6 +2,7 @@
 import Grade
 import Lens
 import ListUtils
+import Text
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
@@ -43,9 +44,9 @@ cam_walk_acc = |i, acc| (if (i >= U64.to_i64_wrap(List.len(cam_lean))) { acc } e
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_rel("l-base ", base_got, base_want, F64.from_bits(4472406533629990549)))
-	line!(Grade.grade_rel("l-lean ", ListUtils.list_map(Lens.focal_for_lean, lean_in), lean_want, F64.from_bits(4472406533629990549)))
-	line!(Grade.grade_rel("l-gaze ", ListUtils.list_map(Lens.focal_for_gaze, gaze_in), gaze_want, F64.from_bits(4472406533629990549)))
-	line!(Grade.grade_rel("l-cam  ", cam_walk(0), cam_want, F64.from_bits(4472406533629990549)))
+	line!(Text.printed(Grade.grade_rel([23, 73, 32, 15, 19, 13, 2], base_got, base_want, F64.from_bits(4472406533629990549))))
+	line!(Text.printed(Grade.grade_rel([23, 73, 23, 13, 15, 18, 2], ListUtils.list_map(Lens.focal_for_lean, lean_in), lean_want, F64.from_bits(4472406533629990549))))
+	line!(Text.printed(Grade.grade_rel([23, 73, 29, 15, 38, 13, 2], ListUtils.list_map(Lens.focal_for_gaze, gaze_in), gaze_want, F64.from_bits(4472406533629990549))))
+	line!(Text.printed(Grade.grade_rel([23, 73, 24, 15, 26, 2, 2], cam_walk(0), cam_want, F64.from_bits(4472406533629990549))))
 	Ok({})
 }

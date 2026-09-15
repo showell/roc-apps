@@ -1,6 +1,7 @@
 # ViewYawSpec -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 import Grade
 import Pose
+import Text
 import ViewYaw
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
@@ -42,8 +43,8 @@ head_want = [0.0, 4.89375, 0.825, (-1.9875), 0.6875]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("vy-frac", frac_got, frac_want, 0.0))
-	line!(Grade.grade_reals("vy-yaw ", yaw_got, yaw_want, 0.0))
-	line!(Grade.grade_reals("vy-head", head_got, head_want, 0.0))
+	line!(Text.printed(Grade.grade_reals([33, 30, 73, 28, 21, 15, 24], frac_got, frac_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([33, 30, 73, 30, 15, 27, 2], yaw_got, yaw_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([33, 30, 73, 20, 13, 15, 22], head_got, head_want, 0.0)))
 	Ok({})
 }

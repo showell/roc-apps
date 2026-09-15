@@ -1,6 +1,7 @@
 # TowerSpec -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 import Geom
 import Grade
+import Text
 import Tower
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
@@ -125,19 +126,19 @@ cut_want = [4.0, 0.4, 20.0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("tw-dims  ", dims_got, dims_want, 0.0))
-	line!(Grade.grade_ints("tw-fixed ", fixed_got, fixed_want))
-	line!(Grade.grade_reals("tw-offset", offsets_got, offsets_want, 0.0))
-	line!(Grade.grade_reals("tw-bright", bright_got, bright_want, F64.from_bits(4502148214488346440)))
-	line!(Grade.grade_reals("tw-corner", corner_got, corner_want, 0.0))
-	line!(Grade.grade_reals("tw-ax    ", ax_got, ax_want, F64.from_bits(4517329193108106637)))
-	line!(Grade.grade_reals("tw-taper ", taper_got, taper_want, 0.0))
-	line!(Grade.grade_reals("tw-drop  ", drop_got, drop_want, 0.0))
-	line!(Grade.grade_reals("tw-lerp  ", lerp_got, lerp_want, 0.0))
-	line!(Grade.grade_reals("tw-bar   ", bar_got, bar_want, 0.0))
-	line!(Grade.grade_reals("tw-degen ", degenerate_got, degenerate_want, 0.0))
-	line!(Grade.grade_reals("tw-width ", width_got, width_want, 0.0))
-	line!(Grade.grade_ints("tw-clip  ", clip_count_got, clip_count_want))
-	line!(Grade.grade_reals("tw-cut   ", cut_got, cut_want, 0.0))
+	line!(Text.printed(Grade.grade_reals([14, 27, 73, 22, 17, 26, 19, 2, 2], dims_got, dims_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([14, 27, 73, 28, 17, 36, 13, 22, 2], fixed_got, fixed_want)))
+	line!(Text.printed(Grade.grade_reals([14, 27, 73, 16, 28, 28, 19, 13, 14], offsets_got, offsets_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([14, 27, 73, 32, 21, 17, 29, 20, 14], bright_got, bright_want, F64.from_bits(4502148214488346440))))
+	line!(Text.printed(Grade.grade_reals([14, 27, 73, 24, 16, 21, 18, 13, 21], corner_got, corner_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([14, 27, 73, 15, 36, 2, 2, 2, 2], ax_got, ax_want, F64.from_bits(4517329193108106637))))
+	line!(Text.printed(Grade.grade_reals([14, 27, 73, 14, 15, 31, 13, 21, 2], taper_got, taper_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([14, 27, 73, 22, 21, 16, 31, 2, 2], drop_got, drop_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([14, 27, 73, 23, 13, 21, 31, 2, 2], lerp_got, lerp_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([14, 27, 73, 32, 15, 21, 2, 2, 2], bar_got, bar_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([14, 27, 73, 22, 13, 29, 13, 18, 2], degenerate_got, degenerate_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([14, 27, 73, 27, 17, 22, 14, 20, 2], width_got, width_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([14, 27, 73, 24, 23, 17, 31, 2, 2], clip_count_got, clip_count_want)))
+	line!(Text.printed(Grade.grade_reals([14, 27, 73, 24, 25, 14, 2, 2, 2], cut_got, cut_want, 0.0)))
 	Ok({})
 }

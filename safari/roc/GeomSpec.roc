@@ -1,6 +1,7 @@
 # GeomSpec -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 import Geom
 import Grade
+import Text
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
@@ -71,9 +72,9 @@ cn_walk_acc = |vs, i, acc| (if (i >= U64.to_i64_wrap(List.len(vs))) { acc } else
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("g-drop ", gd_walk(0), gd_want, 0.0))
-	line!(Grade.grade_reals("g-rider", tr_walk(0), tr_want, F64.from_bits(4517329193108106637)))
-	line!(Grade.grade_reals("g-meet ", lm_got, lm_want, 0.0))
-	line!(Grade.grade_reals("g-clip ", cn_walk(Geom.clip_near(poly, 0.4), 0), cn_want, 0.0))
+	line!(Text.printed(Grade.grade_reals([29, 73, 22, 21, 16, 31, 2], gd_walk(0), gd_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([29, 73, 21, 17, 22, 13, 21], tr_walk(0), tr_want, F64.from_bits(4517329193108106637))))
+	line!(Text.printed(Grade.grade_reals([29, 73, 26, 13, 13, 14, 2], lm_got, lm_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([29, 73, 24, 23, 17, 31, 2], cn_walk(Geom.clip_near(poly, 0.4), 0), cn_want, 0.0)))
 	Ok({})
 }

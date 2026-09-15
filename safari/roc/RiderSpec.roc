@@ -4,6 +4,7 @@ import Grade
 import LeanSearch
 import Pose
 import Rider
+import Text
 import Throttle
 import VehicleLimits
 import World
@@ -113,15 +114,15 @@ frame_want = [True, True, True, True, True]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_bools("rd-step  ", step_got, step_want))
-	line!(Grade.grade_bools("rd-leaned", leaned_got, leaned_want))
-	line!(Grade.grade_reals("rd-carry ", carry_got, carry_want, 0.0))
-	line!(Grade.grade_reals("rd-turn  ", turn_got, turn_want, 0.0))
-	line!(Grade.grade_ints("rd-index ", index_got, index_want))
-	line!(Grade.grade_bools("rd-early ", early_got, early_want))
-	line!(Grade.grade_ints("rd-resolv", resolve_got, resolve_want))
-	line!(Grade.grade_reals("rd-finish", finish_got, finish_want, 0.0))
-	line!(Grade.grade_bools("rd-done  ", done_got, done_want))
-	line!(Grade.grade_bools("rd-frame ", frame_got, frame_want))
+	line!(Text.printed(Grade.grade_bools([21, 22, 73, 19, 14, 13, 31, 2, 2], step_got, step_want)))
+	line!(Text.printed(Grade.grade_bools([21, 22, 73, 23, 13, 15, 18, 13, 22], leaned_got, leaned_want)))
+	line!(Text.printed(Grade.grade_reals([21, 22, 73, 24, 15, 21, 21, 30, 2], carry_got, carry_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([21, 22, 73, 14, 25, 21, 18, 2, 2], turn_got, turn_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([21, 22, 73, 17, 18, 22, 13, 36, 2], index_got, index_want)))
+	line!(Text.printed(Grade.grade_bools([21, 22, 73, 13, 15, 21, 23, 30, 2], early_got, early_want)))
+	line!(Text.printed(Grade.grade_ints([21, 22, 73, 21, 13, 19, 16, 23, 33], resolve_got, resolve_want)))
+	line!(Text.printed(Grade.grade_reals([21, 22, 73, 28, 17, 18, 17, 19, 20], finish_got, finish_want, 0.0)))
+	line!(Text.printed(Grade.grade_bools([21, 22, 73, 22, 16, 18, 13, 2, 2], done_got, done_want)))
+	line!(Text.printed(Grade.grade_bools([21, 22, 73, 28, 21, 15, 26, 13, 2], frame_got, frame_want)))
 	Ok({})
 }

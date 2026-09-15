@@ -1,6 +1,7 @@
 # TowerPlanSpec -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 import Frame
 import Grade
+import Text
 import Tower
 import TowerPlan
 import World
@@ -112,17 +113,17 @@ items_want = [3, 0, 2, 0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("tl-fixed ", fixed_got, fixed_want, 0.0))
-	line!(Grade.grade_ints("tl-cap   ", cap_got, cap_want))
-	line!(Grade.grade_ints("tl-short ", short_got, short_want))
-	line!(Grade.grade_bools("tl-mid   ", mid_flags_got, mid_flags_want))
-	line!(Grade.grade_reals("tl-where ", where_got, where_want, 0.0))
-	line!(Grade.grade_ints("tl-long  ", long_got, long_want))
-	line!(Grade.grade_reals("tl-lwhere", long_where_got, long_where_want, F64.from_bits(4427486594234968593)))
-	line!(Grade.grade_reals("tl-key   ", key_got, key_want, 0.0))
-	line!(Grade.grade_reals("tl-spread", spread_got, spread_want, 0.0))
-	line!(Grade.grade_ints("tl-behind", behind_got, behind_want))
-	line!(Grade.grade_ints("tl-cull  ", cull_got, cull_want))
-	line!(Grade.grade_ints("tl-items ", items_got, items_want))
+	line!(Text.printed(Grade.grade_reals([14, 23, 73, 28, 17, 36, 13, 22, 2], fixed_got, fixed_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([14, 23, 73, 24, 15, 31, 2, 2, 2], cap_got, cap_want)))
+	line!(Text.printed(Grade.grade_ints([14, 23, 73, 19, 20, 16, 21, 14, 2], short_got, short_want)))
+	line!(Text.printed(Grade.grade_bools([14, 23, 73, 26, 17, 22, 2, 2, 2], mid_flags_got, mid_flags_want)))
+	line!(Text.printed(Grade.grade_reals([14, 23, 73, 27, 20, 13, 21, 13, 2], where_got, where_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([14, 23, 73, 23, 16, 18, 29, 2, 2], long_got, long_want)))
+	line!(Text.printed(Grade.grade_reals([14, 23, 73, 23, 27, 20, 13, 21, 13], long_where_got, long_where_want, F64.from_bits(4427486594234968593))))
+	line!(Text.printed(Grade.grade_reals([14, 23, 73, 34, 13, 30, 2, 2, 2], key_got, key_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([14, 23, 73, 19, 31, 21, 13, 15, 22], spread_got, spread_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([14, 23, 73, 32, 13, 20, 17, 18, 22], behind_got, behind_want)))
+	line!(Text.printed(Grade.grade_ints([14, 23, 73, 24, 25, 23, 23, 2, 2], cull_got, cull_want)))
+	line!(Text.printed(Grade.grade_ints([14, 23, 73, 17, 14, 13, 26, 19, 2], items_got, items_want)))
 	Ok({})
 }

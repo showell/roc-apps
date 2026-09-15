@@ -2,6 +2,7 @@
 import Camera
 import Grade
 import Paint
+import Text
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
@@ -78,11 +79,11 @@ pts_want = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("pa-flat  ", flat_got, flat_want, 0.0))
-	line!(Grade.grade_ints("pa-guard ", count_got, count_want))
-	line!(Grade.grade_ints("pa-tags  ", tags_got, tags_want))
-	line!(Grade.grade_reals("pa-streng", strength_got, strength_want, 0.0))
-	line!(Grade.grade_reals("pa-geom  ", geom_got, geom_want, 0.0))
-	line!(Grade.grade_reals("pa-pts   ", pts_got, pts_want, 0.0))
+	line!(Text.printed(Grade.grade_reals([31, 15, 73, 28, 23, 15, 14, 2, 2], flat_got, flat_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([31, 15, 73, 29, 25, 15, 21, 22, 2], count_got, count_want)))
+	line!(Text.printed(Grade.grade_ints([31, 15, 73, 14, 15, 29, 19, 2, 2], tags_got, tags_want)))
+	line!(Text.printed(Grade.grade_reals([31, 15, 73, 19, 14, 21, 13, 18, 29], strength_got, strength_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([31, 15, 73, 29, 13, 16, 26, 2, 2], geom_got, geom_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([31, 15, 73, 31, 14, 19, 2, 2, 2], pts_got, pts_want, 0.0)))
 	Ok({})
 }

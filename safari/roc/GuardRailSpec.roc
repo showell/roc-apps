@@ -2,6 +2,7 @@
 import Geom
 import Grade
 import GuardRail
+import Text
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
@@ -96,15 +97,15 @@ short_want = [0, 0, 3, 0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("gu-dims  ", dims_got, dims_want, 0.0))
-	line!(Grade.grade_ints("gu-fixed ", fixed_got, fixed_want))
-	line!(Grade.grade_ints("gu-shape ", shape_got, shape_want))
-	line!(Grade.grade_ints("gu-colour", colour_got, colour_want))
-	line!(Grade.grade_reals("gu-fwd   ", fwd_got, fwd_want, 0.0))
-	line!(Grade.grade_reals("gu-bar   ", bar_got, bar_want, 0.0))
-	line!(Grade.grade_reals("gu-post  ", post_got, post_want, 0.0))
-	line!(Grade.grade_reals("gu-diag  ", diag_got, diag_want, 0.0))
-	line!(Grade.grade_reals("gu-double", doubled_got, doubled_want, 0.0))
-	line!(Grade.grade_ints("gu-short ", short_got, short_want))
+	line!(Text.printed(Grade.grade_reals([29, 25, 73, 22, 17, 26, 19, 2, 2], dims_got, dims_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([29, 25, 73, 28, 17, 36, 13, 22, 2], fixed_got, fixed_want)))
+	line!(Text.printed(Grade.grade_ints([29, 25, 73, 19, 20, 15, 31, 13, 2], shape_got, shape_want)))
+	line!(Text.printed(Grade.grade_ints([29, 25, 73, 24, 16, 23, 16, 25, 21], colour_got, colour_want)))
+	line!(Text.printed(Grade.grade_reals([29, 25, 73, 28, 27, 22, 2, 2, 2], fwd_got, fwd_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([29, 25, 73, 32, 15, 21, 2, 2, 2], bar_got, bar_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([29, 25, 73, 31, 16, 19, 14, 2, 2], post_got, post_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([29, 25, 73, 22, 17, 15, 29, 2, 2], diag_got, diag_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([29, 25, 73, 22, 16, 25, 32, 23, 13], doubled_got, doubled_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([29, 25, 73, 19, 20, 16, 21, 14, 2], short_got, short_want)))
 	Ok({})
 }

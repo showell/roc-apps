@@ -2,6 +2,7 @@
 import CanvasRoll
 import Grade
 import Pose
+import Text
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
@@ -31,7 +32,7 @@ roll_walk_acc = |i, acc| (if (i >= U64.to_i64_wrap(List.len(tilt_in))) { acc } e
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("cr-band", band_got, band_want, 0.0))
-	line!(Grade.grade_reals("cr-roll", roll_walk(0), roll_want, 0.0))
+	line!(Text.printed(Grade.grade_reals([24, 21, 73, 32, 15, 18, 22], band_got, band_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([24, 21, 73, 21, 16, 23, 23], roll_walk(0), roll_want, 0.0)))
 	Ok({})
 }

@@ -2,6 +2,7 @@
 import Blit
 import Grade
 import Paint
+import Text
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
@@ -108,18 +109,18 @@ empty_want = [0, 0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_ints("bl-chan  ", chan_got, chan_want))
-	line!(Grade.grade_ints("bl-shade ", shade_got, shade_want))
-	line!(Grade.grade_ints("bl-stops ", stops_got, stops_want))
-	line!(Grade.grade_ints("bl-zero  ", zero_got, zero_want))
-	line!(Grade.grade_ints("bl-glow  ", glow_got, glow_want))
-	line!(Grade.grade_bools("bl-vis   ", visible_got, visible_want))
-	line!(Grade.grade_reals("bl-limits", limits_got, limits_want, 0.0))
-	line!(Grade.grade_reals("bl-span  ", span_got, span_want, 0.0))
-	line!(Grade.grade_ints("bl-wide  ", wide_got, wide_want))
-	line!(Grade.grade_reals("bl-wgeom ", wide_geom_got, wide_geom_want, 0.0))
-	line!(Grade.grade_ints("bl-flat  ", flat_got, flat_want))
-	line!(Grade.grade_ints("bl-frame ", frame_got, frame_want))
-	line!(Grade.grade_ints("bl-empty ", empty_got, empty_want))
+	line!(Text.printed(Grade.grade_ints([32, 23, 73, 24, 20, 15, 18, 2, 2], chan_got, chan_want)))
+	line!(Text.printed(Grade.grade_ints([32, 23, 73, 19, 20, 15, 22, 13, 2], shade_got, shade_want)))
+	line!(Text.printed(Grade.grade_ints([32, 23, 73, 19, 14, 16, 31, 19, 2], stops_got, stops_want)))
+	line!(Text.printed(Grade.grade_ints([32, 23, 73, 38, 13, 21, 16, 2, 2], zero_got, zero_want)))
+	line!(Text.printed(Grade.grade_ints([32, 23, 73, 29, 23, 16, 27, 2, 2], glow_got, glow_want)))
+	line!(Text.printed(Grade.grade_bools([32, 23, 73, 33, 17, 19, 2, 2, 2], visible_got, visible_want)))
+	line!(Text.printed(Grade.grade_reals([32, 23, 73, 23, 17, 26, 17, 14, 19], limits_got, limits_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([32, 23, 73, 19, 31, 15, 18, 2, 2], span_got, span_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([32, 23, 73, 27, 17, 22, 13, 2, 2], wide_got, wide_want)))
+	line!(Text.printed(Grade.grade_reals([32, 23, 73, 27, 29, 13, 16, 26, 2], wide_geom_got, wide_geom_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([32, 23, 73, 28, 23, 15, 14, 2, 2], flat_got, flat_want)))
+	line!(Text.printed(Grade.grade_ints([32, 23, 73, 28, 21, 15, 26, 13, 2], frame_got, frame_want)))
+	line!(Text.printed(Grade.grade_ints([32, 23, 73, 13, 26, 31, 14, 30, 2], empty_got, empty_want)))
 	Ok({})
 }

@@ -2,6 +2,7 @@
 import Camera
 import Grade
 import Paint
+import Text
 import Tree
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
@@ -118,20 +119,20 @@ sorted_want = [0.0, 0.0, 0.0, 4.0, 2.0, 0.0, 2.0, 2.0, 4.0, 0.0, 4.0, 4.0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("tr-table ", table_got, table_want, 0.0))
-	line!(Grade.grade_ints("tr-size  ", size_got, size_want))
-	line!(Grade.grade_reals("tr-frac  ", frac_got, frac_want, 0.0))
-	line!(Grade.grade_reals("tr-metric", metric_got, metric_want, 0.0))
-	line!(Grade.grade_reals("tr-trunk ", trunk_got, trunk_want, 0.0))
-	line!(Grade.grade_ints("tr-ttag  ", trunk_tag_got, trunk_tag_want))
-	line!(Grade.grade_reals("tr-tstr  ", trunk_strength_got, trunk_strength_want, 0.0))
-	line!(Grade.grade_reals("tr-tri   ", tri_got, tri_want, F64.from_bits(4472406533629990549)))
-	line!(Grade.grade_reals("tr-square", square_got, square_want, 0.0))
-	line!(Grade.grade_reals("tr-tri3  ", tri3_got, tri3_want, 0.0))
-	line!(Grade.grade_reals("tr-line  ", line_got, line_want, 0.0))
-	line!(Grade.grade_reals("tr-short ", short_got, short_want, 0.0))
-	line!(Grade.grade_reals("tr-dup   ", dup_got, dup_want, 0.0))
-	line!(Grade.grade_ints("tr-count ", count_got, count_want))
-	line!(Grade.grade_reals("tr-sorted", sorted_got, sorted_want, 0.0))
+	line!(Text.printed(Grade.grade_reals([14, 21, 73, 14, 15, 32, 23, 13, 2], table_got, table_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([14, 21, 73, 19, 17, 38, 13, 2, 2], size_got, size_want)))
+	line!(Text.printed(Grade.grade_reals([14, 21, 73, 28, 21, 15, 24, 2, 2], frac_got, frac_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([14, 21, 73, 26, 13, 14, 21, 17, 24], metric_got, metric_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([14, 21, 73, 14, 21, 25, 18, 34, 2], trunk_got, trunk_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([14, 21, 73, 14, 14, 15, 29, 2, 2], trunk_tag_got, trunk_tag_want)))
+	line!(Text.printed(Grade.grade_reals([14, 21, 73, 14, 19, 14, 21, 2, 2], trunk_strength_got, trunk_strength_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([14, 21, 73, 14, 21, 17, 2, 2, 2], tri_got, tri_want, F64.from_bits(4472406533629990549))))
+	line!(Text.printed(Grade.grade_reals([14, 21, 73, 19, 37, 25, 15, 21, 13], square_got, square_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([14, 21, 73, 14, 21, 17, 6, 2, 2], tri3_got, tri3_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([14, 21, 73, 23, 17, 18, 13, 2, 2], line_got, line_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([14, 21, 73, 19, 20, 16, 21, 14, 2], short_got, short_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([14, 21, 73, 22, 25, 31, 2, 2, 2], dup_got, dup_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([14, 21, 73, 24, 16, 25, 18, 14, 2], count_got, count_want)))
+	line!(Text.printed(Grade.grade_reals([14, 21, 73, 19, 16, 21, 14, 13, 22], sorted_got, sorted_want, 0.0)))
 	Ok({})
 }

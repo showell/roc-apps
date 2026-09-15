@@ -3,6 +3,7 @@ import Frame
 import Grade
 import ItemDraw
 import SceneLimits
+import Text
 import TowerPlan
 import TreePlan
 import World
@@ -97,13 +98,13 @@ tree_want = [True, True, True, True]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("id-fixed ", fixed_got, fixed_want, 0.0))
-	line!(Grade.grade_ints("id-count ", count_got, count_want))
-	line!(Grade.grade_ints("id-tie   ", tie_got, tie_want))
-	line!(Grade.grade_reals("id-shade ", shade_got, shade_want, 0.0))
-	line!(Grade.grade_ints("id-base  ", base_got, base_want))
-	line!(Grade.grade_reals("id-corner", corner_got, corner_want, 0.0001))
-	line!(Grade.grade_bools("id-tower ", tower_got, tower_want))
-	line!(Grade.grade_bools("id-tree  ", tree_got, tree_want))
+	line!(Text.printed(Grade.grade_reals([17, 22, 73, 28, 17, 36, 13, 22, 2], fixed_got, fixed_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([17, 22, 73, 24, 16, 25, 18, 14, 2], count_got, count_want)))
+	line!(Text.printed(Grade.grade_ints([17, 22, 73, 14, 17, 13, 2, 2, 2], tie_got, tie_want)))
+	line!(Text.printed(Grade.grade_reals([17, 22, 73, 19, 20, 15, 22, 13, 2], shade_got, shade_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([17, 22, 73, 32, 15, 19, 13, 2, 2], base_got, base_want)))
+	line!(Text.printed(Grade.grade_reals([17, 22, 73, 24, 16, 21, 18, 13, 21], corner_got, corner_want, 0.0001)))
+	line!(Text.printed(Grade.grade_bools([17, 22, 73, 14, 16, 27, 13, 21, 2], tower_got, tower_want)))
+	line!(Text.printed(Grade.grade_bools([17, 22, 73, 14, 21, 13, 13, 2, 2], tree_got, tree_want)))
 	Ok({})
 }

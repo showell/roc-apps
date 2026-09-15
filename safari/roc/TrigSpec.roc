@@ -1,6 +1,7 @@
 # TrigSpec -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 import Grade
 import ListUtils
+import Text
 import Trig
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
@@ -24,8 +25,8 @@ atan_want = [0.0, 0.24497866312686414, 0.4636476090008061, 0.7853981633974483, 1
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("t-sin ", ListUtils.list_map(Trig.r_sin, ang), sin_want, F64.from_bits(4502148214488346440)))
-	line!(Grade.grade_reals("t-cos ", ListUtils.list_map(Trig.r_cos, ang), cos_want, F64.from_bits(4506651814115716936)))
-	line!(Grade.grade_reals("t-atan", ListUtils.list_map(Trig.r_atan, atan_in), atan_want, F64.from_bits(4382569440205035030)))
+	line!(Text.printed(Grade.grade_reals([14, 73, 19, 17, 18, 2], ListUtils.list_map(Trig.r_sin, ang), sin_want, F64.from_bits(4502148214488346440))))
+	line!(Text.printed(Grade.grade_reals([14, 73, 24, 16, 19, 2], ListUtils.list_map(Trig.r_cos, ang), cos_want, F64.from_bits(4506651814115716936))))
+	line!(Text.printed(Grade.grade_reals([14, 73, 15, 14, 15, 18], ListUtils.list_map(Trig.r_atan, atan_in), atan_want, F64.from_bits(4382569440205035030))))
 	Ok({})
 }

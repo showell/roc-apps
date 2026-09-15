@@ -7,6 +7,7 @@ import Grade
 import Pose
 import RailPlan
 import Render
+import Text
 import TowerPlan
 import TreePlan
 import TruckPlan
@@ -105,14 +106,14 @@ shrink_want = [True, True]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_ints("rn-prev  ", prev_got, prev_want))
-	line!(Grade.grade_ints("rn-merge ", merge_got, merge_want))
-	line!(Grade.grade_bools("rn-presnt", present_got, present_want))
-	line!(Grade.grade_bools("rn-cap   ", cap_got, cap_want))
-	line!(Grade.grade_ints("rn-caps  ", cap_values_got, cap_values_want))
-	line!(Grade.grade_bools("rn-sorted", sorted_got, sorted_want))
-	line!(Grade.grade_bools("rn-cull  ", cull_got, cull_want))
-	line!(Grade.grade_ints("rn-segcul", seg_cull_got, seg_cull_want))
-	line!(Grade.grade_bools("rn-shrink", shrink_got, shrink_want))
+	line!(Text.printed(Grade.grade_ints([21, 18, 73, 31, 21, 13, 33, 2, 2], prev_got, prev_want)))
+	line!(Text.printed(Grade.grade_ints([21, 18, 73, 26, 13, 21, 29, 13, 2], merge_got, merge_want)))
+	line!(Text.printed(Grade.grade_bools([21, 18, 73, 31, 21, 13, 19, 18, 14], present_got, present_want)))
+	line!(Text.printed(Grade.grade_bools([21, 18, 73, 24, 15, 31, 2, 2, 2], cap_got, cap_want)))
+	line!(Text.printed(Grade.grade_ints([21, 18, 73, 24, 15, 31, 19, 2, 2], cap_values_got, cap_values_want)))
+	line!(Text.printed(Grade.grade_bools([21, 18, 73, 19, 16, 21, 14, 13, 22], sorted_got, sorted_want)))
+	line!(Text.printed(Grade.grade_bools([21, 18, 73, 24, 25, 23, 23, 2, 2], cull_got, cull_want)))
+	line!(Text.printed(Grade.grade_ints([21, 18, 73, 19, 13, 29, 24, 25, 23], seg_cull_got, seg_cull_want)))
+	line!(Text.printed(Grade.grade_bools([21, 18, 73, 19, 20, 21, 17, 18, 34], shrink_got, shrink_want)))
 	Ok({})
 }

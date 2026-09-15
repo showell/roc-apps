@@ -2,6 +2,7 @@
 import Billboards
 import Grade
 import ListUtils
+import Text
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
@@ -80,12 +81,12 @@ lam_1 = |p| p.size_culled
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_bools("bb-kept ", kept_got, kept_want))
-	line!(Grade.grade_bools("bb-culled", culled_got, culled_want))
-	line!(Grade.grade_reals("bb-carry", carried_real_got, carried_real_want, 0.0))
-	line!(Grade.grade_ints("bb-cp   ", carried_int_got, carried_int_want))
-	line!(Grade.grade_bools("bb-face ", carried_bool_got, carried_bool_want))
-	line!(Grade.grade_ints("bb-count", harvest_got, harvest_want))
-	line!(Grade.grade_reals("bb-floor", floor_got, floor_want, 0.0))
+	line!(Text.printed(Grade.grade_bools([32, 32, 73, 34, 13, 31, 14, 2], kept_got, kept_want)))
+	line!(Text.printed(Grade.grade_bools([32, 32, 73, 24, 25, 23, 23, 13, 22], culled_got, culled_want)))
+	line!(Text.printed(Grade.grade_reals([32, 32, 73, 24, 15, 21, 21, 30], carried_real_got, carried_real_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([32, 32, 73, 24, 31, 2, 2, 2], carried_int_got, carried_int_want)))
+	line!(Text.printed(Grade.grade_bools([32, 32, 73, 28, 15, 24, 13, 2], carried_bool_got, carried_bool_want)))
+	line!(Text.printed(Grade.grade_ints([32, 32, 73, 24, 16, 25, 18, 14], harvest_got, harvest_want)))
+	line!(Text.printed(Grade.grade_reals([32, 32, 73, 28, 23, 16, 16, 21], floor_got, floor_want, 0.0)))
 	Ok({})
 }

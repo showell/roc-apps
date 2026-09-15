@@ -4,6 +4,7 @@ import Grade
 import Ground
 import ListUtils
 import Paint
+import Text
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
@@ -66,9 +67,9 @@ lam_0 = |v| v.height
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("gr-height", height_got, height_want, 0.0))
-	line!(Grade.grade_reals("gr-carry ", carry_got, carry_want, 0.0))
-	line!(Grade.grade_ints("gr-count ", count_got, count_want))
-	line!(Grade.grade_ints("gr-cmd   ", cmd_got, cmd_want))
+	line!(Text.printed(Grade.grade_reals([29, 21, 73, 20, 13, 17, 29, 20, 14], height_got, height_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([29, 21, 73, 24, 15, 21, 21, 30, 2], carry_got, carry_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([29, 21, 73, 24, 16, 25, 18, 14, 2], count_got, count_want)))
+	line!(Text.printed(Grade.grade_ints([29, 21, 73, 24, 26, 22, 2, 2, 2], cmd_got, cmd_want)))
 	Ok({})
 }

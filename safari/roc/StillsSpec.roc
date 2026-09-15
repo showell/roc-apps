@@ -1,6 +1,7 @@
 # StillsSpec -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 import Grade
 import Stills
+import Text
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
@@ -44,9 +45,9 @@ reach_want = [2.5, 0.5, 13.5]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("s-gradr", grad_reals_got, grad_reals_want, 0.0))
-	line!(Grade.grade_ints("s-gradi", grad_ints_got, grad_ints_want))
-	line!(Grade.grade_ints("s-poly ", poly_ints_got, poly_ints_want))
-	line!(Grade.grade_reals("s-reach", reach_got, reach_want, 0.0))
+	line!(Text.printed(Grade.grade_reals([19, 73, 29, 21, 15, 22, 21], grad_reals_got, grad_reals_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([19, 73, 29, 21, 15, 22, 17], grad_ints_got, grad_ints_want)))
+	line!(Text.printed(Grade.grade_ints([19, 73, 31, 16, 23, 30, 2], poly_ints_got, poly_ints_want)))
+	line!(Text.printed(Grade.grade_reals([19, 73, 21, 13, 15, 24, 20], reach_got, reach_want, 0.0)))
 	Ok({})
 }

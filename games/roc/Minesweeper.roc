@@ -1,5 +1,6 @@
 # Minesweeper -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 import Rng
+import Text
 
 Minesweeper :: [].{
 	MinesweeperState : { mine_grid : List(I64), revealed : List(I64), adjacent : List(I64), cells_revealed : I64, mines_hit : I64, safe_cells : I64, game_over : Bool, won : Bool, moves : I64, rng : Rng.Rng }
@@ -121,9 +122,9 @@ Minesweeper :: [].{
 		}) })
 	}) }) })
 
-	format_minesweeper_result : Minesweeper.MinesweeperResult -> Str
+	format_minesweeper_result : Minesweeper.MinesweeperResult -> List(U8)
 	format_minesweeper_result = |r| ({
-		outcome = (if r.won { "Solved" } else { "Hit mine" })
-		Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat("Minesweeper: ", outcome), " revealed="), I64.to_str(r.cells_revealed)), " mines-hit="), I64.to_str(r.mines_hit)), " moves="), I64.to_str(r.moves))
+		outcome = (if r.won { [45, 16, 23, 33, 13, 22] } else { [46, 17, 14, 2, 26, 17, 18, 13] })
+		List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat([52, 17, 18, 13, 19, 27, 13, 13, 31, 13, 21, 69, 2], outcome), [2, 21, 13, 33, 13, 15, 23, 13, 22, 77]), Text.show_int(r.cells_revealed)), [2, 26, 17, 18, 13, 19, 73, 20, 17, 14, 77]), Text.show_int(r.mines_hit)), [2, 26, 16, 33, 13, 19, 77]), Text.show_int(r.moves))
 	})
 }

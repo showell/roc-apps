@@ -4,6 +4,7 @@ import DeviceMath
 import Grade
 import LeanSearch
 import Pose
+import Text
 import World
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
@@ -78,13 +79,13 @@ stable_want = [0.0, 0.0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("ls-target", target_got, target_want, 0.0))
-	line!(Grade.grade_bools("ls-side  ", side_got, side_want))
-	line!(Grade.grade_reals("ls-tuning", tuning_got, tuning_want, 0.0))
-	line!(Grade.grade_ints("ls-iters ", iters_got, iters_want))
-	line!(Grade.grade_bools("ls-read  ", read_got, read_want))
-	line!(Grade.grade_bools("ls-brackt", bracket_got, bracket_want))
-	line!(Grade.grade_bools("ls-centre", centred_on_got, centred_on_want))
-	line!(Grade.grade_reals("ls-stable", stable_got, stable_want, 0.0))
+	line!(Text.printed(Grade.grade_reals([23, 19, 73, 14, 15, 21, 29, 13, 14], target_got, target_want, 0.0)))
+	line!(Text.printed(Grade.grade_bools([23, 19, 73, 19, 17, 22, 13, 2, 2], side_got, side_want)))
+	line!(Text.printed(Grade.grade_reals([23, 19, 73, 14, 25, 18, 17, 18, 29], tuning_got, tuning_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([23, 19, 73, 17, 14, 13, 21, 19, 2], iters_got, iters_want)))
+	line!(Text.printed(Grade.grade_bools([23, 19, 73, 21, 13, 15, 22, 2, 2], read_got, read_want)))
+	line!(Text.printed(Grade.grade_bools([23, 19, 73, 32, 21, 15, 24, 34, 14], bracket_got, bracket_want)))
+	line!(Text.printed(Grade.grade_bools([23, 19, 73, 24, 13, 18, 14, 21, 13], centred_on_got, centred_on_want)))
+	line!(Text.printed(Grade.grade_reals([23, 19, 73, 19, 14, 15, 32, 23, 13], stable_got, stable_want, 0.0)))
 	Ok({})
 }

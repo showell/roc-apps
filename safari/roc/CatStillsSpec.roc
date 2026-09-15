@@ -2,6 +2,7 @@
 import CatStills
 import Grade
 import Stills
+import Text
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
@@ -45,7 +46,7 @@ spot_want = [0.5062, 0.6873, 0.6467, 0.6377]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_ints("cs-table", table_got, table_want))
-	line!(Grade.grade_reals("cs-spot ", spot_got, spot_want, 0.0))
+	line!(Text.printed(Grade.grade_ints([24, 19, 73, 14, 15, 32, 23, 13], table_got, table_want)))
+	line!(Text.printed(Grade.grade_reals([24, 19, 73, 19, 31, 16, 14, 2], spot_got, spot_want, 0.0)))
 	Ok({})
 }

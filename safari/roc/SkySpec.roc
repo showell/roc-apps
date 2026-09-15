@@ -2,6 +2,7 @@
 import Grade
 import Lens
 import Sky
+import Text
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
@@ -68,13 +69,13 @@ place_want = [480.0, 56.0, 1.0, 0.0, 0.0, 0.0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("sk-height", height_got, height_want, 0.0))
-	line!(Grade.grade_reals("sk-ends  ", ends_got, ends_want, 0.0))
-	line!(Grade.grade_ints("sk-sky   ", sky_got, sky_want))
-	line!(Grade.grade_ints("sk-horiz ", horizon_got, horizon_want))
-	line!(Grade.grade_ints("sk-packed", packed_got, packed_want))
-	line!(Grade.grade_reals("sk-mix   ", mix_got, mix_want, 0.0))
-	line!(Grade.grade_bools("sk-vis   ", visible_got, visible_want))
-	line!(Grade.grade_reals("sk-place ", place_got, place_want, 0.0))
+	line!(Text.printed(Grade.grade_reals([19, 34, 73, 20, 13, 17, 29, 20, 14], height_got, height_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([19, 34, 73, 13, 18, 22, 19, 2, 2], ends_got, ends_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([19, 34, 73, 19, 34, 30, 2, 2, 2], sky_got, sky_want)))
+	line!(Text.printed(Grade.grade_ints([19, 34, 73, 20, 16, 21, 17, 38, 2], horizon_got, horizon_want)))
+	line!(Text.printed(Grade.grade_ints([19, 34, 73, 31, 15, 24, 34, 13, 22], packed_got, packed_want)))
+	line!(Text.printed(Grade.grade_reals([19, 34, 73, 26, 17, 36, 2, 2, 2], mix_got, mix_want, 0.0)))
+	line!(Text.printed(Grade.grade_bools([19, 34, 73, 33, 17, 19, 2, 2, 2], visible_got, visible_want)))
+	line!(Text.printed(Grade.grade_reals([19, 34, 73, 31, 23, 15, 24, 13, 2], place_got, place_want, 0.0)))
 	Ok({})
 }

@@ -1,6 +1,7 @@
 # VehicleLimitsSpec -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 import Grade
 import ListUtils
+import Text
 import Trig
 import VehicleLimits
 
@@ -31,8 +32,8 @@ env_want = [0.01, 2.5, 60.0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("v-table", ListUtils.list_map(VehicleLimits.turn_speed, ListUtils.list_map(to_rad, table_deg)), table_want, 0.0))
-	line!(Grade.grade_reals("v-edge ", ListUtils.list_map(VehicleLimits.turn_speed, ListUtils.list_map(to_rad, edge_deg)), edge_want, 0.0))
-	line!(Grade.grade_reals("v-env  ", env_got, env_want, 0.0))
+	line!(Text.printed(Grade.grade_reals([33, 73, 14, 15, 32, 23, 13], ListUtils.list_map(VehicleLimits.turn_speed, ListUtils.list_map(to_rad, table_deg)), table_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([33, 73, 13, 22, 29, 13, 2], ListUtils.list_map(VehicleLimits.turn_speed, ListUtils.list_map(to_rad, edge_deg)), edge_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([33, 73, 13, 18, 33, 2, 2], env_got, env_want, 0.0)))
 	Ok({})
 }

@@ -1,6 +1,7 @@
 # ScenerySpec -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 import Grade
 import Scenery
+import Text
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
@@ -67,11 +68,11 @@ rec_bools_want = [True]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("sc-road", road_got, road_want, 0.0))
-	line!(Grade.grade_bools("sc-pond", pond_got, pond_want))
-	line!(Grade.grade_ints("sc-code", code_got, code_want))
-	line!(Grade.grade_reals("sc-recr", rec_reals_got, rec_reals_want, 0.0))
-	line!(Grade.grade_ints("sc-reci", rec_ints_got, rec_ints_want))
-	line!(Grade.grade_bools("sc-recb", rec_bools_got, rec_bools_want))
+	line!(Text.printed(Grade.grade_reals([19, 24, 73, 21, 16, 15, 22], road_got, road_want, 0.0)))
+	line!(Text.printed(Grade.grade_bools([19, 24, 73, 31, 16, 18, 22], pond_got, pond_want)))
+	line!(Text.printed(Grade.grade_ints([19, 24, 73, 24, 16, 22, 13], code_got, code_want)))
+	line!(Text.printed(Grade.grade_reals([19, 24, 73, 21, 13, 24, 21], rec_reals_got, rec_reals_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([19, 24, 73, 21, 13, 24, 17], rec_ints_got, rec_ints_want)))
+	line!(Text.printed(Grade.grade_bools([19, 24, 73, 21, 13, 24, 32], rec_bools_got, rec_bools_want)))
 	Ok({})
 }

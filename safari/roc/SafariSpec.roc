@@ -3,6 +3,7 @@ import Grade
 import Paint
 import Rider
 import Safari
+import Text
 import Truck
 import World
 
@@ -112,16 +113,16 @@ sun_want = [True, True]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("sf-start ", start_got, start_want, 0.0))
-	line!(Grade.grade_ints("sf-sindex", start_index_got, start_index_want))
-	line!(Grade.grade_bools("sf-sflag ", start_flag_got, start_flag_want))
-	line!(Grade.grade_reals("sf-step  ", step_got, step_want, 0.0))
-	line!(Grade.grade_bools("sf-moved ", moved_got, moved_want))
-	line!(Grade.grade_bools("sf-order ", order_got, order_want))
-	line!(Grade.grade_reals("sf-restrt", restart_got, restart_want, 0.0))
-	line!(Grade.grade_bools("sf-rflag ", restart_flag_got, restart_flag_want))
-	line!(Grade.grade_bools("sf-notdon", not_done_got, not_done_want))
-	line!(Grade.grade_bools("sf-frame ", frame_got, frame_want))
-	line!(Grade.grade_bools("sf-sun   ", sun_got, sun_want))
+	line!(Text.printed(Grade.grade_reals([19, 28, 73, 19, 14, 15, 21, 14, 2], start_got, start_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([19, 28, 73, 19, 17, 18, 22, 13, 36], start_index_got, start_index_want)))
+	line!(Text.printed(Grade.grade_bools([19, 28, 73, 19, 28, 23, 15, 29, 2], start_flag_got, start_flag_want)))
+	line!(Text.printed(Grade.grade_reals([19, 28, 73, 19, 14, 13, 31, 2, 2], step_got, step_want, 0.0)))
+	line!(Text.printed(Grade.grade_bools([19, 28, 73, 26, 16, 33, 13, 22, 2], moved_got, moved_want)))
+	line!(Text.printed(Grade.grade_bools([19, 28, 73, 16, 21, 22, 13, 21, 2], order_got, order_want)))
+	line!(Text.printed(Grade.grade_reals([19, 28, 73, 21, 13, 19, 14, 21, 14], restart_got, restart_want, 0.0)))
+	line!(Text.printed(Grade.grade_bools([19, 28, 73, 21, 28, 23, 15, 29, 2], restart_flag_got, restart_flag_want)))
+	line!(Text.printed(Grade.grade_bools([19, 28, 73, 18, 16, 14, 22, 16, 18], not_done_got, not_done_want)))
+	line!(Text.printed(Grade.grade_bools([19, 28, 73, 28, 21, 15, 26, 13, 2], frame_got, frame_want)))
+	line!(Text.printed(Grade.grade_bools([19, 28, 73, 19, 25, 18, 2, 2, 2], sun_got, sun_want)))
 	Ok({})
 }

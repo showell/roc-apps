@@ -2,6 +2,7 @@
 import Frame
 import Grade
 import Joint
+import Text
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
@@ -37,7 +38,7 @@ apex_want = [17.297297467543466, (-100.43071597950589), 21.403438709482494, (-10
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("jt-outer", outer_got, outer_want, 0.0))
-	line!(Grade.grade_rel("jt-apex ", apex_got, apex_want, F64.from_bits(4502148214488346440)))
+	line!(Text.printed(Grade.grade_reals([35, 14, 73, 16, 25, 14, 13, 21], outer_got, outer_want, 0.0)))
+	line!(Text.printed(Grade.grade_rel([35, 14, 73, 15, 31, 13, 36, 2], apex_got, apex_want, F64.from_bits(4502148214488346440))))
 	Ok({})
 }

@@ -2,6 +2,7 @@
 import Grade
 import ListUtils
 import Scenery
+import Text
 import Trees
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
@@ -79,14 +80,14 @@ lam_3 = |t| t.height
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_ints("tr-colour", colour_got, colour_want))
-	line!(Grade.grade_reals("tr-dim   ", dim_got, dim_want, 0.0))
-	line!(Grade.grade_ints("tr-accent", accent_got, accent_want))
-	line!(Grade.grade_reals("tr-hx    ", hx_got, hx_want, 0.0))
-	line!(Grade.grade_reals("tr-along ", along_got, along_want, 0.0))
-	line!(Grade.grade_reals("tr-across", across_got, across_want, 0.0))
-	line!(Grade.grade_ints("tr-colours", colours_got, colours_want))
-	line!(Grade.grade_reals("tr-height", heights_got, heights_want, 0.0))
-	line!(Grade.grade_ints("tr-stops ", stops_got, stops_want))
+	line!(Text.printed(Grade.grade_ints([14, 21, 73, 24, 16, 23, 16, 25, 21], colour_got, colour_want)))
+	line!(Text.printed(Grade.grade_reals([14, 21, 73, 22, 17, 26, 2, 2, 2], dim_got, dim_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([14, 21, 73, 15, 24, 24, 13, 18, 14], accent_got, accent_want)))
+	line!(Text.printed(Grade.grade_reals([14, 21, 73, 20, 36, 2, 2, 2, 2], hx_got, hx_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([14, 21, 73, 15, 23, 16, 18, 29, 2], along_got, along_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([14, 21, 73, 15, 24, 21, 16, 19, 19], across_got, across_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([14, 21, 73, 24, 16, 23, 16, 25, 21, 19], colours_got, colours_want)))
+	line!(Text.printed(Grade.grade_reals([14, 21, 73, 20, 13, 17, 29, 20, 14], heights_got, heights_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([14, 21, 73, 19, 14, 16, 31, 19, 2], stops_got, stops_want)))
 	Ok({})
 }

@@ -2,6 +2,7 @@
 import Camera
 import Geom
 import Grade
+import Text
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
@@ -48,10 +49,10 @@ all_want = [3.0, 480.0, 1280.0, (-500.0), 0.0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("cm-x    ", x_got, x_want, 0.0))
-	line!(Grade.grade_reals("cm-y    ", y_got, y_want, 0.0))
-	line!(Grade.grade_reals("cm-depth", depth_got, depth_want, 0.0))
-	line!(Grade.grade_reals("cm-fixed", fixed_got, fixed_want, 0.0))
-	line!(Grade.grade_reals("cm-all  ", all_got, all_want, 0.0))
+	line!(Text.printed(Grade.grade_reals([24, 26, 73, 36, 2, 2, 2, 2], x_got, x_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([24, 26, 73, 30, 2, 2, 2, 2], y_got, y_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([24, 26, 73, 22, 13, 31, 14, 20], depth_got, depth_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([24, 26, 73, 28, 17, 36, 13, 22], fixed_got, fixed_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([24, 26, 73, 15, 23, 23, 2, 2], all_got, all_want, 0.0)))
 	Ok({})
 }

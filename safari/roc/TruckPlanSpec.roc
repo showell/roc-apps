@@ -1,6 +1,7 @@
 # TruckPlanSpec -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 import Frame
 import Grade
+import Text
 import TruckPlan
 import World
 
@@ -88,15 +89,15 @@ item_fwd_want = [499.0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("tp-length", lengths_got, lengths_want, 0.0))
-	line!(Grade.grade_bools("tp-presnt", present_got, present_want))
-	line!(Grade.grade_ints("tp-landed", landed_got, landed_want))
-	line!(Grade.grade_reals("tp-along ", along_got, along_want, 0.0))
-	line!(Grade.grade_reals("tp-fwd   ", fwd_got, fwd_want, 0.0001))
-	line!(Grade.grade_reals("tp-none  ", none_got, none_want, 0.0))
-	line!(Grade.grade_bools("tp-nflag ", none_flag_got, none_flag_want))
-	line!(Grade.grade_bools("tp-behind", behind_got, behind_want))
-	line!(Grade.grade_ints("tp-items ", items_got, items_want))
-	line!(Grade.grade_reals("tp-ifwd  ", item_fwd_got, item_fwd_want, 0.0001))
+	line!(Text.printed(Grade.grade_reals([14, 31, 73, 23, 13, 18, 29, 14, 20], lengths_got, lengths_want, 0.0)))
+	line!(Text.printed(Grade.grade_bools([14, 31, 73, 31, 21, 13, 19, 18, 14], present_got, present_want)))
+	line!(Text.printed(Grade.grade_ints([14, 31, 73, 23, 15, 18, 22, 13, 22], landed_got, landed_want)))
+	line!(Text.printed(Grade.grade_reals([14, 31, 73, 15, 23, 16, 18, 29, 2], along_got, along_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([14, 31, 73, 28, 27, 22, 2, 2, 2], fwd_got, fwd_want, 0.0001)))
+	line!(Text.printed(Grade.grade_reals([14, 31, 73, 18, 16, 18, 13, 2, 2], none_got, none_want, 0.0)))
+	line!(Text.printed(Grade.grade_bools([14, 31, 73, 18, 28, 23, 15, 29, 2], none_flag_got, none_flag_want)))
+	line!(Text.printed(Grade.grade_bools([14, 31, 73, 32, 13, 20, 17, 18, 22], behind_got, behind_want)))
+	line!(Text.printed(Grade.grade_ints([14, 31, 73, 17, 14, 13, 26, 19, 2], items_got, items_want)))
+	line!(Text.printed(Grade.grade_reals([14, 31, 73, 17, 28, 27, 22, 2, 2], item_fwd_got, item_fwd_want, 0.0001)))
 	Ok({})
 }

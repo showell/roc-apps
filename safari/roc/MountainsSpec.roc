@@ -2,6 +2,7 @@
 import Grade
 import Mountains
 import Sky
+import Text
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
@@ -99,20 +100,20 @@ crest_want = [True, True, True, False, True]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_ints("mt-pal   ", palette_got, palette_want))
-	line!(Grade.grade_reals("mt-chan  ", chan_got, chan_want, 0.0))
-	line!(Grade.grade_ints("mt-dim   ", dim_got, dim_want))
-	line!(Grade.grade_ints("mt-snow  ", snow_got, snow_want))
-	line!(Grade.grade_bools("mt-order ", night_order_got, night_order_want))
-	line!(Grade.grade_reals("mt-north ", north_edge_got, north_edge_want, 0.0))
-	line!(Grade.grade_reals("mt-west  ", west_edge_got, west_edge_want, 0.0))
-	line!(Grade.grade_bools("mt-inside", inside_got, inside_want))
-	line!(Grade.grade_reals("mt-shape ", shape_got, shape_want, 0.0))
-	line!(Grade.grade_reals("mt-snowln", snowline_got, snowline_want, 0.0))
-	line!(Grade.grade_bools("mt-band  ", band_got, band_want))
-	line!(Grade.grade_bools("mt-peak  ", peak_got, peak_want))
-	line!(Grade.grade_reals("mt-bear  ", bearing_got, bearing_want, 0.0))
-	line!(Grade.grade_bools("mt-spread", spread_got, spread_want))
-	line!(Grade.grade_bools("mt-crest ", crest_got, crest_want))
+	line!(Text.printed(Grade.grade_ints([26, 14, 73, 31, 15, 23, 2, 2, 2], palette_got, palette_want)))
+	line!(Text.printed(Grade.grade_reals([26, 14, 73, 24, 20, 15, 18, 2, 2], chan_got, chan_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([26, 14, 73, 22, 17, 26, 2, 2, 2], dim_got, dim_want)))
+	line!(Text.printed(Grade.grade_ints([26, 14, 73, 19, 18, 16, 27, 2, 2], snow_got, snow_want)))
+	line!(Text.printed(Grade.grade_bools([26, 14, 73, 16, 21, 22, 13, 21, 2], night_order_got, night_order_want)))
+	line!(Text.printed(Grade.grade_reals([26, 14, 73, 18, 16, 21, 14, 20, 2], north_edge_got, north_edge_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([26, 14, 73, 27, 13, 19, 14, 2, 2], west_edge_got, west_edge_want, 0.0)))
+	line!(Text.printed(Grade.grade_bools([26, 14, 73, 17, 18, 19, 17, 22, 13], inside_got, inside_want)))
+	line!(Text.printed(Grade.grade_reals([26, 14, 73, 19, 20, 15, 31, 13, 2], shape_got, shape_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([26, 14, 73, 19, 18, 16, 27, 23, 18], snowline_got, snowline_want, 0.0)))
+	line!(Text.printed(Grade.grade_bools([26, 14, 73, 32, 15, 18, 22, 2, 2], band_got, band_want)))
+	line!(Text.printed(Grade.grade_bools([26, 14, 73, 31, 13, 15, 34, 2, 2], peak_got, peak_want)))
+	line!(Text.printed(Grade.grade_reals([26, 14, 73, 32, 13, 15, 21, 2, 2], bearing_got, bearing_want, 0.0)))
+	line!(Text.printed(Grade.grade_bools([26, 14, 73, 19, 31, 21, 13, 15, 22], spread_got, spread_want)))
+	line!(Text.printed(Grade.grade_bools([26, 14, 73, 24, 21, 13, 19, 14, 2], crest_got, crest_want)))
 	Ok({})
 }

@@ -2,6 +2,7 @@
 import EmojiStills
 import Grade
 import Stills
+import Text
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
@@ -48,8 +49,8 @@ bg_real_want = [0.0, 1.0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_ints("es-table", table_got, table_want))
-	line!(Grade.grade_ints("es-bgi  ", bg_int_got, bg_int_want))
-	line!(Grade.grade_reals("es-bgr  ", bg_real_got, bg_real_want, 0.0))
+	line!(Text.printed(Grade.grade_ints([13, 19, 73, 14, 15, 32, 23, 13], table_got, table_want)))
+	line!(Text.printed(Grade.grade_ints([13, 19, 73, 32, 29, 17, 2, 2], bg_int_got, bg_int_want)))
+	line!(Text.printed(Grade.grade_reals([13, 19, 73, 32, 29, 21, 2, 2], bg_real_got, bg_real_want, 0.0)))
 	Ok({})
 }

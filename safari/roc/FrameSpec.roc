@@ -2,6 +2,7 @@
 import Frame
 import Geom
 import Grade
+import Text
 import World
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
@@ -80,12 +81,12 @@ behind_want = [(-194.76069932822074), (-231.63435691739767), 239.9883995667414, 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_ints("fr-bound", bound_got, bound_want))
-	line!(Grade.grade_ints("fr-route", route_got, route_want))
-	line!(Grade.grade_ints("fr-mapi ", map_int_got, map_int_want))
-	line!(Grade.grade_reals("fr-mapr ", map_real_got, map_real_want, 0.0))
-	line!(Grade.grade_bools("fr-mapb ", map_bool_got, map_bool_want))
-	line!(Grade.grade_rel("fr-at   ", at_got, at_want, F64.from_bits(4497644614860975944)))
-	line!(Grade.grade_rel("fr-behind", behind_got, behind_want, F64.from_bits(4502148214488346440)))
+	line!(Text.printed(Grade.grade_ints([28, 21, 73, 32, 16, 25, 18, 22], bound_got, bound_want)))
+	line!(Text.printed(Grade.grade_ints([28, 21, 73, 21, 16, 25, 14, 13], route_got, route_want)))
+	line!(Text.printed(Grade.grade_ints([28, 21, 73, 26, 15, 31, 17, 2], map_int_got, map_int_want)))
+	line!(Text.printed(Grade.grade_reals([28, 21, 73, 26, 15, 31, 21, 2], map_real_got, map_real_want, 0.0)))
+	line!(Text.printed(Grade.grade_bools([28, 21, 73, 26, 15, 31, 32, 2], map_bool_got, map_bool_want)))
+	line!(Text.printed(Grade.grade_rel([28, 21, 73, 15, 14, 2, 2, 2], at_got, at_want, F64.from_bits(4497644614860975944))))
+	line!(Text.printed(Grade.grade_rel([28, 21, 73, 32, 13, 20, 17, 18, 22], behind_got, behind_want, F64.from_bits(4502148214488346440))))
 	Ok({})
 }

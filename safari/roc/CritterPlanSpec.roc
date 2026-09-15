@@ -2,6 +2,7 @@
 import CritterPlan
 import Frame
 import Grade
+import Text
 import World
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
@@ -102,15 +103,15 @@ behind_want = [True, True, True]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_ints("cn-reach ", reach_got, reach_want))
-	line!(Grade.grade_bools("cn-cutoff", cutoff_got, cutoff_want))
-	line!(Grade.grade_ints("cn-term  ", term_got, term_want))
-	line!(Grade.grade_bools("cn-tflag ", term_flag_got, term_flag_want))
-	line!(Grade.grade_bools("cn-duck  ", duck_got, duck_want))
-	line!(Grade.grade_ints("cn-dreach", duck_reach_got, duck_reach_want))
-	line!(Grade.grade_ints("cn-order ", order_got, order_want))
-	line!(Grade.grade_ints("cn-walk  ", walk_got, walk_want))
-	line!(Grade.grade_bools("cn-grow  ", grow_got, grow_want))
-	line!(Grade.grade_bools("cn-behind", behind_got, behind_want))
+	line!(Text.printed(Grade.grade_ints([24, 18, 73, 21, 13, 15, 24, 20, 2], reach_got, reach_want)))
+	line!(Text.printed(Grade.grade_bools([24, 18, 73, 24, 25, 14, 16, 28, 28], cutoff_got, cutoff_want)))
+	line!(Text.printed(Grade.grade_ints([24, 18, 73, 14, 13, 21, 26, 2, 2], term_got, term_want)))
+	line!(Text.printed(Grade.grade_bools([24, 18, 73, 14, 28, 23, 15, 29, 2], term_flag_got, term_flag_want)))
+	line!(Text.printed(Grade.grade_bools([24, 18, 73, 22, 25, 24, 34, 2, 2], duck_got, duck_want)))
+	line!(Text.printed(Grade.grade_ints([24, 18, 73, 22, 21, 13, 15, 24, 20], duck_reach_got, duck_reach_want)))
+	line!(Text.printed(Grade.grade_ints([24, 18, 73, 16, 21, 22, 13, 21, 2], order_got, order_want)))
+	line!(Text.printed(Grade.grade_ints([24, 18, 73, 27, 15, 23, 34, 2, 2], walk_got, walk_want)))
+	line!(Text.printed(Grade.grade_bools([24, 18, 73, 29, 21, 16, 27, 2, 2], grow_got, grow_want)))
+	line!(Text.printed(Grade.grade_bools([24, 18, 73, 32, 13, 20, 17, 18, 22], behind_got, behind_want)))
 	Ok({})
 }

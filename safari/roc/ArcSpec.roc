@@ -3,6 +3,7 @@ import Arc
 import Bike
 import Grade
 import Pose
+import Text
 import World
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
@@ -115,17 +116,17 @@ step_want = [0.0, 0.0, 0.0, 0.0, 0.3, 0.5, 0.55, 0.05, 0.05, 0.1]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("ar-fixed ", fixed_got, fixed_want, 0.0))
-	line!(Grade.grade_ints("ar-steps ", steps_got, steps_want))
-	line!(Grade.grade_reals("ar-straig", straight_got, straight_want, 0.0))
-	line!(Grade.grade_reals("ar-wide  ", wide_got, wide_want, 0.0))
-	line!(Grade.grade_reals("ar-stop  ", stopped_got, stopped_want, 0.0))
-	line!(Grade.grade_ints("ar-none  ", none_got, none_want))
-	line!(Grade.grade_bools("ar-cross ", crossed_got, crossed_want))
-	line!(Grade.grade_ints("ar-side  ", leaving_got, leaving_want))
-	line!(Grade.grade_bools("ar-left  ", left_got, left_want))
-	line!(Grade.grade_reals("ar-mirror", mirror_got, mirror_want, 0.0))
-	line!(Grade.grade_reals("ar-mfwd  ", mirror_fwd_got, mirror_fwd_want, F64.from_bits(4517329193108106637)))
-	line!(Grade.grade_reals("ar-step  ", step_got, step_want, 0.0))
+	line!(Text.printed(Grade.grade_reals([15, 21, 73, 28, 17, 36, 13, 22, 2], fixed_got, fixed_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([15, 21, 73, 19, 14, 13, 31, 19, 2], steps_got, steps_want)))
+	line!(Text.printed(Grade.grade_reals([15, 21, 73, 19, 14, 21, 15, 17, 29], straight_got, straight_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([15, 21, 73, 27, 17, 22, 13, 2, 2], wide_got, wide_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([15, 21, 73, 19, 14, 16, 31, 2, 2], stopped_got, stopped_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([15, 21, 73, 18, 16, 18, 13, 2, 2], none_got, none_want)))
+	line!(Text.printed(Grade.grade_bools([15, 21, 73, 24, 21, 16, 19, 19, 2], crossed_got, crossed_want)))
+	line!(Text.printed(Grade.grade_ints([15, 21, 73, 19, 17, 22, 13, 2, 2], leaving_got, leaving_want)))
+	line!(Text.printed(Grade.grade_bools([15, 21, 73, 23, 13, 28, 14, 2, 2], left_got, left_want)))
+	line!(Text.printed(Grade.grade_reals([15, 21, 73, 26, 17, 21, 21, 16, 21], mirror_got, mirror_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([15, 21, 73, 26, 28, 27, 22, 2, 2], mirror_fwd_got, mirror_fwd_want, F64.from_bits(4517329193108106637))))
+	line!(Text.printed(Grade.grade_reals([15, 21, 73, 19, 14, 13, 31, 2, 2], step_got, step_want, 0.0)))
 	Ok({})
 }

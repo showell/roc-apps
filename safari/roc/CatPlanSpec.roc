@@ -2,6 +2,7 @@
 import CatPlan
 import Frame
 import Grade
+import Text
 import World
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
@@ -78,13 +79,13 @@ items_want = [1, 0, 0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_bools("cp-has   ", has_got, has_want))
-	line!(Grade.grade_reals("cp-gap   ", gap_got, gap_want, 0.0))
-	line!(Grade.grade_ints("cp-count ", count_got, count_want))
-	line!(Grade.grade_reals("cp-place ", place_got, place_want, 0.0))
-	line!(Grade.grade_ints("cp-pose  ", pose_got, pose_want))
-	line!(Grade.grade_reals("cp-close ", closing_got, closing_want, 0.0001))
-	line!(Grade.grade_ints("cp-cull  ", cull_got, cull_want))
-	line!(Grade.grade_ints("cp-items ", items_got, items_want))
+	line!(Text.printed(Grade.grade_bools([24, 31, 73, 20, 15, 19, 2, 2, 2], has_got, has_want)))
+	line!(Text.printed(Grade.grade_reals([24, 31, 73, 29, 15, 31, 2, 2, 2], gap_got, gap_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([24, 31, 73, 24, 16, 25, 18, 14, 2], count_got, count_want)))
+	line!(Text.printed(Grade.grade_reals([24, 31, 73, 31, 23, 15, 24, 13, 2], place_got, place_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([24, 31, 73, 31, 16, 19, 13, 2, 2], pose_got, pose_want)))
+	line!(Text.printed(Grade.grade_reals([24, 31, 73, 24, 23, 16, 19, 13, 2], closing_got, closing_want, 0.0001)))
+	line!(Text.printed(Grade.grade_ints([24, 31, 73, 24, 25, 23, 23, 2, 2], cull_got, cull_want)))
+	line!(Text.printed(Grade.grade_ints([24, 31, 73, 17, 14, 13, 26, 19, 2], items_got, items_want)))
 	Ok({})
 }

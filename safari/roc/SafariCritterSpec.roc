@@ -3,6 +3,7 @@ import Grade
 import ListUtils
 import SafariCritter
 import Scenery
+import Text
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
@@ -100,15 +101,15 @@ lam_4 = |c| c.face_right
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_bools("sk-present", present_got, present_want))
-	line!(Grade.grade_ints("sk-cp    ", cp_got, cp_want))
-	line!(Grade.grade_reals("sk-height", height_got, height_want, 0.0))
-	line!(Grade.grade_reals("sk-dims  ", dims_got, dims_want, 0.0))
-	line!(Grade.grade_reals("sk-across", across_got, across_want, 0.0))
-	line!(Grade.grade_reals("sk-along ", along_got, along_want, 0.0))
-	line!(Grade.grade_reals("sk-ch    ", ch_got, ch_want, 0.0))
-	line!(Grade.grade_ints("sk-ccp   ", ccp_got, ccp_want))
-	line!(Grade.grade_bools("sk-face  ", face_got, face_want))
-	line!(Grade.grade_ints("sk-count ", count_got, count_want))
+	line!(Text.printed(Grade.grade_bools([19, 34, 73, 31, 21, 13, 19, 13, 18, 14], present_got, present_want)))
+	line!(Text.printed(Grade.grade_ints([19, 34, 73, 24, 31, 2, 2, 2, 2], cp_got, cp_want)))
+	line!(Text.printed(Grade.grade_reals([19, 34, 73, 20, 13, 17, 29, 20, 14], height_got, height_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([19, 34, 73, 22, 17, 26, 19, 2, 2], dims_got, dims_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([19, 34, 73, 15, 24, 21, 16, 19, 19], across_got, across_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([19, 34, 73, 15, 23, 16, 18, 29, 2], along_got, along_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([19, 34, 73, 24, 20, 2, 2, 2, 2], ch_got, ch_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([19, 34, 73, 24, 24, 31, 2, 2, 2], ccp_got, ccp_want)))
+	line!(Text.printed(Grade.grade_bools([19, 34, 73, 28, 15, 24, 13, 2, 2], face_got, face_want)))
+	line!(Text.printed(Grade.grade_ints([19, 34, 73, 24, 16, 25, 18, 14, 2], count_got, count_want)))
 	Ok({})
 }

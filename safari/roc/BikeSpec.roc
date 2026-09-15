@@ -2,6 +2,7 @@
 import Bike
 import Grade
 import Pose
+import Text
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
@@ -51,10 +52,10 @@ pos_want = [121.25108639750266, 2.5532642799382796, 122.00167174017032, 2.870827
 # --- Entry ---
 
 main! = |_args| {
-	line!(Grade.grade_reals("bk-limit", limit_got, limit_want, 0.0))
-	line!(Grade.grade_reals("bk-exact", exact_got, exact_want, 0.0))
-	line!(Grade.grade_reals("bk-carry", carried_real_got, carried_real_want, 0.0))
-	line!(Grade.grade_ints("bk-seg  ", carried_int_got, carried_int_want))
-	line!(Grade.grade_rel("bk-pos  ", pos_got, pos_want, F64.from_bits(4472406533629990549)))
+	line!(Text.printed(Grade.grade_reals([32, 34, 73, 23, 17, 26, 17, 14], limit_got, limit_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([32, 34, 73, 13, 36, 15, 24, 14], exact_got, exact_want, 0.0)))
+	line!(Text.printed(Grade.grade_reals([32, 34, 73, 24, 15, 21, 21, 30], carried_real_got, carried_real_want, 0.0)))
+	line!(Text.printed(Grade.grade_ints([32, 34, 73, 19, 13, 29, 2, 2], carried_int_got, carried_int_want)))
+	line!(Text.printed(Grade.grade_rel([32, 34, 73, 31, 16, 19, 2, 2], pos_got, pos_want, F64.from_bits(4472406533629990549))))
 	Ok({})
 }
