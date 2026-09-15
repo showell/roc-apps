@@ -31,6 +31,7 @@ Roc on the fifth tree on the right of every segment.
 | `safari/roc/Shapes.roc` | a frame as shapes a drawing platform fills itself, each with its brush: convex polygons, ear-clipped triangles wound for raylib, discs, rectangles; the blitter's sky and clipped sun | hand |
 | `safari/roc/ShapesFrame.roc` | the check on Shapes: Raster paints the frame itself and again from Shapes' pieces with their brushes, and the pixels that differ are counted | hand |
 | `safari/roc/Raster.roc` | a frame painted into 960x600 pixels in Roc, as blitter.js paints the canvas: backdrop, sun, commands, under the roll; nonzero fills, no anti-aliasing | hand |
+| `ray/png_diff.mjs` | two screenshots compared pixel by pixel: how many differ, how many by more than a tolerance, the largest difference; for the Windows runner's shots of the two painters | hand |
 | `safari/roc/RasterFrame.roc` | one frame painted natively and printed as hex with its hash; `ray/pixels_png.mjs` turns that into a PNG | hand |
 | `.github/workflows/windows.yml` | the Windows executables, built on a hosted Windows runner because Roc's `x64win` link needs an installed Windows SDK; uploaded as the `windows-exe` artifact; run by hand | hand |
 
