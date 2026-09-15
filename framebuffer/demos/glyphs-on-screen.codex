@@ -5,10 +5,10 @@ Chapter: GlyphsOnScreen
   cites Works chapter GopDraw
 
  The small TrueType font codex/test/truetype-render-test embeds, parsed by
- TrueType and its letter A rasterized by GlyphRasterizer at 16, 24 and 32
- pixels to the em, onto the screen that UEFI's GOP protocol describes with each
- glyph pixel a 3 by 3 block: plain coverage along the top row, and the
- anti-aliased render, its coverage as grey, along the bottom.
+ TrueType and its glyph for A, a single triangle, rasterized by GlyphRasterizer
+ at 16, 24 and 32 pixels to the em, onto the screen that UEFI's GOP protocol
+ describes with each glyph pixel a 3 by 3 block: plain coverage along the top
+ row, and the anti-aliased render, its coverage as grey, along the bottom.
 
  We say:
 

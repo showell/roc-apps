@@ -89,7 +89,7 @@ machine page's MachineGpu and this platform's GPU agreed.
 | `demos/qr-on-screen.codex` | `codex/test/qr-encode`'s payload encoded by GopQr and drawn with GopDraw's fill |
 | `demos/sketch-on-screen.codex` | what `codex/test/rasterizer-test` and `sprite-test` draw, in one 80 x 60 Framebuf copied to the screen: lines, a rectangle, a filled circle and a triangle, keyed and flipped sprites, a blinking face |
 | `demos/raytrace-on-screen.codex` | `codex/test/raytracer-test`'s spheres and floor traced by Raytracer at 160 x 120 and copied to the screen, the red sphere bobbing by the clock; the spheres are lit at the ambient level alone and the floor at its full grey |
-| `demos/glyphs-on-screen.codex` | the A of `codex/test/truetype-render-test`'s embedded font, rasterized by GlyphRasterizer plain and anti-aliased at 16, 24 and 32 pixels to the em, each glyph pixel a 3 by 3 block |
+| `demos/glyphs-on-screen.codex` | the glyph for A in `codex/test/truetype-render-test`'s embedded font, a single triangle, rasterized by GlyphRasterizer plain and anti-aliased at 16, 24 and 32 pixels to the em, each glyph pixel a 3 by 3 block |
 
 Drawing these showed three things about the chapters under them:
 
