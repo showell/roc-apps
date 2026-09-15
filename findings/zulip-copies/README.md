@@ -1,47 +1,114 @@
-# `--opt=speed` copies a list that `--opt=dev` writes in place
+# A list write that copies or not depending on `--opt`
 
-**Reduced, not reported.** Steve decides whether it goes to the Roc Zulip; the
-draft question is `:9100/notes/zulip-stack-moves-question.md`.
+**Reduced, not reported.** Steve's plan: a roc-lang/roc issue with the
+details and this directory, and a short Zulip question that points at it.
 
-`run.sh` builds every variant with LLVM and with the dev backend and measures
-how the time scales: 10,000 writes into `num`, a `List(F64)` in a record, at
-list sizes of 286, 4,096 and 65,536. The default platform gives every heap
-value its own `mmap`, so a copy per write shows as thousands of calls; 3 is
-startup alone.
+On the default platform every heap value is its own `mmap`, so a copy per
+write shows as thousands of calls; 2 or 3 is startup alone. Every build below
+is a native x86-64 ELF (`file`), and dev and LLVM builds of each program print
+the same result.
 
-    findings/zulip-copies/run.sh
+    findings/zulip-copies/run.sh          # thread/ variants and RecordWidth, dev and LLVM
     ROC=<another roc> findings/zulip-copies/run.sh
 
-## The copy (nightly-2026-09-11-793f9d8 and nightly-2026-09-12-220fd47, the same)
+## T1: LLVM copies on every other write, dev on none
 
-| `thread/` variant | what differs from T1 | `--opt=speed` @286 / @4,096 / @65,536 | `--opt=dev` |
+`thread/T1_walk_returns` (threaded-record-copy's `h_recursive_returns_m`, with
+the list's size from the command line): 10,000 writes into `num`, a `List(F64)`
+in a record `{ num, scr : List(U8), out : List(Str), pc }`. Before each write a
+recursive `walk` hands the record back; the write is inline in `spin`'s tail
+call.
+
+| build, list of 65,536 | time | mmap |
+|---|---|---|
+| `--opt=dev` | 0.007 s | 3 |
+| `--opt=speed` | 1.91 s | 5,003 |
+| `--opt=size` | 1.93 s | 5,003 |
+
+At 286, 4,096 and 65,536 elements the LLVM build takes 0.03, 0.15 and 1.9 s:
+the copy count is fixed and each copy grows with the list. The same on
+nightly-2026-09-11-793f9d8, nightly-2026-09-12-220fd47, and a local Debug build
+of roc at `68267dd`. nightly-2026-09-15-fe09c42 dies with SIGILL on this CPU.
+
+| variant | what differs from T1 | dev | LLVM |
 |---|---|---|---|
-| `T1_walk_returns` | `threaded-record-copy`'s `h_recursive_returns_m`, sized: a recursive walk hands the record back, the record also holds `scr : List(U8)` and `out : List(Str)`, and the write is inline in the tail call | 0.03 / 0.15 / 1.9 s, 5,003 mmap | 0.00 s, 3 mmap |
-| `T0_no_walk` | no walk | 0.00 s, 3 mmap | 0.00 s, 3 |
-| `T4_walk_reads` | the walk only reads the record | 0.00 s, 3 | 0.00 s, 3 |
-| `T2_one_list` | the record is only `num` and `pc` | 0.00 s, 3 | 0.00 s, 3 |
-| `T3_write_in_helper` | the record update in its own function | 0.00 s, 3 | 0.00 s, 3 |
-| `T5_bytes_only` | `scr` kept, `out` gone | 0.03 / 0.15 / 1.9 s, 5,003 | 0.00 s, 3 |
-| `T6_strs_only` | `out` kept, `scr` gone | 0.03 / 0.16 / 1.9 s, 5,003 | 0.00 s, 3 |
-| `T7_one_byte_walk` | a one-byte text, so the walk recurses once a step | 0.03 / 0.15 / 1.9 s, 5,003 | 0.00 s, 3 |
+| `T0_no_walk` | no walk | 3 | 3 |
+| `T4_walk_reads` | the walk only reads the record | 3 | 3 |
+| `T2_one_list` | no other list in the record | 3 | 3 |
+| `T3_write_in_helper` | the record update in a helper | 3 | 3 |
+| `T5_bytes_only` | only `scr` beside `num` | 3 | 5,003 |
+| `T6_strs_only` | only `out` beside `num` | 3 | 5,003 |
+| `T7_one_byte_walk` | the walk recurses once a step | 3 | 5,003 |
+| `T8_runtime_index` | the written index from the command line | 3 | 5,003 |
+| `T9_while_loop` | a `while` over `var $m` instead of recursion | **10,003** | **10,003** |
 
-**Under LLVM every other write copies the whole list; under dev none does.**
-The copy needs all three of these:
-1. **a recursive function given the record that hands it back;**
-2. **a second refcounted field in the record** (a list of any element);
-3. **the write inline in the tail call's argument.**
+`T8` rules out the range proof. `T9` copies every write on BOTH backends: a
+different shape, not a test of the recursion.
 
-A first probe written from scratch, a state record of one list and a counter
-written through a helper, did not copy under either backend, which is what
-`T2` and `T3` say.
+## The earlier findings, dev against LLVM
 
-nightly-2026-09-15-fe09c42 does not run on this machine (SIGILL on `check`
-and `build`; the CPU has AVX2, not AVX-512).
+| program | dev | LLVM |
+|---|---|---|
+| `threaded-record-copy` a, b, c, g | 10,001 | 10,001 |
+| `threaded-record-copy` h (T1's origin) | 2 | 5,001 |
+| `threaded-record-copy` d, e, f, i, j | 2 | 2 |
+| `helper-arg-copy` copies | 50,006 | 10 |
+| `helper-arg-copy` union-copies | 20,001 | 3 |
+| `helper-arg-copy` const-arg | 10 | 50,006 |
+| `helper-arg-copy` no-helper, union-no-helper | 10, 3 | 10, 3 |
 
-## Records carried by value
+**Neither backend is the one that copies.** Each copies in shapes the other
+writes in place, and some shapes copy under both.
 
-`record_width.py <K>` writes a loop that carries one record of K `F64` fields
-and updates two a step. 20 million steps:
+## Where the difference shows: the final LIR
+
+`lir/` holds `ROC_LIR_DUMP` output for T1 (dev, speed) and T3 (speed), and
+`spin` extracted from each.
+
+- **dev:** `spin`'s step reads `num` out of the record `walk` returned,
+  increments it, **decrements the record, then `list_set`s**. The record was
+  the other reference, so `num` is unique at the write.
+- **speed:** `spin`'s body holds the step twice.
+  - The first copy is dev's order: increment, release the record, `list_set`
+    (`spin-speed.txt` lines 43, 44, 47).
+  - The second copy is increment, **`list_set`, then release the record**
+    (lines 126, 129, 131). The record still holds `num` at the write, so its
+    count is 2 and `list_set` copies.
+
+That is every other write.
+
+## What differs between the two pipelines
+
+roc at `793f9d8`, `src/cli/main.zig` lines 11775-11800 and 11901-11916: the
+same LIR pipeline, four settings by optimization level (`inline_mode` is
+`.wrappers` for all three).
+
+| setting | dev | speed, size |
+|---|---|---|
+| `spec_constr_clone_inlining` | `.iterator_fusion` | `.all_calls` |
+| `list_in_place_map` | off | on |
+| `tag_reachability` | off | on |
+| `prove_ranges` | off | on |
+
+**The leading suspect is SpecConstr.**
+`src/postcheck/monotype_lifted/spec_constr.zig` "specializes recursive direct
+calls whose arguments are known constructor shapes". Under `.all_calls` a
+worker "can flatten a callee's whole call tree into its body".
+- T1's `spin` calls itself with a record literal. That is the shape SpecConstr
+  specializes, and the duplicated step in the speed LIR is what such a worker
+  would look like.
+- T3 passes a helper's result instead, and does not copy.
+
+**Not yet proven.** No environment variable changes the setting. The proof is
+roc rebuilt with `specConstrCloneInliningForOpt(.speed)` answering
+`.iterator_fusion`, and T1 run again. The local checkout at `68267dd`
+reproduces the copy and has the same function, so the one-line patch applies
+there.
+
+## Records carried by value (the first thesis)
+
+`record_width.py <K>`: a loop carrying one record of K `F64` fields, 20
+million steps.
 
 | | 4 fields | 32 fields | 256 fields |
 |---|---|---|---|
@@ -50,7 +117,6 @@ and updates two a step. 20 million steps:
 
 ## Related
 
-- `../threaded-record-copy/`, the program `T1` comes from.
-- `../helper-arg-copy/`, a copy that needs a helper given the record and a
-  value read from it (measured on dev).
+- `../threaded-record-copy/`, `../helper-arg-copy/`.
 - roc-lang/roc #10218 and #10920, both closed before these nightlies.
+- `dig-2026-09-15.log`, the run behind the dev-against-LLVM tables.

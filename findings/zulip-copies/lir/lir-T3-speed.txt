@@ -1,0 +1,172 @@
+=== LIR Echo.line! (p1) ===
+proc p1 args=[l16:str] ret=zst
+  <no body>
+
+=== LIR spin (p2) ===
+proc p2 args=[l34:struct_#37, l35:list#36, l36:u64, l37:u64] ret=struct_#37 transform=tce
+  join j10 params=[l34, l35, l36, l37]
+    remainder:
+      jump j10
+    body:
+      join j8 params=[l114]
+        remainder:
+          l134:u64 = ref.local l36
+          l135:u64 = ref.local l37
+          l133:bool = low_level num_is_gte(l134, l135)
+          switch l133 default_cold=false
+            case 1:
+              l114:struct_#37 = ref.local l34
+              decref l35 rc=concrete(decref,36)
+              jump j8
+            default:
+              join j9 params=[l121]
+                remainder:
+                  l129:u64 = literal 0
+                  l131:list#36 = ref.local l35
+                  l132:list#36 = ref.local l131
+                  l130:u64 = low_level list_len(l132)
+                  l128:bool = low_level num_is_gte(l129, l130)
+                  switch l128 default_cold=false
+                    case 1:
+                      l121:struct_#37 = ref.local l34
+                      jump j9
+                    default:
+                      l126:u64 = literal 0
+                      l127:u64 = literal 1
+                      l125:u64 = low_level num_int_add_proven_cannot_overflow(l126, l127)
+                      l123:struct_#37 = ref.local l34
+                      l124:list#36 = ref.local l35
+                      incref l124 x1 rc=concrete(incref,36)
+                      l121:struct_#37 = call p5(l123, l124, l125)
+                      jump j9
+                body:
+                  l122:u64 = ref.local l36
+                  l115:struct_#37 = call p7(l121, l122)
+                  l120:u64 = literal 1
+                  l119:u64 = ref.local l36
+                  l117:u64 = low_level num_int_add_proven_cannot_overflow(l119, l120)
+                  l116:list#36 = ref.local l35
+                  l118:u64 = ref.local l37
+                  set l37 := l118 (initialize_join_param)
+                  set l36 := l117 (initialize_join_param)
+                  set l35 := l116 (initialize_join_param)
+                  set l34 := l115 (initialize_join_param)
+                  jump j10
+        body:
+          ret l114
+
+=== LIR write (p4) ===
+proc p4 args=[l42:struct_#37, l43:u64] ret=struct_#37
+  l160:struct_#37 = ref.local l42
+  l157:struct_#37 = ref.local l160
+  l159:list#26 = ref.field l157[1]
+  incref l159 x1 rc=concrete(incref,26)
+  l142:list#26 = ref.local l159
+  l158:list#36 = ref.field l157[3]
+  incref l158 x1 rc=concrete(incref,36)
+  l141:list#36 = ref.local l158
+  join j10 params=[l137]
+    remainder:
+      l152:u64 = literal 7
+      l156:struct_#37 = ref.local l42
+      l154:list#33 = ref.field l156[0]
+      l155:list#33 = ref.local l154
+      l153:u64 = low_level list_len(l155)
+      l151:bool = low_level num_is_lt(l152, l153)
+      switch l151 default_cold=false
+        case 1:
+          l150:struct_#37 = ref.local l42
+          l147:list#33 = ref.field l150[0]
+          incref l147 x1 rc=concrete(incref,33)
+          l148:u64 = literal 7
+          l149:f64 = literal f64 1
+          l146:list#33 = low_level list_set(l147, l148, l149)
+          l137:list#33 = ref.local l146
+          jump j10
+        default:
+          l145:str = literal str
+          l144:str = ref.local l145
+          decref l141 rc=concrete(decref,36)
+          decref l142 rc=concrete(decref,26)
+          crash l144
+    body:
+      l138:list#26 = ref.local l142
+      l139:u64 = ref.local l43
+      l140:list#36 = ref.local l141
+      l136:struct_#37 = struct(l137, l138, l139, l140)
+      ret l136
+
+=== LIR walk (p5) ===
+proc p5 args=[l47:struct_#37, l48:list#36, l49:u64] ret=struct_#37 transform=tce
+  join j12 params=[l47, l48, l49]
+    remainder:
+      jump j12
+    body:
+      join j11 params=[l161]
+        remainder:
+          l170:list#36 = ref.local l48
+          l171:list#36 = ref.local l170
+          l169:u64 = low_level list_len(l171)
+          l168:u64 = ref.local l49
+          l167:bool = low_level num_is_gte(l168, l169)
+          switch l167 default_cold=false
+            case 1:
+              l161:struct_#37 = ref.local l47
+              decref l48 rc=concrete(decref,36)
+              jump j11
+            default:
+              l166:u64 = literal 1
+              l165:u64 = ref.local l49
+              l164:u64 = low_level num_int_add_proven_cannot_overflow(l165, l166)
+              l162:struct_#37 = ref.local l47
+              l163:list#36 = ref.local l48
+              set l49 := l164 (initialize_join_param)
+              set l48 := l163 (initialize_join_param)
+              set l47 := l162 (initialize_join_param)
+              jump j12
+        body:
+          ret l161
+
+=== LIR write (p7) ===
+proc p7 args=[l42:struct_#37, l43:u64] ret=struct_#37
+  l160:struct_#37 = ref.local l42
+  l157:struct_#37 = ref.local l160
+  l159:list#26 = ref.field l157[1] take
+  l142:list#26 = ref.local l159
+  l158:list#36 = ref.field l157[3] take
+  l141:list#36 = ref.local l158
+  join j10 params=[l137]
+    remainder:
+      l152:u64 = literal 7
+      l156:struct_#37 = ref.local l42 shell_absent={1,3}
+      l154:list#33 = ref.field l156[0]
+      l155:list#33 = ref.local l154
+      l153:u64 = low_level list_len(l155)
+      l151:bool = low_level num_is_lt(l152, l153)
+      switch l151 default_cold=false
+        case 1:
+          l150:struct_#37 = ref.local l42 shell_absent={1,3}
+          l147:list#33 = ref.field l150[0] take
+          l148:u64 = literal 7
+          l149:f64 = literal f64 1
+          l146:list#33 = low_level list_set(l147, l148, l149)
+          l137:list#33 = ref.local l146
+          jump j10
+        default:
+          l145:str = literal str
+          l144:str = ref.local l145
+          l174:list#33 = ref.field l42[0] take
+          decref l174 rc=concrete(decref,33)
+          decref l141 rc=concrete(decref,36)
+          decref l142 rc=concrete(decref,26)
+          crash l144
+    body:
+      l138:list#26 = ref.local l142
+      l139:u64 = ref.local l43
+      l140:list#36 = ref.local l141
+      l136:struct_#37 = struct(l137, l138, l139, l140)
+      ret l136
+
+0 errors and 0 warnings found in 1.1s while successfully building:
+
+    lir-speed

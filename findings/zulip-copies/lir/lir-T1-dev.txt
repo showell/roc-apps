@@ -1,0 +1,134 @@
+=== LIR Echo.line! (p1) ===
+proc p1 args=[l16:str] ret=zst
+  <no body>
+
+=== LIR spin (p2) ===
+proc p2 args=[l43:struct_#40, l44:list#39, l45:u64, l46:u64] ret=struct_#40 transform=tce
+  join j11 params=[l43, l44, l45, l46]
+    remainder:
+      jump j11
+    body:
+      join j8 params=[l105]
+        remainder:
+          l155:u64 = ref.local l45
+          l156:u64 = ref.local l46
+          l154:bool = low_level num_is_gte(l155, l156)
+          switch l154 default_cold=false
+            case 1:
+              l105:struct_#40 = ref.local l43
+              decref l44 rc=concrete(decref,39)
+              jump j8
+            default:
+              l150:u64 = literal 0
+              l148:struct_#40 = ref.local l43
+              l149:list#39 = ref.local l44
+              incref l149 x1 rc=concrete(incref,39)
+              l143:struct_#40 = call p5(l148, l149, l150)
+              l147:struct_#40 = ref.local l143
+              l144:struct_#40 = ref.local l147
+              l146:list#26 = ref.field l144[1]
+              incref l146 x1 rc=concrete(incref,26)
+              l117:list#26 = ref.local l146
+              l145:list#39 = ref.field l144[3]
+              incref l145 x1 rc=concrete(incref,39)
+              l116:list#39 = ref.local l145
+              join j9 params=[l112]
+                remainder:
+                  l142:struct_#40 = ref.local l143
+                  l126:list#36 = ref.field l142[0]
+                  incref l126 x1 rc=concrete(incref,36)
+                  decref l143 rc=concrete(decref,40)
+                  l127:u64 = literal 7
+                  l128:f64 = literal f64 1
+                  join j10 params=[l118]
+                    remainder:
+                      l140:list#36 = ref.local l126
+                      l141:list#36 = ref.local l140
+                      l139:u64 = low_level list_len(l141)
+                      l138:u64 = ref.local l127
+                      l137:bool = low_level num_is_lt(l138, l139)
+                      switch l137 default_cold=false
+                        case 1:
+                          l131:list#36 = ref.local l126
+                          l132:u64 = ref.local l127
+                          l133:f64 = ref.local l128
+                          l134:list#36 = ref.local l131
+                          l135:u64 = ref.local l132
+                          l136:f64 = ref.local l133
+                          l130:list#36 = low_level list_set(l134, l135, l136)
+                          l118:tag_union#47 = tag v1 d1 (l130)
+                          jump j10
+                        default:
+                          l129:zst = struct()
+                          l118:tag_union#47 = tag v0 d0 (l129)
+                          decref l126 rc=concrete(decref,36)
+                          jump j10
+                    body:
+                      l119:tag_union#47 = ref.local l118
+                      l120:u16 = ref.discriminant l119
+                      switch l120 default_cold=false
+                        case 1:
+                          l121:list#36 = ref.tag_payload_struct l119 v1
+                          l122:list#36 = ref.local l121
+                          l112:list#36 = ref.local l122
+                          jump j9
+                        default:
+                          l125:str = literal str
+                          l124:str = ref.local l125
+                          decref l44 rc=concrete(decref,39)
+                          decref l116 rc=concrete(decref,39)
+                          decref l117 rc=concrete(decref,26)
+                          decref l118 rc=concrete(decref,47)
+                          crash l124
+                body:
+                  l113:list#26 = ref.local l117
+                  l114:u64 = ref.local l45
+                  l115:list#39 = ref.local l116
+                  l106:struct_#40 = struct(l112, l113, l114, l115)
+                  l111:u64 = literal 1
+                  l110:u64 = ref.local l45
+                  l108:u64 = low_level num_int_add_crash_on_overflow(l110, l111)
+                  l107:list#39 = ref.local l44
+                  l109:u64 = ref.local l46
+                  set l46 := l109 (initialize_join_param)
+                  set l45 := l108 (initialize_join_param)
+                  set l44 := l107 (initialize_join_param)
+                  set l43 := l106 (initialize_join_param)
+                  jump j11
+        body:
+          ret l105
+
+=== LIR walk (p5) ===
+proc p5 args=[l151:struct_#40, l152:list#39, l153:u64] ret=struct_#40 transform=tce
+  join j12 params=[l151, l152, l153]
+    remainder:
+      jump j12
+    body:
+      join j11 params=[l157]
+        remainder:
+          l166:list#39 = ref.local l152
+          l167:list#39 = ref.local l166
+          l165:u64 = low_level list_len(l167)
+          l164:u64 = ref.local l153
+          l163:bool = low_level num_is_gte(l164, l165)
+          switch l163 default_cold=false
+            case 1:
+              l157:struct_#40 = ref.local l151
+              decref l152 rc=concrete(decref,39)
+              jump j11
+            default:
+              l162:u64 = literal 1
+              l161:u64 = ref.local l153
+              l160:u64 = low_level num_int_add_crash_on_overflow(l161, l162)
+              l158:struct_#40 = ref.local l151
+              l159:list#39 = ref.local l152
+              set l153 := l160 (initialize_join_param)
+              set l152 := l159 (initialize_join_param)
+              set l151 := l158 (initialize_join_param)
+              jump j12
+        body:
+          ret l157
+
+0 errors and 0 warnings found in 53ms while successfully building:
+
+    lir-dev

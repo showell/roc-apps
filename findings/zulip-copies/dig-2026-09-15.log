@@ -1,0 +1,30 @@
+dig 2026-09-15T15:44:34Z, Roc compiler version nightly-2026-09-11-793f9d8
+=== 1. T1 by optimization level
+--opt=dev built in 0 s: ELF 64-bit LSB executable, x86-64
+--opt=speed built in 1 s: ELF 64-bit LSB executable, x86-64
+--opt=size built in 1 s: ELF 64-bit LSB executable, x86-64
+--opt=dev @65536: prints '1', 0.007 s, 3 mmap
+--opt=speed @65536: prints '1', 1.912 s, 5003 mmap
+--opt=size @65536: prints '1', 1.927 s, 5003 mmap
+=== 2. the earlier findings, dev and speed (mmap calls)
+threaded-record-copy/a_field_then_at         dev     10001 mmap, prints 1608     speed   10001 mmap, prints 1608    
+threaded-record-copy/b_bound_first           dev     10001 mmap, prints 1608     speed   10001 mmap, prints 1608    
+threaded-record-copy/c_destructured          dev     10001 mmap, prints 1608     speed   10001 mmap, prints 1608    
+threaded-record-copy/d_no_eval               dev         2 mmap, prints 1        speed       2 mmap, prints 1       
+threaded-record-copy/e_eval_without_m        dev         2 mmap, prints 1608     speed       2 mmap, prints 1608    
+threaded-record-copy/f_one_call_record       dev         2 mmap, prints 88       speed       2 mmap, prints 88      
+threaded-record-copy/g_recursive_updates_m   dev     10001 mmap, prints 1608     speed   10001 mmap, prints 1608    
+threaded-record-copy/h_recursive_returns_m   dev         2 mmap, prints 1        speed    5001 mmap, prints 1       
+threaded-record-copy/i_recursive_reads_m     dev         2 mmap, prints 1608     speed       2 mmap, prints 1608    
+threaded-record-copy/j_mutual_reads_m        dev         2 mmap, prints 1608     speed       2 mmap, prints 1608    
+helper-arg-copy/const-arg                    dev        10 mmap, prints 7        speed   50006 mmap, prints 7       
+helper-arg-copy/copies                       dev     50006 mmap, prints 7        speed      10 mmap, prints 7       
+helper-arg-copy/no-helper                    dev        10 mmap, prints 7        speed      10 mmap, prints 7       
+helper-arg-copy/union-copies                 dev     20001 mmap, prints 7        speed       3 mmap, prints 7       
+helper-arg-copy/union-no-helper              dev         3 mmap, prints 7        speed       3 mmap, prints 7       
+=== 3. LIR dumps
+  134 /tmp/claude-1000/-home-steve-showell-repos-codex-zig-ladder/36d32d80-a8c6-42f9-9dfc-5dbee30a95ec/scratchpad/dig/lir-T1-dev.txt
+  198 /tmp/claude-1000/-home-steve-showell-repos-codex-zig-ladder/36d32d80-a8c6-42f9-9dfc-5dbee30a95ec/scratchpad/dig/lir-T1-speed.txt
+  172 /tmp/claude-1000/-home-steve-showell-repos-codex-zig-ladder/36d32d80-a8c6-42f9-9dfc-5dbee30a95ec/scratchpad/dig/lir-T3-speed.txt
+  504 total
+=== done 15:45:11
