@@ -4,6 +4,11 @@
 #   :9210  dev      ~/build/roc-apps/next/, what the build scripts last wrote
 #   :9200  staging  roc-apps/site/live/, what site/publish.sh last moved there
 #
+# The ports announced before the site answer with redirects, 302 because their
+# targets move to prod: :9201 (Safari) to staging's safari/; :9203 (the old
+# preview) to staging for basic/ and to dev at the same path for the rest;
+# :9204 and :9205 (the gallery and the games) to staging's gpu/ and games/.
+#
 # Every response is no-store, because a cached module looks exactly like a
 # build that changed nothing, and asks for cross-origin isolation, because the
 # framebuffer page shares memory with its Web Worker through a
@@ -27,4 +32,24 @@
 :9210 {
 	root * {$HOME}/build/roc-apps/next
 	import roc
+}
+
+:9201 {
+	redir http://{host}:9200/safari/ 302
+}
+
+:9203 {
+	@basic path /basic /basic/*
+	redir @basic http://{host}:9200{uri} 302
+	redir http://{host}:9210{uri} 302
+}
+
+:9204 {
+	redir / http://{host}:9200/gpu/gallery.html 302
+	redir http://{host}:9200/gpu{uri} 302
+}
+
+:9205 {
+	redir / http://{host}:9200/ 302
+	redir http://{host}:9200/games{uri} 302
 }

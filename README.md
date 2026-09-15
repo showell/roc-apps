@@ -15,9 +15,9 @@ Roc on the fifth tree on the right of every segment.
 | `safari/roc/RocBird.roc` | the bird | hand |
 | `safari/roc/FrameBench.roc` | a native loop over the frame, for `perf` | hand |
 | `safari/wasm/` | the platform: `platform/main.roc` provides the page's sixteen exports over `Box(Model)`; `platform/host.zig` is the host; `build.zig` builds it against the roc checkout; `drive_smoke.mjs` drives the built module from Node as the page does (first frame, readouts, ms per step, `back`); `run_wasm.mjs` runs any Roc module's `wasm_main` with logged `env` imports | hand |
-| `safari/web/` | the page: a copy of safari-codex's `blitter.js`, and its `index.html`; `serve.py`, which the four Python services run until their ports become redirects | hand |
+| `safari/web/` | the page: a copy of safari-codex's `blitter.js`, and its `index.html` | hand |
 | `safari/build.sh` | host + app + page into the dev channel, `http://<box>:9210/safari/` | hand |
-| `ops/` | `Caddyfile` and `roc-site.service`: one Caddy serving the site (below); the four Python services still answering :9201 (the last published Safari, frozen in `~/build/roc-apps/safari-demo/`), :9203 (`~/build/roc-apps/next/`), :9204 (`gpu/live/`) and :9205 (`games/live/`) until they become redirects; `install.sh` | hand |
+| `ops/` | `Caddyfile` and `roc-site.service`: one Caddy serving the site (below) and redirecting the ports announced before it; `install.sh` | hand |
 | `safari/emitted.sh` | THE GATE: every unit emitted, chapter identity checked, roc run two at a time, output against the verdict; a compile error is a FAIL | hand |
 | `safari/retest.sh` | the targeted sweep: emit all, diff against the tracked Roc, run only what changed | hand |
 | `wasm/*.mjs` | Node drivers: run a module, drive the screensaver headless with timings | hand |
@@ -37,6 +37,10 @@ from one channel to the next unchanged. The design is
 |---|---|---|---|
 | dev | `http://<box>:9210/` | `~/build/roc-apps/next/` | each app's `build.sh`; `site/build.sh` for the root |
 | staging | `http://<box>:9200/` | `site/live/`, tracked | `site/publish.sh`, after an eye test on dev |
+
+The ports announced before the site redirect: :9201 to staging's `safari/`;
+:9203's `basic/` to staging and the rest of :9203 to dev at the same path;
+:9204 and :9205 to staging's `gpu/` and `games/`.
 
 | where | what | written by |
 |---|---|---|

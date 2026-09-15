@@ -38,7 +38,7 @@ emitted Roc, and this platform answers it in the host.
   writes the frame's time there, in milliseconds.
 - **Keys and the mouse** reach a running program through memory the page shares
   with its runner (a SharedArrayBuffer, so the page must be cross-origin
-  isolated, which `safari/web/serve.py` asks for, and a secure context: from
+  isolated, which the site's Caddy asks for, and a secure context: from
   another machine, open it through a tunnel, `ssh -N -L 9210:localhost:9210`,
   as `http://localhost:9210/framebuffer/`). A key's set-1 make code lands
   in the key cell at 28680, where codex-vm's keyboard interrupt leaves it, and

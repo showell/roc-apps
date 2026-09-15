@@ -57,4 +57,4 @@ git -C "$REPO" commit -q -m "site: publish $what to staging
 
 $([ "$app" = home ] || cat "$LIVE/$app/PROVENANCE")" -- "${paths[@]}"
 git -C "$REPO" push -q
-echo "staging: http://143.244.172.148:9200/$([ "$app" = home ] || echo "$app/")"
+echo "staging: http://143.244.172.148:9200/, where the landing page links $what"
