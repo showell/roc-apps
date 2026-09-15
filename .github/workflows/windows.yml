@@ -70,3 +70,34 @@ jobs:
           name: windows-exe
           path: out/*/*.exe
           if-no-files-found: error
+
+      # The runner exposes only Microsoft's OpenGL 1.1, which raylib cannot use;
+      # Mesa's llvmpipe opengl32.dll beside the executable gives it GL 3.3 on the
+      # CPU, as roc-ray's own CI does. Pinned so what CI draws cannot move.
+      - name: Install Mesa software OpenGL
+        env:
+          MESA_VERSION: 24.3.4
+        run: |
+          curl -fsSL -o mesa.7z \
+            "https://github.com/pal1000/mesa-dist-win/releases/download/${MESA_VERSION}/mesa3d-${MESA_VERSION}-release-msvc.7z"
+          7z e -y mesa.7z -oout/safari x64/opengl32.dll x64/libgallium_wgl.dll x64/libglapi.dll
+          rm mesa.7z
+
+      # Safari in a real hidden window, the keys scripted by cycle: at a few
+      # places on the route it pauses, saves the Shapes frame (P), switches to
+      # the Pixels painter (R), saves the same frame again, and switches back.
+      - name: Screenshots, both painters
+        working-directory: out/safari
+        env:
+          GALLIUM_DRIVER: llvmpipe
+        run: |
+          ./safari.exe --host-frames=150 --host-hidden --host-caps-allow-all \
+            --host-keys=5:J,8:J,11:J,14:P,17:R,20:P,23:R,26:J,29:J,32:J,35:P,38:R,41:P,44:R,47:SPACE,87:SPACE,90:P,93:R,96:P,99:R,102:J,105:J,108:J,111:J,114:J,117:J,120:J,123:J,126:J,129:P,132:R,135:P,138:R
+          ls -l shots
+
+      - name: Upload the screenshots
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: safari-shots
+          path: out/safari/shots/*.png
+          if-no-files-found: error

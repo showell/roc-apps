@@ -1,52 +1,59 @@
-# Shapes -- a Safari frame as shapes a drawing platform fills itself: convex
-# polygons, triangles, discs, radial glows and rectangles, in scene coordinates,
-# before the camera roll.
+# Shapes -- a Safari frame as shapes a drawing platform fills itself, each with
+# the Brush it is painted with, in scene coordinates before the camera roll.
 #
-# Hand-written, for roc-ray's second iteration, where roc-ray draws the frame
-# and Roc no longer paints pixels. roc-ray fills only convex polygons, so a
-# concave one is cut into triangles by ear clipping. A triangle comes out in the
-# order raylib keeps: roc-ray's convex fill reverses a polygon whose signed area
-# is positive, and its triangle passes the points through as given.
+# Hand-written, for roc-ray, where roc-ray draws the frame and Roc does not
+# paint pixels. roc-ray fills only convex polygons, so a concave one is cut into
+# triangles by ear clipping; the pieces share the polygon's brush. A triangle
+# comes out in the order raylib keeps: roc-ray's convex fill reverses a polygon
+# whose signed area is positive, and its triangle passes the points through as
+# given.
 #
-# Gradients are flat for now, at the colour halfway between their stops, and
-# the sun's three-stop glow is one two-stop glow. The blitter clips the sun to
-# the sky; here the grass is drawn after the sun instead, which hides it below
-# the horizon the same way.
+# The backdrop is the blitter's: the sky's linear gradient, the grass, and the
+# sun's glow and disc clipped to the sky, the glow as a rectangle that is the
+# clip and the disc marked sky-only.
 import Paint
 import Sky
+import Brush
 
 Shapes :: [].{
-	Rgba8 : { r : U8, g : U8, b : U8, a : U8 }
-
 	Shape : [
-		Convex({ pts : List(F64), color : Shapes.Rgba8 }),
-		Triangle({ ax : F64, ay : F64, bx : F64, by : F64, cx : F64, cy : F64, color : Shapes.Rgba8 }),
-		Disc({ x : F64, y : F64, r : F64, color : Shapes.Rgba8 }),
-		Glow({ x : F64, y : F64, r : F64, inner : Shapes.Rgba8, outer : Shapes.Rgba8 }),
-		Rect({ x : F64, y : F64, w : F64, h : F64, color : Shapes.Rgba8 }),
-		RectV({ x : F64, y : F64, w : F64, h : F64, top : Shapes.Rgba8, bottom : Shapes.Rgba8 }),
+		# A convex polygon, x0, y0, x1, y1, ...
+		Convex({ pts : List(F64), fill : Brush.Fill }),
+		# The triangles of one concave polygon, six numbers each.
+		Pieces({ tris : List(F64), fill : Brush.Fill }),
+		# A disc; `sky_only` keeps it to the sky, (0, 0) to (960, 300).
+		Disc({ x : F64, y : F64, r : F64, fill : Brush.Fill, sky_only : Bool }),
+		Rect({ x : F64, y : F64, w : F64, h : F64, fill : Brush.Fill }),
 	]
 
-	# The frame in paint order: the sky, the sun, the grass, then every command.
+	# The frame in paint order: the sky, the grass, the sun, then every command.
 	frame : List(Paint.DrawCmd), I64, I64, Sky.SunPos -> List(Shapes.Shape)
 	frame = |commands, sky_top, sky_horizon, sun| {
-		top = opaque(sky_top)
 		var $out = List.with_capacity(2 * List.len(commands) + 8)
-		# The sky band and the grass, oversized as the blitter draws them so the
-		# rolled frame's corners stay filled: the top colour to a fifth of the way
-		# down to the horizon at y 300, then the fade, and the grass from a pixel
-		# above the horizon.
-		$out = List.append($out, Rect({ x: -1080.0, y: -1260.0, w: 3120.0, h: 1320.0, color: top }))
-		$out = List.append($out, RectV({ x: -1080.0, y: 60.0, w: 3120.0, h: 240.0, top, bottom: opaque(sky_horizon) }))
+		# Oversized, as the blitter draws them, so the rolled frame's corners stay
+		# filled: the top colour to a fifth of the way down to the horizon at y
+		# 300, then the fade; the grass from a pixel above the horizon.
+		sky = Linear({ c0: Brush.opaque(sky_top), c1: Brush.opaque(sky_horizon), o0: 0.2, o1: 1.0, ax: 0.0, ay: 0.0, dx: 0.0, dy: 300.0, len2: 90000.0 })
+		$out = List.append($out, Rect({ x: -1080.0, y: -1260.0, w: 3120.0, h: 1560.0, fill: sky }))
+		$out = List.append($out, Rect({ x: -1080.0, y: 299.0, w: 3120.0, h: 1561.0, fill: Flat(Brush.opaque(0x4a8f43)) }))
 		$out = if sun.visible and sun.scale > 0.0 {
+			glow = Glow({
+				c0: { r: 255.0, g: 201.0, b: 128.0, a: 0.85 },
+				c1: { r: 255.0, g: 150.0, b: 92.0, a: 0.32 },
+				c2: { r: 255.0, g: 150.0, b: 92.0, a: 0.0 },
+				x: sun.x,
+				y: sun.y,
+				r0: 8.0 * sun.scale,
+				r1: 340.0 * sun.scale,
+			})
+			disc = Radial({ inner: Brush.opaque(0xffe6a3), outer: Brush.opaque(0xff9d5c), x: sun.x, y: sun.y, r0: 4.0 * sun.scale, r1: 46.0 * sun.scale })
 			List.concat($out, [
-				Glow({ x: sun.x, y: sun.y, r: 340.0 * sun.scale, inner: { r: 255, g: 201, b: 128, a: 217 }, outer: { r: 255, g: 150, b: 92, a: 0 } }),
-				Glow({ x: sun.x, y: sun.y, r: 46.0 * sun.scale, inner: opaque(0xffe6a3), outer: opaque(0xff9d5c) }),
+				Rect({ x: 0.0, y: 0.0, w: 960.0, h: 300.0, fill: glow }),
+				Disc({ x: sun.x, y: sun.y, r: 46.0 * sun.scale, fill: disc, sky_only: Bool.True }),
 			])
 		} else {
 			$out
 		}
-		$out = List.append($out, Rect({ x: -1080.0, y: 299.0, w: 3120.0, h: 1561.0, color: opaque(0x4a8f43) }))
 		n = List.len(commands)
 		var $k = 0
 		while $k < n {
@@ -56,82 +63,56 @@ Shapes :: [].{
 		$out
 	}
 
-	# One command's shapes: a disc, or its polygon at its flat colour.
+	# One command's shapes: a disc, or its polygon with its brush.
 	of_command : Paint.DrawCmd -> List(Shapes.Shape)
 	of_command = |c|
 		if c.tag == 3 {
-			col = opaque(c.color)
-			[Disc({ x: at(c.geom, 0), y: at(c.geom, 1), r: at(c.geom, 2), color: { ..col, a: unit_byte(c.strength) } })]
+			col = Brush.opaque(c.color)
+			[Disc({ x: Brush.geom(c, 0), y: Brush.geom(c, 1), r: Brush.geom(c, 2), fill: Flat({ ..col, a: c.strength }), sky_only: Bool.False })]
 		} else {
-			polygon(c.pts, flat_color(c))
+			fill = Brush.of_command(c)
+			match fill {
+				Skip => []
+				_ => polygon(c.pts, fill)
+			}
 		}
 
-	# The colour a command's polygon is filled with while gradients are flat.
-	flat_color : Paint.DrawCmd -> Shapes.Rgba8
-	flat_color = |c|
-		if c.tag == 0 {
-			opaque(c.color)
-		} else if c.tag == 2 {
-			opaque(c.color2)
-		} else if c.tag >= 4 and c.tag <= 6 {
-			halfway(with_alpha(c.color), with_alpha(c.color2))
-		} else {
-			opaque(c.color)
-		}
-
-	polygon : List(F64), Shapes.Rgba8 -> List(Shapes.Shape)
-	polygon = |pts, color| {
+	polygon : List(F64), Brush.Fill -> List(Shapes.Shape)
+	polygon = |pts, fill| {
 		n = List.len(pts) // 2
 		if n < 3 {
 			[]
 		} else if is_convex(pts) {
-			[Convex({ pts, color })]
+			[Convex({ pts, fill })]
 		} else {
-			tris = triangulate(pts)
-			m = List.len(tris) // 6
-			var $out = List.with_capacity(m)
-			var $k = 0
-			while $k < m {
-				b = 6 * $k
-				$out = List.append($out, triangle(at(tris, b), at(tris, b + 1), at(tris, b + 2), at(tris, b + 3), at(tris, b + 4), at(tris, b + 5), color))
-				$k = $k + 1
+			[Pieces({ tris: wound(triangulate(pts)), fill })]
+		}
+	}
+
+	# Each triangle wound as roc-ray's convex fill winds one: its second and
+	# third corners swapped when its signed area is positive.
+	wound : List(F64) -> List(F64)
+	wound = |tris| {
+		m = List.len(tris) // 6
+		var $out = List.with_capacity(6 * m)
+		var $k = 0
+		while $k < m {
+			b = 6 * $k
+			ax = at(tris, b)
+			ay = at(tris, b + 1)
+			bx = at(tris, b + 2)
+			by = at(tris, b + 3)
+			cx = at(tris, b + 4)
+			cy = at(tris, b + 5)
+			$out = if cross3(ax, ay, bx, by, cx, cy) > 0.0 {
+				List.concat($out, [ax, ay, cx, cy, bx, by])
+			} else {
+				List.concat($out, [ax, ay, bx, by, cx, cy])
 			}
-			$out
+			$k = $k + 1
 		}
+		$out
 	}
-
-	# A triangle wound as roc-ray's convex fill winds one: swapped when its
-	# signed area is positive.
-	triangle : F64, F64, F64, F64, F64, F64, Shapes.Rgba8 -> Shapes.Shape
-	triangle = |ax, ay, bx, by, cx, cy, color|
-		if cross3(ax, ay, bx, by, cx, cy) > 0.0 {
-			Triangle({ ax, ay, bx: cx, by: cy, cx: bx, cy: by, color })
-		} else {
-			Triangle({ ax, ay, bx, by, cx, cy, color })
-		}
-
-	# --- Colour ---------------------------------------------------------------
-
-	byte_of : I64, U8 -> U8
-	byte_of = |c, shift| I64.to_u8_wrap(I64.bitwise_and(I64.shr_wrap(c, shift), 255))
-
-	opaque : I64 -> Shapes.Rgba8
-	opaque = |c| { r: byte_of(c, 16), g: byte_of(c, 8), b: byte_of(c, 0), a: 255 }
-
-	with_alpha : I64 -> Shapes.Rgba8
-	with_alpha = |c| { r: byte_of(c, 16), g: byte_of(c, 8), b: byte_of(c, 0), a: byte_of(c, 24) }
-
-	unit_byte : F64 -> U8
-	unit_byte = |v| {
-		n = F64.to_i64_wrap(v * 255.0 + 0.5)
-		I64.to_u8_wrap(if n < 0 { 0 } else if n > 255 { 255 } else { n })
-	}
-
-	mid : U8, U8 -> U8
-	mid = |p, q| I64.to_u8_wrap((U8.to_i64(p) + U8.to_i64(q) + 1) // 2)
-
-	halfway : Shapes.Rgba8, Shapes.Rgba8 -> Shapes.Rgba8
-	halfway = |p, q| { r: mid(p.r, q.r), g: mid(p.g, q.g), b: mid(p.b, q.b), a: mid(p.a, q.a) }
 
 	# --- Geometry -------------------------------------------------------------
 

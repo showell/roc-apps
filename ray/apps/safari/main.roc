@@ -2,27 +2,44 @@
 #
 # Two painters, R switching between them so they can be compared on the same
 # screen. Shapes, the default: roc-ray fills the frame's polygons, triangles,
-# discs and rectangles itself, under a camera turned by the roll, with
-# gradients flat for now. Pixels, the first iteration: Raster paints the frame
-# in Roc and roc-ray shows it as one texture.
+# discs and rectangles itself, under a camera turned by the roll; a shape with a
+# gradient is drawn through one fragment shader that does Brush.shade's
+# arithmetic on the scene position. Pixels, the first iteration: Raster paints
+# the frame in Roc and roc-ray shows it as one texture.
 #
 # The keys are the page's: SPACE pauses and resumes, UP and DOWN step, J rides
-# to the next segment, D shows the frame rate, ESCAPE quits; and R.
+# to the next segment, D shows the frame rate, ESCAPE quits; and R, and P, which
+# saves a screenshot to shots/ named by the ride's clock and the painter.
 app [Model, program] { rr: platform "roc-ray/platform/main.roc" }
 
 import rr.App
 import rr.Assets
 import rr.Camera
+import rr.Capture
 import rr.Color
 import rr.Draw
 import rr.Math
+import rr.Task
+import Brush
 import SafariRide
 import Raster
 import Shapes
 
-Model : { ride : SafariRide.Model, auto : Bool, fps : Bool, pixels : Bool, screen : Assets.Texture }
+Gpu : {
+	shader : Draw.Shader,
+	mode : Draw.F32Uniform,
+	sky_only : Draw.F32Uniform,
+	color_a : Draw.Vec4Uniform,
+	color_b : Draw.Vec4Uniform,
+	color_c : Draw.Vec4Uniform,
+	geom_a : Draw.Vec4Uniform,
+	geom_b : Draw.Vec4Uniform,
+	geom_c : Draw.Vec4Uniform,
+}
 
-Msg : []
+Model : { ride : SafariRide.Model, auto : Bool, fps : Bool, pixels : Bool, screen : Assets.Texture, gpu : Gpu }
+
+Msg : [ShotSaved(Try({}, Capture.ScreenshotError))]
 
 program = { init!, update!, render! }
 
@@ -30,17 +47,29 @@ program = { init!, update!, render! }
 step_guard : I64
 step_guard = 200000
 
-init! : App.Init(Model, [TextureGenerationFailed, ResourceLimit])
+init! : App.Init(Model, [TextureGenerationFailed, ResourceLimit, ShaderLoadFailed, UniformNotFound])
 init! = App.init(
-	App.default.with_title("Safari").with_size({ width: 960, height: 600 }),
+	App.default.with_title("Safari").with_size({ width: 960, height: 600 }).with_output_dir("shots"),
 	|_io| {
 		screen = Assets.generate_color_texture!({ width: 960, height: 600, color: Color.black })?
-		Ok({ ride: SafariRide.init, auto: Bool.True, fps: Bool.False, pixels: Bool.False, screen })
+		shader = Draw.Shader.from_source!({ vertex_source: vertex_glsl, fragment_source: fragment_glsl })?
+		gpu = {
+			shader,
+			mode: shader.uniform_f32!("mode")?,
+			sky_only: shader.uniform_f32!("skyOnly")?,
+			color_a: shader.uniform_vec4!("colorA")?,
+			color_b: shader.uniform_vec4!("colorB")?,
+			color_c: shader.uniform_vec4!("colorC")?,
+			geom_a: shader.uniform_vec4!("geomA")?,
+			geom_b: shader.uniform_vec4!("geomB")?,
+			geom_c: shader.uniform_vec4!("geomC")?,
+		}
+		Ok({ ride: SafariRide.init, auto: Bool.True, fps: Bool.False, pixels: Bool.False, screen, gpu })
 	},
 )
 
 update! : Model, App.Input(Msg), App.Io => Try(Model, [Exit(I64), ..])
-update! = |model, input, _io| {
+update! = |model, input, io| {
 	keys = input.devices
 	if keys.key_pressed(KeyEscape) {
 		Err(Exit(0))
@@ -63,8 +92,12 @@ update! = |model, input, _io| {
 		}
 		pixels = if keys.key_pressed(KeyR) { !model.pixels } else { model.pixels }
 		upload!(pixels and (manual or auto or pixels != model.pixels), model.screen, ride)
+		if keys.key_pressed(KeyP) {
+			name = "safari-${U32.to_str(F64.to_u32_wrap(ride.ride.clock))}-${if pixels { "pixels" } else { "shapes" }}.png"
+			Task.spawn!(input, || ShotSaved(io.capture().screenshot!(name)))
+		}
 		fps = if keys.key_pressed(KeyD) { !model.fps } else { model.fps }
-		Ok({ ride, auto, fps, pixels, screen: model.screen })
+		Ok({ ..model, ride, auto, fps, pixels })
 	}
 }
 
@@ -88,32 +121,191 @@ draw! = |model, frame|
 		camera = Camera.new({ target: { x: 480, y: 300 }, offset: { x: 480, y: 300 }, rotation: F64.to_f32_wrap(0.0 - SafariRide.roll(m) * 57.29577951308232), zoom: 1 })
 		frame.clear!(Color.black)
 		frame.with_camera!(camera, |world| {
-			draw_shapes!(world, shapes)
+			draw_shapes!(model.gpu, world, shapes)
 			Ok({})
 		})
 	}
 
-draw_shapes! : Draw.Frame, List(Shapes.Shape) => {}
-draw_shapes! = |frame, shapes| {
+draw_shapes! : Gpu, Draw.Frame, List(Shapes.Shape) => {}
+draw_shapes! = |gpu, frame, shapes| {
 	n = List.len(shapes)
 	var $k = 0
 	while $k < n {
-		draw_shape!(frame, List.get(shapes, $k) ?? crash("shape out of range"))
+		draw_shape!(gpu, frame, List.get(shapes, $k) ?? crash("shape out of range"))
 		$k = $k + 1
 	}
 	{}
 }
 
-draw_shape! : Draw.Frame, Shapes.Shape => {}
-draw_shape! = |frame, shape|
+draw_shape! : Gpu, Draw.Frame, Shapes.Shape => {}
+draw_shape! = |gpu, frame, shape|
 	match shape {
-		Convex(p) => frame.convex_polygon!({ points: points(p.pts), style: Draw.filled(color(p.color)) })
-		Triangle(t) => frame.triangle!({ a: point(t.ax, t.ay), b: point(t.bx, t.by), c: point(t.cx, t.cy), style: Draw.filled(color(t.color)) })
-		Disc(d) => frame.circle!({ center: point(d.x, d.y), radius: F64.to_f32_wrap(d.r), style: Draw.filled(color(d.color)) })
-		Glow(g) => frame.circle_gradient!({ center: point(g.x, g.y), radius: F64.to_f32_wrap(g.r), color_inner: color(g.inner), color_outer: color(g.outer) })
-		Rect(r) => frame.rectangle!({ x: F64.to_f32_wrap(r.x), y: F64.to_f32_wrap(r.y), width: F64.to_f32_wrap(r.w), height: F64.to_f32_wrap(r.h), style: Draw.filled(color(r.color)) })
-		RectV(r) => frame.rectangle_gradient_v!({ x: F64.to_f32_wrap(r.x), y: F64.to_f32_wrap(r.y), width: F64.to_f32_wrap(r.w), height: F64.to_f32_wrap(r.h), color_top: color(r.top), color_bottom: color(r.bottom) })
+		Convex(p) => with_fill!(gpu, frame, p.fill, Bool.False, |f, col| f.convex_polygon!({ points: points(p.pts), style: Draw.filled(col) }))
+		Pieces(p) => with_fill!(gpu, frame, p.fill, Bool.False, |f, col| draw_triangles!(f, p.tris, col))
+		Disc(d) => with_fill!(gpu, frame, d.fill, d.sky_only, |f, col| f.circle!({ center: point(d.x, d.y), radius: F64.to_f32_wrap(d.r), style: Draw.filled(col) }))
+		Rect(r) => with_fill!(gpu, frame, r.fill, Bool.False, |f, col| f.rectangle!({ x: F64.to_f32_wrap(r.x), y: F64.to_f32_wrap(r.y), width: F64.to_f32_wrap(r.w), height: F64.to_f32_wrap(r.h), style: Draw.filled(col) }))
 	}
+
+# Draw with a flat colour directly, or through the shader: its uniforms set for
+# the fill and the geometry drawn in white, which the shader ignores.
+with_fill! : Gpu, Draw.Frame, Brush.Fill, Bool, (Draw.Frame, Color.Rgba => {}) => {}
+with_fill! = |gpu, frame, fill, sky_only, draw_it!|
+	match fill {
+		Skip => {}
+		Flat(col) if !sky_only => draw_it!(frame, color_of(col))
+		_ => {
+			scope = frame.with_shader!(gpu.shader, |shaded| {
+				set_uniforms!(gpu, fill, sky_only)
+				draw_it!(shaded, Color.white)
+				Ok({})
+			})
+			match scope {
+				Ok({}) => {}
+				Err(_) => crash("safari: a shader scope was refused")
+			}
+		}
+	}
+
+# The shader's modes, as Brush.shade reads each fill: 0 flat, 1 span, 2 radial,
+# 3 linear, 4 ellipse, 5 glow. Colours are sent with channels in 0..1.
+set_uniforms! : Gpu, Brush.Fill, Bool => {}
+set_uniforms! = |gpu, fill, sky_only| {
+	gpu.sky_only.set!(if sky_only { 1.0 } else { 0.0 })
+	match fill {
+		Skip => {}
+		Flat(c) => {
+			gpu.mode.set!(0.0)
+			gpu.color_a.set!(rgba_vec(c))
+		}
+		Span(p) => {
+			gpu.mode.set!(1.0)
+			gpu.color_a.set!(rgba_vec(p.edge))
+			gpu.color_b.set!(rgba_vec(p.middle))
+			gpu.geom_a.set!(vec(p.x0, p.x1, 0.0, 0.0))
+		}
+		Radial(p) => {
+			gpu.mode.set!(2.0)
+			gpu.color_a.set!(rgba_vec(p.inner))
+			gpu.color_b.set!(rgba_vec(p.outer))
+			gpu.geom_a.set!(vec(p.x, p.y, p.r0, p.r1))
+		}
+		Linear(p) => {
+			gpu.mode.set!(3.0)
+			gpu.color_a.set!(rgba_vec(p.c0))
+			gpu.color_b.set!(rgba_vec(p.c1))
+			gpu.geom_a.set!(vec(p.o0, p.o1, 0.0, 0.0))
+			gpu.geom_b.set!(vec(p.ax, p.ay, p.dx, p.dy))
+		}
+		Ellipse(p) => {
+			gpu.mode.set!(4.0)
+			gpu.color_a.set!(rgba_vec(p.c0))
+			gpu.color_b.set!(rgba_vec(p.c1))
+			gpu.geom_a.set!(vec(p.o0, p.o1, 0.0, 0.0))
+			gpu.geom_b.set!(vec(p.x, p.y, 0.0, 0.0))
+			gpu.geom_c.set!(vec(p.ia, p.ib, p.ic, p.id))
+		}
+		Glow(p) => {
+			gpu.mode.set!(5.0)
+			gpu.color_a.set!(rgba_vec(p.c0))
+			gpu.color_b.set!(rgba_vec(p.c1))
+			gpu.color_c.set!(rgba_vec(p.c2))
+			gpu.geom_a.set!(vec(p.x, p.y, p.r0, p.r1))
+		}
+	}
+}
+
+vertex_glsl : Str
+vertex_glsl = Str.join_with(
+	[
+		"#version 330",
+		"in vec3 vertexPosition;",
+		"uniform mat4 mvp;",
+		"out vec2 scenePos;",
+		"void main() {",
+		"    scenePos = vertexPosition.xy;",
+		"    gl_Position = mvp * vec4(vertexPosition, 1.0);",
+		"}",
+	],
+	"\n",
+)
+
+# Brush.shade, line for line, on the scene position the vertex shader passes
+# through (the camera is in the matrix, not in the vertices).
+fragment_glsl : Str
+fragment_glsl = Str.join_with(
+	[
+		"#version 330",
+		"in vec2 scenePos;",
+		"uniform float mode;",
+		"uniform float skyOnly;",
+		"uniform vec4 colorA;",
+		"uniform vec4 colorB;",
+		"uniform vec4 colorC;",
+		"uniform vec4 geomA;",
+		"uniform vec4 geomB;",
+		"uniform vec4 geomC;",
+		"out vec4 finalColor;",
+		"vec4 twoStop(vec4 c0, float o0, vec4 c1, float o1, float t) {",
+		"    if (t <= o0) return c0;",
+		"    if (t >= o1) return c1;",
+		"    return mix(c0, c1, (t - o0) / (o1 - o0));",
+		"}",
+		"void main() {",
+		"    if (skyOnly > 0.5 && (scenePos.x < 0.0 || scenePos.x >= 960.0 || scenePos.y < 0.0 || scenePos.y >= 300.0)) discard;",
+		"    vec4 c = colorA;",
+		"    if (mode > 0.5 && mode < 1.5) {",
+		"        float t = clamp((scenePos.x - geomA.x) / (geomA.y - geomA.x), 0.0, 1.0);",
+		"        c = t <= 0.5 ? mix(colorA, colorB, t * 2.0) : mix(colorB, colorA, (t - 0.5) * 2.0);",
+		"    } else if (mode > 1.5 && mode < 2.5) {",
+		"        float d = distance(scenePos, geomA.xy);",
+		"        c = mix(colorA, colorB, geomA.w > geomA.z ? clamp((d - geomA.z) / (geomA.w - geomA.z), 0.0, 1.0) : 1.0);",
+		"    } else if (mode > 2.5 && mode < 3.5) {",
+		"        float t = clamp(dot(scenePos - geomB.xy, geomB.zw) / dot(geomB.zw, geomB.zw), 0.0, 1.0);",
+		"        c = twoStop(colorA, geomA.x, colorB, geomA.y, t);",
+		"    } else if (mode > 3.5 && mode < 4.5) {",
+		"        vec2 q = scenePos - geomB.xy;",
+		"        vec2 u = vec2(geomC.x * q.x + geomC.y * q.y, geomC.z * q.x + geomC.w * q.y);",
+		"        c = twoStop(colorA, geomA.x, colorB, geomA.y, clamp(length(u), 0.0, 1.0));",
+		"    } else if (mode > 4.5) {",
+		"        float d = distance(scenePos, geomA.xy);",
+		"        float t = geomA.w > geomA.z ? clamp((d - geomA.z) / (geomA.w - geomA.z), 0.0, 1.0) : 1.0;",
+		"        c = t <= 0.4 ? mix(colorA, colorB, t / 0.4) : mix(colorB, colorC, (t - 0.4) / 0.6);",
+		"    }",
+		"    finalColor = c;",
+		"}",
+	],
+	"\n",
+)
+
+rgba_vec : Brush.Rgba -> Draw.Vec4
+rgba_vec = |c| vec(c.r / 255.0, c.g / 255.0, c.b / 255.0, c.a)
+
+vec : F64, F64, F64, F64 -> Draw.Vec4
+vec = |x, y, z, w| { x: F64.to_f32_wrap(x), y: F64.to_f32_wrap(y), z: F64.to_f32_wrap(z), w: F64.to_f32_wrap(w) }
+
+color_of : Brush.Rgba -> Color.Rgba
+color_of = |c| Color.rgba(byte(c.r), byte(c.g), byte(c.b), byte(c.a * 255.0))
+
+byte : F64 -> U8
+byte = |v| {
+	n = F64.to_i64_wrap(v + 0.5)
+	I64.to_u8_wrap(if n < 0 { 0 } else if n > 255 { 255 } else { n })
+}
+
+draw_triangles! : Draw.Frame, List(F64), Color.Rgba => {}
+draw_triangles! = |frame, tris, col| {
+	m = List.len(tris) // 6
+	var $k = 0
+	while $k < m {
+		b = 6 * $k
+		frame.triangle!({ a: point(at(tris, b), at(tris, b + 1)), b: point(at(tris, b + 2), at(tris, b + 3)), c: point(at(tris, b + 4), at(tris, b + 5)), style: Draw.filled(col) })
+		$k = $k + 1
+	}
+	{}
+}
+
+at : List(F64), U64 -> F64
+at = |xs, i| List.get(xs, i) ?? 0.0
 
 point : F64, F64 -> { x : F32, y : F32 }
 point = |x, y| { x: F64.to_f32_wrap(x), y: F64.to_f32_wrap(y) }
@@ -124,14 +316,11 @@ points = |xs| {
 	var $out = List.with_capacity(n)
 	var $k = 0
 	while $k < n {
-		$out = List.append($out, point(List.get(xs, 2 * $k) ?? 0.0, List.get(xs, 2 * $k + 1) ?? 0.0))
+		$out = List.append($out, point(at(xs, 2 * $k), at(xs, 2 * $k + 1)))
 		$k = $k + 1
 	}
 	$out
 }
-
-color : Shapes.Rgba8 -> Color.Rgba
-color = |c| Color.rgba(c.r, c.g, c.b, c.a)
 
 # The frame SafariRide describes, painted by Raster and handed to the screen
 # texture, when the pixel painter is showing and the frame moved.
