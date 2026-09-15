@@ -128,7 +128,7 @@ Cobblestone's other drawing apps do not run here yet:
 | app | what stops it |
 |---|---|
 | `apps/circuits` | BitmapFont's GPU text path calls `gpu-rect-top`, `gpu-rect-chrome` and `gpu-seq`, which the app defines, so the emitted modules import each other; `roc check` names the cycle and `roc build` crashes on it |
-| `apps/fireworks` | `rnd` multiplies a plain `Integer` past 64 bits before the first flush. A plain `Integer` traps on overflow in Cobblestone's x86 code (`int-trap-after`, `int-ty-default` is `OvError`), and Roc's `*` crashes the same way; its `hsh` is declared `wrapping` and `rnd` is not. The cinematic pass, the fade clear and the additive sprites it draws with are in `gpu.zig`, not yet exercised |
+| `apps/fireworks` | `rnd` multiplies a plain `Integer` past 64 bits before the first frame, where a plain `Integer` traps (COMPILER-36), as Roc's `*` does. Cobblestone PR 151 makes it wrap; built with that change the app runs its whole 3,900-frame cycle here, through the cinematic pass and the additive sprites |
 | `apps/c64` | plays its SID through the HDA sound card's MMIO |
 
 `PERF.md` is what a frame costs and where the time goes.
