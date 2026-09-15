@@ -1,0 +1,73 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>2048 in Roc</title>
+<script src="../shared/home.js"></script>
+<style>
+  html,body { margin:0; background:#faf8ef; color:#776e65; font:16px system-ui,sans-serif; }
+  #wrap { display:flex; flex-direction:column; align-items:center; gap:12px; padding:16px; }
+  #bar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:center; }
+  button { background:#8f7a66; color:#f9f6f2; border:0; border-radius:4px; padding:8px 14px; font:inherit; font-weight:bold; cursor:pointer; }
+  #grid { display:grid; grid-template-columns:repeat(4, 96px); gap:10px; background:#bbada0; padding:10px; border-radius:8px; }
+  .t { width:96px; height:96px; border-radius:4px; background:#cdc1b4; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:34px; color:#776e65; }
+  .t.v2{background:#eee4da}.t.v4{background:#ede0c8}.t.v8{background:#f2b179;color:#f9f6f2}.t.v16{background:#f59563;color:#f9f6f2}
+  .t.v32{background:#f67c5f;color:#f9f6f2}.t.v64{background:#f65e3b;color:#f9f6f2}.t.v128{background:#edcf72;color:#f9f6f2;font-size:28px}
+  .t.v256{background:#edcc61;color:#f9f6f2;font-size:28px}.t.v512{background:#edc850;color:#f9f6f2;font-size:28px}
+  .t.v1024{background:#edc53f;color:#f9f6f2;font-size:24px}.t.v2048{background:#edc22e;color:#f9f6f2;font-size:24px}.t.vbig{background:#3c3a32;color:#f9f6f2;font-size:22px}
+  #status { min-height:1.4em; }
+  .note { max-width:440px; font-size:13px; color:#9a8f82; line-height:1.5; }
+  a { color:#8f7a66; }
+</style>
+<div id="wrap">
+  <div id="bar">
+    <button id="new">New game</button>
+    <button id="ai">AI move</button>
+    <button id="auto">Autoplay</button>
+    <span id="status">arrow keys to play</span>
+  </div>
+  <div id="grid"></div>
+  <div class="note">Damian's 2048 engine, Codex emitted to Roc and run in wasm. The page turns a key into a
+    message and calls <code>step</code>; <code>view</code> answers the board as words. The generated Roc is
+    <a href="https://github.com/showell/roc-apps/tree/master/games/roc">games/roc</a>; the engine's Codex is
+    <a href="https://github.com/damiant3/Cobblestone/blob/master/apps/games/classic/Game2048.codex">Game2048.codex</a>.</div>
+</div>
+<script type="module">
+// THE SEAM. A browser event becomes one small integer, the message, and
+// step(message) is the only way into the generated Roc. The table below is
+// the whole keyboard binding; the app (games/roc/G2048App.roc) decodes:
+// 0..3 slide up, right, down, left; 4 asks the engine's AI for a move.
+const KEYS = { ArrowUp: 0, ArrowRight: 1, ArrowDown: 2, ArrowLeft: 3, KeyW: 0, KeyD: 1, KeyS: 2, KeyA: 3 };
+const AI = 4;
+// view() answers 22 words: sixteen tiles, score, moves, done, best, empty, sum.
+const { instance } = await WebAssembly.instantiateStreaming(fetch('2048.wasm'), {});
+const x = instance.exports;
+const grid = document.getElementById('grid'), status = document.getElementById('status');
+let auto = null;
+function draw() {
+  const n = x.view();
+  const w = new Uint32Array(x.memory.buffer, x.bufPtr(), n / 4);
+  grid.innerHTML = '';
+  for (let i = 0; i < 16; i++) {
+    const v = w[i], d = document.createElement('div');
+    d.className = 't' + (v ? ' v' + (v <= 2048 ? v : 'big') : '');
+    d.textContent = v || '';
+    grid.appendChild(d);
+  }
+  const [score, moves, done, best] = [w[16], w[17], w[18], w[19]];
+  status.textContent = `score ${score} · best tile ${best} · ${moves} moves` + (done ? ' · no move left' : '');
+  if (done && auto) { clearInterval(auto); auto = null; }
+}
+function send(msg) { x.step(msg); draw(); }
+document.addEventListener('keydown', ev => {
+  if (!(ev.code in KEYS)) return;
+  ev.preventDefault();
+  send(KEYS[ev.code]);
+});
+document.getElementById('new').onclick = () => { x.newGame((Date.now() % 90000) + 1); draw(); };
+document.getElementById('ai').onclick = () => send(AI);
+document.getElementById('auto').onclick = () => {
+  if (auto) { clearInterval(auto); auto = null; return; }
+  auto = setInterval(() => send(AI), 120);
+};
+x.newGame((Date.now() % 90000) + 1);
+draw();
+</script>

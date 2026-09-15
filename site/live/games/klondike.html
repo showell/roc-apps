@@ -1,0 +1,109 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Klondike in Roc</title>
+<script src="../shared/home.js"></script>
+<style>
+  html,body { margin:0; background:#1d5c34; color:#e8f0e8; font:15px system-ui,sans-serif; }
+  #wrap { display:flex; flex-direction:column; align-items:center; gap:12px; padding:14px; }
+  #bar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:center; }
+  button { background:#0f3d20; color:#e8f0e8; border:1px solid #2f7a48; border-radius:4px; padding:7px 12px; font:inherit; cursor:pointer; }
+  button:disabled { opacity:.4; cursor:default; }
+  #status { min-height:1.4em; }
+  #table { display:grid; grid-template-columns:repeat(7, 84px); gap:10px; }
+  .slot { width:84px; height:118px; border:2px dashed #6aa77f; border-radius:8px; box-sizing:border-box; cursor:pointer; position:relative; }
+  .card { width:84px; height:118px; border-radius:8px; box-sizing:border-box; background:#fdfdfa; color:#222; border:1px solid #999; box-shadow:0 1px 3px rgba(0,0,0,.4); cursor:pointer; padding:6px 8px; font-weight:bold; font-size:20px; position:absolute; left:0; }
+  .card.red { color:#c8202a; }
+  .card.down { background:repeating-linear-gradient(45deg,#3a5fa8,#3a5fa8 6px,#2c4b8a 6px,#2c4b8a 12px); border-color:#223; }
+  .card.picked, .slot.picked { outline:3px solid #ffd54a; outline-offset:-3px; }
+  .card.takes, .slot.takes { outline:3px solid #7cf; outline-offset:-3px; }
+  .card.movable { box-shadow:0 0 0 1px #fff inset, 0 1px 3px rgba(0,0,0,.4); }
+  .col { position:relative; height:520px; }
+  .top { display:flex; gap:10px; margin-bottom:6px; }
+  .top .gap { width:84px; }
+  .pile { position:relative; width:84px; height:118px; }
+  .count { position:absolute; bottom:4px; right:6px; font-size:12px; color:#666; }
+  .note { max-width:640px; font-size:13px; color:#b9d4c1; line-height:1.5; }
+  a { color:#dff3e4; }
+</style>
+<div id="wrap">
+  <div id="bar">
+    <button id="new">New deal</button>
+    <button id="one">Same deal, turn one</button>
+    <button id="three">Same deal, turn three</button>
+    <button id="ai">AI move</button>
+    <button id="auto">Autoplay</button>
+    <span id="status"></span>
+  </div>
+  <div class="top" id="top"></div>
+  <div id="table"></div>
+  <div class="note">Damian's Klondike engine, Codex emitted to Roc and run in wasm. Click a card to lift it (a run
+    lifts whole; click lower in the run to carry less), click where it goes. The stock turns on a click and gathers
+    the waste when empty. Every click is one message into <code>step</code>; the selection lives in the Roc model,
+    and <code>view</code> answers the whole table as words. The generated Roc is
+    <a href="https://github.com/showell/roc-apps/tree/master/games/roc">games/roc</a>; the engine's Codex is
+    <a href="https://github.com/damiant3/Cobblestone/blob/master/apps/games/classic/Klondike.codex">Klondike.codex</a>.</div>
+</div>
+<script type="module">
+// THE SEAM. Every click is one message: 100*c + i for card i of column c
+// (99 for the column itself), 700 the stock, 701 the waste, 710 + f a
+// foundation, 720 the AI, 722/723 the same deal turning one or three,
+// 724 the next deal. The Roc model holds the selection; view() reports it.
+const RANK = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+const SUIT = ['♠', '♥', '♦', '♣'];
+const face = c => `${RANK[c % 13]}${SUIT[Math.floor(c / 13) % 4]}`;
+const red = c => [1, 2].includes(Math.floor(c / 13) % 4);
+const { instance } = await WebAssembly.instantiateStreaming(fetch('klondike.wasm'), {});
+const x = instance.exports;
+const top = document.getElementById('top'), table = document.getElementById('table'), status = document.getElementById('status');
+let auto = null;
+const el = (cls, text, msg) => { const d = document.createElement('div'); d.className = cls; d.textContent = text ?? ''; if (msg !== undefined) d.onclick = ev => { ev.stopPropagation(); send(msg); }; return d; };
+function draw() {
+  const n = x.view();
+  const w = new Int32Array(x.memory.buffer, x.bufPtr(), n / 4);
+  const [stock, waste, wasteTop, canDraw, canRecycle, founded, moves, won, sel, start, drawn] = w;
+  top.innerHTML = '';
+  const stockPile = el('pile', '', 700);
+  stockPile.appendChild(stock ? el('card down', '', 700) : el('slot', canRecycle ? '↻' : '', 700));
+  top.appendChild(stockPile);
+  const wastePile = el('pile', '', 701);
+  if (waste) { const c = el('card' + (red(wasteTop) ? ' red' : '') + (sel === 7 ? ' picked' : ''), face(wasteTop), 701); wastePile.appendChild(c); }
+  else wastePile.appendChild(el('slot', '', 701));
+  top.appendChild(wastePile);
+  top.appendChild(el('gap'));
+  for (let f = 0; f < 4; f++) {
+    const c = w[11 + f], takes = w[11 + 4 + 7 * 24 + f];
+    const pile = el('pile', '', 710 + f);
+    if (c >= 0) pile.appendChild(el('card' + (red(c) ? ' red' : '') + (sel === 8 + f ? ' picked' : '') + (takes ? ' takes' : ''), face(c), 710 + f));
+    else pile.appendChild(el('slot' + (takes ? ' takes' : ''), SUIT[f], 710 + f));
+    top.appendChild(pile);
+  }
+  table.innerHTML = '';
+  for (let c = 0; c < 7; c++) {
+    const base = 15 + c * 24;
+    const [cn, down, runFrom, takes] = [w[base], w[base + 1], w[base + 2], w[base + 3]];
+    const col = el('col', '', 100 * c + 99);
+    if (!cn) col.appendChild(el('slot' + (takes ? ' takes' : ''), '', 100 * c + 99));
+    for (let i = 0; i < cn; i++) {
+      const v = w[base + 4 + i];
+      const cls = 'card' + (v < 0 ? ' down' : (red(v) ? ' red' : ''))
+        + (sel === c && i >= start ? ' picked' : '') + (v >= 0 && i >= runFrom ? ' movable' : '')
+        + (takes && i === cn - 1 ? ' takes' : '');
+      const card = el(cls, v < 0 ? '' : face(v), 100 * c + i);
+      card.style.top = (i * 26) + 'px';
+      col.appendChild(card);
+    }
+    table.appendChild(col);
+  }
+  status.textContent = won ? `All fifty-two up in ${moves} moves` : `${founded} of 52 up · ${moves} moves · ${stock} in the stock · turning ${drawn > 1 ? 'three' : 'one'}`;
+  if (won && auto) { clearInterval(auto); auto = null; }
+}
+function send(msg) { x.step(msg); draw(); }
+document.getElementById('new').onclick = () => { x.newGame((Date.now() % 90000) + 1); draw(); };
+document.getElementById('one').onclick = () => send(722);
+document.getElementById('three').onclick = () => send(723);
+document.getElementById('ai').onclick = () => send(720);
+document.getElementById('auto').onclick = () => { if (auto) { clearInterval(auto); auto = null; return; } auto = setInterval(() => send(720), 200); };
+document.addEventListener('keydown', ev => { if (ev.code === 'Escape') send(721); if (ev.code === 'Space') { ev.preventDefault(); send(700); } });
+x.newGame((Date.now() % 90000) + 1);
+draw();
+</script>
