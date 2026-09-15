@@ -11,10 +11,11 @@ Roc on the fifth tree on the right of every segment.
 | where | what | written by |
 |---|---|---|
 | `safari/roc/*.roc` | one type module per Codex chapter, whole, as written; one app per spec (`*Spec.roc`) | `rocemit`, via `safari/emitted.sh` |
-| `safari/roc/SafariApp.roc` | the screensaver: the ride as a boxed model, the frame packed into the blitter's words | hand |
+| `safari/roc/SafariRide.roc` | the screensaver for any platform: the ride between frames, the history for stepping back, and what a frame shows (commands after blit expansion, roll, sky colours, sun) | hand |
+| `safari/roc/SafariApp.roc` | the wasm edge of SafariRide: the model boxed for the page, the frame packed into the blitter's words, the readouts | hand |
 | `safari/roc/RocBird.roc` | the bird | hand |
 | `safari/roc/FrameBench.roc` | a native loop over the frame, for `perf` | hand |
-| `safari/wasm/` | the platform: `platform/main.roc` provides the page's sixteen exports over `Box(Model)`; `platform/host.zig` is the host; `build.zig` builds it against the roc checkout; `drive_smoke.mjs` drives the built module from Node as the page does (first frame, readouts, ms per step, `back`); `run_wasm.mjs` runs any Roc module's `wasm_main` with logged `env` imports | hand |
+| `safari/wasm/` | the platform: `platform/main.roc` provides the page's sixteen exports over `Box(Model)`; `platform/host.zig` is the host; `build.zig` builds it against the roc checkout; `drive_smoke.mjs` drives the built module from Node as the page does (first frame, readouts, ms per step, `back`); `frame_hash.mjs` hashes every frame's bytes and readouts over a fixed ride, so a change that should move no pixel is held to that; `run_wasm.mjs` runs any Roc module's `wasm_main` with logged `env` imports | hand |
 | `safari/web/` | the page: a copy of safari-codex's `blitter.js`, and its `index.html` | hand |
 | `safari/build.sh` | host + app + page into the dev channel, `http://<box>:9210/safari/` | hand |
 | `ops/` | `Caddyfile` and `roc-site.service`: one Caddy serving the site (below) and redirecting the ports announced before it; `install.sh` | hand |

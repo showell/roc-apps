@@ -1,52 +1,29 @@
 # The screensaver as a Roc app on the safari wasm platform (../wasm/platform).
 #
-# Hand-written, and the one file in this directory that is: everything else
-# here is emitted from Codex. It holds what the Codex program cannot -- the
-# ride between frames, a history for the down arrow -- and calls the emitted
-# chapters for everything else. The host (../wasm/platform/host.zig) keeps
-# the model as one boxed pointer and exposes the readouts web/blitter.js
-# binds; the draw buffer is packed here, word for word what poc/drive_shim.zig
-# in safari-codex wrote: tag, colour, count, then f32 bit patterns.
+# Hand-written: the wasm edge of SafariRide, which holds the ride and says what
+# a frame shows. The host (../wasm/platform/host.zig) keeps the model as one
+# boxed pointer and exposes the readouts web/blitter.js binds; the draw buffer
+# is packed here, word for word what poc/drive_shim.zig in safari-codex wrote:
+# tag, colour, count, then f32 bit patterns.
 app [Model, program] { pf: platform "../wasm/platform/main.roc" }
 
 import World
 import Safari
+import SafariRide
 import Blit
 import Paint
-import Sky
-import Rider
-import CanvasRoll
 import RideFocal
-import ViewYaw
-import Frame
-import Lens
-import RocBird
 
-Model : { world : List(World.Segment), ride : Safari.Ride, hist : List(Safari.Ride) }
-
-# The shim's ring: 2048 frames of history, about half the route.
-hist_cap : U64
-hist_cap = 2048
+Model : SafariRide.Model
 
 init : {} -> Box(Model)
-init = |{}| Box.box({ world: World.build_world, ride: Safari.ride_initial, hist: [] })
+init = |{}| Box.box(SafariRide.init)
 
 advance : Box(Model) -> Box(Model)
-advance = |b| {
-	m = Box.unbox(b)
-	finished = Rider.is_finished(m.ride.rider, m.world)
-	hist = if finished { [] } else if List.len(m.hist) < hist_cap { List.append(m.hist, m.ride) } else { m.hist }
-	Box.box({ world: m.world, ride: Safari.ride_next(m.world, m.ride), hist: hist })
-}
+advance = |b| Box.box(SafariRide.advance(Box.unbox(b)))
 
 back : Box(Model) -> Box(Model)
-back = |b| {
-	m = Box.unbox(b)
-	match List.last(m.hist) {
-		Ok(prev) => Box.box({ world: m.world, ride: prev, hist: List.drop_last(m.hist, 1) })
-		Err(_) => Box.box(m)
-	}
-}
+back = |b| Box.box(SafariRide.back(Box.unbox(b)))
 
 # --- The draw buffer --------------------------------------------------------
 
@@ -87,17 +64,8 @@ probe_expand = |b| {
 	U64.to_u32_wrap(List.len(Blit.blit_expand(Safari.ride_frame(m.world, m.ride), 0)))
 }
 
-# The frame, then the Roc flair: a bird on the fifth tree on the right of
-# every segment (RocBird), appended after the Codex frame so it paints on top.
 render : Box(Model) -> List(U32)
-render = |b| {
-	m = Box.unbox(b)
-	s = m.ride.rider
-	cf = RideFocal.ride_focal(m.world, s)
-	birds = RocBird.draw_all(m.world, Frame.build_chain(m.world, s.segment), ViewYaw.pose_for(m.world, s), cf, Lens.camera_w)
-	cmds = Blit.blit_expand(List.concat(Safari.ride_frame(m.world, m.ride), birds), 0)
-	List.join_map(cmds, pack_cmd)
-}
+render = |b| List.join_map(SafariRide.commands(Box.unbox(b)), pack_cmd)
 
 # --- The readouts -------------------------------------------------------------
 
@@ -108,7 +76,7 @@ rider_seg : Box(Model) -> U32
 rider_seg = |b| u(Box.unbox(b).ride.rider.segment)
 
 rider_tilt : Box(Model) -> F32
-rider_tilt = |b| F64.to_f32_wrap(CanvasRoll.rider_roll(Box.unbox(b).ride.rider))
+rider_tilt = |b| F64.to_f32_wrap(SafariRide.roll(Box.unbox(b)))
 
 cam_focal : Box(Model) -> F32
 cam_focal = |b| {
@@ -120,28 +88,22 @@ gaze_yaw : Box(Model) -> F32
 gaze_yaw = |b| F64.to_f32_wrap(Box.unbox(b).ride.rider.gaze_yaw)
 
 sky_top : Box(Model) -> U32
-sky_top = |b| u(Sky.sky_color(Box.unbox(b).ride.clock))
+sky_top = |b| u(SafariRide.sky_top(Box.unbox(b)))
 
 sky_horizon : Box(Model) -> U32
-sky_horizon = |b| u(Sky.horizon_color(Box.unbox(b).ride.clock))
-
-sun : Box(Model) -> Sky.SunPos
-sun = |b| {
-	m = Box.unbox(b)
-	Safari.ride_sun(m.world, m.ride)
-}
+sky_horizon = |b| u(SafariRide.sky_horizon(Box.unbox(b)))
 
 sun_visible : Box(Model) -> U32
-sun_visible = |b| if sun(b).visible { 1 } else { 0 }
+sun_visible = |b| if SafariRide.sun(Box.unbox(b)).visible { 1 } else { 0 }
 
 sun_x : Box(Model) -> F32
-sun_x = |b| F64.to_f32_wrap(sun(b).x)
+sun_x = |b| F64.to_f32_wrap(SafariRide.sun(Box.unbox(b)).x)
 
 sun_y : Box(Model) -> F32
-sun_y = |b| F64.to_f32_wrap(sun(b).y)
+sun_y = |b| F64.to_f32_wrap(SafariRide.sun(Box.unbox(b)).y)
 
 sun_scale : Box(Model) -> F32
-sun_scale = |b| F64.to_f32_wrap(sun(b).scale)
+sun_scale = |b| F64.to_f32_wrap(SafariRide.sun(Box.unbox(b)).scale)
 
 rider_v : Box(Model) -> F32
 rider_v = |b| F64.to_f32_wrap(Box.unbox(b).ride.rider.v)
