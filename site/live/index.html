@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cobblestone Roc Projects</title>
+<script src="shared/home.js"></script>
+<style>
+  :root { color-scheme: light dark; --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --pane: #ffffff; --link: #1f5fa8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --pane: #242422; --link: #8ab4f0; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, sans-serif; }
+  main { max-width: 880px; margin: 0 auto; padding: 36px 16px 48px; }
+  h1 { font-size: 28px; margin: 0 0 6px; }
+  .lede { color: var(--muted); margin: 0 0 8px; max-width: 66ch; }
+  h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 30px 0 10px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+  .card { background: var(--pane); border: 1px solid var(--edge); border-radius: 8px; padding: 14px 16px; }
+  .card h3 { margin: 0 0 4px; font-size: 17px; }
+  .card p { margin: 0; color: var(--muted); font-size: 14px; }
+  .links { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; }
+  .when { margin-top: 8px; font-size: 12px; color: var(--muted); }
+  a { color: var(--link); }
+  footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+<h1>Cobblestone Roc Projects</h1>
+<p class="lede">Programs that run in this tab as <a href="https://www.roc-lang.org/">Roc</a> compiled to
+WebAssembly. Most of them are Codex, the language of <a href="https://github.com/damiant3/Cobblestone">Cobblestone</a>,
+turned into Roc by rocemit.</p>
+
+<h2>Finished</h2>
+<div class="cards">
+  <section class="card" data-app="safari">
+    <h3><a href="safari/">Safari</a></h3>
+    <p>A drive through the country, as a screensaver: its Codex chapters emitted as Roc, with a hand-written Roc app around them.</p>
+  </section>
+  <section class="card" data-app="basic">
+    <h3><a href="basic/basic.html">BASIC</a></h3>
+    <p>An ECMA-55 Minimal BASIC interpreter, hand-written in Roc, with sample programs to run.</p>
+  </section>
+</div>
+
+<h2>In progress</h2>
+<div class="cards">
+  <section class="card" data-app="framebuffer">
+    <h3><a href="framebuffer/">The framebuffer</a></h3>
+    <p>Codex programs drawing on a screen that is part of their memory: scenes, a raytracer, a globe, a GUI.</p>
+  </section>
+  <section class="card" data-app="machine">
+    <h3><a href="machine/batch/">The Roc machine</a></h3>
+    <p>Cobblestone's tests, run from start to finish on a Roc model of their machine: disk drives, a network card, and the network behind it.</p>
+    <div class="links"><a href="machine/batch/about.html">How it works</a><a href="machine/machine.html">A hand-written program on it</a></div>
+  </section>
+  <section class="card" data-app="gpu">
+    <h3><a href="gpu/gallery.html">GPU kernels</a></h3>
+    <p>Cobblestone's WebGPU compute kernels, emitted as Roc and run on the CPU.</p>
+  </section>
+  <section class="card" data-app="games">
+    <h3>Games</h3>
+    <p>Cobblestone's classic games, emitted as Roc.</p>
+    <div class="links"><a href="games/2048.html">2048</a><a href="games/minesweeper.html">Minesweeper</a><a href="games/klondike.html">Klondike</a></div>
+  </section>
+</div>
+
+<footer>The Roc, the pages and the platforms are in <a href="https://github.com/showell/roc-apps">roc-apps</a>.</footer>
+</main>
+<script>
+// A published app has a PROVENANCE beside it, whose first line dates the build
+// this channel serves. The dev channel has none, and shows no date.
+for (const card of document.querySelectorAll('[data-app]')) {
+  fetch(`${card.dataset.app}/PROVENANCE`).then(r => (r.ok ? r.text() : '')).then(text => {
+    const published = text.match(/^published (\d{4}-\d\d-\d\d)/);
+    if (!published) return;
+    const when = document.createElement('div');
+    when.className = 'when';
+    when.textContent = `published ${published[1]}`;
+    card.append(when);
+  }).catch(() => {});
+}
+</script>
+</body>
+</html>
