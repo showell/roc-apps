@@ -91,7 +91,7 @@ machine page's MachineGpu and this platform's GPU agreed.
 | `codex/test/gpu-panel-border`, `gpu-depth-tree`, `gpu-gauge-clamp`, `gpu-input-cursor` | Cobblestone's widgets, laid out and drawn as triangles by the GPU at 640 x 480; each console matches its verdict, and each image is the machine page's, pixel for pixel |
 | `codex/test/gop-padded-stride` | a 320 x 240 screen whose rows are 512 pixels in memory; the hidden ends stay untouched |
 | `apps/engine-demo/EngineDemo.codex` | Cobblestone's engine demo: Codex lights and transforms a scene and hands the triangles to the GPU, the camera orbiting in a loop that never ends; a frame is a flush |
-| `apps/cvmm/GuiOpening.codex` | cvmm's GuiOS desktop at 1024 x 768, its widgets drawn through the GPU; a frame is a flush |
+| `apps/cvmm/GuiOpening.codex` | cvmm's GuiOS desktop at 1024 x 768, its widgets drawn through the GPU; a frame is a flush. At Update 60 a click on the sidebar selects the button below the one under the pointer, and a click on the last does nothing; Cobblestone PR 150 fixes that |
 | `demos/shadow-spin.codex` | `codex/test/engine-shadow`'s cube and plane with Renderer3D's shadow map, the light circling the cube by the clock |
 | `demos/meshes-spin.codex` | `codex/test/engine-mesh-gen`'s sphere, cylinder, cone and torus, Gouraud shaded, the camera circling them |
 | `demos/widgets-on-screen.codex` | a panel of widgets drawn by GopComposite onto the screen, as `codex/test/gop-composite-kinds` draws them into memory, the gauge filling with the clock |
