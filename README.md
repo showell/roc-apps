@@ -37,6 +37,7 @@ from one channel to the next unchanged. The design is
 |---|---|---|---|
 | dev | `http://<box>:9210/` | `~/build/roc-apps/next/` | each app's `build.sh`; `site/build.sh` for the root |
 | staging | `http://<box>:9200/` | `site/live/`, tracked | `site/publish.sh`, after an eye test on dev |
+| prod | `https://roc.lynrummy.com/` | `/srv/roc-site/` on the prod droplet, staging's files verbatim | `site/deploy.sh`, on Steve's sign-off of staging |
 
 The ports announced before the site redirect: :9201 to staging's `safari/`;
 :9203's `basic/` to staging and the rest of :9203 to dev at the same path;
@@ -47,11 +48,14 @@ The ports announced before the site redirect: :9201 to staging's `safari/`;
 | `site/web/index.html` | the landing page: Finished, In progress, and the date each app on the channel was published | hand |
 | `site/web/shared/home.js` | the link home, and the banner on dev (whose root alone has a `channel` file); every page loads it with one relative line | hand |
 | `site/build.sh` | the landing page, `shared/` and the `channel` file into dev | hand |
-| `site/publish.sh` | THE SIGN-OFF: one app's dev directory over `site/live/<app>/` whole, with a `PROVENANCE`, committed and pushed; `site/publish.sh home` for the root | hand |
-| `site/live/` | what staging serves | `site/publish.sh` |
+| `site/publish.sh` | THE SIGN-OFF: one app's dev directory over `site/live/<app>/` whole, with a `PROVENANCE`, committed and pushed; `site/publish.sh home` for the landing page and `shared/` | hand |
+| `site/live/` | what staging serves, and what prod serves | `site/publish.sh` |
+| `site/deploy.sh` | THE PROD DEPLOY: `site/live/` to the droplet with `rsync --delete`, each file's sha256 checked against staging's; the site block installed and validated when it changed; the landing page checked over HTTPS | hand |
+| `ops/roc.lynrummy.com.caddy` | prod's site block, imported by the droplet's Caddyfile (angry-gopher's `deploy/Caddyfile`) from `/etc/caddy/sites/` | hand |
 
     site/build.sh                  # the root into dev, http://<box>:9210/
     site/publish.sh safari         # when dev looks right: staging, http://<box>:9200/safari/
+    site/deploy.sh                 # when staging looks right: prod, https://roc.lynrummy.com/
 
 Every page's URLs are relative, so the site works under any prefix.
 
