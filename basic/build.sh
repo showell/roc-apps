@@ -24,6 +24,6 @@ rm -f "$NEXT/basic.wasm" "$NEXT/build.log"
 if grep -q "✗" "$LOG" || [ ! -s "$NEXT/basic.wasm" ]; then
     cat "$LOG"; echo "build failed"; exit 1
 fi
-cp "$HERE/web/basic.html" "$NEXT/"
+cp "$HERE/web/index.html" "$HERE/web/basic.html" "$NEXT/"
 ls -la "$NEXT"
-echo "dev: http://143.244.172.148:9210/basic/basic.html"
+echo "dev: http://143.244.172.148:9210/basic/"
