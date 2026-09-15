@@ -130,7 +130,7 @@ Cat :: [].{
 
 	cat_entering : Cat.Cat, F64 -> Cat.CatState
 	cat_entering = |c, step| ({
-		p = (if (enters_road_steps > 0.0) { (step / enters_road_steps) } else { 1.0 })
+		p = (step / enters_road_steps)
 		{ pose_idx: (if (Trig.r_sin(gait(p, enters_road_steps)) > 0.0) { pose_stride } else { pose_rest }), across: lerp(c.start_across, c.mid_across, p), lift: 0.0 }
 	})
 
