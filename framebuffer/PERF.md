@@ -207,3 +207,16 @@ nothing else, `render` is the whole `rt-render`, and each prints a checksum
 that stays the same. The case study that goes on from here, what `rt-closest`
 carries and what the dev backend's code is, is the essay
 `:9100/notes/raytrace-case-study.md`.
+
+## 2026-09-15: the bench with LLVM
+
+`OPT=speed bench/raybench.sh` builds with LLVM in 2 s. The checksums are the
+dev build's.
+
+| 30 frames, native | `--opt=dev` | `--opt=speed` |
+|---|---|---|
+| `trace` | 0.59 to 0.65 s | 0.037 to 0.042 s |
+| `render` | 0.84 to 0.88 s | 0.083 to 0.086 s |
+
+The dev backend's frame is sixteen times LLVM's for the closest-hit walk and
+ten times for the whole render.
