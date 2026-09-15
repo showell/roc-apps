@@ -79,7 +79,7 @@ const ABOUT = {
   "gpu-input-cursor": "an input box drawn by the GPU, whose cursor must stay inside it",
   "gop-padded-stride": "a screen whose rows are longer in memory than on the glass; the hidden ends must stay untouched",
   "EngineDemo": "Cobblestone's engine demo (apps/engine-demo): Codex lights and transforms a scene and the GPU draws it, the camera orbiting in a loop that never ends",
-  "GuiOpening": "the GuiOS desktop of Cobblestone's cvmm app, drawn by its widgets through the GPU; at Update 60 a click on the sidebar selects the button below the one under the pointer, and a click on the last does nothing (Cobblestone PR 150 fixes that)",
+  "GuiOpening": "the GuiOS desktop of Cobblestone's cvmm app, drawn by its widgets through the GPU; a click on the sidebar opens that pane",
   "shadow-spin": "engine-shadow's cube and plane, rendered with a shadow map as the light circles the cube",
   "meshes-spin": "engine-mesh-gen's sphere, cylinder, cone and torus, Gouraud shaded, the camera circling them",
   "widgets-on-screen": "a panel of Cobblestone's widgets drawn by GopComposite onto the screen, the gauge filling with the clock",
@@ -88,6 +88,7 @@ const ABOUT = {
   "raytrace-on-screen": "raytracer-test's spheres and floor, traced by Raytracer, the red sphere rising and falling",
   "glyphs-on-screen": "the glyph for A in truetype-render-test's small font, a single triangle, rasterized by GlyphRasterizer plain and anti-aliased at three sizes",
   "GlobeDemo": "Cobblestone's globe (apps/globe): an icosphere wrapped in the earth image the app loads from disk and shaded by codex-vm's globe shader, turning on its own; the arrows turn and tilt it, keypad + and - zoom, and E, M and R paint an Earth, a Mars or a random planet in Codex",
+  "Fireworks": "Cobblestone's fireworks (apps/fireworks): shells launched, simulated and drawn with the GPU's additive sprites and cinematic pass, a show in a loop of its own; F1 switches how each frame clears, and Q ends the show",
 };
 
 let programs = [], chosen = null, worker = null, playing = false, nextRun = 0, shown = 0, spent = 0;

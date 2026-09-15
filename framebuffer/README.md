@@ -74,10 +74,15 @@ hold: safe here because the host stops at any address it does not back.
 | `demos/` | Codex programs written for this platform; `quires.tsv` names the checkout they cite |
 
     framebuffer/build.sh framebuffer/demos/scene-spin.codex machine/batch/demos/scene-on-screen.codex
-    framebuffer/build.sh ~/showell_repos/cobblestone-u60rel/codex/test/gpu-panel-border.codex
+    framebuffer/build.sh ~/showell_repos/cobblestone-u61/codex/test/gpu-panel-border.codex
     node framebuffer/frames.mjs scene-spin 5
     framebuffer/verify.sh        # mode 2: the table's programs, natively, against their hashes
     # the preview: http://143.244.172.148:9203/framebuffer/
+
+**Cobblestone here is the candidate, not the released Update.** The checkout
+the demos cite, `build.sh` builds Cobblestone's programs from and `verify.sh`
+runs them in is `~/showell_repos/cobblestone-u61`, branch `u61-candidate`:
+Update 60 and the Cobblestone PRs still open (147 to 151).
 
 **Mode 2 checks what mode 3 shows.** The browser's host and the checker's are
 two thin roots over one `core.zig` and one `gpu.zig`, so a program draws the
@@ -91,22 +96,22 @@ machine page's MachineGpu and this platform's GPU agreed.
 | `codex/test/gpu-panel-border`, `gpu-depth-tree`, `gpu-gauge-clamp`, `gpu-input-cursor` | Cobblestone's widgets, laid out and drawn as triangles by the GPU at 640 x 480; each console matches its verdict, and each image is the machine page's, pixel for pixel |
 | `codex/test/gop-padded-stride` | a 320 x 240 screen whose rows are 512 pixels in memory; the hidden ends stay untouched |
 | `apps/engine-demo/EngineDemo.codex` | Cobblestone's engine demo: Codex lights and transforms a scene and hands the triangles to the GPU, the camera orbiting in a loop that never ends; a frame is a flush |
-| `apps/cvmm/GuiOpening.codex` | cvmm's GuiOS desktop at 1024 x 768, its widgets drawn through the GPU; a frame is a flush. At Update 60 a click on the sidebar selects the button below the one under the pointer, and a click on the last does nothing; Cobblestone PR 150 fixes that |
+| `apps/cvmm/GuiOpening.codex` | cvmm's GuiOS desktop at 1024 x 768, its widgets drawn through the GPU; a frame is a flush |
 | `demos/shadow-spin.codex` | `codex/test/engine-shadow`'s cube and plane with Renderer3D's shadow map, the light circling the cube by the clock |
 | `demos/meshes-spin.codex` | `codex/test/engine-mesh-gen`'s sphere, cylinder, cone and torus, Gouraud shaded, the camera circling them |
 | `demos/widgets-on-screen.codex` | a panel of widgets drawn by GopComposite onto the screen, as `codex/test/gop-composite-kinds` draws them into memory, the gauge filling with the clock |
 | `demos/qr-on-screen.codex` | `codex/test/qr-encode`'s payload encoded by GopQr and drawn with GopDraw's fill |
 | `demos/sketch-on-screen.codex` | what `codex/test/rasterizer-test` and `sprite-test` draw, in one 80 x 60 Framebuf copied to the screen: lines, a rectangle, a filled circle and a triangle, keyed and flipped sprites, a blinking face |
-| `demos/raytrace-on-screen.codex` | `codex/test/raytracer-test`'s spheres and floor traced by Raytracer at 160 x 120 and copied to the screen, the red sphere bobbing by the clock; the spheres are lit at the ambient level alone and the floor at its full grey |
+| `demos/raytrace-on-screen.codex` | `codex/test/raytracer-test`'s spheres and floor traced by Raytracer at 160 x 120 and copied to the screen, the red sphere bobbing by the clock |
 | `demos/glyphs-on-screen.codex` | the glyph for A in `codex/test/truetype-render-test`'s embedded font, a single triangle, rasterized by GlyphRasterizer plain and anti-aliased at 16, 24 and 32 pixels to the em, each glyph pixel a 3 by 3 block |
 | `apps/globe/GlobeDemo.codex` | Cobblestone's globe: an icosphere wrapped in the 2048 x 1024 earth image it loads from disk, shaded by codex-vm's globe shader, turning; with no image it paints a planet in Codex. Its wasm needs more stack than a browser gives: `gtris` and `gtris-next`, which only forwards back to `gtris`, call each other once a visible triangle |
+| `apps/fireworks/Fireworks.codex` | Cobblestone's fireworks at 1024 x 768: shells launched, simulated and drawn with the GPU's additive sprites and cinematic pass, a 3,900-frame show in a loop of its own; a frame is a flush. Its `rnd` wraps with Cobblestone PR 151; at Update 60 it multiplies a plain `Integer` past 64 bits before the first frame, which traps (COMPILER-36) |
 
 Drawing these showed three things about the chapters under them:
 
 - Raytracer's `rt-pixel-ray` reaches sideways half the camera's field of view
   against a forward reach of 1, so `raytracer-test`'s field of 1000 sees nearly
-  half the sphere of directions; `raytrace-on-screen` uses a field of 1. With a
-  forward reach of 1000, `raytracer-test`'s 16 x 12 render hits 110 pixels, not
+  half the sphere of directions. With a forward reach of 1000, `raytracer-test`'s 16 x 12 render hits 110 pixels, not
   81.
 - Raytracer's `rt-shade` divides its diffuse and specular terms by 1000, and
   for a unit normal they reach at most one, so a sphere is lit at the scene's
@@ -116,8 +121,8 @@ Drawing these showed three things about the chapters under them:
   thousand times larger and it draws at its full grey. Both are the scale of
   the fixed-point Raytracer, where a unit vector was 1000 long and `vec3-dot`
   divided by 1000, left in place when Update 26 made its geometry Real.
-  Cobblestone PR 149 proposes the fix; under it `raytrace-on-screen` passes a
-  field of 1000 and a unit floor normal.
+  Cobblestone PR 149 fixes both; the candidate carries it, and
+  `raytrace-on-screen` passes a field of 1000 and a unit floor normal.
 - GlyphRasterizer's `gr-make-row` builds a glyph's buffer by pushing onto its
   own recursive call, as deep as the buffer is long, and the 4 x 4 supersampled
   buffer of an anti-aliased glyph overflowed the browser's stack. rocemit now
@@ -128,7 +133,6 @@ Cobblestone's other drawing apps do not run here yet:
 | app | what stops it |
 |---|---|
 | `apps/circuits` | BitmapFont's GPU text path calls `gpu-rect-top`, `gpu-rect-chrome` and `gpu-seq`, which the app defines, so the emitted modules import each other; `roc check` names the cycle and `roc build` crashes on it |
-| `apps/fireworks` | `rnd` multiplies a plain `Integer` past 64 bits before the first frame, where a plain `Integer` traps (COMPILER-36), as Roc's `*` does. Cobblestone PR 151 makes it wrap; built with that change the app runs its whole 3,900-frame cycle here, through the cinematic pass and the additive sprites |
 | `apps/c64` | plays its SID through the HDA sound card's MMIO |
 
 `PERF.md` is what a frame costs and where the time goes.

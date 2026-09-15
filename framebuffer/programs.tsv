@@ -11,3 +11,4 @@ EngineDemo    flush   640    480     640
 GuiOpening    flush   1024   768     1024
 widgets-on-screen  run  640    480     640
 GlobeDemo     flush   640    480     640     apps/globe/earth-texture.raw
+Fireworks     flush   1024   768     1024

@@ -20,7 +20,7 @@ cp "$NEXT"/*.html "$NEXT"/*.wasm "$HERE/live/"
     echo "roc $("${ROC:-$HOME/build/roc-nightly/roc}" version | sed 's/Roc compiler version //')"
     echo "roc-apps $(git -C "$HERE" rev-parse --short HEAD)$(git -C "$HERE" diff --quiet -- games/roc games/wasm games/web games/gen.py || echo ' +uncommitted')"
     echo "rocemit $(git -C "$HOME/showell_repos/rust-codex-compiler" rev-parse --short HEAD)"
-    echo "games $(git -C "${GAMES_ROOT:-$HOME/showell_repos/cobblestone-u58}" rev-parse --short HEAD) ${GAMES_ROOT:-$HOME/showell_repos/cobblestone-u58}"
+    echo "games $(git -C "${GAMES_ROOT:-$HOME/showell_repos/cobblestone-u61}" rev-parse --short HEAD) ${GAMES_ROOT:-$HOME/showell_repos/cobblestone-u61}"
     for w in "$HERE"/live/*.wasm; do echo "sha256 $(sha256sum "$w" | cut -c1-16)  $(stat -c %s "$w") bytes  $(basename "$w")"; done
 } > "$HERE/live/PROVENANCE"
 cat "$HERE/live/PROVENANCE"

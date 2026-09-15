@@ -11,7 +11,7 @@ set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROC="${ROC:-$HOME/build/roc-nightly/roc}"
 ZIG="${ZIG:-$HOME/zig-0.16.0/zig}"
-CHECKOUT="${CHECKOUT:-$HOME/showell_repos/cobblestone-u60rel}"
+CHECKOUT="${CHECKOUT:-$HOME/showell_repos/cobblestone-u61}"
 NEXT="$HOME/build/roc-apps/next/machine"
 mkdir -p "$NEXT"
 (cd "$HERE/wasm" && "$ZIG" build --cache-dir "$HOME/build/roc-apps/zig-cache" --global-cache-dir "$HOME/build/zig-global")

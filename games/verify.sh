@@ -8,7 +8,7 @@
 #   games/verify.sh                 every game
 #   games/verify.sh minesweeper     named games
 set -u
-GAMES_ROOT="${GAMES_ROOT:-$HOME/showell_repos/cobblestone-u58}"
+GAMES_ROOT="${GAMES_ROOT:-$HOME/showell_repos/cobblestone-u61}"
 declare -A GRADER=([2048]=g2 [minesweeper]=ms [klondike]=kd)
 games=("$@"); [ ${#games[@]} -eq 0 ] && games=(2048 minesweeper klondike)
 fail=0

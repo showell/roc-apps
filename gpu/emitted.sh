@@ -15,7 +15,7 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROC="${ROC:-$HOME/build/roc-nightly/roc}"
 ROCEMIT="${ROCEMIT:-$HOME/build/rust-target/release/rocemit}"
-KERNELS_ROOT="${KERNELS_ROOT:-$HOME/showell_repos/cobblestone-u60rel}"
+KERNELS_ROOT="${KERNELS_ROOT:-$HOME/showell_repos/cobblestone-u61}"
 # rocemit resolves a kernel's cites (DeviceMath, DeviceEffect, ...) from the
 # checkout the kernel sits in, so they come from $KERNELS_ROOT too.
 GEN="$HOME/build/roc-apps/gen/gpu"

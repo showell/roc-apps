@@ -15,11 +15,7 @@ Chapter: RaytraceOnScreen
  and falls by the clock the framebuffer platform writes before each frame.
 
  `rt-shade` adds the ambient, 200 in thousandths, to diffuse and specular terms
- it divides by 1000. For a sphere's unit normal those terms reach at most one,
- so a sphere is its material's colour at a fifth of its brightness wherever the
- light stands; raytracer-test's verdict pins that colour, rgb(51, 0, 0) for the
- red sphere. The floor's normal is 1000 long, so its terms are a thousand times
- larger and the floor is its full grey.
+ in the material's thousandths, over unit normals; the floor's is 0 1 0.
 
  We say:
 
@@ -44,18 +40,17 @@ Section: Scene
     let bob = real-from-int (600 * cordic-sin t / 1000)
     in let s1 = ObjSphere (RtSphere { rt-center = vec3-new 0.0 bob 5000.0, rt-radius = 1000.0, rt-mat = mat-shiny rgb-red })
     in let s2 = ObjSphere (RtSphere { rt-center = vec3-new 2000.0 0.0 6000.0, rt-radius = 1500.0, rt-mat = mat-matte rgb-green })
-    in let floor = ObjPlane (RtPlane { rt-point = vec3-new 0.0 (0.0 - 1000.0) 0.0, rt-normal = vec3-new 0.0 1000.0 0.0, rt-mat = mat-matte (rgb 128 128 128) })
+    in let floor = ObjPlane (RtPlane { rt-point = vec3-new 0.0 (0.0 - 1000.0) 0.0, rt-normal = vec3-new 0.0 1.0 0.0, rt-mat = mat-matte (rgb 128 128 128) })
     in let light = vec3-new (0.0 - 3000.0) 5000.0 2000.0
     in let sc = scene-new light rgb-white 200 (rgb 32 32 64)
     in scene-add (scene-add (scene-add sc s1) s2) floor
 
  Raytracer turns a pixel into a ray whose sideways reach, against a forward
- reach of 1, runs from minus to plus half the camera's field of view. A field
- of 1 sees about 67 degrees across; raytracer-test's camera of 1000 sees nearly
- half the sphere of directions, where at this size the red sphere is one
- traced pixel and the green one falls between rays.
+ reach of 1, runs from minus to plus half the camera's field of view, which it
+ reads in thousandths. raytracer-test's field of 1000 sees about 67 degrees
+ across this 4 by 3 trace.
 
-  camera : RtCamera = rt-camera-new (vec3-new 0.0 0.0 0.0) 1
+  camera : RtCamera = rt-camera-new (vec3-new 0.0 0.0 0.0) 1000
 
 Section: Copy
 

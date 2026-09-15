@@ -16,7 +16,7 @@ gid in that order. Pages that seed an input buffer or draw points and quads
 are listed as skipped, with the reason.
 """
 import os, re, sys
-ROOT = os.environ.get("KERNELS_ROOT", os.path.expanduser("~/showell_repos/cobblestone-u58"))
+ROOT = os.environ.get("KERNELS_ROOT", os.path.expanduser("~/showell_repos/cobblestone-u61"))
 HERE = os.path.dirname(os.path.abspath(__file__))
 WEB = os.path.join(ROOT, "apps/gpushow/web")
 KER = os.path.join(ROOT, "apps/gpushow/kernels")
