@@ -5,10 +5,10 @@ import Paint
 Blit :: [].{
 
 	chan_r : I64 -> I64
-	chan_r = |c| I64.bitwise_and(I64.shr_zf_wrap(c, I64.to_u8_wrap(16)), 255)
+	chan_r = |c| I64.bitwise_and(I64.shr_wrap(c, I64.to_u8_wrap(16)), 255)
 
 	chan_g : I64 -> I64
-	chan_g = |c| I64.bitwise_and(I64.shr_zf_wrap(c, I64.to_u8_wrap(8)), 255)
+	chan_g = |c| I64.bitwise_and(I64.shr_wrap(c, I64.to_u8_wrap(8)), 255)
 
 	chan_b : I64 -> I64
 	chan_b = |c| I64.bitwise_and(c, 255)

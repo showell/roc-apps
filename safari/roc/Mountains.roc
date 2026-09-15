@@ -28,7 +28,7 @@ Mountains :: [].{
 	snow_night = { r: 70.0, g: 84.0, b: 104.0 }
 
 	chan : I64, I64 -> F64
-	chan = |color, sh| I64.to_f64(I64.bitwise_and(I64.shr_zf_wrap(color, I64.to_u8_wrap(sh)), 255))
+	chan = |color, sh| I64.to_f64(I64.bitwise_and(I64.shr_wrap(color, I64.to_u8_wrap(sh)), 255))
 
 	dimmed : I64, F64 -> I64
 	dimmed = |color, dusk| ({
