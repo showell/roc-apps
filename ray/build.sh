@@ -13,13 +13,16 @@
 #
 # The environment names everything that differs between this box and a CI
 # runner: ROC (the compiler roc-ray pins, nightly-2026-09-07-14d9829), ROC_RAY
-# (the checkout), OUT (where outputs go) and TARGET.
+# (the checkout), OUT (where outputs go), TARGET, and OPT: `dev` (the default,
+# seconds to build) or `speed` (LLVM; Safari builds in 12 s here and paints a
+# frame in about 65 ms against 255 ms on dev).
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROC="${ROC:-$HOME/build/roc-nightly/roc_nightly-linux_x86_64-2026-09-07-14d9829/roc}"
 ROC_RAY="$(cd "${ROC_RAY:-$HOME/showell_repos/roc-ray}" && pwd)"
 OUT="${OUT:-$HOME/build/roc-apps/ray}"
 TARGET="${TARGET:-x64glibc}"
+OPT="${OPT:-dev}"
 name="${1:?usage: ray/build.sh <app>, an app under ray/apps/}"
 app="$HERE/apps/$name"
 [ -f "$app/main.roc" ] || { echo "no app at $app/main.roc"; exit 2; }
@@ -50,13 +53,13 @@ grep -q "platform \"$platform\"" "$stage/main.roc" || { echo "no platform refere
 
 exe="$dest/$name$suffix"
 rm -f "$exe"
-log="$dest/build-$TARGET.log"
+log="$dest/build-$TARGET-$OPT.log"
 # **ROC EXITS NON-ZERO FOR A WARNING**, so the verdict is an error mark (✗) or
 # a missing executable, not the exit code.
 t0=$(date +%s)
-"$ROC" build "$stage/main.roc" --target="$TARGET" --opt=dev --output="$exe" > "$log" 2>&1 || true
+"$ROC" build "$stage/main.roc" --target="$TARGET" --opt="$OPT" --output="$exe" > "$log" 2>&1 || true
 secs=$(( $(date +%s) - t0 ))
 if grep -q "✗" "$log" || [ ! -s "$exe" ]; then
     cat "$log"; echo "build failed after ${secs}s"; exit 1
 fi
-echo "built $exe in ${secs}s ($(grep -c "●" "$log" || true) warnings)"
+echo "built $exe ($OPT) in ${secs}s ($(grep -c "●" "$log" || true) warnings)"

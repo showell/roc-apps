@@ -53,7 +53,7 @@ jobs:
           TARGET: x64win
         run: |
           ray/build.sh hello
-          ray/build.sh safari
+          OPT=speed ray/build.sh safari
 
       # No window: the headless host draws nothing, so this proves each
       # executable links, loads and runs its cycles (Safari paints every one).
