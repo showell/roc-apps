@@ -1,0 +1,334 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>BASIC, in Roc</title>
+<script src="../shared/home.js"></script>
+<style>
+  :root { color-scheme: light dark; --ink: #1b1b1b; --dim: #6a6a6a; --line: #d8d4cc; --paper: #faf8f4; }
+  @media (prefers-color-scheme: dark) {
+    :root { --ink: #e8e6e1; --dim: #9a968e; --line: #3a3833; --paper: #1a1917; }
+  }
+  body { margin: 0; background: var(--paper); color: var(--ink);
+         font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding-block: 28px; padding-left: 20px; padding-right: 20px; }
+  h1 { font-size: 20px; margin: 0 0 4px; font-weight: 600; }
+  .sub { color: var(--dim); font-size: 13px; margin: 0 0 20px; }
+  .cols { display: flex; gap: 18px; flex-wrap: wrap; }
+  .col { flex: 1 1 380px; min-width: 0; }
+  label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .06em;
+          color: var(--dim); margin: 0 0 6px; }
+  textarea, pre { width: 100%; box-sizing: border-box; background: transparent; color: inherit;
+                  border: 1px solid var(--line); border-radius: 4px; padding: 10px;
+                  font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  textarea { resize: vertical; }
+  #src { height: 388px; }
+  pre { height: 394px; overflow: auto; margin: 0; white-space: pre; }
+  /* The screen is 40x25 cells of a Commodore's memory, drawn as text so
+     that a cell is exactly a cell. */
+  #screen { background: var(--scr-bg, #000); color: var(--scr-fg, #33ff66); border: 8px solid var(--scr-edge, #1d4d2a); border-radius: 4px;
+            padding: 8px; margin: 0 0 12px; overflow-x: auto;
+            width: max-content; max-width: 100%; box-sizing: content-box;
+            font: 13px/1.1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  #screen div { white-space: pre; }
+  #screen span { display: inline-block; }
+  #pix { width: 100%; max-width: 640px; image-rendering: pixelated; display: block;
+         background: #000; border: 8px solid var(--scr-edge, #1d4d2a); border-radius: 4px; margin: 0 0 12px; }
+  #line { width: 100%; box-sizing: border-box; margin-top: 8px; padding: 8px 10px;
+          background: transparent; color: inherit; border: 1px solid var(--line); border-radius: 4px;
+          font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  #line:enabled { border-color: var(--ink); }
+  #line:disabled { color: var(--dim); }
+  .bar { display: flex; gap: 10px; align-items: center; margin: 14px 0; flex-wrap: wrap; }
+  button { font: inherit; padding: 6px 16px; border: 1px solid var(--line); border-radius: 4px;
+           background: transparent; color: inherit; cursor: pointer; }
+  button:hover { border-color: var(--ink); }
+  select { font: inherit; padding: 5px; background: transparent; color: inherit;
+           border: 1px solid var(--line); border-radius: 4px; }
+  .note { color: var(--dim); font-size: 12px; margin-top: 22px; border-top: 1px solid var(--line); padding-top: 14px; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  a { color: inherit; }
+  /* Rules above that set `display` would otherwise beat the hidden attribute. */
+  [hidden] { display: none !important; }
+  #status.done { display: inline-block; color: var(--ink); animation: done-jiggle .6s ease-in-out; }
+  @keyframes done-jiggle {
+    0%, 100% { transform: translateX(0) rotate(0); }
+    20% { transform: translateX(-3px) rotate(-3deg); }
+    40% { transform: translateX(3px) rotate(3deg); }
+    60% { transform: translateX(-2px) rotate(-2deg); }
+    80% { transform: translateX(2px) rotate(1deg); }
+  }
+  @media (prefers-reduced-motion: reduce) { #status.done { animation: none; } }
+</style>
+<div class="wrap">
+<h1>BASIC, in <a href="https://www.roc-lang.org/">Roc</a></h1>
+<p class="sub">An ECMA-55 Minimal BASIC interpreter, hand-written in <a href="https://www.roc-lang.org/">Roc</a> and compiled to WebAssembly,
+with a thin JavaScript layer for the page. Everything below runs in this tab.</p>
+
+<div class="bar">
+  <button id="run">Run</button>
+  <button id="stop">Stop</button>
+  <select id="sample"></select>
+  <select id="theme" title="Screen colours"></select>
+  <span id="status" class="sub" style="margin:0"></span>
+</div>
+
+<div class="cols">
+  <div class="col">
+    <label for="src">Listing</label>
+    <textarea id="src" spellcheck="false"></textarea>
+  </div>
+  <div class="col">
+    <label for="screen" id="screenlab" hidden>Screen &mdash; 40&times;25 at address 1024</label>
+    <div id="screen" hidden></div>
+    <label for="pix" id="pixlab" hidden>Framebuffer &mdash; 320&times;200 at address 131072</label>
+    <canvas id="pix" width="320" height="200" hidden></canvas>
+    <input id="line" type="text" spellcheck="false" placeholder="the program is not asking for anything" disabled>
+  </div>
+</div>
+
+<p class="note">
+  The machine is a Roc value. The page starts it with the listing and a seed, and the machine
+  hands itself back whenever it wants a line typed, sleeps, prints a line, or has run a few
+  thousand statements; the page paints what it drew and resumes it. Graded against the National Bureau of Standards' Minimal
+  BASIC test programs and the 1978 <em>BASIC Computer Games</em> listings.
+  Source: <a href="https://github.com/showell/roc-apps/tree/master/basic">github.com/showell/roc-apps</a>
+  (<code>basic/</code>).
+  This page was authored by Steve Howell with Claude in September 2026.
+</p>
+</div>
+
+<script>
+const SAMPLES = {
+  "Hello": '10 PRINT "HELLO, WORLD"\n20 END\n',
+  "Squares": '10 FOR I = 1 TO 10\n20 PRINT I, I*I, I*I*I\n30 NEXT I\n40 END\n',
+  "Temperature table": '10 PRINT "C", "F"\n20 FOR C = -40 TO 100 STEP 20\n30 PRINT C, C*9/5+32\n40 NEXT C\n50 END\n',
+  "Guess a number (type your own)": '10 PRINT "I AM THINKING OF A NUMBER FROM 1 TO 100."\n20 LET N = INT(RND(1)*100) + 1\n30 FOR T = 1 TO 7\n40 PRINT "YOUR GUESS";\n50 INPUT G\n60 IF G = N THEN 200\n70 IF G < N THEN 100\n80 PRINT "TOO HIGH."\n90 GOTO 110\n100 PRINT "TOO LOW."\n110 NEXT T\n120 PRINT "OUT OF GUESSES. IT WAS"; N\n130 END\n200 PRINT "RIGHT, IN"; T; "GUESSES!"\n210 END\n',
+  "Sieve of Eratosthenes": '10 DIM S(200)\n20 FOR I = 2 TO 200\n30 IF S(I) = 1 THEN 80\n40 PRINT I;\n50 FOR J = I+I TO 200 STEP I\n60 LET S(J) = 1\n70 NEXT J\n80 NEXT I\n90 PRINT\n99 END\n',
+  "Fibonacci": '10 LET A = 0\n20 LET B = 1\n30 FOR I = 1 TO 20\n40 PRINT A;\n50 LET C = A + B\n60 LET A = B\n70 LET B = C\n80 NEXT I\n90 PRINT\n99 END\n',
+  "Screen: colour bars": '5 PRINT "SIXTEEN COLOURS, POKED ONE CELL AT A TIME."\n10 REM THE SCREEN IS MEMORY: 40x25 CODES AT 1024,\n11 REM COLOUR AT 55296. POKE IS HOW A PROGRAM DRAWS.\n20 FOR Y = 0 TO 24\n30 FOR X = 0 TO 39\n40 LET P = X + 40*Y\n50 POKE 1024 + P, 160\n60 POKE 55296 + P, INT(X/2.5)\n70 NEXT X\n80 NEXT Y\n99 END\n',
+  "Screen: sine wave": '5 PRINT "A SINE, PLOTTED BY POKE."\n10 FOR X = 0 TO 39\n20 LET Y = INT(12 + 11*SIN(X/3.2))\n30 LET P = X + 40*Y\n40 POKE 1024 + P, 81\n50 POKE 55296 + P, 7\n60 NEXT X\n70 FOR X = 0 TO 39\n80 POKE 1024 + X + 480, 64\n90 POKE 55296 + X + 480, 11\n100 NEXT X\n199 END\n',
+  "Screen: Mandelbrot": '5 PRINT "MANDELBROT, SIXTEEN ITERATIONS DEEP."\n10 FOR R = 0 TO 24\n20 FOR C = 0 TO 39\n30 LET A = -2.2 + C*3.0/39\n40 LET B = -1.2 + R*2.4/24\n50 LET X = 0\n60 LET Y = 0\n70 LET N = 0\n80 IF X*X + Y*Y > 4 THEN 140\n90 IF N >= 15 THEN 140\n100 LET T = X*X - Y*Y + A\n110 LET Y = 2*X*Y + B\n120 LET X = T\n130 LET N = N + 1\n135 GOTO 80\n140 LET P = C + 40*R\n150 POKE 1024 + P, 160\n160 POKE 55296 + P, N\n170 NEXT C\n180 NEXT R\n199 END\n',
+  "Screen: Mandelbrot zoom (SLEEP)": '5 PRINT "TWENTY-FOUR FRAMES, ONE SLEEP EACH."\n10 REM SLEEP HANDS THE MACHINE BACK TO THE PAGE,\n11 REM WHICH PAINTS A FRAME AND RESUMES IT.\n20 LET Z = 1\n30 FOR F = 1 TO 24\n40 FOR R = 0 TO 24\n50 FOR C = 0 TO 39\n60 LET A = -0.743 + (C-19.5)*3.0/39/Z\n70 LET B = 0.131 + (R-12)*2.4/24/Z\n80 LET X = 0\n90 LET Y = 0\n100 LET N = 0\n110 IF X*X + Y*Y > 4 THEN 170\n120 IF N >= 14 THEN 170\n130 LET T = X*X - Y*Y + A\n140 LET Y = 2*X*Y + B\n150 LET X = T\n160 LET N = N + 1\n165 GOTO 110\n170 LET P = C + 40*R\n180 POKE 1024 + P, 160\n190 POKE 55296 + P, N + 1\n200 NEXT C\n210 NEXT R\n220 SLEEP 0.05\n230 LET Z = Z * 1.35\n240 NEXT F\n299 END\n',
+  "Pixels: plasma (PLOT)": '5 PRINT "A PLASMA, ONE PIXEL AT A TIME."\n10 REM 320x200, ONE BYTE A PIXEL FROM 131072.\n11 REM PLOT X,Y,C IS THAT POKE WITH THE SUM DONE.\n20 FOR Y = 0 TO 199 STEP 2\n30 FOR X = 0 TO 319 STEP 2\n40 LET C = 128 + 120*SIN(X/24)*COS(Y/17)\n50 PLOT X, Y, C\n60 PLOT X+1, Y, C\n70 PLOT X, Y+1, C\n80 PLOT X+1, Y+1, C\n90 NEXT X\n100 NEXT Y\n199 END\n',
+  "Counting forever": '1 REM IT NEVER ENDS ON PURPOSE. THE MACHINE HANDS\n2 REM ITSELF BACK EVERY 250,000 STEPS, THE PAGE\n3 REM PAINTS AND CARRIES ON UNTIL YOU PRESS STOP.\n10 I = 0\n20 PRINT I\n30 I = I + 1\n40 GOTO 20\n',
+  "Screen: the maze, forever": '1 REM THE CLASSIC: A RANDOM DIAGONAL POKED INTO A\n2 REM RANDOM CELL, AGAIN AND AGAIN, UNTIL STOP.\n20 POKE 1024 + INT(RND(1)*1000), 77 + INT(RND(1)*2)\n30 GOTO 20\n',
+  "Square roots by Newton": '10 PRINT "N", "SQR(N)", "NEWTON"\n20 FOR N = 1 TO 10\n30 LET X = N\n40 FOR K = 1 TO 12\n50 LET X = (X + N/X)/2\n60 NEXT K\n70 PRINT N, SQR(N), X\n80 NEXT N\n90 END\n',
+  "Eight queens": '10 REM EIGHT QUEENS: EVERY WAY TO PUT EIGHT QUEENS ON A\n11 REM CHESSBOARD SO THAT NO QUEEN ATTACKS ANOTHER.\n12 REM Q(R) IS THE COLUMN OF THE QUEEN IN ROW R; A ROW\n13 REM THAT RUNS OUT OF COLUMNS BACKS UP TO THE ROW ABOVE.\n20 DIM Q(8)\n30 LET S = 0\n40 LET R = 1\n50 LET Q(1) = 0\n60 LET Q(R) = Q(R) + 1\n70 IF Q(R) > 8 THEN 200\n80 FOR K = 1 TO R - 1\n90 IF Q(K) = Q(R) THEN 60\n100 IF ABS(Q(K) - Q(R)) = R - K THEN 60\n110 NEXT K\n120 IF R = 8 THEN 300\n130 LET R = R + 1\n140 LET Q(R) = 0\n150 GOTO 60\n200 LET R = R - 1\n210 IF R = 0 THEN 400\n220 GOTO 60\n300 LET S = S + 1\n310 IF S > 1 THEN 330\n320 GOSUB 500\n330 PRINT S; ":"; Q(1); Q(2); Q(3); Q(4); Q(5); Q(6); Q(7); Q(8)\n340 GOTO 60\n400 PRINT\n410 PRINT S; "SOLUTIONS"\n420 END\n500 PRINT "THE FIRST ONE:"\n510 FOR I = 1 TO 8\n520 FOR J = 1 TO 8\n530 IF Q(I) = J THEN 560\n540 PRINT ". ";\n550 GOTO 570\n560 PRINT "Q ";\n570 NEXT J\n580 PRINT\n590 NEXT I\n600 PRINT\n610 RETURN\n',
+};
+
+const $ = (id) => document.getElementById(id);
+const sel = $("sample");
+for (const name of Object.keys(SAMPLES).sort()) {
+  const o = document.createElement("option");
+  o.value = name; o.textContent = name; sel.appendChild(o);
+}
+// Choosing a sample runs it: the old run is dropped and the display shows
+// only what the new program draws.
+sel.onchange = () => { $("src").value = SAMPLES[sel.value]; go(); };
+
+// ---- the screen ---------------------------------------------------------
+//
+// A Commodore's screen IS memory: 1,000 screen codes from 1024 and 1,000
+// colour cells from 55296. Codes 0-63 are exact; the graphics half is an
+// approximation, since PETSCII has glyphs Unicode does not.
+const SC = "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[£]↑← !\"#$%&'()*+,-./0123456789:;<=>?";
+const GFX = "─♠│────││╮╰╯▘╲╱▖" +
+            "▝●▄♥▌╭╳○♣▎♦┼▒│π◥" +
+            " ▌▄▔▁▏▒▕▒◤▕├▗└┐▂" +
+            "┌┴┬┤▎▍▊▋▊▇▆▅▄│▒▒";
+// 0-15 are the Commodore's; the rest is a ramp, so a program that plots
+// an escape count gets a gradient without having to invent one.
+function palette() {
+  const p = PAL.map((h) => [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)]);
+  for (let i = 16; i < 256; i++) {
+    const t = (i - 16) / 239, a = t * Math.PI * 2;
+    p.push([Math.round(127 + 127*Math.sin(a)), Math.round(127 + 127*Math.sin(a + 2.094)), Math.round(127 + 127*Math.sin(a + 4.188))]);
+  }
+  return p;
+}
+let RGB = null;
+
+function paintPixels(cells) {
+  const lab = $("pixlab"), cv = $("pix");
+  if (cells.length === 0) { lab.hidden = true; cv.hidden = true; return; }
+  lab.hidden = false; cv.hidden = false;
+  if (!RGB) RGB = palette();
+  const ctx = cv.getContext("2d");
+  const img = ctx.createImageData(320, 200);
+  for (let i = 0; i < 64000; i++) {
+    const c = RGB[cells[i]];
+    img.data[i*4] = c[0]; img.data[i*4+1] = c[1]; img.data[i*4+2] = c[2]; img.data[i*4+3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+const PAL = ["#000000","#ffffff","#813338","#75cec8","#8e3c97","#56ac4d","#2e2c9b","#edf171",
+             "#8e5029","#553800","#c46c71","#4a4a4a","#7b7b7b","#a9ff9f","#706deb","#b2b2b2"];
+
+// The screen's look. Colour 14 is what a cell holds until a program POKEs
+// its colour, so it is the theme's text colour; every other code is the
+// Commodore's own.
+const THEMES = {
+  "Green on black": { bg: "#000000", fg: "#33ff66", edge: "#1d4d2a" },
+  "Black on white": { bg: "#ffffff", fg: "#111111", edge: "#b8b4ac" },
+  "Commodore blue": { bg: "#3e31a2", fg: "#7c70da", edge: "#7c70da" },
+};
+let THEME = THEMES["Green on black"];
+
+function applyTheme(name) {
+  THEME = THEMES[name] || THEMES["Green on black"];
+  const s = document.documentElement.style;
+  s.setProperty("--scr-bg", THEME.bg);
+  s.setProperty("--scr-fg", THEME.fg);
+  s.setProperty("--scr-edge", THEME.edge);
+  try { localStorage.setItem("basic-theme", name); } catch (e) {}
+  if (x) render();
+}
+
+function glyph(c) {
+  const rev = c >= 128;
+  const k = rev ? c - 128 : c;
+  return { ch: k < 64 ? SC[k] : GFX[k - 64] || "·", rev: rev };
+}
+
+function paint(cells) {
+  const lab = document.getElementById("screenlab"), box = $("screen");
+  lab.hidden = false; box.hidden = false;
+  box.textContent = "";
+  for (let y = 0; y < 25; y++) {
+    const row = document.createElement("div");
+    for (let x = 0; x < 40; x++) {
+      const i = y * 40 + x;
+      const g = glyph(cells[i]);
+      const code = cells[1000 + i] & 15;
+      const fg = code === 14 ? THEME.fg : PAL[code];
+      const sp = document.createElement("span");
+      sp.textContent = g.ch;
+      if (g.rev) { sp.style.background = fg; sp.style.color = THEME.bg; } else { sp.style.color = fg; }
+      row.appendChild(sp);
+    }
+    box.appendChild(row);
+  }
+}
+
+// `run` numbers the runs: a pump that finds a newer number has been
+// replaced, and stops without touching the page.
+let x = null, running = false, stopped = false, run = 0, note = "";
+const enc = new TextEncoder(), dec = new TextDecoder();
+const STATUS = { 0: "finished \u2713", 1: "waiting for a line", 2: "stopped on an exception",
+                 3: "stopped: a form the interpreter has not built", 4: "sleeping",
+                 5: "running", 6: "rejected before it ran" };
+
+async function boot() {
+  $("status").textContent = "loading\u2026";
+  const { instance } = await WebAssembly.instantiateStreaming(fetch("basic.wasm"), {});
+  x = instance.exports;
+  $("status").textContent = "";
+  const th = $("theme");
+  for (const name of Object.keys(THEMES)) {
+    const o = document.createElement("option");
+    o.value = name; o.textContent = name; th.appendChild(o);
+  }
+  let saved = null;
+  try { saved = localStorage.getItem("basic-theme"); } catch (e) {}
+  th.value = THEMES[saved] ? saved : "Green on black";
+  th.onchange = () => applyTheme(th.value);
+  applyTheme(th.value);
+  sel.value = "Hello";
+  sel.onchange();
+}
+
+const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function render() {
+  const n = x.view();
+  const sb = x.screenBytes();
+  const all = new Uint8Array(x.memory.buffer, x.outPtr(), n);
+  // A flag byte, 1 when the program drew pixels; the screen codes and
+  // colour; the framebuffer when there is one; then the transcript.
+  const hires = all[0] === 1 ? 64000 : 0;
+  // ONE DISPLAY AT A TIME: a program that drew pixels shows the
+  // framebuffer, and every other program the text screen.
+  if (hires) {
+    $("screenlab").hidden = true;
+    $("screen").hidden = true;
+  } else {
+    paint(all.subarray(1, 1 + sb));
+  }
+  paintPixels(all.subarray(1 + sb, 1 + sb + hires));
+  // The screen shows what PRINT drew. What is left of the transcript's
+  // use is its last line, where a stopped machine says why.
+  const text = dec.decode(all.subarray(1 + sb + hires)).trimEnd();
+  const last = text.slice(text.lastIndexOf("\n") + 1);
+  note = last.startsWith("*** ") ? last.slice(4) : "";
+}
+
+// **RUN UNTIL THE MACHINE WANTS SOMETHING.** A suspended machine comes
+// back for one of three reasons: it printed an INPUT prompt, it asked to
+// sleep, or it spent a tank of fuel. The first waits for the reader; the
+// other two paint a frame and carry on -- a sleep after its delay, a
+// yield at once -- which is what makes an animation an animation and a
+// program that never ends a program that keeps going until Stop.
+async function pump(id) {
+  running = true;
+  while (!stopped && id === run) {
+    const st = x.runStatus();
+    render();
+    if (st === 5 || st === 4) {
+      // A spent tank, a SLEEP, or the millisecond every PRINT ends in:
+      // still running.
+      $("status").textContent = "running";
+      $("status").classList.remove("done");
+      await delay(st === 4 ? Math.min(x.pauseMs(), 2000) : 0);
+      if (stopped || id !== run) break;
+      x.wake();
+      continue;
+    }
+    const why = (st === 2 || st === 3 || st === 6) && note ? "  \u2014  " + note : "";
+    const bar = $("status");
+    bar.textContent = STATUS[st] + why;
+    // A little ceremony for a program that ran to its end.
+    bar.classList.remove("done");
+    if (st === 0) { void bar.offsetWidth; bar.classList.add("done"); }
+    $("line").disabled = st !== 1;
+    $("line").placeholder = st === 1 ? "type a line and press Enter" : "the program is not asking for anything";
+    if (st === 1) $("line").focus();
+    running = false;
+    return;
+  }
+  if (id !== run) return;
+  running = false;
+  $("status").textContent = "stopped";
+}
+
+function feed(text) {
+  const b = enc.encode(text);
+  if (b.length > x.capacity(1)) return;
+  new Uint8Array(x.memory.buffer).set(b, x.keysPtr());
+  x.send(b.length);
+}
+
+function go() {
+  if (!x) return;
+  const src = enc.encode($("src").value);
+  if (src.length > x.capacity(0)) { $("status").textContent = "listing too long for this module"; return; }
+  run += 1;
+  stopped = false;
+  new Uint8Array(x.memory.buffer).set(src, x.srcPtr());
+  x.newRun(src.length, (Date.now() & 0x7fffffff) || 1);
+  pump(run);
+}
+
+$("stop").onclick = () => { stopped = true; };
+$("line").addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" || !x || running) return;
+  feed($("line").value);
+  $("line").value = "";
+  pump(run);
+});
+
+$("run").onclick = go;
+$("src").addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); go(); }
+});
+boot();
+</script>
