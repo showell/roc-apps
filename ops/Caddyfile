@@ -1,0 +1,30 @@
+# Cobblestone Roc Projects on this box: one Caddy, a path per app, a port per
+# channel. Run by the roc-site user service (ops/roc-site.service).
+#
+#   :9210  dev      ~/build/roc-apps/next/, what the build scripts last wrote
+#   :9200  staging  roc-apps/site/live/, what site/publish.sh last moved there
+#
+# Every response is no-store, because a cached module looks exactly like a
+# build that changed nothing, and asks for cross-origin isolation, because the
+# framebuffer page shares memory with its Web Worker through a
+# SharedArrayBuffer, which a browser gives only an isolated page.
+{
+	persist_config off
+}
+
+(roc) {
+	header Cache-Control "no-store, must-revalidate"
+	header Cross-Origin-Opener-Policy same-origin
+	header Cross-Origin-Embedder-Policy require-corp
+	file_server
+}
+
+:9200 {
+	root * {$HOME}/showell_repos/roc-apps/site/live
+	import roc
+}
+
+:9210 {
+	root * {$HOME}/build/roc-apps/next
+	import roc
+}

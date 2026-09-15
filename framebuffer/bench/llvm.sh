@@ -6,7 +6,7 @@
 #   - each wasm's size;
 #   - its frames in Node for both builds (frames.mjs, at verify.tsv's count),
 #     the median frame time, and whether the last frame's hash is verify.tsv's.
-# Nothing here writes the preview: the wasm goes to ~/build/roc-apps/gen/llvm/.
+# Nothing here writes the dev channel: the wasm goes to ~/build/roc-apps/gen/llvm/.
 #
 #   framebuffer/bench/llvm.sh [program...]     default: every built program, smallest first
 #

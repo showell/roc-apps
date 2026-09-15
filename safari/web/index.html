@@ -7,8 +7,10 @@
 <body>
 <!-- A copy of safari-codex's fork of the game's blitter.js: the same
      JavaScript that draws the Codex module draws the Roc one. It builds the
-     canvas, fetches /driving/safari.wasm, and paints the commands the module
-     wrote into linear memory. Only the module differs. -->
-<script src="/blitter.js"></script>
+     canvas, fetches safari.wasm, and paints the commands the module
+     wrote into linear memory. Only the module differs. Every URL is relative,
+     so the page works under any path. -->
+<script src="blitter.js"></script>
+<script src="../shared/home.js"></script>
 </body>
 </html>

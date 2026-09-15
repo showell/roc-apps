@@ -2,7 +2,7 @@
 # Codex programs, emitted by rocemit, built for the framebuffer platform: the
 # wasm host (zig, against the roc checkout), then each program's modules with
 # this platform's Mem (roc/Mem.roc) in place of the one rocemit writes, wired
-# to the platform and built for wasm into the preview root.
+# to the platform and built for wasm into the dev channel.
 #
 #   framebuffer/build.sh <program.codex>...
 #
@@ -10,7 +10,7 @@
 # so a .vmargs beside the original (which asks rocemit for the machine) stays
 # behind; the screen size in it still reaches the page. The wasm, the modules
 # the page shows and the page land in ~/build/roc-apps/next/framebuffer/,
-# served on :9203.
+# served on :9210.
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROC="${ROC:-$HOME/build/roc-nightly/roc}"
@@ -70,7 +70,7 @@ for src in "$@"; do
     row="$(awk -v n="$n" '$1 == n' "$HERE/programs.tsv")"
     rm -f "$NEXT/$n.screen" "$NEXT/$n.frame"
     [ -n "$row" ] && awk '{ print $2 }' <<< "$row" > "$NEXT/$n.frame"
-    # The files its asset loads read, from its checkout, under the preview's
+    # The files its asset loads read, from its checkout, under the dev channel's
     # assets/ at the same paths.
     checkout="$(awk '$1 == "checkout" { print $2 }' "$d/codex/quires.tsv")"
     checkout="${checkout/#\~/$HOME}"
@@ -118,4 +118,4 @@ def program(n):
     return {"name": n, "roc": open(n + ".files").read().split(), "screen": screen, "frame": frame}
 print(json.dumps([program(w[:-5]) for w in sorted(glob.glob("*.wasm"))]))
 ' > programs.json)
-echo "page: http://143.244.172.148:9203/framebuffer/"
+echo "dev: http://143.244.172.148:9210/framebuffer/"

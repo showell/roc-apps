@@ -1,8 +1,8 @@
 [Unit]
-Description=safari, the Roc module, in the browser (port 9201)
+Description=safari, the last module published to the demo, frozen in ~/build/roc-apps/safari-demo until 9201 redirects to staging (port 9201)
 
 [Service]
-ExecStart=/usr/bin/python3 %h/showell_repos/roc-apps/safari/web/serve.py 9201
+ExecStart=/usr/bin/python3 %h/build/roc-apps/safari-demo/serve.py 9201
 Restart=always
 RestartSec=3
 

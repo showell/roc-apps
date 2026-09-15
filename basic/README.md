@@ -33,7 +33,7 @@ control ladder (below) is how each one was found.
     basic/roc/BasicApp.roc  the machine behind one box, for the page
     basic/wasm/             the page's platform and host
     basic/web/basic.html    the page
-    basic/build.sh          the page and its module, into the preview
+    basic/build.sh          the page and its module, into the dev channel
     basic/build-run.sh      basic-run and basic-check, built once (the dev backend)
     basic/corpus.sh         the corpus as the scripts read it: a program's listing and replies
     basic/run.sh            corpus programs through basic-run, one process each, timed

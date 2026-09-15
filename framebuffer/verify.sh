@@ -1,7 +1,7 @@
 #!/bin/bash
 # Screen mode 2: the framebuffer platform's native host checks every program in
 # verify.tsv. Each is built by build.sh, which also refreshes the page's
-# preview, then natively in the same directory, and run with the screen
+# dev channel, then natively in the same directory, and run with the screen
 # build.sh found for it (320 x 240 when none) for its runs or GPU flushes. The
 # last frame's hash must be the table's, and a Cobblestone test's console must
 # match its verdict as tests/ladder.sh cleaned it.

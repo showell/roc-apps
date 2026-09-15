@@ -70,7 +70,7 @@ function frameFlushed() {
   started = performance.now();
 }
 
-// A program's asset load reads the file under the preview's assets/, where the
+// A program's asset load reads the file under the dev channel's assets/, where the
 // page's runner fetches it.
 let asset = null;
 function assetSize(ptr, len) {

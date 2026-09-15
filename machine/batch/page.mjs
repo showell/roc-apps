@@ -1,5 +1,5 @@
 // Run the batch page's own script from Node, with no browser: a document just
-// big enough for it, fetch answered from the preview root, and every built
+// big enough for it, fetch answered from the dev channel, and every built
 // unit run through the page's Run. Prints what each pane would show.
 //
 //   node machine/batch/page.mjs

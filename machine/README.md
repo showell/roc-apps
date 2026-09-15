@@ -18,7 +18,7 @@ Two programs drive it:
 - **The batch page.** An emitted unit built for wasm on `batch/`'s platform
   runs to its end in the browser: the page loads its disk images into the
   host's buffers, runs it, and reads back the console and the drives.
-  `machine/batch/build.sh fat16-write.codex` builds it into the preview root,
+  `machine/batch/build.sh fat16-write.codex` builds it into the dev channel,
   and `node machine/batch/smoke.mjs fat16-write` runs it against its verdict;
   `node machine/batch/page.mjs` runs the page's own script over every built
   unit and prints its panes.
@@ -55,7 +55,7 @@ Two programs drive it:
 | `native/run.sh` | a Codex unit emitted by rocemit, wired to the native platform and run with codex-vm's flags |
 | `native/probe.roc` | the platform alone: open a file, read a sector, read the empty slave |
 | `web/machine.html` | the page: console, PCI table, the memory a block read landed on |
-| `build.sh` | host, app, page and disk image into the preview, `http://<box>:9203/machine/machine.html` |
+| `build.sh` | host, app, page and disk image into the dev channel, `http://<box>:9210/machine/machine.html` |
 | `wasm/smoke.mjs` | the same doors from Node, no browser |
 
     machine/build.sh

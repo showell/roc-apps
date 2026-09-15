@@ -216,7 +216,7 @@ function drawSafariBackdrop(ctx, scene) {
 // literal like this one -- a different wasm, a `drawCityBackdrop` that paints a dark
 // sky and no sun, its own copy, its own route length -- and nothing else changes.
 const SAFARI = {
-  wasm: '/driving/safari.wasm',
+  wasm: 'safari.wasm',
   segments: 19,                     // the guest owns the route; it does not export its length
   hint: 'SPACE pause/resume · ↑/↓ step · J next intersection · D debug overlay',
   loading: 'Prepare for your journey! Watch out for animals crossing the road.',

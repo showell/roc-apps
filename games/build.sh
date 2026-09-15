@@ -1,11 +1,11 @@
 #!/bin/bash
-# Build the games into the PREVIEW root: per game its host (zig, against
+# Build the games into the DEV channel: per game its host (zig, against
 # the roc checkout) and its app on the nightly compiler, then the pages.
 #
 #   games/build.sh              every game in games/gen.py's table
 #   games/build.sh 2048         named games
 #
-# Lands at ~/build/roc-apps/next/games/, served on :9203 by safari-web-next.
+# Lands at ~/build/roc-apps/next/games/, served on :9210 by roc-site.
 # The platforms and hosts are written by games/gen.py, which runs first.
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -22,4 +22,4 @@ for g in "${games[@]}"; do
     cp "$HERE/web/$g.html" "$NEXT/"
     ls -la "$NEXT/$g.wasm"
 done
-echo "preview: http://143.244.172.148:9203/games/<game>.html"
+echo "dev: http://143.244.172.148:9210/games/<game>.html"

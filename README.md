@@ -14,10 +14,10 @@ Roc on the fifth tree on the right of every segment.
 | `safari/roc/SafariApp.roc` | the screensaver: the ride as a boxed model, the frame packed into the blitter's words | hand |
 | `safari/roc/RocBird.roc` | the bird | hand |
 | `safari/roc/FrameBench.roc` | a native loop over the frame, for `perf` | hand |
-| `safari/wasm/` | the platform: `platform/main.roc` provides the page's sixteen exports over `Box(Model)`; `platform/host.zig` is the host; `build.zig` builds it against the roc checkout; `build.sh` builds host and app into the PREVIEW root; `drive_smoke.mjs` drives the built module from Node as the page does (first frame, readouts, ms per step, `back`); `run_wasm.mjs` runs any Roc module's `wasm_main` with logged `env` imports | hand |
-| `safari/web/` | the demo page: a copy of safari-codex's `blitter.js`, `index.html`, `serve.py`, and `driving/safari.wasm` with its `PROVENANCE`, which only `safari/publish.sh` writes | hand; the module by publish |
-| `safari/publish.sh` | THE MANUAL STEP: the previewed module into the demo, with provenance, committed and pushed | hand |
-| `ops/` | four systemd --user services: `safari-web` :9201 over `safari/web/` (the safari demo), `safari-web-next` :9203 over `~/build/roc-apps/next/` (the preview of every app), `gallery-web` :9204 over `gpu/live/` (the gallery demo), `games-web` :9205 over `games/live/` (the games demo); `install.sh` | hand |
+| `safari/wasm/` | the platform: `platform/main.roc` provides the page's sixteen exports over `Box(Model)`; `platform/host.zig` is the host; `build.zig` builds it against the roc checkout; `drive_smoke.mjs` drives the built module from Node as the page does (first frame, readouts, ms per step, `back`); `run_wasm.mjs` runs any Roc module's `wasm_main` with logged `env` imports | hand |
+| `safari/web/` | the page: a copy of safari-codex's `blitter.js`, and its `index.html`; `serve.py`, which the four Python services run until their ports become redirects | hand |
+| `safari/build.sh` | host + app + page into the dev channel, `http://<box>:9210/safari/` | hand |
+| `ops/` | `Caddyfile` and `roc-site.service`: one Caddy serving the site (below); the four Python services still answering :9201 (the last published Safari, frozen in `~/build/roc-apps/safari-demo/`), :9203 (`~/build/roc-apps/next/`), :9204 (`gpu/live/`) and :9205 (`games/live/`) until they become redirects; `install.sh` | hand |
 | `safari/emitted.sh` | THE GATE: every unit emitted, chapter identity checked, roc run two at a time, output against the verdict; a compile error is a FAIL | hand |
 | `safari/retest.sh` | the targeted sweep: emit all, diff against the tracked Roc, run only what changed | hand |
 | `wasm/*.mjs` | Node drivers: run a module, drive the screensaver headless with timings | hand |
@@ -25,6 +25,31 @@ Roc on the fifth tree on the right of every segment.
 
 The units come from `~/showell_repos/safari-codex/units/` (`<Spec>.codex`
 resolved, `<Spec>.expected` the verdict the Rust interpreter froze).
+
+## The site: Cobblestone Roc Projects
+
+Every app is a static page. One Caddy (`ops/Caddyfile`) serves them all, an
+app at a path of its own and a channel on a port of its own, so a page moves
+from one channel to the next unchanged. The design is
+`:9100/notes/roc-web-umbrella.md`.
+
+| channel | where | serves | written by |
+|---|---|---|---|
+| dev | `http://<box>:9210/` | `~/build/roc-apps/next/` | each app's `build.sh`; `site/build.sh` for the root |
+| staging | `http://<box>:9200/` | `site/live/`, tracked | `site/publish.sh`, after an eye test on dev |
+
+| where | what | written by |
+|---|---|---|
+| `site/web/index.html` | the landing page: Finished, In progress, and the date each app on the channel was published | hand |
+| `site/web/shared/home.js` | the link home and the channel's banner; every page loads it with one relative line | hand |
+| `site/build.sh` | the landing page, `shared/` and the `channel` file into dev | hand |
+| `site/publish.sh` | THE SIGN-OFF: one app's dev directory over `site/live/<app>/` whole, with a `PROVENANCE`, committed and pushed; `site/publish.sh home` for the root | hand |
+| `site/live/` | what staging serves | `site/publish.sh` |
+
+    site/build.sh                  # the root into dev, http://<box>:9210/
+    site/publish.sh safari         # when dev looks right: staging, http://<box>:9200/safari/
+
+Every page's URLs are relative, so the site works under any prefix.
 
 ## gpu: Cobblestone's WGSL kernels, on the CPU
 
@@ -44,14 +69,13 @@ became one gallery module. The essay is `:9100/notes/plasma-in-roc.md`.
 | `gpu/roc/{Plasma,CpuParticles}Bench.roc` | two native benches that print a checksum a Python evaluation of the Codex source matches | hand |
 | `gpu/wasm/` | the platform: `step(demo, frame)`, `view()` and `bufPtr` over one boxed model, as safari's; host, build.zig as safari's; `smoke.mjs` renders every demo from Node with its checksum and ms per frame, or the named ones | hand |
 | `gpu/web/gallery.html` | the page: a demo selector (`?k=plasma`); pixels as an ImageData, particles as additive quads the way each page's vertex shader drew them; no WebGPU, so no secure context | hand |
-| `gpu/build.sh` | host + app + page into the preview, `http://<box>:9203/gpu/gallery.html` | hand |
-| `gpu/publish.sh`, `gpu/live/` | THE MANUAL STEP for the gallery: the previewed page, manifest and module into `gpu/live/` with a `PROVENANCE`, committed and pushed; `gallery-web` (:9204) serves only that | hand; the files by publish |
+| `gpu/build.sh` | host + app + page into the dev channel, `http://<box>:9210/gpu/gallery.html` | hand |
 | `gpu/emitted.sh` | THE GATE: every kernel under `$KERNELS_ROOT/apps/*/kernels` (default `~/showell_repos/cobblestone-u61`) emitted, chapter identity checked, `roc check`ed; on green, written to `gpu/roc/` | hand |
 
     gpu/emitted.sh                 # 46 kernels, ~4 s
     gpu/gallery.py                 # after a page or kernel changes: the app and the manifest
-    gpu/build.sh                   # ~10 s; the preview at :9203/gpu/
-    gpu/publish.sh                 # when the preview looks right: the demo, http://<box>:9204/gallery.html
+    gpu/build.sh                   # ~10 s; dev at :9210/gpu/
+    site/publish.sh gpu            # when dev looks right: staging, http://<box>:9200/gpu/gallery.html
     node gpu/wasm/smoke.mjs ~/build/roc-apps/next/gpu/gallery.wasm 2   # 39 of 39 render; plasma's frame 0 is 6293600626746
     node gpu/wasm/smoke.mjs ~/build/roc-apps/next/gpu/gallery.wasm 30 cpuparticles swarm   # the named demos; the fountain's frame 0 is 91143764817938
 
@@ -72,16 +96,16 @@ export contract, which the same host serves over a handle table.
 | `games/gen.py` -> `games/wasm/<game>/` | per game the platform and host from Damian's export table, an export's kind (query, transition, make, pure) read off the emitted shell's signature: the page's door (`newGame`, `step`, `view`, `bufPtr`) over one model, the grader's door (`g2_new`, `ms_open`, `kd_run`, ...) over a table of boxed models, a refused transition answering the same handle by the app's structural `same`; `__heap_reset` | generated; `host_head.zig`/`host_body.zig` are the fixed parts |
 | `games/web/<game>.html` | the pages: the key table or the click, the message, the board | hand |
 | `games/emitted.sh` | THE GATE: the shell chapters emitted from `$GAMES_ROOT` (cites resolved from the same tree), chapter identity, `roc check`; on green written to `games/roc/` | hand |
-| `games/build.sh`, `games/verify.sh` | hosts + apps + pages into the preview, `http://<box>:9203/games/<game>.html`; then Damian's `<xx>-verify.mjs` against each module | hand |
-| `games/publish.sh`, `games/live/` | THE MANUAL STEP for the games: the previewed pages and modules into `games/live/` with a `PROVENANCE`, committed and pushed; `games-web` (:9205) serves only that | hand; the files by publish |
+| `games/build.sh`, `games/verify.sh` | hosts + apps + pages into the dev channel, `http://<box>:9210/games/<game>.html`; then Damian's `<xx>-verify.mjs` against each module | hand |
 
     games/emitted.sh
     games/build.sh                 # runs gen.py first
     games/verify.sh                # PASS 20 arms for 2048, 20 for Minesweeper, 42 for Klondike
-    games/publish.sh               # when the preview looks right: the demo, http://<box>:9205/2048.html
+    site/publish.sh games          # when dev looks right: staging, http://<box>:9200/games/2048.html
 
 Adding a game: its row in `gen.py` (from `apps/games/build-wasm.ps1`), its
-shell in `emitted.sh`, an app, a page, and its grader in `verify.sh`.
+shell in `emitted.sh`, an app, a page, its grader in `verify.sh`, and a link
+on the landing page.
 
 ## machine: simulated devices in one Roc value
 
@@ -92,7 +116,7 @@ configuration space, a drive, a keyboard queue, a console), each behind a door
 that takes the machine and hands it back. Step 1 is a hand-written program on
 it, watched by a page. `machine/README.md` is the map.
 
-    machine/build.sh               # host + app + page + disk image into the preview, :9203/machine/machine.html
+    machine/build.sh               # host + app + page + disk image into dev, :9210/machine/machine.html
     node machine/wasm/smoke.mjs ~/build/roc-apps/next/machine
 
 ## framebuffer: Codex drawing on a screen, with no machine under it
@@ -102,7 +126,7 @@ kept by the platform's host and the screen a part of them where UEFI's GOP
 protocol puts it. The page runs the program once a frame. `framebuffer/README.md`
 is the map.
 
-    framebuffer/build.sh framebuffer/demos/scene-spin.codex   # the preview, :9203/framebuffer/
+    framebuffer/build.sh framebuffer/demos/scene-spin.codex   # dev, :9210/framebuffer/
     node framebuffer/frames.mjs scene-spin 5
 
 ## Why any of this exists
@@ -145,21 +169,21 @@ names the rest. Nothing we ship does this.
 `safari/roc/` is generated and committed, because those files are the point.
 A full `emitted.sh` rewrites every emitted file and leaves the hand-written
 ones; a diff there is a change in what the emitter says, reviewed like any
-other. The published module `safari/web/driving/safari.wasm` is committed
-too, with its provenance, so a clone has the demo. Roc's own output, the
-previewed module and the caches live under `~/build/roc-apps/`.
+other. What staging serves, `site/live/`, is committed too, each app with its
+provenance, so a clone has the published site. Roc's own output, the dev
+channel and the caches live under `~/build/roc-apps/`.
 
 ## The loop
 
     safari/emitted.sh              # 54 units, ~10-27 s; the gate before a commit of safari/roc
     safari/retest.sh               # after a rocemit change: only what changed
-    safari/wasm/build.sh           # host + app -> the preview, http://<box>:9203/, ~15 s
-    wasm/drive_smoke.mjs ~/build/roc-apps/next/driving/safari.wasm 120   # frame bytes, stages, ms per frame
-    safari/publish.sh              # when the preview looks right: the demo, http://<box>:9201/
+    safari/build.sh                # host + app + page -> dev, http://<box>:9210/safari/, ~15 s
+    wasm/drive_smoke.mjs ~/build/roc-apps/next/safari/safari.wasm 120   # frame bytes, stages, ms per frame
+    site/publish.sh safari         # when dev looks right: staging, http://<box>:9200/safari/
 
-The demo never changes under you: a build goes to the preview, and only a
-publish, a deliberate copy with a provenance file and a commit, moves it to
-the demo. Both pages send no-store, so each is live the moment its file is.
+Staging never changes under you: a build goes to dev, and only a publish, a
+deliberate copy with a provenance file and a commit, moves it to staging.
+Both channels send no-store, so each is live the moment its file is.
 
 `ROCEMIT=~/build/rust-target/debug/rocemit` points the sweeps at a debug
 build of the emitter; the default is the release one.

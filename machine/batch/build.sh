@@ -2,13 +2,13 @@
 # Codex units, emitted by rocemit, built for the machine's batch page: the
 # wasm host (zig, against the roc checkout), then each unit's emitted modules
 # beside the machine's, wired to this platform and built for wasm into the
-# preview root with the unit's disk images and cleaned verdict.
+# dev channel with the unit's disk images and cleaned verdict.
 #
 #   machine/batch/build.sh <unit.codex>...
 #
 # The modules land in ~/build/roc-apps/gen/batch/<unit>/ with the native
 # platform's MachineDisk, which asks the platform's Drive for its sectors.
-# The wasm lands in ~/build/roc-apps/next/machine/batch/, served on :9203.
+# The wasm lands in ~/build/roc-apps/next/machine/batch/, served on :9210.
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROC="${ROC:-$HOME/build/roc-nightly/roc}"
@@ -68,4 +68,4 @@ def unit(n):
     }
 print(json.dumps([unit(w[:-5]) for w in sorted(glob.glob("*.wasm"))]))
 ' > units.json)
-echo "page: http://143.244.172.148:9203/machine/batch/"
+echo "dev: http://143.244.172.148:9210/machine/batch/"

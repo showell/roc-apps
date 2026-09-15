@@ -29,7 +29,7 @@ emitted Roc, and this platform answers it in the host.
 - **Files** a program reads through codex-vm's asset loader (0x40C, 0x40D,
   0x417) come, natively, from the working directory, as codex-vm finds them
   (`verify.sh` runs each program from the checkout), and in the browser and
-  `frames.mjs` from the preview's `assets/`, where `build.sh` copies the files
+  `frames.mjs` from the dev channel's `assets/`, where `build.sh` copies the files
   `programs.tsv` names.
 - **The keyboard controller** is codex-vm's, at ports 0x60 and 0x64: a queue of
   scancodes the host fills (`key`), empty until the page types. Any other port
@@ -39,8 +39,8 @@ emitted Roc, and this platform answers it in the host.
 - **Keys and the mouse** reach a running program through memory the page shares
   with its runner (a SharedArrayBuffer, so the page must be cross-origin
   isolated, which `safari/web/serve.py` asks for, and a secure context: from
-  another machine, open it through a tunnel, `ssh -N -L 9203:localhost:9203`,
-  as `http://localhost:9203/framebuffer/`). A key's set-1 make code lands
+  another machine, open it through a tunnel, `ssh -N -L 9210:localhost:9210`,
+  as `http://localhost:9210/framebuffer/`). A key's set-1 make code lands
   in the key cell at 28680, where codex-vm's keyboard interrupt leaves it, and
   in the keyboard controller's queue; the mouse's position and buttons land in
   codex-vm's mouse ports. The runner hands them to the host before each run and
@@ -66,7 +66,7 @@ hold: safe here because the host stops at any address it does not back.
 | `platform/native.zig` | the checker's host (x86-64 Linux): runs the program for its runs (`-frames`) or GPU flushes (`-flushes`) and prints the last console and every frame's time and hash; `-key` and `-mouse` hand it input before the first run, as the page's runner does, and `-ppm` writes the last frame |
 | `platform/gpu.zig` | codex-vm's GPU over the program's memory |
 | `roc/Mem.roc`, `roc/Machine.roc` | the platform's side of the two states: the bump pointer as a value, every other door through the host |
-| `build.sh` | host, then each program emitted from a copy (so a `.vmargs` beside it stays behind), wired to the platform and built for wasm into the preview |
+| `build.sh` | host, then each program emitted from a copy (so a `.vmargs` beside it stays behind), wired to the platform and built for wasm into the dev channel |
 | `programs.tsv` | what a frame is for a program, the screen it expects when its sources name none, and the files its asset loads read |
 | `frames.mjs` | a program's frames from Node, runs or (`flushes:N`) GPU flushes: each frame's time, pixels drawn and a hash of the image, and the last frame as a PNG |
 | `verify.sh`, `verify.tsv` | screen mode 2: every program in the table built natively and run for its runs or flushes; the last frame's hash must be the table's, and a test's console its verdict |
@@ -78,7 +78,7 @@ hold: safe here because the host stops at any address it does not back.
     framebuffer/build.sh ~/showell_repos/cobblestone-u61/codex/test/gpu-panel-border.codex
     node framebuffer/frames.mjs scene-spin 5
     framebuffer/verify.sh        # mode 2: the table's programs, natively, against their hashes
-    # the preview: http://143.244.172.148:9203/framebuffer/
+    # the dev channel: http://143.244.172.148:9210/framebuffer/
 
 **Cobblestone here is the candidate, not the released Update.** The checkout
 the demos cite, `build.sh` builds Cobblestone's programs from and `verify.sh`

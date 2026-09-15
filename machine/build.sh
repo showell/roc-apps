@@ -1,10 +1,10 @@
 #!/bin/bash
-# Build the machine into the PREVIEW root: the wasm host (zig, against the roc
+# Build the machine into the DEV channel: the wasm host (zig, against the roc
 # checkout), the app on the nightly compiler, the page, and a disk image.
 #
 #   machine/build.sh
 #
-# Lands at ~/build/roc-apps/next/machine/, served on :9203 by safari-web-next.
+# Lands at ~/build/roc-apps/next/machine/, served on :9210 by roc-site.
 # The image is upstream's block-select-drives.disk (128 sectors), copied from
 # the checkout; it is never committed here.
 set -eu
@@ -27,4 +27,4 @@ fi
 cp "$HERE/web/machine.html" "$NEXT/"
 cp "$CHECKOUT/codex/test/block-select-drives.disk" "$NEXT/drive0.img"
 ls -la "$NEXT"
-echo "preview: http://143.244.172.148:9203/machine/machine.html"
+echo "dev: http://143.244.172.148:9210/machine/machine.html"
