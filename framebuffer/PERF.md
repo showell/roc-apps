@@ -220,3 +220,45 @@ dev build's.
 
 The dev backend's frame is sixteen times LLVM's for the closest-hit walk and
 ten times for the whole render.
+
+## 2026-09-15: every program with LLVM
+
+`bench/llvm.sh` builds each program's emitted modules for wasm32 with the dev
+backend and with LLVM, under GNU time, then times the frames of both in Node at
+`verify.tsv`'s count. These are warm builds: Roc's cache holds the modules from
+the day's dev builds (21 of 22 cached for the smallest program), so each LLVM
+time is the program's LLVM step. Nightly `2026-09-11-793f9d8`.
+
+| program | dev build | LLVM build | LLVM peak | wasm, dev -> LLVM | frame, dev -> LLVM |
+|---|---|---|---|---|---|
+| gop-padded-stride | 0.1 s | 0.4 s | 129 MB | 43,722 -> 12,870 | 27 -> 6 ms (1 frame) |
+| sketch-on-screen | 0.1 s | 0.6 s | 108 MB | 101,185 -> 54,487 | 11 -> 3 ms |
+| qr-on-screen | 0.2 s | 1.0 s | 122 MB | 141,360 -> 27,439 | 37 -> 5 ms (1 frame) |
+| raytrace-on-screen | 0.2 s | 0.8 s | 125 MB | 151,336 -> 21,207 | 61 -> 7 ms |
+| EngineDemo | 0.4 s | 2.2 s | 173 MB | 317,200 -> 90,668 | 12 -> 11 ms |
+| glyphs-on-screen | 0.3 s | 2.4 s | 148 MB | 333,626 -> 72,081 | 54 -> 7 ms (1 frame) |
+| Fireworks | 0.5 s | 1.3 s | 133 MB | 424,283 -> 70,655 | 94 -> 89 ms |
+| GlobeDemo | 0.5 s | 2.2 s | 159 MB | 425,238 -> 80,196 | 27 -> 24 ms |
+| scene-spin | 0.5 s | 5.5 s | 223 MB | 666,684 -> 118,333 | 98 -> 38 ms |
+| meshes-spin | 0.7 s | 5.6 s | 224 MB | 687,419 -> 131,874 | 85 -> 21 ms |
+| scene-on-screen | 0.5 s | 7.4 s | 331 MB | 688,441 -> 187,688 | 205 -> 62 ms (1 frame) |
+| shadow-spin | 0.8 s | 10.7 s | 276 MB | 937,989 -> 248,410 | 260 -> 33 ms |
+| gpu-gauge-clamp | 1.1 s | 16.2 s | 243 MB | 1,120,797 -> 231,424 | 795 -> 76 ms (1 frame) |
+| gpu-input-cursor | 1.1 s | 18.6 s | 244 MB | 1,123,199 -> 231,787 | 869 -> 50 ms (1 frame) |
+| gpu-panel-border | 1.0 s | 17.0 s | 271 MB | 1,140,124 -> 208,576 | 769 -> 55 ms (1 frame) |
+| gpu-depth-tree | 1.0 s | 15.5 s | 242 MB | 1,142,235 -> 222,501 | 783 -> 58 ms (1 frame) |
+| widgets-on-screen | 1.7 s | 7.7 s | 355 MB | 1,345,876 -> 153,102 | 52 -> 11 ms |
+| GuiOpening | 1.7 s | 7.1 s | 382 MB | 16,939,391 -> 169,892 | 369 -> 104 ms |
+
+A frame is the median of every frame after the first; "1 frame" marks a
+program `verify.tsv` runs once, whose one frame includes the engine compiling
+the module. Every LLVM build's last frame has `verify.tsv`'s hash.
+
+- **Every LLVM build is under 19 s**; nine are under 3 s. The whole chain,
+  eighteen dev and LLVM builds and both frame runs, took 3 minutes.
+- **The frame gains follow the work in Roc.** The GPU tests' layout and
+  raytrace-on-screen's trace get about 10 times faster. EngineDemo, GlobeDemo
+  and Fireworks, whose frames are mostly the host's GPU, barely move.
+- Fireworks and widgets-on-screen build with warnings (an `if` known at compile
+  time; a redundant `match` branch), which Roc reports as exit 2; the script
+  counts a build with a wasm and no error.

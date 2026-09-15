@@ -7,6 +7,7 @@
 //   node framebuffer/frames.mjs <program> [runs]          a frame is a run, the clock 100 ms on each time
 //   node framebuffer/frames.mjs <program> flushes:<n>     a frame is a GPU flush; stop at the nth
 //   node framebuffer/frames.mjs <path/to/program.wasm> ...
+//   WASM_DIR=<dir> node framebuffer/frames.mjs <program> ...   the program's own screen and assets, its wasm from <dir>
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, join } from "node:path";
@@ -20,7 +21,7 @@ const runs = flushBudget ? Infinity : Number(count);
 const name = n.endsWith(".wasm") ? basename(n, ".wasm") : n;
 const listed = n.endsWith(".wasm") ? null : JSON.parse(readFileSync(join(dir, "programs.json"), "utf8")).find((p) => p.name === n);
 const [W, H, S] = listed?.screen ?? [320, 240, 320];
-const wasm = n.endsWith(".wasm") ? n : join(dir, `${n}.wasm`);
+const wasm = n.endsWith(".wasm") ? n : join(process.env.WASM_DIR || dir, `${n}.wasm`);
 
 // FNV-1a over the visible pixels, as the page draws them.
 function fnv(bytes) {
