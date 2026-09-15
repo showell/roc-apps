@@ -1,0 +1,88 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Cobblestone's GPU kernels, in Roc, on the CPU</title>
+<script src="../shared/home.js"></script>
+<style>
+  html,body { margin:0; background:#05060c; color:#8aa; font:13px system-ui,sans-serif; }
+  #wrap { display:flex; flex-direction:column; align-items:center; gap:8px; padding:10px; }
+  canvas { border:1px solid #182a4a; max-width:100%; }
+  #bar { display:flex; gap:12px; align-items:center; }
+  select { background:#080c16; color:#cde; border:1px solid #182a4a; padding:4px 6px; font:inherit; }
+  #status { opacity:.7; }
+  a { color:#7c9; }
+</style>
+<div id="wrap">
+  <div id="bar"><label>demo <select id="k"></select></label><span id="status">loading gallery.wasm...</span></div>
+  <canvas id="c" width="1024" height="768"></canvas>
+  <div id="src"></div>
+  <div>The same Codex <code>[Device]</code> kernels Cobblestone's <a href="https://github.com/damiant3/Cobblestone/tree/master/apps/gpushow">gpushow</a> runs as WebGPU compute shaders, emitted to Roc by <a href="https://github.com/showell/roc-apps">roc-apps</a> and dispatched one gid at a time in wasm. No WebGPU: any browser, plain http. The generated Roc is <a href="https://github.com/showell/roc-apps/tree/master/gpu/roc">gpu/roc</a>.</div>
+</div>
+<script type="module">
+// step(demo, frame) moves the Roc model; view() answers the words. A pixel
+// demo's words go into an ImageData; a particle demo's are drawn as the
+// page's vertex shader drew them, an additive quad per record.
+import { kernels } from './gallery.js';
+const sel = document.getElementById('k'), status = document.getElementById('status');
+for (const k of kernels) { const o = document.createElement('option'); o.value = k.id; o.textContent = k.page; sel.appendChild(o); }
+const want = new URLSearchParams(location.search).get('k');
+let cur = kernels.find(k => k.page === want) ?? kernels.find(k => k.page === 'plasma') ?? kernels[0];
+sel.value = cur.id;
+const ROC = 'https://github.com/showell/roc-apps/blob/master/gpu/roc/', CODEX = 'https://github.com/damiant3/Cobblestone/blob/master/apps/gpushow/kernels/';
+function showSource() {
+  const mods = cur.kernel.split(' + ');
+  document.getElementById('src').innerHTML = 'this demo in Roc: ' + mods.map(m => `<a href="${ROC}${m}.roc">${m}.roc</a>`).join(', ')
+    + ' &nbsp; from Codex: ' + mods.map(m => `<a href="${CODEX}${m}.codex">${m}.codex</a>`).join(', ');
+}
+sel.onchange = () => { cur = kernels[Number(sel.value)]; frame = 0; ms = 0; history.replaceState(null, '', '?k=' + cur.page); showSource(); };
+showSource();
+const { instance } = await WebAssembly.instantiateStreaming(fetch('gallery.wasm'), {});
+const x = instance.exports;
+const canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
+let img = null, px = null, frame = 0, ms = 0;
+const rgb = (c0, c1, t, k) => `rgb(${c0.map((a, i) => Math.round((a + (c1[i] - a) * t) * k * 255)).join(',')})`;
+function drawPixels(src) {
+  if (canvas.width !== cur.w || canvas.height !== cur.h || !img) {
+    canvas.width = cur.w; canvas.height = cur.h; img = ctx.createImageData(cur.w, cur.h); px = new Uint32Array(img.data.buffer);
+  }
+  const n = Math.min(src.length, px.length);
+  for (let i = 0; i < n; i++) { const c = src[i]; px[i] = 0xff000000 | ((c & 255) << 16) | (c & 0xff00) | ((c >>> 16) & 255); }
+  ctx.putImageData(img, 0, 0);
+}
+function drawQuads(src, d) {
+  if (canvas.width !== 1024 || canvas.height !== 768) { canvas.width = 1024; canvas.height = 768; }
+  const i32 = new Int32Array(src.buffer, src.byteOffset, src.length);
+  ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = d.clear; ctx.fillRect(0, 0, 1024, 768);
+  ctx.globalCompositeOperation = 'lighter';
+  const s = d.size * 2;
+  for (let i = 0; i + 3 < i32.length; i += 4) {
+    const px = i32[i] / d.scale, py = i32[i + 1] / d.scale, vx = i32[i + 2], vy = i32[i + 3];
+    const spd = Math.min(1, Math.sqrt(vx * vx + vy * vy) / d.vmax);
+    ctx.fillStyle = rgb(d.c0, d.c1, spd, d.k);
+    ctx.fillRect(px - d.size, py - d.size, s, s);
+  }
+}
+function drawSparks(src, d) {
+  if (canvas.width !== 1024 || canvas.height !== 768) { canvas.width = 1024; canvas.height = 768; }
+  ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = d.clear; ctx.fillRect(0, 0, 1024, 768);
+  ctx.globalCompositeOperation = 'lighter';
+  const s = d.size * 2;
+  for (const u of src) {
+    const py = u & 4095, px = (u >>> 12) & 4095, bright = (u >>> 24) / 255;
+    ctx.fillStyle = `rgb(${d.color.map(a => Math.round(a * bright * 255)).join(',')})`;
+    ctx.fillRect(px - d.size, py - d.size, s, s);
+  }
+}
+function tick() {
+  const t0 = performance.now();
+  x.step(cur.id, frame);
+  const bytes = x.view();
+  const src = new Uint32Array(x.memory.buffer, x.bufPtr(), bytes / 4);
+  const d = cur.draw;
+  if (d.kind === 'quads') drawQuads(src, d); else if (d.kind === 'sparks') drawSparks(src, d); else drawPixels(src);
+  const t = performance.now() - t0; ms = ms ? ms * 0.9 + t * 0.1 : t;
+  frame = cur.frameMod && frame + 1 >= cur.frameMod ? 0 : frame + 1;
+  status.textContent = `${cur.kernel} -- frame ${frame}, ${ms.toFixed(1)} ms`;
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+</script>
