@@ -99,6 +99,8 @@ const input = self.crossOriginIsolated ? new SharedArrayBuffer(Int32Array.BYTES_
 const ring = input ? new Int32Array(input) : null;
 $("inputnote").textContent = input
   ? "Click the screen, then type or point: keys go to the program as PC scancodes, and the mouse as its position and buttons."
+  : !self.isSecureContext
+  ? `Keys and the mouse need memory shared with the runner, which a browser allows only on a secure page. Open this one as http://localhost:${location.port}${location.pathname} through an SSH tunnel to this port, or over HTTPS.`
   : "This page is not cross-origin isolated, so keys and the mouse cannot reach a running program.";
 
 function send(kind, a, b = 0, c = 0) {
