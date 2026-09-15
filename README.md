@@ -45,7 +45,7 @@ The ports announced before the site redirect: :9201 to staging's `safari/`;
 | where | what | written by |
 |---|---|---|
 | `site/web/index.html` | the landing page: Finished, In progress, and the date each app on the channel was published | hand |
-| `site/web/shared/home.js` | the link home and the channel's banner; every page loads it with one relative line | hand |
+| `site/web/shared/home.js` | the link home, and the banner on dev (whose root alone has a `channel` file); every page loads it with one relative line | hand |
 | `site/build.sh` | the landing page, `shared/` and the `channel` file into dev | hand |
 | `site/publish.sh` | THE SIGN-OFF: one app's dev directory over `site/live/<app>/` whole, with a `PROVENANCE`, committed and pushed; `site/publish.sh home` for the root | hand |
 | `site/live/` | what staging serves | `site/publish.sh` |

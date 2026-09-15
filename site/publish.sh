@@ -7,9 +7,9 @@
 # An app: copies ~/build/roc-apps/next/<app>/ (what <app>'s build.sh last wrote,
 # and what :9210/<app>/ shows) over site/live/<app>/ whole, writes a PROVENANCE
 # beside it, and commits and pushes that directory alone. `home` does the same
-# for the site's root files, and names the channel staging. Staging on :9200
-# serves site/live/ per request with no-store, so it is live at once. Nothing
-# else writes site/live/.
+# for the landing page and shared/; dev's `channel` file stays behind, so
+# staging holds exactly what prod will. Staging on :9200 serves site/live/ per
+# request with no-store, so it is live at once. Nothing else writes site/live/.
 #
 # PROVENANCE records what the build read: the Roc compiler, the roc-apps and
 # rocemit commits (marked when the app's own tree has uncommitted changes), the
@@ -30,8 +30,7 @@ if [ "$app" = home ]; then
     cp "$NEXT/index.html" "$LIVE/"
     rm -rf "$LIVE/shared"
     cp -r "$NEXT/shared" "$LIVE/"
-    echo staging > "$LIVE/channel"
-    paths=("$LIVE/index.html" "$LIVE/shared" "$LIVE/channel")
+    paths=("$LIVE/index.html" "$LIVE/shared")
     what="the landing page"
 else
     [ -d "$REPO/$app" ] || { echo "$app is not an app in $REPO"; exit 2; }

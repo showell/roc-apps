@@ -1,12 +1,13 @@
-// The way home, and the channel's banner, for every page of Cobblestone Roc
+// The way home, and the dev channel's banner, for every page of Cobblestone Roc
 // Projects. A page loads it with one line, the path relative to the page:
 //
 //   <script src="../shared/home.js"></script>
 //
 // The site's root is the directory above this script, so a page at any depth,
-// on any host, links to its own channel's landing page. The root's `channel`
-// file names the channel: dev and staging show a banner, prod shows none. The
-// landing page loads it too, and gets the banner without the link.
+// on any host, links to its own channel's landing page. Only the dev root holds
+// a `channel` file, and a page there shows a banner naming it; staging and prod
+// serve the same files and show none. The landing page loads it too, and gets
+// the banner without the link.
 (() => {
   const root = new URL('..', document.currentScript.src);
   const pill = 'padding:3px 8px;border-radius:4px;color:#fff;text-decoration:none;pointer-events:auto';
@@ -24,10 +25,10 @@
   document.body ? show() : document.addEventListener('DOMContentLoaded', show);
   fetch(new URL('channel', root)).then(r => (r.ok ? r.text() : '')).then(text => {
     const channel = text.trim();
-    if (!channel || channel === 'prod') return;
+    if (!channel) return;
     const banner = document.createElement('span');
     banner.textContent = channel;
-    banner.style.cssText = pill + ';background:' + (channel === 'dev' ? '#b3261e' : '#8a5a00');
+    banner.style.cssText = pill + ';background:#b3261e';
     bar.prepend(banner);
   }).catch(() => {});
 })();
