@@ -22,6 +22,9 @@ Roc on the fifth tree on the right of every segment.
 | `safari/retest.sh` | the targeted sweep: emit all, diff against the tracked Roc, run only what changed | hand |
 | `wasm/*.mjs` | Node drivers: run a module, drive the screensaver headless with timings | hand |
 | `docs/codex-subset.md` | the forms safari uses, counted over the 54 IRs | hand |
+| `ray/build.sh` | an app on [roc-ray](https://github.com/lukewilliamboswell/roc-ray) (raylib; native only) for one target, from a roc-ray checkout's platform source: stages `ray/apps/<name>/` with its platform reference rewritten, and builds with the nightly roc-ray pins (09-07) | hand |
+| `ray/apps/hello/` | the smallest roc-ray app, proving a build end to end | hand |
+| `.github/workflows/windows.yml` | the Windows executables, built on a hosted Windows runner because Roc's `x64win` link needs an installed Windows SDK; uploaded as the `windows-exe` artifact; run by hand | hand |
 
 The units come from `~/showell_repos/safari-codex/units/` (`<Spec>.codex`
 resolved, `<Spec>.expected` the verdict the Rust interpreter froze).

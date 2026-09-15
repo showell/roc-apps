@@ -1,0 +1,66 @@
+# Build the roc-ray apps as Windows executables and upload them as an artifact.
+#
+# This runs on a hosted Windows runner because Roc's x64win link is MSVC-ABI and
+# looks for an installed Windows SDK, which a Linux box cannot provide. The
+# steps follow roc-ray's own CI: its pinned zig and Roc nightly, then `zig build`
+# for the host libraries. Run by hand:
+#
+#   gh workflow run windows.yml
+#   gh run download <run-id> -n windows-exe -D ~/build/roc-apps/ray/windows
+name: Windows executables
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout roc-apps
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Checkout roc-ray
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: lukewilliamboswell/roc-ray
+          ref: e100c9548b903ee5c7363f5997251980c4355c7b
+          path: roc-ray
+
+      - name: Install Zig
+        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
+        with:
+          version: 0.16.0
+
+      - name: Install Roc
+        uses: roc-lang/setup-roc@cbe782d6f165b89c87d99f50a59ac4f5f73b4427
+        with:
+          version: nightly-new-compiler
+          nightly-tag: nightly-2026-09-07-14d9829
+
+      - name: Build roc-ray's host libraries
+        working-directory: roc-ray
+        run: zig build
+
+      - name: Build the apps
+        env:
+          ROC: roc
+          ROC_RAY: roc-ray
+          OUT: out
+          TARGET: x64win
+        run: ray/build.sh hello
+
+      # No window: the headless host draws nothing, so this proves the
+      # executable links, loads and runs its cycles.
+      - name: Run hello headless
+        run: out/hello/hello.exe --host-headless --host-headless-frames=5
+
+      - name: Upload the executables
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: windows-exe
+          path: out/*/*.exe
+          if-no-files-found: error
