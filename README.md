@@ -23,6 +23,7 @@ Roc on the fifth tree on the right of every segment.
 | `safari/retest.sh` | the targeted sweep: emit all, diff against the tracked Roc, run only what changed | hand |
 | `wasm/*.mjs` | Node drivers: run a module, drive the screensaver headless with timings | hand |
 | `docs/codex-subset.md` | the forms safari uses, counted over the 54 IRs | hand |
+| `ray/README.md` | Safari on roc-ray: what is shared with the web and what is not, the two painters, building, the checks | hand |
 | `ray/build.sh` | an app on [roc-ray](https://github.com/lukewilliamboswell/roc-ray) (raylib; native only) for one target, from a roc-ray checkout's platform source: stages `ray/apps/<name>/` with its platform reference rewritten, and builds with the nightly roc-ray pins (09-07) | hand |
 | `ray/apps/hello/` | the smallest roc-ray app, proving a build end to end | hand |
 | `ray/apps/safari/` | Safari on roc-ray: roc-ray draws Shapes' frame under a camera turned by the roll; R switches to the first iteration, Raster's pixels shown as one texture; the page's keys; `modules` names `safari/roc` for `ray/build.sh` to stage | hand |
