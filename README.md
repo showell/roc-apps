@@ -25,7 +25,9 @@ Roc on the fifth tree on the right of every segment.
 | `docs/codex-subset.md` | the forms safari uses, counted over the 54 IRs | hand |
 | `ray/build.sh` | an app on [roc-ray](https://github.com/lukewilliamboswell/roc-ray) (raylib; native only) for one target, from a roc-ray checkout's platform source: stages `ray/apps/<name>/` with its platform reference rewritten, and builds with the nightly roc-ray pins (09-07) | hand |
 | `ray/apps/hello/` | the smallest roc-ray app, proving a build end to end | hand |
-| `ray/apps/safari/` | Safari on roc-ray, first iteration: SafariRide's frame painted by Raster and shown as one texture; the page's keys; `modules` names `safari/roc` for `ray/build.sh` to stage | hand |
+| `ray/apps/safari/` | Safari on roc-ray: roc-ray draws Shapes' frame under a camera turned by the roll; R switches to the first iteration, Raster's pixels shown as one texture; the page's keys; `modules` names `safari/roc` for `ray/build.sh` to stage | hand |
+| `safari/roc/Shapes.roc` | a frame as shapes a drawing platform fills itself: convex polygons, ear-clipped triangles wound for raylib, discs, glows, rectangles; gradients flat for now | hand |
+| `safari/roc/ShapesFrame.roc` | the check on Shapes: Raster paints the frame with the commands' own polygons and with Shapes' pieces, at the same flat colours, and the pixels that differ are counted | hand |
 | `safari/roc/Raster.roc` | a frame painted into 960x600 pixels in Roc, as blitter.js paints the canvas: backdrop, sun, commands, under the roll; nonzero fills, no anti-aliasing | hand |
 | `safari/roc/RasterFrame.roc` | one frame painted natively and printed as hex with its hash; `ray/pixels_png.mjs` turns that into a PNG | hand |
 | `.github/workflows/windows.yml` | the Windows executables, built on a hosted Windows runner because Roc's `x64win` link needs an installed Windows SDK; uploaded as the `windows-exe` artifact; run by hand | hand |
