@@ -148,3 +148,43 @@ a GPU flush. Flushes 1 to 4, one run each:
 Every flush's hash is the same in both. The machine's page cannot run it: its
 loop reads the keyboard controller's port 0x60, which the machine does not
 model. `verify.sh` with engine-demo's 30 flushes added: all eight pass, 15 s.
+
+## 2026-09-15: raytrace-on-screen, where a frame goes
+
+`demos/raytrace-on-screen` traces raytracer-test's scene at 160 x 120 with
+Raytracer, then copies the trace onto the screen with one `poke-32` a screen
+pixel; it does not use the GPU. At u61-candidate (Raytracer with PR 149), on
+the page's default 320 x 240 screen:
+
+| build | a frame, frames 1 to 11 |
+|---|---|
+| native (`verify.sh`) | 55 ms |
+| wasm in Node (`frames.mjs`, a `--debug` build) | 96 to 101 ms |
+| the page, in Steve's browser | about 105 ms |
+
+`node --cpu-prof` over 12 frames sampled 1,375 ms. The wasm names a procedure
+by id. Each id was matched to a source name from `ROC_LIR_DUMP=` by the
+constants it holds and what it calls, read from the module's code section:
+
+| what | wasm | self time |
+|---|---|---|
+| `Raytracer.rt_intersect_obj`, the sphere and plane tests folded in (both hold 0.001 and 999999) | `roc__proc_313`, 28.7 KB | 21.8% |
+| `Raytracer.rt_closest`, two specializations: the walk over the scene for a ray | `roc__proc_312`, `2f0` | 17.2% |
+| the demo's `copy_cols!`: `fb-get`, then `poke-32` through `Heap.store!` | `roc__proc_303` | 10.8% |
+| `Geometry.geo_sqrt_loop` and `Prelude.ordinal`, the `~` that ends it | `roc__proc_335`, `339` | 10.8% |
+| `Raytracer.rt_shade` | `roc__proc_2ee` | 5.6% |
+| the opening, holding the scene and `rt-render`'s loop | `roc__proc_2e0` | 4.6% |
+| `List.get`, `vec3_subtract`, `rt_normalize`, `vec3_scale`, `col_clamp8` | | 11% |
+| Node: `frames.mjs`'s report and hash | | 3.4% |
+| the host's `present` and `screen` | | 1.2% |
+
+The frame is Raytracer's own Roc, as scene-on-screen's is Renderer3D's. Two
+things in it are this program's shape rather than Roc's:
+
+- `geo-sqrt` is Newton's method written in Codex: it starts from n / 2 + 1 and
+  stops when two guesses are within `~`, four ULPs. Cobblestone has no
+  square-root builtin, so the loop is the program, and it costs a tenth of the
+  frame.
+- The copy costs a tenth though the host's store, `roc_heap_store`, is not in
+  the top 25: the time is the Roc around each pixel, `fb-get`'s `List.get` on
+  the Framebuf and the door's wrapper.
