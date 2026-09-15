@@ -78,7 +78,7 @@ REFUSED cost@giveup-beats-fuel | an opening of type (effectful (effs "Console") 
 PASS cross-port-refused |
 PASS crypto-test |
 PASS crypto-vectors |
-REFUSED cryptobig | `cb-shl1-step` writes its list parameter `x` and answers something else
+REFUSED cryptobig | `cb-shl1` writes its list parameter `x` and answers something else
 PASS ctor-narrow-warn |
 PASS db-csv-roundtrip |
 DIVERGES db-full-test | test-bulk-load and test-import insert 5 rows through heap-insert-encoded's list-set-at on the catalog's pages and answer only Text; the backup then scans the same catalog, which in Roc still holds the old pages (rows=21, not 26)
@@ -140,9 +140,9 @@ PASS e1000-tx-deadline |
 PASS e1000-ulp-entry |
 PASS e1000-unresettable |
 REFUSED ecdsa-cert | `fe-carry-pass` writes its list parameter `o` and answers something else
-REFUSED ecdsa-p256 | `cb-shl1-step` writes its list parameter `x` and answers something else
-REFUSED ecdsa-p384 | `cb-shl1-step` writes its list parameter `x` and answers something else
-REFUSED ecdsa-sha384 | `cb-shl1-step` writes its list parameter `x` and answers something else
+REFUSED ecdsa-p256 | `cb-shl1` writes its list parameter `x` and answers something else
+REFUSED ecdsa-p384 | `cb-shl1` writes its list parameter `x` and answers something else
+REFUSED ecdsa-sha384 | `cb-shl1` writes its list parameter `x` and answers something else
 DIVERGES edalias | list-set-at mutates in place; Roc's List.set answers a new list
 REFUSED edcurve | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED edge-mesh-admit | `nc-try-insert` writes its list parameter `history` and answers something else
@@ -872,8 +872,8 @@ PASS roc-iter-map |
 PASS roc-recursive-var |
 PASS roc-returned-closure |
 PASS rp2040-drivers |
-REFUSED rsa-pss | `cb-shl1-step` writes its list parameter `x` and answers something else
-REFUSED rsa-verify | `cb-shl1-step` writes its list parameter `x` and answers something else
+REFUSED rsa-pss | `cb-shl1` writes its list parameter `x` and answers something else
+REFUSED rsa-verify | `cb-shl1` writes its list parameter `x` and answers something else
 PASS rv-arg-order |
 PASS rv-big-literal |
 PASS rv-frameless-imm |
