@@ -54,7 +54,7 @@ hold: safe here because the host stops at any address it does not back.
 | `platform/Heap.roc`, `platform/Port.roc`, `platform/Echo.roc` | the hosted doors: a load and a store of 1, 2, 4 or 8 bytes; a port read and write of a width; a line of text |
 | `platform/core.zig` | what both hosts share: memory in pages, the screen and clock cells, the ports (the GPU and the keyboard controller), a run, the visible pixels and their hash |
 | `platform/host.zig` | the browser's host (wasm): the exports the page calls, a flush reported to the page's runner, and a crash kept for the page |
-| `platform/native.zig` | the checker's host (x86-64 Linux): runs the program for its runs (`-frames`) or GPU flushes (`-flushes`) and prints the last console and every frame's time and hash |
+| `platform/native.zig` | the checker's host (x86-64 Linux): runs the program for its runs (`-frames`) or GPU flushes (`-flushes`) and prints the last console and every frame's time and hash; `-key` and `-mouse` hand it input before the first run, as the page's runner does, and `-ppm` writes the last frame |
 | `platform/gpu.zig` | codex-vm's GPU over the program's memory |
 | `roc/Mem.roc`, `roc/Machine.roc` | the platform's side of the two states: the bump pointer as a value, every other door through the host |
 | `build.sh` | host, then each program emitted from a copy (so a `.vmargs` beside it stays behind), wired to the platform and built for wasm into the preview |

@@ -5,13 +5,18 @@
 //! before its line. A crash prints the console so far and its message, and
 //! exits 1.
 //!
-//!     <program> [-screen <width> <height> <stride>] (-frames <n> | -flushes <n>)
+//!     <program> [-screen <width> <height> <stride>] [-key <scancode>]...
+//!               [-mouse <x> <y> <buttons>]... [-ppm <path>] (-frames <n> | -flushes <n>)
 //!
 //! With -frames (1 when neither is given), a frame is a run of the program's
 //! opening, with the clock 100 ms further on each time, as the page runs it.
 //! With -flushes, a frame is a GPU flush, for a program that draws in a loop of
 //! its own and never ends its run; the host stops at the nth. The program's own
 //! command line is empty, as on the page; the heap's base moves with its length.
+//!
+//! Each -key and -mouse is handed to the host, in order, before the first run,
+//! as the page's runner hands over what was queued before it started. -ppm
+//! writes the last frame's visible pixels to a binary PPM.
 
 const std = @import("std");
 const shim_io = @import("shim_io");
@@ -54,7 +59,7 @@ comptime {
 }
 
 fn usage() c_int {
-    write(2, "usage: <program> [-screen <width> <height> <stride>] (-frames <n> | -flushes <n>)\n");
+    write(2, "usage: <program> [-screen <width> <height> <stride>] [-key <scancode>]... [-mouse <x> <y> <buttons>]... [-ppm <path>] (-frames <n> | -flushes <n>)\n");
     return 2;
 }
 
@@ -68,12 +73,49 @@ fn nowUs() u64 {
     return @as(u64, @intCast(ts.sec)) * 1_000_000 + @as(u64, @intCast(ts.nsec)) / 1000;
 }
 
+/// A key or a mouse state from the command line, handed over before the first
+/// run.
+const Input = struct { key: bool, a: u32, b: u32, c: u32 };
+var inputs: [64]Input = undefined;
+var input_count: usize = 0;
+
+var screen_w: u32 = 320;
+var screen_h: u32 = 240;
+var ppm_path: ?[*:0]u8 = null;
+
+/// The visible pixels, red, green and blue a pixel, after a binary PPM header.
+fn writePpm() void {
+    const path = ppm_path orelse return;
+    const fd = std.c.open(path, .{ .ACCMODE = .WRONLY, .CREAT = true, .TRUNC = true }, @as(std.c.mode_t, 0o644));
+    if (fd < 0) stop("cannot open the -ppm file");
+    defer _ = std.c.close(fd);
+    var header: [48]u8 = undefined;
+    write(fd, std.fmt.bufPrint(&header, "P6\n{d} {d}\n255\n", .{ screen_w, screen_h }) catch unreachable);
+    const px = core.present();
+    const row = allocator.alloc(u8, screen_w * 3) catch stop("no memory for a -ppm row");
+    defer allocator.free(row);
+    var y: usize = 0;
+    while (y < screen_h) : (y += 1) {
+        var x: usize = 0;
+        while (x < screen_w) : (x += 1) {
+            const at = (y * screen_w + x) * 4;
+            row[x * 3] = px[at];
+            row[x * 3 + 1] = px[at + 1];
+            row[x * 3 + 2] = px[at + 2];
+        }
+        write(fd, row);
+    }
+}
+
 /// One frame's line: its number, its time, and its pixels' hash; the last
-/// frame's console goes before it.
+/// frame's console goes before it, and its pixels to -ppm.
 fn frameLine(n: u32, us: u64, last: bool) void {
     var line: [96]u8 = undefined;
     const h = core.hash(core.present());
-    if (last) write(1, core.console());
+    if (last) {
+        write(1, core.console());
+        writePpm();
+    }
     write(1, std.fmt.bufPrint(&line, "-- frame {d}: {d} ms, hash {x:0>8}\n", .{ n, us / 1000, h }) catch "-- frame\n");
 }
 
@@ -90,8 +132,6 @@ pub fn flushed() void {
 }
 
 fn main(argc: c_int, argv: [*][*:0]u8) callconv(.c) c_int {
-    var w: u32 = 320;
-    var h: u32 = 240;
     var s: u32 = 320;
     var frames: u32 = 1;
     const n: usize = @intCast(argc);
@@ -99,8 +139,8 @@ fn main(argc: c_int, argv: [*][*:0]u8) callconv(.c) c_int {
     while (i < n) {
         const a = std.mem.span(argv[i]);
         if (std.mem.eql(u8, a, "-screen") and i + 3 < n) {
-            w = number(argv[i + 1]) orelse return usage();
-            h = number(argv[i + 2]) orelse return usage();
+            screen_w = number(argv[i + 1]) orelse return usage();
+            screen_h = number(argv[i + 2]) orelse return usage();
             s = number(argv[i + 3]) orelse return usage();
             i += 4;
         } else if (std.mem.eql(u8, a, "-frames") and i + 1 < n) {
@@ -110,13 +150,34 @@ fn main(argc: c_int, argv: [*][*:0]u8) callconv(.c) c_int {
             flush_budget = number(argv[i + 1]) orelse return usage();
             if (flush_budget == 0) return usage();
             i += 2;
+        } else if (std.mem.eql(u8, a, "-key") and i + 1 < n and input_count < inputs.len) {
+            const code = number(argv[i + 1]) orelse return usage();
+            if (code > 255) return usage();
+            inputs[input_count] = .{ .key = true, .a = code, .b = 0, .c = 0 };
+            input_count += 1;
+            i += 2;
+        } else if (std.mem.eql(u8, a, "-mouse") and i + 3 < n and input_count < inputs.len) {
+            inputs[input_count] = .{
+                .key = false,
+                .a = number(argv[i + 1]) orelse return usage(),
+                .b = number(argv[i + 2]) orelse return usage(),
+                .c = number(argv[i + 3]) orelse return usage(),
+            };
+            input_count += 1;
+            i += 4;
+        } else if (std.mem.eql(u8, a, "-ppm") and i + 1 < n) {
+            ppm_path = argv[i + 1];
+            i += 2;
         } else {
             return usage();
         }
     }
-    if (!core.screen(w, h, s)) {
+    if (!core.screen(screen_w, screen_h, s)) {
         write(2, "the host cannot give the program that screen\n");
         return 2;
+    }
+    for (inputs[0..input_count]) |in| {
+        if (in.key) core.keyPush(@intCast(in.a)) else core.mousePush(in.a, in.b, in.c);
     }
     var line: [96]u8 = undefined;
     var f: u32 = 0;
