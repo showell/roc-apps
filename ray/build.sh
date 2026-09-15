@@ -35,6 +35,14 @@ dest="$(cd "$OUT/$name" && pwd)"
 stage="$dest/src"
 rm -rf "$stage"
 mkdir -p "$stage"
+# An app may import modules from elsewhere in the repository: ray/apps/<name>/modules
+# names their directories, one a line. They are staged first, so the app's own
+# files win a name clash.
+if [ -f "$app/modules" ]; then
+    while read -r dir; do
+        [ -z "$dir" ] || cp "$HERE/../$dir"/*.roc "$stage/"
+    done < "$app/modules"
+fi
 cp "$app"/*.roc "$stage/"
 platform="$(realpath --relative-to="$stage" "$ROC_RAY/platform/main.roc")"
 sed -i -E "0,/platform \"[^\"]*\"/s##platform \"$platform\"#" "$stage/main.roc"

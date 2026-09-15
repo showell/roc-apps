@@ -51,12 +51,16 @@ jobs:
           ROC_RAY: roc-ray
           OUT: out
           TARGET: x64win
-        run: ray/build.sh hello
+        run: |
+          ray/build.sh hello
+          ray/build.sh safari
 
-      # No window: the headless host draws nothing, so this proves the
-      # executable links, loads and runs its cycles.
-      - name: Run hello headless
-        run: out/hello/hello.exe --host-headless --host-headless-frames=5
+      # No window: the headless host draws nothing, so this proves each
+      # executable links, loads and runs its cycles (Safari paints every one).
+      - name: Run the apps headless
+        run: |
+          out/hello/hello.exe --host-headless --host-headless-frames=5
+          out/safari/safari.exe --host-headless --host-headless-frames=3
 
       - name: Upload the executables
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
