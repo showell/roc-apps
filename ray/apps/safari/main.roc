@@ -7,9 +7,16 @@
 # arithmetic on the scene position. Pixels, the first iteration: Raster paints
 # the frame in Roc and roc-ray shows it as one texture.
 #
+# Shapes is anti-aliased by supersampling, as roc-ray offers no multisampling:
+# the frame is drawn into a render texture at twice the window's size, the
+# camera zoomed to match, and drawn down onto the window with bilinear
+# filtering, whose sample at each window pixel's centre falls between four
+# texels and averages them.
+#
 # The keys are the page's: SPACE pauses and resumes, UP and DOWN step, J rides
-# to the next segment, D shows the frame rate, ESCAPE quits; and R, and P, which
-# saves a screenshot to shots/ named by the ride's clock and the painter.
+# to the next segment, D shows the frame rate, ESCAPE quits; and R, A, which
+# turns anti-aliasing off and on, and P, which saves a screenshot to shots/
+# named by the ride's clock and the painter.
 app [Model, program] { rr: platform "roc-ray/platform/main.roc" }
 
 import rr.App
@@ -37,7 +44,14 @@ Gpu : {
 	geom_c : Draw.Vec4Uniform,
 }
 
-Model : { ride : SafariRide.Model, auto : Bool, fps : Bool, pixels : Bool, screen : Assets.Texture, gpu : Gpu }
+Model : { ride : SafariRide.Model, auto : Bool, fps : Bool, pixels : Bool, aa : Bool, screen : Assets.Texture, target : Draw.RenderTexture, gpu : Gpu }
+
+# The supersampled frame: twice the window's size each way, four samples a pixel.
+supersample : F32
+supersample = 2
+
+target_size : { width : I32, height : I32 }
+target_size = { width: 1920, height: 1200 }
 
 Msg : [ShotSaved(Try({}, Capture.ScreenshotError))]
 
@@ -47,11 +61,13 @@ program = { init!, update!, render! }
 step_guard : I64
 step_guard = 200000
 
-init! : App.Init(Model, [TextureGenerationFailed, ResourceLimit, ShaderLoadFailed, UniformNotFound])
+init! : App.Init(Model, [TextureGenerationFailed, ResourceLimit, ShaderLoadFailed, UniformNotFound, RenderTextureLoadFailed])
 init! = App.init(
 	App.default.with_title("Safari").with_size({ width: 960, height: 600 }).with_output_dir("shots"),
 	|_io| {
 		screen = Assets.generate_color_texture!({ width: 960, height: 600, color: Color.black })?
+		target = Draw.RenderTexture.load!(target_size)?
+		Assets.set_texture_filter!(target.texture(), Bilinear)
 		shader = Draw.Shader.from_source!({ vertex_source: vertex_glsl, fragment_source: fragment_glsl })?
 		gpu = {
 			shader,
@@ -64,7 +80,7 @@ init! = App.init(
 			geom_b: shader.uniform_vec4!("geomB")?,
 			geom_c: shader.uniform_vec4!("geomC")?,
 		}
-		Ok({ ride: SafariRide.init, auto: Bool.True, fps: Bool.False, pixels: Bool.False, screen, gpu })
+		Ok({ ride: SafariRide.init, auto: Bool.True, fps: Bool.False, pixels: Bool.False, aa: Bool.True, screen, target, gpu })
 	},
 )
 
@@ -91,13 +107,15 @@ update! = |model, input, io| {
 			model.ride
 		}
 		pixels = if keys.key_pressed(KeyR) { !model.pixels } else { model.pixels }
+		aa = if keys.key_pressed(KeyA) { !model.aa } else { model.aa }
 		upload!(pixels and (manual or auto or pixels != model.pixels), model.screen, ride)
 		if keys.key_pressed(KeyP) {
-			name = "safari-${U32.to_str(F64.to_u32_wrap(ride.ride.clock))}-${if pixels { "pixels" } else { "shapes" }}.png"
+			painter = if pixels { "pixels" } else if aa { "shapes-aa" } else { "shapes" }
+			name = "safari-${U32.to_str(F64.to_u32_wrap(ride.ride.clock))}-${painter}.png"
 			Task.spawn!(input, || ShotSaved(io.capture().screenshot!(name)))
 		}
 		fps = if keys.key_pressed(KeyD) { !model.fps } else { model.fps }
-		Ok({ ..model, ride, auto, fps, pixels })
+		Ok({ ..model, ride, auto, fps, pixels, aa })
 	}
 }
 
@@ -116,15 +134,32 @@ draw! = |model, frame|
 	} else {
 		m = model.ride
 		shapes = Shapes.frame(SafariRide.commands(m), SafariRide.sky_top(m), SafariRide.sky_horizon(m), SafariRide.sun(m))
-		# The canvas turns the frame by minus the roll about the screen's centre;
-		# a Camera2D turns the world by its rotation, in degrees.
-		camera = Camera.new({ target: { x: 480, y: 300 }, offset: { x: 480, y: 300 }, rotation: F64.to_f32_wrap(0.0 - SafariRide.roll(m) * 57.29577951308232), zoom: 1 })
-		frame.clear!(Color.black)
-		frame.with_camera!(camera, |world| {
-			draw_shapes!(model.gpu, world, shapes)
+		roll = F64.to_f32_wrap(0.0 - SafariRide.roll(m) * 57.29577951308232)
+		if model.aa {
+			frame.with_render_texture!(model.target, |big| {
+				big.clear!(Color.black)
+				big.with_camera!(camera(roll, supersample), |world| {
+					draw_shapes!(model.gpu, world, shapes)
+					Ok({})
+				})
+			})?
+			frame.texture!({ texture: model.target.texture(), source: model.target.source(), dest: Math.rect(0, 0, 960, 600), origin: Math.zero, rotation: 0, tint: Color.white })
 			Ok({})
-		})
+		} else {
+			frame.clear!(Color.black)
+			frame.with_camera!(camera(roll, 1), |world| {
+				draw_shapes!(model.gpu, world, shapes)
+				Ok({})
+			})
+		}
 	}
+
+# The canvas turns the frame by minus the roll about the screen's centre; a
+# Camera2D turns the world by its rotation, in degrees, about its target, and
+# puts the target at its offset. `zoom` scales the frame onto a target that
+# many times the window's size.
+camera : F32, F32 -> Camera.Camera2D
+camera = |rotation, zoom| Camera.new({ target: { x: 480, y: 300 }, offset: { x: 480 * zoom, y: 300 * zoom }, rotation, zoom })
 
 draw_shapes! : Gpu, Draw.Frame, List(Shapes.Shape) => {}
 draw_shapes! = |gpu, frame, shapes| {

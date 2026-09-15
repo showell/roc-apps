@@ -26,7 +26,7 @@ No module under `safari/roc/` imports a platform. The roc-ray app is one file:
 |---|---|
 | `build.sh` | an app for one target, from a roc-ray checkout's platform source: stages `apps/<name>/` and the module directories its `modules` file names, with its platform reference rewritten, and builds with the nightly roc-ray pins (09-07) |
 | `apps/hello/` | the smallest roc-ray app, proving a build end to end |
-| `apps/safari/` | Safari: roc-ray draws Shapes' frame under a camera turned by the roll, gradients through one fragment shader; R switches to Raster's pixels shown as one texture; P saves a screenshot; `modules` names `safari/roc` |
+| `apps/safari/` | Safari: roc-ray draws Shapes' frame under a camera turned by the roll, gradients through one fragment shader, anti-aliased by drawing at twice the size (A turns it off); R switches to Raster's pixels shown as one texture; P saves a screenshot; `modules` names `safari/roc` |
 | `pixels_png.mjs` | the frame `safari/roc/RasterFrame.roc` or `ShapesFrame.roc` prints, as a PNG |
 | `png_diff.mjs` | two screenshots compared pixel by pixel: how many differ, how many by more than a tolerance, the largest difference |
 | `../.github/workflows/windows.yml` | the Windows executables, built on a hosted Windows runner, and each painter's screenshots from a real window on Mesa's llvmpipe; run by hand |
@@ -43,12 +43,16 @@ screen:
 2. **Pixels**: Raster paints the whole frame in Roc, as the canvas would, with
    the same `Brush.shade`, and roc-ray shows it as one texture.
 
+Shapes is anti-aliased by supersampling, since roc-ray offers no multisampling:
+the frame is drawn into a render texture at twice the window's size and drawn
+down with bilinear filtering, four samples a pixel. A turns it off.
+
 Headless on the build box (Linux, no window), a frame takes about 17 ms with
-Shapes and 34 ms with Pixels. Edges are not anti-aliased.
+Shapes and 34 ms with Pixels.
 
 Keys: SPACE pauses and resumes, UP and DOWN step, J rides to the next segment,
-D shows the frame rate, R switches painter, P saves a screenshot to `shots/`,
-ESCAPE quits.
+D shows the frame rate, R switches painter, A turns anti-aliasing off and on, P
+saves a screenshot to `shots/`, ESCAPE quits.
 
 ## Building
 
@@ -69,8 +73,8 @@ The Windows executable is built by `.github/workflows/windows.yml` on a hosted
 Windows runner, because Roc's `x64win` link needs an installed Windows SDK. It
 builds `hello` and `safari`, runs both headless, and uploads them. Then it runs
 Safari in a real hidden window on Mesa's llvmpipe with scripted keys, pausing at
-a few places on the route and saving each frame from both painters, and uploads
-the screenshots as `safari-shots`.
+four places on the route and saving each frame three ways (Shapes anti-aliased,
+Shapes plain, Pixels), and uploads the screenshots as `safari-shots`.
 
 ## The checks
 

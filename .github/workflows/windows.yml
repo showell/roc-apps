@@ -83,16 +83,17 @@ jobs:
           7z e -y mesa.7z -oout/safari x64/opengl32.dll x64/libgallium_wgl.dll x64/libglapi.dll
           rm mesa.7z
 
-      # Safari in a real hidden window, the keys scripted by cycle: at a few
-      # places on the route it pauses, saves the Shapes frame (P), switches to
-      # the Pixels painter (R), saves the same frame again, and switches back.
+      # Safari in a real hidden window, the keys scripted by cycle: at four
+      # places on the route it pauses and saves the frame three ways, the
+      # anti-aliased Shapes painter (P), plain Shapes (A, P, A), and the Pixels
+      # painter (R, P, R).
       - name: Screenshots, both painters
         working-directory: out/safari
         env:
           GALLIUM_DRIVER: llvmpipe
         run: |
-          ./safari.exe --host-frames=150 --host-hidden --host-caps-allow-all \
-            --host-keys=5:J,8:J,11:J,14:P,17:R,20:P,23:R,26:J,29:J,32:J,35:P,38:R,41:P,44:R,47:SPACE,87:SPACE,90:P,93:R,96:P,99:R,102:J,105:J,108:J,111:J,114:J,117:J,120:J,123:J,126:J,129:P,132:R,135:P,138:R
+          ./safari.exe --host-frames=190 --host-hidden --host-caps-allow-all \
+            --host-keys=5:J,8:J,11:J,14:P,17:A,20:P,23:A,26:R,29:P,32:R,35:J,38:J,41:J,44:P,47:A,50:P,53:A,56:R,59:P,62:R,65:SPACE,105:SPACE,108:P,111:A,114:P,117:A,120:R,123:P,126:R,129:J,132:J,135:J,138:J,141:J,144:J,147:J,150:J,153:J,156:P,159:A,162:P,165:A,168:R,171:P,174:R
           ls -l shots
 
       - name: Upload the screenshots
