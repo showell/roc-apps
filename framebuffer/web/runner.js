@@ -59,10 +59,31 @@ self.onmessage = async ({ data }) => {
     if (shown >= frames) throw ENOUGH;
   };
   const stopped = (why) => self.postMessage({ kind: "stopped", why, console: x ? text(x.consolePtr(), x.consoleLen()) : "" });
+  // A program's asset load: the file at its path under assets/, fetched while
+  // the program waits, since the load answers its size before the program goes
+  // on. A worker may fetch synchronously.
+  let asset = null;
+  const assetSize = (ptr, len) => {
+    try {
+      const req = new XMLHttpRequest();
+      req.open("GET", `assets/${text(ptr, len)}`, false);
+      req.responseType = "arraybuffer";
+      req.send();
+      if (req.status !== 200) return -1;
+      asset = new Uint8Array(req.response);
+      return asset.length;
+    } catch {
+      return -1;
+    }
+  };
+  const assetRead = (ptr) => {
+    new Uint8Array(x.memory.buffer, ptr, asset.length).set(asset);
+    asset = null;
+  };
 
   try {
     const bytes = await (await fetch(`${name}.wasm`)).arrayBuffer();
-    x = (await WebAssembly.instantiate(bytes, { env: { frameFlushed } })).instance.exports;
+    x = (await WebAssembly.instantiate(bytes, { env: { frameFlushed, assetSize, assetRead } })).instance.exports;
   } catch (e) {
     return stopped(`${name}.wasm did not load: ${e.message}`);
   }

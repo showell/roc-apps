@@ -69,7 +69,23 @@ function frameFlushed() {
   started = performance.now();
 }
 
-const { instance } = await WebAssembly.instantiate(readFileSync(wasm), { env: { frameFlushed } });
+// A program's asset load reads the file under the preview's assets/, where the
+// page's runner fetches it.
+let asset = null;
+function assetSize(ptr, len) {
+  try {
+    asset = readFileSync(join(dir, "assets", text(ptr, len)));
+    return asset.length;
+  } catch {
+    return -1;
+  }
+}
+function assetRead(ptr) {
+  new Uint8Array(x.memory.buffer, ptr, asset.length).set(asset);
+  asset = null;
+}
+
+const { instance } = await WebAssembly.instantiate(readFileSync(wasm), { env: { frameFlushed, assetSize, assetRead } });
 x = instance.exports;
 const text = (ptr, len) => new TextDecoder().decode(new Uint8Array(x.memory.buffer, ptr, len));
 if (!x.screen(W, H, S)) throw new Error(`no ${W} x ${H} screen with stride ${S}`);

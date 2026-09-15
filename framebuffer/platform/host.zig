@@ -34,6 +34,25 @@ pub fn flushed() void {
     frameFlushed();
 }
 
+/// The page's runner, asked for the file at a path: the size of what it found,
+/// or -1 for nothing. It keeps the bytes until they are read.
+extern "env" fn assetSize(path: [*]const u8, len: u32) i32;
+/// The bytes the last assetSize found, into `dest`.
+extern "env" fn assetRead(dest: [*]u8) void;
+
+var asset_buf: []u8 = &.{};
+
+/// The bytes of the file at `path`, as the runner finds it; null when there is
+/// none. They are the host's until the next asset.
+pub fn asset(path: []const u8) ?[]const u8 {
+    const n = assetSize(path.ptr, @intCast(path.len));
+    if (n < 0) return null;
+    if (asset_buf.len > 0) allocator.free(asset_buf);
+    asset_buf = allocator.alloc(u8, @intCast(n)) catch stop("no memory for an asset");
+    assetRead(asset_buf.ptr);
+    return asset_buf;
+}
+
 /// A scancode for the program's keyboard controller.
 pub export fn key(scancode: u32) void {
     core.keyPush(@truncate(scancode));

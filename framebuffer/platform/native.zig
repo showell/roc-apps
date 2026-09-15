@@ -119,6 +119,32 @@ fn frameLine(n: u32, us: u64, last: bool) void {
     write(1, std.fmt.bufPrint(&line, "-- frame {d}: {d} ms, hash {x:0>8}\n", .{ n, us / 1000, h }) catch "-- frame\n");
 }
 
+var asset_buf: []u8 = &.{};
+
+/// The bytes of the file at `path`, relative to the working directory, as
+/// codex-vm's asset loader finds it; null when there is none. They are the
+/// host's until the next asset.
+pub fn asset(path: []const u8) ?[]const u8 {
+    var z: [256]u8 = undefined;
+    if (path.len >= z.len) return null;
+    @memcpy(z[0..path.len], path);
+    z[path.len] = 0;
+    const fd = std.c.open(z[0..path.len :0].ptr, .{ .ACCMODE = .RDONLY });
+    if (fd < 0) return null;
+    defer _ = std.c.close(fd);
+    const end = std.c.lseek(fd, 0, std.c.SEEK.END);
+    if (end <= 0 or std.c.lseek(fd, 0, std.c.SEEK.SET) != 0) return null;
+    if (asset_buf.len > 0) allocator.free(asset_buf);
+    asset_buf = allocator.alloc(u8, @intCast(end)) catch stop("no memory for an asset");
+    var at: usize = 0;
+    while (at < asset_buf.len) {
+        const n = std.c.read(fd, asset_buf.ptr + at, asset_buf.len - at);
+        if (n <= 0) break;
+        at += @intCast(n);
+    }
+    return asset_buf[0..at];
+}
+
 var flush_budget: u32 = 0;
 var flushes: u32 = 0;
 var frame_start: u64 = 0;

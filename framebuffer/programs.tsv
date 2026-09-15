@@ -1,10 +1,13 @@
 # What the page needs to know about a program that its sources do not say: its
 # name (the .codex file's); what a frame is, `run` (a run of its opening) or
-# `flush` (a GPU flush, for a program that draws in a loop of its own); and the
+# `flush` (a GPU flush, for a program that draws in a loop of its own); the
 # screen it expects, width, height and stride, or `-` for a program whose
-# codex-vm -gop flags name one. A program not listed here draws once a run.
+# codex-vm -gop flags name one; and the files its asset loads read, paths in its
+# Cobblestone checkout separated by commas, which build.sh copies under the
+# preview's assets/. A program not listed here draws once a run.
 #
-# program     frame   width  height  stride
+# program     frame   width  height  stride  assets
 EngineDemo    flush   640    480     640
 GuiOpening    flush   1024   768     1024
 widgets-on-screen  run  640    480     640
+GlobeDemo     flush   640    480     640     apps/globe/earth-texture.raw

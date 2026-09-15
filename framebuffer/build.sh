@@ -70,6 +70,14 @@ for src in "$@"; do
     row="$(awk -v n="$n" '$1 == n' "$HERE/programs.tsv")"
     rm -f "$NEXT/$n.screen" "$NEXT/$n.frame"
     [ -n "$row" ] && awk '{ print $2 }' <<< "$row" > "$NEXT/$n.frame"
+    # The files its asset loads read, from its checkout, under the preview's
+    # assets/ at the same paths.
+    checkout="$(awk '$1 == "checkout" { print $2 }' "$d/codex/quires.tsv")"
+    checkout="${checkout/#\~/$HOME}"
+    for a in $(awk '{ print $6 }' <<< "$row" | tr ',' ' '); do
+        mkdir -p "$NEXT/assets/$(dirname "$a")"
+        cp "$checkout/$a" "$NEXT/assets/$a"
+    done
     if [ -f "${src%.codex}.vmargs" ] && grep -q -- '-gop' "${src%.codex}.vmargs"; then
         python3 -c '
 import sys

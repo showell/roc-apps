@@ -23,6 +23,14 @@ emitted Roc, and this platform answers it in the host.
   0x400-0x417, the command buffer at 0xBE000000, the depth buffer at
   0xBE800000, triangles filled with interpolated depth and colour, then the
   glow. The host makes those buffers when the page gives the program a screen.
+  A triangle with texture coordinates samples the texture the program uploads
+  (0x408-0x40B), shaded by codex-vm's globe shader under the light and eye of
+  0x404-0x407, or modulating its colour.
+- **Files** a program reads through codex-vm's asset loader (0x40C, 0x40D,
+  0x417) come, natively, from the working directory, as codex-vm finds them
+  (`verify.sh` runs each program from the checkout), and in the browser and
+  `frames.mjs` from the preview's `assets/`, where `build.sh` copies the files
+  `programs.tsv` names.
 - **The keyboard controller** is codex-vm's, at ports 0x60 and 0x64: a queue of
   scancodes the host fills (`key`), empty until the page types. Any other port
   stops the run, naming it and its width.
@@ -36,7 +44,8 @@ emitted Roc, and this platform answers it in the host.
   in the key cell at 28680, where codex-vm's keyboard interrupt leaves it, and
   in the keyboard controller's queue; the mouse's position and buttons land in
   codex-vm's mouse ports. The runner hands them to the host before each run and
-  at every GPU flush.
+  at every GPU flush. codex-vm's relative mouse packet at 28684, which the
+  globe reads to drag, is not modelled.
 - **A frame** is one run of the program's opening, or, for a program that draws
   in a loop of its own and never ends its run, one GPU flush (`programs.tsv`
   says which). The page runs the program in a Web Worker (`web/runner.js`),
@@ -58,7 +67,7 @@ hold: safe here because the host stops at any address it does not back.
 | `platform/gpu.zig` | codex-vm's GPU over the program's memory |
 | `roc/Mem.roc`, `roc/Machine.roc` | the platform's side of the two states: the bump pointer as a value, every other door through the host |
 | `build.sh` | host, then each program emitted from a copy (so a `.vmargs` beside it stays behind), wired to the platform and built for wasm into the preview |
-| `programs.tsv` | what a frame is for a program, and the screen it expects when its sources name none |
+| `programs.tsv` | what a frame is for a program, the screen it expects when its sources name none, and the files its asset loads read |
 | `frames.mjs` | a program's frames from Node, runs or (`flushes:N`) GPU flushes: each frame's time, pixels drawn and a hash of the image, and the last frame as a PNG |
 | `verify.sh`, `verify.tsv` | screen mode 2: every program in the table built natively and run for its runs or flushes; the last frame's hash must be the table's, and a test's console its verdict |
 | `web/index.html`, `web/runner.js` | the page: the programs, Play, one frame at a time, the screen size, the console, the Roc; and its runner, the Web Worker that runs the program and posts its frames |
@@ -90,6 +99,7 @@ machine page's MachineGpu and this platform's GPU agreed.
 | `demos/sketch-on-screen.codex` | what `codex/test/rasterizer-test` and `sprite-test` draw, in one 80 x 60 Framebuf copied to the screen: lines, a rectangle, a filled circle and a triangle, keyed and flipped sprites, a blinking face |
 | `demos/raytrace-on-screen.codex` | `codex/test/raytracer-test`'s spheres and floor traced by Raytracer at 160 x 120 and copied to the screen, the red sphere bobbing by the clock; the spheres are lit at the ambient level alone and the floor at its full grey |
 | `demos/glyphs-on-screen.codex` | the glyph for A in `codex/test/truetype-render-test`'s embedded font, a single triangle, rasterized by GlyphRasterizer plain and anti-aliased at 16, 24 and 32 pixels to the em, each glyph pixel a 3 by 3 block |
+| `apps/globe/GlobeDemo.codex` | Cobblestone's globe: an icosphere wrapped in the 2048 x 1024 earth image it loads from disk, shaded by codex-vm's globe shader, turning; with no image it paints a planet in Codex. Its wasm needs more stack than a browser gives: `gtris` and `gtris-next`, which only forwards back to `gtris`, call each other once a visible triangle |
 
 Drawing these showed three things about the chapters under them:
 
@@ -119,7 +129,6 @@ Cobblestone's other drawing apps do not run here yet:
 |---|---|
 | `apps/circuits` | BitmapFont's GPU text path calls `gpu-rect-top`, `gpu-rect-chrome` and `gpu-seq`, which the app defines, so the emitted modules import each other; `roc check` names the cycle and `roc build` crashes on it |
 | `apps/fireworks` | `rnd` multiplies a plain `Integer` past 64 bits before the first flush. A plain `Integer` traps on overflow in Cobblestone's x86 code (`int-trap-after`, `int-ty-default` is `OvError`), and Roc's `*` crashes the same way; its `hsh` is declared `wrapping` and `rnd` is not. The cinematic pass, the fade clear and the additive sprites it draws with are in `gpu.zig`, not yet exercised |
-| `apps/globe` | loads its earth texture through the GPU's asset ports (0x408-0x40D, 0x417) |
 | `apps/c64` | plays its SID through the HDA sound card's MMIO |
 
 `PERF.md` is what a frame costs and where the time goes.

@@ -32,3 +32,7 @@ roc-apps:framebuffer/demos/qr-on-screen.codex      runs=1     e4f6b335
 roc-apps:framebuffer/demos/sketch-on-screen.codex  runs=2     eec762a5
 roc-apps:framebuffer/demos/raytrace-on-screen.codex runs=2    dc47f30d
 roc-apps:framebuffer/demos/glyphs-on-screen.codex  runs=1     13afd485
+# Cobblestone's globe, run from the checkout so its asset load finds
+# apps/globe/earth-texture.raw; the hash is the one the native build and the
+# wasm build (from Node, with a larger stack) both drew.
+cobblestone:apps/globe/GlobeDemo.codex             flushes=3  cbc9c3d0

@@ -67,7 +67,9 @@ for row in "${rows[@]}"; do
     fi
     screen=(320 240 320)
     [ -f "$NEXT/$n.screen" ] && read -ra screen < "$NEXT/$n.screen"
-    "$d/native" -screen "${screen[@]}" "${mode[@]}" > "$d/native.out" 2> "$d/native.err"
+    # From the checkout, where codex-vm runs, so an asset load's relative path
+    # names the file it names there.
+    (cd "$CHECKOUT" && "$d/native" -screen "${screen[@]}" "${mode[@]}") > "$d/native.out" 2> "$d/native.err"
     code=$?
     last="$(grep '^-- frame' "$d/native.out" | tail -1)"
     got="${last##*hash }"

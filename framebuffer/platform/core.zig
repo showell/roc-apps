@@ -299,11 +299,101 @@ fn gpuPort(port: u64) bool {
     return port >= gpu.port_lo and port <= gpu.port_hi;
 }
 
+/// codex-vm's texture upload and asset loader, the GPU ports that reach the
+/// program's memory. 0x408, 0x409 and 0x40A name a texture's address, width
+/// and height, and 0x40B commits it: the host copies it out of memory for the
+/// GPU, three bytes a texel, or a word a texel when the word committed is 1.
+/// 0x40C and 0x40D name a NUL-terminated path and a destination, and 0x417
+/// loads the file there, its size answered on 0x40E and 0x40F; the host's root
+/// finds the file (`asset`), and a path it cannot find loads nothing. As in
+/// codex-vm, the address at 0x408 is masked to 32 bits and those at 0x40C and
+/// 0x40D are widened from the signed words they arrive as.
+var tex_addr: u64 = 0;
+var tex_w: i32 = 0;
+var tex_h: i32 = 0;
+var tex_bytes: []u8 = &.{};
+var asset_path: u64 = 0;
+var asset_dest: u64 = 0;
+
+fn widened(value: u64) u64 {
+    return @bitCast(@as(i64, @as(i32, @bitCast(@as(u32, @truncate(value))))));
+}
+
+/// Answers whether the port was one of these.
+fn textureOrAsset(g: *gpu.Gpu, port: u64, value: u64) bool {
+    switch (port) {
+        0x408 => tex_addr = @as(u32, @truncate(value)),
+        0x409 => tex_w = @bitCast(@as(u32, @truncate(value))),
+        0x40A => tex_h = @bitCast(@as(u32, @truncate(value))),
+        0x40B => commitTexture(g, @truncate(value)),
+        0x40C => asset_path = widened(value),
+        0x40D => asset_dest = widened(value),
+        0x417 => loadAsset(g),
+        else => return false,
+    }
+    return true;
+}
+
+fn commitTexture(g: *gpu.Gpu, word: u32) void {
+    if (tex_w <= 0 or tex_h <= 0) return;
+    const mode: u32 = if (word == 1) 1 else 0;
+    const size = @as(u64, @intCast(tex_w)) * @as(u64, @intCast(tex_h)) * @as(u64, if (mode == 1) 4 else 3);
+    if (tex_addr + size > ram_top) return;
+    const copy = root.allocator.alloc(u8, @intCast(size)) catch root.stop("gpu: the host has no room for the texture");
+    copyOut(tex_addr, copy);
+    if (tex_bytes.len > 0) root.allocator.free(tex_bytes);
+    tex_bytes = copy;
+    g.tex = copy;
+    g.tex_w = @intCast(tex_w);
+    g.tex_h = @intCast(tex_h);
+    g.tex_mode = mode;
+}
+
+fn loadAsset(g: *gpu.Gpu) void {
+    g.asset_size = 0;
+    if (asset_path >= ram_top or asset_dest >= ram_top) return;
+    var path: [255]u8 = undefined;
+    var n: usize = 0;
+    while (n < path.len and asset_path + n < ram_top) : (n += 1) {
+        const ch: u8 = @truncate(load(asset_path + n, 1));
+        if (ch == 0) break;
+        path[n] = ch;
+    }
+    const bytes = root.asset(path[0..n]) orelse return;
+    if (bytes.len == 0 or asset_dest + bytes.len > ram_top) return;
+    copyIn(asset_dest, bytes);
+    g.asset_size = bytes.len;
+}
+
+/// `dest.len` bytes of memory from `addr`, a page at a time.
+fn copyOut(addr: u64, dest: []u8) void {
+    var done: usize = 0;
+    while (done < dest.len) {
+        const a = addr + done;
+        const off: usize = @intCast(a & page_mask);
+        const n = @min(page_size - off, dest.len - done);
+        @memcpy(dest[done..][0..n], page(a)[off..][0..n]);
+        done += n;
+    }
+}
+
+/// `bytes` into memory from `addr`, a page at a time.
+fn copyIn(addr: u64, bytes: []const u8) void {
+    var done: usize = 0;
+    while (done < bytes.len) {
+        const a = addr + done;
+        const off: usize = @intCast(a & page_mask);
+        const n = @min(page_size - off, bytes.len - done);
+        @memcpy(page(a)[off..][0..n], bytes[done..][0..n]);
+        done += n;
+    }
+}
+
 /// The `width` bytes a port answers.
 fn hostedPortIn(port: u64, width: u64) callconv(.c) u64 {
     if (gpuPort(port) and width == 4) {
-        if (the_gpu == null) root.stop("gpu: a GPU port read before the program has a screen");
-        return gpu.Gpu.portIn(port) orelse
+        const g = if (the_gpu) |*it| it else root.stop("gpu: a GPU port read before the program has a screen");
+        return g.portIn(port) orelse
             root.stop(std.fmt.bufPrint(&gpu_msg, "gpu: port-in-32 from GPU port 0x{X}, which this platform does not model", .{port}) catch "gpu: port-in-32 from a GPU port this platform does not model");
     }
     if (port == kbd_data and width == 1) {
@@ -324,7 +414,9 @@ fn hostedPortIn(port: u64, width: u64) callconv(.c) u64 {
 fn hostedPortOut(port: u64, value: u64, width: u64) callconv(.c) void {
     if (gpuPort(port) and width == 4) {
         const g = if (the_gpu) |*it| it else root.stop("gpu: a GPU port written before the program has a screen");
-        if (g.portOut(port, @truncate(value), &gpu_msg)) |why| root.stop(why);
+        if (!textureOrAsset(g, port, value)) {
+            if (g.portOut(port, @truncate(value), &gpu_msg)) |why| root.stop(why);
+        }
         if (port == 0x400) root.flushed();
         return;
     }

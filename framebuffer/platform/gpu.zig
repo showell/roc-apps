@@ -1,14 +1,21 @@
 //! The GPU codex-vm models behind ports 0x400-0x417, drawing into the GOP
 //! framebuffer: tools/codex-vm.c's gpu_clear_fb, gpu_fade_clear,
-//! gpu_clear_depth, gpu_rasterize_band, gpu_lerp_color, gpu_atmosphere_glow
-//! and gpu_cinematic_post, over the program's own memory. A program writes
-//! triangles into the command buffer at 0xBE000000, 72 bytes each; clears the
-//! framebuffer (port 0x401) or fades it toward a colour (0x40E), and clears the
-//! depth buffer at 0xBE800000 (0x402); and flushes a count (0x400). Each
-//! triangle is filled where its three edge functions agree, its depth and colour
-//! interpolated across it, a pixel drawn only where it is strictly nearer than
-//! what the depth buffer holds; then the glow tints the background within 16
-//! pixels of what was drawn.
+//! gpu_clear_depth, gpu_rasterize_band, gpu_lerp_color, gpu_atmosphere_glow,
+//! gpu_cinematic_post, and gpu_shade_globe with its two samplers, over the
+//! program's own memory. A program writes triangles into the command buffer at
+//! 0xBE000000, 72 bytes each; clears the framebuffer (port 0x401) or fades it
+//! toward a colour (0x40E), and clears the depth buffer at 0xBE800000 (0x402);
+//! and flushes a count (0x400). Each triangle is filled where its three edge
+//! functions agree, its depth and colour interpolated across it, a pixel drawn
+//! only where it is strictly nearer than what the depth buffer holds; then the
+//! glow tints the background within 16 pixels of what was drawn.
+//!
+//! A triangle with texture coordinates samples the texture the host last
+//! committed (ports 0x408-0x40B, in core.zig): in mode 0, three bytes a texel
+//! read bilinearly and shaded as a globe under the light and eye of ports
+//! 0x404-0x407; in mode 1, a word a texel read nearest, modulating the vertex
+//! colour. One before any texture, which codex-vm shades with a procedural
+//! Earth, stops the run by name.
 //!
 //! Port 0x410 turns on the cinematic pass. While it is on, a triangle's first
 //! texture word is its blend: 1 adds its colour to the pixels under it, 2 adds
@@ -19,8 +26,8 @@
 //! codex-vm addresses the framebuffer's rows by the visible width, so with a
 //! padded stride it draws nothing (gop_host_gpu_refuses), and so does this. No
 //! program here arms the viewport, so it is not modelled, and codex-vm's frame
-//! pacing is the page's to do. A textured triangle, the shadow map and every
-//! other port stop the run by name.
+//! pacing is the page's to do. The shadow map and every other port stop the run
+//! by name.
 
 const std = @import("std");
 
@@ -61,13 +68,28 @@ pub const Gpu = struct {
     cine: u32 = 0,
     bloom: []f32,
     bloom_tmp: []f32,
+    /// The light's direction and the eye's (ports 0x404-0x407), each a
+    /// thousandth of the word written; the eye's y and z are the light's.
+    light: [3]f32 = .{ 0, 0, 0 },
+    eye: [3]f32 = .{ 0, 0, 0 },
+    /// The texture port 0x40B last committed, copied out of the program's
+    /// memory by the host, which owns it: three bytes a texel in mode 0, a
+    /// 0x00RRGGBB word a texel in mode 1. Empty until one is committed.
+    tex: []const u8 = &.{},
+    tex_w: usize = 0,
+    tex_h: usize = 0,
+    tex_mode: u32 = 0,
+    /// The bytes the last asset load read (port 0x417), answered on 0x40E and
+    /// 0x40F.
+    asset_size: u64 = 0,
 
     fn refuses(g: *const Gpu) bool {
         return g.stride != g.w;
     }
 
-    /// A write of `value` to a port in 0x400-0x417. Answers null, or the
-    /// message the run stops with.
+    /// A write of `value` to one of the GPU's own ports in 0x400-0x417; the
+    /// texture's and the asset loader's reach the program's memory and are the
+    /// host's (core.zig). Answers null, or the message the run stops with.
     pub fn portOut(g: *Gpu, port: u64, value: u32, msg: []u8) ?[]const u8 {
         switch (port) {
             0x401 => g.clear(value),
@@ -87,18 +109,23 @@ pub const Gpu = struct {
                 if (value != 0) return "gpu: port-out-32 to port 0x40F arms the GPU's viewport, which this platform does not model";
             },
             0x410 => g.cine = value,
+            0x404 => g.light[0] = milli(value),
+            0x405 => g.light[1] = milli(value),
+            0x406 => g.light[2] = milli(value),
+            0x407 => g.eye = .{ milli(value), g.light[1], g.light[2] },
             else => return std.fmt.bufPrint(msg, "gpu: port-out-32 to GPU port 0x{X}, which this platform does not model", .{port}) catch "gpu: port-out-32 to a GPU port this platform does not model",
         }
         return null;
     }
 
     /// A read of a port in 0x400-0x417: 0x403 answers that a rasterizer is
-    /// there, and 0x40E and 0x40F the size of the last asset loaded, which with
-    /// none loaded is 0. Null for a port this does not model.
-    pub fn portIn(port: u64) ?u32 {
+    /// there, and 0x40E and 0x40F the low and high halves of the last asset
+    /// load's size. Null for a port this does not model.
+    pub fn portIn(g: *const Gpu, port: u64) ?u32 {
         return switch (port) {
             0x403 => 1,
-            0x40E, 0x40F => 0,
+            0x40E => @truncate(g.asset_size),
+            0x40F => @truncate(g.asset_size >> 32),
             else => null,
         };
     }
@@ -155,11 +182,13 @@ pub const Gpu = struct {
         const x2: i64 = @as(i32, @bitCast(tri[4]));
         const y2: i64 = @as(i32, @bitCast(tri[5]));
         var blend: i32 = 0;
+        var textured = false;
         if (g.cine != 0) {
             // u0: 0 opaque, 1 a hard add, 2 a soft round sprite at (u1, v1), radius u2.
             blend = @bitCast(tri[12]);
         } else if (tri[12] | tri[13] | tri[14] | tri[15] | tri[16] | tri[17] != 0) {
-            return "gpu: a textured triangle, which this platform's GPU does not draw";
+            if (g.tex.len == 0) return "gpu: a textured triangle before any texture is committed, which codex-vm shades with a procedural Earth this platform does not draw";
+            textured = true;
         }
         const cx: i32 = @bitCast(tri[14]);
         const cy: i32 = @bitCast(tri[15]);
@@ -202,7 +231,7 @@ pub const Gpu = struct {
                 } else {
                     const depth: u32 = @bitCast(@as(i32, @truncate(@divTrunc(d0 * bw0 + d1 * bw1 + d2 * bw2, abs_area))));
                     if (depth < g.db[idx]) {
-                        g.fb[idx] = lerp(c0, c1, c2, bw0, bw1, bw2, abs_area);
+                        g.fb[idx] = if (textured) g.texel(tri, bw0, bw1, bw2, abs_area) else lerp(c0, c1, c2, bw0, bw1, bw2, abs_area);
                         g.db[idx] = depth;
                     }
                 }
@@ -373,6 +402,132 @@ pub const Gpu = struct {
             }
         }
     }
+
+    /// A textured fragment: its texture coordinates interpolated as its depth
+    /// is, then in mode 1 the texel modulating the vertex colour, and in mode 0
+    /// the globe's shading.
+    fn texel(g: *const Gpu, tri: *const [18]u32, bw0: i64, bw1: i64, bw2: i64, area: i64) u32 {
+        const u = interp(tri[12], tri[14], tri[16], bw0, bw1, bw2, area);
+        const v = interp(tri[13], tri[15], tri[17], bw0, bw1, bw2, area);
+        if (g.tex_mode == 1) {
+            const t = g.samplePlain(u, v);
+            const lit = lerp(tri[6], tri[7], tri[8], bw0, bw1, bw2, area);
+            return (modulate(lit >> 16, t >> 16) << 16) | (modulate(lit >> 8, t >> 8) << 8) | modulate(lit, t);
+        }
+        return g.shadeGlobe(u, v);
+    }
+
+    /// Mode 0's sample: three bytes a texel, bilinear, with u reversed and
+    /// wrapped and v reversed and held at the edges.
+    fn sampleGlobe(g: *const Gpu, tu: i32, tv: i32) u32 {
+        var fu: f32 = 1.0 - @as(f32, @floatFromInt(tu)) / 1000.0;
+        var fv: f32 = 1.0 - @as(f32, @floatFromInt(tv)) / 1000.0;
+        fu = fu - @floor(fu);
+        if (fv < 0) fv = 0;
+        if (fv > 1) fv = 1;
+        const px = fu * @as(f32, @floatFromInt(g.tex_w - 1));
+        const py = fv * @as(f32, @floatFromInt(g.tex_h - 1));
+        const ix: usize = @intFromFloat(px);
+        const iy: usize = @intFromFloat(py);
+        const fx = px - @as(f32, @floatFromInt(ix));
+        const fy = py - @as(f32, @floatFromInt(iy));
+        const ix1 = if (ix + 1 < g.tex_w) ix + 1 else 0;
+        const iy1 = if (iy + 1 < g.tex_h) iy + 1 else iy;
+        const t = g.tex;
+        const p00 = (iy * g.tex_w + ix) * 3;
+        const p10 = (iy * g.tex_w + ix1) * 3;
+        const p01 = (iy1 * g.tex_w + ix) * 3;
+        const p11 = (iy1 * g.tex_w + ix1) * 3;
+        var out: u32 = 0;
+        for (0..3) |c| {
+            const s = @as(f32, @floatFromInt(t[p00 + c])) * (1 - fx) * (1 - fy) + @as(f32, @floatFromInt(t[p10 + c])) * fx * (1 - fy) + @as(f32, @floatFromInt(t[p01 + c])) * (1 - fx) * fy + @as(f32, @floatFromInt(t[p11 + c])) * fx * fy;
+            out = (out << 8) | @as(u32, @intFromFloat(s));
+        }
+        return out;
+    }
+
+    /// Mode 1's sample: a 0x00RRGGBB word a texel, nearest, both axes wrapped.
+    fn samplePlain(g: *const Gpu, tu: i32, tv: i32) u32 {
+        var fu: f32 = @as(f32, @floatFromInt(tu)) / 1000.0;
+        var fv: f32 = @as(f32, @floatFromInt(tv)) / 1000.0;
+        fu = fu - @floor(fu);
+        fv = fv - @floor(fv);
+        const w: i32 = @intCast(g.tex_w);
+        const h: i32 = @intCast(g.tex_h);
+        const ix = std.math.clamp(@as(i32, @intFromFloat(fu * @as(f32, @floatFromInt(w)))), 0, w - 1);
+        const iy = std.math.clamp(@as(i32, @intFromFloat(fv * @as(f32, @floatFromInt(h)))), 0, h - 1);
+        const at: usize = @intCast((iy * w + ix) * 4);
+        return std.mem.readInt(u32, g.tex[at..][0..4], .little) & 0xFFFFFF;
+    }
+
+    /// codex-vm's globe shader: the texture pinched toward the meridian near
+    /// the poles and faded to ice at them, a sphere's normal made from the
+    /// coordinates, wrapped diffuse light, specular where a texel is blue enough
+    /// to be water, and a Fresnel rim that fades out above 45 degrees of
+    /// latitude. Single-precision, step for step as codex-vm computes it.
+    fn shadeGlobe(g: *const Gpu, u: i32, v: i32) u32 {
+        const uf: f32 = @floatFromInt(u);
+        const vf: f32 = @floatFromInt(v);
+        var tex: u32 = undefined;
+        if (v < 140 or v > 860) {
+            const pole_t: f32 = if (v < 140) vf / 140.0 else @as(f32, @floatFromInt(1000 - v)) / 140.0;
+            const u_fixed: i32 = @intFromFloat(500.0 + @as(f32, @floatFromInt(u - 500)) * pole_t);
+            const v_edge: i32 = if (v < 140)
+                @intFromFloat(vf + @as(f32, @floatFromInt(140 - v)) * (1.0 - pole_t))
+            else
+                @intFromFloat(vf - @as(f32, @floatFromInt(v - 860)) * (1.0 - pole_t));
+            const sampled = g.sampleGlobe(u_fixed, v_edge);
+            tex = if (pole_t < 0.3) colorLerp(0xD8E0EC, sampled, pole_t / 0.3) else sampled;
+        } else {
+            tex = g.sampleGlobe(u, v);
+        }
+        const px_lon: f32 = -3.14159 + (uf / 1000.0) * 6.28318;
+        const px_lat: f32 = 1.5708 - (vf / 1000.0) * 3.14159;
+        const clat = @cos(px_lat);
+        const slat = @sin(px_lat);
+        const clon = @cos(px_lon);
+        const slon = @sin(px_lon);
+        const nx = clat * clon;
+        const ny = slat;
+        const nz = clat * slon;
+        const l = g.light;
+        const e = g.eye;
+        const ndl = nx * l[0] + ny * l[1] + nz * l[2];
+        var wrap = (ndl + 0.5) / 1.5;
+        if (wrap < 0) wrap = 0;
+        var intensity = 0.22 + wrap * 1.1;
+        if (intensity > 1.4) intensity = 1.4;
+        var nde = nx * e[0] + ny * e[1] + nz * e[2];
+        if (nde < 0) nde = 0;
+        var fresnel = 1.0 - nde;
+        if (fresnel < 0) fresnel = 0;
+        const rim = fresnel * fresnel * fresnel;
+        var spec: f32 = 0;
+        const is_water = (tex & 0xFF) > ((tex >> 16) & 0xFF) + 15;
+        if (is_water and ndl > 0) {
+            var hx = l[0] + e[0];
+            var hy = l[1] + e[1];
+            var hz = l[2] + e[2];
+            const hlen = @sqrt(hx * hx + hy * hy + hz * hz);
+            if (hlen > 0.001) {
+                hx /= hlen;
+                hy /= hlen;
+                hz /= hlen;
+            }
+            const ndh = nx * hx + ny * hy + nz * hz;
+            if (ndh > 0) {
+                const s4 = ndh * ndh * ndh * ndh;
+                const sharp = s4 * s4 * s4 * s4 * 0.7;
+                spec = sharp + s4 * 0.12;
+            }
+        }
+        const lat_abs = @abs(px_lat * 57.2958);
+        const rim_scale: f32 = if (lat_abs > 65) 0 else if (lat_abs > 45) (65 - lat_abs) / 20.0 else 1;
+        const r = shaded((tex >> 16) & 0xFF, intensity, spec, rim * rim_scale * 40);
+        const gr = shaded((tex >> 8) & 0xFF, intensity, spec, rim * rim_scale * 70);
+        const b = shaded(tex & 0xFF, intensity, spec, rim * rim_scale * 140);
+        return (r << 16) | (gr << 8) | b;
+    }
 };
 
 fn edge(ax: i64, ay: i64, bx: i64, by: i64, px: i64, py: i64) i64 {
@@ -408,6 +563,47 @@ fn add(dst: u32, src: u32, scale: f32) u32 {
         if (shift == 0) break;
     }
     return out;
+}
+
+/// A word written to a light or eye port, as thousandths.
+fn milli(value: u32) f32 {
+    return @as(f32, @floatFromInt(@as(i32, @bitCast(value)))) / 1000.0;
+}
+
+/// A texture coordinate interpolated across a triangle, the int of a 64-bit
+/// quotient as codex-vm takes it.
+fn interp(a: u32, b: u32, c: u32, w0: i64, w1: i64, w2: i64, area: i64) i32 {
+    const wide = @as(i64, @as(i32, @bitCast(a))) * w0 + @as(i64, @as(i32, @bitCast(b))) * w1 + @as(i64, @as(i32, @bitCast(c))) * w2;
+    return @truncate(@divTrunc(wide, area));
+}
+
+/// One channel of a colour scaled by a texel's, in 255ths.
+fn modulate(lit: u32, tex: u32) u32 {
+    return ((lit & 0xFF) * (tex & 0xFF)) / 255;
+}
+
+/// `c0` moved toward `c1` by `t`, each channel truncated, as codex-vm's
+/// color_lerp does it.
+fn colorLerp(c0: u32, c1: u32, t: f32) u32 {
+    if (t <= 0) return c0;
+    if (t >= 1.0) return c1;
+    var out: u32 = 0;
+    var shift: u5 = 16;
+    while (true) : (shift -= 8) {
+        const a: i32 = @intCast((c0 >> shift) & 0xFF);
+        const b: i32 = @intCast((c1 >> shift) & 0xFF);
+        const v: i32 = @intFromFloat(@as(f32, @floatFromInt(a)) + @as(f32, @floatFromInt(b - a)) * t);
+        out |= @as(u32, @bitCast(v)) << shift;
+        if (shift == 0) break;
+    }
+    return out;
+}
+
+/// A channel of the globe's shading: the texel's by the light's intensity,
+/// with the specular and the rim added, held to a byte.
+fn shaded(c: u32, intensity: f32, spec: f32, rim: f32) u32 {
+    const v: i32 = @intFromFloat(@as(f32, @floatFromInt(c)) * intensity + spec * 255 + rim);
+    return @intCast(std.math.clamp(v, 0, 255));
 }
 
 fn channelOf(p: u32, shift: u5) f32 {
