@@ -16,6 +16,7 @@
 # value. That is the same shape x86's builtin already had, and it is why this
 # platform copies nothing.
 import pf.Heap
+import pf.Port
 import pf.Disk
 import pf.Clock
 import MachineCaps
@@ -196,6 +197,64 @@ Machine :: [].{
 
 	wait! : Machine.Machine, I64 => (Machine.Machine, I64)
 	wait! = |m, deadline| (m, U64.to_i64_wrap(Clock.wait!(I64.to_u64_wrap(deadline))))
+
+	# ---- the ports and the keyboard --------------------------------------
+	#
+	# The host answers codex-vm's GPU at 0x400-0x417 and its keyboard
+	# controller at 0x60 and 0x64; a port no device there answers stops the run,
+	# naming the port and its width.
+
+	# `uefi-read-key-ex` asks UEFI's ConIn through the system table whose
+	# address sits at 30704; with none there, as on codex-vm's bare-metal boot,
+	# it answers -1.
+	uefi_read_key_ex! : Machine.Machine => (Machine.Machine, I64)
+	uefi_read_key_ex! = |m| {
+		table = Heap.load!(30704, 8)
+		if table == 0 {
+			(m, -1)
+		} else {
+			crash("floor: uefi-read-key-ex with a UEFI system table, which this platform does not model")
+		}
+	}
+
+	# `uefi-read-key`: the key cell at 28680 exchanged with zero, as its
+	# scancode byte.
+	uefi_read_key! : Machine.Machine => (Machine.Machine, I64)
+	uefi_read_key! = |m| {
+		cell = Heap.load!(28680, 8)
+		Heap.store!(28680, 0, 8)
+		(m, U64.to_i64_wrap(U64.bitwise_and(cell, 255)))
+	}
+
+	# A port write answers 0, as it does on x86; the host masks the value to the
+	# port's width.
+	port_write! : Machine.Machine, I64, I64, U64 => (Machine.Machine, I64)
+	port_write! = |m, port, value, width| {
+		Port.out!(Machine.at(port), I64.to_u64_wrap(value), width)
+		(m, 0)
+	}
+
+	port_read! : Machine.Machine, I64, U64 => (Machine.Machine, I64)
+	port_read! = |m, port, width| (m, U64.to_i64_wrap(Port.in!(Machine.at(port), width)))
+
+	# `port-out-32`, and `gpu-out` with it.
+	port_out_32! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
+	port_out_32! = |m, port, value| Machine.port_write!(m, port, value, 4)
+
+	port_in_32! : Machine.Machine, I64 => (Machine.Machine, I64)
+	port_in_32! = |m, port| Machine.port_read!(m, port, 4)
+
+	port_out_16! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
+	port_out_16! = |m, port, value| Machine.port_write!(m, port, value, 2)
+
+	port_in_16! : Machine.Machine, I64 => (Machine.Machine, I64)
+	port_in_16! = |m, port| Machine.port_read!(m, port, 2)
+
+	port_out_byte! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
+	port_out_byte! = |m, port, value| Machine.port_write!(m, port, value, 1)
+
+	port_in_byte! : Machine.Machine, I64 => (Machine.Machine, I64)
+	port_in_byte! = |m, port| Machine.port_read!(m, port, 1)
 
 	# ---- the process -----------------------------------------------------
 

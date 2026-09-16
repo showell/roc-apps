@@ -16,7 +16,7 @@ ROCEMIT="${ROCEMIT:-$HOME/build/rust-target/release/rocemit}"
 ZIG="${ZIG:-$HOME/zig-0.16.0/zig}"
 ROC_CHECKOUT="${ROC_CHECKOUT:-$HOME/showell_repos/roc}"
 GEN="$HOME/build/roc-apps/gen/floor"
-mkdir -p "$GEN" "$HERE/platform/targets/x64musl"
+mkdir -p "$GEN" "$HERE/platform/targets/x64musl" "$HERE/platform/targets/wasm32"
 # **THE HOST IS BUILT FAST, NOT DEBUG**: every read and write of the program's
 # memory is a call into it. It links with musl's C runtime, copied from the roc
 # checkout's fx test platform.

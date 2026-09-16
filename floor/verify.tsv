@@ -1,12 +1,25 @@
 # What verify.sh runs on the floor: the program, the host flags (`-` for none),
-# and the console it must print -- `verdict` for the unit's own cleaned
-# .expected, or a path in this repo.
+# the console it must print -- `verdict` for the unit's own cleaned .expected,
+# or a path in this repo -- and the hash its last frame must draw (`-` for a
+# program with no screen).
 #
 # The fault rows pin what the Roc above does when the floor breaks its
 # promises, so it is a regression test and not an anecdote.
-cobblestone:codex/test/fat16-write.codex	-	verdict
-cobblestone:codex/test/fat16-write.codex	-fault tear-write	verdict
-cobblestone:codex/test/fat16-write.codex	-fault refuse-write	floor/expect/fat16-write.nothing-lands
-cobblestone:codex/test/fat16-write.codex	-fault refuse-write -fault-every 2	floor/expect/fat16-write.nothing-lands
-cobblestone:codex/test/fat16-write.codex	-fault refuse-read	floor/expect/fat16-write.nothing-lands
-cobblestone:codex/test/fat16-write.codex	-fault refuse-read -fault-every 7	floor/expect/fat16-write.silent-loss
+#
+# The screen hashes are framebuffer/verify.tsv's, which the framebuffer
+# platform and the machine page's MachineGpu both drew: a row here is a check
+# that this floor draws the same image as the two things that came before it.
+#
+# program	flags	console	hash
+cobblestone:codex/test/fat16-write.codex	-	verdict	-
+cobblestone:codex/test/fat16-write.codex	-fault tear-write	verdict	-
+cobblestone:codex/test/fat16-write.codex	-fault refuse-write	floor/expect/fat16-write.nothing-lands	-
+cobblestone:codex/test/fat16-write.codex	-fault refuse-write -fault-every 2	floor/expect/fat16-write.nothing-lands	-
+cobblestone:codex/test/fat16-write.codex	-fault refuse-read	floor/expect/fat16-write.nothing-lands	-
+cobblestone:codex/test/fat16-write.codex	-fault refuse-read -fault-every 7	floor/expect/fat16-write.silent-loss	-
+cobblestone:codex/test/gpu-panel-border.codex	-screen 640 480 640	verdict	fee5df14
+cobblestone:codex/test/gpu-depth-tree.codex	-screen 640 480 640	verdict	2c7c1dc1
+cobblestone:codex/test/gpu-gauge-clamp.codex	-screen 640 480 640	verdict	c990fa29
+cobblestone:codex/test/gpu-input-cursor.codex	-screen 640 480 640	verdict	dbf102b2
+cobblestone:codex/test/gop-padded-stride.codex	-screen 320 240 512	verdict	1989e38f
+roc-apps:machine/batch/demos/scene-on-screen.codex	-screen 320 240 320	floor/expect/scene-on-screen.console	1271e425

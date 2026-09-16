@@ -1,13 +1,15 @@
-// The floor's native host (platform/native.zig), compiled against roc's own
-// `builtins`, `host_alloc` and `shim_io` modules from the roc checkout
-// (-Droc=<path>, default ~/showell_repos/roc): a static library for
-// x86_64-linux-musl that roc links with musl's crt1.o and libc.a. The module
-// graph is the one roc's build.zig gives the same host in its own tests
-// (test/fx); options.zig stands in for roc's generated build options.
+// The floor's two hosts, each compiled against roc's own `builtins`,
+// `host_alloc` and `shim_io` modules from the roc checkout (-Droc=<path>,
+// default ~/showell_repos/roc): the browser's (platform/host.zig), an object
+// for wasm32-freestanding, and the native checker's (platform/native.zig), a
+// static library for x86_64-linux-musl that roc links with musl's crt1.o and
+// libc.a. Both are one compilation of the same core.zig, so a program behaves
+// the same in each. The module graph is the one roc's build.zig gives the same
+// hosts in its tests (test/wasm, test/fx); options.zig stands in for roc's
+// generated build options.
 //
-// The browser's host is not built here yet. When it arrives it is a second
-// compilation of the same core.zig for wasm32-freestanding, as the framebuffer
-// platform's build.zig already does for its two.
+// A third root -- a real machine's, with its own framebuffer and its own
+// clock -- is another compilation beside these two and nothing more.
 const std = @import("std");
 
 const Roc = struct {
@@ -59,6 +61,26 @@ pub fn build(b: *std.Build) void {
         b.pathFromRoot("../../roc");
     const optimize = b.standardOptimizeOption(.{ .preferred_optimize_mode = .ReleaseFast });
     const copy = b.addUpdateSourceFiles();
+
+    const web = rocModules(b, roc);
+    const host = b.addObject(.{
+        .name = "host",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("platform/host.zig"),
+            .target = b.resolveTargetQuery(.{ .cpu_arch = .wasm32, .os_tag = .freestanding, .abi = .none }),
+            .optimize = optimize,
+            .pic = true,
+            .imports = &.{
+                .{ .name = "builtins", .module = web.builtins },
+                .{ .name = "host_alloc", .module = web.host_alloc },
+            },
+        }),
+    });
+    host.use_llvm = true;
+    host.link_function_sections = true;
+    host.link_data_sections = true;
+    host.bundle_compiler_rt = true;
+    copy.addCopyFileToSource(host.getEmittedBin(), "platform/targets/wasm32/host.wasm");
 
     const native = rocModules(b, roc);
     const lib = b.addLibrary(.{

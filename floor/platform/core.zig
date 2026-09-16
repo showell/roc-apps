@@ -1,34 +1,44 @@
-//! What the floor's hosts share. A Codex program's memory lives here rather
-//! than in Roc: 3 GB of RAM in 1 MB pages, each made and zeroed the first time
-//! the program touches it, read and written through the platform's Heap doors.
-//! The block device's images live here too, and so does the clock.
+//! What the floor's hosts share: the native checker's (native.zig), the
+//! browser's (host.zig, wasm), and any third root a real machine wants. A
+//! Codex program's memory lives here rather than in Roc: 3 GB of RAM in 1 MB
+//! pages, each made and zeroed the first time the program touches it, read and
+//! written through the platform's Heap doors. The block device's images live
+//! here too, and so does the clock.
 //!
 //! **A TRANSFER NAMES AN ADDRESS, NEVER A PAYLOAD.** `Disk.read!` takes a
 //! sector and an address and moves the 512 bytes from one host-owned buffer to
 //! another; nothing but integers crosses the door. That is what a controller
 //! doing DMA actually does, and it is why the Roc above can stay pure.
 //!
-//! **EVERY DOOR IS LOUD.** A refusal names the address, the position or the
-//! sector, and says what was expected. The Roc side cannot inspect the host's
-//! state, so the host has to say what it saw.
+//! **EVERY DOOR IS LOUD.** A refusal names the address, the port or the
+//! position, and says what was expected. The Roc side cannot inspect the
+//! host's state, so the host has to say what it saw.
 //!
-//! The faults (`fault`) are the beginning of the other half of the idea: the
-//! floor can be put in a mode where it breaks its promises on purpose -- a
-//! write refused, a write torn in half -- and the Roc above has to cope. They
-//! are deterministic, counted, and reported at the end of a run.
+//! The screen is part of memory, as a UEFI GOP framebuffer is part of a
+//! machine's. The host publishes its geometry where UEFI's GOP protocol keeps
+//! it (the cells codex-vm writes), codex-vm's GPU (gpu.zig) draws into it
+//! through the Port doors, and the host reads the pixels back out.
 //!
-//! The root file supplies `allocator`, and `stop`, which ends the run with a
-//! message the way that host reports one.
+//! A run is one pass of the program's opening. Memory outlives a run, so a
+//! frame starts from what the last one left; the frame cell is what the host
+//! writes between them. A program that draws in a loop of its own never ends
+//! its run, and each GPU flush is its frame instead.
 //!
-//! The page table here is the framebuffer platform's (framebuffer/platform/
-//! core.zig), which holds the same 1 MB pages under the same 3 GB. The two
-//! converge when the screen arrives on this floor; until then the duplication
-//! is deliberate and dated (2026-09-16).
+//! The faults are the other half of the idea: the floor can be put in a mode
+//! where it breaks its promises on purpose -- a write refused, a write torn in
+//! half, a read that never arrives -- and the Roc above has to cope. They are
+//! deterministic, counted, and reported at the end of a run.
+//!
+//! The root file supplies `allocator`; `stop`, which ends the run with a
+//! message the way that host reports one; `flushed`, told of each GPU flush;
+//! `asset`, the bytes of a file a program loads; and `nowNs` and `sleepNs` for
+//! the wall clock.
 
 const std = @import("std");
 const builtins = @import("builtins");
 const host_alloc = @import("host_alloc");
 const root = @import("root");
+const gpu = @import("gpu.zig");
 
 const RocOps = builtins.host_abi.RocOps;
 const RocList = builtins.list.RocList;
@@ -113,23 +123,24 @@ const page_mask: u64 = (1 << page_bits) - 1;
 const page_count: usize = 1 << (32 - page_bits);
 
 /// RAM ends at 3 GB, where it ends on the machine (machine/roc's
-/// `Machine.ram_size`). Above it a machine keeps device registers, and this
-/// floor has none yet, so a read or write there stops the run rather than
-/// finding memory.
+/// `Machine.ram_size`). Above it a machine keeps device registers, the HPET's,
+/// the APICs', a network card's, and this platform has none, so a read or
+/// write there stops the run rather than finding memory.
 const ram_top: u64 = 0xC0000000;
 
 /// Page `i` holds the addresses from `i << 20` on; null until something
 /// touches it.
 var pages: [page_count]?[*]u8 = [_]?[*]u8{null} ** page_count;
 
-/// How many 1 MB pages the host holds for the program's memory.
+/// How many 1 MB pages the host holds for the program's memory: those it has
+/// touched, and the GPU's.
 pub var pages_made: u32 = 0;
 
-var fault_msg: [160]u8 = undefined;
+var fault_msg: [128]u8 = undefined;
 
 fn page(addr: u64) [*]u8 {
     if (addr >= ram_top) {
-        root.stop(std.fmt.bufPrint(&fault_msg, "memory: address 0x{X} is past 3 GB, where a machine keeps its devices, and this floor has none", .{addr}) catch "memory: an address past 3 GB, where a machine keeps its devices");
+        root.stop(std.fmt.bufPrint(&fault_msg, "memory: address 0x{X} is past 3 GB, where a machine keeps its devices, and this platform has none", .{addr}) catch "memory: an address past 3 GB, where a machine keeps its devices");
     }
     const i: usize = @intCast(addr >> page_bits);
     if (pages[i]) |p| return p;
@@ -188,6 +199,209 @@ fn store(addr: u64, value: u64, width: u64) void {
     }
 }
 
+/// How many times the Roc side crossed each door. Whether the seam is at the
+/// right height is answered by these and not by a wall clock: a rung is too low
+/// when a protocol event costs thousands.
+pub var heap_loads: u64 = 0;
+pub var heap_stores: u64 = 0;
+
+fn hostedHeapLoad(addr: u64, width: u64) callconv(.c) u64 {
+    heap_loads += 1;
+    return load(addr, width);
+}
+
+fn hostedHeapStore(addr: u64, value: u64, width: u64) callconv(.c) void {
+    heap_stores += 1;
+    store(addr, value, width);
+}
+
+// ---- the screen and the GPU ----------------------------------------------
+
+const fb_base = gpu.fb_base;
+
+/// The frame's clock, in milliseconds. This cell is the framebuffer
+/// platform's own, just past the GOP mode block; UEFI and codex-vm write
+/// nothing there, so on the machine it reads 0.
+const clock_cell: u64 = 0x7F0;
+
+var screen_width: usize = 0;
+var screen_height: usize = 0;
+var screen_stride: usize = 0;
+
+/// The visible pixels as a page draws them: red, green, blue, opaque.
+var pixels: []u8 = &.{};
+
+/// The GPU, from the moment the program has a screen.
+var the_gpu: ?gpu.Gpu = null;
+var gpu_msg: [160]u8 = undefined;
+
+/// `n_words` zeroed words at `base`, whole pages of them in place of whatever
+/// the page table held: the GPU reads and writes its buffers as words, and the
+/// program reaches the same bytes through Heap.
+fn region(base: u64, n_words: usize) ?[]u32 {
+    const words_per_page = page_size / 4;
+    const n_pages = (n_words + words_per_page - 1) / words_per_page;
+    const words = root.allocator.alloc(u32, n_pages * words_per_page) catch return null;
+    @memset(words, 0);
+    const bytes = std.mem.sliceAsBytes(words);
+    const first: usize = @intCast(base >> page_bits);
+    for (0..n_pages) |k| {
+        pages[first + k] = bytes.ptr + k * page_size;
+        pages_made += 1;
+    }
+    return words[0..n_words];
+}
+
+// ---- the ports -----------------------------------------------------------
+
+/// codex-vm's keyboard controller: a read of 0x60 takes the next scancode
+/// waiting (0 when none), a read of 0x64 has bit 0 set while one waits, and a
+/// write to either is accepted and ignored. Scancodes arrive from the host's
+/// root (`keyPush`).
+const kbd_data: u64 = 0x60;
+const kbd_status: u64 = 0x64;
+var keys: [64]u8 = undefined;
+var keys_head: usize = 0;
+var keys_len: usize = 0;
+
+/// The key cell, where codex-vm's keyboard interrupt leaves the last scancode
+/// for a kernel's readers (uefi-read-key, InputSource's atomic exchange).
+const key_cell: u64 = 28680;
+
+/// A scancode for the program: it lands in the key cell, as the last one there,
+/// and it waits in the controller's queue, where one past 64 is dropped.
+pub fn keyPush(scancode: u8) void {
+    store(key_cell, scancode, 8);
+    if (keys_len == keys.len) return;
+    keys[(keys_head + keys_len) % keys.len] = scancode;
+    keys_len += 1;
+}
+
+/// codex-vm's mouse, as the ports it keeps for the absolute pointer: 0xE1 the
+/// buttons (the live level with the presses latched since the last read, which
+/// the read clears), 0xE2 and 0xE3 the position (a read of 0xE3 takes the news
+/// away), and 0xE4 whether the position is news. The host's root moves it
+/// (`mousePush`); until then nothing is pressed and nothing is news.
+const mouse_first: u64 = 0xE1;
+const mouse_last: u64 = 0xE4;
+var mouse_x: u32 = 0;
+var mouse_y: u32 = 0;
+var mouse_buttons: u32 = 0;
+var mouse_latch: u32 = 0;
+var mouse_news: u32 = 0;
+
+pub fn mousePush(x: u32, y: u32, buttons: u32) void {
+    mouse_x = x;
+    mouse_y = y;
+    mouse_buttons = buttons;
+    mouse_latch |= buttons;
+    mouse_news = 1;
+}
+
+fn mouseRead(port: u64) u64 {
+    switch (port) {
+        0xE1 => {
+            const b = mouse_buttons | mouse_latch;
+            mouse_latch = 0;
+            return b;
+        },
+        0xE2 => return mouse_x & 0xFFFF,
+        0xE3 => {
+            mouse_news = 0;
+            return mouse_y & 0xFFFF;
+        },
+        else => return mouse_news,
+    }
+}
+
+var port_msg: [160]u8 = undefined;
+
+fn noDevice(what: []const u8, port: u64, width: u64) noreturn {
+    root.stop(std.fmt.bufPrint(&port_msg, "port: a {d}-bit {s} port 0x{X}, where this platform has no device", .{ width * 8, what, port }) catch "port: a port where this platform has no device");
+}
+
+fn gpuPort(port: u64) bool {
+    return port >= gpu.port_lo and port <= gpu.port_hi;
+}
+
+/// codex-vm's texture upload and asset loader, the GPU ports that reach the
+/// program's memory. 0x408, 0x409 and 0x40A name a texture's address, width
+/// and height, and 0x40B commits it: the host copies it out of memory for the
+/// GPU, three bytes a texel, or a word a texel when the word committed is 1.
+/// 0x40C and 0x40D name a NUL-terminated path and a destination, and 0x417
+/// loads the file there, its size answered on 0x40E and 0x40F; the host's root
+/// finds the file (`asset`), and a path it cannot find loads nothing. As in
+/// codex-vm, the address at 0x408 is masked to 32 bits and those at 0x40C and
+/// 0x40D are widened from the signed words they arrive as.
+var tex_addr: u64 = 0;
+var tex_w: i32 = 0;
+var tex_h: i32 = 0;
+var tex_bytes: []u8 = &.{};
+var asset_path: u64 = 0;
+var asset_dest: u64 = 0;
+
+fn widened(value: u64) u64 {
+    return @bitCast(@as(i64, @as(i32, @bitCast(@as(u32, @truncate(value))))));
+}
+
+/// Answers whether the port was one of these.
+fn textureOrAsset(g: *gpu.Gpu, port: u64, value: u64) bool {
+    switch (port) {
+        0x408 => tex_addr = @as(u32, @truncate(value)),
+        0x409 => tex_w = @bitCast(@as(u32, @truncate(value))),
+        0x40A => tex_h = @bitCast(@as(u32, @truncate(value))),
+        0x40B => commitTexture(g, @truncate(value)),
+        0x40C => asset_path = widened(value),
+        0x40D => asset_dest = widened(value),
+        0x417 => loadAsset(g),
+        else => return false,
+    }
+    return true;
+}
+
+fn commitTexture(g: *gpu.Gpu, word: u32) void {
+    if (tex_w <= 0 or tex_h <= 0) return;
+    const mode: u32 = if (word == 1) 1 else 0;
+    const size = @as(u64, @intCast(tex_w)) * @as(u64, @intCast(tex_h)) * @as(u64, if (mode == 1) 4 else 3);
+    if (tex_addr + size > ram_top) return;
+    const copy = root.allocator.alloc(u8, @intCast(size)) catch root.stop("gpu: the host has no room for the texture");
+    copyOut(tex_addr, copy);
+    if (tex_bytes.len > 0) root.allocator.free(tex_bytes);
+    tex_bytes = copy;
+    g.tex = copy;
+    g.tex_w = @intCast(tex_w);
+    g.tex_h = @intCast(tex_h);
+    g.tex_mode = mode;
+}
+
+fn loadAsset(g: *gpu.Gpu) void {
+    g.asset_size = 0;
+    if (asset_path >= ram_top or asset_dest >= ram_top) return;
+    var path: [255]u8 = undefined;
+    var n: usize = 0;
+    while (n < path.len and asset_path + n < ram_top) : (n += 1) {
+        const ch: u8 = @truncate(load(asset_path + n, 1));
+        if (ch == 0) break;
+        path[n] = ch;
+    }
+    const bytes = root.asset(path[0..n]) orelse return;
+    if (bytes.len == 0 or asset_dest + bytes.len > ram_top) return;
+    copyIn(asset_dest, bytes);
+    g.asset_size = bytes.len;
+}
+
+/// `dest.len` bytes of memory from `addr`, a page at a time.
+fn copyOut(addr: u64, dest: []u8) void {
+    var done: usize = 0;
+    while (done < dest.len) {
+        const a = addr + done;
+        const off: usize = @intCast(a & page_mask);
+        const n = @min(page_size - off, dest.len - done);
+        @memcpy(dest[done..][0..n], page(a)[off..][0..n]);
+        done += n;
+    }
+}
+
 /// `bytes` into memory from `addr`, a page at a time.
 fn copyIn(addr: u64, bytes: []const u8) void {
     var done: usize = 0;
@@ -200,19 +414,7 @@ fn copyIn(addr: u64, bytes: []const u8) void {
     }
 }
 
-/// `len` bytes of memory from `addr` into `out`, a page at a time.
-fn copyOut(addr: u64, out: []u8) void {
-    var done: usize = 0;
-    while (done < out.len) {
-        const a = addr + done;
-        const off: usize = @intCast(a & page_mask);
-        const n = @min(page_size - off, out.len - done);
-        @memcpy(out[done..][0..n], page(a)[off..][0..n]);
-        done += n;
-    }
-}
-
-/// A byte at a time, for the one byte `fill` needs.
+/// `len` bytes of `byte` from `addr`, a page at a time.
 fn fill(addr: u64, byte: u8, len: usize) void {
     var done: usize = 0;
     while (done < len) {
@@ -224,20 +426,108 @@ fn fill(addr: u64, byte: u8, len: usize) void {
     }
 }
 
-/// How many times the Roc side crossed each door. The essay's question --
-/// whether the seam is at the right height -- is answered by these and not by
-/// a wall clock: a rung is too low when a protocol event costs thousands.
-pub var heap_loads: u64 = 0;
-pub var heap_stores: u64 = 0;
-
-fn hostedHeapLoad(addr: u64, width: u64) callconv(.c) u64 {
-    heap_loads += 1;
-    return load(addr, width);
+/// The `width` bytes a port answers.
+fn hostedPortIn(port: u64, width: u64) callconv(.c) u64 {
+    if (gpuPort(port) and width == 4) {
+        const g = if (the_gpu) |*it| it else root.stop("gpu: a GPU port read before the program has a screen");
+        return g.portIn(port) orelse
+            root.stop(std.fmt.bufPrint(&gpu_msg, "gpu: port-in-32 from GPU port 0x{X}, which this platform does not model", .{port}) catch "gpu: port-in-32 from a GPU port this platform does not model");
+    }
+    if (port == kbd_data and width == 1) {
+        if (keys_len == 0) return 0;
+        const k = keys[keys_head];
+        keys_head = (keys_head + 1) % keys.len;
+        keys_len -= 1;
+        return k;
+    }
+    if (port == kbd_status and width == 1) return if (keys_len > 0) 1 else 0;
+    if (port >= mouse_first and port <= mouse_last and width <= 2) return mouseRead(port);
+    noDevice("read from", port, width);
 }
 
-fn hostedHeapStore(addr: u64, value: u64, width: u64) callconv(.c) void {
-    heap_stores += 1;
-    store(addr, value, width);
+/// The low `width` bytes of `value` to a port. A write to the GPU's port 0x400
+/// is a flush, and the root hears of it (`flushed`): for a program that draws
+/// in a loop of its own, a flush is where a frame ends.
+fn hostedPortOut(port: u64, value: u64, width: u64) callconv(.c) void {
+    if (gpuPort(port) and width == 4) {
+        const g = if (the_gpu) |*it| it else root.stop("gpu: a GPU port written before the program has a screen");
+        if (!textureOrAsset(g, port, value)) {
+            if (g.portOut(port, @truncate(value), &gpu_msg)) |why| root.stop(why);
+        }
+        if (port == 0x400) root.flushed();
+        return;
+    }
+    if ((port == kbd_data or port == kbd_status) and width == 1) return;
+    noDevice("write to", port, width);
+}
+
+/// Gives the program a screen `width` by `height` pixels, with rows `stride`
+/// pixels long in memory, published as UEFI's GOP protocol and codex-vm
+/// publish it: the framebuffer's base and size at 0x798 and 0x7A0, and the
+/// resolution, the pixel format (1, blue-green-red) and the stride at 0x7C4,
+/// 0x7C8, 0x7CC and 0x7E0. The GPU's command buffer, depth buffer and
+/// framebuffer are made then, as whole pages at 0xBE000000, 0xBE800000 and
+/// 0xBF000000. False for a size the host cannot hold, or a second screen.
+pub fn screen(width: u32, height: u32, stride: u32) bool {
+    if (the_gpu != null) return false;
+    if (width == 0 or height == 0 or stride < width) return false;
+    const w: usize = width;
+    const h: usize = height;
+    const s: usize = stride;
+    const bytes = @as(u64, s) * h * 4;
+    if (bytes > ram_top - fb_base) return false;
+    if (@as(u64, w) * h * 4 > gpu.fb_base - gpu.depth_base) return false;
+    const cmd = region(gpu.cmd_base, gpu.max_tris * 18) orelse return false;
+    const db = region(gpu.depth_base, w * h) orelse return false;
+    const fb = region(gpu.fb_base, s * h) orelse return false;
+    const glow = root.allocator.alloc(u8, w * h) catch return false;
+    const bloom = root.allocator.alloc(f32, gpu.bloomLen(w, h)) catch return false;
+    const bloom_tmp = root.allocator.alloc(f32, gpu.bloomLen(w, h)) catch return false;
+    @memset(bloom, 0);
+    @memset(bloom_tmp, 0);
+    pixels = root.allocator.alloc(u8, w * h * 4) catch return false;
+    the_gpu = .{ .w = w, .h = h, .stride = s, .fb = fb, .db = db, .cmd = cmd, .glow = glow, .bloom = bloom, .bloom_tmp = bloom_tmp };
+    screen_width = w;
+    screen_height = h;
+    screen_stride = s;
+    store(0x798, fb_base, 8);
+    store(0x7A0, bytes, 8);
+    store(0x7C4, width, 4);
+    store(0x7C8, height, 4);
+    store(0x7CC, 1, 4);
+    store(0x7E0, stride, 4);
+    return true;
+}
+
+pub fn clock(ms: u32) void {
+    store(clock_cell, ms, 4);
+}
+
+/// Copies the visible part of the framebuffer out of memory: the first `width`
+/// pixels of each row, each 0x00RRGGBB word as red, green, blue and an opaque
+/// alpha.
+pub fn present() []u8 {
+    var y: usize = 0;
+    while (y < screen_height) : (y += 1) {
+        var x: usize = 0;
+        while (x < screen_width) : (x += 1) {
+            const v = load(fb_base + (@as(u64, y) * screen_stride + x) * 4, 4);
+            const d = (y * screen_width + x) * 4;
+            pixels[d] = @truncate(v >> 16);
+            pixels[d + 1] = @truncate(v >> 8);
+            pixels[d + 2] = @truncate(v);
+            pixels[d + 3] = 255;
+        }
+    }
+    return pixels;
+}
+
+/// FNV-1a over the bytes: the hash frames.mjs and machine/batch/screenhash.mjs
+/// print for an image.
+pub fn hash(bytes: []const u8) u32 {
+    var h: u32 = 0x811c9dc5;
+    for (bytes) |b| h = (h ^ b) *% 0x01000193;
+    return h;
 }
 
 // ---- the clock -----------------------------------------------------------
@@ -302,14 +592,15 @@ var disk_msg: [192]u8 = undefined;
 pub fn attach(p: u64, bytes: []u8) bool {
     if (p >= drive_count) return false;
     if (bytes.len % 512 != 0) return false;
-    if (drives[p]) |old| root.allocator.free(old);
-    drives[p] = bytes;
+    const i: usize = @intCast(p);
+    if (drives[i]) |old| root.allocator.free(old);
+    drives[i] = bytes;
     return true;
 }
 
 /// Position `p`'s image as it stands, for a host that writes it back out.
 pub fn image(p: u64) ?[]u8 {
-    return if (p < drive_count) drives[p] else null;
+    return if (p < drive_count) drives[@intCast(p)] else null;
 }
 
 fn drive() ?[]u8 {
@@ -461,6 +752,8 @@ pub fn exportSymbols() void {
     @export(&hostedEchoLine, .{ .name = "roc_echo_line", .visibility = .hidden });
     @export(&hostedHeapLoad, .{ .name = "roc_heap_load", .visibility = .hidden });
     @export(&hostedHeapStore, .{ .name = "roc_heap_store", .visibility = .hidden });
+    @export(&hostedPortIn, .{ .name = "roc_port_in", .visibility = .hidden });
+    @export(&hostedPortOut, .{ .name = "roc_port_out", .visibility = .hidden });
     @export(&hostedDiskSelect, .{ .name = "roc_disk_select", .visibility = .hidden });
     @export(&hostedDiskSectorCount, .{ .name = "roc_disk_sector_count", .visibility = .hidden });
     @export(&hostedDiskRead, .{ .name = "roc_disk_read", .visibility = .hidden });
