@@ -31,6 +31,7 @@ platform ""
 	targets: {
 		inputs_dir: "targets/",
 		x64musl: { inputs: ["crt1.o", "libhost.a", app, "libc.a"] },
+		x64elf: { inputs: ["host.o", app] },
 		wasm32: {
 			inputs: ["host.wasm", app],
 			exports: ["run", "screen", "clock", "present", "key", "mouse", "wallClock", "driveBuffer", "drivePtr", "driveLen", "fault", "faultsBitten", "pagesMade", "heapLoads", "heapStores", "sectorsRead", "sectorsWritten", "consolePtr", "consoleLen", "crashPtr", "crashLen"],

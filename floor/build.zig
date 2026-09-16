@@ -105,5 +105,36 @@ pub fn build(b: *std.Build) void {
     lib.link_data_sections = true;
     copy.addCopyFileToSource(lib.getEmittedBin(), "platform/targets/x64musl/libhost.a");
 
+    // **THE THIRD ROOT: NO OPERATING SYSTEM.** The same core.zig again, for a
+    // machine QEMU boots with `-kernel`. roc links this object with the app's
+    // for target x64elf ("x86_64-unknown-none-elf"), which is the one target in
+    // its list with no OS under it.
+    const bare = rocModules(b, roc);
+    const kernel = b.addObject(.{
+        .name = "host",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("platform/bare.zig"),
+            .target = b.resolveTargetQuery(.{
+                .cpu_arch = .x86_64,
+                .os_tag = .freestanding,
+                .abi = .none,
+                // No SSE: a kernel that has not enabled it faults on the first
+                // xmm register the compiler chooses to use.
+                .cpu_features_sub = std.Target.x86.featureSet(&.{ .sse, .sse2, .avx, .avx2 }),
+                .cpu_features_add = std.Target.x86.featureSet(&.{.soft_float}),
+            }),
+            .optimize = optimize,
+            .pic = false,
+            .code_model = .kernel,
+            .imports = &.{
+                .{ .name = "builtins", .module = bare.builtins },
+                .{ .name = "host_alloc", .module = bare.host_alloc },
+            },
+        }),
+    });
+    kernel.use_llvm = true;
+    kernel.bundle_compiler_rt = true;
+    copy.addCopyFileToSource(kernel.getEmittedBin(), "platform/targets/x64elf/host.o");
+
     b.getInstallStep().dependOn(&copy.step);
 }
