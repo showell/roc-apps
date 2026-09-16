@@ -20,7 +20,7 @@
 
 const std = @import("std");
 const shim_io = @import("shim_io");
-const core = @import("core.zig");
+const core = @import("core");
 
 // std.debug's I/O is roc's minimal shim rather than zig's threaded I/O, as in
 // roc's own static archives: the threaded vtable brings stat and socket calls
@@ -67,10 +67,19 @@ fn number(arg: [*:0]u8) ?u32 {
     return std.fmt.parseInt(u32, std.mem.span(arg), 10) catch null;
 }
 
-fn nowUs() u64 {
+pub fn nowNs() u64 {
     var ts: std.c.timespec = undefined;
     _ = std.c.clock_gettime(std.c.CLOCK.MONOTONIC, &ts);
-    return @as(u64, @intCast(ts.sec)) * 1_000_000 + @as(u64, @intCast(ts.nsec)) / 1000;
+    return @as(u64, @intCast(ts.sec)) * 1_000_000_000 + @as(u64, @intCast(ts.nsec));
+}
+
+pub fn sleepNs(ns: u64) void {
+    var req = std.c.timespec{ .sec = @intCast(ns / 1_000_000_000), .nsec = @intCast(ns % 1_000_000_000) };
+    _ = std.c.nanosleep(&req, &req);
+}
+
+fn nowUs() u64 {
+    return nowNs() / 1000;
 }
 
 /// A key or a mouse state from the command line, handed over before the first

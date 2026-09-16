@@ -14,6 +14,21 @@ const Roc = struct {
     shim_io: *std.Build.Module,
 };
 
+/// **THE FLOOR IS THE PLATFORM** (roc-apps floor/): its `core.zig` holds the
+/// memory, the screen, the ports and the GPU these two hosts stand on, beside
+/// the block device and the clock they do not use. It is a module rather than a
+/// file beside them because it lives in the other directory; `gpu.zig` comes
+/// with it, resolved against its own.
+fn floorCore(b: *std.Build, roc: Roc) *std.Build.Module {
+    return b.createModule(.{
+        .root_source_file = .{ .cwd_relative = b.pathFromRoot("../floor/platform/core.zig") },
+        .imports = &.{
+            .{ .name = "builtins", .module = roc.builtins },
+            .{ .name = "host_alloc", .module = roc.host_alloc },
+        },
+    });
+}
+
 /// A fresh module graph for one host: a module takes its target from the
 /// compilation that imports it, so the two hosts do not share one.
 fn rocModules(b: *std.Build, roc: []const u8) Roc {
@@ -69,6 +84,7 @@ pub fn build(b: *std.Build) void {
             .imports = &.{
                 .{ .name = "builtins", .module = web.builtins },
                 .{ .name = "host_alloc", .module = web.host_alloc },
+                .{ .name = "core", .module = floorCore(b, web) },
             },
         }),
     });
@@ -92,6 +108,7 @@ pub fn build(b: *std.Build) void {
                 .{ .name = "builtins", .module = native.builtins },
                 .{ .name = "host_alloc", .module = native.host_alloc },
                 .{ .name = "shim_io", .module = native.shim_io },
+                .{ .name = "core", .module = floorCore(b, native) },
             },
         }),
     });

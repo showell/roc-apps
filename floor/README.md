@@ -23,19 +23,26 @@ which is how we found out what the doors are. This is the other arrangement:
   opening declares and read back by every block door. A program that clears its
   own grant is denied from then on, as on the machine. The host enforces one
   thing: that an address is backed.
-- **Every door is loud.** A refusal names the address, the position or the
-  sector. The Roc side cannot inspect the host's state, so the host has to say
+- **Every door is loud.** A refusal names the address, the port or the
+  position. The Roc side cannot inspect the host's state, so the host has to say
   what it saw.
+- **One core, several roots.** `platform/core.zig` is the whole floor; a host
+  is a thin root over it that says how this machine reports a crash and where
+  its clock comes from. There are two -- the native checker and the browser --
+  and a third for a real machine is another compilation and nothing more.
 
 | where | what |
 |---|---|
 | `platform/main.roc` | the platform: `main!` in Echo's shape and the hosted doors |
 | `platform/Heap.roc` | a load and a store of 1, 2, 4 or 8 bytes |
+| `platform/Port.roc` | the devices the host answers at an I/O port: codex-vm's GPU at 0x400-0x417 and its keyboard controller at 0x60 and 0x64 |
 | `platform/Disk.roc` | the block device: select a position, its sector count, and a transfer naming a sector and an address |
 | `platform/Clock.roc` | `now!` and `wait!`, in nanoseconds, on a virtual or a wall clock |
 | `platform/Echo.roc` | a line of text |
-| `platform/core.zig` | the host: memory in pages, the images, the clock, the faults, and the run |
-| `platform/native.zig` | the native host (x86-64 Linux, musl): the flags, the images in and out, and a run's report |
+| `platform/core.zig` | the floor: memory in pages, the screen, the ports, the images, the clock, the faults, and the run |
+| `platform/gpu.zig` | codex-vm's GPU over the program's memory |
+| `platform/native.zig` | the native root (x86-64 Linux, musl): the flags, the images in and out, each frame's hash, and a run's report |
+| `platform/host.zig` | the browser's root (wasm): the exports a page calls, the drives it fills, and a crash kept for the page |
 | `roc/Machine.roc` | the floor's side of the state, standing in for the `Machine` rocemit writes, door for door |
 | `build.sh` | the host, then each unit emitted and wired to the platform and built natively |
 | `run.sh` | one unit, built and run, with a `.disk` beside it attached and the host's flags passed through |
@@ -44,6 +51,7 @@ which is how we found out what the doors are. This is the other arrangement:
 
     floor/run.sh ~/showell_repos/cobblestone-u61/codex/test/fat16-write.codex -report
     floor/run.sh ~/showell_repos/cobblestone-u61/codex/test/fat16-write.codex -fault tear-write -report
+    floor/run.sh ~/showell_repos/cobblestone-u61/codex/test/gpu-panel-border.codex -screen 640 480 640
     floor/verify.sh
 
 **An image is never written where it was read.** `-disk` reads the file into
@@ -99,6 +107,19 @@ Nothing in the program could have noticed. That is a gap in the builtin, not a
 bug in `Fat16`, and it is an argument for what a Roc kernel on this floor needs
 that the machine never offered it: a read door with an outcome.
 
+## The screen
+
+A program gets one only when `-screen` asks for it, so a program that reaches
+the disk prints its console and nothing else. With a screen, the host publishes
+its geometry where UEFI's GOP protocol and codex-vm publish it, codex-vm's GPU
+draws through the Port doors, and every frame's time and the hash of its
+visible pixels go out as a line.
+
+Those hashes are the check that matters. `verify.tsv`'s screen rows carry
+`framebuffer/verify.tsv`'s hashes -- the images the framebuffer platform and
+the machine page's `MachineGpu` both drew -- so a green row means this floor
+draws the same picture as the two things that came before it, pixel for pixel.
+
 ## What it costs
 
 `fat16-write` against its 16 MB fixture, both natively on the dev backend,
@@ -134,14 +155,10 @@ so the seam is where it should be.
 
 ## What is not here yet
 
-- **The screen.** `framebuffer/` has it: the same 1 MB pages under the same
-  3 GB, codex-vm's GPU in zig, and a wasm host beside the native one. The page
-  table in `platform/core.zig` is that platform's, duplicated on purpose and
-  dated (2026-09-16); the two converge when the screen arrives here, which is
-  the next step.
-- **A browser host.** The native host is the whole of it for now. The wasm one
-  is a second compilation of the same `core.zig`, as `framebuffer/build.zig`
-  already does for its two.
+- **A page.** The browser's host is built and exports what a page needs
+  (`driveBuffer`, `fault`, `present`, the counters), and nothing calls it yet.
+- **A real machine's root.** The Raspberry Pi is the reason the core and the
+  roots are separated at all; the root is the small part.
 - **A disk larger than memory.** The host reads an image in whole and owns it;
   there is no reading on demand and no mapping yet.
 - **`wait!` has no caller.** `Clock` is wired end to end and nothing rocemit

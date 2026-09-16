@@ -4,7 +4,7 @@
 //! the message after the trap.
 
 const std = @import("std");
-const core = @import("core.zig");
+const core = @import("core");
 
 pub const allocator = std.heap.wasm_allocator;
 
@@ -52,6 +52,15 @@ pub fn asset(path: []const u8) ?[]const u8 {
     assetRead(asset_buf.ptr);
     return asset_buf;
 }
+
+/// The floor's clock, which this platform does not use: a page cannot block, so
+/// a wall-clock wait here would not sleep, and nothing in a framebuffer program
+/// waits. The virtual clock is what a `Clock.wait!` would move.
+pub fn nowNs() u64 {
+    return 0;
+}
+
+pub fn sleepNs(_: u64) void {}
 
 /// A scancode for the program's keyboard controller.
 pub export fn key(scancode: u32) void {
