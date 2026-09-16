@@ -46,6 +46,8 @@ which is how we found out what the doors are. This is the other arrangement:
 | `roc/Machine.roc` | the floor's side of the state, standing in for the `Machine` rocemit writes, door for door |
 | `build.sh` | the host, then each unit emitted and wired to the platform and built natively |
 | `run.sh` | one unit, built and run, with a `.disk` beside it attached and the host's flags passed through |
+| `page.sh` | each named unit built for wasm into the dev channel, with its image, its screen and the console a clean run must print |
+| `web/index.html` | the page: a program, a fault to inflict on it, and what the Roc above did about it |
 | `verify.sh`, `verify.tsv` | every row built and run, its console compared with what the row expects |
 | `expect/` | the consoles a fault row expects, which the unit's own verdict cannot describe |
 
@@ -53,6 +55,8 @@ which is how we found out what the doors are. This is the other arrangement:
     floor/run.sh ~/showell_repos/cobblestone-u61/codex/test/fat16-write.codex -fault tear-write -report
     floor/run.sh ~/showell_repos/cobblestone-u61/codex/test/gpu-panel-border.codex -screen 640 480 640
     floor/verify.sh
+    ROC=~/build/roc/fast/bin/roc floor/page.sh <unit.codex>...
+    # the dev channel: http://143.244.172.148:9210/floor/
 
 **An image is never written where it was read.** `-disk` reads the file into
 the host, which then owns it, and the run's writes land in that copy;
@@ -155,8 +159,9 @@ so the seam is where it should be.
 
 ## What is not here yet
 
-- **A page.** The browser's host is built and exports what a page needs
-  (`driveBuffer`, `fault`, `present`, the counters), and nothing calls it yet.
+- **The page is new and thin.** It runs one program at a time on the main
+  thread, which suits a program that ends its run; a program that draws in a
+  loop of its own wants the framebuffer page's Web Worker.
 - **A real machine's root.** The Raspberry Pi is the reason the core and the
   roots are separated at all; the root is the small part.
 - **A disk larger than memory.** The host reads an image in whole and owns it;

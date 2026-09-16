@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The floor</title>
+<style>
+  :root {
+    --ink: #1a1d21; --dim: #6b7280; --line: #d9dee5; --bg: #f7f8fa;
+    --card: #ffffff; --ok: #1a7f37; --bad: #b42318; --warn: #b45309;
+    --accent: #1f4e79;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 16px 64px; background: var(--bg); color: var(--ink);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  main { max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .lede { color: var(--dim); margin: 0 0 24px; max-width: 70ch; }
+  .lede code { background: #eceff3; padding: 1px 4px; border-radius: 3px; font-size: 13px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+    padding: 16px; margin-bottom: 16px;
+  }
+  .card > h2 {
+    font-size: 12px; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--dim); margin: 0 0 12px; font-weight: 600;
+  }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  button, select, input {
+    font: inherit; font-size: 14px; padding: 6px 12px; border-radius: 6px;
+    border: 1px solid var(--line); background: #fff; color: var(--ink);
+  }
+  button { cursor: pointer; }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.go { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  button:disabled { opacity: .5; cursor: default; }
+  input[type=number] { width: 80px; }
+  label { font-size: 13px; color: var(--dim); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+  pre {
+    margin: 0; padding: 12px; background: #0f1419; color: #d5dae0; border-radius: 6px;
+    font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    overflow-x: auto; white-space: pre-wrap; word-break: break-word; min-height: 3em;
+  }
+  pre .same { color: #9aa4b0; }
+  pre .diff { color: #ffd166; font-weight: 600; }
+  pre .gone { color: #6b7280; text-decoration: line-through; }
+  .badge {
+    display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px;
+    border-radius: 999px; margin-left: 8px; vertical-align: 2px;
+  }
+  .badge.ok { background: #e7f6ec; color: var(--ok); }
+  .badge.bad { background: #fdecea; color: var(--bad); }
+  .badge.warn { background: #fef6e7; color: var(--warn); }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  td { padding: 3px 0; }
+  td:first-child { color: var(--dim); }
+  td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  canvas { max-width: 100%; image-rendering: pixelated; border: 1px solid var(--line); border-radius: 4px; background: #000; }
+  .note { font-size: 13px; color: var(--dim); margin-top: 10px; }
+  .sectors { font: 12px/1.6 ui-monospace, Menlo, monospace; color: var(--dim); word-break: break-all; }
+</style>
+</head>
+<body>
+<main>
+  <h1>The floor</h1>
+  <p class="lede">
+    A zig host owns the memory, the disk and the clock; the Roc above it is the
+    filesystem. Pick a program, then make the floor <strong>break its
+    promises</strong> &mdash; refuse a read, refuse a write, tear a write in
+    half &mdash; and watch what the Roc does about it. A run with no fault must
+    print exactly what the program&rsquo;s own verdict says.
+  </p>
+
+  <div class="card">
+    <h2>Program</h2>
+    <div class="row" id="programs"></div>
+  </div>
+
+  <div class="card">
+    <h2>What the floor does wrong</h2>
+    <div class="row">
+      <button data-fault="0" aria-pressed="true">nothing</button>
+      <button data-fault="1" aria-pressed="false">refuse a read</button>
+      <button data-fault="2" aria-pressed="false">refuse a write</button>
+      <button data-fault="3" aria-pressed="false">tear a write</button>
+      <span style="flex:1"></span>
+      <label for="every">every</label>
+      <input type="number" id="every" min="1" value="1">
+      <label for="every">transfer(s)</label>
+    </div>
+    <p class="note" id="faultNote"></p>
+    <div class="row" style="margin-top:12px">
+      <button class="go" id="run">Run</button>
+      <span id="status" class="note" style="margin:0"></span>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Console <span id="verdict"></span></h2>
+      <pre id="console">not run yet</pre>
+      <p class="note" id="consoleNote"></p>
+    </div>
+    <div class="card">
+      <h2>What the run cost</h2>
+      <table id="counters"><tbody></tbody></table>
+      <div id="diskBox" style="display:none;margin-top:12px">
+        <h2 style="margin-bottom:6px">Sectors the run changed</h2>
+        <div class="sectors" id="sectors"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="screenCard" style="display:none">
+    <h2>Screen</h2>
+    <canvas id="screen"></canvas>
+  </div>
+</main>
+
+<script>
+const FAULTS = [
+  { name: "nothing", note: "Every transfer does what it says. The console must match the program's verdict." },
+  { name: "refuse a read", note: "The sector never arrives and the buffer is filled with 0xDD. A caller that ignores the error reads garbage rather than plausible stale bytes — hardware is unlucky, a fault is adversarial." },
+  { name: "refuse a write", note: "Nothing is written, and the door says so. Fat16 does check this status, so it can tell the truth about a file it failed to write." },
+  { name: "tear a write", note: "Half the sector lands and the door answers success. The controller thought it wrote; finding out otherwise is the filesystem's problem. This is the hard one." },
+];
+
+let programs = [];
+let chosen = null;
+let fault = 0;
+
+const $ = (id) => document.getElementById(id);
+const text = (x, ptr, len) => new TextDecoder().decode(new Uint8Array(x.memory.buffer, ptr, len).slice());
+
+function chooseFault(k) {
+  fault = k;
+  for (const b of document.querySelectorAll("[data-fault]")) {
+    b.setAttribute("aria-pressed", String(Number(b.dataset.fault) === k));
+  }
+  $("faultNote").textContent = FAULTS[k].note;
+  $("every").disabled = k === 0;
+}
+
+function chooseProgram(name) {
+  chosen = programs.find((p) => p.name === name);
+  for (const b of document.querySelectorAll("[data-program]")) {
+    b.setAttribute("aria-pressed", String(b.dataset.program === name));
+  }
+  $("console").textContent = "not run yet";
+  $("verdict").innerHTML = "";
+  $("consoleNote").textContent = "";
+  $("counters").querySelector("tbody").innerHTML = "";
+  $("diskBox").style.display = "none";
+  $("screenCard").style.display = chosen.screen ? "" : "none";
+}
+
+// The console, against what a clean run prints: a line that changed is marked,
+// so a fault's effect is visible without reading both.
+function showConsole(got, want) {
+  const pre = $("console");
+  pre.textContent = "";
+  if (want === null || want === undefined) {
+    pre.textContent = got || "(nothing)";
+    return;
+  }
+  const g = got.replace(/\n+$/, "").split("\n");
+  const w = want.replace(/\n+$/, "").split("\n");
+  for (let i = 0; i < Math.max(g.length, w.length); i++) {
+    const span = document.createElement("span");
+    if (i >= g.length) {
+      span.className = "gone";
+      span.textContent = w[i] + "  (this line never came)";
+    } else {
+      span.className = g[i] === w[i] ? "same" : "diff";
+      span.textContent = g[i];
+      if (i < w.length && g[i] !== w[i]) span.textContent += "        clean: " + w[i];
+    }
+    pre.appendChild(span);
+    pre.appendChild(document.createTextNode("\n"));
+  }
+}
+
+function showCounters(x, ms) {
+  const rows = [
+    ["run", ms.toFixed(1) + " ms"],
+    ["memory the host made", x.pagesMade() + " × 1 MB"],
+    ["Heap.load!", x.heapLoads().toLocaleString()],
+    ["Heap.store!", x.heapStores().toLocaleString()],
+    ["sectors read", x.sectorsRead().toLocaleString()],
+    ["sectors written", x.sectorsWritten().toLocaleString()],
+    ["times a fault bit", x.faultsBitten().toLocaleString()],
+  ];
+  $("counters").querySelector("tbody").innerHTML =
+    rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
+}
+
+function showSectors(before, after) {
+  const changed = [];
+  for (let lba = 0; lba * 512 < before.length; lba++) {
+    const a = before.subarray(lba * 512, lba * 512 + 512);
+    const b = after.subarray(lba * 512, lba * 512 + 512);
+    for (let i = 0; i < 512; i++) {
+      if (a[i] !== b[i]) { changed.push(lba); break; }
+    }
+  }
+  $("diskBox").style.display = "";
+  $("sectors").textContent = changed.length
+    ? `${changed.length} of ${before.length / 512}: ` + changed.join(", ")
+    : `none of ${before.length / 512} — the image is exactly as it was`;
+}
+
+function showScreen(x, [w, h]) {
+  const canvas = $("screen");
+  canvas.width = w;
+  canvas.height = h;
+  const px = new Uint8ClampedArray(x.memory.buffer, x.present(), w * h * 4).slice();
+  canvas.getContext("2d").putImageData(new ImageData(px, w, h), 0, 0);
+}
+
+async function run() {
+  if (!chosen) return;
+  const p = chosen;
+  $("run").disabled = true;
+  $("status").textContent = "running…";
+  let x = null;
+  try {
+    const bytes = await (await fetch(`${p.name}.wasm`)).arrayBuffer();
+    // A program here loads no assets; a fault plan is set before the run, and
+    // nothing flushes a GPU frame mid-run on this page.
+    const env = { frameFlushed: () => {}, assetSize: () => -1, assetRead: () => {} };
+    x = (await WebAssembly.instantiate(bytes, { env })).instance.exports;
+
+    let before = null;
+    if (p.disk) {
+      const img = new Uint8Array(await (await fetch(`${p.name}.disk`)).arrayBuffer());
+      const ptr = x.driveBuffer(0, img.length);
+      if (!ptr) throw new Error("the host has no room for that image");
+      new Uint8Array(x.memory.buffer, ptr, img.length).set(img);
+      before = img;
+    }
+    if (p.screen && !x.screen(p.screen[0], p.screen[1], p.screen[2])) {
+      throw new Error(`the host has no room for a ${p.screen[0]} × ${p.screen[1]} screen`);
+    }
+    x.fault(fault, Math.max(1, Number($("every").value) || 1), 0, 0);
+
+    const t0 = performance.now();
+    const code = x.run();
+    const ms = performance.now() - t0;
+
+    const got = text(x, x.consolePtr(), x.consoleLen());
+    showConsole(got, fault === 0 ? null : p.expected);
+    showCounters(x, ms);
+    if (p.disk) {
+      showSectors(before, new Uint8Array(x.memory.buffer, x.drivePtr(0), x.driveLen(0)));
+    }
+    if (p.screen) showScreen(x, p.screen);
+
+    // A clean run is the one with a right answer, so it is the one that is
+    // judged; a faulted run is judged only against what the clean one printed.
+    const v = $("verdict");
+    if (fault !== 0) {
+      v.innerHTML = '<span class="badge warn">the floor misbehaved</span>';
+      $("consoleNote").textContent = p.expected
+        ? "Marked lines are where this run differs from a clean one."
+        : "";
+    } else if (p.expected == null) {
+      v.innerHTML = "";
+      $("consoleNote").textContent = "This program brings no verdict to check against.";
+    } else if (got.replace(/\n+$/, "") === p.expected.replace(/\n+$/, "")) {
+      v.innerHTML = '<span class="badge ok">matches its verdict</span>';
+      $("consoleNote").textContent = "";
+    } else {
+      v.innerHTML = '<span class="badge bad">differs from its verdict</span>';
+      $("consoleNote").textContent = "A clean run should print the verdict exactly.";
+    }
+    $("status").textContent = code === 0 ? "" : `exit ${code}`;
+  } catch (e) {
+    const why = x && x.crashLen && x.crashLen() ? text(x, x.crashPtr(), x.crashLen()) : e.message;
+    $("console").textContent = (x ? text(x, x.consolePtr(), x.consoleLen()) : "") + "\nstopped: " + why;
+    $("status").textContent = "stopped";
+  } finally {
+    $("run").disabled = false;
+  }
+}
+
+(async () => {
+  programs = await (await fetch("programs.json")).json();
+  $("programs").innerHTML = programs
+    .map((p) => `<button data-program="${p.name}" aria-pressed="false">${p.name}</button>`)
+    .join("");
+  for (const b of document.querySelectorAll("[data-program]")) {
+    b.onclick = () => chooseProgram(b.dataset.program);
+  }
+  for (const b of document.querySelectorAll("[data-fault]")) {
+    b.onclick = () => chooseFault(Number(b.dataset.fault));
+  }
+  $("run").onclick = run;
+  chooseFault(0);
+  if (programs.length) chooseProgram(programs[0].name);
+})();
+</script>
+</body>
+</html>
