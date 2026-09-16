@@ -1,0 +1,51 @@
+# Does a Roc nightly from 2026-09-12 or later run on a GitHub Linux runner?
+#
+# roc-lang/roc a02ff3b0ce (2026-09-12) computes type digests with the CPU's
+# SHA-256 instructions and puts `sha` in the release target's CPU floor, so a
+# host without the extension dies of SIGILL (132) the first time it digests a
+# type. x86_64 macOS is exempt and uses portable rounds; x86_64 Linux is not.
+# Our own box (Cascade Lake, no sha_ni) dies. This asks the same question of
+# GitHub's runners, whose x64 pool mixes Cascade Lake with AMD Zen.
+name: sha-probe
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-latest, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: What CPU is this
+        run: |
+          uname -m
+          grep -m1 'model name' /proc/cpuinfo || true
+          lscpu | grep -i 'model name\|flags' | head -4 || true
+          if grep -qm1 ' sha_ni\|^Features.*sha2' /proc/cpuinfo; then
+            echo "SHA-256 instructions: PRESENT"
+          else
+            echo "SHA-256 instructions: ABSENT"
+          fi
+
+      - name: Install the 2026-09-15 nightly
+        uses: roc-lang/setup-roc@cbe782d6f165b89c87d99f50a59ac4f5f73b4427
+        with:
+          version: nightly-new-compiler
+          nightly-tag: nightly-2026-09-15-fe09c42
+
+      - name: Run a program that makes the compiler digest a type
+        run: |
+          cat > probe.roc <<'EOF'
+          app [main!] {}
+
+          main! = |_args| {
+          	echo!("sha probe ok\n")
+          	Ok({})
+          }
+          EOF
+          set +e
+          roc run probe.roc
+          echo "exit=$?  (132 is SIGILL)"
