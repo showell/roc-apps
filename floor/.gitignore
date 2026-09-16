@@ -1,3 +1,5 @@
 # The host objects every build rewrites; nothing under targets/ is committed,
 # as machine/native and the framebuffer platform also keep it.
 platform/targets/
+# The probe kernel the build writes.
+probe/probe.elf
