@@ -81,21 +81,24 @@ jobs:
           ls -la out/bin/roc
           out/bin/roc --version
 
-      # A smoke test, and only that: the binary type-checks a program without
-      # dying. It is what catches the two ways this build goes wrong -- a
-      # compile error from TypeDigestHasher's @compileError, and the SIGILL a
-      # stock build gives on a CPU with no SHA extension. It does NOT check that
-      # the portable rounds and the hardware rounds agree; that is upstream's
-      # own code path and upstream's own tests.
-      - name: Type-check a program with it
-        run: |
-          set -eu
-          printf 'module [twice]\n\ntwice : I64 -> I64\ntwice = |n| n * 2\n' > /tmp/Smoke.roc
-          out/bin/roc check /tmp/Smoke.roc
-
+      # **THE ARTIFACT IS UPLOADED FIRST**, because a build that took twenty
+      # minutes should not be thrown away by a check that comes after it. The
+      # check's verdict is the job's; the binary is kept either way.
       - uses: actions/upload-artifact@v4
         with:
           name: roc-linux-x64
           path: out/bin/roc
           retention-days: 14
           compression-level: 9
+
+      # A smoke test, and only that: the binary type-checks a program from the
+      # checkout's own test tree, so the syntax is right for this exact
+      # compiler rather than for whatever I remembered. It catches the two ways
+      # this build goes wrong -- a compile error from TypeDigestHasher's
+      # @compileError, and the SIGILL a stock build gives on a CPU with no SHA
+      # extension. It does NOT check that the portable rounds and the hardware
+      # rounds agree; that is upstream's own code path and upstream's tests.
+      - name: Type-check a program with it
+        run: |
+          set -eu
+          out/bin/roc check test/provided-callable-host/app.roc
