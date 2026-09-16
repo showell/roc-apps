@@ -7,11 +7,10 @@ the link:
 wasm-ld: error: ~/.cache/roc/nightly-2026-09-11-793f9d8/src/roc_build/roc_app_unsealed_wasm32.o: relocations not in offset order
 ```
 
-The nightly is `nightly-2026-09-11-793f9d8`. **This is almost certainly
-[roc-lang/roc#11419](https://github.com/roc-lang/roc/issues/11419):** `Repro.roc`
-links with a debug build of Roc's `main` (68267ddd06) patched with that issue's
-fix, a sort of each constant's relocations by offset (2026-09-15). The unpatched
-debug build was not tried.
+**Filed as [roc-lang/roc#11419](https://github.com/roc-lang/roc/issues/11419),
+fixed by [PR #11422](https://github.com/roc-lang/roc/pull/11422)** (open). The
+nightly is `nightly-2026-09-11-793f9d8`; the PR is against `main` at
+`f58f67d319`.
 
 ## Reproduce
 
@@ -27,19 +26,26 @@ platform links and runs.
 
 ## What it takes
 
-`step` recurses over the command line and, in each of seven branches, copies a
-record `R` with `{ ..r, field: value }`. `R` holds two copies of `Inner`, a
-record with a nested record, a `List(U64)` and a tag union with a payload.
+A constant record with two pointer-holding fields whose field order and layout
+order disagree: the fields are copied in field order, so the relocations come
+out in the opposite order to the bytes. `Repro.roc` reaches that through a
+`step` that recurses over the command line and copies a record `R` in each of
+seven branches; `R` holds two copies of `Inner`, a nested record, a `List(U64)`
+and a tag union with a payload. The smaller shape in #11419 is one record whose
+`kind` (8-byte aligned) is laid out before its `id` (a list, 4-byte aligned on
+wasm32).
 
-- Taking out the tag field still fails, and so does taking out the dictionary
-  instead.
-- The same function over a record of twelve `U64` fields links, and so does one
-  holding two 24-field records.
-- A version with lists and a dictionary but no nested record, and with six
-  branches, links.
+The value must survive compile-time evaluation: an index the host supplies
+keeps it as data, and a program whose every use folds away links.
 
-So the ingredient is not one field type. The last reduction step between
-linking and failing is not isolated.
+## Where the entries come from
+
+They arrive at `reloc.DATA` from more than one producer, and which one depends
+on the day: #11419 traced this value through
+`StaticDataBuilder.freezeRelocations`, and by `f58f67d319` it came from the
+compile-time path instead, as the export `roc__ctfe_1_1` (offsets +32, +72, +8,
++48). The fix therefore sorts in `WasmModule.encodeRelocationSection`, the one
+place that knows the offset each entry is written at.
 
 ## Where it came from
 
