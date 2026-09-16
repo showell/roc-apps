@@ -157,6 +157,15 @@ sector -- `Fat16` reading a sector's fields out of memory one at a time, which
 is the byte rung doing its job. Nothing here is thousands per protocol event,
 so the seam is where it should be.
 
+## The device drivers live in gopher-metal
+
+`virtio.zig` and the probe kernel that proved it moved to
+`~/showell_repos/gopher-metal` (2026-09-16), which is the machine with no
+operating system under it: the boot, the drivers, and eventually the chat
+server. This floor is the Roc side — the doors, the FAT16 that runs on them,
+and the faults. The two are two implementations of one device set, which is
+why the drivers there are written against the doors here.
+
 ## What is not here yet
 
 - **The page is new and thin.** It runs one program at a time on the main

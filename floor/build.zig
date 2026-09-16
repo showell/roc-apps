@@ -136,37 +136,5 @@ pub fn build(b: *std.Build) void {
     kernel.bundle_compiler_rt = true;
     copy.addCopyFileToSource(kernel.getEmittedBin(), "platform/targets/x64elf/host.o");
 
-    // **THE PROBE**: a kernel that is only the virtio driver and a serial
-    // port, so the driver can be put on virtual hardware before anything is
-    // built on it. `zig build probe --build-file floor/build.zig`, then
-    // floor/probe/run.sh.
-    const probe = b.addExecutable(.{
-        .name = "probe.elf",
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("probe/kernel.zig"),
-            .target = b.resolveTargetQuery(.{
-                .cpu_arch = .x86_64,
-                .os_tag = .freestanding,
-                .abi = .none,
-                // A kernel that has not enabled SSE faults on the first xmm
-                // register the compiler reaches for, and it reaches for them
-                // in memcpy unless told not to.
-                .cpu_features_sub = std.Target.x86.featureSet(&.{ .sse, .sse2, .avx, .avx2 }),
-                .cpu_features_add = std.Target.x86.featureSet(&.{.soft_float}),
-            }),
-            .optimize = .ReleaseSafe,
-            .pic = false,
-            .code_model = .kernel,
-            .imports = &.{
-                .{ .name = "virtio", .module = b.createModule(.{ .root_source_file = b.path("platform/virtio.zig") }) },
-            },
-        }),
-    });
-    probe.setLinkerScript(b.path("probe/link.ld"));
-    probe.entry = .{ .symbol_name = "_start" };
-    const probe_copy = b.addUpdateSourceFiles();
-    probe_copy.addCopyFileToSource(probe.getEmittedBin(), "probe/probe.elf");
-    b.step("probe", "the virtio probe kernel").dependOn(&probe_copy.step);
-
     b.getInstallStep().dependOn(&copy.step);
 }
