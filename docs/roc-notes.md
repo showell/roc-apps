@@ -10,9 +10,16 @@ reduced program, `findings/` holds it.
   roc-lang/roc's own releases page is the old compiler. A debug build of the
   checkout is for working on the compiler: its checker is quadratic in a file's
   literals, where the nightly's is linear.
-- `nightly-2026-09-15-fe09c42` dies with SIGILL (exit 132) in `roc check` and
-  `roc build` on this box's CPU (AVX2 and BMI2, no AVX-512); the 09-11 and 09-12
-  nightlies run.
+- **A nightly from 2026-09-12 on does not run on this box.** Since roc-lang/roc
+  `a02ff3b0ce`, type digests are SHA-256 computed with the CPU's SHA-256
+  instructions, and `sha` is in the x86_64 Linux release build's CPU floor, so
+  `nightly-2026-09-15-fe09c42` dies with SIGILL (exit 132) the first time it
+  digests a type -- which `roc check` on four lines already does. This box's CPU
+  has no `sha_ni`; GitHub's x64 and arm64 Linux runners do, and run that nightly.
+  x86_64 macOS is exempt from the floor and computes the same digests with
+  portable rounds, because Intel Macs are the same CPU generation as this box.
+  `nightly-2026-09-11-793f9d8` is the last one that runs here, and a build of the
+  checkout needs `src/base/sha256_rounds.zig` forced onto the portable rounds.
 - roc-ray pins `nightly-2026-09-07-14d9829`. Its `0.10.0-rc3` release bundle is
   pinned to `nightly-2026-08-23-fb208ba`, and the 09-07 and 09-11 nightlies both
   reject that bundle's `Text.roc`.
