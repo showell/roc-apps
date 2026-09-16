@@ -164,13 +164,23 @@ Machine :: [].{
 		}
 	}
 
-	# `block-write-sector`: the 512 bytes at `buf` become the sector. It answers
-	# 0 whether or not it was denied, and a denied write writes nothing.
+	# `block-write-sector`: the 512 bytes at `buf` become the sector. A denied
+	# write writes nothing and answers 0, as x86's does.
+	#
+	# **THE FLOOR REPORTS WHAT THE FLOOR DID WRONG, AND NOTHING ELSE.** A
+	# position with nothing on it and a sector past the end answer 0, because
+	# that is what the machine answers, and a clean run has to be the machine's
+	# run exactly. A transfer an injected fault refused answers 1 -- Fat16
+	# already reads this status (`fat16-put-entry-and-write` answers True only
+	# for 0), so a write that did not land is reported as one instead of being
+	# claimed as a success. A torn write still answers 0: the controller thought
+	# it wrote, and finding out otherwise is the filesystem's problem, which is
+	# the whole point of that fault.
 	block_write_sector! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
 	block_write_sector! = |m, lba, buf| {
 		if Machine.block_granted!(m) {
-			_outcome = Disk.write!(I64.to_u64_wrap(lba), Machine.at(buf))
-			(m, 0)
+			outcome = Disk.write!(I64.to_u64_wrap(lba), Machine.at(buf))
+			(m, if outcome == 3 { 1 } else { 0 })
 		} else {
 			(m, 0)
 		}

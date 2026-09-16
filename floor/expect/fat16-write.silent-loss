@@ -1,0 +1,7 @@
+wrote True
+exists True
+readback Hello, disk!
+size 12
+wrote-bin True
+bin <none>
+absent False

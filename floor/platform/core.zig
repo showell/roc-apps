@@ -331,6 +331,14 @@ fn hostedDiskRead(lba: u64, addr: u64) callconv(.c) u64 {
         return @intFromEnum(Outcome.absent);
     };
     if (faulted(.read, lba)) {
+        // **A REFUSED READ POISONS ITS BUFFER.** A controller that reports an
+        // error may leave the buffer untouched, and a caller that ignores the
+        // error then reads whatever was there before -- stale bytes that are
+        // often still plausible, so the mistake hides. A fault is allowed to be
+        // adversarial where hardware is merely unlucky: filling the buffer with
+        // a byte no filesystem means turns "ignored the error" into something
+        // the run shows.
+        fill(addr, 0xDD, 512);
         return @intFromEnum(Outcome.refused);
     }
     if (lba >= d.len / 512) {

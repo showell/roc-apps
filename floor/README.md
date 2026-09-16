@@ -1,0 +1,115 @@
+# floor
+
+A zig platform under the Roc: the low-level machine in the host, with the Roc
+above it free to be an operating system. The essay is
+`notes/a-zig-floor-under-a-roc-kernel.md`
+(<http://143.244.172.148:9100/notes/a-zig-floor-under-a-roc-kernel.md>).
+
+The machine emulator in `machine/roc` holds every device in one Roc value,
+which is how we found out what the doors are. This is the other arrangement:
+
+- **The host owns every mutable byte.** Memory is 3 GB in 1 MB pages, made and
+  zeroed the first time the program touches one. The block device's images are
+  the host's. The clock is the host's. The Roc value a program threads carries
+  the heap's bump pointer and nothing else.
+- **A transfer names an address, never a payload.** `Disk.read!(lba, addr)`
+  moves 512 bytes from the host's image into the page that address lands on;
+  nothing but integers crosses the door. That is what a controller doing DMA
+  does, and it is why this platform copies nothing. The Codex builtin already
+  had this shape -- `block-read-sector` answers an address -- so the copying in
+  `machine/roc` was never the program's idea.
+- **The policy stays in Roc.** The capability word is memory, at the address
+  x86's kernel keeps it (20536), written by `Machine.boot!` from the effects the
+  opening declares and read back by every block door. A program that clears its
+  own grant is denied from then on, as on the machine. The host enforces one
+  thing: that an address is backed.
+- **Every door is loud.** A refusal names the address, the position or the
+  sector. The Roc side cannot inspect the host's state, so the host has to say
+  what it saw.
+
+| where | what |
+|---|---|
+| `platform/main.roc` | the platform: `main!` in Echo's shape and the hosted doors |
+| `platform/Heap.roc` | a load and a store of 1, 2, 4 or 8 bytes |
+| `platform/Disk.roc` | the block device: select a position, its sector count, and a transfer naming a sector and an address |
+| `platform/Clock.roc` | `now!` and `wait!`, in nanoseconds, on a virtual or a wall clock |
+| `platform/Echo.roc` | a line of text |
+| `platform/core.zig` | the host: memory in pages, the images, the clock, the faults, and the run |
+| `platform/native.zig` | the native host (x86-64 Linux, musl): the flags, the images in and out, and a run's report |
+| `roc/Machine.roc` | the floor's side of the state, standing in for the `Machine` rocemit writes, door for door |
+| `build.sh` | the host, then each unit emitted and wired to the platform and built natively |
+| `run.sh` | one unit, built and run, with a `.disk` beside it attached and the host's flags passed through |
+| `verify.sh`, `verify.tsv` | every row built and run, its console compared with what the row expects |
+| `expect/` | the consoles a fault row expects, which the unit's own verdict cannot describe |
+
+    floor/run.sh ~/showell_repos/cobblestone-u61/codex/test/fat16-write.codex -report
+    floor/run.sh ~/showell_repos/cobblestone-u61/codex/test/fat16-write.codex -fault tear-write -report
+    floor/verify.sh
+
+**An image is never written where it was read.** `-disk` reads the file into
+the host, which then owns it, and the run's writes land in that copy;
+`-disk-out` is the only thing that writes an image back out.
+
+## The faults
+
+The floor can be put in a mode where it breaks its promises on purpose, and the
+Roc above has to cope. The plans are deterministic -- a plan counts the
+transfers it matches and bites on every `-fault-every`-th one, optionally only
+at the sector `-fault-lba` names -- so a run repeats exactly and a fault row in
+`verify.tsv` is a regression test.
+
+| kind | what the floor does |
+|---|---|
+| `refuse-read` | the transfer moves nothing and the buffer is filled with 0xDD |
+| `refuse-write` | the transfer moves nothing, and the door answers a failure |
+| `tear-write` | half the sector is written and the door answers success |
+
+`refuse-read` poisons its buffer rather than leaving it alone. Hardware may
+leave a buffer untouched, and a caller that ignores the error then reads
+whatever was there before -- stale bytes that are often still plausible, so the
+mistake hides. A fault is allowed to be adversarial where hardware is merely
+unlucky.
+
+`tear-write` answers success on purpose: the controller thought it wrote, and
+finding out otherwise is the filesystem's problem. That is what makes it the
+hard one.
+
+## What fat16-write says under each
+
+Cobblestone's `codex/test/fat16-write.codex`, 2,291 lines of `Fat16` over 171
+sector reads and 8 writes. Every row below is in `verify.tsv`.
+
+| run | console | what it shows |
+|---|---|---|
+| clean | its verdict, exactly | the floor is the machine's answer, not a near one |
+| `tear-write` | its verdict, exactly | this workload never reads back the half of a sector the tear drops |
+| `refuse-write` | `wrote False` … `bin <none>` | Fat16 reports the failure honestly and stays consistent |
+| `refuse-read` | the same | a filesystem that can read nothing writes nothing |
+| `refuse-read -fault-every 7` | `wrote-bin True`, then `bin <none>` | **a write reported as a success whose file is not there** |
+
+The last row is the one to look at. `Fat16` does check whether a write landed
+-- `fat16-put-entry-and-write` answers True only when `block-write-sector`
+answers 0 -- so under `refuse-write` it tells the truth. It has no such
+check available for a read, because **`block-read-sector` answers an address
+and nothing else**: there is no channel in that builtin for "this sector did
+not arrive". With every seventh read poisoned, the program writes data derived
+from sectors it never received, reports success, and cannot read the file back.
+
+Nothing in the program could have noticed. That is a gap in the builtin, not a
+bug in `Fat16`, and it is an argument for what a Roc kernel on this floor needs
+that the machine never offered it: a read door with an outcome.
+
+## What is not here yet
+
+- **The screen.** `framebuffer/` has it: the same 1 MB pages under the same
+  3 GB, codex-vm's GPU in zig, and a wasm host beside the native one. The page
+  table in `platform/core.zig` is that platform's, duplicated on purpose and
+  dated (2026-09-16); the two converge when the screen arrives here, which is
+  the next step.
+- **A browser host.** The native host is the whole of it for now. The wasm one
+  is a second compilation of the same `core.zig`, as `framebuffer/build.zig`
+  already does for its two.
+- **`wait!` has no caller.** `Clock` is wired end to end and nothing rocemit
+  writes calls it yet. It is here because it is what an operating system above
+  this floor is built on, and because a virtual clock is how a run with waiting
+  in it still repeats exactly.

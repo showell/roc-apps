@@ -1,0 +1,12 @@
+# What verify.sh runs on the floor: the program, the host flags (`-` for none),
+# and the console it must print -- `verdict` for the unit's own cleaned
+# .expected, or a path in this repo.
+#
+# The fault rows pin what the Roc above does when the floor breaks its
+# promises, so it is a regression test and not an anecdote.
+cobblestone:codex/test/fat16-write.codex	-	verdict
+cobblestone:codex/test/fat16-write.codex	-fault tear-write	verdict
+cobblestone:codex/test/fat16-write.codex	-fault refuse-write	floor/expect/fat16-write.nothing-lands
+cobblestone:codex/test/fat16-write.codex	-fault refuse-write -fault-every 2	floor/expect/fat16-write.nothing-lands
+cobblestone:codex/test/fat16-write.codex	-fault refuse-read	floor/expect/fat16-write.nothing-lands
+cobblestone:codex/test/fat16-write.codex	-fault refuse-read -fault-every 7	floor/expect/fat16-write.silent-loss
