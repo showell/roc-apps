@@ -180,9 +180,11 @@ fn main(argc: c_int, argv: [*][*:0]u8) callconv(.c) c_int {
 
     if (report) {
         var line: [224]u8 = undefined;
-        write(1, std.fmt.bufPrint(&line, "-- {d} ms, {d} pages, {d} sectors read, {d} written, {d} waits, fault {s} bit {d}\n", .{
+        write(1, std.fmt.bufPrint(&line, "-- {d} ms, {d} pages, heap {d} loads {d} stores, disk {d} read {d} written, {d} waits, fault {s} bit {d}\n", .{
             us / 1000,
             core.pages_made,
+            core.heap_loads,
+            core.heap_stores,
             core.sectors_read,
             core.sectors_written,
             core.waits,

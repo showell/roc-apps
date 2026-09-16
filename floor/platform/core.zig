@@ -224,11 +224,19 @@ fn fill(addr: u64, byte: u8, len: usize) void {
     }
 }
 
+/// How many times the Roc side crossed each door. The essay's question --
+/// whether the seam is at the right height -- is answered by these and not by
+/// a wall clock: a rung is too low when a protocol event costs thousands.
+pub var heap_loads: u64 = 0;
+pub var heap_stores: u64 = 0;
+
 fn hostedHeapLoad(addr: u64, width: u64) callconv(.c) u64 {
+    heap_loads += 1;
     return load(addr, width);
 }
 
 fn hostedHeapStore(addr: u64, value: u64, width: u64) callconv(.c) void {
+    heap_stores += 1;
     store(addr, value, width);
 }
 

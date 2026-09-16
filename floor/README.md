@@ -99,6 +99,39 @@ Nothing in the program could have noticed. That is a gap in the builtin, not a
 bug in `Fat16`, and it is an argument for what a Roc kernel on this floor needs
 that the machine never offered it: a read door with an outcome.
 
+## What it costs
+
+`fat16-write` against its 16 MB fixture, both natively on the dev backend,
+fastest of three, on this box (2026-09-16). The Roc machine is
+`machine/native` -- the same emulator, its disk answered by host files rather
+than modelled -- so the difference is the memory model and the transfers, not
+the compiler.
+
+| | run | RSS |
+|---|---|---|
+| the Roc machine (`machine/native`) | 0.13 s | 3.2 MB |
+| this floor | **0.02 s** | 19 MB |
+
+The floor is about six times faster and holds more: it reads the whole image
+into the host at startup, so a 16 MB fixture is 16 MB of RSS, where the Roc
+machine reads a sector from the file when it wants one. That is the right trade
+at this size and the wrong one at a real disk's; reading on demand, or mapping
+the file, is the fix when it matters.
+
+**Crossings, which is the measurement that decides whether the seam is at the
+right height.** One clean `fat16-write`:
+
+| door | crossings |
+|---|---|
+| `Heap.load!` | 21,133 |
+| `Heap.store!` | 1,097 |
+| `Disk.read!` / `write!` | 171 / 8 |
+
+179 transfer crossings for the whole program, about 124 byte crossings a
+sector -- `Fat16` reading a sector's fields out of memory one at a time, which
+is the byte rung doing its job. Nothing here is thousands per protocol event,
+so the seam is where it should be.
+
 ## What is not here yet
 
 - **The screen.** `framebuffer/` has it: the same 1 MB pages under the same
@@ -109,6 +142,8 @@ that the machine never offered it: a read door with an outcome.
 - **A browser host.** The native host is the whole of it for now. The wasm one
   is a second compilation of the same `core.zig`, as `framebuffer/build.zig`
   already does for its two.
+- **A disk larger than memory.** The host reads an image in whole and owns it;
+  there is no reading on demand and no mapping yet.
 - **`wait!` has no caller.** `Clock` is wired end to end and nothing rocemit
   writes calls it yet. It is here because it is what an operating system above
   this floor is built on, and because a virtual clock is how a run with waiting
