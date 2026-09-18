@@ -28,9 +28,6 @@ Movie :: [].{
 
 		# What to draw.
 		frame : model -> Movie.Frame,
-		# The same frame painted into pixels, for a player that would rather
-		# show one texture than fill shapes.
-		pixels : model -> List(U32),
 
 		# How far in it is: a number that goes up, for naming a screenshot.
 		clock : model -> F64,

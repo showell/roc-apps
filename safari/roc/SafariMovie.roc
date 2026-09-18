@@ -1,12 +1,15 @@
 # SafariMovie -- Safari, as a Movie.
 #
 # Hand-written: the shim between the ride Safari actually is and the movie a
-# player wants. SafariRide holds the ride and the history; Shapes cuts a frame
-# into shapes; Raster paints one into pixels. This is the value that says so.
+# player wants. SafariRide holds the ride and the history; Shapes says what a
+# frame looks like. This is the value that says so.
+#
+# Raster still paints a frame into pixels, and ShapesFrame still checks the two
+# against each other -- but no PLAYER shows pixels any more, so a movie is not
+# asked for them.
 import Movie
 import SafariRide
 import Shapes
-import Raster
 
 SafariMovie :: [].{
 	Model : SafariRide.Model
@@ -21,13 +24,6 @@ SafariMovie :: [].{
 			shapes: Shapes.frame(SafariRide.commands(m), SafariRide.sky_top(m), SafariRide.sky_horizon(m), SafariRide.sun(m)),
 			roll: SafariRide.roll(m),
 		},
-		pixels: |m| Raster.paint({
-			commands: SafariRide.commands(m),
-			roll: SafariRide.roll(m),
-			sky_top: SafariRide.sky_top(m),
-			sky_horizon: SafariRide.sky_horizon(m),
-			sun: SafariRide.sun(m),
-		}),
 		clock: |m| m.ride.clock,
 		title: "Safari",
 		stem: "safari",

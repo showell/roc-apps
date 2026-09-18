@@ -26,7 +26,7 @@ No module under `safari/roc/` imports a platform. The roc-ray app is one file:
 |---|---|
 | `build.sh` | an app for one target, from a roc-ray checkout's platform source: stages `apps/<name>/` and the module directories its `modules` file names, with its platform reference rewritten, and builds with the nightly roc-ray pins (09-07) |
 | `apps/hello/` | the smallest roc-ray app, proving a build end to end |
-| `apps/safari/` | Safari: roc-ray draws Shapes' frame under a camera turned by the roll, gradients through one fragment shader, anti-aliased by drawing at twice the size (A turns it off); R switches to Raster's pixels shown as one texture; P saves a screenshot; `modules` names `safari/roc` |
+| `apps/safari/` | Safari: four lines, naming the movie and handing it to `ray/player`'s MoviePlayer. Its `modules` names `safari/roc` (the movie) and `ray/player` (the player) |
 | `pixels_png.mjs` | the frame `safari/roc/RasterFrame.roc` or `ShapesFrame.roc` prints, as a PNG |
 | `png_diff.mjs` | two screenshots compared pixel by pixel: how many differ, how many by more than a tolerance, the largest difference |
 | `../.github/workflows/windows.yml` | the Windows executables, built on a hosted Windows runner, and each painter's screenshots from a real window on Mesa's llvmpipe; run by hand |
@@ -34,26 +34,26 @@ No module under `safari/roc/` imports a platform. The roc-ray app is one file:
 
 ## Two painters
 
-The app carries both iterations, and **R** switches between them on the same
-screen:
+roc-ray fills every polygon, triangle and disc itself. It fills only convex
+polygons, so `Shapes.cut` cuts the concave ones into triangles — which is the
+player's business rather than the movie's, and the page does not ask for it. A
+shape with a gradient goes through one fragment shader, whose modes do
+`Brush.shade`'s arithmetic on the scene position.
 
-1. **Shapes** (the default): roc-ray fills every polygon, triangle and disc
-   itself. roc-ray fills only convex polygons, so Shapes cuts the concave ones
-   into triangles. A shape with a gradient is drawn through one fragment
-   shader, whose modes do `Brush.shade`'s arithmetic on the scene position.
-2. **Pixels**: Raster paints the whole frame in Roc, as the canvas would, with
-   the same `Brush.shade`, and roc-ray shows it as one texture.
+It is anti-aliased by supersampling, since roc-ray offers no multisampling: the
+frame is drawn into a render texture at twice the window's size and drawn down
+with bilinear filtering, four samples a pixel. About 17 ms a frame headless on
+the build box.
 
-Shapes is anti-aliased by supersampling, since roc-ray offers no multisampling:
-the frame is drawn into a render texture at twice the window's size and drawn
-down with bilinear filtering, four samples a pixel. A turns it off.
+**There were three painters and now there is one.** `R` switched to Raster
+painting the whole frame in Roc for roc-ray to show as a texture (34 ms a
+frame), and `A` turned the anti-aliasing off. They existed to be compared, and
+the comparison is settled. Raster is still here and `ShapesFrame` still checks
+the two against each other — but no player shows pixels, so a movie is not
+asked for them.
 
-Headless on the build box (Linux, no window), a frame takes about 17 ms with
-Shapes and 34 ms with Pixels.
-
-Keys: SPACE pauses and resumes, UP and DOWN step, J rides to the next segment,
-D shows the frame rate, R switches painter, A turns anti-aliasing off and on, P
-saves a screenshot to `shots/`, ESCAPE quits.
+Keys: SPACE pauses and resumes, UP and DOWN step, J rides to the next scene,
+D shows the frame rate, P saves a screenshot to `shots/`, ESCAPE quits.
 
 ## Building
 

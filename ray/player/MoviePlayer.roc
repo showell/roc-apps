@@ -1,7 +1,7 @@
 # MoviePlayer -- the whole of playing a movie on roc-ray, for any movie.
 #
 # ray/apps/<name>/main.roc names a movie and hands it here. Everything a
-# player does lives in this file -- the two painters, the keys, the camera, the
+# player does lives in this file -- the painting, the keys, the camera, the
 # supersampling, the screenshot -- and none of it names a movie: `program`
 # TAKES one, as a value of Movie.Movie, so the app does the gluing where it can
 # be read rather than by which file happened to be staged.
@@ -10,24 +10,27 @@
 # frame, and fills the shapes the frame reports under a camera turned by its
 # roll. A movie of a night drive would need no change here.
 #
-# Two painters, R switching between them so they can be compared on the same
-# screen. Shapes, the default: roc-ray fills the frame's polygons, triangles,
-# discs and rectangles itself, under a camera turned by the roll; a shape with a
-# gradient is drawn through one fragment shader that does Brush.shade's
-# arithmetic on the scene position (BrushGlsl). Pixels, the first iteration: the movie
-# paints the frame itself and roc-ray shows it as one texture.
+# **ONE PAINTER.** roc-ray fills the frame's polygons, triangles, discs and
+# rectangles itself, under a camera turned by the roll; a shape with a gradient
+# goes through one fragment shader that does Brush.shade's arithmetic on the
+# scene position (BrushGlsl).
 #
-# Shapes is anti-aliased by supersampling, as roc-ray offers no multisampling:
-# the frame is drawn into a render texture at twice the window's size, the
-# camera zoomed to match, and drawn down onto the window with bilinear
-# filtering, whose sample at each window pixel's centre falls between four
-# texels and averages them.
+# There used to be three, and `R` and `A` switched between them: this one, this
+# one without anti-aliasing, and the movie painting its own pixels for roc-ray
+# to show as a texture. They existed to be COMPARED, and the comparison is
+# settled. What went with them: a second texture, an upload every step, a
+# painter in every screenshot's name, and a `pixels` method every movie would
+# have had to implement.
+#
+# It is anti-aliased by supersampling, as roc-ray offers no multisampling: the
+# frame is drawn into a render texture at twice the window's size, the camera
+# zoomed to match, and drawn down onto the window with bilinear filtering,
+# whose sample at each window pixel's centre falls between four texels and
+# averages them.
 #
 # The keys are the page's: SPACE pauses and resumes, UP and DOWN step, J skips
-# to the next scene, D shows the frame rate, ESCAPE quits; and R, A, which
-# turns anti-aliasing off and on, and P, which saves a screenshot to shots/
-# named by the movie's clock and the painter.
-
+# to the next scene, D shows the frame rate, ESCAPE quits, and P saves a
+# screenshot to shots/ named by the movie's clock.
 import rr.App
 import rr.Assets
 import rr.Camera
@@ -54,7 +57,7 @@ MoviePlayer :: [].{
 		geom_c : Draw.Vec4Uniform,
 	}
 
-	Model(model) : { state : model, auto : Bool, fps : Bool, pixels : Bool, aa : Bool, screen : Assets.Texture, target : Draw.RenderTexture, gpu : MoviePlayer.Gpu }
+	Model(model) : { state : model, auto : Bool, fps : Bool, target : Draw.RenderTexture, gpu : MoviePlayer.Gpu }
 
 	# The supersampled frame: twice the window's size each way, four samples a pixel.
 	supersample : F32
@@ -71,7 +74,6 @@ MoviePlayer :: [].{
 	init! = |movie| App.init(
 		App.default.with_title(movie.title).with_size({ width: 960, height: 600 }).with_output_dir("shots"),
 		|_io| {
-			screen = Assets.generate_color_texture!({ width: 960, height: 600, color: Color.black })?
 			target = Draw.RenderTexture.load!(target_size)?
 			Assets.set_texture_filter!(target.texture(), Bilinear)
 			shader = Draw.Shader.from_source!({ vertex_source: BrushGlsl.vertex, fragment_source: BrushGlsl.fragment })?
@@ -86,7 +88,7 @@ MoviePlayer :: [].{
 				geom_b: shader.uniform_vec4!("geomB")?,
 				geom_c: shader.uniform_vec4!("geomC")?,
 			}
-			Ok({ state: movie.init, auto: Bool.True, fps: Bool.False, pixels: Bool.False, aa: Bool.True, screen, target, gpu })
+			Ok({ state: movie.init, auto: Bool.True, fps: Bool.False, target, gpu })
 		},
 	)
 
@@ -118,16 +120,12 @@ MoviePlayer :: [].{
 			} else {
 				model.state
 			}
-			pixels = if keys.key_pressed(KeyR) { !model.pixels } else { model.pixels }
-			aa = if keys.key_pressed(KeyA) { !model.aa } else { model.aa }
-			upload!(movie, pixels and (manual or auto or pixels != model.pixels), model.screen, state)
 			if keys.key_pressed(KeyP) {
-				painter = if pixels { "pixels" } else if aa { "shapes-aa" } else { "shapes" }
-				name = "${movie.stem}-${U32.to_str(F64.to_u32_wrap(clock(state)))}-${painter}.png"
+				name = "${movie.stem}-${U32.to_str(F64.to_u32_wrap(clock(state)))}.png"
 				Task.spawn!(input, || ShotSaved(io.capture().screenshot!(name)))
 			}
 			fps = if keys.key_pressed(KeyD) { !model.fps } else { model.fps }
-			Ok({ ..model, state, auto, fps, pixels, aa })
+			Ok({ ..model, state, auto, fps })
 		}
 	}
 
@@ -139,35 +137,23 @@ MoviePlayer :: [].{
 	}
 
 	draw! : Movie.Movie(model), MoviePlayer.Model(model), Draw.Frame => Try({}, [ScopeLimit, ScopeUnavailable, ..])
-	draw! = |movie, model, frame|
-		if model.pixels {
-			frame.texture!({ texture: model.screen, source: Math.rect(0, 0, 960, 600), dest: Math.rect(0, 0, 960, 600), origin: Math.zero, rotation: 0, tint: Color.white })
-			Ok({})
-		} else {
-			the_frame = movie.frame
-			f = the_frame(model.state)
-			# roc-ray fills convex polygons only, so a concave one is cut here.
-			# A movie does not know or care; a canvas does not ask.
-			shapes = Shapes.cut(f.shapes)
-			roll = F64.to_f32_wrap(0.0 - f.roll * 57.29577951308232)
-			if model.aa {
-				frame.with_render_texture!(model.target, |big| {
-					big.clear!(Color.black)
-					big.with_camera!(camera(roll, supersample), |world| {
-						draw_shapes!(model.gpu, world, shapes)
-						Ok({})
-					})
-				})?
-				frame.texture!({ texture: model.target.texture(), source: model.target.source(), dest: Math.rect(0, 0, 960, 600), origin: Math.zero, rotation: 0, tint: Color.white })
+	draw! = |movie, model, frame| {
+		the_frame = movie.frame
+		f = the_frame(model.state)
+		# roc-ray fills convex polygons only, so a concave one is cut here.
+		# A movie does not know or care; a canvas does not ask.
+		shapes = Shapes.cut(f.shapes)
+		roll = F64.to_f32_wrap(0.0 - f.roll * 57.29577951308232)
+		frame.with_render_texture!(model.target, |big| {
+			big.clear!(Color.black)
+			big.with_camera!(camera(roll, supersample), |world| {
+				draw_shapes!(model.gpu, world, shapes)
 				Ok({})
-			} else {
-				frame.clear!(Color.black)
-				frame.with_camera!(camera(roll, 1), |world| {
-					draw_shapes!(model.gpu, world, shapes)
-					Ok({})
-				})
-			}
-		}
+			})
+		})?
+		frame.texture!({ texture: model.target.texture(), source: model.target.source(), dest: Math.rect(0, 0, 960, 600), origin: Math.zero, rotation: 0, tint: Color.white })
+		Ok({})
+	}
 
 	# The canvas turns the frame by minus the roll about the screen's centre; a
 	# Camera2D turns the world by its rotation, in degrees, about its target, and
@@ -315,19 +301,6 @@ MoviePlayer :: [].{
 		$out
 	}
 
-	# The frame the movie paints itself, handed to the screen texture, when the
-	# pixel painter is showing and the frame moved.
-	upload! : Movie.Movie(model), Bool, Assets.Texture, model => {}
-	upload! = |movie, needed, screen, state|
-		if needed {
-			match Assets.update_texture!(screen, pixels_of(movie, state)) {
-				Ok({}) => {}
-				Err(_) => crash("the player: a frame did not fit the screen texture")
-			}
-		} else {
-			{}
-		}
-
 	show_fps! : Bool, Draw.Frame => {}
 	show_fps! = |shown, frame|
 		if shown {
@@ -336,14 +309,6 @@ MoviePlayer :: [].{
 			{}
 		}
 
-	pixels_of : Movie.Movie(model), model -> List(Color.Rgba)
-	pixels_of = |movie, state| {
-		paint = movie.pixels
-		List.map(paint(state), rgba)
-	}
-
-	rgba : U32 -> Color.Rgba
-	rgba = |p| Color.rgba(U32.to_u8_wrap(U32.shr_wrap(p, 16)), U32.to_u8_wrap(U32.shr_wrap(p, 8)), U32.to_u8_wrap(p), 255)
 
 	# **THE PLAYER IS A FUNCTION OF THE MOVIE IT PLAYS.** An app names its
 	# movie and hands it over; nothing here is found by name.
