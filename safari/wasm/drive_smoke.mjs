@@ -21,29 +21,31 @@ for (const imp of WebAssembly.Module.imports(mod)) {
 const x = new WebAssembly.Instance(mod, { env }).exports;
 memory = x.memory;
 
-// The blitter's walk over the words: tag, then per tag its header and points.
+// The blitter's walk over the words: a kind, a brush, then the shape. **This
+// is the round-trip check**: if the packer in ShapeWire.roc and the reader in
+// blitter.js disagree by one word, the walk does not land exactly on the end.
+const MODE_WORDS = { 0: 2, 1: 6, 2: 8, 3: 10, 4: 12, 5: 10 }; // colours + geometry, past the mode
 function decode(base, len) {
   const u32 = new Uint32Array(memory.buffer, base, len / 4);
-  const f32 = new Float32Array(memory.buffer, base, len / 4);
-  const tags = {}; let w = 0, pts = 0;
+  const kinds = {}; const modes = {}; let w = 0, pts = 0, clips = 0;
   while (w * 4 < len) {
-    const tag = u32[w++]; tags[tag] = (tags[tag] ?? 0) + 1;
-    if (tag === 3) { w += 5; continue; }
-    if (tag >= 2 && tag <= 6) {
-      w += 2; // color, color2
-      const geom = { 2: 2, 4: 3, 5: 4, 6: 5 }[tag] ?? 0; // the geom words per tag, if known
-      w += geom;
-      const n = u32[w++]; pts += n; w += 2 * n; continue;
-    }
-    w += 1; const n = u32[w++]; pts += n; w += 2 * n;
+    const kind = u32[w++]; kinds[kind] = (kinds[kind] ?? 0) + 1;
+    const mode = u32[w++]; modes[mode] = (modes[mode] ?? 0) + 1;
+    const words = MODE_WORDS[mode];
+    if (words === undefined) throw new Error(`unknown brush mode ${mode} at word ${w - 1}`);
+    w += words;
+    if (kind === 0) { const n = u32[w++]; pts += n; w += 2 * n; }
+    else if (kind === 1) { w += 3; if (u32[w++]) { clips++; w += 4; } }
+    else if (kind === 2) { w += 4; }
+    else throw new Error(`unknown shape kind ${kind} at word ${w - 2}`);
   }
-  return { tags, pts };
+  if (w * 4 !== len) throw new Error(`the walk ended at ${w * 4} bytes, not ${len}`);
+  return { kinds, modes, pts, clips };
 }
 
 const readouts = () => ({
   clock: x.clock(), seg: x.riderSeg(), tilt: x.riderTilt().toFixed(4), focal: x.camFocal().toFixed(2),
-  gaze: x.gazeYaw().toFixed(4), skyTop: x.skyTop().toString(16), horizon: x.skyHorizon().toString(16),
-  sun: x.sunVisible() ? [x.sunX().toFixed(1), x.sunY().toFixed(1), x.sunScale().toFixed(3)] : null,
+  gaze: x.gazeYaw().toFixed(4),
   v: x.riderV().toFixed(3), truckLead: x.truckLead().toFixed(2), truckV: x.truckV().toFixed(3),
 });
 

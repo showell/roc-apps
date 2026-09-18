@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Hash what the safari wasm module draws over a fixed ride, so a change that
 // should not move a pixel can be held to exactly that. Each frame is its
-// command bytes and every readout the page binds; the ride advances `stride`
+// SHAPE bytes and every readout the page binds; the ride advances `stride`
 // steps between frames, then steps back three times and draws again. One
 // line per frame, then the digest of them all (FNV-1a, 32 bits).
 //
@@ -26,8 +26,8 @@ const fnv = (h, bytes) => {
   return h;
 };
 const OFFSET = 2166136261;
-const U32 = ["clock", "riderSeg", "skyTop", "skyHorizon", "sunVisible"];
-const F32 = ["riderTilt", "camFocal", "gazeYaw", "sunX", "sunY", "sunScale", "riderV", "truckLead", "truckV"];
+const U32 = ["clock", "riderSeg"];
+const F32 = ["riderTilt", "camFocal", "gazeYaw", "riderV", "truckLead", "truckV"];
 
 function frame(label) {
   const len = x.renderFrame();

@@ -17,12 +17,6 @@ platform ""
 			rider_tilt : Box(model) -> F32,
 			cam_focal : Box(model) -> F32,
 			gaze_yaw : Box(model) -> F32,
-			sky_top : Box(model) -> U32,
-			sky_horizon : Box(model) -> U32,
-			sun_visible : Box(model) -> U32,
-			sun_x : Box(model) -> F32,
-			sun_y : Box(model) -> F32,
-			sun_scale : Box(model) -> F32,
 			rider_v : Box(model) -> F32,
 			truck_lead : Box(model) -> F32,
 			truck_v : Box(model) -> F32,
@@ -42,12 +36,6 @@ platform ""
 		"roc_rider_tilt": rider_tilt_for_host,
 		"roc_cam_focal": cam_focal_for_host,
 		"roc_gaze_yaw": gaze_yaw_for_host,
-		"roc_sky_top": sky_top_for_host,
-		"roc_sky_horizon": sky_horizon_for_host,
-		"roc_sun_visible": sun_visible_for_host,
-		"roc_sun_x": sun_x_for_host,
-		"roc_sun_y": sun_y_for_host,
-		"roc_sun_scale": sun_scale_for_host,
 		"roc_rider_v": rider_v_for_host,
 		"roc_truck_lead": truck_lead_for_host,
 		"roc_truck_v": truck_v_for_host,
@@ -56,7 +44,7 @@ platform ""
 		inputs_dir: "targets/",
 		wasm32: {
 			inputs: ["host.wasm", app],
-			exports: ["renderFrame", "probeFrame", "probeExpand", "bufPtr", "bufHighWater", "bufCap", "advance", "back", "clock", "riderSeg", "riderTilt", "camFocal", "gazeYaw", "skyTop", "skyHorizon", "sunVisible", "sunX", "sunY", "sunScale", "riderV", "truckLead", "truckV"],
+			exports: ["renderFrame", "probeFrame", "probeExpand", "bufPtr", "bufHighWater", "bufCap", "advance", "back", "clock", "riderSeg", "riderTilt", "camFocal", "gazeYaw", "riderV", "truckLead", "truckV"],
 		},
 	}
 
@@ -69,12 +57,6 @@ rider_seg_for_host = program.rider_seg
 rider_tilt_for_host = program.rider_tilt
 cam_focal_for_host = program.cam_focal
 gaze_yaw_for_host = program.gaze_yaw
-sky_top_for_host = program.sky_top
-sky_horizon_for_host = program.sky_horizon
-sun_visible_for_host = program.sun_visible
-sun_x_for_host = program.sun_x
-sun_y_for_host = program.sun_y
-sun_scale_for_host = program.sun_scale
 rider_v_for_host = program.rider_v
 truck_lead_for_host = program.truck_lead
 truck_v_for_host = program.truck_v
