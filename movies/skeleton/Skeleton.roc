@@ -1,0 +1,155 @@
+# Skeleton -- one skeleton, dancing, forever.
+#
+# After The Skeleton Dance (1929), which is in the public domain: Disney's
+# first Silly Symphony, white bones on black, no dialogue, and a figure built
+# out of exactly the shapes this vocabulary has -- a skull is a disc, a rib is
+# a thick line, a femur is the quad `Shapes.line` builds. Nothing is traced
+# from it; this is a skeleton doing a jig, which is what that short is.
+#
+# **IT IS THE THIRD KIND OF MOVIE.** Safari and particles simulate forwards and
+# cannot say what frame 900 looks like without walking there; capture_plot is a
+# function of its clock. This one is a function of its PHASE -- the loop is
+# sixty frames and frame 900 is frame 60 is frame 0 -- so it can be stepped
+# either way, and a movie that loops needs no history to go back.
+#
+# A pose is angles. Every joint below is an angle from straight down, positive
+# to the right, and a bone is where two of them meet; the dance is four sine
+# waves on one phase.
+import Movie
+import Shapes
+import Brush
+import Trig
+
+Skeleton :: [].{
+	width : F64
+	width = 640.0
+	height : F64
+	height = 480.0
+
+	# Sixty frames to the loop, so the phase closes exactly.
+	period : I64
+	period = 60
+
+	Model : { tick : I64 }
+
+	movie : Movie.Movie(Skeleton.Model)
+	movie = {
+		size: { width: width, height: height },
+		init: { tick: 0 },
+		advance: |m| { tick: wrap(m.tick + 1) },
+		# **IT LOOPS, SO IT REMEMBERS NOTHING.** Back is a step the other way.
+		back: |m| { tick: wrap(m.tick - 1) },
+		# A quarter of the way round.
+		skip: |m| { tick: wrap(m.tick + period // 4) },
+		frame: |m| { shapes: shapes(m), roll: 0.0 },
+		clock: |m| I64.to_f64(m.tick),
+		title: "The Skeleton Dance",
+		stem: "skeleton",
+	}
+
+	wrap : I64 -> I64
+	wrap = |t| {
+		r = t - I64.div_trunc_by(t, period) * period
+		if r < 0 { r + period } else { r }
+	}
+
+	tau : F64
+	tau = 6.283185307179586
+
+	bone : Brush.Rgba
+	bone = Brush.opaque(0xf2f0e6)
+	night : Brush.Rgba
+	night = Brush.opaque(0x0a0a0c)
+
+	# Where a bone of length `len` ends, leaving (x, y) at `angle` from straight
+	# down. y is down, so this is the screen's own arithmetic.
+	end_of : F64, F64, F64, F64 -> { x : F64, y : F64 }
+	end_of = |x, y, angle, len| { x: x + Trig.r_sin(angle) * len, y: y + Trig.r_cos(angle) * len }
+
+	rib : F64, F64, F64, F64, F64 -> Shapes.Shape
+	rib = |x0, y0, x1, y1, w| Shapes.line(x0, y0, x1, y1, w, Flat(bone))
+
+	joint : F64, F64, F64 -> Shapes.Shape
+	joint = |x, y, r| Disc({ x: x, y: y, r: r, fill: Flat(bone), clip: Anywhere })
+
+	shapes : Skeleton.Model -> List(Shapes.Shape)
+	shapes = |m| {
+		t = I64.to_f64(m.tick) / I64.to_f64(period) * tau
+
+		# The dance: a bob on the double beat, a sway on the beat, and the
+		# limbs alternating about it.
+		bob = Trig.r_cos(2.0 * t) * 7.0
+		sway = Trig.r_sin(t) * 14.0
+		swing = Trig.r_sin(t)
+
+		cx = width / 2.0 + sway
+		pelvis_y = 300.0 + bob
+
+		# The spine, and the skull on top of it.
+		shoulder_y = pelvis_y - 78.0
+		lean = Trig.r_sin(t) * 0.10
+		neck = end_of(cx, shoulder_y, lean, -16.0)
+		skull = end_of(neck.x, neck.y, lean, -26.0)
+
+		var $out = List.with_capacity(40)
+		$out = List.append($out, Rect({ x: 0.0, y: 0.0, w: width, h: height, fill: Flat(night) }))
+
+		# Spine and pelvis.
+		$out = List.append($out, rib(cx, pelvis_y, cx, shoulder_y, 9.0))
+		$out = List.append($out, rib(cx - 22.0, pelvis_y + 2.0, cx + 22.0, pelvis_y + 2.0, 13.0))
+
+		# Four ribs, narrowing downward, each a bar across the spine.
+		var $k = 0
+		while $k < 4 {
+			ry = shoulder_y + 12.0 + I64.to_f64($k) * 13.0
+			half = 30.0 - I64.to_f64($k) * 4.0
+			$out = List.append($out, rib(cx - half, ry, cx + half, ry, 6.0))
+			$k = $k + 1
+		}
+
+		# The skull: a disc, two sockets, and a jaw that opens on the beat.
+		$out = List.append($out, joint(skull.x, skull.y, 26.0))
+		$out = List.append($out, Disc({ x: skull.x - 9.0, y: skull.y - 4.0, r: 6.0, fill: Flat(night), clip: Anywhere }))
+		$out = List.append($out, Disc({ x: skull.x + 9.0, y: skull.y - 4.0, r: 6.0, fill: Flat(night), clip: Anywhere }))
+		gape = 3.0 + 3.0 * (1.0 + Trig.r_cos(2.0 * t)) / 2.0
+		$out = List.append($out, Rect({ x: skull.x - 11.0, y: skull.y + 12.0, w: 22.0, h: gape, fill: Flat(night) }))
+
+		# The arms, alternating: one up while the other is down.
+		$out = arm($out, cx - 26.0, shoulder_y + 4.0, 0.0 - 1.9 - swing * 0.9, 0.0 - 0.7 - swing * 0.5)
+		$out = arm($out, cx + 26.0, shoulder_y + 4.0, 1.9 - swing * 0.9, 0.7 - swing * 0.5)
+
+		# The legs, kicking the other way about.
+		$out = leg($out, cx - 15.0, pelvis_y + 6.0, 0.0 - 0.18 + swing * 0.55, 0.0 - 0.10 - swing * 0.45)
+		$out = leg($out, cx + 15.0, pelvis_y + 6.0, 0.18 + swing * 0.55, 0.10 - swing * 0.45)
+		$out
+	}
+
+	# An upper arm and a forearm, with a shoulder, an elbow and a hand.
+	arm : List(Shapes.Shape), F64, F64, F64, F64 -> List(Shapes.Shape)
+	arm = |acc, x, y, upper, fore| {
+		elbow = end_of(x, y, upper, 34.0)
+		hand = end_of(elbow.x, elbow.y, upper + fore, 30.0)
+		List.concat(acc, [
+			rib(x, y, elbow.x, elbow.y, 7.0),
+			rib(elbow.x, elbow.y, hand.x, hand.y, 6.0),
+			joint(x, y, 6.0),
+			joint(elbow.x, elbow.y, 5.0),
+			joint(hand.x, hand.y, 5.0),
+		])
+	}
+
+	# A thigh and a shin, with a hip, a knee and a foot.
+	leg : List(Shapes.Shape), F64, F64, F64, F64 -> List(Shapes.Shape)
+	leg = |acc, x, y, thigh, shin| {
+		knee = end_of(x, y, thigh, 44.0)
+		foot = end_of(knee.x, knee.y, thigh + shin, 42.0)
+		toe = end_of(foot.x, foot.y, thigh + shin + 1.4, 16.0)
+		List.concat(acc, [
+			rib(x, y, knee.x, knee.y, 9.0),
+			rib(knee.x, knee.y, foot.x, foot.y, 7.0),
+			rib(foot.x, foot.y, toe.x, toe.y, 6.0),
+			joint(x, y, 7.0),
+			joint(knee.x, knee.y, 6.0),
+		])
+	}
+}
