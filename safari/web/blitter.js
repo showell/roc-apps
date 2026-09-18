@@ -385,8 +385,9 @@ async function main(show) {
     'margin:0;background:#0b0b0d;height:100vh;display:flex;flex-direction:column;' +
     'align-items:center;justify-content:center;font-family:ui-monospace,Menlo,monospace;color:#cfd2d6';
   const canvas = document.createElement('canvas');
-  W = scene.width();
-  H = scene.height();
+  // Sized properly once the module is bound and can be asked; the canvas has
+  // to exist before that, because the spinner is drawn on it while the wasm
+  // is still arriving.
   canvas.width = W;
   canvas.height = H;
   canvas.style.cssText = 'display:block;background:#000;box-shadow:0 10px 40px rgba(0,0,0,0.6)';
@@ -413,6 +414,11 @@ async function main(show) {
 
   const { instance } = await WebAssembly.instantiateStreaming(fetch(show.wasm), {});
   const scene = bindScene(instance.exports);
+  // **HOW BIG A FRAME IS COMES FROM THE MOVIE**, and only now can it be asked.
+  W = scene.width();
+  H = scene.height();
+  canvas.width = W;
+  canvas.height = H;
   const capBytes = scene.bufferCapacity();
 
   let auto = true;
