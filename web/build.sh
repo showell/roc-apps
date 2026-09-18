@@ -4,6 +4,7 @@
 #
 #   web/build.sh safari
 #   web/build.sh capture_plot
+#   web/build.sh particles
 #
 # A movie is a directory of Roc with an `<Name>App.roc` beside it; the shared
 # vocabulary -- Movie, Shapes, Brush, ShapeWire, Font and what they cite --
@@ -18,6 +19,7 @@ name="${1:?usage: web/build.sh <movie>}"
 case "$name" in
     safari)       dirs="safari/roc"; app="SafariApp.roc" ;;
     capture_plot) dirs="safari/roc movies/capture_plot"; app="CapturePlotApp.roc" ;;
+    particles)    dirs="safari/roc movies/particles"; app="ParticlesApp.roc" ;;
     *) echo "no movie called $name"; exit 2 ;;
 esac
 
