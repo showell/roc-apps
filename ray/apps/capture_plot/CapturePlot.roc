@@ -9,13 +9,13 @@
 #
 # **WHAT IT COULD NOT SAY, and these are findings rather than complaints:**
 #
-#   - TEXT. It draws a title, a status line and a frame count. Nothing in this
-#     vocabulary draws a glyph -- Safari's critters are baked polygons and its
-#     `Text.roc` is a Codex Text, not a font -- so the words are missing here.
-#   - A LINE WITH A THICKNESS. Its gridlines and axis are strokes; the nearest
-#     thing here is a thin rectangle, which is what they are below. Exact for
-#     a horizontal rule, and not a general answer.
-#   - A ROUNDED RECTANGLE. Its progress bar has a radius; this one has corners.
+#   - TEXT. It draws a title, a status line and a frame count, and nothing in
+#     this vocabulary drew a glyph. `Font.roc` does now: a letter is a few
+#     strokes and a stroke is a polygon, so the words need no new shape and no
+#     new wire. It is a plotter's alphabet rather than a typeface.
+#   - A LINE WITH A THICKNESS, and A ROUNDED RECTANGLE. Both were missing and
+#     both are here now: `Shapes.line` and `Shapes.rounded_rect` build the
+#     polygons they always were, so no painter had to learn a new shape.
 #
 # Everything else went across as it was: a vertical gradient is a Linear brush,
 # a bar is a Rect, the pulsing dot is a Disc.
@@ -28,6 +28,7 @@ import Movie
 import Shapes
 import Brush
 import Trig
+import Font
 
 CapturePlot :: [].{
 	# How far into the animation it is. Their model also carries the recording's
@@ -72,6 +73,8 @@ CapturePlot :: [].{
 	bg_top = Brush.opaque(0x0b0e17)
 	bg_bottom : Brush.Rgba
 	bg_bottom = Brush.opaque(0x171f31)
+	ink : Brush.Rgba
+	ink = Brush.opaque(0xe8ecf5)
 	muted : Brush.Rgba
 	muted = Brush.opaque(0x8a97b0)
 	grid : Brush.Rgba
@@ -95,16 +98,15 @@ CapturePlot :: [].{
 	down = |c0, c1, y0, y1|
 		Linear({ c0: c0, c1: c1, o0: 0.0, o1: 1.0, ax: 0.0, ay: y0, dx: 0.0, dy: y1 - y0, len2: (y1 - y0) * (y1 - y0) })
 
-	# A stroke, as the only thing here that can be one.
-	rule : F64, F64, F64, F64, Brush.Rgba -> Shapes.Shape
-	rule = |x0, y, x1, thickness, color|
-		Rect({ x: x0, y: y - thickness / 2.0, w: x1 - x0, h: thickness, fill: Flat(color) })
-
 	shapes : CapturePlot.Model -> List(Shapes.Shape)
 	shapes = |m| {
 		baseline = height - 44.0
 		var $out = List.with_capacity(I64.to_u64_wrap(6 + 4 * bar_count))
 		$out = List.append($out, Rect({ x: 0.0, y: 0.0, w: width, h: height, fill: down(bg_top, bg_bottom, 0.0, height) }))
+
+		# Their title, and the status line beside the indicator.
+		$out = List.concat($out, Font.text(Str.to_utf8("Recording a plot"), 32.0, 26.0, 18.0, ink))
+		$out = List.concat($out, Font.text(Str.to_utf8("captures/plot.webm"), 52.0, 58.0, 11.0, muted))
 
 		# The recording indicator, pulsing on the same step the frames are
 		# captured on.
@@ -113,10 +115,21 @@ CapturePlot :: [].{
 
 		# How much of the recording is written. Their radius is not available,
 		# so these are square.
-		share = min(m.elapsed * 25.0 / recorded_frames, 1.0)
-		$out = List.append($out, Rect({ x: width - 232.0, y: 56.0, w: 200.0, h: 6.0, fill: Flat(track) }))
+		frames = F64.to_i64_wrap(m.elapsed * 25.0)
+		share = min(I64.to_f64(frames) / recorded_frames, 1.0)
+		$out = List.concat(
+			$out,
+			Font.text(
+				Str.to_utf8("${I64.to_str(frames)} / ${I64.to_str(F64.to_i64_wrap(recorded_frames))} frames"),
+				width - 232.0,
+				34.0,
+				10.0,
+				muted,
+			),
+		)
+		$out = List.append($out, Shapes.rounded_rect(width - 232.0, 56.0, 200.0, 6.0, 0.5, 6, Flat(track)))
 		$out = if share > 0.0 {
-			List.append($out, Rect({ x: width - 232.0, y: 56.0, w: 200.0 * share, h: 6.0, fill: Flat(rec) }))
+			List.append($out, Shapes.rounded_rect(width - 232.0, 56.0, 200.0 * share, 6.0, 0.5, 6, Flat(rec)))
 		} else {
 			$out
 		}
@@ -125,10 +138,10 @@ CapturePlot :: [].{
 		# spot, and the axis under them.
 		var $k = 1
 		while $k <= 4 {
-			$out = List.append($out, rule(32.0, baseline - I64.to_f64($k) * 42.0, width - 32.0, 1.0, grid))
+			$out = List.append($out, Shapes.line(32.0, baseline - I64.to_f64($k) * 42.0, width - 32.0, baseline - I64.to_f64($k) * 42.0, 1.0, Flat(grid)))
 			$k = $k + 1
 		}
-		$out = List.append($out, rule(32.0, baseline, width - 32.0, 1.5, axis))
+		$out = List.append($out, Shapes.line(32.0, baseline, width - 32.0, baseline, 1.5, Flat(axis)))
 
 		# The bars: a travelling wave, so every frame differs.
 		var $i = 0

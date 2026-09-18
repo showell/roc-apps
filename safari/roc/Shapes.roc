@@ -14,6 +14,7 @@
 import Paint
 import Sky
 import Brush
+import Trig
 
 Shapes :: [].{
 	Shape : [
@@ -31,6 +32,69 @@ Shapes :: [].{
 		Disc({ x : F64, y : F64, r : F64, fill : Brush.Fill, clip : Shapes.Clip }),
 		Rect({ x : F64, y : F64, w : F64, h : F64, fill : Brush.Fill }),
 	]
+
+	# ── what a polygon can be, given a little arithmetic ────────────────────
+	#
+	# **A THICK LINE AND A ROUNDED RECTANGLE ARE POLYGONS**, so they are built
+	# here rather than added to the vocabulary every painter has to learn. A
+	# second movie (roc-ray's capture_plot) wanted both: gridlines with a
+	# thickness, and a progress bar with a radius.
+
+	# A line of `w` pixels between two points: the quad it actually is. Exact
+	# at any angle; it has no cap and no join, which is what a gridline wants.
+	line : F64, F64, F64, F64, F64, Brush.Fill -> Shapes.Shape
+	line = |x0, y0, x1, y1, w, fill| {
+		dx = x1 - x0
+		dy = y1 - y0
+		len = sqrt(dx * dx + dy * dy)
+		if len == 0.0 {
+			Poly({ pts: [], fill })
+		} else {
+			# The unit normal, half a width each way.
+			nx = 0.0 - dy / len * (w / 2.0)
+			ny = dx / len * (w / 2.0)
+			Poly({ pts: [x0 + nx, y0 + ny, x1 + nx, y1 + ny, x1 - nx, y1 - ny, x0 - nx, y0 - ny], fill })
+		}
+	}
+
+	# A rectangle whose corners are rounded by `r`, each corner drawn with
+	# `segments` steps -- the same two numbers roc-ray's own rounded_rectangle
+	# takes. A radius of zero, or one too big for the box, gives the box.
+	rounded_rect : F64, F64, F64, F64, F64, I64, Brush.Fill -> Shapes.Shape
+	rounded_rect = |x, y, w, h, r, segments, fill| {
+		rr = F64.min(r, F64.min(w / 2.0, h / 2.0))
+		if rr <= 0.0 or segments < 1 {
+			Poly({ pts: [x, y, x + w, y, x + w, y + h, x, y + h], fill })
+		} else {
+			var $pts = List.with_capacity(I64.to_u64_wrap(8 * (segments + 1)))
+			# Clockwise from the top-left corner's arc, each corner swept from
+			# its own start angle.
+			$pts = corner($pts, x + rr, y + rr, rr, half_pi * 2.0, segments)
+			$pts = corner($pts, x + w - rr, y + rr, rr, 0.0 - half_pi, segments)
+			$pts = corner($pts, x + w - rr, y + h - rr, rr, 0.0, segments)
+			$pts = corner($pts, x + rr, y + h - rr, rr, half_pi, segments)
+			Poly({ pts: $pts, fill })
+		}
+	}
+
+	half_pi : F64
+	half_pi = 1.5707963267948966
+
+	# One quarter turn about (cx, cy), from `from` through a right angle.
+	corner : List(F64), F64, F64, F64, F64, I64 -> List(F64)
+	corner = |pts, cx, cy, r, from, segments| {
+		var $out = pts
+		var $k = 0
+		while $k <= segments {
+			a = from + half_pi * I64.to_f64($k) / I64.to_f64(segments)
+			$out = List.concat($out, [cx + r * Trig.r_cos(a), cy + r * Trig.r_sin(a)])
+			$k = $k + 1
+		}
+		$out
+	}
+
+	sqrt : F64 -> F64
+	sqrt = |v| if v <= 0.0 { 0.0 } else { F64.sqrt(v) }
 
 	# Where a shape is allowed to paint, when it is not allowed everywhere.
 	Clip : [Anywhere, Within({ x : F64, y : F64, w : F64, h : F64 })]
