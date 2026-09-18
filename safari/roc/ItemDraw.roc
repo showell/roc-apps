@@ -1,6 +1,5 @@
-# ItemDraw -- Roc, hand-edited. It began as an emission from Codex by rocemit and
-# is the program now: safari/emitted.sh is retired, and the Roc is where safari
-# is maintained.
+# ItemDraw -- originally emitted from Codex by rocemit; the Roc is the program now
+# and this file is edited here (safari/README.md).
 import Billboards
 import CatDraw
 import CatPlan

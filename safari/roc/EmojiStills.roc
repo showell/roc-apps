@@ -1,4 +1,5 @@
-# EmojiStills -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+# EmojiStills -- originally emitted from Codex by rocemit; the Roc is the program now
+# and this file is edited here (safari/README.md).
 import Stills
 
 EmojiStills :: [].{

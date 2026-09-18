@@ -1,4 +1,5 @@
-# Mountains -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+# Mountains -- originally emitted from Codex by rocemit; the Roc is the program now
+# and this file is edited here (safari/README.md).
 import Camera
 import DeviceMath
 import Lens

@@ -1,4 +1,5 @@
-# JointSpec -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+# JointSpec -- originally emitted from Codex by rocemit; the Roc is the program now
+# and this file is edited here (safari/README.md).
 import Frame
 import Grade
 import Joint

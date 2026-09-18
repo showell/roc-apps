@@ -1,4 +1,5 @@
-# CatDraw -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+# CatDraw -- originally emitted from Codex by rocemit; the Roc is the program now
+# and this file is edited here (safari/README.md).
 import Camera
 import CatStills
 import Paint

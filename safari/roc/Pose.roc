@@ -1,4 +1,5 @@
-# Pose -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+# Pose -- originally emitted from Codex by rocemit; the Roc is the program now
+# and this file is edited here (safari/README.md).
 
 Pose :: [].{
 	RiderState : { segment : I64, along : F64, across : F64, yaw : F64, v : F64, tilt : F64, heading : F64, gaze_yaw : F64, focus : F64 }

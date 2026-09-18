@@ -1,4 +1,5 @@
-# Gaze -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+# Gaze -- originally emitted from Codex by rocemit; the Roc is the program now
+# and this file is edited here (safari/README.md).
 import DeviceMath
 import Pigs
 import Pose

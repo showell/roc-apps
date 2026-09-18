@@ -1,4 +1,5 @@
-# Pond -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+# Pond -- originally emitted from Codex by rocemit; the Roc is the program now
+# and this file is edited here (safari/README.md).
 
 Pond :: [].{
 	PondPt : { cu : F64, cv : F64 }

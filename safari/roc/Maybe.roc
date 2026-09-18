@@ -1,4 +1,5 @@
-# Maybe -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+# Maybe -- originally emitted from Codex by rocemit; the Roc is the program now
+# and this file is edited here (safari/README.md).
 
 Maybe :: [].{
 	Maybe(a) : [Just(a), None]

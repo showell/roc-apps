@@ -1,4 +1,5 @@
-# TruckPlan -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+# TruckPlan -- originally emitted from Codex by rocemit; the Roc is the program now
+# and this file is edited here (safari/README.md).
 import DepthSort
 import Frame
 import Geom

@@ -1,4 +1,5 @@
-# CritterPlan -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+# CritterPlan -- originally emitted from Codex by rocemit; the Roc is the program now
+# and this file is edited here (safari/README.md).
 import Billboards
 import DepthSort
 import Frame

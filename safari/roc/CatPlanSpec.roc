@@ -1,4 +1,5 @@
-# CatPlanSpec -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+# CatPlanSpec -- originally emitted from Codex by rocemit; the Roc is the program now
+# and this file is edited here (safari/README.md).
 import CatPlan
 import Frame
 import Grade

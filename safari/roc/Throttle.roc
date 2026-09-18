@@ -1,4 +1,5 @@
-# Throttle -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+# Throttle -- originally emitted from Codex by rocemit; the Roc is the program now
+# and this file is edited here (safari/README.md).
 import Arc
 import Cat
 import DeviceMath
