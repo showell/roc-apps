@@ -17,10 +17,10 @@
 # filtering, whose sample at each window pixel's centre falls between four
 # texels and averages them.
 #
-# The keys are the page's: SPACE pauses and resumes, UP and DOWN step, J rides
-# to the next segment, D shows the frame rate, ESCAPE quits; and R, A, which
+# The keys are the page's: SPACE pauses and resumes, UP and DOWN step, J skips
+# to the next scene, D shows the frame rate, ESCAPE quits; and R, A, which
 # turns anti-aliasing off and on, and P, which saves a screenshot to shots/
-# named by the ride's clock and the painter.
+# named by the movie's clock and the painter.
 app [Model, program] { rr: platform "roc-ray/platform/main.roc" }
 
 import rr.App
@@ -48,7 +48,7 @@ Gpu : {
 	geom_c : Draw.Vec4Uniform,
 }
 
-Model : { ride : Movie.Model, auto : Bool, fps : Bool, pixels : Bool, aa : Bool, screen : Assets.Texture, target : Draw.RenderTexture, gpu : Gpu }
+Model : { movie : Movie.Model, auto : Bool, fps : Bool, pixels : Bool, aa : Bool, screen : Assets.Texture, target : Draw.RenderTexture, gpu : Gpu }
 
 # The supersampled frame: twice the window's size each way, four samples a pixel.
 supersample : F32
@@ -80,7 +80,7 @@ init! = App.init(
 			geom_b: shader.uniform_vec4!("geomB")?,
 			geom_c: shader.uniform_vec4!("geomC")?,
 		}
-		Ok({ ride: Movie.init, auto: Bool.True, fps: Bool.False, pixels: Bool.False, aa: Bool.True, screen, target, gpu })
+		Ok({ movie: Movie.init, auto: Bool.True, fps: Bool.False, pixels: Bool.False, aa: Bool.True, screen, target, gpu })
 	},
 )
 
@@ -95,27 +95,27 @@ update! = |model, input, io| {
 		jump = keys.key_pressed(KeyJ)
 		manual = up or down or jump
 		auto = if manual { Bool.False } else if keys.key_pressed(KeySpace) { !model.auto } else { model.auto }
-		ride = if jump {
-			Movie.skip(model.ride)
+		movie = if jump {
+			Movie.skip(model.movie)
 		} else if up {
-			Movie.advance(model.ride)
+			Movie.advance(model.movie)
 		} else if down {
-			Movie.back(model.ride)
+			Movie.back(model.movie)
 		} else if auto {
-			Movie.advance(model.ride)
+			Movie.advance(model.movie)
 		} else {
-			model.ride
+			model.movie
 		}
 		pixels = if keys.key_pressed(KeyR) { !model.pixels } else { model.pixels }
 		aa = if keys.key_pressed(KeyA) { !model.aa } else { model.aa }
-		upload!(pixels and (manual or auto or pixels != model.pixels), model.screen, ride)
+		upload!(pixels and (manual or auto or pixels != model.pixels), model.screen, movie)
 		if keys.key_pressed(KeyP) {
 			painter = if pixels { "pixels" } else if aa { "shapes-aa" } else { "shapes" }
-			name = "${Movie.stem}-${U32.to_str(F64.to_u32_wrap(Movie.clock(ride)))}-${painter}.png"
+			name = "${Movie.stem}-${U32.to_str(F64.to_u32_wrap(Movie.clock(movie)))}-${painter}.png"
 			Task.spawn!(input, || ShotSaved(io.capture().screenshot!(name)))
 		}
 		fps = if keys.key_pressed(KeyD) { !model.fps } else { model.fps }
-		Ok({ ..model, ride, auto, fps, pixels, aa })
+		Ok({ ..model, movie, auto, fps, pixels, aa })
 	}
 }
 
@@ -132,7 +132,7 @@ draw! = |model, frame|
 		frame.texture!({ texture: model.screen, source: Math.rect(0, 0, 960, 600), dest: Math.rect(0, 0, 960, 600), origin: Math.zero, rotation: 0, tint: Color.white })
 		Ok({})
 	} else {
-		f = Movie.frame(model.ride)
+		f = Movie.frame(model.movie)
 		shapes = f.shapes
 		roll = F64.to_f32_wrap(0.0 - f.roll * 57.29577951308232)
 		if model.aa {
@@ -303,9 +303,9 @@ points = |xs| {
 # The frame the movie paints itself, handed to the screen texture, when the
 # pixel painter is showing and the frame moved.
 upload! : Bool, Assets.Texture, Movie.Model => {}
-upload! = |needed, screen, ride|
+upload! = |needed, screen, movie|
 	if needed {
-		match Assets.update_texture!(screen, pixels_of(ride)) {
+		match Assets.update_texture!(screen, pixels_of(movie)) {
 			Ok({}) => {}
 			Err(_) => crash("the player: a frame did not fit the screen texture")
 		}
