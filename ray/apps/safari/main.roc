@@ -8,7 +8,7 @@
 # screen. Shapes, the default: roc-ray fills the frame's polygons, triangles,
 # discs and rectangles itself, under a camera turned by the roll; a shape with a
 # gradient is drawn through one fragment shader that does Brush.shade's
-# arithmetic on the scene position. Pixels, the first iteration: the movie
+# arithmetic on the scene position (BrushGlsl). Pixels, the first iteration: the movie
 # paints the frame itself and roc-ray shows it as one texture.
 #
 # Shapes is anti-aliased by supersampling, as roc-ray offers no multisampling:
@@ -32,6 +32,7 @@ import rr.Draw
 import rr.Math
 import rr.Task
 import Brush
+import BrushGlsl
 import Movie
 import Shapes
 
@@ -67,7 +68,7 @@ init! = App.init(
 		screen = Assets.generate_color_texture!({ width: 960, height: 600, color: Color.black })?
 		target = Draw.RenderTexture.load!(target_size)?
 		Assets.set_texture_filter!(target.texture(), Bilinear)
-		shader = Draw.Shader.from_source!({ vertex_source: vertex_glsl, fragment_source: fragment_glsl })?
+		shader = Draw.Shader.from_source!({ vertex_source: BrushGlsl.vertex, fragment_source: BrushGlsl.fragment })?
 		gpu = {
 			shader,
 			mode: shader.uniform_f32!("mode")?,
@@ -207,8 +208,8 @@ with_fill! = |gpu, frame, fill, clip, draw_it!|
 		}
 	}
 
-# The shader's modes, as Brush.shade reads each fill: 0 flat, 1 span, 2 radial,
-# 3 linear, 4 ellipse, 5 glow. Colours are sent with channels in 0..1.
+# The fill, into the uniforms BrushGlsl reads: which shading, where it may
+# paint, and the colours and geometry that shading wants.
 set_uniforms! : Gpu, Brush.Fill, Shapes.Clip => {}
 set_uniforms! = |gpu, fill, clip| {
 	# A zero width is "no clip"; the shader keeps every fragment.
@@ -218,33 +219,27 @@ set_uniforms! = |gpu, fill, clip| {
 			Within(r) => vec(r.x, r.y, r.w, r.h)
 		},
 	)
+	gpu.mode.set!(F64.to_f32_wrap(BrushGlsl.mode_of(fill)))
 	match fill {
 		Skip => {}
-		Flat(c) => {
-			gpu.mode.set!(0.0)
-			gpu.color_a.set!(rgba_vec(c))
-		}
+		Flat(c) => gpu.color_a.set!(rgba_vec(c))
 		Span(p) => {
-			gpu.mode.set!(1.0)
 			gpu.color_a.set!(rgba_vec(p.edge))
 			gpu.color_b.set!(rgba_vec(p.middle))
 			gpu.geom_a.set!(vec(p.x0, p.x1, 0.0, 0.0))
 		}
 		Radial(p) => {
-			gpu.mode.set!(2.0)
 			gpu.color_a.set!(rgba_vec(p.inner))
 			gpu.color_b.set!(rgba_vec(p.outer))
 			gpu.geom_a.set!(vec(p.x, p.y, p.r0, p.r1))
 		}
 		Linear(p) => {
-			gpu.mode.set!(3.0)
 			gpu.color_a.set!(rgba_vec(p.c0))
 			gpu.color_b.set!(rgba_vec(p.c1))
 			gpu.geom_a.set!(vec(p.o0, p.o1, 0.0, 0.0))
 			gpu.geom_b.set!(vec(p.ax, p.ay, p.dx, p.dy))
 		}
 		Ellipse(p) => {
-			gpu.mode.set!(4.0)
 			gpu.color_a.set!(rgba_vec(p.c0))
 			gpu.color_b.set!(rgba_vec(p.c1))
 			gpu.geom_a.set!(vec(p.o0, p.o1, 0.0, 0.0))
@@ -252,7 +247,6 @@ set_uniforms! = |gpu, fill, clip| {
 			gpu.geom_c.set!(vec(p.ia, p.ib, p.ic, p.id))
 		}
 		Glow(p) => {
-			gpu.mode.set!(5.0)
 			gpu.color_a.set!(rgba_vec(p.c0))
 			gpu.color_b.set!(rgba_vec(p.c1))
 			gpu.color_c.set!(rgba_vec(p.c2))
@@ -260,69 +254,6 @@ set_uniforms! = |gpu, fill, clip| {
 		}
 	}
 }
-
-vertex_glsl : Str
-vertex_glsl = Str.join_with(
-	[
-		"#version 330",
-		"in vec3 vertexPosition;",
-		"uniform mat4 mvp;",
-		"out vec2 scenePos;",
-		"void main() {",
-		"    scenePos = vertexPosition.xy;",
-		"    gl_Position = mvp * vec4(vertexPosition, 1.0);",
-		"}",
-	],
-	"\n",
-)
-
-# Brush.shade, line for line, on the scene position the vertex shader passes
-# through (the camera is in the matrix, not in the vertices).
-fragment_glsl : Str
-fragment_glsl = Str.join_with(
-	[
-		"#version 330",
-		"in vec2 scenePos;",
-		"uniform float mode;",
-		"uniform vec4 clip;",
-		"uniform vec4 colorA;",
-		"uniform vec4 colorB;",
-		"uniform vec4 colorC;",
-		"uniform vec4 geomA;",
-		"uniform vec4 geomB;",
-		"uniform vec4 geomC;",
-		"out vec4 finalColor;",
-		"vec4 twoStop(vec4 c0, float o0, vec4 c1, float o1, float t) {",
-		"    if (t <= o0) return c0;",
-		"    if (t >= o1) return c1;",
-		"    return mix(c0, c1, (t - o0) / (o1 - o0));",
-		"}",
-		"void main() {",
-		"    if (clip.z > 0.0 && (scenePos.x < clip.x || scenePos.x >= clip.x + clip.z || scenePos.y < clip.y || scenePos.y >= clip.y + clip.w)) discard;",
-		"    vec4 c = colorA;",
-		"    if (mode > 0.5 && mode < 1.5) {",
-		"        float t = clamp((scenePos.x - geomA.x) / (geomA.y - geomA.x), 0.0, 1.0);",
-		"        c = t <= 0.5 ? mix(colorA, colorB, t * 2.0) : mix(colorB, colorA, (t - 0.5) * 2.0);",
-		"    } else if (mode > 1.5 && mode < 2.5) {",
-		"        float d = distance(scenePos, geomA.xy);",
-		"        c = mix(colorA, colorB, geomA.w > geomA.z ? clamp((d - geomA.z) / (geomA.w - geomA.z), 0.0, 1.0) : 1.0);",
-		"    } else if (mode > 2.5 && mode < 3.5) {",
-		"        float t = clamp(dot(scenePos - geomB.xy, geomB.zw) / dot(geomB.zw, geomB.zw), 0.0, 1.0);",
-		"        c = twoStop(colorA, geomA.x, colorB, geomA.y, t);",
-		"    } else if (mode > 3.5 && mode < 4.5) {",
-		"        vec2 q = scenePos - geomB.xy;",
-		"        vec2 u = vec2(geomC.x * q.x + geomC.y * q.y, geomC.z * q.x + geomC.w * q.y);",
-		"        c = twoStop(colorA, geomA.x, colorB, geomA.y, clamp(length(u), 0.0, 1.0));",
-		"    } else if (mode > 4.5) {",
-		"        float d = distance(scenePos, geomA.xy);",
-		"        float t = geomA.w > geomA.z ? clamp((d - geomA.z) / (geomA.w - geomA.z), 0.0, 1.0) : 1.0;",
-		"        c = t <= 0.4 ? mix(colorA, colorB, t / 0.4) : mix(colorB, colorC, (t - 0.4) / 0.6);",
-		"    }",
-		"    finalColor = c;",
-		"}",
-	],
-	"\n",
-)
 
 rgba_vec : Brush.Rgba -> Draw.Vec4
 rgba_vec = |c| vec(c.r / 255.0, c.g / 255.0, c.b / 255.0, c.a)
