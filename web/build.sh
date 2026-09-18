@@ -6,9 +6,9 @@
 #   web/build.sh capture_plot
 #   web/build.sh particles
 #
-# A movie is a directory of Roc with an `<Name>App.roc` beside it; the shared
-# vocabulary -- Movie, Shapes, Brush, ShapeWire, Font and what they cite --
-# lives in safari/roc until a second home earns itself. The platform is
+# A movie is a directory of Roc with an `<Name>App.roc` beside it, and `movie/`
+# is the vocabulary they share: Movie, Shapes, Brush, BrushGlsl, ShapeWire,
+# Font, and the arithmetic those need. The platform is
 # safari/wasm/platform, which asks for nothing about any particular movie.
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -17,9 +17,9 @@ ZIG="${ZIG:-$HOME/zig-0.16.0/zig}"
 name="${1:?usage: web/build.sh <movie>}"
 
 case "$name" in
-    safari)       dirs="safari/roc"; app="SafariApp.roc" ;;
-    capture_plot) dirs="safari/roc movies/capture_plot"; app="CapturePlotApp.roc" ;;
-    particles)    dirs="safari/roc movies/particles"; app="ParticlesApp.roc" ;;
+    safari)       dirs="movie safari/roc"; app="SafariApp.roc" ;;
+    capture_plot) dirs="movie movies/capture_plot"; app="CapturePlotApp.roc" ;;
+    particles)    dirs="movie movies/particles"; app="ParticlesApp.roc" ;;
     *) echo "no movie called $name"; exit 2 ;;
 esac
 

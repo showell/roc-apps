@@ -14,6 +14,7 @@
 import Paint
 import Sky
 import Brush
+import SafariBrush
 import Num_
 
 Raster :: [].{
@@ -212,7 +213,7 @@ Raster :: [].{
 			col = Brush.opaque(c.color)
 			disc(pixels, view, at(c.geom, 0), at(c.geom, 1), at(c.geom, 2), { r: col.r, g: col.g, b: col.b, a: c.strength })
 		} else {
-			fill = Brush.of_command(c)
+			fill = SafariBrush.of_command(c)
 			match fill {
 				Skip => pixels
 				_ => fill_polygon(pixels, view, c.pts, fill)

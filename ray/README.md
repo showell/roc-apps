@@ -29,6 +29,16 @@ No module under `safari/roc/` imports a platform. The roc-ray app is one file:
 | `apps/safari/` | Safari: four lines, naming the movie and handing it to `ray/player`'s MoviePlayer. Its `modules` names `safari/roc` (the movie) and `ray/player` (the player) |
 | `apps/capture_plot/` | roc-ray's own `examples/capture_plot`, as a second movie, with `CapturePlot.roc` beside its four-line app. **The same player, unchanged** |
 | `player/` | `MoviePlayer.roc`: everything a player does, for any movie. `program` takes a `Movie.Movie` and names none |
+
+`movie/` at the repository root is what the three of them share: `Movie` (the
+type a player is a function of), `Shapes`, `Brush`, `BrushGlsl`, `ShapeWire`,
+`Font`, and the arithmetic those need. It lived in `safari/roc` until a second
+and a third movie arrived and had to stage a hundred and twenty files of
+Safari to reach seven of them.
+
+What stayed behind is the half that knows what Safari looks like:
+`SafariShapes.roc` builds its sky, its grass and its sun and turns a Codex draw
+command into a polygon, and `SafariBrush.roc` reads a brush out of one.
 | `pixels_png.mjs` | the frame `safari/roc/RasterFrame.roc` or `ShapesFrame.roc` prints, as a PNG |
 | `png_diff.mjs` | two screenshots compared pixel by pixel: how many differ, how many by more than a tolerance, the largest difference |
 | `../.github/workflows/windows.yml` | the Windows executables, built on a hosted Windows runner, and each painter's screenshots from a real window on Mesa's llvmpipe; run by hand |

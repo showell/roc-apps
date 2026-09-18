@@ -10,6 +10,7 @@
 import Movie
 import SafariRide
 import Shapes
+import SafariShapes
 
 SafariMovie :: [].{
 	Model : SafariRide.Model
@@ -22,7 +23,7 @@ SafariMovie :: [].{
 		back: |m| SafariRide.back(m),
 		skip: |m| skip(m),
 		frame: |m| {
-			shapes: Shapes.frame(SafariRide.commands(m), SafariRide.sky_top(m), SafariRide.sky_horizon(m), SafariRide.sun(m)),
+			shapes: SafariShapes.frame(SafariRide.commands(m), SafariRide.sky_top(m), SafariRide.sky_horizon(m), SafariRide.sun(m)),
 			roll: SafariRide.roll(m),
 		},
 		clock: |m| m.ride.clock,

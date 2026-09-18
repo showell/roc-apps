@@ -1,12 +1,14 @@
-# Brush -- the paint a draw command names, decoded once for every painter: a
-# flat colour or one of the blitter's gradients, its geometry in scene
-# coordinates. Raster shades a brush on the CPU; the roc-ray app hands one to a
-# fragment shader that does the same arithmetic.
+# Brush -- the paint a shape is filled with: a flat colour or one of five
+# gradients, its geometry in scene coordinates. Raster shades one on the CPU,
+# BrushGlsl on the GPU and blitter.js on a canvas, all from what is here.
+#
+# **EVERY MOVIE'S**, which is why it sits in movie/ rather than in safari/roc.
+# Reading a brush out of a Codex draw command is Safari's business and is in
+# SafariBrush.roc.
 #
 # Hand-written. The tags are blitter.js's, and so is what they mean: gradients
 # mix unpremultiplied, as the canvas specification says, and an offset outside
 # [0, 1] is clamped as the blitter clamps it.
-import Paint
 
 Brush :: [].{
 	# Red, green and blue in 0..255, alpha in 0..1.
@@ -27,42 +29,6 @@ Brush :: [].{
 		# The sun's glow: stops at 0, 0.4 and 1, from radius r0 to r1 about (x, y).
 		Glow({ c0 : Brush.Rgba, c1 : Brush.Rgba, c2 : Brush.Rgba, x : F64, y : F64, r0 : F64, r1 : F64 }),
 	]
-
-	# The brush a polygon command names. Tag 3, the disc, is not a polygon and
-	# has no brush here; Raster and Shapes read its colour and alpha directly.
-	of_command : Paint.DrawCmd -> Brush.Fill
-	of_command = |c|
-		if c.tag == 2 {
-			x0 = geom(c, 0)
-			x1 = geom(c, 1)
-			if x1 == x0 { Skip } else { Span({ edge: opaque(c.color), middle: opaque(c.color2), x0, x1 }) }
-		} else if c.tag == 4 {
-			Radial({ inner: with_alpha(c.color), outer: with_alpha(c.color2), x: geom(c, 0), y: geom(c, 1), r0: 0.0, r1: geom(c, 2) })
-		} else if c.tag == 5 {
-			o0 = clamp01(geom(c, 0))
-			o1 = F64.max(o0, F64.min(1.0, geom(c, 1)))
-			ax = geom(c, 2)
-			ay = geom(c, 3)
-			dx = geom(c, 4) - ax
-			dy = geom(c, 5) - ay
-			len2 = dx * dx + dy * dy
-			if len2 == 0.0 { Skip } else { Linear({ c0: with_alpha(c.color), c1: with_alpha(c.color2), o0, o1, ax, ay, dx, dy, len2 }) }
-		} else if c.tag == 6 {
-			o0 = clamp01(geom(c, 0))
-			o1 = F64.max(o0, F64.min(1.0, geom(c, 1)))
-			ux = geom(c, 4)
-			uy = geom(c, 5)
-			vx = geom(c, 6)
-			vy = geom(c, 7)
-			det = ux * vy - uy * vx
-			if F64.abs(det) < 0.0001 {
-				Flat(with_alpha(c.color))
-			} else {
-				Ellipse({ c0: with_alpha(c.color), c1: with_alpha(c.color2), o0, o1, x: geom(c, 2), y: geom(c, 3), ia: vy / det, ib: (0.0 - vx) / det, ic: (0.0 - uy) / det, id: ux / det })
-			}
-		} else {
-			Flat(opaque(c.color))
-		}
 
 	# The colour a brush gives the scene point (x, y).
 	shade : Brush.Fill, F64, F64 -> Brush.Rgba
@@ -95,9 +61,6 @@ Brush :: [].{
 
 	at : List(F64), U64 -> F64
 	at = |xs, i| List.get(xs, i) ?? 0.0
-
-	geom : Paint.DrawCmd, U64 -> F64
-	geom = |c, i| at(c.geom, i)
 
 	chan : I64, U8 -> F64
 	chan = |c, shift| I64.to_f64(I64.bitwise_and(I64.shr_wrap(c, shift), 255))
