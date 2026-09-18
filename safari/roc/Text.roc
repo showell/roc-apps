@@ -1,5 +1,7 @@
-# Text -- a Codex Text as its CCE units, written by rocemit
-# (rust-codex-compiler) from the compiler's own tables. Do not edit.
+# Text -- a Codex Text as its CCE units. It was written by rocemit
+# (rust-codex-compiler) from the compiler's own tables and is FROZEN: the Roc
+# is the program now and this file is edited here (safari/README.md). If CCE
+# itself ever changes, that is a bigger day than a regeneration.
 #
 # A Codex Text is a sequence of units 0..255, as every upstream backend holds
 # one: codes 1..127 are one unit per character, and a code outside them is
