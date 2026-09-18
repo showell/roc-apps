@@ -72,9 +72,21 @@ Skeleton :: [].{
 	joint : F64, F64, F64 -> Shapes.Shape
 	joint = |x, y, r| Disc({ x: x, y: y, r: r, fill: Flat(bone), clip: Anywhere })
 
+	# **TWO OF THEM, HALF A LOOP APART.** One figure is a function of a phase
+	# and a place, so a second costs a call: while one is swaying right with
+	# its left arm up, the other is doing the opposite, and the pair reads as a
+	# dance rather than as one puppet.
 	shapes : Skeleton.Model -> List(Shapes.Shape)
 	shapes = |m| {
 		t = I64.to_f64(m.tick) / I64.to_f64(period) * tau
+		var $all = [Rect({ x: 0.0, y: 0.0, w: width, h: height, fill: Flat(night) })]
+		$all = List.concat($all, figure(t, width * 0.32))
+		$all = List.concat($all, figure(t + tau / 2.0, width * 0.68))
+		$all
+	}
+
+	figure : F64, F64 -> List(Shapes.Shape)
+	figure = |t, base| {
 
 		# The dance: a bob on the double beat, a sway on the beat, and the
 		# limbs alternating about it.
@@ -82,7 +94,7 @@ Skeleton :: [].{
 		sway = Trig.r_sin(t) * 14.0
 		swing = Trig.r_sin(t)
 
-		cx = width / 2.0 + sway
+		cx = base + sway
 		pelvis_y = 300.0 + bob
 
 		# The spine, and the skull on top of it.
@@ -92,7 +104,6 @@ Skeleton :: [].{
 		skull = end_of(neck.x, neck.y, lean, -26.0)
 
 		var $out = List.with_capacity(40)
-		$out = List.append($out, Rect({ x: 0.0, y: 0.0, w: width, h: height, fill: Flat(night) }))
 
 		# Spine and pelvis.
 		$out = List.append($out, rib(cx, pelvis_y, cx, shoulder_y, 9.0))
