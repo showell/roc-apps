@@ -10,21 +10,31 @@ app [Model, program] { pf: platform "../wasm/platform/main.roc" }
 import World
 import Safari
 import SafariRide
-import Movie
+import SafariMovie
 import ShapeWire
 import Blit
 import RideFocal
 
-Model : Movie.Model
+Model : SafariMovie.Model
+
+# The movie this page plays, named here and nowhere else. Roc reads
+# `movie.advance(m)` as a method call, so its functions are bound first.
+movie = SafariMovie.movie
 
 init : {} -> Box(Model)
-init = |{}| Box.box(Movie.init)
+init = |{}| Box.box(movie.init)
 
 advance : Box(Model) -> Box(Model)
-advance = |b| Box.box(Movie.advance(Box.unbox(b)))
+advance = |b| {
+	step = movie.advance
+	Box.box(step(Box.unbox(b)))
+}
 
 back : Box(Model) -> Box(Model)
-back = |b| Box.box(Movie.back(Box.unbox(b)))
+back = |b| {
+	step = movie.back
+	Box.box(step(Box.unbox(b)))
+}
 
 # --- The draw buffer --------------------------------------------------------
 
@@ -50,7 +60,10 @@ probe_expand = |b| {
 # more exports; a page cannot do that for a movie it has never heard of, so the
 # frame arrives as shapes and the page paints what it is given.
 render : Box(Model) -> List(U32)
-render = |b| ShapeWire.pack(Movie.frame(Box.unbox(b)).shapes)
+render = |b| {
+	frame = movie.frame
+	ShapeWire.pack(frame(Box.unbox(b)).shapes)
+}
 
 # --- The readouts -------------------------------------------------------------
 
@@ -61,7 +74,10 @@ rider_seg : Box(Model) -> U32
 rider_seg = |b| u(Box.unbox(b).ride.rider.segment)
 
 rider_tilt : Box(Model) -> F32
-rider_tilt = |b| F64.to_f32_wrap(Movie.frame(Box.unbox(b)).roll)
+rider_tilt = |b| {
+	frame = movie.frame
+	F64.to_f32_wrap(frame(Box.unbox(b)).roll)
+}
 
 cam_focal : Box(Model) -> F32
 cam_focal = |b| {

@@ -1,13 +1,14 @@
-# Safari on roc-ray: the movie is Safari's, the player is anybody's.
+# Safari on roc-ray.
 #
-# `modules` stages safari/roc (which has this movie's Movie.roc) and ray/player
-# (which has MoviePlayer). A second movie is a second directory here.
+# The movie is Safari's; the player is anybody's. This file is the glue, and
+# says so out loud: it names the movie it is playing and hands it over.
 app [Model, program] { rr: platform "roc-ray/platform/main.roc" }
 
 import MoviePlayer
+import SafariMovie
 
-Model : MoviePlayer.Model
+Model : MoviePlayer.Model(SafariMovie.Model)
 
 Msg : MoviePlayer.Msg
 
-program = MoviePlayer.program
+program = MoviePlayer.program(SafariMovie.movie)

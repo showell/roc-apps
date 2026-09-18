@@ -1,10 +1,10 @@
 # MoviePlayer -- the whole of playing a movie on roc-ray, for any movie.
 #
-# ray/apps/<name>/main.roc is four lines: it names the platform and hands this
-# its Model and program. Everything a player does lives here -- the two
-# painters, the keys, the camera, the supersampling, the screenshot -- and
-# none of it names a movie. `Movie` is whichever Movie.roc the app staged, so
-# a second movie is a second app directory whose `modules` names its own.
+# ray/apps/<name>/main.roc names a movie and hands it here. Everything a
+# player does lives in this file -- the two painters, the keys, the camera, the
+# supersampling, the screenshot -- and none of it names a movie: `program`
+# TAKES one, as a value of Movie.Movie, so the app does the gluing where it can
+# be read rather than by which file happened to be staged.
 #
 # **NOTHING HERE KNOWS WHICH MOVIE IT IS PLAYING**: it steps a model, asks for a
 # frame, and fills the shapes the frame reports under a camera turned by its
@@ -54,7 +54,7 @@ MoviePlayer :: [].{
 		geom_c : Draw.Vec4Uniform,
 	}
 
-	Model : { movie : Movie.Model, auto : Bool, fps : Bool, pixels : Bool, aa : Bool, screen : Assets.Texture, target : Draw.RenderTexture, gpu : MoviePlayer.Gpu }
+	Model(model) : { state : model, auto : Bool, fps : Bool, pixels : Bool, aa : Bool, screen : Assets.Texture, target : Draw.RenderTexture, gpu : MoviePlayer.Gpu }
 
 	# The supersampled frame: twice the window's size each way, four samples a pixel.
 	supersample : F32
@@ -65,11 +65,11 @@ MoviePlayer :: [].{
 
 	Msg : [ShotSaved(Try({}, Capture.ScreenshotError))]
 
-	program = { init!, update!, render! }
 
-	init! : App.Init(MoviePlayer.Model, [TextureGenerationFailed, ResourceLimit, ShaderLoadFailed, UniformNotFound, RenderTextureLoadFailed])
-	init! = App.init(
-		App.default.with_title(Movie.title).with_size({ width: 960, height: 600 }).with_output_dir("shots"),
+
+	init! : Movie.Movie(model) -> App.Init(MoviePlayer.Model(model), [TextureGenerationFailed, ResourceLimit, ShaderLoadFailed, UniformNotFound, RenderTextureLoadFailed])
+	init! = |movie| App.init(
+		App.default.with_title(movie.title).with_size({ width: 960, height: 600 }).with_output_dir("shots"),
 		|_io| {
 			screen = Assets.generate_color_texture!({ width: 960, height: 600, color: Color.black })?
 			target = Draw.RenderTexture.load!(target_size)?
@@ -86,12 +86,18 @@ MoviePlayer :: [].{
 				geom_b: shader.uniform_vec4!("geomB")?,
 				geom_c: shader.uniform_vec4!("geomC")?,
 			}
-			Ok({ movie: Movie.init, auto: Bool.True, fps: Bool.False, pixels: Bool.False, aa: Bool.True, screen, target, gpu })
+			Ok({ state: movie.init, auto: Bool.True, fps: Bool.False, pixels: Bool.False, aa: Bool.True, screen, target, gpu })
 		},
 	)
 
-	update! : MoviePlayer.Model, App.Input(MoviePlayer.Msg), App.Io => Try(MoviePlayer.Model, [Exit(I64), ..])
-	update! = |model, input, io| {
+	update! : Movie.Movie(model), MoviePlayer.Model(model), App.Input(MoviePlayer.Msg), App.Io => Try(MoviePlayer.Model(model), [Exit(I64), ..])
+	update! = |movie, model, input, io| {
+		# Roc reads `movie.advance(m)` as a method call, so a movie's own
+		# functions are bound before they are used. See Movie.roc.
+		skip = movie.skip
+		advance = movie.advance
+		back = movie.back
+		clock = movie.clock
 		keys = input.devices
 		if keys.key_pressed(KeyEscape) {
 			Err(Exit(0))
@@ -101,44 +107,45 @@ MoviePlayer :: [].{
 			jump = keys.key_pressed(KeyJ)
 			manual = up or down or jump
 			auto = if manual { Bool.False } else if keys.key_pressed(KeySpace) { !model.auto } else { model.auto }
-			movie = if jump {
-				Movie.skip(model.movie)
+			state = if jump {
+				skip(model.state)
 			} else if up {
-				Movie.advance(model.movie)
+				advance(model.state)
 			} else if down {
-				Movie.back(model.movie)
+				back(model.state)
 			} else if auto {
-				Movie.advance(model.movie)
+				advance(model.state)
 			} else {
-				model.movie
+				model.state
 			}
 			pixels = if keys.key_pressed(KeyR) { !model.pixels } else { model.pixels }
 			aa = if keys.key_pressed(KeyA) { !model.aa } else { model.aa }
-			upload!(pixels and (manual or auto or pixels != model.pixels), model.screen, movie)
+			upload!(movie, pixels and (manual or auto or pixels != model.pixels), model.screen, state)
 			if keys.key_pressed(KeyP) {
 				painter = if pixels { "pixels" } else if aa { "shapes-aa" } else { "shapes" }
-				name = "${Movie.stem}-${U32.to_str(F64.to_u32_wrap(Movie.clock(movie)))}-${painter}.png"
+				name = "${movie.stem}-${U32.to_str(F64.to_u32_wrap(clock(state)))}-${painter}.png"
 				Task.spawn!(input, || ShotSaved(io.capture().screenshot!(name)))
 			}
 			fps = if keys.key_pressed(KeyD) { !model.fps } else { model.fps }
-			Ok({ ..model, movie, auto, fps, pixels, aa })
+			Ok({ ..model, state, auto, fps, pixels, aa })
 		}
 	}
 
-	render! : MoviePlayer.Model, Draw.Frame => Try({}, [Exit(I64), ScopeLimit, ScopeUnavailable, ..])
-	render! = |model, frame| {
-		draw!(model, frame)?
+	render! : Movie.Movie(model), MoviePlayer.Model(model), Draw.Frame => Try({}, [Exit(I64), ScopeLimit, ScopeUnavailable, ..])
+	render! = |movie, model, frame| {
+		draw!(movie, model, frame)?
 		show_fps!(model.fps, frame)
 		Ok({})
 	}
 
-	draw! : MoviePlayer.Model, Draw.Frame => Try({}, [ScopeLimit, ScopeUnavailable, ..])
-	draw! = |model, frame|
+	draw! : Movie.Movie(model), MoviePlayer.Model(model), Draw.Frame => Try({}, [ScopeLimit, ScopeUnavailable, ..])
+	draw! = |movie, model, frame|
 		if model.pixels {
 			frame.texture!({ texture: model.screen, source: Math.rect(0, 0, 960, 600), dest: Math.rect(0, 0, 960, 600), origin: Math.zero, rotation: 0, tint: Color.white })
 			Ok({})
 		} else {
-			f = Movie.frame(model.movie)
+			the_frame = movie.frame
+			f = the_frame(model.state)
 			# roc-ray fills convex polygons only, so a concave one is cut here.
 			# A movie does not know or care; a canvas does not ask.
 			shapes = Shapes.cut(f.shapes)
@@ -310,10 +317,10 @@ MoviePlayer :: [].{
 
 	# The frame the movie paints itself, handed to the screen texture, when the
 	# pixel painter is showing and the frame moved.
-	upload! : Bool, Assets.Texture, Movie.Model => {}
-	upload! = |needed, screen, movie|
+	upload! : Movie.Movie(model), Bool, Assets.Texture, model => {}
+	upload! = |movie, needed, screen, state|
 		if needed {
-			match Assets.update_texture!(screen, pixels_of(movie)) {
+			match Assets.update_texture!(screen, pixels_of(movie, state)) {
 				Ok({}) => {}
 				Err(_) => crash("the player: a frame did not fit the screen texture")
 			}
@@ -329,9 +336,20 @@ MoviePlayer :: [].{
 			{}
 		}
 
-	pixels_of : Movie.Model -> List(Color.Rgba)
-	pixels_of = |m| List.map(Movie.pixels(m), rgba)
+	pixels_of : Movie.Movie(model), model -> List(Color.Rgba)
+	pixels_of = |movie, state| {
+		paint = movie.pixels
+		List.map(paint(state), rgba)
+	}
 
 	rgba : U32 -> Color.Rgba
 	rgba = |p| Color.rgba(U32.to_u8_wrap(U32.shr_wrap(p, 16)), U32.to_u8_wrap(U32.shr_wrap(p, 8)), U32.to_u8_wrap(p), 255)
+
+	# **THE PLAYER IS A FUNCTION OF THE MOVIE IT PLAYS.** An app names its
+	# movie and hands it over; nothing here is found by name.
+	program = |movie| {
+		init!: init!(movie),
+		update!: |model, input, io| update!(movie, model, input, io),
+		render!: |model, frame| render!(movie, model, frame),
+	}
 }
