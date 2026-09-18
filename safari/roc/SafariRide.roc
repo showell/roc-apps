@@ -23,7 +23,12 @@ import RocBird
 SafariRide :: [].{
 	Model : { world : List(World.Segment), ride : Safari.Ride, hist : List(Safari.Ride) }
 
-	# The shim's ring: 2048 frames of history, about half the route.
+	# How far back a step back can go: 2048 frames, about half the route.
+	#
+	# **IT KEEPS THE NEWEST, WHICH IT DID NOT USED TO.** Once the list was
+	# full, `advance` simply stopped recording -- so the history was the FIRST
+	# 2048 frames, and a step back from frame 3000 landed on 2047. Pressing J
+	# a few times fills it in a moment, which is how anyone would find this.
 	hist_cap : U64
 	hist_cap = 2048
 
@@ -33,7 +38,18 @@ SafariRide :: [].{
 	advance : SafariRide.Model -> SafariRide.Model
 	advance = |m| {
 		finished = Rider.is_finished(m.ride.rider, m.world)
-		hist = if finished { [] } else if List.len(m.hist) < hist_cap { List.append(m.hist, m.ride) } else { m.hist }
+		# Dropping one frame per step would copy the whole list every step, so
+		# half of it goes at once and the copy falls on one step in a thousand.
+		# The history is therefore between half a cap and a cap deep, never
+		# empty, and always the most recent frames.
+		hist =
+			if finished {
+				[]
+			} else if List.len(m.hist) < hist_cap {
+				List.append(m.hist, m.ride)
+			} else {
+				List.append(List.drop_first(m.hist, hist_cap // 2), m.ride)
+			}
 		{ world: m.world, ride: Safari.ride_next(m.world, m.ride), hist: hist }
 	}
 
