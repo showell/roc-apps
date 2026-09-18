@@ -28,6 +28,14 @@ Movie :: [].{
 		# Where it starts, and how it moves.
 		init : model,
 		advance : model -> model,
+
+		# **A MOVIE THAT CANNOT GO BACK RETURNS THE MODEL UNCHANGED**, and
+		# that is a fair answer rather than a failure. Safari can, because a
+		# frame of it is thirteen numbers and it keeps two thousand of them;
+		# capture_plot can, because a frame is a function of its clock;
+		# particles cannot, because a particle's velocity accumulates gravity
+		# and there is no summary to keep. Keeping rendered frames instead
+		# would cost more than it is worth.
 		back : model -> model,
 		# On to the next scene. What a scene is, is the movie's business.
 		skip : model -> model,
