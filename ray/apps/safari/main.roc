@@ -133,7 +133,9 @@ draw! = |model, frame|
 		Ok({})
 	} else {
 		f = Movie.frame(model.movie)
-		shapes = f.shapes
+		# roc-ray fills convex polygons only, so a concave one is cut here.
+		# A movie does not know or care; a canvas does not ask.
+		shapes = Shapes.cut(f.shapes)
 		roll = F64.to_f32_wrap(0.0 - f.roll * 57.29577951308232)
 		if model.aa {
 			frame.with_render_texture!(model.target, |big| {
@@ -182,7 +184,7 @@ draw_shapes! = |gpu, frame, shapes| {
 draw_shape! : Gpu, Draw.Frame, Shapes.Shape => {}
 draw_shape! = |gpu, frame, shape|
 	match shape {
-		Convex(p) => with_fill!(gpu, frame, p.fill, Anywhere, |f, col| f.convex_polygon!({ points: points(p.pts), style: Draw.filled(col) }))
+		Poly(p) => with_fill!(gpu, frame, p.fill, Anywhere, |f, col| f.convex_polygon!({ points: points(p.pts), style: Draw.filled(col) }))
 		Pieces(p) => with_fill!(gpu, frame, p.fill, Anywhere, |f, col| draw_triangles!(f, p.tris, col))
 		Disc(d) => with_fill!(gpu, frame, d.fill, d.clip, |f, col| f.circle!({ center: point(d.x, d.y), radius: F64.to_f32_wrap(d.r), style: Draw.filled(col) }))
 		Rect(r) => with_fill!(gpu, frame, r.fill, Anywhere, |f, col| f.rectangle!({ x: F64.to_f32_wrap(r.x), y: F64.to_f32_wrap(r.y), width: F64.to_f32_wrap(r.w), height: F64.to_f32_wrap(r.h), style: Draw.filled(col) }))

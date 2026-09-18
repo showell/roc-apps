@@ -24,7 +24,7 @@ paint_shapes = |pixels, view, shapes| {
 	var $k = 0
 	while $k < n {
 		$px = match List.get(shapes, $k) ?? crash("shape out of range") {
-			Convex(p) => Raster.fill_polygon($px, view, p.pts, p.fill)
+			Poly(p) => Raster.fill_polygon($px, view, p.pts, p.fill)
 			Pieces(p) => paint_pieces($px, view, p.tris, p.fill)
 			Disc(d) => {
 				col = match d.fill {
@@ -79,7 +79,7 @@ main! = |args| {
 	commands = SafariRide.commands(m)
 	roll = SafariRide.roll(m)
 	scene = { commands, roll, sky_top: SafariRide.sky_top(m), sky_horizon: SafariRide.sky_horizon(m), sun: SafariRide.sun(m) }
-	shapes = List.join_map(commands, Shapes.of_command)
+	shapes = Shapes.cut(List.join_map(commands, Shapes.of_command))
 	a = Raster.paint(scene)
 	b = paint_shapes(Raster.paint({ ..scene, commands: [] }), Raster.view_of(roll), shapes)
 	n = List.len(a)

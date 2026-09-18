@@ -17,9 +17,12 @@ import Brush
 
 Shapes :: [].{
 	Shape : [
-		# A convex polygon, x0, y0, x1, y1, ...
-		Convex({ pts : List(F64), fill : Brush.Fill }),
-		# The triangles of one concave polygon, six numbers each.
+		# A polygon, x0, y0, x1, y1, ... — any polygon, as a movie describes
+		# it. **After `cut` it is convex**, which is the only kind some
+		# platforms will fill.
+		Poly({ pts : List(F64), fill : Brush.Fill }),
+		# The triangles of one concave polygon, six numbers each. Only `cut`
+		# makes these, for a platform that asked to be spared a concave one.
 		Pieces({ tris : List(F64), fill : Brush.Fill }),
 		# A disc, kept to `clip` if it names a rectangle. **A CLIP IS A
 		# RECTANGLE, NOT A PLACE**: this used to be `sky_only`, which meant
@@ -88,11 +91,38 @@ Shapes :: [].{
 		n = List.len(pts) // 2
 		if n < 3 {
 			[]
-		} else if is_convex(pts) {
-			[Convex({ pts, fill })]
 		} else {
-			[Pieces({ tris: wound(triangulate(pts)), fill })]
+			[Poly({ pts, fill })]
 		}
+	}
+
+	# **CUTTING IS THE PLATFORM'S BUSINESS, NOT THE MOVIE'S.** A canvas fills a
+	# concave polygon itself and would rather have the polygon; roc-ray fills
+	# only convex ones, so it asks for this, which leaves a convex polygon
+	# alone and cuts a concave one into triangles wound the way its own convex
+	# fill winds them. A frame that has been through here paints the same as
+	# one that has not -- that is what ShapesFrame checks.
+	cut : List(Shapes.Shape) -> List(Shapes.Shape)
+	cut = |shapes| {
+		n = List.len(shapes)
+		var $out = List.with_capacity(n)
+		var $k = 0
+		while $k < n {
+			$out = List.concat(
+				$out,
+				match List.get(shapes, $k) ?? crash("shape out of range") {
+					Poly(p) =>
+						if is_convex(p.pts) {
+							[Poly(p)]
+						} else {
+							[Pieces({ tris: wound(triangulate(p.pts)), fill: p.fill })]
+						}
+					other => [other]
+				},
+			)
+			$k = $k + 1
+		}
+		$out
 	}
 
 	# Each triangle wound as roc-ray's convex fill winds one: its second and
