@@ -16,6 +16,7 @@ SafariMovie :: [].{
 
 	movie : Movie.Movie(SafariMovie.Model)
 	movie = {
+		size: { width: 960.0, height: 600.0 },
 		init: SafariRide.init,
 		advance: |m| SafariRide.advance(m),
 		back: |m| SafariRide.back(m),

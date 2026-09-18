@@ -19,6 +19,12 @@ Movie :: [].{
 	Frame : { shapes : List(Shapes.Shape), roll : F64 }
 
 	Movie(model) : {
+		# **HOW BIG A FRAME IS, in its own coordinates.** A player sizes its
+		# window and aims its camera from this. Safari's was 960 by 600 and the
+		# player simply knew that, until a second movie arrived at 640 by 360
+		# and drew itself into a corner.
+		size : { width : F64, height : F64 },
+
 		# Where it starts, and how it moves.
 		init : model,
 		advance : model -> model,

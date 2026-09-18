@@ -27,6 +27,8 @@ No module under `safari/roc/` imports a platform. The roc-ray app is one file:
 | `build.sh` | an app for one target, from a roc-ray checkout's platform source: stages `apps/<name>/` and the module directories its `modules` file names, with its platform reference rewritten, and builds with the nightly roc-ray pins (09-07) |
 | `apps/hello/` | the smallest roc-ray app, proving a build end to end |
 | `apps/safari/` | Safari: four lines, naming the movie and handing it to `ray/player`'s MoviePlayer. Its `modules` names `safari/roc` (the movie) and `ray/player` (the player) |
+| `apps/capture_plot/` | roc-ray's own `examples/capture_plot`, as a second movie, with `CapturePlot.roc` beside its four-line app. **The same player, unchanged** |
+| `player/` | `MoviePlayer.roc`: everything a player does, for any movie. `program` takes a `Movie.Movie` and names none |
 | `pixels_png.mjs` | the frame `safari/roc/RasterFrame.roc` or `ShapesFrame.roc` prints, as a PNG |
 | `png_diff.mjs` | two screenshots compared pixel by pixel: how many differ, how many by more than a tolerance, the largest difference |
 | `../.github/workflows/windows.yml` | the Windows executables, built on a hosted Windows runner, and each painter's screenshots from a real window on Mesa's llvmpipe; run by hand |

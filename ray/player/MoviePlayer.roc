@@ -63,8 +63,12 @@ MoviePlayer :: [].{
 	supersample : F32
 	supersample = 2
 
-	target_size : { width : I32, height : I32 }
-	target_size = { width: 1920, height: 1200 }
+	# The render texture the frame is drawn into, at the supersampled size.
+	target_size : Movie.Movie(model) -> { width : I32, height : I32 }
+	target_size = |movie| {
+		width: F64.to_i32_wrap(movie.size.width * F32.to_f64(supersample)),
+		height: F64.to_i32_wrap(movie.size.height * F32.to_f64(supersample)),
+	}
 
 	Msg : [ShotSaved(Try({}, Capture.ScreenshotError))]
 
@@ -72,9 +76,9 @@ MoviePlayer :: [].{
 
 	init! : Movie.Movie(model) -> App.Init(MoviePlayer.Model(model), [TextureGenerationFailed, ResourceLimit, ShaderLoadFailed, UniformNotFound, RenderTextureLoadFailed])
 	init! = |movie| App.init(
-		App.default.with_title(movie.title).with_size({ width: 960, height: 600 }).with_output_dir("shots"),
+		App.default.with_title(movie.title).with_size({ width: F64.to_i32_wrap(movie.size.width), height: F64.to_i32_wrap(movie.size.height) }).with_output_dir("shots"),
 		|_io| {
-			target = Draw.RenderTexture.load!(target_size)?
+			target = Draw.RenderTexture.load!(target_size(movie))?
 			Assets.set_texture_filter!(target.texture(), Bilinear)
 			shader = Draw.Shader.from_source!({ vertex_source: BrushGlsl.vertex, fragment_source: BrushGlsl.fragment })?
 			gpu = {
@@ -146,12 +150,12 @@ MoviePlayer :: [].{
 		roll = F64.to_f32_wrap(0.0 - f.roll * 57.29577951308232)
 		frame.with_render_texture!(model.target, |big| {
 			big.clear!(Color.black)
-			big.with_camera!(camera(roll, supersample), |world| {
+			big.with_camera!(camera(movie.size, roll, supersample), |world| {
 				draw_shapes!(model.gpu, world, shapes)
 				Ok({})
 			})
 		})?
-		frame.texture!({ texture: model.target.texture(), source: model.target.source(), dest: Math.rect(0, 0, 960, 600), origin: Math.zero, rotation: 0, tint: Color.white })
+		frame.texture!({ texture: model.target.texture(), source: model.target.source(), dest: Math.rect(0, 0, F64.to_f32_wrap(movie.size.width), F64.to_f32_wrap(movie.size.height)), origin: Math.zero, rotation: 0, tint: Color.white })
 		Ok({})
 	}
 
@@ -166,8 +170,12 @@ MoviePlayer :: [].{
 			Within(_) => Bool.False
 		}
 
-	camera : F32, F32 -> Camera.Camera2D
-	camera = |rotation, zoom| Camera.new({ target: { x: 480, y: 300 }, offset: { x: 480 * zoom, y: 300 * zoom }, rotation, zoom })
+	camera : { width : F64, height : F64 }, F32, F32 -> Camera.Camera2D
+	camera = |size, rotation, zoom| {
+		mid_x = F64.to_f32_wrap(size.width / 2.0)
+		mid_y = F64.to_f32_wrap(size.height / 2.0)
+		Camera.new({ target: { x: mid_x, y: mid_y }, offset: { x: mid_x * zoom, y: mid_y * zoom }, rotation, zoom })
+	}
 
 	draw_shapes! : MoviePlayer.Gpu, Draw.Frame, List(Shapes.Shape) => {}
 	draw_shapes! = |gpu, frame, shapes| {
