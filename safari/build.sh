@@ -7,6 +7,13 @@
 # Lands at ~/build/roc-apps/next/safari/, served on :9210 by roc-site. The page
 # is safari/web/'s copy of safari-codex's index.html and blitter.js.
 set -eu
+
+# **SUPERSEDED by web/build.sh, which builds any movie's page including this
+# one.** It stages the modules a movie needs rather than building in place, so
+# a movie whose Roc lives outside safari/roc can have a page too.
+echo "use: web/build.sh safari" >&2
+exit 2
+
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROC="${ROC:-$HOME/build/roc-nightly/roc}"
 ZIG="${ZIG:-$HOME/zig-0.16.0/zig}"

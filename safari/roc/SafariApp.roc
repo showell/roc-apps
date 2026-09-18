@@ -7,13 +7,11 @@
 # tag, colour, count, then f32 bit patterns.
 app [Model, program] { pf: platform "../wasm/platform/main.roc" }
 
-import World
 import Safari
 import SafariRide
 import SafariMovie
 import ShapeWire
 import Blit
-import RideFocal
 
 Model : SafariMovie.Model
 
@@ -68,38 +66,22 @@ render = |b| {
 # --- The readouts -------------------------------------------------------------
 
 clock : Box(Model) -> U32
-clock = |b| F64.to_u32_wrap(Box.unbox(b).ride.clock)
+clock = |b| {
+	tick = movie.clock
+	F64.to_u32_wrap(tick(Box.unbox(b)))
+}
 
-rider_seg : Box(Model) -> U32
-rider_seg = |b| u(Box.unbox(b).ride.rider.segment)
+# Which scene it is in. Safari's are the route's segments, and the page shows
+# the number; what a scene IS, is the movie's business.
+scene : Box(Model) -> U32
+scene = |b| u(Box.unbox(b).ride.rider.segment)
 
-rider_tilt : Box(Model) -> F32
-rider_tilt = |b| {
+# How the camera is turned, which the page applies to the whole frame.
+roll : Box(Model) -> F32
+roll = |b| {
 	frame = movie.frame
 	F64.to_f32_wrap(frame(Box.unbox(b)).roll)
 }
 
-cam_focal : Box(Model) -> F32
-cam_focal = |b| {
-	m = Box.unbox(b)
-	F64.to_f32_wrap(RideFocal.ride_focal(m.world, m.ride.rider))
-}
-
-gaze_yaw : Box(Model) -> F32
-gaze_yaw = |b| F64.to_f32_wrap(Box.unbox(b).ride.rider.gaze_yaw)
-
-rider_v : Box(Model) -> F32
-rider_v = |b| F64.to_f32_wrap(Box.unbox(b).ride.rider.v)
-
-truck_lead : Box(Model) -> F32
-truck_lead = |b| {
-	m = Box.unbox(b)
-	r = m.ride.rider
-	F64.to_f32_wrap(m.ride.truck.pos - World.route_distance(m.world, r.segment, r.along))
-}
-
-truck_v : Box(Model) -> F32
-truck_v = |b| F64.to_f32_wrap(Box.unbox(b).ride.truck.v)
-
 # What the platform requires, as one record.
-program = { init, advance, back, render, probe_frame, probe_expand, clock, rider_seg, rider_tilt, cam_focal, gaze_yaw, rider_v, truck_lead, truck_v }
+program = { init, advance, back, render, probe_frame, probe_expand, clock, scene, roll }

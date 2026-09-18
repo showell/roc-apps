@@ -33,19 +33,8 @@ extern fn roc_render(model: ?[*]u8) callconv(.c) RocList;
 extern fn roc_probe_frame(model: ?[*]u8) callconv(.c) u32;
 extern fn roc_probe_expand(model: ?[*]u8) callconv(.c) u32;
 extern fn roc_clock(model: ?[*]u8) callconv(.c) u32;
-extern fn roc_rider_seg(model: ?[*]u8) callconv(.c) u32;
-extern fn roc_rider_tilt(model: ?[*]u8) callconv(.c) f32;
-extern fn roc_cam_focal(model: ?[*]u8) callconv(.c) f32;
-extern fn roc_gaze_yaw(model: ?[*]u8) callconv(.c) f32;
-extern fn roc_sky_top(model: ?[*]u8) callconv(.c) u32;
-extern fn roc_sky_horizon(model: ?[*]u8) callconv(.c) u32;
-extern fn roc_sun_visible(model: ?[*]u8) callconv(.c) u32;
-extern fn roc_sun_x(model: ?[*]u8) callconv(.c) f32;
-extern fn roc_sun_y(model: ?[*]u8) callconv(.c) f32;
-extern fn roc_sun_scale(model: ?[*]u8) callconv(.c) f32;
-extern fn roc_rider_v(model: ?[*]u8) callconv(.c) f32;
-extern fn roc_truck_lead(model: ?[*]u8) callconv(.c) f32;
-extern fn roc_truck_v(model: ?[*]u8) callconv(.c) f32;
+extern fn roc_scene(model: ?[*]u8) callconv(.c) u32;
+extern fn roc_roll(model: ?[*]u8) callconv(.c) f32;
 
 // NO IMPORTS. web/blitter.js instantiates the module with an empty import
 // object, as it does the Codex-built one, so a panic is a wasm trap -- the
@@ -174,42 +163,9 @@ pub export fn back() void {
 pub export fn clock() u32 {
     return roc_clock(borrowed());
 }
-pub export fn riderSeg() u32 {
-    return roc_rider_seg(borrowed());
+pub export fn scene() u32 {
+    return roc_scene(borrowed());
 }
-pub export fn riderTilt() f32 {
-    return roc_rider_tilt(borrowed());
-}
-pub export fn camFocal() f32 {
-    return roc_cam_focal(borrowed());
-}
-pub export fn gazeYaw() f32 {
-    return roc_gaze_yaw(borrowed());
-}
-pub export fn skyTop() u32 {
-    return roc_sky_top(borrowed());
-}
-pub export fn skyHorizon() u32 {
-    return roc_sky_horizon(borrowed());
-}
-pub export fn sunVisible() u32 {
-    return roc_sun_visible(borrowed());
-}
-pub export fn sunX() f32 {
-    return roc_sun_x(borrowed());
-}
-pub export fn sunY() f32 {
-    return roc_sun_y(borrowed());
-}
-pub export fn sunScale() f32 {
-    return roc_sun_scale(borrowed());
-}
-pub export fn riderV() f32 {
-    return roc_rider_v(borrowed());
-}
-pub export fn truckLead() f32 {
-    return roc_truck_lead(borrowed());
-}
-pub export fn truckV() f32 {
-    return roc_truck_v(borrowed());
+pub export fn roll() f32 {
+    return roc_roll(borrowed());
 }

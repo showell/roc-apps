@@ -156,14 +156,16 @@ const DEGENERATE_DET = 1e-4;
 // country drive looks like. The movie sends its own backdrop as shapes now, so
 // a second show needs no function here at all: only the literal below.
 
-// THE DESCRIPTOR. What makes this a drive through the country rather than a walk
-// through a city at night, entire. A second show is a second literal.
-const SAFARI = {
-  wasm: 'safari.wasm',
-  segments: 19,                     // the guest owns the route; it does not export its length
-  hint: 'SPACE pause/resume · ↑/↓ step · J next intersection · D debug overlay',
-  loading: 'Prepare for your journey! Watch out for animals crossing the road.',
-};
+// THE DESCRIPTOR comes from the page now, because there is more than one show.
+// A page sets `window.SHOW` and this file plays it; everything else here is
+// about rendering one, not about which.
+//
+//   window.SHOW = {
+//     wasm: 'safari.wasm',        the module to fetch
+//     scenes: 19,                 how many the movie has; it does not export it
+//     hint: '…',                  the key legend
+//     loading: '…',               what to say while the wasm arrives
+//   };
 
 // ── 2b. THE GUEST BOUNDARY ─────────────────────────────────────────────────────
 // The ONE place the guest's own names are allowed.
@@ -185,8 +187,8 @@ function bindScene(x) {
     forward: x.advance,             // one step along the route
     backward: x.back,
     step: x.clock,                  // how many steps in
-    segment: x.riderSeg,            // which segment of the route
-    roll: x.riderTilt,              // camera roll, in radians
+    segment: x.scene,               // which scene of the movie
+    roll: x.roll,                   // camera roll, in radians
     bufferAt: x.bufPtr,
     bufferPeak: x.bufHighWater,
     bufferCapacity: x.bufCap,
@@ -423,7 +425,7 @@ async function main(show) {
     hudPush(hud.wasm, t1 - t0);
     hudPush(hud.blit, t2 - t1);
     hudPush(hud.total, t2 - t0);
-    drawHud(ctx, scene.bufferPeak(), capBytes, cmds, scene.step(), scene.segment() + 1, show.segments, debug); // unrolled overlay, on top
+    drawHud(ctx, scene.bufferPeak(), capBytes, cmds, scene.step(), scene.segment() + 1, show.scenes, debug); // unrolled overlay, on top
   }
   function loop() {
     if (auto) { scene.forward(); draw(); }
@@ -475,4 +477,6 @@ async function main(show) {
   requestAnimationFrame(loop);
 }
 
-main(SAFARI);
+const show = window.SHOW;
+if (!show) throw new Error('blitter: the page did not set window.SHOW');
+main(show);
