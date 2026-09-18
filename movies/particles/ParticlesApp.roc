@@ -57,4 +57,11 @@ probe_frame = |b| {
 probe_expand : Box(Model) -> U32
 probe_expand = |b| probe_frame(b)
 
-program = { init, advance, back, render, probe_frame, probe_expand, clock, scene, roll }
+# How big a frame is, in the movie's own coordinates.
+width : Box(Model) -> U32
+width = |_b| F64.to_u32_wrap(movie.size.width)
+
+height : Box(Model) -> U32
+height = |_b| F64.to_u32_wrap(movie.size.height)
+
+program = { init, advance, back, render, probe_frame, probe_expand, clock, scene, roll, width, height }

@@ -32,7 +32,12 @@
 //
 // Plain hand-written JS (no TS, no bundler).
 
-const W = 960, H = 600;
+// **HOW BIG A FRAME IS COMES FROM THE MOVIE**, which is the only one that
+// knows. These were 960 and 600 -- Safari's, from when it was the only show --
+// and a movie 800 wide then painted its background over four fifths of the
+// canvas and let its particles fly across the strip that was left. Set once,
+// when the module is bound.
+let W = 960, H = 600;
 
 // ── 1. CANVAS BACKEND ─────────────────────────────────────────────────────────
 // Paths, paints and CSS colour strings. This is the half that cannot move: it is
@@ -189,6 +194,8 @@ function bindScene(x) {
     step: x.clock,                  // how many steps in
     segment: x.scene,               // which scene of the movie
     roll: x.roll,                   // camera roll, in radians
+    width: x.width,                 // how big a frame is, in the movie's coordinates
+    height: x.height,
     bufferAt: x.bufPtr,
     bufferPeak: x.bufHighWater,
     bufferCapacity: x.bufCap,
@@ -378,6 +385,8 @@ async function main(show) {
     'margin:0;background:#0b0b0d;height:100vh;display:flex;flex-direction:column;' +
     'align-items:center;justify-content:center;font-family:ui-monospace,Menlo,monospace;color:#cfd2d6';
   const canvas = document.createElement('canvas');
+  W = scene.width();
+  H = scene.height();
   canvas.width = W;
   canvas.height = H;
   canvas.style.cssText = 'display:block;background:#000;box-shadow:0 10px 40px rgba(0,0,0,0.6)';
