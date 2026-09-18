@@ -1,4 +1,4 @@
-# RocBird -- a Roc on the fifth tree on the right of every segment.
+# RocBird -- a Roc on the fifth tree on the LEFT of every segment.
 #
 # Hand-written Roc, the first flair the Roc version of safari has and the
 # Codex version does not. The bird is roc-lang.org's logo, six purple
@@ -35,15 +35,20 @@ RocBird :: [].{
 	height : F64
 	height = 2.2
 
-	# The fifth tree on the right: trees are planted in pairs, left then right,
-	# and across > 0 is the right side.
-	fifth_right : List(Scenery.Tree), I64, I64 -> [Found(Scenery.Tree), NoTree]
-	fifth_right = |trees, i, seen| match List.get(trees, I64.to_u64_wrap(i)) {
+	# The fifth tree on the LEFT: trees are planted in pairs, left then right,
+	# and across < 0 is the left side.
+	#
+	# **IT USED TO BE THE RIGHT, AND THE BIRD LOOKED AWAY FROM THE ROAD.** The
+	# still's beak points toward +x and `facing(False)` leaves it that way, so
+	# it faces screen-right; on a right-hand tree that is out into the trees.
+	# From a left-hand one, the same unflipped bird faces the road.
+	fifth_left : List(Scenery.Tree), I64, I64 -> [Found(Scenery.Tree), NoTree]
+	fifth_left = |trees, i, seen| match List.get(trees, I64.to_u64_wrap(i)) {
 		Err(_) => NoTree
-		Ok(t) => if t.across > 0.0 {
-			if seen == 4 { Found(t) } else { fifth_right(trees, i + 1, seen + 1) }
+		Ok(t) => if t.across < 0.0 {
+			if seen == 4 { Found(t) } else { fifth_left(trees, i + 1, seen + 1) }
 		} else {
-			fifth_right(trees, i + 1, seen)
+			fifth_left(trees, i + 1, seen)
 		}
 	}
 
@@ -53,7 +58,7 @@ RocBird :: [].{
 	perch = |segs, ch, pose, cf, view_w, d| {
 		seg_idx = List.get(ch, I64.to_u64_wrap(d)) ?? crash("chain index")
 		seg = List.get(segs, I64.to_u64_wrap(seg_idx)) ?? crash("segment")
-		match fifth_right(seg.trees, 0, 0) {
+		match fifth_left(seg.trees, 0, 0) {
 			NoTree => []
 			Found(t) => {
 				rp = Frame.at(segs, ch, pose, d, t.along, t.across + seg.width / 2.0)
@@ -65,7 +70,8 @@ RocBird :: [].{
 						[]
 					} else {
 						top = Camera.project({ right: rp.right, forward: rp.forward, height: t.height }, cf, view_w)
-						# Facing the road, which is to a right-side tree's left.
+						# Unflipped: the beak points toward +x, which from a
+						# left-hand tree is across the road.
 						Critter.critter_polys(top, Critter.facing(False), ht, polys, 0)
 					}
 				}
