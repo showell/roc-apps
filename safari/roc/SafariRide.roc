@@ -61,16 +61,14 @@ SafariRide :: [].{
 		}
 	}
 
-	# The frame's commands in paint order, expanded as the blitter reads them:
-	# the Codex frame, then the Roc flair, a bird on the fifth tree on the right
-	# of every segment (RocBird), appended so it paints on top.
+	# The frame's commands in paint order, expanded as the blitter reads them.
+	#
+	# **THE BIRD IS NOT PASTED ON THE END ANY MORE.** It used to be: the frame,
+	# then the Roc flair concatenated after it, which put a bird in front of
+	# every tree nearer than its own. It is collected and sorted with the rest
+	# now -- Render.collect gathers it, DepthSort orders it, ItemDraw draws it.
 	commands : SafariRide.Model -> List(Paint.DrawCmd)
-	commands = |m| {
-		s = m.ride.rider
-		cf = RideFocal.ride_focal(m.world, s)
-		birds = RocBird.draw_all(m.world, Frame.build_chain(m.world, s.segment), ViewYaw.pose_for(m.world, s), cf, Lens.camera_w)
-		Blit.blit_expand(List.concat(Safari.ride_frame(m.world, m.ride), birds), 0)
-	}
+	commands = |m| Blit.blit_expand(Safari.ride_frame(m.world, m.ride), 0)
 
 	# The camera roll in radians: the whole frame, backdrop and commands, turns
 	# by minus this about the screen's centre.

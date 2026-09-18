@@ -8,6 +8,21 @@
 # app or imported modules differ. Nothing changed means nothing runs, and
 # says so. A full sweep is still the gate before a commit of safari/roc.
 set -u
+# **RETIRED 2026-09-18, Steve's call: "the Roc program is the new program going
+# forward. We should never re-emit Roc from Codex at this point. That's no
+# longer worth the trouble."**
+#
+# safari/roc/*.roc is SOURCE now, hand-edited like any other Roc. This script
+# would re-emit and compare, which at best undoes that work and at
+# worst deletes it: the line further down removes every file whose header still
+# says it was emitted. It refuses rather than explaining itself afterwards.
+#
+# The Codex program is still the Codex program, and safari-codex still emits
+# the zig, the wasm and the C#. It just does not emit this any more.
+echo "retired: safari/roc is the program now, not an emission. See the comment in $0." >&2
+exit 2
+
+
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROCEMIT="${ROCEMIT:-$HOME/build/rust-target/release/rocemit}"
 UNITS="${SAFARI_UNITS:-$HOME/showell_repos/safari-codex/units}"

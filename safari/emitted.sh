@@ -22,6 +22,21 @@
 # verdict; REFUSED is rocemit declining a form it has not built, with the
 # reason -- not a failure and not a pass.
 set -u
+# **RETIRED 2026-09-18, Steve's call: "the Roc program is the new program going
+# forward. We should never re-emit Roc from Codex at this point. That's no
+# longer worth the trouble."**
+#
+# safari/roc/*.roc is SOURCE now, hand-edited like any other Roc. This script
+# would emit the Roc from Codex, which at best undoes that work and at
+# worst deletes it: the line further down removes every file whose header still
+# says it was emitted. It refuses rather than explaining itself afterwards.
+#
+# The Codex program is still the Codex program, and safari-codex still emits
+# the zig, the wasm and the C#. It just does not emit this any more.
+echo "retired: safari/roc is the program now, not an emission. See the comment in $0." >&2
+exit 2
+
+
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # The compiler is roc-lang/nightlies' build of the new compiler (README);
 # ROC=~/build/roc/out/bin/roc runs the debug build from the checkout.

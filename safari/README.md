@@ -7,6 +7,23 @@ platform and app run them in the browser page the Codex version used; natively,
 roc-ray does (`ray/README.md`). The first Roc-only flair is a Roc on the fifth
 tree on the right of every segment.
 
+## The Roc is the program now
+
+**Retired 2026-09-18, Steve's call:** "the Roc program is the new program going
+forward. We should never re-emit Roc from Codex at this point. That's no longer
+worth the trouble."
+
+`roc/*.roc` is source, hand-edited like any other Roc. `emitted.sh` and
+`retest.sh` refuse to run, because the first of them deleted every file whose
+header said it was emitted -- which is now the program. safari-codex is still
+the Codex program and still emits the zig, the wasm and the C#; it just does
+not emit this.
+
+The files changed since are `DepthSort.roc`, `Render.roc`, `ItemDraw.roc`,
+`RocBird.roc` and `SafariRide.roc`, and their headers say what they are. **The
+rest still carry the old "Do not edit" line**, which is now untrue of all of
+them; they will be corrected as they are touched, or in one sweep.
+
 ## The map
 
 | where | what | written by |

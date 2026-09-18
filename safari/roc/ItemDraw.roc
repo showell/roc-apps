@@ -1,4 +1,6 @@
-# ItemDraw -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+# ItemDraw -- Roc, hand-edited. It began as an emission from Codex by rocemit and
+# is the program now: safari/emitted.sh is retired, and the Roc is where safari
+# is maintained.
 import Billboards
 import CatDraw
 import CatPlan
@@ -18,6 +20,7 @@ import Tree
 import TreePlan
 import TruckDraw
 import TruckPlan
+import RocBird
 import World
 
 ItemDraw :: [].{
@@ -64,6 +67,7 @@ ItemDraw :: [].{
 		KCow => draw_one_critter((List.get(c.cows, I64.to_u64_wrap(it.i)) ?? crash("list-at out of range")), cf)
 		KCat => draw_one_cat((List.get(c.cats, I64.to_u64_wrap(it.i)) ?? crash("list-at out of range")), cf)
 		KTruck => draw_one_truck(w, ch, pose, c.truck, braking, cf, step)
+		KBird => RocBird.draw_one((List.get(c.birds, I64.to_u64_wrap(it.i)) ?? crash("bird out of range")), cf, Lens.camera_w)
 	})
 
 	# draw_order builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.

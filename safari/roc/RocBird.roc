@@ -1,5 +1,12 @@
 # RocBird -- a Roc on the fifth tree on the LEFT of every segment.
 #
+# **IT IS AN ITEM IN THE DEPTH SORT, like a tree or a cow.** It used to be
+# drawn after the whole frame, on the reasoning that "a bird on a treetop is
+# rarely behind anything" -- and rarely is not never: a nearer, taller tree
+# would be painted first and the bird would float in front of it. Its depth is
+# its tree's `forward`, which is exact rather than a cheat, because how high a
+# thing sits does not change how far away it is.
+#
 # Hand-written Roc, the first flair the Roc version of safari has and the
 # Codex version does not. The bird is roc-lang.org's logo, six purple
 # polygons, carried in the same unit frame as the baked stills (feet at y 0,
@@ -9,6 +16,7 @@
 # at the tree's depth. The app appends the birds after the frame, so they
 # paint on top of everything; a bird on a treetop is rarely behind anything.
 import Stills
+import DepthSort
 import Scenery
 import World
 import Frame
@@ -52,10 +60,15 @@ RocBird :: [].{
 		}
 	}
 
+	# One bird, placed: where it is and how far up its tree its feet go. The
+	# same shape every other collected item has -- where, not what.
+	Bird : { right : F64, fwd : F64, lift : F64 }
+
 	# The bird for chain position d, or nothing when its tree is behind the
-	# near plane or too small to draw.
-	perch : List(World.Segment), List(I64), Frame.Pose, F64, F64, I64 -> List(Paint.DrawCmd)
-	perch = |segs, ch, pose, cf, view_w, d| {
+	# near plane or too small to draw. Culled here, as every kind is culled
+	# where it is collected rather than where it is drawn.
+	perch : List(World.Segment), List(I64), Frame.Pose, F64, I64 -> List(RocBird.Bird)
+	perch = |segs, ch, pose, cf, d| {
 		seg_idx = List.get(ch, I64.to_u64_wrap(d)) ?? crash("chain index")
 		seg = List.get(segs, I64.to_u64_wrap(seg_idx)) ?? crash("segment")
 		match fifth_left(seg.trees, 0, 0) {
@@ -64,28 +77,43 @@ RocBird :: [].{
 				rp = Frame.at(segs, ch, pose, d, t.along, t.across + seg.width / 2.0)
 				if rp.forward <= Geom.near {
 					[]
+				} else if (height / rp.forward) * cf < SceneLimits.min_scenery_px {
+					[]
 				} else {
-					ht = (height / rp.forward) * cf
-					if ht < SceneLimits.min_scenery_px {
-						[]
-					} else {
-						top = Camera.project({ right: rp.right, forward: rp.forward, height: t.height }, cf, view_w)
-						# Unflipped: the beak points toward +x, which from a
-						# left-hand tree is across the road.
-						Critter.critter_polys(top, Critter.facing(False), ht, polys, 0)
-					}
+					[{ right: rp.right, fwd: rp.forward, lift: t.height }]
 				}
 			}
 		}
 	}
 
-	# Every bird in the chain, nearest segment first.
-	draw_all : List(World.Segment), List(I64), Frame.Pose, F64, F64 -> List(Paint.DrawCmd)
-	draw_all = |segs, ch, pose, cf, view_w| draw_from(segs, ch, pose, cf, view_w, 0, [])
+	# Every bird in the chain, nearest segment first. The sort puts them where
+	# they belong.
+	perches : List(World.Segment), List(I64), Frame.Pose, F64 -> List(RocBird.Bird)
+	perches = |segs, ch, pose, cf| perches_from(segs, ch, pose, cf, 0, [])
 
-	draw_from : List(World.Segment), List(I64), Frame.Pose, F64, F64, I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
-	draw_from = |segs, ch, pose, cf, view_w, d, acc|
+	perches_from : List(World.Segment), List(I64), Frame.Pose, F64, I64, List(RocBird.Bird) -> List(RocBird.Bird)
+	perches_from = |segs, ch, pose, cf, d, acc|
 		if d >= U64.to_i64_wrap(List.len(ch)) { acc } else {
-			draw_from(segs, ch, pose, cf, view_w, d + 1, List.concat(acc, perch(segs, ch, pose, cf, view_w, d)))
+			perches_from(segs, ch, pose, cf, d + 1, List.concat(acc, perch(segs, ch, pose, cf, d)))
 		}
+
+	# **THE DEPTH IS THE TREE'S**, which is the whole point of collecting them:
+	# how high the bird sits does not change how far away it is.
+	bird_items : List(RocBird.Bird), I64 -> List(DepthSort.Item)
+	bird_items = |bs, i|
+		if i >= U64.to_i64_wrap(List.len(bs)) { [] } else {
+			List.concat(
+				[{ fwd: (List.get(bs, I64.to_u64_wrap(i)) ?? crash("bird out of range")).fwd, kind: KBird, i: i }],
+				bird_items(bs, i + 1),
+			)
+		}
+
+	# One bird, drawn where the sort says. Its feet go at the top of its tree,
+	# and unflipped its beak points toward +x, which from a left-hand tree is
+	# across the road.
+	draw_one : RocBird.Bird, F64, F64 -> List(Paint.DrawCmd)
+	draw_one = |b, cf, view_w| {
+		feet = Camera.project({ right: b.right, forward: b.fwd, height: b.lift }, cf, view_w)
+		Critter.critter_polys(feet, Critter.facing(False), (height / b.fwd) * cf, polys, 0)
+	}
 }

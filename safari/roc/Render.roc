@@ -1,4 +1,6 @@
-# Render -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+# Render -- Roc, hand-edited. It began as an emission from Codex by rocemit and
+# is the program now: safari/emitted.sh is retired, and the Roc is where safari
+# is maintained.
 import Billboards
 import CatPlan
 import CritterPlan
@@ -10,10 +12,11 @@ import RailPlan
 import TowerPlan
 import TreePlan
 import TruckPlan
+import RocBird
 import World
 
 Render :: [].{
-	Collected : { trees : List(TreePlan.TreeItem), towers : List(TowerPlan.TowerItem), cows : List(Billboards.Billboard), cats : List(CatPlan.CatItem), rails : List(GuardRail.RailPoly), truck : TruckPlan.TruckAt, order : List(DepthSort.Item), cull_seg : I64, cull_size : I64 }
+	Collected : { trees : List(TreePlan.TreeItem), towers : List(TowerPlan.TowerItem), cows : List(Billboards.Billboard), cats : List(CatPlan.CatItem), rails : List(GuardRail.RailPoly), truck : TruckPlan.TruckAt, order : List(DepthSort.Item), cull_seg : I64, cull_size : I64, birds : List(RocBird.Bird) }
 
 	seg_cull_count : List(World.Segment), List(I64), I64 -> I64
 	seg_cull_count = |segs, ch, d| ({
@@ -37,6 +40,9 @@ Render :: [].{
 		cats = ListUtils.list_take(CatPlan.walk_cats(segs, ch, pose, cf, along, v, 0), CatPlan.max_vis_cats)
 		rails = RailPlan.all_rails(segs, ch, pose, seg_idx)
 		tk = TruckPlan.truck_at(segs, ch, pose, along, (truck_pos - World.route_distance(segs, seg_idx, along)))
-		{ trees: trees, towers: towers, cows: cows, cats: cats, rails: rails, truck: tk, order: DepthSort.sort_items(List.concat(List.concat(List.concat(List.concat(List.concat(TreePlan.tree_items(trees, 0), TowerPlan.tower_items(towers, 0)), CritterPlan.cow_items(cows, 0)), CatPlan.cat_items(cats, 0)), TruckPlan.truck_items(tk)), RailPlan.rail_items(rails, 0))), cull_seg: walk_seg_cull(segs, ch, 0), cull_size: Billboards.size_culled_of(placed, 0) }
+		# Roc's own flair, collected like every other kind so the sort can put
+		# it behind a nearer tree. See RocBird.
+		birds = RocBird.perches(segs, ch, pose, cf)
+		{ trees: trees, towers: towers, cows: cows, cats: cats, rails: rails, truck: tk, birds: birds, order: DepthSort.sort_items(List.concat(RocBird.bird_items(birds, 0), List.concat(List.concat(List.concat(List.concat(List.concat(TreePlan.tree_items(trees, 0), TowerPlan.tower_items(towers, 0)), CritterPlan.cow_items(cows, 0)), CatPlan.cat_items(cats, 0)), TruckPlan.truck_items(tk)), RailPlan.rail_items(rails, 0)))), cull_seg: walk_seg_cull(segs, ch, 0), cull_size: Billboards.size_culled_of(placed, 0) }
 	})
 }

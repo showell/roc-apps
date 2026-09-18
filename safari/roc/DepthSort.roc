@@ -1,9 +1,13 @@
-# DepthSort -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+# DepthSort -- Roc, hand-edited. It began as an emission from Codex by rocemit and
+# is the program now: safari/emitted.sh is retired, and the Roc is where safari
+# is maintained.
 import DeviceMath
 import ListUtils
 
 DepthSort :: [].{
-	Kind : [KTree, KTower, KCow, KCat, KTruck, KRail]
+	# KBird is Roc's, and the reason this file is no longer an emission: the
+	# Roc build has a bird on a treetop and the Codex program does not.
+	Kind : [KTree, KTower, KCow, KCat, KTruck, KRail, KBird]
 	Item : { fwd : F64, kind : DepthSort.Kind, i : I64 }
 
 	# rest_from builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
@@ -53,6 +57,10 @@ DepthSort :: [].{
 		})
 		KRail => (match ey {
 			KRail => True
+			_ => False
+		})
+		KBird => (match ey {
+			KBird => True
 			_ => False
 		})
 	})
