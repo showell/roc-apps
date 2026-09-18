@@ -10,7 +10,7 @@
 #
 # The backdrop is the blitter's: the sky's linear gradient, the grass, and the
 # sun's glow and disc clipped to the sky, the glow as a rectangle that is the
-# clip and the disc marked sky-only.
+# clip and the disc carrying the same rectangle as its own.
 import Paint
 import Sky
 import Brush
@@ -21,10 +21,16 @@ Shapes :: [].{
 		Convex({ pts : List(F64), fill : Brush.Fill }),
 		# The triangles of one concave polygon, six numbers each.
 		Pieces({ tris : List(F64), fill : Brush.Fill }),
-		# A disc; `sky_only` keeps it to the sky, (0, 0) to (960, 300).
-		Disc({ x : F64, y : F64, r : F64, fill : Brush.Fill, sky_only : Bool }),
+		# A disc, kept to `clip` if it names a rectangle. **A CLIP IS A
+		# RECTANGLE, NOT A PLACE**: this used to be `sky_only`, which meant
+		# "(0, 0) to (960, 300)" and put one movie's sky into every painter
+		# that drew a disc, the fragment shader included.
+		Disc({ x : F64, y : F64, r : F64, fill : Brush.Fill, clip : Shapes.Clip }),
 		Rect({ x : F64, y : F64, w : F64, h : F64, fill : Brush.Fill }),
 	]
+
+	# Where a shape is allowed to paint, when it is not allowed everywhere.
+	Clip : [Anywhere, Within({ x : F64, y : F64, w : F64, h : F64 })]
 
 	# The frame in paint order: the sky, the grass, the sun, then every command.
 	frame : List(Paint.DrawCmd), I64, I64, Sky.SunPos -> List(Shapes.Shape)
@@ -49,7 +55,7 @@ Shapes :: [].{
 			disc = Radial({ inner: Brush.opaque(0xffe6a3), outer: Brush.opaque(0xff9d5c), x: sun.x, y: sun.y, r0: 4.0 * sun.scale, r1: 46.0 * sun.scale })
 			List.concat($out, [
 				Rect({ x: 0.0, y: 0.0, w: 960.0, h: 300.0, fill: glow }),
-				Disc({ x: sun.x, y: sun.y, r: 46.0 * sun.scale, fill: disc, sky_only: Bool.True }),
+				Disc({ x: sun.x, y: sun.y, r: 46.0 * sun.scale, fill: disc, clip: Within({ x: 0.0, y: 0.0, w: 960.0, h: 300.0 }) }),
 			])
 		} else {
 			$out
@@ -68,7 +74,7 @@ Shapes :: [].{
 	of_command = |c|
 		if c.tag == 3 {
 			col = Brush.opaque(c.color)
-			[Disc({ x: Brush.geom(c, 0), y: Brush.geom(c, 1), r: Brush.geom(c, 2), fill: Flat({ ..col, a: c.strength }), sky_only: Bool.False })]
+			[Disc({ x: Brush.geom(c, 0), y: Brush.geom(c, 1), r: Brush.geom(c, 2), fill: Flat({ ..col, a: c.strength }), clip: Anywhere })]
 		} else {
 			fill = Brush.of_command(c)
 			match fill {

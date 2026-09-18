@@ -1,11 +1,15 @@
-# Safari on roc-ray. SafariRide says what a frame shows; roc-ray draws it.
+# A movie on roc-ray. Movie.roc says what a frame shows; roc-ray draws it.
+#
+# **NOTHING HERE KNOWS WHICH MOVIE IT IS PLAYING**: it steps a model, asks for a
+# frame, and fills the shapes the frame reports under a camera turned by its
+# roll. A movie of a night drive would need no change here.
 #
 # Two painters, R switching between them so they can be compared on the same
 # screen. Shapes, the default: roc-ray fills the frame's polygons, triangles,
 # discs and rectangles itself, under a camera turned by the roll; a shape with a
 # gradient is drawn through one fragment shader that does Brush.shade's
-# arithmetic on the scene position. Pixels, the first iteration: Raster paints
-# the frame in Roc and roc-ray shows it as one texture.
+# arithmetic on the scene position. Pixels, the first iteration: the movie
+# paints the frame itself and roc-ray shows it as one texture.
 #
 # Shapes is anti-aliased by supersampling, as roc-ray offers no multisampling:
 # the frame is drawn into a render texture at twice the window's size, the
@@ -28,14 +32,13 @@ import rr.Draw
 import rr.Math
 import rr.Task
 import Brush
-import SafariRide
-import Raster
+import Movie
 import Shapes
 
 Gpu : {
 	shader : Draw.Shader,
 	mode : Draw.F32Uniform,
-	sky_only : Draw.F32Uniform,
+	clip : Draw.Vec4Uniform,
 	color_a : Draw.Vec4Uniform,
 	color_b : Draw.Vec4Uniform,
 	color_c : Draw.Vec4Uniform,
@@ -44,7 +47,7 @@ Gpu : {
 	geom_c : Draw.Vec4Uniform,
 }
 
-Model : { ride : SafariRide.Model, auto : Bool, fps : Bool, pixels : Bool, aa : Bool, screen : Assets.Texture, target : Draw.RenderTexture, gpu : Gpu }
+Model : { ride : Movie.Model, auto : Bool, fps : Bool, pixels : Bool, aa : Bool, screen : Assets.Texture, target : Draw.RenderTexture, gpu : Gpu }
 
 # The supersampled frame: twice the window's size each way, four samples a pixel.
 supersample : F32
@@ -57,13 +60,9 @@ Msg : [ShotSaved(Try({}, Capture.ScreenshotError))]
 
 program = { init!, update!, render! }
 
-# J rides until the segment changes; this bounds it, as the page does.
-step_guard : I64
-step_guard = 200000
-
 init! : App.Init(Model, [TextureGenerationFailed, ResourceLimit, ShaderLoadFailed, UniformNotFound, RenderTextureLoadFailed])
 init! = App.init(
-	App.default.with_title("Safari").with_size({ width: 960, height: 600 }).with_output_dir("shots"),
+	App.default.with_title(Movie.title).with_size({ width: 960, height: 600 }).with_output_dir("shots"),
 	|_io| {
 		screen = Assets.generate_color_texture!({ width: 960, height: 600, color: Color.black })?
 		target = Draw.RenderTexture.load!(target_size)?
@@ -72,7 +71,7 @@ init! = App.init(
 		gpu = {
 			shader,
 			mode: shader.uniform_f32!("mode")?,
-			sky_only: shader.uniform_f32!("skyOnly")?,
+			clip: shader.uniform_vec4!("clip")?,
 			color_a: shader.uniform_vec4!("colorA")?,
 			color_b: shader.uniform_vec4!("colorB")?,
 			color_c: shader.uniform_vec4!("colorC")?,
@@ -80,7 +79,7 @@ init! = App.init(
 			geom_b: shader.uniform_vec4!("geomB")?,
 			geom_c: shader.uniform_vec4!("geomC")?,
 		}
-		Ok({ ride: SafariRide.init, auto: Bool.True, fps: Bool.False, pixels: Bool.False, aa: Bool.True, screen, target, gpu })
+		Ok({ ride: Movie.init, auto: Bool.True, fps: Bool.False, pixels: Bool.False, aa: Bool.True, screen, target, gpu })
 	},
 )
 
@@ -96,13 +95,13 @@ update! = |model, input, io| {
 		manual = up or down or jump
 		auto = if manual { Bool.False } else if keys.key_pressed(KeySpace) { !model.auto } else { model.auto }
 		ride = if jump {
-			next_segment(model.ride)
+			Movie.skip(model.ride)
 		} else if up {
-			SafariRide.advance(model.ride)
+			Movie.advance(model.ride)
 		} else if down {
-			SafariRide.back(model.ride)
+			Movie.back(model.ride)
 		} else if auto {
-			SafariRide.advance(model.ride)
+			Movie.advance(model.ride)
 		} else {
 			model.ride
 		}
@@ -111,7 +110,7 @@ update! = |model, input, io| {
 		upload!(pixels and (manual or auto or pixels != model.pixels), model.screen, ride)
 		if keys.key_pressed(KeyP) {
 			painter = if pixels { "pixels" } else if aa { "shapes-aa" } else { "shapes" }
-			name = "safari-${U32.to_str(F64.to_u32_wrap(ride.ride.clock))}-${painter}.png"
+			name = "${Movie.stem}-${U32.to_str(F64.to_u32_wrap(Movie.clock(ride)))}-${painter}.png"
 			Task.spawn!(input, || ShotSaved(io.capture().screenshot!(name)))
 		}
 		fps = if keys.key_pressed(KeyD) { !model.fps } else { model.fps }
@@ -132,9 +131,9 @@ draw! = |model, frame|
 		frame.texture!({ texture: model.screen, source: Math.rect(0, 0, 960, 600), dest: Math.rect(0, 0, 960, 600), origin: Math.zero, rotation: 0, tint: Color.white })
 		Ok({})
 	} else {
-		m = model.ride
-		shapes = Shapes.frame(SafariRide.commands(m), SafariRide.sky_top(m), SafariRide.sky_horizon(m), SafariRide.sun(m))
-		roll = F64.to_f32_wrap(0.0 - SafariRide.roll(m) * 57.29577951308232)
+		f = Movie.frame(model.ride)
+		shapes = f.shapes
+		roll = F64.to_f32_wrap(0.0 - f.roll * 57.29577951308232)
 		if model.aa {
 			frame.with_render_texture!(model.target, |big| {
 				big.clear!(Color.black)
@@ -158,6 +157,13 @@ draw! = |model, frame|
 # Camera2D turns the world by its rotation, in degrees, about its target, and
 # puts the target at its offset. `zoom` scales the frame onto a target that
 # many times the window's size.
+unclipped : Shapes.Clip -> Bool
+unclipped = |clip|
+	match clip {
+		Anywhere => Bool.True
+		Within(_) => Bool.False
+	}
+
 camera : F32, F32 -> Camera.Camera2D
 camera = |rotation, zoom| Camera.new({ target: { x: 480, y: 300 }, offset: { x: 480 * zoom, y: 300 * zoom }, rotation, zoom })
 
@@ -175,37 +181,43 @@ draw_shapes! = |gpu, frame, shapes| {
 draw_shape! : Gpu, Draw.Frame, Shapes.Shape => {}
 draw_shape! = |gpu, frame, shape|
 	match shape {
-		Convex(p) => with_fill!(gpu, frame, p.fill, Bool.False, |f, col| f.convex_polygon!({ points: points(p.pts), style: Draw.filled(col) }))
-		Pieces(p) => with_fill!(gpu, frame, p.fill, Bool.False, |f, col| draw_triangles!(f, p.tris, col))
-		Disc(d) => with_fill!(gpu, frame, d.fill, d.sky_only, |f, col| f.circle!({ center: point(d.x, d.y), radius: F64.to_f32_wrap(d.r), style: Draw.filled(col) }))
-		Rect(r) => with_fill!(gpu, frame, r.fill, Bool.False, |f, col| f.rectangle!({ x: F64.to_f32_wrap(r.x), y: F64.to_f32_wrap(r.y), width: F64.to_f32_wrap(r.w), height: F64.to_f32_wrap(r.h), style: Draw.filled(col) }))
+		Convex(p) => with_fill!(gpu, frame, p.fill, Anywhere, |f, col| f.convex_polygon!({ points: points(p.pts), style: Draw.filled(col) }))
+		Pieces(p) => with_fill!(gpu, frame, p.fill, Anywhere, |f, col| draw_triangles!(f, p.tris, col))
+		Disc(d) => with_fill!(gpu, frame, d.fill, d.clip, |f, col| f.circle!({ center: point(d.x, d.y), radius: F64.to_f32_wrap(d.r), style: Draw.filled(col) }))
+		Rect(r) => with_fill!(gpu, frame, r.fill, Anywhere, |f, col| f.rectangle!({ x: F64.to_f32_wrap(r.x), y: F64.to_f32_wrap(r.y), width: F64.to_f32_wrap(r.w), height: F64.to_f32_wrap(r.h), style: Draw.filled(col) }))
 	}
 
 # Draw with a flat colour directly, or through the shader: its uniforms set for
 # the fill and the geometry drawn in white, which the shader ignores.
-with_fill! : Gpu, Draw.Frame, Brush.Fill, Bool, (Draw.Frame, Color.Rgba => {}) => {}
-with_fill! = |gpu, frame, fill, sky_only, draw_it!|
+with_fill! : Gpu, Draw.Frame, Brush.Fill, Shapes.Clip, (Draw.Frame, Color.Rgba => {}) => {}
+with_fill! = |gpu, frame, fill, clip, draw_it!|
 	match fill {
 		Skip => {}
-		Flat(col) if !sky_only => draw_it!(frame, color_of(col))
+		Flat(col) if unclipped(clip) => draw_it!(frame, color_of(col))
 		_ => {
 			scope = frame.with_shader!(gpu.shader, |shaded| {
-				set_uniforms!(gpu, fill, sky_only)
+				set_uniforms!(gpu, fill, clip)
 				draw_it!(shaded, Color.white)
 				Ok({})
 			})
 			match scope {
 				Ok({}) => {}
-				Err(_) => crash("safari: a shader scope was refused")
+				Err(_) => crash("the player: a shader scope was refused")
 			}
 		}
 	}
 
 # The shader's modes, as Brush.shade reads each fill: 0 flat, 1 span, 2 radial,
 # 3 linear, 4 ellipse, 5 glow. Colours are sent with channels in 0..1.
-set_uniforms! : Gpu, Brush.Fill, Bool => {}
-set_uniforms! = |gpu, fill, sky_only| {
-	gpu.sky_only.set!(if sky_only { 1.0 } else { 0.0 })
+set_uniforms! : Gpu, Brush.Fill, Shapes.Clip => {}
+set_uniforms! = |gpu, fill, clip| {
+	# A zero width is "no clip"; the shader keeps every fragment.
+	gpu.clip.set!(
+		match clip {
+			Anywhere => vec(0.0, 0.0, 0.0, 0.0)
+			Within(r) => vec(r.x, r.y, r.w, r.h)
+		},
+	)
 	match fill {
 		Skip => {}
 		Flat(c) => {
@@ -272,7 +284,7 @@ fragment_glsl = Str.join_with(
 		"#version 330",
 		"in vec2 scenePos;",
 		"uniform float mode;",
-		"uniform float skyOnly;",
+		"uniform vec4 clip;",
 		"uniform vec4 colorA;",
 		"uniform vec4 colorB;",
 		"uniform vec4 colorC;",
@@ -286,7 +298,7 @@ fragment_glsl = Str.join_with(
 		"    return mix(c0, c1, (t - o0) / (o1 - o0));",
 		"}",
 		"void main() {",
-		"    if (skyOnly > 0.5 && (scenePos.x < 0.0 || scenePos.x >= 960.0 || scenePos.y < 0.0 || scenePos.y >= 300.0)) discard;",
+		"    if (clip.z > 0.0 && (scenePos.x < clip.x || scenePos.x >= clip.x + clip.z || scenePos.y < clip.y || scenePos.y >= clip.y + clip.w)) discard;",
 		"    vec4 c = colorA;",
 		"    if (mode > 0.5 && mode < 1.5) {",
 		"        float t = clamp((scenePos.x - geomA.x) / (geomA.y - geomA.x), 0.0, 1.0);",
@@ -357,14 +369,14 @@ points = |xs| {
 	$out
 }
 
-# The frame SafariRide describes, painted by Raster and handed to the screen
-# texture, when the pixel painter is showing and the frame moved.
-upload! : Bool, Assets.Texture, SafariRide.Model => {}
+# The frame the movie paints itself, handed to the screen texture, when the
+# pixel painter is showing and the frame moved.
+upload! : Bool, Assets.Texture, Movie.Model => {}
 upload! = |needed, screen, ride|
 	if needed {
 		match Assets.update_texture!(screen, pixels_of(ride)) {
 			Ok({}) => {}
-			Err(_) => crash("safari: a frame did not fit the screen texture")
+			Err(_) => crash("the player: a frame did not fit the screen texture")
 		}
 	} else {
 		{}
@@ -378,23 +390,8 @@ show_fps! = |shown, frame|
 		{}
 	}
 
-pixels_of : SafariRide.Model -> List(Color.Rgba)
-pixels_of = |m| {
-	scene = { commands: SafariRide.commands(m), roll: SafariRide.roll(m), sky_top: SafariRide.sky_top(m), sky_horizon: SafariRide.sky_horizon(m), sun: SafariRide.sun(m) }
-	List.map(Raster.paint(scene), rgba)
-}
+pixels_of : Movie.Model -> List(Color.Rgba)
+pixels_of = |m| List.map(Movie.pixels(m), rgba)
 
 rgba : U32 -> Color.Rgba
 rgba = |p| Color.rgba(U32.to_u8_wrap(U32.shr_wrap(p, 16)), U32.to_u8_wrap(U32.shr_wrap(p, 8)), U32.to_u8_wrap(p), 255)
-
-next_segment : SafariRide.Model -> SafariRide.Model
-next_segment = |m| {
-	from = m.ride.rider.segment
-	var $m = SafariRide.advance(m)
-	var $guard = 0
-	while $m.ride.rider.segment == from and $guard < step_guard {
-		$m = SafariRide.advance($m)
-		$guard = $guard + 1
-	}
-	$m
-}
