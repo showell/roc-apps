@@ -29,6 +29,7 @@ const RocList = builtins.list.RocList;
 extern fn roc_init() callconv(.c) ?[*]u8;
 extern fn roc_advance(model: ?[*]u8) callconv(.c) ?[*]u8;
 extern fn roc_back(model: ?[*]u8) callconv(.c) ?[*]u8;
+extern fn roc_skip(model: ?[*]u8) callconv(.c) ?[*]u8;
 extern fn roc_render(model: ?[*]u8) callconv(.c) RocList;
 extern fn roc_probe_frame(model: ?[*]u8) callconv(.c) u32;
 extern fn roc_probe_expand(model: ?[*]u8) callconv(.c) u32;
@@ -38,6 +39,7 @@ extern fn roc_roll(model: ?[*]u8) callconv(.c) f32;
 extern fn roc_width(model: ?[*]u8) callconv(.c) u32;
 extern fn roc_height(model: ?[*]u8) callconv(.c) u32;
 extern fn roc_fps(model: ?[*]u8) callconv(.c) u32;
+extern fn roc_scenes(model: ?[*]u8) callconv(.c) u32;
 
 // NO IMPORTS. web/blitter.js instantiates the module with an empty import
 // object, as it does the Codex-built one, so a panic is a wasm trap -- the
@@ -163,6 +165,13 @@ pub export fn back() void {
     ensure();
     model = roc_back(model);
 }
+// **THE MOVIE'S OWN IDEA OF A JUMP.** The page used to reach the next scene by
+// stepping until the scene number changed, which for a movie with one scene
+// was two hundred thousand steps.
+pub export fn skip() void {
+    ensure();
+    model = roc_skip(model);
+}
 pub export fn clock() u32 {
     return roc_clock(borrowed());
 }
@@ -187,4 +196,10 @@ pub export fn height() u32 {
 // rather than by however often the display happens to refresh.
 pub export fn fps() u32 {
     return roc_fps(borrowed());
+}
+
+// How many scenes the movie has, which the page shows beside which one it is
+// in. It used to be a number written on the page, one movie at a time.
+pub export fn scenes() u32 {
+    return roc_scenes(borrowed());
 }

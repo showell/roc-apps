@@ -167,7 +167,6 @@ const DEGENERATE_DET = 1e-4;
 //
 //   window.SHOW = {
 //     wasm: 'safari.wasm',        the module to fetch
-//     scenes: 19,                 how many the movie has; it does not export it
 //     hint: '…',                  the key legend
 //     loading: '…',               what to say while the wasm arrives
 //   };
@@ -186,13 +185,18 @@ const DEGENERATE_DET = 1e-4;
 // object literal instead of six call sites, and the destructure below fails loudly
 // if the export is gone.
 function bindScene(x) {
+  // **THE MOVIE'S OWN WORDS.** These were forward/backward/step/segment, which
+  // were four second names for advance/back/clock/scene and four things to keep
+  // straight between here, WasmApp.roc and Movie.roc.
   return {
     memory: x.memory,
     render: x.renderFrame,          // compute a frame; answers its byte length
-    forward: x.advance,             // one step along the route
-    backward: x.back,
-    step: x.clock,                  // how many steps in
-    segment: x.scene,               // which scene of the movie
+    advance: x.advance,             // one step of the movie
+    back: x.back,
+    skip: x.skip,                   // the movie's own idea of a jump
+    clock: x.clock,                 // how far in it is
+    scene: x.scene,                 // which scene of the movie
+    scenes: x.scenes,               // how many it has
     roll: x.roll,                   // camera roll, in radians
     width: x.width,                 // how big a frame is, in the movie's coordinates
     height: x.height,
@@ -203,9 +207,6 @@ function bindScene(x) {
   };
 }
 
-// The J key steps until the segment changes; this bounds the search so a guest that
-// never leaves a segment cannot hang the page.
-const STEP_GUARD = 200000;
 
 // ── 3. THE COMMAND STREAM ──────────────────────────────────────────────────────
 
@@ -441,7 +442,7 @@ async function main(show) {
     hudPush(hud.wasm, t1 - t0);
     hudPush(hud.blit, t2 - t1);
     hudPush(hud.total, t2 - t0);
-    drawHud(ctx, scene.bufferPeak(), capBytes, cmds, scene.step(), scene.segment() + 1, show.scenes, debug); // unrolled overlay, on top
+    drawHud(ctx, scene.bufferPeak(), capBytes, cmds, scene.clock(), scene.scene() + 1, scene.scenes(), debug); // unrolled overlay, on top
   }
   // **THE MOVIE SETS THE RATE, NOT THE DISPLAY.** One step per animation frame
   // is one step per refresh, which is 60 a second on this monitor, 144 on that
@@ -458,7 +459,7 @@ async function main(show) {
     if (auto) {
       owed += since;
       let steps = 0;
-      while (owed >= STEP_MS && steps < CATCH_UP) { scene.forward(); owed -= STEP_MS; steps++; }
+      while (owed >= STEP_MS && steps < CATCH_UP) { scene.advance(); owed -= STEP_MS; steps++; }
       if (steps) draw();
     } else {
       owed = 0;
@@ -468,20 +469,14 @@ async function main(show) {
 
   window.addEventListener('keydown', (e) => {
     if (e.code === 'Space') { auto = !auto; e.preventDefault(); }
-    else if (e.code === 'ArrowUp') { auto = false; scene.forward(); draw(); e.preventDefault(); }
-    else if (e.code === 'ArrowDown') { auto = false; scene.backward(); draw(); e.preventDefault(); }
+    else if (e.code === 'ArrowUp') { auto = false; scene.advance(); draw(); e.preventDefault(); }
+    else if (e.code === 'ArrowDown') { auto = false; scene.back(); draw(); e.preventDefault(); }
     else if (e.code === 'KeyJ') {
-      // Step until the scene enters the next segment, landing at its start — every step
-      // is a real one, so velocity, acceleration and the day→dusk dimming stay faithful.
-      // Repeated presses walk the route a segment at a time; it pauses after so you can
-      // look. Mirrors the J hotkey in main.ts.
-      if (!e.repeat) {
-        auto = false;
-        const from = scene.segment();
-        let guard = 0;
-        while (scene.segment() === from && guard++ < STEP_GUARD) scene.forward();
-        draw();
-      }
+      // **THE MOVIE'S OWN JUMP**, the one roc-ray's player calls. This used to
+      // step until the scene number changed, which reached the next segment of
+      // Safari's route and, for a movie with one scene, ran two hundred
+      // thousand steps into a guard: twelve seconds of frozen tab on particles.
+      if (!e.repeat) { auto = false; scene.skip(); draw(); }
       e.preventDefault();
     } else if (e.code === 'KeyD') {
       // toggle the dev overlay (frame-budget HUD). Off by default; redraw now so it

@@ -1,10 +1,10 @@
 # The screensaver as a Roc app on the movie wasm platform (../../wasm/platform).
 #
 # Hand-written. **THE DEFAULT PLUS WHAT IS SAFARI'S OWN**: WasmApp.program is
-# the whole wasm edge for any movie, and this names the three things Safari
-# answers differently -- the route segment it calls a scene, and the two
-# command counts the Node smoke run times its stages by. Every other movie's
-# app is the five lines without this part.
+# the whole wasm edge for any movie, and this names the two things Safari
+# answers differently -- the command counts the Node smoke run times its stages
+# by, before and after expansion. Every other movie's app is the five lines
+# without this part.
 app [Model, program] { pf: platform "../../wasm/platform/main.roc" }
 
 import Safari
@@ -13,11 +13,6 @@ import WasmApp
 import Blit
 
 Model : SafariMovie.Model
-
-# Which scene it is in. Safari's are the route's segments, and the page shows
-# the number.
-scene : Box(Model) -> U32
-scene = |b| I64.to_u32_wrap(Box.unbox(b).ride.rider.segment)
 
 # How many commands the frame has before and after expansion, so render's
 # stages can be timed apart.
@@ -33,4 +28,4 @@ probe_expand = |b| {
 	U64.to_u32_wrap(List.len(Blit.blit_expand(Safari.ride_frame(m.world, m.ride), 0)))
 }
 
-program = { ..WasmApp.program(SafariMovie.movie), scene, probe_frame, probe_expand }
+program = { ..WasmApp.program(SafariMovie.movie), probe_frame, probe_expand }

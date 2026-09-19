@@ -23,6 +23,8 @@ SafariMovie :: [].{
 		advance: |m| SafariRide.advance(m),
 		back: |m| SafariRide.back(m),
 		skip: |m| skip(m),
+		scene: |m| m.ride.rider.segment,
+		scenes: 19,
 		frame: |m| SafariShapes.frame(SafariRide.commands(m), SafariRide.sky_top(m), SafariRide.sky_horizon(m), SafariRide.sun(m)),
 		roll: |m| SafariRide.roll(m),
 		clock: |m| m.ride.clock,

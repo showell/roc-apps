@@ -53,6 +53,8 @@ Particles :: [].{
 		back: |m| m,
 		# There are no scenes; a skip is a second of them.
 		skip: |m| skip_from(m, 60),
+		scene: |_m| 0,
+		scenes: 1,
 		frame: |m| shapes(m),
 		roll: |_m| 0.0,
 		clock: |m| I64.to_f64(m.tick),

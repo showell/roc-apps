@@ -15,6 +15,7 @@ platform ""
 			init : {} -> Box(model),
 			advance : Box(model) -> Box(model),
 			back : Box(model) -> Box(model),
+			skip : Box(model) -> Box(model),
 			render : Box(model) -> List(U32),
 			probe_frame : Box(model) -> U32,
 			probe_expand : Box(model) -> U32,
@@ -24,6 +25,7 @@ platform ""
 			width : Box(model) -> U32,
 			height : Box(model) -> U32,
 			fps : Box(model) -> U32,
+			scenes : Box(model) -> U32,
 		}
 	}
 	exposes []
@@ -32,6 +34,7 @@ platform ""
 		"roc_init": init_for_host,
 		"roc_advance": advance_for_host,
 		"roc_back": back_for_host,
+		"roc_skip": skip_for_host,
 		"roc_render": render_for_host,
 		"roc_probe_frame": probe_frame_for_host,
 		"roc_probe_expand": probe_expand_for_host,
@@ -41,18 +44,20 @@ platform ""
 		"roc_width": width_for_host,
 		"roc_height": height_for_host,
 		"roc_fps": fps_for_host,
+		"roc_scenes": scenes_for_host,
 	}
 	targets: {
 		inputs_dir: "targets/",
 		wasm32: {
 			inputs: ["host.wasm", app],
-			exports: ["renderFrame", "probeFrame", "probeExpand", "bufPtr", "bufHighWater", "bufCap", "advance", "back", "clock", "scene", "roll", "width", "height", "fps"],
+			exports: ["renderFrame", "probeFrame", "probeExpand", "bufPtr", "bufHighWater", "bufCap", "advance", "back", "clock", "scene", "roll", "width", "height", "fps", "skip", "scenes"],
 		},
 	}
 
 init_for_host = program.init
 advance_for_host = program.advance
 back_for_host = program.back
+skip_for_host = program.skip
 render_for_host = program.render
 clock_for_host = program.clock
 scene_for_host = program.scene
@@ -63,5 +68,7 @@ width_for_host = program.width
 height_for_host = program.height
 
 fps_for_host = program.fps
+
+scenes_for_host = program.scenes
 probe_frame_for_host = program.probe_frame
 probe_expand_for_host = program.probe_expand

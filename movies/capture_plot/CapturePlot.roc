@@ -63,6 +63,8 @@ CapturePlot :: [].{
 		back: |m| { elapsed: if m.elapsed > step { m.elapsed - step } else { 0.0 } },
 		# There are no scenes; a skip is a second of them.
 		skip: |m| { elapsed: m.elapsed + 1.0 },
+		scene: |_m| 0,
+		scenes: 1,
 		frame: |m| shapes(m),
 		roll: |_m| 0.0,
 		clock: |m| m.elapsed * 25.0,

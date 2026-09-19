@@ -42,8 +42,17 @@ Movie :: [].{
 		# and there is no summary to keep. Keeping rendered frames instead
 		# would cost more than it is worth.
 		back : model -> model,
-		# On to the next scene. What a scene is, is the movie's business.
+		# On to the next scene. What a scene IS, is the movie's business:
+		# Safari's are the route's nineteen segments, and a movie with one
+		# scene skips a second instead.
 		skip : model -> model,
+		# Which scene it is in, and how many there are, for a player that
+		# shows them. **A MOVIE WITH ONE SCENE IS ALWAYS IN IT**, and says so
+		# rather than leaving a player to assume: the page used to reach the
+		# next scene by stepping until this number changed, so a default of
+		# zero that nobody wrote meant two hundred thousand steps.
+		scene : model -> I64,
+		scenes : I64,
 
 		# What to draw: the shapes to fill, in scene coordinates.
 		frame : model -> List(Shapes.Shape),
