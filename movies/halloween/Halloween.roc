@@ -71,17 +71,19 @@ Halloween :: [].{
 	brake_frames : I64
 	brake_frames = 100
 
-	# Half a second of nothing at all, and then a turn that takes rather less.
+	# Half a second of nothing at all, and then a turn that takes a second and
+	# a half: a child looking over both shoulders on the way round, not a
+	# gun turret.
 	spin_tick : I64
 	spin_tick = 750
 	spin_frames : I64
-	spin_frames = 22
+	spin_frames = 88
 
 	# **THE WAY BACK IS HALF AGAIN AS FAST.** The approach averaged about
 	# twelve millimetres a frame; this is sixteen, reached over three quarters
 	# of a second.
 	back_tick : I64
-	back_tick = 772
+	back_tick = 838
 	back_speed : F64
 	back_speed = 0.0154
 	back_ramp : I64
@@ -156,6 +158,12 @@ Halloween :: [].{
 	moon_c = Brush.opaque(0xf4f0dc)
 	spill : Brush.Rgba
 	spill = Brush.opaque(0xe89a2c)
+	# The hall floor, which is the same light landing on boards rather than
+	# coming straight at you.
+	floor_c : Brush.Rgba
+	floor_c = Brush.opaque(0xb0701c)
+	fence_c : Brush.Rgba
+	fence_c = Brush.opaque(0x272430)
 	# She is between the child and the hall light, so she has no colour of her
 	# own beyond the little there is to catch.
 	witch_c : Brush.Rgba
@@ -247,6 +255,11 @@ Halloween :: [].{
 
 	# ── drawing on a plane in the world ─────────────────────────────────────
 
+	# A polygon of points in the world, however they are placed: the door
+	# leaf turns out of its own plane on its hinge, and a floor lies flat.
+	world : View.View, List(View.At), Brush.Fill -> List(Shapes.Shape)
+	world = |v, ats, fill| Shapes.polygon(View.seen(v, ats), fill)
+
 	# A polygon given as metres on one plane `fwd` away: right, height, right,
 	# height. Everything on the house's face is one of these.
 	face : View.View, F64, List(F64), Brush.Fill -> List(Shapes.Shape)
@@ -258,7 +271,7 @@ Halloween :: [].{
 			$ats = List.append($ats, { right: List.get(pts, $i) ?? 0.0, forward: fwd, height: List.get(pts, $i + 1) ?? 0.0 })
 			$i = $i + 2
 		}
-		Shapes.polygon(View.seen(v, $ats), fill)
+		world(v, $ats, fill)
 	}
 
 	# A rectangle on that plane, by its two opposite corners.
@@ -306,6 +319,7 @@ Halloween :: [].{
 
 		# The street the child came from, the walkway, and the house.
 		$out = List.concat($out, strip(v, 14.0, 0.0 - 9.0 - now, 0.0 - 0.6 - now, Flat(street_c)))
+		$out = List.concat($out, fence(v, now))
 		# **SOMETHING TO WALK BACK TOWARD.** The way down the path is four
 		# seconds of nothing once the house is behind you; a light at the kerb
 		# is where the child is going.
@@ -412,9 +426,6 @@ Halloween :: [].{
 	house : View.View, F64, I64 -> List(Shapes.Shape)
 	house = |v, hf, tick| {
 		open = ramp(tick - door_tick, open_frames)
-		# The leaf is hinged on the left and swings inward: what we see of it
-		# narrows against its own jamb while the lit hall grows past it.
-		leaf = 0.0 - 0.55 + 1.1 * (1.0 - open)
 
 		var $out = List.with_capacity(24)
 		$out = List.concat($out, panel(v, hf, 0.0 - 3.0, 0.0, 3.0, 2.6, Flat(house_c)))
@@ -422,49 +433,153 @@ Halloween :: [].{
 		# Two lit windows.
 		$out = List.concat($out, panel(v, hf, 0.0 - 2.3, 1.5, 0.0 - 1.3, 2.3, Flat(lit)))
 		$out = List.concat($out, panel(v, hf, 1.3, 1.5, 2.3, 2.3, Flat(lit)))
-		# The hall behind the doorway, and the door across it.
-		$out = List.concat($out, panel(v, hf, 0.0 - 0.55, 0.0, 0.55, 1.95, Flat(spill)))
-		$out = if open < 1.0 { List.concat($out, panel(v, hf, 0.0 - 0.55, 0.0, leaf, 1.95, Flat(door_c))) } else { $out }
-		# She comes down the hall once the door is on its way open.
+		# **THE HALL IS NOT THERE UNTIL THE DOOR IS OPEN.** It used to be drawn
+		# under a shut door at exactly the door's own rectangle, and a canvas
+		# antialiases both edges: the bright one bled through the dark one by
+		# a fraction of a pixel, and as the child walked, that shared edge
+		# drifted across the pixel grid and the light pulsed.
+		$out = if open > 0.0 {
+			List.concat(
+				List.concat($out, panel(v, hf, 0.0 - 0.53, 0.0, 0.53, 1.93, Flat(spill))),
+				# The floor of the hall, which is what the door sweeps over
+				# and what she stands on.
+				world(v, [
+					{ right: 0.0 - 0.53, forward: hf, height: 0.0 },
+					{ right: 0.53, forward: hf, height: 0.0 },
+					{ right: 0.53, forward: hf + 2.4, height: 0.0 },
+					{ right: 0.0 - 0.53, forward: hf + 2.4, height: 0.0 },
+				], Flat(floor_c)),
+			)
+		} else {
+			$out
+		}
+		$out = List.concat($out, leaf(v, hf, open))
+		# She comes up the hall once the door is on its way open.
 		List.concat($out, witch(v, hf, ramp(tick - witch_tick, loom_frames)))
 	}
 
-	# **SHE ARRIVES BY GROWING.** There is no clipping of one shape to another
+	# **A DOOR IS ON A HINGE.** It was a rectangle that got narrower, which is
+	# what a door looks like only if you are standing on its hinge; this one
+	# turns about the jamb, so its free edge swings back into the hall and its
+	# foot draws that arc across the floor.
+	hinge_at : F64
+	hinge_at = 0.0 - 0.55
+	leaf_wide : F64
+	leaf_wide = 1.1
+	# Ninety-five degrees: far enough back to be edge-on, not so far that it
+	# swings out past its own jamb.
+	leaf_swing : F64
+	leaf_swing = 1.658
+
+	leaf : View.View, F64, F64 -> List(Shapes.Shape)
+	leaf = |v, hf, open| {
+		a = open * leaf_swing
+		fx = hinge_at + leaf_wide * Trig.r_cos(a)
+		ff = hf + leaf_wide * Trig.r_sin(a)
+		world(v, [
+			{ right: hinge_at, forward: hf, height: 1.95 },
+			{ right: fx, forward: ff, height: 1.95 },
+			{ right: fx, forward: ff, height: 0.0 },
+			{ right: hinge_at, forward: hf, height: 0.0 },
+		], Flat(door_c))
+	}
+
+	# **SHE ARRIVES BY WALKING.** There is no clipping of one shape to another
 	# in the vocabulary, so she cannot walk in from the side of a doorway;
 	# coming up the hall from the back of it keeps her inside the one lit
 	# rectangle the whole way, and is what someone answering a door does.
+	# She is drawn at her own size at her own distance, so the projection
+	# shrinks her and stands her feet on the part of the floor she is on --
+	# scaling a figure pinned to the doorway put her feet on the threshold
+	# whatever it was pretending about how far back she was.
+	hall_deep : F64
+	hall_deep = 2.2
+
 	witch : View.View, F64, F64 -> List(Shapes.Shape)
-	witch = |v, fwd, u|
+	witch = |v, door_f, u|
 		if u <= 0.0 {
 			[]
-		} else if View.ahead(v, { right: 0.0, forward: fwd, height: 1.0 }) {
-			# Two thirds of her height at the back of the hall, all of it at
-			# the threshold.
-			s = 0.66 + 0.34 * u
-			c = View.turn(v, { right: 0.0, forward: fwd, height: 1.0 })
-			ppm = View.pixels_per_metre(v, c.forward)
-			shoulder_l = View.project(v, { right: 0.0 - 0.19 * s, forward: fwd, height: 1.10 * s })
-			shoulder_r = View.project(v, { right: 0.19 * s, forward: fwd, height: 1.10 * s })
-			hand_l = View.project(v, { right: 0.0 - 0.52 * s, forward: fwd, height: 0.70 * s })
-			hand_r = View.project(v, { right: 0.52 * s, forward: fwd, height: 0.70 * s })
-			head = View.project(v, { right: 0.0, forward: fwd, height: 1.24 * s })
-			eye_l = View.project(v, { right: 0.0 - 0.045 * s, forward: fwd, height: 1.26 * s })
-			eye_r = View.project(v, { right: 0.045 * s, forward: fwd, height: 1.26 * s })
-			var $out = List.with_capacity(10)
-			# The robe, flaring to the floor.
-			$out = List.concat($out, face(v, fwd, [0.0 - 0.19 * s, 1.10 * s, 0.19 * s, 1.10 * s, 0.30 * s, 0.60 * s, 0.45 * s, 0.0, 0.0 - 0.45 * s, 0.0, 0.0 - 0.30 * s, 0.60 * s], Flat(witch_c)))
-			# Two arms, held out from it.
-			$out = List.append($out, Shapes.line(shoulder_l.x, shoulder_l.y, hand_l.x, hand_l.y, 0.075 * s * ppm, Flat(witch_c)))
-			$out = List.append($out, Shapes.line(shoulder_r.x, shoulder_r.y, hand_r.x, hand_r.y, 0.075 * s * ppm, Flat(witch_c)))
-			$out = List.append($out, Disc({ x: head.x, y: head.y, r: 0.115 * s * ppm, fill: Flat(witch_c), clip: Anywhere }))
-			# The hat: a brim, and a point that leans.
-			$out = List.concat($out, face(v, fwd, [0.0 - 0.32 * s, 1.37 * s, 0.32 * s, 1.37 * s, 0.30 * s, 1.31 * s, 0.0 - 0.30 * s, 1.31 * s], Flat(witch_c)))
-			$out = List.concat($out, face(v, fwd, [0.0 - 0.25 * s, 1.36 * s, 0.25 * s, 1.36 * s, 0.12 * s, 1.86 * s], Flat(witch_c)))
-			# **THE ONLY PART OF HER THAT IS NOT DARK.** A silhouette says
-			# somebody; two eyes say who.
-			$out = List.append($out, Disc({ x: eye_l.x, y: eye_l.y, r: 0.022 * s * ppm, fill: Flat(eye_c), clip: Anywhere }))
-			List.append($out, Disc({ x: eye_r.x, y: eye_r.y, r: 0.022 * s * ppm, fill: Flat(eye_c), clip: Anywhere }))
 		} else {
-			[]
+			fwd = door_f + hall_deep * (1.0 - u)
+			here_she = { right: 0.0, forward: fwd, height: 1.0 }
+			if View.ahead(v, here_she) {
+				c = View.turn(v, here_she)
+				ppm = View.pixels_per_metre(v, c.forward)
+				shoulder_l = View.project(v, { right: 0.0 - 0.19, forward: fwd, height: 1.10 })
+				shoulder_r = View.project(v, { right: 0.19, forward: fwd, height: 1.10 })
+				hand_l = View.project(v, { right: 0.0 - 0.52, forward: fwd, height: 0.70 })
+				hand_r = View.project(v, { right: 0.52, forward: fwd, height: 0.70 })
+				head = View.project(v, { right: 0.0, forward: fwd, height: 1.24 })
+				eye_l = View.project(v, { right: 0.0 - 0.045, forward: fwd, height: 1.26 })
+				eye_r = View.project(v, { right: 0.045, forward: fwd, height: 1.26 })
+				var $out = List.with_capacity(14)
+				# Two legs and two long pointed shoes, under a hem that stops
+				# short of the floor.
+				$out = List.concat($out, face(v, fwd, [0.0 - 0.15, 0.26, 0.0 - 0.07, 0.26, 0.0 - 0.07, 0.05, 0.0 - 0.15, 0.05], Flat(witch_c)))
+				$out = List.concat($out, face(v, fwd, [0.07, 0.26, 0.15, 0.26, 0.15, 0.05, 0.07, 0.05], Flat(witch_c)))
+				$out = List.concat($out, face(v, fwd, [0.0 - 0.15, 0.08, 0.0 - 0.06, 0.08, 0.0 - 0.32, 0.0], Flat(witch_c)))
+				$out = List.concat($out, face(v, fwd, [0.15, 0.08, 0.06, 0.08, 0.32, 0.0], Flat(witch_c)))
+				# The robe, flaring to the hem.
+				$out = List.concat($out, face(v, fwd, [0.0 - 0.19, 1.10, 0.19, 1.10, 0.30, 0.66, 0.42, 0.24, 0.0 - 0.42, 0.24, 0.0 - 0.30, 0.66], Flat(witch_c)))
+				# Two arms, held out from it.
+				$out = List.append($out, Shapes.line(shoulder_l.x, shoulder_l.y, hand_l.x, hand_l.y, 0.075 * ppm, Flat(witch_c)))
+				$out = List.append($out, Shapes.line(shoulder_r.x, shoulder_r.y, hand_r.x, hand_r.y, 0.075 * ppm, Flat(witch_c)))
+				$out = List.append($out, Disc({ x: head.x, y: head.y, r: 0.115 * ppm, fill: Flat(witch_c), clip: Anywhere }))
+				# The hat: a brim, and a point that leans.
+				$out = List.concat($out, face(v, fwd, [0.0 - 0.32, 1.37, 0.32, 1.37, 0.30, 1.31, 0.0 - 0.30, 1.31], Flat(witch_c)))
+				$out = List.concat($out, face(v, fwd, [0.0 - 0.25, 1.36, 0.25, 1.36, 0.12, 1.86], Flat(witch_c)))
+				# **THE ONLY PART OF HER THAT IS NOT DARK.** A silhouette says
+				# somebody; two eyes say who.
+				$out = List.append($out, Disc({ x: eye_l.x, y: eye_l.y, r: 0.022 * ppm, fill: Flat(eye_c), clip: Anywhere }))
+				List.append($out, Disc({ x: eye_r.x, y: eye_r.y, r: 0.022 * ppm, fill: Flat(eye_c), clip: Anywhere }))
+			} else {
+				[]
+			}
 		}
+
+	# ── the fence ───────────────────────────────────────────────────────────
+	#
+	# **WHAT THE CHILD CAME THROUGH.** It stands across the front of the yard
+	# at the kerb, so it is behind the eye for the whole walk up and is there
+	# waiting when they turn round: a tall line of pointed pickets with a gap
+	# where the path goes.
+	fence_at : F64
+	fence_at = 0.2
+	fence_high : F64
+	fence_high = 2.0
+	gate_half : F64
+	gate_half = 1.0
+	pickets : I64
+	pickets = 30
+
+	fence : View.View, F64 -> List(Shapes.Shape)
+	fence = |v, now| {
+		fwd = fence_at - now
+		var $out = List.with_capacity(80)
+		# The two gate posts, taller and square-topped.
+		$out = List.concat($out, face(v, fwd, [gate_half, 0.0, gate_half + 0.18, 0.0, gate_half + 0.18, 2.35, gate_half, 2.35], Flat(fence_c)))
+		$out = List.concat($out, face(v, fwd, [0.0 - gate_half - 0.18, 0.0, 0.0 - gate_half, 0.0, 0.0 - gate_half, 2.35, 0.0 - gate_half - 0.18, 2.35], Flat(fence_c)))
+		# Two rails each way, behind the pickets.
+		$out = List.concat($out, rail(v, fwd, 0.52))
+		$out = List.concat($out, rail(v, fwd, 1.34))
+		var $i = 0
+		while $i < pickets {
+			x = gate_half + 0.24 + I64.to_f64($i) * 0.2
+			$out = List.concat($out, picket(v, fwd, x))
+			$out = List.concat($out, picket(v, fwd, 0.0 - x - 0.13))
+			$i = $i + 1
+		}
+		$out
+	}
+
+	picket : View.View, F64, F64 -> List(Shapes.Shape)
+	picket = |v, fwd, x|
+		face(v, fwd, [x, 0.0, x + 0.13, 0.0, x + 0.13, fence_high - 0.16, x + 0.065, fence_high, x, fence_high - 0.16], Flat(fence_c))
+
+	rail : View.View, F64, F64 -> List(Shapes.Shape)
+	rail = |v, fwd, y|
+		List.concat(
+			face(v, fwd, [gate_half, y, 7.2, y, 7.2, y + 0.1, gate_half, y + 0.1], Flat(fence_c)),
+			face(v, fwd, [0.0 - 7.2, y, 0.0 - gate_half, y, 0.0 - gate_half, y + 0.1, 0.0 - 7.2, y + 0.1], Flat(fence_c)),
+		)
 }
