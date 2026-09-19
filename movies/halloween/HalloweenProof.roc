@@ -5,7 +5,9 @@
 # Raster and printed coarse enough to read in a terminal, because a pose is
 # hand-authored angles and an angle that is wrong is invisible in the source.
 #
-#   roc build --opt=dev HalloweenProof.roc --output=<bin>; <bin> 0
+#   roc build --opt=dev HalloweenProof.roc --output=<bin>
+#   <bin> 0                      the whole frame, one cell per 8 by 14 pixels
+#   <bin> 790 260 150 2 4        a corner of it, magnified: the doorway
 import Halloween
 import Shapes
 import Raster
@@ -13,6 +15,13 @@ import Brush
 
 main! = |args| {
 	tick = I64.from_str(List.get(args, 0) ?? "0") ?? 0
+	# **THE CELL HIDES SMALL THINGS.** A cell prints its brightest pixel, so a
+	# witch's head against a lit hall vanished into the hall until this could
+	# be pointed at the doorway with smaller cells.
+	x0 = I64.from_str(List.get(args, 1) ?? "0") ?? 0
+	y0 = I64.from_str(List.get(args, 2) ?? "0") ?? 0
+	cw = I64.from_str(List.get(args, 3) ?? "8") ?? 8
+	ch = I64.from_str(List.get(args, 4) ?? "14") ?? 14
 	shapes = Halloween.shapes({ tick: tick })
 	view = Raster.view_of(0.0)
 	px = paint(List.repeat(0, Raster.width * Raster.height), view, shapes, 0)
@@ -24,7 +33,7 @@ main! = |args| {
 		var $line = ""
 		var $col = 0
 		while $col < 80 {
-			$line = Str.concat($line, shade(px, 8 * $col, 14 * $row))
+			$line = Str.concat($line, shade(px, x0 + cw * $col, y0 + ch * $row, cw, ch))
 			$col = $col + 1
 		}
 		$out = Str.concat($out, Str.concat($line, "\n"))
@@ -38,13 +47,13 @@ main! = |args| {
 # night and one bit said everything; a night sky, a lawn and a lit window are
 # all "drawn", so this prints the brightest pixel in the cell as one of five
 # levels. It is the crudest possible screenshot, and enough to see a house.
-shade : List(U32), I64, I64 -> Str
-shade = |px, x0, y0| {
+shade : List(U32), I64, I64, I64, I64 -> Str
+shade = |px, x0, y0, cw, ch| {
 	var $best = 0
 	var $dy = 0
-	while $dy < 14 {
+	while $dy < ch {
 		var $dx = 0
-		while $dx < 8 {
+		while $dx < cw {
 			i = (y0 + $dy) * U64.to_i64_wrap(Raster.width) + (x0 + $dx)
 			v = if i >= 0 and i < U64.to_i64_wrap(List.len(px)) { List.get(px, I64.to_u64_wrap(i)) ?? 0 } else { 0 }
 			# The green channel stands in for brightness, which is close

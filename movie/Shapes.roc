@@ -60,6 +60,52 @@ Shapes :: [].{
 		}
 	}
 
+	# **A FIGURE TURNED AWAY FROM US IS THE SAME FIGURE, NARROWER.** Every x is
+	# pulled toward `axis` by `k`, so a drawing made face-on reads as one yawed
+	# by the angle whose cosine is `k`; a negative `k` mirrors it as well, which
+	# is how a pair flanking a path can face each other. A disc keeps its
+	# radius -- a skull turned forty-five degrees is still round, and an
+	# ellipse is not in the vocabulary.
+	squash_x : List(Shapes.Shape), F64, F64 -> List(Shapes.Shape)
+	squash_x = |shapes, axis, k| {
+		n = List.len(shapes)
+		var $out = List.with_capacity(n)
+		var $i = 0
+		while $i < n {
+			$out = List.append(
+				$out,
+				match List.get(shapes, $i) ?? crash("shape out of range") {
+					Poly(p) => Poly({ pts: pulled(p.pts, axis, k), fill: p.fill })
+					Pieces(p) => Pieces({ tris: pulled(p.tris, axis, k), fill: p.fill })
+					Disc(d) => Disc({ x: axis + (d.x - axis) * k, y: d.y, r: d.r, fill: d.fill, clip: d.clip })
+					# A mirror sends a rectangle's left edge to its right, and a
+					# width is never negative.
+					Rect(r) => {
+						a = axis + (r.x - axis) * k
+						b = axis + (r.x + r.w - axis) * k
+						Rect({ x: F64.min(a, b), y: r.y, w: if b < a { a - b } else { b - a }, h: r.h, fill: r.fill })
+					}
+				},
+			)
+			$i = $i + 1
+		}
+		$out
+	}
+
+	# The x of every point pulled toward `axis`; the y of each left alone.
+	pulled : List(F64), F64, F64 -> List(F64)
+	pulled = |xs, axis, k| {
+		n = List.len(xs)
+		var $out = List.with_capacity(n)
+		var $i = 0
+		while $i + 1 < n {
+			$out = List.append($out, axis + (at(xs, $i) - axis) * k)
+			$out = List.append($out, at(xs, $i + 1))
+			$i = $i + 2
+		}
+		$out
+	}
+
 	# A rectangle whose corners are rounded by `r`, each corner drawn with
 	# `segments` steps -- the same two numbers roc-ray's own rounded_rectangle
 	# takes. A radius of zero, or one too big for the box, gives the box.
