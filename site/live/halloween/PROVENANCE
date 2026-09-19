@@ -1,6 +1,6 @@
-published 2026-09-19T18:06:31Z
+published 2026-09-19T19:13:22Z
 roc nightly-2026-09-11-793f9d8
-roc-apps bfcf847
+roc-apps bc23405
 rocemit c0379e0
 cobblestone 7b9235e7 u61-candidate
-sha256 fc1d6fbc1c307802  152479 bytes  halloween.wasm
+sha256 c1e2187c6467ef56  153459 bytes  halloween.wasm
