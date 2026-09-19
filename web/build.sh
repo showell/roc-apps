@@ -6,6 +6,7 @@
 #   web/build.sh capture_plot
 #   web/build.sh particles
 #   web/build.sh skeleton
+#   web/build.sh halloween
 #
 # A movie is a directory of Roc with an `<Name>App.roc` beside it, and `movie/`
 # is the vocabulary they share: Movie, Shapes, Brush, BrushGlsl, ShapeWire,
@@ -22,6 +23,7 @@ case "$name" in
     capture_plot) dirs="movie movies/capture_plot"; app="CapturePlotApp.roc" ;;
     particles)    dirs="movie movies/particles"; app="ParticlesApp.roc" ;;
     skeleton)     dirs="movie movies/skeleton"; app="SkeletonApp.roc" ;;
+    halloween)    dirs="movie movies/skeleton movies/halloween"; app="HalloweenApp.roc" ;;
     *) echo "no movie called $name"; exit 2 ;;
 esac
 

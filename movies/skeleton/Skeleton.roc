@@ -80,87 +80,92 @@ Skeleton :: [].{
 	shapes = |m| {
 		t = I64.to_f64(m.tick) / I64.to_f64(period) * tau
 		var $all = [Rect({ x: 0.0, y: 0.0, w: width, h: height, fill: Flat(night) })]
-		$all = List.concat($all, figure(t, width * 0.32))
-		$all = List.concat($all, figure(t + tau / 2.0, width * 0.68))
+		$all = List.concat($all, figure(t, width * 0.32, 392.0, 1.0))
+		$all = List.concat($all, figure(t + tau / 2.0, width * 0.68, 392.0, 1.0))
 		$all
 	}
 
-	figure : F64, F64 -> List(Shapes.Shape)
-	figure = |t, base| {
+	# **A FIGURE IS A PHASE, A PLACE AND A SIZE.** It was pixels at a fixed
+	# spot on a fixed screen until a scene wanted six of them at six distances;
+	# `s` is how big one metre of skeleton is in pixels, and `feet_y` is where
+	# it stands. A skeleton is about 1.35 metres of bone, which is a child's
+	# height and suits the company it keeps.
+	figure : F64, F64, F64, F64 -> List(Shapes.Shape)
+	figure = |t, base, feet_y, s| {
 
 		# The dance: a bob on the double beat, a sway on the beat, and the
 		# limbs alternating about it.
-		bob = Trig.r_cos(2.0 * t) * 7.0
-		sway = Trig.r_sin(t) * 14.0
+		bob = Trig.r_cos(2.0 * t) * 7.0 * s
+		sway = Trig.r_sin(t) * 14.0 * s
 		swing = Trig.r_sin(t)
 
 		cx = base + sway
-		pelvis_y = 300.0 + bob
+		pelvis_y = feet_y - 92.0 * s + bob
 
 		# The spine, and the skull on top of it.
-		shoulder_y = pelvis_y - 78.0
+		shoulder_y = pelvis_y - 78.0 * s
 		lean = Trig.r_sin(t) * 0.10
-		neck = end_of(cx, shoulder_y, lean, -16.0)
-		skull = end_of(neck.x, neck.y, lean, -26.0)
+		neck = end_of(cx, shoulder_y, lean, -16.0 * s)
+		skull = end_of(neck.x, neck.y, lean, -26.0 * s)
 
 		var $out = List.with_capacity(40)
 
 		# Spine and pelvis.
-		$out = List.append($out, rib(cx, pelvis_y, cx, shoulder_y, 9.0))
-		$out = List.append($out, rib(cx - 22.0, pelvis_y + 2.0, cx + 22.0, pelvis_y + 2.0, 13.0))
+		$out = List.append($out, rib(cx, pelvis_y, cx, shoulder_y, 9.0 * s))
+		$out = List.append($out, rib(cx - 22.0 * s, pelvis_y + 2.0 * s, cx + 22.0 * s, pelvis_y + 2.0 * s, 13.0 * s))
 
 		# Four ribs, narrowing downward, each a bar across the spine.
 		var $k = 0
 		while $k < 4 {
-			ry = shoulder_y + 12.0 + I64.to_f64($k) * 13.0
-			half = 30.0 - I64.to_f64($k) * 4.0
-			$out = List.append($out, rib(cx - half, ry, cx + half, ry, 6.0))
+			ry = shoulder_y + (12.0 + I64.to_f64($k) * 13.0) * s
+			half = (30.0 - I64.to_f64($k) * 4.0) * s
+			$out = List.append($out, rib(cx - half, ry, cx + half, ry, 6.0 * s))
 			$k = $k + 1
 		}
 
 		# The skull: a disc, two sockets, and a jaw that opens on the beat.
-		$out = List.append($out, joint(skull.x, skull.y, 26.0))
-		$out = List.append($out, Disc({ x: skull.x - 9.0, y: skull.y - 4.0, r: 6.0, fill: Flat(night), clip: Anywhere }))
-		$out = List.append($out, Disc({ x: skull.x + 9.0, y: skull.y - 4.0, r: 6.0, fill: Flat(night), clip: Anywhere }))
-		gape = 3.0 + 3.0 * (1.0 + Trig.r_cos(2.0 * t)) / 2.0
-		$out = List.append($out, Rect({ x: skull.x - 11.0, y: skull.y + 12.0, w: 22.0, h: gape, fill: Flat(night) }))
+		$out = List.append($out, joint(skull.x, skull.y, 26.0 * s))
+		$out = List.append($out, Disc({ x: skull.x - 9.0 * s, y: skull.y - 4.0 * s, r: 6.0 * s, fill: Flat(night), clip: Anywhere }))
+		$out = List.append($out, Disc({ x: skull.x + 9.0 * s, y: skull.y - 4.0 * s, r: 6.0 * s, fill: Flat(night), clip: Anywhere }))
+		gape = (3.0 + 3.0 * (1.0 + Trig.r_cos(2.0 * t)) / 2.0) * s
+		$out = List.append($out, Rect({ x: skull.x - 11.0 * s, y: skull.y + 12.0 * s, w: 22.0 * s, h: gape, fill: Flat(night) }))
 
 		# The arms, alternating: one up while the other is down.
-		$out = arm($out, cx - 26.0, shoulder_y + 4.0, 0.0 - 1.9 - swing * 0.9, 0.0 - 0.7 - swing * 0.5)
-		$out = arm($out, cx + 26.0, shoulder_y + 4.0, 1.9 - swing * 0.9, 0.7 - swing * 0.5)
+		$out = arm($out, cx - 26.0 * s, shoulder_y + 4.0 * s, s, 0.0 - 1.9 - swing * 0.9, 0.0 - 0.7 - swing * 0.5)
+		$out = arm($out, cx + 26.0 * s, shoulder_y + 4.0 * s, s, 1.9 - swing * 0.9, 0.7 - swing * 0.5)
 
 		# The legs, kicking the other way about.
-		$out = leg($out, cx - 15.0, pelvis_y + 6.0, 0.0 - 0.18 + swing * 0.55, 0.0 - 0.10 - swing * 0.45)
-		$out = leg($out, cx + 15.0, pelvis_y + 6.0, 0.18 + swing * 0.55, 0.10 - swing * 0.45)
+		$out = leg($out, cx - 15.0 * s, pelvis_y + 6.0 * s, s, 0.0 - 0.18 + swing * 0.55, 0.0 - 0.10 - swing * 0.45)
+		$out = leg($out, cx + 15.0 * s, pelvis_y + 6.0 * s, s, 0.18 + swing * 0.55, 0.10 - swing * 0.45)
 		$out
 	}
 
 	# An upper arm and a forearm, with a shoulder, an elbow and a hand.
-	arm : List(Shapes.Shape), F64, F64, F64, F64 -> List(Shapes.Shape)
-	arm = |acc, x, y, upper, fore| {
-		elbow = end_of(x, y, upper, 34.0)
-		hand = end_of(elbow.x, elbow.y, upper + fore, 30.0)
+	arm : List(Shapes.Shape), F64, F64, F64, F64, F64 -> List(Shapes.Shape)
+	arm = |acc, x, y, s, upper, fore| {
+		elbow = end_of(x, y, upper, 34.0 * s)
+		hand = end_of(elbow.x, elbow.y, upper + fore, 30.0 * s)
 		List.concat(acc, [
-			rib(x, y, elbow.x, elbow.y, 7.0),
-			rib(elbow.x, elbow.y, hand.x, hand.y, 6.0),
-			joint(x, y, 6.0),
-			joint(elbow.x, elbow.y, 5.0),
-			joint(hand.x, hand.y, 5.0),
+			rib(x, y, elbow.x, elbow.y, 7.0 * s),
+			rib(elbow.x, elbow.y, hand.x, hand.y, 6.0 * s),
+			joint(x, y, 6.0 * s),
+			joint(elbow.x, elbow.y, 5.0 * s),
+			joint(hand.x, hand.y, 5.0 * s),
 		])
 	}
 
 	# A thigh and a shin, with a hip, a knee and a foot.
-	leg : List(Shapes.Shape), F64, F64, F64, F64 -> List(Shapes.Shape)
-	leg = |acc, x, y, thigh, shin| {
-		knee = end_of(x, y, thigh, 44.0)
-		foot = end_of(knee.x, knee.y, thigh + shin, 42.0)
-		toe = end_of(foot.x, foot.y, thigh + shin + 1.4, 16.0)
+	leg : List(Shapes.Shape), F64, F64, F64, F64, F64 -> List(Shapes.Shape)
+	leg = |acc, x, y, s, thigh, shin| {
+		knee = end_of(x, y, thigh, 44.0 * s)
+		foot = end_of(knee.x, knee.y, thigh + shin, 42.0 * s)
+		toe = end_of(foot.x, foot.y, thigh + shin + 1.4, 16.0 * s)
 		List.concat(acc, [
-			rib(x, y, knee.x, knee.y, 9.0),
-			rib(knee.x, knee.y, foot.x, foot.y, 7.0),
-			rib(foot.x, foot.y, toe.x, toe.y, 6.0),
-			joint(x, y, 7.0),
-			joint(knee.x, knee.y, 6.0),
+			rib(x, y, knee.x, knee.y, 9.0 * s),
+			rib(knee.x, knee.y, foot.x, foot.y, 7.0 * s),
+			rib(foot.x, foot.y, toe.x, toe.y, 6.0 * s),
+			joint(x, y, 7.0 * s),
+			joint(knee.x, knee.y, 6.0 * s),
 		])
 	}
 }
