@@ -10,6 +10,12 @@
 // keeps drawing.
 //
 //   web/page_check.mjs <movie>            one of the built pages
+//   FRAMES=1400 web/page_check.mjs halloween     the whole of a long movie
+//
+// Thirty frames is half a second, which is enough to say the page runs. A
+// movie that turns round and walks back needs the rest of itself run too:
+// the arithmetic that divides by a distance only meets a distance of zero
+// well into one.
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
@@ -46,11 +52,12 @@ const document_ = {
   addEventListener() {},
 };
 
+const limit = Number(process.env.FRAMES ?? 30);
 let frames = 0;
 const sandbox = {
   console, performance, WebAssembly, fetch: async () => ({}), TextDecoder,
   document: document_, window: {},
-  requestAnimationFrame: (fn) => { if (frames++ < 30) setImmediate(fn); },
+  requestAnimationFrame: (fn) => { if (frames++ < limit) setImmediate(fn); },
   setImmediate,
 };
 sandbox.addEventListener = () => {};
@@ -71,7 +78,8 @@ vm.createContext(sandbox);
 vm.runInContext(`window.SHOW = ${showSrc[1]};`, sandbox);
 vm.runInContext(blitter, sandbox, { filename: "blitter.js" });
 
-await new Promise((r) => setTimeout(r, 400));
+const until = Date.now() + 60000;
+while (frames <= limit && Date.now() < until) await new Promise((r) => setTimeout(r, 20));
 if (frames < 2) { console.error(`${name}: the page never asked for a second frame`); process.exit(1); }
 if (fills === 0) { console.error(`${name}: the page drew nothing`); process.exit(1); }
 console.log(`${name}: ran ${frames} frames, ${calls} canvas calls, ${fills} fills`);
