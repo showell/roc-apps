@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>snake</title>
+</head>
+<body>
+<!-- roc-ray's examples/snake, running on a canvas. The rules, the board and
+     the drawing are the same Roc that runs natively; the page owns the
+     keyboard and hands every tick a snapshot of it. -->
+<script>
+window.SHOW = {
+  wasm: 'snake.wasm',
+  hint: '←↑↓→ / WASD turn · SPACE restart',
+  loading: 'Waking the snake…',
+};
+</script>
+<script src="blitter.js"></script>
+</body>
+</html>
