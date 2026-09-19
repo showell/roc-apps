@@ -1,4 +1,4 @@
-# Build the roc-ray apps as Windows executables and upload them as an artifact.
+# Build the movies as Windows executables and upload them as an artifact.
 #
 # This runs on a hosted Windows runner because Roc's x64win link is MSVC-ABI and
 # looks for an installed Windows SDK, which a Linux box cannot provide. The
@@ -7,6 +7,9 @@
 #
 #   gh workflow run windows.yml
 #   gh run download <run-id> -n windows-exe -D ~/build/roc-apps/ray/windows
+#
+# Every movie under movies/ is built. ray/fetch_exes.sh is what pulls them from
+# this box to a Windows machine.
 name: Windows executables
 
 on:
@@ -47,22 +50,31 @@ jobs:
         working-directory: roc-ray
         run: zig build -Doptimize=ReleaseFast
 
-      - name: Build the apps
+      # **EVERY MOVIE, NOT JUST SAFARI.** They are all the same shape now --
+      # movies/<name>/main.roc, the shared vocabulary, and one player -- so
+      # the list here is the list of directories.
+      - name: Build the movies
         env:
           ROC: roc
           ROC_RAY: roc-ray
           OUT: out
           TARGET: x64win
+          OPT: speed
         run: |
-          ray/build.sh hello
-          OPT=speed ray/build.sh safari
+          OPT=dev ray/build.sh hello
+          for movie in safari capture_plot particles halloween; do
+            ray/build.sh "$movie"
+          done
 
       # No window: the headless host draws nothing, so this proves each
-      # executable links, loads and runs its cycles (Safari paints every one).
-      - name: Run the apps headless
+      # executable links, loads and runs its cycles (each movie paints every
+      # one).
+      - name: Run them headless
         run: |
           out/hello/hello.exe --host-headless --host-headless-frames=5
-          out/safari/safari.exe --host-headless --host-headless-frames=3
+          for movie in safari capture_plot particles halloween; do
+            "out/$movie/$movie.exe" --host-headless --host-headless-frames=3
+          done
 
       - name: Upload the executables
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -80,7 +92,9 @@ jobs:
         run: |
           curl -fsSL -o mesa.7z \
             "https://github.com/pal1000/mesa-dist-win/releases/download/${MESA_VERSION}/mesa3d-${MESA_VERSION}-release-msvc.7z"
-          7z e -y mesa.7z -oout/safari x64/opengl32.dll x64/libgallium_wgl.dll x64/libglapi.dll
+          for movie in safari halloween; do
+            7z e -y mesa.7z -o"out/$movie" x64/opengl32.dll x64/libgallium_wgl.dll x64/libglapi.dll
+          done
           rm mesa.7z
 
       # Safari in a real hidden window, the keys scripted by cycle: at four
@@ -97,9 +111,23 @@ jobs:
             --host-keys=5:J,8:J,11:J,14:P,40:J,43:J,46:P,65:SPACE,105:SPACE,108:P,130:J,133:J,136:J,139:J,142:J,145:P
           ls -l shots
 
+      # Halloween's own four: the walk, the door open, the witch in it, and
+      # the way back. J is a second of its clock, so the jumps are how one
+      # gets to the late ones without waiting for them.
+      - name: Screenshots up the path
+        working-directory: out/halloween
+        env:
+          GALLIUM_DRIVER: llvmpipe
+        run: |
+          ./halloween.exe --host-frames=150 --host-hidden --host-caps-allow-all \
+            --host-keys=5:P,10:J,13:J,16:J,19:J,22:J,25:J,28:J,31:P,34:J,37:J,40:J,43:J,46:P,60:J,63:J,66:J,69:J,72:J,75:P
+          ls -l shots
+
       - name: Upload the screenshots
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: safari-shots
-          path: out/safari/shots/*.png
+          path: |
+            out/safari/shots/*.png
+            out/halloween/shots/*.png
           if-no-files-found: error
