@@ -32,7 +32,12 @@
 //
 // Plain hand-written JS (no TS, no bundler).
 
-const W = 960, H = 600;
+// **HOW BIG A FRAME IS COMES FROM THE MOVIE**, which is the only one that
+// knows. These were 960 and 600 -- Safari's, from when it was the only show --
+// and a movie 800 wide then painted its background over four fifths of the
+// canvas and let its particles fly across the strip that was left. Set once,
+// when the module is bound.
+let W = 960, H = 600;
 
 // ── 1. CANVAS BACKEND ─────────────────────────────────────────────────────────
 // Paths, paints and CSS colour strings. This is the half that cannot move: it is
@@ -125,23 +130,19 @@ function fillDisc(ctx, x, y, r, color, alpha) {
 // Nothing in it decides anything: every number a command carries was computed by
 // the guest, and this file's whole job is to turn tags into paths and paints.
 
-// What the guest's tags mean, so the dispatch below can be read without a legend.
-// A tag names a SHAPE AND A PAINT, never a subject: the backend paints a
-// radial-gradient polygon; it does not paint a headlight.
+// What arrives, so the dispatch below can be read without a legend. A frame is
+// SHAPES, each with a BRUSH, and neither names a subject: this file fills a
+// polygon under a radial gradient; it does not paint a headlight.
 //
-// TAG 1 IS GONE FROM THIS LIST. It was a polygon plus a `strength`, and a strength
-// is only meaningful to something that knows the shading recipe -- so this file
-// held a darkening factor, a lifting factor and a width floor in order to read it.
-// Tag 2 replaces it: two colours and two x's, already decided by the guest. Tag 2
-// was free because the critters it once meant are baked to polygons now.
-const TAG = {
-  SOLID: 0,          // a flat polygon
-  SPAN_SHADE: 2,     // a polygon under a symmetric 3-stop gradient across an x-span
-  DISC: 3,           // an alpha disc (the tower beacon's blink)
-  RADIAL_POLY: 4,    // radial-gradient fill (the truck's headlight beams, brake glow)
-  LINEAR_POLY: 5,    // 2-stop linear fill (flat shading panels)
-  ELLIPSE_POLY: 6,   // 2-stop radial fill through an ellipse (rounded muscle shading)
-};
+// THE TAG LIST THAT USED TO BE HERE IS GONE. It named a shape and a paint
+// together -- SPAN_SHADE, RADIAL_POLY, ELLIPSE_POLY -- so every new pairing
+// needed a new tag, and the sun could not be said at all: its glow is three
+// colours and the tags carried two, which is why the page used to paint the sky
+// and the sun itself from six extra exports. A shape and a brush are two words
+// now, and a movie this file has never heard of can say anything the brush
+// vocabulary can.
+const KIND = { POLY: 0, DISC: 1, RECT: 2 };
+const MODE = { FLAT: 0, SPAN: 1, RADIAL: 2, LINEAR: 3, ELLIPSE: 4, GLOW: 5 };
 
 // The one threshold left, and it is a canvas fact rather than a scene one: a
 // singular matrix cannot be inverted. The four that were chosen by eye -- the disc
@@ -150,78 +151,26 @@ const TAG = {
 const DEGENERATE_DET = 1e-4;
 
 // ── 2a. THE SHOW ───────────────────────────────────────────────────────────────
-// Everything that is about THIS screensaver and not about rendering one.
+// Everything that is about THIS screensaver and not about rendering one, which
+// is now a wasm file and some strings.
 //
-// The test this section exists to pass: a night walk through a city should reuse
-// every line above and below it and replace only what is in here -- a different
-// wasm, a different backdrop, different copy, a different route length. If that
-// stops being true, something domain-shaped has leaked out of this block.
+// **THE BACKDROP USED TO BE HERE AND IS NOT ANY MORE.** A `drawSafariBackdrop`
+// painted the sky's gradient, the grass and the sun, from `skyTop`,
+// `skyHorizon` and four sun readouts -- the one part of this file that could not
+// be reused for a night walk through a city, because it knew what the sky of a
+// country drive looks like. The movie sends its own backdrop as shapes now, so
+// a second show needs no function here at all: only the literal below.
+
+// THE DESCRIPTOR comes from the page now, because there is more than one show.
+// A page sets `window.SHOW` and this file plays it; everything else here is
+// about rendering one, not about which.
 //
-// What is deliberately NOT here: the tag vocabulary, the paints, the frame loop,
-// the clock, the segments, the HUD. A show is a backdrop and some strings; a frame
-// is geometry either way.
-
-// The sky band and the grass under it, drawn OVERSIZED so the rolled frame's corners
-// stay filled. The guest owns the two colours; the stop positions are ours.
-const GRASS_HEX = '#4a8f43';
-const SKY_STOP_FLAT = 0.2;  // the upper band holds skyHex to here, then fades to the horizon
-function drawBackground(ctx, skyHex, horizonHex) {
-  const BIG = W + H;
-  const g = ctx.createLinearGradient(0, 0, 0, H / 2);
-  g.addColorStop(0, skyHex);
-  g.addColorStop(SKY_STOP_FLAT, skyHex);
-  g.addColorStop(1, horizonHex);
-  ctx.fillStyle = g;
-  ctx.fillRect(W / 2 - BIG, H / 2 - BIG, 2 * BIG, BIG);
-  ctx.fillStyle = GRASS_HEX;
-  // BROWSER FACT: overlap 1px up over the horizon. Under the camera roll the two rects'
-  // shared edge can rasterize a sky sliver into the grass -- grass last + overlapping wins.
-  ctx.fillRect(W / 2 - BIG, H / 2 - 1, 2 * BIG, BIG + 1);
-}
-
-// The setting sun: a warm glow plus the disc, clipped to the sky so the ground occludes
-// the rest, at the centre and scale the guest computed. Painted before the buffer, so the
-// mountain polys -- first in the buffer -- occlude it: the sun sets BEHIND the ranges.
-const SUN_RADIUS_PX = 46;   // matches sky.zig SUN_RADIUS_PX; the gradient recipe lives here
-const SUN_GLOW_INNER = 8, SUN_GLOW_OUTER = 340, SUN_DISC_INNER = 4;
-const SUN_GLOW_STOPS = [
-  [0, 'rgba(255,201,128,0.85)'],
-  [0.4, 'rgba(255,150,92,0.32)'],
-  [1, 'rgba(255,150,92,0)'],
-];
-const SUN_DISC_STOPS = [[0, '#ffe6a3'], [1, '#ff9d5c']];
-function drawSun(ctx, x, y, scale) {
-  ctx.save();
-  ctx.beginPath(); ctx.rect(0, 0, W, H / 2); ctx.clip(); // sky only
-  const glow = ctx.createRadialGradient(x, y, SUN_GLOW_INNER * scale, x, y, SUN_GLOW_OUTER * scale);
-  for (const [at, col] of SUN_GLOW_STOPS) glow.addColorStop(at, col);
-  ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H / 2);
-  const disc = ctx.createRadialGradient(x, y, SUN_DISC_INNER * scale, x, y, SUN_RADIUS_PX * scale);
-  for (const [at, col] of SUN_DISC_STOPS) disc.addColorStop(at, col);
-  ctx.fillStyle = disc;
-  ctx.beginPath(); ctx.arc(x, y, SUN_RADIUS_PX * scale, 0, Math.PI * 2); ctx.fill();
-  ctx.restore();
-}
-
-// Everything painted BEFORE the command buffer. The buffer's own polygons --
-// mountains first -- paint over it, which is how the sun sets behind the ranges.
-function drawSafariBackdrop(ctx, scene) {
-  drawBackground(ctx, hex(scene.skyTop()), hex(scene.skyHorizon()));
-  const sun = scene.sun();
-  if (sun) drawSun(ctx, sun.x, sun.y, sun.scale);
-}
-
-// THE DESCRIPTOR. This object is the whole of what makes this a drive through the
-// country rather than a walk through a city at night. A second show is a second
-// literal like this one -- a different wasm, a `drawCityBackdrop` that paints a dark
-// sky and no sun, its own copy, its own route length -- and nothing else changes.
-const SAFARI = {
-  wasm: 'safari.wasm',
-  segments: 19,                     // the guest owns the route; it does not export its length
-  hint: 'SPACE pause/resume · ↑/↓ step · J next intersection · D debug overlay',
-  loading: 'Prepare for your journey! Watch out for animals crossing the road.',
-  backdrop: drawSafariBackdrop,
-};
+//   window.SHOW = {
+//     wasm: 'safari.wasm',        the module to fetch
+//     scenes: 19,                 how many the movie has; it does not export it
+//     hint: '…',                  the key legend
+//     loading: '…',               what to say while the wasm arrives
+//   };
 
 // ── 2b. THE GUEST BOUNDARY ─────────────────────────────────────────────────────
 // The ONE place the guest's own names are allowed.
@@ -243,12 +192,11 @@ function bindScene(x) {
     forward: x.advance,             // one step along the route
     backward: x.back,
     step: x.clock,                  // how many steps in
-    segment: x.riderSeg,            // which segment of the route
-    roll: x.riderTilt,              // camera roll, in radians
-    skyTop: x.skyTop,
-    skyHorizon: x.skyHorizon,
-    // A sun or nothing, rather than a visibility flag and three loose numbers.
-    sun: () => (x.sunVisible() ? { x: x.sunX(), y: x.sunY(), scale: x.sunScale() } : null),
+    segment: x.scene,               // which scene of the movie
+    roll: x.roll,                   // camera roll, in radians
+    width: x.width,                 // how big a frame is, in the movie's coordinates
+    height: x.height,
+    fps: x.fps,                     // how often the movie means to be stepped
     bufferAt: x.bufPtr,
     bufferPeak: x.bufHighWater,
     bufferCapacity: x.bufCap,
@@ -269,70 +217,120 @@ const STEP_GUARD = 200000;
 // This function DECODES and PAINTS, and that is now all it does: there is not one
 // comparison against a threshold left in it, because the guest already made every
 // call this file used to make about what is worth drawing.
+function css(rgb, a) {
+  return `rgba(${(rgb >> 16) & 255},${(rgb >> 8) & 255},${rgb & 255},${a})`;
+}
+
+// A colour: 0xRRGGBB, then its alpha. Two words.
+function readColor(u32, f32, w) {
+  return { css: css(u32[w], f32[w + 1]), w: w + 2 };
+}
+
+// A brush: its mode, then the colours and geometry that mode wants. Answers
+// something that can paint, and the word after it.
+function readBrush(ctx, u32, f32, w) {
+  const mode = u32[w++];
+  const a = readColor(u32, f32, w); w = a.w;
+  if (mode === MODE.FLAT) return { paint: a.css, w };
+
+  const b = readColor(u32, f32, w); w = b.w;
+  if (mode === MODE.SPAN) {
+    const x0 = f32[w++], x1 = f32[w++];
+    const g = ctx.createLinearGradient(x0, 0, x1, 0);
+    g.addColorStop(0, a.css); g.addColorStop(0.5, b.css); g.addColorStop(1, a.css);
+    return { paint: g, w };
+  }
+  if (mode === MODE.RADIAL) {
+    const x = f32[w++], y = f32[w++], r0 = f32[w++], r1 = f32[w++];
+    if (!(r1 > r0)) return { paint: b.css, w };
+    const g = ctx.createRadialGradient(x, y, r0, x, y, r1);
+    g.addColorStop(0, a.css); g.addColorStop(1, b.css);
+    return { paint: g, w };
+  }
+  if (mode === MODE.LINEAR) {
+    const o0 = f32[w++], o1 = f32[w++];
+    const ax = f32[w++], ay = f32[w++], dx = f32[w++], dy = f32[w++];
+    const g = ctx.createLinearGradient(ax, ay, ax + dx, ay + dy);
+    g.addColorStop(stopAt(o0), a.css);
+    g.addColorStop(stopAt(o1, stopAt(o0)), b.css);
+    return { paint: g, w };
+  }
+  if (mode === MODE.ELLIPSE) {
+    const o0 = f32[w++], o1 = f32[w++], x = f32[w++], y = f32[w++];
+    // The brush carries the matrix that takes a scene offset TO the unit
+    // circle, because that is what shading a point wants. A canvas wants the
+    // one that goes the other way, so it is inverted here -- a canvas fact.
+    const ia = f32[w++], ib = f32[w++], ic = f32[w++], id = f32[w++];
+    return { ellipse: { x, y, ia, ib, ic, id, o0, o1, c0: a.css, c1: b.css }, w };
+  }
+  // GLOW: three stops, at 0, 0.4 and 1, from r0 out to r1.
+  const c = readColor(u32, f32, w); w = c.w;
+  const x = f32[w++], y = f32[w++], r0 = f32[w++], r1 = f32[w++];
+  if (!(r1 > r0)) return { paint: a.css, w };
+  const g = ctx.createRadialGradient(x, y, r0, x, y, r1);
+  g.addColorStop(0, a.css); g.addColorStop(0.4, b.css); g.addColorStop(1, c.css);
+  return { paint: g, w };
+}
+
+// Fill the current path through an ellipse brush, or flat if its matrix is
+// singular -- a canvas fact, not a scene one.
+function fillThroughEllipse(ctx, e) {
+  const det = e.ia * e.id - e.ib * e.ic;
+  if (Math.abs(det) < DEGENERATE_DET) { ctx.fillStyle = e.c0; ctx.fill(); return; }
+  const ux = e.id / det, uy = -e.ic / det, vx = -e.ib / det, vy = e.ia / det;
+  ctx.save();
+  ctx.clip();
+  ctx.transform(ux, uy, vx, vy, e.x, e.y); // unit space -> screen ellipse
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+  g.addColorStop(stopAt(e.o0), e.c0);
+  g.addColorStop(stopAt(e.o1, stopAt(e.o0)), e.c1);
+  ctx.fillStyle = g;
+  ctx.fillRect(-1e4, -1e4, 2e4, 2e4); // clipped to the path; past r=1 the gradient holds
+  ctx.restore();
+}
+
+// Walk the frame [base, base+len). Views over the SAME words: u32 for kinds,
+// modes, counts and colours, f32 for coordinate bit patterns.
+//
+// This function DECODES and PAINTS, and that is all it does: not one comparison
+// against a threshold is left in it, because the movie already made every call
+// this file used to make about what is worth drawing.
 function blit(ctx, mem, base, len) {
   const u32 = new Uint32Array(mem.buffer, base, len / 4);
   const f32 = new Float32Array(mem.buffer, base, len / 4);
   let w = 0;
-  let cmds = 0;
+  let shapes = 0;
   while (w * 4 < len) {
-    cmds++;
-    const tag = u32[w++];
+    shapes++;
+    const kind = u32[w++];
+    const brush = readBrush(ctx, u32, f32, w); w = brush.w;
 
-    if (tag === TAG.DISC) {
-      const color = u32[w++];
-      const x = f32[w++], y = f32[w++], r = f32[w++], alpha = f32[w++];
-      fillDisc(ctx, x, y, r, color, alpha);
-      continue;
-    }
-
-    // A symmetric 3-stop gradient across [x0, x1]: edge, middle, edge. The offsets
-    // are the canvas's -- addColorStop wants them -- and the colours are not.
-    if (tag === TAG.SPAN_SHADE) {
-      const edge = u32[w++], middle = u32[w++];
-      const x0 = f32[w++], x1 = f32[w++], n = u32[w++];
-      ctx.fillStyle = stopsPaint(ctx, x0, x1, [[0, edge], [0.5, middle], [1, edge]]);
+    if (kind === KIND.POLY) {
+      const n = u32[w++];
       w = polyPath(ctx, f32, w, n);
-      ctx.fill();
-      continue;
-    }
-
-    if (tag === TAG.RADIAL_POLY) {
-      const cCol = u32[w++], eCol = u32[w++];
-      const cx = f32[w++], cy = f32[w++], r = f32[w++], n = u32[w++];
-      w = polyPath(ctx, f32, w, n);
-      ctx.fillStyle = radialPaint(ctx, cx, cy, r, cCol, eCol);
-      ctx.fill();
-      continue;
-    }
-
-    if (tag === TAG.LINEAR_POLY) {
-      const c0 = u32[w++], c1 = u32[w++], o0 = f32[w++], o1 = f32[w++];
-      const ax = f32[w++], ay = f32[w++], bx = f32[w++], by = f32[w++], n = u32[w++];
-      w = polyPath(ctx, f32, w, n);
-      ctx.fillStyle = linearPaint(ctx, ax, ay, bx, by, c0, o0, c1, o1);
-      ctx.fill();
-      continue;
-    }
-
-    if (tag === TAG.ELLIPSE_POLY) {
-      const c0 = u32[w++], c1 = u32[w++], o0 = f32[w++], o1 = f32[w++];
-      const cx = f32[w++], cy = f32[w++], ux = f32[w++], uy = f32[w++], vx = f32[w++], vy = f32[w++], n = u32[w++];
-      w = polyPath(ctx, f32, w, n);
-      if (!fillEllipseRadial(ctx, cx, cy, ux, uy, vx, vy, c0, o0, c1, o1)) {
-        ctx.fillStyle = rgba(c0);
-        ctx.fill();
+    } else if (kind === KIND.DISC) {
+      const x = f32[w++], y = f32[w++], r = f32[w++];
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.closePath();
+      // A clip: a rectangle the shape may not paint outside of, or nothing.
+      if (u32[w++]) {
+        const cx = f32[w++], cy = f32[w++], cw = f32[w++], ch = f32[w++];
+        ctx.save();
+        ctx.beginPath(); ctx.rect(cx, cy, cw, ch); ctx.clip();
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.closePath();
+        if (brush.ellipse) fillThroughEllipse(ctx, brush.ellipse);
+        else { ctx.fillStyle = brush.paint; ctx.fill(); }
+        ctx.restore();
+        continue;
       }
-      continue;
+    } else {
+      const x = f32[w++], y = f32[w++], rw = f32[w++], rh = f32[w++];
+      ctx.beginPath(); ctx.rect(x, y, rw, rh); ctx.closePath();
     }
 
-    // TAG.SOLID, and after the guest's expansion it is the only thing left.
-    const color = u32[w++];
-    const n = u32[w++];
-    ctx.fillStyle = hex(color);
-    w = polyPath(ctx, f32, w, n);
-    ctx.fill();
+    if (brush.ellipse) fillThroughEllipse(ctx, brush.ellipse);
+    else { ctx.fillStyle = brush.paint; ctx.fill(); }
   }
-  return cmds;
+  return shapes;
 }
 
 // The frame-budget HUD: zig can't time itself (no clock in wasm-freestanding), so the
@@ -388,6 +386,9 @@ async function main(show) {
     'margin:0;background:#0b0b0d;height:100vh;display:flex;flex-direction:column;' +
     'align-items:center;justify-content:center;font-family:ui-monospace,Menlo,monospace;color:#cfd2d6';
   const canvas = document.createElement('canvas');
+  // Sized properly once the module is bound and can be asked; the canvas has
+  // to exist before that, because the spinner is drawn on it while the wasm
+  // is still arriving.
   canvas.width = W;
   canvas.height = H;
   canvas.style.cssText = 'display:block;background:#000;box-shadow:0 10px 40px rgba(0,0,0,0.6)';
@@ -414,6 +415,11 @@ async function main(show) {
 
   const { instance } = await WebAssembly.instantiateStreaming(fetch(show.wasm), {});
   const scene = bindScene(instance.exports);
+  // **HOW BIG A FRAME IS COMES FROM THE MOVIE**, and only now can it be asked.
+  W = scene.width();
+  H = scene.height();
+  canvas.width = W;
+  canvas.height = H;
   const capBytes = scene.bufferCapacity();
 
   let auto = true;
@@ -429,17 +435,34 @@ async function main(show) {
     ctx.translate(W / 2, H / 2);
     ctx.rotate(-scene.roll());
     ctx.translate(-W / 2, -H / 2);
-    show.backdrop(ctx, scene);
     const cmds = blit(ctx, scene.memory, scene.bufferAt(), len);
     ctx.restore();
     const t2 = performance.now();
     hudPush(hud.wasm, t1 - t0);
     hudPush(hud.blit, t2 - t1);
     hudPush(hud.total, t2 - t0);
-    drawHud(ctx, scene.bufferPeak(), capBytes, cmds, scene.step(), scene.segment() + 1, show.segments, debug); // unrolled overlay, on top
+    drawHud(ctx, scene.bufferPeak(), capBytes, cmds, scene.step(), scene.segment() + 1, show.scenes, debug); // unrolled overlay, on top
   }
-  function loop() {
-    if (auto) { scene.forward(); draw(); }
+  // **THE MOVIE SETS THE RATE, NOT THE DISPLAY.** One step per animation frame
+  // is one step per refresh, which is 60 a second on this monitor, 144 on that
+  // one, and 240 on roc-ray's default — the same movie at three speeds. So the
+  // elapsed time is banked and steps are taken as they fall due. The cap is
+  // what stops a backgrounded tab from returning and running a minute of the
+  // movie in one frame.
+  const STEP_MS = 1000 / (scene.fps() || 60);
+  const CATCH_UP = 4;
+  let owed = 0, last = performance.now();
+  function loop(now) {
+    const since = Math.min(now - last, 250);
+    last = now;
+    if (auto) {
+      owed += since;
+      let steps = 0;
+      while (owed >= STEP_MS && steps < CATCH_UP) { scene.forward(); owed -= STEP_MS; steps++; }
+      if (steps) draw();
+    } else {
+      owed = 0;
+    }
     requestAnimationFrame(loop);
   }
 
@@ -485,7 +508,10 @@ async function main(show) {
   spinner.remove();
 
   draw();
+  last = performance.now();
   requestAnimationFrame(loop);
 }
 
-main(SAFARI);
+const show = window.SHOW;
+if (!show) throw new Error('blitter: the page did not set window.SHOW');
+main(show);

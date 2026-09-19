@@ -5,11 +5,18 @@
 <title>safari — the Roc module</title>
 </head>
 <body>
-<!-- A copy of safari-codex's fork of the game's blitter.js: the same
-     JavaScript that draws the Codex module draws the Roc one. It builds the
-     canvas, fetches safari.wasm, and paints the commands the module
-     wrote into linear memory. Only the module differs. Every URL is relative,
-     so the page works under any path. -->
+<!-- The page names the show; blitter.js plays it. The same JavaScript draws
+     every movie here, so what is particular to this one is the four lines
+     below: which module to fetch, how many scenes it has, and what to say.
+     Every URL is relative, so the page works under any path. -->
+<script>
+window.SHOW = {
+  wasm: 'safari.wasm',
+  scenes: 19,
+  hint: 'SPACE pause/resume · ↑/↓ step · J next intersection · D debug overlay',
+  loading: 'Prepare for your journey! Watch out for animals crossing the road.',
+};
+</script>
 <script src="blitter.js"></script>
 <script src="../shared/home.js"></script>
 </body>
