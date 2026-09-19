@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>capture_plot — a second movie</title>
+</head>
+<body>
+<!-- roc-ray's own examples/capture_plot, as a movie on this page. The
+     JavaScript below is the same file safari uses, unchanged: a movie reports
+     shapes and a camera, and this draws them. -->
+<script>
+window.SHOW = {
+  wasm: 'capture_plot.wasm',
+  scenes: 1,
+  hint: 'SPACE pause/resume · ↑/↓ step · J skip a second · D debug overlay',
+  loading: 'Recording a plot…',
+};
+</script>
+<script src="blitter.js"></script>
+<script src="../shared/home.js"></script>
+</body>
+</html>
