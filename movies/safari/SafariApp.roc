@@ -90,5 +90,9 @@ width = |_b| F64.to_u32_wrap(movie.size.width)
 height : Box(Model) -> U32
 height = |_b| F64.to_u32_wrap(movie.size.height)
 
+# How often the page should step it.
+fps : Box(Model) -> U32
+fps = |_b| I32.to_u32_wrap(movie.fps)
+
 # What the platform requires, as one record.
-program = { init, advance, back, render, probe_frame, probe_expand, clock, scene, roll, width, height }
+program = { init, advance, back, render, probe_frame, probe_expand, clock, scene, roll, width, height, fps }

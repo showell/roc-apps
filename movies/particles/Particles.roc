@@ -46,6 +46,7 @@ Particles :: [].{
 	movie : Movie.Movie(Particles.Model)
 	movie = {
 		size: { width: width, height: height },
+		fps: 60,
 		init: { particles: initial(0, []), tick: 0 },
 		advance: |m| { particles: stepped(m.particles, emitter(m.tick), 0, []), tick: m.tick + 1 },
 		# **A FOUNTAIN HAS NO PAST.** See the note at the top.

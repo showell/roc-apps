@@ -25,6 +25,15 @@ Movie :: [].{
 		# and drew itself into a corner.
 		size : { width : F64, height : F64 },
 
+		# **HOW OFTEN A FRAME IS MEANT TO HAPPEN.** Every movie's motion is
+		# written per tick -- a velocity, a gravity, a walk of eight hundred
+		# frames -- so the rate is the movie's, and a player that runs at its
+		# own rate plays the movie at the wrong speed. It is here for the same
+		# reason `size` is: the browser was accidentally paced by the display's
+		# refresh and roc-ray ran at raylib's default of 240, so the same movie
+		# played four times faster on the desktop.
+		fps : I32,
+
 		# Where it starts, and how it moves.
 		init : model,
 		advance : model -> model,

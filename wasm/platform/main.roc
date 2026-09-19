@@ -23,6 +23,7 @@ platform ""
 			roll : Box(model) -> F32,
 			width : Box(model) -> U32,
 			height : Box(model) -> U32,
+			fps : Box(model) -> U32,
 		}
 	}
 	exposes []
@@ -39,12 +40,13 @@ platform ""
 		"roc_roll": roll_for_host,
 		"roc_width": width_for_host,
 		"roc_height": height_for_host,
+		"roc_fps": fps_for_host,
 	}
 	targets: {
 		inputs_dir: "targets/",
 		wasm32: {
 			inputs: ["host.wasm", app],
-			exports: ["renderFrame", "probeFrame", "probeExpand", "bufPtr", "bufHighWater", "bufCap", "advance", "back", "clock", "scene", "roll", "width", "height"],
+			exports: ["renderFrame", "probeFrame", "probeExpand", "bufPtr", "bufHighWater", "bufCap", "advance", "back", "clock", "scene", "roll", "width", "height", "fps"],
 		},
 	}
 
@@ -59,5 +61,7 @@ roll_for_host = program.roll
 width_for_host = program.width
 
 height_for_host = program.height
+
+fps_for_host = program.fps
 probe_frame_for_host = program.probe_frame
 probe_expand_for_host = program.probe_expand

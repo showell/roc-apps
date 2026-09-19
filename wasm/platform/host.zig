@@ -37,6 +37,7 @@ extern fn roc_scene(model: ?[*]u8) callconv(.c) u32;
 extern fn roc_roll(model: ?[*]u8) callconv(.c) f32;
 extern fn roc_width(model: ?[*]u8) callconv(.c) u32;
 extern fn roc_height(model: ?[*]u8) callconv(.c) u32;
+extern fn roc_fps(model: ?[*]u8) callconv(.c) u32;
 
 // NO IMPORTS. web/blitter.js instantiates the module with an empty import
 // object, as it does the Codex-built one, so a panic is a wasm trap -- the
@@ -180,4 +181,10 @@ pub export fn width() u32 {
 
 pub export fn height() u32 {
     return roc_height(borrowed());
+}
+
+// How often the movie means to be stepped. The page paces itself by this
+// rather than by however often the display happens to refresh.
+pub export fn fps() u32 {
+    return roc_fps(borrowed());
 }

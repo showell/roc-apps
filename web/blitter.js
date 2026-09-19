@@ -196,6 +196,7 @@ function bindScene(x) {
     roll: x.roll,                   // camera roll, in radians
     width: x.width,                 // how big a frame is, in the movie's coordinates
     height: x.height,
+    fps: x.fps,                     // how often the movie means to be stepped
     bufferAt: x.bufPtr,
     bufferPeak: x.bufHighWater,
     bufferCapacity: x.bufCap,
@@ -442,8 +443,26 @@ async function main(show) {
     hudPush(hud.total, t2 - t0);
     drawHud(ctx, scene.bufferPeak(), capBytes, cmds, scene.step(), scene.segment() + 1, show.scenes, debug); // unrolled overlay, on top
   }
-  function loop() {
-    if (auto) { scene.forward(); draw(); }
+  // **THE MOVIE SETS THE RATE, NOT THE DISPLAY.** One step per animation frame
+  // is one step per refresh, which is 60 a second on this monitor, 144 on that
+  // one, and 240 on roc-ray's default — the same movie at three speeds. So the
+  // elapsed time is banked and steps are taken as they fall due. The cap is
+  // what stops a backgrounded tab from returning and running a minute of the
+  // movie in one frame.
+  const STEP_MS = 1000 / (scene.fps() || 60);
+  const CATCH_UP = 4;
+  let owed = 0, last = performance.now();
+  function loop(now) {
+    const since = Math.min(now - last, 250);
+    last = now;
+    if (auto) {
+      owed += since;
+      let steps = 0;
+      while (owed >= STEP_MS && steps < CATCH_UP) { scene.forward(); owed -= STEP_MS; steps++; }
+      if (steps) draw();
+    } else {
+      owed = 0;
+    }
     requestAnimationFrame(loop);
   }
 
@@ -489,6 +508,7 @@ async function main(show) {
   spinner.remove();
 
   draw();
+  last = performance.now();
   requestAnimationFrame(loop);
 }
 

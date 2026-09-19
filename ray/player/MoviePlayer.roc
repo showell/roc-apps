@@ -76,7 +76,9 @@ MoviePlayer :: [].{
 
 	init! : Movie.Movie(model) -> App.Init(MoviePlayer.Model(model), [TextureGenerationFailed, ResourceLimit, ShaderLoadFailed, UniformNotFound, RenderTextureLoadFailed])
 	init! = |movie| App.init(
-		App.default.with_title(movie.title).with_size({ width: F64.to_i32_wrap(movie.size.width), height: F64.to_i32_wrap(movie.size.height) }).with_output_dir("shots"),
+		# **THE MOVIE SETS THE RATE.** raylib's default is 240 frames a second,
+		# which played every movie here four times too fast against the page.
+		App.default.with_title(movie.title).with_size({ width: F64.to_i32_wrap(movie.size.width), height: F64.to_i32_wrap(movie.size.height) }).with_frame_pacing(Capped(movie.fps)).with_output_dir("shots"),
 		|_io| {
 			target = Draw.RenderTexture.load!(target_size(movie))?
 			Assets.set_texture_filter!(target.texture(), Bilinear)

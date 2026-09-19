@@ -116,6 +116,7 @@ Halloween :: [].{
 	movie : Movie.Movie(Halloween.Model)
 	movie = {
 		size: { width: width, height: height },
+		fps: 60,
 		init: { tick: 0 },
 		advance: |m| { tick: m.tick + 1 },
 		# Every frame is a function of the tick, so back is a step the other

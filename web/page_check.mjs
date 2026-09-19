@@ -54,10 +54,18 @@ const document_ = {
 
 const limit = Number(process.env.FRAMES ?? 30);
 let frames = 0;
+// **THE CLOCK IS VIRTUAL, OR THE PAGE TAKES NO STEPS.** The blitter paces the
+// movie by elapsed time now, and setImmediate fires far faster than a frame is
+// due, so against the real clock this ran the page without ever advancing the
+// movie. One animation frame here is one frame of the movie's own time.
+const STEP_MS = 1000 / 60;
+let virtualNow = 0;
 const sandbox = {
-  console, performance, WebAssembly, fetch: async () => ({}), TextDecoder,
+  console, performance: { now: () => virtualNow }, WebAssembly, fetch: async () => ({}), TextDecoder,
   document: document_, window: {},
-  requestAnimationFrame: (fn) => { if (frames++ < limit) setImmediate(fn); },
+  requestAnimationFrame: (fn) => {
+    if (frames++ < limit) setImmediate(() => { virtualNow += STEP_MS; fn(virtualNow); });
+  },
   setImmediate,
 };
 sandbox.addEventListener = () => {};

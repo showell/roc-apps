@@ -57,6 +57,7 @@ CapturePlot :: [].{
 	movie : Movie.Movie(CapturePlot.Model)
 	movie = {
 		size: { width: width, height: height },
+		fps: 60,
 		init: { elapsed: 0.0 },
 		advance: |m| { elapsed: m.elapsed + step },
 		back: |m| { elapsed: if m.elapsed > step { m.elapsed - step } else { 0.0 } },
