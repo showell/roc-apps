@@ -123,7 +123,8 @@ Halloween :: [].{
 		# way and costs nothing to remember.
 		back: |m| { tick: if m.tick > 0 { m.tick - 1 } else { 0 } },
 		skip: |m| { tick: m.tick + 60 },
-		frame: |m| { shapes: shapes(m), roll: 0.0 },
+		frame: |m| shapes(m),
+		roll: |_m| 0.0,
 		clock: |m| I64.to_f64(m.tick),
 		title: "Trick or Treat",
 		stem: "halloween",

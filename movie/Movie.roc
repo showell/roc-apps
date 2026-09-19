@@ -14,10 +14,6 @@
 import Shapes
 
 Movie :: [].{
-	# One frame: the shapes to fill, in scene coordinates, and how the camera
-	# is turned. **A movie that does not roll sends zero.**
-	Frame : { shapes : List(Shapes.Shape), roll : F64 }
-
 	Movie(model) : {
 		# **HOW BIG A FRAME IS, in its own coordinates.** A player sizes its
 		# window and aims its camera from this. Safari's was 960 by 600 and the
@@ -49,8 +45,14 @@ Movie :: [].{
 		# On to the next scene. What a scene is, is the movie's business.
 		skip : model -> model,
 
-		# What to draw.
-		frame : model -> Movie.Frame,
+		# What to draw: the shapes to fill, in scene coordinates.
+		frame : model -> List(Shapes.Shape),
+
+		# How the camera is turned. **A MOVIE THAT DOES NOT ROLL SENDS ZERO**,
+		# and it is asked for apart from the frame because the page asks for
+		# it apart: roll was a field of the frame, so answering the page's
+		# `roll()` built every shape in the frame and threw them away.
+		roll : model -> F64,
 
 		# How far in it is: a number that goes up, for naming a screenshot.
 		clock : model -> F64,

@@ -145,11 +145,12 @@ MoviePlayer :: [].{
 	draw! : Movie.Movie(model), MoviePlayer.Model(model), Draw.Frame => Try({}, [ScopeLimit, ScopeUnavailable, ..])
 	draw! = |movie, model, frame| {
 		the_frame = movie.frame
+		rolled = movie.roll
 		f = the_frame(model.state)
 		# roc-ray fills convex polygons only, so a concave one is cut here.
 		# A movie does not know or care; a canvas does not ask.
-		shapes = Shapes.cut(f.shapes)
-		roll = F64.to_f32_wrap(0.0 - f.roll * 57.29577951308232)
+		shapes = Shapes.cut(f)
+		roll = F64.to_f32_wrap(0.0 - rolled(model.state) * 57.29577951308232)
 		frame.with_render_texture!(model.target, |big| {
 			big.clear!(Color.black)
 			big.with_camera!(camera(movie.size, roll, supersample), |world| {
