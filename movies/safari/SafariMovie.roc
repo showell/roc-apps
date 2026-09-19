@@ -18,7 +18,12 @@ SafariMovie :: [].{
 	movie : Movie.Movie(SafariMovie.Model)
 	movie = {
 		size: { width: 960.0, height: 600.0 },
-		fps: 60,
+		# **THIRTY, BY EYE.** The drive was paced by how long its own frame
+		# took -- one step per animation frame, and a frame it could not fit
+		# in a sixtieth of a second -- so it ran at about twenty-five in a
+		# browser and faster than that on a desktop. Thirty is the speed it
+		# is meant to look like, and now it is that speed on both.
+		fps: 30,
 		init: SafariRide.init,
 		advance: |m| SafariRide.advance(m),
 		back: |m| SafariRide.back(m),
