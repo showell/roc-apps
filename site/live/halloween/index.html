@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>trick or treat</title>
+</head>
+<body>
+<!-- The first movie here with a world in it: things are placed in metres and
+     View says where they land, so walking is one number changing. The eye is a
+     metre off the ground, which is the whole character -- and it can turn, so
+     a polygon is cut against the near plane on its way to the screen. -->
+<script>
+window.SHOW = {
+  wasm: 'halloween.wasm',
+  scenes: 1,
+  hint: 'SPACE pause/resume · ↑/↓ step · J jump a second · D debug overlay',
+  loading: 'Walking up the path…',
+};
+</script>
+<script src="blitter.js"></script>
+<script src="../shared/home.js"></script>
+</body>
+</html>
