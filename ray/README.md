@@ -1,45 +1,44 @@
-# Safari on roc-ray
+# The movies on roc-ray
 
-Safari, the driving screensaver, runs as a native Windows and Linux program on
+Every movie under `movies/` runs as a native Windows and Linux program on
 [roc-ray](https://github.com/lukewilliamboswell/roc-ray), Luke Boswell's raylib
 platform for Roc, while the same Roc keeps running in the browser on our wasm
 platform. The bulk of the code is shared; each platform has a thin edge.
+`movies/README.md` is the layout; this is the roc-ray side of it.
 
 ## What is shared and what is not
 
 | layer | files | platform |
 |---|---|---|
-| the screensaver itself | `safari/roc/*.roc` emitted from Codex by `rocemit` (one module per chapter) | any |
-| the ride between frames, and what a frame shows | `safari/roc/SafariRide.roc` | any |
-| what a command's paint means | `safari/roc/Brush.roc`: a flat colour or one of the blitter's gradients, and the colour it gives a point | any |
-| a frame as shapes a platform can fill | `safari/roc/Shapes.roc`: convex polygons, ear-clipped triangles, discs, rectangles, each with its brush | any |
-| a frame painted into pixels | `safari/roc/Raster.roc` | any |
-| the web edge | `safari/roc/SafariApp.roc` (exports over a boxed model) and `safari/web/blitter.js` (paints the canvas) | wasm |
-| the roc-ray edge | `apps/safari/main.roc`: each shape becomes one draw call, under a camera turned by the ride's roll | roc-ray |
+| the screensaver itself | `movies/safari/*.roc` emitted from Codex by `rocemit` (one module per chapter) | any |
+| the ride between frames, and what a frame shows | `movies/safari/SafariRide.roc` | any |
+| what a command's paint means | `movies/safari/Brush.roc`: a flat colour or one of the blitter's gradients, and the colour it gives a point | any |
+| a frame as shapes a platform can fill | `movies/safari/Shapes.roc`: convex polygons, ear-clipped triangles, discs, rectangles, each with its brush | any |
+| a frame painted into pixels | `movies/safari/Raster.roc` | any |
+| the web edge | `movies/safari/SafariApp.roc` (exports over a boxed model) and `web/blitter.js` (paints the canvas) | wasm |
+| the roc-ray edge | `movies/safari/main.roc` and `player/MoviePlayer.roc`: each shape becomes one draw call, under a camera turned by the ride's roll | roc-ray |
 
-No module under `safari/roc/` imports a platform. The roc-ray app is one file:
+No module under `movies/safari/` imports a platform. The roc-ray app is one file:
 `init!`, `update!` for the keys, and `render!`.
 
 ## The files
 
 | where | what |
 |---|---|
-| `build.sh` | an app for one target, from a roc-ray checkout's platform source: stages `apps/<name>/` and the module directories its `modules` file names, with its platform reference rewritten, and builds with the nightly roc-ray pins (09-07) |
-| `apps/hello/` | the smallest roc-ray app, proving a build end to end |
-| `apps/safari/` | Safari: four lines, naming the movie and handing it to `ray/player`'s MoviePlayer. Its `modules` names `safari/roc` (the movie) and `ray/player` (the player) |
-| `apps/capture_plot/` | roc-ray's own `examples/capture_plot`, as a second movie, with `CapturePlot.roc` beside its four-line app. **The same player, unchanged** |
+| `build.sh` | an app for one target, from a roc-ray checkout's platform source, with the platform reference rewritten and the nightly roc-ray pins (09-07). A movie -- `movies/<name>/main.roc` -- is staged with `movie/` and `player/`; a plain app under `apps/` brings what its `modules` file names |
+| `apps/hello/` | the smallest roc-ray app, proving a build end to end, and the only thing left under `apps/` |
 | `player/` | `MoviePlayer.roc`: everything a player does, for any movie. `program` takes a `Movie.Movie` and names none |
 
 `movie/` at the repository root is what the three of them share: `Movie` (the
 type a player is a function of), `Shapes`, `Brush`, `BrushGlsl`, `ShapeWire`,
-`Font`, and the arithmetic those need. It lived in `safari/roc` until a second
-and a third movie arrived and had to stage a hundred and twenty files of
-Safari to reach seven of them.
+`Font`, and the arithmetic those need. It lived in Safari's own directory until
+a second and a third movie arrived and had to stage a hundred and twenty files
+of Safari to reach seven of them.
 
 What stayed behind is the half that knows what Safari looks like:
 `SafariShapes.roc` builds its sky, its grass and its sun and turns a Codex draw
 command into a polygon, and `SafariBrush.roc` reads a brush out of one.
-| `pixels_png.mjs` | the frame `safari/roc/RasterFrame.roc` or `ShapesFrame.roc` prints, as a PNG |
+| `pixels_png.mjs` | the frame `movies/safari/RasterFrame.roc` or `ShapesFrame.roc` prints, as a PNG |
 | `png_diff.mjs` | two screenshots compared pixel by pixel: how many differ, how many by more than a tolerance, the largest difference |
 | `../.github/workflows/windows.yml` | the Windows executables, built on a hosted Windows runner, and each painter's screenshots from a real window on Mesa's llvmpipe; run by hand |
 | `../.github/workflows/macos.yml` | the macOS executables, built and run headless on hosted Apple Silicon and Intel runners, which have no GPU; run by hand |
@@ -98,11 +97,11 @@ tested only on a real Mac.
 
 ## The checks
 
-- `safari/emitted.sh`: the 54 Codex specs, emitted and run in Roc against their
+- `movies/safari/emitted.sh`: the 54 Codex specs, emitted and run in Roc against their
   verdicts.
-- `safari/wasm/frame_hash.mjs`: every frame's bytes and readouts over a fixed
+- `wasm/frame_hash.mjs`: every frame's bytes and readouts over a fixed
   ride, so a refactor of the shared code is held to identical frames on the web.
-- `safari/roc/RasterFrame.roc` with `ray/pixels_png.mjs`: one frame painted by
+- `movies/safari/RasterFrame.roc` with `ray/pixels_png.mjs`: one frame painted by
   Raster, as a PNG.
-- `safari/roc/ShapesFrame.roc`: a frame painted with the commands' own
+- `movies/safari/ShapesFrame.roc`: a frame painted with the commands' own
   polygons and with Shapes' pieces; 0 of 576,000 pixels differ.

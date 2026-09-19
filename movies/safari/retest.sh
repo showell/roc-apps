@@ -4,22 +4,22 @@
 #   safari/retest.sh
 #
 # Emits every unit into scratch (fast), compares each module against the
-# tracked safari/roc/, and runs, through emitted.sh, exactly the specs whose
+# tracked movies/safari/, and runs, through emitted.sh, exactly the specs whose
 # app or imported modules differ. Nothing changed means nothing runs, and
-# says so. A full sweep is still the gate before a commit of safari/roc.
+# says so. A full sweep is still the gate before a commit of movies/safari.
 set -u
 # **RETIRED 2026-09-18, Steve's call: "the Roc program is the new program going
 # forward. We should never re-emit Roc from Codex at this point. That's no
 # longer worth the trouble."**
 #
-# safari/roc/*.roc is SOURCE now, hand-edited like any other Roc. This script
+# movies/safari/*.roc is SOURCE now, hand-edited like any other Roc. This script
 # would re-emit and compare, which at best undoes that work and at
 # worst deletes it: the line further down removes every file whose header still
 # says it was emitted. It refuses rather than explaining itself afterwards.
 #
 # The Codex program is still the Codex program, and safari-codex still emits
 # the zig, the wasm and the C#. It just does not emit this any more.
-echo "retired: safari/roc is the program now, not an emission. See the comment in $0." >&2
+echo "retired: movies/safari is the program now, not an emission. See the comment in $0." >&2
 exit 2
 
 
@@ -45,7 +45,7 @@ for u in "$UNITS"/*Spec.codex; do
     done
     [ -z "$differs" ] || { echo "CHANGED $n:$differs"; to_run+=("$n"); }
 done
-if [ ${#to_run[@]} -eq 0 ]; then echo "nothing changed against safari/roc; nothing to run"; exit 0; fi
+if [ ${#to_run[@]} -eq 0 ]; then echo "nothing changed against movies/safari; nothing to run"; exit 0; fi
 echo "${#changed[@]} module(s) changed; running ${#to_run[@]} unit(s)"
 status=0
 for n in "${to_run[@]}"; do

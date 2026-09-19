@@ -1,7 +1,8 @@
 #!/bin/bash
 # THE SIGN-OFF: move what the dev channel shows into staging, one app at a time.
 #
-#   site/publish.sh safari      an app: safari, basic, machine, framebuffer, gpu, games
+#   site/publish.sh safari      an app: safari, basic, machine, framebuffer, gpu, games,
+#                               or a movie: capture_plot, particles, halloween
 #   site/publish.sh home        the landing page and shared/
 #
 # An app: copies ~/build/roc-apps/next/<app>/ (what <app>'s build.sh last wrote,
@@ -33,14 +34,18 @@ if [ "$app" = home ]; then
     paths=("$LIVE/index.html" "$LIVE/shared")
     what="the landing page"
 else
-    [ -d "$REPO/$app" ] || { echo "$app is not an app in $REPO"; exit 2; }
+    # An app is a directory of this repository -- at the top for the older
+    # ones, under movies/ for a movie.
+    src="$app"
+    [ -d "$REPO/$src" ] || src="movies/$app"
+    [ -d "$REPO/$src" ] || { echo "$app is neither an app nor a movie in $REPO"; exit 2; }
     [ -d "$NEXT/$app" ] || { echo "no dev build at $NEXT/$app; run $app's build.sh first"; exit 2; }
     rm -rf "$LIVE/$app"
     cp -r "$NEXT/$app" "$LIVE/$app"
     {
         echo "published $(date -u +%Y-%m-%dT%H:%M:%SZ)"
         echo "roc $("$ROC" version | sed 's/Roc compiler version //')"
-        echo "roc-apps $(git -C "$REPO" rev-parse --short HEAD)$(git -C "$REPO" diff --quiet HEAD -- "$app" || echo ' +uncommitted')"
+        echo "roc-apps $(git -C "$REPO" rev-parse --short HEAD)$(git -C "$REPO" diff --quiet HEAD -- "$src" || echo ' +uncommitted')"
         echo "rocemit $(git -C "$ROCEMIT_REPO" rev-parse --short HEAD)$(git -C "$ROCEMIT_REPO" diff --quiet HEAD || echo ' +uncommitted')"
         echo "cobblestone $(git -C "$COBBLESTONE" rev-parse --short HEAD) $(git -C "$COBBLESTONE" branch --show-current)"
         (cd "$LIVE/$app" && find . -name '*.wasm' | sort | while read -r w; do

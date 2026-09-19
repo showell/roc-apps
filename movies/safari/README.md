@@ -53,9 +53,9 @@ there is a change in what the emitter says.
 
 ## The loop
 
-    safari/emitted.sh              # 54 units, ~10-27 s; the gate before a commit of safari/roc
+    movies/safari/emitted.sh              # 54 units, ~10-27 s; the gate before a commit of movies/safari
     safari/retest.sh               # after a rocemit change: only what changed
-    safari/build.sh                # host + app + page -> dev, http://<box>:9210/safari/, ~15 s
-    node safari/wasm/drive_smoke.mjs ~/build/roc-apps/next/safari/safari.wasm 120   # frame bytes, stages, ms per frame
-    node safari/wasm/frame_hash.mjs ~/build/roc-apps/next/safari/safari.wasm        # every frame's hash, and their digest
+    movies/build.sh safari                # host + app + page -> dev, http://<box>:9210/safari/, ~15 s
+    node wasm/drive_smoke.mjs ~/build/roc-apps/next/safari/safari.wasm 120   # frame bytes, stages, ms per frame
+    node wasm/frame_hash.mjs ~/build/roc-apps/next/safari/safari.wasm        # every frame's hash, and their digest
     site/publish.sh safari         # when dev looks right: staging, http://<box>:9200/safari/

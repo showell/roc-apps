@@ -5,7 +5,7 @@
 //! List until the next view; bufPtr is where its words are.
 //!
 //! The runtime scaffolding (allocator, RocOps, no imports) is the safari
-//! host's, safari/wasm/platform/host.zig, which explains it.
+//! host's, wasm/platform/host.zig, which explains it.
 
 const std = @import("std");
 const builtins = @import("builtins");

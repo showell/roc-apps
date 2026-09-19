@@ -2,7 +2,7 @@
 # gradients, its geometry in scene coordinates. Raster shades one on the CPU,
 # BrushGlsl on the GPU and blitter.js on a canvas, all from what is here.
 #
-# **EVERY MOVIE'S**, which is why it sits in movie/ rather than in safari/roc.
+# **EVERY MOVIE'S**, which is why it sits in movie/ rather than in movies/safari.
 # Reading a brush out of a Codex draw command is Safari's business and is in
 # SafariBrush.roc.
 #

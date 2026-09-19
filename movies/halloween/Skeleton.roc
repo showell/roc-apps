@@ -1,4 +1,4 @@
-# Skeleton -- one skeleton, dancing, forever.
+# Skeleton -- a dancing skeleton, as a figure anyone can place.
 #
 # After The Skeleton Dance (1929), which is in the public domain: Disney's
 # first Silly Symphony, white bones on black, no dialogue, and a figure built
@@ -6,53 +6,20 @@
 # a thick line, a femur is the quad `Shapes.line` builds. Nothing is traced
 # from it; this is a skeleton doing a jig, which is what that short is.
 #
-# **IT IS THE THIRD KIND OF MOVIE.** Safari and particles simulate forwards and
-# cannot say what frame 900 looks like without walking there; capture_plot is a
-# function of its clock. This one is a function of its PHASE -- the loop is
-# sixty frames and frame 900 is frame 60 is frame 0 -- so it can be stepped
-# either way, and a movie that loops needs no history to go back.
+# **IT WAS A MOVIE OF ITS OWN AND IS NOW A PROP.** Two skeletons dancing on a
+# black rectangle made the point that a movie can be a function of its PHASE
+# rather than of a simulation; Halloween lines six of them up a walkway, which
+# makes the point better, so the standalone one is gone and what is left is
+# the figure.
 #
 # A pose is angles. Every joint below is an angle from straight down, positive
 # to the right, and a bone is where two of them meet; the dance is four sine
 # waves on one phase.
-import Movie
 import Shapes
 import Brush
 import Trig
 
 Skeleton :: [].{
-	width : F64
-	width = 640.0
-	height : F64
-	height = 480.0
-
-	# Sixty frames to the loop, so the phase closes exactly.
-	period : I64
-	period = 60
-
-	Model : { tick : I64 }
-
-	movie : Movie.Movie(Skeleton.Model)
-	movie = {
-		size: { width: width, height: height },
-		init: { tick: 0 },
-		advance: |m| { tick: wrap(m.tick + 1) },
-		# **IT LOOPS, SO IT REMEMBERS NOTHING.** Back is a step the other way.
-		back: |m| { tick: wrap(m.tick - 1) },
-		# A quarter of the way round.
-		skip: |m| { tick: wrap(m.tick + period // 4) },
-		frame: |m| { shapes: shapes(m), roll: 0.0 },
-		clock: |m| I64.to_f64(m.tick),
-		title: "The Skeleton Dance",
-		stem: "skeleton",
-	}
-
-	wrap : I64 -> I64
-	wrap = |t| {
-		r = t - I64.div_trunc_by(t, period) * period
-		if r < 0 { r + period } else { r }
-	}
-
 	tau : F64
 	tau = 6.283185307179586
 
@@ -71,19 +38,6 @@ Skeleton :: [].{
 
 	joint : F64, F64, F64 -> Shapes.Shape
 	joint = |x, y, r| Disc({ x: x, y: y, r: r, fill: Flat(bone), clip: Anywhere })
-
-	# **TWO OF THEM, HALF A LOOP APART.** One figure is a function of a phase
-	# and a place, so a second costs a call: while one is swaying right with
-	# its left arm up, the other is doing the opposite, and the pair reads as a
-	# dance rather than as one puppet.
-	shapes : Skeleton.Model -> List(Shapes.Shape)
-	shapes = |m| {
-		t = I64.to_f64(m.tick) / I64.to_f64(period) * tau
-		var $all = [Rect({ x: 0.0, y: 0.0, w: width, h: height, fill: Flat(night) })]
-		$all = List.concat($all, figure(t, width * 0.32, 392.0, 1.0))
-		$all = List.concat($all, figure(t + tau / 2.0, width * 0.68, 392.0, 1.0))
-		$all
-	}
 
 	# **A FIGURE IS A PHASE, A PLACE AND A SIZE.** It was pixels at a fixed
 	# spot on a fixed screen until a scene wanted six of them at six distances;

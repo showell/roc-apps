@@ -2,7 +2,7 @@
 // Run a Roc wasm module from Node the way a browser would: satisfy its `env`
 // imports and call its exported entry.
 //
-//   safari/wasm/run_wasm.mjs <module.wasm> [entry]        entry defaults to wasm_main
+//   wasm/run_wasm.mjs <module.wasm> [entry]        entry defaults to wasm_main
 //
 // Roc's test host exports `wasm_main`, which answers a pointer to a string,
 // and `wasm_result_len`, its length. Anything the module imports from `env`

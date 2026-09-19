@@ -5,7 +5,7 @@
 # boxed pointer and exposes the readouts web/blitter.js binds; the draw buffer
 # is packed here, word for word what poc/drive_shim.zig in safari-codex wrote:
 # tag, colour, count, then f32 bit patterns.
-app [Model, program] { pf: platform "../wasm/platform/main.roc" }
+app [Model, program] { pf: platform "../../wasm/platform/main.roc" }
 
 import Safari
 import SafariRide

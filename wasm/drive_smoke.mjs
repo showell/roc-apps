@@ -3,7 +3,7 @@
 // a canvas: render, decode the command stream's tags, read the readouts, and
 // time a run of steps.
 //
-//   safari/wasm/drive_smoke.mjs <safari.wasm> [steps]     steps defaults to 60
+//   wasm/drive_smoke.mjs <safari.wasm> [steps]     steps defaults to 60
 import { readFileSync } from "node:fs";
 
 const [path, stepsArg = "60"] = process.argv.slice(2);

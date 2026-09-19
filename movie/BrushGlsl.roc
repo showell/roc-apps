@@ -3,7 +3,7 @@
 # Hand-written, beside Brush because it belongs to Brush: the six fills a
 # command can name, shaded on the scene position, for a platform whose fragment
 # shader can do the arithmetic itself. **Nothing here belongs to any one
-# movie** -- it used to live in ray/apps/safari/main.roc, where a player that
+# movie** -- it used to live in movies/safari/main.roc, where a player that
 # knows nothing else about a movie carried sixty lines of its paint.
 #
 # `Brush.shade` is the same arithmetic on the CPU, case for case; the names

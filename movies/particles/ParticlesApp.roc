@@ -3,8 +3,8 @@
 #
 # Hand-written, and almost nothing: the platform asks for a model it can step
 # and a frame it can draw, and `Particles.movie` is both. Compare
-# safari/roc/SafariApp.roc, which is the same file for the other movie.
-app [Model, program] { pf: platform "../../safari/wasm/platform/main.roc" }
+# movies/safari/SafariApp.roc, which is the same file for the other movie.
+app [Model, program] { pf: platform "../../wasm/platform/main.roc" }
 
 import Particles
 import ShapeWire

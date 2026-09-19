@@ -5,7 +5,7 @@
 // steps between frames, then steps back three times and draws again. One
 // line per frame, then the digest of them all (FNV-1a, 32 bits).
 //
-//   safari/wasm/frame_hash.mjs <safari.wasm> [frames] [stride]    defaults 60 and 100
+//   wasm/frame_hash.mjs <safari.wasm> [frames] [stride]    defaults 60 and 100
 import { readFileSync } from "node:fs";
 
 const [path, framesArg = "60", strideArg = "100"] = process.argv.slice(2);

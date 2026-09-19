@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Turn safari/roc/RasterFrame's output into a PNG: a `hash` line, `<width>
+// Turn movies/safari/RasterFrame's output into a PNG: a `hash` line, `<width>
 // <height>`, then every pixel as six hex digits (0xRRGGBB, row-major). Prints
 // the hash line and writes the image.
 //

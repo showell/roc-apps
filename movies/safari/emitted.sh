@@ -1,16 +1,16 @@
 #!/bin/bash
 # Every safari spec through rocemit, then roc, against the Codex verdict.
 #
-#   safari/emitted.sh             all 54 units; rewrites safari/roc/ whole
-#   safari/emitted.sh ViewYaw     one; rewrites only what that unit emits
-#   JOBS=1 safari/emitted.sh      serial (the default runs two units at a time)
+#   movies/safari/emitted.sh             all 54 units; rewrites movies/safari/ whole
+#   movies/safari/emitted.sh ViewYaw     one; rewrites only what that unit emits
+#   JOBS=1 movies/safari/emitted.sh      serial (the default runs two units at a time)
 #
 # The units are safari-codex's `units/<Spec>.codex` (the resolved program) and
 # `units/<Spec>.expected` (the verdict the Rust interpreter froze). rocemit is
 # rust-codex-compiler's Roc emitter: ONE TYPE MODULE PER CODEX CHAPTER, whole,
 # as written, plus the spec's app.
 #
-# THE ROC IS TRACKED. `safari/roc/` is generated and committed -- the one
+# THE ROC IS TRACKED. `movies/safari/` is generated and committed -- the one
 # exception to "outputs live outside the repo", because the Roc files are the
 # point: the chapter modules are the code the screensaver will import, and the
 # spec apps grade them. Every unit re-emits the chapters it reaches, and a
@@ -26,14 +26,14 @@ set -u
 # forward. We should never re-emit Roc from Codex at this point. That's no
 # longer worth the trouble."**
 #
-# safari/roc/*.roc is SOURCE now, hand-edited like any other Roc. This script
+# movies/safari/*.roc is SOURCE now, hand-edited like any other Roc. This script
 # would emit the Roc from Codex, which at best undoes that work and at
 # worst deletes it: the line further down removes every file whose header still
 # says it was emitted. It refuses rather than explaining itself afterwards.
 #
 # The Codex program is still the Codex program, and safari-codex still emits
 # the zig, the wasm and the C#. It just does not emit this any more.
-echo "retired: safari/roc is the program now, not an emission. See the comment in $0." >&2
+echo "retired: movies/safari is the program now, not an emission. See the comment in $0." >&2
 exit 2
 
 
@@ -56,7 +56,7 @@ mkdir -p "$ROC_DIR"
 declare -A wrote
 pass=0; fail=0; refused=0
 units=()
-# PHASE ONE, serial: emit every unit, check chapter identity, fill safari/roc.
+# PHASE ONE, serial: emit every unit, check chapter identity, fill movies/safari.
 for u in "$UNITS"/*Spec.codex; do
     n="$(basename "$u" .codex)"
     [ $# -eq 0 ] || [ "$n" = "$1Spec" ] || continue

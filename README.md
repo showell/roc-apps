@@ -9,8 +9,10 @@ there; the others are mapped below.
 
 | where | what | map |
 |---|---|---|
-| `safari/` | our driving screensaver: its Codex chapters emitted as Roc, graded by their specs, run in the browser | `safari/README.md` |
-| `ray/` | apps as native programs on roc-ray (raylib), Safari among them, and the Windows and macOS builds | `ray/README.md` |
+| `movies/` | the four movies, each a directory that builds to a page or to a native program: Safari (Codex chapters emitted as Roc, graded by their specs), capture_plot, particles, halloween | `movies/README.md`, `movies/safari/README.md` |
+| `movie/` | the vocabulary every movie shares: `Movie` (the type a player is a function of), `Shapes`, `Brush`, `View`, `Font` | `movies/README.md` |
+| `wasm/`, `web/` | what a movie's page is made of: the wasm platform and host, the blitter that paints the canvas, and the check that runs a page the way a browser would | `movies/README.md` |
+| `ray/` | movies as native programs on roc-ray (raylib), and the Windows and macOS builds | `ray/README.md` |
 | `basic/` | a BASIC interpreter written by hand in Roc, a web page that runs it, and the corpora that grade it | `basic/README.md` |
 | `gpu/` | Cobblestone's WGSL kernels, on the CPU | below |
 | `games/` | Damian's classic games, with the browser as the platform | below |
@@ -41,7 +43,7 @@ The ports announced before the site redirect: :9201 to prod's `safari/`;
 | where | what | written by |
 |---|---|---|
 | `ops/` | `Caddyfile` and `roc-site.service`: one Caddy serving the site and redirecting the ports announced before it; `install.sh` | hand |
-| `site/web/index.html` | the landing page: Finished, In progress, and the date each app on the channel was published | hand |
+| `site/web/index.html` | the landing page: Finished, Other movies, In progress, and the date each app on the channel was published | hand |
 | `site/web/shared/home.js` | the link home, and the banner on dev (whose root alone has a `channel` file); every page loads it with one relative line | hand |
 | `site/build.sh` | the landing page, `shared/` and the `channel` file into dev | hand |
 | `site/publish.sh` | THE SIGN-OFF: one app's dev directory over `site/live/<app>/` whole, with a `PROVENANCE`, committed and pushed; `site/publish.sh home` for the landing page and `shared/` | hand |
@@ -174,7 +176,7 @@ names the rest. Nothing we ship does this.
 
 ## The Roc is tracked; everything else the tools write is not
 
-Each app's emitted Roc (`safari/roc/`, `gpu/roc/`, `games/roc/`) is generated
+Each app's emitted Roc (`movies/safari/`, `gpu/roc/`, `games/roc/`) is generated
 and committed, because those files are the point: a diff there is a change in
 what the emitter says, reviewed like any other. What staging serves,
 `site/live/`, is committed too, each app with its provenance, so a clone has

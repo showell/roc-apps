@@ -1,4 +1,4 @@
-// The safari wasm host: platform/host.zig compiled to a wasm32-freestanding
+// The movies' wasm host: platform/host.zig compiled to a wasm32-freestanding
 // object against roc's own `builtins` and `host_alloc` modules, taken from the
 // roc checkout (-Droc=<path>, default ~/showell_repos/roc). The module graph is
 // the one roc's build.zig gives the same host in its tests (test/wasm and
@@ -9,7 +9,7 @@ const std = @import("std");
 pub fn build(b: *std.Build) void {
     // The checkouts are siblings under showell_repos.
     const roc = b.option([]const u8, "roc", "the roc-lang/roc checkout") orelse
-        b.pathFromRoot("../../../roc");
+        b.pathFromRoot("../../roc");
     const optimize = b.standardOptimizeOption(.{ .preferred_optimize_mode = .ReleaseFast });
     const target = b.resolveTargetQuery(.{ .cpu_arch = .wasm32, .os_tag = .freestanding, .abi = .none });
 

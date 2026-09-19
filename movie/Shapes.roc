@@ -3,7 +3,7 @@
 # before the camera roll.
 #
 # **EVERY MOVIE'S.** Building Safari's own frame -- its sky, its grass, its sun
-# and its Codex draw commands -- is in safari/roc/SafariShapes.roc; what is
+# and its Codex draw commands -- is in movies/safari/SafariShapes.roc; what is
 # here is the vocabulary three movies now share.
 #
 # Hand-written, for roc-ray, where roc-ray draws the frame and Roc does not
