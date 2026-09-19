@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>particles — four thousand of them</title>
+</head>
+<body>
+<!-- roc-ray's own examples/particles, as a movie. Four thousand discs a
+     frame, every one of them over the wire. The same blitter as the others. -->
+<script>
+window.SHOW = {
+  wasm: 'particles.wasm',
+  scenes: 1,
+  hint: 'SPACE pause/resume · ↑ step · J skip a second · D debug overlay',
+  loading: 'Four thousand sprites, and a fountain to put them in…',
+};
+</script>
+<script src="blitter.js"></script>
+<script src="../shared/home.js"></script>
+</body>
+</html>
