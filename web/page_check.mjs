@@ -10,7 +10,7 @@
 // keeps drawing.
 //
 //   web/page_check.mjs <movie>            one of the built pages
-//   FRAMES=1400 web/page_check.mjs halloween     the whole of a long movie
+//   FRAMES=1500 web/page_check.mjs halloween     the whole of a long movie
 //
 // Thirty frames is half a second, which is enough to say the page runs. A
 // movie that turns round and walks back needs the rest of itself run too:
