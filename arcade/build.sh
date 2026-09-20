@@ -1,6 +1,6 @@
 #!/bin/bash
 # **A GAME'S PAGE.** Builds <game>_web.roc into the dev channel, beside the
-# arcade's blitter and the game's page.
+# arcade's game runner and the game's page.
 #
 #   arcade/build.sh snake
 #
@@ -30,7 +30,7 @@ rm -f "$OUT/$name.wasm"
 (cd "$HERE" && "$ROC" build "${name}_web.roc" --target=wasm32 --opt=speed --output="$OUT/$name.wasm") > "$LOG" 2>&1 || true
 if grep -q "✗" "$LOG" || [ ! -s "$OUT/$name.wasm" ]; then cat "$LOG"; echo "build failed"; exit 1; fi
 
-cp "$HERE/web/blitter.js" "$OUT/"
+cp "$HERE/web/game_runner.js" "$OUT/"
 cp "$HERE/$name/page.html" "$OUT/index.html"
 ls -la "$OUT"
 echo "dev: http://143.244.172.148:9210/$name/"

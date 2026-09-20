@@ -1,7 +1,7 @@
 # GameRunner -- the whole of running a game on roc-ray, for any game.
 #
 # arcade/<name>/main.roc names a game and hands it here. What is in this file
-# is what web/blitter.js does on a page: the window, the clock, the keyboard,
+# is what web/game_runner.js does on a page: the window, the clock, the keyboard,
 # and the painting. Neither knows what game it is running.
 #
 # **THE KEYBOARD IS THE POINT OF THE SEAM.** roc-ray hands the host's own

@@ -1,5 +1,11 @@
-// blitter — the browser half of the arcade. It loads a game's wasm, runs the
-// event loop, and paints the shapes the game answers with.
+// game_runner — the browser half of the arcade, and the twin of
+// native/GameRunner.roc. It loads a game's wasm, runs the event loop, and
+// paints the shapes the game answers with.
+//
+// It was called blitter.js, which named a third of what it does: the canvas
+// backend blits, but this also reads the wire, owns the keyboard and shows the
+// speaker. "Host" would have been worse -- web/platform/host.zig is a host in
+// Roc's own sense and is a different thing.
 //
 // **THE GAME IS THE SAME ROC THAT RUNS NATIVELY.** What differs is only what is
 // in this file: the keyboard, the clock, and the speaker. roc-ray's own player
@@ -14,7 +20,7 @@
 //      ShapeWire.roc's layout read back.
 //   3. THE PAGE. The loop, the keys, and the sound widget.
 //
-// Everything above section 4 is shared with the movies' blitter, because
+// Everything above section 4 is a copy of the movies' player, because
 // filling a polygon is the same job either way; everything below it is the
 // arcade's own, because a movie has no keyboard and a game is not scrubbed.
 
@@ -423,5 +429,5 @@ async function main(show) {
 }
 
 const show = window.SHOW;
-if (!show) throw new Error('blitter: the page did not set window.SHOW');
+if (!show) throw new Error('game_runner: the page did not set window.SHOW');
 main(show);

@@ -15,7 +15,7 @@
 
 Keys :: [].{
 	# The keys a game here can ask about. A tick sends two bit sets, so the
-	# list is short on purpose: adding one is a bit and a line in blitter.js.
+	# list is short on purpose: adding one is a bit and a line in game_runner.js.
 	Key := [KeyUp, KeyDown, KeyLeft, KeyRight, KeyW, KeyA, KeyS, KeyD, KeySpace, KeyEscape, KeyEnter, KeyP, KeyR].{
 		is_eq : _
 	}

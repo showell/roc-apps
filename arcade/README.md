@@ -16,7 +16,7 @@ game is driven.
 | `snake_native.roc` | the app roc-ray runs — uses `native/GameRunner` |
 | `snake/` | **the game**, and everything that is only about it, its page included. Neither app's half; it cannot tell which is running |
 | `lib/` | a package: `Game`, `Keys`, `Random`, `Shapes`, `Brush`, `Font`, and the two wire edges |
-| `web/` | the page's end: the wasm platform and host, `blitter.js`, `page_check.mjs` |
+| `web/` | the page's end: the wasm platform and host, `game_runner.js`, `page_check.mjs` |
 | `native/` | roc-ray's end: `GameRunner.roc` |
 
 **Why the two app files sit at the top rather than beside the game.** An app
@@ -40,7 +40,7 @@ its way into a build.
 That is what the shape of `lib/Keys.roc` and `lib/Random.roc` is for.
 `Keys.Snapshot` is built like roc-ray's `Devices.Snapshot`, so a game's
 `read_controls` compiles against either: `GameRunner` converts the host's
-snapshot into one and `blitter.js` builds one from keydown and keyup. `Random`
+snapshot into one and `game_runner.js` builds one from keydown and keyup. `Random`
 offers roc-ray's surface because `rr.Random` re-exports a package and the wasm
 build has none. Without those two, `snake/Board.roc` would need a different
 import line per platform.

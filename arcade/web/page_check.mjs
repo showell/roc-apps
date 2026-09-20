@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // **DOES THE PAGE ACTUALLY RUN?** Node checks the wasm and never touches
-// blitter.js, which is how a reference error in it reached the browser: the
+// game_runner.js, which is how a reference error in it reached the browser: the
 // canvas was sized from a module that had not been bound yet, and every page
 // threw before drawing a pixel.
 //
-// So this runs blitter.js the way a browser would, against a canvas that
+// So this runs game_runner.js the way a browser would, against a canvas that
 // records rather than paints and the real wasm. It cannot say whether a frame
 // LOOKS right -- nothing here can -- but it says the page runs, draws, and
 // keeps drawing.
@@ -23,7 +23,7 @@ const name = process.argv[2];
 if (!name) { console.error("usage: page_check.mjs <movie>"); process.exit(2); }
 const dir = `${process.env.HOME}/build/roc-apps/next/${name}`;
 const page = readFileSync(`${dir}/index.html`, "utf8");
-const blitter = readFileSync(`${dir}/blitter.js`, "utf8");
+const runner = readFileSync(`${dir}/game_runner.js`, "utf8");
 
 // The show the page declares, taken from the page rather than assumed.
 const showSrc = page.match(/window\.SHOW\s*=\s*(\{[\s\S]*?\});/);
@@ -54,7 +54,7 @@ const document_ = {
 
 const limit = Number(process.env.FRAMES ?? 30);
 let frames = 0;
-// **THE CLOCK IS VIRTUAL, OR THE PAGE TAKES NO STEPS.** The blitter paces the
+// **THE CLOCK IS VIRTUAL, OR THE PAGE TAKES NO STEPS.** The runner paces the
 // movie by elapsed time now, and setImmediate fires far faster than a frame is
 // due, so against the real clock this ran the page without ever advancing the
 // movie. One animation frame here is one frame of the movie's own time.
@@ -84,7 +84,7 @@ sandbox.WebAssembly.instantiateStreaming = async () => {
 
 vm.createContext(sandbox);
 vm.runInContext(`window.SHOW = ${showSrc[1]};`, sandbox);
-vm.runInContext(blitter, sandbox, { filename: "blitter.js" });
+vm.runInContext(runner, sandbox, { filename: "game_runner.js" });
 
 const until = Date.now() + 60000;
 while (frames <= limit && Date.now() < until) await new Promise((r) => setTimeout(r, 20));

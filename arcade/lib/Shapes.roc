@@ -13,7 +13,7 @@
 # whose signed area is positive, and its triangle passes the points through as
 # given.
 #
-# The backdrop is the blitter's: the sky's linear gradient, the grass, and the
+# The backdrop is the runner's: the sky's linear gradient, the grass, and the
 # sun's glow and disc clipped to the sky, the glow as a rectangle that is the
 # clip and the disc carrying the same rectangle as its own.
 import Brush

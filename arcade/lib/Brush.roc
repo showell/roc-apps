@@ -1,14 +1,14 @@
 # Brush -- the paint a shape is filled with: a flat colour or one of five
 # gradients, its geometry in scene coordinates. Raster shades one on the CPU,
-# BrushGlsl on the GPU and blitter.js on a canvas, all from what is here.
+# BrushGlsl on the GPU and game_runner.js on a canvas, all from what is here.
 #
 # **EVERY MOVIE'S**, which is why it sits in movie/ rather than in movies/safari.
 # Reading a brush out of a Codex draw command is Safari's business and is in
 # SafariBrush.roc.
 #
-# Hand-written. The tags are blitter.js's, and so is what they mean: gradients
+# Hand-written. The tags are game_runner.js's, and so is what they mean: gradients
 # mix unpremultiplied, as the canvas specification says, and an offset outside
-# [0, 1] is clamped as the blitter clamps it.
+# [0, 1] is clamped as the runner clamps it.
 
 Brush :: [].{
 	# Red, green and blue in 0..255, alpha in 0..1.

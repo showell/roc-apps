@@ -1,4 +1,4 @@
-//! The safari wasm host: the sixteen exports web/blitter.js binds, over a Roc
+//! The arcade wasm host: the nine exports web/game_runner.js binds, over a Roc
 //! model the host holds as one boxed pointer.
 //!
 //! Where poc/drive_shim.zig in safari-codex had to keep the rider, the truck,
@@ -15,7 +15,7 @@
 //! decrement on the way out restores it. `render` returns a List the host
 //! owns until the next frame, when it is released.
 //!
-//! The draw buffer the blitter reads is the List's own bytes: tag, colour,
+//! The draw buffer the runner reads is the List's own bytes: tag, colour,
 //! count and f32 bit patterns as 32-bit words, packed in Roc (SafariApp.roc),
 //! exactly the stream the zig shim wrote.
 
@@ -34,7 +34,7 @@ extern fn roc_width(model: ?[*]u8) callconv(.c) u32;
 extern fn roc_height(model: ?[*]u8) callconv(.c) u32;
 extern fn roc_fps(model: ?[*]u8) callconv(.c) u32;
 
-// NO IMPORTS. web/blitter.js instantiates the module with an empty import
+// NO IMPORTS. web/game_runner.js instantiates the module with an empty import
 // object, as it does the Codex-built one, so a panic is a wasm trap -- the
 // page sees a RuntimeError -- and dbg output goes nowhere.
 const env = struct {
