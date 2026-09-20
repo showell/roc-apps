@@ -10,7 +10,11 @@ game is driven.
     KEYS=3:Space DRAG=200,100,200,500 node arcade/web/page_check.mjs pong
     node arcade/web/lens_check.mjs      the camera, on both ends
 
-Five of them: `snake`, `pong`, `breakout`, `camera`, `workshop`.
+Six of them: `snake`, `pong`, `breakout`, `camera`, `workshop`, `halloween`.
+
+**`halloween` shares a dev URL with the movie it came from**, since both build
+into `next/<name>`. Whichever was built last is what `:9210/halloween/` serves.
+`site/publish.sh` still only knows `movies/`, so prod is untouched either way.
 
 ## Where the splits are
 
@@ -68,6 +72,39 @@ roc-ray as `../../roc-ray`, a sibling of roc-apps.
         <Name>Game.roc    the Game value: the keyboard, the clock, the sounds
         page.html         the page
         …                 the rules and the drawing
+
+## Halloween, moved
+
+Not a port from upstream: roc-apps' own Halloween movie, moved out of
+`movies/halloween` and run by the arcade's runners instead of a player of its
+own. Its twelve modules came across with their import lines changed and one
+field dropped -- `Brush.Linear` here derives `len2` from `dx` and `dy` rather
+than being told it.
+
+**A MOVIE IS A GAME THAT DOES NOT READ ITS KEYBOARD.** `Movie` and `Game` ask
+for the same size, rate, init, frame and title. The six fields `Movie` has
+besides are all things a PLAYER did rather than things a movie is:
+
+| `Movie` field | what it is here |
+|---|---|
+| `back`, `skip` | scrubbing: Left, Right and Enter |
+| `scene`, `scenes` | somewhere to skip to; Halloween has one scene and never needed them |
+| `clock` | a number for naming a screenshot, which no runner here takes |
+| `roll` | a camera turned, which is `Camera.with_rotation` and a `View` mark now |
+
+So the six became five keys and a `paused` flag in `HalloweenGame.roc`, and
+the scrubbing that each player had to implement is written once, in the movie,
+and runs on both ends without either knowing a movie from a game.
+
+**It is the same movie to the byte.** Neither wire ever carried `len2`, and
+this one uses no blend, view or image mark, so the two wasm modules pack
+identical frames: sampled every 75 ticks across the whole 900-tick walk, the
+movie's `renderFrame`/`bufPtr` and the arcade's `computeFrame`/`frameAt` answer
+the same bytes, 13360 down to 5104 and back.
+
+What did not move: `HalloweenProof.roc`, which paints into a buffer and prints
+coarse cells for a box with no screen. It imports safari's `Raster`, and
+dragging that in would be a second copy of safari.
 
 ## Pixel Workshop, ported
 
