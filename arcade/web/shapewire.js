@@ -10,7 +10,7 @@
 // ShapeWire.roc's layout, read back. Decoding is pure: it walks the words and
 // answers plain descriptors, and nothing here touches a canvas.
 
-const SHAPE = { POLY: 0, DISC: 1, RECT: 2, BLEND: 3 };
+const SHAPE = { POLY: 0, DISC: 1, RECT: 2, BLEND: 3, VIEW: 4 };
 const FILL = { FLAT: 0, SPAN: 1, RADIAL: 2, LINEAR: 3, ELLIPSE: 4, GLOW: 5 };
 
 const channel = (byte) => Math.max(0, Math.min(255, Math.round(byte)));
@@ -43,6 +43,13 @@ function readFill(words, floats, at) {
 function readShape(words, floats, at) {
   const kind = words[at];
   if (kind === SHAPE.BLEND) return [{ kind, additive: words[at + 1] === 1 }, at + 2];
+  // A lens is a word saying which, and the camera's four settings if it is
+  // not the screen. `null` is the screen, which is where a frame starts.
+  if (kind === SHAPE.VIEW) {
+    if (!words[at + 1]) return [{ kind, lens: null }, at + 2];
+    const [lens, next] = readFloats(floats, at + 2, 6);
+    return [{ kind, lens }, next];
+  }
 
   const [fill, afterFill] = readFill(words, floats, at + 1);
   if (kind === SHAPE.POLY) {
@@ -156,11 +163,28 @@ function fillShape(ctx, shape) {
   else { ctx.fillStyle = paint; ctx.fill(); }
 }
 
+// Where the shapes after a view mark are: the camera written as the matrix a
+// canvas takes. `screen = zoom · R(rotation) · (world − target) + offset`, which
+// is what Camera.world_to_screen does in Roc and BeginMode2D does in raylib.
+function setLens(ctx, lens) {
+  if (!lens) { ctx.setTransform(1, 0, 0, 1, 0, 0); return; }
+  const [tx, ty, ox, oy, rotation, zoom] = lens;
+  const radians = (rotation * Math.PI) / 180;
+  const cos = Math.cos(radians) * zoom;
+  const sin = Math.sin(radians) * zoom;
+  ctx.setTransform(cos, sin, -sin, cos, ox - (tx * cos - ty * sin), oy - (tx * sin + ty * cos));
+}
+
 function paintFrame(ctx, shapes) {
   for (const shape of shapes) {
     // A blend mark is not a shape: it says how the shapes after it combine.
     if (shape.kind === SHAPE.BLEND) {
       ctx.globalCompositeOperation = shape.additive ? 'lighter' : 'source-over';
+      continue;
+    }
+    // Nor is a view mark: it says where they are.
+    if (shape.kind === SHAPE.VIEW) {
+      setLens(ctx, shape.lens);
       continue;
     }
     if (shape.clip) {
@@ -177,6 +201,9 @@ function paintFrame(ctx, shapes) {
     fillShape(ctx, shape);
   }
   ctx.globalCompositeOperation = 'source-over';
+  // A frame leaves the canvas as it found it, so whatever the page draws next
+  // — the speaker, the next frame — is in the page's own pixels.
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
 
 const ShapeWire = { decode: decodeFrame, paint: paintFrame };

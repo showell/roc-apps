@@ -97,7 +97,7 @@ GameRunner :: [].{
 	# look tautological because the tags are spelled the same on purpose; they
 	# are two different types, and this is the bridge.
 	watched_keys : List(Keys.Key)
-	watched_keys = [KeyUp, KeyDown, KeyLeft, KeyRight, KeyW, KeyA, KeyS, KeyD, KeySpace, KeyEnter, KeyP, KeyR]
+	watched_keys = [KeyUp, KeyDown, KeyLeft, KeyRight, KeyW, KeyA, KeyS, KeyD, KeySpace, KeyEnter, KeyP, KeyR, KeyQ, KeyE]
 
 	input_of : Devices.Snapshot -> Input.Snapshot
 	input_of = |devices| {
@@ -156,6 +156,8 @@ GameRunner :: [].{
 			KeyEnter => d.key_down(KeyEnter)
 			KeyP => d.key_down(KeyP)
 			KeyR => d.key_down(KeyR)
+			KeyQ => d.key_down(KeyQ)
+			KeyE => d.key_down(KeyE)
 		}
 
 	host_key_pressed : Devices.Snapshot, Keys.Key -> Bool
@@ -173,6 +175,8 @@ GameRunner :: [].{
 			KeyEnter => d.key_pressed(KeyEnter)
 			KeyP => d.key_pressed(KeyP)
 			KeyR => d.key_pressed(KeyR)
+			KeyQ => d.key_pressed(KeyQ)
+			KeyE => d.key_pressed(KeyE)
 		}
 
 	update! : Game.Game(model), GameRunner.Model(model), App.Input(GameRunner.Msg), App.Io => Try(GameRunner.Model(model), [Exit(I64), ..])
@@ -211,10 +215,8 @@ GameRunner :: [].{
 		shapes = Shapes.cut(the_frame(model.state))
 		frame.with_render_texture!(model.target, |big| {
 			big.clear!(Color.black)
-			big.with_camera!(camera(game.size, 0.0, supersample), |world| {
-				draw_frame!(model.gpu, world, shapes)
-				Ok({})
-			})
+			draw_runs!(model.gpu, game.size, big, shapes)
+			Ok({})
 		})?
 		frame.texture!({ texture: model.target.texture(), source: model.target.source(), dest: Math.rect(0, 0, F64.to_f32_wrap(game.size.width), F64.to_f32_wrap(game.size.height)), origin: Math.zero, rotation: 0, tint: Color.white })
 		Ok({})
@@ -234,21 +236,35 @@ GameRunner :: [].{
 		Camera.new({ target: { x: mid_x, y: mid_y }, offset: { x: mid_x * zoom, y: mid_y * zoom }, rotation, zoom })
 	}
 
-	# **A BLEND MARK CHANGES THE MODE UNTIL THE NEXT ONE.** raylib takes a
-	# blend as a scope rather than a flag, so the frame is walked in runs: the
-	# shapes between two marks are drawn together, inside that scope.
-	draw_frame! : GameRunner.Gpu, Draw.Frame, List(Shapes.Shape) => {}
-	draw_frame! = |gpu, frame, shapes| {
+	# **THE TWO MARKS ARE ONE PROBLEM.** A blend says how the shapes after it
+	# combine and a view says where they are, and raylib takes each as a scope
+	# rather than a flag. So the frame is walked once and cut into runs: the
+	# shapes between two marks share a lens and a mode and are drawn inside
+	# both scopes. A frame starts on the screen, painting over.
+	#
+	# Walking once is what keeps the two ends agreeing. A canvas holds its
+	# transform and its composite operation independently, so a view mark
+	# there does not disturb the blend; cutting the frame twice here, once per
+	# mark, would have reset the mode at every view boundary and lit a glow on
+	# a page that was flat natively.
+	draw_runs! : GameRunner.Gpu, { width : F64, height : F64 }, Draw.Frame, List(Shapes.Shape) => {}
+	draw_runs! = |gpu, size, frame, shapes| {
 		n = List.len(shapes)
 		var $run = List.with_capacity(n)
+		var $lens = Screen
 		var $mode = Over
 		var $k = 0
 		while $k < n {
 			match List.get(shapes, $k) ?? crash("shape out of range") {
 				Blend(next) => {
-					draw_under!(gpu, frame, $run, $mode)
+					draw_run!(gpu, size, frame, $run, $lens, $mode)
 					$run = List.with_capacity(n - $k)
 					$mode = next
+				}
+				View(next) => {
+					draw_run!(gpu, size, frame, $run, $lens, $mode)
+					$run = List.with_capacity(n - $k)
+					$lens = next
 				}
 				shape => {
 					$run = List.append($run, shape)
@@ -256,27 +272,56 @@ GameRunner :: [].{
 			}
 			$k = $k + 1
 		}
-		draw_under!(gpu, frame, $run, $mode)
+		draw_run!(gpu, size, frame, $run, $lens, $mode)
 	}
 
-	draw_under! : GameRunner.Gpu, Draw.Frame, List(Shapes.Shape), Shapes.Mode => {}
-	draw_under! = |gpu, frame, run, mode|
+	draw_run! : GameRunner.Gpu, { width : F64, height : F64 }, Draw.Frame, List(Shapes.Shape), Shapes.Lens, Shapes.Mode => {}
+	draw_run! = |gpu, size, frame, run, lens, mode|
 		if List.is_empty(run) {
 			{}
 		} else {
-			match mode {
-				Over => draw_all!(gpu, frame, run)
-				Add => {
-					scope = frame.with_blend_mode!(Draw.additive_blend, |lit| {
-						draw_all!(gpu, lit, run)
-						Ok({})
-					})
-					match scope {
-						Ok({}) => {}
-						Err(_) => crash("the runner: a blend scope was refused")
-					}
+			scope = frame.with_camera!(staged(size, lens), |seen| {
+				draw_under!(gpu, seen, run, mode)
+				Ok({})
+			})
+			match scope {
+				Ok({}) => {}
+				Err(_) => crash("the runner: a camera scope was refused")
+			}
+		}
+
+	draw_under! : GameRunner.Gpu, Draw.Frame, List(Shapes.Shape), Shapes.Mode => {}
+	draw_under! = |gpu, frame, run, mode|
+		match mode {
+			Over => draw_all!(gpu, frame, run)
+			Add => {
+				scope = frame.with_blend_mode!(Draw.additive_blend, |lit| {
+					draw_all!(gpu, lit, run)
+					Ok({})
+				})
+				match scope {
+					Ok({}) => {}
+					Err(_) => crash("the runner: a blend scope was refused")
 				}
 			}
+		}
+
+	# **THE GAME'S LENS, THROUGH THE ONE THE WHOLE FRAME IS DRAWN AT.** Every
+	# frame here is painted into a texture at twice the window and scaled back
+	# down, which is a camera of its own, and raylib's camera scopes do not
+	# nest. Both are similarity transforms, so their composition is one
+	# camera: scaling the offset and the zoom is the whole of it.
+	staged : { width : F64, height : F64 }, Shapes.Lens -> Camera.Camera2D
+	staged = |size, lens|
+		match lens {
+			Screen => camera(size, 0.0, supersample)
+			World(c) =>
+				Camera.new({
+					target: { x: F64.to_f32_wrap(c.target.x), y: F64.to_f32_wrap(c.target.y) },
+					offset: { x: F64.to_f32_wrap(c.offset.x) * supersample, y: F64.to_f32_wrap(c.offset.y) * supersample },
+					rotation: F64.to_f32_wrap(c.rotation),
+					zoom: F64.to_f32_wrap(c.zoom) * supersample,
+				})
 		}
 
 	draw_all! : GameRunner.Gpu, Draw.Frame, List(Shapes.Shape) => {}
@@ -299,6 +344,7 @@ GameRunner :: [].{
 			Rect(r) => with_fill!(gpu, frame, r.fill, Anywhere, |f, col| f.rectangle!({ x: F64.to_f32_wrap(r.x), y: F64.to_f32_wrap(r.y), width: F64.to_f32_wrap(r.w), height: F64.to_f32_wrap(r.h), style: Draw.filled(col) }))
 			# Runs are split before this, so a mark never reaches here.
 			Blend(_) => {}
+			View(_) => {}
 		}
 
 	# Draw with a flat colour directly, or through the shader: its uniforms set for

@@ -13,14 +13,15 @@
 #
 # The layout, all 32-bit words, floats as bit patterns:
 #
-#   kind    0 poly, 1 disc, 2 rect, 3 blend
+#   kind    0 poly, 1 disc, 2 rect, 3 blend, 4 view
 #   mode    which brush (0 flat, 1 span, 2 radial, 3 linear, 4 ellipse, 5 glow)
 #   brush   its colours (0xRRGGBB, then alpha) and its geometry
 #   shape   poly: count, then x, y pairs · disc: x, y, r, then a clip
 #           rect: x, y, w, h
 #
-# A blend is the exception and carries no brush: one word for the kind and one
-# for the mode it switches to.
+# The two marks are the exception and carry no brush. A blend is the kind and
+# the mode it switches to. A view is the kind and then a lens: 0 for the
+# screen, or 1 and then the camera's target, offset, rotation and zoom.
 #
 # A clip is a word that is 0, or 1 and then x, y, w, h.
 import Brush
@@ -36,6 +37,9 @@ ShapeWire :: [].{
 	# Not a shape: a mark that changes how the shapes after it are combined.
 	kind_blend : U32
 	kind_blend = 3
+	# Not a shape either: a mark that changes where they are.
+	kind_view : U32
+	kind_view = 4
 
 	pack : List(Shapes.Shape) -> List(U32)
 	pack = |shapes| {
@@ -63,10 +67,21 @@ ShapeWire :: [].{
 			# which is the step roc-ray asks for and this does not.
 			# A mark, not a shape: one word for the kind and one for the mode.
 			Blend(m) => [kind_blend, if m == Add { 1 } else { 0 }]
+			View(l) => List.concat([kind_view], lens(l))
 			# **THE PAGE IS NEVER SENT PIECES.** A canvas fills a concave
 			# polygon itself, so nothing here cuts one up; see `Shapes.cut`,
 			# which is the step roc-ray asks for and this does not.
 			Pieces(_) => crash("ShapeWire: a page is never sent Pieces; do not cut a frame it will draw")
+		}
+
+	# A lens: 0 for the screen, or 1 and the camera's four settings. The same
+	# shape as a clip, and for the same reason -- the word that says which
+	# says how many follow.
+	lens : Shapes.Lens -> List(U32)
+	lens = |l|
+		match l {
+			Screen => [0]
+			World(c) => List.concat([1], nums([c.target.x, c.target.y, c.offset.x, c.offset.y, c.rotation, c.zoom]))
 		}
 
 	clip : Shapes.Clip -> List(U32)

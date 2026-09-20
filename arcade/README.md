@@ -7,6 +7,9 @@ game is driven.
     arcade/build.sh snake       the page,   http://<box>:9210/snake/
     arcade/native.sh snake      the native program
     node arcade/web/page_check.mjs snake
+    node arcade/web/lens_check.mjs      the camera, on both ends
+
+Four of them: `snake`, `pong`, `breakout`, `camera`.
 
 ## Where the splits are
 
@@ -16,7 +19,7 @@ game is driven.
 | `snake_native.roc` | the app roc-ray runs — uses `native/GameRunner` |
 | `snake/` | **the game**, and everything that is only about it, its page included. Neither app's half; it cannot tell which is running |
 | `lib/` | a package: `Game`, `Keys`, `Random`, `Shapes`, `Brush`, `Font`, and the two wire edges |
-| `web/` | the page's end: the wasm platform and host, `shapewire.js` (a frame, decoded and painted), `game_runner.js` (the clock, the input, the speaker), `page_check.mjs` |
+| `web/` | the page's end: the wasm platform and host, `shapewire.js` (a frame, decoded and painted), `game_runner.js` (the clock, the input, the speaker), `page_check.mjs`, `lens_check.mjs` |
 | `native/` | roc-ray's end: `GameRunner.roc` |
 
 **Why the two app files sit at the top rather than beside the game.** An app
@@ -65,6 +68,46 @@ roc-ray as `../../roc-ray`, a sibling of roc-apps.
         page.html         the page
         …                 the rules and the drawing
 
+## Camera world, ported
+
+Not a game: roc-ray's `examples/camera`, a world larger than the window with a
+camera over it and a HUD that is not. It is here because it is the first thing
+that could not be said at all.
+
+**A FRAME HAD NO WAY TO SAY WHERE ITS SHAPES WERE.** Upstream calls
+`frame.with_camera!(camera, |world| …)` — a scope a platform opens. A frame
+that is a value cannot open a scope, so the camera became `View`, a second
+mark in the list beside `Blend`: `eye.view()` says the shapes after it are in
+the world and `Shapes.screen` says the ones after that are back in the window.
+Both painters already wanted it that way — `setTransform` on a canvas,
+`BeginMode2D` on roc-ray — and a frame that never says `View` paints exactly as
+it did before.
+
+**A CAMERA IS ALSO ARITHMETIC THE GAME ITSELF NEEDS**, which is why
+`lib/Camera.roc` is a value with `screen_to_world`, `world_to_screen` and
+`viewport` and not just six numbers on a wire. The pointer arrives in pixels
+and the rules are written in the world; no runner can do that conversion,
+because only the game knows which camera to do it with. `viewport` is what
+keeps the grid from drawing thirty-one lines that are not on screen.
+
+**THE DEMO IS ITS OWN ORACLE.** The pointer is marked twice — a ring drawn
+through the camera at `screen_to_world(mouse)`, and a crosshair drawn on the
+screen at `world_to_screen` of that same point. If the canvas matrix and
+`Camera.roc` ever disagreed, the two would separate, on whichever end was
+wrong. `web/lens_check.mjs` says the same thing without a screen: it feeds
+`shapewire.js` four lenses and checks the matrix it builds against the map
+written the geometric way, since `setTransform`'s six numbers are easy to
+transpose.
+
+`Rules.roc` is upstream's `move_player`, `axis` and the body of its `update!`,
+expects included. `lib/Keys.roc` grew Q and E, `lib/Font.roc` a comma and a
+per-cent sign, and `lib/Shapes.roc` a `ring` — a circle's outline as the
+strokes it is, since a hollow circle over a world that moves cannot be faked
+with a smaller disc on top.
+
+It also has no sounds at all, which is the case the speaker widget had never
+been handed.
+
 ## Breakout, ported
 
 The closest to a straight port of the three: upstream is already six modules,
@@ -94,10 +137,11 @@ their import lines and nothing else.
 `Game.roc`, renamed so it does not collide with ours) changed their import
 lines and nothing else. `SnakeDraw.roc` is the rewrite: upstream draws into a
 `Draw.Frame`, and here a frame is a value, so it answers a list of shapes. Its
-additive glow is approximated with radial fills, because a shape carries a
-brush but not a blend mode.
+glow is upstream's, additive: `Blend(Add)` marks the run and `Blend(Over)` ends
+it.
 
-Sound is reported but not played: the game says which tones a step set off, the
-page lights one pip per tone in the corner, and the native runner ignores it
-for now. The width is part of the seam (`tone_count`), because a runner that
-guesses it gets the first game with more than three wrong.
+Sound: the game says which tones a step set off and what each one sounds like,
+the page plays them and lights one pip per tone in the corner, and the native
+runner ignores them for now. The width is part of the seam (`tone_count`),
+because a runner that guesses it gets the first game with more than three
+wrong.

@@ -20,6 +20,10 @@ Mouse :: [].{
 			Middle => 4
 		}
 
+	# `wheel` is a field rather than a method, so a game reads it exactly as it
+	# does on roc-ray: `input.mouse.wheel`, positive away from the hand. **IT
+	# IS NOT CALLED wheel_delta**, which roc-ray also has and which means
+	# something else there -- both axes, as a Vec2. One name, one meaning.
 	Snapshot := { held : U32, struck : U32, at : { x : F32, y : F32 }, wheel : F32 }.{
 		## Whether a button is down now, however long it has been.
 		button_down : Snapshot, Mouse.Button -> Bool
@@ -32,10 +36,6 @@ Mouse :: [].{
 		## Where the pointer is, in the game's coordinates.
 		position : Snapshot -> { x : F32, y : F32 }
 		position = |snapshot| snapshot.at
-
-		## How far the wheel turned this tick; positive is away from the hand.
-		wheel_delta : Snapshot -> F32
-		wheel_delta = |snapshot| snapshot.wheel
 	}
 
 	none : Mouse.Snapshot

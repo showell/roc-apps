@@ -43,10 +43,33 @@ Shapes :: [].{
 		# (`globalCompositeOperation` on a canvas, `BeginBlendMode` on
 		# roc-ray). A frame that never mentions it paints exactly as before.
 		Blend(Shapes.Mode),
+		# **NOT A SHAPE: WHERE THE SHAPES AFTER IT ARE.** Until the next one,
+		# coordinates are read through this lens instead of as screen pixels.
+		# The same mark as Blend, for the same reason: both painters already
+		# take this as a scope rather than a flag (`setTransform` on a canvas,
+		# `BeginMode2D` on roc-ray), and a frame is a list, so the cheapest way
+		# to say it is a mark that holds until the next one.
+		View(Shapes.Lens),
 	]
 
 	# `Over` paints; `Add` lights.
 	Mode : [Over, Add]
+
+	# `Screen` is the game's own pixels, which is where every frame starts, so
+	# a frame that never says `View` paints exactly as it did before.
+	#
+	# **A LENS CARRIES NUMBERS, NOT A CAMERA.** Camera.roc builds one and names
+	# the same four settings roc-ray's `Camera2D` does, but a mark that crossed
+	# the wire carrying that type would need the type on the far side, and the
+	# far side is JavaScript.
+	Lens : [
+		Screen,
+		World({ target : { x : F64, y : F64 }, offset : { x : F64, y : F64 }, rotation : F64, zoom : F64 }),
+	]
+
+	# Back to the game's own pixels: what a HUD is drawn in.
+	screen : Shapes.Shape
+	screen = View(Screen)
 
 	# ── what a polygon can be, given a little arithmetic ────────────────────
 	#
@@ -71,6 +94,31 @@ Shapes :: [].{
 			Poly({ pts: [x0 + nx, y0 + ny, x1 + nx, y1 + ny, x1 - nx, y1 - ny, x0 - nx, y0 - ny], fill })
 		}
 	}
+
+	# A circle's OUTLINE, as the strokes it actually is: `sides` quads around
+	# the rim. **NOT A NEW SHAPE** -- the same trick Font plays with a letter,
+	# so a hollow circle needs nothing new on any wire and no painter learns a
+	# stroke. A filled disc under a smaller one is the other way to get a ring,
+	# and it only works where the background is a known flat colour.
+	ring : F64, F64, F64, F64, U64, Brush.Fill -> List(Shapes.Shape)
+	ring = |x, y, r, w, sides, fill| {
+		n = if sides < 3 { 3 } else { sides }
+		var $out = List.with_capacity(n)
+		var $k = 0
+		while $k < n {
+			a0 = Trig.two_pi * count($k) / count(n)
+			a1 = Trig.two_pi * count($k + 1) / count(n)
+			$out = List.append(
+				$out,
+				line(x + r * Trig.r_cos(a0), y + r * Trig.r_sin(a0), x + r * Trig.r_cos(a1), y + r * Trig.r_sin(a1), w, fill),
+			)
+			$k = $k + 1
+		}
+		$out
+	}
+
+	count : U64 -> F64
+	count = |n| I64.to_f64(U64.to_i64_wrap(n))
 
 	# **A FIGURE TURNED AWAY FROM US IS THE SAME FIGURE, NARROWER.** Every x is
 	# pulled toward `axis` by `k`, so a drawing made face-on reads as one yawed
@@ -99,6 +147,7 @@ Shapes :: [].{
 					}
 					# A mark is not geometry; turning a figure does not touch it.
 					Blend(m) => Blend(m)
+					View(l) => View(l)
 				},
 			)
 			$i = $i + 1
