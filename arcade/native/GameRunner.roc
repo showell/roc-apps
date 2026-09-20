@@ -1,6 +1,6 @@
 # GameRunner -- the whole of running a game on roc-ray, for any game.
 #
-# arcade/<name>/main.roc names a game and hands it here. What is in this file
+# arcade/<name>_native.roc names a game and hands it here. What is in this file
 # is what web/game_runner.js does on a page: the window, the clock, the keyboard,
 # and the painting. Neither knows what game it is running.
 #
@@ -54,6 +54,11 @@ GameRunner :: [].{
 
 	Msg : []
 
+	# The debug overlay's key, which is a key like any other so both runners
+	# can agree on it and a game can see that it is taken.
+	overlay_key : Keys.Key
+	overlay_key = KeyF
+
 	# Twice the window, drawn down with bilinear filtering.
 	supersample : F32
 	supersample = 2.0
@@ -95,7 +100,7 @@ GameRunner :: [].{
 	# look tautological because the tags are spelled the same on purpose; they
 	# are two different types, and this is the bridge.
 	watched : List(Keys.Key)
-	watched = [KeyUp, KeyDown, KeyLeft, KeyRight, KeyW, KeyA, KeyS, KeyD, KeySpace, KeyEscape, KeyEnter, KeyP, KeyR]
+	watched = [KeyUp, KeyDown, KeyLeft, KeyRight, KeyW, KeyA, KeyS, KeyD, KeySpace, KeyEscape, KeyEnter, KeyF, KeyP, KeyR]
 
 	snapshot_of : Devices.Snapshot -> Keys.Snapshot
 	snapshot_of = |devices| {
@@ -130,6 +135,7 @@ GameRunner :: [].{
 			KeySpace => d.key_down(KeySpace)
 			KeyEscape => d.key_down(KeyEscape)
 			KeyEnter => d.key_down(KeyEnter)
+			KeyF => d.key_down(KeyF)
 			KeyP => d.key_down(KeyP)
 			KeyR => d.key_down(KeyR)
 		}
@@ -148,6 +154,7 @@ GameRunner :: [].{
 			KeySpace => d.key_pressed(KeySpace)
 			KeyEscape => d.key_pressed(KeyEscape)
 			KeyEnter => d.key_pressed(KeyEnter)
+			KeyF => d.key_pressed(KeyF)
 			KeyP => d.key_pressed(KeyP)
 			KeyR => d.key_pressed(KeyR)
 		}
@@ -157,12 +164,18 @@ GameRunner :: [].{
 		# Roc reads `game.advance(m, k)` as a method call, so the field is
 		# bound first. See Game.roc.
 		advance = game.advance
-		devices = input.devices
-		if devices.key_pressed(KeyEscape) {
+		keys = snapshot_of(input.devices)
+		# Escape closes the window; a page cannot, so no game is given it to
+		# read and none decodes it.
+		if keys.key_pressed(KeyEscape) {
 			Err(Exit(0))
 		} else {
-			fps = if devices.key_pressed(KeyF) { !model.fps } else { model.fps }
-			Ok({ ..model, state: advance(model.state, snapshot_of(devices)), fps })
+			# The step is the rate the game asked for, not however long the
+			# last frame happened to take, so a rally is the same rally
+			# whatever the machine is doing.
+			dt = 1.0 / I32.to_f32(game.fps)
+			fps = if keys.key_pressed(overlay_key) { !model.fps } else { model.fps }
+			Ok({ ..model, state: advance(model.state, keys, dt), fps })
 		}
 	}
 
@@ -204,8 +217,53 @@ GameRunner :: [].{
 		Camera.new({ target: { x: mid_x, y: mid_y }, offset: { x: mid_x * zoom, y: mid_y * zoom }, rotation, zoom })
 	}
 
+	# **A BLEND MARK CHANGES THE MODE UNTIL THE NEXT ONE.** raylib takes a
+	# blend as a scope rather than a flag, so the frame is walked in runs: the
+	# shapes between two marks are drawn together, inside that scope.
 	draw_shapes! : GameRunner.Gpu, Draw.Frame, List(Shapes.Shape) => {}
 	draw_shapes! = |gpu, frame, shapes| {
+		n = List.len(shapes)
+		var $run = List.with_capacity(n)
+		var $mode = Over
+		var $k = 0
+		while $k < n {
+			match List.get(shapes, $k) ?? crash("shape out of range") {
+				Blend(next) => {
+					draw_run!(gpu, frame, $run, $mode)
+					$run = List.with_capacity(n - $k)
+					$mode = next
+				}
+				shape => {
+					$run = List.append($run, shape)
+				}
+			}
+			$k = $k + 1
+		}
+		draw_run!(gpu, frame, $run, $mode)
+	}
+
+	draw_run! : GameRunner.Gpu, Draw.Frame, List(Shapes.Shape), Shapes.Mode => {}
+	draw_run! = |gpu, frame, run, mode|
+		if List.is_empty(run) {
+			{}
+		} else {
+			match mode {
+				Over => draw_each!(gpu, frame, run)
+				Add => {
+					scope = frame.with_blend_mode!(Draw.additive_blend, |lit| {
+						draw_each!(gpu, lit, run)
+						Ok({})
+					})
+					match scope {
+						Ok({}) => {}
+						Err(_) => crash("the runner: a blend scope was refused")
+					}
+				}
+			}
+		}
+
+	draw_each! : GameRunner.Gpu, Draw.Frame, List(Shapes.Shape) => {}
+	draw_each! = |gpu, frame, shapes| {
 		n = List.len(shapes)
 		var $k = 0
 		while $k < n {
@@ -222,6 +280,8 @@ GameRunner :: [].{
 			Pieces(p) => with_fill!(gpu, frame, p.fill, Anywhere, |f, col| draw_triangles!(f, p.tris, col))
 			Disc(d) => with_fill!(gpu, frame, d.fill, d.clip, |f, col| f.circle!({ center: point(d.x, d.y), radius: F64.to_f32_wrap(d.r), style: Draw.filled(col) }))
 			Rect(r) => with_fill!(gpu, frame, r.fill, Anywhere, |f, col| f.rectangle!({ x: F64.to_f32_wrap(r.x), y: F64.to_f32_wrap(r.y), width: F64.to_f32_wrap(r.w), height: F64.to_f32_wrap(r.h), style: Draw.filled(col) }))
+			# Runs are split before this, so a mark never reaches here.
+			Blend(_) => {}
 		}
 
 	# Draw with a flat colour directly, or through the shader: its uniforms set for

@@ -30,6 +30,9 @@ ShapeWire :: [].{
 	kind_disc = 1
 	kind_rect : U32
 	kind_rect = 2
+	# Not a shape: a mark that changes how the shapes after it are combined.
+	kind_blend : U32
+	kind_blend = 3
 
 	pack : List(Shapes.Shape) -> List(U32)
 	pack = |shapes| {
@@ -55,7 +58,11 @@ ShapeWire :: [].{
 			# **THE PAGE IS NEVER SENT PIECES.** A canvas fills a concave
 			# polygon itself, so nothing here cuts one up; see `Shapes.cut`,
 			# which is the step roc-ray asks for and this does not.
-			Pieces(_) => []
+			Blend(m) => [kind_blend, if m == Add { 1 } else { 0 }]
+			# **THE PAGE IS NEVER SENT PIECES.** A canvas fills a concave
+			# polygon itself, so nothing here cuts one up; see `Shapes.cut`,
+			# which is the step roc-ray asks for and this does not.
+			Pieces(_) => crash("ShapeWire: a page is never sent Pieces; do not cut a frame it will draw")
 		}
 
 	clip : Shapes.Clip -> List(U32)

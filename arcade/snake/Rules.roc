@@ -16,7 +16,7 @@ Rules := [].{
 	RequestedDirection := [KeepDirection, Turn(Snake.Direction)].{
 		is_eq : _
 	}
-	Controls : { requested_direction : RequestedDirection, restart_pressed : Bool, quit_pressed : Bool }
+	Controls : { requested_direction : RequestedDirection, restart_pressed : Bool }
 	World : { snake : Snake, food : Board.Cell, score : U64, accumulator : F32, state : State, rng : Random.State }
 	Event := [FoodEaten, SnakeCrashed, GameStarted].{
 		is_eq : _
@@ -92,7 +92,7 @@ update_game_over : Rules.World, Rules.Controls -> (Rules.World, List(Rules.Event
 update_game_over = |world, controls| if controls.restart_pressed (Rules.new_world(world.rng), [GameStarted]) else (world, [])
 
 no_controls : Rules.Controls
-no_controls = { requested_direction: KeepDirection, restart_pressed: Bool.False, quit_pressed: Bool.False }
+no_controls = { requested_direction: KeepDirection, restart_pressed: Bool.False }
 
 expect {
 	world = Rules.new_world(Random.seed(1))

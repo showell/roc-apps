@@ -34,7 +34,19 @@ Shapes :: [].{
 		# that drew a disc, the fragment shader included.
 		Disc({ x : F64, y : F64, r : F64, fill : Brush.Fill, clip : Shapes.Clip }),
 		Rect({ x : F64, y : F64, w : F64, h : F64, fill : Brush.Fill }),
+		# **NOT A SHAPE: HOW THE SHAPES AFTER IT ARE COMBINED.** A glow is
+		# light added to what is already there, not paint laid over it, and
+		# every game so far has apologised in its own comments for faking one
+		# with a translucent fill. A frame is a list, so the cheapest way to
+		# say this is a mark in the list that changes the mode until the next
+		# mark -- which is what both painters do underneath anyway
+		# (`globalCompositeOperation` on a canvas, `BeginBlendMode` on
+		# roc-ray). A frame that never mentions it paints exactly as before.
+		Blend(Shapes.Mode),
 	]
+
+	# `Over` paints; `Add` lights.
+	Mode : [Over, Add]
 
 	# ── what a polygon can be, given a little arithmetic ────────────────────
 	#
@@ -85,6 +97,8 @@ Shapes :: [].{
 						b = axis + (r.x + r.w - axis) * k
 						Rect({ x: F64.min(a, b), y: r.y, w: if b < a { a - b } else { b - a }, h: r.h, fill: r.fill })
 					}
+					# A mark is not geometry; turning a figure does not touch it.
+					Blend(m) => Blend(m)
 				},
 			)
 			$i = $i + 1

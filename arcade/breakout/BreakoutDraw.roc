@@ -3,8 +3,7 @@
 # Ported from roc-ray's examples/breakout Render.roc, which draws into a
 # Draw.Frame. Here a frame is a value, so this answers a list of shapes.
 #
-# **THE GLOW IS APPROXIMATED**, as in the other two: upstream wraps its halos
-# in an additive blend, and a Shape carries a brush but not a blend mode.
+# The halos are additive, as upstream's are: `Blend(Add)` marks the run.
 import lib.Shapes
 import lib.Brush
 import lib.Color
@@ -86,8 +85,10 @@ BreakoutDraw :: [].{
 	glow = |world| {
 		p = Math.center(world.paddle.rect())
 		[
+			Blend(Add),
 			halo(F32.to_f64(p.x), F32.to_f64(p.y), 90.0, paddle_neon),
 			halo(F32.to_f64(world.ball.pos.x), F32.to_f64(world.ball.pos.y), 46.0, ball_neon),
+			Blend(Over),
 		]
 	}
 

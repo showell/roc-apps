@@ -17,19 +17,23 @@ GameApp :: [].{
 		advance : Box(model), U32, U32 -> Box(model),
 		render : Box(model) -> List(U32),
 		sounds : Box(model) -> U32,
+		tone_count : Box(model) -> U32,
 		width : Box(model) -> U32,
 		height : Box(model) -> U32,
 		fps : Box(model) -> U32,
 	}
 	program = |game| {
+		# The step a tick covers, which is the rate the game asked to be run at.
+		dt = 1.0 / I32.to_f32(game.fps)
 		advance = game.advance
 		frame = game.frame
 		sounds = game.sounds
 		{
 			init: |{}| Box.box(game.init),
-			advance: |b, held, struck| Box.box(advance(Box.unbox(b), Keys.of(held, struck))),
+			advance: |b, held, struck| Box.box(advance(Box.unbox(b), Keys.of(held, struck), dt)),
 			render: |b| ShapeWire.pack(frame(Box.unbox(b))),
 			sounds: |b| sounds(Box.unbox(b)),
+			tone_count: |_b| U64.to_u32_wrap(List.len(game.tones)),
 			width: |_b| F64.to_u32_wrap(game.size.width),
 			height: |_b| F64.to_u32_wrap(game.size.height),
 			fps: |_b| I32.to_u32_wrap(game.fps),

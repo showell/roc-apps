@@ -16,7 +16,7 @@
 Keys :: [].{
 	# The keys a game here can ask about. A tick sends two bit sets, so the
 	# list is short on purpose: adding one is a bit and a line in game_runner.js.
-	Key := [KeyUp, KeyDown, KeyLeft, KeyRight, KeyW, KeyA, KeyS, KeyD, KeySpace, KeyEscape, KeyEnter, KeyP, KeyR].{
+	Key := [KeyUp, KeyDown, KeyLeft, KeyRight, KeyW, KeyA, KeyS, KeyD, KeySpace, KeyEscape, KeyEnter, KeyF, KeyP, KeyR].{
 		is_eq : _
 	}
 
@@ -34,8 +34,9 @@ Keys :: [].{
 			KeySpace => 256
 			KeyEscape => 512
 			KeyEnter => 1024
-			KeyP => 2048
-			KeyR => 4096
+			KeyF => 2048
+			KeyP => 4096
+			KeyR => 8192
 		}
 
 	Snapshot := { held : U32, struck : U32 }.{

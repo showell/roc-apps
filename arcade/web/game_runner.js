@@ -1,426 +1,335 @@
 // game_runner — the browser half of the arcade, and the twin of
-// native/GameRunner.roc. It loads a game's wasm, runs the event loop, and
-// paints the shapes the game answers with.
+// native/GameRunner.roc. It loads a game's wasm, runs the clock and the
+// keyboard, and paints the shapes the game answers with.
 //
-// It was called blitter.js, which named a third of what it does: the canvas
-// backend blits, but this also reads the wire, owns the keyboard and shows the
-// speaker. "Host" would have been worse -- web/platform/host.zig is a host in
-// Roc's own sense and is a different thing.
+// The game is the same Roc that runs natively. What is in here is only what a
+// browser does differently: decode the frame, fill a canvas, keep the key
+// state, show the speaker.
 //
-// **THE GAME IS THE SAME ROC THAT RUNS NATIVELY.** What differs is only what is
-// in this file: the keyboard, the clock, and the speaker. roc-ray's own player
-// does the same three things in a window; neither knows what game it is running.
-//
-// THE LINE THIS FILE IS ORGANISED AROUND. Three kinds of thing live here and
-// they are not the same kind:
-//
-//   1. CANVAS BACKEND. A vocabulary of paths and paints with no idea what it is
-//      drawing — polygons, discs, rectangles, and the six brushes.
-//   2. THE FRAME VOCABULARY. What a shape looks like on the wire, which is
-//      ShapeWire.roc's layout read back.
-//   3. THE PAGE. The loop, the keys, and the sound widget.
-//
-// Everything above section 4 is a copy of the movies' player, because
-// filling a polygon is the same job either way; everything below it is the
-// arcade's own, because a movie has no keyboard and a game is not scrubbed.
+//   window.SHOW = { wasm: 'snake.wasm', hint: '…', loading: '…' }
 
-// ── 1. CANVAS BACKEND ─────────────────────────────────────────────────────────
-// Paths, paints and CSS colour strings. This is the half that cannot move: it is
-// the shape of the canvas API and nothing else. There are no trucks here.
+// ── the wire ───────────────────────────────────────────────────────────────
+// ShapeWire.roc's layout, read back. Decoding is pure: it walks the words and
+// answers plain descriptors, and nothing here touches a canvas.
 
-// 0xRRGGBB -> "#rrggbb". SHELL.
-function hex(c) {
-  return '#' + (c & 0xffffff).toString(16).padStart(6, '0');
-}
+const SHAPE = { POLY: 0, DISC: 1, RECT: 2, BLEND: 3 };
+const FILL = { FLAT: 0, SPAN: 1, RADIAL: 2, LINEAR: 3, ELLIPSE: 4, GLOW: 5 };
 
-// 0xRRGGBB -> "rgb(r,g,b)". SHELL.
-function rgbCss(c) {
-  return `rgb(${(c >> 16) & 255},${(c >> 8) & 255},${c & 255})`;
-}
+const channel = (byte) => Math.max(0, Math.min(255, Math.round(byte)));
+const cssColor = (rgb, alpha) =>
+  `rgba(${channel(rgb >>> 16)},${channel((rgb >>> 8) & 255)},${channel(rgb & 255)},${alpha})`;
 
-// 0xAARRGGBB -> "rgba(r,g,b,a)". SHELL.
-function rgba(c) {
-  return `rgba(${(c >> 16) & 255},${(c >> 8) & 255},${c & 255},${((c >>> 24) & 255) / 255})`;
-}
+// Each reader takes the two views and a word index, and answers [value, next].
+const readColor = (words, floats, at) => [cssColor(words[at], floats[at + 1]), at + 2];
 
-// clamp a gradient stop offset to [0,1], and to >= a lower bound so a 2-stop pair
-// stays ascending. A canvas rule: `addColorStop` throws outside [0,1] and ignores
-// order. SHELL.
-function stopAt(o, lo = 0) { return Math.max(lo, Math.min(1, o)); }
+const readFloats = (floats, at, count) =>
+  [Array.from({ length: count }, (_, i) => floats[at + i]), at + count];
 
-// Trace an n-point polygon starting at word `w`. Returns the word after it.
-function polyPath(ctx, f32, w, n) {
-  ctx.beginPath();
-  ctx.moveTo(f32[w], f32[w + 1]); w += 2;
-  for (let i = 1; i < n; i++) { ctx.lineTo(f32[w], f32[w + 1]); w += 2; }
-  ctx.closePath();
-  return w;
-}
+function readFill(words, floats, at) {
+  const mode = words[at];
+  const [first, afterFirst] = readColor(words, floats, at + 1);
+  if (mode === FILL.FLAT) return [{ mode, colors: [first] }, afterFirst];
 
-// A two-stop linear gradient between two points, in 0xAARRGGBB.
-function linearPaint(ctx, ax, ay, bx, by, c0, o0, c1, o1) {
-  const g = ctx.createLinearGradient(ax, ay, bx, by);
-  g.addColorStop(stopAt(o0), rgba(c0));
-  g.addColorStop(stopAt(o1, o0), rgba(c1));
-  return g;
-}
-
-// A two-stop radial gradient from a centre out to a radius, in 0xAARRGGBB.
-function radialPaint(ctx, cx, cy, r, cCol, eCol) {
-  const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-  g.addColorStop(0, rgba(cCol));
-  g.addColorStop(1, rgba(eCol));
-  return g;
-}
-
-// A gradient across a span, from stops given as [offset, 0xRRGGBB] pairs.
-function stopsPaint(ctx, x0, x1, stops) {
-  const g = ctx.createLinearGradient(x0, 0, x1, 0);
-  for (const [at, col] of stops) g.addColorStop(at, rgbCss(col));
-  return g;
-}
-
-// Fill the CURRENT path with a unit radial gradient mapped onto the ellipse that
-// (u, v) spans at (cx, cy). Answers false when the matrix is degenerate and the
-// caller should fall back to a flat fill -- a canvas fact, not a scene one.
-function fillEllipseRadial(ctx, cx, cy, ux, uy, vx, vy, c0, o0, c1, o1) {
-  if (Math.abs(ux * vy - uy * vx) < DEGENERATE_DET) return false;
-  ctx.save();
-  ctx.clip();
-  ctx.transform(ux, uy, vx, vy, cx, cy); // unit space -> screen ellipse
-  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
-  g.addColorStop(stopAt(o0), rgba(c0));
-  g.addColorStop(stopAt(o1, o0), rgba(c1));
-  ctx.fillStyle = g;
-  ctx.fillRect(-1e4, -1e4, 2e4, 2e4); // clipped to the path; beyond r=1 the gradient clamps to stop 1
-  ctx.restore();
-  return true;
-}
-
-// A filled disc at a composited alpha.
-function fillDisc(ctx, x, y, r, color, alpha) {
-  ctx.globalAlpha = alpha;
-  ctx.fillStyle = hex(color);
-  ctx.beginPath();
-  ctx.arc(x, y, r, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.globalAlpha = 1;
-}
-
-// ── 2. THE FRAME VOCABULARY ────────────────────────────────────────────────────
-// What a frame IS: an ordered list of geometric objects, each a polygon or a disc,
-// each with a paint. Nothing here is about safari -- a different show emitting the
-// same tags renders with this file untouched.
-//
-// Nothing in it decides anything: every number a command carries was computed by
-// the guest, and this file's whole job is to turn tags into paths and paints.
-
-// What arrives, so the dispatch below can be read without a legend. A frame is
-// SHAPES, each with a BRUSH, and neither names a subject: this file fills a
-// polygon under a radial gradient; it does not paint a headlight.
-//
-// THE TAG LIST THAT USED TO BE HERE IS GONE. It named a shape and a paint
-// together -- SPAN_SHADE, RADIAL_POLY, ELLIPSE_POLY -- so every new pairing
-// needed a new tag, and the sun could not be said at all: its glow is three
-// colours and the tags carried two, which is why the page used to paint the sky
-// and the sun itself from six extra exports. A shape and a brush are two words
-// now, and a movie this file has never heard of can say anything the brush
-// vocabulary can.
-const KIND = { POLY: 0, DISC: 1, RECT: 2 };
-const MODE = { FLAT: 0, SPAN: 1, RADIAL: 2, LINEAR: 3, ELLIPSE: 4, GLOW: 5 };
-
-// The one threshold left, and it is a canvas fact rather than a scene one: a
-// singular matrix cannot be inverted. The four that were chosen by eye -- the disc
-// radius and alpha floors, the radial radius floor, the flat-fill width -- are
-// `port/Blit.codex`'s now, and a command that fails one never reaches this file.
-const DEGENERATE_DET = 1e-4;
-
-// ── 2a. THE SHOW ───────────────────────────────────────────────────────────────
-// A page says which game to fetch and what to tell the player; everything else
-// here is about running one, not about which.
-//
-//   window.SHOW = {
-//     wasm: 'snake.wasm',         the module to fetch
-//     hint: '…',                  the key legend
-//     loading: '…',               what to say while the wasm arrives
-//   };
-
-// ── 2b. THE GUEST BOUNDARY ─────────────────────────────────────────────────────
-// The ONE place the guest's own names are allowed.
-//
-// The guest names its exports for the game it is: `riderTilt`, `riderSeg`,
-// `sunVisible`. Those are good names there and bad ones here -- a renderer that
-// says `riderSeg` has learned that the thing being driven is a rider, and once a
-// name like that reaches `draw()` it has to be threaded through every function it
-// touches. Binding them once, here, means the rest of the file speaks about a
-// scene: how far it has stepped, which segment it is in, how the camera is rolled.
-//
-// It is also where a change to the guest gets caught. A renamed export breaks one
-// object literal instead of six call sites, and the destructure below fails loudly
-// if the export is gone.
-function bindScene(x) {
-  // **THE MOVIE'S OWN WORDS.** These were forward/backward/step/segment, which
-  // were four second names for advance/back/clock/scene and four things to keep
-  // straight between here, WasmApp.roc and Movie.roc.
-  return {
-    memory: x.memory,
-    render: x.renderFrame,          // compute a frame; answers its byte length
-    advance: x.advance,             // one step, given (held, struck)
-    sounds: x.sounds,               // a bit per tone the last step set off
-    width: x.width,                 // how big a frame is, in the game's coordinates
-    height: x.height,
-    fps: x.fps,                     // how often the game means to be stepped
-    bufferAt: x.bufPtr,
-    bufferPeak: x.bufHighWater,
-    bufferCapacity: x.bufCap,
-  };
-}
-
-
-// ── 3. THE COMMAND STREAM ──────────────────────────────────────────────────────
-
-// Walk the draw buffer [base, base+len). Views over the SAME words: u32 for
-// tag/color/count, f32 for coordinate bit patterns. The critters used to be tag-2
-// emoji glyphs the browser font rasterised; they are now baked to tag-0 polygons
-// (emoji_frames.zig), so this draws no glyphs -- polygons, gradients and one disc.
-//
-// This function DECODES and PAINTS, and that is now all it does: there is not one
-// comparison against a threshold left in it, because the guest already made every
-// call this file used to make about what is worth drawing.
-function css(rgb, a) {
-  return `rgba(${(rgb >> 16) & 255},${(rgb >> 8) & 255},${rgb & 255},${a})`;
-}
-
-// A colour: 0xRRGGBB, then its alpha. Two words.
-function readColor(u32, f32, w) {
-  return { css: css(u32[w], f32[w + 1]), w: w + 2 };
-}
-
-// A brush: its mode, then the colours and geometry that mode wants. Answers
-// something that can paint, and the word after it.
-function readBrush(ctx, u32, f32, w) {
-  const mode = u32[w++];
-  const a = readColor(u32, f32, w); w = a.w;
-  if (mode === MODE.FLAT) return { paint: a.css, w };
-
-  const b = readColor(u32, f32, w); w = b.w;
-  if (mode === MODE.SPAN) {
-    const x0 = f32[w++], x1 = f32[w++];
-    const g = ctx.createLinearGradient(x0, 0, x1, 0);
-    g.addColorStop(0, a.css); g.addColorStop(0.5, b.css); g.addColorStop(1, a.css);
-    return { paint: g, w };
+  const [second, afterSecond] = readColor(words, floats, afterFirst);
+  if (mode === FILL.GLOW) {
+    const [third, afterThird] = readColor(words, floats, afterSecond);
+    const [geometry, next] = readFloats(floats, afterThird, 4);
+    return [{ mode, colors: [first, second, third], geometry }, next];
   }
-  if (mode === MODE.RADIAL) {
-    const x = f32[w++], y = f32[w++], r0 = f32[w++], r1 = f32[w++];
-    if (!(r1 > r0)) return { paint: b.css, w };
-    const g = ctx.createRadialGradient(x, y, r0, x, y, r1);
-    g.addColorStop(0, a.css); g.addColorStop(1, b.css);
-    return { paint: g, w };
-  }
-  if (mode === MODE.LINEAR) {
-    const o0 = f32[w++], o1 = f32[w++];
-    const ax = f32[w++], ay = f32[w++], dx = f32[w++], dy = f32[w++];
-    const g = ctx.createLinearGradient(ax, ay, ax + dx, ay + dy);
-    g.addColorStop(stopAt(o0), a.css);
-    g.addColorStop(stopAt(o1, stopAt(o0)), b.css);
-    return { paint: g, w };
-  }
-  if (mode === MODE.ELLIPSE) {
-    const o0 = f32[w++], o1 = f32[w++], x = f32[w++], y = f32[w++];
-    // The brush carries the matrix that takes a scene offset TO the unit
-    // circle, because that is what shading a point wants. A canvas wants the
-    // one that goes the other way, so it is inverted here -- a canvas fact.
-    const ia = f32[w++], ib = f32[w++], ic = f32[w++], id = f32[w++];
-    return { ellipse: { x, y, ia, ib, ic, id, o0, o1, c0: a.css, c1: b.css }, w };
-  }
-  // GLOW: three stops, at 0, 0.4 and 1, from r0 out to r1.
-  const c = readColor(u32, f32, w); w = c.w;
-  const x = f32[w++], y = f32[w++], r0 = f32[w++], r1 = f32[w++];
-  if (!(r1 > r0)) return { paint: a.css, w };
-  const g = ctx.createRadialGradient(x, y, r0, x, y, r1);
-  g.addColorStop(0, a.css); g.addColorStop(0.4, b.css); g.addColorStop(1, c.css);
-  return { paint: g, w };
+  const spans = { [FILL.SPAN]: 2, [FILL.RADIAL]: 4, [FILL.LINEAR]: 6, [FILL.ELLIPSE]: 8 };
+  const [geometry, next] = readFloats(floats, afterSecond, spans[mode]);
+  return [{ mode, colors: [first, second], geometry }, next];
 }
 
-// Fill the current path through an ellipse brush, or flat if its matrix is
-// singular -- a canvas fact, not a scene one.
-function fillThroughEllipse(ctx, e) {
-  const det = e.ia * e.id - e.ib * e.ic;
-  if (Math.abs(det) < DEGENERATE_DET) { ctx.fillStyle = e.c0; ctx.fill(); return; }
-  const ux = e.id / det, uy = -e.ic / det, vx = -e.ib / det, vy = e.ia / det;
-  ctx.save();
-  ctx.clip();
-  ctx.transform(ux, uy, vx, vy, e.x, e.y); // unit space -> screen ellipse
-  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
-  g.addColorStop(stopAt(e.o0), e.c0);
-  g.addColorStop(stopAt(e.o1, stopAt(e.o0)), e.c1);
-  ctx.fillStyle = g;
-  ctx.fillRect(-1e4, -1e4, 2e4, 2e4); // clipped to the path; past r=1 the gradient holds
-  ctx.restore();
+function readShape(words, floats, at) {
+  const kind = words[at];
+  if (kind === SHAPE.BLEND) return [{ kind, additive: words[at + 1] === 1 }, at + 2];
+
+  const [fill, afterFill] = readFill(words, floats, at + 1);
+  if (kind === SHAPE.POLY) {
+    const corners = words[afterFill];
+    const [points, next] = readFloats(floats, afterFill + 1, corners * 2);
+    return [{ kind, fill, points }, next];
+  }
+  if (kind === SHAPE.RECT) {
+    const [box, next] = readFloats(floats, afterFill, 4);
+    return [{ kind, fill, box }, next];
+  }
+  const [disc, afterDisc] = readFloats(floats, afterFill, 3);
+  if (!words[afterDisc]) return [{ kind, fill, disc }, afterDisc + 1];
+  const [clip, next] = readFloats(floats, afterDisc + 1, 4);
+  return [{ kind, fill, disc, clip }, next];
 }
 
-// Walk the frame [base, base+len). Views over the SAME words: u32 for kinds,
-// modes, counts and colours, f32 for coordinate bit patterns.
-//
-// This function DECODES and PAINTS, and that is all it does: not one comparison
-// against a threshold is left in it, because the movie already made every call
-// this file used to make about what is worth drawing.
-function blit(ctx, mem, base, len) {
-  const u32 = new Uint32Array(mem.buffer, base, len / 4);
-  const f32 = new Float32Array(mem.buffer, base, len / 4);
-  let w = 0;
-  let shapes = 0;
-  while (w * 4 < len) {
-    shapes++;
-    const kind = u32[w++];
-    const brush = readBrush(ctx, u32, f32, w); w = brush.w;
-
-    if (kind === KIND.POLY) {
-      const n = u32[w++];
-      w = polyPath(ctx, f32, w, n);
-    } else if (kind === KIND.DISC) {
-      const x = f32[w++], y = f32[w++], r = f32[w++];
-      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.closePath();
-      // A clip: a rectangle the shape may not paint outside of, or nothing.
-      if (u32[w++]) {
-        const cx = f32[w++], cy = f32[w++], cw = f32[w++], ch = f32[w++];
-        ctx.save();
-        ctx.beginPath(); ctx.rect(cx, cy, cw, ch); ctx.clip();
-        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.closePath();
-        if (brush.ellipse) fillThroughEllipse(ctx, brush.ellipse);
-        else { ctx.fillStyle = brush.paint; ctx.fill(); }
-        ctx.restore();
-        continue;
-      }
-    } else {
-      const x = f32[w++], y = f32[w++], rw = f32[w++], rh = f32[w++];
-      ctx.beginPath(); ctx.rect(x, y, rw, rh); ctx.closePath();
-    }
-
-    if (brush.ellipse) fillThroughEllipse(ctx, brush.ellipse);
-    else { ctx.fillStyle = brush.paint; ctx.fill(); }
+// The whole frame, as descriptors, in the order it is painted.
+function decodeFrame(memory, base, bytes) {
+  const words = new Uint32Array(memory.buffer, base, bytes / 4);
+  const floats = new Float32Array(memory.buffer, base, bytes / 4);
+  const shapes = [];
+  for (let at = 0; at < words.length; ) {
+    const [shape, next] = readShape(words, floats, at);
+    shapes.push(shape);
+    at = next;
   }
   return shapes;
 }
 
-// ── 4. THE KEYBOARD ────────────────────────────────────────────────────────────
-// **THE PAGE OWNS THE KEYBOARD AND THE GAME IS TOLD.** Two bit sets go with
-// every tick: `held` is every key down right now, `struck` is those that went
-// down since the last tick. A game needs both — Snake turns on the edge, and a
-// paddle moves while a key is held — so an event alone will not do, and the
-// page has to keep the state either way.
-//
-// The bits are Keys.roc's, in its order. Adding a key is a line here and a tag
-// there.
-const BIT = {
-  ArrowUp: 1, ArrowDown: 2, ArrowLeft: 4, ArrowRight: 8,
-  KeyW: 16, KeyA: 32, KeyS: 64, KeyD: 128,
-  Space: 256, Escape: 512, Enter: 1024, KeyP: 2048, KeyR: 4096,
+// ── paints ─────────────────────────────────────────────────────────────────
+// A fill descriptor becomes something canvas can paint with. An ellipse is the
+// exception: it paints through a transform, so it stays a descriptor.
+
+const stopAt = (offset, floor = 0) => Math.max(floor, Math.min(1, offset));
+
+function paintFor(ctx, { mode, colors, geometry }) {
+  const [a, b, c] = colors;
+  if (mode === FILL.FLAT) return a;
+
+  if (mode === FILL.SPAN) {
+    const [x0, x1] = geometry;
+    return withStops(ctx.createLinearGradient(x0, 0, x1, 0), [[0, a], [0.5, b], [1, a]]);
+  }
+  if (mode === FILL.RADIAL) {
+    const [x, y, r0, r1] = geometry;
+    if (!(r1 > r0)) return b;
+    return withStops(ctx.createRadialGradient(x, y, r0, x, y, r1), [[0, a], [1, b]]);
+  }
+  if (mode === FILL.LINEAR) {
+    const [o0, o1, ax, ay, dx, dy] = geometry;
+    const gradient = ctx.createLinearGradient(ax, ay, ax + dx, ay + dy);
+    return withStops(gradient, [[stopAt(o0), a], [stopAt(o1, stopAt(o0)), b]]);
+  }
+  if (mode === FILL.GLOW) {
+    const [x, y, r0, r1] = geometry;
+    if (!(r1 > r0)) return a;
+    return withStops(ctx.createRadialGradient(x, y, r0, x, y, r1), [[0, a], [0.4, b], [1, c]]);
+  }
+  return { ellipse: geometry, colors };
+}
+
+const withStops = (gradient, stops) => {
+  stops.forEach(([offset, color]) => gradient.addColorStop(offset, color));
+  return gradient;
 };
 
-// ── 5. THE SPEAKER ─────────────────────────────────────────────────────────────
-// **THERE IS NO AUDIO HERE YET, AND THE GAME DOES NOT KNOW THAT.** It reports
-// that a sound happened, the same as it does natively, where roc-ray plays the
-// tone. Here the report lights a widget in the corner, so nothing had to be
-// taken out of the game to run it on a page.
-const SOUND_MS = 420;
-function drawSpeaker(ctx, W, H, lit, now) {
-  const age = now - lit.at;
-  if (age > SOUND_MS) return;
-  const fade = 1 - age / SOUND_MS;
-  const x = W - 34, y = H - 30;
+// ── painting ───────────────────────────────────────────────────────────────
+
+function tracePath(ctx, shape) {
+  ctx.beginPath();
+  if (shape.kind === SHAPE.POLY) {
+    const [x0, y0, ...rest] = shape.points;
+    ctx.moveTo(x0, y0);
+    for (let i = 0; i < rest.length; i += 2) ctx.lineTo(rest[i], rest[i + 1]);
+  } else if (shape.kind === SHAPE.RECT) {
+    ctx.rect(...shape.box);
+  } else {
+    const [x, y, r] = shape.disc;
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+  }
+  ctx.closePath();
+}
+
+// An ellipse brush carries the matrix that takes a scene offset TO the unit
+// circle; a canvas wants the one that goes the other way, so it is inverted.
+function fillThroughEllipse(ctx, { ellipse, colors }) {
+  const [o0, o1, x, y, ia, ib, ic, id] = ellipse;
+  const det = ia * id - ib * ic;
+  if (Math.abs(det) < 1e-4) { ctx.fillStyle = colors[0]; ctx.fill(); return; }
   ctx.save();
-  ctx.globalAlpha = 0.25 + 0.75 * fade;
+  ctx.clip();
+  ctx.transform(id / det, -ic / det, -ib / det, ia / det, x, y);
+  const gradient = withStops(ctx.createRadialGradient(0, 0, 0, 0, 0, 1),
+    [[stopAt(o0), colors[0]], [stopAt(o1, stopAt(o0)), colors[1]]]);
+  ctx.fillStyle = gradient;
+  ctx.fillRect(-1e4, -1e4, 2e4, 2e4); // clipped to the path; past r=1 the gradient holds
+  ctx.restore();
+}
+
+function fillShape(ctx, shape) {
+  const paint = paintFor(ctx, shape.fill);
+  if (paint.ellipse) fillThroughEllipse(ctx, paint);
+  else { ctx.fillStyle = paint; ctx.fill(); }
+}
+
+function paintFrame(ctx, shapes) {
+  for (const shape of shapes) {
+    // A blend mark is not a shape: it says how the shapes after it combine.
+    if (shape.kind === SHAPE.BLEND) {
+      ctx.globalCompositeOperation = shape.additive ? 'lighter' : 'source-over';
+      continue;
+    }
+    if (shape.clip) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(...shape.clip);
+      ctx.clip();
+      tracePath(ctx, shape);
+      fillShape(ctx, shape);
+      ctx.restore();
+      continue;
+    }
+    tracePath(ctx, shape);
+    fillShape(ctx, shape);
+  }
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+// ── the keyboard ───────────────────────────────────────────────────────────
+// The page owns it and the game is told. Every tick carries two bit sets:
+// which keys are down now, and which went down since the last tick. A game
+// needs both — snake turns on the edge, a paddle moves while a key is held —
+// so an event alone will not do.
+//
+// The bits are Keys.roc's, in its order.
+const KEY_BIT = {
+  ArrowUp: 1, ArrowDown: 2, ArrowLeft: 4, ArrowRight: 8,
+  KeyW: 16, KeyA: 32, KeyS: 64, KeyD: 128,
+  Space: 256, Escape: 512, Enter: 1024, KeyF: 2048, KeyP: 4096, KeyR: 8192,
+};
+
+const maskOf = (codes) => [...codes].reduce((bits, code) => bits | (KEY_BIT[code] ?? 0), 0);
+
+function watchKeyboard(target) {
+  const held = new Set();
+  let struck = new Set();
+  const known = (event) => event.code in KEY_BIT;
+
+  target.addEventListener('keydown', (event) => {
+    if (!known(event)) return;
+    if (!event.repeat) struck.add(event.code);
+    held.add(event.code);
+    event.preventDefault();
+  });
+  target.addEventListener('keyup', (event) => {
+    if (!known(event)) return;
+    held.delete(event.code);
+    event.preventDefault();
+  });
+  // A window that loses focus loses its keys with it, or a paddle sticks.
+  target.addEventListener('blur', () => { held.clear(); struck.clear(); });
+
+  // Reading a snapshot consumes the edges, as one tick's worth.
+  return () => {
+    const snapshot = { held: maskOf(held), struck: maskOf(struck) };
+    struck = new Set();
+    return snapshot;
+  };
+}
+
+// ── the speaker ────────────────────────────────────────────────────────────
+// There is no audio here yet, and the game does not know that: it reports that
+// a sound happened, exactly as it does natively, and here that lights a pip.
+
+const FADE_MS = 420;
+const bitsOf = (word) => [...Array(32).keys()].filter((bit) => word & (1 << bit));
+
+function drawSpeaker(ctx, width, height, toneCount, ringing, now) {
+  const age = now - ringing.at;
+  if (age > FADE_MS) return;
+  const fade = 1 - age / FADE_MS;
+  const x = width - 30 - toneCount * 9;
+  const y = height - 26;
+
+  ctx.save();
+  ctx.globalAlpha = 0.3 + 0.7 * fade;
   ctx.fillStyle = '#d7e3ff';
-  // A speaker: a box and a cone.
   ctx.fillRect(x - 9, y - 4, 5, 8);
   ctx.beginPath();
-  ctx.moveTo(x - 4, y - 4); ctx.lineTo(x + 2, y - 9);
-  ctx.lineTo(x + 2, y + 9); ctx.lineTo(x - 4, y + 4);
-  ctx.closePath(); ctx.fill();
-  // One arc per tone that fired, so three sounds look different from one.
-  ctx.strokeStyle = '#7ef7d1';
-  ctx.lineWidth = 1.5;
-  for (let i = 0; i < lit.count; i++) {
+  ctx.moveTo(x - 4, y - 4);
+  ctx.lineTo(x + 2, y - 9);
+  ctx.lineTo(x + 2, y + 9);
+  ctx.lineTo(x - 4, y + 4);
+  ctx.closePath();
+  ctx.fill();
+  // One pip per tone the game has; the ones that just sounded are lit.
+  for (let tone = 0; tone < toneCount; tone++) {
+    ctx.fillStyle = ringing.tones.includes(tone) ? '#7ef7d1' : '#2a3566';
     ctx.beginPath();
-    ctx.arc(x + 2, y, 6 + i * 4 + (1 - fade) * 6, -0.9, 0.9);
-    ctx.stroke();
+    ctx.arc(x + 14 + tone * 9, y, 3, 0, Math.PI * 2);
+    ctx.fill();
   }
   ctx.restore();
 }
 
-// ── 6. THE PAGE ────────────────────────────────────────────────────────────────
+// ── the page ───────────────────────────────────────────────────────────────
+
+function bindGame(exports) {
+  return {
+    memory: exports.memory,
+    render: exports.renderFrame,      // compute a frame; answers its byte length
+    advance: exports.advance,         // one step, given (held, struck)
+    sounds: exports.sounds,           // a bit per tone the last step set off
+    toneCount: exports.toneCount,     // how many tones the game has
+    width: exports.width,
+    height: exports.height,
+    fps: exports.fps,                 // how often the game means to be stepped
+    frameAt: exports.bufPtr,
+  };
+}
+
+const CATCH_UP = 4; // steps one animation frame may take before time is dropped
+
 async function main(show) {
   document.body.style.cssText =
     'margin:0;background:#06080f;height:100vh;display:flex;flex-direction:column;' +
     'align-items:center;justify-content:center;font:13px system-ui,sans-serif;color:#6d7aa8';
+  const loading = document.createElement('div');
+  loading.textContent = show.loading ?? 'Loading…';
+  document.body.appendChild(loading);
+
+  const { instance } = await WebAssembly.instantiateStreaming(fetch(show.wasm), { env: {} });
+  const game = bindGame(instance.exports);
+  const width = game.width();
+  const height = game.height();
+  const toneCount = game.toneCount();
+  const stepMs = 1000 / game.fps();
 
   const canvas = document.createElement('canvas');
-  canvas.style.cssText = 'background:#06080f;max-width:100%;max-height:88vh;image-rendering:auto';
+  canvas.width = width;
+  canvas.height = height;
+  canvas.style.cssText = 'background:#06080f;max-width:100%;max-height:88vh';
+  const ctx = canvas.getContext('2d');
+
   const hint = document.createElement('div');
   hint.textContent = show.hint ?? '';
   hint.style.cssText = 'margin-top:10px;letter-spacing:.04em';
-  const spinner = document.createElement('div');
-  spinner.textContent = show.loading ?? 'Loading…';
-  document.body.appendChild(spinner);
 
-  const { instance } = await WebAssembly.instantiateStreaming(fetch(show.wasm), { env: {} });
-  const scene = bindScene(instance.exports);
-  const W = scene.width(), H = scene.height();
-  canvas.width = W; canvas.height = H;
-  const ctx = canvas.getContext('2d');
+  const snapshot = watchKeyboard(window);
+  const ringing = { at: -Infinity, tones: [] };
 
-  const held = new Set(), struck = new Set();
-  const lit = { at: -1e9, count: 0 };
+  const step = (now) => {
+    const { held, struck } = snapshot();
+    game.advance(held, struck);
+    const rung = game.sounds();
+    if (rung) { ringing.at = now; ringing.tones = bitsOf(rung); }
+  };
 
-  function mask(set) { let m = 0; for (const code of set) m |= BIT[code] ?? 0; return m; }
+  const draw = (now) => {
+    // The canvas keeps what was drawn, so a frame starts from nothing —
+    // as the native runner's clear does.
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, width, height);
+    // render() computes the frame and may move the buffer, so its pointer is
+    // read after, never as a sibling argument.
+    const bytes = game.render();
+    paintFrame(ctx, decodeFrame(game.memory, game.frameAt(), bytes));
+    drawSpeaker(ctx, width, height, toneCount, ringing, now);
+  };
 
-  function step(now) {
-    scene.advance(mask(held), mask(struck));
-    struck.clear();
-    const rung = scene.sounds();
-    if (rung) { lit.at = now; lit.count = (rung & 1) + ((rung >> 1) & 1) + ((rung >> 2) & 1); }
-  }
-
-  function draw(now) {
-    const len = scene.render();
-    blit(ctx, scene.memory, scene.bufferAt(), len);
-    drawSpeaker(ctx, W, H, lit, now);
-  }
-
-  const STEP_MS = 1000 / (scene.fps() || 60);
-  const CATCH_UP = 4;
-  let owed = 0, last = performance.now(), running = true;
-
-  function loop(now) {
-    const since = Math.min(now - last, 250);
+  // The game sets the rate, not the display: elapsed time is banked and steps
+  // are taken as they fall due.
+  let owed = 0;
+  let last = performance.now();
+  const loop = (now) => {
+    owed = Math.min(owed + (now - last), stepMs * CATCH_UP);
     last = now;
-    if (running) {
-      owed += since;
-      let steps = 0;
-      while (owed >= STEP_MS && steps < CATCH_UP) { step(now); owed -= STEP_MS; steps++; }
-      if (steps) draw(now);
-    } else {
-      owed = 0;
-    }
+    let stepped = 0;
+    while (owed >= stepMs) { step(now); owed -= stepMs; stepped++; }
+    if (stepped) draw(now);
     requestAnimationFrame(loop);
-  }
+  };
 
-  window.addEventListener('keydown', (e) => {
-    if (!(e.code in BIT)) return;
-    if (!e.repeat) struck.add(e.code);
-    held.add(e.code);
-    e.preventDefault();
-  });
-  window.addEventListener('keyup', (e) => {
-    if (!(e.code in BIT)) return;
-    held.delete(e.code);
-    e.preventDefault();
-  });
-  // A game that loses the window loses its keys with it, or a paddle sticks.
-  window.addEventListener('blur', () => { held.clear(); struck.clear(); });
-
-  spinner.remove();
+  loading.remove();
   document.body.appendChild(canvas);
   document.body.appendChild(hint);
   draw(performance.now());

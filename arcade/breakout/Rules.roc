@@ -18,7 +18,6 @@ Rules := [].{
 	Controls : {
 		move : Paddle.Move,
 		action_pressed : Bool,
-		quit_pressed : Bool,
 	}
 
 	World : {

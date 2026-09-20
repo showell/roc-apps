@@ -90,4 +90,6 @@ additive glow is approximated with radial fills, because a shape carries a
 brush but not a blend mode.
 
 Sound is reported but not played: the game says which tones a step set off, the
-page lights a widget in the corner, and the native runner ignores it for now.
+page lights one pip per tone in the corner, and the native runner ignores it
+for now. The width is part of the seam (`tone_count`), because a runner that
+guesses it gets the first game with more than three wrong.

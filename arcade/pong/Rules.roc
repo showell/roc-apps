@@ -47,7 +47,6 @@ Rules :: [].{
 	Controls : {
 		move : F32,
 		new_match_pressed : Bool,
-		quit_pressed : Bool,
 	}
 
 	## The match ends as soon as either score reaches the winning score.
@@ -300,7 +299,7 @@ test_world = {
 }
 
 no_controls : Rules.Controls
-no_controls = { move: 0, new_match_pressed: Bool.False, quit_pressed: Bool.False }
+no_controls = { move: 0, new_match_pressed: Bool.False }
 
 expect !Rules.is_over(test_world)
 expect Rules.is_over({ ..test_world, right: { ..test_world.right, score: Rules.win_score } })

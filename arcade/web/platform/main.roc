@@ -13,6 +13,7 @@ platform ""
 			advance : Box(model), U32, U32 -> Box(model),
 			render : Box(model) -> List(U32),
 			sounds : Box(model) -> U32,
+			tone_count : Box(model) -> U32,
 			width : Box(model) -> U32,
 			height : Box(model) -> U32,
 			fps : Box(model) -> U32,
@@ -25,6 +26,7 @@ platform ""
 		"roc_advance": advance_for_host,
 		"roc_render": render_for_host,
 		"roc_sounds": sounds_for_host,
+		"roc_tone_count": tone_count_for_host,
 		"roc_width": width_for_host,
 		"roc_height": height_for_host,
 		"roc_fps": fps_for_host,
@@ -33,7 +35,7 @@ platform ""
 		inputs_dir: "targets/",
 		wasm32: {
 			inputs: ["host.wasm", app],
-			exports: ["renderFrame", "bufPtr", "bufHighWater", "bufCap", "advance", "sounds", "width", "height", "fps"],
+			exports: ["renderFrame", "bufPtr", "bufHighWater", "bufCap", "advance", "sounds", "toneCount", "width", "height", "fps"],
 		},
 	}
 
@@ -41,6 +43,7 @@ init_for_host = program.init
 advance_for_host = program.advance
 render_for_host = program.render
 sounds_for_host = program.sounds
+tone_count_for_host = program.tone_count
 width_for_host = program.width
 height_for_host = program.height
 fps_for_host = program.fps

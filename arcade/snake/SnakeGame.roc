@@ -18,23 +18,18 @@ import SnakeDraw
 SnakeGame :: [].{
 	Model : { world : Rules.World, elapsed : F64, sounds : U32 }
 
-	# A fixed sixtieth, so the rules are a function of the ticks and the keys
-	# rather than of how long a frame happened to take.
-	step_dt : F32
-	step_dt = 0.016666666666666666
 
 	game : Game.Game(SnakeGame.Model)
 	game = {
 		size: { width: SnakeDraw.screen_w, height: SnakeDraw.screen_h },
 		fps: 60,
 		init: { world: Rules.new_world(Random.seed(1)), elapsed: 0.0, sounds: 0 },
-		advance: |m, keys| step(m, keys),
+		advance: |m, keys, dt| step(m, keys, dt),
 		frame: |m| SnakeDraw.frame(m.world, m.elapsed),
 		sounds: |m| m.sounds,
 		# Eaten, crashed, started -- the three tones upstream generates.
 		tones: [{ freq: 620, ms: 70 }, { freq: 120, ms: 180 }, { freq: 360, ms: 80 }],
 		title: "Snake",
-		stem: "snake",
 	}
 
 	## Translates keyboard bindings into a requested Snake turn and buttons.
@@ -52,14 +47,14 @@ SnakeGame :: [].{
 			} else {
 				KeepDirection
 			}
-		{ requested_direction, restart_pressed: devices.key_pressed(KeySpace), quit_pressed: devices.key_pressed(KeyEscape) }
+		{ requested_direction, restart_pressed: devices.key_pressed(KeySpace),  }
 	}
 
-	step : SnakeGame.Model, Keys.Snapshot -> SnakeGame.Model
-	step = |m, keys| {
+	step : SnakeGame.Model, Keys.Snapshot, F32 -> SnakeGame.Model
+	step = |m, keys, dt| {
 		controls = read_controls(keys)
-		(world, events) = Rules.update(m.world, controls, step_dt)
-		{ world, elapsed: m.elapsed + 0.016666666666666666, sounds: rung(events, 0) }
+		(world, events) = Rules.update(m.world, controls, dt)
+		{ world, elapsed: m.elapsed + F32.to_f64(dt), sounds: rung(events, 0) }
 	}
 
 	## Which tones the step set off, a bit each, in `tones` order.

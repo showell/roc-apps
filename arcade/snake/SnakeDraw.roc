@@ -5,10 +5,8 @@
 # answers one instead, and the same list is filled by a canvas in a browser and
 # by roc-ray in a window.
 #
-# **THE GLOW IS APPROXIMATED.** The original wraps its halos in an additive
-# blend, and a Shape carries a brush but not a blend mode; these are radial
-# fills over the background, which reads close enough at these sizes and costs
-# nothing new on any wire.
+# The halos are additive, as upstream's are: `Blend(Add)` marks the run and
+# `Blend(Over)` ends it.
 import lib.Shapes
 import lib.Brush
 import lib.Font
@@ -142,8 +140,10 @@ SnakeDraw :: [].{
 		food_r = cell * (1.0 + 0.5 * beat)
 		head_r = cell * 1.5
 		[
+			Blend(Add),
 			Disc({ x: f.x, y: f.y, r: food_r, fill: Radial({ inner: Brush.with_alpha(0x50ff6b8b), outer: Brush.with_alpha(0x00ff6b8b), x: f.x, y: f.y, r0: 0.0, r1: food_r }), clip: Anywhere }),
 			Disc({ x: h.x, y: h.y, r: head_r, fill: Radial({ inner: Brush.with_alpha(0x407ef7d1), outer: Brush.with_alpha(0x007ef7d1), x: h.x, y: h.y, r0: 0.0, r1: head_r }), clip: Anywhere }),
+			Blend(Over),
 		]
 	}
 

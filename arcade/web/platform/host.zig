@@ -29,6 +29,7 @@ const RocList = builtins.list.RocList;
 extern fn roc_init() callconv(.c) ?[*]u8;
 extern fn roc_advance(model: ?[*]u8, held: u32, struck: u32) callconv(.c) ?[*]u8;
 extern fn roc_sounds(model: ?[*]u8) callconv(.c) u32;
+extern fn roc_tone_count(model: ?[*]u8) callconv(.c) u32;
 extern fn roc_render(model: ?[*]u8) callconv(.c) RocList;
 extern fn roc_width(model: ?[*]u8) callconv(.c) u32;
 extern fn roc_height(model: ?[*]u8) callconv(.c) u32;
@@ -172,5 +173,11 @@ pub export fn fps() u32 {
 // speaker or a widget in the corner of a page.
 pub export fn sounds() u32 {
     return roc_sounds(borrowed());
+}
+
+// How many tones the game HAS, so a runner never has to guess the width of
+// the word above.
+pub export fn toneCount() u32 {
+    return roc_tone_count(borrowed());
 }
 

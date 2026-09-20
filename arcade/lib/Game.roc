@@ -24,10 +24,12 @@ Game :: [].{
 
 		init : model,
 
-		# **ONE STEP, GIVEN WHAT THE KEYBOARD LOOKS LIKE NOW.** The snapshot
-		# is a value, so the browser's event loop can make one and a test can
-		# write one down.
-		advance : model, Keys.Snapshot -> model,
+		# **ONE STEP, GIVEN WHAT THE KEYBOARD LOOKS LIKE NOW AND HOW LONG THE
+		# STEP COVERS.** The snapshot is a value, so the browser's event loop
+		# can make one and a test can write one down. The seconds are always
+		# `1 / fps`: a runner paces to that and passes it, rather than each
+		# game writing the same sixtieth twice and hoping it matches `fps`.
+		advance : model, Keys.Snapshot, F32 -> model,
 
 		# What to draw.
 		frame : model -> List(Shapes.Shape),
@@ -35,10 +37,14 @@ Game :: [].{
 		# Which of `tones` the last step set off, as a bit per tone. A game
 		# reports that a sound HAPPENED; whether that is a speaker or a widget
 		# in the corner of a web page is the runner's business.
+		#
+		# **THE WIDTH IS PART OF THE CONTRACT.** A runner that guesses how many
+		# tones there are gets it wrong on the first game with more: the page
+		# assumed three, Breakout has five, and breaking a brick lit a speaker
+		# with no sound coming out of it.
 		sounds : model -> U32,
 		tones : List({ freq : I32, ms : I32 }),
 
 		title : Str,
-		stem : Str,
 	}
 }

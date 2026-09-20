@@ -18,39 +18,34 @@ import PongDraw
 PongGame :: [].{
 	Model : { world : Rules.World, sounds : U32 }
 
-	# A fixed sixtieth, so a rally is a function of the ticks and the keys.
-	step_dt : F32
-	step_dt = 0.016666666666666666
 
 	game : Game.Game(PongGame.Model)
 	game = {
 		size: { width: 800.0, height: 600.0 },
 		fps: 60,
 		init: { world: Rules.new_match(Rules.opening(Random.seed(7))), sounds: 0 },
-		advance: |m, keys| step(m, keys),
+		advance: |m, keys, dt| step(m, keys, dt),
 		frame: |m| PongDraw.frame(m.world),
 		sounds: |m| m.sounds,
 		# Paddle, wall, point -- the three tones upstream generates.
 		tones: [{ freq: 440, ms: 60 }, { freq: 220, ms: 50 }, { freq: 160, ms: 200 }],
 		title: "Pong",
-		stem: "pong",
 	}
 
 	## Translates keyboard bindings into paddle movement and buttons.
 	read_controls : Keys.Snapshot -> Rules.Controls
 	read_controls = |devices| {
 		move: if devices.key_down(KeyW) -1 else if devices.key_down(KeyS) 1 else 0,
-		new_match_pressed: devices.key_pressed(KeySpace),
-		quit_pressed: devices.key_pressed(KeyEscape),
+		new_match_pressed: devices.key_pressed(KeySpace)
 	}
 
-	step : PongGame.Model, Keys.Snapshot -> PongGame.Model
-	step = |m, keys| {
+	step : PongGame.Model, Keys.Snapshot, F32 -> PongGame.Model
+	step = |m, keys, dt| {
 		controls = read_controls(keys)
 		(world, events) = if Rules.is_over(m.world) {
 			Rules.step_game_over(m.world, controls)
 		} else {
-			Rules.step_playing(m.world, controls, step_dt)
+			Rules.step_playing(m.world, controls, dt)
 		}
 		{ world, sounds: rung(events) }
 	}

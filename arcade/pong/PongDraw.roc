@@ -4,10 +4,8 @@
 # Here a frame is a value, so this answers a list of shapes and the same list
 # is filled by a canvas in a browser and by roc-ray in a window.
 #
-# **THE GLOW AND THE TRAIL ARE APPROXIMATED.** Upstream wraps both in an
-# additive blend, and a Shape carries a brush but not a blend mode; these are
-# radial fills and translucent discs over the field, which reads close at these
-# sizes and needs nothing new on any wire.
+# The comet, the halos and the flash are additive, as upstream's are: one
+# `Blend(Add)` run covers all three.
 import lib.Shapes
 import lib.Brush
 import lib.Color
@@ -32,9 +30,11 @@ PongDraw :: [].{
 		$out = List.append($out, Rect({ x: 0.0, y: 0.0, w: w, h: h, fill: Linear({ c0: Color.brush(Rules.field_top), c1: Color.brush(Rules.field_bottom), o0: 0.0, o1: 1.0, ax: 0.0, ay: 0.0, dx: 0.0, dy: h, len2: h * h }) }))
 		$out = List.concat($out, center_line({}))
 		$out = List.concat($out, scores(world))
+		$out = List.append($out, Blend(Add))
 		$out = List.concat($out, trail(world))
 		$out = List.concat($out, glow(world))
 		$out = List.concat($out, wash(world))
+		$out = List.append($out, Blend(Over))
 		$out = List.concat($out, bodies(world))
 		List.concat($out, banner(world))
 	}

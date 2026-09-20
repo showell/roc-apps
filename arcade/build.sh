@@ -11,7 +11,8 @@
 # package reference may.
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROC="${ROC:-$HOME/build/roc-nightly/roc}"
+# The compiler roc-ray pins, so both ends of a game are built by one.
+ROC="${ROC:-$HOME/build/roc-nightly/roc_nightly-linux_x86_64-2026-09-07-14d9829/roc}"
 ZIG="${ZIG:-$HOME/zig-0.16.0/zig}"
 name="${1:?usage: arcade/build.sh <game>}"
 app="$HERE/${name}_web.roc"
