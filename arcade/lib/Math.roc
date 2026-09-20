@@ -42,6 +42,11 @@ Math :: [].{
 	center : Math.Rect -> Math.Vec2
 	center = |r| { x: r.x + r.width / 2, y: r.y + r.height / 2 }
 
+	## Whether a rectangle contains a point, including its edges.
+	contains : Math.Rect, Math.Vec2 -> Bool
+	contains = |r, point|
+		point.x >= left(r) and point.x <= right(r) and point.y >= top(r) and point.y <= bottom(r)
+
 	clamp : F32, F32, F32 -> F32
 	clamp = |v, lo, hi| if v < lo { lo } else if v > hi { hi } else { v }
 

@@ -7,9 +7,10 @@ game is driven.
     arcade/build.sh snake       the page,   http://<box>:9210/snake/
     arcade/native.sh snake      the native program
     node arcade/web/page_check.mjs snake
+    KEYS=3:Space DRAG=200,100,200,500 node arcade/web/page_check.mjs pong
     node arcade/web/lens_check.mjs      the camera, on both ends
 
-Four of them: `snake`, `pong`, `breakout`, `camera`.
+Five of them: `snake`, `pong`, `breakout`, `camera`, `workshop`.
 
 ## Where the splits are
 
@@ -67,6 +68,42 @@ roc-ray as `../../roc-ray`, a sibling of roc-apps.
         <Name>Game.roc    the Game value: the keyboard, the clock, the sounds
         page.html         the page
         …                 the rules and the drawing
+
+## Pixel Workshop, ported
+
+roc-ray's `examples/generated_assets`: a 16 x 16 pixel canvas you drag on, with
+four colours and a brush note. Upstream calls it "a tiny paint program with a
+mutable GPU texture", and porting it **deleted the mutable GPU texture**.
+
+There, the drawing lives twice. `pixels : List(Color.Rgba)` is in the model and
+a `Assets.Texture` is on the GPU, and the editor answers
+`Edited : { model, edits }` so that every branch changing one remembers to emit
+the upload that changes the other -- upstream's own comment says that returning
+both together "is what keeps the two from drifting apart".
+
+Here a frame is a VALUE computed from the model, so there is no second copy to
+drift. `Shapes.Image` carries the pixels themselves. `Upload` and
+`UploadRegion` are gone, the `Edit` type with them, and the third edit --
+`Play` -- is the `sounds` bitmask this seam already had. **The port is smaller
+than the original because a whole synchronisation problem stopped existing.**
+
+The trade is honest and worth stating: the whole picture crosses the wire every
+frame rather than the one cell you painted. At 256 pixels beside the 9,000
+words a frame already carries, that is not close. **A LOADED image is a
+different thing** -- nobody re-sends a tileset sixty times a second -- and it
+still wants a handle and a way to load one, which is where top_down and
+cave_climb stop.
+
+Each painter gets the picture in the form it can paint: `putImageData` into a
+scratch canvas and `drawImage` with smoothing off on a page, and on roc-ray the
+rectangles it is, the same way a concave polygon arrives as triangles.
+
+Upstream's five brush pitches are five tones here, at the frequencies those
+pitches produce, because a tone on this seam is a pitch and a length. What did
+not come across: `Mouse.set_cursor!`, which is an effect with nowhere to go.
+
+`page_check` learned `DRAG` for this one. A check that cannot press a key checks
+the attract screen; a check that cannot drag checks a canvas nobody painted on.
 
 ## Camera world, ported
 

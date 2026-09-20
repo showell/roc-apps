@@ -10,7 +10,7 @@
 // ShapeWire.roc's layout, read back. Decoding is pure: it walks the words and
 // answers plain descriptors, and nothing here touches a canvas.
 
-const SHAPE = { POLY: 0, DISC: 1, RECT: 2, BLEND: 3, VIEW: 4 };
+const SHAPE = { POLY: 0, DISC: 1, RECT: 2, BLEND: 3, VIEW: 4, IMAGE: 5 };
 const FILL = { FLAT: 0, SPAN: 1, RADIAL: 2, LINEAR: 3, ELLIPSE: 4, GLOW: 5 };
 
 const channel = (byte) => Math.max(0, Math.min(255, Math.round(byte)));
@@ -49,6 +49,19 @@ function readShape(words, floats, at) {
     if (!words[at + 1]) return [{ kind, lens: null }, at + 2];
     const [lens, next] = readFloats(floats, at + 2, 6);
     return [{ kind, lens }, next];
+  }
+  // A picture: how many cells each way, where it goes, and then one word a
+  // pixel. **THE PIXELS ARE COPIED OUT**, by `slice` rather than `subarray`:
+  // a view into the frame is a view into wasm memory, which the next step
+  // overwrites, so anything that held one would be reading the frame after
+  // this one. Decoding answers values everywhere else and it answers a value
+  // here; a memcpy of a few hundred words is not what to save.
+  if (kind === SHAPE.IMAGE) {
+    const cols = words[at + 1];
+    const rows = words[at + 2];
+    const [box, afterBox] = readFloats(floats, at + 3, 4);
+    const next = afterBox + cols * rows;
+    return [{ kind, cols, rows, box, pixels: words.slice(afterBox, next) }, next];
   }
 
   const [fill, afterFill] = readFill(words, floats, at + 1);
@@ -175,6 +188,42 @@ function setLens(ctx, lens) {
   ctx.setTransform(cos, sin, -sin, cos, ox - (tx * cos - ty * sin), oy - (tx * sin + ty * cos));
 }
 
+// A picture is drawn through a scratch canvas of its own size and then
+// stretched with smoothing off, which is what nearest-neighbour is on a canvas.
+// One scratch canvas is kept and resized, because a frame may hold several and
+// a new canvas per picture per frame is a new canvas sixty times a second.
+const scratch = { canvas: null, ctx: null };
+
+function paintImage(ctx, { cols, rows, box, pixels }) {
+  if (!cols || !rows) return;
+  if (!scratch.canvas) {
+    scratch.canvas = document.createElement('canvas');
+    scratch.ctx = scratch.canvas.getContext('2d');
+  }
+  if (scratch.canvas.width !== cols || scratch.canvas.height !== rows) {
+    scratch.canvas.width = cols;
+    scratch.canvas.height = rows;
+  }
+  const image = scratch.ctx.createImageData(cols, rows);
+  const bytes = image.data;
+  // The wire packs a pixel as 0xAARRGGBB; ImageData wants the four bytes in
+  // the other order, and writing them one at a time says which is which.
+  for (let i = 0; i < cols * rows; i++) {
+    const pixel = pixels[i];
+    bytes[i * 4] = (pixel >>> 16) & 255;
+    bytes[i * 4 + 1] = (pixel >>> 8) & 255;
+    bytes[i * 4 + 2] = pixel & 255;
+    bytes[i * 4 + 3] = (pixel >>> 24) & 255;
+  }
+  scratch.ctx.putImageData(image, 0, 0);
+  const smoothing = ctx.imageSmoothingEnabled;
+  ctx.imageSmoothingEnabled = false;
+  // drawImage goes through the current transform, so a picture inside a view
+  // scope lands in the world like everything else.
+  ctx.drawImage(scratch.canvas, 0, 0, cols, rows, box[0], box[1], box[2], box[3]);
+  ctx.imageSmoothingEnabled = smoothing;
+}
+
 function paintFrame(ctx, shapes) {
   for (const shape of shapes) {
     // A blend mark is not a shape: it says how the shapes after it combine.
@@ -185,6 +234,11 @@ function paintFrame(ctx, shapes) {
     // Nor is a view mark: it says where they are.
     if (shape.kind === SHAPE.VIEW) {
       setLens(ctx, shape.lens);
+      continue;
+    }
+    // A picture is not a path, so it is not traced and filled.
+    if (shape.kind === SHAPE.IMAGE) {
+      paintImage(ctx, shape);
       continue;
     }
     if (shape.clip) {

@@ -97,7 +97,7 @@ GameRunner :: [].{
 	# look tautological because the tags are spelled the same on purpose; they
 	# are two different types, and this is the bridge.
 	watched_keys : List(Keys.Key)
-	watched_keys = [KeyUp, KeyDown, KeyLeft, KeyRight, KeyW, KeyA, KeyS, KeyD, KeySpace, KeyEnter, KeyP, KeyR, KeyQ, KeyE]
+	watched_keys = [KeyUp, KeyDown, KeyLeft, KeyRight, KeyW, KeyA, KeyS, KeyD, KeySpace, KeyEnter, KeyP, KeyR, KeyQ, KeyE, KeyC, Key1, Key2, Key3, Key4]
 
 	input_of : Devices.Snapshot -> Input.Snapshot
 	input_of = |devices| {
@@ -158,6 +158,11 @@ GameRunner :: [].{
 			KeyR => d.key_down(KeyR)
 			KeyQ => d.key_down(KeyQ)
 			KeyE => d.key_down(KeyE)
+			KeyC => d.key_down(KeyC)
+			Key1 => d.key_down(Key1)
+			Key2 => d.key_down(Key2)
+			Key3 => d.key_down(Key3)
+			Key4 => d.key_down(Key4)
 		}
 
 	host_key_pressed : Devices.Snapshot, Keys.Key -> Bool
@@ -177,6 +182,11 @@ GameRunner :: [].{
 			KeyR => d.key_pressed(KeyR)
 			KeyQ => d.key_pressed(KeyQ)
 			KeyE => d.key_pressed(KeyE)
+			KeyC => d.key_pressed(KeyC)
+			Key1 => d.key_pressed(Key1)
+			Key2 => d.key_pressed(Key2)
+			Key3 => d.key_pressed(Key3)
+			Key4 => d.key_pressed(Key4)
 		}
 
 	update! : Game.Game(model), GameRunner.Model(model), App.Input(GameRunner.Msg), App.Io => Try(GameRunner.Model(model), [Exit(I64), ..])
@@ -342,10 +352,43 @@ GameRunner :: [].{
 			Pieces(p) => with_fill!(gpu, frame, p.fill, Anywhere, |f, col| draw_triangles!(f, p.tris, col))
 			Disc(d) => with_fill!(gpu, frame, d.fill, d.clip, |f, col| f.circle!({ center: point(d.x, d.y), radius: F64.to_f32_wrap(d.r), style: Draw.filled(col) }))
 			Rect(r) => with_fill!(gpu, frame, r.fill, Anywhere, |f, col| f.rectangle!({ x: F64.to_f32_wrap(r.x), y: F64.to_f32_wrap(r.y), width: F64.to_f32_wrap(r.w), height: F64.to_f32_wrap(r.h), style: Draw.filled(col) }))
+			# **roc-ray IS HANDED THE RECTANGLES**, as it is handed triangles
+			# for a concave polygon: each painter gets a frame in the form it
+			# can paint. A canvas has `putImageData`; here a texture would be
+			# a GPU resource created and dropped every frame, since `render!`
+			# cannot keep one.
+			Image(i) => draw_pixels!(frame, i)
 			# Runs are split before this, so a mark never reaches here.
 			Blend(_) => {}
 			View(_) => {}
 		}
+
+	draw_pixels! : Draw.Frame, { x : F64, y : F64, w : F64, h : F64, cols : U64, rows : U64, pixels : List(Brush.Rgba) } => {}
+	draw_pixels! = |frame, image| {
+		n = image.cols * image.rows
+		var $k = 0
+		while $k < n {
+			col = $k % image.cols
+			row = $k // image.cols
+			# Each cell edge to edge rather than a width times an index, so
+			# neighbours meet exactly and no seam shows through.
+			x0 = image.x + image.w * span(col) / span(image.cols)
+			x1 = image.x + image.w * span(col + 1) / span(image.cols)
+			y0 = image.y + image.h * span(row) / span(image.rows)
+			y1 = image.y + image.h * span(row + 1) / span(image.rows)
+			colour = List.get(image.pixels, $k) ?? { r: 0.0, g: 0.0, b: 0.0, a: 0.0 }
+			if colour.a > 0.0 {
+				frame.rectangle!({ x: F64.to_f32_wrap(x0), y: F64.to_f32_wrap(y0), width: F64.to_f32_wrap(x1 - x0), height: F64.to_f32_wrap(y1 - y0), style: Draw.filled(color_of(colour)) })
+			} else {
+				{}
+			}
+			$k = $k + 1
+		}
+		{}
+	}
+
+	span : U64 -> F64
+	span = |n| I64.to_f64(U64.to_i64_wrap(n))
 
 	# Draw with a flat colour directly, or through the shader: its uniforms set for
 	# the fill and the geometry drawn in white, which the shader ignores.

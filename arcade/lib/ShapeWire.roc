@@ -13,7 +13,7 @@
 #
 # The layout, all 32-bit words, floats as bit patterns:
 #
-#   kind    0 poly, 1 disc, 2 rect, 3 blend, 4 view
+#   kind    0 poly, 1 disc, 2 rect, 3 blend, 4 view, 5 image
 #   mode    which brush (0 flat, 1 span, 2 radial, 3 linear, 4 ellipse, 5 glow)
 #   brush   its colours (0xRRGGBB, then alpha) and its geometry
 #   shape   poly: count, then x, y pairs · disc: x, y, r, then a clip
@@ -22,6 +22,12 @@
 # The two marks are the exception and carry no brush. A blend is the kind and
 # the mode it switches to. A view is the kind and then a lens: 0 for the
 # screen, or 1 and then the camera's target, offset, rotation and zoom.
+#
+# An image is the kind, its cols and rows, its rectangle, and then one word a
+# PIXEL, 0xAARRGGBB. A brush's colour takes two words -- a packed RGB and the
+# alpha as a float -- because a brush is a handful of colours and the float is
+# what every painter shades with; a picture is thousands of them and bytes are
+# what one is made of.
 #
 # A clip is a word that is 0, or 1 and then x, y, w, h.
 import Brush
@@ -40,6 +46,8 @@ ShapeWire :: [].{
 	# Not a shape either: a mark that changes where they are.
 	kind_view : U32
 	kind_view = 4
+	kind_image : U32
+	kind_image = 5
 
 	pack : List(Shapes.Shape) -> List(U32)
 	pack = |shapes| {
@@ -68,11 +76,24 @@ ShapeWire :: [].{
 			# A mark, not a shape: one word for the kind and one for the mode.
 			Blend(m) => [kind_blend, if m == Add { 1 } else { 0 }]
 			View(l) => List.concat([kind_view], lens(l))
+			Image(i) => List.concat(
+				List.concat([kind_image, U64.to_u32_wrap(i.cols), U64.to_u32_wrap(i.rows)], nums([i.x, i.y, i.w, i.h])),
+				List.map(i.pixels, pixel),
+			)
 			# **THE PAGE IS NEVER SENT PIECES.** A canvas fills a concave
 			# polygon itself, so nothing here cuts one up; see `Shapes.cut`,
 			# which is the step roc-ray asks for and this does not.
 			Pieces(_) => crash("ShapeWire: a page is never sent Pieces; do not cut a frame it will draw")
 		}
+
+	# One pixel, 0xAARRGGBB: the bytes a picture is made of, in the order
+	# `putImageData` wants them read back out.
+	pixel : Brush.Rgba -> U32
+	pixel = |c|
+		U32.bitwise_or(
+			U32.bitwise_or(U32.shl_wrap(byte(c.a * 255.0), 24), U32.shl_wrap(byte(c.r), 16)),
+			U32.bitwise_or(U32.shl_wrap(byte(c.g), 8), byte(c.b)),
+		)
 
 	# A lens: 0 for the screen, or 1 and the camera's four settings. The same
 	# shape as a clip, and for the same reason -- the word that says which

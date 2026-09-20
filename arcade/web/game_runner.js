@@ -23,7 +23,8 @@ const KEY_BIT = {
   ArrowUp: 1, ArrowDown: 2, ArrowLeft: 4, ArrowRight: 8,
   KeyW: 16, KeyA: 32, KeyS: 64, KeyD: 128,
   Space: 256, Enter: 512, KeyP: 1024, KeyR: 2048,
-  KeyQ: 4096, KeyE: 8192,
+  KeyQ: 4096, KeyE: 8192, KeyC: 16384,
+  Digit1: 32768, Digit2: 65536, Digit3: 131072, Digit4: 262144,
 };
 
 const maskOf = (codes) => [...codes].reduce((bits, code) => bits | (KEY_BIT[code] ?? 0), 0);

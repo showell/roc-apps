@@ -50,6 +50,26 @@ Shapes :: [].{
 		# `BeginMode2D` on roc-ray), and a frame is a list, so the cheapest way
 		# to say it is a mark that holds until the next one.
 		View(Shapes.Lens),
+		# **A PICTURE, IN THE FRAME.** `cols` x `rows` pixels stretched over
+		# the rectangle without smoothing, so a 16 x 16 canvas drawn at 448
+		# pixels is 28-pixel cells with hard edges.
+		#
+		# **IT CARRIES THE PIXELS, NOT A HANDLE**, which is the whole reason
+		# roc-ray's Pixel Workshop shrank when it was ported. There, the
+		# picture lives twice -- once in the model and once on the GPU -- and
+		# every branch that changes the model has to remember to emit the
+		# matching upload; upstream says so in its own comment, and has an
+		# `Edit` type to carry them. A frame that is a VALUE computed from the
+		# model cannot have a second copy to keep in step, so the upload, the
+		# handle and the `Edit` all go away together.
+		#
+		# The trade is bandwidth: the whole picture crosses every frame rather
+		# than one changed pixel. That is the same trade this design makes
+		# everywhere, and at 256 pixels beside the nine thousand words a frame
+		# already carries it is not close. **A LOADED IMAGE IS A DIFFERENT
+		# THING** -- a tileset is not re-sent sixty times a second -- and it
+		# still wants a handle, and a way to load one, which is the wall.
+		Image({ x : F64, y : F64, w : F64, h : F64, cols : U64, rows : U64, pixels : List(Brush.Rgba) }),
 	]
 
 	# `Over` paints; `Add` lights.
@@ -148,6 +168,13 @@ Shapes :: [].{
 					# A mark is not geometry; turning a figure does not touch it.
 					Blend(m) => Blend(m)
 					View(l) => View(l)
+					# A picture pulled toward the axis is the same picture,
+					# narrower; a mirror sends its left edge to its right.
+					Image(i) => {
+						a = axis + (i.x - axis) * k
+						b = axis + (i.x + i.w - axis) * k
+						Image({ ..i, x: F64.min(a, b), w: if b < a { a - b } else { b - a } })
+					}
 				},
 			)
 			$i = $i + 1
