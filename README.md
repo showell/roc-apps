@@ -11,6 +11,8 @@ there; the others are mapped below.
 |---|---|---|
 | `movies/` | the four movies, each a directory that builds to a page or to a native program: Safari (Codex chapters emitted as Roc, graded by their specs), capture_plot, particles, halloween | `movies/README.md`, `movies/safari/README.md` |
 | `movie/` | the vocabulary every movie shares: `Movie` (the type a player is a function of), `Shapes`, `Brush`, `View`, `Font` | `movies/README.md` |
+| `canvas_apps/` | six small interactive programs that run natively on roc-ray and as a page from one set of files: snake, pong, breakout, a camera world, a pixel paint program, and a movie you can scrub | `canvas_apps/README.md` |
+| `glue/` | `JsGlue.roc`, the `roc glue` spec that generates a page's frame reader from the compiler's type table | `glue/README.md` |
 | `wasm/`, `web/` | what a movie's page is made of: the wasm platform and host, the blitter that paints the canvas, and the check that runs a page the way a browser would | `movies/README.md` |
 | `ray/` | movies as native programs on roc-ray (raylib), and the Windows and macOS builds | `ray/README.md` |
 | `basic/` | a BASIC interpreter written by hand in Roc, a web page that runs it, and the corpora that grade it | `basic/README.md` |
