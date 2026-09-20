@@ -30,7 +30,7 @@ extern fn roc_init() callconv(.c) ?[*]u8;
 extern fn roc_advance(model: ?[*]u8, held: u32, struck: u32, buttons: u32, clicks: u32, x: f32, y: f32, wheel: f32) callconv(.c) ?[*]u8;
 extern fn roc_sounds(model: ?[*]u8) callconv(.c) u32;
 extern fn roc_tone_count(model: ?[*]u8) callconv(.c) u32;
-extern fn roc_render(model: ?[*]u8) callconv(.c) RocList;
+extern fn roc_frame(model: ?[*]u8) callconv(.c) RocList;
 extern fn roc_width(model: ?[*]u8) callconv(.c) u32;
 extern fn roc_height(model: ?[*]u8) callconv(.c) u32;
 extern fn roc_fps(model: ?[*]u8) callconv(.c) u32;
@@ -113,7 +113,6 @@ var roc_ops = RocOps{
 var model: ?[*]u8 = null;
 // The last frame's words, owned until the next frame replaces them.
 var packed_frame: RocList = RocList.empty();
-var frame_high: usize = 0;
 
 fn ensure() void {
     if (model == null) model = roc_init();
@@ -128,13 +127,13 @@ fn borrowed() ?[*]u8 {
 
 fn noDec(_: ?*anyopaque, _: ?[*]u8) callconv(.c) void {}
 
-// The frame, packed where `frameAt` says. Both are nouns for the same thing:
-// one answers how many bytes, the other where they start.
-pub export fn frame() u32 {
+// **THIS ONE IS THE EFFECT**, which is why it is a verb: it releases the last
+// frame, asks Roc for a new one, and answers how many bytes that came to.
+// `frameAt` is a plain read of what this just set, so it must be called after.
+pub export fn computeFrame() u32 {
     packed_frame.decref(@alignOf(u32), @sizeOf(u32), false, null, noDec, &roc_ops);
-    packed_frame = roc_render(borrowed());
+    packed_frame = roc_frame(borrowed());
     const bytes = packed_frame.length * 4;
-    if (bytes > frame_high) frame_high = bytes;
     return @intCast(bytes);
 }
 // Where the packed frame starts.

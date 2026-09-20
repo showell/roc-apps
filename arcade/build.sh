@@ -20,7 +20,8 @@ app="$HERE/${name}_web.roc"
 [ -f "$HERE/$name/page.html" ] || { echo "no page at $HERE/$name/page.html"; exit 2; }
 
 OUT="$HOME/build/roc-apps/next/$name"
-mkdir -p "$OUT"
+# Cleared, so yesterday's files cannot be served beside today's.
+rm -rf "$OUT"; mkdir -p "$OUT"
 (cd "$HERE/web" && "$ZIG" build --cache-dir "$HOME/build/roc-apps/zig-cache" --global-cache-dir "$HOME/build/zig-global")
 
 LOG="$HOME/build/roc-apps/gen/arcade/$name-web.log"

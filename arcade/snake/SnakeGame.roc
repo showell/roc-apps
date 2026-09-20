@@ -5,7 +5,7 @@
 # sounds -- everything that used to live in roc-ray's main.roc driver.
 #
 # `read_controls` is the port's whole point. Upstream it takes a
-# `Input.Snapshot`; here it takes a `Input.Snapshot`, which is shaped the same
+# `Devices.Snapshot`; here it takes an `Input.Snapshot`, which is shaped the same
 # on purpose, so the function below is the upstream one with its type changed
 # and nothing else.
 import lib.Game

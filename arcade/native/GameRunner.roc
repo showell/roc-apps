@@ -5,13 +5,12 @@
 # and the painting. Neither knows what game it is running.
 #
 # **THE KEYBOARD IS THE POINT OF THE SEAM.** roc-ray hands the host's own
-# `Devices.Snapshot`; this converts it into a `Devices.Snapshot`, which is the
+# `Devices.Snapshot`; this converts it into an `Input.Snapshot`, which is the
 # same thing a browser's event loop builds out of keydown and keyup. So a
 # game's `read_controls` -- the one function that touches the keyboard -- is
 # written once and run by both.
 #
-# The painting is MoviePlayer's, because filling a frame's shapes is the same
-# job whatever produced them: roc-ray fills the polygons, triangles, discs and
+# The painting is the arcade's own: roc-ray fills the polygons, triangles, discs and
 # rectangles itself, and a shape with a gradient goes through one fragment
 # shader that does Brush.shade's arithmetic on the scene position (BrushGlsl).
 # It is anti-aliased by supersampling, since roc-ray offers no multisampling.
@@ -57,11 +56,6 @@ GameRunner :: [].{
 
 	Msg : []
 
-	# The debug overlay's key, which is a key like any other so both runners
-	# can agree on it and a game can see that it is taken.
-	overlay_key : Keys.Key
-	overlay_key = KeyF
-
 	# Twice the window, drawn down with bilinear filtering.
 	supersample : F32
 	supersample = 2.0
@@ -103,7 +97,7 @@ GameRunner :: [].{
 	# look tautological because the tags are spelled the same on purpose; they
 	# are two different types, and this is the bridge.
 	watched_keys : List(Keys.Key)
-	watched_keys = [KeyUp, KeyDown, KeyLeft, KeyRight, KeyW, KeyA, KeyS, KeyD, KeySpace, KeyEscape, KeyEnter, KeyF, KeyP, KeyR]
+	watched_keys = [KeyUp, KeyDown, KeyLeft, KeyRight, KeyW, KeyA, KeyS, KeyD, KeySpace, KeyEnter, KeyP, KeyR]
 
 	input_of : Devices.Snapshot -> Input.Snapshot
 	input_of = |devices| {
@@ -159,9 +153,7 @@ GameRunner :: [].{
 			KeyS => d.key_down(KeyS)
 			KeyD => d.key_down(KeyD)
 			KeySpace => d.key_down(KeySpace)
-			KeyEscape => d.key_down(KeyEscape)
 			KeyEnter => d.key_down(KeyEnter)
-			KeyF => d.key_down(KeyF)
 			KeyP => d.key_down(KeyP)
 			KeyR => d.key_down(KeyR)
 		}
@@ -178,9 +170,7 @@ GameRunner :: [].{
 			KeyS => d.key_pressed(KeyS)
 			KeyD => d.key_pressed(KeyD)
 			KeySpace => d.key_pressed(KeySpace)
-			KeyEscape => d.key_pressed(KeyEscape)
 			KeyEnter => d.key_pressed(KeyEnter)
-			KeyF => d.key_pressed(KeyF)
 			KeyP => d.key_pressed(KeyP)
 			KeyR => d.key_pressed(KeyR)
 		}
@@ -191,16 +181,17 @@ GameRunner :: [].{
 		# bound first. See Game.roc.
 		advance = game.advance
 		keys = input_of(input.devices)
-		# Escape closes the window; a page cannot, so no game is given it to
-		# read and none decodes it.
-		if keys.key_pressed(KeyEscape) {
+		# Escape and F are the RUNNER's, read straight off roc-ray's own
+		# snapshot: they never enter a game's Input.Snapshot, so no game can
+		# bind a key that would behave differently on a page.
+		if input.devices.key_pressed(KeyEscape) {
 			Err(Exit(0))
 		} else {
 			# The step is the rate the game asked for, not however long the
 			# last frame happened to take, so a rally is the same rally
 			# whatever the machine is doing.
 			dt = 1.0 / I32.to_f32(game.fps)
-			fps = if keys.key_pressed(overlay_key) { !model.fps } else { model.fps }
+			fps = if input.devices.key_pressed(KeyF) { !model.fps } else { model.fps }
 			Ok({ ..model, state: advance(model.state, keys, dt), fps })
 		}
 	}

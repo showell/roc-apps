@@ -6,7 +6,7 @@
 #
 # **NOTHING IS STAGED AND NOTHING IS REWRITTEN**, as with the page. The one
 # thing this needs from outside the repository is roc-ray, which
-# <game>/native.roc names as a sibling of roc-apps. That is a
+# <game>_native.roc names as a sibling of roc-apps. That is a
 # path in the source rather than something a script edits, so it has to be true.
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

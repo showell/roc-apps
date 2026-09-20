@@ -19,7 +19,7 @@
 const KEY_BIT = {
   ArrowUp: 1, ArrowDown: 2, ArrowLeft: 4, ArrowRight: 8,
   KeyW: 16, KeyA: 32, KeyS: 64, KeyD: 128,
-  Space: 256, Escape: 512, Enter: 1024, KeyF: 2048, KeyP: 4096, KeyR: 8192,
+  Space: 256, Enter: 512, KeyP: 1024, KeyR: 2048,
 };
 
 const maskOf = (codes) => [...codes].reduce((bits, code) => bits | (KEY_BIT[code] ?? 0), 0);
@@ -27,7 +27,8 @@ const maskOf = (codes) => [...codes].reduce((bits, code) => bits | (KEY_BIT[code
 function watchKeyboard(target) {
   const held = new Set();
   let struck = new Set();
-  const known = (event) => event.code in KEY_BIT;
+  // A shortcut belongs to the browser: Ctrl+R reloads, Ctrl+F finds.
+  const known = (event) => event.code in KEY_BIT && !(event.ctrlKey || event.metaKey || event.altKey);
 
   target.addEventListener('keydown', (event) => {
     if (!known(event)) return;
@@ -78,9 +79,12 @@ function watchPointer(canvas, width, height) {
     struck.add(event.button);
     event.preventDefault();
   });
-  canvas.addEventListener('mouseup', (event) => { place(event); held.delete(event.button); });
+  // On the window, not the canvas: a drag that ends outside it still ends.
+  window.addEventListener('mouseup', (event) => { held.delete(event.button); });
   canvas.addEventListener('contextmenu', (event) => event.preventDefault());
-  canvas.addEventListener('wheel', (event) => { wheel += Math.sign(event.deltaY); event.preventDefault(); });
+  // Positive is away from the hand, as raylib reports it; a browser's deltaY
+  // is the other way round.
+  canvas.addEventListener('wheel', (event) => { wheel -= Math.sign(event.deltaY); event.preventDefault(); });
   window.addEventListener('blur', () => { held.clear(); struck.clear(); });
 
   const bits = (buttons) => [...buttons].reduce((m, b) => m | (MOUSE_BIT[b] ?? 0), 0);
@@ -132,7 +136,7 @@ function drawSpeaker(ctx, width, height, toneCount, ringing, now) {
 function bindGame(exports) {
   return {
     memory: exports.memory,
-    frame: exports.frame,             // compute the frame; answers its byte length
+    computeFrame: exports.computeFrame, // the effect: answers the new frame's byte length
     advance: exports.advance,         // one step, given (held, struck)
     sounds: exports.sounds,           // a bit per tone the last step set off
     toneCount: exports.toneCount,     // how many tones the game has
@@ -188,9 +192,8 @@ async function main(show) {
     ctx.globalCompositeOperation = 'source-over';
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, width, height);
-    // frame() computes it and may move the buffer, so the pointer is read
-    // after, never as a sibling argument.
-    const bytes = game.frame();
+    // The verb first: it may move the buffer, so the pointer is read after.
+    const bytes = game.computeFrame();
     ShapeWire.paint(ctx, ShapeWire.decode(game.memory, game.frameAt(), bytes));
     drawSpeaker(ctx, width, height, toneCount, ringing, now);
   };
@@ -218,4 +221,8 @@ async function main(show) {
 
 const show = window.SHOW;
 if (!show) throw new Error('game_runner: the page did not set window.SHOW');
-main(show);
+// A failure here used to leave the loading line up with the reason in the
+// console, which is the one thing a blank page never tells you.
+main(show).catch((error) => {
+  document.body.textContent = `${show.wasm} did not start: ${error.message}`;
+});

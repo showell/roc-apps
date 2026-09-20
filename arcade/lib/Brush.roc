@@ -1,14 +1,14 @@
 # Brush -- the paint a shape is filled with: a flat colour or one of five
 # gradients, its geometry in scene coordinates. Raster shades one on the CPU,
-# BrushGlsl on the GPU and game_runner.js on a canvas, all from what is here.
+# BrushGlsl on the GPU and shapewire.js on a canvas, all from what is here.
 #
 # **EVERY MOVIE'S**, which is why it sits in movie/ rather than in movies/safari.
 # Reading a brush out of a Codex draw command is Safari's business and is in
 # SafariBrush.roc.
 #
-# Hand-written. The tags are game_runner.js's, and so is what they mean: gradients
+# Hand-written. The tags are shapewire.js's, and so is what they mean: gradients
 # mix unpremultiplied, as the canvas specification says, and an offset outside
-# [0, 1] is clamped as the runner clamps it.
+# [0, 1] is clamped as shapewire.js clamps it.
 
 Brush :: [].{
 	# Red, green and blue in 0..255, alpha in 0..1.
@@ -17,13 +17,13 @@ Brush :: [].{
 	Fill : [
 		Skip,
 		Flat(Brush.Rgba),
-		# Tag 2: edge, middle, edge, across [x0, x1].
+		# Mode 1: edge, middle, edge, across [x0, x1].
 		Span({ edge : Brush.Rgba, middle : Brush.Rgba, x0 : F64, x1 : F64 }),
-		# Tag 4 (r0 0), and the sun's disc: from radius r0 to r1 about (x, y).
+		# Mode 2: from radius r0 to r1 about (x, y).
 		Radial({ inner : Brush.Rgba, outer : Brush.Rgba, x : F64, y : F64, r0 : F64, r1 : F64 }),
-		# Tag 5: two stops along a..a+d, at offsets o0 <= o1.
+		# Mode 3: two stops along a..a+d, at offsets o0 <= o1.
 		Linear({ c0 : Brush.Rgba, c1 : Brush.Rgba, o0 : F64, o1 : F64, ax : F64, ay : F64, dx : F64, dy : F64, len2 : F64 }),
-		# Tag 6: two stops out from (x, y) through the ellipse whose inverse is
+		# Mode 4: two stops out from (x, y) through the ellipse whose inverse is
 		# ia ib / ic id, taking a scene offset to the unit circle.
 		Ellipse({ c0 : Brush.Rgba, c1 : Brush.Rgba, o0 : F64, o1 : F64, x : F64, y : F64, ia : F64, ib : F64, ic : F64, id : F64 }),
 		# The sun's glow: stops at 0, 0.4 and 1, from radius r0 to r1 about (x, y).

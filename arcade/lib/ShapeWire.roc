@@ -13,11 +13,14 @@
 #
 # The layout, all 32-bit words, floats as bit patterns:
 #
-#   kind    0 poly, 1 disc, 2 rect
-#   mode    which brush
+#   kind    0 poly, 1 disc, 2 rect, 3 blend
+#   mode    which brush (0 flat, 1 span, 2 radial, 3 linear, 4 ellipse, 5 glow)
 #   brush   its colours (0xRRGGBB, then alpha) and its geometry
 #   shape   poly: count, then x, y pairs · disc: x, y, r, then a clip
 #           rect: x, y, w, h
+#
+# A blend is the exception and carries no brush: one word for the kind and one
+# for the mode it switches to.
 #
 # A clip is a word that is 0, or 1 and then x, y, w, h.
 import Brush
@@ -58,6 +61,7 @@ ShapeWire :: [].{
 			# **THE PAGE IS NEVER SENT PIECES.** A canvas fills a concave
 			# polygon itself, so nothing here cuts one up; see `Shapes.cut`,
 			# which is the step roc-ray asks for and this does not.
+			# A mark, not a shape: one word for the kind and one for the mode.
 			Blend(m) => [kind_blend, if m == Add { 1 } else { 0 }]
 			# **THE PAGE IS NEVER SENT PIECES.** A canvas fills a concave
 			# polygon itself, so nothing here cuts one up; see `Shapes.cut`,

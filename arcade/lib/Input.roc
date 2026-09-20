@@ -1,9 +1,9 @@
-# Devices -- what the keyboard and the mouse looked like at one tick.
+# Input -- what the keyboard and the mouse looked like at one tick.
 #
-# Hand-written, and shaped deliberately like roc-ray's `Input.Snapshot`: a
+# Hand-written, and shaped deliberately like roc-ray's `Devices.Snapshot`: a
 # game's `read_controls` is the one function that touches input, and it takes a
 # snapshot as a VALUE rather than performing an effect. Matching the shape --
-# the module name, the type name, `key_down`, `mouse.button_pressed` -- means
+# `key_down`, `mouse.button_pressed`, the lot -- means
 # such a function ports between the two platforms with its import line changed
 # and nothing else.
 #

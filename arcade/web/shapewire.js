@@ -35,6 +35,7 @@ function readFill(words, floats, at) {
     return [{ mode, colors: [first, second, third], geometry }, next];
   }
   const spans = { [FILL.SPAN]: 2, [FILL.RADIAL]: 4, [FILL.LINEAR]: 6, [FILL.ELLIPSE]: 8 };
+  if (!(mode in spans)) throw new Error(`shapewire: no brush mode ${mode}`);
   const [geometry, next] = readFloats(floats, afterSecond, spans[mode]);
   return [{ mode, colors: [first, second], geometry }, next];
 }
@@ -53,6 +54,7 @@ function readShape(words, floats, at) {
     const [box, next] = readFloats(floats, afterFill, 4);
     return [{ kind, fill, box }, next];
   }
+  if (kind !== SHAPE.DISC) throw new Error(`shapewire: no shape kind ${kind}`);
   const [disc, afterDisc] = readFloats(floats, afterFill, 3);
   if (!words[afterDisc]) return [{ kind, fill, disc }, afterDisc + 1];
   const [clip, next] = readFloats(floats, afterDisc + 1, 4);
@@ -64,11 +66,15 @@ function decodeFrame(memory, base, bytes) {
   const words = new Uint32Array(memory.buffer, base, bytes / 4);
   const floats = new Float32Array(memory.buffer, base, bytes / 4);
   const shapes = [];
-  for (let at = 0; at < words.length; ) {
+  let at = 0;
+  while (at < words.length) {
     const [shape, next] = readShape(words, floats, at);
     shapes.push(shape);
     at = next;
   }
+  // A frame that does not end exactly on its last word was misread, and a
+  // misread frame used to come out short and silent.
+  if (at !== words.length) throw new Error(`shapewire: read ${at} of ${words.length} words`);
   return shapes;
 }
 
@@ -98,9 +104,11 @@ function paintFor(ctx, { mode, colors, geometry }) {
   }
   if (mode === FILL.GLOW) {
     const [x, y, r0, r1] = geometry;
-    if (!(r1 > r0)) return a;
+    // Brush.shade and BrushGlsl both end at c2 when there is no ring to walk.
+    if (!(r1 > r0)) return c;
     return withStops(ctx.createRadialGradient(x, y, r0, x, y, r1), [[0, a], [0.4, b], [1, c]]);
   }
+  if (mode !== FILL.ELLIPSE) throw new Error(`shapewire: no brush mode ${mode}`);
   return { ellipse: geometry, colors };
 }
 

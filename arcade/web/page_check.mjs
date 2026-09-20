@@ -17,15 +17,13 @@
 // that had not started -- which is how a sound bug reached the page.
 //   FRAMES=1500 web/page_check.mjs halloween     the whole of a long movie
 //
-// Thirty frames is half a second, which is enough to say the page runs. A
-// movie that turns round and walks back needs the rest of itself run too:
-// the arithmetic that divides by a distance only meets a distance of zero
-// well into one.
+// Thirty frames is half a second, which is enough to say the page runs. A game
+// that waits on a key needs a key: without KEYS this checks the attract screen.
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
 const name = process.argv[2];
-if (!name) { console.error("usage: page_check.mjs <movie>"); process.exit(2); }
+if (!name) { console.error("usage: page_check.mjs <game>"); process.exit(2); }
 const dir = `${process.env.HOME}/build/roc-apps/next/${name}`;
 const page = readFileSync(`${dir}/index.html`, "utf8");
 const wire = readFileSync(`${dir}/shapewire.js`, "utf8");
@@ -100,10 +98,10 @@ sandbox.globalThis = sandbox;
 const bytes = readFileSync(`${dir}/${name}.wasm`);
 sandbox.WebAssembly = Object.create(WebAssembly);
 sandbox.WebAssembly.instantiateStreaming = async () => {
+  // **THE SAME IMPORTS THE BROWSER GIVES IT**, which is none. Stubbing every
+  // declared import would pass a module the page itself could not link.
   const mod = new WebAssembly.Module(bytes);
-  const env = {};
-  for (const imp of WebAssembly.Module.imports(mod)) env[imp.name] = () => {};
-  return { instance: new WebAssembly.Instance(mod, { env }) };
+  return { instance: new WebAssembly.Instance(mod, { env: {} }) };
 };
 
 vm.createContext(sandbox);
