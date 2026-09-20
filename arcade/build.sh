@@ -32,7 +32,7 @@ rm -f "$OUT/$name.wasm"
 (cd "$HERE" && "$ROC" build "${name}_web.roc" --target=wasm32 --opt=speed --output="$OUT/$name.wasm") > "$LOG" 2>&1 || true
 if grep -q "✗" "$LOG" || [ ! -s "$OUT/$name.wasm" ]; then cat "$LOG"; echo "build failed"; exit 1; fi
 
-cp "$HERE/web/shapewire.js" "$HERE/web/game_runner.js" "$OUT/"
+cp "$HERE/web/shapewire.js" "$HERE/web/canvas_app_runner.js" "$OUT/"
 cp "$HERE/$name/page.html" "$OUT/index.html"
 ls -la "$OUT"
 echo "dev: http://143.244.172.148:9210/$name/"

@@ -39,7 +39,7 @@ platform ""
 		inputs_dir: "targets/",
 		wasm32: {
 			inputs: ["host.wasm", app],
-			exports: ["computeFrame", "frameAt", "advance", "sounds", "toneCount", "toneFreq", "toneMs", "width", "height", "fps"],
+			exports: ["computeFrame", "advance", "sounds", "toneCount", "toneFreq", "toneMs", "width", "height", "fps"],
 		},
 	}
 

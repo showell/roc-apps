@@ -8,7 +8,7 @@
 Keys :: [].{
 	# The keys a game here can ask about. A tick sends two bit sets, so the
 	# list is short on purpose: adding one is a bit and a line in
-	# game_runner.js.
+	# canvas_app_runner.js.
 	#
 	# **ESCAPE AND F ARE NOT HERE.** They belong to the runners -- Escape
 	# closes a native window and F shows its frame rate -- and a page can do

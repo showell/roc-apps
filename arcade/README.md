@@ -10,11 +10,14 @@ game is driven.
     KEYS=3:Space DRAG=200,100,200,500 node arcade/web/page_check.mjs pong
     node arcade/web/lens_check.mjs      the camera, on both ends
 
-Six of them: `snake`, `pong`, `breakout`, `camera`, `workshop`, `halloween`.
+Six of them: `snake`, `pong`, `breakout`, `camera`, `workshop`,
+`trick_or_treat`. The last is the Halloween movie, named for its title so it
+does not collide with `movies/halloween` in `next/` or on the dev server.
 
-**`halloween` shares a dev URL with the movie it came from**, since both build
-into `next/<name>`. Whichever was built last is what `:9210/halloween/` serves.
-`site/publish.sh` still only knows `movies/`, so prod is untouched either way.
+**Two of the six are not games.** `camera` is a world you fly around and
+`trick_or_treat` is a movie you can scrub. `canvas_app_runner.js` hosts all
+six; the `game` still in its local names is older than that and not yet
+honest.
 
 ## Where the splits are
 
@@ -24,7 +27,21 @@ into `next/<name>`. Whichever was built last is what `:9210/halloween/` serves.
 | `snake_native.roc` | the app roc-ray runs — uses `native/GameRunner` |
 | `snake/` | **the game**, and everything that is only about it, its page included. Neither app's half; it cannot tell which is running |
 | `lib/` | a package: `Game`, `Keys`, `Random`, `Shapes`, `Brush`, `Font`, and the two wire edges |
-| `web/` | the page's end: the wasm platform and host, `shapewire.js` (a frame, decoded and painted), `game_runner.js` (the clock, the input, the speaker), `page_check.mjs`, `lens_check.mjs` |
+| `web/` | the page's end: the wasm platform and host, `shapewire.js` (a frame, decoded and painted), `canvas_app_runner.js` (the clock, the input, the speaker), `page_check.mjs`, `lens_check.mjs` |
+
+**One call for a frame.** `computeFrame()` is the effect and answers the
+address of two words, the frame's start and its length. It used to be two
+exports, `computeFrame()` then `frameAt()`, and that arrangement caught two
+people who each wrote `decode(memory, frameAt(), computeFrame())` -- which
+JavaScript evaluates left to right, so it read the previous frame's start with
+this frame's length and misread far enough in to look like corrupt data.
+
+**What `page_check` actually gates on.** `fills > frames`, because `draw`
+clears the canvas with a counted `fillRect`, so a page painting no shape at all
+still reported 29 fills over 31 frames and passed. And the picture changing at
+least once, because a page whose `fps` is zero steps once and then never again
+while every count stays healthy. Both were reproduced before the gates were
+written, and both fail now.
 | `native/` | roc-ray's end: `GameRunner.roc` |
 
 **Why the two app files sit at the top rather than beside the game.** An app
@@ -49,7 +66,7 @@ That is what the shape of `lib/Keys.roc` and `lib/Random.roc` is for.
 `Input.Snapshot` is built like roc-ray's `Devices.Snapshot` -- same
 `key_down`, same `input.mouse.position()` -- so a game's `read_controls`
 compiles against either: `GameRunner` converts the host's snapshot into one and
-`game_runner.js` builds one from the page's events.
+`canvas_app_runner.js` builds one from the page's events.
 
 It is called `Input` and not `Devices` for a reason worth keeping: `GameRunner`
 imports both, and two nominal types with the same qualified name are ambiguous
@@ -73,11 +90,11 @@ roc-ray as `../../roc-ray`, a sibling of roc-apps.
         page.html         the page
         …                 the rules and the drawing
 
-## Halloween, moved
+## Trick or Treat, moved
 
 Not a port from upstream: roc-apps' own Halloween movie, moved out of
 `movies/halloween` and run by the arcade's runners instead of a player of its
-own. Its twelve modules came across with their import lines changed and one
+own. It takes its title as its name here, so the two builds do not collide. Its twelve modules came across with their import lines changed and one
 field dropped -- `Brush.Linear` here derives `len2` from `dx` and `dy` rather
 than being told it.
 

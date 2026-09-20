@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // **DOES THE PAGE ACTUALLY RUN?** Node checks the wasm and never touches
-// game_runner.js, which is how a reference error in it reached the browser: the
+// canvas_app_runner.js, which is how a reference error in it reached the browser: the
 // canvas was sized from a module that had not been bound yet, and every page
 // threw before drawing a pixel.
 //
-// So this runs game_runner.js the way a browser would, against a canvas that
+// So this runs canvas_app_runner.js the way a browser would, against a canvas that
 // records rather than paints and the real wasm. It cannot say whether a frame
 // LOOKS right -- nothing here can -- but it says the page runs, draws, and
 // keeps drawing.
@@ -31,24 +31,36 @@ if (!name) { console.error("usage: page_check.mjs <game>"); process.exit(2); }
 const dir = `${process.env.HOME}/build/roc-apps/next/${name}`;
 const page = readFileSync(`${dir}/index.html`, "utf8");
 const wire = readFileSync(`${dir}/shapewire.js`, "utf8");
-const runner = readFileSync(`${dir}/game_runner.js`, "utf8");
+const runner = readFileSync(`${dir}/canvas_app_runner.js`, "utf8");
 
 // The show the page declares, taken from the page rather than assumed.
 const showSrc = page.match(/window\.SHOW\s*=\s*(\{[\s\S]*?\});/);
 if (!showSrc) throw new Error("the page does not set window.SHOW");
 
 let calls = 0, fills = 0;
+// What the current frame looks like, reset before each one.
+let picture = 0;
 // A hash of everything drawn, so a keyed run can be shown to differ from an
 // unkeyed one. Counting calls cannot see where a paddle is.
 let drawn = 0;
 // Colours arrive as property SETS (`ctx.fillStyle = ...`), not calls, so those
 // are hashed too or a colour regression is invisible.
-const mark = (what, values) => {
-  drawn = (drawn * 31 + what.length) | 0;
+// **TWO HASHES, BECAUSE THEY ANSWER DIFFERENT QUESTIONS.** `drawn` runs over
+// the whole session and says whether THIS RUN differs from another one, which
+// is how a keyed run is shown to differ from an unkeyed one. It can never
+// repeat, so it says nothing about whether the page is still alive; `picture`
+// is reset each frame and says what THAT FRAME looked like.
+const fold = (hash, what, values) => {
+  let h = (hash * 31 + what.length) | 0;
   for (const v of values) {
-    if (typeof v === "number") drawn = (drawn * 31 + Math.round(v * 8)) | 0;
-    else if (typeof v === "string") for (let i = 0; i < v.length; i++) drawn = (drawn * 31 + v.charCodeAt(i)) | 0;
+    if (typeof v === "number") h = (h * 31 + Math.round(v * 8)) | 0;
+    else if (typeof v === "string") for (let i = 0; i < v.length; i++) h = (h * 31 + v.charCodeAt(i)) | 0;
   }
+  return h;
+};
+const mark = (what, values) => {
+  drawn = fold(drawn, what, values);
+  picture = fold(picture, what, values);
 };
 const ctx = new Proxy({}, {
   get: (_t, k) => {
@@ -100,6 +112,10 @@ const script = (process.env.KEYS ?? '').split(',').filter(Boolean).map((pair) =>
 // walks to the second over the run, and the button comes up at the end.
 const dragArg = (process.env.DRAG ?? '').split(',').filter(Boolean).map(Number);
 const drag = dragArg.length === 4 ? dragArg : null;
+// How many distinct pictures the run produced. One means it drew once and
+// then repeated itself, or froze.
+let moved = 0;
+let lastPicture = null;
 let frames = 0;
 // **THE CLOCK IS VIRTUAL, OR THE PAGE TAKES NO STEPS.** The runner paces the
 // movie by elapsed time now, and setImmediate fires far faster than a frame is
@@ -119,7 +135,9 @@ const sandbox = {
       }
       if (drag) dragTo(frames);
       virtualNow += STEP_MS;
+      picture = 2166136261;
       fn(virtualNow);
+      if (picture !== lastPicture) { moved++; lastPicture = picture; }
     });
   },
   setImmediate,
@@ -160,12 +178,30 @@ sandbox.WebAssembly.instantiateStreaming = async () => {
 vm.createContext(sandbox);
 vm.runInContext(`window.SHOW = ${showSrc[1]};`, sandbox);
 vm.runInContext(wire, sandbox, { filename: "shapewire.js" });
-vm.runInContext(runner, sandbox, { filename: "game_runner.js" });
+vm.runInContext(runner, sandbox, { filename: "canvas_app_runner.js" });
 
 const until = Date.now() + 60000;
 while (frames <= limit && Date.now() < until) await new Promise((r) => setTimeout(r, 20));
 if (frames < 2) { console.error(`${name}: the page never asked for a second frame`); process.exit(1); }
-if (fills === 0) { console.error(`${name}: the page drew nothing`); process.exit(1); }
+// **COUNTING CALLS CANNOT TELL A RUNNING PAGE FROM A DEAD ONE**, and
+// `fills === 0` never could: `draw` clears the canvas with a `fillRect` before
+// it paints anything, and the clear is counted. A page that painted no shape
+// at all reported 29 fills over 31 frames and passed. So the two ways a page
+// can be dead are asked about separately.
+//
+// One clear per draw, so no more fills than frames means nothing but clears.
+if (fills <= frames) {
+  console.error(`${name}: ${fills} fills over ${frames} frames is the background and nothing else`);
+  process.exit(1);
+}
+// And a page can paint a great deal and still be stuck: `fps` of zero steps
+// once and never again. Neither the call count nor the fill count moves when
+// that happens, but the picture stops changing.
+if (moved < 2) {
+  console.error(`${name}: what the page drew never changed over ${frames} frames`);
+  console.error(`${name}: an attract screen that waits for input needs KEYS or DRAG`);
+  process.exit(1);
+}
 const pressed = script.length ? `, ${script.length} keys pressed` : '';
 const dragged = drag ? `, dragged ${drag[0]},${drag[1]} to ${drag[2]},${drag[3]}` : '';
-console.log(`${name}: ran ${frames} frames, ${calls} canvas calls, ${fills} fills${pressed}${dragged}, drawn ${drawn >>> 0}`);
+console.log(`${name}: ran ${frames} frames, ${moved} distinct, ${calls} canvas calls, ${fills} fills${pressed}${dragged}, drawn ${drawn >>> 0}`);

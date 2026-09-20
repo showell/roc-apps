@@ -1,4 +1,4 @@
-# HalloweenGame -- the Halloween movie as a value the arcade can run.
+# TrickOrTreatGame -- the Halloween movie as a value the arcade can run.
 #
 # **A MOVIE IS A GAME THAT DOES NOT READ ITS KEYBOARD.** That is the whole of
 # what this file had to work out. `Game` and `Movie` asked for the same size,
@@ -21,11 +21,11 @@ import lib.Game
 import lib.Input
 import Halloween
 
-HalloweenGame :: [].{
+TrickOrTreatGame :: [].{
 	## The movie's own state is the tick; `paused` is the viewer's.
 	Model : { tick : I64, paused : Bool }
 
-	game : Game.Game(HalloweenGame.Model)
+	game : Game.Game(TrickOrTreatGame.Model)
 	game = {
 		size: { width: Halloween.width, height: Halloween.height },
 		# **THE MOVIE SETS THE RATE**, as it always did: its motion is written
@@ -48,7 +48,7 @@ HalloweenGame :: [].{
 	scrub : Bool -> I64
 	scrub = |paused| if paused { 1 } else { 4 }
 
-	step : HalloweenGame.Model, Input.Snapshot -> HalloweenGame.Model
+	step : TrickOrTreatGame.Model, Input.Snapshot -> TrickOrTreatGame.Model
 	step = |m, input| {
 		paused = if input.key_pressed(KeySpace) { !m.paused } else { m.paused }
 		speed = scrub(paused)
@@ -74,16 +74,16 @@ HalloweenGame :: [].{
 
 ## Space pauses, and a paused movie sits on the frame it was on.
 expect {
-    held = HalloweenGame.step(HalloweenGame.game.init, Input.none.with_key_pressed(KeySpace))
-    held.paused and HalloweenGame.step(held, Input.none).tick == held.tick
+    held = TrickOrTreatGame.step(TrickOrTreatGame.game.init, Input.none.with_key_pressed(KeySpace))
+    held.paused and TrickOrTreatGame.step(held, Input.none).tick == held.tick
 }
 
 ## Left scrubs backwards and stops at the beginning rather than before it.
-expect HalloweenGame.step({ tick: 2, paused: Bool.True }, Input.none.with_key_down(KeyLeft)).tick == 1
-expect HalloweenGame.step({ tick: 0, paused: Bool.True }, Input.none.with_key_down(KeyLeft)).tick == 0
+expect TrickOrTreatGame.step({ tick: 2, paused: Bool.True }, Input.none.with_key_down(KeyLeft)).tick == 1
+expect TrickOrTreatGame.step({ tick: 0, paused: Bool.True }, Input.none.with_key_down(KeyLeft)).tick == 0
 
 ## Enter jumps a second on, which is what `skip` did.
-expect HalloweenGame.step({ tick: 10, paused: Bool.True }, Input.none.with_key_pressed(KeyEnter)).tick == 70
+expect TrickOrTreatGame.step({ tick: 10, paused: Bool.True }, Input.none.with_key_pressed(KeyEnter)).tick == 70
 
 ## R goes back to the top.
-expect HalloweenGame.step({ tick: 900, paused: Bool.False }, Input.none.with_key_pressed(KeyR)).tick == 0
+expect TrickOrTreatGame.step({ tick: 900, paused: Bool.False }, Input.none.with_key_pressed(KeyR)).tick == 0

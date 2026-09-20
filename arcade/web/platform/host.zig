@@ -1,4 +1,4 @@
-//! The arcade wasm host: the eight exports web/game_runner.js binds, over a Roc
+//! The arcade wasm host: the eight exports web/canvas_app_runner.js binds, over a Roc
 //! model the host holds as one boxed pointer.
 //!
 //! Where poc/drive_shim.zig in safari-codex had to keep the rider, the truck,
@@ -37,7 +37,7 @@ extern fn roc_width(model: ?[*]u8) callconv(.c) u32;
 extern fn roc_height(model: ?[*]u8) callconv(.c) u32;
 extern fn roc_fps(model: ?[*]u8) callconv(.c) u32;
 
-// NO IMPORTS. web/game_runner.js instantiates the module with an empty import
+// NO IMPORTS. web/canvas_app_runner.js instantiates the module with an empty import
 // object, as it does the Codex-built one, so a panic is a wasm trap -- the
 // page sees a RuntimeError -- and dbg output goes nowhere.
 const env = struct {
@@ -129,18 +129,25 @@ fn borrowed() ?[*]u8 {
 
 fn noDec(_: ?*anyopaque, _: ?[*]u8) callconv(.c) void {}
 
-// **THIS ONE IS THE EFFECT**, which is why it is a verb: it releases the last
-// frame, asks Roc for a new one, and answers how many bytes that came to.
-// `frameAt` is a plain read of what this just set, so it must be called after.
+// Where the last frame is and how big it is, in two words at an address that
+// never moves. **THE FRAME ITSELF MOVES** -- it is a fresh Roc list every
+// tick -- so a caller that reads its address before asking for it gets the
+// previous frame's start with this frame's length, which misreads far enough
+// in to look like corrupt data rather than a mistake.
+var frame_where: [2]u32 = .{ 0, 0 };
+
+// **THIS IS THE EFFECT**, which is why it is a verb: it releases the last
+// frame, asks Roc for a new one, and answers where the two words above are.
+// There is ONE call, so there is no order to get wrong. It used to be two --
+// `computeFrame` then `frameAt` -- and the trap that arrangement left caught
+// two people who each wrote the natural spelling, `decode(memory, frameAt(),
+// computeFrame())`, which JavaScript evaluates left to right.
 pub export fn computeFrame() u32 {
     packed_frame.decref(@alignOf(u32), @sizeOf(u32), false, null, noDec, &roc_ops);
     packed_frame = roc_frame(borrowed());
-    const bytes = packed_frame.length * 4;
-    return @intCast(bytes);
-}
-// Where the packed frame starts.
-pub export fn frameAt() u32 {
-    return @intCast(@intFromPtr(packed_frame.bytes orelse return 0));
+    frame_where[0] = if (packed_frame.bytes) |at| @intCast(@intFromPtr(at)) else 0;
+    frame_where[1] = @intCast(packed_frame.length * 4);
+    return @intCast(@intFromPtr(&frame_where));
 }
 // **THE INPUT ARRIVES WITH THE TICK.** One Input.Snapshot, flattened: the keys
 // down and the keys struck, the same pair for mouse buttons, then where the

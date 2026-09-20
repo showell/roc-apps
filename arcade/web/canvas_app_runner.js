@@ -1,11 +1,18 @@
-// game_runner — the browser half of the arcade, and the twin of
-// native/GameRunner.roc. It loads a game's wasm, runs the clock and the
+// canvas_app_runner — the browser half of the arcade, and the twin of
+// native/GameRunner.roc. It loads an app's wasm, runs the clock and the
 // keyboard, and hands each frame to ShapeWire to paint.
 //
-// The game is the same Roc that runs natively. What is in here is only what a
+// **NOT ONLY GAMES.** Six programs are built against this file and two of them
+// are not games: `camera` is a world you fly around and `trick_or_treat` is a
+// movie you can scrub. What they share is that they are a Roc value on a
+// canvas, stepped at their own rate and drawn from what they answer. The
+// `game` in the names below is older than that and has not been made honest
+// yet.
+//
+// The app is the same Roc that runs natively. What is in here is only what a
 // browser does differently: keep the input, pace the clock, show the speaker.
 // Reading a frame and filling a canvas is shapewire.js, which this loads
-// first and which knows nothing about games.
+// first and which knows nothing about any of them.
 //
 //   window.SHOW = { wasm: 'snake.wasm', loading: '…' }
 //
@@ -172,24 +179,29 @@ function drawSpeaker(ctx, width, height, toneCount, ringing, now) {
 
 // ── the page ───────────────────────────────────────────────────────────────
 
-function bindGame(exports) {
-  // The one thing this wrapper is worth: an arity that disagrees with the
-  // host's used to surface as a bare `unreachable` with no message at all.
+// What the wasm module must provide, checked once so a missing or mismatched
+// export says which, rather than surfacing later as a bare `unreachable` or as
+// `Cannot read properties of undefined`.
+const WANTED = ['memory', 'computeFrame', 'advance', 'sounds', 'toneCount', 'toneFreq', 'toneMs', 'width', 'height', 'fps'];
+
+function bindApp(exports) {
+  const missing = WANTED.filter((name) => !(name in exports));
+  if (missing.length) throw new Error(`canvas_app_runner: the module exports no ${missing.join(', ')}`);
   if (exports.advance.length !== 7) {
-    throw new Error(`game_runner: advance takes ${exports.advance.length} arguments, expected 7`);
+    throw new Error(`canvas_app_runner: advance takes ${exports.advance.length} arguments, expected 7`);
   }
   return {
-    memory: exports.memory,
-    computeFrame: exports.computeFrame, // the effect: answers the new frame's byte length
-    advance: exports.advance,         // one step, given (held, struck)
-    sounds: exports.sounds,           // a bit per tone the last step set off
-    toneCount: exports.toneCount,     // how many tones the game has
-    toneFreq: exports.toneFreq,       // and what each one sounds like
-    toneMs: exports.toneMs,
-    width: exports.width,
-    height: exports.height,
-    fps: exports.fps,                 // how often the game means to be stepped
-    frameAt: exports.frameAt,         // where those bytes start
+    ...exports,
+    // **ONE CALL, SO THERE IS NO ORDER TO GET WRONG.** `computeFrame` is the
+    // effect and answers where it put the answer: two words, the frame's
+    // start and its length. Reading the start from a second export is what
+    // this replaces, and what it replaces caught two people.
+    frame: () => {
+      const at = exports.computeFrame();
+      // A fresh view each time: wasm memory that grows detaches the old one.
+      const words = new DataView(exports.memory.buffer);
+      return { at: words.getUint32(at, true), bytes: words.getUint32(at + 4, true) };
+    },
   };
 }
 
@@ -204,7 +216,7 @@ async function main(show) {
   document.body.appendChild(loading);
 
   const { instance } = await WebAssembly.instantiateStreaming(fetch(show.wasm), { env: {} });
-  const game = bindGame(instance.exports);
+  const game = bindApp(instance.exports);
   const width = game.width();
   const height = game.height();
   const toneCount = game.toneCount();
@@ -241,34 +253,58 @@ async function main(show) {
     ctx.globalCompositeOperation = 'source-over';
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, width, height);
-    // The verb first: it may move the buffer, so the pointer is read after.
-    const bytes = game.computeFrame();
-    ShapeWire.paint(ctx, ShapeWire.decode(game.memory, game.frameAt(), bytes));
+    const frame = game.frame();
+    ShapeWire.paint(ctx, ShapeWire.decode(game.memory, frame.at, frame.bytes));
     drawSpeaker(ctx, width, height, toneCount, ringing, now);
   };
 
-  // The game sets the rate, not the display: elapsed time is banked and steps
+  // The app sets the rate, not the display: elapsed time is banked and steps
   // are taken as they fall due.
   let owed = 0;
   let last = performance.now();
-  const loop = (now) => {
+  const tick = (now) => {
     owed = Math.min(owed + (now - last), stepMs * CATCH_UP);
     last = now;
     let stepped = 0;
     while (owed >= stepMs) { step(now); owed -= stepMs; stepped++; }
     if (stepped) draw(now);
+  };
+
+  // **A LOOP THAT RE-ARMS ITSELF LAST STOPS DEAD ON A THROW**, and this one
+  // clears to black before it decodes, so the page went black and silent and
+  // stayed that way. Every good message in this layer -- the unknown brush
+  // mode, the word-exactness check, a Roc crash arriving as `unreachable` --
+  // used to end there. `main`'s catch cannot help: it settled at startup.
+  const loop = (now) => {
+    try {
+      tick(now);
+    } catch (error) {
+      stopped(error);
+      return;
+    }
     requestAnimationFrame(loop);
+  };
+
+  const stopped = (error) => {
+    canvas.remove();
+    document.body.textContent = `${show.wasm} stopped: ${error.message}`;
+    throw error; // and again into the console, with its stack
   };
 
   loading.remove();
   document.body.appendChild(canvas);
-  draw(performance.now());
+  try {
+    draw(performance.now());
+  } catch (error) {
+    stopped(error);
+    return;
+  }
   last = performance.now();
   requestAnimationFrame(loop);
 }
 
 const show = window.SHOW;
-if (!show) throw new Error('game_runner: the page did not set window.SHOW');
+if (!show) throw new Error('canvas_app_runner: the page did not set window.SHOW');
 // A failure here used to leave the loading line up with the reason in the
 // console, which is the one thing a blank page never tells you.
 main(show).catch((error) => {

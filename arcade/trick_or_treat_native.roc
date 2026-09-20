@@ -1,6 +1,6 @@
 # The Halloween movie, as a native program on roc-ray.
 #
-# The same movie in halloween/, the same lib, and a different runner. roc-ray
+# The same movie in trick_or_treat/, the same lib, and a different runner. roc-ray
 # is named as a sibling checkout of roc-apps.
 app [Model, program] {
 	rr: platform "../../roc-ray/platform/main.roc",
@@ -8,10 +8,10 @@ app [Model, program] {
 }
 
 import native/GameRunner
-import halloween/HalloweenGame
+import trick_or_treat/TrickOrTreatGame
 
-Model : GameRunner.Model(HalloweenGame.Model)
+Model : GameRunner.Model(TrickOrTreatGame.Model)
 
 Msg : GameRunner.Msg
 
-program = GameRunner.program(HalloweenGame.game)
+program = GameRunner.program(TrickOrTreatGame.game)
