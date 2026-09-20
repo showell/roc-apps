@@ -28,6 +28,7 @@ honest.
 | `snake/` | **the game**, and everything that is only about it, its page included. Neither app's half; it cannot tell which is running |
 | `lib/` | a package: `Game`, `Keys`, `Random`, `Shapes`, `Brush`, `Font`, and the two wire edges |
 | `web/` | the page's end: the wasm platform and host, `shapewire.js` (a frame, decoded and painted), `canvas_app_runner.js` (the clock, the input, the speaker), `page_check.mjs`, `lens_check.mjs` |
+| `native/` | roc-ray's end: `GameRunner.roc` |
 
 **One call for a frame.** `computeFrame()` is the effect and answers the
 address of two words, the frame's start and its length. It used to be two
@@ -42,7 +43,6 @@ still reported 29 fills over 31 frames and passed. And the picture changing at
 least once, because a page whose `fps` is zero steps once and then never again
 while every count stays healthy. Both were reproduced before the gates were
 written, and both fail now.
-| `native/` | roc-ray's end: `GameRunner.roc` |
 
 **Why the two app files sit at the top rather than beside the game.** An app
 file is where Roc's package root is, and a relative import may not climb above

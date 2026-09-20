@@ -23,15 +23,20 @@
 //
 // Thirty frames is half a second, which is enough to say the page runs. A game
 // that waits on a key needs a key: without KEYS this checks the attract screen.
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import vm from "node:vm";
 
 const name = process.argv[2];
 if (!name) { console.error("usage: page_check.mjs <game>"); process.exit(2); }
 const dir = `${process.env.HOME}/build/roc-apps/next/${name}`;
 const page = readFileSync(`${dir}/index.html`, "utf8");
-const wire = readFileSync(`${dir}/shapewire.js`, "utf8");
-const runner = readFileSync(`${dir}/canvas_app_runner.js`, "utf8");
+// **THE PAGE NAMES ITS OWN SCRIPTS**, so they are read out of it rather than
+// by convention. There used to be three lists of them -- build.sh's `cp`, the
+// six page.html files, and two hardcoded names here -- and nothing checked
+// that any two agreed. A page that loads a script build.sh never copied, or
+// forgets one the others have, now fails here instead of in a browser.
+const sources = [...page.matchAll(/<script\s+src="([^"]+)"\s*>/g)].map((m) => m[1]);
+if (!sources.length) { console.error(`${name}: the page loads no scripts`); process.exit(1); }
 
 // The show the page declares, taken from the page rather than assumed.
 const showSrc = page.match(/window\.SHOW\s*=\s*(\{[\s\S]*?\});/);
@@ -177,8 +182,13 @@ sandbox.WebAssembly.instantiateStreaming = async () => {
 
 vm.createContext(sandbox);
 vm.runInContext(`window.SHOW = ${showSrc[1]};`, sandbox);
-vm.runInContext(wire, sandbox, { filename: "shapewire.js" });
-vm.runInContext(runner, sandbox, { filename: "canvas_app_runner.js" });
+for (const src of sources) {
+  if (!existsSync(`${dir}/${src}`)) {
+    console.error(`${name}: the page loads ${src}, which is not beside it in ${dir}`);
+    process.exit(1);
+  }
+  vm.runInContext(readFileSync(`${dir}/${src}`, "utf8"), sandbox, { filename: src });
+}
 
 const until = Date.now() + 60000;
 while (frames <= limit && Date.now() < until) await new Promise((r) => setTimeout(r, 20));
