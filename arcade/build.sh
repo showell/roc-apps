@@ -5,9 +5,10 @@
 #   arcade/build.sh snake
 #
 # **NOTHING IS STAGED AND NOTHING IS REWRITTEN.** Every file compiles where it
-# is written: the app at the top of arcade/ is Roc's package root, and
-# everything it reaches -- lib/, snake/, web/platform/ -- sits below it. A
-# module inside a game may climb to ../lib because that stays within the root.
+# is written. A game's whole self is its own directory, app files included;
+# what is outside it -- the vocabulary and the two platform ends -- is reached
+# as a package, because a relative import may not climb above an app file and a
+# package reference may.
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROC="${ROC:-$HOME/build/roc-nightly/roc}"
@@ -15,7 +16,7 @@ ZIG="${ZIG:-$HOME/zig-0.16.0/zig}"
 name="${1:?usage: arcade/build.sh <game>}"
 app="$HERE/${name}_web.roc"
 [ -f "$app" ] || { echo "no app at $app"; exit 2; }
-[ -f "$HERE/web/$name.html" ] || { echo "no page at $HERE/web/$name.html"; exit 2; }
+[ -f "$HERE/$name/page.html" ] || { echo "no page at $HERE/$name/page.html"; exit 2; }
 
 OUT="$HOME/build/roc-apps/next/$name"
 mkdir -p "$OUT"
@@ -30,6 +31,6 @@ rm -f "$OUT/$name.wasm"
 if grep -q "✗" "$LOG" || [ ! -s "$OUT/$name.wasm" ]; then cat "$LOG"; echo "build failed"; exit 1; fi
 
 cp "$HERE/web/blitter.js" "$OUT/"
-cp "$HERE/web/$name.html" "$OUT/index.html"
+cp "$HERE/$name/page.html" "$OUT/index.html"
 ls -la "$OUT"
 echo "dev: http://143.244.172.148:9210/$name/"

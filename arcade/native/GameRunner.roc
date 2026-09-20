@@ -16,6 +16,11 @@
 # shader that does Brush.shade's arithmetic on the scene position (BrushGlsl).
 # It is anti-aliased by supersampling, since roc-ray offers no multisampling.
 #
+# **THIS IS AN APP MODULE, NOT PART OF A PACKAGE.** It imports rr.App and
+# rr.Draw, and a package cannot see a platform -- every roc-ray type came back
+# as an unresolved type variable when this was tried as one. That is why the
+# app files sit at the top of arcade/ rather than beside their game.
+#
 # Sound is not wired up yet. A game reports which tones a step set off and this
 # ignores them for now, exactly as the page lights a widget instead of playing
 # them.
@@ -26,11 +31,11 @@ import rr.Color
 import rr.Devices
 import rr.Draw
 import rr.Math
-import ../lib/Brush
-import ../lib/BrushGlsl
-import ../lib/Game
-import ../lib/Keys
-import ../lib/Shapes
+import lib.Brush
+import lib.BrushGlsl
+import lib.Game
+import lib.Keys
+import lib.Shapes
 
 GameRunner :: [].{
 	Gpu : {

@@ -8,10 +8,10 @@
 # `Devices.Snapshot`; here it takes a `Keys.Snapshot`, which is shaped the same
 # on purpose, so the function below is the upstream one with its type changed
 # and nothing else.
-import ../lib/Game
-import ../lib/Keys
-import ../lib/Random
-import ../lib/Shapes
+import lib.Game
+import lib.Keys
+import lib.Random
+import lib.Shapes
 import Rules
 import SnakeDraw
 

@@ -10,27 +10,30 @@ game is driven.
 
 ## Where the splits are
 
-The two ends of a game are two files, named for where they run:
-
 | | |
 |---|---|
-| `snake_web.roc` | the app a browser runs. Sits on `web/platform/`, uses `lib/GameApp` |
-| `snake_native.roc` | the app roc-ray runs. Sits on roc-ray, uses `native/GameRunner` |
-| `snake/` | **the game.** Both apps import it and neither can tell which is running |
-| `lib/` | the vocabulary both ends use: `Game`, `Keys`, `Random`, `Shapes`, `Brush`, `Font` |
-| `web/` | the page's end: the wasm platform and host, `blitter.js`, the page |
+| `snake_web.roc` | the app a browser runs — sits on `web/platform/`, uses `lib.GameApp` |
+| `snake_native.roc` | the app roc-ray runs — uses `native/GameRunner` |
+| `snake/` | **the game**, and everything that is only about it, its page included. Neither app's half; it cannot tell which is running |
+| `lib/` | a package: `Game`, `Keys`, `Random`, `Shapes`, `Brush`, `Font`, and the two wire edges |
+| `web/` | the page's end: the wasm platform and host, `blitter.js`, `page_check.mjs` |
 | `native/` | roc-ray's end: `GameRunner.roc` |
 
-**The two app files sit at the top rather than beside the game because an app
-file is where Roc's package root is**, and a relative import may not climb
-above it (`roc check` says so; `roc build` segfaults instead, which is a
-compiler bug worth reporting). So everything an app reaches sits below it, and
-a module inside `snake/` may say `import ../lib/Random` because that stays
-within the root.
+**Why the two app files sit at the top rather than beside the game.** An app
+file is where Roc's package root is, and a relative import may not climb above
+it. `lib/` is fine outside because it is a package and a package reference is
+not a relative import — but `native/GameRunner.roc` cannot be a package,
+because **a package cannot see a platform**: it imports `rr.App` and `rr.Draw`,
+and as a package module every roc-ray type comes back as an unresolved type
+variable. So both apps live where everything they reach is below them, and the
+file name says which is which.
+
+Everything that is only about one game is in that game's directory, `page.html`
+included, because nothing but Roc's imports is constrained.
 
 ## Nothing is staged and nothing is rewritten
 
-Every file compiles where it is written. There is one copy of the game's rules
+Every file compiles where it is written. There is one copy of a game's rules
 and both builds compile that copy — not two copies, and not one copy edited on
 its way into a build.
 
@@ -47,8 +50,11 @@ roc-ray as `../../roc-ray`, a sibling of roc-apps.
 
 ## A game
 
-    arcade/<name>/
+    <name>_web.roc        the app a browser runs
+    <name>_native.roc     the app roc-ray runs
+    <name>/
         <Name>Game.roc    the Game value: the keyboard, the clock, the sounds
+        page.html         the page
         …                 the rules and the drawing
 
 ## Snake, ported

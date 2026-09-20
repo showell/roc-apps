@@ -3,7 +3,7 @@
 ## Ported from roc-ray's examples/snake. `rr.Math`'s Vec2 and Rect were used
 ## here only as record shapes, so they are written out; `Random` is the
 ## arcade's own with roc-ray's surface. Nothing else changed.
-import ../lib/Random
+import lib.Random
 
 Board := [].{
 	Cell : { x : I32, y : I32 }
