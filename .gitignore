@@ -5,3 +5,6 @@ machine/wasm/platform/targets/
 machine/native/platform/targets/
 machine/batch/platform/targets/
 framebuffer/platform/targets/
+
+# Editor swap files — one got committed by a `git add -A` on 2026-09-20.
+.*.swp
