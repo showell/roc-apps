@@ -1,8 +1,9 @@
 #!/bin/bash
 # THE SIGN-OFF: move what the dev channel shows into staging, one app at a time.
 #
-#   site/publish.sh safari      an app: safari, basic, machine, framebuffer, gpu, games,
-#                               or a movie: capture_plot, particles, halloween
+#   site/publish.sh safari      an app: safari, basic, machine, framebuffer, gpu, games;
+#                               a movie: capture_plot, particles, halloween; or a canvas
+#                               app: snake, pong, breakout, camera, workshop, trick_or_treat
 #   site/publish.sh home        the landing page and shared/
 #
 # An app: copies ~/build/roc-apps/next/<app>/ (what <app>'s build.sh last wrote,
@@ -35,10 +36,11 @@ if [ "$app" = home ]; then
     what="the landing page"
 else
     # An app is a directory of this repository -- at the top for the older
-    # ones, under movies/ for a movie.
+    # ones, under movies/ for a movie, under canvas_apps/ for a canvas app.
     src="$app"
     [ -d "$REPO/$src" ] || src="movies/$app"
-    [ -d "$REPO/$src" ] || { echo "$app is neither an app nor a movie in $REPO"; exit 2; }
+    [ -d "$REPO/$src" ] || src="canvas_apps/$app"
+    [ -d "$REPO/$src" ] || { echo "$app is not an app, a movie or a canvas app in $REPO"; exit 2; }
     [ -d "$NEXT/$app" ] || { echo "no dev build at $NEXT/$app; run $app's build.sh first"; exit 2; }
     rm -rf "$LIVE/$app"
     cp -r "$NEXT/$app" "$LIVE/$app"
