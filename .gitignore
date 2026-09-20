@@ -8,3 +8,6 @@ framebuffer/platform/targets/
 
 # Editor swap files — one got committed by a `git add -A` on 2026-09-20.
 .*.swp
+
+# The arcade host object, rebuilt by every arcade/build.sh run.
+arcade/web/platform/targets/
