@@ -73,7 +73,7 @@ readable = |types, id, depth|
 			RocFunction(_) => Bool.False
 			RocUnknown(_) => Bool.False
 			RocStr => Bool.False
-			RocTagUnion(_) => Bool.False
+			RocTagUnion(_) => all_tags_readable(types, AbiLayout.tag_layouts(at(types, id).layout), depth)
 			RocDec => Bool.False
 			# A box of something unreadable is still a handle a page can hold.
 			RocBox(_) => Bool.True
@@ -131,8 +131,122 @@ body = |types, id, repr|
 			}
 		RocList(elem) => Reads(list_body(types, elem))
 		RocRecord(record) => Reads(record_body(types, id, record))
+		RocTagUnion(_) => Reads(tag_union_body(types, id))
 		_ => Skipped
 	}
+
+## Every variant's payload has to be readable before the union is, so a
+## generated reader never references one that was skipped.
+all_tags_readable : Types, List(_), U64 -> Bool
+all_tags_readable = |types, tags, depth| {
+	n = List.len(tags)
+	var $ok = Bool.True
+	var $i = 0
+	while $i < n {
+		tag = List.get(tags, $i) ?? crash("glue: tag out of range")
+		fine = if List.is_empty(tag.payload_fields) {
+			all_payloads_readable(types, tag.payload, depth)
+		} else {
+			all_readable(types, tag.payload_fields, depth)
+		}
+		$ok = if fine { $ok } else { Bool.False }
+		$i = $i + 1
+	}
+	$ok
+}
+
+all_payloads_readable : Types, List(U64), U64 -> Bool
+all_payloads_readable = |types, payload, depth| {
+	n = List.len(payload)
+	var $ok = Bool.True
+	var $i = 0
+	while $i < n {
+		id = List.get(payload, $i) ?? crash("glue: payload out of range")
+		$ok = if readable(types, id, depth + 1) { $ok } else { Bool.False }
+		$i = $i + 1
+	}
+	$ok
+}
+
+## **A TAG UNION IS A DISCRIMINANT AND A PAYLOAD AT ONE ADDRESS.** The compiler
+## commits to where the discriminant sits, how wide it is, and where each
+## variant's payload fields land. None of that is guessable from the source --
+## the variants are not in source order, they are in the order the compiler
+## chose, each with the number it was given.
+##
+## A variant with no payload reads as `{ tag }`; one whose payload the source
+## never named reads as `{ tag, value }`, which is what `Blend(Mode)` wants;
+## one with named fields reads as `{ tag, ...those }`.
+tag_union_body : Types, U64 -> Str
+tag_union_body = |types, id| {
+	layout = at(types, id).layout
+	tags = AbiLayout.tag_layouts(layout)
+	read = discriminant_read(AbiLayout.discriminant_size(layout), AbiLayout.discriminant_offset(layout, Pointer32))
+	n = List.len(tags)
+	var $arms = ""
+	var $i = 0
+	while $i < n {
+		tag = List.get(tags, $i) ?? crash("glue: tag out of range")
+		$arms = Str.concat($arms, "      case ${U64.to_str(tag.discriminant)}: return ${tag_value(tag)};\n")
+		$i = $i + 1
+	}
+	Str.concat(
+		Str.concat("{\n    switch (${read}) {\n", $arms),
+		"      default: throw new Error('roc_glue: no variant ' + ${read});\n    }\n  }",
+	)
+}
+
+## The discriminant, at its own offset and its own width.
+discriminant_read : U64, U64 -> Str
+discriminant_read = |size, offset|
+	if size == 1 {
+		"view.getUint8(at + ${U64.to_str(offset)})"
+	} else if size == 2 {
+		"view.getUint16(at + ${U64.to_str(offset)}, true)"
+	} else {
+		"view.getUint32(at + ${U64.to_str(offset)}, true)"
+	}
+
+## **A SINGLE PAYLOAD IS A TYPE, NOT A FIELD LIST.** `payload_fields` is
+## empty for a variant carrying one thing -- `Disc({...})` carries one record
+## -- and `payload` names its type instead, sitting at offset 0. A variant
+## carrying several has the field list. Reading only `payload_fields`, as the
+## first attempt did, silently produced `{ tag: "Disc" }` for every variant:
+## seven correct-looking readers, none of which read anything.
+tag_value : _ -> Str
+tag_value = |tag|
+	if List.is_empty(tag.payload_fields) and List.len(tag.payload) == 1 {
+		single = List.get(tag.payload, 0) ?? crash("glue: payload out of range")
+		Str.concat(Str.concat("({ tag: \"", tag.name), "\", value: ${reader_name(single)}(view, at + 0) })")
+	} else {
+		named_value(tag)
+	}
+
+named_value : _ -> Str
+named_value = |tag| {
+	fields = tag.payload_fields
+	n = List.len(fields)
+	var $out = ""
+	var $i = 0
+	while $i < n {
+		field = List.get(fields, $i) ?? crash("glue: payload field out of range")
+		$out = if field.is_padding {
+			$out
+		} else {
+			Str.concat($out, " ${payload_name(field.name)}: ${reader_name(field.type_id)}(view, at + ${U64.to_str(field.offset32)}),")
+		}
+		$i = $i + 1
+	}
+	if Str.is_empty($out) {
+		Str.concat(Str.concat("({ tag: \"", tag.name), "\" })")
+	} else {
+		Str.concat(Str.concat(Str.concat("({ tag: \"", tag.name), "\","), Str.concat($out, " })"))
+	}
+}
+
+## A payload the source never named arrives as index "0"; `value` reads better.
+payload_name : Str -> Str
+payload_name = |name| if name == "0" { "value" } else { name }
 
 ## A list is a pointer, a length and a capacity; the elements sit end to end,
 ## each as wide as the compiler says that element is.
