@@ -16,10 +16,10 @@ import Snake
 import lib.Trig
 
 SnakeDraw :: [].{
-	screen_w : F64
-	screen_w = 800.0
-	screen_h : F64
-	screen_h = 600.0
+	w : F64
+	w = 800.0
+	h : F64
+	h = 600.0
 
 	field_top : Brush.Rgba
 	field_top = Brush.opaque(0x151d3a)
@@ -58,7 +58,7 @@ SnakeDraw :: [].{
 	frame = |world, elapsed| {
 		var $out = List.with_capacity(220)
 		# The field, a dark vertical gradient rather than flat black.
-		$out = List.append($out, Rect({ x: 0.0, y: 0.0, w: screen_w, h: screen_h, fill: Linear({ c0: field_top, c1: field_bottom, o0: 0.0, o1: 1.0, ax: 0.0, ay: 0.0, dx: 0.0, dy: screen_h, len2: screen_h * screen_h }) }))
+		$out = List.append($out, Rect({ x: 0.0, y: 0.0, w: w, h: h, fill: Linear({ c0: field_top, c1: field_bottom, o0: 0.0, o1: 1.0, ax: 0.0, ay: 0.0, dx: 0.0, dy: h }) }))
 		$out = List.concat($out, hud(world))
 		$out = List.concat($out, board({}))
 		$out = List.concat($out, glow(world, elapsed))
@@ -71,11 +71,11 @@ SnakeDraw :: [].{
 	hud : Rules.World -> List(Shapes.Shape)
 	hud = |world| {
 		score = Str.concat("SCORE ", U64.to_str(world.score))
-		score_bytes = Str.to_utf8(score)
-		hint = Str.to_utf8("ARROWS / WASD TURN    SPACE RESTART")
-		var $out = Font.text(Str.to_utf8("SNAKE"), left, 26.0, 30.0, snake_head)
-		$out = List.concat($out, Font.text(score_bytes, screen_w - left - Font.width_of(score_bytes, 24.0), 30.0, 24.0, hud_color))
-		List.concat($out, Font.text(hint, (screen_w - Font.width_of(hint, 17.0)) / 2.0, 572.0, 17.0, hint_color))
+
+		hint = "ARROWS / WASD TURN    SPACE RESTART"
+		var $out = Font.text("SNAKE", left, 26.0, 30.0, snake_head)
+		$out = List.concat($out, Font.text(score, w - left - Font.width_of(score, 24.0), 30.0, 24.0, hud_color))
+		List.concat($out, Font.centered(hint, w / 2.0, 572.0, 17.0, hint_color))
 	}
 
 	## The bordered playfield and its faint lattice.
@@ -127,22 +127,18 @@ SnakeDraw :: [].{
 		$out
 	}
 
-	## The breathing pulse the food and the restart prompt share.
-	pulse : F64 -> F64
-	pulse = |elapsed| 0.5 + 0.5 * Trig.r_sin(elapsed * 3.4)
-
 	## Halos behind the food and the head, which were additive.
 	glow : Rules.World, F64 -> List(Shapes.Shape)
 	glow = |world, elapsed| {
-		beat = pulse(elapsed)
+		beat = Trig.pulse(elapsed)
 		f = middle_of(world.food)
 		h = middle_of(world.snake.head())
 		food_r = cell * (1.0 + 0.5 * beat)
 		head_r = cell * 1.5
 		[
 			Blend(Add),
-			Disc({ x: f.x, y: f.y, r: food_r, fill: Radial({ inner: Brush.with_alpha(0x50ff6b8b), outer: Brush.with_alpha(0x00ff6b8b), x: f.x, y: f.y, r0: 0.0, r1: food_r }), clip: Anywhere }),
-			Disc({ x: h.x, y: h.y, r: head_r, fill: Radial({ inner: Brush.with_alpha(0x407ef7d1), outer: Brush.with_alpha(0x007ef7d1), x: h.x, y: h.y, r0: 0.0, r1: head_r }), clip: Anywhere }),
+			Shapes.halo(f.x, f.y, food_r, food_neon, 0.3137254901960784),
+			Shapes.halo(h.x, h.y, head_r, snake_head, 0.25098039215686274),
 			Blend(Over),
 		]
 	}
@@ -151,7 +147,7 @@ SnakeDraw :: [].{
 	food : Board.Cell, F64 -> List(Shapes.Shape)
 	food = |at, elapsed| {
 		m = middle_of(at)
-		r = cell * (0.3 + 0.04 * pulse(elapsed))
+		r = cell * (0.3 + 0.04 * Trig.pulse(elapsed))
 		[
 			Disc({ x: m.x, y: m.y, r: r, fill: Flat(food_neon), clip: Anywhere }),
 			Disc({ x: m.x - r * 0.3, y: m.y - r * 0.35, r: r * 0.32, fill: Flat(Brush.with_alpha(0xbeffffff)), clip: Anywhere }),
@@ -164,12 +160,12 @@ SnakeDraw :: [].{
 		match world.state {
 			Playing => []
 			GameOver => {
-				over = Str.to_utf8("GAME OVER")
-				again = Str.to_utf8("PRESS SPACE TO PLAY AGAIN")
-				alpha = 0.59 + 0.41 * pulse(elapsed)
+				over = "GAME OVER"
+				again = "PRESS SPACE TO PLAY AGAIN"
+				alpha = 0.59 + 0.41 * Trig.pulse(elapsed)
 				var $out = [Rect({ x: left - 8.0, y: 236.0, w: board_w + 16.0, h: 140.0, fill: Flat(Brush.with_alpha(0xe1060810)) })]
-				$out = List.concat($out, Font.text(over, (screen_w - Font.width_of(over, 40.0)) / 2.0, 262.0, 40.0, food_neon))
-				List.concat($out, Font.text(again, (screen_w - Font.width_of(again, 19.0)) / 2.0, 326.0, 19.0, { r: hint_color.r, g: hint_color.g, b: hint_color.b, a: alpha }))
+				$out = List.concat($out, Font.centered(over, w / 2.0, 262.0, 40.0, food_neon))
+				List.concat($out, Font.centered(again, w / 2.0, 326.0, 19.0, { r: hint_color.r, g: hint_color.g, b: hint_color.b, a: alpha }))
 			}
 		}
 }

@@ -39,7 +39,7 @@ BreakoutDraw :: [].{
 	## One complete Breakout frame, back to front.
 	frame : Rules.World, F64 -> List(Shapes.Shape)
 	frame = |world, elapsed| {
-		var $out = [Rect({ x: 0.0, y: 0.0, w: w, h: h, fill: Linear({ c0: Color.brush(field_top), c1: Color.brush(field_bottom), o0: 0.0, o1: 1.0, ax: 0.0, ay: 0.0, dx: 0.0, dy: h, len2: h * h }) })]
+		var $out = [Rect({ x: 0.0, y: 0.0, w: w, h: h, fill: Linear({ c0: Color.brush(field_top), c1: Color.brush(field_bottom), o0: 0.0, o1: 1.0, ax: 0.0, ay: 0.0, dx: 0.0, dy: h }) })]
 		$out = List.concat($out, hud(world))
 		$out = List.concat($out, bricks(world.bricks))
 		$out = List.concat($out, glow(world))
@@ -50,14 +50,14 @@ BreakoutDraw :: [].{
 	## The title, the score, the lives, the rule under them, and the keys.
 	hud : Rules.World -> List(Shapes.Shape)
 	hud = |world| {
-		score = Str.to_utf8(Str.concat("SCORE ", U64.to_str(world.score)))
-		lives = Str.to_utf8(Str.concat("LIVES ", U64.to_str(world.lives)))
-		hint = Str.to_utf8("LEFT / RIGHT MOVE    SPACE LAUNCH")
-		var $out = Font.text(Str.to_utf8("BREAKOUT"), 44.0, 22.0, 26.0, Color.brush(paddle_neon))
+		score = Str.concat("SCORE ", U64.to_str(world.score))
+		lives = Str.concat("LIVES ", U64.to_str(world.lives))
+		hint = "LEFT / RIGHT MOVE    SPACE LAUNCH"
+		var $out = Font.text("BREAKOUT", 44.0, 22.0, 26.0, Color.brush(paddle_neon))
 		$out = List.concat($out, Font.text(score, 330.0, 26.0, 22.0, Color.brush(hud_color)))
 		$out = List.concat($out, Font.text(lives, 560.0, 26.0, 22.0, Color.brush(hud_color)))
 		$out = List.append($out, Shapes.line(44.0, 58.0, 756.0, 58.0, 2.0, Flat(Color.brush(rule_color))))
-		List.concat($out, Font.text(hint, (w - Font.width_of(hint, 17.0)) / 2.0, 572.0, 17.0, Color.brush(hint_color)))
+		List.concat($out, Font.centered(hint, w / 2.0, 572.0, 17.0, Color.brush(hint_color)))
 	}
 
 	## Every brick still standing, each with a bright top-edge sheen.
@@ -93,10 +93,7 @@ BreakoutDraw :: [].{
 	}
 
 	halo : F64, F64, F64, Color.Rgba -> Shapes.Shape
-	halo = |x, y, r, col| {
-		c = Color.brush(col)
-		Disc({ x: x, y: y, r: r, fill: Radial({ inner: { ..c, a: 0.37 }, outer: { ..c, a: 0.0 }, x: x, y: y, r0: 0.0, r1: r }), clip: Anywhere })
-	}
+	halo = |x, y, r, col| Shapes.halo(x, y, r, Color.brush(col), 0.37)
 
 	## The solid paddle and ball, over their glows.
 	bodies : Rules.World -> List(Shapes.Shape)
@@ -119,33 +116,33 @@ BreakoutDraw :: [].{
 
 	## Waiting text pulses between translucent and opaque.
 	prompt_alpha : F64 -> F64
-	prompt_alpha = |elapsed| 0.59 + 0.41 * (0.5 + 0.5 * Trig.r_sin(elapsed * 3.4))
+	prompt_alpha = |elapsed| 0.59 + 0.41 * Trig.pulse(elapsed)
 
 	## The launch prompt, or the banner a finished match earns.
 	overlay : Rules.World, F64 -> List(Shapes.Shape)
 	overlay = |world, elapsed|
 		match world.state {
 			Ready => {
-				line = Str.to_utf8("PRESS SPACE TO LAUNCH")
+				line = "PRESS SPACE TO LAUNCH"
 				c = Color.brush(hud_color)
-				Font.text(line, (w - Font.width_of(line, 22.0)) / 2.0, 340.0, 22.0, { ..c, a: prompt_alpha(elapsed) })
+				Font.centered(line, w / 2.0, 340.0, 22.0, { ..c, a: prompt_alpha(elapsed) })
 			}
 			Playing => []
-			Won => banner(Str.to_utf8("WALL CLEARED"), Color.from_hex_rgb(0x4ce0b3), elapsed)
-			GameOver => banner(Str.to_utf8("GAME OVER"), Color.from_hex_rgb(0xff4f7d), elapsed)
+			Won => banner("WALL CLEARED", Color.from_hex_rgb(0x4ce0b3), elapsed)
+			GameOver => banner("GAME OVER", Color.from_hex_rgb(0xff4f7d), elapsed)
 		}
 
-	banner : List(U8), Color.Rgba, F64 -> List(Shapes.Shape)
+	banner : Str, Color.Rgba, F64 -> List(Shapes.Shape)
 	banner = |line, accent, elapsed| {
 		dim = Color.brush(field_bottom)
 		edge = Color.brush(accent)
-		again = Str.to_utf8("PRESS SPACE TO PLAY AGAIN")
+		again = "PRESS SPACE TO PLAY AGAIN"
 		hint = Color.brush(hint_color)
 		var $out = [
 			Shapes.rounded_rect(188.0, 274.0, 424.0, 128.0, 18.0, 8, Flat({ ..edge, a: 0.47 })),
 			Shapes.rounded_rect(190.0, 276.0, 420.0, 124.0, 17.0, 8, Flat({ ..dim, a: 0.91 })),
 		]
-		$out = List.concat($out, Font.text(line, (w - Font.width_of(line, 30.0)) / 2.0, 304.0, 30.0, Color.brush(accent)))
-		List.concat($out, Font.text(again, (w - Font.width_of(again, 17.0)) / 2.0, 356.0, 17.0, { ..hint, a: prompt_alpha(elapsed) }))
+		$out = List.concat($out, Font.centered(line, w / 2.0, 304.0, 30.0, Color.brush(accent)))
+		List.concat($out, Font.centered(again, w / 2.0, 356.0, 17.0, { ..hint, a: prompt_alpha(elapsed) }))
 	}
 }

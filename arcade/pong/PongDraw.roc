@@ -27,7 +27,7 @@ PongDraw :: [].{
 	frame = |world| {
 		var $out = List.with_capacity(140)
 		# The field, a dark vertical gradient rather than flat black.
-		$out = List.append($out, Rect({ x: 0.0, y: 0.0, w: w, h: h, fill: Linear({ c0: Color.brush(Rules.field_top), c1: Color.brush(Rules.field_bottom), o0: 0.0, o1: 1.0, ax: 0.0, ay: 0.0, dx: 0.0, dy: h, len2: h * h }) }))
+		$out = List.append($out, Rect({ x: 0.0, y: 0.0, w: w, h: h, fill: Linear({ c0: Color.brush(Rules.field_top), c1: Color.brush(Rules.field_bottom), o0: 0.0, o1: 1.0, ax: 0.0, ay: 0.0, dx: 0.0, dy: h }) }))
 		$out = List.concat($out, center_line({}))
 		$out = List.concat($out, scores(world))
 		$out = List.append($out, Blend(Add))
@@ -82,10 +82,7 @@ PongDraw :: [].{
 	}
 
 	halo : F64, F64, F64, Color.Rgba -> Shapes.Shape
-	halo = |x, y, r, col| {
-		c = Color.brush(col)
-		Disc({ x: x, y: y, r: r, fill: Radial({ inner: { ..c, a: 0.39 }, outer: { ..c, a: 0.0 }, x: x, y: y, r0: 0.0, r1: r }), clip: Anywhere })
-	}
+	halo = |x, y, r, col| Shapes.halo(x, y, r, Color.brush(col), 0.39)
 
 	## The full-field tint after a hit or a point, which decays to nothing.
 	wash : Rules.World -> List(Shapes.Shape)
@@ -115,28 +112,28 @@ PongDraw :: [].{
 	## The two scores, in each player's colour.
 	scores : Rules.World -> List(Shapes.Shape)
 	scores = |world| {
-		left = Str.to_utf8(U64.to_str(world.left.score))
-		right = Str.to_utf8(U64.to_str(world.right.score))
+		left = U64.to_str(world.left.score)
+		right = U64.to_str(world.right.score)
 		List.concat(
-			Font.text(left, w * 0.32 - Font.width_of(left, 44.0) / 2.0, 30.0, 44.0, Color.brush(Rules.left_neon)),
-			Font.text(right, w * 0.68 - Font.width_of(right, 44.0) / 2.0, 30.0, 44.0, Color.brush(Rules.right_neon)),
+			Font.centered(left, w * 0.32, 30.0, 44.0, Color.brush(Rules.left_neon)),
+			Font.centered(right, w * 0.68, 30.0, 44.0, Color.brush(Rules.right_neon)),
 		)
 	}
 
 	## The hint, always; the winner and the prompt once a match is over.
 	banner : Rules.World -> List(Shapes.Shape)
 	banner = |world| {
-		hint = Str.to_utf8("W / S MOVE    SPACE NEW MATCH")
-		var $out = Font.text(hint, (w - Font.width_of(hint, 17.0)) / 2.0, h - 34.0, 17.0, Color.brush(Rules.hint_color))
+		hint = "W / S MOVE    SPACE NEW MATCH"
+		var $out = Font.centered(hint, w / 2.0, h - 34.0, 17.0, Color.brush(Rules.hint_color))
 		if Rules.is_over(world) {
 			left_won = world.left.score >= 5
-			won = if left_won { Str.to_utf8("LEFT WINS") } else { Str.to_utf8("RIGHT WINS") }
-			again = Str.to_utf8("PRESS SPACE FOR A NEW MATCH")
+			won = if left_won { "LEFT WINS" } else { "RIGHT WINS" }
+			again = "PRESS SPACE FOR A NEW MATCH"
 			tint = if left_won { Rules.left_neon } else { Rules.right_neon }
 			dim = Color.brush(Rules.field_bottom)
 			$out = List.concat([Rect({ x: 0.0, y: 0.0, w: w, h: h, fill: Flat({ ..dim, a: 0.75 }) })], $out)
-			$out = List.concat($out, Font.text(won, (w - Font.width_of(won, 40.0)) / 2.0, 248.0, 40.0, Color.brush(tint)))
-			List.concat($out, Font.text(again, (w - Font.width_of(again, 19.0)) / 2.0, 316.0, 19.0, Color.brush(Rules.hint_color)))
+			$out = List.concat($out, Font.centered(won, w / 2.0, 248.0, 40.0, Color.brush(tint)))
+			List.concat($out, Font.centered(again, w / 2.0, 316.0, 19.0, Color.brush(Rules.hint_color)))
 		} else {
 			$out
 		}

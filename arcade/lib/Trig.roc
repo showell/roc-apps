@@ -19,6 +19,11 @@ Trig :: [].{
 	wrap : F64, I64 -> F64
 	wrap = |x, fuel| (if (fuel <= 0) { x } else { (if (x > pi) { wrap((x - two_pi), (fuel - 1)) } else { (if (x < (0.0 - pi)) { wrap((x + two_pi), (fuel - 1)) } else { x }) }) })
 
+	## Nought to one and back, once every `tau / 3.4` seconds: the breathing a
+	## waiting prompt and a piece of food both do.
+	pulse : F64 -> F64
+	pulse = |t| 0.5 + 0.5 * r_sin(t * 3.4)
+
 	r_sin : F64 -> F64
 	r_sin = |x| DeviceMath.real_sin(x)
 

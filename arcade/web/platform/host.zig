@@ -30,6 +30,8 @@ extern fn roc_init() callconv(.c) ?[*]u8;
 extern fn roc_advance(model: ?[*]u8, held: u32, struck: u32, buttons: u32, clicks: u32, x: f32, y: f32, wheel: f32) callconv(.c) ?[*]u8;
 extern fn roc_sounds(model: ?[*]u8) callconv(.c) u32;
 extern fn roc_tone_count(model: ?[*]u8) callconv(.c) u32;
+extern fn roc_tone_freq(model: ?[*]u8, index: u32) callconv(.c) u32;
+extern fn roc_tone_ms(model: ?[*]u8, index: u32) callconv(.c) u32;
 extern fn roc_frame(model: ?[*]u8) callconv(.c) RocList;
 extern fn roc_width(model: ?[*]u8) callconv(.c) u32;
 extern fn roc_height(model: ?[*]u8) callconv(.c) u32;
@@ -175,5 +177,15 @@ pub export fn sounds() u32 {
 // the word above.
 pub export fn toneCount() u32 {
     return roc_tone_count(borrowed());
+}
+
+// What one of them sounds like: a pitch in hertz and a length in
+// milliseconds, which is what roc-ray's Audio.gen_tone takes as well.
+pub export fn toneFreq(index: u32) u32 {
+    return roc_tone_freq(borrowed(), index);
+}
+
+pub export fn toneMs(index: u32) u32 {
+    return roc_tone_ms(borrowed(), index);
 }
 

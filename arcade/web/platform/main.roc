@@ -14,6 +14,8 @@ platform ""
 			frame : Box(model) -> List(U32),
 			sounds : Box(model) -> U32,
 			tone_count : Box(model) -> U32,
+			tone_freq : Box(model), U32 -> U32,
+			tone_ms : Box(model), U32 -> U32,
 			width : Box(model) -> U32,
 			height : Box(model) -> U32,
 			fps : Box(model) -> U32,
@@ -27,6 +29,8 @@ platform ""
 		"roc_frame": frame_for_host,
 		"roc_sounds": sounds_for_host,
 		"roc_tone_count": tone_count_for_host,
+		"roc_tone_freq": tone_freq_for_host,
+		"roc_tone_ms": tone_ms_for_host,
 		"roc_width": width_for_host,
 		"roc_height": height_for_host,
 		"roc_fps": fps_for_host,
@@ -35,7 +39,7 @@ platform ""
 		inputs_dir: "targets/",
 		wasm32: {
 			inputs: ["host.wasm", app],
-			exports: ["computeFrame", "frameAt", "advance", "sounds", "toneCount", "width", "height", "fps"],
+			exports: ["computeFrame", "frameAt", "advance", "sounds", "toneCount", "toneFreq", "toneMs", "width", "height", "fps"],
 		},
 	}
 
@@ -44,6 +48,8 @@ advance_for_host = program.advance
 frame_for_host = program.frame
 sounds_for_host = program.sounds
 tone_count_for_host = program.tone_count
+tone_freq_for_host = program.tone_freq
+tone_ms_for_host = program.tone_ms
 width_for_host = program.width
 height_for_host = program.height
 fps_for_host = program.fps

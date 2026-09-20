@@ -22,7 +22,7 @@ SnakeGame :: [].{
 
 	game : Game.Game(SnakeGame.Model)
 	game = {
-		size: { width: SnakeDraw.screen_w, height: SnakeDraw.screen_h },
+		size: { width: SnakeDraw.w, height: SnakeDraw.h },
 		fps: 60,
 		init: { world: Rules.new_world(Random.seed(1)), elapsed: 0.0, sounds: 0 },
 		advance: |m, keys, dt| step(m, keys, dt),
@@ -55,14 +55,14 @@ SnakeGame :: [].{
 	step = |m, keys, dt| {
 		controls = read_controls(keys)
 		(world, events) = Rules.update(m.world, controls, dt)
-		{ world, elapsed: m.elapsed + F32.to_f64(dt), sounds: rung(events, 0) }
+		{ world, elapsed: m.elapsed + F32.to_f64(dt), sounds: rung(events) }
 	}
 
 	## Which tones the step set off, a bit each, in `tones` order.
-	rung : List(Rules.Event), U32 -> U32
-	rung = |events, so_far| {
+	rung : List(Rules.Event) -> U32
+	rung = |events| {
 		n = List.len(events)
-		var $bits = so_far
+		var $bits = 0
 		var $i = 0
 		while $i < n {
 			$bits = U32.bitwise_or(

@@ -22,7 +22,7 @@ Brush :: [].{
 		# Mode 2: from radius r0 to r1 about (x, y).
 		Radial({ inner : Brush.Rgba, outer : Brush.Rgba, x : F64, y : F64, r0 : F64, r1 : F64 }),
 		# Mode 3: two stops along a..a+d, at offsets o0 <= o1.
-		Linear({ c0 : Brush.Rgba, c1 : Brush.Rgba, o0 : F64, o1 : F64, ax : F64, ay : F64, dx : F64, dy : F64, len2 : F64 }),
+		Linear({ c0 : Brush.Rgba, c1 : Brush.Rgba, o0 : F64, o1 : F64, ax : F64, ay : F64, dx : F64, dy : F64 }),
 		# Mode 4: two stops out from (x, y) through the ellipse whose inverse is
 		# ia ib / ic id, taking a scene offset to the unit circle.
 		Ellipse({ c0 : Brush.Rgba, c1 : Brush.Rgba, o0 : F64, o1 : F64, x : F64, y : F64, ia : F64, ib : F64, ic : F64, id : F64 }),
@@ -44,7 +44,7 @@ Brush :: [].{
 				d = F64.sqrt((x - p.x) * (x - p.x) + (y - p.y) * (y - p.y))
 				mix(p.inner, p.outer, if p.r1 > p.r0 { clamp01((d - p.r0) / (p.r1 - p.r0)) } else { 1.0 })
 			}
-			Linear(p) => two_stop(p.c0, p.o0, p.c1, p.o1, clamp01(((x - p.ax) * p.dx + (y - p.ay) * p.dy) / p.len2))
+			Linear(p) => two_stop(p.c0, p.o0, p.c1, p.o1, clamp01(((x - p.ax) * p.dx + (y - p.ay) * p.dy) / (p.dx * p.dx + p.dy * p.dy)))
 			Ellipse(p) => {
 				qx = x - p.x
 				qy = y - p.y

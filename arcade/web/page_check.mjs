@@ -37,19 +37,26 @@ let calls = 0, fills = 0;
 // A hash of everything drawn, so a keyed run can be shown to differ from an
 // unkeyed one. Counting calls cannot see where a paddle is.
 let drawn = 0;
-const mark = (k, args) => {
-  drawn = (drawn * 31 + k.length) | 0;
-  for (const a of args) drawn = (drawn * 31 + (typeof a === "number" ? Math.round(a * 8) : 0)) | 0;
+// Colours arrive as property SETS (`ctx.fillStyle = ...`), not calls, so those
+// are hashed too or a colour regression is invisible.
+const mark = (what, values) => {
+  drawn = (drawn * 31 + what.length) | 0;
+  for (const v of values) {
+    if (typeof v === "number") drawn = (drawn * 31 + Math.round(v * 8)) | 0;
+    else if (typeof v === "string") for (let i = 0; i < v.length; i++) drawn = (drawn * 31 + v.charCodeAt(i)) | 0;
+  }
 };
 const ctx = new Proxy({}, {
   get: (_t, k) => {
     if (k === "canvas") return { width: 0, height: 0 };
     if (k === "measureText") return () => ({ width: 10 });
+    // A gradient's stops are where most of the colour lives, so they are
+    // hashed rather than thrown away.
     if (k === "createLinearGradient" || k === "createRadialGradient")
-      return () => ({ addColorStop() {} });
+      return (...a) => { mark(k, a); return { addColorStop: (at, colour) => mark("stop", [at, colour]) }; };
     return (...a) => { calls++; mark(k, a); if (k === "fill" || k === "fillRect") fills++; return undefined; };
   },
-  set: () => true,
+  set: (_target, key, value) => { mark(key, [value]); return true; },
 });
 
 const el = () => ({

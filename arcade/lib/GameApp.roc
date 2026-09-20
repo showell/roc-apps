@@ -22,6 +22,8 @@ GameApp :: [].{
 		frame : Box(model) -> List(U32),
 		sounds : Box(model) -> U32,
 		tone_count : Box(model) -> U32,
+		tone_freq : Box(model), U32 -> U32,
+		tone_ms : Box(model), U32 -> U32,
 		width : Box(model) -> U32,
 		height : Box(model) -> U32,
 		fps : Box(model) -> U32,
@@ -39,9 +41,16 @@ GameApp :: [].{
 			frame: |b| ShapeWire.pack(frame_of(Box.unbox(b))),
 			sounds: |b| sounds(Box.unbox(b)),
 			tone_count: |_b| U64.to_u32_wrap(List.len(game.tones)),
+			# A tone is a pitch and a length, which is all either runner needs
+			# to make the sound the game says it made.
+			tone_freq: |_b, i| I32.to_u32_wrap(tone_at(game.tones, i).freq),
+			tone_ms: |_b, i| I32.to_u32_wrap(tone_at(game.tones, i).ms),
 			width: |_b| F64.to_u32_wrap(game.size.width),
 			height: |_b| F64.to_u32_wrap(game.size.height),
 			fps: |_b| I32.to_u32_wrap(game.fps),
 		}
 	}
+
+	tone_at : List({ freq : I32, ms : I32 }), U32 -> { freq : I32, ms : I32 }
+	tone_at = |tones, i| List.get(tones, U32.to_u64(i)) ?? { freq: 0, ms: 0 }
 }

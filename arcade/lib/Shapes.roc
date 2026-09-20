@@ -120,6 +120,18 @@ Shapes :: [].{
 		$out
 	}
 
+	# **A HALO**: light that fades to nothing at `r`. Three games drew one by
+	# hand, each spelling out the same radial fill.
+	halo : F64, F64, F64, Brush.Rgba, F64 -> Shapes.Shape
+	halo = |x, y, r, colour, alpha|
+		Disc({
+			x,
+			y,
+			r,
+			fill: Radial({ inner: { ..colour, a: alpha }, outer: { ..colour, a: 0.0 }, x, y, r0: 0.0, r1: r }),
+			clip: Anywhere,
+		})
+
 	# A rectangle whose corners are rounded by `r`, each corner drawn with
 	# `segments` steps -- the same two numbers roc-ray's own rounded_rectangle
 	# takes. A radius of zero, or one too big for the box, gives the box.

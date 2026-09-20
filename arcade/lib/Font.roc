@@ -31,8 +31,9 @@ Font :: [].{
 	# A string, as shapes, with its top-left at (x, y). `size` is the height of
 	# a capital letter; the stroke is a fourteenth of it, which is about what a
 	# plotter would give you.
-	text : List(U8), F64, F64, F64, Brush.Rgba -> List(Shapes.Shape)
-	text = |bytes, x, y, size, color| {
+	text : Str, F64, F64, F64, Brush.Rgba -> List(Shapes.Shape)
+	text = |str, x, y, size, color| {
+		bytes = Str.to_utf8(str)
 		u = size / units
 		w = F64.max(size / 14.0, 1.0)
 		n = List.len(bytes)
@@ -47,8 +48,13 @@ Font :: [].{
 	}
 
 	# How wide a string is, for a caller that wants to place one.
-	width_of : List(U8), F64 -> F64
-	width_of = |bytes, size| I64.to_f64(U64.to_i64_wrap(List.len(bytes))) * advance * (size / units)
+	width_of : Str, F64 -> F64
+	width_of = |str, size| I64.to_f64(U64.to_i64_wrap(List.len(Str.to_utf8(str)))) * advance * (size / units)
+
+	## A string centred on `mid`, which is what a title, a banner and a hint
+	## all want and each game was working out for itself.
+	centered : Str, F64, F64, F64, Brush.Rgba -> List(Shapes.Shape)
+	centered = |str, mid, y, size, colour| text(str, mid - width_of(str, size) / 2.0, y, size, colour)
 
 	# One glyph's strokes, placed and thickened.
 	glyph : U8, F64, F64, F64, F64, Brush.Rgba -> List(Shapes.Shape)

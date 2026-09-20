@@ -7,7 +7,10 @@
 // Reading a frame and filling a canvas is shapewire.js, which this loads
 // first and which knows nothing about games.
 //
-//   window.SHOW = { wasm: 'snake.wasm', hint: '…', loading: '…' }
+//   window.SHOW = { wasm: 'snake.wasm', loading: '…' }
+//
+// No hint: every game draws the keys it reads in its own HUD, which is the
+// only place that cannot drift from the keys it actually reads.
 
 // ── the keyboard ───────────────────────────────────────────────────────────
 // The page owns it and the game is told. Every tick carries two bit sets:
@@ -97,11 +100,45 @@ function watchPointer(canvas, width, height) {
 }
 
 // ── the speaker ────────────────────────────────────────────────────────────
-// There is no audio here yet, and the game does not know that: it reports that
-// a sound happened, exactly as it does natively, and here that lights a pip.
+// The game says a sound happened and what it sounds like; this plays it and
+// lights a pip. A browser will not start audio until the page has been
+// clicked or typed in, so the context is made on the first key or button and
+// the pips work either way.
 
 const FADE_MS = 420;
 const bitsOf = (word) => [...Array(32).keys()].filter((bit) => word & (1 << bit));
+
+// One oscillator per sound, gated to nothing quickly enough not to click.
+function makeSpeaker(game) {
+  let audio = null;
+  const tones = [...Array(game.toneCount()).keys()].map((i) => ({
+    freq: game.toneFreq(i),
+    seconds: game.toneMs(i) / 1000,
+  }));
+
+  const wake = () => {
+    if (audio || typeof AudioContext === 'undefined') return;
+    audio = new AudioContext();
+  };
+
+  const play = (which) => {
+    if (!audio) return;
+    for (const index of which) {
+      const tone = tones[index];
+      if (!tone) continue;
+      const osc = audio.createOscillator();
+      const gain = audio.createGain();
+      osc.frequency.value = tone.freq;
+      gain.gain.setValueAtTime(0.18, audio.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + tone.seconds);
+      osc.connect(gain).connect(audio.destination);
+      osc.start();
+      osc.stop(audio.currentTime + tone.seconds);
+    }
+  };
+
+  return { wake, play, count: tones.length };
+}
 
 function drawSpeaker(ctx, width, height, toneCount, ringing, now) {
   const age = now - ringing.at;
@@ -145,6 +182,8 @@ function bindGame(exports) {
     advance: exports.advance,         // one step, given (held, struck)
     sounds: exports.sounds,           // a bit per tone the last step set off
     toneCount: exports.toneCount,     // how many tones the game has
+    toneFreq: exports.toneFreq,       // and what each one sounds like
+    toneMs: exports.toneMs,
     width: exports.width,
     height: exports.height,
     fps: exports.fps,                 // how often the game means to be stepped
@@ -175,12 +214,11 @@ async function main(show) {
   canvas.style.cssText = 'background:#06080f;max-width:100%;max-height:88vh';
   const ctx = canvas.getContext('2d');
 
-  const hint = document.createElement('div');
-  hint.textContent = show.hint ?? '';
-  hint.style.cssText = 'margin-top:10px;letter-spacing:.04em';
-
   const keyboard = watchKeyboard(window);
   const pointer = watchPointer(canvas, width, height);
+  const speaker = makeSpeaker(game);
+  window.addEventListener('keydown', speaker.wake);
+  window.addEventListener('mousedown', speaker.wake);
   const ringing = { at: -Infinity, tones: [] };
 
   const step = (now) => {
@@ -188,7 +226,11 @@ async function main(show) {
     const mouse = pointer();
     game.advance(keys.held, keys.struck, mouse.held, mouse.struck, mouse.x, mouse.y, mouse.wheel);
     const rung = game.sounds();
-    if (rung) { ringing.at = now; ringing.tones = bitsOf(rung); }
+    if (rung) {
+      ringing.at = now;
+      ringing.tones = bitsOf(rung);
+      speaker.play(ringing.tones);
+    }
   };
 
   const draw = (now) => {
@@ -218,7 +260,6 @@ async function main(show) {
 
   loading.remove();
   document.body.appendChild(canvas);
-  document.body.appendChild(hint);
   draw(performance.now());
   last = performance.now();
   requestAnimationFrame(loop);
