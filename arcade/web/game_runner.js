@@ -134,6 +134,11 @@ function drawSpeaker(ctx, width, height, toneCount, ringing, now) {
 // ── the page ───────────────────────────────────────────────────────────────
 
 function bindGame(exports) {
+  // The one thing this wrapper is worth: an arity that disagrees with the
+  // host's used to surface as a bare `unreachable` with no message at all.
+  if (exports.advance.length !== 7) {
+    throw new Error(`game_runner: advance takes ${exports.advance.length} arguments, expected 7`);
+  }
   return {
     memory: exports.memory,
     computeFrame: exports.computeFrame, // the effect: answers the new frame's byte length

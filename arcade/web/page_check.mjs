@@ -34,13 +34,20 @@ const showSrc = page.match(/window\.SHOW\s*=\s*(\{[\s\S]*?\});/);
 if (!showSrc) throw new Error("the page does not set window.SHOW");
 
 let calls = 0, fills = 0;
+// A hash of everything drawn, so a keyed run can be shown to differ from an
+// unkeyed one. Counting calls cannot see where a paddle is.
+let drawn = 0;
+const mark = (k, args) => {
+  drawn = (drawn * 31 + k.length) | 0;
+  for (const a of args) drawn = (drawn * 31 + (typeof a === "number" ? Math.round(a * 8) : 0)) | 0;
+};
 const ctx = new Proxy({}, {
   get: (_t, k) => {
     if (k === "canvas") return { width: 0, height: 0 };
     if (k === "measureText") return () => ({ width: 10 });
     if (k === "createLinearGradient" || k === "createRadialGradient")
       return () => ({ addColorStop() {} });
-    return (...a) => { calls++; if (k === "fill" || k === "fillRect") fills++; return undefined; };
+    return (...a) => { calls++; mark(k, a); if (k === "fill" || k === "fillRect") fills++; return undefined; };
   },
   set: () => true,
 });
@@ -114,4 +121,4 @@ while (frames <= limit && Date.now() < until) await new Promise((r) => setTimeou
 if (frames < 2) { console.error(`${name}: the page never asked for a second frame`); process.exit(1); }
 if (fills === 0) { console.error(`${name}: the page drew nothing`); process.exit(1); }
 const pressed = script.length ? `, ${script.length} keys pressed` : '';
-console.log(`${name}: ran ${frames} frames, ${calls} canvas calls, ${fills} fills${pressed}`);
+console.log(`${name}: ran ${frames} frames, ${calls} canvas calls, ${fills} fills${pressed}, drawn ${drawn >>> 0}`);

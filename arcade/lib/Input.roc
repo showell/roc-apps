@@ -1,5 +1,15 @@
 # Input -- what the keyboard and the mouse looked like at one tick.
 #
+# **NOT CALLED Devices, THOUGH IT MIRRORS roc-ray's Devices.Snapshot.**
+# GameRunner imports both, and two nominal types with the same qualified name
+# are ambiguous to the compiler, not only to a reader. Aliasing roc-ray's
+# module does NOT fix it: `import rr.Devices as HostDevices` was tried, and the
+# compiler still reports two `Devices.Snapshot`s with "the difference is inside
+# this type". The same alias DOES work for Mouse, whose type never has to be
+# named on both sides of one signature. roc-ray calls a tick's whole input
+# `App.Input`, so that is the name this takes -- knowing that roc-ray's
+# App.Input is a larger thing, carrying window, time and messages besides.
+#
 # Hand-written, and shaped deliberately like roc-ray's `Devices.Snapshot`: a
 # game's `read_controls` is the one function that touches input, and it takes a
 # snapshot as a VALUE rather than performing an effect. Matching the shape --
