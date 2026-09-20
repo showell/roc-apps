@@ -1,59 +1,64 @@
 # The arcade
 
 roc-ray's own example games, running on a web page and as native programs from
-the same Roc. `movies/` is the other half of the building: a movie is played,
-a game is driven.
+the same Roc. `movies/` is the other half of the building: a movie is played, a
+game is driven.
 
-    arcade/build.sh snake       the page into dev, http://<box>:9210/snake/
-    arcade/native.sh snake      the native program, ~/build/roc-apps/arcade/snake/
-    arcade/portable.sh snake    which files both builds run byte for byte
+    arcade/build.sh snake       the page,   http://<box>:9210/snake/
+    arcade/native.sh snake      the native program
     node arcade/web/page_check.mjs snake
 
-## What is portable, and how that is enforced
+## Where the splits are
 
-A game's rules are ONE file that both builds run — not two copies, and not one
-copy rewritten on its way into a build. `portable.sh` compares what each build
-actually staged against the source here and prints anything that is not
-identical in both. Today that is four files and they are all platform edges:
+The two ends of a game are two files, named for where they run:
 
-| file | page | native |
-|---|---|---|
-| `lib/GameApp.roc` | the wasm edge | — |
-| `ray/GameRunner.roc` | — | the roc-ray edge |
-| `<game>/<Name>App.roc` | names the wasm platform | — |
-| `<game>/main.roc` | — | names roc-ray |
+| | |
+|---|---|
+| `snake_web.roc` | the app a browser runs. Sits on `web/platform/`, uses `lib/GameApp` |
+| `snake_native.roc` | the app roc-ray runs. Sits on roc-ray, uses `native/GameRunner` |
+| `snake/` | **the game.** Both apps import it and neither can tell which is running |
+| `lib/` | the vocabulary both ends use: `Game`, `Keys`, `Random`, `Shapes`, `Brush`, `Font` |
+| `web/` | the page's end: the wasm platform and host, `blitter.js`, the page |
+| `native/` | roc-ray's end: `GameRunner.roc` |
 
-The last two are the only files a build edits, and only their `platform "…"`
-line, because a staging directory is flat and elsewhere on disk.
+**The two app files sit at the top rather than beside the game because an app
+file is where Roc's package root is**, and a relative import may not climb
+above it (`roc check` says so; `roc build` segfaults instead, which is a
+compiler bug worth reporting). So everything an app reaches sits below it, and
+a module inside `snake/` may say `import ../lib/Random` because that stays
+within the root.
 
-**That is what the shape of `Keys.roc` and `Random.roc` is for.** `Keys.Snapshot`
-is built like roc-ray's `Devices.Snapshot` so a game's `read_controls` compiles
-against either; `GameRunner` converts the host's snapshot into one, and
-`blitter.js` builds one from keydown and keyup. `Random` offers roc-ray's
-surface because the wasm build is a flat pile of Roc with no package manifest,
-and `rr.Random` re-exports a package. Without those two, `Board.roc` would need
-a different import line per platform, which is the thing being avoided.
+## Nothing is staged and nothing is rewritten
+
+Every file compiles where it is written. There is one copy of the game's rules
+and both builds compile that copy — not two copies, and not one copy edited on
+its way into a build.
+
+That is what the shape of `lib/Keys.roc` and `lib/Random.roc` is for.
+`Keys.Snapshot` is built like roc-ray's `Devices.Snapshot`, so a game's
+`read_controls` compiles against either: `GameRunner` converts the host's
+snapshot into one and `blitter.js` builds one from keydown and keyup. `Random`
+offers roc-ray's surface because `rr.Random` re-exports a package and the wasm
+build has none. Without those two, `snake/Board.roc` would need a different
+import line per platform.
+
+The one path that must be true rather than checked: `<game>_native.roc` names
+roc-ray as `../../roc-ray`, a sibling of roc-apps.
 
 ## A game
 
     arcade/<name>/
         <Name>Game.roc    the Game value: the keyboard, the clock, the sounds
-        <Name>App.roc     the wasm app
-        main.roc          the roc-ray app
-        page.html         the page
         …                 the rules and the drawing
-
-`lib/` is the vocabulary: `Game`, `Keys`, `Random`, `Shapes`, `Brush`, `Font`,
-and the wire and shader edges. It is a copy of `movie/`'s, not a share, so this
-directory is a whole program.
 
 ## Snake, ported
 
 `Snake.roc` is upstream's verbatim. `Board.roc` and `Rules.roc` (upstream's
-`Game.roc`, renamed) changed their import lines and nothing else. `SnakeDraw.roc`
-is the rewrite: upstream draws into a `Draw.Frame` and here a frame is a value,
-so it answers a list of shapes. Its additive glow is approximated with radial
-fills, because a shape carries a brush but not a blend mode.
+`Game.roc`, renamed so it does not collide with ours) changed their import
+lines and nothing else. `SnakeDraw.roc` is the rewrite: upstream draws into a
+`Draw.Frame`, and here a frame is a value, so it answers a list of shapes. Its
+additive glow is approximated with radial fills, because a shape carries a
+brush but not a blend mode.
 
 Sound is reported but not played: the game says which tones a step set off, the
 page lights a widget in the corner, and the native runner ignores it for now.

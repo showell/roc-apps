@@ -9,13 +9,13 @@
 # blend, and a Shape carries a brush but not a blend mode; these are radial
 # fills over the background, which reads close enough at these sizes and costs
 # nothing new on any wire.
-import Shapes
-import Brush
-import Font
+import ../lib/Shapes
+import ../lib/Brush
+import ../lib/Font
 import Board
 import Rules
 import Snake
-import Trig
+import ../lib/Trig
 
 SnakeDraw :: [].{
 	screen_w : F64

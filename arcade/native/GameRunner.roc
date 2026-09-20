@@ -26,11 +26,11 @@ import rr.Color
 import rr.Devices
 import rr.Draw
 import rr.Math
-import Brush
-import BrushGlsl
-import Game
-import Keys
-import Shapes
+import ../lib/Brush
+import ../lib/BrushGlsl
+import ../lib/Game
+import ../lib/Keys
+import ../lib/Shapes
 
 GameRunner :: [].{
 	Gpu : {

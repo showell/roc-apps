@@ -3,7 +3,7 @@
 ## Ported from roc-ray's examples/snake, where it is Game.roc; renamed because
 ## `Game` is the arcade's own type. Its import line is the only other change:
 ## the rules never touched the platform.
-import Random
+import ../lib/Random
 import Board
 import Snake
 
