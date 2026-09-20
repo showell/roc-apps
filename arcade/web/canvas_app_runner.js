@@ -196,11 +196,20 @@ function bindApp(exports) {
     // effect and answers where it put the answer: two words, the frame's
     // start and its length. Reading the start from a second export is what
     // this replaces, and what it replaces caught two people.
+    // **THE FRAME IS READ BY GENERATED CODE.** computeFrame answers the
+    // address of the Roc list itself; RocGlue's reader, emitted from the
+    // compiler's type table, turns it into shapes.
+    //
+    // **THE VIEW IS MADE AFTER THE CALL, ON ITS OWN LINE.** Asking for the
+    // frame allocates, which can grow wasm memory, which DETACHES every
+    // DataView over the old buffer. Written as one expression --
+    // `read(new DataView(memory.buffer), computeFrame())` -- JavaScript
+    // evaluates left to right and builds the view first, so the page dies on
+    // the frame that happens to grow memory. That is the third costume this
+    // one bug has worn.
     frame: () => {
       const at = exports.computeFrame();
-      // A fresh view each time: wasm memory that grows detaches the old one.
-      const words = new DataView(exports.memory.buffer);
-      return { at: words.getUint32(at, true), bytes: words.getUint32(at + 4, true) };
+      return RocGlue.frame(new DataView(exports.memory.buffer), at);
     },
   };
 }
@@ -253,8 +262,7 @@ async function main(show) {
     ctx.globalCompositeOperation = 'source-over';
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, width, height);
-    const frame = game.frame();
-    ShapeWire.paint(ctx, ShapeWire.decode(game.memory, frame.at, frame.bytes));
+    ShapeWire.paint(ctx, game.frame());
     drawSpeaker(ctx, width, height, toneCount, ringing, now);
   };
 

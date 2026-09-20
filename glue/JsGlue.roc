@@ -290,10 +290,67 @@ footer = |entries, types| {
 	}
 	sigs = $sigs
 	Str.concat(
-		Str.concat("  // What this platform provides:\n", sigs),
-		"\n  return { ${exported(types)} };\n})();\n",
+		Str.concat(Str.concat("  // What this platform provides:\n", sigs), results(entries, types)),
+		"\n  return { ${exported(types)}${named(entries, types)} };\n})();\n",
 	)
 }
+
+## **A TYPE ID IS A POSITION, NOT A NAME.** `read_t32` became `read_t34` when
+## the platform gained one function, and the page that had bound `read_t32`
+## died on its first frame. So every provided function's RESULT also gets a
+## name taken from the function, which is stable under renumbering: a page
+## binds `RocGlue.frame`, not an accident of ordering.
+results : List(_), Types -> Str
+results = |entries, types| {
+	n = List.len(entries)
+	var $out = ""
+	var $i = 0
+	while $i < n {
+		entry = List.get(entries, $i) ?? crash("glue: entry out of range")
+		$out = match at(types, entry.type_id).repr {
+			RocFunction(f) =>
+				if readable(types, f.ret, 0) {
+					Str.concat($out, "  // ${plain(entry.ffi_symbol)} reads what ${entry.ffi_symbol} answers\n")
+				} else {
+					$out
+				}
+			_ => $out
+		}
+		$i = $i + 1
+	}
+	$out
+}
+
+named : List(_), Types -> Str
+named = |entries, types| {
+	n = List.len(entries)
+	var $out = ""
+	var $i = 0
+	while $i < n {
+		entry = List.get(entries, $i) ?? crash("glue: entry out of range")
+		$out = match at(types, entry.type_id).repr {
+			RocFunction(f) =>
+				if readable(types, f.ret, 0) {
+					Str.concat($out, ", ${plain(entry.ffi_symbol)}: ${reader_name(f.ret)}")
+				} else {
+					$out
+				}
+			_ => $out
+		}
+		$i = $i + 1
+	}
+	$out
+}
+
+## `roc_frame` names itself `frame`; the prefix is the host ABI's, not the
+## reader's.
+plain : Str -> Str
+plain = |symbol|
+	if Str.starts_with(symbol, "roc_") {
+		Str.drop_prefix(symbol, "roc_")
+	} else {
+		symbol
+	}
 
 ## Every reader that got emitted, so a host can reach them by type id.
 exported : Types -> Str

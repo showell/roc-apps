@@ -8,7 +8,7 @@
 import Game
 import Input
 import Mouse
-import ShapeWire
+import Shapes
 
 GameApp :: [].{
 	# Roc reads `game.frame(m)` as a method call, so each of a game's
@@ -19,7 +19,8 @@ GameApp :: [].{
 	program : Game.Game(model) -> {
 		init : {} -> Box(model),
 		advance : Box(model), U32, U32, U32, U32, F32, F32, F32 -> Box(model),
-		frame : Box(model) -> List(U32),
+		frame : Box(model) -> List(Shapes.Shape),
+		release : List(Shapes.Shape) -> {},
 		sounds : Box(model) -> U32,
 		tone_count : Box(model) -> U32,
 		tone_freq : Box(model), U32 -> U32,
@@ -38,7 +39,13 @@ GameApp :: [].{
 			init: |{}| Box.box(game.init),
 			advance: |b, held, struck, buttons, clicks, x, y, wheel|
 				Box.box(advance(Box.unbox(b), Input.of(held, struck, Mouse.of(buttons, clicks, x, y, wheel)), dt)),
-			frame: |b| ShapeWire.pack(frame_of(Box.unbox(b))),
+			frame: |b| frame_of(Box.unbox(b)),
+			# **THE HOST HANDS THE FRAME BACK AND ROC DROPS IT.** Releasing a
+			# List(Shape) means decrementing each element's inner lists, which
+			# needs the tag union's layout. Roc already has that layout; the
+			# host does not and should not. So the host does not free the
+			# frame, it returns it.
+			release: |_frame| {},
 			sounds: |b| sounds(Box.unbox(b)),
 			tone_count: |_b| U64.to_u32_wrap(List.len(game.tones)),
 			# A tone is a pitch and a length, which is all either runner needs

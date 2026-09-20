@@ -33,6 +33,7 @@ extern fn roc_tone_count(model: ?[*]u8) callconv(.c) u32;
 extern fn roc_tone_freq(model: ?[*]u8, index: u32) callconv(.c) u32;
 extern fn roc_tone_ms(model: ?[*]u8, index: u32) callconv(.c) u32;
 extern fn roc_frame(model: ?[*]u8) callconv(.c) RocList;
+extern fn roc_release(frame: RocList) callconv(.c) void;
 extern fn roc_width(model: ?[*]u8) callconv(.c) u32;
 extern fn roc_height(model: ?[*]u8) callconv(.c) u32;
 extern fn roc_fps(model: ?[*]u8) callconv(.c) u32;
@@ -143,11 +144,13 @@ var frame_where: [2]u32 = .{ 0, 0 };
 // two people who each wrote the natural spelling, `decode(memory, frameAt(),
 // computeFrame())`, which JavaScript evaluates left to right.
 pub export fn computeFrame() u32 {
-    packed_frame.decref(@alignOf(u32), @sizeOf(u32), false, null, noDec, &roc_ops);
+    // **ROC FREES THE FRAME, NOT THIS.** Decrementing a List(Shape) means
+    // walking each element's inner lists, which needs the tag union's layout.
+    // Roc has that layout and the host does not, so the host hands the last
+    // frame back and lets Roc drop it. No layout knowledge in Zig at all.
+    roc_release(packed_frame);
     packed_frame = roc_frame(borrowed());
-    frame_where[0] = if (packed_frame.bytes) |at| @intCast(@intFromPtr(at)) else 0;
-    frame_where[1] = @intCast(packed_frame.length * 4);
-    return @intCast(@intFromPtr(&frame_where));
+    return @intCast(@intFromPtr(&packed_frame));
 }
 // **THE INPUT ARRIVES WITH THE TICK.** One Input.Snapshot, flattened: the keys
 // down and the keys struck, the same pair for mouse buttons, then where the
