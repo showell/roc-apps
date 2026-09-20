@@ -29,7 +29,8 @@
 <main>
 <h1>Cobblestone Roc Projects</h1>
 <p class="lede">Programs that run in this tab as <a href="https://www.roc-lang.org/">Roc</a> compiled to
-WebAssembly. Most of them are Codex, the language of <a href="https://github.com/damiant3/Cobblestone">Cobblestone</a>,
+WebAssembly, on platforms written for them. Some of them also run as native programs.
+A few began as Codex, the language of <a href="https://github.com/damiant3/Cobblestone">Cobblestone</a>,
 turned into Roc by rocemit.</p>
 
 <h2>Finished</h2>
@@ -45,15 +46,47 @@ turned into Roc by rocemit.</p>
   </section>
 </div>
 
+<h2>Canvas apps</h2>
+<p class="lede">Small interactive programs, each one a Roc value: a size, a rate, a way to step it
+with the keyboard and the pointer, and a frame of shapes to draw. The same files run here and as
+native programs through <a href="https://github.com/lukewilliamboswell/roc-ray">roc-ray</a> —
+<a href="https://github.com/showell/roc-apps/tree/master/canvas_apps">the README</a> says how to
+build those.</p>
+<div class="cards">
+  <section class="card" data-app="snake">
+    <h3><a href="snake/">Snake</a></h3>
+    <p>The arrows turn, the food glows, and the wall ends it. Ported from roc-ray's own example.</p>
+  </section>
+  <section class="card" data-app="pong">
+    <h3><a href="pong/">Pong</a></h3>
+    <p>W and S move the paddle, or hold the left button and point where you want it.</p>
+  </section>
+  <section class="card" data-app="breakout">
+    <h3><a href="breakout/">Breakout</a></h3>
+    <p>Space serves; the arrows or the pointer steer. Each brick is worth what its colour says.</p>
+  </section>
+  <section class="card" data-app="camera">
+    <h3><a href="camera/">Camera world</a></h3>
+    <p>A world larger than the window. WASD moves, the wheel zooms, Q and E turn it. The pointer is
+    marked twice, once through the camera and once on the screen.</p>
+  </section>
+  <section class="card" data-app="workshop">
+    <h3><a href="workshop/">Pixel workshop</a></h3>
+    <p>A sixteen-by-sixteen canvas you drag on. Four colours, a note for each, and C puts the design back.</p>
+  </section>
+  <section class="card" data-app="trick_or_treat">
+    <h3><a href="trick_or_treat/">Trick or Treat</a></h3>
+    <p>A child walks up to a house past six dancing skeletons, the door opens, and they think better of
+    it. Space pauses, the arrows scrub, Enter skips a second.</p>
+  </section>
+</div>
+
 <h2>Other movies</h2>
 <p class="lede">Safari turned out to be one instance of something: a movie is a value -- a size, a
 way to step, and a frame of shapes -- and one player draws any of them, in this tab or on a
-desktop through <a href="https://github.com/lukewilliamboswell/roc-ray">roc-ray</a>.</p>
+desktop. Trick or Treat, above, is the same idea a step further on: a movie is a canvas app that
+does not read its keyboard, so the scrubbing is in the movie rather than in a player.</p>
 <div class="cards">
-  <section class="card" data-app="halloween">
-    <h3><a href="halloween/">Trick or Treat</a></h3>
-    <p>A child walks up to a house past six dancing skeletons, the door opens, and they think better of it. Placed in metres and projected, so walking is one number changing.</p>
-  </section>
   <section class="card" data-app="particles">
     <h3><a href="particles/">Particles</a></h3>
     <p>A fountain of a few thousand particles, after roc-ray's own example, as a movie.</p>
