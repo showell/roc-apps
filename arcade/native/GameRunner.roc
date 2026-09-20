@@ -102,19 +102,19 @@ GameRunner :: [].{
 	# arcade knows, asked of roc-ray's snapshot and written into ours. The arms
 	# look tautological because the tags are spelled the same on purpose; they
 	# are two different types, and this is the bridge.
-	watched : List(Keys.Key)
-	watched = [KeyUp, KeyDown, KeyLeft, KeyRight, KeyW, KeyA, KeyS, KeyD, KeySpace, KeyEscape, KeyEnter, KeyF, KeyP, KeyR]
+	watched_keys : List(Keys.Key)
+	watched_keys = [KeyUp, KeyDown, KeyLeft, KeyRight, KeyW, KeyA, KeyS, KeyD, KeySpace, KeyEscape, KeyEnter, KeyF, KeyP, KeyR]
 
-	snapshot_of : Devices.Snapshot -> Input.Snapshot
-	snapshot_of = |devices| {
-		n = List.len(watched)
+	input_of : Devices.Snapshot -> Input.Snapshot
+	input_of = |devices| {
+		n = List.len(watched_keys)
 		var $keys = Input.none
 		var $i = 0
 		while $i < n {
-			key = List.get(watched, $i) ?? KeyUp
-			$keys = if pressed_on(devices, key) {
+			key = List.get(watched_keys, $i) ?? KeyUp
+			$keys = if host_key_pressed(devices, key) {
 				$keys.with_key_pressed(key)
-			} else if down_on(devices, key) {
+			} else if host_key_down(devices, key) {
 				$keys.with_key_down(key)
 			} else {
 				$keys
@@ -147,8 +147,8 @@ GameRunner :: [].{
 		if middle { U32.bitwise_or($bits, Mouse.bit(Middle)) } else { $bits }
 	}
 
-	down_on : Devices.Snapshot, Keys.Key -> Bool
-	down_on = |d, key|
+	host_key_down : Devices.Snapshot, Keys.Key -> Bool
+	host_key_down = |d, key|
 		match key {
 			KeyUp => d.key_down(KeyUp)
 			KeyDown => d.key_down(KeyDown)
@@ -166,8 +166,8 @@ GameRunner :: [].{
 			KeyR => d.key_down(KeyR)
 		}
 
-	pressed_on : Devices.Snapshot, Keys.Key -> Bool
-	pressed_on = |d, key|
+	host_key_pressed : Devices.Snapshot, Keys.Key -> Bool
+	host_key_pressed = |d, key|
 		match key {
 			KeyUp => d.key_pressed(KeyUp)
 			KeyDown => d.key_pressed(KeyDown)
@@ -190,7 +190,7 @@ GameRunner :: [].{
 		# Roc reads `game.advance(m, k)` as a method call, so the field is
 		# bound first. See Game.roc.
 		advance = game.advance
-		keys = snapshot_of(input.devices)
+		keys = input_of(input.devices)
 		# Escape closes the window; a page cannot, so no game is given it to
 		# read and none decodes it.
 		if keys.key_pressed(KeyEscape) {
@@ -221,7 +221,7 @@ GameRunner :: [].{
 		frame.with_render_texture!(model.target, |big| {
 			big.clear!(Color.black)
 			big.with_camera!(camera(game.size, 0.0, supersample), |world| {
-				draw_shapes!(model.gpu, world, shapes)
+				draw_frame!(model.gpu, world, shapes)
 				Ok({})
 			})
 		})?
@@ -246,8 +246,8 @@ GameRunner :: [].{
 	# **A BLEND MARK CHANGES THE MODE UNTIL THE NEXT ONE.** raylib takes a
 	# blend as a scope rather than a flag, so the frame is walked in runs: the
 	# shapes between two marks are drawn together, inside that scope.
-	draw_shapes! : GameRunner.Gpu, Draw.Frame, List(Shapes.Shape) => {}
-	draw_shapes! = |gpu, frame, shapes| {
+	draw_frame! : GameRunner.Gpu, Draw.Frame, List(Shapes.Shape) => {}
+	draw_frame! = |gpu, frame, shapes| {
 		n = List.len(shapes)
 		var $run = List.with_capacity(n)
 		var $mode = Over
@@ -255,7 +255,7 @@ GameRunner :: [].{
 		while $k < n {
 			match List.get(shapes, $k) ?? crash("shape out of range") {
 				Blend(next) => {
-					draw_run!(gpu, frame, $run, $mode)
+					draw_under!(gpu, frame, $run, $mode)
 					$run = List.with_capacity(n - $k)
 					$mode = next
 				}
@@ -265,19 +265,19 @@ GameRunner :: [].{
 			}
 			$k = $k + 1
 		}
-		draw_run!(gpu, frame, $run, $mode)
+		draw_under!(gpu, frame, $run, $mode)
 	}
 
-	draw_run! : GameRunner.Gpu, Draw.Frame, List(Shapes.Shape), Shapes.Mode => {}
-	draw_run! = |gpu, frame, run, mode|
+	draw_under! : GameRunner.Gpu, Draw.Frame, List(Shapes.Shape), Shapes.Mode => {}
+	draw_under! = |gpu, frame, run, mode|
 		if List.is_empty(run) {
 			{}
 		} else {
 			match mode {
-				Over => draw_each!(gpu, frame, run)
+				Over => draw_all!(gpu, frame, run)
 				Add => {
 					scope = frame.with_blend_mode!(Draw.additive_blend, |lit| {
-						draw_each!(gpu, lit, run)
+						draw_all!(gpu, lit, run)
 						Ok({})
 					})
 					match scope {
@@ -288,8 +288,8 @@ GameRunner :: [].{
 			}
 		}
 
-	draw_each! : GameRunner.Gpu, Draw.Frame, List(Shapes.Shape) => {}
-	draw_each! = |gpu, frame, shapes| {
+	draw_all! : GameRunner.Gpu, Draw.Frame, List(Shapes.Shape) => {}
+	draw_all! = |gpu, frame, shapes| {
 		n = List.len(shapes)
 		var $k = 0
 		while $k < n {

@@ -35,7 +35,7 @@ platform ""
 		inputs_dir: "targets/",
 		wasm32: {
 			inputs: ["host.wasm", app],
-			exports: ["renderFrame", "bufPtr", "bufHighWater", "bufCap", "advance", "sounds", "toneCount", "width", "height", "fps"],
+			exports: ["frame", "frameAt", "advance", "sounds", "toneCount", "width", "height", "fps"],
 		},
 	}
 

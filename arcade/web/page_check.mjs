@@ -28,6 +28,7 @@ const name = process.argv[2];
 if (!name) { console.error("usage: page_check.mjs <movie>"); process.exit(2); }
 const dir = `${process.env.HOME}/build/roc-apps/next/${name}`;
 const page = readFileSync(`${dir}/index.html`, "utf8");
+const wire = readFileSync(`${dir}/shapewire.js`, "utf8");
 const runner = readFileSync(`${dir}/game_runner.js`, "utf8");
 
 // The show the page declares, taken from the page rather than assumed.
@@ -107,6 +108,7 @@ sandbox.WebAssembly.instantiateStreaming = async () => {
 
 vm.createContext(sandbox);
 vm.runInContext(`window.SHOW = ${showSrc[1]};`, sandbox);
+vm.runInContext(wire, sandbox, { filename: "shapewire.js" });
 vm.runInContext(runner, sandbox, { filename: "game_runner.js" });
 
 const until = Date.now() + 60000;

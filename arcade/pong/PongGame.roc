@@ -33,11 +33,19 @@ PongGame :: [].{
 		title: "Pong",
 	}
 
-	## Translates keyboard bindings into paddle movement and buttons.
+	## Translates input into paddle movement and buttons.
+	##
+	## **THE POINTER IS AN AIM, NOT A PUSH.** Holding the left button puts the
+	## paddle where you point; W and S still push it and take over the moment
+	## the button is let go.
 	read_controls : Input.Snapshot -> Rules.Controls
 	read_controls = |devices| {
-		move: if devices.key_down(KeyW) -1 else if devices.key_down(KeyS) 1 else 0,
-		new_match_pressed: devices.key_pressed(KeySpace)
+		pointer = devices.mouse
+		{
+			move: if devices.key_down(KeyW) { -1 } else if devices.key_down(KeyS) { 1 } else { 0 },
+			aim: if pointer.button_down(Left) { AimAt(pointer.position().y) } else { NoAim },
+			new_match_pressed: devices.key_pressed(KeySpace) or pointer.button_pressed(Left),
+		}
 	}
 
 	step : PongGame.Model, Input.Snapshot, F32 -> PongGame.Model

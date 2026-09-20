@@ -1,4 +1,4 @@
-//! The arcade wasm host: the nine exports web/game_runner.js binds, over a Roc
+//! The arcade wasm host: the eight exports web/game_runner.js binds, over a Roc
 //! model the host holds as one boxed pointer.
 //!
 //! Where poc/drive_shim.zig in safari-codex had to keep the rider, the truck,
@@ -112,7 +112,7 @@ var roc_ops = RocOps{
 // THE MODEL, one reference the host owns.
 var model: ?[*]u8 = null;
 // The last frame's words, owned until the next frame replaces them.
-var frame: RocList = RocList.empty();
+var packed_frame: RocList = RocList.empty();
 var frame_high: usize = 0;
 
 fn ensure() void {
@@ -128,22 +128,18 @@ fn borrowed() ?[*]u8 {
 
 fn noDec(_: ?*anyopaque, _: ?[*]u8) callconv(.c) void {}
 
-pub export fn renderFrame() u32 {
-    frame.decref(@alignOf(u32), @sizeOf(u32), false, null, noDec, &roc_ops);
-    frame = roc_render(borrowed());
-    const bytes = frame.length * 4;
+// The frame, packed where `frameAt` says. Both are nouns for the same thing:
+// one answers how many bytes, the other where they start.
+pub export fn frame() u32 {
+    packed_frame.decref(@alignOf(u32), @sizeOf(u32), false, null, noDec, &roc_ops);
+    packed_frame = roc_render(borrowed());
+    const bytes = packed_frame.length * 4;
     if (bytes > frame_high) frame_high = bytes;
     return @intCast(bytes);
 }
-// Timing probes: the frame before expansion, and after, by command count.
-pub export fn bufPtr() u32 {
-    return @intCast(@intFromPtr(frame.bytes orelse return 0));
-}
-pub export fn bufHighWater() u32 {
-    return @intCast(frame_high);
-}
-pub export fn bufCap() u32 {
-    return @intCast(frame.getCapacity() * 4);
+// Where the packed frame starts.
+pub export fn frameAt() u32 {
+    return @intCast(@intFromPtr(packed_frame.bytes orelse return 0));
 }
 // **THE INPUT ARRIVES WITH THE TICK.** One Input.Snapshot, flattened: the keys
 // down and the keys struck, the same pair for mouse buttons, then where the
@@ -154,7 +150,7 @@ pub export fn advance(held: u32, struck: u32, buttons: u32, clicks: u32, x: f32,
     model = roc_advance(model, held, struck, buttons, clicks, x, y, wheel);
 }
 
-// How big a frame is, in the movie's own coordinates. The page sizes its
+// How big a frame is, in the game's own coordinates. The page sizes its
 // canvas from this rather than knowing one movie's numbers.
 pub export fn width() u32 {
     return roc_width(borrowed());

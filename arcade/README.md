@@ -16,7 +16,7 @@ game is driven.
 | `snake_native.roc` | the app roc-ray runs — uses `native/GameRunner` |
 | `snake/` | **the game**, and everything that is only about it, its page included. Neither app's half; it cannot tell which is running |
 | `lib/` | a package: `Game`, `Keys`, `Random`, `Shapes`, `Brush`, `Font`, and the two wire edges |
-| `web/` | the page's end: the wasm platform and host, `game_runner.js`, `page_check.mjs` |
+| `web/` | the page's end: the wasm platform and host, `shapewire.js` (a frame, decoded and painted), `game_runner.js` (the clock, the input, the speaker), `page_check.mjs` |
 | `native/` | roc-ray's end: `GameRunner.roc` |
 
 **Why the two app files sit at the top rather than beside the game.** An app

@@ -46,6 +46,9 @@ Rules :: [].{
 	## Gameplay sees intentions, not the keys currently bound to them.
 	Controls : {
 		move : F32,
+		## Where the player wants the paddle's middle, when they can say it
+		## outright. A key can only push; a pointer can point.
+		aim : [NoAim, AimAt(F32)],
 		new_match_pressed : Bool,
 	}
 
@@ -181,8 +184,12 @@ Rules :: [].{
 	step_playing : World, Controls, F32 -> (World, List(GameEvent))
 	step_playing = |world, controls, dt| {
 
-		# --- Left paddle: semantic player movement ---
-		left_y = Math.clamp(world.left.paddle_y + controls.move * paddle_speed * dt, 0, screen_h - paddle_h)
+		# --- Left paddle: an aim places it, a key pushes it ---
+		left_y =
+			match controls.aim {
+				AimAt(y) => Math.clamp(y - paddle_h * 0.5, 0, screen_h - paddle_h)
+				NoAim => Math.clamp(world.left.paddle_y + controls.move * paddle_speed * dt, 0, screen_h - paddle_h)
+			}
 
 		# --- Right paddle: simple AI tracks the ball's vertical position ---
 		right_center = world.right.paddle_y + paddle_h * 0.5
@@ -299,7 +306,7 @@ test_world = {
 }
 
 no_controls : Rules.Controls
-no_controls = { move: 0, new_match_pressed: Bool.False }
+no_controls = { move: 0, aim: NoAim, new_match_pressed: Bool.False }
 
 expect !Rules.is_over(test_world)
 expect Rules.is_over({ ..test_world, right: { ..test_world.right, score: Rules.win_score } })
