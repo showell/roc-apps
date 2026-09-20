@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>workshop</title>
+</head>
+<body>
+<!-- roc-ray's Pixel Workshop, running on a canvas. Upstream keeps the drawing
+     on the GPU and uploads the cell you painted; here the canvas is a shape
+     that carries its own pixels, so what you see is the model and cannot be
+     out of date with it. -->
+<script>
+window.SHOW = {
+  wasm: 'workshop.wasm',
+  loading: 'Mixing the paint…',
+};
+</script>
+<script src="roc_glue.js"></script>
+<script src="shapewire.js"></script>
+<script src="canvas_app_runner.js"></script>
+</body>
+</html>
