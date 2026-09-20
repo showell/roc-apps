@@ -4,7 +4,7 @@
 table. Roc ships `ZigGlue.roc`, `RustGlue.roc` and `CGlue.roc`; there is no
 JavaScript one, so a page that wants a Roc value is told the layout by hand.
 
-That is what `arcade/web/shapewire.js` is: a decoder written twice, once as
+That is what `canvas_apps/web/shapewire.js` is: a decoder written twice, once as
 `ShapeWire.pack` in Roc and once as a reader in JavaScript, with nothing
 checking that the two agree. **This spec does not fix that today**, and the
 section below says why not — the reason is our own flattening, not a gap in the
@@ -13,11 +13,11 @@ generator. Roc's own glue README argues against exactly this:
 > platform code should consume generated glue instead of hand-rolling Roc ABI
 > bindings
 
-    roc glue glue/JsGlue.roc <out-dir> arcade/web/platform/main.roc
+    roc glue glue/JsGlue.roc <out-dir> canvas_apps/web/platform/main.roc
 
 emits `roc_glue.js`: one reader per type the platform's provided functions
 mention, each taking a `DataView` over the wasm memory and a byte offset. For
-the arcade's platform that includes
+canvas_apps's platform that includes
 
     // List(t23)
     const read_t28 = (view, at) => {
@@ -41,7 +41,7 @@ Tag unions, as of 2026-09-20. Not yet: `Str`, `Dec` and the vector types.
 ## Tag unions are NOT what stands between this and shapewire.js
 
 An earlier version of this file said they were — that `Shapes.Shape` is a tag
-union, so covering tag unions would let the arcade stop packing frames by hand.
+union, so covering tag unions would let canvas_apps stop packing frames by hand.
 **That is backwards, and worth spelling out because it is an easy thing to keep
 believing.**
 
@@ -58,7 +58,7 @@ wire layout in `shapewire.js` — which kinds exist, which brush carries how man
 floats, that a view mark is a lens and an image is `cols × rows` words of
 `0xAARRGGBB` — are invisible to it. Those 67 lines grew by three words after
 this file was first written (blend, view, image), each a coordinated hand-edit
-in `lib/ShapeWire.roc` and `arcade/web/shapewire.js` that no generator saw. The
+in `lib/ShapeWire.roc` and `canvas_apps/web/shapewire.js` that no generator saw. The
 eight generated lines are the part nobody has ever got wrong.
 
 **What would actually pay: declaring the real type.** This was built and
@@ -101,7 +101,7 @@ nothing here does that yet. **Generating the reader is half the problem.**
 The experiment lives in scratch and is not adopted. What came back from it into
 this repo is tag-union support, which is real and tested against a real frame.
 
-Until then, `arcade/web/lens_check.mjs` is the compensating control — one
+Until then, `canvas_apps/web/camera_check.mjs` is the compensating control — one
 hand-written decode checked against an independently written formula — and it
 covers one mark out of the wire's eleven words.
 
