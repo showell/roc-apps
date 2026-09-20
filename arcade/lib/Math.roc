@@ -21,6 +21,12 @@ Math :: [].{
 	circle : Math.Vec2, F32 -> Math.Circle
 	circle = |center, radius| { center, radius }
 
+	add : Math.Vec2, Math.Vec2 -> Math.Vec2
+	add = |a, b| { x: a.x + b.x, y: a.y + b.y }
+
+	scale : Math.Vec2, F32 -> Math.Vec2
+	scale = |v, k| { x: v.x * k, y: v.y * k }
+
 	left : Math.Rect -> F32
 	left = |r| r.x
 

@@ -57,6 +57,13 @@ roc-ray as `../../roc-ray`, a sibling of roc-apps.
         page.html         the page
         …                 the rules and the drawing
 
+## Breakout, ported
+
+The closest to a straight port of the three: upstream is already six modules,
+and `Ball.roc`, `Bricks.roc` and `Paddle.roc` came across with one import line
+changed each. `Rules.roc` is upstream's `Game.roc`, renamed. `lib/Math.roc`
+grew `add` and `scale` for the ball's motion.
+
 ## Pong, ported
 
 Upstream is one flat app file, so its rules are wrapped in the module block

@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>breakout</title>
+</head>
+<body>
+<!-- roc-ray's examples/breakout, running on a canvas. The rules, the ball, the
+     bricks and the paddle are the same Roc that runs natively; the page owns
+     the keyboard and hands every tick a snapshot of it. -->
+<script>
+window.SHOW = {
+  wasm: 'breakout.wasm',
+  hint: '← → / A D move · SPACE launch',
+  loading: 'Racking the bricks…',
+};
+</script>
+<script src="game_runner.js"></script>
+</body>
+</html>
