@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>pong</title>
+</head>
+<body>
+<!-- roc-ray's examples/pong, running on a canvas. The rules are upstream's,
+     lifted verbatim; the page owns the keyboard and hands every tick a
+     snapshot of it, which is how W and S can be HELD. -->
+<script>
+window.SHOW = {
+  wasm: 'pong.wasm',
+  hint: 'W / S move · SPACE new match',
+  loading: 'Chalking the court…',
+};
+</script>
+<script src="blitter.js"></script>
+</body>
+</html>

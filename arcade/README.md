@@ -57,6 +57,22 @@ roc-ray as `../../roc-ray`, a sibling of roc-apps.
         page.html         the page
         …                 the rules and the drawing
 
+## Pong, ported
+
+Upstream is one flat app file, so its rules are wrapped in the module block
+this dialect wants — an indent — and its test fixtures and `expect`s sit
+outside that block, the way roc-ray's own snake modules have them. Everything
+else in `Rules.roc` is upstream's, palette and tests included.
+
+It is the first game here to read a HELD key: the paddle moves for as long as
+W or S is down, where Snake only asks whether a key was struck. Note that a key
+struck is also a key down for that tick, so a tap nudges the paddle once.
+
+`lib/Math.roc` and `lib/Color.roc` exist for this port: pong's rules call
+`Math.circle_rect` and `Math.clamp`, and its world stores a flash `Color.Rgba`.
+Both mirror roc-ray's surface under the same module names, so the rules changed
+their import lines and nothing else.
+
 ## Snake, ported
 
 `Snake.roc` is upstream's verbatim. `Board.roc` and `Rules.roc` (upstream's
