@@ -102,6 +102,13 @@ Upstream's five brush pitches are five tones here, at the frequencies those
 pitches produce, because a tone on this seam is a pitch and a length. What did
 not come across: `Mouse.set_cursor!`, which is an effect with nowhere to go.
 
+**One thing was added, because it was missing on both ends.** Upstream lights
+the swatch under the pointer and then never reads a click on it, so the palette
+can only be chosen with 1-4; the hover was an affordance with nothing behind
+it. Clicking a swatch picks that colour here, and sounds that colour's note.
+`swatch_bounds` moved into `Rules.roc` for it -- three things have to agree
+about where a swatch is now, not two.
+
 `page_check` learned `DRAG` for this one. A check that cannot press a key checks
 the attract screen; a check that cannot drag checks a canvas nobody painted on.
 

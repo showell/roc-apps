@@ -97,13 +97,9 @@ WorkshopDraw :: [].{
 		$out
 	}
 
-	## Where one palette swatch sits, so the drawing and the hover test agree.
-	swatch_bounds : U64 -> Math.Rect
-	swatch_bounds = |index| Math.rect(610, 180 + count_f32(index) * 70, 118, 50)
-
 	swatch : U64, U64, Math.Vec2 -> List(Shapes.Shape)
 	swatch = |index, selected, mouse| {
-		bounds = swatch_bounds(index)
+		bounds = Rules.swatch_bounds(index)
 		x = f(bounds.x)
 		y = f(bounds.y)
 		w = f(bounds.width)
@@ -170,14 +166,7 @@ WorkshopDraw :: [].{
 	count : U64 -> F64
 	count = |n| I64.to_f64(U64.to_i64_wrap(n))
 
-	count_f32 : U64 -> F32
-	count_f32 = |n| I32.to_f32(I64.to_i32_wrap(U64.to_i64_wrap(n)))
-
 	f : F32 -> F64
 	f = |value| F32.to_f64(value)
 }
 
-## Every swatch stays inside the palette panel, which is what makes the hover
-## test against the same rectangle honest.
-expect WorkshopDraw.swatch_bounds(0).x >= 594
-expect WorkshopDraw.swatch_bounds(3).y + WorkshopDraw.swatch_bounds(3).height <= 456

@@ -82,6 +82,28 @@ Rules :: [].{
 	start : Rules.World
 	start = { pixels: initial_pixels, palette: 1, last_cell: Idle, mouse: { x: 0, y: 0 } }
 
+	## Where one palette swatch sits, so the drawing, the hover and the CLICK
+	## all agree. Upstream keeps this beside the drawing, where two of the
+	## three needed it.
+	swatch_bounds : U64 -> Math.Rect
+	swatch_bounds = |index| Math.rect(610, 180 + side(index) * 70, 118, 50)
+
+	## Which swatch a point is on, if any.
+	##
+	## **UPSTREAM LIGHTS A SWATCH UNDER THE POINTER AND THEN IGNORES THE
+	## CLICK**, so the palette can only be chosen with 1-4. The hover was an
+	## affordance with nothing behind it; this is what it promised.
+	swatch_at : Math.Vec2 -> Try(U64, [Outside])
+	swatch_at = |point| {
+		var $found = Err(Outside)
+		var $i = 0
+		while $i < 4 {
+			$found = if Math.contains(swatch_bounds($i), point) { Ok($i) } else { $found }
+			$i = $i + 1
+		}
+		$found
+	}
+
 	palette_from_input : U64, Input.Snapshot -> U64
 	palette_from_input = |current, input|
 		if input.key_pressed(Key1) {
@@ -121,10 +143,26 @@ Rules :: [].{
 	## off. Upstream's `update_editor`, with the two upload edits gone.
 	step : Rules.World, Input.Snapshot -> { world : Rules.World, sounds : U32 }
 	step = |world, input| {
-		palette = palette_from_input(world.palette, input)
-		base = { ..world, palette, mouse: input.mouse.position() }
+		at = input.mouse.position()
+		# A click on a swatch chooses that colour; 1-4 still do, and the digit
+		# wins if both happen in one tick, because a key is the deliberate one.
+		picked =
+			if input.mouse.button_pressed(Left) {
+				match swatch_at(at) {
+					Ok(index) => index
+					Err(_) => world.palette
+				}
+			} else {
+				world.palette
+			}
+		palette = palette_from_input(picked, input)
+		base = { ..world, palette, mouse: at }
 
-		if input.key_pressed(KeyC) {
+		# Choosing a colour sounds that colour's own note, so the click says
+		# something on the channel a stroke uses.
+		if palette != world.palette and picked != world.palette {
+			{ world: { ..base, last_cell: Idle }, sounds: tone_paint(palette) }
+		} else if input.key_pressed(KeyC) {
 			{ world: { ..base, pixels: initial_pixels, last_cell: Idle }, sounds: tone_reset }
 		} else if input.mouse.button_down(Left) {
 			match cell_at(input.mouse.position()) {
@@ -194,4 +232,29 @@ expect {
     painted = Rules.step(Rules.start, Input.none.with_mouse(Mouse.of(Mouse.bit(Left), 0, at.x, at.y, 0))).world
     restored = Rules.step(painted, Input.none.with_key_pressed(KeyC))
     restored.world.pixels == Rules.initial_pixels and restored.sounds == 1
+}
+
+## Every swatch stays inside the palette panel, which is what makes hitting it
+## with the pointer the same question as drawing it.
+expect Rules.swatch_bounds(0).x >= 594
+expect Rules.swatch_bounds(3).y + Rules.swatch_bounds(3).height <= 456
+
+## Clicking a swatch chooses that colour and says so; clicking the panel
+## between two of them does not.
+expect {
+    on = Math.center(Rules.swatch_bounds(2))
+    click = Input.none.with_mouse(Mouse.of(0, Mouse.bit(Left), on.x, on.y, 0))
+    after = Rules.step(Rules.start, click)
+    after.world.palette == 2 and after.sounds == Rules.tone_paint(2)
+}
+expect {
+    click = Input.none.with_mouse(Mouse.of(0, Mouse.bit(Left), 600, 470, 0))
+    Rules.step(Rules.start, click).world.palette == Rules.start.palette
+}
+
+## And a click on a swatch is not a brush stroke: the canvas is untouched.
+expect {
+    on = Math.center(Rules.swatch_bounds(3))
+    click = Input.none.with_mouse(Mouse.of(0, Mouse.bit(Left), on.x, on.y, 0))
+    Rules.step(Rules.start, click).world.pixels == Rules.initial_pixels
 }
