@@ -20,7 +20,7 @@
 #           rect: x, y, w, h
 #
 # The two marks are the exception and carry no brush. A blend is the kind and
-# the mode it switches to. A view is the kind and then a lens: 0 for the
+# the mode it switches to. A view is the kind and then a space: 0 for the
 # screen, or 1 and then the camera's target, offset, rotation and zoom.
 #
 # An image is the kind, its cols and rows, its rectangle, and then one word a
@@ -75,7 +75,7 @@ ShapeWire :: [].{
 			# which is the step roc-ray asks for and this does not.
 			# A mark, not a shape: one word for the kind and one for the mode.
 			Blend(m) => [kind_blend, if m == Add { 1 } else { 0 }]
-			View(l) => List.concat([kind_view], lens(l))
+			View(l) => List.concat([kind_view], space(l))
 			Image(i) => List.concat(
 				List.concat([kind_image, U64.to_u32_wrap(i.cols), U64.to_u32_wrap(i.rows)], nums([i.x, i.y, i.w, i.h])),
 				List.map(i.pixels, pixel),
@@ -95,11 +95,11 @@ ShapeWire :: [].{
 			U32.bitwise_or(U32.shl_wrap(byte(c.g), 8), byte(c.b)),
 		)
 
-	# A lens: 0 for the screen, or 1 and the camera's four settings. The same
+	# A space: 0 for the screen, or 1 and the camera's four settings. The same
 	# shape as a clip, and for the same reason -- the word that says which
 	# says how many follow.
-	lens : Shapes.Lens -> List(U32)
-	lens = |l|
+	space : Shapes.Space -> List(U32)
+	space = |l|
 		match l {
 			Screen => [0]
 			World(c) => List.concat([1], nums([c.target.x, c.target.y, c.offset.x, c.offset.y, c.rotation, c.zoom]))

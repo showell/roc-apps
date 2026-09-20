@@ -44,12 +44,12 @@ Shapes :: [].{
 		# roc-ray). A frame that never mentions it paints exactly as before.
 		Blend(Shapes.Mode),
 		# **NOT A SHAPE: WHERE THE SHAPES AFTER IT ARE.** Until the next one,
-		# coordinates are read through this lens instead of as screen pixels.
+		# coordinates are read through this space instead of as screen pixels.
 		# The same mark as Blend, for the same reason: both painters already
 		# take this as a scope rather than a flag (`setTransform` on a canvas,
 		# `BeginMode2D` on roc-ray), and a frame is a list, so the cheapest way
 		# to say it is a mark that holds until the next one.
-		View(Shapes.Lens),
+		View(Shapes.Space),
 		# **A PICTURE, IN THE FRAME.** `cols` x `rows` pixels stretched over
 		# the rectangle without smoothing, so a 16 x 16 canvas drawn at 448
 		# pixels is 28-pixel cells with hard edges.
@@ -75,14 +75,21 @@ Shapes :: [].{
 	# `Over` paints; `Add` lights.
 	Mode : [Over, Add]
 
-	# `Screen` is the game's own pixels, which is where every frame starts, so
-	# a frame that never says `View` paints exactly as it did before.
+	# Which coordinate space the shapes after a `View` mark are in. `Screen` is
+	# the game's own pixels, which is where every frame starts, so a frame that
+	# never says `View` paints exactly as it did before.
+	#
+	# **IT IS NOT CALLED A LENS.** It was, because a camera lens is what you
+	# see a world through, and in a language with Roc's audience that word is
+	# already taken: a lens in functional programming is a getter and a setter
+	# paired into a value, and nothing here is one. A name that needs a
+	# disclaimer is a name to change.
 	#
 	# **A LENS CARRIES NUMBERS, NOT A CAMERA.** Camera.roc builds one and names
 	# the same four settings roc-ray's `Camera2D` does, but a mark that crossed
 	# the wire carrying that type would need the type on the far side, and the
 	# far side is JavaScript.
-	Lens : [
+	Space : [
 		Screen,
 		World({ target : { x : F64, y : F64 }, offset : { x : F64, y : F64 }, rotation : F64, zoom : F64 }),
 	]

@@ -8,7 +8,7 @@ game is driven.
     arcade/native.sh snake      the native program
     node arcade/web/page_check.mjs snake
     KEYS=3:Space DRAG=200,100,200,500 node arcade/web/page_check.mjs pong
-    node arcade/web/lens_check.mjs      the camera, on both ends
+    node arcade/web/camera_check.mjs      the camera, on both ends
 
 Six of them: `snake`, `pong`, `breakout`, `camera`, `workshop`,
 `trick_or_treat`. The last is the Halloween movie, named for its title so it
@@ -27,7 +27,7 @@ honest.
 | `snake_native.roc` | the app roc-ray runs — uses `native/GameRunner` |
 | `snake/` | **the game**, and everything that is only about it, its page included. Neither app's half; it cannot tell which is running |
 | `lib/` | a package: `Game`, `Keys`, `Random`, `Shapes`, `Brush`, `Font`, and the two wire edges |
-| `web/` | the page's end: the wasm platform and host, `shapewire.js` (a frame, decoded and painted), `canvas_app_runner.js` (the clock, the input, the speaker), `page_check.mjs`, `lens_check.mjs` |
+| `web/` | the page's end: the wasm platform and host, `shapewire.js` (a frame, decoded and painted), `canvas_app_runner.js` (the clock, the input, the speaker), `page_check.mjs`, `camera_check.mjs` |
 | `native/` | roc-ray's end: `GameRunner.roc` |
 
 **One call for a frame.** `computeFrame()` is the effect and answers the
@@ -192,8 +192,8 @@ keeps the grid from drawing thirty-one lines that are not on screen.
 through the camera at `screen_to_world(mouse)`, and a crosshair drawn on the
 screen at `world_to_screen` of that same point. If the canvas matrix and
 `Camera.roc` ever disagreed, the two would separate, on whichever end was
-wrong. `web/lens_check.mjs` says the same thing without a screen: it feeds
-`shapewire.js` four lenses and checks the matrix it builds against the map
+wrong. `web/camera_check.mjs` says the same thing without a screen: it feeds
+`shapewire.js` four cameras and checks the matrix it builds against the map
 written the geometric way, since `setTransform`'s six numbers are easy to
 transpose.
 

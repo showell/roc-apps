@@ -43,12 +43,12 @@ function readFill(words, floats, at) {
 function readShape(words, floats, at) {
   const kind = words[at];
   if (kind === SHAPE.BLEND) return [{ kind, additive: words[at + 1] === 1 }, at + 2];
-  // A lens is a word saying which, and the camera's four settings if it is
+  // A space is a word saying which, and the camera's four settings if it is
   // not the screen. `null` is the screen, which is where a frame starts.
   if (kind === SHAPE.VIEW) {
-    if (!words[at + 1]) return [{ kind, lens: null }, at + 2];
-    const [lens, next] = readFloats(floats, at + 2, 6);
-    return [{ kind, lens }, next];
+    if (!words[at + 1]) return [{ kind, space: null }, at + 2];
+    const [space, next] = readFloats(floats, at + 2, 6);
+    return [{ kind, space }, next];
   }
   // A picture: how many cells each way, where it goes, and then one word a
   // pixel. **THE PIXELS ARE COPIED OUT**, by `slice` rather than `subarray`:
@@ -179,9 +179,9 @@ function fillShape(ctx, shape) {
 // Where the shapes after a view mark are: the camera written as the matrix a
 // canvas takes. `screen = zoom · R(rotation) · (world − target) + offset`, which
 // is what Camera.world_to_screen does in Roc and BeginMode2D does in raylib.
-function setLens(ctx, lens) {
-  if (!lens) { ctx.setTransform(1, 0, 0, 1, 0, 0); return; }
-  const [tx, ty, ox, oy, rotation, zoom] = lens;
+function setSpace(ctx, space) {
+  if (!space) { ctx.setTransform(1, 0, 0, 1, 0, 0); return; }
+  const [tx, ty, ox, oy, rotation, zoom] = space;
   const radians = (rotation * Math.PI) / 180;
   const cos = Math.cos(radians) * zoom;
   const sin = Math.sin(radians) * zoom;
@@ -233,7 +233,7 @@ function paintFrame(ctx, shapes) {
     }
     // Nor is a view mark: it says where they are.
     if (shape.kind === SHAPE.VIEW) {
-      setLens(ctx, shape.lens);
+      setSpace(ctx, shape.space);
       continue;
     }
     // A picture is not a path, so it is not traced and filled.

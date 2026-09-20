@@ -249,7 +249,7 @@ GameRunner :: [].{
 	# **THE TWO MARKS ARE ONE PROBLEM.** A blend says how the shapes after it
 	# combine and a view says where they are, and raylib takes each as a scope
 	# rather than a flag. So the frame is walked once and cut into runs: the
-	# shapes between two marks share a lens and a mode and are drawn inside
+	# shapes between two marks share a space and a mode and are drawn inside
 	# both scopes. A frame starts on the screen, painting over.
 	#
 	# Walking once is what keeps the two ends agreeing. A canvas holds its
@@ -261,20 +261,20 @@ GameRunner :: [].{
 	draw_runs! = |gpu, size, frame, shapes| {
 		n = List.len(shapes)
 		var $run = List.with_capacity(n)
-		var $lens = Screen
+		var $space = Screen
 		var $mode = Over
 		var $k = 0
 		while $k < n {
 			match List.get(shapes, $k) ?? crash("shape out of range") {
 				Blend(next) => {
-					draw_run!(gpu, size, frame, $run, $lens, $mode)
+					draw_run!(gpu, size, frame, $run, $space, $mode)
 					$run = List.with_capacity(n - $k)
 					$mode = next
 				}
 				View(next) => {
-					draw_run!(gpu, size, frame, $run, $lens, $mode)
+					draw_run!(gpu, size, frame, $run, $space, $mode)
 					$run = List.with_capacity(n - $k)
-					$lens = next
+					$space = next
 				}
 				shape => {
 					$run = List.append($run, shape)
@@ -282,15 +282,15 @@ GameRunner :: [].{
 			}
 			$k = $k + 1
 		}
-		draw_run!(gpu, size, frame, $run, $lens, $mode)
+		draw_run!(gpu, size, frame, $run, $space, $mode)
 	}
 
-	draw_run! : GameRunner.Gpu, { width : F64, height : F64 }, Draw.Frame, List(Shapes.Shape), Shapes.Lens, Shapes.Mode => {}
-	draw_run! = |gpu, size, frame, run, lens, mode|
+	draw_run! : GameRunner.Gpu, { width : F64, height : F64 }, Draw.Frame, List(Shapes.Shape), Shapes.Space, Shapes.Mode => {}
+	draw_run! = |gpu, size, frame, run, space, mode|
 		if List.is_empty(run) {
 			{}
 		} else {
-			scope = frame.with_camera!(staged(size, lens), |seen| {
+			scope = frame.with_camera!(staged(size, space), |seen| {
 				draw_under!(gpu, seen, run, mode)
 				Ok({})
 			})
@@ -321,9 +321,9 @@ GameRunner :: [].{
 	# down, which is a camera of its own, and raylib's camera scopes do not
 	# nest. Both are similarity transforms, so their composition is one
 	# camera: scaling the offset and the zoom is the whole of it.
-	staged : { width : F64, height : F64 }, Shapes.Lens -> Camera.Camera2D
-	staged = |size, lens|
-		match lens {
+	staged : { width : F64, height : F64 }, Shapes.Space -> Camera.Camera2D
+	staged = |size, space|
+		match space {
 			Screen => camera(size, 0.0, supersample)
 			World(c) =>
 				Camera.new({
