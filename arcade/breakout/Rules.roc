@@ -17,6 +17,9 @@ Rules := [].{
 
 	Controls : {
 		move : Paddle.Move,
+		## Where the player wants the paddle's middle, when they can say it
+		## outright. A key can only push; a pointer can point.
+		aim : [NoAim, AimAt(F32)],
 		action_pressed : Bool,
 	}
 
@@ -54,6 +57,14 @@ Rules := [].{
 }
 
 ## Respawns the ball above the paddle that will launch it.
+## An aim places the paddle outright; otherwise a key pushes it.
+steered : Paddle, Rules.Controls, F32 -> Paddle
+steered = |paddle, controls, dt|
+	match controls.aim {
+		AimAt(x) => paddle.aimed_at(x)
+		NoAim => paddle.move(controls.move, dt)
+	}
+
 respawn_ball : Rules.World, Paddle -> Rules.World
 respawn_ball = |world, paddle| {
 	..world,
@@ -68,7 +79,7 @@ event_when = |condition, event| if condition [event] else []
 ## Moves the waiting paddle and launches the attached ball on request.
 update_ready : Rules.World, Rules.Controls, F32 -> (Rules.World, List(Rules.Event))
 update_ready = |world, controls, dt| {
-	paddle = world.paddle.move(controls.move, dt)
+	paddle = steered(world.paddle, controls, dt)
 	ready_world = respawn_ball(world, paddle)
 	if controls.action_pressed ({ ..ready_world, state: Playing }, [GameStarted]) else (ready_world, [])
 }
@@ -80,7 +91,7 @@ update_finished = |world, controls| if controls.action_pressed (Rules.new_world(
 ## Moves the ball and resolves life, wall, paddle, and brick interactions.
 update_playing : Rules.World, Rules.Controls, F32 -> (Rules.World, List(Rules.Event))
 update_playing = |world, controls, dt| {
-	paddle = world.paddle.move(controls.move, dt)
+	paddle = steered(world.paddle, controls, dt)
 	paddle_rect = paddle.rect()
 	candidate_ball = world.ball.move(dt)
 	lost_life = candidate_ball.pos.y - Ball.radius > 600

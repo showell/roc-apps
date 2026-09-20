@@ -3,14 +3,14 @@
 #
 # Seven functions, against the movie platform's fourteen. A game is not
 # scrubbed, so there is no back, no skip and no scene; it does not bank a
-# camera, so there is no roll. What it has instead is a keyboard -- `advance`
-# takes the two bit sets a tick's key snapshot packs into -- and a speaker,
-# which `sounds` reports as a bit per tone.
+# camera, so there is no roll. What it has instead is input -- `advance` takes
+# one Devices.Snapshot, flattened into numbers because the wasm edge has no
+# records -- and a speaker, which `sounds` reports as a bit per tone.
 platform ""
 	requires {
 		[Model : model] for program : {
 			init : {} -> Box(model),
-			advance : Box(model), U32, U32 -> Box(model),
+			advance : Box(model), U32, U32, U32, U32, F32, F32, F32 -> Box(model),
 			render : Box(model) -> List(U32),
 			sounds : Box(model) -> U32,
 			tone_count : Box(model) -> U32,

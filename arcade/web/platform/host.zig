@@ -27,7 +27,7 @@ const RocOps = builtins.host_abi.RocOps;
 const RocList = builtins.list.RocList;
 
 extern fn roc_init() callconv(.c) ?[*]u8;
-extern fn roc_advance(model: ?[*]u8, held: u32, struck: u32) callconv(.c) ?[*]u8;
+extern fn roc_advance(model: ?[*]u8, held: u32, struck: u32, buttons: u32, clicks: u32, x: f32, y: f32, wheel: f32) callconv(.c) ?[*]u8;
 extern fn roc_sounds(model: ?[*]u8) callconv(.c) u32;
 extern fn roc_tone_count(model: ?[*]u8) callconv(.c) u32;
 extern fn roc_render(model: ?[*]u8) callconv(.c) RocList;
@@ -145,12 +145,13 @@ pub export fn bufHighWater() u32 {
 pub export fn bufCap() u32 {
     return @intCast(frame.getCapacity() * 4);
 }
-// **THE KEYBOARD ARRIVES WITH THE TICK.** `held` is every key down now and
-// `struck` is those that went down since the last tick; the page's event loop
-// owns both and packs them.
-pub export fn advance(held: u32, struck: u32) void {
+// **THE INPUT ARRIVES WITH THE TICK.** One Input.Snapshot, flattened: the keys
+// down and the keys struck, the same pair for mouse buttons, then where the
+// pointer is and how far the wheel turned. The page's event loop owns all of
+// it and packs it; nothing here remembers anything between ticks.
+pub export fn advance(held: u32, struck: u32, buttons: u32, clicks: u32, x: f32, y: f32, wheel: f32) void {
     ensure();
-    model = roc_advance(model, held, struck);
+    model = roc_advance(model, held, struck, buttons, clicks, x, y, wheel);
 }
 
 // How big a frame is, in the movie's own coordinates. The page sizes its

@@ -5,7 +5,7 @@
 # and the painting. Neither knows what game it is running.
 #
 # **THE KEYBOARD IS THE POINT OF THE SEAM.** roc-ray hands the host's own
-# `Devices.Snapshot`; this converts it into a `Keys.Snapshot`, which is the
+# `Devices.Snapshot`; this converts it into a `Devices.Snapshot`, which is the
 # same thing a browser's event loop builds out of keydown and keyup. So a
 # game's `read_controls` -- the one function that touches the keyboard -- is
 # written once and run by both.
@@ -29,12 +29,15 @@ import rr.Assets
 import rr.Camera
 import rr.Color
 import rr.Devices
+import rr.Mouse as HostMouse
 import rr.Draw
 import rr.Math
 import lib.Brush
 import lib.BrushGlsl
 import lib.Game
+import lib.Input
 import lib.Keys
+import lib.Mouse
 import lib.Shapes
 
 GameRunner :: [].{
@@ -102,10 +105,10 @@ GameRunner :: [].{
 	watched : List(Keys.Key)
 	watched = [KeyUp, KeyDown, KeyLeft, KeyRight, KeyW, KeyA, KeyS, KeyD, KeySpace, KeyEscape, KeyEnter, KeyF, KeyP, KeyR]
 
-	snapshot_of : Devices.Snapshot -> Keys.Snapshot
+	snapshot_of : Devices.Snapshot -> Input.Snapshot
 	snapshot_of = |devices| {
 		n = List.len(watched)
-		var $keys = Keys.none
+		var $keys = Input.none
 		var $i = 0
 		while $i < n {
 			key = List.get(watched, $i) ?? KeyUp
@@ -118,7 +121,30 @@ GameRunner :: [].{
 			}
 			$i = $i + 1
 		}
-		$keys
+		pointer = devices.mouse
+		at = pointer.position()
+		$keys.with_mouse(
+			Mouse.of(held_buttons(pointer), struck_buttons(pointer), at.x, at.y, pointer.wheel_delta().y),
+		)
+	}
+
+	## The three buttons a page can report, as our bits. roc-ray names seven
+	## and we name three, and the two Button types share their spellings, so
+	## the bridge says each case outright rather than matching either.
+	held_buttons : HostMouse.Snapshot -> U32
+	held_buttons = |m|
+		some(m.button_down(Left), m.button_down(Right), m.button_down(Middle))
+
+	struck_buttons : HostMouse.Snapshot -> U32
+	struck_buttons = |m|
+		some(m.button_pressed(Left), m.button_pressed(Right), m.button_pressed(Middle))
+
+	some : Bool, Bool, Bool -> U32
+	some = |left, right, middle| {
+		var $bits = 0
+		$bits = if left { U32.bitwise_or($bits, Mouse.bit(Left)) } else { $bits }
+		$bits = if right { U32.bitwise_or($bits, Mouse.bit(Right)) } else { $bits }
+		if middle { U32.bitwise_or($bits, Mouse.bit(Middle)) } else { $bits }
 	}
 
 	down_on : Devices.Snapshot, Keys.Key -> Bool

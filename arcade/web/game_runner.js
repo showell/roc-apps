@@ -215,6 +215,47 @@ function watchKeyboard(target) {
   };
 }
 
+// ── the pointer ────────────────────────────────────────────────────────────
+// Position is reported in the game's own coordinates, so a game never learns
+// how big the window is or how the page scaled the canvas.
+
+const MOUSE_BIT = { 0: 1, 2: 2, 1: 4 }; // left, right, middle — Mouse.roc's bits
+
+function watchPointer(canvas, width, height) {
+  const held = new Set();
+  let struck = new Set();
+  let at = { x: 0, y: 0 };
+  let wheel = 0;
+
+  const place = (event) => {
+    const box = canvas.getBoundingClientRect();
+    at = {
+      x: ((event.clientX - box.left) / box.width) * width,
+      y: ((event.clientY - box.top) / box.height) * height,
+    };
+  };
+
+  canvas.addEventListener('mousemove', place);
+  canvas.addEventListener('mousedown', (event) => {
+    place(event);
+    held.add(event.button);
+    struck.add(event.button);
+    event.preventDefault();
+  });
+  canvas.addEventListener('mouseup', (event) => { place(event); held.delete(event.button); });
+  canvas.addEventListener('contextmenu', (event) => event.preventDefault());
+  canvas.addEventListener('wheel', (event) => { wheel += Math.sign(event.deltaY); event.preventDefault(); });
+  window.addEventListener('blur', () => { held.clear(); struck.clear(); });
+
+  const bits = (buttons) => [...buttons].reduce((m, b) => m | (MOUSE_BIT[b] ?? 0), 0);
+  return () => {
+    const pointer = { held: bits(held), struck: bits(struck), x: at.x, y: at.y, wheel };
+    struck = new Set();
+    wheel = 0;
+    return pointer;
+  };
+}
+
 // ── the speaker ────────────────────────────────────────────────────────────
 // There is no audio here yet, and the game does not know that: it reports that
 // a sound happened, exactly as it does natively, and here that lights a pip.
@@ -293,12 +334,14 @@ async function main(show) {
   hint.textContent = show.hint ?? '';
   hint.style.cssText = 'margin-top:10px;letter-spacing:.04em';
 
-  const snapshot = watchKeyboard(window);
+  const keyboard = watchKeyboard(window);
+  const pointer = watchPointer(canvas, width, height);
   const ringing = { at: -Infinity, tones: [] };
 
   const step = (now) => {
-    const { held, struck } = snapshot();
-    game.advance(held, struck);
+    const keys = keyboard();
+    const mouse = pointer();
+    game.advance(keys.held, keys.struck, mouse.held, mouse.struck, mouse.x, mouse.y, mouse.wheel);
     const rung = game.sounds();
     if (rung) { ringing.at = now; ringing.tones = bitsOf(rung); }
   };

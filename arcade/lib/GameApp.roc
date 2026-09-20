@@ -6,15 +6,19 @@
 # keys, pack its shapes, and say which tones went off. `program` takes a Game
 # and names none, so a game's wasm app is five lines.
 import Game
-import Keys
+import Input
+import Mouse
 import ShapeWire
 
 GameApp :: [].{
 	# Roc reads `game.frame(m)` as a method call, so each of a game's
 	# functions is bound before it is used, under its own name.
+	#
+	# The eight numbers a tick carries are one Input.Snapshot, flattened: the
+	# wasm edge has no records, so the runner packs and this unpacks.
 	program : Game.Game(model) -> {
 		init : {} -> Box(model),
-		advance : Box(model), U32, U32 -> Box(model),
+		advance : Box(model), U32, U32, U32, U32, F32, F32, F32 -> Box(model),
 		render : Box(model) -> List(U32),
 		sounds : Box(model) -> U32,
 		tone_count : Box(model) -> U32,
@@ -30,7 +34,8 @@ GameApp :: [].{
 		sounds = game.sounds
 		{
 			init: |{}| Box.box(game.init),
-			advance: |b, held, struck| Box.box(advance(Box.unbox(b), Keys.of(held, struck), dt)),
+			advance: |b, held, struck, buttons, clicks, x, y, wheel|
+				Box.box(advance(Box.unbox(b), Input.of(held, struck, Mouse.of(buttons, clicks, x, y, wheel)), dt)),
 			render: |b| ShapeWire.pack(frame(Box.unbox(b))),
 			sounds: |b| sounds(Box.unbox(b)),
 			tone_count: |_b| U64.to_u32_wrap(List.len(game.tones)),

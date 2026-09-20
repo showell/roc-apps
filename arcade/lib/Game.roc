@@ -10,7 +10,7 @@
 # under that. arcade/ carries its own copy of it, so this directory is a whole
 # program and can be lifted out without untangling anything.
 import Shapes
-import Keys
+import Input
 
 Game :: [].{
 	Game(model) : {
@@ -29,7 +29,7 @@ Game :: [].{
 		# can make one and a test can write one down. The seconds are always
 		# `1 / fps`: a runner paces to that and passes it, rather than each
 		# game writing the same sixtieth twice and hoping it matches `fps`.
-		advance : model, Keys.Snapshot, F32 -> model,
+		advance : model, Input.Snapshot, F32 -> model,
 
 		# What to draw.
 		frame : model -> List(Shapes.Shape),

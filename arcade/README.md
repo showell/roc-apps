@@ -38,9 +38,17 @@ and both builds compile that copy — not two copies, and not one copy edited on
 its way into a build.
 
 That is what the shape of `lib/Keys.roc` and `lib/Random.roc` is for.
-`Keys.Snapshot` is built like roc-ray's `Devices.Snapshot`, so a game's
-`read_controls` compiles against either: `GameRunner` converts the host's
-snapshot into one and `game_runner.js` builds one from keydown and keyup. `Random`
+`Input.Snapshot` is built like roc-ray's `Devices.Snapshot` -- same
+`key_down`, same `input.mouse.position()` -- so a game's `read_controls`
+compiles against either: `GameRunner` converts the host's snapshot into one and
+`game_runner.js` builds one from the page's events.
+
+It is called `Input` and not `Devices` for a reason worth keeping: `GameRunner`
+imports both, and two nominal types with the same qualified name are ambiguous
+to the compiler, not only to a reader. roc-ray calls a tick's whole input
+`App.Input`, so that is the name ours takes. For the same reason `mouse` is a
+field on the snapshot rather than an accessor method -- an accessor would have
+collided with roc-ray's field under static dispatch. `Random`
 offers roc-ray's surface because `rr.Random` re-exports a package and the wasm
 build has none. Without those two, `snake/Board.roc` would need a different
 import line per platform.

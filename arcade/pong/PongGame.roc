@@ -9,6 +9,7 @@
 # only ever asks whether a key was struck. Both halves of a snapshot are now
 # carrying something.
 import lib.Game
+import lib.Input
 import lib.Keys
 import lib.Random
 import lib.Shapes
@@ -33,13 +34,13 @@ PongGame :: [].{
 	}
 
 	## Translates keyboard bindings into paddle movement and buttons.
-	read_controls : Keys.Snapshot -> Rules.Controls
+	read_controls : Input.Snapshot -> Rules.Controls
 	read_controls = |devices| {
 		move: if devices.key_down(KeyW) -1 else if devices.key_down(KeyS) 1 else 0,
 		new_match_pressed: devices.key_pressed(KeySpace)
 	}
 
-	step : PongGame.Model, Keys.Snapshot, F32 -> PongGame.Model
+	step : PongGame.Model, Input.Snapshot, F32 -> PongGame.Model
 	step = |m, keys, dt| {
 		controls = read_controls(keys)
 		(world, events) = if Rules.is_over(m.world) {

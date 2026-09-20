@@ -30,6 +30,10 @@ Paddle := { x : F32 }.{
 	rect : Paddle -> Math.Rect
 	rect = |paddle| Math.rect(paddle.x, y, width, height)
 
+	## Puts the paddle's middle where it is asked for, within the field.
+	aimed_at : Paddle, F32 -> Paddle
+	aimed_at = |_paddle, x| { x: Math.clamp(x - width / 2, 0, 800 - width) }
+
 	## Moves the paddle horizontally while keeping it inside the cabinet.
 	move : Paddle, Move, F32 -> Paddle
 	move = |paddle, direction, dt| {

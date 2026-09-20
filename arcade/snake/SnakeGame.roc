@@ -5,10 +5,11 @@
 # sounds -- everything that used to live in roc-ray's main.roc driver.
 #
 # `read_controls` is the port's whole point. Upstream it takes a
-# `Devices.Snapshot`; here it takes a `Keys.Snapshot`, which is shaped the same
+# `Input.Snapshot`; here it takes a `Input.Snapshot`, which is shaped the same
 # on purpose, so the function below is the upstream one with its type changed
 # and nothing else.
 import lib.Game
+import lib.Input
 import lib.Keys
 import lib.Random
 import lib.Shapes
@@ -33,7 +34,7 @@ SnakeGame :: [].{
 	}
 
 	## Translates keyboard bindings into a requested Snake turn and buttons.
-	read_controls : Keys.Snapshot -> Rules.Controls
+	read_controls : Input.Snapshot -> Rules.Controls
 	read_controls = |devices| {
 		requested_direction =
 			if devices.key_pressed(KeyUp) or devices.key_pressed(KeyW) {
@@ -50,7 +51,7 @@ SnakeGame :: [].{
 		{ requested_direction, restart_pressed: devices.key_pressed(KeySpace),  }
 	}
 
-	step : SnakeGame.Model, Keys.Snapshot, F32 -> SnakeGame.Model
+	step : SnakeGame.Model, Input.Snapshot, F32 -> SnakeGame.Model
 	step = |m, keys, dt| {
 		controls = read_controls(keys)
 		(world, events) = Rules.update(m.world, controls, dt)

@@ -7,6 +7,7 @@
 # `read_controls` is upstream's, word for word. Like Pong it reads HELD keys,
 # so the paddle slides while an arrow is down, and the edge for SPACE.
 import lib.Game
+import lib.Input
 import lib.Keys
 import lib.Shapes
 import Rules
@@ -29,18 +30,25 @@ BreakoutGame :: [].{
 		title: "Breakout",
 	}
 
-	## Translates keyboard bindings into paddle movement and buttons.
-	read_controls : Keys.Snapshot -> Rules.Controls
+	## Translates input into paddle movement and buttons.
+	##
+	## **THE POINTER IS AN AIM, NOT A PUSH.** Holding the left button steers
+	## the paddle to where the pointer is, which is how this game was played
+	## before it had arrow keys; the keys still work and take over the moment
+	## the button is let go.
+	read_controls : Input.Snapshot -> Rules.Controls
 	read_controls = |devices| {
 		left = devices.key_down(KeyLeft) or devices.key_down(KeyA)
 		right = devices.key_down(KeyRight) or devices.key_down(KeyD)
+		pointer = devices.mouse
 		{
 			move: if left { Left } else if right { Right } else { Still },
-			action_pressed: devices.key_pressed(KeySpace)
+			aim: if pointer.button_down(Left) { AimAt(pointer.position().x) } else { NoAim },
+			action_pressed: devices.key_pressed(KeySpace) or pointer.button_pressed(Left)
 		}
 	}
 
-	step : BreakoutGame.Model, Keys.Snapshot, F32 -> BreakoutGame.Model
+	step : BreakoutGame.Model, Input.Snapshot, F32 -> BreakoutGame.Model
 	step = |m, keys, dt| {
 		(world, events) = Rules.update(m.world, read_controls(keys), dt)
 		{ world, elapsed: m.elapsed + F32.to_f64(dt), sounds: rung(events) }
