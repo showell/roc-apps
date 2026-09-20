@@ -46,7 +46,11 @@ else
     cp -r "$NEXT/$app" "$LIVE/$app"
     {
         echo "published $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-        echo "roc $("$ROC" version | sed 's/Roc compiler version //')"
+        # A build that recorded its own compiler is believed; the older apps
+        # record none and are built by whatever `roc` points at.
+        if [ -f "$LIVE/$app/BUILT" ]; then cat "$LIVE/$app/BUILT"; else
+            echo "roc $("$ROC" version | sed 's/Roc compiler version //')"
+        fi
         echo "roc-apps $(git -C "$REPO" rev-parse --short HEAD)$(git -C "$REPO" diff --quiet HEAD -- "$src" || echo ' +uncommitted')"
         echo "rocemit $(git -C "$ROCEMIT_REPO" rev-parse --short HEAD)$(git -C "$ROCEMIT_REPO" diff --quiet HEAD || echo ' +uncommitted')"
         echo "cobblestone $(git -C "$COBBLESTONE" rev-parse --short HEAD) $(git -C "$COBBLESTONE" branch --show-current)"
@@ -54,6 +58,8 @@ else
             echo "sha256 $(sha256sum "$w" | cut -c1-16)  $(stat -c %s "$w") bytes  ${w#./}"
         done)
     } > "$LIVE/$app/PROVENANCE"
+    # Folded into PROVENANCE above; one record, not two.
+    rm -f "$LIVE/$app/BUILT"
     cat "$LIVE/$app/PROVENANCE"
     paths=("$LIVE/$app")
     what="$app"

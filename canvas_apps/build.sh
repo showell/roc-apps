@@ -37,6 +37,10 @@ if grep -q "✗" "$LOG" || [ ! -s "$OUT/$name.wasm" ]; then cat "$LOG"; echo "bu
 "$ROC" glue "$HERE/../glue/JsGlue.roc" "$OUT" "$HERE/web/platform/main.roc" > "$LOG.glue" 2>&1 \
     || { cat "$LOG.glue"; echo "glue failed"; exit 1; }
 cp "$HERE/web/shapewire.js" "$HERE/web/canvas_app_runner.js" "$OUT/"
+# **WHICH COMPILER BUILT THIS**, recorded where the build happens rather than
+# guessed later: these pin the nightly roc-ray pins, and the `roc` symlink
+# points at a different one.
+"$ROC" version | sed 's/Roc compiler version /roc /' > "$OUT/BUILT"
 cp "$HERE/$name/page.html" "$OUT/index.html"
 ls -la "$OUT"
 echo "dev: http://143.244.172.148:9210/$name/"
