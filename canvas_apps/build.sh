@@ -18,6 +18,7 @@ name="${1:?usage: canvas_apps/build.sh <app>}"
 app="$HERE/$name/web.roc"
 [ -f "$app" ] || { echo "no app at $app"; exit 2; }
 [ -f "$HERE/$name/page.html" ] || { echo "no page at $HERE/$name/page.html"; exit 2; }
+[ -f "$HERE/$name/shot.env" ] || { echo "no shot at $HERE/$name/shot.env"; exit 2; }
 
 OUT="$HOME/build/roc-apps/next/$name"
 # Cleared, so yesterday's files cannot be served beside today's.
@@ -42,5 +43,13 @@ cp "$HERE/web/shapewire.js" "$HERE/web/canvas_app_runner.js" "$OUT/"
 # points at a different one.
 "$ROC" version | sed 's/Roc compiler version /roc /' > "$OUT/BUILT"
 cp "$HERE/$name/page.html" "$OUT/index.html"
+
+# **EVERY BUILD IS CHECKED AND PHOTOGRAPHED.** page_check runs the page as a
+# browser would, with the keys and pointer <app>/shot.env scripts, and saves
+# its last frame beside the page as shot.png -- the picture the landing page
+# shows. A page that fails the check fails the build, and the picture is never
+# older than the wasm it shows.
+( set -a; . "$HERE/$name/shot.env"; set +a
+  SHOT="$OUT/shot.png" node "$HERE/web/page_check.mjs" "$name" ) || { echo "page check failed"; exit 1; }
 ls -la "$OUT"
 echo "dev: http://143.244.172.148:9210/$name/"

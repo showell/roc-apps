@@ -18,6 +18,8 @@
   .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
   .card { background: var(--pane); border: 1px solid var(--edge); border-radius: 8px; padding: 14px 16px; }
   .card h3 { margin: 0 0 4px; font-size: 17px; }
+  /* A canvas app's picture: its page's last frame, taken by the build. */
+  .shot { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 5px; margin: -2px 0 10px; background: #000; }
   .card p { margin: 0; color: var(--muted); font-size: 14px; }
   .links { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; }
   .when { margin-top: 8px; font-size: 12px; color: var(--muted); }
@@ -42,40 +44,48 @@ through roc-ray — <a href="https://github.com/showell/roc-apps/tree/master/can
 says how to build those.</p>
 <div class="cards">
   <section class="card" data-app="safari">
+    <a href="safari/"><img class="shot" src="safari/shot.png" alt="" loading="lazy"></a>
     <h3><a href="safari/">Safari</a></h3>
     <p>A drive through the country, as a screensaver: the rider leans into the turns and the animals cross when they like. Space pauses, the arrows step through the ride, J jumps to the next intersection.</p>
   </section>
   <section class="card" data-app="snake">
+    <a href="snake/"><img class="shot" src="snake/shot.png" alt="" loading="lazy"></a>
     <h3><a href="snake/">Snake</a></h3>
     <p>The arrows turn, the food glows, and the wall ends it.</p>
     <div class="links"><a href="https://github.com/lukewilliamboswell/roc-ray/tree/e100c9548b903ee5c7363f5997251980c4355c7b/examples/snake">Luke's original</a></div>
   </section>
   <section class="card" data-app="pong">
+    <a href="pong/"><img class="shot" src="pong/shot.png" alt="" loading="lazy"></a>
     <h3><a href="pong/">Pong</a></h3>
     <p>W and S move the paddle, or hold the left button and point where you want it.</p>
     <div class="links"><a href="https://github.com/lukewilliamboswell/roc-ray/tree/e100c9548b903ee5c7363f5997251980c4355c7b/examples/pong">Luke's original</a></div>
   </section>
   <section class="card" data-app="breakout">
+    <a href="breakout/"><img class="shot" src="breakout/shot.png" alt="" loading="lazy"></a>
     <h3><a href="breakout/">Breakout</a></h3>
     <p>Space serves; the arrows or the pointer steer. Each brick is worth what its colour says.</p>
     <div class="links"><a href="https://github.com/lukewilliamboswell/roc-ray/tree/e100c9548b903ee5c7363f5997251980c4355c7b/examples/breakout">Luke's original</a></div>
   </section>
   <section class="card" data-app="particles">
+    <a href="particles/"><img class="shot" src="particles/shot.png" alt="" loading="lazy"></a>
     <h3><a href="particles/">Particles</a></h3>
     <p>A fountain of four thousand sprites that follows the pointer. Hold Space to widen the spray.</p>
     <div class="links"><a href="https://github.com/lukewilliamboswell/roc-ray/tree/e100c9548b903ee5c7363f5997251980c4355c7b/examples/particles">Luke's original</a></div>
   </section>
   <section class="card" data-app="camera">
+    <a href="camera/"><img class="shot" src="camera/shot.png" alt="" loading="lazy"></a>
     <h3><a href="camera/">Camera world</a></h3>
     <p>A world larger than the window. WASD moves, the wheel zooms, Q and E turn it. The pointer is marked twice, once through the camera and once on the screen.</p>
     <div class="links"><a href="https://github.com/lukewilliamboswell/roc-ray/tree/e100c9548b903ee5c7363f5997251980c4355c7b/examples/camera">Luke's original</a></div>
   </section>
   <section class="card" data-app="workshop">
+    <a href="workshop/"><img class="shot" src="workshop/shot.png" alt="" loading="lazy"></a>
     <h3><a href="workshop/">Pixel workshop</a></h3>
     <p>A sixteen-by-sixteen canvas you drag on. Four colours, a note for each, and C puts the design back.</p>
     <div class="links"><a href="https://github.com/lukewilliamboswell/roc-ray/tree/e100c9548b903ee5c7363f5997251980c4355c7b/examples/generated_assets">Luke's original</a></div>
   </section>
   <section class="card" data-app="trick_or_treat">
+    <a href="trick_or_treat/"><img class="shot" src="trick_or_treat/shot.png" alt="" loading="lazy"></a>
     <h3><a href="trick_or_treat/">Trick or Treat</a></h3>
     <p>A child walks up to a house past six dancing skeletons, the door opens, and they think better of it. Space pauses, the arrows scrub, J skips a second.</p>
   </section>

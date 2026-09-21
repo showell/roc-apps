@@ -12,6 +12,7 @@
 //   canvas_apps/web/page_check.mjs <app>                  one of the built pages
 //   KEYS=5:Space,40:ArrowRight FRAMES=200 …            press keys while it runs
 //   DRAG=80,80,500,500 …                               hold and drag the pointer
+//   SHOT=snake.png …                                   and save the last frame
 //
 // **A CHECK THAT CANNOT PRESS A KEY CHECKS THE ATTRACT SCREEN.** Breakout
 // waits in Ready until SPACE, so without KEYS this ran 31 frames of a game
@@ -23,8 +24,20 @@
 //
 // Thirty frames is half a second, which is enough to say the page runs. A game
 // that waits on a key needs a key: without KEYS this checks the attract screen.
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import vm from "node:vm";
+
+// **SHOT PHOTOGRAPHS THE SAME RUN IT CHECKS.** With SHOT set, every canvas is
+// also a real one -- mini_canvas.mjs, a dependency-free rasterizer -- and the
+// page's last frame is written to that file as a PNG. Painting is slow next to
+// recording, so only the last few callbacks paint; each of the runner's draws
+// clears the canvas first, so the last one is a whole frame on its own.
+const SHOT = process.env.SHOT;
+const mini = SHOT ? await import(new URL("./mini_canvas.mjs", import.meta.url)) : null;
+const LIVE_CALLBACKS = 4;
+let live = false;
+let liveFills = 0;
+let mainCanvas = null;
 
 const name = process.argv[2];
 if (!name) { console.error("usage: page_check.mjs <app>"); process.exit(2); }
@@ -67,10 +80,16 @@ const mark = (what, values) => {
   drawn = fold(drawn, what, values);
   picture = fold(picture, what, values);
 };
-const ctx = new Proxy({}, {
+// Properties a painter READS back, which a real canvas has to answer.
+const READ_BACK = new Set(["fillStyle", "globalAlpha", "globalCompositeOperation", "imageSmoothingEnabled"]);
+
+// One canvas's context: every call and property set is hashed, and with SHOT
+// is also made on `real` while the run is in its last callbacks.
+const recorder = (real) => new Proxy({}, {
   get: (_t, k) => {
     if (k === "canvas") return { width: 0, height: 0 };
     if (k === "measureText") return () => ({ width: 10 });
+    if (real && READ_BACK.has(k)) return real[k];
     // A gradient's stops are where most of the colour lives, so they are
     // hashed rather than thrown away.
     // A picture arrives as bytes written into an ImageData and put back, so
@@ -80,23 +99,52 @@ const ctx = new Proxy({}, {
     if (k === "createImageData")
       return (w, h) => ({ width: w, height: h, data: new Uint8ClampedArray(w * h * 4) });
     if (k === "putImageData")
-      return (image) => { calls++; mark(k, [image.width, image.height, ...image.data]); };
+      return (image, ...at) => {
+        calls++; mark(k, [image.width, image.height, ...image.data]);
+        if (real && live) real.putImageData(image, ...at);
+      };
     if (k === "createLinearGradient" || k === "createRadialGradient")
-      return (...a) => { mark(k, a); return { addColorStop: (at, colour) => mark("stop", [at, colour]) }; };
-    return (...a) => { calls++; mark(k, a); if (k === "fill" || k === "fillRect") fills++; return undefined; };
+      return (...a) => {
+        mark(k, a);
+        const gradient = real && live ? real[k](...a) : null;
+        return {
+          addColorStop: (at, colour) => { mark("stop", [at, colour]); gradient?.addColorStop(at, colour); },
+          real: gradient,
+        };
+      };
+    return (...a) => {
+      calls++; mark(k, a);
+      if (k === "fill" || k === "fillRect") { fills++; if (live) liveFills++; }
+      return real && live ? real[k](...a) : undefined;
+    };
   },
-  set: (_target, key, value) => { mark(key, [value]); return true; },
+  set: (_target, key, value) => {
+    mark(key, [value]);
+    if (real && live) real[key] = value?.real ?? value;
+    return true;
+  },
 });
 
 // An element that can be listened to and asked where it is: the pointer
 // registers on the CANVAS rather than the window, and `place` converts a page
 // coordinate through `getBoundingClientRect`.
-const el = () => {
+const el = (tag) => {
+  // With SHOT a canvas is backed by a real one; the first is the page's own,
+  // and any after it are a painter's scratch canvases.
+  const real = mini && tag === "canvas" ? mini.createCanvas(1, 1) : null;
+  if (real && !mainCanvas) mainCanvas = real;
+  let width = 0, height = 0, context = null;
   const node = {
-    style: {}, width: 0, height: 0, textContent: "", appendChild() {}, remove() {},
-    getContext: () => ctx,
+    style: {}, textContent: "", appendChild() {}, remove() {},
+    get width() { return width; },
+    set width(v) { width = v; if (real) real.width = v; },
+    get height() { return height; },
+    set height(v) { height = v; if (real) real.height = v; },
+    getContext: () => (context ??= recorder(real ? real.getContext("2d") : null)),
+    // What drawImage reads out of a scratch canvas.
+    pixel: (x, y) => real.pixel(x, y),
     addEventListener: (kind, fn) => { (listeners[kind] ??= []).push(fn); },
-    getBoundingClientRect: () => ({ left: 0, top: 0, width: node.width, height: node.height }),
+    getBoundingClientRect: () => ({ left: 0, top: 0, width, height }),
   };
   return node;
 };
@@ -141,6 +189,7 @@ const sandbox = {
       if (drag) dragTo(frames);
       virtualNow += STEP_MS;
       picture = 2166136261;
+      live = Boolean(SHOT) && frames > limit - LIVE_CALLBACKS;
       fn(virtualNow);
       if (picture !== lastPicture) { moved++; lastPicture = picture; }
     });
@@ -214,4 +263,11 @@ if (moved < 2) {
 }
 const pressed = script.length ? `, ${script.length} keys pressed` : '';
 const dragged = drag ? `, dragged ${drag[0]},${drag[1]} to ${drag[2]},${drag[3]}` : '';
+if (SHOT) {
+  if (!liveFills) {
+    console.error(`${name}: nothing was drawn in the last ${LIVE_CALLBACKS} callbacks, so there is no frame to save`);
+    process.exit(1);
+  }
+  writeFileSync(SHOT, mainCanvas.toPNG());
+}
 console.log(`${name}: ran ${frames} frames, ${moved} distinct, ${calls} canvas calls, ${fills} fills${pressed}${dragged}, drawn ${drawn >>> 0}`);

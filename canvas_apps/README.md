@@ -29,7 +29,7 @@ examples, by Luke Boswell, taken with only small changes to fit this scheme.
 | `snake/main.roc` | the app on roc-ray, reaching the runner as `native.CanvasAppRunner` |
 | `snake/web.roc` | the app as a page, on `web/platform/`, through `lib.WasmApp` |
 | `lib/` | a package every app shares: `CanvasApp` `WasmApp` `Shapes` `Brush` `Input` `Keys` `Mouse` `Math` `Color` `Camera` `Font` `Random` `Trig` `DeviceMath` `BrushGlsl` `View` |
-| `web/` | the page's end: the wasm platform and host, `build.zig` and `options.zig` (the host object, rebuilt by every page build), `canvas_app_runner.js`, `shapewire.js`, `page_check.mjs`, `camera_check.mjs` |
+| `web/` | the page's end: the wasm platform and host, `build.zig` and `options.zig` (the host object, rebuilt by every page build), `canvas_app_runner.js`, `shapewire.js`, `page_check.mjs`, `mini_canvas.mjs`, `camera_check.mjs` |
 | `native/` | roc-ray's end, as a package: `CanvasAppRunner.roc` |
 
 An app's own directory holds a `<Name>App.roc` with the `CanvasApp` value in
@@ -51,13 +51,14 @@ there.
 
 ## Adding an app
 
-A directory of four files, and `build.sh` exits 2 if `web.roc` or the page is
-missing:
+A directory of five files, and `build.sh` exits 2 if `web.roc`, the page or
+the shot is missing:
 
     <name>/main.roc             CanvasAppRunner.program(<Name>App.canvas_app)
     <name>/web.roc              WasmApp.program(<Name>App.canvas_app)
     <name>/<Name>App.roc        the CanvasApp value
     <name>/page.html            loads three scripts, and sets window.SHOW first
+    <name>/shot.env             the keys and pointer that make its picture
 
 Copy an existing app's `main.roc` and `web.roc`; they differ from each other
 only in their platform, the runner they hand the value to, and one comment.
@@ -243,6 +244,12 @@ console.
 
 ## The checks
 
+**Every page build is checked and photographed.** `build.sh` ends by running
+`page_check.mjs` with the input `<name>/shot.env` scripts — `KEYS=`, `DRAG=`,
+`FRAMES=` — and `SHOT=` set, which saves the page's last frame beside it as
+`shot.png`. That is the picture on the landing page, and it is never older than
+the wasm it shows. A page that fails the check fails the build.
+
 `page_check.mjs` runs a built page the way a browser would, against a canvas
 that records instead of painting, reading the page's own `<script src>` list so
 a script that was never copied fails here rather than in a browser.
@@ -251,6 +258,20 @@ app that waits for input is driven. It reports frames, how many were distinct
 pictures, canvas calls, fills, and a hash of everything drawn so one run can be
 compared with another. It fails if the page drew nothing but its background, or
 if the picture never changed.
+
+With `SHOT=<file>.png`, every canvas is also a real one: `mini_canvas.mjs`, a
+dependency-free software rasterizer for exactly the canvas calls `shapewire.js`
+and `canvas_app_runner.js` make — paths, nonzero fill, linear and concentric
+radial gradients, clip, the additive composite, images — supersampled for
+anti-aliasing, with PNGs through node's own zlib. The real painter runs
+unchanged against it, and it throws on anything outside that list rather than
+painting something plausible. Painting is slow next to recording, so only the
+last four callbacks paint; each of the runner's draws clears first, so the last
+is a whole frame. It is ported from angry-gopher's `mini_canvas.ts`, which does
+the same for the driving game's cat.
+
+Because the input is scripted and the clock is virtual, a shot is the same on
+every run of the same build, so a changed picture is a changed program.
 
 `camera_check.mjs` hands `shapewire.js` a view mark and checks the canvas
 matrix it builds against the same map written the geometric way,
@@ -263,7 +284,7 @@ An app's `expect`s are the third check, and the compiler runs them:
 
 ## Where things are
 
-    ~/build/roc-apps/next/<name>/                 the page, served at :9210/<name>/
+    ~/build/roc-apps/next/<name>/                 the page and its shot.png, served at :9210/<name>/
     ~/build/roc-apps/canvas_apps/<name>/          the native binary
     ~/build/roc-apps/gen/canvas_apps/<name>-web.log   what to read when a page build fails
 
