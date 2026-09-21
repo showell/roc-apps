@@ -97,7 +97,7 @@ CanvasAppRunner :: [].{
 	# look tautological because the tags are spelled the same on purpose; they
 	# are two different types, and this is the bridge.
 	watched_keys : List(Keys.Key)
-	watched_keys = [KeyUp, KeyDown, KeyLeft, KeyRight, KeyW, KeyA, KeyS, KeyD, KeySpace, KeyEnter, KeyP, KeyR, KeyQ, KeyE, KeyC, Key1, Key2, Key3, Key4]
+	watched_keys = [KeyUp, KeyDown, KeyLeft, KeyRight, KeyW, KeyA, KeyS, KeyD, KeySpace, KeyEnter, KeyP, KeyR, KeyQ, KeyE, KeyC, KeyJ, Key1, Key2, Key3, Key4]
 
 	input_of : Devices.Snapshot -> Input.Snapshot
 	input_of = |devices| {
@@ -159,6 +159,7 @@ CanvasAppRunner :: [].{
 			KeyQ => d.key_down(KeyQ)
 			KeyE => d.key_down(KeyE)
 			KeyC => d.key_down(KeyC)
+			KeyJ => d.key_down(KeyJ)
 			Key1 => d.key_down(Key1)
 			Key2 => d.key_down(Key2)
 			Key3 => d.key_down(Key3)
@@ -183,6 +184,7 @@ CanvasAppRunner :: [].{
 			KeyQ => d.key_pressed(KeyQ)
 			KeyE => d.key_pressed(KeyE)
 			KeyC => d.key_pressed(KeyC)
+			KeyJ => d.key_pressed(KeyJ)
 			Key1 => d.key_pressed(Key1)
 			Key2 => d.key_pressed(Key2)
 			Key3 => d.key_pressed(Key3)

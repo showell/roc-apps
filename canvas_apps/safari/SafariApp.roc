@@ -7,8 +7,8 @@
 #
 # The drive plays on its own. Space pauses it. Left steps back through the
 # ride's history and Right forward, a frame at a time while paused and faster
-# while it runs. Enter jumps to the next of the route's nineteen segments, and
-# R starts the drive again.
+# while it runs. J jumps to the next of the route's nineteen segments, and R
+# starts the drive again.
 #
 # Raster still paints a frame into pixels, and ShapesFrame checks the two
 # against each other, natively; neither is on the path a runner takes.
@@ -76,7 +76,7 @@ SafariApp :: [].{
 				} else {
 					SafariRide.advance(m.ride)
 				}
-			ride = if input.key_pressed(KeyEnter) { next_segment(moved) } else { moved }
+			ride = if input.key_pressed(KeyJ) { next_segment(moved) } else { moved }
 			{ ride, paused }
 		}
 

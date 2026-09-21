@@ -9,7 +9,7 @@ other canvas apps (`../README.md`).
     canvas_apps/native.sh safari      the native program
 
 Space pauses. Left and Right step back and forward through the ride's history —
-a frame at a time while paused, faster while it runs. Enter jumps to the next
+a frame at a time while paused, faster while it runs. J jumps to the next
 intersection. R starts the drive again.
 
 ## Where it came from

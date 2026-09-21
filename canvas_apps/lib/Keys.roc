@@ -14,7 +14,7 @@ Keys :: [].{
 	# closes a native window and F shows its frame rate -- and a page can do
 	# neither. A key a game could bind on one end and not the other is a key
 	# that behaves differently on the two, so no game is given them at all.
-	Key := [KeyUp, KeyDown, KeyLeft, KeyRight, KeyW, KeyA, KeyS, KeyD, KeySpace, KeyEnter, KeyP, KeyR, KeyQ, KeyE, KeyC, Key1, Key2, Key3, Key4].{
+	Key := [KeyUp, KeyDown, KeyLeft, KeyRight, KeyW, KeyA, KeyS, KeyD, KeySpace, KeyEnter, KeyP, KeyR, KeyQ, KeyE, KeyC, KeyJ, Key1, Key2, Key3, Key4].{
 		is_eq : _
 	}
 
@@ -40,5 +40,6 @@ Keys :: [].{
 			Key2 => 65536
 			Key3 => 131072
 			Key4 => 262144
+			KeyJ => 524288
 		}
 }

@@ -73,8 +73,8 @@ window.SHOW = { wasm: '<name>.wasm', loading: 'Loading…' };
 Copy an existing `page.html`; `canvas_app_runner.js` throws if `window.SHOW` is
 not set.
 
-**The keys an app may read are a closed set of nineteen** (`lib/Keys.roc`): the
-four arrows, `W` `A` `S` `D` `Q` `E` `C` `P` `R`, Space, Enter, and `1`–`4`.
+**The keys an app may read are a closed set of twenty** (`lib/Keys.roc`): the
+four arrows, `W` `A` `S` `D` `Q` `E` `C` `J` `P` `R`, Space, Enter, and `1`–`4`.
 Adding one touches four places — `Keys.Key` and `Keys.bit`, `KEY_BIT` in
 `web/canvas_app_runner.js`, and `watched_keys` plus both match arms in
 `native/CanvasAppRunner.roc` — so a key exists on both ends or on neither.

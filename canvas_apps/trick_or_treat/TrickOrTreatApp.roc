@@ -6,7 +6,7 @@
 # `scene`, `scenes`, `roll` and `clock`, and every one of those is a thing a
 # PLAYER did with a movie rather than a thing a movie is:
 #
-#   back / skip    scrubbing, which is Left, Right and Enter here
+#   back / skip    scrubbing, which is Left, Right and J here
 #   scene / scenes a place to skip to, which Halloween never had (it has one)
 #   clock          a number for naming a screenshot, which no runner here takes
 #   roll           a camera turned, which is `Camera.with_rotation` now and a
@@ -64,9 +64,9 @@ TrickOrTreatApp :: [].{
 			} else {
 				m.tick + 1
 			}
-		# Enter is the old `skip`: a second on, which for a movie with one
+		# J is the old `skip`: a second on, which for a movie with one
 		# scene is what skipping to the next one meant.
-		jumped = if input.key_pressed(KeyEnter) { moved + 60 } else { moved }
+		jumped = if input.key_pressed(KeyJ) { moved + 60 } else { moved }
 		tick = if input.key_pressed(KeyR) { 0 } else if jumped < 0 { 0 } else { jumped }
 		{ tick, paused }
 	}
@@ -82,8 +82,8 @@ expect {
 expect TrickOrTreatApp.step({ tick: 2, paused: Bool.True }, Input.none.with_key_down(KeyLeft)).tick == 1
 expect TrickOrTreatApp.step({ tick: 0, paused: Bool.True }, Input.none.with_key_down(KeyLeft)).tick == 0
 
-## Enter jumps a second on, which is what `skip` did.
-expect TrickOrTreatApp.step({ tick: 10, paused: Bool.True }, Input.none.with_key_pressed(KeyEnter)).tick == 70
+## J jumps a second on, which is what `skip` did.
+expect TrickOrTreatApp.step({ tick: 10, paused: Bool.True }, Input.none.with_key_pressed(KeyJ)).tick == 70
 
 ## R goes back to the top.
 expect TrickOrTreatApp.step({ tick: 900, paused: Bool.False }, Input.none.with_key_pressed(KeyR)).tick == 0
