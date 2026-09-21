@@ -2,21 +2,20 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>safari — the Roc module</title>
+<title>safari</title>
 </head>
 <body>
-<!-- The page names the show; blitter.js plays it. The same JavaScript draws
-     every movie here, so what is particular to this one is the four lines
-     below: which module to fetch, how many scenes it has, and what to say.
-     Every URL is relative, so the page works under any path. -->
+<!-- A drive through the country. Space pauses, the arrows step back and
+     forward through the ride, J jumps to the next intersection, R starts
+     again. -->
 <script>
 window.SHOW = {
   wasm: 'safari.wasm',
-  hint: 'SPACE pause/resume · ↑/↓ step · J next intersection · D debug overlay',
   loading: 'Prepare for your journey! Watch out for animals crossing the road.',
 };
 </script>
-<script src="blitter.js"></script>
-<script src="../shared/home.js"></script>
+<script src="roc_glue.js"></script>
+<script src="shapewire.js"></script>
+<script src="canvas_app_runner.js"></script>
 </body>
 </html>
