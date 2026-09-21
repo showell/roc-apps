@@ -1,27 +1,21 @@
-# Particles -- roc-ray's `examples/particles`, as a Movie.
+# Particles -- roc-ray's `examples/particles`: a fountain of four thousand
+# sprites that follows the pointer.
 #
-# A fountain of four thousand sprites. Their version steers it with the pointer
-# and draws one texture four thousand times in a single hosted call; this one
-# takes the path they built for recording -- a travelling emitter and a fixed
-# step, chosen so a demo GIF is the same every time -- because that is what a
-# movie is.
+# Upstream steers the emitter with the pointer, widens the spray while Space is
+# held, and has a recording mode in which the emitter travels a fixed figure.
+# Both are here: the emitter follows the pointer once it has moved over the
+# canvas, and travels the recording's figure until then, so the fountain is
+# alive before anyone touches it.
 #
-# **IT IS HERE FOR THE VOLUME.** capture_plot draws three hundred shapes a
-# frame and says nothing about whether this scales; this one draws four
-# thousand discs, and every one of them crosses the wire.
+# **IT IS HERE FOR THE VOLUME**: four thousand discs a frame, every one of them
+# crossing to the page.
 #
 # A sprite becomes a disc: theirs is an 8-by-8 white texture with a tint and a
 # rotation, so nothing is lost but the spin, which at three to nine pixels
 # across is not visible anyway.
-#
-# **AND IT CANNOT GO BACK**, which is the finding. Safari keeps a history;
-# capture_plot is a pure function of its clock; a particle's velocity
-# accumulates gravity, so its past is not recoverable without replaying from
-# the start. `back` says so by doing nothing.
-import Movie
-import Shapes
-import Brush
-import Trig
+import lib.Shapes
+import lib.Brush
+import lib.Trig
 
 Particles :: [].{
 	# Their window.
@@ -43,41 +37,26 @@ Particles :: [].{
 
 	Model : { particles : List(Particles.Particle), tick : I64 }
 
-	movie : Movie.Movie(Particles.Model)
-	movie = {
-		size: { width: width, height: height },
-		fps: 60,
-		init: { particles: initial(0, []), tick: 0 },
-		advance: |m| { particles: stepped(m.particles, emitter(m.tick), 0, []), tick: m.tick + 1 },
-		# **A FOUNTAIN HAS NO PAST.** See the note at the top.
-		back: |m| m,
-		# There are no scenes; a skip is a second of them.
-		skip: |m| skip_from(m, 60),
-		scene: |_m| 0,
-		scenes: 1,
-		frame: |m| shapes(m),
-		roll: |_m| 0.0,
-		clock: |m| I64.to_f64(m.tick),
-		title: "RocRay Particles",
-		stem: "particles",
-	}
+	start : Particles.Model
+	start = { particles: initial(0, []), tick: 0 }
 
-	skip_from : Particles.Model, I64 -> Particles.Model
-	skip_from = |m, n|
-		if n <= 0 { m } else {
-			skip_from({ particles: stepped(m.particles, emitter(m.tick), 0, []), tick: m.tick + 1 }, n - 1)
-		}
+	## One step, with the emitter where it is and the spray as wide as it is.
+	advance : Particles.Model, { x : F64, y : F64 }, F64 -> Particles.Model
+	advance = |m, at, spread| { particles: stepped(m.particles, at, spread, 0, []), tick: m.tick + 1 }
 
-	# Their demo emitter: a slow figure that keeps the fountain moving.
+	# Their recording's emitter: a slow figure that keeps the fountain moving.
 	emitter : I64 -> { x : F64, y : F64 }
 	emitter = |tick| {
 		phase = I64.to_f64(tick) * 0.055
 		{ x: 400.0 + Trig.r_sin(phase) * 170.0, y: 205.0 + Trig.r_cos(phase * 0.7) * 45.0 }
 	}
 
-	# Their `--record-demo` spread, which is the wider one.
-	spread : F64
-	spread = 1.9
+	# Their two spreads: the wide one while Space is held, and in recording.
+	spread_wide : F64
+	spread_wide = 1.9
+
+	spread_narrow : F64
+	spread_narrow = 0.7
 
 	# **SPREAD AN INDEX OVER 0..1 WITHOUT A RANDOM SOURCE**, exactly as they
 	# do: the modulus is prime and the multiplier coprime to it, so every
@@ -113,14 +92,14 @@ Particles :: [].{
 			)
 		}
 
-	stepped : List(Particles.Particle), { x : F64, y : F64 }, U64, List(Particles.Particle) -> List(Particles.Particle)
-	stepped = |ps, at, i, acc|
+	stepped : List(Particles.Particle), { x : F64, y : F64 }, F64, U64, List(Particles.Particle) -> List(Particles.Particle)
+	stepped = |ps, at, spread, i, acc|
 		if i >= List.len(ps) { acc } else {
-			stepped(ps, at, i + 1, List.append(acc, step(List.get(ps, i) ?? crash("particle"), at)))
+			stepped(ps, at, spread, i + 1, List.append(acc, step(List.get(ps, i) ?? crash("particle"), at, spread)))
 		}
 
-	step : Particles.Particle, { x : F64, y : F64 } -> Particles.Particle
-	step = |p, at| {
+	step : Particles.Particle, { x : F64, y : F64 }, F64 -> Particles.Particle
+	step = |p, at, spread| {
 		life = p.life - dt
 		if life > 0.0 {
 			{ ..p, x: p.x + p.vx * dt, y: p.y + p.vy * dt, vy: p.vy + 420.0 * dt, life: life }
