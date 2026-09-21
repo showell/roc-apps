@@ -1,7 +1,7 @@
 # Raster -- a Safari frame painted into pixels in Roc, for a platform that can
 # only show pixels (roc-ray as a framebuffer).
 #
-# Hand-written. It does what web/blitter.js does with a canvas, without one:
+# Hand-written. It does what shapewire.js does with a canvas, without one:
 # the sky and grass, the sun, then every command in paint order, all turned by
 # the camera roll about the screen's centre. A pixel is painted when its centre
 # is inside; a polygon fills by the nonzero rule, as the canvas's does. There

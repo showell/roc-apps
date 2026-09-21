@@ -1,7 +1,7 @@
 # SafariShapes -- Safari's frame, as shapes.
 #
-# Hand-written. The vocabulary is in movie/Shapes.roc, every movie's; this is
-# the part that knows what THIS movie looks like -- the sky's gradient, the
+# Hand-written. The vocabulary is in lib/Shapes.roc, every canvas app's; this
+# is the part that knows what Safari looks like -- the sky's gradient, the
 # grass, the sun's glow and disc, and how a Codex draw command becomes a
 # polygon.
 import Paint

@@ -1,8 +1,8 @@
 # SafariBrush -- the brush a Codex draw command names.
 #
-# Hand-written. `Brush` is every movie's and moved to movie/ when a second and
-# a third arrived; this is the half that reads one out of a `Paint.DrawCmd`,
-# which only Safari has. The tags are the blitter's, and so is what they mean.
+# Hand-written. `Brush` is every canvas app's and lives in lib/; this is the
+# half that reads one out of a `Paint.DrawCmd`, which only Safari has. The tags
+# are safari-codex's blitter's, and so is what they mean.
 import Paint
 import lib.Brush
 

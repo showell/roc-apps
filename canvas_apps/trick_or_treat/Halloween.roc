@@ -15,9 +15,8 @@
 # one thing and are told a number rather than a tick. What is left here is the
 # order the things are painted in, which is back to front.
 #
-# Moved here from movies/halloween with its import lines changed and its
-# `Movie.Movie` record dropped: HalloweenGame.roc is what a runner is handed
-# now, and the scrubbing that was five fields of that record is five keys.
+# TrickOrTreatApp.roc is what a runner is handed; the scrubbing lives there,
+# as five keys.
 import lib.Shapes
 import lib.View
 import Walk

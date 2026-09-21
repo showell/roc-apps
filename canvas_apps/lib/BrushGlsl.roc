@@ -3,8 +3,8 @@
 # Hand-written, beside Brush because it belongs to Brush: the six fills a
 # command can name, shaded on the scene position, for a platform whose fragment
 # shader can do the arithmetic itself. **Nothing here belongs to any one
-# movie** -- it used to live in movies/safari/main.roc, where a player that
-# knows nothing else about a movie carried sixty lines of its paint.
+# app**: native/CanvasAppRunner.roc compiles it once and shades every app's
+# gradients with it.
 #
 # `Brush.shade` is the same arithmetic on the CPU, case for case; the names
 # below are its cases, so the two can be read side by side. A player sets

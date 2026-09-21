@@ -3,13 +3,15 @@
 Small interactive Roc programs that run two ways from one set of files: as a
 native program on roc-ray, and as a page in a browser.
 
-Six of them, covering a few different kinds of program. `snake`, `pong` and
-`breakout` are arcade games ported from roc-ray's own examples. `camera` is a
-world larger than the window, with a camera over it and a HUD that stays put.
-`workshop` is a pixel paint program you drag on. `trick_or_treat` is a movie
-you can scrub, forked from `movies/halloween` — **that movie still exists and
-is what prod serves**, so the two drift independently and an edit to one is not
-an edit to the other.
+Eight of them, covering a few different kinds of program. `safari` is a
+driving screensaver. `snake`, `pong` and `breakout` are arcade games.
+`particles` is a fountain of four thousand sprites that follows the pointer.
+`camera` is a world larger than the window, with a camera over it and a HUD
+that stays put. `workshop` is a pixel paint program you drag on.
+`trick_or_treat` is a movie you can scrub.
+
+Six of the eight — all but `safari` and `trick_or_treat` — are roc-ray's own
+examples, by Luke Boswell, taken with only small changes to fit this scheme.
 
     canvas_apps/build.sh snake       the page,   http://<box>:9210/snake/
     canvas_apps/native.sh snake      the native program
@@ -270,17 +272,22 @@ long movie wants: `FRAMES=1500`.
 
 ## Where each app came from
 
-`snake`, `pong`, `breakout`, `camera` and `workshop` are ports of roc-ray's
-examples of the same names, except `workshop`, which is `generated_assets`.
-`trick_or_treat` is a fork of this repo's own `movies/halloween`.
+| app | from |
+|---|---|
+| `snake`, `pong`, `breakout`, `camera`, `particles` | roc-ray's examples of the same names |
+| `workshop` | roc-ray's `generated_assets`, the Pixel Workshop |
+| `safari` | this repository's own screensaver, which began as a Codex program; `safari/README.md` |
+| `trick_or_treat` | this repository's own |
 
-Each ported file says in its own docstring what changed in it and why, which is
-the copy to trust: a summary here would go stale the first time one of them is
-edited. The shape of the change is the same throughout — the rules keep their
-arithmetic and change their import lines, and the drawing is rewritten, because
-upstream draws into a `Draw.Frame` and here a frame is a value.
+The roc-ray examples were taken at commit `e100c95`, which is also the roc-ray
+CI pins. Each ported file says in its own docstring what changed in it and why,
+which is the copy to trust. The shape of the change is the same throughout: the
+rules keep their arithmetic and change their import lines, and the drawing is
+rewritten, because upstream draws into a `Draw.Frame` and here a frame is a
+value.
 
-Two things these have that upstream does not: `pong` and `breakout` can be
-played with the pointer as well as the keys (`Controls.aim`), and `workshop`'s
-palette swatches respond to a click, which is what their hover highlight
-offers.
+What these have that upstream does not: `pong` and `breakout` can be played with
+the pointer as well as the keys, and `workshop`'s palette swatches respond to a
+click, which is what their hover highlight offers. `particles` follows upstream's
+interactive controls, and travels upstream's recording figure until the pointer
+has moved over the canvas.

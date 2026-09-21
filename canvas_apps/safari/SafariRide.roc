@@ -5,8 +5,8 @@
 # program cannot -- the ride between frames, a history for stepping back --
 # and says what a frame is in the terms a painter needs: the draw commands
 # after blit expansion, the camera roll, the two sky colours and the sun.
-# SafariApp boxes the model for the wasm page and packs the commands into the
-# blitter's words; movies/safari paints them on roc-ray.
+# SafariApp turns it into a canvas app: the keys, the pause, and the frame
+# leaned by the roll.
 import World
 import Safari
 import Blit

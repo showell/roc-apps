@@ -7,7 +7,7 @@
 # own frame, cuts what is behind it against the near plane, and projects the
 # rest.
 #
-# **THE OBVIOUS THING TO PROMOTE TO `movie/`** the day a second movie places
+# **THE OBVIOUS THING TO PROMOTE TO `lib/`** the day a second app places
 # anything in metres. Nothing here knows what a house or a fence is.
 import lib.Shapes
 import lib.Brush

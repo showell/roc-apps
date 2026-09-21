@@ -19,7 +19,7 @@
 //
 // The same hole one input along: Pixel Workshop is driven entirely by dragging,
 // so without DRAG this checks a canvas nobody has painted on.
-//   FRAMES=1500 web/page_check.mjs halloween     the whole of a long movie
+//   FRAMES=1500 web/page_check.mjs trick_or_treat   the whole of a long movie
 //
 // Thirty frames is half a second, which is enough to say the page runs. A game
 // that waits on a key needs a key: without KEYS this checks the attract screen.
