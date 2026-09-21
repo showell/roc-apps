@@ -13,7 +13,7 @@ on:
 
 jobs:
   build:
-    # canvas_apps/<name>_native.roc names roc-ray as ../../roc-ray in its own
+    # canvas_apps/<name>/main.roc names roc-ray as ../../../roc-ray in its own
     # source, so the two checkouts are siblings.
     strategy:
       fail-fast: false

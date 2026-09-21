@@ -25,39 +25,42 @@ examples, by Luke Boswell, taken with only small changes to fit this scheme.
 
 | | |
 |---|---|
-| `snake_web.roc` | the app a browser runs — sits on `web/platform/`, uses `lib.WasmApp` |
-| `snake_native.roc` | the app roc-ray runs — uses `native/CanvasAppRunner` |
-| `snake/` | the program itself, and everything that is only about it, its `page.html` included. It cannot tell which runner is running it |
+| `snake/` | everything about one app: its two app roots, its `page.html`, and its rules and drawing, which cannot tell which runner is running them |
+| `snake/main.roc` | the app on roc-ray, reaching the runner as `native.CanvasAppRunner` |
+| `snake/web.roc` | the app as a page, on `web/platform/`, through `lib.WasmApp` |
 | `lib/` | a package every app shares: `CanvasApp` `WasmApp` `Shapes` `Brush` `Input` `Keys` `Mouse` `Math` `Color` `Camera` `Font` `Random` `Trig` `DeviceMath` `BrushGlsl` `View` |
 | `web/` | the page's end: the wasm platform and host, `build.zig` and `options.zig` (the host object, rebuilt by every page build), `canvas_app_runner.js`, `shapewire.js`, `page_check.mjs`, `camera_check.mjs` |
-| `native/` | roc-ray's end: `CanvasAppRunner.roc` |
+| `native/` | roc-ray's end, as a package: `CanvasAppRunner.roc` |
 
 An app's own directory holds a `<Name>App.roc` with the `CanvasApp` value in
 it, a `page.html`, and whatever rules and drawing it needs.
 
-**The two app files sit at the top rather than beside the app.** An app file is
-where Roc's package root is, and a relative import may not climb above it.
-`lib/` is reachable from anywhere because it is a package, and a package
-reference is not a relative import. `native/CanvasAppRunner.roc` cannot be a
-package, because a package cannot see a platform: it imports roc-ray's own
-modules, and as a package module every roc-ray type comes back as an
-unresolved type variable. So both app files live where everything they reach is
-below them, and the file name says which is which.
+**The app root is `main.roc`**, as in roc-ray's own examples, so tooling that
+walks up the tree looking for it finds the native app. `web.roc` beside it is
+the page's root. Both import the app's own modules as siblings, and reach
+everything else as a package: `lib/` for the vocabulary, and `native/` for the
+runner. `native/` is a package that declares roc-ray in its own header,
+because it imports roc-ray's modules and a package may only see a platform it
+names; `lib/` declares none, because both platforms use it.
 
-**roc-ray is named in the source, not by a script.** `<name>_native.roc` says
-`../../roc-ray/platform/main.roc`, so roc-ray has to be a sibling of
-`roc-apps` on disk; nothing stages the app or rewrites that line on its way
-into a build. `native.sh` checks it and says so when it is not there.
+**roc-ray is named in the source, not by a script.** `<name>/main.roc` and
+`native/main.roc` both say `../../../roc-ray/platform/main.roc`, so roc-ray has
+to be a sibling of `roc-apps` on disk; nothing stages the app or rewrites that
+line on its way into a build. `native.sh` checks it and says so when it is not
+there.
 
 ## Adding an app
 
-Four files, and `build.sh` exits 2 if either the app file or the page is
+A directory of four files, and `build.sh` exits 2 if `web.roc` or the page is
 missing:
 
-    <name>_web.roc              5 lines: WasmApp.program(<Name>App.canvas_app)
-    <name>_native.roc           5 lines: CanvasAppRunner.program(<Name>App.canvas_app)
+    <name>/main.roc             CanvasAppRunner.program(<Name>App.canvas_app)
+    <name>/web.roc              WasmApp.program(<Name>App.canvas_app)
     <name>/<Name>App.roc        the CanvasApp value
     <name>/page.html            loads three scripts, and sets window.SHOW first
+
+Copy an existing app's `main.roc` and `web.roc`; they differ from each other
+only in their platform, the runner they hand the value to, and one comment.
 
 The page's own part is one object, before the script tags:
 
@@ -107,8 +110,8 @@ An app imports no platform, so the same value goes to either runner. Each app
 names its value out loud:
 
 ```roc
-program = WasmApp.program(SnakeApp.canvas_app)          # snake_web.roc
-program = CanvasAppRunner.program(SnakeApp.canvas_app)  # snake_native.roc
+program = CanvasAppRunner.program(SnakeApp.canvas_app)  # snake/main.roc
+program = WasmApp.program(SnakeApp.canvas_app)          # snake/web.roc
 ```
 
 ## What a frame is
@@ -256,7 +259,7 @@ four points.
 
 An app's `expect`s are the third check, and the compiler runs them:
 
-    roc test canvas_apps/snake_web.roc
+    cd canvas_apps/snake && roc test web.roc
 
 ## Where things are
 

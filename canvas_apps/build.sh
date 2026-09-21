@@ -1,5 +1,5 @@
 #!/bin/bash
-# **A GAME'S PAGE.** Builds <game>_web.roc into the dev channel, beside the
+# **AN APP'S PAGE.** Builds <app>/web.roc into the dev channel, beside the
 # canvas_apps's game runner and the game's page.
 #
 #   canvas_apps/build.sh snake
@@ -15,7 +15,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROC="${ROC:-$HOME/build/roc-nightly/roc_nightly-linux_x86_64-2026-09-07-14d9829/roc}"
 ZIG="${ZIG:-$HOME/zig-0.16.0/zig}"
 name="${1:?usage: canvas_apps/build.sh <app>}"
-app="$HERE/${name}_web.roc"
+app="$HERE/$name/web.roc"
 [ -f "$app" ] || { echo "no app at $app"; exit 2; }
 [ -f "$HERE/$name/page.html" ] || { echo "no page at $HERE/$name/page.html"; exit 2; }
 
@@ -29,7 +29,7 @@ mkdir -p "$(dirname "$LOG")"
 rm -f "$OUT/$name.wasm"
 # **ROC EXITS NON-ZERO FOR A WARNING**, so the verdict is an error mark or a
 # missing module, not the exit code.
-(cd "$HERE" && "$ROC" build "${name}_web.roc" --target=wasm32 --opt=speed --output="$OUT/$name.wasm") > "$LOG" 2>&1 || true
+(cd "$HERE/$name" && "$ROC" build web.roc --target=wasm32 --opt=speed --output="$OUT/$name.wasm") > "$LOG" 2>&1 || true
 if grep -q "✗" "$LOG" || [ ! -s "$OUT/$name.wasm" ]; then cat "$LOG"; echo "build failed"; exit 1; fi
 
 # **THE FRAME READER IS GENERATED**, from the platform's own type table, by

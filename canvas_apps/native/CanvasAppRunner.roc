@@ -1,28 +1,26 @@
-# CanvasAppRunner -- the whole of running a game on roc-ray, for any game.
+# CanvasAppRunner -- the whole of running a canvas app on roc-ray, for any app.
 #
-# canvas_apps/<name>_native.roc names a game and hands it here. What is in this file
-# is what web/canvas_app_runner.js does on a page: the window, the clock, the keyboard,
-# and the painting. Neither knows what game it is running.
+# An app's main.roc names its CanvasApp value and hands it here. What is in this
+# file is what web/canvas_app_runner.js does on a page: the window, the clock,
+# the keyboard, and the painting. Neither knows which app it is running.
 #
 # **THE KEYBOARD IS THE POINT OF THE SEAM.** roc-ray hands the host's own
 # `Devices.Snapshot`; this converts it into an `Input.Snapshot`, which is the
-# same thing a browser's event loop builds out of keydown and keyup. So a
-# game's `read_controls` -- the one function that touches the keyboard -- is
+# same thing a browser's event loop builds out of keydown and keyup. So an
+# app's `read_controls` -- the one function that touches the keyboard -- is
 # written once and run by both.
 #
-# The painting is the canvas apps' own: roc-ray fills the polygons, triangles, discs and
-# rectangles itself, and a shape with a gradient goes through one fragment
-# shader that does Brush.shade's arithmetic on the scene position (BrushGlsl).
-# It is anti-aliased by supersampling, since roc-ray offers no multisampling.
+# The painting is the canvas apps' own: roc-ray fills the polygons, triangles,
+# discs and rectangles itself, and a shape with a gradient goes through one
+# fragment shader that does Brush.shade's arithmetic on the scene position
+# (BrushGlsl). It is anti-aliased by supersampling, since roc-ray offers no
+# multisampling.
 #
-# **THIS IS AN APP MODULE, NOT PART OF A PACKAGE.** It imports rr.App and
-# rr.Draw, and a package cannot see a platform -- every roc-ray type came back
-# as an unresolved type variable when this was tried as one. That is why the
-# app files sit at the top of canvas_apps/ rather than beside their game.
+# It is a module of the `native` package, which declares roc-ray in its own
+# header (native/main.roc); that declaration is what lets it import rr.App.
 #
-# Sound is not wired up yet. A game reports which tones a step set off and this
-# ignores them for now, exactly as the page lights a widget instead of playing
-# them.
+# Sound is not played here: an app reports which tones a step set off and this
+# ignores them, where the page plays them.
 import rr.App
 import rr.Assets
 import rr.Camera

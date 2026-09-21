@@ -1,7 +1,6 @@
-# The canvas_apps's vocabulary, as a package.
+# The vocabulary every canvas app shares, as a package.
 #
-# A package rather than a directory of loose modules because a game's two app
-# files live in the game's own directory, and a relative import may not climb
-# above an app -- a package reference may. So `snake_web.roc` says
-# `lib: "lib/main.roc"` and every module of the game says `import lib.Shapes`.
+# An app's two roots, main.roc and web.roc, sit in the app's own directory and
+# reach this as `lib: "../lib/main.roc"`; every module of the app then says
+# `import lib.Shapes`. It declares no platform, because both platforms use it.
 package [CanvasApp, WasmApp, Camera, Color, Input, View, Keys, Mouse, Math, Random, Shapes, Brush, Font, Trig, DeviceMath, BrushGlsl] {}
