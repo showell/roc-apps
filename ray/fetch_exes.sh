@@ -1,8 +1,8 @@
 #!/bin/bash
 # **RUN THIS ON THE WINDOWS BOX (WSL), NOT ON THE BUILD BOX.** It pulls the
 # executables the Windows workflow built -- and that the build box downloaded
-# from the run -- into ~/roc-ray, and makes them executable. Four movies and
-# six canvas apps.
+# from the run -- into ~/roc-ray, and makes them executable: the eight canvas
+# apps.
 #
 #   scp steve@143.244.172.148:showell_repos/roc-apps/ray/fetch_exes.sh ~/
 #   chmod u+x ~/fetch_exes.sh && ~/fetch_exes.sh
@@ -21,17 +21,12 @@ scp "$BOX:$SRC/*/*.exe" "$DEST/"
 chmod u+x "$DEST"/*.exe
 ls -l "$DEST"/*.exe
 echo
-echo "run one, from $DEST:"
-echo "  the canvas apps            ESC quits, F shows the frame rate"
-echo "    ./snake.exe             arrows turn, SPACE starts again"
-echo "    ./pong.exe              W and S, or hold the left button to aim"
-echo "    ./breakout.exe          left and right, or the pointer; SPACE serves"
-echo "    ./camera.exe            WASD move, wheel zooms, Q/E turn, R levels"
-echo "    ./workshop.exe          drag to paint, 1-4 or click a swatch, C resets"
-echo "    ./trick_or_treat.exe    SPACE pauses, left/right scrub, ENTER skips a second, R restarts"
-echo
-echo "  the movies"
-echo "    ./halloween.exe         a child walks up to a house  (SPACE pause, up/down step, J a second, P screenshot)"
-echo "    ./safari.exe            the drive"
-echo "    ./particles.exe         the fountain"
-echo "    ./capture_plot.exe      the plot drawing itself"
+echo "run one, from $DEST.  ESC quits, F shows the frame rate."
+echo "  ./safari.exe            the drive: SPACE pauses, left/right step, ENTER next intersection, R restarts"
+echo "  ./snake.exe             arrows turn, SPACE starts again"
+echo "  ./pong.exe              W and S, or hold the left button to aim"
+echo "  ./breakout.exe          left and right, or the pointer; SPACE serves"
+echo "  ./camera.exe            WASD move, wheel zooms, Q/E turn, R levels"
+echo "  ./workshop.exe          drag to paint, 1-4 or click a swatch, C resets"
+echo "  ./particles.exe         the pointer steers the fountain, SPACE widens it"
+echo "  ./trick_or_treat.exe    SPACE pauses, left/right scrub, ENTER skips a second, R restarts"

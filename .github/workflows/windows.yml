@@ -1,5 +1,4 @@
-# Build the movies and the canvas apps as Windows executables, and upload them
-# as one artifact.
+# Build the canvas apps as Windows executables and upload them as one artifact.
 #
 # This runs on a hosted Windows runner because Roc's x64win link is MSVC-ABI and
 # looks for an installed Windows SDK, which a Linux box cannot provide. The
@@ -9,13 +8,12 @@
 #   gh workflow run windows.yml
 #   gh run download <run-id> -n windows-exe -D ~/build/roc-apps/ray/windows
 #
-# Every movie under movies/ and every app under canvas_apps/ is built.
-# ray/fetch_exes.sh is what pulls them from the build box to a Windows machine.
+# Every app under canvas_apps/ is built. ray/fetch_exes.sh is what pulls them
+# from the build box to a Windows machine.
 #
 # **THE TWO CHECKOUTS ARE SIBLINGS**, because canvas_apps/<name>_native.roc
 # names roc-ray as `../../roc-ray` in its own source rather than through a
-# variable. Nothing here stages or rewrites that path, so the layout on disk
-# has to be the one the source says.
+# variable, and nothing stages or rewrites that path.
 name: Windows executables
 
 on:
@@ -58,23 +56,6 @@ jobs:
         working-directory: roc-ray
         run: zig build -Doptimize=ReleaseFast
 
-      # **EVERY MOVIE, NOT JUST SAFARI.** They are all the same shape now --
-      # movies/<name>/main.roc, the shared vocabulary, and one player -- so
-      # the list here is the list of directories.
-      - name: Build the movies
-        working-directory: roc-apps
-        env:
-          ROC: roc
-          ROC_RAY: ../roc-ray
-          OUT: out
-          TARGET: x64win
-          OPT: speed
-        run: |
-          OPT=dev ray/build.sh hello
-          for movie in safari capture_plot particles halloween; do
-            ray/build.sh "$movie"
-          done
-
       # The canvas apps compile where they are written, so `native.sh` takes no
       # roc-ray variable: the sibling checkout above is what makes it resolve.
       - name: Build the canvas apps
@@ -85,21 +66,16 @@ jobs:
           TARGET: x64win
           OPT: speed
         run: |
-          for app in snake pong breakout camera workshop trick_or_treat; do
+          for app in snake pong breakout camera workshop particles safari trick_or_treat; do
             canvas_apps/native.sh "$app"
           done
 
       # No window: the headless host draws nothing, so this proves each
-      # executable links, loads and runs its cycles (each movie paints every
-      # one).
+      # executable links, loads and runs its cycles.
       - name: Run them headless
         working-directory: roc-apps
         run: |
-          out/hello/hello.exe --host-headless --host-headless-frames=5
-          for movie in safari capture_plot particles halloween; do
-            "out/$movie/$movie.exe" --host-headless --host-headless-frames=3
-          done
-          for app in snake pong breakout camera workshop trick_or_treat; do
+          for app in snake pong breakout camera workshop particles safari trick_or_treat; do
             "out/$app/$app.exe" --host-headless --host-headless-frames=3
           done
 
@@ -108,53 +84,4 @@ jobs:
         with:
           name: windows-exe
           path: roc-apps/out/*/*.exe
-          if-no-files-found: error
-
-      # The runner exposes only Microsoft's OpenGL 1.1, which raylib cannot use;
-      # Mesa's llvmpipe opengl32.dll beside the executable gives it GL 3.3 on the
-      # CPU, as roc-ray's own CI does. Pinned so what CI draws cannot move.
-      - name: Install Mesa software OpenGL
-        env:
-          MESA_VERSION: 24.3.4
-        run: |
-          curl -fsSL -o mesa.7z \
-            "https://github.com/pal1000/mesa-dist-win/releases/download/${MESA_VERSION}/mesa3d-${MESA_VERSION}-release-msvc.7z"
-          for movie in safari halloween; do
-            7z e -y mesa.7z -o"roc-apps/out/$movie" x64/opengl32.dll x64/libgallium_wgl.dll x64/libglapi.dll
-          done
-          rm mesa.7z
-
-      # Safari in a real hidden window, the keys scripted by cycle: at four
-      # places on the route it pauses and saves the frame three ways, the
-      # One painter now, so the script is J to move the ride on and P to
-      # shoot: four points along the route rather than the same point in
-      # three painters.
-      - name: Screenshots along the ride
-        working-directory: roc-apps/out/safari
-        env:
-          GALLIUM_DRIVER: llvmpipe
-        run: |
-          ./safari.exe --host-frames=190 --host-hidden --host-caps-allow-all \
-            --host-keys=5:J,8:J,11:J,14:P,40:J,43:J,46:P,65:SPACE,105:SPACE,108:P,130:J,133:J,136:J,139:J,142:J,145:P
-          ls -l shots
-
-      # Halloween's own four: the walk, the door open, the witch in it, and
-      # the way back. J is a second of its clock, so the jumps are how one
-      # gets to the late ones without waiting for them.
-      - name: Screenshots up the path
-        working-directory: roc-apps/out/halloween
-        env:
-          GALLIUM_DRIVER: llvmpipe
-        run: |
-          ./halloween.exe --host-frames=150 --host-hidden --host-caps-allow-all \
-            --host-keys=5:P,10:J,13:J,16:J,19:J,22:J,25:J,28:J,31:P,34:J,37:J,40:J,43:J,46:P,60:J,63:J,66:J,69:J,72:J,75:P
-          ls -l shots
-
-      - name: Upload the screenshots
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: safari-shots
-          path: |
-            roc-apps/out/safari/shots/*.png
-            roc-apps/out/halloween/shots/*.png
           if-no-files-found: error
