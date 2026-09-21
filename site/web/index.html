@@ -33,67 +33,60 @@ WebAssembly, on platforms written for them. Some of them also run as native prog
 A few began as Codex, the language of <a href="https://github.com/damiant3/Cobblestone">Cobblestone</a>,
 turned into Roc by rocemit.</p>
 
-<h2>Finished</h2>
+<h2>Canvas apps</h2>
+<p class="lede">Small interactive programs, each one a Roc value: a size, a rate, a way to step it
+with the keyboard and the pointer, and a frame of shapes to draw. Most of them are
+<a href="https://github.com/lukewilliamboswell/roc-ray">roc-ray</a>'s own examples, by Luke Boswell,
+taken with only small changes to fit this scheme. The same files run here and as native programs
+through roc-ray — <a href="https://github.com/showell/roc-apps/tree/master/canvas_apps">the README</a>
+says how to build those.</p>
 <div class="cards">
   <section class="card" data-app="safari">
     <h3><a href="safari/">Safari</a></h3>
-    <p>A drive through the country, as a screensaver: its Codex chapters emitted as Roc, with a hand-written Roc app around them.</p>
+    <p>A drive through the country, as a screensaver: the rider leans into the turns and the animals cross when they like. Space pauses, the arrows step through the ride, Enter jumps to the next intersection.</p>
   </section>
-  <section class="card" data-app="basic">
-    <h3><a href="basic/">BASIC</a></h3>
-    <p>A BASIC interpreter written in Roc, for ECMA-55 Minimal BASIC and the 1978 Creative Computing games.</p>
-    <div class="links"><a href="basic/basic.html">The REPL</a><a href="basic/">How it works</a></div>
-  </section>
-</div>
-
-<h2>Canvas apps</h2>
-<p class="lede">Small interactive programs, each one a Roc value: a size, a rate, a way to step it
-with the keyboard and the pointer, and a frame of shapes to draw. The same files run here and as
-native programs through <a href="https://github.com/lukewilliamboswell/roc-ray">roc-ray</a> —
-<a href="https://github.com/showell/roc-apps/tree/master/canvas_apps">the README</a> says how to
-build those.</p>
-<div class="cards">
   <section class="card" data-app="snake">
     <h3><a href="snake/">Snake</a></h3>
-    <p>The arrows turn, the food glows, and the wall ends it. Ported from roc-ray's own example.</p>
+    <p>The arrows turn, the food glows, and the wall ends it.</p>
+    <div class="links"><a href="https://github.com/lukewilliamboswell/roc-ray/tree/e100c9548b903ee5c7363f5997251980c4355c7b/examples/snake">Luke's original</a></div>
   </section>
   <section class="card" data-app="pong">
     <h3><a href="pong/">Pong</a></h3>
     <p>W and S move the paddle, or hold the left button and point where you want it.</p>
+    <div class="links"><a href="https://github.com/lukewilliamboswell/roc-ray/tree/e100c9548b903ee5c7363f5997251980c4355c7b/examples/pong">Luke's original</a></div>
   </section>
   <section class="card" data-app="breakout">
     <h3><a href="breakout/">Breakout</a></h3>
     <p>Space serves; the arrows or the pointer steer. Each brick is worth what its colour says.</p>
+    <div class="links"><a href="https://github.com/lukewilliamboswell/roc-ray/tree/e100c9548b903ee5c7363f5997251980c4355c7b/examples/breakout">Luke's original</a></div>
+  </section>
+  <section class="card" data-app="particles">
+    <h3><a href="particles/">Particles</a></h3>
+    <p>A fountain of four thousand sprites that follows the pointer. Hold Space to widen the spray.</p>
+    <div class="links"><a href="https://github.com/lukewilliamboswell/roc-ray/tree/e100c9548b903ee5c7363f5997251980c4355c7b/examples/particles">Luke's original</a></div>
   </section>
   <section class="card" data-app="camera">
     <h3><a href="camera/">Camera world</a></h3>
-    <p>A world larger than the window. WASD moves, the wheel zooms, Q and E turn it. The pointer is
-    marked twice, once through the camera and once on the screen.</p>
+    <p>A world larger than the window. WASD moves, the wheel zooms, Q and E turn it. The pointer is marked twice, once through the camera and once on the screen.</p>
+    <div class="links"><a href="https://github.com/lukewilliamboswell/roc-ray/tree/e100c9548b903ee5c7363f5997251980c4355c7b/examples/camera">Luke's original</a></div>
   </section>
   <section class="card" data-app="workshop">
     <h3><a href="workshop/">Pixel workshop</a></h3>
     <p>A sixteen-by-sixteen canvas you drag on. Four colours, a note for each, and C puts the design back.</p>
+    <div class="links"><a href="https://github.com/lukewilliamboswell/roc-ray/tree/e100c9548b903ee5c7363f5997251980c4355c7b/examples/generated_assets">Luke's original</a></div>
   </section>
   <section class="card" data-app="trick_or_treat">
     <h3><a href="trick_or_treat/">Trick or Treat</a></h3>
-    <p>A child walks up to a house past six dancing skeletons, the door opens, and they think better of
-    it. Space pauses, the arrows scrub, Enter skips a second.</p>
+    <p>A child walks up to a house past six dancing skeletons, the door opens, and they think better of it. Space pauses, the arrows scrub, Enter skips a second.</p>
   </section>
 </div>
 
-<h2>Other movies</h2>
-<p class="lede">Safari turned out to be one instance of something: a movie is a value -- a size, a
-way to step, and a frame of shapes -- and one player draws any of them, in this tab or on a
-desktop. Trick or Treat, above, is the same idea a step further on: a movie is a canvas app that
-does not read its keyboard, so the scrubbing is in the movie rather than in a player.</p>
+<h2>Interpreters</h2>
 <div class="cards">
-  <section class="card" data-app="particles">
-    <h3><a href="particles/">Particles</a></h3>
-    <p>A fountain of a few thousand particles, after roc-ray's own example, as a movie.</p>
-  </section>
-  <section class="card" data-app="capture_plot">
-    <h3><a href="capture_plot/">Capture plot</a></h3>
-    <p>A plot drawing itself, after roc-ray's example: gridlines, text, and a progress bar, all of them polygons.</p>
+  <section class="card" data-app="basic">
+    <h3><a href="basic/">BASIC</a></h3>
+    <p>A BASIC interpreter written in Roc, for ECMA-55 Minimal BASIC and the 1978 Creative Computing games.</p>
+    <div class="links"><a href="basic/basic.html">The REPL</a><a href="basic/">How it works</a></div>
   </section>
 </div>
 
