@@ -14,19 +14,21 @@ import Setup
 import Type
 
 FastTrack :: [].{
-	Seat : [Human, Computer(Agent.Weights), Naive]
+	## A computer seat carries its weights and the tables they make, built
+	## once rather than every click.
+	Seat : [Human, Computer(Agent.Knowledge), Naive]
 
 	Model : { game : Type.Game, history : History.History(Type.Game), seats : List(FastTrack.Seat) }
 
 	## Two bits a seat, the first seat lowest: 0 a person, 1 the computer, 2
 	## the naive player (Agent.next_msg).
-	seats_of : U32 -> List(FastTrack.Seat)
-	seats_of = |bits|
+	seats_of : U32, List(Str) -> List(FastTrack.Seat)
+	seats_of = |bits, zone_colors|
 		List.map(
 			[0, 1, 2, 3],
 			|i|
 				match U32.bitwise_and(U32.shr_zf_wrap(bits, 2 * i), 3) {
-					1 => Computer(Agent.default_weights)
+					1 => Computer(Agent.knowledge(Agent.default_weights, zone_colors))
 					2 => Naive
 					_ => Human
 				},
@@ -36,7 +38,7 @@ FastTrack :: [].{
 	seat = |model| List.get(model.seats, model.game.active_player_idx) ?? Human
 
 	## One weight of one computer seat: `factor` 0 is danger, 1 out of the
-	## pen, 2 home (Agent.Weights). Anything else, or a seat that is not the
+	## pen, 2 home, 3 the cost of a fast-track hop (Agent.Weights). Anything else, or a seat that is not the
 	## computer's, is left alone.
 	tune : FastTrack.Model, U32, U32, U32 -> FastTrack.Model
 	tune = |model, seat_idx, factor, value| {
@@ -45,16 +47,22 @@ FastTrack :: [].{
 			model.seats,
 			|s, i|
 				match s {
-					Computer(w) if i == U32.to_u64(seat_idx) =>
-						if factor == 0 {
-							Computer({ ..w, danger: v })
-						} else if factor == 1 {
-							Computer({ ..w, out_of_pen: v })
-						} else if factor == 2 {
-							Computer({ ..w, home: v })
-						} else {
-							s
-						}
+					Computer(k) if i == U32.to_u64(seat_idx) => {
+						w = k.weights
+						weights =
+							if factor == 0 {
+								{ ..w, danger: v }
+							} else if factor == 1 {
+								{ ..w, out_of_pen: v }
+							} else if factor == 2 {
+								{ ..w, home: v }
+							} else if factor == 3 {
+								{ ..w, hop: v }
+							} else {
+								w
+							}
+						Computer(Agent.knowledge(weights, model.game.zone_colors))
+					}
 					_ => s
 				},
 		)
@@ -72,7 +80,7 @@ FastTrack :: [].{
 	init : U64, U32, U32 -> FastTrack.Model
 	init = |millis, setup, seat_bits| {
 		game = Game.begin_game(millis, List.get(setups, U32.to_u64(setup)) ?? Normal)
-		{ game, history: History.reset(game), seats: seats_of(seat_bits) }
+		{ game, history: History.reset(game), seats: seats_of(seat_bits, game.zone_colors) }
 	}
 
 	## A person's click only in a person's seat, the tick only in the
@@ -84,7 +92,7 @@ FastTrack :: [].{
 			if code == Codes.agent_step {
 				if agent_to_move(model) {
 					kind = match seat(model) {
-						Computer(w) => Computer(w)
+						Computer(k) => Computer(k)
 						_ => Naive
 					}
 					Try.map_err(Agent.next_msg(kind, model.game), |_| Ignored)
