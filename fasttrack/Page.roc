@@ -81,7 +81,7 @@ Page :: [].{
 		side_count = List.len(zone_colors)
 		console =
 			if flags.winner != "" {
-				div([bold("color: ${flags.winner}; font-size: 150%", [text("${flags.winner} wins!")])])
+				winner_view(flags.winner)
 			} else if flags.interactive {
 				player_view(active_player, active_color, undo_button)
 			} else {
@@ -105,6 +105,26 @@ Page :: [].{
 		}
 	}
 
+	## "red wins!", or for a partnership "red and green win!", in the first
+	## color named.
+	winner_view : Str -> Page.Tree
+	winner_view = |winner| {
+		(color, verb) = match Str.split_first(winner, " and ") {
+			Ok(parts) => (parts.before, "win")
+			Err(_) => (winner, "wins")
+		}
+		div([bold("color: ${color}; font-size: 150%", [text("${winner} ${verb}!")])])
+	}
+
+	## Who plays with whom, in a partnership.
+	team_line : Type.Player -> List(Page.Tree)
+	team_line = |player|
+		match player.team {
+			Solo => []
+			Partner(partner) => [div([text("${player.color} plays with ${partner}, and may move either's pieces")])]
+			PartnerOnceHome(partner) => [div([text("${player.color} plays with ${partner}, and may move ${partner}'s pieces once its own are home")])]
+		}
+
 	## The computer's hand, face up, and nothing to press.
 	computer_view : Type.Player, Str -> Page.Tree
 	computer_view = |player, color|
@@ -112,7 +132,8 @@ Page :: [].{
 			[
 				span(List.map(player.hand, |card| el("button", card_css(color, color), 0, Bool.True, [text(card)]))),
 				div([text("the computer is playing ${color}")]),
-			],
+			]
+			.concat(team_line(player)),
 		)
 
 	board_view : Type.Game, List(Str), Type.Player, Bool -> List(Wire.Slot)
@@ -221,7 +242,7 @@ Page :: [].{
 			TurnDone => div([text("ok, now hit 'done' if you're happy")])
 			_ => div([])
 		}
-		div([hand, credits_view(player), console])
+		div(List.concat([hand, credits_view(player), console], team_line(player)))
 	}
 
 	need_start_instructions : Type.PlayType -> Str

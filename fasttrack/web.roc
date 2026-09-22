@@ -5,6 +5,7 @@ app [Model, program] {
 
 import FastTrack
 import RulesTests
+import TeamTests
 
 Model : FastTrack.Model
 

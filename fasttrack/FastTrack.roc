@@ -77,9 +77,12 @@ FastTrack :: [].{
 	setups : List(Setup.InitSetup)
 	setups = [Normal, ForcedToReverse, Discard, Cover, BullsEye, SevenSplit]
 
-	init : U64, U32, U32 -> FastTrack.Model
-	init = |millis, setup, seat_bits| {
-		game = Game.begin_game(millis, List.get(setups, U32.to_u64(setup)) ?? Normal)
+	## `teams`: 0 each for itself, 1 partners who may move each other's
+	## pieces at any time, 2 partners who may once their own are home.
+	init : U64, U32, U32, U32 -> FastTrack.Model
+	init = |millis, setup, seat_bits, teams| {
+		team_style = if teams == 1 { Anytime } else if teams == 2 { OnceHome } else { Solo }
+		game = Game.begin_game(millis, List.get(setups, U32.to_u64(setup)) ?? Normal, team_style)
 		{ game, history: History.reset(game), seats: seats_of(seat_bits, game.zone_colors) }
 	}
 
@@ -128,17 +131,26 @@ FastTrack :: [].{
 	}
 
 	program : {
-		init : U64, U32, U32 -> Box(FastTrack.Model),
+		init : U64, U32, U32, U32 -> Box(FastTrack.Model),
 		update : Box(FastTrack.Model), U32 -> Box(FastTrack.Model),
 		tune : Box(FastTrack.Model), U32, U32, U32 -> Box(FastTrack.Model),
 		view : Box(FastTrack.Model) -> Box(Wire.View),
 		release : Box(Wire.View) -> {},
 	}
 	program = {
-		init: |millis, setup, seat_bits| Box.box(init(millis, setup, seat_bits)),
+		init: |millis, setup, seat_bits, teams| Box.box(init(millis, setup, seat_bits, teams)),
 		update: |b, code| Box.box(update(Box.unbox(b), code)),
 		tune: |b, seat_idx, factor, value| Box.box(tune(Box.unbox(b), seat_idx, factor, value)),
 		view: |b| Box.box(view(Box.unbox(b))),
 		release: |_view| {},
+	}
+}
+
+# Tuning reaches the seat's tables: a dear hop makes red's own FT farther.
+expect {
+	model = FastTrack.tune(FastTrack.init(0, 0, 1, 0), 0, 3, 14)
+	match List.first(model.seats) {
+		Ok(Computer(k)) => k.weights.hop == 14 and List.get(List.first(k.steps) ?? [], 16) == Ok(32)
+		_ => Bool.False
 	}
 }

@@ -67,7 +67,7 @@ RulesTests :: [].{
 	}
 
 	for_cards : List(Str), Type.PieceMap -> List(Type.Move)
-	for_cards = |cards, piece_map| LegalMove.get_moves_for_cards(Assoc.set_from_list(cards), piece_map, zone_colors, "blue")
+	for_cards = |cards, piece_map| LegalMove.get_moves_for_cards(Assoc.set_from_list(cards), piece_map, zone_colors, ["blue"])
 
 	end_locs_of : List(Type.Move) -> List(Type.PieceLocation)
 	end_locs_of = |moves| List.map(moves, |m| m.end)
@@ -127,7 +127,7 @@ expect {
 # get locs 2 away
 expect {
 	b = RulesTests.board([("red", "L0", "blue"), ("green", "R4", "blue"), ("blue", "L3", "blue"), ("green", "L3", "green")])
-	moves = LegalMove.get_moves_for_move_type(WithCard("2"), b, RulesTests.zone_colors, "blue")
+	moves = LegalMove.get_moves_for_move_type(WithCard("2"), b, RulesTests.zone_colors, ["blue"])
 	RulesTests.moves_are(moves, ["2 red.L0 red.L2", "2 green.R4 green.R2", "2 blue.L3 blue.FT"])
 }
 
@@ -135,7 +135,7 @@ expect {
 expect {
 	exclude = RulesTests.at("green", "R4")
 	b = RulesTests.board([("green", "R4", "blue"), ("blue", "B1", "blue"), ("green", "L2", "blue"), ("red", "L2", "red")])
-	moves = LegalMove.get_moves_for_move_type(FinishSplit(3, exclude), b, RulesTests.zone_colors, "blue")
+	moves = LegalMove.get_moves_for_move_type(FinishSplit(3, exclude), b, RulesTests.zone_colors, ["blue"])
 	RulesTests.moves_are(moves, ["FS3 blue.B1 blue.B4", "FS3 green.L2 green.FT"])
 }
 
@@ -180,21 +180,21 @@ expect RulesTests.locs_are(LegalMove.end_locations(RulesTests.params([]), RulesT
 # seven full
 expect {
 	b = RulesTests.board([("blue", "L2", "blue")])
-	moves = LegalMove.get_moves_from_location(WithCard("7"), b, RulesTests.zone_colors, RulesTests.at("blue", "L2"))
+	moves = LegalMove.get_moves_from_location(WithCard("7"), b, RulesTests.zone_colors, RulesTests.at("blue", "L2"), ["blue"])
 	RulesTests.locs_are(RulesTests.end_locs_of(moves), ["green.R1"])
 }
 
 # seven split
 expect {
 	b = RulesTests.board([("blue", "R1", "blue"), ("blue", "B1", "blue")])
-	moves = LegalMove.get_moves_from_location(WithCard("7"), b, RulesTests.zone_colors, RulesTests.at("blue", "B1"))
+	moves = LegalMove.get_moves_from_location(WithCard("7"), b, RulesTests.zone_colors, RulesTests.at("blue", "B1"), ["blue"])
 	RulesTests.locs_are(RulesTests.end_locs_of(moves), ["blue.B3", "blue.B4"])
 }
 
 # can only move FT piece
 expect {
 	b = RulesTests.board([("green", "FT", "blue"), ("red", "L1", "blue")])
-	moves = LegalMove.get_moves_from_location(WithCard("8"), b, RulesTests.zone_colors, RulesTests.at("red", "L1"))
+	moves = LegalMove.get_moves_from_location(WithCard("8"), b, RulesTests.zone_colors, RulesTests.at("red", "L1"), ["blue"])
 	List.is_empty(moves)
 }
 
@@ -227,12 +227,12 @@ expect {
 }
 
 # testCanGoNSpaces
-expect LegalMove.get_can_go_n_spaces(RulesTests.board([("red", "L1", "blue")]), RulesTests.at("red", "L1"), RulesTests.zone_colors, 7)
-expect !LegalMove.get_can_go_n_spaces(RulesTests.board([("red", "L1", "blue"), ("green", "FT", "blue")]), RulesTests.at("red", "L1"), RulesTests.zone_colors, 1)
-expect !LegalMove.get_can_go_n_spaces(RulesTests.board([("red", "L1", "blue"), ("red", "L3", "blue")]), RulesTests.at("red", "L1"), RulesTests.zone_colors, 2)
-expect LegalMove.get_can_go_n_spaces(RulesTests.board([("blue", "DS", "blue")]), RulesTests.at("blue", "DS"), RulesTests.zone_colors, 4)
-expect LegalMove.get_can_go_n_spaces(RulesTests.board([("red", "L1", "blue"), ("blue", "R4", "blue")]), RulesTests.at("red", "L1"), RulesTests.zone_colors, 4)
-expect !LegalMove.get_can_go_n_spaces(RulesTests.board([("red", "L1", "blue"), ("blue", "R4", "blue")]), RulesTests.at("red", "L1"), RulesTests.zone_colors, 5)
+expect LegalMove.get_can_go_n_spaces(RulesTests.board([("red", "L1", "blue")]), RulesTests.at("red", "L1"), RulesTests.zone_colors, 7, ["blue"])
+expect !LegalMove.get_can_go_n_spaces(RulesTests.board([("red", "L1", "blue"), ("green", "FT", "blue")]), RulesTests.at("red", "L1"), RulesTests.zone_colors, 1, ["blue"])
+expect !LegalMove.get_can_go_n_spaces(RulesTests.board([("red", "L1", "blue"), ("red", "L3", "blue")]), RulesTests.at("red", "L1"), RulesTests.zone_colors, 2, ["blue"])
+expect LegalMove.get_can_go_n_spaces(RulesTests.board([("blue", "DS", "blue")]), RulesTests.at("blue", "DS"), RulesTests.zone_colors, 4, ["blue"])
+expect LegalMove.get_can_go_n_spaces(RulesTests.board([("red", "L1", "blue"), ("blue", "R4", "blue")]), RulesTests.at("red", "L1"), RulesTests.zone_colors, 4, ["blue"])
+expect !LegalMove.get_can_go_n_spaces(RulesTests.board([("red", "L1", "blue"), ("blue", "R4", "blue")]), RulesTests.at("red", "L1"), RulesTests.zone_colors, 5, ["blue"])
 
 # A guard on the guard: a wrong expectation must not pass.
 expect !RulesTests.moves_are(RulesTests.for_cards(["7"], RulesTests.board([("blue", "B1", "blue"), ("blue", "L0", "blue")])), ["7 blue.L0 green.R3"])

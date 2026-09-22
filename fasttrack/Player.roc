@@ -8,6 +8,7 @@ import Assoc
 import Config
 import ElmRandom
 import LegalMove
+import Piece
 import Setup
 import Type
 
@@ -40,27 +41,54 @@ Player :: [].{
 		}
 
 	## `hand` is empty unless a setup other than Normal deals one.
-	config_player : Setup.InitSetup, Str -> Type.Player
-	config_player = |init_setup, color| {
+	config_player : Setup.InitSetup, Str, Type.Team -> Type.Player
+	config_player = |init_setup, color, team| {
 		deck: Config.full_deck,
 		hand: Setup.starting_hand(init_setup, color),
 		get_out_credits: 0,
 		turn: TurnBegin,
 		color,
+		team,
 	}
 
-	config_players : Setup.InitSetup, List(Str) -> List(Type.Player)
-	config_players = |init_setup, zone_colors| List.map(zone_colors, |color| config_player(init_setup, color))
+	## In a partnership, partners sit opposite: red and green, blue and
+	## purple.
+	config_players : Setup.InitSetup, List(Str), Type.Teams -> List(Type.Player)
+	config_players = |init_setup, zone_colors, teams| {
+		n = List.len(zone_colors)
+		List.map_with_index(
+			zone_colors,
+			|color, i| {
+				partner = List.get(zone_colors, U64.rem_by(i + n // 2, n)) ?? color
+				team = match teams {
+					Solo => Solo
+					Anytime => Partner(partner)
+					OnceHome => PartnerOnceHome(partner)
+				}
+				config_player(init_setup, color, team)
+			},
+		)
+	}
 
 	get_player : List(Type.Player), U64 -> Type.Player
-	get_player = |players, idx| List.get(players, idx) ?? config_player(Normal, "bogus")
+	get_player = |players, idx| List.get(players, idx) ?? config_player(Normal, "bogus", Solo)
+
+	## The colors whose pieces this player may move: its own, and its
+	## partner's when its team's rules allow.
+	movers : Type.Player, Type.PieceMap -> List(Str)
+	movers = |player, piece_map|
+		match player.team {
+			Solo => [player.color]
+			Partner(partner) => [player.color, partner]
+			PartnerOnceHome(partner) => if Piece.all_home(piece_map, player.color) { [player.color, partner] } else { [player.color] }
+		}
 
 	get_active_player : Type.Game -> Type.Player
 	get_active_player = |game| get_player(game.players, game.active_player_idx)
 
 	get_moves_for_player : Type.Player, Type.PieceMap, List(Str) -> List(Type.Move)
 	get_moves_for_player = |player, piece_map, zone_colors|
-		LegalMove.get_moves_for_cards(Assoc.set_from_list(player.hand), piece_map, zone_colors, player.color)
+		LegalMove.get_moves_for_cards(Assoc.set_from_list(player.hand), piece_map, zone_colors, movers(player, piece_map))
 
 	turn_need_card : Type.PieceMap, List(Str), Type.Player -> Type.Player
 	turn_need_card = |piece_map, zone_colors, player| {
@@ -97,10 +125,10 @@ Player :: [].{
 		update_active_player(|player| turn_need_card(game.piece_map, game.zone_colors, player), game)
 
 	## The second half of a split seven: any OTHER piece, the rest of the way.
-	finish_seven_split : Type.PieceMap, List(Str), Str, I64, Type.PieceLocation -> Type.Turn
-	finish_seven_split = |piece_map, zone_colors, active_color, distance, end_loc| {
+	finish_seven_split : Type.PieceMap, List(Str), List(Str), I64, Type.PieceLocation -> Type.Turn
+	finish_seven_split = |piece_map, zone_colors, move_colors, distance, end_loc| {
 		move_count = 7 - distance
-		moves = LegalMove.get_moves_for_move_type(FinishSplit(move_count, end_loc), piece_map, zone_colors, active_color)
+		moves = LegalMove.get_moves_for_move_type(FinishSplit(move_count, end_loc), piece_map, zone_colors, move_colors)
 		TurnNeedStartLoc(
 			{
 				play_type: FinishSeven(move_count),
@@ -122,7 +150,7 @@ Player :: [].{
 	finish_move : Type.PieceMap, List(Str), Type.Move, Type.Player -> Type.Player
 	finish_move = |piece_map, zone_colors, move, player|
 		match move.kind {
-			StartSplit(distance) => { ..player, turn: finish_seven_split(piece_map, zone_colors, player.color, distance, move.end) }
+			StartSplit(distance) => { ..player, turn: finish_seven_split(piece_map, zone_colors, movers(player, piece_map), distance, move.end) }
 			_ => maybe_finish_turn(LegalMove.get_card_for_move_type(move.kind), piece_map, zone_colors, player)
 		}
 

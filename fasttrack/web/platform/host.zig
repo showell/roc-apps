@@ -20,7 +20,7 @@ const host_alloc = @import("host_alloc");
 
 const RocOps = builtins.host_abi.RocOps;
 
-extern fn roc_init(millis: u64, setup: u32, seats: u32) callconv(.c) ?[*]u8;
+extern fn roc_init(millis: u64, setup: u32, seats: u32, teams: u32) callconv(.c) ?[*]u8;
 extern fn roc_update(model: ?[*]u8, code: u32) callconv(.c) ?[*]u8;
 extern fn roc_tune(model: ?[*]u8, seat: u32, factor: u32, value: u32) callconv(.c) ?[*]u8;
 extern fn roc_view(model: ?[*]u8) callconv(.c) ?[*]u8;
@@ -99,9 +99,10 @@ var view_box: ?[*]u8 = null;
 
 /// A new game. `millis` seeds the deck, as Elm's `Time.now` did; `setup`
 /// picks Setup.InitSetup by its position in FastTrack.setups; `seats` says
-/// who plays each color, two bits a seat (FastTrack.seats_of).
-pub export fn start(millis: f64, setup: u32, seats: u32) void {
-    model = roc_init(@intFromFloat(millis), setup, seats);
+/// who plays each color, two bits a seat (FastTrack.seats_of); `teams`
+/// whether they play in partnerships, and which style (FastTrack.init).
+pub export fn start(millis: f64, setup: u32, seats: u32, teams: u32) void {
+    model = roc_init(@intFromFloat(millis), setup, seats, teams);
 }
 
 /// One click: the code the view gave the thing clicked.

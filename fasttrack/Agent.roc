@@ -135,26 +135,29 @@ Agent :: [].{
 		)
 		home = index_of(zone_colors, { zone: NormalColor(color), id: "B4" })
 		start = List.set(List.repeat(far, List.len(locs)), home, 0) ?? crash("Agent.distances: no home square")
+		# A pass says whether it changed anything. **NOT `while $next != $d`**:
+		# the wasm32 LLVM build (nightly 09-07) lets the pass write into the
+		# list `$d` still names, so the two compare equal after one pass and
+		# every square but B3 and B4 stays `far`. The dev build and native
+		# LLVM both get it right (findings/wasm-llvm-alias).
 		relax = |d|
 			List.fold(
 				edges,
-				d,
+				{ d, changed: Bool.False },
 				|acc, e| {
-					via = (List.get(acc, e.to) ?? far) + e.cost
-					if via < (List.get(acc, e.from) ?? far) {
-						List.set(acc, e.from, via) ?? crash("Agent.distances: edge out of range")
+					via = (List.get(acc.d, e.to) ?? far) + e.cost
+					if via < (List.get(acc.d, e.from) ?? far) {
+						{ d: List.set(acc.d, e.from, via) ?? crash("Agent.distances: edge out of range"), changed: Bool.True }
 					} else {
 						acc
 					}
 				},
 			)
-		var $d = start
-		var $next = relax(start)
-		while $next != $d {
-			$d = $next
-			$next = relax($d)
+		var $pass = relax(start)
+		while $pass.changed {
+			$pass = relax($pass.d)
 		}
-		$d
+		$pass.d
 	}
 
 	## Every square a piece of `color` on each square could land on with one
@@ -201,11 +204,11 @@ Agent :: [].{
 			},
 		)
 
-	## Whether any other player's piece could land on this one. A player with
-	## a piece on the fast track must move that one, so its others do not
-	## count.
-	in_danger : Agent.Knowledge, List(Agent.Placed), Agent.Placed -> Bool
-	in_danger = |k, pieces, piece|
+	## Whether an opponent's piece could land on this one. A player with a
+	## piece on the fast track must move that one, so its others do not
+	## count. A partner could, but would not.
+	in_danger : Agent.Knowledge, List(Agent.Placed), Agent.Placed, List(U64) -> Bool
+	in_danger = |k, pieces, piece, partner_list|
 		if Config.is_holding_pen_id(piece.loc.id) or Config.is_base_id(piece.loc.id) {
 			Bool.False
 		} else {
@@ -213,7 +216,8 @@ Agent :: [].{
 				pieces,
 				|other| {
 					forced = List.any(pieces, |p| p.owner == other.owner and p.loc.id == "FT")
-					if other.owner == piece.owner or (forced and other.loc.id != "FT") {
+					partner = List.get(partner_list, piece.owner) ?? piece.owner
+					if other.owner == piece.owner or other.owner == partner or (forced and other.loc.id != "FT") {
 						Bool.False
 					} else {
 						lands = List.get(List.get(k.reach, other.owner) ?? [], other.at) ?? []
@@ -223,11 +227,28 @@ Agent :: [].{
 			)
 		}
 
+	## Each player's partner, by place in the game's color order; a player
+	## alone is its own.
+	partners : Type.Game -> List(U64)
+	partners = |game|
+		List.map_with_index(
+			game.players,
+			|player, i|
+				match player.team {
+					Solo => i
+					# One arm each: `Partner(p) | PartnerOnceHome(p)` here makes
+					# `roc check` fail with OutOfMemory (nightly 09-07).
+					Partner(p) => List.find_first_index(game.zone_colors, |c| c == p) ?? i
+					PartnerOnceHome(p) => List.find_first_index(game.zone_colors, |c| c == p) ?? i
+				},
+		)
+
 	## Each player's value, in the game's color order.
 	values : Agent.Knowledge, Type.Game -> List(I64)
 	values = |k, game| {
 		w = k.weights
 		pieces = placed(game)
+		partner_list = partners(game)
 		List.map_with_index(
 			game.zone_colors,
 			|_, owner|
@@ -238,25 +259,32 @@ Agent :: [].{
 						steps = List.get(List.get(k.steps, owner) ?? [], p.at) ?? far
 						out = if Config.is_holding_pen_id(p.loc.id) { 0 } else { w.out_of_pen }
 						home = if Config.is_base_id(p.loc.id) { w.home } else { 0 }
-						danger = if w.danger != 0 and in_danger(k, pieces, p) { w.danger } else { 0 }
+						danger = if w.danger != 0 and in_danger(k, pieces, p, partner_list) { w.danger } else { 0 }
 						total - 4 * steps + out + home - danger
 					},
 				),
 		)
 	}
 
-	## The mover's value less the leading opponent's.
+	## The mover's value less the leading opponent's; in a partnership, the
+	## team's value (both partners') less the leading other team's.
 	score : Agent.Knowledge, Type.Game -> I64
 	score = |k, game| {
 		vals = values(k, game)
+		partner_list = partners(game)
+		team_value = |i| {
+			p = List.get(partner_list, i) ?? i
+			own = List.get(vals, i) ?? 0
+			if p == i { own } else { own + (List.get(vals, p) ?? 0) }
+		}
 		mover = game.active_player_idx
-		mine = List.get(vals, mover) ?? 0
+		mover_partner = List.get(partner_list, mover) ?? mover
 		best_other = List.fold(
-			List.drop_at(vals, mover),
+			List.map_with_index(vals, |_, i| i),
 			-1000000,
-			|best, v| if v > best { v } else { best },
+			|best, i| if i == mover or i == mover_partner { best } else if team_value(i) > best { team_value(i) } else { best },
 		)
-		mine - best_other
+		team_value(mover) - best_other
 	}
 
 	## Every choice the turn offers now, one per distinct card.
@@ -429,7 +457,7 @@ expect {
 
 # With a 2 and a 3, red takes the 3 that lands on blue and sends it home.
 expect {
-	start = Game.begin_game(0, Normal)
+	start = Game.begin_game(0, Normal, Solo)
 	piece_map = [{ key: { zone: NormalColor("red"), id: "L0" }, value: "red" }, { key: { zone: NormalColor("red"), id: "L3" }, value: "blue" }]
 	players = Player.update_player(start.players, 0, |p| { ..p, hand: ["2", "3"], turn: TurnBegin })
 	game = Player.set_turn_to_need_card({ ..start, piece_map, players })
@@ -446,8 +474,8 @@ expect {
 	colors = ["red", "blue", "green", "purple"]
 	k = Agent.knowledge({ ..Agent.default_weights, danger: 1 }, colors)
 	danger = |blue_id| {
-		game = { ..Game.begin_game(0, Normal), piece_map: [{ key: { zone: NormalColor("red"), id: "L2" }, value: "red" }, { key: { zone: NormalColor("red"), id: blue_id }, value: "blue" }] }
-		List.map(Agent.placed(game), |p| Agent.in_danger(k, Agent.placed(game), p))
+		game = { ..Game.begin_game(0, Normal, Solo), piece_map: [{ key: { zone: NormalColor("red"), id: "L2" }, value: "red" }, { key: { zone: NormalColor("red"), id: blue_id }, value: "blue" }] }
+		List.map(Agent.placed(game), |p| Agent.in_danger(k, Agent.placed(game), p, [0, 1, 2, 3]))
 	}
 	danger("L0") == [Bool.True, Bool.False] and danger("L3") == [Bool.False, Bool.True]
 }

@@ -1,8 +1,9 @@
 # The fasttrack platform: a game driven by clicks, over one boxed model the
 # host keeps (host.zig).
 #
-# `init` takes the time as Elm's did, to seed the deck, a setup number, and
-# who sits in each seat (FastTrack.seats_of).
+# `init` takes the time as Elm's did, to seed the deck, a setup number, who
+# sits in each seat (FastTrack.seats_of), and whether they play in
+# partnerships (FastTrack.init).
 # `update` takes the code of what was clicked. `tune` sets one weight of one
 # computer seat, for races between computers (web/race.mjs); a page never
 # calls it. `view` answers the whole page
@@ -11,7 +12,7 @@
 platform ""
 	requires {
 		[Model : model] for program : {
-			init : U64, U32, U32 -> Box(model),
+			init : U64, U32, U32, U32 -> Box(model),
 			update : Box(model), U32 -> Box(model),
 			tune : Box(model), U32, U32, U32 -> Box(model),
 			view : Box(model) -> Box(Wire.View),

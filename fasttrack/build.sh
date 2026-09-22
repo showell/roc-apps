@@ -5,10 +5,13 @@
 #   fasttrack/build.sh          http://<box>:9210/fasttrack/
 #
 # In order: the Roc expects (the rules, Example.elm's tests, the codes); the
-# wasm host; the app, with LLVM; the page's reader, generated from the
-# platform's types by glue/JsGlue.roc; then page_check.mjs, which plays four
-# hundred clicks through the built page and paints the last board to
-# shot.png beside it. Any of them failing fails the build.
+# wasm host; the app, with LLVM, and again with the dev backend; the page's
+# reader, generated from the platform's types by glue/JsGlue.roc;
+# backends_check.mjs, which plays the two builds against each other and
+# fails on any difference (this nightly has miscompiled the page both ways);
+# then page_check.mjs, which plays four hundred clicks through the built page
+# and paints the last board to shot.png beside it. Any of them failing fails
+# the build.
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # The compiler canvas_apps builds with, so the two pages share one.
@@ -26,7 +29,9 @@ if grep -q "✗" "$LOG/test.log" || ! grep -q "^All ([0-9]*) tests passed" "$LOG
 fi
 tail -1 "$LOG/test.log"
 
-OUT="$HOME/build/roc-apps/next/fasttrack"
+# OUT elsewhere builds beside the dev channel, not into it -- for a build
+# that must not replace the one a race is reading.
+OUT="${OUT:-$HOME/build/roc-apps/next/fasttrack}"
 # Cleared, so yesterday's files cannot be served beside today's.
 rm -rf "$OUT"; mkdir -p "$OUT"
 (cd "$HERE/web" && "$ZIG" build --cache-dir "$HOME/build/roc-apps/zig-cache" --global-cache-dir "$HOME/build/zig-global")
@@ -36,9 +41,17 @@ start=$(date +%s)
 if grep -q "✗" "$LOG/build.log" || [ ! -s "$OUT/fasttrack.wasm" ]; then cat "$LOG/build.log"; echo "build failed"; exit 1; fi
 echo "wasm (LLVM): $(( $(date +%s) - start )) s"
 
+# The same source through the dev backend, beside the build rather than in it.
+DEV="$LOG/dev-build"
+rm -rf "$DEV"; mkdir -p "$DEV"
+(cd "$HERE" && "$ROC" build web.roc --target=wasm32 --opt=dev --output="$DEV/fasttrack.wasm") > "$LOG/build-dev.log" 2>&1 || true
+if grep -q "✗" "$LOG/build-dev.log" || [ ! -s "$DEV/fasttrack.wasm" ]; then cat "$LOG/build-dev.log"; echo "dev build failed"; exit 1; fi
+
 "$ROC" glue "$HERE/../glue/JsGlue.roc" "$OUT" "$HERE/web/platform/main.roc" > "$LOG/glue.log" 2>&1 \
     || { cat "$LOG/glue.log"; echo "glue failed"; exit 1; }
 cp "$HERE/web/fasttrack.js" "$OUT/"
+cp "$OUT/roc_glue.js" "$DEV/"
+node "$HERE/web/backends_check.mjs" "$OUT" "$DEV" || { echo "the LLVM and dev builds disagree"; exit 1; }
 cp "$HERE/web/page.html" "$OUT/index.html"
 "$ROC" version | sed 's/Roc compiler version /roc /' > "$OUT/BUILT"
 

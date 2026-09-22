@@ -24,7 +24,7 @@ const FastTrack = (() => {
   function game(instance) {
     const ex = instance.exports;
     return {
-      start: (millis, setup, seats) => ex.start(millis, setup, seats),
+      start: (millis, setup, seats, teams = 0) => ex.start(millis, setup, seats, teams),
       click: (code) => ex.update(code),
       tune: (seat, factor, value) => ex.tune(seat, factor, value),
       // **computeView FIRST, THEN THE DataView.** Building a view can grow
@@ -157,19 +157,32 @@ const FastTrack = (() => {
     return [...text].slice(0, 4).reduce((bits, ch, i) => bits | ((codes[ch] ?? 0) << (2 * i)), 0);
   }
 
-  return { game, board, render, mount, seatBits };
+  // `?teams=`: none (each for itself), `anytime` (partners, red with green
+  // and blue with purple, may move each other's pieces whenever), or
+  // `oncehome` (only once their own are all home).
+  function teamStyle(text) {
+    return { anytime: 1, oncehome: 2 }[text] ?? 0;
+  }
+
+  return { game, board, render, mount, seatBits, teamStyle };
 })();
 
 // In a browser: `?seed=` replays a deal, `?setup=` starts from one of
 // Setup.roc's scenarios by number, `?seats=` (default hccc: you are red)
-// says who plays, and `?pause=` is the computer's pause per click in ms.
+// says who plays, `?teams=anytime|oncehome` seats partnerships, and
+// `?pause=` is the computer's pause per click in ms.
 if (typeof window !== "undefined" && window.document && window.FASTTRACK_WASM) {
   (async () => {
     const root = document.getElementById("game");
     const { instance } = await WebAssembly.instantiateStreaming(fetch(window.FASTTRACK_WASM), {});
     const g = FastTrack.game(instance);
     const params = new URLSearchParams(location.search);
-    g.start(Number(params.get("seed") ?? Date.now()), Number(params.get("setup") ?? 0), FastTrack.seatBits(params.get("seats") ?? "hccc"));
+    g.start(
+      Number(params.get("seed") ?? Date.now()),
+      Number(params.get("setup") ?? 0),
+      FastTrack.seatBits(params.get("seats") ?? "hccc"),
+      FastTrack.teamStyle(params.get("teams") ?? ""),
+    );
     const pause = Number(params.get("pause") ?? 350);
     let pending = null;
     const schedule = (send) => {

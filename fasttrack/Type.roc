@@ -43,7 +43,16 @@ Type :: [].{
 		TurnDone,
 	]
 
-	Player : { deck : List(Str), hand : List(Str), get_out_credits : I64, turn : Type.Turn, color : Str }
+	## Whose pieces a player may move besides its own (Player.movers):
+	## none; a partner's at any time (pagat.com's partnership rules); or a
+	## partner's once its own are all home.
+	Team : [Solo, Partner(Str), PartnerOnceHome(Str)]
+
+	## How a game seats its players: each for itself, or in partnerships of
+	## either style.
+	Teams : [Solo, Anytime, OnceHome]
+
+	Player : { deck : List(Str), hand : List(Str), get_out_credits : I64, turn : Type.Turn, color : Str, team : Type.Team }
 
 	FindLocParams : {
 		can_fast_track : Bool,

@@ -1,7 +1,7 @@
 // page_check -- plays Fast Track through the real page, with no browser.
 //
 //   node fasttrack/web/page_check.mjs <build-dir>
-//   SEED=42 SETUP=5 SEATS=hccc CLICKS=300 SHOT=board.png node fasttrack/web/page_check.mjs <build-dir>
+//   SEED=42 SETUP=5 SEATS=hccc TEAMS=anytime CLICKS=300 SHOT=board.png node fasttrack/web/page_check.mjs <build-dir>
 //
 // It loads <build-dir>'s fasttrack.wasm and roc_glue.js and runs
 // fasttrack.js -- the page's own file, unchanged -- against a stand-in
@@ -15,8 +15,8 @@
 //
 // **EVERY CLICK IS CHECKED.** After each one: sixteen pieces are on the board
 // (a move never loses or copies one), the board has its 89 squares, and the
-// document holds exactly the nodes Roc sent. The default run also checks the
-// first deal against the one ElmRandom's expects pin.
+// document holds exactly the nodes Roc sent. The default run (red a person)
+// also checks the first deal against the one ElmRandom's expects pin.
 //
 // With SHOT set it paints the last board to a PNG through
 // canvas_apps/web/mini_canvas.mjs, and prints the page's text beside it.
@@ -30,6 +30,7 @@ const SETUP = Number(process.env.SETUP ?? 0);
 const CLICKS = Number(process.env.CLICKS ?? 400);
 const SHOT = process.env.SHOT;
 const SEATS = process.env.SEATS ?? "hccc";
+const TEAMS = process.env.TEAMS ?? "";
 
 // ── a stand-in document ────────────────────────────────────────────────────
 
@@ -104,7 +105,7 @@ let last = null;
 const watched = { ...game, view: () => (last = game.view()) };
 
 const root = new Node("div", "");
-game.start(SEED, SETUP, FastTrack.seatBits(SEATS));
+game.start(SEED, SETUP, FastTrack.seatBits(SEATS), FastTrack.teamStyle(TEAMS));
 const page = FastTrack.mount(document, root, watched);
 page.draw();
 
@@ -124,7 +125,7 @@ function check(step) {
 
 check(0);
 const firstPage = pageText(root);
-if (SEED === 0 && SETUP === 0) {
+if (SEED === 0 && SETUP === 0 && SEATS[0] === "h") {
   // Seed 0 deals red 9 J 5 5 J (Game.roc's expect); none leaves the pen.
   const expected = "[9*]  [J*]  [5*]  [5*]  [J*]\nclick a card to discard";
   if (!firstPage.includes(expected)) fail(`the first deal:\n${firstPage}`);
@@ -172,7 +173,7 @@ const ms = (performance.now() - started) / Math.max(step, 1);
 
 const turns = counts.done;
 const won = last.winner ? `, ${last.winner} won` : "";
-console.log(`seed ${SEED} setup ${SETUP} seats ${SEATS}: ${step} clicks (${counts.card} cards, ${counts.square} squares, ${counts.oops} oops, ${turns} turns by hand, ${counts.tick} computer clicks${won}), ${ms.toFixed(3)} ms a click`);
+console.log(`seed ${SEED} setup ${SETUP} seats ${SEATS}${TEAMS ? ` teams ${TEAMS}` : ""}: ${step} clicks (${counts.card} cards, ${counts.square} squares, ${counts.oops} oops, ${turns} turns by hand, ${counts.tick} computer clicks${won}), ${ms.toFixed(3)} ms a click`);
 if (SEATS.includes("h") && turns === 0) fail("no turn ever finished by hand");
 if (SEATS.includes("h") && counts.square === 0) fail("no piece ever moved by hand");
 if (/[cn]/.test(SEATS) && counts.tick === 0) fail("the computer never played");

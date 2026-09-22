@@ -71,6 +71,21 @@ Piece :: [].{
 	other_non_pen_pieces = |piece_map, active_color, loc|
 		Assoc.set_remove(non_pen_pieces(piece_map, active_color), loc)
 
+	## A piece on the fast track must be moved before any other: across every
+	## color the player moves, which in a partnership is the team.
+	any_on_fast_track : Type.PieceMap, List(Str) -> Bool
+	any_on_fast_track = |piece_map, movers| List.any(movers, |color| has_piece_on_fast_track(piece_map, color))
+
+	team_movable_pieces : Type.PieceMap, List(Str) -> Assoc.AssocSet(Type.PieceLocation)
+	team_movable_pieces = |piece_map, movers| List.join_map(movers, |color| movable_pieces(piece_map, color))
+
+	team_other_non_pen_pieces : Type.PieceMap, List(Str), Type.PieceLocation -> Assoc.AssocSet(Type.PieceLocation)
+	team_other_non_pen_pieces = |piece_map, movers, loc| List.join_map(movers, |color| other_non_pen_pieces(piece_map, color, loc))
+
+	## Every base square of `color` holds a piece of its own.
+	all_home : Type.PieceMap, Str -> Bool
+	all_home = |piece_map, color| List.all(Config.base_locations, |id| get_piece(piece_map, { zone: NormalColor(color), id }) == Ok(color))
+
 	has_piece_on_fast_track : Type.PieceMap, Str -> Bool
 	has_piece_on_fast_track = |piece_map, active_color|
 		List.any(my_pieces(piece_map, active_color), |loc| loc.id == "FT")

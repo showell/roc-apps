@@ -20,14 +20,14 @@ Game :: [].{
 	num_players : U64
 	num_players = 4
 
-	begin_game : U64, Setup.InitSetup -> Type.Game
-	begin_game = |millis, init_setup| {
+	begin_game : U64, Setup.InitSetup, Type.Teams -> Type.Game
+	begin_game = |millis, init_setup, teams| {
 		zone_colors = Color.get_zone_colors(num_players)
 		begin_active_turn(
 			{
 				zone_colors,
 				piece_map: Piece.config_pieces(init_setup, zone_colors),
-				players: Player.config_players(init_setup, zone_colors),
+				players: Player.config_players(init_setup, zone_colors, teams),
 				seed: ElmRandom.initial_seed(millis),
 				active_player_idx: 0,
 				num_players,
@@ -63,13 +63,24 @@ Game :: [].{
 		begin_active_turn({ ..game, players, active_player_idx: new_idx })
 	}
 
-	## The first color with every base square its own.
+	## The first color with every base square its own -- and in a
+	## partnership, its partner's too; the team is named "red and green".
 	winner : Type.Game -> Try(Str, [NoWinner])
-	winner = |game|
-		match List.find_first(game.zone_colors, |color| List.all(Config.base_locations, |id| Piece.get_piece(game.piece_map, { zone: NormalColor(color), id }) == Ok(color))) {
-			Ok(color) => Ok(color)
+	winner = |game| {
+		# One arm per partnership style: an or-pattern that binds `partner`
+		# crashes the compiler (nightly 09-07; see Agent.partners).
+		both_home = |color, partner| Piece.all_home(game.piece_map, color) and Piece.all_home(game.piece_map, partner)
+		done = |player|
+			match player.team {
+				Solo => if Piece.all_home(game.piece_map, player.color) { Ok(player.color) } else { Err(NoWinner) }
+				Partner(partner) => if both_home(player.color, partner) { Ok(Str.concat(player.color, Str.concat(" and ", partner))) } else { Err(NoWinner) }
+				PartnerOnceHome(partner) => if both_home(player.color, partner) { Ok(Str.concat(player.color, Str.concat(" and ", partner))) } else { Err(NoWinner) }
+			}
+		match List.find_first(game.players, |p| Try.is_ok(done(p))) {
+			Ok(p) => done(p)
 			Err(_) => Err(NoWinner)
 		}
+	}
 
 	begin_active_turn : Type.Game -> Type.Game
 	begin_active_turn = |game| Player.set_turn_to_need_card(Player.replenish_hand(game))
@@ -95,7 +106,7 @@ Game :: [].{
 # Seed 0 deals red, the first player, the first five draws from the full deck
 # at the positions web/elm_random_oracle.mjs prints: 7, 8, 14, 39, 19.
 expect {
-	game = Game.begin_game(0, Normal)
+	game = Game.begin_game(0, Normal, Solo)
 	red = Player.get_player(game.players, 0)
 	red.hand == ["9", "J", "5", "5", "J"] and List.len(red.deck) == 49
 }
