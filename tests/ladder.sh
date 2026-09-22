@@ -29,12 +29,15 @@
 # name and with the reason, never a silent FAIL: see DIVERGE below.
 #
 # Outcomes: PASS (output equals the verdict), FAIL (it does not, or roc
-# printed ✗), CRASH (roc run died), KILLED (a signal -- 9 is the OOM
-# killer stopping compile-time evaluation), REFUSED (rocemit said no, by
-# reason), TIMEOUT.
+# printed ✗), CRASH (roc run died), EMIT-CRASH (rocemit died), KILLED (a
+# signal -- 9 is the OOM killer stopping compile-time evaluation), REFUSED
+# (rocemit said no, by reason), TIMEOUT.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROC="${ROC:-$HOME/build/roc-nightly/roc}"
+# The roc a verdict came from is part of its stamp: the nightly's directory,
+# which names its date and commit.
+ROC_ID="$(readlink -f "$ROC")"
 ROCEMIT="${ROCEMIT:-$HOME/build/rust-target/release/rocemit}"
 TESTS_ROOT="${TESTS_ROOT:-$HOME/showell_repos/cobblestone-u62}"
 SRC="$TESTS_ROOT/codex/test"
@@ -125,12 +128,17 @@ one() {
     if [ -n "$why" ]; then echo "DIVERGES $n | $why" > "$d/verdict"; return; fi
     # rocemit prints the app's name and a digest of everything it wrote,
     # so telling "this is what it was last time" costs no processes.
-    if ! said=$("$ROCEMIT" "$src.codex" "$d" 2> "$d/emit.err"); then
+    # rocemit exits 2 on a refusal; any other failure is rocemit dying (a
+    # panic, a stack overflow), which is its own outcome, never a refusal.
+    said=$("$ROCEMIT" "$src.codex" "$d" 2> "$d/emit.err"); erc=$?
+    if [ $erc = 2 ]; then
         echo "REFUSED $n | $(head -1 "$d/emit.err" | sed 's/^REFUSED: //' | cut -c1-110)" > "$d/verdict"; return
+    elif [ $erc != 0 ]; then
+        echo "EMIT-CRASH $n | exit $erc: $(grep -m1 . "$d/emit.err" | cut -c1-100)" > "$d/verdict"; return
     fi
     app="${said%%$'\n'*}"; stamp="${said##*$'\n'}"
-    # A kept verdict was judged against one checkout's verdicts.
-    stamp="$stamp $TESTS_ROOT"
+    # A kept verdict was judged against one checkout's verdicts, by one roc.
+    stamp="$stamp $TESTS_ROOT $ROC_ID"
     if [ "$app" = library ]; then echo "REFUSED $n | no opening" > "$d/verdict"; return; fi
     # **A UNIT THAT REACHES A DEVICE RUNS ON THE MACHINE.** rocemit threads
     # Machine through it and writes no Machine module: the machine is
@@ -178,7 +186,7 @@ one() {
 }
 
 MACHINE="$(cd "$HERE/../machine/roc" && pwd)"
-export -f one diverges media; export ROC ROCEMIT SRC GEN VERDICTS MACHINE TESTS_ROOT
+export -f one diverges media; export ROC ROC_ID ROCEMIT SRC GEN VERDICTS MACHINE TESTS_ROOT
 printf '%s\n' "${units[@]}" | xargs -P "${JOBS:-2}" -I{} bash -c 'one {}'
 ledger="$( for n in "${units[@]}"; do cat "$GEN/$n/verdict"; done )"
 [ "$full" = yes ] && echo "$ledger" > "$HERE/ledger.txt"

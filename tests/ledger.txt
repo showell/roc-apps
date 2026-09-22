@@ -2,7 +2,7 @@ PASS acpi-parse |
 PASS act-let-scope |
 PASS act-tco-loop |
 PASS act-unused-bind |
-REFUSED aesgcm256 | builtin `__list-with-capacity`
+PASS aesgcm256 |
 PASS amp-after-call |
 PASS approx-eq |
 SKIP arith-narrow-proven | expects a diagnostic
@@ -13,7 +13,7 @@ PASS arm64-encoder |
 PASS arm64-http-test |
 PASS arm64-net-gate |
 PASS arm64-proc-cells |
-REFUSED arm64-send-refusal | builtin `__list-with-capacity`
+PASS arm64-send-refusal |
 PASS arp-cache-bound |
 REFUSED asn1-der | `fe-carry-pass` writes its list parameter `o` and answers something else
 PASS asn1-der-write |
@@ -56,11 +56,11 @@ PASS carddeck-shuffle |
 PASS cce-roundtrip |
 REFUSED cce-tier1 | type (effectful (effs "Console") (scopes "") nothing)
 REFUSED cdx-export-retention | an opening of type nothing
-REFUSED chacha20poly1305 | builtin `__list-with-capacity`
+PASS chacha20poly1305 |
 PASS chapter-pages |
 PASS circbuf-test |
 PASS cite-override-quire |
-REFUSED cmac-test | builtin `__list-with-capacity`
+PASS cmac-test |
 PASS cms-spread |
 PASS coap-block |
 PASS coap-packet |
@@ -75,13 +75,13 @@ REFUSED console-readline-cite | builtin `read-line` used as a value
 SKIP const-narrow-proven | expects a diagnostic
 PASS convolution-identity |
 DIVERGES cost@accumulator-corpus | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
-REFUSED cost@giveup-beats-fuel | builtin `__list-with-capacity`
+REFUSED cost@giveup-beats-fuel | an opening of type (effectful (effs "Console") (scopes "") nothing)
 PASS cross-port-refused |
-REFUSED crypto-test | builtin `__list-with-capacity`
-REFUSED crypto-vectors | builtin `__list-with-capacity`
+REFUSED crypto-test | type (effectful (effs "Console") (scopes "") nothing)
+PASS crypto-vectors |
 REFUSED cryptobig | `cb-shl1` writes its list parameter `x` and answers something else
 PASS ctor-narrow-warn |
-REFUSED db-csv-roundtrip | builtin `__list-with-capacity`
+PASS db-csv-roundtrip |
 DIVERGES db-full-test | test-bulk-load and test-import insert 5 rows through heap-insert-encoded's list-set-at on the catalog's pages and answer only Text; the backup then scans the same catalog, which in Roc still holds the old pages (rows=21, not 26)
 DIVERGES db-row-update | list-set-at mutates in place; Roc's List.set answers a new list
 REFUSED dce-reach | type error
@@ -89,28 +89,28 @@ REFUSED deck-bracket-contract | builtin `__deck-set`
 REFUSED deck-cell-contract | builtin `__deck-set`
 REFUSED deck-record-contract | builtin `__deck-set`
 PASS deriving-eq-recursive |
-REFUSED desk-hole | builtin `__list-with-capacity`
-REFUSED desk-hover | builtin `__list-with-capacity`
-REFUSED desk-parse | builtin `__list-with-capacity`
-REFUSED desk-reuse | builtin `__list-with-capacity`
-REFUSED desk-root-guard | builtin `__list-with-capacity`
-REFUSED desk-span | builtin `__list-with-capacity`
+REFUSED desk-hole | a function value from `__lam_0` (1 of 2 arguments), which reaches the machine; a function value carries no sta
+REFUSED desk-hover | a function value from `__lam_0` (1 of 2 arguments), which reaches the machine; a function value carries no sta
+REFUSED desk-parse | a function value from `__lam_0` (1 of 2 arguments), which reaches the machine; a function value carries no sta
+REFUSED desk-reuse | a function value from `__lam_0` (1 of 2 arguments), which reaches the machine; a function value carries no sta
+REFUSED desk-root-guard | a function value from `__lam_0` (1 of 2 arguments), which reaches the machine; a function value carries no sta
+REFUSED desk-span | a function value from `__lam_0` (1 of 2 arguments), which reaches the machine; a function value carries no sta
 PASS device-buffer-alloc |
 PASS dhcp-acquire |
 CRASH dhcp-acquire-e1000 | machine: -e1000-nat is not a codex-vm flag this machine models
 PASS dhcp-renew |
 PASS diag-pci-map-judge |
 PASS disk-enum-parse |
-REFUSED diskfacts-unpack-large | builtin `__list-with-capacity`
+PASS diskfacts-unpack-large |
 PASS dnp3-encode |
 PASS dns-answer-count |
-REFUSED dtls-fragment | builtin `__list-with-capacity`
-REFUSED dtls-handshake | builtin `__list-with-capacity`
-REFUSED dtls-hello | builtin `__list-with-capacity`
-REFUSED dtls-message | builtin `__list-with-capacity`
-REFUSED dtls-openssl-fragments | builtin `__list-with-capacity`
-REFUSED dtls-random | builtin `__list-with-capacity`
-REFUSED dtls-record | builtin `__list-with-capacity`
+REFUSED dtls-fragment | `fe-carry-pass` writes its list parameter `o` and answers something else
+PASS dtls-handshake |
+REFUSED dtls-hello | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED dtls-message | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED dtls-openssl-fragments | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED dtls-random | `fe-carry-pass` writes its list parameter `o` and answers something else
+PASS dtls-record |
 PASS e1000-aneg-budget |
 PASS e1000-asde-arms |
 PASS e1000-asde-nolink |
@@ -296,7 +296,7 @@ PASS forewords@encode-uri |
 PASS forewords@encode-uuid |
 PASS forewords@encode-video-codec |
 PASS forewords@encode-wav |
-REFUSED forewords@encode-web-socket | builtin `__list-with-capacity`
+PASS forewords@encode-web-socket |
 PASS forewords@encode-yaml |
 PASS forewords@engine-ability-system |
 PASS forewords@engine-anim-blend |
@@ -340,16 +340,16 @@ PASS forewords@engine-time-of-day |
 PASS forewords@engine-water |
 PASS forewords@engine-world-gen |
 PASS forewords@engine-world-hud |
-REFUSED forewords@foreword-aes | builtin `__list-with-capacity`
-REFUSED forewords@foreword-aes-gcm | builtin `__list-with-capacity`
-REFUSED forewords@foreword-aes256 | builtin `__list-with-capacity`
+PASS forewords@foreword-aes |
+PASS forewords@foreword-aes-gcm |
+PASS forewords@foreword-aes256 |
 PASS forewords@foreword-apprunner |
 PASS forewords@foreword-b-plus-tree |
 PASS forewords@foreword-bit-set |
 PASS forewords@foreword-bloom-filter |
 PASS forewords@foreword-c-c-e |
 PASS forewords@foreword-camera |
-REFUSED forewords@foreword-cha-cha20 | builtin `__list-with-capacity`
+PASS forewords@foreword-cha-cha20 |
 PASS forewords@foreword-channel |
 PASS forewords@foreword-circular-buffer |
 REFUSED forewords@foreword-concurrent | builtin `fork`
@@ -367,7 +367,7 @@ PASS forewords@foreword-either |
 PASS forewords@foreword-elastic-bloom |
 PASS forewords@foreword-elastic-hash |
 PASS forewords@foreword-event-bus |
-REFUSED forewords@foreword-fact-store | builtin `__list-with-capacity`
+PASS forewords@foreword-fact-store |
 PASS forewords@foreword-fat16 |
 PASS forewords@foreword-fat32 |
 REFUSED forewords@foreword-file-system | builtin `read-text`
@@ -378,8 +378,8 @@ PASS forewords@foreword-gpt |
 REFUSED forewords@foreword-graph | `graph-bfs-expand` writes its list parameter `visited` and answers something else
 PASS forewords@foreword-hamt |
 PASS forewords@foreword-history |
-REFUSED forewords@foreword-hkdf | builtin `__list-with-capacity`
-REFUSED forewords@foreword-hmac | builtin `__list-with-capacity`
+PASS forewords@foreword-hkdf |
+PASS forewords@foreword-hmac |
 REFUSED forewords@foreword-identity | `fe-carry-pass` writes its list parameter `o` and answers something else
 PASS forewords@foreword-image-tensor |
 PASS forewords@foreword-interval-tree |
@@ -399,11 +399,11 @@ PASS forewords@foreword-number-theory |
 PASS forewords@foreword-pair |
 PASS forewords@foreword-path |
 PASS forewords@foreword-pattern |
-REFUSED forewords@foreword-pbkdf | builtin `__list-with-capacity`
+PASS forewords@foreword-pbkdf |
 PASS forewords@foreword-pipeline |
 PASS forewords@foreword-priority-queue |
 PASS forewords@foreword-probability |
-REFUSED forewords@foreword-proof-of-work | builtin `__list-with-capacity`
+PASS forewords@foreword-proof-of-work |
 PASS forewords@foreword-queue |
 PASS forewords@foreword-random |
 REFUSED forewords@foreword-ranked-text-set | `rts-build-update-loop` writes its list parameter `nodes` and answers something else
@@ -418,8 +418,8 @@ PASS forewords@foreword-schedule |
 PASS forewords@foreword-scheduler |
 PASS forewords@foreword-sensors |
 PASS forewords@foreword-set |
-REFUSED forewords@foreword-sha1 | builtin `__list-with-capacity`
-REFUSED forewords@foreword-sha256 | builtin `__list-with-capacity`
+PASS forewords@foreword-sha1 |
+PASS forewords@foreword-sha256 |
 PASS forewords@foreword-sha512 |
 PASS forewords@foreword-sort |
 PASS forewords@foreword-source-def-wire |
@@ -432,7 +432,7 @@ PASS forewords@foreword-text-search |
 PASS forewords@foreword-text-wrap |
 PASS forewords@foreword-time |
 PASS forewords@foreword-timing-wheel |
-REFUSED forewords@foreword-tls | builtin `__list-with-capacity`
+REFUSED forewords@foreword-tls | `fe-carry-pass` writes its list parameter `o` and answers something else
 PASS forewords@foreword-trie |
 PASS forewords@foreword-tuple |
 PASS forewords@foreword-unicode |
@@ -456,7 +456,7 @@ REFUSED forewords@game-pathfinding | `dijk-loop` writes its list parameter `visi
 PASS forewords@game-quadtree |
 PASS forewords@game-rasterizer |
 PASS forewords@game-raytracer |
-REFUSED forewords@game-save-slot | builtin `__list-with-capacity`
+PASS forewords@game-save-slot |
 PASS forewords@game-scene2-d |
 PASS forewords@game-sprite |
 PASS forewords@game-state-machine |
@@ -537,7 +537,7 @@ PASS forewords@ui-vector |
 PASS forewords@ui-widget |
 REFUSED fork-nested | builtin `fork`
 REFUSED fork-reclaim | builtin `fork`
-REFUSED frame-short-buffer | builtin `__list-with-capacity`
+PASS frame-short-buffer |
 PASS frameless-leaf-probe |
 SKIP fresh-alloc-narrow | expects a diagnostic
 REFUSED fs-deny-runtime | builtin `read-text`
@@ -588,9 +588,9 @@ PASS history-test |
 CRASH hpet-interrupt | machine: the HPET raised IOAPIC line 2 on vector 80, and this machine delivers no interrupts
 PASS i219-k1-mechanism |
 REFUSED ident-letters | name `café` cannot be a Roc identifier
-REFUSED idm-key-tests | builtin `__list-with-capacity`
-REFUSED idm-read-line | builtin `__list-with-capacity`
-REFUSED idm-salt-iv-distinct | builtin `__list-with-capacity`
+REFUSED idm-key-tests | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED idm-read-line | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED idm-salt-iv-distinct | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED iec104-encode | type real-approx
 PASS ieee802154-encode |
 PASS if-in-arith |
@@ -633,11 +633,11 @@ PASS lease-handoff |
 PASS let-dest-scope |
 PASS let-else-scope |
 PASS let-shadow-scope |
-REFUSED lib@aesgcm-test | builtin `__list-with-capacity`
+PASS lib@aesgcm-test |
 PASS lib@app-runner-frame |
 PASS lib@badge-tone |
 REFUSED lib@brotli-ctx2-test | `lz77-count-distinct` writes its list parameter `seen` and answers something else
-REFUSED lib@brotli-dict-test | builtin `__list-with-capacity`
+REFUSED lib@brotli-dict-test | `brdix-fill` writes its list parameter `next` and answers something else
 REFUSED lib@brotli-test | `lz77-count-distinct` writes its list parameter `seen` and answers something else
 PASS lib@canvas-viewport |
 PASS lib@cbor-test |
@@ -649,7 +649,7 @@ PASS lib@device-math |
 PASS lib@dropdown-options |
 PASS lib@flex-layout-geometry |
 PASS lib@format-test |
-REFUSED lib@hkdf-test | builtin `__list-with-capacity`
+PASS lib@hkdf-test |
 PASS lib@key-tab-single |
 PASS lib@linalg-test |
 PASS lib@locale-test |
@@ -667,7 +667,7 @@ PASS lib@settings-panel-render |
 PASS lib@status-badge-priority |
 PASS lib@text-overflow |
 PASS lib@text-overflow-render |
-REFUSED lib@text-trim-test | builtin `__list-with-capacity`
+REFUSED lib@text-trim-test | field-store
 PASS lib@toml-test |
 DIVERGES lib@tree-view-nav | pins what a caller still holding the old record sees after its list is written in place; a Roc list is a value, so the caller keeps what it held
 PASS lib@utf8-cce-test |
@@ -699,9 +699,9 @@ REFUSED list-view-probe | builtin `__list-len`
 PASS literal-subpattern |
 SKIP local-narrow-proven | expects a diagnostic
 REFUSED location-sensors-stub | type (effectful (effs "Location") (scopes "") boolean)
-REFUSED lorawan-encode | builtin `__list-with-capacity`
+PASS lorawan-encode |
 PASS lwm2m-encode |
-PASS magic-sim-fixes |
+CRASH magic-sim-fixes | overflowed its stack memory
 SKIP manifest-pin | its disk is compiled from manifest-subject by the Cobblestone compiler at test time
 REFUSED mask-ops | type (effectful (effs "Console") (scopes "") nothing)
 PASS match-arms-per-line |
@@ -723,24 +723,24 @@ PASS neg-int-parse |
 REFUSED neg-real-repro | an opening of type real
 PASS negation-abutment |
 REFUSED nested-spawn | a function value from `__lam_0` (0 of 1 arguments), which reaches memory; a function value carries no state
-REFUSED net-drain-budget | builtin `__list-with-capacity`
+PASS net-drain-budget |
 PASS net-driver-seam-bound |
 PASS net-driver-seam-no-av |
-REFUSED net-io-clock | builtin `__list-with-capacity`
-REFUSED net-poll-calibrated | builtin `__list-with-capacity`
+CRASH net-io-clock | machine: the program sent a frame to a TCP connection to the host, which this machine does not have
+CRASH net-poll-calibrated | machine: -e1000-nat is not a codex-vm flag this machine models
 PASS net-poll-clamped |
 DIVERGES net-recv-heap | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
-REFUSED network-effect | builtin `__list-with-capacity`
-REFUSED network-scope-deny | builtin `__list-with-capacity`
-REFUSED network-scope-open | builtin `__list-with-capacity`
-REFUSED network-scope-spawn | builtin `__list-with-capacity`
+REFUSED network-effect | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED network-scope-deny | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED network-scope-open | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED network-scope-spawn | `fe-carry-pass` writes its list parameter `o` and answers something else
 SKIP noalias-linear-param | expects a diagnostic
 PASS noise-test |
 REFUSED normalize-eq | type (propeq (ctd "Off" (args)) (ctd "Off" (args)))
 PASS nrf52840-drivers |
 PASS nrf9160-drivers |
 PASS nvme-encode |
-REFUSED oauth-island | builtin `__list-with-capacity`
+PASS oauth-island |
 PASS occurrence-check |
 PASS opcua-encode |
 PASS ops@bounded-modes-smoke |
@@ -803,10 +803,10 @@ REFUSED ops@variant-address | builtin `address-of`
 REFUSED ops@vec-lanes-smoke | type (vector 2 real)
 REFUSED ops@vec-sized | type (sized-vec 1 int-default)
 PASS osc-noise |
-REFUSED ota-gate-block | builtin `__list-with-capacity`
-REFUSED ota-gate-real | builtin `__list-with-capacity`
-REFUSED ota-state-machine | builtin `__list-with-capacity`
-REFUSED ota-update | builtin `__list-with-capacity`
+PASS ota-gate-block |
+PASS ota-gate-real |
+PASS ota-state-machine |
+PASS ota-update |
 REFUSED par-map | builtin `fork`
 REFUSED par-nested | builtin `fork`
 PASS parse-test |
@@ -824,7 +824,7 @@ PASS pipe-unique-test |
 PASS pit-latch |
 REFUSED plug-oracle-arith | field-store
 PASS poke16-width |
-REFUSED poly1305 | builtin `__list-with-capacity`
+PASS poly1305 |
 PASS port-in-32-width |
 REFUSED proc-state-running | a function value from `__lam_0` (0 of 1 arguments), which reaches memory; a function value carries no state
 REFUSED process-exit-status | builtin `process-exit`
@@ -937,7 +937,7 @@ PASS tcp-checksum-refuse |
 PASS tcp-listen-reclaim |
 PASS tcp-reliability |
 PASS tcp-seqwrap |
-REFUSED text-append-alias | builtin `__list-with-capacity`
+PASS text-append-alias |
 PASS text-eq-branches |
 PASS text-fold-indexed |
 PASS text-helper-native |
@@ -947,14 +947,14 @@ PASS textscan-test |
 PASS textsearch-test |
 PASS thumb2-encoder |
 PASS timer-registers |
-REFUSED tls-cert | builtin `__list-with-capacity`
-REFUSED tls-cv-schemes | builtin `__list-with-capacity`
-REFUSED tls-record-framing | builtin `__list-with-capacity`
-REFUSED tls-test | builtin `__list-with-capacity`
-REFUSED tls13-record | builtin `__list-with-capacity`
-REFUSED tls13-schedule | builtin `__list-with-capacity`
-REFUSED transport-cocite | builtin `__list-with-capacity`
-KILLED trie-prefix-test | signal 6
+REFUSED tls-cert | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED tls-cv-schemes | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED tls-record-framing | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED tls-test | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED tls13-record | `fe-carry-pass` writes its list parameter `o` and answers something else
+REFUSED tls13-schedule | `fe-carry-pass` writes its list parameter `o` and answers something else
+PASS transport-cocite |
+PASS trie-prefix-test |
 PASS truetype-bridge-test |
 PASS truetype-render-test |
 PASS truetype-test |
@@ -1019,18 +1019,18 @@ PASS wavelet-sort-aliasing |
 SKIP wcet-budget-unchecked | expects a diagnostic
 SKIP wcet-probe | expects a diagnostic
 REFUSED web-chain | `fe-carry-pass` writes its list parameter `o` and answers something else
-REFUSED web-mux-concurrent | builtin `__list-with-capacity`
+PASS web-mux-concurrent |
 DIVERGES web-mux-heap | measures Codex's bump pointer with __heap-save; the machine's pointer moves for alloc-bytes, so each 65536-byte receive buffer shows, but no Roc list lives on it, so every reading lacks the lists' bytes
-REFUSED web-mux-idle-reap | builtin `__list-with-capacity`
-REFUSED web-mux-lifecycle | builtin `__list-with-capacity`
-REFUSED web-mux-reassembly | builtin `__list-with-capacity`
+PASS web-mux-idle-reap |
+PASS web-mux-lifecycle |
+PASS web-mux-reassembly |
 PASS when-arm-nontail |
 PASS when-arm-tail-call |
 PASS when-bool-cross |
 PASS when-bool-pattern |
 PASS when-generic-field |
 REFUSED with-timeout-test | with-timeout
-REFUSED workflow-parse-int | builtin `__list-with-capacity`
+PASS workflow-parse-int |
 REFUSED x509-chain | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED x509-parse | `fe-carry-pass` writes its list parameter `o` and answers something else
 PASS zigbee-encode |
