@@ -94,11 +94,17 @@ play are kept, and the best position at the end of the turn is the plan. A
 line stops where the hand is refilled, so the computer never sees a card it
 has not drawn.
 
-**The heuristic** is distance: steps left for each piece to its own B4,
-computed on the board's real graph on an empty board, with 4 extra steps for
-waiting in the pen for an A, 6 or joker and 6 for waiting in the bullseye for
-a face card. A position is worth the opponents' steps less four times the
-mover's own, so sending a piece home counts, but moving your own counts more.
+**The heuristic is symmetric.** Every player's position is valued by the
+same function, and a line is worth the mover's value less the leading
+opponent's; in a partnership, the team's less the other team's. A value is
+minus 4 for every step the player's pieces have left to their own B4 (on the
+board's real graph, with 4 extra steps for waiting in the pen for an A, 6 or
+joker, 6 for waiting in the bullseye for a face card, and `hop` for a fast
+track hop or entering the bullseye, since those need an exact landing), plus
+`home` for each piece in its base, `out_of_pen` for each piece out, and minus
+`danger` for each piece another player could land on with one card. Danger
+is everyone's, so putting an opponent in danger lowers that opponent's value.
+A partner is never counted as a threat.
 
 **The page drives it with a tick.** In a computer's seat the view names
 `Codes.agent_step` as its `tick`; the page sends it back after a pause, and
@@ -107,10 +113,10 @@ it, and its first message played. So a person watches the computer choose a
 card, a piece and a square, as they would. Nothing in a computer's turn takes
 a click, and a stale click is ignored.
 
-Measured with `arena.mjs` (LLVM build), 20 deals each played as cncn and
-ncnc: the computer won 19 of 20 against the naive player. A computer click
-averages about 5 ms, and the slowest seen was about 100 ms, under the page's
-pause.
+The heuristic is symmetric and its weights were tuned by racing computers
+against each other: see `TUNING.md`. The tuned computer (`home = 10`) won
+55% against the untuned one on fresh deals, and 20 of 20 against the naive
+player. A computer click averages about 2 ms.
 
 ## The compiler, met
 

@@ -15,7 +15,7 @@ set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DIR="${1:?usage: tune.sh <build-dir>}"
 DEALS="${DEALS:-100}"
-START="${START:-hop=1}"
+START="${START:-hop=1,home=0}"
 best="$START"
 
 stage() {

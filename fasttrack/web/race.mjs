@@ -4,7 +4,7 @@
 //
 // A weight spec is `danger=<n>,out=<n>,home=<n>,hop=<n>` (Agent.Weights, in
 // the agent's units: a step is 4, except hop, which is steps); a factor left
-// out is Agent.default_weights'.
+// out is Agent.default_weights' (danger 0, out 0, home 10, hop 1).
 // Every deal is played twice, as abab and baba, so neither side keeps the
 // seats that move first; with DEALS=40 that is 80 games. The games are split
 // between two worker threads, one per core. A game past CAP clicks is a draw.
@@ -18,7 +18,7 @@ const FACTORS = { danger: 0, out: 1, home: 2, hop: 3 };
 const COLORS = ["red", "blue", "green", "purple"];
 
 function parse(spec) {
-  const w = [0, 0, 0, 1];
+  const w = [0, 0, 10, 1];
   for (const part of (spec ?? "").split(",").filter(Boolean)) {
     const [name, value] = part.split("=");
     if (!(name in FACTORS)) throw new Error(`race: no factor ${name}`);

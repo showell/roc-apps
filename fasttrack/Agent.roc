@@ -53,9 +53,10 @@ Agent :: [].{
 
 	Weights : { danger : I64, out_of_pen : I64, home : I64, hop : I64 }
 
-	## The weights a computer seat plays with unless told otherwise.
+	## The weights a computer seat plays with unless told otherwise: the
+	## winners of the races in TUNING.md.
 	default_weights : Agent.Weights
-	default_weights = { danger: 0, out_of_pen: 0, home: 0, hop: 1 }
+	default_weights = { danger: 0, out_of_pen: 0, home: 10, hop: 1 }
 
 	## Extra steps for waiting on A, 6 or joker to leave the pen.
 	pen_wait : I64
