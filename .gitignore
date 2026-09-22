@@ -11,3 +11,6 @@ framebuffer/platform/targets/
 
 # The canvas apps host object, rebuilt by every canvas_apps/build.sh run.
 canvas_apps/web/platform/targets/
+
+# The fasttrack host object, rebuilt by every fasttrack/build.sh run.
+fasttrack/web/platform/targets/

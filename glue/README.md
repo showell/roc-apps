@@ -2,7 +2,8 @@
 
 `roc glue` generates platform-facing bindings from the compiler's own type
 table. Roc ships `ZigGlue.roc`, `RustGlue.roc` and `CGlue.roc`; `JsGlue.roc` is
-the JavaScript one, and it is what reads a frame in `canvas_apps/`.
+the JavaScript one, and it is what reads a frame in `canvas_apps/` and a view
+in `fasttrack/`.
 
     roc glue glue/JsGlue.roc <out-dir> canvas_apps/web/platform/main.roc
 
@@ -65,10 +66,15 @@ return { read_t1, ..., init: read_t25, advance: read_t31, frame: read_t34, ... }
 
 ## What it covers
 
-Scalars, `Bool`, `Unit`, `Box`, `List`, records and tag unions, at 32-bit
-pointer width because wasm is 32-bit. A type is emitted only when every part of
-it is readable, so no reader ever references one that was skipped. `Str`, `Dec`
-and the vector types are not covered.
+Scalars, `Bool`, `Unit`, `Str`, `Box`, `List`, records and tag unions, at
+32-bit pointer width because wasm is 32-bit. A type is emitted only when every
+part of it is readable, so no reader ever references one that was skipped.
+`Dec` and the vector types are not covered.
+
+A `Str` is three words: bytes, capacity, length. A small one keeps its bytes in
+the three words themselves and says so in the high bit of the last byte, whose
+low seven bits are its length. Either way the bytes are UTF-8, and `readStr`
+decodes them with a `TextDecoder`.
 
 A `Box` of a type the platform never names — an app's own model — reads as the
 pointer, because a handle is all a page can hold of it.
