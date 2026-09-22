@@ -112,6 +112,23 @@ ncnc: the computer won 19 of 20 against the naive player. A computer click
 averages about 5 ms, and the slowest seen was about 100 ms, under the page's
 pause.
 
+## The compiler, met
+
+The nightly (`2026-09-07-14d9829`) got four things wrong while this was
+built. Two failed loudly, and two quietly produced a page that ran and was
+wrong, which is why `build.sh` builds with both backends and
+`web/backends_check.mjs` plays the builds against each other in lockstep:
+
+| what | where | workaround |
+|---|---|---|
+| LLVM ends a `while $next != $d` loop after one pass when the pass is a local closure: the computer's distance tables came out all "far" | `Agent.distances` | the pass reports whether it changed anything; reduced in `findings/llvm-closure-loop-alias/` |
+| the dev backend dropped `partner` from `"${player.color} and ${partner}"` in a closure inside `Game.winner` | `Game.winner` | `Str.concat` in each arm |
+| an or-pattern binding a variable (`Partner(p) \| PartnerOnceHome(p) =>`) in a lambda: `roc check` fails with OutOfMemory | `Agent.partners` | one arm each |
+| a closure passed as an argument (`partner_of : U64 -> U64`): `roc build --opt=speed` crashes with SIGSEGV | `Agent.in_danger` | a list of partners instead |
+
+Only the first is reduced; the others are recorded here as met, not as
+findings.
+
 ## Layout
 
 | where | what |
@@ -123,6 +140,8 @@ pause.
 | `web/page_check.mjs` | plays the built page with no browser; see below |
 | `web/arena.mjs` | the computer against the naive player, over many deals |
 | `web/elm_random_oracle.mjs` | elm/random's arithmetic as compiled JavaScript |
+| `web/race.mjs`, `web/tune.sh` | two computers with different weights over many deals; the factors tuned one at a time |
+| `web/backends_check.mjs` | the LLVM and dev builds played against each other, click for click |
 
 ## The checks
 

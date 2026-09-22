@@ -136,10 +136,10 @@ Agent :: [].{
 		home = index_of(zone_colors, { zone: NormalColor(color), id: "B4" })
 		start = List.set(List.repeat(far, List.len(locs)), home, 0) ?? crash("Agent.distances: no home square")
 		# A pass says whether it changed anything. **NOT `while $next != $d`**:
-		# the wasm32 LLVM build (nightly 09-07) lets the pass write into the
-		# list `$d` still names, so the two compare equal after one pass and
-		# every square but B3 and B4 stays `far`. The dev build and native
-		# LLVM both get it right (findings/wasm-llvm-alias).
+		# with the pass a closure over `edges`, the LLVM build (nightly 09-07)
+		# lets it write into the list `$d` still names, so the two compare
+		# equal after one pass and every square but B3 and B4 stays `far`.
+		# The dev build gets it right (findings/llvm-closure-loop-alias).
 		relax = |d|
 			List.fold(
 				edges,
