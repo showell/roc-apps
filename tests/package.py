@@ -277,7 +277,12 @@ def pick(order, cap):
 
 def main():
     check_only = "--check" in sys.argv
-    cap = 8
+    # **THE CAP MUST CLEAR THE BIGGEST SHARED CHAPTER.** The cost of a test
+    # is the chapters no test before it needed, so the first test to need
+    # Text pays all of Text: at a cap below its 13 KB, nothing that prints
+    # anything is ever admitted, and the package is the encoders alone (17
+    # tests, where the same corpus gives 530 at 16).
+    cap = 16
     if "--cap" in sys.argv:
         cap = int(sys.argv[sys.argv.index("--cap") + 1])
     if not check_only:

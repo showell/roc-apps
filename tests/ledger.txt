@@ -701,7 +701,7 @@ SKIP local-narrow-proven | expects a diagnostic
 REFUSED location-sensors-stub | type (effectful (effs "Location") (scopes "") boolean)
 PASS lorawan-encode |
 PASS lwm2m-encode |
-CRASH magic-sim-fixes | overflowed its stack memory
+PASS magic-sim-fixes |
 SKIP manifest-pin | its disk is compiled from manifest-subject by the Cobblestone compiler at test time
 REFUSED mask-ops | type (effectful (effs "Console") (scopes "") nothing)
 PASS match-arms-per-line |
@@ -954,7 +954,7 @@ REFUSED tls-test | `fe-carry-pass` writes its list parameter `o` and answers som
 REFUSED tls13-record | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED tls13-schedule | `fe-carry-pass` writes its list parameter `o` and answers something else
 PASS transport-cocite |
-PASS trie-prefix-test |
+KILLED trie-prefix-test | signal 6
 PASS truetype-bridge-test |
 PASS truetype-render-test |
 PASS truetype-test |
