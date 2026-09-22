@@ -7,6 +7,7 @@
 #
 #     1              rotate the board ("done")
 #     2              undo ("oops")
+#     3              the computer's next click (the page's tick)
 #     100 + i        play card i
 #     200 + i        discard card i
 #     300 + i        cover card i
@@ -23,6 +24,10 @@ Codes :: [].{
 
 	undo : U32
 	undo = 2
+
+	## Not a message: FastTrack answers it with the computer's choice.
+	agent_step : U32
+	agent_step = 3
 
 	activate_card : U64 -> U32
 	activate_card = |idx| 100 + U64.to_u32_wrap(idx)

@@ -68,31 +68,55 @@ Page :: [].{
 	center_offset : U64 -> F64
 	center_offset = |side_count| panel_height + incircle_radius(side_count)
 
-	view : Type.Game, Bool -> Wire.View
-	view = |game, show_undo| {
+	## What the page may offer: `interactive` is false in the computer's seat
+	## and once someone has won, and then nothing takes a click.
+	Flags : { interactive : Bool, show_undo : Bool, tick : U32, winner : Str }
+
+	view : Type.Game, Page.Flags -> Wire.View
+	view = |game, flags| {
 		active_player = Player.get_active_player(game)
 		active_color = active_player.color
 		zone_colors = Color.rotate_list(game.active_player_idx, game.zone_colors)
-		undo_button = if show_undo { [button("", Codes.undo, [text("oops")])] } else { [] }
+		undo_button = if flags.show_undo { [button("", Codes.undo, [text("oops")])] } else { [] }
 		side_count = List.len(zone_colors)
+		console =
+			if flags.winner != "" {
+				div([bold("color: ${flags.winner}; font-size: 150%", [text("${flags.winner} wins!")])])
+			} else if flags.interactive {
+				player_view(active_player, active_color, undo_button)
+			} else {
+				computer_view(active_player, active_color)
+			}
 		{
 			board_size: 2.0 * center_offset(side_count) + 3.0 * Config.square_size,
-			slots: board_view(game, zone_colors, active_player),
+			slots: board_view(game, zone_colors, active_player, flags.interactive),
 			nodes: el(
 				"div",
 				"display: flex; flex-direction: row",
 				0,
 				Bool.False,
 				[
-					div([div([div([el("board", "", 0, Bool.False, [])]), el("hr", "", 0, Bool.False, []), player_view(active_player, active_color, undo_button)])]),
+					div([div([div([el("board", "", 0, Bool.False, [])]), el("hr", "", 0, Bool.False, []), console])]),
 					div([cheat_sheet_view(active_player)]),
 				],
 			),
+			tick: flags.tick,
+			winner: flags.winner,
 		}
 	}
 
-	board_view : Type.Game, List(Str), Type.Player -> List(Wire.Slot)
-	board_view = |game, zone_colors, active_player| {
+	## The computer's hand, face up, and nothing to press.
+	computer_view : Type.Player, Str -> Page.Tree
+	computer_view = |player, color|
+		div(
+			[
+				span(List.map(player.hand, |card| el("button", card_css(color, color), 0, Bool.True, [text(card)]))),
+				div([text("the computer is playing ${color}")]),
+			],
+		)
+
+	board_view : Type.Game, List(Str), Type.Player, Bool -> List(Wire.Slot)
+	board_view = |game, zone_colors, active_player, interactive| {
 		side_count = List.len(zone_colors)
 		angle = 2.0 * F64.pi / U64.to_f64(side_count)
 		center = center_offset(side_count)
@@ -110,19 +134,19 @@ Page :: [].{
 							b = panel_height - (loc.y * Config.square_size) + radius
 							cx = Config.square_size + center + a * F64.cos(theta) - b * F64.sin(theta)
 							cy = Config.square_size + center + a * F64.sin(theta) + b * F64.cos(theta)
-							slot(game, active_player, { zone: NormalColor(zone_color), id: loc.id }, cx, cy)
+							slot(game, active_player, interactive, { zone: NormalColor(zone_color), id: loc.id }, cx, cy)
 						},
 					)
 				},
 			),
 		)
-		bulls_eye = slot(game, active_player, { zone: BullsEyeZone, id: "bullseye" }, Config.square_size + center, Config.square_size + center)
+		bulls_eye = slot(game, active_player, interactive, { zone: BullsEyeZone, id: "bullseye" }, Config.square_size + center, Config.square_size + center)
 		List.append(zones, bulls_eye)
 	}
 
 	## `drawLocationAtCoords`.
-	slot : Type.Game, Type.Player, Type.PieceLocation, F64, F64 -> Wire.Slot
-	slot = |game, active_player, piece_location, cx, cy| {
+	slot : Type.Game, Type.Player, Bool, Type.PieceLocation, F64, F64 -> Wire.Slot
+	slot = |game, active_player, interactive, piece_location, cx, cy| {
 		zone_color = match piece_location.zone {
 			BullsEyeZone => "black"
 			NormalColor(color) => color
@@ -145,7 +169,9 @@ Page :: [].{
 				"white"
 			}
 		click =
-			if is_start_loc {
+			if !interactive {
+				0
+			} else if is_start_loc {
 				Codes.start_location(game.zone_colors, piece_location)
 			} else if is_reachable {
 				Codes.end_location(game.zone_colors, piece_location)

@@ -27,5 +27,7 @@ Wire :: [].{
 
 	Node : { parent : U32, tag : Str, text : Str, style : Str, click : U32, disabled : Bool }
 
-	View : { board_size : F64, slots : List(Wire.Slot), nodes : List(Wire.Node) }
+	## `tick` is a code the page sends back by itself after a pause (the
+	## computer's next click), 0 for none; `winner` is a color, or "".
+	View : { board_size : F64, slots : List(Wire.Slot), nodes : List(Wire.Node), tick : U32, winner : Str }
 }

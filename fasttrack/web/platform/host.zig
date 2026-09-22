@@ -1,9 +1,11 @@
 //! The fasttrack wasm host: three exports over a Roc model it holds as one
-//! boxed pointer. The page calls `start` once, `update` for every click, and
-//! `computeView` after each, and reads the view through the generated glue.
+//! boxed pointer. The page calls `start` once, `update` for every click (and
+//! for every tick the view asks for), and `computeView` after each, and reads
+//! the view through the generated glue.
 //!
 //! A game is driven by events, not a clock, so unlike canvas_apps' host
-//! there is no tick: nothing happens between clicks.
+//! nothing happens between calls. The computer's pauses are the page's: a
+//! view names a code to send back later, and the page sends it.
 //!
 //! OWNERSHIP AT THE BOUNDARY. A Roc function that takes a `Box` owns that
 //! reference. `update` returns the next model, so the host's reference moves
@@ -18,7 +20,7 @@ const host_alloc = @import("host_alloc");
 
 const RocOps = builtins.host_abi.RocOps;
 
-extern fn roc_init(millis: u64, setup: u32) callconv(.c) ?[*]u8;
+extern fn roc_init(millis: u64, setup: u32, seats: u32) callconv(.c) ?[*]u8;
 extern fn roc_update(model: ?[*]u8, code: u32) callconv(.c) ?[*]u8;
 extern fn roc_view(model: ?[*]u8) callconv(.c) ?[*]u8;
 extern fn roc_release(view: ?[*]u8) callconv(.c) void;
@@ -95,9 +97,10 @@ var model: ?[*]u8 = null;
 var view_box: ?[*]u8 = null;
 
 /// A new game. `millis` seeds the deck, as Elm's `Time.now` did; `setup`
-/// picks Setup.InitSetup by its position in FastTrack.setups.
-pub export fn start(millis: f64, setup: u32) void {
-    model = roc_init(@intFromFloat(millis), setup);
+/// picks Setup.InitSetup by its position in FastTrack.setups; `seats` says
+/// who plays each color, two bits a seat (FastTrack.seats_of).
+pub export fn start(millis: f64, setup: u32, seats: u32) void {
+    model = roc_init(@intFromFloat(millis), setup, seats);
 }
 
 /// One click: the code the view gave the thing clicked.

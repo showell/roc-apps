@@ -11,7 +11,9 @@
 //     node whose tag is "board".
 //
 // A click sends back the code Roc gave the thing clicked; nothing here builds
-// a message.
+// a message. When the computer is playing, the view names a `tick` code, and
+// the page sends it back by itself after a pause -- one computer click per
+// tick, so a person can watch.
 //
 // A plain script (the page loads it with <script src>), defining `FastTrack`.
 // page_check.mjs runs the same file against a stand-in document.
@@ -22,7 +24,7 @@ const FastTrack = (() => {
   function game(instance) {
     const ex = instance.exports;
     return {
-      start: (millis, setup) => ex.start(millis, setup),
+      start: (millis, setup, seats) => ex.start(millis, setup, seats),
       click: (code) => ex.update(code),
       // **computeView FIRST, THEN THE DataView.** Building a view can grow
       // wasm memory, which detaches every view of the old buffer.
@@ -126,13 +128,16 @@ const FastTrack = (() => {
     }
   }
 
-  // Wires a game to a document: draw, and redraw after every click.
-  function mount(document, root, g) {
+  // Wires a game to a document: draw, and redraw after every click. A view
+  // that names a tick hands it to `schedule`, which sends it later; the
+  // browser passes a timer, a check passes nothing and sends it itself.
+  function mount(document, root, g, schedule) {
     const b = board(document);
     const draw = () => {
       const view = g.view();
       b.patch(view, onClick);
       render(document, root, view.nodes, b.svg, onClick);
+      if (view.tick && schedule) schedule(() => onClick(view.tick));
       return view;
     };
     const onClick = (code) => {
@@ -142,18 +147,34 @@ const FastTrack = (() => {
     return { draw, onClick };
   }
 
-  return { game, board, render, mount };
+  // `?seats=hccc`: who plays each color, in the game's order (red, blue,
+  // green, purple) -- h a person, c the computer, n the naive player that
+  // takes the first choice it is offered. Two bits a seat, as
+  // FastTrack.seats_of reads them.
+  function seatBits(text) {
+    const codes = { h: 0, c: 1, n: 2 };
+    return [...text].slice(0, 4).reduce((bits, ch, i) => bits | ((codes[ch] ?? 0) << (2 * i)), 0);
+  }
+
+  return { game, board, render, mount, seatBits };
 })();
 
 // In a browser: `?seed=` replays a deal, `?setup=` starts from one of
-// Setup.roc's scenarios by number.
+// Setup.roc's scenarios by number, `?seats=` (default hccc: you are red)
+// says who plays, and `?pause=` is the computer's pause per click in ms.
 if (typeof window !== "undefined" && window.document && window.FASTTRACK_WASM) {
   (async () => {
     const root = document.getElementById("game");
     const { instance } = await WebAssembly.instantiateStreaming(fetch(window.FASTTRACK_WASM), {});
     const g = FastTrack.game(instance);
     const params = new URLSearchParams(location.search);
-    g.start(Number(params.get("seed") ?? Date.now()), Number(params.get("setup") ?? 0));
-    FastTrack.mount(document, root, g).draw();
+    g.start(Number(params.get("seed") ?? Date.now()), Number(params.get("setup") ?? 0), FastTrack.seatBits(params.get("seats") ?? "hccc"));
+    const pause = Number(params.get("pause") ?? 350);
+    let pending = null;
+    const schedule = (send) => {
+      clearTimeout(pending);
+      pending = setTimeout(send, pause);
+    };
+    FastTrack.mount(document, root, g, schedule).draw();
   })();
 }

@@ -4,9 +4,10 @@
 # played saves the state from BEFORE it; moving pieces saves nothing in
 # between. So "oops" takes back the last card and everything it caused.
 #
-# Elm's `beginActiveTurn` also ran WhatIf.debugWhatIf, which only logged. The
-# computer player is not ported yet.
+# Elm's `beginActiveTurn` also ran WhatIf.debugWhatIf, which only logged; the
+# computer player is Agent.roc. Elm never said who won; `winner` does.
 import Color
+import Config
 import ElmRandom
 import History
 import Move
@@ -61,6 +62,14 @@ Game :: [].{
 		players = Player.set_turn(new_idx, TurnBegin, Player.set_turn(old_idx, TurnIdle, game.players))
 		begin_active_turn({ ..game, players, active_player_idx: new_idx })
 	}
+
+	## The first color with every base square its own.
+	winner : Type.Game -> Try(Str, [NoWinner])
+	winner = |game|
+		match List.find_first(game.zone_colors, |color| List.all(Config.base_locations, |id| Piece.get_piece(game.piece_map, { zone: NormalColor(color), id }) == Ok(color))) {
+			Ok(color) => Ok(color)
+			Err(_) => Err(NoWinner)
+		}
 
 	begin_active_turn : Type.Game -> Type.Game
 	begin_active_turn = |game| Player.set_turn_to_need_card(Player.replenish_hand(game))

@@ -1,14 +1,17 @@
 // page_check -- plays Fast Track through the real page, with no browser.
 //
 //   node fasttrack/web/page_check.mjs <build-dir>
-//   SEED=42 SETUP=5 CLICKS=300 SHOT=board.png node fasttrack/web/page_check.mjs <build-dir>
+//   SEED=42 SETUP=5 SEATS=hccc CLICKS=300 SHOT=board.png node fasttrack/web/page_check.mjs <build-dir>
 //
 // It loads <build-dir>'s fasttrack.wasm and roc_glue.js and runs
 // fasttrack.js -- the page's own file, unchanged -- against a stand-in
-// document just large enough for it. Then it PLAYS: every step clicks
-// something the page offers, the way a person would: "done" when it is
-// there, else the first square that takes a click, else the first card
-// button that is enabled, and "oops" every seventh step when it is offered.
+// document just large enough for it. Then it PLAYS. When the view asks for
+// a tick (the computer's seat, SEATS as in the page's ?seats=, default hccc)
+// it sends it, as the page's timer would. In a person's seat it clicks what
+// the page offers, the way a person would: "done" when it is there, else the
+// first square that takes a click, else the first card button that is
+// enabled, and "oops" every seventh step when it is offered. It stops when
+// someone wins.
 //
 // **EVERY CLICK IS CHECKED.** After each one: sixteen pieces are on the board
 // (a move never loses or copies one), the board has its 89 squares, and the
@@ -26,6 +29,7 @@ const SEED = Number(process.env.SEED ?? 0);
 const SETUP = Number(process.env.SETUP ?? 0);
 const CLICKS = Number(process.env.CLICKS ?? 400);
 const SHOT = process.env.SHOT;
+const SEATS = process.env.SEATS ?? "hccc";
 
 // ── a stand-in document ────────────────────────────────────────────────────
 
@@ -100,7 +104,7 @@ let last = null;
 const watched = { ...game, view: () => (last = game.view()) };
 
 const root = new Node("div", "");
-game.start(SEED, SETUP);
+game.start(SEED, SETUP, FastTrack.seatBits(SEATS));
 const page = FastTrack.mount(document, root, watched);
 page.draw();
 
@@ -138,10 +142,18 @@ function clickables() {
   return { buttons, squares };
 }
 
-const counts = { done: 0, square: 0, card: 0, oops: 0 };
+const counts = { done: 0, square: 0, card: 0, oops: 0, tick: 0 };
 const started = performance.now();
 let step = 0;
-for (; step < CLICKS; step++) {
+for (; step < CLICKS && last.winner === ""; step++) {
+  if (last.tick) {
+    const { buttons, squares } = clickables();
+    if (buttons.length || squares.length) fail(`step ${step + 1}: the computer's turn offers clicks`);
+    counts.tick++;
+    page.onClick(last.tick);
+    check(step + 1);
+    continue;
+  }
   const { buttons, squares } = clickables();
   const named = (label) => buttons.find((b) => b.textContent === label);
   let target;
@@ -159,9 +171,12 @@ for (; step < CLICKS; step++) {
 const ms = (performance.now() - started) / Math.max(step, 1);
 
 const turns = counts.done;
-console.log(`seed ${SEED} setup ${SETUP}: ${step} clicks (${counts.card} cards, ${counts.square} squares, ${counts.oops} oops, ${turns} turns), ${ms.toFixed(3)} ms a click`);
-if (turns === 0) fail("no turn ever finished");
-if (counts.square === 0) fail("no piece ever moved");
+const won = last.winner ? `, ${last.winner} won` : "";
+console.log(`seed ${SEED} setup ${SETUP} seats ${SEATS}: ${step} clicks (${counts.card} cards, ${counts.square} squares, ${counts.oops} oops, ${turns} turns by hand, ${counts.tick} computer clicks${won}), ${ms.toFixed(3)} ms a click`);
+if (SEATS.includes("h") && turns === 0) fail("no turn ever finished by hand");
+if (SEATS.includes("h") && counts.square === 0) fail("no piece ever moved by hand");
+if (/[cn]/.test(SEATS) && counts.tick === 0) fail("the computer never played");
+if (last.winner && (last.tick || clickables().buttons.length || clickables().squares.length)) fail("the game goes on after a win");
 
 if (SHOT) {
   const { createCanvas } = await import(new URL("../../canvas_apps/web/mini_canvas.mjs", import.meta.url));
