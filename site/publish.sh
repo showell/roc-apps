@@ -23,7 +23,7 @@ NEXT="$HOME/build/roc-apps/next"
 LIVE="$HERE/live"
 ROC="${ROC:-$HOME/build/roc-nightly/roc}"
 ROCEMIT_REPO="$HOME/showell_repos/rust-codex-compiler"
-COBBLESTONE="${COBBLESTONE:-$HOME/showell_repos/cobblestone-u61}"
+COBBLESTONE="${COBBLESTONE:-$HOME/showell_repos/cobblestone-u62}"
 [ $# -eq 1 ] || { echo "usage: site/publish.sh <app> | home"; exit 2; }
 app="$1"
 mkdir -p "$LIVE"

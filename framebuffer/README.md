@@ -75,15 +75,15 @@ hold: safe here because the host stops at any address it does not back.
 | `bench/RayBench.roc`, `bench/raybench.sh` | raytrace-on-screen's trace as a native bench: the demo's scene and camera over the modules rocemit writes for it, timed with a checksum that must not move (`PERF.md`) |
 
     framebuffer/build.sh framebuffer/demos/scene-spin.codex machine/batch/demos/scene-on-screen.codex
-    framebuffer/build.sh ~/showell_repos/cobblestone-u61/codex/test/gpu-panel-border.codex
+    framebuffer/build.sh ~/showell_repos/cobblestone-u62/codex/test/gpu-panel-border.codex
     node framebuffer/frames.mjs scene-spin 5
     framebuffer/verify.sh        # mode 2: the table's programs, natively, against their hashes
     # the dev channel: http://143.244.172.148:9210/framebuffer/
 
 **Cobblestone here is the candidate, not the released Update.** The checkout
 the demos cite, `build.sh` builds Cobblestone's programs from and `verify.sh`
-runs them in is `~/showell_repos/cobblestone-u61`, branch `u61-candidate`:
-Update 60 and the Cobblestone PRs still open (147 to 151).
+runs them in is `~/showell_repos/cobblestone-u62`, branch `u62-candidate`:
+Update 61 and the Cobblestone PRs still open (154 to 156).
 
 **Mode 2 checks what mode 3 shows.** The browser's host and the checker's are
 two thin roots over one `core.zig` and one `gpu.zig`, so a program draws the

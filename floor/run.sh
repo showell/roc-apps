@@ -8,7 +8,7 @@
 #                             [-wall] [-fault <kind>] [-fault-every <n>]
 #                             [-fault-lba <lba>] [-report]
 #
-#   floor/run.sh ~/showell_repos/cobblestone-u61/codex/test/fat16-write.codex -report
+#   floor/run.sh ~/showell_repos/cobblestone-u62/codex/test/fat16-write.codex -report
 #   floor/run.sh .../fat16-write.codex -fault tear-write -fault-every 3 -report
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

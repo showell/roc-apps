@@ -36,7 +36,7 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROC="${ROC:-$HOME/build/roc-nightly/roc}"
 ROCEMIT="${ROCEMIT:-$HOME/build/rust-target/release/rocemit}"
-TESTS_ROOT="${TESTS_ROOT:-$HOME/showell_repos/cobblestone-u61}"
+TESTS_ROOT="${TESTS_ROOT:-$HOME/showell_repos/cobblestone-u62}"
 SRC="$TESTS_ROOT/codex/test"
 GEN="$HOME/build/roc-apps/gen/tests"
 VERDICTS="$HOME/build/roc-apps/gen/verdicts"

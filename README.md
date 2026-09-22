@@ -79,7 +79,7 @@ became one gallery module. The essay is `:9100/notes/plasma-in-roc.md`.
 | `gpu/wasm/` | the platform: `step(demo, frame)`, `view()` and `bufPtr` over one boxed model, as safari's; host, build.zig as safari's; `smoke.mjs` renders every demo from Node with its checksum and ms per frame, or the named ones | hand |
 | `gpu/web/gallery.html` | the page: a demo selector (`?k=plasma`); pixels as an ImageData, particles as additive quads the way each page's vertex shader drew them; no WebGPU, so no secure context | hand |
 | `gpu/build.sh` | host + app + page into the dev channel, `http://<box>:9210/gpu/gallery.html` | hand |
-| `gpu/emitted.sh` | THE GATE: every kernel under `$KERNELS_ROOT/apps/*/kernels` (default `~/showell_repos/cobblestone-u61`) emitted, chapter identity checked, `roc check`ed; on green, written to `gpu/roc/` | hand |
+| `gpu/emitted.sh` | THE GATE: every kernel under `$KERNELS_ROOT/apps/*/kernels` (default `~/showell_repos/cobblestone-u62`) emitted, chapter identity checked, `roc check`ed; on green, written to `gpu/roc/` | hand |
 
     gpu/emitted.sh                 # 46 kernels, ~4 s
     gpu/gallery.py                 # after a page or kernel changes: the app and the manifest

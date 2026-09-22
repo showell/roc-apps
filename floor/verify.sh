@@ -23,7 +23,7 @@
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$HERE/.." && pwd)"
-CHECKOUT="${CHECKOUT:-$HOME/showell_repos/cobblestone-u61}"
+CHECKOUT="${CHECKOUT:-$HOME/showell_repos/cobblestone-u62}"
 GEN="$HOME/build/roc-apps/gen/floor"
 VERDICTS="$HOME/build/roc-apps/gen/verdicts"
 mkdir -p "$GEN"

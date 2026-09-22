@@ -51,9 +51,9 @@ which is how we found out what the doors are. This is the other arrangement:
 | `verify.sh`, `verify.tsv` | every row built and run, its console compared with what the row expects |
 | `expect/` | the consoles a fault row expects, which the unit's own verdict cannot describe |
 
-    floor/run.sh ~/showell_repos/cobblestone-u61/codex/test/fat16-write.codex -report
-    floor/run.sh ~/showell_repos/cobblestone-u61/codex/test/fat16-write.codex -fault tear-write -report
-    floor/run.sh ~/showell_repos/cobblestone-u61/codex/test/gpu-panel-border.codex -screen 640 480 640
+    floor/run.sh ~/showell_repos/cobblestone-u62/codex/test/fat16-write.codex -report
+    floor/run.sh ~/showell_repos/cobblestone-u62/codex/test/fat16-write.codex -fault tear-write -report
+    floor/run.sh ~/showell_repos/cobblestone-u62/codex/test/gpu-panel-border.codex -screen 640 480 640
     floor/verify.sh
     ROC=~/build/roc/fast/bin/roc floor/page.sh <unit.codex>...
     # the dev channel: http://143.244.172.148:9210/floor/

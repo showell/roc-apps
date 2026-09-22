@@ -35,7 +35,7 @@ OUT = os.path.join(HERE, "ported")
 GEN = os.path.expanduser("~/build/roc-apps/gen/tests")
 VERDICTS = os.path.expanduser("~/build/roc-apps/gen/verdicts")
 ROC = os.environ.get("ROC", os.path.expanduser("~/build/roc-nightly/roc"))
-TESTS_ROOT = os.environ.get("TESTS_ROOT", os.path.expanduser("~/showell_repos/cobblestone-u61"))
+TESTS_ROOT = os.environ.get("TESTS_ROOT", os.path.expanduser("~/showell_repos/cobblestone-u62"))
 COBBLESTONE = "https://github.com/damiant3/Cobblestone"
 ROC_APPS = "https://github.com/showell/roc-apps"
 

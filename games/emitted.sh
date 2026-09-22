@@ -13,7 +13,7 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROC="${ROC:-$HOME/build/roc-nightly/roc}"
 ROCEMIT="${ROCEMIT:-$HOME/build/rust-target/release/rocemit}"
-GAMES_ROOT="${GAMES_ROOT:-$HOME/showell_repos/cobblestone-u61}"
+GAMES_ROOT="${GAMES_ROOT:-$HOME/showell_repos/cobblestone-u62}"
 GEN="$HOME/build/roc-apps/gen/games"
 GAMES=(Game2048Wasm MinesweeperWasm KlondikeWasm)
 if [ $# -gt 0 ]; then shells=("$@"); write=no; else shells=("${GAMES[@]}"); write=yes; fi
