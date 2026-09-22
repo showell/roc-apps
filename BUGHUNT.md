@@ -132,6 +132,10 @@ that is the DIVERGES column.
 - [#11335](https://github.com/roc-lang/roc/issues/11335) -- the default
   platform's allocator makes one `mmap` per heap value and one `munmap`
   per free.
+- [#11590](https://github.com/roc-lang/roc/issues/11590) -- compile-time
+  evaluation panics ("reallocated unknown pointer") on a small trie
+  program that runs fine when its input comes from `args`; regressed
+  between the 09-12 and 09-15 nightlies, and may be fixed on main.
 
 ## Where the pieces are
 

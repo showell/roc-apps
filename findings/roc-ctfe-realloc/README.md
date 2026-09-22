@@ -1,6 +1,7 @@
 # Compile-time evaluation panics: "compile-time RocOps reallocated unknown pointer"
 
-**Not yet filed.** `ISSUE.md` is the draft.
+**Filed as [roc-lang/roc#11590](https://github.com/roc-lang/roc/issues/11590),
+2026-09-22.** `ISSUE.md` is the text as posted.
 
 `main.roc` aborts `roc run` on nightly 2026-09-19 with the panic above;
 `runtime.roc` is the same program with the key read from `args`, and it

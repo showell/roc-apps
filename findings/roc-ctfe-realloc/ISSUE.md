@@ -1,5 +1,7 @@
 Compile-time evaluation panics: "compile-time RocOps reallocated unknown pointer"
 
+**This may well be fixed already.** We only have the nightlies, and `main` is 241 commits past the newest one (`nightly-2026-09-19-d025939`), several of them compile-time evaluation work (739e00fbc0, d2585908ce, 8718428979). It is very plausible one of them fixed this, and we have not built `main` to check. We are filing anyway because the program is small and would make a good regression test for compile-time evaluation either way.
+
 `roc run main.roc` aborts in the compiler on this program, which builds a two-node trie and collects its keys:
 
 ```
@@ -76,8 +78,6 @@ It should print `1`. Taking the key from `args` instead of writing it as a liter
 So it regressed between `220fd47` and `fe09c42`. The 09-15 crash hits both forms and is gone by 09-19; the compile-time one is not. The release tarballs from roc-lang/nightlies, x86-64 Linux.
 
 Each of these makes it pass, as far as we reduced it: writing `{ nodes: [empty_node] }` in `main!` instead of naming the `empty` constant; calling `collect_keys(t, 0, [])` directly instead of through `keys`; building the same two nodes by hand instead of with `insert_at`.
-
-We have not tried `main`, which is 241 commits past `d025939` and includes compile-time work (739e00fbc0, d2585908ce), so it may already be fixed.
 
 **Where we hit it.** We compile a Codex test corpus to Roc (https://github.com/showell/roc-apps), and this is a trie test that passed on the 09-12 nightly.
 
