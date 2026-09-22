@@ -11,22 +11,24 @@
 # Expected stdout:
 #     widened
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # EffectWidenArg -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-writer : Str => {}
-writer = |t| line!(t)
+writer! : List(U8) => {}
+writer! = |t| line!(Text.printed(t))
 
-apply_it : (Str => {}), Str => {}
-apply_it = |f, t| f(t)
+apply_it! : (List(U8) => {}), List(U8) => {}
+apply_it! = |f, t| f(t)
 
 # --- Entry ---
 
 main! = |_args| {
-	apply_it(writer, "widened")
+	apply_it!(writer!, [27, 17, 22, 13, 18, 13, 22])
 	Ok({})
 }

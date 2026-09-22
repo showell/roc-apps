@@ -12,7 +12,9 @@
 #     Codex ARM64 boot OK
 #     hello world
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # Arm64BootTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -22,7 +24,7 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!("Codex ARM64 boot OK")
-	line!(Str.concat("hello ", "world"))
+	line!(Text.printed([50, 16, 22, 13, 36, 2, 41, 47, 52, 9, 7, 2, 32, 16, 16, 14, 2, 42, 60]))
+	line!(Text.printed(List.concat([20, 13, 23, 23, 16, 2], [27, 16, 21, 23, 22])))
 	Ok({})
 }

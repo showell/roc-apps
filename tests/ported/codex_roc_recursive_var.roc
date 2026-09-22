@@ -11,7 +11,9 @@
 # Expected stdout:
 #     6
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # RocRecursiveVar -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -30,6 +32,6 @@ f = |n| ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(I64.to_str(f(3)))
+	line!(Text.printed(Text.show_int(f(3))))
 	Ok({})
 }

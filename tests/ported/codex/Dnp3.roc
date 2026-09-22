@@ -9,10 +9,10 @@ Dnp3 :: [].{
 	dnp3_crc_loop = |crc, bs, i, len| (if (i >= len) { crc } else { dnp3_crc_loop(dnp3_crc_byte(I64.bitwise_xor(crc, (List.get(bs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))), 0), bs, (i + 1), len) })
 
 	dnp3_crc_byte : I64, I64 -> I64
-	dnp3_crc_byte = |crc, k| (if (k >= 8) { crc } else { (if (I64.bitwise_and(crc, 1) == 1) { dnp3_crc_byte(I64.bitwise_xor(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(crc), U64.pow(2, I64.to_u64_wrap(1)))), 42684), (k + 1)) } else { dnp3_crc_byte(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(crc), U64.pow(2, I64.to_u64_wrap(1)))), (k + 1)) }) })
+	dnp3_crc_byte = |crc, k| (if (k >= 8) { crc } else { (if (I64.bitwise_and(crc, 1) == 1) { dnp3_crc_byte(I64.bitwise_xor(I64.shr_zf_wrap(crc, I64.to_u8_wrap(1)), 42684), (k + 1)) } else { dnp3_crc_byte(I64.shr_zf_wrap(crc, I64.to_u8_wrap(1)), (k + 1)) }) })
 
 	dnp3_u16_le : I64 -> List(I64)
-	dnp3_u16_le = |v| [I64.bitwise_and(v, 255), I64.bitwise_and(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(v), U64.pow(2, I64.to_u64_wrap(8)))), 255)]
+	dnp3_u16_le = |v| [I64.bitwise_and(v, 255), I64.bitwise_and(I64.shr_zf_wrap(v, I64.to_u8_wrap(8)), 255)]
 
 	dnp3_crc_suffix : List(I64) -> List(I64)
 	dnp3_crc_suffix = |bs| dnp3_u16_le(dnp3_crc16(bs))

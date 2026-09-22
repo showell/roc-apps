@@ -21,7 +21,9 @@
 #     wide-sub: 73
 #     via-call: 36
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # LirBinopCross -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -61,16 +63,16 @@ via_call = |n| (diff(n, 4) + scale(n))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Str.concat("diff: ", I64.to_str(diff(9, 4))))
-	line!(Str.concat("diff-neg: ", I64.to_str(diff(4, 9))))
-	line!(Str.concat("addup: ", I64.to_str(addup(1, 2, 3))))
-	line!(Str.concat("chain-sub: ", I64.to_str(chain_sub(20, 5, 3))))
-	line!(Str.concat("scale: ", I64.to_str(scale(7))))
-	line!(Str.concat("offset: ", I64.to_str(offset(7))))
-	line!(Str.concat("poly: ", I64.to_str(poly(5))))
-	line!(Str.concat("reuse: ", I64.to_str(reuse(6, 4))))
-	line!(Str.concat("wide: ", I64.to_str(wide(1, 2, 3, 4, 5, 6, 7, 8))))
-	line!(Str.concat("wide-sub: ", I64.to_str(wide_sub(100, 3, 5, 2, 7, 4, 6, 9))))
-	line!(Str.concat("via-call: ", I64.to_str(via_call(10))))
+	line!(Text.printed(List.concat([22, 17, 28, 28, 69, 2], Text.show_int(diff(9, 4)))))
+	line!(Text.printed(List.concat([22, 17, 28, 28, 73, 18, 13, 29, 69, 2], Text.show_int(diff(4, 9)))))
+	line!(Text.printed(List.concat([15, 22, 22, 25, 31, 69, 2], Text.show_int(addup(1, 2, 3)))))
+	line!(Text.printed(List.concat([24, 20, 15, 17, 18, 73, 19, 25, 32, 69, 2], Text.show_int(chain_sub(20, 5, 3)))))
+	line!(Text.printed(List.concat([19, 24, 15, 23, 13, 69, 2], Text.show_int(scale(7)))))
+	line!(Text.printed(List.concat([16, 28, 28, 19, 13, 14, 69, 2], Text.show_int(offset(7)))))
+	line!(Text.printed(List.concat([31, 16, 23, 30, 69, 2], Text.show_int(poly(5)))))
+	line!(Text.printed(List.concat([21, 13, 25, 19, 13, 69, 2], Text.show_int(reuse(6, 4)))))
+	line!(Text.printed(List.concat([27, 17, 22, 13, 69, 2], Text.show_int(wide(1, 2, 3, 4, 5, 6, 7, 8)))))
+	line!(Text.printed(List.concat([27, 17, 22, 13, 73, 19, 25, 32, 69, 2], Text.show_int(wide_sub(100, 3, 5, 2, 7, 4, 6, 9)))))
+	line!(Text.printed(List.concat([33, 17, 15, 73, 24, 15, 23, 23, 69, 2], Text.show_int(via_call(10)))))
 	Ok({})
 }

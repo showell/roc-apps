@@ -15,7 +15,9 @@
 #     of3-mid: 2
 #     of3-last: 3
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # RvParamBind -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -40,10 +42,10 @@ of_three_last = |_a, _b, c| c
 # --- Entry ---
 
 main! = |_args| {
-	line!(Str.concat("first: ", I64.to_str(take_first(1, 2))))
-	line!(Str.concat("second: ", I64.to_str(take_second(1, 2))))
-	line!(Str.concat("of3-first: ", I64.to_str(of_three_first(1, 2, 3))))
-	line!(Str.concat("of3-mid: ", I64.to_str(of_three_mid(1, 2, 3))))
-	line!(Str.concat("of3-last: ", I64.to_str(of_three_last(1, 2, 3))))
+	line!(Text.printed(List.concat([28, 17, 21, 19, 14, 69, 2], Text.show_int(take_first(1, 2)))))
+	line!(Text.printed(List.concat([19, 13, 24, 16, 18, 22, 69, 2], Text.show_int(take_second(1, 2)))))
+	line!(Text.printed(List.concat([16, 28, 6, 73, 28, 17, 21, 19, 14, 69, 2], Text.show_int(of_three_first(1, 2, 3)))))
+	line!(Text.printed(List.concat([16, 28, 6, 73, 26, 17, 22, 69, 2], Text.show_int(of_three_mid(1, 2, 3)))))
+	line!(Text.printed(List.concat([16, 28, 6, 73, 23, 15, 19, 14, 69, 2], Text.show_int(of_three_last(1, 2, 3)))))
 	Ok({})
 }

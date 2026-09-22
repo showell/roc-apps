@@ -11,7 +11,9 @@
 # Expected stdout:
 #     24
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # MutBorrowTransitive -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -34,6 +36,6 @@ scan_twice = |m| ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(I64.to_str(scan_twice({ pos: 7 })))
+	line!(Text.printed(Text.show_int(scan_twice({ pos: 7 }))))
 	Ok({})
 }

@@ -14,6 +14,7 @@
 app [main!] { cdx: "./codex/main.roc" }
 
 import cdx.Linear
+import cdx.Text
 
 # LinearSmoke -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -39,6 +40,6 @@ shadow_test = |n| ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(Str.concat(Str.concat(Str.concat(Str.concat(I64.to_str(use_once), " "), I64.to_str(finalize(21))), " "), I64.to_str(shadow_test(41))))
+	line!(Text.printed(List.concat(List.concat(List.concat(List.concat(Text.show_int(use_once), [2]), Text.show_int(finalize(21))), [2]), Text.show_int(shadow_test(41)))))
 	Ok({})
 }

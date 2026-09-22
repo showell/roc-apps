@@ -3,25 +3,25 @@
 J1939 :: [].{
 
 	j1939_can_id : I64, I64, I64, I64 -> I64
-	j1939_can_id = |priority, pf, ps, source_addr| I64.bitwise_or(I64.bitwise_or(U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(priority), U64.pow(2, I64.to_u64_wrap(26)))), U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(pf), U64.pow(2, I64.to_u64_wrap(16))))), I64.bitwise_or(U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(ps), U64.pow(2, I64.to_u64_wrap(8)))), source_addr))
+	j1939_can_id = |priority, pf, ps, source_addr| I64.bitwise_or(I64.bitwise_or(I64.shl_wrap(priority, I64.to_u8_wrap(26)), I64.shl_wrap(pf, I64.to_u8_wrap(16))), I64.bitwise_or(I64.shl_wrap(ps, I64.to_u8_wrap(8)), source_addr))
 
 	j1939_pgn_pdu2 : I64, I64 -> I64
-	j1939_pgn_pdu2 = |pf, ps| I64.bitwise_or(U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(pf), U64.pow(2, I64.to_u64_wrap(8)))), ps)
+	j1939_pgn_pdu2 = |pf, ps| I64.bitwise_or(I64.shl_wrap(pf, I64.to_u8_wrap(8)), ps)
 
 	j1939_pgn_pdu1 : I64 -> I64
-	j1939_pgn_pdu1 = |pf| U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(pf), U64.pow(2, I64.to_u64_wrap(8))))
+	j1939_pgn_pdu1 = |pf| I64.shl_wrap(pf, I64.to_u8_wrap(8))
 
 	j1939_is_pdu1 : I64 -> Bool
 	j1939_is_pdu1 = |pf| (pf < 240)
 
 	j1939_priority : I64 -> I64
-	j1939_priority = |can_id| I64.bitwise_and(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(can_id), U64.pow(2, I64.to_u64_wrap(26)))), 7)
+	j1939_priority = |can_id| I64.bitwise_and(I64.shr_zf_wrap(can_id, I64.to_u8_wrap(26)), 7)
 
 	j1939_pf : I64 -> I64
-	j1939_pf = |can_id| I64.bitwise_and(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(can_id), U64.pow(2, I64.to_u64_wrap(16)))), 255)
+	j1939_pf = |can_id| I64.bitwise_and(I64.shr_zf_wrap(can_id, I64.to_u8_wrap(16)), 255)
 
 	j1939_ps : I64 -> I64
-	j1939_ps = |can_id| I64.bitwise_and(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(can_id), U64.pow(2, I64.to_u64_wrap(8)))), 255)
+	j1939_ps = |can_id| I64.bitwise_and(I64.shr_zf_wrap(can_id, I64.to_u8_wrap(8)), 255)
 
 	j1939_source_addr : I64 -> I64
 	j1939_source_addr = |can_id| I64.bitwise_and(can_id, 255)

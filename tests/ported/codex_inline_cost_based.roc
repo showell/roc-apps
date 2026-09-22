@@ -11,7 +11,9 @@
 # Expected stdout:
 #     inline-cost-based: 1122 3351 9 40
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # InlineCostBased -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -49,7 +51,7 @@ main! = |_args| {
 		b = caller_two
 		c = pick2(5, 9)
 		d = pick2(40, 2)
-		line!(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat("inline-cost-based: ", I64.to_str(a)), " "), I64.to_str(b)), " "), I64.to_str(c)), " "), I64.to_str(d)))
+		line!(Text.printed(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat([17, 18, 23, 17, 18, 13, 73, 24, 16, 19, 14, 73, 32, 15, 19, 13, 22, 69, 2], Text.show_int(a)), [2]), Text.show_int(b)), [2]), Text.show_int(c)), [2]), Text.show_int(d))))
 	})
 	Ok({})
 }

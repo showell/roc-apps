@@ -12,7 +12,9 @@
 #     whole-19-parses : 123456789012345680
 #     frac-19-parses  : 2
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # RealLiteralBoundary -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -28,7 +30,7 @@ whole_nineteen = F64.from_bits(4862596447618666293)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Str.concat("whole-19-parses : ", I64.to_str(F64.to_i64_wrap(whole_nineteen))))
-	line!(Str.concat("frac-19-parses  : ", I64.to_str(F64.to_i64_wrap((frac_nineteen + frac_nineteen)))))
+	line!(Text.printed(List.concat([27, 20, 16, 23, 13, 73, 4, 12, 73, 31, 15, 21, 19, 13, 19, 2, 69, 2], Text.show_int(F64.to_i64_wrap(whole_nineteen)))))
+	line!(Text.printed(List.concat([28, 21, 15, 24, 73, 4, 12, 73, 31, 15, 21, 19, 13, 19, 2, 2, 69, 2], Text.show_int(F64.to_i64_wrap((frac_nineteen + frac_nineteen))))))
 	Ok({})
 }

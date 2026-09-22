@@ -15,7 +15,9 @@
 #     block=2
 #     plusk=4294967302
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # FramelessLeafProbe -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -28,11 +30,11 @@ flp_add32 = |a, b| I64.bitwise_and((a + b), 4294967295)
 flp_rotl32 : I64, I64 -> I64
 flp_rotl32 = |val, n| ({
 	masked = I64.bitwise_and(val, 4294967295)
-	I64.bitwise_and(I64.bitwise_or(U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(masked), U64.pow(2, I64.to_u64_wrap(n)))), U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(masked), U64.pow(2, I64.to_u64_wrap((32 - n)))))), 4294967295)
+	I64.bitwise_and(I64.bitwise_or(I64.shl_wrap(masked, I64.to_u8_wrap(n)), I64.shr_zf_wrap(masked, I64.to_u8_wrap((32 - n)))), 4294967295)
 })
 
 flp_gmul2 : I64 -> I64
-flp_gmul2 = |a| (if (a >= 128) { I64.bitwise_xor(I64.bitwise_and(U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(a), U64.pow(2, I64.to_u64_wrap(1)))), 255), 27) } else { I64.bitwise_and(U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(a), U64.pow(2, I64.to_u64_wrap(1)))), 255) })
+flp_gmul2 = |a| (if (a >= 128) { I64.bitwise_xor(I64.bitwise_and(I64.shl_wrap(a, I64.to_u8_wrap(1)), 255), 27) } else { I64.bitwise_and(I64.shl_wrap(a, I64.to_u8_wrap(1)), 255) })
 
 flp_block : I64 -> I64
 flp_block = |cp| ({
@@ -49,10 +51,10 @@ flp_plusk = |x| (x + flp_mask)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Str.concat("add32=", I64.to_str(flp_add32(1634760805, 2036477234))))
-	line!(Str.concat("rotl32=", I64.to_str(flp_rotl32(1634760805, 7))))
-	line!(Str.concat("gmul2=", I64.to_str(flp_gmul2(202))))
-	line!(Str.concat("block=", I64.to_str(flp_block(628))))
-	line!(Str.concat("plusk=", I64.to_str(flp_plusk(7))))
+	line!(Text.printed(List.concat([15, 22, 22, 6, 5, 77], Text.show_int(flp_add32(1634760805, 2036477234)))))
+	line!(Text.printed(List.concat([21, 16, 14, 23, 6, 5, 77], Text.show_int(flp_rotl32(1634760805, 7)))))
+	line!(Text.printed(List.concat([29, 26, 25, 23, 5, 77], Text.show_int(flp_gmul2(202)))))
+	line!(Text.printed(List.concat([32, 23, 16, 24, 34, 77], Text.show_int(flp_block(628)))))
+	line!(Text.printed(List.concat([31, 23, 25, 19, 34, 77], Text.show_int(flp_plusk(7)))))
 	Ok({})
 }

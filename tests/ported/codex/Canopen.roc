@@ -30,7 +30,7 @@ Canopen :: [].{
 	co_fc_heartbeat = 14
 
 	co_cob_id : I64, I64 -> I64
-	co_cob_id = |function, node| I64.bitwise_or(U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(function), U64.pow(2, I64.to_u64_wrap(7)))), node)
+	co_cob_id = |function, node| I64.bitwise_or(I64.shl_wrap(function, I64.to_u8_wrap(7)), node)
 
 	co_nmt_start : I64
 	co_nmt_start = 1
@@ -71,7 +71,7 @@ Canopen :: [].{
 	co_sdo_download_expedited : I64, I64, List(I64) -> List(I64)
 	co_sdo_download_expedited = |index, subindex, data| ({
 		n = U64.to_i64_wrap(List.len(data))
-		command = I64.bitwise_or(35, U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap((4 - n)), U64.pow(2, I64.to_u64_wrap(2)))))
-		List.concat(List.concat([command, I64.bitwise_and(index, 255), I64.bitwise_and(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(index), U64.pow(2, I64.to_u64_wrap(8)))), 255), subindex], data), co_zeros((4 - n), []))
+		command = I64.bitwise_or(35, I64.shl_wrap((4 - n), I64.to_u8_wrap(2)))
+		List.concat(List.concat([command, I64.bitwise_and(index, 255), I64.bitwise_and(I64.shr_zf_wrap(index, I64.to_u8_wrap(8)), 255), subindex], data), co_zeros((4 - n), []))
 	})
 }

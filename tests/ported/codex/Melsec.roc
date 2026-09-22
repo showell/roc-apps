@@ -3,10 +3,10 @@
 Melsec :: [].{
 
 	melsec_u16_le : I64 -> List(I64)
-	melsec_u16_le = |v| [I64.bitwise_and(v, 255), I64.bitwise_and(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(v), U64.pow(2, I64.to_u64_wrap(8)))), 255)]
+	melsec_u16_le = |v| [I64.bitwise_and(v, 255), I64.bitwise_and(I64.shr_zf_wrap(v, I64.to_u8_wrap(8)), 255)]
 
 	melsec_u24_le : I64 -> List(I64)
-	melsec_u24_le = |v| [I64.bitwise_and(v, 255), I64.bitwise_and(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(v), U64.pow(2, I64.to_u64_wrap(8)))), 255), I64.bitwise_and(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(v), U64.pow(2, I64.to_u64_wrap(16)))), 255)]
+	melsec_u24_le = |v| [I64.bitwise_and(v, 255), I64.bitwise_and(I64.shr_zf_wrap(v, I64.to_u8_wrap(8)), 255), I64.bitwise_and(I64.shr_zf_wrap(v, I64.to_u8_wrap(16)), 255)]
 
 	melsec_cmd_batch_read : I64
 	melsec_cmd_batch_read = 1025

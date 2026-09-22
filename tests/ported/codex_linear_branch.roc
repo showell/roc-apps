@@ -14,6 +14,7 @@
 app [main!] { cdx: "./codex/main.roc" }
 
 import cdx.Linear
+import cdx.Text
 
 # LinearBranch -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -39,6 +40,6 @@ pass_linear = |n| ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(I64.to_str(consume_in_branch(5, 1)), " "), I64.to_str(consume_in_branch(5, 0))), " "), I64.to_str(consume_in_match(10, 1))), " "), I64.to_str(consume_in_match(10, 2))), " "), I64.to_str(consume_in_match(10, 0))), " "), I64.to_str(pass_linear(99))))
+	line!(Text.printed(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(Text.show_int(consume_in_branch(5, 1)), [2]), Text.show_int(consume_in_branch(5, 0))), [2]), Text.show_int(consume_in_match(10, 1))), [2]), Text.show_int(consume_in_match(10, 2))), [2]), Text.show_int(consume_in_match(10, 0))), [2]), Text.show_int(pass_linear(99)))))
 	Ok({})
 }

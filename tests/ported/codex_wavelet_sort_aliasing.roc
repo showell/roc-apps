@@ -18,6 +18,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.Text
 import cdx.Wavelet
 
 # WaveletSortAliasing -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
@@ -25,17 +26,17 @@ import cdx.Wavelet
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-print_list : List(I64), I64, I64 => {}
-print_list = |xs, i, len| ({
-	(if (i >= len) { line!("done") } else { ({
-		line!(I64.to_str((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))
-		print_list(xs, (i + 1), len)
+print_list! : List(I64), I64, I64 => {}
+print_list! = |xs, i, len| ({
+	(if (i >= len) { line!(Text.printed([22, 16, 18, 13])) } else { ({
+		line!(Text.printed(Text.show_int((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))
+		print_list!(xs, (i + 1), len)
 	}) })
 })
 
 # --- Entry ---
 
 main! = |_args| {
-	print_list(Wavelet.dwt_insertion_sort([5, 3, 4, 1, 2], 0, 5), 0, 5)
+	print_list!(Wavelet.dwt_insertion_sort([5, 3, 4, 1, 2], 0, 5), 0, 5)
 	Ok({})
 }

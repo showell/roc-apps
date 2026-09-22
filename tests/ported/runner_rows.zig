@@ -15,6 +15,11 @@ const codex_act_let_scope_stdout =
     \\arm-local: 23
     ++ "\n";
 
+const codex_act_unused_bind_stdout =
+    \\noisy 1
+    \\after
+    ++ "\n";
+
 const codex_amp_after_call_stdout =
     \\n=7
     ++ "\n";
@@ -51,6 +56,35 @@ const codex_arm64_boot_test_stdout =
     \\hello world
     ++ "\n";
 
+const codex_asn1_der_write_stdout =
+    \\der alg-matches-rfc8410=True
+    \\der len-5-is-one-octet=True
+    \\der len-223-matches-rfc8410=True
+    \\der len-300-matches-rfc8410=True
+    \\der len-127-is-one-octet=True
+    \\der len-128-takes-long-form=True
+    \\der small-int-round-trip=True
+    \\der int-128-content=True
+    \\der int-128-round-trip=True
+    \\der int-0-is-one-octet=True
+    \\der wide-int-round-trip=True
+    \\der bit-string-round-trip=True
+    \\der oid-round-trip=True
+    \\der long-sequence-round-trip=True
+    \\der reader-refuses-non-minimal=True
+    \\der writer-avoids-that-form=True
+    ++ "\n";
+
+const codex_audio_diffusion_test_stdout =
+    \\peak=1000 rms=19
+    \\env=2 e0=15 e1=3
+    \\analyze: peak=1000 rms=19 centroid=3Hz bpm=120 dur=2ms
+    \\linear: steps=10 beta[0]=1 beta[-1]=20 abar[-1]=901
+    \\cosine: steps=10 beta[0]=1 beta[-1]=722 abar[-1]=27
+    \\noisy: len=3
+    \\snr: early=165666 late=697 decreasing=True
+    ++ "\n";
+
 const codex_bezier_identity_stdout =
     \\cubic-t0=100,200,300
     \\cubic-t1000=1000,1100,1200
@@ -75,9 +109,43 @@ const codex_ble_att_encode_stdout =
     \\5
     ++ "\n";
 
+const codex_bounded_integer_ops_stdout =
+    \\155
+    \\165
+    \\52
+    \\18
+    \\4660
+    \\100
+    ++ "\n";
+
 const codex_bounded_sig_runtime_stdout =
     \\6
     \\9
+    ++ "\n";
+
+const codex_bounds_proof_stdout =
+    \\42
+    \\100
+    \\300
+    \\18
+    \\52
+    \\240
+    \\232
+    \\18
+    \\10
+    \\150
+    ++ "\n";
+
+const codex_bounds_prover_stdout =
+    \\42
+    \\250
+    \\70
+    \\80
+    \\50
+    \\232
+    \\232
+    \\50
+    \\75
     ++ "\n";
 
 const codex_bs3_smoke_stdout =
@@ -96,8 +164,23 @@ const codex_canopen_encode_stdout =
     \\4
     ++ "\n";
 
+const codex_cap_heap_poke_pure_stdout =
+    \\42
+    ++ "\n";
+
 const codex_cap_manifest_derived_stdout =
     \\capability manifest derived from opening effects
+    ++ "\n";
+
+const codex_capability_doors_stdout =
+    \\agree=75/75
+    \\granting=75/75
+    \\union=25/25 refines=25/25
+    \\unknown-id=-1 unknown-name-bits=0 unknown-id-bits=0
+    \\names=31 rows=25 resolving=25
+    \\console=17,33,49
+    \\filesystem=64,128,192
+    \\concurrent=6152,6152
     ++ "\n";
 
 const codex_carddeck_shuffle_stdout =
@@ -136,6 +219,17 @@ const codex_cms_spread_stdout =
     \\total:          40
     ++ "\n";
 
+const codex_color_test_stdout =
+    \\packed=16744448 back=rgb(255,128,0)
+    \\mid=rgb(127,127,127)
+    \\blend=rgb(127,0,127)
+    \\gray=rgb(124,124,124) lum=124
+    \\inv=rgb(155,55,205)
+    \\hsl=hsl(0,1000,500) back=rgb(255,0,0)
+    \\grad=5 mid=rgb(127,0,127)
+    \\hex=#ff8000
+    ++ "\n";
+
 const codex_consistent_hash_balance_stdout =
     \\nodes=4
     \\entries=64
@@ -155,8 +249,40 @@ const codex_ctor_narrow_warn_stdout =
     \\42
     ++ "\n";
 
+const codex_deriving_eq_recursive_stdout =
+    \\eq
+    \\ne
+    \\eq
+    \\eq
+    \\ne
+    \\eq
+    ++ "\n";
+
 const codex_dnp3_encode_stdout =
     \\8
+    ++ "\n";
+
+const codex_dtls_handshake_stdout =
+    \\hs happy: send1,timer1000 | keys,send5,timer1050 |  | connected
+    \\hs cookie: send1,timer3000 | send3,timer2200 | timer=1000 retries=0
+    \\hs backoff: 2000,4000,8000,16000,32000,60000,60000,60000,60000,60000,60000
+    \\hs giveup: retries=10 phase=wait-sh then=abort80/failed after=/failed
+    \\hs stale: /connected
+    \\hs verdict none=send2
+    \\hs verdict good=keys
+    \\hs verdict bad=abort47
+    \\hs verdict wrong-addr=abort47
+    \\hs amp: at=True over=False partial=True budget=50
+    ++ "\n";
+
+const codex_edit_distance_test_stdout =
+    \\same=0
+    \\empty=3,3
+    \\kitten-sitting=3 saturday-sunday=3
+    \\sub=1 ins=1 del=1
+    \\sim-same=1000 sim-close=800
+    \\best=help (d=1)
+    \\within-2=4
     ++ "\n";
 
 const codex_effect_dotted_allow_stdout =
@@ -194,6 +320,10 @@ const codex_eq_generic_fields_stdout =
     \\one-param ne     : no
     \\second param     : yes
     \\second param ne  : no
+    \\one-param int eq : yes
+    \\one-param int ne : no
+    \\first param eq   : yes
+    \\first param ne   : no
     ++ "\n";
 
 const codex_eq_generic_recursive_stdout =
@@ -223,6 +353,59 @@ const codex_eventbus_test_stdout =
     \\last=[20] b: 2
     \\since-200=2
     \\overflow=3/3 events
+    ++ "\n";
+
+const codex_examples@eight_queens_stdout =
+    \\Q . . . . . . .
+    \\. . . . Q . . .
+    \\. . . . . . . Q
+    \\. . . . . Q . .
+    \\. . Q . . . . .
+    \\. . . . . . Q .
+    \\. Q . . . . . .
+    \\. . . Q . . . .
+    ++ "\n";
+
+const codex_examples@missile_warning_stdout =
+    \\THREAT: CRITICAL
+    \\ACTION: FLARE
+    \\IMMINENT: YES
+    \\THREAT: NONE
+    \\ACTION: HOLD
+    \\IMMINENT: NO
+    ++ "\n";
+
+const codex_expr_calculator_stdout =
+    \\=== Expression Calculator ===
+    \\
+    \\PASS: 42 = 42 (expected 42)  tree: 42
+    \\PASS: 2 + 3 = 5 (expected 5)  tree: (2 + 3)
+    \\PASS: 10 - 4 = 6 (expected 6)  tree: (10 - 4)
+    \\PASS: 3 * 7 = 21 (expected 21)  tree: (3 * 7)
+    \\PASS: 100 / 5 = 20 (expected 20)  tree: (100 / 5)
+    \\PASS: 2 + 3 * 4 = 14 (expected 14)  tree: (2 + (3 * 4))
+    \\PASS: 10 - 2 * 3 = 4 (expected 4)  tree: (10 - (2 * 3))
+    \\PASS: (2 + 3) * 4 = 20 (expected 20)  tree: ((2 + 3) * 4)
+    \\PASS: 1 + 2 + 3 + 4 = 10 (expected 10)  tree: (((1 + 2) + 3) + 4)
+    \\PASS: 2 * 3 + 4 * 5 = 26 (expected 26)  tree: ((2 * 3) + (4 * 5))
+    \\
+    \\All PASS = compiler correctly compiles a recursive descent parser.
+    \\QED: not a quine.
+    ++ "\n";
+
+const codex_factlog_layout_stdout =
+    \\u16=4660 want=4660
+    \\u32=305419896 want=305419896
+    \\u64=81985529216486895 want=81985529216486895
+    \\u64-high=-9223372036854775808
+    \\kind=30 ts=1234567890123 clen=4321
+    \\log-head=777 index-gen=42
+    \\off kind=32 ts=66 clen=74 hdr=78 sec=512
+    \\magic-ok=yes
+    \\magic-corrupt=no
+    \\sectors 0=1 434=1 435=2 1024=3
+    \\text=hello
+    \\text-cps=200 1 255 len=3
     ++ "\n";
 
 const codex_factorial_stdout =
@@ -258,6 +441,1330 @@ const codex_fins_encode_stdout =
     \\4
     ++ "\n";
 
+const codex_forewords@ai_activation_stdout =
+    \\AI/Activation OK
+    ++ "\n";
+
+const codex_forewords@ai_activation_range_stdout =
+    \\sigmoid, which must rise and stay inside (0, 1000):
+    \\  sigmoid 0 = 500  true 500 exact, and the control: no error can move it
+    \\  sigmoid 2000 = 881  true 881
+    \\  sigmoid 3000 = 953  true 953
+    \\  sigmoid 5000 = 994  true 993
+    \\  sigmoid -3000 = 47  true 47
+    \\
+    \\no cliff where the old guard sat, at 6000:
+    \\  sigmoid 5999 = 998  true 998
+    \\  sigmoid 6001 = 998  true 998
+    \\
+    \\tanh, which must rise and stay inside (-1000, 1000):
+    \\  tanh 1000 = 762  true 762
+    \\  tanh 2000 = 964  true 964
+    \\  tanh 3000 = 996  true 995
+    \\  tanh -2000 = -966  true -964
+    \\
+    \\exp on NEGATIVE arguments, which is the only side softmax ever
+    \\asks for, because it shifts by the maximum first:
+    \\  exp 0 = 1000  true 1000 exact, the control
+    \\  exp -1000 = 367  true 368
+    \\  exp -2000 = 135  true 135
+    \\  exp -3000 = 49  true 50
+    \\
+    \\gelu, which asks the sigmoid for 1.702x and so reaches the old
+    \\broken region sooner than the sigmoid itself did:
+    \\  gelu 2000 = 1936  true 1955
+    \\  gelu 3000 = 2982  true 2996
+    \\
+    \\monotonicity, counted rather than eyeballed. Both were false
+    \\before: the sigmoid turned over at z=2 and exp at z=-1.
+    \\  sigmoid non-decreasing over z=0..12: 13 of 13
+    \\  exp non-decreasing over z=0..12:     13 of 13
+    ++ "\n";
+
+const codex_forewords@ai_attention_stdout =
+    \\AI/Attention OK
+    ++ "\n";
+
+const codex_forewords@ai_clip_interrogator_stdout =
+    \\AI/ClipInterrogator OK
+    ++ "\n";
+
+const codex_forewords@ai_control_net_stdout =
+    \\AI/ControlNet OK
+    ++ "\n";
+
+const codex_forewords@ai_decision_tree_stdout =
+    \\AI/DecisionTree OK
+    ++ "\n";
+
+const codex_forewords@ai_diffusion_pipeline_stdout =
+    \\AI/DiffusionPipeline OK
+    ++ "\n";
+
+const codex_forewords@ai_diffusion_scheduler_stdout =
+    \\AI/DiffusionScheduler OK
+    ++ "\n";
+
+const codex_forewords@ai_embedding_stdout =
+    \\AI/Embedding OK
+    ++ "\n";
+
+const codex_forewords@ai_flux_pipeline_stdout =
+    \\AI/FluxPipeline OK
+    ++ "\n";
+
+const codex_forewords@ai_genetic_algorithm_stdout =
+    \\ranked:   22 44 33 11
+    \\kept:     22 44
+    \\stepped:  4 individuals
+    \\elite held: 22 44
+    \\best-idx: 1
+    \\best-fit: 9
+    \\avg-fit:  5
+    \\evolved gen: 1
+    \\evolved size: 4
+    ++ "\n";
+
+const codex_forewords@ai_gguf_stdout =
+    \\AI/Gguf OK
+    ++ "\n";
+
+const codex_forewords@ai_gpu_proxy_stdout =
+    \\AI/GpuProxy OK
+    ++ "\n";
+
+const codex_forewords@ai_hires_fix_stdout =
+    \\AI/HiresFix OK
+    ++ "\n";
+
+const codex_forewords@ai_inpainting_stdout =
+    \\AI/Inpainting OK
+    ++ "\n";
+
+const codex_forewords@ai_k_nearest_neighbor_stdout =
+    \\AI/KNearestNeighbor OK
+    ++ "\n";
+
+const codex_forewords@ai_kv_cache_stdout =
+    \\AI/KvCache OK
+    ++ "\n";
+
+const codex_forewords@ai_lora_loader_stdout =
+    \\AI/LoraLoader OK
+    ++ "\n";
+
+const codex_forewords@ai_loss_stdout =
+    \\AI/Loss OK
+    ++ "\n";
+
+const codex_forewords@ai_neural_net_stdout =
+    \\AI/NeuralNet OK
+    ++ "\n";
+
+const codex_forewords@ai_normalization_stdout =
+    \\group-norm, 1 group, 1 channel, spatial 4, values 0 1 2 3:
+    \\  -1341 -447 447 1341   true -1342 -447 447 1342
+    \\
+    \\control: all values equal, so every deviation is zero and the
+    \\answer is beta no matter what the divisor is.
+    \\  beta 0: 0 0 0 0   true 0 0 0 0
+    \\  beta 7: 7 7 7 7   true 7 7 7 7
+    \\
+    \\gamma scales the normalized value, so doubling it doubles the answer:
+    \\  gamma 2.0: -2682 -894 894 2682   true -2683 -894 894 2683
+    \\
+    \\layer-norm carried the identical defect and the identical fix:
+    \\  -1341 -447 447 1341   true -1342 -447 447 1342
+    \\
+    \\silu is x * sigmoid(x). Its sigmoid used to be a private copy of
+    \\the one in Activation, byte for byte, and carried the same defect;
+    \\it now delegates, so there is one sigmoid in the quire.
+    \\  silu 1000: 731   true 731
+    \\  silu 3000: 2859   true 2858
+    \\  silu 5000: 4970   true 4967
+    \\  silu -1000: -268   true -269
+    ++ "\n";
+
+const codex_forewords@ai_optimizer_stdout =
+    \\AI/Optimizer OK
+    ++ "\n";
+
+const codex_forewords@ai_png_metadata_stdout =
+    \\AI/PngMetadata OK
+    ++ "\n";
+
+const codex_forewords@ai_prompt_parser_stdout =
+    \\AI/PromptParser OK
+    ++ "\n";
+
+const codex_forewords@ai_reservoir_stdout =
+    \\AI/Reservoir OK
+    ++ "\n";
+
+const codex_forewords@ai_sampling_stdout =
+    \\AI/Sampling OK
+    ++ "\n";
+
+const codex_forewords@ai_sparse_lattice_stdout =
+    \\AI/SparseLattice OK
+    ++ "\n";
+
+const codex_forewords@ai_tensor_stdout =
+    \\AI/Tensor OK
+    ++ "\n";
+
+const codex_forewords@ai_text_encoder_stdout =
+    \\AI/TextEncoder OK
+    ++ "\n";
+
+const codex_forewords@ai_text_encoder_xl_stdout =
+    \\AI/TextEncoderXL OK
+    ++ "\n";
+
+const codex_forewords@ai_tokenizer_stdout =
+    \\AI/Tokenizer OK
+    ++ "\n";
+
+const codex_forewords@ai_transformer_stdout =
+    \\AI/Transformer OK
+    ++ "\n";
+
+const codex_forewords@ai_unet_xl_stdout =
+    \\AI/UNetXL OK
+    ++ "\n";
+
+const codex_forewords@ai_upscaler_stdout =
+    \\AI/Upscaler OK
+    ++ "\n";
+
+const codex_forewords@compress_huffman_stdout =
+    \\Compress/Huffman OK
+    ++ "\n";
+
+const codex_forewords@compress_lz4_stdout =
+    \\Compress/Lz4 OK
+    ++ "\n";
+
+const codex_forewords@compress_rle_stdout =
+    \\Compress/Rle OK
+    ++ "\n";
+
+const codex_forewords@core_bigint_stdout =
+    \\12345
+    \\10000
+    \\99980001
+    \\-42
+    \\3628800
+    \\-1
+    ++ "\n";
+
+const codex_forewords@encode_avi_stdout =
+    \\Encode/Avi OK
+    ++ "\n";
+
+const codex_forewords@encode_base64_stdout =
+    \\Encode/Base64 OK
+    ++ "\n";
+
+const codex_forewords@encode_bencode_stdout =
+    \\Encode/Bencode OK
+    ++ "\n";
+
+const codex_forewords@encode_bmp_stdout =
+    \\Encode/Bmp OK
+    ++ "\n";
+
+const codex_forewords@encode_cbor_stdout =
+    \\Encode/Cbor OK
+    ++ "\n";
+
+const codex_forewords@encode_crc32_stdout =
+    \\Encode/Crc32 OK
+    ++ "\n";
+
+const codex_forewords@encode_csv_stdout =
+    \\Encode/Csv OK
+    ++ "\n";
+
+const codex_forewords@encode_flac_stdout =
+    \\Encode/Flac OK
+    ++ "\n";
+
+const codex_forewords@encode_gif_stdout =
+    \\Encode/Gif OK
+    ++ "\n";
+
+const codex_forewords@encode_gray_code_stdout =
+    \\Encode/GrayCode OK
+    ++ "\n";
+
+const codex_forewords@encode_hex_stdout =
+    \\Encode/Hex OK
+    ++ "\n";
+
+const codex_forewords@encode_ini_stdout =
+    \\Encode/Ini OK
+    ++ "\n";
+
+const codex_forewords@encode_jpeg_stdout =
+    \\Encode/Jpeg OK
+    ++ "\n";
+
+const codex_forewords@encode_json_stdout =
+    \\Encode/Json OK
+    ++ "\n";
+
+const codex_forewords@encode_lwm2m_stdout =
+    \\Encode/Lwm2m OK
+    ++ "\n";
+
+const codex_forewords@encode_markdown_stdout =
+    \\Encode/Markdown OK
+    ++ "\n";
+
+const codex_forewords@encode_message_pack_stdout =
+    \\Encode/MessagePack OK
+    ++ "\n";
+
+const codex_forewords@encode_midi_stdout =
+    \\Encode/Midi OK
+    ++ "\n";
+
+const codex_forewords@encode_mp3_stdout =
+    \\Encode/Mp3 OK
+    ++ "\n";
+
+const codex_forewords@encode_mp4_stdout =
+    \\Encode/Mp4 OK
+    ++ "\n";
+
+const codex_forewords@encode_ogg_stdout =
+    \\Encode/Ogg OK
+    ++ "\n";
+
+const codex_forewords@encode_png_stdout =
+    \\Encode/Png OK
+    ++ "\n";
+
+const codex_forewords@encode_protobuf_stdout =
+    \\Encode/Protobuf OK
+    ++ "\n";
+
+const codex_forewords@encode_qoi_stdout =
+    \\Encode/Qoi OK
+    ++ "\n";
+
+const codex_forewords@encode_smtp_stdout =
+    \\Encode/Smtp OK
+    ++ "\n";
+
+const codex_forewords@encode_tiff_stdout =
+    \\Encode/Tiff OK
+    ++ "\n";
+
+const codex_forewords@encode_toml_stdout =
+    \\Encode/Toml OK
+    ++ "\n";
+
+const codex_forewords@encode_uri_stdout =
+    \\Encode/Uri OK
+    ++ "\n";
+
+const codex_forewords@encode_uuid_stdout =
+    \\Encode/Uuid OK
+    ++ "\n";
+
+const codex_forewords@encode_video_codec_stdout =
+    \\Encode/VideoCodec OK
+    ++ "\n";
+
+const codex_forewords@encode_wav_stdout =
+    \\Encode/Wav OK
+    ++ "\n";
+
+const codex_forewords@encode_web_socket_stdout =
+    \\Encode/WebSocket OK
+    ++ "\n";
+
+const codex_forewords@encode_yaml_stdout =
+    \\Encode/Yaml OK
+    ++ "\n";
+
+const codex_forewords@engine_ability_system_stdout =
+    \\Engine/AbilitySystem OK
+    ++ "\n";
+
+const codex_forewords@engine_anim_blend_stdout =
+    \\Engine/AnimBlend OK
+    ++ "\n";
+
+const codex_forewords@engine_asset_table_stdout =
+    \\Engine/AssetTable OK
+    ++ "\n";
+
+const codex_forewords@engine_audio_bus_stdout =
+    \\Engine/AudioBus OK
+    ++ "\n";
+
+const codex_forewords@engine_audio3d_stdout =
+    \\Engine/Audio3D OK
+    ++ "\n";
+
+const codex_forewords@engine_biome_stdout =
+    \\Engine/Biome OK
+    ++ "\n";
+
+const codex_forewords@engine_cloth_sim_stdout =
+    \\Engine/ClothSim OK
+    ++ "\n";
+
+const codex_forewords@engine_collision3d_stdout =
+    \\Engine/Collision3D OK
+    ++ "\n";
+
+const codex_forewords@engine_culling_stdout =
+    \\Engine/Culling OK
+    ++ "\n";
+
+const codex_forewords@engine_cutscene_stdout =
+    \\Engine/Cutscene OK
+    ++ "\n";
+
+const codex_forewords@engine_damage_system_stdout =
+    \\Engine/DamageSystem OK
+    ++ "\n";
+
+const codex_forewords@engine_debug_draw_stdout =
+    \\Engine/DebugDraw OK
+    ++ "\n";
+
+const codex_forewords@engine_facial_anim_stdout =
+    \\Engine/FacialAnim OK
+    ++ "\n";
+
+const codex_forewords@engine_fog_stdout =
+    \\Engine/Fog OK
+    ++ "\n";
+
+const codex_forewords@engine_fractal_plant_stdout =
+    \\Engine/FractalPlant OK
+    ++ "\n";
+
+const codex_forewords@engine_game_loop_stdout =
+    \\Engine/GameLoop OK
+    ++ "\n";
+
+const codex_forewords@engine_gameplay_tags_stdout =
+    \\Engine/GameplayTags OK
+    ++ "\n";
+
+const codex_forewords@engine_hair_sim_stdout =
+    \\Engine/HairSim OK
+    ++ "\n";
+
+const codex_forewords@engine_helm_bridge_stdout =
+    \\Engine/HelmBridge OK
+    ++ "\n";
+
+const codex_forewords@engine_input_stdout =
+    \\Engine/Input OK
+    ++ "\n";
+
+const codex_forewords@engine_lod_stdout =
+    \\Engine/LOD OK
+    ++ "\n";
+
+const codex_forewords@engine_material_stdout =
+    \\Engine/Material OK
+    ++ "\n";
+
+const codex_forewords@engine_mesh_stdout =
+    \\Engine/Mesh OK
+    ++ "\n";
+
+const codex_forewords@engine_musculature_stdout =
+    \\Engine/Musculature OK
+    ++ "\n";
+
+const codex_forewords@engine_particle_renderer_stdout =
+    \\Engine/ParticleRenderer OK
+    ++ "\n";
+
+const codex_forewords@engine_physics_joint_stdout =
+    \\Engine/PhysicsJoint OK
+    ++ "\n";
+
+const codex_forewords@engine_post_process_stdout =
+    \\Engine/PostProcess OK
+    ++ "\n";
+
+const codex_forewords@engine_renderer3d_stdout =
+    \\Engine/Renderer3D OK
+    ++ "\n";
+
+const codex_forewords@engine_scene3d_stdout =
+    \\Engine/Scene3D OK
+    ++ "\n";
+
+const codex_forewords@engine_signal_stdout =
+    \\Engine/Signal OK
+    ++ "\n";
+
+const codex_forewords@engine_skin_shader_stdout =
+    \\Engine/SkinShader OK
+    ++ "\n";
+
+const codex_forewords@engine_skinning_stdout =
+    \\Engine/Skinning OK
+    ++ "\n";
+
+const codex_forewords@engine_soft_body_stdout =
+    \\Engine/SoftBody OK
+    ++ "\n";
+
+const codex_forewords@engine_spline_path_stdout =
+    \\Engine/SplinePath OK
+    ++ "\n";
+
+const codex_forewords@engine_terrain_stdout =
+    \\Engine/Terrain OK
+    ++ "\n";
+
+const codex_forewords@engine_texture_stdout =
+    \\Engine/Texture OK
+    ++ "\n";
+
+const codex_forewords@engine_time_of_day_stdout =
+    \\Engine/TimeOfDay OK
+    ++ "\n";
+
+const codex_forewords@engine_water_stdout =
+    \\Engine/Water OK
+    ++ "\n";
+
+const codex_forewords@engine_world_gen_stdout =
+    \\Engine/WorldGen OK
+    ++ "\n";
+
+const codex_forewords@engine_world_hud_stdout =
+    \\Engine/WorldHUD OK
+    ++ "\n";
+
+const codex_forewords@foreword_aes_stdout =
+    \\Foreword/Aes OK
+    ++ "\n";
+
+const codex_forewords@foreword_aes_gcm_stdout =
+    \\Foreword/AesGcm OK
+    ++ "\n";
+
+const codex_forewords@foreword_aes256_stdout =
+    \\Foreword/Aes256 OK
+    ++ "\n";
+
+const codex_forewords@foreword_apprunner_stdout =
+    \\Foreword/AppRunner OK
+    ++ "\n";
+
+const codex_forewords@foreword_b_plus_tree_stdout =
+    \\Foreword/BPlusTree OK
+    ++ "\n";
+
+const codex_forewords@foreword_bit_set_stdout =
+    \\Foreword/BitSet OK
+    ++ "\n";
+
+const codex_forewords@foreword_bloom_filter_stdout =
+    \\Foreword/BloomFilter OK
+    ++ "\n";
+
+const codex_forewords@foreword_c_c_e_stdout =
+    \\Foreword/CCE OK
+    ++ "\n";
+
+const codex_forewords@foreword_camera_stdout =
+    \\Foreword/Camera OK
+    ++ "\n";
+
+const codex_forewords@foreword_cha_cha20_stdout =
+    \\Foreword/ChaCha20 OK
+    ++ "\n";
+
+const codex_forewords@foreword_channel_stdout =
+    \\Foreword/Channel OK
+    ++ "\n";
+
+const codex_forewords@foreword_circular_buffer_stdout =
+    \\Foreword/CircularBuffer OK
+    ++ "\n";
+
+const codex_forewords@foreword_consistent_hash_stdout =
+    \\Foreword/ConsistentHash OK
+    ++ "\n";
+
+const codex_forewords@foreword_console_stdout =
+    \\Foreword/Console OK
+    ++ "\n";
+
+const codex_forewords@foreword_count_min_sketch_stdout =
+    \\Foreword/CountMinSketch OK
+    ++ "\n";
+
+const codex_forewords@foreword_date_time_stdout =
+    \\Foreword/DateTime OK
+    ++ "\n";
+
+const codex_forewords@foreword_decimal_stdout =
+    \\Foreword/Decimal OK
+    ++ "\n";
+
+const codex_forewords@foreword_deque_stdout =
+    \\Foreword/Deque OK
+    ++ "\n";
+
+const codex_forewords@foreword_display_stdout =
+    \\Foreword/Display OK
+    ++ "\n";
+
+const codex_forewords@foreword_edit_distance_stdout =
+    \\Foreword/EditDistance OK
+    ++ "\n";
+
+const codex_forewords@foreword_either_stdout =
+    \\Foreword/Either OK
+    ++ "\n";
+
+const codex_forewords@foreword_elastic_bloom_stdout =
+    \\Foreword/ElasticBloom OK
+    ++ "\n";
+
+const codex_forewords@foreword_elastic_hash_stdout =
+    \\Foreword/ElasticHash OK
+    ++ "\n";
+
+const codex_forewords@foreword_event_bus_stdout =
+    \\Foreword/EventBus OK
+    ++ "\n";
+
+const codex_forewords@foreword_fact_store_stdout =
+    \\Foreword/FactStore OK
+    ++ "\n";
+
+const codex_forewords@foreword_fat16_stdout =
+    \\Foreword/Fat16 OK
+    ++ "\n";
+
+const codex_forewords@foreword_fat32_stdout =
+    \\Foreword/Fat32 OK
+    ++ "\n";
+
+const codex_forewords@foreword_format_stdout =
+    \\Foreword/Format OK
+    ++ "\n";
+
+const codex_forewords@foreword_fuel_stdout =
+    \\Foreword/Fuel OK
+    ++ "\n";
+
+const codex_forewords@foreword_funnel_hash_stdout =
+    \\Foreword/FunnelHash OK
+    ++ "\n";
+
+const codex_forewords@foreword_gpt_stdout =
+    \\Foreword/Gpt OK
+    ++ "\n";
+
+const codex_forewords@foreword_hamt_stdout =
+    \\Foreword/Hamt OK
+    ++ "\n";
+
+const codex_forewords@foreword_history_stdout =
+    \\Foreword/History OK
+    ++ "\n";
+
+const codex_forewords@foreword_hkdf_stdout =
+    \\Foreword/Hkdf OK
+    ++ "\n";
+
+const codex_forewords@foreword_hmac_stdout =
+    \\Foreword/Hmac OK
+    ++ "\n";
+
+const codex_forewords@foreword_interval_tree_stdout =
+    \\Foreword/IntervalTree OK
+    ++ "\n";
+
+const codex_forewords@foreword_kv_store_stdout =
+    \\Foreword/KvStore OK
+    ++ "\n";
+
+const codex_forewords@foreword_list_stdout =
+    \\Foreword/List OK
+    ++ "\n";
+
+const codex_forewords@foreword_list_utils_stdout =
+    \\Foreword/ListUtils OK
+    ++ "\n";
+
+const codex_forewords@foreword_locale_stdout =
+    \\Foreword/Locale OK
+    ++ "\n";
+
+const codex_forewords@foreword_location_stdout =
+    \\Foreword/Location OK
+    ++ "\n";
+
+const codex_forewords@foreword_logger_stdout =
+    \\Foreword/Logger OK
+    ++ "\n";
+
+const codex_forewords@foreword_lru_cache_stdout =
+    \\Foreword/LruCache OK
+    ++ "\n";
+
+const codex_forewords@foreword_math_lib_stdout =
+    \\Foreword/MathLib OK
+    ++ "\n";
+
+const codex_forewords@foreword_maybe_stdout =
+    \\Foreword/Maybe OK
+    ++ "\n";
+
+const codex_forewords@foreword_microphone_stdout =
+    \\Foreword/Microphone OK
+    ++ "\n";
+
+const codex_forewords@foreword_network_stdout =
+    \\Foreword/Network OK
+    ++ "\n";
+
+const codex_forewords@foreword_number_theory_stdout =
+    \\Foreword/NumberTheory OK
+    ++ "\n";
+
+const codex_forewords@foreword_pair_stdout =
+    \\Foreword/Pair OK
+    ++ "\n";
+
+const codex_forewords@foreword_path_stdout =
+    \\Foreword/Path OK
+    ++ "\n";
+
+const codex_forewords@foreword_pattern_stdout =
+    \\Foreword/Pattern OK
+    ++ "\n";
+
+const codex_forewords@foreword_pbkdf_stdout =
+    \\Foreword/Pbkdf OK
+    ++ "\n";
+
+const codex_forewords@foreword_pipeline_stdout =
+    \\Foreword/Pipeline OK
+    ++ "\n";
+
+const codex_forewords@foreword_priority_queue_stdout =
+    \\Foreword/PriorityQueue OK
+    ++ "\n";
+
+const codex_forewords@foreword_probability_stdout =
+    \\Foreword/Probability OK
+    ++ "\n";
+
+const codex_forewords@foreword_proof_of_work_stdout =
+    \\Foreword/ProofOfWork OK
+    ++ "\n";
+
+const codex_forewords@foreword_queue_stdout =
+    \\Foreword/Queue OK
+    ++ "\n";
+
+const codex_forewords@foreword_random_stdout =
+    \\Foreword/Random OK
+    ++ "\n";
+
+const codex_forewords@foreword_rate_limiter_stdout =
+    \\Foreword/RateLimiter OK
+    ++ "\n";
+
+const codex_forewords@foreword_regex_stdout =
+    \\Foreword/Regex OK
+    ++ "\n";
+
+const codex_forewords@foreword_result_stdout =
+    \\Foreword/Result OK
+    ++ "\n";
+
+const codex_forewords@foreword_ring_buffer_stdout =
+    \\Foreword/RingBuffer OK
+    ++ "\n";
+
+const codex_forewords@foreword_rope_stdout =
+    \\Foreword/Rope OK
+    ++ "\n";
+
+const codex_forewords@foreword_schedule_stdout =
+    \\Foreword/Schedule OK
+    ++ "\n";
+
+const codex_forewords@foreword_scheduler_stdout =
+    \\Foreword/Scheduler OK
+    ++ "\n";
+
+const codex_forewords@foreword_sensors_stdout =
+    \\Foreword/Sensors OK
+    ++ "\n";
+
+const codex_forewords@foreword_set_stdout =
+    \\Foreword/Set OK
+    ++ "\n";
+
+const codex_forewords@foreword_sha1_stdout =
+    \\Foreword/Sha1 OK
+    ++ "\n";
+
+const codex_forewords@foreword_sha256_stdout =
+    \\Foreword/Sha256 OK
+    ++ "\n";
+
+const codex_forewords@foreword_sha512_stdout =
+    \\Foreword/Sha512 OK
+    ++ "\n";
+
+const codex_forewords@foreword_sort_stdout =
+    \\Foreword/Sort OK
+    ++ "\n";
+
+const codex_forewords@foreword_state_stdout =
+    \\Foreword/State OK
+    ++ "\n";
+
+const codex_forewords@foreword_statistics_stdout =
+    \\Foreword/Statistics OK
+    ++ "\n";
+
+const codex_forewords@foreword_string_utils_stdout =
+    \\Foreword/StringUtils OK
+    ++ "\n";
+
+const codex_forewords@foreword_tab_complete_stdout =
+    \\Foreword/TabComplete OK
+    ++ "\n";
+
+const codex_forewords@foreword_text_wrap_stdout =
+    \\Foreword/TextWrap OK
+    ++ "\n";
+
+const codex_forewords@foreword_time_stdout =
+    \\Foreword/Time OK
+    ++ "\n";
+
+const codex_forewords@foreword_timing_wheel_stdout =
+    \\Foreword/TimingWheel OK
+    ++ "\n";
+
+const codex_forewords@foreword_trie_stdout =
+    \\Foreword/Trie OK
+    ++ "\n";
+
+const codex_forewords@foreword_tuple_stdout =
+    \\Foreword/Tuple OK
+    ++ "\n";
+
+const codex_forewords@foreword_unicode_stdout =
+    \\Foreword/Unicode OK
+    ++ "\n";
+
+const codex_forewords@foreword_union_find_stdout =
+    \\Foreword/UnionFind OK
+    ++ "\n";
+
+const codex_forewords@game_bresenham_stdout =
+    \\Game/Bresenham OK
+    ++ "\n";
+
+const codex_forewords@game_card_deck_stdout =
+    \\Game/CardDeck OK
+    ++ "\n";
+
+const codex_forewords@game_cellular_automata_stdout =
+    \\Game/CellularAutomata OK
+    ++ "\n";
+
+const codex_forewords@game_color_stdout =
+    \\Game/Color OK
+    ++ "\n";
+
+const codex_forewords@game_diamond_square_stdout =
+    \\Game/DiamondSquare OK
+    ++ "\n";
+
+const codex_forewords@game_e_c_s_stdout =
+    \\Game/ECS OK
+    ++ "\n";
+
+const codex_forewords@game_easing_stdout =
+    \\Game/Easing OK
+    ++ "\n";
+
+const codex_forewords@game_flood_fill_stdout =
+    \\Game/FloodFill OK
+    ++ "\n";
+
+const codex_forewords@game_game_camera_stdout =
+    \\Game/GameCamera OK
+    ++ "\n";
+
+const codex_forewords@game_hex_map_stdout =
+    \\Game/HexMap OK
+    ++ "\n";
+
+const codex_forewords@game_inventory_stdout =
+    \\Game/Inventory OK
+    ++ "\n";
+
+const codex_forewords@game_klondike_stdout =
+    \\Game/Klondike OK
+    ++ "\n";
+
+const codex_forewords@game_octree_stdout =
+    \\Game/Octree OK
+    ++ "\n";
+
+const codex_forewords@game_quadtree_stdout =
+    \\Game/Quadtree OK
+    ++ "\n";
+
+const codex_forewords@game_rasterizer_stdout =
+    \\Game/Rasterizer OK
+    ++ "\n";
+
+const codex_forewords@game_raytracer_stdout =
+    \\Game/Raytracer OK
+    ++ "\n";
+
+const codex_forewords@game_save_slot_stdout =
+    \\Game/SaveSlot OK
+    ++ "\n";
+
+const codex_forewords@game_scene2_d_stdout =
+    \\Game/Scene2D OK
+    ++ "\n";
+
+const codex_forewords@game_sprite_stdout =
+    \\Game/Sprite OK
+    ++ "\n";
+
+const codex_forewords@game_state_machine_stdout =
+    \\Game/StateMachine OK
+    ++ "\n";
+
+const codex_forewords@game_tile_map_stdout =
+    \\Game/TileMap OK
+    ++ "\n";
+
+const codex_forewords@game_tween_stdout =
+    \\Game/Tween OK
+    ++ "\n";
+
+const codex_forewords@game_voronoi_stdout =
+    \\Game/Voronoi OK
+    ++ "\n";
+
+const codex_forewords@gpu_atomic_stdout =
+    \\Gpu/Atomic OK
+    ++ "\n";
+
+const codex_forewords@gpu_barrier_stdout =
+    \\32
+    ++ "\n";
+
+const codex_forewords@gpu_device_buffer_stdout =
+    \\Gpu/DeviceBuffer OK
+    ++ "\n";
+
+const codex_forewords@gpu_device_effect_stdout =
+    \\Gpu/DeviceEffect OK
+    ++ "\n";
+
+const codex_forewords@gpu_devicemath_atan_stdout =
+    \\atan 0.0 = 0  ok
+    \\atan 0.0001 = 100000  ok
+    \\atan 0.1 = 99668652  ok
+    \\atan 0.25 = 244978663  ok
+    \\atan 0.5 = 463647609  ok
+    \\atan 0.7071067811865476 = 615479709  ok
+    \\atan 0.9 = 732815102  ok
+    \\atan 0.99 = 780373080  ok
+    \\atan 1.0 = 785398163  ok
+    \\atan 1.0000001 = 785398213  ok
+    \\atan 1.1 = 832981267  ok
+    \\atan 1.5 = 982793723  ok
+    \\atan 2.0 = 1107148718  ok
+    \\atan 3.0 = 1249045772  ok
+    \\atan 10.0 = 1471127674  ok
+    \\atan 1000000.0 = 1570795327  ok
+    \\atan -0.5 = -463647609  ok
+    \\atan -1.0 = -785398163  ok
+    \\atan -1.5 = -982793723  ok
+    \\atan -3.0 = -1249045772  ok
+    \\atan2 1.0, 1.0 = 785398163  ok
+    \\atan2 1.0, -1.0 = 2356194490  ok
+    \\atan2 -1.0, 1.0 = -785398163  ok
+    \\atan2 -1.0, -1.0 = -2356194490  ok
+    \\atan2 2.0, 0.5 = 1325817664  ok
+    \\atan2 2.0, -0.5 = 1815774990  ok
+    \\atan2 -2.0, 0.5 = -1325817664  ok
+    \\atan2 -2.0, -0.5 = -1815774990  ok
+    \\atan2 1.0, 0.0 = 1570796327  ok
+    \\atan2 -1.0, 0.0 = -1570796327  ok
+    \\atan2 0.0, -1.0 = 3141592654  ok
+    \\atan2 0.0, 0.0 = 0  ok
+    \\atan2 3.0, 4.0 = 643501109  ok
+    \\atan2 -4.0, 3.0 = -927295218  ok
+    \\round trip through real-sin and real-cos, within 50 nano: 8 of 8
+    ++ "\n";
+
+const codex_forewords@gpu_disjoint_slice_stdout =
+    \\1024
+    ++ "\n";
+
+const codex_forewords@gpu_effect_stdout =
+    \\Gpu/GpuEffect OK
+    ++ "\n";
+
+const codex_forewords@gpu_launch_config_stdout =
+    \\256
+    ++ "\n";
+
+const codex_forewords@gpu_shared_stdout =
+    \\64
+    ++ "\n";
+
+const codex_forewords@gpu_thread_stdout =
+    \\42
+    ++ "\n";
+
+const codex_forewords@gpu_warp_stdout =
+    \\4294967295
+    ++ "\n";
+
+const codex_forewords@math_bezier_stdout =
+    \\Math/Bezier OK
+    ++ "\n";
+
+const codex_forewords@math_complex_stdout =
+    \\Math/Complex OK
+    ++ "\n";
+
+const codex_forewords@math_cordic_stdout =
+    \\Math/Cordic OK
+    ++ "\n";
+
+const codex_forewords@math_cordic_accuracy_stdout =
+    \\  0 sin 0 true 0   cos 997 true 1000   err 3
+    \\  300 sin 291 true 296   cos 955 true 955   err 5
+    \\  500 sin 480 true 479   cos 875 true 878   err 3
+    \\  785 sin 707 true 707   cos 706 true 707   err 1
+    \\  1000 sin 841 true 841   cos 538 true 540   err 2
+    \\  1571 sin 997 true 1000   cos -2 true 0   err 3
+    \\  1800 sin 974 true 974   cos -227 true -227   err 0
+    \\  2000 sin 908 true 909   cos -415 true -416   err 1
+    \\  2500 sin 598 true 598   cos -800 true -801   err 1
+    \\  3000 sin 140 true 141   cos -988 true -990   err 2
+    \\  3141 sin 0 true 1   cos -997 true -1000   err 3
+    \\  3163 sin -16 true -21   cos -998 true -1000   err 5
+    \\  3255 sin -109 true -113   cos -993 true -994   err 4
+    \\  3500 sin -351 true -351   cos -935 true -936   err 1
+    \\  4000 sin -756 true -757   cos -653 true -654   err 1
+    \\  4712 sin -997 true -1000   cos 0 true 0   err 3
+    \\  5000 sin -959 true -959   cos 283 true 284   err 1
+    \\  5500 sin -704 true -706   cos 709 true 709   err 2
+    \\  6000 sin -276 true -279   cos 960 true 960   err 3
+    \\  6283 sin 0 true 0   cos 997 true 1000   err 3
+    \\worst absolute error over the sample: 5 of 1000 full scale
+    \\within 6 of 1000: 20 of 20
+    ++ "\n";
+
+const codex_forewords@math_cordic_quadrants_stdout =
+    \\Below 1735 the rotation always converged, so these are controls
+    \\and the quadrant fold must not move any of them:
+    \\  sin 0 = 0  true 0
+    \\  sin 500 = 480  true 479
+    \\  sin 1000 = 841  true 841
+    \\  sin 1500 = 997  true 997
+    \\  cos 0 = 997  true 1000, and 997 is the gain constant, not the fold
+    \\
+    \\Second quadrant, where the saturation began:
+    \\  sin 2000 = 908  true 909
+    \\  sin 2500 = 598  true 599
+    \\  sin 3141 = 0  true 0
+    \\  cos 1571 = -2  true 0
+    \\  cos 2000 = -415  true -416
+    \\  cos 3141 = -997  true -1000
+    \\
+    \\Third and fourth quadrants, where sin must go negative and the
+    \\saturated version answered a positive 986 throughout:
+    \\  sin 3500 = -351  true -351
+    \\  sin 4712 = -997  true -1000
+    \\  sin 5500 = -704  true -706
+    \\  cos 4712 = 0  true 0
+    \\  cos 6000 = 960  true 960
+    \\
+    \\Angles outside one turn, which cordic-normalize folds first:
+    \\  sin 7854 = 997  true 1000, being 6283 + 1571
+    \\  sin -1571 = -997  true -1000
+    \\
+    \\Counted rather than eyeballed, over the whole turn:
+    \\  sin^2 + cos^2 within 1.5 pct of 1, angles 0..6000: 13 of 13
+    \\  sin non-negative over 0..3000:                     11 of 11
+    \\  sin non-positive over pi..pi+3000:                 11 of 11
+    ++ "\n";
+
+const codex_forewords@math_geodesic_stdout =
+    \\Math/Geodesic OK
+    ++ "\n";
+
+const codex_forewords@math_geometry_stdout =
+    \\Math/Geometry OK
+    ++ "\n";
+
+const codex_forewords@math_linear_algebra_stdout =
+    \\Math/LinearAlgebra OK
+    ++ "\n";
+
+const codex_forewords@math_matrix3_stdout =
+    \\Math/Matrix3 OK
+    ++ "\n";
+
+const codex_forewords@math_matrix4_stdout =
+    \\Math/Matrix4 OK
+    ++ "\n";
+
+const codex_forewords@math_numeric_stdout =
+    \\Math/Numeric OK
+    ++ "\n";
+
+const codex_forewords@math_optimize_stdout =
+    \\Math/Optimize OK
+    ++ "\n";
+
+const codex_forewords@math_quaternion_stdout =
+    \\Math/Quaternion OK
+    ++ "\n";
+
+const codex_forewords@math_spline_stdout =
+    \\Math/Spline OK
+    ++ "\n";
+
+const codex_forewords@signal_audio_analysis_stdout =
+    \\Signal/AudioAnalysis OK
+    ++ "\n";
+
+const codex_forewords@signal_audio_effect_stdout =
+    \\Signal/AudioEffect OK
+    ++ "\n";
+
+const codex_forewords@signal_convolution_stdout =
+    \\Signal/Convolution OK
+    ++ "\n";
+
+const codex_forewords@signal_envelope_stdout =
+    \\Signal/Envelope OK
+    ++ "\n";
+
+const codex_forewords@signal_filter_stdout =
+    \\Signal/Filter OK
+    ++ "\n";
+
+const codex_forewords@signal_music_theory_stdout =
+    \\Signal/MusicTheory OK
+    ++ "\n";
+
+const codex_forewords@signal_noise_stdout =
+    \\Signal/Noise OK
+    ++ "\n";
+
+const codex_forewords@signal_oscillator_stdout =
+    \\Signal/Oscillator OK
+    ++ "\n";
+
+const codex_forewords@signal_perlin_stdout =
+    \\Signal/Perlin OK
+    ++ "\n";
+
+const codex_forewords@signal_pitch_stdout =
+    \\Signal/Pitch OK
+    ++ "\n";
+
+const codex_forewords@signal_resample_stdout =
+    \\Signal/Resample OK
+    ++ "\n";
+
+const codex_forewords@signal_synth_stdout =
+    \\Signal/Synth OK
+    ++ "\n";
+
+const codex_forewords@sim_collision_stdout =
+    \\Sim/Collision OK
+    ++ "\n";
+
+const codex_forewords@sim_constraint_stdout =
+    \\Sim/Constraint OK
+    ++ "\n";
+
+const codex_forewords@sim_kinematics_stdout =
+    \\Sim/Kinematics OK
+    ++ "\n";
+
+const codex_forewords@sim_particle_system_stdout =
+    \\Sim/ParticleSystem OK
+    ++ "\n";
+
+const codex_forewords@sim_physics_stdout =
+    \\Sim/Physics OK
+    ++ "\n";
+
+const codex_forewords@sim_steering_stdout =
+    \\Sim/Steering OK
+    ++ "\n";
+
+const codex_forewords@ui_accessibility_stdout =
+    \\roles    : button/y textbox/y checkbox/y radio/y slider/y menu/n menuitem/y dialog/n alert/n status/n heading/n list/n listitem/n link/y image/n none/n
+    \\empty    : none off tab 0 hidden n None None 0 0 100
+    \\announce : Save, button | button
+    \\checkbox : Just True Sounds, checkbox
+    \\slider   : 40 of 0..100
+    \\heading  : heading level 2
+    \\alert    : assertive alert
+    \\status   : polite status
+    \\hidden   : y tab 7 Close, button
+    ++ "\n";
+
+const codex_forewords@ui_animation_stdout =
+    \\UI/Animation OK
+    ++ "\n";
+
+const codex_forewords@ui_binding_stdout =
+    \\UI/Binding OK
+    ++ "\n";
+
+const codex_forewords@ui_box_model_stdout =
+    \\UI/BoxModel OK
+    ++ "\n";
+
+const codex_forewords@ui_clipboard_stdout =
+    \\UI/Clipboard OK
+    ++ "\n";
+
+const codex_forewords@ui_cursor_stdout =
+    \\UI/Cursor OK
+    ++ "\n";
+
+const codex_forewords@ui_dialog_stdout =
+    \\UI/Dialog OK
+    ++ "\n";
+
+const codex_forewords@ui_drag_stdout =
+    \\UI/Drag OK
+    ++ "\n";
+
+const codex_forewords@ui_event_stdout =
+    \\UI/Event OK
+    ++ "\n";
+
+const codex_forewords@ui_focus_stdout =
+    \\UI/Focus OK
+    ++ "\n";
+
+const codex_forewords@ui_font_stdout =
+    \\UI/Font OK
+    ++ "\n";
+
+const codex_forewords@ui_icon_stdout =
+    \\UI/Icon OK
+    ++ "\n";
+
+const codex_forewords@ui_layout_stdout =
+    \\UI/Layout OK
+    ++ "\n";
+
+const codex_forewords@ui_orchestrator_stdout =
+    \\UI/Orchestrator OK
+    ++ "\n";
+
+const codex_forewords@ui_overlay_stdout =
+    \\UI/Overlay OK
+    ++ "\n";
+
+const codex_forewords@ui_render_stdout =
+    \\UI/Render OK
+    ++ "\n";
+
+const codex_forewords@ui_rich_text_stdout =
+    \\UI/RichText OK
+    ++ "\n";
+
+const codex_forewords@ui_scroll_stdout =
+    \\UI/Scroll OK
+    ++ "\n";
+
+const codex_forewords@ui_selection_stdout =
+    \\UI/Selection OK
+    ++ "\n";
+
+const codex_forewords@ui_sound_stdout =
+    \\UI/Sound OK
+    ++ "\n";
+
+const codex_forewords@ui_surface_stdout =
+    \\UI/Surface OK
+    ++ "\n";
+
+const codex_forewords@ui_text_field_stdout =
+    \\UI/TextField OK
+    ++ "\n";
+
+const codex_forewords@ui_theme_stdout =
+    \\UI/Theme OK
+    ++ "\n";
+
+const codex_forewords@ui_touch_stdout =
+    \\UI/Touch OK
+    ++ "\n";
+
+const codex_forewords@ui_vector_stdout =
+    \\UI/Vector OK
+    ++ "\n";
+
+const codex_forewords@ui_widget_stdout =
+    \\UI/Widget OK
+    ++ "\n";
+
+const codex_frame_short_buffer_stdout =
+    \\whole-len=4
+    \\whole-next=8
+    \\short-len=0
+    \\huge-len=0
+    \\runt-len=0
+    \\empty-len=0
+    \\whole-bytes=4
+    \\short-bytes=0
+    \\huge-bytes=0
+    \\tag-of-runt=0
+    \\len-of-runt=7
+    \\body-of-short=0
+    \\whole-valid=True
+    \\declared-empty-len=0
+    \\declared-empty-valid=True
+    \\short-valid=False
+    \\huge-valid=False
+    \\runt-valid=False
+    \\empty-valid=False
+    \\bytes-whole-valid=True
+    \\bytes-short-valid=False
+    \\survived
+    ++ "\n";
+
 const codex_frameless_leaf_probe_stdout =
     \\add32=3671238039
     \\rotl32=3090952880
@@ -266,8 +1773,27 @@ const codex_frameless_leaf_probe_stdout =
     \\plusk=4294967302
     ++ "\n";
 
+const codex_hamt_test_stdout =
+    \\=== HAMT (Hash Array Mapped Trie) ===
+    \\
+    \\PASS: basic get
+    \\PASS: overwrite
+    \\PASS: remove
+    \\PASS: contains
+    \\PASS: 100 entries
+    \\PASS: persistence
+    \\
+    \\All PASS = persistent immutable trie with O(log32 n) operations.
+    \\Zero external dependencies. Compiles to all 12 backends.
+    ++ "\n";
+
 const codex_hart_encode_stdout =
     \\6
+    ++ "\n";
+
+const codex_hid_decode_stdout =
+    \\events: 42 35 23 163 170 151 80 28 208 156
+    \\prev-drained: 0
     ++ "\n";
 
 const codex_ieee802154_encode_stdout =
@@ -278,6 +1804,27 @@ const codex_if_in_arith_stdout =
     \\72
     \\68
     \\76
+    ++ "\n";
+
+const codex_if_let_join_stdout =
+    \\5
+    \\5
+    \\5
+    \\5
+    \\1
+    \\6
+    \\5
+    \\5
+    \\1
+    \\6
+    \\3
+    ++ "\n";
+
+const codex_implicit_convert_stdout =
+    \\warm
+    \\warm
+    \\cold
+    \\hot
     ++ "\n";
 
 const codex_inline_cost_based_stdout =
@@ -294,6 +1841,30 @@ const codex_inline_single_caller_stdout =
 const codex_int_literal_underscore_stdout =
     \\grouped: 1000000000000000000
     \\padded: 42
+    ++ "\n";
+
+const codex_ip_checksum_odd_stdout =
+    \\odd3-agrees=True
+    \\odd5-agrees=True
+    \\odd1-agrees=True
+    \\odd3-equals-padded=True
+    \\odd5-equals-padded=True
+    \\even4-agrees=True
+    \\even20-agrees=True
+    \\even4-value=64505
+    \\even20-value=25182
+    \\odd3-value=64509
+    \\odd5-value=47349
+    ++ "\n";
+
+const codex_ir_check_clean_stdout =
+    \\shadow: 12
+    \\apply-twice: 20
+    \\capture: 18
+    \\tree-sum: 12
+    \\manhattan: 7
+    \\total: 15
+    \\text: ir-check
     ++ "\n";
 
 const codex_iterate_test_stdout =
@@ -318,8 +1889,50 @@ const codex_j1939_encode_stdout =
     \\5
     ++ "\n";
 
+const codex_klondike_test_stdout =
+    \\piles=1,2,3,4,5,6,7 stock=24
+    \\Stock:(24) Waste:[] Found:[S] [H] [D] [C] Moves:0
+    \\0: TS
+    \\1: ## AS
+    \\6: ## ## ## ## ## ## 3S
+    \\draw-ok waste=[JH]
+    \\found=0 won=False
+    \\after-2-draws stock=22 waste=2
+    ++ "\n";
+
 const codex_knx_encode_stdout =
     \\4
+    ++ "\n";
+
+const codex_lang_smoke_stdout =
+    \\bool-ok
+    \\lt
+    \\eq
+    \\255
+    \\3735928559
+    \\5
+    \\warm
+    \\cool
+    \\large-circle
+    \\square
+    \\4
+    \\10
+    \\15
+    \\6
+    \\7
+    \\42
+    \\129
+    \\63
+    \\hello
+    \\True
+    \\False
+    \\False
+    \\8
+    \\256
+    \\1
+    \\42
+    \\hello
+    \\3
     ++ "\n";
 
 const codex_leaf_let_if_stdout =
@@ -342,8 +1955,326 @@ const codex_let_shadow_scope_stdout =
     \\9
     ++ "\n";
 
+const codex_lib@canvas_viewport_stdout =
+    \\origin: x=250 y=130
+    \\panned: x=257 y=127
+    \\rt w=0 s=250 back=0 ok
+    \\rt w=137 s=387 back=137 ok
+    \\rt w=-137 s=113 back=-137 ok
+    \\rt w=137 s=394 back=137 ok
+    \\zoom in : 100 125 150 175 200 250 300 350 400 450 500 550 600 650 700 750 800
+    \\zoom out: 100 75 50 40 30 20 10 10 10 10 10
+    \\fit: zoom=100 panx=0 w=400
+    \\contains: 49=False 50=True 449=True 450=False
+    \\snap pos: 0=0 9=0 10=20 25=20 35=40
+    \\snap neg: -9=0 -10=-20 -25=-20 -35=-40
+    \\snap g0 : 7=7
+    ++ "\n";
+
+const codex_lib@cbor_test_stdout =
+    \\uint-0=pass
+    \\uint-1=pass
+    \\uint-23=pass
+    \\uint-24=pass
+    \\uint-255=pass
+    \\uint-1000=pass
+    \\text-empty=pass
+    \\text-hello=pass
+    \\bool-true=pass
+    \\bool-false=pass
+    \\array-len=3
+    \\null=pass
+    ++ "\n";
+
+const codex_lib@decimal_test_stdout =
+    \\a=12.50
+    \\b=3.25
+    \\a+b=15.75
+    \\a-b=9.25
+    \\a*b=40.6250
+    \\a/b=3.84
+    \\neg=-12.50
+    \\round=3.5
+    \\floor=7
+    \\cmp=1
+    \\eq=true
+    \\lt=true
+    \\zero=true
+    \\parsed=42.75
+    ++ "\n";
+
+const codex_lib@device_math_stdout =
+    \\sqrt 0.0      ok
+    \\sqrt 0.25     ok
+    \\sqrt 1.0      ok
+    \\sqrt 2.0      ok
+    \\sqrt 4.0      ok
+    \\sqrt 16.0     ok
+    \\sqrt 100.0    ok
+    \\sqrt 1000.0   ok
+    \\sqrt 10000.0  ok
+    \\sqrt 1000000. ok
+    \\sqrt 1e-6     ok
+    \\sqrt 1e12     ok
+    \\sqrt neg      ok
+    \\sin 0.0       ok
+    \\sin 0.5       ok
+    \\sin halfpi    ok
+    \\sin 2.0       ok
+    \\sin 3.0       ok
+    \\sin pi        ok
+    \\sin 4.0       ok
+    \\sin threehalf ok
+    \\sin 6.0       ok
+    \\sin -1.0      ok
+    \\sin -3.0      ok
+    \\sin 100.0     ok
+    \\cos 0.0       ok
+    \\cos 1.0       ok
+    \\cos 2.0       ok
+    \\cos pi        ok
+    \\cos 4.0       ok
+    \\cos -2.0      ok
+    \\cos 100.0     ok
+    \\cos 0.0 exact ok
+    \\sin 0.0 exact ok
+    \\cos pi/4      ok
+    \\sin pi/4      ok
+    \\cos 3.0       ok
+    \\cos 6.0       ok
+    \\pyth 0.3      ok
+    \\pyth 1.7      ok
+    \\pyth 3.0      ok
+    \\pyth -2.4     ok
+    \\abs -3.5      ok
+    \\abs 3.5       ok
+    \\min 2.0 3.0   ok
+    \\max 2.0 3.0   ok
+    \\abs 0.0       ok
+    \\abs -0.5      ok
+    \\min 3.0 2.0   ok
+    \\min 2.0 2.0   ok
+    \\min -3.0 2.0  ok
+    \\min 2.0 -3.0  ok
+    \\max 3.0 2.0   ok
+    \\max 2.0 2.0   ok
+    \\max -3.0 2.0  ok
+    \\max 2.0 -3.0  ok
+    ++ "\n";
+
+const codex_lib@format_test_stdout =
+    \\    hi
+    \\hi....
+    \\---hi---
+    \\ababab
+    \\a, b, c
+    \\1,234,567
+    \\42
+    \\-9,876,543
+    \\   7
+    \\ff
+    \\1000
+    \\000f
+    \\true
+    \\no
+    ++ "\n";
+
+const codex_lib@linalg_test_stdout =
+    \\id-00=1000
+    \\id-01=0
+    \\id-11=1000
+    \\mul-00=2500
+    \\mul-01=2000
+    \\mul-10=1500
+    \\mul-11=6000
+    \\det=6000
+    \\trans-01=0
+    \\trans-10=1000
+    \\add-00=3000
+    ++ "\n";
+
+const codex_lib@locale_test_stdout =
+    \\us-num=1,234,567
+    \\de-num=1.234.567
+    \\small=42
+    \\neg=-9,876
+    \\us-date=05/08/2026
+    \\de-date=08/05/2026
+    \\ja-date=2026-05-08
+    \\us-dir=ltr
+    \\ar-dir=rtl
+    \\de-sep=,
+    \\de-thou=.
+    ++ "\n";
+
+const codex_lib@loss_test_stdout =
+    \\mse=positive
+    \\hinge=non-neg
+    \\huber=positive
+    \\perfect-mse=0
+    \\clamp-lo=0
+    \\clamp-hi=100
+    \\clamp-mid=50
+    ++ "\n";
+
+const codex_lib@lz4_test_stdout =
+    \\empty=pass
+    \\tiny=pass
+    \\repeating=pass
+    \\uniform-100=pass
+    ++ "\n";
+
+const codex_lib@number_theory_test_stdout =
+    \\gcd(12,8)=4
+    \\gcd(17,13)=1
+    \\lcm(4,6)=12
+    \\lcm(7,5)=35
+    \\mod-exp(2,10,1000)=24
+    \\mod-exp(3,7,100)=87
+    \\is-prime(2)=true
+    \\is-prime(17)=true
+    \\is-prime(15)=false
+    \\is-prime(1)=false
+    \\primes=10
+    \\totient(12)=4
+    \\factors(60)=3
+    \\mod-inv(3,7)=5
+    ++ "\n";
+
+const codex_lib@numeric_test_stdout =
+    \\bisect=2000
+    \\newton=2001
+    \\trap=8999
+    \\simpson=8998
+    \\rk4-t=100
+    \\rk4-y=decaying
+    \\rk4-steps=11
+    ++ "\n";
+
+const codex_lib@path_test_stdout =
+    \\codex/Emit
+    \\codex/Emit
+    \\Emit
+    \\codex
+    \\codex/Emit
+    \\X86_64.codex
+    \\X86_64
+    \\codex
+    \\
+    \\codex/Emit/X86_64.codex
+    \\abs
+    \\rel
+    \\yes
+    \\segs=3
+    ++ "\n";
+
+const codex_lib@pixel_buf_stdout =
+    \\new: ......../......../......../........
+    \\set: ......../...#..../......../.......#
+    \\clip: #......./......../......../........
+    \\clip read: left=0 right=0 inside=3
+    \\rect: ......../..###.../..###.../........
+    \\hline: ......../......../########/........
+    \\vline: .....#../.....#../.....#../........
+    \\outline: .######./.#....#./.#....#./.######.
+    \\blend: a0=0 a128=8421504 a239=15724527 a240=16777215 a255=16777215
+    \\cost: control=0 thousand-writes=0
+    ++ "\n";
+
+const codex_lib@probability_test_stdout =
+    \\normal-cdf-0=500
+    \\normal-cdf-1=above-700
+    \\normal-cdf-neg1=159
+    \\normal-cdf-scaled=841
+    \\normal-cdf-2sig=977
+    \\normal-cdf-3sig=999
+    \\normal-cdf-neg3sig=1
+    \\normal-pdf-0=above-300
+    \\expneg-1=368
+    \\expneg-3=50
+    \\expneg-4=18
+    \\expneg-6=3
+    \\poisson-pmf-0=50
+    \\poisson-pmf-1=150
+    \\poisson-pmf-2=225
+    \\binom-mean=5
+    \\binom-var=2
+    \\exp-mean=2000
+    \\bound=14
+    \\choose-5-2=10
+    \\choose-0=1
+    ++ "\n";
+
+const codex_lib@text_overflow_stdout =
+    \\fits exactly, no overflow: every mode must agree
+    \\  clip len=10 avail=60 adv=6 gw=5 -> start=0 count=10 dots=0
+    \\  ellipsis len=10 avail=60 adv=6 gw=5 -> start=0 count=10 dots=0
+    \\  scroll len=10 avail=60 adv=6 gw=5 -> start=0 count=10 dots=0
+    \\
+    \\shorter than the box: every mode must agree
+    \\  clip len=4 avail=60 adv=6 gw=5 -> start=0 count=4 dots=0
+    \\  ellipsis len=4 avail=60 adv=6 gw=5 -> start=0 count=4 dots=0
+    \\  scroll len=4 avail=60 adv=6 gw=5 -> start=0 count=4 dots=0
+    \\
+    \\overflowing, adv=6 (GPU walk), 20 chars in 60px
+    \\  clip len=20 avail=60 adv=6 gw=5 -> start=0 count=10 dots=0
+    \\  ellipsis len=20 avail=60 adv=6 gw=5 -> start=0 count=7 dots=3
+    \\  scroll len=20 avail=60 adv=6 gw=5 -> start=10 count=10 dots=0
+    \\
+    \\overflowing, adv=9 (GopBuf walk), 20 chars in 63px
+    \\  clip len=20 avail=63 adv=9 gw=8 -> start=0 count=7 dots=0
+    \\  ellipsis len=20 avail=63 adv=9 gw=8 -> start=0 count=4 dots=3
+    \\  scroll len=20 avail=63 adv=9 gw=8 -> start=13 count=7 dots=0
+    \\
+    \\overflowing, adv=10 (SystemFont walk), 20 chars in 100px
+    \\  clip len=20 avail=100 adv=10 gw=8 -> start=0 count=10 dots=0
+    \\  ellipsis len=20 avail=100 adv=10 gw=8 -> start=0 count=7 dots=3
+    \\  scroll len=20 avail=100 adv=10 gw=8 -> start=10 count=10 dots=0
+    \\
+    \\a box too narrow for an ellipsis falls back to clip
+    \\  clip len=20 avail=18 adv=6 gw=5 -> start=0 count=3 dots=0
+    \\  ellipsis len=20 avail=18 adv=6 gw=5 -> start=0 count=3 dots=0
+    \\  scroll len=20 avail=18 adv=6 gw=5 -> start=17 count=3 dots=0
+    \\  clip len=20 avail=24 adv=6 gw=5 -> start=0 count=4 dots=0
+    \\  ellipsis len=20 avail=24 adv=6 gw=5 -> start=0 count=1 dots=3
+    \\  scroll len=20 avail=24 adv=6 gw=5 -> start=16 count=4 dots=0
+    \\
+    \\degenerate boxes draw nothing
+    \\  clip len=20 avail=0 adv=6 gw=5 -> start=0 count=0 dots=0
+    \\  ellipsis len=20 avail=0 adv=6 gw=5 -> start=0 count=0 dots=0
+    \\  scroll len=20 avail=0 adv=6 gw=5 -> start=20 count=0 dots=0
+    \\  clip len=20 avail=-40 adv=6 gw=5 -> start=0 count=0 dots=0
+    \\  ellipsis len=20 avail=-40 adv=6 gw=5 -> start=0 count=0 dots=0
+    \\  scroll len=20 avail=-40 adv=6 gw=5 -> start=20 count=0 dots=0
+    \\  clip len=20 avail=60 adv=0 gw=5 -> start=0 count=0 dots=0
+    \\  ellipsis len=20 avail=60 adv=0 gw=5 -> start=0 count=0 dots=0
+    \\  scroll len=20 avail=60 adv=0 gw=5 -> start=20 count=0 dots=0
+    \\
+    \\default mode: clip
+    ++ "\n";
+
+const codex_lib@toml_test_stdout =
+    \\title=My Config
+    \\port=8080
+    \\debug=true
+    \\missing=default
+    \\emit-ok=yes
+    ++ "\n";
+
+const codex_lib@yaml_test_stdout =
+    \\name=Codex
+    \\version=42
+    \\emit-len=37
+    \\list-len=3
+    \\null=null-ok
+    ++ "\n";
+
 const codex_linear_branch_stdout =
     \\15 25 20 30 10 100
+    ++ "\n";
+
+const codex_linear_capture_once_stdout =
+    \\42 42
     ++ "\n";
 
 const codex_linear_mint_container_stdout =
@@ -536,6 +2467,16 @@ const codex_lir_test_cross_stdout =
     \\1
     ++ "\n";
 
+const codex_list_comprehension_copy_stdout =
+    \\base-len=1 grown-len=2 grown-head=7
+    \\0
+    ++ "\n";
+
+const codex_list_literal_o1_stdout =
+    \\flat-len=5 ends=6 alloc=e1e2e3 nested=5 nested-len=3 mixed=15
+    \\0
+    ++ "\n";
+
 const codex_list_pattern_stdout =
     \\sum=15
     \\count=3
@@ -552,6 +2493,33 @@ const codex_list_tail_empty_stdout =
     \\three-first 2
     \\three-last 3
     \\one-len 0
+    ++ "\n";
+
+const codex_list_test_stdout =
+    \\=== ConsList Prelude Module ===
+    \\
+    \\PASS: length
+    \\PASS: head
+    \\PASS: tail length
+    \\PASS: map double
+    \\PASS: filter even
+    \\PASS: foldl sum
+    \\PASS: reverse
+    \\PASS: append
+    \\PASS: take 3
+    \\PASS: drop 3
+    \\PASS: any even
+    \\PASS: all even
+    \\PASS: sum
+    \\PASS: is-empty nil
+    \\PASS: is-empty cons
+    \\
+    \\=== Array-List Operations ===
+    \\PASS: set-at
+    \\PASS: insert-at
+    \\PASS: empty-direct
+    \\PASS: empty-let
+    \\PASS: list-of-records
     ++ "\n";
 
 const codex_literal_subpattern_stdout =
@@ -576,6 +2544,10 @@ const codex_literal_subpattern_stdout =
     \\done
     ++ "\n";
 
+const codex_lwm2m_encode_stdout =
+    \\12
+    ++ "\n";
+
 const codex_match_arms_per_line_stdout =
     \\one-line: onetwothreeother
     \\many-1: one
@@ -595,6 +2567,10 @@ const codex_melsec_encode_stdout =
     \\4
     ++ "\n";
 
+const codex_mini_bootstrap_stdout =
+    \\mini-bootstrap works
+    ++ "\n";
+
 const codex_mix_bits_stdout =
     \\ones/256:        131
     \\balanced:        True
@@ -610,6 +2586,10 @@ const codex_mod_bound_return_stdout =
     \\34
     \\34
     \\4
+    ++ "\n";
+
+const codex_modbus_encode_stdout =
+    \\17
     ++ "\n";
 
 const codex_modprobe_stdout =
@@ -643,6 +2623,397 @@ const codex_negation_abutment_stdout =
     \\arrow: 8
     ++ "\n";
 
+const codex_noise_test_stdout =
+    \\v1d: a=254 b=288 c=323
+    \\v2d: a=975 b=492 c=456
+    \\continuous=True,True
+    \\f1=313 f2=687 f2>f1=True
+    \\fbm-a=43 fbm-b=363 differ=True
+    \\warped=444 unwarped=492 plain=492
+    \\map=16 min=21 max=975 range=True
+    ++ "\n";
+
+const codex_ops@bounded_modes_smoke_stdout =
+    \\wu8 300: 44
+    \\wu8 -1: 255
+    \\wu8 255: 255
+    \\wu8 256: 0
+    \\wu8 512: 0
+    \\wu8 100: 100
+    \\wi8 128: -128
+    \\wi8 -129: 127
+    \\wi8 130: -126
+    \\wi8 -1: -1
+    \\cu8 150: 100
+    \\cu8 -5: 0
+    \\cu8 100: 100
+    \\cu8 0: 0
+    \\ci8 99: 50
+    \\ci8 -99: -50
+    \\ci8 0: 0
+    \\wrap-add 200 100: 44
+    \\cu32 4294967301: 4294967295
+    \\cu32 -1: 0
+    \\cu32 4294967295: 4294967295
+    \\cbig 20000000000: 10000000000
+    \\cbig -5: 0
+    \\cbig 10000000000: 10000000000
+    ++ "\n";
+
+const codex_ops@builtin_name_shadow_stdout =
+    \\shadowed constant want 64: 64
+    \\shadowed product  want 192: 192
+    ++ "\n";
+
+const codex_ops@cap_word_64_stdout =
+    \\q-bit31 : 2147483648
+    \\q-bit40 : 1099511627776
+    \\q-small : 305419896
+    \\d-small : 305419896
+    \\d-bit40 : 0
+    ++ "\n";
+
+const codex_ops@cce_builtin_bounds_stdout =
+    \\builtin-letter 12,15,70,97: FTFT
+    \\builtin-ws 0,1,2,3: FTTF
+    ++ "\n";
+
+const codex_ops@char_at_bounds_stdout =
+    \\codes: 0=15 1=32 2=24 3=22 4=13
+    \\chars=[abcde]
+    \\last-legal=13
+    \\first=15
+    ++ "\n";
+
+const codex_ops@closure_under_apply_stdout =
+    \\full: 6
+    \\flat-two: 42
+    \\split-one-at-a-time: 42
+    \\split-four: 10
+    \\half-then-one: 10
+    ++ "\n";
+
+const codex_ops@div_negative_pow2_stdout =
+    \\-7 / 2 = -3
+    \\-7 / 3 = -2
+    \\-13 / 4 = -3
+    \\-13 / 5 = -2
+    \\-1 / 2 = 0
+    \\-1 / 8 = 0
+    \\-8 / 8 = -1
+    \\-9 / 8 = -1
+    \\7 / 2 = 3
+    \\13 / 4 = 3
+    \\-7 mod 2 = 1
+    \\-7 mod 3 = 2
+    ++ "\n";
+
+const codex_ops@int_add_wrapping_stdout =
+    \\funnel-add want -9223372036854775808: -9223372036854775808
+    \\funnel-sub want 9223372036854775807: 9223372036854775807
+    \\param-add  want -9223372036854775808: -9223372036854775808
+    \\param-sub  want 9223372036854775807: 9223372036854775807
+    \\imm-add    want -9223372036854775808: -9223372036854775808
+    \\imm-sub    want 9223372036854775807: 9223372036854775807
+    \\in-band    want 9000000000000000000: 9000000000000000000
+    \\in-band    want -9000000000000000000: -9000000000000000000
+    \\small      want 42: 42
+    \\small      want 42: 42
+    ++ "\n";
+
+const codex_ops@int_min_literal_stdout =
+    \\min       want -9223372036854775808 got -9223372036854775808
+    \\min+1     want -9223372036854775807 got -9223372036854775807
+    \\min+254   want -9223372036854775554 got -9223372036854775554
+    \\min+255   want -9223372036854775553 got -9223372036854775553
+    \\min+256   want -9223372036854775552 got -9223372036854775552
+    \\max       want 9223372036854775807 got 9223372036854775807
+    \\allf      want -1 got -1
+    \\c000      want -4611686018427387904 got -4611686018427387904
+    \\minusinf  want -4503599627370496 got -4503599627370496
+    \\shl63     want 1 got 1
+    \\negzero   want 1 got 1
+    \\negzero>= want 1 got 1
+    \\negzero<= want 1 got 1
+    ++ "\n";
+
+const codex_ops@int_mul_wrapping_stdout =
+    \\funnel   want -2446744073709551616: -2446744073709551616
+    \\param    want -2446744073709551616: -2446744073709551616
+    \\in-band  want 9000000000000000000: 9000000000000000000
+    \\small    want 42: 42
+    ++ "\n";
+
+const codex_ops@int_pow_stdout =
+    \\two-cubed 8
+    \\two-fourth 16
+    \\three-fifth 243
+    \\ten-third 1000
+    \\any-zero 1
+    \\any-one 7
+    \\one-big 1
+    \\neg-base-even 81
+    \\neg-base-odd -27
+    \\neg-exponent 0
+    \\zero-base 0
+    \\past-double-down 16677181699666569
+    \\past-double-up 11398895185373143
+    ++ "\n";
+
+const codex_ops@int_rem_stdout =
+    \\7 rem 3 = 1
+    \\-7 rem 3 = -1
+    \\7 rem -3 = 1
+    \\-7 rem -3 = -1
+    \\7 mod 3 = 1
+    \\-7 mod 3 = 2
+    \\7 mod -3 = 1
+    \\-7 mod -3 = 2
+    \\-1 rem 8 = -1
+    \\-8 rem 8 = 0
+    \\-9 rem 8 = -1
+    \\-1 mod 8 = 7
+    \\0 rem 5 = 0
+    \\computed -7 rem 3 = -1
+    \\computed 7 rem -3 = 1
+    \\identity -7 3 = yes
+    \\identity 7 -3 = yes
+    \\identity -7 -3 = yes
+    \\identity -1 8 = yes
+    \\identity 13 4 = yes
+    \\identities held = 5
+    ++ "\n";
+
+const codex_ops@int_wrapping_spelling_stdout =
+    \\literal  want -9223372036854775808: -9223372036854775808
+    \\literal  want -9223372036854775808: -9223372036854775808
+    \\literal  want 9223372036854775807: 9223372036854775807
+    \\bare-add want -9223372036854775808: -9223372036854775808
+    \\bare-sub want 9223372036854775807: 9223372036854775807
+    \\bare-mul want -2446744073709551616: -2446744073709551616
+    \\small    want 42: 42
+    ++ "\n";
+
+const codex_ops@list_index_bounds_stdout =
+    \\read: 1 2 3 4
+    \\last=4
+    \\set: 0 10 20 30
+    \\ins-front: 99 1 2 3
+    \\ins-mid: 1 99 2 3
+    \\ins-end: 1 2 3 99
+    ++ "\n";
+
+const codex_ops@list_view_bounds_stdout =
+    \\view: 2 3 4
+    \\view-len=3
+    ++ "\n";
+
+const codex_ops@match_shadowed_arm_stdout =
+    \\one
+    \\two
+    \\other
+    \\leaf
+    \\fork
+    ++ "\n";
+
+const codex_ops@native_nested_pattern_stdout =
+    \\3000
+    \\304
+    \\-1
+    \\-1
+    \\1
+    \\-700
+    \\1234
+    \\-1
+    \\-1
+    \\2042
+    \\-1
+    \\-9
+    \\11
+    \\-1
+    \\104
+    \\1
+    \\2
+    ++ "\n";
+
+const codex_ops@native_nested_tags_stdout =
+    \\1
+    \\2
+    \\3
+    \\3
+    \\3
+    ++ "\n";
+
+const codex_ops@real_bitcast_f64_stdout =
+    \\bits 0.0 0
+    \\bits 1.0 4607182418800017408
+    \\bits 0.5 4602678819172646912
+    \\bits 42.5 4631178160564600832
+    \\bits -1.0 -4616189618054758400
+    \\bits -2.0 -4611686018427387904
+    \\negzero -9223372036854775808
+    \\poszero 0
+    \\nan 9221120237041090560
+    \\inf 9218868437227405312
+    \\maxfinite 9218868437227405311
+    \\roundtrip 42.5 4631178160564600832
+    ++ "\n";
+
+const codex_ops@real_compare_negative_stdout =
+    \\neg-big lt neg-small want 11 11
+    \\neg-big gt neg-small want 00 00
+    \\neg-big le neg-small want 11 11
+    \\neg-big ge neg-small want 00 00
+    \\neg-small lt neg-big want 00 00
+    \\neg-small gt neg-big want 11 11
+    \\neg-big lt neg-big want 00 00
+    \\neg-big le neg-big want 11 11
+    \\neg-big ge neg-big want 11 11
+    \\pos-small lt pos-big want 11 11
+    \\pos-small gt pos-big want 00 00
+    \\neg-big lt pos-small want 11 11
+    \\pos-big lt neg-small want 00 00
+    \\neg-small lt zero want 11 11
+    \\neg-small gt zero want 00 00
+    ++ "\n";
+
+const codex_ops@real_neg_neg_stdout =
+    \\neg-neg      25
+    \\neg-neg-call 50
+    ++ "\n";
+
+const codex_ops@real_negate_stdout =
+    \\neg-param   -25
+    \\neg-call    -50
+    \\neg-field   -15
+    \\neg-nested  -80
+    \\neg-multi   -110
+    \\mixed       -190
+    ++ "\n";
+
+const codex_ops@record_closure_field_poly_stdout =
+    \\wrap 21
+    \\wrap-let 8
+    \\wrap-map 42
+    \\wrap-text seven
+    ++ "\n";
+
+const codex_ops@record_equality_stdout =
+    \\record equal=True
+    \\record differs=False
+    \\record not-equal-operator=True
+    \\record text-field=True
+    \\record nested=True
+    \\record nested-differs=False
+    \\record list-field=True
+    \\record list-field-differs=False
+    \\record real-field-builds=True
+    ++ "\n";
+
+const codex_ops@saturated_call_returning_function_stdout =
+    \\one-at-a-time: 47
+    \\rest-at-once: 47
+    \\flat: 47
+    \\other-branch: 48
+    \\arity-two: 45
+    \\arity-two-b: 51
+    \\still-partial: 47
+    \\self-recursive: 47
+    \\mutual: 47
+    \\closure-over-one: 48
+    \\closure-over-two: 48
+    \\closure-arity-one-over-two: 45
+    \\bare-name-over-one: 48
+    ++ "\n";
+
+const codex_ops@substring_bounds_stdout =
+    \\ 0,0=[] 0,1=[a] 0,2=[ab] 0,3=[abc] 0,4=[abcd] 0,5=[abcde] 1,0=[] 1,1=[b] 1,2=[bc] 1,3=[bcd] 1,4=[bcde] 2,0=[] 2,1=[c] 2,2=[cd] 2,3=[cde] 3,0=[] 3,1=[d] 3,2=[de] 4,0=[] 4,1=[e] 5,0=[]
+    \\len=5
+    \\empty-at-end=0
+    ++ "\n";
+
+const codex_ops@text_order_allowed_stdout =
+    \\eq-same-content = 1
+    \\eq-diff-content = 0
+    \\neq-diff        = 1
+    \\cmp-a-b         = -1
+    \\cmp-a-a         = 0
+    \\cmp-d-b         = -1
+    ++ "\n";
+
+const codex_ops@tier0_cyrillic_print_stdout =
+    \\cyrillic-113-127: аоеинтсрвлкмдпу
+    \\accented-97-104:  éèêëáàâä
+    \\ascii-3-12:       0123456789
+    ++ "\n";
+
+const codex_ops@unit_pattern_lit_stdout =
+    \\text-plain=matched
+    \\text-unit =matched
+    \\int-unit  =matched
+    ++ "\n";
+
+const codex_ops@unit_real_arith_stdout =
+    \\add 4616189618054758400
+    \\addneg -4606732058837280358
+    \\sub -4616189618054758400
+    \\subneg -4614388178203810202
+    \\mul 4617315517961601024
+    \\mulneg -4606056518893174784
+    \\div 4612811918334230528
+    \\divneg -4610560118520545280
+    \\nestadd 4616189618054758400
+    \\nestmul 4617315517961601024
+    \\tadd 12
+    \\tsub 2
+    ++ "\n";
+
+const codex_ops@unit_real_compare_stdout =
+    \\neg-big lt neg-small want 11 got 11
+    \\neg-big gt neg-small want 00 got 00
+    \\neg-big le neg-small want 11 got 11
+    \\neg-big ge neg-small want 00 got 00
+    \\neg-small lt neg-big want 00 got 00
+    \\neg-small gt neg-big want 11 got 11
+    \\neg-big lt neg-big want 00 got 00
+    \\neg-big le neg-big want 11 got 11
+    \\neg-big ge neg-big want 11 got 11
+    \\pos-small lt pos-big want 11 got 11
+    \\pos-big lt pos-small want 00 got 00
+    \\neg-big lt pos-small want 11 got 11
+    \\pos-big lt neg-small want 00 got 00
+    \\neg-small lt zero want 11 got 11
+    \\neg-small gt zero want 00 got 00
+    \\hertz lo lt hi want 1 got 1
+    \\hertz hi lt lo want 0 got 0
+    ++ "\n";
+
+const codex_ops@unit_show_stdout =
+    \\text-plain=abcd
+    \\text-unit =abcd
+    \\bool-plain=True
+    \\bool-unit =True
+    \\real-plain=2.5
+    \\real-unit =2.5
+    \\int-plain =42
+    \\int-unit  =42
+    ++ "\n";
+
+const codex_ops@unused_let_alias_discard_stdout =
+    \\reads-in-body: 60
+    \\reads-in-sibling: 50
+    \\reads-in-tail: 23
+    ++ "\n";
+
+const codex_osc_noise_stdout =
+    \\samples:       240
+    \\period:        80
+    \\repeats:       0 of 160
+    \\distinct:      230
+    \\not periodic:  True
+    \\above period:  True
+    ++ "\n";
+
 const codex_particle_spread_stdout =
     \\emitted=200
     \\modal-dy-share-sp64=1
@@ -656,6 +3027,31 @@ const codex_path_real_stdout =
     \\main.codex
     \\main
     \\codex
+    ++ "\n";
+
+const codex_peek32_sign_stdout =
+    \\bit31-set 2882351940
+    \\bit31-clear 2147483647
+    \\bit31-only 2147483648
+    \\hi-word 43981
+    ++ "\n";
+
+const codex_pipe_unique_test_stdout =
+    \\7
+    \\True
+    \\True
+    \\False
+    ++ "\n";
+
+const codex_poke16_width_stdout =
+    \\neighbour 1271739204
+    \\odd-bytes 0 255 238 0
+    \\peek16-odd 61183
+    \\peek16-hi 19405
+    ++ "\n";
+
+const codex_prose_binary_control_stdout =
+    \\2004
     ++ "\n";
 
 const codex_prose_consistency_stdout =
@@ -674,6 +3070,13 @@ const codex_prose_smoke_stdout =
     \\Hello, World!
     ++ "\n";
 
+const codex_punctual_fastmath_stdout =
+    \\int-log2 1: 0
+    \\int-log2 256: 8
+    \\int-log2 1023: 9
+    \\int-log2 0: -1
+    ++ "\n";
+
 const codex_punctual_iot_stdout =
     \\threat-2500: 3
     \\threat-400: 0
@@ -687,6 +3090,43 @@ const codex_punctual_iot_stdout =
     \\checksum: 132
     ++ "\n";
 
+const codex_punctual_quire_stdout =
+    \\int-abs -42: 42
+    \\int-sign -7: -1
+    \\int-min 3 5: 3
+    \\int-max 3 5: 5
+    \\int-clamp 0 10 15: 10
+    \\is-even 4: True
+    \\is-odd 7: True
+    \\bit-popcount 255: 8
+    \\bit-ctz 8: 3
+    \\is-power-of-two 16: True
+    \\next-power-of-two 5: 8
+    \\byte-swap-32 #01020304: 67305985
+    \\extract-byte #AABB 0: 187
+    \\sat-add-u8 200 100: 255
+    \\sat-sub-u8 10 20: 0
+    \\lerp 0 100 1 2: 50
+    \\step 5 3: 0
+    \\step 5 7: 1
+    \\int-sqrt 144: 12
+    \\int-pow 2 10: 1024
+    \\int-log2 256: 8
+    \\fast-sin 0: 0
+    \\fast-sin 90000: 10000
+    \\fast-cos 0: 10000
+    \\rgba-r (rgba-pack 128 64 32 255): 128
+    \\rgba-g (rgba-pack 128 64 32 255): 64
+    \\rgba-b (rgba-pack 128 64 32 255): 32
+    \\rgb-luminance-packed white: 255
+    \\dot-2d 3 4 3 4: 25
+    \\cross-2d 1 0 0 1: 1
+    \\distance-sq-2d 0 0 3 4: 25
+    \\manhattan-2d 0 0 3 4: 7
+    \\to-big-endian-16 #0102: 513
+    \\from-big-endian-16 #0201: 258
+    ++ "\n";
+
 const codex_punctual_smoke_stdout =
     \\42
     \\42
@@ -694,9 +3134,40 @@ const codex_punctual_smoke_stdout =
     \\42
     ++ "\n";
 
+const codex_queue_test_stdout =
+    \\True
+    \\3
+    ++ "\n";
+
 const codex_real_literal_boundary_stdout =
     \\whole-19-parses : 123456789012345680
     \\frac-19-parses  : 2
+    ++ "\n";
+
+const codex_record_smoke_stdout =
+    \\rect at 10,20 area=21
+    \\15
+    \\circle-green-r5
+    \\red circle r=5
+    \\15
+    \\42
+    \\99
+    \\a:13
+    \\one:5
+    ++ "\n";
+
+const codex_recursive_eq_stdout =
+    \\eq
+    \\eq
+    \\eq
+    \\ne
+    \\ne
+    \\eq
+    \\ne
+    \\eq
+    \\ne
+    \\ne
+    \\eq
     ++ "\n";
 
 const codex_reservoir_uniform_stdout =
@@ -713,6 +3184,49 @@ const codex_revised_narrow_stdout =
     \\literal: 42 lit
     \\revised: 7 rev
     \\mixed: 99 mixed
+    ++ "\n";
+
+const codex_riscv_encoder_stdout =
+    \\add a0,a1,a2=00C58533
+    \\sub a0,a1,a2=40C58533
+    \\mul a0,a1,a2=02C58533
+    \\and a0,a1,a2=00C5F533
+    \\or a0,a1,a2=00C5E533
+    \\addi a0,a1,42=02A58513
+    \\ld a0,0(a1)=0005B503
+    \\sd a1,8(a0)=00B53423
+    \\beq a0,a1,+16=00B50863
+    \\lui a0,#12345=12345537
+    \\jal ra,+100=064000EF
+    \\ret=00008067
+    \\nop=00000013
+    \\mv a0,a1=00058513
+    \\li a0,#DEADBEEF len=5
+    \\fits32 -2147483649=False
+    \\fits32 -2147483648=True
+    \\fits32 2147483647=True
+    \\fits32 2147483648=False
+    \\fits32 #7FFFFFFF7FFFFFFF=False
+    \\fits32 #7FFFFFFF80000000=False
+    \\li max len=7
+    ++ "\n";
+
+const codex_riscv32c_encoder_stdout =
+    \\c.nop=0001
+    \\c.li a0,42=5529
+    \\c.mv a0,a1=052E
+    \\c.add a0,a1=152E
+    \\c.jr ra=0082
+    \\c.jalr ra=1082
+    \\c.ret=0082
+    \\c.addi a0,5=0515
+    \\c.j +100=A095
+    \\li32 a0,#12345=2 insns
+    \\li32 a0,42=1 insns
+    ++ "\n";
+
+const codex_roc_closure_captures_list_stdout =
+    \\3
     ++ "\n";
 
 const codex_roc_early_return_predicate_stdout =
@@ -735,8 +3249,24 @@ const codex_roc_fold_sum_stdout =
     \\10
     ++ "\n";
 
+const codex_roc_iter_drop_if_stdout =
+    \\2
+    ++ "\n";
+
+const codex_roc_iter_keep_if_stdout =
+    \\2
+    ++ "\n";
+
+const codex_roc_iter_map_stdout =
+    \\24
+    ++ "\n";
+
 const codex_roc_recursive_var_stdout =
     \\6
+    ++ "\n";
+
+const codex_roc_returned_closure_stdout =
+    \\9
     ++ "\n";
 
 const codex_rv_arg_order_stdout =
@@ -855,8 +3385,60 @@ const codex_sort_test_stdout =
     \\5
     ++ "\n";
 
+const codex_sound_test_stdout =
+    \\bank: count=2 samples=16 peak=800
+    \\fm: samples=16 peak=1002
+    \\pulse: peak=1000
+    \\dist: peak=1000 clipped=True
+    \\comp: last=750 reduced=True
+    \\eq: samples=5
+    \\A4=440Hz C4=261Hz
+    \\C-major=7 notes
+    \\Cmaj=C4-E4-G4 Amin=A4-C5-E5
+    \\quarter=500ms eighth=250ms
+    ++ "\n";
+
+const codex_stats_wrap_test_stdout =
+    \\mean=30
+    \\median=5
+    \\stddev=2
+    \\p50=5
+    \\hist=1,2,3,2,1
+    \\range=8
+    \\wrap=the quick brown
+    \\fox jumps over
+    \\the lazy dog
+    \\trunc=hello...
+    \\center=[    hi]
+    \\+------------+
+    \\| Hello      |
+    \\+------------+
+    ++ "\n";
+
 const codex_string_escape_quote_stdout =
     \\she said "hi" loudly
+    ++ "\n";
+
+const codex_sum_field_eq_stdout =
+    \\eq
+    \\ne
+    \\eq
+    \\ne
+    \\eq
+    \\ne
+    \\ne
+    \\ne
+    \\ne
+    ++ "\n";
+
+const codex_synth_test_stdout =
+    \\sine0=0 sine90=1004 sq+=1000 sq-=-1000 saw0=0 tri0=1000
+    \\count=16 peak=1000
+    \\sq-count=8 zc=1
+    \\raw=1000 filt=672 smoother=True
+    \\mixed=8 peak=757
+    \\raw=1005 shaped=702 quieter=True
+    \\note-samples=600 peak=995
     ++ "\n";
 
 const codex_tco_bitop_loop_stdout =
@@ -894,6 +3476,10 @@ const codex_tco_shuffle_spill_stdout =
     \\turns=4
     ++ "\n";
 
+const codex_text_append_alias_stdout =
+    \\PASS
+    ++ "\n";
+
 const codex_text_eq_branches_stdout =
     \\eq-int same    1
     \\eq-int differ  0
@@ -913,6 +3499,42 @@ const codex_text_fold_indexed_stdout =
     \\4
     ++ "\n";
 
+const codex_text_helper_native_stdout =
+    \\sw TTTFFTF
+    \\ct TTTFTFTF
+    \\rp heLLo||bb|abc||abababab|hello
+    \\sp1 4[a][b][][c]
+    \\sp2 1[]
+    \\sp3 1[abc]
+    \\sp4 3[][a][]
+    \\sp5 3[a][b][c]
+    \\sp6 1[abc]
+    \\sp7 3[a][b][c]
+    \\ti 42 -42 0 0 7 0 12 0 0 0 9223372036854775807
+    ++ "\n";
+
+const codex_thumb2_encoder_stdout =
+    \\nop=BF00
+    \\mov r0,r1=1C08
+    \\mov r0,#42=202A
+    \\add r0,r1,r2=1888
+    \\sub r0,r1,r2=1A88
+    \\cmp r1,r2=4291
+    \\and r0,r1=4008
+    \\ldr r0,[sp,#16]=9804
+    \\str r0,[sp,#16]=9004
+    \\bx lr=4770
+    \\movw r0,#1234=2034F241
+    \\movt r0,#5678=6078F2C5
+    \\add.w r0,r1,r2=0002EB01
+    \\sub.w r0,r1,r2=0002EBA1
+    \\mul r0,r1,r2=F002FB01
+    \\sdiv r0,r1,r2=F002FB91
+    \\ldr.w r0,[r1,#16]=0010F8D1
+    \\str.w r0,[r1,#16]=0010F8C1
+    \\li r0,#12345678 len=8
+    ++ "\n";
+
 const codex_tuple_syntax_stdout =
     \\30
     \\20 10
@@ -925,6 +3547,10 @@ const codex_tvar_in_declared_type_stdout =
     \\73
     ++ "\n";
 
+const codex_type_checker_test_stdout =
+    \\42
+    ++ "\n";
+
 const codex_ui_sound_test_stdout =
     \\click square 800hz 50ms vol=500
     \\beep sine 440hz 200ms vol=700
@@ -934,6 +3560,100 @@ const codex_ui_sound_test_stdout =
     \\count=2
     \\peek=warning
     \\q-count=2 done=false
+    ++ "\n";
+
+const codex_ui@theme_ink_on_stdout =
+    \\the ink each scheme puts on its own accent:
+    \\terminal: bg luma 16, fg luma 204, accent luma 154 -> ink luma 16
+    \\lcars: bg luma 0, fg luma 255, accent luma 179 -> ink luma 0
+    \\minimal: bg luma 255, fg luma 32, accent luma 88 -> ink luma 255
+    \\
+    \\the same helper asked for black and for white:
+    \\  terminal: on black luma 204, on white luma 16
+    \\  lcars: on black luma 255, on white luma 0
+    \\  minimal: on black luma 255, on white luma 32
+    ++ "\n";
+
+const codex_unconstrained_empty_list_stdout =
+    \\0
+    \\0
+    \\0
+    \\0
+    \\0
+    \\42
+    \\text
+    ++ "\n";
+
+const codex_unconstrained_nullary_sum_stdout =
+    \\ok
+    \\ok
+    \\42
+    \\text
+    \\7
+    \\kept
+    ++ "\n";
+
+const codex_unit_family_stdout =
+    \\2400
+    \\240
+    \\2
+    \\100
+    ++ "\n";
+
+const codex_unit_family_mixed_stdout =
+    \\perimeter mm+yard: 2828mm
+    \\  in cm: 282
+    \\  in inches: 113
+    \\fence: 8478mm
+    \\  in meters: 8
+    \\  in feet: 27
+    ++ "\n";
+
+const codex_unit_smoke_stdout =
+    \\42
+    \\100
+    \\50
+    \\126
+    \\True
+    \\120
+    \\99
+    ++ "\n";
+
+const codex_units_foreword_stdout =
+    \\dur: 2500ms
+    \\len: 83km
+    \\astro: 37843071488195km
+    \\data: 2048MB
+    \\temp-k: 373
+    \\temp-f: 212
+    \\temp-c: 0
+    \\angle-arcmin: 5400
+    \\speed-m/s: 27
+    \\energy-j: 8368000
+    \\force-mn: 9000
+    \\power-w: 745
+    ++ "\n";
+
+const codex_usb_desc_guard_stdout =
+    \\device vendor=4660 product=22136 class=9 configs=1
+    \\device-short vendor=0 class=0 configs=0
+    \\endpoint addr=1 dir=128 type=3 maxpkt=8 interval=10
+    \\endpoint-past addr=0 maxpkt=0
+    \\interface num=0 class=3 sub=1 proto=1 eps=1
+    \\interface-past num=0 class=0
+    \\le16 in=25 at-end=0 past=0
+    \\scan honest total=25 ifaces=1
+    \\scan lying total=200 ifaces=1
+    \\scan huge total=65535 ifaces=1
+    \\scan empty ifaces=0
+    ++ "\n";
+
+const codex_usb_test_stdout =
+    \\setup: len=8 req=6
+    \\ep: EP1 IN ISO maxpkt=192
+    \\cd: 44100Hz 2ch 16bit (176400 B/s)
+    \\frame: bytes=8
+    \\latency-256=5ms bps=192000
     ++ "\n";
 
 const codex_wavelet_sort_aliasing_stdout =
@@ -989,28 +3709,40 @@ const codex_zigbee_encode_stdout =
     ++ "\n";
 
     .{ .id = 0, .suite = .codex, .name = "codex: act-let-scope", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_act_let_scope.roc", .stdout_exact = codex_act_let_scope_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: act-unused-bind", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_act_unused_bind.roc", .stdout_exact = codex_act_unused_bind_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: amp-after-call", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_amp_after_call.roc", .stdout_exact = codex_amp_after_call_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: approx-eq", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_approx_eq.roc", .stdout_exact = codex_approx_eq_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: arith-operand-order", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_arith_operand_order.roc", .stdout_exact = codex_arith_operand_order_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: arithmetic", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_arithmetic.roc", .stdout_exact = codex_arithmetic_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: arm64-boot-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_arm64_boot_test.roc", .stdout_exact = codex_arm64_boot_test_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: asn1-der-write", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_asn1_der_write.roc", .stdout_exact = codex_asn1_der_write_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: audio-diffusion-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_audio_diffusion_test.roc", .stdout_exact = codex_audio_diffusion_test_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: bezier-identity", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_bezier_identity.roc", .stdout_exact = codex_bezier_identity_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: bitop-if-cond", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_bitop_if_cond.roc", .stdout_exact = codex_bitop_if_cond_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: ble-att-encode", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ble_att_encode.roc", .stdout_exact = codex_ble_att_encode_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: bounded-integer-ops", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_bounded_integer_ops.roc", .stdout_exact = codex_bounded_integer_ops_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: bounded-sig-runtime", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_bounded_sig_runtime.roc", .stdout_exact = codex_bounded_sig_runtime_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: bounds-proof", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_bounds_proof.roc", .stdout_exact = codex_bounds_proof_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: bounds-prover", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_bounds_prover.roc", .stdout_exact = codex_bounds_prover_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: bs3-smoke", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_bs3_smoke.roc", .stdout_exact = codex_bs3_smoke_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: call-clobber", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_call_clobber.roc", .stdout_exact = codex_call_clobber_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: canopen-encode", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_canopen_encode.roc", .stdout_exact = codex_canopen_encode_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: cap-heap-poke-pure", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_cap_heap_poke_pure.roc", .stdout_exact = codex_cap_heap_poke_pure_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: cap-manifest-derived", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_cap_manifest_derived.roc", .stdout_exact = codex_cap_manifest_derived_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: capability-doors", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_capability_doors.roc", .stdout_exact = codex_capability_doors_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: carddeck-shuffle", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_carddeck_shuffle.roc", .stdout_exact = codex_carddeck_shuffle_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: chapter-pages", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_chapter_pages.roc", .stdout_exact = codex_chapter_pages_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: circbuf-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_circbuf_test.roc", .stdout_exact = codex_circbuf_test_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: cite-override-quire", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_cite_override_quire.roc", .stdout_exact = codex_cite_override_quire_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: cms-spread", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_cms_spread.roc", .stdout_exact = codex_cms_spread_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: color-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_color_test.roc", .stdout_exact = codex_color_test_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: consistent-hash-balance", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_consistent_hash_balance.roc", .stdout_exact = codex_consistent_hash_balance_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: convolution-identity", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_convolution_identity.roc", .stdout_exact = codex_convolution_identity_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: ctor-narrow-warn", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ctor_narrow_warn.roc", .stdout_exact = codex_ctor_narrow_warn_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: deriving-eq-recursive", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_deriving_eq_recursive.roc", .stdout_exact = codex_deriving_eq_recursive_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: dnp3-encode", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_dnp3_encode.roc", .stdout_exact = codex_dnp3_encode_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: dtls-handshake", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_dtls_handshake.roc", .stdout_exact = codex_dtls_handshake_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: edit-distance-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_edit_distance_test.roc", .stdout_exact = codex_edit_distance_test_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: effect-dotted-allow", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_effect_dotted_allow.roc", .stdout_exact = codex_effect_dotted_allow_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: effect-positive", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_effect_positive.roc", .stdout_exact = codex_effect_positive_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: effect-row-var-syntax", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_effect_row_var_syntax.roc", .stdout_exact = codex_effect_row_var_syntax_stdout } } },
@@ -1021,25 +3753,341 @@ const codex_zigbee_encode_stdout =
     .{ .id = 0, .suite = .codex, .name = "codex: eq-generic-recursive", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_eq_generic_recursive.roc", .stdout_exact = codex_eq_generic_recursive_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: eq-plain-sum", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_eq_plain_sum.roc", .stdout_exact = codex_eq_plain_sum_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: eventbus-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_eventbus_test.roc", .stdout_exact = codex_eventbus_test_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: examples@eight-queens", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_examples@eight_queens.roc", .stdout_exact = codex_examples@eight_queens_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: examples@missile-warning", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_examples@missile_warning.roc", .stdout_exact = codex_examples@missile_warning_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: expr-calculator", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_expr_calculator.roc", .stdout_exact = codex_expr_calculator_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: factlog-layout", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_factlog_layout.roc", .stdout_exact = codex_factlog_layout_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: factorial", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_factorial.roc", .stdout_exact = codex_factorial_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: field-cache-text-lit", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_field_cache_text_lit.roc", .stdout_exact = codex_field_cache_text_lit_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: fins-encode", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_fins_encode.roc", .stdout_exact = codex_fins_encode_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-activation", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_activation.roc", .stdout_exact = codex_forewords@ai_activation_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-activation-range", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_activation_range.roc", .stdout_exact = codex_forewords@ai_activation_range_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-attention", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_attention.roc", .stdout_exact = codex_forewords@ai_attention_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-clip-interrogator", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_clip_interrogator.roc", .stdout_exact = codex_forewords@ai_clip_interrogator_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-control-net", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_control_net.roc", .stdout_exact = codex_forewords@ai_control_net_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-decision-tree", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_decision_tree.roc", .stdout_exact = codex_forewords@ai_decision_tree_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-diffusion-pipeline", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_diffusion_pipeline.roc", .stdout_exact = codex_forewords@ai_diffusion_pipeline_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-diffusion-scheduler", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_diffusion_scheduler.roc", .stdout_exact = codex_forewords@ai_diffusion_scheduler_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-embedding", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_embedding.roc", .stdout_exact = codex_forewords@ai_embedding_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-flux-pipeline", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_flux_pipeline.roc", .stdout_exact = codex_forewords@ai_flux_pipeline_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-genetic-algorithm", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_genetic_algorithm.roc", .stdout_exact = codex_forewords@ai_genetic_algorithm_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-gguf", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_gguf.roc", .stdout_exact = codex_forewords@ai_gguf_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-gpu-proxy", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_gpu_proxy.roc", .stdout_exact = codex_forewords@ai_gpu_proxy_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-hires-fix", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_hires_fix.roc", .stdout_exact = codex_forewords@ai_hires_fix_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-inpainting", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_inpainting.roc", .stdout_exact = codex_forewords@ai_inpainting_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-k-nearest-neighbor", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_k_nearest_neighbor.roc", .stdout_exact = codex_forewords@ai_k_nearest_neighbor_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-kv-cache", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_kv_cache.roc", .stdout_exact = codex_forewords@ai_kv_cache_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-lora-loader", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_lora_loader.roc", .stdout_exact = codex_forewords@ai_lora_loader_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-loss", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_loss.roc", .stdout_exact = codex_forewords@ai_loss_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-neural-net", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_neural_net.roc", .stdout_exact = codex_forewords@ai_neural_net_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-normalization", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_normalization.roc", .stdout_exact = codex_forewords@ai_normalization_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-optimizer", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_optimizer.roc", .stdout_exact = codex_forewords@ai_optimizer_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-png-metadata", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_png_metadata.roc", .stdout_exact = codex_forewords@ai_png_metadata_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-prompt-parser", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_prompt_parser.roc", .stdout_exact = codex_forewords@ai_prompt_parser_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-reservoir", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_reservoir.roc", .stdout_exact = codex_forewords@ai_reservoir_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-sampling", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_sampling.roc", .stdout_exact = codex_forewords@ai_sampling_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-sparse-lattice", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_sparse_lattice.roc", .stdout_exact = codex_forewords@ai_sparse_lattice_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-tensor", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_tensor.roc", .stdout_exact = codex_forewords@ai_tensor_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-text-encoder", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_text_encoder.roc", .stdout_exact = codex_forewords@ai_text_encoder_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-text-encoder-xl", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_text_encoder_xl.roc", .stdout_exact = codex_forewords@ai_text_encoder_xl_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-tokenizer", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_tokenizer.roc", .stdout_exact = codex_forewords@ai_tokenizer_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-transformer", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_transformer.roc", .stdout_exact = codex_forewords@ai_transformer_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-unet-xl", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_unet_xl.roc", .stdout_exact = codex_forewords@ai_unet_xl_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ai-upscaler", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ai_upscaler.roc", .stdout_exact = codex_forewords@ai_upscaler_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@compress-huffman", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@compress_huffman.roc", .stdout_exact = codex_forewords@compress_huffman_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@compress-lz4", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@compress_lz4.roc", .stdout_exact = codex_forewords@compress_lz4_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@compress-rle", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@compress_rle.roc", .stdout_exact = codex_forewords@compress_rle_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@core-bigint", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@core_bigint.roc", .stdout_exact = codex_forewords@core_bigint_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-avi", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_avi.roc", .stdout_exact = codex_forewords@encode_avi_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-base64", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_base64.roc", .stdout_exact = codex_forewords@encode_base64_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-bencode", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_bencode.roc", .stdout_exact = codex_forewords@encode_bencode_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-bmp", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_bmp.roc", .stdout_exact = codex_forewords@encode_bmp_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-cbor", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_cbor.roc", .stdout_exact = codex_forewords@encode_cbor_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-crc32", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_crc32.roc", .stdout_exact = codex_forewords@encode_crc32_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-csv", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_csv.roc", .stdout_exact = codex_forewords@encode_csv_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-flac", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_flac.roc", .stdout_exact = codex_forewords@encode_flac_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-gif", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_gif.roc", .stdout_exact = codex_forewords@encode_gif_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-gray-code", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_gray_code.roc", .stdout_exact = codex_forewords@encode_gray_code_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-hex", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_hex.roc", .stdout_exact = codex_forewords@encode_hex_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-ini", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_ini.roc", .stdout_exact = codex_forewords@encode_ini_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-jpeg", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_jpeg.roc", .stdout_exact = codex_forewords@encode_jpeg_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-json", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_json.roc", .stdout_exact = codex_forewords@encode_json_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-lwm2m", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_lwm2m.roc", .stdout_exact = codex_forewords@encode_lwm2m_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-markdown", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_markdown.roc", .stdout_exact = codex_forewords@encode_markdown_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-message-pack", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_message_pack.roc", .stdout_exact = codex_forewords@encode_message_pack_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-midi", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_midi.roc", .stdout_exact = codex_forewords@encode_midi_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-mp3", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_mp3.roc", .stdout_exact = codex_forewords@encode_mp3_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-mp4", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_mp4.roc", .stdout_exact = codex_forewords@encode_mp4_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-ogg", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_ogg.roc", .stdout_exact = codex_forewords@encode_ogg_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-png", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_png.roc", .stdout_exact = codex_forewords@encode_png_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-protobuf", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_protobuf.roc", .stdout_exact = codex_forewords@encode_protobuf_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-qoi", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_qoi.roc", .stdout_exact = codex_forewords@encode_qoi_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-smtp", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_smtp.roc", .stdout_exact = codex_forewords@encode_smtp_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-tiff", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_tiff.roc", .stdout_exact = codex_forewords@encode_tiff_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-toml", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_toml.roc", .stdout_exact = codex_forewords@encode_toml_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-uri", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_uri.roc", .stdout_exact = codex_forewords@encode_uri_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-uuid", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_uuid.roc", .stdout_exact = codex_forewords@encode_uuid_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-video-codec", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_video_codec.roc", .stdout_exact = codex_forewords@encode_video_codec_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-wav", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_wav.roc", .stdout_exact = codex_forewords@encode_wav_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-web-socket", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_web_socket.roc", .stdout_exact = codex_forewords@encode_web_socket_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@encode-yaml", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@encode_yaml.roc", .stdout_exact = codex_forewords@encode_yaml_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-ability-system", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_ability_system.roc", .stdout_exact = codex_forewords@engine_ability_system_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-anim-blend", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_anim_blend.roc", .stdout_exact = codex_forewords@engine_anim_blend_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-asset-table", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_asset_table.roc", .stdout_exact = codex_forewords@engine_asset_table_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-audio-bus", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_audio_bus.roc", .stdout_exact = codex_forewords@engine_audio_bus_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-audio3d", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_audio3d.roc", .stdout_exact = codex_forewords@engine_audio3d_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-biome", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_biome.roc", .stdout_exact = codex_forewords@engine_biome_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-cloth-sim", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_cloth_sim.roc", .stdout_exact = codex_forewords@engine_cloth_sim_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-collision3d", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_collision3d.roc", .stdout_exact = codex_forewords@engine_collision3d_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-culling", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_culling.roc", .stdout_exact = codex_forewords@engine_culling_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-cutscene", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_cutscene.roc", .stdout_exact = codex_forewords@engine_cutscene_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-damage-system", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_damage_system.roc", .stdout_exact = codex_forewords@engine_damage_system_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-debug-draw", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_debug_draw.roc", .stdout_exact = codex_forewords@engine_debug_draw_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-facial-anim", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_facial_anim.roc", .stdout_exact = codex_forewords@engine_facial_anim_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-fog", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_fog.roc", .stdout_exact = codex_forewords@engine_fog_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-fractal-plant", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_fractal_plant.roc", .stdout_exact = codex_forewords@engine_fractal_plant_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-game-loop", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_game_loop.roc", .stdout_exact = codex_forewords@engine_game_loop_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-gameplay-tags", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_gameplay_tags.roc", .stdout_exact = codex_forewords@engine_gameplay_tags_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-hair-sim", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_hair_sim.roc", .stdout_exact = codex_forewords@engine_hair_sim_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-helm-bridge", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_helm_bridge.roc", .stdout_exact = codex_forewords@engine_helm_bridge_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-input", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_input.roc", .stdout_exact = codex_forewords@engine_input_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-lod", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_lod.roc", .stdout_exact = codex_forewords@engine_lod_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-material", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_material.roc", .stdout_exact = codex_forewords@engine_material_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-mesh", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_mesh.roc", .stdout_exact = codex_forewords@engine_mesh_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-musculature", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_musculature.roc", .stdout_exact = codex_forewords@engine_musculature_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-particle-renderer", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_particle_renderer.roc", .stdout_exact = codex_forewords@engine_particle_renderer_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-physics-joint", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_physics_joint.roc", .stdout_exact = codex_forewords@engine_physics_joint_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-post-process", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_post_process.roc", .stdout_exact = codex_forewords@engine_post_process_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-renderer3d", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_renderer3d.roc", .stdout_exact = codex_forewords@engine_renderer3d_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-scene3d", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_scene3d.roc", .stdout_exact = codex_forewords@engine_scene3d_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-signal", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_signal.roc", .stdout_exact = codex_forewords@engine_signal_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-skin-shader", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_skin_shader.roc", .stdout_exact = codex_forewords@engine_skin_shader_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-skinning", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_skinning.roc", .stdout_exact = codex_forewords@engine_skinning_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-soft-body", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_soft_body.roc", .stdout_exact = codex_forewords@engine_soft_body_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-spline-path", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_spline_path.roc", .stdout_exact = codex_forewords@engine_spline_path_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-terrain", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_terrain.roc", .stdout_exact = codex_forewords@engine_terrain_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-texture", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_texture.roc", .stdout_exact = codex_forewords@engine_texture_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-time-of-day", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_time_of_day.roc", .stdout_exact = codex_forewords@engine_time_of_day_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-water", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_water.roc", .stdout_exact = codex_forewords@engine_water_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-world-gen", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_world_gen.roc", .stdout_exact = codex_forewords@engine_world_gen_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@engine-world-hud", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@engine_world_hud.roc", .stdout_exact = codex_forewords@engine_world_hud_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-aes", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_aes.roc", .stdout_exact = codex_forewords@foreword_aes_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-aes-gcm", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_aes_gcm.roc", .stdout_exact = codex_forewords@foreword_aes_gcm_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-aes256", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_aes256.roc", .stdout_exact = codex_forewords@foreword_aes256_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-apprunner", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_apprunner.roc", .stdout_exact = codex_forewords@foreword_apprunner_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-b-plus-tree", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_b_plus_tree.roc", .stdout_exact = codex_forewords@foreword_b_plus_tree_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-bit-set", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_bit_set.roc", .stdout_exact = codex_forewords@foreword_bit_set_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-bloom-filter", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_bloom_filter.roc", .stdout_exact = codex_forewords@foreword_bloom_filter_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-c-c-e", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_c_c_e.roc", .stdout_exact = codex_forewords@foreword_c_c_e_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-camera", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_camera.roc", .stdout_exact = codex_forewords@foreword_camera_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-cha-cha20", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_cha_cha20.roc", .stdout_exact = codex_forewords@foreword_cha_cha20_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-channel", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_channel.roc", .stdout_exact = codex_forewords@foreword_channel_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-circular-buffer", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_circular_buffer.roc", .stdout_exact = codex_forewords@foreword_circular_buffer_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-consistent-hash", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_consistent_hash.roc", .stdout_exact = codex_forewords@foreword_consistent_hash_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-console", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_console.roc", .stdout_exact = codex_forewords@foreword_console_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-count-min-sketch", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_count_min_sketch.roc", .stdout_exact = codex_forewords@foreword_count_min_sketch_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-date-time", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_date_time.roc", .stdout_exact = codex_forewords@foreword_date_time_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-decimal", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_decimal.roc", .stdout_exact = codex_forewords@foreword_decimal_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-deque", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_deque.roc", .stdout_exact = codex_forewords@foreword_deque_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-display", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_display.roc", .stdout_exact = codex_forewords@foreword_display_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-edit-distance", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_edit_distance.roc", .stdout_exact = codex_forewords@foreword_edit_distance_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-either", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_either.roc", .stdout_exact = codex_forewords@foreword_either_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-elastic-bloom", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_elastic_bloom.roc", .stdout_exact = codex_forewords@foreword_elastic_bloom_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-elastic-hash", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_elastic_hash.roc", .stdout_exact = codex_forewords@foreword_elastic_hash_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-event-bus", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_event_bus.roc", .stdout_exact = codex_forewords@foreword_event_bus_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-fact-store", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_fact_store.roc", .stdout_exact = codex_forewords@foreword_fact_store_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-fat16", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_fat16.roc", .stdout_exact = codex_forewords@foreword_fat16_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-fat32", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_fat32.roc", .stdout_exact = codex_forewords@foreword_fat32_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-format", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_format.roc", .stdout_exact = codex_forewords@foreword_format_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-fuel", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_fuel.roc", .stdout_exact = codex_forewords@foreword_fuel_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-funnel-hash", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_funnel_hash.roc", .stdout_exact = codex_forewords@foreword_funnel_hash_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-gpt", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_gpt.roc", .stdout_exact = codex_forewords@foreword_gpt_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-hamt", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_hamt.roc", .stdout_exact = codex_forewords@foreword_hamt_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-history", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_history.roc", .stdout_exact = codex_forewords@foreword_history_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-hkdf", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_hkdf.roc", .stdout_exact = codex_forewords@foreword_hkdf_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-hmac", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_hmac.roc", .stdout_exact = codex_forewords@foreword_hmac_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-interval-tree", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_interval_tree.roc", .stdout_exact = codex_forewords@foreword_interval_tree_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-kv-store", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_kv_store.roc", .stdout_exact = codex_forewords@foreword_kv_store_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-list", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_list.roc", .stdout_exact = codex_forewords@foreword_list_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-list-utils", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_list_utils.roc", .stdout_exact = codex_forewords@foreword_list_utils_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-locale", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_locale.roc", .stdout_exact = codex_forewords@foreword_locale_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-location", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_location.roc", .stdout_exact = codex_forewords@foreword_location_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-logger", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_logger.roc", .stdout_exact = codex_forewords@foreword_logger_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-lru-cache", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_lru_cache.roc", .stdout_exact = codex_forewords@foreword_lru_cache_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-math-lib", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_math_lib.roc", .stdout_exact = codex_forewords@foreword_math_lib_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-maybe", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_maybe.roc", .stdout_exact = codex_forewords@foreword_maybe_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-microphone", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_microphone.roc", .stdout_exact = codex_forewords@foreword_microphone_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-network", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_network.roc", .stdout_exact = codex_forewords@foreword_network_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-number-theory", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_number_theory.roc", .stdout_exact = codex_forewords@foreword_number_theory_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-pair", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_pair.roc", .stdout_exact = codex_forewords@foreword_pair_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-path", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_path.roc", .stdout_exact = codex_forewords@foreword_path_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-pattern", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_pattern.roc", .stdout_exact = codex_forewords@foreword_pattern_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-pbkdf", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_pbkdf.roc", .stdout_exact = codex_forewords@foreword_pbkdf_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-pipeline", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_pipeline.roc", .stdout_exact = codex_forewords@foreword_pipeline_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-priority-queue", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_priority_queue.roc", .stdout_exact = codex_forewords@foreword_priority_queue_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-probability", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_probability.roc", .stdout_exact = codex_forewords@foreword_probability_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-proof-of-work", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_proof_of_work.roc", .stdout_exact = codex_forewords@foreword_proof_of_work_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-queue", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_queue.roc", .stdout_exact = codex_forewords@foreword_queue_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-random", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_random.roc", .stdout_exact = codex_forewords@foreword_random_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-rate-limiter", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_rate_limiter.roc", .stdout_exact = codex_forewords@foreword_rate_limiter_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-regex", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_regex.roc", .stdout_exact = codex_forewords@foreword_regex_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-result", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_result.roc", .stdout_exact = codex_forewords@foreword_result_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-ring-buffer", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_ring_buffer.roc", .stdout_exact = codex_forewords@foreword_ring_buffer_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-rope", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_rope.roc", .stdout_exact = codex_forewords@foreword_rope_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-schedule", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_schedule.roc", .stdout_exact = codex_forewords@foreword_schedule_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-scheduler", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_scheduler.roc", .stdout_exact = codex_forewords@foreword_scheduler_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-sensors", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_sensors.roc", .stdout_exact = codex_forewords@foreword_sensors_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-set", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_set.roc", .stdout_exact = codex_forewords@foreword_set_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-sha1", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_sha1.roc", .stdout_exact = codex_forewords@foreword_sha1_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-sha256", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_sha256.roc", .stdout_exact = codex_forewords@foreword_sha256_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-sha512", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_sha512.roc", .stdout_exact = codex_forewords@foreword_sha512_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-sort", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_sort.roc", .stdout_exact = codex_forewords@foreword_sort_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-state", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_state.roc", .stdout_exact = codex_forewords@foreword_state_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-statistics", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_statistics.roc", .stdout_exact = codex_forewords@foreword_statistics_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-string-utils", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_string_utils.roc", .stdout_exact = codex_forewords@foreword_string_utils_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-tab-complete", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_tab_complete.roc", .stdout_exact = codex_forewords@foreword_tab_complete_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-text-wrap", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_text_wrap.roc", .stdout_exact = codex_forewords@foreword_text_wrap_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-time", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_time.roc", .stdout_exact = codex_forewords@foreword_time_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-timing-wheel", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_timing_wheel.roc", .stdout_exact = codex_forewords@foreword_timing_wheel_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-trie", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_trie.roc", .stdout_exact = codex_forewords@foreword_trie_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-tuple", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_tuple.roc", .stdout_exact = codex_forewords@foreword_tuple_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-unicode", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_unicode.roc", .stdout_exact = codex_forewords@foreword_unicode_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@foreword-union-find", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@foreword_union_find.roc", .stdout_exact = codex_forewords@foreword_union_find_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@game-bresenham", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@game_bresenham.roc", .stdout_exact = codex_forewords@game_bresenham_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@game-card-deck", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@game_card_deck.roc", .stdout_exact = codex_forewords@game_card_deck_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@game-cellular-automata", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@game_cellular_automata.roc", .stdout_exact = codex_forewords@game_cellular_automata_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@game-color", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@game_color.roc", .stdout_exact = codex_forewords@game_color_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@game-diamond-square", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@game_diamond_square.roc", .stdout_exact = codex_forewords@game_diamond_square_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@game-e-c-s", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@game_e_c_s.roc", .stdout_exact = codex_forewords@game_e_c_s_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@game-easing", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@game_easing.roc", .stdout_exact = codex_forewords@game_easing_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@game-flood-fill", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@game_flood_fill.roc", .stdout_exact = codex_forewords@game_flood_fill_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@game-game-camera", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@game_game_camera.roc", .stdout_exact = codex_forewords@game_game_camera_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@game-hex-map", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@game_hex_map.roc", .stdout_exact = codex_forewords@game_hex_map_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@game-inventory", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@game_inventory.roc", .stdout_exact = codex_forewords@game_inventory_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@game-klondike", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@game_klondike.roc", .stdout_exact = codex_forewords@game_klondike_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@game-octree", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@game_octree.roc", .stdout_exact = codex_forewords@game_octree_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@game-quadtree", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@game_quadtree.roc", .stdout_exact = codex_forewords@game_quadtree_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@game-rasterizer", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@game_rasterizer.roc", .stdout_exact = codex_forewords@game_rasterizer_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@game-raytracer", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@game_raytracer.roc", .stdout_exact = codex_forewords@game_raytracer_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@game-save-slot", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@game_save_slot.roc", .stdout_exact = codex_forewords@game_save_slot_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@game-scene2-d", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@game_scene2_d.roc", .stdout_exact = codex_forewords@game_scene2_d_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@game-sprite", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@game_sprite.roc", .stdout_exact = codex_forewords@game_sprite_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@game-state-machine", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@game_state_machine.roc", .stdout_exact = codex_forewords@game_state_machine_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@game-tile-map", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@game_tile_map.roc", .stdout_exact = codex_forewords@game_tile_map_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@game-tween", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@game_tween.roc", .stdout_exact = codex_forewords@game_tween_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@game-voronoi", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@game_voronoi.roc", .stdout_exact = codex_forewords@game_voronoi_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@gpu-atomic", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@gpu_atomic.roc", .stdout_exact = codex_forewords@gpu_atomic_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@gpu-barrier", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@gpu_barrier.roc", .stdout_exact = codex_forewords@gpu_barrier_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@gpu-device-buffer", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@gpu_device_buffer.roc", .stdout_exact = codex_forewords@gpu_device_buffer_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@gpu-device-effect", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@gpu_device_effect.roc", .stdout_exact = codex_forewords@gpu_device_effect_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@gpu-devicemath-atan", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@gpu_devicemath_atan.roc", .stdout_exact = codex_forewords@gpu_devicemath_atan_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@gpu-disjoint-slice", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@gpu_disjoint_slice.roc", .stdout_exact = codex_forewords@gpu_disjoint_slice_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@gpu-effect", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@gpu_effect.roc", .stdout_exact = codex_forewords@gpu_effect_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@gpu-launch-config", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@gpu_launch_config.roc", .stdout_exact = codex_forewords@gpu_launch_config_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@gpu-shared", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@gpu_shared.roc", .stdout_exact = codex_forewords@gpu_shared_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@gpu-thread", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@gpu_thread.roc", .stdout_exact = codex_forewords@gpu_thread_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@gpu-warp", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@gpu_warp.roc", .stdout_exact = codex_forewords@gpu_warp_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@math-bezier", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@math_bezier.roc", .stdout_exact = codex_forewords@math_bezier_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@math-complex", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@math_complex.roc", .stdout_exact = codex_forewords@math_complex_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@math-cordic", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@math_cordic.roc", .stdout_exact = codex_forewords@math_cordic_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@math-cordic-accuracy", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@math_cordic_accuracy.roc", .stdout_exact = codex_forewords@math_cordic_accuracy_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@math-cordic-quadrants", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@math_cordic_quadrants.roc", .stdout_exact = codex_forewords@math_cordic_quadrants_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@math-geodesic", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@math_geodesic.roc", .stdout_exact = codex_forewords@math_geodesic_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@math-geometry", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@math_geometry.roc", .stdout_exact = codex_forewords@math_geometry_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@math-linear-algebra", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@math_linear_algebra.roc", .stdout_exact = codex_forewords@math_linear_algebra_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@math-matrix3", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@math_matrix3.roc", .stdout_exact = codex_forewords@math_matrix3_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@math-matrix4", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@math_matrix4.roc", .stdout_exact = codex_forewords@math_matrix4_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@math-numeric", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@math_numeric.roc", .stdout_exact = codex_forewords@math_numeric_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@math-optimize", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@math_optimize.roc", .stdout_exact = codex_forewords@math_optimize_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@math-quaternion", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@math_quaternion.roc", .stdout_exact = codex_forewords@math_quaternion_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@math-spline", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@math_spline.roc", .stdout_exact = codex_forewords@math_spline_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@signal-audio-analysis", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@signal_audio_analysis.roc", .stdout_exact = codex_forewords@signal_audio_analysis_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@signal-audio-effect", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@signal_audio_effect.roc", .stdout_exact = codex_forewords@signal_audio_effect_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@signal-convolution", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@signal_convolution.roc", .stdout_exact = codex_forewords@signal_convolution_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@signal-envelope", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@signal_envelope.roc", .stdout_exact = codex_forewords@signal_envelope_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@signal-filter", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@signal_filter.roc", .stdout_exact = codex_forewords@signal_filter_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@signal-music-theory", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@signal_music_theory.roc", .stdout_exact = codex_forewords@signal_music_theory_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@signal-noise", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@signal_noise.roc", .stdout_exact = codex_forewords@signal_noise_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@signal-oscillator", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@signal_oscillator.roc", .stdout_exact = codex_forewords@signal_oscillator_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@signal-perlin", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@signal_perlin.roc", .stdout_exact = codex_forewords@signal_perlin_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@signal-pitch", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@signal_pitch.roc", .stdout_exact = codex_forewords@signal_pitch_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@signal-resample", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@signal_resample.roc", .stdout_exact = codex_forewords@signal_resample_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@signal-synth", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@signal_synth.roc", .stdout_exact = codex_forewords@signal_synth_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@sim-collision", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@sim_collision.roc", .stdout_exact = codex_forewords@sim_collision_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@sim-constraint", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@sim_constraint.roc", .stdout_exact = codex_forewords@sim_constraint_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@sim-kinematics", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@sim_kinematics.roc", .stdout_exact = codex_forewords@sim_kinematics_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@sim-particle-system", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@sim_particle_system.roc", .stdout_exact = codex_forewords@sim_particle_system_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@sim-physics", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@sim_physics.roc", .stdout_exact = codex_forewords@sim_physics_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@sim-steering", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@sim_steering.roc", .stdout_exact = codex_forewords@sim_steering_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-accessibility", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_accessibility.roc", .stdout_exact = codex_forewords@ui_accessibility_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-animation", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_animation.roc", .stdout_exact = codex_forewords@ui_animation_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-binding", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_binding.roc", .stdout_exact = codex_forewords@ui_binding_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-box-model", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_box_model.roc", .stdout_exact = codex_forewords@ui_box_model_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-clipboard", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_clipboard.roc", .stdout_exact = codex_forewords@ui_clipboard_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-cursor", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_cursor.roc", .stdout_exact = codex_forewords@ui_cursor_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-dialog", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_dialog.roc", .stdout_exact = codex_forewords@ui_dialog_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-drag", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_drag.roc", .stdout_exact = codex_forewords@ui_drag_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-event", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_event.roc", .stdout_exact = codex_forewords@ui_event_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-focus", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_focus.roc", .stdout_exact = codex_forewords@ui_focus_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-font", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_font.roc", .stdout_exact = codex_forewords@ui_font_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-icon", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_icon.roc", .stdout_exact = codex_forewords@ui_icon_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-layout", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_layout.roc", .stdout_exact = codex_forewords@ui_layout_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-orchestrator", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_orchestrator.roc", .stdout_exact = codex_forewords@ui_orchestrator_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-overlay", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_overlay.roc", .stdout_exact = codex_forewords@ui_overlay_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-render", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_render.roc", .stdout_exact = codex_forewords@ui_render_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-rich-text", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_rich_text.roc", .stdout_exact = codex_forewords@ui_rich_text_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-scroll", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_scroll.roc", .stdout_exact = codex_forewords@ui_scroll_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-selection", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_selection.roc", .stdout_exact = codex_forewords@ui_selection_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-sound", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_sound.roc", .stdout_exact = codex_forewords@ui_sound_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-surface", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_surface.roc", .stdout_exact = codex_forewords@ui_surface_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-text-field", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_text_field.roc", .stdout_exact = codex_forewords@ui_text_field_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-theme", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_theme.roc", .stdout_exact = codex_forewords@ui_theme_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-touch", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_touch.roc", .stdout_exact = codex_forewords@ui_touch_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-vector", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_vector.roc", .stdout_exact = codex_forewords@ui_vector_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-widget", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_widget.roc", .stdout_exact = codex_forewords@ui_widget_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: frame-short-buffer", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_frame_short_buffer.roc", .stdout_exact = codex_frame_short_buffer_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: frameless-leaf-probe", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_frameless_leaf_probe.roc", .stdout_exact = codex_frameless_leaf_probe_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: hamt-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_hamt_test.roc", .stdout_exact = codex_hamt_test_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: hart-encode", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_hart_encode.roc", .stdout_exact = codex_hart_encode_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: hid-decode", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_hid_decode.roc", .stdout_exact = codex_hid_decode_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: ieee802154-encode", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ieee802154_encode.roc", .stdout_exact = codex_ieee802154_encode_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: if-in-arith", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_if_in_arith.roc", .stdout_exact = codex_if_in_arith_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: if-let-join", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_if_let_join.roc", .stdout_exact = codex_if_let_join_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: implicit-convert", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_implicit_convert.roc", .stdout_exact = codex_implicit_convert_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: inline-cost-based", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_inline_cost_based.roc", .stdout_exact = codex_inline_cost_based_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: inline-single-caller", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_inline_single_caller.roc", .stdout_exact = codex_inline_single_caller_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: int-literal-underscore", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_int_literal_underscore.roc", .stdout_exact = codex_int_literal_underscore_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ip-checksum-odd", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ip_checksum_odd.roc", .stdout_exact = codex_ip_checksum_odd_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ir-check-clean", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ir_check_clean.roc", .stdout_exact = codex_ir_check_clean_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: iterate-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_iterate_test.roc", .stdout_exact = codex_iterate_test_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: iterate-zip-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_iterate_zip_test.roc", .stdout_exact = codex_iterate_zip_test_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: j1939-encode", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_j1939_encode.roc", .stdout_exact = codex_j1939_encode_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: klondike-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_klondike_test.roc", .stdout_exact = codex_klondike_test_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: knx-encode", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_knx_encode.roc", .stdout_exact = codex_knx_encode_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: lang-smoke", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_lang_smoke.roc", .stdout_exact = codex_lang_smoke_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: leaf-let-if", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_leaf_let_if.roc", .stdout_exact = codex_leaf_let_if_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: leaf-mispredict", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_leaf_mispredict.roc", .stdout_exact = codex_leaf_mispredict_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: let-else-scope", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_let_else_scope.roc", .stdout_exact = codex_let_else_scope_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: let-shadow-scope", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_let_shadow_scope.roc", .stdout_exact = codex_let_shadow_scope_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: lib@canvas-viewport", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_lib@canvas_viewport.roc", .stdout_exact = codex_lib@canvas_viewport_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: lib@cbor-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_lib@cbor_test.roc", .stdout_exact = codex_lib@cbor_test_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: lib@decimal-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_lib@decimal_test.roc", .stdout_exact = codex_lib@decimal_test_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: lib@device-math", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_lib@device_math.roc", .stdout_exact = codex_lib@device_math_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: lib@format-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_lib@format_test.roc", .stdout_exact = codex_lib@format_test_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: lib@linalg-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_lib@linalg_test.roc", .stdout_exact = codex_lib@linalg_test_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: lib@locale-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_lib@locale_test.roc", .stdout_exact = codex_lib@locale_test_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: lib@loss-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_lib@loss_test.roc", .stdout_exact = codex_lib@loss_test_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: lib@lz4-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_lib@lz4_test.roc", .stdout_exact = codex_lib@lz4_test_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: lib@number-theory-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_lib@number_theory_test.roc", .stdout_exact = codex_lib@number_theory_test_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: lib@numeric-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_lib@numeric_test.roc", .stdout_exact = codex_lib@numeric_test_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: lib@path-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_lib@path_test.roc", .stdout_exact = codex_lib@path_test_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: lib@pixel-buf", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_lib@pixel_buf.roc", .stdout_exact = codex_lib@pixel_buf_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: lib@probability-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_lib@probability_test.roc", .stdout_exact = codex_lib@probability_test_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: lib@text-overflow", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_lib@text_overflow.roc", .stdout_exact = codex_lib@text_overflow_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: lib@toml-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_lib@toml_test.roc", .stdout_exact = codex_lib@toml_test_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: lib@yaml-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_lib@yaml_test.roc", .stdout_exact = codex_lib@yaml_test_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: linear-branch", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_linear_branch.roc", .stdout_exact = codex_linear_branch_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: linear-capture-once", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_linear_capture_once.roc", .stdout_exact = codex_linear_capture_once_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: linear-mint-container", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_linear_mint_container.roc", .stdout_exact = codex_linear_mint_container_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: linear-poly-freeze", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_linear_poly_freeze.roc", .stdout_exact = codex_linear_poly_freeze_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: linear-smoke", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_linear_smoke.roc", .stdout_exact = codex_linear_smoke_stdout } } },
@@ -1053,33 +4101,90 @@ const codex_zigbee_encode_stdout =
     .{ .id = 0, .suite = .codex, .name = "codex: lir-nullary-cross", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_lir_nullary_cross.roc", .stdout_exact = codex_lir_nullary_cross_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: lir-selector-smoke", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_lir_selector_smoke.roc", .stdout_exact = codex_lir_selector_smoke_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: lir-test-cross", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_lir_test_cross.roc", .stdout_exact = codex_lir_test_cross_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: list-comprehension-copy", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_list_comprehension_copy.roc", .stdout_exact = codex_list_comprehension_copy_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: list-literal-o1", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_list_literal_o1.roc", .stdout_exact = codex_list_literal_o1_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: list-pattern", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_list_pattern.roc", .stdout_exact = codex_list_pattern_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: list-tail-empty", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_list_tail_empty.roc", .stdout_exact = codex_list_tail_empty_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: list-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_list_test.roc", .stdout_exact = codex_list_test_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: literal-subpattern", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_literal_subpattern.roc", .stdout_exact = codex_literal_subpattern_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: lwm2m-encode", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_lwm2m_encode.roc", .stdout_exact = codex_lwm2m_encode_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: match-arms-per-line", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_match_arms_per_line.roc", .stdout_exact = codex_match_arms_per_line_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: mbus-encode", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_mbus_encode.roc", .stdout_exact = codex_mbus_encode_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: melsec-encode", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_melsec_encode.roc", .stdout_exact = codex_melsec_encode_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: mini-bootstrap", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_mini_bootstrap.roc", .stdout_exact = codex_mini_bootstrap_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: mix-bits", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_mix_bits.roc", .stdout_exact = codex_mix_bits_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: mod-bound-return", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_mod_bound_return.roc", .stdout_exact = codex_mod_bound_return_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: modbus-encode", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_modbus_encode.roc", .stdout_exact = codex_modbus_encode_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: modprobe", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_modprobe.roc", .stdout_exact = codex_modprobe_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: mut-borrow-transitive", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_mut_borrow_transitive.roc", .stdout_exact = codex_mut_borrow_transitive_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: neg-int-parse", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_neg_int_parse.roc", .stdout_exact = codex_neg_int_parse_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: negation-abutment", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_negation_abutment.roc", .stdout_exact = codex_negation_abutment_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: noise-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_noise_test.roc", .stdout_exact = codex_noise_test_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@bounded-modes-smoke", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@bounded_modes_smoke.roc", .stdout_exact = codex_ops@bounded_modes_smoke_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@builtin-name-shadow", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@builtin_name_shadow.roc", .stdout_exact = codex_ops@builtin_name_shadow_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@cap-word-64", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@cap_word_64.roc", .stdout_exact = codex_ops@cap_word_64_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@cce-builtin-bounds", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@cce_builtin_bounds.roc", .stdout_exact = codex_ops@cce_builtin_bounds_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@char-at-bounds", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@char_at_bounds.roc", .stdout_exact = codex_ops@char_at_bounds_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@closure-under-apply", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@closure_under_apply.roc", .stdout_exact = codex_ops@closure_under_apply_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@div-negative-pow2", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@div_negative_pow2.roc", .stdout_exact = codex_ops@div_negative_pow2_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@int-add-wrapping", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@int_add_wrapping.roc", .stdout_exact = codex_ops@int_add_wrapping_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@int-min-literal", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@int_min_literal.roc", .stdout_exact = codex_ops@int_min_literal_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@int-mul-wrapping", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@int_mul_wrapping.roc", .stdout_exact = codex_ops@int_mul_wrapping_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@int-pow", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@int_pow.roc", .stdout_exact = codex_ops@int_pow_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@int-rem", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@int_rem.roc", .stdout_exact = codex_ops@int_rem_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@int-wrapping-spelling", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@int_wrapping_spelling.roc", .stdout_exact = codex_ops@int_wrapping_spelling_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@list-index-bounds", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@list_index_bounds.roc", .stdout_exact = codex_ops@list_index_bounds_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@list-view-bounds", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@list_view_bounds.roc", .stdout_exact = codex_ops@list_view_bounds_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@match-shadowed-arm", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@match_shadowed_arm.roc", .stdout_exact = codex_ops@match_shadowed_arm_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@native-nested-pattern", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@native_nested_pattern.roc", .stdout_exact = codex_ops@native_nested_pattern_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@native-nested-tags", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@native_nested_tags.roc", .stdout_exact = codex_ops@native_nested_tags_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@real-bitcast-f64", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@real_bitcast_f64.roc", .stdout_exact = codex_ops@real_bitcast_f64_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@real-compare-negative", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@real_compare_negative.roc", .stdout_exact = codex_ops@real_compare_negative_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@real-neg-neg", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@real_neg_neg.roc", .stdout_exact = codex_ops@real_neg_neg_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@real-negate", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@real_negate.roc", .stdout_exact = codex_ops@real_negate_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@record-closure-field-poly", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@record_closure_field_poly.roc", .stdout_exact = codex_ops@record_closure_field_poly_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@record-equality", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@record_equality.roc", .stdout_exact = codex_ops@record_equality_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@saturated-call-returning-function", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@saturated_call_returning_function.roc", .stdout_exact = codex_ops@saturated_call_returning_function_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@substring-bounds", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@substring_bounds.roc", .stdout_exact = codex_ops@substring_bounds_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@text-order-allowed", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@text_order_allowed.roc", .stdout_exact = codex_ops@text_order_allowed_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@tier0-cyrillic-print", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@tier0_cyrillic_print.roc", .stdout_exact = codex_ops@tier0_cyrillic_print_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@unit-pattern-lit", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@unit_pattern_lit.roc", .stdout_exact = codex_ops@unit_pattern_lit_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@unit-real-arith", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@unit_real_arith.roc", .stdout_exact = codex_ops@unit_real_arith_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@unit-real-compare", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@unit_real_compare.roc", .stdout_exact = codex_ops@unit_real_compare_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@unit-show", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@unit_show.roc", .stdout_exact = codex_ops@unit_show_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ops@unused-let-alias-discard", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ops@unused_let_alias_discard.roc", .stdout_exact = codex_ops@unused_let_alias_discard_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: osc-noise", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_osc_noise.roc", .stdout_exact = codex_osc_noise_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: particle-spread", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_particle_spread.roc", .stdout_exact = codex_particle_spread_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: path-real", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_path_real.roc", .stdout_exact = codex_path_real_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: peek32-sign", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_peek32_sign.roc", .stdout_exact = codex_peek32_sign_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: pipe-unique-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_pipe_unique_test.roc", .stdout_exact = codex_pipe_unique_test_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: poke16-width", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_poke16_width.roc", .stdout_exact = codex_poke16_width_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: prose-binary-control", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_prose_binary_control.roc", .stdout_exact = codex_prose_binary_control_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: prose-consistency", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_prose_consistency.roc", .stdout_exact = codex_prose_consistency_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: prose-smoke", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_prose_smoke.roc", .stdout_exact = codex_prose_smoke_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: punctual-fastmath", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_punctual_fastmath.roc", .stdout_exact = codex_punctual_fastmath_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: punctual-iot", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_punctual_iot.roc", .stdout_exact = codex_punctual_iot_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: punctual-quire", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_punctual_quire.roc", .stdout_exact = codex_punctual_quire_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: punctual-smoke", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_punctual_smoke.roc", .stdout_exact = codex_punctual_smoke_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: queue-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_queue_test.roc", .stdout_exact = codex_queue_test_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: real-literal-boundary", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_real_literal_boundary.roc", .stdout_exact = codex_real_literal_boundary_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: record-smoke", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_record_smoke.roc", .stdout_exact = codex_record_smoke_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: recursive-eq", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_recursive_eq.roc", .stdout_exact = codex_recursive_eq_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: reservoir-uniform", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_reservoir_uniform.roc", .stdout_exact = codex_reservoir_uniform_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: revised-narrow", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_revised_narrow.roc", .stdout_exact = codex_revised_narrow_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: riscv-encoder", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_riscv_encoder.roc", .stdout_exact = codex_riscv_encoder_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: riscv32c-encoder", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_riscv32c_encoder.roc", .stdout_exact = codex_riscv32c_encoder_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: roc-closure-captures-list", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_roc_closure_captures_list.roc", .stdout_exact = codex_roc_closure_captures_list_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: roc-early-return-predicate", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_roc_early_return_predicate.roc", .stdout_exact = codex_roc_early_return_predicate_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: roc-fold-count", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_roc_fold_count.roc", .stdout_exact = codex_roc_fold_count_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: roc-fold-empty", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_roc_fold_empty.roc", .stdout_exact = codex_roc_fold_empty_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: roc-fold-product", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_roc_fold_product.roc", .stdout_exact = codex_roc_fold_product_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: roc-fold-sum", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_roc_fold_sum.roc", .stdout_exact = codex_roc_fold_sum_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: roc-iter-drop-if", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_roc_iter_drop_if.roc", .stdout_exact = codex_roc_iter_drop_if_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: roc-iter-keep-if", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_roc_iter_keep_if.roc", .stdout_exact = codex_roc_iter_keep_if_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: roc-iter-map", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_roc_iter_map.roc", .stdout_exact = codex_roc_iter_map_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: roc-recursive-var", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_roc_recursive_var.roc", .stdout_exact = codex_roc_recursive_var_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: roc-returned-closure", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_roc_returned_closure.roc", .stdout_exact = codex_roc_returned_closure_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: rv-arg-order", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_rv_arg_order.roc", .stdout_exact = codex_rv_arg_order_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: rv-big-literal", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_rv_big_literal.roc", .stdout_exact = codex_rv_big_literal_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: rv-frameless-imm", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_rv_frameless_imm.roc", .stdout_exact = codex_rv_frameless_imm_stdout } } },
@@ -1094,17 +4199,34 @@ const codex_zigbee_encode_stdout =
     .{ .id = 0, .suite = .codex, .name = "codex: sixlowpan-encode", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_sixlowpan_encode.roc", .stdout_exact = codex_sixlowpan_encode_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: sntp-encode", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_sntp_encode.roc", .stdout_exact = codex_sntp_encode_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: sort-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_sort_test.roc", .stdout_exact = codex_sort_test_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: sound-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_sound_test.roc", .stdout_exact = codex_sound_test_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: stats-wrap-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_stats_wrap_test.roc", .stdout_exact = codex_stats_wrap_test_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: string-escape-quote", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_string_escape_quote.roc", .stdout_exact = codex_string_escape_quote_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: sum-field-eq", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_sum_field_eq.roc", .stdout_exact = codex_sum_field_eq_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: synth-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_synth_test.roc", .stdout_exact = codex_synth_test_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: tco-bitop-loop", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_tco_bitop_loop.roc", .stdout_exact = codex_tco_bitop_loop_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: tco-direct-arg-reads", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_tco_direct_arg_reads.roc", .stdout_exact = codex_tco_direct_arg_reads_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: tco-framed-append", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_tco_framed_append.roc", .stdout_exact = codex_tco_framed_append_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: tco-nested-if", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_tco_nested_if.roc", .stdout_exact = codex_tco_nested_if_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: tco-shuffle-spill", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_tco_shuffle_spill.roc", .stdout_exact = codex_tco_shuffle_spill_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: text-append-alias", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_text_append_alias.roc", .stdout_exact = codex_text_append_alias_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: text-eq-branches", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_text_eq_branches.roc", .stdout_exact = codex_text_eq_branches_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: text-fold-indexed", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_text_fold_indexed.roc", .stdout_exact = codex_text_fold_indexed_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: text-helper-native", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_text_helper_native.roc", .stdout_exact = codex_text_helper_native_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: thumb2-encoder", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_thumb2_encoder.roc", .stdout_exact = codex_thumb2_encoder_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: tuple-syntax", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_tuple_syntax.roc", .stdout_exact = codex_tuple_syntax_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: tvar-in-declared-type", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_tvar_in_declared_type.roc", .stdout_exact = codex_tvar_in_declared_type_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: type-checker-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_type_checker_test.roc", .stdout_exact = codex_type_checker_test_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: ui-sound-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ui_sound_test.roc", .stdout_exact = codex_ui_sound_test_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: ui@theme-ink-on", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ui@theme_ink_on.roc", .stdout_exact = codex_ui@theme_ink_on_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: unconstrained-empty-list", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_unconstrained_empty_list.roc", .stdout_exact = codex_unconstrained_empty_list_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: unconstrained-nullary-sum", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_unconstrained_nullary_sum.roc", .stdout_exact = codex_unconstrained_nullary_sum_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: unit-family", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_unit_family.roc", .stdout_exact = codex_unit_family_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: unit-family-mixed", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_unit_family_mixed.roc", .stdout_exact = codex_unit_family_mixed_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: unit-smoke", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_unit_smoke.roc", .stdout_exact = codex_unit_smoke_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: units-foreword", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_units_foreword.roc", .stdout_exact = codex_units_foreword_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: usb-desc-guard", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_usb_desc_guard.roc", .stdout_exact = codex_usb_desc_guard_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: usb-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_usb_test.roc", .stdout_exact = codex_usb_test_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: wavelet-sort-aliasing", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_wavelet_sort_aliasing.roc", .stdout_exact = codex_wavelet_sort_aliasing_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: when-arm-nontail", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_when_arm_nontail.roc", .stdout_exact = codex_when_arm_nontail_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: when-arm-tail-call", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_when_arm_tail_call.roc", .stdout_exact = codex_when_arm_tail_call_stdout } } },

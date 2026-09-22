@@ -11,7 +11,9 @@
 # Expected stdout:
 #     42
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # RocFoldEmpty -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -32,7 +34,7 @@ lam_1 = |acc, x| (acc + x)
 main! = |_args| {
 	({
 		total = lam_0([], 42, lam_1)
-		line!(I64.to_str(total))
+		line!(Text.printed(Text.show_int(total)))
 	})
 	Ok({})
 }

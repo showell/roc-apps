@@ -13,7 +13,9 @@
 #     value 42
 #     shout 7
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # EffectPositive -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -26,24 +28,24 @@ apply_pure = |f, x| f(x)
 double : I64 -> I64
 double = |n| (n * 2)
 
-run_console : (I64 => {}), I64 => {}
-run_console = |act_fn, n| act_fn(n)
+run_console! : (I64 => {}), I64 => {}
+run_console! = |act_fn, n| act_fn(n)
 
-shout : I64 => {}
-shout = |n| ({
-	line!(Str.concat("shout ", I64.to_str(n)))
+shout! : I64 => {}
+shout! = |n| ({
+	line!(Text.printed(List.concat([19, 20, 16, 25, 14, 2], Text.show_int(n))))
 })
 
-report : I64 => {}
-report = |n| ({
-	line!("step one")
-	line!(Str.concat("value ", I64.to_str(apply_pure(double, n))))
+report! : I64 => {}
+report! = |n| ({
+	line!(Text.printed([19, 14, 13, 31, 2, 16, 18, 13]))
+	line!(Text.printed(List.concat([33, 15, 23, 25, 13, 2], Text.show_int(apply_pure(double, n)))))
 })
 
 # --- Entry ---
 
 main! = |_args| {
-	report(21)
-	run_console(shout, 7)
+	report!(21)
+	run_console!(shout!, 7)
 	Ok({})
 }

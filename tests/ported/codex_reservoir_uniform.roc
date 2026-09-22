@@ -20,6 +20,7 @@
 app [main!] { cdx: "./codex/main.roc" }
 
 import cdx.Reservoir
+import cdx.Text
 
 # ReservoirUniformTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -69,10 +70,10 @@ rut_max = |xs, i, n, acc| (if (i >= n) { acc } else { ({
 rut_sum : List(I64), I64, I64, I64 -> I64
 rut_sum = |xs, i, n, acc| (if (i >= n) { acc } else { rut_sum(xs, (i + 1), n, (acc + (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))) })
 
-rut_fmt : List(I64), I64, I64, Str -> Str
+rut_fmt : List(I64), I64, I64, List(U8) -> List(U8)
 rut_fmt = |xs, i, n, acc| (if (i >= n) { acc } else { ({
-	sep = (if (i == 0) { "" } else { " " })
-	rut_fmt(xs, (i + 1), n, Str.concat(Str.concat(acc, sep), I64.to_str((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))
+	sep = (if (i == 0) { [] } else { [2] })
+	rut_fmt(xs, (i + 1), n, List.concat(List.concat(acc, sep), Text.show_int((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))
 }) })
 
 # --- Entry ---
@@ -83,12 +84,12 @@ main! = |_args| {
 	lo = rut_min(counts, 0, rut_items, 999999)
 	hi = rut_max(counts, 0, rut_items, 0)
 	tot = rut_sum(counts, 0, rut_items, 0)
-	line!(Str.concat("counts:      ", rut_fmt(counts, 0, rut_items, "")))
-	line!(Str.concat("expected ea: ", I64.to_str(I64.div_trunc_by((rut_trials * rut_cap), rut_items))))
-	line!(Str.concat("min:         ", I64.to_str(lo)))
-	line!(Str.concat("max:         ", I64.to_str(hi)))
-	line!(Str.concat("total:       ", I64.to_str(tot)))
-	line!(Str.concat("all sampled: ", (if (lo > 0) { "True" } else { "False" })))
-	line!(Str.concat("within 2x:   ", (if (hi <= (lo * 2)) { "True" } else { "False" })))
+	line!(Text.printed(List.concat([24, 16, 25, 18, 14, 19, 69, 2, 2, 2, 2, 2, 2], rut_fmt(counts, 0, rut_items, []))))
+	line!(Text.printed(List.concat([13, 36, 31, 13, 24, 14, 13, 22, 2, 13, 15, 69, 2], Text.show_int(I64.div_trunc_by((rut_trials * rut_cap), rut_items)))))
+	line!(Text.printed(List.concat([26, 17, 18, 69, 2, 2, 2, 2, 2, 2, 2, 2, 2], Text.show_int(lo))))
+	line!(Text.printed(List.concat([26, 15, 36, 69, 2, 2, 2, 2, 2, 2, 2, 2, 2], Text.show_int(hi))))
+	line!(Text.printed(List.concat([14, 16, 14, 15, 23, 69, 2, 2, 2, 2, 2, 2, 2], Text.show_int(tot))))
+	line!(Text.printed(List.concat([15, 23, 23, 2, 19, 15, 26, 31, 23, 13, 22, 69, 2], (if (lo > 0) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))))
+	line!(Text.printed(List.concat([27, 17, 14, 20, 17, 18, 2, 5, 36, 69, 2, 2, 2], (if (hi <= (lo * 2)) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))))
 	Ok({})
 }

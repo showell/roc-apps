@@ -3,7 +3,7 @@
 S7comm :: [].{
 
 	s7_u16_be : I64 -> List(I64)
-	s7_u16_be = |v| [I64.bitwise_and(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(v), U64.pow(2, I64.to_u64_wrap(8)))), 255), I64.bitwise_and(v, 255)]
+	s7_u16_be = |v| [I64.bitwise_and(I64.shr_zf_wrap(v, I64.to_u8_wrap(8)), 255), I64.bitwise_and(v, 255)]
 
 	s7_tpkt : List(I64) -> List(I64)
 	s7_tpkt = |payload| List.concat(List.concat([3, 0], s7_u16_be((4 + U64.to_i64_wrap(List.len(payload))))), payload)
@@ -45,7 +45,7 @@ S7comm :: [].{
 	s7_area_db = 132
 
 	s7_addr3 : I64 -> List(I64)
-	s7_addr3 = |bit_addr| [I64.bitwise_and(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(bit_addr), U64.pow(2, I64.to_u64_wrap(16)))), 255), I64.bitwise_and(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(bit_addr), U64.pow(2, I64.to_u64_wrap(8)))), 255), I64.bitwise_and(bit_addr, 255)]
+	s7_addr3 = |bit_addr| [I64.bitwise_and(I64.shr_zf_wrap(bit_addr, I64.to_u8_wrap(16)), 255), I64.bitwise_and(I64.shr_zf_wrap(bit_addr, I64.to_u8_wrap(8)), 255), I64.bitwise_and(bit_addr, 255)]
 
 	s7_read_item : I64, I64, I64, I64 -> List(I64)
 	s7_read_item = |area, db, count, start_byte| List.concat(List.concat(List.concat(List.concat([18, 10, 16, 2], s7_u16_be(count)), s7_u16_be(db)), [area]), s7_addr3((start_byte * 8)))

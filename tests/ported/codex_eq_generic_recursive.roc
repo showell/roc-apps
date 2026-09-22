@@ -19,7 +19,9 @@
 #     box-nested     : yes
 #     box-depth-ne   : no
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # EqGenericRecursive -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -30,13 +32,13 @@ Box_(a) := [Empty, Cell(a, Box_(a))].{
 	is_eq : Box_(a), Box_(a) -> Bool where [a.is_eq : a, a -> Bool]
 	is_eq = |a, b| eq_Box(a, b)
 }
-Named := [Nil, Node(Str, Named)].{
+Named := [Nil, Node(List(U8), Named)].{
 	is_eq : Named, Named -> Bool
 	is_eq = |a, b| eq_Named(a, b)
 }
 
-yn : Bool -> Str
-yn = |b| (if b { "yes" } else { "no" })
+yn : Bool -> List(U8)
+yn = |b| (if b { [30, 13, 19] } else { [18, 16] })
 
 eq_Pair : Pair(a), Pair(a) -> Bool where [a.is_eq : a, a -> Bool]
 eq_Pair = |ex, ey| (match ex {
@@ -73,14 +75,14 @@ eq_Named = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Str.concat("text-control   : ", yn(("12" == I64.to_str(12)))))
-	line!(Str.concat("named-concrete : ", yn(eq_Named(Node("12", Nil), Node(I64.to_str(12), Nil)))))
-	line!(Str.concat("pair-generic   : ", yn(eq_Pair(P("12", "9"), P(I64.to_str(12), "9")))))
-	line!(Str.concat("box-text-eq    : ", yn(eq_Box(Cell("12", Empty), Cell(I64.to_str(12), Empty)))))
-	line!(Str.concat("box-text-ne    : ", yn(eq_Box(Cell("12", Empty), Cell(I64.to_str(13), Empty)))))
-	line!(Str.concat("box-int-eq     : ", yn(eq_Box(Cell(12, Empty), Cell((6 + 6), Empty)))))
-	line!(Str.concat("box-int-ne     : ", yn(eq_Box(Cell(12, Empty), Cell((6 + 7), Empty)))))
-	line!(Str.concat("box-nested     : ", yn(eq_Box(Cell("12", Cell("9", Empty)), Cell(I64.to_str(12), Cell("9", Empty))))))
-	line!(Str.concat("box-depth-ne   : ", yn(eq_Box(Cell("12", Cell("9", Empty)), Cell("12", Empty)))))
+	line!(Text.printed(List.concat([14, 13, 36, 14, 73, 24, 16, 18, 14, 21, 16, 23, 2, 2, 2, 69, 2], yn(([4, 5] == Text.show_int(12))))))
+	line!(Text.printed(List.concat([18, 15, 26, 13, 22, 73, 24, 16, 18, 24, 21, 13, 14, 13, 2, 69, 2], yn(eq_Named(Node([4, 5], Nil), Node(Text.show_int(12), Nil))))))
+	line!(Text.printed(List.concat([31, 15, 17, 21, 73, 29, 13, 18, 13, 21, 17, 24, 2, 2, 2, 69, 2], yn(eq_Pair(P([4, 5], [12]), P(Text.show_int(12), [12]))))))
+	line!(Text.printed(List.concat([32, 16, 36, 73, 14, 13, 36, 14, 73, 13, 37, 2, 2, 2, 2, 69, 2], yn(eq_Box(Cell([4, 5], Empty), Cell(Text.show_int(12), Empty))))))
+	line!(Text.printed(List.concat([32, 16, 36, 73, 14, 13, 36, 14, 73, 18, 13, 2, 2, 2, 2, 69, 2], yn(eq_Box(Cell([4, 5], Empty), Cell(Text.show_int(13), Empty))))))
+	line!(Text.printed(List.concat([32, 16, 36, 73, 17, 18, 14, 73, 13, 37, 2, 2, 2, 2, 2, 69, 2], yn(eq_Box(Cell(12, Empty), Cell((6 + 6), Empty))))))
+	line!(Text.printed(List.concat([32, 16, 36, 73, 17, 18, 14, 73, 18, 13, 2, 2, 2, 2, 2, 69, 2], yn(eq_Box(Cell(12, Empty), Cell((6 + 7), Empty))))))
+	line!(Text.printed(List.concat([32, 16, 36, 73, 18, 13, 19, 14, 13, 22, 2, 2, 2, 2, 2, 69, 2], yn(eq_Box(Cell([4, 5], Cell([12], Empty)), Cell(Text.show_int(12), Cell([12], Empty)))))))
+	line!(Text.printed(List.concat([32, 16, 36, 73, 22, 13, 31, 14, 20, 73, 18, 13, 2, 2, 2, 69, 2], yn(eq_Box(Cell([4, 5], Cell([12], Empty)), Cell([4, 5], Empty))))))
 	Ok({})
 }

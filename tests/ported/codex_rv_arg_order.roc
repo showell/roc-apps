@@ -15,7 +15,9 @@
 #     bin-call: 3
 #     bin2-call: 13
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # RvArgOrder -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -37,10 +39,10 @@ f_bin2 = |x| ((x * 2) - seven)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Str.concat("lit-lit: ", I64.to_str(f_two(7, 2))))
-	line!(Str.concat("call-lit: ", I64.to_str(f_two(seven, 2))))
-	line!(Str.concat("lit-call: ", I64.to_str(f_two(2, seven))))
-	line!(Str.concat("bin-call: ", I64.to_str(f_bin(10))))
-	line!(Str.concat("bin2-call: ", I64.to_str(f_bin2(10))))
+	line!(Text.printed(List.concat([23, 17, 14, 73, 23, 17, 14, 69, 2], Text.show_int(f_two(7, 2)))))
+	line!(Text.printed(List.concat([24, 15, 23, 23, 73, 23, 17, 14, 69, 2], Text.show_int(f_two(seven, 2)))))
+	line!(Text.printed(List.concat([23, 17, 14, 73, 24, 15, 23, 23, 69, 2], Text.show_int(f_two(2, seven)))))
+	line!(Text.printed(List.concat([32, 17, 18, 73, 24, 15, 23, 23, 69, 2], Text.show_int(f_bin(10)))))
+	line!(Text.printed(List.concat([32, 17, 18, 5, 73, 24, 15, 23, 23, 69, 2], Text.show_int(f_bin2(10)))))
 	Ok({})
 }

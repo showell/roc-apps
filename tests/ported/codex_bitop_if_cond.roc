@@ -13,7 +13,9 @@
 #     count-ones 255: 8
 #     count-nz 5: 2
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # BitopIfCond -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -21,7 +23,7 @@ app [main!] {}
 line! = |s| echo!(Str.concat(s, "\n"))
 
 count_ones : I64, I64 -> I64
-count_ones = |x, acc| (if (x == 0) { acc } else { (if (I64.bitwise_and(x, 1) == 1) { count_ones(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(x), U64.pow(2, I64.to_u64_wrap(1)))), (acc + 1)) } else { count_ones(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(x), U64.pow(2, I64.to_u64_wrap(1)))), acc) }) })
+count_ones = |x, acc| (if (x == 0) { acc } else { (if (I64.bitwise_and(x, 1) == 1) { count_ones(I64.shr_zf_wrap(x, I64.to_u8_wrap(1)), (acc + 1)) } else { count_ones(I64.shr_zf_wrap(x, I64.to_u8_wrap(1)), acc) }) })
 
 count_nz : I64, I64 -> I64
 count_nz = |x, acc| (if (x == 0) { acc } else { (if ((x - (I64.div_trunc_by(x, 2) * 2)) == 1) { count_nz(I64.div_trunc_by(x, 2), (acc + 1)) } else { count_nz(I64.div_trunc_by(x, 2), acc) }) })
@@ -29,8 +31,8 @@ count_nz = |x, acc| (if (x == 0) { acc } else { (if ((x - (I64.div_trunc_by(x, 2
 # --- Entry ---
 
 main! = |_args| {
-	line!(Str.concat("count-ones 5: ", I64.to_str(count_ones(5, 0))))
-	line!(Str.concat("count-ones 255: ", I64.to_str(count_ones(255, 0))))
-	line!(Str.concat("count-nz 5: ", I64.to_str(count_nz(5, 0))))
+	line!(Text.printed(List.concat([24, 16, 25, 18, 14, 73, 16, 18, 13, 19, 2, 8, 69, 2], Text.show_int(count_ones(5, 0)))))
+	line!(Text.printed(List.concat([24, 16, 25, 18, 14, 73, 16, 18, 13, 19, 2, 5, 8, 8, 69, 2], Text.show_int(count_ones(255, 0)))))
+	line!(Text.printed(List.concat([24, 16, 25, 18, 14, 73, 18, 38, 2, 8, 69, 2], Text.show_int(count_nz(5, 0)))))
 	Ok({})
 }

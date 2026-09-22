@@ -23,6 +23,7 @@
 app [main!] { cdx: "./codex/main.roc" }
 
 import cdx.IntOps
+import cdx.Text
 
 # PunctualIoT -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -54,7 +55,7 @@ encode_telemetry_byte = |channel, temp, threat| ({
 	ch = I64.bitwise_and(channel, 7)
 	t = IntOps.int_clamp(0, 255, temp)
 	thr = I64.bitwise_and(threat, 7)
-	I64.bitwise_or(U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(ch), U64.pow(2, I64.to_u64_wrap(5)))), I64.bitwise_or(U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(thr), U64.pow(2, I64.to_u64_wrap(2)))), I64.bitwise_and(t, 3)))
+	I64.bitwise_or(I64.shl_wrap(ch, I64.to_u8_wrap(5)), I64.bitwise_or(I64.shl_wrap(thr, I64.to_u8_wrap(2)), I64.bitwise_and(t, 3)))
 })
 
 checksum_byte : I64, I64 -> I64
@@ -102,16 +103,16 @@ main! = |_args| {
 		byte3 = encode_telemetry_byte(2, temp3, threat_to_integer(t3))
 		ck = checksum_byte(checksum_byte(byte1, byte2), byte3)
 		({
-			line!(Str.concat("threat-2500: ", I64.to_str(threat_to_integer(t1))))
-			line!(Str.concat("threat-400: ", I64.to_str(threat_to_integer(t2))))
-			line!(Str.concat("threat-3800: ", I64.to_str(threat_to_integer(t3))))
-			line!(Str.concat("temp-2500: ", I64.to_str(temp1)))
-			line!(Str.concat("temp-400: ", I64.to_str(temp2)))
-			line!(Str.concat("temp-3800: ", I64.to_str(temp3)))
-			line!(Str.concat("byte1: ", I64.to_str(byte1)))
-			line!(Str.concat("byte2: ", I64.to_str(byte2)))
-			line!(Str.concat("byte3: ", I64.to_str(byte3)))
-			line!(Str.concat("checksum: ", I64.to_str(ck)))
+			line!(Text.printed(List.concat([14, 20, 21, 13, 15, 14, 73, 5, 8, 3, 3, 69, 2], Text.show_int(threat_to_integer(t1)))))
+			line!(Text.printed(List.concat([14, 20, 21, 13, 15, 14, 73, 7, 3, 3, 69, 2], Text.show_int(threat_to_integer(t2)))))
+			line!(Text.printed(List.concat([14, 20, 21, 13, 15, 14, 73, 6, 11, 3, 3, 69, 2], Text.show_int(threat_to_integer(t3)))))
+			line!(Text.printed(List.concat([14, 13, 26, 31, 73, 5, 8, 3, 3, 69, 2], Text.show_int(temp1))))
+			line!(Text.printed(List.concat([14, 13, 26, 31, 73, 7, 3, 3, 69, 2], Text.show_int(temp2))))
+			line!(Text.printed(List.concat([14, 13, 26, 31, 73, 6, 11, 3, 3, 69, 2], Text.show_int(temp3))))
+			line!(Text.printed(List.concat([32, 30, 14, 13, 4, 69, 2], Text.show_int(byte1))))
+			line!(Text.printed(List.concat([32, 30, 14, 13, 5, 69, 2], Text.show_int(byte2))))
+			line!(Text.printed(List.concat([32, 30, 14, 13, 6, 69, 2], Text.show_int(byte3))))
+			line!(Text.printed(List.concat([24, 20, 13, 24, 34, 19, 25, 26, 69, 2], Text.show_int(ck))))
 		})
 	})
 	Ok({})

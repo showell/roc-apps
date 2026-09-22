@@ -22,7 +22,9 @@
 #     58
 #     68
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # LirJoinCross -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -30,10 +32,7 @@ app [main!] {}
 line! = |s| echo!(Str.concat(s, "\n"))
 
 sel_let : I64 -> I64
-sel_let = |c| ({
-	v = (if (c > 0) { 3 } else { 4 })
-	v
-})
+sel_let = |c| (if (c > 0) { 3 } else { 4 })
 
 sel_add : I64 -> I64
 sel_add = |c| ((if (c > 0) { 10 } else { 20 }) + 1)
@@ -57,17 +56,17 @@ sel_seq = |a, b| ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(I64.to_str(sel_let(1)))
-	line!(I64.to_str(sel_let((-1))))
-	line!(I64.to_str(sel_add(1)))
-	line!(I64.to_str(sel_add((-1))))
-	line!(I64.to_str(sel_reg(1, 30, 40)))
-	line!(I64.to_str(sel_reg((-1), 30, 40)))
-	line!(I64.to_str(sel_nest(1, 1)))
-	line!(I64.to_str(sel_nest(1, (-1))))
-	line!(I64.to_str(sel_nest((-1), 5)))
-	line!(I64.to_str(sel_seq(1, 1)))
-	line!(I64.to_str(sel_seq(1, (-1))))
-	line!(I64.to_str(sel_seq((-1), (-1))))
+	line!(Text.printed(Text.show_int(sel_let(1))))
+	line!(Text.printed(Text.show_int(sel_let((-1)))))
+	line!(Text.printed(Text.show_int(sel_add(1))))
+	line!(Text.printed(Text.show_int(sel_add((-1)))))
+	line!(Text.printed(Text.show_int(sel_reg(1, 30, 40))))
+	line!(Text.printed(Text.show_int(sel_reg((-1), 30, 40))))
+	line!(Text.printed(Text.show_int(sel_nest(1, 1))))
+	line!(Text.printed(Text.show_int(sel_nest(1, (-1)))))
+	line!(Text.printed(Text.show_int(sel_nest((-1), 5))))
+	line!(Text.printed(Text.show_int(sel_seq(1, 1))))
+	line!(Text.printed(Text.show_int(sel_seq(1, (-1)))))
+	line!(Text.printed(Text.show_int(sel_seq((-1), (-1)))))
 	Ok({})
 }

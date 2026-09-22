@@ -12,7 +12,9 @@
 #     grouped: 1000000000000000000
 #     padded: 42
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # IntLiteralUnderscore -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -28,7 +30,7 @@ padded = 42
 # --- Entry ---
 
 main! = |_args| {
-	line!(Str.concat("grouped: ", I64.to_str(billion_squared)))
-	line!(Str.concat("padded: ", I64.to_str(padded)))
+	line!(Text.printed(List.concat([29, 21, 16, 25, 31, 13, 22, 69, 2], Text.show_int(billion_squared))))
+	line!(Text.printed(List.concat([31, 15, 22, 22, 13, 22, 69, 2], Text.show_int(padded))))
 	Ok({})
 }

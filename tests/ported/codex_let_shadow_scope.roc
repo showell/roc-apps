@@ -11,7 +11,9 @@
 # Expected stdout:
 #     9
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # LetShadowScope -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -31,6 +33,6 @@ shadowed = |n| ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(I64.to_str(shadowed(2)))
+	line!(Text.printed(Text.show_int(shadowed(2))))
 	Ok({})
 }

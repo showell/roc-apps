@@ -11,22 +11,24 @@
 # Expected stdout:
 #     result 42
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # EffectDottedAllow -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-narrow : I64 => I64
-narrow = |n| (n + 1)
+narrow! : I64 => I64
+narrow! = |n| (n + 1)
 
-caller : I64 => I64
-caller = |n| narrow(n)
+caller! : I64 => I64
+caller! = |n| narrow!(n)
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Str.concat("result ", I64.to_str(caller(41))))
+	line!(Text.printed(List.concat([21, 13, 19, 25, 23, 14, 2], Text.show_int(caller!(41)))))
 	Ok({})
 }

@@ -21,25 +21,26 @@
 app [main!] { cdx: "./codex/main.roc" }
 
 import cdx.Prelude
+import cdx.Text
 
 # ModProbe -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-mline : Str, I64, I64 -> Str
-mline = |tag, x, y| Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(tag, " "), I64.to_str(x)), ","), I64.to_str(y)), " div="), I64.to_str(I64.div_trunc_by(x, y))), " mod="), I64.to_str(Prelude.int_mod(x, y)))
+mline : List(U8), I64, I64 -> List(U8)
+mline = |tag, x, y| List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(tag, [2]), Text.show_int(x)), [66]), Text.show_int(y)), [2, 22, 17, 33, 77]), Text.show_int(I64.div_trunc_by(x, y))), [2, 26, 16, 22, 77]), Text.show_int(Prelude.int_mod(x, y)))
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(mline("pp", 7, 3))
-	line!(mline("np", (0 - 7), 3))
-	line!(mline("pn", 7, (0 - 3)))
-	line!(mline("nn", (0 - 7), (0 - 3)))
-	line!(mline("pp2", 8, 4))
-	line!(mline("np2", (0 - 8), 4))
-	line!(mline("np3", (0 - 1), 8))
-	line!(mline("pn3", 1, (0 - 8)))
+	line!(Text.printed(mline([31, 31], 7, 3)))
+	line!(Text.printed(mline([18, 31], (0 - 7), 3)))
+	line!(Text.printed(mline([31, 18], 7, (0 - 3))))
+	line!(Text.printed(mline([18, 18], (0 - 7), (0 - 3))))
+	line!(Text.printed(mline([31, 31, 5], 8, 4)))
+	line!(Text.printed(mline([18, 31, 5], (0 - 8), 4)))
+	line!(Text.printed(mline([18, 31, 6], (0 - 1), 8)))
+	line!(Text.printed(mline([31, 18, 6], 1, (0 - 8))))
 	Ok({})
 }

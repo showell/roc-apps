@@ -19,6 +19,7 @@
 app [main!] { cdx: "./codex/main.roc" }
 
 import cdx.Iterate
+import cdx.Text
 
 # IterateZipTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -48,12 +49,12 @@ main! = |_args| {
 		all_true = Iterate.list_all_generic(lam_2, xs)
 		any_big = Iterate.list_any_generic(lam_3, xs)
 		({
-			line!(I64.to_str(U64.to_i64_wrap(List.len(zipped))))
-			line!(I64.to_str((List.get(zipped, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))))
-			line!(I64.to_str((List.get(zipped, I64.to_u64_wrap(2)) ?? crash("list-at out of range"))))
-			line!(I64.to_str((List.get(products, I64.to_u64_wrap(1)) ?? crash("list-at out of range"))))
-			line!((if all_true { "True" } else { "False" }))
-			line!((if any_big { "True" } else { "False" }))
+			line!(Text.printed(Text.show_int(U64.to_i64_wrap(List.len(zipped)))))
+			line!(Text.printed(Text.show_int((List.get(zipped, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))))
+			line!(Text.printed(Text.show_int((List.get(zipped, I64.to_u64_wrap(2)) ?? crash("list-at out of range")))))
+			line!(Text.printed(Text.show_int((List.get(products, I64.to_u64_wrap(1)) ?? crash("list-at out of range")))))
+			line!(Text.printed((if all_true { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] })))
+			line!(Text.printed((if any_big { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] })))
 		})
 	})
 	Ok({})

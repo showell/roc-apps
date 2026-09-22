@@ -19,14 +19,14 @@ Sixlowpan :: [].{
 
 	lowpan_iphc : I64, I64, I64, I64, I64, I64, I64, I64, I64 -> List(I64)
 	lowpan_iphc = |tf, nh, hlim, cid, sac, sam, m, dac, dam| ({
-		byte0 = I64.bitwise_or(96, I64.bitwise_or(U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(tf), U64.pow(2, I64.to_u64_wrap(3)))), I64.bitwise_or(U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(nh), U64.pow(2, I64.to_u64_wrap(2)))), hlim)))
-		byte1 = I64.bitwise_or(U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(cid), U64.pow(2, I64.to_u64_wrap(7)))), I64.bitwise_or(U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(sac), U64.pow(2, I64.to_u64_wrap(6)))), I64.bitwise_or(U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(sam), U64.pow(2, I64.to_u64_wrap(4)))), I64.bitwise_or(U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(m), U64.pow(2, I64.to_u64_wrap(3)))), I64.bitwise_or(U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(dac), U64.pow(2, I64.to_u64_wrap(2)))), dam)))))
+		byte0 = I64.bitwise_or(96, I64.bitwise_or(I64.shl_wrap(tf, I64.to_u8_wrap(3)), I64.bitwise_or(I64.shl_wrap(nh, I64.to_u8_wrap(2)), hlim)))
+		byte1 = I64.bitwise_or(I64.shl_wrap(cid, I64.to_u8_wrap(7)), I64.bitwise_or(I64.shl_wrap(sac, I64.to_u8_wrap(6)), I64.bitwise_or(I64.shl_wrap(sam, I64.to_u8_wrap(4)), I64.bitwise_or(I64.shl_wrap(m, I64.to_u8_wrap(3)), I64.bitwise_or(I64.shl_wrap(dac, I64.to_u8_wrap(2)), dam)))))
 		[byte0, byte1]
 	})
 
 	lowpan_frag1 : I64, I64 -> List(I64)
-	lowpan_frag1 = |datagram_size, tag| [I64.bitwise_or(lowpan_dispatch_frag1, I64.bitwise_and(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(datagram_size), U64.pow(2, I64.to_u64_wrap(8)))), 7)), I64.bitwise_and(datagram_size, 255), I64.bitwise_and(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(tag), U64.pow(2, I64.to_u64_wrap(8)))), 255), I64.bitwise_and(tag, 255)]
+	lowpan_frag1 = |datagram_size, tag| [I64.bitwise_or(lowpan_dispatch_frag1, I64.bitwise_and(I64.shr_zf_wrap(datagram_size, I64.to_u8_wrap(8)), 7)), I64.bitwise_and(datagram_size, 255), I64.bitwise_and(I64.shr_zf_wrap(tag, I64.to_u8_wrap(8)), 255), I64.bitwise_and(tag, 255)]
 
 	lowpan_fragn : I64, I64, I64 -> List(I64)
-	lowpan_fragn = |datagram_size, tag, offset| [I64.bitwise_or(lowpan_dispatch_fragn, I64.bitwise_and(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(datagram_size), U64.pow(2, I64.to_u64_wrap(8)))), 7)), I64.bitwise_and(datagram_size, 255), I64.bitwise_and(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(tag), U64.pow(2, I64.to_u64_wrap(8)))), 255), I64.bitwise_and(tag, 255), I64.bitwise_and(offset, 255)]
+	lowpan_fragn = |datagram_size, tag, offset| [I64.bitwise_or(lowpan_dispatch_fragn, I64.bitwise_and(I64.shr_zf_wrap(datagram_size, I64.to_u8_wrap(8)), 7)), I64.bitwise_and(datagram_size, 255), I64.bitwise_and(I64.shr_zf_wrap(tag, I64.to_u8_wrap(8)), 255), I64.bitwise_and(tag, 255), I64.bitwise_and(offset, 255)]
 }

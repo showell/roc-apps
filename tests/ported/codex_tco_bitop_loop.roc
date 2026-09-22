@@ -25,6 +25,7 @@
 app [main!] { cdx: "./codex/main.roc" }
 
 import cdx.Prelude
+import cdx.Text
 
 # TcoBitopLoop -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -41,10 +42,10 @@ loop_none : I64, I64 -> I64
 loop_none = |acc, k| (if (k >= 8) { acc } else { loop_none(I64.bitwise_and(acc, 255), (k + 1)) })
 
 loop_shru : I64, I64 -> I64
-loop_shru = |acc, k| (if (k >= 8) { acc } else { loop_shru(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(acc), U64.pow(2, I64.to_u64_wrap(1)))), (k + 1)) })
+loop_shru = |acc, k| (if (k >= 8) { acc } else { loop_shru(I64.shr_zf_wrap(acc, I64.to_u8_wrap(1)), (k + 1)) })
 
 loop_shl : I64, I64 -> I64
-loop_shl = |acc, k| (if (k >= 8) { acc } else { loop_shl(U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(acc), U64.pow(2, I64.to_u64_wrap(1)))), (k + 1)) })
+loop_shl = |acc, k| (if (k >= 8) { acc } else { loop_shl(I64.shl_wrap(acc, I64.to_u8_wrap(1)), (k + 1)) })
 
 loop_xor : I64, I64 -> I64
 loop_xor = |acc, k| (if (k >= 8) { acc } else { loop_xor(I64.bitwise_xor(acc, 1), (k + 1)) })
@@ -53,7 +54,7 @@ loop_or : I64, I64 -> I64
 loop_or = |acc, k| (if (k >= 8) { acc } else { loop_or(I64.bitwise_or(acc, 1), (k + 1)) })
 
 loop_shr : I64, I64 -> I64
-loop_shr = |acc, k| (if (k >= 8) { acc } else { loop_shr(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(acc), U64.pow(2, I64.to_u64_wrap(1)))), (k + 1)) })
+loop_shr = |acc, k| (if (k >= 8) { acc } else { loop_shr(I64.shr_wrap(acc, I64.to_u8_wrap(1)), (k + 1)) })
 
 loop_not : I64, I64 -> I64
 loop_not = |acc, k| (if (k >= 8) { acc } else { loop_not(I64.bitwise_not(acc), (k + 1)) })
@@ -70,17 +71,17 @@ loop_and3 = |acc, k, pad| (if (k >= 8) { acc } else { loop_and3(I64.bitwise_and(
 # --- Entry ---
 
 main! = |_args| {
-	line!(Str.concat("loop-both: ", I64.to_str(loop_both(0, 0))))
-	line!(Str.concat("loop-a0: ", I64.to_str(loop_a0(255, 0))))
-	line!(Str.concat("loop-none: ", I64.to_str(loop_none(255, 0))))
-	line!(Str.concat("loop-shru: ", I64.to_str(loop_shru(255, 0))))
-	line!(Str.concat("loop-shl: ", I64.to_str(loop_shl(1, 0))))
-	line!(Str.concat("loop-xor: ", I64.to_str(loop_xor(255, 0))))
-	line!(Str.concat("loop-or: ", I64.to_str(loop_or(254, 0))))
-	line!(Str.concat("loop-shr: ", I64.to_str(loop_shr(255, 0))))
-	line!(Str.concat("loop-not: ", I64.to_str(loop_not(255, 0))))
-	line!(Str.concat("loop-mod: ", I64.to_str(loop_mod(123456, 0))))
-	line!(Str.concat("loop-sub: ", I64.to_str(loop_sub(255, 0))))
-	line!(Str.concat("loop-and3: ", I64.to_str(loop_and3(255, 0, 7))))
+	line!(Text.printed(List.concat([23, 16, 16, 31, 73, 32, 16, 14, 20, 69, 2], Text.show_int(loop_both(0, 0)))))
+	line!(Text.printed(List.concat([23, 16, 16, 31, 73, 15, 3, 69, 2], Text.show_int(loop_a0(255, 0)))))
+	line!(Text.printed(List.concat([23, 16, 16, 31, 73, 18, 16, 18, 13, 69, 2], Text.show_int(loop_none(255, 0)))))
+	line!(Text.printed(List.concat([23, 16, 16, 31, 73, 19, 20, 21, 25, 69, 2], Text.show_int(loop_shru(255, 0)))))
+	line!(Text.printed(List.concat([23, 16, 16, 31, 73, 19, 20, 23, 69, 2], Text.show_int(loop_shl(1, 0)))))
+	line!(Text.printed(List.concat([23, 16, 16, 31, 73, 36, 16, 21, 69, 2], Text.show_int(loop_xor(255, 0)))))
+	line!(Text.printed(List.concat([23, 16, 16, 31, 73, 16, 21, 69, 2], Text.show_int(loop_or(254, 0)))))
+	line!(Text.printed(List.concat([23, 16, 16, 31, 73, 19, 20, 21, 69, 2], Text.show_int(loop_shr(255, 0)))))
+	line!(Text.printed(List.concat([23, 16, 16, 31, 73, 18, 16, 14, 69, 2], Text.show_int(loop_not(255, 0)))))
+	line!(Text.printed(List.concat([23, 16, 16, 31, 73, 26, 16, 22, 69, 2], Text.show_int(loop_mod(123456, 0)))))
+	line!(Text.printed(List.concat([23, 16, 16, 31, 73, 19, 25, 32, 69, 2], Text.show_int(loop_sub(255, 0)))))
+	line!(Text.printed(List.concat([23, 16, 16, 31, 73, 15, 18, 22, 6, 69, 2], Text.show_int(loop_and3(255, 0, 7)))))
 	Ok({})
 }

@@ -3,7 +3,7 @@
 Fins :: [].{
 
 	fins_u16_be : I64 -> List(I64)
-	fins_u16_be = |v| [I64.bitwise_and(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(v), U64.pow(2, I64.to_u64_wrap(8)))), 255), I64.bitwise_and(v, 255)]
+	fins_u16_be = |v| [I64.bitwise_and(I64.shr_zf_wrap(v, I64.to_u8_wrap(8)), 255), I64.bitwise_and(v, 255)]
 
 	fins_header : I64, I64, I64 -> List(I64)
 	fins_header = |dest_node, src_node, sid| [128, 0, 2, 0, dest_node, 0, 0, src_node, 0, sid]

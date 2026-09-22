@@ -16,6 +16,7 @@
 app [main!] { cdx: "./codex/main.roc" }
 
 import cdx.Convolution
+import cdx.Text
 
 # ConvolutionIdentity -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -37,14 +38,14 @@ conv_imp = Convolution.convolve(sig, impulse)
 conv_box : List(I64)
 conv_box = Convolution.convolve(flat, Convolution.kernel_box_3)
 
-five : List(I64) -> Str
-five = |xs| Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(I64.to_str((List.get(xs, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))), " "), I64.to_str((List.get(xs, I64.to_u64_wrap(1)) ?? crash("list-at out of range")))), " "), I64.to_str((List.get(xs, I64.to_u64_wrap(2)) ?? crash("list-at out of range")))), " "), I64.to_str((List.get(xs, I64.to_u64_wrap(3)) ?? crash("list-at out of range")))), " "), I64.to_str((List.get(xs, I64.to_u64_wrap(4)) ?? crash("list-at out of range"))))
+five : List(I64) -> List(U8)
+five = |xs| List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(Text.show_int((List.get(xs, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))), [2]), Text.show_int((List.get(xs, I64.to_u64_wrap(1)) ?? crash("list-at out of range")))), [2]), Text.show_int((List.get(xs, I64.to_u64_wrap(2)) ?? crash("list-at out of range")))), [2]), Text.show_int((List.get(xs, I64.to_u64_wrap(3)) ?? crash("list-at out of range")))), [2]), Text.show_int((List.get(xs, I64.to_u64_wrap(4)) ?? crash("list-at out of range"))))
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Str.concat("impulse-identity=", five(conv_imp)))
-	line!(Str.concat("box3-on-constant=", five(conv_box)))
-	line!(Str.concat(Str.concat(Str.concat("lengths=", I64.to_str(U64.to_i64_wrap(List.len(conv_imp)))), " "), I64.to_str(U64.to_i64_wrap(List.len(conv_box)))))
+	line!(Text.printed(List.concat([17, 26, 31, 25, 23, 19, 13, 73, 17, 22, 13, 18, 14, 17, 14, 30, 77], five(conv_imp))))
+	line!(Text.printed(List.concat([32, 16, 36, 6, 73, 16, 18, 73, 24, 16, 18, 19, 14, 15, 18, 14, 77], five(conv_box))))
+	line!(Text.printed(List.concat(List.concat(List.concat([23, 13, 18, 29, 14, 20, 19, 77], Text.show_int(U64.to_i64_wrap(List.len(conv_imp)))), [2]), Text.show_int(U64.to_i64_wrap(List.len(conv_box))))))
 	Ok({})
 }

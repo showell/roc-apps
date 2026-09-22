@@ -12,7 +12,9 @@
 #     222
 #     -33
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # LeafMispredict -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -28,7 +30,7 @@ p_shift = |n, a| (if (n == 0) { a } else { p_shift((n - 1), ((a + a) - n)) })
 # --- Entry ---
 
 main! = |_args| {
-	line!(I64.to_str(m_swap(7, 111, 222)))
-	line!(I64.to_str(p_shift(5, 3)))
+	line!(Text.printed(Text.show_int(m_swap(7, 111, 222))))
+	line!(Text.printed(Text.show_int(p_shift(5, 3))))
 	Ok({})
 }

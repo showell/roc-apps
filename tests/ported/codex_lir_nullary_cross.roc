@@ -19,7 +19,9 @@
 #     deep: 8
 #     via-call: 15
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # LirNullaryCross -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -56,14 +58,14 @@ via_call = |n| (ident(n) + pick2(n, 5))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Str.concat("ident: ", I64.to_str(ident(7))))
-	line!(Str.concat("konst: ", I64.to_str(konst)))
-	line!(Str.concat("neg-konst: ", I64.to_str(neg_konst)))
-	line!(Str.concat("big-konst: ", I64.to_str(big_konst)))
-	line!(Str.concat("pick2: ", I64.to_str(pick2(3, 9))))
-	line!(Str.concat("pick-mid: ", I64.to_str(pick_mid(1, 2, 3))))
-	line!(Str.concat("pick-last: ", I64.to_str(pick_last(1, 2, 3))))
-	line!(Str.concat("deep: ", I64.to_str(deep(1, 2, 3, 4, 5, 6, 7, 8))))
-	line!(Str.concat("via-call: ", I64.to_str(via_call(10))))
+	line!(Text.printed(List.concat([17, 22, 13, 18, 14, 69, 2], Text.show_int(ident(7)))))
+	line!(Text.printed(List.concat([34, 16, 18, 19, 14, 69, 2], Text.show_int(konst))))
+	line!(Text.printed(List.concat([18, 13, 29, 73, 34, 16, 18, 19, 14, 69, 2], Text.show_int(neg_konst))))
+	line!(Text.printed(List.concat([32, 17, 29, 73, 34, 16, 18, 19, 14, 69, 2], Text.show_int(big_konst))))
+	line!(Text.printed(List.concat([31, 17, 24, 34, 5, 69, 2], Text.show_int(pick2(3, 9)))))
+	line!(Text.printed(List.concat([31, 17, 24, 34, 73, 26, 17, 22, 69, 2], Text.show_int(pick_mid(1, 2, 3)))))
+	line!(Text.printed(List.concat([31, 17, 24, 34, 73, 23, 15, 19, 14, 69, 2], Text.show_int(pick_last(1, 2, 3)))))
+	line!(Text.printed(List.concat([22, 13, 13, 31, 69, 2], Text.show_int(deep(1, 2, 3, 4, 5, 6, 7, 8)))))
+	line!(Text.printed(List.concat([33, 17, 15, 73, 24, 15, 23, 23, 69, 2], Text.show_int(via_call(10)))))
 	Ok({})
 }

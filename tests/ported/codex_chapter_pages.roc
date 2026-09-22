@@ -11,7 +11,9 @@
 # Expected stdout:
 #     3
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # ChapterPages -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -27,6 +29,6 @@ beta = 2
 # --- Entry ---
 
 main! = |_args| {
-	line!(I64.to_str((alpha + beta)))
+	line!(Text.printed(Text.show_int((alpha + beta))))
 	Ok({})
 }

@@ -11,19 +11,21 @@
 # Expected stdout:
 #     n=7
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # AmpAfterCall -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-label : I64 -> Str
-label = |x| Str.concat("n=", I64.to_str(x))
+label : I64 -> List(U8)
+label = |x| List.concat([18, 77], Text.show_int(x))
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(label(7))
+	line!(Text.printed(label(7)))
 	Ok({})
 }

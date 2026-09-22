@@ -1,6 +1,6 @@
 # ConsistentHash -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
-import Cce
 import Random
+import Text
 
 ConsistentHash :: [].{
 	HashRingEntry : { hr_hash : I64, hr_node : I64 }
@@ -45,11 +45,11 @@ ConsistentHash :: [].{
 		(if (h < 0) { (-h) } else { h })
 	})
 
-	chr_hash_text : Str -> I64
-	chr_hash_text = |key| chr_hash_key(chr_text_fold(key, 0, Cce.length(key), 5381))
+	chr_hash_text : List(U8) -> I64
+	chr_hash_text = |key| chr_hash_key(chr_text_fold(key, 0, Text.len(key), 5381))
 
-	chr_text_fold : Str, I64, I64, I64 -> I64
-	chr_text_fold = |key, i, len, acc| (if (i >= len) { acc } else { chr_text_fold(key, (i + 1), len, I64.plus_wrap(I64.times_wrap(acc, 33), Cce.at_or_crash(key, i))) })
+	chr_text_fold : List(U8), I64, I64, I64 -> I64
+	chr_text_fold = |key, i, len, acc| (if (i >= len) { acc } else { chr_text_fold(key, (i + 1), len, I64.plus_wrap(I64.times_wrap(acc, 33), Text.char_at(key, i))) })
 
 	chr_hash_pair : I64, I64 -> I64
 	chr_hash_pair = |node, vnode| ({

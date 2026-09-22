@@ -18,15 +18,16 @@ app [main!] { cdx: "./codex/main.roc" }
 
 import cdx.Maybe
 import cdx.Pair
+import cdx.Text
 
 # WhenGenericField -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-ProbeOp : [OpScan(Str), OpFilter(Str, I64)]
+ProbeOp : [OpScan(List(U8)), OpFilter(List(U8), I64)]
 
 lookup_like : I64 -> Pair.Pair(I64, Maybe.Maybe(ProbeOp))
-lookup_like = |k| (if (k == 1) { Pair.make_pair(10, Just(OpScan("emp"))) } else { Pair.make_pair(20, None) })
+lookup_like = |k| (if (k == 1) { Pair.make_pair(10, Just(OpScan([13, 26, 31]))) } else { Pair.make_pair(20, None) })
 
 eq_ProbeOp : ProbeOp, ProbeOp -> Bool
 eq_ProbeOp = |ex, ey| (match ex {
@@ -49,22 +50,22 @@ main! = |_args| {
 		r2 = lookup_like(2)
 		b2 = r2.snd
 		({
-			line!((match b1 {
-				Just(_p) => "b1-hit"
-				None => "b1-miss"
-			}))
-			line!((match r1.snd {
-				Just(_p) => "i1-hit"
-				None => "i1-miss"
-			}))
-			line!((match b2 {
-				Just(_p) => "b2-hit"
-				None => "b2-miss"
-			}))
-			line!((match r2.snd {
-				Just(_p) => "i2-hit"
-				None => "i2-miss"
-			}))
+			line!(Text.printed((match b1 {
+				Just(_p) => [32, 4, 73, 20, 17, 14]
+				None => [32, 4, 73, 26, 17, 19, 19]
+			})))
+			line!(Text.printed((match r1.snd {
+				Just(_p) => [17, 4, 73, 20, 17, 14]
+				None => [17, 4, 73, 26, 17, 19, 19]
+			})))
+			line!(Text.printed((match b2 {
+				Just(_p) => [32, 5, 73, 20, 17, 14]
+				None => [32, 5, 73, 26, 17, 19, 19]
+			})))
+			line!(Text.printed((match r2.snd {
+				Just(_p) => [17, 5, 73, 20, 17, 14]
+				None => [17, 5, 73, 26, 17, 19, 19]
+			})))
 		})
 	})
 	Ok({})

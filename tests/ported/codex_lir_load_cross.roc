@@ -25,7 +25,9 @@
 #     3
 #     41
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # LirLoadCross -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -109,20 +111,20 @@ eq_Packed = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(I64.to_str(sh_area(Circle(5))))
-	line!(I64.to_str(sh_area(Rect(6, 7))))
-	line!(I64.to_str(sh_area(Dot)))
-	line!(I64.to_str(sh_first(Circle(5))))
-	line!(I64.to_str(sh_first(Rect(6, 7))))
-	line!(I64.to_str(sh_first(Dot)))
-	line!(I64.to_str(sh_second(Rect(6, 7))))
-	line!(I64.to_str(sh_second(Circle(5))))
-	line!(I64.to_str(sh_twice(Circle(5))))
-	line!(I64.to_str(sh_twice(Rect(6, 7))))
-	line!(I64.to_str(sh_both(Rect(6, 7))))
-	line!(I64.to_str(sh_both(Circle(5))))
-	line!(I64.to_str(pk_lo(Bytes(7, 3))))
-	line!(I64.to_str(pk_hi(Bytes(7, 3))))
-	line!(I64.to_str(pk_lo(Big(41))))
+	line!(Text.printed(Text.show_int(sh_area(Circle(5)))))
+	line!(Text.printed(Text.show_int(sh_area(Rect(6, 7)))))
+	line!(Text.printed(Text.show_int(sh_area(Dot))))
+	line!(Text.printed(Text.show_int(sh_first(Circle(5)))))
+	line!(Text.printed(Text.show_int(sh_first(Rect(6, 7)))))
+	line!(Text.printed(Text.show_int(sh_first(Dot))))
+	line!(Text.printed(Text.show_int(sh_second(Rect(6, 7)))))
+	line!(Text.printed(Text.show_int(sh_second(Circle(5)))))
+	line!(Text.printed(Text.show_int(sh_twice(Circle(5)))))
+	line!(Text.printed(Text.show_int(sh_twice(Rect(6, 7)))))
+	line!(Text.printed(Text.show_int(sh_both(Rect(6, 7)))))
+	line!(Text.printed(Text.show_int(sh_both(Circle(5)))))
+	line!(Text.printed(Text.show_int(pk_lo(Bytes(7, 3)))))
+	line!(Text.printed(Text.show_int(pk_hi(Bytes(7, 3)))))
+	line!(Text.printed(Text.show_int(pk_lo(Big(41)))))
 	Ok({})
 }

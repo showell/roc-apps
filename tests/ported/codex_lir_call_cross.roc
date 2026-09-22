@@ -20,7 +20,9 @@
 #     312
 #     231
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # LirCallCross -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -63,15 +65,15 @@ callthree2 = |a, b, c| htri(b, c, a)
 # --- Entry ---
 
 main! = |_args| {
-	line!(I64.to_str(callplain(9, 4)))
-	line!(I64.to_str(callswap(9, 4)))
-	line!(I64.to_str(callimm_l(10)))
-	line!(I64.to_str(callimm_r(10)))
-	line!(I64.to_str(callres(9, 4)))
-	line!(I64.to_str(callchain(9, 4)))
-	line!(I64.to_str(callcond(9, 4)))
-	line!(I64.to_str(callcond((-9), 4)))
-	line!(I64.to_str(callthree(1, 2, 3)))
-	line!(I64.to_str(callthree2(1, 2, 3)))
+	line!(Text.printed(Text.show_int(callplain(9, 4))))
+	line!(Text.printed(Text.show_int(callswap(9, 4))))
+	line!(Text.printed(Text.show_int(callimm_l(10))))
+	line!(Text.printed(Text.show_int(callimm_r(10))))
+	line!(Text.printed(Text.show_int(callres(9, 4))))
+	line!(Text.printed(Text.show_int(callchain(9, 4))))
+	line!(Text.printed(Text.show_int(callcond(9, 4))))
+	line!(Text.printed(Text.show_int(callcond((-9), 4))))
+	line!(Text.printed(Text.show_int(callthree(1, 2, 3))))
+	line!(Text.printed(Text.show_int(callthree2(1, 2, 3))))
 	Ok({})
 }

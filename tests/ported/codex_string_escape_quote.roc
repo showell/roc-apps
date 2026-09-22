@@ -11,19 +11,21 @@
 # Expected stdout:
 #     she said "hi" loudly
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # StringEscapeQuote -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-q : Str
-q = "she said \"hi\" loudly"
+q : List(U8)
+q = [19, 20, 13, 2, 19, 15, 17, 22, 2, 72, 20, 17, 72, 2, 23, 16, 25, 22, 23, 30]
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(q)
+	line!(Text.printed(q))
 	Ok({})
 }

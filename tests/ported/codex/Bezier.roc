@@ -1,5 +1,6 @@
 # Bezier -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 import MathLib
+import Text
 
 Bezier :: [].{
 	BezVec : { vx : I64, vy : I64, vz : I64 }
@@ -40,6 +41,6 @@ Bezier :: [].{
 		bezier3_arc_loop(p0, p1, p2, p3, (i + 1), segments, (total + dist), curr)
 	}) })
 
-	format_bezier_point : Bezier.BezVec -> Str
-	format_bezier_point = |v| Str.concat(Str.concat(Str.concat(Str.concat("(", I64.to_str(v.vx)), ","), I64.to_str(v.vy)), ")")
+	format_bezier_point : Bezier.BezVec -> List(U8)
+	format_bezier_point = |v| List.concat(List.concat(List.concat(List.concat([74], Text.show_int(v.vx)), [66]), Text.show_int(v.vy)), [75])
 }

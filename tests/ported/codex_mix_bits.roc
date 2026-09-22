@@ -21,6 +21,7 @@
 app [main!] { cdx: "./codex/main.roc" }
 
 import cdx.Random
+import cdx.Text
 
 # MixBitsTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -57,13 +58,13 @@ main! = |_args| {
 	alt = mb_alt(20260725, 1, 256, 0)
 	oldalt = mb_old_alt(20260725, 1, 256, 0)
 	r2 = mb_range2(0, 256, 0)
-	line!(Str.concat("ones/256:        ", I64.to_str(ones)))
-	line!(Str.concat("balanced:        ", (if ((ones > 96) and (ones < 160)) { "True" } else { "False" })))
-	line!(Str.concat("alternations:    ", I64.to_str(alt)))
-	line!(Str.concat("not a stripe:    ", (if (alt < 200) { "True" } else { "False" })))
-	line!(Str.concat("control alt:     ", I64.to_str(oldalt)))
-	line!(Str.concat("control striped: ", (if (oldalt == 255) { "True" } else { "False" })))
-	line!(Str.concat("range2 ones/256: ", I64.to_str(r2)))
-	line!(Str.concat("range2 spread:   ", (if ((r2 > 96) and (r2 < 160)) { "True" } else { "False" })))
+	line!(Text.printed(List.concat([16, 18, 13, 19, 81, 5, 8, 9, 69, 2, 2, 2, 2, 2, 2, 2, 2], Text.show_int(ones))))
+	line!(Text.printed(List.concat([32, 15, 23, 15, 18, 24, 13, 22, 69, 2, 2, 2, 2, 2, 2, 2, 2], (if ((ones > 96) and (ones < 160)) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))))
+	line!(Text.printed(List.concat([15, 23, 14, 13, 21, 18, 15, 14, 17, 16, 18, 19, 69, 2, 2, 2, 2], Text.show_int(alt))))
+	line!(Text.printed(List.concat([18, 16, 14, 2, 15, 2, 19, 14, 21, 17, 31, 13, 69, 2, 2, 2, 2], (if (alt < 200) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))))
+	line!(Text.printed(List.concat([24, 16, 18, 14, 21, 16, 23, 2, 15, 23, 14, 69, 2, 2, 2, 2, 2], Text.show_int(oldalt))))
+	line!(Text.printed(List.concat([24, 16, 18, 14, 21, 16, 23, 2, 19, 14, 21, 17, 31, 13, 22, 69, 2], (if (oldalt == 255) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))))
+	line!(Text.printed(List.concat([21, 15, 18, 29, 13, 5, 2, 16, 18, 13, 19, 81, 5, 8, 9, 69, 2], Text.show_int(r2))))
+	line!(Text.printed(List.concat([21, 15, 18, 29, 13, 5, 2, 19, 31, 21, 13, 15, 22, 69, 2, 2, 2], (if ((r2 > 96) and (r2 < 160)) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))))
 	Ok({})
 }

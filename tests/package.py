@@ -15,9 +15,12 @@ test is a short app that imports what it needs:
     app [main!] { cdx: "./codex/main.roc" }
     import cdx.ListUtils
 
-Every chapter's text is identical wherever it appears, which is what makes
-the deduplication sound: rocemit emits a chapter from the chapter, not
-from the program that cites it (checked over all 137 units).
+A chapter's text depends only on the chapter, which is what makes the
+deduplication sound: rocemit emits a chapter from the chapter, not from the
+program that cites it. The exception is the state a program threads -- a
+chapter reaching a device is emitted over `Mem` or over `Machine` -- and a
+test whose chapter is already here in another form is dropped, never given
+the wrong one.
 
 Each app is RUN and its output compared with the verdict before it is
 kept, so nothing here ships untested.
@@ -25,8 +28,13 @@ kept, so nothing here ships untested.
 **Not every passing test is packaged.** A Codex chapter is big -- one is
 28 KB and exactly one test needs it -- so the tests are taken cheapest
 first and one is dropped when it would add more than `--cap` KB of
-chapter text nobody else needs. At the default of 8 KB that is 103 of the
-137, in a quarter of the bytes; the whole set is in roc-apps either way.
+chapter text nobody else needs.
+
+**THE CAP MUST CLEAR THE BIGGEST SHARED CHAPTER.** A test is charged for the
+chapters no earlier test needed, so the first test to need `Text` pays for
+all 13 KB of it: at a cap below that, nothing that prints anything is ever
+admitted and the package is the encoders alone. The default of 16 takes
+about two thirds of the corpus; the whole set is in roc-apps either way.
 """
 import os, re, shutil, subprocess, sys, time
 
@@ -141,7 +149,7 @@ def write_artifacts(kept, times, shared, cap):
         slow="\n".join(f"| `{u}` | {t*1000:.0f} |" for t, u in slow),
         table="\n".join(stat_line(u, times[u]) for u in sorted(kept)),
         cob=COBBLESTONE, apps=ROC_APPS, chapters=len(shared), pkg_kb=pkg_kb, app_kb=app_kb,
-        all_n=len(units()), cap=cap,
+        all_n=len(units()), cap=cap, n_slow=len(SLOW),
     ))
 
 
@@ -158,9 +166,8 @@ from Codex to Roc and checked against the output Cobblestone records for
 each one.
 
 {n} of the {all_n} the emitter runs to their verdict are here. Two kinds
-are left out. Eleven take more than a quarter of a second, and the reason
-is the compiler rather than the program -- ten of them in compile-time
-evaluation and one in the allocator -- so they are held back by name
+are left out. {n_slow} take more than a quarter of a second, and the reason
+is the compiler rather than the program, so they are held back by name
 rather than being a performance report inside a regression suite. The
 rest are left out on size: a Codex chapter can be 28 KB and needed by
 exactly one program, so a test goes when it would add more than {cap} KB
@@ -182,11 +189,15 @@ emitted from ({pkg_kb} KB), and each test is a short app over it
     app [main!] {{ cdx: "./codex/main.roc" }}
     import cdx.ListUtils
 
-A Codex program carries every chapter it cites, so the 137 units carried
-137 copies of the same chapters; a chapter's emitted text is identical
-wherever it appears, which is what lets them be shared here. Nothing was
-edited by hand, and every app was run and compared with its expected
-output before it was kept.
+A Codex program carries every chapter it cites, so the {all_n} units carried
+{all_n} copies of the same chapters. A chapter's emitted text depends only on
+the chapter, which is what lets them be shared here -- with one exception:
+a chapter that reaches a device is emitted over the state its program
+threads, so the same chapter is a different module in a program that reaches
+the machine. Those programs are all far over the size cap anyway, and a test
+whose chapter is already here in another form is dropped rather than given
+the wrong one. Nothing was edited by hand, and every app was run and
+compared with its expected output before it was kept.
 
 ## Where they come from
 
@@ -214,9 +225,9 @@ them RUNS in about 3 ms; the rest is the compiler. The slowest:
 
 The compiler EVALUATES a call whose arguments are known, so for these
 programs the compile time is largely the program's own work and the run is
-then two or three milliseconds. The eleven where that adds up to more than
-a quarter of a second are held back by name, and the slowest of them,
-`ttt-perfect`, is the clearest case: 2.5 seconds to compile, because the
+then two or three milliseconds. The {n_slow} where that adds up to more than
+a quarter of a second are held back by name, and `ttt-perfect` is the
+clearest case: 2.5 seconds to compile, because the
 compiler plays the whole-tree tic-tac-toe search, and 3 ms to run, because
 by then the answer is a constant.
 
@@ -230,12 +241,21 @@ by then the answer is a constant.
 
 # **SLOW PROGRAMS ARE HELD BACK BY NAME.** A regression suite should not
 # also be a performance report: these each take more than a quarter of a
-# second, and the reason is the compiler rather than the test. Ten of the
-# eleven spend it in compile-time evaluation, which is roc-lang/roc#11334;
-# bloom-spread spends it in the allocator, which is #11335. They are good
-# programs and they are in roc-apps; they are simply not regression tests.
+# second, and the reason is the compiler rather than the test. Most spend it
+# in compile-time evaluation, which is roc-lang/roc#11334; bloom-spread
+# spends it in the allocator, which is #11335; lib@hkdf-test is the one that
+# really does work at run time. They are good programs and they are in
+# roc-apps; they are simply not regression tests.
+#
+# **The list is MEASURED, not inherited.** A cold `roc build`, and then the
+# built binary on its own, against a 0.11 s baseline, says where a program's
+# time goes; the ladder's millisecond column says which to look at.
 SLOW = {
     "ttt-perfect": "2.5 s: the compiler plays the whole tic-tac-toe game tree (#11334)",
+    "interval-exhaustive": "2.4 s to compile and 3 ms to run (#11334)",
+    "ui-theme-test": "0.35 s, all of it the compiler; the binary runs in 3 ms",
+    "lib@msgpack-test": "0.27 s, all of it the compiler; the binary runs in 3 ms",
+    "lib@hkdf-test": "1.7 s to compile, and 140 ms of real work at run time",
     "tcp-checksum-refuse": "1.3 s in compile-time evaluation (#11334)",
     "lorawan-encode": "1.0 s in compile-time evaluation (#11334)",
     "chacha20poly1305": "0.8 s in compile-time evaluation (#11334)",

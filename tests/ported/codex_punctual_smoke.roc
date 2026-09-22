@@ -14,7 +14,9 @@
 #     42
 #     42
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # PunctualSmoke -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -36,9 +38,9 @@ scale_then_add = |a, b| fast_add(bounded_mul(a, 2), b)
 # --- Entry ---
 
 main! = |_args| {
-	line!(I64.to_str(fast_add(10, 32)))
-	line!(I64.to_str(bounded_mul(6, 7)))
-	line!(I64.to_str(bounded_sub(100, 58)))
-	line!(I64.to_str(scale_then_add(20, 2)))
+	line!(Text.printed(Text.show_int(fast_add(10, 32))))
+	line!(Text.printed(Text.show_int(bounded_mul(6, 7))))
+	line!(Text.printed(Text.show_int(bounded_sub(100, 58))))
+	line!(Text.printed(Text.show_int(scale_then_add(20, 2))))
 	Ok({})
 }

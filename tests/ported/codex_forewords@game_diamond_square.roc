@@ -1,0 +1,28 @@
+# forewords@game-diamond-square
+#
+# Ported from Cobblestone's Codex test suite, not written for Roc.
+#
+#   from      https://github.com/damiant3/Cobblestone/blob/master/codex/test/forewords@game-diamond-square.codex
+#   emitted   by rocemit, https://github.com/showell/roc-apps (Codex -> Roc)
+#
+# The chapters it imports are in ./codex, a package of the Codex chapters
+# these tests are emitted from. Written by tests/package.py. Do not edit.
+#
+# Expected stdout:
+#     Game/DiamondSquare OK
+
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
+
+# FwdDiamondSquareTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+
+# The Echo platform's echo! writes no newline; a Codex line is one.
+line! = |s| echo!(Str.concat(s, "\n"))
+
+# --- Entry ---
+
+main! = |_args| {
+	line!(Text.printed([55, 15, 26, 13, 81, 48, 17, 15, 26, 16, 18, 22, 45, 37, 25, 15, 21, 13, 2, 42, 60]))
+	Ok({})
+}

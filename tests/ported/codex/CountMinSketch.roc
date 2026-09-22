@@ -1,7 +1,7 @@
 # CountMinSketch -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
-import Cce
 import ListUtils
 import Random
+import Text
 
 CountMinSketch :: [].{
 	CmSketch : { cms_table : List(I64), cms_width : I64, cms_depth : I64, cms_total : I64 }
@@ -9,7 +9,7 @@ CountMinSketch :: [].{
 	cms_new : I64, I64 -> CountMinSketch.CmSketch
 	cms_new = |width, depth| { cms_table: ListUtils.list_zeros((width * depth)), cms_width: width, cms_depth: depth, cms_total: 0 }
 
-	cms_add : CountMinSketch.CmSketch, Str, I64 -> CountMinSketch.CmSketch
+	cms_add : CountMinSketch.CmSketch, List(U8), I64 -> CountMinSketch.CmSketch
 	cms_add = |sketch, key, count| ({
 		h = cms_hash_key(key)
 		updated = cms_add_rows(sketch.cms_table, h, sketch.cms_width, sketch.cms_depth, count, 0)
@@ -24,7 +24,7 @@ CountMinSketch :: [].{
 		cms_add_rows((List.set(table, I64.to_u64_wrap(idx), (old + count)) ?? crash("list-set-at past the end")), hash, width, depth, count, (row + 1))
 	}) })
 
-	cms_count : CountMinSketch.CmSketch, Str -> I64
+	cms_count : CountMinSketch.CmSketch, List(U8) -> I64
 	cms_count = |sketch, key| ({
 		h = cms_hash_key(key)
 		cms_min_rows(sketch.cms_table, h, sketch.cms_width, sketch.cms_depth, 0, 999999999)
@@ -39,15 +39,12 @@ CountMinSketch :: [].{
 		cms_min_rows(table, hash, width, depth, (row + 1), new_best)
 	}) })
 
-	cms_hash_key : Str -> I64
-	cms_hash_key = |key| cms_text_hash(key, 0, Cce.length(key), 5381)
+	cms_hash_key : List(U8) -> I64
+	cms_hash_key = |key| cms_text_hash(key, 0, Text.len(key), 5381)
 
-	cms_text_hash : Str, I64, I64, I64 -> I64
-	cms_text_hash = |key, i, len, hash| (if (i >= len) { ({
-		positive = (if (hash < 0) { (-hash) } else { hash })
-		positive
-	}) } else { ({
-		c = Cce.at_or_crash(key, i)
+	cms_text_hash : List(U8), I64, I64, I64 -> I64
+	cms_text_hash = |key, i, len, hash| (if (i >= len) { (if (hash < 0) { I64.minus_wrap(0, hash) } else { hash }) } else { ({
+		c = Text.char_at(key, i)
 		cms_text_hash(key, (i + 1), len, I64.plus_wrap(I64.times_wrap(hash, 33), c))
 	}) })
 
@@ -57,6 +54,6 @@ CountMinSketch :: [].{
 	cms_total : CountMinSketch.CmSketch -> I64
 	cms_total = |sketch| sketch.cms_total
 
-	format_cms : CountMinSketch.CmSketch -> Str
-	format_cms = |s| Str.concat(Str.concat(Str.concat(Str.concat(Str.concat("cms ", I64.to_str(s.cms_width)), "x"), I64.to_str(s.cms_depth)), " total="), I64.to_str(s.cms_total))
+	format_cms : CountMinSketch.CmSketch -> List(U8)
+	format_cms = |s| List.concat(List.concat(List.concat(List.concat(List.concat([24, 26, 19, 2], Text.show_int(s.cms_width)), [36]), Text.show_int(s.cms_depth)), [2, 14, 16, 14, 15, 23, 77]), Text.show_int(s.cms_total))
 }

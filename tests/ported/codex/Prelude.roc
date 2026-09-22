@@ -61,6 +61,29 @@ Prelude :: [].{
 	approx_eq : F64, F64 -> Bool
 	approx_eq = |x, y| I64.abs(I64.minus_wrap(Prelude.ordinal(x), Prelude.ordinal(y))) <= 4
 
+	# `a ^ b` with a negative exponent is 0, where Roc's pow crashes
+	# (codex/test's ops/int-pow: `ipow 5 (0 - 2)` is 0).
+	int_pow : I64, I64 -> I64
+	int_pow = |a, b| if b < 0 { 0 } else { I64.pow(a, b) }
+
+	# `base` with `pushed` appended last to first: the list a definition builds
+	# by pushing onto its own recursive call, which rocemit writes as a loop
+	# that gathers the pushed elements outermost first.
+	push_backwards : List(a), List(a) -> List(a)
+	push_backwards = |base, pushed| {
+		var $out = base
+		var $i = List.len(pushed)
+		while $i > 0 {
+			$i = $i - 1
+			$out = List.append($out, List.get(pushed, $i) ?? crash("Prelude: an index outside a list"))
+		}
+		$out
+	}
+
+	# x86's abs negates with a wrapping neg: the most negative integer answers itself.
+	int_abs : I64 -> I64
+	int_abs = |a| if a < 0 { I64.minus_wrap(0, a) } else { a }
+
 	int_mod : I64, I64 -> I64
 	int_mod = |a, b| {
 		m = I64.mod_by(a, b)

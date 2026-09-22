@@ -11,7 +11,9 @@
 # Expected stdout:
 #     42
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # CtorNarrowWarn -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -38,6 +40,6 @@ eq_Byteish = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(I64.to_str(use_byte(make_byte_narrowed(42))))
+	line!(Text.printed(Text.show_int(use_byte(make_byte_narrowed(42)))))
 	Ok({})
 }

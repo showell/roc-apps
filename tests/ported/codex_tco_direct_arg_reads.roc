@@ -11,7 +11,9 @@
 # Expected stdout:
 #     acc=101
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # TcoDirectArgReads -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -31,6 +33,6 @@ loop4 = |i, s, acc, n| (if (i >= n) { acc } else { ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(Str.concat("acc=", I64.to_str(loop4(0, { v: 1 }, 0, 3))))
+	line!(Text.printed(List.concat([15, 24, 24, 77], Text.show_int(loop4(0, { v: 1 }, 0, 3)))))
 	Ok({})
 }

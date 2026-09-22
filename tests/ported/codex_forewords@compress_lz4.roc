@@ -1,0 +1,28 @@
+# forewords@compress-lz4
+#
+# Ported from Cobblestone's Codex test suite, not written for Roc.
+#
+#   from      https://github.com/damiant3/Cobblestone/blob/master/codex/test/forewords@compress-lz4.codex
+#   emitted   by rocemit, https://github.com/showell/roc-apps (Codex -> Roc)
+#
+# The chapters it imports are in ./codex, a package of the Codex chapters
+# these tests are emitted from. Written by tests/package.py. Do not edit.
+#
+# Expected stdout:
+#     Compress/Lz4 OK
+
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
+
+# FwdLz4Test -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+
+# The Echo platform's echo! writes no newline; a Codex line is one.
+line! = |s| echo!(Str.concat(s, "\n"))
+
+# --- Entry ---
+
+main! = |_args| {
+	line!(Text.printed([50, 16, 26, 31, 21, 13, 19, 19, 81, 49, 38, 7, 2, 42, 60]))
+	Ok({})
+}

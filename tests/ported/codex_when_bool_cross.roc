@@ -14,7 +14,9 @@
 #     cross: 115
 #     frm: 150
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # WhenBoolCross -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -51,9 +53,9 @@ frm = |n, acc| (match (n == 0) {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Str.concat("spin2: ", I64.to_str(spin2(5, 100))))
-	line!(Str.concat("spin3: ", I64.to_str(spin3(5, 100, 0))))
-	line!(Str.concat("cross: ", I64.to_str(cross(5, 100))))
-	line!(Str.concat("frm: ", I64.to_str(frm(5, 100))))
+	line!(Text.printed(List.concat([19, 31, 17, 18, 5, 69, 2], Text.show_int(spin2(5, 100)))))
+	line!(Text.printed(List.concat([19, 31, 17, 18, 6, 69, 2], Text.show_int(spin3(5, 100, 0)))))
+	line!(Text.printed(List.concat([24, 21, 16, 19, 19, 69, 2], Text.show_int(cross(5, 100)))))
+	line!(Text.printed(List.concat([28, 21, 26, 69, 2], Text.show_int(frm(5, 100)))))
 	Ok({})
 }

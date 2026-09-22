@@ -20,7 +20,9 @@
 #     shadowed-after: 100
 #     arm-local: 23
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # ActLetScope -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -46,24 +48,24 @@ main! = |_args| {
 	({
 		a = bump(1)
 		({
-			line!(Str.concat("a: ", I64.to_str(a)))
-			line!(Str.concat("a-after: ", I64.to_str(a)))
+			line!(Text.printed(List.concat([15, 69, 2], Text.show_int(a))))
+			line!(Text.printed(List.concat([15, 73, 15, 28, 14, 13, 21, 69, 2], Text.show_int(a))))
 			({
 				b = bump(a)
 				c = bump(b)
 				d = bump(c)
 				({
-					line!(Str.concat("chain-in-body: ", I64.to_str(d)))
-					line!(Str.concat("chain-b: ", I64.to_str(b)))
-					line!(Str.concat("chain-c: ", I64.to_str(c)))
-					line!(Str.concat("chain-d: ", I64.to_str(d)))
-					line!(Str.concat("chain-sum: ", I64.to_str((((a + b) + c) + d))))
+					line!(Text.printed(List.concat([24, 20, 15, 17, 18, 73, 17, 18, 73, 32, 16, 22, 30, 69, 2], Text.show_int(d))))
+					line!(Text.printed(List.concat([24, 20, 15, 17, 18, 73, 32, 69, 2], Text.show_int(b))))
+					line!(Text.printed(List.concat([24, 20, 15, 17, 18, 73, 24, 69, 2], Text.show_int(c))))
+					line!(Text.printed(List.concat([24, 20, 15, 17, 18, 73, 22, 69, 2], Text.show_int(d))))
+					line!(Text.printed(List.concat([24, 20, 15, 17, 18, 73, 19, 25, 26, 69, 2], Text.show_int((((a + b) + c) + d)))))
 					({
 						a_1 = 100
 						({
-							line!(Str.concat("shadowed: ", I64.to_str(a_1)))
-							line!(Str.concat("shadowed-after: ", I64.to_str(a_1)))
-							line!(Str.concat("arm-local: ", I64.to_str(arm_local(2))))
+							line!(Text.printed(List.concat([19, 20, 15, 22, 16, 27, 13, 22, 69, 2], Text.show_int(a_1))))
+							line!(Text.printed(List.concat([19, 20, 15, 22, 16, 27, 13, 22, 73, 15, 28, 14, 13, 21, 69, 2], Text.show_int(a_1))))
+							line!(Text.printed(List.concat([15, 21, 26, 73, 23, 16, 24, 15, 23, 69, 2], Text.show_int(arm_local(2)))))
 						})
 					})
 				})

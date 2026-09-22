@@ -21,7 +21,9 @@
 #     6
 #     6
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # LirSelectorSmoke -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -59,16 +61,16 @@ s_result = |a, b| ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(I64.to_str(s_apply(s_add, 3, 4)))
-	line!(I64.to_str(s_join(0)))
-	line!(I64.to_str(s_join(5)))
-	line!(I64.to_str(s_join((-2))))
-	line!(I64.to_str(s_tail(5, (-2))))
-	line!(I64.to_str(s_tail(1, 7)))
-	line!(I64.to_str(s_clash(9, 0, 0, 9, 3)))
-	line!(I64.to_str(s_clash(0, 9, 0, 9, 3)))
-	line!(I64.to_str(s_clash(0, 0, 9, 9, 3)))
-	line!(I64.to_str(s_result(5, (-2))))
-	line!(I64.to_str(s_result(5, 3)))
+	line!(Text.printed(Text.show_int(s_apply(s_add, 3, 4))))
+	line!(Text.printed(Text.show_int(s_join(0))))
+	line!(Text.printed(Text.show_int(s_join(5))))
+	line!(Text.printed(Text.show_int(s_join((-2)))))
+	line!(Text.printed(Text.show_int(s_tail(5, (-2)))))
+	line!(Text.printed(Text.show_int(s_tail(1, 7))))
+	line!(Text.printed(Text.show_int(s_clash(9, 0, 0, 9, 3))))
+	line!(Text.printed(Text.show_int(s_clash(0, 9, 0, 9, 3))))
+	line!(Text.printed(Text.show_int(s_clash(0, 0, 9, 9, 3))))
+	line!(Text.printed(Text.show_int(s_result(5, (-2)))))
+	line!(Text.printed(Text.show_int(s_result(5, 3))))
 	Ok({})
 }

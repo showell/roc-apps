@@ -17,7 +17,9 @@
 #     secondE=0
 #     sumE=0
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # ListPattern -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -51,12 +53,12 @@ second_or = |xs, d| (match xs {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Str.concat("sum=", I64.to_str(sum_list([1, 2, 3, 4, 5]))))
-	line!(Str.concat("count=", I64.to_str(count_list([7, 8, 9]))))
-	line!(Str.concat("head=", I64.to_str(head_or([42, 1], 0))))
-	line!(Str.concat("headE=", I64.to_str(head_or([], 0))))
-	line!(Str.concat("second=", I64.to_str(second_or([5, 6, 7], 0))))
-	line!(Str.concat("secondE=", I64.to_str(second_or([5], 0))))
-	line!(Str.concat("sumE=", I64.to_str(sum_list([]))))
+	line!(Text.printed(List.concat([19, 25, 26, 77], Text.show_int(sum_list([1, 2, 3, 4, 5])))))
+	line!(Text.printed(List.concat([24, 16, 25, 18, 14, 77], Text.show_int(count_list([7, 8, 9])))))
+	line!(Text.printed(List.concat([20, 13, 15, 22, 77], Text.show_int(head_or([42, 1], 0)))))
+	line!(Text.printed(List.concat([20, 13, 15, 22, 39, 77], Text.show_int(head_or([], 0)))))
+	line!(Text.printed(List.concat([19, 13, 24, 16, 18, 22, 77], Text.show_int(second_or([5, 6, 7], 0)))))
+	line!(Text.printed(List.concat([19, 13, 24, 16, 18, 22, 39, 77], Text.show_int(second_or([5], 0)))))
+	line!(Text.printed(List.concat([19, 25, 26, 39, 77], Text.show_int(sum_list([])))))
 	Ok({})
 }

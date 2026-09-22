@@ -24,7 +24,7 @@ Ieee802154 :: [].{
 	ieee_addr_extended = 3
 
 	ieee_fcf : I64, I64, I64, I64, I64, I64, I64, I64 -> I64
-	ieee_fcf = |ftype, sec, pending, ackreq, pancomp, dest_mode, frame_ver, src_mode| I64.bitwise_or(I64.bitwise_or(I64.bitwise_or(I64.bitwise_or(ftype, U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(sec), U64.pow(2, I64.to_u64_wrap(3))))), I64.bitwise_or(U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(pending), U64.pow(2, I64.to_u64_wrap(4)))), U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(ackreq), U64.pow(2, I64.to_u64_wrap(5)))))), I64.bitwise_or(U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(pancomp), U64.pow(2, I64.to_u64_wrap(6)))), U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(dest_mode), U64.pow(2, I64.to_u64_wrap(10)))))), I64.bitwise_or(U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(frame_ver), U64.pow(2, I64.to_u64_wrap(12)))), U64.to_i64_wrap(U64.times_wrap(I64.to_u64_wrap(src_mode), U64.pow(2, I64.to_u64_wrap(14))))))
+	ieee_fcf = |ftype, sec, pending, ackreq, pancomp, dest_mode, frame_ver, src_mode| I64.bitwise_or(I64.bitwise_or(I64.bitwise_or(I64.bitwise_or(ftype, I64.shl_wrap(sec, I64.to_u8_wrap(3))), I64.bitwise_or(I64.shl_wrap(pending, I64.to_u8_wrap(4)), I64.shl_wrap(ackreq, I64.to_u8_wrap(5)))), I64.bitwise_or(I64.shl_wrap(pancomp, I64.to_u8_wrap(6)), I64.shl_wrap(dest_mode, I64.to_u8_wrap(10)))), I64.bitwise_or(I64.shl_wrap(frame_ver, I64.to_u8_wrap(12)), I64.shl_wrap(src_mode, I64.to_u8_wrap(14))))
 
 	ieee_fcs : List(I64) -> I64
 	ieee_fcs = |bs| ieee_fcs_loop(0, bs, 0, U64.to_i64_wrap(List.len(bs)))
@@ -33,10 +33,10 @@ Ieee802154 :: [].{
 	ieee_fcs_loop = |crc, bs, i, len| (if (i >= len) { crc } else { ieee_fcs_loop(ieee_fcs_byte(I64.bitwise_xor(crc, (List.get(bs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))), 0), bs, (i + 1), len) })
 
 	ieee_fcs_byte : I64, I64 -> I64
-	ieee_fcs_byte = |crc, k| (if (k >= 8) { crc } else { (if (I64.bitwise_and(crc, 1) == 1) { ieee_fcs_byte(I64.bitwise_xor(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(crc), U64.pow(2, I64.to_u64_wrap(1)))), 33800), (k + 1)) } else { ieee_fcs_byte(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(crc), U64.pow(2, I64.to_u64_wrap(1)))), (k + 1)) }) })
+	ieee_fcs_byte = |crc, k| (if (k >= 8) { crc } else { (if (I64.bitwise_and(crc, 1) == 1) { ieee_fcs_byte(I64.bitwise_xor(I64.shr_zf_wrap(crc, I64.to_u8_wrap(1)), 33800), (k + 1)) } else { ieee_fcs_byte(I64.shr_zf_wrap(crc, I64.to_u8_wrap(1)), (k + 1)) }) })
 
 	ieee_u16_le : I64 -> List(I64)
-	ieee_u16_le = |v| [I64.bitwise_and(v, 255), I64.bitwise_and(U64.to_i64_wrap(U64.div_by(I64.to_u64_wrap(v), U64.pow(2, I64.to_u64_wrap(8)))), 255)]
+	ieee_u16_le = |v| [I64.bitwise_and(v, 255), I64.bitwise_and(I64.shr_zf_wrap(v, I64.to_u8_wrap(8)), 255)]
 
 	ieee_build_data_short : I64, I64, I64, I64, List(I64) -> List(I64)
 	ieee_build_data_short = |seq, dest_pan, dest_addr, src_addr, payload| ({

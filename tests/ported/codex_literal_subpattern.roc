@@ -29,13 +29,15 @@
 #     bare-oth 69
 #     done
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # LiteralSubpattern -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Box_ : [BInt(I64), BText(Str), BFlag(Bool), BPair(I64, Str), BNone]
+Box_ : [BInt(I64), BText(List(U8)), BFlag(Bool), BPair(I64, List(U8)), BNone]
 
 by_int : Box_ -> I64
 by_int = |b| (match b {
@@ -48,8 +50,8 @@ by_int = |b| (match b {
 
 by_text : Box_ -> I64
 by_text = |b| (match b {
-	BText("sin") => 20
-	BText("cos") => 21
+	BText([19, 17, 18]) => 20
+	BText([24, 16, 19]) => 21
 	BText(_s) => 29
 	_ => 99
 })
@@ -64,7 +66,7 @@ by_flag = |b| (match b {
 by_pair : Box_ -> I64
 by_pair = |b| (match b {
 	BPair(0, _s) => 40
-	BPair(_n, "hit") => 41
+	BPair(_n, [20, 17, 14]) => 41
 	BPair(_n, _s) => 42
 	_ => 99
 })
@@ -76,10 +78,10 @@ bare_int = |n| (match n {
 	_ => 59
 })
 
-bare_text : Str -> I64
+bare_text : List(U8) -> I64
 bare_text = |t| (match t {
-	"sin" => 60
-	"cos" => 61
+	[19, 17, 18] => 60
+	[24, 16, 19] => 61
 	_ => 69
 })
 
@@ -110,24 +112,24 @@ eq_Box = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Str.concat("int-0 ", I64.to_str(by_int(BInt(0)))))
-	line!(Str.concat("int-1 ", I64.to_str(by_int(BInt(1)))))
-	line!(Str.concat("int-7 ", I64.to_str(by_int(BInt(7)))))
-	line!(Str.concat("int-n ", I64.to_str(by_int(BInt(3)))))
-	line!(Str.concat("txt-sin ", I64.to_str(by_text(BText("sin")))))
-	line!(Str.concat("txt-cos ", I64.to_str(by_text(BText("cos")))))
-	line!(Str.concat("txt-oth ", I64.to_str(by_text(BText("zzz")))))
-	line!(Str.concat("flag-t ", I64.to_str(by_flag(BFlag(True)))))
-	line!(Str.concat("flag-f ", I64.to_str(by_flag(BFlag(False)))))
-	line!(Str.concat("pair-0 ", I64.to_str(by_pair(BPair(0, "x")))))
-	line!(Str.concat("pair-hit ", I64.to_str(by_pair(BPair(5, "hit")))))
-	line!(Str.concat("pair-oth ", I64.to_str(by_pair(BPair(5, "x")))))
-	line!(Str.concat("bare-0 ", I64.to_str(bare_int(0))))
-	line!(Str.concat("bare-1 ", I64.to_str(bare_int(1))))
-	line!(Str.concat("bare-n ", I64.to_str(bare_int(4))))
-	line!(Str.concat("bare-sin ", I64.to_str(bare_text("sin"))))
-	line!(Str.concat("bare-cos ", I64.to_str(bare_text("cos"))))
-	line!(Str.concat("bare-oth ", I64.to_str(bare_text("zzz"))))
-	line!("done")
+	line!(Text.printed(List.concat([17, 18, 14, 73, 3, 2], Text.show_int(by_int(BInt(0))))))
+	line!(Text.printed(List.concat([17, 18, 14, 73, 4, 2], Text.show_int(by_int(BInt(1))))))
+	line!(Text.printed(List.concat([17, 18, 14, 73, 10, 2], Text.show_int(by_int(BInt(7))))))
+	line!(Text.printed(List.concat([17, 18, 14, 73, 18, 2], Text.show_int(by_int(BInt(3))))))
+	line!(Text.printed(List.concat([14, 36, 14, 73, 19, 17, 18, 2], Text.show_int(by_text(BText([19, 17, 18]))))))
+	line!(Text.printed(List.concat([14, 36, 14, 73, 24, 16, 19, 2], Text.show_int(by_text(BText([24, 16, 19]))))))
+	line!(Text.printed(List.concat([14, 36, 14, 73, 16, 14, 20, 2], Text.show_int(by_text(BText([38, 38, 38]))))))
+	line!(Text.printed(List.concat([28, 23, 15, 29, 73, 14, 2], Text.show_int(by_flag(BFlag(True))))))
+	line!(Text.printed(List.concat([28, 23, 15, 29, 73, 28, 2], Text.show_int(by_flag(BFlag(False))))))
+	line!(Text.printed(List.concat([31, 15, 17, 21, 73, 3, 2], Text.show_int(by_pair(BPair(0, [36]))))))
+	line!(Text.printed(List.concat([31, 15, 17, 21, 73, 20, 17, 14, 2], Text.show_int(by_pair(BPair(5, [20, 17, 14]))))))
+	line!(Text.printed(List.concat([31, 15, 17, 21, 73, 16, 14, 20, 2], Text.show_int(by_pair(BPair(5, [36]))))))
+	line!(Text.printed(List.concat([32, 15, 21, 13, 73, 3, 2], Text.show_int(bare_int(0)))))
+	line!(Text.printed(List.concat([32, 15, 21, 13, 73, 4, 2], Text.show_int(bare_int(1)))))
+	line!(Text.printed(List.concat([32, 15, 21, 13, 73, 18, 2], Text.show_int(bare_int(4)))))
+	line!(Text.printed(List.concat([32, 15, 21, 13, 73, 19, 17, 18, 2], Text.show_int(bare_text([19, 17, 18])))))
+	line!(Text.printed(List.concat([32, 15, 21, 13, 73, 24, 16, 19, 2], Text.show_int(bare_text([24, 16, 19])))))
+	line!(Text.printed(List.concat([32, 15, 21, 13, 73, 16, 14, 20, 2], Text.show_int(bare_text([38, 38, 38])))))
+	line!(Text.printed([22, 16, 18, 13]))
 	Ok({})
 }

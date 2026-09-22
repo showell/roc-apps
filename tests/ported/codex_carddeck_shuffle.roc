@@ -20,6 +20,7 @@
 app [main!] { cdx: "./codex/main.roc" }
 
 import cdx.CardDeck
+import cdx.Text
 
 # CardDeckShuffleTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -55,10 +56,10 @@ cdt_max = |xs, i, n, acc| (if (i >= n) { acc } else { ({
 	cdt_max(xs, (i + 1), n, (if (v > acc) { v } else { acc }))
 }) })
 
-cdt_fmt : List(I64), I64, I64, Str -> Str
+cdt_fmt : List(I64), I64, I64, List(U8) -> List(U8)
 cdt_fmt = |xs, i, n, acc| (if (i >= n) { acc } else { ({
-	sep = (if (i == 0) { "" } else { " " })
-	cdt_fmt(xs, (i + 1), n, Str.concat(Str.concat(acc, sep), I64.to_str((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))
+	sep = (if (i == 0) { [] } else { [2] })
+	cdt_fmt(xs, (i + 1), n, List.concat(List.concat(acc, sep), Text.show_int((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))
 }) })
 
 cdt_two : I64 -> I64
@@ -82,12 +83,12 @@ main! = |_args| {
 	lo = cdt_min(counts, 0, 8, 999999)
 	hi = cdt_max(counts, 0, 8, 0)
 	alt = cdt_alt(1, 256, 0)
-	line!(Str.concat("counts:        ", cdt_fmt(counts, 0, 8, "")))
-	line!(Str.concat("min:           ", I64.to_str(lo)))
-	line!(Str.concat("max:           ", I64.to_str(hi)))
-	line!(Str.concat("every pos hit: ", (if (lo > 0) { "True" } else { "False" })))
-	line!(Str.concat("within 3x:     ", (if (hi <= (lo * 3)) { "True" } else { "False" })))
-	line!(Str.concat("alternations:  ", I64.to_str(alt)))
-	line!(Str.concat("not a stripe:  ", (if (alt < 200) { "True" } else { "False" })))
+	line!(Text.printed(List.concat([24, 16, 25, 18, 14, 19, 69, 2, 2, 2, 2, 2, 2, 2, 2], cdt_fmt(counts, 0, 8, []))))
+	line!(Text.printed(List.concat([26, 17, 18, 69, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], Text.show_int(lo))))
+	line!(Text.printed(List.concat([26, 15, 36, 69, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], Text.show_int(hi))))
+	line!(Text.printed(List.concat([13, 33, 13, 21, 30, 2, 31, 16, 19, 2, 20, 17, 14, 69, 2], (if (lo > 0) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))))
+	line!(Text.printed(List.concat([27, 17, 14, 20, 17, 18, 2, 6, 36, 69, 2, 2, 2, 2, 2], (if (hi <= (lo * 3)) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))))
+	line!(Text.printed(List.concat([15, 23, 14, 13, 21, 18, 15, 14, 17, 16, 18, 19, 69, 2, 2], Text.show_int(alt))))
+	line!(Text.printed(List.concat([18, 16, 14, 2, 15, 2, 19, 14, 21, 17, 31, 13, 69, 2, 2], (if (alt < 200) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))))
 	Ok({})
 }

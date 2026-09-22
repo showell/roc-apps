@@ -25,6 +25,7 @@ app [main!] { cdx: "./codex/main.roc" }
 
 import cdx.Bezier
 import cdx.MathLib
+import cdx.Text
 
 # BezierIdentity -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -43,22 +44,22 @@ pc = { vx: 700, vy: 800, vz: 900 }
 pd : Bezier.BezVec
 pd = { vx: 1000, vy: 1100, vz: 1200 }
 
-fmt : Bezier.BezVec -> Str
-fmt = |p| Str.concat(Str.concat(Str.concat(Str.concat(I64.to_str(p.vx), ","), I64.to_str(p.vy)), ","), I64.to_str(p.vz))
+fmt : Bezier.BezVec -> List(U8)
+fmt = |p| List.concat(List.concat(List.concat(List.concat(Text.show_int(p.vx), [66]), Text.show_int(p.vy)), [66]), Text.show_int(p.vz))
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Str.concat("cubic-t0=", fmt(Bezier.bezier3_eval(pa, pb, pc, pd, 0))))
-	line!(Str.concat("cubic-t1000=", fmt(Bezier.bezier3_eval(pa, pb, pc, pd, 1000))))
-	line!(Str.concat("cubic-mid=", fmt(Bezier.bezier3_eval(pa, pb, pc, pd, 500))))
-	line!(Str.concat("quad-t0=", fmt(Bezier.bezier2_eval(pa, pb, pc, 0))))
-	line!(Str.concat("quad-t1000=", fmt(Bezier.bezier2_eval(pa, pb, pc, 1000))))
-	line!(Str.concat("quad-mid=", fmt(Bezier.bezier2_eval(pa, pb, pc, 500))))
-	line!(Str.concat("degen-cubic-250=", fmt(Bezier.bezier3_eval(pa, pa, pa, pa, 250))))
-	line!(Str.concat("degen-cubic-500=", fmt(Bezier.bezier3_eval(pa, pa, pa, pa, 500))))
-	line!(Str.concat("degen-cubic-750=", fmt(Bezier.bezier3_eval(pa, pa, pa, pa, 750))))
-	line!(Str.concat("degen-quad-500=", fmt(Bezier.bezier2_eval(pa, pa, pa, 500))))
-	line!(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat("math-isqrt=", I64.to_str(MathLib.math_isqrt(0))), " "), I64.to_str(MathLib.math_isqrt(144))), " "), I64.to_str(MathLib.math_isqrt(1000000))))
+	line!(Text.printed(List.concat([24, 25, 32, 17, 24, 73, 14, 3, 77], fmt(Bezier.bezier3_eval(pa, pb, pc, pd, 0)))))
+	line!(Text.printed(List.concat([24, 25, 32, 17, 24, 73, 14, 4, 3, 3, 3, 77], fmt(Bezier.bezier3_eval(pa, pb, pc, pd, 1000)))))
+	line!(Text.printed(List.concat([24, 25, 32, 17, 24, 73, 26, 17, 22, 77], fmt(Bezier.bezier3_eval(pa, pb, pc, pd, 500)))))
+	line!(Text.printed(List.concat([37, 25, 15, 22, 73, 14, 3, 77], fmt(Bezier.bezier2_eval(pa, pb, pc, 0)))))
+	line!(Text.printed(List.concat([37, 25, 15, 22, 73, 14, 4, 3, 3, 3, 77], fmt(Bezier.bezier2_eval(pa, pb, pc, 1000)))))
+	line!(Text.printed(List.concat([37, 25, 15, 22, 73, 26, 17, 22, 77], fmt(Bezier.bezier2_eval(pa, pb, pc, 500)))))
+	line!(Text.printed(List.concat([22, 13, 29, 13, 18, 73, 24, 25, 32, 17, 24, 73, 5, 8, 3, 77], fmt(Bezier.bezier3_eval(pa, pa, pa, pa, 250)))))
+	line!(Text.printed(List.concat([22, 13, 29, 13, 18, 73, 24, 25, 32, 17, 24, 73, 8, 3, 3, 77], fmt(Bezier.bezier3_eval(pa, pa, pa, pa, 500)))))
+	line!(Text.printed(List.concat([22, 13, 29, 13, 18, 73, 24, 25, 32, 17, 24, 73, 10, 8, 3, 77], fmt(Bezier.bezier3_eval(pa, pa, pa, pa, 750)))))
+	line!(Text.printed(List.concat([22, 13, 29, 13, 18, 73, 37, 25, 15, 22, 73, 8, 3, 3, 77], fmt(Bezier.bezier2_eval(pa, pa, pa, 500)))))
+	line!(Text.printed(List.concat(List.concat(List.concat(List.concat(List.concat([26, 15, 14, 20, 73, 17, 19, 37, 21, 14, 77], Text.show_int(MathLib.math_isqrt(0))), [2]), Text.show_int(MathLib.math_isqrt(144))), [2]), Text.show_int(MathLib.math_isqrt(1000000)))))
 	Ok({})
 }
