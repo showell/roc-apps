@@ -12,12 +12,21 @@
 # wins. A line stops where the hand is refilled, so the agent never looks at
 # a card it has not drawn.
 #
-# **THE HEURISTIC** is distance: how many steps each piece has left to the
-# deepest square of its own base, walking the board's real graph on an empty
-# board. Waiting in the pen for a card that lets a piece out, and in the
+# **THE HEURISTIC** starts from distance: how many steps each piece has left
+# to the deepest square of its own base, walking the board's real graph on an
+# empty board. Waiting in the pen for a card that lets a piece out, and in the
 # bullseye for a face card, cost extra steps. A position is worth the
 # opponents' distance less four times the mover's own, so sending a piece
-# home counts, but moving your own counts more.
+# home counts, but moving your own counts more. Three weighted terms, in the
+# same units (a step of the mover's own is 4), are the mover's alone:
+#
+#   - `danger`, for each piece an opponent could land on next: one card away
+#     from an opponent piece (1 to 10 forward, 4 back, out of the pen);
+#   - `out_of_pen`, for each piece out of the pen;
+#   - `home`, for each piece in its base, where nothing can touch it.
+#
+# The weights are a seat's own (FastTrack.Seat), so two computers with
+# different ones can race (web/race.mjs).
 import Config
 import Piece
 import Game
@@ -28,6 +37,19 @@ import Type
 
 Agent :: [].{
 	Line : { game : Type.Game, msgs : List(Type.GameMsg), drew : Bool }
+
+	Weights : { danger : I64, out_of_pen : I64, home : I64 }
+
+	## The weights a computer seat plays with unless told otherwise.
+	default_weights : Agent.Weights
+	default_weights = { danger: 0, out_of_pen: 0, home: 0 }
+
+	## Where an opponent piece could land with one card: `lands` from
+	## `from`, while a piece of `color` is still there.
+	Threat : { from : Type.PieceLocation, color : Str, lands : List(Type.PieceLocation) }
+
+	## What a plan's scoring needs that does not change inside a turn.
+	Context : { tabs : Agent.Tables, threats : List(Agent.Threat), weights : Agent.Weights, color : Str }
 
 	## Extra steps for waiting on A, 6 or joker to leave the pen.
 	pen_wait : I64
@@ -131,17 +153,78 @@ Agent :: [].{
 			Err(_) => far
 		}
 
-	## Higher is better for `color`.
-	score : Agent.Tables, Type.Game, Str -> I64
-	score = |tabs, game, color|
+	## Every square an opponent piece could land on with one card, from the
+	## position a turn starts in. An opponent with a piece on the fast track
+	## must move that one, so its others threaten nothing.
+	threats : Type.Game, Str -> List(Agent.Threat)
+	threats = |game, mover|
+		List.join_map(
+			game.piece_map,
+			|entry| {
+				color = entry.value
+				loc = entry.key
+				on_fast_track = loc.id == "FT"
+				if color == mover or Config.is_base_id(loc.id) or (!on_fast_track and Piece.has_piece_on_fast_track(game.piece_map, color)) {
+					[]
+				} else {
+					params = {
+						reverse_mode: Bool.False,
+						can_fast_track: on_fast_track,
+						can_leave_pen: Bool.True,
+						can_leave_bulls_eye: Bool.True,
+						piece_color: color,
+						piece_map: game.piece_map,
+						zone_colors: game.zone_colors,
+					}
+					lands =
+						if Config.is_holding_pen_id(loc.id) or loc.zone == BullsEyeZone {
+							LegalMove.end_locations(params, loc, 1)
+						} else {
+							forward = List.join_map([1, 2, 3, 5, 6, 7, 8, 9, 10], |n| LegalMove.end_locations(params, loc, n))
+							List.concat(forward, LegalMove.end_locations({ ..params, reverse_mode: Bool.True }, loc, 4))
+						}
+					[{ from: loc, color, lands }]
+				}
+			},
+		)
+
+	## A piece of the mover's on the open track that an opponent, still where
+	## it was, could land on.
+	endangered : Agent.Context, Type.Game, Type.PieceLocation -> Bool
+	endangered = |ctx, game, loc|
+		if Config.is_holding_pen_id(loc.id) or Config.is_base_id(loc.id) {
+			Bool.False
+		} else {
+			List.any(ctx.threats, |t| List.contains(t.lands, loc) and Piece.get_piece(game.piece_map, t.from) == Ok(t.color))
+		}
+
+	context : Agent.Weights, Type.Game -> Agent.Context
+	context = |weights, game| {
+		color = Player.get_active_player(game).color
+		{ tabs: tables(game.zone_colors), threats: threats(game, color), weights, color }
+	}
+
+	## Higher is better for the mover.
+	score : Agent.Context, Type.Game -> I64
+	score = |ctx, game| {
+		w = ctx.weights
 		List.fold(
 			game.piece_map,
 			0,
 			|total, entry| {
-				steps = steps_left(tabs, game.zone_colors, entry.value, entry.key)
-				if entry.value == color { total - 4 * steps } else { total + steps }
+				loc = entry.key
+				steps = steps_left(ctx.tabs, game.zone_colors, entry.value, loc)
+				if entry.value == ctx.color {
+					out = if Config.is_holding_pen_id(loc.id) { 0 } else { w.out_of_pen }
+					home = if Config.is_base_id(loc.id) { w.home } else { 0 }
+					danger = if w.danger != 0 and endangered(ctx, game, loc) { w.danger } else { 0 }
+					total - 4 * steps + out + home - danger
+				} else {
+					total + steps
+				}
 			},
 		)
+	}
 
 	## Every choice the turn offers now, one per distinct card.
 	options : Type.Game -> List(Type.GameMsg)
@@ -220,9 +303,9 @@ Agent :: [].{
 	expand : Agent.Line -> List(Agent.Line)
 	expand = |line| List.join_map(options(line.game), |msg| settle(apply(line, msg)))
 
-	best_first : Agent.Tables, Str, List(Agent.Line) -> List(Agent.Line)
-	best_first = |tabs, color, lines| {
-		scored = List.map_with_index(lines, |line, i| { line, value: score(tabs, line.game, color), i })
+	best_first : Agent.Context, List(Agent.Line) -> List(Agent.Line)
+	best_first = |ctx, lines| {
+		scored = List.map_with_index(lines, |line, i| { line, value: score(ctx, line.game), i })
 		sorted = List.sort_with(
 			scored,
 			|a, b|
@@ -247,20 +330,19 @@ Agent :: [].{
 		List.fold(lines, [], |kept, line| if List.any(kept, |k| k.game == line.game) { kept } else { List.append(kept, line) })
 
 	## The messages of the best line through the rest of this turn.
-	plan : Type.Game -> List(Type.GameMsg)
-	plan = |game| {
-		tabs = tables(game.zone_colors)
-		color = Player.get_active_player(game).color
+	plan : Agent.Weights, Type.Game -> List(Type.GameMsg)
+	plan = |weights, game| {
+		ctx = context(weights, game)
 		var $level = settle({ game, msgs: [], drew: Bool.False })
 		var $finished = []
 		var $depth = 0
 		while List.any($level, is_open) and $depth < 8 {
 			$finished = List.concat($finished, List.drop_if($level, is_open))
 			grown = List.join_map(List.keep_if($level, is_open), expand)
-			$level = List.take_first(best_first(tabs, color, distinct_lines(grown)), beam_width)
+			$level = List.take_first(best_first(ctx, distinct_lines(grown)), beam_width)
 			$depth = $depth + 1
 		}
-		match List.first(best_first(tabs, color, List.concat($finished, $level))) {
+		match List.first(best_first(ctx, List.concat($finished, $level))) {
 			Ok(line) => line.msgs
 			Err(_) => []
 		}
@@ -269,14 +351,14 @@ Agent :: [].{
 	## The next click for the computer, or the naive player that always takes
 	## the first choice it is offered (the baseline the computer is measured
 	## against). A finished turn is passed to the next player.
-	next_msg : [Computer, Naive], Type.Game -> Try(Type.GameMsg, [NothingToDo])
+	next_msg : [Computer(Agent.Weights), Naive], Type.Game -> Try(Type.GameMsg, [NothingToDo])
 	next_msg = |kind, game| {
 		player = Player.get_active_player(game)
 		if player.turn == TurnDone {
 			Ok(RotateBoard)
 		} else {
 			choices = match kind {
-				Computer => plan(game)
+				Computer(weights) => plan(weights, game)
 				Naive => options(game)
 			}
 			match List.first(choices) {
@@ -308,7 +390,24 @@ expect {
 	piece_map = [{ key: { zone: NormalColor("red"), id: "L0" }, value: "red" }, { key: { zone: NormalColor("red"), id: "L3" }, value: "blue" }]
 	players = Player.update_player(start.players, 0, |p| { ..p, hand: ["2", "3"], turn: TurnBegin })
 	game = Player.set_turn_to_need_card({ ..start, piece_map, players })
-	finished = List.fold(Agent.plan(game), game, |g, msg| Game.update_game(msg, History.init, g).1)
+	finished = List.fold(Agent.plan(Agent.default_weights, game), game, |g, msg| Game.update_game(msg, History.init, g).1)
 	Piece.get_piece(finished.piece_map, { zone: NormalColor("red"), id: "L3" }) == Ok("red")
 	and Piece.get_piece(finished.piece_map, { zone: NormalColor("blue"), id: "HP1" }) == Ok("blue")
+}
+
+# Red's piece on red's L2: a blue piece on red's L0 lands on it with a 2; one
+# on red's L3 cannot -- forward it is a lap away, and a 4 back lands on HH.
+expect {
+	start = Game.begin_game(0, Normal)
+	piece_map = [{ key: { zone: NormalColor("red"), id: "L2" }, value: "red" }, { key: { zone: NormalColor("red"), id: "L0" }, value: "blue" }]
+	game = { ..start, piece_map }
+	ctx = Agent.context({ danger: 1, out_of_pen: 0, home: 0 }, game)
+	Agent.endangered(ctx, game, { zone: NormalColor("red"), id: "L2" })
+}
+expect {
+	start = Game.begin_game(0, Normal)
+	piece_map = [{ key: { zone: NormalColor("red"), id: "L2" }, value: "red" }, { key: { zone: NormalColor("red"), id: "L3" }, value: "blue" }]
+	game = { ..start, piece_map }
+	ctx = Agent.context({ danger: 1, out_of_pen: 0, home: 0 }, game)
+	!Agent.endangered(ctx, game, { zone: NormalColor("red"), id: "L2" })
 }

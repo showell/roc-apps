@@ -26,6 +26,7 @@ const FastTrack = (() => {
     return {
       start: (millis, setup, seats) => ex.start(millis, setup, seats),
       click: (code) => ex.update(code),
+      tune: (seat, factor, value) => ex.tune(seat, factor, value),
       // **computeView FIRST, THEN THE DataView.** Building a view can grow
       // wasm memory, which detaches every view of the old buffer.
       view: () => {

@@ -14,7 +14,7 @@ import Setup
 import Type
 
 FastTrack :: [].{
-	Seat : [Human, Computer, Naive]
+	Seat : [Human, Computer(Agent.Weights), Naive]
 
 	Model : { game : Type.Game, history : History.History(Type.Game), seats : List(FastTrack.Seat) }
 
@@ -26,7 +26,7 @@ FastTrack :: [].{
 			[0, 1, 2, 3],
 			|i|
 				match U32.bitwise_and(U32.shr_zf_wrap(bits, 2 * i), 3) {
-					1 => Computer
+					1 => Computer(Agent.default_weights)
 					2 => Naive
 					_ => Human
 				},
@@ -34,6 +34,32 @@ FastTrack :: [].{
 
 	seat : FastTrack.Model -> FastTrack.Seat
 	seat = |model| List.get(model.seats, model.game.active_player_idx) ?? Human
+
+	## One weight of one computer seat: `factor` 0 is danger, 1 out of the
+	## pen, 2 home (Agent.Weights). Anything else, or a seat that is not the
+	## computer's, is left alone.
+	tune : FastTrack.Model, U32, U32, U32 -> FastTrack.Model
+	tune = |model, seat_idx, factor, value| {
+		v = U32.to_i64(value)
+		retuned = List.map_with_index(
+			model.seats,
+			|s, i|
+				match s {
+					Computer(w) if i == U32.to_u64(seat_idx) =>
+						if factor == 0 {
+							Computer({ ..w, danger: v })
+						} else if factor == 1 {
+							Computer({ ..w, out_of_pen: v })
+						} else if factor == 2 {
+							Computer({ ..w, home: v })
+						} else {
+							s
+						}
+					_ => s
+				},
+		)
+		{ ..model, seats: retuned }
+	}
 
 	## The computer's seat, unless someone has won.
 	agent_to_move : FastTrack.Model -> Bool
@@ -57,7 +83,10 @@ FastTrack :: [].{
 		msg =
 			if code == Codes.agent_step {
 				if agent_to_move(model) {
-					kind = if seat(model) == Naive { Naive } else { Computer }
+					kind = match seat(model) {
+						Computer(w) => Computer(w)
+						_ => Naive
+					}
 					Try.map_err(Agent.next_msg(kind, model.game), |_| Ignored)
 				} else {
 					Err(Ignored)
@@ -93,12 +122,14 @@ FastTrack :: [].{
 	program : {
 		init : U64, U32, U32 -> Box(FastTrack.Model),
 		update : Box(FastTrack.Model), U32 -> Box(FastTrack.Model),
+		tune : Box(FastTrack.Model), U32, U32, U32 -> Box(FastTrack.Model),
 		view : Box(FastTrack.Model) -> Box(Wire.View),
 		release : Box(Wire.View) -> {},
 	}
 	program = {
 		init: |millis, setup, seat_bits| Box.box(init(millis, setup, seat_bits)),
 		update: |b, code| Box.box(update(Box.unbox(b), code)),
+		tune: |b, seat_idx, factor, value| Box.box(tune(Box.unbox(b), seat_idx, factor, value)),
 		view: |b| Box.box(view(Box.unbox(b))),
 		release: |_view| {},
 	}

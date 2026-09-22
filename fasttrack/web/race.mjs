@@ -1,0 +1,72 @@
+// race -- two computers with different weights, over many deals.
+//
+//   A=danger=40 B=danger=0 DEALS=40 node fasttrack/web/race.mjs <build-dir>
+//
+// A weight spec is `danger=<n>,out=<n>,home=<n>` (Agent.Weights, in the
+// agent's units: a step of the mover's own is 4); a factor left out is 0.
+// Every deal is played twice, as abab and baba, so neither side keeps the
+// seats that move first; with DEALS=40 that is 80 games. The games are split
+// between two worker threads, one per core. A game past CAP clicks is a draw.
+//
+// It prints A's share of the decided games, with its standard error.
+import { readFileSync } from "node:fs";
+import { Worker, isMainThread, parentPort, workerData } from "node:worker_threads";
+import vm from "node:vm";
+
+const FACTORS = { danger: 0, out: 1, home: 2 };
+const COLORS = ["red", "blue", "green", "purple"];
+
+function parse(spec) {
+  const w = [0, 0, 0];
+  for (const part of (spec ?? "").split(",").filter(Boolean)) {
+    const [name, value] = part.split("=");
+    if (!(name in FACTORS)) throw new Error(`race: no factor ${name}`);
+    w[FACTORS[name]] = Number(value);
+  }
+  return w;
+}
+
+// One game: seats 0..3 take the weights `order` names, "abab" or "baba".
+function play(FastTrack, module, seed, order, weights, cap) {
+  const g = FastTrack.game(new WebAssembly.Instance(module, {}));
+  g.start(seed, 0, FastTrack.seatBits("cccc"));
+  [...order].forEach((side, seat) => weights[side].forEach((v, factor) => g.tune(seat, factor, v)));
+  let view = g.view();
+  let clicks = 0;
+  while (view.winner === "" && clicks < cap) {
+    g.click(view.tick);
+    view = g.view();
+    clicks++;
+  }
+  return view.winner === "" ? "draw" : order[COLORS.indexOf(view.winner)];
+}
+
+if (isMainThread) {
+  const dir = process.argv[2];
+  if (!dir) { console.error("usage: A=<spec> B=<spec> node race.mjs <build-dir>"); process.exit(2); }
+  const deals = Number(process.env.DEALS ?? 40);
+  const first = Number(process.env.FIRST ?? 1);
+  const weights = { a: parse(process.env.A), b: parse(process.env.B) };
+  const jobs = [];
+  for (let seed = first; seed < first + deals; seed++) for (const order of ["abab", "baba"]) jobs.push({ seed, order });
+  const started = Date.now();
+  const halves = [jobs.filter((_, i) => i % 2 === 0), jobs.filter((_, i) => i % 2 === 1)];
+  const results = (await Promise.all(halves.map((part) => new Promise((resolve, reject) => {
+    const w = new Worker(new URL(import.meta.url), { workerData: { dir, jobs: part, weights, cap: Number(process.env.CAP ?? 20000) } });
+    w.on("message", resolve);
+    w.on("error", reject);
+  })))).flat();
+  const count = (x) => results.filter((r) => r === x).length;
+  const a = count("a"), b = count("b"), draws = count("draw");
+  const n = a + b;
+  const p = n ? a / n : 0;
+  const se = n ? Math.sqrt(p * (1 - p) / n) : 0;
+  console.log(`A {${process.env.A ?? ""}} vs B {${process.env.B ?? ""}}: A won ${a}, B won ${b}, ${draws} draws -- A ${(100 * p).toFixed(1)}% +- ${(100 * se).toFixed(1)} (${((Date.now() - started) / 1000).toFixed(0)} s)`);
+} else {
+  const { dir, jobs, weights, cap } = workerData;
+  const context = vm.createContext({ TextDecoder, DataView, Uint8Array, console });
+  vm.runInContext(readFileSync(`${dir}/roc_glue.js`, "utf8") + "\nglobalThis.RocGlue = RocGlue;", context);
+  vm.runInContext(readFileSync(new URL("./fasttrack.js", import.meta.url), "utf8") + "\nglobalThis.FastTrack = FastTrack;", context);
+  const module = new WebAssembly.Module(readFileSync(`${dir}/fasttrack.wasm`));
+  parentPort.postMessage(jobs.map(({ seed, order }) => play(context.FastTrack, module, seed, order, weights, cap)));
+}

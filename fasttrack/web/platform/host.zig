@@ -1,4 +1,4 @@
-//! The fasttrack wasm host: three exports over a Roc model it holds as one
+//! The fasttrack wasm host: four exports over a Roc model it holds as one
 //! boxed pointer. The page calls `start` once, `update` for every click (and
 //! for every tick the view asks for), and `computeView` after each, and reads
 //! the view through the generated glue.
@@ -22,6 +22,7 @@ const RocOps = builtins.host_abi.RocOps;
 
 extern fn roc_init(millis: u64, setup: u32, seats: u32) callconv(.c) ?[*]u8;
 extern fn roc_update(model: ?[*]u8, code: u32) callconv(.c) ?[*]u8;
+extern fn roc_tune(model: ?[*]u8, seat: u32, factor: u32, value: u32) callconv(.c) ?[*]u8;
 extern fn roc_view(model: ?[*]u8) callconv(.c) ?[*]u8;
 extern fn roc_release(view: ?[*]u8) callconv(.c) void;
 
@@ -106,6 +107,11 @@ pub export fn start(millis: f64, setup: u32, seats: u32) void {
 /// One click: the code the view gave the thing clicked.
 pub export fn update(code: u32) void {
     model = roc_update(model, code);
+}
+
+/// One weight of one computer seat (FastTrack.tune); for races, not pages.
+pub export fn tune(seat: u32, factor: u32, value: u32) void {
+    model = roc_tune(model, seat, factor, value);
 }
 
 /// **THIS IS THE EFFECT**, which is why it is a verb: it releases the last
