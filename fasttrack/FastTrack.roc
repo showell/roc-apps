@@ -38,8 +38,8 @@ FastTrack :: [].{
 	seat = |model| List.get(model.seats, model.game.active_player_idx) ?? Human
 
 	## One weight of one computer seat: `factor` 0 is danger, 1 out of the
-	## pen, 2 home, 3 the cost of a fast-track hop, 4 the wait in the pen
-	## (Agent.Weights). Anything else, or a seat that is not the
+	## pen, 2 home, 3 the cost of a fast-track hop, 4 the wait in the pen,
+	## 5 the cost of a 4 played backwards (Agent.Weights). Anything else, or a seat that is not the
 	## computer's, is left alone.
 	tune : FastTrack.Model, U32, U32, U32 -> FastTrack.Model
 	tune = |model, seat_idx, factor, value| {
@@ -61,6 +61,8 @@ FastTrack :: [].{
 								{ ..w, hop: v }
 							} else if factor == 4 {
 								{ ..w, pen: v }
+							} else if factor == 5 {
+								{ ..w, back4: v }
 							} else {
 								w
 							}

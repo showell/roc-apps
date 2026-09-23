@@ -51,12 +51,12 @@ import Type
 Agent :: [].{
 	Line : { game : Type.Game, msgs : List(Type.GameMsg), drew : Bool }
 
-	Weights : { danger : I64, out_of_pen : I64, home : I64, hop : I64, pen : I64 }
+	Weights : { danger : I64, out_of_pen : I64, home : I64, hop : I64, pen : I64, back4 : I64 }
 
 	## The weights a computer seat plays with unless told otherwise: the
 	## winners of the races in TUNING.md.
 	default_weights : Agent.Weights
-	default_weights = { danger: 0, out_of_pen: 0, home: 10, hop: 1, pen: 4 }
+	default_weights = { danger: 0, out_of_pen: 0, home: 10, hop: 1, pen: 4, back4: 0 }
 
 	## Extra steps for waiting on J, Q or K to leave the bullseye.
 	bulls_eye_wait : I64
@@ -102,50 +102,89 @@ Agent :: [].{
 		zone_colors,
 	}
 
-	## Steps left for a piece of `color` on each square, indexed as `all_locs`:
-	## Bellman-Ford over the empty board's edges, walked backwards from B4.
-	## `pen` is the extra steps a piece waits in the pen for an A, 6 or joker.
-	distances : List(Str), Str, I64, I64 -> List(I64)
-	distances = |zone_colors, color, hop, pen| {
+	## A zone's squares from its R4 to its DS: the last stretch before the base.
+	home_stretch : List(Str)
+	home_stretch = ["R4", "R3", "R2", "R1", "R0", "BR", "DS"]
+
+	## One edge of a piece's way home, and what kind of step it is.
+	Edge : { from : U64, to : U64, cost : I64, kind : [Walk, Hop, LeavePen, LeaveBullsEye, Back4] }
+
+	## The board as a piece of `color` sees it on an empty board, every edge
+	## costed: a walk 1; a fast-track hop, or entering the bullseye, `hop`
+	## (both need an exact landing); leaving the pen 1 + `pen`, the wait for
+	## an A, 6 or joker; leaving the bullseye 1 + the wait for a face card;
+	## and, when `back4` is not 0, a 4 played backwards, `back4` -- coming out
+	## of the pen and going back 4 puts a piece on its own R0, 6 from home.
+	## Only a 4 that lands a piece in its own home stretch counts: chaining
+	## 4s backwards round the board is no plan anyone can deal themselves.
+	graph : List(Str), Str, I64, I64, I64 -> List(Agent.Edge)
+	graph = |zone_colors, color, hop, pen, back4| {
 		locs = all_locs(zone_colors)
 		params = free_params(zone_colors, color, Bool.True)
-		edges = List.join(
+		forward = List.join(
 			List.map_with_index(
 				locs,
 				|loc, from|
 					List.map(
 						LegalMove.get_next_locs(params, loc),
 						|next| {
-							cost =
-								if Config.is_holding_pen_id(loc.id) {
-									1 + pen
-								} else if loc.zone == BullsEyeZone {
-									1 + bulls_eye_wait
-								} else if loc.id == "FT" and (next.id == "FT" or next.zone == BullsEyeZone) {
-									hop
-								} else {
-									1
-								}
-							{ from, to: index_of(zone_colors, next), cost }
+							to = index_of(zone_colors, next)
+							if Config.is_holding_pen_id(loc.id) {
+								{ from, to, cost: 1 + pen, kind: LeavePen }
+							} else if loc.zone == BullsEyeZone {
+								{ from, to, cost: 1 + bulls_eye_wait, kind: LeaveBullsEye }
+							} else if loc.id == "FT" and (next.id == "FT" or next.zone == BullsEyeZone) {
+								{ from, to, cost: hop, kind: Hop }
+							} else {
+								{ from, to, cost: 1, kind: Walk }
+							}
 						},
 					),
 			),
 		)
+		backwards =
+			if back4 == 0 {
+				[]
+			} else {
+				back_params = { ..free_params(zone_colors, color, Bool.False), reverse_mode: Bool.True }
+				List.join(
+					List.map_with_index(
+						locs,
+						|loc, from|
+							LegalMove.end_locations(back_params, loc, 4)
+							.keep_if(|back| back.zone == NormalColor(color) and List.contains(home_stretch, back.id))
+							.map(|back| { from, to: index_of(zone_colors, back), cost: back4, kind: Back4 }),
+					),
+				)
+			}
+		List.concat(forward, backwards)
+	}
+
+	## For every square, indexed as `all_locs`: the steps left to B4 and the
+	## first edge of the shortest way there (`first` is meaningless where
+	## `steps` is 0 or `far`). Bellman-Ford over `graph`, walked backwards
+	## from B4.
+	Route : { steps : I64, first : Agent.Edge }
+
+	routes : List(Str), Str, I64, I64, I64 -> List(Agent.Route)
+	routes = |zone_colors, color, hop, pen, back4| {
+		edges = graph(zone_colors, color, hop, pen, back4)
+		none = { from: 0, to: 0, cost: 0, kind: Walk }
 		home = index_of(zone_colors, { zone: NormalColor(color), id: "B4" })
-		start = List.set(List.repeat(far, List.len(locs)), home, 0) ?? crash("Agent.distances: no home square")
+		start = List.set(List.repeat({ steps: far, first: none }, List.len(all_locs(zone_colors))), home, { steps: 0, first: none }) ?? crash("Agent.routes: no home square")
 		# A pass says whether it changed anything. **NOT `while $next != $d`**:
-		# with the pass a closure over `edges`, the LLVM build (nightly 09-07)
-		# lets it write into the list `$d` still names, so the two compare
-		# equal after one pass and every square but B3 and B4 stays `far`.
-		# The dev build gets it right (findings/llvm-closure-loop-alias).
+		# with the pass a closure over the edges, the LLVM build (nightly
+		# 09-07) lets it write into the list `$d` still names, so the two
+		# compare equal after one pass and every square but B3 and B4 stays
+		# `far`. The dev build gets it right (findings/llvm-closure-loop-alias).
 		relax = |d|
 			List.fold(
 				edges,
 				{ d, changed: Bool.False },
 				|acc, e| {
-					via = (List.get(acc.d, e.to) ?? far) + e.cost
-					if via < (List.get(acc.d, e.from) ?? far) {
-						{ d: List.set(acc.d, e.from, via) ?? crash("Agent.distances: edge out of range"), changed: Bool.True }
+					via = (List.get(acc.d, e.to) ?? { steps: far, first: none }).steps + e.cost
+					if via < (List.get(acc.d, e.from) ?? { steps: far, first: none }).steps {
+						{ d: List.set(acc.d, e.from, { steps: via, first: e }) ?? crash("Agent.routes: edge out of range"), changed: Bool.True }
 					} else {
 						acc
 					}
@@ -157,6 +196,10 @@ Agent :: [].{
 		}
 		$pass.d
 	}
+
+	## Steps left for a piece of `color` on each square, indexed as `all_locs`.
+	distances : List(Str), Str, I64, I64, I64 -> List(I64)
+	distances = |zone_colors, color, hop, pen, back4| List.map(routes(zone_colors, color, hop, pen, back4), |r| r.steps)
 
 	## Every square a piece of `color` on each square could land on with one
 	## card, indexed as `all_locs`, on an empty board.
@@ -184,7 +227,7 @@ Agent :: [].{
 	knowledge : Agent.Weights, List(Str) -> Agent.Knowledge
 	knowledge = |weights, zone_colors| {
 		weights,
-		steps: List.map(zone_colors, |color| distances(zone_colors, color, weights.hop, weights.pen)),
+		steps: List.map(zone_colors, |color| distances(zone_colors, color, weights.hop, weights.pen, weights.back4)),
 		reach: List.map(zone_colors, |color| reach(zone_colors, color)),
 	}
 
@@ -436,13 +479,13 @@ Agent :: [].{
 # L0; the bullseye the wait and one step before purple's FT (11).
 expect {
 	colors = ["red", "blue", "green", "purple"]
-	d = Agent.distances(colors, "red", 1, 4)
+	d = Agent.distances(colors, "red", 1, 4, 0)
 	at = |zone, id| List.get(d, Agent.index_of(colors, { zone: NormalColor(zone), id })) ?? 0
 	at("red", "B4") == 0 and at("red", "B1") == 3 and at("red", "FT") == 14 and at("red", "L0") == 19 and at("red", "HP1") == 24 and at("purple", "FT") == 11
 }
 expect {
 	colors = ["red", "blue", "green", "purple"]
-	List.get(Agent.distances(colors, "red", 1, 4), Agent.index_of(colors, { zone: BullsEyeZone, id: "bullseye" })) == Ok(18)
+	List.get(Agent.distances(colors, "red", 1, 4, 0), Agent.index_of(colors, { zone: BullsEyeZone, id: "bullseye" })) == Ok(18)
 }
 
 # Steve's two squares: six past red's pen without the bullseye is blue's R4,
@@ -451,9 +494,18 @@ expect {
 # being out and stuck on blue's R4, which is what the `pen` weight is for.
 expect {
 	colors = ["red", "blue", "green", "purple"]
-	d = Agent.distances(colors, "red", 1, 4)
+	d = Agent.distances(colors, "red", 1, 4, 0)
 	at = |zone, id| List.get(d, Agent.index_of(colors, { zone: NormalColor(zone), id })) ?? 0
 	at("blue", "R4") == 26 and at("blue", "FT") == 13 and at("red", "HP1") == 24
+}
+
+# Steve: out of the pen and back 4 is the game's best legal cheat. With the
+# 4 costing one step, red's L0 is 7: back to red's R0, then BR, DS and B1..B4.
+expect {
+	colors = ["red", "blue", "green", "purple"]
+	d = Agent.distances(colors, "red", 1, 4, 1)
+	at = |zone, id| List.get(d, Agent.index_of(colors, { zone: NormalColor(zone), id })) ?? 0
+	at("red", "L0") == 7 and at("red", "R0") == 6 and at("red", "HP1") == 12
 }
 
 # With a hop as dear as walking a zone (14), red's FT is 32 from home: into
@@ -461,7 +513,7 @@ expect {
 # Walking the three zones would be 42 + 11.
 expect {
 	colors = ["red", "blue", "green", "purple"]
-	List.get(Agent.distances(colors, "red", 14, 4), Agent.index_of(colors, { zone: NormalColor("red"), id: "FT" })) == Ok(32)
+	List.get(Agent.distances(colors, "red", 14, 4, 0), Agent.index_of(colors, { zone: NormalColor("red"), id: "FT" })) == Ok(32)
 }
 
 # With a 2 and a 3, red takes the 3 that lands on blue and sends it home.
