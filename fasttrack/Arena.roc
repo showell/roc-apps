@@ -119,10 +119,10 @@ Arena :: [].{
 	}
 
 	## One player's game, to the first player home.
-	Tally : { won : Bool, turns : U64, idle : U64, cards : U64, ft_landings : U64, ft_hops : U64, captures : U64, captured : U64, played : List(Str), discarded : List(Str) }
+	Tally : { won : Bool, turns : U64, idle : U64, cards : U64, ft_landings : U64, ft_hops : U64, captures : U64, captured : U64, played : List(Str), discarded : List(Str), in_hand : List(Str) }
 
 	no_tally : Arena.Tally
-	no_tally = { won: Bool.False, turns: 0, idle: 0, cards: 0, ft_landings: 0, ft_hops: 0, captures: 0, captured: 0, played: [], discarded: [] }
+	no_tally = { won: Bool.False, turns: 0, idle: 0, cards: 0, ft_landings: 0, ft_hops: 0, captures: 0, captured: 0, played: [], discarded: [], in_hand: [] }
 
 	## The moves a turn's messages made, each with its kind. A start with one
 	## end moves at once (Move.maybe_auto_move), with no end click.
@@ -203,8 +203,9 @@ Arena :: [].{
 	bump : List(Arena.Tally), U64, (Arena.Tally -> Arena.Tally) -> List(Arena.Tally)
 	bump = |ts, i, f| List.set(ts, i, f(List.get(ts, i) ?? no_tally)) ?? ts
 
-	## Every player's game, played to the first player home. A turn is idle
-	## when the player discarded and played no card.
+	## Every player's game, played to the first player home and no further,
+	## with the hand each holds at the end. A turn is idle when the player
+	## discarded and played no card.
 	tally_game : List(Arena.Seat), U64 -> List(Arena.Tally)
 	tally_game = |seats, seed| {
 		var $g = Game.begin_game(seed, Normal, Solo)
@@ -265,7 +266,7 @@ Arena :: [].{
 			$g = s.game
 			$steps = $steps + 1
 		}
-		$t
+		List.map_with_index($t, |x, i| { ..x, in_hand: Player.get_player($g.players, i).hand })
 	}
 
 	tenths : F64 -> Str

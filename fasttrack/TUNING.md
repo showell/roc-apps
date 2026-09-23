@@ -257,6 +257,37 @@ because anyone with a piece in the pen must play them, and they were never
 discarded. Steve's guess at the order of worth: 6, A, joker, J, K, Q, 7, 4,
 10, 2, 9, 8, 3.
 
+### Which cards were dealt to the winner, 2026-09-23
+
+The same 80 games, every card each player drew: played, discarded, or in
+hand when the game was won. `exp_cards.roc`.
+
+| card | drawn: winner / losers | winner's share of draws | played + discarded: winner / losers | score, +3 / -1 |
+|---|---|---|---|---|
+| A | 179 / 385 | .317 | 168 / 379 | 125 |
+| J | 175 / 380 | .315 | 169 / 367 | 140 |
+| Q | 170 / 375 | .311 | 160 / 367 | 113 |
+| 6 | 174 / 388 | .309 | 162 / 376 | 110 |
+| joker | 87 / 202 | .301 | 78 / 196 | 38 |
+| K | 166 / 387 | .300 | 161 / 368 | 115 |
+| 7 | 159 / 399 | .284 | 133 / 318 | 81 |
+| 4 | 155 / 437 | .261 | 136 / 376 | 32 |
+| 2 | 139 / 420 | .248 | 119 / 323 | 34 |
+| 8 | 134 / 412 | .245 | 105 / 282 | 33 |
+| 10 | 137 / 429 | .242 | 107 / 314 | 7 |
+| 5 | 142 / 453 | .238 | 105 / 385 | -70 |
+| 3 | 131 / 421 | .237 | 112 / 335 | 1 |
+| 9 | 127 / 408 | .237 | 94 / 306 | -24 |
+
+Winners draw more (26 cards a game against 23), so the neutral share is .274.
+Every move-again card (A, 6, J, Q, K, joker) is above it and every plain
+number but the 7 and 4 below: move-again cards were 45.8% of the winners'
+draws, 38.5% of the losers', 40.7% of the deck -- about six standard errors
+apart. The winner is largely the player whose shuffled deck put move-again
+cards on top. Counting a discard as a use (a credit toward getting out), the
+score ranks J, A, K, Q, 6, 7, then the joker (76 for four copies), with the
+plain numbers behind and the 5 last.
+
 ## Before these races
 
 Every race and arena number before `4a9f3b7` came from a build whose
