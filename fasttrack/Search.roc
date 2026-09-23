@@ -35,15 +35,19 @@ Search :: [].{
 		}
 	}
 
+	## Cards the rules treat alike: a Q and a K both move one and go again.
+	same_card : Str, Str -> Bool
+	same_card = |a, b| a == b or (List.contains(["Q", "K"], a) and List.contains(["Q", "K"], b))
+
 	## The index of the first copy of each card `keep` accepts: two 5s are
-	## one choice.
+	## one choice, and so are a Q and a K.
 	first_of_each : List(Str), (Str -> Bool), (U64 -> Type.GameMsg) -> List(Type.GameMsg)
 	first_of_each = |hand, keep, make|
 		List.join(
 			List.map_with_index(
 				hand,
 				|card, i|
-					if keep(card) and List.find_first_index(hand, |c| c == card) == Ok(i) {
+					if keep(card) and List.find_first_index(hand, |c| same_card(c, card)) == Ok(i) {
 						[make(i)]
 					} else {
 						[]
@@ -137,3 +141,5 @@ Search :: [].{
 		if best.found { Ok({ line: best.line, cut: List.any($level, is_open) }) } else { Err(NoPlay) }
 	}
 }
+
+expect Search.first_of_each(["K", "7", "Q", "K"], |_| Bool.True, |i| ActivateCard(i)) == [ActivateCard(0), ActivateCard(1)]

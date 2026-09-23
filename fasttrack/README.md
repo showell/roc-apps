@@ -9,7 +9,7 @@ Roc answers.
     node fasttrack/web/page_check.mjs ~/build/roc-apps/next/fasttrack
     SEED=42 SETUP=5 SEATS=cccc CLICKS=300 SHOT=/tmp/b.png node fasttrack/web/page_check.mjs <dir>
     FAST=1 fasttrack/build.sh           the dev backend alone, no checks: a quick look
-    cd fasttrack && roc build exp_jack_hoard.roc --opt=speed && ./exp_jack_hoard     an experiment
+    fasttrack/run_exp.sh exp_win_focus                                         an experiment, detached
 
 The page takes `?seats=` for who plays red, blue, green and purple — `h` a
 person, `c` the computer — default `hccc`, you against three computers;
@@ -118,9 +118,12 @@ ignored.
 
 **Experiments are values too** (`Arena.roc`). An experiment is a small app
 (`exp_*.roc`) that lists variants — a Strategy for each seat, the one under
-test in red's — and prints `Arena.report`: red's wins, red's turns to get
-home, idle turns (turns begun with a discard), captures, and two checks that
-read 0. Every variant is dealt the same cards: each player's deck is
+test in red's — plays them seed by seed, printing a line a game, and ends
+with `Arena.report`: red's wins, red's turns to get home, idle turns (turns
+begun with a discard), captures, and two checks that read 0. `run_exp.sh`
+builds one with LLVM and runs it detached, each log line stamped with the
+time; the built-in platform's `echo!` writes no newline, so each app has a
+`line!`. Every variant is dealt the same cards: each player's deck is
 shuffled once from the seed. When an experiment settles a number, it goes
 into `Strategy.champion`, the losing variants go, and `TUNING.md` keeps the
 result.

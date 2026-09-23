@@ -14,7 +14,9 @@
 # With two variants it also says, game by game, which games only one won.
 #
 # An experiment is an app beside this module (exp_*.roc) that builds the
-# variants and prints Arena.report.
+# variants, plays them seed by seed, printing Arena.game_line after each game,
+# and ends with Arena.report. run_exp.sh builds one and runs it, each line of
+# its log stamped with the time.
 import Game
 import History
 import Player
@@ -114,9 +116,12 @@ Arena :: [].{
 		"${I64.to_str(t // 10)}.${I64.to_str(t % 10)}"
 	}
 
-	## Every game of one variant.
-	results : Arena.Variant, U64 -> List(Arena.Result)
-	results = |variant, games| List.map_with_index(List.repeat(0, games), |_, i| play(variant.seats, i + 1))
+	## One game, as the log shows it.
+	game_line : Str, U64, Arena.Result -> Str
+	game_line = |label, seed, r| {
+		outcome = if r.red_won { "won " } else { "lost" }
+		"seed ${U64.to_str(seed)} | ${label} | ${outcome} | ${U64.to_str(r.turns)} turns home | ${U64.to_str(r.idle)} idle | took ${U64.to_str(r.captures)} | captured ${U64.to_str(r.captured)}"
+	}
 
 	## One row: the variant's label and what its games came to.
 	row : Str, List(Arena.Result) -> Str
@@ -146,10 +151,11 @@ Arena :: [].{
 		"Game by game: red won ${U64.to_str(List.len(only_b))} games only as ${label_b} (seeds ${seeds(only_b)}) and ${U64.to_str(List.len(only_a))} only as ${label_a} (seeds ${seeds(only_a)}); the other ${U64.to_str(List.len(pairs) - List.len(only_a) - List.len(only_b))} came out the same."
 	}
 
-	report : Str, List(Arena.Variant), U64 -> Str
-	report = |title, variants, games| {
-		header = "## ${title}\n\n${U64.to_str(games)} games per variant, seeds 1-${U64.to_str(games)}; red is the variant, the other seats Strategy.champion.\n\n| variant | red won | red's turns home | idle turns a game | captures by red | red captured | skipped / cut |\n|---|---|---|---|---|---|---|\n"
-		all = List.map(variants, |v| { label: v.label, rs: results(v, games) })
+	## The table, from every variant's games, seeds 1 up.
+	report : Str, List({ label : Str, rs : List(Arena.Result) }) -> Str
+	report = |title, all| {
+		games = U64.to_str(List.len((List.first(all) ?? { label: "", rs: [] }).rs))
+		header = "## ${title}\n\n${games} games per variant, seeds 1-${games}; red is the variant, the other seats Strategy.champion.\n\n| variant | red won | red's turns home | idle turns a game | captures by red | red captured | skipped / cut |\n|---|---|---|---|---|---|---|\n"
 		rows = Str.join_with(List.map(all, |x| row(x.label, x.rs)), "\n")
 		pair =
 			if List.len(all) == 2 {
