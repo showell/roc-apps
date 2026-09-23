@@ -9,7 +9,7 @@ Roc answers.
     node fasttrack/web/page_check.mjs ~/build/roc-apps/next/fasttrack
     SEED=42 SETUP=5 SEATS=cccc CLICKS=300 SHOT=/tmp/b.png node fasttrack/web/page_check.mjs <dir>
     FAST=1 fasttrack/build.sh           the dev backend alone, no checks: a quick look
-    fasttrack/run_exp.sh exp_win_focus                                         an experiment, detached
+    fasttrack/run_exp.sh exp_win_focus  an experiment, detached: ~/build/roc-apps/gen/fasttrack/<name>/log.md
 
 The page takes `?seats=` for who plays red, blue, green and purple — `h` a
 person, `c` the computer — default `hccc`, you against three computers;
