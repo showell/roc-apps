@@ -111,7 +111,7 @@ Page :: [].{
 		}
 	}
 
-	## Each player's discards toward leaving the pen, beside its pen, while
+	## Each player's discards toward leaving the pen, next to its pen, while
 	## it has any.
 	labels_view : Type.Game -> List(Wire.Label)
 	labels_view = |game| {
@@ -121,7 +121,11 @@ Page :: [].{
 				game.players,
 				|p, i|
 					if p.get_out_credits > 0 {
-						at = spot(side_count, i, -3.7, 2.6)
+						# The pen's centre on the screen, and the label clear of it:
+						# above for red and blue, below for green and purple.
+						pen = spot(side_count, i, -3.7, 1.2)
+						dy = if i < 2 { -1.4 * Config.square_size } else { 1.4 * Config.square_size + 4.0 }
+						at = { x: pen.x, y: pen.y + dy }
 						n = I64.to_str(p.get_out_credits)
 						[{ x: at.x, y: at.y, text: "${n} discard${if p.get_out_credits == 1 { "" } else { "s" }}", fill: p.color }]
 					} else {
