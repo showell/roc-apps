@@ -351,9 +351,9 @@ the other 187 came out the same.
 
 Red hoards the 7 at 1500, 1000, 500, 0 by pieces home, beside the champion's
 A, joker and J. `exp_seven_hoard.roc`. Leans better (9 games to 4) but within
-chance (p ≈ 0.27). The taper runs against the reason for hoarding a 7 -- a
-split packs pieces into the base in the end game -- so a rising taper is the
-next thing to try. Not adopted yet.
+chance (p ≈ 0.27). The taper is the point: a 7 kept early is a 7 in hand for
+the end game, when a split packs pieces into the base and the hoard's worth
+has fallen to nothing.
 
 ### Hoarding the 7, 1000 games, 2026-09-23
 
@@ -369,9 +369,10 @@ Game by game against the champion: 7s worth less as pieces come home (1500,
 1000, 500, 0) won 46 games the champion lost and lost 38 it won; 7s worth
 more (0, 500, 1000, 1500) won 23 and lost 40. `exp_seven_hoard.roc`.
 
-The falling taper changes nothing that shows (p ≈ 0.4; the 200-game run's
-9 to 4 was noise). The rising taper hurts (p ≈ 0.04): holding a 7 back late
-costs more than the splits it saves. Not adopted.
+Steve's falling taper -- keep 7s early so they are there for the end game --
+changes nothing that shows (p ≈ 0.4; the 200-game run's 9 to 4 was noise).
+The rising taper, which values a 7 most when it should be spent, hurts (p ≈
+0.04). Not adopted.
 
 ## Before these races
 
