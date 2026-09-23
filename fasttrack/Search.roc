@@ -106,7 +106,7 @@ Search :: [].{
 
 	## What `strategy` makes of a line from `game`: the mover's team's board,
 	## the hand it keeps unless it drew, less the leader's board if it plays
-	## against the leader.
+	## against the leader (when behind, for LeaderWhenBehind: judged on `game`).
 	score : Strategy.Strategy, Type.Game, Search.Line -> I64
 	score = |strategy, game, line| {
 		mover = Player.get_active_player(game)
@@ -115,6 +115,12 @@ Search :: [].{
 		against = match strategy.opponents {
 			Ignore => 0
 			Leader => Strategy.leader(strategy, line.game, colors)
+			LeaderWhenBehind =>
+				if Strategy.leader(strategy, game, colors) > Strategy.board(strategy, game, colors) {
+					Strategy.leader(strategy, line.game, colors)
+				} else {
+					0
+				}
 		}
 		Strategy.board(strategy, line.game, colors) + kept - against
 	}

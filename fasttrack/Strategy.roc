@@ -11,6 +11,8 @@
 # a capture is only ever an accident. `Leader`: the line is worth the mover's
 # team less the leading opposing team, judged at the end of the turn -- two
 # opponents close together make slowing one of them a poor sacrifice.
+# `LeaderWhenBehind`: `Leader` when the leading opposing team's board is
+# ahead of the mover's as the search starts, `Ignore` otherwise.
 #
 # `champion` is what the page's computers play. TUNING.md says how each number
 # was chosen; a new experiment is a new value (Arena, the exp_*.roc apps).
@@ -23,7 +25,7 @@ import Type
 Strategy :: [].{
 	Hoard : { cards : List(Str), worth : List(I64) }
 
-	Strategy : { base_bonus : I64, hoards : List(Strategy.Hoard), opponents : [Ignore, Leader] }
+	Strategy : { base_bonus : I64, hoards : List(Strategy.Hoard), opponents : [Ignore, Leader, LeaderWhenBehind] }
 
 	champion : Strategy.Strategy
 	champion = {

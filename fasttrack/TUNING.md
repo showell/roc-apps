@@ -175,6 +175,27 @@ and red was captured more. It captured two and a half times as often, so the
 chase itself is what it bought. 5 games against 9 is not beyond chance (a sign
 test gives about 0.4), but nothing here points the other way. Not adopted.
 
+### Playing to win only when behind, 2026-09-23
+
+80 games per variant, seeds 1-80; red is the variant, the other seats Strategy.champion.
+
+| variant | red won | red's turns home | idle turns a game | captures by red | red captured | skipped / cut |
+|---|---|---|---|---|---|---|
+| own pieces only | 21 of 80 | 15.5 ± 0.4 | 3.5 | 40 | 52 | 0 / 0 |
+| less the leader when behind | 17 of 80 | 16.3 ± 0.4 | 3.7 | 86 | 68 | 0 / 0 |
+
+Game by game: red won 5 games only as less the leader when behind (seeds 41,
+58, 61, 77, 80) and 9 only as own pieces only (seeds 21, 22, 40, 43, 55, 60,
+69, 76, 79); the other 66 came out the same.
+
+`opponents: LeaderWhenBehind`: red plays against the leader only when the
+leader's board is ahead of its own as the search starts. `exp_win_focus.roc`
+at the commit that adds it. It came out almost exactly like always chasing,
+because red is almost always behind by that test: at 283 of red's 332
+searches in 20 all-champion games (`exp_leader_shadow.roc`), and at 11 of the
+14 where the chaser chose differently. The best of three opponents is
+usually ahead of any one player. Not adopted.
+
 ## Before these races
 
 Every race and arena number before `4a9f3b7` came from a build whose

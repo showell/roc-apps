@@ -1,6 +1,8 @@
 # Experiment: does playing to win beat playing for speed? Red scores its own
-# pieces less the leading opponent's at the end of its turn (Strategy's
-# `opponents: Leader`) against the champion, which counts only its own.
+# pieces less the leading opponent's at the end of its turn -- only when it
+# starts the turn behind the leader (Strategy's `opponents:
+# LeaderWhenBehind`) -- against the champion, which counts only its own.
+# `opponents: Leader` (always) lost: TUNING.md.
 #
 #   fasttrack/run_exp.sh exp_win_focus
 import Arena
@@ -15,9 +17,9 @@ main! = |_args| {
 	# Built with List.map: a literal list of these records crashes `roc
 	# check` (nightly 09-07).
 	variants = List.map(
-		[Ignore, Leader],
+		[Ignore, LeaderWhenBehind],
 		|opponents| {
-			label: if opponents == Leader { "own less the leader" } else { "own pieces only" },
+			label: if opponents == LeaderWhenBehind { "less the leader when behind" } else { "own pieces only" },
 			seats: [{ ..champion, opponents }, champion, champion, champion],
 		},
 	)
@@ -34,6 +36,6 @@ main! = |_args| {
 			line!(Arena.game_line(x.label, seed, List.last(x.rs) ?? crash("no game")))
 		}
 	}
-	line!("\n${Arena.report("Playing to win", $all)}")
+	line!("\n${Arena.report("Playing to win when behind", $all)}")
 	Ok({})
 }

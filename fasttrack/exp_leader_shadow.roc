@@ -56,6 +56,8 @@ main! = |_args| {
 	var $cap_chaser = 0
 	var $cap_chaser_leader = 0
 	var $shown = 0
+	var $behind = 0
+	var $behind_differ = 0
 	for seed in List.map_with_index(List.repeat(0, games), |_, i| i + 1) {
 		var $g = Game.begin_game(seed, Normal, Solo)
 		var $turn = 1
@@ -72,6 +74,10 @@ main! = |_args| {
 				la = (a ?? crash("no line")).line
 				lb = (b ?? crash("no line")).line
 				$decisions = $decisions + 1
+				red_colors = Strategy.team(Player.get_active_player($g))
+				behind = Strategy.leader(champion, $g, red_colors) > Strategy.board(champion, $g, red_colors)
+				$behind = $behind + (if behind { 1 } else { 0 })
+				$behind_differ = $behind_differ + (if behind and la.game != lb.game { 1 } else { 0 })
 				if la.game != lb.game {
 					mover = Player.get_active_player($g)
 					colors = Strategy.team(mover)
@@ -105,7 +111,7 @@ main! = |_args| {
 	}
 	d = I64.max(1, U64.to_i64_wrap($differ))
 	line!(
-		"\n${U64.to_str(games)} games of four champions; at each of red's searches the chaser is asked too.\n${U64.to_str($differ)} of ${U64.to_str($decisions)} searches chose differently. Where they did, the chaser on average gave up ${I64.to_str($given // d)} of red's own value and took ${I64.to_str($gained // d)} off the leader.\nLines that captured: champion ${U64.to_str($cap_champion)}, chaser ${U64.to_str($cap_chaser)} (the leader's piece ${U64.to_str($cap_chaser_leader)}).",
+		"\n${U64.to_str(games)} games of four champions; at each of red's searches the chaser is asked too.\n${U64.to_str($differ)} of ${U64.to_str($decisions)} searches chose differently. Where they did, the chaser on average gave up ${I64.to_str($given // d)} of red's own value and took ${I64.to_str($gained // d)} off the leader.\nLines that captured: champion ${U64.to_str($cap_champion)}, chaser ${U64.to_str($cap_chaser)} (the leader's piece ${U64.to_str($cap_chaser_leader)}).\nRed was behind the leader as ${U64.to_str($behind)} of its ${U64.to_str($decisions)} searches began, and at ${U64.to_str($behind_differ)} of the ${U64.to_str($differ)} where the chaser chose differently.",
 	)
 	Ok({})
 }

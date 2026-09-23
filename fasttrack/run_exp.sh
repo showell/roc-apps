@@ -5,7 +5,8 @@
 #   fasttrack/run_exp.sh exp_win_focus
 #
 # The build lands in ~/build/roc-apps/gen/fasttrack/<name>/, the log beside it
-# as log.md: a line a game while it plays, the report at the end.
+# as log.md: a line a game while it plays, the report at the end. An earlier
+# log is kept, renamed by the time it was last written.
 set -euo pipefail
 NAME="${1:?usage: run_exp.sh exp_name}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -16,5 +17,6 @@ mkdir -p "$OUT"
 if grep -q "✗" "$OUT/build.log" || [ ! -x "$OUT/$NAME" ]; then cat "$OUT/build.log"; echo "build failed"; exit 1; fi
 head -1 "$OUT/build.log"
 cd "$OUT"
+if [ -s log.md ]; then mv log.md "log-$(date -r log.md +%Y%m%d-%H%M%S).md"; fi
 setsid nohup bash -c "./$NAME 2>&1 | while IFS= read -r line; do printf '%s  %s\n' \"\$(date +%H:%M:%S)\" \"\$line\"; done > log.md" < /dev/null > /dev/null 2>&1 &
 echo "$OUT/log.md"
