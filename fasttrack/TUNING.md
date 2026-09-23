@@ -135,6 +135,25 @@ Paired game by game: 67 of the 200 games differ; red is faster in 40 and
 slower in 27, by 0.23 turns on average (standard error 0.16). Idle turns fall
 by a seventh. A small gain, likely real, not yet certain.
 
+### Hoarding the J, 2026-09-23
+
+30 games per variant, seeds 1-30; red is the variant, the other seats Strategy.champion.
+
+| variant | red won | red's turns home | idle turns a game | red captured | skipped / cut |
+|---|---|---|---|---|---|
+| J up to 0 | 6 of 30 | 15.7 ± 0.6 | 4.0 | 22 | 0 / 0 |
+| J up to 300 | 6 of 30 | 15.7 ± 0.6 | 4.0 | 22 | 0 / 0 |
+| J up to 900 | 6 of 30 | 15.6 ± 0.6 | 4.0 | 22 | 0 / 0 |
+| J up to 1500 | 7 of 30 | 15.2 ± 0.6 | 4.0 | 19 | 0 / 0 |
+| J up to 3000 | 4 of 30 | 15.7 ± 0.6 | 3.9 | 20 | 0 / 0 |
+
+Red hoards the J on top of the champion's A and joker, the J's worth
+tapering like theirs (full, 2/3, 1/3, 0 by pieces home); the other seats play
+Strategy.champion. `exp_jack_hoard.roc` at `42b9113`. Nothing here stands out
+of the noise: 30 games is a win rate to within about 8 points and turns to
+within 0.6. Up to 900 the J hoard changes almost nothing; 1500 is slightly
+better on every count and 3000 slightly worse on wins. Not adopted.
+
 ## Before these races
 
 Every race and arena number before `4a9f3b7` came from a build whose
