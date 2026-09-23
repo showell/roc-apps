@@ -374,6 +374,32 @@ changes nothing that shows (p ≈ 0.4; the 200-game run's 9 to 4 was noise).
 The rising taper, which values a 7 most when it should be spent, hurts (p ≈
 0.04). Not adopted.
 
+### Hoarding the 7 at 900/600/300/0, dealt as duplicate, 2026-09-23
+
+1000 seeds, each dealt four times with the decks turned a seat
+(Game.begin_dealt), so red plays every player's deck: 4000 games per
+variant. `exp_seven_duplicate.roc`.
+
+| red plays as | red won | win rate | wins with the decks turned 0 / 1 / 2 / 3 seats |
+|---|---|---|---|
+| the champion | 1087 of 4000 | 0.272 | 250 / 281 / 289 / 267 |
+| hoarding 7s | 1061 of 4000 | 0.265 | 250 / 272 / 283 / 256 |
+
+Deals only hoarding won: 124; only the champion won: 150. The difference,
+-0.007 a game, judged three ways:
+
+| judged as | standard error of the difference | the difference in standard errors |
+|---|---|---|
+| unrelated games | 0.010 | -0.66 |
+| paired, deal by deal | 0.004 | -1.57 |
+| by seed, four turned deals together | 0.004 | -1.53 |
+
+A milder 7 hoard does not help either. **Duplicate dealing buys nothing over
+pairing**: pairing (both variants on the same deal) already cuts the error
+2.5 times, and turning the decks adds nothing on top, at four times the
+games. A/B experiments stay paired by seed. Red, moving first, wins 27.2%
+± 0.7 with every deck through its seat: a first-move edge of about 2 points.
+
 ## Before these races
 
 Every race and arena number before `4a9f3b7` came from a build whose
