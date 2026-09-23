@@ -2,7 +2,8 @@
 # decks turned a seat each time (Game.begin_dealt), so red plays every
 # player's deck. Red plays `variant` against the champion; the other seats
 # play the champion. Earlier variants are in TUNING.md and git (hoarding 7s
-# at 900/600/300/0 was this app's first, then no J hoard).
+# at 900/600/300/0 was this app's first, then no J hoard, then playing
+# against a leader three home).
 #
 # The report sets the ways of judging the difference side by side: as if
 # the games were unrelated, paired game by game (the same deal for both), and
@@ -15,17 +16,17 @@ import pf.Echo
 import Arena
 import Strategy
 
-## The strategy under test: the champion, playing against the leading
-## opponent once it has three pieces home (Strategy's LeaderNearHome).
+## The strategy under test: the champion with the base worth 2500 a step
+## (B1 2500 .. B4 10000) where the champion has 1000.
 variant : { label : Str, strategy : Strategy.Strategy }
 variant = {
-	label: "against a leader three home",
-	strategy: { ..Strategy.champion, opponents: LeaderNearHome },
+	label: "base bonus 2500",
+	strategy: { ..Strategy.champion, base_bonus: 2500 },
 }
 
 ## Seeds; each is dealt four times.
 seeds : U64
-seeds = 2500
+seeds = 500
 
 rotations : List(U64)
 rotations = [0, 1, 2, 3]
