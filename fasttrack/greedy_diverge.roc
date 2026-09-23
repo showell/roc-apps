@@ -44,8 +44,8 @@ main! = |args| {
 		Ok(t) => I64.from_str(t) ?? 100
 		Err(_) => 100
 	}
-	plain = GreedyRace.with_bonus(0)
-	tucked = GreedyRace.with_bonus(bonus)
+	plain = { tables: GreedyRace.with_bonus(0), hand_value: 0 }
+	tucked = { tables: GreedyRace.with_bonus(bonus), hand_value: 0 }
 	var $a = Game.begin_game(seed, Normal, Solo)
 	var $b = $a
 	var $turn = 1
@@ -58,11 +58,11 @@ main! = |args| {
 			hand = Player.get_active_player($a).hand
 			echo!("game ${U64.to_str(seed)}: red first plays differently on its turn ${U64.to_str($turn)}\n\n")
 			echo!("hand: ${Str.join_with(hand, " ")}\n")
-			echo!("red before: ${pieces(plain, $a, "red")}\n")
-			for_color = |c| if c == "red" { "" } else { "${c}: ${pieces(plain, $a, c)}\n" }
+			echo!("red before: ${pieces(plain.tables, $a, "red")}\n")
+			for_color = |c| if c == "red" { "" } else { "${c}: ${pieces(plain.tables, $a, c)}\n" }
 			echo!(Str.join_with(List.map(GreedyRace.colors, for_color), ""))
-			echo!("\nno bonus plays to:  ${pieces(plain, na, "red")} -- worth ${I64.to_str(GreedyRace.board_score(plain, na, 0))} without the bonus, ${I64.to_str(GreedyRace.board_score(tucked, na, 0))} with it\n")
-			echo!("bonus plays to:     ${pieces(tucked, nb, "red")} -- worth ${I64.to_str(GreedyRace.board_score(plain, nb, 0))} without the bonus, ${I64.to_str(GreedyRace.board_score(tucked, nb, 0))} with it\n")
+			echo!("\nno bonus plays to:  ${pieces(plain.tables, na, "red")} -- worth ${I64.to_str(GreedyRace.board_score(plain.tables, na, 0))} without the bonus, ${I64.to_str(GreedyRace.board_score(tucked.tables, na, 0))} with it\n")
+			echo!("bonus plays to:     ${pieces(tucked.tables, nb, "red")} -- worth ${I64.to_str(GreedyRace.board_score(plain.tables, nb, 0))} without the bonus, ${I64.to_str(GreedyRace.board_score(tucked.tables, nb, 0))} with it\n")
 			$split = Bool.True
 		} else {
 			if na.active_player_idx == 0 and $a.active_player_idx != 0 {
@@ -82,7 +82,7 @@ main! = |args| {
 		next = GreedyRace.step(tucked, $g)
 		if $g.active_player_idx != 0 and GreedyRace.red_in_pen(next) > GreedyRace.red_in_pen($g) {
 			mover = List.get(GreedyRace.colors, $g.active_player_idx) ?? "?"
-			echo!("  red's turn ${U64.to_str($t)}: ${mover} sends a red piece home. red before: ${pieces(tucked, $g, "red")}; ${mover} before: ${pieces(tucked, $g, mover)}\n")
+			echo!("  red's turn ${U64.to_str($t)}: ${mover} sends a red piece home. red before: ${pieces(tucked.tables, $g, "red")}; ${mover} before: ${pieces(tucked.tables, $g, mover)}\n")
 		}
 		if next.active_player_idx == 0 and $g.active_player_idx != 0 {
 			$t = $t + 1

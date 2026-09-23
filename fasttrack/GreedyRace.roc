@@ -26,21 +26,24 @@ GreedyRace :: [].{
 			},
 		)
 
-	## Red's values with `bonus` more a step down its base: B1 + bonus, B2 +
-	## 2 bonus, B3 + 3, B4 + 4. The other colors keep theirs.
+	## What a player plays for: its square values, and what each card it
+	## hoards -- an A or joker to get out, a J for a late swap -- still in its
+	## hand at the end of its turn is worth (red only).
+	Strategy : { tables : List(List(I64)), hand_value : I64 }
+
+	## Every color's values with `bonus` more a step down its own base: B1 +
+	## bonus, B2 + 2 bonus, B3 + 3, B4 + 4.
 	with_bonus : I64 -> List(List(I64))
 	with_bonus = |bonus|
 		List.map_with_index(
 			values,
-			|table, owner|
-				if owner != 0 {
-					table
-				} else {
-					List.map_with_index(
+			|table, owner| {
+				color = List.get(colors, owner) ?? ""
+				List.map_with_index(
 						table,
 						|v, i|
 							match List.get(Agent.all_locs(colors), i) {
-								Ok(loc) if loc.zone == NormalColor("red") =>
+								Ok(loc) if loc.zone == NormalColor(color) =>
 									match loc.id {
 										"B1" => v + bonus
 										"B2" => v + 2 * bonus
@@ -51,7 +54,7 @@ GreedyRace :: [].{
 								_ => v
 							},
 					)
-				},
+			},
 		)
 
 	board_score : List(List(I64)), Type.Game, U64 -> I64
@@ -61,11 +64,29 @@ GreedyRace :: [].{
 		List.fold(game.piece_map, 0, |total, e| if e.value == color { total + (List.get(table, Agent.index_of(colors, e.key)) ?? 0) } else { total })
 	}
 
+	## A line's worth to the mover: its pieces' squares, and for red, each A,
+	## joker or J it kept -- none when the line refilled its hand, since the
+	## cards it drew were not chosen.
+	line_score : Strategy, Agent.Line, U64 -> I64
+	line_score = |strategy, line, owner| {
+		kept =
+			if owner != 0 or line.drew or strategy.hand_value == 0 {
+				0
+			} else {
+				hand = (List.get(line.game.players, owner) ?? Player.get_active_player(line.game)).hand
+				U64.to_i64_wrap(List.count_if(hand, |c| List.contains(["A", "joker", "J"], c))) * strategy.hand_value
+			}
+		board_score(strategy.tables, line.game, owner) + kept
+	}
+
 	## The game after the mover's best line of play through the rest of its
 	## turn -- every line, the same position reached two ways counted once -- or
-	## the game unchanged when it has no play.
-	greedy_turn : List(List(I64)), Type.Game -> Type.Game
-	greedy_turn = |tables, game| {
+	## the game unchanged when it has no play. Every line the search keeps is
+	## a whole turn: a player holding a playable card plays it, and a
+	## move-again card is followed by the next play when there is one.
+	## `cut` says the search stopped before every line had ended.
+	greedy_turn : Strategy, Type.Game -> { game : Type.Game, cut : Bool }
+	greedy_turn = |strategy, game| {
 		owner = game.active_player_idx
 		start = Agent.settle({ game, msgs: [], drew: Bool.False })
 		var $level = start
@@ -82,11 +103,11 @@ GreedyRace :: [].{
 			finals,
 			{ game, score: I64.lowest, moved: Bool.False },
 			|acc, line| {
-				s = board_score(tables, line.game, owner)
+				s = line_score(strategy, line, owner)
 				if !List.is_empty(line.msgs) and (!acc.moved or s > acc.score) { { game: line.game, score: s, moved: Bool.True } } else { acc }
 			},
 		)
-		best.game
+		{ game: best.game, cut: List.any($level, Agent.is_open) }
 	}
 
 	home : Type.Game, U64 -> Bool
@@ -104,16 +125,26 @@ GreedyRace :: [].{
 		$g
 	}
 
-	## One step of a game: the mover's whole turn, or a finished turn passed on.
-	step : List(List(I64)), Type.Game -> Type.Game
-	step = |tables, g|
+	## One step of a game: the mover's whole turn, or a finished turn passed
+	## on. `skipped` says the mover had a legal play and played nothing;
+	## `cut` that the search stopped short.
+	step_checked : Strategy, Type.Game -> { game : Type.Game, skipped : Bool, cut : Bool }
+	step_checked = |strategy, g|
 		if Player.get_active_player(g).turn == TurnDone {
-			rotate(g)
+			{ game: rotate(g), skipped: Bool.False, cut: Bool.False }
 		} else {
-			played = greedy_turn(tables, g)
-			# No play at all (should not happen): end the turn.
-			if played == g { rotate(g) } else { played }
+			played = greedy_turn(strategy, g)
+			if played.game == g {
+				# No play at all: the turn passes, which is right only when
+				# there was nothing to play.
+				{ game: rotate(g), skipped: !List.is_empty(Agent.options(g)), cut: played.cut }
+			} else {
+				{ game: played.game, skipped: Bool.False, cut: played.cut }
+			}
 		}
+
+	step : Strategy, Type.Game -> Type.Game
+	step = |strategy, g| step_checked(strategy, g).game
 
 	## Red's pieces in its pen.
 	red_in_pen : Type.Game -> U64
@@ -121,14 +152,21 @@ GreedyRace :: [].{
 
 	## Red's turns until its four pieces are home (or `cap`), and how many
 	## times an opponent sent a red piece back to the pen.
-	red_turns : List(List(I64)), U64, U64 -> { turns : U64, captured : U64 }
-	red_turns = |tables, seed, cap| {
+	## `skips` counts steps where a player with a legal play played nothing,
+	## and `cuts` searches that stopped short; both should be 0.
+	red_turns : Strategy, U64, U64 -> { turns : U64, captured : U64, skips : U64, cuts : U64 }
+	red_turns = |strategy, seed, cap| {
 		var $g = Game.begin_game(seed, Normal, Solo)
 		var $turns = 1
 		var $captured = 0
+		var $skips = 0
+		var $cuts = 0
 		var $steps = 0
 		while !home($g, 0) and $turns < cap and $steps < 100000 {
-			next = step(tables, $g)
+			checked = step_checked(strategy, $g)
+			next = checked.game
+			$skips = if checked.skipped { $skips + 1 } else { $skips }
+			$cuts = if checked.cut { $cuts + 1 } else { $cuts }
 			if $g.active_player_idx != 0 and red_in_pen(next) > red_in_pen($g) {
 				$captured = $captured + (red_in_pen(next) - red_in_pen($g))
 			}
@@ -138,6 +176,6 @@ GreedyRace :: [].{
 			$g = next
 			$steps = $steps + 1
 		}
-		{ turns: $turns, captured: $captured }
+		{ turns: $turns, captured: $captured, skips: $skips, cuts: $cuts }
 	}
 }
