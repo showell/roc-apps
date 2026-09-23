@@ -6,8 +6,9 @@
 #   3. then more routes -- every shortest sequence of moves, a move being a
 #      card or a face card and a card;
 #   4. then, while still tied, the same two (fewer cards, more routes) with the
-#      6 gone from the deck; then the J, Q and K too (and with them the free
-#      face card); then the 7; then the 4.
+#      6 gone from the deck; then the 7 too; then the 4; and last the J, Q and
+#      K, and with them the free face card -- last, so that face + 8 still
+#      counts as a cheaper play than face + 7.
 #
 # Squares that still tie after every stage are listed at the end.
 #
@@ -33,15 +34,15 @@ stages : List({ title : Str, hand : List(Str) })
 stages = {
 	all = List.drop_if(Reach.cards, |c| c == "joker")
 	no6 = List.drop_if(all, |c| c == "6")
-	no_face = List.drop_if(no6, |c| List.contains(["J", "Q", "K"], c))
-	no7 = List.drop_if(no_face, |c| c == "7")
+	no7 = List.drop_if(no6, |c| c == "7")
 	no4 = List.drop_if(no7, |c| c == "4")
+	no_face = List.drop_if(no4, |c| List.contains(["J", "Q", "K"], c))
 	[
 		{ title: "no joker", hand: all },
 		{ title: "no 6", hand: no6 },
-		{ title: "no J/Q/K", hand: no_face },
 		{ title: "no 7", hand: no7 },
 		{ title: "no 4", hand: no4 },
+		{ title: "no J/Q/K", hand: no_face },
 	]
 }
 
