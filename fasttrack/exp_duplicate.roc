@@ -2,7 +2,7 @@
 # decks turned a seat each time (Game.begin_dealt), so red plays every
 # player's deck. Red plays `variant` against the champion; the other seats
 # play the champion. Earlier variants are in TUNING.md and git (hoarding 7s
-# at 900/600/300/0 was this app's first).
+# at 900/600/300/0 was this app's first, then no J hoard).
 #
 # The report sets the ways of judging the difference side by side: as if
 # the games were unrelated, paired game by game (the same deal for both), and
@@ -15,12 +15,17 @@ import pf.Echo
 import Arena
 import Strategy
 
-## The strategy under test: the champion without hoarding the J.
+## The strategy under test: the champion, playing against the leading
+## opponent once it has three pieces home (Strategy's LeaderNearHome).
 variant : { label : Str, strategy : Strategy.Strategy }
 variant = {
-	label: "no J hoard",
-	strategy: { ..Strategy.champion, hoards: [{ cards: ["A", "joker"], worth: [1500, 1000, 500, 0] }] },
+	label: "against a leader three home",
+	strategy: { ..Strategy.champion, opponents: LeaderNearHome },
 }
+
+## Seeds; each is dealt four times.
+seeds : U64
+seeds = 40
 
 rotations : List(U64)
 rotations = [0, 1, 2, 3]
@@ -35,7 +40,7 @@ thousandths = |x| {
 
 main! = |_args| {
 	champion = Strategy.champion
-	games = 1000
+	games = seeds
 	seats_a = List.repeat(Plays(champion), 4)
 	seats_b = [Plays(variant.strategy), Plays(champion), Plays(champion), Plays(champion)]
 	# Per seed, per rotation: did red win as the champion (a), as the variant (b)?

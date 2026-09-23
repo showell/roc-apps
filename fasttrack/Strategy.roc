@@ -13,6 +13,10 @@
 # opponents close together make slowing one of them a poor sacrifice.
 # `LeaderWhenBehind`: `Leader` when the leading opposing team's board is
 # ahead of the mover's as the search starts, `Ignore` otherwise.
+# `LeaderNearHome`: less the board of one opponent -- of those with three
+# pieces in their base as the search starts, the one whose board is worth
+# most then -- judged at the end of the turn; nobody otherwise. Capturing
+# (or trading away) such a player's last piece out is what it pays for.
 #
 # `champion` is what the page's computers play. TUNING.md says how each number
 # was chosen; a new experiment is a new value (Arena, the exp_*.roc apps).
@@ -26,7 +30,7 @@ import Type
 Strategy :: [].{
 	Hoard : { cards : List(Str), worth : List(I64) }
 
-	Strategy : { base_bonus : I64, hoards : List(Strategy.Hoard), opponents : [Ignore, Leader, LeaderWhenBehind] }
+	Strategy : { base_bonus : I64, hoards : List(Strategy.Hoard), opponents : [Ignore, Leader, LeaderWhenBehind, LeaderNearHome] }
 
 	champion : Strategy.Strategy
 	champion = {
@@ -79,6 +83,24 @@ Strategy :: [].{
 					if v > best { v } else { best }
 				},
 		)
+
+	## Of the other teams with a player three pieces home, the one whose
+	## board is worth most.
+	near_home_leader : Strategy.Strategy, Type.Game, List(Str) -> Try(List(Str), [Nobody])
+	near_home_leader = |strategy, game, own| {
+		best = List.fold(
+			game.players,
+			{ team: [], v: I64.lowest },
+			|acc, p|
+				if List.contains(own, p.color) or in_base(game, p.color) < 3 {
+					acc
+				} else {
+					v = board(strategy, game, team(p))
+					if v > acc.v { { team: team(p), v } } else { acc }
+				},
+		)
+		if List.is_empty(best.team) { Err(Nobody) } else { Ok(best.team) }
+	}
 
 	## A player's pieces in its own base.
 	in_base : Type.Game, Str -> U64

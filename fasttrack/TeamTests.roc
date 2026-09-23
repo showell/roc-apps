@@ -98,3 +98,11 @@ expect TeamTests.starts(TeamTests.game_with(Solo, [("red", "HP1", "red"), ("blue
 # played -- the turn wants a card, not a discard.
 expect List.all(["A", "joker", "6"], |card| Player.get_active_player(TeamTests.game_with(Solo, [("red", "HP1", "red")], [card, "3"])).turn != TurnNeedDiscard)
 expect Player.get_active_player(TeamTests.game_with(Solo, [("red", "HP1", "red")], ["3", "5"])).turn == TurnNeedDiscard
+
+# LeaderNearHome looks only at opponents with three pieces home.
+expect {
+	three_home = TeamTests.game_with(Solo, [("red", "L0", "red"), ("blue", "B1", "blue"), ("blue", "B2", "blue"), ("blue", "B3", "blue"), ("red", "L2", "blue")], ["2"])
+	two_home = TeamTests.game_with(Solo, [("red", "L0", "red"), ("blue", "B1", "blue"), ("blue", "B2", "blue"), ("red", "L2", "blue")], ["2"])
+	Strategy.near_home_leader(Strategy.champion, three_home, ["red"]) == Ok(["blue"])
+	and Strategy.near_home_leader(Strategy.champion, two_home, ["red"]) == Err(Nobody)
+}

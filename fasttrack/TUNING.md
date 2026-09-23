@@ -416,6 +416,21 @@ Deals only no J hoard won: 143; only the champion won: 171. The difference,
 as Steve expected (one-sided p ≈ 0.06), but not by much. The champion keeps
 it.
 
+### Against a leader three home, a first look, 2026-09-23
+
+40 seeds, each dealt four times with the decks turned a seat: 160 games per
+variant. Red scores its board less the board, at the end of its turn, of the
+opponent worth most among those with three pieces home as the turn starts
+(`opponents: LeaderNearHome`); nobody counts otherwise. `exp_duplicate.roc`.
+
+| red plays as | red won | win rate | wins with the decks turned 0 / 1 / 2 / 3 seats |
+|---|---|---|---|
+| the champion | 43 of 160 | 0.269 | 6 / 13 / 12 / 12 |
+| against a leader three home | 51 of 160 | 0.319 | 9 / 14 / 15 / 13 |
+
+Deals only the variant won: 9; only the champion won: 1 (2.6 paired standard
+errors). Promising, and to be scaled up.
+
 ## Before these races
 
 Every race and arena number before `4a9f3b7` came from a build whose
