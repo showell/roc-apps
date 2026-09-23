@@ -1,7 +1,8 @@
 # Motion -- what moved in one update, square by square, for the page to
 # animate: the moving piece along the walk it took, then any piece it sent
-# back to the pen, or the piece a jack traded with. A piece brought out of
-# the pen by discard credits steps from the pen to L0.
+# back to the pen (`sent_home`: it stays put until the mover lands on it,
+# then goes home at once), or the piece a jack traded with. A piece brought
+# out of the pen by discard credits steps from the pen to L0.
 import Board
 import Config
 import Game
@@ -13,7 +14,7 @@ import Player
 import Type
 
 Motion :: [].{
-	Motion : { color : Str, path : List(U64) }
+	Motion : { color : Str, path : List(U64), sent_home : Bool }
 
 	## The motions of `msg`, which took `before` to `after`.
 	of : Type.Game, Type.GameMsg, Type.Game -> List(Motion.Motion)
@@ -36,8 +37,8 @@ Motion :: [].{
 				match m.kind {
 					JackTrade =>
 						match hit {
-							Ok(other) => [{ color: name(c), path: [m.start, m.end] }, { color: name(other), path: [m.end, m.start] }]
-							Err(_) => [{ color: name(c), path: [m.start, m.end] }]
+							Ok(other) => [{ color: name(c), path: [m.start, m.end], sent_home: Bool.False }, { color: name(other), path: [m.end, m.start], sent_home: Bool.False }]
+							Err(_) => [{ color: name(c), path: [m.start, m.end], sent_home: Bool.False }]
 						}
 					_ => {
 						(n, reverse) = match m.kind {
@@ -47,7 +48,7 @@ Motion :: [].{
 							FinishSplit(k, _) => (k, Bool.False)
 							JackTrade => (1, Bool.False)
 						}
-						walked = { color: name(c), path: LegalMove.walk_between(board, c, m.start, m.end, n, reverse) }
+						walked = { color: name(c), path: LegalMove.walk_between(board, c, m.start, m.end, n, reverse), sent_home: Bool.False }
 						List.concat([walked], sent_home(board, m.end, name))
 					}
 				}
@@ -58,7 +59,7 @@ Motion :: [].{
 	sent_home : Type.Board, U64, (U64 -> Str) -> List(Motion.Motion)
 	sent_home = |board, s, name|
 		match Piece.at(board, s) {
-			Ok(victim) => [{ color: name(victim), path: [s, Piece.open_holding_pen_location(board, victim)] }]
+			Ok(victim) => [{ color: name(victim), path: [s, Piece.open_holding_pen_location(board, victim)], sent_home: Bool.True }]
 			Err(_) => []
 		}
 
@@ -71,7 +72,7 @@ Motion :: [].{
 			c = before.active_player_idx
 			l0 = Board.at(c, Board.l0)
 			match Piece.piece_to_move_out_of_pen(before.board, c) {
-				Ok(pen) => List.concat([{ color: name(c), path: [pen, l0] }], sent_home(before.board, l0, name))
+				Ok(pen) => List.concat([{ color: name(c), path: [pen, l0], sent_home: Bool.False }], sent_home(before.board, l0, name))
 				Err(_) => []
 			}
 		}
@@ -94,13 +95,13 @@ motions_at = |g, s| Motion.of(g, SetStartLocation(s), Game.update_game(SetStartL
 # A 3 walks red's piece from L0 up to L3, square by square.
 expect {
 	g = test_game([("red", "L0", "red")], ["3"])
-	motions_at(g, Board.at(0, Board.l0)) == [{ color: "red", path: [11, 12, 13, 14] }]
+	motions_at(g, Board.at(0, Board.l0)) == [{ color: "red", path: [11, 12, 13, 14], sent_home: Bool.False }]
 }
 
 # Landing on blue sends blue back to its pen's first open square.
 expect {
 	g = test_game([("red", "L0", "red"), ("red", "L2", "blue")], ["2"])
-	motions_at(g, Board.at(0, Board.l0)) == [{ color: "red", path: [11, 12, 13] }, { color: "blue", path: [13, Board.at(1, 0)] }]
+	motions_at(g, Board.at(0, Board.l0)) == [{ color: "red", path: [11, 12, 13], sent_home: Bool.False }, { color: "blue", path: [13, Board.at(1, 0)], sent_home: Bool.True }]
 }
 
 # A jack trades: each piece goes to the other's square.
@@ -108,5 +109,5 @@ expect {
 	g = test_game([("red", "L0", "red"), ("red", "L3", "blue")], ["J"])
 	end_click = Game.update_game(SetStartLocation(Board.at(0, Board.l0)), History.init, g).1
 	Motion.of(end_click, SetEndLocation(Board.at(0, 14)), Game.update_game(SetEndLocation(Board.at(0, 14)), History.init, end_click).1)
-	== [{ color: "red", path: [11, 14] }, { color: "blue", path: [14, 11] }]
+	== [{ color: "red", path: [11, 14], sent_home: Bool.False }, { color: "blue", path: [14, 11], sent_home: Bool.False }]
 }

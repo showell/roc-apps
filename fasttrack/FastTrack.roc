@@ -122,7 +122,7 @@ FastTrack :: [].{
 				tick: if agent_to_move(model) { Codes.agent_step } else { 0 },
 				winner: Game.winner(model.game) ?? "",
 				motion_id: model.motion_id,
-				motions: List.map(model.motions, |m| { color: m.color, path: List.map(m.path, U64.to_u32_wrap) }),
+				motions: List.map(model.motions, |m| { color: m.color, path: List.map(m.path, U64.to_u32_wrap), sent_home: m.sent_home }),
 			},
 		)
 	}

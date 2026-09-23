@@ -61,8 +61,9 @@ Player :: [].{
 	## purple.
 	## Each player's deck is shuffled from the game's seed and its seat, so a
 	## seed deals every player the same cards whatever the others do.
-	config_players : Setup.InitSetup, List(Str), Type.Teams, U64 -> List(Type.Player)
-	config_players = |init_setup, zone_colors, teams, millis| {
+	## `rotation` turns the decks: seat i plays seat i + rotation's.
+	config_players : Setup.InitSetup, List(Str), Type.Teams, U64, U64 -> List(Type.Player)
+	config_players = |init_setup, zone_colors, teams, millis, rotation| {
 		n = List.len(zone_colors)
 		List.map_with_index(
 			zone_colors,
@@ -73,7 +74,7 @@ Player :: [].{
 					Anytime => Partner(partner)
 					OnceHome => PartnerOnceHome(partner)
 				}
-				config_player(init_setup, color, team, ElmRandom.initial_seed(millis + 1000003 * i))
+				config_player(init_setup, color, team, ElmRandom.initial_seed(millis + 1000003 * U64.rem_by(i + rotation, n)))
 			},
 		)
 	}

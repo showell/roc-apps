@@ -87,8 +87,12 @@ Arena :: [].{
 	others_in_pen = |g| List.fold(["blue", "green", "purple"], 0, |t, c| t + in_pen(g, c))
 
 	play : List(Arena.Seat), U64 -> Arena.Result
-	play = |seats, seed| {
-		var $g = Game.begin_game(seed, Normal, Solo)
+	play = |seats, seed| play_dealt(seats, seed, 0)
+
+	## A game with its decks turned `rotation` seats (Game.begin_dealt).
+	play_dealt : List(Arena.Seat), U64, U64 -> Arena.Result
+	play_dealt = |seats, seed, rotation| {
+		var $g = Game.begin_dealt(seed, Normal, Solo, rotation)
 		var $r = { red_won: Bool.False, turns: 1, idle: 0, captured: 0, captures: 0, skips: 0, cuts: 0 }
 		var $winner = 4
 		var $idle_turn = 0

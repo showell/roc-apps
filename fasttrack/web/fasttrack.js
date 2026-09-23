@@ -130,37 +130,85 @@ const FastTrack = (() => {
   // Walks each motion's marble across the board, one square every `step`
   // ms, one motion after another, then calls `done`. The board already shows
   // where everything ends; each motion's last square stays hidden until its
-  // marble arrives.
+  // marble arrives. A piece that is hit (or traded) waits on its square
+  // until the mover lands; one sent home then bursts and appears in its pen.
   function animator(document, step) {
     return (b, view, done) => {
       const slots = view.slots;
+      const put = (c, i) => {
+        c.setAttribute("cx", String(slots[i].cx));
+        c.setAttribute("cy", String(slots[i].cy));
+      };
+      const marble = (color, i) => {
+        const c = document.createElementNS(SVG, "circle");
+        c.setAttribute("r", "6");
+        c.setAttribute("fill", color);
+        c.setAttribute("stroke", "black");
+        put(c, i);
+        b.svg.appendChild(c);
+        return c;
+      };
+      // A ring that grows from r0 to r1 on slot i, `frames` frames `ms` apart.
+      const ring = (i, color, r0, r1, frames, ms, each, then) => {
+        const c = document.createElementNS(SVG, "circle");
+        c.setAttribute("fill", "none");
+        c.setAttribute("stroke", color);
+        c.setAttribute("stroke-width", "3");
+        put(c, i);
+        b.svg.appendChild(c);
+        let f = 0;
+        const frame = () => {
+          const t = f / frames;
+          c.setAttribute("r", String(r0 + (r1 - r0) * t));
+          c.setAttribute("opacity", String(1 - t));
+          each(t);
+          f += 1;
+          if (f <= frames) {
+            setTimeout(frame, ms);
+          } else {
+            c.remove();
+            then();
+          }
+        };
+        frame();
+      };
+      const walk = (c, path, then) => {
+        let j = 1;
+        const hop = () => {
+          if (j < path.length) {
+            put(c, path[j]);
+            j += 1;
+            setTimeout(hop, step);
+          } else {
+            then();
+          }
+        };
+        setTimeout(hop, step);
+      };
       view.motions.forEach((m) => b.hide(m.path[m.path.length - 1]));
+      const waiting = view.motions.map((m, k) => (k > 0 ? marble(m.color, m.path[0]) : null));
       let k = 0;
       const next = () => {
         if (k >= view.motions.length) return done();
-        const m = view.motions[k++];
-        const marble = document.createElementNS(SVG, "circle");
-        marble.setAttribute("r", "6");
-        marble.setAttribute("fill", m.color);
-        marble.setAttribute("stroke", "black");
-        b.svg.appendChild(marble);
-        let j = 0;
-        const hop = () => {
-          const s = slots[m.path[j]];
-          marble.setAttribute("cx", String(s.cx));
-          marble.setAttribute("cy", String(s.cy));
-          j += 1;
-          if (j < m.path.length) {
-            setTimeout(hop, step);
-          } else {
-            setTimeout(() => {
-              marble.remove();
-              b.show(m.path[m.path.length - 1]);
-              next();
-            }, step);
-          }
-        };
-        hop();
+        const m = view.motions[k];
+        const own = waiting[k] || marble(m.color, m.path[0]);
+        k += 1;
+        const last = m.path[m.path.length - 1];
+        if (m.sent_home) {
+          // The collision: a burst where it stood while it shrinks away,
+          // then it appears in its pen with a small flash.
+          ring(m.path[0], "orange", 6, 20, 8, 45, (t) => own.setAttribute("r", String(6 * (1 - t))), () => {
+            own.remove();
+            b.show(last);
+            ring(last, m.color, 4, 12, 5, 40, () => {}, next);
+          });
+        } else {
+          walk(own, m.path, () => {
+            own.remove();
+            b.show(last);
+            next();
+          });
+        }
       };
       next();
     };

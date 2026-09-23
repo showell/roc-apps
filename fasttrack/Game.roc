@@ -21,13 +21,18 @@ Game :: [].{
 	num_players = 4
 
 	begin_game : U64, Setup.InitSetup, Type.Teams -> Type.Game
-	begin_game = |millis, init_setup, teams| {
+	begin_game = |millis, init_setup, teams| begin_dealt(millis, init_setup, teams, 0)
+
+	## A game whose decks are turned `rotation` seats: seat i plays the deck
+	## seat i + rotation would have had (Arena's duplicate deals).
+	begin_dealt : U64, Setup.InitSetup, Type.Teams, U64 -> Type.Game
+	begin_dealt = |millis, init_setup, teams, rotation| {
 		zone_colors = Color.get_zone_colors(num_players)
 		begin_active_turn(
 			{
 				zone_colors,
 				board: Piece.config_pieces(init_setup, zone_colors),
-				players: Player.config_players(init_setup, zone_colors, teams, millis),
+				players: Player.config_players(init_setup, zone_colors, teams, millis, rotation),
 				active_player_idx: 0,
 				num_players,
 			},

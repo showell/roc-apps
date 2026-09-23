@@ -30,8 +30,9 @@ Wire :: [].{
 	## Text drawn on the board, centred on (x, y).
 	Label : { x : F64, y : F64, text : Str, fill : Str }
 
-	## A piece of `color` walking the slots of `path`, first to last.
-	Motion : { color : Str, path : List(U32) }
+	## A piece of `color` walking the slots of `path`, first to last; one
+	## `sent_home` waits on its square to be landed on, then jumps home.
+	Motion : { color : Str, path : List(U32), sent_home : Bool }
 
 	## `tick` is a code the page sends back by itself after a pause (the
 	## computer's next click), 0 for none; `winner` is a color, or "".
