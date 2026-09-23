@@ -3,12 +3,12 @@
 # An experiment is a list of variants, each a Strategy for every seat; the
 # variant under test is seat 0 (red), the others usually Strategy.champion.
 # Each game is played to its end -- the first player with all four pieces
-# home wins -- and on until red's four are home too, a finished player's turns
-# skipped, so red's turns home count in every game. Seeds 1 .. N, each player's
-# deck shuffled once from its seed, so every variant is dealt the same cards.
+# home wins -- and no further: what happens after the win is noise. Seeds
+# 1 .. N, each player's deck shuffled once from its seed, so every variant is
+# dealt the same cards.
 #
-# The report is a markdown table per variant: red's wins, red's turns home
-# (mean and standard error), idle turns (red's turns begun with a discard),
+# The report is a markdown table per variant: red's wins, the game's length
+# in red's turns (mean and standard error), idle turns (red's turns begun with a discard),
 # captures made by red and of red's pieces, and two checks that should read 0
 # -- turns a player skipped holding a legal play, and searches cut short.
 # With two variants it also says, game by game, which games only one won.
@@ -89,10 +89,10 @@ Arena :: [].{
 	play = |seats, seed| {
 		var $g = Game.begin_game(seed, Normal, Solo)
 		var $r = { red_won: Bool.False, turns: 1, idle: 0, captured: 0, captures: 0, skips: 0, cuts: 0 }
-		var $decided = Bool.False
+		var $winner = 4
 		var $idle_turn = 0
 		var $steps = 0
-		while !home($g, 0) and $steps < 100000 {
+		while $winner == 4 and $steps < 100000 {
 			if $g.active_player_idx == 0 and Player.get_active_player($g).turn == TurnNeedDiscard and $idle_turn != $r.turns {
 				$r = { ..$r, idle: $r.idle + 1 }
 				$idle_turn = $r.turns
@@ -110,14 +110,12 @@ Arena :: [].{
 				cuts: if s.cut { $r.cuts + 1 } else { $r.cuts },
 				turns: if turned { $r.turns + 1 } else { $r.turns },
 			}
-			# The first player home wins.
-			if !$decided and List.any([1, 2, 3], |seat| home(next, seat)) {
-				$decided = Bool.True
-			}
+			# The first player home wins, and the game stops.
+			$winner = List.find_first([0, 1, 2, 3], |seat| home(next, seat)) ?? 4
 			$g = next
 			$steps = $steps + 1
 		}
-		{ ..$r, red_won: !$decided }
+		{ ..$r, red_won: $winner == 0 }
 	}
 
 	## One player's game, to the first player home.
@@ -258,7 +256,7 @@ Arena :: [].{
 	game_line : Str, U64, Arena.Result -> Str
 	game_line = |label, seed, r| {
 		outcome = if r.red_won { "won " } else { "lost" }
-		"seed ${U64.to_str(seed)} | ${label} | ${outcome} | ${U64.to_str(r.turns)} turns home | ${U64.to_str(r.idle)} idle | took ${U64.to_str(r.captures)} | captured ${U64.to_str(r.captured)}"
+		"seed ${U64.to_str(seed)} | ${label} | ${outcome} | ${U64.to_str(r.turns)} turns | ${U64.to_str(r.idle)} idle | took ${U64.to_str(r.captures)} | captured ${U64.to_str(r.captured)}"
 	}
 
 	## One row: the variant's label and what its games came to.
@@ -293,7 +291,7 @@ Arena :: [].{
 	report : Str, List({ label : Str, rs : List(Arena.Result) }) -> Str
 	report = |title, all| {
 		games = U64.to_str(List.len((List.first(all) ?? { label: "", rs: [] }).rs))
-		header = "## ${title}\n\n${games} games per variant, seeds 1-${games}; red is the variant, the other seats Strategy.champion.\n\n| variant | red won | red's turns home | idle turns a game | captures by red | red captured | skipped / cut |\n|---|---|---|---|---|---|---|\n"
+		header = "## ${title}\n\n${games} games per variant, seeds 1-${games}; red is the variant, the other seats Strategy.champion.\n\n| variant | red won | the game's length, red's turns | idle turns a game | captures by red | red captured | skipped / cut |\n|---|---|---|---|---|---|---|\n"
 		rows = Str.join_with(List.map(all, |x| row(x.label, x.rs)), "\n")
 		pair =
 			if List.len(all) == 2 {

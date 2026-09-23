@@ -336,6 +336,25 @@ are equal; a chi-square over the four gives p ≈ 0.08).
 | captures made | 0.81 | 0.51 | 96 / 39 / 65 |
 | times captured | 0.30 | 0.68 | 27 / 41 / 132 |
 
+### Hoarding the 7, 2026-09-23
+
+200 games per variant, seeds 1-200; red is the variant, the other seats Strategy.champion. Each game stops at the first player home.
+
+| variant | red won | the game's length, red's turns | idle turns a game | captures by red | red captured | skipped / cut |
+|---|---|---|---|---|---|---|
+| the champion | 50 of 200 | 11.8 ± 0.2 | 2.8 | 104 | 125 | 0 / 0 |
+| hoards the 7 too | 55 of 200 | 11.8 ± 0.2 | 2.7 | 106 | 133 | 0 / 0 |
+
+Game by game: red won 9 games only as hoards the 7 too (seeds 7, 34, 43, 44,
+68, 82, 117, 158, 168) and 4 only as the champion (seeds 59, 73, 127, 196);
+the other 187 came out the same.
+
+Red hoards the 7 at 1500, 1000, 500, 0 by pieces home, beside the champion's
+A, joker and J. `exp_seven_hoard.roc`. Leans better (9 games to 4) but within
+chance (p ≈ 0.27). The taper runs against the reason for hoarding a 7 -- a
+split packs pieces into the base in the end game -- so a rising taper is the
+next thing to try. Not adopted yet.
+
 ## Before these races
 
 Every race and arena number before `4a9f3b7` came from a build whose
