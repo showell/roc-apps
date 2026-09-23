@@ -34,20 +34,21 @@ FastTrack :: [].{
 	}
 
 	## What the analysis button steps through, after "off".
-	overlay_variants : List({ title : Str, kind : [Cards({ face : Bool, peak : Str }), Heat] })
+	overlay_variants : List({ title : Str, kind : [Cards({ face : Bool, peak : Str }), Heat(Str)] })
 	overlay_variants = [
 		{ title: "cards to B4", kind: Cards({ face: Bool.False, peak: "B4" }) },
 		{ title: "cards to B4, free face card", kind: Cards({ face: Bool.True, peak: "B4" }) },
 		{ title: "cards to B3, free face card", kind: Cards({ face: Bool.True, peak: "B3" }) },
-		{ title: "heat map (rank to B3)", kind: Heat },
+		{ title: "heat map (rank to B3)", kind: Heat("B3") },
+		{ title: "heat map (rank to B1)", kind: Heat("B1") },
 	]
 
 	## One overlay for one color, from that color's grid (Reach.grid).
-	overlay_for : List(Reach.Move), List(Str), Str, [Cards({ face : Bool, peak : Str }), Heat] -> List(Overlay.Mark)
+	overlay_for : List(Reach.Move), List(Str), Str, [Cards({ face : Bool, peak : Str }), Heat(Str)] -> List(Overlay.Mark)
 	overlay_for = |grid, zone_colors, color, kind|
 		match kind {
 			Cards(c) => Overlay.cards(Reach.fewest_in(grid, zone_colors, color, c.face, c.peak, Reach.cards))
-			Heat => Overlay.heat(Rank.places_in(grid, zone_colors, color))
+			Heat(peak) => Overlay.heat(Rank.places_in(grid, zone_colors, color, peak))
 		}
 
 	## Two bits a seat, the first seat lowest: 0 a person, 1 the computer, 2
@@ -197,7 +198,7 @@ FastTrack :: [].{
 					if model.show_overlay == 0 {
 						""
 					} else {
-						(List.get(overlay_variants, model.show_overlay - 1) ?? { title: "", kind: Heat }).title
+						(List.get(overlay_variants, model.show_overlay - 1) ?? { title: "", kind: Heat("B3") }).title
 					},
 			},
 		)
@@ -241,7 +242,7 @@ expect {
 # again: every step renders (show_overlay 0 once underflowed here).
 expect {
 	start = FastTrack.init(0, 0, 0, 0)
-	List.all([0, 1, 2, 3, 4, 5], |n| {
+	List.all([0, 1, 2, 3, 4, 5, 6], |n| {
 		m = List.fold(List.repeat(0, n), start, |acc, _| FastTrack.update(acc, Codes.toggle_overlay))
 		List.len(FastTrack.view(m).slots) == 89
 	})

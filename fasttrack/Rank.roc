@@ -1,8 +1,9 @@
-# Rank -- Steve's ranking of the squares, for a piece of one color with B4
-# taken (the peak is B3) and a free face card played first. Best first:
+# Rank -- Steve's ranking of the squares, for a piece of one color, counting
+# the way to a peak (B3 once B4 is taken; B1 to rank against the base as a
+# whole) with a free face card played first. Best first:
 #
-#   1. fewer cards to the peak, with every card but the joker;
-#   2. among equals, a base square above the rest, the deeper first;
+#   1. the piece's own base squares above everything else, the deeper first;
+#   2. fewer cards to the peak, with every card but the joker;
 #   3. then more routes -- every shortest sequence of moves, a move being a
 #      card or a face card and a card;
 #   4. then, while still tied, the same two (fewer cards, more routes) with the
@@ -41,13 +42,14 @@ Rank :: [].{
 	## at each stage.
 	Row : { at : U64, loc : Type.PieceLocation, base : I64, stage : List(Reach.Routes) }
 
-	## Base depth, for rule 2: B3 3, B2 2, B1 1, anything else 0.
+	## Base depth, for rule 1: B4 4, B3 3, B2 2, B1 1, anything else 0.
 	base_depth : Str -> I64
 	base_depth = |id|
 		match id {
 			"B1" => 1
 			"B2" => 2
 			"B3" => 3
+			"B4" => 4
 			_ => 0
 		}
 
@@ -66,10 +68,10 @@ Rank :: [].{
 	compare : Rank.Row, Rank.Row -> I64
 	compare = |a, b| {
 		first = |r| List.first(r.stage) ?? { cards: Agent.far, routes: 0 }
-		if first(a).cards != first(b).cards {
-			if first(a).cards < first(b).cards { -1 } else { 1 }
-		} else if a.base != b.base {
+		if a.base != b.base {
 			if a.base > b.base { -1 } else { 1 }
+		} else if first(a).cards != first(b).cards {
+			if first(a).cards < first(b).cards { -1 } else { 1 }
 		} else {
 			List.fold(
 				List.map_with_index(a.stage, |sa, i| by_stage(sa, List.get(b.stage, i) ?? { cards: Agent.far, routes: 0 })),
@@ -81,23 +83,25 @@ Rank :: [].{
 
 	## Every square a piece of `color` can reach the peak from, best first
 	## (ties in board order).
-	ranked : List(Str), Str -> List(Rank.Row)
-	ranked = |zone_colors, color| ranked_in(Reach.grid(zone_colors, color), zone_colors, color)
+	ranked : List(Str), Str, Str -> List(Rank.Row)
+	ranked = |zone_colors, color, peak| ranked_in(Reach.grid(zone_colors, color), zone_colors, color, peak)
 
 	## `ranked`, over a color's grid built once (Reach.grid).
-	ranked_in : List(Reach.Move), List(Str), Str -> List(Rank.Row)
-	ranked_in = |grid, zone_colors, color| {
-		tables = List.map(stages, |st| Reach.routes_in(grid, zone_colors, color, Bool.True, "B3", st.hand))
+	ranked_in : List(Reach.Move), List(Str), Str, Str -> List(Rank.Row)
+	ranked_in = |grid, zone_colors, color, peak| {
+		tables = List.map(stages, |st| Reach.routes_in(grid, zone_colors, color, Bool.True, peak, st.hand))
 		rows = List.join(
 			List.map_with_index(
 				Agent.all_locs(zone_colors),
 				|loc, i| {
 					stage = List.map(tables, |t| List.get(t, i) ?? { cards: Agent.far, routes: 0 })
-					if (List.first(stage) ?? { cards: Agent.far, routes: 0 }).cards >= Agent.far {
+					id = if loc.zone == NormalColor(color) { loc.id } else { "" }
+					base = base_depth(id)
+					# The base squares past the peak count too: they rank first.
+					if base == 0 and (List.first(stage) ?? { cards: Agent.far, routes: 0 }).cards >= Agent.far {
 						[]
 					} else {
-						id = if loc.zone == NormalColor(color) { loc.id } else { "" }
-						[{ at: i, loc, base: base_depth(id), stage }]
+						[{ at: i, loc, base, stage }]
 					}
 				},
 			),
@@ -116,12 +120,12 @@ Rank :: [].{
 	## the peak. `worst` is the place of the last square.
 	Places : { place : List(U64), worst : U64 }
 
-	places : List(Str), Str -> Rank.Places
-	places = |zone_colors, color| places_in(Reach.grid(zone_colors, color), zone_colors, color)
+	places : List(Str), Str, Str -> Rank.Places
+	places = |zone_colors, color, peak| places_in(Reach.grid(zone_colors, color), zone_colors, color, peak)
 
-	places_in : List(Reach.Move), List(Str), Str -> Rank.Places
-	places_in = |grid, zone_colors, color| {
-		order = ranked_in(grid, zone_colors, color)
+	places_in : List(Reach.Move), List(Str), Str, Str -> Rank.Places
+	places_in = |grid, zone_colors, color, peak| {
+		order = ranked_in(grid, zone_colors, color, peak)
 		start = List.repeat(U64.highest, List.len(Agent.all_locs(zone_colors)))
 		settled = List.fold(
 			List.map_with_index(order, |row, i| { row, i }),
@@ -136,11 +140,21 @@ Rank :: [].{
 	}
 }
 
-# Red's places: B3 first, then B2 and B1; R4 above R3; DS above R4; the pen
-# squares share one place.
+# Red's places to B3: B4 first (a base square), then B3, B2 and B1; R4 above
+# R3; DS above R4; the pen squares share one place.
 expect {
 	colors = ["red", "blue", "green", "purple"]
-	p = Rank.places(colors, "red")
+	p = Rank.places(colors, "red", "B3")
 	at = |id| List.get(p.place, Agent.index_of(colors, { zone: NormalColor("red"), id })) ?? U64.highest
-	at("B3") == 0 and at("B2") == 1 and at("B1") == 2 and at("DS") < at("R4") and at("R4") < at("R3") and at("HP1") == at("HP4") and at("B4") == U64.highest
+	at("B4") == 0 and at("B3") == 1 and at("B2") == 2 and at("B1") == 3 and at("DS") < at("R4") and at("R4") < at("R3") and at("HP1") == at("HP4")
+}
+
+# To B1: B4, B3, B2, B1 first, in that order; then BR, with five one-card
+# ways in (2, or a face card then A, J, Q or K), above DS, with four (A, J,
+# Q, K -- no joker).
+expect {
+	colors = ["red", "blue", "green", "purple"]
+	p = Rank.places(colors, "red", "B1")
+	at = |id| List.get(p.place, Agent.index_of(colors, { zone: NormalColor("red"), id })) ?? U64.highest
+	at("B4") == 0 and at("B3") == 1 and at("B2") == 2 and at("B1") == 3 and at("BR") == 4 and at("DS") == 5
 }

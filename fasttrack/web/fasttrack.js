@@ -211,9 +211,9 @@ if (typeof window !== "undefined" && window.document && window.FASTTRACK_WASM) {
     const page = FastTrack.mount(document, root, g, schedule);
     // `?show=cards` opens with the fewest cards to B4 on every square,
     // `?show=face` with them counted with a free face card, `?show=b3` the
-    // same to B3, as once B4 is taken, and `?show=heat` the heat map of the
-    // ranking (Codes.toggle_overlay steps through FastTrack.overlay_variants).
-    const steps = { cards: 1, face: 2, b3: 3, heat: 4 }[params.get("show")] ?? 0;
+    // same to B3, as once B4 is taken, `?show=heat` the heat map of the
+    // ranking to B3 and `?show=heat1` to B1 (Codes.toggle_overlay steps through FastTrack.overlay_variants).
+    const steps = { cards: 1, face: 2, b3: 3, heat: 4, heat1: 5 }[params.get("show")] ?? 0;
     if (steps === 0) page.draw();
     for (let i = 0; i < steps; i++) page.onClick(4);
   })();

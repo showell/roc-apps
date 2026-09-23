@@ -32,7 +32,7 @@ cell : Reach.Routes -> Str
 cell = |r| if r.cards >= Agent.far { "-" } else { "${I64.to_str(r.cards)} / ${U64.to_str(r.routes)}" }
 
 main! = |_args| {
-	ranked = Rank.ranked(colors, "red")
+	ranked = Rank.ranked(colors, "red", "B3")
 	lines = List.map(ranked, |r| "| ${name(r)} | ${Str.join_with(List.map(r.stage, cell), " | ")} |")
 	header = "| square | ${Str.join_with(List.map(Rank.stages, |st| st.title), " | ")} |\n|---|---|---|---|---|---|---|\n"
 	echo!(Str.concat(header, Str.join_with(lines, "\n")))

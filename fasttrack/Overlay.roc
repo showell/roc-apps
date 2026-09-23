@@ -29,8 +29,9 @@ Overlay :: [].{
 				},
 		)
 
-	## Steve's heat map: the best square blue 255, the worst 0, by rank
-	## (Rank.places); the rank on the square, 1 the best.
+	## Steve's heat map: the best square pure blue, the worst white, red and
+	## green falling together as a square ranks better (Rank.places); the
+	## rank on the square, 1 the best.
 	heat : Rank.Places -> List(Overlay.Mark)
 	heat = |places|
 		List.map(
@@ -39,8 +40,8 @@ Overlay :: [].{
 				if p == U64.highest {
 					none
 				} else {
-					blue = if places.worst == 0 { 255 } else { (255 * (places.worst - p)) // places.worst }
-					{ label: U64.to_str(p + 1), hint: "rank ${U64.to_str(p + 1)} of ${U64.to_str(places.worst + 1)}", fill: "rgb(0, 0, ${U64.to_str(blue)})" }
+					rg = if places.worst == 0 { 0 } else { (255 * p) // places.worst }
+					{ label: U64.to_str(p + 1), hint: "rank ${U64.to_str(p + 1)} of ${U64.to_str(places.worst + 1)}", fill: "rgb(${U64.to_str(rg)}, ${U64.to_str(rg)}, 255)" }
 				},
 		)
 }

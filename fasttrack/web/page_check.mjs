@@ -147,13 +147,13 @@ page.onClick(4);
 // To B3: B3 (square 6) reads 0, and B4 (square 7), taken, reads nothing.
 if (labelOf(0, 6) !== "0" || labelOf(0, 7) !== "") fail(`cards to B3: B3 ${labelOf(0, 6)}, B4 ${labelOf(0, 7)}`);
 page.onClick(4);
-// The heat map: B3 ranks first, pure blue; the pen is somewhere darker.
-{
-  const b3 = last.slots[6];
-  if (b3.label !== "1" || b3.fill !== "rgb(0, 0, 255)") fail(`heat map: B3 ${b3.label} ${b3.fill}`);
-  if (!/^rgb\(0, 0, \d+\)$/.test(last.slots[0].fill) || last.slots[0].fill === b3.fill) fail(`heat map: pen ${last.slots[0].fill}`);
+// The heat maps: B4 ranks first, pure blue; the pen is paler, toward white.
+for (const peak of ["B3", "B1"]) {
+  const b4 = last.slots[7];
+  if (b4.label !== "1" || b4.fill !== "rgb(0, 0, 255)") fail(`heat map to ${peak}: B4 ${b4.label} ${b4.fill}`);
+  if (!/^rgb\((\d+), \1, 255\)$/.test(last.slots[0].fill) || last.slots[0].fill === b4.fill) fail(`heat map to ${peak}: pen ${last.slots[0].fill}`);
+  page.onClick(4);
 }
-page.onClick(4);
 if (last.slots.some((s) => s.label !== "")) fail("cards home stays on after it is hidden");
 check(0);
 const firstPage = pageText(root);
