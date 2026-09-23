@@ -400,6 +400,22 @@ pairing**: pairing (both variants on the same deal) already cuts the error
 games. A/B experiments stay paired by seed. Red, moving first, wins 27.2%
 ± 0.7 with every deck through its seat: a first-move edge of about 2 points.
 
+### No J hoard, dealt as duplicate, 2026-09-23
+
+1000 seeds, each dealt four times with the decks turned a seat: 4000 games
+per variant. Red hoards only the A and joker (1500/1000/500/0) against the
+champion, which hoards the J too. `exp_duplicate.roc` at `90fb257`.
+
+| red plays as | red won | win rate | wins with the decks turned 0 / 1 / 2 / 3 seats |
+|---|---|---|---|
+| the champion | 1087 of 4000 | 0.272 | 250 / 281 / 289 / 267 |
+| no J hoard | 1059 of 4000 | 0.265 | 246 / 270 / 289 / 254 |
+
+Deals only no J hoard won: 143; only the champion won: 171. The difference,
+-0.007 a game, is -1.58 standard errors paired (0.004): the J hoard helps,
+as Steve expected (one-sided p ≈ 0.06), but not by much. The champion keeps
+it.
+
 ## Before these races
 
 Every race and arena number before `4a9f3b7` came from a build whose
