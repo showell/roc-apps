@@ -301,7 +301,7 @@ Page :: [].{
 	credits_view : Type.Player -> Page.Tree
 	credits_view = |player|
 		if player.get_out_credits > 0 {
-			div([text("You have "), bold("", [text(I64.to_str(player.get_out_credits))]), text(" credits (you need 5 to get out)")])
+			div([text("You have "), bold("", [text(I64.to_str(player.get_out_credits))]), text(" credits (you need ${I64.to_str(Config.num_credits_to_get_out)} to get out)")])
 		} else {
 			span([])
 		}

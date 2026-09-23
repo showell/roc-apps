@@ -2,8 +2,10 @@
 import Type
 
 Config :: [].{
+	## Discards that bring a piece out of the pen. Elm had 5; Steve's game
+	## has 4.
 	num_credits_to_get_out : I64
-	num_credits_to_get_out = 5
+	num_credits_to_get_out = 4
 
 	gutter_size : F64
 	gutter_size = 4.0
@@ -165,8 +167,8 @@ Config :: [].{
 			_ => "bogus"
 		}
 
-	## Suits do not matter in Fast Track. The deck is never shuffled: a draw
-	## takes a card from a random position in what is left.
+	## Suits do not matter in Fast Track. Each player's copy is shuffled once
+	## before the game and drawn from the top (Player.shuffle).
 	full_deck : List(Str)
 	full_deck = List.join(List.repeat(["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"], 4)).concat(["joker", "joker"])
 }
