@@ -110,7 +110,8 @@ table = |title, hop, pen, back4| {
 		},
 	)
 	header = "## ${title}\n\nhop ${I64.to_str(hop)}, pen ${I64.to_str(pen)}, back4 ${if back4 == 0 { "off" } else { I64.to_str(back4) }}\n\n| square | steps | formula | route |\n|---|---|---|---|\n"
-	Str.concat(header, Str.join_with(rows, "\n"))
+	# `echo!` adds no newline, so every table ends with its own.
+	Str.concat(Str.concat(header, Str.join_with(rows, "\n")), "\n\n")
 }
 
 main! = |_args| {
