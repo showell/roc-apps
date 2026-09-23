@@ -39,11 +39,14 @@ FastTrack :: [].{
 
 	## One weight of one computer seat: `factor` 0 is danger, 1 out of the
 	## pen, 2 home, 3 the cost of a fast-track hop, 4 the wait in the pen,
-	## 5 the cost of a 4 played backwards (Agent.Weights). Anything else, or a seat that is not the
+	## 5 the cost of a 4 played backwards, 6 to 15 the regions (Agent.tune_region)
+	## (Agent.Weights). Anything else, or a seat that is not the
 	## computer's, is left alone.
 	tune : FastTrack.Model, U32, U32, U32 -> FastTrack.Model
 	tune = |model, seat_idx, factor, value| {
-		v = U32.to_i64(value)
+		# Signed: the page's JavaScript hands a negative weight over as the
+		# U32 with the same bits.
+		v = if value >= 2147483648 { U32.to_i64(value) - 4294967296 } else { U32.to_i64(value) }
 		retuned = List.map_with_index(
 			model.seats,
 			|s, i|
@@ -63,6 +66,8 @@ FastTrack :: [].{
 								{ ..w, pen: v }
 							} else if factor == 5 {
 								{ ..w, back4: v }
+							} else if factor >= 6 and factor <= 15 {
+								{ ..w, regions: Agent.tune_region(w.regions, factor - 6, v) }
 							} else {
 								w
 							}
@@ -156,6 +161,15 @@ expect {
 	model = FastTrack.tune(FastTrack.init(0, 0, 1, 0), 0, 3, 14)
 	match List.first(model.seats) {
 		Ok(Computer(k)) => k.weights.hop == 14 and List.get(List.first(k.steps) ?? [], 16) == Ok(32)
+		_ => Bool.False
+	}
+}
+
+# A negative weight arrives as the U32 with its bits: -44 is 4294967252.
+expect {
+	model = FastTrack.tune(FastTrack.init(0, 0, 1, 0), 0, 8, 4294967252)
+	match List.first(model.seats) {
+		Ok(Computer(k)) => k.weights.regions.out_safely == -44
 		_ => Bool.False
 	}
 }

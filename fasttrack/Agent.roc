@@ -51,12 +51,117 @@ import Type
 Agent :: [].{
 	Line : { game : Type.Game, msgs : List(Type.GameMsg), drew : Bool }
 
-	Weights : { danger : I64, out_of_pen : I64, home : I64, hop : I64, pen : I64, back4 : I64 }
+	Weights : { danger : I64, out_of_pen : I64, home : I64, hop : I64, pen : I64, back4 : I64, regions : Agent.Regions }
+
+	## Steve's regions of the board, each worth a fixed value to a piece of
+	## its own color (higher is better), in place of steps left when `on` is
+	## 1. The base is `safely_home` plus 0, 1, 2 or 3 `tuck`s, B1 to B4.
+	Regions : {
+		on : I64,
+		pen : I64,
+		out_safely : I64,
+		l34 : I64,
+		fast_track : I64,
+		bulls_eye : I64,
+		enemy : I64,
+		in_range : I64,
+		safely_home : I64,
+		tuck : I64,
+	}
+
+	## Where the region weights start: today's distance table, four to a step,
+	## averaged over each region (back4 6, home 10).
+	default_regions : Agent.Regions
+	default_regions = {
+		on: 0,
+		pen: -68,
+		out_safely: -44,
+		l34: -62,
+		fast_track: -50,
+		bulls_eye: -72,
+		enemy: -76,
+		in_range: -28,
+		safely_home: -2,
+		tuck: 4,
+	}
+
+	## A square's region, for a piece of `color`: the pen; its own L0 to L2
+	## and HH ("out safely": a 4 back from any of them reaches its home
+	## stretch); its own L3 and L4; any fast-track square; the bullseye; its
+	## own R4 to DS ("in range"); its base, B1 to B4 as 0 to 3; and every
+	## other square, in another color's zone ("enemy territory").
+	region : Str, Type.PieceLocation -> [Pen, OutSafely, L34, FastTrack, BullsEye, Enemy, InRange, Base(I64)]
+	region = |color, loc|
+		if Config.is_holding_pen_id(loc.id) {
+			Pen
+		} else if loc.zone == BullsEyeZone {
+			BullsEye
+		} else if loc.id == "FT" {
+			FastTrack
+		} else if loc.zone != NormalColor(color) {
+			Enemy
+		} else {
+			match loc.id {
+				"L0" => OutSafely
+				"L1" => OutSafely
+				"L2" => OutSafely
+				"HH" => OutSafely
+				"L3" => L34
+				"L4" => L34
+				"B1" => Base(0)
+				"B2" => Base(1)
+				"B3" => Base(2)
+				"B4" => Base(3)
+				_ => InRange
+			}
+		}
+
+	## One region weight by number, in `Regions`' order: 0 on, 1 pen, 2 out
+	## safely, 3 L3/L4, 4 fast track, 5 bullseye, 6 enemy, 7 in range, 8
+	## safely home, 9 tuck.
+	tune_region : Agent.Regions, U32, I64 -> Agent.Regions
+	tune_region = |r, i, v|
+		if i == 0 {
+			{ ..r, on: v }
+		} else if i == 1 {
+			{ ..r, pen: v }
+		} else if i == 2 {
+			{ ..r, out_safely: v }
+		} else if i == 3 {
+			{ ..r, l34: v }
+		} else if i == 4 {
+			{ ..r, fast_track: v }
+		} else if i == 5 {
+			{ ..r, bulls_eye: v }
+		} else if i == 6 {
+			{ ..r, enemy: v }
+		} else if i == 7 {
+			{ ..r, in_range: v }
+		} else if i == 8 {
+			{ ..r, safely_home: v }
+		} else if i == 9 {
+			{ ..r, tuck: v }
+		} else {
+			r
+		}
+
+	region_value : Agent.Regions, Str, Type.PieceLocation -> I64
+	region_value = |r, color, loc|
+		match region(color, loc) {
+			Pen => r.pen
+			OutSafely => r.out_safely
+			L34 => r.l34
+			FastTrack => r.fast_track
+			BullsEye => r.bulls_eye
+			Enemy => r.enemy
+			InRange => r.in_range
+			Base(n) => r.safely_home + n * r.tuck
+		}
 
 	## The weights a computer seat plays with unless told otherwise: the
 	## winners of the races in TUNING.md.
 	default_weights : Agent.Weights
-	default_weights = { danger: 0, out_of_pen: 0, home: 10, hop: 1, pen: 4, back4: 6 }
+	default_weights = { danger: 0, out_of_pen: 0, home: 10, hop: 1, pen: 4, back4: 6, regions: default_regions }
 
 	## Extra steps for waiting on J, Q or K to leave the bullseye.
 	bulls_eye_wait : I64
@@ -297,11 +402,16 @@ Agent :: [].{
 					List.keep_if(pieces, |p| p.owner == owner),
 					0,
 					|total, p| {
-						steps = List.get(List.get(k.steps, owner) ?? [], p.at) ?? far
-						out = if Config.is_holding_pen_id(p.loc.id) { 0 } else { w.out_of_pen }
-						home = if Config.is_base_id(p.loc.id) { w.home } else { 0 }
 						danger = if w.danger != 0 and in_danger(k, pieces, p, partner_list) { w.danger } else { 0 }
-						total - 4 * steps + out + home - danger
+						if w.regions.on == 1 {
+							color = List.get(game.zone_colors, owner) ?? ""
+							total + region_value(w.regions, color, p.loc) - danger
+						} else {
+							steps = List.get(List.get(k.steps, owner) ?? [], p.at) ?? far
+							out = if Config.is_holding_pen_id(p.loc.id) { 0 } else { w.out_of_pen }
+							home = if Config.is_base_id(p.loc.id) { w.home } else { 0 }
+							total - 4 * steps + out + home - danger
+						}
 					},
 				),
 		)
@@ -551,4 +661,24 @@ expect {
 	game = Player.set_turn_to_need_card({ ..start, piece_map, players })
 	finished = List.fold(Agent.plan(Agent.knowledge(Agent.default_weights, game.zone_colors), game), game, |g, msg| Game.update_game(msg, History.init, g).1)
 	Piece.get_piece(finished.piece_map, { zone: NormalColor("red"), id: "L2" }) == Ok("red")
+}
+
+# Steve's regions, for red.
+expect {
+	at = |zone, id| { zone: NormalColor(zone), id }
+	[
+		Agent.region("red", at("red", "HP2")),
+		Agent.region("red", at("red", "L0")),
+		Agent.region("red", at("red", "HH")),
+		Agent.region("red", at("red", "L4")),
+		Agent.region("red", at("red", "FT")),
+		Agent.region("red", at("green", "FT")),
+		Agent.region("red", { zone: BullsEyeZone, id: "bullseye" }),
+		Agent.region("red", at("blue", "R4")),
+		Agent.region("red", at("purple", "L4")),
+		Agent.region("red", at("red", "R4")),
+		Agent.region("red", at("red", "DS")),
+		Agent.region("red", at("red", "B4")),
+	]
+	== [Pen, OutSafely, OutSafely, L34, FastTrack, FastTrack, BullsEye, Enemy, Enemy, InRange, InRange, Base(3)]
 }

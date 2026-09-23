@@ -5,7 +5,10 @@
 // A weight spec is `danger=<n>,out=<n>,home=<n>,hop=<n>,pen=<n>,back4=<n>`
 // (Agent.Weights, in the agent's units: a step is 4, except hop, pen and
 // back4, which are steps, back4 0 meaning no backwards 4); a factor left out
-// is Agent.default_weights' (danger 0, out 0, home 10, hop 1, pen 4, back4 6).
+// is Agent.default_weights' (danger 0, out 0, home 10, hop 1, pen 4, back4 6,
+// and Agent.default_regions). `regions=1` plays by Steve's regions of the
+// board instead of by steps left; `r_pen`, `r_out`, `r_l34`, `r_ft`,
+// `r_bull`, `r_enemy`, `r_range`, `r_safe` and `r_tuck` are their values.
 // Every deal is played twice, as abab and baba, so neither side keeps the
 // seats that move first; with DEALS=40 that is 80 games. The games are split
 // between two worker threads, one per core. A game past CAP clicks is a draw.
@@ -15,11 +18,16 @@ import { readFileSync } from "node:fs";
 import { Worker, isMainThread, parentPort, workerData } from "node:worker_threads";
 import vm from "node:vm";
 
-const FACTORS = { danger: 0, out: 1, home: 2, hop: 3, pen: 4, back4: 5 };
+const FACTORS = {
+  danger: 0, out: 1, home: 2, hop: 3, pen: 4, back4: 5,
+  // Agent.Regions, in order: on (1 for the regions, 0 for the distance), then
+  // each region's value.
+  regions: 6, r_pen: 7, r_out: 8, r_l34: 9, r_ft: 10, r_bull: 11, r_enemy: 12, r_range: 13, r_safe: 14, r_tuck: 15,
+};
 const COLORS = ["red", "blue", "green", "purple"];
 
 function parse(spec) {
-  const w = [0, 0, 10, 1, 4, 6];
+  const w = [0, 0, 10, 1, 4, 6, 0, -68, -44, -62, -50, -72, -76, -28, -2, 4];
   for (const part of (spec ?? "").split(",").filter(Boolean)) {
     const [name, value] = part.split("=");
     if (!(name in FACTORS)) throw new Error(`race: no factor ${name}`);
