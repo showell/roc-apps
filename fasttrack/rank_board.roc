@@ -7,8 +7,9 @@
 #      card or a face card and a card;
 #   4. then, while still tied, the same two (fewer cards, more routes) with the
 #      6 gone from the deck; then the 7 too; then the 4; and last the J, Q and
-#      K, and with them the free face card -- last, so that face + 8 still
-#      counts as a cheaper play than face + 7.
+#      K, and with them the free face card -- late, so that face + 8 still
+#      counts as a cheaper play than face + 7; and then the 9 and 10, so a
+#      square reached with a 2 or 3 beats one reached with a 9 or 10.
 #
 # Squares that still tie after every stage are listed at the end.
 #
@@ -37,12 +38,14 @@ stages = {
 	no7 = List.drop_if(no6, |c| c == "7")
 	no4 = List.drop_if(no7, |c| c == "4")
 	no_face = List.drop_if(no4, |c| List.contains(["J", "Q", "K"], c))
+	no_high = List.drop_if(no_face, |c| c == "9" or c == "10")
 	[
 		{ title: "no joker", hand: all },
 		{ title: "no 6", hand: no6 },
 		{ title: "no 7", hand: no7 },
 		{ title: "no 4", hand: no4 },
 		{ title: "no J/Q/K", hand: no_face },
+		{ title: "no 9/10", hand: no_high },
 	]
 }
 
@@ -122,7 +125,7 @@ ranked = List.sort_with(rows, |a, b| {
 
 main! = |_args| {
 	lines = List.map(ranked, |r| "| ${r.name} | ${Str.join_with(List.map(r.stage, cell), " | ")} |")
-	header = "| square | ${Str.join_with(List.map(stages, |st| st.title), " | ")} |\n|---|---|---|---|---|---|\n"
+	header = "| square | ${Str.join_with(List.map(stages, |st| st.title), " | ")} |\n|---|---|---|---|---|---|---|\n"
 	echo!(Str.concat(header, Str.join_with(lines, "\n")))
 	echo!("\n\n")
 	# Neighbours in the ranking that compare equal: the ties.
