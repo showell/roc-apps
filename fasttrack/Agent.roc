@@ -56,7 +56,7 @@ Agent :: [].{
 	## The weights a computer seat plays with unless told otherwise: the
 	## winners of the races in TUNING.md.
 	default_weights : Agent.Weights
-	default_weights = { danger: 0, out_of_pen: 0, home: 10, hop: 1, pen: 4, back4: 0 }
+	default_weights = { danger: 0, out_of_pen: 0, home: 10, hop: 1, pen: 4, back4: 6 }
 
 	## Extra steps for waiting on J, Q or K to leave the bullseye.
 	bulls_eye_wait : I64
@@ -516,13 +516,16 @@ expect {
 	List.get(Agent.distances(colors, "red", 14, 4, 0), Agent.index_of(colors, { zone: NormalColor("red"), id: "FT" })) == Ok(32)
 }
 
-# With a 2 and a 3, red takes the 3 that lands on blue and sends it home.
+# With a 2 and a 3, red takes the 3 that lands on blue and sends it home --
+# with no 4 played backwards. With one (back4 6), red plays the 2 instead:
+# L0 to L2 keeps its piece where a 4 back reaches home, and the 3 would leave
+# it on L3, where none does.
 expect {
 	start = Game.begin_game(0, Normal, Solo)
 	piece_map = [{ key: { zone: NormalColor("red"), id: "L0" }, value: "red" }, { key: { zone: NormalColor("red"), id: "L3" }, value: "blue" }]
 	players = Player.update_player(start.players, 0, |p| { ..p, hand: ["2", "3"], turn: TurnBegin })
 	game = Player.set_turn_to_need_card({ ..start, piece_map, players })
-	finished = List.fold(Agent.plan(Agent.knowledge(Agent.default_weights, game.zone_colors), game), game, |g, msg| Game.update_game(msg, History.init, g).1)
+	finished = List.fold(Agent.plan(Agent.knowledge({ ..Agent.default_weights, back4: 0 }, game.zone_colors), game), game, |g, msg| Game.update_game(msg, History.init, g).1)
 	Piece.get_piece(finished.piece_map, { zone: NormalColor("red"), id: "L3" }) == Ok("red")
 	and Piece.get_piece(finished.piece_map, { zone: NormalColor("blue"), id: "HP1" }) == Ok("blue")
 }
@@ -539,4 +542,13 @@ expect {
 		List.map(Agent.placed(game), |p| Agent.in_danger(k, Agent.placed(game), p, [0, 1, 2, 3]))
 	}
 	danger("L0") == [Bool.True, Bool.False] and danger("L3") == [Bool.False, Bool.True]
+}
+
+expect {
+	start = Game.begin_game(0, Normal, Solo)
+	piece_map = [{ key: { zone: NormalColor("red"), id: "L0" }, value: "red" }, { key: { zone: NormalColor("red"), id: "L3" }, value: "blue" }]
+	players = Player.update_player(start.players, 0, |p| { ..p, hand: ["2", "3"], turn: TurnBegin })
+	game = Player.set_turn_to_need_card({ ..start, piece_map, players })
+	finished = List.fold(Agent.plan(Agent.knowledge(Agent.default_weights, game.zone_colors), game), game, |g, msg| Game.update_game(msg, History.init, g).1)
+	Piece.get_piece(finished.piece_map, { zone: NormalColor("red"), id: "L2" }) == Ok("red")
 }

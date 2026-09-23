@@ -114,8 +114,8 @@ table = |title, hop, pen, back4| {
 }
 
 main! = |_args| {
-	echo!(table("The computer today", 1, 4, 0))
+	echo!(table("Without the 4 played backwards", 1, 4, 0))
 	echo!("")
-	echo!(table("With the 4 played backwards (Steve)", 1, 4, 1))
+	echo!(table("The computer today: a 4 played backwards costs 6", 1, 4, 6))
 	Ok({})
 }
