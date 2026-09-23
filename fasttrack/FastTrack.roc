@@ -8,6 +8,7 @@
 # a tick; a refilled hand, which ends a plan, gets a new one.
 import pf.Wire
 import Codes
+import Motion
 import Game
 import History
 import Page
@@ -21,12 +22,15 @@ FastTrack :: [].{
 	Seat : [Human, Computer(Strategy.Strategy)]
 
 	## `plan` is the rest of the computer's current plan: the clicks it has
-	## chosen and not yet played.
+	## chosen and not yet played. `motions` are what the last click moved,
+	## and `motion_id` counts the clicks that moved something.
 	Model : {
 		game : Type.Game,
 		history : History.History(Type.Game),
 		seats : List(FastTrack.Seat),
 		plan : List(Type.GameMsg),
+		motion_id : U32,
+		motions : List(Motion.Motion),
 	}
 
 	## Two bits a seat, the first seat lowest: 0 a person, anything else the
@@ -55,7 +59,7 @@ FastTrack :: [].{
 	init = |millis, setup, seat_bits, teams| {
 		team_style = if teams == 1 { Anytime } else if teams == 2 { OnceHome } else { Solo }
 		game = Game.begin_game(millis, List.get(setups, U32.to_u64(setup)) ?? Normal, team_style)
-		{ game, history: History.reset(game), seats: seats_of(seat_bits), plan: [] }
+		{ game, history: History.reset(game), seats: seats_of(seat_bits), plan: [], motion_id: 0, motions: [] }
 	}
 
 	## The computer's next click, and the rest of its plan: a finished turn
@@ -99,7 +103,9 @@ FastTrack :: [].{
 		match step {
 			Ok(s) => {
 				(history, game) = Game.update_game(s.msg, model.history, model.game)
-				{ ..model, game, history, plan: s.rest }
+				motions = Motion.of(model.game, s.msg, game)
+				motion_id = if List.is_empty(motions) { model.motion_id } else { model.motion_id + 1 }
+				{ ..model, game, history, plan: s.rest, motion_id, motions }
 			}
 			Err(_) => model
 		}
@@ -115,6 +121,8 @@ FastTrack :: [].{
 				show_undo: human and History.can_undo(model.history, model.game),
 				tick: if agent_to_move(model) { Codes.agent_step } else { 0 },
 				winner: Game.winner(model.game) ?? "",
+				motion_id: model.motion_id,
+				motions: List.map(model.motions, |m| { color: m.color, path: List.map(m.path, U64.to_u32_wrap) }),
 			},
 		)
 	}

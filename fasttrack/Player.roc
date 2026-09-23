@@ -49,6 +49,7 @@ Player :: [].{
 		{
 			deck: shuffled.deck,
 			hand: Setup.starting_hand(init_setup, color),
+			pile: 0,
 			get_out_credits: 0,
 			turn: TurnBegin,
 			color,
@@ -203,7 +204,7 @@ Player :: [].{
 				# A move-again card keeps the player discarding; the caller
 				# moves to covering once there are credits enough to get out.
 				turn = if Config.is_move_again_card(card) { TurnNeedDiscard } else { TurnDone }
-				{ ..player, hand: List.drop_at(player.hand, idx), turn, get_out_credits: player.get_out_credits + 1 }
+				{ ..player, hand: List.drop_at(player.hand, idx), pile: player.pile + 1, turn, get_out_credits: player.get_out_credits + 1 }
 			}
 			_ => player
 		}
@@ -213,7 +214,7 @@ Player :: [].{
 		match (List.get(player.hand, idx), player.turn) {
 			(Ok(card), TurnNeedCover) => {
 				turn = if Config.is_move_again_card(card) { TurnNeedCover } else { TurnDone }
-				{ ..player, hand: List.drop_at(player.hand, idx), turn }
+				{ ..player, hand: List.drop_at(player.hand, idx), pile: player.pile + 1, turn }
 			}
 			_ => player
 		}
@@ -230,7 +231,7 @@ Player :: [].{
 						start_locs: Assoc.set_from_list(List.map(moves, |m| m.start)),
 					},
 				)
-				{ ..player, hand: List.drop_at(player.hand, idx), turn }
+				{ ..player, hand: List.drop_at(player.hand, idx), pile: player.pile + 1, turn }
 			}
 			_ => player
 		}
@@ -269,9 +270,12 @@ Player :: [].{
 
 	draw_card : Type.Player -> Type.Player
 	draw_card = |player| {
-		fresh = if List.is_empty(player.deck) { shuffle(player.seed) } else { { deck: player.deck, seed: player.seed } }
+		# A new deck is the discard pile shuffled back in.
+		reshuffled = List.is_empty(player.deck)
+		fresh = if reshuffled { shuffle(player.seed) } else { { deck: player.deck, seed: player.seed } }
+		pile = if reshuffled { 0 } else { player.pile }
 		match fresh.deck {
-			[card, .. as rest] => { ..player, deck: rest, seed: fresh.seed, hand: List.append(player.hand, card) }
+			[card, .. as rest] => { ..player, deck: rest, seed: fresh.seed, pile, hand: List.append(player.hand, card) }
 			[] => player
 		}
 	}

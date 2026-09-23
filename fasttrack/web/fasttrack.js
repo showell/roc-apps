@@ -13,7 +13,9 @@
 // A click sends back the code Roc gave the thing clicked; nothing here builds
 // a message. When the computer is playing, the view names a `tick` code, and
 // the page sends it back by itself after a pause -- one computer click per
-// tick, so a person can watch.
+// tick, so a person can watch. A view's `motions` (what the last click moved)
+// are walked square by square before the next tick: the board is drawn as red
+// sees it, so a motion's squares are slot numbers.
 //
 // A plain script (the page loads it with <script src>), defining `FastTrack`.
 // page_check.mjs runs the same file against a stand-in document.
@@ -104,7 +106,50 @@ const FastTrack = (() => {
       });
     }
 
-    return { svg, patch };
+    // A piece hidden while a marble walks to it, and shown when it lands.
+    const hide = (i) => entries[i] && set(entries[i].piece, "visibility", "hidden");
+    const show = (i) => entries[i] && entries[i].last && set(entries[i].piece, "visibility", entries[i].last.piece === "" ? "hidden" : "visible");
+
+    return { svg, patch, hide, show };
+  }
+
+  // Walks each motion's marble across the board, one square every `step`
+  // ms, one motion after another, then calls `done`. The board already shows
+  // where everything ends; each motion's last square stays hidden until its
+  // marble arrives.
+  function animator(document, step) {
+    return (b, view, done) => {
+      const slots = view.slots;
+      view.motions.forEach((m) => b.hide(m.path[m.path.length - 1]));
+      let k = 0;
+      const next = () => {
+        if (k >= view.motions.length) return done();
+        const m = view.motions[k++];
+        const marble = document.createElementNS(SVG, "circle");
+        marble.setAttribute("r", "6");
+        marble.setAttribute("fill", m.color);
+        marble.setAttribute("stroke", "black");
+        b.svg.appendChild(marble);
+        let j = 0;
+        const hop = () => {
+          const s = slots[m.path[j]];
+          marble.setAttribute("cx", String(s.cx));
+          marble.setAttribute("cy", String(s.cy));
+          j += 1;
+          if (j < m.path.length) {
+            setTimeout(hop, step);
+          } else {
+            setTimeout(() => {
+              marble.remove();
+              b.show(m.path[m.path.length - 1]);
+              next();
+            }, step);
+          }
+        };
+        hop();
+      };
+      next();
+    };
   }
 
   // The page, rebuilt: each node lands in its parent, which came before it.
@@ -129,15 +174,23 @@ const FastTrack = (() => {
   }
 
   // Wires a game to a document: draw, and redraw after every click. A view
-  // that names a tick hands it to `schedule`, which sends it later; the
-  // browser passes a timer, a check passes nothing and sends it itself.
-  function mount(document, root, g, schedule) {
+  // that names a tick hands it to `schedule`, which sends it later, once any
+  // `animate` of its motions is done; the browser passes a timer and an
+  // animator, a check passes neither and sends the tick itself.
+  function mount(document, root, g, schedule, animate) {
     const b = board(document);
+    let lastMotion = 0;
     const draw = () => {
       const view = g.view();
       b.patch(view, onClick);
       render(document, root, view.nodes, b.svg, onClick);
-      if (view.tick && schedule) schedule(() => onClick(view.tick));
+      const tick = () => { if (view.tick && schedule) schedule(() => onClick(view.tick)); };
+      if (animate && view.motion_id !== lastMotion && view.motions.length > 0) {
+        lastMotion = view.motion_id;
+        animate(b, view, tick);
+      } else {
+        tick();
+      }
       return view;
     };
     const onClick = (code) => {
@@ -147,7 +200,7 @@ const FastTrack = (() => {
     return { draw, onClick };
   }
 
-  // `?seats=hccc`: who plays each color, in the game's order (red, blue,
+  // Who plays each color, as the checks' SEATS spell it: in the game's order (red, blue,
   // green, purple) -- h a person, c the computer. Two bits a seat, as
   // FastTrack.seats_of reads them.
   function seatBits(text) {
@@ -162,13 +215,15 @@ const FastTrack = (() => {
     return { anytime: 1, oncehome: 2 }[text] ?? 0;
   }
 
-  return { game, board, render, mount, seatBits, teamStyle };
+  return { game, board, render, mount, animator, seatBits, teamStyle };
 })();
 
-// In a browser: `?seed=` replays a deal, `?setup=` starts from one of
-// Setup.roc's scenarios by number, `?seats=` (default hccc: you are red)
-// says who plays, `?teams=anytime|oncehome` seats partnerships, and
-// `?pause=` is the computer's pause per click in ms.
+// In a browser there is one way to play: you are red, and the computer plays
+// blue, green and purple, each for itself. `?seed=` replays a deal, `?setup=`
+// starts from one of Setup.roc's scenarios by number, `?pause=` is the
+// computer's pause per click in ms (default 1050), and `?step=` a marble's
+// time per square in ms (default 150). The checks start other seatings
+// (seatBits, teamStyle).
 if (typeof window !== "undefined" && window.document && window.FASTTRACK_WASM) {
   (async () => {
     const root = document.getElementById("game");
@@ -178,15 +233,16 @@ if (typeof window !== "undefined" && window.document && window.FASTTRACK_WASM) {
     g.start(
       Number(params.get("seed") ?? Date.now()),
       Number(params.get("setup") ?? 0),
-      FastTrack.seatBits(params.get("seats") ?? "hccc"),
-      FastTrack.teamStyle(params.get("teams") ?? ""),
+      FastTrack.seatBits("hccc"),
+      FastTrack.teamStyle(""),
     );
-    const pause = Number(params.get("pause") ?? 350);
+    const pause = Number(params.get("pause") ?? 1050);
+    const step = Number(params.get("step") ?? 150);
     let pending = null;
     const schedule = (send) => {
       clearTimeout(pending);
       pending = setTimeout(send, pause);
     };
-    FastTrack.mount(document, root, g, schedule).draw();
+    FastTrack.mount(document, root, g, schedule, FastTrack.animator(document, step)).draw();
   })();
 }

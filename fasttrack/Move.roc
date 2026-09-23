@@ -44,4 +44,25 @@ Move :: [].{
 			# a programming error
 			Err(_) => game
 		}
+
+	## The moves one message makes: an end click's, or a start click's when
+	## that piece has only one place to go (maybe_auto_move).
+	made : Type.Game, Type.GameMsg -> List(Type.Move)
+	made = |game, msg|
+		match (Player.get_active_player(game).turn, msg) {
+			(TurnNeedStartLoc(info), SetStartLocation(start)) => {
+				from = List.keep_if(info.moves, |m| m.start == start)
+				match from {
+					[first, ..] if List.all(from, |m| m.end == first.end) => [first]
+					_ => []
+				}
+			}
+			(TurnNeedEndLoc(info), SetEndLocation(end)) => {
+				match List.find_first(info.moves, |m| m.start == info.start_location and m.end == end) {
+					Ok(m) => [m]
+					Err(_) => []
+				}
+			}
+			_ => []
+		}
 }

@@ -43,6 +43,19 @@ LegalMove :: [].{
 			)
 		}
 
+	## The squares a move of `n` steps from `start` to `end` passes through,
+	## start and end included: its first open walk (Routes' order).
+	walk_between : Type.Board, U64, U64, U64, I64, Bool -> List(U64)
+	walk_between = |board, c, start, end, n, reverse| {
+		r = Board.relative(c, start)
+		walks = if reverse { Routes.backward_walks(r, I64.to_u64_wrap(n)) } else { Routes.forward_walks(r, I64.to_u64_wrap(n)) }
+		open = List.keep_if(
+			List.map(walks, |walk| List.map(walk, |x| Board.absolute(c, x))),
+			|walk| List.last(walk) == Ok(end) and !List.any(walk, |x| Piece.holds(board, x, c)),
+		)
+		List.prepend(List.first(open) ?? [end], start)
+	}
+
 	## Whether the piece on `s` can go `n` more squares, for the second part
 	## of a split seven: no leaving the pen or the bullseye.
 	get_can_go_n_spaces : Type.Board, U64, List(Str), I64, List(Str) -> Bool

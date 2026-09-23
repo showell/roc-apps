@@ -4,8 +4,8 @@
 # the page is a flat list of Wire.Node, which a page replaces wholesale on
 # every click -- it is a handful of buttons and lines -- and the board is a
 # fixed list of Wire.Slot, which a page draws once and then patches, because
-# the board never changes shape: rotating it recolors the squares, and never
-# moves one.
+# the board never changes shape. It is drawn as red sees it whoever is
+# playing, so a slot's place in the list is its square's number.
 #
 # **THE GEOMETRY IS Polygon.elm's.** Each zone is a panel drawn upright,
 # pushed out by the incircle radius, rotated a side's angle about the centre,
@@ -16,7 +16,6 @@ import pf.Wire
 import Assoc
 import Board
 import Codes
-import Color
 import Config
 import LegalMove
 import Piece
@@ -70,14 +69,17 @@ Page :: [].{
 	center_offset = |side_count| panel_height + incircle_radius(side_count)
 
 	## What the page may offer: `interactive` is false in the computer's seat
-	## and once someone has won, and then nothing takes a click.
-	Flags : { interactive : Bool, show_undo : Bool, tick : U32, winner : Str }
+	## and once someone has won, and then nothing takes a click. `motions`
+	## are what the last click moved (Motion.roc), for the page to animate.
+	Flags : { interactive : Bool, show_undo : Bool, tick : U32, winner : Str, motion_id : U32, motions : List(Wire.Motion) }
 
 	view : Type.Game, Page.Flags -> Wire.View
 	view = |game, flags| {
 		active_player = Player.get_active_player(game)
 		active_color = active_player.color
-		zone_colors = Color.rotate_list(game.active_player_idx, game.zone_colors)
+		# The board is always drawn as red sees it, so a slot's place is its
+		# square's number (Board.roc).
+		zone_colors = game.zone_colors
 		undo_button = if flags.show_undo { [button("", Codes.undo, [text("oops")])] } else { [] }
 		side_count = List.len(zone_colors)
 		console =
@@ -97,12 +99,25 @@ Page :: [].{
 				0,
 				Bool.False,
 				[
-					div([div([div([el("board", "", 0, Bool.False, [])]), el("hr", "", 0, Bool.False, []), console])]),
+					div([div([div([el("board", "", 0, Bool.False, [])]), piles_view(game), el("hr", "", 0, Bool.False, []), console])]),
 					div([cheat_sheet_view(active_player)]),
 				],
 			),
 			tick: flags.tick,
 			winner: flags.winner,
+			motion_id: flags.motion_id,
+			motions: flags.motions,
+		}
+	}
+
+	## Every discard pile with a card in it.
+	piles_view : Type.Game -> Page.Tree
+	piles_view = |game| {
+		piles = List.keep_if(game.players, |p| p.pile > 0)
+		if List.is_empty(piles) {
+			div([])
+		} else {
+			div(List.concat([text("discard piles: ")], List.join(List.map_with_index(piles, |p, i| [bold("color: ${p.color}", [text("${p.color} ${U64.to_str(p.pile)}")]), text(if i + 1 < List.len(piles) { ", " } else { "" })]))))
 		}
 	}
 

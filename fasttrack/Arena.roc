@@ -20,6 +20,7 @@
 import Board
 import Game
 import History
+import Move
 import Piece
 import Player
 import Search
@@ -132,26 +133,7 @@ Arena :: [].{
 		var $g = g0
 		var $moves = []
 		for msg in msgs {
-			match (Player.get_active_player($g).turn, msg) {
-				(TurnNeedStartLoc(info), SetStartLocation(start)) => {
-					from = List.keep_if(info.moves, |m| m.start == start)
-					match from {
-						[first, ..] if List.all(from, |m| m.end == first.end) => {
-							$moves = List.append($moves, first)
-						}
-						_ => {}
-					}
-				}
-				(TurnNeedEndLoc(info), SetEndLocation(end)) => {
-					match List.find_first(info.moves, |m| m.start == info.start_location and m.end == end) {
-						Ok(m) => {
-							$moves = List.append($moves, m)
-						}
-						Err(_) => {}
-					}
-				}
-				_ => {}
-			}
+			$moves = List.concat($moves, Move.made($g, msg))
 			$g = Game.update_game(msg, History.init, $g).1
 		}
 		$moves

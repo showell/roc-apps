@@ -27,7 +27,12 @@ Wire :: [].{
 
 	Node : { parent : U32, tag : Str, text : Str, style : Str, click : U32, disabled : Bool }
 
+	## A piece of `color` walking the slots of `path`, first to last.
+	Motion : { color : Str, path : List(U32) }
+
 	## `tick` is a code the page sends back by itself after a pause (the
 	## computer's next click), 0 for none; `winner` is a color, or "".
-	View : { board_size : F64, slots : List(Wire.Slot), nodes : List(Wire.Node), tick : U32, winner : Str }
+	## `motions` are what the last click moved, one after another, and
+	## `motion_id` changes with every click that moved something.
+	View : { board_size : F64, slots : List(Wire.Slot), nodes : List(Wire.Node), tick : U32, winner : Str, motion_id : U32, motions : List(Wire.Motion) }
 }
