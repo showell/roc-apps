@@ -1,6 +1,7 @@
 #!/bin/bash
-# Builds an experiment app (exp_*.roc) with LLVM and runs it detached, each
-# line of its log stamped with the time. Prints the log's path.
+# Builds an experiment app (exp_*.roc, on the cli/ platform) with LLVM and
+# runs it detached, each line of its log stamped with the time. Prints the
+# log's path.
 #
 #   fasttrack/run_exp.sh exp_win_focus
 #
@@ -13,6 +14,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 ROC="${ROC:-$HOME/build/roc-nightly/roc_nightly-linux_x86_64-2026-09-07-14d9829/roc}"
 OUT="$HOME/build/roc-apps/gen/fasttrack/$NAME"
 mkdir -p "$OUT"
+[ -f "$HERE/cli/platform/targets/x64musl/libhost.a" ] || "$HERE/cli/build.sh"
 (cd "$HERE" && "$ROC" build "$NAME.roc" --opt=speed --output="$OUT/$NAME") > "$OUT/build.log" 2>&1 || true
 if grep -q "✗" "$OUT/build.log" || [ ! -x "$OUT/$NAME" ]; then cat "$OUT/build.log"; echo "build failed"; exit 1; fi
 head -1 "$OUT/build.log"

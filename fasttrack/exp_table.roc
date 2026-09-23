@@ -5,12 +5,12 @@
 # made and suffered are counted (Arena.tally_game).
 #
 #   fasttrack/run_exp.sh exp_table
+app [main!] { pf: platform "cli/platform/main.roc" }
+
+import pf.Echo
 import Arena
 import Tables
 import Strategy
-
-## echo! writes no newline.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 main! = |_args| {
 	champion = Plays(Strategy.champion)
@@ -20,9 +20,9 @@ main! = |_args| {
 	for seed in List.map_with_index(List.repeat(0, games), |_, i| i + 1) {
 		ts = Arena.tally_game(seats, seed)
 		$all = List.append($all, ts)
-		line!(Tables.tally_line(seed, ts))
+		Echo.line!(Tables.tally_line(seed, ts))
 	}
-	line!("\n## Who wins, and what the winner does\n\n${U64.to_str(games)} games, seeds 1-${U64.to_str(games)}; red, blue and purple play Strategy.champion, green the first legal move it finds. Each game stops at the first player home.\n")
-	line!(Tables.winner_table($all, [2]))
+	Echo.line!("\n## Who wins, and what the winner does\n\n${U64.to_str(games)} games, seeds 1-${U64.to_str(games)}; red, blue and purple play Strategy.champion, green the first legal move it finds. Each game stops at the first player home.\n")
+	Echo.line!(Tables.winner_table($all, [2]))
 	Ok({})
 }

@@ -9,12 +9,12 @@
 # the winner does (Tables.winner_table).
 #
 #   fasttrack/run_exp.sh exp_cards
+app [main!] { pf: platform "cli/platform/main.roc" }
+
+import pf.Echo
 import Arena
 import Tables
 import Strategy
-
-## echo! writes no newline.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 cards : List(Str)
 cards = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "joker"]
@@ -37,7 +37,7 @@ main! = |_args| {
 	for seed in List.map_with_index(List.repeat(0, games), |_, i| i + 1) {
 		ts = Arena.tally_game(seats, seed)
 		$all = List.append($all, ts)
-		line!(Tables.tally_line(seed, ts))
+		Echo.line!(Tables.tally_line(seed, ts))
 	}
 	tallies = List.join($all)
 	won = List.join_map(List.keep_if(tallies, |t| t.won), |t| t.played)
@@ -63,16 +63,16 @@ main! = |_args| {
 		},
 	)
 	ranked = List.sort_with(rows, |a, b| if a.share > b.share { Before } else if a.share < b.share { After } else { Same })
-	line!("\n## Which cards win\n\n${U64.to_str(games)} games, seeds 1-${U64.to_str(games)}, four champions, each game to the first player home. A card the winner played or discarded scores +3, one a loser played or discarded -1.\n")
+	Echo.line!("\n## Which cards win\n\n${U64.to_str(games)} games, seeds 1-${U64.to_str(games)}, four champions, each game to the first player home. A card the winner played or discarded scores +3, one a loser played or discarded -1.\n")
 	all_w = List.fold(rows, 0, |t, r| t + r.dw)
 	all_l = List.fold(rows, 0, |t, r| t + r.dl)
-	line!("Drawn is played + discarded + in hand at the end. Ranked by the winner's share of a card's draws; over every card it is ${thousandths(I64.to_f64(all_w) / I64.to_f64(all_w + all_l))} (winners draw more cards), and the ± is one standard error, counting draws as independent.\n")
-	line!("| rank | card | winner's share of draws | drawn: winner / losers | played: winner / losers | discarded: winner / losers | in hand at the end: winner / losers | score, +3 / -1 |")
-	line!("|---|---|---|---|---|---|---|---|")
+	Echo.line!("Drawn is played + discarded + in hand at the end. Ranked by the winner's share of a card's draws; over every card it is ${thousandths(I64.to_f64(all_w) / I64.to_f64(all_w + all_l))} (winners draw more cards), and the ± is one standard error, counting draws as independent.\n")
+	Echo.line!("| rank | card | winner's share of draws | drawn: winner / losers | played: winner / losers | discarded: winner / losers | in hand at the end: winner / losers | score, +3 / -1 |")
+	Echo.line!("|---|---|---|---|---|---|---|---|")
 	for r in List.map_with_index(ranked, |r, i| { card: r.card, score: r.score, w: r.w, l: r.l, wd: r.wd, ld: r.ld, wh: r.wh, lh: r.lh, dw: r.dw, dl: r.dl, share: r.share, se: r.se, rank: i + 1 }) {
-		line!("| ${U64.to_str(r.rank)} | ${r.card} | ${thousandths(r.share)} ± ${thousandths(r.se)} | ${I64.to_str(r.dw)} / ${I64.to_str(r.dl)} | ${I64.to_str(r.w)} / ${I64.to_str(r.l)} | ${I64.to_str(r.wd)} / ${I64.to_str(r.ld)} | ${I64.to_str(r.wh)} / ${I64.to_str(r.lh)} | ${I64.to_str(r.score)} |")
+		Echo.line!("| ${U64.to_str(r.rank)} | ${r.card} | ${thousandths(r.share)} ± ${thousandths(r.se)} | ${I64.to_str(r.dw)} / ${I64.to_str(r.dl)} | ${I64.to_str(r.w)} / ${I64.to_str(r.l)} | ${I64.to_str(r.wd)} / ${I64.to_str(r.ld)} | ${I64.to_str(r.wh)} / ${I64.to_str(r.lh)} | ${I64.to_str(r.score)} |")
 	}
-	line!("\n## What the winner does\n\nThe same ${U64.to_str(games)} games.\n")
-	line!(Tables.winner_table($all, []))
+	Echo.line!("\n## What the winner does\n\nThe same ${U64.to_str(games)} games.\n")
+	Echo.line!(Tables.winner_table($all, []))
 	Ok({})
 }

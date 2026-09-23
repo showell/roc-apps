@@ -7,15 +7,15 @@
 # Board values are each player's own, as the champion values its pieces.
 #
 #   fasttrack/run_exp.sh exp_pivot
+app [main!] { pf: platform "cli/platform/main.roc" }
+
+import pf.Echo
 import Arena
 import Game
 import Player
 import Search
 import Strategy
 import Type
-
-## echo! writes no newline.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 colors : List(Str)
 colors = ["red", "blue", "green", "purple"]
@@ -148,12 +148,12 @@ main! = |_args| {
 	chaser = { ..champion, opponents: Leader }
 	for seed in [74, 21, 22, 43, 55, 60, 69, 76, 79] {
 		match find_pivot(seed) {
-			Err(_) => line!("\n## seed ${U64.to_str(seed)}: the two strategies never part")
+			Err(_) => Echo.line!("\n## seed ${U64.to_str(seed)}: the two strategies never part")
 			Ok(p) => {
 				g = p.game
 				hand = Player.get_active_player(g).hand
-				line!("\n## seed ${U64.to_str(seed)}, red's turn ${U64.to_str(p.turn)}, hand ${Str.join_with(hand, " ")}")
-				line!("before: ${values(g)}")
+				Echo.line!("\n## seed ${U64.to_str(seed)}, red's turn ${U64.to_str(p.turn)}, hand ${Str.join_with(hand, " ")}")
+				Echo.line!("before: ${values(g)}")
 				found = Search.all_lines(g)
 				ranked = |s|
 					List.sort_with(
@@ -172,18 +172,18 @@ main! = |_args| {
 					d = value(l.game, c) - value(g, c)
 					if d > 0 { "+${I64.to_str(d)}" } else { I64.to_str(d) }
 				}
-				line!("${U64.to_str(List.len(found.lines))} lines, ${U64.to_str(List.len(shown))} shown: ${if List.len(found.lines) <= 40 { "all" } else { "the best four by each scoring" }}, by the champion's score. The leader is ${who}.")
-				line!("| line | pieces | red | ${who} (leader) | others | champion's score | chaser's score |")
-				line!("|---|---|---|---|---|---|---|")
+				Echo.line!("${U64.to_str(List.len(found.lines))} lines, ${U64.to_str(List.len(shown))} shown: ${if List.len(found.lines) <= 40 { "all" } else { "the best four by each scoring" }}, by the champion's score. The leader is ${who}.")
+				Echo.line!("| line | pieces | red | ${who} (leader) | others | champion's score | chaser's score |")
+				Echo.line!("|---|---|---|---|---|---|---|")
 				for l in shown {
 					tag = if l.game == p.champion.game { "champion's pick" } else if l.game == p.chaser.game { "chaser's pick" } else { "" }
 					rest = Str.join_with(List.map(List.keep_if(others, |c| value(l.game, c) != value(g, c)), |c| "${c} ${delta(l, c)}"), ", ")
-					line!("| ${tag} | ${moved(g, l.game)} | ${delta(l, "red")} | ${delta(l, who)} | ${rest} | ${I64.to_str(Search.score(champion, g, l))} | ${I64.to_str(Search.score(chaser, g, l))} |")
+					Echo.line!("| ${tag} | ${moved(g, l.game)} | ${delta(l, "red")} | ${delta(l, who)} | ${rest} | ${I64.to_str(Search.score(champion, g, l))} | ${I64.to_str(Search.score(chaser, g, l))} |")
 				}
-				line!("\nred as the champion, from its pick:")
-				line!(play_out(List.repeat(Plays(champion), 4), p.champion.game, p.turn))
-				line!("\nred as the chaser, from its pick:")
-				line!(play_out([Plays(chaser), Plays(champion), Plays(champion), Plays(champion)], p.chaser.game, p.turn))
+				Echo.line!("\nred as the champion, from its pick:")
+				Echo.line!(play_out(List.repeat(Plays(champion), 4), p.champion.game, p.turn))
+				Echo.line!("\nred as the chaser, from its pick:")
+				Echo.line!(play_out([Plays(chaser), Plays(champion), Plays(champion), Plays(champion)], p.chaser.game, p.turn))
 			}
 		}
 	}

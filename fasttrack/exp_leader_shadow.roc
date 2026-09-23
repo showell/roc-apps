@@ -5,6 +5,9 @@
 # off the leader, and whether either line captured.
 #
 #   fasttrack/run_exp.sh exp_leader_shadow
+app [main!] { pf: platform "cli/platform/main.roc" }
+
+import pf.Echo
 import Arena
 import Game
 import Player
@@ -39,9 +42,6 @@ leading = |game|
 			if v > best.v { { color: c, v } } else { best }
 		},
 	).color
-
-## echo! writes no newline.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 main! = |_args| {
 	champion = Strategy.champion
@@ -95,7 +95,7 @@ main! = |_args| {
 					$cap_chaser_leader = $cap_chaser_leader + (if took_leader { 1 } else { 0 })
 					if $shown < 15 {
 						$shown = $shown + 1
-						line!(
+						Echo.line!(
 							"\nseed ${U64.to_str(seed)}, red's turn ${U64.to_str($turn)}, hand ${Str.join_with(mover.hand, " ")}, leader ${who}\n  champion: ${moved($g, la.game)} (own ${I64.to_str(own(la))}, leader ${I64.to_str(lead(la))})\n  chaser:   ${moved($g, lb.game)} (own ${I64.to_str(own(lb))}, leader ${I64.to_str(lead(lb))})",
 						)
 					}
@@ -107,10 +107,10 @@ main! = |_args| {
 			$g = next
 			$steps = $steps + 1
 		}
-		line!("seed ${U64.to_str(seed)}: ${U64.to_str($differ)} of ${U64.to_str($decisions)} searches so far chose differently")
+		Echo.line!("seed ${U64.to_str(seed)}: ${U64.to_str($differ)} of ${U64.to_str($decisions)} searches so far chose differently")
 	}
 	d = I64.max(1, U64.to_i64_wrap($differ))
-	line!(
+	Echo.line!(
 		"\n${U64.to_str(games)} games of four champions; at each of red's searches the chaser is asked too.\n${U64.to_str($differ)} of ${U64.to_str($decisions)} searches chose differently. Where they did, the chaser on average gave up ${I64.to_str($given // d)} of red's own value and took ${I64.to_str($gained // d)} off the leader.\nLines that captured: champion ${U64.to_str($cap_champion)}, chaser ${U64.to_str($cap_chaser)} (the leader's piece ${U64.to_str($cap_chaser_leader)}).\nRed was behind the leader as ${U64.to_str($behind)} of its ${U64.to_str($decisions)} searches began, and at ${U64.to_str($behind_differ)} of the ${U64.to_str($differ)} where the chaser chose differently.",
 	)
 	Ok({})

@@ -122,8 +122,11 @@ test in red's — plays them seed by seed, printing a line a game, and ends
 with `Arena.report`: red's wins, red's turns to get home, idle turns (turns
 begun with a discard), captures, and two checks that read 0. `run_exp.sh`
 builds one with LLVM and runs it detached, each log line stamped with the
-time; the built-in platform's `echo!` writes no newline, so each app has a
-`line!`. Every variant is dealt the same cards: each player's deck is
+time. The apps run on `cli/`, a small native platform (a zig host copied
+from `machine/native`, drives removed, built by `cli/build.sh`): Roc's
+built-in platform for a headerless app maps a page for every allocation, and
+an 80-game table took 5 min 6 s there against 24 s here. Its `Echo.line!`
+writes the newline. Every variant is dealt the same cards: each player's deck is
 shuffled once from the seed. When an experiment settles a number, it goes
 into `Strategy.champion`, the losing variants go, and `TUNING.md` keeps the
 result.

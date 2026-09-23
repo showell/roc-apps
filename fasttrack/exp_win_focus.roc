@@ -5,11 +5,11 @@
 # `opponents: Leader` (always) lost: TUNING.md.
 #
 #   fasttrack/run_exp.sh exp_win_focus
+app [main!] { pf: platform "cli/platform/main.roc" }
+
+import pf.Echo
 import Arena
 import Strategy
-
-## echo! writes no newline.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 main! = |_args| {
 	champion = Strategy.champion
@@ -33,9 +33,9 @@ main! = |_args| {
 			},
 		)
 		for x in $all {
-			line!(Arena.game_line(x.label, seed, List.last(x.rs) ?? crash("no game")))
+			Echo.line!(Arena.game_line(x.label, seed, List.last(x.rs) ?? crash("no game")))
 		}
 	}
-	line!("\n${Arena.report("Playing to win when behind", $all)}")
+	Echo.line!("\n${Arena.report("Playing to win when behind", $all)}")
 	Ok({})
 }

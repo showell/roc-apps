@@ -7,6 +7,9 @@
 # multiset, its turn and its discard credits.
 #
 #   fasttrack/run_exp.sh exp_search_size
+app [main!] { pf: platform "cli/platform/main.roc" }
+
+import pf.Echo
 import Arena
 import Game
 import Board
@@ -15,9 +18,6 @@ import Player
 import Search
 import Strategy
 import Type
-
-## echo! writes no newline.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 seed : U64
 seed = 74
@@ -121,13 +121,13 @@ main! = |_args| {
 	}
 	g = $best.game
 	mover = Player.get_active_player(g)
-	line!("## Seed ${U64.to_str(seed)}: the biggest search\n")
-	line!("${U64.to_str($searches)} searches to the first player home, ${U64.to_str($total)} lines in all; ${U64.to_str($big)} searches had more than 100.\n")
-	line!("The biggest: ${U64.to_str($best.n)} lines, ${mover.color} to play in round ${U64.to_str($best.turn)}, hand ${Str.join_with(mover.hand, " ")}, discard credits ${I64.to_str(mover.get_out_credits)}. The board:\n")
-	line!(pieces(g))
-	line!("\nLevel by level (a level is one more card):\n")
-	line!("| level | open lines | grown | kept by distinct_lines | positions | boards |")
-	line!("|---|---|---|---|---|---|")
+	Echo.line!("## Seed ${U64.to_str(seed)}: the biggest search\n")
+	Echo.line!("${U64.to_str($searches)} searches to the first player home, ${U64.to_str($total)} lines in all; ${U64.to_str($big)} searches had more than 100.\n")
+	Echo.line!("The biggest: ${U64.to_str($best.n)} lines, ${mover.color} to play in round ${U64.to_str($best.turn)}, hand ${Str.join_with(mover.hand, " ")}, discard credits ${I64.to_str(mover.get_out_credits)}. The board:\n")
+	Echo.line!(pieces(g))
+	Echo.line!("\nLevel by level (a level is one more card):\n")
+	Echo.line!("| level | open lines | grown | kept by distinct_lines | positions | boards |")
+	Echo.line!("|---|---|---|---|---|---|")
 	first = Search.settle({ game: g, msgs: [], drew: Bool.False })
 	var $level = first
 	var $done = List.drop_if(first, Search.is_open)
@@ -136,17 +136,17 @@ main! = |_args| {
 		open = List.keep_if($level, Search.is_open)
 		grown = List.join_map(open, Search.expand)
 		merged = Search.distinct_lines(grown)
-		line!("| ${U64.to_str($depth + 1)} | ${U64.to_str(List.len(open))} | ${U64.to_str(List.len(grown))} | ${U64.to_str(List.len(merged))} | ${U64.to_str(distinct_keys(grown))} | ${U64.to_str(List.len(boards(grown)))} |")
+		Echo.line!("| ${U64.to_str($depth + 1)} | ${U64.to_str(List.len(open))} | ${U64.to_str(List.len(grown))} | ${U64.to_str(List.len(merged))} | ${U64.to_str(distinct_keys(grown))} | ${U64.to_str(List.len(boards(grown)))} |")
 		$level = merged
 		$done = List.concat($done, List.drop_if(merged, Search.is_open))
 		$depth = $depth + 1
 	}
 	finals = List.keep_if(List.concat($done, List.keep_if($level, Search.is_open)), |l| !List.is_empty(l.msgs))
 	final_boards = List.sort_with(boards(finals), |x, y| if x.n > y.n { Before } else if x.n < y.n { After } else { Same })
-	line!("\nThe search's answer: ${U64.to_str(List.len(finals))} lines, ${U64.to_str(distinct_keys(finals))} positions, ${U64.to_str(List.len(final_boards))} boards.\n")
-	line!("The boards reached most often:\n")
+	Echo.line!("\nThe search's answer: ${U64.to_str(List.len(finals))} lines, ${U64.to_str(distinct_keys(finals))} positions, ${U64.to_str(List.len(final_boards))} boards.\n")
+	Echo.line!("The boards reached most often:\n")
 	for b in List.take_first(final_boards, 3) {
-		line!("${U64.to_str(b.n)} lines reach:\n${pieces(b.example.game)}\n")
+		Echo.line!("${U64.to_str(b.n)} lines reach:\n${pieces(b.example.game)}\n")
 	}
 	Ok({})
 }
