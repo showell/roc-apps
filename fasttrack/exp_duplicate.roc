@@ -1,19 +1,26 @@
 # Experiment, dealt as duplicate bridge: every seed is played four times, the
 # decks turned a seat each time (Game.begin_dealt), so red plays every
-# player's deck. Red hoards 7s at 900, 600, 300, 0 by pieces home, beside
-# the champion's A, joker and J, against the champion; the other seats play
-# the champion.
+# player's deck. Red plays `variant` against the champion; the other seats
+# play the champion. Earlier variants are in TUNING.md and git (hoarding 7s
+# at 900/600/300/0 was this app's first).
 #
 # The report sets the ways of judging the difference side by side: as if
 # the games were unrelated, paired game by game (the same deal for both), and
 # by seed (the same four deals for both).
 #
-#   fasttrack/run_exp.sh exp_seven_duplicate
+#   fasttrack/run_exp.sh exp_duplicate
 app [main!] { pf: platform "cli/platform/main.roc" }
 
 import pf.Echo
 import Arena
 import Strategy
+
+## The strategy under test: the champion without hoarding the J.
+variant : { label : Str, strategy : Strategy.Strategy }
+variant = {
+	label: "no J hoard",
+	strategy: { ..Strategy.champion, hoards: [{ cards: ["A", "joker"], worth: [1500, 1000, 500, 0] }] },
+}
 
 rotations : List(U64)
 rotations = [0, 1, 2, 3]
@@ -29,16 +36,15 @@ thousandths = |x| {
 main! = |_args| {
 	champion = Strategy.champion
 	games = 1000
-	sevens = { ..champion, hoards: List.append(champion.hoards, { cards: ["7"], worth: [900, 600, 300, 0] }) }
 	seats_a = List.repeat(Plays(champion), 4)
-	seats_b = [Plays(sevens), Plays(champion), Plays(champion), Plays(champion)]
-	# Per seed, per rotation: did red win as the champion (a), hoarding 7s (b)?
+	seats_b = [Plays(variant.strategy), Plays(champion), Plays(champion), Plays(champion)]
+	# Per seed, per rotation: did red win as the champion (a), as the variant (b)?
 	var $blocks = []
 	for seed in List.map_with_index(List.repeat(0, games), |_, i| i + 1) {
 		block = List.map(rotations, |k| { a: Arena.play_dealt(seats_a, seed, k).red_won, b: Arena.play_dealt(seats_b, seed, k).red_won })
 		$blocks = List.append($blocks, block)
 		wins = |f| U64.to_str(List.count_if(block, f))
-		Echo.line!("seed ${U64.to_str(seed)} | the champion won ${wins(|x| x.a)} of 4 | hoarding 7s won ${wins(|x| x.b)} of 4")
+		Echo.line!("seed ${U64.to_str(seed)} | the champion won ${wins(|x| x.a)} of 4 | ${variant.label} won ${wins(|x| x.b)} of 4")
 	}
 	all = List.join($blocks)
 	n = U64.to_f64(List.len(all))
@@ -62,13 +68,13 @@ main! = |_args| {
 	per_seed = List.map($blocks, |bl| (U64.to_f64(List.count_if(bl, |x| x.b)) - U64.to_f64(List.count_if(bl, |x| x.a))) / 4.0)
 	se_seed = sd(per_seed) / F64.sqrt(U64.to_f64(List.len(per_seed)))
 	by_rotation = |f| Str.join_with(List.map(rotations, |k| U64.to_str(List.count_if($blocks, |bl| f(List.get(bl, k) ?? { a: Bool.False, b: Bool.False })))), " / ")
-	Echo.line!("\n## Hoarding the 7 at 900/600/300/0, dealt as duplicate\n")
+	Echo.line!("\n## ${variant.label}, dealt as duplicate\n")
 	Echo.line!("${U64.to_str(games)} seeds, each dealt four times with the decks turned a seat, so red plays every player's deck: ${U64.to_str(List.len(all))} games per variant. Red is the variant; the other seats play Strategy.champion. Each game stops at the first player home.\n")
 	Echo.line!("| red plays as | red won | win rate | wins with the decks turned 0 / 1 / 2 / 3 seats |")
 	Echo.line!("|---|---|---|---|")
 	Echo.line!("| the champion | ${U64.to_str(wins_a)} of ${U64.to_str(List.len(all))} | ${thousandths(pa)} | ${by_rotation(|x| x.a)} |")
-	Echo.line!("| hoarding 7s | ${U64.to_str(wins_b)} of ${U64.to_str(List.len(all))} | ${thousandths(pb)} | ${by_rotation(|x| x.b)} |")
-	Echo.line!("\nThe difference, hoarding 7s less the champion: ${thousandths(diff)} a game. Deals only hoarding won: ${U64.to_str(only_b)}; only the champion won: ${U64.to_str(only_a)}.\n")
+	Echo.line!("| ${variant.label} | ${U64.to_str(wins_b)} of ${U64.to_str(List.len(all))} | ${thousandths(pb)} | ${by_rotation(|x| x.b)} |")
+	Echo.line!("\nThe difference, ${variant.label} less the champion: ${thousandths(diff)} a game. Deals only ${variant.label} won: ${U64.to_str(only_b)}; only the champion won: ${U64.to_str(only_a)}.\n")
 	Echo.line!("| judged as | standard error of the difference | the difference in standard errors |")
 	Echo.line!("|---|---|---|")
 	Echo.line!("| unrelated games | ${thousandths(se_unrelated)} | ${thousandths(diff / se_unrelated)} |")

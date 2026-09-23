@@ -378,7 +378,7 @@ The rising taper, which values a 7 most when it should be spent, hurts (p ≈
 
 1000 seeds, each dealt four times with the decks turned a seat
 (Game.begin_dealt), so red plays every player's deck: 4000 games per
-variant. `exp_seven_duplicate.roc`.
+variant. `exp_seven_duplicate.roc` at `82f3dd9` (now `exp_duplicate.roc`).
 
 | red plays as | red won | win rate | wins with the decks turned 0 / 1 / 2 / 3 seats |
 |---|---|---|---|
