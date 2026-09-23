@@ -1,22 +1,32 @@
 #!/bin/bash
 # **TUNING THE COMPUTER**, one factor at a time, by racing (race.mjs).
 #
-#   fasttrack/web/tune.sh ~/build/roc-apps/next/fasttrack
+#   fasttrack/web/tune.sh ~/build/roc-apps/next/fasttrack                    web/schedules/weights.txt
+#   fasttrack/web/tune.sh ~/build/roc-apps/next/fasttrack web/schedules/regions.txt
 #
-# Each stage races every candidate value of one factor, added to the champion
-# so far, against the champion: DEALS deals (default 100), each played abab
-# and baba. A candidate takes over only if it wins by more than one standard
-# error above 50%, and the best of those does. Then a confirmation race on
-# deals no stage has seen (FIRST=1001): the final champion against where it
-# started.
+# A schedule is a file of lines (# starts a comment):
+#
+#   start <spec>                 the champion to begin from (race.mjs's weight spec)
+#   stage <factor> <v> <v> ...   race each value of one factor against the champion
+#   versus <spec>                at the end, also race the champion against this
+#
+# Each stage races every candidate value, added to the champion so far,
+# against the champion: DEALS deals (default 100), each played abab and baba.
+# A candidate takes over only if it wins by more than one standard error above
+# 50%, and the best of those does. Then, on deals no stage has seen, the
+# champion races where it started (FIRST=1001) and, with `versus`, that
+# computer too (FIRST=2001).
 #
 # Every race line and every stage's verdict goes to stdout.
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DIR="${1:?usage: tune.sh <build-dir>}"
+DIR="${1:?usage: tune.sh <build-dir> [schedule]}"
+SCHEDULE="${2:-$HERE/schedules/weights.txt}"
 DEALS="${DEALS:-100}"
-START="${START:-hop=1,home=0}"
-best="$START"
+
+start=""
+versus=""
+best=""
 
 stage() {
     local factor=$1; shift
@@ -36,11 +46,19 @@ stage() {
     echo "== after $factor: {$best}"
 }
 
-stage hop 4 8 14
-stage danger 10 20 40 80
-stage out 10 20 40 80
-stage home 10 20 40 80
+while read -r word rest; do
+    case "$word" in
+        ""|\#*) ;;
+        start) start="$rest"; best="$rest"; echo "== start: {$best}" ;;
+        stage) stage $rest ;;
+        versus) versus="$rest" ;;
+        *) echo "tune.sh: no such schedule line: $word $rest"; exit 2 ;;
+    esac
+done < "$SCHEDULE"
 
 echo "== confirming on fresh deals"
-A="$best" B="$START" DEALS="$DEALS" FIRST=1001 node "$HERE/race.mjs" "$DIR"
+A="$best" B="$start" DEALS="$DEALS" FIRST=1001 node "$HERE/race.mjs" "$DIR"
+if [ -n "$versus" ]; then
+    A="$best" B="$versus" DEALS="$DEALS" FIRST=2001 node "$HERE/race.mjs" "$DIR"
+fi
 echo "== champion: {$best}"
