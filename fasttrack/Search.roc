@@ -101,10 +101,56 @@ Search :: [].{
 	expand : Search.Line -> List(Search.Line)
 	expand = |line| List.join_map(options(line.game), |msg| settle(apply(line, msg)))
 
-	## The same position reached two ways is one line.
+	## The same position reached two ways is one line, the first: lines are
+	## the same when their keys are (line_key), found by sorting the keys, not
+	## by comparing every pair -- a hand of jacks can grow a level to tens of
+	## thousands of lines.
 	distinct_lines : List(Search.Line) -> List(Search.Line)
-	distinct_lines = |lines|
-		List.fold(lines, [], |kept, line| if List.any(kept, |k| k.game == line.game) { kept } else { List.append(kept, line) })
+	distinct_lines = |lines| {
+		keyed = List.map_with_index(lines, |line, i| { key: line_key(line), i, line })
+		sorted = List.sort_with(
+			keyed,
+			|a, b|
+				if key_before(a.key, b.key) {
+					Before
+				} else if key_before(b.key, a.key) {
+					After
+				} else if a.i < b.i {
+					Before
+				} else {
+					After
+				},
+		)
+		firsts = List.fold(
+			sorted,
+			[],
+			|kept, x|
+				match List.last(kept) {
+					Ok(k) if k.key == x.key => kept
+					_ => List.append(kept, x)
+				},
+		)
+		List.map(List.sort_with(firsts, |a, b| if a.i < b.i { Before } else if a.i > b.i { After } else { Same }), |x| x.line)
+	}
+
+	## A line's position (position_key) and where its turn stands: two lines
+	## with the same key play on and score alike.
+	line_key : Search.Line -> List(U64)
+	line_key = |line| {
+		stage = match Player.get_active_player(line.game).turn {
+			TurnNeedCard(_) => 0
+			TurnNeedDiscard => 1
+			TurnNeedCover => 2
+			TurnDone => 3
+			_ => 4
+		}
+		List.append(position_key(line), stage)
+	}
+
+	## The most lines a level of the search keeps; past it the search keeps
+	## the first ones and says it was cut.
+	max_lines : U64
+	max_lines = 20000
 
 	## What `strategy` makes of a line from `game`: the mover's team's board,
 	## the hand it keeps unless it drew, less the leader's board if it plays
@@ -134,22 +180,25 @@ Search :: [].{
 	}
 
 	## Every line through the rest of the mover's turn. `cut` says the search
-	## stopped before every line had ended.
+	## stopped before every line had ended, or dropped lines past max_lines.
 	all_lines : Type.Game -> { lines : List(Search.Line), cut : Bool }
 	all_lines = |game| {
 		start = settle({ game, msgs: [], drew: Bool.False })
 		var $level = start
 		var $done = List.drop_if(start, is_open)
 		var $depth = 0
+		var $capped = Bool.False
 		while List.any($level, is_open) and $depth < 8 {
 			grown = List.join_map(List.keep_if($level, is_open), expand)
-			$level = distinct_lines(grown)
+			merged = distinct_lines(grown)
+			$capped = $capped or List.len(merged) > max_lines
+			$level = List.take_first(merged, max_lines)
 			$done = List.concat($done, List.drop_if($level, is_open))
 			$depth = $depth + 1
 		}
 		{
 			lines: List.keep_if(List.concat($done, List.keep_if($level, is_open)), |l| !List.is_empty(l.msgs)),
-			cut: List.any($level, is_open),
+			cut: $capped or List.any($level, is_open),
 		}
 	}
 

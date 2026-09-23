@@ -431,6 +431,31 @@ opponent worth most among those with three pieces home as the turn starts
 Deals only the variant won: 9; only the champion won: 1 (2.6 paired standard
 errors). Promising, and to be scaled up.
 
+### Against a leader three home, 2163 seeds, 2026-09-23
+
+The dinner run of the first look above: 2500 seeds planned, each dealt four
+times with the decks turned a seat. It stopped at seed 2164, on a turn the
+search could not finish (blue holding J J joker J J; see below), so the
+result is seeds 1-2163, read from the per-seed log lines: 8652 deals per
+variant. `exp_duplicate.roc` at `8e52179`.
+
+| red plays as | red won | win rate |
+|---|---|---|
+| the champion | 2390 of 8652 | 0.276 |
+| against a leader three home | 2351 of 8652 | 0.272 |
+
+By seed (four deals): the variant won more deals than the champion in 193
+seeds and fewer in 220; 1750 came out the same. The difference, -0.0045 a
+game, is -1.8 standard errors. The first look's 9 deals to 1 (seeds 1-40,
+inside this run) was noise. Not adopted.
+
+The turn that stopped it: four jacks and a joker are five plays that each
+go again, and a jack trades with any of a dozen pieces, so the lines ran to
+hundreds of thousands and the search's merge compared every pair. Search
+now merges by sorted keys (no decision changes: 200 games identical) and
+keeps at most 20000 lines a level, counting a search that hits the cap as
+cut; that hand's search now takes 17 s and is cut.
+
 ## Before these races
 
 Every race and arena number before `4a9f3b7` came from a build whose
