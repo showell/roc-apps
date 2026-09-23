@@ -1,4 +1,5 @@
-# The board, square by square, as Reach.fewest_cards sees it for a red piece:
+# The board, square by square, as Reach.fewest_cards sees it for a red piece
+# holding a free face card (F+3 is a face card, then a 3):
 # each zone drawn upright the way the page draws its panel, each square with
 # the fewest cards that take a red piece from it to red's B4 and the cards
 # that start such a way.
@@ -27,7 +28,7 @@ show_card = |card|
 	match card {
 		"4" => "4 back"
 		"joker" => "Jo"
-		_ => card
+		_ => Str.replace_each(Str.replace_each(card, "face+", "F+"), "+4", "+4 back")
 	}
 
 cell : List(Reach.Best), Str, Str -> Str
@@ -40,7 +41,7 @@ cell = |best, zone, id|
 		b = List.get(best, Agent.index_of(colors, { zone: NormalColor(zone), id })) ?? { cards: 0, first: [] }
 		shown = if b.cards >= Agent.far { "never" } else { I64.to_str(b.cards) }
 		# In deck order, whatever order the search found them in.
-		in_order = List.keep_if(Reach.cards, |c| List.contains(b.first, c))
+		in_order = List.concat(List.keep_if(Reach.cards, |c| List.contains(b.first, c)), List.keep_if(b.first, |c| Str.contains(c, "face")))
 		how = if List.is_empty(in_order) { "" } else { " · ${Str.join_with(List.map(in_order, show_card), ", ")}" }
 		label = if id == "HP1" { "pen" } else { id }
 		"**${label}** ${shown}${how}"
@@ -53,7 +54,7 @@ panel = |best, zone, caption| {
 }
 
 main! = |_args| {
-	best = Reach.fewest_cards(colors, "red")
+	best = Reach.fewest_cards(colors, "red", Bool.True)
 	bulls = List.get(best, Agent.index_of(colors, { zone: BullsEyeZone, id: "bullseye" })) ?? { cards: 0, first: [] }
 	echo!(panel(best, "red", "Red's zone (the mover's own)"))
 	echo!("\n\n")

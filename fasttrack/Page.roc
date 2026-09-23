@@ -74,7 +74,8 @@ Page :: [].{
 	## and once someone has won, and then nothing takes a click.
 	## `reach` is the fewest cards home for the player to move, square by
 	## square (Reach.fewest_cards), or [] to show none.
-	Flags : { interactive : Bool, show_undo : Bool, tick : U32, winner : Str, reach : List(Reach.Best) }
+	## `reach_title` is what the button that cycles it says.
+	Flags : { interactive : Bool, show_undo : Bool, tick : U32, winner : Str, reach : List(Reach.Best), reach_title : Str }
 
 	view : Type.Game, Page.Flags -> Wire.View
 	view = |game, flags| {
@@ -101,7 +102,7 @@ Page :: [].{
 				Bool.False,
 				[
 					div([div([div([el("board", "", 0, Bool.False, [])]), el("hr", "", 0, Bool.False, []), console])]),
-					div([reach_button(flags.reach), cheat_sheet_view(active_player)]),
+					div([reach_button(flags.reach_title), cheat_sheet_view(active_player)]),
 				],
 			),
 			tick: flags.tick,
@@ -129,11 +130,10 @@ Page :: [].{
 			PartnerOnceHome(partner) => [div([text("${player.color} plays with ${partner}, and may move ${partner}'s pieces once its own are home")])]
 		}
 
-	## Shows or hides the fewest cards home on every square: for the player to
-	## move, whose zone is at the bottom.
-	reach_button : List(Reach.Best) -> Page.Tree
-	reach_button = |reach|
-		div([button("", Codes.toggle_reach, [text(if List.is_empty(reach) { "show cards home" } else { "hide cards home" })])])
+	## Cycles the fewest cards home on every square -- off, plain, with a free
+	## face card -- for the player to move, whose zone is at the bottom.
+	reach_button : Str -> Page.Tree
+	reach_button = |title| div([button("", Codes.toggle_reach, [text(title)])])
 
 	## The computer's hand, face up, and nothing to press.
 	computer_view : Type.Player, Str -> Page.Tree
@@ -185,7 +185,10 @@ Page :: [].{
 			if best.cards >= Agent.far {
 				("", "")
 			} else {
-				cards = List.map(List.keep_if(Reach.cards, |c| List.contains(best.first, c)), |c| if c == "4" { "4 back" } else { c })
+				# Plain cards in deck order, then the ways with a face card.
+				plain = List.keep_if(Reach.cards, |c| List.contains(best.first, c))
+				with_face = List.keep_if(best.first, |c| Str.contains(c, "face"))
+				cards = List.map(List.concat(plain, with_face), |c| Str.replace_each(c, "4", "4 back"))
 				(I64.to_str(best.cards), if List.is_empty(cards) { "home" } else { Str.concat("start with ", Str.join_with(cards, ", ")) })
 			}
 		zone_color = match piece_location.zone {

@@ -19,14 +19,16 @@ FastTrack :: [].{
 	## once rather than every click.
 	Seat : [Human, Computer(Agent.Knowledge), Naive]
 
-	## `reach` is Reach.fewest_cards for each color, in the game's color
-	## order, worked out once; `show_reach` says whether the page shows it.
+	## `reach` and `reach_face` are Reach.fewest_cards for each color, in the
+	## game's color order, without and with a free face card, worked out once;
+	## `show_reach` says which the page shows, if either.
 	Model : {
 		game : Type.Game,
 		history : History.History(Type.Game),
 		seats : List(FastTrack.Seat),
 		reach : List(List(Reach.Best)),
-		show_reach : Bool,
+		reach_face : List(List(Reach.Best)),
+		show_reach : [Off, Plain, WithFace],
 	}
 
 	## Two bits a seat, the first seat lowest: 0 a person, 1 the computer, 2
@@ -106,8 +108,9 @@ FastTrack :: [].{
 			game,
 			history: History.reset(game),
 			seats: seats_of(seat_bits, game.zone_colors),
-			reach: List.map(game.zone_colors, |color| Reach.fewest_cards(game.zone_colors, color)),
-			show_reach: Bool.False,
+			reach: List.map(game.zone_colors, |color| Reach.fewest_cards(game.zone_colors, color, Bool.False)),
+			reach_face: List.map(game.zone_colors, |color| Reach.fewest_cards(game.zone_colors, color, Bool.True)),
+			show_reach: Off,
 		}
 	}
 
@@ -117,7 +120,12 @@ FastTrack :: [].{
 	update : FastTrack.Model, U32 -> FastTrack.Model
 	update = |model, code|
 		if code == Codes.toggle_reach {
-			{ ..model, show_reach: !model.show_reach }
+			next = match model.show_reach {
+				Off => Plain
+				Plain => WithFace
+				WithFace => Off
+			}
+			{ ..model, show_reach: next }
 		} else {
 			play(model, code)
 		}
@@ -159,7 +167,16 @@ FastTrack :: [].{
 				show_undo: human and History.can_undo(model.history, model.game),
 				tick: if agent_to_move(model) { Codes.agent_step } else { 0 },
 				winner: Game.winner(model.game) ?? "",
-				reach: if model.show_reach { List.get(model.reach, model.game.active_player_idx) ?? [] } else { [] },
+				reach: match model.show_reach {
+					Off => []
+					Plain => List.get(model.reach, model.game.active_player_idx) ?? []
+					WithFace => List.get(model.reach_face, model.game.active_player_idx) ?? []
+				},
+				reach_title: match model.show_reach {
+					Off => "show cards home"
+					Plain => "with a free face card"
+					WithFace => "hide cards home"
+				},
 			},
 		)
 	}

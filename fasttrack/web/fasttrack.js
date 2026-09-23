@@ -187,7 +187,8 @@ const FastTrack = (() => {
 // In a browser: `?seed=` replays a deal, `?setup=` starts from one of
 // Setup.roc's scenarios by number, `?seats=` (default hccc: you are red)
 // says who plays, `?teams=anytime|oncehome` seats partnerships, `?show=cards`
-// puts the fewest cards home on every square, and `?pause=` is the
+// puts the fewest cards home on every square (`?show=face` with a free face
+// card), and `?pause=` is the
 // computer's pause per click in ms.
 if (typeof window !== "undefined" && window.document && window.FASTTRACK_WASM) {
   (async () => {
@@ -208,9 +209,12 @@ if (typeof window !== "undefined" && window.document && window.FASTTRACK_WASM) {
       pending = setTimeout(send, pause);
     };
     const page = FastTrack.mount(document, root, g, schedule);
-    // `?show=cards` opens with the fewest cards home on every square
-    // (Codes.toggle_reach).
-    if (params.get("show") === "cards") page.onClick(4);
+    // `?show=cards` opens with the fewest cards home on every square, and
+    // `?show=face` with them counted with a free face card
+    // (Codes.toggle_reach, which cycles off, cards, face).
+    const show = params.get("show");
+    if (show === "cards") page.onClick(4);
+    else if (show === "face") { page.onClick(4); page.onClick(4); }
     else page.draw();
   })();
 }

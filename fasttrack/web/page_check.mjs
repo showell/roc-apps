@@ -126,8 +126,9 @@ function check(step) {
 
 check(0);
 
-// The cards-home overlay: on, the mover's own B4 reads 0 and its pen 3; off
-// again, no square has a label.
+// The cards-home overlay cycles off, plain, with a free face card. Plain, the
+// mover's own B4 reads 0, its pen 3 and DS 2; with the face card DS reads 1;
+// off again, no square has a label.
 function labelOf(zoneIndex, square) {
   const e = last.slots[zoneIndex * 22 + square];
   return e ? e.label : undefined;
@@ -138,6 +139,9 @@ page.onClick(4);
   // The mover's zone is drawn first: HP1 is square 0, B4 square 7.
   if (labelOf(0, 7) !== "0" || labelOf(0, 0) !== "3" || labels < 60) fail(`cards home: B4 ${labelOf(0, 7)}, pen ${labelOf(0, 0)}, ${labels} labels`);
 }
+if (labelOf(0, 9) !== "2") fail(`cards home: DS ${labelOf(0, 9)}, not 2`);
+page.onClick(4);
+if (labelOf(0, 9) !== "1") fail(`cards home with a face card: DS ${labelOf(0, 9)}, not 1`);
 page.onClick(4);
 if (last.slots.some((s) => s.label !== "")) fail("cards home stays on after it is hidden");
 check(0);
