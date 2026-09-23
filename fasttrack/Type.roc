@@ -52,7 +52,9 @@ Type :: [].{
 	## either style.
 	Teams : [Solo, Anytime, OnceHome]
 
-	Player : { deck : List(Str), hand : List(Str), get_out_credits : I64, turn : Type.Turn, color : Str, team : Type.Team }
+	## A player's deck is shuffled once and drawn from the top; `seed` is its
+	## own random stream, for the next shuffle when the deck runs out.
+	Player : { deck : List(Str), hand : List(Str), get_out_credits : I64, turn : Type.Turn, color : Str, team : Type.Team, seed : ElmRandom.Seed }
 
 	FindLocParams : {
 		can_fast_track : Bool,
@@ -69,7 +71,6 @@ Type :: [].{
 		zone_colors : List(Str),
 		piece_map : Type.PieceMap,
 		players : List(Type.Player),
-		seed : ElmRandom.Seed,
 		active_player_idx : U64,
 		num_players : U64,
 	}

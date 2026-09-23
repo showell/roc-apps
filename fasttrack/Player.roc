@@ -41,20 +41,27 @@ Player :: [].{
 		}
 
 	## `hand` is empty unless a setup other than Normal deals one.
-	config_player : Setup.InitSetup, Str, Type.Team -> Type.Player
-	config_player = |init_setup, color, team| {
-		deck: Config.full_deck,
-		hand: Setup.starting_hand(init_setup, color),
-		get_out_credits: 0,
-		turn: TurnBegin,
-		color,
-		team,
+	## `seed` shuffles this player's deck, before the game begins.
+	config_player : Setup.InitSetup, Str, Type.Team, ElmRandom.Seed -> Type.Player
+	config_player = |init_setup, color, team, seed| {
+		shuffled = shuffle(seed)
+		{
+			deck: shuffled.deck,
+			hand: Setup.starting_hand(init_setup, color),
+			get_out_credits: 0,
+			turn: TurnBegin,
+			color,
+			team,
+			seed: shuffled.seed,
+		}
 	}
 
 	## In a partnership, partners sit opposite: red and green, blue and
 	## purple.
-	config_players : Setup.InitSetup, List(Str), Type.Teams -> List(Type.Player)
-	config_players = |init_setup, zone_colors, teams| {
+	## Each player's deck is shuffled from the game's seed and its seat, so a
+	## seed deals every player the same cards whatever the others do.
+	config_players : Setup.InitSetup, List(Str), Type.Teams, U64 -> List(Type.Player)
+	config_players = |init_setup, zone_colors, teams, millis| {
 		n = List.len(zone_colors)
 		List.map_with_index(
 			zone_colors,
@@ -65,13 +72,13 @@ Player :: [].{
 					Anytime => Partner(partner)
 					OnceHome => PartnerOnceHome(partner)
 				}
-				config_player(init_setup, color, team)
+				config_player(init_setup, color, team, ElmRandom.initial_seed(millis + 1000003 * i))
 			},
 		)
 	}
 
 	get_player : List(Type.Player), U64 -> Type.Player
-	get_player = |players, idx| List.get(players, idx) ?? config_player(Normal, "bogus", Solo)
+	get_player = |players, idx| List.get(players, idx) ?? crash("Player.get_player: no player at that index")
 
 	## The colors whose pieces this player may move: its own, and its
 	## partner's when its team's rules allow.
@@ -227,28 +234,46 @@ Player :: [].{
 			_ => player
 		}
 
-	maybe_replenish_deck : List(Str) -> List(Str)
-	maybe_replenish_deck = |deck| if List.is_empty(deck) { Config.full_deck } else { deck }
-
-	## Draw until the hand holds five.
-	replenish_hand : Type.Game -> Type.Game
-	replenish_hand = |game| {
-		var $game = game
-		var $player = get_player(game.players, game.active_player_idx)
-		while List.len($player.hand) < 5 {
-			draw = ElmRandom.int(0, U64.to_i64_wrap(List.len($player.deck)) - 1, $game.seed)
-			$game = { ..$game, players: update_player($game.players, $game.active_player_idx, |p| draw_card(I64.to_u64_wrap(draw.value), p)), seed: draw.seed }
-			$player = get_player($game.players, $game.active_player_idx)
+	## A full deck shuffled from `seed`: each card in turn taken from a
+	## random place in what is left. Answers the deck and the seed after.
+	shuffle : ElmRandom.Seed -> { deck : List(Str), seed : ElmRandom.Seed }
+	shuffle = |seed0| {
+		var $left = Config.full_deck
+		var $deck = []
+		var $seed = seed0
+		while !List.is_empty($left) {
+			draw = ElmRandom.int(0, U64.to_i64_wrap(List.len($left)) - 1, $seed)
+			i = I64.to_u64_wrap(draw.value)
+			$deck = List.append($deck, List.get($left, i) ?? crash("Player.shuffle: out of range"))
+			$left = List.drop_at($left, i)
+			$seed = draw.seed
 		}
-		$game
+		{ deck: $deck, seed: $seed }
 	}
 
-	draw_card : U64, Type.Player -> Type.Player
-	draw_card = |idx, player|
-		match List.get(player.deck, idx) {
-			Ok(card) => { ..player, deck: maybe_replenish_deck(List.drop_at(player.deck, idx)), hand: List.append(player.hand, card) }
-			Err(_) => player
+	## Draw from the top of the deck until the hand holds five; an empty deck
+	## is shuffled again from the player's own seed. No other player's draws
+	## touch this one's cards.
+	replenish_hand : Type.Game -> Type.Game
+	replenish_hand = |game| update_active_player(fill_hand, game)
+
+	fill_hand : Type.Player -> Type.Player
+	fill_hand = |player| {
+		var $p = player
+		while List.len($p.hand) < 5 {
+			$p = draw_card($p)
 		}
+		$p
+	}
+
+	draw_card : Type.Player -> Type.Player
+	draw_card = |player| {
+		fresh = if List.is_empty(player.deck) { shuffle(player.seed) } else { { deck: player.deck, seed: player.seed } }
+		match fresh.deck {
+			[card, .. as rest] => { ..player, deck: rest, seed: fresh.seed, hand: List.append(player.hand, card) }
+			[] => player
+		}
+	}
 
 	start_locs_for_player : Type.Player -> Assoc.AssocSet(Type.PieceLocation)
 	start_locs_for_player = |player|

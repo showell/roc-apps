@@ -8,7 +8,6 @@
 # computer player is Agent.roc. Elm never said who won; `winner` does.
 import Color
 import Config
-import ElmRandom
 import History
 import Move
 import Piece
@@ -27,8 +26,7 @@ Game :: [].{
 			{
 				zone_colors,
 				piece_map: Piece.config_pieces(init_setup, zone_colors),
-				players: Player.config_players(init_setup, zone_colors, teams),
-				seed: ElmRandom.initial_seed(millis),
+				players: Player.config_players(init_setup, zone_colors, teams, millis),
 				active_player_idx: 0,
 				num_players,
 			},
