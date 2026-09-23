@@ -50,6 +50,7 @@ class Node {
     this.children = [];
   }
   setAttribute(name, value) { this.attrs[name] = String(value); }
+  set textContent(v) { this.children = [new Node("#text", v)]; }
   addEventListener(kind, f) { if (kind === "click") this.listeners.push(f); }
   click() { for (const f of this.listeners) f(); }
   get textContent() { return this.tag === "#text" ? this.text : this.children.map((c) => c.textContent).join(""); }
@@ -124,6 +125,22 @@ function check(step) {
 }
 
 check(0);
+
+// The cards-home overlay: on, the mover's own B4 reads 0 and its pen 3; off
+// again, no square has a label.
+function labelOf(zoneIndex, square) {
+  const e = last.slots[zoneIndex * 22 + square];
+  return e ? e.label : undefined;
+}
+page.onClick(4);
+{
+  const labels = last.slots.filter((s) => s.label !== "").length;
+  // The mover's zone is drawn first: HP1 is square 0, B4 square 7.
+  if (labelOf(0, 7) !== "0" || labelOf(0, 0) !== "3" || labels < 60) fail(`cards home: B4 ${labelOf(0, 7)}, pen ${labelOf(0, 0)}, ${labels} labels`);
+}
+page.onClick(4);
+if (last.slots.some((s) => s.label !== "")) fail("cards home stays on after it is hidden");
+check(0);
 const firstPage = pageText(root);
 if (SEED === 0 && SETUP === 0 && SEATS[0] === "h") {
   // Seed 0 deals red 9 J 5 5 J (Game.roc's expect); none leaves the pen.
@@ -133,11 +150,13 @@ if (SEED === 0 && SETUP === 0 && SEATS[0] === "h") {
 
 // ── play ───────────────────────────────────────────────────────────────────
 
+// What the game offers to click. The cards-home toggle is always there and
+// changes only the view, so it is not one of them.
 function clickables() {
   const buttons = [];
   const squares = [];
   walk(root, (n) => {
-    if (n.tag === "button" && !n.disabled && n.listeners.length) buttons.push(n);
+    if (n.tag === "button" && !n.disabled && n.listeners.length && !/cards home$/.test(n.textContent)) buttons.push(n);
     if (n.tag === "g" && n.attrs.cursor === "pointer") squares.push(n);
   });
   return { buttons, squares };

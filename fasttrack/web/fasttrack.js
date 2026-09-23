@@ -47,10 +47,23 @@ const FastTrack = (() => {
         const g = document.createElementNS(SVG, "g");
         const shape = document.createElementNS(SVG, s.square ? "rect" : "circle");
         const piece = document.createElementNS(SVG, "circle");
+        // A square's label sits over its piece, outlined in white so either
+        // shows through; its hint is the square's hover text.
+        const label = document.createElementNS(SVG, "text");
+        const hint = document.createElementNS(SVG, "title");
+        label.setAttribute("text-anchor", "middle");
+        label.setAttribute("font-size", "11");
+        label.setAttribute("font-weight", "bold");
+        label.setAttribute("stroke", "white");
+        label.setAttribute("stroke-width", "3");
+        label.setAttribute("paint-order", "stroke");
+        label.setAttribute("pointer-events", "none");
         g.appendChild(shape);
         g.appendChild(piece);
+        g.appendChild(label);
+        g.appendChild(hint);
         svg.appendChild(g);
-        const entry = { g, shape, piece, last: null, code: 0 };
+        const entry = { g, shape, piece, label, hint, last: null, code: 0 };
         g.addEventListener("click", () => { if (entry.code) onClick(entry.code); });
         return entry;
       });
@@ -88,7 +101,11 @@ const FastTrack = (() => {
           }
           set(e.piece, "cx", s.cx);
           set(e.piece, "cy", s.cy);
+          set(e.label, "x", s.cx);
+          set(e.label, "y", s.cy + 4);
         }
+        if (old.label !== s.label) e.label.textContent = s.label;
+        if (old.hint !== s.hint) e.hint.textContent = s.hint;
         if (old.fill !== s.fill) set(e.shape, "fill", s.fill);
         if (old.stroke !== s.stroke) set(e.shape, "stroke", s.stroke);
         if (old.piece !== s.piece) {
@@ -169,8 +186,9 @@ const FastTrack = (() => {
 
 // In a browser: `?seed=` replays a deal, `?setup=` starts from one of
 // Setup.roc's scenarios by number, `?seats=` (default hccc: you are red)
-// says who plays, `?teams=anytime|oncehome` seats partnerships, and
-// `?pause=` is the computer's pause per click in ms.
+// says who plays, `?teams=anytime|oncehome` seats partnerships, `?show=cards`
+// puts the fewest cards home on every square, and `?pause=` is the
+// computer's pause per click in ms.
 if (typeof window !== "undefined" && window.document && window.FASTTRACK_WASM) {
   (async () => {
     const root = document.getElementById("game");
@@ -189,6 +207,10 @@ if (typeof window !== "undefined" && window.document && window.FASTTRACK_WASM) {
       clearTimeout(pending);
       pending = setTimeout(send, pause);
     };
-    FastTrack.mount(document, root, g, schedule).draw();
+    const page = FastTrack.mount(document, root, g, schedule);
+    // `?show=cards` opens with the fewest cards home on every square
+    // (Codes.toggle_reach).
+    if (params.get("show") === "cards") page.onClick(4);
+    else page.draw();
   })();
 }

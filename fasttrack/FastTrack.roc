@@ -10,6 +10,7 @@ import Codes
 import Game
 import History
 import Page
+import Reach
 import Setup
 import Type
 
@@ -18,7 +19,15 @@ FastTrack :: [].{
 	## once rather than every click.
 	Seat : [Human, Computer(Agent.Knowledge), Naive]
 
-	Model : { game : Type.Game, history : History.History(Type.Game), seats : List(FastTrack.Seat) }
+	## `reach` is Reach.fewest_cards for each color, in the game's color
+	## order, worked out once; `show_reach` says whether the page shows it.
+	Model : {
+		game : Type.Game,
+		history : History.History(Type.Game),
+		seats : List(FastTrack.Seat),
+		reach : List(List(Reach.Best)),
+		show_reach : Bool,
+	}
 
 	## Two bits a seat, the first seat lowest: 0 a person, 1 the computer, 2
 	## the naive player (Agent.next_msg).
@@ -93,14 +102,28 @@ FastTrack :: [].{
 	init = |millis, setup, seat_bits, teams| {
 		team_style = if teams == 1 { Anytime } else if teams == 2 { OnceHome } else { Solo }
 		game = Game.begin_game(millis, List.get(setups, U32.to_u64(setup)) ?? Normal, team_style)
-		{ game, history: History.reset(game), seats: seats_of(seat_bits, game.zone_colors) }
+		{
+			game,
+			history: History.reset(game),
+			seats: seats_of(seat_bits, game.zone_colors),
+			reach: List.map(game.zone_colors, |color| Reach.fewest_cards(game.zone_colors, color)),
+			show_reach: Bool.False,
+		}
 	}
 
 	## A person's click only in a person's seat, the tick only in the
 	## computer's, and nothing once someone has won: a stale click is ignored
 	## rather than played.
 	update : FastTrack.Model, U32 -> FastTrack.Model
-	update = |model, code| {
+	update = |model, code|
+		if code == Codes.toggle_reach {
+			{ ..model, show_reach: !model.show_reach }
+		} else {
+			play(model, code)
+		}
+
+	play : FastTrack.Model, U32 -> FastTrack.Model
+	play = |model, code| {
 		msg =
 			if code == Codes.agent_step {
 				if agent_to_move(model) {
@@ -136,6 +159,7 @@ FastTrack :: [].{
 				show_undo: human and History.can_undo(model.history, model.game),
 				tick: if agent_to_move(model) { Codes.agent_step } else { 0 },
 				winner: Game.winner(model.game) ?? "",
+				reach: if model.show_reach { List.get(model.reach, model.game.active_player_idx) ?? [] } else { [] },
 			},
 		)
 	}

@@ -13,6 +13,7 @@
 # multiple of 90 degrees, so a square stays a square and a slot needs only a
 # centre.
 import pf.Wire
+import Agent
 import Assoc
 import Codes
 import Color
@@ -20,6 +21,7 @@ import Config
 import LegalMove
 import Piece
 import Player
+import Reach
 import Type
 
 Page :: [].{
@@ -70,7 +72,9 @@ Page :: [].{
 
 	## What the page may offer: `interactive` is false in the computer's seat
 	## and once someone has won, and then nothing takes a click.
-	Flags : { interactive : Bool, show_undo : Bool, tick : U32, winner : Str }
+	## `reach` is the fewest cards home for the player to move, square by
+	## square (Reach.fewest_cards), or [] to show none.
+	Flags : { interactive : Bool, show_undo : Bool, tick : U32, winner : Str, reach : List(Reach.Best) }
 
 	view : Type.Game, Page.Flags -> Wire.View
 	view = |game, flags| {
@@ -89,7 +93,7 @@ Page :: [].{
 			}
 		{
 			board_size: 2.0 * center_offset(side_count) + 3.0 * Config.square_size,
-			slots: board_view(game, zone_colors, active_player, flags.interactive),
+			slots: board_view(game, zone_colors, active_player, flags.interactive, flags.reach),
 			nodes: el(
 				"div",
 				"display: flex; flex-direction: row",
@@ -97,7 +101,7 @@ Page :: [].{
 				Bool.False,
 				[
 					div([div([div([el("board", "", 0, Bool.False, [])]), el("hr", "", 0, Bool.False, []), console])]),
-					div([cheat_sheet_view(active_player)]),
+					div([reach_button(flags.reach), cheat_sheet_view(active_player)]),
 				],
 			),
 			tick: flags.tick,
@@ -125,6 +129,12 @@ Page :: [].{
 			PartnerOnceHome(partner) => [div([text("${player.color} plays with ${partner}, and may move ${partner}'s pieces once its own are home")])]
 		}
 
+	## Shows or hides the fewest cards home on every square: for the player to
+	## move, whose zone is at the bottom.
+	reach_button : List(Reach.Best) -> Page.Tree
+	reach_button = |reach|
+		div([button("", Codes.toggle_reach, [text(if List.is_empty(reach) { "show cards home" } else { "hide cards home" })])])
+
 	## The computer's hand, face up, and nothing to press.
 	computer_view : Type.Player, Str -> Page.Tree
 	computer_view = |player, color|
@@ -136,8 +146,8 @@ Page :: [].{
 			.concat(team_line(player)),
 		)
 
-	board_view : Type.Game, List(Str), Type.Player, Bool -> List(Wire.Slot)
-	board_view = |game, zone_colors, active_player, interactive| {
+	board_view : Type.Game, List(Str), Type.Player, Bool, List(Reach.Best) -> List(Wire.Slot)
+	board_view = |game, zone_colors, active_player, interactive, reach| {
 		side_count = List.len(zone_colors)
 		angle = 2.0 * F64.pi / U64.to_f64(side_count)
 		center = center_offset(side_count)
@@ -155,19 +165,29 @@ Page :: [].{
 							b = panel_height - (loc.y * Config.square_size) + radius
 							cx = Config.square_size + center + a * F64.cos(theta) - b * F64.sin(theta)
 							cy = Config.square_size + center + a * F64.sin(theta) + b * F64.cos(theta)
-							slot(game, active_player, interactive, { zone: NormalColor(zone_color), id: loc.id }, cx, cy)
+							slot(game, active_player, interactive, reach, { zone: NormalColor(zone_color), id: loc.id }, cx, cy)
 						},
 					)
 				},
 			),
 		)
-		bulls_eye = slot(game, active_player, interactive, { zone: BullsEyeZone, id: "bullseye" }, Config.square_size + center, Config.square_size + center)
+		bulls_eye = slot(game, active_player, interactive, reach, { zone: BullsEyeZone, id: "bullseye" }, Config.square_size + center, Config.square_size + center)
 		List.append(zones, bulls_eye)
 	}
 
 	## `drawLocationAtCoords`.
-	slot : Type.Game, Type.Player, Bool, Type.PieceLocation, F64, F64 -> Wire.Slot
-	slot = |game, active_player, interactive, piece_location, cx, cy| {
+	slot : Type.Game, Type.Player, Bool, List(Reach.Best), Type.PieceLocation, F64, F64 -> Wire.Slot
+	slot = |game, active_player, interactive, reach, piece_location, cx, cy| {
+		# The fewest cards home from here, and the cards that start the way;
+		# nothing for squares a piece of this color never stands on.
+		best = List.get(reach, Agent.index_of(game.zone_colors, piece_location)) ?? { cards: Agent.far, first: [] }
+		(label, hint) =
+			if best.cards >= Agent.far {
+				("", "")
+			} else {
+				cards = List.map(List.keep_if(Reach.cards, |c| List.contains(best.first, c)), |c| if c == "4" { "4 back" } else { c })
+				(I64.to_str(best.cards), if List.is_empty(cards) { "home" } else { Str.concat("start with ", Str.join_with(cards, ", ")) })
+			}
 		zone_color = match piece_location.zone {
 			BullsEyeZone => "black"
 			NormalColor(color) => color
@@ -217,6 +237,8 @@ Page :: [].{
 			piece: my_piece ?? "",
 			piece_r,
 			click,
+			label,
+			hint,
 		}
 	}
 
