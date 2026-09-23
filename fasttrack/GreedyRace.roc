@@ -27,9 +27,9 @@ GreedyRace :: [].{
 		)
 
 	## What a player plays for: its square values, and what each card it
-	## hoards -- an A or joker to get out, a J for a late swap -- still in its
-	## hand at the end of its turn is worth (red only).
-	Strategy : { tables : List(List(I64)), hand_value : I64 }
+	## hoards (`hoard`: an A or joker to get out, a J for a late swap) still in
+	## its hand at the end of its turn is worth (red only).
+	Strategy : { tables : List(List(I64)), hand_value : I64, hoard : List(Str) }
 
 	## Every color's values with `bonus` more a step down its own base: B1 +
 	## bonus, B2 + 2 bonus, B3 + 3, B4 + 4.
@@ -64,8 +64,8 @@ GreedyRace :: [].{
 		List.fold(game.piece_map, 0, |total, e| if e.value == color { total + (List.get(table, Agent.index_of(colors, e.key)) ?? 0) } else { total })
 	}
 
-	## A line's worth to the mover: its pieces' squares, and for red, each A,
-	## joker or J it kept -- none when the line refilled its hand, since the
+	## A line's worth to the mover: its pieces' squares, and for red, each
+	## hoarded card it kept -- none when the line refilled its hand, since the
 	## cards it drew were not chosen.
 	line_score : Strategy, Agent.Line, U64 -> I64
 	line_score = |strategy, line, owner| {
@@ -74,7 +74,7 @@ GreedyRace :: [].{
 				0
 			} else {
 				hand = (List.get(line.game.players, owner) ?? Player.get_active_player(line.game)).hand
-				U64.to_i64_wrap(List.count_if(hand, |c| List.contains(["A", "joker", "J"], c))) * strategy.hand_value
+				U64.to_i64_wrap(List.count_if(hand, |c| List.contains(strategy.hoard, c))) * strategy.hand_value
 			}
 		board_score(strategy.tables, line.game, owner) + kept
 	}
@@ -153,16 +153,23 @@ GreedyRace :: [].{
 	## Red's turns until its four pieces are home (or `cap`), and how many
 	## times an opponent sent a red piece back to the pen.
 	## `skips` counts steps where a player with a legal play played nothing,
-	## and `cuts` searches that stopped short; both should be 0.
-	red_turns : Strategy, U64, U64 -> { turns : U64, captured : U64, skips : U64, cuts : U64 }
+	## and `cuts` searches that stopped short; both should be 0. `idle` counts
+	## red's turns that began with a discard: no piece could move.
+	red_turns : Strategy, U64, U64 -> { turns : U64, captured : U64, skips : U64, cuts : U64, idle : U64 }
 	red_turns = |strategy, seed, cap| {
 		var $g = Game.begin_game(seed, Normal, Solo)
 		var $turns = 1
 		var $captured = 0
 		var $skips = 0
 		var $cuts = 0
+		var $idle = 0
+		var $idle_turn = 0
 		var $steps = 0
 		while !home($g, 0) and $turns < cap and $steps < 100000 {
+			if $g.active_player_idx == 0 and Player.get_active_player($g).turn == TurnNeedDiscard and $idle_turn != $turns {
+				$idle = $idle + 1
+				$idle_turn = $turns
+			}
 			checked = step_checked(strategy, $g)
 			next = checked.game
 			$skips = if checked.skipped { $skips + 1 } else { $skips }
@@ -176,6 +183,6 @@ GreedyRace :: [].{
 			$g = next
 			$steps = $steps + 1
 		}
-		{ turns: $turns, captured: $captured, skips: $skips, cuts: $cuts }
+		{ turns: $turns, captured: $captured, skips: $skips, cuts: $cuts, idle: $idle }
 	}
 }
