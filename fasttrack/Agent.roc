@@ -51,16 +51,12 @@ import Type
 Agent :: [].{
 	Line : { game : Type.Game, msgs : List(Type.GameMsg), drew : Bool }
 
-	Weights : { danger : I64, out_of_pen : I64, home : I64, hop : I64 }
+	Weights : { danger : I64, out_of_pen : I64, home : I64, hop : I64, pen : I64 }
 
 	## The weights a computer seat plays with unless told otherwise: the
 	## winners of the races in TUNING.md.
 	default_weights : Agent.Weights
-	default_weights = { danger: 0, out_of_pen: 0, home: 10, hop: 1 }
-
-	## Extra steps for waiting on A, 6 or joker to leave the pen.
-	pen_wait : I64
-	pen_wait = 4
+	default_weights = { danger: 0, out_of_pen: 0, home: 10, hop: 1, pen: 4 }
 
 	## Extra steps for waiting on J, Q or K to leave the bullseye.
 	bulls_eye_wait : I64
@@ -108,8 +104,9 @@ Agent :: [].{
 
 	## Steps left for a piece of `color` on each square, indexed as `all_locs`:
 	## Bellman-Ford over the empty board's edges, walked backwards from B4.
-	distances : List(Str), Str, I64 -> List(I64)
-	distances = |zone_colors, color, hop| {
+	## `pen` is the extra steps a piece waits in the pen for an A, 6 or joker.
+	distances : List(Str), Str, I64, I64 -> List(I64)
+	distances = |zone_colors, color, hop, pen| {
 		locs = all_locs(zone_colors)
 		params = free_params(zone_colors, color, Bool.True)
 		edges = List.join(
@@ -121,7 +118,7 @@ Agent :: [].{
 						|next| {
 							cost =
 								if Config.is_holding_pen_id(loc.id) {
-									1 + pen_wait
+									1 + pen
 								} else if loc.zone == BullsEyeZone {
 									1 + bulls_eye_wait
 								} else if loc.id == "FT" and (next.id == "FT" or next.zone == BullsEyeZone) {
@@ -187,7 +184,7 @@ Agent :: [].{
 	knowledge : Agent.Weights, List(Str) -> Agent.Knowledge
 	knowledge = |weights, zone_colors| {
 		weights,
-		steps: List.map(zone_colors, |color| distances(zone_colors, color, weights.hop)),
+		steps: List.map(zone_colors, |color| distances(zone_colors, color, weights.hop, weights.pen)),
 		reach: List.map(zone_colors, |color| reach(zone_colors, color)),
 	}
 
@@ -439,13 +436,24 @@ Agent :: [].{
 # L0; the bullseye the wait and one step before purple's FT (11).
 expect {
 	colors = ["red", "blue", "green", "purple"]
-	d = Agent.distances(colors, "red", 1)
+	d = Agent.distances(colors, "red", 1, 4)
 	at = |zone, id| List.get(d, Agent.index_of(colors, { zone: NormalColor(zone), id })) ?? 0
 	at("red", "B4") == 0 and at("red", "B1") == 3 and at("red", "FT") == 14 and at("red", "L0") == 19 and at("red", "HP1") == 24 and at("purple", "FT") == 11
 }
 expect {
 	colors = ["red", "blue", "green", "purple"]
-	List.get(Agent.distances(colors, "red", 1), Agent.index_of(colors, { zone: BullsEyeZone, id: "bullseye" })) == Ok(18)
+	List.get(Agent.distances(colors, "red", 1, 4), Agent.index_of(colors, { zone: BullsEyeZone, id: "bullseye" })) == Ok(18)
+}
+
+# Steve's two squares: six past red's pen without the bullseye is blue's R4,
+# 13 to blue's fast track and 13 more home (26); landing on blue's FT
+# instead leaves the 13. With a 4-step wait, red's pen is 24 -- better than
+# being out and stuck on blue's R4, which is what the `pen` weight is for.
+expect {
+	colors = ["red", "blue", "green", "purple"]
+	d = Agent.distances(colors, "red", 1, 4)
+	at = |zone, id| List.get(d, Agent.index_of(colors, { zone: NormalColor(zone), id })) ?? 0
+	at("blue", "R4") == 26 and at("blue", "FT") == 13 and at("red", "HP1") == 24
 }
 
 # With a hop as dear as walking a zone (14), red's FT is 32 from home: into
@@ -453,7 +461,7 @@ expect {
 # Walking the three zones would be 42 + 11.
 expect {
 	colors = ["red", "blue", "green", "purple"]
-	List.get(Agent.distances(colors, "red", 14), Agent.index_of(colors, { zone: NormalColor("red"), id: "FT" })) == Ok(32)
+	List.get(Agent.distances(colors, "red", 14, 4), Agent.index_of(colors, { zone: NormalColor("red"), id: "FT" })) == Ok(32)
 }
 
 # With a 2 and a 3, red takes the 3 that lands on blue and sends it home.

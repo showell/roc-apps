@@ -2,9 +2,10 @@
 //
 //   A=danger=40 B=danger=0 DEALS=40 node fasttrack/web/race.mjs <build-dir>
 //
-// A weight spec is `danger=<n>,out=<n>,home=<n>,hop=<n>` (Agent.Weights, in
-// the agent's units: a step is 4, except hop, which is steps); a factor left
-// out is Agent.default_weights' (danger 0, out 0, home 10, hop 1).
+// A weight spec is `danger=<n>,out=<n>,home=<n>,hop=<n>,pen=<n>`
+// (Agent.Weights, in the agent's units: a step is 4, except hop and pen,
+// which are steps); a factor left out is Agent.default_weights' (danger 0,
+// out 0, home 10, hop 1, pen 4).
 // Every deal is played twice, as abab and baba, so neither side keeps the
 // seats that move first; with DEALS=40 that is 80 games. The games are split
 // between two worker threads, one per core. A game past CAP clicks is a draw.
@@ -14,11 +15,11 @@ import { readFileSync } from "node:fs";
 import { Worker, isMainThread, parentPort, workerData } from "node:worker_threads";
 import vm from "node:vm";
 
-const FACTORS = { danger: 0, out: 1, home: 2, hop: 3 };
+const FACTORS = { danger: 0, out: 1, home: 2, hop: 3, pen: 4 };
 const COLORS = ["red", "blue", "green", "purple"];
 
 function parse(spec) {
-  const w = [0, 0, 10, 1];
+  const w = [0, 0, 10, 1, 4];
   for (const part of (spec ?? "").split(",").filter(Boolean)) {
     const [name, value] = part.split("=");
     if (!(name in FACTORS)) throw new Error(`race: no factor ${name}`);
