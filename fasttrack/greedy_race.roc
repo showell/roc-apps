@@ -13,9 +13,11 @@
 #
 # All four seats play greedy, each on its own color's values. Red's turns are
 # counted until red's four pieces are in its base; a player already home is
-# skipped. N games (default 20; the first argument), seeds 1 .. N.
+# skipped. N games (default 20; the first argument), seeds 1 .. N. A second
+# argument gives red alone a bonus of that much a step down its base (B1
+# once, B4 four times).
 #
-#   cd fasttrack && roc build greedy_race.roc --opt=speed && ./greedy_race 20
+#   cd fasttrack && roc build greedy_race.roc --opt=speed && ./greedy_race 20 100
 import Agent
 import Game
 import History
@@ -38,18 +40,46 @@ values =
 		},
 	)
 
-board_score : Type.Game, U64 -> I64
-board_score = |game, owner| {
+## Red's values with `bonus` more a step down its base: B1 + bonus, B2 +
+## 2 bonus, B3 + 3, B4 + 4. The other colors keep theirs.
+with_bonus : I64 -> List(List(I64))
+with_bonus = |bonus|
+	List.map_with_index(
+		values,
+		|table, owner|
+			if owner != 0 {
+				table
+			} else {
+				List.map_with_index(
+					table,
+					|v, i|
+						match List.get(Agent.all_locs(colors), i) {
+							Ok(loc) if loc.zone == NormalColor("red") =>
+								match loc.id {
+									"B1" => v + bonus
+									"B2" => v + 2 * bonus
+									"B3" => v + 3 * bonus
+									"B4" => v + 4 * bonus
+									_ => v
+								}
+							_ => v
+						},
+				)
+			},
+	)
+
+board_score : List(List(I64)), Type.Game, U64 -> I64
+board_score = |tables, game, owner| {
 	color = List.get(colors, owner) ?? ""
-	table = List.get(values, owner) ?? []
+	table = List.get(tables, owner) ?? []
 	List.fold(game.piece_map, 0, |total, e| if e.value == color { total + (List.get(table, Agent.index_of(colors, e.key)) ?? 0) } else { total })
 }
 
 ## The game after the mover's best line of play through the rest of its
 ## turn -- every line, the same position reached two ways counted once -- or
 ## the game unchanged when it has no play.
-greedy_turn : Type.Game -> Type.Game
-greedy_turn = |game| {
+greedy_turn : List(List(I64)), Type.Game -> Type.Game
+greedy_turn = |tables, game| {
 	owner = game.active_player_idx
 	start = Agent.settle({ game, msgs: [], drew: Bool.False })
 	var $level = start
@@ -66,7 +96,7 @@ greedy_turn = |game| {
 		finals,
 		{ game, score: I64.lowest, moved: Bool.False },
 		|acc, line| {
-			s = board_score(line.game, owner)
+			s = board_score(tables, line.game, owner)
 			if !List.is_empty(line.msgs) and (!acc.moved or s > acc.score) { { game: line.game, score: s, moved: Bool.True } } else { acc }
 		},
 	)
@@ -89,8 +119,8 @@ rotate = |game| {
 }
 
 ## Red's turns until its four pieces are home (or `cap`).
-red_turns : U64, U64 -> U64
-red_turns = |seed, cap| {
+red_turns : List(List(I64)), U64, U64 -> U64
+red_turns = |tables, seed, cap| {
 	var $g = Game.begin_game(seed, Normal, Solo)
 	var $turns = 1
 	var $steps = 0
@@ -100,7 +130,7 @@ red_turns = |seed, cap| {
 			if player.turn == TurnDone {
 				rotate($g)
 			} else {
-				played = greedy_turn($g)
+				played = greedy_turn(tables, $g)
 				# No play at all (should not happen): end the turn.
 				if played == $g { rotate($g) } else { played }
 			}
@@ -118,12 +148,19 @@ main! = |args| {
 		Ok(t) => U64.from_str(t) ?? 20
 		Err(_) => 20
 	}
+	bonus = match List.get(args, 1) {
+		Ok(t) => I64.from_str(t) ?? 0
+		Err(_) => 0
+	}
+	tables = with_bonus(bonus)
 	cap = 1000
-	results = List.map_with_index(List.repeat(0, n), |_, i| red_turns(i + 1, cap))
+	results = List.map_with_index(List.repeat(0, n), |_, i| red_turns(tables, i + 1, cap))
 	each = Str.join_with(List.map(results, U64.to_str), " ")
 	total = List.fold(results, 0, |t, r| t + r)
 	lo = List.fold(results, cap, |m, r| if r < m { r } else { m })
 	hi = List.fold(results, 0, |m, r| if r > m { r } else { m })
+	red = List.first(tables) ?? []
+	echo!("red's base bonus ${I64.to_str(bonus)} a step: B4 is ${I64.to_str(List.get(red, Agent.index_of(colors, { zone: NormalColor("red"), id: "B4" })) ?? -1)}\n")
 	blue_r4 = List.get(List.first(values) ?? [], Agent.index_of(colors, { zone: NormalColor("blue"), id: "R4" })) ?? -1
 	echo!("red's values: B4 ${I64.to_str(List.get(List.first(values) ?? [], Agent.index_of(colors, { zone: NormalColor("red"), id: "B4" })) ?? -1)}, blue's R4 ${I64.to_str(blue_r4)}, pen ${I64.to_str(List.get(List.first(values) ?? [], Agent.index_of(colors, { zone: NormalColor("red"), id: "HP1" })) ?? -1)}\n")
 	echo!("red's turns to get all four home, ${U64.to_str(n)} games: ${each}\n")
