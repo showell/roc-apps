@@ -1,8 +1,9 @@
 # Tuning the computer
 
 **Today's computer is `Strategy.champion`** (Strategy.roc): the square values
-of Steve's ranking (SquareValues.roc), a base bonus of 1000 a step, and A and
-joker hoarded at 1500, 1000, 500 and 0 by pieces home, with a whole-turn search
+of Steve's ranking (SquareValues.roc), a base bonus of 1000 a step, and the A,
+joker and J hoarded at 1500, 1000, 500 and 0 by pieces home, opponents
+ignored, with a whole-turn search
 (Search.roc). Experiments run through Arena.roc (`exp_*.roc`). The first two
 sections below tuned an earlier computer -- a distance heuristic with a
 limited search -- that has since been removed; they are kept for what they
@@ -153,6 +154,26 @@ Strategy.champion. `exp_jack_hoard.roc` at `42b9113`. Nothing here stands out
 of the noise: 30 games is a win rate to within about 8 points and turns to
 within 0.6. Up to 900 the J hoard changes almost nothing; 1500 is slightly
 better on every count and 3000 slightly worse on wins. Not adopted.
+
+### Playing to win, 2026-09-23
+
+80 games per variant, seeds 1-80; red is the variant, the other seats Strategy.champion.
+
+| variant | red won | red's turns home | idle turns a game | captures by red | red captured | skipped / cut |
+|---|---|---|---|---|---|---|
+| own pieces only | 21 of 80 | 15.5 ± 0.4 | 3.5 | 40 | 52 | 0 / 0 |
+| own less the leader | 17 of 80 | 16.6 ± 0.4 | 3.7 | 101 | 68 | 0 / 0 |
+
+Game by game: red won 5 games only as own less the leader (seeds 23, 41, 58,
+61, 80) and 9 only as own pieces only (seeds 21, 22, 43, 55, 60, 69, 74, 76,
+79); the other 66 came out the same.
+
+Red scores its own pieces less the leading opponent's at the end of its turn
+(`opponents: Leader`); the other seats count only their own. `exp_win_focus.roc`
+at `62459a1`. Playing against the leader lost: fewer wins, a turn slower home,
+and red was captured more. It captured two and a half times as often, so the
+chase itself is what it bought. 5 games against 9 is not beyond chance (a sign
+test gives about 0.4), but nothing here points the other way. Not adopted.
 
 ## Before these races
 
