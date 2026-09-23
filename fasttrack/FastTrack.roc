@@ -48,7 +48,11 @@ FastTrack :: [].{
 	overlay_for = |grid, zone_colors, color, kind|
 		match kind {
 			Cards(c) => Overlay.cards(Reach.fewest_in(grid, zone_colors, color, c.face, c.peak, Reach.cards))
-			Heat(peak) => Overlay.heat(Rank.places_in(grid, zone_colors, color, peak))
+			Heat(peak) => {
+				# The tiers and ways the hover shows, with the ranking's deck: no joker.
+				no_joker = List.drop_if(Reach.cards, |c| c == "joker")
+				Overlay.heat(Rank.places_in(grid, zone_colors, color, peak), Reach.fewest_in(grid, zone_colors, color, Bool.True, peak, no_joker))
+			}
 		}
 
 	## Two bits a seat, the first seat lowest: 0 a person, 1 the computer, 2

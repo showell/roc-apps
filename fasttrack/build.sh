@@ -12,6 +12,10 @@
 # then page_check.mjs, which plays four hundred clicks through the built page
 # and paints the last board to shot.png beside it. Any of them failing fails
 # the build.
+#
+# FAST=1 is for looking at a change quickly: no tests, the dev backend only,
+# no second build and no checks -- about ten seconds. Not for a commit that
+# changes the game.
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # The compiler canvas_apps builds with, so the two pages share one.
@@ -23,6 +27,18 @@ mkdir -p "$LOG"
 
 # **ROC EXITS NON-ZERO FOR A WARNING**, so every verdict below is an error
 # mark or a missing artifact, never the exit code.
+if [ -n "${FAST:-}" ]; then
+    OUT="${OUT:-$HOME/build/roc-apps/next/fasttrack}"
+    rm -rf "$OUT"; mkdir -p "$OUT"
+    (cd "$HERE/web" && "$ZIG" build --cache-dir "$HOME/build/roc-apps/zig-cache" --global-cache-dir "$HOME/build/zig-global")
+    (cd "$HERE" && "$ROC" build web.roc --target=wasm32 --opt=dev --output="$OUT/fasttrack.wasm") > "$LOG/build-dev.log" 2>&1 || true
+    if grep -q "✗" "$LOG/build-dev.log" || [ ! -s "$OUT/fasttrack.wasm" ]; then cat "$LOG/build-dev.log"; echo "build failed"; exit 1; fi
+    "$ROC" glue "$HERE/../glue/JsGlue.roc" "$OUT" "$HERE/web/platform/main.roc" > "$LOG/glue.log" 2>&1 || { cat "$LOG/glue.log"; echo "glue failed"; exit 1; }
+    cp "$HERE/web/fasttrack.js" "$OUT/"
+    cp "$HERE/web/page.html" "$OUT/index.html"
+    echo "dev (FAST, dev backend, unchecked): http://143.244.172.148:9210/fasttrack/"
+    exit 0
+fi
 (cd "$HERE" && "$ROC" test web.roc) > "$LOG/test.log" 2>&1 || true
 if grep -q "✗" "$LOG/test.log" || ! grep -q "^All ([0-9]*) tests passed" "$LOG/test.log"; then
     cat "$LOG/test.log"; echo "tests failed"; exit 1
