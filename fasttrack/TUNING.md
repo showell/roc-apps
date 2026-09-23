@@ -318,6 +318,24 @@ and 7 sit at the average, and the plain numbers trail together, within noise
 of each other. The 5 of the 80-game run was noise. The 8, 9 and 10 are the
 cards left rotting in a loser's hand.
 
+### What the winner does, four champions, 200 games, 2026-09-23
+
+The 200 games of the card ranking above, every seat Strategy.champion, each
+to the first player home. `exp_cards.roc` (Tables.winner_table).
+
+Wins: red 54, blue 47, green 62, purple 37 (50 each ± about 6 if the seats
+are equal; a chi-square over the four gives p ≈ 0.08).
+
+| | winner | players who lost | winner vs losers: above / equal / below |
+|---|---|---|---|
+| turns | 11.85 | 11.32 | 163 / 37 / 0 |
+| cards played | 20.25 | 15.81 | 169 / 5 / 26 |
+| idle turns | 1.61 | 2.97 | 37 / 9 / 154 |
+| fast-track landings | 2.85 | 2.38 | 111 / 12 / 77 |
+| fast-track hops | 1.76 | 1.32 | 109 / 17 / 74 |
+| captures made | 0.81 | 0.51 | 96 / 39 / 65 |
+| times captured | 0.30 | 0.68 | 27 / 41 / 132 |
+
 ## Before these races
 
 Every race and arena number before `4a9f3b7` came from a build whose

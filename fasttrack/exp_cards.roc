@@ -5,10 +5,12 @@
 # counted too. With the cards in hand when the game is won, the plays and
 # discards are every card each player drew, and the cards are ranked by the
 # winner's share of a card's draws: the deal decides much of the game, so
-# what matters is whether a card went to the winner.
+# what matters is whether a card went to the winner. Then the table of what
+# the winner does (Tables.winner_table).
 #
 #   fasttrack/run_exp.sh exp_cards
 import Arena
+import Tables
 import Strategy
 
 ## echo! writes no newline.
@@ -35,8 +37,7 @@ main! = |_args| {
 	for seed in List.map_with_index(List.repeat(0, games), |_, i| i + 1) {
 		ts = Arena.tally_game(seats, seed)
 		$all = List.append($all, ts)
-		winner = List.find_first(ts, |t| t.won) ?? Arena.no_tally
-		line!("seed ${U64.to_str(seed)} | winner played ${Str.join_with(winner.played, " ")}")
+		line!(Tables.tally_line(seed, ts))
 	}
 	tallies = List.join($all)
 	won = List.join_map(List.keep_if(tallies, |t| t.won), |t| t.played)
@@ -71,5 +72,7 @@ main! = |_args| {
 	for r in List.map_with_index(ranked, |r, i| { card: r.card, score: r.score, w: r.w, l: r.l, wd: r.wd, ld: r.ld, wh: r.wh, lh: r.lh, dw: r.dw, dl: r.dl, share: r.share, se: r.se, rank: i + 1 }) {
 		line!("| ${U64.to_str(r.rank)} | ${r.card} | ${thousandths(r.share)} ± ${thousandths(r.se)} | ${I64.to_str(r.dw)} / ${I64.to_str(r.dl)} | ${I64.to_str(r.w)} / ${I64.to_str(r.l)} | ${I64.to_str(r.wd)} / ${I64.to_str(r.ld)} | ${I64.to_str(r.wh)} / ${I64.to_str(r.lh)} | ${I64.to_str(r.score)} |")
 	}
+	line!("\n## What the winner does\n\nThe same ${U64.to_str(games)} games.\n")
+	line!(Tables.winner_table($all, []))
 	Ok({})
 }
