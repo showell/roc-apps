@@ -25,7 +25,7 @@ variant = {
 
 ## Seeds; each is dealt four times.
 seeds : U64
-seeds = 40
+seeds = 2500
 
 rotations : List(U64)
 rotations = [0, 1, 2, 3]
