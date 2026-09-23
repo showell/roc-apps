@@ -3,6 +3,7 @@
 # the mover's own pieces, and a game played out step by step. greedy_race.roc
 # races it; greedy_diverge.roc takes one game apart.
 import Agent
+import Config
 import Game
 import History
 import Piece
@@ -29,7 +30,28 @@ GreedyRace :: [].{
 	## What a player plays for: its square values, and what each card it
 	## hoards (`hoard`: an A or joker to get out, a J for a late swap) still in
 	## its hand at the end of its turn is worth (red only).
-	Strategy : { tables : List(List(I64)), hand_value : I64, hoard : List(Str) }
+	##
+	## `hand_value` is by how many of red's pieces are already in its base at
+	## the start of the turn: the first entry with none in, the next with one,
+	## and so on, the last entry standing for more (Steve: hoarding late in the
+	## game is dumb).
+	Strategy : { tables : List(List(I64)), hand_value : List(I64), hoard : List(Str) }
+
+	## Red's pieces in its base.
+	red_in_base : Type.Game -> U64
+	red_in_base = |g| List.count_if(g.piece_map, |e| e.value == "red" and e.key.zone == NormalColor("red") and Config.is_base_id(e.key.id))
+
+	## What each hoarded card is worth to red this turn.
+	hoard_value : Strategy, Type.Game -> I64
+	hoard_value = |strategy, g| {
+		n = red_in_base(g)
+		last = List.len(strategy.hand_value)
+		if last == 0 {
+			0
+		} else {
+			List.get(strategy.hand_value, if n < last { n } else { last - 1 }) ?? 0
+		}
+	}
 
 	## Every color's values with `bonus` more a step down its own base: B1 +
 	## bonus, B2 + 2 bonus, B3 + 3, B4 + 4.
@@ -67,14 +89,14 @@ GreedyRace :: [].{
 	## A line's worth to the mover: its pieces' squares, and for red, each
 	## hoarded card it kept -- none when the line refilled its hand, since the
 	## cards it drew were not chosen.
-	line_score : Strategy, Agent.Line, U64 -> I64
-	line_score = |strategy, line, owner| {
+	line_score : Strategy, I64, Agent.Line, U64 -> I64
+	line_score = |strategy, worth, line, owner| {
 		kept =
-			if owner != 0 or line.drew or strategy.hand_value == 0 {
+			if owner != 0 or line.drew or worth == 0 {
 				0
 			} else {
 				hand = (List.get(line.game.players, owner) ?? Player.get_active_player(line.game)).hand
-				U64.to_i64_wrap(List.count_if(hand, |c| List.contains(strategy.hoard, c))) * strategy.hand_value
+				U64.to_i64_wrap(List.count_if(hand, |c| List.contains(strategy.hoard, c))) * worth
 			}
 		board_score(strategy.tables, line.game, owner) + kept
 	}
@@ -88,6 +110,7 @@ GreedyRace :: [].{
 	greedy_turn : Strategy, Type.Game -> { game : Type.Game, cut : Bool }
 	greedy_turn = |strategy, game| {
 		owner = game.active_player_idx
+		worth = hoard_value(strategy, game)
 		start = Agent.settle({ game, msgs: [], drew: Bool.False })
 		var $level = start
 		var $done = List.drop_if(start, Agent.is_open)
@@ -103,7 +126,7 @@ GreedyRace :: [].{
 			finals,
 			{ game, score: I64.lowest, moved: Bool.False },
 			|acc, line| {
-				s = line_score(strategy, line, owner)
+				s = line_score(strategy, worth, line, owner)
 				if !List.is_empty(line.msgs) and (!acc.moved or s > acc.score) { { game: line.game, score: s, moved: Bool.True } } else { acc }
 			},
 		)

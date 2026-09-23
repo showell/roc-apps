@@ -16,7 +16,8 @@
 # skipped. N games (default 20; the first argument), seeds 1 .. N. A second
 # argument gives every player a bonus of that much a step down its own base
 # (B1 once, B4 four times); a third is what red alone counts each hoarded
-# card it keeps in its hand at the end of its turn; a fourth is the hoarded
+# card it keeps in its hand at the end of its turn -- one value, or a list by
+# how many of its pieces are in its base (2100,1400,700,0); a fourth is the hoarded
 # cards, comma-separated (default A,joker).
 #
 #   cd fasttrack && roc build greedy_race.roc --opt=speed && ./greedy_race 20 1000 500 A,joker
@@ -33,8 +34,8 @@ main! = |args| {
 		Err(_) => 0
 	}
 	hand_value = match List.get(args, 2) {
-		Ok(t) => I64.from_str(t) ?? 0
-		Err(_) => 0
+		Ok(t) => List.map(Str.split_on(t, ","), |v| I64.from_str(v) ?? 0)
+		Err(_) => [0]
 	}
 	hoard = match List.get(args, 3) {
 		Ok(t) => Str.split_on(t, ",")
@@ -50,7 +51,7 @@ main! = |args| {
 	hi = List.fold(turns, 0, |m, r| if r > m { r } else { m })
 	caught = List.fold(results, 0, |t, r| t + r.captured)
 	red = List.first(tables) ?? []
-	echo!("every player's base bonus ${I64.to_str(bonus)} a step (B4 is ${I64.to_str(List.get(red, Agent.index_of(GreedyRace.colors, { zone: NormalColor("red"), id: "B4" })) ?? -1)}); red values each ${Str.join_with(hoard, ", ")} it keeps at ${I64.to_str(hand_value)}\n")
+	echo!("every player's base bonus ${I64.to_str(bonus)} a step (B4 is ${I64.to_str(List.get(red, Agent.index_of(GreedyRace.colors, { zone: NormalColor("red"), id: "B4" })) ?? -1)}); red values each ${Str.join_with(hoard, ", ")} it keeps at ${Str.join_with(List.map(hand_value, I64.to_str), " / ")} (by pieces in its base)\n")
 	echo!("| game | ${Str.join_with(List.map_with_index(results, |_, i| U64.to_str(i + 1)), " | ")} |\n")
 	echo!("| turns | ${Str.join_with(List.map(turns, U64.to_str), " | ")} |\n")
 	echo!("| red captured | ${Str.join_with(List.map(results, |r| U64.to_str(r.captured)), " | ")} |\n")

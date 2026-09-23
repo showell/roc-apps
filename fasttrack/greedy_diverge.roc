@@ -44,8 +44,8 @@ main! = |args| {
 		Ok(t) => I64.from_str(t) ?? 100
 		Err(_) => 100
 	}
-	plain = { tables: GreedyRace.with_bonus(0), hand_value: 0, hoard: [] }
-	tucked = { tables: GreedyRace.with_bonus(bonus), hand_value: 0, hoard: [] }
+	plain = { tables: GreedyRace.with_bonus(0), hand_value: [], hoard: [] }
+	tucked = { tables: GreedyRace.with_bonus(bonus), hand_value: [], hoard: [] }
 	var $a = Game.begin_game(seed, Normal, Solo)
 	var $b = $a
 	var $turn = 1
