@@ -17,6 +17,7 @@
 # variants, plays them seed by seed, printing Arena.game_line after each game,
 # and ends with Arena.report. run_exp.sh builds one and runs it, each line of
 # its log stamped with the time.
+import Color
 import Game
 import History
 import Player
@@ -25,7 +26,11 @@ import Strategy
 import Type
 
 Arena :: [].{
-	Variant : { label : Str, seats : List(Strategy.Strategy) }
+	## A seat plays a Strategy through the whole-turn search, or takes the
+	## first legal move it finds.
+	Seat : [Plays(Strategy.Strategy), FirstLegal]
+
+	Variant : { label : Str, seats : List(Arena.Seat) }
 
 	Result : { red_won : Bool, turns : U64, idle : U64, captured : U64, captures : U64, skips : U64, cuts : U64 }
 
@@ -47,20 +52,23 @@ Arena :: [].{
 		$g
 	}
 
-	Step : { game : Type.Game, skipped : Bool, cut : Bool }
+	Step : { game : Type.Game, msgs : List(Type.GameMsg), skipped : Bool, cut : Bool }
 
 	## The mover's whole turn, or a finished turn passed on.
-	step : List(Strategy.Strategy), Type.Game -> Arena.Step
+	step : List(Arena.Seat), Type.Game -> Arena.Step
 	step = |seats, g|
 		if Player.get_active_player(g).turn == TurnDone {
-			{ game: rotate(g), skipped: Bool.False, cut: Bool.False }
+			{ game: rotate(g), msgs: [], skipped: Bool.False, cut: Bool.False }
 		} else {
-			strategy = List.get(seats, g.active_player_idx) ?? Strategy.champion
-			match Search.best_line(strategy, g) {
-				Ok(best) => { game: best.line.game, skipped: Bool.False, cut: best.cut }
+			found = match List.get(seats, g.active_player_idx) ?? Plays(Strategy.champion) {
+				Plays(strategy) => Search.best_line(strategy, g)
+				FirstLegal => Try.map_ok(Search.first_line(g), |line| { line, cut: Bool.False })
+			}
+			match found {
+				Ok(best) => { game: best.line.game, msgs: best.line.msgs, skipped: Bool.False, cut: best.cut }
 				# No play at all: the turn passes, which is right only when
 				# there was nothing to play.
-				Err(_) => { game: rotate(g), skipped: !List.is_empty(Search.options(g)), cut: Bool.False }
+				Err(_) => { game: rotate(g), msgs: [], skipped: !List.is_empty(Search.options(g)), cut: Bool.False }
 			}
 		}
 
@@ -75,7 +83,7 @@ Arena :: [].{
 	others_in_pen : Type.Game -> U64
 	others_in_pen = |g| List.fold(["blue", "green", "purple"], 0, |t, c| t + in_pen(g, c))
 
-	play : List(Strategy.Strategy), U64 -> Arena.Result
+	play : List(Arena.Seat), U64 -> Arena.Result
 	play = |seats, seed| {
 		var $g = Game.begin_game(seed, Normal, Solo)
 		var $r = { red_won: Bool.False, turns: 1, idle: 0, captured: 0, captures: 0, skips: 0, cuts: 0 }
@@ -108,6 +116,132 @@ Arena :: [].{
 			$steps = $steps + 1
 		}
 		{ ..$r, red_won: !$decided }
+	}
+
+	## One player's game, to the first player home.
+	Tally : { won : Bool, turns : U64, idle : U64, cards : U64, ft_landings : U64, ft_hops : U64, captures : U64, captured : U64 }
+
+	no_tally : Arena.Tally
+	no_tally = { won: Bool.False, turns: 0, idle: 0, cards: 0, ft_landings: 0, ft_hops: 0, captures: 0, captured: 0 }
+
+	## The moves a turn's messages made, each with its kind. A start with one
+	## end moves at once (Move.maybe_auto_move), with no end click.
+	moves_of : Type.Game, List(Type.GameMsg) -> List(Type.Move)
+	moves_of = |g0, msgs| {
+		var $g = g0
+		var $moves = []
+		for msg in msgs {
+			match (Player.get_active_player($g).turn, msg) {
+				(TurnNeedStartLoc(info), SetStartLocation(start)) => {
+					from = List.keep_if(info.moves, |m| m.start == start)
+					match from {
+						[first, ..] if List.all(from, |m| m.end == first.end) => {
+							$moves = List.append($moves, first)
+						}
+						_ => {}
+					}
+				}
+				(TurnNeedEndLoc(info), SetEndLocation(end)) => {
+					match List.find_first(info.moves, |m| m.start == info.start_location and m.end == end) {
+						Ok(m) => {
+							$moves = List.append($moves, m)
+						}
+						Err(_) => {}
+					}
+				}
+				_ => {}
+			}
+			$g = Game.update_game(msg, History.init, $g).1
+		}
+		$moves
+	}
+
+	forward : Type.Move -> Bool
+	forward = |m|
+		match m.kind {
+			Reverse(_) => Bool.False
+			JackTrade => Bool.False
+			_ => Bool.True
+		}
+
+	## A move along the fast track: from a fast-track square to another, or
+	## past the zone a piece leaving it the ordinary way would enter.
+	ft_hop : List(Str), Type.Move -> Bool
+	ft_hop = |zone_colors, m|
+		if forward(m) and m.start.id == "FT" {
+			match (m.start.zone, m.end.zone) {
+				(NormalColor(a), NormalColor(b)) => m.end.id == "FT" or b != Color.next_zone_color(a, zone_colors)
+				_ => Bool.False
+			}
+		} else {
+			Bool.False
+		}
+
+	bump : List(Arena.Tally), U64, (Arena.Tally -> Arena.Tally) -> List(Arena.Tally)
+	bump = |ts, i, f| List.set(ts, i, f(List.get(ts, i) ?? no_tally)) ?? ts
+
+	## Every player's game, played to the first player home. A turn is idle
+	## when the player discarded and played no card.
+	tally_game : List(Arena.Seat), U64 -> List(Arena.Tally)
+	tally_game = |seats, seed| {
+		var $g = Game.begin_game(seed, Normal, Solo)
+		var $t = List.repeat(no_tally, 4)
+		var $prev = 4
+		var $played = Bool.False
+		var $discarded = Bool.False
+		var $over = Bool.False
+		var $steps = 0
+		while !$over and $steps < 100000 {
+			a = $g.active_player_idx
+			if a != $prev {
+				if $prev < 4 and !$played and $discarded {
+					$t = bump($t, $prev, |x| { ..x, idle: x.idle + 1 })
+				}
+				$t = bump($t, a, |x| { ..x, turns: x.turns + 1 })
+				$played = Bool.False
+				$discarded = Bool.False
+				$prev = a
+			}
+			s = step(seats, $g)
+			moves = moves_of($g, s.msgs)
+			cards = List.count_if(
+				s.msgs,
+				|m|
+					match m {
+						ActivateCard(_) => Bool.True
+						_ => Bool.False
+					},
+			)
+			discards = List.count_if(
+				s.msgs,
+				|m|
+					match m {
+						DiscardCard(_) => Bool.True
+						_ => Bool.False
+					},
+			)
+			$played = $played or cards > 0
+			$discarded = $discarded or discards > 0
+			landings = List.count_if(moves, |m| forward(m) and m.end.id == "FT")
+			hops = List.count_if(moves, |m| ft_hop($g.zone_colors, m))
+			$t = bump($t, a, |x| { ..x, cards: x.cards + cards, ft_landings: x.ft_landings + landings, ft_hops: x.ft_hops + hops })
+			for c in [0, 1, 2, 3] {
+				color = List.get($g.zone_colors, c) ?? ""
+				before = in_pen($g, color)
+				after = in_pen(s.game, color)
+				if after > before {
+					$t = bump($t, c, |x| { ..x, captured: x.captured + after - before })
+					$t = bump($t, a, |x| { ..x, captures: x.captures + after - before })
+				}
+			}
+			if home(s.game, a) {
+				$t = bump($t, a, |x| { ..x, won: Bool.True })
+				$over = Bool.True
+			}
+			$g = s.game
+			$steps = $steps + 1
+		}
+		$t
 	}
 
 	tenths : F64 -> Str
@@ -167,4 +301,25 @@ Arena :: [].{
 			}
 		Str.concat(Str.concat(header, rows), pair)
 	}
+}
+
+# The fast track runs red, blue, green, purple: from red's FT to blue's is a
+# hop; from red's FT into blue's R4 is the ordinary way; backwards is neither.
+expect {
+	colors = ["red", "blue", "green", "purple"]
+	ft = |zone, id| { zone: NormalColor(zone), id }
+	Arena.ft_hop(colors, { kind: WithCard("2"), start: ft("red", "FT"), end: ft("blue", "FT") })
+	and Arena.ft_hop(colors, { kind: WithCard("3"), start: ft("red", "FT"), end: ft("green", "R4") })
+	and !Arena.ft_hop(colors, { kind: WithCard("2"), start: ft("red", "FT"), end: ft("blue", "R3") })
+	and !Arena.ft_hop(colors, { kind: Reverse("4"), start: ft("red", "FT"), end: ft("red", "L1") })
+}
+
+# A move with one end is made by its start click alone, and still counted:
+# red's one piece on L0 with a 2 can only go to L2.
+expect {
+	start = Game.begin_game(0, Normal, Solo)
+	players = Player.update_player(start.players, 0, |p| { ..p, hand: ["2"], turn: TurnBegin })
+	g0 = Player.set_turn_to_need_card({ ..start, piece_map: [{ key: { zone: NormalColor("red"), id: "L0" }, value: "red" }], players })
+	found = Search.first_line(g0) ?? crash("no line")
+	Arena.moves_of(g0, found.msgs) == [{ kind: WithCard("2"), start: { zone: NormalColor("red"), id: "L0" }, end: { zone: NormalColor("red"), id: "L2" } }]
 }

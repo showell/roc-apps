@@ -78,7 +78,7 @@ find_pivot : U64 -> Try(Pivot, [Same])
 find_pivot = |seed| {
 	champion = Strategy.champion
 	chaser = { ..champion, opponents: Leader }
-	seats = [champion, champion, champion, champion]
+	seats = List.repeat(Plays(champion), 4)
 	var $g = Game.begin_game(seed, Normal, Solo)
 	var $turn = 1
 	var $pivot = Err(Same)
@@ -109,7 +109,7 @@ find_pivot = |seed| {
 
 ## The rest of a game from red's line at the pivot: every round's values,
 ## every capture, and who got home first.
-play_out : List(Strategy.Strategy), Type.Game, U64 -> Str
+play_out : List(Arena.Seat), Type.Game, U64 -> Str
 play_out = |seats, from, turn0| {
 	var $g = from
 	var $turn = turn0
@@ -181,9 +181,9 @@ main! = |_args| {
 					line!("| ${tag} | ${moved(g, l.game)} | ${delta(l, "red")} | ${delta(l, who)} | ${rest} | ${I64.to_str(Search.score(champion, g, l))} | ${I64.to_str(Search.score(chaser, g, l))} |")
 				}
 				line!("\nred as the champion, from its pick:")
-				line!(play_out([champion, champion, champion, champion], p.champion.game, p.turn))
+				line!(play_out(List.repeat(Plays(champion), 4), p.champion.game, p.turn))
 				line!("\nred as the chaser, from its pick:")
-				line!(play_out([chaser, champion, champion, champion], p.chaser.game, p.turn))
+				line!(play_out([Plays(chaser), Plays(champion), Plays(champion), Plays(champion)], p.chaser.game, p.turn))
 			}
 		}
 	}

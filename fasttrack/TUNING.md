@@ -196,6 +196,36 @@ searches in 20 all-champion games (`exp_leader_shadow.roc`), and at 11 of the
 14 where the chaser chose differently. The best of three opponents is
 usually ahead of any one player. Not adopted.
 
+### What the winner does, 2026-09-23
+
+80 games, seeds 1-80; red, blue and purple play Strategy.champion, green the
+first legal move it finds (`FirstLegal`). Each game stops at the first player
+home. `exp_table.roc`.
+
+Wins: red 31, blue 24, green 0, purple 25.
+
+| | winner | champions who lost | green, when it lost | winner vs losers: above / equal / below |
+|---|---|---|---|---|
+| turns | 12.88 | 12.34 | 12.19 | 55 / 25 / 0 |
+| cards played | 20.89 | 16.66 | 18.21 | 65 / 3 / 12 |
+| idle turns | 1.99 | 3.23 | 1.81 | 13 / 10 / 57 |
+| fast-track landings | 3.08 | 2.45 | 1.19 | 48 / 8 / 24 |
+| fast-track hops | 1.78 | 1.33 | 0.00 | 44 / 12 / 24 |
+| captures made | 0.84 | 0.48 | 0.44 | 40 / 19 / 21 |
+| times captured | 0.31 | 0.70 | 0.51 | 10 / 23 / 47 |
+
+Means per player per game; the last column compares the winner with the mean
+of the champions who lost that game. Every stat leans the way Steve expected:
+winners play more cards, sit idle less, use the fast track more, capture
+more and are captured less. Cards played and idle turns separate them most.
+The turns row is an artifact: the game stops at the winner's turn, so the
+winner has always had its turn and some losers have not.
+
+Green plays the first legal move and never won. It is idle less than the
+champions, because its pieces rarely reach the base and nearly any card moves
+one. Red's 31 wins against about 27 expected for each of three seats is
+within noise (about ± 4).
+
 ## Before these races
 
 Every race and arena number before `4a9f3b7` came from a build whose

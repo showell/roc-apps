@@ -145,6 +145,26 @@ Search :: [].{
 		}
 	}
 
+	## The line that takes the first choice offered at every step, through
+	## the rest of the turn: a player who plays the first legal move it finds.
+	first_line : Type.Game -> Try(Search.Line, [NoPlay])
+	first_line = |game| {
+		var $line = { game, msgs: [], drew: Bool.False }
+		var $steps = 0
+		while !$line.drew and Player.get_active_player($line.game).turn != TurnDone and $steps < 1000 {
+			match options($line.game) {
+				[first, ..] => {
+					$line = apply($line, first)
+				}
+				[] => {
+					$steps = 1000
+				}
+			}
+			$steps = $steps + 1
+		}
+		if List.is_empty($line.msgs) { Err(NoPlay) } else { Ok($line) }
+	}
+
 	## The best line through the rest of the mover's turn, or Err when it has
 	## no play.
 	best_line : Strategy.Strategy, Type.Game -> Try({ line : Search.Line, cut : Bool }, [NoPlay])

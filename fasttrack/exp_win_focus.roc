@@ -20,7 +20,7 @@ main! = |_args| {
 		[Ignore, LeaderWhenBehind],
 		|opponents| {
 			label: if opponents == LeaderWhenBehind { "less the leader when behind" } else { "own pieces only" },
-			seats: [{ ..champion, opponents }, champion, champion, champion],
+			seats: [Plays({ ..champion, opponents }), Plays(champion), Plays(champion), Plays(champion)],
 		},
 	)
 	var $all = List.map(variants, |v| { label: v.label, rs: [] })

@@ -87,3 +87,8 @@ expect {
 	}
 	!List.any(finished.piece_map, |e| e.value == "green" and e.key.id == "HP1")
 }
+
+# In a game for one too: a piece on the fast track moves before any other,
+# and nothing leaves the pen until it has.
+expect TeamTests.starts(TeamTests.game_with(Solo, [("red", "L0", "red"), ("blue", "FT", "red")], ["2"])) == ["red@FT"]
+expect TeamTests.starts(TeamTests.game_with(Solo, [("red", "HP1", "red"), ("blue", "FT", "red")], ["A"])) == ["red@FT"]
