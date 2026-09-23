@@ -47,12 +47,18 @@ Reach :: [].{
 	## With `free_face`, a card may also be played after one free face card --
 	## face cards are always played first (Steve: DS to B4 is Q then 3, one
 	## card); such a move's card reads "face+3".
+	##
+	## Squares a piece of this color never stands on -- the other colors' pens
+	## and bases -- have no moves.
 	moves : List(Str), Str, Bool -> List(Reach.Move)
 	moves = |zone_colors, color, free_face|
 		List.join(
 			List.map_with_index(
 				Agent.all_locs(zone_colors),
 				|loc, from|
+					if loc.zone != NormalColor(color) and (Config.is_holding_pen_id(loc.id) or Config.is_base_id(loc.id)) {
+						[]
+					} else {
 					List.join_map(
 						cards,
 						|card| {
@@ -64,19 +70,26 @@ Reach :: [].{
 								plain
 							}
 						},
-					),
+					)
+					},
 			),
 		)
 
-	## For each square, indexed as Agent.all_locs: the fewest cards to B4
-	## (`far` where no cards do), and every card that starts such a way.
+	## For each square, indexed as Agent.all_locs: the fewest cards to the
+	## peak (`far` where no cards do), and every card that starts such a way.
 	Best : { cards : I64, first : List(Str) }
 
-	fewest_cards : List(Str), Str, Bool -> List(Reach.Best)
-	fewest_cards = |zone_colors, color, free_face| {
-		edges = moves(zone_colors, color, free_face)
+	## `peak` is the deepest base square a piece can still enter: B4, or B3
+	## once B4 is occupied, and so on. A move landing deeper is dropped; one
+	## landing on the peak or short of it never passes the occupied squares.
+	fewest_cards : List(Str), Str, Bool, Str -> List(Reach.Best)
+	fewest_cards = |zone_colors, color, free_face, peak| {
+		peak_at = List.find_first_index(Config.base_locations, |id| id == peak) ?? crash("Reach: the peak is a base square")
+		deeper = List.drop_first(Config.base_locations, peak_at + 1)
+		occupied = List.map(deeper, |id| Agent.index_of(zone_colors, { zone: NormalColor(color), id }))
+		edges = List.drop_if(moves(zone_colors, color, free_face), |e| List.contains(occupied, e.to))
 		far = Agent.far
-		home = Agent.index_of(zone_colors, { zone: NormalColor(color), id: "B4" })
+		home = Agent.index_of(zone_colors, { zone: NormalColor(color), id: peak })
 		start = List.set(List.repeat({ cards: far, first: [] }, List.len(Agent.all_locs(zone_colors))), home, { cards: 0, first: [] }) ?? crash("Reach: no home")
 		# A pass says whether it changed anything (findings/llvm-closure-loop-alias).
 		relax = |d|
@@ -106,7 +119,7 @@ Reach :: [].{
 # Steve's expectations, for red: B4 0; B3 .. R4 one card; L0 .. L2 two.
 expect {
 	colors = ["red", "blue", "green", "purple"]
-	best = Reach.fewest_cards(colors, "red", Bool.False)
+	best = Reach.fewest_cards(colors, "red", Bool.False, "B4")
 	n = |id| (List.get(best, Agent.index_of(colors, { zone: NormalColor("red"), id })) ?? { cards: 0, first: [] }).cards
 	n("B4") == 0 and n("B3") == 1 and n("B1") == 1 and n("BR") == 1 and n("R0") == 1 and n("R4") == 1 and n("L0") == 2 and n("L1") == 2
 }
@@ -115,7 +128,16 @@ expect {
 # through it: 4 back to DS, then the face card and a 3.
 expect {
 	colors = ["red", "blue", "green", "purple"]
-	best = Reach.fewest_cards(colors, "red", Bool.True)
+	best = Reach.fewest_cards(colors, "red", Bool.True, "B4")
 	n = |id| (List.get(best, Agent.index_of(colors, { zone: NormalColor("red"), id })) ?? { cards: 0, first: [] }).cards
 	n("B4") == 0 and n("B3") == 1 and n("DS") == 1 and n("L2") == 2
+}
+
+# With B4 taken, B3 is the peak: B3 is 0, B2 and B1 one card, and DS one (a
+# face card, then a 2); nothing lands on B4.
+expect {
+	colors = ["red", "blue", "green", "purple"]
+	best = Reach.fewest_cards(colors, "red", Bool.True, "B3")
+	n = |id| (List.get(best, Agent.index_of(colors, { zone: NormalColor("red"), id })) ?? { cards: 0, first: [] }).cards
+	n("B3") == 0 and n("B2") == 1 and n("B1") == 1 and n("DS") == 1 and n("B4") >= Agent.far
 }

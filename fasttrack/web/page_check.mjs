@@ -126,9 +126,9 @@ function check(step) {
 
 check(0);
 
-// The cards-home overlay cycles off, plain, with a free face card. Plain, the
-// mover's own B4 reads 0, its pen 3 and DS 2; with the face card DS reads 1;
-// off again, no square has a label.
+// The cards-home overlay steps through off and FastTrack.reach_variants.
+// Plain, the mover's own B4 reads 0, its pen 3 and DS 2; with the face card
+// DS reads 1; to B3, B3 reads 0 and B4 nothing; off again, no label.
 function labelOf(zoneIndex, square) {
   const e = last.slots[zoneIndex * 22 + square];
   return e ? e.label : undefined;
@@ -142,6 +142,9 @@ page.onClick(4);
 if (labelOf(0, 9) !== "2") fail(`cards home: DS ${labelOf(0, 9)}, not 2`);
 page.onClick(4);
 if (labelOf(0, 9) !== "1") fail(`cards home with a face card: DS ${labelOf(0, 9)}, not 1`);
+page.onClick(4);
+// To B3: B3 (square 6) reads 0, and B4 (square 7), taken, reads nothing.
+if (labelOf(0, 6) !== "0" || labelOf(0, 7) !== "") fail(`cards to B3: B3 ${labelOf(0, 6)}, B4 ${labelOf(0, 7)}`);
 page.onClick(4);
 if (last.slots.some((s) => s.label !== "")) fail("cards home stays on after it is hidden");
 check(0);
@@ -160,7 +163,7 @@ function clickables() {
   const buttons = [];
   const squares = [];
   walk(root, (n) => {
-    if (n.tag === "button" && !n.disabled && n.listeners.length && !/cards home$/.test(n.textContent)) buttons.push(n);
+    if (n.tag === "button" && !n.disabled && n.listeners.length && !/^(show|hide) cards/.test(n.textContent)) buttons.push(n);
     if (n.tag === "g" && n.attrs.cursor === "pointer") squares.push(n);
   });
   return { buttons, squares };

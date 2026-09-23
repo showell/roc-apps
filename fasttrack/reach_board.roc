@@ -1,5 +1,6 @@
 # The board, square by square, as Reach.fewest_cards sees it for a red piece
-# holding a free face card (F+3 is a face card, then a 3):
+# holding a free face card (F+3 is a face card, then a 3), with B4 taken, so
+# the peak is B3:
 # each zone drawn upright the way the page draws its panel, each square with
 # the fewest cards that take a red piece from it to red's B4 and the cards
 # that start such a way.
@@ -54,7 +55,7 @@ panel = |best, zone, caption| {
 }
 
 main! = |_args| {
-	best = Reach.fewest_cards(colors, "red", Bool.True)
+	best = Reach.fewest_cards(colors, "red", Bool.True, "B3")
 	bulls = List.get(best, Agent.index_of(colors, { zone: BullsEyeZone, id: "bullseye" })) ?? { cards: 0, first: [] }
 	echo!(panel(best, "red", "Red's zone (the mover's own)"))
 	echo!("\n\n")

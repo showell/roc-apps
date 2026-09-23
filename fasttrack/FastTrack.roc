@@ -19,17 +19,24 @@ FastTrack :: [].{
 	## once rather than every click.
 	Seat : [Human, Computer(Agent.Knowledge), Naive]
 
-	## `reach` and `reach_face` are Reach.fewest_cards for each color, in the
-	## game's color order, without and with a free face card, worked out once;
-	## `show_reach` says which the page shows, if either.
+	## `reach` is Reach.fewest_cards for each of `reach_variants`, for each
+	## color in the game's color order, worked out once; `show_reach` is 0 for
+	## none, or which variant the page shows, counting from 1.
 	Model : {
 		game : Type.Game,
 		history : History.History(Type.Game),
 		seats : List(FastTrack.Seat),
-		reach : List(List(Reach.Best)),
-		reach_face : List(List(Reach.Best)),
-		show_reach : [Off, Plain, WithFace],
+		reach : List(List(List(Reach.Best))),
+		show_reach : U64,
 	}
+
+	## What the cards-home button steps through, after "off".
+	reach_variants : List({ face : Bool, peak : Str, title : Str })
+	reach_variants = [
+		{ face: Bool.False, peak: "B4", title: "cards to B4" },
+		{ face: Bool.True, peak: "B4", title: "cards to B4, free face card" },
+		{ face: Bool.True, peak: "B3", title: "cards to B3, free face card" },
+	]
 
 	## Two bits a seat, the first seat lowest: 0 a person, 1 the computer, 2
 	## the naive player (Agent.next_msg).
@@ -108,9 +115,8 @@ FastTrack :: [].{
 			game,
 			history: History.reset(game),
 			seats: seats_of(seat_bits, game.zone_colors),
-			reach: List.map(game.zone_colors, |color| Reach.fewest_cards(game.zone_colors, color, Bool.False)),
-			reach_face: List.map(game.zone_colors, |color| Reach.fewest_cards(game.zone_colors, color, Bool.True)),
-			show_reach: Off,
+			reach: List.map(reach_variants, |v| List.map(game.zone_colors, |color| Reach.fewest_cards(game.zone_colors, color, v.face, v.peak))),
+			show_reach: 0,
 		}
 	}
 
@@ -120,12 +126,7 @@ FastTrack :: [].{
 	update : FastTrack.Model, U32 -> FastTrack.Model
 	update = |model, code|
 		if code == Codes.toggle_reach {
-			next = match model.show_reach {
-				Off => Plain
-				Plain => WithFace
-				WithFace => Off
-			}
-			{ ..model, show_reach: next }
+			{ ..model, show_reach: U64.rem_by(model.show_reach + 1, List.len(reach_variants) + 1) }
 		} else {
 			play(model, code)
 		}
@@ -167,16 +168,22 @@ FastTrack :: [].{
 				show_undo: human and History.can_undo(model.history, model.game),
 				tick: if agent_to_move(model) { Codes.agent_step } else { 0 },
 				winner: Game.winner(model.game) ?? "",
-				reach: match model.show_reach {
-					Off => []
-					Plain => List.get(model.reach, model.game.active_player_idx) ?? []
-					WithFace => List.get(model.reach_face, model.game.active_player_idx) ?? []
+				reach:
+					if model.show_reach == 0 {
+						[]
+					} else {
+						List.get(List.get(model.reach, model.show_reach - 1) ?? [], model.game.active_player_idx) ?? []
+					},
+				reach_title: match List.get(reach_variants, model.show_reach) {
+					Ok(next) => "show ${next.title}"
+					Err(_) => "hide cards home"
 				},
-				reach_title: match model.show_reach {
-					Off => "show cards home"
-					Plain => "with a free face card"
-					WithFace => "hide cards home"
-				},
+				reach_showing:
+					if model.show_reach == 0 {
+						""
+					} else {
+						(List.get(reach_variants, model.show_reach - 1) ?? { face: Bool.False, peak: "", title: "" }).title
+					},
 			},
 		)
 	}
@@ -213,4 +220,14 @@ expect {
 		Ok(Computer(k)) => k.weights.regions.out_safely == -44
 		_ => Bool.False
 	}
+}
+
+# The page's view with the cards-home overlay off, on each variant, and off
+# again: every step renders (show_reach 0 once underflowed here).
+expect {
+	start = FastTrack.init(0, 0, 0, 0)
+	List.all([0, 1, 2, 3, 4], |n| {
+		m = List.fold(List.repeat(0, n), start, |acc, _| FastTrack.update(acc, Codes.toggle_reach))
+		List.len(FastTrack.view(m).slots) == 89
+	})
 }

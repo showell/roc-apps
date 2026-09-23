@@ -74,8 +74,9 @@ Page :: [].{
 	## and once someone has won, and then nothing takes a click.
 	## `reach` is the fewest cards home for the player to move, square by
 	## square (Reach.fewest_cards), or [] to show none.
-	## `reach_title` is what the button that cycles it says.
-	Flags : { interactive : Bool, show_undo : Bool, tick : U32, winner : Str, reach : List(Reach.Best), reach_title : Str }
+	## `reach_title` is what the button that cycles it says, and
+	## `reach_showing` what the board shows now ("" for nothing).
+	Flags : { interactive : Bool, show_undo : Bool, tick : U32, winner : Str, reach : List(Reach.Best), reach_title : Str, reach_showing : Str }
 
 	view : Type.Game, Page.Flags -> Wire.View
 	view = |game, flags| {
@@ -102,7 +103,7 @@ Page :: [].{
 				Bool.False,
 				[
 					div([div([div([el("board", "", 0, Bool.False, [])]), el("hr", "", 0, Bool.False, []), console])]),
-					div([reach_button(flags.reach_title), cheat_sheet_view(active_player)]),
+					div([reach_button(flags.reach_title, flags.reach_showing), cheat_sheet_view(active_player)]),
 				],
 			),
 			tick: flags.tick,
@@ -132,8 +133,14 @@ Page :: [].{
 
 	## Cycles the fewest cards home on every square -- off, plain, with a free
 	## face card -- for the player to move, whose zone is at the bottom.
-	reach_button : Str -> Page.Tree
-	reach_button = |title| div([button("", Codes.toggle_reach, [text(title)])])
+	reach_button : Str, Str -> Page.Tree
+	reach_button = |title, showing|
+		div(
+			List.concat(
+				[button("", Codes.toggle_reach, [text(title)])],
+				if showing == "" { [] } else { [div([text("the board shows: ${showing}")])] },
+			),
+		)
 
 	## The computer's hand, face up, and nothing to press.
 	computer_view : Type.Player, Str -> Page.Tree
