@@ -104,21 +104,25 @@ Search :: [].{
 	distinct_lines = |lines|
 		List.fold(lines, [], |kept, line| if List.any(kept, |k| k.game == line.game) { kept } else { List.append(kept, line) })
 
-	## The best line through the rest of the mover's turn, or Err when it has
-	## no play. `cut` says the search stopped before every line had ended.
-	best_line : Strategy.Strategy, Type.Game -> Try({ line : Search.Line, cut : Bool }, [NoPlay])
-	best_line = |strategy, game| {
+	## What `strategy` makes of a line from `game`: the mover's team's board,
+	## the hand it keeps unless it drew, less the leader's board if it plays
+	## against the leader.
+	score : Strategy.Strategy, Type.Game, Search.Line -> I64
+	score = |strategy, game, line| {
 		mover = Player.get_active_player(game)
 		colors = Strategy.team(mover)
-		worths = Strategy.hoard_worths(strategy, game, mover.color)
-		score = |line| {
-			kept = if line.drew { 0 } else { Strategy.hand(worths, Player.get_active_player(line.game).hand) }
-			against = match strategy.opponents {
-				Ignore => 0
-				Leader => Strategy.leader(strategy, line.game, colors)
-			}
-			Strategy.board(strategy, line.game, colors) + kept - against
+		kept = if line.drew { 0 } else { Strategy.hand(Strategy.hoard_worths(strategy, game, mover.color), Player.get_active_player(line.game).hand) }
+		against = match strategy.opponents {
+			Ignore => 0
+			Leader => Strategy.leader(strategy, line.game, colors)
 		}
+		Strategy.board(strategy, line.game, colors) + kept - against
+	}
+
+	## Every line through the rest of the mover's turn. `cut` says the search
+	## stopped before every line had ended.
+	all_lines : Type.Game -> { lines : List(Search.Line), cut : Bool }
+	all_lines = |game| {
 		start = settle({ game, msgs: [], drew: Bool.False })
 		var $level = start
 		var $done = List.drop_if(start, is_open)
@@ -129,16 +133,26 @@ Search :: [].{
 			$done = List.concat($done, List.drop_if($level, is_open))
 			$depth = $depth + 1
 		}
-		finals = List.keep_if(List.concat($done, List.keep_if($level, is_open)), |l| !List.is_empty(l.msgs))
+		{
+			lines: List.keep_if(List.concat($done, List.keep_if($level, is_open)), |l| !List.is_empty(l.msgs)),
+			cut: List.any($level, is_open),
+		}
+	}
+
+	## The best line through the rest of the mover's turn, or Err when it has
+	## no play.
+	best_line : Strategy.Strategy, Type.Game -> Try({ line : Search.Line, cut : Bool }, [NoPlay])
+	best_line = |strategy, game| {
+		found = all_lines(game)
 		best = List.fold(
-			finals,
+			found.lines,
 			{ line: { game, msgs: [], drew: Bool.False }, score: 0, found: Bool.False },
 			|acc, line| {
-				s = score(line)
+				s = score(strategy, game, line)
 				if !acc.found or s > acc.score { { line, score: s, found: Bool.True } } else { acc }
 			},
 		)
-		if best.found { Ok({ line: best.line, cut: List.any($level, is_open) }) } else { Err(NoPlay) }
+		if best.found { Ok({ line: best.line, cut: found.cut }) } else { Err(NoPlay) }
 	}
 }
 
