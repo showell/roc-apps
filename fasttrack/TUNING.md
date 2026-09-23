@@ -355,6 +355,24 @@ chance (p ≈ 0.27). The taper runs against the reason for hoarding a 7 -- a
 split packs pieces into the base in the end game -- so a rising taper is the
 next thing to try. Not adopted yet.
 
+### Hoarding the 7, 1000 games, 2026-09-23
+
+1000 games per variant, seeds 1-1000; red is the variant, the other seats Strategy.champion. Each game stops at the first player home.
+
+| variant | red won | the game's length, red's turns | idle turns a game | captures by red | red captured | skipped / cut |
+|---|---|---|---|---|---|---|
+| the champion | 250 of 1000 | 11.8 ± 0.1 | 2.8 | 526 | 633 | 0 / 0 |
+| 7s worth less as pieces come home | 258 of 1000 | 11.8 ± 0.1 | 2.8 | 555 | 655 | 0 / 0 |
+| 7s worth more as pieces come home | 233 of 1000 | 11.8 ± 0.1 | 2.8 | 533 | 650 | 0 / 0 |
+
+Game by game against the champion: 7s worth less as pieces come home (1500,
+1000, 500, 0) won 46 games the champion lost and lost 38 it won; 7s worth
+more (0, 500, 1000, 1500) won 23 and lost 40. `exp_seven_hoard.roc`.
+
+The falling taper changes nothing that shows (p ≈ 0.4; the 200-game run's
+9 to 4 was noise). The rising taper hurts (p ≈ 0.04): holding a 7 back late
+costs more than the splits it saves. Not adopted.
+
 ## Before these races
 
 Every race and arena number before `4a9f3b7` came from a build whose
