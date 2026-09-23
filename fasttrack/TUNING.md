@@ -86,6 +86,32 @@ Priced at one step the computer parks too eagerly; priced for the wait for a
 4 (6 and up) it helps. Pooled, back4 6 won 216 of 400. A bigger pen wait
 never helped, on either table.
 
+## The greedy player: hoarding A and jokers, 2026-09-23
+
+A different player from the races above: `greedy_race.roc` (GreedyRace.roc).
+Each square is worth 100 points a place in Steve's ranking to B1, every
+player adds 1000 a step down its own base, and each turn every seat tries
+every line of play to the turn's end and keeps the best board for its own
+pieces. Each player's deck is shuffled once before the game; four discards
+bring a piece out. Red alone also counts each A or joker it keeps in hand at
+the end of its turn. 100 games per setting, seeds 1-100, binary `d21c400`;
+an idle turn is one red begins with a discard. No turn was skipped with a
+legal play and no search was cut short.
+
+| A/joker kept worth | red's turns | fastest | slowest | idle turns a game | red captured |
+|---|---|---|---|---|---|
+| 0 | 15.9 | 7 | 23 | 3.6 | 72 |
+| 200 | 15.8 | 7 | 25 | 3.5 | 71 |
+| 500 | 15.9 | 7 | 25 | 3.5 | 71 |
+| 1000 | 15.9 | 7 | 25 | 3.5 | 71 |
+| 2000 | 15.6 | 7 | 25 | 3.0 | 70 |
+| 4000 | 16.2 | 10 | 25 | 2.8 | 71 |
+
+Up to 1000 the hoard barely changes a choice. At 2000 idle turns fall by a
+sixth and the turns by 0.3; at 4000 idle turns fall further but the game gets
+slower, as holding the cards starts to cost moves. The spread of a game is
+about 3.5 turns, so a difference of 0.3 over 100 games is within the noise.
+
 ## Before these races
 
 Every race and arena number before `4a9f3b7` came from a build whose
