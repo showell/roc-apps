@@ -239,8 +239,12 @@ Player :: [].{
 	## A full deck shuffled from `seed`: each card in turn taken from a
 	## random place in what is left. Answers the deck and the seed after.
 	shuffle : ElmRandom.Seed -> { deck : List(Str), seed : ElmRandom.Seed }
-	shuffle = |seed0| {
-		var $left = Config.full_deck
+	shuffle = |seed0| shuffle_cards(Config.full_deck, seed0)
+
+	## These cards shuffled from `seed`, the same way.
+	shuffle_cards : List(Str), ElmRandom.Seed -> { deck : List(Str), seed : ElmRandom.Seed }
+	shuffle_cards = |cards, seed0| {
+		var $left = cards
 		var $deck = []
 		var $seed = seed0
 		while !List.is_empty($left) {

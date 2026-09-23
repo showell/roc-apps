@@ -456,6 +456,32 @@ now merges by sorted keys (no decision changes: 200 games identical) and
 keeps at most 20000 lines a level, counting a search that hits the cap as
 cut; that hand's search now takes 17 s and is cut.
 
+### Rollouts at seed 69's pivot, 2026-09-23
+
+Seed 69 with four champions, to red's first turn where the champion and the
+leader-chaser choose differently: now red's turn 7, hand 4 9 2 Q A (the
+essay's turn 6 predates the tie-break by position). Each line played out
+1000 times from the end of red's turn, every player a champion, every
+player's undrawn cards shuffled afresh -- the same 1000 shuffles for every
+line. `exp_rollout.roc`.
+
+| red's line | champion's score | red won | vs the champion's pick, paired |
+|---|---|---|---|
+| champion's pick: DS to B1; out with the A, back 4 to R0 | 26500 | 39.7% ± 1.5 | -- |
+| DS to B3; out to L0 | 26000 | 53.2% ± 1.6 | +13.5 ± 1.3 |
+| DS to B2; out to L1 | 25000 | 40.7% ± 1.6 | +1.0 ± 1.4 |
+| DS to B2; out to L0 | 24900 | 52.0% ± 1.6 | +12.3 ± 1.4 |
+| DS to B3 | 24200 | 50.9% ± 1.6 | +11.2 ± 1.3 |
+| the capture: out to L0; bullseye onto purple's FT | 23400 | 40.7% ± 1.6 | +1.0 ± 1.9 |
+
+The capture is no better than the champion's move here. The champion's move
+is itself wrong by 13 points of red's chance to win: tucking the DS piece
+deep beats leaving it on B1 and backing the new piece to R0, which the
+square values prefer by 500 points. A piece on B1 blocks the base; the back
+4 to R0 looks overvalued. One decision is worth more than any capture
+experiment has found -- the next thing is to audit the champion's choices
+by rollouts.
+
 ## Before these races
 
 Every race and arena number before `4a9f3b7` came from a build whose
