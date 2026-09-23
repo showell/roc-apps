@@ -288,6 +288,36 @@ cards on top. Counting a discard as a use (a credit toward getting out), the
 score ranks J, A, K, Q, 6, 7, then the joker (76 for four copies), with the
 plain numbers behind and the 5 last.
 
+### Which cards were dealt to the winner, 200 games, 2026-09-23
+
+200 games, seeds 1-200, four champions, each game to the first player home.
+`exp_cards.roc`. Ranked by the winner's share of a card's draws (played +
+discarded + in hand at the end); over every card it is .272, since winners
+draw more. ± one standard error, counting draws as independent.
+
+| rank | card | winner's share of draws | drawn: winner / losers | played | discarded | in hand at the end |
+|---|---|---|---|---|---|---|
+| 1 | joker | .314 ± .017 | 227 / 495 | 213 / 481 | 0 / 0 | 14 / 14 |
+| 2 | A | .314 ± .012 | 463 / 1012 | 439 / 997 | 0 / 0 | 24 / 15 |
+| 3 | 6 | .310 ± .012 | 437 / 973 | 404 / 951 | 0 / 0 | 33 / 22 |
+| 4 | J | .309 ± .012 | 433 / 967 | 380 / 763 | 38 / 173 | 15 / 31 |
+| 5 | Q | .285 ± .012 | 399 / 1001 | 322 / 771 | 50 / 202 | 27 / 28 |
+| 6 | K | .285 ± .012 | 397 / 996 | 342 / 756 | 42 / 197 | 13 / 43 |
+| 7 | 4 | .279 ± .012 | 394 / 1018 | 315 / 694 | 31 / 171 | 48 / 153 |
+| 8 | 7 | .273 ± .012 | 385 / 1024 | 268 / 592 | 46 / 215 | 71 / 217 |
+| 9 | 3 | .250 ± .012 | 346 / 1039 | 240 / 636 | 39 / 202 | 67 / 201 |
+| 10 | 2 | .246 ± .011 | 352 / 1078 | 240 / 588 | 50 / 254 | 62 / 236 |
+| 11 | 5 | .244 ± .011 | 354 / 1096 | 251 / 745 | 31 / 177 | 72 / 174 |
+| 12 | 8 | .243 ± .012 | 335 / 1043 | 201 / 415 | 46 / 276 | 88 / 352 |
+| 13 | 9 | .237 ± .012 | 322 / 1039 | 217 / 537 | 37 / 250 | 68 / 252 |
+| 14 | 10 | .235 ± .011 | 328 / 1067 | 218 / 557 | 42 / 234 | 68 / 276 |
+
+Steve's guess (6, A, joker, J, K, Q, 7, 4, 10, 2, 9, 8, 3) holds: the three
+cards that get a piece out and the J lead at about .31, Q and K follow, 4
+and 7 sit at the average, and the plain numbers trail together, within noise
+of each other. The 5 of the 80-game run was noise. The 8, 9 and 10 are the
+cards left rotting in a loser's hand.
+
 ## Before these races
 
 Every race and arena number before `4a9f3b7` came from a build whose
