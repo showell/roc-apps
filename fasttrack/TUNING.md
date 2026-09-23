@@ -112,6 +112,21 @@ sixth and the turns by 0.3; at 4000 idle turns fall further but the game gets
 slower, as holding the cards starts to cost moves. The spread of a game is
 about 3.5 turns, so a difference of 0.3 over 100 games is within the noise.
 
+### Tapering the hoard, 2026-09-23
+
+Steve: hoarding late in the game is dumb. Each A or joker kept is worth 2100
+with no piece in the base, 1400 with one, 700 with two and 0 with three,
+against no hoarding at all; 200 games each (seeds 1-200), binary `d49e62b`.
+
+| hoard | red's turns | idle turns a game | red captured |
+|---|---|---|---|
+| none | 15.7 | 3.6 | 155 |
+| 2100 / 1400 / 700 / 0 | 15.4 | 3.1 | 152 |
+
+Paired game by game: 67 of the 200 games differ; red is faster in 40 and
+slower in 27, by 0.23 turns on average (standard error 0.16). Idle turns fall
+by a seventh. A small gain, likely real, not yet certain.
+
 ## Before these races
 
 Every race and arena number before `4a9f3b7` came from a build whose
