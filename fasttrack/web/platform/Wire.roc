@@ -27,6 +27,9 @@ Wire :: [].{
 
 	Node : { parent : U32, tag : Str, text : Str, style : Str, click : U32, disabled : Bool }
 
+	## Text drawn on the board, centred on (x, y).
+	Label : { x : F64, y : F64, text : Str, fill : Str }
+
 	## A piece of `color` walking the slots of `path`, first to last.
 	Motion : { color : Str, path : List(U32) }
 
@@ -34,5 +37,5 @@ Wire :: [].{
 	## computer's next click), 0 for none; `winner` is a color, or "".
 	## `motions` are what the last click moved, one after another, and
 	## `motion_id` changes with every click that moved something.
-	View : { board_size : F64, slots : List(Wire.Slot), nodes : List(Wire.Node), tick : U32, winner : Str, motion_id : U32, motions : List(Wire.Motion) }
+	View : { board_size : F64, slots : List(Wire.Slot), labels : List(Wire.Label), nodes : List(Wire.Node), tick : U32, winner : Str, motion_id : U32, motions : List(Wire.Motion) }
 }

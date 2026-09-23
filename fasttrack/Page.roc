@@ -93,13 +93,14 @@ Page :: [].{
 		{
 			board_size: 2.0 * center_offset(side_count) + 3.0 * Config.square_size,
 			slots: board_view(game, zone_colors, active_player, flags.interactive),
+			labels: labels_view(game),
 			nodes: el(
 				"div",
 				"display: flex; flex-direction: row",
 				0,
 				Bool.False,
 				[
-					div([div([div([el("board", "", 0, Bool.False, [])]), piles_view(game), el("hr", "", 0, Bool.False, []), console])]),
+					div([div([div([el("board", "", 0, Bool.False, [])]), el("hr", "", 0, Bool.False, []), console])]),
 					div([cheat_sheet_view(active_player)]),
 				],
 			),
@@ -110,14 +111,38 @@ Page :: [].{
 		}
 	}
 
-	## Every discard pile with a card in it.
-	piles_view : Type.Game -> Page.Tree
-	piles_view = |game| {
-		piles = List.keep_if(game.players, |p| p.pile > 0)
-		if List.is_empty(piles) {
-			div([])
-		} else {
-			div(List.concat([text("discard piles: ")], List.join(List.map_with_index(piles, |p, i| [bold("color: ${p.color}", [text("${p.color} ${U64.to_str(p.pile)}")]), text(if i + 1 < List.len(piles) { ", " } else { "" })]))))
+	## Each player's discards toward leaving the pen, beside its pen, while
+	## it has any.
+	labels_view : Type.Game -> List(Wire.Label)
+	labels_view = |game| {
+		side_count = List.len(game.zone_colors)
+		List.join(
+			List.map_with_index(
+				game.players,
+				|p, i|
+					if p.get_out_credits > 0 {
+						at = spot(side_count, i, -3.7, 2.6)
+						n = I64.to_str(p.get_out_credits)
+						[{ x: at.x, y: at.y, text: "${n} discard${if p.get_out_credits == 1 { "" } else { "s" }}", fill: p.color }]
+					} else {
+						[]
+					},
+			),
+		)
+	}
+
+	## Where a point of a zone's panel lands on the board (Polygon.elm): the
+	## panel upright, pushed out by the incircle radius, turned by its side's
+	## angle.
+	spot : U64, U64, F64, F64 -> { x : F64, y : F64 }
+	spot = |side_count, zone, px, py| {
+		theta = 2.0 * F64.pi / U64.to_f64(side_count) * U64.to_f64(zone)
+		center = center_offset(side_count)
+		a = px * Config.square_size
+		b = panel_height - (py * Config.square_size) + incircle_radius(side_count)
+		{
+			x: Config.square_size + center + a * F64.cos(theta) - b * F64.sin(theta),
+			y: Config.square_size + center + a * F64.sin(theta) + b * F64.cos(theta),
 		}
 	}
 

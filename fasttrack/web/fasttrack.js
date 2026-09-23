@@ -39,6 +39,7 @@ const FastTrack = (() => {
 
   function board(document) {
     const svg = document.createElementNS(SVG, "svg");
+    const labels = document.createElementNS(SVG, "g");
     let entries = [];
     let size = null;
 
@@ -104,6 +105,19 @@ const FastTrack = (() => {
         e.code = s.click;
         e.last = s;
       });
+      // A few words on the board, redrawn every time, above the squares.
+      if (labels.parentNode !== svg) svg.appendChild(labels);
+      labels.replaceChildren();
+      for (const l of view.labels) {
+        const t = document.createElementNS(SVG, "text");
+        set(t, "x", l.x);
+        set(t, "y", l.y);
+        set(t, "text-anchor", "middle");
+        set(t, "font-size", 11);
+        set(t, "fill", l.fill);
+        t.appendChild(document.createTextNode(l.text));
+        labels.appendChild(t);
+      }
     }
 
     // A piece hidden while a marble walks to it, and shown when it lands.

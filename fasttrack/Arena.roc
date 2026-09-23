@@ -11,7 +11,8 @@
 # in red's turns (mean and standard error), idle turns (red's turns begun with a discard),
 # captures made by red and of red's pieces, and two checks that should read 0
 # -- turns a player skipped holding a legal play, and searches cut short.
-# With two variants it also says, game by game, which games only one won.
+# It also says, game by game, which games only one of the first variant and
+# each other won.
 #
 # An experiment is an app beside this module (exp_*.roc) that builds the
 # variants, plays them seed by seed, printing Arena.game_line after each game,
@@ -293,14 +294,9 @@ Arena :: [].{
 		games = U64.to_str(List.len((List.first(all) ?? { label: "", rs: [] }).rs))
 		header = "## ${title}\n\n${games} games per variant, seeds 1-${games}; red is the variant, the other seats Strategy.champion.\n\n| variant | red won | the game's length, red's turns | idle turns a game | captures by red | red captured | skipped / cut |\n|---|---|---|---|---|---|---|\n"
 		rows = Str.join_with(List.map(all, |x| row(x.label, x.rs)), "\n")
-		pair =
-			if List.len(all) == 2 {
-				a = List.get(all, 0) ?? crash("Arena.report: no first variant")
-				b = List.get(all, 1) ?? crash("Arena.report: no second variant")
-				"\n\n${paired(a.label, a.rs, b.label, b.rs)}"
-			} else {
-				""
-			}
+		# Every other variant against the first, game by game.
+		first = List.first(all) ?? { label: "", rs: [] }
+		pair = Str.join_with(List.map(List.drop_first(all, 1), |b| "\n\n${paired(first.label, first.rs, b.label, b.rs)}"), "")
 		Str.concat(Str.concat(header, rows), pair)
 	}
 }

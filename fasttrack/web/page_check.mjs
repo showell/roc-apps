@@ -120,7 +120,8 @@ function check(step) {
   if (drawn !== last.nodes.length) fail(`step ${step}: ${drawn} nodes in the document, ${last.nodes.length} from Roc`);
   let svg = null;
   walk(root, (n) => { if (n.tag === "svg") svg = n; });
-  if (!svg || svg.children.length !== 89) fail(`step ${step}: the board is not in the page`);
+  // 89 squares, and the group of labels above them.
+  if (!svg || svg.children.length !== 90) fail(`step ${step}: the board is not in the page`);
 }
 
 check(0);
