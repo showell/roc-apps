@@ -9,6 +9,8 @@
 # card must play one. The same position reached two ways is kept once. A line
 # stops where the hand is refilled, so the computer never sees a card it has
 # not drawn; it searches again with the cards it drew.
+import Board
+import Config
 import Game
 import History
 import Player
@@ -165,8 +167,43 @@ Search :: [].{
 		if List.is_empty($line.msgs) { Err(NoPlay) } else { Ok($line) }
 	}
 
+	## A line's position as numbers, whatever order the board keeps its
+	## pieces in: every piece as its square and color (Board.index_of), then
+	## the mover's hand as a multiset, its discard credits, and whether it
+	## drew.
+	position_key : Search.Line -> List(U64)
+	position_key = |line| {
+		g = line.game
+		p = Player.get_active_player(g)
+		color_num = |c| List.find_first_index(g.zone_colors, |z| z == c) ?? 9
+		ascending = |xs| List.sort_with(xs, |a, b| if a < b { Before } else if a > b { After } else { Same })
+		pieces = ascending(List.map(g.piece_map, |e| 10 * Board.index_of(g.zone_colors, e.key) + color_num(e.value)))
+		cards = ascending(List.map(p.hand, |c| I64.to_u64_wrap(Config.card_value(c))))
+		List.join([pieces, [999], cards, [999, I64.to_u64_wrap(p.get_out_credits), if line.drew { 1 } else { 0 }]])
+	}
+
+	## Lexicographic order on keys.
+	key_before : List(U64), List(U64) -> Bool
+	key_before = |a, b| {
+		var $i = 0
+		var $answer = List.len(a) < List.len(b)
+		var $decided = Bool.False
+		while !$decided and $i < List.len(a) and $i < List.len(b) {
+			x = List.get(a, $i) ?? 0
+			y = List.get(b, $i) ?? 0
+			if x != y {
+				$answer = x < y
+				$decided = Bool.True
+			}
+			$i = $i + 1
+		}
+		$answer
+	}
+
 	## The best line through the rest of the mover's turn, or Err when it has
-	## no play.
+	## no play. Lines that score the same are told apart by their positions
+	## (position_key), never by the order the search met them, so the choice
+	## does not hang on the order the rules list the moves in.
 	best_line : Strategy.Strategy, Type.Game -> Try({ line : Search.Line, cut : Bool }, [NoPlay])
 	best_line = |strategy, game| {
 		found = all_lines(game)
@@ -175,7 +212,8 @@ Search :: [].{
 			{ line: { game, msgs: [], drew: Bool.False }, score: 0, found: Bool.False },
 			|acc, line| {
 				s = score(strategy, game, line)
-				if !acc.found or s > acc.score { { line, score: s, found: Bool.True } } else { acc }
+				better = !acc.found or s > acc.score or (s == acc.score and key_before(position_key(line), position_key(acc.line)))
+				if better { { line, score: s, found: Bool.True } } else { acc }
 			},
 		)
 		if best.found { Ok({ line: best.line, cut: found.cut }) } else { Err(NoPlay) }
