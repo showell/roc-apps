@@ -15,33 +15,32 @@
 import Board
 import Config
 import LegalMove
-import Type
+import Piece
 
 Reach :: [].{
 	cards : List(Str)
 	cards = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "joker"]
 
-	## Where one card takes a piece of `color` from `loc`, on an empty board.
-	lands : List(Str), Str, Type.PieceLocation, Str -> List(Type.PieceLocation)
-	lands = |zone_colors, color, loc, card| {
-		params = {
-			reverse_mode: card == "4",
-			can_fast_track: loc.id == "FT",
-			can_leave_pen: List.contains(["A", "6", "joker"], card),
-			can_leave_bulls_eye: List.contains(["J", "Q", "K"], card) and loc.zone == BullsEyeZone,
-			piece_color: color,
-			piece_map: [],
-			zone_colors,
-		}
-		LegalMove.end_locations(params, loc, Config.move_count_for_card(card, loc.id))
-	}
+	## Where one card takes a piece of `color` from square `s`, on an empty
+	## board.
+	lands : List(Str), Str, U64, Str -> List(U64)
+	lands = |zone_colors, color, s, card|
+		LegalMove.ends(
+			Piece.empty,
+			Board.color_index(zone_colors, color),
+			s,
+			Config.move_count_for_card(card, Board.is_pen(s)),
+			card == "4",
+			List.contains(["A", "6", "joker"], card),
+			List.contains(["J", "Q", "K"], card) and s == Board.bullseye,
+		)
 
 	Move : { from : U64, to : U64, card : Str }
 
 	## Where a free face card takes a piece: one square on (a J, Q or K moves
 	## one), or out of the bullseye. It does not leave the pen.
-	face_steps : List(Str), Str, Type.PieceLocation -> List(Type.PieceLocation)
-	face_steps = |zone_colors, color, loc| lands(zone_colors, color, loc, "Q")
+	face_steps : List(Str), Str, U64 -> List(U64)
+	face_steps = |zone_colors, color, s| lands(zone_colors, color, s, "Q")
 
 	## Every square to every square by one card, indexed as Board.all_locs.
 	## With `free_face`, a card may also be played after one free face card --
@@ -54,17 +53,17 @@ Reach :: [].{
 	moves = |zone_colors, color, free_face|
 		List.join(
 			List.map_with_index(
-				Board.all_locs(zone_colors),
-				|loc, from|
-					if loc.zone != NormalColor(color) and (Config.is_holding_pen_id(loc.id) or Config.is_base_id(loc.id)) {
+				Board.squares,
+				|from, _|
+					if Board.zone(from) != Board.color_index(zone_colors, color) and !Board.is_track(from) {
 						[]
 					} else {
 					List.join_map(
 						cards,
 						|card| {
-							plain = List.map(lands(zone_colors, color, loc, card), |to| { from, to: Board.index_of(zone_colors, to), card })
+							plain = List.map(lands(zone_colors, color, from, card), |to| { from, to, card })
 							if free_face {
-								with_face = List.join_map(face_steps(zone_colors, color, loc), |step| List.map(lands(zone_colors, color, step, card), |to| { from, to: Board.index_of(zone_colors, to), card: "face+${card}" }))
+								with_face = List.join_map(face_steps(zone_colors, color, from), |step| List.map(lands(zone_colors, color, step, card), |to| { from, to, card: "face+${card}" }))
 								List.concat(plain, with_face)
 							} else {
 								plain

@@ -102,15 +102,16 @@ Config :: [].{
 			_ => ""
 		}
 
-	move_count_for_card : Str, Str -> I64
-	move_count_for_card = |active_card, id|
+	## A 6 brings a piece out of the pen one square.
+	move_count_for_card : Str, Bool -> I64
+	move_count_for_card = |active_card, in_pen|
 		match active_card {
 			"A" => 1
 			"2" => 2
 			"3" => 3
 			"4" => 4
 			"5" => 5
-			"6" => if is_holding_pen_id(id) { 1 } else { 6 }
+			"6" => if in_pen { 1 } else { 6 }
 			"7" => 7
 			"8" => 8
 			"9" => 9
@@ -122,51 +123,6 @@ Config :: [].{
 			_ => 0
 		}
 
-	## Neither holding-pen nor fast-track squares: the caller handles those.
-	next_ids_in_zone : Str, Str, Str -> List(Str)
-	next_ids_in_zone = |id, piece_color, zone_color|
-		match id {
-			"HH" => ["L0"]
-			"L0" => ["L1"]
-			"L1" => ["L2"]
-			"L2" => ["L3"]
-			"L3" => ["L4"]
-			"L4" => ["FT"]
-			"R4" => ["R3"]
-			"R3" => ["R2"]
-			"R2" => ["R1"]
-			"R1" => ["R0"]
-			"R0" => ["BR"]
-			"BR" => ["DS"]
-			"DS" => if zone_color == piece_color { ["B1"] } else { ["HH"] }
-			"B1" => ["B2"]
-			"B2" => ["B3"]
-			"B3" => ["B4"]
-			# B4 is home.
-			_ => []
-		}
-
-	## Only the squares with an obvious predecessor: the caller handles R4,
-	## the holding pen and the base.
-	prev_id_in_zone : Str -> Str
-	prev_id_in_zone = |id|
-		match id {
-			"HH" => "DS"
-			"L0" => "HH"
-			"L1" => "L0"
-			"L2" => "L1"
-			"L3" => "L2"
-			"L4" => "L3"
-			"FT" => "L4"
-			"R3" => "R4"
-			"R2" => "R3"
-			"R1" => "R2"
-			"R0" => "R1"
-			"BR" => "R0"
-			"DS" => "BR"
-			_ => "bogus"
-		}
-
 	## Suits do not matter in Fast Track. Each player's copy is shuffled once
 	## before the game and drawn from the top (Player.shuffle).
 	full_deck : List(Str)
@@ -175,4 +131,4 @@ Config :: [].{
 
 expect List.len(Config.full_deck) == 54
 expect List.take_first(Config.full_deck, 14) == ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A", "2"]
-expect Config.move_count_for_card("6", "HP2") == 1 and Config.move_count_for_card("6", "L2") == 6
+expect Config.move_count_for_card("6", Bool.True) == 1 and Config.move_count_for_card("6", Bool.False) == 6

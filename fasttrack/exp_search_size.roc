@@ -14,6 +14,7 @@ import Arena
 import Game
 import Board
 import Config
+import Piece
 import Player
 import Search
 import Strategy
@@ -22,11 +23,12 @@ import Type
 seed : U64
 seed = 74
 
-loc_str : Type.PieceLocation -> Str
-loc_str = |loc|
-	match loc.zone {
-		BullsEyeZone => "bullseye"
-		NormalColor(zone) => "${zone}.${loc.id}"
+loc_str : List(Str), U64 -> Str
+loc_str = |zone_colors, s|
+	if s == Board.bullseye {
+		"bullseye"
+	} else {
+		"${List.get(zone_colors, Board.zone(s)) ?? "?"}.${Board.loc_of(zone_colors, s).id}"
 	}
 
 ## A number for every piece: its square and its color.
@@ -39,9 +41,8 @@ key : Search.Line -> Key
 key = |line| {
 	g = line.game
 	p = Player.get_active_player(g)
-	color_num = |c| List.find_first_index(g.zone_colors, |z| z == c) ?? 9
 	{
-		board: sorted_nums(List.map(g.piece_map, |e| 10 * Board.index_of(g.zone_colors, e.key) + color_num(e.value))),
+		board: List.join(List.map_with_index(g.board, |v, sq| if v == 0 { [] } else { [10 * sq + U8.to_u64(v) - 1] })),
 		hand: sorted_nums(List.map(p.hand, |c| I64.to_u64_wrap(Config.card_value(c)))),
 		turn: p.turn,
 		credits: p.get_out_credits,
@@ -82,7 +83,7 @@ pieces = |g|
 	Str.join_with(
 		List.map(
 			g.zone_colors,
-			|c| "${c}: ${Str.join_with(List.map(List.keep_if(g.piece_map, |e| e.value == c), |e| loc_str(e.key)), " ")}",
+			|c| "${c}: ${Str.join_with(List.map(Piece.my_pieces(g.board, Board.color_index(g.zone_colors, c)), |sq| loc_str(g.zone_colors, sq)), " ")}",
 		),
 		"\n",
 	)

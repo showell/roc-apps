@@ -2,6 +2,7 @@
 #
 # Partners sit opposite, so red plays with green and blue with purple.
 import Assoc
+import Board
 import Game
 import LegalMove
 import Piece
@@ -15,20 +16,20 @@ TeamTests :: [].{
 	game_with : Type.Teams, List((Str, Str, Str)), List(Str) -> Type.Game
 	game_with = |teams, pieces, hand| {
 		start = Game.begin_game(0, Normal, teams)
-		piece_map = List.fold(pieces, [], |pm, (zone, id, color)| Assoc.dict_insert(pm, { zone: NormalColor(zone), id }, color))
+		board = Piece.board_of(start.zone_colors, pieces)
 		players = Player.update_player(start.players, 0, |p| { ..p, hand, turn: TurnBegin })
-		Player.set_turn_to_need_card({ ..start, piece_map, players })
+		Player.set_turn_to_need_card({ ..start, board, players })
 	}
 
 	starts : Type.Game -> List(Str)
 	starts = |game| {
 		moves = LegalMove.get_moves_for_cards(
 			Assoc.set_from_list(Player.get_player(game.players, 0).hand),
-			game.piece_map,
+			game.board,
 			game.zone_colors,
-			Player.movers(Player.get_player(game.players, 0), game.piece_map),
+			Player.movers(Player.get_player(game.players, 0), game.zone_colors, game.board),
 		)
-		Assoc.set_from_list(List.map(moves, |m| "${Piece.get_the_piece(game.piece_map, m.start)}@${m.start.id}"))
+		Assoc.set_from_list(List.map(moves, |m| "${Piece.get_piece(game.board, game.zone_colors, m.start) ?? "nobody"}@${Board.loc_of(game.zone_colors, m.start).id}"))
 	}
 
 	home : Str -> List((Str, Str, Str))
@@ -38,19 +39,19 @@ TeamTests :: [].{
 # Who red may move.
 expect {
 	g = TeamTests.game_with(Anytime, [("red", "L0", "red")], ["2"])
-	Player.movers(Player.get_player(g.players, 0), g.piece_map) == ["red", "green"]
+	Player.movers(Player.get_player(g.players, 0), g.zone_colors, g.board) == ["red", "green"]
 }
 expect {
 	g = TeamTests.game_with(OnceHome, [("red", "L0", "red")], ["2"])
-	Player.movers(Player.get_player(g.players, 0), g.piece_map) == ["red"]
+	Player.movers(Player.get_player(g.players, 0), g.zone_colors, g.board) == ["red"]
 }
 expect {
 	g = TeamTests.game_with(OnceHome, TeamTests.home("red"), ["2"])
-	Player.movers(Player.get_player(g.players, 0), g.piece_map) == ["red", "green"]
+	Player.movers(Player.get_player(g.players, 0), g.zone_colors, g.board) == ["red", "green"]
 }
 expect {
 	g = TeamTests.game_with(Solo, [("red", "L0", "red")], ["2"])
-	Player.movers(Player.get_player(g.players, 0), g.piece_map) == ["red"]
+	Player.movers(Player.get_player(g.players, 0), g.zone_colors, g.board) == ["red"]
 }
 
 # Red's 2 moves either red's piece or green's.
@@ -68,7 +69,7 @@ expect {
 # A seven splits between red's piece and green's.
 expect {
 	g = TeamTests.game_with(Anytime, [("red", "L0", "red"), ("green", "L0", "green")], ["7"])
-	moves = LegalMove.get_moves_for_cards(["7"], g.piece_map, g.zone_colors, ["red", "green"])
+	moves = LegalMove.get_moves_for_cards(["7"], g.board, g.zone_colors, ["red", "green"])
 	List.any(moves, |m| m.kind == StartSplit(3))
 }
 
@@ -85,7 +86,7 @@ expect {
 		Ok(best) => best.line.game
 		Err(_) => g
 	}
-	!List.any(finished.piece_map, |e| e.value == "green" and e.key.id == "HP1")
+	Piece.is_open(finished.board, Board.at(2, 0))
 }
 
 # In a game for one too: a piece on the fast track moves before any other,

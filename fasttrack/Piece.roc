@@ -1,137 +1,160 @@
 # Piece -- the pieces on the board: finding them and moving them, from
-# Piece.elm.
-import Assoc
-import Config
+# Piece.elm, over square numbers (Board.roc). A color is its place in the
+# game's color order (Board.color_index).
+import Board
 import Setup
 import Type
 
 Piece :: [].{
-	fake_location : Type.PieceLocation
-	fake_location = { zone: NormalColor("bogus"), id: "bogus" }
+	empty : Type.Board
+	empty = List.repeat(0, Board.count)
 
-	get_piece : Type.PieceMap, Type.PieceLocation -> Try(Str, [NotFound])
-	get_piece = |piece_map, piece_loc| Assoc.dict_get(piece_map, piece_loc)
+	## Who stands on `s`.
+	at : Type.Board, U64 -> Try(U64, [NotFound])
+	at = |board, s|
+		match List.get(board, s) {
+			Ok(v) if v > 0 => Ok(U8.to_u64(v) - 1)
+			_ => Err(NotFound)
+		}
 
-	## Only for a location known to hold a piece: a move already validated.
-	get_the_piece : Type.PieceMap, Type.PieceLocation -> Str
-	get_the_piece = |piece_map, piece_loc| Assoc.dict_get(piece_map, piece_loc) ?? "bogus"
+	is_open : Type.Board, U64 -> Bool
+	is_open = |board, s| (List.get(board, s) ?? 0) == 0
 
-	is_open_location : Type.PieceMap, Type.PieceLocation -> Bool
-	is_open_location = |piece_map, piece_loc| Try.is_err(get_piece(piece_map, piece_loc))
+	holds : Type.Board, U64, U64 -> Bool
+	holds = |board, s, c| (List.get(board, s) ?? 0) == U64.to_u8_wrap(c + 1)
+
+	place : Type.Board, U64, U64 -> Type.Board
+	place = |board, s, c| List.set(board, s, U64.to_u8_wrap(c + 1)) ?? board
+
+	clear : Type.Board, U64 -> Type.Board
+	clear = |board, s| List.set(board, s, 0) ?? board
+
+	## The color on `s`, by name, for the page.
+	get_piece : Type.Board, List(Str), U64 -> Try(Str, [NotFound])
+	get_piece = |board, zone_colors, s|
+		match at(board, s) {
+			Ok(c) => Ok(List.get(zone_colors, c) ?? "bogus")
+			Err(_) => Err(NotFound)
+		}
 
 	## The LAST occupied pen square: the one a piece leaves the pen from.
-	piece_to_move_out_of_pen : Type.PieceMap, Str -> Try(Type.PieceLocation, [NotFound])
-	piece_to_move_out_of_pen = |piece_map, color|
-		match List.find_last(Config.holding_pen_locations, |id| Try.is_ok(get_piece(piece_map, { zone: NormalColor(color), id }))) {
-			Ok(id) => Ok({ zone: NormalColor(color), id })
+	piece_to_move_out_of_pen : Type.Board, U64 -> Try(U64, [NotFound])
+	piece_to_move_out_of_pen = |board, c|
+		match List.find_last(Board.pen_of(c), |s| !is_open(board, s)) {
+			Ok(s) => Ok(s)
 			Err(_) => Err(NotFound)
 		}
 
 	## Only when a piece is being sent home, so there is always a square.
-	open_holding_pen_location : Type.PieceMap, Str -> Type.PieceLocation
-	open_holding_pen_location = |piece_map, color|
-		match List.find_first(Config.holding_pen_locations, |id| is_open_location(piece_map, { zone: NormalColor(color), id })) {
-			Ok(id) => { zone: NormalColor(color), id }
-			Err(_) => fake_location
-		}
+	open_holding_pen_location : Type.Board, U64 -> U64
+	open_holding_pen_location = |board, c| List.find_first(Board.pen_of(c), |s| is_open(board, s)) ?? crash("Piece: no open pen square")
 
-	is_color : Type.PieceMap, Str, Type.PieceLocation -> Bool
-	is_color = |piece_map, color, loc| Assoc.dict_get(piece_map, loc) == Ok(color)
+	## Every piece of another color on the open track (the bullseye too): the
+	## squares a jack may trade with.
+	swappable_locs : Type.Board, U64 -> List(U64)
+	swappable_locs = |board, c| List.keep_if(Board.squares, |s| Board.is_track(s) and !is_open(board, s) and !holds(board, s, c))
 
-	is_normal_loc : Type.PieceLocation -> Bool
-	is_normal_loc = |loc| !Config.is_holding_pen_id(loc.id) and !Config.is_base_id(loc.id)
-
-	swappable_locs : Type.PieceMap, Str -> Assoc.AssocSet(Type.PieceLocation)
-	swappable_locs = |piece_map, active_color|
-		Assoc.set_from_list(
-			Assoc.dict_keys(piece_map)
-			.keep_if(|loc| !is_color(piece_map, active_color, loc))
-			.keep_if(is_normal_loc),
-		)
-
-	my_pieces : Type.PieceMap, Str -> Assoc.AssocSet(Type.PieceLocation)
-	my_pieces = |piece_map, active_color|
-		Assoc.set_from_list(List.keep_if(Assoc.dict_keys(piece_map), |loc| is_color(piece_map, active_color, loc)))
+	my_pieces : Type.Board, U64 -> List(U64)
+	my_pieces = |board, c| List.keep_if(Board.squares, |s| holds(board, s, c))
 
 	## Every piece of this color that can move, counting the pen once.
-	movable_pieces : Type.PieceMap, Str -> Assoc.AssocSet(Type.PieceLocation)
-	movable_pieces = |piece_map, color| {
-		pieces = non_pen_pieces(piece_map, color)
-		match piece_to_move_out_of_pen(piece_map, color) {
-			Ok(pen_loc) => Assoc.set_insert(pieces, pen_loc)
+	movable_pieces : Type.Board, U64 -> List(U64)
+	movable_pieces = |board, c| {
+		pieces = non_pen_pieces(board, c)
+		match piece_to_move_out_of_pen(board, c) {
+			Ok(pen) => List.prepend(pieces, pen)
 			Err(_) => pieces
 		}
 	}
 
-	non_pen_pieces : Type.PieceMap, Str -> Assoc.AssocSet(Type.PieceLocation)
-	non_pen_pieces = |piece_map, active_color|
-		List.keep_if(my_pieces(piece_map, active_color), |loc| !Config.is_holding_pen_id(loc.id))
+	non_pen_pieces : Type.Board, U64 -> List(U64)
+	non_pen_pieces = |board, c| List.drop_if(my_pieces(board, c), Board.is_pen)
 
-	other_non_pen_pieces : Type.PieceMap, Str, Type.PieceLocation -> Assoc.AssocSet(Type.PieceLocation)
-	other_non_pen_pieces = |piece_map, active_color, loc|
-		Assoc.set_remove(non_pen_pieces(piece_map, active_color), loc)
+	other_non_pen_pieces : Type.Board, U64, U64 -> List(U64)
+	other_non_pen_pieces = |board, c, s| List.drop_if(non_pen_pieces(board, c), |x| x == s)
+
+	fast_track_squares : List(U64)
+	fast_track_squares = [Board.at(0, Board.ft), Board.at(1, Board.ft), Board.at(2, Board.ft), Board.at(3, Board.ft)]
 
 	## A piece on the fast track must be moved before any other: across every
 	## color the player moves, which in a partnership is the team.
-	any_on_fast_track : Type.PieceMap, List(Str) -> Bool
-	any_on_fast_track = |piece_map, movers| List.any(movers, |color| has_piece_on_fast_track(piece_map, color))
+	any_on_fast_track : Type.Board, List(U64) -> Bool
+	any_on_fast_track = |board, movers| List.any(fast_track_squares, |s| List.any(movers, |c| holds(board, s, c)))
 
-	team_movable_pieces : Type.PieceMap, List(Str) -> Assoc.AssocSet(Type.PieceLocation)
-	team_movable_pieces = |piece_map, movers| List.join_map(movers, |color| movable_pieces(piece_map, color))
+	has_piece_on_fast_track : Type.Board, U64 -> Bool
+	has_piece_on_fast_track = |board, c| any_on_fast_track(board, [c])
 
-	team_other_non_pen_pieces : Type.PieceMap, List(Str), Type.PieceLocation -> Assoc.AssocSet(Type.PieceLocation)
-	team_other_non_pen_pieces = |piece_map, movers, loc| List.join_map(movers, |color| other_non_pen_pieces(piece_map, color, loc))
+	team_movable_pieces : Type.Board, List(U64) -> List(U64)
+	team_movable_pieces = |board, movers| List.join_map(movers, |c| movable_pieces(board, c))
 
-	## Every base square of `color` holds a piece of its own.
-	all_home : Type.PieceMap, Str -> Bool
-	all_home = |piece_map, color| List.all(Config.base_locations, |id| get_piece(piece_map, { zone: NormalColor(color), id }) == Ok(color))
+	team_other_non_pen_pieces : Type.Board, List(U64), U64 -> List(U64)
+	team_other_non_pen_pieces = |board, movers, s| List.join_map(movers, |c| other_non_pen_pieces(board, c, s))
 
-	has_piece_on_fast_track : Type.PieceMap, Str -> Bool
-	has_piece_on_fast_track = |piece_map, active_color|
-		List.any(my_pieces(piece_map, active_color), |loc| loc.id == "FT")
+	## Every base square of `c` holds a piece of its own.
+	all_home : Type.Board, U64 -> Bool
+	all_home = |board, c| List.all(Board.base_of(c), |s| holds(board, s, c))
 
-	config_pieces : Setup.InitSetup, List(Str) -> Type.PieceMap
+	## A color's pieces in its own base.
+	in_base : Type.Board, U64 -> U64
+	in_base = |board, c| List.count_if(Board.base_of(c), |s| holds(board, s, c))
+
+	## A color's pieces in its pen.
+	in_pen : Type.Board, U64 -> U64
+	in_pen = |board, c| List.count_if(Board.pen_of(c), |s| holds(board, s, c))
+
+	config_pieces : Setup.InitSetup, List(Str) -> Type.Board
 	config_pieces = |init_setup, zone_colors|
 		List.fold(
-			zone_colors,
-			[],
-			|piece_map, color|
-				List.fold(Setup.starting_locations(init_setup, color), piece_map, |pm, loc| Assoc.dict_insert(pm, loc, color)),
+			List.map_with_index(zone_colors, |_, c| c),
+			empty,
+			|board, c| List.fold(Setup.starting_locations(init_setup), board, |b, id| place(b, Board.at(c, Board.square_of(id)), c)),
 		)
 
-	bring_player_out : Str, Type.PieceMap -> Type.PieceMap
-	bring_player_out = |color, piece_map|
-		match piece_to_move_out_of_pen(piece_map, color) {
+	bring_player_out : U64, Type.Board -> Type.Board
+	bring_player_out = |c, board|
+		match piece_to_move_out_of_pen(board, c) {
 			# probably a bug
-			Err(_) => piece_map
-			Ok(start_loc) => execute_move(RegularMove, start_loc, { zone: NormalColor(color), id: "L0" }, piece_map)
+			Err(_) => board
+			Ok(start) => execute_move(RegularMove, start, Board.at(c, Board.l0), board)
 		}
 
-	move_piece : Type.Move, Type.PieceMap -> Type.PieceMap
-	move_piece = |move, piece_map| {
+	move_piece : Type.Move, Type.Board -> Type.Board
+	move_piece = |move, board| {
 		flavor = match move.kind {
 			JackTrade => TradePieces
 			_ => RegularMove
 		}
-		execute_move(flavor, move.start, move.end, piece_map)
+		execute_move(flavor, move.start, move.end, board)
 	}
 
 	## A piece landing on another either trades places with it (a jack's
 	## trade) or sends it back to its own pen.
-	execute_move : Type.MoveFlavor, Type.PieceLocation, Type.PieceLocation, Type.PieceMap -> Type.PieceMap
-	execute_move = |flavor, start_loc, end_loc, piece_map| {
-		start_color = get_the_piece(piece_map, start_loc)
-		match get_piece(piece_map, end_loc) {
-			Ok(end_color) =>
+	execute_move : Type.MoveFlavor, U64, U64, Type.Board -> Type.Board
+	execute_move = |flavor, start, end, board| {
+		start_c = at(board, start) ?? crash("Piece.execute_move: no piece to move")
+		match at(board, end) {
+			Ok(end_c) =>
 				if flavor == TradePieces {
-					Assoc.dict_insert(Assoc.dict_insert(piece_map, start_loc, end_color), end_loc, start_color)
+					place(place(board, start, end_c), end, start_c)
 				} else {
-					pen_loc = open_holding_pen_location(piece_map, end_color)
-					sent_home = Assoc.dict_insert(piece_map, pen_loc, end_color)
-					Assoc.dict_insert(Assoc.dict_remove(sent_home, start_loc), end_loc, start_color)
+					pen = open_holding_pen_location(board, end_c)
+					sent_home = place(board, pen, end_c)
+					place(clear(sent_home, start), end, start_c)
 				}
-			Err(_) =>
-				Assoc.dict_insert(Assoc.dict_remove(piece_map, start_loc), end_loc, start_color)
+			Err(_) => place(clear(board, start), end, start_c)
 		}
 	}
+
+	## A board with these pieces, each `(zone, id, color)` by name: for the
+	## tests.
+	board_of : List(Str), List((Str, Str, Str)) -> Type.Board
+	board_of = |zone_colors, pieces|
+		List.fold(
+			pieces,
+			empty,
+			|b, (zone, id, color)| {
+				s = if zone == "BE" { Board.bullseye } else { Board.at(Board.color_index(zone_colors, zone), Board.square_of(id)) }
+				place(b, s, Board.color_index(zone_colors, color))
+			},
+		)
 }

@@ -2,12 +2,11 @@
 #
 # Every square's value to a piece, by Steve's ranking to B1 (Rank.places):
 # 100 points a place, the best square (B4) 6100, the worst (the pen) 0.
-# Laid out as Board.relative_index: the piece's own zone first, then the
+# Laid out as Board.relative sees a square: the piece's own zone first, then the
 # zones after it, each in Config.config_locations order, then the
 # bullseye. Squares a piece never stands on (other colors' pens and
 # bases) are 0.
 import Board
-import Type
 
 SquareValues :: [].{
 	values : List(I64)
@@ -24,6 +23,7 @@ SquareValues :: [].{
 		4100,
 	]
 
-	value : List(Str), Str, Type.PieceLocation -> I64
-	value = |zone_colors, color, loc| List.get(values, Board.relative_index(zone_colors, color, loc)) ?? 0
+	## Square `s` to a piece of color `c` (its place in the color order).
+	value : U64, U64 -> I64
+	value = |c, s| List.get(values, Board.relative(c, s)) ?? 0
 }

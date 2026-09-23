@@ -16,8 +16,9 @@
 #
 # `champion` is what the page's computers play. TUNING.md says how each number
 # was chosen; a new experiment is a new value (Arena, the exp_*.roc apps).
-import Config
+import Board
 import Game
+import Piece
 import Player
 import SquareValues
 import Type
@@ -43,30 +44,24 @@ Strategy :: [].{
 			PartnerOnceHome(p) => [player.color, p]
 		}
 
-	base_step : Str -> I64
-	base_step = |id|
-		match id {
-			"B1" => 1
-			"B2" => 2
-			"B3" => 3
-			"B4" => 4
-			_ => 0
-		}
-
 	## What the squares of these colors' pieces are worth.
 	board : Strategy.Strategy, Type.Game, List(Str) -> I64
-	board = |strategy, game, colors|
-		List.fold(
-			game.piece_map,
-			0,
-			|total, e|
-				if List.contains(colors, e.value) {
-					own_base = if e.key.zone == NormalColor(e.value) { base_step(e.key.id) } else { 0 }
-					total + SquareValues.value(game.zone_colors, e.value, e.key) + own_base * strategy.base_bonus
-				} else {
-					total
-				},
-		)
+	board = |strategy, game, colors| {
+		cs = List.map(colors, |c| Board.color_index(game.zone_colors, c))
+		var $total = 0
+		var $s = 0
+		while $s < Board.count {
+			match Piece.at(game.board, $s) {
+				Ok(c) if List.contains(cs, c) => {
+					own_base = if Board.is_base($s) and Board.zone($s) == c { U64.to_i64_wrap(Board.local($s)) - 3 } else { 0 }
+					$total = $total + SquareValues.value(c, $s) + own_base * strategy.base_bonus
+				}
+				_ => {}
+			}
+			$s = $s + 1
+		}
+		$total
+	}
 
 	## What the leading opposing team's pieces are worth: every other
 	## player's team, valued as the mover values its own (board only -- their
@@ -87,7 +82,7 @@ Strategy :: [].{
 
 	## A player's pieces in its own base.
 	in_base : Type.Game, Str -> U64
-	in_base = |game, color| List.count_if(game.piece_map, |e| e.value == color and e.key.zone == NormalColor(color) and Config.is_base_id(e.key.id))
+	in_base = |game, color| Piece.in_base(game.board, Board.color_index(game.zone_colors, color))
 
 	## What each hoard's cards are worth this turn, given the board it starts
 	## from.
@@ -112,19 +107,18 @@ Strategy :: [].{
 
 # The table's corners (SquareValues, from Steve's ranking), and the base bonus.
 expect {
-	colors = ["red", "blue", "green", "purple"]
-	at = |zone, id| { zone: NormalColor(zone), id }
-	SquareValues.value(colors, "red", at("red", "B4")) == 6100
-	and SquareValues.value(colors, "red", at("blue", "R4")) == 100
-	and SquareValues.value(colors, "red", at("red", "HP1")) == 0
-	and SquareValues.value(colors, "blue", at("blue", "B4")) == 6100
-	and SquareValues.value(colors, "blue", at("green", "R4")) == 100
+	b4 = 7
+	SquareValues.value(0, Board.at(0, b4)) == 6100
+	and SquareValues.value(0, Board.at(1, Board.r4)) == 100
+	and SquareValues.value(0, Board.at(0, 0)) == 0
+	and SquareValues.value(1, Board.at(1, b4)) == 6100
+	and SquareValues.value(1, Board.at(2, Board.r4)) == 100
 }
 
 # The champion's hoard: 1500 an A, joker or J with none home, 500 with two.
 expect {
 	start = Game.begin_game(0, Normal, Solo)
-	two_home = { ..start, piece_map: [{ key: { zone: NormalColor("red"), id: "B1" }, value: "red" }, { key: { zone: NormalColor("red"), id: "B2" }, value: "red" }] }
+	two_home = { ..start, board: Piece.board_of(start.zone_colors, [("red", "B1", "red"), ("red", "B2", "red")]) }
 	Strategy.hoard_worths(Strategy.champion, start, "red") == [{ cards: ["A", "joker", "J"], worth: 1500 }]
 	and Strategy.hoard_worths(Strategy.champion, two_home, "red") == [{ cards: ["A", "joker", "J"], worth: 500 }]
 	and Strategy.board(Strategy.champion, two_home, ["red"]) == 5800 + 1000 + 5900 + 2000

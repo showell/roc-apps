@@ -1,9 +1,9 @@
 # Codes -- a message as the number a click sends back.
 #
 # The page never builds a message: every clickable thing carries the code the
-# view gave it, and a click hands that code to `update`. A location is its
-# zone's place in the game's own (unrotated) color order and its place in
-# Config.config_locations.
+# view gave it, and a click hands that code to `update`. A square (Board.roc)
+# is sent as its zone's place in the game's own (unrotated) color order and
+# its place in Config.config_locations.
 #
 #     1              rotate the board ("done")
 #     2              undo ("oops")
@@ -15,7 +15,7 @@
 #     20000 + loc    a piece's end square
 #
 # where loc is 32 * zone + square, and the bullseye is 999.
-import Config
+import Board
 import Type
 
 Codes :: [].{
@@ -42,32 +42,23 @@ Codes :: [].{
 	bulls_eye : U32
 	bulls_eye = 999
 
-	location : List(Str), Type.PieceLocation -> U32
-	location = |zone_colors, loc|
-		match loc.zone {
-			BullsEyeZone => bulls_eye
-			NormalColor(color) => {
-				zone = List.find_first_index(zone_colors, |c| c == color) ?? crash("Codes.location: no such zone")
-				square = List.find_first_index(Config.config_locations, |l| l.id == loc.id) ?? crash("Codes.location: no such square")
-				U64.to_u32_wrap(32 * zone + square)
-			}
-		}
+	location : U64 -> U32
+	location = |s| if s == Board.bullseye { bulls_eye } else { U64.to_u32_wrap(32 * Board.zone(s) + Board.local(s)) }
 
-	start_location : List(Str), Type.PieceLocation -> U32
-	start_location = |zone_colors, loc| 10000 + location(zone_colors, loc)
+	start_location : U64 -> U32
+	start_location = |s| 10000 + location(s)
 
-	end_location : List(Str), Type.PieceLocation -> U32
-	end_location = |zone_colors, loc| 20000 + location(zone_colors, loc)
+	end_location : U64 -> U32
+	end_location = |s| 20000 + location(s)
 
-	to_location : List(Str), U32 -> Try(Type.PieceLocation, [BadCode])
+	to_location : List(Str), U32 -> Try(U64, [BadCode])
 	to_location = |zone_colors, code|
 		if code == bulls_eye {
-			Ok({ zone: BullsEyeZone, id: "bullseye" })
+			Ok(Board.bullseye)
 		} else {
-			match (List.get(zone_colors, U32.to_u64(code // 32)), List.get(Config.config_locations, U32.to_u64(code % 32))) {
-				(Ok(color), Ok(square)) => Ok({ zone: NormalColor(color), id: square.id })
-				_ => Err(BadCode)
-			}
+			zone = U32.to_u64(code // 32)
+			local = U32.to_u64(code % 32)
+			if zone < List.len(zone_colors) and local < Board.per_zone { Ok(Board.at(zone, local)) } else { Err(BadCode) }
 		}
 
 	## A code no view hands out is a bug, and says so.
@@ -94,13 +85,9 @@ Codes :: [].{
 
 expect {
 	colors = ["red", "blue", "green", "purple"]
-	loc = { zone: NormalColor("green"), id: "R4" }
-	Codes.decode(colors, Codes.end_location(colors, loc)) == Ok(SetEndLocation(loc))
+	s = Board.at(2, Board.r4)
+	Codes.decode(colors, Codes.end_location(s)) == Ok(SetEndLocation(s)) and Codes.location(s) == 32 * 2 + 21
 }
-expect {
-	colors = ["red", "blue", "green", "purple"]
-	loc = { zone: BullsEyeZone, id: "bullseye" }
-	Codes.decode(colors, Codes.start_location(colors, loc)) == Ok(SetStartLocation(loc))
-}
+expect Codes.decode(["red", "blue", "green", "purple"], Codes.start_location(Board.bullseye)) == Ok(SetStartLocation(Board.bullseye))
 expect Codes.decode(["red"], Codes.discard_card(3)) == Ok(DiscardCard(3))
 expect Codes.decode(["red"], 7) == Err(BadCode)

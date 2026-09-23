@@ -3,29 +3,35 @@
 # Elm compared sets of moves; these compare the same sets, each move written
 # as one string: the move type as Example.elm's `fixMoveType` spells it, then
 # where from and where to, as `zone.id`, with the bullseye's zone as `BE`.
+#
+# Elm's tests played on three zones; these play on the game's four. No route
+# in them wraps round the board, so every expectation is Elm's.
 import Assoc
-import Color
+import Board
 import LegalMove
 import Piece
 import Type
 
 RulesTests :: [].{
 	zone_colors : List(Str)
-	zone_colors = ["red", "blue", "green"]
+	zone_colors = ["red", "blue", "green", "purple"]
 
-	## A board built the way the Elm tests build one: insert after insert.
-	board : List((Str, Str, Str)) -> Type.PieceMap
-	board = |pieces|
-		List.fold(pieces, [], |piece_map, (zone, id, color)| Assoc.dict_insert(piece_map, at(zone, id), color))
+	blue : U64
+	blue = 1
 
-	at : Str, Str -> Type.PieceLocation
-	at = |zone, id| if zone == "BE" { { zone: BullsEyeZone, id } } else { { zone: NormalColor(zone), id } }
+	board : List((Str, Str, Str)) -> Type.Board
+	board = |pieces| Piece.board_of(zone_colors, pieces)
 
-	show_loc : Type.PieceLocation -> Str
-	show_loc = |loc|
-		match loc.zone {
-			BullsEyeZone => "BE.${loc.id}"
-			NormalColor(color) => "${color}.${loc.id}"
+	at : Str, Str -> U64
+	at = |zone, id| if zone == "BE" { Board.bullseye } else { Board.index_of(zone_colors, { zone: NormalColor(zone), id }) }
+
+	show_loc : U64 -> Str
+	show_loc = |s|
+		if s == Board.bullseye {
+			"BE.bullseye"
+		} else {
+			loc = Board.loc_of(zone_colors, s)
+			"${List.get(zone_colors, Board.zone(s)) ?? "?"}.${loc.id}"
 		}
 
 	show_move_type : Type.MoveType -> Str
@@ -52,24 +58,17 @@ RulesTests :: [].{
 	moves_are : List(Type.Move), List(Str) -> Bool
 	moves_are = |moves, expected| same_set(List.map(moves, show_move), expected)
 
-	locs_are : List(Type.PieceLocation), List(Str) -> Bool
+	locs_are : List(U64), List(Str) -> Bool
 	locs_are = |locs, expected| same_set(List.map(locs, show_loc), expected)
 
-	params : Type.PieceMap -> Type.FindLocParams
-	params = |piece_map| {
-		reverse_mode: Bool.False,
-		can_fast_track: Bool.False,
-		can_leave_pen: Bool.False,
-		can_leave_bulls_eye: Bool.False,
-		piece_color: "blue",
-		piece_map,
-		zone_colors,
-	}
+	## Where a blue piece on `start` lands after `n` steps forward.
+	ends : Type.Board, U64, I64 -> List(U64)
+	ends = |b, start, n| LegalMove.ends(b, blue, start, n, Bool.False, Bool.False, Bool.False)
 
-	for_cards : List(Str), Type.PieceMap -> List(Type.Move)
-	for_cards = |cards, piece_map| LegalMove.get_moves_for_cards(Assoc.set_from_list(cards), piece_map, zone_colors, ["blue"])
+	for_cards : List(Str), Type.Board -> List(Type.Move)
+	for_cards = |cards, b| LegalMove.get_moves_for_cards(Assoc.set_from_list(cards), b, zone_colors, ["blue"])
 
-	end_locs_of : List(Type.Move) -> List(Type.PieceLocation)
+	end_locs_of : List(Type.Move) -> List(U64)
 	end_locs_of = |moves| List.map(moves, |m| m.end)
 }
 
@@ -154,7 +153,7 @@ expect {
 			("blue", "FT", "red"),
 		],
 	)
-	RulesTests.locs_are(Piece.movable_pieces(b, "blue"), ["red.L0", "green.FT", "blue.L3", "blue.HP2", "blue.B2"])
+	RulesTests.locs_are(Piece.movable_pieces(b, RulesTests.blue), ["red.L0", "green.FT", "blue.L3", "blue.HP2", "blue.B2"])
 }
 
 # testOtherNonPenPieces: other pieces can be found
@@ -169,13 +168,13 @@ expect {
 			("blue", "FT", "red"),
 		],
 	)
-	RulesTests.locs_are(Piece.other_non_pen_pieces(b, "blue", RulesTests.at("red", "L1")), ["green.FT", "blue.L3", "blue.B2"])
+	RulesTests.locs_are(Piece.other_non_pen_pieces(b, RulesTests.blue, RulesTests.at("red", "L1")), ["green.FT", "blue.L3", "blue.B2"])
 }
 
 # testEndLocs
 
 # can move 8
-expect RulesTests.locs_are(LegalMove.end_locations(RulesTests.params([]), RulesTests.at("red", "L1"), 8), ["blue.R1"])
+expect RulesTests.locs_are(RulesTests.ends(Piece.empty, RulesTests.at("red", "L1"), 8), ["blue.R1"])
 
 # seven full
 expect {
@@ -201,13 +200,13 @@ expect {
 # can't jump own piece
 expect {
 	b = RulesTests.board([("blue", "R3", "blue")])
-	List.is_empty(LegalMove.end_locations(RulesTests.params(b), RulesTests.at("red", "L1"), 8))
+	List.is_empty(RulesTests.ends(b, RulesTests.at("red", "L1"), 8))
 }
 
 # testHasPieceOnFastTrack
-expect Piece.has_piece_on_fast_track(RulesTests.board([("red", "FT", "blue")]), "blue")
-expect !Piece.has_piece_on_fast_track(RulesTests.board([("red", "FT", "green")]), "blue")
-expect !Piece.has_piece_on_fast_track(RulesTests.board([("blue", "L0", "blue"), ("green", "R4", "blue")]), "blue")
+expect Piece.has_piece_on_fast_track(RulesTests.board([("red", "FT", "blue")]), RulesTests.blue)
+expect !Piece.has_piece_on_fast_track(RulesTests.board([("red", "FT", "green")]), RulesTests.blue)
+expect !Piece.has_piece_on_fast_track(RulesTests.board([("blue", "L0", "blue"), ("green", "R4", "blue")]), RulesTests.blue)
 
 # testSwappableLocs
 expect {
@@ -223,7 +222,7 @@ expect {
 			("red", "R3", "red"),
 		],
 	)
-	RulesTests.locs_are(Piece.swappable_locs(b, "blue"), ["green.L0", "blue.L1", "red.R3"])
+	RulesTests.locs_are(Piece.swappable_locs(b, RulesTests.blue), ["green.L0", "blue.L1", "red.R3"])
 }
 
 # testCanGoNSpaces

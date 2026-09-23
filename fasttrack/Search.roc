@@ -167,17 +167,16 @@ Search :: [].{
 		if List.is_empty($line.msgs) { Err(NoPlay) } else { Ok($line) }
 	}
 
-	## A line's position as numbers, whatever order the board keeps its
-	## pieces in: every piece as its square and color (Board.index_of), then
+	## A line's position as numbers: every piece as its square (Board.roc) and
+	## color, in square order, then
 	## the mover's hand as a multiset, its discard credits, and whether it
 	## drew.
 	position_key : Search.Line -> List(U64)
 	position_key = |line| {
 		g = line.game
 		p = Player.get_active_player(g)
-		color_num = |c| List.find_first_index(g.zone_colors, |z| z == c) ?? 9
 		ascending = |xs| List.sort_with(xs, |a, b| if a < b { Before } else if a > b { After } else { Same })
-		pieces = ascending(List.map(g.piece_map, |e| 10 * Board.index_of(g.zone_colors, e.key) + color_num(e.value)))
+		pieces = List.join(List.map_with_index(g.board, |v, sq| if v == 0 { [] } else { [10 * sq + U8.to_u64(v) - 1] }))
 		cards = ascending(List.map(p.hand, |c| I64.to_u64_wrap(Config.card_value(c))))
 		List.join([pieces, [999], cards, [999, I64.to_u64_wrap(p.get_out_credits), if line.drew { 1 } else { 0 }]])
 	}

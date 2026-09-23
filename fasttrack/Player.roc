@@ -5,6 +5,7 @@
 # go again. With nothing playable, the player discards (at the start of a
 # turn, earning a credit towards leaving the pen) or covers a card.
 import Assoc
+import Board
 import Config
 import ElmRandom
 import LegalMove
@@ -22,7 +23,7 @@ Player :: [].{
 
 	## Two moves can join the same two squares only by a jack, moving one or
 	## trading. Elm takes the first, the forward move, and so does this.
-	get_player_move_type : Type.Player, Type.PieceLocation -> Try(Type.MoveType, [NotFound])
+	get_player_move_type : Type.Player, U64 -> Try(Type.MoveType, [NotFound])
 	get_player_move_type = |player, end_loc|
 		match player.turn {
 			TurnNeedEndLoc(info) => {
@@ -82,24 +83,24 @@ Player :: [].{
 
 	## The colors whose pieces this player may move: its own, and its
 	## partner's when its team's rules allow.
-	movers : Type.Player, Type.PieceMap -> List(Str)
-	movers = |player, piece_map|
+	movers : Type.Player, List(Str), Type.Board -> List(Str)
+	movers = |player, zone_colors, board|
 		match player.team {
 			Solo => [player.color]
 			Partner(partner) => [player.color, partner]
-			PartnerOnceHome(partner) => if Piece.all_home(piece_map, player.color) { [player.color, partner] } else { [player.color] }
+			PartnerOnceHome(partner) => if Piece.all_home(board, Board.color_index(zone_colors, player.color)) { [player.color, partner] } else { [player.color] }
 		}
 
 	get_active_player : Type.Game -> Type.Player
 	get_active_player = |game| get_player(game.players, game.active_player_idx)
 
-	get_moves_for_player : Type.Player, Type.PieceMap, List(Str) -> List(Type.Move)
-	get_moves_for_player = |player, piece_map, zone_colors|
-		LegalMove.get_moves_for_cards(Assoc.set_from_list(player.hand), piece_map, zone_colors, movers(player, piece_map))
+	get_moves_for_player : Type.Player, Type.Board, List(Str) -> List(Type.Move)
+	get_moves_for_player = |player, board, zone_colors|
+		LegalMove.get_moves_for_cards(Assoc.set_from_list(player.hand), board, zone_colors, movers(player, zone_colors, board))
 
-	turn_need_card : Type.PieceMap, List(Str), Type.Player -> Type.Player
-	turn_need_card = |piece_map, zone_colors, player| {
-		moves = get_moves_for_player(player, piece_map, zone_colors)
+	turn_need_card : Type.Board, List(Str), Type.Player -> Type.Player
+	turn_need_card = |board, zone_colors, player| {
+		moves = get_moves_for_player(player, board, zone_colors)
 		if List.is_empty(moves) {
 			turn = match player.turn {
 				TurnBegin => TurnNeedDiscard
@@ -111,10 +112,10 @@ Player :: [].{
 		}
 	}
 
-	maybe_finish_turn : Str, Type.PieceMap, List(Str), Type.Player -> Type.Player
-	maybe_finish_turn = |card, piece_map, zone_colors, player|
+	maybe_finish_turn : Str, Type.Board, List(Str), Type.Player -> Type.Player
+	maybe_finish_turn = |card, board, zone_colors, player|
 		if Config.is_move_again_card(card) {
-			turn_need_card(piece_map, zone_colors, player)
+			turn_need_card(board, zone_colors, player)
 		} else {
 			{ ..player, turn: TurnDone }
 		}
@@ -129,13 +130,13 @@ Player :: [].{
 
 	set_turn_to_need_card : Type.Game -> Type.Game
 	set_turn_to_need_card = |game|
-		update_active_player(|player| turn_need_card(game.piece_map, game.zone_colors, player), game)
+		update_active_player(|player| turn_need_card(game.board, game.zone_colors, player), game)
 
 	## The second half of a split seven: any OTHER piece, the rest of the way.
-	finish_seven_split : Type.PieceMap, List(Str), List(Str), I64, Type.PieceLocation -> Type.Turn
-	finish_seven_split = |piece_map, zone_colors, move_colors, distance, end_loc| {
+	finish_seven_split : Type.Board, List(Str), List(Str), I64, U64 -> Type.Turn
+	finish_seven_split = |board, zone_colors, move_colors, distance, end_loc| {
 		move_count = 7 - distance
-		moves = LegalMove.get_moves_for_move_type(FinishSplit(move_count, end_loc), piece_map, zone_colors, move_colors)
+		moves = LegalMove.get_moves_for_move_type(FinishSplit(move_count, end_loc), board, zone_colors, move_colors)
 		TurnNeedStartLoc(
 			{
 				play_type: FinishSeven(move_count),
@@ -154,14 +155,14 @@ Player :: [].{
 		{ ..player, get_out_credits: 0, turn }
 	}
 
-	finish_move : Type.PieceMap, List(Str), Type.Move, Type.Player -> Type.Player
-	finish_move = |piece_map, zone_colors, move, player|
+	finish_move : Type.Board, List(Str), Type.Move, Type.Player -> Type.Player
+	finish_move = |board, zone_colors, move, player|
 		match move.kind {
-			StartSplit(distance) => { ..player, turn: finish_seven_split(piece_map, zone_colors, movers(player, piece_map), distance, move.end) }
-			_ => maybe_finish_turn(LegalMove.get_card_for_move_type(move.kind), piece_map, zone_colors, player)
+			StartSplit(distance) => { ..player, turn: finish_seven_split(board, zone_colors, movers(player, zone_colors, board), distance, move.end) }
+			_ => maybe_finish_turn(LegalMove.get_card_for_move_type(move.kind), board, zone_colors, player)
 		}
 
-	set_start_location : Type.PieceLocation, Type.Player -> Type.Player
+	set_start_location : U64, Type.Player -> Type.Player
 	set_start_location = |start_loc, player|
 		match player.turn {
 			TurnNeedStartLoc(info) => {
@@ -179,7 +180,7 @@ Player :: [].{
 			_ => player
 		}
 
-	get_start_location : Type.Player -> Try(Type.PieceLocation, [NotFound])
+	get_start_location : Type.Player -> Try(U64, [NotFound])
 	get_start_location = |player|
 		match player.turn {
 			TurnNeedEndLoc(info) => Ok(info.start_location)
@@ -275,14 +276,14 @@ Player :: [].{
 		}
 	}
 
-	start_locs_for_player : Type.Player -> Assoc.AssocSet(Type.PieceLocation)
+	start_locs_for_player : Type.Player -> Assoc.AssocSet(U64)
 	start_locs_for_player = |player|
 		match player.turn {
 			TurnNeedStartLoc(info) => info.start_locs
 			_ => []
 		}
 
-	end_locs_for_player : Type.Player -> Assoc.AssocSet(Type.PieceLocation)
+	end_locs_for_player : Type.Player -> Assoc.AssocSet(U64)
 	end_locs_for_player = |player|
 		match player.turn {
 			TurnNeedEndLoc(info) => info.end_locs

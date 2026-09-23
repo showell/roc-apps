@@ -17,9 +17,10 @@
 # variants, plays them seed by seed, printing Arena.game_line after each game,
 # and ends with Arena.report. run_exp.sh builds one and runs it, each line of
 # its log stamped with the time.
-import Color
+import Board
 import Game
 import History
+import Piece
 import Player
 import Search
 import Strategy
@@ -74,7 +75,7 @@ Arena :: [].{
 
 	## A color's pieces in its pen.
 	in_pen : Type.Game, Str -> U64
-	in_pen = |g, color| List.count_if(g.piece_map, |e| e.value == color and e.key.zone == NormalColor(color) and List.contains(["HP1", "HP2", "HP3", "HP4"], e.key.id))
+	in_pen = |g, color| Piece.in_pen(g.board, Board.color_index(g.zone_colors, color))
 
 	red_in_pen : Type.Game -> U64
 	red_in_pen = |g| in_pen(g, "red")
@@ -189,16 +190,12 @@ Arena :: [].{
 
 	## A move along the fast track: from a fast-track square to another, or
 	## past the zone a piece leaving it the ordinary way would enter.
-	ft_hop : List(Str), Type.Move -> Bool
-	ft_hop = |zone_colors, m|
-		if forward(m) and m.start.id == "FT" {
-			match (m.start.zone, m.end.zone) {
-				(NormalColor(a), NormalColor(b)) => m.end.id == "FT" or b != Color.next_zone_color(a, zone_colors)
-				_ => Bool.False
-			}
-		} else {
-			Bool.False
-		}
+	ft_hop : Type.Move -> Bool
+	ft_hop = |m|
+		forward(m)
+		and Board.is_ft(m.start)
+		and m.end != Board.bullseye
+		and (Board.is_ft(m.end) or Board.zone(m.end) != (Board.zone(m.start) + 1) % Board.zones)
 
 	bump : List(Arena.Tally), U64, (Arena.Tally -> Arena.Tally) -> List(Arena.Tally)
 	bump = |ts, i, f| List.set(ts, i, f(List.get(ts, i) ?? no_tally)) ?? ts
@@ -246,8 +243,8 @@ Arena :: [].{
 			)
 			$played = $played or cards > 0
 			$discarded = $discarded or discards > 0
-			landings = List.count_if(moves, |m| forward(m) and m.end.id == "FT")
-			hops = List.count_if(moves, |m| ft_hop($g.zone_colors, m))
+			landings = List.count_if(moves, |m| forward(m) and Board.is_ft(m.end))
+			hops = List.count_if(moves, ft_hop)
 			turn_cards = cards_of($g, s.msgs)
 			$t = bump($t, a, |x| { ..x, cards: x.cards + cards, ft_landings: x.ft_landings + landings, ft_hops: x.ft_hops + hops, played: List.concat(x.played, turn_cards.played), discarded: List.concat(x.discarded, turn_cards.discarded) })
 			for c in [0, 1, 2, 3] {
@@ -331,12 +328,11 @@ Arena :: [].{
 # The fast track runs red, blue, green, purple: from red's FT to blue's is a
 # hop; from red's FT into blue's R4 is the ordinary way; backwards is neither.
 expect {
-	colors = ["red", "blue", "green", "purple"]
-	ft = |zone, id| { zone: NormalColor(zone), id }
-	Arena.ft_hop(colors, { kind: WithCard("2"), start: ft("red", "FT"), end: ft("blue", "FT") })
-	and Arena.ft_hop(colors, { kind: WithCard("3"), start: ft("red", "FT"), end: ft("green", "R4") })
-	and !Arena.ft_hop(colors, { kind: WithCard("2"), start: ft("red", "FT"), end: ft("blue", "R3") })
-	and !Arena.ft_hop(colors, { kind: Reverse("4"), start: ft("red", "FT"), end: ft("red", "L1") })
+	ft = Board.at(0, Board.ft)
+	Arena.ft_hop({ kind: WithCard("2"), start: ft, end: Board.at(1, Board.ft) })
+	and Arena.ft_hop({ kind: WithCard("3"), start: ft, end: Board.at(2, Board.r4) })
+	and !Arena.ft_hop({ kind: WithCard("2"), start: ft, end: Board.at(1, 20) })
+	and !Arena.ft_hop({ kind: Reverse("4"), start: ft, end: Board.at(0, 12) })
 }
 
 # A move with one end is made by its start click alone, and still counted:
@@ -344,7 +340,7 @@ expect {
 expect {
 	start = Game.begin_game(0, Normal, Solo)
 	players = Player.update_player(start.players, 0, |p| { ..p, hand: ["2"], turn: TurnBegin })
-	g0 = Player.set_turn_to_need_card({ ..start, piece_map: [{ key: { zone: NormalColor("red"), id: "L0" }, value: "red" }], players })
+	g0 = Player.set_turn_to_need_card({ ..start, board: Piece.board_of(start.zone_colors, [("red", "L0", "red")]), players })
 	found = Search.first_line(g0) ?? crash("no line")
-	Arena.moves_of(g0, found.msgs) == [{ kind: WithCard("2"), start: { zone: NormalColor("red"), id: "L0" }, end: { zone: NormalColor("red"), id: "L2" } }]
+	Arena.moves_of(g0, found.msgs) == [{ kind: WithCard("2"), start: Board.at(0, Board.l0), end: Board.at(0, 13) }]
 }

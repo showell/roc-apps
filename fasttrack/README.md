@@ -30,14 +30,15 @@ module of the same name and the same functions, in snake case:
 | Roc | from | what |
 |---|---|---|
 | `Type` | Type.elm | the vocabulary; Elm's tuples are records, its Maybe is Try |
-| `Config` `Setup` `Color` `Graph` `History` | the same | the board's squares, the cards, the starting setups, zone order, graph walks, undo |
+| `Config` `Setup` `Color` `History` | the same | the squares' names and places, the cards, the starting setups, zone order, undo |
+| `Board`, `Routes` | Graph.elm, LegalMove.elm's walks | every square a number from red's side, the translation table for the other colors, and every walk precomputed |
 | `Piece` `LegalMove` `Player` `Move` `Game` | the same | the rules |
 | `Page` | View.elm, Polygon.elm | the page as data |
 | `FastTrack` | Main.elm | the model, and the program the platform runs |
 | `Assoc` | pzp1997/assoc-list, erlandsona/assoc-set | ordered dict and set |
 | `ElmRandom` | elm/random | `initialSeed`, `int`, `step`, to the bit |
 | `Codes` | | a message as the number a click sends back |
-| `Strategy`, `Search`, `SquareValues`, `Board` | | the computer player: what it plays for, its turn search, the square values, square numbering |
+| `Strategy`, `Search`, `SquareValues` | | the computer player: what it plays for, its turn search, the square values |
 | `Arena`, `exp_*.roc` | | experiments on the strategy |
 | `Rank`, `Reach`, `gen_square_values.roc` | | Steve's ranking of the squares, and the generator that writes SquareValues from it |
 | `RulesTests` | tests/Example.elm | the Elm tests, test for test |
@@ -45,14 +46,23 @@ module of the same name and the same functions, in snake case:
 Two libraries are ported rather than replaced, because their behaviour
 reaches the game:
 
-- **Assoc keeps assoc-list's order**: `insert` removes and prepends. That
-  order is the order of the legal moves, and Elm's `==` on these lists, which
-  History's undo check uses, sees it.
+- **Assoc keeps assoc-list's order**: `insert` removes and prepends. The
+  sets of cards and squares a turn offers keep Elm's order; the computer's
+  choice does not depend on it (Search breaks ties by position).
 - **ElmRandom deals Elm's cards.** Elm compiles `*` to a double multiply, and
   `peel`'s product passes 2^53, so JavaScript rounds before taking the low 32
   bits. `peel` rounds through F64 at the same point; exact integer arithmetic
   deals entirely different cards. `web/elm_random_oracle.mjs` is the
   arithmetic as compiled JavaScript, and its draws are pinned in the expects.
+
+**The board is 89 numbers, not Elm's dict of named squares** (`Board.roc`):
+0-87 zone by zone from red's side, 88 the bullseye, and `Type.Board` says
+who stands on each. The rules are written once, as red sees them: `Routes`
+holds every walk a card can make from every square, and a move is a lookup
+plus a check that the walk passes no piece of its own color. Names appear
+only at the edges -- the page, the click codes and the tests. The Elm tests
+pass on it unchanged but for playing on four zones, and 200 four-champion
+games play out exactly as on Elm's representation, 5.6x faster.
 
 Setup.elm's constant developer switch is a parameter of `Game.begin_game`,
 which is how the page and the checks start from its scenarios.

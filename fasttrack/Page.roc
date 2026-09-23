@@ -14,6 +14,7 @@
 # centre.
 import pf.Wire
 import Assoc
+import Board
 import Codes
 import Color
 import Config
@@ -172,11 +173,12 @@ Page :: [].{
 			BullsEyeZone => "black"
 			NormalColor(color) => color
 		}
-		my_piece = Piece.get_piece(game.piece_map, piece_location)
+		square = Board.index_of(game.zone_colors, piece_location)
+		my_piece = Piece.get_piece(game.board, game.zone_colors, square)
 		is_me = my_piece == Ok(active_player.color)
-		is_selected_piece = Player.get_start_location(active_player) == Ok(piece_location)
-		is_start_loc = Assoc.set_member(Player.start_locs_for_player(active_player), piece_location)
-		is_reachable = Assoc.set_member(Player.end_locs_for_player(active_player), piece_location)
+		is_selected_piece = Player.get_start_location(active_player) == Ok(square)
+		is_start_loc = Assoc.set_member(Player.start_locs_for_player(active_player), square)
+		is_reachable = Assoc.set_member(Player.end_locs_for_player(active_player), square)
 		fill =
 			if is_selected_piece {
 				"lightblue"
@@ -193,9 +195,9 @@ Page :: [].{
 			if !interactive {
 				0
 			} else if is_start_loc {
-				Codes.start_location(game.zone_colors, piece_location)
+				Codes.start_location(square)
 			} else if is_reachable {
-				Codes.end_location(game.zone_colors, piece_location)
+				Codes.end_location(square)
 			} else {
 				0
 			}

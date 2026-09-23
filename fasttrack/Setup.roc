@@ -5,20 +5,19 @@
 # board out for one scenario (splitting sevens, trading jacks, a forced
 # reverse); a game is begun with one, so a check can start from any of them.
 import Config
-import Type
 
 Setup :: [].{
 	InitSetup : [Normal, ForcedToReverse, Discard, Cover, BullsEye, SevenSplit]
 
-	starting_locations : Setup.InitSetup, Str -> List(Type.PieceLocation)
-	starting_locations = |init_setup, color| {
-		ids = match init_setup {
+	## Square ids in the color's own zone.
+	starting_locations : Setup.InitSetup -> List(Str)
+	starting_locations = |init_setup| {
+		match init_setup {
 			ForcedToReverse => ["HP1", "B1", "B3", "R0"]
 			SevenSplit => ["L0", "L2", "R2", "B2"]
 			Cover => ["HP1", "HP2", "HP3", "B2"]
 			_ => Config.holding_pen_locations
 		}
-		List.map(ids, |id| { zone: NormalColor(color), id })
 	}
 
 	starting_hand : Setup.InitSetup, Str -> List(Str)

@@ -1,50 +1,71 @@
 # LegalMove -- every move a card allows, from LegalMove.elm.
 #
-# A move is a walk over the board's graph: `get_next_locs` and `get_prev_locs`
-# are the edges out of a square, which depend on the piece's color, the card
-# (leaving the pen, leaving the bullseye, going backwards) and what else is on
-# the board, since a piece may not pass its own color.
+# A move is a walk from a square: Routes holds every walk of every length,
+# as a piece sees the board from its own zone, and the board says which are
+# open -- a piece may not pass or land on its own color. A card says whether
+# a walk may leave the pen (an A, joker or 6) or the bullseye (a J, Q or K),
+# and a walk starting on a fast-track square may take the fast track.
 #
 # `movers` are the colors whose pieces the player may move (Player.movers):
 # one in a game for one, two in a partnership. Each piece walks its own
 # color's way home; the fast track's obligation and the split seven's second
 # piece are the movers' together.
-import Assoc
-import Color
+#
+# The order moves are listed in is Elm's where it decides anything: a split
+# seven's partial moves before its full ones, a jack's step before its
+# trades (Player.get_player_move_type takes the first of two).
+import Board
 import Config
-import Graph
 import Piece
+import Routes
 import Type
 
 LegalMove :: [].{
-	## Only while splitting a seven, so no card here can leave the pen.
-	get_can_go_n_spaces : Type.PieceMap, Type.PieceLocation, List(Str), I64, List(Str) -> Bool
-	get_can_go_n_spaces = |piece_map, loc, zone_colors, n, movers| {
-		can_fast_track = loc.id == "FT"
-		piece_color = Piece.get_the_piece(piece_map, loc)
-		can_move = can_fast_track or !Piece.any_on_fast_track(piece_map, movers)
-		if can_move {
-			params = {
-				reverse_mode: Bool.False,
-				can_fast_track,
-				can_leave_pen: Bool.False,
-				can_leave_bulls_eye: Bool.False,
-				piece_color,
-				piece_map,
-				zone_colors,
-			}
-			Graph.can_travel_n_edges(|l| get_next_locs(params, l), n, loc)
+	## Where the piece of color `c` on `start` lands after `n` steps: once
+	## for every open walk, in Routes' order.
+	ends : Type.Board, U64, U64, I64, Bool, Bool, Bool -> List(U64)
+	ends = |board, c, start, n, reverse, leave_pen, leave_bulls|
+		if n <= 0 or n > 10 {
+			[]
+		} else if !reverse and ((Board.is_pen(start) and !leave_pen) or (start == Board.bullseye and !leave_bulls)) {
+			[]
 		} else {
-			Bool.False
+			r = Board.relative(c, start)
+			walks = if reverse { Routes.backward_walks(r, I64.to_u64_wrap(n)) } else { Routes.forward_walks(r, I64.to_u64_wrap(n)) }
+			List.join_map(
+				walks,
+				|walk|
+					if List.any(walk, |x| Piece.holds(board, Board.absolute(c, x), c)) {
+						[]
+					} else {
+						[Board.absolute(c, List.last(walk) ?? crash("LegalMove: an empty walk"))]
+					},
+			)
 		}
-	}
+
+	## Whether the piece on `s` can go `n` more squares, for the second part
+	## of a split seven: no leaving the pen or the bullseye.
+	get_can_go_n_spaces : Type.Board, U64, List(Str), I64, List(Str) -> Bool
+	get_can_go_n_spaces = |board, s, zone_colors, n, movers| can_go(board, s, n, List.map(movers, |m| Board.color_index(zone_colors, m)))
+
+	can_go : Type.Board, U64, I64, List(U64) -> Bool
+	can_go = |board, s, n, movers|
+		match Piece.at(board, s) {
+			Err(_) => Bool.False
+			Ok(c) =>
+				if Board.is_ft(s) or !Piece.any_on_fast_track(board, movers) {
+					!List.is_empty(ends(board, c, s, n, Bool.False, Bool.False, Bool.False))
+				} else {
+					Bool.False
+				}
+		}
 
 	## Every forward move the hand allows; when there is none, every move
 	## backwards instead.
-	get_moves_for_cards : Assoc.AssocSet(Str), Type.PieceMap, List(Str), List(Str) -> List(Type.Move)
-	get_moves_for_cards = |cards, piece_map, zone_colors, movers| {
-		moves_for = |make_move_type|
-			List.join_map(cards, |card| get_moves_for_move_type(make_move_type(card), piece_map, zone_colors, movers))
+	get_moves_for_cards : List(Str), Type.Board, List(Str), List(Str) -> List(Type.Move)
+	get_moves_for_cards = |cards, board, zone_colors, movers| {
+		m = List.map(movers, |c| Board.color_index(zone_colors, c))
+		moves_for = |make_move_type| List.join_map(cards, |card| moves_for_type(make_move_type(card), board, m))
 		forward_moves = moves_for(|card| if card == "4" { Reverse(card) } else { WithCard(card) })
 		if List.is_empty(forward_moves) {
 			moves_for(|card| Reverse(card))
@@ -53,149 +74,75 @@ LegalMove :: [].{
 		}
 	}
 
-	get_moves_for_move_type : Type.MoveType, Type.PieceMap, List(Str), List(Str) -> List(Type.Move)
-	get_moves_for_move_type = |move_type, piece_map, zone_colors, movers| {
-		start_locs = match move_type {
-			FinishSplit(_, exclude_loc) => Piece.team_other_non_pen_pieces(piece_map, movers, exclude_loc)
-			_ => Piece.team_movable_pieces(piece_map, movers)
+	get_moves_for_move_type : Type.MoveType, Type.Board, List(Str), List(Str) -> List(Type.Move)
+	get_moves_for_move_type = |move_type, board, zone_colors, movers| moves_for_type(move_type, board, List.map(movers, |c| Board.color_index(zone_colors, c)))
+
+	moves_for_type : Type.MoveType, Type.Board, List(U64) -> List(Type.Move)
+	moves_for_type = |move_type, board, movers| {
+		starts = match move_type {
+			FinishSplit(_, exclude) => Piece.team_other_non_pen_pieces(board, movers, exclude)
+			_ => Piece.team_movable_pieces(board, movers)
 		}
-		List.join_map(start_locs, |start_loc| get_moves_from_location(move_type, piece_map, zone_colors, start_loc, movers))
+		List.join_map(starts, |start| moves_from(move_type, board, start, movers))
 	}
 
-	get_moves_from_location : Type.MoveType, Type.PieceMap, List(Str), Type.PieceLocation, List(Str) -> List(Type.Move)
-	get_moves_from_location = |move_type, piece_map, zone_colors, start_loc, movers| {
-		id = start_loc.id
-		can_fast_track = id == "FT"
-		piece_color = Piece.get_the_piece(piece_map, start_loc)
-		active_card = get_card_for_move_type(move_type)
-		can_leave_bulls_eye = List.contains(["J", "Q", "K"], active_card) and id == "bullseye"
-		can_leave_pen = List.contains(["A", "joker", "6"], active_card)
-		reverse_mode = match move_type {
-			Reverse(_) => Bool.True
-			_ => active_card == "4"
-		}
-		moves_left = move_count_for_move_type(move_type, id)
-		can_move = can_fast_track or !Piece.any_on_fast_track(piece_map, movers)
-		if can_move {
-			params = { reverse_mode, can_fast_track, can_leave_pen, can_leave_bulls_eye, piece_color, piece_map, zone_colors }
-			if move_type == WithCard("7") {
-				get_moves_for_seven(params, start_loc, movers)
-			} else if move_type == WithCard("J") {
-				get_moves_for_jack(params, start_loc)
-			} else {
-				List.map(end_locations(params, start_loc, moves_left), |end_loc| { kind: move_type, start: start_loc, end: end_loc })
-			}
-		} else {
-			[]
-		}
-	}
+	get_moves_from_location : Type.MoveType, Type.Board, List(Str), U64, List(Str) -> List(Type.Move)
+	get_moves_from_location = |move_type, board, zone_colors, start, movers| moves_from(move_type, board, start, List.map(movers, |c| Board.color_index(zone_colors, c)))
 
-	can_finish_split : List(Str), Assoc.AssocSet(Type.PieceLocation), Type.PieceMap, I64, Type.Move, List(Str) -> Bool
-	can_finish_split = |zone_colors, other_locs, piece_map, count, move, movers| {
-		modified_piece_map = Piece.move_piece(move, piece_map)
-		List.any(other_locs, |other_loc| get_can_go_n_spaces(modified_piece_map, other_loc, zone_colors, count, movers))
-	}
-
-	## A jack moves one square, or trades places with a piece of another
-	## color on the open track.
-	get_moves_for_jack : Type.FindLocParams, Type.PieceLocation -> List(Type.Move)
-	get_moves_for_jack = |params, start_loc| {
-		piece_color = Piece.get_the_piece(params.piece_map, start_loc)
-		forward_moves = List.map(end_locations(params, start_loc, 1), |end_loc| { kind: WithCard("J"), start: start_loc, end: end_loc })
-		trade_moves =
-			if Piece.is_normal_loc(start_loc) {
-				List.map(Piece.swappable_locs(params.piece_map, piece_color), |end_loc| { kind: JackTrade, start: start_loc, end: end_loc })
-			} else {
-				[]
-			}
-		List.concat(forward_moves, trade_moves)
-	}
-
-	## A seven moves one piece seven, or splits between two: the first part
-	## is offered only if some other piece can then finish the split.
-	get_moves_for_seven : Type.FindLocParams, Type.PieceLocation, List(Str) -> List(Type.Move)
-	get_moves_for_seven = |params, start_loc, movers| {
-		piece_map = params.piece_map
-		full_moves = List.map(end_locations(params, start_loc, 7), |end_loc| { kind: WithCard("7"), start: start_loc, end: end_loc })
-		other_locs = Piece.team_other_non_pen_pieces(piece_map, movers, start_loc)
-		if List.is_empty(other_locs) {
-			full_moves
-		} else {
-			partial_moves = List.join_map(
-				[1, 2, 3, 4, 5, 6],
-				|move_count| {
-					candidates =
-						end_locations(params, start_loc, move_count)
-						.drop_if(|end_loc| end_loc == { zone: BullsEyeZone, id: "bullseye" })
-						.map(|end_loc| { kind: StartSplit(move_count), start: start_loc, end: end_loc })
-					List.keep_if(candidates, |move| can_finish_split(params.zone_colors, other_locs, piece_map, 7 - move_count, move, movers))
-				},
-			)
-			List.concat(partial_moves, full_moves)
-		}
-	}
-
-	end_locations : Type.FindLocParams, Type.PieceLocation, I64 -> List(Type.PieceLocation)
-	end_locations = |params, start_loc, moves_left|
-		if params.reverse_mode {
-			Graph.get_nodes_n_edges_away(|l| get_prev_locs(params, l), moves_left, start_loc)
-		} else {
-			Graph.get_nodes_n_edges_away(|l| get_next_locs(params, l), moves_left, start_loc)
-		}
-
-	get_next_locs : Type.FindLocParams, Type.PieceLocation -> List(Type.PieceLocation)
-	get_next_locs = |params, loc| {
-		piece_color = params.piece_color
-		free = |locs| List.keep_if(locs, |l| is_loc_free(params.piece_map, piece_color, l))
-		id = loc.id
-		match loc.zone {
-			BullsEyeZone =>
-				if params.can_leave_bulls_eye {
-					free([{ zone: NormalColor(Color.prev_zone_color(piece_color, params.zone_colors)), id: "FT" }])
-				} else {
-					[]
-				}
-			NormalColor(zone_color) => {
-				next_zone = NormalColor(Color.next_zone_color(zone_color, params.zone_colors))
-				if Config.is_holding_pen_id(id) {
-					if params.can_leave_pen { free([{ zone: loc.zone, id: "L0" }]) } else { [] }
-				} else if id == "FT" {
-					if piece_color == zone_color {
-						if params.can_fast_track {
-							free([{ zone: next_zone, id: "FT" }, { zone: next_zone, id: "R4" }, { zone: BullsEyeZone, id: "bullseye" }])
-						} else {
-							free([{ zone: next_zone, id: "R4" }, { zone: BullsEyeZone, id: "bullseye" }])
-						}
-					} else if params.can_fast_track and NormalColor(piece_color) != next_zone {
-						free([{ zone: next_zone, id: "FT" }, { zone: next_zone, id: "R4" }])
+	moves_from : Type.MoveType, Type.Board, U64, List(U64) -> List(Type.Move)
+	moves_from = |move_type, board, start, movers|
+		match Piece.at(board, start) {
+			Err(_) => []
+			Ok(c) =>
+				if Board.is_ft(start) or !Piece.any_on_fast_track(board, movers) {
+					card = get_card_for_move_type(move_type)
+					reverse = match move_type {
+						Reverse(_) => Bool.True
+						_ => card == "4"
+					}
+					leave_pen = List.contains(["A", "joker", "6"], card)
+					leave_bulls = List.contains(["J", "Q", "K"], card) and start == Board.bullseye
+					n = move_count_for_move_type(move_type, Board.is_pen(start))
+					if move_type == WithCard("7") {
+						moves_for_seven(board, c, start, movers)
+					} else if move_type == WithCard("J") {
+						steps = List.map(ends(board, c, start, 1, reverse, leave_pen, leave_bulls), |end| { kind: WithCard("J"), start, end })
+						trades = if Board.is_track(start) { List.map(Piece.swappable_locs(board, c), |end| { kind: JackTrade, start, end }) } else { [] }
+						List.concat(steps, trades)
 					} else {
-						free([{ zone: next_zone, id: "R4" }])
+						List.map(ends(board, c, start, n, reverse, leave_pen, leave_bulls), |end| { kind: move_type, start, end })
 					}
 				} else {
-					free(List.map(Config.next_ids_in_zone(id, piece_color, zone_color), |next_id| { zone: NormalColor(zone_color), id: next_id }))
+					[]
 				}
-			}
+		}
+
+	## A seven moves one piece seven, or splits between two: the first part
+	## is offered only if some other piece can then finish the split, and
+	## never onto the bullseye.
+	moves_for_seven : Type.Board, U64, U64, List(U64) -> List(Type.Move)
+	moves_for_seven = |board, c, start, movers| {
+		full = List.map(ends(board, c, start, 7, Bool.False, Bool.False, Bool.False), |end| { kind: WithCard("7"), start, end })
+		others = Piece.team_other_non_pen_pieces(board, movers, start)
+		if List.is_empty(others) {
+			full
+		} else {
+			partial = List.join_map(
+				[1, 2, 3, 4, 5, 6],
+				|count| {
+					candidates = List.map(List.drop_if(ends(board, c, start, count, Bool.False, Bool.False, Bool.False), |end| end == Board.bullseye), |end| { kind: StartSplit(count), start, end })
+					List.keep_if(candidates, |move| can_finish_split(board, others, 7 - count, move, movers))
+				},
+			)
+			List.concat(partial, full)
 		}
 	}
 
-	get_prev_locs : Type.FindLocParams, Type.PieceLocation -> List(Type.PieceLocation)
-	get_prev_locs = |params, loc|
-		match loc.zone {
-			BullsEyeZone => []
-			NormalColor(zone_color) => {
-				free = |locs| List.keep_if(locs, |l| is_loc_free(params.piece_map, params.piece_color, l))
-				id = loc.id
-				if Config.is_holding_pen_id(id) {
-					[]
-				} else if Config.is_base_id(id) {
-					[]
-				} else if id == "R4" {
-					free([{ zone: NormalColor(Color.prev_zone_color(zone_color, params.zone_colors)), id: "FT" }])
-				} else {
-					free([{ zone: NormalColor(zone_color), id: Config.prev_id_in_zone(id) }])
-				}
-			}
-		}
+	can_finish_split : Type.Board, List(U64), I64, Type.Move, List(U64) -> Bool
+	can_finish_split = |board, others, count, move, movers| {
+		moved = Piece.move_piece(move, board)
+		List.any(others, |other| can_go(moved, other, count, movers))
+	}
 
 	get_card_for_play_type : Type.PlayType -> Str
 	get_card_for_play_type = |play_type|
@@ -214,22 +161,15 @@ LegalMove :: [].{
 			JackTrade => "J"
 		}
 
-	move_count_for_move_type : Type.MoveType, Str -> I64
-	move_count_for_move_type = |move_type, id|
+	move_count_for_move_type : Type.MoveType, Bool -> I64
+	move_count_for_move_type = |move_type, in_pen|
 		match move_type {
-			WithCard(card) => Config.move_count_for_card(card, id)
-			Reverse(card) => Config.move_count_for_card(card, id)
+			WithCard(card) => Config.move_count_for_card(card, in_pen)
+			Reverse(card) => Config.move_count_for_card(card, in_pen)
 			StartSplit(count) => count
 			FinishSplit(count, _) => count
 			# never asked of a trade
 			JackTrade => 0
 		}
 
-	## Free unless a piece of the mover's own color is there.
-	is_loc_free : Type.PieceMap, Str, Type.PieceLocation -> Bool
-	is_loc_free = |piece_map, piece_color, loc|
-		match Piece.get_piece(piece_map, loc) {
-			Ok(color) => color != piece_color
-			Err(_) => Bool.True
-		}
 }

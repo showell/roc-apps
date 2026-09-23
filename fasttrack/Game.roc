@@ -6,6 +6,7 @@
 #
 # Elm's `beginActiveTurn` also ran WhatIf.debugWhatIf, which only logged; the
 # computer player is Search.roc. Elm never said who won; `winner` does.
+import Board
 import Color
 import Config
 import History
@@ -25,7 +26,7 @@ Game :: [].{
 		begin_active_turn(
 			{
 				zone_colors,
-				piece_map: Piece.config_pieces(init_setup, zone_colors),
+				board: Piece.config_pieces(init_setup, zone_colors),
 				players: Player.config_players(init_setup, zone_colors, teams, millis),
 				active_player_idx: 0,
 				num_players,
@@ -67,10 +68,11 @@ Game :: [].{
 	winner = |game| {
 		# One arm per partnership style: an or-pattern that binds `partner`
 		# crashes the compiler (nightly 09-07).
-		both_home = |color, partner| Piece.all_home(game.piece_map, color) and Piece.all_home(game.piece_map, partner)
+		home = |color| Piece.all_home(game.board, Board.color_index(game.zone_colors, color))
+		both_home = |color, partner| home(color) and home(partner)
 		done = |player|
 			match player.team {
-				Solo => if Piece.all_home(game.piece_map, player.color) { Ok(player.color) } else { Err(NoWinner) }
+				Solo => if home(player.color) { Ok(player.color) } else { Err(NoWinner) }
 				Partner(partner) => if both_home(player.color, partner) { Ok(Str.concat(player.color, Str.concat(" and ", partner))) } else { Err(NoWinner) }
 				PartnerOnceHome(partner) => if both_home(player.color, partner) { Ok(Str.concat(player.color, Str.concat(" and ", partner))) } else { Err(NoWinner) }
 			}
@@ -83,7 +85,7 @@ Game :: [].{
 	begin_active_turn : Type.Game -> Type.Game
 	begin_active_turn = |game| Player.set_turn_to_need_card(Player.replenish_hand(game))
 
-	handle_start_loc_click : Type.PieceLocation, Type.Game -> Type.Game
+	handle_start_loc_click : U64, Type.Game -> Type.Game
 	handle_start_loc_click = |location, game|
 		match Player.get_active_player(game).turn {
 			TurnNeedStartLoc(_) => Move.maybe_auto_move(location, Player.update_active_player(|p| Player.set_start_location(location, p), game))
@@ -91,7 +93,7 @@ Game :: [].{
 			_ => game
 		}
 
-	handle_end_loc_click : Type.PieceLocation, Type.Game -> Type.Game
+	handle_end_loc_click : U64, Type.Game -> Type.Game
 	handle_end_loc_click = |end_loc, game| {
 		active_player = Player.get_active_player(game)
 		match active_player.turn {
