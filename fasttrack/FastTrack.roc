@@ -3,116 +3,43 @@
 # The model is the game, its undo history, and who sits in each seat. A click
 # arrives as a code (Codes.roc); a code that decodes to nothing leaves the
 # game as it was. A computer's seat plays through the page's tick: the view
-# asks for Codes.agent_step, and each one is the computer's next click.
+# asks for Codes.agent_step, and each one is the computer's next click. The
+# computer plans its turn once (Search.best_line) and plays the plan a click
+# a tick; a refilled hand, which ends a plan, gets a new one.
 import pf.Wire
-import Agent
 import Codes
 import Game
 import History
-import Overlay
 import Page
-import Rank
-import Reach
+import Player
+import Search
 import Setup
+import Strategy
 import Type
 
 FastTrack :: [].{
-	## A computer seat carries its weights and the tables they make, built
-	## once rather than every click.
-	Seat : [Human, Computer(Agent.Knowledge), Naive]
+	Seat : [Human, Computer(Strategy.Strategy)]
 
-	## `overlays` holds what the analysis overlay puts on the board, for each
-	## of `overlay_variants` and each color in the game's color order, worked
-	## out once; `show_overlay` is 0 for none, or which variant the page shows,
-	## counting from 1.
+	## `plan` is the rest of the computer's current plan: the clicks it has
+	## chosen and not yet played.
 	Model : {
 		game : Type.Game,
 		history : History.History(Type.Game),
 		seats : List(FastTrack.Seat),
-		overlays : List(List(List(Overlay.Mark))),
-		show_overlay : U64,
+		plan : List(Type.GameMsg),
 	}
 
-	## What the analysis button steps through, after "off".
-	overlay_variants : List({ title : Str, kind : [Cards({ face : Bool, peak : Str }), Heat(Str)] })
-	overlay_variants = [
-		{ title: "cards to B4", kind: Cards({ face: Bool.False, peak: "B4" }) },
-		{ title: "cards to B4, free face card", kind: Cards({ face: Bool.True, peak: "B4" }) },
-		{ title: "cards to B3, free face card", kind: Cards({ face: Bool.True, peak: "B3" }) },
-		{ title: "heat map (rank to B3)", kind: Heat("B3") },
-		{ title: "heat map (rank to B1)", kind: Heat("B1") },
-	]
-
-	## One overlay for one color, from that color's grid (Reach.grid).
-	overlay_for : List(Reach.Move), List(Str), Str, [Cards({ face : Bool, peak : Str }), Heat(Str)] -> List(Overlay.Mark)
-	overlay_for = |grid, zone_colors, color, kind|
-		match kind {
-			Cards(c) => Overlay.cards(Reach.fewest_in(grid, zone_colors, color, c.face, c.peak, Reach.cards))
-			Heat(peak) => {
-				# The tiers and ways the hover shows, with the ranking's deck: no joker.
-				no_joker = List.drop_if(Reach.cards, |c| c == "joker")
-				Overlay.heat(Rank.places_in(grid, zone_colors, color, peak), Reach.fewest_in(grid, zone_colors, color, Bool.True, peak, no_joker))
-			}
-		}
-
-	## Two bits a seat, the first seat lowest: 0 a person, 1 the computer, 2
-	## the naive player (Agent.next_msg).
-	seats_of : U32, List(Str) -> List(FastTrack.Seat)
-	seats_of = |bits, zone_colors|
+	## Two bits a seat, the first seat lowest: 0 a person, anything else the
+	## computer, playing Strategy.champion.
+	seats_of : U32 -> List(FastTrack.Seat)
+	seats_of = |bits|
 		List.map(
 			[0, 1, 2, 3],
-			|i|
-				match U32.bitwise_and(U32.shr_zf_wrap(bits, 2 * i), 3) {
-					1 => Computer(Agent.knowledge(Agent.default_weights, zone_colors))
-					2 => Naive
-					_ => Human
-				},
+			|i| if U32.bitwise_and(U32.shr_zf_wrap(bits, 2 * i), 3) == 0 { Human } else { Computer(Strategy.champion) },
 		)
 
 	seat : FastTrack.Model -> FastTrack.Seat
 	seat = |model| List.get(model.seats, model.game.active_player_idx) ?? Human
-
-	## One weight of one computer seat: `factor` 0 is danger, 1 out of the
-	## pen, 2 home, 3 the cost of a fast-track hop, 4 the wait in the pen,
-	## 5 the cost of a 4 played backwards, 6 to 15 the regions (Agent.tune_region)
-	## (Agent.Weights). Anything else, or a seat that is not the
-	## computer's, is left alone.
-	tune : FastTrack.Model, U32, U32, U32 -> FastTrack.Model
-	tune = |model, seat_idx, factor, value| {
-		# Signed: the page's JavaScript hands a negative weight over as the
-		# U32 with the same bits.
-		v = if value >= 2147483648 { U32.to_i64(value) - 4294967296 } else { U32.to_i64(value) }
-		retuned = List.map_with_index(
-			model.seats,
-			|s, i|
-				match s {
-					Computer(k) if i == U32.to_u64(seat_idx) => {
-						w = k.weights
-						weights =
-							if factor == 0 {
-								{ ..w, danger: v }
-							} else if factor == 1 {
-								{ ..w, out_of_pen: v }
-							} else if factor == 2 {
-								{ ..w, home: v }
-							} else if factor == 3 {
-								{ ..w, hop: v }
-							} else if factor == 4 {
-								{ ..w, pen: v }
-							} else if factor == 5 {
-								{ ..w, back4: v }
-							} else if factor >= 6 and factor <= 15 {
-								{ ..w, regions: Agent.tune_region(w.regions, factor - 6, v) }
-							} else {
-								w
-							}
-						Computer(Agent.knowledge(weights, model.game.zone_colors))
-					}
-					_ => s
-				},
-		)
-		{ ..model, seats: retuned }
-	}
 
 	## The computer's seat, unless someone has won.
 	agent_to_move : FastTrack.Model -> Bool
@@ -128,51 +55,51 @@ FastTrack :: [].{
 	init = |millis, setup, seat_bits, teams| {
 		team_style = if teams == 1 { Anytime } else if teams == 2 { OnceHome } else { Solo }
 		game = Game.begin_game(millis, List.get(setups, U32.to_u64(setup)) ?? Normal, team_style)
-		{
-			game,
-			history: History.reset(game),
-			seats: seats_of(seat_bits, game.zone_colors),
-			overlays: {
-				grids = List.map(game.zone_colors, |color| { color, grid: Reach.grid(game.zone_colors, color) })
-				List.map(overlay_variants, |v| List.map(grids, |g| overlay_for(g.grid, game.zone_colors, g.color, v.kind)))
-			},
-			show_overlay: 0,
-		}
+		{ game, history: History.reset(game), seats: seats_of(seat_bits), plan: [] }
 	}
+
+	## The computer's next click, and the rest of its plan: a finished turn
+	## is passed on; otherwise the plan in hand, or a new one.
+	next_click : FastTrack.Model, Strategy.Strategy -> Try({ msg : Type.GameMsg, rest : List(Type.GameMsg) }, [NoPlay])
+	next_click = |model, strategy|
+		if Player.get_active_player(model.game).turn == TurnDone {
+			Ok({ msg: RotateBoard, rest: [] })
+		} else {
+			plan =
+				if List.is_empty(model.plan) {
+					match Search.best_line(strategy, model.game) {
+						Ok(best) => best.line.msgs
+						Err(_) => []
+					}
+				} else {
+					model.plan
+				}
+			match plan {
+				[first, .. as rest] => Ok({ msg: first, rest })
+				[] => Err(NoPlay)
+			}
+		}
 
 	## A person's click only in a person's seat, the tick only in the
 	## computer's, and nothing once someone has won: a stale click is ignored
 	## rather than played.
 	update : FastTrack.Model, U32 -> FastTrack.Model
-	update = |model, code|
-		if code == Codes.toggle_overlay {
-			{ ..model, show_overlay: U64.rem_by(model.show_overlay + 1, List.len(overlay_variants) + 1) }
-		} else {
-			play(model, code)
-		}
-
-	play : FastTrack.Model, U32 -> FastTrack.Model
-	play = |model, code| {
-		msg =
-			if code == Codes.agent_step {
-				if agent_to_move(model) {
-					kind = match seat(model) {
-						Computer(k) => Computer(k)
-						_ => Naive
-					}
-					Try.map_err(Agent.next_msg(kind, model.game), |_| Ignored)
-				} else {
-					Err(Ignored)
+	update = |model, code| {
+		step =
+			if code == Codes.agent_step and agent_to_move(model) {
+				match seat(model) {
+					Computer(strategy) => Try.map_err(next_click(model, strategy), |_| Ignored)
+					Human => Err(Ignored)
 				}
-			} else if seat(model) == Human and Try.is_err(Game.winner(model.game)) {
-				Try.map_err(Codes.decode(model.game.zone_colors, code), |_| Ignored)
+			} else if code != Codes.agent_step and seat(model) == Human and Try.is_err(Game.winner(model.game)) {
+				Try.map_ok(Try.map_err(Codes.decode(model.game.zone_colors, code), |_| Ignored), |m| { msg: m, rest: [] })
 			} else {
 				Err(Ignored)
 			}
-		match msg {
-			Ok(m) => {
-				(history, game) = Game.update_game(m, model.history, model.game)
-				{ ..model, game, history }
+		match step {
+			Ok(s) => {
+				(history, game) = Game.update_game(s.msg, model.history, model.game)
+				{ ..model, game, history, plan: s.rest }
 			}
 			Err(_) => model
 		}
@@ -188,22 +115,6 @@ FastTrack :: [].{
 				show_undo: human and History.can_undo(model.history, model.game),
 				tick: if agent_to_move(model) { Codes.agent_step } else { 0 },
 				winner: Game.winner(model.game) ?? "",
-				overlay:
-					if model.show_overlay == 0 {
-						[]
-					} else {
-						List.get(List.get(model.overlays, model.show_overlay - 1) ?? [], model.game.active_player_idx) ?? []
-					},
-				overlay_title: match List.get(overlay_variants, model.show_overlay) {
-					Ok(next) => "show ${next.title}"
-					Err(_) => "hide the analysis"
-				},
-				overlay_showing:
-					if model.show_overlay == 0 {
-						""
-					} else {
-						(List.get(overlay_variants, model.show_overlay - 1) ?? { title: "", kind: Heat("B3") }).title
-					},
 			},
 		)
 	}
@@ -211,43 +122,25 @@ FastTrack :: [].{
 	program : {
 		init : U64, U32, U32, U32 -> Box(FastTrack.Model),
 		update : Box(FastTrack.Model), U32 -> Box(FastTrack.Model),
-		tune : Box(FastTrack.Model), U32, U32, U32 -> Box(FastTrack.Model),
 		view : Box(FastTrack.Model) -> Box(Wire.View),
 		release : Box(Wire.View) -> {},
 	}
 	program = {
 		init: |millis, setup, seat_bits, teams| Box.box(init(millis, setup, seat_bits, teams)),
 		update: |b, code| Box.box(update(Box.unbox(b), code)),
-		tune: |b, seat_idx, factor, value| Box.box(tune(Box.unbox(b), seat_idx, factor, value)),
 		view: |b| Box.box(view(Box.unbox(b))),
 		release: |_view| {},
 	}
 }
 
-# Tuning reaches the seat's tables: a dear hop makes red's own FT farther.
+# Four computers play a game to its end, a click a tick, taking turns in order.
 expect {
-	model = FastTrack.tune(FastTrack.init(0, 0, 1, 0), 0, 3, 14)
-	match List.first(model.seats) {
-		Ok(Computer(k)) => k.weights.hop == 14 and List.get(List.first(k.steps) ?? [], 16) == Ok(32)
-		_ => Bool.False
+	start = FastTrack.init(3, 0, 0x55, 0)
+	var $m = start
+	var $n = 0
+	while Try.is_err(Game.winner($m.game)) and $n < 5000 {
+		$m = FastTrack.update($m, Codes.agent_step)
+		$n = $n + 1
 	}
-}
-
-# A negative weight arrives as the U32 with its bits: -44 is 4294967252.
-expect {
-	model = FastTrack.tune(FastTrack.init(0, 0, 1, 0), 0, 8, 4294967252)
-	match List.first(model.seats) {
-		Ok(Computer(k)) => k.weights.regions.out_safely == -44
-		_ => Bool.False
-	}
-}
-
-# The page's view with the analysis overlay off, on each variant, and off
-# again: every step renders (show_overlay 0 once underflowed here).
-expect {
-	start = FastTrack.init(0, 0, 0, 0)
-	List.all([0, 1, 2, 3, 4, 5, 6], |n| {
-		m = List.fold(List.repeat(0, n), start, |acc, _| FastTrack.update(acc, Codes.toggle_overlay))
-		List.len(FastTrack.view(m).slots) == 89
-	})
+	Try.is_ok(Game.winner($m.game))
 }

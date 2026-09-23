@@ -4,7 +4,8 @@
 #
 #   fasttrack/build.sh          http://<box>:9210/fasttrack/
 #
-# In order: the Roc expects (the rules, Example.elm's tests, the codes); the
+# In order: SquareValues.roc against its generator; the Roc expects (the
+# rules, Example.elm's tests, the codes, the strategy); the
 # wasm host; the app, with LLVM, and again with the dev backend; the page's
 # reader, generated from the platform's types by glue/JsGlue.roc;
 # backends_check.mjs, which plays the two builds against each other and
@@ -39,6 +40,10 @@ if [ -n "${FAST:-}" ]; then
     echo "dev (FAST, dev backend, unchecked): http://143.244.172.148:9210/fasttrack/"
     exit 0
 fi
+# **THE SQUARE VALUES ARE GENERATED**: SquareValues.roc must be what
+# gen_square_values.roc writes from the ranking today.
+(cd "$HERE" && "$ROC" gen_square_values.roc) > "$LOG/SquareValues.roc" 2> "$LOG/gen.log" || true
+cmp -s "$LOG/SquareValues.roc" "$HERE/SquareValues.roc" || { diff "$HERE/SquareValues.roc" "$LOG/SquareValues.roc" | head; echo "SquareValues.roc is stale: roc gen_square_values.roc > SquareValues.roc"; exit 1; }
 (cd "$HERE" && "$ROC" test web.roc) > "$LOG/test.log" 2>&1 || true
 if grep -q "✗" "$LOG/test.log" || ! grep -q "^All ([0-9]*) tests passed" "$LOG/test.log"; then
     cat "$LOG/test.log"; echo "tests failed"; exit 1

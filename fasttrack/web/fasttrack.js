@@ -26,7 +26,6 @@ const FastTrack = (() => {
     return {
       start: (millis, setup, seats, teams = 0) => ex.start(millis, setup, seats, teams),
       click: (code) => ex.update(code),
-      tune: (seat, factor, value) => ex.tune(seat, factor, value),
       // **computeView FIRST, THEN THE DataView.** Building a view can grow
       // wasm memory, which detaches every view of the old buffer.
       view: () => {
@@ -47,23 +46,10 @@ const FastTrack = (() => {
         const g = document.createElementNS(SVG, "g");
         const shape = document.createElementNS(SVG, s.square ? "rect" : "circle");
         const piece = document.createElementNS(SVG, "circle");
-        // A square's label sits over its piece, outlined in white so either
-        // shows through; its hint is the square's hover text.
-        const label = document.createElementNS(SVG, "text");
-        const hint = document.createElementNS(SVG, "title");
-        label.setAttribute("text-anchor", "middle");
-        label.setAttribute("font-size", "11");
-        label.setAttribute("font-weight", "bold");
-        label.setAttribute("stroke", "white");
-        label.setAttribute("stroke-width", "3");
-        label.setAttribute("paint-order", "stroke");
-        label.setAttribute("pointer-events", "none");
         g.appendChild(shape);
         g.appendChild(piece);
-        g.appendChild(label);
-        g.appendChild(hint);
         svg.appendChild(g);
-        const entry = { g, shape, piece, label, hint, last: null, code: 0 };
+        const entry = { g, shape, piece, last: null, code: 0 };
         g.addEventListener("click", () => { if (entry.code) onClick(entry.code); });
         return entry;
       });
@@ -101,11 +87,7 @@ const FastTrack = (() => {
           }
           set(e.piece, "cx", s.cx);
           set(e.piece, "cy", s.cy);
-          set(e.label, "x", s.cx);
-          set(e.label, "y", s.cy + 4);
         }
-        if (old.label !== s.label) e.label.textContent = s.label;
-        if (old.hint !== s.hint) e.hint.textContent = s.hint;
         if (old.fill !== s.fill) set(e.shape, "fill", s.fill);
         if (old.stroke !== s.stroke) set(e.shape, "stroke", s.stroke);
         if (old.piece !== s.piece) {
@@ -166,11 +148,10 @@ const FastTrack = (() => {
   }
 
   // `?seats=hccc`: who plays each color, in the game's order (red, blue,
-  // green, purple) -- h a person, c the computer, n the naive player that
-  // takes the first choice it is offered. Two bits a seat, as
+  // green, purple) -- h a person, c the computer. Two bits a seat, as
   // FastTrack.seats_of reads them.
   function seatBits(text) {
-    const codes = { h: 0, c: 1, n: 2 };
+    const codes = { h: 0, c: 1 };
     return [...text].slice(0, 4).reduce((bits, ch, i) => bits | ((codes[ch] ?? 0) << (2 * i)), 0);
   }
 
@@ -186,10 +167,8 @@ const FastTrack = (() => {
 
 // In a browser: `?seed=` replays a deal, `?setup=` starts from one of
 // Setup.roc's scenarios by number, `?seats=` (default hccc: you are red)
-// says who plays, `?teams=anytime|oncehome` seats partnerships, `?show=cards`
-// puts the fewest cards home on every square (`?show=face` with a free face
-// card, `?show=b3` to B3, `?show=heat` the ranking's heat map), and `?pause=` is the
-// computer's pause per click in ms.
+// says who plays, `?teams=anytime|oncehome` seats partnerships, and
+// `?pause=` is the computer's pause per click in ms.
 if (typeof window !== "undefined" && window.document && window.FASTTRACK_WASM) {
   (async () => {
     const root = document.getElementById("game");
@@ -208,13 +187,6 @@ if (typeof window !== "undefined" && window.document && window.FASTTRACK_WASM) {
       clearTimeout(pending);
       pending = setTimeout(send, pause);
     };
-    const page = FastTrack.mount(document, root, g, schedule);
-    // `?show=cards` opens with the fewest cards to B4 on every square,
-    // `?show=face` with them counted with a free face card, `?show=b3` the
-    // same to B3, as once B4 is taken, `?show=heat` the heat map of the
-    // ranking to B3 and `?show=heat1` to B1 (Codes.toggle_overlay steps through FastTrack.overlay_variants).
-    const steps = { cards: 1, face: 2, b3: 3, heat: 4, heat1: 5 }[params.get("show")] ?? 0;
-    if (steps === 0) page.draw();
-    for (let i = 0; i < steps; i++) page.onClick(4);
+    FastTrack.mount(document, root, g, schedule).draw();
   })();
 }

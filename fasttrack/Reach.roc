@@ -12,7 +12,7 @@
 # needs a second piece), a 6 from the pen one square. Leaving the pen takes an
 # A, 6 or joker; leaving the bullseye a J, Q or K; a fast-track hop only a
 # move that starts on a fast-track square.
-import Agent
+import Board
 import Config
 import LegalMove
 import Type
@@ -43,7 +43,7 @@ Reach :: [].{
 	face_steps : List(Str), Str, Type.PieceLocation -> List(Type.PieceLocation)
 	face_steps = |zone_colors, color, loc| lands(zone_colors, color, loc, "Q")
 
-	## Every square to every square by one card, indexed as Agent.all_locs.
+	## Every square to every square by one card, indexed as Board.all_locs.
 	## With `free_face`, a card may also be played after one free face card --
 	## face cards are always played first (Steve: DS to B4 is Q then 3, one
 	## card); such a move's card reads "face+3".
@@ -54,7 +54,7 @@ Reach :: [].{
 	moves = |zone_colors, color, free_face|
 		List.join(
 			List.map_with_index(
-				Agent.all_locs(zone_colors),
+				Board.all_locs(zone_colors),
 				|loc, from|
 					if loc.zone != NormalColor(color) and (Config.is_holding_pen_id(loc.id) or Config.is_base_id(loc.id)) {
 						[]
@@ -62,9 +62,9 @@ Reach :: [].{
 					List.join_map(
 						cards,
 						|card| {
-							plain = List.map(lands(zone_colors, color, loc, card), |to| { from, to: Agent.index_of(zone_colors, to), card })
+							plain = List.map(lands(zone_colors, color, loc, card), |to| { from, to: Board.index_of(zone_colors, to), card })
 							if free_face {
-								with_face = List.join_map(face_steps(zone_colors, color, loc), |step| List.map(lands(zone_colors, color, step, card), |to| { from, to: Agent.index_of(zone_colors, to), card: "face+${card}" }))
+								with_face = List.join_map(face_steps(zone_colors, color, loc), |step| List.map(lands(zone_colors, color, step, card), |to| { from, to: Board.index_of(zone_colors, to), card: "face+${card}" }))
 								List.concat(plain, with_face)
 							} else {
 								plain
@@ -75,7 +75,7 @@ Reach :: [].{
 			),
 		)
 
-	## For each square, indexed as Agent.all_locs: the fewest cards to the
+	## For each square, indexed as Board.all_locs: the fewest cards to the
 	## peak (`far` where no cards do), and every card that starts such a way.
 	Best : { cards : I64, first : List(Str) }
 
@@ -107,7 +107,7 @@ Reach :: [].{
 	usable : List(Reach.Move), List(Str), Str, Bool, Str, List(Str) -> List(Reach.Move)
 	usable = |all, zone_colors, color, free_face, peak, hand| {
 		peak_at = List.find_first_index(Config.base_locations, |id| id == peak) ?? crash("Reach: the peak is a base square")
-		occupied = List.map(List.drop_first(Config.base_locations, peak_at + 1), |id| Agent.index_of(zone_colors, { zone: NormalColor(color), id }))
+		occupied = List.map(List.drop_first(Config.base_locations, peak_at + 1), |id| Board.index_of(zone_colors, { zone: NormalColor(color), id }))
 		List.drop_if(all, |e| (!free_face and Str.starts_with(e.card, "face+")) or List.contains(occupied, e.to) or !allowed(hand, e.card))
 	}
 
@@ -120,9 +120,9 @@ Reach :: [].{
 
 	fewest_over : List(Reach.Move), List(Str), Str, Str -> List(Reach.Best)
 	fewest_over = |edges, zone_colors, color, peak| {
-		far = Agent.far
-		home = Agent.index_of(zone_colors, { zone: NormalColor(color), id: peak })
-		start = List.set(List.repeat({ cards: far, first: [] }, List.len(Agent.all_locs(zone_colors))), home, { cards: 0, first: [] }) ?? crash("Reach: no home")
+		far = Board.far
+		home = Board.index_of(zone_colors, { zone: NormalColor(color), id: peak })
+		start = List.set(List.repeat({ cards: far, first: [] }, List.len(Board.all_locs(zone_colors))), home, { cards: 0, first: [] }) ?? crash("Reach: no home")
 		# A pass says whether it changed anything (findings/llvm-closure-loop-alias).
 		relax = |d|
 			List.fold(
@@ -146,7 +146,7 @@ Reach :: [].{
 		}
 		$pass.d
 	}
-	## For each square, indexed as Agent.all_locs: the fewest cards to the
+	## For each square, indexed as Board.all_locs: the fewest cards to the
 	## peak with these kinds of card, and how many shortest routes there are --
 	## every sequence of moves, a move being a card or a face card and a card.
 	Routes : { cards : I64, routes : U64 }
@@ -158,12 +158,12 @@ Reach :: [].{
 	routes_in = |all, zone_colors, color, free_face, peak, hand| {
 		edges = usable(all, zone_colors, color, free_face, peak, hand)
 		best = fewest_over(edges, zone_colors, color, peak)
-		cards_at = |i| (List.get(best, i) ?? { cards: Agent.far, first: [] }).cards
-		home = Agent.index_of(zone_colors, { zone: NormalColor(color), id: peak })
+		cards_at = |i| (List.get(best, i) ?? { cards: Board.far, first: [] }).cards
+		home = Board.index_of(zone_colors, { zone: NormalColor(color), id: peak })
 		start = List.map_with_index(best, |b, i| { cards: b.cards, routes: if i == home { 1 } else { 0 } })
 		# Squares n cards out take their routes from squares n - 1 out, so
 		# one sweep per distance settles every count.
-		deepest = List.fold(best, 0, |m, b| if b.cards < Agent.far and b.cards > m { b.cards } else { m })
+		deepest = List.fold(best, 0, |m, b| if b.cards < Board.far and b.cards > m { b.cards } else { m })
 		var $counts = start
 		var $n = 1
 		while $n <= deepest {
@@ -191,7 +191,7 @@ Reach :: [].{
 expect {
 	colors = ["red", "blue", "green", "purple"]
 	best = Reach.fewest_cards(colors, "red", Bool.False, "B4")
-	n = |id| (List.get(best, Agent.index_of(colors, { zone: NormalColor("red"), id })) ?? { cards: 0, first: [] }).cards
+	n = |id| (List.get(best, Board.index_of(colors, { zone: NormalColor("red"), id })) ?? { cards: 0, first: [] }).cards
 	n("B4") == 0 and n("B3") == 1 and n("B1") == 1 and n("BR") == 1 and n("R0") == 1 and n("R4") == 1 and n("L0") == 2 and n("L1") == 2
 }
 
@@ -200,7 +200,7 @@ expect {
 expect {
 	colors = ["red", "blue", "green", "purple"]
 	best = Reach.fewest_cards(colors, "red", Bool.True, "B4")
-	n = |id| (List.get(best, Agent.index_of(colors, { zone: NormalColor("red"), id })) ?? { cards: 0, first: [] }).cards
+	n = |id| (List.get(best, Board.index_of(colors, { zone: NormalColor("red"), id })) ?? { cards: 0, first: [] }).cards
 	n("B4") == 0 and n("B3") == 1 and n("DS") == 1 and n("L2") == 2
 }
 
@@ -209,8 +209,8 @@ expect {
 expect {
 	colors = ["red", "blue", "green", "purple"]
 	best = Reach.fewest_cards(colors, "red", Bool.True, "B3")
-	n = |id| (List.get(best, Agent.index_of(colors, { zone: NormalColor("red"), id })) ?? { cards: 0, first: [] }).cards
-	n("B3") == 0 and n("B2") == 1 and n("B1") == 1 and n("DS") == 1 and n("B4") >= Agent.far
+	n = |id| (List.get(best, Board.index_of(colors, { zone: NormalColor("red"), id })) ?? { cards: 0, first: [] }).cards
+	n("B3") == 0 and n("B2") == 1 and n("B1") == 1 and n("DS") == 1 and n("B4") >= Board.far
 }
 
 # R1 and R3 to B3, with a free face card and no joker: one card each, two
@@ -219,7 +219,7 @@ expect {
 expect {
 	colors = ["red", "blue", "green", "purple"]
 	no_joker = List.drop_if(Reach.cards, |c| c == "joker")
-	at = |hand, id| List.get(Reach.routes_with(colors, "red", Bool.True, "B3", hand), Agent.index_of(colors, { zone: NormalColor("red"), id })) ?? { cards: 0, routes: 0 }
+	at = |hand, id| List.get(Reach.routes_with(colors, "red", Bool.True, "B3", hand), Board.index_of(colors, { zone: NormalColor("red"), id })) ?? { cards: 0, routes: 0 }
 	no_six = List.drop_if(no_joker, |c| c == "6")
 	at(no_joker, "R1") == { cards: 1, routes: 2 } and at(no_joker, "R3") == { cards: 1, routes: 2 } and at(no_six, "R1") == { cards: 1, routes: 1 } and at(no_six, "R3") == { cards: 1, routes: 2 }
 }

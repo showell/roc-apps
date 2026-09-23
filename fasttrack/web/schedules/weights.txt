@@ -1,7 +1,0 @@
-# The first tuning (TUNING.md, 2026-09-22): the distance heuristic's weights,
-# from nothing.
-start hop=1,home=0,back4=0
-stage hop 4 8 14
-stage danger 10 20 40 80
-stage out 10 20 40 80
-stage home 10 20 40 80

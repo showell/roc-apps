@@ -50,7 +50,6 @@ class Node {
     this.children = [];
   }
   setAttribute(name, value) { this.attrs[name] = String(value); }
-  set textContent(v) { this.children = [new Node("#text", v)]; }
   addEventListener(kind, f) { if (kind === "click") this.listeners.push(f); }
   click() { for (const f of this.listeners) f(); }
   get textContent() { return this.tag === "#text" ? this.text : this.children.map((c) => c.textContent).join(""); }
@@ -125,37 +124,6 @@ function check(step) {
 }
 
 check(0);
-
-// The cards-home overlay steps through off and FastTrack.reach_variants.
-// Plain, the mover's own B4 reads 0, its pen 3 and DS 2; with the face card
-// DS reads 1; to B3, B3 reads 0 and B4 nothing; the heat map fills B3 pure
-// blue; off again, no label.
-function labelOf(zoneIndex, square) {
-  const e = last.slots[zoneIndex * 22 + square];
-  return e ? e.label : undefined;
-}
-page.onClick(4);
-{
-  const labels = last.slots.filter((s) => s.label !== "").length;
-  // The mover's zone is drawn first: HP1 is square 0, B4 square 7.
-  if (labelOf(0, 7) !== "0" || labelOf(0, 0) !== "3" || labels < 60) fail(`cards home: B4 ${labelOf(0, 7)}, pen ${labelOf(0, 0)}, ${labels} labels`);
-}
-if (labelOf(0, 9) !== "2") fail(`cards home: DS ${labelOf(0, 9)}, not 2`);
-page.onClick(4);
-if (labelOf(0, 9) !== "1") fail(`cards home with a face card: DS ${labelOf(0, 9)}, not 1`);
-page.onClick(4);
-// To B3: B3 (square 6) reads 0, and B4 (square 7), taken, reads nothing.
-if (labelOf(0, 6) !== "0" || labelOf(0, 7) !== "") fail(`cards to B3: B3 ${labelOf(0, 6)}, B4 ${labelOf(0, 7)}`);
-page.onClick(4);
-// The heat maps: B4 ranks first, pure blue; the pen is paler, toward white.
-for (const peak of ["B3", "B1"]) {
-  const b4 = last.slots[7];
-  if (b4.label !== "1" || b4.fill !== "rgb(0, 0, 255)") fail(`heat map to ${peak}: B4 ${b4.label} ${b4.fill}`);
-  if (!/^rgb\((\d+), \1, 255\)$/.test(last.slots[0].fill) || last.slots[0].fill === b4.fill) fail(`heat map to ${peak}: pen ${last.slots[0].fill}`);
-  page.onClick(4);
-}
-if (last.slots.some((s) => s.label !== "")) fail("cards home stays on after it is hidden");
-check(0);
 const firstPage = pageText(root);
 if (SEED === 0 && SETUP === 0 && SEATS[0] === "h") {
   // Seed 0 deals red 9 J 5 5 J (Game.roc's expect); none leaves the pen.
@@ -165,13 +133,12 @@ if (SEED === 0 && SETUP === 0 && SEATS[0] === "h") {
 
 // ── play ───────────────────────────────────────────────────────────────────
 
-// What the game offers to click. The cards-home toggle is always there and
-// changes only the view, so it is not one of them.
+// What the game offers to click.
 function clickables() {
   const buttons = [];
   const squares = [];
   walk(root, (n) => {
-    if (n.tag === "button" && !n.disabled && n.listeners.length && !/^(show|hide) cards/.test(n.textContent)) buttons.push(n);
+    if (n.tag === "button" && !n.disabled && n.listeners.length) buttons.push(n);
     if (n.tag === "g" && n.attrs.cursor === "pointer") squares.push(n);
   });
   return { buttons, squares };

@@ -13,7 +13,7 @@
 #      reached with a 2 or 3 beats one reached with a 9 or 10.
 #
 # rank_board.roc prints it; the page's heat map colors the board by it.
-import Agent
+import Board
 import Reach
 import Type
 
@@ -38,7 +38,7 @@ Rank :: [].{
 	}
 
 	## A square that can reach the peak: where it is (indexed as
-	## Agent.all_locs), its base depth for rule 2, and its cards and routes
+	## Board.all_locs), its base depth for rule 2, and its cards and routes
 	## at each stage.
 	Row : { at : U64, loc : Type.PieceLocation, base : I64, stage : List(Reach.Routes) }
 
@@ -67,14 +67,14 @@ Rank :: [].{
 	## -1 when `a` ranks above `b`, 1 below, 0 a tie at every stage.
 	compare : Rank.Row, Rank.Row -> I64
 	compare = |a, b| {
-		first = |r| List.first(r.stage) ?? { cards: Agent.far, routes: 0 }
+		first = |r| List.first(r.stage) ?? { cards: Board.far, routes: 0 }
 		if a.base != b.base {
 			if a.base > b.base { -1 } else { 1 }
 		} else if first(a).cards != first(b).cards {
 			if first(a).cards < first(b).cards { -1 } else { 1 }
 		} else {
 			List.fold(
-				List.map_with_index(a.stage, |sa, i| by_stage(sa, List.get(b.stage, i) ?? { cards: Agent.far, routes: 0 })),
+				List.map_with_index(a.stage, |sa, i| by_stage(sa, List.get(b.stage, i) ?? { cards: Board.far, routes: 0 })),
 				0,
 				|decided, c| if decided != 0 { decided } else { c },
 			)
@@ -92,13 +92,13 @@ Rank :: [].{
 		tables = List.map(stages, |st| Reach.routes_in(grid, zone_colors, color, Bool.True, peak, st.hand))
 		rows = List.join(
 			List.map_with_index(
-				Agent.all_locs(zone_colors),
+				Board.all_locs(zone_colors),
 				|loc, i| {
-					stage = List.map(tables, |t| List.get(t, i) ?? { cards: Agent.far, routes: 0 })
+					stage = List.map(tables, |t| List.get(t, i) ?? { cards: Board.far, routes: 0 })
 					id = if loc.zone == NormalColor(color) { loc.id } else { "" }
 					base = base_depth(id)
 					# The base squares past the peak count too: they rank first.
-					if base == 0 and (List.first(stage) ?? { cards: Agent.far, routes: 0 }).cards >= Agent.far {
+					if base == 0 and (List.first(stage) ?? { cards: Board.far, routes: 0 }).cards >= Board.far {
 						[]
 					} else {
 						[{ at: i, loc, base, stage }]
@@ -115,7 +115,7 @@ Rank :: [].{
 		)
 	}
 
-	## For each square, indexed as Agent.all_locs: its place in the ranking,
+	## For each square, indexed as Board.all_locs: its place in the ranking,
 	## 0 the best, a tie sharing the better place; U64.highest where it cannot reach
 	## the peak. `worst` is the place of the last square.
 	Places : { place : List(U64), worst : U64 }
@@ -126,7 +126,7 @@ Rank :: [].{
 	places_in : List(Reach.Move), List(Str), Str, Str -> Rank.Places
 	places_in = |grid, zone_colors, color, peak| {
 		order = ranked_in(grid, zone_colors, color, peak)
-		start = List.repeat(U64.highest, List.len(Agent.all_locs(zone_colors)))
+		start = List.repeat(U64.highest, List.len(Board.all_locs(zone_colors)))
 		settled = List.fold(
 			List.map_with_index(order, |row, i| { row, i }),
 			{ place: start, prev: { row: List.first(order) ?? { at: 0, loc: { zone: BullsEyeZone, id: "" }, base: 0, stage: [] }, place: 0 } },
@@ -145,7 +145,7 @@ Rank :: [].{
 expect {
 	colors = ["red", "blue", "green", "purple"]
 	p = Rank.places(colors, "red", "B3")
-	at = |id| List.get(p.place, Agent.index_of(colors, { zone: NormalColor("red"), id })) ?? U64.highest
+	at = |id| List.get(p.place, Board.index_of(colors, { zone: NormalColor("red"), id })) ?? U64.highest
 	at("B4") == 0 and at("B3") == 1 and at("B2") == 2 and at("B1") == 3 and at("DS") < at("R4") and at("R4") < at("R3") and at("HP1") == at("HP4")
 }
 
@@ -155,6 +155,6 @@ expect {
 expect {
 	colors = ["red", "blue", "green", "purple"]
 	p = Rank.places(colors, "red", "B1")
-	at = |id| List.get(p.place, Agent.index_of(colors, { zone: NormalColor("red"), id })) ?? U64.highest
+	at = |id| List.get(p.place, Board.index_of(colors, { zone: NormalColor("red"), id })) ?? U64.highest
 	at("B4") == 0 and at("B3") == 1 and at("B2") == 2 and at("B1") == 3 and at("BR") == 4 and at("DS") == 5
 }

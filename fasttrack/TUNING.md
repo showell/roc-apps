@@ -1,5 +1,13 @@
 # Tuning the computer
 
+**Today's computer is `Strategy.champion`** (Strategy.roc): the square values
+of Steve's ranking (SquareValues.roc), a base bonus of 1000 a step, and A and
+joker hoarded at 1500, 1000, 500 and 0 by pieces home, with a whole-turn search
+(Search.roc). Experiments run through Arena.roc (`exp_*.roc`). The first two
+sections below tuned an earlier computer -- a distance heuristic with a
+limited search -- that has since been removed; they are kept for what they
+found about the game.
+
 The computer's weights (`Agent.Weights`) were chosen by racing computers
 against each other: `web/tune.sh` over `web/race.mjs`, on the LLVM build of
 `4a9f3b7`. A race is 100 deals, each played twice (abab and baba, so seats do

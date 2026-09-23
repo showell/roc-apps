@@ -1,13 +1,13 @@
 # TeamTests -- partnerships: pagat.com's rules, and the "once home" style.
 #
 # Partners sit opposite, so red plays with green and blue with purple.
-import Agent
 import Assoc
 import Game
-import History
 import LegalMove
 import Piece
 import Player
+import Search
+import Strategy
 import Type
 
 TeamTests :: [].{
@@ -81,7 +81,9 @@ expect Game.winner(TeamTests.game_with(Solo, TeamTests.home("red"), ["2"])) == O
 # something else.
 expect {
 	g = TeamTests.game_with(Anytime, [("red", "L0", "red"), ("red", "L3", "green")], ["3", "2"])
-	k = Agent.knowledge(Agent.default_weights, g.zone_colors)
-	finished = List.fold(Agent.plan(k, g), g, |acc, msg| Game.update_game(msg, History.init, acc).1)
+	finished = match Search.best_line(Strategy.champion, g) {
+		Ok(best) => best.line.game
+		Err(_) => g
+	}
 	!List.any(finished.piece_map, |e| e.value == "green" and e.key.id == "HP1")
 }

@@ -5,7 +5,7 @@
 # between. So "oops" takes back the last card and everything it caused.
 #
 # Elm's `beginActiveTurn` also ran WhatIf.debugWhatIf, which only logged; the
-# computer player is Agent.roc. Elm never said who won; `winner` does.
+# computer player is Search.roc. Elm never said who won; `winner` does.
 import Color
 import Config
 import History
@@ -66,7 +66,7 @@ Game :: [].{
 	winner : Type.Game -> Try(Str, [NoWinner])
 	winner = |game| {
 		# One arm per partnership style: an or-pattern that binds `partner`
-		# crashes the compiler (nightly 09-07; see Agent.partners).
+		# crashes the compiler (nightly 09-07).
 		both_home = |color, partner| Piece.all_home(game.piece_map, color) and Piece.all_home(game.piece_map, partner)
 		done = |player|
 			match player.team {

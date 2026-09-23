@@ -8,7 +8,6 @@
 #     1              rotate the board ("done")
 #     2              undo ("oops")
 #     3              the computer's next click (the page's tick)
-#     4              step the analysis overlay (FastTrack.overlay_variants)
 #     100 + i        play card i
 #     200 + i        discard card i
 #     300 + i        cover card i
@@ -30,9 +29,6 @@ Codes :: [].{
 	agent_step : U32
 	agent_step = 3
 
-	## Not a message either: it changes what the page shows, not the game.
-	toggle_overlay : U32
-	toggle_overlay = 4
 
 	activate_card : U64 -> U32
 	activate_card = |idx| 100 + U64.to_u32_wrap(idx)

@@ -11,9 +11,7 @@
 # sends back to `update`, 0 for none.
 #
 # The board is `slots`: one per square, in the same order every time, so a
-# page draws them once and afterwards changes only what changed. A slot's
-# `label` is written on the square and its `hint` shown on hover; both are ""
-# unless the page asked to see the cards home (Codes.toggle_reach).
+# page draws them once and afterwards changes only what changed.
 Wire :: [].{
 	Slot : {
 		square : Bool,
@@ -25,8 +23,6 @@ Wire :: [].{
 		piece : Str,
 		piece_r : F64,
 		click : U32,
-		label : Str,
-		hint : Str,
 	}
 
 	Node : { parent : U32, tag : Str, text : Str, style : Str, click : U32, disabled : Bool }
