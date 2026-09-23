@@ -9,8 +9,9 @@
 #
 # The report is a markdown table per variant: red's wins, red's turns home
 # (mean and standard error), idle turns (red's turns begun with a discard),
-# captures of red pieces, and two checks that should read 0 -- turns a player
-# skipped holding a legal play, and searches cut short.
+# captures made by red and of red's pieces, and two checks that should read 0
+# -- turns a player skipped holding a legal play, and searches cut short.
+# With two variants it also says, game by game, which games only one won.
 #
 # An experiment is an app beside this module (exp_*.roc) that builds the
 # variants and prints Arena.report.
@@ -24,7 +25,7 @@ import Type
 Arena :: [].{
 	Variant : { label : Str, seats : List(Strategy.Strategy) }
 
-	Result : { red_won : Bool, turns : U64, idle : U64, captured : U64, skips : U64, cuts : U64 }
+	Result : { red_won : Bool, turns : U64, idle : U64, captured : U64, captures : U64, skips : U64, cuts : U64 }
 
 	home : Type.Game, U64 -> Bool
 	home = |game, seat| {
@@ -61,13 +62,21 @@ Arena :: [].{
 			}
 		}
 
+	## A color's pieces in its pen.
+	in_pen : Type.Game, Str -> U64
+	in_pen = |g, color| List.count_if(g.piece_map, |e| e.value == color and e.key.zone == NormalColor(color) and List.contains(["HP1", "HP2", "HP3", "HP4"], e.key.id))
+
 	red_in_pen : Type.Game -> U64
-	red_in_pen = |g| List.count_if(g.piece_map, |e| e.value == "red" and e.key.zone == NormalColor("red") and List.contains(["HP1", "HP2", "HP3", "HP4"], e.key.id))
+	red_in_pen = |g| in_pen(g, "red")
+
+	## The other colors' pieces in their pens.
+	others_in_pen : Type.Game -> U64
+	others_in_pen = |g| List.fold(["blue", "green", "purple"], 0, |t, c| t + in_pen(g, c))
 
 	play : List(Strategy.Strategy), U64 -> Arena.Result
 	play = |seats, seed| {
 		var $g = Game.begin_game(seed, Normal, Solo)
-		var $r = { red_won: Bool.False, turns: 1, idle: 0, captured: 0, skips: 0, cuts: 0 }
+		var $r = { red_won: Bool.False, turns: 1, idle: 0, captured: 0, captures: 0, skips: 0, cuts: 0 }
 		var $decided = Bool.False
 		var $idle_turn = 0
 		var $steps = 0
@@ -79,10 +88,12 @@ Arena :: [].{
 			s = step(seats, $g)
 			next = s.game
 			caught = if $g.active_player_idx != 0 and red_in_pen(next) > red_in_pen($g) { red_in_pen(next) - red_in_pen($g) } else { 0 }
+			took = if $g.active_player_idx == 0 and others_in_pen(next) > others_in_pen($g) { others_in_pen(next) - others_in_pen($g) } else { 0 }
 			turned = next.active_player_idx == 0 and $g.active_player_idx != 0
 			$r = {
 				..$r,
 				captured: $r.captured + caught,
+				captures: $r.captures + took,
 				skips: if s.skipped { $r.skips + 1 } else { $r.skips },
 				cuts: if s.cut { $r.cuts + 1 } else { $r.cuts },
 				turns: if turned { $r.turns + 1 } else { $r.turns },
@@ -103,26 +114,51 @@ Arena :: [].{
 		"${I64.to_str(t // 10)}.${I64.to_str(t % 10)}"
 	}
 
+	## Every game of one variant.
+	results : Arena.Variant, U64 -> List(Arena.Result)
+	results = |variant, games| List.map_with_index(List.repeat(0, games), |_, i| play(variant.seats, i + 1))
+
 	## One row: the variant's label and what its games came to.
-	row : Arena.Variant, U64 -> Str
-	row = |variant, games| {
-		results = List.map_with_index(List.repeat(0, games), |_, i| play(variant.seats, i + 1))
-		n = U64.to_f64(games)
-		turns = List.map(results, |r| U64.to_f64(r.turns))
+	row : Str, List(Arena.Result) -> Str
+	row = |label, rs| {
+		n = U64.to_f64(List.len(rs))
+		turns = List.map(rs, |r| U64.to_f64(r.turns))
 		mean = List.fold(turns, 0.0, |t, x| t + x) / n
 		var_ = List.fold(turns, 0.0, |t, x| t + (x - mean) * (x - mean)) / (n - 1.0)
 		se = F64.sqrt(var_ / n)
-		wins = List.count_if(results, |r| r.red_won)
-		idle = List.fold(results, 0, |t, r| t + r.idle)
-		caught = List.fold(results, 0, |t, r| t + r.captured)
-		skips = List.fold(results, 0, |t, r| t + r.skips)
-		cuts = List.fold(results, 0, |t, r| t + r.cuts)
-		"| ${variant.label} | ${U64.to_str(wins)} of ${U64.to_str(games)} | ${tenths(mean)} ± ${tenths(se)} | ${tenths(U64.to_f64(idle) / n)} | ${U64.to_str(caught)} | ${U64.to_str(skips)} / ${U64.to_str(cuts)} |"
+		wins = List.count_if(rs, |r| r.red_won)
+		idle = List.fold(rs, 0, |t, r| t + r.idle)
+		caught = List.fold(rs, 0, |t, r| t + r.captured)
+		took = List.fold(rs, 0, |t, r| t + r.captures)
+		skips = List.fold(rs, 0, |t, r| t + r.skips)
+		cuts = List.fold(rs, 0, |t, r| t + r.cuts)
+		"| ${label} | ${U64.to_str(wins)} of ${U64.to_str(List.len(rs))} | ${tenths(mean)} ± ${tenths(se)} | ${tenths(U64.to_f64(idle) / n)} | ${U64.to_str(took)} | ${U64.to_str(caught)} | ${U64.to_str(skips)} / ${U64.to_str(cuts)} |"
+	}
+
+	## Two variants on the same deals, game by game: which games only one of
+	## them won.
+	paired : Str, List(Arena.Result), Str, List(Arena.Result) -> Str
+	paired = |label_a, a, label_b, b| {
+		pairs = List.map_with_index(a, |ra, i| { a: ra.red_won, b: (List.get(b, i) ?? ra).red_won, seed: i + 1 })
+		only_a = List.keep_if(pairs, |p| p.a and !p.b)
+		only_b = List.keep_if(pairs, |p| p.b and !p.a)
+		seeds = |ps| Str.join_with(List.map(ps, |p| U64.to_str(p.seed)), ", ")
+		"Game by game: red won ${U64.to_str(List.len(only_b))} games only as ${label_b} (seeds ${seeds(only_b)}) and ${U64.to_str(List.len(only_a))} only as ${label_a} (seeds ${seeds(only_a)}); the other ${U64.to_str(List.len(pairs) - List.len(only_a) - List.len(only_b))} came out the same."
 	}
 
 	report : Str, List(Arena.Variant), U64 -> Str
 	report = |title, variants, games| {
-		header = "## ${title}\n\n${U64.to_str(games)} games per variant, seeds 1-${U64.to_str(games)}; red is the variant, the other seats Strategy.champion.\n\n| variant | red won | red's turns home | idle turns a game | red captured | skipped / cut |\n|---|---|---|---|---|---|\n"
-		Str.concat(header, Str.join_with(List.map(variants, |v| row(v, games)), "\n"))
+		header = "## ${title}\n\n${U64.to_str(games)} games per variant, seeds 1-${U64.to_str(games)}; red is the variant, the other seats Strategy.champion.\n\n| variant | red won | red's turns home | idle turns a game | captures by red | red captured | skipped / cut |\n|---|---|---|---|---|---|---|\n"
+		all = List.map(variants, |v| { label: v.label, rs: results(v, games) })
+		rows = Str.join_with(List.map(all, |x| row(x.label, x.rs)), "\n")
+		pair =
+			if List.len(all) == 2 {
+				a = List.get(all, 0) ?? crash("Arena.report: no first variant")
+				b = List.get(all, 1) ?? crash("Arena.report: no second variant")
+				"\n\n${paired(a.label, a.rs, b.label, b.rs)}"
+			} else {
+				""
+			}
+		Str.concat(Str.concat(header, rows), pair)
 	}
 }

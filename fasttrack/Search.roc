@@ -109,7 +109,11 @@ Search :: [].{
 		worths = Strategy.hoard_worths(strategy, game, mover.color)
 		score = |line| {
 			kept = if line.drew { 0 } else { Strategy.hand(worths, Player.get_active_player(line.game).hand) }
-			Strategy.board(strategy, line.game, colors) + kept
+			against = match strategy.opponents {
+				Ignore => 0
+				Leader => Strategy.leader(strategy, line.game, colors)
+			}
+			Strategy.board(strategy, line.game, colors) + kept - against
 		}
 		start = settle({ game, msgs: [], drew: Bool.False })
 		var $level = start
