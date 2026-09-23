@@ -128,7 +128,8 @@ check(0);
 
 // The cards-home overlay steps through off and FastTrack.reach_variants.
 // Plain, the mover's own B4 reads 0, its pen 3 and DS 2; with the face card
-// DS reads 1; to B3, B3 reads 0 and B4 nothing; off again, no label.
+// DS reads 1; to B3, B3 reads 0 and B4 nothing; the heat map fills B3 pure
+// blue; off again, no label.
 function labelOf(zoneIndex, square) {
   const e = last.slots[zoneIndex * 22 + square];
   return e ? e.label : undefined;
@@ -145,6 +146,13 @@ if (labelOf(0, 9) !== "1") fail(`cards home with a face card: DS ${labelOf(0, 9)
 page.onClick(4);
 // To B3: B3 (square 6) reads 0, and B4 (square 7), taken, reads nothing.
 if (labelOf(0, 6) !== "0" || labelOf(0, 7) !== "") fail(`cards to B3: B3 ${labelOf(0, 6)}, B4 ${labelOf(0, 7)}`);
+page.onClick(4);
+// The heat map: B3 ranks first, pure blue; the pen is somewhere darker.
+{
+  const b3 = last.slots[6];
+  if (b3.label !== "1" || b3.fill !== "rgb(0, 0, 255)") fail(`heat map: B3 ${b3.label} ${b3.fill}`);
+  if (!/^rgb\(0, 0, \d+\)$/.test(last.slots[0].fill) || last.slots[0].fill === b3.fill) fail(`heat map: pen ${last.slots[0].fill}`);
+}
 page.onClick(4);
 if (last.slots.some((s) => s.label !== "")) fail("cards home stays on after it is hidden");
 check(0);

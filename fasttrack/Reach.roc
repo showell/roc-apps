@@ -95,13 +95,31 @@ Reach :: [].{
 			List.contains(hand, card)
 		}
 
+	## A color's grid: every move from every square, with and without a free
+	## face card first. Built once; every table filters it.
+	grid : List(Str), Str -> List(Reach.Move)
+	grid = |zone_colors, color| moves(zone_colors, color, Bool.True)
+
+	## The grid's moves a table may use: no face card first unless
+	## `free_face`, only these kinds of card, and nothing landing deeper than
+	## the peak -- B4 once it is taken, and so on. A move landing on the peak
+	## or short of it never passes the occupied squares.
+	usable : List(Reach.Move), List(Str), Str, Bool, Str, List(Str) -> List(Reach.Move)
+	usable = |all, zone_colors, color, free_face, peak, hand| {
+		peak_at = List.find_first_index(Config.base_locations, |id| id == peak) ?? crash("Reach: the peak is a base square")
+		occupied = List.map(List.drop_first(Config.base_locations, peak_at + 1), |id| Agent.index_of(zone_colors, { zone: NormalColor(color), id }))
+		List.drop_if(all, |e| (!free_face and Str.starts_with(e.card, "face+")) or List.contains(occupied, e.to) or !allowed(hand, e.card))
+	}
+
 	## `fewest_cards` with only some kinds of card in the deck.
 	fewest_with : List(Str), Str, Bool, Str, List(Str) -> List(Reach.Best)
-	fewest_with = |zone_colors, color, free_face, peak, hand| {
-		peak_at = List.find_first_index(Config.base_locations, |id| id == peak) ?? crash("Reach: the peak is a base square")
-		deeper = List.drop_first(Config.base_locations, peak_at + 1)
-		occupied = List.map(deeper, |id| Agent.index_of(zone_colors, { zone: NormalColor(color), id }))
-		edges = List.drop_if(moves(zone_colors, color, free_face), |e| List.contains(occupied, e.to) or !allowed(hand, e.card))
+	fewest_with = |zone_colors, color, free_face, peak, hand| fewest_in(grid(zone_colors, color), zone_colors, color, free_face, peak, hand)
+
+	fewest_in : List(Reach.Move), List(Str), Str, Bool, Str, List(Str) -> List(Reach.Best)
+	fewest_in = |all, zone_colors, color, free_face, peak, hand| fewest_over(usable(all, zone_colors, color, free_face, peak, hand), zone_colors, color, peak)
+
+	fewest_over : List(Reach.Move), List(Str), Str, Str -> List(Reach.Best)
+	fewest_over = |edges, zone_colors, color, peak| {
 		far = Agent.far
 		home = Agent.index_of(zone_colors, { zone: NormalColor(color), id: peak })
 		start = List.set(List.repeat({ cards: far, first: [] }, List.len(Agent.all_locs(zone_colors))), home, { cards: 0, first: [] }) ?? crash("Reach: no home")
@@ -134,11 +152,12 @@ Reach :: [].{
 	Routes : { cards : I64, routes : U64 }
 
 	routes_with : List(Str), Str, Bool, Str, List(Str) -> List(Reach.Routes)
-	routes_with = |zone_colors, color, free_face, peak, hand| {
-		best = fewest_with(zone_colors, color, free_face, peak, hand)
-		peak_at = List.find_first_index(Config.base_locations, |id| id == peak) ?? crash("Reach: the peak is a base square")
-		occupied = List.map(List.drop_first(Config.base_locations, peak_at + 1), |id| Agent.index_of(zone_colors, { zone: NormalColor(color), id }))
-		edges = List.drop_if(moves(zone_colors, color, free_face), |e| List.contains(occupied, e.to) or !allowed(hand, e.card))
+	routes_with = |zone_colors, color, free_face, peak, hand| routes_in(grid(zone_colors, color), zone_colors, color, free_face, peak, hand)
+
+	routes_in : List(Reach.Move), List(Str), Str, Bool, Str, List(Str) -> List(Reach.Routes)
+	routes_in = |all, zone_colors, color, free_face, peak, hand| {
+		edges = usable(all, zone_colors, color, free_face, peak, hand)
+		best = fewest_over(edges, zone_colors, color, peak)
 		cards_at = |i| (List.get(best, i) ?? { cards: Agent.far, first: [] }).cards
 		home = Agent.index_of(zone_colors, { zone: NormalColor(color), id: peak })
 		start = List.map_with_index(best, |b, i| { cards: b.cards, routes: if i == home { 1 } else { 0 } })

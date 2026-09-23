@@ -20,8 +20,8 @@ import Color
 import Config
 import LegalMove
 import Piece
+import Overlay
 import Player
-import Reach
 import Type
 
 Page :: [].{
@@ -72,11 +72,10 @@ Page :: [].{
 
 	## What the page may offer: `interactive` is false in the computer's seat
 	## and once someone has won, and then nothing takes a click.
-	## `reach` is the fewest cards home for the player to move, square by
-	## square (Reach.fewest_cards), or [] to show none.
-	## `reach_title` is what the button that cycles it says, and
-	## `reach_showing` what the board shows now ("" for nothing).
-	Flags : { interactive : Bool, show_undo : Bool, tick : U32, winner : Str, reach : List(Reach.Best), reach_title : Str, reach_showing : Str }
+	## `overlay` is what the analysis puts on each square (Overlay), for the
+	## player to move, or [] for nothing; `overlay_title` is what the button
+	## that cycles it says, and `overlay_showing` what the board shows now.
+	Flags : { interactive : Bool, show_undo : Bool, tick : U32, winner : Str, overlay : List(Overlay.Mark), overlay_title : Str, overlay_showing : Str }
 
 	view : Type.Game, Page.Flags -> Wire.View
 	view = |game, flags| {
@@ -95,7 +94,7 @@ Page :: [].{
 			}
 		{
 			board_size: 2.0 * center_offset(side_count) + 3.0 * Config.square_size,
-			slots: board_view(game, zone_colors, active_player, flags.interactive, flags.reach),
+			slots: board_view(game, zone_colors, active_player, flags.interactive, flags.overlay),
 			nodes: el(
 				"div",
 				"display: flex; flex-direction: row",
@@ -103,7 +102,7 @@ Page :: [].{
 				Bool.False,
 				[
 					div([div([div([el("board", "", 0, Bool.False, [])]), el("hr", "", 0, Bool.False, []), console])]),
-					div([reach_button(flags.reach_title, flags.reach_showing), cheat_sheet_view(active_player)]),
+					div([overlay_button(flags.overlay_title, flags.overlay_showing), cheat_sheet_view(active_player)]),
 				],
 			),
 			tick: flags.tick,
@@ -131,13 +130,13 @@ Page :: [].{
 			PartnerOnceHome(partner) => [div([text("${player.color} plays with ${partner}, and may move ${partner}'s pieces once its own are home")])]
 		}
 
-	## Cycles the fewest cards home on every square -- off, plain, with a free
-	## face card -- for the player to move, whose zone is at the bottom.
-	reach_button : Str, Str -> Page.Tree
-	reach_button = |title, showing|
+	## Cycles the analysis overlay (FastTrack.overlay_variants), for the
+	## player to move, whose zone is at the bottom.
+	overlay_button : Str, Str -> Page.Tree
+	overlay_button = |title, showing|
 		div(
 			List.concat(
-				[button("", Codes.toggle_reach, [text(title)])],
+				[button("", Codes.toggle_overlay, [text(title)])],
 				if showing == "" { [] } else { [div([text("the board shows: ${showing}")])] },
 			),
 		)
@@ -153,8 +152,8 @@ Page :: [].{
 			.concat(team_line(player)),
 		)
 
-	board_view : Type.Game, List(Str), Type.Player, Bool, List(Reach.Best) -> List(Wire.Slot)
-	board_view = |game, zone_colors, active_player, interactive, reach| {
+	board_view : Type.Game, List(Str), Type.Player, Bool, List(Overlay.Mark) -> List(Wire.Slot)
+	board_view = |game, zone_colors, active_player, interactive, overlay| {
 		side_count = List.len(zone_colors)
 		angle = 2.0 * F64.pi / U64.to_f64(side_count)
 		center = center_offset(side_count)
@@ -172,32 +171,20 @@ Page :: [].{
 							b = panel_height - (loc.y * Config.square_size) + radius
 							cx = Config.square_size + center + a * F64.cos(theta) - b * F64.sin(theta)
 							cy = Config.square_size + center + a * F64.sin(theta) + b * F64.cos(theta)
-							slot(game, active_player, interactive, reach, { zone: NormalColor(zone_color), id: loc.id }, cx, cy)
+							slot(game, active_player, interactive, overlay, { zone: NormalColor(zone_color), id: loc.id }, cx, cy)
 						},
 					)
 				},
 			),
 		)
-		bulls_eye = slot(game, active_player, interactive, reach, { zone: BullsEyeZone, id: "bullseye" }, Config.square_size + center, Config.square_size + center)
+		bulls_eye = slot(game, active_player, interactive, overlay, { zone: BullsEyeZone, id: "bullseye" }, Config.square_size + center, Config.square_size + center)
 		List.append(zones, bulls_eye)
 	}
 
 	## `drawLocationAtCoords`.
-	slot : Type.Game, Type.Player, Bool, List(Reach.Best), Type.PieceLocation, F64, F64 -> Wire.Slot
-	slot = |game, active_player, interactive, reach, piece_location, cx, cy| {
-		# The fewest cards home from here, and the cards that start the way;
-		# nothing for squares a piece of this color never stands on.
-		best = List.get(reach, Agent.index_of(game.zone_colors, piece_location)) ?? { cards: Agent.far, first: [] }
-		(label, hint) =
-			if best.cards >= Agent.far {
-				("", "")
-			} else {
-				# Plain cards in deck order, then the ways with a face card.
-				plain = List.keep_if(Reach.cards, |c| List.contains(best.first, c))
-				with_face = List.keep_if(best.first, |c| Str.contains(c, "face"))
-				cards = List.map(List.concat(plain, with_face), |c| Str.replace_each(c, "4", "4 back"))
-				(I64.to_str(best.cards), if List.is_empty(cards) { "home" } else { Str.concat("start with ", Str.join_with(cards, ", ")) })
-			}
+	slot : Type.Game, Type.Player, Bool, List(Overlay.Mark), Type.PieceLocation, F64, F64 -> Wire.Slot
+	slot = |game, active_player, interactive, overlay, piece_location, cx, cy| {
+		mark = List.get(overlay, Agent.index_of(game.zone_colors, piece_location)) ?? Overlay.none
 		zone_color = match piece_location.zone {
 			BullsEyeZone => "black"
 			NormalColor(color) => color
@@ -208,7 +195,9 @@ Page :: [].{
 		is_start_loc = Assoc.set_member(Player.start_locs_for_player(active_player), piece_location)
 		is_reachable = Assoc.set_member(Player.end_locs_for_player(active_player), piece_location)
 		fill =
-			if is_selected_piece {
+			if mark.fill != "" {
+				mark.fill
+			} else if is_selected_piece {
 				"lightblue"
 			} else if is_start_loc {
 				"lightcyan"
@@ -247,8 +236,8 @@ Page :: [].{
 			piece: my_piece ?? "",
 			piece_r,
 			click,
-			label,
-			hint,
+			label: mark.label,
+			hint: mark.hint,
 		}
 	}
 

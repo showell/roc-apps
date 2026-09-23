@@ -188,7 +188,7 @@ const FastTrack = (() => {
 // Setup.roc's scenarios by number, `?seats=` (default hccc: you are red)
 // says who plays, `?teams=anytime|oncehome` seats partnerships, `?show=cards`
 // puts the fewest cards home on every square (`?show=face` with a free face
-// card, `?show=b3` to B3), and `?pause=` is the
+// card, `?show=b3` to B3, `?show=heat` the ranking's heat map), and `?pause=` is the
 // computer's pause per click in ms.
 if (typeof window !== "undefined" && window.document && window.FASTTRACK_WASM) {
   (async () => {
@@ -210,10 +210,10 @@ if (typeof window !== "undefined" && window.document && window.FASTTRACK_WASM) {
     };
     const page = FastTrack.mount(document, root, g, schedule);
     // `?show=cards` opens with the fewest cards to B4 on every square,
-    // `?show=face` with them counted with a free face card, and `?show=b3`
-    // the same to B3, as once B4 is taken (Codes.toggle_reach steps through
-    // FastTrack.reach_variants).
-    const steps = { cards: 1, face: 2, b3: 3 }[params.get("show")] ?? 0;
+    // `?show=face` with them counted with a free face card, `?show=b3` the
+    // same to B3, as once B4 is taken, and `?show=heat` the heat map of the
+    // ranking (Codes.toggle_overlay steps through FastTrack.overlay_variants).
+    const steps = { cards: 1, face: 2, b3: 3, heat: 4 }[params.get("show")] ?? 0;
     if (steps === 0) page.draw();
     for (let i = 0; i < steps; i++) page.onClick(4);
   })();
