@@ -119,10 +119,10 @@ Arena :: [].{
 	}
 
 	## One player's game, to the first player home.
-	Tally : { won : Bool, turns : U64, idle : U64, cards : U64, ft_landings : U64, ft_hops : U64, captures : U64, captured : U64 }
+	Tally : { won : Bool, turns : U64, idle : U64, cards : U64, ft_landings : U64, ft_hops : U64, captures : U64, captured : U64, played : List(Str), discarded : List(Str) }
 
 	no_tally : Arena.Tally
-	no_tally = { won: Bool.False, turns: 0, idle: 0, cards: 0, ft_landings: 0, ft_hops: 0, captures: 0, captured: 0 }
+	no_tally = { won: Bool.False, turns: 0, idle: 0, cards: 0, ft_landings: 0, ft_hops: 0, captures: 0, captured: 0, played: [], discarded: [] }
 
 	## The moves a turn's messages made, each with its kind. A start with one
 	## end moves at once (Move.maybe_auto_move), with no end click.
@@ -154,6 +154,29 @@ Arena :: [].{
 			$g = Game.update_game(msg, History.init, $g).1
 		}
 		$moves
+	}
+
+	## The cards a turn's messages played and discarded, read from the hand
+	## as each was chosen.
+	cards_of : Type.Game, List(Type.GameMsg) -> { played : List(Str), discarded : List(Str) }
+	cards_of = |g0, msgs| {
+		var $g = g0
+		var $played = []
+		var $discarded = []
+		for msg in msgs {
+			hand = Player.get_active_player($g).hand
+			match msg {
+				ActivateCard(i) => {
+					$played = List.append($played, List.get(hand, i) ?? "?")
+				}
+				DiscardCard(i) => {
+					$discarded = List.append($discarded, List.get(hand, i) ?? "?")
+				}
+				_ => {}
+			}
+			$g = Game.update_game(msg, History.init, $g).1
+		}
+		{ played: $played, discarded: $discarded }
 	}
 
 	forward : Type.Move -> Bool
@@ -224,7 +247,8 @@ Arena :: [].{
 			$discarded = $discarded or discards > 0
 			landings = List.count_if(moves, |m| forward(m) and m.end.id == "FT")
 			hops = List.count_if(moves, |m| ft_hop($g.zone_colors, m))
-			$t = bump($t, a, |x| { ..x, cards: x.cards + cards, ft_landings: x.ft_landings + landings, ft_hops: x.ft_hops + hops })
+			turn_cards = cards_of($g, s.msgs)
+			$t = bump($t, a, |x| { ..x, cards: x.cards + cards, ft_landings: x.ft_landings + landings, ft_hops: x.ft_hops + hops, played: List.concat(x.played, turn_cards.played), discarded: List.concat(x.discarded, turn_cards.discarded) })
 			for c in [0, 1, 2, 3] {
 				color = List.get($g.zone_colors, c) ?? ""
 				before = in_pen($g, color)

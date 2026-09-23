@@ -92,3 +92,8 @@ expect {
 # and nothing leaves the pen until it has.
 expect TeamTests.starts(TeamTests.game_with(Solo, [("red", "L0", "red"), ("blue", "FT", "red")], ["2"])) == ["red@FT"]
 expect TeamTests.starts(TeamTests.game_with(Solo, [("red", "HP1", "red"), ("blue", "FT", "red")], ["A"])) == ["red@FT"]
+
+# A piece in the pen and an A, a joker or a 6 in hand: the card must be
+# played -- the turn wants a card, not a discard.
+expect List.all(["A", "joker", "6"], |card| Player.get_active_player(TeamTests.game_with(Solo, [("red", "HP1", "red")], [card, "3"])).turn != TurnNeedDiscard)
+expect Player.get_active_player(TeamTests.game_with(Solo, [("red", "HP1", "red")], ["3", "5"])).turn == TurnNeedDiscard

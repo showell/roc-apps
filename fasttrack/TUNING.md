@@ -226,6 +226,37 @@ champions, because its pieces rarely reach the base and nearly any card moves
 one. Red's 31 wins against about 27 expected for each of three seats is
 within noise (about ± 4).
 
+### Which cards win, 2026-09-23
+
+80 games, seeds 1-80, four champions, each game to the first player home.
+`exp_cards.roc`. A card the winner played scores +3, a card a loser played
+-1.
+
+| rank | card | score | played by the winner | played by losers | winner's share | discarded by the winner | discarded by losers |
+|---|---|---|---|---|---|---|---|
+| 1 | J | 156 | 150 | 294 | .338 | 19 | 73 |
+| 2 | Q | 131 | 139 | 286 | .327 | 21 | 81 |
+| 3 | A | 125 | 168 | 379 | .307 | 0 | 0 |
+| 4 | K | 118 | 138 | 296 | .318 | 23 | 72 |
+| 5 | 6 | 110 | 162 | 376 | .301 | 0 | 0 |
+| 6 | 7 | 102 | 107 | 219 | .328 | 26 | 99 |
+| 7 | 4 | 88 | 126 | 290 | .303 | 10 | 86 |
+| 8 | 8 | 85 | 84 | 167 | .335 | 21 | 115 |
+| 9 | 2 | 67 | 99 | 230 | .301 | 20 | 93 |
+| 10 | 10 | 57 | 91 | 216 | .296 | 16 | 98 |
+| 11 | joker | 38 | 78 | 196 | .285 | 0 | 0 |
+| 12 | 3 | 30 | 94 | 252 | .272 | 18 | 83 |
+| 13 | 9 | 30 | 79 | 207 | .276 | 15 | 99 |
+| 14 | 5 | -44 | 93 | 323 | .224 | 12 | 62 |
+
+The score mixes a card's worth with how often it is played (the deck has two
+jokers, four of the rest). The winner's share of a card's plays is fairer;
+over all cards it is .301, since winners play more. Only the 5 stands out
+(.224, about three standard errors low). A, 6 and joker sit at the average
+because anyone with a piece in the pen must play them, and they were never
+discarded. Steve's guess at the order of worth: 6, A, joker, J, K, Q, 7, 4,
+10, 2, 9, 8, 3.
+
 ## Before these races
 
 Every race and arena number before `4a9f3b7` came from a build whose
