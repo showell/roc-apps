@@ -7,7 +7,9 @@
 # Lands at ~/build/roc-apps/next/basic/, served on :9210 by roc-site.
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROC="${ROC:-$HOME/build/roc-nightly/roc}"
+# **NOT ../roc-nightly.txt**: BasicApp crashes every nightly after 09-11
+# (findings/basic-compiler-crash), so BASIC builds on the last one that works.
+ROC="${ROC:-$HOME/build/roc-nightly/roc_nightly-linux_x86_64-2026-09-11-793f9d8/roc}"
 ZIG="${ZIG:-$HOME/zig-0.16.0/zig}"
 NEXT="$HOME/build/roc-apps/next/basic"
 mkdir -p "$NEXT"
@@ -19,11 +21,16 @@ mkdir -p "$NEXT"
 # The log stays out of the served directory.
 LOG="$HOME/build/roc-apps/gen/basic/build-page.log"
 mkdir -p "$(dirname "$LOG")"
-rm -f "$NEXT/basic.wasm" "$NEXT/build.log"
-(cd "$HERE/roc" && "$ROC" build BasicApp.roc --target=wasm32 --opt=dev --output="$NEXT/basic.wasm") > "$LOG" 2>&1 || true
-if grep -q "✗" "$LOG" || [ ! -s "$NEXT/basic.wasm" ]; then
+# Built beside the page and moved in only when it built: a failed build
+# leaves the page's module as it was.
+NEW="$(mktemp -d)"
+trap 'rm -rf "$NEW"' EXIT
+rm -f "$NEXT/build.log"
+(cd "$HERE/roc" && "$ROC" build BasicApp.roc --target=wasm32 --opt=dev --output="$NEW/basic.wasm") > "$LOG" 2>&1 || true
+if grep -q "✗" "$LOG" || [ ! -s "$NEW/basic.wasm" ]; then
     cat "$LOG"; echo "build failed"; exit 1
 fi
+mv "$NEW/basic.wasm" "$NEXT/basic.wasm"
 cp "$HERE/web/index.html" "$HERE/web/basic.html" "$NEXT/"
 ls -la "$NEXT"
 echo "dev: http://143.244.172.148:9210/basic/"

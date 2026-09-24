@@ -10,8 +10,8 @@
 # reader, generated from the platform's types by glue/JsGlue.roc;
 # backends_check.mjs, which plays the two builds against each other and
 # fails on any difference (this nightly has miscompiled the page both ways);
-# then page_check.mjs, which plays four hundred clicks through the built page
-# and paints the last board to shot.png beside it. Any of them failing fails
+# then page_check.mjs, which plays four hundred clicks through the built page,
+# and once more to paint the landing page's picture, shot.png. Any of them failing fails
 # the build.
 #
 # FAST=1 is for looking at a change quickly: no tests, the dev backend only,
@@ -91,7 +91,10 @@ node "$HERE/web/backends_check.mjs" "$OUT" "$DEV" || { echo "the LLVM and dev bu
 cp "$HERE/web/page.html" "$OUT/index.html"
 "$ROC" version | sed 's/Roc compiler version /roc /' > "$OUT/BUILT"
 
-SHOT="$OUT/shot.png" node "$HERE/web/page_check.mjs" "$OUT" || { echo "page check failed"; exit 1; }
+SHOT="$LOG/check-shot.png" node "$HERE/web/page_check.mjs" "$OUT" || { echo "page check failed"; exit 1; }
+# The landing page's picture: four computers, seed 3, 200 clicks in -- a
+# board with pieces out on the track and in the bases.
+SEED=3 SEATS=cccc CLICKS=200 SHOT="$OUT/shot.png" node "$HERE/web/page_check.mjs" "$OUT" > "$LOG/shot.log" 2>&1 || { cat "$LOG/shot.log"; echo "the landing shot failed"; exit 1; }
 publish
 ls -la "$DEST"
 echo "dev: http://143.244.172.148:9210/fasttrack/"
