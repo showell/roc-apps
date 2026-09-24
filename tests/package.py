@@ -68,7 +68,9 @@ def units():
     """The units the ladder ran to their verdict, in order."""
     out = []
     for line in open(os.path.join(HERE, "ledger.txt"), encoding="utf-8", errors="replace"):
-        if line.startswith("PASS "):
+        # A SLOW unit (tests/slow.txt) was left out of the run; its last
+        # real verdict is the one that counts here.
+        if line.startswith("PASS ") or (line.startswith("SLOW ") and "| last PASS," in line):
             out.append(line.split()[1])
     return out
 

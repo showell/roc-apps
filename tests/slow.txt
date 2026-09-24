@@ -1,0 +1,33 @@
+# Units the ladder leaves out by default: each took more than 5 s to
+# `roc run` (compile and run together) on nightly-2026-09-22-e494788, most of
+# it compile-time evaluation. Together they were 365 of the 671 s a full run
+# spent in roc. `ALL=1 tests/ladder.sh` runs them; otherwise each is reported
+# as SLOW with its last real verdict, never silently skipped.
+#
+# ms at the cutoff, then the unit.
+63105 crypto-vectors
+32936 net-driver-seam-bound
+24858 diskfacts-unpack-large
+24161 gop-composite-vclip
+23686 e1000-reset-wedged
+17243 engine-shadow
+13684 engine-shading
+13372 net-io-clock
+12961 gop-composite-clamp
+12376 engine-texture-cost
+10586 gop-composite-clip
+10513 e1000-link-deadline
+10086 e1000-pch-k1
+9967 lib@widget-tone
+9675 e1000-asde-nolink
+9577 gop-composite-kinds
+8665 i219-k1-mechanism
+8437 e1000-lcd-reload
+7633 engine-mesh-gen
+7392 gop-composite-stride
+6773 gop-padded-stride
+5535 gop-corner-ramp
+5530 e1000-tx-deadline
+5465 sector-read-list-growth
+5219 dhcp-renew
+5156 e1000-phy-absent

@@ -31,7 +31,8 @@
 # Outcomes: PASS (output equals the verdict), FAIL (it does not, or roc
 # printed ✗), CRASH (roc run died), EMIT-CRASH (rocemit died), KILLED (a
 # signal -- 9 is the OOM killer stopping compile-time evaluation), REFUSED
-# (rocemit said no, by reason), TIMEOUT.
+# (rocemit said no, by reason), TIMEOUT, SLOW (in slow.txt, left out
+# unless ALL=1, with its last real verdict).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # The compiler every roc-apps build uses: ../roc-nightly.txt.
@@ -125,6 +126,11 @@ one() {
     # processors publish what the test reads. This harness runs one core.
     cores="$( [ -f "$src.smp" ] && head -1 "$src.smp" | tr -d ' \r\n' )"
     if [ -n "$cores" ] && [ "$cores" -gt 1 ] 2>/dev/null; then echo "SKIP $n | codex-vm boots it with $cores cores (.smp); this harness runs one" > "$d/verdict"; return; fi
+    # A unit in slow.txt keeps its last real verdict, marked SLOW, unless ALL=1.
+    if [ -z "${ALL:-}" ] && grep -q " $n\$" "$HERE/slow.txt"; then
+        last="$(cat "$GEN/$n.verdict" 2>/dev/null | cut -d' ' -f1)"
+        echo "SLOW $n | last ${last:-never run}, $(cat "$GEN/$n.ms" 2>/dev/null || echo '?') ms; ALL=1 runs it" > "$d/verdict"; return
+    fi
     why="$(diverges "$n")"
     if [ -n "$why" ]; then echo "DIVERGES $n | $why" > "$d/verdict"; return; fi
     # rocemit prints the app's name and a digest of everything it wrote,
@@ -189,7 +195,7 @@ one() {
 }
 
 MACHINE="$(cd "$HERE/../machine/roc" && pwd)"
-export -f one diverges media; export ROC ROC_ID ROCEMIT SRC GEN VERDICTS MACHINE TESTS_ROOT
+export -f one diverges media; export ROC ROC_ID ROCEMIT SRC GEN VERDICTS MACHINE TESTS_ROOT HERE
 printf '%s\n' "${units[@]}" | xargs -P "${JOBS:-2}" -I{} bash -c 'one {}'
 ledger="$( for n in "${units[@]}"; do cat "$GEN/$n/verdict"; done )"
 [ "$full" = yes ] && echo "$ledger" > "$HERE/ledger.txt"
@@ -200,7 +206,7 @@ echo "--- refusals by reason:"; echo "$ledger" | grep -a '^REFUSED' | cut -d'|' 
 # together, in ms, as measured the last time the unit actually ran (a kept
 # verdict keeps its time). A full run writes every unit's to
 # ~/build/roc-apps/gen/ledger-ms.txt, untracked: the times change every run.
-times="$( for n in "${units[@]}"; do [ -f "$GEN/$n.ms" ] && echo "$(cat "$GEN/$n.ms") $n"; done | sort -rn )"
+times="$( for n in "${units[@]}"; do grep -q '^SLOW' "$GEN/$n/verdict" || { [ -f "$GEN/$n.ms" ] && echo "$(cat "$GEN/$n.ms") $n"; }; done | sort -rn )"
 [ "$full" = yes ] && echo "$times" > "$GEN/../ledger-ms.txt"
 echo "--- slowest runs, ms (of $(echo "$times" | awk '{s += $1} END {printf "%.1f s", s / 1000}') in all):"; echo "$times" | head -15
 echo "$(echo "$ledger" | grep -ac '^PASS') pass of ${#units[@]} -- tests from $TESTS_ROOT"

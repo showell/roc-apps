@@ -78,7 +78,7 @@ DIVERGES cost@accumulator-corpus | measures Codex's bump pointer with __heap-sav
 REFUSED cost@giveup-beats-fuel | an opening of type (effectful (effs "Console") (scopes "") nothing)
 PASS cross-port-refused |
 REFUSED crypto-test | type (effectful (effs "Console") (scopes "") nothing)
-PASS crypto-vectors |
+SLOW crypto-vectors | last PASS, 63105 ms; ALL=1 runs it
 REFUSED cryptobig | `cb-shl1` writes its list parameter `x` and answers something else
 PASS ctor-narrow-warn |
 PASS db-csv-roundtrip |
@@ -98,10 +98,10 @@ REFUSED desk-span | a function value from `__lam_0` (1 of 2 arguments), which re
 PASS device-buffer-alloc |
 PASS dhcp-acquire |
 CRASH dhcp-acquire-e1000 | machine: -e1000-nat is not a codex-vm flag this machine models
-PASS dhcp-renew |
+SLOW dhcp-renew | last PASS, 5219 ms; ALL=1 runs it
 PASS diag-pci-map-judge |
 PASS disk-enum-parse |
-PASS diskfacts-unpack-large |
+SLOW diskfacts-unpack-large | last PASS, 24858 ms; ALL=1 runs it
 PASS dnp3-encode |
 PASS dns-answer-count |
 REFUSED dtls-fragment | `fe-carry-pass` writes its list parameter `o` and answers something else
@@ -113,22 +113,22 @@ REFUSED dtls-random | `fe-carry-pass` writes its list parameter `o` and answers 
 PASS dtls-record |
 PASS e1000-aneg-budget |
 PASS e1000-asde-arms |
-PASS e1000-asde-nolink |
+SLOW e1000-asde-nolink | last PASS, 9675 ms; ALL=1 runs it
 PASS e1000-asde-speed |
 PASS e1000-bringup |
 PASS e1000-ctrl-ro |
-PASS e1000-lcd-reload |
+SLOW e1000-lcd-reload | last PASS, 8437 ms; ALL=1 runs it
 PASS e1000-link-budget |
-PASS e1000-link-deadline |
+SLOW e1000-link-deadline | last PASS, 10513 ms; ALL=1 runs it
 PASS e1000-match |
 PASS e1000-mdio-slow |
 PASS e1000-mdio-window |
-PASS e1000-pch-k1 |
+SLOW e1000-pch-k1 | last PASS, 10086 ms; ALL=1 runs it
 PASS e1000-pch-k1-off |
 PASS e1000-phy |
-PASS e1000-phy-absent |
+SLOW e1000-phy-absent | last PASS, 5156 ms; ALL=1 runs it
 PASS e1000-reset-live |
-PASS e1000-reset-wedged |
+SLOW e1000-reset-wedged | last PASS, 23686 ms; ALL=1 runs it
 PASS e1000-ring-wrap |
 PASS e1000-rx-invisible |
 PASS e1000-rx-invisible-off |
@@ -137,7 +137,7 @@ PASS e1000-swflag-k1 |
 PASS e1000-swflag-mng |
 PASS e1000-swflag-refused |
 PASS e1000-swflag-strict |
-PASS e1000-tx-deadline |
+SLOW e1000-tx-deadline | last PASS, 5530 ms; ALL=1 runs it
 PASS e1000-ulp-entry |
 PASS e1000-unresettable |
 REFUSED ecdsa-cert | `fe-carry-pass` writes its list parameter `o` and answers something else
@@ -173,13 +173,13 @@ REFUSED effect-widen-scope-narrow | an opening scoped to FileSystem.Read "/confi
 PASS engine-animation |
 DIVERGES engine-culling-cost | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
 PASS engine-fill-guard |
-PASS engine-mesh-gen |
+SLOW engine-mesh-gen | last PASS, 7633 ms; ALL=1 runs it
 PASS engine-near-clip |
 DIVERGES engine-render-heap | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
-PASS engine-shading |
-PASS engine-shadow |
+SLOW engine-shading | last PASS, 13684 ms; ALL=1 runs it
+SLOW engine-shadow | last PASS, 17243 ms; ALL=1 runs it
 PASS engine-software-render |
-PASS engine-texture-cost |
+SLOW engine-texture-cost | last PASS, 12376 ms; ALL=1 runs it
 PASS enip-encode |
 PASS eq-generic-fields |
 PASS eq-generic-recursive |
@@ -548,14 +548,14 @@ SKIP fs-spawn-inherits | child reaches the write path and faults inside it: the 
 PASS ga-core |
 PASS geometry-test |
 PASS goose-encode |
-PASS gop-composite-clamp |
-PASS gop-composite-clip |
-PASS gop-composite-kinds |
-PASS gop-composite-stride |
+SLOW gop-composite-clamp | last PASS, 12961 ms; ALL=1 runs it
+SLOW gop-composite-clip | last PASS, 10586 ms; ALL=1 runs it
+SLOW gop-composite-kinds | last PASS, 9577 ms; ALL=1 runs it
+SLOW gop-composite-stride | last PASS, 7392 ms; ALL=1 runs it
 DIVERGES gop-composite-translate | comp-translate moves each child with __record-set and drops the answers; Codex writes the record in place, so the parent's children list sees the move, and a Roc record is a value
-PASS gop-composite-vclip |
-PASS gop-corner-ramp |
-PASS gop-padded-stride |
+SLOW gop-composite-vclip | last PASS, 24161 ms; ALL=1 runs it
+SLOW gop-corner-ramp | last PASS, 5535 ms; ALL=1 runs it
+SLOW gop-padded-stride | last PASS, 6773 ms; ALL=1 runs it
 PASS gop-scene-backbuffer |
 PASS gop-scene-viewport |
 PASS gop-stride |
@@ -586,7 +586,7 @@ DIVERGES heap-scrub | measures Codex's bump pointer with __heap-save; Roc counts
 PASS hid-decode |
 PASS history-test |
 CRASH hpet-interrupt | machine: the HPET raised IOAPIC line 2 on vector 80, and this machine delivers no interrupts
-PASS i219-k1-mechanism |
+SLOW i219-k1-mechanism | last PASS, 8665 ms; ALL=1 runs it
 REFUSED ident-letters | name `café` cannot be a Roc identifier
 REFUSED idm-key-tests | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED idm-read-line | `fe-carry-pass` writes its list parameter `o` and answers something else
@@ -671,7 +671,7 @@ REFUSED lib@text-trim-test | field-store
 PASS lib@toml-test |
 DIVERGES lib@tree-view-nav | pins what a caller still holding the old record sees after its list is written in place; a Roc list is a value, so the caller keeps what it held
 PASS lib@utf8-cce-test |
-PASS lib@widget-tone |
+SLOW lib@widget-tone | last PASS, 9967 ms; ALL=1 runs it
 PASS lib@yaml-test |
 PASS linear-branch |
 PASS linear-capture-once |
@@ -724,9 +724,9 @@ REFUSED neg-real-repro | an opening of type real
 PASS negation-abutment |
 REFUSED nested-spawn | a function value from `__lam_0` (0 of 1 arguments), which reaches memory; a function value carries no state
 PASS net-drain-budget |
-PASS net-driver-seam-bound |
+SLOW net-driver-seam-bound | last PASS, 32936 ms; ALL=1 runs it
 PASS net-driver-seam-no-av |
-CRASH net-io-clock | machine: the program sent a frame to a TCP connection to the host, which this machine does not have
+SLOW net-io-clock | last CRASH, 13372 ms; ALL=1 runs it
 CRASH net-poll-calibrated | machine: -e1000-nat is not a codex-vm flag this machine models
 PASS net-poll-clamped |
 DIVERGES net-recv-heap | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
@@ -891,7 +891,7 @@ REFUSED scope-runtime-deny | an opening scoped to FileSystem.Read "OK"
 PASS scope-runtime-open |
 REFUSED scope-runtime-spawn | an opening scoped to FileSystem.Read "OK"
 REFUSED scope-try-region | try
-PASS sector-read-list-growth |
+SLOW sector-read-list-growth | last PASS, 5465 ms; ALL=1 runs it
 PASS sensor-data |
 REFUSED serial-line | field-store
 SKIP shadow-builtin-fold | expects a diagnostic
