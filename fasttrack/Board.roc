@@ -85,7 +85,17 @@ Board :: [].{
 
 	## 0 through 88.
 	squares : List(U64)
-	squares = List.map_with_index(List.repeat(0, count), |_, i| i)
+	squares = indices(count)
+
+	## 0 through `n` - 1.
+	indices : U64 -> List(U64)
+	indices = |n| {
+		var $xs = List.with_capacity(n)
+		for i in 0..<n {
+			$xs = List.append($xs, i)
+		}
+		$xs
+	}
 
 	## A square moved round by `k` zones; the bullseye stays put.
 	turn : U64, U64 -> U64

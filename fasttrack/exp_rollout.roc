@@ -86,7 +86,7 @@ main! = |args| {
 	Echo.line!("Red holds ${Str.join_with(red.hand, " ")}. The champion's best ${U64.to_str(List.len(candidates))} lines, each played out ${U64.to_str(rollouts)} times from the end of red's turn, every player a champion, the undrawn cards shuffled afresh each time (the same ${U64.to_str(rollouts)} shuffles for every line).\n")
 	var $results = []
 	for c in candidates {
-		wins = List.map(List.map_with_index(List.repeat(0, rollouts), |_, k| k), |k| Arena.winner_from(List.repeat(Plays(champion), 4), reshuffled(c.game, k)))
+		wins = List.map(Board.indices(rollouts), |k| Arena.winner_from(List.repeat(Plays(champion), 4), reshuffled(c.game, k)))
 		$results = List.append($results, { line: c, wins })
 		Echo.line!("done: ${moved(g, c.game)}: red won ${U64.to_str(List.count_if(wins, |w| w == 0))} of ${U64.to_str(rollouts)}")
 	}

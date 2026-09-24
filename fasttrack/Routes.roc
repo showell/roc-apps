@@ -109,12 +109,12 @@ Routes :: [].{
 			|r| {
 				fast = r != Board.bullseye and Board.local(r) == Board.ft
 				step = |s| next(s, fast, Board.is_pen(r), r == Board.bullseye)
-				List.map(List.map_with_index(List.repeat(0, longest + 1), |_, n| n), |n| walks(step, n, r))
+				List.map(Board.indices(longest + 1), |n| walks(step, n, r))
 			},
 		)
 
 	backward : List(List(List(U64)))
-	backward = List.join_map(Board.squares, |r| List.map(List.map_with_index(List.repeat(0, longest + 1), |_, n| n), |n| walks(prev, n, r)))
+	backward = List.join_map(Board.squares, |r| List.map(Board.indices(longest + 1), |n| walks(prev, n, r)))
 
 	forward_walks : U64, U64 -> List(List(U64))
 	forward_walks = |r, n| List.get(forward, r * (longest + 1) + n) ?? []

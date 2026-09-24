@@ -33,7 +33,7 @@ main! = |args| {
 	labels = List.prepend(List.map(variants, |v| v.label), "the champion")
 	strategies = List.prepend(List.map(variants, |v| v.strategy), Strategy.champion)
 	var $blocks = []
-	for seed in List.map_with_index(List.repeat(0, seeds), |_, i| start + i) {
+	for seed in start..<(start + seeds) {
 		block = Arena.compare(strategies, seed)
 		$blocks = List.append($blocks, block)
 		Echo.line!(Arena.block_line(labels, seed, block))

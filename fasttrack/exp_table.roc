@@ -17,7 +17,7 @@ main! = |_args| {
 	seats = [champion, champion, FirstLegal, champion]
 	games = 80
 	var $all = []
-	for seed in List.map_with_index(List.repeat(0, games), |_, i| i + 1) {
+	for seed in 1..=games {
 		ts = Arena.tally_game(seats, seed)
 		$all = List.append($all, ts)
 		Echo.line!(Tables.tally_line(seed, ts))
