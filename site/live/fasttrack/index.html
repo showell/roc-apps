@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fast Track</title>
+<script src="../shared/home.js"></script>
+</head>
+<body>
+<!-- Fast Track, ported from showell/elm-fasttrack. The rules and the page are
+     Roc; fasttrack.js runs the wasm and draws what it answers. -->
+<div id="game">loading...</div>
+<script>
+window.FASTTRACK_WASM = 'fasttrack.wasm';
+</script>
+<script src="roc_glue.js"></script>
+<script src="fasttrack.js"></script>
+</body>
+</html>
