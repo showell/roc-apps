@@ -13,19 +13,19 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # EffectWidenScope -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-scoped_print! : Text => {}
+scoped_print! : CceText => {}
 scoped_print! = |t| ({
-	line!(Text.printed(t))
+	line!(CceText.printed(t))
 })
 
-apply_it! : (Text => {}), Text => {}
+apply_it! : (CceText => {}), CceText => {}
 apply_it! = |f, t| ({
 	f(t)
 })

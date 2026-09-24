@@ -13,7 +13,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # RocEarlyReturnPredicate -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -26,6 +26,6 @@ scan_for_two = |xs, i| (if (i >= U64.to_i64_wrap(List.len(xs))) { False } else {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed((if scan_for_two([1, 2, 3], 0) { "True" } else { "False" })))
+	line!(CceText.printed((if scan_for_two([1, 2, 3], 0) { "True" } else { "False" })))
 	Ok({})
 }

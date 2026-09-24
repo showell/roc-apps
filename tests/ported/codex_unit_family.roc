@@ -16,7 +16,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # UnitFamily -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -62,10 +62,10 @@ main! = |_args| {
 		h = meter(1)
 		p = perimeter(w, h)
 		({
-			line!(Text.printed(Text.show_int(p)))
-			line!(Text.printed(Text.show_int(length_to_Centimeter(p))))
-			line!(Text.printed(Text.show_int(length_to_Meter(p))))
-			line!(Text.printed(Text.show_int(double_length(millimeter(50)))))
+			line!(CceText.printed(CceText.show_int(p)))
+			line!(CceText.printed(CceText.show_int(length_to_Centimeter(p))))
+			line!(CceText.printed(CceText.show_int(length_to_Meter(p))))
+			line!(CceText.printed(CceText.show_int(double_length(millimeter(50)))))
 		})
 	})
 	Ok({})

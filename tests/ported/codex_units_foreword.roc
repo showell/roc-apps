@@ -24,7 +24,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 import cdx.Units
 
 # UnitsForeword -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
@@ -1022,18 +1022,18 @@ main! = |_args| {
 		force_1 = newton(9)
 		power = horsepower(1)
 		({
-			line!(Text.printed(Text.concat(Text.concat("dur: ", Text.show_int(duration_to_Millisecond(dur))), "ms")))
-			line!(Text.printed(Text.concat(Text.concat("len: ", Text.show_int(length_to_Kilometer(total_len))), "km")))
-			line!(Text.printed(Text.concat(Text.concat("astro: ", Text.show_int(astroDistance_to_AstroKm(star_dist))), "km")))
-			line!(Text.printed(Text.concat(Text.concat("data: ", Text.show_int(dataSize_to_Megabyte(data))), "MB")))
-			line!(Text.printed(Text.concat("temp-k: ", Text.show_int(bk))))
-			line!(Text.printed(Text.concat("temp-f: ", Text.show_int(bf))))
-			line!(Text.printed(Text.concat("temp-c: ", Text.show_int(fc))))
-			line!(Text.printed(Text.concat("angle-arcmin: ", Text.show_int(angle_to_Arcminute(angle)))))
-			line!(Text.printed(Text.concat("speed-m/s: ", Text.show_int(speed_to_MeterPerSec(speed)))))
-			line!(Text.printed(Text.concat("energy-j: ", Text.show_int(energy_to_Joule(energy)))))
-			line!(Text.printed(Text.concat("force-mn: ", Text.show_int(force_to_Millinewton(force_1)))))
-			line!(Text.printed(Text.concat("power-w: ", Text.show_int(power_to_Watt(power)))))
+			line!(CceText.printed(CceText.concat(CceText.concat("dur: ", CceText.show_int(duration_to_Millisecond(dur))), "ms")))
+			line!(CceText.printed(CceText.concat(CceText.concat("len: ", CceText.show_int(length_to_Kilometer(total_len))), "km")))
+			line!(CceText.printed(CceText.concat(CceText.concat("astro: ", CceText.show_int(astroDistance_to_AstroKm(star_dist))), "km")))
+			line!(CceText.printed(CceText.concat(CceText.concat("data: ", CceText.show_int(dataSize_to_Megabyte(data))), "MB")))
+			line!(CceText.printed(CceText.concat("temp-k: ", CceText.show_int(bk))))
+			line!(CceText.printed(CceText.concat("temp-f: ", CceText.show_int(bf))))
+			line!(CceText.printed(CceText.concat("temp-c: ", CceText.show_int(fc))))
+			line!(CceText.printed(CceText.concat("angle-arcmin: ", CceText.show_int(angle_to_Arcminute(angle)))))
+			line!(CceText.printed(CceText.concat("speed-m/s: ", CceText.show_int(speed_to_MeterPerSec(speed)))))
+			line!(CceText.printed(CceText.concat("energy-j: ", CceText.show_int(energy_to_Joule(energy)))))
+			line!(CceText.printed(CceText.concat("force-mn: ", CceText.show_int(force_to_Millinewton(force_1)))))
+			line!(CceText.printed(CceText.concat("power-w: ", CceText.show_int(power_to_Watt(power)))))
 		})
 	})
 	Ok({})

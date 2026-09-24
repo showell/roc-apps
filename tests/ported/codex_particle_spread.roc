@@ -17,8 +17,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.ParticleSystem
-import cdx.Text
 
 # ParticleSpread -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -46,10 +46,10 @@ modal = |spread| ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("emitted=", Text.show_int(ParticleSystem.psys_count(sys_for(100))))))
-	line!(Text.printed(Text.concat("modal-dy-share-sp64=", Text.show_int(modal(64)))))
-	line!(Text.printed(Text.concat("modal-dy-share-sp100=", Text.show_int(modal(100)))))
-	line!(Text.printed(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("sample-dy=", Text.show_int(dy_at(sys_for(100), 0))), " "), Text.show_int(dy_at(sys_for(100), 1))), " "), Text.show_int(dy_at(sys_for(100), 2)))))
-	line!(Text.printed(Text.concat("independent=", (if (modal(100) < 20) { "yes" } else { "no" }))))
+	line!(CceText.printed(CceText.concat("emitted=", CceText.show_int(ParticleSystem.psys_count(sys_for(100))))))
+	line!(CceText.printed(CceText.concat("modal-dy-share-sp64=", CceText.show_int(modal(64)))))
+	line!(CceText.printed(CceText.concat("modal-dy-share-sp100=", CceText.show_int(modal(100)))))
+	line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("sample-dy=", CceText.show_int(dy_at(sys_for(100), 0))), " "), CceText.show_int(dy_at(sys_for(100), 1))), " "), CceText.show_int(dy_at(sys_for(100), 2)))))
+	line!(CceText.printed(CceText.concat("independent=", (if (modal(100) < 20) { "yes" } else { "no" }))))
 	Ok({})
 }

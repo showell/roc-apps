@@ -20,73 +20,73 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Color
-import cdx.Text
 
 # ColorTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-test_pack : Text
+test_pack : CceText
 test_pack = ({
 	c = Color.rgb(255, 128, 0)
 	packed = Color.rgb_to_packed(c)
 	back = Color.rgb_from_packed(packed)
-	Text.concat(Text.concat(Text.concat("packed=", Text.show_int(packed)), " back="), Color.format_rgb(back))
+	CceText.concat(CceText.concat(CceText.concat("packed=", CceText.show_int(packed)), " back="), Color.format_rgb(back))
 })
 
-test_lerp : Text
+test_lerp : CceText
 test_lerp = ({
 	mid = Color.rgb_lerp(Color.rgb_black, Color.rgb_white, 500)
-	Text.concat("mid=", Color.format_rgb(mid))
+	CceText.concat("mid=", Color.format_rgb(mid))
 })
 
-test_blend : Text
+test_blend : CceText
 test_blend = ({
 	c = Color.rgb_alpha_blend(Color.rgb_red, Color.rgb_blue, 500)
-	Text.concat("blend=", Color.format_rgb(c))
+	CceText.concat("blend=", Color.format_rgb(c))
 })
 
-test_gray : Text
+test_gray : CceText
 test_gray = ({
 	c = Color.rgb(200, 100, 50)
 	g = Color.rgb_grayscale(c)
-	Text.concat(Text.concat(Text.concat("gray=", Color.format_rgb(g)), " lum="), Text.show_int(Color.rgb_luminance(c)))
+	CceText.concat(CceText.concat(CceText.concat("gray=", Color.format_rgb(g)), " lum="), CceText.show_int(Color.rgb_luminance(c)))
 })
 
-test_invert : Text
+test_invert : CceText
 test_invert = ({
 	c = Color.rgb_invert(Color.rgb(100, 200, 50))
-	Text.concat("inv=", Color.format_rgb(c))
+	CceText.concat("inv=", Color.format_rgb(c))
 })
 
-test_hsl : Text
+test_hsl : CceText
 test_hsl = ({
 	hsl = Color.rgb_to_hsl(Color.rgb_red)
 	back = Color.hsl_to_rgb(hsl)
-	Text.concat(Text.concat(Text.concat("hsl=", Color.format_hsl(hsl)), " back="), Color.format_rgb(back))
+	CceText.concat(CceText.concat(CceText.concat("hsl=", Color.format_hsl(hsl)), " back="), Color.format_rgb(back))
 })
 
-test_gradient : Text
+test_gradient : CceText
 test_gradient = ({
 	pal = Color.palette_gradient(Color.rgb_red, Color.rgb_blue, 5)
-	Text.concat(Text.concat(Text.concat("grad=", Text.show_int(U64.to_i64_wrap(List.len(pal)))), " mid="), Color.format_rgb((List.get(pal, I64.to_u64_wrap(2)) ?? crash("list-at out of range"))))
+	CceText.concat(CceText.concat(CceText.concat("grad=", CceText.show_int(U64.to_i64_wrap(List.len(pal)))), " mid="), Color.format_rgb((List.get(pal, I64.to_u64_wrap(2)) ?? crash("list-at out of range"))))
 })
 
-test_hex : Text
-test_hex = Text.concat("hex=", Color.format_hex_color(Color.rgb(255, 128, 0)))
+test_hex : CceText
+test_hex = CceText.concat("hex=", Color.format_hex_color(Color.rgb(255, 128, 0)))
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(test_pack))
-	line!(Text.printed(test_lerp))
-	line!(Text.printed(test_blend))
-	line!(Text.printed(test_gray))
-	line!(Text.printed(test_invert))
-	line!(Text.printed(test_hsl))
-	line!(Text.printed(test_gradient))
-	line!(Text.printed(test_hex))
+	line!(CceText.printed(test_pack))
+	line!(CceText.printed(test_lerp))
+	line!(CceText.printed(test_blend))
+	line!(CceText.printed(test_gray))
+	line!(CceText.printed(test_invert))
+	line!(CceText.printed(test_hsl))
+	line!(CceText.printed(test_gradient))
+	line!(CceText.printed(test_hex))
 	Ok({})
 }

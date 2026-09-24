@@ -13,7 +13,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # FwdScene3DTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed("Engine/Scene3D OK"))
+	line!(CceText.printed("Engine/Scene3D OK"))
 	Ok({})
 }

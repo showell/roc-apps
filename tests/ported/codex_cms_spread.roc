@@ -19,8 +19,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.CountMinSketch
-import cdx.Text
 
 # CmsSpreadTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -36,8 +36,8 @@ cst_depth = 4
 cst_keys : I64
 cst_keys = 40
 
-cst_key : I64 -> Text
-cst_key = |i| Text.concat("key", Text.show_int(i))
+cst_key : I64 -> CceText
+cst_key = |i| CceText.concat("key", CceText.show_int(i))
 
 cst_fill : CountMinSketch.CmSketch, I64, I64 -> CountMinSketch.CmSketch
 cst_fill = |s, i, n| (if (i >= n) { s } else { cst_fill(CountMinSketch.cms_add(s, cst_key(i), 1), (i + 1), n) })
@@ -70,12 +70,12 @@ main! = |_args| {
 	r1 = cst_occupied(s, 1, 0, cst_width, 0)
 	r2 = cst_occupied(s, 2, 0, cst_width, 0)
 	r3 = cst_occupied(s, 3, 0, cst_width, 0)
-	line!(Text.printed(Text.concat("keys:           ", Text.show_int(cst_keys))))
-	line!(Text.printed(Text.concat("exact:          ", Text.show_int(exact))))
-	line!(Text.printed(Text.concat("worst estimate: ", Text.show_int(worst))))
-	line!(Text.printed(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("cols used:      ", Text.show_int(r0)), " "), Text.show_int(r1)), " "), Text.show_int(r2)), " "), Text.show_int(r3))))
-	line!(Text.printed(Text.concat("mostly exact:   ", (if ((exact * 4) >= (cst_keys * 3)) { "True" } else { "False" }))))
-	line!(Text.printed(Text.concat("rows spread:    ", (if ((((r0 > 20) and (r1 > 20)) and (r2 > 20)) and (r3 > 20)) { "True" } else { "False" }))))
-	line!(Text.printed(Text.concat("total:          ", Text.show_int(CountMinSketch.cms_total(s)))))
+	line!(CceText.printed(CceText.concat("keys:           ", CceText.show_int(cst_keys))))
+	line!(CceText.printed(CceText.concat("exact:          ", CceText.show_int(exact))))
+	line!(CceText.printed(CceText.concat("worst estimate: ", CceText.show_int(worst))))
+	line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("cols used:      ", CceText.show_int(r0)), " "), CceText.show_int(r1)), " "), CceText.show_int(r2)), " "), CceText.show_int(r3))))
+	line!(CceText.printed(CceText.concat("mostly exact:   ", (if ((exact * 4) >= (cst_keys * 3)) { "True" } else { "False" }))))
+	line!(CceText.printed(CceText.concat("rows spread:    ", (if ((((r0 > 20) and (r1 > 20)) and (r2 > 20)) and (r3 > 20)) { "True" } else { "False" }))))
+	line!(CceText.printed(CceText.concat("total:          ", CceText.show_int(CountMinSketch.cms_total(s)))))
 	Ok({})
 }

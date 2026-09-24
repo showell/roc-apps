@@ -14,7 +14,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # ArithOperandOrder -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -31,7 +31,7 @@ bump_left = |b| { val: (1 + b.val) }.val
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.show_int(bump_right({ val: 42 }))))
-	line!(Text.printed(Text.show_int(bump_left({ val: 42 }))))
+	line!(CceText.printed(CceText.show_int(bump_right({ val: 42 }))))
+	line!(CceText.printed(CceText.show_int(bump_left({ val: 42 }))))
 	Ok({})
 }

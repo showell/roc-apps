@@ -13,17 +13,17 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # ScopeLetArmGlobal -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-inner : Text
+inner : CceText
 inner = "GLOBAL"
 
-arm_scoped : I64 -> Text
+arm_scoped : I64 -> CceText
 arm_scoped = |n| ({
 	_w = (if (n > 0) { ({
 		inner_1 = (n * 10)
@@ -35,6 +35,6 @@ arm_scoped = |n| ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("arm-scoped: ", arm_scoped(2))))
+	line!(CceText.printed(CceText.concat("arm-scoped: ", arm_scoped(2))))
 	Ok({})
 }

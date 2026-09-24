@@ -13,7 +13,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # InlineCostBased -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -51,7 +51,7 @@ main! = |_args| {
 		b = caller_two
 		c = pick2(5, 9)
 		d = pick2(40, 2)
-		line!(Text.printed(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("inline-cost-based: ", Text.show_int(a)), " "), Text.show_int(b)), " "), Text.show_int(c)), " "), Text.show_int(d))))
+		line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("inline-cost-based: ", CceText.show_int(a)), " "), CceText.show_int(b)), " "), CceText.show_int(c)), " "), CceText.show_int(d))))
 	})
 	Ok({})
 }

@@ -21,7 +21,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 import cdx.Theme
 
 # ThemeInkOnTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
@@ -35,32 +35,32 @@ black = 0
 white : I64
 white = 16777215
 
-named : I64 -> Text
+named : I64 -> CceText
 named = |i| (if (i == 0) { "terminal" } else { (if (i == 1) { "lcars" } else { "minimal" }) })
 
 pal_of : I64 -> Theme.Palette
 pal_of = |i| (if (i == 0) { Theme.palette_terminal } else { (if (i == 1) { Theme.palette_lcars } else { Theme.palette_minimal }) })
 
 report! : I64, I64 => {}
-report! = |i, n| (if (i >= n) { line!(Text.printed("")) } else { ({
+report! = |i, n| (if (i >= n) { line!(CceText.printed("")) } else { ({
 	({
 		p = pal_of(i)
 		acc = p.pal_accent
 		({
-			line!(Text.printed(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(named(i), ": bg luma "), Text.show_int(Theme.theme_luma(p.pal_bg))), ", fg luma "), Text.show_int(Theme.theme_luma(p.pal_fg))), ", accent luma "), Text.show_int(Theme.theme_luma(acc))), " -> ink luma "), Text.show_int(Theme.theme_luma(Theme.theme_ink_on(p, acc))))))
+			line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(named(i), ": bg luma "), CceText.show_int(Theme.theme_luma(p.pal_bg))), ", fg luma "), CceText.show_int(Theme.theme_luma(p.pal_fg))), ", accent luma "), CceText.show_int(Theme.theme_luma(acc))), " -> ink luma "), CceText.show_int(Theme.theme_luma(Theme.theme_ink_on(p, acc))))))
 			report!((i + 1), n)
 		})
 	})
 }) })
 
 flips! : I64, I64 => {}
-flips! = |i, n| (if (i >= n) { line!(Text.printed("")) } else { ({
+flips! = |i, n| (if (i >= n) { line!(CceText.printed("")) } else { ({
 	({
 		p = pal_of(i)
 		on_black = Theme.theme_ink_on(p, black)
 		on_white = Theme.theme_ink_on(p, white)
 		({
-			line!(Text.printed(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("  ", named(i)), ": on black luma "), Text.show_int(Theme.theme_luma(on_black))), ", on white luma "), Text.show_int(Theme.theme_luma(on_white))), (if (on_black == on_white) { "   SAME, the ground is being ignored" } else { "" }))))
+			line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("  ", named(i)), ": on black luma "), CceText.show_int(Theme.theme_luma(on_black))), ", on white luma "), CceText.show_int(Theme.theme_luma(on_white))), (if (on_black == on_white) { "   SAME, the ground is being ignored" } else { "" }))))
 			flips!((i + 1), n)
 		})
 	})
@@ -69,9 +69,9 @@ flips! = |i, n| (if (i >= n) { line!(Text.printed("")) } else { ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed("the ink each scheme puts on its own accent:"))
+	line!(CceText.printed("the ink each scheme puts on its own accent:"))
 	report!(0, 3)
-	line!(Text.printed("the same helper asked for black and for white:"))
+	line!(CceText.printed("the same helper asked for black and for white:"))
 	flips!(0, 3)
 	Ok({})
 }

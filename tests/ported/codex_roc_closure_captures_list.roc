@@ -13,7 +13,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # RocClosureCapturesList -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -33,7 +33,7 @@ main! = |_args| {
 			|dev__2| lam_0(dev__1, dev__2)
 		})
 		result = f(0)
-		line!(Text.printed(Text.show_int(((List.get(result, I64.to_u64_wrap(0)) ?? crash("list-at out of range")) + (List.get(result, I64.to_u64_wrap(1)) ?? crash("list-at out of range"))))))
+		line!(CceText.printed(CceText.show_int(((List.get(result, I64.to_u64_wrap(0)) ?? crash("list-at out of range")) + (List.get(result, I64.to_u64_wrap(1)) ?? crash("list-at out of range"))))))
 	})
 	Ok({})
 }

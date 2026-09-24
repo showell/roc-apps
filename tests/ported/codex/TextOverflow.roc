@@ -1,5 +1,5 @@
 # TextOverflow -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
-import Text
+import CceText
 
 TextOverflow :: [].{
 	TextOverflow : [OverflowClip, OverflowEllipsis, OverflowScroll]
@@ -43,7 +43,7 @@ TextOverflow :: [].{
 		}) })
 	})
 
-	text_overflow_name : TextOverflow.TextOverflow -> Text
+	text_overflow_name : TextOverflow.TextOverflow -> CceText
 	text_overflow_name = |mode| (match mode {
 		OverflowClip => "clip"
 		OverflowEllipsis => "ellipsis"

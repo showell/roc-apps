@@ -13,7 +13,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # TcoDirectArgReads -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -33,6 +33,6 @@ loop4 = |i, s, acc, n| (if (i >= n) { acc } else { ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("acc=", Text.show_int(loop4(0, { v: 1 }, 0, 3)))))
+	line!(CceText.printed(CceText.concat("acc=", CceText.show_int(loop4(0, { v: 1 }, 0, 3)))))
 	Ok({})
 }

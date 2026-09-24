@@ -20,7 +20,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # LirFrameCross -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -48,13 +48,13 @@ via_call = |n| (saved(n, 2, 3, 4, 5, 6, 7, 8) - swapped(n, 4))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("regs-only: ", Text.show_int(regs_only(1, 2, 3, 4, 5, 6, 7, 8)))))
-	line!(Text.printed(Text.concat("saved: ", Text.show_int(saved(1, 2, 3, 4, 5, 6, 7, 8)))))
-	line!(Text.printed(Text.concat("saved-perm: ", Text.show_int(saved(8, 7, 6, 5, 4, 3, 2, 1)))))
-	line!(Text.printed(Text.concat("spilled: ", Text.show_int(spilled(1, 2, 3, 4, 5, 6, 7, 8)))))
-	line!(Text.printed(Text.concat("spilled-perm: ", Text.show_int(spilled(8, 7, 6, 5, 4, 3, 2, 1)))))
-	line!(Text.printed(Text.concat("unused-first: ", Text.show_int(unused_first(99, 6, 4)))))
-	line!(Text.printed(Text.concat("swapped: ", Text.show_int(swapped(9, 4)))))
-	line!(Text.printed(Text.concat("via-call: ", Text.show_int(via_call(10)))))
+	line!(CceText.printed(CceText.concat("regs-only: ", CceText.show_int(regs_only(1, 2, 3, 4, 5, 6, 7, 8)))))
+	line!(CceText.printed(CceText.concat("saved: ", CceText.show_int(saved(1, 2, 3, 4, 5, 6, 7, 8)))))
+	line!(CceText.printed(CceText.concat("saved-perm: ", CceText.show_int(saved(8, 7, 6, 5, 4, 3, 2, 1)))))
+	line!(CceText.printed(CceText.concat("spilled: ", CceText.show_int(spilled(1, 2, 3, 4, 5, 6, 7, 8)))))
+	line!(CceText.printed(CceText.concat("spilled-perm: ", CceText.show_int(spilled(8, 7, 6, 5, 4, 3, 2, 1)))))
+	line!(CceText.printed(CceText.concat("unused-first: ", CceText.show_int(unused_first(99, 6, 4)))))
+	line!(CceText.printed(CceText.concat("swapped: ", CceText.show_int(swapped(9, 4)))))
+	line!(CceText.printed(CceText.concat("via-call: ", CceText.show_int(via_call(10)))))
 	Ok({})
 }

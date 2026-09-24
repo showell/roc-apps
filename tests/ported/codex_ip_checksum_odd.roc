@@ -23,8 +23,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Ethernet
-import cdx.Text
 
 # IpChecksumOdd -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -65,16 +65,16 @@ ip_padded = |xs| Ethernet.ip_checksum(List.concat(xs, [0]), 0, (U64.to_i64_wrap(
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("odd3-agrees=", (if (ip_of(odd3) == witness_of(odd3)) { "True" } else { "False" }))))
-	line!(Text.printed(Text.concat("odd5-agrees=", (if (ip_of(odd5) == witness_of(odd5)) { "True" } else { "False" }))))
-	line!(Text.printed(Text.concat("odd1-agrees=", (if (ip_of(odd1) == witness_of(odd1)) { "True" } else { "False" }))))
-	line!(Text.printed(Text.concat("odd3-equals-padded=", (if (ip_of(odd3) == ip_padded(odd3)) { "True" } else { "False" }))))
-	line!(Text.printed(Text.concat("odd5-equals-padded=", (if (ip_of(odd5) == ip_padded(odd5)) { "True" } else { "False" }))))
-	line!(Text.printed(Text.concat("even4-agrees=", (if (ip_of(even4) == witness_of(even4)) { "True" } else { "False" }))))
-	line!(Text.printed(Text.concat("even20-agrees=", (if (ip_of(even20) == witness_of(even20)) { "True" } else { "False" }))))
-	line!(Text.printed(Text.concat("even4-value=", Text.show_int(ip_of(even4)))))
-	line!(Text.printed(Text.concat("even20-value=", Text.show_int(ip_of(even20)))))
-	line!(Text.printed(Text.concat("odd3-value=", Text.show_int(ip_of(odd3)))))
-	line!(Text.printed(Text.concat("odd5-value=", Text.show_int(ip_of(odd5)))))
+	line!(CceText.printed(CceText.concat("odd3-agrees=", (if (ip_of(odd3) == witness_of(odd3)) { "True" } else { "False" }))))
+	line!(CceText.printed(CceText.concat("odd5-agrees=", (if (ip_of(odd5) == witness_of(odd5)) { "True" } else { "False" }))))
+	line!(CceText.printed(CceText.concat("odd1-agrees=", (if (ip_of(odd1) == witness_of(odd1)) { "True" } else { "False" }))))
+	line!(CceText.printed(CceText.concat("odd3-equals-padded=", (if (ip_of(odd3) == ip_padded(odd3)) { "True" } else { "False" }))))
+	line!(CceText.printed(CceText.concat("odd5-equals-padded=", (if (ip_of(odd5) == ip_padded(odd5)) { "True" } else { "False" }))))
+	line!(CceText.printed(CceText.concat("even4-agrees=", (if (ip_of(even4) == witness_of(even4)) { "True" } else { "False" }))))
+	line!(CceText.printed(CceText.concat("even20-agrees=", (if (ip_of(even20) == witness_of(even20)) { "True" } else { "False" }))))
+	line!(CceText.printed(CceText.concat("even4-value=", CceText.show_int(ip_of(even4)))))
+	line!(CceText.printed(CceText.concat("even20-value=", CceText.show_int(ip_of(even20)))))
+	line!(CceText.printed(CceText.concat("odd3-value=", CceText.show_int(ip_of(odd3)))))
+	line!(CceText.printed(CceText.concat("odd5-value=", CceText.show_int(ip_of(odd5)))))
 	Ok({})
 }

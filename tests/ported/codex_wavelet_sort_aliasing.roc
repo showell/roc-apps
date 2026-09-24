@@ -18,7 +18,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 import cdx.Wavelet
 
 # WaveletSortAliasing -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
@@ -28,8 +28,8 @@ line! = |s| echo!(Str.concat(s, "\n"))
 
 print_list! : List(I64), I64, I64 => {}
 print_list! = |xs, i, len| ({
-	(if (i >= len) { line!(Text.printed("done")) } else { ({
-		line!(Text.printed(Text.show_int((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))
+	(if (i >= len) { line!(CceText.printed("done")) } else { ({
+		line!(CceText.printed(CceText.show_int((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))
 		print_list!(xs, (i + 1), len)
 	}) })
 })

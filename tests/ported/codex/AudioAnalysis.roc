@@ -1,6 +1,6 @@
 # AudioAnalysis -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+import CceText
 import MathLib
-import Text
 import Tuple
 import Units
 
@@ -134,11 +134,11 @@ AudioAnalysis :: [].{
 		{ af_peak: peak, af_rms: rms, af_centroid: centroid, af_bpm: bpm, af_duration_ms: dur }
 	})
 
-	audio_vibe : AudioAnalysis.AudioFeatures -> Text
+	audio_vibe : AudioAnalysis.AudioFeatures -> CceText
 	audio_vibe = |f| ({
 		energy = (if (f.af_rms > 700) { "high-energy" } else { (if (f.af_rms > 300) { "moderate" } else { "soft" }) })
 		tempo = (if (f.af_bpm > 140) { "fast" } else { (if (f.af_bpm > 100) { "mid-tempo" } else { "relaxed" }) })
-		Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(energy, ", "), tempo), " ("), Text.show_int(f.af_bpm)), " BPM)")
+		CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(energy, ", "), tempo), " ("), CceText.show_int(f.af_bpm)), " BPM)")
 	})
 
 	aa_sin : I64 -> I64
@@ -157,6 +157,6 @@ AudioAnalysis :: [].{
 	aa_min_val : I64, I64 -> I64
 	aa_min_val = |a, b| (if (a < b) { a } else { b })
 
-	format_audio_features : AudioAnalysis.AudioFeatures -> Text
-	format_audio_features = |f| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("peak=", Text.show_int(f.af_peak)), " rms="), Text.show_int(f.af_rms)), " centroid="), Text.show_int(f.af_centroid)), "Hz bpm="), Text.show_int(f.af_bpm)), " dur="), Text.show_int(f.af_duration_ms)), "ms")
+	format_audio_features : AudioAnalysis.AudioFeatures -> CceText
+	format_audio_features = |f| CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("peak=", CceText.show_int(f.af_peak)), " rms="), CceText.show_int(f.af_rms)), " centroid="), CceText.show_int(f.af_centroid)), "Hz bpm="), CceText.show_int(f.af_bpm)), " dur="), CceText.show_int(f.af_duration_ms)), "ms")
 }

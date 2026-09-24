@@ -13,17 +13,17 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # EffectWidenArg -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-writer! : Text => {}
-writer! = |t| line!(Text.printed(t))
+writer! : CceText => {}
+writer! = |t| line!(CceText.printed(t))
 
-apply_it! : (Text => {}), Text => {}
+apply_it! : (CceText => {}), CceText => {}
 apply_it! = |f, t| f(t)
 
 # --- Entry ---

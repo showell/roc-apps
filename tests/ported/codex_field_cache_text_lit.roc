@@ -15,7 +15,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # FieldCacheTextLit -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -23,7 +23,7 @@ import cdx.Text
 line! = |s| echo!(Str.concat(s, "\n"))
 Box_ : { items : List(I64) }
 
-probe : List(I64), Text, I64, I64 -> I64
+probe : List(I64), CceText, I64, I64 -> I64
 probe = |_xs, _name, _i, len| len
 
 # --- Entry ---
@@ -32,9 +32,9 @@ main! = |_args| {
 	({
 		b = { items: [7, 8, 9] }
 		({
-			line!(Text.printed(Text.concat("literal between two reads: ", Text.show_int(probe(b.items, "read-text", 0, U64.to_i64_wrap(List.len(b.items)))))))
-			line!(Text.printed(Text.concat("empty literal between them: ", Text.show_int(probe(b.items, "", 0, U64.to_i64_wrap(List.len(b.items)))))))
-			line!(Text.printed(Text.concat("no literal to cross: ", Text.show_int(U64.to_i64_wrap(List.len(b.items))))))
+			line!(CceText.printed(CceText.concat("literal between two reads: ", CceText.show_int(probe(b.items, "read-text", 0, U64.to_i64_wrap(List.len(b.items)))))))
+			line!(CceText.printed(CceText.concat("empty literal between them: ", CceText.show_int(probe(b.items, "", 0, U64.to_i64_wrap(List.len(b.items)))))))
+			line!(CceText.printed(CceText.concat("no literal to cross: ", CceText.show_int(U64.to_i64_wrap(List.len(b.items))))))
 		})
 	})
 	Ok({})

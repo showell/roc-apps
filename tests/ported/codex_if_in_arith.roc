@@ -15,7 +15,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # IfInArith -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -28,8 +28,8 @@ perm = |w, r| ((64 + (if w { 8 } else { 0 })) + (if r { 4 } else { 0 }))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.show_int(perm(True, False))))
-	line!(Text.printed(Text.show_int(perm(False, True))))
-	line!(Text.printed(Text.show_int(perm(True, True))))
+	line!(CceText.printed(CceText.show_int(perm(True, False))))
+	line!(CceText.printed(CceText.show_int(perm(False, True))))
+	line!(CceText.printed(CceText.show_int(perm(True, True))))
 	Ok({})
 }

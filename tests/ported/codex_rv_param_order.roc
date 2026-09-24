@@ -14,7 +14,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # RvParamOrder -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -55,7 +55,7 @@ eq_IntList = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("bound: ", Text.show_int(e_bound(0, three)))))
-	line!(Text.printed(Text.concat("swap: ", Text.show_int(e_swap(three, 0)))))
+	line!(CceText.printed(CceText.concat("bound: ", CceText.show_int(e_bound(0, three)))))
+	line!(CceText.printed(CceText.concat("swap: ", CceText.show_int(e_swap(three, 0)))))
 	Ok({})
 }

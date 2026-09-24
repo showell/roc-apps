@@ -25,7 +25,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # IntMinLiteral -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -38,18 +38,18 @@ b2i = |x| (if x { 1 } else { 0 })
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("min       want -9223372036854775808 got ", Text.show_int((-9223372036854775808)))))
-	line!(Text.printed(Text.concat("min+1     want -9223372036854775807 got ", Text.show_int((-9223372036854775807)))))
-	line!(Text.printed(Text.concat("min+254   want -9223372036854775554 got ", Text.show_int((-9223372036854775554)))))
-	line!(Text.printed(Text.concat("min+255   want -9223372036854775553 got ", Text.show_int((-9223372036854775553)))))
-	line!(Text.printed(Text.concat("min+256   want -9223372036854775552 got ", Text.show_int((-9223372036854775552)))))
-	line!(Text.printed(Text.concat("max       want 9223372036854775807 got ", Text.show_int(9223372036854775807))))
-	line!(Text.printed(Text.concat("allf      want -1 got ", Text.show_int((-1)))))
-	line!(Text.printed(Text.concat("c000      want -4611686018427387904 got ", Text.show_int((-4611686018427387904)))))
-	line!(Text.printed(Text.concat("minusinf  want -4503599627370496 got ", Text.show_int((-4503599627370496)))))
-	line!(Text.printed(Text.concat("shl63     want 1 got ", Text.show_int(b2i(((-9223372036854775808) == I64.shl_wrap(1, I64.to_u8_wrap(63))))))))
-	line!(Text.printed(Text.concat("negzero   want 1 got ", Text.show_int(b2i((U64.to_i64_wrap(F64.to_bits(F64.from_bits(I64.to_u64_wrap((-9223372036854775808))))) == I64.shl_wrap(1, I64.to_u8_wrap(63))))))))
-	line!(Text.printed(Text.concat("negzero>= want 1 got ", Text.show_int(b2i((F64.from_bits(I64.to_u64_wrap((-9223372036854775808))) >= 0.0))))))
-	line!(Text.printed(Text.concat("negzero<= want 1 got ", Text.show_int(b2i((F64.from_bits(I64.to_u64_wrap((-9223372036854775808))) <= 0.0))))))
+	line!(CceText.printed(CceText.concat("min       want -9223372036854775808 got ", CceText.show_int((-9223372036854775808)))))
+	line!(CceText.printed(CceText.concat("min+1     want -9223372036854775807 got ", CceText.show_int((-9223372036854775807)))))
+	line!(CceText.printed(CceText.concat("min+254   want -9223372036854775554 got ", CceText.show_int((-9223372036854775554)))))
+	line!(CceText.printed(CceText.concat("min+255   want -9223372036854775553 got ", CceText.show_int((-9223372036854775553)))))
+	line!(CceText.printed(CceText.concat("min+256   want -9223372036854775552 got ", CceText.show_int((-9223372036854775552)))))
+	line!(CceText.printed(CceText.concat("max       want 9223372036854775807 got ", CceText.show_int(9223372036854775807))))
+	line!(CceText.printed(CceText.concat("allf      want -1 got ", CceText.show_int((-1)))))
+	line!(CceText.printed(CceText.concat("c000      want -4611686018427387904 got ", CceText.show_int((-4611686018427387904)))))
+	line!(CceText.printed(CceText.concat("minusinf  want -4503599627370496 got ", CceText.show_int((-4503599627370496)))))
+	line!(CceText.printed(CceText.concat("shl63     want 1 got ", CceText.show_int(b2i(((-9223372036854775808) == I64.shl_wrap(1, I64.to_u8_wrap(63))))))))
+	line!(CceText.printed(CceText.concat("negzero   want 1 got ", CceText.show_int(b2i((U64.to_i64_wrap(F64.to_bits(F64.from_bits(I64.to_u64_wrap((-9223372036854775808))))) == I64.shl_wrap(1, I64.to_u8_wrap(63))))))))
+	line!(CceText.printed(CceText.concat("negzero>= want 1 got ", CceText.show_int(b2i((F64.from_bits(I64.to_u64_wrap((-9223372036854775808))) >= 0.0))))))
+	line!(CceText.printed(CceText.concat("negzero<= want 1 got ", CceText.show_int(b2i((F64.from_bits(I64.to_u64_wrap((-9223372036854775808))) <= 0.0))))))
 	Ok({})
 }

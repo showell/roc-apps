@@ -16,8 +16,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.FastMath
-import cdx.Text
 
 # PunctualFastMath -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -27,9 +27,9 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("int-log2 1: ", Text.show_int(FastMath.int_log2(1)))))
-	line!(Text.printed(Text.concat("int-log2 256: ", Text.show_int(FastMath.int_log2(256)))))
-	line!(Text.printed(Text.concat("int-log2 1023: ", Text.show_int(FastMath.int_log2(1023)))))
-	line!(Text.printed(Text.concat("int-log2 0: ", Text.show_int(FastMath.int_log2(0)))))
+	line!(CceText.printed(CceText.concat("int-log2 1: ", CceText.show_int(FastMath.int_log2(1)))))
+	line!(CceText.printed(CceText.concat("int-log2 256: ", CceText.show_int(FastMath.int_log2(256)))))
+	line!(CceText.printed(CceText.concat("int-log2 1023: ", CceText.show_int(FastMath.int_log2(1023)))))
+	line!(CceText.printed(CceText.concat("int-log2 0: ", CceText.show_int(FastMath.int_log2(0)))))
 	Ok({})
 }

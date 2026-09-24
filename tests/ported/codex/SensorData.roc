@@ -1,14 +1,14 @@
 # SensorData -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
-import Text
+import CceText
 
 SensorData :: [].{
-	SensorKind : [Temperature, Humidity, Barometer, Light, Accelerometer, Gyroscope, Magnetometer, Gps, Battery, Custom(Text)]
+	SensorKind : [Temperature, Humidity, Barometer, Light, Accelerometer, Gyroscope, Magnetometer, Gps, Battery, Custom(CceText)]
 	SensorValue : [IntValue(I64), FixedValue(I64, I64), BoolValue(Bool), Vec3Value(I64, I64, I64)]
-	SensorReading : { kind : SensorData.SensorKind, value : SensorData.SensorValue, timestamp : I64, device_id : Text }
+	SensorReading : { kind : SensorData.SensorKind, value : SensorData.SensorValue, timestamp : I64, device_id : CceText }
 	TimeSeriesEntry : { timestamp : I64, value : I64 }
 	AlertCondition : [AboveThreshold(I64), BelowThreshold(I64), OutsideRange(I64, I64), RateOfChange(I64)]
 
-	sensor_kind_name : SensorData.SensorKind -> Text
+	sensor_kind_name : SensorData.SensorKind -> CceText
 	sensor_kind_name = |k| (match k {
 		Temperature => "temperature"
 		Humidity => "humidity"
@@ -22,19 +22,19 @@ SensorData :: [].{
 		Custom(name) => name
 	})
 
-	sensor_value_to_text : SensorData.SensorValue -> Text
+	sensor_value_to_text : SensorData.SensorValue -> CceText
 	sensor_value_to_text = |v| (match v {
-		IntValue(n) => Text.show_int(n)
-		FixedValue(whole, frac) => Text.concat(Text.concat(Text.show_int(whole), "."), Text.show_int(frac))
+		IntValue(n) => CceText.show_int(n)
+		FixedValue(whole, frac) => CceText.concat(CceText.concat(CceText.show_int(whole), "."), CceText.show_int(frac))
 		BoolValue(b) => (if b { "true" } else { "false" })
-		Vec3Value(x, y, z) => Text.concat(Text.concat(Text.concat(Text.concat(Text.show_int(x), ","), Text.show_int(y)), ","), Text.show_int(z))
+		Vec3Value(x, y, z) => CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.show_int(x), ","), CceText.show_int(y)), ","), CceText.show_int(z))
 	})
 
-	make_reading : SensorData.SensorKind, SensorData.SensorValue, I64, Text -> SensorData.SensorReading
+	make_reading : SensorData.SensorKind, SensorData.SensorValue, I64, CceText -> SensorData.SensorReading
 	make_reading = |kind, value, ts, dev_| { kind: kind, value: value, timestamp: ts, device_id: dev_ }
 
-	format_reading : SensorData.SensorReading -> Text
-	format_reading = |r| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(r.device_id, "/"), sensor_kind_name(r.kind)), "="), sensor_value_to_text(r.value)), "@"), Text.show_int(r.timestamp))
+	format_reading : SensorData.SensorReading -> CceText
+	format_reading = |r| CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(r.device_id, "/"), sensor_kind_name(r.kind)), "="), sensor_value_to_text(r.value)), "@"), CceText.show_int(r.timestamp))
 
 	ts_min : List(SensorData.TimeSeriesEntry) -> I64
 	ts_min = |entries| ts_min_loop(entries, 0, U64.to_i64_wrap(List.len(entries)), 2147483647)

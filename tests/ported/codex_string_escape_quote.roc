@@ -13,19 +13,19 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # StringEscapeQuote -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-q : Text
+q : CceText
 q = "she said \"hi\" loudly"
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(q))
+	line!(CceText.printed(q))
 	Ok({})
 }

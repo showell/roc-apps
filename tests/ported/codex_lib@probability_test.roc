@@ -33,49 +33,49 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Probability
-import cdx.Text
 
 # ProbabilityTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-pb_cdf_0 : Text
-pb_cdf_0 = Text.show_int(Probability.normal_cdf(Probability.normal_standard, 0))
+pb_cdf_0 : CceText
+pb_cdf_0 = CceText.show_int(Probability.normal_cdf(Probability.normal_standard, 0))
 
-pb_cdf_1 : Text
+pb_cdf_1 : CceText
 pb_cdf_1 = (if (Probability.normal_cdf(Probability.normal_standard, 1000) > 700) { "above-700" } else { "low" })
 
-pb_pdf_0 : Text
+pb_pdf_0 : CceText
 pb_pdf_0 = (if (Probability.normal_pdf(Probability.normal_standard, 0) > 300) { "above-300" } else { "low" })
 
-pb_poisson : Text
-pb_poisson = Text.show_int(Probability.poisson_pmf(Probability.poisson(3000), 0))
+pb_poisson : CceText
+pb_poisson = CceText.show_int(Probability.poisson_pmf(Probability.poisson(3000), 0))
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("normal-cdf-0=", pb_cdf_0)))
-	line!(Text.printed(Text.concat("normal-cdf-1=", pb_cdf_1)))
-	line!(Text.printed(Text.concat("normal-cdf-neg1=", Text.show_int(Probability.normal_cdf(Probability.normal_standard, (-1000))))))
-	line!(Text.printed(Text.concat("normal-cdf-scaled=", Text.show_int(Probability.normal_cdf(Probability.normal(1000, 2000), 3000)))))
-	line!(Text.printed(Text.concat("normal-cdf-2sig=", Text.show_int(Probability.normal_cdf(Probability.normal_standard, 2000)))))
-	line!(Text.printed(Text.concat("normal-cdf-3sig=", Text.show_int(Probability.normal_cdf(Probability.normal_standard, 3000)))))
-	line!(Text.printed(Text.concat("normal-cdf-neg3sig=", Text.show_int(Probability.normal_cdf(Probability.normal_standard, (-3000))))))
-	line!(Text.printed(Text.concat("normal-pdf-0=", pb_pdf_0)))
-	line!(Text.printed(Text.concat("expneg-1=", Text.show_int(Probability.prob_exp_neg(1000)))))
-	line!(Text.printed(Text.concat("expneg-3=", Text.show_int(Probability.prob_exp_neg(3000)))))
-	line!(Text.printed(Text.concat("expneg-4=", Text.show_int(Probability.prob_exp_neg(4000)))))
-	line!(Text.printed(Text.concat("expneg-6=", Text.show_int(Probability.prob_exp_neg(6000)))))
-	line!(Text.printed(Text.concat("poisson-pmf-0=", pb_poisson)))
-	line!(Text.printed(Text.concat("poisson-pmf-1=", Text.show_int(Probability.poisson_pmf(Probability.poisson(3000), 1)))))
-	line!(Text.printed(Text.concat("poisson-pmf-2=", Text.show_int(Probability.poisson_pmf(Probability.poisson(3000), 2)))))
-	line!(Text.printed(Text.concat("binom-mean=", Text.show_int(Probability.binomial_mean(Probability.binomial(10, 500))))))
-	line!(Text.printed(Text.concat("binom-var=", Text.show_int(Probability.binomial_variance(Probability.binomial(10, 500))))))
-	line!(Text.printed(Text.concat("exp-mean=", Text.show_int(Probability.exponential_mean(Probability.exponential(500))))))
-	line!(Text.printed(Text.concat("bound=", Text.show_int(Probability.uniform_bound(10, 20, 37)))))
-	line!(Text.printed(Text.concat("choose-5-2=", Text.show_int(Probability.prob_choose(5, 2)))))
-	line!(Text.printed(Text.concat("choose-0=", Text.show_int(Probability.prob_choose(5, 0)))))
+	line!(CceText.printed(CceText.concat("normal-cdf-0=", pb_cdf_0)))
+	line!(CceText.printed(CceText.concat("normal-cdf-1=", pb_cdf_1)))
+	line!(CceText.printed(CceText.concat("normal-cdf-neg1=", CceText.show_int(Probability.normal_cdf(Probability.normal_standard, (-1000))))))
+	line!(CceText.printed(CceText.concat("normal-cdf-scaled=", CceText.show_int(Probability.normal_cdf(Probability.normal(1000, 2000), 3000)))))
+	line!(CceText.printed(CceText.concat("normal-cdf-2sig=", CceText.show_int(Probability.normal_cdf(Probability.normal_standard, 2000)))))
+	line!(CceText.printed(CceText.concat("normal-cdf-3sig=", CceText.show_int(Probability.normal_cdf(Probability.normal_standard, 3000)))))
+	line!(CceText.printed(CceText.concat("normal-cdf-neg3sig=", CceText.show_int(Probability.normal_cdf(Probability.normal_standard, (-3000))))))
+	line!(CceText.printed(CceText.concat("normal-pdf-0=", pb_pdf_0)))
+	line!(CceText.printed(CceText.concat("expneg-1=", CceText.show_int(Probability.prob_exp_neg(1000)))))
+	line!(CceText.printed(CceText.concat("expneg-3=", CceText.show_int(Probability.prob_exp_neg(3000)))))
+	line!(CceText.printed(CceText.concat("expneg-4=", CceText.show_int(Probability.prob_exp_neg(4000)))))
+	line!(CceText.printed(CceText.concat("expneg-6=", CceText.show_int(Probability.prob_exp_neg(6000)))))
+	line!(CceText.printed(CceText.concat("poisson-pmf-0=", pb_poisson)))
+	line!(CceText.printed(CceText.concat("poisson-pmf-1=", CceText.show_int(Probability.poisson_pmf(Probability.poisson(3000), 1)))))
+	line!(CceText.printed(CceText.concat("poisson-pmf-2=", CceText.show_int(Probability.poisson_pmf(Probability.poisson(3000), 2)))))
+	line!(CceText.printed(CceText.concat("binom-mean=", CceText.show_int(Probability.binomial_mean(Probability.binomial(10, 500))))))
+	line!(CceText.printed(CceText.concat("binom-var=", CceText.show_int(Probability.binomial_variance(Probability.binomial(10, 500))))))
+	line!(CceText.printed(CceText.concat("exp-mean=", CceText.show_int(Probability.exponential_mean(Probability.exponential(500))))))
+	line!(CceText.printed(CceText.concat("bound=", CceText.show_int(Probability.uniform_bound(10, 20, 37)))))
+	line!(CceText.printed(CceText.concat("choose-5-2=", CceText.show_int(Probability.prob_choose(5, 2)))))
+	line!(CceText.printed(CceText.concat("choose-0=", CceText.show_int(Probability.prob_choose(5, 0)))))
 	Ok({})
 }

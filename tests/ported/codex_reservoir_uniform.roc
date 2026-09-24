@@ -19,8 +19,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Reservoir
-import cdx.Text
 
 # ReservoirUniformTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -70,10 +70,10 @@ rut_max = |xs, i, n, acc| (if (i >= n) { acc } else { ({
 rut_sum : List(I64), I64, I64, I64 -> I64
 rut_sum = |xs, i, n, acc| (if (i >= n) { acc } else { rut_sum(xs, (i + 1), n, (acc + (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))) })
 
-rut_fmt : List(I64), I64, I64, Text -> Text
+rut_fmt : List(I64), I64, I64, CceText -> CceText
 rut_fmt = |xs, i, n, acc| (if (i >= n) { acc } else { ({
 	sep = (if (i == 0) { "" } else { " " })
-	rut_fmt(xs, (i + 1), n, Text.concat(Text.concat(acc, sep), Text.show_int((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))
+	rut_fmt(xs, (i + 1), n, CceText.concat(CceText.concat(acc, sep), CceText.show_int((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))
 }) })
 
 # --- Entry ---
@@ -84,12 +84,12 @@ main! = |_args| {
 	lo = rut_min(counts, 0, rut_items, 999999)
 	hi = rut_max(counts, 0, rut_items, 0)
 	tot = rut_sum(counts, 0, rut_items, 0)
-	line!(Text.printed(Text.concat("counts:      ", rut_fmt(counts, 0, rut_items, ""))))
-	line!(Text.printed(Text.concat("expected ea: ", Text.show_int(I64.div_trunc_by((rut_trials * rut_cap), rut_items)))))
-	line!(Text.printed(Text.concat("min:         ", Text.show_int(lo))))
-	line!(Text.printed(Text.concat("max:         ", Text.show_int(hi))))
-	line!(Text.printed(Text.concat("total:       ", Text.show_int(tot))))
-	line!(Text.printed(Text.concat("all sampled: ", (if (lo > 0) { "True" } else { "False" }))))
-	line!(Text.printed(Text.concat("within 2x:   ", (if (hi <= (lo * 2)) { "True" } else { "False" }))))
+	line!(CceText.printed(CceText.concat("counts:      ", rut_fmt(counts, 0, rut_items, ""))))
+	line!(CceText.printed(CceText.concat("expected ea: ", CceText.show_int(I64.div_trunc_by((rut_trials * rut_cap), rut_items)))))
+	line!(CceText.printed(CceText.concat("min:         ", CceText.show_int(lo))))
+	line!(CceText.printed(CceText.concat("max:         ", CceText.show_int(hi))))
+	line!(CceText.printed(CceText.concat("total:       ", CceText.show_int(tot))))
+	line!(CceText.printed(CceText.concat("all sampled: ", (if (lo > 0) { "True" } else { "False" }))))
+	line!(CceText.printed(CceText.concat("within 2x:   ", (if (hi <= (lo * 2)) { "True" } else { "False" }))))
 	Ok({})
 }

@@ -14,15 +14,15 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # ListO1Probe -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-tag : I64 -> Text
-tag = |n| Text.concat("e", Text.show_int(n))
+tag : I64 -> CceText
+tag = |n| CceText.concat("e", CceText.show_int(n))
 
 flat : List(I64)
 flat = [1, 2, 3, 4, 5]
@@ -30,17 +30,17 @@ flat = [1, 2, 3, 4, 5]
 nested : List(List(I64))
 nested = [[1, 2], [3, 4, 5], [6]]
 
-report : I64 -> Text
+report : I64 -> CceText
 report = |_x| ({
 	alloc = [tag(1), tag(2), tag(3)]
 	mixed = [U64.to_i64_wrap(List.len(flat)), U64.to_i64_wrap(List.len((List.get(nested, I64.to_u64_wrap(1)) ?? crash("list-at out of range")))), 7]
-	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("flat-len=", Text.show_int(U64.to_i64_wrap(List.len(flat)))), " ends="), Text.show_int(((List.get(flat, I64.to_u64_wrap(0)) ?? crash("list-at out of range")) + (List.get(flat, I64.to_u64_wrap(4)) ?? crash("list-at out of range"))))), " alloc="), (List.get(alloc, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))), (List.get(alloc, I64.to_u64_wrap(1)) ?? crash("list-at out of range"))), (List.get(alloc, I64.to_u64_wrap(2)) ?? crash("list-at out of range"))), " nested="), Text.show_int((List.get((List.get(nested, I64.to_u64_wrap(1)) ?? crash("list-at out of range")), I64.to_u64_wrap(2)) ?? crash("list-at out of range")))), " nested-len="), Text.show_int(U64.to_i64_wrap(List.len(nested)))), " mixed="), Text.show_int((((List.get(mixed, I64.to_u64_wrap(0)) ?? crash("list-at out of range")) + (List.get(mixed, I64.to_u64_wrap(1)) ?? crash("list-at out of range"))) + (List.get(mixed, I64.to_u64_wrap(2)) ?? crash("list-at out of range")))))
+	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("flat-len=", CceText.show_int(U64.to_i64_wrap(List.len(flat)))), " ends="), CceText.show_int(((List.get(flat, I64.to_u64_wrap(0)) ?? crash("list-at out of range")) + (List.get(flat, I64.to_u64_wrap(4)) ?? crash("list-at out of range"))))), " alloc="), (List.get(alloc, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))), (List.get(alloc, I64.to_u64_wrap(1)) ?? crash("list-at out of range"))), (List.get(alloc, I64.to_u64_wrap(2)) ?? crash("list-at out of range"))), " nested="), CceText.show_int((List.get((List.get(nested, I64.to_u64_wrap(1)) ?? crash("list-at out of range")), I64.to_u64_wrap(2)) ?? crash("list-at out of range")))), " nested-len="), CceText.show_int(U64.to_i64_wrap(List.len(nested)))), " mixed="), CceText.show_int((((List.get(mixed, I64.to_u64_wrap(0)) ?? crash("list-at out of range")) + (List.get(mixed, I64.to_u64_wrap(1)) ?? crash("list-at out of range"))) + (List.get(mixed, I64.to_u64_wrap(2)) ?? crash("list-at out of range")))))
 })
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(report(0)))
+	line!(CceText.printed(report(0)))
 	line!(I64.to_str(0))
 	Ok({})
 }

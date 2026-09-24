@@ -15,7 +15,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # WhenArmNonTail -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -74,9 +74,9 @@ main! = |_args| {
 	({
 		nums = ICons(1, ICons(2, ICons(3, ICons(4, ICons(5, INil)))))
 		({
-			line!(Text.printed(Text.concat("map-sum: ", Text.show_int(my_sum(my_map(dbl, nums))))))
-			line!(Text.printed(Text.concat("filter-sum: ", Text.show_int(my_sum(my_filter(is_even, nums))))))
-			line!(Text.printed(Text.concat("tail-loop: ", Text.show_int(sum_real(nums, 100)))))
+			line!(CceText.printed(CceText.concat("map-sum: ", CceText.show_int(my_sum(my_map(dbl, nums))))))
+			line!(CceText.printed(CceText.concat("filter-sum: ", CceText.show_int(my_sum(my_filter(is_even, nums))))))
+			line!(CceText.printed(CceText.concat("tail-loop: ", CceText.show_int(sum_real(nums, 100)))))
 		})
 	})
 	Ok({})

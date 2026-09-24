@@ -57,7 +57,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 import cdx.TextOverflow
 
 # TextOverflowTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
@@ -65,39 +65,39 @@ import cdx.TextOverflow
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-plan : TextOverflow.TextOverflow, I64, I64, I64, I64 -> Text
-plan = |m, len, avail, adv, gw| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("  ", TextOverflow.text_overflow_name(m)), " len="), Text.show_int(len)), " avail="), Text.show_int(avail)), " adv="), Text.show_int(adv)), " gw="), Text.show_int(gw)), " -> start="), Text.show_int(TextOverflow.text_overflow_start(m, len, avail, adv, gw))), " count="), Text.show_int(TextOverflow.text_overflow_count(m, len, avail, adv, gw))), " dots="), Text.show_int(TextOverflow.text_overflow_dots(m, len, avail, adv, gw)))
+plan : TextOverflow.TextOverflow, I64, I64, I64, I64 -> CceText
+plan = |m, len, avail, adv, gw| CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("  ", TextOverflow.text_overflow_name(m)), " len="), CceText.show_int(len)), " avail="), CceText.show_int(avail)), " adv="), CceText.show_int(adv)), " gw="), CceText.show_int(gw)), " -> start="), CceText.show_int(TextOverflow.text_overflow_start(m, len, avail, adv, gw))), " count="), CceText.show_int(TextOverflow.text_overflow_count(m, len, avail, adv, gw))), " dots="), CceText.show_int(TextOverflow.text_overflow_dots(m, len, avail, adv, gw)))
 
-all_modes : I64, I64, I64, I64 -> Text
-all_modes = |len, avail, adv, gw| Text.concat(Text.concat(Text.concat(Text.concat(plan(OverflowClip, len, avail, adv, gw), "\n"), plan(OverflowEllipsis, len, avail, adv, gw)), "\n"), plan(OverflowScroll, len, avail, adv, gw))
+all_modes : I64, I64, I64, I64 -> CceText
+all_modes = |len, avail, adv, gw| CceText.concat(CceText.concat(CceText.concat(CceText.concat(plan(OverflowClip, len, avail, adv, gw), "\n"), plan(OverflowEllipsis, len, avail, adv, gw)), "\n"), plan(OverflowScroll, len, avail, adv, gw))
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed("fits exactly, no overflow: every mode must agree"))
-	line!(Text.printed(all_modes(10, 60, 6, 5)))
-	line!(Text.printed(""))
-	line!(Text.printed("shorter than the box: every mode must agree"))
-	line!(Text.printed(all_modes(4, 60, 6, 5)))
-	line!(Text.printed(""))
-	line!(Text.printed("overflowing, adv=6 (GPU walk), 20 chars in 60px"))
-	line!(Text.printed(all_modes(20, 60, 6, 5)))
-	line!(Text.printed(""))
-	line!(Text.printed("overflowing, adv=9 (GopBuf walk), 20 chars in 63px"))
-	line!(Text.printed(all_modes(20, 63, 9, 8)))
-	line!(Text.printed(""))
-	line!(Text.printed("overflowing, adv=10 (SystemFont walk), 20 chars in 100px"))
-	line!(Text.printed(all_modes(20, 100, 10, 8)))
-	line!(Text.printed(""))
-	line!(Text.printed("a box too narrow for an ellipsis falls back to clip"))
-	line!(Text.printed(all_modes(20, 18, 6, 5)))
-	line!(Text.printed(all_modes(20, 24, 6, 5)))
-	line!(Text.printed(""))
-	line!(Text.printed("degenerate boxes draw nothing"))
-	line!(Text.printed(all_modes(20, 0, 6, 5)))
-	line!(Text.printed(all_modes(20, (0 - 40), 6, 5)))
-	line!(Text.printed(all_modes(20, 60, 0, 5)))
-	line!(Text.printed(""))
-	line!(Text.printed(Text.concat("default mode: ", TextOverflow.text_overflow_name(TextOverflow.text_overflow_default))))
+	line!(CceText.printed("fits exactly, no overflow: every mode must agree"))
+	line!(CceText.printed(all_modes(10, 60, 6, 5)))
+	line!(CceText.printed(""))
+	line!(CceText.printed("shorter than the box: every mode must agree"))
+	line!(CceText.printed(all_modes(4, 60, 6, 5)))
+	line!(CceText.printed(""))
+	line!(CceText.printed("overflowing, adv=6 (GPU walk), 20 chars in 60px"))
+	line!(CceText.printed(all_modes(20, 60, 6, 5)))
+	line!(CceText.printed(""))
+	line!(CceText.printed("overflowing, adv=9 (GopBuf walk), 20 chars in 63px"))
+	line!(CceText.printed(all_modes(20, 63, 9, 8)))
+	line!(CceText.printed(""))
+	line!(CceText.printed("overflowing, adv=10 (SystemFont walk), 20 chars in 100px"))
+	line!(CceText.printed(all_modes(20, 100, 10, 8)))
+	line!(CceText.printed(""))
+	line!(CceText.printed("a box too narrow for an ellipsis falls back to clip"))
+	line!(CceText.printed(all_modes(20, 18, 6, 5)))
+	line!(CceText.printed(all_modes(20, 24, 6, 5)))
+	line!(CceText.printed(""))
+	line!(CceText.printed("degenerate boxes draw nothing"))
+	line!(CceText.printed(all_modes(20, 0, 6, 5)))
+	line!(CceText.printed(all_modes(20, (0 - 40), 6, 5)))
+	line!(CceText.printed(all_modes(20, 60, 0, 5)))
+	line!(CceText.printed(""))
+	line!(CceText.printed(CceText.concat("default mode: ", TextOverflow.text_overflow_name(TextOverflow.text_overflow_default))))
 	Ok({})
 }

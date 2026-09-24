@@ -1,6 +1,6 @@
 # UsbAudio -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+import CceText
 import Maybe
-import Text
 import Usb
 
 UsbAudio :: [].{
@@ -105,9 +105,9 @@ UsbAudio :: [].{
 	uaf_min : I64, I64 -> I64
 	uaf_min = |a, b| (if (a < b) { a } else { b })
 
-	format_usb_audio : UsbAudio.UsbAudioDevice -> Text
-	format_usb_audio = |dev| (if dev.uad_found { Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("USB Audio: ", Text.show_int(dev.uad_sample_rate)), "Hz "), Text.show_int(dev.uad_channels)), "ch "), Text.show_int(dev.uad_bit_depth)), "bit EP"), Text.show_int(dev.uad_stream_ep)) } else { "USB Audio: not found" })
+	format_usb_audio : UsbAudio.UsbAudioDevice -> CceText
+	format_usb_audio = |dev| (if dev.uad_found { CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("USB Audio: ", CceText.show_int(dev.uad_sample_rate)), "Hz "), CceText.show_int(dev.uad_channels)), "ch "), CceText.show_int(dev.uad_bit_depth)), "bit EP"), CceText.show_int(dev.uad_stream_ep)) } else { "USB Audio: not found" })
 
-	format_audio_format : UsbAudio.AudioFormat -> Text
-	format_audio_format = |fmt| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.show_int(fmt.afmt_sample_rate), "Hz "), Text.show_int(fmt.afmt_channels)), "ch "), Text.show_int(fmt.afmt_bit_depth)), "bit ("), Text.show_int(usb_audio_bytes_per_second(fmt))), " B/s)")
+	format_audio_format : UsbAudio.AudioFormat -> CceText
+	format_audio_format = |fmt| CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.show_int(fmt.afmt_sample_rate), "Hz "), CceText.show_int(fmt.afmt_channels)), "ch "), CceText.show_int(fmt.afmt_bit_depth)), "bit ("), CceText.show_int(usb_audio_bytes_per_second(fmt))), " B/s)")
 }

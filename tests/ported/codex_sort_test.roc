@@ -29,8 +29,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Sort
-import cdx.Text
 
 # SortTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -42,8 +42,8 @@ int_cmp = |a, b| (a - b)
 
 print_list! : List(I64), I64, I64 => {}
 print_list! = |xs, i, len| ({
-	(if (i >= len) { line!(Text.printed("")) } else { ({
-		line!(Text.printed(Text.show_int((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))
+	(if (i >= len) { line!(CceText.printed("")) } else { ({
+		line!(CceText.printed(CceText.show_int((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))
 		print_list!(xs, (i + 1), len)
 	}) })
 })
@@ -59,8 +59,8 @@ main! = |_args| {
 		dupes = Sort.sort_by([3, 1, 4, 1, 5], int_cmp)
 		({
 			print_list!(sorted, 0, 9)
-			line!(Text.printed(Text.show_int(U64.to_i64_wrap(List.len(empty)))))
-			line!(Text.printed(Text.show_int((List.get(single, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))))
+			line!(CceText.printed(CceText.show_int(U64.to_i64_wrap(List.len(empty)))))
+			line!(CceText.printed(CceText.show_int((List.get(single, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))))
 			print_list!(dupes, 0, 5)
 		})
 	})

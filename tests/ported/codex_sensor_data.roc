@@ -18,8 +18,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.SensorData
-import cdx.Text
 
 # SensorDataTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -32,16 +32,16 @@ main! = |_args| {
 	({
 		r = SensorData.make_reading(Temperature, FixedValue(23, 5), 1000, "dev01")
 		({
-			line!(Text.printed(SensorData.format_reading(r)))
-			line!(Text.printed(SensorData.sensor_kind_name(Humidity)))
-			line!(Text.printed(SensorData.sensor_value_to_text(IntValue(42))))
-			line!(Text.printed(SensorData.sensor_value_to_text(BoolValue(True))))
+			line!(CceText.printed(SensorData.format_reading(r)))
+			line!(CceText.printed(SensorData.sensor_kind_name(Humidity)))
+			line!(CceText.printed(SensorData.sensor_value_to_text(IntValue(42))))
+			line!(CceText.printed(SensorData.sensor_value_to_text(BoolValue(True))))
 			({
 				over = SensorData.check_alert(AboveThreshold(30), 35)
 				under = SensorData.check_alert(BelowThreshold(10), 5)
 				({
-					line!(Text.printed((if over { "ALERT" } else { "ok" })))
-					line!(Text.printed((if under { "ALERT" } else { "ok" })))
+					line!(CceText.printed((if over { "ALERT" } else { "ok" })))
+					line!(CceText.printed((if under { "ALERT" } else { "ok" })))
 				})
 			})
 		})

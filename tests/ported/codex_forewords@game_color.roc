@@ -13,7 +13,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # FwdColorTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed("Game/Color OK"))
+	line!(CceText.printed("Game/Color OK"))
 	Ok({})
 }

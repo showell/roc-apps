@@ -1,5 +1,6 @@
 # Decimal -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
-import Text
+import CceChar
+import CceText
 
 Decimal :: [].{
 	Decimal : { dec_mantissa : I64, dec_scale : I64 }
@@ -110,43 +111,43 @@ Decimal :: [].{
 		(if (d.dec_mantissa > (floored.dec_mantissa * dec_pow10(d.dec_scale))) { { dec_mantissa: (floored.dec_mantissa + 1), dec_scale: 0 } } else { floored })
 	})
 
-	dec_to_text : Decimal.Decimal -> Text
-	dec_to_text = |d| (if (d.dec_scale == 0) { Text.show_int(d.dec_mantissa) } else { ({
+	dec_to_text : Decimal.Decimal -> CceText
+	dec_to_text = |d| (if (d.dec_scale == 0) { CceText.show_int(d.dec_mantissa) } else { ({
 		abs_m = (if (d.dec_mantissa < 0) { (0 - d.dec_mantissa) } else { d.dec_mantissa })
 		factor = dec_pow10(d.dec_scale)
 		whole = I64.div_trunc_by(abs_m, factor)
 		frac = (abs_m - (whole * factor))
 		sign = (if (d.dec_mantissa < 0) { "-" } else { "" })
-		Text.concat(Text.concat(Text.concat(sign, Text.show_int(whole)), "."), dec_pad_frac(frac, d.dec_scale))
+		CceText.concat(CceText.concat(CceText.concat(sign, CceText.show_int(whole)), "."), dec_pad_frac(frac, d.dec_scale))
 	}) })
 
-	dec_pad_frac : I64, I64 -> Text
+	dec_pad_frac : I64, I64 -> CceText
 	dec_pad_frac = |frac, scale| ({
-		raw = Text.show_int(frac)
-		padding = (scale - Text.len(raw))
-		(if (padding <= 0) { raw } else { Text.concat(dec_repeat_zero(padding, ""), raw) })
+		raw = CceText.show_int(frac)
+		padding = (scale - CceText.len(raw))
+		(if (padding <= 0) { raw } else { CceText.concat(dec_repeat_zero(padding, ""), raw) })
 	})
 
-	dec_repeat_zero : I64, Text -> Text
-	dec_repeat_zero = |n, acc| (if (n <= 0) { acc } else { dec_repeat_zero((n - 1), Text.concat(acc, "0")) })
+	dec_repeat_zero : I64, CceText -> CceText
+	dec_repeat_zero = |n, acc| (if (n <= 0) { acc } else { dec_repeat_zero((n - 1), CceText.concat(acc, "0")) })
 
-	dec_from_text : Text, I64 -> Decimal.Decimal
+	dec_from_text : CceText, I64 -> Decimal.Decimal
 	dec_from_text = |s, default_scale| ({
-		dot = dec_find_dot(s, 0, Text.len(s))
-		(if (dot < 0) { { dec_mantissa: (Text.to_integer(s) * dec_pow10(default_scale)), dec_scale: default_scale } } else { ({
-			whole_str = Text.substring(s, 0, dot)
-			raw_frac = Text.substring(s, (dot + 1), ((Text.len(s) - dot) - 1))
-			scale = dec_clamp_scale(Text.len(raw_frac))
-			frac_str = Text.substring(raw_frac, 0, scale)
-			whole = Text.to_integer(whole_str)
-			frac = Text.to_integer(frac_str)
+		dot = dec_find_dot(s, 0, CceText.len(s))
+		(if (dot < 0) { { dec_mantissa: (CceText.to_integer(s) * dec_pow10(default_scale)), dec_scale: default_scale } } else { ({
+			whole_str = CceText.substring(s, 0, dot)
+			raw_frac = CceText.substring(s, (dot + 1), ((CceText.len(s) - dot) - 1))
+			scale = dec_clamp_scale(CceText.len(raw_frac))
+			frac_str = CceText.substring(raw_frac, 0, scale)
+			whole = CceText.to_integer(whole_str)
+			frac = CceText.to_integer(frac_str)
 			sign = (if (whole < 0) { (0 - 1) } else { 1 })
 			{ dec_mantissa: (sign * (((if (whole < 0) { (0 - whole) } else { whole }) * dec_pow10(scale)) + frac)), dec_scale: scale }
 		}) })
 	})
 
-	dec_find_dot : Text, I64, I64 -> I64
-	dec_find_dot = |s, i, len| (if (i >= len) { (0 - 1) } else { (if (Text.char_at(s, i) == 65) { i } else { dec_find_dot(s, (i + 1), len) }) })
+	dec_find_dot : CceText, I64, I64 -> I64
+	dec_find_dot = |s, i, len| (if (i >= len) { (0 - 1) } else { (if (CceChar.code(CceText.char_at(s, i)) == 65) { i } else { dec_find_dot(s, (i + 1), len) }) })
 
 	dec_whole_part : Decimal.Decimal -> I64
 	dec_whole_part = |d| I64.div_trunc_by(d.dec_mantissa, dec_pow10(d.dec_scale))

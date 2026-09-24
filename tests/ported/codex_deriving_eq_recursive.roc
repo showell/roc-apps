@@ -18,7 +18,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # DerivingEqRecursive -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -56,11 +56,11 @@ eq_Tree = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed((if eq_Tree(pair_tree, mk_fork(leaf, leaf)) { "eq" } else { "ne" })))
-	line!(Text.printed((if eq_Tree(pair_tree, leaf) { "eq" } else { "ne" })))
-	line!(Text.printed((if eq_Tree(leaf, leaf) { "eq" } else { "ne" })))
-	line!(Text.printed((if eq_Tree(nested_tree, mk_fork(mk_fork(leaf, leaf), leaf)) { "eq" } else { "ne" })))
-	line!(Text.printed((if eq_Tree(nested_tree, pair_tree) { "eq" } else { "ne" })))
-	line!(Text.printed((if eq_Tree(pair_tree, pair_tree) { "eq" } else { "ne" })))
+	line!(CceText.printed((if eq_Tree(pair_tree, mk_fork(leaf, leaf)) { "eq" } else { "ne" })))
+	line!(CceText.printed((if eq_Tree(pair_tree, leaf) { "eq" } else { "ne" })))
+	line!(CceText.printed((if eq_Tree(leaf, leaf) { "eq" } else { "ne" })))
+	line!(CceText.printed((if eq_Tree(nested_tree, mk_fork(mk_fork(leaf, leaf), leaf)) { "eq" } else { "ne" })))
+	line!(CceText.printed((if eq_Tree(nested_tree, pair_tree) { "eq" } else { "ne" })))
+	line!(CceText.printed((if eq_Tree(pair_tree, pair_tree) { "eq" } else { "ne" })))
 	Ok({})
 }

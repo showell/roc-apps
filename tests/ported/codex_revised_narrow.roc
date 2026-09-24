@@ -15,13 +15,13 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # RevisedNarrow -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Reading : { level : I64, label : Text }
+Reading : { level : I64, label : CceText }
 
 make_literal : I64 -> Reading
 make_literal = |n| { level: n, label: "lit" }
@@ -50,9 +50,9 @@ main! = |_args| {
 		b = make_revised(make_literal(5), 7)
 		c = make_mixed(make_literal(5), 99)
 		({
-			line!(Text.printed(Text.concat(Text.concat(Text.concat("literal: ", Text.show_int(a.level)), " "), a.label)))
-			line!(Text.printed(Text.concat(Text.concat(Text.concat("revised: ", Text.show_int(b.level)), " "), b.label)))
-			line!(Text.printed(Text.concat(Text.concat(Text.concat("mixed: ", Text.show_int(c.level)), " "), c.label)))
+			line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat("literal: ", CceText.show_int(a.level)), " "), a.label)))
+			line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat("revised: ", CceText.show_int(b.level)), " "), b.label)))
+			line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat("mixed: ", CceText.show_int(c.level)), " "), c.label)))
 		})
 	})
 	Ok({})

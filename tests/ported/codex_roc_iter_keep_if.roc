@@ -13,7 +13,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # RocIterKeepIf -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -54,8 +54,8 @@ main! = |_args| {
 	({
 		kept = iter_keep_if(range_to(1, 4), lam_2)
 		(match (kept.next)(0) {
-			One(item, _rest) => line!(Text.printed(Text.show_int(item)))
-			Done => line!(Text.printed(Text.show_int((0 - 1))))
+			One(item, _rest) => line!(CceText.printed(CceText.show_int(item)))
+			Done => line!(CceText.printed(CceText.show_int((0 - 1))))
 		})
 	})
 	Ok({})

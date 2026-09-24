@@ -1,5 +1,5 @@
 # Theme -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
-import Text
+import CceText
 
 Theme :: [].{
 	Palette : { pal_bg : I64, pal_fg : I64, pal_primary : I64, pal_secondary : I64, pal_accent : I64, pal_muted : I64, pal_error : I64, pal_success : I64, pal_warning : I64, pal_border : I64 }
@@ -13,7 +13,7 @@ Theme :: [].{
 	AccentBorder : { ab_side : I64, ab_width : I64, ab_color : I64, ab_enabled : Bool }
 	WidgetStyle : { ws_bg : I64, ws_fg : I64, ws_border : Theme.Border, ws_padding : Theme.Edges, ws_margin : Theme.Edges, ws_min_width : I64, ws_min_height : I64, ws_shadow : Theme.Shadow, ws_gradient : Theme.Gradient, ws_accent_border : Theme.AccentBorder, ws_bevel : Theme.Bevel }
 	StateStyles : { ss_normal : Theme.WidgetStyle, ss_hover : Theme.WidgetStyle, ss_pressed : Theme.WidgetStyle, ss_disabled : Theme.WidgetStyle, ss_focused : Theme.WidgetStyle }
-	Theme : { th_name : Text, th_palette : Theme.Palette, th_panel : Theme.StateStyles, th_button : Theme.StateStyles, th_label : Theme.StateStyles, th_input : Theme.StateStyles, th_gauge : Theme.StateStyles, th_separator : Theme.StateStyles }
+	Theme : { th_name : CceText, th_palette : Theme.Palette, th_panel : Theme.StateStyles, th_button : Theme.StateStyles, th_label : Theme.StateStyles, th_input : Theme.StateStyles, th_gauge : Theme.StateStyles, th_separator : Theme.StateStyles }
 
 	shadow_none : Theme.Shadow
 	shadow_none = { sh_offset_x: 0, sh_offset_y: 0, sh_blur: 0, sh_color: 0, sh_enabled: False }
@@ -242,10 +242,10 @@ Theme :: [].{
 		(if (tone == tone_primary) { pal.pal_primary } else { (if (tone == tone_success) { pal.pal_success } else { (if (tone == tone_warning) { pal.pal_warning } else { (if (tone == tone_error) { pal.pal_error } else { (if (tone == tone_muted) { pal.pal_muted } else { fallback }) }) }) }) })
 	})
 
-	tone_name : I64 -> Text
+	tone_name : I64 -> CceText
 	tone_name = |tone| (if (tone == tone_primary) { "primary" } else { (if (tone == tone_success) { "success" } else { (if (tone == tone_warning) { "warning" } else { (if (tone == tone_error) { "error" } else { (if (tone == tone_muted) { "muted" } else { "none" }) }) }) }) })
 
-	theme_fmt_bool : Bool -> Text
+	theme_fmt_bool : Bool -> CceText
 	theme_fmt_bool = |b| (if b { "true" } else { "false" })
 
 	eq_CornerStyle : Theme.CornerStyle, Theme.CornerStyle -> Bool

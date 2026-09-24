@@ -30,11 +30,11 @@ kept, so nothing here ships untested.
 first and one is dropped when it would add more than `--cap` KB of
 chapter text nobody else needs.
 
-**THE CAP MUST CLEAR THE BIGGEST SHARED CHAPTER.** A test is charged for the
-chapters no earlier test needed, so the first test to need `Text` pays for
-all 13 KB of it: at a cap below that, nothing that prints anything is ever
-admitted and the package is the encoders alone. The default of 16 takes
-about two thirds of the corpus; the whole set is in roc-apps either way.
+A test is charged for the chapters no earlier test needed. rocemit's own
+modules (`CceText`, `CceChar`, `Prelude`) are not chapters and are free: the
+runtime every printing test needs, which charged to the first of them put
+everything that prints over the cap. The default of 16 takes about two
+thirds of the corpus; the whole set is in roc-apps either way.
 """
 import os, re, shutil, subprocess, sys, time
 
@@ -273,6 +273,11 @@ SLOW = {
 }
 
 
+# The modules rocemit writes itself rather than from a chapter: the runtime
+# every test that prints needs, not a chapter one test drags in.
+RUNTIME = {"CceText", "CceChar", "Prelude"}
+
+
 def pick(order, cap):
     """The tests to package, cheapest first, under a per-test byte cap.
 
@@ -285,7 +290,7 @@ def pick(order, cap):
     for u in order:
         _, chapters, why = modules(u)
         if not why:
-            sizes[u] = {c: len(t) for c, t in chapters.items()}
+            sizes[u] = {c: len(t) for c, t in chapters.items() if c not in RUNTIME}
     if cap <= 0:
         return [u for u in order if u in sizes]
     have, kept, rest = {}, [], set(sizes)
@@ -301,11 +306,10 @@ def pick(order, cap):
 
 def main():
     check_only = "--check" in sys.argv
-    # **THE CAP MUST CLEAR THE BIGGEST SHARED CHAPTER.** The cost of a test
-    # is the chapters no test before it needed, so the first test to need
-    # Text pays all of Text: at a cap below its 13 KB, nothing that prints
-    # anything is ever admitted, and the package is the encoders alone (17
-    # tests, where the same corpus gives 530 at 16).
+    # The cost of a test is the chapters no test before it needed. rocemit's
+    # own modules are not chapters and cost nothing (RUNTIME): charged, the
+    # first test to print paid all 16 KB of CceText and CceChar, and at a cap
+    # of 16 nothing that prints was ever admitted (17 tests, not 526).
     cap = 16
     if "--cap" in sys.argv:
         cap = int(sys.argv[sys.argv.index("--cap") + 1])

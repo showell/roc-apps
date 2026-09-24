@@ -13,8 +13,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Prelude
-import cdx.Text
 
 # TcoShuffleSpill -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -44,6 +44,6 @@ loop5 = |cfg, r, units, turn, active| (if (r.state >= 8) { turn } else { ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("turns=", Text.show_int(loop5({ width: 4, nplayers: 2, limit: 3, data: [1, 2] }, { state: 0 }, [7, 8], 0, 0)))))
+	line!(CceText.printed(CceText.concat("turns=", CceText.show_int(loop5({ width: 4, nplayers: 2, limit: 3, data: [1, 2] }, { state: 0 }, [7, 8], 0, 0)))))
 	Ok({})
 }

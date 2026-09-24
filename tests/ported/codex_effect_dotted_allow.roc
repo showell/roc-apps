@@ -13,7 +13,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # EffectDottedAllow -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -29,6 +29,6 @@ caller! = |n| narrow!(n)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("result ", Text.show_int(caller!(41)))))
+	line!(CceText.printed(CceText.concat("result ", CceText.show_int(caller!(41)))))
 	Ok({})
 }

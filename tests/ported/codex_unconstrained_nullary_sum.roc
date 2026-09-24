@@ -18,7 +18,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # UnconstrainedNullarySum -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -26,7 +26,7 @@ import cdx.Text
 line! = |s| echo!(Str.concat(s, "\n"))
 Foo(a) : [Bar(a), Baz]
 
-inspect_foo : Foo(a) -> Text
+inspect_foo : Foo(a) -> CceText
 inspect_foo = |_ignored| "ok"
 
 payload_or : Foo(a), a -> a
@@ -50,11 +50,11 @@ eq_Foo = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(inspect_foo(Baz)))
-	line!(Text.printed(inspect_foo(Bar(1))))
-	line!(Text.printed(Text.show_int(payload_or(Baz, 42))))
-	line!(Text.printed(payload_or(Baz, "text")))
-	line!(Text.printed(Text.show_int(payload_or(Bar(7), 0))))
-	line!(Text.printed(payload_or(Bar("kept"), "fallback")))
+	line!(CceText.printed(inspect_foo(Baz)))
+	line!(CceText.printed(inspect_foo(Bar(1))))
+	line!(CceText.printed(CceText.show_int(payload_or(Baz, 42))))
+	line!(CceText.printed(payload_or(Baz, "text")))
+	line!(CceText.printed(CceText.show_int(payload_or(Bar(7), 0))))
+	line!(CceText.printed(payload_or(Bar("kept"), "fallback")))
 	Ok({})
 }

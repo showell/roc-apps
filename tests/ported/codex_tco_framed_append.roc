@@ -15,7 +15,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # TcoFramedAppendTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -26,10 +26,10 @@ Step : [Go, Stop]
 step_of : I64 -> Step
 step_of = |n| (if (n <= 0) { Stop } else { Go })
 
-by_append_text : I64, Text -> Text
+by_append_text : I64, CceText -> CceText
 by_append_text = |n, acc| (match step_of(n) {
 	Stop => acc
-	Go => by_append_text((n - 1), Text.concat(acc, "x"))
+	Go => by_append_text((n - 1), CceText.concat(acc, "x"))
 })
 
 eq_Step : Step, Step -> Bool
@@ -47,8 +47,8 @@ eq_Step = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed("01 start"))
-	line!(Text.printed(Text.concat("02 append-text ", Text.show_int(Text.len(by_append_text(4, ""))))))
-	line!(Text.printed("03 done"))
+	line!(CceText.printed("01 start"))
+	line!(CceText.printed(CceText.concat("02 append-text ", CceText.show_int(CceText.len(by_append_text(4, ""))))))
+	line!(CceText.printed("03 done"))
 	Ok({})
 }

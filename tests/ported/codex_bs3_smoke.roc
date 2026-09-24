@@ -15,30 +15,30 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # BS3Smoke -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 Maybe2(a) : [Just2(a), None2]
-Def : { name : Text, body : Text }
-Thing : { th_name : Text, th_body : Text }
+Def : { name : CceText, body : CceText }
+Thing : { th_name : CceText, th_body : CceText }
 Holder : [Plain(Thing)]
 Box2(a) : [Box2(a)]
 
-extract_name : Maybe2(Def) -> Text
+extract_name : Maybe2(Def) -> CceText
 extract_name = |m| (match m {
 	Just2(d) => d.name
 	None2 => "none"
 })
 
-extract_holder : Holder -> Text
+extract_holder : Holder -> CceText
 extract_holder = |m| (match m {
 	Plain(t) => t.th_name
 })
 
-extract_box : Box2(Thing) -> Text
+extract_box : Box2(Thing) -> CceText
 extract_box = |m| (match m {
 	Box2(t) => t.th_name
 })
@@ -74,8 +74,8 @@ eq_Box2 = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(extract_name(Just2({ name: "hello", body: "world" }))))
-	line!(Text.printed(extract_holder(Plain({ th_name: "hi", th_body: "b" }))))
-	line!(Text.printed(extract_box(Box2({ th_name: "bye", th_body: "c" }))))
+	line!(CceText.printed(extract_name(Just2({ name: "hello", body: "world" }))))
+	line!(CceText.printed(extract_holder(Plain({ th_name: "hi", th_body: "b" }))))
+	line!(CceText.printed(extract_box(Box2({ th_name: "bye", th_body: "c" }))))
 	Ok({})
 }

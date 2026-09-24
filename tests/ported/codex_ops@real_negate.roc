@@ -18,7 +18,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # RealNegate -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -53,11 +53,11 @@ mixed = |a, b| ((((-dot(a, b)) * 2.0) + a.vx) * 10.0)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("neg-param   ", Text.show_int(F64.to_i64_wrap((neg_param(2.5) * 10.0))))))
-	line!(Text.printed(Text.concat("neg-call    ", Text.show_int(F64.to_i64_wrap((neg_call(2.5) * 10.0))))))
-	line!(Text.printed(Text.concat("neg-field   ", Text.show_int(F64.to_i64_wrap((neg_field({ vx: 1.5, vy: 0.0 }) * 10.0))))))
-	line!(Text.printed(Text.concat("neg-nested  ", Text.show_int(F64.to_i64_wrap((neg_nested(2.0) * 10.0))))))
-	line!(Text.printed(Text.concat("neg-multi   ", Text.show_int(F64.to_i64_wrap((neg_call_multi({ vx: 3.0, vy: 4.0 }, { vx: 1.0, vy: 2.0 }) * 10.0))))))
-	line!(Text.printed(Text.concat("mixed       ", Text.show_int(F64.to_i64_wrap(mixed({ vx: 3.0, vy: 4.0 }, { vx: 1.0, vy: 2.0 }))))))
+	line!(CceText.printed(CceText.concat("neg-param   ", CceText.show_int(F64.to_i64_wrap((neg_param(2.5) * 10.0))))))
+	line!(CceText.printed(CceText.concat("neg-call    ", CceText.show_int(F64.to_i64_wrap((neg_call(2.5) * 10.0))))))
+	line!(CceText.printed(CceText.concat("neg-field   ", CceText.show_int(F64.to_i64_wrap((neg_field({ vx: 1.5, vy: 0.0 }) * 10.0))))))
+	line!(CceText.printed(CceText.concat("neg-nested  ", CceText.show_int(F64.to_i64_wrap((neg_nested(2.0) * 10.0))))))
+	line!(CceText.printed(CceText.concat("neg-multi   ", CceText.show_int(F64.to_i64_wrap((neg_call_multi({ vx: 3.0, vy: 4.0 }, { vx: 1.0, vy: 2.0 }) * 10.0))))))
+	line!(CceText.printed(CceText.concat("mixed       ", CceText.show_int(F64.to_i64_wrap(mixed({ vx: 3.0, vy: 4.0 }, { vx: 1.0, vy: 2.0 }))))))
 	Ok({})
 }

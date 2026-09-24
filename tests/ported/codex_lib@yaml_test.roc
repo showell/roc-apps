@@ -17,7 +17,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 import cdx.Yaml
 
 # YamlTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
@@ -33,26 +33,26 @@ main! = |_args| {
 		({
 			(match Yaml.yaml_parse(input) {
 				Just(v) => ({
-					line!(Text.printed(Text.concat("name=", Yaml.yaml_get_str(v, "name", "?"))))
-					line!(Text.printed(Text.concat("version=", Text.show_int(Yaml.yaml_get_int(v, "version", 0)))))
+					line!(CceText.printed(CceText.concat("name=", Yaml.yaml_get_str(v, "name", "?"))))
+					line!(CceText.printed(CceText.concat("version=", CceText.show_int(Yaml.yaml_get_int(v, "version", 0)))))
 					({
 						emitted = Yaml.yaml_emit(v)
-						line!(Text.printed(Text.concat("emit-len=", Text.show_int(Text.len(emitted)))))
+						line!(CceText.printed(CceText.concat("emit-len=", CceText.show_int(CceText.len(emitted)))))
 					})
 				})
-				None => line!(Text.printed("parse=fail"))
+				None => line!(CceText.printed("parse=fail"))
 			})
 			({
 				list_input = "- alpha\n- beta\n- gamma\n"
 				({
 					(match Yaml.yaml_parse(list_input) {
 						Just(v) => (match v {
-							YamlList(items) => line!(Text.printed(Text.concat("list-len=", Text.show_int(U64.to_i64_wrap(List.len(items))))))
-							_ => line!(Text.printed("list=fail:type"))
+							YamlList(items) => line!(CceText.printed(CceText.concat("list-len=", CceText.show_int(U64.to_i64_wrap(List.len(items))))))
+							_ => line!(CceText.printed("list=fail:type"))
 						})
-						None => line!(Text.printed("list=fail"))
+						None => line!(CceText.printed("list=fail"))
 					})
-					line!(Text.printed(Text.concat("null=", (match Yaml.yaml_parse("x: null\n") {
+					line!(CceText.printed(CceText.concat("null=", (match Yaml.yaml_parse("x: null\n") {
 						Just(v) => Yaml.yaml_get_str(v, "x", "null-ok")
 						None => "fail"
 					}))))

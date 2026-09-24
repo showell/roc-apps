@@ -21,13 +21,13 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # SumFieldEq -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Held : [Empty, Hold(Text)]
+Held : [Empty, Hold(CceText)]
 Quad : [Quad(I64, I64, I64, I64)]
 
 eq_Held : Held, Held -> Bool
@@ -53,14 +53,14 @@ eq_Quad = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed((if eq_Held(Hold(Text.concat("h", "i")), Hold("hi")) { "eq" } else { "ne" })))
-	line!(Text.printed((if eq_Held(Hold("hi"), Hold("no")) { "eq" } else { "ne" })))
-	line!(Text.printed((if eq_Held(Empty, Empty) { "eq" } else { "ne" })))
-	line!(Text.printed((if eq_Held(Empty, Hold("hi")) { "eq" } else { "ne" })))
-	line!(Text.printed((if eq_Quad(Quad(1, 2, 3, 4), Quad(1, 2, 3, 4)) { "eq" } else { "ne" })))
-	line!(Text.printed((if eq_Quad(Quad(9, 2, 3, 4), Quad(1, 2, 3, 4)) { "eq" } else { "ne" })))
-	line!(Text.printed((if eq_Quad(Quad(1, 9, 3, 4), Quad(1, 2, 3, 4)) { "eq" } else { "ne" })))
-	line!(Text.printed((if eq_Quad(Quad(1, 2, 9, 4), Quad(1, 2, 3, 4)) { "eq" } else { "ne" })))
-	line!(Text.printed((if eq_Quad(Quad(1, 2, 3, 9), Quad(1, 2, 3, 4)) { "eq" } else { "ne" })))
+	line!(CceText.printed((if eq_Held(Hold(CceText.concat("h", "i")), Hold("hi")) { "eq" } else { "ne" })))
+	line!(CceText.printed((if eq_Held(Hold("hi"), Hold("no")) { "eq" } else { "ne" })))
+	line!(CceText.printed((if eq_Held(Empty, Empty) { "eq" } else { "ne" })))
+	line!(CceText.printed((if eq_Held(Empty, Hold("hi")) { "eq" } else { "ne" })))
+	line!(CceText.printed((if eq_Quad(Quad(1, 2, 3, 4), Quad(1, 2, 3, 4)) { "eq" } else { "ne" })))
+	line!(CceText.printed((if eq_Quad(Quad(9, 2, 3, 4), Quad(1, 2, 3, 4)) { "eq" } else { "ne" })))
+	line!(CceText.printed((if eq_Quad(Quad(1, 9, 3, 4), Quad(1, 2, 3, 4)) { "eq" } else { "ne" })))
+	line!(CceText.printed((if eq_Quad(Quad(1, 2, 9, 4), Quad(1, 2, 3, 4)) { "eq" } else { "ne" })))
+	line!(CceText.printed((if eq_Quad(Quad(1, 2, 3, 9), Quad(1, 2, 3, 4)) { "eq" } else { "ne" })))
 	Ok({})
 }

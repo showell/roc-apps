@@ -18,17 +18,17 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # ListIndexBounds -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-walk_at : List(I64), I64, I64, Text -> Text
-walk_at = |xs, i, n, acc| (if (i >= n) { acc } else { walk_at(xs, (i + 1), n, Text.concat(Text.concat(acc, " "), Text.show_int((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))) })
+walk_at : List(I64), I64, I64, CceText -> CceText
+walk_at = |xs, i, n, acc| (if (i >= n) { acc } else { walk_at(xs, (i + 1), n, CceText.concat(CceText.concat(acc, " "), CceText.show_int((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))) })
 
-read_all : List(I64) -> Text
+read_all : List(I64) -> CceText
 read_all = |xs| walk_at(xs, 0, U64.to_i64_wrap(List.len(xs)), "")
 
 set_walk : List(I64), I64, I64 -> List(I64)
@@ -37,11 +37,11 @@ set_walk = |xs, i, n| (if (i >= n) { xs } else { set_walk((List.set(xs, I64.to_u
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("read:", read_all([1, 2, 3, 4]))))
-	line!(Text.printed(Text.concat("last=", Text.show_int((List.get([1, 2, 3, 4], I64.to_u64_wrap(3)) ?? crash("list-at out of range"))))))
-	line!(Text.printed(Text.concat("set:", read_all(set_walk([1, 2, 3, 4], 0, 4)))))
-	line!(Text.printed(Text.concat("ins-front:", read_all((List.insert([1, 2, 3], I64.to_u64_wrap(0), 99) ?? crash("list-insert-at past the end"))))))
-	line!(Text.printed(Text.concat("ins-mid:", read_all((List.insert([1, 2, 3], I64.to_u64_wrap(1), 99) ?? crash("list-insert-at past the end"))))))
-	line!(Text.printed(Text.concat("ins-end:", read_all((List.insert([1, 2, 3], I64.to_u64_wrap(3), 99) ?? crash("list-insert-at past the end"))))))
+	line!(CceText.printed(CceText.concat("read:", read_all([1, 2, 3, 4]))))
+	line!(CceText.printed(CceText.concat("last=", CceText.show_int((List.get([1, 2, 3, 4], I64.to_u64_wrap(3)) ?? crash("list-at out of range"))))))
+	line!(CceText.printed(CceText.concat("set:", read_all(set_walk([1, 2, 3, 4], 0, 4)))))
+	line!(CceText.printed(CceText.concat("ins-front:", read_all((List.insert([1, 2, 3], I64.to_u64_wrap(0), 99) ?? crash("list-insert-at past the end"))))))
+	line!(CceText.printed(CceText.concat("ins-mid:", read_all((List.insert([1, 2, 3], I64.to_u64_wrap(1), 99) ?? crash("list-insert-at past the end"))))))
+	line!(CceText.printed(CceText.concat("ins-end:", read_all((List.insert([1, 2, 3], I64.to_u64_wrap(3), 99) ?? crash("list-insert-at past the end"))))))
 	Ok({})
 }

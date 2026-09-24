@@ -13,8 +13,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.DisjointSlice
-import cdx.Text
 
 # FwdGpuDisjointSliceTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -26,7 +26,7 @@ line! = |s| echo!(Str.concat(s, "\n"))
 main! = |_args| {
 	({
 		s = DisjointSlice.disjoint_from_buffer(0, 1024)
-		line!(Text.printed(Text.show_int(DisjointSlice.disjoint_length(s))))
+		line!(CceText.printed(CceText.show_int(DisjointSlice.disjoint_length(s))))
 	})
 	Ok({})
 }

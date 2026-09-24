@@ -18,7 +18,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # UnitFamilyMixed -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -92,12 +92,12 @@ main! = |_args| {
 		p = perimeter(w, h)
 		fence = total_fence(meter(3), foot(10), inch(24), yard(2))
 		({
-			line!(Text.printed(Text.concat(Text.concat("perimeter mm+yard: ", Text.show_int(p)), "mm")))
-			line!(Text.printed(Text.concat("  in cm: ", Text.show_int(length_to_Centimeter(p)))))
-			line!(Text.printed(Text.concat("  in inches: ", Text.show_int(length_to_Inch(p)))))
-			line!(Text.printed(Text.concat(Text.concat("fence: ", Text.show_int(fence)), "mm")))
-			line!(Text.printed(Text.concat("  in meters: ", Text.show_int(length_to_Meter(fence)))))
-			line!(Text.printed(Text.concat("  in feet: ", Text.show_int(length_to_Foot(fence)))))
+			line!(CceText.printed(CceText.concat(CceText.concat("perimeter mm+yard: ", CceText.show_int(p)), "mm")))
+			line!(CceText.printed(CceText.concat("  in cm: ", CceText.show_int(length_to_Centimeter(p)))))
+			line!(CceText.printed(CceText.concat("  in inches: ", CceText.show_int(length_to_Inch(p)))))
+			line!(CceText.printed(CceText.concat(CceText.concat("fence: ", CceText.show_int(fence)), "mm")))
+			line!(CceText.printed(CceText.concat("  in meters: ", CceText.show_int(length_to_Meter(fence)))))
+			line!(CceText.printed(CceText.concat("  in feet: ", CceText.show_int(length_to_Foot(fence)))))
 		})
 	})
 	Ok({})

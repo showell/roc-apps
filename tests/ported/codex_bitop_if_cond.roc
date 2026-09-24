@@ -15,7 +15,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # BitopIfCond -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -31,8 +31,8 @@ count_nz = |x, acc| (if (x == 0) { acc } else { (if ((x - (I64.div_trunc_by(x, 2
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("count-ones 5: ", Text.show_int(count_ones(5, 0)))))
-	line!(Text.printed(Text.concat("count-ones 255: ", Text.show_int(count_ones(255, 0)))))
-	line!(Text.printed(Text.concat("count-nz 5: ", Text.show_int(count_nz(5, 0)))))
+	line!(CceText.printed(CceText.concat("count-ones 5: ", CceText.show_int(count_ones(5, 0)))))
+	line!(CceText.printed(CceText.concat("count-ones 255: ", CceText.show_int(count_ones(255, 0)))))
+	line!(CceText.printed(CceText.concat("count-nz 5: ", CceText.show_int(count_nz(5, 0)))))
 	Ok({})
 }

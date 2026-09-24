@@ -24,7 +24,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # UnitRealArith -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -61,17 +61,17 @@ ts = |a, b| (a - b)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("add ", Text.show_int(ma(1.5, 2.5)))))
-	line!(Text.printed(Text.concat("addneg ", Text.show_int(ma((0.0 - 2.9), (0.0 - 1.5))))))
-	line!(Text.printed(Text.concat("sub ", Text.show_int(ms(1.5, 2.5)))))
-	line!(Text.printed(Text.concat("subneg ", Text.show_int(ms((0.0 - 2.9), (0.0 - 1.5))))))
-	line!(Text.printed(Text.concat("mul ", Text.show_int(mm(2.5, 2.0)))))
-	line!(Text.printed(Text.concat("mulneg ", Text.show_int(mm((0.0 - 2.5), 2.0)))))
-	line!(Text.printed(Text.concat("div ", Text.show_int(md(5.0, 2.0)))))
-	line!(Text.printed(Text.concat("divneg ", Text.show_int(md((0.0 - 5.0), 2.0)))))
-	line!(Text.printed(Text.concat("nestadd ", Text.show_int(sa(1.5, 2.5)))))
-	line!(Text.printed(Text.concat("nestmul ", Text.show_int(sm(2.5, 2.0)))))
-	line!(Text.printed(Text.concat("tadd ", Text.show_int(ta(7, 5)))))
-	line!(Text.printed(Text.concat("tsub ", Text.show_int(ts(7, 5)))))
+	line!(CceText.printed(CceText.concat("add ", CceText.show_int(ma(1.5, 2.5)))))
+	line!(CceText.printed(CceText.concat("addneg ", CceText.show_int(ma((0.0 - 2.9), (0.0 - 1.5))))))
+	line!(CceText.printed(CceText.concat("sub ", CceText.show_int(ms(1.5, 2.5)))))
+	line!(CceText.printed(CceText.concat("subneg ", CceText.show_int(ms((0.0 - 2.9), (0.0 - 1.5))))))
+	line!(CceText.printed(CceText.concat("mul ", CceText.show_int(mm(2.5, 2.0)))))
+	line!(CceText.printed(CceText.concat("mulneg ", CceText.show_int(mm((0.0 - 2.5), 2.0)))))
+	line!(CceText.printed(CceText.concat("div ", CceText.show_int(md(5.0, 2.0)))))
+	line!(CceText.printed(CceText.concat("divneg ", CceText.show_int(md((0.0 - 5.0), 2.0)))))
+	line!(CceText.printed(CceText.concat("nestadd ", CceText.show_int(sa(1.5, 2.5)))))
+	line!(CceText.printed(CceText.concat("nestmul ", CceText.show_int(sm(2.5, 2.0)))))
+	line!(CceText.printed(CceText.concat("tadd ", CceText.show_int(ta(7, 5)))))
+	line!(CceText.printed(CceText.concat("tsub ", CceText.show_int(ts(7, 5)))))
 	Ok({})
 }

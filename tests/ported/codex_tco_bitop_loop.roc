@@ -24,8 +24,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Prelude
-import cdx.Text
 
 # TcoBitopLoop -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -71,17 +71,17 @@ loop_and3 = |acc, k, pad| (if (k >= 8) { acc } else { loop_and3(I64.bitwise_and(
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("loop-both: ", Text.show_int(loop_both(0, 0)))))
-	line!(Text.printed(Text.concat("loop-a0: ", Text.show_int(loop_a0(255, 0)))))
-	line!(Text.printed(Text.concat("loop-none: ", Text.show_int(loop_none(255, 0)))))
-	line!(Text.printed(Text.concat("loop-shru: ", Text.show_int(loop_shru(255, 0)))))
-	line!(Text.printed(Text.concat("loop-shl: ", Text.show_int(loop_shl(1, 0)))))
-	line!(Text.printed(Text.concat("loop-xor: ", Text.show_int(loop_xor(255, 0)))))
-	line!(Text.printed(Text.concat("loop-or: ", Text.show_int(loop_or(254, 0)))))
-	line!(Text.printed(Text.concat("loop-shr: ", Text.show_int(loop_shr(255, 0)))))
-	line!(Text.printed(Text.concat("loop-not: ", Text.show_int(loop_not(255, 0)))))
-	line!(Text.printed(Text.concat("loop-mod: ", Text.show_int(loop_mod(123456, 0)))))
-	line!(Text.printed(Text.concat("loop-sub: ", Text.show_int(loop_sub(255, 0)))))
-	line!(Text.printed(Text.concat("loop-and3: ", Text.show_int(loop_and3(255, 0, 7)))))
+	line!(CceText.printed(CceText.concat("loop-both: ", CceText.show_int(loop_both(0, 0)))))
+	line!(CceText.printed(CceText.concat("loop-a0: ", CceText.show_int(loop_a0(255, 0)))))
+	line!(CceText.printed(CceText.concat("loop-none: ", CceText.show_int(loop_none(255, 0)))))
+	line!(CceText.printed(CceText.concat("loop-shru: ", CceText.show_int(loop_shru(255, 0)))))
+	line!(CceText.printed(CceText.concat("loop-shl: ", CceText.show_int(loop_shl(1, 0)))))
+	line!(CceText.printed(CceText.concat("loop-xor: ", CceText.show_int(loop_xor(255, 0)))))
+	line!(CceText.printed(CceText.concat("loop-or: ", CceText.show_int(loop_or(254, 0)))))
+	line!(CceText.printed(CceText.concat("loop-shr: ", CceText.show_int(loop_shr(255, 0)))))
+	line!(CceText.printed(CceText.concat("loop-not: ", CceText.show_int(loop_not(255, 0)))))
+	line!(CceText.printed(CceText.concat("loop-mod: ", CceText.show_int(loop_mod(123456, 0)))))
+	line!(CceText.printed(CceText.concat("loop-sub: ", CceText.show_int(loop_sub(255, 0)))))
+	line!(CceText.printed(CceText.concat("loop-and3: ", CceText.show_int(loop_and3(255, 0, 7)))))
 	Ok({})
 }

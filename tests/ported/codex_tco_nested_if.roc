@@ -15,7 +15,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # TcoNestedIf -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -31,8 +31,8 @@ ptl = |n, s| (if (n <= 0) { 999 } else { (if (s == 1) { ptl((n - 1), s) } else {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("arm-then: ", Text.show_int(ptl(3, 6)))))
-	line!(Text.printed(Text.concat("after-arm: ", Text.show_int(ptl(1, 7)))))
-	line!(Text.printed(Text.concat("base: ", Text.show_int(ptl(0, 6)))))
+	line!(CceText.printed(CceText.concat("arm-then: ", CceText.show_int(ptl(3, 6)))))
+	line!(CceText.printed(CceText.concat("after-arm: ", CceText.show_int(ptl(1, 7)))))
+	line!(CceText.printed(CceText.concat("base: ", CceText.show_int(ptl(0, 6)))))
 	Ok({})
 }

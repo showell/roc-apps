@@ -17,7 +17,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # FramelessLeafProbe -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -51,10 +51,10 @@ flp_plusk = |x| (x + flp_mask)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("add32=", Text.show_int(flp_add32(1634760805, 2036477234)))))
-	line!(Text.printed(Text.concat("rotl32=", Text.show_int(flp_rotl32(1634760805, 7)))))
-	line!(Text.printed(Text.concat("gmul2=", Text.show_int(flp_gmul2(202)))))
-	line!(Text.printed(Text.concat("block=", Text.show_int(flp_block(628)))))
-	line!(Text.printed(Text.concat("plusk=", Text.show_int(flp_plusk(7)))))
+	line!(CceText.printed(CceText.concat("add32=", CceText.show_int(flp_add32(1634760805, 2036477234)))))
+	line!(CceText.printed(CceText.concat("rotl32=", CceText.show_int(flp_rotl32(1634760805, 7)))))
+	line!(CceText.printed(CceText.concat("gmul2=", CceText.show_int(flp_gmul2(202)))))
+	line!(CceText.printed(CceText.concat("block=", CceText.show_int(flp_block(628)))))
+	line!(CceText.printed(CceText.concat("plusk=", CceText.show_int(flp_plusk(7)))))
 	Ok({})
 }

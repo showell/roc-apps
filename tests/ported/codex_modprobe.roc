@@ -20,27 +20,27 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Prelude
-import cdx.Text
 
 # ModProbe -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-mline : Text, I64, I64 -> Text
-mline = |tag, x, y| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(tag, " "), Text.show_int(x)), ","), Text.show_int(y)), " div="), Text.show_int(I64.div_trunc_by(x, y))), " mod="), Text.show_int(Prelude.int_mod(x, y)))
+mline : CceText, I64, I64 -> CceText
+mline = |tag, x, y| CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(tag, " "), CceText.show_int(x)), ","), CceText.show_int(y)), " div="), CceText.show_int(I64.div_trunc_by(x, y))), " mod="), CceText.show_int(Prelude.int_mod(x, y)))
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(mline("pp", 7, 3)))
-	line!(Text.printed(mline("np", (0 - 7), 3)))
-	line!(Text.printed(mline("pn", 7, (0 - 3))))
-	line!(Text.printed(mline("nn", (0 - 7), (0 - 3))))
-	line!(Text.printed(mline("pp2", 8, 4)))
-	line!(Text.printed(mline("np2", (0 - 8), 4)))
-	line!(Text.printed(mline("np3", (0 - 1), 8)))
-	line!(Text.printed(mline("pn3", 1, (0 - 8))))
+	line!(CceText.printed(mline("pp", 7, 3)))
+	line!(CceText.printed(mline("np", (0 - 7), 3)))
+	line!(CceText.printed(mline("pn", 7, (0 - 3))))
+	line!(CceText.printed(mline("nn", (0 - 7), (0 - 3))))
+	line!(CceText.printed(mline("pp2", 8, 4)))
+	line!(CceText.printed(mline("np2", (0 - 8), 4)))
+	line!(CceText.printed(mline("np3", (0 - 1), 8)))
+	line!(CceText.printed(mline("pn3", 1, (0 - 8))))
 	Ok({})
 }

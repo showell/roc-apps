@@ -1,5 +1,5 @@
 # MusicTheory -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
-import Text
+import CceText
 
 MusicTheory :: [].{
 
@@ -18,14 +18,14 @@ MusicTheory :: [].{
 	mt_semitone_table : List(I64)
 	mt_semitone_table = [1000, 1059, 1122, 1189, 1260, 1335, 1414, 1498, 1587, 1682, 1782, 1888]
 
-	mt_note_name : I64 -> Text
+	mt_note_name : I64 -> CceText
 	mt_note_name = |midi| ({
 		pc = (midi - (I64.div_trunc_by(midi, 12) * 12))
 		octave = (I64.div_trunc_by(midi, 12) - 1)
-		Text.concat(mt_pitch_class(pc), Text.show_int(octave))
+		CceText.concat(mt_pitch_class(pc), CceText.show_int(octave))
 	})
 
-	mt_pitch_class : I64 -> Text
+	mt_pitch_class : I64 -> CceText
 	mt_pitch_class = |pc| (if (pc == 0) { "C" } else { (if (pc == 1) { "C#" } else { (if (pc == 2) { "D" } else { (if (pc == 3) { "D#" } else { (if (pc == 4) { "E" } else { (if (pc == 5) { "F" } else { (if (pc == 6) { "F#" } else { (if (pc == 7) { "G" } else { (if (pc == 8) { "G#" } else { (if (pc == 9) { "A" } else { (if (pc == 10) { "A#" } else { "B" }) }) }) }) }) }) }) }) }) }) })
 
 	scale_major : I64 -> List(I64)
@@ -82,8 +82,8 @@ MusicTheory :: [].{
 	chord_sus4 : I64 -> List(I64)
 	chord_sus4 = |root| [root, (root + 5), (root + 7)]
 
-	mt_interval_name : I64 -> Text
-	mt_interval_name = |semitones| (if (semitones == 0) { "unison" } else { (if (semitones == 1) { "m2" } else { (if (semitones == 2) { "M2" } else { (if (semitones == 3) { "m3" } else { (if (semitones == 4) { "M3" } else { (if (semitones == 5) { "P4" } else { (if (semitones == 6) { "tritone" } else { (if (semitones == 7) { "P5" } else { (if (semitones == 8) { "m6" } else { (if (semitones == 9) { "M6" } else { (if (semitones == 10) { "m7" } else { (if (semitones == 11) { "M7" } else { (if (semitones == 12) { "octave" } else { Text.concat(Text.show_int(semitones), "st") }) }) }) }) }) }) }) }) }) }) }) }) })
+	mt_interval_name : I64 -> CceText
+	mt_interval_name = |semitones| (if (semitones == 0) { "unison" } else { (if (semitones == 1) { "m2" } else { (if (semitones == 2) { "M2" } else { (if (semitones == 3) { "m3" } else { (if (semitones == 4) { "M3" } else { (if (semitones == 5) { "P4" } else { (if (semitones == 6) { "tritone" } else { (if (semitones == 7) { "P5" } else { (if (semitones == 8) { "m6" } else { (if (semitones == 9) { "M6" } else { (if (semitones == 10) { "m7" } else { (if (semitones == 11) { "M7" } else { (if (semitones == 12) { "octave" } else { CceText.concat(CceText.show_int(semitones), "st") }) }) }) }) }) }) }) }) }) }) }) }) })
 
 	mt_bpm_to_ms : I64 -> I64
 	mt_bpm_to_ms = |bpm| I64.div_trunc_by(60000, bpm)
@@ -94,12 +94,12 @@ MusicTheory :: [].{
 	mt_samples_for_ms : I64, I64 -> I64
 	mt_samples_for_ms = |ms, sample_rate| I64.div_trunc_by((ms * sample_rate), 1000)
 
-	format_chord : List(I64) -> Text
+	format_chord : List(I64) -> CceText
 	format_chord = |notes| mt_format_notes(notes, 0, U64.to_i64_wrap(List.len(notes)), "")
 
-	mt_format_notes : List(I64), I64, I64, Text -> Text
+	mt_format_notes : List(I64), I64, I64, CceText -> CceText
 	mt_format_notes = |notes, i, n, acc| (if (i >= n) { acc } else { ({
 		sep = (if (i == 0) { "" } else { "-" })
-		mt_format_notes(notes, (i + 1), n, Text.concat(Text.concat(acc, sep), mt_note_name((List.get(notes, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))
+		mt_format_notes(notes, (i + 1), n, CceText.concat(CceText.concat(acc, sep), mt_note_name((List.get(notes, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))
 	}) })
 }

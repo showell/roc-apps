@@ -14,7 +14,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # RealNegNeg -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -30,7 +30,7 @@ neg_neg_call = |x| (-(-(x * 2.0)))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("neg-neg      ", Text.show_int(F64.to_i64_wrap((neg_neg(2.5) * 10.0))))))
-	line!(Text.printed(Text.concat("neg-neg-call ", Text.show_int(F64.to_i64_wrap((neg_neg_call(2.5) * 10.0))))))
+	line!(CceText.printed(CceText.concat("neg-neg      ", CceText.show_int(F64.to_i64_wrap((neg_neg(2.5) * 10.0))))))
+	line!(CceText.printed(CceText.concat("neg-neg-call ", CceText.show_int(F64.to_i64_wrap((neg_neg_call(2.5) * 10.0))))))
 	Ok({})
 }

@@ -24,8 +24,8 @@
 app [main!] { cdx: "./codex/main.roc" }
 
 import cdx.Bezier
+import cdx.CceText
 import cdx.MathLib
-import cdx.Text
 
 # BezierIdentity -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -44,22 +44,22 @@ pc = { vx: 700, vy: 800, vz: 900 }
 pd : Bezier.BezVec
 pd = { vx: 1000, vy: 1100, vz: 1200 }
 
-fmt : Bezier.BezVec -> Text
-fmt = |p| Text.concat(Text.concat(Text.concat(Text.concat(Text.show_int(p.vx), ","), Text.show_int(p.vy)), ","), Text.show_int(p.vz))
+fmt : Bezier.BezVec -> CceText
+fmt = |p| CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.show_int(p.vx), ","), CceText.show_int(p.vy)), ","), CceText.show_int(p.vz))
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("cubic-t0=", fmt(Bezier.bezier3_eval(pa, pb, pc, pd, 0)))))
-	line!(Text.printed(Text.concat("cubic-t1000=", fmt(Bezier.bezier3_eval(pa, pb, pc, pd, 1000)))))
-	line!(Text.printed(Text.concat("cubic-mid=", fmt(Bezier.bezier3_eval(pa, pb, pc, pd, 500)))))
-	line!(Text.printed(Text.concat("quad-t0=", fmt(Bezier.bezier2_eval(pa, pb, pc, 0)))))
-	line!(Text.printed(Text.concat("quad-t1000=", fmt(Bezier.bezier2_eval(pa, pb, pc, 1000)))))
-	line!(Text.printed(Text.concat("quad-mid=", fmt(Bezier.bezier2_eval(pa, pb, pc, 500)))))
-	line!(Text.printed(Text.concat("degen-cubic-250=", fmt(Bezier.bezier3_eval(pa, pa, pa, pa, 250)))))
-	line!(Text.printed(Text.concat("degen-cubic-500=", fmt(Bezier.bezier3_eval(pa, pa, pa, pa, 500)))))
-	line!(Text.printed(Text.concat("degen-cubic-750=", fmt(Bezier.bezier3_eval(pa, pa, pa, pa, 750)))))
-	line!(Text.printed(Text.concat("degen-quad-500=", fmt(Bezier.bezier2_eval(pa, pa, pa, 500)))))
-	line!(Text.printed(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("math-isqrt=", Text.show_int(MathLib.math_isqrt(0))), " "), Text.show_int(MathLib.math_isqrt(144))), " "), Text.show_int(MathLib.math_isqrt(1000000)))))
+	line!(CceText.printed(CceText.concat("cubic-t0=", fmt(Bezier.bezier3_eval(pa, pb, pc, pd, 0)))))
+	line!(CceText.printed(CceText.concat("cubic-t1000=", fmt(Bezier.bezier3_eval(pa, pb, pc, pd, 1000)))))
+	line!(CceText.printed(CceText.concat("cubic-mid=", fmt(Bezier.bezier3_eval(pa, pb, pc, pd, 500)))))
+	line!(CceText.printed(CceText.concat("quad-t0=", fmt(Bezier.bezier2_eval(pa, pb, pc, 0)))))
+	line!(CceText.printed(CceText.concat("quad-t1000=", fmt(Bezier.bezier2_eval(pa, pb, pc, 1000)))))
+	line!(CceText.printed(CceText.concat("quad-mid=", fmt(Bezier.bezier2_eval(pa, pb, pc, 500)))))
+	line!(CceText.printed(CceText.concat("degen-cubic-250=", fmt(Bezier.bezier3_eval(pa, pa, pa, pa, 250)))))
+	line!(CceText.printed(CceText.concat("degen-cubic-500=", fmt(Bezier.bezier3_eval(pa, pa, pa, pa, 500)))))
+	line!(CceText.printed(CceText.concat("degen-cubic-750=", fmt(Bezier.bezier3_eval(pa, pa, pa, pa, 750)))))
+	line!(CceText.printed(CceText.concat("degen-quad-500=", fmt(Bezier.bezier2_eval(pa, pa, pa, 500)))))
+	line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("math-isqrt=", CceText.show_int(MathLib.math_isqrt(0))), " "), CceText.show_int(MathLib.math_isqrt(144))), " "), CceText.show_int(MathLib.math_isqrt(1000000)))))
 	Ok({})
 }

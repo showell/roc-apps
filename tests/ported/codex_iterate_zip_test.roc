@@ -18,8 +18,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Iterate
-import cdx.Text
 
 # IterateZipTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -49,12 +49,12 @@ main! = |_args| {
 		all_true = Iterate.list_all_generic(lam_2, xs)
 		any_big = Iterate.list_any_generic(lam_3, xs)
 		({
-			line!(Text.printed(Text.show_int(U64.to_i64_wrap(List.len(zipped)))))
-			line!(Text.printed(Text.show_int((List.get(zipped, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))))
-			line!(Text.printed(Text.show_int((List.get(zipped, I64.to_u64_wrap(2)) ?? crash("list-at out of range")))))
-			line!(Text.printed(Text.show_int((List.get(products, I64.to_u64_wrap(1)) ?? crash("list-at out of range")))))
-			line!(Text.printed((if all_true { "True" } else { "False" })))
-			line!(Text.printed((if any_big { "True" } else { "False" })))
+			line!(CceText.printed(CceText.show_int(U64.to_i64_wrap(List.len(zipped)))))
+			line!(CceText.printed(CceText.show_int((List.get(zipped, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))))
+			line!(CceText.printed(CceText.show_int((List.get(zipped, I64.to_u64_wrap(2)) ?? crash("list-at out of range")))))
+			line!(CceText.printed(CceText.show_int((List.get(products, I64.to_u64_wrap(1)) ?? crash("list-at out of range")))))
+			line!(CceText.printed((if all_true { "True" } else { "False" })))
+			line!(CceText.printed((if any_big { "True" } else { "False" })))
 		})
 	})
 	Ok({})

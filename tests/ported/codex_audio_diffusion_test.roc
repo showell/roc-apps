@@ -20,8 +20,8 @@
 app [main!] { cdx: "./codex/main.roc" }
 
 import cdx.AudioAnalysis
+import cdx.CceText
 import cdx.DiffusionScheduler
-import cdx.Text
 import cdx.Units
 
 # AudioDiffusionTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
@@ -29,53 +29,53 @@ import cdx.Units
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-test_peak_rms : Text
+test_peak_rms : CceText
 test_peak_rms = ({
 	samples = [500, (0 - 800), 300, (0 - 200), 1000, (0 - 600)]
-	Text.concat(Text.concat(Text.concat("peak=", Text.show_int(AudioAnalysis.audio_peak(samples))), " rms="), Text.show_int(AudioAnalysis.audio_rms(samples)))
+	CceText.concat(CceText.concat(CceText.concat("peak=", CceText.show_int(AudioAnalysis.audio_peak(samples))), " rms="), CceText.show_int(AudioAnalysis.audio_rms(samples)))
 })
 
-test_envelope : Text
+test_envelope : CceText
 test_envelope = ({
 	samples = [500, 500, 500, 500, 100, 100, 100, 100]
 	env = AudioAnalysis.audio_envelope(samples, 4)
-	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("env=", Text.show_int(U64.to_i64_wrap(List.len(env)))), " e0="), Text.show_int((List.get(env, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))), " e1="), Text.show_int((List.get(env, I64.to_u64_wrap(1)) ?? crash("list-at out of range"))))
+	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("env=", CceText.show_int(U64.to_i64_wrap(List.len(env)))), " e0="), CceText.show_int((List.get(env, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))), " e1="), CceText.show_int((List.get(env, I64.to_u64_wrap(1)) ?? crash("list-at out of range"))))
 })
 
-test_analyze : Text
+test_analyze : CceText
 test_analyze = ({
 	samples = [0, 500, 1000, 500, 0, (0 - 500), (0 - 1000), (0 - 500), 0, 500, 1000, 500, 0, (0 - 500), (0 - 1000), (0 - 500)]
 	features = AudioAnalysis.audio_analyze(samples, 8000)
-	Text.concat("analyze: ", AudioAnalysis.format_audio_features(features))
+	CceText.concat("analyze: ", AudioAnalysis.format_audio_features(features))
 })
 
-test_linear_schedule : Text
+test_linear_schedule : CceText
 test_linear_schedule = ({
 	sched = DiffusionScheduler.linear_schedule(10, 1, 20)
-	Text.concat("linear: ", DiffusionScheduler.format_schedule(sched))
+	CceText.concat("linear: ", DiffusionScheduler.format_schedule(sched))
 })
 
-test_cosine_schedule : Text
+test_cosine_schedule : CceText
 test_cosine_schedule = ({
 	sched = DiffusionScheduler.cosine_schedule(10)
-	Text.concat("cosine: ", DiffusionScheduler.format_schedule(sched))
+	CceText.concat("cosine: ", DiffusionScheduler.format_schedule(sched))
 })
 
-test_add_noise : Text
+test_add_noise : CceText
 test_add_noise = ({
 	sched = DiffusionScheduler.linear_schedule(20, 10, 200)
 	x0 = [1000, 500, (0 - 500)]
 	noise = [100, (0 - 200), 300]
 	noisy = DiffusionScheduler.diffusion_add_noise(x0, noise, 10, sched)
-	Text.concat("noisy: len=", Text.show_int(U64.to_i64_wrap(List.len(noisy))))
+	CceText.concat("noisy: len=", CceText.show_int(U64.to_i64_wrap(List.len(noisy))))
 })
 
-test_snr : Text
+test_snr : CceText
 test_snr = ({
 	sched = DiffusionScheduler.linear_schedule(100, 1, 20)
 	snr_early = DiffusionScheduler.schedule_snr(sched, 5)
 	snr_late = DiffusionScheduler.schedule_snr(sched, 90)
-	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("snr: early=", Text.show_int(snr_early)), " late="), Text.show_int(snr_late)), " decreasing="), (if (snr_early > snr_late) { "True" } else { "False" }))
+	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("snr: early=", CceText.show_int(snr_early)), " late="), CceText.show_int(snr_late)), " decreasing="), (if (snr_early > snr_late) { "True" } else { "False" }))
 })
 
 nanosecond : I64 -> Units.Duration
@@ -1047,12 +1047,12 @@ bodyTemp_to_CelsiusBody = |fv| I64.div_trunc_by(fv, 1000)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(test_peak_rms))
-	line!(Text.printed(test_envelope))
-	line!(Text.printed(test_analyze))
-	line!(Text.printed(test_linear_schedule))
-	line!(Text.printed(test_cosine_schedule))
-	line!(Text.printed(test_add_noise))
-	line!(Text.printed(test_snr))
+	line!(CceText.printed(test_peak_rms))
+	line!(CceText.printed(test_envelope))
+	line!(CceText.printed(test_analyze))
+	line!(CceText.printed(test_linear_schedule))
+	line!(CceText.printed(test_cosine_schedule))
+	line!(CceText.printed(test_add_noise))
+	line!(CceText.printed(test_snr))
 	Ok({})
 }

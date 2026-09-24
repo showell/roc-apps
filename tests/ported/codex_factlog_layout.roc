@@ -24,9 +24,9 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.FactLog
 import cdx.Mem
-import cdx.Text
 
 # FactLogLayout -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -43,13 +43,13 @@ poke_le_loop! = |mem, buf, off, v, i, n| (if (i >= n) { (mem, 0) } else { ({
 	poke_le_loop!(mem1, buf, off, v, (i + 1), n)
 }) })
 
-pack_cce! : Mem.Mem, I64, I64, Text, I64, I64 => (Mem.Mem, I64)
+pack_cce! : Mem.Mem, I64, I64, CceText, I64, I64 => (Mem.Mem, I64)
 pack_cce! = |mem, buf, off, txt, i, n| (if (i >= n) { (mem, 0) } else { ({
-	(mem1, _p) = Mem.store!(mem, buf, (off + i), Text.char_code_at(txt, i), 1)
+	(mem1, _p) = Mem.store!(mem, buf, (off + i), CceText.char_code_at(txt, i), 1)
 	pack_cce!(mem1, buf, off, txt, (i + 1), n)
 }) })
 
-test_u16! : Mem.Mem => (Mem.Mem, Text)
+test_u16! : Mem.Mem => (Mem.Mem, CceText)
 test_u16! = |mem| ({
 	(mem5, mem__2) = ({
 	(mem1, buf) = Mem.alloc(mem, 64)
@@ -57,13 +57,13 @@ test_u16! = |mem| ({
 	(mem3, _b) = Mem.store!(mem2, buf, 1, 18, 1)
 	({
 		(mem4, mem__1) = FactLog.fl_u16!(mem3, buf, 0)
-		(mem4, Text.concat(Text.concat("u16=", Text.show_int(mem__1)), " want=4660"))
+		(mem4, CceText.concat(CceText.concat("u16=", CceText.show_int(mem__1)), " want=4660"))
 	})
 })
 	(mem5, mem__2)
 })
 
-test_u32! : Mem.Mem => (Mem.Mem, Text)
+test_u32! : Mem.Mem => (Mem.Mem, CceText)
 test_u32! = |mem| ({
 	(mem7, mem__2) = ({
 	(mem1, buf) = Mem.alloc(mem, 64)
@@ -73,39 +73,39 @@ test_u32! = |mem| ({
 	(mem5, _d) = Mem.store!(mem4, buf, 3, 18, 1)
 	({
 		(mem6, mem__1) = FactLog.fl_u32!(mem5, buf, 0)
-		(mem6, Text.concat(Text.concat("u32=", Text.show_int(mem__1)), " want=305419896"))
+		(mem6, CceText.concat(CceText.concat("u32=", CceText.show_int(mem__1)), " want=305419896"))
 	})
 })
 	(mem7, mem__2)
 })
 
-test_u64! : Mem.Mem => (Mem.Mem, Text)
+test_u64! : Mem.Mem => (Mem.Mem, CceText)
 test_u64! = |mem| ({
 	(mem4, mem__2) = ({
 	(mem1, buf) = Mem.alloc(mem, 64)
 	(mem2, _p) = poke_le!(mem1, buf, 0, 81985529216486895, 8)
 	({
 		(mem3, mem__1) = FactLog.fl_u64!(mem2, buf, 0)
-		(mem3, Text.concat(Text.concat("u64=", Text.show_int(mem__1)), " want=81985529216486895"))
+		(mem3, CceText.concat(CceText.concat("u64=", CceText.show_int(mem__1)), " want=81985529216486895"))
 	})
 })
 	(mem4, mem__2)
 })
 
-test_u64_high! : Mem.Mem => (Mem.Mem, Text)
+test_u64_high! : Mem.Mem => (Mem.Mem, CceText)
 test_u64_high! = |mem| ({
 	(mem4, mem__2) = ({
 	(mem1, buf) = Mem.alloc(mem, 64)
 	(mem2, _p) = poke_le!(mem1, buf, 0, I64.shl_wrap(128, I64.to_u8_wrap(56)), 8)
 	({
 		(mem3, mem__1) = FactLog.fl_u64!(mem2, buf, 0)
-		(mem3, Text.concat("u64-high=", Text.show_int(mem__1)))
+		(mem3, CceText.concat("u64-high=", CceText.show_int(mem__1)))
 	})
 })
 	(mem4, mem__2)
 })
 
-test_entry_fields! : Mem.Mem => (Mem.Mem, Text)
+test_entry_fields! : Mem.Mem => (Mem.Mem, CceText)
 test_entry_fields! = |mem| ({
 	(mem8, mem__4) = ({
 	(mem1, buf) = Mem.alloc(mem, 512)
@@ -116,13 +116,13 @@ test_entry_fields! = |mem| ({
 		(mem5, mem__1) = FactLog.fl_entry_kind!(mem4, buf)
 		(mem6, mem__2) = FactLog.fl_entry_timestamp!(mem5, buf)
 		(mem7, mem__3) = FactLog.fl_entry_content_len!(mem6, buf)
-		(mem7, Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("kind=", Text.show_int(mem__1)), " ts="), Text.show_int(mem__2)), " clen="), Text.show_int(mem__3)))
+		(mem7, CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("kind=", CceText.show_int(mem__1)), " ts="), CceText.show_int(mem__2)), " clen="), CceText.show_int(mem__3)))
 	})
 })
 	(mem8, mem__4)
 })
 
-test_superblock_fields! : Mem.Mem => (Mem.Mem, Text)
+test_superblock_fields! : Mem.Mem => (Mem.Mem, CceText)
 test_superblock_fields! = |mem| ({
 	(mem6, mem__3) = ({
 	(mem1, buf) = Mem.alloc(mem, 512)
@@ -131,29 +131,29 @@ test_superblock_fields! = |mem| ({
 	({
 		(mem4, mem__1) = FactLog.fl_sb_log_head!(mem3, buf)
 		(mem5, mem__2) = FactLog.fl_sb_index_gen!(mem4, buf)
-		(mem5, Text.concat(Text.concat(Text.concat("log-head=", Text.show_int(mem__1)), " index-gen="), Text.show_int(mem__2)))
+		(mem5, CceText.concat(CceText.concat(CceText.concat("log-head=", CceText.show_int(mem__1)), " index-gen="), CceText.show_int(mem__2)))
 	})
 })
 	(mem6, mem__3)
 })
 
-test_offsets : Text
-test_offsets = Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("off kind=", Text.show_int(FactLog.fl_off_kind)), " ts="), Text.show_int(FactLog.fl_off_timestamp)), " clen="), Text.show_int(FactLog.fl_off_content_len)), " hdr="), Text.show_int(FactLog.fl_header_size)), " sec="), Text.show_int(FactLog.fl_sector_size))
+test_offsets : CceText
+test_offsets = CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("off kind=", CceText.show_int(FactLog.fl_off_kind)), " ts="), CceText.show_int(FactLog.fl_off_timestamp)), " clen="), CceText.show_int(FactLog.fl_off_content_len)), " hdr="), CceText.show_int(FactLog.fl_header_size)), " sec="), CceText.show_int(FactLog.fl_sector_size))
 
-test_magic_ok! : Mem.Mem => (Mem.Mem, Text)
+test_magic_ok! : Mem.Mem => (Mem.Mem, CceText)
 test_magic_ok! = |mem| ({
 	(mem4, mem__2) = ({
 	(mem1, buf) = Mem.alloc(mem, 512)
 	(mem2, _p) = pack_cce!(mem1, buf, 0, FactLog.fl_magic, 0, 8)
 	({
 		(mem3, mem__1) = FactLog.fl_magic_ok!(mem2, buf)
-		(mem3, Text.concat("magic-ok=", (if mem__1 { "yes" } else { "no" })))
+		(mem3, CceText.concat("magic-ok=", (if mem__1 { "yes" } else { "no" })))
 	})
 })
 	(mem4, mem__2)
 })
 
-test_magic_bad! : Mem.Mem => (Mem.Mem, Text)
+test_magic_bad! : Mem.Mem => (Mem.Mem, CceText)
 test_magic_bad! = |mem| ({
 	(mem5, mem__2) = ({
 	(mem1, buf) = Mem.alloc(mem, 512)
@@ -161,29 +161,29 @@ test_magic_bad! = |mem| ({
 	(mem3, _corrupt) = Mem.store!(mem2, buf, 3, 99, 1)
 	({
 		(mem4, mem__1) = FactLog.fl_magic_ok!(mem3, buf)
-		(mem4, Text.concat("magic-corrupt=", (if mem__1 { "yes" } else { "no" })))
+		(mem4, CceText.concat("magic-corrupt=", (if mem__1 { "yes" } else { "no" })))
 	})
 })
 	(mem5, mem__2)
 })
 
-test_sectors : Text
-test_sectors = Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("sectors 0=", Text.show_int(FactLog.fl_sectors_for(0))), " 434="), Text.show_int(FactLog.fl_sectors_for(434))), " 435="), Text.show_int(FactLog.fl_sectors_for(435))), " 1024="), Text.show_int(FactLog.fl_sectors_for(1024)))
+test_sectors : CceText
+test_sectors = CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("sectors 0=", CceText.show_int(FactLog.fl_sectors_for(0))), " 434="), CceText.show_int(FactLog.fl_sectors_for(434))), " 435="), CceText.show_int(FactLog.fl_sectors_for(435))), " 1024="), CceText.show_int(FactLog.fl_sectors_for(1024)))
 
-test_text! : Mem.Mem => (Mem.Mem, Text)
+test_text! : Mem.Mem => (Mem.Mem, CceText)
 test_text! = |mem| ({
 	(mem4, mem__2) = ({
 	(mem1, buf) = Mem.alloc(mem, 512)
 	(mem2, _p) = pack_cce!(mem1, buf, 16, "hello", 0, 5)
 	({
 		(mem3, mem__1) = FactLog.fl_text!(mem2, buf, 16, 5)
-		(mem3, Text.concat("text=", mem__1))
+		(mem3, CceText.concat("text=", mem__1))
 	})
 })
 	(mem4, mem__2)
 })
 
-test_text_bytes! : Mem.Mem => (Mem.Mem, Text)
+test_text_bytes! : Mem.Mem => (Mem.Mem, CceText)
 test_text_bytes! = |mem| ({
 	(mem6, mem__1) = ({
 	(mem1, buf) = Mem.alloc(mem, 512)
@@ -191,7 +191,7 @@ test_text_bytes! = |mem| ({
 	(mem3, _b) = Mem.store!(mem2, buf, 1, 1, 1)
 	(mem4, _c) = Mem.store!(mem3, buf, 2, 255, 1)
 	(mem5, s) = FactLog.fl_text!(mem4, buf, 0, 3)
-	(mem5, Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("text-cps=", Text.show_int(Text.char_code_at(s, 0))), " "), Text.show_int(Text.char_code_at(s, 1))), " "), Text.show_int(Text.char_code_at(s, 2))), " len="), Text.show_int(Text.len(s))))
+	(mem5, CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("text-cps=", CceText.show_int(CceText.char_code_at(s, 0))), " "), CceText.show_int(CceText.char_code_at(s, 1))), " "), CceText.show_int(CceText.char_code_at(s, 2))), " len="), CceText.show_int(CceText.len(s))))
 })
 	(mem6, mem__1)
 })
@@ -201,26 +201,26 @@ test_text_bytes! = |mem| ({
 main! = |args| {
 	mem = Mem.new(U64.to_i64_wrap(List.len(args)))
 	(mem1, mem__1) = test_u16!(mem)
-	line!(Text.printed(mem__1))
+	line!(CceText.printed(mem__1))
 	(mem2, mem__2) = test_u32!(mem1)
-	line!(Text.printed(mem__2))
+	line!(CceText.printed(mem__2))
 	(mem3, mem__3) = test_u64!(mem2)
-	line!(Text.printed(mem__3))
+	line!(CceText.printed(mem__3))
 	(mem4, mem__4) = test_u64_high!(mem3)
-	line!(Text.printed(mem__4))
+	line!(CceText.printed(mem__4))
 	(mem5, mem__5) = test_entry_fields!(mem4)
-	line!(Text.printed(mem__5))
+	line!(CceText.printed(mem__5))
 	(mem6, mem__6) = test_superblock_fields!(mem5)
-	line!(Text.printed(mem__6))
-	line!(Text.printed(test_offsets))
+	line!(CceText.printed(mem__6))
+	line!(CceText.printed(test_offsets))
 	(mem7, mem__7) = test_magic_ok!(mem6)
-	line!(Text.printed(mem__7))
+	line!(CceText.printed(mem__7))
 	(mem8, mem__8) = test_magic_bad!(mem7)
-	line!(Text.printed(mem__8))
-	line!(Text.printed(test_sectors))
+	line!(CceText.printed(mem__8))
+	line!(CceText.printed(test_sectors))
 	(mem9, mem__9) = test_text!(mem8)
-	line!(Text.printed(mem__9))
+	line!(CceText.printed(mem__9))
 	(_mem10, mem__10) = test_text_bytes!(mem9)
-	line!(Text.printed(mem__10))
+	line!(CceText.printed(mem__10))
 	Ok({})
 }

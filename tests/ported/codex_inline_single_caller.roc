@@ -16,7 +16,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # InlineSingleCaller -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -41,10 +41,10 @@ isc_four = |a, b, c, d| (((a + b) + c) + d)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("wide ", Text.show_int(isc_pick(9, 4)))))
-	line!(Text.printed(Text.concat("arity4 ", Text.show_int(isc_four(1, 2, 3, 4)))))
-	line!(Text.printed(Text.concat("free ", Text.show_int(isc_add_g(1)))))
-	line!(Text.printed(Text.concat("shadowed ", Text.show_int(({
+	line!(CceText.printed(CceText.concat("wide ", CceText.show_int(isc_pick(9, 4)))))
+	line!(CceText.printed(CceText.concat("arity4 ", CceText.show_int(isc_four(1, 2, 3, 4)))))
+	line!(CceText.printed(CceText.concat("free ", CceText.show_int(isc_add_g(1)))))
+	line!(CceText.printed(CceText.concat("shadowed ", CceText.show_int(({
 		_isc_g_1 = 7
 		isc_add_h(1)
 	})))))

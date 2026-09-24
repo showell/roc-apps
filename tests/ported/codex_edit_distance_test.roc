@@ -19,65 +19,65 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.EditDistance
-import cdx.Text
 
 # EditDistanceTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-test_identical : Text
-test_identical = Text.concat("same=", Text.show_int(EditDistance.edit_distance("hello", "hello")))
+test_identical : CceText
+test_identical = CceText.concat("same=", CceText.show_int(EditDistance.edit_distance("hello", "hello")))
 
-test_empty : Text
-test_empty = Text.concat(Text.concat(Text.concat("empty=", Text.show_int(EditDistance.edit_distance("", "abc"))), ","), Text.show_int(EditDistance.edit_distance("abc", "")))
+test_empty : CceText
+test_empty = CceText.concat(CceText.concat(CceText.concat("empty=", CceText.show_int(EditDistance.edit_distance("", "abc"))), ","), CceText.show_int(EditDistance.edit_distance("abc", "")))
 
-test_basic : Text
+test_basic : CceText
 test_basic = ({
 	d1 = EditDistance.edit_distance("kitten", "sitting")
 	d2 = EditDistance.edit_distance("saturday", "sunday")
-	Text.concat(Text.concat(Text.concat("kitten-sitting=", Text.show_int(d1)), " saturday-sunday="), Text.show_int(d2))
+	CceText.concat(CceText.concat(CceText.concat("kitten-sitting=", CceText.show_int(d1)), " saturday-sunday="), CceText.show_int(d2))
 })
 
-test_single : Text
+test_single : CceText
 test_single = ({
 	d1 = EditDistance.edit_distance("cat", "hat")
 	d2 = EditDistance.edit_distance("cat", "cats")
 	d3 = EditDistance.edit_distance("cat", "at")
-	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("sub=", Text.show_int(d1)), " ins="), Text.show_int(d2)), " del="), Text.show_int(d3))
+	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("sub=", CceText.show_int(d1)), " ins="), CceText.show_int(d2)), " del="), CceText.show_int(d3))
 })
 
-test_similarity : Text
+test_similarity : CceText
 test_similarity = ({
 	s1 = EditDistance.edit_similarity("hello", "hello")
 	s2 = EditDistance.edit_similarity("hello", "hallo")
-	Text.concat(Text.concat(Text.concat("sim-same=", Text.show_int(s1)), " sim-close="), Text.show_int(s2))
+	CceText.concat(CceText.concat(CceText.concat("sim-same=", CceText.show_int(s1)), " sim-close="), CceText.show_int(s2))
 })
 
-test_best_match : Text
+test_best_match : CceText
 test_best_match = ({
 	candidates = ["help", "shell", "hello", "world", "helm"]
 	best = EditDistance.edit_best_match("helo", candidates)
-	Text.concat("best=", EditDistance.format_edit_match(best))
+	CceText.concat("best=", EditDistance.format_edit_match(best))
 })
 
-test_within : Text
+test_within : CceText
 test_within = ({
 	candidates = ["help", "shell", "hello", "world", "helm"]
 	matches = EditDistance.edit_within("helo", candidates, 2)
-	Text.concat("within-2=", Text.show_int(U64.to_i64_wrap(List.len(matches))))
+	CceText.concat("within-2=", CceText.show_int(U64.to_i64_wrap(List.len(matches))))
 })
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(test_identical))
-	line!(Text.printed(test_empty))
-	line!(Text.printed(test_basic))
-	line!(Text.printed(test_single))
-	line!(Text.printed(test_similarity))
-	line!(Text.printed(test_best_match))
-	line!(Text.printed(test_within))
+	line!(CceText.printed(test_identical))
+	line!(CceText.printed(test_empty))
+	line!(CceText.printed(test_basic))
+	line!(CceText.printed(test_single))
+	line!(CceText.printed(test_similarity))
+	line!(CceText.printed(test_best_match))
+	line!(CceText.printed(test_within))
 	Ok({})
 }

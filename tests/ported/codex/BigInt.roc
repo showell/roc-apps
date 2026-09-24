@@ -1,6 +1,6 @@
 # BigInt -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+import CceText
 import Maybe
-import Text
 
 BigInt :: [].{
 	BigInt : { bi_sign : I64, bi_limbs : List(I64) }
@@ -157,24 +157,24 @@ BigInt :: [].{
 	bigint_limbs_to_int : List(I64), I64, I64, I64 -> I64
 	bigint_limbs_to_int = |limbs, i, mult, acc| (if (i >= U64.to_i64_wrap(List.len(limbs))) { acc } else { bigint_limbs_to_int(limbs, (i + 1), (mult * bigint_base), (acc + ((List.get(limbs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")) * mult))) })
 
-	bigint_to_text : BigInt.BigInt -> Text
+	bigint_to_text : BigInt.BigInt -> CceText
 	bigint_to_text = |a| (if (a.bi_sign == 0) { "0" } else { ({
 		digits = bigint_limbs_to_text(a.bi_limbs, (U64.to_i64_wrap(List.len(a.bi_limbs)) - 1), True)
-		(if (a.bi_sign < 0) { Text.concat("-", digits) } else { digits })
+		(if (a.bi_sign < 0) { CceText.concat("-", digits) } else { digits })
 	}) })
 
-	bigint_limbs_to_text : List(I64), I64, Bool -> Text
+	bigint_limbs_to_text : List(I64), I64, Bool -> CceText
 	bigint_limbs_to_text = |limbs, i, first| (if (i < 0) { "" } else { ({
 		limb = (List.get(limbs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
-		s = Text.show_int(limb)
+		s = CceText.show_int(limb)
 		padded = (if first { s } else { bigint_pad4(s) })
-		Text.concat(padded, bigint_limbs_to_text(limbs, (i - 1), False))
+		CceText.concat(padded, bigint_limbs_to_text(limbs, (i - 1), False))
 	}) })
 
-	bigint_pad4 : Text -> Text
+	bigint_pad4 : CceText -> CceText
 	bigint_pad4 = |s| ({
-		len = Text.len(s)
-		(if (len >= 4) { s } else { (if (len == 3) { Text.concat("0", s) } else { (if (len == 2) { Text.concat("00", s) } else { (if (len == 1) { Text.concat("000", s) } else { "0000" }) }) }) })
+		len = CceText.len(s)
+		(if (len >= 4) { s } else { (if (len == 3) { CceText.concat("0", s) } else { (if (len == 2) { CceText.concat("00", s) } else { (if (len == 1) { CceText.concat("000", s) } else { "0000" }) }) }) })
 	})
 
 	bigint_pow : BigInt.BigInt, I64 -> BigInt.BigInt

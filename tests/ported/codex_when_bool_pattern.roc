@@ -19,7 +19,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceChar
+import cdx.CceText
 
 # WhenBoolPattern -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -60,7 +61,7 @@ int_control = (match (5 + 0) {
 })
 
 char_control : I64
-char_control = (match 15 {
+char_control = (match CceChar.of_code(15) {
 	15 => 1
 	_ => 0
 })
@@ -68,12 +69,12 @@ char_control = (match 15 {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("bare-true: ", Text.show_int(bare_true))))
-	line!(Text.printed(Text.concat("bare-false: ", Text.show_int(bare_false))))
-	line!(Text.printed(Text.concat("computed: ", Text.show_int(computed))))
-	line!(Text.printed(Text.concat("both-arms-named: ", Text.show_int(both_arms_named))))
-	line!(Text.printed(Text.concat("if-control: ", Text.show_int(if_control))))
-	line!(Text.printed(Text.concat("int-control: ", Text.show_int(int_control))))
-	line!(Text.printed(Text.concat("char-control: ", Text.show_int(char_control))))
+	line!(CceText.printed(CceText.concat("bare-true: ", CceText.show_int(bare_true))))
+	line!(CceText.printed(CceText.concat("bare-false: ", CceText.show_int(bare_false))))
+	line!(CceText.printed(CceText.concat("computed: ", CceText.show_int(computed))))
+	line!(CceText.printed(CceText.concat("both-arms-named: ", CceText.show_int(both_arms_named))))
+	line!(CceText.printed(CceText.concat("if-control: ", CceText.show_int(if_control))))
+	line!(CceText.printed(CceText.concat("int-control: ", CceText.show_int(int_control))))
+	line!(CceText.printed(CceText.concat("char-control: ", CceText.show_int(char_control))))
 	Ok({})
 }

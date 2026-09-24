@@ -15,7 +15,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # CallClobber -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -34,8 +34,8 @@ cc_add = |a, b| (a + b)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("args ", Text.show_int(cc_three(1, cc_mark, 2)))))
-	line!(Text.printed(Text.concat("eq ", (if (cc_add(5, (5 + 11)) == 15) { "True" } else { "False" }))))
-	line!(Text.printed(Text.concat("eqtrue ", (if (cc_add(4, (0 + 11)) == 15) { "True" } else { "False" }))))
+	line!(CceText.printed(CceText.concat("args ", CceText.show_int(cc_three(1, cc_mark, 2)))))
+	line!(CceText.printed(CceText.concat("eq ", (if (cc_add(5, (5 + 11)) == 15) { "True" } else { "False" }))))
+	line!(CceText.printed(CceText.concat("eqtrue ", (if (cc_add(4, (0 + 11)) == 15) { "True" } else { "False" }))))
 	Ok({})
 }

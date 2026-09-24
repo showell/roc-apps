@@ -13,7 +13,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # RocFoldProduct -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -34,7 +34,7 @@ lam_1 = |acc, x| (acc * x)
 main! = |_args| {
 	({
 		total = lam_0([2, 3, 4], 1, lam_1)
-		line!(Text.printed(Text.show_int(total)))
+		line!(CceText.printed(CceText.show_int(total)))
 	})
 	Ok({})
 }

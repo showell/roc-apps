@@ -15,7 +15,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # EffectPositive -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -33,13 +33,13 @@ run_console! = |act_fn, n| act_fn(n)
 
 shout! : I64 => {}
 shout! = |n| ({
-	line!(Text.printed(Text.concat("shout ", Text.show_int(n))))
+	line!(CceText.printed(CceText.concat("shout ", CceText.show_int(n))))
 })
 
 report! : I64 => {}
 report! = |n| ({
-	line!(Text.printed("step one"))
-	line!(Text.printed(Text.concat("value ", Text.show_int(apply_pure(double, n)))))
+	line!(CceText.printed("step one"))
+	line!(CceText.printed(CceText.concat("value ", CceText.show_int(apply_pure(double, n)))))
 })
 
 # --- Entry ---

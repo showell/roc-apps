@@ -15,8 +15,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Prelude
-import cdx.Text
 
 # ModBoundReturn -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -35,8 +35,8 @@ ret_tighter = |n| Prelude.int_mod(n, 10)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.show_int(ret_direct(1234))))
-	line!(Text.printed(Text.show_int(ret_via_let(1234))))
-	line!(Text.printed(Text.show_int(ret_tighter(1234))))
+	line!(CceText.printed(CceText.show_int(ret_direct(1234))))
+	line!(CceText.printed(CceText.show_int(ret_via_let(1234))))
+	line!(CceText.printed(CceText.show_int(ret_tighter(1234))))
 	Ok({})
 }

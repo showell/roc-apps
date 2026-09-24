@@ -32,8 +32,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Prelude
-import cdx.Text
 
 # Factorial -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -41,8 +41,8 @@ import cdx.Text
 line! = |s| echo!(Str.concat(s, "\n"))
 Box_(a) : [Wrap(a)]
 Shape : [Circle(F64), Rectangle(F64, F64)]
-Result_(a) : [Success(a), Failure(Text)]
-Person : { name : Text, age : I64 }
+Result_(a) : [Success(a), Failure(CceText)]
+Person : { name : CceText, age : I64 }
 Box2 : { val : I64 }
 
 square : I64 -> I64
@@ -63,8 +63,8 @@ fact = |n| (if (n == 0) { 1 } else { (n * fact((n - 1))) })
 fib : I64 -> I64
 fib = |n| (if (n == 0) { 0 } else { (if (n == 1) { 1 } else { (fib((n - 1)) + fib((n - 2))) }) })
 
-greeting : Text -> Text
-greeting = |name| Text.concat(Text.concat("Hello, ", name), "!")
+greeting : CceText -> CceText
+greeting = |name| CceText.concat(CceText.concat("Hello, ", name), "!")
 
 unwrap : Box_(I64) -> I64
 unwrap = |b| (match b {
@@ -80,14 +80,14 @@ area = |s| (match s {
 safe_divide : I64, I64 -> Result_(I64)
 safe_divide = |x, y| (if (y == 0) { Failure("division by zero") } else { Success(I64.div_trunc_by(x, y)) })
 
-describe : Result_(I64) -> Text
+describe : Result_(I64) -> CceText
 describe = |result| (match result {
-	Success(n) => Text.concat("got ", Text.show_int(n))
-	Failure(msg) => Text.concat("error: ", msg)
+	Success(n) => CceText.concat("got ", CceText.show_int(n))
+	Failure(msg) => CceText.concat("error: ", msg)
 })
 
-greet : Person -> Text
-greet = |p| Text.concat(Text.concat("Hello, ", p.name), "!")
+greet : Person -> CceText
+greet = |p| CceText.concat(CceText.concat("Hello, ", p.name), "!")
 
 mk : Box2
 mk = { val: 7 }
@@ -118,27 +118,27 @@ eq_Result = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("literal: ", Text.show_int(42))))
-	line!(Text.printed(Text.concat("mul: ", Text.show_int((3 * 4)))))
-	line!(Text.printed(Text.concat("if: ", Text.show_int((if (1 == 1) { 77 } else { 88 })))))
-	line!(Text.printed(Text.concat("call: ", Text.show_int(add1(9)))))
-	line!(Text.printed(Text.concat("rec: ", Text.show_int(countdown(5)))))
-	line!(Text.printed(Text.concat("square: ", Text.show_int(square(5)))))
-	line!(Text.printed(Text.concat("fact1: ", Text.show_int(fact(1)))))
-	line!(Text.printed(Text.concat("fact2: ", Text.show_int(fact(2)))))
-	line!(Text.printed(Text.concat("fact3: ", Text.show_int(fact(3)))))
-	line!(Text.printed(Text.concat("fact5: ", Text.show_int(fact(5)))))
-	line!(Text.printed(Text.concat("fact10: ", Text.show_int(fact(10)))))
-	line!(Text.printed(Text.concat("fib20: ", Text.show_int(fib(20)))))
-	line!(Text.printed(Text.concat("greeting: ", greeting("World"))))
-	line!(Text.printed(Text.concat("wrap: ", (match Wrap(7) {
-		Wrap(x) => Text.concat("Wrap ", Text.show_int(x))
+	line!(CceText.printed(CceText.concat("literal: ", CceText.show_int(42))))
+	line!(CceText.printed(CceText.concat("mul: ", CceText.show_int((3 * 4)))))
+	line!(CceText.printed(CceText.concat("if: ", CceText.show_int((if (1 == 1) { 77 } else { 88 })))))
+	line!(CceText.printed(CceText.concat("call: ", CceText.show_int(add1(9)))))
+	line!(CceText.printed(CceText.concat("rec: ", CceText.show_int(countdown(5)))))
+	line!(CceText.printed(CceText.concat("square: ", CceText.show_int(square(5)))))
+	line!(CceText.printed(CceText.concat("fact1: ", CceText.show_int(fact(1)))))
+	line!(CceText.printed(CceText.concat("fact2: ", CceText.show_int(fact(2)))))
+	line!(CceText.printed(CceText.concat("fact3: ", CceText.show_int(fact(3)))))
+	line!(CceText.printed(CceText.concat("fact5: ", CceText.show_int(fact(5)))))
+	line!(CceText.printed(CceText.concat("fact10: ", CceText.show_int(fact(10)))))
+	line!(CceText.printed(CceText.concat("fib20: ", CceText.show_int(fib(20)))))
+	line!(CceText.printed(CceText.concat("greeting: ", greeting("World"))))
+	line!(CceText.printed(CceText.concat("wrap: ", (match Wrap(7) {
+		Wrap(x) => CceText.concat("Wrap ", CceText.show_int(x))
 	}))))
-	line!(Text.printed(Text.concat("unwrap: ", Text.show_int(unwrap(Wrap(7))))))
-	line!(Text.printed(Text.concat("area: ", Text.of_str(Prelude.real_to_str(area(Circle(5.0)))))))
-	line!(Text.printed(Text.concat("person: ", greet({ name: "Alice", age: 30 }))))
-	line!(Text.printed(Text.concat("number: ", (if Prelude.approx_eq(3.14, 3.14) { (if Prelude.approx_eq(1.5, 2.5) { "FAIL" } else { "PASS" }) } else { "FAIL" }))))
-	line!(Text.printed(Text.concat("safe-divide: ", describe(safe_divide(42, 7)))))
-	line!(Text.printed(Text.concat("paren-field: ", Text.show_int(ignore_second(99, mk.val)))))
+	line!(CceText.printed(CceText.concat("unwrap: ", CceText.show_int(unwrap(Wrap(7))))))
+	line!(CceText.printed(CceText.concat("area: ", CceText.of_str(Prelude.real_to_str(area(Circle(5.0)))))))
+	line!(CceText.printed(CceText.concat("person: ", greet({ name: "Alice", age: 30 }))))
+	line!(CceText.printed(CceText.concat("number: ", (if Prelude.approx_eq(3.14, 3.14) { (if Prelude.approx_eq(1.5, 2.5) { "FAIL" } else { "PASS" }) } else { "FAIL" }))))
+	line!(CceText.printed(CceText.concat("safe-divide: ", describe(safe_divide(42, 7)))))
+	line!(CceText.printed(CceText.concat("paren-field: ", CceText.show_int(ignore_second(99, mk.val)))))
 	Ok({})
 }

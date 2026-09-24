@@ -26,8 +26,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Decimal
-import cdx.Text
 
 # DecimalTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -41,22 +41,22 @@ main! = |_args| {
 		a = Decimal.dec_from_parts(12, 50, 2)
 		b = Decimal.dec_from_parts(3, 25, 2)
 		({
-			line!(Text.printed(Text.concat("a=", Decimal.dec_to_text(a))))
-			line!(Text.printed(Text.concat("b=", Decimal.dec_to_text(b))))
-			line!(Text.printed(Text.concat("a+b=", Decimal.dec_to_text(Decimal.dec_add(a, b)))))
-			line!(Text.printed(Text.concat("a-b=", Decimal.dec_to_text(Decimal.dec_sub(a, b)))))
-			line!(Text.printed(Text.concat("a*b=", Decimal.dec_to_text(Decimal.dec_mul(a, b)))))
-			line!(Text.printed(Text.concat("a/b=", Decimal.dec_to_text(Decimal.dec_div(a, b)))))
-			line!(Text.printed(Text.concat("neg=", Decimal.dec_to_text(Decimal.dec_negate(a)))))
-			line!(Text.printed(Text.concat("round=", Decimal.dec_to_text(Decimal.dec_round(Decimal.dec_from_parts(3, 456, 3), 1)))))
-			line!(Text.printed(Text.concat("floor=", Decimal.dec_to_text(Decimal.dec_floor(Decimal.dec_from_parts(7, 99, 2))))))
-			line!(Text.printed(Text.concat("cmp=", Text.show_int(Decimal.dec_compare(a, b)))))
-			line!(Text.printed(Text.concat("eq=", (if Decimal.dec_eq(a, a) { "true" } else { "false" }))))
-			line!(Text.printed(Text.concat("lt=", (if Decimal.dec_lt(b, a) { "true" } else { "false" }))))
-			line!(Text.printed(Text.concat("zero=", (if Decimal.dec_is_zero(Decimal.dec_zero) { "true" } else { "false" }))))
+			line!(CceText.printed(CceText.concat("a=", Decimal.dec_to_text(a))))
+			line!(CceText.printed(CceText.concat("b=", Decimal.dec_to_text(b))))
+			line!(CceText.printed(CceText.concat("a+b=", Decimal.dec_to_text(Decimal.dec_add(a, b)))))
+			line!(CceText.printed(CceText.concat("a-b=", Decimal.dec_to_text(Decimal.dec_sub(a, b)))))
+			line!(CceText.printed(CceText.concat("a*b=", Decimal.dec_to_text(Decimal.dec_mul(a, b)))))
+			line!(CceText.printed(CceText.concat("a/b=", Decimal.dec_to_text(Decimal.dec_div(a, b)))))
+			line!(CceText.printed(CceText.concat("neg=", Decimal.dec_to_text(Decimal.dec_negate(a)))))
+			line!(CceText.printed(CceText.concat("round=", Decimal.dec_to_text(Decimal.dec_round(Decimal.dec_from_parts(3, 456, 3), 1)))))
+			line!(CceText.printed(CceText.concat("floor=", Decimal.dec_to_text(Decimal.dec_floor(Decimal.dec_from_parts(7, 99, 2))))))
+			line!(CceText.printed(CceText.concat("cmp=", CceText.show_int(Decimal.dec_compare(a, b)))))
+			line!(CceText.printed(CceText.concat("eq=", (if Decimal.dec_eq(a, a) { "true" } else { "false" }))))
+			line!(CceText.printed(CceText.concat("lt=", (if Decimal.dec_lt(b, a) { "true" } else { "false" }))))
+			line!(CceText.printed(CceText.concat("zero=", (if Decimal.dec_is_zero(Decimal.dec_zero) { "true" } else { "false" }))))
 			({
 				parsed = Decimal.dec_from_text("42.75", 2)
-				line!(Text.printed(Text.concat("parsed=", Decimal.dec_to_text(parsed))))
+				line!(CceText.printed(CceText.concat("parsed=", Decimal.dec_to_text(parsed))))
 			})
 		})
 	})

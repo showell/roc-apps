@@ -19,8 +19,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Prelude
-import cdx.Text
 
 # IRCheckClean -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -94,12 +94,12 @@ lam_1 = |k, a| (a * k)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("shadow: ", Text.show_int(shadow(3)))))
-	line!(Text.printed(Text.concat("apply-twice: ", Text.show_int(apply_twice(5)))))
-	line!(Text.printed(Text.concat("capture: ", Text.show_int(capture(1)))))
-	line!(Text.printed(Text.concat("tree-sum: ", Text.show_int(tree_sum(sample_tree)))))
-	line!(Text.printed(Text.concat("manhattan: ", Text.show_int(manhattan({ x: (0 - 3), y: 4 })))))
-	line!(Text.printed(Text.concat("total: ", Text.show_int(total([1, 2, 3, 4, 5])))))
-	line!(Text.printed(Text.concat("text: ", Text.concat(Text.concat("ir", "-"), "check"))))
+	line!(CceText.printed(CceText.concat("shadow: ", CceText.show_int(shadow(3)))))
+	line!(CceText.printed(CceText.concat("apply-twice: ", CceText.show_int(apply_twice(5)))))
+	line!(CceText.printed(CceText.concat("capture: ", CceText.show_int(capture(1)))))
+	line!(CceText.printed(CceText.concat("tree-sum: ", CceText.show_int(tree_sum(sample_tree)))))
+	line!(CceText.printed(CceText.concat("manhattan: ", CceText.show_int(manhattan({ x: (0 - 3), y: 4 })))))
+	line!(CceText.printed(CceText.concat("total: ", CceText.show_int(total([1, 2, 3, 4, 5])))))
+	line!(CceText.printed(CceText.concat("text: ", CceText.concat(CceText.concat("ir", "-"), "check"))))
 	Ok({})
 }

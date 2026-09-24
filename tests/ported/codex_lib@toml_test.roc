@@ -17,7 +17,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 import cdx.Toml
 
 # TomlTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
@@ -32,16 +32,16 @@ main! = |_args| {
 		input = "title = \"My Config\"\nport = 8080\ndebug = true\n"
 		(match Toml.toml_parse(input) {
 			Just(v) => ({
-				line!(Text.printed(Text.concat("title=", Toml.toml_get_str(v, "title", "?"))))
-				line!(Text.printed(Text.concat("port=", Text.show_int(Toml.toml_get_int(v, "port", 0)))))
-				line!(Text.printed(Text.concat("debug=", (if Toml.toml_get_bool(v, "debug", False) { "true" } else { "false" }))))
-				line!(Text.printed(Text.concat("missing=", Toml.toml_get_str(v, "nope", "default"))))
+				line!(CceText.printed(CceText.concat("title=", Toml.toml_get_str(v, "title", "?"))))
+				line!(CceText.printed(CceText.concat("port=", CceText.show_int(Toml.toml_get_int(v, "port", 0)))))
+				line!(CceText.printed(CceText.concat("debug=", (if Toml.toml_get_bool(v, "debug", False) { "true" } else { "false" }))))
+				line!(CceText.printed(CceText.concat("missing=", Toml.toml_get_str(v, "nope", "default"))))
 				({
 					emitted = Toml.toml_emit(v)
-					line!(Text.printed(Text.concat("emit-ok=", (if (Text.len(emitted) > 0) { "yes" } else { "no" }))))
+					line!(CceText.printed(CceText.concat("emit-ok=", (if (CceText.len(emitted) > 0) { "yes" } else { "no" }))))
 				})
 			})
-			None => line!(Text.printed("parse=fail"))
+			None => line!(CceText.printed("parse=fail"))
 		})
 	})
 	Ok({})

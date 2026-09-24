@@ -36,7 +36,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # BoundedModesSmoke -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -73,29 +73,29 @@ wrap_add = |a, b| wu8((wu8(a) + wu8(b)))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("wu8 300: ", Text.show_int(wu8(300)))))
-	line!(Text.printed(Text.concat("wu8 -1: ", Text.show_int(wu8((-1))))))
-	line!(Text.printed(Text.concat("wu8 255: ", Text.show_int(wu8(255)))))
-	line!(Text.printed(Text.concat("wu8 256: ", Text.show_int(wu8(256)))))
-	line!(Text.printed(Text.concat("wu8 512: ", Text.show_int(wu8(512)))))
-	line!(Text.printed(Text.concat("wu8 100: ", Text.show_int(wu8(100)))))
-	line!(Text.printed(Text.concat("wi8 128: ", Text.show_int(wi8(128)))))
-	line!(Text.printed(Text.concat("wi8 -129: ", Text.show_int(wi8((-129))))))
-	line!(Text.printed(Text.concat("wi8 130: ", Text.show_int(wi8(130)))))
-	line!(Text.printed(Text.concat("wi8 -1: ", Text.show_int(wi8((-1))))))
-	line!(Text.printed(Text.concat("cu8 150: ", Text.show_int(cu8(150)))))
-	line!(Text.printed(Text.concat("cu8 -5: ", Text.show_int(cu8((-5))))))
-	line!(Text.printed(Text.concat("cu8 100: ", Text.show_int(cu8(100)))))
-	line!(Text.printed(Text.concat("cu8 0: ", Text.show_int(cu8(0)))))
-	line!(Text.printed(Text.concat("ci8 99: ", Text.show_int(ci8(99)))))
-	line!(Text.printed(Text.concat("ci8 -99: ", Text.show_int(ci8((-99))))))
-	line!(Text.printed(Text.concat("ci8 0: ", Text.show_int(ci8(0)))))
-	line!(Text.printed(Text.concat("wrap-add 200 100: ", Text.show_int(wrap_add(200, 100)))))
-	line!(Text.printed(Text.concat("cu32 4294967301: ", Text.show_int(cu32(4294967301)))))
-	line!(Text.printed(Text.concat("cu32 -1: ", Text.show_int(cu32((-1))))))
-	line!(Text.printed(Text.concat("cu32 4294967295: ", Text.show_int(cu32(4294967295)))))
-	line!(Text.printed(Text.concat("cbig 20000000000: ", Text.show_int(cbig(20000000000)))))
-	line!(Text.printed(Text.concat("cbig -5: ", Text.show_int(cbig((-5))))))
-	line!(Text.printed(Text.concat("cbig 10000000000: ", Text.show_int(cbig(10000000000)))))
+	line!(CceText.printed(CceText.concat("wu8 300: ", CceText.show_int(wu8(300)))))
+	line!(CceText.printed(CceText.concat("wu8 -1: ", CceText.show_int(wu8((-1))))))
+	line!(CceText.printed(CceText.concat("wu8 255: ", CceText.show_int(wu8(255)))))
+	line!(CceText.printed(CceText.concat("wu8 256: ", CceText.show_int(wu8(256)))))
+	line!(CceText.printed(CceText.concat("wu8 512: ", CceText.show_int(wu8(512)))))
+	line!(CceText.printed(CceText.concat("wu8 100: ", CceText.show_int(wu8(100)))))
+	line!(CceText.printed(CceText.concat("wi8 128: ", CceText.show_int(wi8(128)))))
+	line!(CceText.printed(CceText.concat("wi8 -129: ", CceText.show_int(wi8((-129))))))
+	line!(CceText.printed(CceText.concat("wi8 130: ", CceText.show_int(wi8(130)))))
+	line!(CceText.printed(CceText.concat("wi8 -1: ", CceText.show_int(wi8((-1))))))
+	line!(CceText.printed(CceText.concat("cu8 150: ", CceText.show_int(cu8(150)))))
+	line!(CceText.printed(CceText.concat("cu8 -5: ", CceText.show_int(cu8((-5))))))
+	line!(CceText.printed(CceText.concat("cu8 100: ", CceText.show_int(cu8(100)))))
+	line!(CceText.printed(CceText.concat("cu8 0: ", CceText.show_int(cu8(0)))))
+	line!(CceText.printed(CceText.concat("ci8 99: ", CceText.show_int(ci8(99)))))
+	line!(CceText.printed(CceText.concat("ci8 -99: ", CceText.show_int(ci8((-99))))))
+	line!(CceText.printed(CceText.concat("ci8 0: ", CceText.show_int(ci8(0)))))
+	line!(CceText.printed(CceText.concat("wrap-add 200 100: ", CceText.show_int(wrap_add(200, 100)))))
+	line!(CceText.printed(CceText.concat("cu32 4294967301: ", CceText.show_int(cu32(4294967301)))))
+	line!(CceText.printed(CceText.concat("cu32 -1: ", CceText.show_int(cu32((-1))))))
+	line!(CceText.printed(CceText.concat("cu32 4294967295: ", CceText.show_int(cu32(4294967295)))))
+	line!(CceText.printed(CceText.concat("cbig 20000000000: ", CceText.show_int(cbig(20000000000)))))
+	line!(CceText.printed(CceText.concat("cbig -5: ", CceText.show_int(cbig((-5))))))
+	line!(CceText.printed(CceText.concat("cbig 10000000000: ", CceText.show_int(cbig(10000000000)))))
 	Ok({})
 }

@@ -19,7 +19,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # UnconstrainedEmptyList -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -35,18 +35,18 @@ typed_empty = |_witness| []
 identity_value : a -> a
 identity_value = |value| value
 
-empty_text : List(Text)
+empty_text : List(CceText)
 empty_text = make_empty(2)
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.show_int(U64.to_i64_wrap(List.len(make_empty(0))))))
-	line!(Text.printed(Text.show_int(U64.to_i64_wrap(List.len(make_empty(1))))))
-	line!(Text.printed(Text.show_int(U64.to_i64_wrap(List.len(typed_empty(42))))))
-	line!(Text.printed(Text.show_int(U64.to_i64_wrap(List.len(typed_empty("text"))))))
-	line!(Text.printed(Text.show_int(U64.to_i64_wrap(List.len(empty_text)))))
-	line!(Text.printed(Text.show_int(identity_value(42))))
-	line!(Text.printed(identity_value("text")))
+	line!(CceText.printed(CceText.show_int(U64.to_i64_wrap(List.len(make_empty(0))))))
+	line!(CceText.printed(CceText.show_int(U64.to_i64_wrap(List.len(make_empty(1))))))
+	line!(CceText.printed(CceText.show_int(U64.to_i64_wrap(List.len(typed_empty(42))))))
+	line!(CceText.printed(CceText.show_int(U64.to_i64_wrap(List.len(typed_empty("text"))))))
+	line!(CceText.printed(CceText.show_int(U64.to_i64_wrap(List.len(empty_text)))))
+	line!(CceText.printed(CceText.show_int(identity_value(42))))
+	line!(CceText.printed(identity_value("text")))
 	Ok({})
 }

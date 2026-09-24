@@ -1,13 +1,13 @@
 # EditDistance -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
-import Text
+import CceText
 
 EditDistance :: [].{
-	EditMatch : { em_text : Text, em_distance : I64, em_index : I64 }
+	EditMatch : { em_text : CceText, em_distance : I64, em_index : I64 }
 
-	edit_distance : Text, Text -> I64
+	edit_distance : CceText, CceText -> I64
 	edit_distance = |a, b| ({
-		m = Text.len(a)
-		n = Text.len(b)
+		m = CceText.len(a)
+		n = CceText.len(b)
 		(if (m == 0) { n } else { (if (n == 0) { m } else { (if (m > n) { edit_distance(b, a) } else { ({
 			row = ed_init_row(0, (n + 1), [])
 			ed_outer(a, b, row, 1, m, n)
@@ -17,15 +17,15 @@ EditDistance :: [].{
 	ed_init_row : I64, I64, List(I64) -> List(I64)
 	ed_init_row = |i, len, acc| (if (i >= len) { acc } else { ed_init_row((i + 1), len, List.append(acc, i)) })
 
-	ed_outer : Text, Text, List(I64), I64, I64, I64 -> I64
+	ed_outer : CceText, CceText, List(I64), I64, I64, I64 -> I64
 	ed_outer = |a, b, row, i, m, n| (if (i > m) { (List.get(row, I64.to_u64_wrap(n)) ?? crash("list-at out of range")) } else { ({
 		new_row = ed_inner(a, b, row, i, 1, n, [i])
 		ed_outer(a, b, new_row, (i + 1), m, n)
 	}) })
 
-	ed_inner : Text, Text, List(I64), I64, I64, I64, List(I64) -> List(I64)
+	ed_inner : CceText, CceText, List(I64), I64, I64, I64, List(I64) -> List(I64)
 	ed_inner = |a, b, prev, i, j, n, curr| (if (j > n) { curr } else { ({
-		cost = (if (Text.char_at(a, (i - 1)) == Text.char_at(b, (j - 1))) { 0 } else { 1 })
+		cost = (if (CceText.char_at(a, (i - 1)) == CceText.char_at(b, (j - 1))) { 0 } else { 1 })
 		del = ((List.get(prev, I64.to_u64_wrap(j)) ?? crash("list-at out of range")) + 1)
 		ins = ((List.get(curr, I64.to_u64_wrap((j - 1))) ?? crash("list-at out of range")) + 1)
 		sub = ((List.get(prev, I64.to_u64_wrap((j - 1))) ?? crash("list-at out of range")) + cost)
@@ -33,10 +33,10 @@ EditDistance :: [].{
 		ed_inner(a, b, prev, i, (j + 1), n, List.append(curr, best))
 	}) })
 
-	edit_similarity : Text, Text -> I64
+	edit_similarity : CceText, CceText -> I64
 	edit_similarity = |a, b| ({
-		m = Text.len(a)
-		n = Text.len(b)
+		m = CceText.len(a)
+		n = CceText.len(b)
 		max_len = (if (m > n) { m } else { n })
 		(if (max_len == 0) { 1000 } else { ({
 			dist = edit_distance(a, b)
@@ -44,10 +44,10 @@ EditDistance :: [].{
 		}) })
 	})
 
-	edit_best_match : Text, List(Text) -> EditDistance.EditMatch
+	edit_best_match : CceText, List(CceText) -> EditDistance.EditMatch
 	edit_best_match = |query, candidates| ed_best_loop(query, candidates, 0, U64.to_i64_wrap(List.len(candidates)), { em_text: "", em_distance: 999999, em_index: (0 - 1) })
 
-	ed_best_loop : Text, List(Text), I64, I64, EditDistance.EditMatch -> EditDistance.EditMatch
+	ed_best_loop : CceText, List(CceText), I64, I64, EditDistance.EditMatch -> EditDistance.EditMatch
 	ed_best_loop = |query, candidates, i, n, best| (if (i >= n) { best } else { ({
 		c = (List.get(candidates, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 		d = edit_distance(query, c)
@@ -55,10 +55,10 @@ EditDistance :: [].{
 		ed_best_loop(query, candidates, (i + 1), n, new_best)
 	}) })
 
-	edit_within : Text, List(Text), I64 -> List(Text)
+	edit_within : CceText, List(CceText), I64 -> List(CceText)
 	edit_within = |query, candidates, max_dist| ed_within_loop(query, candidates, max_dist, 0, U64.to_i64_wrap(List.len(candidates)), [])
 
-	ed_within_loop : Text, List(Text), I64, I64, I64, List(Text) -> List(Text)
+	ed_within_loop : CceText, List(CceText), I64, I64, I64, List(CceText) -> List(CceText)
 	ed_within_loop = |query, candidates, max_dist, i, n, acc| (if (i >= n) { acc } else { ({
 		c = (List.get(candidates, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 		d = edit_distance(query, c)
@@ -72,6 +72,6 @@ EditDistance :: [].{
 		(if (ab < c) { ab } else { c })
 	})
 
-	format_edit_match : EditDistance.EditMatch -> Text
-	format_edit_match = |m| Text.concat(Text.concat(Text.concat(m.em_text, " (d="), Text.show_int(m.em_distance)), ")")
+	format_edit_match : EditDistance.EditMatch -> CceText
+	format_edit_match = |m| CceText.concat(CceText.concat(CceText.concat(m.em_text, " (d="), CceText.show_int(m.em_distance)), ")")
 }

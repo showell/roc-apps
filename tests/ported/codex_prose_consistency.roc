@@ -17,22 +17,22 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # ProseConsistency -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Account : { balance : I64, name : Text }
+Account : { balance : I64, name : CceText }
 Status : [Active, Closed]
 
-make_account : Text, I64 -> Account
+make_account : CceText, I64 -> Account
 make_account = |name, amount| { balance: amount, name: name }
 
-show_account : Account -> Text
-show_account = |acct| Text.concat(Text.concat(acct.name, ":"), Text.show_int(acct.balance))
+show_account : Account -> CceText
+show_account = |acct| CceText.concat(CceText.concat(acct.name, ":"), CceText.show_int(acct.balance))
 
-show_status : Status -> Text
+show_status : Status -> CceText
 show_status = |s| (match s {
 	Active => "active"
 	Closed => "closed"
@@ -63,11 +63,11 @@ main! = |_args| {
 		a1 = make_account("Alice", 100)
 		a2 = make_account("Bob", 250)
 		({
-			line!(Text.printed(show_account(a1)))
-			line!(Text.printed(show_account(a2)))
-			line!(Text.printed(Text.concat("size=", Text.show_int(account_size))))
-			line!(Text.printed(Text.concat("status=", show_status(Active))))
-			line!(Text.printed(Text.concat("total=", Text.show_int(sum_balances([a1, a2], 0, 0)))))
+			line!(CceText.printed(show_account(a1)))
+			line!(CceText.printed(show_account(a2)))
+			line!(CceText.printed(CceText.concat("size=", CceText.show_int(account_size))))
+			line!(CceText.printed(CceText.concat("status=", show_status(Active))))
+			line!(CceText.printed(CceText.concat("total=", CceText.show_int(sum_balances([a1, a2], 0, 0)))))
 		})
 	})
 	Ok({})

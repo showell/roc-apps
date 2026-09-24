@@ -34,8 +34,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Cordic
-import cdx.Text
 
 # FwdCordicAccuracyTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -71,48 +71,48 @@ acc_worst = |i, so_far| (if (i >= U64.to_i64_wrap(List.len(acc_angles))) { so_fa
 acc_within : I64, I64 -> I64
 acc_within = |i, n| (if (i >= U64.to_i64_wrap(List.len(acc_angles))) { n } else { acc_within((i + 1), (if (acc_err_at(i) <= 6) { (n + 1) } else { n })) })
 
-acc_line : I64 -> Text
+acc_line : I64 -> CceText
 acc_line = |i| ({
 	a = (List.get(acc_angles, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
-	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("  ", Text.show_int(a)), " sin "), Text.show_int(Cordic.cordic_sin(a))), " true "), Text.show_int((List.get(acc_true_sin, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))), "   cos "), Text.show_int(Cordic.cordic_cos(a))), " true "), Text.show_int((List.get(acc_true_cos, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))), "   err "), Text.show_int(acc_err_at(i)))
+	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("  ", CceText.show_int(a)), " sin "), CceText.show_int(Cordic.cordic_sin(a))), " true "), CceText.show_int((List.get(acc_true_sin, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))), "   cos "), CceText.show_int(Cordic.cordic_cos(a))), " true "), CceText.show_int((List.get(acc_true_cos, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))), "   err "), CceText.show_int(acc_err_at(i)))
 })
 
-acc_report : Text
+acc_report : CceText
 acc_report = ({
 	w = acc_worst(0, 0)
-	Text.concat(Text.concat("worst absolute error over the sample: ", Text.show_int(w)), " of 1000 full scale")
+	CceText.concat(CceText.concat("worst absolute error over the sample: ", CceText.show_int(w)), " of 1000 full scale")
 })
 
-acc_count : Text
+acc_count : CceText
 acc_count = ({
 	n = acc_within(0, 0)
-	Text.concat(Text.concat(Text.concat("within 6 of 1000: ", Text.show_int(n)), " of "), Text.show_int(U64.to_i64_wrap(List.len(acc_angles))))
+	CceText.concat(CceText.concat(CceText.concat("within 6 of 1000: ", CceText.show_int(n)), " of "), CceText.show_int(U64.to_i64_wrap(List.len(acc_angles))))
 })
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(acc_line(0)))
-	line!(Text.printed(acc_line(1)))
-	line!(Text.printed(acc_line(2)))
-	line!(Text.printed(acc_line(3)))
-	line!(Text.printed(acc_line(4)))
-	line!(Text.printed(acc_line(5)))
-	line!(Text.printed(acc_line(6)))
-	line!(Text.printed(acc_line(7)))
-	line!(Text.printed(acc_line(8)))
-	line!(Text.printed(acc_line(9)))
-	line!(Text.printed(acc_line(10)))
-	line!(Text.printed(acc_line(11)))
-	line!(Text.printed(acc_line(12)))
-	line!(Text.printed(acc_line(13)))
-	line!(Text.printed(acc_line(14)))
-	line!(Text.printed(acc_line(15)))
-	line!(Text.printed(acc_line(16)))
-	line!(Text.printed(acc_line(17)))
-	line!(Text.printed(acc_line(18)))
-	line!(Text.printed(acc_line(19)))
-	line!(Text.printed(acc_report))
-	line!(Text.printed(acc_count))
+	line!(CceText.printed(acc_line(0)))
+	line!(CceText.printed(acc_line(1)))
+	line!(CceText.printed(acc_line(2)))
+	line!(CceText.printed(acc_line(3)))
+	line!(CceText.printed(acc_line(4)))
+	line!(CceText.printed(acc_line(5)))
+	line!(CceText.printed(acc_line(6)))
+	line!(CceText.printed(acc_line(7)))
+	line!(CceText.printed(acc_line(8)))
+	line!(CceText.printed(acc_line(9)))
+	line!(CceText.printed(acc_line(10)))
+	line!(CceText.printed(acc_line(11)))
+	line!(CceText.printed(acc_line(12)))
+	line!(CceText.printed(acc_line(13)))
+	line!(CceText.printed(acc_line(14)))
+	line!(CceText.printed(acc_line(15)))
+	line!(CceText.printed(acc_line(16)))
+	line!(CceText.printed(acc_line(17)))
+	line!(CceText.printed(acc_line(18)))
+	line!(CceText.printed(acc_line(19)))
+	line!(CceText.printed(acc_report))
+	line!(CceText.printed(acc_count))
 	Ok({})
 }

@@ -1,13 +1,13 @@
 # Klondike -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 import CardDeck
+import CceText
 import ListUtils
 import Maybe
-import Text
 
 Klondike :: [].{
 	Pile : { pile_cards : List(I64), pile_face_up : I64 }
 	KlondikeState : { kl_tableau : List(Klondike.Pile), kl_foundation : List(List(I64)), kl_stock : List(I64), kl_waste : List(I64), kl_moves : I64 }
-	MoveResult : [MoveOk(Klondike.KlondikeState), MoveErr(Text)]
+	MoveResult : [MoveOk(Klondike.KlondikeState), MoveErr(CceText)]
 
 	card_color : I64 -> I64
 	card_color = |card| ({
@@ -169,38 +169,38 @@ Klondike :: [].{
 	kl_foundation_count : Klondike.KlondikeState -> I64
 	kl_foundation_count = |st| (((U64.to_i64_wrap(List.len((List.get(st.kl_foundation, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))) + U64.to_i64_wrap(List.len((List.get(st.kl_foundation, I64.to_u64_wrap(1)) ?? crash("list-at out of range"))))) + U64.to_i64_wrap(List.len((List.get(st.kl_foundation, I64.to_u64_wrap(2)) ?? crash("list-at out of range"))))) + U64.to_i64_wrap(List.len((List.get(st.kl_foundation, I64.to_u64_wrap(3)) ?? crash("list-at out of range")))))
 
-	kl_format_waste : Klondike.KlondikeState -> Text
+	kl_format_waste : Klondike.KlondikeState -> CceText
 	kl_format_waste = |st| ({
 		n = U64.to_i64_wrap(List.len(st.kl_waste))
-		(if (n == 0) { "[]" } else { Text.concat(Text.concat("[", CardDeck.format_card((List.get(st.kl_waste, I64.to_u64_wrap((n - 1))) ?? crash("list-at out of range")))), "]") })
+		(if (n == 0) { "[]" } else { CceText.concat(CceText.concat("[", CardDeck.format_card((List.get(st.kl_waste, I64.to_u64_wrap((n - 1))) ?? crash("list-at out of range")))), "]") })
 	})
 
-	kl_format_stock : Klondike.KlondikeState -> Text
-	kl_format_stock = |st| Text.concat(Text.concat("(", Text.show_int(U64.to_i64_wrap(List.len(st.kl_stock)))), ")")
+	kl_format_stock : Klondike.KlondikeState -> CceText
+	kl_format_stock = |st| CceText.concat(CceText.concat("(", CceText.show_int(U64.to_i64_wrap(List.len(st.kl_stock)))), ")")
 
-	kl_format_foundation : Klondike.KlondikeState -> Text
-	kl_format_foundation = |st| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(kl_fmt_found((List.get(st.kl_foundation, I64.to_u64_wrap(0)) ?? crash("list-at out of range")), "S"), " "), kl_fmt_found((List.get(st.kl_foundation, I64.to_u64_wrap(1)) ?? crash("list-at out of range")), "H")), " "), kl_fmt_found((List.get(st.kl_foundation, I64.to_u64_wrap(2)) ?? crash("list-at out of range")), "D")), " "), kl_fmt_found((List.get(st.kl_foundation, I64.to_u64_wrap(3)) ?? crash("list-at out of range")), "C"))
+	kl_format_foundation : Klondike.KlondikeState -> CceText
+	kl_format_foundation = |st| CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(kl_fmt_found((List.get(st.kl_foundation, I64.to_u64_wrap(0)) ?? crash("list-at out of range")), "S"), " "), kl_fmt_found((List.get(st.kl_foundation, I64.to_u64_wrap(1)) ?? crash("list-at out of range")), "H")), " "), kl_fmt_found((List.get(st.kl_foundation, I64.to_u64_wrap(2)) ?? crash("list-at out of range")), "D")), " "), kl_fmt_found((List.get(st.kl_foundation, I64.to_u64_wrap(3)) ?? crash("list-at out of range")), "C"))
 
-	kl_fmt_found : List(I64), Text -> Text
+	kl_fmt_found : List(I64), CceText -> CceText
 	kl_fmt_found = |cards, suit| ({
 		n = U64.to_i64_wrap(List.len(cards))
-		(if (n == 0) { Text.concat(Text.concat("[", suit), "]") } else { Text.concat(Text.concat("[", CardDeck.format_card((List.get(cards, I64.to_u64_wrap((n - 1))) ?? crash("list-at out of range")))), "]") })
+		(if (n == 0) { CceText.concat(CceText.concat("[", suit), "]") } else { CceText.concat(CceText.concat("[", CardDeck.format_card((List.get(cards, I64.to_u64_wrap((n - 1))) ?? crash("list-at out of range")))), "]") })
 	})
 
-	kl_format_tableau_pile : Klondike.Pile, I64 -> Text
-	kl_format_tableau_pile = |p, idx| Text.concat(Text.concat(Text.show_int(idx), ": "), kl_fmt_pile_cards(p.pile_cards, p.pile_face_up, 0, U64.to_i64_wrap(List.len(p.pile_cards)), ""))
+	kl_format_tableau_pile : Klondike.Pile, I64 -> CceText
+	kl_format_tableau_pile = |p, idx| CceText.concat(CceText.concat(CceText.show_int(idx), ": "), kl_fmt_pile_cards(p.pile_cards, p.pile_face_up, 0, U64.to_i64_wrap(List.len(p.pile_cards)), ""))
 
-	kl_fmt_pile_cards : List(I64), I64, I64, I64, Text -> Text
+	kl_fmt_pile_cards : List(I64), I64, I64, I64, CceText -> CceText
 	kl_fmt_pile_cards = |cards, face_up, i, n, acc| (if (i >= n) { (if (n == 0) { "--" } else { acc }) } else { ({
 		sep = (if (i == 0) { "" } else { " " })
 		card_str = (if (i < face_up) { "##" } else { CardDeck.format_card((List.get(cards, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))) })
-		kl_fmt_pile_cards(cards, face_up, (i + 1), n, Text.concat(Text.concat(acc, sep), card_str))
+		kl_fmt_pile_cards(cards, face_up, (i + 1), n, CceText.concat(CceText.concat(acc, sep), card_str))
 	}) })
 
-	kl_format_state : Klondike.KlondikeState -> Text
-	kl_format_state = |st| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("Stock:", kl_format_stock(st)), " Waste:"), kl_format_waste(st)), " Found:"), kl_format_foundation(st)), " Moves:"), Text.show_int(st.kl_moves))
+	kl_format_state : Klondike.KlondikeState -> CceText
+	kl_format_state = |st| CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("Stock:", kl_format_stock(st)), " Waste:"), kl_format_waste(st)), " Found:"), kl_format_foundation(st)), " Moves:"), CceText.show_int(st.kl_moves))
 
-	kl_format_tableau : Klondike.KlondikeState, I64 -> Text
+	kl_format_tableau : Klondike.KlondikeState, I64 -> CceText
 	kl_format_tableau = |st, idx| (if (idx >= 7) { "" } else { kl_format_tableau_pile((List.get(st.kl_tableau, I64.to_u64_wrap(idx)) ?? crash("list-at out of range")), idx) })
 
 	kl_list_init : List(I64) -> List(I64)

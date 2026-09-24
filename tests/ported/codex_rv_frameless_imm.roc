@@ -20,7 +20,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # RvFramelessImm -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -69,13 +69,13 @@ xor_let = |id| ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.show_int(pf_of(419357952))))
-	line!(Text.printed(Text.show_int(shl_let(419357952))))
-	line!(Text.printed(Text.show_int(shl_let_if(419357952))))
-	line!(Text.printed(Text.show_int(shl_let_if(111550464))))
-	line!(Text.printed(Text.show_int(shru_let(419357952))))
-	line!(Text.printed(Text.show_int(and_let(419357952))))
-	line!(Text.printed(Text.show_int(or_let(419357952))))
-	line!(Text.printed(Text.show_int(xor_let(419357952))))
+	line!(CceText.printed(CceText.show_int(pf_of(419357952))))
+	line!(CceText.printed(CceText.show_int(shl_let(419357952))))
+	line!(CceText.printed(CceText.show_int(shl_let_if(419357952))))
+	line!(CceText.printed(CceText.show_int(shl_let_if(111550464))))
+	line!(CceText.printed(CceText.show_int(shru_let(419357952))))
+	line!(CceText.printed(CceText.show_int(and_let(419357952))))
+	line!(CceText.printed(CceText.show_int(or_let(419357952))))
+	line!(CceText.printed(CceText.show_int(xor_let(419357952))))
 	Ok({})
 }

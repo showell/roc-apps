@@ -14,7 +14,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # BoundedSigRuntime -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -30,7 +30,7 @@ clamp_ret = |n| n
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.show_int(inc_byte(5))))
-	line!(Text.printed(Text.show_int(clamp_ret(9))))
+	line!(CceText.printed(CceText.show_int(inc_byte(5))))
+	line!(CceText.printed(CceText.show_int(clamp_ret(9))))
 	Ok({})
 }

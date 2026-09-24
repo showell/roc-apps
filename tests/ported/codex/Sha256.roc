@@ -1,6 +1,7 @@
 # Sha256 -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+import CceChar
+import CceText
 import Mem
-import Text
 
 Sha256 :: [].{
 	Sha256State : { a : I64, b : I64, c : I64, d : I64, e : I64, f : I64, g : I64, h : I64 }
@@ -133,39 +134,39 @@ Sha256 :: [].{
 		sha256_digest_bytes(words, (i + 1), List.append(List.append(List.append(List.append(out, I64.bitwise_and(I64.shr_zf_wrap(w, I64.to_u8_wrap(24)), 255)), I64.bitwise_and(I64.shr_zf_wrap(w, I64.to_u8_wrap(16)), 255)), I64.bitwise_and(I64.shr_zf_wrap(w, I64.to_u8_wrap(8)), 255)), I64.bitwise_and(w, 255)))
 	}) })
 
-	sha256_to_hex : List(I64) -> Text
+	sha256_to_hex : List(I64) -> CceText
 	sha256_to_hex = |hash| words_to_hex(hash, 0, U64.to_i64_wrap(List.len(hash)), "")
 
-	words_to_hex : List(I64), I64, I64, Text -> Text
+	words_to_hex : List(I64), I64, I64, CceText -> CceText
 	words_to_hex = |ws, i, len, acc| (if (i == len) { acc } else { ({
 		w = (List.get(ws, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
-		words_to_hex(ws, (i + 1), len, Text.concat(acc, word_to_hex(w)))
+		words_to_hex(ws, (i + 1), len, CceText.concat(acc, word_to_hex(w)))
 	}) })
 
-	word_to_hex : I64 -> Text
+	word_to_hex : I64 -> CceText
 	word_to_hex = |w| ({
 		b0 = I64.bitwise_and(I64.shr_wrap(w, I64.to_u8_wrap(24)), 255)
 		b1 = I64.bitwise_and(I64.shr_wrap(w, I64.to_u8_wrap(16)), 255)
 		b2 = I64.bitwise_and(I64.shr_wrap(w, I64.to_u8_wrap(8)), 255)
 		b3 = I64.bitwise_and(w, 255)
-		Text.concat(Text.concat(Text.concat(byte_to_hex(b0), byte_to_hex(b1)), byte_to_hex(b2)), byte_to_hex(b3))
+		CceText.concat(CceText.concat(CceText.concat(byte_to_hex(b0), byte_to_hex(b1)), byte_to_hex(b2)), byte_to_hex(b3))
 	})
 
-	byte_to_hex : I64 -> Text
+	byte_to_hex : I64 -> CceText
 	byte_to_hex = |b| ({
 		hi = I64.shr_wrap(b, I64.to_u8_wrap(4))
 		lo = I64.bitwise_and(b, 15)
-		Text.concat(sha256_hex_nibble(hi), sha256_hex_nibble(lo))
+		CceText.concat(sha256_hex_nibble(hi), sha256_hex_nibble(lo))
 	})
 
-	sha256_hex_nibble : I64 -> Text
+	sha256_hex_nibble : I64 -> CceText
 	sha256_hex_nibble = |n| (if (n == 0) { "0" } else { (if (n == 1) { "1" } else { (if (n == 2) { "2" } else { (if (n == 3) { "3" } else { (if (n == 4) { "4" } else { (if (n == 5) { "5" } else { (if (n == 6) { "6" } else { (if (n == 7) { "7" } else { (if (n == 8) { "8" } else { (if (n == 9) { "9" } else { (if (n == 10) { "a" } else { (if (n == 11) { "b" } else { (if (n == 12) { "c" } else { (if (n == 13) { "d" } else { (if (n == 14) { "e" } else { "f" }) }) }) }) }) }) }) }) }) }) }) }) }) }) })
 
-	text_to_bytes : Text -> List(I64)
-	text_to_bytes = |s| text_to_bytes_loop(s, 0, Text.len(s), [])
+	text_to_bytes : CceText -> List(I64)
+	text_to_bytes = |s| text_to_bytes_loop(s, 0, CceText.len(s), [])
 
-	text_to_bytes_loop : Text, I64, I64, List(I64) -> List(I64)
-	text_to_bytes_loop = |s, i, len, acc| (if (i == len) { acc } else { text_to_bytes_loop(s, (i + 1), len, List.append(acc, Text.char_at(s, i))) })
+	text_to_bytes_loop : CceText, I64, I64, List(I64) -> List(I64)
+	text_to_bytes_loop = |s, i, len, acc| (if (i == len) { acc } else { text_to_bytes_loop(s, (i + 1), len, List.append(acc, CceChar.code(CceText.char_at(s, i)))) })
 
 	sha256_buf! : Mem.Mem, I64, I64, I64 => (Mem.Mem, List(I64))
 	sha256_buf! = |mem, buf, off, len| sha256_buf_blocks!(mem, buf, off, len, 0, 1779033703, 3144134277, 1013904242, 2773480762, 1359893119, 2600822924, 528734635, 1541459225)

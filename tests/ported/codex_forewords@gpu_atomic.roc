@@ -13,7 +13,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # FwdGpuAtomicTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -24,8 +24,8 @@ line! = |s| echo!(Str.concat(s, "\n"))
 
 main! = |_args| {
 	(match Relaxed {
-		Relaxed => line!(Text.printed("Gpu/Atomic OK"))
-		_ => line!(Text.printed("fail"))
+		Relaxed => line!(CceText.printed("Gpu/Atomic OK"))
+		_ => line!(CceText.printed("fail"))
 	})
 	Ok({})
 }

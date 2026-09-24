@@ -16,18 +16,18 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Mem
-import cdx.Text
 
 # Poke16Width -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-hex_bytes! : Mem.Mem, I64, I64, I64, Text => (Mem.Mem, Text)
+hex_bytes! : Mem.Mem, I64, I64, I64, CceText => (Mem.Mem, CceText)
 hex_bytes! = |mem, b, i, n, acc| (if (i >= n) { (mem, acc) } else { ({
 	(mem1, mem__1) = Mem.load!(mem, b, i, 1)
-	hex_bytes!(mem1, b, (i + 1), n, Text.concat(Text.concat(acc, " "), Text.show_int(mem__1)))
+	hex_bytes!(mem1, b, (i + 1), n, CceText.concat(CceText.concat(acc, " "), CceText.show_int(mem__1)))
 }) })
 
 # --- Entry ---
@@ -44,13 +44,13 @@ main! = |args| {
 		(mem7, _w4) = Mem.store!(mem6, b, 5, 61183, 2)
 		(mem8, odd) = Mem.load!(mem7, b, 5, 2)
 		({
-			_ = line!(Text.printed(Text.concat("neighbour ", Text.show_int(aligned))))
+			_ = line!(CceText.printed(CceText.concat("neighbour ", CceText.show_int(aligned))))
 			(mem9, mem__1) = hex_bytes!(mem8, b, 4, 8, "")
-			_ = line!(Text.printed(Text.concat("odd-bytes", mem__1)))
-			_ = line!(Text.printed(Text.concat("peek16-odd ", Text.show_int(odd))))
+			_ = line!(CceText.printed(CceText.concat("odd-bytes", mem__1)))
+			_ = line!(CceText.printed(CceText.concat("peek16-odd ", CceText.show_int(odd))))
 			({
 				(mem10, mem__2) = Mem.load!(mem9, b, 2, 2)
-				(mem10, line!(Text.printed(Text.concat("peek16-hi ", Text.show_int(mem__2)))))
+				(mem10, line!(CceText.printed(CceText.concat("peek16-hi ", CceText.show_int(mem__2)))))
 			})
 		})
 	})

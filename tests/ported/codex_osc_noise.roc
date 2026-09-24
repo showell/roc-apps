@@ -18,8 +18,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Oscillator
-import cdx.Text
 import cdx.Units
 
 # OscNoiseTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
@@ -1027,11 +1027,11 @@ main! = |_args| {
 	xs = Oscillator.osc_bank_render(ont_bank, ont_samples)
 	reps = ont_repeats(xs, 0, (ont_samples - ont_period), 0)
 	dist = ont_distinct(xs, 0, ont_samples, 0)
-	line!(Text.printed(Text.concat("samples:       ", Text.show_int(ont_samples))))
-	line!(Text.printed(Text.concat("period:        ", Text.show_int(ont_period))))
-	line!(Text.printed(Text.concat(Text.concat(Text.concat("repeats:       ", Text.show_int(reps)), " of "), Text.show_int((ont_samples - ont_period)))))
-	line!(Text.printed(Text.concat("distinct:      ", Text.show_int(dist))))
-	line!(Text.printed(Text.concat("not periodic:  ", (if (reps < (ont_samples - ont_period)) { "True" } else { "False" }))))
-	line!(Text.printed(Text.concat("above period:  ", (if (dist > ont_period) { "True" } else { "False" }))))
+	line!(CceText.printed(CceText.concat("samples:       ", CceText.show_int(ont_samples))))
+	line!(CceText.printed(CceText.concat("period:        ", CceText.show_int(ont_period))))
+	line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat("repeats:       ", CceText.show_int(reps)), " of "), CceText.show_int((ont_samples - ont_period)))))
+	line!(CceText.printed(CceText.concat("distinct:      ", CceText.show_int(dist))))
+	line!(CceText.printed(CceText.concat("not periodic:  ", (if (reps < (ont_samples - ont_period)) { "True" } else { "False" }))))
+	line!(CceText.printed(CceText.concat("above period:  ", (if (dist > ont_period) { "True" } else { "False" }))))
 	Ok({})
 }

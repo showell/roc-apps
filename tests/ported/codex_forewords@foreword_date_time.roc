@@ -13,8 +13,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.DateTime
-import cdx.Text
 
 # FwdDateTimeTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -72,6 +72,6 @@ elapsed_to_SecondElapsed = |fv| I64.div_trunc_by(fv, 1000000000)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed("Foreword/DateTime OK"))
+	line!(CceText.printed("Foreword/DateTime OK"))
 	Ok({})
 }

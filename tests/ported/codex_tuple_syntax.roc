@@ -17,7 +17,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 import cdx.Tuple
 
 # TupleSyntax -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
@@ -52,19 +52,19 @@ main! = |_args| {
 		p = MkTup2(10, 20)
 		({
 			({
-				line!(Text.printed(Text.show_int(sum_pair(p))))
+				line!(CceText.printed(CceText.show_int(sum_pair(p))))
 				(match swap(p) {
 					MkTup2(a, b) => ({
-						line!(Text.printed(Text.concat(Text.concat(Text.show_int(a), " "), Text.show_int(b))))
+						line!(CceText.printed(CceText.concat(CceText.concat(CceText.show_int(a), " "), CceText.show_int(b))))
 					})
 				})
 			})
-			line!(Text.printed(Text.show_int(fst3(MkTup3(1, 2, 3)))))
+			line!(CceText.printed(CceText.show_int(fst3(MkTup3(1, 2, 3)))))
 			({
 				q = MkTup2(MkTup2(3, 4), 5)
 				({
-					line!(Text.printed(Text.show_int(nested_sum(q))))
-					line!(Text.printed(Text.show_int(sum_pair(MkTup2(100, 200)))))
+					line!(CceText.printed(CceText.show_int(nested_sum(q))))
+					line!(CceText.printed(CceText.show_int(sum_pair(MkTup2(100, 200)))))
 				})
 			})
 		})

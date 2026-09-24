@@ -22,7 +22,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # EqGenericFields -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -30,9 +30,9 @@ import cdx.Text
 line! = |s| echo!(Str.concat(s, "\n"))
 Pair(a) : [P(a, a)]
 Holder(a, b) : [H(a, b)]
-Plain : [Q(Text, Text)]
+Plain : [Q(CceText, CceText)]
 
-yn : Bool -> Text
+yn : Bool -> CceText
 yn = |b| (if b { "yes" } else { "no" })
 
 eq_Pair : Pair(a), Pair(a) -> Bool where [a.is_eq : a, a -> Bool]
@@ -62,15 +62,15 @@ eq_Plain = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("text-control     : ", yn(("12" == Text.show_int(12))))))
-	line!(Text.printed(Text.concat("concrete-control : ", yn(eq_Plain(Q("12", "9"), Q(Text.show_int(12), "9"))))))
-	line!(Text.printed(Text.concat("one-param eq     : ", yn(eq_Pair(P("12", "9"), P(Text.show_int(12), "9"))))))
-	line!(Text.printed(Text.concat("one-param ne     : ", yn(eq_Pair(P("12", "9"), P(Text.show_int(13), "9"))))))
-	line!(Text.printed(Text.concat("second param     : ", yn(eq_Holder(H(7, "12"), H(7, Text.show_int(12)))))))
-	line!(Text.printed(Text.concat("second param ne  : ", yn(eq_Holder(H(7, "12"), H(8, Text.show_int(12)))))))
-	line!(Text.printed(Text.concat("one-param int eq : ", yn(eq_Pair(P(12, 9), P((6 + 6), 9))))))
-	line!(Text.printed(Text.concat("one-param int ne : ", yn(eq_Pair(P(12, 9), P((6 + 7), 9))))))
-	line!(Text.printed(Text.concat("first param eq   : ", yn(eq_Holder(H("12", 7), H(Text.show_int(12), 7))))))
-	line!(Text.printed(Text.concat("first param ne   : ", yn(eq_Holder(H("12", 7), H(Text.show_int(13), 7))))))
+	line!(CceText.printed(CceText.concat("text-control     : ", yn(("12" == CceText.show_int(12))))))
+	line!(CceText.printed(CceText.concat("concrete-control : ", yn(eq_Plain(Q("12", "9"), Q(CceText.show_int(12), "9"))))))
+	line!(CceText.printed(CceText.concat("one-param eq     : ", yn(eq_Pair(P("12", "9"), P(CceText.show_int(12), "9"))))))
+	line!(CceText.printed(CceText.concat("one-param ne     : ", yn(eq_Pair(P("12", "9"), P(CceText.show_int(13), "9"))))))
+	line!(CceText.printed(CceText.concat("second param     : ", yn(eq_Holder(H(7, "12"), H(7, CceText.show_int(12)))))))
+	line!(CceText.printed(CceText.concat("second param ne  : ", yn(eq_Holder(H(7, "12"), H(8, CceText.show_int(12)))))))
+	line!(CceText.printed(CceText.concat("one-param int eq : ", yn(eq_Pair(P(12, 9), P((6 + 6), 9))))))
+	line!(CceText.printed(CceText.concat("one-param int ne : ", yn(eq_Pair(P(12, 9), P((6 + 7), 9))))))
+	line!(CceText.printed(CceText.concat("first param eq   : ", yn(eq_Holder(H("12", 7), H(CceText.show_int(12), 7))))))
+	line!(CceText.printed(CceText.concat("first param ne   : ", yn(eq_Holder(H("12", 7), H(CceText.show_int(13), 7))))))
 	Ok({})
 }

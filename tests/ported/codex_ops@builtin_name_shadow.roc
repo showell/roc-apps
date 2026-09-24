@@ -14,7 +14,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # BuiltinNameShadow -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -30,7 +30,7 @@ vec_mul = 3
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("shadowed constant want 64: ", Text.show_int(vec_sub))))
-	line!(Text.printed(Text.concat("shadowed product  want 192: ", Text.show_int((vec_sub * vec_mul)))))
+	line!(CceText.printed(CceText.concat("shadowed constant want 64: ", CceText.show_int(vec_sub))))
+	line!(CceText.printed(CceText.concat("shadowed product  want 192: ", CceText.show_int((vec_sub * vec_mul)))))
 	Ok({})
 }

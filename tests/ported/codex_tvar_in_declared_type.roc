@@ -13,7 +13,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # ProbeTvarInDeclared -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -29,7 +29,7 @@ pair_swap = |p| { fst: p.snd, snd: p.fst }
 main! = |_args| {
 	({
 		q = pair_swap({ fst: 3, snd: 7 })
-		line!(Text.printed(Text.show_int(((q.fst * 10) + q.snd))))
+		line!(CceText.printed(CceText.show_int(((q.fst * 10) + q.snd))))
 	})
 	Ok({})
 }

@@ -44,19 +44,19 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Cordic
-import cdx.Text
 
 # MathCordicQuadrants -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-s : I64, I64, Text -> Text
-s = |a, got, want| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("  sin ", Text.show_int(a)), " = "), Text.show_int(got)), "  true "), want)
+s : I64, I64, CceText -> CceText
+s = |a, got, want| CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("  sin ", CceText.show_int(a)), " = "), CceText.show_int(got)), "  true "), want)
 
-c : I64, I64, Text -> Text
-c = |a, got, want| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("  cos ", Text.show_int(a)), " = "), Text.show_int(got)), "  true "), want)
+c : I64, I64, CceText -> CceText
+c = |a, got, want| CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("  cos ", CceText.show_int(a)), " = "), CceText.show_int(got)), "  true "), want)
 
 pythag : I64, I64, I64 -> I64
 pythag = |i, n, acc| (if (i > n) { acc } else { ({
@@ -76,37 +76,37 @@ lower = |i, n, acc| (if (i > n) { acc } else { lower((i + 1), n, (if (Cordic.cor
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed("Below 1735 the rotation always converged, so these are controls"))
-	line!(Text.printed("and the quadrant fold must not move any of them:"))
-	line!(Text.printed(s(0, Cordic.cordic_sin(0), "0")))
-	line!(Text.printed(s(500, Cordic.cordic_sin(500), "479")))
-	line!(Text.printed(s(1000, Cordic.cordic_sin(1000), "841")))
-	line!(Text.printed(s(1500, Cordic.cordic_sin(1500), "997")))
-	line!(Text.printed(c(0, Cordic.cordic_cos(0), "1000, and 997 is the gain constant, not the fold")))
-	line!(Text.printed(""))
-	line!(Text.printed("Second quadrant, where the saturation began:"))
-	line!(Text.printed(s(2000, Cordic.cordic_sin(2000), "909")))
-	line!(Text.printed(s(2500, Cordic.cordic_sin(2500), "599")))
-	line!(Text.printed(s(3141, Cordic.cordic_sin(3141), "0")))
-	line!(Text.printed(c(1571, Cordic.cordic_cos(1571), "0")))
-	line!(Text.printed(c(2000, Cordic.cordic_cos(2000), "-416")))
-	line!(Text.printed(c(3141, Cordic.cordic_cos(3141), "-1000")))
-	line!(Text.printed(""))
-	line!(Text.printed("Third and fourth quadrants, where sin must go negative and the"))
-	line!(Text.printed("saturated version answered a positive 986 throughout:"))
-	line!(Text.printed(s(3500, Cordic.cordic_sin(3500), "-351")))
-	line!(Text.printed(s(4712, Cordic.cordic_sin(4712), "-1000")))
-	line!(Text.printed(s(5500, Cordic.cordic_sin(5500), "-706")))
-	line!(Text.printed(c(4712, Cordic.cordic_cos(4712), "0")))
-	line!(Text.printed(c(6000, Cordic.cordic_cos(6000), "960")))
-	line!(Text.printed(""))
-	line!(Text.printed("Angles outside one turn, which cordic-normalize folds first:"))
-	line!(Text.printed(s(7854, Cordic.cordic_sin(7854), "1000, being 6283 + 1571")))
-	line!(Text.printed(s((0 - 1571), Cordic.cordic_sin((0 - 1571)), "-1000")))
-	line!(Text.printed(""))
-	line!(Text.printed("Counted rather than eyeballed, over the whole turn:"))
-	line!(Text.printed(Text.concat(Text.concat("  sin^2 + cos^2 within 1.5 pct of 1, angles 0..6000: ", Text.show_int(pythag(0, 12, 0))), " of 13")))
-	line!(Text.printed(Text.concat(Text.concat("  sin non-negative over 0..3000:                     ", Text.show_int(upper(0, 10, 0))), " of 11")))
-	line!(Text.printed(Text.concat(Text.concat("  sin non-positive over pi..pi+3000:                 ", Text.show_int(lower(0, 10, 0))), " of 11")))
+	line!(CceText.printed("Below 1735 the rotation always converged, so these are controls"))
+	line!(CceText.printed("and the quadrant fold must not move any of them:"))
+	line!(CceText.printed(s(0, Cordic.cordic_sin(0), "0")))
+	line!(CceText.printed(s(500, Cordic.cordic_sin(500), "479")))
+	line!(CceText.printed(s(1000, Cordic.cordic_sin(1000), "841")))
+	line!(CceText.printed(s(1500, Cordic.cordic_sin(1500), "997")))
+	line!(CceText.printed(c(0, Cordic.cordic_cos(0), "1000, and 997 is the gain constant, not the fold")))
+	line!(CceText.printed(""))
+	line!(CceText.printed("Second quadrant, where the saturation began:"))
+	line!(CceText.printed(s(2000, Cordic.cordic_sin(2000), "909")))
+	line!(CceText.printed(s(2500, Cordic.cordic_sin(2500), "599")))
+	line!(CceText.printed(s(3141, Cordic.cordic_sin(3141), "0")))
+	line!(CceText.printed(c(1571, Cordic.cordic_cos(1571), "0")))
+	line!(CceText.printed(c(2000, Cordic.cordic_cos(2000), "-416")))
+	line!(CceText.printed(c(3141, Cordic.cordic_cos(3141), "-1000")))
+	line!(CceText.printed(""))
+	line!(CceText.printed("Third and fourth quadrants, where sin must go negative and the"))
+	line!(CceText.printed("saturated version answered a positive 986 throughout:"))
+	line!(CceText.printed(s(3500, Cordic.cordic_sin(3500), "-351")))
+	line!(CceText.printed(s(4712, Cordic.cordic_sin(4712), "-1000")))
+	line!(CceText.printed(s(5500, Cordic.cordic_sin(5500), "-706")))
+	line!(CceText.printed(c(4712, Cordic.cordic_cos(4712), "0")))
+	line!(CceText.printed(c(6000, Cordic.cordic_cos(6000), "960")))
+	line!(CceText.printed(""))
+	line!(CceText.printed("Angles outside one turn, which cordic-normalize folds first:"))
+	line!(CceText.printed(s(7854, Cordic.cordic_sin(7854), "1000, being 6283 + 1571")))
+	line!(CceText.printed(s((0 - 1571), Cordic.cordic_sin((0 - 1571)), "-1000")))
+	line!(CceText.printed(""))
+	line!(CceText.printed("Counted rather than eyeballed, over the whole turn:"))
+	line!(CceText.printed(CceText.concat(CceText.concat("  sin^2 + cos^2 within 1.5 pct of 1, angles 0..6000: ", CceText.show_int(pythag(0, 12, 0))), " of 13")))
+	line!(CceText.printed(CceText.concat(CceText.concat("  sin non-negative over 0..3000:                     ", CceText.show_int(upper(0, 10, 0))), " of 11")))
+	line!(CceText.printed(CceText.concat(CceText.concat("  sin non-positive over pi..pi+3000:                 ", CceText.show_int(lower(0, 10, 0))), " of 11")))
 	Ok({})
 }

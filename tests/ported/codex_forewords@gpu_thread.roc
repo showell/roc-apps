@@ -13,7 +13,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 import cdx.Thread
 
 # FwdGpuThreadTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
@@ -26,7 +26,7 @@ line! = |s| echo!(Str.concat(s, "\n"))
 main! = |_args| {
 	({
 		idx = Thread.make_thread_index(42)
-		line!(Text.printed(Text.show_int(Thread.thread_index_get(idx))))
+		line!(CceText.printed(CceText.show_int(Thread.thread_index_get(idx))))
 	})
 	Ok({})
 }

@@ -17,7 +17,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # MatchShadowedArm -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -25,7 +25,7 @@ import cdx.Text
 line! = |s| echo!(Str.concat(s, "\n"))
 Shape : [Leaf, Fork]
 
-classify : I64 -> Text
+classify : I64 -> CceText
 classify = |n| (match n {
 	1 => "one"
 	2 => "two"
@@ -33,7 +33,7 @@ classify = |n| (match n {
 	_ => "other"
 })
 
-name_of : Shape -> Text
+name_of : Shape -> CceText
 name_of = |s| (match s {
 	Leaf => "leaf"
 	Fork => "fork"
@@ -55,10 +55,10 @@ eq_Shape = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(classify(1)))
-	line!(Text.printed(classify(2)))
-	line!(Text.printed(classify(3)))
-	line!(Text.printed(name_of(Leaf)))
-	line!(Text.printed(name_of(Fork)))
+	line!(CceText.printed(classify(1)))
+	line!(CceText.printed(classify(2)))
+	line!(CceText.printed(classify(3)))
+	line!(CceText.printed(name_of(Leaf)))
+	line!(CceText.printed(name_of(Fork)))
 	Ok({})
 }

@@ -1,5 +1,5 @@
 # DateTime -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
-import Text
+import CceText
 import Tuple
 
 DateTime :: [].{
@@ -74,23 +74,23 @@ DateTime :: [].{
 		((((I64.div_trunc_by((days + 4), 7) * 7) - days) - 4) + (days + 4))
 	})
 
-	day_of_week_name : I64 -> Text
+	day_of_week_name : I64 -> CceText
 	day_of_week_name = |dow| (if (dow == 0) { "Thu" } else { (if (dow == 1) { "Fri" } else { (if (dow == 2) { "Sat" } else { (if (dow == 3) { "Sun" } else { (if (dow == 4) { "Mon" } else { (if (dow == 5) { "Tue" } else { (if (dow == 6) { "Wed" } else { "?" }) }) }) }) }) }) })
 
-	format_datetime : DateTime.DateTime -> Text
-	format_datetime = |dt| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(pad4(dt.year), "-"), pad2(dt.month)), "-"), pad2(dt.day)), "T"), pad2(dt.hour)), ":"), pad2(dt.minute)), ":"), pad2(dt.second)), "Z")
+	format_datetime : DateTime.DateTime -> CceText
+	format_datetime = |dt| CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(pad4(dt.year), "-"), pad2(dt.month)), "-"), pad2(dt.day)), "T"), pad2(dt.hour)), ":"), pad2(dt.minute)), ":"), pad2(dt.second)), "Z")
 
-	format_date : DateTime.DateTime -> Text
-	format_date = |dt| Text.concat(Text.concat(Text.concat(Text.concat(pad4(dt.year), "-"), pad2(dt.month)), "-"), pad2(dt.day))
+	format_date : DateTime.DateTime -> CceText
+	format_date = |dt| CceText.concat(CceText.concat(CceText.concat(CceText.concat(pad4(dt.year), "-"), pad2(dt.month)), "-"), pad2(dt.day))
 
-	format_time : DateTime.DateTime -> Text
-	format_time = |dt| Text.concat(Text.concat(Text.concat(Text.concat(pad2(dt.hour), ":"), pad2(dt.minute)), ":"), pad2(dt.second))
+	format_time : DateTime.DateTime -> CceText
+	format_time = |dt| CceText.concat(CceText.concat(CceText.concat(CceText.concat(pad2(dt.hour), ":"), pad2(dt.minute)), ":"), pad2(dt.second))
 
-	pad2 : I64 -> Text
-	pad2 = |n| (if (n < 10) { Text.concat("0", Text.show_int(n)) } else { Text.show_int(n) })
+	pad2 : I64 -> CceText
+	pad2 = |n| (if (n < 10) { CceText.concat("0", CceText.show_int(n)) } else { CceText.show_int(n) })
 
-	pad4 : I64 -> Text
-	pad4 = |n| (if (n < 10) { Text.concat("000", Text.show_int(n)) } else { (if (n < 100) { Text.concat("00", Text.show_int(n)) } else { (if (n < 1000) { Text.concat("0", Text.show_int(n)) } else { Text.show_int(n) }) }) })
+	pad4 : I64 -> CceText
+	pad4 = |n| (if (n < 10) { CceText.concat("000", CceText.show_int(n)) } else { (if (n < 100) { CceText.concat("00", CceText.show_int(n)) } else { (if (n < 1000) { CceText.concat("0", CceText.show_int(n)) } else { CceText.show_int(n) }) }) })
 
 	datetime_add_seconds : DateTime.Timestamp, DateTime.Elapsed -> DateTime.Timestamp
 	datetime_add_seconds = |ts, secs| (ts + secs)
@@ -104,6 +104,6 @@ DateTime :: [].{
 	datetime_diff : DateTime.Timestamp, DateTime.Timestamp -> DateTime.Elapsed
 	datetime_diff = |a, b| (a - b)
 
-	month_name : I64 -> Text
+	month_name : I64 -> CceText
 	month_name = |m| (if (m == 1) { "Jan" } else { (if (m == 2) { "Feb" } else { (if (m == 3) { "Mar" } else { (if (m == 4) { "Apr" } else { (if (m == 5) { "May" } else { (if (m == 6) { "Jun" } else { (if (m == 7) { "Jul" } else { (if (m == 8) { "Aug" } else { (if (m == 9) { "Sep" } else { (if (m == 10) { "Oct" } else { (if (m == 11) { "Nov" } else { (if (m == 12) { "Dec" } else { "?" }) }) }) }) }) }) }) }) }) }) }) })
 }

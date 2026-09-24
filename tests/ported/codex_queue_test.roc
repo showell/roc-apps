@@ -14,31 +14,31 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Maybe
 import cdx.Queue
-import cdx.Text
 
 # QueueTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-show_dequeue : Maybe.Maybe(Queue.DequeueResult(I64)) -> Text
+show_dequeue : Maybe.Maybe(Queue.DequeueResult(I64)) -> CceText
 show_dequeue = |r| (match r {
-	Just(dr) => Text.show_int(dr.value)
+	Just(dr) => CceText.show_int(dr.value)
 	None => "empty"
 })
 
-test_queue : Text
+test_queue : CceText
 test_queue = ({
 	q0 = Queue.queue_empty
 	q1 = Queue.queue_enqueue(Queue.queue_enqueue(Queue.queue_enqueue(q0, 10), 20), 30)
-	Text.concat(Text.concat((if Queue.queue_is_empty(q0) { "True" } else { "False" }), "\n"), Text.show_int(Queue.queue_size(q1)))
+	CceText.concat(CceText.concat((if Queue.queue_is_empty(q0) { "True" } else { "False" }), "\n"), CceText.show_int(Queue.queue_size(q1)))
 })
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(test_queue))
+	line!(CceText.printed(test_queue))
 	Ok({})
 }

@@ -17,8 +17,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.ListUtils
-import cdx.Text
 
 # ListTailEmpty -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -36,11 +36,11 @@ main! = |_args| {
 		three = ListUtils.list_tail([1, 2, 3])
 		one = ListUtils.list_tail([7])
 		({
-			line!(Text.printed(Text.concat("empty-len ", Text.show_int(U64.to_i64_wrap(List.len(empty))))))
-			line!(Text.printed(Text.concat("three-len ", Text.show_int(U64.to_i64_wrap(List.len(three))))))
-			line!(Text.printed(Text.concat("three-first ", Text.show_int((List.get(three, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))))))
-			line!(Text.printed(Text.concat("three-last ", Text.show_int((List.get(three, I64.to_u64_wrap(1)) ?? crash("list-at out of range"))))))
-			line!(Text.printed(Text.concat("one-len ", Text.show_int(U64.to_i64_wrap(List.len(one))))))
+			line!(CceText.printed(CceText.concat("empty-len ", CceText.show_int(U64.to_i64_wrap(List.len(empty))))))
+			line!(CceText.printed(CceText.concat("three-len ", CceText.show_int(U64.to_i64_wrap(List.len(three))))))
+			line!(CceText.printed(CceText.concat("three-first ", CceText.show_int((List.get(three, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))))))
+			line!(CceText.printed(CceText.concat("three-last ", CceText.show_int((List.get(three, I64.to_u64_wrap(1)) ?? crash("list-at out of range"))))))
+			line!(CceText.printed(CceText.concat("one-len ", CceText.show_int(U64.to_i64_wrap(List.len(one))))))
 		})
 	})
 	Ok({})

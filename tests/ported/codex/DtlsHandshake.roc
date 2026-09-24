@@ -1,7 +1,7 @@
 # DtlsHandshake -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+import CceText
 import Hkdf
 import Hmac
-import Text
 
 DtlsHandshake :: [].{
 	DtlsHsPhase : [PhStart, PhWaitServerHello, PhWaitAck, PhConnected, PhFailed]

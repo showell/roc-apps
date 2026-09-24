@@ -13,7 +13,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # FwdGpuBarrierTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -25,7 +25,7 @@ line! = |s| echo!(Str.concat(s, "\n"))
 main! = |_args| {
 	({
 		b = { mb_id: 0, mb_expected: 32, mb_state: MBReady }
-		line!(Text.printed(Text.show_int(b.mb_expected)))
+		line!(CceText.printed(CceText.show_int(b.mb_expected)))
 	})
 	Ok({})
 }

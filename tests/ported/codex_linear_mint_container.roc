@@ -13,7 +13,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # LinearMintContainer -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -32,6 +32,6 @@ stash_arg = |n| ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.show_int(stash_arg(7))))
+	line!(CceText.printed(CceText.show_int(stash_arg(7))))
 	Ok({})
 }

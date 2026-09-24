@@ -14,7 +14,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # ActUnusedBind -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -23,7 +23,7 @@ line! = |s| echo!(Str.concat(s, "\n"))
 
 noisy! : I64 => I64
 noisy! = |n| ({
-	line!(Text.printed(Text.concat("noisy ", Text.show_int(n))))
+	line!(CceText.printed(CceText.concat("noisy ", CceText.show_int(n))))
 	n
 })
 
@@ -31,6 +31,6 @@ noisy! = |n| ({
 
 main! = |_args| {
 	_w = noisy!(1)
-	line!(Text.printed("after"))
+	line!(CceText.printed("after"))
 	Ok({})
 }

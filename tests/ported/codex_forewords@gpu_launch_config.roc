@@ -13,8 +13,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.LaunchConfig
-import cdx.Text
 
 # FwdGpuLaunchConfigTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -26,7 +26,7 @@ line! = |s| echo!(Str.concat(s, "\n"))
 main! = |_args| {
 	({
 		cfg = LaunchConfig.launch_config_for_num_elems(1024)
-		line!(Text.printed(Text.show_int(cfg.lc_block_x)))
+		line!(CceText.printed(CceText.show_int(cfg.lc_block_x)))
 	})
 	Ok({})
 }

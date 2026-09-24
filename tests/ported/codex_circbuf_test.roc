@@ -17,68 +17,68 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.CircularBuffer
-import cdx.Text
 
 # CircBufTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-test_push_pop : Text
+test_push_pop : CceText
 test_push_pop = ({
 	b = CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_new(5), 10), 20), 30)
 	f = CircularBuffer.circbuf_front(b)
 	bk = CircularBuffer.circbuf_back(b)
 	(match f {
 		Just(fv) => (match bk {
-			Just(bv) => Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("count=", Text.show_int(CircularBuffer.circbuf_count(b))), " front="), Text.show_int(fv)), " back="), Text.show_int(bv))
+			Just(bv) => CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("count=", CceText.show_int(CircularBuffer.circbuf_count(b))), " front="), CceText.show_int(fv)), " back="), CceText.show_int(bv))
 			None => "bk-none"
 			None => "f-none"
 		})
 	})
 })
 
-test_overflow : Text
+test_overflow : CceText
 test_overflow = ({
 	b = CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_new(3), 1), 2), 3), 4)
 	f = CircularBuffer.circbuf_front(b)
 	(match f {
-		Just(fv) => Text.concat(Text.concat(Text.concat("overflow front=", Text.show_int(fv)), " count="), Text.show_int(CircularBuffer.circbuf_count(b)))
+		Just(fv) => CceText.concat(CceText.concat(CceText.concat("overflow front=", CceText.show_int(fv)), " count="), CceText.show_int(CircularBuffer.circbuf_count(b)))
 		None => "none"
 	})
 })
 
-test_pop : Text
+test_pop : CceText
 test_pop = ({
 	b = CircularBuffer.circbuf_pop_front(CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_new(5), 10), 20))
 	f = CircularBuffer.circbuf_front(b)
 	(match f {
-		Just(fv) => Text.concat(Text.concat(Text.concat("after-pop=", Text.show_int(fv)), " count="), Text.show_int(CircularBuffer.circbuf_count(b)))
+		Just(fv) => CceText.concat(CceText.concat(CceText.concat("after-pop=", CceText.show_int(fv)), " count="), CceText.show_int(CircularBuffer.circbuf_count(b)))
 		None => "empty"
 	})
 })
 
-test_to_list : Text
+test_to_list : CceText
 test_to_list = ({
 	b = CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_new(5), 1), 2), 3)
 	lst = CircularBuffer.circbuf_to_list(b)
-	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("list=", Text.show_int((List.get(lst, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))), ","), Text.show_int((List.get(lst, I64.to_u64_wrap(1)) ?? crash("list-at out of range")))), ","), Text.show_int((List.get(lst, I64.to_u64_wrap(2)) ?? crash("list-at out of range"))))
+	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("list=", CceText.show_int((List.get(lst, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))), ","), CceText.show_int((List.get(lst, I64.to_u64_wrap(1)) ?? crash("list-at out of range")))), ","), CceText.show_int((List.get(lst, I64.to_u64_wrap(2)) ?? crash("list-at out of range"))))
 })
 
-test_sum : Text
+test_sum : CceText
 test_sum = ({
 	b = CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_new(10), 100), 200), 300)
-	Text.concat("sum=", Text.show_int(CircularBuffer.circbuf_sum(b)))
+	CceText.concat("sum=", CceText.show_int(CircularBuffer.circbuf_sum(b)))
 })
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(test_push_pop))
-	line!(Text.printed(test_overflow))
-	line!(Text.printed(test_pop))
-	line!(Text.printed(test_to_list))
-	line!(Text.printed(test_sum))
+	line!(CceText.printed(test_push_pop))
+	line!(CceText.printed(test_overflow))
+	line!(CceText.printed(test_pop))
+	line!(CceText.printed(test_to_list))
+	line!(CceText.printed(test_sum))
 	Ok({})
 }

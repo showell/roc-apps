@@ -18,17 +18,17 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Prelude
-import cdx.Text
 
 # ApproxEq -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-check! : Text, Bool => {}
+check! : CceText, Bool => {}
 check! = |label, result| ({
-	line!(Text.printed(Text.concat(Text.concat(label, ": "), (if result { "PASS" } else { "FAIL" }))))
+	line!(CceText.printed(CceText.concat(CceText.concat(label, ": "), (if result { "PASS" } else { "FAIL" }))))
 })
 
 # --- Entry ---

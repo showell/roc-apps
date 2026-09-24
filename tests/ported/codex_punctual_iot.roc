@@ -22,8 +22,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.IntOps
-import cdx.Text
 
 # PunctualIoT -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -103,16 +103,16 @@ main! = |_args| {
 		byte3 = encode_telemetry_byte(2, temp3, threat_to_integer(t3))
 		ck = checksum_byte(checksum_byte(byte1, byte2), byte3)
 		({
-			line!(Text.printed(Text.concat("threat-2500: ", Text.show_int(threat_to_integer(t1)))))
-			line!(Text.printed(Text.concat("threat-400: ", Text.show_int(threat_to_integer(t2)))))
-			line!(Text.printed(Text.concat("threat-3800: ", Text.show_int(threat_to_integer(t3)))))
-			line!(Text.printed(Text.concat("temp-2500: ", Text.show_int(temp1))))
-			line!(Text.printed(Text.concat("temp-400: ", Text.show_int(temp2))))
-			line!(Text.printed(Text.concat("temp-3800: ", Text.show_int(temp3))))
-			line!(Text.printed(Text.concat("byte1: ", Text.show_int(byte1))))
-			line!(Text.printed(Text.concat("byte2: ", Text.show_int(byte2))))
-			line!(Text.printed(Text.concat("byte3: ", Text.show_int(byte3))))
-			line!(Text.printed(Text.concat("checksum: ", Text.show_int(ck))))
+			line!(CceText.printed(CceText.concat("threat-2500: ", CceText.show_int(threat_to_integer(t1)))))
+			line!(CceText.printed(CceText.concat("threat-400: ", CceText.show_int(threat_to_integer(t2)))))
+			line!(CceText.printed(CceText.concat("threat-3800: ", CceText.show_int(threat_to_integer(t3)))))
+			line!(CceText.printed(CceText.concat("temp-2500: ", CceText.show_int(temp1))))
+			line!(CceText.printed(CceText.concat("temp-400: ", CceText.show_int(temp2))))
+			line!(CceText.printed(CceText.concat("temp-3800: ", CceText.show_int(temp3))))
+			line!(CceText.printed(CceText.concat("byte1: ", CceText.show_int(byte1))))
+			line!(CceText.printed(CceText.concat("byte2: ", CceText.show_int(byte2))))
+			line!(CceText.printed(CceText.concat("byte3: ", CceText.show_int(byte3))))
+			line!(CceText.printed(CceText.concat("checksum: ", CceText.show_int(ck))))
 		})
 	})
 	Ok({})

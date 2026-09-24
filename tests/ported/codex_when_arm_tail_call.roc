@@ -18,7 +18,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # WhenArmTailCallTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -62,11 +62,11 @@ eq_Step = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed("01 start"))
-	line!(Text.printed(Text.concat("02 if-tail ", Text.show_int(by_if(10, 0)))))
-	line!(Text.printed(Text.concat("03 when-nontail ", Text.show_int(by_when_nontail(Go(10))))))
-	line!(Text.printed(Text.concat("04 when-tail ", Text.show_int(by_when_tail(Go(10), 0)))))
-	line!(Text.printed(Text.concat("05 when-bare ", Text.show_int(by_when_bare(Go(10), 0)))))
-	line!(Text.printed("06 done"))
+	line!(CceText.printed("01 start"))
+	line!(CceText.printed(CceText.concat("02 if-tail ", CceText.show_int(by_if(10, 0)))))
+	line!(CceText.printed(CceText.concat("03 when-nontail ", CceText.show_int(by_when_nontail(Go(10))))))
+	line!(CceText.printed(CceText.concat("04 when-tail ", CceText.show_int(by_when_tail(Go(10), 0)))))
+	line!(CceText.printed(CceText.concat("05 when-bare ", CceText.show_int(by_when_bare(Go(10), 0)))))
+	line!(CceText.printed("06 done"))
 	Ok({})
 }

@@ -16,7 +16,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # RecordClosureFieldPoly -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -55,15 +55,15 @@ lam_2 = |f, bx, i| f((bx.get)(i))
 lam_3 : I64 -> I64
 lam_3 = |n| (n * 2)
 
-lam_4 : I64 -> Text
+lam_4 : I64 -> CceText
 lam_4 = |_n| "seven"
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("wrap ", Text.show_int((wrap(21).get)(0)))))
-	line!(Text.printed(Text.concat("wrap-let ", Text.show_int((wrap_let(8).get)(0)))))
-	line!(Text.printed(Text.concat("wrap-map ", Text.show_int((wrap_map(wrap(21), lam_3).get)(0)))))
-	line!(Text.printed(Text.concat("wrap-text ", (wrap_map(wrap(7), lam_4).get)(0))))
+	line!(CceText.printed(CceText.concat("wrap ", CceText.show_int((wrap(21).get)(0)))))
+	line!(CceText.printed(CceText.concat("wrap-let ", CceText.show_int((wrap_let(8).get)(0)))))
+	line!(CceText.printed(CceText.concat("wrap-map ", CceText.show_int((wrap_map(wrap(21), lam_3).get)(0)))))
+	line!(CceText.printed(CceText.concat("wrap-text ", (wrap_map(wrap(7), lam_4).get)(0))))
 	Ok({})
 }

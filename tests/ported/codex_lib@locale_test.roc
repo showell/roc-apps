@@ -23,8 +23,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Locale
-import cdx.Text
 
 # LocaleTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -40,17 +40,17 @@ main! = |_args| {
 		ja = Locale.locale_ja
 		ar = Locale.locale_ar
 		({
-			line!(Text.printed(Text.concat("us-num=", Locale.locale_format_number(us, 1234567))))
-			line!(Text.printed(Text.concat("de-num=", Locale.locale_format_number(de, 1234567))))
-			line!(Text.printed(Text.concat("small=", Locale.locale_format_number(us, 42))))
-			line!(Text.printed(Text.concat("neg=", Locale.locale_format_number(us, (0 - 9876)))))
-			line!(Text.printed(Text.concat("us-date=", Locale.locale_format_date(us, 2026, 5, 8))))
-			line!(Text.printed(Text.concat("de-date=", Locale.locale_format_date(de, 2026, 5, 8))))
-			line!(Text.printed(Text.concat("ja-date=", Locale.locale_format_date(ja, 2026, 5, 8))))
-			line!(Text.printed(Text.concat("us-dir=", (if Locale.locale_is_rtl(us) { "rtl" } else { "ltr" }))))
-			line!(Text.printed(Text.concat("ar-dir=", (if Locale.locale_is_rtl(ar) { "rtl" } else { "ltr" }))))
-			line!(Text.printed(Text.concat("de-sep=", Locale.locale_decimal_sep(de))))
-			line!(Text.printed(Text.concat("de-thou=", Locale.locale_thousands_sep(de))))
+			line!(CceText.printed(CceText.concat("us-num=", Locale.locale_format_number(us, 1234567))))
+			line!(CceText.printed(CceText.concat("de-num=", Locale.locale_format_number(de, 1234567))))
+			line!(CceText.printed(CceText.concat("small=", Locale.locale_format_number(us, 42))))
+			line!(CceText.printed(CceText.concat("neg=", Locale.locale_format_number(us, (0 - 9876)))))
+			line!(CceText.printed(CceText.concat("us-date=", Locale.locale_format_date(us, 2026, 5, 8))))
+			line!(CceText.printed(CceText.concat("de-date=", Locale.locale_format_date(de, 2026, 5, 8))))
+			line!(CceText.printed(CceText.concat("ja-date=", Locale.locale_format_date(ja, 2026, 5, 8))))
+			line!(CceText.printed(CceText.concat("us-dir=", (if Locale.locale_is_rtl(us) { "rtl" } else { "ltr" }))))
+			line!(CceText.printed(CceText.concat("ar-dir=", (if Locale.locale_is_rtl(ar) { "rtl" } else { "ltr" }))))
+			line!(CceText.printed(CceText.concat("de-sep=", Locale.locale_decimal_sep(de))))
+			line!(CceText.printed(CceText.concat("de-thou=", Locale.locale_thousands_sep(de))))
 		})
 	})
 	Ok({})

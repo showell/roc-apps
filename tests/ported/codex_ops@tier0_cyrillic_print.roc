@@ -15,21 +15,22 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceChar
+import cdx.CceText
 
 # TierZeroCyrillicPrint -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-show_run : I64, I64, Text -> Text
-show_run = |i, stop, acc| (if (i > stop) { acc } else { show_run((i + 1), stop, Text.concat(acc, Text.char_to_text(i))) })
+show_run : I64, I64, CceText -> CceText
+show_run = |i, stop, acc| (if (i > stop) { acc } else { show_run((i + 1), stop, CceText.concat(acc, CceText.char_to_text(CceChar.of_code(i)))) })
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("cyrillic-113-127: ", show_run(113, 127, ""))))
-	line!(Text.printed(Text.concat("accented-97-104:  ", show_run(97, 104, ""))))
-	line!(Text.printed(Text.concat("ascii-3-12:       ", show_run(3, 12, ""))))
+	line!(CceText.printed(CceText.concat("cyrillic-113-127: ", show_run(113, 127, ""))))
+	line!(CceText.printed(CceText.concat("accented-97-104:  ", show_run(97, 104, ""))))
+	line!(CceText.printed(CceText.concat("ascii-3-12:       ", show_run(3, 12, ""))))
 	Ok({})
 }

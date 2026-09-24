@@ -20,7 +20,7 @@
 app [main!] { cdx: "./codex/main.roc" }
 
 import cdx.CardDeck
-import cdx.Text
+import cdx.CceText
 
 # CardDeckShuffleTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -56,10 +56,10 @@ cdt_max = |xs, i, n, acc| (if (i >= n) { acc } else { ({
 	cdt_max(xs, (i + 1), n, (if (v > acc) { v } else { acc }))
 }) })
 
-cdt_fmt : List(I64), I64, I64, Text -> Text
+cdt_fmt : List(I64), I64, I64, CceText -> CceText
 cdt_fmt = |xs, i, n, acc| (if (i >= n) { acc } else { ({
 	sep = (if (i == 0) { "" } else { " " })
-	cdt_fmt(xs, (i + 1), n, Text.concat(Text.concat(acc, sep), Text.show_int((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))
+	cdt_fmt(xs, (i + 1), n, CceText.concat(CceText.concat(acc, sep), CceText.show_int((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))
 }) })
 
 cdt_two : I64 -> I64
@@ -83,12 +83,12 @@ main! = |_args| {
 	lo = cdt_min(counts, 0, 8, 999999)
 	hi = cdt_max(counts, 0, 8, 0)
 	alt = cdt_alt(1, 256, 0)
-	line!(Text.printed(Text.concat("counts:        ", cdt_fmt(counts, 0, 8, ""))))
-	line!(Text.printed(Text.concat("min:           ", Text.show_int(lo))))
-	line!(Text.printed(Text.concat("max:           ", Text.show_int(hi))))
-	line!(Text.printed(Text.concat("every pos hit: ", (if (lo > 0) { "True" } else { "False" }))))
-	line!(Text.printed(Text.concat("within 3x:     ", (if (hi <= (lo * 3)) { "True" } else { "False" }))))
-	line!(Text.printed(Text.concat("alternations:  ", Text.show_int(alt))))
-	line!(Text.printed(Text.concat("not a stripe:  ", (if (alt < 200) { "True" } else { "False" }))))
+	line!(CceText.printed(CceText.concat("counts:        ", cdt_fmt(counts, 0, 8, ""))))
+	line!(CceText.printed(CceText.concat("min:           ", CceText.show_int(lo))))
+	line!(CceText.printed(CceText.concat("max:           ", CceText.show_int(hi))))
+	line!(CceText.printed(CceText.concat("every pos hit: ", (if (lo > 0) { "True" } else { "False" }))))
+	line!(CceText.printed(CceText.concat("within 3x:     ", (if (hi <= (lo * 3)) { "True" } else { "False" }))))
+	line!(CceText.printed(CceText.concat("alternations:  ", CceText.show_int(alt))))
+	line!(CceText.printed(CceText.concat("not a stripe:  ", (if (alt < 200) { "True" } else { "False" }))))
 	Ok({})
 }

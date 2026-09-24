@@ -13,7 +13,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 import cdx.Units
 
 # FwdFilterTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
@@ -990,6 +990,6 @@ bodyTemp_to_CelsiusBody = |fv| I64.div_trunc_by(fv, 1000)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed("Signal/Filter OK"))
+	line!(CceText.printed("Signal/Filter OK"))
 	Ok({})
 }

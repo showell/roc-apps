@@ -19,7 +19,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # ListPattern -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -53,12 +53,12 @@ second_or = |xs, d| (match xs {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("sum=", Text.show_int(sum_list([1, 2, 3, 4, 5])))))
-	line!(Text.printed(Text.concat("count=", Text.show_int(count_list([7, 8, 9])))))
-	line!(Text.printed(Text.concat("head=", Text.show_int(head_or([42, 1], 0)))))
-	line!(Text.printed(Text.concat("headE=", Text.show_int(head_or([], 0)))))
-	line!(Text.printed(Text.concat("second=", Text.show_int(second_or([5, 6, 7], 0)))))
-	line!(Text.printed(Text.concat("secondE=", Text.show_int(second_or([5], 0)))))
-	line!(Text.printed(Text.concat("sumE=", Text.show_int(sum_list([])))))
+	line!(CceText.printed(CceText.concat("sum=", CceText.show_int(sum_list([1, 2, 3, 4, 5])))))
+	line!(CceText.printed(CceText.concat("count=", CceText.show_int(count_list([7, 8, 9])))))
+	line!(CceText.printed(CceText.concat("head=", CceText.show_int(head_or([42, 1], 0)))))
+	line!(CceText.printed(CceText.concat("headE=", CceText.show_int(head_or([], 0)))))
+	line!(CceText.printed(CceText.concat("second=", CceText.show_int(second_or([5, 6, 7], 0)))))
+	line!(CceText.printed(CceText.concat("secondE=", CceText.show_int(second_or([5], 0)))))
+	line!(CceText.printed(CceText.concat("sumE=", CceText.show_int(sum_list([])))))
 	Ok({})
 }

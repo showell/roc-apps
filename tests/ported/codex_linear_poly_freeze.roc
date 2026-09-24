@@ -13,8 +13,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Linear
-import cdx.Text
 
 # LinearPolyFreeze -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -24,6 +24,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat(Text.concat(Text.show_int(Linear.freeze(21)), " "), Linear.freeze("seven"))))
+	line!(CceText.printed(CceText.concat(CceText.concat(CceText.show_int(Linear.freeze(21)), " "), Linear.freeze("seven"))))
 	Ok({})
 }

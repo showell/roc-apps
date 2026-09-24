@@ -1,5 +1,5 @@
 # Tensor -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
-import Text
+import CceText
 
 Tensor :: [].{
 	Tensor : { data : List(I64), rows : I64, cols : I64 }
@@ -91,6 +91,6 @@ Tensor :: [].{
 	tensor_size : Tensor.Tensor -> I64
 	tensor_size = |t| (t.rows * t.cols)
 
-	tensor_shape : Tensor.Tensor -> Text
-	tensor_shape = |t| Text.concat(Text.concat(Text.show_int(t.rows), "x"), Text.show_int(t.cols))
+	tensor_shape : Tensor.Tensor -> CceText
+	tensor_shape = |t| CceText.concat(CceText.concat(CceText.show_int(t.rows), "x"), CceText.show_int(t.cols))
 }

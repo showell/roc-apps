@@ -18,8 +18,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Prelude
-import cdx.Text
 
 # BoundedIntegerOps -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -59,11 +59,11 @@ main! = |_args| {
 	rejoined = join_pair(parts)
 	bytes = [make_byte(10), make_byte(20), make_byte(30), make_byte(40)]
 	total = sum_bytes_acc(bytes, 0, 0)
-	line!(Text.printed(Text.show_int(c.val)))
-	line!(Text.printed(Text.show_int(d.val)))
-	line!(Text.printed(Text.show_int(parts.lo)))
-	line!(Text.printed(Text.show_int(parts.hi)))
-	line!(Text.printed(Text.show_int(rejoined)))
-	line!(Text.printed(Text.show_int(total)))
+	line!(CceText.printed(CceText.show_int(c.val)))
+	line!(CceText.printed(CceText.show_int(d.val)))
+	line!(CceText.printed(CceText.show_int(parts.lo)))
+	line!(CceText.printed(CceText.show_int(parts.hi)))
+	line!(CceText.printed(CceText.show_int(rejoined)))
+	line!(CceText.printed(CceText.show_int(total)))
 	Ok({})
 }

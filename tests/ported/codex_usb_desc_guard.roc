@@ -23,7 +23,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 import cdx.Usb
 import cdx.UsbHid
 
@@ -50,16 +50,16 @@ main! = |_args| {
 	epast = Usb.usb_parse_endpoint(cfg_bytes, 22)
 	i = Usb.usb_parse_interface(cfg_bytes, 9)
 	ipast = Usb.usb_parse_interface(cfg_bytes, 20)
-	line!(Text.printed(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("device vendor=", Text.show_int(d.usb_vendor)), " product="), Text.show_int(d.usb_product)), " class="), Text.show_int(d.usb_class)), " configs="), Text.show_int(d.usb_num_configs))))
-	line!(Text.printed(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("device-short vendor=", Text.show_int(dshort.usb_vendor)), " class="), Text.show_int(dshort.usb_class)), " configs="), Text.show_int(dshort.usb_num_configs))))
-	line!(Text.printed(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("endpoint addr=", Text.show_int(e.ep_address)), " dir="), Text.show_int(e.ep_direction)), " type="), Text.show_int(e.ep_type)), " maxpkt="), Text.show_int(e.ep_max_packet)), " interval="), Text.show_int(e.ep_interval))))
-	line!(Text.printed(Text.concat(Text.concat(Text.concat("endpoint-past addr=", Text.show_int(epast.ep_address)), " maxpkt="), Text.show_int(epast.ep_max_packet))))
-	line!(Text.printed(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("interface num=", Text.show_int(i.if_number)), " class="), Text.show_int(i.if_class)), " sub="), Text.show_int(i.if_subclass)), " proto="), Text.show_int(i.if_protocol)), " eps="), Text.show_int(i.if_num_endpoints))))
-	line!(Text.printed(Text.concat(Text.concat(Text.concat("interface-past num=", Text.show_int(ipast.if_number)), " class="), Text.show_int(ipast.if_class))))
-	line!(Text.printed(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("le16 in=", Text.show_int(Usb.usb_le16(cfg_bytes, 2))), " at-end="), Text.show_int(Usb.usb_le16(cfg_bytes, 24))), " past="), Text.show_int(Usb.usb_le16(cfg_bytes, 99)))))
-	line!(Text.printed(Text.concat("scan honest total=25 ifaces=", Text.show_int(ifc_count(UsbHid.hid_scan_interfaces(cfg_bytes, 25))))))
-	line!(Text.printed(Text.concat("scan lying total=200 ifaces=", Text.show_int(ifc_count(UsbHid.hid_scan_interfaces(cfg_bytes, 200))))))
-	line!(Text.printed(Text.concat("scan huge total=65535 ifaces=", Text.show_int(ifc_count(UsbHid.hid_scan_interfaces(cfg_bytes, 65535))))))
-	line!(Text.printed(Text.concat("scan empty ifaces=", Text.show_int(ifc_count(UsbHid.hid_scan_interfaces([], 25))))))
+	line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("device vendor=", CceText.show_int(d.usb_vendor)), " product="), CceText.show_int(d.usb_product)), " class="), CceText.show_int(d.usb_class)), " configs="), CceText.show_int(d.usb_num_configs))))
+	line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("device-short vendor=", CceText.show_int(dshort.usb_vendor)), " class="), CceText.show_int(dshort.usb_class)), " configs="), CceText.show_int(dshort.usb_num_configs))))
+	line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("endpoint addr=", CceText.show_int(e.ep_address)), " dir="), CceText.show_int(e.ep_direction)), " type="), CceText.show_int(e.ep_type)), " maxpkt="), CceText.show_int(e.ep_max_packet)), " interval="), CceText.show_int(e.ep_interval))))
+	line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat("endpoint-past addr=", CceText.show_int(epast.ep_address)), " maxpkt="), CceText.show_int(epast.ep_max_packet))))
+	line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("interface num=", CceText.show_int(i.if_number)), " class="), CceText.show_int(i.if_class)), " sub="), CceText.show_int(i.if_subclass)), " proto="), CceText.show_int(i.if_protocol)), " eps="), CceText.show_int(i.if_num_endpoints))))
+	line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat("interface-past num=", CceText.show_int(ipast.if_number)), " class="), CceText.show_int(ipast.if_class))))
+	line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("le16 in=", CceText.show_int(Usb.usb_le16(cfg_bytes, 2))), " at-end="), CceText.show_int(Usb.usb_le16(cfg_bytes, 24))), " past="), CceText.show_int(Usb.usb_le16(cfg_bytes, 99)))))
+	line!(CceText.printed(CceText.concat("scan honest total=25 ifaces=", CceText.show_int(ifc_count(UsbHid.hid_scan_interfaces(cfg_bytes, 25))))))
+	line!(CceText.printed(CceText.concat("scan lying total=200 ifaces=", CceText.show_int(ifc_count(UsbHid.hid_scan_interfaces(cfg_bytes, 200))))))
+	line!(CceText.printed(CceText.concat("scan huge total=65535 ifaces=", CceText.show_int(ifc_count(UsbHid.hid_scan_interfaces(cfg_bytes, 65535))))))
+	line!(CceText.printed(CceText.concat("scan empty ifaces=", CceText.show_int(ifc_count(UsbHid.hid_scan_interfaces([], 25))))))
 	Ok({})
 }

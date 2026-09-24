@@ -13,7 +13,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # TypeCheckerSmokeTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -26,8 +26,8 @@ add_one = |x| (x + 1)
 double : I64 -> I64
 double = |x| (x * 2)
 
-greet : Text -> Text
-greet = |name| Text.concat(Text.concat("Hello, ", name), "!")
+greet : CceText -> CceText
+greet = |name| CceText.concat(CceText.concat("Hello, ", name), "!")
 
 is_positive : I64 -> Bool
 is_positive = |x| (x > 0)

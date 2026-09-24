@@ -20,8 +20,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Random
-import cdx.Text
 
 # MixBitsTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -58,13 +58,13 @@ main! = |_args| {
 	alt = mb_alt(20260725, 1, 256, 0)
 	oldalt = mb_old_alt(20260725, 1, 256, 0)
 	r2 = mb_range2(0, 256, 0)
-	line!(Text.printed(Text.concat("ones/256:        ", Text.show_int(ones))))
-	line!(Text.printed(Text.concat("balanced:        ", (if ((ones > 96) and (ones < 160)) { "True" } else { "False" }))))
-	line!(Text.printed(Text.concat("alternations:    ", Text.show_int(alt))))
-	line!(Text.printed(Text.concat("not a stripe:    ", (if (alt < 200) { "True" } else { "False" }))))
-	line!(Text.printed(Text.concat("control alt:     ", Text.show_int(oldalt))))
-	line!(Text.printed(Text.concat("control striped: ", (if (oldalt == 255) { "True" } else { "False" }))))
-	line!(Text.printed(Text.concat("range2 ones/256: ", Text.show_int(r2))))
-	line!(Text.printed(Text.concat("range2 spread:   ", (if ((r2 > 96) and (r2 < 160)) { "True" } else { "False" }))))
+	line!(CceText.printed(CceText.concat("ones/256:        ", CceText.show_int(ones))))
+	line!(CceText.printed(CceText.concat("balanced:        ", (if ((ones > 96) and (ones < 160)) { "True" } else { "False" }))))
+	line!(CceText.printed(CceText.concat("alternations:    ", CceText.show_int(alt))))
+	line!(CceText.printed(CceText.concat("not a stripe:    ", (if (alt < 200) { "True" } else { "False" }))))
+	line!(CceText.printed(CceText.concat("control alt:     ", CceText.show_int(oldalt))))
+	line!(CceText.printed(CceText.concat("control striped: ", (if (oldalt == 255) { "True" } else { "False" }))))
+	line!(CceText.printed(CceText.concat("range2 ones/256: ", CceText.show_int(r2))))
+	line!(CceText.printed(CceText.concat("range2 spread:   ", (if ((r2 > 96) and (r2 < 160)) { "True" } else { "False" }))))
 	Ok({})
 }

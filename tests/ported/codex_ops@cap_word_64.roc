@@ -17,8 +17,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Mem
-import cdx.Text
 
 # CapWord64 -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -47,16 +47,16 @@ main! = |args| {
 		(mem6, _w5) = Mem.store!(mem5, a, 32, bit40, 4)
 		({
 			(mem7, mem__1) = Mem.load!(mem6, a, 0, 8)
-			_ = line!(Text.printed(Text.concat("q-bit31 : ", Text.show_int(mem__1))))
+			_ = line!(CceText.printed(CceText.concat("q-bit31 : ", CceText.show_int(mem__1))))
 			(mem8, mem__2) = Mem.load!(mem7, a, 8, 8)
-			_ = line!(Text.printed(Text.concat("q-bit40 : ", Text.show_int(mem__2))))
+			_ = line!(CceText.printed(CceText.concat("q-bit40 : ", CceText.show_int(mem__2))))
 			(mem9, mem__3) = Mem.load!(mem8, a, 16, 8)
-			_ = line!(Text.printed(Text.concat("q-small : ", Text.show_int(mem__3))))
+			_ = line!(CceText.printed(CceText.concat("q-small : ", CceText.show_int(mem__3))))
 			(mem10, mem__4) = Mem.load!(mem9, a, 24, 4)
-			_ = line!(Text.printed(Text.concat("d-small : ", Text.show_int(mem__4))))
+			_ = line!(CceText.printed(CceText.concat("d-small : ", CceText.show_int(mem__4))))
 			({
 				(mem11, mem__5) = Mem.load!(mem10, a, 32, 4)
-				(mem11, line!(Text.printed(Text.concat("d-bit40 : ", Text.show_int(mem__5)))))
+				(mem11, line!(CceText.printed(CceText.concat("d-bit40 : ", CceText.show_int(mem__5)))))
 			})
 		})
 	})

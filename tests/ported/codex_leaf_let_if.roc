@@ -15,7 +15,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # LeafLetIf -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -31,8 +31,8 @@ nd = |current, total| ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("nd 2 4 = ", Text.show_int(nd(2, 4)))))
-	line!(Text.printed(Text.concat("nd 9 4 = ", Text.show_int(nd(9, 4)))))
-	line!(Text.printed(Text.concat("nd 0 1 = ", Text.show_int(nd(0, 1)))))
+	line!(CceText.printed(CceText.concat("nd 2 4 = ", CceText.show_int(nd(2, 4)))))
+	line!(CceText.printed(CceText.concat("nd 9 4 = ", CceText.show_int(nd(9, 4)))))
+	line!(CceText.printed(CceText.concat("nd 0 1 = ", CceText.show_int(nd(0, 1)))))
 	Ok({})
 }

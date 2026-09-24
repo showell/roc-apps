@@ -22,7 +22,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # RvBigLiteral -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -32,15 +32,15 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("at-boundary want 9223372034707292159 got ", Text.show_int(9223372034707292159))))
-	line!(Text.printed(Text.concat("past-boundary want 9223372034707292160 got ", Text.show_int(9223372034707292160))))
-	line!(Text.printed(Text.concat("max want 9223372036854775807 got ", Text.show_int(9223372036854775807))))
-	line!(Text.printed(Text.concat("max-1 want 9223372036854775806 got ", Text.show_int(9223372036854775806))))
-	line!(Text.printed(Text.concat("min want -9223372036854775808 got ", Text.show_int((-9223372036854775808)))))
-	line!(Text.printed(Text.concat("allf want -1 got ", Text.show_int((-1)))))
-	line!(Text.printed(Text.concat("just-over-32 want 2147483648 got ", Text.show_int(2147483648))))
-	line!(Text.printed(Text.concat("top-of-32 want 2147483647 got ", Text.show_int(2147483647))))
-	line!(Text.printed(Text.concat("bottom-of-32 want -2147483648 got ", Text.show_int((0 - 2147483648)))))
-	line!(Text.printed(Text.concat("under-32 want -2147483649 got ", Text.show_int((0 - 2147483649)))))
+	line!(CceText.printed(CceText.concat("at-boundary want 9223372034707292159 got ", CceText.show_int(9223372034707292159))))
+	line!(CceText.printed(CceText.concat("past-boundary want 9223372034707292160 got ", CceText.show_int(9223372034707292160))))
+	line!(CceText.printed(CceText.concat("max want 9223372036854775807 got ", CceText.show_int(9223372036854775807))))
+	line!(CceText.printed(CceText.concat("max-1 want 9223372036854775806 got ", CceText.show_int(9223372036854775806))))
+	line!(CceText.printed(CceText.concat("min want -9223372036854775808 got ", CceText.show_int((-9223372036854775808)))))
+	line!(CceText.printed(CceText.concat("allf want -1 got ", CceText.show_int((-1)))))
+	line!(CceText.printed(CceText.concat("just-over-32 want 2147483648 got ", CceText.show_int(2147483648))))
+	line!(CceText.printed(CceText.concat("top-of-32 want 2147483647 got ", CceText.show_int(2147483647))))
+	line!(CceText.printed(CceText.concat("bottom-of-32 want -2147483648 got ", CceText.show_int((0 - 2147483648)))))
+	line!(CceText.printed(CceText.concat("under-32 want -2147483649 got ", CceText.show_int((0 - 2147483649)))))
 	Ok({})
 }

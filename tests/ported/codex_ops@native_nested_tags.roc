@@ -17,7 +17,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # NativeNestedTags -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -54,10 +54,10 @@ eq_Atom = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.show_int(nested_tag(Both(Yes, No)))))
-	line!(Text.printed(Text.show_int(nested_tag(Both(No, Yes)))))
-	line!(Text.printed(Text.show_int(nested_tag(Both(Yes, Yes)))))
-	line!(Text.printed(Text.show_int(nested_tag(Both(No, No)))))
-	line!(Text.printed(Text.show_int(nested_tag(Yes))))
+	line!(CceText.printed(CceText.show_int(nested_tag(Both(Yes, No)))))
+	line!(CceText.printed(CceText.show_int(nested_tag(Both(No, Yes)))))
+	line!(CceText.printed(CceText.show_int(nested_tag(Both(Yes, Yes)))))
+	line!(CceText.printed(CceText.show_int(nested_tag(Both(No, No)))))
+	line!(CceText.printed(CceText.show_int(nested_tag(Yes))))
 	Ok({})
 }

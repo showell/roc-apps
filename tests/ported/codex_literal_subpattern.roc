@@ -31,13 +31,13 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # LiteralSubpattern -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Box_ : [BInt(I64), BText(Text), BFlag(Bool), BPair(I64, Text), BNone]
+Box_ : [BInt(I64), BText(CceText), BFlag(Bool), BPair(I64, CceText), BNone]
 
 by_int : Box_ -> I64
 by_int = |b| (match b {
@@ -78,7 +78,7 @@ bare_int = |n| (match n {
 	_ => 59
 })
 
-bare_text : Text -> I64
+bare_text : CceText -> I64
 bare_text = |t| (match t {
 	"sin" => 60
 	"cos" => 61
@@ -112,24 +112,24 @@ eq_Box = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("int-0 ", Text.show_int(by_int(BInt(0))))))
-	line!(Text.printed(Text.concat("int-1 ", Text.show_int(by_int(BInt(1))))))
-	line!(Text.printed(Text.concat("int-7 ", Text.show_int(by_int(BInt(7))))))
-	line!(Text.printed(Text.concat("int-n ", Text.show_int(by_int(BInt(3))))))
-	line!(Text.printed(Text.concat("txt-sin ", Text.show_int(by_text(BText("sin"))))))
-	line!(Text.printed(Text.concat("txt-cos ", Text.show_int(by_text(BText("cos"))))))
-	line!(Text.printed(Text.concat("txt-oth ", Text.show_int(by_text(BText("zzz"))))))
-	line!(Text.printed(Text.concat("flag-t ", Text.show_int(by_flag(BFlag(True))))))
-	line!(Text.printed(Text.concat("flag-f ", Text.show_int(by_flag(BFlag(False))))))
-	line!(Text.printed(Text.concat("pair-0 ", Text.show_int(by_pair(BPair(0, "x"))))))
-	line!(Text.printed(Text.concat("pair-hit ", Text.show_int(by_pair(BPair(5, "hit"))))))
-	line!(Text.printed(Text.concat("pair-oth ", Text.show_int(by_pair(BPair(5, "x"))))))
-	line!(Text.printed(Text.concat("bare-0 ", Text.show_int(bare_int(0)))))
-	line!(Text.printed(Text.concat("bare-1 ", Text.show_int(bare_int(1)))))
-	line!(Text.printed(Text.concat("bare-n ", Text.show_int(bare_int(4)))))
-	line!(Text.printed(Text.concat("bare-sin ", Text.show_int(bare_text("sin")))))
-	line!(Text.printed(Text.concat("bare-cos ", Text.show_int(bare_text("cos")))))
-	line!(Text.printed(Text.concat("bare-oth ", Text.show_int(bare_text("zzz")))))
-	line!(Text.printed("done"))
+	line!(CceText.printed(CceText.concat("int-0 ", CceText.show_int(by_int(BInt(0))))))
+	line!(CceText.printed(CceText.concat("int-1 ", CceText.show_int(by_int(BInt(1))))))
+	line!(CceText.printed(CceText.concat("int-7 ", CceText.show_int(by_int(BInt(7))))))
+	line!(CceText.printed(CceText.concat("int-n ", CceText.show_int(by_int(BInt(3))))))
+	line!(CceText.printed(CceText.concat("txt-sin ", CceText.show_int(by_text(BText("sin"))))))
+	line!(CceText.printed(CceText.concat("txt-cos ", CceText.show_int(by_text(BText("cos"))))))
+	line!(CceText.printed(CceText.concat("txt-oth ", CceText.show_int(by_text(BText("zzz"))))))
+	line!(CceText.printed(CceText.concat("flag-t ", CceText.show_int(by_flag(BFlag(True))))))
+	line!(CceText.printed(CceText.concat("flag-f ", CceText.show_int(by_flag(BFlag(False))))))
+	line!(CceText.printed(CceText.concat("pair-0 ", CceText.show_int(by_pair(BPair(0, "x"))))))
+	line!(CceText.printed(CceText.concat("pair-hit ", CceText.show_int(by_pair(BPair(5, "hit"))))))
+	line!(CceText.printed(CceText.concat("pair-oth ", CceText.show_int(by_pair(BPair(5, "x"))))))
+	line!(CceText.printed(CceText.concat("bare-0 ", CceText.show_int(bare_int(0)))))
+	line!(CceText.printed(CceText.concat("bare-1 ", CceText.show_int(bare_int(1)))))
+	line!(CceText.printed(CceText.concat("bare-n ", CceText.show_int(bare_int(4)))))
+	line!(CceText.printed(CceText.concat("bare-sin ", CceText.show_int(bare_text("sin")))))
+	line!(CceText.printed(CceText.concat("bare-cos ", CceText.show_int(bare_text("cos")))))
+	line!(CceText.printed(CceText.concat("bare-oth ", CceText.show_int(bare_text("zzz")))))
+	line!(CceText.printed("done"))
 	Ok({})
 }

@@ -23,7 +23,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # IfLetJoin -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -57,16 +57,16 @@ chain = |op, x, y, _p4, _p5, _p6, _p7| (if (op == 1) { (x + y) } else { (if (op 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.show_int(w6(1, 3, 2, 0, 0, 0))))
-	line!(Text.printed(Text.show_int(w7(1, 3, 2, 0, 0, 0, 0))))
-	line!(Text.printed(Text.show_int(w8(1, 3, 2, 0, 0, 0, 0, 0))))
-	line!(Text.printed(Text.show_int(w9(1, 3, 2, 0, 0, 0, 0, 0, 0))))
-	line!(Text.printed(Text.show_int(s7(1, 3, 2, 0, 0, 0, 0))))
-	line!(Text.printed(Text.show_int(m7(1, 3, 2, 0, 0, 0, 0))))
-	line!(Text.printed(Text.show_int(n7(1, 3, 2, 0, 0, 0, 0))))
-	line!(Text.printed(Text.show_int(chain(1, 3, 2, 0, 0, 0, 0))))
-	line!(Text.printed(Text.show_int(chain(2, 3, 2, 0, 0, 0, 0))))
-	line!(Text.printed(Text.show_int(chain(3, 3, 2, 0, 0, 0, 0))))
-	line!(Text.printed(Text.show_int(chain(9, 3, 2, 0, 0, 0, 0))))
+	line!(CceText.printed(CceText.show_int(w6(1, 3, 2, 0, 0, 0))))
+	line!(CceText.printed(CceText.show_int(w7(1, 3, 2, 0, 0, 0, 0))))
+	line!(CceText.printed(CceText.show_int(w8(1, 3, 2, 0, 0, 0, 0, 0))))
+	line!(CceText.printed(CceText.show_int(w9(1, 3, 2, 0, 0, 0, 0, 0, 0))))
+	line!(CceText.printed(CceText.show_int(s7(1, 3, 2, 0, 0, 0, 0))))
+	line!(CceText.printed(CceText.show_int(m7(1, 3, 2, 0, 0, 0, 0))))
+	line!(CceText.printed(CceText.show_int(n7(1, 3, 2, 0, 0, 0, 0))))
+	line!(CceText.printed(CceText.show_int(chain(1, 3, 2, 0, 0, 0, 0))))
+	line!(CceText.printed(CceText.show_int(chain(2, 3, 2, 0, 0, 0, 0))))
+	line!(CceText.printed(CceText.show_int(chain(3, 3, 2, 0, 0, 0, 0))))
+	line!(CceText.printed(CceText.show_int(chain(9, 3, 2, 0, 0, 0, 0))))
 	Ok({})
 }

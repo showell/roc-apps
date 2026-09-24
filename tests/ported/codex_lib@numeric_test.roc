@@ -19,8 +19,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Numeric
-import cdx.Text
 
 # NumericTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -48,30 +48,30 @@ main! = |_args| {
 	({
 		root = Numeric.bisect(test_f, 0, 4000, 50)
 		({
-			line!(Text.printed(Text.concat("bisect=", Text.show_int(root))))
+			line!(CceText.printed(CceText.concat("bisect=", CceText.show_int(root))))
 			({
 				newton_root = Numeric.newton(test_f, test_df, 3000, 20)
 				({
-					line!(Text.printed(Text.concat("newton=", Text.show_int(newton_root))))
+					line!(CceText.printed(CceText.concat("newton=", CceText.show_int(newton_root))))
 					({
 						trap = Numeric.integrate_trapezoid(lam_0, 0, 3000, 100)
 						({
-							line!(Text.printed(Text.concat("trap=", Text.show_int(trap))))
+							line!(CceText.printed(CceText.concat("trap=", CceText.show_int(trap))))
 							({
 								simp = Numeric.integrate_simpson(lam_1, 0, 3000, 100)
 								({
-									line!(Text.printed(Text.concat("simpson=", Text.show_int(simp))))
+									line!(CceText.printed(CceText.concat("simpson=", CceText.show_int(simp))))
 									({
 										step = Numeric.rk4_step(test_ode, 0, 1000, 100)
 										({
-											line!(Text.printed(Text.concat("rk4-t=", Text.show_int(step.rk_t))))
+											line!(CceText.printed(CceText.concat("rk4-t=", CceText.show_int(step.rk_t))))
 											({
 												rk_ok = (if (step.rk_y < 1000) { "decaying" } else { "wrong" })
 												({
-													line!(Text.printed(Text.concat("rk4-y=", rk_ok)))
+													line!(CceText.printed(CceText.concat("rk4-y=", rk_ok)))
 													({
 														solution = Numeric.rk4_solve(test_ode, 0, 1000, 1, 10)
-														line!(Text.printed(Text.concat("rk4-steps=", Text.show_int(U64.to_i64_wrap(List.len(solution))))))
+														line!(CceText.printed(CceText.concat("rk4-steps=", CceText.show_int(U64.to_i64_wrap(List.len(solution))))))
 													})
 												})
 											})

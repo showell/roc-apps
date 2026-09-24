@@ -21,7 +21,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # NegationAbutment -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -52,14 +52,14 @@ arrowed = |n| (n * 2)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("arg-lit: ", Text.show_int(two(1, (-2))))))
-	line!(Text.printed(Text.concat("arg-only: ", Text.show_int(one((-5))))))
-	line!(Text.printed(Text.concat("arg-var: ", Text.show_int(neg_var(3)))))
-	line!(Text.printed(Text.concat("three-args: ", Text.show_int(three(1, (-2), 3)))))
-	line!(Text.printed(Text.concat("sub: ", Text.show_int((7 - 2)))))
-	line!(Text.printed(Text.concat("left-abut: ", Text.show_int(a_(2)))))
-	line!(Text.printed(Text.concat("hyphen-digit: ", Text.show_int(x_2))))
-	line!(Text.printed(Text.concat("paren: ", Text.show_int(two(1, (-2))))))
-	line!(Text.printed(Text.concat("arrow: ", Text.show_int(arrowed(4)))))
+	line!(CceText.printed(CceText.concat("arg-lit: ", CceText.show_int(two(1, (-2))))))
+	line!(CceText.printed(CceText.concat("arg-only: ", CceText.show_int(one((-5))))))
+	line!(CceText.printed(CceText.concat("arg-var: ", CceText.show_int(neg_var(3)))))
+	line!(CceText.printed(CceText.concat("three-args: ", CceText.show_int(three(1, (-2), 3)))))
+	line!(CceText.printed(CceText.concat("sub: ", CceText.show_int((7 - 2)))))
+	line!(CceText.printed(CceText.concat("left-abut: ", CceText.show_int(a_(2)))))
+	line!(CceText.printed(CceText.concat("hyphen-digit: ", CceText.show_int(x_2))))
+	line!(CceText.printed(CceText.concat("paren: ", CceText.show_int(two(1, (-2))))))
+	line!(CceText.printed(CceText.concat("arrow: ", CceText.show_int(arrowed(4)))))
 	Ok({})
 }

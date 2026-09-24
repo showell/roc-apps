@@ -14,7 +14,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # LetElseScope -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -38,7 +38,7 @@ pick = |n, m| ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.show_int(pick(5, 7))))
-	line!(Text.printed(Text.show_int(pick((-3), 7))))
+	line!(CceText.printed(CceText.show_int(pick(5, 7))))
+	line!(CceText.printed(CceText.show_int(pick((-3), 7))))
 	Ok({})
 }

@@ -1,8 +1,8 @@
 # Capability -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
-import Text
+import CceText
 
 Capability :: [].{
-	CapSpec : { cs_name : Text, cs_id : I64, cs_base_bit : I64, cs_read_bit : I64, cs_write_bit : I64, cs_extra_bits : List(I64) }
+	CapSpec : { cs_name : CceText, cs_id : I64, cs_base_bit : I64, cs_read_bit : I64, cs_write_bit : I64, cs_extra_bits : List(I64) }
 
 	cap_console : I64
 	cap_console = 0
@@ -123,20 +123,20 @@ Capability :: [].{
 		I64.bitwise_or(base, I64.bitwise_or(dirb, extra))
 	})
 
-	cap_find_by_name : List(Capability.CapSpec), Text, I64, I64 -> I64
+	cap_find_by_name : List(Capability.CapSpec), CceText, I64, I64 -> I64
 	cap_find_by_name = |ts, n, i, len| (if (i >= len) { (0 - 1) } else { (if ((List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).cs_name == n) { i } else { cap_find_by_name(ts, n, (i + 1), len) }) })
 
 	cap_find_by_id : List(Capability.CapSpec), I64, I64, I64 -> I64
 	cap_find_by_id = |ts, id, i, len| (if (i >= len) { (0 - 1) } else { (if ((List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).cs_id == id) { i } else { cap_find_by_id(ts, id, (i + 1), len) }) })
 
-	cap_id_for_name : Text -> I64
+	cap_id_for_name : CceText -> I64
 	cap_id_for_name = |n| ({
 		ts = capability_table
 		i = cap_find_by_name(ts, n, 0, U64.to_i64_wrap(List.len(ts)))
 		(if (i < 0) { (0 - 1) } else { (List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).cs_id })
 	})
 
-	cap_bits_for_name : Text, I64 -> I64
+	cap_bits_for_name : CceText, I64 -> I64
 	cap_bits_for_name = |n, dir| ({
 		ts = capability_table
 		i = cap_find_by_name(ts, n, 0, U64.to_i64_wrap(List.len(ts)))
@@ -150,14 +150,14 @@ Capability :: [].{
 		(if (i < 0) { 0 } else { cap_bits_for_spec((List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), dir) })
 	})
 
-	cap_names_from : List(Capability.CapSpec), I64, I64, List(Text) -> List(Text)
+	cap_names_from : List(Capability.CapSpec), I64, I64, List(CceText) -> List(CceText)
 	cap_names_from = |ts, i, len, acc| (if (i >= len) { acc } else { ({
 		s = (List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 		a1 = List.append(acc, s.cs_name)
-		(if (s.cs_read_bit >= 0) { cap_names_from(ts, (i + 1), len, List.append(List.append(a1, Text.concat(s.cs_name, ".Read")), Text.concat(s.cs_name, ".Write"))) } else { cap_names_from(ts, (i + 1), len, a1) })
+		(if (s.cs_read_bit >= 0) { cap_names_from(ts, (i + 1), len, List.append(List.append(a1, CceText.concat(s.cs_name, ".Read")), CceText.concat(s.cs_name, ".Write"))) } else { cap_names_from(ts, (i + 1), len, a1) })
 	}) })
 
-	capability_names : List(Text)
+	capability_names : List(CceText)
 	capability_names = ({
 		ts = capability_table
 		cap_names_from(ts, 0, U64.to_i64_wrap(List.len(ts)), [])

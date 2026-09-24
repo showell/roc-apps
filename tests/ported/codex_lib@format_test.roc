@@ -26,8 +26,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Format
-import cdx.Text
 
 # FormatTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -37,19 +37,19 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Format.fmt_pad_left("hi", 6, " ")))
-	line!(Text.printed(Format.fmt_pad_right("hi", 6, ".")))
-	line!(Text.printed(Format.fmt_center("hi", 8, "-")))
-	line!(Text.printed(Format.fmt_repeat("ab", 3)))
-	line!(Text.printed(Format.fmt_join(["a", "b", "c"], ", ")))
-	line!(Text.printed(Format.fmt_commas(1234567)))
-	line!(Text.printed(Format.fmt_commas(42)))
-	line!(Text.printed(Format.fmt_commas((0 - 9876543))))
-	line!(Text.printed(Format.fmt_fixed_width(7, 4)))
-	line!(Text.printed(Format.fmt_hex(255)))
-	line!(Text.printed(Format.fmt_hex(4096)))
-	line!(Text.printed(Format.fmt_hex_pad(15, 4)))
-	line!(Text.printed(Format.fmt_bool(True)))
-	line!(Text.printed(Format.fmt_yes_no(False)))
+	line!(CceText.printed(Format.fmt_pad_left("hi", 6, " ")))
+	line!(CceText.printed(Format.fmt_pad_right("hi", 6, ".")))
+	line!(CceText.printed(Format.fmt_center("hi", 8, "-")))
+	line!(CceText.printed(Format.fmt_repeat("ab", 3)))
+	line!(CceText.printed(Format.fmt_join(["a", "b", "c"], ", ")))
+	line!(CceText.printed(Format.fmt_commas(1234567)))
+	line!(CceText.printed(Format.fmt_commas(42)))
+	line!(CceText.printed(Format.fmt_commas((0 - 9876543))))
+	line!(CceText.printed(Format.fmt_fixed_width(7, 4)))
+	line!(CceText.printed(Format.fmt_hex(255)))
+	line!(CceText.printed(Format.fmt_hex(4096)))
+	line!(CceText.printed(Format.fmt_hex_pad(15, 4)))
+	line!(CceText.printed(Format.fmt_bool(True)))
+	line!(CceText.printed(Format.fmt_yes_no(False)))
 	Ok({})
 }

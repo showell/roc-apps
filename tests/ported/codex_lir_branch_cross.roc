@@ -40,8 +40,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.MathLib
-import cdx.Text
 
 # LirBranchCross -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -87,33 +87,33 @@ via_call = |n| ((mn(n, 4) + mx(n, 4)) + nest(n))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("mn: ", Text.show_int(mn(3, 9)))))
-	line!(Text.printed(Text.concat("mn-rev: ", Text.show_int(mn(9, 3)))))
-	line!(Text.printed(Text.concat("mn-eq: ", Text.show_int(mn(5, 5)))))
-	line!(Text.printed(Text.concat("mx: ", Text.show_int(mx(3, 9)))))
-	line!(Text.printed(Text.concat("mx-eq: ", Text.show_int(mx(5, 5)))))
-	line!(Text.printed(Text.concat("le-lt: ", Text.show_int(le_pick(3, 9)))))
-	line!(Text.printed(Text.concat("le-eq: ", Text.show_int(le_pick(5, 5)))))
-	line!(Text.printed(Text.concat("le-gt: ", Text.show_int(le_pick(9, 3)))))
-	line!(Text.printed(Text.concat("ge-eq: ", Text.show_int(ge_pick(5, 5)))))
-	line!(Text.printed(Text.concat("ge-lt: ", Text.show_int(ge_pick(3, 9)))))
-	line!(Text.printed(Text.concat("ne-same: ", Text.show_int(ne_pick(5, 5)))))
-	line!(Text.printed(Text.concat("ne-diff: ", Text.show_int(ne_pick(5, 6)))))
-	line!(Text.printed(Text.concat("sgn-pos: ", Text.show_int(sgn(4)))))
-	line!(Text.printed(Text.concat("sgn-zero: ", Text.show_int(sgn(0)))))
-	line!(Text.printed(Text.concat("far-lo: ", Text.show_int(far_cmp(5)))))
-	line!(Text.printed(Text.concat("far-hi: ", Text.show_int(far_cmp(200000)))))
-	line!(Text.printed(Text.concat("nest-hi: ", Text.show_int(nest(9)))))
-	line!(Text.printed(Text.concat("nest-mid: ", Text.show_int(nest(3)))))
-	line!(Text.printed(Text.concat("nest-lo: ", Text.show_int(nest(0)))))
-	line!(Text.printed(Text.concat("even: ", Text.show_int(bit_even(4)))))
-	line!(Text.printed(Text.concat("odd: ", Text.show_int(bit_even(5)))))
-	line!(Text.printed(Text.concat("even-neg: ", Text.show_int(bit_even((-4))))))
-	line!(Text.printed(Text.concat("odd-neg: ", Text.show_int(bit_even((-5))))))
-	line!(Text.printed(Text.concat("mod4: ", Text.show_int(bit_mod4(8)))))
-	line!(Text.printed(Text.concat("mod4-no: ", Text.show_int(bit_mod4(6)))))
-	line!(Text.printed(Text.concat("wide-t: ", Text.show_int(wide_branch(9, 8, 1, 1, 1, 1, 1, 1)))))
-	line!(Text.printed(Text.concat("wide-f: ", Text.show_int(wide_branch(1, 2, 3, 4, 5, 6, 7, 8)))))
-	line!(Text.printed(Text.concat("via-call: ", Text.show_int(via_call(7)))))
+	line!(CceText.printed(CceText.concat("mn: ", CceText.show_int(mn(3, 9)))))
+	line!(CceText.printed(CceText.concat("mn-rev: ", CceText.show_int(mn(9, 3)))))
+	line!(CceText.printed(CceText.concat("mn-eq: ", CceText.show_int(mn(5, 5)))))
+	line!(CceText.printed(CceText.concat("mx: ", CceText.show_int(mx(3, 9)))))
+	line!(CceText.printed(CceText.concat("mx-eq: ", CceText.show_int(mx(5, 5)))))
+	line!(CceText.printed(CceText.concat("le-lt: ", CceText.show_int(le_pick(3, 9)))))
+	line!(CceText.printed(CceText.concat("le-eq: ", CceText.show_int(le_pick(5, 5)))))
+	line!(CceText.printed(CceText.concat("le-gt: ", CceText.show_int(le_pick(9, 3)))))
+	line!(CceText.printed(CceText.concat("ge-eq: ", CceText.show_int(ge_pick(5, 5)))))
+	line!(CceText.printed(CceText.concat("ge-lt: ", CceText.show_int(ge_pick(3, 9)))))
+	line!(CceText.printed(CceText.concat("ne-same: ", CceText.show_int(ne_pick(5, 5)))))
+	line!(CceText.printed(CceText.concat("ne-diff: ", CceText.show_int(ne_pick(5, 6)))))
+	line!(CceText.printed(CceText.concat("sgn-pos: ", CceText.show_int(sgn(4)))))
+	line!(CceText.printed(CceText.concat("sgn-zero: ", CceText.show_int(sgn(0)))))
+	line!(CceText.printed(CceText.concat("far-lo: ", CceText.show_int(far_cmp(5)))))
+	line!(CceText.printed(CceText.concat("far-hi: ", CceText.show_int(far_cmp(200000)))))
+	line!(CceText.printed(CceText.concat("nest-hi: ", CceText.show_int(nest(9)))))
+	line!(CceText.printed(CceText.concat("nest-mid: ", CceText.show_int(nest(3)))))
+	line!(CceText.printed(CceText.concat("nest-lo: ", CceText.show_int(nest(0)))))
+	line!(CceText.printed(CceText.concat("even: ", CceText.show_int(bit_even(4)))))
+	line!(CceText.printed(CceText.concat("odd: ", CceText.show_int(bit_even(5)))))
+	line!(CceText.printed(CceText.concat("even-neg: ", CceText.show_int(bit_even((-4))))))
+	line!(CceText.printed(CceText.concat("odd-neg: ", CceText.show_int(bit_even((-5))))))
+	line!(CceText.printed(CceText.concat("mod4: ", CceText.show_int(bit_mod4(8)))))
+	line!(CceText.printed(CceText.concat("mod4-no: ", CceText.show_int(bit_mod4(6)))))
+	line!(CceText.printed(CceText.concat("wide-t: ", CceText.show_int(wide_branch(9, 8, 1, 1, 1, 1, 1, 1)))))
+	line!(CceText.printed(CceText.concat("wide-f: ", CceText.show_int(wide_branch(1, 2, 3, 4, 5, 6, 7, 8)))))
+	line!(CceText.printed(CceText.concat("via-call: ", CceText.show_int(via_call(7)))))
 	Ok({})
 }

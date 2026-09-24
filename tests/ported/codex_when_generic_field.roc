@@ -16,15 +16,15 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Maybe
 import cdx.Pair
-import cdx.Text
 
 # WhenGenericField -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-ProbeOp : [OpScan(Text), OpFilter(Text, I64)]
+ProbeOp : [OpScan(CceText), OpFilter(CceText, I64)]
 
 lookup_like : I64 -> Pair.Pair(I64, Maybe.Maybe(ProbeOp))
 lookup_like = |k| (if (k == 1) { Pair.make_pair(10, Just(OpScan("emp"))) } else { Pair.make_pair(20, None) })
@@ -50,19 +50,19 @@ main! = |_args| {
 		r2 = lookup_like(2)
 		b2 = r2.snd
 		({
-			line!(Text.printed((match b1 {
+			line!(CceText.printed((match b1 {
 				Just(_p) => "b1-hit"
 				None => "b1-miss"
 			})))
-			line!(Text.printed((match r1.snd {
+			line!(CceText.printed((match r1.snd {
 				Just(_p) => "i1-hit"
 				None => "i1-miss"
 			})))
-			line!(Text.printed((match b2 {
+			line!(CceText.printed((match b2 {
 				Just(_p) => "b2-hit"
 				None => "b2-miss"
 			})))
-			line!(Text.printed((match r2.snd {
+			line!(CceText.printed((match r2.snd {
 				Just(_p) => "i2-hit"
 				None => "i2-miss"
 			})))

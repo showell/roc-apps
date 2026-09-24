@@ -24,8 +24,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Prelude
-import cdx.Text
 
 # DivNegativePow2 -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -56,17 +56,17 @@ m3 = |a| Prelude.int_mod(a, 3)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("-7 / 2 = ", Text.show_int(d2((0 - 7))))))
-	line!(Text.printed(Text.concat("-7 / 3 = ", Text.show_int(d3((0 - 7))))))
-	line!(Text.printed(Text.concat("-13 / 4 = ", Text.show_int(d4((0 - 13))))))
-	line!(Text.printed(Text.concat("-13 / 5 = ", Text.show_int(d5((0 - 13))))))
-	line!(Text.printed(Text.concat("-1 / 2 = ", Text.show_int(d2((0 - 1))))))
-	line!(Text.printed(Text.concat("-1 / 8 = ", Text.show_int(d8((0 - 1))))))
-	line!(Text.printed(Text.concat("-8 / 8 = ", Text.show_int(d8((0 - 8))))))
-	line!(Text.printed(Text.concat("-9 / 8 = ", Text.show_int(d8((0 - 9))))))
-	line!(Text.printed(Text.concat("7 / 2 = ", Text.show_int(d2(7)))))
-	line!(Text.printed(Text.concat("13 / 4 = ", Text.show_int(d4(13)))))
-	line!(Text.printed(Text.concat("-7 mod 2 = ", Text.show_int(m2((0 - 7))))))
-	line!(Text.printed(Text.concat("-7 mod 3 = ", Text.show_int(m3((0 - 7))))))
+	line!(CceText.printed(CceText.concat("-7 / 2 = ", CceText.show_int(d2((0 - 7))))))
+	line!(CceText.printed(CceText.concat("-7 / 3 = ", CceText.show_int(d3((0 - 7))))))
+	line!(CceText.printed(CceText.concat("-13 / 4 = ", CceText.show_int(d4((0 - 13))))))
+	line!(CceText.printed(CceText.concat("-13 / 5 = ", CceText.show_int(d5((0 - 13))))))
+	line!(CceText.printed(CceText.concat("-1 / 2 = ", CceText.show_int(d2((0 - 1))))))
+	line!(CceText.printed(CceText.concat("-1 / 8 = ", CceText.show_int(d8((0 - 1))))))
+	line!(CceText.printed(CceText.concat("-8 / 8 = ", CceText.show_int(d8((0 - 8))))))
+	line!(CceText.printed(CceText.concat("-9 / 8 = ", CceText.show_int(d8((0 - 9))))))
+	line!(CceText.printed(CceText.concat("7 / 2 = ", CceText.show_int(d2(7)))))
+	line!(CceText.printed(CceText.concat("13 / 4 = ", CceText.show_int(d4(13)))))
+	line!(CceText.printed(CceText.concat("-7 mod 2 = ", CceText.show_int(m2((0 - 7))))))
+	line!(CceText.printed(CceText.concat("-7 mod 3 = ", CceText.show_int(m3((0 - 7))))))
 	Ok({})
 }

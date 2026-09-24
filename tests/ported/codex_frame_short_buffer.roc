@@ -34,8 +34,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.MessageFraming
-import cdx.Text
 
 # FrameShortBuffer -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -66,28 +66,28 @@ main! = |_args| {
 	({
 		w = MessageFraming.frame_decode_text(whole, 0)
 		({
-			line!(Text.printed(Text.concat("whole-len=", Text.show_int(Text.len(w.value)))))
-			line!(Text.printed(Text.concat("whole-next=", Text.show_int(w.next_offset))))
-			line!(Text.printed(Text.concat("short-len=", Text.show_int(Text.len(MessageFraming.frame_decode_text(short, 0).value)))))
-			line!(Text.printed(Text.concat("huge-len=", Text.show_int(Text.len(MessageFraming.frame_decode_text(huge, 0).value)))))
-			line!(Text.printed(Text.concat("runt-len=", Text.show_int(Text.len(MessageFraming.frame_decode_text(runt, 0).value)))))
-			line!(Text.printed(Text.concat("empty-len=", Text.show_int(Text.len(MessageFraming.frame_decode_text(empty_bs, 0).value)))))
-			line!(Text.printed(Text.concat("whole-bytes=", Text.show_int(U64.to_i64_wrap(List.len(MessageFraming.frame_decode_bytes(whole, 0).value))))))
-			line!(Text.printed(Text.concat("short-bytes=", Text.show_int(U64.to_i64_wrap(List.len(MessageFraming.frame_decode_bytes(short, 0).value))))))
-			line!(Text.printed(Text.concat("huge-bytes=", Text.show_int(U64.to_i64_wrap(List.len(MessageFraming.frame_decode_bytes(huge, 0).value))))))
-			line!(Text.printed(Text.concat("tag-of-runt=", Text.show_int(MessageFraming.frame_decode_tag(runt)))))
-			line!(Text.printed(Text.concat("len-of-runt=", Text.show_int(MessageFraming.frame_decode_length(runt)))))
-			line!(Text.printed(Text.concat("body-of-short=", Text.show_int(U64.to_i64_wrap(List.len(MessageFraming.frame_decode_body(short)))))))
-			line!(Text.printed(Text.concat("whole-valid=", (if w.valid { "True" } else { "False" }))))
-			line!(Text.printed(Text.concat("declared-empty-len=", Text.show_int(Text.len(MessageFraming.frame_decode_text(declared_empty, 0).value)))))
-			line!(Text.printed(Text.concat("declared-empty-valid=", (if MessageFraming.frame_decode_text(declared_empty, 0).valid { "True" } else { "False" }))))
-			line!(Text.printed(Text.concat("short-valid=", (if MessageFraming.frame_decode_text(short, 0).valid { "True" } else { "False" }))))
-			line!(Text.printed(Text.concat("huge-valid=", (if MessageFraming.frame_decode_text(huge, 0).valid { "True" } else { "False" }))))
-			line!(Text.printed(Text.concat("runt-valid=", (if MessageFraming.frame_decode_text(runt, 0).valid { "True" } else { "False" }))))
-			line!(Text.printed(Text.concat("empty-valid=", (if MessageFraming.frame_decode_text(empty_bs, 0).valid { "True" } else { "False" }))))
-			line!(Text.printed(Text.concat("bytes-whole-valid=", (if MessageFraming.frame_decode_bytes(whole, 0).valid { "True" } else { "False" }))))
-			line!(Text.printed(Text.concat("bytes-short-valid=", (if MessageFraming.frame_decode_bytes(short, 0).valid { "True" } else { "False" }))))
-			line!(Text.printed("survived"))
+			line!(CceText.printed(CceText.concat("whole-len=", CceText.show_int(CceText.len(w.value)))))
+			line!(CceText.printed(CceText.concat("whole-next=", CceText.show_int(w.next_offset))))
+			line!(CceText.printed(CceText.concat("short-len=", CceText.show_int(CceText.len(MessageFraming.frame_decode_text(short, 0).value)))))
+			line!(CceText.printed(CceText.concat("huge-len=", CceText.show_int(CceText.len(MessageFraming.frame_decode_text(huge, 0).value)))))
+			line!(CceText.printed(CceText.concat("runt-len=", CceText.show_int(CceText.len(MessageFraming.frame_decode_text(runt, 0).value)))))
+			line!(CceText.printed(CceText.concat("empty-len=", CceText.show_int(CceText.len(MessageFraming.frame_decode_text(empty_bs, 0).value)))))
+			line!(CceText.printed(CceText.concat("whole-bytes=", CceText.show_int(U64.to_i64_wrap(List.len(MessageFraming.frame_decode_bytes(whole, 0).value))))))
+			line!(CceText.printed(CceText.concat("short-bytes=", CceText.show_int(U64.to_i64_wrap(List.len(MessageFraming.frame_decode_bytes(short, 0).value))))))
+			line!(CceText.printed(CceText.concat("huge-bytes=", CceText.show_int(U64.to_i64_wrap(List.len(MessageFraming.frame_decode_bytes(huge, 0).value))))))
+			line!(CceText.printed(CceText.concat("tag-of-runt=", CceText.show_int(MessageFraming.frame_decode_tag(runt)))))
+			line!(CceText.printed(CceText.concat("len-of-runt=", CceText.show_int(MessageFraming.frame_decode_length(runt)))))
+			line!(CceText.printed(CceText.concat("body-of-short=", CceText.show_int(U64.to_i64_wrap(List.len(MessageFraming.frame_decode_body(short)))))))
+			line!(CceText.printed(CceText.concat("whole-valid=", (if w.valid { "True" } else { "False" }))))
+			line!(CceText.printed(CceText.concat("declared-empty-len=", CceText.show_int(CceText.len(MessageFraming.frame_decode_text(declared_empty, 0).value)))))
+			line!(CceText.printed(CceText.concat("declared-empty-valid=", (if MessageFraming.frame_decode_text(declared_empty, 0).valid { "True" } else { "False" }))))
+			line!(CceText.printed(CceText.concat("short-valid=", (if MessageFraming.frame_decode_text(short, 0).valid { "True" } else { "False" }))))
+			line!(CceText.printed(CceText.concat("huge-valid=", (if MessageFraming.frame_decode_text(huge, 0).valid { "True" } else { "False" }))))
+			line!(CceText.printed(CceText.concat("runt-valid=", (if MessageFraming.frame_decode_text(runt, 0).valid { "True" } else { "False" }))))
+			line!(CceText.printed(CceText.concat("empty-valid=", (if MessageFraming.frame_decode_text(empty_bs, 0).valid { "True" } else { "False" }))))
+			line!(CceText.printed(CceText.concat("bytes-whole-valid=", (if MessageFraming.frame_decode_bytes(whole, 0).valid { "True" } else { "False" }))))
+			line!(CceText.printed(CceText.concat("bytes-short-valid=", (if MessageFraming.frame_decode_bytes(short, 0).valid { "True" } else { "False" }))))
+			line!(CceText.printed("survived"))
 		})
 	})
 	Ok({})

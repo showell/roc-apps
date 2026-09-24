@@ -19,7 +19,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # IntWrappingSpelling -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -47,12 +47,12 @@ plain_sub = |a, b| (a - b)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("literal  want -9223372036854775808: ", Text.show_int(bottom))))
-	line!(Text.printed(Text.concat("literal  want -9223372036854775808: ", Text.show_int((-9223372036854775808)))))
-	line!(Text.printed(Text.concat("literal  want 9223372036854775807: ", Text.show_int(plain_sub(top, 0)))))
-	line!(Text.printed(Text.concat("bare-add want -9223372036854775808: ", Text.show_int(bump(top, 1)))))
-	line!(Text.printed(Text.concat("bare-sub want 9223372036854775807: ", Text.show_int(drop(bottom)))))
-	line!(Text.printed(Text.concat("bare-mul want -2446744073709551616: ", Text.show_int(scale(4000000000, 4000000000)))))
-	line!(Text.printed(Text.concat("small    want 42: ", Text.show_int(bump(40, 2)))))
+	line!(CceText.printed(CceText.concat("literal  want -9223372036854775808: ", CceText.show_int(bottom))))
+	line!(CceText.printed(CceText.concat("literal  want -9223372036854775808: ", CceText.show_int((-9223372036854775808)))))
+	line!(CceText.printed(CceText.concat("literal  want 9223372036854775807: ", CceText.show_int(plain_sub(top, 0)))))
+	line!(CceText.printed(CceText.concat("bare-add want -9223372036854775808: ", CceText.show_int(bump(top, 1)))))
+	line!(CceText.printed(CceText.concat("bare-sub want 9223372036854775807: ", CceText.show_int(drop(bottom)))))
+	line!(CceText.printed(CceText.concat("bare-mul want -2446744073709551616: ", CceText.show_int(scale(4000000000, 4000000000)))))
+	line!(CceText.printed(CceText.concat("small    want 42: ", CceText.show_int(bump(40, 2)))))
 	Ok({})
 }

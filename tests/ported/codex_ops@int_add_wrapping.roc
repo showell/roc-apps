@@ -22,7 +22,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 import cdx.Wrap64
 
 # IntAddWrapping -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
@@ -57,15 +57,15 @@ sub_plain = |a, b| (a - b)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("funnel-add want -9223372036854775808: ", Text.show_int(Wrap64.w64_add(top, 1)))))
-	line!(Text.printed(Text.concat("funnel-sub want 9223372036854775807: ", Text.show_int(Wrap64.w64_sub(bottom, 1)))))
-	line!(Text.printed(Text.concat("param-add  want -9223372036854775808: ", Text.show_int(add_param(top, 1)))))
-	line!(Text.printed(Text.concat("param-sub  want 9223372036854775807: ", Text.show_int(sub_param(bottom, 1)))))
-	line!(Text.printed(Text.concat("imm-add    want -9223372036854775808: ", Text.show_int(add_imm_param(top)))))
-	line!(Text.printed(Text.concat("imm-sub    want 9223372036854775807: ", Text.show_int(sub_imm_param(bottom)))))
-	line!(Text.printed(Text.concat("in-band    want 9000000000000000000: ", Text.show_int(add_plain(4500000000000000000, 4500000000000000000)))))
-	line!(Text.printed(Text.concat("in-band    want -9000000000000000000: ", Text.show_int(sub_plain((0 - 4500000000000000000), 4500000000000000000)))))
-	line!(Text.printed(Text.concat("small      want 42: ", Text.show_int(add_plain(40, 2)))))
-	line!(Text.printed(Text.concat("small      want 42: ", Text.show_int(sub_plain(50, 8)))))
+	line!(CceText.printed(CceText.concat("funnel-add want -9223372036854775808: ", CceText.show_int(Wrap64.w64_add(top, 1)))))
+	line!(CceText.printed(CceText.concat("funnel-sub want 9223372036854775807: ", CceText.show_int(Wrap64.w64_sub(bottom, 1)))))
+	line!(CceText.printed(CceText.concat("param-add  want -9223372036854775808: ", CceText.show_int(add_param(top, 1)))))
+	line!(CceText.printed(CceText.concat("param-sub  want 9223372036854775807: ", CceText.show_int(sub_param(bottom, 1)))))
+	line!(CceText.printed(CceText.concat("imm-add    want -9223372036854775808: ", CceText.show_int(add_imm_param(top)))))
+	line!(CceText.printed(CceText.concat("imm-sub    want 9223372036854775807: ", CceText.show_int(sub_imm_param(bottom)))))
+	line!(CceText.printed(CceText.concat("in-band    want 9000000000000000000: ", CceText.show_int(add_plain(4500000000000000000, 4500000000000000000)))))
+	line!(CceText.printed(CceText.concat("in-band    want -9000000000000000000: ", CceText.show_int(sub_plain((0 - 4500000000000000000), 4500000000000000000)))))
+	line!(CceText.printed(CceText.concat("small      want 42: ", CceText.show_int(add_plain(40, 2)))))
+	line!(CceText.printed(CceText.concat("small      want 42: ", CceText.show_int(sub_plain(50, 8)))))
 	Ok({})
 }

@@ -29,7 +29,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # UnitRealCompare -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -92,22 +92,22 @@ hv_lt = |a, b| b2i((a < b))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat(Text.concat("neg-big lt neg-small want 11 got ", Text.show_int(mf_lt(m_neg_big, m_neg_small))), Text.show_int(mv_lt(m_neg_big, m_neg_small)))))
-	line!(Text.printed(Text.concat(Text.concat("neg-big gt neg-small want 00 got ", Text.show_int(mf_gt(m_neg_big, m_neg_small))), Text.show_int(mv_gt(m_neg_big, m_neg_small)))))
-	line!(Text.printed(Text.concat(Text.concat("neg-big le neg-small want 11 got ", Text.show_int(mf_le(m_neg_big, m_neg_small))), Text.show_int(mv_le(m_neg_big, m_neg_small)))))
-	line!(Text.printed(Text.concat(Text.concat("neg-big ge neg-small want 00 got ", Text.show_int(mf_ge(m_neg_big, m_neg_small))), Text.show_int(mv_ge(m_neg_big, m_neg_small)))))
-	line!(Text.printed(Text.concat(Text.concat("neg-small lt neg-big want 00 got ", Text.show_int(mf_lt(m_neg_small, m_neg_big))), Text.show_int(mv_lt(m_neg_small, m_neg_big)))))
-	line!(Text.printed(Text.concat(Text.concat("neg-small gt neg-big want 11 got ", Text.show_int(mf_gt(m_neg_small, m_neg_big))), Text.show_int(mv_gt(m_neg_small, m_neg_big)))))
-	line!(Text.printed(Text.concat(Text.concat("neg-big lt neg-big want 00 got ", Text.show_int(mf_lt(m_neg_big, m_neg_big))), Text.show_int(mv_lt(m_neg_big, m_neg_big)))))
-	line!(Text.printed(Text.concat(Text.concat("neg-big le neg-big want 11 got ", Text.show_int(mf_le(m_neg_big, m_neg_big))), Text.show_int(mv_le(m_neg_big, m_neg_big)))))
-	line!(Text.printed(Text.concat(Text.concat("neg-big ge neg-big want 11 got ", Text.show_int(mf_ge(m_neg_big, m_neg_big))), Text.show_int(mv_ge(m_neg_big, m_neg_big)))))
-	line!(Text.printed(Text.concat(Text.concat("pos-small lt pos-big want 11 got ", Text.show_int(mf_lt(m_pos_small, m_pos_big))), Text.show_int(mv_lt(m_pos_small, m_pos_big)))))
-	line!(Text.printed(Text.concat(Text.concat("pos-big lt pos-small want 00 got ", Text.show_int(mf_lt(m_pos_big, m_pos_small))), Text.show_int(mv_lt(m_pos_big, m_pos_small)))))
-	line!(Text.printed(Text.concat(Text.concat("neg-big lt pos-small want 11 got ", Text.show_int(mf_lt(m_neg_big, m_pos_small))), Text.show_int(mv_lt(m_neg_big, m_pos_small)))))
-	line!(Text.printed(Text.concat(Text.concat("pos-big lt neg-small want 00 got ", Text.show_int(mf_lt(m_pos_big, m_neg_small))), Text.show_int(mv_lt(m_pos_big, m_neg_small)))))
-	line!(Text.printed(Text.concat(Text.concat("neg-small lt zero want 11 got ", Text.show_int(mf_lt(m_neg_small, m_zero))), Text.show_int(mv_lt(m_neg_small, m_zero)))))
-	line!(Text.printed(Text.concat(Text.concat("neg-small gt zero want 00 got ", Text.show_int(mf_gt(m_neg_small, m_zero))), Text.show_int(mv_gt(m_neg_small, m_zero)))))
-	line!(Text.printed(Text.concat("hertz lo lt hi want 1 got ", Text.show_int(hv_lt(h_lo, h_hi)))))
-	line!(Text.printed(Text.concat("hertz hi lt lo want 0 got ", Text.show_int(hv_lt(h_hi, h_lo)))))
+	line!(CceText.printed(CceText.concat(CceText.concat("neg-big lt neg-small want 11 got ", CceText.show_int(mf_lt(m_neg_big, m_neg_small))), CceText.show_int(mv_lt(m_neg_big, m_neg_small)))))
+	line!(CceText.printed(CceText.concat(CceText.concat("neg-big gt neg-small want 00 got ", CceText.show_int(mf_gt(m_neg_big, m_neg_small))), CceText.show_int(mv_gt(m_neg_big, m_neg_small)))))
+	line!(CceText.printed(CceText.concat(CceText.concat("neg-big le neg-small want 11 got ", CceText.show_int(mf_le(m_neg_big, m_neg_small))), CceText.show_int(mv_le(m_neg_big, m_neg_small)))))
+	line!(CceText.printed(CceText.concat(CceText.concat("neg-big ge neg-small want 00 got ", CceText.show_int(mf_ge(m_neg_big, m_neg_small))), CceText.show_int(mv_ge(m_neg_big, m_neg_small)))))
+	line!(CceText.printed(CceText.concat(CceText.concat("neg-small lt neg-big want 00 got ", CceText.show_int(mf_lt(m_neg_small, m_neg_big))), CceText.show_int(mv_lt(m_neg_small, m_neg_big)))))
+	line!(CceText.printed(CceText.concat(CceText.concat("neg-small gt neg-big want 11 got ", CceText.show_int(mf_gt(m_neg_small, m_neg_big))), CceText.show_int(mv_gt(m_neg_small, m_neg_big)))))
+	line!(CceText.printed(CceText.concat(CceText.concat("neg-big lt neg-big want 00 got ", CceText.show_int(mf_lt(m_neg_big, m_neg_big))), CceText.show_int(mv_lt(m_neg_big, m_neg_big)))))
+	line!(CceText.printed(CceText.concat(CceText.concat("neg-big le neg-big want 11 got ", CceText.show_int(mf_le(m_neg_big, m_neg_big))), CceText.show_int(mv_le(m_neg_big, m_neg_big)))))
+	line!(CceText.printed(CceText.concat(CceText.concat("neg-big ge neg-big want 11 got ", CceText.show_int(mf_ge(m_neg_big, m_neg_big))), CceText.show_int(mv_ge(m_neg_big, m_neg_big)))))
+	line!(CceText.printed(CceText.concat(CceText.concat("pos-small lt pos-big want 11 got ", CceText.show_int(mf_lt(m_pos_small, m_pos_big))), CceText.show_int(mv_lt(m_pos_small, m_pos_big)))))
+	line!(CceText.printed(CceText.concat(CceText.concat("pos-big lt pos-small want 00 got ", CceText.show_int(mf_lt(m_pos_big, m_pos_small))), CceText.show_int(mv_lt(m_pos_big, m_pos_small)))))
+	line!(CceText.printed(CceText.concat(CceText.concat("neg-big lt pos-small want 11 got ", CceText.show_int(mf_lt(m_neg_big, m_pos_small))), CceText.show_int(mv_lt(m_neg_big, m_pos_small)))))
+	line!(CceText.printed(CceText.concat(CceText.concat("pos-big lt neg-small want 00 got ", CceText.show_int(mf_lt(m_pos_big, m_neg_small))), CceText.show_int(mv_lt(m_pos_big, m_neg_small)))))
+	line!(CceText.printed(CceText.concat(CceText.concat("neg-small lt zero want 11 got ", CceText.show_int(mf_lt(m_neg_small, m_zero))), CceText.show_int(mv_lt(m_neg_small, m_zero)))))
+	line!(CceText.printed(CceText.concat(CceText.concat("neg-small gt zero want 00 got ", CceText.show_int(mf_gt(m_neg_small, m_zero))), CceText.show_int(mv_gt(m_neg_small, m_zero)))))
+	line!(CceText.printed(CceText.concat("hertz lo lt hi want 1 got ", CceText.show_int(hv_lt(h_lo, h_hi)))))
+	line!(CceText.printed(CceText.concat("hertz hi lt lo want 0 got ", CceText.show_int(hv_lt(h_hi, h_lo)))))
 	Ok({})
 }

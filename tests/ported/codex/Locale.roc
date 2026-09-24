@@ -1,9 +1,9 @@
 # Locale -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
-import Text
+import CceText
 
 Locale :: [].{
 	TextDirection : [DirLTR, DirRTL]
-	Locale : { lang_tag : Text, direction : Locale.TextDirection, decimal_sep : Text, thousands_sep : Text, date_order : Locale.DateOrder }
+	Locale : { lang_tag : CceText, direction : Locale.TextDirection, decimal_sep : CceText, thousands_sep : CceText, date_order : Locale.DateOrder }
 	DateOrder : [DateYMD, DateMDY, DateDMY]
 
 	locale_en_us : Locale.Locale
@@ -21,16 +21,16 @@ Locale :: [].{
 	locale_ar : Locale.Locale
 	locale_ar = { lang_tag: "ar", direction: DirRTL, decimal_sep: ".", thousands_sep: ",", date_order: DateDMY }
 
-	locale_new : Text -> Locale.Locale
+	locale_new : CceText -> Locale.Locale
 	locale_new = |tag| (if (tag == "en-US") { locale_en_us } else { (if (tag == "en-GB") { locale_en_gb } else { (if (tag == "de") { locale_de } else { (if (tag == "ja") { locale_ja } else { (if (tag == "ar") { locale_ar } else { locale_en_us }) }) }) }) })
 
 	locale_direction : Locale.Locale -> Locale.TextDirection
 	locale_direction = |loc| loc.direction
 
-	locale_decimal_sep : Locale.Locale -> Text
+	locale_decimal_sep : Locale.Locale -> CceText
 	locale_decimal_sep = |loc| loc.decimal_sep
 
-	locale_thousands_sep : Locale.Locale -> Text
+	locale_thousands_sep : Locale.Locale -> CceText
 	locale_thousands_sep = |loc| loc.thousands_sep
 
 	locale_is_rtl : Locale.Locale -> Bool
@@ -39,42 +39,42 @@ Locale :: [].{
 		DirLTR => False
 	})
 
-	locale_format_number : Locale.Locale, I64 -> Text
-	locale_format_number = |loc, n| (if (n < 0) { Text.concat("-", locale_format_positive(loc, (0 - n))) } else { locale_format_positive(loc, n) })
+	locale_format_number : Locale.Locale, I64 -> CceText
+	locale_format_number = |loc, n| (if (n < 0) { CceText.concat("-", locale_format_positive(loc, (0 - n))) } else { locale_format_positive(loc, n) })
 
-	locale_format_positive : Locale.Locale, I64 -> Text
+	locale_format_positive : Locale.Locale, I64 -> CceText
 	locale_format_positive = |loc, n| ({
-		raw = Text.show_int(n)
-		(if (Text.len(loc.thousands_sep) == 0) { raw } else { locale_insert_thousands(raw, loc.thousands_sep) })
+		raw = CceText.show_int(n)
+		(if (CceText.len(loc.thousands_sep) == 0) { raw } else { locale_insert_thousands(raw, loc.thousands_sep) })
 	})
 
-	locale_insert_thousands : Text, Text -> Text
+	locale_insert_thousands : CceText, CceText -> CceText
 	locale_insert_thousands = |raw, sep| ({
-		len = Text.len(raw)
+		len = CceText.len(raw)
 		(if (len <= 3) { raw } else { locale_insert_loop(raw, sep, (len - 1), 0, "") })
 	})
 
-	locale_insert_loop : Text, Text, I64, I64, Text -> Text
+	locale_insert_loop : CceText, CceText, I64, I64, CceText -> CceText
 	locale_insert_loop = |raw, sep, i, count, acc| (if (i < 0) { acc } else { ({
-		c = Text.char_to_text(Text.char_at(raw, i))
+		c = CceText.char_to_text(CceText.char_at(raw, i))
 		s = (if (count > 0) { (if ((count - (I64.div_trunc_by(count, 3) * 3)) == 0) { sep } else { "" }) } else { "" })
-		locale_insert_loop(raw, sep, (i - 1), (count + 1), Text.concat(Text.concat(c, s), acc))
+		locale_insert_loop(raw, sep, (i - 1), (count + 1), CceText.concat(CceText.concat(c, s), acc))
 	}) })
 
-	locale_format_date : Locale.Locale, I64, I64, I64 -> Text
+	locale_format_date : Locale.Locale, I64, I64, I64 -> CceText
 	locale_format_date = |loc, year, month, day| ({
-		y = Text.show_int(year)
+		y = CceText.show_int(year)
 		m = locale_two_digit(month)
 		d = locale_two_digit(day)
 		(match loc.date_order {
-			DateYMD => Text.concat(Text.concat(Text.concat(Text.concat(y, "-"), m), "-"), d)
-			DateMDY => Text.concat(Text.concat(Text.concat(Text.concat(m, "/"), d), "/"), y)
-			DateDMY => Text.concat(Text.concat(Text.concat(Text.concat(d, "/"), m), "/"), y)
+			DateYMD => CceText.concat(CceText.concat(CceText.concat(CceText.concat(y, "-"), m), "-"), d)
+			DateMDY => CceText.concat(CceText.concat(CceText.concat(CceText.concat(m, "/"), d), "/"), y)
+			DateDMY => CceText.concat(CceText.concat(CceText.concat(CceText.concat(d, "/"), m), "/"), y)
 		})
 	})
 
-	locale_two_digit : I64 -> Text
-	locale_two_digit = |n| (if (n < 10) { Text.concat("0", Text.show_int(n)) } else { Text.show_int(n) })
+	locale_two_digit : I64 -> CceText
+	locale_two_digit = |n| (if (n < 10) { CceText.concat("0", CceText.show_int(n)) } else { CceText.show_int(n) })
 
 	eq_TextDirection : Locale.TextDirection, Locale.TextDirection -> Bool
 	eq_TextDirection = |ex, ey| (match ex {

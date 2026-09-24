@@ -1,5 +1,5 @@
 # Color -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
-import Text
+import CceText
 
 Color :: [].{
 	Rgb : { cr : I64, cg : I64, cb : I64 }
@@ -171,19 +171,19 @@ Color :: [].{
 		rgb_to_packed(hsl_to_rgb({ ch: hue, cs: sat, cl: lit }))
 	})
 
-	format_rgb : Color.Rgb -> Text
-	format_rgb = |c| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("rgb(", Text.show_int(c.cr)), ","), Text.show_int(c.cg)), ","), Text.show_int(c.cb)), ")")
+	format_rgb : Color.Rgb -> CceText
+	format_rgb = |c| CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("rgb(", CceText.show_int(c.cr)), ","), CceText.show_int(c.cg)), ","), CceText.show_int(c.cb)), ")")
 
-	format_hsl : Color.Hsl -> Text
-	format_hsl = |c| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("hsl(", Text.show_int(c.ch)), ","), Text.show_int(c.cs)), ","), Text.show_int(c.cl)), ")")
+	format_hsl : Color.Hsl -> CceText
+	format_hsl = |c| CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("hsl(", CceText.show_int(c.ch)), ","), CceText.show_int(c.cs)), ","), CceText.show_int(c.cl)), ")")
 
-	format_hex_color : Color.Rgb -> Text
-	format_hex_color = |c| Text.concat(Text.concat(Text.concat("#", col_hex2(c.cr)), col_hex2(c.cg)), col_hex2(c.cb))
+	format_hex_color : Color.Rgb -> CceText
+	format_hex_color = |c| CceText.concat(CceText.concat(CceText.concat("#", col_hex2(c.cr)), col_hex2(c.cg)), col_hex2(c.cb))
 
-	col_hex2 : I64 -> Text
-	col_hex2 = |v| Text.concat(col_hex_digit(I64.div_trunc_by(v, 16)), col_hex_digit(I64.bitwise_and(v, 15)))
+	col_hex2 : I64 -> CceText
+	col_hex2 = |v| CceText.concat(col_hex_digit(I64.div_trunc_by(v, 16)), col_hex_digit(I64.bitwise_and(v, 15)))
 
-	col_hex_digit : I64 -> Text
+	col_hex_digit : I64 -> CceText
 	col_hex_digit = |d| (if (d == 0) { "0" } else { (if (d == 1) { "1" } else { (if (d == 2) { "2" } else { (if (d == 3) { "3" } else { (if (d == 4) { "4" } else { (if (d == 5) { "5" } else { (if (d == 6) { "6" } else { (if (d == 7) { "7" } else { (if (d == 8) { "8" } else { (if (d == 9) { "9" } else { (if (d == 10) { "a" } else { (if (d == 11) { "b" } else { (if (d == 12) { "c" } else { (if (d == 13) { "d" } else { (if (d == 14) { "e" } else { "f" }) }) }) }) }) }) }) }) }) }) }) }) }) }) })
 
 	eq_RainbowPalette : Color.RainbowPalette, Color.RainbowPalette -> Bool

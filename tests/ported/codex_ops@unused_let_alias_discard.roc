@@ -15,7 +15,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # UnusedLetAliasDiscard -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -46,8 +46,8 @@ reads_in_tail = |xs, n| (if (n <= 0) { (List.get(xs, I64.to_u64_wrap(0)) ?? cras
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("reads-in-body: ", Text.show_int(reads_in_body(0)))))
-	line!(Text.printed(Text.concat("reads-in-sibling: ", Text.show_int(reads_in_sibling(0)))))
-	line!(Text.printed(Text.concat("reads-in-tail: ", Text.show_int(reads_in_tail([23], 10000)))))
+	line!(CceText.printed(CceText.concat("reads-in-body: ", CceText.show_int(reads_in_body(0)))))
+	line!(CceText.printed(CceText.concat("reads-in-sibling: ", CceText.show_int(reads_in_sibling(0)))))
+	line!(CceText.printed(CceText.concat("reads-in-tail: ", CceText.show_int(reads_in_tail([23], 10000)))))
 	Ok({})
 }

@@ -1,11 +1,11 @@
 # Accessibility -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+import CceText
 import Maybe
-import Text
 
 Accessibility :: [].{
 	A11yRole : [RoleButton, RoleTextbox, RoleCheckbox, RoleRadio, RoleSlider, RoleMenu, RoleMenuItem, RoleDialog, RoleAlert, RoleStatus, RoleHeading(I64), RoleList, RoleListItem, RoleLink, RoleImage, RoleNone]
 	A11yLive : [LiveOff, LivePolite, LiveAssertive]
-	A11yInfo : { ai_role : Accessibility.A11yRole, ai_label : Text, ai_description : Text, ai_live : Accessibility.A11yLive, ai_tab_index : I64, ai_hidden : Bool, ai_expanded : Maybe.Maybe(Bool), ai_checked : Maybe.Maybe(Bool), ai_value_now : I64, ai_value_min : I64, ai_value_max : I64 }
+	A11yInfo : { ai_role : Accessibility.A11yRole, ai_label : CceText, ai_description : CceText, ai_live : Accessibility.A11yLive, ai_tab_index : I64, ai_hidden : Bool, ai_expanded : Maybe.Maybe(Bool), ai_checked : Maybe.Maybe(Bool), ai_value_now : I64, ai_value_min : I64, ai_value_max : I64 }
 
 	a11y_empty : Accessibility.A11yInfo
 	a11y_empty = { ai_role: RoleNone, ai_label: "", ai_description: "", ai_live: LiveOff, ai_tab_index: 0, ai_hidden: False, ai_expanded: None, ai_checked: None, ai_value_now: 0, ai_value_min: 0, ai_value_max: 100 }
@@ -13,10 +13,10 @@ Accessibility :: [].{
 	a11y_role : Accessibility.A11yInfo, Accessibility.A11yRole -> Accessibility.A11yInfo
 	a11y_role = |info, role| { ..info, ai_role: role }
 
-	a11y_label : Accessibility.A11yInfo, Text -> Accessibility.A11yInfo
+	a11y_label : Accessibility.A11yInfo, CceText -> Accessibility.A11yInfo
 	a11y_label = |info, label| { ..info, ai_label: label }
 
-	a11y_description : Accessibility.A11yInfo, Text -> Accessibility.A11yInfo
+	a11y_description : Accessibility.A11yInfo, CceText -> Accessibility.A11yInfo
 	a11y_description = |info, desc| { ..info, ai_description: desc }
 
 	a11y_live : Accessibility.A11yInfo, Accessibility.A11yLive -> Accessibility.A11yInfo
@@ -37,28 +37,28 @@ Accessibility :: [].{
 	a11y_value : Accessibility.A11yInfo, I64, I64, I64 -> Accessibility.A11yInfo
 	a11y_value = |info, now, min_val, max_val| { ..{ ..{ ..info, ai_value_now: now }, ai_value_min: min_val }, ai_value_max: max_val }
 
-	a11y_button : Text -> Accessibility.A11yInfo
+	a11y_button : CceText -> Accessibility.A11yInfo
 	a11y_button = |label| a11y_label(a11y_role(a11y_empty, RoleButton), label)
 
-	a11y_textbox : Text -> Accessibility.A11yInfo
+	a11y_textbox : CceText -> Accessibility.A11yInfo
 	a11y_textbox = |label| a11y_label(a11y_role(a11y_empty, RoleTextbox), label)
 
-	a11y_checkbox : Text, Bool -> Accessibility.A11yInfo
+	a11y_checkbox : CceText, Bool -> Accessibility.A11yInfo
 	a11y_checkbox = |label, checked| a11y_checked(a11y_label(a11y_role(a11y_empty, RoleCheckbox), label), checked)
 
-	a11y_slider : Text, I64, I64, I64 -> Accessibility.A11yInfo
+	a11y_slider : CceText, I64, I64, I64 -> Accessibility.A11yInfo
 	a11y_slider = |label, now, lo, hi| a11y_value(a11y_label(a11y_role(a11y_empty, RoleSlider), label), now, lo, hi)
 
-	a11y_heading : Text, I64 -> Accessibility.A11yInfo
+	a11y_heading : CceText, I64 -> Accessibility.A11yInfo
 	a11y_heading = |label, level| a11y_label(a11y_role(a11y_empty, RoleHeading(level)), label)
 
-	a11y_alert : Text -> Accessibility.A11yInfo
+	a11y_alert : CceText -> Accessibility.A11yInfo
 	a11y_alert = |msg| a11y_label(a11y_live(a11y_role(a11y_empty, RoleAlert), LiveAssertive), msg)
 
-	a11y_status : Text -> Accessibility.A11yInfo
+	a11y_status : CceText -> Accessibility.A11yInfo
 	a11y_status = |msg| a11y_label(a11y_live(a11y_role(a11y_empty, RoleStatus), LivePolite), msg)
 
-	a11y_role_name : Accessibility.A11yRole -> Text
+	a11y_role_name : Accessibility.A11yRole -> CceText
 	a11y_role_name = |r| (match r {
 		RoleButton => "button"
 		RoleTextbox => "textbox"
@@ -90,11 +90,11 @@ Accessibility :: [].{
 		_ => False
 	})
 
-	a11y_announce : Accessibility.A11yInfo -> Text
+	a11y_announce : Accessibility.A11yInfo -> CceText
 	a11y_announce = |info| ({
 		role = a11y_role_name(info.ai_role)
 		label = info.ai_label
-		(if (Text.len(label) > 0) { Text.concat(Text.concat(label, ", "), role) } else { role })
+		(if (CceText.len(label) > 0) { CceText.concat(CceText.concat(label, ", "), role) } else { role })
 	})
 
 	eq_A11yRole : Accessibility.A11yRole, Accessibility.A11yRole -> Bool

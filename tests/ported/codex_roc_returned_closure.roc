@@ -13,7 +13,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # RocReturnedClosure -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -38,7 +38,7 @@ lam_1 = |_x| 9
 main! = |_args| {
 	({
 		wrapped = wrap(lam_1)
-		line!(Text.printed(Text.show_int((wrapped.next)(0))))
+		line!(CceText.printed(CceText.show_int((wrapped.next)(0))))
 	})
 	Ok({})
 }

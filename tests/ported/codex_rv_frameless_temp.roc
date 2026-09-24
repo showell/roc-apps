@@ -17,7 +17,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # RvFramelessTemp -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -42,10 +42,10 @@ mix_shru = |n, acc| (if (n == 0) { acc } else { mix_shru((n - 1), I64.bitwise_xo
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.show_int(mix_shl(12, 0))))
-	line!(Text.printed(Text.show_int(mix_and(12, 0))))
-	line!(Text.printed(Text.show_int(mix_add(12, 0))))
-	line!(Text.printed(Text.show_int(mix_sub(12, 0))))
-	line!(Text.printed(Text.show_int(mix_shru(12, 0))))
+	line!(CceText.printed(CceText.show_int(mix_shl(12, 0))))
+	line!(CceText.printed(CceText.show_int(mix_and(12, 0))))
+	line!(CceText.printed(CceText.show_int(mix_add(12, 0))))
+	line!(CceText.printed(CceText.show_int(mix_sub(12, 0))))
+	line!(CceText.printed(CceText.show_int(mix_shru(12, 0))))
 	Ok({})
 }

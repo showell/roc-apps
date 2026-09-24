@@ -18,8 +18,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.ConsistentHash
-import cdx.Text
 
 # ConsistentHashBalance -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -35,8 +35,8 @@ build_ring = |r, i, n| (if (i >= n) { r } else { build_ring(ConsistentHash.chr_a
 count_for : I64, I64, I64, I64 -> I64
 count_for = |node, k, n, acc| (if (k >= n) { acc } else { count_for(node, (k + 1), n, (acc + (if (ConsistentHash.chr_get_node(ring, k) == node) { 1 } else { 0 }))) })
 
-tally : I64, I64, Text -> Text
-tally = |node, n, acc| (if (node >= n) { acc } else { tally((node + 1), n, Text.concat(Text.concat(acc, " "), Text.show_int(count_for(node, 0, 200, 0)))) })
+tally : I64, I64, CceText -> CceText
+tally = |node, n, acc| (if (node >= n) { acc } else { tally((node + 1), n, CceText.concat(CceText.concat(acc, " "), CceText.show_int(count_for(node, 0, 200, 0)))) })
 
 lowest : I64, I64, I64 -> I64
 lowest = |node, n, acc| (if (node >= n) { acc } else { ({
@@ -53,11 +53,11 @@ highest = |node, n, acc| (if (node >= n) { acc } else { ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("nodes=", Text.show_int(ConsistentHash.chr_node_count(ring)))))
-	line!(Text.printed(Text.concat("entries=", Text.show_int(ConsistentHash.chr_entry_count(ring)))))
-	line!(Text.printed(Text.concat("per-node=", tally(0, 4, ""))))
-	line!(Text.printed(Text.concat("min-share=", Text.show_int(lowest(0, 4, 1000)))))
-	line!(Text.printed(Text.concat("max-share=", Text.show_int(highest(0, 4, 0)))))
-	line!(Text.printed(Text.concat("every-node-used=", (if (lowest(0, 4, 1000) > 0) { "yes" } else { "no" }))))
+	line!(CceText.printed(CceText.concat("nodes=", CceText.show_int(ConsistentHash.chr_node_count(ring)))))
+	line!(CceText.printed(CceText.concat("entries=", CceText.show_int(ConsistentHash.chr_entry_count(ring)))))
+	line!(CceText.printed(CceText.concat("per-node=", tally(0, 4, ""))))
+	line!(CceText.printed(CceText.concat("min-share=", CceText.show_int(lowest(0, 4, 1000)))))
+	line!(CceText.printed(CceText.concat("max-share=", CceText.show_int(highest(0, 4, 0)))))
+	line!(CceText.printed(CceText.concat("every-node-used=", (if (lowest(0, 4, 1000) > 0) { "yes" } else { "no" }))))
 	Ok({})
 }

@@ -1,7 +1,7 @@
 # Hmac -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+import CceText
 import ListUtils
 import Sha256
-import Text
 
 Hmac :: [].{
 
@@ -30,7 +30,7 @@ Hmac :: [].{
 	repeat_byte_loop : I64, I64, List(I64) -> List(I64)
 	repeat_byte_loop = |val, n, acc| (if (n <= 0) { acc } else { repeat_byte_loop(val, (n - 1), List.append(acc, val)) })
 
-	hmac_sha256_hex : List(I64), List(I64) -> Text
+	hmac_sha256_hex : List(I64), List(I64) -> CceText
 	hmac_sha256_hex = |key, msg| Sha256.sha256_to_hex(hmac_sha256(key, msg))
 
 	hash_words_to_bytes : List(I64) -> List(I64)

@@ -1,5 +1,5 @@
 # Usb -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
-import Text
+import CceText
 
 Usb :: [].{
 	UsbDeviceDesc : { usb_vendor : I64, usb_product : I64, usb_class : I64, usb_subclass : I64, usb_protocol : I64, usb_max_packet : I64, usb_num_configs : I64, usb_speed : I64 }
@@ -121,19 +121,19 @@ Usb :: [].{
 	usb_le16_encode : I64 -> List(I64)
 	usb_le16_encode = |v| [I64.bitwise_and(v, 255), I64.bitwise_and(I64.shr_zf_wrap(v, I64.to_u8_wrap(8)), 255)]
 
-	format_usb_device : Usb.UsbDeviceDesc -> Text
-	format_usb_device = |d| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(usb_hex16(d.usb_vendor), ":"), usb_hex16(d.usb_product)), " class="), Text.show_int(d.usb_class)), "."), Text.show_int(d.usb_subclass))
+	format_usb_device : Usb.UsbDeviceDesc -> CceText
+	format_usb_device = |d| CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(usb_hex16(d.usb_vendor), ":"), usb_hex16(d.usb_product)), " class="), CceText.show_int(d.usb_class)), "."), CceText.show_int(d.usb_subclass))
 
-	format_usb_endpoint : Usb.UsbEndpoint -> Text
+	format_usb_endpoint : Usb.UsbEndpoint -> CceText
 	format_usb_endpoint = |ep| ({
 		dir = (if (ep.ep_direction == 128) { "IN" } else { "OUT" })
 		typ = (if (ep.ep_type == 0) { "CTRL" } else { (if (ep.ep_type == 1) { "ISO" } else { (if (ep.ep_type == 2) { "BULK" } else { "INT" }) }) })
-		Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("EP", Text.show_int(ep.ep_address)), " "), dir), " "), typ), " maxpkt="), Text.show_int(ep.ep_max_packet))
+		CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("EP", CceText.show_int(ep.ep_address)), " "), dir), " "), typ), " maxpkt="), CceText.show_int(ep.ep_max_packet))
 	})
 
-	usb_hex16 : I64 -> Text
-	usb_hex16 = |v| Text.concat(Text.concat(Text.concat(usb_nib(I64.bitwise_and(I64.shr_zf_wrap(v, I64.to_u8_wrap(12)), 15)), usb_nib(I64.bitwise_and(I64.shr_zf_wrap(v, I64.to_u8_wrap(8)), 15))), usb_nib(I64.bitwise_and(I64.shr_zf_wrap(v, I64.to_u8_wrap(4)), 15))), usb_nib(I64.bitwise_and(v, 15)))
+	usb_hex16 : I64 -> CceText
+	usb_hex16 = |v| CceText.concat(CceText.concat(CceText.concat(usb_nib(I64.bitwise_and(I64.shr_zf_wrap(v, I64.to_u8_wrap(12)), 15)), usb_nib(I64.bitwise_and(I64.shr_zf_wrap(v, I64.to_u8_wrap(8)), 15))), usb_nib(I64.bitwise_and(I64.shr_zf_wrap(v, I64.to_u8_wrap(4)), 15))), usb_nib(I64.bitwise_and(v, 15)))
 
-	usb_nib : I64 -> Text
+	usb_nib : I64 -> CceText
 	usb_nib = |n| (if (n == 0) { "0" } else { (if (n == 1) { "1" } else { (if (n == 2) { "2" } else { (if (n == 3) { "3" } else { (if (n == 4) { "4" } else { (if (n == 5) { "5" } else { (if (n == 6) { "6" } else { (if (n == 7) { "7" } else { (if (n == 8) { "8" } else { (if (n == 9) { "9" } else { (if (n == 10) { "a" } else { (if (n == 11) { "b" } else { (if (n == 12) { "c" } else { (if (n == 13) { "d" } else { (if (n == 14) { "e" } else { "f" }) }) }) }) }) }) }) }) }) }) }) }) }) }) })
 }

@@ -29,7 +29,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # NativeNestedPattern -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -42,7 +42,7 @@ Tree := [Leaf(I64), Join(Tree, Tree), Tip].{
 Packed : [Pack(I64, Tree, Bool, I64), Blank]
 Box_(a) : [Wrapped(a)]
 
-boxed_text : Box_(Text) -> I64
+boxed_text : Box_(CceText) -> I64
 boxed_text = |value| (match value {
 	Wrapped("hi") => 1
 	_ => 2
@@ -117,22 +117,22 @@ eq_Box = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.show_int(siblings(Join(Leaf(3), Leaf(0))))))
-	line!(Text.printed(Text.show_int(siblings(Join(Leaf(3), Leaf(4))))))
-	line!(Text.printed(Text.show_int(siblings(Join(Tip, Leaf(0))))))
-	line!(Text.printed(Text.show_int(siblings(Join(Leaf(0), Tip)))))
-	line!(Text.printed(Text.show_int(siblings(Join(Leaf(0), Leaf(1))))))
-	line!(Text.printed(Text.show_int(siblings(Join(Leaf((0 - 7)), Leaf(0))))))
-	line!(Text.printed(Text.show_int(wide(Join(Join(Leaf(1), Leaf(2)), Join(Leaf(3), Leaf(4)))))))
-	line!(Text.printed(Text.show_int(wide(Join(Join(Leaf(1), Tip), Join(Leaf(3), Leaf(4)))))))
-	line!(Text.printed(Text.show_int(wide(Join(Join(Leaf(1), Leaf(2)), Join(Leaf(3), Tip))))))
-	line!(Text.printed(Text.show_int(packed(Pack(7, Join(Leaf(2), Leaf(4)), True, (0 - 5))))))
-	line!(Text.printed(Text.show_int(packed(Pack(7, Join(Leaf(2), Leaf(4)), False, (0 - 5))))))
-	line!(Text.printed(Text.show_int(packed(Pack(7, Leaf(9), False, (0 - 5))))))
-	line!(Text.printed(Text.show_int(packed(Pack(7, Leaf(9), True, (0 - 5))))))
-	line!(Text.printed(Text.show_int(packed(Blank))))
-	line!(Text.printed(Text.show_int(scope(Join(Leaf(2), Leaf(3))))))
-	line!(Text.printed(Text.show_int(boxed_text(Wrapped("hi")))))
-	line!(Text.printed(Text.show_int(boxed_text(Wrapped("bye")))))
+	line!(CceText.printed(CceText.show_int(siblings(Join(Leaf(3), Leaf(0))))))
+	line!(CceText.printed(CceText.show_int(siblings(Join(Leaf(3), Leaf(4))))))
+	line!(CceText.printed(CceText.show_int(siblings(Join(Tip, Leaf(0))))))
+	line!(CceText.printed(CceText.show_int(siblings(Join(Leaf(0), Tip)))))
+	line!(CceText.printed(CceText.show_int(siblings(Join(Leaf(0), Leaf(1))))))
+	line!(CceText.printed(CceText.show_int(siblings(Join(Leaf((0 - 7)), Leaf(0))))))
+	line!(CceText.printed(CceText.show_int(wide(Join(Join(Leaf(1), Leaf(2)), Join(Leaf(3), Leaf(4)))))))
+	line!(CceText.printed(CceText.show_int(wide(Join(Join(Leaf(1), Tip), Join(Leaf(3), Leaf(4)))))))
+	line!(CceText.printed(CceText.show_int(wide(Join(Join(Leaf(1), Leaf(2)), Join(Leaf(3), Tip))))))
+	line!(CceText.printed(CceText.show_int(packed(Pack(7, Join(Leaf(2), Leaf(4)), True, (0 - 5))))))
+	line!(CceText.printed(CceText.show_int(packed(Pack(7, Join(Leaf(2), Leaf(4)), False, (0 - 5))))))
+	line!(CceText.printed(CceText.show_int(packed(Pack(7, Leaf(9), False, (0 - 5))))))
+	line!(CceText.printed(CceText.show_int(packed(Pack(7, Leaf(9), True, (0 - 5))))))
+	line!(CceText.printed(CceText.show_int(packed(Blank))))
+	line!(CceText.printed(CceText.show_int(scope(Join(Leaf(2), Leaf(3))))))
+	line!(CceText.printed(CceText.show_int(boxed_text(Wrapped("hi")))))
+	line!(CceText.printed(CceText.show_int(boxed_text(Wrapped("bye")))))
 	Ok({})
 }

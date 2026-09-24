@@ -13,8 +13,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.CiteOverrideAlpha
-import cdx.Text
 
 # CiteOverrideMain -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -24,6 +24,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("cite-shared 1 = ", Text.show_int(CiteOverrideAlpha.citeoverridealpha_cite_shared(1)))))
+	line!(CceText.printed(CceText.concat("cite-shared 1 = ", CceText.show_int(CiteOverrideAlpha.citeoverridealpha_cite_shared(1)))))
 	Ok({})
 }

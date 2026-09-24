@@ -23,7 +23,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # RecursiveEq -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -65,16 +65,16 @@ eq_Chain = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed((if eq_Nest(Wrap(Leaf), Wrap(Leaf)) { "eq" } else { "ne" })))
-	line!(Text.printed((if eq_Nest(Wrap(Wrap(Leaf)), Wrap(Wrap(Leaf))) { "eq" } else { "ne" })))
-	line!(Text.printed((if eq_Nest(Leaf, Leaf) { "eq" } else { "ne" })))
-	line!(Text.printed((if eq_Nest(Wrap(Leaf), Leaf) { "eq" } else { "ne" })))
-	line!(Text.printed((if eq_Nest(Wrap(Wrap(Leaf)), Wrap(Leaf)) { "eq" } else { "ne" })))
-	line!(Text.printed((if (if eq_Nest(Wrap(Leaf), Wrap(Leaf)) { False } else { True }) { "ne" } else { "eq" })))
-	line!(Text.printed((if (if eq_Nest(Wrap(Leaf), Leaf) { False } else { True }) { "ne" } else { "eq" })))
-	line!(Text.printed((if eq_Chain(Link(1, Link(2, End)), Link(1, Link(2, End))) { "eq" } else { "ne" })))
-	line!(Text.printed((if eq_Chain(Link(1, Link(2, End)), Link(1, Link(3, End))) { "eq" } else { "ne" })))
-	line!(Text.printed((if eq_Chain(Link(1, Link(2, End)), Link(1, End)) { "eq" } else { "ne" })))
-	line!(Text.printed((if eq_Chain(End, End) { "eq" } else { "ne" })))
+	line!(CceText.printed((if eq_Nest(Wrap(Leaf), Wrap(Leaf)) { "eq" } else { "ne" })))
+	line!(CceText.printed((if eq_Nest(Wrap(Wrap(Leaf)), Wrap(Wrap(Leaf))) { "eq" } else { "ne" })))
+	line!(CceText.printed((if eq_Nest(Leaf, Leaf) { "eq" } else { "ne" })))
+	line!(CceText.printed((if eq_Nest(Wrap(Leaf), Leaf) { "eq" } else { "ne" })))
+	line!(CceText.printed((if eq_Nest(Wrap(Wrap(Leaf)), Wrap(Leaf)) { "eq" } else { "ne" })))
+	line!(CceText.printed((if (if eq_Nest(Wrap(Leaf), Wrap(Leaf)) { False } else { True }) { "ne" } else { "eq" })))
+	line!(CceText.printed((if (if eq_Nest(Wrap(Leaf), Leaf) { False } else { True }) { "ne" } else { "eq" })))
+	line!(CceText.printed((if eq_Chain(Link(1, Link(2, End)), Link(1, Link(2, End))) { "eq" } else { "ne" })))
+	line!(CceText.printed((if eq_Chain(Link(1, Link(2, End)), Link(1, Link(3, End))) { "eq" } else { "ne" })))
+	line!(CceText.printed((if eq_Chain(Link(1, Link(2, End)), Link(1, End)) { "eq" } else { "ne" })))
+	line!(CceText.printed((if eq_Chain(End, End) { "eq" } else { "ne" })))
 	Ok({})
 }

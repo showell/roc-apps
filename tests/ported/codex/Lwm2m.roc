@@ -1,11 +1,11 @@
 # Lwm2m -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
-import Text
+import CceText
 
 Lwm2m :: [].{
 	Lwm2mObjectId : { id : I64, instance : I64 }
 	Lwm2mResourceId : { object_id : I64, instance : I64, resource : I64 }
-	Lwm2mValue : [Lwm2mString(Text), Lwm2mInteger(I64), Lwm2mFloat(I64, I64), Lwm2mBoolean(Bool), Lwm2mOpaque(List(I64)), Lwm2mTime(I64)]
-	Lwm2mRegistration : { endpoint : Text, lifetime : I64, binding : Text, objects : List(I64) }
+	Lwm2mValue : [Lwm2mString(CceText), Lwm2mInteger(I64), Lwm2mFloat(I64, I64), Lwm2mBoolean(Bool), Lwm2mOpaque(List(I64)), Lwm2mTime(I64)]
+	Lwm2mRegistration : { endpoint : CceText, lifetime : I64, binding : CceText, objects : List(I64) }
 	LwmFirmwareState : [FwIdle, FwDownloading, FwDownloaded, FwUpdating]
 
 	lwm2m_obj_security : I64
@@ -47,11 +47,11 @@ Lwm2m :: [].{
 	lwm2m_obj_accelerometer : I64
 	lwm2m_obj_accelerometer = 3313
 
-	lwm2m_uri : I64, I64, I64 -> Text
-	lwm2m_uri = |object_id, instance_id, resource_id| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("/", Text.show_int(object_id)), "/"), Text.show_int(instance_id)), "/"), Text.show_int(resource_id))
+	lwm2m_uri : I64, I64, I64 -> CceText
+	lwm2m_uri = |object_id, instance_id, resource_id| CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("/", CceText.show_int(object_id)), "/"), CceText.show_int(instance_id)), "/"), CceText.show_int(resource_id))
 
-	lwm2m_object_uri : I64, I64 -> Text
-	lwm2m_object_uri = |object_id, instance_id| Text.concat(Text.concat(Text.concat("/", Text.show_int(object_id)), "/"), Text.show_int(instance_id))
+	lwm2m_object_uri : I64, I64 -> CceText
+	lwm2m_object_uri = |object_id, instance_id| CceText.concat(CceText.concat(CceText.concat("/", CceText.show_int(object_id)), "/"), CceText.show_int(instance_id))
 
 	lwm2m_tlv_type_resource : I64
 	lwm2m_tlv_type_resource = 3
@@ -68,17 +68,17 @@ Lwm2m :: [].{
 	default_lwm2m_registration : Lwm2m.Lwm2mRegistration
 	default_lwm2m_registration = { endpoint: "codex-device", lifetime: 300, binding: "U", objects: [lwm2m_obj_device, lwm2m_obj_firmware] }
 
-	lwm2m_registration_path : Lwm2m.Lwm2mRegistration -> Text
-	lwm2m_registration_path = |reg| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("/rd?ep=", reg.endpoint), "&lt="), Text.show_int(reg.lifetime)), "&b="), reg.binding)
+	lwm2m_registration_path : Lwm2m.Lwm2mRegistration -> CceText
+	lwm2m_registration_path = |reg| CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("/rd?ep=", reg.endpoint), "&lt="), CceText.show_int(reg.lifetime)), "&b="), reg.binding)
 
-	lwm2m_registration_payload : Lwm2m.Lwm2mRegistration -> Text
+	lwm2m_registration_payload : Lwm2m.Lwm2mRegistration -> CceText
 	lwm2m_registration_payload = |reg| lwm2m_link_list(reg.objects, 0, U64.to_i64_wrap(List.len(reg.objects)), "")
 
-	lwm2m_link_list : List(I64), I64, I64, Text -> Text
+	lwm2m_link_list : List(I64), I64, I64, CceText -> CceText
 	lwm2m_link_list = |objs, i, n, acc| (if (i >= n) { acc } else { ({
-		link = Text.concat(Text.concat("</", Text.show_int((List.get(objs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))), ">")
+		link = CceText.concat(CceText.concat("</", CceText.show_int((List.get(objs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))), ">")
 		sep = (if (i > 0) { "," } else { "" })
-		lwm2m_link_list(objs, (i + 1), n, Text.concat(Text.concat(acc, sep), link))
+		lwm2m_link_list(objs, (i + 1), n, CceText.concat(CceText.concat(acc, sep), link))
 	}) })
 
 	lwm2m_res_fw_package : I64

@@ -27,8 +27,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.MathLib
-import cdx.Text
 
 # LirTestCross -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -56,20 +56,20 @@ lt_modone = |n| (if (MathLib.math_mod(n, 2) == 1) { 1 } else { 0 })
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.show_int(lt_even(4))))
-	line!(Text.printed(Text.show_int(lt_even(7))))
-	line!(Text.printed(Text.show_int(lt_odd(7))))
-	line!(Text.printed(Text.show_int(lt_odd(4))))
-	line!(Text.printed(Text.show_int(lt_mod4(8))))
-	line!(Text.printed(Text.show_int(lt_mod4(6))))
-	line!(Text.printed(Text.show_int(lt_mod8(16))))
-	line!(Text.printed(Text.show_int(lt_mod8(12))))
-	line!(Text.printed(Text.show_int(lt_mod3(6))))
-	line!(Text.printed(Text.show_int(lt_mod3(7))))
-	line!(Text.printed(Text.show_int(lt_modone(7))))
-	line!(Text.printed(Text.show_int(lt_modone(4))))
-	line!(Text.printed(Text.show_int(lt_even((-4)))))
-	line!(Text.printed(Text.show_int(lt_even((-5)))))
-	line!(Text.printed(Text.show_int(lt_odd((-5)))))
+	line!(CceText.printed(CceText.show_int(lt_even(4))))
+	line!(CceText.printed(CceText.show_int(lt_even(7))))
+	line!(CceText.printed(CceText.show_int(lt_odd(7))))
+	line!(CceText.printed(CceText.show_int(lt_odd(4))))
+	line!(CceText.printed(CceText.show_int(lt_mod4(8))))
+	line!(CceText.printed(CceText.show_int(lt_mod4(6))))
+	line!(CceText.printed(CceText.show_int(lt_mod8(16))))
+	line!(CceText.printed(CceText.show_int(lt_mod8(12))))
+	line!(CceText.printed(CceText.show_int(lt_mod3(6))))
+	line!(CceText.printed(CceText.show_int(lt_mod3(7))))
+	line!(CceText.printed(CceText.show_int(lt_modone(7))))
+	line!(CceText.printed(CceText.show_int(lt_modone(4))))
+	line!(CceText.printed(CceText.show_int(lt_even((-4)))))
+	line!(CceText.printed(CceText.show_int(lt_even((-5)))))
+	line!(CceText.printed(CceText.show_int(lt_odd((-5)))))
 	Ok({})
 }

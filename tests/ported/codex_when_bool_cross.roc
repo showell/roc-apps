@@ -16,7 +16,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # WhenBoolCross -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -53,9 +53,9 @@ frm = |n, acc| (match (n == 0) {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("spin2: ", Text.show_int(spin2(5, 100)))))
-	line!(Text.printed(Text.concat("spin3: ", Text.show_int(spin3(5, 100, 0)))))
-	line!(Text.printed(Text.concat("cross: ", Text.show_int(cross(5, 100)))))
-	line!(Text.printed(Text.concat("frm: ", Text.show_int(frm(5, 100)))))
+	line!(CceText.printed(CceText.concat("spin2: ", CceText.show_int(spin2(5, 100)))))
+	line!(CceText.printed(CceText.concat("spin3: ", CceText.show_int(spin3(5, 100, 0)))))
+	line!(CceText.printed(CceText.concat("cross: ", CceText.show_int(cross(5, 100)))))
+	line!(CceText.printed(CceText.concat("frm: ", CceText.show_int(frm(5, 100)))))
 	Ok({})
 }

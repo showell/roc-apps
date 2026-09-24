@@ -21,8 +21,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Prelude
-import cdx.Text
 
 # BoundsProver -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -78,14 +78,14 @@ from_negate = |a| ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.show_int(from_literal.val)))
-	line!(Text.printed(Text.show_int(from_add(100, 150).val)))
-	line!(Text.printed(Text.show_int(from_sub(30).val)))
-	line!(Text.printed(Text.show_int(from_mul(8).val)))
-	line!(Text.printed(Text.show_int(from_div(500).val)))
-	line!(Text.printed(Text.show_int(from_mod(1000).val)))
-	line!(Text.printed(Text.show_int(from_bitand(1000).val)))
-	line!(Text.printed(Text.show_int(from_if(50).val)))
-	line!(Text.printed(Text.show_int(from_negate(75).val)))
+	line!(CceText.printed(CceText.show_int(from_literal.val)))
+	line!(CceText.printed(CceText.show_int(from_add(100, 150).val)))
+	line!(CceText.printed(CceText.show_int(from_sub(30).val)))
+	line!(CceText.printed(CceText.show_int(from_mul(8).val)))
+	line!(CceText.printed(CceText.show_int(from_div(500).val)))
+	line!(CceText.printed(CceText.show_int(from_mod(1000).val)))
+	line!(CceText.printed(CceText.show_int(from_bitand(1000).val)))
+	line!(CceText.printed(CceText.show_int(from_if(50).val)))
+	line!(CceText.printed(CceText.show_int(from_negate(75).val)))
 	Ok({})
 }

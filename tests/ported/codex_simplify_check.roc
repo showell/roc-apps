@@ -22,7 +22,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # SimplifyCheck -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -51,7 +51,7 @@ sc_bool : I64 -> I64
 sc_bool = |_n| (if (True or False) { 7 } else { 8 })
 
 sc_text : I64 -> I64
-sc_text = |_n| Text.len("hello")
+sc_text = |_n| CceText.len("hello")
 
 sc_dead : I64 -> I64
 sc_dead = |n| ({
@@ -91,15 +91,15 @@ lam_0 = |x, n_1| (x + n_1)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.show_int(sc_fold(0))))
-	line!(Text.printed(Text.show_int(sc_cmp(0))))
-	line!(Text.printed(Text.show_int(sc_neg(0))))
-	line!(Text.printed(Text.show_int(sc_bool(0))))
-	line!(Text.printed(Text.show_int(sc_text(0))))
-	line!(Text.printed(Text.show_int(sc_dead(0))))
-	line!(Text.printed(Text.show_int(sc_copy(0))))
-	line!(Text.printed(Text.show_int(sc_once(0))))
-	line!(Text.printed(Text.show_int(sc_cap(0))))
-	line!(Text.printed(Text.show_int(sc_lamcap(0))))
+	line!(CceText.printed(CceText.show_int(sc_fold(0))))
+	line!(CceText.printed(CceText.show_int(sc_cmp(0))))
+	line!(CceText.printed(CceText.show_int(sc_neg(0))))
+	line!(CceText.printed(CceText.show_int(sc_bool(0))))
+	line!(CceText.printed(CceText.show_int(sc_text(0))))
+	line!(CceText.printed(CceText.show_int(sc_dead(0))))
+	line!(CceText.printed(CceText.show_int(sc_copy(0))))
+	line!(CceText.printed(CceText.show_int(sc_once(0))))
+	line!(CceText.printed(CceText.show_int(sc_cap(0))))
+	line!(CceText.printed(CceText.show_int(sc_lamcap(0))))
 	Ok({})
 }

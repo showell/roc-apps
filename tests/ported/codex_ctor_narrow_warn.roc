@@ -13,7 +13,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # CtorNarrowWarn -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -40,6 +40,6 @@ eq_Byteish = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.show_int(use_byte(make_byte_narrowed(42)))))
+	line!(CceText.printed(CceText.show_int(use_byte(make_byte_narrowed(42)))))
 	Ok({})
 }

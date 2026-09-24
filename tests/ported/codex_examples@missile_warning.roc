@@ -18,7 +18,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # MissileWarning -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -49,7 +49,7 @@ select_response = |threat, s| (match threat {
 is_imminent : SensorReading -> Bool
 is_imminent = |s| ((s.range_m < 1000) and (s.velocity > 2000))
 
-threat_name : ThreatLevel -> Text
+threat_name : ThreatLevel -> CceText
 threat_name = |t| (match t {
 	None => "NONE"
 	Low => "LOW"
@@ -58,7 +58,7 @@ threat_name = |t| (match t {
 	Critical => "CRITICAL"
 })
 
-response_name : Countermeasure -> Text
+response_name : Countermeasure -> CceText
 response_name = |c| (match c {
 	NoAction => "HOLD"
 	Chaff => "CHAFF"
@@ -124,18 +124,18 @@ main! = |_args| {
 		response = select_response(threat, inbound)
 		({
 			({
-				line!(Text.printed(Text.concat("THREAT: ", threat_name(threat))))
-				line!(Text.printed(Text.concat("ACTION: ", response_name(response))))
-				line!(Text.printed(Text.concat("IMMINENT: ", (if is_imminent(inbound) { "YES" } else { "NO" }))))
+				line!(CceText.printed(CceText.concat("THREAT: ", threat_name(threat))))
+				line!(CceText.printed(CceText.concat("ACTION: ", response_name(response))))
+				line!(CceText.printed(CceText.concat("IMMINENT: ", (if is_imminent(inbound) { "YES" } else { "NO" }))))
 			})
 			({
 				far_contact = { bearing: 270, range_m: 45000, velocity: 300, ir_signal: 50 }
 				threat2 = classify_threat(far_contact)
 				response2 = select_response(threat2, far_contact)
 				({
-					line!(Text.printed(Text.concat("THREAT: ", threat_name(threat2))))
-					line!(Text.printed(Text.concat("ACTION: ", response_name(response2))))
-					line!(Text.printed(Text.concat("IMMINENT: ", (if is_imminent(far_contact) { "YES" } else { "NO" }))))
+					line!(CceText.printed(CceText.concat("THREAT: ", threat_name(threat2))))
+					line!(CceText.printed(CceText.concat("ACTION: ", response_name(response2))))
+					line!(CceText.printed(CceText.concat("IMMINENT: ", (if is_imminent(far_contact) { "YES" } else { "NO" }))))
 				})
 			})
 		})

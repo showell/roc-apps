@@ -13,7 +13,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # RocRecursiveVar -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -32,6 +32,6 @@ f = |n| ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.show_int(f(3))))
+	line!(CceText.printed(CceText.show_int(f(3))))
 	Ok({})
 }

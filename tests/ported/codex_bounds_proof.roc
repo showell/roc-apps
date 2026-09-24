@@ -22,8 +22,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Prelude
-import cdx.Text
 
 # BoundsProof -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -110,15 +110,15 @@ test_sub = ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.show_int(test_literal)))
-	line!(Text.printed(Text.show_int(test_field)))
-	line!(Text.printed(Text.show_int(test_add)))
-	line!(Text.printed(Text.show_int(test_div)))
-	line!(Text.printed(Text.show_int(test_mod)))
-	line!(Text.printed(Text.show_int(test_mul)))
-	line!(Text.printed(Text.show_int(test_bitand)))
-	line!(Text.printed(Text.show_int(test_shru)))
-	line!(Text.printed(Text.show_int(test_if)))
-	line!(Text.printed(Text.show_int(test_sub)))
+	line!(CceText.printed(CceText.show_int(test_literal)))
+	line!(CceText.printed(CceText.show_int(test_field)))
+	line!(CceText.printed(CceText.show_int(test_add)))
+	line!(CceText.printed(CceText.show_int(test_div)))
+	line!(CceText.printed(CceText.show_int(test_mod)))
+	line!(CceText.printed(CceText.show_int(test_mul)))
+	line!(CceText.printed(CceText.show_int(test_bitand)))
+	line!(CceText.printed(CceText.show_int(test_shru)))
+	line!(CceText.printed(CceText.show_int(test_if)))
+	line!(CceText.printed(CceText.show_int(test_sub)))
 	Ok({})
 }

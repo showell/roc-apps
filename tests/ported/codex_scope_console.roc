@@ -14,18 +14,18 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # ScopeConsole -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-say! : Text => {}
-say! = |m| line!(Text.printed(m))
+say! : CceText => {}
+say! = |m| line!(CceText.printed(m))
 
-wide! : Text => {}
-wide! = |m| line!(Text.printed(m))
+wide! : CceText => {}
+wide! = |m| line!(CceText.printed(m))
 
 # --- Entry ---
 

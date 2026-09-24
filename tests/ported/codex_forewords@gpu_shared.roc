@@ -13,8 +13,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Shared
-import cdx.Text
 
 # FwdGpuSharedTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -26,7 +26,7 @@ line! = |s| echo!(Str.concat(s, "\n"))
 main! = |_args| {
 	({
 		arr = Shared.make_shared_array(0, 64)
-		line!(Text.printed(Text.show_int(arr.sa_count)))
+		line!(CceText.printed(CceText.show_int(arr.sa_count)))
 	})
 	Ok({})
 }

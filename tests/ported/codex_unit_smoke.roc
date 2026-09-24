@@ -19,7 +19,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # UnitSmoke -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -48,13 +48,13 @@ main! = |_args| {
 		s = minute_to_Second(m)
 		built = make_duration(99)
 		({
-			line!(Text.printed(Text.show_int(t1)))
-			line!(Text.printed(Text.show_int(d)))
-			line!(Text.printed(Text.show_int(sum)))
-			line!(Text.printed(Text.show_int(scaled)))
-			line!(Text.printed((if (t1 > t2) { "True" } else { "False" })))
-			line!(Text.printed(Text.show_int(s)))
-			line!(Text.printed(Text.show_int(built)))
+			line!(CceText.printed(CceText.show_int(t1)))
+			line!(CceText.printed(CceText.show_int(d)))
+			line!(CceText.printed(CceText.show_int(sum)))
+			line!(CceText.printed(CceText.show_int(scaled)))
+			line!(CceText.printed((if (t1 > t2) { "True" } else { "False" })))
+			line!(CceText.printed(CceText.show_int(s)))
+			line!(CceText.printed(CceText.show_int(built)))
 		})
 	})
 	Ok({})

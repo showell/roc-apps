@@ -14,20 +14,20 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.ListUtils
-import cdx.Text
 
 # ListComprehensionCopy -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-report : I64 -> Text
+report : I64 -> CceText
 report = |_x| ({
 	base = [7]
 	copied = ListUtils.map_list(lam_0, base)
 	grown = List.append(copied, 9)
-	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("base-len=", Text.show_int(U64.to_i64_wrap(List.len(base)))), " grown-len="), Text.show_int(U64.to_i64_wrap(List.len(grown)))), " grown-head="), Text.show_int((List.get(grown, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))))
+	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("base-len=", CceText.show_int(U64.to_i64_wrap(List.len(base)))), " grown-len="), CceText.show_int(U64.to_i64_wrap(List.len(grown)))), " grown-head="), CceText.show_int((List.get(grown, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))))
 })
 
 lam_0 : I64 -> I64
@@ -36,7 +36,7 @@ lam_0 = |r| r
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(report(0)))
+	line!(CceText.printed(report(0)))
 	line!(I64.to_str(0))
 	Ok({})
 }

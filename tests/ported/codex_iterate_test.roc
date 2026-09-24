@@ -18,8 +18,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Iterate
-import cdx.Text
 
 # IterateTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -50,12 +50,12 @@ main! = |_args| {
 		first3 = Iterate.list_take_generic(xs, 3)
 		last2 = Iterate.list_drop_generic(xs, 3)
 		({
-			line!(Text.printed(Text.show_int(U64.to_i64_wrap(List.len(doubled)))))
-			line!(Text.printed(Text.show_int(U64.to_i64_wrap(List.len(evens)))))
-			line!(Text.printed(Text.show_int(idx)))
-			line!(Text.printed(Text.show_int(count)))
-			line!(Text.printed(Text.show_int(U64.to_i64_wrap(List.len(first3)))))
-			line!(Text.printed(Text.show_int(U64.to_i64_wrap(List.len(last2)))))
+			line!(CceText.printed(CceText.show_int(U64.to_i64_wrap(List.len(doubled)))))
+			line!(CceText.printed(CceText.show_int(U64.to_i64_wrap(List.len(evens)))))
+			line!(CceText.printed(CceText.show_int(idx)))
+			line!(CceText.printed(CceText.show_int(count)))
+			line!(CceText.printed(CceText.show_int(U64.to_i64_wrap(List.len(first3)))))
+			line!(CceText.printed(CceText.show_int(U64.to_i64_wrap(List.len(last2)))))
 		})
 	})
 	Ok({})

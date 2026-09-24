@@ -22,7 +22,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # ActLetScope -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -48,24 +48,24 @@ main! = |_args| {
 	({
 		a = bump(1)
 		({
-			line!(Text.printed(Text.concat("a: ", Text.show_int(a))))
-			line!(Text.printed(Text.concat("a-after: ", Text.show_int(a))))
+			line!(CceText.printed(CceText.concat("a: ", CceText.show_int(a))))
+			line!(CceText.printed(CceText.concat("a-after: ", CceText.show_int(a))))
 			({
 				b = bump(a)
 				c = bump(b)
 				d = bump(c)
 				({
-					line!(Text.printed(Text.concat("chain-in-body: ", Text.show_int(d))))
-					line!(Text.printed(Text.concat("chain-b: ", Text.show_int(b))))
-					line!(Text.printed(Text.concat("chain-c: ", Text.show_int(c))))
-					line!(Text.printed(Text.concat("chain-d: ", Text.show_int(d))))
-					line!(Text.printed(Text.concat("chain-sum: ", Text.show_int((((a + b) + c) + d)))))
+					line!(CceText.printed(CceText.concat("chain-in-body: ", CceText.show_int(d))))
+					line!(CceText.printed(CceText.concat("chain-b: ", CceText.show_int(b))))
+					line!(CceText.printed(CceText.concat("chain-c: ", CceText.show_int(c))))
+					line!(CceText.printed(CceText.concat("chain-d: ", CceText.show_int(d))))
+					line!(CceText.printed(CceText.concat("chain-sum: ", CceText.show_int((((a + b) + c) + d)))))
 					({
 						a_1 = 100
 						({
-							line!(Text.printed(Text.concat("shadowed: ", Text.show_int(a_1))))
-							line!(Text.printed(Text.concat("shadowed-after: ", Text.show_int(a_1))))
-							line!(Text.printed(Text.concat("arm-local: ", Text.show_int(arm_local(2)))))
+							line!(CceText.printed(CceText.concat("shadowed: ", CceText.show_int(a_1))))
+							line!(CceText.printed(CceText.concat("shadowed-after: ", CceText.show_int(a_1))))
+							line!(CceText.printed(CceText.concat("arm-local: ", CceText.show_int(arm_local(2)))))
 						})
 					})
 				})

@@ -1,19 +1,19 @@
 # Sound -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+import CceText
 import Maybe
-import Text
 
 Sound :: [].{
 	Waveform : [WavSine, WavSquare, WavTriangle, WavNoise, WavSilence]
-	SoundEffect : { snd_name : Text, snd_wave : Sound.Waveform, snd_freq : I64, snd_duration : I64, snd_volume : I64, snd_priority : I64 }
+	SoundEffect : { snd_name : CceText, snd_wave : Sound.Waveform, snd_freq : I64, snd_duration : I64, snd_volume : I64, snd_priority : I64 }
 	SoundQueue : { sq_pending : List(Sound.SoundEffect), sq_count : I64, sq_max : I64 }
 	SoundStep : { ss_effect : Sound.SoundEffect, ss_delay : I64 }
 	SoundSeq : { sseq_steps : List(Sound.SoundStep), sseq_count : I64, sseq_current : I64, sseq_elapsed : I64, sseq_done : Bool }
 	SoundSeqResult : { ssr_seq : Sound.SoundSeq, ssr_queue : Sound.SoundQueue }
 
-	sound_effect : Text, Sound.Waveform, I64, I64, I64 -> Sound.SoundEffect
+	sound_effect : CceText, Sound.Waveform, I64, I64, I64 -> Sound.SoundEffect
 	sound_effect = |name, wave, freq, dur, vol| { snd_name: name, snd_wave: wave, snd_freq: freq, snd_duration: dur, snd_volume: vol, snd_priority: 0 }
 
-	sound_effect_pri : Text, Sound.Waveform, I64, I64, I64, I64 -> Sound.SoundEffect
+	sound_effect_pri : CceText, Sound.Waveform, I64, I64, I64, I64 -> Sound.SoundEffect
 	sound_effect_pri = |name, wave, freq, dur, vol, pri| { snd_name: name, snd_wave: wave, snd_freq: freq, snd_duration: dur, snd_volume: vol, snd_priority: pri }
 
 	sound_queue_new : I64 -> Sound.SoundQueue
@@ -72,7 +72,7 @@ Sound :: [].{
 		}) } else { { ssr_seq: { sseq_steps: seq.sseq_steps, sseq_count: seq.sseq_count, sseq_current: seq.sseq_current, sseq_elapsed: new_elapsed, sseq_done: False }, ssr_queue: sq } })
 	}) }) })
 
-	waveform_name : Sound.Waveform -> Text
+	waveform_name : Sound.Waveform -> CceText
 	waveform_name = |w| (match w {
 		WavSine => "sine"
 		WavSquare => "square"
@@ -81,8 +81,8 @@ Sound :: [].{
 		WavSilence => "silence"
 	})
 
-	format_sound : Sound.SoundEffect -> Text
-	format_sound = |s| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(s.snd_name, " "), waveform_name(s.snd_wave)), " "), Text.show_int(s.snd_freq)), "hz "), Text.show_int(s.snd_duration)), "ms vol="), Text.show_int(s.snd_volume))
+	format_sound : Sound.SoundEffect -> CceText
+	format_sound = |s| CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(s.snd_name, " "), waveform_name(s.snd_wave)), " "), CceText.show_int(s.snd_freq)), "hz "), CceText.show_int(s.snd_duration)), "ms vol="), CceText.show_int(s.snd_volume))
 
 	eq_Waveform : Sound.Waveform, Sound.Waveform -> Bool
 	eq_Waveform = |ex, ey| (match ex {

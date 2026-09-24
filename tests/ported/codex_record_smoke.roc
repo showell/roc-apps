@@ -21,7 +21,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # RecordSmoke -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -32,39 +32,39 @@ Rect : { origin : Point, width : I64, height : I64 }
 Color : [Red, Green, Blue]
 Shape : [Circle(Color, I64), Square(Color, I64)]
 Wrapped : [Wrapped(Color, Shape)]
-TestRec : { name : Text, effect : I64, value : I64 }
-Inner : { x_val : I64, y_val : I64, label : Text }
+TestRec : { name : CceText, effect : I64, value : I64 }
+Inner : { x_val : I64, y_val : I64, label : CceText }
 Outer : [OWrapped(Inner), OPlain(I64), OEmpty]
 Rec1 : { rx : I64, ry : I64 }
-Rec2 : { ra : Text, rb : I64 }
+Rec2 : { ra : CceText, rb : I64 }
 V : [VarA(Rec1), VarB(Rec2)]
-Box_ : { box_label : Text, apply : (I64 -> Text) }
-Entry : { ent_name : Text, emit : (I64 -> Text) }
+Box_ : { box_label : CceText, apply : (I64 -> CceText) }
+Entry : { ent_name : CceText, emit : (I64 -> CceText) }
 
 area : Rect -> I64
 area = |r| (r.width * r.height)
 
-describe_rect : Rect -> Text
-describe_rect = |r| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("rect at ", Text.show_int(r.origin.x)), ","), Text.show_int(r.origin.y)), " area="), Text.show_int(area(r)))
+describe_rect : Rect -> CceText
+describe_rect = |r| CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("rect at ", CceText.show_int(r.origin.x)), ","), CceText.show_int(r.origin.y)), " area="), CceText.show_int(area(r)))
 
-color_name : Color -> Text
+color_name : Color -> CceText
 color_name = |c| (match c {
 	Red => "red"
 	Green => "green"
 	Blue => "blue"
 })
 
-describe_shape : Shape -> Text
+describe_shape : Shape -> CceText
 describe_shape = |s| (match s {
-	Circle(c, r) => Text.concat(Text.concat(Text.concat("circle-", color_name(c)), "-r"), Text.show_int(r))
-	Square(c, side) => Text.concat(Text.concat(Text.concat("square-", color_name(c)), "-s"), Text.show_int(side))
+	Circle(c, r) => CceText.concat(CceText.concat(CceText.concat("circle-", color_name(c)), "-r"), CceText.show_int(r))
+	Square(c, side) => CceText.concat(CceText.concat(CceText.concat("square-", color_name(c)), "-s"), CceText.show_int(side))
 })
 
-describe_wrapped : Wrapped -> Text
+describe_wrapped : Wrapped -> CceText
 describe_wrapped = |w| (match w {
 	Wrapped(c, s) => (match s {
-		Circle(_c2, r) => Text.concat(Text.concat(color_name(c), " circle r="), Text.show_int(r))
-		Square(_c2, side) => Text.concat(Text.concat(color_name(c), " square s="), Text.show_int(side))
+		Circle(_c2, r) => CceText.concat(CceText.concat(color_name(c), " circle r="), CceText.show_int(r))
+		Square(_c2, side) => CceText.concat(CceText.concat(color_name(c), " square s="), CceText.show_int(side))
 	})
 })
 
@@ -87,18 +87,18 @@ extract_int = |v| (match v {
 	VarB(r) => r.rb
 })
 
-make_box : Text, I64 -> Box_
+make_box : CceText, I64 -> Box_
 make_box = |lbl, offset| { box_label: lbl, apply: ({
 	dev__1 = offset
 	dev__2 = lbl
 	|dev__3| lam_0(dev__1, dev__2, dev__3)
 }) }
 
-emit_one : I64 -> Text
-emit_one = |x| Text.concat("one:", Text.show_int(x))
+emit_one : I64 -> CceText
+emit_one = |x| CceText.concat("one:", CceText.show_int(x))
 
-emit_two : I64 -> Text
-emit_two = |x| Text.concat("two:", Text.show_int((x + x)))
+emit_two : I64 -> CceText
+emit_two = |x| CceText.concat("two:", CceText.show_int((x + x)))
 
 eq_Color : Color, Color -> Bool
 eq_Color = |ex, ey| (match ex {
@@ -164,29 +164,29 @@ eq_V = |ex, ey| (match ex {
 	})
 })
 
-lam_0 : I64, Text, I64 -> Text
-lam_0 = |offset, lbl, x| Text.concat(Text.concat(lbl, ":"), Text.show_int((x + offset)))
+lam_0 : I64, CceText, I64 -> CceText
+lam_0 = |offset, lbl, x| CceText.concat(CceText.concat(lbl, ":"), CceText.show_int((x + offset)))
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(describe_rect({ origin: { x: 10, y: 20 }, width: 7, height: 3 })))
+	line!(CceText.printed(describe_rect({ origin: { x: 10, y: 20 }, width: 7, height: 3 })))
 	({
 		tr = make_test(5)
 		({
-			line!(Text.printed(Text.show_int((tr.effect + tr.value))))
-			line!(Text.printed(describe_shape(Circle(Green, 5))))
-			line!(Text.printed(describe_wrapped(Wrapped(Red, Circle(Red, 5)))))
-			line!(Text.printed(Text.show_int(use_wrapped(make_wrapped(5)))))
-			line!(Text.printed(Text.show_int(extract_int(VarA({ rx: 42, ry: 7 })))))
-			line!(Text.printed(Text.show_int(extract_int(VarB({ ra: "hello", rb: 99 })))))
+			line!(CceText.printed(CceText.show_int((tr.effect + tr.value))))
+			line!(CceText.printed(describe_shape(Circle(Green, 5))))
+			line!(CceText.printed(describe_wrapped(Wrapped(Red, Circle(Red, 5)))))
+			line!(CceText.printed(CceText.show_int(use_wrapped(make_wrapped(5)))))
+			line!(CceText.printed(CceText.show_int(extract_int(VarA({ rx: 42, ry: 7 })))))
+			line!(CceText.printed(CceText.show_int(extract_int(VarB({ ra: "hello", rb: 99 })))))
 			({
 				b1 = make_box("a", 10)
 				({
-					line!(Text.printed((b1.apply)(3)))
+					line!(CceText.printed((b1.apply)(3)))
 					({
 						e = { ent_name: "one", emit: emit_one }
-						line!(Text.printed((e.emit)(5)))
+						line!(CceText.printed((e.emit)(5)))
 					})
 				})
 			})

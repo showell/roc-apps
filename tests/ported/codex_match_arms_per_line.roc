@@ -20,14 +20,14 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # MatchArmsPerLine -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-one_line : I64 -> Text
+one_line : I64 -> CceText
 one_line = |n| (match n {
 	1 => "one"
 	2 => "two"
@@ -35,7 +35,7 @@ one_line = |n| (match n {
 	_ => "other"
 })
 
-many_per_line : I64 -> Text
+many_per_line : I64 -> CceText
 many_per_line = |n| (match n {
 	1 => "one"
 	2 => "two"
@@ -49,13 +49,13 @@ many_per_line = |n| (match n {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat(Text.concat(Text.concat(Text.concat("one-line: ", one_line(1)), one_line(2)), one_line(3)), one_line(9))))
-	line!(Text.printed(Text.concat("many-1: ", many_per_line(1))))
-	line!(Text.printed(Text.concat("many-2: ", many_per_line(2))))
-	line!(Text.printed(Text.concat("many-3: ", many_per_line(3))))
-	line!(Text.printed(Text.concat("many-4: ", many_per_line(4))))
-	line!(Text.printed(Text.concat("many-5: ", many_per_line(5))))
-	line!(Text.printed(Text.concat("many-6: ", many_per_line(6))))
-	line!(Text.printed(Text.concat("many-9: ", many_per_line(9))))
+	line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat(CceText.concat("one-line: ", one_line(1)), one_line(2)), one_line(3)), one_line(9))))
+	line!(CceText.printed(CceText.concat("many-1: ", many_per_line(1))))
+	line!(CceText.printed(CceText.concat("many-2: ", many_per_line(2))))
+	line!(CceText.printed(CceText.concat("many-3: ", many_per_line(3))))
+	line!(CceText.printed(CceText.concat("many-4: ", many_per_line(4))))
+	line!(CceText.printed(CceText.concat("many-5: ", many_per_line(5))))
+	line!(CceText.printed(CceText.concat("many-6: ", many_per_line(6))))
+	line!(CceText.printed(CceText.concat("many-9: ", many_per_line(9))))
 	Ok({})
 }

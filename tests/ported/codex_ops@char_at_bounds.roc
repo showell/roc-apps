@@ -16,28 +16,28 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # CharAtBounds -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-s : Text
+s : CceText
 s = "abcde"
 
-walk : I64, I64, Text -> Text
-walk = |i, n, acc| (if (i >= n) { acc } else { walk((i + 1), n, Text.concat(Text.concat(Text.concat(Text.concat(acc, " "), Text.show_int(i)), "="), Text.show_int(Text.char_code_at(s, i)))) })
+walk : I64, I64, CceText -> CceText
+walk = |i, n, acc| (if (i >= n) { acc } else { walk((i + 1), n, CceText.concat(CceText.concat(CceText.concat(CceText.concat(acc, " "), CceText.show_int(i)), "="), CceText.show_int(CceText.char_code_at(s, i)))) })
 
-walk_chars : I64, I64, Text -> Text
-walk_chars = |i, n, acc| (if (i >= n) { acc } else { walk_chars((i + 1), n, Text.concat(acc, Text.char_to_text(Text.char_at(s, i)))) })
+walk_chars : I64, I64, CceText -> CceText
+walk_chars = |i, n, acc| (if (i >= n) { acc } else { walk_chars((i + 1), n, CceText.concat(acc, CceText.char_to_text(CceText.char_at(s, i)))) })
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("codes:", walk(0, Text.len(s), ""))))
-	line!(Text.printed(Text.concat(Text.concat("chars=[", walk_chars(0, Text.len(s), "")), "]")))
-	line!(Text.printed(Text.concat("last-legal=", Text.show_int(Text.char_code_at(s, (Text.len(s) - 1))))))
-	line!(Text.printed(Text.concat("first=", Text.show_int(Text.char_code_at(s, 0)))))
+	line!(CceText.printed(CceText.concat("codes:", walk(0, CceText.len(s), ""))))
+	line!(CceText.printed(CceText.concat(CceText.concat("chars=[", walk_chars(0, CceText.len(s), "")), "]")))
+	line!(CceText.printed(CceText.concat("last-legal=", CceText.show_int(CceText.char_code_at(s, (CceText.len(s) - 1))))))
+	line!(CceText.printed(CceText.concat("first=", CceText.show_int(CceText.char_code_at(s, 0)))))
 	Ok({})
 }

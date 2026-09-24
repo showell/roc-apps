@@ -17,7 +17,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 import cdx.Usb
 import cdx.UsbAudio
 
@@ -26,47 +26,47 @@ import cdx.UsbAudio
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-test_setup_packet : Text
+test_setup_packet : CceText
 test_setup_packet = ({
 	pkt = Usb.usb_setup_get_descriptor(Usb.usb_desc_device, 0, 18)
 	bytes = Usb.usb_encode_setup(pkt)
-	Text.concat(Text.concat(Text.concat("setup: len=", Text.show_int(U64.to_i64_wrap(List.len(bytes)))), " req="), Text.show_int(pkt.sp_request))
+	CceText.concat(CceText.concat(CceText.concat("setup: len=", CceText.show_int(U64.to_i64_wrap(List.len(bytes)))), " req="), CceText.show_int(pkt.sp_request))
 })
 
-test_endpoint : Text
+test_endpoint : CceText
 test_endpoint = ({
 	bytes = [7, 5, 129, 1, 192, 0, 1]
 	ep = Usb.usb_parse_endpoint(bytes, 0)
-	Text.concat("ep: ", Usb.format_usb_endpoint(ep))
+	CceText.concat("ep: ", Usb.format_usb_endpoint(ep))
 })
 
-test_audio_format : Text
+test_audio_format : CceText
 test_audio_format = ({
 	cd = UsbAudio.audio_format_cd
-	Text.concat("cd: ", UsbAudio.format_audio_format(cd))
+	CceText.concat("cd: ", UsbAudio.format_audio_format(cd))
 })
 
-test_audio_frame : Text
+test_audio_frame : CceText
 test_audio_frame = ({
 	left = [500, (0 - 500)]
 	right = [300, (0 - 300)]
 	frame = UsbAudio.usb_audio_frame(left, right, UsbAudio.audio_format_cd)
-	Text.concat("frame: bytes=", Text.show_int(U64.to_i64_wrap(List.len(frame))))
+	CceText.concat("frame: bytes=", CceText.show_int(U64.to_i64_wrap(List.len(frame))))
 })
 
-test_latency : Text
+test_latency : CceText
 test_latency = ({
 	fmt = UsbAudio.audio_format_48k
-	Text.concat(Text.concat(Text.concat("latency-256=", Text.show_int(UsbAudio.usb_audio_latency_ms(fmt, 256))), "ms bps="), Text.show_int(UsbAudio.usb_audio_bytes_per_second(fmt)))
+	CceText.concat(CceText.concat(CceText.concat("latency-256=", CceText.show_int(UsbAudio.usb_audio_latency_ms(fmt, 256))), "ms bps="), CceText.show_int(UsbAudio.usb_audio_bytes_per_second(fmt)))
 })
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(test_setup_packet))
-	line!(Text.printed(test_endpoint))
-	line!(Text.printed(test_audio_format))
-	line!(Text.printed(test_audio_frame))
-	line!(Text.printed(test_latency))
+	line!(CceText.printed(test_setup_packet))
+	line!(CceText.printed(test_endpoint))
+	line!(CceText.printed(test_audio_format))
+	line!(CceText.printed(test_audio_frame))
+	line!(CceText.printed(test_latency))
 	Ok({})
 }

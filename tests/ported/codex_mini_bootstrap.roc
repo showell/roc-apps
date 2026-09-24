@@ -13,8 +13,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.ListUtils
-import cdx.Text
 
 # MiniBootstrapTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -23,7 +23,7 @@ line! = |s| echo!(Str.concat(s, "\n"))
 Color : [Red, Green, Blue(I64)]
 Point : { x : I64, y : I64 }
 
-show_color : Color -> Text
+show_color : Color -> CceText
 show_color = |c| (match c {
 	Red => "red"
 	Green => "green"
@@ -58,6 +58,6 @@ eq_Color = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed("mini-bootstrap works"))
+	line!(CceText.printed("mini-bootstrap works"))
 	Ok({})
 }

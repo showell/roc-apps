@@ -15,28 +15,28 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # UnitPatternLit -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Name : Text
+Name : CceText
 Count : I64
 
-classify_plain : Text -> Text
+classify_plain : CceText -> CceText
 classify_plain = |s| (match s {
 	"sin" => "matched"
 	_ => "fell-through"
 })
 
-classify_unit : Name -> Text
+classify_unit : Name -> CceText
 classify_unit = |n| (match n {
 	"sin" => "matched"
 	_ => "fell-through"
 })
 
-classify_int : Count -> Text
+classify_int : Count -> CceText
 classify_int = |c| (match c {
 	42 => "matched"
 	_ => "fell-through"
@@ -45,8 +45,8 @@ classify_int = |c| (match c {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("text-plain=", classify_plain("sin"))))
-	line!(Text.printed(Text.concat("text-unit =", classify_unit("sin"))))
-	line!(Text.printed(Text.concat("int-unit  =", classify_int(42))))
+	line!(CceText.printed(CceText.concat("text-plain=", classify_plain("sin"))))
+	line!(CceText.printed(CceText.concat("text-unit =", classify_unit("sin"))))
+	line!(CceText.printed(CceText.concat("int-unit  =", classify_int(42))))
 	Ok({})
 }

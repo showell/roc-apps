@@ -16,7 +16,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 import cdx.Wrap64
 
 # IntMulWrapping -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
@@ -36,9 +36,9 @@ by_plain = |a, b| (a * b)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("funnel   want -2446744073709551616: ", Text.show_int(Wrap64.w64_mul(big, big)))))
-	line!(Text.printed(Text.concat("param    want -2446744073709551616: ", Text.show_int(by_param(big, big)))))
-	line!(Text.printed(Text.concat("in-band  want 9000000000000000000: ", Text.show_int(by_plain(3000000000, 3000000000)))))
-	line!(Text.printed(Text.concat("small    want 42: ", Text.show_int(by_plain(6, 7)))))
+	line!(CceText.printed(CceText.concat("funnel   want -2446744073709551616: ", CceText.show_int(Wrap64.w64_mul(big, big)))))
+	line!(CceText.printed(CceText.concat("param    want -2446744073709551616: ", CceText.show_int(by_param(big, big)))))
+	line!(CceText.printed(CceText.concat("in-band  want 9000000000000000000: ", CceText.show_int(by_plain(3000000000, 3000000000)))))
+	line!(CceText.printed(CceText.concat("small    want 42: ", CceText.show_int(by_plain(6, 7)))))
 	Ok({})
 }

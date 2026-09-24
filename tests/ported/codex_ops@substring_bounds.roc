@@ -15,33 +15,33 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # SubstringBounds -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-s : Text
+s : CceText
 s = "abcde"
 
-row : I64, I64 -> Text
+row : I64, I64 -> CceText
 row = |start, len| ({
-	r = Text.substring(s, start, len)
-	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(" ", Text.show_int(start)), ","), Text.show_int(len)), "=["), r), "]")
+	r = CceText.substring(s, start, len)
+	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(" ", CceText.show_int(start)), ","), CceText.show_int(len)), "=["), r), "]")
 })
 
-from_start : I64, I64, I64, Text -> Text
-from_start = |start, len, room, acc| (if (len > room) { acc } else { from_start(start, (len + 1), room, Text.concat(acc, row(start, len))) })
+from_start : I64, I64, I64, CceText -> CceText
+from_start = |start, len, room, acc| (if (len > room) { acc } else { from_start(start, (len + 1), room, CceText.concat(acc, row(start, len))) })
 
-walk : I64, I64, Text -> Text
-walk = |start, n, acc| (if (start > n) { acc } else { walk((start + 1), n, Text.concat(acc, from_start(start, 0, (n - start), ""))) })
+walk : I64, I64, CceText -> CceText
+walk = |start, n, acc| (if (start > n) { acc } else { walk((start + 1), n, CceText.concat(acc, from_start(start, 0, (n - start), ""))) })
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(walk(0, Text.len(s), "")))
-	line!(Text.printed(Text.concat("len=", Text.show_int(Text.len(Text.substring(s, 0, 5))))))
-	line!(Text.printed(Text.concat("empty-at-end=", Text.show_int(Text.len(Text.substring(s, 5, 0))))))
+	line!(CceText.printed(walk(0, CceText.len(s), "")))
+	line!(CceText.printed(CceText.concat("len=", CceText.show_int(CceText.len(CceText.substring(s, 0, 5))))))
+	line!(CceText.printed(CceText.concat("empty-at-end=", CceText.show_int(CceText.len(CceText.substring(s, 5, 0))))))
 	Ok({})
 }

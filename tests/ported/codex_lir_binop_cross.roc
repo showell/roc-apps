@@ -23,7 +23,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # LirBinopCross -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -63,16 +63,16 @@ via_call = |n| (diff(n, 4) + scale(n))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("diff: ", Text.show_int(diff(9, 4)))))
-	line!(Text.printed(Text.concat("diff-neg: ", Text.show_int(diff(4, 9)))))
-	line!(Text.printed(Text.concat("addup: ", Text.show_int(addup(1, 2, 3)))))
-	line!(Text.printed(Text.concat("chain-sub: ", Text.show_int(chain_sub(20, 5, 3)))))
-	line!(Text.printed(Text.concat("scale: ", Text.show_int(scale(7)))))
-	line!(Text.printed(Text.concat("offset: ", Text.show_int(offset(7)))))
-	line!(Text.printed(Text.concat("poly: ", Text.show_int(poly(5)))))
-	line!(Text.printed(Text.concat("reuse: ", Text.show_int(reuse(6, 4)))))
-	line!(Text.printed(Text.concat("wide: ", Text.show_int(wide(1, 2, 3, 4, 5, 6, 7, 8)))))
-	line!(Text.printed(Text.concat("wide-sub: ", Text.show_int(wide_sub(100, 3, 5, 2, 7, 4, 6, 9)))))
-	line!(Text.printed(Text.concat("via-call: ", Text.show_int(via_call(10)))))
+	line!(CceText.printed(CceText.concat("diff: ", CceText.show_int(diff(9, 4)))))
+	line!(CceText.printed(CceText.concat("diff-neg: ", CceText.show_int(diff(4, 9)))))
+	line!(CceText.printed(CceText.concat("addup: ", CceText.show_int(addup(1, 2, 3)))))
+	line!(CceText.printed(CceText.concat("chain-sub: ", CceText.show_int(chain_sub(20, 5, 3)))))
+	line!(CceText.printed(CceText.concat("scale: ", CceText.show_int(scale(7)))))
+	line!(CceText.printed(CceText.concat("offset: ", CceText.show_int(offset(7)))))
+	line!(CceText.printed(CceText.concat("poly: ", CceText.show_int(poly(5)))))
+	line!(CceText.printed(CceText.concat("reuse: ", CceText.show_int(reuse(6, 4)))))
+	line!(CceText.printed(CceText.concat("wide: ", CceText.show_int(wide(1, 2, 3, 4, 5, 6, 7, 8)))))
+	line!(CceText.printed(CceText.concat("wide-sub: ", CceText.show_int(wide_sub(100, 3, 5, 2, 7, 4, 6, 9)))))
+	line!(CceText.printed(CceText.concat("via-call: ", CceText.show_int(via_call(10)))))
 	Ok({})
 }

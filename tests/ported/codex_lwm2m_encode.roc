@@ -13,8 +13,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Lwm2m
-import cdx.Text
 
 # Lwm2mEncodeTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -30,13 +30,13 @@ test_firmware_obj = (if (Lwm2m.lwm2m_obj_firmware == 5) { 1 } else { 0 })
 test_uri : I64
 test_uri = ({
 	u = Lwm2m.lwm2m_uri(3, 0, 1)
-	(if (Text.len(u) > 0) { 1 } else { 0 })
+	(if (CceText.len(u) > 0) { 1 } else { 0 })
 })
 
 test_object_uri : I64
 test_object_uri = ({
 	u = Lwm2m.lwm2m_object_uri(3, 0)
-	(if (Text.len(u) > 0) { 1 } else { 0 })
+	(if (CceText.len(u) > 0) { 1 } else { 0 })
 })
 
 test_tlv_encode : I64
@@ -78,7 +78,7 @@ test_registration_fields = ({
 test_registration_path : I64
 test_registration_path = ({
 	path = Lwm2m.lwm2m_registration_path(Lwm2m.default_lwm2m_registration)
-	(if (Text.len(path) > 0) { 1 } else { 0 })
+	(if (CceText.len(path) > 0) { 1 } else { 0 })
 })
 
 # --- Entry ---

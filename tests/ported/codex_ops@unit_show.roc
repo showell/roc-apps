@@ -20,19 +20,19 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Prelude
-import cdx.Text
 
 # UnitShow -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Name : Text
+Name : CceText
 Flag : Bool
 Dist : F64
 Count : I64
 
-plain_text : Text
+plain_text : CceText
 plain_text = "abcd"
 
 plain_bool : Bool
@@ -59,13 +59,13 @@ unit_int = 42
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("text-plain=", plain_text)))
-	line!(Text.printed(Text.concat("text-unit =", unit_text)))
-	line!(Text.printed(Text.concat("bool-plain=", (if plain_bool { "True" } else { "False" }))))
-	line!(Text.printed(Text.concat("bool-unit =", (if unit_bool { "True" } else { "False" }))))
-	line!(Text.printed(Text.concat("real-plain=", Text.of_str(Prelude.real_to_str(plain_real)))))
-	line!(Text.printed(Text.concat("real-unit =", Text.of_str(Prelude.real_to_str(unit_real)))))
-	line!(Text.printed(Text.concat("int-plain =", Text.show_int(plain_int))))
-	line!(Text.printed(Text.concat("int-unit  =", Text.show_int(unit_int))))
+	line!(CceText.printed(CceText.concat("text-plain=", plain_text)))
+	line!(CceText.printed(CceText.concat("text-unit =", unit_text)))
+	line!(CceText.printed(CceText.concat("bool-plain=", (if plain_bool { "True" } else { "False" }))))
+	line!(CceText.printed(CceText.concat("bool-unit =", (if unit_bool { "True" } else { "False" }))))
+	line!(CceText.printed(CceText.concat("real-plain=", CceText.of_str(Prelude.real_to_str(plain_real)))))
+	line!(CceText.printed(CceText.concat("real-unit =", CceText.of_str(Prelude.real_to_str(unit_real)))))
+	line!(CceText.printed(CceText.concat("int-plain =", CceText.show_int(plain_int))))
+	line!(CceText.printed(CceText.concat("int-unit  =", CceText.show_int(unit_int))))
 	Ok({})
 }

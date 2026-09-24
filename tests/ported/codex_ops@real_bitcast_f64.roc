@@ -24,7 +24,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # RealBitcastF64 -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -34,17 +34,17 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("bits 0.0 ", Text.show_int(U64.to_i64_wrap(F64.to_bits(0.0))))))
-	line!(Text.printed(Text.concat("bits 1.0 ", Text.show_int(U64.to_i64_wrap(F64.to_bits(1.0))))))
-	line!(Text.printed(Text.concat("bits 0.5 ", Text.show_int(U64.to_i64_wrap(F64.to_bits(0.5))))))
-	line!(Text.printed(Text.concat("bits 42.5 ", Text.show_int(U64.to_i64_wrap(F64.to_bits(42.5))))))
-	line!(Text.printed(Text.concat("bits -1.0 ", Text.show_int(U64.to_i64_wrap(F64.to_bits((0.0 - 1.0)))))))
-	line!(Text.printed(Text.concat("bits -2.0 ", Text.show_int(U64.to_i64_wrap(F64.to_bits((0.0 - 2.0)))))))
-	line!(Text.printed(Text.concat("negzero ", Text.show_int(U64.to_i64_wrap(F64.to_bits(F64.from_bits(I64.to_u64_wrap((-9223372036854775808)))))))))
-	line!(Text.printed(Text.concat("poszero ", Text.show_int(U64.to_i64_wrap(F64.to_bits(F64.from_bits(I64.to_u64_wrap(0))))))))
-	line!(Text.printed(Text.concat("nan ", Text.show_int(U64.to_i64_wrap(F64.to_bits(F64.from_bits(I64.to_u64_wrap(9221120237041090560))))))))
-	line!(Text.printed(Text.concat("inf ", Text.show_int(U64.to_i64_wrap(F64.to_bits(F64.from_bits(I64.to_u64_wrap(9218868437227405312))))))))
-	line!(Text.printed(Text.concat("maxfinite ", Text.show_int(U64.to_i64_wrap(F64.to_bits(F64.from_bits(I64.to_u64_wrap(9218868437227405311))))))))
-	line!(Text.printed(Text.concat("roundtrip 42.5 ", Text.show_int(U64.to_i64_wrap(F64.to_bits(F64.from_bits(I64.to_u64_wrap(U64.to_i64_wrap(F64.to_bits(42.5))))))))))
+	line!(CceText.printed(CceText.concat("bits 0.0 ", CceText.show_int(U64.to_i64_wrap(F64.to_bits(0.0))))))
+	line!(CceText.printed(CceText.concat("bits 1.0 ", CceText.show_int(U64.to_i64_wrap(F64.to_bits(1.0))))))
+	line!(CceText.printed(CceText.concat("bits 0.5 ", CceText.show_int(U64.to_i64_wrap(F64.to_bits(0.5))))))
+	line!(CceText.printed(CceText.concat("bits 42.5 ", CceText.show_int(U64.to_i64_wrap(F64.to_bits(42.5))))))
+	line!(CceText.printed(CceText.concat("bits -1.0 ", CceText.show_int(U64.to_i64_wrap(F64.to_bits((0.0 - 1.0)))))))
+	line!(CceText.printed(CceText.concat("bits -2.0 ", CceText.show_int(U64.to_i64_wrap(F64.to_bits((0.0 - 2.0)))))))
+	line!(CceText.printed(CceText.concat("negzero ", CceText.show_int(U64.to_i64_wrap(F64.to_bits(F64.from_bits(I64.to_u64_wrap((-9223372036854775808)))))))))
+	line!(CceText.printed(CceText.concat("poszero ", CceText.show_int(U64.to_i64_wrap(F64.to_bits(F64.from_bits(I64.to_u64_wrap(0))))))))
+	line!(CceText.printed(CceText.concat("nan ", CceText.show_int(U64.to_i64_wrap(F64.to_bits(F64.from_bits(I64.to_u64_wrap(9221120237041090560))))))))
+	line!(CceText.printed(CceText.concat("inf ", CceText.show_int(U64.to_i64_wrap(F64.to_bits(F64.from_bits(I64.to_u64_wrap(9218868437227405312))))))))
+	line!(CceText.printed(CceText.concat("maxfinite ", CceText.show_int(U64.to_i64_wrap(F64.to_bits(F64.from_bits(I64.to_u64_wrap(9218868437227405311))))))))
+	line!(CceText.printed(CceText.concat("roundtrip 42.5 ", CceText.show_int(U64.to_i64_wrap(F64.to_bits(F64.from_bits(I64.to_u64_wrap(U64.to_i64_wrap(F64.to_bits(42.5))))))))))
 	Ok({})
 }

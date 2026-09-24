@@ -13,8 +13,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Mem
-import cdx.Text
 
 # CapHeapPokePure -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -32,6 +32,6 @@ raw_mem! = |mem, addr, val| ({
 main! = |args| {
 	mem = Mem.new(U64.to_i64_wrap(List.len(args)))
 	(_mem1, mem__1) = raw_mem!(mem, 786432, 42)
-	line!(Text.printed(Text.show_int(mem__1)))
+	line!(CceText.printed(CceText.show_int(mem__1)))
 	Ok({})
 }

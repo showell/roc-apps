@@ -17,15 +17,15 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.EventBus
-import cdx.Text
 
 # EventBusTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-test_log : Text
+test_log : CceText
 test_log = ({
 	log = EventBus.event_log_new(10)
 	log1 = EventBus.event_log_add(log, EventBus.event_new("boot", "started", 100))
@@ -34,43 +34,43 @@ test_log = ({
 	EventBus.evt_format_event_log(log3)
 })
 
-test_filter : Text
+test_filter : CceText
 test_filter = ({
 	log = EventBus.event_log_add(EventBus.event_log_add(EventBus.event_log_add(EventBus.event_log_new(10), EventBus.event_new("boot", "started", 100)), EventBus.event_new("net", "up", 200)), EventBus.event_new("boot", "ready", 300))
 	boots = EventBus.event_log_filter(log, "boot")
-	Text.concat("boot-events=", Text.show_int(U64.to_i64_wrap(List.len(boots))))
+	CceText.concat("boot-events=", CceText.show_int(U64.to_i64_wrap(List.len(boots))))
 })
 
-test_last : Text
+test_last : CceText
 test_last = ({
 	log = EventBus.event_log_add(EventBus.event_log_add(EventBus.event_log_new(10), EventBus.event_new("a", "1", 10)), EventBus.event_new("b", "2", 20))
 	last = EventBus.event_log_last(log)
 	(match last {
-		Just(e) => Text.concat("last=", EventBus.evt_format_event(e))
+		Just(e) => CceText.concat("last=", EventBus.evt_format_event(e))
 		None => "last=none"
 	})
 })
 
-test_since : Text
+test_since : CceText
 test_since = ({
 	log = EventBus.event_log_add(EventBus.event_log_add(EventBus.event_log_add(EventBus.event_log_new(10), EventBus.event_new("a", "1", 100)), EventBus.event_new("b", "2", 200)), EventBus.event_new("c", "3", 300))
 	recent = EventBus.event_log_since(log, 200)
-	Text.concat("since-200=", Text.show_int(U64.to_i64_wrap(List.len(recent))))
+	CceText.concat("since-200=", CceText.show_int(U64.to_i64_wrap(List.len(recent))))
 })
 
-test_overflow : Text
+test_overflow : CceText
 test_overflow = ({
 	log = EventBus.event_log_add(EventBus.event_log_add(EventBus.event_log_add(EventBus.event_log_add(EventBus.event_log_new(3), EventBus.event_new("a", "1", 1)), EventBus.event_new("b", "2", 2)), EventBus.event_new("c", "3", 3)), EventBus.event_new("d", "4", 4))
-	Text.concat("overflow=", EventBus.evt_format_event_log(log))
+	CceText.concat("overflow=", EventBus.evt_format_event_log(log))
 })
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(test_log))
-	line!(Text.printed(test_filter))
-	line!(Text.printed(test_last))
-	line!(Text.printed(test_since))
-	line!(Text.printed(test_overflow))
+	line!(CceText.printed(test_log))
+	line!(CceText.printed(test_filter))
+	line!(CceText.printed(test_last))
+	line!(CceText.printed(test_since))
+	line!(CceText.printed(test_overflow))
 	Ok({})
 }

@@ -1,6 +1,6 @@
 # DiffusionScheduler -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+import CceText
 import MathLib
-import Text
 
 DiffusionScheduler :: [].{
 	NoiseSchedule : { ns_betas : List(I64), ns_alphas : List(I64), ns_alpha_cumprod : List(I64), ns_steps : I64 }
@@ -115,6 +115,6 @@ DiffusionScheduler :: [].{
 		(if (abar >= 1000) { 999999 } else { I64.div_trunc_by((abar * 1000), (1000 - abar)) })
 	})
 
-	format_schedule : DiffusionScheduler.NoiseSchedule -> Text
-	format_schedule = |s| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("steps=", Text.show_int(s.ns_steps)), " beta[0]="), Text.show_int((List.get(s.ns_betas, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))), " beta[-1]="), Text.show_int((List.get(s.ns_betas, I64.to_u64_wrap((s.ns_steps - 1))) ?? crash("list-at out of range")))), " abar[-1]="), Text.show_int((List.get(s.ns_alpha_cumprod, I64.to_u64_wrap((s.ns_steps - 1))) ?? crash("list-at out of range"))))
+	format_schedule : DiffusionScheduler.NoiseSchedule -> CceText
+	format_schedule = |s| CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("steps=", CceText.show_int(s.ns_steps)), " beta[0]="), CceText.show_int((List.get(s.ns_betas, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))), " beta[-1]="), CceText.show_int((List.get(s.ns_betas, I64.to_u64_wrap((s.ns_steps - 1))) ?? crash("list-at out of range")))), " abar[-1]="), CceText.show_int((List.get(s.ns_alpha_cumprod, I64.to_u64_wrap((s.ns_steps - 1))) ?? crash("list-at out of range"))))
 }

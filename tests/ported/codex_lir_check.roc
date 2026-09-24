@@ -41,8 +41,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.MathLib
-import cdx.Text
 
 # LirCheck -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -152,34 +152,34 @@ eq_Sw = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.show_int(sl_add(3, 4))))
-	line!(Text.printed(Text.show_int(sl_mix(5))))
-	line!(Text.printed(Text.show_int(sl_nest(5, 3))))
-	line!(Text.printed(Text.show_int(sl_wide(1, 2, 3, 4, 5))))
-	line!(Text.printed(Text.show_int(if_min(4))))
-	line!(Text.printed(Text.show_int(if_operand(4))))
-	line!(Text.printed(Text.show_int(if_nest(8))))
-	line!(Text.printed(Text.show_int(sw_min(0))))
-	line!(Text.printed(Text.show_int(sw_three(1))))
-	line!(Text.printed(Text.show_int(sw_var(7))))
-	line!(Text.printed(Text.show_int(sw_or(1))))
-	line!(Text.printed(Text.show_int(sw_ctor(SwA(42)))))
-	line!(Text.printed(Text.show_int(sw_ctor(SwB))))
-	line!(Text.printed(Text.show_int(if_even(4))))
-	line!(Text.printed(Text.show_int(if_even(7))))
-	line!(Text.printed(Text.show_int(if_even((-4)))))
-	line!(Text.printed(Text.show_int(if_even((-5)))))
-	line!(Text.printed(Text.show_int(if_odd(7))))
-	line!(Text.printed(Text.show_int(if_odd((-5)))))
-	line!(Text.printed(Text.show_int(if_mod4(8))))
-	line!(Text.printed(Text.show_int(if_mod4(6))))
-	line!(Text.printed(Text.show_int(if_mod3(6))))
-	line!(Text.printed(Text.show_int(if_mod3(7))))
-	line!(Text.printed(Text.show_int(if_mod_one(7))))
-	line!(Text.printed(Text.show_int(pmv_clash(255, 0, 0, 255, 255))))
-	line!(Text.printed(Text.show_int(pmv_clash(0, 255, 0, 255, 255))))
-	line!(Text.printed(Text.show_int(pmv_clash(0, 0, 255, 255, 255))))
-	line!(Text.printed(Text.show_int(coal_result(5, (-2)))))
-	line!(Text.printed(Text.show_int(coal_result(5, 3))))
+	line!(CceText.printed(CceText.show_int(sl_add(3, 4))))
+	line!(CceText.printed(CceText.show_int(sl_mix(5))))
+	line!(CceText.printed(CceText.show_int(sl_nest(5, 3))))
+	line!(CceText.printed(CceText.show_int(sl_wide(1, 2, 3, 4, 5))))
+	line!(CceText.printed(CceText.show_int(if_min(4))))
+	line!(CceText.printed(CceText.show_int(if_operand(4))))
+	line!(CceText.printed(CceText.show_int(if_nest(8))))
+	line!(CceText.printed(CceText.show_int(sw_min(0))))
+	line!(CceText.printed(CceText.show_int(sw_three(1))))
+	line!(CceText.printed(CceText.show_int(sw_var(7))))
+	line!(CceText.printed(CceText.show_int(sw_or(1))))
+	line!(CceText.printed(CceText.show_int(sw_ctor(SwA(42)))))
+	line!(CceText.printed(CceText.show_int(sw_ctor(SwB))))
+	line!(CceText.printed(CceText.show_int(if_even(4))))
+	line!(CceText.printed(CceText.show_int(if_even(7))))
+	line!(CceText.printed(CceText.show_int(if_even((-4)))))
+	line!(CceText.printed(CceText.show_int(if_even((-5)))))
+	line!(CceText.printed(CceText.show_int(if_odd(7))))
+	line!(CceText.printed(CceText.show_int(if_odd((-5)))))
+	line!(CceText.printed(CceText.show_int(if_mod4(8))))
+	line!(CceText.printed(CceText.show_int(if_mod4(6))))
+	line!(CceText.printed(CceText.show_int(if_mod3(6))))
+	line!(CceText.printed(CceText.show_int(if_mod3(7))))
+	line!(CceText.printed(CceText.show_int(if_mod_one(7))))
+	line!(CceText.printed(CceText.show_int(pmv_clash(255, 0, 0, 255, 255))))
+	line!(CceText.printed(CceText.show_int(pmv_clash(0, 255, 0, 255, 255))))
+	line!(CceText.printed(CceText.show_int(pmv_clash(0, 0, 255, 255, 255))))
+	line!(CceText.printed(CceText.show_int(coal_result(5, (-2)))))
+	line!(CceText.printed(CceText.show_int(coal_result(5, 3))))
 	Ok({})
 }

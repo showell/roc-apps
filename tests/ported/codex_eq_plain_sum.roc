@@ -18,13 +18,13 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # EqPlainSum -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Pair : [Both(I64, I64), JustText(Text), Neither]
+Pair : [Both(I64, I64), JustText(CceText), Neither]
 Holder : [Wraps(Pair), Empty]
 
 eq_Pair : Pair, Pair -> Bool
@@ -58,11 +58,11 @@ eq_Holder = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed((if eq_Pair(Both(1, 2), Both(1, 2)) { "both eq : yes" } else { "both eq : no" })))
-	line!(Text.printed((if eq_Pair(Both(1, 2), Both(1, 3)) { "both ne : no" } else { "both ne : yes" })))
-	line!(Text.printed((if eq_Pair(JustText("a"), JustText("a")) { "text eq : yes" } else { "text eq : no" })))
-	line!(Text.printed((if eq_Pair(Both(1, 2), Neither) { "cross ne : no" } else { "cross ne : yes" })))
-	line!(Text.printed((if eq_Holder(Wraps(Both(1, 2)), Wraps(Both(1, 2))) { "sum field eq : yes" } else { "sum field eq : no" })))
-	line!(Text.printed((if eq_Holder(Wraps(Both(1, 2)), Wraps(JustText("a"))) { "sum field ne : no" } else { "sum field ne : yes" })))
+	line!(CceText.printed((if eq_Pair(Both(1, 2), Both(1, 2)) { "both eq : yes" } else { "both eq : no" })))
+	line!(CceText.printed((if eq_Pair(Both(1, 2), Both(1, 3)) { "both ne : no" } else { "both ne : yes" })))
+	line!(CceText.printed((if eq_Pair(JustText("a"), JustText("a")) { "text eq : yes" } else { "text eq : no" })))
+	line!(CceText.printed((if eq_Pair(Both(1, 2), Neither) { "cross ne : no" } else { "cross ne : yes" })))
+	line!(CceText.printed((if eq_Holder(Wraps(Both(1, 2)), Wraps(Both(1, 2))) { "sum field eq : yes" } else { "sum field eq : no" })))
+	line!(CceText.printed((if eq_Holder(Wraps(Both(1, 2)), Wraps(JustText("a"))) { "sum field ne : no" } else { "sum field ne : yes" })))
 	Ok({})
 }

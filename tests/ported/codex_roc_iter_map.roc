@@ -13,7 +13,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # RocIterMap -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -55,10 +55,10 @@ main! = |_args| {
 		mapped = iter_map(range_to(1, 3), lam_2)
 		(match (mapped.next)(0) {
 			One(first, rest) => (match (rest.next)(0) {
-				One(second, _ignored) => line!(Text.printed(Text.show_int(((first * 10) + second))))
-				Done => line!(Text.printed(Text.show_int((0 - 2))))
+				One(second, _ignored) => line!(CceText.printed(CceText.show_int(((first * 10) + second))))
+				Done => line!(CceText.printed(CceText.show_int((0 - 2))))
 			})
-			Done => line!(Text.printed(Text.show_int((0 - 1))))
+			Done => line!(CceText.printed(CceText.show_int((0 - 1))))
 		})
 	})
 	Ok({})

@@ -22,30 +22,30 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.DtlsHandshake
-import cdx.Text
 
 # DtlsHandshakeTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-fmt_act : DtlsHandshake.DtlsAction -> Text
+fmt_act : DtlsHandshake.DtlsAction -> CceText
 fmt_act = |a| (match a {
-	ActSendFlight(f) => Text.concat("send", Text.show_int(f))
-	ActSetTimer(d) => Text.concat("timer", Text.show_int(d))
+	ActSendFlight(f) => CceText.concat("send", CceText.show_int(f))
+	ActSetTimer(d) => CceText.concat("timer", CceText.show_int(d))
 	ActDeliverKeys => "keys"
 	ActAck => "ack"
-	ActAbort(x) => Text.concat("abort", Text.show_int(x))
+	ActAbort(x) => CceText.concat("abort", CceText.show_int(x))
 })
 
-fmt_acts : List(DtlsHandshake.DtlsAction) -> Text
+fmt_acts : List(DtlsHandshake.DtlsAction) -> CceText
 fmt_acts = |as_| fmt_acts_loop(as_, 0, U64.to_i64_wrap(List.len(as_)), "")
 
-fmt_acts_loop : List(DtlsHandshake.DtlsAction), I64, I64, Text -> Text
-fmt_acts_loop = |as_, i, n, acc| (if (i >= n) { acc } else { (if (i == 0) { fmt_acts_loop(as_, (i + 1), n, fmt_act((List.get(as_, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))) } else { fmt_acts_loop(as_, (i + 1), n, Text.concat(Text.concat(acc, ","), fmt_act((List.get(as_, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))) }) })
+fmt_acts_loop : List(DtlsHandshake.DtlsAction), I64, I64, CceText -> CceText
+fmt_acts_loop = |as_, i, n, acc| (if (i >= n) { acc } else { (if (i == 0) { fmt_acts_loop(as_, (i + 1), n, fmt_act((List.get(as_, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))) } else { fmt_acts_loop(as_, (i + 1), n, CceText.concat(CceText.concat(acc, ","), fmt_act((List.get(as_, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))) }) })
 
-fmt_phase : DtlsHandshake.DtlsHsPhase -> Text
+fmt_phase : DtlsHandshake.DtlsHsPhase -> CceText
 fmt_phase = |p| (match p {
 	PhStart => "start"
 	PhWaitServerHello => "wait-sh"
@@ -63,8 +63,8 @@ h2 = DtlsHandshake.dtls_hs_step(h1.step_state, EvServerFlight(50))
 h3 : DtlsHandshake.DtlsHsStep
 h3 = DtlsHandshake.dtls_hs_step(h2.step_state, EvAck(90))
 
-test_happy : Text
-test_happy = Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("hs happy: ", fmt_acts(h1.step_actions)), " | "), fmt_acts(h2.step_actions)), " | "), fmt_acts(h3.step_actions)), " | "), fmt_phase(h3.step_state.hs_phase))
+test_happy : CceText
+test_happy = CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("hs happy: ", fmt_acts(h1.step_actions)), " | "), fmt_acts(h2.step_actions)), " | "), fmt_acts(h3.step_actions)), " | "), fmt_phase(h3.step_state.hs_phase))
 
 c1 : DtlsHandshake.DtlsHsStep
 c1 = DtlsHandshake.dtls_hs_step(DtlsHandshake.dtls_hs_new, EvStart(0))
@@ -75,8 +75,8 @@ c2 = DtlsHandshake.dtls_hs_step(c1.step_state, EvTimeout(1000))
 c3 : DtlsHandshake.DtlsHsStep
 c3 = DtlsHandshake.dtls_hs_step(c2.step_state, EvHelloRetry([9, 9, 9, 9], 1200))
 
-test_cookie_flight : Text
-test_cookie_flight = Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("hs cookie: ", fmt_acts(c2.step_actions)), " | "), fmt_acts(c3.step_actions)), " | timer="), Text.show_int(c3.step_state.hs_timer)), " retries="), Text.show_int(c3.step_state.hs_retries))
+test_cookie_flight : CceText
+test_cookie_flight = CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("hs cookie: ", fmt_acts(c2.step_actions)), " | "), fmt_acts(c3.step_actions)), " | timer="), CceText.show_int(c3.step_state.hs_timer)), " retries="), CceText.show_int(c3.step_state.hs_retries))
 
 bo : List(I64)
 bo = bo_loop(DtlsHandshake.dtls_hs_new, 0, 12, [])
@@ -90,14 +90,14 @@ bo_step = |st, i, n, acc| ({
 	bo_loop(r.step_state, (i + 1), n, List.append(acc, r.step_state.hs_timer))
 })
 
-test_backoff : Text
-test_backoff = Text.concat("hs backoff: ", fmt_ints(bo))
+test_backoff : CceText
+test_backoff = CceText.concat("hs backoff: ", fmt_ints(bo))
 
-fmt_ints : List(I64) -> Text
+fmt_ints : List(I64) -> CceText
 fmt_ints = |xs| fmt_ints_loop(xs, 0, U64.to_i64_wrap(List.len(xs)), "")
 
-fmt_ints_loop : List(I64), I64, I64, Text -> Text
-fmt_ints_loop = |xs, i, n, acc| (if (i >= n) { acc } else { (if (i == 0) { fmt_ints_loop(xs, (i + 1), n, Text.show_int((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))) } else { fmt_ints_loop(xs, (i + 1), n, Text.concat(Text.concat(acc, ","), Text.show_int((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))) }) })
+fmt_ints_loop : List(I64), I64, I64, CceText -> CceText
+fmt_ints_loop = |xs, i, n, acc| (if (i >= n) { acc } else { (if (i == 0) { fmt_ints_loop(xs, (i + 1), n, CceText.show_int((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))) } else { fmt_ints_loop(xs, (i + 1), n, CceText.concat(CceText.concat(acc, ","), CceText.show_int((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))) }) })
 
 g0 : DtlsHandshake.DtlsHsState
 g0 = DtlsHandshake.dtls_hs_step(DtlsHandshake.dtls_hs_new, EvStart(0)).step_state
@@ -114,14 +114,14 @@ gfinal = DtlsHandshake.dtls_hs_step(g1, EvTimeout(99999))
 gafter : DtlsHandshake.DtlsHsStep
 gafter = DtlsHandshake.dtls_hs_step(gfinal.step_state, EvTimeout(111111))
 
-test_giveup : Text
-test_giveup = Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("hs giveup: retries=", Text.show_int(g1.hs_retries)), " phase="), fmt_phase(g1.hs_phase)), " then="), fmt_acts(gfinal.step_actions)), "/"), fmt_phase(gfinal.step_state.hs_phase)), " after="), fmt_acts(gafter.step_actions)), "/"), fmt_phase(gafter.step_state.hs_phase))
+test_giveup : CceText
+test_giveup = CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("hs giveup: retries=", CceText.show_int(g1.hs_retries)), " phase="), fmt_phase(g1.hs_phase)), " then="), fmt_acts(gfinal.step_actions)), "/"), fmt_phase(gfinal.step_state.hs_phase)), " after="), fmt_acts(gafter.step_actions)), "/"), fmt_phase(gafter.step_state.hs_phase))
 
 s1 : DtlsHandshake.DtlsHsStep
 s1 = DtlsHandshake.dtls_hs_step(h3.step_state, EvTimeout(5000))
 
-test_stale : Text
-test_stale = Text.concat(Text.concat(Text.concat("hs stale: ", fmt_acts(s1.step_actions)), "/"), fmt_phase(s1.step_state.hs_phase))
+test_stale : CceText
+test_stale = CceText.concat(CceText.concat(CceText.concat("hs stale: ", fmt_acts(s1.step_actions)), "/"), fmt_phase(s1.step_state.hs_phase))
 
 sec : List(I64)
 sec = [1, 2, 3, 4]
@@ -135,33 +135,33 @@ good = DtlsHandshake.dtls_cookie(sec, addr)
 bad : List(I64)
 bad = (List.set(DtlsHandshake.dtls_cookie(sec, addr), I64.to_u64_wrap(0), I64.bitwise_xor((List.get(DtlsHandshake.dtls_cookie(sec, addr), I64.to_u64_wrap(0)) ?? crash("list-at out of range")), 1)) ?? crash("list-set-at past the end"))
 
-test_verdict_none : Text
-test_verdict_none = Text.concat("hs verdict none=", fmt_act(DtlsHandshake.dtls_server_verdict(sec, addr, [])))
+test_verdict_none : CceText
+test_verdict_none = CceText.concat("hs verdict none=", fmt_act(DtlsHandshake.dtls_server_verdict(sec, addr, [])))
 
-test_verdict_good : Text
-test_verdict_good = Text.concat("hs verdict good=", fmt_act(DtlsHandshake.dtls_server_verdict(sec, addr, good)))
+test_verdict_good : CceText
+test_verdict_good = CceText.concat("hs verdict good=", fmt_act(DtlsHandshake.dtls_server_verdict(sec, addr, good)))
 
-test_verdict_bad : Text
-test_verdict_bad = Text.concat("hs verdict bad=", fmt_act(DtlsHandshake.dtls_server_verdict(sec, addr, bad)))
+test_verdict_bad : CceText
+test_verdict_bad = CceText.concat("hs verdict bad=", fmt_act(DtlsHandshake.dtls_server_verdict(sec, addr, bad)))
 
-test_verdict_other_addr : Text
-test_verdict_other_addr = Text.concat("hs verdict wrong-addr=", fmt_act(DtlsHandshake.dtls_server_verdict(sec, [10, 0, 0, 8], good)))
+test_verdict_other_addr : CceText
+test_verdict_other_addr = CceText.concat("hs verdict wrong-addr=", fmt_act(DtlsHandshake.dtls_server_verdict(sec, [10, 0, 0, 8], good)))
 
-test_amp : Text
-test_amp = Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("hs amp: at=", (if DtlsHandshake.dtls_amplification_ok(100, 0, 300) { "True" } else { "False" })), " over="), (if DtlsHandshake.dtls_amplification_ok(100, 0, 301) { "True" } else { "False" })), " partial="), (if DtlsHandshake.dtls_amplification_ok(100, 250, 50) { "True" } else { "False" })), " budget="), Text.show_int(DtlsHandshake.dtls_amplification_budget(100, 250)))
+test_amp : CceText
+test_amp = CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("hs amp: at=", (if DtlsHandshake.dtls_amplification_ok(100, 0, 300) { "True" } else { "False" })), " over="), (if DtlsHandshake.dtls_amplification_ok(100, 0, 301) { "True" } else { "False" })), " partial="), (if DtlsHandshake.dtls_amplification_ok(100, 250, 50) { "True" } else { "False" })), " budget="), CceText.show_int(DtlsHandshake.dtls_amplification_budget(100, 250)))
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(test_happy))
-	line!(Text.printed(test_cookie_flight))
-	line!(Text.printed(test_backoff))
-	line!(Text.printed(test_giveup))
-	line!(Text.printed(test_stale))
-	line!(Text.printed(test_verdict_none))
-	line!(Text.printed(test_verdict_good))
-	line!(Text.printed(test_verdict_bad))
-	line!(Text.printed(test_verdict_other_addr))
-	line!(Text.printed(test_amp))
+	line!(CceText.printed(test_happy))
+	line!(CceText.printed(test_cookie_flight))
+	line!(CceText.printed(test_backoff))
+	line!(CceText.printed(test_giveup))
+	line!(CceText.printed(test_stale))
+	line!(CceText.printed(test_verdict_none))
+	line!(CceText.printed(test_verdict_good))
+	line!(CceText.printed(test_verdict_bad))
+	line!(CceText.printed(test_verdict_other_addr))
+	line!(CceText.printed(test_amp))
 	Ok({})
 }

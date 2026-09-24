@@ -17,7 +17,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # ClosureUnderApply -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -33,14 +33,14 @@ add4 = |a, b, c, d| (((a + b) + c) + d)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("full: ", Text.show_int(add3(1, 2, 3)))))
+	line!(CceText.printed(CceText.concat("full: ", CceText.show_int(add3(1, 2, 3)))))
 	({
 		h = ({
 			dev__1 = 10
 			|dev__2, dev__3| add3(dev__1, dev__2, dev__3)
 		})
 		({
-			line!(Text.printed(Text.concat("flat-two: ", Text.show_int(h(20, 12)))))
+			line!(CceText.printed(CceText.concat("flat-two: ", CceText.show_int(h(20, 12)))))
 			({
 				j = ({
 					dev__4 = 10
@@ -51,7 +51,7 @@ main! = |_args| {
 					|dev__8| j(dev__7, dev__8)
 				})
 				({
-					line!(Text.printed(Text.concat("split-one-at-a-time: ", Text.show_int(g(12)))))
+					line!(CceText.printed(CceText.concat("split-one-at-a-time: ", CceText.show_int(g(12)))))
 					({
 						k = ({
 							dev__9 = 1
@@ -66,7 +66,7 @@ main! = |_args| {
 							|dev__17| k2(dev__16, dev__17)
 						})
 						({
-							line!(Text.printed(Text.concat("split-four: ", Text.show_int(k3(4)))))
+							line!(CceText.printed(CceText.concat("split-four: ", CceText.show_int(k3(4)))))
 							({
 								m = ({
 									dev__18 = 1
@@ -77,7 +77,7 @@ main! = |_args| {
 									dev__22 = 3
 									|dev__23| m(dev__22, dev__23)
 								})
-								line!(Text.printed(Text.concat("half-then-one: ", Text.show_int(m2(4)))))
+								line!(CceText.printed(CceText.concat("half-then-one: ", CceText.show_int(m2(4)))))
 							})
 						})
 					})

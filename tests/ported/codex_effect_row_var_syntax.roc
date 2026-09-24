@@ -15,7 +15,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # EffectRowVarSyntax -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -33,15 +33,15 @@ double = |n| (n * 2)
 
 shout! : I64 => I64
 shout! = |n| ({
-	line!(Text.printed(Text.concat("shout ", Text.show_int(n))))
+	line!(CceText.printed(CceText.concat("shout ", CceText.show_int(n))))
 	(n * 2)
 })
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("pure ", Text.show_int(apply_row(double, 21)))))
+	line!(CceText.printed(CceText.concat("pure ", CceText.show_int(apply_row(double, 21)))))
 	r = logged_apply!(shout!, 21)
-	line!(Text.printed(Text.concat("logged ", Text.show_int(r))))
+	line!(CceText.printed(CceText.concat("logged ", CceText.show_int(r))))
 	Ok({})
 }

@@ -13,7 +13,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # ChapterPages -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -29,6 +29,6 @@ beta = 2
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.show_int((alpha + beta))))
+	line!(CceText.printed(CceText.show_int((alpha + beta))))
 	Ok({})
 }

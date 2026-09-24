@@ -25,8 +25,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Prelude
-import cdx.Text
 
 # IntPow -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -39,18 +39,18 @@ ipow = |a, b| Prelude.int_pow(a, b)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("two-cubed ", Text.show_int(ipow(2, 3)))))
-	line!(Text.printed(Text.concat("two-fourth ", Text.show_int(ipow(2, 4)))))
-	line!(Text.printed(Text.concat("three-fifth ", Text.show_int(ipow(3, 5)))))
-	line!(Text.printed(Text.concat("ten-third ", Text.show_int(ipow(10, 3)))))
-	line!(Text.printed(Text.concat("any-zero ", Text.show_int(ipow(7, 0)))))
-	line!(Text.printed(Text.concat("any-one ", Text.show_int(ipow(7, 1)))))
-	line!(Text.printed(Text.concat("one-big ", Text.show_int(ipow(1, 62)))))
-	line!(Text.printed(Text.concat("neg-base-even ", Text.show_int(ipow((0 - 3), 4)))))
-	line!(Text.printed(Text.concat("neg-base-odd ", Text.show_int(ipow((0 - 3), 3)))))
-	line!(Text.printed(Text.concat("neg-exponent ", Text.show_int(ipow(5, (0 - 2))))))
-	line!(Text.printed(Text.concat("zero-base ", Text.show_int(ipow(0, 5)))))
-	line!(Text.printed(Text.concat("past-double-down ", Text.show_int(ipow(3, 34)))))
-	line!(Text.printed(Text.concat("past-double-up ", Text.show_int(ipow(7, 19)))))
+	line!(CceText.printed(CceText.concat("two-cubed ", CceText.show_int(ipow(2, 3)))))
+	line!(CceText.printed(CceText.concat("two-fourth ", CceText.show_int(ipow(2, 4)))))
+	line!(CceText.printed(CceText.concat("three-fifth ", CceText.show_int(ipow(3, 5)))))
+	line!(CceText.printed(CceText.concat("ten-third ", CceText.show_int(ipow(10, 3)))))
+	line!(CceText.printed(CceText.concat("any-zero ", CceText.show_int(ipow(7, 0)))))
+	line!(CceText.printed(CceText.concat("any-one ", CceText.show_int(ipow(7, 1)))))
+	line!(CceText.printed(CceText.concat("one-big ", CceText.show_int(ipow(1, 62)))))
+	line!(CceText.printed(CceText.concat("neg-base-even ", CceText.show_int(ipow((0 - 3), 4)))))
+	line!(CceText.printed(CceText.concat("neg-base-odd ", CceText.show_int(ipow((0 - 3), 3)))))
+	line!(CceText.printed(CceText.concat("neg-exponent ", CceText.show_int(ipow(5, (0 - 2))))))
+	line!(CceText.printed(CceText.concat("zero-base ", CceText.show_int(ipow(0, 5)))))
+	line!(CceText.printed(CceText.concat("past-double-down ", CceText.show_int(ipow(3, 34)))))
+	line!(CceText.printed(CceText.concat("past-double-up ", CceText.show_int(ipow(7, 19)))))
 	Ok({})
 }

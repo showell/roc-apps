@@ -16,7 +16,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 import cdx.Units
 
 # ImplicitConvert -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
@@ -24,7 +24,7 @@ import cdx.Units
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-describe_temp : Units.Kelvin -> Text
+describe_temp : Units.Kelvin -> CceText
 describe_temp = |k| (if (k > 373) { "hot" } else { (if (k > 273) { "warm" } else { "cold" }) })
 
 nanosecond : I64 -> Units.Duration
@@ -996,9 +996,9 @@ bodyTemp_to_CelsiusBody = |fv| I64.div_trunc_by(fv, 1000)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(describe_temp(Units.celsius_to_Kelvin(100))))
-	line!(Text.printed(describe_temp(Units.celsius_to_Kelvin(20))))
-	line!(Text.printed(describe_temp(Units.celsius_to_Kelvin(0))))
-	line!(Text.printed(describe_temp(500)))
+	line!(CceText.printed(describe_temp(Units.celsius_to_Kelvin(100))))
+	line!(CceText.printed(describe_temp(Units.celsius_to_Kelvin(20))))
+	line!(CceText.printed(describe_temp(Units.celsius_to_Kelvin(0))))
+	line!(CceText.printed(describe_temp(500)))
 	Ok({})
 }

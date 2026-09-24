@@ -40,10 +40,11 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceChar
+import cdx.CceText
 import cdx.Iterate
 import cdx.ListUtils
 import cdx.Prelude
-import cdx.Text
 import cdx.Tuple
 
 # LangSmoke -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
@@ -57,7 +58,7 @@ Opt(a) : [Some(a), Nada]
 check_bool : Bool, Bool -> Bool
 check_bool = |a, b| (a and (b or a))
 
-is_warm : Color -> Text
+is_warm : Color -> CceText
 is_warm = |c| (match c {
 	Red => "warm"
 	Orange => "warm"
@@ -66,7 +67,7 @@ is_warm = |c| (match c {
 	Green => "cool"
 })
 
-area_kind : Shape -> Text
+area_kind : Shape -> CceText
 area_kind = |s| (match s {
 	Circle(r) if (r > 10) => "large-circle"
 	Circle(_r) => "small-circle"
@@ -74,8 +75,8 @@ area_kind = |s| (match s {
 	Rect(_w, _h) => "rectangle"
 })
 
-count_letters : Text, I64, I64 -> I64
-count_letters = |s, i, acc| (if (i >= Text.len(s)) { acc } else { (if ((Text.char_at(s, i) >= 13 and Text.char_at(s, i) <= 64) or (Text.char_at(s, i) >= 97 and Text.char_at(s, i) <= 127)) { count_letters(s, (i + 1), (acc + 1)) } else { count_letters(s, (i + 1), acc) }) })
+count_letters : CceText, I64, I64 -> I64
+count_letters = |s, i, acc| (if (i >= CceText.len(s)) { acc } else { (if CceChar.is_letter(CceText.char_at(s, i)) { count_letters(s, (i + 1), (acc + 1)) } else { count_letters(s, (i + 1), acc) }) })
 
 make_adder : I64, I64 -> I64
 make_adder = |x, y| (x + y)
@@ -168,11 +169,11 @@ lam_0 = |x| (x + x)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed((if check_bool(True, True) { "bool-ok" } else { "BAD" })))
-	line!(Text.printed((if (5 < 10) { "lt" } else { "nlt" })))
-	line!(Text.printed((if (5 == 5) { "eq" } else { "neq" })))
-	line!(Text.printed(Text.show_int(255)))
-	line!(Text.printed(Text.show_int(3735928559)))
+	line!(CceText.printed((if check_bool(True, True) { "bool-ok" } else { "BAD" })))
+	line!(CceText.printed((if (5 < 10) { "lt" } else { "nlt" })))
+	line!(CceText.printed((if (5 == 5) { "eq" } else { "neq" })))
+	line!(CceText.printed(CceText.show_int(255)))
+	line!(CceText.printed(CceText.show_int(3735928559)))
 	({
 		chain = ({
 			a = 1
@@ -181,23 +182,23 @@ main! = |_args| {
 			(c + b)
 		})
 		({
-			line!(Text.printed(Text.show_int(chain)))
-			line!(Text.printed(is_warm(Red)))
-			line!(Text.printed(is_warm(Blue)))
-			line!(Text.printed(area_kind(Circle(20))))
-			line!(Text.printed(area_kind(Rect(4, 4))))
+			line!(CceText.printed(CceText.show_int(chain)))
+			line!(CceText.printed(is_warm(Red)))
+			line!(CceText.printed(is_warm(Blue)))
+			line!(CceText.printed(area_kind(Circle(20))))
+			line!(CceText.printed(area_kind(Rect(4, 4))))
 			({
 				doubled = ListUtils.map_list(lam_0, [1, 2, 3])
 				({
-					line!(Text.printed(Text.show_int((List.get(doubled, I64.to_u64_wrap(1)) ?? crash("list-at out of range")))))
-					line!(Text.printed(Text.show_int(count_letters("hello world", 0, 0))))
+					line!(CceText.printed(CceText.show_int((List.get(doubled, I64.to_u64_wrap(1)) ?? crash("list-at out of range")))))
+					line!(CceText.printed(CceText.show_int(count_letters("hello world", 0, 0))))
 					({
 						partial = ({
 							dev__1 = 10
 							|dev__2| make_adder(dev__1, dev__2)
 						})
 						({
-							line!(Text.printed(Text.show_int(partial(5))))
+							line!(CceText.printed(CceText.show_int(partial(5))))
 							({
 								p2 = ({
 									dev__3 = 1
@@ -205,25 +206,25 @@ main! = |_args| {
 									|dev__5| three_deep(dev__3, dev__4, dev__5)
 								})
 								({
-									line!(Text.printed(Text.show_int(p2(3))))
-									line!(Text.printed(Text.show_int(id(7))))
-									line!(Text.printed(Text.show_int(opt_or(0, opt_map(inc, Some(41))))))
-									line!(Text.printed(Text.show_int((match swap_tup(MkTup2(10, 20)) {
+									line!(CceText.printed(CceText.show_int(p2(3))))
+									line!(CceText.printed(CceText.show_int(id(7))))
+									line!(CceText.printed(CceText.show_int(opt_or(0, opt_map(inc, Some(41))))))
+									line!(CceText.printed(CceText.show_int((match swap_tup(MkTup2(10, 20)) {
 										MkTup2(x, y) => sum3(MkTup3(x, y, 99))
 									}))))
-									line!(Text.printed(Text.show_int(Iterate.list_fold_indexed([1, 2, 3], 0, my_combiner))))
-									line!(Text.printed("hello"))
-									line!(Text.printed((if eq_Shape(Circle(5), Circle(5)) { "True" } else { "False" })))
-									line!(Text.printed((if eq_Shape(Circle(5), Circle(7)) { "True" } else { "False" })))
-									line!(Text.printed((if eq_Shape(Circle(5), Rect(3, 4)) { "True" } else { "False" })))
-									line!(Text.printed(Text.show_int(I64.bitwise_and(12, 10))))
-									line!(Text.printed(Text.show_int(I64.shl_wrap(1, I64.to_u8_wrap(8)))))
-									line!(Text.printed(Text.show_int(Prelude.int_mod(7, 3))))
-									line!(Text.printed(Text.show_int(Prelude.int_abs((-42)))))
-									line!(Text.printed(Text.substring("hello world", 0, 5)))
+									line!(CceText.printed(CceText.show_int(Iterate.list_fold_indexed([1, 2, 3], 0, my_combiner))))
+									line!(CceText.printed("hello"))
+									line!(CceText.printed((if eq_Shape(Circle(5), Circle(5)) { "True" } else { "False" })))
+									line!(CceText.printed((if eq_Shape(Circle(5), Circle(7)) { "True" } else { "False" })))
+									line!(CceText.printed((if eq_Shape(Circle(5), Rect(3, 4)) { "True" } else { "False" })))
+									line!(CceText.printed(CceText.show_int(I64.bitwise_and(12, 10))))
+									line!(CceText.printed(CceText.show_int(I64.shl_wrap(1, I64.to_u8_wrap(8)))))
+									line!(CceText.printed(CceText.show_int(Prelude.int_mod(7, 3))))
+									line!(CceText.printed(CceText.show_int(Prelude.int_abs((-42)))))
+									line!(CceText.printed(CceText.substring("hello world", 0, 5)))
 									({
-										parts = Text.split("a,b,c", ",")
-										line!(Text.printed(Text.show_int(U64.to_i64_wrap(List.len(parts)))))
+										parts = CceText.split("a,b,c", ",")
+										line!(CceText.printed(CceText.show_int(U64.to_i64_wrap(List.len(parts)))))
 									})
 								})
 							})

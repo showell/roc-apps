@@ -16,8 +16,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Path
-import cdx.Text
 
 # PathReal -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -27,9 +27,9 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Path.path_join("/src", "main.codex")))
-	line!(Text.printed(Path.path_filename("/src/main.codex")))
-	line!(Text.printed(Path.path_stem("/src/main.codex")))
-	line!(Text.printed(Path.path_extension("/src/main.codex")))
+	line!(CceText.printed(Path.path_join("/src", "main.codex")))
+	line!(CceText.printed(Path.path_filename("/src/main.codex")))
+	line!(CceText.printed(Path.path_stem("/src/main.codex")))
+	line!(CceText.printed(Path.path_extension("/src/main.codex")))
 	Ok({})
 }

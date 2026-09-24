@@ -13,7 +13,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 import cdx.Warp
 
 # FwdGpuWarpTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
@@ -26,7 +26,7 @@ line! = |s| echo!(Str.concat(s, "\n"))
 main! = |_args| {
 	({
 		m = Warp.warp_full_mask
-		line!(Text.printed(Text.show_int(m.wm_bits)))
+		line!(CceText.printed(CceText.show_int(m.wm_bits)))
 	})
 	Ok({})
 }

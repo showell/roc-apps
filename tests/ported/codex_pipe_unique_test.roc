@@ -16,8 +16,8 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
+import cdx.CceText
 import cdx.Pipeline
-import cdx.Text
 
 # PipeUniqueTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -32,10 +32,10 @@ main! = |_args| {
 		unique = Pipeline.pipe_unique(xs)
 		count = U64.to_i64_wrap(List.len(unique))
 		({
-			line!(Text.printed(Text.show_int(count)))
-			line!(Text.printed((if Pipeline.pipe_contains(unique, 1) { "True" } else { "False" })))
-			line!(Text.printed((if Pipeline.pipe_contains(unique, 9) { "True" } else { "False" })))
-			line!(Text.printed((if Pipeline.pipe_contains(unique, 7) { "True" } else { "False" })))
+			line!(CceText.printed(CceText.show_int(count)))
+			line!(CceText.printed((if Pipeline.pipe_contains(unique, 1) { "True" } else { "False" })))
+			line!(CceText.printed((if Pipeline.pipe_contains(unique, 9) { "True" } else { "False" })))
+			line!(CceText.printed((if Pipeline.pipe_contains(unique, 7) { "True" } else { "False" })))
 		})
 	})
 	Ok({})

@@ -20,7 +20,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # EightQueens -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -61,16 +61,16 @@ try_col = |qs, col| (if (col >= n) { Miss } else { (if (safe(qs, col) == False) 
 	})
 }) }) })
 
-cell : List(I64), I64, I64 -> Text
+cell : List(I64), I64, I64 -> CceText
 cell = |qs, row, col| (if ((List.get(qs, I64.to_u64_wrap(row)) ?? crash("list-at out of range")) == col) { "Q" } else { "." })
 
-row_line : List(I64), I64, I64 -> Text
-row_line = |qs, row, col| (if (col >= n) { "" } else { (if (col == 0) { Text.concat(cell(qs, row, col), row_line(qs, row, (col + 1))) } else { Text.concat(Text.concat(" ", cell(qs, row, col)), row_line(qs, row, (col + 1))) }) })
+row_line : List(I64), I64, I64 -> CceText
+row_line = |qs, row, col| (if (col >= n) { "" } else { (if (col == 0) { CceText.concat(cell(qs, row, col), row_line(qs, row, (col + 1))) } else { CceText.concat(CceText.concat(" ", cell(qs, row, col)), row_line(qs, row, (col + 1))) }) })
 
-board_text : List(I64), I64 -> Text
-board_text = |qs, row| (if (row >= n) { "" } else { (if (row == (n - 1)) { row_line(qs, row, 0) } else { Text.concat(Text.concat(row_line(qs, row, 0), "\n"), board_text(qs, (row + 1))) }) })
+board_text : List(I64), I64 -> CceText
+board_text = |qs, row| (if (row >= n) { "" } else { (if (row == (n - 1)) { row_line(qs, row, 0) } else { CceText.concat(CceText.concat(row_line(qs, row, 0), "\n"), board_text(qs, (row + 1))) }) })
 
-render : Answer -> Text
+render : Answer -> CceText
 render = |ans| (match ans {
 	Found(qs) => board_text(qs, 0)
 	Miss => "no solution"
@@ -91,6 +91,6 @@ eq_Answer = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(render(place([]))))
+	line!(CceText.printed(render(place([]))))
 	Ok({})
 }

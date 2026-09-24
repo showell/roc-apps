@@ -21,7 +21,7 @@
 
 app [main!] { cdx: "./codex/main.roc" }
 
-import cdx.Text
+import cdx.CceText
 
 # EqGenericRecursive -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -32,12 +32,12 @@ Box_(a) := [Empty, Cell(a, Box_(a))].{
 	is_eq : Box_(a), Box_(a) -> Bool where [a.is_eq : a, a -> Bool]
 	is_eq = |a, b| eq_Box(a, b)
 }
-Named := [Nil, Node(Text, Named)].{
+Named := [Nil, Node(CceText, Named)].{
 	is_eq : Named, Named -> Bool
 	is_eq = |a, b| eq_Named(a, b)
 }
 
-yn : Bool -> Text
+yn : Bool -> CceText
 yn = |b| (if b { "yes" } else { "no" })
 
 eq_Pair : Pair(a), Pair(a) -> Bool where [a.is_eq : a, a -> Bool]
@@ -75,14 +75,14 @@ eq_Named = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Text.concat("text-control   : ", yn(("12" == Text.show_int(12))))))
-	line!(Text.printed(Text.concat("named-concrete : ", yn(eq_Named(Node("12", Nil), Node(Text.show_int(12), Nil))))))
-	line!(Text.printed(Text.concat("pair-generic   : ", yn(eq_Pair(P("12", "9"), P(Text.show_int(12), "9"))))))
-	line!(Text.printed(Text.concat("box-text-eq    : ", yn(eq_Box(Cell("12", Empty), Cell(Text.show_int(12), Empty))))))
-	line!(Text.printed(Text.concat("box-text-ne    : ", yn(eq_Box(Cell("12", Empty), Cell(Text.show_int(13), Empty))))))
-	line!(Text.printed(Text.concat("box-int-eq     : ", yn(eq_Box(Cell(12, Empty), Cell((6 + 6), Empty))))))
-	line!(Text.printed(Text.concat("box-int-ne     : ", yn(eq_Box(Cell(12, Empty), Cell((6 + 7), Empty))))))
-	line!(Text.printed(Text.concat("box-nested     : ", yn(eq_Box(Cell("12", Cell("9", Empty)), Cell(Text.show_int(12), Cell("9", Empty)))))))
-	line!(Text.printed(Text.concat("box-depth-ne   : ", yn(eq_Box(Cell("12", Cell("9", Empty)), Cell("12", Empty))))))
+	line!(CceText.printed(CceText.concat("text-control   : ", yn(("12" == CceText.show_int(12))))))
+	line!(CceText.printed(CceText.concat("named-concrete : ", yn(eq_Named(Node("12", Nil), Node(CceText.show_int(12), Nil))))))
+	line!(CceText.printed(CceText.concat("pair-generic   : ", yn(eq_Pair(P("12", "9"), P(CceText.show_int(12), "9"))))))
+	line!(CceText.printed(CceText.concat("box-text-eq    : ", yn(eq_Box(Cell("12", Empty), Cell(CceText.show_int(12), Empty))))))
+	line!(CceText.printed(CceText.concat("box-text-ne    : ", yn(eq_Box(Cell("12", Empty), Cell(CceText.show_int(13), Empty))))))
+	line!(CceText.printed(CceText.concat("box-int-eq     : ", yn(eq_Box(Cell(12, Empty), Cell((6 + 6), Empty))))))
+	line!(CceText.printed(CceText.concat("box-int-ne     : ", yn(eq_Box(Cell(12, Empty), Cell((6 + 7), Empty))))))
+	line!(CceText.printed(CceText.concat("box-nested     : ", yn(eq_Box(Cell("12", Cell("9", Empty)), Cell(CceText.show_int(12), Cell("9", Empty)))))))
+	line!(CceText.printed(CceText.concat("box-depth-ne   : ", yn(eq_Box(Cell("12", Cell("9", Empty)), Cell("12", Empty))))))
 	Ok({})
 }
