@@ -23,7 +23,7 @@ there; the others are mapped below.
 | `findings/` | Roc behaviours we found, each with a program that shows it | |
 | `docs/` | `roc-notes.md`, how the Roc nightly behaves (the compiler, the language, what copies); the Codex forms safari uses; the machine's memory plan and structures | |
 
-## The site: Cobblestone Roc Projects
+## The site: Steve's Roc Apps
 
 Every app is a static page. One Caddy (`ops/Caddyfile`) serves them all, an
 app at a path of its own and a channel on a port of its own, so a page moves
