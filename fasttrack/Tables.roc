@@ -65,11 +65,11 @@ Tables :: [].{
 					|ts| {
 						w = U64.to_f64(List.fold(List.keep_if(ts, |t| t.won), 0, |a, t| a + stat(label, t)))
 						m = mean(losers_of(ts, label))
-						if w > m { 1 } else if w < m { -1 } else { 0 }
+						if w > m { Above } else if w < m { Below } else { Equal }
 					},
 				)
 				apart_cell = if List.is_empty(apart) { "" } else { " ${hundredths(mean(set_apart))} |" }
-				"| ${label} | ${hundredths(mean(winners))} | ${hundredths(mean(losers))} |${apart_cell} ${U64.to_str(List.count_if(cmp, |x| x == 1))} / ${U64.to_str(List.count_if(cmp, |x| x == 0))} / ${U64.to_str(List.count_if(cmp, |x| x == -1))} |"
+				"| ${label} | ${hundredths(mean(winners))} | ${hundredths(mean(losers))} |${apart_cell} ${U64.to_str(List.count_if(cmp, |x| x == Above))} / ${U64.to_str(List.count_if(cmp, |x| x == Equal))} / ${U64.to_str(List.count_if(cmp, |x| x == Below))} |"
 			},
 		)
 		apart_rule = if List.is_empty(apart) { "" } else { "---|" }
