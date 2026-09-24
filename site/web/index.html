@@ -38,71 +38,71 @@
 <body>
 <main>
 <h1>Steve's Roc Apps</h1>
-<p class="lede">Programs that run in this tab. Each is mostly <a href="https://www.roc-lang.org/">Roc</a>,
-compiled to WebAssembly on a platform written for it, with a thin layer of JavaScript that loads it,
-draws what it answers, and hands it the clicks and keys. Some of them also run as native programs.</p>
+<p class="lede">Small programs that run in your browser. Each is written mostly in
+<a href="https://www.roc-lang.org/">Roc</a> and compiled to WebAssembly; a thin layer of JavaScript
+draws the screen and passes along your clicks and keys. The canvas apps and the BASIC interpreter
+also run as native programs.</p>
 
 <h2>Board Games</h2>
 <div class="cards">
   <section class="card" data-app="fasttrack">
-    <a href="fasttrack/"><img class="shot board" src="fasttrack/shot.png" alt="" loading="lazy"></a>
+    <a href="fasttrack/" aria-hidden="true" tabindex="-1"><img class="shot board" src="fasttrack/shot.png" alt="" loading="lazy"></a>
     <h3><a href="fasttrack/">Fast Track</a></h3>
-    <p>The marble race: you play red against three computer players, and their marbles walk the board as they move. Ported from Steve's Elm version of the game; the computer players are new, searching every way to play their turn through the game's own rules and keeping the one they value most.</p>
+    <p>The marble race board game. You play red against three computer players, whose marbles walk the board as they move. Ported from Steve's Elm version; the computer players are new: each turn, they try every legal way to play and keep the position they score highest.</p>
     <div class="links"><a href="https://github.com/showell/elm-fasttrack">Steve's Elm original</a><a href="https://github.com/showell/roc-apps/tree/master/fasttrack">How it is built</a></div>
   </section>
 </div>
 
-<h2>Canvas apps</h2>
-<p class="lede">Small interactive programs, each one a Roc value: a size, a rate, a way to step it
-with the keyboard and the pointer, and a frame of shapes to draw. Most of them are
+<h2>Canvas Apps</h2>
+<p class="lede">Small games and animations, drawn on a canvas. Six of them are
 <a href="https://github.com/lukewilliamboswell/roc-ray">roc-ray</a>'s own examples, by Luke Boswell,
-taken with only small changes to fit this scheme. The same files run here and as native programs
-through roc-ray — <a href="https://github.com/showell/roc-apps/tree/master/canvas_apps">the README</a>
+taken with only small changes; Safari and Trick or Treat are this site's own. The same files run here
+and as native programs through roc-ray — <a href="https://github.com/showell/roc-apps/tree/master/canvas_apps">the README</a>
 says how to build those.</p>
 <div class="cards">
   <section class="card" data-app="safari">
-    <a href="safari/"><img class="shot" src="safari/shot.png" alt="" loading="lazy"></a>
+    <a href="safari/" aria-hidden="true" tabindex="-1"><img class="shot" src="safari/shot.png" alt="" loading="lazy"></a>
     <h3><a href="safari/">Safari</a></h3>
-    <p>A drive through the country, as a screensaver: the rider leans into the turns and the animals cross when they like. Space pauses, the arrows step through the ride, J jumps to the next intersection.</p>
+    <p>A drive through the country, as a screensaver: the rider leans into the turns and the animals cross when they like. Space pauses, the arrows step through the ride, J jumps to the next intersection, R starts over.</p>
   </section>
   <section class="card" data-app="snake">
-    <a href="snake/"><img class="shot" src="snake/shot.png" alt="" loading="lazy"></a>
+    <a href="snake/" aria-hidden="true" tabindex="-1"><img class="shot" src="snake/shot.png" alt="" loading="lazy"></a>
     <h3><a href="snake/">Snake</a></h3>
-    <p>The arrows turn, the food glows, and the wall ends it.</p>
+    <p>The arrows steer toward the glowing food; the wall ends the game.</p>
     <div class="links"><a href="https://github.com/lukewilliamboswell/roc-ray/tree/e100c9548b903ee5c7363f5997251980c4355c7b/examples/snake">Luke's original</a></div>
   </section>
   <section class="card" data-app="pong">
-    <a href="pong/"><img class="shot" src="pong/shot.png" alt="" loading="lazy"></a>
+    <a href="pong/" aria-hidden="true" tabindex="-1"><img class="shot" src="pong/shot.png" alt="" loading="lazy"></a>
     <h3><a href="pong/">Pong</a></h3>
     <p>W and S move the paddle, or hold the left button and point where you want it.</p>
     <div class="links"><a href="https://github.com/lukewilliamboswell/roc-ray/tree/e100c9548b903ee5c7363f5997251980c4355c7b/examples/pong">Luke's original</a></div>
   </section>
   <section class="card" data-app="breakout">
-    <a href="breakout/"><img class="shot" src="breakout/shot.png" alt="" loading="lazy"></a>
+    <a href="breakout/" aria-hidden="true" tabindex="-1"><img class="shot" src="breakout/shot.png" alt="" loading="lazy"></a>
     <h3><a href="breakout/">Breakout</a></h3>
-    <p>Space serves; the arrows or the pointer steer. Each brick is worth what its colour says.</p>
+    <p>Space serves; the arrows or the pointer steer. Each brick is worth what its color says.</p>
     <div class="links"><a href="https://github.com/lukewilliamboswell/roc-ray/tree/e100c9548b903ee5c7363f5997251980c4355c7b/examples/breakout">Luke's original</a></div>
   </section>
   <section class="card" data-app="particles">
-    <a href="particles/"><img class="shot" src="particles/shot.png" alt="" loading="lazy"></a>
+    <a href="particles/" aria-hidden="true" tabindex="-1"><img class="shot" src="particles/shot.png" alt="" loading="lazy"></a>
     <h3><a href="particles/">Particles</a></h3>
     <p>A fountain of four thousand sprites that follows the pointer. Hold Space to widen the spray.</p>
     <div class="links"><a href="https://github.com/lukewilliamboswell/roc-ray/tree/e100c9548b903ee5c7363f5997251980c4355c7b/examples/particles">Luke's original</a></div>
   </section>
   <section class="card" data-app="camera">
-    <a href="camera/"><img class="shot" src="camera/shot.png" alt="" loading="lazy"></a>
-    <h3><a href="camera/">Camera world</a></h3>
+    <a href="camera/" aria-hidden="true" tabindex="-1"><img class="shot" src="camera/shot.png" alt="" loading="lazy"></a>
+    <h3><a href="camera/">Camera World</a></h3>
     <p>A world larger than the window. WASD moves, the wheel zooms, Q and E turn it. The pointer is marked twice, once through the camera and once on the screen.</p>
     <div class="links"><a href="https://github.com/lukewilliamboswell/roc-ray/tree/e100c9548b903ee5c7363f5997251980c4355c7b/examples/camera">Luke's original</a></div>
   </section>
   <section class="card" data-app="workshop">
-    <a href="workshop/"><img class="shot" src="workshop/shot.png" alt="" loading="lazy"></a>
-    <h3><a href="workshop/">Pixel workshop</a></h3>
-    <p>A sixteen-by-sixteen canvas you drag on. Four colours, a note for each, and C puts the design back.</p>
+    <a href="workshop/" aria-hidden="true" tabindex="-1"><img class="shot" src="workshop/shot.png" alt="" loading="lazy"></a>
+    <h3><a href="workshop/">Pixel Workshop</a></h3>
+    <p>A sixteen-by-sixteen canvas you drag on. Four colors, a note for each, and C puts the design back.</p>
     <div class="links"><a href="https://github.com/lukewilliamboswell/roc-ray/tree/e100c9548b903ee5c7363f5997251980c4355c7b/examples/generated_assets">Luke's original</a></div>
   </section>
   <section class="card" data-app="trick_or_treat">
-    <a href="trick_or_treat/"><img class="shot" src="trick_or_treat/shot.png" alt="" loading="lazy"></a>
+    <a href="trick_or_treat/" aria-hidden="true" tabindex="-1"><img class="shot" src="trick_or_treat/shot.png" alt="" loading="lazy"></a>
     <h3><a href="trick_or_treat/">Trick or Treat</a></h3>
     <p>A child walks up to a house past six dancing skeletons, the door opens, and they think better of it. Space pauses, the arrows scrub, J skips a second.</p>
   </section>
@@ -112,7 +112,7 @@ says how to build those.</p>
 <div class="cards">
   <section class="card wide" data-app="basic">
     <!-- The REPL's "Square roots by Newton" example, RUN: basic-run's transcript of it. -->
-    <a class="screen" href="basic/basic.html">RUN
+    <a class="screen" href="basic/basic.html" aria-label="Open the BASIC REPL">RUN
 N             SQR(N)        NEWTON
  1             1             1
  2             1.414214      1.414214
@@ -124,37 +124,38 @@ N             SQR(N)        NEWTON
  8             2.828427      2.828427
  9             3             3
  10            3.162278      3.162278</a>
-    <h3><a href="basic/">BASIC</a></h3>
-    <p>A BASIC interpreter written in Roc, for ECMA-55 Minimal BASIC and the 1978 Creative Computing games.</p>
+    <h3><a href="basic/basic.html">BASIC</a></h3>
+    <p>A BASIC interpreter written in Roc. It runs two dialects: ECMA-55 Minimal BASIC, and the BASIC of the 1978 Creative Computing games.</p>
     <div class="links"><a href="basic/basic.html">The REPL</a><a href="basic/">How it works</a></div>
   </section>
 </div>
 
-<h2>In progress</h2>
-<p class="lede">These began as Codex, the language of <a href="https://github.com/damiant3/Cobblestone">Cobblestone</a>,
-and are turned into Roc by rocemit.</p>
+<h2>In Progress</h2>
+<p class="lede">These began as programs in Codex, the language of Damian's
+<a href="https://github.com/damiant3/Cobblestone">Cobblestone</a> project. A translator, rocemit,
+turns them into Roc; nobody writes that Roc by hand.</p>
 <div class="cards">
   <section class="card" data-app="framebuffer">
-    <h3><a href="framebuffer/">The framebuffer</a></h3>
+    <h3><a href="framebuffer/">Framebuffer</a></h3>
     <p>Codex programs drawing on a screen that is part of their memory: scenes, a raytracer, a globe, a GUI.</p>
   </section>
   <section class="card" data-app="machine">
-    <h3><a href="machine/batch/">The Roc machine</a></h3>
-    <p>Cobblestone's tests, run from start to finish on a Roc model of their machine: disk drives, a network card, and the network behind it.</p>
+    <h3><a href="machine/batch/">Roc Machine</a></h3>
+    <p>Cobblestone's test programs, run start to finish on a simulated computer written in Roc: disk drives, a network card, and the network behind it.</p>
     <div class="links"><a href="machine/batch/about.html">How it works</a><a href="machine/machine.html">A hand-written program on it</a></div>
   </section>
   <section class="card" data-app="gpu">
     <h3><a href="gpu/gallery.html">GPU kernels</a></h3>
-    <p>Cobblestone's WebGPU compute kernels, emitted as Roc and run on the CPU.</p>
+    <p>Cobblestone's WebGPU compute kernels, translated to Roc and run on the CPU.</p>
   </section>
   <section class="card" data-app="games">
     <h3>Games</h3>
-    <p>Cobblestone's classic games, emitted as Roc.</p>
+    <p>2048, Minesweeper and Klondike from Cobblestone, translated to Roc.</p>
     <div class="links"><a href="games/2048.html">2048</a><a href="games/minesweeper.html">Minesweeper</a><a href="games/klondike.html">Klondike</a></div>
   </section>
 </div>
 
-<footer>The Roc, the pages and the platforms are in <a href="https://github.com/showell/roc-apps">roc-apps</a>.</footer>
+<footer>All the source is in <a href="https://github.com/showell/roc-apps">roc-apps</a> on GitHub.</footer>
 </main>
 <script>
 // A published app has a PROVENANCE beside it, whose first line dates the build
