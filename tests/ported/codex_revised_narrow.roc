@@ -21,10 +21,13 @@ import cdx.CceText
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Reading : { level : I64, label : CceText }
+Reading := { level : I64, label : CceText }.{
+	is_eq : Reading, Reading -> Bool
+	is_eq = |a, b| a.level == b.level and a.label == b.label
+}
 
 make_literal : I64 -> Reading
-make_literal = |n| { level: n, label: "lit" }
+make_literal = |n| Reading.{ level: n, label: "lit" }
 
 make_revised : Reading, I64 -> Reading
 make_revised = |r, n| ({

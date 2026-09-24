@@ -4,8 +4,14 @@ import Maybe
 import Usb
 
 UsbHid :: [].{
-	HidInterface : { hi_number : I64, hi_subclass : I64, hi_protocol : I64, hi_ep_in_addr : I64, hi_ep_out_addr : I64, hi_ep_in_max : I64, hi_ep_out_max : I64, hi_report_size : I64 }
-	HidDevice : { hd_vendor : I64, hd_product : I64, hd_slot : I64, hd_interfaces : List(UsbHid.HidInterface), hd_interface_count : I64, hd_keyboard_if : I64, hd_raw_if : I64 }
+	HidInterface := { hi_number : I64, hi_subclass : I64, hi_protocol : I64, hi_ep_in_addr : I64, hi_ep_out_addr : I64, hi_ep_in_max : I64, hi_ep_out_max : I64, hi_report_size : I64 }.{
+		is_eq : UsbHid.HidInterface, UsbHid.HidInterface -> Bool
+		is_eq = |a, b| a.hi_number == b.hi_number and a.hi_subclass == b.hi_subclass and a.hi_protocol == b.hi_protocol and a.hi_ep_in_addr == b.hi_ep_in_addr and a.hi_ep_out_addr == b.hi_ep_out_addr and a.hi_ep_in_max == b.hi_ep_in_max and a.hi_ep_out_max == b.hi_ep_out_max and a.hi_report_size == b.hi_report_size
+	}
+	HidDevice := { hd_vendor : I64, hd_product : I64, hd_slot : I64, hd_interfaces : List(UsbHid.HidInterface), hd_interface_count : I64, hd_keyboard_if : I64, hd_raw_if : I64 }.{
+		is_eq : UsbHid.HidDevice, UsbHid.HidDevice -> Bool
+		is_eq = |a, b| a.hd_vendor == b.hd_vendor and a.hd_product == b.hd_product and a.hd_slot == b.hd_slot and a.hd_interfaces == b.hd_interfaces and a.hd_interface_count == b.hd_interface_count and a.hd_keyboard_if == b.hd_keyboard_if and a.hd_raw_if == b.hd_raw_if
+	}
 
 	hid_class : I64
 	hid_class = 3
@@ -56,10 +62,10 @@ UsbHid :: [].{
 	hid_report_type_feature = 3
 
 	hid_interface_empty : UsbHid.HidInterface
-	hid_interface_empty = { hi_number: 0, hi_subclass: 0, hi_protocol: 0, hi_ep_in_addr: 0, hi_ep_out_addr: 0, hi_ep_in_max: 0, hi_ep_out_max: 0, hi_report_size: 64 }
+	hid_interface_empty = UsbHid.HidInterface.{ hi_number: 0, hi_subclass: 0, hi_protocol: 0, hi_ep_in_addr: 0, hi_ep_out_addr: 0, hi_ep_in_max: 0, hi_ep_out_max: 0, hi_report_size: 64 }
 
 	hid_device_new : I64, I64, I64 -> UsbHid.HidDevice
-	hid_device_new = |vendor, product, slot| { hd_vendor: vendor, hd_product: product, hd_slot: slot, hd_interfaces: [], hd_interface_count: 0, hd_keyboard_if: (-1), hd_raw_if: (-1) }
+	hid_device_new = |vendor, product, slot| UsbHid.HidDevice.{ hd_vendor: vendor, hd_product: product, hd_slot: slot, hd_interfaces: [], hd_interface_count: 0, hd_keyboard_if: (-1), hd_raw_if: (-1) }
 
 	hid_scan_interfaces : List(I64), I64 -> List(UsbHid.HidInterface)
 	hid_scan_interfaces = |config_desc, total_len| ({
@@ -77,7 +83,7 @@ UsbHid :: [].{
 		(if (desc_len == 0) { acc } else { (if (desc_type == 4) { ({
 			iface = Usb.usb_parse_interface(desc, offset)
 			(if (iface.if_class == hid_class) { ({
-				new_hid = { hi_number: iface.if_number, hi_subclass: iface.if_subclass, hi_protocol: iface.if_protocol, hi_ep_in_addr: 0, hi_ep_out_addr: 0, hi_ep_in_max: 0, hi_ep_out_max: 0, hi_report_size: 64 }
+				new_hid = UsbHid.HidInterface.{ hi_number: iface.if_number, hi_subclass: iface.if_subclass, hi_protocol: iface.if_protocol, hi_ep_in_addr: 0, hi_ep_out_addr: 0, hi_ep_in_max: 0, hi_ep_out_max: 0, hi_report_size: 64 }
 				acc2 = (match current {
 					Just(prev) => List.append(acc, prev)
 					None => acc
@@ -111,19 +117,19 @@ UsbHid :: [].{
 	}) })
 
 	hid_setup_get_report : I64, I64, I64, I64 -> Usb.UsbSetupPacket
-	hid_setup_get_report = |report_type, report_id, interface_num, length| { sp_request_type: 161, sp_request: hid_req_get_report, sp_value: I64.bitwise_or(I64.shl_wrap(report_type, I64.to_u8_wrap(8)), report_id), sp_index: interface_num, sp_length: length }
+	hid_setup_get_report = |report_type, report_id, interface_num, length| Usb.UsbSetupPacket.{ sp_request_type: 161, sp_request: hid_req_get_report, sp_value: I64.bitwise_or(I64.shl_wrap(report_type, I64.to_u8_wrap(8)), report_id), sp_index: interface_num, sp_length: length }
 
 	hid_setup_set_report : I64, I64, I64, I64 -> Usb.UsbSetupPacket
-	hid_setup_set_report = |report_type, report_id, interface_num, length| { sp_request_type: 33, sp_request: hid_req_set_report, sp_value: I64.bitwise_or(I64.shl_wrap(report_type, I64.to_u8_wrap(8)), report_id), sp_index: interface_num, sp_length: length }
+	hid_setup_set_report = |report_type, report_id, interface_num, length| Usb.UsbSetupPacket.{ sp_request_type: 33, sp_request: hid_req_set_report, sp_value: I64.bitwise_or(I64.shl_wrap(report_type, I64.to_u8_wrap(8)), report_id), sp_index: interface_num, sp_length: length }
 
 	hid_setup_set_idle : I64, I64 -> Usb.UsbSetupPacket
-	hid_setup_set_idle = |interface_num, duration| { sp_request_type: 33, sp_request: hid_req_set_idle, sp_value: I64.shl_wrap(duration, I64.to_u8_wrap(8)), sp_index: interface_num, sp_length: 0 }
+	hid_setup_set_idle = |interface_num, duration| Usb.UsbSetupPacket.{ sp_request_type: 33, sp_request: hid_req_set_idle, sp_value: I64.shl_wrap(duration, I64.to_u8_wrap(8)), sp_index: interface_num, sp_length: 0 }
 
 	hid_setup_set_protocol : I64, I64 -> Usb.UsbSetupPacket
-	hid_setup_set_protocol = |interface_num, protocol| { sp_request_type: 33, sp_request: hid_req_set_protocol, sp_value: protocol, sp_index: interface_num, sp_length: 0 }
+	hid_setup_set_protocol = |interface_num, protocol| Usb.UsbSetupPacket.{ sp_request_type: 33, sp_request: hid_req_set_protocol, sp_value: protocol, sp_index: interface_num, sp_length: 0 }
 
 	hid_setup_get_hid_descriptor : I64, I64 -> Usb.UsbSetupPacket
-	hid_setup_get_hid_descriptor = |interface_num, length| { sp_request_type: 129, sp_request: Usb.usb_req_get_descriptor, sp_value: I64.shl_wrap(hid_desc_type_report, I64.to_u8_wrap(8)), sp_index: interface_num, sp_length: length }
+	hid_setup_get_hid_descriptor = |interface_num, length| Usb.UsbSetupPacket.{ sp_request_type: 129, sp_request: Usb.usb_req_get_descriptor, sp_value: I64.shl_wrap(hid_desc_type_report, I64.to_u8_wrap(8)), sp_index: interface_num, sp_length: length }
 
 	hid_raw_report : I64, List(I64) -> List(I64)
 	hid_raw_report = |size, data| hid_pad_report(data, 0, size, [])

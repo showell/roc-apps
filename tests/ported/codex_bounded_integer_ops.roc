@@ -25,12 +25,21 @@ import cdx.Prelude
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Byte : { val : I64 }
-Port : { num : I64 }
-Pair : { lo : I64, hi : I64 }
+Byte := { val : I64 }.{
+	is_eq : Byte, Byte -> Bool
+	is_eq = |a, b| a.val == b.val
+}
+Port := { num : I64 }.{
+	is_eq : Port, Port -> Bool
+	is_eq = |a, b| a.num == b.num
+}
+Pair := { lo : I64, hi : I64 }.{
+	is_eq : Pair, Pair -> Bool
+	is_eq = |a, b| a.lo == b.lo and a.hi == b.hi
+}
 
 make_byte : I64 -> Byte
-make_byte = |n| { val: n }
+make_byte = |n| Byte.{ val: n }
 
 byte_add : Byte, Byte -> Byte
 byte_add = |a, b| make_byte((a.val + b.val))
@@ -39,7 +48,7 @@ byte_mul : Byte, I64 -> Byte
 byte_mul = |b, n| make_byte((b.val * n))
 
 split_u16 : Port -> Pair
-split_u16 = |p| { lo: Prelude.int_mod(p.num, 256), hi: I64.div_trunc_by(p.num, 256) }
+split_u16 = |p| Pair.{ lo: Prelude.int_mod(p.num, 256), hi: I64.div_trunc_by(p.num, 256) }
 
 join_pair : Pair -> I64
 join_pair = |p| ((p.hi * 256) + p.lo)
@@ -54,7 +63,7 @@ main! = |_args| {
 	b = make_byte(55)
 	c = byte_add(a, b)
 	d = byte_mul(b, 3)
-	port = { num: 4660 }
+	port = Port.{ num: 4660 }
 	parts = split_u16(port)
 	rejoined = join_pair(parts)
 	bytes = [make_byte(10), make_byte(20), make_byte(30), make_byte(40)]

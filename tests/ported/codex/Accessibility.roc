@@ -5,10 +5,13 @@ import Maybe
 Accessibility :: [].{
 	A11yRole : [RoleButton, RoleTextbox, RoleCheckbox, RoleRadio, RoleSlider, RoleMenu, RoleMenuItem, RoleDialog, RoleAlert, RoleStatus, RoleHeading(I64), RoleList, RoleListItem, RoleLink, RoleImage, RoleNone]
 	A11yLive : [LiveOff, LivePolite, LiveAssertive]
-	A11yInfo : { ai_role : Accessibility.A11yRole, ai_label : CceText, ai_description : CceText, ai_live : Accessibility.A11yLive, ai_tab_index : I64, ai_hidden : Bool, ai_expanded : Maybe.Maybe(Bool), ai_checked : Maybe.Maybe(Bool), ai_value_now : I64, ai_value_min : I64, ai_value_max : I64 }
+	A11yInfo := { ai_role : Accessibility.A11yRole, ai_label : CceText, ai_description : CceText, ai_live : Accessibility.A11yLive, ai_tab_index : I64, ai_hidden : Bool, ai_expanded : Maybe.Maybe(Bool), ai_checked : Maybe.Maybe(Bool), ai_value_now : I64, ai_value_min : I64, ai_value_max : I64 }.{
+		is_eq : Accessibility.A11yInfo, Accessibility.A11yInfo -> Bool
+		is_eq = |a, b| a.ai_role == b.ai_role and a.ai_label == b.ai_label and a.ai_description == b.ai_description and a.ai_live == b.ai_live and a.ai_tab_index == b.ai_tab_index and a.ai_hidden == b.ai_hidden and a.ai_expanded == b.ai_expanded and a.ai_checked == b.ai_checked and a.ai_value_now == b.ai_value_now and a.ai_value_min == b.ai_value_min and a.ai_value_max == b.ai_value_max
+	}
 
 	a11y_empty : Accessibility.A11yInfo
-	a11y_empty = { ai_role: RoleNone, ai_label: "", ai_description: "", ai_live: LiveOff, ai_tab_index: 0, ai_hidden: False, ai_expanded: None, ai_checked: None, ai_value_now: 0, ai_value_min: 0, ai_value_max: 100 }
+	a11y_empty = Accessibility.A11yInfo.{ ai_role: RoleNone, ai_label: "", ai_description: "", ai_live: LiveOff, ai_tab_index: 0, ai_hidden: False, ai_expanded: None, ai_checked: None, ai_value_now: 0, ai_value_min: 0, ai_value_max: 100 }
 
 	a11y_role : Accessibility.A11yInfo, Accessibility.A11yRole -> Accessibility.A11yInfo
 	a11y_role = |info, role| { ..info, ai_role: role }

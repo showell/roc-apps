@@ -5,7 +5,10 @@ import Tuple
 import Units
 
 AudioAnalysis :: [].{
-	AudioFeatures : { af_peak : I64, af_rms : I64, af_centroid : Units.Frequency, af_bpm : I64, af_duration_ms : I64 }
+	AudioFeatures := { af_peak : I64, af_rms : I64, af_centroid : Units.Frequency, af_bpm : I64, af_duration_ms : I64 }.{
+		is_eq : AudioAnalysis.AudioFeatures, AudioAnalysis.AudioFeatures -> Bool
+		is_eq = |a, b| a.af_peak == b.af_peak and a.af_rms == b.af_rms and a.af_centroid == b.af_centroid and a.af_bpm == b.af_bpm and a.af_duration_ms == b.af_duration_ms
+	}
 
 	audio_peak : List(I64) -> I64
 	audio_peak = |samples| aa_peak_loop(samples, 0, U64.to_i64_wrap(List.len(samples)), 0)
@@ -131,7 +134,7 @@ AudioAnalysis :: [].{
 		env = audio_envelope(samples, 2048)
 		bpm = audio_estimate_bpm(env, sample_rate, 2048)
 		dur = I64.div_trunc_by((U64.to_i64_wrap(List.len(samples)) * 1000), sample_rate)
-		{ af_peak: peak, af_rms: rms, af_centroid: centroid, af_bpm: bpm, af_duration_ms: dur }
+		AudioAnalysis.AudioFeatures.{ af_peak: peak, af_rms: rms, af_centroid: centroid, af_bpm: bpm, af_duration_ms: dur }
 	})
 
 	audio_vibe : AudioAnalysis.AudioFeatures -> CceText

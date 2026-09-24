@@ -3,19 +3,22 @@ import CceText
 import Maybe
 
 BigInt :: [].{
-	BigInt : { bi_sign : I64, bi_limbs : List(I64) }
+	BigInt := { bi_sign : I64, bi_limbs : List(I64) }.{
+		is_eq : BigInt.BigInt, BigInt.BigInt -> Bool
+		is_eq = |a, b| a.bi_sign == b.bi_sign and a.bi_limbs == b.bi_limbs
+	}
 
 	bigint_base : I64
 	bigint_base = 10000
 
 	bigint_zero : BigInt.BigInt
-	bigint_zero = { bi_sign: 0, bi_limbs: [0] }
+	bigint_zero = BigInt.BigInt.{ bi_sign: 0, bi_limbs: [0] }
 
 	bigint_one : BigInt.BigInt
-	bigint_one = { bi_sign: 1, bi_limbs: [1] }
+	bigint_one = BigInt.BigInt.{ bi_sign: 1, bi_limbs: [1] }
 
 	bigint_from_integer : I64 -> BigInt.BigInt
-	bigint_from_integer = |n| (if (n == 0) { bigint_zero } else { (if (n > 0) { { bi_sign: 1, bi_limbs: bigint_split_limbs(n, []) } } else { { bi_sign: (-1), bi_limbs: bigint_split_limbs((-n), []) } }) })
+	bigint_from_integer = |n| (if (n == 0) { bigint_zero } else { (if (n > 0) { BigInt.BigInt.{ bi_sign: 1, bi_limbs: bigint_split_limbs(n, []) } } else { BigInt.BigInt.{ bi_sign: (-1), bi_limbs: bigint_split_limbs((-n), []) } }) })
 
 	bigint_split_limbs : I64, List(I64) -> List(I64)
 	bigint_split_limbs = |n, acc| (if (n == 0) { (if (U64.to_i64_wrap(List.len(acc)) == 0) { [0] } else { acc }) } else { bigint_split_limbs(I64.div_trunc_by(n, bigint_base), List.append(acc, (n - (I64.div_trunc_by(n, bigint_base) * bigint_base)))) })
@@ -24,10 +27,10 @@ BigInt :: [].{
 	bigint_is_zero = |a| (a.bi_sign == 0)
 
 	bigint_negate : BigInt.BigInt -> BigInt.BigInt
-	bigint_negate = |a| (if (a.bi_sign == 0) { a } else { { bi_sign: (-a.bi_sign), bi_limbs: a.bi_limbs } })
+	bigint_negate = |a| (if (a.bi_sign == 0) { a } else { BigInt.BigInt.{ bi_sign: (-a.bi_sign), bi_limbs: a.bi_limbs } })
 
 	bigint_abs : BigInt.BigInt -> BigInt.BigInt
-	bigint_abs = |a| (if (a.bi_sign >= 0) { a } else { { bi_sign: 1, bi_limbs: a.bi_limbs } })
+	bigint_abs = |a| (if (a.bi_sign >= 0) { a } else { BigInt.BigInt.{ bi_sign: 1, bi_limbs: a.bi_limbs } })
 
 	bigint_compare : BigInt.BigInt, BigInt.BigInt -> I64
 	bigint_compare = |a, b| (if (a.bi_sign < b.bi_sign) { (-1) } else { (if (a.bi_sign > b.bi_sign) { 1 } else { (if (a.bi_sign == 0) { 0 } else { (if (a.bi_sign > 0) { bigint_compare_limbs(a.bi_limbs, b.bi_limbs) } else { bigint_compare_limbs(b.bi_limbs, a.bi_limbs) }) }) }) })
@@ -56,9 +59,9 @@ BigInt :: [].{
 	bigint_gt = |a, b| (bigint_compare(a, b) > 0)
 
 	bigint_add : BigInt.BigInt, BigInt.BigInt -> BigInt.BigInt
-	bigint_add = |a, b| (if (a.bi_sign == 0) { b } else { (if (b.bi_sign == 0) { a } else { (if (a.bi_sign == b.bi_sign) { { bi_sign: a.bi_sign, bi_limbs: bigint_add_limbs(a.bi_limbs, b.bi_limbs, 0) } } else { ({
+	bigint_add = |a, b| (if (a.bi_sign == 0) { b } else { (if (b.bi_sign == 0) { a } else { (if (a.bi_sign == b.bi_sign) { BigInt.BigInt.{ bi_sign: a.bi_sign, bi_limbs: bigint_add_limbs(a.bi_limbs, b.bi_limbs, 0) } } else { ({
 		cmp = bigint_compare_limbs(a.bi_limbs, b.bi_limbs)
-		(if (cmp == 0) { bigint_zero } else { (if (cmp > 0) { { bi_sign: a.bi_sign, bi_limbs: bigint_sub_limbs(a.bi_limbs, b.bi_limbs, 0) } } else { { bi_sign: b.bi_sign, bi_limbs: bigint_sub_limbs(b.bi_limbs, a.bi_limbs, 0) } }) })
+		(if (cmp == 0) { bigint_zero } else { (if (cmp > 0) { BigInt.BigInt.{ bi_sign: a.bi_sign, bi_limbs: bigint_sub_limbs(a.bi_limbs, b.bi_limbs, 0) } } else { BigInt.BigInt.{ bi_sign: b.bi_sign, bi_limbs: bigint_sub_limbs(b.bi_limbs, a.bi_limbs, 0) } }) })
 	}) }) }) })
 
 	bigint_add_limbs : List(I64), List(I64), I64 -> List(I64)
@@ -106,7 +109,7 @@ BigInt :: [].{
 	bigint_copy_limbs = |src, i, len, acc| (if (i >= len) { acc } else { bigint_copy_limbs(src, (i + 1), len, List.append(acc, (List.get(src, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))) })
 
 	bigint_mul : BigInt.BigInt, BigInt.BigInt -> BigInt.BigInt
-	bigint_mul = |a, b| (if (a.bi_sign == 0) { bigint_zero } else { (if (b.bi_sign == 0) { bigint_zero } else { { bi_sign: (a.bi_sign * b.bi_sign), bi_limbs: bigint_mul_limbs(a.bi_limbs, b.bi_limbs) } }) })
+	bigint_mul = |a, b| (if (a.bi_sign == 0) { bigint_zero } else { (if (b.bi_sign == 0) { bigint_zero } else { BigInt.BigInt.{ bi_sign: (a.bi_sign * b.bi_sign), bi_limbs: bigint_mul_limbs(a.bi_limbs, b.bi_limbs) } }) })
 
 	bigint_mul_limbs : List(I64), List(I64) -> List(I64)
 	bigint_mul_limbs = |a, b| bigint_mul_outer(a, b, 0, bigint_make_zeros((U64.to_i64_wrap(List.len(a)) + U64.to_i64_wrap(List.len(b)))))
@@ -139,7 +142,7 @@ BigInt :: [].{
 		qa = bigint_abs(a)
 		qb = bigint_abs(b)
 		result = bigint_div_unsigned(qa, qb)
-		{ bi_sign: (a.bi_sign * b.bi_sign), bi_limbs: result.bi_limbs }
+		BigInt.BigInt.{ bi_sign: (a.bi_sign * b.bi_sign), bi_limbs: result.bi_limbs }
 	}) }) })
 
 	bigint_div_unsigned : BigInt.BigInt, BigInt.BigInt -> BigInt.BigInt

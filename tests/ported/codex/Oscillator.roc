@@ -3,8 +3,14 @@ import Random
 import Units
 
 Oscillator :: [].{
-	OscBank : { ob_oscs : List(Oscillator.OscState), ob_count : I64, ob_sample_rate : Units.Frequency }
-	OscState : { osc_freq : Units.Frequency, osc_phase : I64, osc_amp : I64, osc_type : I64, osc_param : I64 }
+	OscBank := { ob_oscs : List(Oscillator.OscState), ob_count : I64, ob_sample_rate : Units.Frequency }.{
+		is_eq : Oscillator.OscBank, Oscillator.OscBank -> Bool
+		is_eq = |a, b| a.ob_oscs == b.ob_oscs and a.ob_count == b.ob_count and a.ob_sample_rate == b.ob_sample_rate
+	}
+	OscState := { osc_freq : Units.Frequency, osc_phase : I64, osc_amp : I64, osc_type : I64, osc_param : I64 }.{
+		is_eq : Oscillator.OscState, Oscillator.OscState -> Bool
+		is_eq = |a, b| a.osc_freq == b.osc_freq and a.osc_phase == b.osc_phase and a.osc_amp == b.osc_amp and a.osc_type == b.osc_type and a.osc_param == b.osc_param
+	}
 
 	osc_type_sine : I64
 	osc_type_sine = 0
@@ -25,12 +31,12 @@ Oscillator :: [].{
 	osc_type_noise = 5
 
 	osc_bank_new : Units.Frequency -> Oscillator.OscBank
-	osc_bank_new = |sr| { ob_oscs: [], ob_count: 0, ob_sample_rate: sr }
+	osc_bank_new = |sr| Oscillator.OscBank.{ ob_oscs: [], ob_count: 0, ob_sample_rate: sr }
 
 	osc_add : Oscillator.OscBank, Units.Frequency, I64, I64, I64 -> Oscillator.OscBank
 	osc_add = |bank, freq, amp, wave_type, param| ({
-		osc = { osc_freq: freq, osc_phase: 0, osc_amp: amp, osc_type: wave_type, osc_param: param }
-		{ ob_oscs: List.append(bank.ob_oscs, osc), ob_count: (bank.ob_count + 1), ob_sample_rate: bank.ob_sample_rate }
+		osc = Oscillator.OscState.{ osc_freq: freq, osc_phase: 0, osc_amp: amp, osc_type: wave_type, osc_param: param }
+		Oscillator.OscBank.{ ob_oscs: List.append(bank.ob_oscs, osc), ob_count: (bank.ob_count + 1), ob_sample_rate: bank.ob_sample_rate }
 	})
 
 	osc_eval : Oscillator.OscState, I64, I64 -> I64

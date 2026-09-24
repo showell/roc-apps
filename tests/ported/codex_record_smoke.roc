@@ -27,19 +27,37 @@ import cdx.CceText
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Point : { x : I64, y : I64 }
-Rect : { origin : Point, width : I64, height : I64 }
+Point := { x : I64, y : I64 }.{
+	is_eq : Point, Point -> Bool
+	is_eq = |a, b| a.x == b.x and a.y == b.y
+}
+Rect := { origin : Point, width : I64, height : I64 }.{
+	is_eq : Rect, Rect -> Bool
+	is_eq = |a, b| a.origin == b.origin and a.width == b.width and a.height == b.height
+}
 Color : [Red, Green, Blue]
 Shape : [Circle(Color, I64), Square(Color, I64)]
 Wrapped : [Wrapped(Color, Shape)]
-TestRec : { name : CceText, effect : I64, value : I64 }
-Inner : { x_val : I64, y_val : I64, label : CceText }
+TestRec := { name : CceText, effect : I64, value : I64 }.{
+	is_eq : TestRec, TestRec -> Bool
+	is_eq = |a, b| a.name == b.name and a.effect == b.effect and a.value == b.value
+}
+Inner := { x_val : I64, y_val : I64, label : CceText }.{
+	is_eq : Inner, Inner -> Bool
+	is_eq = |a, b| a.x_val == b.x_val and a.y_val == b.y_val and a.label == b.label
+}
 Outer : [OWrapped(Inner), OPlain(I64), OEmpty]
-Rec1 : { rx : I64, ry : I64 }
-Rec2 : { ra : CceText, rb : I64 }
+Rec1 := { rx : I64, ry : I64 }.{
+	is_eq : Rec1, Rec1 -> Bool
+	is_eq = |a, b| a.rx == b.rx and a.ry == b.ry
+}
+Rec2 := { ra : CceText, rb : I64 }.{
+	is_eq : Rec2, Rec2 -> Bool
+	is_eq = |a, b| a.ra == b.ra and a.rb == b.rb
+}
 V : [VarA(Rec1), VarB(Rec2)]
-Box_ : { box_label : CceText, apply : (I64 -> CceText) }
-Entry : { ent_name : CceText, emit : (I64 -> CceText) }
+Box_ := { box_label : CceText, apply : (I64 -> CceText) }
+Entry := { ent_name : CceText, emit : (I64 -> CceText) }
 
 area : Rect -> I64
 area = |r| (r.width * r.height)
@@ -69,10 +87,10 @@ describe_wrapped = |w| (match w {
 })
 
 make_test : I64 -> TestRec
-make_test = |n| { name: "hello", effect: (n * 2), value: n }
+make_test = |n| TestRec.{ name: "hello", effect: (n * 2), value: n }
 
 make_wrapped : I64 -> Outer
-make_wrapped = |n| OWrapped({ x_val: n, y_val: (n * 2), label: "test" })
+make_wrapped = |n| OWrapped(Inner.{ x_val: n, y_val: (n * 2), label: "test" })
 
 use_wrapped : Outer -> I64
 use_wrapped = |o| (match o {
@@ -88,7 +106,7 @@ extract_int = |v| (match v {
 })
 
 make_box : CceText, I64 -> Box_
-make_box = |lbl, offset| { box_label: lbl, apply: ({
+make_box = |lbl, offset| Box_.{ box_label: lbl, apply: ({
 	dev__1 = offset
 	dev__2 = lbl
 	|dev__3| lam_0(dev__1, dev__2, dev__3)
@@ -170,7 +188,7 @@ lam_0 = |offset, lbl, x| CceText.concat(CceText.concat(lbl, ":"), CceText.show_i
 # --- Entry ---
 
 main! = |_args| {
-	line!(CceText.printed(describe_rect({ origin: { x: 10, y: 20 }, width: 7, height: 3 })))
+	line!(CceText.printed(describe_rect(Rect.{ origin: Point.{ x: 10, y: 20 }, width: 7, height: 3 })))
 	({
 		tr = make_test(5)
 		({
@@ -178,14 +196,14 @@ main! = |_args| {
 			line!(CceText.printed(describe_shape(Circle(Green, 5))))
 			line!(CceText.printed(describe_wrapped(Wrapped(Red, Circle(Red, 5)))))
 			line!(CceText.printed(CceText.show_int(use_wrapped(make_wrapped(5)))))
-			line!(CceText.printed(CceText.show_int(extract_int(VarA({ rx: 42, ry: 7 })))))
-			line!(CceText.printed(CceText.show_int(extract_int(VarB({ ra: "hello", rb: 99 })))))
+			line!(CceText.printed(CceText.show_int(extract_int(VarA(Rec1.{ rx: 42, ry: 7 })))))
+			line!(CceText.printed(CceText.show_int(extract_int(VarB(Rec2.{ ra: "hello", rb: 99 })))))
 			({
 				b1 = make_box("a", 10)
 				({
 					line!(CceText.printed((b1.apply)(3)))
 					({
-						e = { ent_name: "one", emit: emit_one }
+						e = Entry.{ ent_name: "one", emit: emit_one }
 						line!(CceText.printed((e.emit)(5)))
 					})
 				})

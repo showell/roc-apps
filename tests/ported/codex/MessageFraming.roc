@@ -4,8 +4,14 @@ import CceText
 import Sha256
 
 MessageFraming :: [].{
-	FrameTextResult : { value : CceText, next_offset : I64, valid : Bool }
-	FrameBytesResult : { value : List(I64), next_offset : I64, valid : Bool }
+	FrameTextResult := { value : CceText, next_offset : I64, valid : Bool }.{
+		is_eq : MessageFraming.FrameTextResult, MessageFraming.FrameTextResult -> Bool
+		is_eq = |a, b| a.value == b.value and a.next_offset == b.next_offset and a.valid == b.valid
+	}
+	FrameBytesResult := { value : List(I64), next_offset : I64, valid : Bool }.{
+		is_eq : MessageFraming.FrameBytesResult, MessageFraming.FrameBytesResult -> Bool
+		is_eq = |a, b| a.value == b.value and a.next_offset == b.next_offset and a.valid == b.valid
+	}
 
 	frame_encode : I64, List(I64) -> List(I64)
 	frame_encode = |type_tag, body| ({
@@ -53,7 +59,7 @@ MessageFraming :: [].{
 	frame_decode_text = |bs, offset| ({
 		len = frame_read_le32(bs, offset)
 		text = frame_bytes_to_text(bs, (offset + 4), len, "")
-		{ value: text, next_offset: frame_next_offset(bs, ((offset + 4) + len)), valid: frame_fits(bs, offset, len) }
+		MessageFraming.FrameTextResult.{ value: text, next_offset: frame_next_offset(bs, ((offset + 4) + len)), valid: frame_fits(bs, offset, len) }
 	})
 
 	frame_bytes_to_text : List(I64), I64, I64, CceText -> CceText
@@ -71,7 +77,7 @@ MessageFraming :: [].{
 	frame_decode_bytes : List(I64), I64 -> MessageFraming.FrameBytesResult
 	frame_decode_bytes = |bs, offset| ({
 		len = frame_read_le32(bs, offset)
-		{ value: frame_slice(bs, (offset + 4), ((offset + 4) + len)), next_offset: frame_next_offset(bs, ((offset + 4) + len)), valid: frame_fits(bs, offset, len) }
+		MessageFraming.FrameBytesResult.{ value: frame_slice(bs, (offset + 4), ((offset + 4) + len)), next_offset: frame_next_offset(bs, ((offset + 4) + len)), valid: frame_fits(bs, offset, len) }
 	})
 
 	tag_propose : I64

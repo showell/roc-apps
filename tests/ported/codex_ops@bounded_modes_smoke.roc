@@ -42,30 +42,48 @@ import cdx.CceText
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-WrapU8 : { v : I64 }
-WrapI8 : { v : I64 }
-ClampU8 : { v : I64 }
-ClampI8 : { v : I64 }
-ClampU32 : { v : I64 }
-ClampBig : { v : I64 }
+WrapU8 := { v : I64 }.{
+	is_eq : WrapU8, WrapU8 -> Bool
+	is_eq = |a, b| a.v == b.v
+}
+WrapI8 := { v : I64 }.{
+	is_eq : WrapI8, WrapI8 -> Bool
+	is_eq = |a, b| a.v == b.v
+}
+ClampU8 := { v : I64 }.{
+	is_eq : ClampU8, ClampU8 -> Bool
+	is_eq = |a, b| a.v == b.v
+}
+ClampI8 := { v : I64 }.{
+	is_eq : ClampI8, ClampI8 -> Bool
+	is_eq = |a, b| a.v == b.v
+}
+ClampU32 := { v : I64 }.{
+	is_eq : ClampU32, ClampU32 -> Bool
+	is_eq = |a, b| a.v == b.v
+}
+ClampBig := { v : I64 }.{
+	is_eq : ClampBig, ClampBig -> Bool
+	is_eq = |a, b| a.v == b.v
+}
 
 wu8 : I64 -> I64
-wu8 = |n| { v: (0 + I64.mod_by(n - (0), 256)) }.v
+wu8 = |n| WrapU8.{ v: (0 + I64.mod_by(n - (0), 256)) }.v
 
 wi8 : I64 -> I64
-wi8 = |n| { v: (-128 + I64.mod_by(n - (-128), 256)) }.v
+wi8 = |n| WrapI8.{ v: (-128 + I64.mod_by(n - (-128), 256)) }.v
 
 cu8 : I64 -> I64
-cu8 = |n| { v: I64.min(I64.max(n, 0), 100) }.v
+cu8 = |n| ClampU8.{ v: I64.min(I64.max(n, 0), 100) }.v
 
 ci8 : I64 -> I64
-ci8 = |n| { v: I64.min(I64.max(n, -50), 50) }.v
+ci8 = |n| ClampI8.{ v: I64.min(I64.max(n, -50), 50) }.v
 
 cu32 : I64 -> I64
-cu32 = |n| { v: I64.min(I64.max(n, 0), 4294967295) }.v
+cu32 = |n| ClampU32.{ v: I64.min(I64.max(n, 0), 4294967295) }.v
 
 cbig : I64 -> I64
-cbig = |n| { v: I64.min(I64.max(n, 0), 10000000000) }.v
+cbig = |n| ClampBig.{ v: I64.min(I64.max(n, 0), 10000000000) }.v
 
 wrap_add : I64, I64 -> I64
 wrap_add = |a, b| wu8((wu8(a) + wu8(b)))

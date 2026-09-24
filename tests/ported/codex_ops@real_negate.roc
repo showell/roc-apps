@@ -24,7 +24,10 @@ import cdx.CceText
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Vec : { vx : F64, vy : F64 }
+Vec := { vx : F64, vy : F64 }.{
+	is_eq : Vec, Vec -> Bool
+	is_eq = |a, b| a.vx == b.vx and a.vy == b.vy
+}
 
 scale_by_two : F64 -> F64
 scale_by_two = |x| (x * 2.0)
@@ -55,9 +58,9 @@ mixed = |a, b| ((((-dot(a, b)) * 2.0) + a.vx) * 10.0)
 main! = |_args| {
 	line!(CceText.printed(CceText.concat("neg-param   ", CceText.show_int(F64.to_i64_wrap((neg_param(2.5) * 10.0))))))
 	line!(CceText.printed(CceText.concat("neg-call    ", CceText.show_int(F64.to_i64_wrap((neg_call(2.5) * 10.0))))))
-	line!(CceText.printed(CceText.concat("neg-field   ", CceText.show_int(F64.to_i64_wrap((neg_field({ vx: 1.5, vy: 0.0 }) * 10.0))))))
+	line!(CceText.printed(CceText.concat("neg-field   ", CceText.show_int(F64.to_i64_wrap((neg_field(Vec.{ vx: 1.5, vy: 0.0 }) * 10.0))))))
 	line!(CceText.printed(CceText.concat("neg-nested  ", CceText.show_int(F64.to_i64_wrap((neg_nested(2.0) * 10.0))))))
-	line!(CceText.printed(CceText.concat("neg-multi   ", CceText.show_int(F64.to_i64_wrap((neg_call_multi({ vx: 3.0, vy: 4.0 }, { vx: 1.0, vy: 2.0 }) * 10.0))))))
-	line!(CceText.printed(CceText.concat("mixed       ", CceText.show_int(F64.to_i64_wrap(mixed({ vx: 3.0, vy: 4.0 }, { vx: 1.0, vy: 2.0 }))))))
+	line!(CceText.printed(CceText.concat("neg-multi   ", CceText.show_int(F64.to_i64_wrap((neg_call_multi(Vec.{ vx: 3.0, vy: 4.0 }, Vec.{ vx: 1.0, vy: 2.0 }) * 10.0))))))
+	line!(CceText.printed(CceText.concat("mixed       ", CceText.show_int(F64.to_i64_wrap(mixed(Vec.{ vx: 3.0, vy: 4.0 }, Vec.{ vx: 1.0, vy: 2.0 }))))))
 	Ok({})
 }

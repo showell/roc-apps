@@ -1,8 +1,14 @@
 # Cordic -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 Cordic :: [].{
-	CordicResult : { cos_val : I64, sin_val : I64 }
-	CordicVector : { angle : I64, magnitude : I64 }
+	CordicResult := { cos_val : I64, sin_val : I64 }.{
+		is_eq : Cordic.CordicResult, Cordic.CordicResult -> Bool
+		is_eq = |a, b| a.cos_val == b.cos_val and a.sin_val == b.sin_val
+	}
+	CordicVector := { angle : I64, magnitude : I64 }.{
+		is_eq : Cordic.CordicVector, Cordic.CordicVector -> Bool
+		is_eq = |a, b| a.angle == b.angle and a.magnitude == b.magnitude
+	}
 
 	cordic_scale : I64
 	cordic_scale = 1000
@@ -33,13 +39,13 @@ Cordic :: [].{
 		a = cordic_normalize(angle_milli)
 		(if (a <= cordic_half_pi) { cordic_rotate(a, cordic_scale, 0, 0) } else { (if (a <= cordic_pi) { ({
 			q = cordic_rotate((cordic_pi - a), cordic_scale, 0, 0)
-			{ cos_val: (0 - q.cos_val), sin_val: q.sin_val }
+			Cordic.CordicResult.{ cos_val: (0 - q.cos_val), sin_val: q.sin_val }
 		}) } else { (if (a <= cordic_three_half_pi) { ({
 			q = cordic_rotate((a - cordic_pi), cordic_scale, 0, 0)
-			{ cos_val: (0 - q.cos_val), sin_val: (0 - q.sin_val) }
+			Cordic.CordicResult.{ cos_val: (0 - q.cos_val), sin_val: (0 - q.sin_val) }
 		}) } else { ({
 			q = cordic_rotate((cordic_two_pi - a), cordic_scale, 0, 0)
-			{ cos_val: q.cos_val, sin_val: (0 - q.sin_val) }
+			Cordic.CordicResult.{ cos_val: q.cos_val, sin_val: (0 - q.sin_val) }
 		}) }) }) })
 	})
 
@@ -51,7 +57,7 @@ Cordic :: [].{
 	})
 
 	cordic_rotate : I64, I64, I64, I64 -> Cordic.CordicResult
-	cordic_rotate = |target, x, y, i| (if (i >= cordic_iterations) { { cos_val: I64.div_trunc_by((x * cordic_gain), cordic_scale), sin_val: I64.div_trunc_by((y * cordic_gain), cordic_scale) } } else { ({
+	cordic_rotate = |target, x, y, i| (if (i >= cordic_iterations) { Cordic.CordicResult.{ cos_val: I64.div_trunc_by((x * cordic_gain), cordic_scale), sin_val: I64.div_trunc_by((y * cordic_gain), cordic_scale) } } else { ({
 		atan_i = (List.get(cordic_atan_table, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 		(if (target > 0) { cordic_rotate((target - atan_i), (x - I64.div_trunc_by(y, I64.shl_wrap(1, I64.to_u8_wrap(i)))), (y + I64.div_trunc_by(x, I64.shl_wrap(1, I64.to_u8_wrap(i)))), (i + 1)) } else { cordic_rotate((target + atan_i), (x + I64.div_trunc_by(y, I64.shl_wrap(1, I64.to_u8_wrap(i)))), (y - I64.div_trunc_by(x, I64.shl_wrap(1, I64.to_u8_wrap(i)))), (i + 1)) })
 	}) })
@@ -75,11 +81,11 @@ Cordic :: [].{
 		raw = cordic_vector(ax, ay, 0, 0)
 		mag = I64.div_trunc_by((raw.magnitude * cordic_gain), cordic_scale)
 		angle = cordic_adjust_quadrant(raw.angle, x, y)
-		{ angle: angle, magnitude: mag }
+		Cordic.CordicVector.{ angle: angle, magnitude: mag }
 	})
 
 	cordic_vector : I64, I64, I64, I64 -> Cordic.CordicVector
-	cordic_vector = |x, y, angle, i| (if (i >= cordic_iterations) { { angle: angle, magnitude: x } } else { ({
+	cordic_vector = |x, y, angle, i| (if (i >= cordic_iterations) { Cordic.CordicVector.{ angle: angle, magnitude: x } } else { ({
 		atan_i = (List.get(cordic_atan_table, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 		(if (y > 0) { cordic_vector((x + I64.div_trunc_by(y, I64.shl_wrap(1, I64.to_u8_wrap(i)))), (y - I64.div_trunc_by(x, I64.shl_wrap(1, I64.to_u8_wrap(i)))), (angle + atan_i), (i + 1)) } else { cordic_vector((x - I64.div_trunc_by(y, I64.shl_wrap(1, I64.to_u8_wrap(i)))), (y + I64.div_trunc_by(x, I64.shl_wrap(1, I64.to_u8_wrap(i)))), (angle - atan_i), (i + 1)) })
 	}) })

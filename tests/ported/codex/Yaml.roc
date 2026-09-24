@@ -12,7 +12,10 @@ Yaml :: [].{
 		is_eq : Yaml.YamlPair, Yaml.YamlPair -> Bool
 		is_eq = |a, b| a.yp_key == b.yp_key and a.yp_value == b.yp_value
 	}
-	YamlParseResult : { value : Yaml.YamlValue, next_line : I64 }
+	YamlParseResult := { value : Yaml.YamlValue, next_line : I64 }.{
+		is_eq : Yaml.YamlParseResult, Yaml.YamlParseResult -> Bool
+		is_eq = |a, b| a.value == b.value and a.next_line == b.next_line
+	}
 
 	yaml_string : CceText -> Yaml.YamlValue
 	yaml_string = |s| YamlString(s)
@@ -33,7 +36,7 @@ Yaml :: [].{
 	yaml_map = |pairs| YamlMap(pairs)
 
 	yaml_pair : CceText, Yaml.YamlValue -> Yaml.YamlPair
-	yaml_pair = |k, v| { yp_key: k, yp_value: v }
+	yaml_pair = |k, v| Yaml.YamlPair.{ yp_key: k, yp_value: v }
 
 	yaml_get : Yaml.YamlValue, CceText -> Maybe.Maybe(Yaml.YamlValue)
 	yaml_get = |v, key| (match v {
@@ -82,10 +85,10 @@ Yaml :: [].{
 	})
 
 	yaml_parse_block : List(CceText), I64, I64, I64 -> Yaml.YamlParseResult
-	yaml_parse_block = |lines, start, len, indent| (if (start >= len) { { value: YamlNull, next_line: start } } else { ({
+	yaml_parse_block = |lines, start, len, indent| (if (start >= len) { Yaml.YamlParseResult.{ value: YamlNull, next_line: start } } else { ({
 		line = (List.get(lines, I64.to_u64_wrap(start)) ?? crash("list-at out of range"))
 		trimmed = yaml_trim(line)
-		(if (CceText.len(trimmed) == 0) { yaml_parse_block(lines, (start + 1), len, indent) } else { (if yaml_starts_with(trimmed, "#") { yaml_parse_block(lines, (start + 1), len, indent) } else { (if yaml_starts_with(trimmed, "- ") { yaml_parse_list(lines, start, len, indent) } else { (if yaml_contains(trimmed, ": ") { yaml_parse_map(lines, start, len, indent) } else { { value: yaml_parse_scalar(trimmed), next_line: (start + 1) } }) }) }) })
+		(if (CceText.len(trimmed) == 0) { yaml_parse_block(lines, (start + 1), len, indent) } else { (if yaml_starts_with(trimmed, "#") { yaml_parse_block(lines, (start + 1), len, indent) } else { (if yaml_starts_with(trimmed, "- ") { yaml_parse_list(lines, start, len, indent) } else { (if yaml_contains(trimmed, ": ") { yaml_parse_map(lines, start, len, indent) } else { Yaml.YamlParseResult.{ value: yaml_parse_scalar(trimmed), next_line: (start + 1) } }) }) }) })
 	}) })
 
 	yaml_parse_scalar : CceText -> Yaml.YamlValue
@@ -110,32 +113,32 @@ Yaml :: [].{
 	yaml_parse_list = |lines, start, len, indent| yaml_list_loop(lines, start, len, indent, [])
 
 	yaml_list_loop : List(CceText), I64, I64, I64, List(Yaml.YamlValue) -> Yaml.YamlParseResult
-	yaml_list_loop = |lines, pos, len, indent, acc| (if (pos >= len) { { value: YamlList(acc), next_line: pos } } else { ({
+	yaml_list_loop = |lines, pos, len, indent, acc| (if (pos >= len) { Yaml.YamlParseResult.{ value: YamlList(acc), next_line: pos } } else { ({
 		line = (List.get(lines, I64.to_u64_wrap(pos)) ?? crash("list-at out of range"))
 		line_indent = yaml_count_indent(line)
 		trimmed = yaml_trim(line)
-		(if (line_indent < indent) { { value: YamlList(acc), next_line: pos } } else { (if yaml_starts_with(trimmed, "- ") { ({
+		(if (line_indent < indent) { Yaml.YamlParseResult.{ value: YamlList(acc), next_line: pos } } else { (if yaml_starts_with(trimmed, "- ") { ({
 			val_str = yaml_trim(CceText.substring(trimmed, 2, (CceText.len(trimmed) - 2)))
 			val = yaml_parse_scalar(val_str)
 			yaml_list_loop(lines, (pos + 1), len, indent, List.append(acc, val))
-		}) } else { { value: YamlList(acc), next_line: pos } }) })
+		}) } else { Yaml.YamlParseResult.{ value: YamlList(acc), next_line: pos } }) })
 	}) })
 
 	yaml_parse_map : List(CceText), I64, I64, I64 -> Yaml.YamlParseResult
 	yaml_parse_map = |lines, start, len, indent| yaml_map_loop(lines, start, len, indent, [])
 
 	yaml_map_loop : List(CceText), I64, I64, I64, List(Yaml.YamlPair) -> Yaml.YamlParseResult
-	yaml_map_loop = |lines, pos, len, indent, acc| (if (pos >= len) { { value: YamlMap(acc), next_line: pos } } else { ({
+	yaml_map_loop = |lines, pos, len, indent, acc| (if (pos >= len) { Yaml.YamlParseResult.{ value: YamlMap(acc), next_line: pos } } else { ({
 		line = (List.get(lines, I64.to_u64_wrap(pos)) ?? crash("list-at out of range"))
 		line_indent = yaml_count_indent(line)
 		trimmed = yaml_trim(line)
-		(if (CceText.len(trimmed) == 0) { yaml_map_loop(lines, (pos + 1), len, indent, acc) } else { (if yaml_starts_with(trimmed, "#") { yaml_map_loop(lines, (pos + 1), len, indent, acc) } else { (if (line_indent < indent) { { value: YamlMap(acc), next_line: pos } } else { (if yaml_contains(trimmed, ": ") { ({
+		(if (CceText.len(trimmed) == 0) { yaml_map_loop(lines, (pos + 1), len, indent, acc) } else { (if yaml_starts_with(trimmed, "#") { yaml_map_loop(lines, (pos + 1), len, indent, acc) } else { (if (line_indent < indent) { Yaml.YamlParseResult.{ value: YamlMap(acc), next_line: pos } } else { (if yaml_contains(trimmed, ": ") { ({
 			colon = yaml_find_colon_space(trimmed, 0, CceText.len(trimmed))
 			key = CceText.substring(trimmed, 0, colon)
 			val_str = yaml_trim(CceText.substring(trimmed, (colon + 2), ((CceText.len(trimmed) - colon) - 2)))
 			val = yaml_parse_scalar(val_str)
-			yaml_map_loop(lines, (pos + 1), len, indent, List.append(acc, { yp_key: key, yp_value: val }))
-		}) } else { { value: YamlMap(acc), next_line: pos } }) }) }) })
+			yaml_map_loop(lines, (pos + 1), len, indent, List.append(acc, Yaml.YamlPair.{ yp_key: key, yp_value: val }))
+		}) } else { Yaml.YamlParseResult.{ value: YamlMap(acc), next_line: pos } }) }) }) })
 	}) })
 
 	yaml_emit : Yaml.YamlValue -> CceText

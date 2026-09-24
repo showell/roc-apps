@@ -29,7 +29,10 @@ import cdx.IntOps
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-SensorReading : { raw_adc : I64, channel : I64 }
+SensorReading := { raw_adc : I64, channel : I64 }.{
+	is_eq : SensorReading, SensorReading -> Bool
+	is_eq = |a, b| a.raw_adc == b.raw_adc and a.channel == b.channel
+}
 ThreatLevel : [ThreatNone, ThreatLow, ThreatMedium, ThreatHigh, ThreatCritical]
 
 classify_threat : I64 -> ThreatLevel

@@ -5,28 +5,28 @@ import Tensor
 Activation :: [].{
 
 	act_relu : Tensor.Tensor -> Tensor.Tensor
-	act_relu = |t| { data: ListUtils.map_list(lam_0, t.data), rows: t.rows, cols: t.cols }
+	act_relu = |t| Tensor.Tensor.{ data: ListUtils.map_list(lam_0, t.data), rows: t.rows, cols: t.cols }
 
 	act_leaky_relu : Tensor.Tensor, I64 -> Tensor.Tensor
-	act_leaky_relu = |t, alpha| { data: ListUtils.map_list(({
+	act_leaky_relu = |t, alpha| Tensor.Tensor.{ data: ListUtils.map_list(({
 		dev__1 = alpha
 		|dev__2| lam_1(dev__1, dev__2)
 	}), t.data), rows: t.rows, cols: t.cols }
 
 	act_sigmoid : Tensor.Tensor -> Tensor.Tensor
-	act_sigmoid = |t| { data: ListUtils.map_list(lam_2, t.data), rows: t.rows, cols: t.cols }
+	act_sigmoid = |t| Tensor.Tensor.{ data: ListUtils.map_list(lam_2, t.data), rows: t.rows, cols: t.cols }
 
 	act_sigmoid_val : I64 -> I64
 	act_sigmoid_val = |x| (if (x > 16000) { 1000 } else { (if (x < (0 - 16000)) { 0 } else { I64.div_trunc_by(1000000, (1000 + act_exp_approx((0 - x)))) }) })
 
 	act_tanh : Tensor.Tensor -> Tensor.Tensor
-	act_tanh = |t| { data: ListUtils.map_list(lam_3, t.data), rows: t.rows, cols: t.cols }
+	act_tanh = |t| Tensor.Tensor.{ data: ListUtils.map_list(lam_3, t.data), rows: t.rows, cols: t.cols }
 
 	act_tanh_val : I64 -> I64
 	act_tanh_val = |x| ((act_sigmoid_val((x * 2)) * 2) - 1000)
 
 	act_gelu : Tensor.Tensor -> Tensor.Tensor
-	act_gelu = |t| { data: ListUtils.map_list(lam_4, t.data), rows: t.rows, cols: t.cols }
+	act_gelu = |t| Tensor.Tensor.{ data: ListUtils.map_list(lam_4, t.data), rows: t.rows, cols: t.cols }
 
 	act_gelu_val : I64 -> I64
 	act_gelu_val = |x| ({
@@ -47,7 +47,7 @@ Activation :: [].{
 			dev__3 = total
 			|dev__4| lam_7(dev__3, dev__4)
 		}), exps) })
-		{ data: normed, rows: t.rows, cols: t.cols }
+		Tensor.Tensor.{ data: normed, rows: t.rows, cols: t.cols }
 	})
 
 	act_exp_approx : I64 -> I64

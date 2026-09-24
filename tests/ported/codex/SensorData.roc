@@ -4,8 +4,14 @@ import CceText
 SensorData :: [].{
 	SensorKind : [Temperature, Humidity, Barometer, Light, Accelerometer, Gyroscope, Magnetometer, Gps, Battery, Custom(CceText)]
 	SensorValue : [IntValue(I64), FixedValue(I64, I64), BoolValue(Bool), Vec3Value(I64, I64, I64)]
-	SensorReading : { kind : SensorData.SensorKind, value : SensorData.SensorValue, timestamp : I64, device_id : CceText }
-	TimeSeriesEntry : { timestamp : I64, value : I64 }
+	SensorReading := { kind : SensorData.SensorKind, value : SensorData.SensorValue, timestamp : I64, device_id : CceText }.{
+		is_eq : SensorData.SensorReading, SensorData.SensorReading -> Bool
+		is_eq = |a, b| a.kind == b.kind and a.value == b.value and a.timestamp == b.timestamp and a.device_id == b.device_id
+	}
+	TimeSeriesEntry := { timestamp : I64, value : I64 }.{
+		is_eq : SensorData.TimeSeriesEntry, SensorData.TimeSeriesEntry -> Bool
+		is_eq = |a, b| a.timestamp == b.timestamp and a.value == b.value
+	}
 	AlertCondition : [AboveThreshold(I64), BelowThreshold(I64), OutsideRange(I64, I64), RateOfChange(I64)]
 
 	sensor_kind_name : SensorData.SensorKind -> CceText
@@ -31,7 +37,7 @@ SensorData :: [].{
 	})
 
 	make_reading : SensorData.SensorKind, SensorData.SensorValue, I64, CceText -> SensorData.SensorReading
-	make_reading = |kind, value, ts, dev_| { kind: kind, value: value, timestamp: ts, device_id: dev_ }
+	make_reading = |kind, value, ts, dev_| SensorData.SensorReading.{ kind: kind, value: value, timestamp: ts, device_id: dev_ }
 
 	format_reading : SensorData.SensorReading -> CceText
 	format_reading = |r| CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(r.device_id, "/"), sensor_kind_name(r.kind)), "="), sensor_value_to_text(r.value)), "@"), CceText.show_int(r.timestamp))

@@ -19,10 +19,13 @@ import cdx.CceText
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Box_ : { v : I64 }
+Box_ := { v : I64 }.{
+	is_eq : Box_, Box_ -> Bool
+	is_eq = |a, b| a.v == b.v
+}
 
 mk : I64 -> Box_
-mk = |x| { v: x }
+mk = |x| Box_.{ v: x }
 
 loop4 : I64, Box_, I64, I64 -> I64
 loop4 = |i, s, acc, n| (if (i >= n) { acc } else { ({
@@ -33,6 +36,6 @@ loop4 = |i, s, acc, n| (if (i >= n) { acc } else { ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(CceText.printed(CceText.concat("acc=", CceText.show_int(loop4(0, { v: 1 }, 0, 3)))))
+	line!(CceText.printed(CceText.concat("acc=", CceText.show_int(loop4(0, Box_.{ v: 1 }, 0, 3)))))
 	Ok({})
 }

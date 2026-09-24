@@ -5,16 +5,19 @@ import ListUtils
 import Random
 
 CountMinSketch :: [].{
-	CmSketch : { cms_table : List(I64), cms_width : I64, cms_depth : I64, cms_total : I64 }
+	CmSketch := { cms_table : List(I64), cms_width : I64, cms_depth : I64, cms_total : I64 }.{
+		is_eq : CountMinSketch.CmSketch, CountMinSketch.CmSketch -> Bool
+		is_eq = |a, b| a.cms_table == b.cms_table and a.cms_width == b.cms_width and a.cms_depth == b.cms_depth and a.cms_total == b.cms_total
+	}
 
 	cms_new : I64, I64 -> CountMinSketch.CmSketch
-	cms_new = |width, depth| { cms_table: ListUtils.list_zeros((width * depth)), cms_width: width, cms_depth: depth, cms_total: 0 }
+	cms_new = |width, depth| CountMinSketch.CmSketch.{ cms_table: ListUtils.list_zeros((width * depth)), cms_width: width, cms_depth: depth, cms_total: 0 }
 
 	cms_add : CountMinSketch.CmSketch, CceText, I64 -> CountMinSketch.CmSketch
 	cms_add = |sketch, key, count| ({
 		h = cms_hash_key(key)
 		updated = cms_add_rows(sketch.cms_table, h, sketch.cms_width, sketch.cms_depth, count, 0)
-		{ cms_table: updated, cms_width: sketch.cms_width, cms_depth: sketch.cms_depth, cms_total: (sketch.cms_total + count) }
+		CountMinSketch.CmSketch.{ cms_table: updated, cms_width: sketch.cms_width, cms_depth: sketch.cms_depth, cms_total: (sketch.cms_total + count) }
 	})
 
 	cms_add_rows : List(I64), I64, I64, I64, I64, I64 -> List(I64)

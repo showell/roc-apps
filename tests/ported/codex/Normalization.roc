@@ -3,16 +3,19 @@ import Activation
 import MathLib
 
 Normalization :: [].{
-	NormParams : { norm_num_groups : I64, norm_num_channels : I64, norm_gamma : List(I64), norm_beta : List(I64), norm_eps : I64 }
+	NormParams := { norm_num_groups : I64, norm_num_channels : I64, norm_gamma : List(I64), norm_beta : List(I64), norm_eps : I64 }.{
+		is_eq : Normalization.NormParams, Normalization.NormParams -> Bool
+		is_eq = |a, b| a.norm_num_groups == b.norm_num_groups and a.norm_num_channels == b.norm_num_channels and a.norm_gamma == b.norm_gamma and a.norm_beta == b.norm_beta and a.norm_eps == b.norm_eps
+	}
 
 	group_norm_params : I64, I64, List(I64), List(I64) -> Normalization.NormParams
-	group_norm_params = |groups, channels, gamma, beta| { norm_num_groups: groups, norm_num_channels: channels, norm_gamma: gamma, norm_beta: beta, norm_eps: 1 }
+	group_norm_params = |groups, channels, gamma, beta| Normalization.NormParams.{ norm_num_groups: groups, norm_num_channels: channels, norm_gamma: gamma, norm_beta: beta, norm_eps: 1 }
 
 	layer_norm_params : I64, List(I64), List(I64) -> Normalization.NormParams
-	layer_norm_params = |dim, gamma, beta| { norm_num_groups: 1, norm_num_channels: dim, norm_gamma: gamma, norm_beta: beta, norm_eps: 1 }
+	layer_norm_params = |dim, gamma, beta| Normalization.NormParams.{ norm_num_groups: 1, norm_num_channels: dim, norm_gamma: gamma, norm_beta: beta, norm_eps: 1 }
 
 	rms_norm_params : I64, List(I64) -> Normalization.NormParams
-	rms_norm_params = |dim, gamma| { norm_num_groups: 1, norm_num_channels: dim, norm_gamma: gamma, norm_beta: norm_zeros(dim, 0, []), norm_eps: 1 }
+	rms_norm_params = |dim, gamma| Normalization.NormParams.{ norm_num_groups: 1, norm_num_channels: dim, norm_gamma: gamma, norm_beta: norm_zeros(dim, 0, []), norm_eps: 1 }
 
 	norm_zeros : I64, I64, List(I64) -> List(I64)
 	norm_zeros = |n, i, acc| (if (i >= n) { acc } else { norm_zeros(n, (i + 1), List.append(acc, 0)) })

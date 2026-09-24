@@ -3,10 +3,13 @@ import CceText
 import MathLib
 
 Bezier :: [].{
-	BezVec : { vx : I64, vy : I64, vz : I64 }
+	BezVec := { vx : I64, vy : I64, vz : I64 }.{
+		is_eq : Bezier.BezVec, Bezier.BezVec -> Bool
+		is_eq = |a, b| a.vx == b.vx and a.vy == b.vy and a.vz == b.vz
+	}
 
 	bez_lerp : Bezier.BezVec, Bezier.BezVec, I64 -> Bezier.BezVec
-	bez_lerp = |p, q, t| { vx: (p.vx + I64.div_trunc_by(((q.vx - p.vx) * t), 1000)), vy: (p.vy + I64.div_trunc_by(((q.vy - p.vy) * t), 1000)), vz: (p.vz + I64.div_trunc_by(((q.vz - p.vz) * t), 1000)) }
+	bez_lerp = |p, q, t| Bezier.BezVec.{ vx: (p.vx + I64.div_trunc_by(((q.vx - p.vx) * t), 1000)), vy: (p.vy + I64.div_trunc_by(((q.vy - p.vy) * t), 1000)), vz: (p.vz + I64.div_trunc_by(((q.vz - p.vz) * t), 1000)) }
 
 	bezier2_eval : Bezier.BezVec, Bezier.BezVec, Bezier.BezVec, I64 -> Bezier.BezVec
 	bezier2_eval = |p0, p1, p2, t| bez_lerp(bez_lerp(p0, p1, t), bez_lerp(p1, p2, t), t)

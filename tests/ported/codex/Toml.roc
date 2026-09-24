@@ -26,7 +26,7 @@ Toml :: [].{
 	toml_table = |pairs| TomlTable(pairs)
 
 	toml_pair : CceText, Toml.TomlValue -> Toml.TomlPair
-	toml_pair = |k, v| { tp_key: k, tp_value: v }
+	toml_pair = |k, v| Toml.TomlPair.{ tp_key: k, tp_value: v }
 
 	toml_empty : Toml.TomlValue
 	toml_empty = TomlTable([])
@@ -100,10 +100,10 @@ Toml :: [].{
 	toml_parse_kv : CceText -> Toml.TomlPair
 	toml_parse_kv = |line| ({
 		eq_pos = toml_find_char(line, 77, 0, CceText.len(line))
-		(if (eq_pos < 0) { { tp_key: line, tp_value: TomlString("") } } else { ({
+		(if (eq_pos < 0) { Toml.TomlPair.{ tp_key: line, tp_value: TomlString("") } } else { ({
 			key = toml_trim(CceText.substring(line, 0, eq_pos))
 			val_str = toml_trim(CceText.substring(line, (eq_pos + 1), ((CceText.len(line) - eq_pos) - 1)))
-			{ tp_key: key, tp_value: toml_parse_value(val_str) }
+			Toml.TomlPair.{ tp_key: key, tp_value: toml_parse_value(val_str) }
 		}) })
 	})
 

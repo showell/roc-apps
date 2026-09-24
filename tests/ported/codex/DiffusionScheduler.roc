@@ -3,14 +3,17 @@ import CceText
 import MathLib
 
 DiffusionScheduler :: [].{
-	NoiseSchedule : { ns_betas : List(I64), ns_alphas : List(I64), ns_alpha_cumprod : List(I64), ns_steps : I64 }
+	NoiseSchedule := { ns_betas : List(I64), ns_alphas : List(I64), ns_alpha_cumprod : List(I64), ns_steps : I64 }.{
+		is_eq : DiffusionScheduler.NoiseSchedule, DiffusionScheduler.NoiseSchedule -> Bool
+		is_eq = |a, b| a.ns_betas == b.ns_betas and a.ns_alphas == b.ns_alphas and a.ns_alpha_cumprod == b.ns_alpha_cumprod and a.ns_steps == b.ns_steps
+	}
 
 	linear_schedule : I64, I64, I64 -> DiffusionScheduler.NoiseSchedule
 	linear_schedule = |steps, beta_start, beta_end| ({
 		betas = ns_build_linear(steps, beta_start, beta_end, 0, [])
 		alphas = ns_compute_alphas(betas, 0, steps, [])
 		alpha_cp = ns_compute_cumprod(alphas, 0, steps, 1000, [])
-		{ ns_betas: betas, ns_alphas: alphas, ns_alpha_cumprod: alpha_cp, ns_steps: steps }
+		DiffusionScheduler.NoiseSchedule.{ ns_betas: betas, ns_alphas: alphas, ns_alpha_cumprod: alpha_cp, ns_steps: steps }
 	})
 
 	ns_build_linear : I64, I64, I64, I64, List(I64) -> List(I64)
@@ -24,7 +27,7 @@ DiffusionScheduler :: [].{
 		alpha_cp = ns_build_cosine(steps, 0, [])
 		betas = ns_cumprod_to_betas(alpha_cp, 0, steps, [])
 		alphas = ns_compute_alphas(betas, 0, steps, [])
-		{ ns_betas: betas, ns_alphas: alphas, ns_alpha_cumprod: alpha_cp, ns_steps: steps }
+		DiffusionScheduler.NoiseSchedule.{ ns_betas: betas, ns_alphas: alphas, ns_alpha_cumprod: alpha_cp, ns_steps: steps }
 	})
 
 	ns_build_cosine : I64, I64, List(I64) -> List(I64)

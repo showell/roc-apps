@@ -2,30 +2,36 @@
 import CceText
 
 Color :: [].{
-	Rgb : { cr : I64, cg : I64, cb : I64 }
-	Hsl : { ch : I64, cs : I64, cl : I64 }
+	Rgb := { cr : I64, cg : I64, cb : I64 }.{
+		is_eq : Color.Rgb, Color.Rgb -> Bool
+		is_eq = |a, b| a.cr == b.cr and a.cg == b.cg and a.cb == b.cb
+	}
+	Hsl := { ch : I64, cs : I64, cl : I64 }.{
+		is_eq : Color.Hsl, Color.Hsl -> Bool
+		is_eq = |a, b| a.ch == b.ch and a.cs == b.cs and a.cl == b.cl
+	}
 	RainbowPalette : [PalRainbow, PalWarm, PalCool, PalPastel, PalNeon, PalFire, PalOcean, PalForest, PalMiami, PalMatrix, PalSakura, PalAurora]
 
 	rgb : I64, I64, I64 -> Color.Rgb
-	rgb = |r, g, b| { cr: r, cg: g, cb: b }
+	rgb = |r, g, b| Color.Rgb.{ cr: r, cg: g, cb: b }
 
 	rgb_black : Color.Rgb
-	rgb_black = { cr: 0, cg: 0, cb: 0 }
+	rgb_black = Color.Rgb.{ cr: 0, cg: 0, cb: 0 }
 
 	rgb_white : Color.Rgb
-	rgb_white = { cr: 255, cg: 255, cb: 255 }
+	rgb_white = Color.Rgb.{ cr: 255, cg: 255, cb: 255 }
 
 	rgb_red : Color.Rgb
-	rgb_red = { cr: 255, cg: 0, cb: 0 }
+	rgb_red = Color.Rgb.{ cr: 255, cg: 0, cb: 0 }
 
 	rgb_green : Color.Rgb
-	rgb_green = { cr: 0, cg: 255, cb: 0 }
+	rgb_green = Color.Rgb.{ cr: 0, cg: 255, cb: 0 }
 
 	rgb_blue : Color.Rgb
-	rgb_blue = { cr: 0, cg: 0, cb: 255 }
+	rgb_blue = Color.Rgb.{ cr: 0, cg: 0, cb: 255 }
 
 	rgb_from_packed : I64 -> Color.Rgb
-	rgb_from_packed = |packed| { cr: I64.bitwise_and(I64.shr_zf_wrap(packed, I64.to_u8_wrap(16)), 255), cg: I64.bitwise_and(I64.shr_zf_wrap(packed, I64.to_u8_wrap(8)), 255), cb: I64.bitwise_and(packed, 255) }
+	rgb_from_packed = |packed| Color.Rgb.{ cr: I64.bitwise_and(I64.shr_zf_wrap(packed, I64.to_u8_wrap(16)), 255), cg: I64.bitwise_and(I64.shr_zf_wrap(packed, I64.to_u8_wrap(8)), 255), cb: I64.bitwise_and(packed, 255) }
 
 	rgb_to_packed : Color.Rgb -> I64
 	rgb_to_packed = |c| I64.bitwise_or(I64.shl_wrap(c.cr, I64.to_u8_wrap(16)), I64.bitwise_or(I64.shl_wrap(c.cg, I64.to_u8_wrap(8)), c.cb))
@@ -33,31 +39,31 @@ Color :: [].{
 	rgb_lerp : Color.Rgb, Color.Rgb, I64 -> Color.Rgb
 	rgb_lerp = |a, b, t| ({
 		inv = (1000 - t)
-		{ cr: I64.div_trunc_by(((a.cr * inv) + (b.cr * t)), 1000), cg: I64.div_trunc_by(((a.cg * inv) + (b.cg * t)), 1000), cb: I64.div_trunc_by(((a.cb * inv) + (b.cb * t)), 1000) }
+		Color.Rgb.{ cr: I64.div_trunc_by(((a.cr * inv) + (b.cr * t)), 1000), cg: I64.div_trunc_by(((a.cg * inv) + (b.cg * t)), 1000), cb: I64.div_trunc_by(((a.cb * inv) + (b.cb * t)), 1000) }
 	})
 
 	rgb_add : Color.Rgb, Color.Rgb -> Color.Rgb
-	rgb_add = |a, b| { cr: col_clamp8((a.cr + b.cr)), cg: col_clamp8((a.cg + b.cg)), cb: col_clamp8((a.cb + b.cb)) }
+	rgb_add = |a, b| Color.Rgb.{ cr: col_clamp8((a.cr + b.cr)), cg: col_clamp8((a.cg + b.cg)), cb: col_clamp8((a.cb + b.cb)) }
 
 	rgb_multiply : Color.Rgb, Color.Rgb -> Color.Rgb
-	rgb_multiply = |a, b| { cr: I64.div_trunc_by((a.cr * b.cr), 255), cg: I64.div_trunc_by((a.cg * b.cg), 255), cb: I64.div_trunc_by((a.cb * b.cb), 255) }
+	rgb_multiply = |a, b| Color.Rgb.{ cr: I64.div_trunc_by((a.cr * b.cr), 255), cg: I64.div_trunc_by((a.cg * b.cg), 255), cb: I64.div_trunc_by((a.cb * b.cb), 255) }
 
 	rgb_scale : Color.Rgb, I64 -> Color.Rgb
-	rgb_scale = |c, s| { cr: col_clamp8(I64.div_trunc_by((c.cr * s), 1000)), cg: col_clamp8(I64.div_trunc_by((c.cg * s), 1000)), cb: col_clamp8(I64.div_trunc_by((c.cb * s), 1000)) }
+	rgb_scale = |c, s| Color.Rgb.{ cr: col_clamp8(I64.div_trunc_by((c.cr * s), 1000)), cg: col_clamp8(I64.div_trunc_by((c.cg * s), 1000)), cb: col_clamp8(I64.div_trunc_by((c.cb * s), 1000)) }
 
 	rgb_alpha_blend : Color.Rgb, Color.Rgb, I64 -> Color.Rgb
 	rgb_alpha_blend = |fg, bg, alpha| rgb_lerp(bg, fg, alpha)
 
 	rgb_brightness : Color.Rgb, I64 -> Color.Rgb
-	rgb_brightness = |c, delta| { cr: col_clamp8((c.cr + delta)), cg: col_clamp8((c.cg + delta)), cb: col_clamp8((c.cb + delta)) }
+	rgb_brightness = |c, delta| Color.Rgb.{ cr: col_clamp8((c.cr + delta)), cg: col_clamp8((c.cg + delta)), cb: col_clamp8((c.cb + delta)) }
 
 	rgb_invert : Color.Rgb -> Color.Rgb
-	rgb_invert = |c| { cr: (255 - c.cr), cg: (255 - c.cg), cb: (255 - c.cb) }
+	rgb_invert = |c| Color.Rgb.{ cr: (255 - c.cr), cg: (255 - c.cg), cb: (255 - c.cb) }
 
 	rgb_grayscale : Color.Rgb -> Color.Rgb
 	rgb_grayscale = |c| ({
 		lum = I64.div_trunc_by((((c.cr * 299) + (c.cg * 587)) + (c.cb * 114)), 1000)
-		{ cr: lum, cg: lum, cb: lum }
+		Color.Rgb.{ cr: lum, cg: lum, cb: lum }
 	})
 
 	rgb_luminance : Color.Rgb -> I64
@@ -72,10 +78,10 @@ Color :: [].{
 		mn = col_min3(r, g, b)
 		l = I64.div_trunc_by((mx + mn), 2)
 		delta = (mx - mn)
-		(if (delta == 0) { { ch: 0, cs: 0, cl: l } } else { ({
+		(if (delta == 0) { Color.Hsl.{ ch: 0, cs: 0, cl: l } } else { ({
 			s = (if (l > 500) { I64.div_trunc_by((delta * 1000), ((2000 - mx) - mn)) } else { I64.div_trunc_by((delta * 1000), (mx + mn)) })
 			h = col_hue(r, g, b, mx, delta)
-			{ ch: h, cs: s, cl: l }
+			Color.Hsl.{ ch: h, cs: s, cl: l }
 		}) })
 	})
 
@@ -88,12 +94,12 @@ Color :: [].{
 	hsl_to_rgb : Color.Hsl -> Color.Rgb
 	hsl_to_rgb = |c| (if (c.cs == 0) { ({
 		v = I64.div_trunc_by((c.cl * 255), 1000)
-		{ cr: v, cg: v, cb: v }
+		Color.Rgb.{ cr: v, cg: v, cb: v }
 	}) } else { ({
 		q = (if (c.cl < 500) { I64.div_trunc_by((c.cl * (1000 + c.cs)), 1000) } else { ((c.cl + c.cs) - I64.div_trunc_by((c.cl * c.cs), 1000)) })
 		p = ((2 * c.cl) - q)
 		h = c.ch
-		{ cr: hsl_channel(p, q, (h + 120)), cg: hsl_channel(p, q, h), cb: hsl_channel(p, q, (h - 120)) }
+		Color.Rgb.{ cr: hsl_channel(p, q, (h + 120)), cg: hsl_channel(p, q, h), cb: hsl_channel(p, q, (h - 120)) }
 	}) })
 
 	hsl_channel : I64, I64, I64 -> I64
@@ -118,7 +124,7 @@ Color :: [].{
 	pal_rainbow_loop : I64, I64, List(Color.Rgb) -> List(Color.Rgb)
 	pal_rainbow_loop = |steps, i, acc| (if (i >= steps) { acc } else { ({
 		h = I64.div_trunc_by((i * 360), steps)
-		pal_rainbow_loop(steps, (i + 1), List.append(acc, hsl_to_rgb({ ch: h, cs: 900, cl: 500 })))
+		pal_rainbow_loop(steps, (i + 1), List.append(acc, hsl_to_rgb(Color.Hsl.{ ch: h, cs: 900, cl: 500 })))
 	}) })
 
 	col_clamp8 : I64 -> I64
@@ -168,7 +174,7 @@ Color :: [].{
 	lolcat_pal = |idx, hue_start, hue_range, sat, lit| ({
 		offset = lolcat_hue_mod(idx, hue_range)
 		hue = lolcat_hue_mod((hue_start + offset), 360)
-		rgb_to_packed(hsl_to_rgb({ ch: hue, cs: sat, cl: lit }))
+		rgb_to_packed(hsl_to_rgb(Color.Hsl.{ ch: hue, cs: sat, cl: lit }))
 	})
 
 	format_rgb : Color.Rgb -> CceText

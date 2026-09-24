@@ -3,23 +3,26 @@ import CceText
 
 Locale :: [].{
 	TextDirection : [DirLTR, DirRTL]
-	Locale : { lang_tag : CceText, direction : Locale.TextDirection, decimal_sep : CceText, thousands_sep : CceText, date_order : Locale.DateOrder }
+	Locale := { lang_tag : CceText, direction : Locale.TextDirection, decimal_sep : CceText, thousands_sep : CceText, date_order : Locale.DateOrder }.{
+		is_eq : Locale.Locale, Locale.Locale -> Bool
+		is_eq = |a, b| a.lang_tag == b.lang_tag and a.direction == b.direction and a.decimal_sep == b.decimal_sep and a.thousands_sep == b.thousands_sep and a.date_order == b.date_order
+	}
 	DateOrder : [DateYMD, DateMDY, DateDMY]
 
 	locale_en_us : Locale.Locale
-	locale_en_us = { lang_tag: "en-US", direction: DirLTR, decimal_sep: ".", thousands_sep: ",", date_order: DateMDY }
+	locale_en_us = Locale.Locale.{ lang_tag: "en-US", direction: DirLTR, decimal_sep: ".", thousands_sep: ",", date_order: DateMDY }
 
 	locale_en_gb : Locale.Locale
-	locale_en_gb = { lang_tag: "en-GB", direction: DirLTR, decimal_sep: ".", thousands_sep: ",", date_order: DateDMY }
+	locale_en_gb = Locale.Locale.{ lang_tag: "en-GB", direction: DirLTR, decimal_sep: ".", thousands_sep: ",", date_order: DateDMY }
 
 	locale_de : Locale.Locale
-	locale_de = { lang_tag: "de", direction: DirLTR, decimal_sep: ",", thousands_sep: ".", date_order: DateDMY }
+	locale_de = Locale.Locale.{ lang_tag: "de", direction: DirLTR, decimal_sep: ",", thousands_sep: ".", date_order: DateDMY }
 
 	locale_ja : Locale.Locale
-	locale_ja = { lang_tag: "ja", direction: DirLTR, decimal_sep: ".", thousands_sep: ",", date_order: DateYMD }
+	locale_ja = Locale.Locale.{ lang_tag: "ja", direction: DirLTR, decimal_sep: ".", thousands_sep: ",", date_order: DateYMD }
 
 	locale_ar : Locale.Locale
-	locale_ar = { lang_tag: "ar", direction: DirRTL, decimal_sep: ".", thousands_sep: ",", date_order: DateDMY }
+	locale_ar = Locale.Locale.{ lang_tag: "ar", direction: DirRTL, decimal_sep: ".", thousands_sep: ",", date_order: DateDMY }
 
 	locale_new : CceText -> Locale.Locale
 	locale_new = |tag| (if (tag == "en-US") { locale_en_us } else { (if (tag == "en-GB") { locale_en_gb } else { (if (tag == "de") { locale_de } else { (if (tag == "ja") { locale_ja } else { (if (tag == "ar") { locale_ar } else { locale_en_us }) }) }) }) })

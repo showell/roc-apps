@@ -3,7 +3,10 @@ import CceText
 import Random
 
 CardDeck :: [].{
-	DealResult : { hand : List(I64), remaining : List(I64) }
+	DealResult := { hand : List(I64), remaining : List(I64) }.{
+		is_eq : CardDeck.DealResult, CardDeck.DealResult -> Bool
+		is_eq = |a, b| a.hand == b.hand and a.remaining == b.remaining
+	}
 
 	deck_size : I64
 	deck_size = 52
@@ -76,7 +79,7 @@ CardDeck :: [].{
 	deck_deal = |cards, n| ({
 		hand = deck_take(cards, 0, n, [])
 		remaining = deck_drop(cards, n, U64.to_i64_wrap(List.len(cards)), [])
-		{ hand: hand, remaining: remaining }
+		CardDeck.DealResult.{ hand: hand, remaining: remaining }
 	})
 
 	deck_take : List(I64), I64, I64, List(I64) -> List(I64)

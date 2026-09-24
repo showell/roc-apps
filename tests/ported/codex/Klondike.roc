@@ -5,8 +5,14 @@ import ListUtils
 import Maybe
 
 Klondike :: [].{
-	Pile : { pile_cards : List(I64), pile_face_up : I64 }
-	KlondikeState : { kl_tableau : List(Klondike.Pile), kl_foundation : List(List(I64)), kl_stock : List(I64), kl_waste : List(I64), kl_moves : I64 }
+	Pile := { pile_cards : List(I64), pile_face_up : I64 }.{
+		is_eq : Klondike.Pile, Klondike.Pile -> Bool
+		is_eq = |a, b| a.pile_cards == b.pile_cards and a.pile_face_up == b.pile_face_up
+	}
+	KlondikeState := { kl_tableau : List(Klondike.Pile), kl_foundation : List(List(I64)), kl_stock : List(I64), kl_waste : List(I64), kl_moves : I64 }.{
+		is_eq : Klondike.KlondikeState, Klondike.KlondikeState -> Bool
+		is_eq = |a, b| a.kl_tableau == b.kl_tableau and a.kl_foundation == b.kl_foundation and a.kl_stock == b.kl_stock and a.kl_waste == b.kl_waste and a.kl_moves == b.kl_moves
+	}
 	MoveResult : [MoveOk(Klondike.KlondikeState), MoveErr(CceText)]
 
 	card_color : I64 -> I64
@@ -47,7 +53,7 @@ Klondike :: [].{
 		r6 = kl_deal_pile(r5.remaining, 6, 7)
 		tableau = [r0.hand, r1.hand, r2.hand, r3.hand, r4.hand, r5.hand, r6.hand]
 		piles = kl_make_piles(tableau, 0, [])
-		{ kl_tableau: piles, kl_foundation: [[], [], [], []], kl_stock: r6.remaining, kl_waste: [], kl_moves: 0 }
+		Klondike.KlondikeState.{ kl_tableau: piles, kl_foundation: [[], [], [], []], kl_stock: r6.remaining, kl_waste: [], kl_moves: 0 }
 	})
 
 	kl_deal_pile : List(I64), I64, I64 -> CardDeck.DealResult
@@ -57,7 +63,7 @@ Klondike :: [].{
 	kl_make_piles = |hands, i, acc| (if (i >= 7) { acc } else { ({
 		cards = (List.get(hands, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 		n = U64.to_i64_wrap(List.len(cards))
-		kl_make_piles(hands, (i + 1), List.append(acc, { pile_cards: cards, pile_face_up: (n - 1) }))
+		kl_make_piles(hands, (i + 1), List.append(acc, Klondike.Pile.{ pile_cards: cards, pile_face_up: (n - 1) }))
 	}) })
 
 	pile_top : Klondike.Pile -> Maybe.Maybe(I64)
@@ -76,10 +82,10 @@ Klondike :: [].{
 	pile_face_down_count = |p| p.pile_face_up
 
 	kl_draw : Klondike.KlondikeState -> Klondike.MoveResult
-	kl_draw = |st| (if (U64.to_i64_wrap(List.len(st.kl_stock)) == 0) { (if (U64.to_i64_wrap(List.len(st.kl_waste)) == 0) { MoveErr("stock and waste empty") } else { MoveOk({ kl_tableau: st.kl_tableau, kl_foundation: st.kl_foundation, kl_stock: kl_reverse_list(st.kl_waste), kl_waste: [], kl_moves: (st.kl_moves + 1) }) }) } else { ({
+	kl_draw = |st| (if (U64.to_i64_wrap(List.len(st.kl_stock)) == 0) { (if (U64.to_i64_wrap(List.len(st.kl_waste)) == 0) { MoveErr("stock and waste empty") } else { MoveOk(Klondike.KlondikeState.{ kl_tableau: st.kl_tableau, kl_foundation: st.kl_foundation, kl_stock: kl_reverse_list(st.kl_waste), kl_waste: [], kl_moves: (st.kl_moves + 1) }) }) } else { ({
 		card = (List.get(st.kl_stock, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))
 		rest = ListUtils.list_tail(st.kl_stock)
-		MoveOk({ kl_tableau: st.kl_tableau, kl_foundation: st.kl_foundation, kl_stock: rest, kl_waste: List.append(st.kl_waste, card), kl_moves: (st.kl_moves + 1) })
+		MoveOk(Klondike.KlondikeState.{ kl_tableau: st.kl_tableau, kl_foundation: st.kl_foundation, kl_stock: rest, kl_waste: List.append(st.kl_waste, card), kl_moves: (st.kl_moves + 1) })
 	}) })
 
 	kl_waste_to_tableau : Klondike.KlondikeState, I64 -> Klondike.MoveResult
@@ -93,9 +99,9 @@ Klondike :: [].{
 		})
 		(if fits { ({
 			new_waste = kl_list_init(st.kl_waste)
-			new_pile = { pile_cards: List.append(pile.pile_cards, card), pile_face_up: pile.pile_face_up }
+			new_pile = Klondike.Pile.{ pile_cards: List.append(pile.pile_cards, card), pile_face_up: pile.pile_face_up }
 			new_tab = (List.set(st.kl_tableau, I64.to_u64_wrap(pile_idx), new_pile) ?? crash("list-set-at past the end"))
-			MoveOk({ kl_tableau: new_tab, kl_foundation: st.kl_foundation, kl_stock: st.kl_stock, kl_waste: new_waste, kl_moves: (st.kl_moves + 1) })
+			MoveOk(Klondike.KlondikeState.{ kl_tableau: new_tab, kl_foundation: st.kl_foundation, kl_stock: st.kl_stock, kl_waste: new_waste, kl_moves: (st.kl_moves + 1) })
 		}) } else { MoveErr("card does not fit") })
 	}) }) }) })
 
@@ -107,7 +113,7 @@ Klondike :: [].{
 		(if card_fits_foundation(card, foundation) { ({
 			new_waste = kl_list_init(st.kl_waste)
 			new_found = (List.set(st.kl_foundation, I64.to_u64_wrap(suit), List.append(foundation, card)) ?? crash("list-set-at past the end"))
-			MoveOk({ kl_tableau: st.kl_tableau, kl_foundation: new_found, kl_stock: st.kl_stock, kl_waste: new_waste, kl_moves: (st.kl_moves + 1) })
+			MoveOk(Klondike.KlondikeState.{ kl_tableau: st.kl_tableau, kl_foundation: new_found, kl_stock: st.kl_stock, kl_waste: new_waste, kl_moves: (st.kl_moves + 1) })
 		}) } else { MoveErr("card does not fit foundation") })
 	}) })
 
@@ -124,7 +130,7 @@ Klondike :: [].{
 					new_pile = kl_remove_top(pile)
 					new_found = (List.set(st.kl_foundation, I64.to_u64_wrap(suit), List.append(foundation, card)) ?? crash("list-set-at past the end"))
 					new_tab = (List.set(st.kl_tableau, I64.to_u64_wrap(pile_idx), new_pile) ?? crash("list-set-at past the end"))
-					MoveOk({ kl_tableau: new_tab, kl_foundation: new_found, kl_stock: st.kl_stock, kl_waste: st.kl_waste, kl_moves: (st.kl_moves + 1) })
+					MoveOk(Klondike.KlondikeState.{ kl_tableau: new_tab, kl_foundation: new_found, kl_stock: st.kl_stock, kl_waste: st.kl_waste, kl_moves: (st.kl_moves + 1) })
 				}) } else { MoveErr("card does not fit foundation") })
 			})
 		})
@@ -145,10 +151,10 @@ Klondike :: [].{
 				})
 				(if fits { ({
 					new_src = kl_remove_top(src)
-					new_dst = { pile_cards: List.append(dst.pile_cards, card), pile_face_up: dst.pile_face_up }
+					new_dst = Klondike.Pile.{ pile_cards: List.append(dst.pile_cards, card), pile_face_up: dst.pile_face_up }
 					tab1 = (List.set(st.kl_tableau, I64.to_u64_wrap(from), new_src) ?? crash("list-set-at past the end"))
 					tab2 = (List.set(tab1, I64.to_u64_wrap(to), new_dst) ?? crash("list-set-at past the end"))
-					MoveOk({ kl_tableau: tab2, kl_foundation: st.kl_foundation, kl_stock: st.kl_stock, kl_waste: st.kl_waste, kl_moves: (st.kl_moves + 1) })
+					MoveOk(Klondike.KlondikeState.{ kl_tableau: tab2, kl_foundation: st.kl_foundation, kl_stock: st.kl_stock, kl_waste: st.kl_waste, kl_moves: (st.kl_moves + 1) })
 				}) } else { MoveErr("card does not fit") })
 			})
 		})
@@ -160,7 +166,7 @@ Klondike :: [].{
 		n = U64.to_i64_wrap(List.len(cards))
 		fu = (if (p.pile_face_up > n) { n } else { (if (p.pile_face_up >= n) { (n - 1) } else { p.pile_face_up }) })
 		adjusted = (if (fu < 0) { 0 } else { fu })
-		{ pile_cards: cards, pile_face_up: adjusted }
+		Klondike.Pile.{ pile_cards: cards, pile_face_up: adjusted }
 	})
 
 	kl_is_won : Klondike.KlondikeState -> Bool

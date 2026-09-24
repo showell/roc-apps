@@ -3,17 +3,23 @@ import CceText
 import ListUtils
 
 LinearAlgebra :: [].{
-	Matrix : { mat_rows : I64, mat_cols : I64, mat_data : List(I64) }
-	LuResult : { lu_lower : LinearAlgebra.Matrix, lu_upper : LinearAlgebra.Matrix, lu_pivot : List(I64) }
+	Matrix := { mat_rows : I64, mat_cols : I64, mat_data : List(I64) }.{
+		is_eq : LinearAlgebra.Matrix, LinearAlgebra.Matrix -> Bool
+		is_eq = |a, b| a.mat_rows == b.mat_rows and a.mat_cols == b.mat_cols and a.mat_data == b.mat_data
+	}
+	LuResult := { lu_lower : LinearAlgebra.Matrix, lu_upper : LinearAlgebra.Matrix, lu_pivot : List(I64) }.{
+		is_eq : LinearAlgebra.LuResult, LinearAlgebra.LuResult -> Bool
+		is_eq = |a, b| a.lu_lower == b.lu_lower and a.lu_upper == b.lu_upper and a.lu_pivot == b.lu_pivot
+	}
 
 	mat_new : I64, I64 -> LinearAlgebra.Matrix
-	mat_new = |rows, cols| { mat_rows: rows, mat_cols: cols, mat_data: mat_zeros((rows * cols), 0, []) }
+	mat_new = |rows, cols| LinearAlgebra.Matrix.{ mat_rows: rows, mat_cols: cols, mat_data: mat_zeros((rows * cols), 0, []) }
 
 	mat_identity : I64 -> LinearAlgebra.Matrix
-	mat_identity = |n| { mat_rows: n, mat_cols: n, mat_data: mat_ident_data(n, 0, (n * n), []) }
+	mat_identity = |n| LinearAlgebra.Matrix.{ mat_rows: n, mat_cols: n, mat_data: mat_ident_data(n, 0, (n * n), []) }
 
 	mat_from_list : I64, I64, List(I64) -> LinearAlgebra.Matrix
-	mat_from_list = |rows, cols, data| { mat_rows: rows, mat_cols: cols, mat_data: data }
+	mat_from_list = |rows, cols, data| LinearAlgebra.Matrix.{ mat_rows: rows, mat_cols: cols, mat_data: data }
 
 	mat_zeros : I64, I64, List(I64) -> List(I64)
 	mat_zeros = |n, i, acc| (if (i >= n) { acc } else { mat_zeros(n, (i + 1), List.append(acc, 0)) })
@@ -32,10 +38,10 @@ LinearAlgebra :: [].{
 	mat_set = |m, row, col, val| { ..m, mat_data: (List.set(m.mat_data, I64.to_u64_wrap(((row * m.mat_cols) + col)), val) ?? crash("list-set-at past the end")) }
 
 	mat_add : LinearAlgebra.Matrix, LinearAlgebra.Matrix -> LinearAlgebra.Matrix
-	mat_add = |a, b| { mat_rows: a.mat_rows, mat_cols: a.mat_cols, mat_data: mat_zip_op(a.mat_data, b.mat_data, 0, U64.to_i64_wrap(List.len(a.mat_data)), [], 1) }
+	mat_add = |a, b| LinearAlgebra.Matrix.{ mat_rows: a.mat_rows, mat_cols: a.mat_cols, mat_data: mat_zip_op(a.mat_data, b.mat_data, 0, U64.to_i64_wrap(List.len(a.mat_data)), [], 1) }
 
 	mat_sub : LinearAlgebra.Matrix, LinearAlgebra.Matrix -> LinearAlgebra.Matrix
-	mat_sub = |a, b| { mat_rows: a.mat_rows, mat_cols: a.mat_cols, mat_data: mat_zip_op(a.mat_data, b.mat_data, 0, U64.to_i64_wrap(List.len(a.mat_data)), [], 0) }
+	mat_sub = |a, b| LinearAlgebra.Matrix.{ mat_rows: a.mat_rows, mat_cols: a.mat_cols, mat_data: mat_zip_op(a.mat_data, b.mat_data, 0, U64.to_i64_wrap(List.len(a.mat_data)), [], 0) }
 
 	mat_zip_op : List(I64), List(I64), I64, I64, List(I64), I64 -> List(I64)
 	mat_zip_op = |a, b, i, len, acc, is_add| (if (i >= len) { acc } else { ({
@@ -44,13 +50,13 @@ LinearAlgebra :: [].{
 	}) })
 
 	mat_scale : LinearAlgebra.Matrix, I64 -> LinearAlgebra.Matrix
-	mat_scale = |m, s| { mat_rows: m.mat_rows, mat_cols: m.mat_cols, mat_data: ListUtils.map_list(({
+	mat_scale = |m, s| LinearAlgebra.Matrix.{ mat_rows: m.mat_rows, mat_cols: m.mat_cols, mat_data: ListUtils.map_list(({
 		dev__1 = s
 		|dev__2| lam_0(dev__1, dev__2)
 	}), m.mat_data) }
 
 	mat_mul : LinearAlgebra.Matrix, LinearAlgebra.Matrix -> LinearAlgebra.Matrix
-	mat_mul = |a, b| { mat_rows: a.mat_rows, mat_cols: b.mat_cols, mat_data: mat_mul_data(a, b, 0, (a.mat_rows * b.mat_cols), []) }
+	mat_mul = |a, b| LinearAlgebra.Matrix.{ mat_rows: a.mat_rows, mat_cols: b.mat_cols, mat_data: mat_mul_data(a, b, 0, (a.mat_rows * b.mat_cols), []) }
 
 	mat_mul_data : LinearAlgebra.Matrix, LinearAlgebra.Matrix, I64, I64, List(I64) -> List(I64)
 	mat_mul_data = |a, b, i, total, acc| (if (i >= total) { acc } else { ({
@@ -67,7 +73,7 @@ LinearAlgebra :: [].{
 	}) })
 
 	mat_transpose : LinearAlgebra.Matrix -> LinearAlgebra.Matrix
-	mat_transpose = |m| { mat_rows: m.mat_cols, mat_cols: m.mat_rows, mat_data: mat_trans_data(m, 0, (m.mat_rows * m.mat_cols), []) }
+	mat_transpose = |m| LinearAlgebra.Matrix.{ mat_rows: m.mat_cols, mat_cols: m.mat_rows, mat_data: mat_trans_data(m, 0, (m.mat_rows * m.mat_cols), []) }
 
 	mat_trans_data : LinearAlgebra.Matrix, I64, I64, List(I64) -> List(I64)
 	mat_trans_data = |m, i, total, acc| (if (i >= total) { acc } else { ({
@@ -88,7 +94,7 @@ LinearAlgebra :: [].{
 	mat_minor : LinearAlgebra.Matrix, I64, I64 -> LinearAlgebra.Matrix
 	mat_minor = |m, skip_row, skip_col| ({
 		n = (m.mat_rows - 1)
-		{ mat_rows: n, mat_cols: n, mat_data: mat_minor_data(m, skip_row, skip_col, 0, 0, m.mat_rows, m.mat_cols, []) }
+		LinearAlgebra.Matrix.{ mat_rows: n, mat_cols: n, mat_data: mat_minor_data(m, skip_row, skip_col, 0, 0, m.mat_rows, m.mat_cols, []) }
 	})
 
 	mat_minor_data : LinearAlgebra.Matrix, I64, I64, I64, I64, I64, I64, List(I64) -> List(I64)
@@ -105,7 +111,7 @@ LinearAlgebra :: [].{
 	mat_augment : LinearAlgebra.Matrix, List(I64) -> LinearAlgebra.Matrix
 	mat_augment = |m, b| ({
 		cols = (m.mat_cols + 1)
-		{ mat_rows: m.mat_rows, mat_cols: cols, mat_data: mat_aug_data(m, b, 0, m.mat_rows, []) }
+		LinearAlgebra.Matrix.{ mat_rows: m.mat_rows, mat_cols: cols, mat_data: mat_aug_data(m, b, 0, m.mat_rows, []) }
 	})
 
 	mat_aug_data : LinearAlgebra.Matrix, List(I64), I64, I64, List(I64) -> List(I64)

@@ -25,7 +25,10 @@ import cdx.CceText
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 ThreatLevel : [None, Low, Medium, High, Critical]
-SensorReading : { bearing : I64, range_m : I64, velocity : I64, ir_signal : I64 }
+SensorReading := { bearing : I64, range_m : I64, velocity : I64, ir_signal : I64 }.{
+	is_eq : SensorReading, SensorReading -> Bool
+	is_eq = |a, b| a.bearing == b.bearing and a.range_m == b.range_m and a.velocity == b.velocity and a.ir_signal == b.ir_signal
+}
 Countermeasure : [NoAction, Chaff, Flare, Jam, Evade]
 
 classify_threat : SensorReading -> ThreatLevel
@@ -119,7 +122,7 @@ eq_Countermeasure = |ex, ey| (match ex {
 
 main! = |_args| {
 	({
-		inbound = { bearing: 45, range_m: 800, velocity: 2800, ir_signal: 900 }
+		inbound = SensorReading.{ bearing: 45, range_m: 800, velocity: 2800, ir_signal: 900 }
 		threat = classify_threat(inbound)
 		response = select_response(threat, inbound)
 		({
@@ -129,7 +132,7 @@ main! = |_args| {
 				line!(CceText.printed(CceText.concat("IMMINENT: ", (if is_imminent(inbound) { "YES" } else { "NO" }))))
 			})
 			({
-				far_contact = { bearing: 270, range_m: 45000, velocity: 300, ir_signal: 50 }
+				far_contact = SensorReading.{ bearing: 270, range_m: 45000, velocity: 300, ir_signal: 50 }
 				threat2 = classify_threat(far_contact)
 				response2 = select_response(threat2, far_contact)
 				({

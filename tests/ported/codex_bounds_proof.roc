@@ -29,14 +29,20 @@ import cdx.Prelude
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Byte : { val : I64 }
-Wide : { val : I64 }
+Byte := { val : I64 }.{
+	is_eq : Byte, Byte -> Bool
+	is_eq = |a, b| a.val == b.val
+}
+Wide := { val : I64 }.{
+	is_eq : Wide, Wide -> Bool
+	is_eq = |a, b| a.val == b.val
+}
 
 byte0 : Byte
-byte0 = { val: 0 }
+byte0 = Byte.{ val: 0 }
 
 wide0 : Wide
-wide0 = { val: 0 }
+wide0 = Wide.{ val: 0 }
 
 test_literal : I64
 test_literal = ({
@@ -46,50 +52,50 @@ test_literal = ({
 
 test_field : I64
 test_field = ({
-	a = { val: 100 }
+	a = Byte.{ val: 100 }
 	w = { ..wide0, val: a.val }
 	w.val
 })
 
 test_add : I64
 test_add = ({
-	a = { val: 100 }
-	b = { val: 200 }
+	a = Byte.{ val: 100 }
+	b = Byte.{ val: 200 }
 	w = { ..wide0, val: (a.val + b.val) }
 	w.val
 })
 
 test_div : I64
 test_div = ({
-	w = { val: 4660 }
+	w = Wide.{ val: 4660 }
 	b = { ..byte0, val: I64.div_trunc_by(w.val, 256) }
 	b.val
 })
 
 test_mod : I64
 test_mod = ({
-	w = { val: 4660 }
+	w = Wide.{ val: 4660 }
 	b = { ..byte0, val: Prelude.int_mod(w.val, 256) }
 	b.val
 })
 
 test_mul : I64
 test_mul = ({
-	b = { val: 120 }
+	b = Byte.{ val: 120 }
 	w = { ..wide0, val: (b.val * 2) }
 	w.val
 })
 
 test_bitand : I64
 test_bitand = ({
-	w = { val: 1000 }
+	w = Wide.{ val: 1000 }
 	b = { ..byte0, val: I64.bitwise_and(w.val, 255) }
 	b.val
 })
 
 test_shru : I64
 test_shru = ({
-	w = { val: 4660 }
+	w = Wide.{ val: 4660 }
 	b = { ..byte0, val: I64.shr_zf_wrap(w.val, I64.to_u8_wrap(8)) }
 	b.val
 })
@@ -102,8 +108,8 @@ test_if = ({
 
 test_sub : I64
 test_sub = ({
-	a = { val: 200 }
-	b = { val: 50 }
+	a = Byte.{ val: 200 }
+	b = Byte.{ val: 50 }
 	(a.val - b.val)
 })
 

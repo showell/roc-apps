@@ -5,7 +5,10 @@ import Tuple
 DateTime :: [].{
 	Timestamp : I64
 	Elapsed : I64
-	DateTime : { year : I64, month : I64, day : I64, hour : I64, minute : I64, second : I64 }
+	DateTime := { year : I64, month : I64, day : I64, hour : I64, minute : I64, second : I64 }.{
+		is_eq : DateTime.DateTime, DateTime.DateTime -> Bool
+		is_eq = |a, b| a.year == b.year and a.month == b.month and a.day == b.day and a.hour == b.hour and a.minute == b.minute and a.second == b.second
+	}
 
 	seconds_per_minute : I64
 	seconds_per_minute = 60
@@ -24,7 +27,7 @@ DateTime :: [].{
 		minute = I64.div_trunc_by((time_of_day - (hour * seconds_per_hour)), seconds_per_minute)
 		second = ((time_of_day - (hour * seconds_per_hour)) - (minute * seconds_per_minute))
 		(match days_to_ymd(days) {
-			MkTup3(y, m, d) => { year: y, month: m, day: d, hour: hour, minute: minute, second: second }
+			MkTup3(y, m, d) => DateTime.DateTime.{ year: y, month: m, day: d, hour: hour, minute: minute, second: second }
 		})
 	})
 

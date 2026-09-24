@@ -2,10 +2,19 @@
 import CceText
 
 Lwm2m :: [].{
-	Lwm2mObjectId : { id : I64, instance : I64 }
-	Lwm2mResourceId : { object_id : I64, instance : I64, resource : I64 }
+	Lwm2mObjectId := { id : I64, instance : I64 }.{
+		is_eq : Lwm2m.Lwm2mObjectId, Lwm2m.Lwm2mObjectId -> Bool
+		is_eq = |a, b| a.id == b.id and a.instance == b.instance
+	}
+	Lwm2mResourceId := { object_id : I64, instance : I64, resource : I64 }.{
+		is_eq : Lwm2m.Lwm2mResourceId, Lwm2m.Lwm2mResourceId -> Bool
+		is_eq = |a, b| a.object_id == b.object_id and a.instance == b.instance and a.resource == b.resource
+	}
 	Lwm2mValue : [Lwm2mString(CceText), Lwm2mInteger(I64), Lwm2mFloat(I64, I64), Lwm2mBoolean(Bool), Lwm2mOpaque(List(I64)), Lwm2mTime(I64)]
-	Lwm2mRegistration : { endpoint : CceText, lifetime : I64, binding : CceText, objects : List(I64) }
+	Lwm2mRegistration := { endpoint : CceText, lifetime : I64, binding : CceText, objects : List(I64) }.{
+		is_eq : Lwm2m.Lwm2mRegistration, Lwm2m.Lwm2mRegistration -> Bool
+		is_eq = |a, b| a.endpoint == b.endpoint and a.lifetime == b.lifetime and a.binding == b.binding and a.objects == b.objects
+	}
 	LwmFirmwareState : [FwIdle, FwDownloading, FwDownloaded, FwUpdating]
 
 	lwm2m_obj_security : I64
@@ -66,7 +75,7 @@ Lwm2m :: [].{
 	})
 
 	default_lwm2m_registration : Lwm2m.Lwm2mRegistration
-	default_lwm2m_registration = { endpoint: "codex-device", lifetime: 300, binding: "U", objects: [lwm2m_obj_device, lwm2m_obj_firmware] }
+	default_lwm2m_registration = Lwm2m.Lwm2mRegistration.{ endpoint: "codex-device", lifetime: 300, binding: "U", objects: [lwm2m_obj_device, lwm2m_obj_firmware] }
 
 	lwm2m_registration_path : Lwm2m.Lwm2mRegistration -> CceText
 	lwm2m_registration_path = |reg| CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("/rd?ep=", reg.endpoint), "&lt="), CceText.show_int(reg.lifetime)), "&b="), reg.binding)

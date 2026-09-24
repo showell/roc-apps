@@ -4,9 +4,18 @@ import Maybe
 import Usb
 
 UsbAudio :: [].{
-	UsbAudioDevice : { uad_slot : I64, uad_stream_ep : I64, uad_sample_rate : I64, uad_channels : I64, uad_bit_depth : I64, uad_max_packet : I64, uad_found : Bool }
-	AudioFormat : { afmt_sample_rate : I64, afmt_channels : I64, afmt_bit_depth : I64, afmt_bytes_per_sample : I64 }
-	UsbAudioBuffer : { uab_frames : List(List(I64)), uab_frame_size : I64, uab_frames_per_ms : I64, uab_total_frames : I64 }
+	UsbAudioDevice := { uad_slot : I64, uad_stream_ep : I64, uad_sample_rate : I64, uad_channels : I64, uad_bit_depth : I64, uad_max_packet : I64, uad_found : Bool }.{
+		is_eq : UsbAudio.UsbAudioDevice, UsbAudio.UsbAudioDevice -> Bool
+		is_eq = |a, b| a.uad_slot == b.uad_slot and a.uad_stream_ep == b.uad_stream_ep and a.uad_sample_rate == b.uad_sample_rate and a.uad_channels == b.uad_channels and a.uad_bit_depth == b.uad_bit_depth and a.uad_max_packet == b.uad_max_packet and a.uad_found == b.uad_found
+	}
+	AudioFormat := { afmt_sample_rate : I64, afmt_channels : I64, afmt_bit_depth : I64, afmt_bytes_per_sample : I64 }.{
+		is_eq : UsbAudio.AudioFormat, UsbAudio.AudioFormat -> Bool
+		is_eq = |a, b| a.afmt_sample_rate == b.afmt_sample_rate and a.afmt_channels == b.afmt_channels and a.afmt_bit_depth == b.afmt_bit_depth and a.afmt_bytes_per_sample == b.afmt_bytes_per_sample
+	}
+	UsbAudioBuffer := { uab_frames : List(List(I64)), uab_frame_size : I64, uab_frames_per_ms : I64, uab_total_frames : I64 }.{
+		is_eq : UsbAudio.UsbAudioBuffer, UsbAudio.UsbAudioBuffer -> Bool
+		is_eq = |a, b| a.uab_frames == b.uab_frames and a.uab_frame_size == b.uab_frame_size and a.uab_frames_per_ms == b.uab_frames_per_ms and a.uab_total_frames == b.uab_total_frames
+	}
 
 	uac_desc_header : I64
 	uac_desc_header = 1
@@ -42,19 +51,19 @@ UsbAudio :: [].{
 	uac_terminal_microphone = 513
 
 	usb_audio_not_found : UsbAudio.UsbAudioDevice
-	usb_audio_not_found = { uad_slot: 0, uad_stream_ep: 0, uad_sample_rate: 0, uad_channels: 0, uad_bit_depth: 0, uad_max_packet: 0, uad_found: False }
+	usb_audio_not_found = UsbAudio.UsbAudioDevice.{ uad_slot: 0, uad_stream_ep: 0, uad_sample_rate: 0, uad_channels: 0, uad_bit_depth: 0, uad_max_packet: 0, uad_found: False }
 
 	usb_audio_detect : Usb.UsbInterface, List(I64), I64 -> Maybe.Maybe(UsbAudio.UsbAudioDevice)
-	usb_audio_detect = |iface, _config_desc, slot| (if (iface.if_class == Usb.usb_class_audio) { (if (iface.if_subclass == Usb.usb_subclass_audio_streaming) { Just({ uad_slot: slot, uad_stream_ep: 0, uad_sample_rate: 44100, uad_channels: 2, uad_bit_depth: 16, uad_max_packet: 192, uad_found: True }) } else { None }) } else { None })
+	usb_audio_detect = |iface, _config_desc, slot| (if (iface.if_class == Usb.usb_class_audio) { (if (iface.if_subclass == Usb.usb_subclass_audio_streaming) { Just(UsbAudio.UsbAudioDevice.{ uad_slot: slot, uad_stream_ep: 0, uad_sample_rate: 44100, uad_channels: 2, uad_bit_depth: 16, uad_max_packet: 192, uad_found: True }) } else { None }) } else { None })
 
 	audio_format_cd : UsbAudio.AudioFormat
-	audio_format_cd = { afmt_sample_rate: 44100, afmt_channels: 2, afmt_bit_depth: 16, afmt_bytes_per_sample: 4 }
+	audio_format_cd = UsbAudio.AudioFormat.{ afmt_sample_rate: 44100, afmt_channels: 2, afmt_bit_depth: 16, afmt_bytes_per_sample: 4 }
 
 	audio_format_48k : UsbAudio.AudioFormat
-	audio_format_48k = { afmt_sample_rate: 48000, afmt_channels: 2, afmt_bit_depth: 16, afmt_bytes_per_sample: 4 }
+	audio_format_48k = UsbAudio.AudioFormat.{ afmt_sample_rate: 48000, afmt_channels: 2, afmt_bit_depth: 16, afmt_bytes_per_sample: 4 }
 
 	audio_format_hires : UsbAudio.AudioFormat
-	audio_format_hires = { afmt_sample_rate: 96000, afmt_channels: 2, afmt_bit_depth: 24, afmt_bytes_per_sample: 6 }
+	audio_format_hires = UsbAudio.AudioFormat.{ afmt_sample_rate: 96000, afmt_channels: 2, afmt_bit_depth: 24, afmt_bytes_per_sample: 6 }
 
 	usb_audio_frame : List(I64), List(I64), UsbAudio.AudioFormat -> List(I64)
 	usb_audio_frame = |left, right, fmt| usb_interleave(left, right, fmt, 0, uaf_min(U64.to_i64_wrap(List.len(left)), U64.to_i64_wrap(List.len(right))), [])
@@ -87,7 +96,7 @@ UsbAudio :: [].{
 	usb_audio_buffer = |fmt, duration_ms| ({
 		samples_per_ms = I64.div_trunc_by(fmt.afmt_sample_rate, 1000)
 		frame_size = (samples_per_ms * fmt.afmt_bytes_per_sample)
-		{ uab_frames: [], uab_frame_size: frame_size, uab_frames_per_ms: samples_per_ms, uab_total_frames: duration_ms }
+		UsbAudio.UsbAudioBuffer.{ uab_frames: [], uab_frame_size: frame_size, uab_frames_per_ms: samples_per_ms, uab_total_frames: duration_ms }
 	})
 
 	usb_audio_set_volume : I64 -> List(I64)

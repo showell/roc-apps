@@ -23,11 +23,14 @@ import cdx.CceText
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Account : { balance : I64, name : CceText }
+Account := { balance : I64, name : CceText }.{
+	is_eq : Account, Account -> Bool
+	is_eq = |a, b| a.balance == b.balance and a.name == b.name
+}
 Status : [Active, Closed]
 
 make_account : CceText, I64 -> Account
-make_account = |name, amount| { balance: amount, name: name }
+make_account = |name, amount| Account.{ balance: amount, name: name }
 
 show_account : Account -> CceText
 show_account = |acct| CceText.concat(CceText.concat(acct.name, ":"), CceText.show_int(acct.balance))

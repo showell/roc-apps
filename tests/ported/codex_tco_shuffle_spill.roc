@@ -20,11 +20,17 @@ import cdx.Prelude
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Cfg : { width : I64, nplayers : I64, limit : I64, data : List(I64) }
-Rng : { state : I64 }
+Cfg := { width : I64, nplayers : I64, limit : I64, data : List(I64) }.{
+	is_eq : Cfg, Cfg -> Bool
+	is_eq = |a, b| a.width == b.width and a.nplayers == b.nplayers and a.limit == b.limit and a.data == b.data
+}
+Rng := { state : I64 }.{
+	is_eq : Rng, Rng -> Bool
+	is_eq = |a, b| a.state == b.state
+}
 
 rng_bump : Rng -> Rng
-rng_bump = |r| { state: (r.state + 1) }
+rng_bump = |r| Rng.{ state: (r.state + 1) }
 
 md : I64, I64 -> I64
 md = |a, b| Prelude.int_mod(a, b)
@@ -44,6 +50,6 @@ loop5 = |cfg, r, units, turn, active| (if (r.state >= 8) { turn } else { ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(CceText.printed(CceText.concat("turns=", CceText.show_int(loop5({ width: 4, nplayers: 2, limit: 3, data: [1, 2] }, { state: 0 }, [7, 8], 0, 0)))))
+	line!(CceText.printed(CceText.concat("turns=", CceText.show_int(loop5(Cfg.{ width: 4, nplayers: 2, limit: 3, data: [1, 2] }, Rng.{ state: 0 }, [7, 8], 0, 0)))))
 	Ok({})
 }

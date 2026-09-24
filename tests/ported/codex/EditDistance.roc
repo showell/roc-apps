@@ -2,7 +2,10 @@
 import CceText
 
 EditDistance :: [].{
-	EditMatch : { em_text : CceText, em_distance : I64, em_index : I64 }
+	EditMatch := { em_text : CceText, em_distance : I64, em_index : I64 }.{
+		is_eq : EditDistance.EditMatch, EditDistance.EditMatch -> Bool
+		is_eq = |a, b| a.em_text == b.em_text and a.em_distance == b.em_distance and a.em_index == b.em_index
+	}
 
 	edit_distance : CceText, CceText -> I64
 	edit_distance = |a, b| ({
@@ -45,13 +48,13 @@ EditDistance :: [].{
 	})
 
 	edit_best_match : CceText, List(CceText) -> EditDistance.EditMatch
-	edit_best_match = |query, candidates| ed_best_loop(query, candidates, 0, U64.to_i64_wrap(List.len(candidates)), { em_text: "", em_distance: 999999, em_index: (0 - 1) })
+	edit_best_match = |query, candidates| ed_best_loop(query, candidates, 0, U64.to_i64_wrap(List.len(candidates)), EditDistance.EditMatch.{ em_text: "", em_distance: 999999, em_index: (0 - 1) })
 
 	ed_best_loop : CceText, List(CceText), I64, I64, EditDistance.EditMatch -> EditDistance.EditMatch
 	ed_best_loop = |query, candidates, i, n, best| (if (i >= n) { best } else { ({
 		c = (List.get(candidates, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 		d = edit_distance(query, c)
-		new_best = (if (d < best.em_distance) { { em_text: c, em_distance: d, em_index: i } } else { best })
+		new_best = (if (d < best.em_distance) { EditDistance.EditMatch.{ em_text: c, em_distance: d, em_index: i } } else { best })
 		ed_best_loop(query, candidates, (i + 1), n, new_best)
 	}) })
 

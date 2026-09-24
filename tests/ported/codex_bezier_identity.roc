@@ -33,16 +33,16 @@ import cdx.MathLib
 line! = |s| echo!(Str.concat(s, "\n"))
 
 pa : Bezier.BezVec
-pa = { vx: 100, vy: 200, vz: 300 }
+pa = Bezier.BezVec.{ vx: 100, vy: 200, vz: 300 }
 
 pb : Bezier.BezVec
-pb = { vx: 400, vy: 500, vz: 600 }
+pb = Bezier.BezVec.{ vx: 400, vy: 500, vz: 600 }
 
 pc : Bezier.BezVec
-pc = { vx: 700, vy: 800, vz: 900 }
+pc = Bezier.BezVec.{ vx: 700, vy: 800, vz: 900 }
 
 pd : Bezier.BezVec
-pd = { vx: 1000, vy: 1100, vz: 1200 }
+pd = Bezier.BezVec.{ vx: 1000, vy: 1100, vz: 1200 }
 
 fmt : Bezier.BezVec -> CceText
 fmt = |p| CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.show_int(p.vx), ","), CceText.show_int(p.vy)), ","), CceText.show_int(p.vz))

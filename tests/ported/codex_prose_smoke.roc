@@ -23,7 +23,10 @@ import cdx.CceText
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-ProseBasic : { value : I64, label : CceText }
+ProseBasic := { value : I64, label : CceText }.{
+	is_eq : ProseBasic, ProseBasic -> Bool
+	is_eq = |a, b| a.value == b.value and a.label == b.label
+}
 ProseResult : [Ok(I64), Err(CceText)]
 
 add_values : I64, I64 -> I64
@@ -59,7 +62,7 @@ eq_ProseResult = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	pb = { value: add_values(10, 32), label: "answer" }
+	pb = ProseBasic.{ value: add_values(10, 32), label: "answer" }
 	desc = describe(pb)
 	r1 = show_result(Ok(42))
 	r2 = show_result(Err("not found"))

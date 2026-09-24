@@ -1,13 +1,16 @@
 # Envelope -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 Envelope :: [].{
-	AdsrEnvelope : { env_attack : I64, env_decay : I64, env_sustain_level : I64, env_release : I64 }
+	AdsrEnvelope := { env_attack : I64, env_decay : I64, env_sustain_level : I64, env_release : I64 }.{
+		is_eq : Envelope.AdsrEnvelope, Envelope.AdsrEnvelope -> Bool
+		is_eq = |a, b| a.env_attack == b.env_attack and a.env_decay == b.env_decay and a.env_sustain_level == b.env_sustain_level and a.env_release == b.env_release
+	}
 
 	adsr_new : I64, I64, I64, I64 -> Envelope.AdsrEnvelope
-	adsr_new = |attack, decay, sustain, release| { env_attack: attack, env_decay: decay, env_sustain_level: sustain, env_release: release }
+	adsr_new = |attack, decay, sustain, release| Envelope.AdsrEnvelope.{ env_attack: attack, env_decay: decay, env_sustain_level: sustain, env_release: release }
 
 	adsr_default : Envelope.AdsrEnvelope
-	adsr_default = { env_attack: 100, env_decay: 200, env_sustain_level: 700, env_release: 300 }
+	adsr_default = Envelope.AdsrEnvelope.{ env_attack: 100, env_decay: 200, env_sustain_level: 700, env_release: 300 }
 
 	adsr_eval : Envelope.AdsrEnvelope, I64, I64, Bool -> I64
 	adsr_eval = |env, time, note_off_time, released| (if released { adsr_release_phase(env, time, note_off_time) } else { adsr_attack_decay_sustain(env, time) })

@@ -20,18 +20,21 @@ import cdx.CceText
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Byte : { val : I64 }
+Byte := { val : I64 }.{
+	is_eq : Byte, Byte -> Bool
+	is_eq = |a, b| a.val == b.val
+}
 
 bump_right : Byte -> I64
-bump_right = |b| { val: (b.val + 1) }.val
+bump_right = |b| Byte.{ val: (b.val + 1) }.val
 
 bump_left : Byte -> I64
-bump_left = |b| { val: (1 + b.val) }.val
+bump_left = |b| Byte.{ val: (1 + b.val) }.val
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(CceText.printed(CceText.show_int(bump_right({ val: 42 }))))
-	line!(CceText.printed(CceText.show_int(bump_left({ val: 42 }))))
+	line!(CceText.printed(CceText.show_int(bump_right(Byte.{ val: 42 }))))
+	line!(CceText.printed(CceText.show_int(bump_left(Byte.{ val: 42 }))))
 	Ok({})
 }

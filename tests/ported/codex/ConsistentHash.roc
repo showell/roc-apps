@@ -4,11 +4,17 @@ import CceText
 import Random
 
 ConsistentHash :: [].{
-	HashRingEntry : { hr_hash : I64, hr_node : I64 }
-	ConsistentHashRing : { hr_entries : List(ConsistentHash.HashRingEntry), hr_count : I64, hr_vnodes : I64 }
+	HashRingEntry := { hr_hash : I64, hr_node : I64 }.{
+		is_eq : ConsistentHash.HashRingEntry, ConsistentHash.HashRingEntry -> Bool
+		is_eq = |a, b| a.hr_hash == b.hr_hash and a.hr_node == b.hr_node
+	}
+	ConsistentHashRing := { hr_entries : List(ConsistentHash.HashRingEntry), hr_count : I64, hr_vnodes : I64 }.{
+		is_eq : ConsistentHash.ConsistentHashRing, ConsistentHash.ConsistentHashRing -> Bool
+		is_eq = |a, b| a.hr_entries == b.hr_entries and a.hr_count == b.hr_count and a.hr_vnodes == b.hr_vnodes
+	}
 
 	chr_new : I64 -> ConsistentHash.ConsistentHashRing
-	chr_new = |vnodes| { hr_entries: [], hr_count: 0, hr_vnodes: vnodes }
+	chr_new = |vnodes| ConsistentHash.ConsistentHashRing.{ hr_entries: [], hr_count: 0, hr_vnodes: vnodes }
 
 	chr_add_node : ConsistentHash.ConsistentHashRing, I64 -> ConsistentHash.ConsistentHashRing
 	chr_add_node = |ring, node_id| chr_add_vnodes(ring, node_id, 0, ring.hr_vnodes)
@@ -16,10 +22,10 @@ ConsistentHash :: [].{
 	chr_add_vnodes : ConsistentHash.ConsistentHashRing, I64, I64, I64 -> ConsistentHash.ConsistentHashRing
 	chr_add_vnodes = |ring, node_id, i, limit| (if (i >= limit) { ring } else { ({
 		h = chr_hash_pair(node_id, i)
-		entry = { hr_hash: h, hr_node: node_id }
+		entry = ConsistentHash.HashRingEntry.{ hr_hash: h, hr_node: node_id }
 		pos = chr_find_insert(ring.hr_entries, h, 0, ring.hr_count)
 		new_entries = chr_insert_at(ring.hr_entries, pos, entry, ring.hr_count)
-		chr_add_vnodes({ hr_entries: new_entries, hr_count: (ring.hr_count + 1), hr_vnodes: ring.hr_vnodes }, node_id, (i + 1), limit)
+		chr_add_vnodes(ConsistentHash.ConsistentHashRing.{ hr_entries: new_entries, hr_count: (ring.hr_count + 1), hr_vnodes: ring.hr_vnodes }, node_id, (i + 1), limit)
 	}) })
 
 	chr_find_insert : List(ConsistentHash.HashRingEntry), I64, I64, I64 -> I64

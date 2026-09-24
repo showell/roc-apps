@@ -2,10 +2,22 @@
 import CceText
 
 Usb :: [].{
-	UsbDeviceDesc : { usb_vendor : I64, usb_product : I64, usb_class : I64, usb_subclass : I64, usb_protocol : I64, usb_max_packet : I64, usb_num_configs : I64, usb_speed : I64 }
-	UsbEndpoint : { ep_address : I64, ep_direction : I64, ep_type : I64, ep_max_packet : I64, ep_interval : I64 }
-	UsbInterface : { if_number : I64, if_alt_setting : I64, if_class : I64, if_subclass : I64, if_protocol : I64, if_num_endpoints : I64 }
-	UsbSetupPacket : { sp_request_type : I64, sp_request : I64, sp_value : I64, sp_index : I64, sp_length : I64 }
+	UsbDeviceDesc := { usb_vendor : I64, usb_product : I64, usb_class : I64, usb_subclass : I64, usb_protocol : I64, usb_max_packet : I64, usb_num_configs : I64, usb_speed : I64 }.{
+		is_eq : Usb.UsbDeviceDesc, Usb.UsbDeviceDesc -> Bool
+		is_eq = |a, b| a.usb_vendor == b.usb_vendor and a.usb_product == b.usb_product and a.usb_class == b.usb_class and a.usb_subclass == b.usb_subclass and a.usb_protocol == b.usb_protocol and a.usb_max_packet == b.usb_max_packet and a.usb_num_configs == b.usb_num_configs and a.usb_speed == b.usb_speed
+	}
+	UsbEndpoint := { ep_address : I64, ep_direction : I64, ep_type : I64, ep_max_packet : I64, ep_interval : I64 }.{
+		is_eq : Usb.UsbEndpoint, Usb.UsbEndpoint -> Bool
+		is_eq = |a, b| a.ep_address == b.ep_address and a.ep_direction == b.ep_direction and a.ep_type == b.ep_type and a.ep_max_packet == b.ep_max_packet and a.ep_interval == b.ep_interval
+	}
+	UsbInterface := { if_number : I64, if_alt_setting : I64, if_class : I64, if_subclass : I64, if_protocol : I64, if_num_endpoints : I64 }.{
+		is_eq : Usb.UsbInterface, Usb.UsbInterface -> Bool
+		is_eq = |a, b| a.if_number == b.if_number and a.if_alt_setting == b.if_alt_setting and a.if_class == b.if_class and a.if_subclass == b.if_subclass and a.if_protocol == b.if_protocol and a.if_num_endpoints == b.if_num_endpoints
+	}
+	UsbSetupPacket := { sp_request_type : I64, sp_request : I64, sp_value : I64, sp_index : I64, sp_length : I64 }.{
+		is_eq : Usb.UsbSetupPacket, Usb.UsbSetupPacket -> Bool
+		is_eq = |a, b| a.sp_request_type == b.sp_request_type and a.sp_request == b.sp_request and a.sp_value == b.sp_value and a.sp_index == b.sp_index and a.sp_length == b.sp_length
+	}
 
 	usb_desc_device : I64
 	usb_desc_device = 1
@@ -41,7 +53,7 @@ Usb :: [].{
 	usb_req_set_config = 9
 
 	usb_parse_device_desc : List(I64) -> Usb.UsbDeviceDesc
-	usb_parse_device_desc = |bytes| (if (U64.to_i64_wrap(List.len(bytes)) < 18) { { usb_vendor: 0, usb_product: 0, usb_class: 0, usb_subclass: 0, usb_protocol: 0, usb_max_packet: 0, usb_num_configs: 0, usb_speed: 0 } } else { { usb_vendor: usb_le16(bytes, 8), usb_product: usb_le16(bytes, 10), usb_class: (List.get(bytes, I64.to_u64_wrap(4)) ?? crash("list-at out of range")), usb_subclass: (List.get(bytes, I64.to_u64_wrap(5)) ?? crash("list-at out of range")), usb_protocol: (List.get(bytes, I64.to_u64_wrap(6)) ?? crash("list-at out of range")), usb_max_packet: (List.get(bytes, I64.to_u64_wrap(7)) ?? crash("list-at out of range")), usb_num_configs: (List.get(bytes, I64.to_u64_wrap(17)) ?? crash("list-at out of range")), usb_speed: 0 } })
+	usb_parse_device_desc = |bytes| (if (U64.to_i64_wrap(List.len(bytes)) < 18) { Usb.UsbDeviceDesc.{ usb_vendor: 0, usb_product: 0, usb_class: 0, usb_subclass: 0, usb_protocol: 0, usb_max_packet: 0, usb_num_configs: 0, usb_speed: 0 } } else { Usb.UsbDeviceDesc.{ usb_vendor: usb_le16(bytes, 8), usb_product: usb_le16(bytes, 10), usb_class: (List.get(bytes, I64.to_u64_wrap(4)) ?? crash("list-at out of range")), usb_subclass: (List.get(bytes, I64.to_u64_wrap(5)) ?? crash("list-at out of range")), usb_protocol: (List.get(bytes, I64.to_u64_wrap(6)) ?? crash("list-at out of range")), usb_max_packet: (List.get(bytes, I64.to_u64_wrap(7)) ?? crash("list-at out of range")), usb_num_configs: (List.get(bytes, I64.to_u64_wrap(17)) ?? crash("list-at out of range")), usb_speed: 0 } })
 
 	usb_ep_dir_in : I64
 	usb_ep_dir_in = 128
@@ -62,28 +74,28 @@ Usb :: [].{
 	usb_ep_type_interrupt = 3
 
 	usb_parse_endpoint : List(I64), I64 -> Usb.UsbEndpoint
-	usb_parse_endpoint = |bytes, offset| (if ((offset + 7) > U64.to_i64_wrap(List.len(bytes))) { { ep_address: 0, ep_direction: 0, ep_type: 0, ep_max_packet: 0, ep_interval: 0 } } else { ({
+	usb_parse_endpoint = |bytes, offset| (if ((offset + 7) > U64.to_i64_wrap(List.len(bytes))) { Usb.UsbEndpoint.{ ep_address: 0, ep_direction: 0, ep_type: 0, ep_max_packet: 0, ep_interval: 0 } } else { ({
 		addr = (List.get(bytes, I64.to_u64_wrap((offset + 2))) ?? crash("list-at out of range"))
-		{ ep_address: I64.bitwise_and(addr, 15), ep_direction: I64.bitwise_and(addr, 128), ep_type: I64.bitwise_and((List.get(bytes, I64.to_u64_wrap((offset + 3))) ?? crash("list-at out of range")), 3), ep_max_packet: usb_le16(bytes, (offset + 4)), ep_interval: (List.get(bytes, I64.to_u64_wrap((offset + 6))) ?? crash("list-at out of range")) }
+		Usb.UsbEndpoint.{ ep_address: I64.bitwise_and(addr, 15), ep_direction: I64.bitwise_and(addr, 128), ep_type: I64.bitwise_and((List.get(bytes, I64.to_u64_wrap((offset + 3))) ?? crash("list-at out of range")), 3), ep_max_packet: usb_le16(bytes, (offset + 4)), ep_interval: (List.get(bytes, I64.to_u64_wrap((offset + 6))) ?? crash("list-at out of range")) }
 	}) })
 
 	usb_parse_interface : List(I64), I64 -> Usb.UsbInterface
-	usb_parse_interface = |bytes, offset| (if ((offset + 8) > U64.to_i64_wrap(List.len(bytes))) { { if_number: 0, if_alt_setting: 0, if_class: 0, if_subclass: 0, if_protocol: 0, if_num_endpoints: 0 } } else { { if_number: (List.get(bytes, I64.to_u64_wrap((offset + 2))) ?? crash("list-at out of range")), if_alt_setting: (List.get(bytes, I64.to_u64_wrap((offset + 3))) ?? crash("list-at out of range")), if_class: (List.get(bytes, I64.to_u64_wrap((offset + 5))) ?? crash("list-at out of range")), if_subclass: (List.get(bytes, I64.to_u64_wrap((offset + 6))) ?? crash("list-at out of range")), if_protocol: (List.get(bytes, I64.to_u64_wrap((offset + 7))) ?? crash("list-at out of range")), if_num_endpoints: (List.get(bytes, I64.to_u64_wrap((offset + 4))) ?? crash("list-at out of range")) } })
+	usb_parse_interface = |bytes, offset| (if ((offset + 8) > U64.to_i64_wrap(List.len(bytes))) { Usb.UsbInterface.{ if_number: 0, if_alt_setting: 0, if_class: 0, if_subclass: 0, if_protocol: 0, if_num_endpoints: 0 } } else { Usb.UsbInterface.{ if_number: (List.get(bytes, I64.to_u64_wrap((offset + 2))) ?? crash("list-at out of range")), if_alt_setting: (List.get(bytes, I64.to_u64_wrap((offset + 3))) ?? crash("list-at out of range")), if_class: (List.get(bytes, I64.to_u64_wrap((offset + 5))) ?? crash("list-at out of range")), if_subclass: (List.get(bytes, I64.to_u64_wrap((offset + 6))) ?? crash("list-at out of range")), if_protocol: (List.get(bytes, I64.to_u64_wrap((offset + 7))) ?? crash("list-at out of range")), if_num_endpoints: (List.get(bytes, I64.to_u64_wrap((offset + 4))) ?? crash("list-at out of range")) } })
 
 	usb_setup_get_descriptor : I64, I64, I64 -> Usb.UsbSetupPacket
-	usb_setup_get_descriptor = |desc_type, desc_index, length| { sp_request_type: 128, sp_request: usb_req_get_descriptor, sp_value: I64.bitwise_or(I64.shl_wrap(desc_type, I64.to_u8_wrap(8)), desc_index), sp_index: 0, sp_length: length }
+	usb_setup_get_descriptor = |desc_type, desc_index, length| Usb.UsbSetupPacket.{ sp_request_type: 128, sp_request: usb_req_get_descriptor, sp_value: I64.bitwise_or(I64.shl_wrap(desc_type, I64.to_u8_wrap(8)), desc_index), sp_index: 0, sp_length: length }
 
 	usb_setup_set_address : I64 -> Usb.UsbSetupPacket
-	usb_setup_set_address = |addr| { sp_request_type: 0, sp_request: usb_req_set_address, sp_value: addr, sp_index: 0, sp_length: 0 }
+	usb_setup_set_address = |addr| Usb.UsbSetupPacket.{ sp_request_type: 0, sp_request: usb_req_set_address, sp_value: addr, sp_index: 0, sp_length: 0 }
 
 	usb_setup_set_config : I64 -> Usb.UsbSetupPacket
-	usb_setup_set_config = |config| { sp_request_type: 0, sp_request: usb_req_set_config, sp_value: config, sp_index: 0, sp_length: 0 }
+	usb_setup_set_config = |config| Usb.UsbSetupPacket.{ sp_request_type: 0, sp_request: usb_req_set_config, sp_value: config, sp_index: 0, sp_length: 0 }
 
 	usb_feature_endpoint_halt : I64
 	usb_feature_endpoint_halt = 0
 
 	usb_setup_clear_halt : I64 -> Usb.UsbSetupPacket
-	usb_setup_clear_halt = |endpoint_addr| { sp_request_type: 2, sp_request: usb_req_clear_feature, sp_value: usb_feature_endpoint_halt, sp_index: endpoint_addr, sp_length: 0 }
+	usb_setup_clear_halt = |endpoint_addr| Usb.UsbSetupPacket.{ sp_request_type: 2, sp_request: usb_req_clear_feature, sp_value: usb_feature_endpoint_halt, sp_index: endpoint_addr, sp_length: 0 }
 
 	usb_encode_setup : Usb.UsbSetupPacket -> List(I64)
 	usb_encode_setup = |pkt| List.concat(List.concat(List.concat([pkt.sp_request_type, pkt.sp_request], usb_le16_encode(pkt.sp_value)), usb_le16_encode(pkt.sp_index)), usb_le16_encode(pkt.sp_length))

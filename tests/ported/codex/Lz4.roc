@@ -2,7 +2,10 @@
 import Wrap64
 
 Lz4 :: [].{
-	Lz4LenResult : { length : I64, next : I64 }
+	Lz4LenResult := { length : I64, next : I64 }.{
+		is_eq : Lz4.Lz4LenResult, Lz4.Lz4LenResult -> Bool
+		is_eq = |a, b| a.length == b.length and a.next == b.next
+	}
 
 	lz4_min_match : I64
 	lz4_min_match = 4
@@ -133,12 +136,12 @@ Lz4 :: [].{
 	}) })
 
 	lz4_read_extra_length : List(I64), I64, I64, I64 -> Lz4.Lz4LenResult
-	lz4_read_extra_length = |input, pos, len, base| (if (base < 15) { { length: base, next: pos } } else { lz4_read_extra_loop(input, pos, len, (base - 15)) })
+	lz4_read_extra_length = |input, pos, len, base| (if (base < 15) { Lz4.Lz4LenResult.{ length: base, next: pos } } else { lz4_read_extra_loop(input, pos, len, (base - 15)) })
 
 	lz4_read_extra_loop : List(I64), I64, I64, I64 -> Lz4.Lz4LenResult
-	lz4_read_extra_loop = |input, pos, len, extra| (if (pos >= len) { { length: (15 + extra), next: pos } } else { ({
+	lz4_read_extra_loop = |input, pos, len, extra| (if (pos >= len) { Lz4.Lz4LenResult.{ length: (15 + extra), next: pos } } else { ({
 		b = (List.get(input, I64.to_u64_wrap(pos)) ?? crash("list-at out of range"))
-		(if (b < 255) { { length: ((15 + extra) + b), next: (pos + 1) } } else { lz4_read_extra_loop(input, (pos + 1), len, (extra + 255)) })
+		(if (b < 255) { Lz4.Lz4LenResult.{ length: ((15 + extra) + b), next: (pos + 1) } } else { lz4_read_extra_loop(input, (pos + 1), len, (extra + 255)) })
 	}) })
 
 	lz4_copy_match : List(I64), I64, I64, I64 -> List(I64)

@@ -2,7 +2,10 @@
 import Maybe
 
 Asn1 :: [].{
-	Asn1Tlv : { tlv_tag : I64, tlv_hdr : I64, tlv_off : I64, tlv_len : I64 }
+	Asn1Tlv := { tlv_tag : I64, tlv_hdr : I64, tlv_off : I64, tlv_len : I64 }.{
+		is_eq : Asn1.Asn1Tlv, Asn1.Asn1Tlv -> Bool
+		is_eq = |a, b| a.tlv_tag == b.tlv_tag and a.tlv_hdr == b.tlv_hdr and a.tlv_off == b.tlv_off and a.tlv_len == b.tlv_len
+	}
 
 	asn1_boolean : I64
 	asn1_boolean = 1
@@ -71,7 +74,7 @@ Asn1 :: [].{
 	asn1_be = |buf, off, n, acc| (if (n <= 0) { acc } else { asn1_be(buf, (off + 1), (n - 1), ((acc * 256) + (List.get(buf, I64.to_u64_wrap(off)) ?? crash("list-at out of range")))) })
 
 	asn1_mk : List(I64), I64, I64, I64, I64 -> Maybe.Maybe(Asn1.Asn1Tlv)
-	asn1_mk = |buf, tag, hdr, off, len| (if (len < 0) { None } else { (if ((off + len) > U64.to_i64_wrap(List.len(buf))) { None } else { Just({ tlv_tag: tag, tlv_hdr: hdr, tlv_off: off, tlv_len: len }) }) })
+	asn1_mk = |buf, tag, hdr, off, len| (if (len < 0) { None } else { (if ((off + len) > U64.to_i64_wrap(List.len(buf))) { None } else { Just(Asn1.Asn1Tlv.{ tlv_tag: tag, tlv_hdr: hdr, tlv_off: off, tlv_len: len }) }) })
 
 	asn1_read_tag : List(I64), I64, I64 -> Maybe.Maybe(Asn1.Asn1Tlv)
 	asn1_read_tag = |buf, off, want| (match asn1_read(buf, off) {

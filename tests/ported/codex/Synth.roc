@@ -5,8 +5,14 @@ import Units
 
 Synth :: [].{
 	WaveType : [WaveSine, WaveSquare, WaveSaw, WaveTriangle]
-	LpfState : { lpf_prev : I64, lpf_alpha : I64 }
-	Note : { note_freq : Units.Frequency, note_start : I64, note_duration : I64, note_wave : Synth.WaveType }
+	LpfState := { lpf_prev : I64, lpf_alpha : I64 }.{
+		is_eq : Synth.LpfState, Synth.LpfState -> Bool
+		is_eq = |a, b| a.lpf_prev == b.lpf_prev and a.lpf_alpha == b.lpf_alpha
+	}
+	Note := { note_freq : Units.Frequency, note_start : I64, note_duration : I64, note_wave : Synth.WaveType }.{
+		is_eq : Synth.Note, Synth.Note -> Bool
+		is_eq = |a, b| a.note_freq == b.note_freq and a.note_start == b.note_start and a.note_duration == b.note_duration and a.note_wave == b.note_wave
+	}
 
 	osc_sine : I64, I64 -> I64
 	osc_sine = |phase, amplitude| ({
@@ -54,13 +60,13 @@ Synth :: [].{
 	}) })
 
 	lpf_new : I64 -> Synth.LpfState
-	lpf_new = |alpha| { lpf_prev: 0, lpf_alpha: alpha }
+	lpf_new = |alpha| Synth.LpfState.{ lpf_prev: 0, lpf_alpha: alpha }
 
 	lpf_tick : Synth.LpfState, I64 -> Synth.LpfState
 	lpf_tick = |state, input| ({
 		a = state.lpf_alpha
 		out = I64.div_trunc_by(((a * input) + ((1000 - a) * state.lpf_prev)), 1000)
-		{ lpf_prev: out, lpf_alpha: a }
+		Synth.LpfState.{ lpf_prev: out, lpf_alpha: a }
 	})
 
 	lpf_value : Synth.LpfState -> I64
@@ -107,7 +113,7 @@ Synth :: [].{
 	}) })
 
 	note_new : Units.Frequency, I64, I64, Synth.WaveType -> Synth.Note
-	note_new = |freq, start, dur, wave| { note_freq: freq, note_start: start, note_duration: dur, note_wave: wave }
+	note_new = |freq, start, dur, wave| Synth.Note.{ note_freq: freq, note_start: start, note_duration: dur, note_wave: wave }
 
 	synth_render_note : Synth.Note, I64, I64, Envelope.AdsrEnvelope -> List(I64)
 	synth_render_note = |note, amp, sample_rate, env| ({

@@ -1,7 +1,10 @@
 # Wavelet -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 Wavelet :: [].{
-	DwtStepResult : { averages : List(I64), details : List(I64) }
+	DwtStepResult := { averages : List(I64), details : List(I64) }.{
+		is_eq : Wavelet.DwtStepResult, Wavelet.DwtStepResult -> Bool
+		is_eq = |a, b| a.averages == b.averages and a.details == b.details
+	}
 
 	dwt_forward : List(I64) -> List(I64)
 	dwt_forward = |signal| ({
@@ -24,7 +27,7 @@ Wavelet :: [].{
 	})
 
 	dwt_fwd_pairs : List(I64), I64, I64, List(I64), List(I64) -> Wavelet.DwtStepResult
-	dwt_fwd_pairs = |data, half, i, avgs, dets| (if (i >= half) { { averages: avgs, details: dets } } else { ({
+	dwt_fwd_pairs = |data, half, i, avgs, dets| (if (i >= half) { Wavelet.DwtStepResult.{ averages: avgs, details: dets } } else { ({
 		a = (List.get(data, I64.to_u64_wrap((2 * i))) ?? crash("list-at out of range"))
 		b = (List.get(data, I64.to_u64_wrap(((2 * i) + 1))) ?? crash("list-at out of range"))
 		det = (a - b)

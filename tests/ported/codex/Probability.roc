@@ -1,10 +1,22 @@
 # Probability -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 Probability :: [].{
-	NormalDist : { mu : I64, sigma : I64 }
-	PoissonDist : { lambda : I64 }
-	BinomialDist : { n : I64, p : I64 }
-	ExponentialDist : { lambda : I64 }
+	NormalDist := { mu : I64, sigma : I64 }.{
+		is_eq : Probability.NormalDist, Probability.NormalDist -> Bool
+		is_eq = |a, b| a.mu == b.mu and a.sigma == b.sigma
+	}
+	PoissonDist := { lambda : I64 }.{
+		is_eq : Probability.PoissonDist, Probability.PoissonDist -> Bool
+		is_eq = |a, b| a.lambda == b.lambda
+	}
+	BinomialDist := { n : I64, p : I64 }.{
+		is_eq : Probability.BinomialDist, Probability.BinomialDist -> Bool
+		is_eq = |a, b| a.n == b.n and a.p == b.p
+	}
+	ExponentialDist := { lambda : I64 }.{
+		is_eq : Probability.ExponentialDist, Probability.ExponentialDist -> Bool
+		is_eq = |a, b| a.lambda == b.lambda
+	}
 
 	prob_sqrt_2pi : I64
 	prob_sqrt_2pi = 2507
@@ -16,10 +28,10 @@ Probability :: [].{
 	prob_exp_neg_one = 368
 
 	normal : I64, I64 -> Probability.NormalDist
-	normal = |mu, sigma| { mu: mu, sigma: sigma }
+	normal = |mu, sigma| Probability.NormalDist.{ mu: mu, sigma: sigma }
 
 	normal_standard : Probability.NormalDist
-	normal_standard = { mu: 0, sigma: prob_scale }
+	normal_standard = Probability.NormalDist.{ mu: 0, sigma: prob_scale }
 
 	normal_pdf : Probability.NormalDist, I64 -> I64
 	normal_pdf = |d, x| ({
@@ -55,7 +67,7 @@ Probability :: [].{
 	})
 
 	poisson : I64 -> Probability.PoissonDist
-	poisson = |lam| { lambda: lam }
+	poisson = |lam| Probability.PoissonDist.{ lambda: lam }
 
 	poisson_pmf : Probability.PoissonDist, I64 -> I64
 	poisson_pmf = |d, k| (if (k < 0) { 0 } else { ({
@@ -66,7 +78,7 @@ Probability :: [].{
 	}) })
 
 	binomial : I64, I64 -> Probability.BinomialDist
-	binomial = |trials, prob| { n: trials, p: prob }
+	binomial = |trials, prob| Probability.BinomialDist.{ n: trials, p: prob }
 
 	binomial_pmf : Probability.BinomialDist, I64 -> I64
 	binomial_pmf = |d, k| (if (k < 0) { 0 } else { (if (k > d.n) { 0 } else { ({
@@ -84,7 +96,7 @@ Probability :: [].{
 	binomial_variance = |d| I64.div_trunc_by((I64.div_trunc_by((d.n * d.p), prob_scale) * (prob_scale - d.p)), prob_scale)
 
 	exponential : I64 -> Probability.ExponentialDist
-	exponential = |lam| { lambda: lam }
+	exponential = |lam| Probability.ExponentialDist.{ lambda: lam }
 
 	exponential_pdf : Probability.ExponentialDist, I64 -> I64
 	exponential_pdf = |d, x| (if (x < 0) { 0 } else { I64.div_trunc_by((d.lambda * prob_exp_neg(I64.div_trunc_by((d.lambda * x), prob_scale))), prob_scale) })

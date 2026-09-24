@@ -21,7 +21,10 @@ import cdx.CceText
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Box_ : { items : List(I64) }
+Box_ := { items : List(I64) }.{
+	is_eq : Box_, Box_ -> Bool
+	is_eq = |a, b| a.items == b.items
+}
 
 probe : List(I64), CceText, I64, I64 -> I64
 probe = |_xs, _name, _i, len| len
@@ -30,7 +33,7 @@ probe = |_xs, _name, _i, len| len
 
 main! = |_args| {
 	({
-		b = { items: [7, 8, 9] }
+		b = Box_.{ items: [7, 8, 9] }
 		({
 			line!(CceText.printed(CceText.concat("literal between two reads: ", CceText.show_int(probe(b.items, "read-text", 0, U64.to_i64_wrap(List.len(b.items)))))))
 			line!(CceText.printed(CceText.concat("empty literal between them: ", CceText.show_int(probe(b.items, "", 0, U64.to_i64_wrap(List.len(b.items)))))))

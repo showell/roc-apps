@@ -2,7 +2,10 @@
 import Mem
 
 PixelBuf :: [].{
-	GopBuf : { gb_base : I64, gb_width : I64, gb_height : I64 }
+	GopBuf := { gb_base : I64, gb_width : I64, gb_height : I64 }.{
+		is_eq : PixelBuf.GopBuf, PixelBuf.GopBuf -> Bool
+		is_eq = |a, b| a.gb_base == b.gb_base and a.gb_width == b.gb_width and a.gb_height == b.gb_height
+	}
 
 	gop_buf_new! : Mem.Mem, I64, I64, I64 => (Mem.Mem, PixelBuf.GopBuf)
 	gop_buf_new! = |mem, w, h, bg| ({
@@ -10,7 +13,7 @@ PixelBuf :: [].{
 		size = ((w * h) * 4)
 		(mem1, base) = Mem.alloc(mem, size)
 		(mem2, _dummy) = gop_buf_fill_loop!(mem1, base, bg, 0, (w * h))
-		(mem2, { gb_base: base, gb_width: w, gb_height: h })
+		(mem2, PixelBuf.GopBuf.{ gb_base: base, gb_width: w, gb_height: h })
 	})
 		(mem3, mem__1)
 	})

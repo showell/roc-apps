@@ -1,9 +1,18 @@
 # Numeric -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 Numeric :: [].{
-	SimpsonSums : { odd : I64, even : I64 }
-	Rk4State : { rk_t : I64, rk_y : I64 }
-	Rk4VecState : { rkv_t : I64, rkv_y : List(I64) }
+	SimpsonSums := { odd : I64, even : I64 }.{
+		is_eq : Numeric.SimpsonSums, Numeric.SimpsonSums -> Bool
+		is_eq = |a, b| a.odd == b.odd and a.even == b.even
+	}
+	Rk4State := { rk_t : I64, rk_y : I64 }.{
+		is_eq : Numeric.Rk4State, Numeric.Rk4State -> Bool
+		is_eq = |a, b| a.rk_t == b.rk_t and a.rk_y == b.rk_y
+	}
+	Rk4VecState := { rkv_t : I64, rkv_y : List(I64) }.{
+		is_eq : Numeric.Rk4VecState, Numeric.Rk4VecState -> Bool
+		is_eq = |a, b| a.rkv_t == b.rkv_t and a.rkv_y == b.rkv_y
+	}
 
 	bisect : (I64 -> I64), I64, I64, I64 -> I64
 	bisect = |f, a, b, max_iter| bisect_loop(f, a, b, max_iter, 0)
@@ -40,7 +49,7 @@ Numeric :: [].{
 	})
 
 	simpson_loop : (I64 -> I64), I64, I64, I64, I64, I64, I64 -> Numeric.SimpsonSums
-	simpson_loop = |f, a, h, n, i, odd_sum, even_sum| (if (i >= n) { { odd: odd_sum, even: even_sum } } else { ({
+	simpson_loop = |f, a, h, n, i, odd_sum, even_sum| (if (i >= n) { Numeric.SimpsonSums.{ odd: odd_sum, even: even_sum } } else { ({
 		x = (a + I64.div_trunc_by((i * h), 1000))
 		fx = f(x)
 		(if ((i - (I64.div_trunc_by(i, 2) * 2)) == 1) { simpson_loop(f, a, h, n, (i + 1), (odd_sum + fx), even_sum) } else { simpson_loop(f, a, h, n, (i + 1), odd_sum, (even_sum + fx)) })
@@ -68,13 +77,13 @@ Numeric :: [].{
 		k3 = f((t + I64.div_trunc_by(h, 2)), (y + I64.div_trunc_by((h * k2), (2 * 1000))))
 		k4 = f((t + h), (y + I64.div_trunc_by((h * k3), 1000)))
 		y_next = (y + I64.div_trunc_by((h * (((k1 + (2 * k2)) + (2 * k3)) + k4)), (6 * 1000)))
-		{ rk_t: (t + h), rk_y: y_next }
+		Numeric.Rk4State.{ rk_t: (t + h), rk_y: y_next }
 	})
 
 	rk4_solve : (I64, I64 -> I64), I64, I64, I64, I64 -> List(Numeric.Rk4State)
 	rk4_solve = |f, t0, y0, t_end, steps| ({
 		h = I64.div_trunc_by(((t_end - t0) * 1000), steps)
-		rk4_solve_loop(f, t0, y0, h, steps, 0, [{ rk_t: t0, rk_y: y0 }])
+		rk4_solve_loop(f, t0, y0, h, steps, 0, [Numeric.Rk4State.{ rk_t: t0, rk_y: y0 }])
 	})
 
 	rk4_solve_loop : (I64, I64 -> I64), I64, I64, I64, I64, I64, List(Numeric.Rk4State) -> List(Numeric.Rk4State)
@@ -94,7 +103,7 @@ Numeric :: [].{
 		y4 = rk4_vec_add(y, k3, h, n)
 		k4 = f((t + h), y4)
 		y_next = rk4_vec_combine(y, k1, k2, k3, k4, h, n, 0, [])
-		{ rkv_t: (t + h), rkv_y: y_next }
+		Numeric.Rk4VecState.{ rkv_t: (t + h), rkv_y: y_next }
 	})
 
 	rk4_vec_add : List(I64), List(I64), I64, I64 -> List(I64)

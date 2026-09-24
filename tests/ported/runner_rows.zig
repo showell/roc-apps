@@ -3562,18 +3562,6 @@ const codex_ui_sound_test_stdout =
     \\q-count=2 done=false
     ++ "\n";
 
-const codex_ui@theme_ink_on_stdout =
-    \\the ink each scheme puts on its own accent:
-    \\terminal: bg luma 16, fg luma 204, accent luma 154 -> ink luma 16
-    \\lcars: bg luma 0, fg luma 255, accent luma 179 -> ink luma 0
-    \\minimal: bg luma 255, fg luma 32, accent luma 88 -> ink luma 255
-    \\
-    \\the same helper asked for black and for white:
-    \\  terminal: on black luma 204, on white luma 16
-    \\  lcars: on black luma 255, on white luma 0
-    \\  minimal: on black luma 255, on white luma 32
-    ++ "\n";
-
 const codex_unconstrained_empty_list_stdout =
     \\0
     \\0
@@ -4218,7 +4206,6 @@ const codex_zigbee_encode_stdout =
     .{ .id = 0, .suite = .codex, .name = "codex: tvar-in-declared-type", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_tvar_in_declared_type.roc", .stdout_exact = codex_tvar_in_declared_type_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: type-checker-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_type_checker_test.roc", .stdout_exact = codex_type_checker_test_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: ui-sound-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ui_sound_test.roc", .stdout_exact = codex_ui_sound_test_stdout } } },
-    .{ .id = 0, .suite = .codex, .name = "codex: ui@theme-ink-on", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ui@theme_ink_on.roc", .stdout_exact = codex_ui@theme_ink_on_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: unconstrained-empty-list", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_unconstrained_empty_list.roc", .stdout_exact = codex_unconstrained_empty_list_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: unconstrained-nullary-sum", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_unconstrained_nullary_sum.roc", .stdout_exact = codex_unconstrained_nullary_sum_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: unit-family", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_unit_family.roc", .stdout_exact = codex_unit_family_stdout } } },

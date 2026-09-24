@@ -23,14 +23,14 @@ Iter_(a) := { next : (I64 -> Step(a)) }
 Step(a) := [One(a, Iter_(a)), Done]
 
 iter_map : Iter_(a), (a -> b) -> Iter_(b)
-iter_map = |it, transform| { next: ({
+iter_map = |it, transform| Iter_.{ next: ({
 	dev__1 = transform
 	dev__2 = it
 	|dev__3| lam_0(dev__1, dev__2, dev__3)
 }) }
 
 range_to : I64, I64 -> Iter_(I64)
-range_to = |start, stop| { next: ({
+range_to = |start, stop| Iter_.{ next: ({
 	dev__1 = start
 	dev__2 = stop
 	|dev__3| lam_1(dev__1, dev__2, dev__3)

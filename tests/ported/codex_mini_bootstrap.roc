@@ -21,7 +21,10 @@ import cdx.ListUtils
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 Color : [Red, Green, Blue(I64)]
-Point : { x : I64, y : I64 }
+Point := { x : I64, y : I64 }.{
+	is_eq : Point, Point -> Bool
+	is_eq = |a, b| a.x == b.x and a.y == b.y
+}
 
 show_color : Color -> CceText
 show_color = |c| (match c {
@@ -34,7 +37,7 @@ get_x : Point -> I64
 get_x = |p| p.x
 
 add_points : Point, Point -> Point
-add_points = |a, b| { x: (a.x + b.x), y: (a.y + b.y) }
+add_points = |a, b| Point.{ x: (a.x + b.x), y: (a.y + b.y) }
 
 use_map : List(Point) -> List(I64)
 use_map = |pts| ListUtils.map_list(get_x, pts)

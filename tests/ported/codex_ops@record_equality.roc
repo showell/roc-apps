@@ -27,22 +27,34 @@ import cdx.CceText
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Point : { px : I64, py : I64 }
-Named : { n_name : CceText, n_point : Point }
-Carrier : { c_items : List(I64), c_tag : CceText }
-Priced : { pr_name : CceText, pr_cost : F64 }
+Point := { px : I64, py : I64 }.{
+	is_eq : Point, Point -> Bool
+	is_eq = |a, b| a.px == b.px and a.py == b.py
+}
+Named := { n_name : CceText, n_point : Point }.{
+	is_eq : Named, Named -> Bool
+	is_eq = |a, b| a.n_name == b.n_name and a.n_point == b.n_point
+}
+Carrier := { c_items : List(I64), c_tag : CceText }.{
+	is_eq : Carrier, Carrier -> Bool
+	is_eq = |a, b| a.c_items == b.c_items and a.c_tag == b.c_tag
+}
+Priced := { pr_name : CceText, pr_cost : F64 }.{
+	is_eq : Priced, Priced -> Bool
+	is_eq = |a, b| a.pr_name == b.pr_name and a.pr_cost == b.pr_cost
+}
 
 yn : Bool -> CceText
 yn = |b| (if b { "True" } else { "False" })
 
 mk_point : I64 -> Point
-mk_point = |k| { px: k, py: (k + 1) }
+mk_point = |k| Point.{ px: k, py: (k + 1) }
 
 mk_named : I64 -> Named
-mk_named = |k| { n_name: CceText.show_int(k), n_point: mk_point(k) }
+mk_named = |k| Named.{ n_name: CceText.show_int(k), n_point: mk_point(k) }
 
 mk_carrier : I64 -> Carrier
-mk_carrier = |k| { c_items: [k, (k + 1), (k + 2)], c_tag: CceText.show_int(k) }
+mk_carrier = |k| Carrier.{ c_items: [k, (k + 1), (k + 2)], c_tag: CceText.show_int(k) }
 
 a_plain : CceText
 a_plain = CceText.concat("record equal=", yn((mk_point(3) == mk_point(3))))
@@ -54,7 +66,7 @@ a_neq : CceText
 a_neq = CceText.concat("record not-equal-operator=", yn((mk_point(3) != mk_point(4))))
 
 a_text_field : CceText
-a_text_field = CceText.concat("record text-field=", yn(({ n_name: CceText.show_int(7), n_point: mk_point(1) } == { n_name: CceText.show_int(7), n_point: mk_point(1) })))
+a_text_field = CceText.concat("record text-field=", yn((Named.{ n_name: CceText.show_int(7), n_point: mk_point(1) } == Named.{ n_name: CceText.show_int(7), n_point: mk_point(1) })))
 
 a_nested : CceText
 a_nested = CceText.concat("record nested=", yn((mk_named(5) == mk_named(5))))
@@ -69,7 +81,7 @@ a_list_field_differs : CceText
 a_list_field_differs = CceText.concat("record list-field-differs=", yn((mk_carrier(2) == mk_carrier(9))))
 
 a_real_builds : CceText
-a_real_builds = CceText.concat("record real-field-builds=", yn((CceText.len({ pr_name: "x", pr_cost: 1.5 }.pr_name) == 1)))
+a_real_builds = CceText.concat("record real-field-builds=", yn((CceText.len(Priced.{ pr_name: "x", pr_cost: 1.5 }.pr_name) == 1)))
 
 # --- Entry ---
 

@@ -19,10 +19,13 @@ import cdx.CceText
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-PBox : { first : I64, second : I64, tag : I64 }
+PBox := { first : I64, second : I64, tag : I64 }.{
+	is_eq : PBox, PBox -> Bool
+	is_eq = |a, b| a.first == b.first and a.second == b.second and a.tag == b.tag
+}
 
 make_pbox : I64, I64 -> PBox
-make_pbox = |a, b| { first: a, second: b, tag: 7 }
+make_pbox = |a, b| PBox.{ first: a, second: b, tag: 7 }
 
 pick2 : I64, I64 -> I64
 pick2 = |a, b| (if (a > b) { a } else { b })

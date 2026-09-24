@@ -22,8 +22,14 @@ import cdx.CceText
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 Maybe2(a) : [Just2(a), None2]
-Def : { name : CceText, body : CceText }
-Thing : { th_name : CceText, th_body : CceText }
+Def := { name : CceText, body : CceText }.{
+	is_eq : Def, Def -> Bool
+	is_eq = |a, b| a.name == b.name and a.body == b.body
+}
+Thing := { th_name : CceText, th_body : CceText }.{
+	is_eq : Thing, Thing -> Bool
+	is_eq = |a, b| a.th_name == b.th_name and a.th_body == b.th_body
+}
 Holder : [Plain(Thing)]
 Box2(a) : [Box2(a)]
 
@@ -74,8 +80,8 @@ eq_Box2 = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(CceText.printed(extract_name(Just2({ name: "hello", body: "world" }))))
-	line!(CceText.printed(extract_holder(Plain({ th_name: "hi", th_body: "b" }))))
-	line!(CceText.printed(extract_box(Box2({ th_name: "bye", th_body: "c" }))))
+	line!(CceText.printed(extract_name(Just2(Def.{ name: "hello", body: "world" }))))
+	line!(CceText.printed(extract_holder(Plain(Thing.{ th_name: "hi", th_body: "b" }))))
+	line!(CceText.printed(extract_box(Box2(Thing.{ th_name: "bye", th_body: "c" }))))
 	Ok({})
 }

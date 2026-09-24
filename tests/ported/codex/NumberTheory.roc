@@ -1,9 +1,18 @@
 # NumberTheory -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
 NumberTheory :: [].{
-	ExtGcdResult : { g : I64, x : I64, y : I64 }
-	FactorPair : { prime : I64, power : I64 }
-	FactorCountResult : { remaining : I64, count : I64 }
+	ExtGcdResult := { g : I64, x : I64, y : I64 }.{
+		is_eq : NumberTheory.ExtGcdResult, NumberTheory.ExtGcdResult -> Bool
+		is_eq = |a, b| a.g == b.g and a.x == b.x and a.y == b.y
+	}
+	FactorPair := { prime : I64, power : I64 }.{
+		is_eq : NumberTheory.FactorPair, NumberTheory.FactorPair -> Bool
+		is_eq = |a, b| a.prime == b.prime and a.power == b.power
+	}
+	FactorCountResult := { remaining : I64, count : I64 }.{
+		is_eq : NumberTheory.FactorCountResult, NumberTheory.FactorCountResult -> Bool
+		is_eq = |a, b| a.remaining == b.remaining and a.count == b.count
+	}
 
 	gcd : I64, I64 -> I64
 	gcd = |a, b| ({
@@ -38,9 +47,9 @@ NumberTheory :: [].{
 	})
 
 	extended_gcd : I64, I64 -> NumberTheory.ExtGcdResult
-	extended_gcd = |a, b| (if (b == 0) { { g: a, x: 1, y: 0 } } else { ({
+	extended_gcd = |a, b| (if (b == 0) { NumberTheory.ExtGcdResult.{ g: a, x: 1, y: 0 } } else { ({
 		r = extended_gcd(b, (a - (I64.div_trunc_by(a, b) * b)))
-		{ g: r.g, x: r.y, y: (r.x - (I64.div_trunc_by(a, b) * r.y)) }
+		NumberTheory.ExtGcdResult.{ g: r.g, x: r.y, y: (r.x - (I64.div_trunc_by(a, b) * r.y)) }
 	}) })
 
 	is_prime : I64 -> Bool
@@ -59,13 +68,13 @@ NumberTheory :: [].{
 	factor = |n| (if (n <= 1) { [] } else { factor_loop(n, 2, []) })
 
 	factor_loop : I64, I64, List(NumberTheory.FactorPair) -> List(NumberTheory.FactorPair)
-	factor_loop = |n, d, acc| (if ((d * d) > n) { (if (n > 1) { List.append(acc, { prime: n, power: 1 }) } else { acc }) } else { (if ((n - (I64.div_trunc_by(n, d) * d)) == 0) { ({
+	factor_loop = |n, d, acc| (if ((d * d) > n) { (if (n > 1) { List.append(acc, NumberTheory.FactorPair.{ prime: n, power: 1 }) } else { acc }) } else { (if ((n - (I64.div_trunc_by(n, d) * d)) == 0) { ({
 		r = factor_count(n, d, 0)
-		factor_loop(r.remaining, (d + 1), List.append(acc, { prime: d, power: r.count }))
+		factor_loop(r.remaining, (d + 1), List.append(acc, NumberTheory.FactorPair.{ prime: d, power: r.count }))
 	}) } else { factor_loop(n, (d + 1), acc) }) })
 
 	factor_count : I64, I64, I64 -> NumberTheory.FactorCountResult
-	factor_count = |n, d, c| (if ((n - (I64.div_trunc_by(n, d) * d)) == 0) { factor_count(I64.div_trunc_by(n, d), d, (c + 1)) } else { { remaining: n, count: c } })
+	factor_count = |n, d, c| (if ((n - (I64.div_trunc_by(n, d) * d)) == 0) { factor_count(I64.div_trunc_by(n, d), d, (c + 1)) } else { NumberTheory.FactorCountResult.{ remaining: n, count: c } })
 
 	euler_totient : I64 -> I64
 	euler_totient = |n| (if (n <= 1) { 1 } else { euler_totient_loop(n, n, 2) })

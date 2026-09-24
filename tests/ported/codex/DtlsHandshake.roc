@@ -7,8 +7,14 @@ DtlsHandshake :: [].{
 	DtlsHsPhase : [PhStart, PhWaitServerHello, PhWaitAck, PhConnected, PhFailed]
 	DtlsAction : [ActSendFlight(I64), ActSetTimer(I64), ActDeliverKeys, ActAck, ActAbort(I64)]
 	DtlsEvent : [EvStart(I64), EvHelloRetry(List(I64), I64), EvServerFlight(I64), EvAck(I64), EvTimeout(I64)]
-	DtlsHsState : { hs_phase : DtlsHandshake.DtlsHsPhase, hs_flight : I64, hs_timer : I64, hs_retries : I64, hs_cookie : List(I64) }
-	DtlsHsStep : { step_state : DtlsHandshake.DtlsHsState, step_actions : List(DtlsHandshake.DtlsAction) }
+	DtlsHsState := { hs_phase : DtlsHandshake.DtlsHsPhase, hs_flight : I64, hs_timer : I64, hs_retries : I64, hs_cookie : List(I64) }.{
+		is_eq : DtlsHandshake.DtlsHsState, DtlsHandshake.DtlsHsState -> Bool
+		is_eq = |a, b| a.hs_phase == b.hs_phase and a.hs_flight == b.hs_flight and a.hs_timer == b.hs_timer and a.hs_retries == b.hs_retries and a.hs_cookie == b.hs_cookie
+	}
+	DtlsHsStep := { step_state : DtlsHandshake.DtlsHsState, step_actions : List(DtlsHandshake.DtlsAction) }.{
+		is_eq : DtlsHandshake.DtlsHsStep, DtlsHandshake.DtlsHsStep -> Bool
+		is_eq = |a, b| a.step_state == b.step_state and a.step_actions == b.step_actions
+	}
 
 	dtls_hs_initial_timer : I64
 	dtls_hs_initial_timer = 1000
@@ -38,7 +44,7 @@ DtlsHandshake :: [].{
 	dtls_flight_fin = 5
 
 	dtls_hs_new : DtlsHandshake.DtlsHsState
-	dtls_hs_new = { hs_phase: PhStart, hs_flight: 0, hs_timer: dtls_hs_initial_timer, hs_retries: 0, hs_cookie: [] }
+	dtls_hs_new = DtlsHandshake.DtlsHsState.{ hs_phase: PhStart, hs_flight: 0, hs_timer: dtls_hs_initial_timer, hs_retries: 0, hs_cookie: [] }
 
 	dtls_hs_step : DtlsHandshake.DtlsHsState, DtlsHandshake.DtlsEvent -> DtlsHandshake.DtlsHsStep
 	dtls_hs_step = |st, ev| (match ev {
@@ -69,13 +75,13 @@ DtlsHandshake :: [].{
 
 	dtls_hs_finish_flight : DtlsHandshake.DtlsHsState, I64 -> DtlsHandshake.DtlsHsStep
 	dtls_hs_finish_flight = |st, now| ({
-		next = { hs_phase: PhWaitAck, hs_flight: dtls_flight_fin, hs_timer: dtls_hs_initial_timer, hs_retries: 0, hs_cookie: st.hs_cookie }
-		{ step_state: next, step_actions: [ActDeliverKeys, ActSendFlight(dtls_flight_fin), ActSetTimer((now + dtls_hs_initial_timer))] }
+		next = DtlsHandshake.DtlsHsState.{ hs_phase: PhWaitAck, hs_flight: dtls_flight_fin, hs_timer: dtls_hs_initial_timer, hs_retries: 0, hs_cookie: st.hs_cookie }
+		DtlsHandshake.DtlsHsStep.{ step_state: next, step_actions: [ActDeliverKeys, ActSendFlight(dtls_flight_fin), ActSetTimer((now + dtls_hs_initial_timer))] }
 	})
 
 	dtls_hs_on_ack : DtlsHandshake.DtlsHsState, I64 -> DtlsHandshake.DtlsHsStep
 	dtls_hs_on_ack = |st, _now| (match st.hs_phase {
-		PhWaitAck => { step_state: { ..st, hs_phase: PhConnected }, step_actions: [] }
+		PhWaitAck => DtlsHandshake.DtlsHsStep.{ step_state: { ..st, hs_phase: PhConnected }, step_actions: [] }
 		_ => dtls_hs_idle(st)
 	})
 
@@ -90,13 +96,13 @@ DtlsHandshake :: [].{
 	dtls_hs_retry = |st, now| (if ((st.hs_retries + 1) > dtls_hs_max_retries) { dtls_hs_give_up(st) } else { dtls_hs_retry_now(st, now) })
 
 	dtls_hs_give_up : DtlsHandshake.DtlsHsState -> DtlsHandshake.DtlsHsStep
-	dtls_hs_give_up = |st| { step_state: { ..st, hs_phase: PhFailed }, step_actions: [ActAbort(dtls_alert_timeout)] }
+	dtls_hs_give_up = |st| DtlsHandshake.DtlsHsStep.{ step_state: { ..st, hs_phase: PhFailed }, step_actions: [ActAbort(dtls_alert_timeout)] }
 
 	dtls_hs_retry_now : DtlsHandshake.DtlsHsState, I64 -> DtlsHandshake.DtlsHsStep
 	dtls_hs_retry_now = |st, now| ({
 		t = dtls_hs_backoff(st.hs_timer)
-		next = { hs_phase: st.hs_phase, hs_flight: st.hs_flight, hs_timer: t, hs_retries: (st.hs_retries + 1), hs_cookie: st.hs_cookie }
-		{ step_state: next, step_actions: [ActSendFlight(st.hs_flight), ActSetTimer((now + t))] }
+		next = DtlsHandshake.DtlsHsState.{ hs_phase: st.hs_phase, hs_flight: st.hs_flight, hs_timer: t, hs_retries: (st.hs_retries + 1), hs_cookie: st.hs_cookie }
+		DtlsHandshake.DtlsHsStep.{ step_state: next, step_actions: [ActSendFlight(st.hs_flight), ActSetTimer((now + t))] }
 	})
 
 	dtls_hs_backoff : I64 -> I64
@@ -107,12 +113,12 @@ DtlsHandshake :: [].{
 
 	dtls_hs_send : DtlsHandshake.DtlsHsState, I64, DtlsHandshake.DtlsHsPhase, I64, List(I64) -> DtlsHandshake.DtlsHsStep
 	dtls_hs_send = |_st, flight, phase, now, cookie| ({
-		next = { hs_phase: phase, hs_flight: flight, hs_timer: dtls_hs_initial_timer, hs_retries: 0, hs_cookie: cookie }
-		{ step_state: next, step_actions: [ActSendFlight(flight), ActSetTimer((now + dtls_hs_initial_timer))] }
+		next = DtlsHandshake.DtlsHsState.{ hs_phase: phase, hs_flight: flight, hs_timer: dtls_hs_initial_timer, hs_retries: 0, hs_cookie: cookie }
+		DtlsHandshake.DtlsHsStep.{ step_state: next, step_actions: [ActSendFlight(flight), ActSetTimer((now + dtls_hs_initial_timer))] }
 	})
 
 	dtls_hs_idle : DtlsHandshake.DtlsHsState -> DtlsHandshake.DtlsHsStep
-	dtls_hs_idle = |st| { step_state: st, step_actions: [] }
+	dtls_hs_idle = |st| DtlsHandshake.DtlsHsStep.{ step_state: st, step_actions: [] }
 
 	dtls_cookie : List(I64), List(I64) -> List(I64)
 	dtls_cookie = |secret, client_addr| Hkdf.hkdf_words_to_bytes(Hmac.hmac_sha256(secret, client_addr))

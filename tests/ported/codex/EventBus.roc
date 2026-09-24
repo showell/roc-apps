@@ -3,20 +3,26 @@ import CceText
 import Maybe
 
 EventBus :: [].{
-	BusEvent : { evt_topic : CceText, evt_payload : CceText, evt_timestamp : I64 }
-	EventLog : { log_events : List(EventBus.BusEvent), log_count : I64, log_max : I64 }
+	BusEvent := { evt_topic : CceText, evt_payload : CceText, evt_timestamp : I64 }.{
+		is_eq : EventBus.BusEvent, EventBus.BusEvent -> Bool
+		is_eq = |a, b| a.evt_topic == b.evt_topic and a.evt_payload == b.evt_payload and a.evt_timestamp == b.evt_timestamp
+	}
+	EventLog := { log_events : List(EventBus.BusEvent), log_count : I64, log_max : I64 }.{
+		is_eq : EventBus.EventLog, EventBus.EventLog -> Bool
+		is_eq = |a, b| a.log_events == b.log_events and a.log_count == b.log_count and a.log_max == b.log_max
+	}
 
 	event_new : CceText, CceText, I64 -> EventBus.BusEvent
-	event_new = |topic, payload, ts| { evt_topic: topic, evt_payload: payload, evt_timestamp: ts }
+	event_new = |topic, payload, ts| EventBus.BusEvent.{ evt_topic: topic, evt_payload: payload, evt_timestamp: ts }
 
 	event_log_new : I64 -> EventBus.EventLog
-	event_log_new = |max| { log_events: [], log_count: 0, log_max: max }
+	event_log_new = |max| EventBus.EventLog.{ log_events: [], log_count: 0, log_max: max }
 
 	event_log_add : EventBus.EventLog, EventBus.BusEvent -> EventBus.EventLog
 	event_log_add = |log, evt| ({
 		events = (if (log.log_count >= log.log_max) { List.append(evt_drop_first(log.log_events), evt) } else { List.append(log.log_events, evt) })
 		count = (if (log.log_count >= log.log_max) { log.log_max } else { (log.log_count + 1) })
-		{ log_events: events, log_count: count, log_max: log.log_max }
+		EventBus.EventLog.{ log_events: events, log_count: count, log_max: log.log_max }
 	})
 
 	evt_drop_first : List(EventBus.BusEvent) -> List(EventBus.BusEvent)

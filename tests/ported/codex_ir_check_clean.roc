@@ -30,7 +30,10 @@ Tree := [Leaf(I64), Node(Tree, Tree)].{
 	is_eq : Tree, Tree -> Bool
 	is_eq = |a, b| eq_Tree(a, b)
 }
-Point : { x : I64, y : I64 }
+Point := { x : I64, y : I64 }.{
+	is_eq : Point, Point -> Bool
+	is_eq = |a, b| a.x == b.x and a.y == b.y
+}
 
 shadow : I64 -> I64
 shadow = |x| ({
@@ -98,7 +101,7 @@ main! = |_args| {
 	line!(CceText.printed(CceText.concat("apply-twice: ", CceText.show_int(apply_twice(5)))))
 	line!(CceText.printed(CceText.concat("capture: ", CceText.show_int(capture(1)))))
 	line!(CceText.printed(CceText.concat("tree-sum: ", CceText.show_int(tree_sum(sample_tree)))))
-	line!(CceText.printed(CceText.concat("manhattan: ", CceText.show_int(manhattan({ x: (0 - 3), y: 4 })))))
+	line!(CceText.printed(CceText.concat("manhattan: ", CceText.show_int(manhattan(Point.{ x: (0 - 3), y: 4 })))))
 	line!(CceText.printed(CceText.concat("total: ", CceText.show_int(total([1, 2, 3, 4, 5])))))
 	line!(CceText.printed(CceText.concat("text: ", CceText.concat(CceText.concat("ir", "-"), "check"))))
 	Ok({})

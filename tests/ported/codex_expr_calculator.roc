@@ -38,7 +38,10 @@ Expr := [Lit(I64), Add(Expr, Expr), Sub(Expr, Expr), Mul(Expr, Expr), Div(Expr, 
 	is_eq : Expr, Expr -> Bool
 	is_eq = |a, b| eq_Expr(a, b)
 }
-ParseResult : { expr : Expr, pos : I64 }
+ParseResult := { expr : Expr, pos : I64 }.{
+	is_eq : ParseResult, ParseResult -> Bool
+	is_eq = |a, b| a.expr == b.expr and a.pos == b.pos
+}
 
 skip_ws : CceText, I64 -> I64
 skip_ws = |input, pos| (if (pos >= CceText.len(input)) { pos } else { (if CceChar.is_whitespace(CceText.char_at(input, pos)) { skip_ws(input, (pos + 1)) } else { pos }) })
@@ -56,16 +59,16 @@ parse_atom : CceText, I64 -> ParseResult
 parse_atom = |input, start| ({
 	pos = skip_ws(input, start)
 	len = CceText.len(input)
-	(if (pos >= len) { { expr: Lit(0), pos: pos } } else { (if (CceText.char_to_text(CceText.char_at(input, pos)) == "(") { ({
+	(if (pos >= len) { ParseResult.{ expr: Lit(0), pos: pos } } else { (if (CceText.char_to_text(CceText.char_at(input, pos)) == "(") { ({
 		inner = parse_additive(input, (pos + 1))
 		after = skip_ws(input, inner.pos)
-		(if (after < len) { { expr: inner.expr, pos: (after + 1) } } else { { expr: inner.expr, pos: after } })
+		(if (after < len) { ParseResult.{ expr: inner.expr, pos: (after + 1) } } else { ParseResult.{ expr: inner.expr, pos: after } })
 	}) } else { ({
 		digits = digit_count(input, pos, len)
 		(if (digits > 0) { ({
 			value = collect_digits(input, pos, len, 0)
-			{ expr: Lit(value), pos: (pos + digits) }
-		}) } else { { expr: Lit(0), pos: pos } })
+			ParseResult.{ expr: Lit(value), pos: (pos + digits) }
+		}) } else { ParseResult.{ expr: Lit(0), pos: pos } })
 	}) }) })
 })
 
@@ -81,10 +84,10 @@ continue_multiplicative = |input, current| ({
 	len = CceText.len(input)
 	(if (pos >= len) { current } else { (if (CceText.char_to_text(CceText.char_at(input, pos)) == "*") { ({
 		right = parse_atom(input, (pos + 1))
-		continue_multiplicative(input, { expr: Mul(current.expr, right.expr), pos: right.pos })
+		continue_multiplicative(input, ParseResult.{ expr: Mul(current.expr, right.expr), pos: right.pos })
 	}) } else { (if (CceText.char_to_text(CceText.char_at(input, pos)) == "/") { ({
 		right = parse_atom(input, (pos + 1))
-		continue_multiplicative(input, { expr: Div(current.expr, right.expr), pos: right.pos })
+		continue_multiplicative(input, ParseResult.{ expr: Div(current.expr, right.expr), pos: right.pos })
 	}) } else { current }) }) })
 })
 
@@ -100,10 +103,10 @@ continue_additive = |input, current| ({
 	len = CceText.len(input)
 	(if (pos >= len) { current } else { (if (CceText.char_to_text(CceText.char_at(input, pos)) == "+") { ({
 		right = parse_multiplicative(input, (pos + 1))
-		continue_additive(input, { expr: Add(current.expr, right.expr), pos: right.pos })
+		continue_additive(input, ParseResult.{ expr: Add(current.expr, right.expr), pos: right.pos })
 	}) } else { (if (CceText.char_to_text(CceText.char_at(input, pos)) == "-") { ({
 		right = parse_multiplicative(input, (pos + 1))
-		continue_additive(input, { expr: Sub(current.expr, right.expr), pos: right.pos })
+		continue_additive(input, ParseResult.{ expr: Sub(current.expr, right.expr), pos: right.pos })
 	}) } else { current }) }) })
 })
 

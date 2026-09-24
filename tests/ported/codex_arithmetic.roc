@@ -28,7 +28,10 @@ import cdx.CceText
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Pct : { p : I64 }
+Pct := { p : I64 }.{
+	is_eq : Pct, Pct -> Bool
+	is_eq = |a, b| a.p == b.p
+}
 
 max : I64, I64 -> I64
 max = |x, y| (if (x > y) { x } else { y })
@@ -71,7 +74,7 @@ main! = |_args| {
 	({
 		large_val = 150
 		({
-			line!(CceText.printed(CceText.concat("clamping: ", CceText.show_int({ p: I64.min(I64.max(large_val, 0), 100) }.p))))
+			line!(CceText.printed(CceText.concat("clamping: ", CceText.show_int(Pct.{ p: I64.min(I64.max(large_val, 0), 100) }.p))))
 			line!(CceText.printed(CceText.concat("even: ", (if is_even(10) { "yes" } else { "no" }))))
 			line!(CceText.printed(CceText.concat("odd: ", (if is_odd(7) { "yes" } else { "no" }))))
 			line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat("comma-params: ", CceText.show_int(add(10, 32))), "/"), CceText.show_int(apply(add, 20, 22)))))

@@ -42,8 +42,14 @@ line! = |s| echo!(Str.concat(s, "\n"))
 Box_(a) : [Wrap(a)]
 Shape : [Circle(F64), Rectangle(F64, F64)]
 Result_(a) : [Success(a), Failure(CceText)]
-Person : { name : CceText, age : I64 }
-Box2 : { val : I64 }
+Person := { name : CceText, age : I64 }.{
+	is_eq : Person, Person -> Bool
+	is_eq = |a, b| a.name == b.name and a.age == b.age
+}
+Box2 := { val : I64 }.{
+	is_eq : Box2, Box2 -> Bool
+	is_eq = |a, b| a.val == b.val
+}
 
 square : I64 -> I64
 square = |x| (x * x)
@@ -90,7 +96,7 @@ greet : Person -> CceText
 greet = |p| CceText.concat(CceText.concat("Hello, ", p.name), "!")
 
 mk : Box2
-mk = { val: 7 }
+mk = Box2.{ val: 7 }
 
 ignore_second : I64, I64 -> I64
 ignore_second = |x, _y| x
@@ -136,7 +142,7 @@ main! = |_args| {
 	}))))
 	line!(CceText.printed(CceText.concat("unwrap: ", CceText.show_int(unwrap(Wrap(7))))))
 	line!(CceText.printed(CceText.concat("area: ", CceText.of_str(Prelude.real_to_str(area(Circle(5.0)))))))
-	line!(CceText.printed(CceText.concat("person: ", greet({ name: "Alice", age: 30 }))))
+	line!(CceText.printed(CceText.concat("person: ", greet(Person.{ name: "Alice", age: 30 }))))
 	line!(CceText.printed(CceText.concat("number: ", (if Prelude.approx_eq(3.14, 3.14) { (if Prelude.approx_eq(1.5, 2.5) { "FAIL" } else { "PASS" }) } else { "FAIL" }))))
 	line!(CceText.printed(CceText.concat("safe-divide: ", describe(safe_divide(42, 7)))))
 	line!(CceText.printed(CceText.concat("paren-field: ", CceText.show_int(ignore_second(99, mk.val)))))

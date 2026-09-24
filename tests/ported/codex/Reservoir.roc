@@ -2,17 +2,20 @@
 import Random
 
 Reservoir :: [].{
-	ReservoirSample : { rs_items : List(I64), rs_capacity : I64, rs_count : I64, rs_seen : I64 }
+	ReservoirSample := { rs_items : List(I64), rs_capacity : I64, rs_count : I64, rs_seen : I64 }.{
+		is_eq : Reservoir.ReservoirSample, Reservoir.ReservoirSample -> Bool
+		is_eq = |a, b| a.rs_items == b.rs_items and a.rs_capacity == b.rs_capacity and a.rs_count == b.rs_count and a.rs_seen == b.rs_seen
+	}
 
 	reservoir_new : I64 -> Reservoir.ReservoirSample
-	reservoir_new = |k| { rs_items: [], rs_capacity: k, rs_count: 0, rs_seen: 0 }
+	reservoir_new = |k| Reservoir.ReservoirSample.{ rs_items: [], rs_capacity: k, rs_count: 0, rs_seen: 0 }
 
 	reservoir_add : Reservoir.ReservoirSample, I64, I64 -> Reservoir.ReservoirSample
 	reservoir_add = |rs, item, seed| ({
 		n = (rs.rs_seen + 1)
-		(if (rs.rs_count < rs.rs_capacity) { { rs_items: List.append(rs.rs_items, item), rs_capacity: rs.rs_capacity, rs_count: (rs.rs_count + 1), rs_seen: n } } else { ({
+		(if (rs.rs_count < rs.rs_capacity) { Reservoir.ReservoirSample.{ rs_items: List.append(rs.rs_items, item), rs_capacity: rs.rs_capacity, rs_count: (rs.rs_count + 1), rs_seen: n } } else { ({
 			j = reservoir_rand(seed, n)
-			(if (j < rs.rs_capacity) { { rs_items: (List.set(rs.rs_items, I64.to_u64_wrap(j), item) ?? crash("list-set-at past the end")), rs_capacity: rs.rs_capacity, rs_count: rs.rs_count, rs_seen: n } } else { { rs_items: rs.rs_items, rs_capacity: rs.rs_capacity, rs_count: rs.rs_count, rs_seen: n } })
+			(if (j < rs.rs_capacity) { Reservoir.ReservoirSample.{ rs_items: (List.set(rs.rs_items, I64.to_u64_wrap(j), item) ?? crash("list-set-at past the end")), rs_capacity: rs.rs_capacity, rs_count: rs.rs_count, rs_seen: n } } else { Reservoir.ReservoirSample.{ rs_items: rs.rs_items, rs_capacity: rs.rs_capacity, rs_count: rs.rs_count, rs_seen: n } })
 		}) })
 	})
 

@@ -19,10 +19,10 @@ import cdx.CceText
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Wrapped : { next : (I64 -> I64) }
+Wrapped := { next : (I64 -> I64) }
 
 wrap : (I64 -> I64) -> Wrapped
-wrap = |transform| { next: ({
+wrap = |transform| Wrapped.{ next: ({
 	dev__1 = transform
 	|dev__2| lam_0(dev__1, dev__2)
 }) }

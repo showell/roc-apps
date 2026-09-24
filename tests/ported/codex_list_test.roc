@@ -43,7 +43,10 @@ import cdx.List_
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Person : { name : CceText, age : I64 }
+Person := { name : CceText, age : I64 }.{
+	is_eq : Person, Person -> Bool
+	is_eq = |a, b| a.name == b.name and a.age == b.age
+}
 
 double : I64 -> I64
 double = |n| (n * 2)
@@ -104,7 +107,7 @@ main! = |_args| {
 					line!(CceText.printed(check("empty-direct", CceText.show_int(U64.to_i64_wrap(List.len((if True { [] } else { [1] })))), "0")))
 					line!(CceText.printed(check("empty-let", CceText.show_int(U64.to_i64_wrap(List.len((if True { [] } else { [1] })))), "0")))
 					({
-						people = [{ name: "Alice", age: 30 }, { name: "Bob", age: 25 }, { name: "Carol", age: 40 }]
+						people = [Person.{ name: "Alice", age: 30 }, Person.{ name: "Bob", age: 25 }, Person.{ name: "Carol", age: 40 }]
 						line!(CceText.printed(check("list-of-records", CceText.show_int(ages_sum(people, 0, 0)), "95")))
 					})
 				})

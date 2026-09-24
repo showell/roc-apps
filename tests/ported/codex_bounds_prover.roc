@@ -28,51 +28,60 @@ import cdx.Prelude
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Byte : { val : I64 }
-Pct : { val : I64 }
-Small : { val : I64 }
+Byte := { val : I64 }.{
+	is_eq : Byte, Byte -> Bool
+	is_eq = |a, b| a.val == b.val
+}
+Pct := { val : I64 }.{
+	is_eq : Pct, Pct -> Bool
+	is_eq = |a, b| a.val == b.val
+}
+Small := { val : I64 }.{
+	is_eq : Small, Small -> Bool
+	is_eq = |a, b| a.val == b.val
+}
 
 from_literal : Byte
-from_literal = { val: 42 }
+from_literal = Byte.{ val: 42 }
 
 from_add : I64, I64 -> Small
 from_add = |a, b| ({
-	x = { val: a }
-	y = { val: b }
-	{ val: (x.val + y.val) }
+	x = Byte.{ val: a }
+	y = Byte.{ val: b }
+	Small.{ val: (x.val + y.val) }
 })
 
 from_sub : I64 -> Pct
 from_sub = |a| ({
-	x = { val: a }
-	{ val: (100 - x.val) }
+	x = Pct.{ val: a }
+	Pct.{ val: (100 - x.val) }
 })
 
 from_mul : I64 -> Small
 from_mul = |a| ({
-	x = { val: a }
-	{ val: (x.val * 10) }
+	x = Pct.{ val: a }
+	Small.{ val: (x.val * 10) }
 })
 
 from_div : I64 -> Pct
 from_div = |a| ({
-	x = { val: a }
-	{ val: I64.div_trunc_by(x.val, 10) }
+	x = Small.{ val: a }
+	Pct.{ val: I64.div_trunc_by(x.val, 10) }
 })
 
 from_mod : I64 -> Byte
-from_mod = |a| { val: Prelude.int_mod(a, 256) }
+from_mod = |a| Byte.{ val: Prelude.int_mod(a, 256) }
 
 from_bitand : I64 -> Byte
-from_bitand = |a| { val: I64.bitwise_and(a, 255) }
+from_bitand = |a| Byte.{ val: I64.bitwise_and(a, 255) }
 
 from_if : I64 -> Byte
-from_if = |a| { val: (if (a > 100) { 100 } else { a }) }
+from_if = |a| Byte.{ val: (if (a > 100) { 100 } else { a }) }
 
 from_negate : I64 -> Small
 from_negate = |a| ({
-	x = { val: a }
-	{ val: (-(-x.val)) }
+	x = Pct.{ val: a }
+	Small.{ val: (-(-x.val)) }
 })
 
 # --- Entry ---

@@ -4,7 +4,10 @@ import CceText
 import Mem
 
 Sha256 :: [].{
-	Sha256State : { a : I64, b : I64, c : I64, d : I64, e : I64, f : I64, g : I64, h : I64 }
+	Sha256State := { a : I64, b : I64, c : I64, d : I64, e : I64, f : I64, g : I64, h : I64 }.{
+		is_eq : Sha256.Sha256State, Sha256.Sha256State -> Bool
+		is_eq = |a, b| a.a == b.a and a.b == b.b and a.c == b.c and a.d == b.d and a.e == b.e and a.f == b.f and a.g == b.g and a.h == b.h
+	}
 
 	mask32 : I64
 	mask32 = 4294967295
@@ -51,13 +54,13 @@ Sha256 :: [].{
 	}) })
 
 	state_from_hash : List(I64) -> Sha256.Sha256State
-	state_from_hash = |hs| { a: (List.get(hs, I64.to_u64_wrap(0)) ?? crash("list-at out of range")), b: (List.get(hs, I64.to_u64_wrap(1)) ?? crash("list-at out of range")), c: (List.get(hs, I64.to_u64_wrap(2)) ?? crash("list-at out of range")), d: (List.get(hs, I64.to_u64_wrap(3)) ?? crash("list-at out of range")), e: (List.get(hs, I64.to_u64_wrap(4)) ?? crash("list-at out of range")), f: (List.get(hs, I64.to_u64_wrap(5)) ?? crash("list-at out of range")), g: (List.get(hs, I64.to_u64_wrap(6)) ?? crash("list-at out of range")), h: (List.get(hs, I64.to_u64_wrap(7)) ?? crash("list-at out of range")) }
+	state_from_hash = |hs| Sha256.Sha256State.{ a: (List.get(hs, I64.to_u64_wrap(0)) ?? crash("list-at out of range")), b: (List.get(hs, I64.to_u64_wrap(1)) ?? crash("list-at out of range")), c: (List.get(hs, I64.to_u64_wrap(2)) ?? crash("list-at out of range")), d: (List.get(hs, I64.to_u64_wrap(3)) ?? crash("list-at out of range")), e: (List.get(hs, I64.to_u64_wrap(4)) ?? crash("list-at out of range")), f: (List.get(hs, I64.to_u64_wrap(5)) ?? crash("list-at out of range")), g: (List.get(hs, I64.to_u64_wrap(6)) ?? crash("list-at out of range")), h: (List.get(hs, I64.to_u64_wrap(7)) ?? crash("list-at out of range")) }
 
 	sha256_round : Sha256.Sha256State, I64, I64 -> Sha256.Sha256State
 	sha256_round = |s, ki, wi| ({
 		t1 = w32(((((s.h + big_sigma1(s.e)) + ch(s.e, s.f, s.g)) + ki) + wi))
 		t2 = w32((big_sigma0(s.a) + maj(s.a, s.b, s.c)))
-		{ a: w32((t1 + t2)), b: s.a, c: s.b, d: s.c, e: w32((s.d + t1)), f: s.e, g: s.f, h: s.g }
+		Sha256.Sha256State.{ a: w32((t1 + t2)), b: s.a, c: s.b, d: s.c, e: w32((s.d + t1)), f: s.e, g: s.f, h: s.g }
 	})
 
 	sha256_rounds : Sha256.Sha256State, List(I64), List(I64), I64 -> Sha256.Sha256State
