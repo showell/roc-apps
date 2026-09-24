@@ -482,6 +482,24 @@ square values prefer by 500 points. A piece on B1 blocks the base; the back
 experiment has found -- the next thing is to audit the champion's choices
 by rollouts.
 
+### Base bonus 2500, dealt as duplicate, 2026-09-23
+
+500 seeds, each dealt four times with the decks turned a seat: 2000 games
+per variant. Red's base worth 2500 a step (B1 2500 .. B4 10000) against the
+champion's 1000, Steve's theory being that tucked positions are worth more
+than the champion thinks (the rollouts at seed 69 above). `exp_duplicate.roc`
+at `66727d0`.
+
+| red plays as | red won | win rate | wins with the decks turned 0 / 1 / 2 / 3 seats |
+|---|---|---|---|
+| the champion | 550 of 2000 | 0.275 | 124 / 147 / 153 / 126 |
+| base bonus 2500 | 581 of 2000 | 0.291 | 132 / 150 / 167 / 132 |
+
+Deals only base bonus 2500 won: 126; only the champion won: 95. The
+difference, +0.015 a game, is +2.1 paired standard errors (0.007): the first
+change to beat the champion by more than noise. To confirm on fresh seeds,
+with other values of the ramp, before it becomes the champion's.
+
 ## Before these races
 
 Every race and arena number before `4a9f3b7` came from a build whose
