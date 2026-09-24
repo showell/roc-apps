@@ -165,7 +165,9 @@ one() {
     fi
     [ -n "${EMIT_ONLY:-}" ] && { echo "EMITTED $n |" > "$d/verdict"; return; }
     run=("$ROC" run "$app"); [ ${#vmargs[@]} -gt 0 ] && run+=(-- "${vmargs[@]}")
+    t0=$(date +%s%N)
     ( cd "$d" && timeout 120 "${run[@]}" > out 2> err ); rc=$?
+    echo $(( ($(date +%s%N) - t0) / 1000000 )) > "$d/ms"
     # The capture behind a verdict drops a trailing blank line, so the
     # comparison strips them from our side too (tests/verdicts.sh).
     awk 'BEGIN{n=0} /^$/{n++; next} {while (n-- > 0) print ""; n=0; print}' "$d/out" > "$d/out.cmp"
@@ -179,7 +181,7 @@ one() {
     elif cmp -s "$d/out.cmp" "$VERDICTS/$n.expected"; then echo "PASS $n |" > "$d/verdict"
     elif grep -q "crashed\|Backtrace\|overflowed" "$d/err"; then echo "CRASH $n | $( { awk '/crashed with this message:/ {f=1; next} f && NF {sub(/^[ \t]+/, ""); print; exit}' "$d/err"; grep -m1 -hoE 'crashed[^\n]*|overflowed[^\n]*' "$d/err"; } | head -1 | cut -c1-100)" > "$d/verdict"
     else echo "FAIL $n | output: $(diff "$d/out.cmp" "$VERDICTS/$n.expected" | grep -m1 '^[<>]' | cut -c1-100)" > "$d/verdict"; fi
-    cp "$d/verdict" "$GEN/$n.verdict"
+    cp "$d/verdict" "$GEN/$n.verdict"; cp "$d/ms" "$GEN/$n.ms"
     # The stamp is written WITH the verdict it names. Written at the emit, an
     # EMIT_ONLY run left a new stamp beside an old verdict, and the next full
     # run reused that verdict for text it had never run.
@@ -194,4 +196,10 @@ ledger="$( for n in "${units[@]}"; do cat "$GEN/$n/verdict"; done )"
 echo "$ledger" | grep -av '^PASS' | sort
 echo "--- by outcome:"; echo "$ledger" | cut -d' ' -f1 | sort | uniq -c | sort -rn
 echo "--- refusals by reason:"; echo "$ledger" | grep -a '^REFUSED' | cut -d'|' -f2 | sed 's/`[^`]*`/`_`/g' | sort | uniq -c | sort -rn | head -20
+# **WHERE THE WALL TIME GOES**: each unit's `roc run`, compile and run
+# together, in ms, as measured the last time the unit actually ran (a kept
+# verdict keeps its time). tests/ledger-ms.txt holds every unit's.
+times="$( for n in "${units[@]}"; do [ -f "$GEN/$n.ms" ] && echo "$(cat "$GEN/$n.ms") $n"; done | sort -rn )"
+[ "$full" = yes ] && echo "$times" > "$HERE/ledger-ms.txt"
+echo "--- slowest runs, ms (of $(echo "$times" | awk '{s += $1} END {printf "%.1f s", s / 1000}') in all):"; echo "$times" | head -15
 echo "$(echo "$ledger" | grep -ac '^PASS') pass of ${#units[@]} -- tests from $TESTS_ROOT"
