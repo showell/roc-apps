@@ -1,189 +1,107 @@
 # Fast Track
 
-Fast Track, the board game, ported from
-[showell/elm-fasttrack](https://github.com/showell/elm-fasttrack). The rules
-and the whole page are Roc; `web/fasttrack.js` runs the wasm and draws what
-Roc answers.
+The board game, in Roc: you play red against three computer players in the
+browser. Ported from [showell/elm-fasttrack](https://github.com/showell/elm-fasttrack);
+the rules and the whole page are Roc, and `web/fasttrack.js` only runs the
+wasm and draws what Roc answers.
 
-    fasttrack/build.sh                  tests, builds and plays the page: http://<box>:9210/fasttrack/
-    node fasttrack/web/page_check.mjs ~/build/roc-apps/next/fasttrack
-    SEED=42 SETUP=5 SEATS=cccc CLICKS=300 SHOT=/tmp/b.png node fasttrack/web/page_check.mjs <dir>
-    FAST=1 fasttrack/build.sh           the dev backend alone, no checks: a quick look
-    fasttrack/run_exp.sh exp_win_focus  an experiment, detached: ~/build/roc-apps/gen/fasttrack/<name>/log.md
+## Play
 
-The page takes `?seats=` for who plays red, blue, green and purple — `h` a
-person, `c` the computer — default `hccc`, you against three computers;
-`?teams=anytime|oncehome` for partnerships; `?pause=<ms>` for the computer's pause per click (350);
-`?seed=<millis>` to replay a deal; and `?setup=<n>` to start from one of
-Setup.roc's scenarios (1 forced to reverse, 2 discard, 3 cover, 4 bullseye,
-5 seven split).
+    fasttrack/build.sh          tests, builds and checks; publishes the dev page
+    FAST=1 fasttrack/build.sh   the dev backend alone, no checks: a quick look
 
-## What is ported
-
-Everything in the Elm game except `WhatIf.elm`, the start of a computer
-player, which only logged; `Search.roc` and `Strategy.roc` are the computer
-player instead. Four
-players, as in Elm. Elm never said who won; `Game.winner` does (a color whose
-four base squares are all its own). Each Elm module has a Roc
-module of the same name and the same functions, in snake case:
-
-| Roc | from | what |
-|---|---|---|
-| `Type` | Type.elm | the vocabulary; Elm's tuples are records, its Maybe is Try |
-| `Config` `Setup` `Color` `History` | the same | the squares' names and places, the cards, the starting setups, zone order, undo |
-| `Board`, `Routes` | Graph.elm, LegalMove.elm's walks | every square a number from red's side, the translation table for the other colors, and every walk precomputed |
-| `Piece` `LegalMove` `Player` `Move` `Game` | the same | the rules |
-| `Page` | View.elm, Polygon.elm | the page as data |
-| `FastTrack` | Main.elm | the model, and the program the platform runs |
-| `Assoc` | pzp1997/assoc-list, erlandsona/assoc-set | ordered dict and set |
-| `ElmRandom` | elm/random | `initialSeed`, `int`, `step`, to the bit |
-| `Codes` | | a message as the number a click sends back |
-| `Strategy`, `Search`, `SquareValues` | | the computer player: what it plays for, its turn search, the square values |
-| `Arena`, `exp_*.roc` | | experiments on the strategy |
-| `Rank`, `Reach`, `gen_square_values.roc` | | Steve's ranking of the squares, and the generator that writes SquareValues from it |
-| `RulesTests` | tests/Example.elm | the Elm tests, test for test |
-
-Two libraries are ported rather than replaced, because their behaviour
-reaches the game:
-
-- **Assoc keeps assoc-list's order**: `insert` removes and prepends. The
-  sets of cards and squares a turn offers keep Elm's order; the computer's
-  choice does not depend on it (Search breaks ties by position).
-- **ElmRandom deals Elm's cards.** Elm compiles `*` to a double multiply, and
-  `peel`'s product passes 2^53, so JavaScript rounds before taking the low 32
-  bits. `peel` rounds through F64 at the same point; exact integer arithmetic
-  deals entirely different cards. `web/elm_random_oracle.mjs` is the
-  arithmetic as compiled JavaScript, and its draws are pinned in the expects.
-
-**The board is 89 numbers, not Elm's dict of named squares** (`Board.roc`):
-0-87 zone by zone from red's side, 88 the bullseye, and `Type.Board` says
-who stands on each. The rules are written once, as red sees them: `Routes`
-holds every walk a card can make from every square, and a move is a lookup
-plus a check that the walk passes no piece of its own color. Names appear
-only at the edges -- the page, the click codes and the tests. The Elm tests
-pass on it unchanged but for playing on four zones, and 200 four-champion
-games play out exactly as on Elm's representation, 5.6x faster.
-
-Setup.elm's constant developer switch is a parameter of `Game.begin_game`,
-which is how the page and the checks start from its scenarios.
-
-## The page: no virtual DOM, and none needed
-
-Elm rebuilds the page on every message and lets its virtual DOM diff it. This
-game does not need that, because **the board never changes shape**: once the
-players are seated it is 89 squares, and rotating it to the next player
-recolors squares without moving one. So the page is two things
-(`web/platform/Wire.roc`):
-
-- **`slots`**, one per square, always in the same order. The page builds the
-  SVG once and afterwards sets only the attributes that differ from the last
-  view. Roc computes the geometry too (Polygon.elm's panels, pushed out by the
-  incircle radius and turned about the centre); with four sides every turn is
-  a multiple of 90 degrees, so a square stays a square and a slot is a centre
-  and a size.
-- **`nodes`**, the rest of the page, as a flat list in document order: each
-  node names its parent by index. The page rebuilds these on every click —
-  a handful of buttons and lines — and moves the board's SVG into the node
-  tagged `board`.
-
-A click carries the code Roc gave the thing clicked (`Codes.roc`), and the
-page hands it straight to `update`. Nothing in `fasttrack.js` knows a rule, a
-color or a word of the game.
-
-The page's reader is generated: `build.sh` runs `roc glue` with
-`glue/JsGlue.roc` over the platform, which is why `Wire.roc` spells the view
-out in full. Fast Track is JsGlue's second user and the reason it reads `Str`.
+The page is http://143.244.172.148:9210/fasttrack/. In the URL: `?seed=<n>`
+replays a deal, `?pause=<ms>` is the computer's pause per click (1050),
+`?step=<ms>` a marble's time per square (150), and `?setup=<n>` starts from
+one of Setup.roc's scenarios.
 
 ## The computer player
 
-**It plays the real rules** (`Search.roc`). A choice is a message
-`Game.update_game` already answers — a distinct card, a starting square, an
-end square, a card to discard or cover — and a line of play is those
-messages applied to a real Game. Elm's WhatIf.elm simulated a turn with a
-copy of the rules of its own; this has no copy to drift.
+- **`Search.roc` plays the real rules.** It tries every line of play through
+  the rest of the turn -- each a list of the messages `Game.update_game`
+  answers -- and takes the one its strategy scores highest. It never sees a
+  card it has not drawn. The same position reached two ways is one line;
+  ties are broken by position, so the choice never depends on move order. A
+  level past 20000 lines is cut, and counted (a hand of four jacks and a
+  joker does it).
+- **`Strategy.roc` says what a position is worth**: the squares its pieces
+  stand on (`SquareValues.roc`, generated from Steve's ranking of the squares
+  by `gen_square_values.roc` over `Rank.roc` and `Reach.roc`), plus
+  `base_bonus` a step down its own base, plus the cards it hoards while they
+  stay in its hand, worth less as pieces come home. Opponents count for
+  nothing. `Strategy.champion` is what the page's computers play: base bonus
+  2500, A, joker and J worth 1500, 1000, 500, 0 with 0-3 pieces home.
+- **`TUNING.md`** is every experiment and its result, in order: what was
+  tried, what won, what was noise.
 
-**The search** tries every line of play to the end of the turn: a play is a
-card and every click it takes, a split seven included, and a move-again card
-goes on to the next. A player holding a playable card must play one. The
-same position reached two ways is kept once. A line stops where the hand is
-refilled, so the computer never sees a card it has not drawn; it searches
-again with the cards it drew.
+## Tuning it
 
-**The strategy is a value** (`Strategy.roc`). A position is worth the
-squares its team's pieces stand on — `SquareValues.roc`, a table generated
-from Steve's ranking of the squares (`Rank.roc`, `gen_square_values.roc`):
-the best square, B4, 6100, the pen 0 — plus a bonus a step down its own
-base, plus what the cards it hoards are worth while they stay in its hand,
-tapering as pieces reach the base. Opponents' pieces count for nothing, so a
-capture is only ever an accident. `Strategy.champion` is what every computer
-seat plays: base bonus 2500, A, joker and J worth 1500, 1000, 500 and 0 with
-0, 1, 2 and 3 pieces home.
+An experiment is a small app (`exp_*.roc`) on `cli/`, a native platform;
+`fasttrack/run_exp.sh <name>` builds it with LLVM and runs it detached, its
+log at `~/build/roc-apps/gen/fasttrack/<name>/log.md` (a line per seed, the
+report at the end; earlier logs are kept).
 
-**The page drives it with a tick.** In a computer's seat the view names
-`Codes.agent_step` as its `tick`; the page sends it back after a pause, and
-each tick is one click of the plan the computer made for its turn. So a
-person watches the computer choose a card, a piece and a square, as they
-would. Nothing in a computer's turn takes a click, and a stale click is
-ignored.
+- **Is B better than the champion?** Put B in `variants` in
+  `exp_duplicate.roc`, e.g. `{ ..Strategy.champion, base_bonus: 3000 }`, and
+  run it. Every seed is dealt four times with the decks turned a seat, and
+  each strategy plays red on the same deals (`Arena.compare`). Read "paired,
+  in standard errors": 500 seeds (2000 deals) take about five minutes a
+  variant and resolve about 1.5 points of win rate. Confirm a winner on fresh
+  seeds (`first_seed`) before it goes into `Strategy.champion`.
+- **Is one decision right?** `exp_rollout.roc` plays a seed to red's turn and
+  plays each of the champion's best lines out 1000 times from there, the
+  undrawn cards shuffled afresh -- the sharpest tool there is, since whole
+  games drown a decision in luck.
+- **What do winners do?** `exp_cards.roc` (the cards each player drew and
+  played) and `exp_table.roc` (turns, idle turns, captures, fast-track use)
+  over `Arena.tally_game` and `Tables.roc`.
+- **Why is a search slow?** `exp_search_size.roc`.
+- **Did a change keep every decision?** Run `exp_cards` before and after and
+  diff the two logs: the games must match (only a fast-track landing count
+  may differ, when the same position is reached by another path).
 
-**Experiments are values too** (`Arena.roc`). An experiment is a small app
-(`exp_*.roc`) that lists variants — a Strategy for each seat, the one under
-test in red's — plays them seed by seed, printing a line a game, and ends
-with `Arena.report`: red's wins, red's turns to get home, idle turns (turns
-begun with a discard), captures, and two checks that read 0. `run_exp.sh`
-builds one with LLVM and runs it detached, each log line stamped with the
-time. The apps run on `cli/`, a small native platform (a zig host copied
-from `machine/native`, drives removed, built by `cli/build.sh`): Roc's
-built-in platform for a headerless app maps a page for every allocation, and
-an 80-game table took 5 min 6 s there against 24 s here. Its `Echo.line!`
-writes the newline. Every variant is dealt the same cards: each player's deck is
-shuffled once from the seed. When an experiment settles a number, it goes
-into `Strategy.champion`, the losing variants go, and `TUNING.md` keeps the
-result.
+What the experiments have taught, in short: the deal decides a lot (winners
+draw more move-again cards), so strategies differ by a point or two of win
+rate; compare them paired on the same deals; distrust anything under a
+thousand deals, and anything not seen again on fresh seeds.
+
+## How it is built
+
+| modules | what |
+|---|---|
+| `Type` `Config` `Setup` `Color` `Piece` `LegalMove` `Player` `Move` `Game` `History` | the rules, ported from the Elm modules of the same names |
+| `Board` `Routes` | every square a number from red's side (0-87 zone by zone, 88 the bullseye), a table turning them for each color, and every walk a card can make precomputed: a move is a lookup and a check that the walk passes no piece of its own color |
+| `Assoc` `ElmRandom` | assoc-list's ordered dict and set; elm/random, to the bit, so a seed deals Elm's cards |
+| `Page` `Motion` `Codes` `FastTrack` | the page as data, what each click moved (for the marbles), a click as a number, and the program the platform runs |
+| `Strategy` `Search` `SquareValues` `Rank` `Reach` | the computer player and its square values |
+| `Arena` `Tables` `exp_*.roc` `run_exp.sh` `cli/` | experiments |
+| `RulesTests` `TeamTests`, expects in the modules | Elm's tests, the partnership rules, and the rest |
+
+**The page has no virtual DOM and needs none** (`web/platform/Wire.roc`):
+the board is 89 slots in a fixed order, drawn once and then patched, and the
+rest of the page is a short list of nodes rebuilt on every click. A click
+carries the code Roc gave the thing clicked; `fasttrack.js` knows no rule. A
+view's `motions` are walked square by square before the computer's next
+click. The reader for the view is generated by `glue/JsGlue.roc`.
+
+**The checks** (`build.sh`): the square values must regenerate unchanged;
+`roc test web.roc` runs every expect; the wasm is built by LLVM and by the dev
+backend, and `web/backends_check.mjs` plays the two in lockstep;
+`web/page_check.mjs` plays the built page against a stand-in document.
+
+Partnerships (pagat.com's, and a "once home" style) and other seatings are
+in the rules and the checks, but the page offers only red against three
+computers.
 
 ## The compiler, met
 
-The nightly (`2026-09-07-14d9829`) got four things wrong while this was
-built. Two failed loudly, and two quietly produced a page that ran and was
-wrong, which is why `build.sh` builds with both backends and
-`web/backends_check.mjs` plays the builds against each other in lockstep:
+The nightly (`2026-09-07-14d9829`), and what each needed:
 
-| what | where | workaround |
-|---|---|---|
-| LLVM ends a `while $next != $d` loop after one pass when the pass is a local closure: an early computer's distance tables came out all "far" | the relaxation loops, now `Reach.fewest_over` | the pass reports whether it changed anything; reduced in `findings/llvm-closure-loop-alias/` |
-| the dev backend dropped `partner` from `"${player.color} and ${partner}"` in a closure inside `Game.winner` | `Game.winner` | `Str.concat` in each arm |
-| an or-pattern binding a variable (`Partner(p) \| PartnerOnceHome(p) =>`) in a lambda: `roc check` fails with OutOfMemory | `Game.winner`, `Strategy.team` | one arm each |
-| a closure passed as an argument (`partner_of : U64 -> U64`): `roc build --opt=speed` crashes with SIGSEGV | an early computer's danger term, since removed | a list of partners instead |
-
-Only the first is reduced; the others are recorded here as met, not as
-findings.
-
-## Layout
-
-| where | what |
+| what | workaround |
 |---|---|
-| `*.roc` | the game, and `web.roc`, the app root |
-| `web/platform/` | the platform: `main.roc` (`init`, `update`, `view`, `release` over a boxed model), `Wire.roc` (the view's types), `host.zig` (the exports `start`, `update`, `computeView`) |
-| `web/build.zig`, `web/options.zig` | the host object; copies of canvas_apps' files, differing only in the comment |
-| `web/fasttrack.js`, `web/page.html` | the page |
-| `web/page_check.mjs` | plays the built page with no browser; see below |
-| `web/elm_random_oracle.mjs` | elm/random's arithmetic as compiled JavaScript |
-| `web/backends_check.mjs` | the LLVM and dev builds played against each other, click for click |
-
-## The checks
-
-`build.sh` first regenerates the square values and fails if
-`SquareValues.roc` differs. `roc test web.roc` runs every expect: Example.elm's
-tests, ElmRandom against its oracle, Assoc's order, the codes' round trip,
-the first deal of seed 0, the partnership rules, the strategy's values, and
-four computers playing a game to its end.
-
-`page_check.mjs` loads the built wasm, the generated reader and the page's own
-`fasttrack.js` against a stand-in document, and plays: "done" when offered,
-else the first square that takes a click, else the first enabled card, and
-"oops" every seventh step. After every click it checks that sixteen pieces are
-on the board, the board has its 89 squares, and the document holds exactly
-the nodes Roc sent. In a computer's seat it sends the view's tick, and checks
-that nothing else takes a click; after a win, that nothing does. With `SHOT` it paints the last board through
-`canvas_apps/web/mini_canvas.mjs` (outlines as one-pixel rings, since that
-rasterizer only fills) and prints the page's text.
+| LLVM ends a `while $next != $d` loop after one pass when the pass is a local closure | the pass reports whether it changed anything (`Reach.fewest_over`; `findings/llvm-closure-loop-alias/`) |
+| the dev backend dropped a variable from an interpolated string in a closure | `Str.concat` (`Game.winner`) |
+| an or-pattern binding a variable in a lambda: `roc check` runs out of memory | one arm each |
+| a literal list of Strategy records crashes `roc check` | build the list with `List.map` |
+| a pure call on constants in `main!` is evaluated at compile time: a game simulation there crashes the compiler | tie it to the arguments (`seed + 0 * List.len(args)`) |
+| the built-in platform of a headerless app maps a page per allocation (86% of the time in the kernel) and its `echo!` writes no newline | `cli/`, 12.7x faster; its `Echo.line!` writes the newline |

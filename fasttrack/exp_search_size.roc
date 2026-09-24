@@ -2,9 +2,8 @@
 # reached twice. Plays one seed with four champions to the first player home,
 # finds the search with the most lines, and shows its board and hand. Then,
 # level by level (a level is one more card played), how many lines the search
-# grew, how many Search.distinct_lines kept (whole game records equal), and
-# how many positions they really are: the same board, the mover's hand as a
-# multiset, its turn and its discard credits.
+# grew, how many Search.distinct_lines kept (one per position), and how many
+# distinct boards they reach. For when a search is slow.
 #
 #   fasttrack/run_exp.sh exp_search_size
 app [main!] { pf: platform "cli/platform/main.roc" }

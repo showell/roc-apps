@@ -7,16 +7,9 @@
 # many are in at the start of the turn, the last entry standing for more --
 # because hoarding late in the game is dumb.
 #
-# `opponents` says whether the other players count. `Ignore`: not at all, so
-# a capture is only ever an accident. `Leader`: the line is worth the mover's
-# team less the leading opposing team, judged at the end of the turn -- two
-# opponents close together make slowing one of them a poor sacrifice.
-# `LeaderWhenBehind`: `Leader` when the leading opposing team's board is
-# ahead of the mover's as the search starts, `Ignore` otherwise.
-# `LeaderNearHome`: less the board of one opponent -- of those with three
-# pieces in their base as the search starts, the one whose board is worth
-# most then -- judged at the end of the turn; nobody otherwise. Capturing
-# (or trading away) such a player's last piece out is what it pays for.
+# Opponents' pieces count for nothing, so a capture is only ever an
+# accident. Three ways of playing against the leading opponent all lost to
+# that (TUNING.md, and the code in git history).
 #
 # `champion` is what the page's computers play. TUNING.md says how each number
 # was chosen; a new experiment is a new value (Arena, the exp_*.roc apps).
@@ -30,13 +23,12 @@ import Type
 Strategy :: [].{
 	Hoard : { cards : List(Str), worth : List(I64) }
 
-	Strategy : { base_bonus : I64, hoards : List(Strategy.Hoard), opponents : [Ignore, Leader, LeaderWhenBehind, LeaderNearHome] }
+	Strategy : { base_bonus : I64, hoards : List(Strategy.Hoard) }
 
 	champion : Strategy.Strategy
 	champion = {
 		base_bonus: 2500,
 		hoards: [{ cards: ["A", "joker", "J"], worth: [1500, 1000, 500, 0] }],
-		opponents: Ignore,
 	}
 
 	## The colors a player scores: its own, and its partner's.
@@ -65,41 +57,6 @@ Strategy :: [].{
 			$s = $s + 1
 		}
 		$total
-	}
-
-	## What the leading opposing team's pieces are worth: every other
-	## player's team, valued as the mover values its own (board only -- their
-	## hands are hidden).
-	leader : Strategy.Strategy, Type.Game, List(Str) -> I64
-	leader = |strategy, game, own|
-		List.fold(
-			game.players,
-			I64.lowest,
-			|best, p|
-				if List.contains(own, p.color) {
-					best
-				} else {
-					v = board(strategy, game, team(p))
-					if v > best { v } else { best }
-				},
-		)
-
-	## Of the other teams with a player three pieces home, the one whose
-	## board is worth most.
-	near_home_leader : Strategy.Strategy, Type.Game, List(Str) -> Try(List(Str), [Nobody])
-	near_home_leader = |strategy, game, own| {
-		best = List.fold(
-			game.players,
-			{ team: [], v: I64.lowest },
-			|acc, p|
-				if List.contains(own, p.color) or in_base(game, p.color) < 3 {
-					acc
-				} else {
-					v = board(strategy, game, team(p))
-					if v > acc.v { { team: team(p), v } } else { acc }
-				},
-		)
-		if List.is_empty(best.team) { Err(Nobody) } else { Ok(best.team) }
 	}
 
 	## A player's pieces in its own base.

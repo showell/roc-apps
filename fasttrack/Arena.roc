@@ -1,23 +1,16 @@
-# Arena -- experiments on the computer's strategy.
+# Arena -- games for experiments on the computer's strategy.
 #
-# An experiment is a list of variants, each a Strategy for every seat; the
-# variant under test is seat 0 (red), the others usually Strategy.champion.
-# Each game is played to its end -- the first player with all four pieces
-# home wins -- and no further: what happens after the win is noise. Seeds
-# 1 .. N, each player's deck shuffled once from its seed, so every variant is
-# dealt the same cards.
+# Red, seat 0, plays the strategy under test; the other seats play
+# Strategy.champion. A game is played to the first player home and no
+# further: what happens after the win is noise. A seed deals every player's
+# deck (shuffled once from the seed and the seat), so every strategy on the
+# same seed is dealt the same cards; `rotation` turns the decks a seat, so
+# red can be dealt every player's deck (duplicate deals).
 #
-# The report is a markdown table per variant: red's wins, the game's length
-# in red's turns (mean and standard error), idle turns (red's turns begun with a discard),
-# captures made by red and of red's pieces, and two checks that should read 0
-# -- turns a player skipped holding a legal play, and searches cut short.
-# It also says, game by game, which games only one of the first variant and
-# each other won.
-#
-# An experiment is an app beside this module (exp_*.roc) that builds the
-# variants, plays them seed by seed, printing Arena.game_line after each game,
-# and ends with Arena.report. run_exp.sh builds one and runs it, each line of
-# its log stamped with the time.
+# `compare` is the tool for "is B better than A": a block of four turned
+# deals per seed, every strategy in red's seat, and `compare_report` judges
+# each strategy against the first on the same deals (exp_duplicate.roc).
+# `tally_game` counts every player's game (exp_table.roc, exp_cards.roc).
 import Board
 import Game
 import History
@@ -33,8 +26,6 @@ Arena :: [].{
 	## first legal move it finds.
 	Seat : [Plays(Strategy.Strategy), FirstLegal]
 
-	Variant : { label : Str, seats : List(Arena.Seat) }
-
 	Result : { red_won : Bool, turns : U64, idle : U64, captured : U64, captures : U64, skips : U64, cuts : U64 }
 
 	home : Type.Game, U64 -> Bool
@@ -43,17 +34,9 @@ Arena :: [].{
 		Strategy.in_base(game, color) == 4
 	}
 
-	## The next player not yet home; red plays until it is.
+	## The next player's turn.
 	rotate : Type.Game -> Type.Game
-	rotate = |game| {
-		var $g = Game.update_game(RotateBoard, History.init, game).1
-		var $guard = 0
-		while $g.active_player_idx != 0 and home($g, $g.active_player_idx) and $guard < 4 {
-			$g = Game.update_game(RotateBoard, History.init, $g).1
-			$guard = $guard + 1
-		}
-		$g
-	}
+	rotate = |game| Game.update_game(RotateBoard, History.init, game).1
 
 	Step : { game : Type.Game, msgs : List(Type.GameMsg), skipped : Bool, cut : Bool }
 
@@ -85,9 +68,6 @@ Arena :: [].{
 	## The other colors' pieces in their pens.
 	others_in_pen : Type.Game -> U64
 	others_in_pen = |g| List.fold(["blue", "green", "purple"], 0, |t, c| t + in_pen(g, c))
-
-	play : List(Arena.Seat), U64 -> Arena.Result
-	play = |seats, seed| play_dealt(seats, seed, 0)
 
 	## A game with its decks turned `rotation` seats (Game.begin_dealt).
 	play_dealt : List(Arena.Seat), U64, U64 -> Arena.Result
@@ -251,57 +231,87 @@ Arena :: [].{
 		List.map_with_index($t, |x, i| { ..x, in_hand: Player.get_player($g.players, i).hand })
 	}
 
-	tenths : F64 -> Str
-	tenths = |x| {
-		t = F64.to_i64_wrap(x * 10.0 + 0.5)
-		"${I64.to_str(t // 10)}.${I64.to_str(t % 10)}"
+	## One seed's four turned deals, every strategy in red's seat against
+	## three champions: [rotation][strategy].
+	compare : List(Strategy.Strategy), U64 -> List(List(Arena.Result))
+	compare = |strategies, seed|
+		List.map(
+			[0, 1, 2, 3],
+			|k| List.map(strategies, |st| play_dealt([Plays(st), Plays(Strategy.champion), Plays(Strategy.champion), Plays(Strategy.champion)], seed, k)),
+		)
+
+	## A seed's block, as the log shows it.
+	block_line : List(Str), U64, List(List(Arena.Result)) -> Str
+	block_line = |labels, seed, block| {
+		counts = List.map_with_index(labels, |label, j| "${label} won ${U64.to_str(List.count_if(block, |deal| won(deal, j)))} of 4")
+		"seed ${U64.to_str(seed)} | ${Str.join_with(counts, " | ")}"
 	}
 
-	## One game, as the log shows it.
-	game_line : Str, U64, Arena.Result -> Str
-	game_line = |label, seed, r| {
-		outcome = if r.red_won { "won " } else { "lost" }
-		"seed ${U64.to_str(seed)} | ${label} | ${outcome} | ${U64.to_str(r.turns)} turns | ${U64.to_str(r.idle)} idle | took ${U64.to_str(r.captures)} | captured ${U64.to_str(r.captured)}"
+	won : List(Arena.Result), U64 -> Bool
+	won = |deal, j| (List.get(deal, j) ?? no_result).red_won
+
+	no_result : Arena.Result
+	no_result = { red_won: Bool.False, turns: 0, idle: 0, captured: 0, captures: 0, skips: 0, cuts: 0 }
+
+	thousandths : F64 -> Str
+	thousandths = |x| {
+		t = F64.to_i64_wrap(F64.abs(x) * 1000.0 + 0.5)
+		sign = if x < 0.0 and t > 0 { "-" } else { "" }
+		pad = if t % 1000 < 10 { "00" } else if t % 1000 < 100 { "0" } else { "" }
+		"${sign}${I64.to_str(t // 1000)}.${pad}${I64.to_str(t % 1000)}"
 	}
 
-	## One row: the variant's label and what its games came to.
-	row : Str, List(Arena.Result) -> Str
-	row = |label, rs| {
-		n = U64.to_f64(List.len(rs))
-		turns = List.map(rs, |r| U64.to_f64(r.turns))
-		mean = List.fold(turns, 0.0, |t, x| t + x) / n
-		var_ = List.fold(turns, 0.0, |t, x| t + (x - mean) * (x - mean)) / (n - 1.0)
-		se = F64.sqrt(var_ / n)
-		wins = List.count_if(rs, |r| r.red_won)
-		idle = List.fold(rs, 0, |t, r| t + r.idle)
-		caught = List.fold(rs, 0, |t, r| t + r.captured)
-		took = List.fold(rs, 0, |t, r| t + r.captures)
-		skips = List.fold(rs, 0, |t, r| t + r.skips)
-		cuts = List.fold(rs, 0, |t, r| t + r.cuts)
-		"| ${label} | ${U64.to_str(wins)} of ${U64.to_str(List.len(rs))} | ${tenths(mean)} ± ${tenths(se)} | ${tenths(U64.to_f64(idle) / n)} | ${U64.to_str(took)} | ${U64.to_str(caught)} | ${U64.to_str(skips)} / ${U64.to_str(cuts)} |"
+	sd : List(F64) -> F64
+	sd = |xs| {
+		n = U64.to_f64(List.len(xs))
+		m = List.fold(xs, 0.0, |t, x| t + x) / n
+		F64.sqrt(List.fold(xs, 0.0, |t, x| t + (x - m) * (x - m)) / (n - 1.0))
 	}
 
-	## Two variants on the same deals, game by game: which games only one of
-	## them won.
-	paired : Str, List(Arena.Result), Str, List(Arena.Result) -> Str
-	paired = |label_a, a, label_b, b| {
-		pairs = List.map_with_index(a, |ra, i| { a: ra.red_won, b: (List.get(b, i) ?? ra).red_won, seed: i + 1 })
-		only_a = List.keep_if(pairs, |p| p.a and !p.b)
-		only_b = List.keep_if(pairs, |p| p.b and !p.a)
-		seeds = |ps| Str.join_with(List.map(ps, |p| U64.to_str(p.seed)), ", ")
-		"Game by game: red won ${U64.to_str(List.len(only_b))} games only as ${label_b} (seeds ${seeds(only_b)}) and ${U64.to_str(List.len(only_a))} only as ${label_a} (seeds ${seeds(only_a)}); the other ${U64.to_str(List.len(pairs) - List.len(only_a) - List.len(only_b))} came out the same."
-	}
-
-	## The table, from every variant's games, seeds 1 up.
-	report : Str, List({ label : Str, rs : List(Arena.Result) }) -> Str
-	report = |title, all| {
-		games = U64.to_str(List.len((List.first(all) ?? { label: "", rs: [] }).rs))
-		header = "## ${title}\n\n${games} games per variant, seeds 1-${games}; red is the variant, the other seats Strategy.champion.\n\n| variant | red won | the game's length, red's turns | idle turns a game | captures by red | red captured | skipped / cut |\n|---|---|---|---|---|---|---|\n"
-		rows = Str.join_with(List.map(all, |x| row(x.label, x.rs)), "\n")
-		# Every other variant against the first, game by game.
-		first = List.first(all) ?? { label: "", rs: [] }
-		pair = Str.join_with(List.map(List.drop_first(all, 1), |b| "\n\n${paired(first.label, first.rs, b.label, b.rs)}"), "")
-		Str.concat(Str.concat(header, rows), pair)
+	## Every strategy's wins, then each against the first on the same deals:
+	## the difference judged as if the games were unrelated, paired deal by
+	## deal, and by seed. `cut` counts searches that hit Search.max_lines.
+	compare_report : List(Str), U64, List(List(List(Arena.Result))) -> Str
+	compare_report = |labels, first_seed, blocks| {
+		deals = List.join(blocks)
+		n = U64.to_f64(List.len(deals))
+		wins = |j| List.count_if(deals, |deal| won(deal, j))
+		win = |b| if b { 1.0 } else { 0.0 }
+		last_seed = first_seed + List.len(blocks) - 1
+		rows = List.map_with_index(
+			labels,
+			|label, j| {
+				by_rotation = Str.join_with(List.map([0, 1, 2, 3], |k| U64.to_str(List.count_if(blocks, |bl| won(List.get(bl, k) ?? [], j)))), " / ")
+				cuts = List.fold(deals, 0, |t, deal| t + (List.get(deal, j) ?? no_result).cuts)
+				"| ${label} | ${U64.to_str(wins(j))} of ${U64.to_str(List.len(deals))} | ${thousandths(U64.to_f64(wins(j)) / n)} | ${by_rotation} | ${U64.to_str(cuts)} |"
+			},
+		)
+		against = List.map(
+			List.drop_first(List.map_with_index(labels, |label, j| { label, j }), 1),
+			|x| {
+				pa = U64.to_f64(wins(0)) / n
+				pb = U64.to_f64(wins(x.j)) / n
+				diff = pb - pa
+				unrelated = F64.sqrt(pa * (1.0 - pa) / n + pb * (1.0 - pb) / n)
+				paired = sd(List.map(deals, |deal| win(won(deal, x.j)) - win(won(deal, 0)))) / F64.sqrt(n)
+				by_seed = sd(List.map(blocks, |bl| (U64.to_f64(List.count_if(bl, |deal| won(deal, x.j))) - U64.to_f64(List.count_if(bl, |deal| won(deal, 0)))) / 4.0)) / F64.sqrt(U64.to_f64(List.len(blocks)))
+				only = "${U64.to_str(List.count_if(deals, |deal| won(deal, x.j) and !won(deal, 0)))} / ${U64.to_str(List.count_if(deals, |deal| won(deal, 0) and !won(deal, x.j)))}"
+				"| ${x.label} | ${thousandths(diff)} | ${only} | ${thousandths(unrelated)} / ${thousandths(paired)} / ${thousandths(by_seed)} | ${if paired > 0.0 { thousandths(diff / paired) } else { "-" }} |"
+			},
+		)
+		Str.join_with(
+			[
+				"Seeds ${U64.to_str(first_seed)}-${U64.to_str(last_seed)}, each dealt four times with the decks turned a seat, so red plays every player's deck: ${U64.to_str(List.len(deals))} games per strategy. Red is the strategy; the other seats play Strategy.champion. Each game stops at the first player home.\n",
+				"| red plays as | red won | win rate | wins with the decks turned 0 / 1 / 2 / 3 seats | searches cut |",
+				"|---|---|---|---|---|",
+				Str.join_with(rows, "\n"),
+				"\nEach against ${List.first(labels) ?? "the first"}, on the same deals:\n",
+				"| red plays as | difference a game | deals only it won / only the first won | standard error: unrelated / paired / by seed | paired, in standard errors |",
+				"|---|---|---|---|---|",
+				Str.join_with(against, "\n"),
+			],
+			"\n",
+		)
 	}
 }
 

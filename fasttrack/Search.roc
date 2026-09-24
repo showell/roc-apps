@@ -152,31 +152,14 @@ Search :: [].{
 	max_lines : U64
 	max_lines = 20000
 
-	## What `strategy` makes of a line from `game`: the mover's team's board,
-	## the hand it keeps unless it drew, less the leader's board if it plays
-	## against the leader (when behind, for LeaderWhenBehind; near home, for
-	## LeaderNearHome: both judged on `game`).
+	## What `strategy` makes of a line from `game`: the mover's team's board
+	## and the hand it keeps, unless it drew.
 	score : Strategy.Strategy, Type.Game, Search.Line -> I64
 	score = |strategy, game, line| {
 		mover = Player.get_active_player(game)
 		colors = Strategy.team(mover)
 		kept = if line.drew { 0 } else { Strategy.hand(Strategy.hoard_worths(strategy, game, mover.color), Player.get_active_player(line.game).hand) }
-		against = match strategy.opponents {
-			Ignore => 0
-			Leader => Strategy.leader(strategy, line.game, colors)
-			LeaderNearHome =>
-				match Strategy.near_home_leader(strategy, game, colors) {
-					Ok(team) => Strategy.board(strategy, line.game, team)
-					Err(_) => 0
-				}
-			LeaderWhenBehind =>
-				if Strategy.leader(strategy, game, colors) > Strategy.board(strategy, game, colors) {
-					Strategy.leader(strategy, line.game, colors)
-				} else {
-					0
-				}
-		}
-		Strategy.board(strategy, line.game, colors) + kept - against
+		Strategy.board(strategy, line.game, colors) + kept
 	}
 
 	## Every line through the rest of the mover's turn. `cut` says the search

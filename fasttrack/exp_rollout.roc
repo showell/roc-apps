@@ -1,12 +1,13 @@
-# Rollouts at a pivot: which of red's lines wins more from one position.
+# Rollouts: which of red's lines wins more from one position -- the way to
+# judge a single decision, where whole games drown it in luck.
 #
-# Plays `seed` with four champions to red's first turn where the champion
-# and the leader-chaser (`opponents: Leader`) choose differently. From that
-# position each candidate line -- the best few by the champion's score, and
-# the chaser's -- is played out `rollouts` times to the first player home,
+# Plays `seed` with four champions to the start of red's turn `red_turn`.
+# From there the champion's best `lines` lines (by its own score, one per
+# board) are each played out `rollouts` times to the first player home,
 # every player a champion, each time with every player's undrawn cards
-# shuffled afresh. Rollout k shuffles the same way for every candidate, so
-# the candidates are compared on the same futures.
+# shuffled afresh. Rollout k shuffles the same way for every line, so the
+# lines are compared on the same futures. If the champion's pick is not the
+# line that wins most, its values are wrong somewhere (TUNING.md, seed 69).
 #
 #   fasttrack/run_exp.sh exp_rollout
 app [main!] { pf: platform "cli/platform/main.roc" }
@@ -23,6 +24,12 @@ import Type
 
 seed : U64
 seed = 69
+
+red_turn : U64
+red_turn = 7
+
+lines : U64
+lines = 5
 
 rollouts : U64
 rollouts = 1000
@@ -51,35 +58,22 @@ moved = |before, after| {
 	"${show(before.board, left)} -> ${show(after.board, went)}"
 }
 
-## The position before red's first turn where the two strategies part.
-pivot : U64 -> Try({ game : Type.Game, turn : U64, chaser : Search.Line }, [Same])
-pivot = |s| {
-	champion = Strategy.champion
-	chaser = { ..champion, opponents: Leader }
-	seats = List.repeat(Plays(champion), 4)
+## The position at the start of red's turn `turn`.
+position : U64, U64 -> Type.Game
+position = |s, turn| {
+	seats = List.repeat(Plays(Strategy.champion), 4)
 	var $g = Game.begin_game(s, Normal, Solo)
 	var $turn = 1
-	var $found = Err(Same)
 	var $steps = 0
-	while Try.is_err($found) and $steps < 100000 {
-		red_to_search = $g.active_player_idx == 0 and Player.get_active_player($g).turn != TurnDone
-		a = if red_to_search { Search.best_line(champion, $g) } else { Err(NoPlay) }
-		b = if red_to_search { Search.best_line(chaser, $g) } else { Err(NoPlay) }
-		match (a, b) {
-			(Ok(x), Ok(y)) if x.line.game.board != y.line.game.board => {
-				$found = Ok({ game: $g, turn: $turn, chaser: y.line })
-			}
-			_ => {
-				next = Arena.step(seats, $g).game
-				if next.active_player_idx == 0 and $g.active_player_idx != 0 {
-					$turn = $turn + 1
-				}
-				$g = next
-			}
+	while $turn < turn and $steps < 100000 {
+		next = Arena.step(seats, $g).game
+		if next.active_player_idx == 0 and $g.active_player_idx != 0 {
+			$turn = $turn + 1
 		}
+		$g = next
 		$steps = $steps + 1
 	}
-	$found
+	$g
 }
 
 ## Every player's undrawn cards shuffled afresh for rollout `k`.
@@ -115,12 +109,9 @@ winner = |from| {
 
 main! = |args| {
 	champion = Strategy.champion
-	# Tied to the arguments so the compiler cannot run the games while it
-	# compiles: with a constant seed it evaluates pivot(seed) at compile
-	# time, and crashes (nightly 09-07).
-	at_run_time = seed + 0 * List.len(args)
-	p = pivot(at_run_time) ?? crash("the strategies never part on this seed")
-	g = p.game
+	# Tied to the arguments, or the compiler plays the games while it
+	# compiles (it evaluates a pure call on constants).
+	g = position(seed + 0 * List.len(args), red_turn)
 	red = Player.get_active_player(g)
 	found = Search.all_lines(g)
 	by_score = List.sort_with(
@@ -131,11 +122,9 @@ main! = |args| {
 			if sx > sy { Before } else if sx < sy { After } else { Same }
 		},
 	)
-	distinct = List.fold(by_score, [], |kept, l| if List.any(kept, |k| k.game.board == l.game.board) { kept } else { List.append(kept, l) })
-	top = List.take_first(distinct, 5)
-	candidates = if List.any(top, |l| l.game.board == p.chaser.game.board) { top } else { List.append(top, p.chaser) }
-	Echo.line!("## Rollouts at seed ${U64.to_str(seed)}'s pivot\n")
-	Echo.line!("Red's turn ${U64.to_str(p.turn)}, hand ${Str.join_with(red.hand, " ")}. ${U64.to_str(List.len(candidates))} lines, each played out ${U64.to_str(rollouts)} times from the end of red's turn, every player a champion, the undrawn cards shuffled afresh each time (the same ${U64.to_str(rollouts)} shuffles for every line).\n")
+	candidates = List.take_first(List.fold(by_score, [], |kept, l| if List.any(kept, |k| k.game.board == l.game.board) { kept } else { List.append(kept, l) }), lines)
+	Echo.line!("## Rollouts at seed ${U64.to_str(seed)}, red's turn ${U64.to_str(red_turn)}\n")
+	Echo.line!("Red holds ${Str.join_with(red.hand, " ")}. The champion's best ${U64.to_str(List.len(candidates))} lines, each played out ${U64.to_str(rollouts)} times from the end of red's turn, every player a champion, the undrawn cards shuffled afresh each time (the same ${U64.to_str(rollouts)} shuffles for every line).\n")
 	var $results = []
 	for c in candidates {
 		wins = List.map(List.map_with_index(List.repeat(0, rollouts), |_, k| k), |k| winner(reshuffled(c.game, k)))
@@ -152,7 +141,7 @@ main! = |args| {
 		diffs = List.map_with_index(r.wins, |w, k| (if w == 0 { 1.0 } else { 0.0 }) - (if (List.get(base, k) ?? 4) == 0 { 1.0 } else { 0.0 }))
 		mean = List.fold(diffs, 0.0, |t, d| t + d) / n
 		sd = F64.sqrt(List.fold(diffs, 0.0, |t, d| t + (d - mean) * (d - mean)) / (n - 1.0))
-		tag = if r.line.game.board == p.chaser.game.board { "the capture (chaser's pick)" } else if r.line.game.board == (List.first(candidates) ?? r.line).game.board { "champion's pick" } else { "" }
+		tag = if r.line.game.board == (List.first(candidates) ?? r.line).game.board { "champion's pick" } else { "" }
 		others = Str.join_with(List.map([1, 2, 3], |c| U64.to_str(List.count_if(r.wins, |w| w == c))), " / ")
 		Echo.line!("| ${tag} | ${moved(g, r.line.game)} | ${I64.to_str(Search.score(champion, g, r.line))} | ${U64.to_str(red_wins)} | ${percent(rate)} ± ${percent(F64.sqrt(rate * (1.0 - rate) / n))} | ${percent(mean)} ± ${percent(sd / F64.sqrt(n))} | ${others} |")
 	}
