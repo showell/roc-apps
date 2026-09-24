@@ -5,85 +5,56 @@
 // JavaScript value. Layouts are the compiler's own, for a 32-bit pointer.
 const RocGlue = (() => {
 
-  // {}
-  const read_t1 = (view, at) => null;
+  const utf8 = new TextDecoder();
+  const readStr = (view, at) => {
+    const last = view.getUint8(at + 11);
+    if (last & 0x80) return utf8.decode(new Uint8Array(view.buffer, view.byteOffset + at, last & 0x7f));
+    return utf8.decode(new Uint8Array(view.buffer, view.getUint32(at, true), view.getUint32(at + 8, true)));
+  };
+
+  // Box(t1)
+  const read_t0 = (view, at) => view.getUint32(at, true);
 
   // {}
-  const read_t3 = (view, at) => null;
+  const read_t2 = (view, at) => null;
 
-  // {}
-  const read_t5 = (view, at) => null;
+  // Box(t1)
+  const read_t3 = (view, at) => view.getUint32(at, true);
 
-  // {}
-  const read_t7 = (view, at) => null;
-
-  // {}
-  const read_t9 = (view, at) => null;
-
-  // {}
-  const read_t11 = (view, at) => null;
-
-  // {}
-  const read_t13 = (view, at) => null;
-
-  // {}
-  const read_t15 = (view, at) => null;
-
-  // {}
-  const read_t17 = (view, at) => null;
-
-  // {}
-  const read_t19 = (view, at) => null;
-
-  // {}
-  const read_t21 = (view, at) => null;
-
-  // {}
-  const read_t24 = (view, at) => null;
-
-  // Box(t26)
-  const read_t25 = (view, at) => view.getUint32(at, true);
-
-  // Box(t26)
-  const read_t28 = (view, at) => view.getUint32(at, true);
+  // Box(t1)
+  const read_t4 = (view, at) => view.getUint32(at, true);
 
   // U32
-  const read_t29 = (view, at) => view.getUint32(at, true);
+  const read_t5 = (view, at) => view.getUint32(at, true);
 
   // F32
-  const read_t30 = (view, at) => view.getFloat32(at, true);
+  const read_t6 = (view, at) => view.getFloat32(at, true);
 
-  // Box(t26)
-  const read_t31 = (view, at) => view.getUint32(at, true);
-
-  // Box(t26)
-  const read_t33 = (view, at) => view.getUint32(at, true);
-
-  // List(t35)
-  const read_t34 = (view, at) => {
+  // List(t8)
+  const read_t7 = (view, at) => {
     const start = view.getUint32(at, true);
     const length = view.getUint32(at + 4, true);
     const out = [];
-    for (let i = 0; i < length; i++) out.push(read_t35(view, start + i * 208));
+    for (let i = 0; i < length; i++) out.push(read_t8(view, start + i * 208));
     return out;
   };
 
   // a tag union
-  const read_t35 = (view, at) => {
+  const read_t8 = (view, at) => {
     switch (view.getUint8(at + 200)) {
-      case 0: return ({ tag: "Blend", value: read_t36(view, at + 0) });
-      case 1: return ({ tag: "Disc", value: read_t37(view, at + 0) });
-      case 2: return ({ tag: "Image", value: read_t48(view, at + 0) });
-      case 3: return ({ tag: "Pieces", value: read_t51(view, at + 0) });
-      case 4: return ({ tag: "Poly", value: read_t53(view, at + 0) });
-      case 5: return ({ tag: "Rect", value: read_t54(view, at + 0) });
-      case 6: return ({ tag: "View", value: read_t55(view, at + 0) });
+      case 0: return ({ tag: "Blend", value: read_t9(view, at + 0) });
+      case 1: return ({ tag: "Disc", value: read_t10(view, at + 0) });
+      case 2: return ({ tag: "Image", value: read_t21(view, at + 0) });
+      case 3: return ({ tag: "Pieces", value: read_t24(view, at + 0) });
+      case 4: return ({ tag: "Poly", value: read_t26(view, at + 0) });
+      case 5: return ({ tag: "Rect", value: read_t27(view, at + 0) });
+      case 6: return ({ tag: "View", value: read_t28(view, at + 0) });
       default: throw new Error('roc_glue: no variant ' + view.getUint8(at + 200));
     }
   };
 
   // a tag union
-  const read_t36 = (view, at) => {
+  const read_t9 = (view, at) => {
     switch (view.getUint8(at + 0)) {
       case 0: return ({ tag: "Add" });
       case 1: return ({ tag: "Over" });
@@ -92,121 +63,139 @@ const RocGlue = (() => {
   };
 
   // a record
-  const read_t37 = (view, at) => ({ clip: read_t38(view, at + 0), fill: read_t41(view, at + 40), r: read_t40(view, at + 176), x: read_t40(view, at + 184), y: read_t40(view, at + 192), });
+  const read_t10 = (view, at) => ({ clip: read_t11(view, at + 0), fill: read_t14(view, at + 40), r: read_t13(view, at + 176), x: read_t13(view, at + 184), y: read_t13(view, at + 192), });
 
   // a tag union
-  const read_t38 = (view, at) => {
+  const read_t11 = (view, at) => {
     switch (view.getUint8(at + 32)) {
       case 0: return ({ tag: "Anywhere" });
-      case 1: return ({ tag: "Within", value: read_t39(view, at + 0) });
+      case 1: return ({ tag: "Within", value: read_t12(view, at + 0) });
       default: throw new Error('roc_glue: no variant ' + view.getUint8(at + 32));
     }
   };
 
   // a record
-  const read_t39 = (view, at) => ({ h: read_t40(view, at + 0), w: read_t40(view, at + 8), x: read_t40(view, at + 16), y: read_t40(view, at + 24), });
+  const read_t12 = (view, at) => ({ h: read_t13(view, at + 0), w: read_t13(view, at + 8), x: read_t13(view, at + 16), y: read_t13(view, at + 24), });
 
   // F64
-  const read_t40 = (view, at) => view.getFloat64(at, true);
+  const read_t13 = (view, at) => view.getFloat64(at, true);
 
   // a tag union
-  const read_t41 = (view, at) => {
+  const read_t14 = (view, at) => {
     switch (view.getUint8(at + 128)) {
-      case 0: return ({ tag: "Ellipse", value: read_t42(view, at + 0) });
-      case 1: return ({ tag: "Flat", value: read_t43(view, at + 0) });
-      case 2: return ({ tag: "Glow", value: read_t44(view, at + 0) });
-      case 3: return ({ tag: "Linear", value: read_t45(view, at + 0) });
-      case 4: return ({ tag: "Radial", value: read_t46(view, at + 0) });
+      case 0: return ({ tag: "Ellipse", value: read_t15(view, at + 0) });
+      case 1: return ({ tag: "Flat", value: read_t16(view, at + 0) });
+      case 2: return ({ tag: "Glow", value: read_t17(view, at + 0) });
+      case 3: return ({ tag: "Linear", value: read_t18(view, at + 0) });
+      case 4: return ({ tag: "Radial", value: read_t19(view, at + 0) });
       case 5: return ({ tag: "Skip" });
-      case 6: return ({ tag: "Span", value: read_t47(view, at + 0) });
+      case 6: return ({ tag: "Span", value: read_t20(view, at + 0) });
       default: throw new Error('roc_glue: no variant ' + view.getUint8(at + 128));
     }
   };
 
   // a record
-  const read_t42 = (view, at) => ({ c0: read_t43(view, at + 0), c1: read_t43(view, at + 32), ia: read_t40(view, at + 64), ib: read_t40(view, at + 72), ic: read_t40(view, at + 80), id: read_t40(view, at + 88), o0: read_t40(view, at + 96), o1: read_t40(view, at + 104), x: read_t40(view, at + 112), y: read_t40(view, at + 120), });
+  const read_t15 = (view, at) => ({ c0: read_t16(view, at + 0), c1: read_t16(view, at + 32), ia: read_t13(view, at + 64), ib: read_t13(view, at + 72), ic: read_t13(view, at + 80), id: read_t13(view, at + 88), o0: read_t13(view, at + 96), o1: read_t13(view, at + 104), x: read_t13(view, at + 112), y: read_t13(view, at + 120), });
 
   // a record
-  const read_t43 = (view, at) => ({ a: read_t40(view, at + 0), b: read_t40(view, at + 8), g: read_t40(view, at + 16), r: read_t40(view, at + 24), });
+  const read_t16 = (view, at) => ({ a: read_t13(view, at + 0), b: read_t13(view, at + 8), g: read_t13(view, at + 16), r: read_t13(view, at + 24), });
 
   // a record
-  const read_t44 = (view, at) => ({ c0: read_t43(view, at + 0), c1: read_t43(view, at + 32), c2: read_t43(view, at + 64), r0: read_t40(view, at + 96), r1: read_t40(view, at + 104), x: read_t40(view, at + 112), y: read_t40(view, at + 120), });
+  const read_t17 = (view, at) => ({ c0: read_t16(view, at + 0), c1: read_t16(view, at + 32), c2: read_t16(view, at + 64), r0: read_t13(view, at + 96), r1: read_t13(view, at + 104), x: read_t13(view, at + 112), y: read_t13(view, at + 120), });
 
   // a record
-  const read_t45 = (view, at) => ({ ax: read_t40(view, at + 0), ay: read_t40(view, at + 8), c0: read_t43(view, at + 16), c1: read_t43(view, at + 48), dx: read_t40(view, at + 80), dy: read_t40(view, at + 88), o0: read_t40(view, at + 96), o1: read_t40(view, at + 104), });
+  const read_t18 = (view, at) => ({ ax: read_t13(view, at + 0), ay: read_t13(view, at + 8), c0: read_t16(view, at + 16), c1: read_t16(view, at + 48), dx: read_t13(view, at + 80), dy: read_t13(view, at + 88), o0: read_t13(view, at + 96), o1: read_t13(view, at + 104), });
 
   // a record
-  const read_t46 = (view, at) => ({ inner: read_t43(view, at + 0), outer: read_t43(view, at + 32), r0: read_t40(view, at + 64), r1: read_t40(view, at + 72), x: read_t40(view, at + 80), y: read_t40(view, at + 88), });
+  const read_t19 = (view, at) => ({ inner: read_t16(view, at + 0), outer: read_t16(view, at + 32), r0: read_t13(view, at + 64), r1: read_t13(view, at + 72), x: read_t13(view, at + 80), y: read_t13(view, at + 88), });
 
   // a record
-  const read_t47 = (view, at) => ({ edge: read_t43(view, at + 0), middle: read_t43(view, at + 32), x0: read_t40(view, at + 64), x1: read_t40(view, at + 72), });
+  const read_t20 = (view, at) => ({ edge: read_t16(view, at + 0), middle: read_t16(view, at + 32), x0: read_t13(view, at + 64), x1: read_t13(view, at + 72), });
 
   // a record
-  const read_t48 = (view, at) => ({ cols: read_t49(view, at + 0), h: read_t40(view, at + 8), rows: read_t49(view, at + 16), w: read_t40(view, at + 24), x: read_t40(view, at + 32), y: read_t40(view, at + 40), pixels: read_t50(view, at + 48), });
+  const read_t21 = (view, at) => ({ cols: read_t22(view, at + 0), h: read_t13(view, at + 8), rows: read_t22(view, at + 16), w: read_t13(view, at + 24), x: read_t13(view, at + 32), y: read_t13(view, at + 40), pixels: read_t23(view, at + 48), });
 
   // U64
-  const read_t49 = (view, at) => view.getBigUint64(at, true);
+  const read_t22 = (view, at) => view.getBigUint64(at, true);
 
-  // List(t43)
-  const read_t50 = (view, at) => {
+  // List(t16)
+  const read_t23 = (view, at) => {
     const start = view.getUint32(at, true);
     const length = view.getUint32(at + 4, true);
     const out = [];
-    for (let i = 0; i < length; i++) out.push(read_t43(view, start + i * 32));
+    for (let i = 0; i < length; i++) out.push(read_t16(view, start + i * 32));
     return out;
   };
 
   // a record
-  const read_t51 = (view, at) => ({ fill: read_t41(view, at + 0), tris: read_t52(view, at + 136), });
+  const read_t24 = (view, at) => ({ fill: read_t14(view, at + 0), tris: read_t25(view, at + 136), });
 
-  // List(t40)
-  const read_t52 = (view, at) => {
+  // List(t13)
+  const read_t25 = (view, at) => {
     const start = view.getUint32(at, true);
     const length = view.getUint32(at + 4, true);
     const out = [];
-    for (let i = 0; i < length; i++) out.push(read_t40(view, start + i * 8));
+    for (let i = 0; i < length; i++) out.push(read_t13(view, start + i * 8));
     return out;
   };
 
   // a record
-  const read_t53 = (view, at) => ({ fill: read_t41(view, at + 0), pts: read_t52(view, at + 136), });
+  const read_t26 = (view, at) => ({ fill: read_t14(view, at + 0), pts: read_t25(view, at + 136), });
 
   // a record
-  const read_t54 = (view, at) => ({ fill: read_t41(view, at + 0), h: read_t40(view, at + 136), w: read_t40(view, at + 144), x: read_t40(view, at + 152), y: read_t40(view, at + 160), });
+  const read_t27 = (view, at) => ({ fill: read_t14(view, at + 0), h: read_t13(view, at + 136), w: read_t13(view, at + 144), x: read_t13(view, at + 152), y: read_t13(view, at + 160), });
 
   // a tag union
-  const read_t55 = (view, at) => {
+  const read_t28 = (view, at) => {
     switch (view.getUint8(at + 48)) {
       case 0: return ({ tag: "Screen" });
-      case 1: return ({ tag: "World", value: read_t56(view, at + 0) });
+      case 1: return ({ tag: "World", value: read_t29(view, at + 0) });
       default: throw new Error('roc_glue: no variant ' + view.getUint8(at + 48));
     }
   };
 
   // a record
-  const read_t56 = (view, at) => ({ offset: read_t57(view, at + 0), rotation: read_t40(view, at + 16), target: read_t57(view, at + 24), zoom: read_t40(view, at + 40), });
+  const read_t29 = (view, at) => ({ offset: read_t30(view, at + 0), rotation: read_t13(view, at + 16), target: read_t30(view, at + 24), zoom: read_t13(view, at + 40), });
 
   // a record
-  const read_t57 = (view, at) => ({ x: read_t40(view, at + 0), y: read_t40(view, at + 8), });
+  const read_t30 = (view, at) => ({ x: read_t13(view, at + 0), y: read_t13(view, at + 8), });
 
-  // Box(t26)
-  const read_t60 = (view, at) => view.getUint32(at, true);
+  // Box(t1)
+  const read_t31 = (view, at) => view.getUint32(at, true);
 
-  // Box(t26)
-  const read_t62 = (view, at) => view.getUint32(at, true);
+  // Box(t1)
+  const read_t32 = (view, at) => view.getUint32(at, true);
+
+  // Box(t1)
+  const read_t33 = (view, at) => view.getUint32(at, true);
+
+  // Box(t1)
+  const read_t34 = (view, at) => view.getUint32(at, true);
+
+  // Box(t1)
+  const read_t35 = (view, at) => view.getUint32(at, true);
+
+  // Box(t1)
+  const read_t36 = (view, at) => view.getUint32(at, true);
+
+  // Box(t1)
+  const read_t37 = (view, at) => view.getUint32(at, true);
+
+  // Box(t1)
+  const read_t38 = (view, at) => view.getUint32(at, true);
 
   // What this platform provides:
-  //   roc_init : t24 -> t25
-  //   roc_advance : t28, t29, t29, t29, t29, t30, t30, t30 -> t31
-  //   roc_frame : t33 -> t34
-  //   roc_release : t34 -> t24
-  //   roc_sounds : t60 -> t29
-  //   roc_tone_count : t60 -> t29
-  //   roc_tone_freq : t62, t29 -> t29
-  //   roc_tone_ms : t62, t29 -> t29
-  //   roc_width : t60 -> t29
-  //   roc_height : t60 -> t29
-  //   roc_fps : t60 -> t29
+  //   roc_init : t2 -> t0
+  //   roc_advance : t4, t5, t5, t5, t5, t6, t6, t6 -> t3
+  //   roc_frame : t31 -> t7
+  //   roc_release : t7 -> t2
+  //   roc_sounds : t32 -> t5
+  //   roc_tone_count : t33 -> t5
+  //   roc_tone_freq : t34, t5 -> t5
+  //   roc_tone_ms : t35, t5 -> t5
+  //   roc_width : t36 -> t5
+  //   roc_height : t37 -> t5
+  //   roc_fps : t38 -> t5
   // init reads what roc_init answers
   // advance reads what roc_advance answers
   // frame reads what roc_frame answers
@@ -219,5 +208,5 @@ const RocGlue = (() => {
   // height reads what roc_height answers
   // fps reads what roc_fps answers
 
-  return { read_t1, read_t3, read_t5, read_t7, read_t9, read_t11, read_t13, read_t15, read_t17, read_t19, read_t21, read_t24, read_t25, read_t28, read_t29, read_t30, read_t31, read_t33, read_t34, read_t35, read_t36, read_t37, read_t38, read_t39, read_t40, read_t41, read_t42, read_t43, read_t44, read_t45, read_t46, read_t47, read_t48, read_t49, read_t50, read_t51, read_t52, read_t53, read_t54, read_t55, read_t56, read_t57, read_t60, read_t62, init: read_t25, advance: read_t31, frame: read_t34, release: read_t24, sounds: read_t29, tone_count: read_t29, tone_freq: read_t29, tone_ms: read_t29, width: read_t29, height: read_t29, fps: read_t29 };
+  return { read_t0, read_t2, read_t3, read_t4, read_t5, read_t6, read_t7, read_t8, read_t9, read_t10, read_t11, read_t12, read_t13, read_t14, read_t15, read_t16, read_t17, read_t18, read_t19, read_t20, read_t21, read_t22, read_t23, read_t24, read_t25, read_t26, read_t27, read_t28, read_t29, read_t30, read_t31, read_t32, read_t33, read_t34, read_t35, read_t36, read_t37, read_t38, init: read_t0, advance: read_t3, frame: read_t7, release: read_t2, sounds: read_t5, tone_count: read_t5, tone_freq: read_t5, tone_ms: read_t5, width: read_t5, height: read_t5, fps: read_t5 };
 })();
