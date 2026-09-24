@@ -1,5 +1,7 @@
 # Checking a constant of `from_quote` literals grows faster than quadratically
 
+Reported as roc-lang/roc#11666.
+
 `T :: List(U8)` defines `from_quote`, so a string literal where a `T` is
 wanted is a `T` (`T.roc`). `gen.py` writes one top-level constant holding N
 literals, `words : List(T) = ["w0", "w1", ...]`, or the same as `List(Str)`.
