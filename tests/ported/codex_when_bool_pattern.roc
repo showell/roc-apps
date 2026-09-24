@@ -61,7 +61,7 @@ int_control = (match (5 + 0) {
 })
 
 char_control : I64
-char_control = (match CceChar.of_code(15) {
+char_control = (match CceChar.code(CceChar.of_code(15)) {
 	15 => 1
 	_ => 0
 })
