@@ -1,6 +1,6 @@
 # LLVM ends a `while $next != $d` loop early when the pass is a local closure
 
-**Reduced, not reported.** Nightly `2026-09-07-14d9829`, native and wasm32,
+**Filed 2026-09-24; `ISSUE.md` is the text.** Nightly `2026-09-07-14d9829`, native and wasm32,
 default platform for the native program. `run.sh` builds `App.roc` both ways
 and runs each:
 
