@@ -198,8 +198,9 @@ echo "--- by outcome:"; echo "$ledger" | cut -d' ' -f1 | sort | uniq -c | sort -
 echo "--- refusals by reason:"; echo "$ledger" | grep -a '^REFUSED' | cut -d'|' -f2 | sed 's/`[^`]*`/`_`/g' | sort | uniq -c | sort -rn | head -20
 # **WHERE THE WALL TIME GOES**: each unit's `roc run`, compile and run
 # together, in ms, as measured the last time the unit actually ran (a kept
-# verdict keeps its time). tests/ledger-ms.txt holds every unit's.
+# verdict keeps its time). A full run writes every unit's to
+# ~/build/roc-apps/gen/ledger-ms.txt, untracked: the times change every run.
 times="$( for n in "${units[@]}"; do [ -f "$GEN/$n.ms" ] && echo "$(cat "$GEN/$n.ms") $n"; done | sort -rn )"
-[ "$full" = yes ] && echo "$times" > "$HERE/ledger-ms.txt"
+[ "$full" = yes ] && echo "$times" > "$GEN/../ledger-ms.txt"
 echo "--- slowest runs, ms (of $(echo "$times" | awk '{s += $1} END {printf "%.1f s", s / 1000}') in all):"; echo "$times" | head -15
 echo "$(echo "$ledger" | grep -ac '^PASS') pass of ${#units[@]} -- tests from $TESTS_ROOT"
