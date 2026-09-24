@@ -20,11 +20,11 @@ Motion :: [].{
 	of : Type.Game, Type.GameMsg, Type.Game -> List(Motion.Motion)
 	of = |before, msg, after| {
 		name = |c| List.get(before.zone_colors, c) ?? "black"
-		moves = Move.made(before, msg)
-		if List.is_empty(moves) {
-			brought_out(before, after, name)
-		} else {
-			List.join_map(moves, |m| of_move(before.board, m, name))
+		match msg {
+			# Only a discard can bring a piece out; an undo moves nothing on
+			# the page, it just shows the earlier board.
+			DiscardCard(_) => brought_out(before, after, name)
+			_ => List.join_map(Move.made(before, msg), |m| of_move(before.board, m, name))
 		}
 	}
 
@@ -110,4 +110,11 @@ expect {
 	end_click = Game.update_game(SetStartLocation(Board.at(0, Board.l0)), History.init, g).1
 	Motion.of(end_click, SetEndLocation(Board.at(0, 14)), Game.update_game(SetEndLocation(Board.at(0, 14)), History.init, end_click).1)
 	== [{ color: "red", path: [11, 14], sent_home: Bool.False }, { color: "blue", path: [14, 11], sent_home: Bool.False }]
+}
+
+# An undo moves nothing on the page, even when the board it restores differs.
+expect {
+	g = test_game([("red", "L0", "red"), ("red", "HP1", "red")], ["3"])
+	moved = Game.update_game(SetStartLocation(Board.at(0, Board.l0)), History.init, g).1
+	Motion.of(moved, UndoAction, g) == []
 }

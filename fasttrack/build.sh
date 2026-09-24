@@ -60,6 +60,15 @@ if grep -q "✗" "$LOG/test.log" || ! grep -q "^All ([0-9]*) tests passed" "$LOG
     cat "$LOG/test.log"; echo "tests failed"; exit 1
 fi
 tail -1 "$LOG/test.log"
+# The expects web.roc does not reach: the experiments' Arena, and the
+# ranking behind the square values (Rank, which brings Reach).
+for m in Arena Rank; do
+    (cd "$HERE" && "$ROC" test "$m.roc") > "$LOG/test-$m.log" 2>&1 || true
+    if grep -q "✗" "$LOG/test-$m.log" || ! grep -q "^All ([0-9]*) tests passed" "$LOG/test-$m.log"; then
+        cat "$LOG/test-$m.log"; echo "$m tests failed"; exit 1
+    fi
+    echo "$m: $(tail -1 "$LOG/test-$m.log")"
+done
 
 (cd "$HERE/web" && "$ZIG" build --cache-dir "$HOME/build/roc-apps/zig-cache" --global-cache-dir "$HOME/build/zig-global")
 

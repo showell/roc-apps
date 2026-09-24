@@ -26,7 +26,9 @@ Arena :: [].{
 	## first legal move it finds.
 	Seat : [Plays(Strategy.Strategy), FirstLegal]
 
-	Result : { red_won : Bool, turns : U64, idle : U64, captured : U64, captures : U64, skips : U64, cuts : U64 }
+	## A game from red's seat: whether red won, and two counts that should
+	## be 0 -- turns passed holding a legal play, and searches cut short.
+	Result : { red_won : Bool, skips : U64, cuts : U64 }
 
 	home : Type.Game, U64 -> Bool
 	home = |game, seat| {
@@ -62,45 +64,57 @@ Arena :: [].{
 	in_pen : Type.Game, Str -> U64
 	in_pen = |g, color| Piece.in_pen(g.board, Board.color_index(g.zone_colors, color))
 
-	red_in_pen : Type.Game -> U64
-	red_in_pen = |g| in_pen(g, "red")
-
-	## The other colors' pieces in their pens.
-	others_in_pen : Type.Game -> U64
-	others_in_pen = |g| List.fold(["blue", "green", "purple"], 0, |t, c| t + in_pen(g, c))
-
 	## A game with its decks turned `rotation` seats (Game.begin_dealt).
 	play_dealt : List(Arena.Seat), U64, U64 -> Arena.Result
 	play_dealt = |seats, seed, rotation| {
 		var $g = Game.begin_dealt(seed, Normal, Solo, rotation)
-		var $r = { red_won: Bool.False, turns: 1, idle: 0, captured: 0, captures: 0, skips: 0, cuts: 0 }
+		var $r = no_result
 		var $winner = 4
-		var $idle_turn = 0
 		var $steps = 0
 		while $winner == 4 and $steps < 100000 {
-			if $g.active_player_idx == 0 and Player.get_active_player($g).turn == TurnNeedDiscard and $idle_turn != $r.turns {
-				$r = { ..$r, idle: $r.idle + 1 }
-				$idle_turn = $r.turns
-			}
 			s = step(seats, $g)
-			next = s.game
-			caught = if $g.active_player_idx != 0 and red_in_pen(next) > red_in_pen($g) { red_in_pen(next) - red_in_pen($g) } else { 0 }
-			took = if $g.active_player_idx == 0 and others_in_pen(next) > others_in_pen($g) { others_in_pen(next) - others_in_pen($g) } else { 0 }
-			turned = next.active_player_idx == 0 and $g.active_player_idx != 0
-			$r = {
-				..$r,
-				captured: $r.captured + caught,
-				captures: $r.captures + took,
-				skips: if s.skipped { $r.skips + 1 } else { $r.skips },
-				cuts: if s.cut { $r.cuts + 1 } else { $r.cuts },
-				turns: if turned { $r.turns + 1 } else { $r.turns },
-			}
+			$r = { ..$r, skips: $r.skips + (if s.skipped { 1 } else { 0 }), cuts: $r.cuts + (if s.cut { 1 } else { 0 }) }
 			# The first player home wins, and the game stops.
-			$winner = List.find_first([0, 1, 2, 3], |seat| home(next, seat)) ?? 4
-			$g = next
+			$winner = List.find_first([0, 1, 2, 3], |seat| home(s.game, seat)) ?? 4
+			$g = s.game
 			$steps = $steps + 1
 		}
 		{ ..$r, red_won: $winner == 0 }
+	}
+
+	## The start of red's turn `turn` of a seed, four champions playing.
+	position : U64, U64 -> Type.Game
+	position = |seed, turn| {
+		seats = List.repeat(Plays(Strategy.champion), 4)
+		var $g = Game.begin_game(seed, Normal, Solo)
+		var $turn = 1
+		var $steps = 0
+		while $turn < turn and $steps < 100000 {
+			next = step(seats, $g).game
+			if next.active_player_idx == 0 and $g.active_player_idx != 0 {
+				$turn = $turn + 1
+			}
+			$g = next
+			$steps = $steps + 1
+		}
+		$g
+	}
+
+	## Who gets home first from here: a seat, or 4 if nobody in time.
+	winner_from : List(Arena.Seat), Type.Game -> U64
+	winner_from = |seats, from| {
+		var $g = from
+		var $won = 4
+		var $steps = 0
+		while $won == 4 and $steps < 100000 {
+			a = $g.active_player_idx
+			$g = step(seats, $g).game
+			if home($g, a) {
+				$won = a
+			}
+			$steps = $steps + 1
+		}
+		$won
 	}
 
 	## One player's game, to the first player home.
@@ -251,7 +265,15 @@ Arena :: [].{
 	won = |deal, j| (List.get(deal, j) ?? no_result).red_won
 
 	no_result : Arena.Result
-	no_result = { red_won: Bool.False, turns: 0, idle: 0, captured: 0, captures: 0, skips: 0, cuts: 0 }
+	no_result = { red_won: Bool.False, skips: 0, cuts: 0 }
+
+	## A fraction as a percentage, one decimal.
+	percent : F64 -> Str
+	percent = |x| {
+		t = F64.to_i64_wrap(F64.abs(x) * 1000.0 + 0.5)
+		sign = if x < 0.0 and t > 0 { "-" } else { "" }
+		"${sign}${I64.to_str(t // 10)}.${I64.to_str(t % 10)}%"
+	}
 
 	thousandths : F64 -> Str
 	thousandths = |x| {
@@ -270,7 +292,8 @@ Arena :: [].{
 
 	## Every strategy's wins, then each against the first on the same deals:
 	## the difference judged as if the games were unrelated, paired deal by
-	## deal, and by seed. `cut` counts searches that hit Search.max_lines.
+	## deal, and by seed. A cut search hit Search.max_lines; a skipped turn
+	## was passed holding a legal play, which would be a bug.
 	compare_report : List(Str), U64, List(List(List(Arena.Result))) -> Str
 	compare_report = |labels, first_seed, blocks| {
 		deals = List.join(blocks)
@@ -283,7 +306,8 @@ Arena :: [].{
 			|label, j| {
 				by_rotation = Str.join_with(List.map([0, 1, 2, 3], |k| U64.to_str(List.count_if(blocks, |bl| won(List.get(bl, k) ?? [], j)))), " / ")
 				cuts = List.fold(deals, 0, |t, deal| t + (List.get(deal, j) ?? no_result).cuts)
-				"| ${label} | ${U64.to_str(wins(j))} of ${U64.to_str(List.len(deals))} | ${thousandths(U64.to_f64(wins(j)) / n)} | ${by_rotation} | ${U64.to_str(cuts)} |"
+				skips = List.fold(deals, 0, |t, deal| t + (List.get(deal, j) ?? no_result).skips)
+				"| ${label} | ${U64.to_str(wins(j))} of ${U64.to_str(List.len(deals))} | ${thousandths(U64.to_f64(wins(j)) / n)} | ${by_rotation} | ${U64.to_str(cuts)} / ${U64.to_str(skips)} |"
 			},
 		)
 		against = List.map(
@@ -302,7 +326,7 @@ Arena :: [].{
 		Str.join_with(
 			[
 				"Seeds ${U64.to_str(first_seed)}-${U64.to_str(last_seed)}, each dealt four times with the decks turned a seat, so red plays every player's deck: ${U64.to_str(List.len(deals))} games per strategy. Red is the strategy; the other seats play Strategy.champion. Each game stops at the first player home.\n",
-				"| red plays as | red won | win rate | wins with the decks turned 0 / 1 / 2 / 3 seats | searches cut |",
+				"| red plays as | red won | win rate | wins with the decks turned 0 / 1 / 2 / 3 seats | searches cut / turns skipped (both should be 0) |",
 				"|---|---|---|---|---|",
 				Str.join_with(rows, "\n"),
 				"\nEach against ${List.first(labels) ?? "the first"}, on the same deals:\n",

@@ -12,7 +12,7 @@
 #      as a cheaper play than face + 7; and last the 9 and 10, so a square
 #      reached with a 2 or 3 beats one reached with a 9 or 10.
 #
-# rank_board.roc prints it; the page's heat map colors the board by it.
+# gen_square_values.roc turns the ranking into SquareValues.roc.
 import Board
 import Reach
 import Type

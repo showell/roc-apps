@@ -63,7 +63,9 @@ FastTrack :: [].{
 	}
 
 	## The computer's next click, and the rest of its plan: a finished turn
-	## is passed on; otherwise the plan in hand, or a new one.
+	## is passed on; otherwise the plan in hand, or a new one. With no play at
+	## all the turn is passed on too, as Arena.step does, so the page can
+	## never wait on a tick that does nothing.
 	next_click : FastTrack.Model, Strategy.Strategy -> Try({ msg : Type.GameMsg, rest : List(Type.GameMsg) }, [NoPlay])
 	next_click = |model, strategy|
 		if Player.get_active_player(model.game).turn == TurnDone {
@@ -80,7 +82,7 @@ FastTrack :: [].{
 				}
 			match plan {
 				[first, .. as rest] => Ok({ msg: first, rest })
-				[] => Err(NoPlay)
+				[] => Ok({ msg: RotateBoard, rest: [] })
 			}
 		}
 

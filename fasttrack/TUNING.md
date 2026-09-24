@@ -1,25 +1,22 @@
 # Tuning the computer
 
 **Today's computer is `Strategy.champion`** (Strategy.roc): the square values
-of Steve's ranking (SquareValues.roc), a base bonus of 2500 a step (1000 until 2026-09-24), and the A,
+of Steve's ranking (SquareValues.roc), a base bonus of 2500 a step, and the A,
 joker and J hoarded at 1500, 1000, 500 and 0 by pieces home, opponents
-ignored, with a whole-turn search
-(Search.roc). Experiments run through Arena.roc (`exp_*.roc`). The first two
-sections below tuned an earlier computer -- a distance heuristic with a
-limited search -- that has since been removed; they are kept for what they
-found about the game.
+ignored, with a whole-turn search (Search.roc). The experiments below are in
+the order they ran; the tools are the README's.
 
-The computer's weights (`Agent.Weights`) were chosen by racing computers
-against each other: `web/tune.sh` over `web/race.mjs`, on the LLVM build of
-`4a9f3b7`. A race is 100 deals, each played twice (abab and baba, so seats do
-not decide it), four computers, solo; the number is A's share of the 200
-games, with its standard error. A candidate replaced the champion only when it
-won by more than one standard error.
+**The 2500 base bonus was adopted on Steve's call** on pooled evidence (+1
+point a game, 1.9 standard errors over 4000 deals), though on fresh seeds
+alone it showed only +0.6 -- short of the README's rule (a winner confirms on
+fresh seeds). It has never done worse than 1000. Seeds 1-1000 are spent on
+it; the next experiment should start at 1001.
 
-**The result: `home = 10` and `back4 = 6`**, everything else off (danger 0,
-out of the pen 0, hop 1, pen 4). `home = 10` won 55.0% ± 3.5 against the
-untuned computer on 100 deals no stage had seen; `back4 = 6` added a smaller
-gain, 54% ± 2.5 over 400 games (below).
+**The first two sections tuned an earlier computer**, since removed: a
+distance heuristic with a limited search, whose weights (`Agent.Weights`) were
+raced against each other by `web/tune.sh` over `web/race.mjs` (100 deals
+played twice, abab and baba). They found `home = 10` and `back4 = 6`, and are
+kept for what they found about the game, not as settings of today's computer.
 
 ## The races, 2026-09-22
 

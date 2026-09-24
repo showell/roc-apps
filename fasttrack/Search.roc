@@ -171,6 +171,8 @@ Search :: [].{
 		var $done = List.drop_if(start, is_open)
 		var $depth = 0
 		var $capped = Bool.False
+		# A turn is at most five plays (a line ends when the hand is refilled),
+		# so the depth guard never binds; max_lines is the cap that can.
 		while List.any($level, is_open) and $depth < 8 {
 			grown = List.join_map(List.keep_if($level, is_open), expand)
 			merged = distinct_lines(grown)

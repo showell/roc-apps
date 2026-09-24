@@ -33,9 +33,6 @@ Assoc :: [].{
 	set_from_list : List(a) -> Assoc.AssocSet(a) where [a.is_eq : a, a -> Bool]
 	set_from_list = |items| List.fold(items, [], |set, item| set_insert(set, item))
 
-	set_remove : Assoc.AssocSet(a), a -> Assoc.AssocSet(a) where [a.is_eq : a, a -> Bool]
-	set_remove = |set, item| List.drop_if(set, |other| other == item)
-
 	set_member : Assoc.AssocSet(a), a -> Bool where [a.is_eq : a, a -> Bool]
 	set_member = |set, item| List.contains(set, item)
 }

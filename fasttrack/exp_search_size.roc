@@ -1,9 +1,10 @@
 # Diagnosis: how big a search gets, and how much of it is the same position
 # reached twice. Plays one seed with four champions to the first player home,
 # finds the search with the most lines, and shows its board and hand. Then,
-# level by level (a level is one more card played), how many lines the search
-# grew, how many Search.distinct_lines kept (one per position), and how many
-# distinct boards they reach. For when a search is slow.
+# level by level (a level is one more card played) the way Search.all_lines
+# goes: how many lines it grew, how many positions Search.distinct_lines
+# kept, how many the Search.max_lines cap let through, and how many distinct
+# boards those reach. For when a search is slow.
 #
 #   fasttrack/run_exp.sh exp_search_size
 app [main!] { pf: platform "cli/platform/main.roc" }
@@ -30,52 +31,26 @@ loc_str = |zone_colors, s|
 		"${List.get(zone_colors, Board.zone(s)) ?? "?"}.${Board.loc_of(zone_colors, s).id}"
 	}
 
-## A number for every piece: its square and its color.
-sorted_nums : List(U64) -> List(U64)
-sorted_nums = |xs| List.sort_with(xs, |a, b| if a < b { Before } else if a > b { After } else { Same })
-
-Key : { board : List(U64), hand : List(U64), turn : Type.Turn, credits : I64 }
-
-key : Search.Line -> Key
-key = |line| {
-	g = line.game
-	p = Player.get_active_player(g)
-	{
-		board: List.join(List.map_with_index(g.board, |v, sq| if v == 0 { [] } else { [10 * sq + U8.to_u64(v) - 1] })),
-		hand: sorted_nums(List.map(p.hand, |c| I64.to_u64_wrap(Config.card_value(c)))),
-		turn: p.turn,
-		credits: p.get_out_credits,
-	}
-}
-
-distinct_keys : List(Search.Line) -> U64
-distinct_keys = |lines|
-	List.len(
-		List.fold(
-			lines,
-			[],
-			|kept, l| {
-				k = key(l)
-				if List.contains(kept, k) { kept } else { List.append(kept, k) }
-			},
-		),
-	)
+## A line's board as numbers: every piece's square and color.
+board_key : Search.Line -> List(U64)
+board_key = |line| List.join(List.map_with_index(line.game.board, |v, sq| if v == 0 { [] } else { [10 * sq + U8.to_u64(v) - 1] }))
 
 ## The distinct boards among these lines, each with how many lines reach it
-## and one of them.
+## and one of them: the lines sorted by board, then counted in runs.
 boards : List(Search.Line) -> List({ board : List(U64), n : U64, example : Search.Line })
-boards = |lines|
+boards = |lines| {
+	keyed = List.map(lines, |l| { board: board_key(l), line: l })
+	sorted = List.sort_with(keyed, |a, b| if Search.key_before(a.board, b.board) { Before } else if Search.key_before(b.board, a.board) { After } else { Same })
 	List.fold(
-		lines,
+		sorted,
 		[],
-		|kept, l| {
-			b = key(l).board
-			match List.find_first_index(kept, |x| x.board == b) {
-				Ok(i) => List.update(kept, i, |x| { ..x, n: x.n + 1 }) ?? kept
-				Err(_) => List.append(kept, { board: b, n: 1, example: l })
-			}
-		},
+		|runs, x|
+			match List.last(runs) {
+				Ok(r) if r.board == x.board => List.set(runs, List.len(runs) - 1, { ..r, n: r.n + 1 }) ?? runs
+				_ => List.append(runs, { board: x.board, n: 1, example: x.line })
+			},
 	)
+}
 
 pieces : Type.Game -> Str
 pieces = |g|
@@ -126,7 +101,7 @@ main! = |_args| {
 	Echo.line!("The biggest: ${U64.to_str($best.n)} lines, ${mover.color} to play in round ${U64.to_str($best.turn)}, hand ${Str.join_with(mover.hand, " ")}, discard credits ${I64.to_str(mover.get_out_credits)}. The board:\n")
 	Echo.line!(pieces(g))
 	Echo.line!("\nLevel by level (a level is one more card):\n")
-	Echo.line!("| level | open lines | grown | kept by distinct_lines | positions | boards |")
+	Echo.line!("| level | open lines | grown | one per position (distinct_lines) | kept, at most Search.max_lines | boards |")
 	Echo.line!("|---|---|---|---|---|---|")
 	first = Search.settle({ game: g, msgs: [], drew: Bool.False })
 	var $level = first
@@ -136,14 +111,15 @@ main! = |_args| {
 		open = List.keep_if($level, Search.is_open)
 		grown = List.join_map(open, Search.expand)
 		merged = Search.distinct_lines(grown)
-		Echo.line!("| ${U64.to_str($depth + 1)} | ${U64.to_str(List.len(open))} | ${U64.to_str(List.len(grown))} | ${U64.to_str(List.len(merged))} | ${U64.to_str(distinct_keys(grown))} | ${U64.to_str(List.len(boards(grown)))} |")
-		$level = merged
+		kept = List.take_first(merged, Search.max_lines)
+		Echo.line!("| ${U64.to_str($depth + 1)} | ${U64.to_str(List.len(open))} | ${U64.to_str(List.len(grown))} | ${U64.to_str(List.len(merged))} | ${U64.to_str(List.len(kept))} | ${U64.to_str(List.len(boards(kept)))} |")
+		$level = kept
 		$done = List.concat($done, List.drop_if(merged, Search.is_open))
 		$depth = $depth + 1
 	}
 	finals = List.keep_if(List.concat($done, List.keep_if($level, Search.is_open)), |l| !List.is_empty(l.msgs))
 	final_boards = List.sort_with(boards(finals), |x, y| if x.n > y.n { Before } else if x.n < y.n { After } else { Same })
-	Echo.line!("\nThe search's answer: ${U64.to_str(List.len(finals))} lines, ${U64.to_str(distinct_keys(finals))} positions, ${U64.to_str(List.len(final_boards))} boards.\n")
+	Echo.line!("\nThe search's answer: ${U64.to_str(List.len(finals))} lines, ${U64.to_str(List.len(final_boards))} boards.\n")
 	Echo.line!("The boards reached most often:\n")
 	for b in List.take_first(final_boards, 3) {
 		Echo.line!("${U64.to_str(b.n)} lines reach:\n${pieces(b.example.game)}\n")

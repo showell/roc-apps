@@ -17,9 +17,11 @@ import Strategy
 variants : List({ label : Str, strategy : Strategy.Strategy })
 variants = List.map([1500, 4000], |b| { label: "base bonus ${I64.to_str(b)}", strategy: { ..Strategy.champion, base_bonus: b } })
 
-## Seeds first_seed, first_seed + 1, ...; each is dealt four times.
+## Seeds first_seed, first_seed + 1, ...; each is dealt four times. Use
+## seeds no earlier experiment chose its winner on: 1-1000 went on the base
+## bonus (TUNING.md).
 first_seed : U64
-first_seed = 1
+first_seed = 1001
 
 seeds : U64
 seeds = 500
