@@ -1,5 +1,5 @@
 // The way home, and the dev channel's banner, for every page of Steve's Roc
-// Projects. A page loads it with one line, the path relative to the page:
+// Apps. A page loads it with one line, the path relative to the page:
 //
 //   <script src="../shared/home.js"></script>
 //
