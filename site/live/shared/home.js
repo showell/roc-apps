@@ -1,5 +1,5 @@
-// The way home, and the dev channel's banner, for every page of Cobblestone Roc
-// Projects. A page loads it with one line, the path relative to the page:
+// The way home, and the dev channel's banner, for every page of Steve's Roc
+// Apps. A page loads it with one line, the path relative to the page:
 //
 //   <script src="../shared/home.js"></script>
 //
@@ -17,7 +17,7 @@
   if (new URL('.', location.href).href !== root.href) {
     const home = document.createElement('a');
     home.href = root.href;
-    home.textContent = 'Cobblestone Roc Projects';
+    home.textContent = "Steve's Roc Apps";
     home.style.cssText = pill + ';background:rgba(24,24,24,.72)';
     bar.append(home);
   }
