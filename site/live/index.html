@@ -20,6 +20,8 @@
   .card h3 { margin: 0 0 4px; font-size: 17px; }
   /* A canvas app's picture: its page's last frame, taken by the build. */
   .shot { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 5px; margin: -2px 0 10px; background: #000; }
+  /* A board game's picture is its whole square board, on the page's white. */
+  .shot.board { aspect-ratio: 1 / 1; object-fit: contain; background: #fff; }
   .card p { margin: 0; color: var(--muted); font-size: 14px; }
   .links { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; }
   .when { margin-top: 8px; font-size: 12px; color: var(--muted); }
@@ -88,6 +90,16 @@ says how to build those.</p>
     <a href="trick_or_treat/"><img class="shot" src="trick_or_treat/shot.png" alt="" loading="lazy"></a>
     <h3><a href="trick_or_treat/">Trick or Treat</a></h3>
     <p>A child walks up to a house past six dancing skeletons, the door opens, and they think better of it. Space pauses, the arrows scrub, J skips a second.</p>
+  </section>
+</div>
+
+<h2>Board Games</h2>
+<div class="cards">
+  <section class="card" data-app="fasttrack">
+    <a href="fasttrack/"><img class="shot board" src="fasttrack/shot.png" alt="" loading="lazy"></a>
+    <h3><a href="fasttrack/">Fast Track</a></h3>
+    <p>The marble race: you play red against three computer players, and their marbles walk the board as they move. Ported from Steve's Elm version of the game; the computer players are new, searching every way to play their turn through the game's own rules and keeping the one they value most.</p>
+    <div class="links"><a href="https://github.com/showell/elm-fasttrack">Steve's Elm original</a><a href="https://github.com/showell/roc-apps/tree/master/fasttrack">How it is built</a></div>
   </section>
 </div>
 
