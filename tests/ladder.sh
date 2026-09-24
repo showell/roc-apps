@@ -34,7 +34,8 @@
 # (rocemit said no, by reason), TIMEOUT.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROC="${ROC:-$HOME/build/roc-nightly/roc}"
+# The compiler every roc-apps build uses: ../roc-nightly.txt.
+ROC="${ROC:-$HOME/build/roc-nightly/$(cat "$HERE/../roc-nightly.txt")/roc}"
 # The roc a verdict came from is part of its stamp: the nightly's directory,
 # which names its date and commit.
 ROC_ID="$(readlink -f "$ROC")"
