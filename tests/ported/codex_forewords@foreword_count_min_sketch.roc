@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([54, 16, 21, 13, 27, 16, 21, 22, 81, 50, 16, 25, 18, 14, 52, 17, 18, 45, 34, 13, 14, 24, 20, 2, 42, 60]))
+	line!(Text.printed("Foreword/CountMinSketch OK"))
 	Ok({})
 }

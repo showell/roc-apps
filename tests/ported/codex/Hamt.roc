@@ -4,8 +4,8 @@ import Maybe
 import Text
 
 Hamt :: [].{
-	HamtEntry(a) : { key : List(U8), value : a }
-	HamtNode(a) := [HamtEmpty, HamtLeaf(I64, List(U8), a), HamtCollision(I64, List(Hamt.HamtEntry(a))), HamtBranch(I64, List(Hamt.HamtNode(a)))].{
+	HamtEntry(a) : { key : Text, value : a }
+	HamtNode(a) := [HamtEmpty, HamtLeaf(I64, Text, a), HamtCollision(I64, List(Hamt.HamtEntry(a))), HamtBranch(I64, List(Hamt.HamtNode(a)))].{
 		is_eq : Hamt.HamtNode(a), Hamt.HamtNode(a) -> Bool where [a.is_eq : a, a -> Bool]
 		is_eq = |a, b| eq_HamtNode(a, b)
 	}
@@ -16,10 +16,10 @@ Hamt :: [].{
 	hamt_empty : Hamt.HamtMap(a)
 	hamt_empty = { root: HamtEmpty, size: 0 }
 
-	hamt_djb2_hash : List(U8) -> I64
+	hamt_djb2_hash : Text -> I64
 	hamt_djb2_hash = |s| hamt_djb2_loop(s, 0, Text.len(s), 5381)
 
-	hamt_djb2_loop : List(U8), I64, I64, I64 -> I64
+	hamt_djb2_loop : Text, I64, I64, I64 -> I64
 	hamt_djb2_loop = |s, i, len, h| (if (i == len) { abs_int(h) } else { hamt_djb2_loop(s, (i + 1), len, I64.plus_wrap(I64.times_wrap(h, 33), Text.char_at(s, i))) })
 
 	abs_int : I64 -> I64
@@ -67,13 +67,13 @@ Hamt :: [].{
 	list_remove_at_acc : List(a), I64, List(a) -> List(a)
 	list_remove_at_acc = |xs, i, acc| (if (i == 0) { List.concat(acc, ListUtils.list_tail(xs)) } else { list_remove_at_acc(ListUtils.list_tail(xs), (i - 1), List.append(acc, (List.get(xs, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))) })
 
-	hamt_get : Hamt.HamtMap(a), List(U8) -> Maybe.Maybe(a)
+	hamt_get : Hamt.HamtMap(a), Text -> Maybe.Maybe(a)
 	hamt_get = |m, key| ({
 		hash = hamt_djb2_hash(key)
 		hamt_node_get(m.root, hash, key, 0)
 	})
 
-	hamt_node_get : Hamt.HamtNode(a), I64, List(U8), I64 -> Maybe.Maybe(a)
+	hamt_node_get : Hamt.HamtNode(a), I64, Text, I64 -> Maybe.Maybe(a)
 	hamt_node_get = |node, hash, key, level| (match node {
 		HamtEmpty => None
 		HamtLeaf(_h, k, v) => (if (k == key) { Just(v) } else { None })
@@ -87,20 +87,20 @@ Hamt :: [].{
 		})
 	})
 
-	collision_find : List(Hamt.HamtEntry(a)), List(U8) -> Maybe.Maybe(a)
+	collision_find : List(Hamt.HamtEntry(a)), Text -> Maybe.Maybe(a)
 	collision_find = |entries, key| (if (U64.to_i64_wrap(List.len(entries)) == 0) { None } else { ({
 		e = (List.get(entries, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))
 		(if (e.key == key) { Just(e.value) } else { collision_find(ListUtils.list_tail(entries), key) })
 	}) })
 
-	hamt_set : Hamt.HamtMap(a), List(U8), a -> Hamt.HamtMap(a)
+	hamt_set : Hamt.HamtMap(a), Text, a -> Hamt.HamtMap(a)
 	hamt_set = |m, key, value| ({
 		hash = hamt_djb2_hash(key)
 		result = hamt_node_set(m.root, hash, key, value, 0)
 		{ root: result.node, size: (m.size + result.delta) }
 	})
 
-	hamt_node_set : Hamt.HamtNode(a), I64, List(U8), a, I64 -> Hamt.HamtSetResult(a)
+	hamt_node_set : Hamt.HamtNode(a), I64, Text, a, I64 -> Hamt.HamtSetResult(a)
 	hamt_node_set = |node, hash, key, value, level| (match node {
 		HamtEmpty => { node: HamtLeaf(hash, key, value), delta: 1 }
 		HamtLeaf(h, k, v) => (if (k == key) { { node: HamtLeaf(h, key, value), delta: 0 } } else { (if (h == hash) { { node: HamtCollision(h, [{ key: k, value: v }, { key: key, value: value }]), delta: 1 } } else { ({
@@ -135,7 +135,7 @@ Hamt :: [].{
 		HamtBranch(pow2(chunk), [node])
 	})
 
-	make_branch : I64, List(U8), a, I64, List(U8), a, I64 -> Hamt.HamtNode(a)
+	make_branch : I64, Text, a, I64, Text, a, I64 -> Hamt.HamtNode(a)
 	make_branch = |h1, k1, v1, h2, k2, v2, level| (if (level > 6) { HamtCollision(h1, [{ key: k1, value: v1 }, { key: k2, value: v2 }]) } else { ({
 		c1 = extract_chunk(h1, level)
 		c2 = extract_chunk(h2, level)
@@ -145,16 +145,16 @@ Hamt :: [].{
 		}) } else { (if (c1 < c2) { HamtBranch(bitmap_set(pow2(c1), c2), [HamtLeaf(h1, k1, v1), HamtLeaf(h2, k2, v2)]) } else { HamtBranch(bitmap_set(pow2(c2), c1), [HamtLeaf(h2, k2, v2), HamtLeaf(h1, k1, v1)]) }) })
 	}) })
 
-	collision_set : List(Hamt.HamtEntry(a)), List(U8), a -> Hamt.CollisionSetResult(a)
+	collision_set : List(Hamt.HamtEntry(a)), Text, a -> Hamt.CollisionSetResult(a)
 	collision_set = |entries, key, value| collision_set_loop(entries, key, value, 0)
 
-	collision_set_loop : List(Hamt.HamtEntry(a)), List(U8), a, I64 -> Hamt.CollisionSetResult(a)
+	collision_set_loop : List(Hamt.HamtEntry(a)), Text, a, I64 -> Hamt.CollisionSetResult(a)
 	collision_set_loop = |entries, key, value, i| (if (i == U64.to_i64_wrap(List.len(entries))) { { entries: List.concat(entries, [{ key: key, value: value }]), delta: 1 } } else { ({
 		e = (List.get(entries, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 		(if (e.key == key) { { entries: list_replace_at(entries, i, { key: key, value: value }), delta: 0 } } else { collision_set_loop(entries, key, value, (i + 1)) })
 	}) })
 
-	hamt_remove : Hamt.HamtMap(a), List(U8) -> Hamt.HamtMap(a)
+	hamt_remove : Hamt.HamtMap(a), Text -> Hamt.HamtMap(a)
 	hamt_remove = |m, key| ({
 		hash = hamt_djb2_hash(key)
 		result = hamt_node_remove(m.root, hash, key, 0)
@@ -164,7 +164,7 @@ Hamt :: [].{
 		})
 	})
 
-	hamt_node_remove : Hamt.HamtNode(a), I64, List(U8), I64 -> Maybe.Maybe(Hamt.HamtNode(a))
+	hamt_node_remove : Hamt.HamtNode(a), I64, Text, I64 -> Maybe.Maybe(Hamt.HamtNode(a))
 	hamt_node_remove = |node, hash, key, level| (match node {
 		HamtEmpty => None
 		HamtLeaf(_h, k, _v) => (if (k == key) { Just(HamtEmpty) } else { None })
@@ -196,16 +196,16 @@ Hamt :: [].{
 	})
 
 	# collision_remove builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	collision_remove : List(Hamt.HamtEntry(a)), List(U8) -> List(Hamt.HamtEntry(a))
+	collision_remove : List(Hamt.HamtEntry(a)), Text -> List(Hamt.HamtEntry(a))
 	collision_remove = |entries, key| collision_remove_acc(entries, key, [])
 
-	collision_remove_acc : List(Hamt.HamtEntry(a)), List(U8), List(Hamt.HamtEntry(a)) -> List(Hamt.HamtEntry(a))
+	collision_remove_acc : List(Hamt.HamtEntry(a)), Text, List(Hamt.HamtEntry(a)) -> List(Hamt.HamtEntry(a))
 	collision_remove_acc = |entries, key, acc| (if (U64.to_i64_wrap(List.len(entries)) == 0) { acc } else { ({
 		e = (List.get(entries, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))
 		(if (e.key == key) { List.concat(acc, ListUtils.list_tail(entries)) } else { collision_remove_acc(ListUtils.list_tail(entries), key, List.append(acc, e)) })
 	}) })
 
-	hamt_contains : Hamt.HamtMap(a), List(U8) -> Bool
+	hamt_contains : Hamt.HamtMap(a), Text -> Bool
 	hamt_contains = |m, key| (match hamt_get(m, key) {
 		Just(_val) => True
 		None => False
@@ -214,10 +214,10 @@ Hamt :: [].{
 	hamt_size : Hamt.HamtMap(a) -> I64
 	hamt_size = |m| m.size
 
-	hamt_fold : (a, List(U8), b -> a), a, Hamt.HamtMap(b) -> a
+	hamt_fold : (a, Text, b -> a), a, Hamt.HamtMap(b) -> a
 	hamt_fold = |f, init, m| hamt_node_fold(f, init, m.root)
 
-	hamt_node_fold : (a, List(U8), b -> a), a, Hamt.HamtNode(b) -> a
+	hamt_node_fold : (a, Text, b -> a), a, Hamt.HamtNode(b) -> a
 	hamt_node_fold = |f, acc, node| (match node {
 		HamtEmpty => acc
 		HamtLeaf(_h, k, v) => f(acc, k, v)
@@ -225,13 +225,13 @@ Hamt :: [].{
 		HamtBranch(_bitmap, children) => fold_children(f, acc, children, 0)
 	})
 
-	fold_entries : (a, List(U8), b -> a), a, List(Hamt.HamtEntry(b)), I64 -> a
+	fold_entries : (a, Text, b -> a), a, List(Hamt.HamtEntry(b)), I64 -> a
 	fold_entries = |f, acc, entries, i| (if (i == U64.to_i64_wrap(List.len(entries))) { acc } else { ({
 		e = (List.get(entries, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 		fold_entries(f, f(acc, e.key, e.value), entries, (i + 1))
 	}) })
 
-	fold_children : (a, List(U8), b -> a), a, List(Hamt.HamtNode(b)), I64 -> a
+	fold_children : (a, Text, b -> a), a, List(Hamt.HamtNode(b)), I64 -> a
 	fold_children = |f, acc, children, i| (if (i == U64.to_i64_wrap(List.len(children))) { acc } else { fold_children(f, hamt_node_fold(f, acc, (List.get(children, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))), children, (i + 1)) })
 
 	hamt_to_list : Hamt.HamtMap(a) -> List(Hamt.HamtEntry(a))
@@ -266,6 +266,6 @@ Hamt :: [].{
 		})
 	})
 
-	lam_0 : List(Hamt.HamtEntry(a)), List(U8), a -> List(Hamt.HamtEntry(a))
+	lam_0 : List(Hamt.HamtEntry(a)), Text, a -> List(Hamt.HamtEntry(a))
 	lam_0 = |acc, k, v| List.concat(acc, [{ key: k, value: v }])
 }

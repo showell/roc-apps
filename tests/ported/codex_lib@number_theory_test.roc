@@ -34,25 +34,25 @@ import cdx.Text
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-show_bool : Bool -> List(U8)
-show_bool = |b| (if b { [14, 21, 25, 13] } else { [28, 15, 23, 19, 13] })
+show_bool : Bool -> Text
+show_bool = |b| (if b { "true" } else { "false" })
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([29, 24, 22, 74, 4, 5, 66, 11, 75, 77], Text.show_int(NumberTheory.gcd(12, 8)))))
-	line!(Text.printed(List.concat([29, 24, 22, 74, 4, 10, 66, 4, 6, 75, 77], Text.show_int(NumberTheory.gcd(17, 13)))))
-	line!(Text.printed(List.concat([23, 24, 26, 74, 7, 66, 9, 75, 77], Text.show_int(NumberTheory.lcm(4, 6)))))
-	line!(Text.printed(List.concat([23, 24, 26, 74, 10, 66, 8, 75, 77], Text.show_int(NumberTheory.lcm(7, 5)))))
-	line!(Text.printed(List.concat([26, 16, 22, 73, 13, 36, 31, 74, 5, 66, 4, 3, 66, 4, 3, 3, 3, 75, 77], Text.show_int(NumberTheory.mod_exp(2, 10, 1000)))))
-	line!(Text.printed(List.concat([26, 16, 22, 73, 13, 36, 31, 74, 6, 66, 10, 66, 4, 3, 3, 75, 77], Text.show_int(NumberTheory.mod_exp(3, 7, 100)))))
-	line!(Text.printed(List.concat([17, 19, 73, 31, 21, 17, 26, 13, 74, 5, 75, 77], show_bool(NumberTheory.is_prime(2)))))
-	line!(Text.printed(List.concat([17, 19, 73, 31, 21, 17, 26, 13, 74, 4, 10, 75, 77], show_bool(NumberTheory.is_prime(17)))))
-	line!(Text.printed(List.concat([17, 19, 73, 31, 21, 17, 26, 13, 74, 4, 8, 75, 77], show_bool(NumberTheory.is_prime(15)))))
-	line!(Text.printed(List.concat([17, 19, 73, 31, 21, 17, 26, 13, 74, 4, 75, 77], show_bool(NumberTheory.is_prime(1)))))
-	line!(Text.printed(List.concat([31, 21, 17, 26, 13, 19, 77], Text.show_int(U64.to_i64_wrap(List.len(NumberTheory.primes_up_to(30)))))))
-	line!(Text.printed(List.concat([14, 16, 14, 17, 13, 18, 14, 74, 4, 5, 75, 77], Text.show_int(NumberTheory.euler_totient(12)))))
-	line!(Text.printed(List.concat([28, 15, 24, 14, 16, 21, 19, 74, 9, 3, 75, 77], Text.show_int(U64.to_i64_wrap(List.len(NumberTheory.factor(60)))))))
-	line!(Text.printed(List.concat([26, 16, 22, 73, 17, 18, 33, 74, 6, 66, 10, 75, 77], Text.show_int(NumberTheory.mod_inverse(3, 7)))))
+	line!(Text.printed(Text.concat("gcd(12,8)=", Text.show_int(NumberTheory.gcd(12, 8)))))
+	line!(Text.printed(Text.concat("gcd(17,13)=", Text.show_int(NumberTheory.gcd(17, 13)))))
+	line!(Text.printed(Text.concat("lcm(4,6)=", Text.show_int(NumberTheory.lcm(4, 6)))))
+	line!(Text.printed(Text.concat("lcm(7,5)=", Text.show_int(NumberTheory.lcm(7, 5)))))
+	line!(Text.printed(Text.concat("mod-exp(2,10,1000)=", Text.show_int(NumberTheory.mod_exp(2, 10, 1000)))))
+	line!(Text.printed(Text.concat("mod-exp(3,7,100)=", Text.show_int(NumberTheory.mod_exp(3, 7, 100)))))
+	line!(Text.printed(Text.concat("is-prime(2)=", show_bool(NumberTheory.is_prime(2)))))
+	line!(Text.printed(Text.concat("is-prime(17)=", show_bool(NumberTheory.is_prime(17)))))
+	line!(Text.printed(Text.concat("is-prime(15)=", show_bool(NumberTheory.is_prime(15)))))
+	line!(Text.printed(Text.concat("is-prime(1)=", show_bool(NumberTheory.is_prime(1)))))
+	line!(Text.printed(Text.concat("primes=", Text.show_int(U64.to_i64_wrap(List.len(NumberTheory.primes_up_to(30)))))))
+	line!(Text.printed(Text.concat("totient(12)=", Text.show_int(NumberTheory.euler_totient(12)))))
+	line!(Text.printed(Text.concat("factors(60)=", Text.show_int(U64.to_i64_wrap(List.len(NumberTheory.factor(60)))))))
+	line!(Text.printed(Text.concat("mod-inv(3,7)=", Text.show_int(NumberTheory.mod_inverse(3, 7)))))
 	Ok({})
 }

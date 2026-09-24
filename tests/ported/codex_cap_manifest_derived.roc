@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([24, 15, 31, 15, 32, 17, 23, 17, 14, 30, 2, 26, 15, 18, 17, 28, 13, 19, 14, 2, 22, 13, 21, 17, 33, 13, 22, 2, 28, 21, 16, 26, 2, 16, 31, 13, 18, 17, 18, 29, 2, 13, 28, 28, 13, 24, 14, 19]))
+	line!(Text.printed("capability manifest derived from opening effects"))
 	Ok({})
 }

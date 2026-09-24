@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([41, 43, 81, 60, 44, 13, 15, 21, 13, 19, 14, 44, 13, 17, 29, 20, 32, 16, 21, 2, 42, 60]))
+	line!(Text.printed("AI/KNearestNeighbor OK"))
 	Ok({})
 }

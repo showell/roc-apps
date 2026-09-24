@@ -44,6 +44,6 @@ loop5 = |cfg, r, units, turn, active| (if (r.state >= 8) { turn } else { ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([14, 25, 21, 18, 19, 77], Text.show_int(loop5({ width: 4, nplayers: 2, limit: 3, data: [1, 2] }, { state: 0 }, [7, 8], 0, 0)))))
+	line!(Text.printed(Text.concat("turns=", Text.show_int(loop5({ width: 4, nplayers: 2, limit: 3, data: [1, 2] }, { state: 0 }, [7, 8], 0, 0)))))
 	Ok({})
 }

@@ -13,8 +13,8 @@ FactLog :: [].{
 	fl_header_size : I64
 	fl_header_size = 78
 
-	fl_magic : List(U8)
-	fl_magic = [50, 42, 48, 39, 62, 54, 45, 4]
+	fl_magic : Text
+	fl_magic = "CODEXFS1"
 
 	fl_kind_definition : I64
 	fl_kind_definition = 30
@@ -79,14 +79,14 @@ FactLog :: [].{
 		(mem9, mem__8)
 	})
 
-	fl_text! : Mem.Mem, I64, I64, I64 => (Mem.Mem, List(U8))
-	fl_text! = |mem, buf, off, len| fl_text_loop!(mem, buf, off, len, 0, [])
+	fl_text! : Mem.Mem, I64, I64, I64 => (Mem.Mem, Text)
+	fl_text! = |mem, buf, off, len| fl_text_loop!(mem, buf, off, len, 0, "")
 
-	fl_text_loop! : Mem.Mem, I64, I64, I64, I64, List(U8) => (Mem.Mem, List(U8))
+	fl_text_loop! : Mem.Mem, I64, I64, I64, I64, Text => (Mem.Mem, Text)
 	fl_text_loop! = |mem, buf, off, len, i, acc| (if (i >= len) { (mem, acc) } else { ({
 		(mem1, mem__1) = Mem.load!(mem, buf, (off + i), 1)
 		ch = Text.char_to_text(mem__1)
-		fl_text_loop!(mem1, buf, off, len, (i + 1), List.concat(acc, ch))
+		fl_text_loop!(mem1, buf, off, len, (i + 1), Text.concat(acc, ch))
 	}) })
 
 	fl_sectors_for : I64 -> I64

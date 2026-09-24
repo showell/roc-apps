@@ -62,11 +62,11 @@ eq_Step = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([3, 4, 2, 19, 14, 15, 21, 14]))
-	line!(Text.printed(List.concat([3, 5, 2, 17, 28, 73, 14, 15, 17, 23, 2], Text.show_int(by_if(10, 0)))))
-	line!(Text.printed(List.concat([3, 6, 2, 27, 20, 13, 18, 73, 18, 16, 18, 14, 15, 17, 23, 2], Text.show_int(by_when_nontail(Go(10))))))
-	line!(Text.printed(List.concat([3, 7, 2, 27, 20, 13, 18, 73, 14, 15, 17, 23, 2], Text.show_int(by_when_tail(Go(10), 0)))))
-	line!(Text.printed(List.concat([3, 8, 2, 27, 20, 13, 18, 73, 32, 15, 21, 13, 2], Text.show_int(by_when_bare(Go(10), 0)))))
-	line!(Text.printed([3, 9, 2, 22, 16, 18, 13]))
+	line!(Text.printed("01 start"))
+	line!(Text.printed(Text.concat("02 if-tail ", Text.show_int(by_if(10, 0)))))
+	line!(Text.printed(Text.concat("03 when-nontail ", Text.show_int(by_when_nontail(Go(10))))))
+	line!(Text.printed(Text.concat("04 when-tail ", Text.show_int(by_when_tail(Go(10), 0)))))
+	line!(Text.printed(Text.concat("05 when-bare ", Text.show_int(by_when_bare(Go(10), 0)))))
+	line!(Text.printed("06 done"))
 	Ok({})
 }

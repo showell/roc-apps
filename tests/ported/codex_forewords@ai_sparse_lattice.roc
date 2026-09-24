@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([41, 43, 81, 45, 31, 15, 21, 19, 13, 49, 15, 14, 14, 17, 24, 13, 2, 42, 60]))
+	line!(Text.printed("AI/SparseLattice OK"))
 	Ok({})
 }

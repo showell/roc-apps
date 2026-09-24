@@ -26,36 +26,36 @@ import cdx.Text
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-test_from_int : List(U8)
+test_from_int : Text
 test_from_int = ({
 	a = BigInt.bigint_from_integer(12345)
 	BigInt.bigint_to_text(a)
 })
 
-test_add : List(U8)
+test_add : Text
 test_add = ({
 	a = BigInt.bigint_from_integer(9999)
 	b = BigInt.bigint_from_integer(1)
 	BigInt.bigint_to_text(BigInt.bigint_add(a, b))
 })
 
-test_mul : List(U8)
+test_mul : Text
 test_mul = ({
 	a = BigInt.bigint_from_integer(9999)
 	b = BigInt.bigint_from_integer(9999)
 	BigInt.bigint_to_text(BigInt.bigint_mul(a, b))
 })
 
-test_negate : List(U8)
+test_negate : Text
 test_negate = ({
 	a = BigInt.bigint_from_integer(42)
 	BigInt.bigint_to_text(BigInt.bigint_negate(a))
 })
 
-test_factorial : List(U8)
+test_factorial : Text
 test_factorial = BigInt.bigint_to_text(BigInt.bigint_factorial(10))
 
-test_compare : List(U8)
+test_compare : Text
 test_compare = ({
 	a = BigInt.bigint_from_integer(100)
 	b = BigInt.bigint_from_integer(200)

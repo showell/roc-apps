@@ -25,51 +25,51 @@ import cdx.Text
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-test_push_pop : List(U8)
+test_push_pop : Text
 test_push_pop = ({
 	b = CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_new(5), 10), 20), 30)
 	f = CircularBuffer.circbuf_front(b)
 	bk = CircularBuffer.circbuf_back(b)
 	(match f {
 		Just(fv) => (match bk {
-			Just(bv) => List.concat(List.concat(List.concat(List.concat(List.concat([24, 16, 25, 18, 14, 77], Text.show_int(CircularBuffer.circbuf_count(b))), [2, 28, 21, 16, 18, 14, 77]), Text.show_int(fv)), [2, 32, 15, 24, 34, 77]), Text.show_int(bv))
-			None => [32, 34, 73, 18, 16, 18, 13]
-			None => [28, 73, 18, 16, 18, 13]
+			Just(bv) => Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("count=", Text.show_int(CircularBuffer.circbuf_count(b))), " front="), Text.show_int(fv)), " back="), Text.show_int(bv))
+			None => "bk-none"
+			None => "f-none"
 		})
 	})
 })
 
-test_overflow : List(U8)
+test_overflow : Text
 test_overflow = ({
 	b = CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_new(3), 1), 2), 3), 4)
 	f = CircularBuffer.circbuf_front(b)
 	(match f {
-		Just(fv) => List.concat(List.concat(List.concat([16, 33, 13, 21, 28, 23, 16, 27, 2, 28, 21, 16, 18, 14, 77], Text.show_int(fv)), [2, 24, 16, 25, 18, 14, 77]), Text.show_int(CircularBuffer.circbuf_count(b)))
-		None => [18, 16, 18, 13]
+		Just(fv) => Text.concat(Text.concat(Text.concat("overflow front=", Text.show_int(fv)), " count="), Text.show_int(CircularBuffer.circbuf_count(b)))
+		None => "none"
 	})
 })
 
-test_pop : List(U8)
+test_pop : Text
 test_pop = ({
 	b = CircularBuffer.circbuf_pop_front(CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_new(5), 10), 20))
 	f = CircularBuffer.circbuf_front(b)
 	(match f {
-		Just(fv) => List.concat(List.concat(List.concat([15, 28, 14, 13, 21, 73, 31, 16, 31, 77], Text.show_int(fv)), [2, 24, 16, 25, 18, 14, 77]), Text.show_int(CircularBuffer.circbuf_count(b)))
-		None => [13, 26, 31, 14, 30]
+		Just(fv) => Text.concat(Text.concat(Text.concat("after-pop=", Text.show_int(fv)), " count="), Text.show_int(CircularBuffer.circbuf_count(b)))
+		None => "empty"
 	})
 })
 
-test_to_list : List(U8)
+test_to_list : Text
 test_to_list = ({
 	b = CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_new(5), 1), 2), 3)
 	lst = CircularBuffer.circbuf_to_list(b)
-	List.concat(List.concat(List.concat(List.concat(List.concat([23, 17, 19, 14, 77], Text.show_int((List.get(lst, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))), [66]), Text.show_int((List.get(lst, I64.to_u64_wrap(1)) ?? crash("list-at out of range")))), [66]), Text.show_int((List.get(lst, I64.to_u64_wrap(2)) ?? crash("list-at out of range"))))
+	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("list=", Text.show_int((List.get(lst, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))), ","), Text.show_int((List.get(lst, I64.to_u64_wrap(1)) ?? crash("list-at out of range")))), ","), Text.show_int((List.get(lst, I64.to_u64_wrap(2)) ?? crash("list-at out of range"))))
 })
 
-test_sum : List(U8)
+test_sum : Text
 test_sum = ({
 	b = CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_new(10), 100), 200), 300)
-	List.concat([19, 25, 26, 77], Text.show_int(CircularBuffer.circbuf_sum(b)))
+	Text.concat("sum=", Text.show_int(CircularBuffer.circbuf_sum(b)))
 })
 
 # --- Entry ---

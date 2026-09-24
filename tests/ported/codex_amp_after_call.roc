@@ -20,8 +20,8 @@ import cdx.Text
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-label : I64 -> List(U8)
-label = |x| List.concat([18, 77], Text.show_int(x))
+label : I64 -> Text
+label = |x| Text.concat("n=", Text.show_int(x))
 
 # --- Entry ---
 

@@ -33,14 +33,14 @@ add4 = |a, b, c, d| (((a + b) + c) + d)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([28, 25, 23, 23, 69, 2], Text.show_int(add3(1, 2, 3)))))
+	line!(Text.printed(Text.concat("full: ", Text.show_int(add3(1, 2, 3)))))
 	({
 		h = ({
 			dev__1 = 10
 			|dev__2, dev__3| add3(dev__1, dev__2, dev__3)
 		})
 		({
-			line!(Text.printed(List.concat([28, 23, 15, 14, 73, 14, 27, 16, 69, 2], Text.show_int(h(20, 12)))))
+			line!(Text.printed(Text.concat("flat-two: ", Text.show_int(h(20, 12)))))
 			({
 				j = ({
 					dev__4 = 10
@@ -51,7 +51,7 @@ main! = |_args| {
 					|dev__8| j(dev__7, dev__8)
 				})
 				({
-					line!(Text.printed(List.concat([19, 31, 23, 17, 14, 73, 16, 18, 13, 73, 15, 14, 73, 15, 73, 14, 17, 26, 13, 69, 2], Text.show_int(g(12)))))
+					line!(Text.printed(Text.concat("split-one-at-a-time: ", Text.show_int(g(12)))))
 					({
 						k = ({
 							dev__9 = 1
@@ -66,7 +66,7 @@ main! = |_args| {
 							|dev__17| k2(dev__16, dev__17)
 						})
 						({
-							line!(Text.printed(List.concat([19, 31, 23, 17, 14, 73, 28, 16, 25, 21, 69, 2], Text.show_int(k3(4)))))
+							line!(Text.printed(Text.concat("split-four: ", Text.show_int(k3(4)))))
 							({
 								m = ({
 									dev__18 = 1
@@ -77,7 +77,7 @@ main! = |_args| {
 									dev__22 = 3
 									|dev__23| m(dev__22, dev__23)
 								})
-								line!(Text.printed(List.concat([20, 15, 23, 28, 73, 14, 20, 13, 18, 73, 16, 18, 13, 69, 2], Text.show_int(m2(4)))))
+								line!(Text.printed(Text.concat("half-then-one: ", Text.show_int(m2(4)))))
 							})
 						})
 					})

@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([39, 18, 24, 16, 22, 13, 81, 61, 19, 16, 18, 2, 42, 60]))
+	line!(Text.printed("Encode/Json OK"))
 	Ok({})
 }

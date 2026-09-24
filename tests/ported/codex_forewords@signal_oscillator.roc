@@ -990,6 +990,6 @@ bodyTemp_to_CelsiusBody = |fv| I64.div_trunc_by(fv, 1000)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([45, 17, 29, 18, 15, 23, 81, 42, 19, 24, 17, 23, 23, 15, 14, 16, 21, 2, 42, 60]))
+	line!(Text.printed("Signal/Oscillator OK"))
 	Ok({})
 }

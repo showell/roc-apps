@@ -28,54 +28,54 @@ import cdx.Text
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-test_pack : List(U8)
+test_pack : Text
 test_pack = ({
 	c = Color.rgb(255, 128, 0)
 	packed = Color.rgb_to_packed(c)
 	back = Color.rgb_from_packed(packed)
-	List.concat(List.concat(List.concat([31, 15, 24, 34, 13, 22, 77], Text.show_int(packed)), [2, 32, 15, 24, 34, 77]), Color.format_rgb(back))
+	Text.concat(Text.concat(Text.concat("packed=", Text.show_int(packed)), " back="), Color.format_rgb(back))
 })
 
-test_lerp : List(U8)
+test_lerp : Text
 test_lerp = ({
 	mid = Color.rgb_lerp(Color.rgb_black, Color.rgb_white, 500)
-	List.concat([26, 17, 22, 77], Color.format_rgb(mid))
+	Text.concat("mid=", Color.format_rgb(mid))
 })
 
-test_blend : List(U8)
+test_blend : Text
 test_blend = ({
 	c = Color.rgb_alpha_blend(Color.rgb_red, Color.rgb_blue, 500)
-	List.concat([32, 23, 13, 18, 22, 77], Color.format_rgb(c))
+	Text.concat("blend=", Color.format_rgb(c))
 })
 
-test_gray : List(U8)
+test_gray : Text
 test_gray = ({
 	c = Color.rgb(200, 100, 50)
 	g = Color.rgb_grayscale(c)
-	List.concat(List.concat(List.concat([29, 21, 15, 30, 77], Color.format_rgb(g)), [2, 23, 25, 26, 77]), Text.show_int(Color.rgb_luminance(c)))
+	Text.concat(Text.concat(Text.concat("gray=", Color.format_rgb(g)), " lum="), Text.show_int(Color.rgb_luminance(c)))
 })
 
-test_invert : List(U8)
+test_invert : Text
 test_invert = ({
 	c = Color.rgb_invert(Color.rgb(100, 200, 50))
-	List.concat([17, 18, 33, 77], Color.format_rgb(c))
+	Text.concat("inv=", Color.format_rgb(c))
 })
 
-test_hsl : List(U8)
+test_hsl : Text
 test_hsl = ({
 	hsl = Color.rgb_to_hsl(Color.rgb_red)
 	back = Color.hsl_to_rgb(hsl)
-	List.concat(List.concat(List.concat([20, 19, 23, 77], Color.format_hsl(hsl)), [2, 32, 15, 24, 34, 77]), Color.format_rgb(back))
+	Text.concat(Text.concat(Text.concat("hsl=", Color.format_hsl(hsl)), " back="), Color.format_rgb(back))
 })
 
-test_gradient : List(U8)
+test_gradient : Text
 test_gradient = ({
 	pal = Color.palette_gradient(Color.rgb_red, Color.rgb_blue, 5)
-	List.concat(List.concat(List.concat([29, 21, 15, 22, 77], Text.show_int(U64.to_i64_wrap(List.len(pal)))), [2, 26, 17, 22, 77]), Color.format_rgb((List.get(pal, I64.to_u64_wrap(2)) ?? crash("list-at out of range"))))
+	Text.concat(Text.concat(Text.concat("grad=", Text.show_int(U64.to_i64_wrap(List.len(pal)))), " mid="), Color.format_rgb((List.get(pal, I64.to_u64_wrap(2)) ?? crash("list-at out of range"))))
 })
 
-test_hex : List(U8)
-test_hex = List.concat([20, 13, 36, 77], Color.format_hex_color(Color.rgb(255, 128, 0)))
+test_hex : Text
+test_hex = Text.concat("hex=", Color.format_hex_color(Color.rgb(255, 128, 0)))
 
 # --- Entry ---
 

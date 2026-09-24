@@ -23,7 +23,7 @@ line! = |s| echo!(Str.concat(s, "\n"))
 
 noisy! : I64 => I64
 noisy! = |n| ({
-	line!(Text.printed(List.concat([18, 16, 17, 19, 30, 2], Text.show_int(n))))
+	line!(Text.printed(Text.concat("noisy ", Text.show_int(n))))
 	n
 })
 
@@ -31,6 +31,6 @@ noisy! = |n| ({
 
 main! = |_args| {
 	_w = noisy!(1)
-	line!(Text.printed([15, 28, 14, 13, 21]))
+	line!(Text.printed("after"))
 	Ok({})
 }

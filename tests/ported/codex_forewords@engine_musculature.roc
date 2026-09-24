@@ -990,6 +990,6 @@ bodyTemp_to_CelsiusBody = |fv| I64.div_trunc_by(fv, 1000)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([39, 18, 29, 17, 18, 13, 81, 52, 25, 19, 24, 25, 23, 15, 14, 25, 21, 13, 2, 42, 60]))
+	line!(Text.printed("Engine/Musculature OK"))
 	Ok({})
 }

@@ -48,6 +48,6 @@ lam_0 = |n, x| (n + x)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat(List.concat(Text.show_int(use_closure(41)), [2]), Text.show_int(use_partial(37)))))
+	line!(Text.printed(Text.concat(Text.concat(Text.show_int(use_closure(41)), " "), Text.show_int(use_partial(37)))))
 	Ok({})
 }

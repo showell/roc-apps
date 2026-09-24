@@ -36,8 +36,8 @@ cst_depth = 4
 cst_keys : I64
 cst_keys = 40
 
-cst_key : I64 -> List(U8)
-cst_key = |i| List.concat([34, 13, 30], Text.show_int(i))
+cst_key : I64 -> Text
+cst_key = |i| Text.concat("key", Text.show_int(i))
 
 cst_fill : CountMinSketch.CmSketch, I64, I64 -> CountMinSketch.CmSketch
 cst_fill = |s, i, n| (if (i >= n) { s } else { cst_fill(CountMinSketch.cms_add(s, cst_key(i), 1), (i + 1), n) })
@@ -70,12 +70,12 @@ main! = |_args| {
 	r1 = cst_occupied(s, 1, 0, cst_width, 0)
 	r2 = cst_occupied(s, 2, 0, cst_width, 0)
 	r3 = cst_occupied(s, 3, 0, cst_width, 0)
-	line!(Text.printed(List.concat([34, 13, 30, 19, 69, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], Text.show_int(cst_keys))))
-	line!(Text.printed(List.concat([13, 36, 15, 24, 14, 69, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], Text.show_int(exact))))
-	line!(Text.printed(List.concat([27, 16, 21, 19, 14, 2, 13, 19, 14, 17, 26, 15, 14, 13, 69, 2], Text.show_int(worst))))
-	line!(Text.printed(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat([24, 16, 23, 19, 2, 25, 19, 13, 22, 69, 2, 2, 2, 2, 2, 2], Text.show_int(r0)), [2]), Text.show_int(r1)), [2]), Text.show_int(r2)), [2]), Text.show_int(r3))))
-	line!(Text.printed(List.concat([26, 16, 19, 14, 23, 30, 2, 13, 36, 15, 24, 14, 69, 2, 2, 2], (if ((exact * 4) >= (cst_keys * 3)) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))))
-	line!(Text.printed(List.concat([21, 16, 27, 19, 2, 19, 31, 21, 13, 15, 22, 69, 2, 2, 2, 2], (if ((((r0 > 20) and (r1 > 20)) and (r2 > 20)) and (r3 > 20)) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))))
-	line!(Text.printed(List.concat([14, 16, 14, 15, 23, 69, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], Text.show_int(CountMinSketch.cms_total(s)))))
+	line!(Text.printed(Text.concat("keys:           ", Text.show_int(cst_keys))))
+	line!(Text.printed(Text.concat("exact:          ", Text.show_int(exact))))
+	line!(Text.printed(Text.concat("worst estimate: ", Text.show_int(worst))))
+	line!(Text.printed(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("cols used:      ", Text.show_int(r0)), " "), Text.show_int(r1)), " "), Text.show_int(r2)), " "), Text.show_int(r3))))
+	line!(Text.printed(Text.concat("mostly exact:   ", (if ((exact * 4) >= (cst_keys * 3)) { "True" } else { "False" }))))
+	line!(Text.printed(Text.concat("rows spread:    ", (if ((((r0 > 20) and (r1 > 20)) and (r2 > 20)) and (r3 > 20)) { "True" } else { "False" }))))
+	line!(Text.printed(Text.concat("total:          ", Text.show_int(CountMinSketch.cms_total(s)))))
 	Ok({})
 }

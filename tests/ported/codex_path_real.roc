@@ -27,9 +27,9 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Path.path_join([81, 19, 21, 24], [26, 15, 17, 18, 65, 24, 16, 22, 13, 36])))
-	line!(Text.printed(Path.path_filename([81, 19, 21, 24, 81, 26, 15, 17, 18, 65, 24, 16, 22, 13, 36])))
-	line!(Text.printed(Path.path_stem([81, 19, 21, 24, 81, 26, 15, 17, 18, 65, 24, 16, 22, 13, 36])))
-	line!(Text.printed(Path.path_extension([81, 19, 21, 24, 81, 26, 15, 17, 18, 65, 24, 16, 22, 13, 36])))
+	line!(Text.printed(Path.path_join("/src", "main.codex")))
+	line!(Text.printed(Path.path_filename("/src/main.codex")))
+	line!(Text.printed(Path.path_stem("/src/main.codex")))
+	line!(Text.printed(Path.path_extension("/src/main.codex")))
 	Ok({})
 }

@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([52, 15, 14, 20, 81, 63, 25, 15, 14, 13, 21, 18, 17, 16, 18, 2, 42, 60]))
+	line!(Text.printed("Math/Quaternion OK"))
 	Ok({})
 }

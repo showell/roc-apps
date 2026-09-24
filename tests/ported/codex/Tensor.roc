@@ -91,6 +91,6 @@ Tensor :: [].{
 	tensor_size : Tensor.Tensor -> I64
 	tensor_size = |t| (t.rows * t.cols)
 
-	tensor_shape : Tensor.Tensor -> List(U8)
-	tensor_shape = |t| List.concat(List.concat(Text.show_int(t.rows), [36]), Text.show_int(t.cols))
+	tensor_shape : Tensor.Tensor -> Text
+	tensor_shape = |t| Text.concat(Text.concat(Text.show_int(t.rows), "x"), Text.show_int(t.cols))
 }

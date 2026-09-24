@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([54, 16, 21, 13, 27, 16, 21, 22, 81, 50, 16, 18, 19, 17, 19, 14, 13, 18, 14, 46, 15, 19, 20, 2, 42, 60]))
+	line!(Text.printed("Foreword/ConsistentHash OK"))
 	Ok({})
 }

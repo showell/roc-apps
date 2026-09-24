@@ -33,15 +33,15 @@ double = |n| (n * 2)
 
 shout! : I64 => I64
 shout! = |n| ({
-	line!(Text.printed(List.concat([19, 20, 16, 25, 14, 2], Text.show_int(n))))
+	line!(Text.printed(Text.concat("shout ", Text.show_int(n))))
 	(n * 2)
 })
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([31, 25, 21, 13, 2], Text.show_int(apply_row(double, 21)))))
+	line!(Text.printed(Text.concat("pure ", Text.show_int(apply_row(double, 21)))))
 	r = logged_apply!(shout!, 21)
-	line!(Text.printed(List.concat([23, 16, 29, 29, 13, 22, 2], Text.show_int(r))))
+	line!(Text.printed(Text.concat("logged ", Text.show_int(r))))
 	Ok({})
 }

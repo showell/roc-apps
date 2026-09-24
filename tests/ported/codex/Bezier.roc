@@ -41,6 +41,6 @@ Bezier :: [].{
 		bezier3_arc_loop(p0, p1, p2, p3, (i + 1), segments, (total + dist), curr)
 	}) })
 
-	format_bezier_point : Bezier.BezVec -> List(U8)
-	format_bezier_point = |v| List.concat(List.concat(List.concat(List.concat([74], Text.show_int(v.vx)), [66]), Text.show_int(v.vy)), [75])
+	format_bezier_point : Bezier.BezVec -> Text
+	format_bezier_point = |v| Text.concat(Text.concat(Text.concat(Text.concat("(", Text.show_int(v.vx)), ","), Text.show_int(v.vy)), ")")
 }

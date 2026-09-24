@@ -4,8 +4,8 @@ import Text
 Lwm2m :: [].{
 	Lwm2mObjectId : { id : I64, instance : I64 }
 	Lwm2mResourceId : { object_id : I64, instance : I64, resource : I64 }
-	Lwm2mValue : [Lwm2mString(List(U8)), Lwm2mInteger(I64), Lwm2mFloat(I64, I64), Lwm2mBoolean(Bool), Lwm2mOpaque(List(I64)), Lwm2mTime(I64)]
-	Lwm2mRegistration : { endpoint : List(U8), lifetime : I64, binding : List(U8), objects : List(I64) }
+	Lwm2mValue : [Lwm2mString(Text), Lwm2mInteger(I64), Lwm2mFloat(I64, I64), Lwm2mBoolean(Bool), Lwm2mOpaque(List(I64)), Lwm2mTime(I64)]
+	Lwm2mRegistration : { endpoint : Text, lifetime : I64, binding : Text, objects : List(I64) }
 	LwmFirmwareState : [FwIdle, FwDownloading, FwDownloaded, FwUpdating]
 
 	lwm2m_obj_security : I64
@@ -47,11 +47,11 @@ Lwm2m :: [].{
 	lwm2m_obj_accelerometer : I64
 	lwm2m_obj_accelerometer = 3313
 
-	lwm2m_uri : I64, I64, I64 -> List(U8)
-	lwm2m_uri = |object_id, instance_id, resource_id| List.concat(List.concat(List.concat(List.concat(List.concat([81], Text.show_int(object_id)), [81]), Text.show_int(instance_id)), [81]), Text.show_int(resource_id))
+	lwm2m_uri : I64, I64, I64 -> Text
+	lwm2m_uri = |object_id, instance_id, resource_id| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("/", Text.show_int(object_id)), "/"), Text.show_int(instance_id)), "/"), Text.show_int(resource_id))
 
-	lwm2m_object_uri : I64, I64 -> List(U8)
-	lwm2m_object_uri = |object_id, instance_id| List.concat(List.concat(List.concat([81], Text.show_int(object_id)), [81]), Text.show_int(instance_id))
+	lwm2m_object_uri : I64, I64 -> Text
+	lwm2m_object_uri = |object_id, instance_id| Text.concat(Text.concat(Text.concat("/", Text.show_int(object_id)), "/"), Text.show_int(instance_id))
 
 	lwm2m_tlv_type_resource : I64
 	lwm2m_tlv_type_resource = 3
@@ -66,19 +66,19 @@ Lwm2m :: [].{
 	})
 
 	default_lwm2m_registration : Lwm2m.Lwm2mRegistration
-	default_lwm2m_registration = { endpoint: [24, 16, 22, 13, 36, 73, 22, 13, 33, 17, 24, 13], lifetime: 300, binding: [51], objects: [lwm2m_obj_device, lwm2m_obj_firmware] }
+	default_lwm2m_registration = { endpoint: "codex-device", lifetime: 300, binding: "U", objects: [lwm2m_obj_device, lwm2m_obj_firmware] }
 
-	lwm2m_registration_path : Lwm2m.Lwm2mRegistration -> List(U8)
-	lwm2m_registration_path = |reg| List.concat(List.concat(List.concat(List.concat(List.concat([81, 21, 22, 68, 13, 31, 77], reg.endpoint), [84, 23, 14, 77]), Text.show_int(reg.lifetime)), [84, 32, 77]), reg.binding)
+	lwm2m_registration_path : Lwm2m.Lwm2mRegistration -> Text
+	lwm2m_registration_path = |reg| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("/rd?ep=", reg.endpoint), "&lt="), Text.show_int(reg.lifetime)), "&b="), reg.binding)
 
-	lwm2m_registration_payload : Lwm2m.Lwm2mRegistration -> List(U8)
-	lwm2m_registration_payload = |reg| lwm2m_link_list(reg.objects, 0, U64.to_i64_wrap(List.len(reg.objects)), [])
+	lwm2m_registration_payload : Lwm2m.Lwm2mRegistration -> Text
+	lwm2m_registration_payload = |reg| lwm2m_link_list(reg.objects, 0, U64.to_i64_wrap(List.len(reg.objects)), "")
 
-	lwm2m_link_list : List(I64), I64, I64, List(U8) -> List(U8)
+	lwm2m_link_list : List(I64), I64, I64, Text -> Text
 	lwm2m_link_list = |objs, i, n, acc| (if (i >= n) { acc } else { ({
-		link = List.concat(List.concat([79, 81], Text.show_int((List.get(objs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))), [80])
-		sep = (if (i > 0) { [66] } else { [] })
-		lwm2m_link_list(objs, (i + 1), n, List.concat(List.concat(acc, sep), link))
+		link = Text.concat(Text.concat("</", Text.show_int((List.get(objs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))), ">")
+		sep = (if (i > 0) { "," } else { "" })
+		lwm2m_link_list(objs, (i + 1), n, Text.concat(Text.concat(acc, sep), link))
 	}) })
 
 	lwm2m_res_fw_package : I64

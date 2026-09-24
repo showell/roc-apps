@@ -76,35 +76,35 @@ val_le = |a, b| b2i((a <= b))
 val_ge : F64, F64 -> I64
 val_ge = |a, b| b2i((a >= b))
 
-say_lt : List(U8), F64, F64 -> List(U8)
-say_lt = |label, a, b| List.concat(List.concat(List.concat(label, [2]), Text.show_int(fused_lt(a, b))), Text.show_int(val_lt(a, b)))
+say_lt : Text, F64, F64 -> Text
+say_lt = |label, a, b| Text.concat(Text.concat(Text.concat(label, " "), Text.show_int(fused_lt(a, b))), Text.show_int(val_lt(a, b)))
 
-say_gt : List(U8), F64, F64 -> List(U8)
-say_gt = |label, a, b| List.concat(List.concat(List.concat(label, [2]), Text.show_int(fused_gt(a, b))), Text.show_int(val_gt(a, b)))
+say_gt : Text, F64, F64 -> Text
+say_gt = |label, a, b| Text.concat(Text.concat(Text.concat(label, " "), Text.show_int(fused_gt(a, b))), Text.show_int(val_gt(a, b)))
 
-say_le : List(U8), F64, F64 -> List(U8)
-say_le = |label, a, b| List.concat(List.concat(List.concat(label, [2]), Text.show_int(fused_le(a, b))), Text.show_int(val_le(a, b)))
+say_le : Text, F64, F64 -> Text
+say_le = |label, a, b| Text.concat(Text.concat(Text.concat(label, " "), Text.show_int(fused_le(a, b))), Text.show_int(val_le(a, b)))
 
-say_ge : List(U8), F64, F64 -> List(U8)
-say_ge = |label, a, b| List.concat(List.concat(List.concat(label, [2]), Text.show_int(fused_ge(a, b))), Text.show_int(val_ge(a, b)))
+say_ge : Text, F64, F64 -> Text
+say_ge = |label, a, b| Text.concat(Text.concat(Text.concat(label, " "), Text.show_int(fused_ge(a, b))), Text.show_int(val_ge(a, b)))
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(say_lt([18, 13, 29, 73, 32, 17, 29, 2, 23, 14, 2, 18, 13, 29, 73, 19, 26, 15, 23, 23, 2, 27, 15, 18, 14, 2, 4, 4], neg_big, neg_small)))
-	line!(Text.printed(say_gt([18, 13, 29, 73, 32, 17, 29, 2, 29, 14, 2, 18, 13, 29, 73, 19, 26, 15, 23, 23, 2, 27, 15, 18, 14, 2, 3, 3], neg_big, neg_small)))
-	line!(Text.printed(say_le([18, 13, 29, 73, 32, 17, 29, 2, 23, 13, 2, 18, 13, 29, 73, 19, 26, 15, 23, 23, 2, 27, 15, 18, 14, 2, 4, 4], neg_big, neg_small)))
-	line!(Text.printed(say_ge([18, 13, 29, 73, 32, 17, 29, 2, 29, 13, 2, 18, 13, 29, 73, 19, 26, 15, 23, 23, 2, 27, 15, 18, 14, 2, 3, 3], neg_big, neg_small)))
-	line!(Text.printed(say_lt([18, 13, 29, 73, 19, 26, 15, 23, 23, 2, 23, 14, 2, 18, 13, 29, 73, 32, 17, 29, 2, 27, 15, 18, 14, 2, 3, 3], neg_small, neg_big)))
-	line!(Text.printed(say_gt([18, 13, 29, 73, 19, 26, 15, 23, 23, 2, 29, 14, 2, 18, 13, 29, 73, 32, 17, 29, 2, 27, 15, 18, 14, 2, 4, 4], neg_small, neg_big)))
-	line!(Text.printed(say_lt([18, 13, 29, 73, 32, 17, 29, 2, 23, 14, 2, 18, 13, 29, 73, 32, 17, 29, 2, 27, 15, 18, 14, 2, 3, 3], neg_big, neg_big)))
-	line!(Text.printed(say_le([18, 13, 29, 73, 32, 17, 29, 2, 23, 13, 2, 18, 13, 29, 73, 32, 17, 29, 2, 27, 15, 18, 14, 2, 4, 4], neg_big, neg_big)))
-	line!(Text.printed(say_ge([18, 13, 29, 73, 32, 17, 29, 2, 29, 13, 2, 18, 13, 29, 73, 32, 17, 29, 2, 27, 15, 18, 14, 2, 4, 4], neg_big, neg_big)))
-	line!(Text.printed(say_lt([31, 16, 19, 73, 19, 26, 15, 23, 23, 2, 23, 14, 2, 31, 16, 19, 73, 32, 17, 29, 2, 27, 15, 18, 14, 2, 4, 4], pos_small, pos_big)))
-	line!(Text.printed(say_gt([31, 16, 19, 73, 19, 26, 15, 23, 23, 2, 29, 14, 2, 31, 16, 19, 73, 32, 17, 29, 2, 27, 15, 18, 14, 2, 3, 3], pos_small, pos_big)))
-	line!(Text.printed(say_lt([18, 13, 29, 73, 32, 17, 29, 2, 23, 14, 2, 31, 16, 19, 73, 19, 26, 15, 23, 23, 2, 27, 15, 18, 14, 2, 4, 4], neg_big, pos_small)))
-	line!(Text.printed(say_lt([31, 16, 19, 73, 32, 17, 29, 2, 23, 14, 2, 18, 13, 29, 73, 19, 26, 15, 23, 23, 2, 27, 15, 18, 14, 2, 3, 3], pos_big, neg_small)))
-	line!(Text.printed(say_lt([18, 13, 29, 73, 19, 26, 15, 23, 23, 2, 23, 14, 2, 38, 13, 21, 16, 2, 27, 15, 18, 14, 2, 4, 4], neg_small, zero)))
-	line!(Text.printed(say_gt([18, 13, 29, 73, 19, 26, 15, 23, 23, 2, 29, 14, 2, 38, 13, 21, 16, 2, 27, 15, 18, 14, 2, 3, 3], neg_small, zero)))
+	line!(Text.printed(say_lt("neg-big lt neg-small want 11", neg_big, neg_small)))
+	line!(Text.printed(say_gt("neg-big gt neg-small want 00", neg_big, neg_small)))
+	line!(Text.printed(say_le("neg-big le neg-small want 11", neg_big, neg_small)))
+	line!(Text.printed(say_ge("neg-big ge neg-small want 00", neg_big, neg_small)))
+	line!(Text.printed(say_lt("neg-small lt neg-big want 00", neg_small, neg_big)))
+	line!(Text.printed(say_gt("neg-small gt neg-big want 11", neg_small, neg_big)))
+	line!(Text.printed(say_lt("neg-big lt neg-big want 00", neg_big, neg_big)))
+	line!(Text.printed(say_le("neg-big le neg-big want 11", neg_big, neg_big)))
+	line!(Text.printed(say_ge("neg-big ge neg-big want 11", neg_big, neg_big)))
+	line!(Text.printed(say_lt("pos-small lt pos-big want 11", pos_small, pos_big)))
+	line!(Text.printed(say_gt("pos-small gt pos-big want 00", pos_small, pos_big)))
+	line!(Text.printed(say_lt("neg-big lt pos-small want 11", neg_big, pos_small)))
+	line!(Text.printed(say_lt("pos-big lt neg-small want 00", pos_big, neg_small)))
+	line!(Text.printed(say_lt("neg-small lt zero want 11", neg_small, zero)))
+	line!(Text.printed(say_gt("neg-small gt zero want 00", neg_small, zero)))
 	Ok({})
 }

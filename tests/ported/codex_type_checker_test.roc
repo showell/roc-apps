@@ -11,7 +11,9 @@
 # Expected stdout:
 #     42
 
-app [main!] {}
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.Text
 
 # TypeCheckerSmokeTest -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 
@@ -24,8 +26,8 @@ add_one = |x| (x + 1)
 double : I64 -> I64
 double = |x| (x * 2)
 
-greet : List(U8) -> List(U8)
-greet = |name| List.concat(List.concat([46, 13, 23, 23, 16, 66, 2], name), [67])
+greet : Text -> Text
+greet = |name| Text.concat(Text.concat("Hello, ", name), "!")
 
 is_positive : I64 -> Bool
 is_positive = |x| (x > 0)

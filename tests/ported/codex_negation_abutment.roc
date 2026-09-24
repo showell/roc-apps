@@ -52,14 +52,14 @@ arrowed = |n| (n * 2)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([15, 21, 29, 73, 23, 17, 14, 69, 2], Text.show_int(two(1, (-2))))))
-	line!(Text.printed(List.concat([15, 21, 29, 73, 16, 18, 23, 30, 69, 2], Text.show_int(one((-5))))))
-	line!(Text.printed(List.concat([15, 21, 29, 73, 33, 15, 21, 69, 2], Text.show_int(neg_var(3)))))
-	line!(Text.printed(List.concat([14, 20, 21, 13, 13, 73, 15, 21, 29, 19, 69, 2], Text.show_int(three(1, (-2), 3)))))
-	line!(Text.printed(List.concat([19, 25, 32, 69, 2], Text.show_int((7 - 2)))))
-	line!(Text.printed(List.concat([23, 13, 28, 14, 73, 15, 32, 25, 14, 69, 2], Text.show_int(a_(2)))))
-	line!(Text.printed(List.concat([20, 30, 31, 20, 13, 18, 73, 22, 17, 29, 17, 14, 69, 2], Text.show_int(x_2))))
-	line!(Text.printed(List.concat([31, 15, 21, 13, 18, 69, 2], Text.show_int(two(1, (-2))))))
-	line!(Text.printed(List.concat([15, 21, 21, 16, 27, 69, 2], Text.show_int(arrowed(4)))))
+	line!(Text.printed(Text.concat("arg-lit: ", Text.show_int(two(1, (-2))))))
+	line!(Text.printed(Text.concat("arg-only: ", Text.show_int(one((-5))))))
+	line!(Text.printed(Text.concat("arg-var: ", Text.show_int(neg_var(3)))))
+	line!(Text.printed(Text.concat("three-args: ", Text.show_int(three(1, (-2), 3)))))
+	line!(Text.printed(Text.concat("sub: ", Text.show_int((7 - 2)))))
+	line!(Text.printed(Text.concat("left-abut: ", Text.show_int(a_(2)))))
+	line!(Text.printed(Text.concat("hyphen-digit: ", Text.show_int(x_2))))
+	line!(Text.printed(Text.concat("paren: ", Text.show_int(two(1, (-2))))))
+	line!(Text.printed(Text.concat("arrow: ", Text.show_int(arrowed(4)))))
 	Ok({})
 }

@@ -57,24 +57,24 @@ Opt(a) : [Some(a), Nada]
 check_bool : Bool, Bool -> Bool
 check_bool = |a, b| (a and (b or a))
 
-is_warm : Color -> List(U8)
+is_warm : Color -> Text
 is_warm = |c| (match c {
-	Red => [27, 15, 21, 26]
-	Orange => [27, 15, 21, 26]
-	Yellow => [27, 15, 21, 26]
-	Blue => [24, 16, 16, 23]
-	Green => [24, 16, 16, 23]
+	Red => "warm"
+	Orange => "warm"
+	Yellow => "warm"
+	Blue => "cool"
+	Green => "cool"
 })
 
-area_kind : Shape -> List(U8)
+area_kind : Shape -> Text
 area_kind = |s| (match s {
-	Circle(r) if (r > 10) => [23, 15, 21, 29, 13, 73, 24, 17, 21, 24, 23, 13]
-	Circle(_r) => [19, 26, 15, 23, 23, 73, 24, 17, 21, 24, 23, 13]
-	Rect(w, h) if (w == h) => [19, 37, 25, 15, 21, 13]
-	Rect(_w, _h) => [21, 13, 24, 14, 15, 18, 29, 23, 13]
+	Circle(r) if (r > 10) => "large-circle"
+	Circle(_r) => "small-circle"
+	Rect(w, h) if (w == h) => "square"
+	Rect(_w, _h) => "rectangle"
 })
 
-count_letters : List(U8), I64, I64 -> I64
+count_letters : Text, I64, I64 -> I64
 count_letters = |s, i, acc| (if (i >= Text.len(s)) { acc } else { (if ((Text.char_at(s, i) >= 13 and Text.char_at(s, i) <= 64) or (Text.char_at(s, i) >= 97 and Text.char_at(s, i) <= 127)) { count_letters(s, (i + 1), (acc + 1)) } else { count_letters(s, (i + 1), acc) }) })
 
 make_adder : I64, I64 -> I64
@@ -168,9 +168,9 @@ lam_0 = |x| (x + x)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed((if check_bool(True, True) { [32, 16, 16, 23, 73, 16, 34] } else { [58, 41, 48] })))
-	line!(Text.printed((if (5 < 10) { [23, 14] } else { [18, 23, 14] })))
-	line!(Text.printed((if (5 == 5) { [13, 37] } else { [18, 13, 37] })))
+	line!(Text.printed((if check_bool(True, True) { "bool-ok" } else { "BAD" })))
+	line!(Text.printed((if (5 < 10) { "lt" } else { "nlt" })))
+	line!(Text.printed((if (5 == 5) { "eq" } else { "neq" })))
 	line!(Text.printed(Text.show_int(255)))
 	line!(Text.printed(Text.show_int(3735928559)))
 	({
@@ -190,7 +190,7 @@ main! = |_args| {
 				doubled = ListUtils.map_list(lam_0, [1, 2, 3])
 				({
 					line!(Text.printed(Text.show_int((List.get(doubled, I64.to_u64_wrap(1)) ?? crash("list-at out of range")))))
-					line!(Text.printed(Text.show_int(count_letters([20, 13, 23, 23, 16, 2, 27, 16, 21, 23, 22], 0, 0))))
+					line!(Text.printed(Text.show_int(count_letters("hello world", 0, 0))))
 					({
 						partial = ({
 							dev__1 = 10
@@ -212,17 +212,17 @@ main! = |_args| {
 										MkTup2(x, y) => sum3(MkTup3(x, y, 99))
 									}))))
 									line!(Text.printed(Text.show_int(Iterate.list_fold_indexed([1, 2, 3], 0, my_combiner))))
-									line!(Text.printed([20, 13, 23, 23, 16]))
-									line!(Text.printed((if eq_Shape(Circle(5), Circle(5)) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] })))
-									line!(Text.printed((if eq_Shape(Circle(5), Circle(7)) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] })))
-									line!(Text.printed((if eq_Shape(Circle(5), Rect(3, 4)) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] })))
+									line!(Text.printed("hello"))
+									line!(Text.printed((if eq_Shape(Circle(5), Circle(5)) { "True" } else { "False" })))
+									line!(Text.printed((if eq_Shape(Circle(5), Circle(7)) { "True" } else { "False" })))
+									line!(Text.printed((if eq_Shape(Circle(5), Rect(3, 4)) { "True" } else { "False" })))
 									line!(Text.printed(Text.show_int(I64.bitwise_and(12, 10))))
 									line!(Text.printed(Text.show_int(I64.shl_wrap(1, I64.to_u8_wrap(8)))))
 									line!(Text.printed(Text.show_int(Prelude.int_mod(7, 3))))
 									line!(Text.printed(Text.show_int(Prelude.int_abs((-42)))))
-									line!(Text.printed(Text.substring([20, 13, 23, 23, 16, 2, 27, 16, 21, 23, 22], 0, 5)))
+									line!(Text.printed(Text.substring("hello world", 0, 5)))
 									({
-										parts = Text.split([15, 66, 32, 66, 24], [66])
+										parts = Text.split("a,b,c", ",")
 										line!(Text.printed(Text.show_int(U64.to_i64_wrap(List.len(parts)))))
 									})
 								})

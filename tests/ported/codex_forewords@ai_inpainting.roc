@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([41, 43, 81, 43, 18, 31, 15, 17, 18, 14, 17, 18, 29, 2, 42, 60]))
+	line!(Text.printed("AI/Inpainting OK"))
 	Ok({})
 }

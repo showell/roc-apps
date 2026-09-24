@@ -28,42 +28,42 @@ import cdx.Text
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-test_deal : List(U8)
+test_deal : Text
 test_deal = ({
 	st = Klondike.klondike_new(42)
-	tab_sizes = List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(Text.show_int(Klondike.pile_size((List.get(st.kl_tableau, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))), [66]), Text.show_int(Klondike.pile_size((List.get(st.kl_tableau, I64.to_u64_wrap(1)) ?? crash("list-at out of range"))))), [66]), Text.show_int(Klondike.pile_size((List.get(st.kl_tableau, I64.to_u64_wrap(2)) ?? crash("list-at out of range"))))), [66]), Text.show_int(Klondike.pile_size((List.get(st.kl_tableau, I64.to_u64_wrap(3)) ?? crash("list-at out of range"))))), [66]), Text.show_int(Klondike.pile_size((List.get(st.kl_tableau, I64.to_u64_wrap(4)) ?? crash("list-at out of range"))))), [66]), Text.show_int(Klondike.pile_size((List.get(st.kl_tableau, I64.to_u64_wrap(5)) ?? crash("list-at out of range"))))), [66]), Text.show_int(Klondike.pile_size((List.get(st.kl_tableau, I64.to_u64_wrap(6)) ?? crash("list-at out of range")))))
-	List.concat(List.concat(List.concat([31, 17, 23, 13, 19, 77], tab_sizes), [2, 19, 14, 16, 24, 34, 77]), Text.show_int(U64.to_i64_wrap(List.len(st.kl_stock))))
+	tab_sizes = Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.show_int(Klondike.pile_size((List.get(st.kl_tableau, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))), ","), Text.show_int(Klondike.pile_size((List.get(st.kl_tableau, I64.to_u64_wrap(1)) ?? crash("list-at out of range"))))), ","), Text.show_int(Klondike.pile_size((List.get(st.kl_tableau, I64.to_u64_wrap(2)) ?? crash("list-at out of range"))))), ","), Text.show_int(Klondike.pile_size((List.get(st.kl_tableau, I64.to_u64_wrap(3)) ?? crash("list-at out of range"))))), ","), Text.show_int(Klondike.pile_size((List.get(st.kl_tableau, I64.to_u64_wrap(4)) ?? crash("list-at out of range"))))), ","), Text.show_int(Klondike.pile_size((List.get(st.kl_tableau, I64.to_u64_wrap(5)) ?? crash("list-at out of range"))))), ","), Text.show_int(Klondike.pile_size((List.get(st.kl_tableau, I64.to_u64_wrap(6)) ?? crash("list-at out of range")))))
+	Text.concat(Text.concat(Text.concat("piles=", tab_sizes), " stock="), Text.show_int(U64.to_i64_wrap(List.len(st.kl_stock))))
 })
 
-test_display : List(U8)
+test_display : Text
 test_display = ({
 	st = Klondike.klondike_new(42)
 	Klondike.kl_format_state(st)
 })
 
-test_tableau : List(U8)
+test_tableau : Text
 test_tableau = ({
 	st = Klondike.klondike_new(42)
-	List.concat(List.concat(List.concat(List.concat(Klondike.kl_format_tableau(st, 0), [1]), Klondike.kl_format_tableau(st, 1)), [1]), Klondike.kl_format_tableau(st, 6))
+	Text.concat(Text.concat(Text.concat(Text.concat(Klondike.kl_format_tableau(st, 0), "\n"), Klondike.kl_format_tableau(st, 1)), "\n"), Klondike.kl_format_tableau(st, 6))
 })
 
-test_draw : List(U8)
+test_draw : Text
 test_draw = ({
 	st = Klondike.klondike_new(42)
 	r = Klondike.kl_draw(st)
 	(match r {
-		MoveOk(st2) => List.concat([22, 21, 15, 27, 73, 16, 34, 2, 27, 15, 19, 14, 13, 77], Klondike.kl_format_waste(st2))
-		MoveErr(msg) => List.concat([22, 21, 15, 27, 73, 13, 21, 21, 77], msg)
+		MoveOk(st2) => Text.concat("draw-ok waste=", Klondike.kl_format_waste(st2))
+		MoveErr(msg) => Text.concat("draw-err=", msg)
 	})
 })
 
-test_foundation : List(U8)
+test_foundation : Text
 test_foundation = ({
 	st = Klondike.klondike_new(42)
-	List.concat(List.concat(List.concat([28, 16, 25, 18, 22, 77], Text.show_int(Klondike.kl_foundation_count(st))), [2, 27, 16, 18, 77]), (if Klondike.kl_is_won(st) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))
+	Text.concat(Text.concat(Text.concat("found=", Text.show_int(Klondike.kl_foundation_count(st))), " won="), (if Klondike.kl_is_won(st) { "True" } else { "False" }))
 })
 
-test_moves : List(U8)
+test_moves : Text
 test_moves = ({
 	st = Klondike.klondike_new(42)
 	r1 = Klondike.kl_draw(st)
@@ -71,11 +71,11 @@ test_moves = ({
 		MoveOk(st2) => ({
 			r2 = Klondike.kl_draw(st2)
 			(match r2 {
-				MoveOk(st3) => List.concat(List.concat(List.concat([15, 28, 14, 13, 21, 73, 5, 73, 22, 21, 15, 27, 19, 2, 19, 14, 16, 24, 34, 77], Text.show_int(U64.to_i64_wrap(List.len(st3.kl_stock)))), [2, 27, 15, 19, 14, 13, 77]), Text.show_int(U64.to_i64_wrap(List.len(st3.kl_waste))))
-				MoveErr(msg) => List.concat([13, 21, 21, 5, 77], msg)
+				MoveOk(st3) => Text.concat(Text.concat(Text.concat("after-2-draws stock=", Text.show_int(U64.to_i64_wrap(List.len(st3.kl_stock)))), " waste="), Text.show_int(U64.to_i64_wrap(List.len(st3.kl_waste))))
+				MoveErr(msg) => Text.concat("err2=", msg)
 			})
 		})
-		MoveErr(msg) => List.concat([13, 21, 21, 4, 77], msg)
+		MoveErr(msg) => Text.concat("err1=", msg)
 	})
 })
 

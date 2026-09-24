@@ -51,7 +51,7 @@ sc_bool : I64 -> I64
 sc_bool = |_n| (if (True or False) { 7 } else { 8 })
 
 sc_text : I64 -> I64
-sc_text = |_n| Text.len([20, 13, 23, 23, 16])
+sc_text = |_n| Text.len("hello")
 
 sc_dead : I64 -> I64
 sc_dead = |n| ({

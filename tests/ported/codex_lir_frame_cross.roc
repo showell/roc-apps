@@ -48,13 +48,13 @@ via_call = |n| (saved(n, 2, 3, 4, 5, 6, 7, 8) - swapped(n, 4))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([21, 13, 29, 19, 73, 16, 18, 23, 30, 69, 2], Text.show_int(regs_only(1, 2, 3, 4, 5, 6, 7, 8)))))
-	line!(Text.printed(List.concat([19, 15, 33, 13, 22, 69, 2], Text.show_int(saved(1, 2, 3, 4, 5, 6, 7, 8)))))
-	line!(Text.printed(List.concat([19, 15, 33, 13, 22, 73, 31, 13, 21, 26, 69, 2], Text.show_int(saved(8, 7, 6, 5, 4, 3, 2, 1)))))
-	line!(Text.printed(List.concat([19, 31, 17, 23, 23, 13, 22, 69, 2], Text.show_int(spilled(1, 2, 3, 4, 5, 6, 7, 8)))))
-	line!(Text.printed(List.concat([19, 31, 17, 23, 23, 13, 22, 73, 31, 13, 21, 26, 69, 2], Text.show_int(spilled(8, 7, 6, 5, 4, 3, 2, 1)))))
-	line!(Text.printed(List.concat([25, 18, 25, 19, 13, 22, 73, 28, 17, 21, 19, 14, 69, 2], Text.show_int(unused_first(99, 6, 4)))))
-	line!(Text.printed(List.concat([19, 27, 15, 31, 31, 13, 22, 69, 2], Text.show_int(swapped(9, 4)))))
-	line!(Text.printed(List.concat([33, 17, 15, 73, 24, 15, 23, 23, 69, 2], Text.show_int(via_call(10)))))
+	line!(Text.printed(Text.concat("regs-only: ", Text.show_int(regs_only(1, 2, 3, 4, 5, 6, 7, 8)))))
+	line!(Text.printed(Text.concat("saved: ", Text.show_int(saved(1, 2, 3, 4, 5, 6, 7, 8)))))
+	line!(Text.printed(Text.concat("saved-perm: ", Text.show_int(saved(8, 7, 6, 5, 4, 3, 2, 1)))))
+	line!(Text.printed(Text.concat("spilled: ", Text.show_int(spilled(1, 2, 3, 4, 5, 6, 7, 8)))))
+	line!(Text.printed(Text.concat("spilled-perm: ", Text.show_int(spilled(8, 7, 6, 5, 4, 3, 2, 1)))))
+	line!(Text.printed(Text.concat("unused-first: ", Text.show_int(unused_first(99, 6, 4)))))
+	line!(Text.printed(Text.concat("swapped: ", Text.show_int(swapped(9, 4)))))
+	line!(Text.printed(Text.concat("via-call: ", Text.show_int(via_call(10)))))
 	Ok({})
 }

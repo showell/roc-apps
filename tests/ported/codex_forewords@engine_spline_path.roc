@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([39, 18, 29, 17, 18, 13, 81, 45, 31, 23, 17, 18, 13, 57, 15, 14, 20, 2, 42, 60]))
+	line!(Text.printed("Engine/SplinePath OK"))
 	Ok({})
 }

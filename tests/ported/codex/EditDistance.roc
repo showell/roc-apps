@@ -2,9 +2,9 @@
 import Text
 
 EditDistance :: [].{
-	EditMatch : { em_text : List(U8), em_distance : I64, em_index : I64 }
+	EditMatch : { em_text : Text, em_distance : I64, em_index : I64 }
 
-	edit_distance : List(U8), List(U8) -> I64
+	edit_distance : Text, Text -> I64
 	edit_distance = |a, b| ({
 		m = Text.len(a)
 		n = Text.len(b)
@@ -17,13 +17,13 @@ EditDistance :: [].{
 	ed_init_row : I64, I64, List(I64) -> List(I64)
 	ed_init_row = |i, len, acc| (if (i >= len) { acc } else { ed_init_row((i + 1), len, List.append(acc, i)) })
 
-	ed_outer : List(U8), List(U8), List(I64), I64, I64, I64 -> I64
+	ed_outer : Text, Text, List(I64), I64, I64, I64 -> I64
 	ed_outer = |a, b, row, i, m, n| (if (i > m) { (List.get(row, I64.to_u64_wrap(n)) ?? crash("list-at out of range")) } else { ({
 		new_row = ed_inner(a, b, row, i, 1, n, [i])
 		ed_outer(a, b, new_row, (i + 1), m, n)
 	}) })
 
-	ed_inner : List(U8), List(U8), List(I64), I64, I64, I64, List(I64) -> List(I64)
+	ed_inner : Text, Text, List(I64), I64, I64, I64, List(I64) -> List(I64)
 	ed_inner = |a, b, prev, i, j, n, curr| (if (j > n) { curr } else { ({
 		cost = (if (Text.char_at(a, (i - 1)) == Text.char_at(b, (j - 1))) { 0 } else { 1 })
 		del = ((List.get(prev, I64.to_u64_wrap(j)) ?? crash("list-at out of range")) + 1)
@@ -33,7 +33,7 @@ EditDistance :: [].{
 		ed_inner(a, b, prev, i, (j + 1), n, List.append(curr, best))
 	}) })
 
-	edit_similarity : List(U8), List(U8) -> I64
+	edit_similarity : Text, Text -> I64
 	edit_similarity = |a, b| ({
 		m = Text.len(a)
 		n = Text.len(b)
@@ -44,10 +44,10 @@ EditDistance :: [].{
 		}) })
 	})
 
-	edit_best_match : List(U8), List(List(U8)) -> EditDistance.EditMatch
-	edit_best_match = |query, candidates| ed_best_loop(query, candidates, 0, U64.to_i64_wrap(List.len(candidates)), { em_text: [], em_distance: 999999, em_index: (0 - 1) })
+	edit_best_match : Text, List(Text) -> EditDistance.EditMatch
+	edit_best_match = |query, candidates| ed_best_loop(query, candidates, 0, U64.to_i64_wrap(List.len(candidates)), { em_text: "", em_distance: 999999, em_index: (0 - 1) })
 
-	ed_best_loop : List(U8), List(List(U8)), I64, I64, EditDistance.EditMatch -> EditDistance.EditMatch
+	ed_best_loop : Text, List(Text), I64, I64, EditDistance.EditMatch -> EditDistance.EditMatch
 	ed_best_loop = |query, candidates, i, n, best| (if (i >= n) { best } else { ({
 		c = (List.get(candidates, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 		d = edit_distance(query, c)
@@ -55,10 +55,10 @@ EditDistance :: [].{
 		ed_best_loop(query, candidates, (i + 1), n, new_best)
 	}) })
 
-	edit_within : List(U8), List(List(U8)), I64 -> List(List(U8))
+	edit_within : Text, List(Text), I64 -> List(Text)
 	edit_within = |query, candidates, max_dist| ed_within_loop(query, candidates, max_dist, 0, U64.to_i64_wrap(List.len(candidates)), [])
 
-	ed_within_loop : List(U8), List(List(U8)), I64, I64, I64, List(List(U8)) -> List(List(U8))
+	ed_within_loop : Text, List(Text), I64, I64, I64, List(Text) -> List(Text)
 	ed_within_loop = |query, candidates, max_dist, i, n, acc| (if (i >= n) { acc } else { ({
 		c = (List.get(candidates, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 		d = edit_distance(query, c)
@@ -72,6 +72,6 @@ EditDistance :: [].{
 		(if (ab < c) { ab } else { c })
 	})
 
-	format_edit_match : EditDistance.EditMatch -> List(U8)
-	format_edit_match = |m| List.concat(List.concat(List.concat(m.em_text, [2, 74, 22, 77]), Text.show_int(m.em_distance)), [75])
+	format_edit_match : EditDistance.EditMatch -> Text
+	format_edit_match = |m| Text.concat(Text.concat(Text.concat(m.em_text, " (d="), Text.show_int(m.em_distance)), ")")
 }

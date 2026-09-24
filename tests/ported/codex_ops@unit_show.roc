@@ -27,13 +27,13 @@ import cdx.Text
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Name : List(U8)
+Name : Text
 Flag : Bool
 Dist : F64
 Count : I64
 
-plain_text : List(U8)
-plain_text = [15, 32, 24, 22]
+plain_text : Text
+plain_text = "abcd"
 
 plain_bool : Bool
 plain_bool = True
@@ -45,7 +45,7 @@ plain_int : I64
 plain_int = 42
 
 unit_text : Name
-unit_text = [15, 32, 24, 22]
+unit_text = "abcd"
 
 unit_bool : Flag
 unit_bool = True
@@ -59,13 +59,13 @@ unit_int = 42
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([14, 13, 36, 14, 73, 31, 23, 15, 17, 18, 77], plain_text)))
-	line!(Text.printed(List.concat([14, 13, 36, 14, 73, 25, 18, 17, 14, 2, 77], unit_text)))
-	line!(Text.printed(List.concat([32, 16, 16, 23, 73, 31, 23, 15, 17, 18, 77], (if plain_bool { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))))
-	line!(Text.printed(List.concat([32, 16, 16, 23, 73, 25, 18, 17, 14, 2, 77], (if unit_bool { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))))
-	line!(Text.printed(List.concat([21, 13, 15, 23, 73, 31, 23, 15, 17, 18, 77], Text.of_str(Prelude.real_to_str(plain_real)))))
-	line!(Text.printed(List.concat([21, 13, 15, 23, 73, 25, 18, 17, 14, 2, 77], Text.of_str(Prelude.real_to_str(unit_real)))))
-	line!(Text.printed(List.concat([17, 18, 14, 73, 31, 23, 15, 17, 18, 2, 77], Text.show_int(plain_int))))
-	line!(Text.printed(List.concat([17, 18, 14, 73, 25, 18, 17, 14, 2, 2, 77], Text.show_int(unit_int))))
+	line!(Text.printed(Text.concat("text-plain=", plain_text)))
+	line!(Text.printed(Text.concat("text-unit =", unit_text)))
+	line!(Text.printed(Text.concat("bool-plain=", (if plain_bool { "True" } else { "False" }))))
+	line!(Text.printed(Text.concat("bool-unit =", (if unit_bool { "True" } else { "False" }))))
+	line!(Text.printed(Text.concat("real-plain=", Text.of_str(Prelude.real_to_str(plain_real)))))
+	line!(Text.printed(Text.concat("real-unit =", Text.of_str(Prelude.real_to_str(unit_real)))))
+	line!(Text.printed(Text.concat("int-plain =", Text.show_int(plain_int))))
+	line!(Text.printed(Text.concat("int-unit  =", Text.show_int(unit_int))))
 	Ok({})
 }

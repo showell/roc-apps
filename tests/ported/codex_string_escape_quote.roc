@@ -20,8 +20,8 @@ import cdx.Text
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-q : List(U8)
-q = [19, 20, 13, 2, 19, 15, 17, 22, 2, 72, 20, 17, 72, 2, 23, 16, 25, 22, 23, 30]
+q : Text
+q = "she said \"hi\" loudly"
 
 # --- Entry ---
 

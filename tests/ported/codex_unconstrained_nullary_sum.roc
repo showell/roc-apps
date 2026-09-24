@@ -26,8 +26,8 @@ import cdx.Text
 line! = |s| echo!(Str.concat(s, "\n"))
 Foo(a) : [Bar(a), Baz]
 
-inspect_foo : Foo(a) -> List(U8)
-inspect_foo = |_ignored| [16, 34]
+inspect_foo : Foo(a) -> Text
+inspect_foo = |_ignored| "ok"
 
 payload_or : Foo(a), a -> a
 payload_or = |value, fallback| (match value {
@@ -53,8 +53,8 @@ main! = |_args| {
 	line!(Text.printed(inspect_foo(Baz)))
 	line!(Text.printed(inspect_foo(Bar(1))))
 	line!(Text.printed(Text.show_int(payload_or(Baz, 42))))
-	line!(Text.printed(payload_or(Baz, [14, 13, 36, 14])))
+	line!(Text.printed(payload_or(Baz, "text")))
 	line!(Text.printed(Text.show_int(payload_or(Bar(7), 0))))
-	line!(Text.printed(payload_or(Bar([34, 13, 31, 14]), [28, 15, 23, 23, 32, 15, 24, 34])))
+	line!(Text.printed(payload_or(Bar("kept"), "fallback")))
 	Ok({})
 }

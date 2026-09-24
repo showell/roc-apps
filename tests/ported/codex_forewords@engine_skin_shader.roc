@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([39, 18, 29, 17, 18, 13, 81, 45, 34, 17, 18, 45, 20, 15, 22, 13, 21, 2, 42, 60]))
+	line!(Text.printed("Engine/SkinShader OK"))
 	Ok({})
 }

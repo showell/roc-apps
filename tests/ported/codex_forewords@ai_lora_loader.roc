@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([41, 43, 81, 49, 16, 21, 15, 49, 16, 15, 22, 13, 21, 2, 42, 60]))
+	line!(Text.printed("AI/LoraLoader OK"))
 	Ok({})
 }

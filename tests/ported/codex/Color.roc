@@ -171,20 +171,20 @@ Color :: [].{
 		rgb_to_packed(hsl_to_rgb({ ch: hue, cs: sat, cl: lit }))
 	})
 
-	format_rgb : Color.Rgb -> List(U8)
-	format_rgb = |c| List.concat(List.concat(List.concat(List.concat(List.concat(List.concat([21, 29, 32, 74], Text.show_int(c.cr)), [66]), Text.show_int(c.cg)), [66]), Text.show_int(c.cb)), [75])
+	format_rgb : Color.Rgb -> Text
+	format_rgb = |c| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("rgb(", Text.show_int(c.cr)), ","), Text.show_int(c.cg)), ","), Text.show_int(c.cb)), ")")
 
-	format_hsl : Color.Hsl -> List(U8)
-	format_hsl = |c| List.concat(List.concat(List.concat(List.concat(List.concat(List.concat([20, 19, 23, 74], Text.show_int(c.ch)), [66]), Text.show_int(c.cs)), [66]), Text.show_int(c.cl)), [75])
+	format_hsl : Color.Hsl -> Text
+	format_hsl = |c| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("hsl(", Text.show_int(c.ch)), ","), Text.show_int(c.cs)), ","), Text.show_int(c.cl)), ")")
 
-	format_hex_color : Color.Rgb -> List(U8)
-	format_hex_color = |c| List.concat(List.concat(List.concat([83], col_hex2(c.cr)), col_hex2(c.cg)), col_hex2(c.cb))
+	format_hex_color : Color.Rgb -> Text
+	format_hex_color = |c| Text.concat(Text.concat(Text.concat("#", col_hex2(c.cr)), col_hex2(c.cg)), col_hex2(c.cb))
 
-	col_hex2 : I64 -> List(U8)
-	col_hex2 = |v| List.concat(col_hex_digit(I64.div_trunc_by(v, 16)), col_hex_digit(I64.bitwise_and(v, 15)))
+	col_hex2 : I64 -> Text
+	col_hex2 = |v| Text.concat(col_hex_digit(I64.div_trunc_by(v, 16)), col_hex_digit(I64.bitwise_and(v, 15)))
 
-	col_hex_digit : I64 -> List(U8)
-	col_hex_digit = |d| (if (d == 0) { [3] } else { (if (d == 1) { [4] } else { (if (d == 2) { [5] } else { (if (d == 3) { [6] } else { (if (d == 4) { [7] } else { (if (d == 5) { [8] } else { (if (d == 6) { [9] } else { (if (d == 7) { [10] } else { (if (d == 8) { [11] } else { (if (d == 9) { [12] } else { (if (d == 10) { [15] } else { (if (d == 11) { [32] } else { (if (d == 12) { [24] } else { (if (d == 13) { [22] } else { (if (d == 14) { [13] } else { [28] }) }) }) }) }) }) }) }) }) }) }) }) }) }) })
+	col_hex_digit : I64 -> Text
+	col_hex_digit = |d| (if (d == 0) { "0" } else { (if (d == 1) { "1" } else { (if (d == 2) { "2" } else { (if (d == 3) { "3" } else { (if (d == 4) { "4" } else { (if (d == 5) { "5" } else { (if (d == 6) { "6" } else { (if (d == 7) { "7" } else { (if (d == 8) { "8" } else { (if (d == 9) { "9" } else { (if (d == 10) { "a" } else { (if (d == 11) { "b" } else { (if (d == 12) { "c" } else { (if (d == 13) { "d" } else { (if (d == 14) { "e" } else { "f" }) }) }) }) }) }) }) }) }) }) }) }) }) }) })
 
 	eq_RainbowPalette : Color.RainbowPalette, Color.RainbowPalette -> Bool
 	eq_RainbowPalette = |ex, ey| (match ex {

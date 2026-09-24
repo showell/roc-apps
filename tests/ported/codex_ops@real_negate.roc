@@ -53,11 +53,11 @@ mixed = |a, b| ((((-dot(a, b)) * 2.0) + a.vx) * 10.0)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([18, 13, 29, 73, 31, 15, 21, 15, 26, 2, 2, 2], Text.show_int(F64.to_i64_wrap((neg_param(2.5) * 10.0))))))
-	line!(Text.printed(List.concat([18, 13, 29, 73, 24, 15, 23, 23, 2, 2, 2, 2], Text.show_int(F64.to_i64_wrap((neg_call(2.5) * 10.0))))))
-	line!(Text.printed(List.concat([18, 13, 29, 73, 28, 17, 13, 23, 22, 2, 2, 2], Text.show_int(F64.to_i64_wrap((neg_field({ vx: 1.5, vy: 0.0 }) * 10.0))))))
-	line!(Text.printed(List.concat([18, 13, 29, 73, 18, 13, 19, 14, 13, 22, 2, 2], Text.show_int(F64.to_i64_wrap((neg_nested(2.0) * 10.0))))))
-	line!(Text.printed(List.concat([18, 13, 29, 73, 26, 25, 23, 14, 17, 2, 2, 2], Text.show_int(F64.to_i64_wrap((neg_call_multi({ vx: 3.0, vy: 4.0 }, { vx: 1.0, vy: 2.0 }) * 10.0))))))
-	line!(Text.printed(List.concat([26, 17, 36, 13, 22, 2, 2, 2, 2, 2, 2, 2], Text.show_int(F64.to_i64_wrap(mixed({ vx: 3.0, vy: 4.0 }, { vx: 1.0, vy: 2.0 }))))))
+	line!(Text.printed(Text.concat("neg-param   ", Text.show_int(F64.to_i64_wrap((neg_param(2.5) * 10.0))))))
+	line!(Text.printed(Text.concat("neg-call    ", Text.show_int(F64.to_i64_wrap((neg_call(2.5) * 10.0))))))
+	line!(Text.printed(Text.concat("neg-field   ", Text.show_int(F64.to_i64_wrap((neg_field({ vx: 1.5, vy: 0.0 }) * 10.0))))))
+	line!(Text.printed(Text.concat("neg-nested  ", Text.show_int(F64.to_i64_wrap((neg_nested(2.0) * 10.0))))))
+	line!(Text.printed(Text.concat("neg-multi   ", Text.show_int(F64.to_i64_wrap((neg_call_multi({ vx: 3.0, vy: 4.0 }, { vx: 1.0, vy: 2.0 }) * 10.0))))))
+	line!(Text.printed(Text.concat("mixed       ", Text.show_int(F64.to_i64_wrap(mixed({ vx: 3.0, vy: 4.0 }, { vx: 1.0, vy: 2.0 }))))))
 	Ok({})
 }

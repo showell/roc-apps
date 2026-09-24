@@ -33,9 +33,9 @@ main! = |_args| {
 		count = U64.to_i64_wrap(List.len(unique))
 		({
 			line!(Text.printed(Text.show_int(count)))
-			line!(Text.printed((if Pipeline.pipe_contains(unique, 1) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] })))
-			line!(Text.printed((if Pipeline.pipe_contains(unique, 9) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] })))
-			line!(Text.printed((if Pipeline.pipe_contains(unique, 7) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] })))
+			line!(Text.printed((if Pipeline.pipe_contains(unique, 1) { "True" } else { "False" })))
+			line!(Text.printed((if Pipeline.pipe_contains(unique, 9) { "True" } else { "False" })))
+			line!(Text.printed((if Pipeline.pipe_contains(unique, 7) { "True" } else { "False" })))
 		})
 	})
 	Ok({})

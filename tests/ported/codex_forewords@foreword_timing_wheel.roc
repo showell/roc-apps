@@ -990,6 +990,6 @@ bodyTemp_to_CelsiusBody = |fv| I64.div_trunc_by(fv, 1000)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([54, 16, 21, 13, 27, 16, 21, 22, 81, 40, 17, 26, 17, 18, 29, 53, 20, 13, 13, 23, 2, 42, 60]))
+	line!(Text.printed("Foreword/TimingWheel OK"))
 	Ok({})
 }

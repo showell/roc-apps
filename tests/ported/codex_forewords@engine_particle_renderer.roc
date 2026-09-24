@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([39, 18, 29, 17, 18, 13, 81, 57, 15, 21, 14, 17, 24, 23, 13, 47, 13, 18, 22, 13, 21, 13, 21, 2, 42, 60]))
+	line!(Text.printed("Engine/ParticleRenderer OK"))
 	Ok({})
 }

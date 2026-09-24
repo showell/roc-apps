@@ -42,7 +42,7 @@ int_cmp = |a, b| (a - b)
 
 print_list! : List(I64), I64, I64 => {}
 print_list! = |xs, i, len| ({
-	(if (i >= len) { line!(Text.printed([])) } else { ({
+	(if (i >= len) { line!(Text.printed("")) } else { ({
 		line!(Text.printed(Text.show_int((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))
 		print_list!(xs, (i + 1), len)
 	}) })

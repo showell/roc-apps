@@ -26,38 +26,38 @@ import cdx.UsbAudio
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-test_setup_packet : List(U8)
+test_setup_packet : Text
 test_setup_packet = ({
 	pkt = Usb.usb_setup_get_descriptor(Usb.usb_desc_device, 0, 18)
 	bytes = Usb.usb_encode_setup(pkt)
-	List.concat(List.concat(List.concat([19, 13, 14, 25, 31, 69, 2, 23, 13, 18, 77], Text.show_int(U64.to_i64_wrap(List.len(bytes)))), [2, 21, 13, 37, 77]), Text.show_int(pkt.sp_request))
+	Text.concat(Text.concat(Text.concat("setup: len=", Text.show_int(U64.to_i64_wrap(List.len(bytes)))), " req="), Text.show_int(pkt.sp_request))
 })
 
-test_endpoint : List(U8)
+test_endpoint : Text
 test_endpoint = ({
 	bytes = [7, 5, 129, 1, 192, 0, 1]
 	ep = Usb.usb_parse_endpoint(bytes, 0)
-	List.concat([13, 31, 69, 2], Usb.format_usb_endpoint(ep))
+	Text.concat("ep: ", Usb.format_usb_endpoint(ep))
 })
 
-test_audio_format : List(U8)
+test_audio_format : Text
 test_audio_format = ({
 	cd = UsbAudio.audio_format_cd
-	List.concat([24, 22, 69, 2], UsbAudio.format_audio_format(cd))
+	Text.concat("cd: ", UsbAudio.format_audio_format(cd))
 })
 
-test_audio_frame : List(U8)
+test_audio_frame : Text
 test_audio_frame = ({
 	left = [500, (0 - 500)]
 	right = [300, (0 - 300)]
 	frame = UsbAudio.usb_audio_frame(left, right, UsbAudio.audio_format_cd)
-	List.concat([28, 21, 15, 26, 13, 69, 2, 32, 30, 14, 13, 19, 77], Text.show_int(U64.to_i64_wrap(List.len(frame))))
+	Text.concat("frame: bytes=", Text.show_int(U64.to_i64_wrap(List.len(frame))))
 })
 
-test_latency : List(U8)
+test_latency : Text
 test_latency = ({
 	fmt = UsbAudio.audio_format_48k
-	List.concat(List.concat(List.concat([23, 15, 14, 13, 18, 24, 30, 73, 5, 8, 9, 77], Text.show_int(UsbAudio.usb_audio_latency_ms(fmt, 256))), [26, 19, 2, 32, 31, 19, 77]), Text.show_int(UsbAudio.usb_audio_bytes_per_second(fmt)))
+	Text.concat(Text.concat(Text.concat("latency-256=", Text.show_int(UsbAudio.usb_audio_latency_ms(fmt, 256))), "ms bps="), Text.show_int(UsbAudio.usb_audio_bytes_per_second(fmt)))
 })
 
 # --- Entry ---

@@ -23,21 +23,21 @@ import cdx.Text
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-s : List(U8)
-s = [15, 32, 24, 22, 13]
+s : Text
+s = "abcde"
 
-walk : I64, I64, List(U8) -> List(U8)
-walk = |i, n, acc| (if (i >= n) { acc } else { walk((i + 1), n, List.concat(List.concat(List.concat(List.concat(acc, [2]), Text.show_int(i)), [77]), Text.show_int(Text.char_code_at(s, i)))) })
+walk : I64, I64, Text -> Text
+walk = |i, n, acc| (if (i >= n) { acc } else { walk((i + 1), n, Text.concat(Text.concat(Text.concat(Text.concat(acc, " "), Text.show_int(i)), "="), Text.show_int(Text.char_code_at(s, i)))) })
 
-walk_chars : I64, I64, List(U8) -> List(U8)
-walk_chars = |i, n, acc| (if (i >= n) { acc } else { walk_chars((i + 1), n, List.concat(acc, Text.char_to_text(Text.char_at(s, i)))) })
+walk_chars : I64, I64, Text -> Text
+walk_chars = |i, n, acc| (if (i >= n) { acc } else { walk_chars((i + 1), n, Text.concat(acc, Text.char_to_text(Text.char_at(s, i)))) })
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([24, 16, 22, 13, 19, 69], walk(0, Text.len(s), []))))
-	line!(Text.printed(List.concat(List.concat([24, 20, 15, 21, 19, 77, 88], walk_chars(0, Text.len(s), [])), [89])))
-	line!(Text.printed(List.concat([23, 15, 19, 14, 73, 23, 13, 29, 15, 23, 77], Text.show_int(Text.char_code_at(s, (Text.len(s) - 1))))))
-	line!(Text.printed(List.concat([28, 17, 21, 19, 14, 77], Text.show_int(Text.char_code_at(s, 0)))))
+	line!(Text.printed(Text.concat("codes:", walk(0, Text.len(s), ""))))
+	line!(Text.printed(Text.concat(Text.concat("chars=[", walk_chars(0, Text.len(s), "")), "]")))
+	line!(Text.printed(Text.concat("last-legal=", Text.show_int(Text.char_code_at(s, (Text.len(s) - 1))))))
+	line!(Text.printed(Text.concat("first=", Text.show_int(Text.char_code_at(s, 0)))))
 	Ok({})
 }

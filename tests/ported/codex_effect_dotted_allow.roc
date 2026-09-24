@@ -29,6 +29,6 @@ caller! = |n| narrow!(n)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([21, 13, 19, 25, 23, 14, 2], Text.show_int(caller!(41)))))
+	line!(Text.printed(Text.concat("result ", Text.show_int(caller!(41)))))
 	Ok({})
 }

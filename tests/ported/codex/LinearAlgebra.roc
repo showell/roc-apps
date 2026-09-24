@@ -1,5 +1,6 @@
 # LinearAlgebra -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 import ListUtils
+import Text
 
 LinearAlgebra :: [].{
 	Matrix : { mat_rows : I64, mat_cols : I64, mat_data : List(I64) }

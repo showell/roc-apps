@@ -46,8 +46,8 @@ reads_in_tail = |xs, n| (if (n <= 0) { (List.get(xs, I64.to_u64_wrap(0)) ?? cras
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([21, 13, 15, 22, 19, 73, 17, 18, 73, 32, 16, 22, 30, 69, 2], Text.show_int(reads_in_body(0)))))
-	line!(Text.printed(List.concat([21, 13, 15, 22, 19, 73, 17, 18, 73, 19, 17, 32, 23, 17, 18, 29, 69, 2], Text.show_int(reads_in_sibling(0)))))
-	line!(Text.printed(List.concat([21, 13, 15, 22, 19, 73, 17, 18, 73, 14, 15, 17, 23, 69, 2], Text.show_int(reads_in_tail([23], 10000)))))
+	line!(Text.printed(Text.concat("reads-in-body: ", Text.show_int(reads_in_body(0)))))
+	line!(Text.printed(Text.concat("reads-in-sibling: ", Text.show_int(reads_in_sibling(0)))))
+	line!(Text.printed(Text.concat("reads-in-tail: ", Text.show_int(reads_in_tail([23], 10000)))))
 	Ok({})
 }

@@ -47,12 +47,12 @@ plain_sub = |a, b| (a - b)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([23, 17, 14, 13, 21, 15, 23, 2, 2, 27, 15, 18, 14, 2, 73, 12, 5, 5, 6, 6, 10, 5, 3, 6, 9, 11, 8, 7, 10, 10, 8, 11, 3, 11, 69, 2], Text.show_int(bottom))))
-	line!(Text.printed(List.concat([23, 17, 14, 13, 21, 15, 23, 2, 2, 27, 15, 18, 14, 2, 73, 12, 5, 5, 6, 6, 10, 5, 3, 6, 9, 11, 8, 7, 10, 10, 8, 11, 3, 11, 69, 2], Text.show_int((-9223372036854775808)))))
-	line!(Text.printed(List.concat([23, 17, 14, 13, 21, 15, 23, 2, 2, 27, 15, 18, 14, 2, 12, 5, 5, 6, 6, 10, 5, 3, 6, 9, 11, 8, 7, 10, 10, 8, 11, 3, 10, 69, 2], Text.show_int(plain_sub(top, 0)))))
-	line!(Text.printed(List.concat([32, 15, 21, 13, 73, 15, 22, 22, 2, 27, 15, 18, 14, 2, 73, 12, 5, 5, 6, 6, 10, 5, 3, 6, 9, 11, 8, 7, 10, 10, 8, 11, 3, 11, 69, 2], Text.show_int(bump(top, 1)))))
-	line!(Text.printed(List.concat([32, 15, 21, 13, 73, 19, 25, 32, 2, 27, 15, 18, 14, 2, 12, 5, 5, 6, 6, 10, 5, 3, 6, 9, 11, 8, 7, 10, 10, 8, 11, 3, 10, 69, 2], Text.show_int(drop(bottom)))))
-	line!(Text.printed(List.concat([32, 15, 21, 13, 73, 26, 25, 23, 2, 27, 15, 18, 14, 2, 73, 5, 7, 7, 9, 10, 7, 7, 3, 10, 6, 10, 3, 12, 8, 8, 4, 9, 4, 9, 69, 2], Text.show_int(scale(4000000000, 4000000000)))))
-	line!(Text.printed(List.concat([19, 26, 15, 23, 23, 2, 2, 2, 2, 27, 15, 18, 14, 2, 7, 5, 69, 2], Text.show_int(bump(40, 2)))))
+	line!(Text.printed(Text.concat("literal  want -9223372036854775808: ", Text.show_int(bottom))))
+	line!(Text.printed(Text.concat("literal  want -9223372036854775808: ", Text.show_int((-9223372036854775808)))))
+	line!(Text.printed(Text.concat("literal  want 9223372036854775807: ", Text.show_int(plain_sub(top, 0)))))
+	line!(Text.printed(Text.concat("bare-add want -9223372036854775808: ", Text.show_int(bump(top, 1)))))
+	line!(Text.printed(Text.concat("bare-sub want 9223372036854775807: ", Text.show_int(drop(bottom)))))
+	line!(Text.printed(Text.concat("bare-mul want -2446744073709551616: ", Text.show_int(scale(4000000000, 4000000000)))))
+	line!(Text.printed(Text.concat("small    want 42: ", Text.show_int(bump(40, 2)))))
 	Ok({})
 }

@@ -30,10 +30,10 @@ import cdx.Text
 line! = |s| echo!(Str.concat(s, "\n"))
 Pair(a) : [P(a, a)]
 Holder(a, b) : [H(a, b)]
-Plain : [Q(List(U8), List(U8))]
+Plain : [Q(Text, Text)]
 
-yn : Bool -> List(U8)
-yn = |b| (if b { [30, 13, 19] } else { [18, 16] })
+yn : Bool -> Text
+yn = |b| (if b { "yes" } else { "no" })
 
 eq_Pair : Pair(a), Pair(a) -> Bool where [a.is_eq : a, a -> Bool]
 eq_Pair = |ex, ey| (match ex {
@@ -62,15 +62,15 @@ eq_Plain = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([14, 13, 36, 14, 73, 24, 16, 18, 14, 21, 16, 23, 2, 2, 2, 2, 2, 69, 2], yn(([4, 5] == Text.show_int(12))))))
-	line!(Text.printed(List.concat([24, 16, 18, 24, 21, 13, 14, 13, 73, 24, 16, 18, 14, 21, 16, 23, 2, 69, 2], yn(eq_Plain(Q([4, 5], [12]), Q(Text.show_int(12), [12]))))))
-	line!(Text.printed(List.concat([16, 18, 13, 73, 31, 15, 21, 15, 26, 2, 13, 37, 2, 2, 2, 2, 2, 69, 2], yn(eq_Pair(P([4, 5], [12]), P(Text.show_int(12), [12]))))))
-	line!(Text.printed(List.concat([16, 18, 13, 73, 31, 15, 21, 15, 26, 2, 18, 13, 2, 2, 2, 2, 2, 69, 2], yn(eq_Pair(P([4, 5], [12]), P(Text.show_int(13), [12]))))))
-	line!(Text.printed(List.concat([19, 13, 24, 16, 18, 22, 2, 31, 15, 21, 15, 26, 2, 2, 2, 2, 2, 69, 2], yn(eq_Holder(H(7, [4, 5]), H(7, Text.show_int(12)))))))
-	line!(Text.printed(List.concat([19, 13, 24, 16, 18, 22, 2, 31, 15, 21, 15, 26, 2, 18, 13, 2, 2, 69, 2], yn(eq_Holder(H(7, [4, 5]), H(8, Text.show_int(12)))))))
-	line!(Text.printed(List.concat([16, 18, 13, 73, 31, 15, 21, 15, 26, 2, 17, 18, 14, 2, 13, 37, 2, 69, 2], yn(eq_Pair(P(12, 9), P((6 + 6), 9))))))
-	line!(Text.printed(List.concat([16, 18, 13, 73, 31, 15, 21, 15, 26, 2, 17, 18, 14, 2, 18, 13, 2, 69, 2], yn(eq_Pair(P(12, 9), P((6 + 7), 9))))))
-	line!(Text.printed(List.concat([28, 17, 21, 19, 14, 2, 31, 15, 21, 15, 26, 2, 13, 37, 2, 2, 2, 69, 2], yn(eq_Holder(H([4, 5], 7), H(Text.show_int(12), 7))))))
-	line!(Text.printed(List.concat([28, 17, 21, 19, 14, 2, 31, 15, 21, 15, 26, 2, 18, 13, 2, 2, 2, 69, 2], yn(eq_Holder(H([4, 5], 7), H(Text.show_int(13), 7))))))
+	line!(Text.printed(Text.concat("text-control     : ", yn(("12" == Text.show_int(12))))))
+	line!(Text.printed(Text.concat("concrete-control : ", yn(eq_Plain(Q("12", "9"), Q(Text.show_int(12), "9"))))))
+	line!(Text.printed(Text.concat("one-param eq     : ", yn(eq_Pair(P("12", "9"), P(Text.show_int(12), "9"))))))
+	line!(Text.printed(Text.concat("one-param ne     : ", yn(eq_Pair(P("12", "9"), P(Text.show_int(13), "9"))))))
+	line!(Text.printed(Text.concat("second param     : ", yn(eq_Holder(H(7, "12"), H(7, Text.show_int(12)))))))
+	line!(Text.printed(Text.concat("second param ne  : ", yn(eq_Holder(H(7, "12"), H(8, Text.show_int(12)))))))
+	line!(Text.printed(Text.concat("one-param int eq : ", yn(eq_Pair(P(12, 9), P((6 + 6), 9))))))
+	line!(Text.printed(Text.concat("one-param int ne : ", yn(eq_Pair(P(12, 9), P((6 + 7), 9))))))
+	line!(Text.printed(Text.concat("first param eq   : ", yn(eq_Holder(H("12", 7), H(Text.show_int(12), 7))))))
+	line!(Text.printed(Text.concat("first param ne   : ", yn(eq_Holder(H("12", 7), H(Text.show_int(13), 7))))))
 	Ok({})
 }

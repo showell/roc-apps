@@ -68,12 +68,12 @@ char_control = (match 15 {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([32, 15, 21, 13, 73, 14, 21, 25, 13, 69, 2], Text.show_int(bare_true))))
-	line!(Text.printed(List.concat([32, 15, 21, 13, 73, 28, 15, 23, 19, 13, 69, 2], Text.show_int(bare_false))))
-	line!(Text.printed(List.concat([24, 16, 26, 31, 25, 14, 13, 22, 69, 2], Text.show_int(computed))))
-	line!(Text.printed(List.concat([32, 16, 14, 20, 73, 15, 21, 26, 19, 73, 18, 15, 26, 13, 22, 69, 2], Text.show_int(both_arms_named))))
-	line!(Text.printed(List.concat([17, 28, 73, 24, 16, 18, 14, 21, 16, 23, 69, 2], Text.show_int(if_control))))
-	line!(Text.printed(List.concat([17, 18, 14, 73, 24, 16, 18, 14, 21, 16, 23, 69, 2], Text.show_int(int_control))))
-	line!(Text.printed(List.concat([24, 20, 15, 21, 73, 24, 16, 18, 14, 21, 16, 23, 69, 2], Text.show_int(char_control))))
+	line!(Text.printed(Text.concat("bare-true: ", Text.show_int(bare_true))))
+	line!(Text.printed(Text.concat("bare-false: ", Text.show_int(bare_false))))
+	line!(Text.printed(Text.concat("computed: ", Text.show_int(computed))))
+	line!(Text.printed(Text.concat("both-arms-named: ", Text.show_int(both_arms_named))))
+	line!(Text.printed(Text.concat("if-control: ", Text.show_int(if_control))))
+	line!(Text.printed(Text.concat("int-control: ", Text.show_int(int_control))))
+	line!(Text.printed(Text.concat("char-control: ", Text.show_int(char_control))))
 	Ok({})
 }

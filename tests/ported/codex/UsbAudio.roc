@@ -105,9 +105,9 @@ UsbAudio :: [].{
 	uaf_min : I64, I64 -> I64
 	uaf_min = |a, b| (if (a < b) { a } else { b })
 
-	format_usb_audio : UsbAudio.UsbAudioDevice -> List(U8)
-	format_usb_audio = |dev| (if dev.uad_found { List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat([51, 45, 58, 2, 41, 25, 22, 17, 16, 69, 2], Text.show_int(dev.uad_sample_rate)), [46, 38, 2]), Text.show_int(dev.uad_channels)), [24, 20, 2]), Text.show_int(dev.uad_bit_depth)), [32, 17, 14, 2, 39, 57]), Text.show_int(dev.uad_stream_ep)) } else { [51, 45, 58, 2, 41, 25, 22, 17, 16, 69, 2, 18, 16, 14, 2, 28, 16, 25, 18, 22] })
+	format_usb_audio : UsbAudio.UsbAudioDevice -> Text
+	format_usb_audio = |dev| (if dev.uad_found { Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("USB Audio: ", Text.show_int(dev.uad_sample_rate)), "Hz "), Text.show_int(dev.uad_channels)), "ch "), Text.show_int(dev.uad_bit_depth)), "bit EP"), Text.show_int(dev.uad_stream_ep)) } else { "USB Audio: not found" })
 
-	format_audio_format : UsbAudio.AudioFormat -> List(U8)
-	format_audio_format = |fmt| List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(Text.show_int(fmt.afmt_sample_rate), [46, 38, 2]), Text.show_int(fmt.afmt_channels)), [24, 20, 2]), Text.show_int(fmt.afmt_bit_depth)), [32, 17, 14, 2, 74]), Text.show_int(usb_audio_bytes_per_second(fmt))), [2, 58, 81, 19, 75])
+	format_audio_format : UsbAudio.AudioFormat -> Text
+	format_audio_format = |fmt| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.show_int(fmt.afmt_sample_rate), "Hz "), Text.show_int(fmt.afmt_channels)), "ch "), Text.show_int(fmt.afmt_bit_depth)), "bit ("), Text.show_int(usb_audio_bytes_per_second(fmt))), " B/s)")
 }

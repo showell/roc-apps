@@ -25,19 +25,19 @@ import cdx.Text
 line! = |s| echo!(Str.concat(s, "\n"))
 Shape : [Leaf, Fork]
 
-classify : I64 -> List(U8)
+classify : I64 -> Text
 classify = |n| (match n {
-	1 => [16, 18, 13]
-	2 => [14, 27, 16]
-	1 => [45, 46, 41, 48, 42, 53, 73, 43, 44, 40]
-	_ => [16, 14, 20, 13, 21]
+	1 => "one"
+	2 => "two"
+	1 => "SHADOW-INT"
+	_ => "other"
 })
 
-name_of : Shape -> List(U8)
+name_of : Shape -> Text
 name_of = |s| (match s {
-	Leaf => [23, 13, 15, 28]
-	Fork => [28, 16, 21, 34]
-	Leaf => [45, 46, 41, 48, 42, 53, 73, 50, 40, 42, 47]
+	Leaf => "leaf"
+	Fork => "fork"
+	Leaf => "SHADOW-CTOR"
 })
 
 eq_Shape : Shape, Shape -> Bool

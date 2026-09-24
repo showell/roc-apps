@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([54, 16, 21, 13, 27, 16, 21, 22, 81, 52, 15, 14, 20, 49, 17, 32, 2, 42, 60]))
+	line!(Text.printed("Foreword/MathLib OK"))
 	Ok({})
 }

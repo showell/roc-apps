@@ -30,7 +30,7 @@ neg_neg_call = |x| (-(-(x * 2.0)))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([18, 13, 29, 73, 18, 13, 29, 2, 2, 2, 2, 2, 2], Text.show_int(F64.to_i64_wrap((neg_neg(2.5) * 10.0))))))
-	line!(Text.printed(List.concat([18, 13, 29, 73, 18, 13, 29, 73, 24, 15, 23, 23, 2], Text.show_int(F64.to_i64_wrap((neg_neg_call(2.5) * 10.0))))))
+	line!(Text.printed(Text.concat("neg-neg      ", Text.show_int(F64.to_i64_wrap((neg_neg(2.5) * 10.0))))))
+	line!(Text.printed(Text.concat("neg-neg-call ", Text.show_int(F64.to_i64_wrap((neg_neg_call(2.5) * 10.0))))))
 	Ok({})
 }

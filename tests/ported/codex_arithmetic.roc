@@ -42,12 +42,12 @@ clamp = |lo, hi, x| (if (x < lo) { lo } else { (if (x > hi) { hi } else { x }) }
 add5 : I64 -> I64
 add5 = |x| (x + 5)
 
-classify : I64 -> List(U8)
+classify : I64 -> Text
 classify = |n| (match n {
-	0 => [38, 13, 21, 16]
-	1 => [16, 18, 13]
-	42 => [15, 18, 19, 27, 13, 21]
-	_ => [16, 14, 20, 13, 21]
+	0 => "zero"
+	1 => "one"
+	42 => "answer"
+	_ => "other"
 })
 
 is_even : I64 -> Bool
@@ -65,21 +65,21 @@ apply = |f, a, b| f(a, b)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([24, 23, 15, 26, 31, 69, 2], Text.show_int(clamp(0, 100, abs(max((-42), 37)))))))
-	line!(Text.printed(List.concat([15, 32, 19, 16, 21, 32, 69, 2], Text.show_int(add5(7)))))
-	line!(Text.printed(List.concat(List.concat(List.concat(List.concat(List.concat([26, 15, 14, 24, 20, 69, 2], classify(42)), [81]), classify(1)), [81]), classify(99))))
+	line!(Text.printed(Text.concat("clamp: ", Text.show_int(clamp(0, 100, abs(max((-42), 37)))))))
+	line!(Text.printed(Text.concat("absorb: ", Text.show_int(add5(7)))))
+	line!(Text.printed(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("match: ", classify(42)), "/"), classify(1)), "/"), classify(99))))
 	({
 		large_val = 150
 		({
-			line!(Text.printed(List.concat([24, 23, 15, 26, 31, 17, 18, 29, 69, 2], Text.show_int({ p: I64.min(I64.max(large_val, 0), 100) }.p))))
-			line!(Text.printed(List.concat([13, 33, 13, 18, 69, 2], (if is_even(10) { [30, 13, 19] } else { [18, 16] }))))
-			line!(Text.printed(List.concat([16, 22, 22, 69, 2], (if is_odd(7) { [30, 13, 19] } else { [18, 16] }))))
-			line!(Text.printed(List.concat(List.concat(List.concat([24, 16, 26, 26, 15, 73, 31, 15, 21, 15, 26, 19, 69, 2], Text.show_int(add(10, 32))), [81]), Text.show_int(apply(add, 20, 22)))))
-			line!(Text.printed(List.concat(List.concat(List.concat([24, 16, 18, 24, 15, 14, 73, 14, 13, 36, 14, 69, 2], [20, 13, 23, 23, 16]), [2]), [27, 16, 21, 23, 22])))
-			line!(Text.printed(List.concat([24, 16, 18, 24, 15, 14, 73, 32, 16, 16, 23, 69, 2], (if (True and False) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))))
+			line!(Text.printed(Text.concat("clamping: ", Text.show_int({ p: I64.min(I64.max(large_val, 0), 100) }.p))))
+			line!(Text.printed(Text.concat("even: ", (if is_even(10) { "yes" } else { "no" }))))
+			line!(Text.printed(Text.concat("odd: ", (if is_odd(7) { "yes" } else { "no" }))))
+			line!(Text.printed(Text.concat(Text.concat(Text.concat("comma-params: ", Text.show_int(add(10, 32))), "/"), Text.show_int(apply(add, 20, 22)))))
+			line!(Text.printed(Text.concat(Text.concat(Text.concat("concat-text: ", "hello"), " "), "world")))
+			line!(Text.printed(Text.concat("concat-bool: ", (if (True and False) { "True" } else { "False" }))))
 			({
 				xs = List.concat([1, 2], [3, 4])
-				line!(Text.printed(List.concat([24, 16, 18, 24, 15, 14, 73, 23, 17, 19, 14, 69, 2], Text.show_int(U64.to_i64_wrap(List.len(xs))))))
+				line!(Text.printed(Text.concat("concat-list: ", Text.show_int(U64.to_i64_wrap(List.len(xs))))))
 			})
 		})
 	})

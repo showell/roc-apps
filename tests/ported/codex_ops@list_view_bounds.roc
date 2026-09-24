@@ -21,11 +21,11 @@ import cdx.Text
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-walk_at : List(I64), I64, I64, List(U8) -> List(U8)
-walk_at = |xs, i, n, acc| (if (i >= n) { acc } else { walk_at(xs, (i + 1), n, List.concat(List.concat(acc, [2]), Text.show_int((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))) })
+walk_at : List(I64), I64, I64, Text -> Text
+walk_at = |xs, i, n, acc| (if (i >= n) { acc } else { walk_at(xs, (i + 1), n, Text.concat(Text.concat(acc, " "), Text.show_int((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))) })
 
-read_all : List(I64) -> List(U8)
-read_all = |xs| walk_at(xs, 0, U64.to_i64_wrap(List.len(xs)), [])
+read_all : List(I64) -> Text
+read_all = |xs| walk_at(xs, 0, U64.to_i64_wrap(List.len(xs)), "")
 
 tail_of : List(I64) -> List(I64)
 tail_of = |xs| (match xs {
@@ -36,7 +36,7 @@ tail_of = |xs| (match xs {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([33, 17, 13, 27, 69], read_all(tail_of([1, 2, 3, 4])))))
-	line!(Text.printed(List.concat([33, 17, 13, 27, 73, 23, 13, 18, 77], Text.show_int(U64.to_i64_wrap(List.len(tail_of([1, 2, 3, 4])))))))
+	line!(Text.printed(Text.concat("view:", read_all(tail_of([1, 2, 3, 4])))))
+	line!(Text.printed(Text.concat("view-len=", Text.show_int(U64.to_i64_wrap(List.len(tail_of([1, 2, 3, 4])))))))
 	Ok({})
 }

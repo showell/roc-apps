@@ -30,7 +30,7 @@ padded = 42
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([29, 21, 16, 25, 31, 13, 22, 69, 2], Text.show_int(billion_squared))))
-	line!(Text.printed(List.concat([31, 15, 22, 22, 13, 22, 69, 2], Text.show_int(padded))))
+	line!(Text.printed(Text.concat("grouped: ", Text.show_int(billion_squared))))
+	line!(Text.printed(Text.concat("padded: ", Text.show_int(padded))))
 	Ok({})
 }

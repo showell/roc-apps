@@ -29,53 +29,53 @@ import cdx.Units
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-test_peak_rms : List(U8)
+test_peak_rms : Text
 test_peak_rms = ({
 	samples = [500, (0 - 800), 300, (0 - 200), 1000, (0 - 600)]
-	List.concat(List.concat(List.concat([31, 13, 15, 34, 77], Text.show_int(AudioAnalysis.audio_peak(samples))), [2, 21, 26, 19, 77]), Text.show_int(AudioAnalysis.audio_rms(samples)))
+	Text.concat(Text.concat(Text.concat("peak=", Text.show_int(AudioAnalysis.audio_peak(samples))), " rms="), Text.show_int(AudioAnalysis.audio_rms(samples)))
 })
 
-test_envelope : List(U8)
+test_envelope : Text
 test_envelope = ({
 	samples = [500, 500, 500, 500, 100, 100, 100, 100]
 	env = AudioAnalysis.audio_envelope(samples, 4)
-	List.concat(List.concat(List.concat(List.concat(List.concat([13, 18, 33, 77], Text.show_int(U64.to_i64_wrap(List.len(env)))), [2, 13, 3, 77]), Text.show_int((List.get(env, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))), [2, 13, 4, 77]), Text.show_int((List.get(env, I64.to_u64_wrap(1)) ?? crash("list-at out of range"))))
+	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("env=", Text.show_int(U64.to_i64_wrap(List.len(env)))), " e0="), Text.show_int((List.get(env, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))), " e1="), Text.show_int((List.get(env, I64.to_u64_wrap(1)) ?? crash("list-at out of range"))))
 })
 
-test_analyze : List(U8)
+test_analyze : Text
 test_analyze = ({
 	samples = [0, 500, 1000, 500, 0, (0 - 500), (0 - 1000), (0 - 500), 0, 500, 1000, 500, 0, (0 - 500), (0 - 1000), (0 - 500)]
 	features = AudioAnalysis.audio_analyze(samples, 8000)
-	List.concat([15, 18, 15, 23, 30, 38, 13, 69, 2], AudioAnalysis.format_audio_features(features))
+	Text.concat("analyze: ", AudioAnalysis.format_audio_features(features))
 })
 
-test_linear_schedule : List(U8)
+test_linear_schedule : Text
 test_linear_schedule = ({
 	sched = DiffusionScheduler.linear_schedule(10, 1, 20)
-	List.concat([23, 17, 18, 13, 15, 21, 69, 2], DiffusionScheduler.format_schedule(sched))
+	Text.concat("linear: ", DiffusionScheduler.format_schedule(sched))
 })
 
-test_cosine_schedule : List(U8)
+test_cosine_schedule : Text
 test_cosine_schedule = ({
 	sched = DiffusionScheduler.cosine_schedule(10)
-	List.concat([24, 16, 19, 17, 18, 13, 69, 2], DiffusionScheduler.format_schedule(sched))
+	Text.concat("cosine: ", DiffusionScheduler.format_schedule(sched))
 })
 
-test_add_noise : List(U8)
+test_add_noise : Text
 test_add_noise = ({
 	sched = DiffusionScheduler.linear_schedule(20, 10, 200)
 	x0 = [1000, 500, (0 - 500)]
 	noise = [100, (0 - 200), 300]
 	noisy = DiffusionScheduler.diffusion_add_noise(x0, noise, 10, sched)
-	List.concat([18, 16, 17, 19, 30, 69, 2, 23, 13, 18, 77], Text.show_int(U64.to_i64_wrap(List.len(noisy))))
+	Text.concat("noisy: len=", Text.show_int(U64.to_i64_wrap(List.len(noisy))))
 })
 
-test_snr : List(U8)
+test_snr : Text
 test_snr = ({
 	sched = DiffusionScheduler.linear_schedule(100, 1, 20)
 	snr_early = DiffusionScheduler.schedule_snr(sched, 5)
 	snr_late = DiffusionScheduler.schedule_snr(sched, 90)
-	List.concat(List.concat(List.concat(List.concat(List.concat([19, 18, 21, 69, 2, 13, 15, 21, 23, 30, 77], Text.show_int(snr_early)), [2, 23, 15, 14, 13, 77]), Text.show_int(snr_late)), [2, 22, 13, 24, 21, 13, 15, 19, 17, 18, 29, 77]), (if (snr_early > snr_late) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))
+	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("snr: early=", Text.show_int(snr_early)), " late="), Text.show_int(snr_late)), " decreasing="), (if (snr_early > snr_late) { "True" } else { "False" }))
 })
 
 nanosecond : I64 -> Units.Duration

@@ -3,7 +3,7 @@ import Maybe
 import Text
 
 Cbor :: [].{
-	CborValue := [CborUint(I64), CborNint(I64), CborBytes(List(I64)), CborText(List(U8)), CborArray(List(Cbor.CborValue)), CborMap(List(Cbor.CborMapEntry)), CborBool(Bool), CborNull, CborTag(I64, Cbor.CborValue)].{
+	CborValue := [CborUint(I64), CborNint(I64), CborBytes(List(I64)), CborText(Text), CborArray(List(Cbor.CborValue)), CborMap(List(Cbor.CborMapEntry)), CborBool(Bool), CborNull, CborTag(I64, Cbor.CborValue)].{
 		is_eq : Cbor.CborValue, Cbor.CborValue -> Bool
 		is_eq = |a, b| eq_CborValue(a, b)
 	}
@@ -57,13 +57,13 @@ Cbor :: [].{
 		(if (n < 24) { [I64.bitwise_or(major, n)] } else { (if (n < 256) { [I64.bitwise_or(major, 24), n] } else { (if (n < 65536) { [I64.bitwise_or(major, 25), I64.shr_zf_wrap(n, I64.to_u8_wrap(8)), I64.bitwise_and(n, 255)] } else { [I64.bitwise_or(major, 26), I64.bitwise_and(I64.shr_zf_wrap(n, I64.to_u8_wrap(24)), 255), I64.bitwise_and(I64.shr_zf_wrap(n, I64.to_u8_wrap(16)), 255), I64.bitwise_and(I64.shr_zf_wrap(n, I64.to_u8_wrap(8)), 255), I64.bitwise_and(n, 255)] }) }) })
 	})
 
-	cbor_encode_text_value : List(U8) -> List(I64)
+	cbor_encode_text_value : Text -> List(I64)
 	cbor_encode_text_value = |s| ({
 		bytes = cbor_text_to_bytes(s, 0, Text.len(s), [])
 		List.concat(cbor_encode_head(cbor_mt_text, U64.to_i64_wrap(List.len(bytes))), bytes)
 	})
 
-	cbor_text_to_bytes : List(U8), I64, I64, List(I64) -> List(I64)
+	cbor_text_to_bytes : Text, I64, I64, List(I64) -> List(I64)
 	cbor_text_to_bytes = |s, i, len, acc| (if (i >= len) { acc } else { cbor_text_to_bytes(s, (i + 1), len, List.append(acc, Text.char_at(s, i))) })
 
 	cbor_encode_array : List(Cbor.CborValue), I64, I64, List(I64) -> List(I64)
@@ -78,7 +78,7 @@ Cbor :: [].{
 	cbor_encode_int : I64 -> List(I64)
 	cbor_encode_int = |n| (if (n >= 0) { cbor_encode(CborUint(n)) } else { cbor_encode(CborNint(n)) })
 
-	cbor_encode_text : List(U8) -> List(I64)
+	cbor_encode_text : Text -> List(I64)
 	cbor_encode_text = |s| cbor_encode(CborText(s))
 
 	cbor_encode_bytes : List(I64) -> List(I64)
@@ -118,7 +118,7 @@ Cbor :: [].{
 	cbor_decode_text : List(I64), I64, I64 -> Cbor.CborDecodeResult
 	cbor_decode_text = |bs, off, len| ({
 		bytes = cbor_slice(bs, off, len, 0, [])
-		s = cbor_bytes_to_text(bytes, 0, U64.to_i64_wrap(List.len(bytes)), [])
+		s = cbor_bytes_to_text(bytes, 0, U64.to_i64_wrap(List.len(bytes)), "")
 		{ cdr_value: CborText(s), cdr_offset: (off + len) }
 	})
 
@@ -147,8 +147,8 @@ Cbor :: [].{
 	cbor_slice : List(I64), I64, I64, I64, List(I64) -> List(I64)
 	cbor_slice = |bs, off, len, i, acc| (if (i >= len) { acc } else { cbor_slice(bs, off, len, (i + 1), List.append(acc, (List.get(bs, I64.to_u64_wrap((off + i))) ?? crash("list-at out of range")))) })
 
-	cbor_bytes_to_text : List(I64), I64, I64, List(U8) -> List(U8)
-	cbor_bytes_to_text = |bs, i, len, acc| (if (i >= len) { acc } else { cbor_bytes_to_text(bs, (i + 1), len, List.concat(acc, Text.char_to_text((List.get(bs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))) })
+	cbor_bytes_to_text : List(I64), I64, I64, Text -> Text
+	cbor_bytes_to_text = |bs, i, len, acc| (if (i >= len) { acc } else { cbor_bytes_to_text(bs, (i + 1), len, Text.concat(acc, Text.char_to_text((List.get(bs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))) })
 
 	eq_CborValue : Cbor.CborValue, Cbor.CborValue -> Bool
 	eq_CborValue = |ex, ey| (match ex {

@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([54, 16, 21, 13, 27, 16, 21, 22, 81, 41, 13, 19, 5, 8, 9, 2, 42, 60]))
+	line!(Text.printed("Foreword/Aes256 OK"))
 	Ok({})
 }

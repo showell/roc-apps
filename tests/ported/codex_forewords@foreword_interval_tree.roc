@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([54, 16, 21, 13, 27, 16, 21, 22, 81, 43, 18, 14, 13, 21, 33, 15, 23, 40, 21, 13, 13, 2, 42, 60]))
+	line!(Text.printed("Foreword/IntervalTree OK"))
 	Ok({})
 }

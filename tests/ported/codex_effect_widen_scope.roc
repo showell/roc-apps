@@ -20,12 +20,12 @@ import cdx.Text
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-scoped_print! : List(U8) => {}
+scoped_print! : Text => {}
 scoped_print! = |t| ({
 	line!(Text.printed(t))
 })
 
-apply_it! : (List(U8) => {}), List(U8) => {}
+apply_it! : (Text => {}), Text => {}
 apply_it! = |f, t| ({
 	f(t)
 })
@@ -33,6 +33,6 @@ apply_it! = |f, t| ({
 # --- Entry ---
 
 main! = |_args| {
-	apply_it!(scoped_print!, [27, 17, 22, 13, 18, 13, 22])
+	apply_it!(scoped_print!, "widened")
 	Ok({})
 }

@@ -42,9 +42,9 @@ Tree := [Leaf(I64), Join(Tree, Tree), Tip].{
 Packed : [Pack(I64, Tree, Bool, I64), Blank]
 Box_(a) : [Wrapped(a)]
 
-boxed_text : Box_(List(U8)) -> I64
+boxed_text : Box_(Text) -> I64
 boxed_text = |value| (match value {
-	Wrapped([20, 17]) => 1
+	Wrapped("hi") => 1
 	_ => 2
 })
 
@@ -132,7 +132,7 @@ main! = |_args| {
 	line!(Text.printed(Text.show_int(packed(Pack(7, Leaf(9), True, (0 - 5))))))
 	line!(Text.printed(Text.show_int(packed(Blank))))
 	line!(Text.printed(Text.show_int(scope(Join(Leaf(2), Leaf(3))))))
-	line!(Text.printed(Text.show_int(boxed_text(Wrapped([20, 17])))))
-	line!(Text.printed(Text.show_int(boxed_text(Wrapped([32, 30, 13])))))
+	line!(Text.printed(Text.show_int(boxed_text(Wrapped("hi")))))
+	line!(Text.printed(Text.show_int(boxed_text(Wrapped("bye")))))
 	Ok({})
 }

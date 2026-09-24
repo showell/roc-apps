@@ -49,22 +49,22 @@ select_response = |threat, s| (match threat {
 is_imminent : SensorReading -> Bool
 is_imminent = |s| ((s.range_m < 1000) and (s.velocity > 2000))
 
-threat_name : ThreatLevel -> List(U8)
+threat_name : ThreatLevel -> Text
 threat_name = |t| (match t {
-	None => [44, 42, 44, 39]
-	Low => [49, 42, 53]
-	Medium => [52, 39, 48, 43, 51, 52]
-	High => [46, 43, 55, 46]
-	Critical => [50, 47, 43, 40, 43, 50, 41, 49]
+	None => "NONE"
+	Low => "LOW"
+	Medium => "MEDIUM"
+	High => "HIGH"
+	Critical => "CRITICAL"
 })
 
-response_name : Countermeasure -> List(U8)
+response_name : Countermeasure -> Text
 response_name = |c| (match c {
-	NoAction => [46, 42, 49, 48]
-	Chaff => [50, 46, 41, 54, 54]
-	Flare => [54, 49, 41, 47, 39]
-	Jam => [61, 41, 52]
-	Evade => [39, 59, 41, 48, 39]
+	NoAction => "HOLD"
+	Chaff => "CHAFF"
+	Flare => "FLARE"
+	Jam => "JAM"
+	Evade => "EVADE"
 })
 
 eq_ThreatLevel : ThreatLevel, ThreatLevel -> Bool
@@ -124,18 +124,18 @@ main! = |_args| {
 		response = select_response(threat, inbound)
 		({
 			({
-				line!(Text.printed(List.concat([40, 46, 47, 39, 41, 40, 69, 2], threat_name(threat))))
-				line!(Text.printed(List.concat([41, 50, 40, 43, 42, 44, 69, 2], response_name(response))))
-				line!(Text.printed(List.concat([43, 52, 52, 43, 44, 39, 44, 40, 69, 2], (if is_imminent(inbound) { [56, 39, 45] } else { [44, 42] }))))
+				line!(Text.printed(Text.concat("THREAT: ", threat_name(threat))))
+				line!(Text.printed(Text.concat("ACTION: ", response_name(response))))
+				line!(Text.printed(Text.concat("IMMINENT: ", (if is_imminent(inbound) { "YES" } else { "NO" }))))
 			})
 			({
 				far_contact = { bearing: 270, range_m: 45000, velocity: 300, ir_signal: 50 }
 				threat2 = classify_threat(far_contact)
 				response2 = select_response(threat2, far_contact)
 				({
-					line!(Text.printed(List.concat([40, 46, 47, 39, 41, 40, 69, 2], threat_name(threat2))))
-					line!(Text.printed(List.concat([41, 50, 40, 43, 42, 44, 69, 2], response_name(response2))))
-					line!(Text.printed(List.concat([43, 52, 52, 43, 44, 39, 44, 40, 69, 2], (if is_imminent(far_contact) { [56, 39, 45] } else { [44, 42] }))))
+					line!(Text.printed(Text.concat("THREAT: ", threat_name(threat2))))
+					line!(Text.printed(Text.concat("ACTION: ", response_name(response2))))
+					line!(Text.printed(Text.concat("IMMINENT: ", (if is_imminent(far_contact) { "YES" } else { "NO" }))))
 				})
 			})
 		})

@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([39, 18, 29, 17, 18, 13, 81, 45, 24, 13, 18, 13, 6, 48, 2, 42, 60]))
+	line!(Text.printed("Engine/Scene3D OK"))
 	Ok({})
 }

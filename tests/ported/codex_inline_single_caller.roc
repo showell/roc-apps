@@ -41,10 +41,10 @@ isc_four = |a, b, c, d| (((a + b) + c) + d)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([27, 17, 22, 13, 2], Text.show_int(isc_pick(9, 4)))))
-	line!(Text.printed(List.concat([15, 21, 17, 14, 30, 7, 2], Text.show_int(isc_four(1, 2, 3, 4)))))
-	line!(Text.printed(List.concat([28, 21, 13, 13, 2], Text.show_int(isc_add_g(1)))))
-	line!(Text.printed(List.concat([19, 20, 15, 22, 16, 27, 13, 22, 2], Text.show_int(({
+	line!(Text.printed(Text.concat("wide ", Text.show_int(isc_pick(9, 4)))))
+	line!(Text.printed(Text.concat("arity4 ", Text.show_int(isc_four(1, 2, 3, 4)))))
+	line!(Text.printed(Text.concat("free ", Text.show_int(isc_add_g(1)))))
+	line!(Text.printed(Text.concat("shadowed ", Text.show_int(({
 		_isc_g_1 = 7
 		isc_add_h(1)
 	})))))

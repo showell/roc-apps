@@ -35,32 +35,32 @@ black = 0
 white : I64
 white = 16777215
 
-named : I64 -> List(U8)
-named = |i| (if (i == 0) { [14, 13, 21, 26, 17, 18, 15, 23] } else { (if (i == 1) { [23, 24, 15, 21, 19] } else { [26, 17, 18, 17, 26, 15, 23] }) })
+named : I64 -> Text
+named = |i| (if (i == 0) { "terminal" } else { (if (i == 1) { "lcars" } else { "minimal" }) })
 
 pal_of : I64 -> Theme.Palette
 pal_of = |i| (if (i == 0) { Theme.palette_terminal } else { (if (i == 1) { Theme.palette_lcars } else { Theme.palette_minimal }) })
 
 report! : I64, I64 => {}
-report! = |i, n| (if (i >= n) { line!(Text.printed([])) } else { ({
+report! = |i, n| (if (i >= n) { line!(Text.printed("")) } else { ({
 	({
 		p = pal_of(i)
 		acc = p.pal_accent
 		({
-			line!(Text.printed(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(named(i), [69, 2, 32, 29, 2, 23, 25, 26, 15, 2]), Text.show_int(Theme.theme_luma(p.pal_bg))), [66, 2, 28, 29, 2, 23, 25, 26, 15, 2]), Text.show_int(Theme.theme_luma(p.pal_fg))), [66, 2, 15, 24, 24, 13, 18, 14, 2, 23, 25, 26, 15, 2]), Text.show_int(Theme.theme_luma(acc))), [2, 73, 80, 2, 17, 18, 34, 2, 23, 25, 26, 15, 2]), Text.show_int(Theme.theme_luma(Theme.theme_ink_on(p, acc))))))
+			line!(Text.printed(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(named(i), ": bg luma "), Text.show_int(Theme.theme_luma(p.pal_bg))), ", fg luma "), Text.show_int(Theme.theme_luma(p.pal_fg))), ", accent luma "), Text.show_int(Theme.theme_luma(acc))), " -> ink luma "), Text.show_int(Theme.theme_luma(Theme.theme_ink_on(p, acc))))))
 			report!((i + 1), n)
 		})
 	})
 }) })
 
 flips! : I64, I64 => {}
-flips! = |i, n| (if (i >= n) { line!(Text.printed([])) } else { ({
+flips! = |i, n| (if (i >= n) { line!(Text.printed("")) } else { ({
 	({
 		p = pal_of(i)
 		on_black = Theme.theme_ink_on(p, black)
 		on_white = Theme.theme_ink_on(p, white)
 		({
-			line!(Text.printed(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat([2, 2], named(i)), [69, 2, 16, 18, 2, 32, 23, 15, 24, 34, 2, 23, 25, 26, 15, 2]), Text.show_int(Theme.theme_luma(on_black))), [66, 2, 16, 18, 2, 27, 20, 17, 14, 13, 2, 23, 25, 26, 15, 2]), Text.show_int(Theme.theme_luma(on_white))), (if (on_black == on_white) { [2, 2, 2, 45, 41, 52, 39, 66, 2, 14, 20, 13, 2, 29, 21, 16, 25, 18, 22, 2, 17, 19, 2, 32, 13, 17, 18, 29, 2, 17, 29, 18, 16, 21, 13, 22] } else { [] }))))
+			line!(Text.printed(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("  ", named(i)), ": on black luma "), Text.show_int(Theme.theme_luma(on_black))), ", on white luma "), Text.show_int(Theme.theme_luma(on_white))), (if (on_black == on_white) { "   SAME, the ground is being ignored" } else { "" }))))
 			flips!((i + 1), n)
 		})
 	})
@@ -69,9 +69,9 @@ flips! = |i, n| (if (i >= n) { line!(Text.printed([])) } else { ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([14, 20, 13, 2, 17, 18, 34, 2, 13, 15, 24, 20, 2, 19, 24, 20, 13, 26, 13, 2, 31, 25, 14, 19, 2, 16, 18, 2, 17, 14, 19, 2, 16, 27, 18, 2, 15, 24, 24, 13, 18, 14, 69]))
+	line!(Text.printed("the ink each scheme puts on its own accent:"))
 	report!(0, 3)
-	line!(Text.printed([14, 20, 13, 2, 19, 15, 26, 13, 2, 20, 13, 23, 31, 13, 21, 2, 15, 19, 34, 13, 22, 2, 28, 16, 21, 2, 32, 23, 15, 24, 34, 2, 15, 18, 22, 2, 28, 16, 21, 2, 27, 20, 17, 14, 13, 69]))
+	line!(Text.printed("the same helper asked for black and for white:"))
 	flips!(0, 3)
 	Ok({})
 }

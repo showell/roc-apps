@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([54, 16, 21, 13, 27, 16, 21, 22, 81, 48, 13, 24, 17, 26, 15, 23, 2, 42, 60]))
+	line!(Text.printed("Foreword/Decimal OK"))
 	Ok({})
 }

@@ -55,7 +55,7 @@ main! = |_args| {
 				line!(Text.printed(Text.show_int(sum_pair(p))))
 				(match swap(p) {
 					MkTup2(a, b) => ({
-						line!(Text.printed(List.concat(List.concat(Text.show_int(a), [2]), Text.show_int(b))))
+						line!(Text.printed(Text.concat(Text.concat(Text.show_int(a), " "), Text.show_int(b))))
 					})
 				})
 			})

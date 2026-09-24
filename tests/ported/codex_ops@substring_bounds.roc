@@ -22,26 +22,26 @@ import cdx.Text
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-s : List(U8)
-s = [15, 32, 24, 22, 13]
+s : Text
+s = "abcde"
 
-row : I64, I64 -> List(U8)
+row : I64, I64 -> Text
 row = |start, len| ({
 	r = Text.substring(s, start, len)
-	List.concat(List.concat(List.concat(List.concat(List.concat(List.concat([2], Text.show_int(start)), [66]), Text.show_int(len)), [77, 88]), r), [89])
+	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(" ", Text.show_int(start)), ","), Text.show_int(len)), "=["), r), "]")
 })
 
-from_start : I64, I64, I64, List(U8) -> List(U8)
-from_start = |start, len, room, acc| (if (len > room) { acc } else { from_start(start, (len + 1), room, List.concat(acc, row(start, len))) })
+from_start : I64, I64, I64, Text -> Text
+from_start = |start, len, room, acc| (if (len > room) { acc } else { from_start(start, (len + 1), room, Text.concat(acc, row(start, len))) })
 
-walk : I64, I64, List(U8) -> List(U8)
-walk = |start, n, acc| (if (start > n) { acc } else { walk((start + 1), n, List.concat(acc, from_start(start, 0, (n - start), []))) })
+walk : I64, I64, Text -> Text
+walk = |start, n, acc| (if (start > n) { acc } else { walk((start + 1), n, Text.concat(acc, from_start(start, 0, (n - start), ""))) })
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(walk(0, Text.len(s), [])))
-	line!(Text.printed(List.concat([23, 13, 18, 77], Text.show_int(Text.len(Text.substring(s, 0, 5))))))
-	line!(Text.printed(List.concat([13, 26, 31, 14, 30, 73, 15, 14, 73, 13, 18, 22, 77], Text.show_int(Text.len(Text.substring(s, 5, 0))))))
+	line!(Text.printed(walk(0, Text.len(s), "")))
+	line!(Text.printed(Text.concat("len=", Text.show_int(Text.len(Text.substring(s, 0, 5))))))
+	line!(Text.printed(Text.concat("empty-at-end=", Text.show_int(Text.len(Text.substring(s, 5, 0))))))
 	Ok({})
 }

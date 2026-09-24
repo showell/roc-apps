@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([39, 18, 29, 17, 18, 13, 81, 54, 21, 15, 24, 14, 15, 23, 57, 23, 15, 18, 14, 2, 42, 60]))
+	line!(Text.printed("Engine/FractalPlant OK"))
 	Ok({})
 }

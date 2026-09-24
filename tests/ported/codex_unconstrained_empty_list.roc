@@ -35,7 +35,7 @@ typed_empty = |_witness| []
 identity_value : a -> a
 identity_value = |value| value
 
-empty_text : List(List(U8))
+empty_text : List(Text)
 empty_text = make_empty(2)
 
 # --- Entry ---
@@ -44,9 +44,9 @@ main! = |_args| {
 	line!(Text.printed(Text.show_int(U64.to_i64_wrap(List.len(make_empty(0))))))
 	line!(Text.printed(Text.show_int(U64.to_i64_wrap(List.len(make_empty(1))))))
 	line!(Text.printed(Text.show_int(U64.to_i64_wrap(List.len(typed_empty(42))))))
-	line!(Text.printed(Text.show_int(U64.to_i64_wrap(List.len(typed_empty([14, 13, 36, 14]))))))
+	line!(Text.printed(Text.show_int(U64.to_i64_wrap(List.len(typed_empty("text"))))))
 	line!(Text.printed(Text.show_int(U64.to_i64_wrap(List.len(empty_text)))))
 	line!(Text.printed(Text.show_int(identity_value(42))))
-	line!(Text.printed(identity_value([14, 13, 36, 14])))
+	line!(Text.printed(identity_value("text")))
 	Ok({})
 }

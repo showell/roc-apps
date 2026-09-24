@@ -69,9 +69,9 @@ test_tlv_long_value = ({
 test_registration_fields : I64
 test_registration_fields = ({
 	reg = Lwm2m.default_lwm2m_registration
-	ok_endpoint = (if (reg.endpoint == [24, 16, 22, 13, 36, 73, 22, 13, 33, 17, 24, 13]) { 1 } else { 0 })
+	ok_endpoint = (if (reg.endpoint == "codex-device") { 1 } else { 0 })
 	ok_lifetime = (if (reg.lifetime == 300) { 1 } else { 0 })
-	ok_binding = (if (reg.binding == [51]) { 1 } else { 0 })
+	ok_binding = (if (reg.binding == "U") { 1 } else { 0 })
 	((ok_endpoint + ok_lifetime) + ok_binding)
 })
 

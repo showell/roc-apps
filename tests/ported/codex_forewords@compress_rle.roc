@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([50, 16, 26, 31, 21, 13, 19, 19, 81, 47, 23, 13, 2, 42, 60]))
+	line!(Text.printed("Compress/Rle OK"))
 	Ok({})
 }

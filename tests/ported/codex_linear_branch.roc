@@ -40,6 +40,6 @@ pass_linear = |n| ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(Text.show_int(consume_in_branch(5, 1)), [2]), Text.show_int(consume_in_branch(5, 0))), [2]), Text.show_int(consume_in_match(10, 1))), [2]), Text.show_int(consume_in_match(10, 2))), [2]), Text.show_int(consume_in_match(10, 0))), [2]), Text.show_int(pass_linear(99)))))
+	line!(Text.printed(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.show_int(consume_in_branch(5, 1)), " "), Text.show_int(consume_in_branch(5, 0))), " "), Text.show_int(consume_in_match(10, 1))), " "), Text.show_int(consume_in_match(10, 2))), " "), Text.show_int(consume_in_match(10, 0))), " "), Text.show_int(pass_linear(99)))))
 	Ok({})
 }

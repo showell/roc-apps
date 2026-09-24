@@ -94,12 +94,12 @@ lam_1 = |k, a| (a * k)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([19, 20, 15, 22, 16, 27, 69, 2], Text.show_int(shadow(3)))))
-	line!(Text.printed(List.concat([15, 31, 31, 23, 30, 73, 14, 27, 17, 24, 13, 69, 2], Text.show_int(apply_twice(5)))))
-	line!(Text.printed(List.concat([24, 15, 31, 14, 25, 21, 13, 69, 2], Text.show_int(capture(1)))))
-	line!(Text.printed(List.concat([14, 21, 13, 13, 73, 19, 25, 26, 69, 2], Text.show_int(tree_sum(sample_tree)))))
-	line!(Text.printed(List.concat([26, 15, 18, 20, 15, 14, 14, 15, 18, 69, 2], Text.show_int(manhattan({ x: (0 - 3), y: 4 })))))
-	line!(Text.printed(List.concat([14, 16, 14, 15, 23, 69, 2], Text.show_int(total([1, 2, 3, 4, 5])))))
-	line!(Text.printed(List.concat([14, 13, 36, 14, 69, 2], List.concat(List.concat([17, 21], [73]), [24, 20, 13, 24, 34]))))
+	line!(Text.printed(Text.concat("shadow: ", Text.show_int(shadow(3)))))
+	line!(Text.printed(Text.concat("apply-twice: ", Text.show_int(apply_twice(5)))))
+	line!(Text.printed(Text.concat("capture: ", Text.show_int(capture(1)))))
+	line!(Text.printed(Text.concat("tree-sum: ", Text.show_int(tree_sum(sample_tree)))))
+	line!(Text.printed(Text.concat("manhattan: ", Text.show_int(manhattan({ x: (0 - 3), y: 4 })))))
+	line!(Text.printed(Text.concat("total: ", Text.show_int(total([1, 2, 3, 4, 5])))))
+	line!(Text.printed(Text.concat("text: ", Text.concat(Text.concat("ir", "-"), "check"))))
 	Ok({})
 }

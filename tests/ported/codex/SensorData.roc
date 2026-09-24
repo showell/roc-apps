@@ -2,39 +2,39 @@
 import Text
 
 SensorData :: [].{
-	SensorKind : [Temperature, Humidity, Barometer, Light, Accelerometer, Gyroscope, Magnetometer, Gps, Battery, Custom(List(U8))]
+	SensorKind : [Temperature, Humidity, Barometer, Light, Accelerometer, Gyroscope, Magnetometer, Gps, Battery, Custom(Text)]
 	SensorValue : [IntValue(I64), FixedValue(I64, I64), BoolValue(Bool), Vec3Value(I64, I64, I64)]
-	SensorReading : { kind : SensorData.SensorKind, value : SensorData.SensorValue, timestamp : I64, device_id : List(U8) }
+	SensorReading : { kind : SensorData.SensorKind, value : SensorData.SensorValue, timestamp : I64, device_id : Text }
 	TimeSeriesEntry : { timestamp : I64, value : I64 }
 	AlertCondition : [AboveThreshold(I64), BelowThreshold(I64), OutsideRange(I64, I64), RateOfChange(I64)]
 
-	sensor_kind_name : SensorData.SensorKind -> List(U8)
+	sensor_kind_name : SensorData.SensorKind -> Text
 	sensor_kind_name = |k| (match k {
-		Temperature => [14, 13, 26, 31, 13, 21, 15, 14, 25, 21, 13]
-		Humidity => [20, 25, 26, 17, 22, 17, 14, 30]
-		Barometer => [31, 21, 13, 19, 19, 25, 21, 13]
-		Light => [23, 17, 29, 20, 14]
-		Accelerometer => [15, 24, 24, 13, 23, 13, 21, 16, 26, 13, 14, 13, 21]
-		Gyroscope => [29, 30, 21, 16, 19, 24, 16, 31, 13]
-		Magnetometer => [26, 15, 29, 18, 13, 14, 16, 26, 13, 14, 13, 21]
-		Gps => [29, 31, 19]
-		Battery => [32, 15, 14, 14, 13, 21, 30]
+		Temperature => "temperature"
+		Humidity => "humidity"
+		Barometer => "pressure"
+		Light => "light"
+		Accelerometer => "accelerometer"
+		Gyroscope => "gyroscope"
+		Magnetometer => "magnetometer"
+		Gps => "gps"
+		Battery => "battery"
 		Custom(name) => name
 	})
 
-	sensor_value_to_text : SensorData.SensorValue -> List(U8)
+	sensor_value_to_text : SensorData.SensorValue -> Text
 	sensor_value_to_text = |v| (match v {
 		IntValue(n) => Text.show_int(n)
-		FixedValue(whole, frac) => List.concat(List.concat(Text.show_int(whole), [65]), Text.show_int(frac))
-		BoolValue(b) => (if b { [14, 21, 25, 13] } else { [28, 15, 23, 19, 13] })
-		Vec3Value(x, y, z) => List.concat(List.concat(List.concat(List.concat(Text.show_int(x), [66]), Text.show_int(y)), [66]), Text.show_int(z))
+		FixedValue(whole, frac) => Text.concat(Text.concat(Text.show_int(whole), "."), Text.show_int(frac))
+		BoolValue(b) => (if b { "true" } else { "false" })
+		Vec3Value(x, y, z) => Text.concat(Text.concat(Text.concat(Text.concat(Text.show_int(x), ","), Text.show_int(y)), ","), Text.show_int(z))
 	})
 
-	make_reading : SensorData.SensorKind, SensorData.SensorValue, I64, List(U8) -> SensorData.SensorReading
+	make_reading : SensorData.SensorKind, SensorData.SensorValue, I64, Text -> SensorData.SensorReading
 	make_reading = |kind, value, ts, dev_| { kind: kind, value: value, timestamp: ts, device_id: dev_ }
 
-	format_reading : SensorData.SensorReading -> List(U8)
-	format_reading = |r| List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(r.device_id, [81]), sensor_kind_name(r.kind)), [77]), sensor_value_to_text(r.value)), [82]), Text.show_int(r.timestamp))
+	format_reading : SensorData.SensorReading -> Text
+	format_reading = |r| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(r.device_id, "/"), sensor_kind_name(r.kind)), "="), sensor_value_to_text(r.value)), "@"), Text.show_int(r.timestamp))
 
 	ts_min : List(SensorData.TimeSeriesEntry) -> I64
 	ts_min = |entries| ts_min_loop(entries, 0, U64.to_i64_wrap(List.len(entries)), 2147483647)

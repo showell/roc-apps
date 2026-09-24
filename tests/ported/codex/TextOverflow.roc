@@ -1,4 +1,5 @@
 # TextOverflow -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+import Text
 
 TextOverflow :: [].{
 	TextOverflow : [OverflowClip, OverflowEllipsis, OverflowScroll]
@@ -42,11 +43,11 @@ TextOverflow :: [].{
 		}) })
 	})
 
-	text_overflow_name : TextOverflow.TextOverflow -> List(U8)
+	text_overflow_name : TextOverflow.TextOverflow -> Text
 	text_overflow_name = |mode| (match mode {
-		OverflowClip => [24, 23, 17, 31]
-		OverflowEllipsis => [13, 23, 23, 17, 31, 19, 17, 19]
-		OverflowScroll => [19, 24, 21, 16, 23, 23]
+		OverflowClip => "clip"
+		OverflowEllipsis => "ellipsis"
+		OverflowScroll => "scroll"
 	})
 
 	eq_TextOverflow : TextOverflow.TextOverflow, TextOverflow.TextOverflow -> Bool

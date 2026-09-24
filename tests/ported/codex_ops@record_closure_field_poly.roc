@@ -55,15 +55,15 @@ lam_2 = |f, bx, i| f((bx.get)(i))
 lam_3 : I64 -> I64
 lam_3 = |n| (n * 2)
 
-lam_4 : I64 -> List(U8)
-lam_4 = |_n| [19, 13, 33, 13, 18]
+lam_4 : I64 -> Text
+lam_4 = |_n| "seven"
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([27, 21, 15, 31, 2], Text.show_int((wrap(21).get)(0)))))
-	line!(Text.printed(List.concat([27, 21, 15, 31, 73, 23, 13, 14, 2], Text.show_int((wrap_let(8).get)(0)))))
-	line!(Text.printed(List.concat([27, 21, 15, 31, 73, 26, 15, 31, 2], Text.show_int((wrap_map(wrap(21), lam_3).get)(0)))))
-	line!(Text.printed(List.concat([27, 21, 15, 31, 73, 14, 13, 36, 14, 2], (wrap_map(wrap(7), lam_4).get)(0))))
+	line!(Text.printed(Text.concat("wrap ", Text.show_int((wrap(21).get)(0)))))
+	line!(Text.printed(Text.concat("wrap-let ", Text.show_int((wrap_let(8).get)(0)))))
+	line!(Text.printed(Text.concat("wrap-map ", Text.show_int((wrap_map(wrap(21), lam_3).get)(0)))))
+	line!(Text.printed(Text.concat("wrap-text ", (wrap_map(wrap(7), lam_4).get)(0))))
 	Ok({})
 }

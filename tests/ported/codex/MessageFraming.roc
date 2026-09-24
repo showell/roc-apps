@@ -3,7 +3,7 @@ import Sha256
 import Text
 
 MessageFraming :: [].{
-	FrameTextResult : { value : List(U8), next_offset : I64, valid : Bool }
+	FrameTextResult : { value : Text, next_offset : I64, valid : Bool }
 	FrameBytesResult : { value : List(I64), next_offset : I64, valid : Bool }
 
 	frame_encode : I64, List(I64) -> List(I64)
@@ -39,24 +39,24 @@ MessageFraming :: [].{
 	frame_le64 : I64 -> List(I64)
 	frame_le64 = |v| List.concat(frame_le32(v), frame_le32(I64.shr_zf_wrap(v, I64.to_u8_wrap(32))))
 
-	frame_encode_text : List(U8) -> List(I64)
+	frame_encode_text : Text -> List(I64)
 	frame_encode_text = |s| ({
 		bytes = frame_text_bytes(s, 0, Text.len(s), [])
 		List.concat(frame_le32(U64.to_i64_wrap(List.len(bytes))), bytes)
 	})
 
-	frame_text_bytes : List(U8), I64, I64, List(I64) -> List(I64)
+	frame_text_bytes : Text, I64, I64, List(I64) -> List(I64)
 	frame_text_bytes = |s, i, len, acc| (if (i == len) { acc } else { frame_text_bytes(s, (i + 1), len, List.append(acc, Text.char_at(s, i))) })
 
 	frame_decode_text : List(I64), I64 -> MessageFraming.FrameTextResult
 	frame_decode_text = |bs, offset| ({
 		len = frame_read_le32(bs, offset)
-		text = frame_bytes_to_text(bs, (offset + 4), len, [])
+		text = frame_bytes_to_text(bs, (offset + 4), len, "")
 		{ value: text, next_offset: frame_next_offset(bs, ((offset + 4) + len)), valid: frame_fits(bs, offset, len) }
 	})
 
-	frame_bytes_to_text : List(I64), I64, I64, List(U8) -> List(U8)
-	frame_bytes_to_text = |bs, i, remaining, acc| (if (remaining <= 0) { acc } else { (if (i >= U64.to_i64_wrap(List.len(bs))) { acc } else { frame_bytes_to_text(bs, (i + 1), (remaining - 1), List.concat(acc, Text.char_to_text((List.get(bs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))) }) })
+	frame_bytes_to_text : List(I64), I64, I64, Text -> Text
+	frame_bytes_to_text = |bs, i, remaining, acc| (if (remaining <= 0) { acc } else { (if (i >= U64.to_i64_wrap(List.len(bs))) { acc } else { frame_bytes_to_text(bs, (i + 1), (remaining - 1), Text.concat(acc, Text.char_to_text((List.get(bs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))) }) })
 
 	frame_read_le32 : List(I64), I64 -> I64
 	frame_read_le32 = |bs, off| (((frame_byte_at(bs, off) + I64.shl_wrap(frame_byte_at(bs, (off + 1)), I64.to_u8_wrap(8))) + I64.shl_wrap(frame_byte_at(bs, (off + 2)), I64.to_u8_wrap(16))) + I64.shl_wrap(frame_byte_at(bs, (off + 3)), I64.to_u8_wrap(24)))

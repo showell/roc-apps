@@ -35,8 +35,8 @@ build_ring = |r, i, n| (if (i >= n) { r } else { build_ring(ConsistentHash.chr_a
 count_for : I64, I64, I64, I64 -> I64
 count_for = |node, k, n, acc| (if (k >= n) { acc } else { count_for(node, (k + 1), n, (acc + (if (ConsistentHash.chr_get_node(ring, k) == node) { 1 } else { 0 }))) })
 
-tally : I64, I64, List(U8) -> List(U8)
-tally = |node, n, acc| (if (node >= n) { acc } else { tally((node + 1), n, List.concat(List.concat(acc, [2]), Text.show_int(count_for(node, 0, 200, 0)))) })
+tally : I64, I64, Text -> Text
+tally = |node, n, acc| (if (node >= n) { acc } else { tally((node + 1), n, Text.concat(Text.concat(acc, " "), Text.show_int(count_for(node, 0, 200, 0)))) })
 
 lowest : I64, I64, I64 -> I64
 lowest = |node, n, acc| (if (node >= n) { acc } else { ({
@@ -53,11 +53,11 @@ highest = |node, n, acc| (if (node >= n) { acc } else { ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([18, 16, 22, 13, 19, 77], Text.show_int(ConsistentHash.chr_node_count(ring)))))
-	line!(Text.printed(List.concat([13, 18, 14, 21, 17, 13, 19, 77], Text.show_int(ConsistentHash.chr_entry_count(ring)))))
-	line!(Text.printed(List.concat([31, 13, 21, 73, 18, 16, 22, 13, 77], tally(0, 4, []))))
-	line!(Text.printed(List.concat([26, 17, 18, 73, 19, 20, 15, 21, 13, 77], Text.show_int(lowest(0, 4, 1000)))))
-	line!(Text.printed(List.concat([26, 15, 36, 73, 19, 20, 15, 21, 13, 77], Text.show_int(highest(0, 4, 0)))))
-	line!(Text.printed(List.concat([13, 33, 13, 21, 30, 73, 18, 16, 22, 13, 73, 25, 19, 13, 22, 77], (if (lowest(0, 4, 1000) > 0) { [30, 13, 19] } else { [18, 16] }))))
+	line!(Text.printed(Text.concat("nodes=", Text.show_int(ConsistentHash.chr_node_count(ring)))))
+	line!(Text.printed(Text.concat("entries=", Text.show_int(ConsistentHash.chr_entry_count(ring)))))
+	line!(Text.printed(Text.concat("per-node=", tally(0, 4, ""))))
+	line!(Text.printed(Text.concat("min-share=", Text.show_int(lowest(0, 4, 1000)))))
+	line!(Text.printed(Text.concat("max-share=", Text.show_int(highest(0, 4, 0)))))
+	line!(Text.printed(Text.concat("every-node-used=", (if (lowest(0, 4, 1000) > 0) { "yes" } else { "no" }))))
 	Ok({})
 }

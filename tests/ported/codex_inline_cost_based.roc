@@ -51,7 +51,7 @@ main! = |_args| {
 		b = caller_two
 		c = pick2(5, 9)
 		d = pick2(40, 2)
-		line!(Text.printed(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat([17, 18, 23, 17, 18, 13, 73, 24, 16, 19, 14, 73, 32, 15, 19, 13, 22, 69, 2], Text.show_int(a)), [2]), Text.show_int(b)), [2]), Text.show_int(c)), [2]), Text.show_int(d))))
+		line!(Text.printed(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("inline-cost-based: ", Text.show_int(a)), " "), Text.show_int(b)), " "), Text.show_int(c)), " "), Text.show_int(d))))
 	})
 	Ok({})
 }

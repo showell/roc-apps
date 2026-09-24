@@ -24,8 +24,8 @@ import cdx.Units
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-describe_temp : Units.Kelvin -> List(U8)
-describe_temp = |k| (if (k > 373) { [20, 16, 14] } else { (if (k > 273) { [27, 15, 21, 26] } else { [24, 16, 23, 22] }) })
+describe_temp : Units.Kelvin -> Text
+describe_temp = |k| (if (k > 373) { "hot" } else { (if (k > 273) { "warm" } else { "cold" }) })
 
 nanosecond : I64 -> Units.Duration
 nanosecond = |fv| fv

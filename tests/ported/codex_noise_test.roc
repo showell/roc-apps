@@ -27,58 +27,58 @@ import cdx.Text
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-test_value_1d : List(U8)
+test_value_1d : Text
 test_value_1d = ({
 	a = Noise.value_noise_1d(0)
 	b = Noise.value_noise_1d(500)
 	c = Noise.value_noise_1d(1000)
-	List.concat(List.concat(List.concat(List.concat(List.concat([33, 4, 22, 69, 2, 15, 77], Text.show_int(a)), [2, 32, 77]), Text.show_int(b)), [2, 24, 77]), Text.show_int(c))
+	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("v1d: a=", Text.show_int(a)), " b="), Text.show_int(b)), " c="), Text.show_int(c))
 })
 
-test_value_2d : List(U8)
+test_value_2d : Text
 test_value_2d = ({
 	a = Noise.value_noise_2d(0, 0)
 	b = Noise.value_noise_2d(500, 500)
 	c = Noise.value_noise_2d(1000, 1000)
-	List.concat(List.concat(List.concat(List.concat(List.concat([33, 5, 22, 69, 2, 15, 77], Text.show_int(a)), [2, 32, 77]), Text.show_int(b)), [2, 24, 77]), Text.show_int(c))
+	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("v2d: a=", Text.show_int(a)), " b="), Text.show_int(b)), " c="), Text.show_int(c))
 })
 
-test_continuity : List(U8)
+test_continuity : Text
 test_continuity = ({
 	a = Noise.value_noise_2d(999, 500)
 	b = Noise.value_noise_2d(1000, 500)
 	c = Noise.value_noise_2d(1001, 500)
 	diff_ab = noise_test_abs((b - a))
 	diff_bc = noise_test_abs((c - b))
-	List.concat(List.concat(List.concat([24, 16, 18, 14, 17, 18, 25, 16, 25, 19, 77], (if (diff_ab < 50) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] })), [66]), (if (diff_bc < 50) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))
+	Text.concat(Text.concat(Text.concat("continuous=", (if (diff_ab < 50) { "True" } else { "False" })), ","), (if (diff_bc < 50) { "True" } else { "False" }))
 })
 
-test_worley : List(U8)
+test_worley : Text
 test_worley = (match Noise.worley_2d(500, 500) {
-	MkTup2(f1, f2) => List.concat(List.concat(List.concat(List.concat(List.concat([28, 4, 77], Text.show_int(f1)), [2, 28, 5, 77]), Text.show_int(f2)), [2, 28, 5, 80, 28, 4, 77]), (if (f2 >= f1) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))
+	MkTup2(f1, f2) => Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("f1=", Text.show_int(f1)), " f2="), Text.show_int(f2)), " f2>f1="), (if (f2 >= f1) { "True" } else { "False" }))
 })
 
-test_fbm : List(U8)
+test_fbm : Text
 test_fbm = ({
 	a = Noise.fbm_2d(500, 500, 4, 2000, 500)
 	b = Noise.fbm_2d(3000, 3000, 4, 2000, 500)
-	List.concat(List.concat(List.concat(List.concat(List.concat([28, 32, 26, 73, 15, 77], Text.show_int(a)), [2, 28, 32, 26, 73, 32, 77]), Text.show_int(b)), [2, 22, 17, 28, 28, 13, 21, 77]), (if (a != b) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))
+	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("fbm-a=", Text.show_int(a)), " fbm-b="), Text.show_int(b)), " differ="), (if (a != b) { "True" } else { "False" }))
 })
 
-test_warp : List(U8)
+test_warp : Text
 test_warp = ({
 	a = Noise.warp_2d(500, 500, 500)
 	b = Noise.warp_2d(500, 500, 0)
 	plain = Noise.value_noise_2d(500, 500)
-	List.concat(List.concat(List.concat(List.concat(List.concat([27, 15, 21, 31, 13, 22, 77], Text.show_int(a)), [2, 25, 18, 27, 15, 21, 31, 13, 22, 77]), Text.show_int(b)), [2, 31, 23, 15, 17, 18, 77]), Text.show_int(plain))
+	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("warped=", Text.show_int(a)), " unwarped="), Text.show_int(b)), " plain="), Text.show_int(plain))
 })
 
-test_map : List(U8)
+test_map : Text
 test_map = ({
 	m = Noise.noise_map_2d(4, 4, 500)
 	mn = Noise.noise_map_min(m)
 	mx = Noise.noise_map_max(m)
-	List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat([26, 15, 31, 77], Text.show_int(U64.to_i64_wrap(List.len(m)))), [2, 26, 17, 18, 77]), Text.show_int(mn)), [2, 26, 15, 36, 77]), Text.show_int(mx)), [2, 21, 15, 18, 29, 13, 77]), (if (mx >= mn) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))
+	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("map=", Text.show_int(U64.to_i64_wrap(List.len(m)))), " min="), Text.show_int(mn)), " max="), Text.show_int(mx)), " range="), (if (mx >= mn) { "True" } else { "False" }))
 })
 
 noise_test_abs : I64 -> I64

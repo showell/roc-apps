@@ -37,11 +37,11 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Format.fmt_pad_left([20, 17], 6, [2])))
-	line!(Text.printed(Format.fmt_pad_right([20, 17], 6, [65])))
-	line!(Text.printed(Format.fmt_center([20, 17], 8, [73])))
-	line!(Text.printed(Format.fmt_repeat([15, 32], 3)))
-	line!(Text.printed(Format.fmt_join([[15], [32], [24]], [66, 2])))
+	line!(Text.printed(Format.fmt_pad_left("hi", 6, " ")))
+	line!(Text.printed(Format.fmt_pad_right("hi", 6, ".")))
+	line!(Text.printed(Format.fmt_center("hi", 8, "-")))
+	line!(Text.printed(Format.fmt_repeat("ab", 3)))
+	line!(Text.printed(Format.fmt_join(["a", "b", "c"], ", ")))
 	line!(Text.printed(Format.fmt_commas(1234567)))
 	line!(Text.printed(Format.fmt_commas(42)))
 	line!(Text.printed(Format.fmt_commas((0 - 9876543))))

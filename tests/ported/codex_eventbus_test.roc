@@ -25,43 +25,43 @@ import cdx.Text
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-test_log : List(U8)
+test_log : Text
 test_log = ({
 	log = EventBus.event_log_new(10)
-	log1 = EventBus.event_log_add(log, EventBus.event_new([32, 16, 16, 14], [19, 14, 15, 21, 14, 13, 22], 100))
-	log2 = EventBus.event_log_add(log1, EventBus.event_new([18, 13, 14], [24, 16, 18, 18, 13, 24, 14, 13, 22], 200))
-	log3 = EventBus.event_log_add(log2, EventBus.event_new([32, 16, 16, 14], [21, 13, 15, 22, 30], 300))
+	log1 = EventBus.event_log_add(log, EventBus.event_new("boot", "started", 100))
+	log2 = EventBus.event_log_add(log1, EventBus.event_new("net", "connected", 200))
+	log3 = EventBus.event_log_add(log2, EventBus.event_new("boot", "ready", 300))
 	EventBus.evt_format_event_log(log3)
 })
 
-test_filter : List(U8)
+test_filter : Text
 test_filter = ({
-	log = EventBus.event_log_add(EventBus.event_log_add(EventBus.event_log_add(EventBus.event_log_new(10), EventBus.event_new([32, 16, 16, 14], [19, 14, 15, 21, 14, 13, 22], 100)), EventBus.event_new([18, 13, 14], [25, 31], 200)), EventBus.event_new([32, 16, 16, 14], [21, 13, 15, 22, 30], 300))
-	boots = EventBus.event_log_filter(log, [32, 16, 16, 14])
-	List.concat([32, 16, 16, 14, 73, 13, 33, 13, 18, 14, 19, 77], Text.show_int(U64.to_i64_wrap(List.len(boots))))
+	log = EventBus.event_log_add(EventBus.event_log_add(EventBus.event_log_add(EventBus.event_log_new(10), EventBus.event_new("boot", "started", 100)), EventBus.event_new("net", "up", 200)), EventBus.event_new("boot", "ready", 300))
+	boots = EventBus.event_log_filter(log, "boot")
+	Text.concat("boot-events=", Text.show_int(U64.to_i64_wrap(List.len(boots))))
 })
 
-test_last : List(U8)
+test_last : Text
 test_last = ({
-	log = EventBus.event_log_add(EventBus.event_log_add(EventBus.event_log_new(10), EventBus.event_new([15], [4], 10)), EventBus.event_new([32], [5], 20))
+	log = EventBus.event_log_add(EventBus.event_log_add(EventBus.event_log_new(10), EventBus.event_new("a", "1", 10)), EventBus.event_new("b", "2", 20))
 	last = EventBus.event_log_last(log)
 	(match last {
-		Just(e) => List.concat([23, 15, 19, 14, 77], EventBus.evt_format_event(e))
-		None => [23, 15, 19, 14, 77, 18, 16, 18, 13]
+		Just(e) => Text.concat("last=", EventBus.evt_format_event(e))
+		None => "last=none"
 	})
 })
 
-test_since : List(U8)
+test_since : Text
 test_since = ({
-	log = EventBus.event_log_add(EventBus.event_log_add(EventBus.event_log_add(EventBus.event_log_new(10), EventBus.event_new([15], [4], 100)), EventBus.event_new([32], [5], 200)), EventBus.event_new([24], [6], 300))
+	log = EventBus.event_log_add(EventBus.event_log_add(EventBus.event_log_add(EventBus.event_log_new(10), EventBus.event_new("a", "1", 100)), EventBus.event_new("b", "2", 200)), EventBus.event_new("c", "3", 300))
 	recent = EventBus.event_log_since(log, 200)
-	List.concat([19, 17, 18, 24, 13, 73, 5, 3, 3, 77], Text.show_int(U64.to_i64_wrap(List.len(recent))))
+	Text.concat("since-200=", Text.show_int(U64.to_i64_wrap(List.len(recent))))
 })
 
-test_overflow : List(U8)
+test_overflow : Text
 test_overflow = ({
-	log = EventBus.event_log_add(EventBus.event_log_add(EventBus.event_log_add(EventBus.event_log_add(EventBus.event_log_new(3), EventBus.event_new([15], [4], 1)), EventBus.event_new([32], [5], 2)), EventBus.event_new([24], [6], 3)), EventBus.event_new([22], [7], 4))
-	List.concat([16, 33, 13, 21, 28, 23, 16, 27, 77], EventBus.evt_format_event_log(log))
+	log = EventBus.event_log_add(EventBus.event_log_add(EventBus.event_log_add(EventBus.event_log_add(EventBus.event_log_new(3), EventBus.event_new("a", "1", 1)), EventBus.event_new("b", "2", 2)), EventBus.event_new("c", "3", 3)), EventBus.event_new("d", "4", 4))
+	Text.concat("overflow=", EventBus.evt_format_event_log(log))
 })
 
 # --- Entry ---

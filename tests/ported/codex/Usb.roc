@@ -121,19 +121,19 @@ Usb :: [].{
 	usb_le16_encode : I64 -> List(I64)
 	usb_le16_encode = |v| [I64.bitwise_and(v, 255), I64.bitwise_and(I64.shr_zf_wrap(v, I64.to_u8_wrap(8)), 255)]
 
-	format_usb_device : Usb.UsbDeviceDesc -> List(U8)
-	format_usb_device = |d| List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(usb_hex16(d.usb_vendor), [69]), usb_hex16(d.usb_product)), [2, 24, 23, 15, 19, 19, 77]), Text.show_int(d.usb_class)), [65]), Text.show_int(d.usb_subclass))
+	format_usb_device : Usb.UsbDeviceDesc -> Text
+	format_usb_device = |d| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(usb_hex16(d.usb_vendor), ":"), usb_hex16(d.usb_product)), " class="), Text.show_int(d.usb_class)), "."), Text.show_int(d.usb_subclass))
 
-	format_usb_endpoint : Usb.UsbEndpoint -> List(U8)
+	format_usb_endpoint : Usb.UsbEndpoint -> Text
 	format_usb_endpoint = |ep| ({
-		dir = (if (ep.ep_direction == 128) { [43, 44] } else { [42, 51, 40] })
-		typ = (if (ep.ep_type == 0) { [50, 40, 47, 49] } else { (if (ep.ep_type == 1) { [43, 45, 42] } else { (if (ep.ep_type == 2) { [58, 51, 49, 60] } else { [43, 44, 40] }) }) })
-		List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat([39, 57], Text.show_int(ep.ep_address)), [2]), dir), [2]), typ), [2, 26, 15, 36, 31, 34, 14, 77]), Text.show_int(ep.ep_max_packet))
+		dir = (if (ep.ep_direction == 128) { "IN" } else { "OUT" })
+		typ = (if (ep.ep_type == 0) { "CTRL" } else { (if (ep.ep_type == 1) { "ISO" } else { (if (ep.ep_type == 2) { "BULK" } else { "INT" }) }) })
+		Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("EP", Text.show_int(ep.ep_address)), " "), dir), " "), typ), " maxpkt="), Text.show_int(ep.ep_max_packet))
 	})
 
-	usb_hex16 : I64 -> List(U8)
-	usb_hex16 = |v| List.concat(List.concat(List.concat(usb_nib(I64.bitwise_and(I64.shr_zf_wrap(v, I64.to_u8_wrap(12)), 15)), usb_nib(I64.bitwise_and(I64.shr_zf_wrap(v, I64.to_u8_wrap(8)), 15))), usb_nib(I64.bitwise_and(I64.shr_zf_wrap(v, I64.to_u8_wrap(4)), 15))), usb_nib(I64.bitwise_and(v, 15)))
+	usb_hex16 : I64 -> Text
+	usb_hex16 = |v| Text.concat(Text.concat(Text.concat(usb_nib(I64.bitwise_and(I64.shr_zf_wrap(v, I64.to_u8_wrap(12)), 15)), usb_nib(I64.bitwise_and(I64.shr_zf_wrap(v, I64.to_u8_wrap(8)), 15))), usb_nib(I64.bitwise_and(I64.shr_zf_wrap(v, I64.to_u8_wrap(4)), 15))), usb_nib(I64.bitwise_and(v, 15)))
 
-	usb_nib : I64 -> List(U8)
-	usb_nib = |n| (if (n == 0) { [3] } else { (if (n == 1) { [4] } else { (if (n == 2) { [5] } else { (if (n == 3) { [6] } else { (if (n == 4) { [7] } else { (if (n == 5) { [8] } else { (if (n == 6) { [9] } else { (if (n == 7) { [10] } else { (if (n == 8) { [11] } else { (if (n == 9) { [12] } else { (if (n == 10) { [15] } else { (if (n == 11) { [32] } else { (if (n == 12) { [24] } else { (if (n == 13) { [22] } else { (if (n == 14) { [13] } else { [28] }) }) }) }) }) }) }) }) }) }) }) }) }) }) })
+	usb_nib : I64 -> Text
+	usb_nib = |n| (if (n == 0) { "0" } else { (if (n == 1) { "1" } else { (if (n == 2) { "2" } else { (if (n == 3) { "3" } else { (if (n == 4) { "4" } else { (if (n == 5) { "5" } else { (if (n == 6) { "6" } else { (if (n == 7) { "7" } else { (if (n == 8) { "8" } else { (if (n == 9) { "9" } else { (if (n == 10) { "a" } else { (if (n == 11) { "b" } else { (if (n == 12) { "c" } else { (if (n == 13) { "d" } else { (if (n == 14) { "e" } else { "f" }) }) }) }) }) }) }) }) }) }) }) }) }) }) })
 }

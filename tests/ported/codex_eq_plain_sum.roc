@@ -24,7 +24,7 @@ import cdx.Text
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Pair : [Both(I64, I64), JustText(List(U8)), Neither]
+Pair : [Both(I64, I64), JustText(Text), Neither]
 Holder : [Wraps(Pair), Empty]
 
 eq_Pair : Pair, Pair -> Bool
@@ -58,11 +58,11 @@ eq_Holder = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed((if eq_Pair(Both(1, 2), Both(1, 2)) { [32, 16, 14, 20, 2, 13, 37, 2, 69, 2, 30, 13, 19] } else { [32, 16, 14, 20, 2, 13, 37, 2, 69, 2, 18, 16] })))
-	line!(Text.printed((if eq_Pair(Both(1, 2), Both(1, 3)) { [32, 16, 14, 20, 2, 18, 13, 2, 69, 2, 18, 16] } else { [32, 16, 14, 20, 2, 18, 13, 2, 69, 2, 30, 13, 19] })))
-	line!(Text.printed((if eq_Pair(JustText([15]), JustText([15])) { [14, 13, 36, 14, 2, 13, 37, 2, 69, 2, 30, 13, 19] } else { [14, 13, 36, 14, 2, 13, 37, 2, 69, 2, 18, 16] })))
-	line!(Text.printed((if eq_Pair(Both(1, 2), Neither) { [24, 21, 16, 19, 19, 2, 18, 13, 2, 69, 2, 18, 16] } else { [24, 21, 16, 19, 19, 2, 18, 13, 2, 69, 2, 30, 13, 19] })))
-	line!(Text.printed((if eq_Holder(Wraps(Both(1, 2)), Wraps(Both(1, 2))) { [19, 25, 26, 2, 28, 17, 13, 23, 22, 2, 13, 37, 2, 69, 2, 30, 13, 19] } else { [19, 25, 26, 2, 28, 17, 13, 23, 22, 2, 13, 37, 2, 69, 2, 18, 16] })))
-	line!(Text.printed((if eq_Holder(Wraps(Both(1, 2)), Wraps(JustText([15]))) { [19, 25, 26, 2, 28, 17, 13, 23, 22, 2, 18, 13, 2, 69, 2, 18, 16] } else { [19, 25, 26, 2, 28, 17, 13, 23, 22, 2, 18, 13, 2, 69, 2, 30, 13, 19] })))
+	line!(Text.printed((if eq_Pair(Both(1, 2), Both(1, 2)) { "both eq : yes" } else { "both eq : no" })))
+	line!(Text.printed((if eq_Pair(Both(1, 2), Both(1, 3)) { "both ne : no" } else { "both ne : yes" })))
+	line!(Text.printed((if eq_Pair(JustText("a"), JustText("a")) { "text eq : yes" } else { "text eq : no" })))
+	line!(Text.printed((if eq_Pair(Both(1, 2), Neither) { "cross ne : no" } else { "cross ne : yes" })))
+	line!(Text.printed((if eq_Holder(Wraps(Both(1, 2)), Wraps(Both(1, 2))) { "sum field eq : yes" } else { "sum field eq : no" })))
+	line!(Text.printed((if eq_Holder(Wraps(Both(1, 2)), Wraps(JustText("a"))) { "sum field ne : no" } else { "sum field ne : yes" })))
 	Ok({})
 }

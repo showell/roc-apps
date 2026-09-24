@@ -20,15 +20,15 @@ import cdx.Text
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-writer! : List(U8) => {}
+writer! : Text => {}
 writer! = |t| line!(Text.printed(t))
 
-apply_it! : (List(U8) => {}), List(U8) => {}
+apply_it! : (Text => {}), Text => {}
 apply_it! = |f, t| f(t)
 
 # --- Entry ---
 
 main! = |_args| {
-	apply_it!(writer!, [27, 17, 22, 13, 18, 13, 22])
+	apply_it!(writer!, "widened")
 	Ok({})
 }

@@ -30,7 +30,7 @@ line! = |s| echo!(Str.concat(s, "\n"))
 
 main! = |_args| {
 	({
-		r = SensorData.make_reading(Temperature, FixedValue(23, 5), 1000, [22, 13, 33, 3, 4])
+		r = SensorData.make_reading(Temperature, FixedValue(23, 5), 1000, "dev01")
 		({
 			line!(Text.printed(SensorData.format_reading(r)))
 			line!(Text.printed(SensorData.sensor_kind_name(Humidity)))
@@ -40,8 +40,8 @@ main! = |_args| {
 				over = SensorData.check_alert(AboveThreshold(30), 35)
 				under = SensorData.check_alert(BelowThreshold(10), 5)
 				({
-					line!(Text.printed((if over { [41, 49, 39, 47, 40] } else { [16, 34] })))
-					line!(Text.printed((if under { [41, 49, 39, 47, 40] } else { [16, 34] })))
+					line!(Text.printed((if over { "ALERT" } else { "ok" })))
+					line!(Text.printed((if under { "ALERT" } else { "ok" })))
 				})
 			})
 		})

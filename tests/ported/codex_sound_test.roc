@@ -33,70 +33,70 @@ import cdx.Units
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-test_osc_bank : List(U8)
+test_osc_bank : Text
 test_osc_bank = ({
 	bank = Oscillator.osc_add(Oscillator.osc_add(Oscillator.osc_bank_new(8000), 440, 500, Oscillator.osc_type_sine, 0), 880, 300, Oscillator.osc_type_square, 0)
 	samples = Oscillator.osc_bank_render(bank, 16)
-	List.concat(List.concat(List.concat(List.concat(List.concat([32, 15, 18, 34, 69, 2, 24, 16, 25, 18, 14, 77], Text.show_int(bank.ob_count)), [2, 19, 15, 26, 31, 23, 13, 19, 77]), Text.show_int(U64.to_i64_wrap(List.len(samples)))), [2, 31, 13, 15, 34, 77]), Text.show_int(Oscillator.osc_peak(samples)))
+	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("bank: count=", Text.show_int(bank.ob_count)), " samples="), Text.show_int(U64.to_i64_wrap(List.len(samples)))), " peak="), Text.show_int(Oscillator.osc_peak(samples)))
 })
 
-test_fm : List(U8)
+test_fm : Text
 test_fm = ({
 	samples = Oscillator.osc_fm_render(440, 110, 200, 1000, 8000, 16)
-	List.concat(List.concat(List.concat([28, 26, 69, 2, 19, 15, 26, 31, 23, 13, 19, 77], Text.show_int(U64.to_i64_wrap(List.len(samples)))), [2, 31, 13, 15, 34, 77]), Text.show_int(Oscillator.osc_peak(samples)))
+	Text.concat(Text.concat(Text.concat("fm: samples=", Text.show_int(U64.to_i64_wrap(List.len(samples)))), " peak="), Text.show_int(Oscillator.osc_peak(samples)))
 })
 
-test_pulse : List(U8)
+test_pulse : Text
 test_pulse = ({
 	bank = Oscillator.osc_add(Oscillator.osc_bank_new(8000), 440, 1000, Oscillator.osc_type_pulse, 250)
 	samples = Oscillator.osc_bank_render(bank, 8)
-	List.concat([31, 25, 23, 19, 13, 69, 2, 31, 13, 15, 34, 77], Text.show_int(Oscillator.osc_peak(samples)))
+	Text.concat("pulse: peak=", Text.show_int(Oscillator.osc_peak(samples)))
 })
 
-test_distortion : List(U8)
+test_distortion : Text
 test_distortion = ({
 	input = [500, 800, 1200, 400, (0 - 600), (0 - 1000)]
 	output = AudioEffect.fx_distortion(input, 2000)
 	peak = AudioEffect.fx_find_peak(output, 0, U64.to_i64_wrap(List.len(output)), 0)
-	List.concat(List.concat(List.concat([22, 17, 19, 14, 69, 2, 31, 13, 15, 34, 77], Text.show_int(peak)), [2, 24, 23, 17, 31, 31, 13, 22, 77]), (if (peak <= 1000) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))
+	Text.concat(Text.concat(Text.concat("dist: peak=", Text.show_int(peak)), " clipped="), (if (peak <= 1000) { "True" } else { "False" }))
 })
 
-test_compress : List(U8)
+test_compress : Text
 test_compress = ({
 	input = [200, 500, 800, 1200, 1500]
 	output = AudioEffect.fx_compress(input, 500, 4000)
 	last = (List.get(output, I64.to_u64_wrap(4)) ?? crash("list-at out of range"))
-	List.concat(List.concat(List.concat([24, 16, 26, 31, 69, 2, 23, 15, 19, 14, 77], Text.show_int(last)), [2, 21, 13, 22, 25, 24, 13, 22, 77]), (if (last < 1500) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))
+	Text.concat(Text.concat(Text.concat("comp: last=", Text.show_int(last)), " reduced="), (if (last < 1500) { "True" } else { "False" }))
 })
 
-test_eq : List(U8)
+test_eq : Text
 test_eq = ({
 	input = [1000, (0 - 500), 800, (0 - 300), 600]
 	output = AudioEffect.fx_eq3(input, 500, 1000, 1500)
-	List.concat([13, 37, 69, 2, 19, 15, 26, 31, 23, 13, 19, 77], Text.show_int(U64.to_i64_wrap(List.len(output))))
+	Text.concat("eq: samples=", Text.show_int(U64.to_i64_wrap(List.len(output))))
 })
 
-test_note_freq : List(U8)
+test_note_freq : Text
 test_note_freq = ({
 	a4 = MusicTheory.note_freq(69)
 	c4 = MusicTheory.note_freq(60)
-	List.concat(List.concat(List.concat(List.concat([41, 7, 77], Text.show_int(a4)), [46, 38, 2, 50, 7, 77]), Text.show_int(c4)), [46, 38])
+	Text.concat(Text.concat(Text.concat(Text.concat("A4=", Text.show_int(a4)), "Hz C4="), Text.show_int(c4)), "Hz")
 })
 
-test_scale : List(U8)
+test_scale : Text
 test_scale = ({
 	cmaj = MusicTheory.scale_major(60)
-	List.concat(List.concat([50, 73, 26, 15, 35, 16, 21, 77], Text.show_int(U64.to_i64_wrap(List.len(cmaj)))), [2, 18, 16, 14, 13, 19])
+	Text.concat(Text.concat("C-major=", Text.show_int(U64.to_i64_wrap(List.len(cmaj)))), " notes")
 })
 
-test_chord : List(U8)
-test_chord = List.concat(List.concat(List.concat([50, 26, 15, 35, 77], MusicTheory.format_chord(MusicTheory.chord_major(60))), [2, 41, 26, 17, 18, 77]), MusicTheory.format_chord(MusicTheory.chord_minor(69)))
+test_chord : Text
+test_chord = Text.concat(Text.concat(Text.concat("Cmaj=", MusicTheory.format_chord(MusicTheory.chord_major(60))), " Amin="), MusicTheory.format_chord(MusicTheory.chord_minor(69)))
 
-test_tempo : List(U8)
+test_tempo : Text
 test_tempo = ({
 	quarter = MusicTheory.mt_note_duration(120, 4)
 	eighth = MusicTheory.mt_note_duration(120, 8)
-	List.concat(List.concat(List.concat(List.concat([37, 25, 15, 21, 14, 13, 21, 77], Text.show_int(quarter)), [26, 19, 2, 13, 17, 29, 20, 14, 20, 77]), Text.show_int(eighth)), [26, 19])
+	Text.concat(Text.concat(Text.concat(Text.concat("quarter=", Text.show_int(quarter)), "ms eighth="), Text.show_int(eighth)), "ms")
 })
 
 nanosecond : I64 -> Units.Duration

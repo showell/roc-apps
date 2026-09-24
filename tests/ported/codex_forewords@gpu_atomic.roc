@@ -24,8 +24,8 @@ line! = |s| echo!(Str.concat(s, "\n"))
 
 main! = |_args| {
 	(match Relaxed {
-		Relaxed => line!(Text.printed([55, 31, 25, 81, 41, 14, 16, 26, 17, 24, 2, 42, 60]))
-		_ => line!(Text.printed([28, 15, 17, 23]))
+		Relaxed => line!(Text.printed("Gpu/Atomic OK"))
+		_ => line!(Text.printed("fail"))
 	})
 	Ok({})
 }

@@ -27,9 +27,9 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([17, 18, 14, 73, 23, 16, 29, 5, 2, 4, 69, 2], Text.show_int(FastMath.int_log2(1)))))
-	line!(Text.printed(List.concat([17, 18, 14, 73, 23, 16, 29, 5, 2, 5, 8, 9, 69, 2], Text.show_int(FastMath.int_log2(256)))))
-	line!(Text.printed(List.concat([17, 18, 14, 73, 23, 16, 29, 5, 2, 4, 3, 5, 6, 69, 2], Text.show_int(FastMath.int_log2(1023)))))
-	line!(Text.printed(List.concat([17, 18, 14, 73, 23, 16, 29, 5, 2, 3, 69, 2], Text.show_int(FastMath.int_log2(0)))))
+	line!(Text.printed(Text.concat("int-log2 1: ", Text.show_int(FastMath.int_log2(1)))))
+	line!(Text.printed(Text.concat("int-log2 256: ", Text.show_int(FastMath.int_log2(256)))))
+	line!(Text.printed(Text.concat("int-log2 1023: ", Text.show_int(FastMath.int_log2(1023)))))
+	line!(Text.printed(Text.concat("int-log2 0: ", Text.show_int(FastMath.int_log2(0)))))
 	Ok({})
 }

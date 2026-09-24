@@ -22,12 +22,12 @@ import cdx.Text
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-report : I64 -> List(U8)
+report : I64 -> Text
 report = |_x| ({
 	base = [7]
 	copied = ListUtils.map_list(lam_0, base)
 	grown = List.append(copied, 9)
-	List.concat(List.concat(List.concat(List.concat(List.concat([32, 15, 19, 13, 73, 23, 13, 18, 77], Text.show_int(U64.to_i64_wrap(List.len(base)))), [2, 29, 21, 16, 27, 18, 73, 23, 13, 18, 77]), Text.show_int(U64.to_i64_wrap(List.len(grown)))), [2, 29, 21, 16, 27, 18, 73, 20, 13, 15, 22, 77]), Text.show_int((List.get(grown, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))))
+	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("base-len=", Text.show_int(U64.to_i64_wrap(List.len(base)))), " grown-len="), Text.show_int(U64.to_i64_wrap(List.len(grown)))), " grown-head="), Text.show_int((List.get(grown, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))))
 })
 
 lam_0 : I64 -> I64

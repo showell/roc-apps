@@ -40,6 +40,6 @@ shadow_test = |n| ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat(List.concat(List.concat(List.concat(Text.show_int(use_once), [2]), Text.show_int(finalize(21))), [2]), Text.show_int(shadow_test(41)))))
+	line!(Text.printed(Text.concat(Text.concat(Text.concat(Text.concat(Text.show_int(use_once), " "), Text.show_int(finalize(21))), " "), Text.show_int(shadow_test(41)))))
 	Ok({})
 }

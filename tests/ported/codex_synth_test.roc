@@ -29,7 +29,7 @@ import cdx.Units
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-test_oscillators : List(U8)
+test_oscillators : Text
 test_oscillators = ({
 	s1 = Synth.osc_sine(0, 1000)
 	s2 = Synth.osc_sine(1571, 1000)
@@ -37,56 +37,56 @@ test_oscillators = ({
 	sq2 = Synth.osc_square((0 - 500), 1000)
 	sw = Synth.osc_saw(0, 1000)
 	tr = Synth.osc_triangle(0, 1000)
-	List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat([19, 17, 18, 13, 3, 77], Text.show_int(s1)), [2, 19, 17, 18, 13, 12, 3, 77]), Text.show_int(s2)), [2, 19, 37, 76, 77]), Text.show_int(sq)), [2, 19, 37, 73, 77]), Text.show_int(sq2)), [2, 19, 15, 27, 3, 77]), Text.show_int(sw)), [2, 14, 21, 17, 3, 77]), Text.show_int(tr))
+	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("sine0=", Text.show_int(s1)), " sine90="), Text.show_int(s2)), " sq+="), Text.show_int(sq)), " sq-="), Text.show_int(sq2)), " saw0="), Text.show_int(sw)), " tri0="), Text.show_int(tr))
 })
 
-test_generate : List(U8)
+test_generate : Text
 test_generate = ({
 	samples = Synth.synth_generate(WaveSine, 440, 1000, 8000, 16)
 	peak = Synth.synth_peak(samples)
-	List.concat(List.concat(List.concat([24, 16, 25, 18, 14, 77], Text.show_int(U64.to_i64_wrap(List.len(samples)))), [2, 31, 13, 15, 34, 77]), Text.show_int(peak))
+	Text.concat(Text.concat(Text.concat("count=", Text.show_int(U64.to_i64_wrap(List.len(samples)))), " peak="), Text.show_int(peak))
 })
 
-test_square_wave : List(U8)
+test_square_wave : Text
 test_square_wave = ({
 	samples = Synth.synth_generate(WaveSquare, 1000, 500, 8000, 8)
 	zc = Synth.synth_zero_crossings(samples)
-	List.concat(List.concat(List.concat([19, 37, 73, 24, 16, 25, 18, 14, 77], Text.show_int(U64.to_i64_wrap(List.len(samples)))), [2, 38, 24, 77]), Text.show_int(zc))
+	Text.concat(Text.concat(Text.concat("sq-count=", Text.show_int(U64.to_i64_wrap(List.len(samples)))), " zc="), Text.show_int(zc))
 })
 
-test_filter : List(U8)
+test_filter : Text
 test_filter = ({
 	raw = Synth.synth_generate(WaveSquare, 500, 1000, 4000, 16)
 	filtered = Synth.lpf_apply(200, raw)
 	raw_peak = Synth.synth_peak(raw)
 	filt_peak = Synth.synth_peak(filtered)
-	List.concat(List.concat(List.concat(List.concat(List.concat([21, 15, 27, 77], Text.show_int(raw_peak)), [2, 28, 17, 23, 14, 77]), Text.show_int(filt_peak)), [2, 19, 26, 16, 16, 14, 20, 13, 21, 77]), (if (filt_peak < raw_peak) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))
+	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("raw=", Text.show_int(raw_peak)), " filt="), Text.show_int(filt_peak)), " smoother="), (if (filt_peak < raw_peak) { "True" } else { "False" }))
 })
 
-test_mix : List(U8)
+test_mix : Text
 test_mix = ({
 	a = Synth.synth_generate(WaveSine, 440, 1000, 8000, 8)
 	b = Synth.synth_generate(WaveSine, 880, 500, 8000, 8)
 	mixed = Synth.mix_signals(a, b, 700, 300)
-	List.concat(List.concat(List.concat([26, 17, 36, 13, 22, 77], Text.show_int(U64.to_i64_wrap(List.len(mixed)))), [2, 31, 13, 15, 34, 77]), Text.show_int(Synth.synth_peak(mixed)))
+	Text.concat(Text.concat(Text.concat("mixed=", Text.show_int(U64.to_i64_wrap(List.len(mixed)))), " peak="), Text.show_int(Synth.synth_peak(mixed)))
 })
 
-test_envelope_apply : List(U8)
+test_envelope_apply : Text
 test_envelope_apply = ({
 	env = Envelope.adsr_new(50, 50, 700, 100)
 	raw = Synth.synth_generate(WaveSine, 440, 1000, 4000, 32)
 	shaped = Synth.synth_apply_env(raw, env, 4000, 24)
 	raw_peak = Synth.synth_peak(raw)
 	shaped_peak = Synth.synth_peak(shaped)
-	List.concat(List.concat(List.concat(List.concat(List.concat([21, 15, 27, 77], Text.show_int(raw_peak)), [2, 19, 20, 15, 31, 13, 22, 77]), Text.show_int(shaped_peak)), [2, 37, 25, 17, 13, 14, 13, 21, 77]), (if (shaped_peak <= raw_peak) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))
+	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("raw=", Text.show_int(raw_peak)), " shaped="), Text.show_int(shaped_peak)), " quieter="), (if (shaped_peak <= raw_peak) { "True" } else { "False" }))
 })
 
-test_note : List(U8)
+test_note : Text
 test_note = ({
 	env = Envelope.adsr_new(10, 20, 800, 50)
 	n = Synth.note_new(440, 0, 100, WaveSine)
 	rendered = Synth.synth_render_note(n, 1000, 4000, env)
-	List.concat(List.concat(List.concat([18, 16, 14, 13, 73, 19, 15, 26, 31, 23, 13, 19, 77], Text.show_int(U64.to_i64_wrap(List.len(rendered)))), [2, 31, 13, 15, 34, 77]), Text.show_int(Synth.synth_peak(rendered)))
+	Text.concat(Text.concat(Text.concat("note-samples=", Text.show_int(U64.to_i64_wrap(List.len(rendered)))), " peak="), Text.show_int(Synth.synth_peak(rendered)))
 })
 
 nanosecond : I64 -> Units.Duration

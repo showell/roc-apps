@@ -28,19 +28,19 @@ import cdx.Text
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-mline : List(U8), I64, I64 -> List(U8)
-mline = |tag, x, y| List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(tag, [2]), Text.show_int(x)), [66]), Text.show_int(y)), [2, 22, 17, 33, 77]), Text.show_int(I64.div_trunc_by(x, y))), [2, 26, 16, 22, 77]), Text.show_int(Prelude.int_mod(x, y)))
+mline : Text, I64, I64 -> Text
+mline = |tag, x, y| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(tag, " "), Text.show_int(x)), ","), Text.show_int(y)), " div="), Text.show_int(I64.div_trunc_by(x, y))), " mod="), Text.show_int(Prelude.int_mod(x, y)))
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(mline([31, 31], 7, 3)))
-	line!(Text.printed(mline([18, 31], (0 - 7), 3)))
-	line!(Text.printed(mline([31, 18], 7, (0 - 3))))
-	line!(Text.printed(mline([18, 18], (0 - 7), (0 - 3))))
-	line!(Text.printed(mline([31, 31, 5], 8, 4)))
-	line!(Text.printed(mline([18, 31, 5], (0 - 8), 4)))
-	line!(Text.printed(mline([18, 31, 6], (0 - 1), 8)))
-	line!(Text.printed(mline([31, 18, 6], 1, (0 - 8))))
+	line!(Text.printed(mline("pp", 7, 3)))
+	line!(Text.printed(mline("np", (0 - 7), 3)))
+	line!(Text.printed(mline("pn", 7, (0 - 3))))
+	line!(Text.printed(mline("nn", (0 - 7), (0 - 3))))
+	line!(Text.printed(mline("pp2", 8, 4)))
+	line!(Text.printed(mline("np2", (0 - 8), 4)))
+	line!(Text.printed(mline("np3", (0 - 1), 8)))
+	line!(Text.printed(mline("pn3", 1, (0 - 8))))
 	Ok({})
 }

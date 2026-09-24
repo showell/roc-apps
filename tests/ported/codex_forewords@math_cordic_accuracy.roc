@@ -71,22 +71,22 @@ acc_worst = |i, so_far| (if (i >= U64.to_i64_wrap(List.len(acc_angles))) { so_fa
 acc_within : I64, I64 -> I64
 acc_within = |i, n| (if (i >= U64.to_i64_wrap(List.len(acc_angles))) { n } else { acc_within((i + 1), (if (acc_err_at(i) <= 6) { (n + 1) } else { n })) })
 
-acc_line : I64 -> List(U8)
+acc_line : I64 -> Text
 acc_line = |i| ({
 	a = (List.get(acc_angles, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
-	List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat([2, 2], Text.show_int(a)), [2, 19, 17, 18, 2]), Text.show_int(Cordic.cordic_sin(a))), [2, 14, 21, 25, 13, 2]), Text.show_int((List.get(acc_true_sin, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))), [2, 2, 2, 24, 16, 19, 2]), Text.show_int(Cordic.cordic_cos(a))), [2, 14, 21, 25, 13, 2]), Text.show_int((List.get(acc_true_cos, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))), [2, 2, 2, 13, 21, 21, 2]), Text.show_int(acc_err_at(i)))
+	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("  ", Text.show_int(a)), " sin "), Text.show_int(Cordic.cordic_sin(a))), " true "), Text.show_int((List.get(acc_true_sin, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))), "   cos "), Text.show_int(Cordic.cordic_cos(a))), " true "), Text.show_int((List.get(acc_true_cos, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))), "   err "), Text.show_int(acc_err_at(i)))
 })
 
-acc_report : List(U8)
+acc_report : Text
 acc_report = ({
 	w = acc_worst(0, 0)
-	List.concat(List.concat([27, 16, 21, 19, 14, 2, 15, 32, 19, 16, 23, 25, 14, 13, 2, 13, 21, 21, 16, 21, 2, 16, 33, 13, 21, 2, 14, 20, 13, 2, 19, 15, 26, 31, 23, 13, 69, 2], Text.show_int(w)), [2, 16, 28, 2, 4, 3, 3, 3, 2, 28, 25, 23, 23, 2, 19, 24, 15, 23, 13])
+	Text.concat(Text.concat("worst absolute error over the sample: ", Text.show_int(w)), " of 1000 full scale")
 })
 
-acc_count : List(U8)
+acc_count : Text
 acc_count = ({
 	n = acc_within(0, 0)
-	List.concat(List.concat(List.concat([27, 17, 14, 20, 17, 18, 2, 9, 2, 16, 28, 2, 4, 3, 3, 3, 69, 2], Text.show_int(n)), [2, 16, 28, 2]), Text.show_int(U64.to_i64_wrap(List.len(acc_angles))))
+	Text.concat(Text.concat(Text.concat("within 6 of 1000: ", Text.show_int(n)), " of "), Text.show_int(U64.to_i64_wrap(List.len(acc_angles))))
 })
 
 # --- Entry ---

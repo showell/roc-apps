@@ -23,17 +23,17 @@ import cdx.Text
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-show_dequeue : Maybe.Maybe(Queue.DequeueResult(I64)) -> List(U8)
+show_dequeue : Maybe.Maybe(Queue.DequeueResult(I64)) -> Text
 show_dequeue = |r| (match r {
 	Just(dr) => Text.show_int(dr.value)
-	None => [13, 26, 31, 14, 30]
+	None => "empty"
 })
 
-test_queue : List(U8)
+test_queue : Text
 test_queue = ({
 	q0 = Queue.queue_empty
 	q1 = Queue.queue_enqueue(Queue.queue_enqueue(Queue.queue_enqueue(q0, 10), 20), 30)
-	List.concat(List.concat((if Queue.queue_is_empty(q0) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }), [1]), Text.show_int(Queue.queue_size(q1)))
+	Text.concat(Text.concat((if Queue.queue_is_empty(q0) { "True" } else { "False" }), "\n"), Text.show_int(Queue.queue_size(q1)))
 })
 
 # --- Entry ---

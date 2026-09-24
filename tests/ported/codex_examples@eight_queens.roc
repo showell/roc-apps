@@ -61,19 +61,19 @@ try_col = |qs, col| (if (col >= n) { Miss } else { (if (safe(qs, col) == False) 
 	})
 }) }) })
 
-cell : List(I64), I64, I64 -> List(U8)
-cell = |qs, row, col| (if ((List.get(qs, I64.to_u64_wrap(row)) ?? crash("list-at out of range")) == col) { [63] } else { [65] })
+cell : List(I64), I64, I64 -> Text
+cell = |qs, row, col| (if ((List.get(qs, I64.to_u64_wrap(row)) ?? crash("list-at out of range")) == col) { "Q" } else { "." })
 
-row_line : List(I64), I64, I64 -> List(U8)
-row_line = |qs, row, col| (if (col >= n) { [] } else { (if (col == 0) { List.concat(cell(qs, row, col), row_line(qs, row, (col + 1))) } else { List.concat(List.concat([2], cell(qs, row, col)), row_line(qs, row, (col + 1))) }) })
+row_line : List(I64), I64, I64 -> Text
+row_line = |qs, row, col| (if (col >= n) { "" } else { (if (col == 0) { Text.concat(cell(qs, row, col), row_line(qs, row, (col + 1))) } else { Text.concat(Text.concat(" ", cell(qs, row, col)), row_line(qs, row, (col + 1))) }) })
 
-board_text : List(I64), I64 -> List(U8)
-board_text = |qs, row| (if (row >= n) { [] } else { (if (row == (n - 1)) { row_line(qs, row, 0) } else { List.concat(List.concat(row_line(qs, row, 0), [1]), board_text(qs, (row + 1))) }) })
+board_text : List(I64), I64 -> Text
+board_text = |qs, row| (if (row >= n) { "" } else { (if (row == (n - 1)) { row_line(qs, row, 0) } else { Text.concat(Text.concat(row_line(qs, row, 0), "\n"), board_text(qs, (row + 1))) }) })
 
-render : Answer -> List(U8)
+render : Answer -> Text
 render = |ans| (match ans {
 	Found(qs) => board_text(qs, 0)
-	Miss => [18, 16, 2, 19, 16, 23, 25, 14, 17, 16, 18]
+	Miss => "no solution"
 })
 
 eq_Answer : Answer, Answer -> Bool

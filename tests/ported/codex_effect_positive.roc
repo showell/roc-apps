@@ -33,13 +33,13 @@ run_console! = |act_fn, n| act_fn(n)
 
 shout! : I64 => {}
 shout! = |n| ({
-	line!(Text.printed(List.concat([19, 20, 16, 25, 14, 2], Text.show_int(n))))
+	line!(Text.printed(Text.concat("shout ", Text.show_int(n))))
 })
 
 report! : I64 => {}
 report! = |n| ({
-	line!(Text.printed([19, 14, 13, 31, 2, 16, 18, 13]))
-	line!(Text.printed(List.concat([33, 15, 23, 25, 13, 2], Text.show_int(apply_pure(double, n)))))
+	line!(Text.printed("step one"))
+	line!(Text.printed(Text.concat("value ", Text.show_int(apply_pure(double, n)))))
 })
 
 # --- Entry ---

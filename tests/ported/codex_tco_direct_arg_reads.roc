@@ -33,6 +33,6 @@ loop4 = |i, s, acc, n| (if (i >= n) { acc } else { ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([15, 24, 24, 77], Text.show_int(loop4(0, { v: 1 }, 0, 3)))))
+	line!(Text.printed(Text.concat("acc=", Text.show_int(loop4(0, { v: 1 }, 0, 3)))))
 	Ok({})
 }

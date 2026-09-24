@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([39, 18, 29, 17, 18, 13, 81, 41, 19, 19, 13, 14, 40, 15, 32, 23, 13, 2, 42, 60]))
+	line!(Text.printed("Engine/AssetTable OK"))
 	Ok({})
 }

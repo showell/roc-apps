@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([45, 17, 26, 81, 50, 16, 18, 19, 14, 21, 15, 17, 18, 14, 2, 42, 60]))
+	line!(Text.printed("Sim/Constraint OK"))
 	Ok({})
 }

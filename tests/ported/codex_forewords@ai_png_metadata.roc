@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([41, 43, 81, 57, 18, 29, 52, 13, 14, 15, 22, 15, 14, 15, 2, 42, 60]))
+	line!(Text.printed("AI/PngMetadata OK"))
 	Ok({})
 }

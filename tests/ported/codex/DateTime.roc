@@ -74,23 +74,23 @@ DateTime :: [].{
 		((((I64.div_trunc_by((days + 4), 7) * 7) - days) - 4) + (days + 4))
 	})
 
-	day_of_week_name : I64 -> List(U8)
-	day_of_week_name = |dow| (if (dow == 0) { [40, 20, 25] } else { (if (dow == 1) { [54, 21, 17] } else { (if (dow == 2) { [45, 15, 14] } else { (if (dow == 3) { [45, 25, 18] } else { (if (dow == 4) { [52, 16, 18] } else { (if (dow == 5) { [40, 25, 13] } else { (if (dow == 6) { [53, 13, 22] } else { [68] }) }) }) }) }) }) })
+	day_of_week_name : I64 -> Text
+	day_of_week_name = |dow| (if (dow == 0) { "Thu" } else { (if (dow == 1) { "Fri" } else { (if (dow == 2) { "Sat" } else { (if (dow == 3) { "Sun" } else { (if (dow == 4) { "Mon" } else { (if (dow == 5) { "Tue" } else { (if (dow == 6) { "Wed" } else { "?" }) }) }) }) }) }) })
 
-	format_datetime : DateTime.DateTime -> List(U8)
-	format_datetime = |dt| List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(pad4(dt.year), [73]), pad2(dt.month)), [73]), pad2(dt.day)), [40]), pad2(dt.hour)), [69]), pad2(dt.minute)), [69]), pad2(dt.second)), [64])
+	format_datetime : DateTime.DateTime -> Text
+	format_datetime = |dt| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(pad4(dt.year), "-"), pad2(dt.month)), "-"), pad2(dt.day)), "T"), pad2(dt.hour)), ":"), pad2(dt.minute)), ":"), pad2(dt.second)), "Z")
 
-	format_date : DateTime.DateTime -> List(U8)
-	format_date = |dt| List.concat(List.concat(List.concat(List.concat(pad4(dt.year), [73]), pad2(dt.month)), [73]), pad2(dt.day))
+	format_date : DateTime.DateTime -> Text
+	format_date = |dt| Text.concat(Text.concat(Text.concat(Text.concat(pad4(dt.year), "-"), pad2(dt.month)), "-"), pad2(dt.day))
 
-	format_time : DateTime.DateTime -> List(U8)
-	format_time = |dt| List.concat(List.concat(List.concat(List.concat(pad2(dt.hour), [69]), pad2(dt.minute)), [69]), pad2(dt.second))
+	format_time : DateTime.DateTime -> Text
+	format_time = |dt| Text.concat(Text.concat(Text.concat(Text.concat(pad2(dt.hour), ":"), pad2(dt.minute)), ":"), pad2(dt.second))
 
-	pad2 : I64 -> List(U8)
-	pad2 = |n| (if (n < 10) { List.concat([3], Text.show_int(n)) } else { Text.show_int(n) })
+	pad2 : I64 -> Text
+	pad2 = |n| (if (n < 10) { Text.concat("0", Text.show_int(n)) } else { Text.show_int(n) })
 
-	pad4 : I64 -> List(U8)
-	pad4 = |n| (if (n < 10) { List.concat([3, 3, 3], Text.show_int(n)) } else { (if (n < 100) { List.concat([3, 3], Text.show_int(n)) } else { (if (n < 1000) { List.concat([3], Text.show_int(n)) } else { Text.show_int(n) }) }) })
+	pad4 : I64 -> Text
+	pad4 = |n| (if (n < 10) { Text.concat("000", Text.show_int(n)) } else { (if (n < 100) { Text.concat("00", Text.show_int(n)) } else { (if (n < 1000) { Text.concat("0", Text.show_int(n)) } else { Text.show_int(n) }) }) })
 
 	datetime_add_seconds : DateTime.Timestamp, DateTime.Elapsed -> DateTime.Timestamp
 	datetime_add_seconds = |ts, secs| (ts + secs)
@@ -104,6 +104,6 @@ DateTime :: [].{
 	datetime_diff : DateTime.Timestamp, DateTime.Timestamp -> DateTime.Elapsed
 	datetime_diff = |a, b| (a - b)
 
-	month_name : I64 -> List(U8)
-	month_name = |m| (if (m == 1) { [61, 15, 18] } else { (if (m == 2) { [54, 13, 32] } else { (if (m == 3) { [52, 15, 21] } else { (if (m == 4) { [41, 31, 21] } else { (if (m == 5) { [52, 15, 30] } else { (if (m == 6) { [61, 25, 18] } else { (if (m == 7) { [61, 25, 23] } else { (if (m == 8) { [41, 25, 29] } else { (if (m == 9) { [45, 13, 31] } else { (if (m == 10) { [42, 24, 14] } else { (if (m == 11) { [44, 16, 33] } else { (if (m == 12) { [48, 13, 24] } else { [68] }) }) }) }) }) }) }) }) }) }) }) })
+	month_name : I64 -> Text
+	month_name = |m| (if (m == 1) { "Jan" } else { (if (m == 2) { "Feb" } else { (if (m == 3) { "Mar" } else { (if (m == 4) { "Apr" } else { (if (m == 5) { "May" } else { (if (m == 6) { "Jun" } else { (if (m == 7) { "Jul" } else { (if (m == 8) { "Aug" } else { (if (m == 9) { "Sep" } else { (if (m == 10) { "Oct" } else { (if (m == 11) { "Nov" } else { (if (m == 12) { "Dec" } else { "?" }) }) }) }) }) }) }) }) }) }) }) })
 }

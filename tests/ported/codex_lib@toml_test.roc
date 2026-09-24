@@ -29,19 +29,19 @@ line! = |s| echo!(Str.concat(s, "\n"))
 
 main! = |_args| {
 	({
-		input = [14, 17, 14, 23, 13, 2, 77, 2, 72, 52, 30, 2, 50, 16, 18, 28, 17, 29, 72, 1, 31, 16, 21, 14, 2, 77, 2, 11, 3, 11, 3, 1, 22, 13, 32, 25, 29, 2, 77, 2, 14, 21, 25, 13, 1]
+		input = "title = \"My Config\"\nport = 8080\ndebug = true\n"
 		(match Toml.toml_parse(input) {
 			Just(v) => ({
-				line!(Text.printed(List.concat([14, 17, 14, 23, 13, 77], Toml.toml_get_str(v, [14, 17, 14, 23, 13], [68]))))
-				line!(Text.printed(List.concat([31, 16, 21, 14, 77], Text.show_int(Toml.toml_get_int(v, [31, 16, 21, 14], 0)))))
-				line!(Text.printed(List.concat([22, 13, 32, 25, 29, 77], (if Toml.toml_get_bool(v, [22, 13, 32, 25, 29], False) { [14, 21, 25, 13] } else { [28, 15, 23, 19, 13] }))))
-				line!(Text.printed(List.concat([26, 17, 19, 19, 17, 18, 29, 77], Toml.toml_get_str(v, [18, 16, 31, 13], [22, 13, 28, 15, 25, 23, 14]))))
+				line!(Text.printed(Text.concat("title=", Toml.toml_get_str(v, "title", "?"))))
+				line!(Text.printed(Text.concat("port=", Text.show_int(Toml.toml_get_int(v, "port", 0)))))
+				line!(Text.printed(Text.concat("debug=", (if Toml.toml_get_bool(v, "debug", False) { "true" } else { "false" }))))
+				line!(Text.printed(Text.concat("missing=", Toml.toml_get_str(v, "nope", "default"))))
 				({
 					emitted = Toml.toml_emit(v)
-					line!(Text.printed(List.concat([13, 26, 17, 14, 73, 16, 34, 77], (if (Text.len(emitted) > 0) { [30, 13, 19] } else { [18, 16] }))))
+					line!(Text.printed(Text.concat("emit-ok=", (if (Text.len(emitted) > 0) { "yes" } else { "no" }))))
 				})
 			})
-			None => line!(Text.printed([31, 15, 21, 19, 13, 77, 28, 15, 17, 23]))
+			None => line!(Text.printed("parse=fail"))
 		})
 	})
 	Ok({})

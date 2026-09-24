@@ -72,6 +72,6 @@ elapsed_to_SecondElapsed = |fv| I64.div_trunc_by(fv, 1000000000)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([54, 16, 21, 13, 27, 16, 21, 22, 81, 47, 15, 14, 13, 49, 17, 26, 17, 14, 13, 21, 2, 42, 60]))
+	line!(Text.printed("Foreword/RateLimiter OK"))
 	Ok({})
 }

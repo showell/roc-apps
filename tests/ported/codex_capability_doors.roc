@@ -43,24 +43,24 @@ doors_nonzero = |ts, i, len, dir, acc| (if (i >= len) { acc } else { ({
 	doors_nonzero(ts, (i + 1), len, dir, (acc + (if (by_name != 0) { 1 } else { 0 })))
 }) })
 
-test_doors : List(U8)
+test_doors : Text
 test_doors = ({
 	ts = Capability.capability_table
 	n = U64.to_i64_wrap(List.len(ts))
 	ar = doors_agree(ts, 0, n, Capability.cap_dir_read, 0)
 	aw = doors_agree(ts, 0, n, Capability.cap_dir_write, 0)
 	arw = doors_agree(ts, 0, n, Capability.cap_dir_readwrite, 0)
-	List.concat(List.concat(List.concat([15, 29, 21, 13, 13, 77], Text.show_int(((ar + aw) + arw))), [81]), Text.show_int((n * 3)))
+	Text.concat(Text.concat(Text.concat("agree=", Text.show_int(((ar + aw) + arw))), "/"), Text.show_int((n * 3)))
 })
 
-test_nonzero : List(U8)
+test_nonzero : Text
 test_nonzero = ({
 	ts = Capability.capability_table
 	n = U64.to_i64_wrap(List.len(ts))
 	zr = doors_nonzero(ts, 0, n, Capability.cap_dir_read, 0)
 	zw = doors_nonzero(ts, 0, n, Capability.cap_dir_write, 0)
 	zrw = doors_nonzero(ts, 0, n, Capability.cap_dir_readwrite, 0)
-	List.concat(List.concat(List.concat([29, 21, 15, 18, 14, 17, 18, 29, 77], Text.show_int(((zr + zw) + zrw))), [81]), Text.show_int((n * 3)))
+	Text.concat(Text.concat(Text.concat("granting=", Text.show_int(((zr + zw) + zrw))), "/"), Text.show_int((n * 3)))
 })
 
 dir_union_ok : List(Capability.CapSpec), I64, I64, I64 -> I64
@@ -86,55 +86,55 @@ dir_distinct_ok = |ts, i, len, acc| (if (i >= len) { acc } else { ({
 	dir_distinct_ok(ts, (i + 1), len, (acc + (if ok { 1 } else { 0 })))
 }) })
 
-test_directions : List(U8)
+test_directions : Text
 test_directions = ({
 	ts = Capability.capability_table
 	n = U64.to_i64_wrap(List.len(ts))
-	List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat([25, 18, 17, 16, 18, 77], Text.show_int(dir_union_ok(ts, 0, n, 0))), [81]), Text.show_int(n)), [2, 21, 13, 28, 17, 18, 13, 19, 77]), Text.show_int(dir_distinct_ok(ts, 0, n, 0))), [81]), Text.show_int(n))
+	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("union=", Text.show_int(dir_union_ok(ts, 0, n, 0))), "/"), Text.show_int(n)), " refines="), Text.show_int(dir_distinct_ok(ts, 0, n, 0))), "/"), Text.show_int(n))
 })
 
-test_ungranted : List(U8)
+test_ungranted : Text
 test_ungranted = ({
-	bad_id = Capability.cap_id_for_name([44, 16, 14, 41, 50, 15, 31, 15, 32, 17, 23, 17, 14, 30])
-	r = Capability.cap_bits_for_name([44, 16, 14, 41, 50, 15, 31, 15, 32, 17, 23, 17, 14, 30], Capability.cap_dir_read)
-	w = Capability.cap_bits_for_name([44, 16, 14, 41, 50, 15, 31, 15, 32, 17, 23, 17, 14, 30], Capability.cap_dir_write)
-	rw = Capability.cap_bits_for_name([44, 16, 14, 41, 50, 15, 31, 15, 32, 17, 23, 17, 14, 30], Capability.cap_dir_readwrite)
+	bad_id = Capability.cap_id_for_name("NotACapability")
+	r = Capability.cap_bits_for_name("NotACapability", Capability.cap_dir_read)
+	w = Capability.cap_bits_for_name("NotACapability", Capability.cap_dir_write)
+	rw = Capability.cap_bits_for_name("NotACapability", Capability.cap_dir_readwrite)
 	by_id = Capability.cap_bits_for_id(999, Capability.cap_dir_readwrite)
-	List.concat(List.concat(List.concat(List.concat(List.concat([25, 18, 34, 18, 16, 27, 18, 73, 17, 22, 77], Text.show_int(bad_id)), [2, 25, 18, 34, 18, 16, 27, 18, 73, 18, 15, 26, 13, 73, 32, 17, 14, 19, 77]), Text.show_int(((r + w) + rw))), [2, 25, 18, 34, 18, 16, 27, 18, 73, 17, 22, 73, 32, 17, 14, 19, 77]), Text.show_int(by_id))
+	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("unknown-id=", Text.show_int(bad_id)), " unknown-name-bits="), Text.show_int(((r + w) + rw))), " unknown-id-bits="), Text.show_int(by_id))
 })
 
-vocab_resolving : List(List(U8)), I64, I64, I64 -> I64
+vocab_resolving : List(Text), I64, I64, I64 -> I64
 vocab_resolving = |ns, i, len, acc| (if (i >= len) { acc } else { vocab_resolving(ns, (i + 1), len, (acc + (if (Capability.cap_id_for_name((List.get(ns, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))) >= 0) { 1 } else { 0 }))) })
 
-test_vocab : List(U8)
+test_vocab : Text
 test_vocab = ({
 	ns = Capability.capability_names
 	n = U64.to_i64_wrap(List.len(ns))
 	rows = U64.to_i64_wrap(List.len(Capability.capability_table))
-	List.concat(List.concat(List.concat(List.concat(List.concat([18, 15, 26, 13, 19, 77], Text.show_int(n)), [2, 21, 16, 27, 19, 77]), Text.show_int(rows)), [2, 21, 13, 19, 16, 23, 33, 17, 18, 29, 77]), Text.show_int(vocab_resolving(ns, 0, n, 0)))
+	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("names=", Text.show_int(n)), " rows="), Text.show_int(rows)), " resolving="), Text.show_int(vocab_resolving(ns, 0, n, 0)))
 })
 
-test_masks : List(U8)
+test_masks : Text
 test_masks = ({
-	cr = Capability.cap_bits_for_name([50, 16, 18, 19, 16, 23, 13], Capability.cap_dir_read)
-	cw = Capability.cap_bits_for_name([50, 16, 18, 19, 16, 23, 13], Capability.cap_dir_write)
-	crw = Capability.cap_bits_for_name([50, 16, 18, 19, 16, 23, 13], Capability.cap_dir_readwrite)
-	List.concat(List.concat(List.concat(List.concat(List.concat([24, 16, 18, 19, 16, 23, 13, 77], Text.show_int(cr)), [66]), Text.show_int(cw)), [66]), Text.show_int(crw))
+	cr = Capability.cap_bits_for_name("Console", Capability.cap_dir_read)
+	cw = Capability.cap_bits_for_name("Console", Capability.cap_dir_write)
+	crw = Capability.cap_bits_for_name("Console", Capability.cap_dir_readwrite)
+	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("console=", Text.show_int(cr)), ","), Text.show_int(cw)), ","), Text.show_int(crw))
 })
 
-test_masks_fs : List(U8)
+test_masks_fs : Text
 test_masks_fs = ({
-	fr = Capability.cap_bits_for_name([54, 17, 23, 13, 45, 30, 19, 14, 13, 26], Capability.cap_dir_read)
-	fw = Capability.cap_bits_for_name([54, 17, 23, 13, 45, 30, 19, 14, 13, 26], Capability.cap_dir_write)
-	frw = Capability.cap_bits_for_name([54, 17, 23, 13, 45, 30, 19, 14, 13, 26], Capability.cap_dir_readwrite)
-	List.concat(List.concat(List.concat(List.concat(List.concat([28, 17, 23, 13, 19, 30, 19, 14, 13, 26, 77], Text.show_int(fr)), [66]), Text.show_int(fw)), [66]), Text.show_int(frw))
+	fr = Capability.cap_bits_for_name("FileSystem", Capability.cap_dir_read)
+	fw = Capability.cap_bits_for_name("FileSystem", Capability.cap_dir_write)
+	frw = Capability.cap_bits_for_name("FileSystem", Capability.cap_dir_readwrite)
+	Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("filesystem=", Text.show_int(fr)), ","), Text.show_int(fw)), ","), Text.show_int(frw))
 })
 
-test_masks_conc : List(U8)
+test_masks_conc : Text
 test_masks_conc = ({
-	kr = Capability.cap_bits_for_name([50, 16, 18, 24, 25, 21, 21, 13, 18, 14], Capability.cap_dir_read)
-	krw = Capability.cap_bits_for_name([50, 16, 18, 24, 25, 21, 21, 13, 18, 14], Capability.cap_dir_readwrite)
-	List.concat(List.concat(List.concat([24, 16, 18, 24, 25, 21, 21, 13, 18, 14, 77], Text.show_int(kr)), [66]), Text.show_int(krw))
+	kr = Capability.cap_bits_for_name("Concurrent", Capability.cap_dir_read)
+	krw = Capability.cap_bits_for_name("Concurrent", Capability.cap_dir_readwrite)
+	Text.concat(Text.concat(Text.concat("concurrent=", Text.show_int(kr)), ","), Text.show_int(krw))
 })
 
 # --- Entry ---

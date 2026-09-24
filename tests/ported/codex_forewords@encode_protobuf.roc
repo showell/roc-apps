@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([39, 18, 24, 16, 22, 13, 81, 57, 21, 16, 14, 16, 32, 25, 28, 2, 42, 60]))
+	line!(Text.printed("Encode/Protobuf OK"))
 	Ok({})
 }

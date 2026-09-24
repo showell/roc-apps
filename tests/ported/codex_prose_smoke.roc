@@ -23,26 +23,26 @@ import cdx.Text
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-ProseBasic : { value : I64, label : List(U8) }
-ProseResult : [Ok(I64), Err(List(U8))]
+ProseBasic : { value : I64, label : Text }
+ProseResult : [Ok(I64), Err(Text)]
 
 add_values : I64, I64 -> I64
 add_values = |a, b| (a + b)
 
-describe : ProseBasic -> List(U8)
-describe = |pb| List.concat(List.concat(pb.label, [69, 2]), Text.show_int(pb.value))
+describe : ProseBasic -> Text
+describe = |pb| Text.concat(Text.concat(pb.label, ": "), Text.show_int(pb.value))
 
-show_result : ProseResult -> List(U8)
+show_result : ProseResult -> Text
 show_result = |r| (match r {
-	Ok(n) => List.concat([16, 34, 69], Text.show_int(n))
-	Err(msg) => List.concat([13, 21, 21, 69], msg)
+	Ok(n) => Text.concat("ok:", Text.show_int(n))
+	Err(msg) => Text.concat("err:", msg)
 })
 
 field_sum : I64
 field_sum = ((0 + 4) + 8)
 
-greet : List(U8) -> List(U8)
-greet = |name| List.concat(List.concat([46, 13, 23, 23, 16, 66, 2], name), [67])
+greet : Text -> Text
+greet = |name| Text.concat(Text.concat("Hello, ", name), "!")
 
 eq_ProseResult : ProseResult, ProseResult -> Bool
 eq_ProseResult = |ex, ey| (match ex {
@@ -59,10 +59,10 @@ eq_ProseResult = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	pb = { value: add_values(10, 32), label: [15, 18, 19, 27, 13, 21] }
+	pb = { value: add_values(10, 32), label: "answer" }
 	desc = describe(pb)
 	r1 = show_result(Ok(42))
-	r2 = show_result(Err([18, 16, 14, 2, 28, 16, 25, 18, 22]))
-	line!(Text.printed(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(desc, [1]), r1), [1]), r2), [1, 28, 17, 13, 23, 22, 19, 73]), Text.show_int(field_sum)), [1]), greet([53, 16, 21, 23, 22]))))
+	r2 = show_result(Err("not found"))
+	line!(Text.printed(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(desc, "\n"), r1), "\n"), r2), "\nfields-"), Text.show_int(field_sum)), "\n"), greet("World"))))
 	Ok({})
 }

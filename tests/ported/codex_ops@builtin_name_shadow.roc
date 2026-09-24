@@ -30,7 +30,7 @@ vec_mul = 3
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([19, 20, 15, 22, 16, 27, 13, 22, 2, 24, 16, 18, 19, 14, 15, 18, 14, 2, 27, 15, 18, 14, 2, 9, 7, 69, 2], Text.show_int(vec_sub))))
-	line!(Text.printed(List.concat([19, 20, 15, 22, 16, 27, 13, 22, 2, 31, 21, 16, 22, 25, 24, 14, 2, 2, 27, 15, 18, 14, 2, 4, 12, 5, 69, 2], Text.show_int((vec_sub * vec_mul)))))
+	line!(Text.printed(Text.concat("shadowed constant want 64: ", Text.show_int(vec_sub))))
+	line!(Text.printed(Text.concat("shadowed product  want 192: ", Text.show_int((vec_sub * vec_mul)))))
 	Ok({})
 }

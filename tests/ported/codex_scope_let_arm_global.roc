@@ -20,10 +20,10 @@ import cdx.Text
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-inner : List(U8)
-inner = [55, 49, 42, 58, 41, 49]
+inner : Text
+inner = "GLOBAL"
 
-arm_scoped : I64 -> List(U8)
+arm_scoped : I64 -> Text
 arm_scoped = |n| ({
 	_w = (if (n > 0) { ({
 		inner_1 = (n * 10)
@@ -35,6 +35,6 @@ arm_scoped = |n| ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([15, 21, 26, 73, 19, 24, 16, 31, 13, 22, 69, 2], arm_scoped(2))))
+	line!(Text.printed(Text.concat("arm-scoped: ", arm_scoped(2))))
 	Ok({})
 }

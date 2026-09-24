@@ -990,6 +990,6 @@ bodyTemp_to_CelsiusBody = |fv| I64.div_trunc_by(fv, 1000)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([52, 15, 14, 20, 81, 55, 13, 16, 22, 13, 19, 17, 24, 2, 42, 60]))
+	line!(Text.printed("Math/Geodesic OK"))
 	Ok({})
 }

@@ -21,32 +21,32 @@ import cdx.Text
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Name : List(U8)
+Name : Text
 Count : I64
 
-classify_plain : List(U8) -> List(U8)
+classify_plain : Text -> Text
 classify_plain = |s| (match s {
-	[19, 17, 18] => [26, 15, 14, 24, 20, 13, 22]
-	_ => [28, 13, 23, 23, 73, 14, 20, 21, 16, 25, 29, 20]
+	"sin" => "matched"
+	_ => "fell-through"
 })
 
-classify_unit : Name -> List(U8)
+classify_unit : Name -> Text
 classify_unit = |n| (match n {
-	[19, 17, 18] => [26, 15, 14, 24, 20, 13, 22]
-	_ => [28, 13, 23, 23, 73, 14, 20, 21, 16, 25, 29, 20]
+	"sin" => "matched"
+	_ => "fell-through"
 })
 
-classify_int : Count -> List(U8)
+classify_int : Count -> Text
 classify_int = |c| (match c {
-	42 => [26, 15, 14, 24, 20, 13, 22]
-	_ => [28, 13, 23, 23, 73, 14, 20, 21, 16, 25, 29, 20]
+	42 => "matched"
+	_ => "fell-through"
 })
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([14, 13, 36, 14, 73, 31, 23, 15, 17, 18, 77], classify_plain([19, 17, 18]))))
-	line!(Text.printed(List.concat([14, 13, 36, 14, 73, 25, 18, 17, 14, 2, 77], classify_unit([19, 17, 18]))))
-	line!(Text.printed(List.concat([17, 18, 14, 73, 25, 18, 17, 14, 2, 2, 77], classify_int(42))))
+	line!(Text.printed(Text.concat("text-plain=", classify_plain("sin"))))
+	line!(Text.printed(Text.concat("text-unit =", classify_unit("sin"))))
+	line!(Text.printed(Text.concat("int-unit  =", classify_int(42))))
 	Ok({})
 }

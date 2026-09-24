@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([45, 17, 26, 81, 57, 15, 21, 14, 17, 24, 23, 13, 45, 30, 19, 14, 13, 26, 2, 42, 60]))
+	line!(Text.printed("Sim/ParticleSystem OK"))
 	Ok({})
 }

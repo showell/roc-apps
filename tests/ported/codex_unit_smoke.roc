@@ -52,7 +52,7 @@ main! = |_args| {
 			line!(Text.printed(Text.show_int(d)))
 			line!(Text.printed(Text.show_int(sum)))
 			line!(Text.printed(Text.show_int(scaled)))
-			line!(Text.printed((if (t1 > t2) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] })))
+			line!(Text.printed((if (t1 > t2) { "True" } else { "False" })))
 			line!(Text.printed(Text.show_int(s)))
 			line!(Text.printed(Text.show_int(built)))
 		})

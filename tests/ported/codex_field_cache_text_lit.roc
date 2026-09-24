@@ -23,7 +23,7 @@ import cdx.Text
 line! = |s| echo!(Str.concat(s, "\n"))
 Box_ : { items : List(I64) }
 
-probe : List(I64), List(U8), I64, I64 -> I64
+probe : List(I64), Text, I64, I64 -> I64
 probe = |_xs, _name, _i, len| len
 
 # --- Entry ---
@@ -32,9 +32,9 @@ main! = |_args| {
 	({
 		b = { items: [7, 8, 9] }
 		({
-			line!(Text.printed(List.concat([23, 17, 14, 13, 21, 15, 23, 2, 32, 13, 14, 27, 13, 13, 18, 2, 14, 27, 16, 2, 21, 13, 15, 22, 19, 69, 2], Text.show_int(probe(b.items, [21, 13, 15, 22, 73, 14, 13, 36, 14], 0, U64.to_i64_wrap(List.len(b.items)))))))
-			line!(Text.printed(List.concat([13, 26, 31, 14, 30, 2, 23, 17, 14, 13, 21, 15, 23, 2, 32, 13, 14, 27, 13, 13, 18, 2, 14, 20, 13, 26, 69, 2], Text.show_int(probe(b.items, [], 0, U64.to_i64_wrap(List.len(b.items)))))))
-			line!(Text.printed(List.concat([18, 16, 2, 23, 17, 14, 13, 21, 15, 23, 2, 14, 16, 2, 24, 21, 16, 19, 19, 69, 2], Text.show_int(U64.to_i64_wrap(List.len(b.items))))))
+			line!(Text.printed(Text.concat("literal between two reads: ", Text.show_int(probe(b.items, "read-text", 0, U64.to_i64_wrap(List.len(b.items)))))))
+			line!(Text.printed(Text.concat("empty literal between them: ", Text.show_int(probe(b.items, "", 0, U64.to_i64_wrap(List.len(b.items)))))))
+			line!(Text.printed(Text.concat("no literal to cross: ", Text.show_int(U64.to_i64_wrap(List.len(b.items))))))
 		})
 	})
 	Ok({})

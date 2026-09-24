@@ -31,8 +31,8 @@ count_nz = |x, acc| (if (x == 0) { acc } else { (if ((x - (I64.div_trunc_by(x, 2
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([24, 16, 25, 18, 14, 73, 16, 18, 13, 19, 2, 8, 69, 2], Text.show_int(count_ones(5, 0)))))
-	line!(Text.printed(List.concat([24, 16, 25, 18, 14, 73, 16, 18, 13, 19, 2, 5, 8, 8, 69, 2], Text.show_int(count_ones(255, 0)))))
-	line!(Text.printed(List.concat([24, 16, 25, 18, 14, 73, 18, 38, 2, 8, 69, 2], Text.show_int(count_nz(5, 0)))))
+	line!(Text.printed(Text.concat("count-ones 5: ", Text.show_int(count_ones(5, 0)))))
+	line!(Text.printed(Text.concat("count-ones 255: ", Text.show_int(count_ones(255, 0)))))
+	line!(Text.printed(Text.concat("count-nz 5: ", Text.show_int(count_nz(5, 0)))))
 	Ok({})
 }

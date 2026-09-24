@@ -146,9 +146,9 @@ UsbHid :: [].{
 	hid_get_keyboard_interface : UsbHid.HidDevice -> UsbHid.HidInterface
 	hid_get_keyboard_interface = |dev_| (if (dev_.hd_keyboard_if < 0) { hid_interface_empty } else { (List.get(dev_.hd_interfaces, I64.to_u64_wrap(dev_.hd_keyboard_if)) ?? crash("list-at out of range")) })
 
-	format_hid_interface : UsbHid.HidInterface -> List(U8)
-	format_hid_interface = |iface| List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat([17, 28], Text.show_int(iface.hi_number)), [2, 19, 25, 32, 77]), Text.show_int(iface.hi_subclass)), [2, 31, 21, 16, 14, 16, 77]), Text.show_int(iface.hi_protocol)), [2, 13, 31, 73, 17, 18, 77]), Text.show_int(iface.hi_ep_in_addr)), [2, 13, 31, 73, 16, 25, 14, 77]), Text.show_int(iface.hi_ep_out_addr))
+	format_hid_interface : UsbHid.HidInterface -> Text
+	format_hid_interface = |iface| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("if", Text.show_int(iface.hi_number)), " sub="), Text.show_int(iface.hi_subclass)), " proto="), Text.show_int(iface.hi_protocol)), " ep-in="), Text.show_int(iface.hi_ep_in_addr)), " ep-out="), Text.show_int(iface.hi_ep_out_addr))
 
-	format_hid_device : UsbHid.HidDevice -> List(U8)
-	format_hid_device = |dev_| List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(Text.show_int(dev_.hd_vendor), [69]), Text.show_int(dev_.hd_product)), [2, 19, 23, 16, 14, 77]), Text.show_int(dev_.hd_slot)), [2, 17, 28, 19, 77]), Text.show_int(dev_.hd_interface_count)), [2, 34, 32, 22, 77]), Text.show_int(dev_.hd_keyboard_if)), [2, 21, 15, 27, 77]), Text.show_int(dev_.hd_raw_if))
+	format_hid_device : UsbHid.HidDevice -> Text
+	format_hid_device = |dev_| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.show_int(dev_.hd_vendor), ":"), Text.show_int(dev_.hd_product)), " slot="), Text.show_int(dev_.hd_slot)), " ifs="), Text.show_int(dev_.hd_interface_count)), " kbd="), Text.show_int(dev_.hd_keyboard_if)), " raw="), Text.show_int(dev_.hd_raw_if))
 }

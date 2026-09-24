@@ -58,14 +58,14 @@ via_call = |n| (ident(n) + pick2(n, 5))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([17, 22, 13, 18, 14, 69, 2], Text.show_int(ident(7)))))
-	line!(Text.printed(List.concat([34, 16, 18, 19, 14, 69, 2], Text.show_int(konst))))
-	line!(Text.printed(List.concat([18, 13, 29, 73, 34, 16, 18, 19, 14, 69, 2], Text.show_int(neg_konst))))
-	line!(Text.printed(List.concat([32, 17, 29, 73, 34, 16, 18, 19, 14, 69, 2], Text.show_int(big_konst))))
-	line!(Text.printed(List.concat([31, 17, 24, 34, 5, 69, 2], Text.show_int(pick2(3, 9)))))
-	line!(Text.printed(List.concat([31, 17, 24, 34, 73, 26, 17, 22, 69, 2], Text.show_int(pick_mid(1, 2, 3)))))
-	line!(Text.printed(List.concat([31, 17, 24, 34, 73, 23, 15, 19, 14, 69, 2], Text.show_int(pick_last(1, 2, 3)))))
-	line!(Text.printed(List.concat([22, 13, 13, 31, 69, 2], Text.show_int(deep(1, 2, 3, 4, 5, 6, 7, 8)))))
-	line!(Text.printed(List.concat([33, 17, 15, 73, 24, 15, 23, 23, 69, 2], Text.show_int(via_call(10)))))
+	line!(Text.printed(Text.concat("ident: ", Text.show_int(ident(7)))))
+	line!(Text.printed(Text.concat("konst: ", Text.show_int(konst))))
+	line!(Text.printed(Text.concat("neg-konst: ", Text.show_int(neg_konst))))
+	line!(Text.printed(Text.concat("big-konst: ", Text.show_int(big_konst))))
+	line!(Text.printed(Text.concat("pick2: ", Text.show_int(pick2(3, 9)))))
+	line!(Text.printed(Text.concat("pick-mid: ", Text.show_int(pick_mid(1, 2, 3)))))
+	line!(Text.printed(Text.concat("pick-last: ", Text.show_int(pick_last(1, 2, 3)))))
+	line!(Text.printed(Text.concat("deep: ", Text.show_int(deep(1, 2, 3, 4, 5, 6, 7, 8)))))
+	line!(Text.printed(Text.concat("via-call: ", Text.show_int(via_call(10)))))
 	Ok({})
 }

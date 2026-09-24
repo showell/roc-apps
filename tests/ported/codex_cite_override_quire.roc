@@ -24,6 +24,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([24, 17, 14, 13, 73, 19, 20, 15, 21, 13, 22, 2, 4, 2, 77, 2], Text.show_int(CiteOverrideAlpha.citeoverridealpha_cite_shared(1)))))
+	line!(Text.printed(Text.concat("cite-shared 1 = ", Text.show_int(CiteOverrideAlpha.citeoverridealpha_cite_shared(1)))))
 	Ok({})
 }

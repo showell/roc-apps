@@ -84,12 +84,12 @@ main! = |_args| {
 			|dev__2| a(dev__1, dev__2)
 		})
 		({
-			line!(Text.printed(List.concat([16, 18, 13, 73, 15, 14, 73, 15, 73, 14, 17, 26, 13, 69, 2], Text.show_int(a2(22)))))
+			line!(Text.printed(Text.concat("one-at-a-time: ", Text.show_int(a2(22)))))
 			({
 				e = mk(4)
 				({
-					line!(Text.printed(List.concat([21, 13, 19, 14, 73, 15, 14, 73, 16, 18, 24, 13, 69, 2], Text.show_int(e(20, 22)))))
-					line!(Text.printed(List.concat([28, 23, 15, 14, 69, 2], Text.show_int(mk(4)(20, 22)))))
+					line!(Text.printed(Text.concat("rest-at-once: ", Text.show_int(e(20, 22)))))
+					line!(Text.printed(Text.concat("flat: ", Text.show_int(mk(4)(20, 22)))))
 					({
 						z = mk(0)
 						z2 = ({
@@ -97,7 +97,7 @@ main! = |_args| {
 							|dev__4| z(dev__3, dev__4)
 						})
 						({
-							line!(Text.printed(List.concat([16, 14, 20, 13, 21, 73, 32, 21, 15, 18, 24, 20, 69, 2], Text.show_int(z2(22)))))
+							line!(Text.printed(Text.concat("other-branch: ", Text.show_int(z2(22)))))
 							({
 								m = mk2(1, 2)
 								m2 = ({
@@ -105,7 +105,7 @@ main! = |_args| {
 									|dev__6| m(dev__5, dev__6)
 								})
 								({
-									line!(Text.printed(List.concat([15, 21, 17, 14, 30, 73, 14, 27, 16, 69, 2], Text.show_int(m2(22)))))
+									line!(Text.printed(Text.concat("arity-two: ", Text.show_int(m2(22)))))
 									({
 										q = mk2(4, 5)
 										q2 = ({
@@ -113,7 +113,7 @@ main! = |_args| {
 											|dev__8| q(dev__7, dev__8)
 										})
 										({
-											line!(Text.printed(List.concat([15, 21, 17, 14, 30, 73, 14, 27, 16, 73, 32, 69, 2], Text.show_int(q2(22)))))
+											line!(Text.printed(Text.concat("arity-two-b: ", Text.show_int(q2(22)))))
 											({
 												j = ({
 													dev__9 = 5
@@ -124,7 +124,7 @@ main! = |_args| {
 													|dev__13| j(dev__12, dev__13)
 												})
 												({
-													line!(Text.printed(List.concat([19, 14, 17, 23, 23, 73, 31, 15, 21, 14, 17, 15, 23, 69, 2], Text.show_int(g(22)))))
+													line!(Text.printed(Text.concat("still-partial: ", Text.show_int(g(22)))))
 													({
 														c = rec_fn(4)
 														c2 = ({
@@ -132,7 +132,7 @@ main! = |_args| {
 															|dev__15| c(dev__14, dev__15)
 														})
 														({
-															line!(Text.printed(List.concat([19, 13, 23, 28, 73, 21, 13, 24, 25, 21, 19, 17, 33, 13, 69, 2], Text.show_int(c2(22)))))
+															line!(Text.printed(Text.concat("self-recursive: ", Text.show_int(c2(22)))))
 															({
 																d = even_fn(4)
 																d2 = ({
@@ -140,7 +140,7 @@ main! = |_args| {
 																	|dev__17| d(dev__16, dev__17)
 																})
 																({
-																	line!(Text.printed(List.concat([26, 25, 14, 25, 15, 23, 69, 2], Text.show_int(d2(22)))))
+																	line!(Text.printed(Text.concat("mutual: ", Text.show_int(d2(22)))))
 																	({
 																		k = ({
 																			dev__18 = 1
@@ -153,7 +153,7 @@ main! = |_args| {
 																			|dev__26| k(dev__23, dev__24, dev__25, dev__26)
 																		})
 																		({
-																			line!(Text.printed(List.concat([24, 23, 16, 19, 25, 21, 13, 73, 16, 33, 13, 21, 73, 16, 18, 13, 69, 2], Text.show_int(k3(22)))))
+																			line!(Text.printed(Text.concat("closure-over-one: ", Text.show_int(k3(22)))))
 																			({
 																				kk = ({
 																					dev__27 = 1
@@ -161,7 +161,7 @@ main! = |_args| {
 																				})
 																				k4 = kk(2, 3, 20, 22)
 																				({
-																					line!(Text.printed(List.concat([24, 23, 16, 19, 25, 21, 13, 73, 16, 33, 13, 21, 73, 14, 27, 16, 69, 2], Text.show_int(k4))))
+																					line!(Text.printed(Text.concat("closure-over-two: ", Text.show_int(k4))))
 																					({
 																						h = ({
 																							dev__32 = 1
@@ -169,7 +169,7 @@ main! = |_args| {
 																						})
 																						h3 = h(2, 20, 22)
 																						({
-																							line!(Text.printed(List.concat([24, 23, 16, 19, 25, 21, 13, 73, 15, 21, 17, 14, 30, 73, 16, 18, 13, 73, 16, 33, 13, 21, 73, 14, 27, 16, 69, 2], Text.show_int(h3))))
+																							line!(Text.printed(Text.concat("closure-arity-one-over-two: ", Text.show_int(h3))))
 																							({
 																								f = ({
 	|dev__36, dev__37, dev__38, dev__39, dev__40| mk3(dev__36, dev__37, dev__38)(dev__39, dev__40)
@@ -181,7 +181,7 @@ main! = |_args| {
 																									dev__44 = 20
 																									|dev__45| f(dev__41, dev__42, dev__43, dev__44, dev__45)
 																								})
-																								line!(Text.printed(List.concat([32, 15, 21, 13, 73, 18, 15, 26, 13, 73, 16, 33, 13, 21, 73, 16, 18, 13, 69, 2], Text.show_int(f4(22)))))
+																								line!(Text.printed(Text.concat("bare-name-over-one: ", Text.show_int(f4(22)))))
 																							})
 																						})
 																					})

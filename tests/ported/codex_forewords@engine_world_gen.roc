@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([39, 18, 29, 17, 18, 13, 81, 53, 16, 21, 23, 22, 55, 13, 18, 2, 42, 60]))
+	line!(Text.printed("Engine/WorldGen OK"))
 	Ok({})
 }

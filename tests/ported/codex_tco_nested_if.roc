@@ -31,8 +31,8 @@ ptl = |n, s| (if (n <= 0) { 999 } else { (if (s == 1) { ptl((n - 1), s) } else {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([15, 21, 26, 73, 14, 20, 13, 18, 69, 2], Text.show_int(ptl(3, 6)))))
-	line!(Text.printed(List.concat([15, 28, 14, 13, 21, 73, 15, 21, 26, 69, 2], Text.show_int(ptl(1, 7)))))
-	line!(Text.printed(List.concat([32, 15, 19, 13, 69, 2], Text.show_int(ptl(0, 6)))))
+	line!(Text.printed(Text.concat("arm-then: ", Text.show_int(ptl(3, 6)))))
+	line!(Text.printed(Text.concat("after-arm: ", Text.show_int(ptl(1, 7)))))
+	line!(Text.printed(Text.concat("base: ", Text.show_int(ptl(0, 6)))))
 	Ok({})
 }

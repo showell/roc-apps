@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([45, 17, 29, 18, 15, 23, 81, 57, 13, 21, 23, 17, 18, 2, 42, 60]))
+	line!(Text.printed("Signal/Perlin OK"))
 	Ok({})
 }

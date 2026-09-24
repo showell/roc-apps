@@ -24,7 +24,7 @@ import cdx.TextScan
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-count_vowels : List(U8) -> I64
+count_vowels : Text -> I64
 count_vowels = |s| TextScan.text_fold_indexed(s, 0, lam_0)
 
 lam_0 : I64, I64, I64 -> I64
@@ -33,8 +33,8 @@ lam_0 = |acc, ch, _idx| (if (ch == 15) { (acc + 1) } else { (if (ch == 13) { (ac
 lam_1 : I64, I64, I64 -> I64
 lam_1 = |acc, _ch, idx| (acc + idx)
 
-lam_2 : List(U8), I64, I64 -> List(U8)
-lam_2 = |acc, _ch, idx| List.concat(acc, Text.show_int(idx))
+lam_2 : Text, I64, I64 -> Text
+lam_2 = |acc, _ch, idx| Text.concat(acc, Text.show_int(idx))
 
 lam_3 : I64, I64, I64 -> I64
 lam_3 = |acc, _ch, _idx| (acc + 1)
@@ -43,10 +43,10 @@ lam_3 = |acc, _ch, _idx| (acc + 1)
 
 main! = |_args| {
 	({
-		r1 = TextScan.text_fold_indexed([15, 32, 24], 0, lam_1)
-		r2 = TextScan.text_fold_indexed([20, 13, 23, 23, 16], [], lam_2)
-		r3 = count_vowels([20, 13, 23, 23, 16, 2, 27, 16, 21, 23, 22])
-		r4 = TextScan.text_fold_indexed([14, 13, 19, 14], 0, lam_3)
+		r1 = TextScan.text_fold_indexed("abc", 0, lam_1)
+		r2 = TextScan.text_fold_indexed("hello", "", lam_2)
+		r3 = count_vowels("hello world")
+		r4 = TextScan.text_fold_indexed("test", 0, lam_3)
 		({
 			line!(Text.printed(Text.show_int(r1)))
 			line!(Text.printed(r2))

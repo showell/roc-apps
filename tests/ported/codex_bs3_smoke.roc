@@ -22,23 +22,23 @@ import cdx.Text
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 Maybe2(a) : [Just2(a), None2]
-Def : { name : List(U8), body : List(U8) }
-Thing : { th_name : List(U8), th_body : List(U8) }
+Def : { name : Text, body : Text }
+Thing : { th_name : Text, th_body : Text }
 Holder : [Plain(Thing)]
 Box2(a) : [Box2(a)]
 
-extract_name : Maybe2(Def) -> List(U8)
+extract_name : Maybe2(Def) -> Text
 extract_name = |m| (match m {
 	Just2(d) => d.name
-	None2 => [18, 16, 18, 13]
+	None2 => "none"
 })
 
-extract_holder : Holder -> List(U8)
+extract_holder : Holder -> Text
 extract_holder = |m| (match m {
 	Plain(t) => t.th_name
 })
 
-extract_box : Box2(Thing) -> List(U8)
+extract_box : Box2(Thing) -> Text
 extract_box = |m| (match m {
 	Box2(t) => t.th_name
 })
@@ -74,8 +74,8 @@ eq_Box2 = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(extract_name(Just2({ name: [20, 13, 23, 23, 16], body: [27, 16, 21, 23, 22] }))))
-	line!(Text.printed(extract_holder(Plain({ th_name: [20, 17], th_body: [32] }))))
-	line!(Text.printed(extract_box(Box2({ th_name: [32, 30, 13], th_body: [24] }))))
+	line!(Text.printed(extract_name(Just2({ name: "hello", body: "world" }))))
+	line!(Text.printed(extract_holder(Plain({ th_name: "hi", th_body: "b" }))))
+	line!(Text.printed(extract_box(Box2({ th_name: "bye", th_body: "c" }))))
 	Ok({})
 }

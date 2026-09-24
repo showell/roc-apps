@@ -22,14 +22,14 @@ import cdx.Text
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-show_run : I64, I64, List(U8) -> List(U8)
-show_run = |i, stop, acc| (if (i > stop) { acc } else { show_run((i + 1), stop, List.concat(acc, Text.char_to_text(i))) })
+show_run : I64, I64, Text -> Text
+show_run = |i, stop, acc| (if (i > stop) { acc } else { show_run((i + 1), stop, Text.concat(acc, Text.char_to_text(i))) })
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([24, 30, 21, 17, 23, 23, 17, 24, 73, 4, 4, 6, 73, 4, 5, 10, 69, 2], show_run(113, 127, []))))
-	line!(Text.printed(List.concat([15, 24, 24, 13, 18, 14, 13, 22, 73, 12, 10, 73, 4, 3, 7, 69, 2, 2], show_run(97, 104, []))))
-	line!(Text.printed(List.concat([15, 19, 24, 17, 17, 73, 6, 73, 4, 5, 69, 2, 2, 2, 2, 2, 2, 2], show_run(3, 12, []))))
+	line!(Text.printed(Text.concat("cyrillic-113-127: ", show_run(113, 127, ""))))
+	line!(Text.printed(Text.concat("accented-97-104:  ", show_run(97, 104, ""))))
+	line!(Text.printed(Text.concat("ascii-3-12:       ", show_run(3, 12, ""))))
 	Ok({})
 }

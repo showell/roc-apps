@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([39, 18, 24, 16, 22, 13, 81, 59, 17, 22, 13, 16, 50, 16, 22, 13, 24, 2, 42, 60]))
+	line!(Text.printed("Encode/VideoCodec OK"))
 	Ok({})
 }

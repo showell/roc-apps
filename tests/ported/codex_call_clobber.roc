@@ -34,8 +34,8 @@ cc_add = |a, b| (a + b)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([15, 21, 29, 19, 2], Text.show_int(cc_three(1, cc_mark, 2)))))
-	line!(Text.printed(List.concat([13, 37, 2], (if (cc_add(5, (5 + 11)) == 15) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))))
-	line!(Text.printed(List.concat([13, 37, 14, 21, 25, 13, 2], (if (cc_add(4, (0 + 11)) == 15) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))))
+	line!(Text.printed(Text.concat("args ", Text.show_int(cc_three(1, cc_mark, 2)))))
+	line!(Text.printed(Text.concat("eq ", (if (cc_add(5, (5 + 11)) == 15) { "True" } else { "False" }))))
+	line!(Text.printed(Text.concat("eqtrue ", (if (cc_add(4, (0 + 11)) == 15) { "True" } else { "False" }))))
 	Ok({})
 }

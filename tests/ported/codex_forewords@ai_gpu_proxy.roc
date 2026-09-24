@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([41, 43, 81, 55, 31, 25, 57, 21, 16, 36, 30, 2, 42, 60]))
+	line!(Text.printed("AI/GpuProxy OK"))
 	Ok({})
 }

@@ -24,6 +24,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat(List.concat(Text.show_int(Linear.freeze(21)), [2]), Linear.freeze([19, 13, 33, 13, 18]))))
+	line!(Text.printed(Text.concat(Text.concat(Text.show_int(Linear.freeze(21)), " "), Linear.freeze("seven"))))
 	Ok({})
 }

@@ -41,13 +41,13 @@ load_report! = |mem, cur, r, i| (if (i >= 8) { (mem, 0) } else { ({
 	load_report!(mem1, cur, r, (i + 1))
 }) })
 
-drain! : Mem.Mem, I64, I64, List(U8), I64 => (Mem.Mem, List(U8))
-drain! = |mem, prev, cur, acc, fuel| (if (fuel <= 0) { (mem, List.concat(acc, [2, 42, 59, 39, 47, 47, 51, 44])) } else { ({
+drain! : Mem.Mem, I64, I64, Text, I64 => (Mem.Mem, Text)
+drain! = |mem, prev, cur, acc, fuel| (if (fuel <= 0) { (mem, Text.concat(acc, " OVERRUN")) } else { ({
 	(mem1, e) = GopHid.hid_step!(mem, prev, cur)
-	(if (e == 0) { (mem1, acc) } else { drain!(mem1, prev, cur, List.concat(List.concat(acc, [2]), Text.show_int(e)), (fuel - 1)) })
+	(if (e == 0) { (mem1, acc) } else { drain!(mem1, prev, cur, Text.concat(Text.concat(acc, " "), Text.show_int(e)), (fuel - 1)) })
 }) })
 
-run_reports! : Mem.Mem, I64, I64, List(U8), I64 => (Mem.Mem, List(U8))
+run_reports! : Mem.Mem, I64, I64, Text, I64 => (Mem.Mem, Text)
 run_reports! = |mem, prev, cur, acc, r| (if (r >= report_count) { (mem, acc) } else { ({
 	(mem1, _l) = load_report!(mem, cur, r, 0)
 	({
@@ -69,16 +69,16 @@ main! = |args| {
 		(mem4, _z1) = zero8!(mem3, cur, 0)
 		({
 			({
-				(mem5, flat) = run_reports!(mem4, prev, cur, [], 0)
+				(mem5, flat) = run_reports!(mem4, prev, cur, "", 0)
 				({
-					_ = line!(Text.printed(List.concat([13, 33, 13, 18, 14, 19, 69], flat)))
+					_ = line!(Text.printed(Text.concat("events:", flat)))
 					({
 						(mem9, mem__4) = ({
 						(mem6, mem__1) = Mem.load!(mem5, prev, 0, 1)
 						(mem7, mem__2) = Mem.load!(mem6, prev, 2, 1)
 						(mem8, mem__3) = Mem.load!(mem7, prev, 3, 1)
 						held = ((mem__1 + mem__2) + mem__3)
-						(mem8, line!(Text.printed(List.concat([31, 21, 13, 33, 73, 22, 21, 15, 17, 18, 13, 22, 69, 2], Text.show_int(held)))))
+						(mem8, line!(Text.printed(Text.concat("prev-drained: ", Text.show_int(held)))))
 					})
 						(mem9, mem__4)
 					})

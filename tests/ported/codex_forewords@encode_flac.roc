@@ -990,6 +990,6 @@ bodyTemp_to_CelsiusBody = |fv| I64.div_trunc_by(fv, 1000)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([39, 18, 24, 16, 22, 13, 81, 54, 23, 15, 24, 2, 42, 60]))
+	line!(Text.printed("Encode/Flac OK"))
 	Ok({})
 }

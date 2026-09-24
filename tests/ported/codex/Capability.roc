@@ -1,7 +1,8 @@
 # Capability -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+import Text
 
 Capability :: [].{
-	CapSpec : { cs_name : List(U8), cs_id : I64, cs_base_bit : I64, cs_read_bit : I64, cs_write_bit : I64, cs_extra_bits : List(I64) }
+	CapSpec : { cs_name : Text, cs_id : I64, cs_base_bit : I64, cs_read_bit : I64, cs_write_bit : I64, cs_extra_bits : List(I64) }
 
 	cap_console : I64
 	cap_console = 0
@@ -106,7 +107,7 @@ Capability :: [].{
 	cap_dir_readwrite = 2
 
 	capability_table : List(Capability.CapSpec)
-	capability_table = [{ cs_name: [50, 16, 18, 19, 16, 23, 13], cs_id: 0, cs_base_bit: cap_console, cs_read_bit: cap_console_read, cs_write_bit: cap_console_write, cs_extra_bits: [] }, { cs_name: [54, 17, 23, 13, 45, 30, 19, 14, 13, 26], cs_id: 1, cs_base_bit: (0 - 1), cs_read_bit: cap_filesystem_read, cs_write_bit: cap_filesystem_write, cs_extra_bits: [] }, { cs_name: [44, 13, 14, 27, 16, 21, 34], cs_id: 2, cs_base_bit: (0 - 1), cs_read_bit: cap_network_read, cs_write_bit: cap_network_write, cs_extra_bits: [] }, { cs_name: [50, 16, 18, 24, 25, 21, 21, 13, 18, 14], cs_id: 3, cs_base_bit: cap_concurrent, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [cap_ipc, cap_process_create] }, { cs_name: [48, 13, 33, 17, 24, 13], cs_id: 4, cs_base_bit: cap_block_device, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [cap_device] }, { cs_name: [55, 31, 25, 65, 50, 16, 26, 31, 25, 14, 13], cs_id: 5, cs_base_bit: cap_gpu_compute, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: [55, 31, 25, 65, 52, 13, 26, 16, 21, 30], cs_id: 6, cs_base_bit: cap_gpu_memory, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: [43, 22, 13, 18, 14, 17, 14, 30], cs_id: 7, cs_base_bit: cap_identity, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: [50, 15, 31, 15, 32, 17, 23, 17, 14, 30], cs_id: 8, cs_base_bit: cap_capability_admin, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: [55, 31, 25], cs_id: 9, cs_base_bit: (0 - 1), cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [cap_gpu_compute, cap_gpu_memory] }, { cs_name: [50, 15, 26, 13, 21, 15], cs_id: 10, cs_base_bit: cap_camera, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: [52, 17, 24, 21, 16, 31, 20, 16, 18, 13], cs_id: 11, cs_base_bit: cap_microphone, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: [49, 16, 24, 15, 14, 17, 16, 18], cs_id: 12, cs_base_bit: cap_location, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: [45, 13, 18, 19, 16, 21, 19], cs_id: 13, cs_base_bit: cap_sensors, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: [48, 17, 19, 31, 23, 15, 30], cs_id: 14, cs_base_bit: cap_display, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: [54, 23, 15, 19, 20], cs_id: 15, cs_base_bit: cap_flash, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: [41, 25, 22, 17, 16], cs_id: 16, cs_base_bit: cap_audio, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: [57, 21, 16, 24, 13, 19, 19], cs_id: 17, cs_base_bit: cap_process, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: [55, 31, 17, 16], cs_id: 18, cs_base_bit: cap_gpio, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: [51, 15, 21, 14], cs_id: 19, cs_base_bit: cap_uart, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: [45, 31, 17], cs_id: 20, cs_base_bit: cap_spi, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: [43, 5, 24], cs_id: 21, cs_base_bit: cap_i2c, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: [41, 22, 24], cs_id: 22, cs_base_bit: cap_adc, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: [57, 16, 27, 13, 21], cs_id: 23, cs_base_bit: cap_power, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: [47, 18, 29], cs_id: 24, cs_base_bit: cap_rng, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }]
+	capability_table = [{ cs_name: "Console", cs_id: 0, cs_base_bit: cap_console, cs_read_bit: cap_console_read, cs_write_bit: cap_console_write, cs_extra_bits: [] }, { cs_name: "FileSystem", cs_id: 1, cs_base_bit: (0 - 1), cs_read_bit: cap_filesystem_read, cs_write_bit: cap_filesystem_write, cs_extra_bits: [] }, { cs_name: "Network", cs_id: 2, cs_base_bit: (0 - 1), cs_read_bit: cap_network_read, cs_write_bit: cap_network_write, cs_extra_bits: [] }, { cs_name: "Concurrent", cs_id: 3, cs_base_bit: cap_concurrent, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [cap_ipc, cap_process_create] }, { cs_name: "Device", cs_id: 4, cs_base_bit: cap_block_device, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [cap_device] }, { cs_name: "Gpu.Compute", cs_id: 5, cs_base_bit: cap_gpu_compute, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: "Gpu.Memory", cs_id: 6, cs_base_bit: cap_gpu_memory, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: "Identity", cs_id: 7, cs_base_bit: cap_identity, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: "Capability", cs_id: 8, cs_base_bit: cap_capability_admin, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: "Gpu", cs_id: 9, cs_base_bit: (0 - 1), cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [cap_gpu_compute, cap_gpu_memory] }, { cs_name: "Camera", cs_id: 10, cs_base_bit: cap_camera, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: "Microphone", cs_id: 11, cs_base_bit: cap_microphone, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: "Location", cs_id: 12, cs_base_bit: cap_location, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: "Sensors", cs_id: 13, cs_base_bit: cap_sensors, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: "Display", cs_id: 14, cs_base_bit: cap_display, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: "Flash", cs_id: 15, cs_base_bit: cap_flash, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: "Audio", cs_id: 16, cs_base_bit: cap_audio, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: "Process", cs_id: 17, cs_base_bit: cap_process, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: "Gpio", cs_id: 18, cs_base_bit: cap_gpio, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: "Uart", cs_id: 19, cs_base_bit: cap_uart, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: "Spi", cs_id: 20, cs_base_bit: cap_spi, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: "I2c", cs_id: 21, cs_base_bit: cap_i2c, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: "Adc", cs_id: 22, cs_base_bit: cap_adc, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: "Power", cs_id: 23, cs_base_bit: cap_power, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }, { cs_name: "Rng", cs_id: 24, cs_base_bit: cap_rng, cs_read_bit: (0 - 1), cs_write_bit: (0 - 1), cs_extra_bits: [] }]
 
 	cap_or_bits : List(I64), I64, I64, I64 -> I64
 	cap_or_bits = |bs, i, len, acc| (if (i >= len) { acc } else { cap_or_bits(bs, (i + 1), len, I64.bitwise_or(acc, I64.shl_wrap(1, I64.to_u8_wrap((List.get(bs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))) })
@@ -122,20 +123,20 @@ Capability :: [].{
 		I64.bitwise_or(base, I64.bitwise_or(dirb, extra))
 	})
 
-	cap_find_by_name : List(Capability.CapSpec), List(U8), I64, I64 -> I64
+	cap_find_by_name : List(Capability.CapSpec), Text, I64, I64 -> I64
 	cap_find_by_name = |ts, n, i, len| (if (i >= len) { (0 - 1) } else { (if ((List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).cs_name == n) { i } else { cap_find_by_name(ts, n, (i + 1), len) }) })
 
 	cap_find_by_id : List(Capability.CapSpec), I64, I64, I64 -> I64
 	cap_find_by_id = |ts, id, i, len| (if (i >= len) { (0 - 1) } else { (if ((List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).cs_id == id) { i } else { cap_find_by_id(ts, id, (i + 1), len) }) })
 
-	cap_id_for_name : List(U8) -> I64
+	cap_id_for_name : Text -> I64
 	cap_id_for_name = |n| ({
 		ts = capability_table
 		i = cap_find_by_name(ts, n, 0, U64.to_i64_wrap(List.len(ts)))
 		(if (i < 0) { (0 - 1) } else { (List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).cs_id })
 	})
 
-	cap_bits_for_name : List(U8), I64 -> I64
+	cap_bits_for_name : Text, I64 -> I64
 	cap_bits_for_name = |n, dir| ({
 		ts = capability_table
 		i = cap_find_by_name(ts, n, 0, U64.to_i64_wrap(List.len(ts)))
@@ -149,14 +150,14 @@ Capability :: [].{
 		(if (i < 0) { 0 } else { cap_bits_for_spec((List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), dir) })
 	})
 
-	cap_names_from : List(Capability.CapSpec), I64, I64, List(List(U8)) -> List(List(U8))
+	cap_names_from : List(Capability.CapSpec), I64, I64, List(Text) -> List(Text)
 	cap_names_from = |ts, i, len, acc| (if (i >= len) { acc } else { ({
 		s = (List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 		a1 = List.append(acc, s.cs_name)
-		(if (s.cs_read_bit >= 0) { cap_names_from(ts, (i + 1), len, List.append(List.append(a1, List.concat(s.cs_name, [65, 47, 13, 15, 22])), List.concat(s.cs_name, [65, 53, 21, 17, 14, 13]))) } else { cap_names_from(ts, (i + 1), len, a1) })
+		(if (s.cs_read_bit >= 0) { cap_names_from(ts, (i + 1), len, List.append(List.append(a1, Text.concat(s.cs_name, ".Read")), Text.concat(s.cs_name, ".Write"))) } else { cap_names_from(ts, (i + 1), len, a1) })
 	}) })
 
-	capability_names : List(List(U8))
+	capability_names : List(Text)
 	capability_names = ({
 		ts = capability_table
 		cap_names_from(ts, 0, U64.to_i64_wrap(List.len(ts)), [])

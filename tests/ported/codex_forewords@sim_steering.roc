@@ -990,6 +990,6 @@ bodyTemp_to_CelsiusBody = |fv| I64.div_trunc_by(fv, 1000)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([45, 17, 26, 81, 45, 14, 13, 13, 21, 17, 18, 29, 2, 42, 60]))
+	line!(Text.printed("Sim/Steering OK"))
 	Ok({})
 }

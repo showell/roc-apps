@@ -21,23 +21,23 @@ import cdx.Text
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-Reading : { level : I64, label : List(U8) }
+Reading : { level : I64, label : Text }
 
 make_literal : I64 -> Reading
-make_literal = |n| { level: n, label: [23, 17, 14] }
+make_literal = |n| { level: n, label: "lit" }
 
 make_revised : Reading, I64 -> Reading
 make_revised = |r, n| ({
 	rev = r
 	rv0 = n
-	rv1 = [21, 13, 33]
+	rv1 = "rev"
 	{ ..{ ..rev, level: rv0 }, label: rv1 }
 })
 
 make_mixed : Reading, I64 -> Reading
 make_mixed = |r, n| ({
 	rev = r
-	rv0 = [26, 17, 36, 13, 22]
+	rv0 = "mixed"
 	rv1 = n
 	{ ..{ ..rev, label: rv0 }, level: rv1 }
 })
@@ -50,9 +50,9 @@ main! = |_args| {
 		b = make_revised(make_literal(5), 7)
 		c = make_mixed(make_literal(5), 99)
 		({
-			line!(Text.printed(List.concat(List.concat(List.concat([23, 17, 14, 13, 21, 15, 23, 69, 2], Text.show_int(a.level)), [2]), a.label)))
-			line!(Text.printed(List.concat(List.concat(List.concat([21, 13, 33, 17, 19, 13, 22, 69, 2], Text.show_int(b.level)), [2]), b.label)))
-			line!(Text.printed(List.concat(List.concat(List.concat([26, 17, 36, 13, 22, 69, 2], Text.show_int(c.level)), [2]), c.label)))
+			line!(Text.printed(Text.concat(Text.concat(Text.concat("literal: ", Text.show_int(a.level)), " "), a.label)))
+			line!(Text.printed(Text.concat(Text.concat(Text.concat("revised: ", Text.show_int(b.level)), " "), b.label)))
+			line!(Text.printed(Text.concat(Text.concat(Text.concat("mixed: ", Text.show_int(c.level)), " "), c.label)))
 		})
 	})
 	Ok({})

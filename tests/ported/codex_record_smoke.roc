@@ -32,47 +32,47 @@ Rect : { origin : Point, width : I64, height : I64 }
 Color : [Red, Green, Blue]
 Shape : [Circle(Color, I64), Square(Color, I64)]
 Wrapped : [Wrapped(Color, Shape)]
-TestRec : { name : List(U8), effect : I64, value : I64 }
-Inner : { x_val : I64, y_val : I64, label : List(U8) }
+TestRec : { name : Text, effect : I64, value : I64 }
+Inner : { x_val : I64, y_val : I64, label : Text }
 Outer : [OWrapped(Inner), OPlain(I64), OEmpty]
 Rec1 : { rx : I64, ry : I64 }
-Rec2 : { ra : List(U8), rb : I64 }
+Rec2 : { ra : Text, rb : I64 }
 V : [VarA(Rec1), VarB(Rec2)]
-Box_ : { box_label : List(U8), apply : (I64 -> List(U8)) }
-Entry : { ent_name : List(U8), emit : (I64 -> List(U8)) }
+Box_ : { box_label : Text, apply : (I64 -> Text) }
+Entry : { ent_name : Text, emit : (I64 -> Text) }
 
 area : Rect -> I64
 area = |r| (r.width * r.height)
 
-describe_rect : Rect -> List(U8)
-describe_rect = |r| List.concat(List.concat(List.concat(List.concat(List.concat([21, 13, 24, 14, 2, 15, 14, 2], Text.show_int(r.origin.x)), [66]), Text.show_int(r.origin.y)), [2, 15, 21, 13, 15, 77]), Text.show_int(area(r)))
+describe_rect : Rect -> Text
+describe_rect = |r| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("rect at ", Text.show_int(r.origin.x)), ","), Text.show_int(r.origin.y)), " area="), Text.show_int(area(r)))
 
-color_name : Color -> List(U8)
+color_name : Color -> Text
 color_name = |c| (match c {
-	Red => [21, 13, 22]
-	Green => [29, 21, 13, 13, 18]
-	Blue => [32, 23, 25, 13]
+	Red => "red"
+	Green => "green"
+	Blue => "blue"
 })
 
-describe_shape : Shape -> List(U8)
+describe_shape : Shape -> Text
 describe_shape = |s| (match s {
-	Circle(c, r) => List.concat(List.concat(List.concat([24, 17, 21, 24, 23, 13, 73], color_name(c)), [73, 21]), Text.show_int(r))
-	Square(c, side) => List.concat(List.concat(List.concat([19, 37, 25, 15, 21, 13, 73], color_name(c)), [73, 19]), Text.show_int(side))
+	Circle(c, r) => Text.concat(Text.concat(Text.concat("circle-", color_name(c)), "-r"), Text.show_int(r))
+	Square(c, side) => Text.concat(Text.concat(Text.concat("square-", color_name(c)), "-s"), Text.show_int(side))
 })
 
-describe_wrapped : Wrapped -> List(U8)
+describe_wrapped : Wrapped -> Text
 describe_wrapped = |w| (match w {
 	Wrapped(c, s) => (match s {
-		Circle(_c2, r) => List.concat(List.concat(color_name(c), [2, 24, 17, 21, 24, 23, 13, 2, 21, 77]), Text.show_int(r))
-		Square(_c2, side) => List.concat(List.concat(color_name(c), [2, 19, 37, 25, 15, 21, 13, 2, 19, 77]), Text.show_int(side))
+		Circle(_c2, r) => Text.concat(Text.concat(color_name(c), " circle r="), Text.show_int(r))
+		Square(_c2, side) => Text.concat(Text.concat(color_name(c), " square s="), Text.show_int(side))
 	})
 })
 
 make_test : I64 -> TestRec
-make_test = |n| { name: [20, 13, 23, 23, 16], effect: (n * 2), value: n }
+make_test = |n| { name: "hello", effect: (n * 2), value: n }
 
 make_wrapped : I64 -> Outer
-make_wrapped = |n| OWrapped({ x_val: n, y_val: (n * 2), label: [14, 13, 19, 14] })
+make_wrapped = |n| OWrapped({ x_val: n, y_val: (n * 2), label: "test" })
 
 use_wrapped : Outer -> I64
 use_wrapped = |o| (match o {
@@ -87,18 +87,18 @@ extract_int = |v| (match v {
 	VarB(r) => r.rb
 })
 
-make_box : List(U8), I64 -> Box_
+make_box : Text, I64 -> Box_
 make_box = |lbl, offset| { box_label: lbl, apply: ({
 	dev__1 = offset
 	dev__2 = lbl
 	|dev__3| lam_0(dev__1, dev__2, dev__3)
 }) }
 
-emit_one : I64 -> List(U8)
-emit_one = |x| List.concat([16, 18, 13, 69], Text.show_int(x))
+emit_one : I64 -> Text
+emit_one = |x| Text.concat("one:", Text.show_int(x))
 
-emit_two : I64 -> List(U8)
-emit_two = |x| List.concat([14, 27, 16, 69], Text.show_int((x + x)))
+emit_two : I64 -> Text
+emit_two = |x| Text.concat("two:", Text.show_int((x + x)))
 
 eq_Color : Color, Color -> Bool
 eq_Color = |ex, ey| (match ex {
@@ -164,8 +164,8 @@ eq_V = |ex, ey| (match ex {
 	})
 })
 
-lam_0 : I64, List(U8), I64 -> List(U8)
-lam_0 = |offset, lbl, x| List.concat(List.concat(lbl, [69]), Text.show_int((x + offset)))
+lam_0 : I64, Text, I64 -> Text
+lam_0 = |offset, lbl, x| Text.concat(Text.concat(lbl, ":"), Text.show_int((x + offset)))
 
 # --- Entry ---
 
@@ -179,13 +179,13 @@ main! = |_args| {
 			line!(Text.printed(describe_wrapped(Wrapped(Red, Circle(Red, 5)))))
 			line!(Text.printed(Text.show_int(use_wrapped(make_wrapped(5)))))
 			line!(Text.printed(Text.show_int(extract_int(VarA({ rx: 42, ry: 7 })))))
-			line!(Text.printed(Text.show_int(extract_int(VarB({ ra: [20, 13, 23, 23, 16], rb: 99 })))))
+			line!(Text.printed(Text.show_int(extract_int(VarB({ ra: "hello", rb: 99 })))))
 			({
-				b1 = make_box([15], 10)
+				b1 = make_box("a", 10)
 				({
 					line!(Text.printed((b1.apply)(3)))
 					({
-						e = { ent_name: [16, 18, 13], emit: emit_one }
+						e = { ent_name: "one", emit: emit_one }
 						line!(Text.printed((e.emit)(5)))
 					})
 				})

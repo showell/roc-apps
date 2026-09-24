@@ -3,10 +3,10 @@ import Maybe
 import Text
 
 EventBus :: [].{
-	BusEvent : { evt_topic : List(U8), evt_payload : List(U8), evt_timestamp : I64 }
+	BusEvent : { evt_topic : Text, evt_payload : Text, evt_timestamp : I64 }
 	EventLog : { log_events : List(EventBus.BusEvent), log_count : I64, log_max : I64 }
 
-	event_new : List(U8), List(U8), I64 -> EventBus.BusEvent
+	event_new : Text, Text, I64 -> EventBus.BusEvent
 	event_new = |topic, payload, ts| { evt_topic: topic, evt_payload: payload, evt_timestamp: ts }
 
 	event_log_new : I64 -> EventBus.EventLog
@@ -25,10 +25,10 @@ EventBus :: [].{
 	evt_drop_loop : List(EventBus.BusEvent), I64, I64, List(EventBus.BusEvent) -> List(EventBus.BusEvent)
 	evt_drop_loop = |xs, i, n, acc| (if (i >= n) { acc } else { evt_drop_loop(xs, (i + 1), n, List.append(acc, (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))) })
 
-	event_log_filter : EventBus.EventLog, List(U8) -> List(EventBus.BusEvent)
+	event_log_filter : EventBus.EventLog, Text -> List(EventBus.BusEvent)
 	event_log_filter = |log, topic| evt_filter_loop(log.log_events, topic, 0, log.log_count, [])
 
-	evt_filter_loop : List(EventBus.BusEvent), List(U8), I64, I64, List(EventBus.BusEvent) -> List(EventBus.BusEvent)
+	evt_filter_loop : List(EventBus.BusEvent), Text, I64, I64, List(EventBus.BusEvent) -> List(EventBus.BusEvent)
 	evt_filter_loop = |events, topic, i, n, acc| (if (i >= n) { acc } else { ({
 		e = (List.get(events, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 		matches = (e.evt_topic == topic)
@@ -47,9 +47,9 @@ EventBus :: [].{
 		(if (e.evt_timestamp >= ts) { evt_since_loop(events, ts, (i + 1), n, List.append(acc, e)) } else { evt_since_loop(events, ts, (i + 1), n, acc) })
 	}) })
 
-	evt_format_event : EventBus.BusEvent -> List(U8)
-	evt_format_event = |e| List.concat(List.concat(List.concat(List.concat(List.concat([88], Text.show_int(e.evt_timestamp)), [89, 2]), e.evt_topic), [69, 2]), e.evt_payload)
+	evt_format_event : EventBus.BusEvent -> Text
+	evt_format_event = |e| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("[", Text.show_int(e.evt_timestamp)), "] "), e.evt_topic), ": "), e.evt_payload)
 
-	evt_format_event_log : EventBus.EventLog -> List(U8)
-	evt_format_event_log = |log| List.concat(List.concat(List.concat(Text.show_int(log.log_count), [81]), Text.show_int(log.log_max)), [2, 13, 33, 13, 18, 14, 19])
+	evt_format_event_log : EventBus.EventLog -> Text
+	evt_format_event_log = |log| Text.concat(Text.concat(Text.concat(Text.show_int(log.log_count), "/"), Text.show_int(log.log_max)), " events")
 }

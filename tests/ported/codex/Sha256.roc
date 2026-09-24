@@ -133,38 +133,38 @@ Sha256 :: [].{
 		sha256_digest_bytes(words, (i + 1), List.append(List.append(List.append(List.append(out, I64.bitwise_and(I64.shr_zf_wrap(w, I64.to_u8_wrap(24)), 255)), I64.bitwise_and(I64.shr_zf_wrap(w, I64.to_u8_wrap(16)), 255)), I64.bitwise_and(I64.shr_zf_wrap(w, I64.to_u8_wrap(8)), 255)), I64.bitwise_and(w, 255)))
 	}) })
 
-	sha256_to_hex : List(I64) -> List(U8)
-	sha256_to_hex = |hash| words_to_hex(hash, 0, U64.to_i64_wrap(List.len(hash)), [])
+	sha256_to_hex : List(I64) -> Text
+	sha256_to_hex = |hash| words_to_hex(hash, 0, U64.to_i64_wrap(List.len(hash)), "")
 
-	words_to_hex : List(I64), I64, I64, List(U8) -> List(U8)
+	words_to_hex : List(I64), I64, I64, Text -> Text
 	words_to_hex = |ws, i, len, acc| (if (i == len) { acc } else { ({
 		w = (List.get(ws, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
-		words_to_hex(ws, (i + 1), len, List.concat(acc, word_to_hex(w)))
+		words_to_hex(ws, (i + 1), len, Text.concat(acc, word_to_hex(w)))
 	}) })
 
-	word_to_hex : I64 -> List(U8)
+	word_to_hex : I64 -> Text
 	word_to_hex = |w| ({
 		b0 = I64.bitwise_and(I64.shr_wrap(w, I64.to_u8_wrap(24)), 255)
 		b1 = I64.bitwise_and(I64.shr_wrap(w, I64.to_u8_wrap(16)), 255)
 		b2 = I64.bitwise_and(I64.shr_wrap(w, I64.to_u8_wrap(8)), 255)
 		b3 = I64.bitwise_and(w, 255)
-		List.concat(List.concat(List.concat(byte_to_hex(b0), byte_to_hex(b1)), byte_to_hex(b2)), byte_to_hex(b3))
+		Text.concat(Text.concat(Text.concat(byte_to_hex(b0), byte_to_hex(b1)), byte_to_hex(b2)), byte_to_hex(b3))
 	})
 
-	byte_to_hex : I64 -> List(U8)
+	byte_to_hex : I64 -> Text
 	byte_to_hex = |b| ({
 		hi = I64.shr_wrap(b, I64.to_u8_wrap(4))
 		lo = I64.bitwise_and(b, 15)
-		List.concat(sha256_hex_nibble(hi), sha256_hex_nibble(lo))
+		Text.concat(sha256_hex_nibble(hi), sha256_hex_nibble(lo))
 	})
 
-	sha256_hex_nibble : I64 -> List(U8)
-	sha256_hex_nibble = |n| (if (n == 0) { [3] } else { (if (n == 1) { [4] } else { (if (n == 2) { [5] } else { (if (n == 3) { [6] } else { (if (n == 4) { [7] } else { (if (n == 5) { [8] } else { (if (n == 6) { [9] } else { (if (n == 7) { [10] } else { (if (n == 8) { [11] } else { (if (n == 9) { [12] } else { (if (n == 10) { [15] } else { (if (n == 11) { [32] } else { (if (n == 12) { [24] } else { (if (n == 13) { [22] } else { (if (n == 14) { [13] } else { [28] }) }) }) }) }) }) }) }) }) }) }) }) }) }) })
+	sha256_hex_nibble : I64 -> Text
+	sha256_hex_nibble = |n| (if (n == 0) { "0" } else { (if (n == 1) { "1" } else { (if (n == 2) { "2" } else { (if (n == 3) { "3" } else { (if (n == 4) { "4" } else { (if (n == 5) { "5" } else { (if (n == 6) { "6" } else { (if (n == 7) { "7" } else { (if (n == 8) { "8" } else { (if (n == 9) { "9" } else { (if (n == 10) { "a" } else { (if (n == 11) { "b" } else { (if (n == 12) { "c" } else { (if (n == 13) { "d" } else { (if (n == 14) { "e" } else { "f" }) }) }) }) }) }) }) }) }) }) }) }) }) }) })
 
-	text_to_bytes : List(U8) -> List(I64)
+	text_to_bytes : Text -> List(I64)
 	text_to_bytes = |s| text_to_bytes_loop(s, 0, Text.len(s), [])
 
-	text_to_bytes_loop : List(U8), I64, I64, List(I64) -> List(I64)
+	text_to_bytes_loop : Text, I64, I64, List(I64) -> List(I64)
 	text_to_bytes_loop = |s, i, len, acc| (if (i == len) { acc } else { text_to_bytes_loop(s, (i + 1), len, List.append(acc, Text.char_at(s, i))) })
 
 	sha256_buf! : Mem.Mem, I64, I64, I64 => (Mem.Mem, List(I64))

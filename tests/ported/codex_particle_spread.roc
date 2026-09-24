@@ -46,10 +46,10 @@ modal = |spread| ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([13, 26, 17, 14, 14, 13, 22, 77], Text.show_int(ParticleSystem.psys_count(sys_for(100))))))
-	line!(Text.printed(List.concat([26, 16, 22, 15, 23, 73, 22, 30, 73, 19, 20, 15, 21, 13, 73, 19, 31, 9, 7, 77], Text.show_int(modal(64)))))
-	line!(Text.printed(List.concat([26, 16, 22, 15, 23, 73, 22, 30, 73, 19, 20, 15, 21, 13, 73, 19, 31, 4, 3, 3, 77], Text.show_int(modal(100)))))
-	line!(Text.printed(List.concat(List.concat(List.concat(List.concat(List.concat([19, 15, 26, 31, 23, 13, 73, 22, 30, 77], Text.show_int(dy_at(sys_for(100), 0))), [2]), Text.show_int(dy_at(sys_for(100), 1))), [2]), Text.show_int(dy_at(sys_for(100), 2)))))
-	line!(Text.printed(List.concat([17, 18, 22, 13, 31, 13, 18, 22, 13, 18, 14, 77], (if (modal(100) < 20) { [30, 13, 19] } else { [18, 16] }))))
+	line!(Text.printed(Text.concat("emitted=", Text.show_int(ParticleSystem.psys_count(sys_for(100))))))
+	line!(Text.printed(Text.concat("modal-dy-share-sp64=", Text.show_int(modal(64)))))
+	line!(Text.printed(Text.concat("modal-dy-share-sp100=", Text.show_int(modal(100)))))
+	line!(Text.printed(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("sample-dy=", Text.show_int(dy_at(sys_for(100), 0))), " "), Text.show_int(dy_at(sys_for(100), 1))), " "), Text.show_int(dy_at(sys_for(100), 2)))))
+	line!(Text.printed(Text.concat("independent=", (if (modal(100) < 20) { "yes" } else { "no" }))))
 	Ok({})
 }

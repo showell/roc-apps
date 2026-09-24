@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([41, 43, 81, 48, 13, 24, 17, 19, 17, 16, 18, 40, 21, 13, 13, 2, 42, 60]))
+	line!(Text.printed("AI/DecisionTree OK"))
 	Ok({})
 }

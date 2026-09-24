@@ -134,11 +134,11 @@ AudioAnalysis :: [].{
 		{ af_peak: peak, af_rms: rms, af_centroid: centroid, af_bpm: bpm, af_duration_ms: dur }
 	})
 
-	audio_vibe : AudioAnalysis.AudioFeatures -> List(U8)
+	audio_vibe : AudioAnalysis.AudioFeatures -> Text
 	audio_vibe = |f| ({
-		energy = (if (f.af_rms > 700) { [20, 17, 29, 20, 73, 13, 18, 13, 21, 29, 30] } else { (if (f.af_rms > 300) { [26, 16, 22, 13, 21, 15, 14, 13] } else { [19, 16, 28, 14] }) })
-		tempo = (if (f.af_bpm > 140) { [28, 15, 19, 14] } else { (if (f.af_bpm > 100) { [26, 17, 22, 73, 14, 13, 26, 31, 16] } else { [21, 13, 23, 15, 36, 13, 22] }) })
-		List.concat(List.concat(List.concat(List.concat(List.concat(energy, [66, 2]), tempo), [2, 74]), Text.show_int(f.af_bpm)), [2, 58, 57, 52, 75])
+		energy = (if (f.af_rms > 700) { "high-energy" } else { (if (f.af_rms > 300) { "moderate" } else { "soft" }) })
+		tempo = (if (f.af_bpm > 140) { "fast" } else { (if (f.af_bpm > 100) { "mid-tempo" } else { "relaxed" }) })
+		Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(energy, ", "), tempo), " ("), Text.show_int(f.af_bpm)), " BPM)")
 	})
 
 	aa_sin : I64 -> I64
@@ -157,6 +157,6 @@ AudioAnalysis :: [].{
 	aa_min_val : I64, I64 -> I64
 	aa_min_val = |a, b| (if (a < b) { a } else { b })
 
-	format_audio_features : AudioAnalysis.AudioFeatures -> List(U8)
-	format_audio_features = |f| List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat([31, 13, 15, 34, 77], Text.show_int(f.af_peak)), [2, 21, 26, 19, 77]), Text.show_int(f.af_rms)), [2, 24, 13, 18, 14, 21, 16, 17, 22, 77]), Text.show_int(f.af_centroid)), [46, 38, 2, 32, 31, 26, 77]), Text.show_int(f.af_bpm)), [2, 22, 25, 21, 77]), Text.show_int(f.af_duration_ms)), [26, 19])
+	format_audio_features : AudioAnalysis.AudioFeatures -> Text
+	format_audio_features = |f| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("peak=", Text.show_int(f.af_peak)), " rms="), Text.show_int(f.af_rms)), " centroid="), Text.show_int(f.af_centroid)), "Hz bpm="), Text.show_int(f.af_bpm)), " dur="), Text.show_int(f.af_duration_ms)), "ms")
 }

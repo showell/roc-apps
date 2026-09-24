@@ -1,4 +1,5 @@
 # Theme -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+import Text
 
 Theme :: [].{
 	Palette : { pal_bg : I64, pal_fg : I64, pal_primary : I64, pal_secondary : I64, pal_accent : I64, pal_muted : I64, pal_error : I64, pal_success : I64, pal_warning : I64, pal_border : I64 }
@@ -12,7 +13,7 @@ Theme :: [].{
 	AccentBorder : { ab_side : I64, ab_width : I64, ab_color : I64, ab_enabled : Bool }
 	WidgetStyle : { ws_bg : I64, ws_fg : I64, ws_border : Theme.Border, ws_padding : Theme.Edges, ws_margin : Theme.Edges, ws_min_width : I64, ws_min_height : I64, ws_shadow : Theme.Shadow, ws_gradient : Theme.Gradient, ws_accent_border : Theme.AccentBorder, ws_bevel : Theme.Bevel }
 	StateStyles : { ss_normal : Theme.WidgetStyle, ss_hover : Theme.WidgetStyle, ss_pressed : Theme.WidgetStyle, ss_disabled : Theme.WidgetStyle, ss_focused : Theme.WidgetStyle }
-	Theme : { th_name : List(U8), th_palette : Theme.Palette, th_panel : Theme.StateStyles, th_button : Theme.StateStyles, th_label : Theme.StateStyles, th_input : Theme.StateStyles, th_gauge : Theme.StateStyles, th_separator : Theme.StateStyles }
+	Theme : { th_name : Text, th_palette : Theme.Palette, th_panel : Theme.StateStyles, th_button : Theme.StateStyles, th_label : Theme.StateStyles, th_input : Theme.StateStyles, th_gauge : Theme.StateStyles, th_separator : Theme.StateStyles }
 
 	shadow_none : Theme.Shadow
 	shadow_none = { sh_offset_x: 0, sh_offset_y: 0, sh_blur: 0, sh_color: 0, sh_enabled: False }
@@ -141,7 +142,7 @@ Theme :: [].{
 		inp_f = widget_style(pal.pal_bg, pal.pal_fg, border_uniform(2, pal.pal_accent, CornerSharp), pad, mar)
 		lbl = widget_style(0, pal.pal_fg, border_none, edges_zero, mar)
 		sep = widget_style(pal.pal_border, pal.pal_border, border_none, edges_zero, edges_xy(0, 4))
-		{ th_name: [14, 13, 21, 26, 17, 18, 15, 23], th_palette: pal, th_panel: state_styles_flat(base), th_button: { ss_normal: btn, ss_hover: btn_h, ss_pressed: btn_p, ss_disabled: btn_d, ss_focused: btn_h }, th_label: state_styles_flat(lbl), th_input: { ss_normal: inp, ss_hover: inp, ss_pressed: inp, ss_disabled: btn_d, ss_focused: inp_f }, th_gauge: state_styles_flat(widget_style(pal.pal_bg, pal.pal_primary, bdr, edges_uniform(2), mar)), th_separator: state_styles_flat(sep) }
+		{ th_name: "terminal", th_palette: pal, th_panel: state_styles_flat(base), th_button: { ss_normal: btn, ss_hover: btn_h, ss_pressed: btn_p, ss_disabled: btn_d, ss_focused: btn_h }, th_label: state_styles_flat(lbl), th_input: { ss_normal: inp, ss_hover: inp, ss_pressed: inp, ss_disabled: btn_d, ss_focused: inp_f }, th_gauge: state_styles_flat(widget_style(pal.pal_bg, pal.pal_primary, bdr, edges_uniform(2), mar)), th_separator: state_styles_flat(sep) }
 	})
 
 	theme_lcars : Theme.Theme
@@ -160,7 +161,7 @@ Theme :: [].{
 		inp_f = widget_style(pal.pal_bg, pal.pal_fg, border_uniform(3, pal.pal_accent, round), pad, mar)
 		lbl = widget_style(0, pal.pal_fg, border_none, edges_zero, mar)
 		sep = widget_style_sized(pal.pal_primary, pal.pal_primary, border_none, edges_zero, edges_xy(0, 4), 0, 6)
-		{ th_name: [23, 24, 15, 21, 19], th_palette: pal, th_panel: state_styles_flat(base), th_button: { ss_normal: btn, ss_hover: btn_h, ss_pressed: btn_p, ss_disabled: btn_d, ss_focused: btn_h }, th_label: state_styles_flat(lbl), th_input: { ss_normal: inp, ss_hover: inp, ss_pressed: inp, ss_disabled: btn_d, ss_focused: inp_f }, th_gauge: state_styles_flat(widget_style(pal.pal_bg, pal.pal_accent, border_uniform(2, pal.pal_secondary, round), edges_uniform(2), mar)), th_separator: state_styles_flat(sep) }
+		{ th_name: "lcars", th_palette: pal, th_panel: state_styles_flat(base), th_button: { ss_normal: btn, ss_hover: btn_h, ss_pressed: btn_p, ss_disabled: btn_d, ss_focused: btn_h }, th_label: state_styles_flat(lbl), th_input: { ss_normal: inp, ss_hover: inp, ss_pressed: inp, ss_disabled: btn_d, ss_focused: inp_f }, th_gauge: state_styles_flat(widget_style(pal.pal_bg, pal.pal_accent, border_uniform(2, pal.pal_secondary, round), edges_uniform(2), mar)), th_separator: state_styles_flat(sep) }
 	})
 
 	theme_minimal : Theme.Theme
@@ -178,7 +179,7 @@ Theme :: [].{
 		inp_f = widget_style(pal.pal_bg, pal.pal_fg, border_uniform(2, pal.pal_accent, CornerSharp), pad, mar)
 		lbl = widget_style(0, pal.pal_fg, border_none, edges_zero, mar)
 		sep = widget_style(pal.pal_border, pal.pal_border, border_none, edges_zero, edges_xy(0, 4))
-		{ th_name: [26, 17, 18, 17, 26, 15, 23], th_palette: pal, th_panel: state_styles_flat(base), th_button: { ss_normal: btn, ss_hover: btn_h, ss_pressed: btn_p, ss_disabled: btn_d, ss_focused: btn_h }, th_label: state_styles_flat(lbl), th_input: { ss_normal: inp, ss_hover: inp, ss_pressed: inp, ss_disabled: btn_d, ss_focused: inp_f }, th_gauge: state_styles_flat(widget_style(pal.pal_bg, pal.pal_primary, bdr, edges_uniform(2), mar)), th_separator: state_styles_flat(sep) }
+		{ th_name: "minimal", th_palette: pal, th_panel: state_styles_flat(base), th_button: { ss_normal: btn, ss_hover: btn_h, ss_pressed: btn_p, ss_disabled: btn_d, ss_focused: btn_h }, th_label: state_styles_flat(lbl), th_input: { ss_normal: inp, ss_hover: inp, ss_pressed: inp, ss_disabled: btn_d, ss_focused: inp_f }, th_gauge: state_styles_flat(widget_style(pal.pal_bg, pal.pal_primary, bdr, edges_uniform(2), mar)), th_separator: state_styles_flat(sep) }
 	})
 
 	theme_resolve_panel : Theme.Theme, I64 -> Theme.WidgetStyle
@@ -241,11 +242,11 @@ Theme :: [].{
 		(if (tone == tone_primary) { pal.pal_primary } else { (if (tone == tone_success) { pal.pal_success } else { (if (tone == tone_warning) { pal.pal_warning } else { (if (tone == tone_error) { pal.pal_error } else { (if (tone == tone_muted) { pal.pal_muted } else { fallback }) }) }) }) })
 	})
 
-	tone_name : I64 -> List(U8)
-	tone_name = |tone| (if (tone == tone_primary) { [31, 21, 17, 26, 15, 21, 30] } else { (if (tone == tone_success) { [19, 25, 24, 24, 13, 19, 19] } else { (if (tone == tone_warning) { [27, 15, 21, 18, 17, 18, 29] } else { (if (tone == tone_error) { [13, 21, 21, 16, 21] } else { (if (tone == tone_muted) { [26, 25, 14, 13, 22] } else { [18, 16, 18, 13] }) }) }) }) })
+	tone_name : I64 -> Text
+	tone_name = |tone| (if (tone == tone_primary) { "primary" } else { (if (tone == tone_success) { "success" } else { (if (tone == tone_warning) { "warning" } else { (if (tone == tone_error) { "error" } else { (if (tone == tone_muted) { "muted" } else { "none" }) }) }) }) })
 
-	theme_fmt_bool : Bool -> List(U8)
-	theme_fmt_bool = |b| (if b { [14, 21, 25, 13] } else { [28, 15, 23, 19, 13] })
+	theme_fmt_bool : Bool -> Text
+	theme_fmt_bool = |b| (if b { "true" } else { "false" })
 
 	eq_CornerStyle : Theme.CornerStyle, Theme.CornerStyle -> Bool
 	eq_CornerStyle = |ex, ey| (match ex {

@@ -65,16 +65,16 @@ ip_padded = |xs| Ethernet.ip_checksum(List.concat(xs, [0]), 0, (U64.to_i64_wrap(
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([16, 22, 22, 6, 73, 15, 29, 21, 13, 13, 19, 77], (if (ip_of(odd3) == witness_of(odd3)) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))))
-	line!(Text.printed(List.concat([16, 22, 22, 8, 73, 15, 29, 21, 13, 13, 19, 77], (if (ip_of(odd5) == witness_of(odd5)) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))))
-	line!(Text.printed(List.concat([16, 22, 22, 4, 73, 15, 29, 21, 13, 13, 19, 77], (if (ip_of(odd1) == witness_of(odd1)) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))))
-	line!(Text.printed(List.concat([16, 22, 22, 6, 73, 13, 37, 25, 15, 23, 19, 73, 31, 15, 22, 22, 13, 22, 77], (if (ip_of(odd3) == ip_padded(odd3)) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))))
-	line!(Text.printed(List.concat([16, 22, 22, 8, 73, 13, 37, 25, 15, 23, 19, 73, 31, 15, 22, 22, 13, 22, 77], (if (ip_of(odd5) == ip_padded(odd5)) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))))
-	line!(Text.printed(List.concat([13, 33, 13, 18, 7, 73, 15, 29, 21, 13, 13, 19, 77], (if (ip_of(even4) == witness_of(even4)) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))))
-	line!(Text.printed(List.concat([13, 33, 13, 18, 5, 3, 73, 15, 29, 21, 13, 13, 19, 77], (if (ip_of(even20) == witness_of(even20)) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] }))))
-	line!(Text.printed(List.concat([13, 33, 13, 18, 7, 73, 33, 15, 23, 25, 13, 77], Text.show_int(ip_of(even4)))))
-	line!(Text.printed(List.concat([13, 33, 13, 18, 5, 3, 73, 33, 15, 23, 25, 13, 77], Text.show_int(ip_of(even20)))))
-	line!(Text.printed(List.concat([16, 22, 22, 6, 73, 33, 15, 23, 25, 13, 77], Text.show_int(ip_of(odd3)))))
-	line!(Text.printed(List.concat([16, 22, 22, 8, 73, 33, 15, 23, 25, 13, 77], Text.show_int(ip_of(odd5)))))
+	line!(Text.printed(Text.concat("odd3-agrees=", (if (ip_of(odd3) == witness_of(odd3)) { "True" } else { "False" }))))
+	line!(Text.printed(Text.concat("odd5-agrees=", (if (ip_of(odd5) == witness_of(odd5)) { "True" } else { "False" }))))
+	line!(Text.printed(Text.concat("odd1-agrees=", (if (ip_of(odd1) == witness_of(odd1)) { "True" } else { "False" }))))
+	line!(Text.printed(Text.concat("odd3-equals-padded=", (if (ip_of(odd3) == ip_padded(odd3)) { "True" } else { "False" }))))
+	line!(Text.printed(Text.concat("odd5-equals-padded=", (if (ip_of(odd5) == ip_padded(odd5)) { "True" } else { "False" }))))
+	line!(Text.printed(Text.concat("even4-agrees=", (if (ip_of(even4) == witness_of(even4)) { "True" } else { "False" }))))
+	line!(Text.printed(Text.concat("even20-agrees=", (if (ip_of(even20) == witness_of(even20)) { "True" } else { "False" }))))
+	line!(Text.printed(Text.concat("even4-value=", Text.show_int(ip_of(even4)))))
+	line!(Text.printed(Text.concat("even20-value=", Text.show_int(ip_of(even20)))))
+	line!(Text.printed(Text.concat("odd3-value=", Text.show_int(ip_of(odd3)))))
+	line!(Text.printed(Text.concat("odd5-value=", Text.show_int(ip_of(odd5)))))
 	Ok({})
 }

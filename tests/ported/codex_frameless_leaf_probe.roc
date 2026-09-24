@@ -51,10 +51,10 @@ flp_plusk = |x| (x + flp_mask)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([15, 22, 22, 6, 5, 77], Text.show_int(flp_add32(1634760805, 2036477234)))))
-	line!(Text.printed(List.concat([21, 16, 14, 23, 6, 5, 77], Text.show_int(flp_rotl32(1634760805, 7)))))
-	line!(Text.printed(List.concat([29, 26, 25, 23, 5, 77], Text.show_int(flp_gmul2(202)))))
-	line!(Text.printed(List.concat([32, 23, 16, 24, 34, 77], Text.show_int(flp_block(628)))))
-	line!(Text.printed(List.concat([31, 23, 25, 19, 34, 77], Text.show_int(flp_plusk(7)))))
+	line!(Text.printed(Text.concat("add32=", Text.show_int(flp_add32(1634760805, 2036477234)))))
+	line!(Text.printed(Text.concat("rotl32=", Text.show_int(flp_rotl32(1634760805, 7)))))
+	line!(Text.printed(Text.concat("gmul2=", Text.show_int(flp_gmul2(202)))))
+	line!(Text.printed(Text.concat("block=", Text.show_int(flp_block(628)))))
+	line!(Text.printed(Text.concat("plusk=", Text.show_int(flp_plusk(7)))))
 	Ok({})
 }

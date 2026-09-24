@@ -65,16 +65,16 @@ eq_Chain = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed((if eq_Nest(Wrap(Leaf), Wrap(Leaf)) { [13, 37] } else { [18, 13] })))
-	line!(Text.printed((if eq_Nest(Wrap(Wrap(Leaf)), Wrap(Wrap(Leaf))) { [13, 37] } else { [18, 13] })))
-	line!(Text.printed((if eq_Nest(Leaf, Leaf) { [13, 37] } else { [18, 13] })))
-	line!(Text.printed((if eq_Nest(Wrap(Leaf), Leaf) { [13, 37] } else { [18, 13] })))
-	line!(Text.printed((if eq_Nest(Wrap(Wrap(Leaf)), Wrap(Leaf)) { [13, 37] } else { [18, 13] })))
-	line!(Text.printed((if (if eq_Nest(Wrap(Leaf), Wrap(Leaf)) { False } else { True }) { [18, 13] } else { [13, 37] })))
-	line!(Text.printed((if (if eq_Nest(Wrap(Leaf), Leaf) { False } else { True }) { [18, 13] } else { [13, 37] })))
-	line!(Text.printed((if eq_Chain(Link(1, Link(2, End)), Link(1, Link(2, End))) { [13, 37] } else { [18, 13] })))
-	line!(Text.printed((if eq_Chain(Link(1, Link(2, End)), Link(1, Link(3, End))) { [13, 37] } else { [18, 13] })))
-	line!(Text.printed((if eq_Chain(Link(1, Link(2, End)), Link(1, End)) { [13, 37] } else { [18, 13] })))
-	line!(Text.printed((if eq_Chain(End, End) { [13, 37] } else { [18, 13] })))
+	line!(Text.printed((if eq_Nest(Wrap(Leaf), Wrap(Leaf)) { "eq" } else { "ne" })))
+	line!(Text.printed((if eq_Nest(Wrap(Wrap(Leaf)), Wrap(Wrap(Leaf))) { "eq" } else { "ne" })))
+	line!(Text.printed((if eq_Nest(Leaf, Leaf) { "eq" } else { "ne" })))
+	line!(Text.printed((if eq_Nest(Wrap(Leaf), Leaf) { "eq" } else { "ne" })))
+	line!(Text.printed((if eq_Nest(Wrap(Wrap(Leaf)), Wrap(Leaf)) { "eq" } else { "ne" })))
+	line!(Text.printed((if (if eq_Nest(Wrap(Leaf), Wrap(Leaf)) { False } else { True }) { "ne" } else { "eq" })))
+	line!(Text.printed((if (if eq_Nest(Wrap(Leaf), Leaf) { False } else { True }) { "ne" } else { "eq" })))
+	line!(Text.printed((if eq_Chain(Link(1, Link(2, End)), Link(1, Link(2, End))) { "eq" } else { "ne" })))
+	line!(Text.printed((if eq_Chain(Link(1, Link(2, End)), Link(1, Link(3, End))) { "eq" } else { "ne" })))
+	line!(Text.printed((if eq_Chain(Link(1, Link(2, End)), Link(1, End)) { "eq" } else { "ne" })))
+	line!(Text.printed((if eq_Chain(End, End) { "eq" } else { "ne" })))
 	Ok({})
 }

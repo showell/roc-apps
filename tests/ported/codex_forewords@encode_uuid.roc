@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([39, 18, 24, 16, 22, 13, 81, 51, 25, 17, 22, 2, 42, 60]))
+	line!(Text.printed("Encode/Uuid OK"))
 	Ok({})
 }

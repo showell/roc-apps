@@ -31,53 +31,53 @@ import cdx.Text
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-show_hex_word : I64 -> List(U8)
+show_hex_word : I64 -> Text
 show_hex_word = |w| ({
 	b0 = I64.bitwise_and(w, 255)
 	b1 = I64.bitwise_and(I64.shr_zf_wrap(w, I64.to_u8_wrap(8)), 255)
 	b2 = I64.bitwise_and(I64.shr_zf_wrap(w, I64.to_u8_wrap(16)), 255)
 	b3 = I64.bitwise_and(I64.shr_zf_wrap(w, I64.to_u8_wrap(24)), 255)
-	List.concat(List.concat(List.concat(hex_byte(b3), hex_byte(b2)), hex_byte(b1)), hex_byte(b0))
+	Text.concat(Text.concat(Text.concat(hex_byte(b3), hex_byte(b2)), hex_byte(b1)), hex_byte(b0))
 })
 
-show_hex_half : I64 -> List(U8)
+show_hex_half : I64 -> Text
 show_hex_half = |w| ({
 	b0 = I64.bitwise_and(w, 255)
 	b1 = I64.bitwise_and(I64.shr_zf_wrap(w, I64.to_u8_wrap(8)), 255)
-	List.concat(hex_byte(b1), hex_byte(b0))
+	Text.concat(hex_byte(b1), hex_byte(b0))
 })
 
-hex_byte : I64 -> List(U8)
-hex_byte = |b| List.concat(hex_nib(I64.div_trunc_by(b, 16)), hex_nib(I64.bitwise_and(b, 15)))
+hex_byte : I64 -> Text
+hex_byte = |b| Text.concat(hex_nib(I64.div_trunc_by(b, 16)), hex_nib(I64.bitwise_and(b, 15)))
 
-hex_nib : I64 -> List(U8)
+hex_nib : I64 -> Text
 hex_nib = |n| (match n {
-	0 => [3]
-	1 => [4]
-	2 => [5]
-	3 => [6]
-	4 => [7]
-	5 => [8]
-	6 => [9]
-	7 => [10]
-	8 => [11]
-	9 => [12]
-	10 => [41]
-	11 => [58]
-	12 => [50]
-	13 => [48]
-	14 => [39]
-	15 => [54]
-	_ => [68]
+	0 => "0"
+	1 => "1"
+	2 => "2"
+	3 => "3"
+	4 => "4"
+	5 => "5"
+	6 => "6"
+	7 => "7"
+	8 => "8"
+	9 => "9"
+	10 => "A"
+	11 => "B"
+	12 => "C"
+	13 => "D"
+	14 => "E"
+	15 => "F"
+	_ => "?"
 })
 
-show_insn_16 : List(I64) -> List(U8)
+show_insn_16 : List(I64) -> Text
 show_insn_16 = |bytes| ({
 	w = ((List.get(bytes, I64.to_u64_wrap(0)) ?? crash("list-at out of range")) + ((List.get(bytes, I64.to_u64_wrap(1)) ?? crash("list-at out of range")) * 256))
 	show_hex_half(w)
 })
 
-show_insn_32 : List(I64) -> List(U8)
+show_insn_32 : List(I64) -> Text
 show_insn_32 = |bytes| ({
 	w = ((((List.get(bytes, I64.to_u64_wrap(0)) ?? crash("list-at out of range")) + ((List.get(bytes, I64.to_u64_wrap(1)) ?? crash("list-at out of range")) * 256)) + ((List.get(bytes, I64.to_u64_wrap(2)) ?? crash("list-at out of range")) * 65536)) + ((List.get(bytes, I64.to_u64_wrap(3)) ?? crash("list-at out of range")) * 16777216))
 	show_hex_word(w)
@@ -86,16 +86,16 @@ show_insn_32 = |bytes| ({
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([24, 65, 18, 16, 31, 77], show_insn_16(RiscV32CEncoder.rv_c_nop))))
-	line!(Text.printed(List.concat([24, 65, 23, 17, 2, 15, 3, 66, 7, 5, 77], show_insn_16(RiscV32CEncoder.rv_c_li(10, 42)))))
-	line!(Text.printed(List.concat([24, 65, 26, 33, 2, 15, 3, 66, 15, 4, 77], show_insn_16(RiscV32CEncoder.rv_c_mv(10, 11)))))
-	line!(Text.printed(List.concat([24, 65, 15, 22, 22, 2, 15, 3, 66, 15, 4, 77], show_insn_16(RiscV32CEncoder.rv_c_add(10, 11)))))
-	line!(Text.printed(List.concat([24, 65, 35, 21, 2, 21, 15, 77], show_insn_16(RiscV32CEncoder.rv_c_jr(1)))))
-	line!(Text.printed(List.concat([24, 65, 35, 15, 23, 21, 2, 21, 15, 77], show_insn_16(RiscV32CEncoder.rv_c_jalr(1)))))
-	line!(Text.printed(List.concat([24, 65, 21, 13, 14, 77], show_insn_16(RiscV32CEncoder.rv_c_ret))))
-	line!(Text.printed(List.concat([24, 65, 15, 22, 22, 17, 2, 15, 3, 66, 8, 77], show_insn_16(RiscV32CEncoder.rv_c_addi(10, 5)))))
-	line!(Text.printed(List.concat([24, 65, 35, 2, 76, 4, 3, 3, 77], show_insn_16(RiscV32CEncoder.rv_c_j(100)))))
-	line!(Text.printed(List.concat(List.concat([23, 17, 6, 5, 2, 15, 3, 66, 83, 4, 5, 6, 7, 8, 77], Text.show_int(I64.div_trunc_by(U64.to_i64_wrap(List.len(RiscV32CEncoder.rv_li_32(10, 74565))), 4))), [2, 17, 18, 19, 18, 19])))
-	line!(Text.printed(List.concat(List.concat([23, 17, 6, 5, 2, 15, 3, 66, 7, 5, 77], Text.show_int(I64.div_trunc_by(U64.to_i64_wrap(List.len(RiscV32CEncoder.rv_li_32(10, 42))), 4))), [2, 17, 18, 19, 18, 19])))
+	line!(Text.printed(Text.concat("c.nop=", show_insn_16(RiscV32CEncoder.rv_c_nop))))
+	line!(Text.printed(Text.concat("c.li a0,42=", show_insn_16(RiscV32CEncoder.rv_c_li(10, 42)))))
+	line!(Text.printed(Text.concat("c.mv a0,a1=", show_insn_16(RiscV32CEncoder.rv_c_mv(10, 11)))))
+	line!(Text.printed(Text.concat("c.add a0,a1=", show_insn_16(RiscV32CEncoder.rv_c_add(10, 11)))))
+	line!(Text.printed(Text.concat("c.jr ra=", show_insn_16(RiscV32CEncoder.rv_c_jr(1)))))
+	line!(Text.printed(Text.concat("c.jalr ra=", show_insn_16(RiscV32CEncoder.rv_c_jalr(1)))))
+	line!(Text.printed(Text.concat("c.ret=", show_insn_16(RiscV32CEncoder.rv_c_ret))))
+	line!(Text.printed(Text.concat("c.addi a0,5=", show_insn_16(RiscV32CEncoder.rv_c_addi(10, 5)))))
+	line!(Text.printed(Text.concat("c.j +100=", show_insn_16(RiscV32CEncoder.rv_c_j(100)))))
+	line!(Text.printed(Text.concat(Text.concat("li32 a0,#12345=", Text.show_int(I64.div_trunc_by(U64.to_i64_wrap(List.len(RiscV32CEncoder.rv_li_32(10, 74565))), 4))), " insns")))
+	line!(Text.printed(Text.concat(Text.concat("li32 a0,42=", Text.show_int(I64.div_trunc_by(U64.to_i64_wrap(List.len(RiscV32CEncoder.rv_li_32(10, 42))), 4))), " insns")))
 	Ok({})
 }

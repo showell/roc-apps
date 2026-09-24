@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([52, 15, 14, 20, 81, 58, 13, 38, 17, 13, 21, 2, 42, 60]))
+	line!(Text.printed("Math/Bezier OK"))
 	Ok({})
 }

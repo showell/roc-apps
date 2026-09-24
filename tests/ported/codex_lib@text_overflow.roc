@@ -65,39 +65,39 @@ import cdx.TextOverflow
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-plan : TextOverflow.TextOverflow, I64, I64, I64, I64 -> List(U8)
-plan = |m, len, avail, adv, gw| List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat([2, 2], TextOverflow.text_overflow_name(m)), [2, 23, 13, 18, 77]), Text.show_int(len)), [2, 15, 33, 15, 17, 23, 77]), Text.show_int(avail)), [2, 15, 22, 33, 77]), Text.show_int(adv)), [2, 29, 27, 77]), Text.show_int(gw)), [2, 73, 80, 2, 19, 14, 15, 21, 14, 77]), Text.show_int(TextOverflow.text_overflow_start(m, len, avail, adv, gw))), [2, 24, 16, 25, 18, 14, 77]), Text.show_int(TextOverflow.text_overflow_count(m, len, avail, adv, gw))), [2, 22, 16, 14, 19, 77]), Text.show_int(TextOverflow.text_overflow_dots(m, len, avail, adv, gw)))
+plan : TextOverflow.TextOverflow, I64, I64, I64, I64 -> Text
+plan = |m, len, avail, adv, gw| Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat(Text.concat("  ", TextOverflow.text_overflow_name(m)), " len="), Text.show_int(len)), " avail="), Text.show_int(avail)), " adv="), Text.show_int(adv)), " gw="), Text.show_int(gw)), " -> start="), Text.show_int(TextOverflow.text_overflow_start(m, len, avail, adv, gw))), " count="), Text.show_int(TextOverflow.text_overflow_count(m, len, avail, adv, gw))), " dots="), Text.show_int(TextOverflow.text_overflow_dots(m, len, avail, adv, gw)))
 
-all_modes : I64, I64, I64, I64 -> List(U8)
-all_modes = |len, avail, adv, gw| List.concat(List.concat(List.concat(List.concat(plan(OverflowClip, len, avail, adv, gw), [1]), plan(OverflowEllipsis, len, avail, adv, gw)), [1]), plan(OverflowScroll, len, avail, adv, gw))
+all_modes : I64, I64, I64, I64 -> Text
+all_modes = |len, avail, adv, gw| Text.concat(Text.concat(Text.concat(Text.concat(plan(OverflowClip, len, avail, adv, gw), "\n"), plan(OverflowEllipsis, len, avail, adv, gw)), "\n"), plan(OverflowScroll, len, avail, adv, gw))
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([28, 17, 14, 19, 2, 13, 36, 15, 24, 14, 23, 30, 66, 2, 18, 16, 2, 16, 33, 13, 21, 28, 23, 16, 27, 69, 2, 13, 33, 13, 21, 30, 2, 26, 16, 22, 13, 2, 26, 25, 19, 14, 2, 15, 29, 21, 13, 13]))
+	line!(Text.printed("fits exactly, no overflow: every mode must agree"))
 	line!(Text.printed(all_modes(10, 60, 6, 5)))
-	line!(Text.printed([]))
-	line!(Text.printed([19, 20, 16, 21, 14, 13, 21, 2, 14, 20, 15, 18, 2, 14, 20, 13, 2, 32, 16, 36, 69, 2, 13, 33, 13, 21, 30, 2, 26, 16, 22, 13, 2, 26, 25, 19, 14, 2, 15, 29, 21, 13, 13]))
+	line!(Text.printed(""))
+	line!(Text.printed("shorter than the box: every mode must agree"))
 	line!(Text.printed(all_modes(4, 60, 6, 5)))
-	line!(Text.printed([]))
-	line!(Text.printed([16, 33, 13, 21, 28, 23, 16, 27, 17, 18, 29, 66, 2, 15, 22, 33, 77, 9, 2, 74, 55, 57, 51, 2, 27, 15, 23, 34, 75, 66, 2, 5, 3, 2, 24, 20, 15, 21, 19, 2, 17, 18, 2, 9, 3, 31, 36]))
+	line!(Text.printed(""))
+	line!(Text.printed("overflowing, adv=6 (GPU walk), 20 chars in 60px"))
 	line!(Text.printed(all_modes(20, 60, 6, 5)))
-	line!(Text.printed([]))
-	line!(Text.printed([16, 33, 13, 21, 28, 23, 16, 27, 17, 18, 29, 66, 2, 15, 22, 33, 77, 12, 2, 74, 55, 16, 31, 58, 25, 28, 2, 27, 15, 23, 34, 75, 66, 2, 5, 3, 2, 24, 20, 15, 21, 19, 2, 17, 18, 2, 9, 6, 31, 36]))
+	line!(Text.printed(""))
+	line!(Text.printed("overflowing, adv=9 (GopBuf walk), 20 chars in 63px"))
 	line!(Text.printed(all_modes(20, 63, 9, 8)))
-	line!(Text.printed([]))
-	line!(Text.printed([16, 33, 13, 21, 28, 23, 16, 27, 17, 18, 29, 66, 2, 15, 22, 33, 77, 4, 3, 2, 74, 45, 30, 19, 14, 13, 26, 54, 16, 18, 14, 2, 27, 15, 23, 34, 75, 66, 2, 5, 3, 2, 24, 20, 15, 21, 19, 2, 17, 18, 2, 4, 3, 3, 31, 36]))
+	line!(Text.printed(""))
+	line!(Text.printed("overflowing, adv=10 (SystemFont walk), 20 chars in 100px"))
 	line!(Text.printed(all_modes(20, 100, 10, 8)))
-	line!(Text.printed([]))
-	line!(Text.printed([15, 2, 32, 16, 36, 2, 14, 16, 16, 2, 18, 15, 21, 21, 16, 27, 2, 28, 16, 21, 2, 15, 18, 2, 13, 23, 23, 17, 31, 19, 17, 19, 2, 28, 15, 23, 23, 19, 2, 32, 15, 24, 34, 2, 14, 16, 2, 24, 23, 17, 31]))
+	line!(Text.printed(""))
+	line!(Text.printed("a box too narrow for an ellipsis falls back to clip"))
 	line!(Text.printed(all_modes(20, 18, 6, 5)))
 	line!(Text.printed(all_modes(20, 24, 6, 5)))
-	line!(Text.printed([]))
-	line!(Text.printed([22, 13, 29, 13, 18, 13, 21, 15, 14, 13, 2, 32, 16, 36, 13, 19, 2, 22, 21, 15, 27, 2, 18, 16, 14, 20, 17, 18, 29]))
+	line!(Text.printed(""))
+	line!(Text.printed("degenerate boxes draw nothing"))
 	line!(Text.printed(all_modes(20, 0, 6, 5)))
 	line!(Text.printed(all_modes(20, (0 - 40), 6, 5)))
 	line!(Text.printed(all_modes(20, 60, 0, 5)))
-	line!(Text.printed([]))
-	line!(Text.printed(List.concat([22, 13, 28, 15, 25, 23, 14, 2, 26, 16, 22, 13, 69, 2], TextOverflow.text_overflow_name(TextOverflow.text_overflow_default))))
+	line!(Text.printed(""))
+	line!(Text.printed(Text.concat("default mode: ", TextOverflow.text_overflow_name(TextOverflow.text_overflow_default))))
 	Ok({})
 }

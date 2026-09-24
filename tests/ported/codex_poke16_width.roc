@@ -24,10 +24,10 @@ import cdx.Text
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-hex_bytes! : Mem.Mem, I64, I64, I64, List(U8) => (Mem.Mem, List(U8))
+hex_bytes! : Mem.Mem, I64, I64, I64, Text => (Mem.Mem, Text)
 hex_bytes! = |mem, b, i, n, acc| (if (i >= n) { (mem, acc) } else { ({
 	(mem1, mem__1) = Mem.load!(mem, b, i, 1)
-	hex_bytes!(mem1, b, (i + 1), n, List.concat(List.concat(acc, [2]), Text.show_int(mem__1)))
+	hex_bytes!(mem1, b, (i + 1), n, Text.concat(Text.concat(acc, " "), Text.show_int(mem__1)))
 }) })
 
 # --- Entry ---
@@ -44,13 +44,13 @@ main! = |args| {
 		(mem7, _w4) = Mem.store!(mem6, b, 5, 61183, 2)
 		(mem8, odd) = Mem.load!(mem7, b, 5, 2)
 		({
-			_ = line!(Text.printed(List.concat([18, 13, 17, 29, 20, 32, 16, 25, 21, 2], Text.show_int(aligned))))
-			(mem9, mem__1) = hex_bytes!(mem8, b, 4, 8, [])
-			_ = line!(Text.printed(List.concat([16, 22, 22, 73, 32, 30, 14, 13, 19], mem__1)))
-			_ = line!(Text.printed(List.concat([31, 13, 13, 34, 4, 9, 73, 16, 22, 22, 2], Text.show_int(odd))))
+			_ = line!(Text.printed(Text.concat("neighbour ", Text.show_int(aligned))))
+			(mem9, mem__1) = hex_bytes!(mem8, b, 4, 8, "")
+			_ = line!(Text.printed(Text.concat("odd-bytes", mem__1)))
+			_ = line!(Text.printed(Text.concat("peek16-odd ", Text.show_int(odd))))
 			({
 				(mem10, mem__2) = Mem.load!(mem9, b, 2, 2)
-				(mem10, line!(Text.printed(List.concat([31, 13, 13, 34, 4, 9, 73, 20, 17, 2], Text.show_int(mem__2)))))
+				(mem10, line!(Text.printed(Text.concat("peek16-hi ", Text.show_int(mem__2)))))
 			})
 		})
 	})

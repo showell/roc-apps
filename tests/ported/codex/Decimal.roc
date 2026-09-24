@@ -110,27 +110,27 @@ Decimal :: [].{
 		(if (d.dec_mantissa > (floored.dec_mantissa * dec_pow10(d.dec_scale))) { { dec_mantissa: (floored.dec_mantissa + 1), dec_scale: 0 } } else { floored })
 	})
 
-	dec_to_text : Decimal.Decimal -> List(U8)
+	dec_to_text : Decimal.Decimal -> Text
 	dec_to_text = |d| (if (d.dec_scale == 0) { Text.show_int(d.dec_mantissa) } else { ({
 		abs_m = (if (d.dec_mantissa < 0) { (0 - d.dec_mantissa) } else { d.dec_mantissa })
 		factor = dec_pow10(d.dec_scale)
 		whole = I64.div_trunc_by(abs_m, factor)
 		frac = (abs_m - (whole * factor))
-		sign = (if (d.dec_mantissa < 0) { [73] } else { [] })
-		List.concat(List.concat(List.concat(sign, Text.show_int(whole)), [65]), dec_pad_frac(frac, d.dec_scale))
+		sign = (if (d.dec_mantissa < 0) { "-" } else { "" })
+		Text.concat(Text.concat(Text.concat(sign, Text.show_int(whole)), "."), dec_pad_frac(frac, d.dec_scale))
 	}) })
 
-	dec_pad_frac : I64, I64 -> List(U8)
+	dec_pad_frac : I64, I64 -> Text
 	dec_pad_frac = |frac, scale| ({
 		raw = Text.show_int(frac)
 		padding = (scale - Text.len(raw))
-		(if (padding <= 0) { raw } else { List.concat(dec_repeat_zero(padding, []), raw) })
+		(if (padding <= 0) { raw } else { Text.concat(dec_repeat_zero(padding, ""), raw) })
 	})
 
-	dec_repeat_zero : I64, List(U8) -> List(U8)
-	dec_repeat_zero = |n, acc| (if (n <= 0) { acc } else { dec_repeat_zero((n - 1), List.concat(acc, [3])) })
+	dec_repeat_zero : I64, Text -> Text
+	dec_repeat_zero = |n, acc| (if (n <= 0) { acc } else { dec_repeat_zero((n - 1), Text.concat(acc, "0")) })
 
-	dec_from_text : List(U8), I64 -> Decimal.Decimal
+	dec_from_text : Text, I64 -> Decimal.Decimal
 	dec_from_text = |s, default_scale| ({
 		dot = dec_find_dot(s, 0, Text.len(s))
 		(if (dot < 0) { { dec_mantissa: (Text.to_integer(s) * dec_pow10(default_scale)), dec_scale: default_scale } } else { ({
@@ -145,7 +145,7 @@ Decimal :: [].{
 		}) })
 	})
 
-	dec_find_dot : List(U8), I64, I64 -> I64
+	dec_find_dot : Text, I64, I64 -> I64
 	dec_find_dot = |s, i, len| (if (i >= len) { (0 - 1) } else { (if (Text.char_at(s, i) == 65) { i } else { dec_find_dot(s, (i + 1), len) }) })
 
 	dec_whole_part : Decimal.Decimal -> I64

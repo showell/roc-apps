@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([52, 15, 14, 20, 81, 45, 31, 23, 17, 18, 13, 2, 42, 60]))
+	line!(Text.printed("Math/Spline OK"))
 	Ok({})
 }

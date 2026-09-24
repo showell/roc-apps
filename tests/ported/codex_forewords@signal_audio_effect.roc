@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([45, 17, 29, 18, 15, 23, 81, 41, 25, 22, 17, 16, 39, 28, 28, 13, 24, 14, 2, 42, 60]))
+	line!(Text.printed("Signal/AudioEffect OK"))
 	Ok({})
 }

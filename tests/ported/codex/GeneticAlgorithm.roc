@@ -162,12 +162,12 @@ GeneticAlgorithm :: [].{
 	ga_rand_range : I64, I64, I64, I64 -> I64
 	ga_rand_range = |seed, idx, lo, hi| Random.rand_in_range(seed, idx, lo, hi)
 
-	format_chromosome : GeneticAlgorithm.GaChromosome -> List(U8)
-	format_chromosome = |c| ga_fmt_genes(c.genes, 0, c.gene_count, [])
+	format_chromosome : GeneticAlgorithm.GaChromosome -> Text
+	format_chromosome = |c| ga_fmt_genes(c.genes, 0, c.gene_count, "")
 
-	ga_fmt_genes : List(I64), I64, I64, List(U8) -> List(U8)
+	ga_fmt_genes : List(I64), I64, I64, Text -> Text
 	ga_fmt_genes = |genes, i, len, acc| (if (i >= len) { acc } else { ({
-		sep = (if (i == 0) { [] } else { [66] })
-		ga_fmt_genes(genes, (i + 1), len, List.concat(List.concat(acc, sep), Text.show_int((List.get(genes, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))
+		sep = (if (i == 0) { "" } else { "," })
+		ga_fmt_genes(genes, (i + 1), len, Text.concat(Text.concat(acc, sep), Text.show_int((List.get(genes, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))
 	}) })
 }

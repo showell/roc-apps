@@ -48,24 +48,24 @@ main! = |_args| {
 	({
 		a = bump(1)
 		({
-			line!(Text.printed(List.concat([15, 69, 2], Text.show_int(a))))
-			line!(Text.printed(List.concat([15, 73, 15, 28, 14, 13, 21, 69, 2], Text.show_int(a))))
+			line!(Text.printed(Text.concat("a: ", Text.show_int(a))))
+			line!(Text.printed(Text.concat("a-after: ", Text.show_int(a))))
 			({
 				b = bump(a)
 				c = bump(b)
 				d = bump(c)
 				({
-					line!(Text.printed(List.concat([24, 20, 15, 17, 18, 73, 17, 18, 73, 32, 16, 22, 30, 69, 2], Text.show_int(d))))
-					line!(Text.printed(List.concat([24, 20, 15, 17, 18, 73, 32, 69, 2], Text.show_int(b))))
-					line!(Text.printed(List.concat([24, 20, 15, 17, 18, 73, 24, 69, 2], Text.show_int(c))))
-					line!(Text.printed(List.concat([24, 20, 15, 17, 18, 73, 22, 69, 2], Text.show_int(d))))
-					line!(Text.printed(List.concat([24, 20, 15, 17, 18, 73, 19, 25, 26, 69, 2], Text.show_int((((a + b) + c) + d)))))
+					line!(Text.printed(Text.concat("chain-in-body: ", Text.show_int(d))))
+					line!(Text.printed(Text.concat("chain-b: ", Text.show_int(b))))
+					line!(Text.printed(Text.concat("chain-c: ", Text.show_int(c))))
+					line!(Text.printed(Text.concat("chain-d: ", Text.show_int(d))))
+					line!(Text.printed(Text.concat("chain-sum: ", Text.show_int((((a + b) + c) + d)))))
 					({
 						a_1 = 100
 						({
-							line!(Text.printed(List.concat([19, 20, 15, 22, 16, 27, 13, 22, 69, 2], Text.show_int(a_1))))
-							line!(Text.printed(List.concat([19, 20, 15, 22, 16, 27, 13, 22, 73, 15, 28, 14, 13, 21, 69, 2], Text.show_int(a_1))))
-							line!(Text.printed(List.concat([15, 21, 26, 73, 23, 16, 24, 15, 23, 69, 2], Text.show_int(arm_local(2)))))
+							line!(Text.printed(Text.concat("shadowed: ", Text.show_int(a_1))))
+							line!(Text.printed(Text.concat("shadowed-after: ", Text.show_int(a_1))))
+							line!(Text.printed(Text.concat("arm-local: ", Text.show_int(arm_local(2)))))
 						})
 					})
 				})

@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([51, 43, 81, 45, 13, 23, 13, 24, 14, 17, 16, 18, 2, 42, 60]))
+	line!(Text.printed("UI/Selection OK"))
 	Ok({})
 }

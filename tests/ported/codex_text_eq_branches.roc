@@ -28,53 +28,53 @@ import cdx.Text
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 
-mk : I64 -> List(U8)
-mk = |n| List.concat([36], Text.show_int(n))
+mk : I64 -> Text
+mk = |n| Text.concat("x", Text.show_int(n))
 
-eq_int : List(U8), List(U8) -> I64
+eq_int : Text, Text -> I64
 eq_int = |n, p| (if (n == p) { 1 } else { 0 })
 
-ne_int : List(U8), List(U8) -> I64
+ne_int : Text, Text -> I64
 ne_int = |n, p| (if (n != p) { 1 } else { 0 })
 
-eq_txt : List(U8), List(U8) -> List(U8)
-eq_txt = |n, p| (if (n == p) { [13, 37, 25, 15, 23] } else { [22, 17, 28, 28, 13, 21, 19] })
+eq_txt : Text, Text -> Text
+eq_txt = |n, p| (if (n == p) { "equal" } else { "differs" })
 
-eq_bool : List(U8), List(U8) -> Bool
+eq_bool : Text, Text -> Bool
 eq_bool = |n, p| (n == p)
 
 eq_int_int : I64, I64 -> I64
 eq_int_int = |a, b| (if (a == b) { 1 } else { 0 })
 
-yn : Bool -> List(U8)
-yn = |b| (if b { [30, 13, 19] } else { [18, 16] })
+yn : Bool -> Text
+yn = |b| (if b { "yes" } else { "no" })
 
-c1 : List(U8)
-c1 = List.concat([13, 37, 73, 17, 18, 14, 2, 19, 15, 26, 13, 2, 2, 2, 2], Text.show_int(eq_int(mk(5), mk(5))))
+c1 : Text
+c1 = Text.concat("eq-int same    ", Text.show_int(eq_int(mk(5), mk(5))))
 
-c2 : List(U8)
-c2 = List.concat([13, 37, 73, 17, 18, 14, 2, 22, 17, 28, 28, 13, 21, 2, 2], Text.show_int(eq_int(mk(5), mk(6))))
+c2 : Text
+c2 = Text.concat("eq-int differ  ", Text.show_int(eq_int(mk(5), mk(6))))
 
-c3 : List(U8)
-c3 = List.concat([18, 13, 73, 17, 18, 14, 2, 19, 15, 26, 13, 2, 2, 2, 2], Text.show_int(ne_int(mk(5), mk(5))))
+c3 : Text
+c3 = Text.concat("ne-int same    ", Text.show_int(ne_int(mk(5), mk(5))))
 
-c4 : List(U8)
-c4 = List.concat([18, 13, 73, 17, 18, 14, 2, 22, 17, 28, 28, 13, 21, 2, 2], Text.show_int(ne_int(mk(5), mk(6))))
+c4 : Text
+c4 = Text.concat("ne-int differ  ", Text.show_int(ne_int(mk(5), mk(6))))
 
-c5 : List(U8)
-c5 = List.concat([13, 37, 73, 14, 36, 14, 2, 19, 15, 26, 13, 2, 2, 2, 2], eq_txt(mk(5), mk(5)))
+c5 : Text
+c5 = Text.concat("eq-txt same    ", eq_txt(mk(5), mk(5)))
 
-c6 : List(U8)
-c6 = List.concat([13, 37, 73, 14, 36, 14, 2, 22, 17, 28, 28, 13, 21, 2, 2], eq_txt(mk(5), mk(6)))
+c6 : Text
+c6 = Text.concat("eq-txt differ  ", eq_txt(mk(5), mk(6)))
 
-c7 : List(U8)
-c7 = List.concat([13, 37, 73, 32, 16, 16, 23, 2, 19, 15, 26, 13, 2, 2, 2], yn(eq_bool(mk(5), mk(5))))
+c7 : Text
+c7 = Text.concat("eq-bool same   ", yn(eq_bool(mk(5), mk(5))))
 
-c8 : List(U8)
-c8 = List.concat([13, 37, 73, 32, 16, 16, 23, 2, 22, 17, 28, 28, 13, 21, 2], yn(eq_bool(mk(5), mk(6))))
+c8 : Text
+c8 = Text.concat("eq-bool differ ", yn(eq_bool(mk(5), mk(6))))
 
-c9 : List(U8)
-c9 = List.concat(List.concat([24, 16, 18, 14, 21, 16, 23, 2, 17, 18, 14, 2, 2, 2, 2], Text.show_int(eq_int_int(5, 5))), Text.show_int(eq_int_int(5, 6)))
+c9 : Text
+c9 = Text.concat(Text.concat("control int    ", Text.show_int(eq_int_int(5, 5))), Text.show_int(eq_int_int(5, 6)))
 
 # --- Entry ---
 

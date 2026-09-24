@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([55, 31, 25, 81, 55, 31, 25, 39, 28, 28, 13, 24, 14, 2, 42, 60]))
+	line!(Text.printed("Gpu/GpuEffect OK"))
 	Ok({})
 }

@@ -23,6 +23,6 @@ line! = |s| echo!(Str.concat(s, "\n"))
 # --- Entry ---
 
 main! = |_args| {
-	line!(I64.to_str(Text.to_integer([73, 8])))
+	line!(I64.to_str(Text.to_integer("-5")))
 	Ok({})
 }

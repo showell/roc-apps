@@ -23,11 +23,11 @@ line! = |s| echo!(Str.concat(s, "\n"))
 Color : [Red, Green, Blue(I64)]
 Point : { x : I64, y : I64 }
 
-show_color : Color -> List(U8)
+show_color : Color -> Text
 show_color = |c| (match c {
-	Red => [21, 13, 22]
-	Green => [29, 21, 13, 13, 18]
-	Blue(_n) => [32, 23, 25, 13]
+	Red => "red"
+	Green => "green"
+	Blue(_n) => "blue"
 })
 
 get_x : Point -> I64
@@ -58,6 +58,6 @@ eq_Color = |ex, ey| (match ex {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([26, 17, 18, 17, 73, 32, 16, 16, 14, 19, 14, 21, 15, 31, 2, 27, 16, 21, 34, 19]))
+	line!(Text.printed("mini-bootstrap works"))
 	Ok({})
 }

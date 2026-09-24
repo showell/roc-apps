@@ -990,6 +990,6 @@ bodyTemp_to_CelsiusBody = |fv| I64.div_trunc_by(fv, 1000)
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed([45, 17, 29, 18, 15, 23, 81, 47, 13, 19, 15, 26, 31, 23, 13, 2, 42, 60]))
+	line!(Text.printed("Signal/Resample OK"))
 	Ok({})
 }

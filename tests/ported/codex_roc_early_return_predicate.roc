@@ -26,6 +26,6 @@ scan_for_two = |xs, i| (if (i >= U64.to_i64_wrap(List.len(xs))) { False } else {
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed((if scan_for_two([1, 2, 3], 0) { [40, 21, 25, 13] } else { [54, 15, 23, 19, 13] })))
+	line!(Text.printed((if scan_for_two([1, 2, 3], 0) { "True" } else { "False" })))
 	Ok({})
 }

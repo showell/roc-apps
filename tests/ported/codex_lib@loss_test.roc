@@ -33,24 +33,24 @@ ls_pred = [800, 600, 400, 200]
 ls_target : List(I64)
 ls_target = [1000, 500, 300, 100]
 
-ls_mse : List(U8)
-ls_mse = (if (Loss.loss_mse(ls_pred, ls_target) > 0) { [31, 16, 19, 17, 14, 17, 33, 13] } else { [38, 13, 21, 16] })
+ls_mse : Text
+ls_mse = (if (Loss.loss_mse(ls_pred, ls_target) > 0) { "positive" } else { "zero" })
 
-ls_hinge : List(U8)
-ls_hinge = (if (Loss.loss_hinge([500, 800], [1000, (0 - 1000)]) >= 0) { [18, 16, 18, 73, 18, 13, 29] } else { [18, 13, 29, 15, 14, 17, 33, 13] })
+ls_hinge : Text
+ls_hinge = (if (Loss.loss_hinge([500, 800], [1000, (0 - 1000)]) >= 0) { "non-neg" } else { "negative" })
 
-ls_huber : List(U8)
-ls_huber = (if (Loss.loss_huber(ls_pred, ls_target, 500) > 0) { [31, 16, 19, 17, 14, 17, 33, 13] } else { [38, 13, 21, 16] })
+ls_huber : Text
+ls_huber = (if (Loss.loss_huber(ls_pred, ls_target, 500) > 0) { "positive" } else { "zero" })
 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(List.concat([26, 19, 13, 77], ls_mse)))
-	line!(Text.printed(List.concat([20, 17, 18, 29, 13, 77], ls_hinge)))
-	line!(Text.printed(List.concat([20, 25, 32, 13, 21, 77], ls_huber)))
-	line!(Text.printed(List.concat([31, 13, 21, 28, 13, 24, 14, 73, 26, 19, 13, 77], Text.show_int(Loss.loss_mse([500, 500], [500, 500])))))
-	line!(Text.printed(List.concat([24, 23, 15, 26, 31, 73, 23, 16, 77], Text.show_int(Loss.loss_clamp((0 - 5), 0, 100)))))
-	line!(Text.printed(List.concat([24, 23, 15, 26, 31, 73, 20, 17, 77], Text.show_int(Loss.loss_clamp(200, 0, 100)))))
-	line!(Text.printed(List.concat([24, 23, 15, 26, 31, 73, 26, 17, 22, 77], Text.show_int(Loss.loss_clamp(50, 0, 100)))))
+	line!(Text.printed(Text.concat("mse=", ls_mse)))
+	line!(Text.printed(Text.concat("hinge=", ls_hinge)))
+	line!(Text.printed(Text.concat("huber=", ls_huber)))
+	line!(Text.printed(Text.concat("perfect-mse=", Text.show_int(Loss.loss_mse([500, 500], [500, 500])))))
+	line!(Text.printed(Text.concat("clamp-lo=", Text.show_int(Loss.loss_clamp((0 - 5), 0, 100)))))
+	line!(Text.printed(Text.concat("clamp-hi=", Text.show_int(Loss.loss_clamp(200, 0, 100)))))
+	line!(Text.printed(Text.concat("clamp-mid=", Text.show_int(Loss.loss_clamp(50, 0, 100)))))
 	Ok({})
 }
