@@ -34,7 +34,7 @@ Strategy :: [].{
 
 	champion : Strategy.Strategy
 	champion = {
-		base_bonus: 1000,
+		base_bonus: 2500,
 		hoards: [{ cards: ["A", "joker", "J"], worth: [1500, 1000, 500, 0] }],
 		opponents: Ignore,
 	}
@@ -143,5 +143,5 @@ expect {
 	two_home = { ..start, board: Piece.board_of(start.zone_colors, [("red", "B1", "red"), ("red", "B2", "red")]) }
 	Strategy.hoard_worths(Strategy.champion, start, "red") == [{ cards: ["A", "joker", "J"], worth: 1500 }]
 	and Strategy.hoard_worths(Strategy.champion, two_home, "red") == [{ cards: ["A", "joker", "J"], worth: 500 }]
-	and Strategy.board(Strategy.champion, two_home, ["red"]) == 5800 + 1000 + 5900 + 2000
+	and Strategy.board(Strategy.champion, two_home, ["red"]) == 5800 + 2500 + 5900 + 5000
 }

@@ -116,8 +116,8 @@ the best square, B4, 6100, the pen 0 — plus a bonus a step down its own
 base, plus what the cards it hoards are worth while they stay in its hand,
 tapering as pieces reach the base. Opponents' pieces count for nothing, so a
 capture is only ever an accident. `Strategy.champion` is what every computer
-seat plays: base bonus 1000, A and joker worth 1500, 1000, 500 and 0 with 0,
-1, 2 and 3 pieces home.
+seat plays: base bonus 2500, A, joker and J worth 1500, 1000, 500 and 0 with
+0, 1, 2 and 3 pieces home.
 
 **The page drives it with a tick.** In a computer's seat the view names
 `Codes.agent_step` as its `tick`; the page sends it back after a pause, and

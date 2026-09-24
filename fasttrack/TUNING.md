@@ -1,7 +1,7 @@
 # Tuning the computer
 
 **Today's computer is `Strategy.champion`** (Strategy.roc): the square values
-of Steve's ranking (SquareValues.roc), a base bonus of 1000 a step, and the A,
+of Steve's ranking (SquareValues.roc), a base bonus of 2500 a step (1000 until 2026-09-24), and the A,
 joker and J hoarded at 1500, 1000, 500 and 0 by pieces home, opponents
 ignored, with a whole-turn search
 (Search.roc). Experiments run through Arena.roc (`exp_*.roc`). The first two
