@@ -86,12 +86,14 @@ Ethernet :: [].{
 
 	arp_build_request : List(I64), List(I64), List(I64) -> List(I64)
 	arp_build_request = |src_mac, src_ip, target_ip| ({
+		payload : List(I64)
 		payload = List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(write_be16(arp_hw_ethernet), write_be16(eth_type_ipv4)), [6, 4]), write_be16(arp_op_request)), src_mac), src_ip), [0, 0, 0, 0, 0, 0]), target_ip)
 		eth_build_frame(mac_broadcast, src_mac, eth_type_arp, payload)
 	})
 
 	arp_build_reply : List(I64), List(I64), List(I64), List(I64), List(I64) -> List(I64)
 	arp_build_reply = |src_mac, src_ip, dst_mac, dst_ip, reply_mac| ({
+		payload : List(I64)
 		payload = List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(write_be16(arp_hw_ethernet), write_be16(eth_type_ipv4)), [6, 4]), write_be16(arp_op_reply)), reply_mac), src_ip), dst_mac), dst_ip)
 		eth_build_frame(dst_mac, src_mac, eth_type_arp, payload)
 	})
@@ -104,8 +106,11 @@ Ethernet :: [].{
 
 	ip_checksum : List(I64), I64, I64, I64 -> I64
 	ip_checksum = |hdr, i, len, sum| ({
+		total : I64
 		total = ip_sum(hdr, i, len, sum)
+		folded : I64
 		folded = (I64.bitwise_and(total, 65535) + I64.shr_zf_wrap(total, I64.to_u8_wrap(16)))
+		folded2 : I64
 		folded2 = (I64.bitwise_and(folded, 65535) + I64.shr_zf_wrap(folded, I64.to_u8_wrap(16)))
 		I64.bitwise_and(I64.bitwise_xor(folded2, 65535), 65535)
 	})
@@ -124,9 +129,13 @@ Ethernet :: [].{
 
 	ip_build_packet : List(I64), List(I64), I64, List(I64) -> List(I64)
 	ip_build_packet = |src_ip, dst_ip, proto, payload| ({
+		total_len : I64
 		total_len = (ip_header_size + U64.to_i64_wrap(List.len(payload)))
+		hdr : List(I64)
 		hdr = List.concat(List.concat(List.concat(List.concat([ip_version_ihl, 0], write_be16(total_len)), [0, 0, 0, 0, 64, proto, 0, 0]), src_ip), dst_ip)
+		cksum : I64
 		cksum = ip_checksum(hdr, 0, ip_header_size, 0)
+		hdr_final : List(I64)
 		hdr_final = List.concat(List.concat(List.concat(List.concat(List.concat([ip_version_ihl, 0], write_be16(total_len)), [0, 0, 0, 0, 64, proto]), write_be16(cksum)), src_ip), dst_ip)
 		List.concat(hdr_final, payload)
 	})

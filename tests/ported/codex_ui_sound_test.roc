@@ -44,7 +44,9 @@ test_queue : CceText
 test_queue = ({
 	sq = Sound.sound_queue_new(4)
 	sq2 = Sound.sq_enqueue(Sound.sq_enqueue(sq, Sound.snd_click), Sound.snd_beep)
+	empty : Bool
 	empty = Sound.sq_is_empty(sq)
+	notempty : Bool
 	notempty = Sound.sq_is_empty(sq2)
 	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("empty=", snd_bool(empty)), " count="), CceText.show_int(sq2.sq_count)), " notempty="), snd_bool(notempty))
 })

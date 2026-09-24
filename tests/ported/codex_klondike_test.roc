@@ -31,6 +31,7 @@ line! = |s| echo!(Str.concat(s, "\n"))
 test_deal : CceText
 test_deal = ({
 	st = Klondike.klondike_new(42)
+	tab_sizes : CceText
 	tab_sizes = CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.show_int(Klondike.pile_size((List.get(st.kl_tableau, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))), ","), CceText.show_int(Klondike.pile_size((List.get(st.kl_tableau, I64.to_u64_wrap(1)) ?? crash("list-at out of range"))))), ","), CceText.show_int(Klondike.pile_size((List.get(st.kl_tableau, I64.to_u64_wrap(2)) ?? crash("list-at out of range"))))), ","), CceText.show_int(Klondike.pile_size((List.get(st.kl_tableau, I64.to_u64_wrap(3)) ?? crash("list-at out of range"))))), ","), CceText.show_int(Klondike.pile_size((List.get(st.kl_tableau, I64.to_u64_wrap(4)) ?? crash("list-at out of range"))))), ","), CceText.show_int(Klondike.pile_size((List.get(st.kl_tableau, I64.to_u64_wrap(5)) ?? crash("list-at out of range"))))), ","), CceText.show_int(Klondike.pile_size((List.get(st.kl_tableau, I64.to_u64_wrap(6)) ?? crash("list-at out of range")))))
 	CceText.concat(CceText.concat(CceText.concat("piles=", tab_sizes), " stock="), CceText.show_int(U64.to_i64_wrap(List.len(st.kl_stock))))
 })

@@ -23,13 +23,18 @@ line! = |s| echo!(Str.concat(s, "\n"))
 
 pick : I64, I64 -> I64
 pick = |n, m| ({
+	base : I64
 	base = (m * 1000)
+	reuse : I64
 	reuse = (n - 1)
 	(if (reuse >= 0) { ({
+		s : I64
 		s = (reuse + 10)
 		((s + reuse) + base)
 	}) } else { ({
+		loc : I64
 		loc = (n + 2)
+		s : I64
 		s = (loc + 100)
 		((s + loc) + base)
 	}) })

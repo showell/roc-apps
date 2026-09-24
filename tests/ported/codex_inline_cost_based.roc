@@ -32,7 +32,9 @@ pick2 = |a, b| (if (a > b) { a } else { b })
 
 caller_one : I64
 caller_one = ({
+	x : I64
 	x = 11
+	y : I64
 	y = 22
 	bx = make_pbox(x, y)
 	((bx.first * 100) + bx.second)
@@ -40,7 +42,9 @@ caller_one = ({
 
 caller_two : I64
 caller_two = ({
+	p : I64
 	p = 33
+	q : I64
 	q = 44
 	bx = make_pbox(p, q)
 	(((bx.first * 100) + bx.second) + bx.tag)
@@ -50,9 +54,13 @@ caller_two = ({
 
 main! = |_args| {
 	({
+		a : I64
 		a = caller_one
+		b : I64
 		b = caller_two
+		c : I64
 		c = pick2(5, 9)
+		d : I64
 		d = pick2(40, 2)
 		line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("inline-cost-based: ", CceText.show_int(a)), " "), CceText.show_int(b)), " "), CceText.show_int(c)), " "), CceText.show_int(d))))
 	})

@@ -27,6 +27,7 @@ s = "abcde"
 
 row : I64, I64 -> CceText
 row = |start, len| ({
+	r : CceText
 	r = CceText.substring(s, start, len)
 	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(" ", CceText.show_int(start)), ","), CceText.show_int(len)), "=["), r), "]")
 })

@@ -37,7 +37,9 @@ main! = |_args| {
 			line!(CceText.printed(SensorData.sensor_value_to_text(IntValue(42))))
 			line!(CceText.printed(SensorData.sensor_value_to_text(BoolValue(True))))
 			({
+				over : Bool
 				over = SensorData.check_alert(AboveThreshold(30), 35)
+				under : Bool
 				under = SensorData.check_alert(BelowThreshold(10), 5)
 				({
 					line!(CceText.printed((if over { "ALERT" } else { "ok" })))

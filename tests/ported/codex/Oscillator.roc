@@ -44,8 +44,11 @@ Oscillator :: [].{
 
 	osc_sine_val : I64, I64 -> I64
 	osc_sine_val = |phase, amp| ({
+		x : I64
 		x = phase
+		x3 : I64
 		x3 = I64.div_trunc_by((I64.div_trunc_by((x * x), 1000) * x), 1000)
+		x5 : I64
 		x5 = I64.div_trunc_by((I64.div_trunc_by((x3 * x), 1000) * x), 1000)
 		I64.div_trunc_by((amp * ((x - I64.div_trunc_by(x3, 6)) + I64.div_trunc_by(x5, 120))), 1000)
 	})
@@ -58,28 +61,36 @@ Oscillator :: [].{
 
 	osc_tri_val : I64, I64 -> I64
 	osc_tri_val = |phase, amp| ({
+		abs_p : I64
 		abs_p = (if (phase < 0) { (-phase) } else { phase })
 		I64.div_trunc_by((amp * (3142 - (2 * abs_p))), 3142)
 	})
 
 	osc_pulse_val : I64, I64, I64 -> I64
 	osc_pulse_val = |phase, amp, duty| ({
+		threshold : I64
 		threshold = (I64.div_trunc_by((duty * 6283), 1000) - 3142)
 		(if (phase < threshold) { amp } else { (-amp) })
 	})
 
 	osc_noise_val : I64, I64 -> I64
 	osc_noise_val = |idx, amp| ({
+		hash : I64
 		hash = Random.mix_bits(idx, 9173)
+		positive : I64
 		positive = (if (hash < 0) { (-hash) } else { hash })
+		normalized : I64
 		normalized = ((positive - (I64.div_trunc_by(positive, 2000) * 2000)) - 1000)
 		I64.div_trunc_by((amp * normalized), 1000)
 	})
 
 	osc_phase_at : I64, I64, I64 -> I64
 	osc_phase_at = |freq, sample_idx, sample_rate| ({
+		period : I64
 		period = I64.div_trunc_by((sample_rate * 1000), freq)
+		pos : I64
 		pos = I64.div_trunc_by(((sample_idx * 1000) * 6283), period)
+		wrapped : I64
 		wrapped = (pos - (I64.div_trunc_by(pos, 6283) * 6283))
 		(wrapped - 3142)
 	})
@@ -89,6 +100,7 @@ Oscillator :: [].{
 
 	osc_bank_loop : Oscillator.OscBank, I64, I64, List(I64) -> List(I64)
 	osc_bank_loop = |bank, n, i, acc| (if (i >= n) { acc } else { ({
+		sample : I64
 		sample = osc_bank_sample(bank, i)
 		osc_bank_loop(bank, n, (i + 1), List.append(acc, sample))
 	}) })
@@ -99,16 +111,22 @@ Oscillator :: [].{
 	osc_mix_loop : List(Oscillator.OscState), I64, I64, I64, I64, I64 -> I64
 	osc_mix_loop = |oscs, sr, idx, i, n, acc| (if (i >= n) { acc } else { ({
 		osc = (List.get(oscs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
+		phase : I64
 		phase = osc_phase_at(osc.osc_freq, idx, sr)
+		val : I64
 		val = osc_eval(osc, phase, idx)
 		osc_mix_loop(oscs, sr, idx, (i + 1), n, (acc + val))
 	}) })
 
 	osc_fm : I64, I64, I64, I64, I64, I64 -> I64
 	osc_fm = |carrier_freq, mod_freq, mod_depth, amp, sample_idx, sr| ({
+		mod_phase : I64
 		mod_phase = osc_phase_at(mod_freq, sample_idx, sr)
+		mod_val : I64
 		mod_val = osc_sine_val(mod_phase, mod_depth)
+		inst_freq : I64
 		inst_freq = (carrier_freq + mod_val)
+		car_phase : I64
 		car_phase = osc_phase_at(inst_freq, sample_idx, sr)
 		osc_sine_val(car_phase, amp)
 	})
@@ -118,6 +136,7 @@ Oscillator :: [].{
 
 	osc_fm_loop : I64, I64, I64, I64, I64, I64, I64, List(I64) -> List(I64)
 	osc_fm_loop = |car, mod, depth, amp, sr, n, i, acc| (if (i >= n) { acc } else { ({
+		val : I64
 		val = osc_fm(car, mod, depth, amp, i, sr)
 		osc_fm_loop(car, mod, depth, amp, sr, n, (i + 1), List.append(acc, val))
 	}) })
@@ -127,6 +146,7 @@ Oscillator :: [].{
 
 	osc_ring_loop : List(I64), List(I64), I64, I64, List(I64) -> List(I64)
 	osc_ring_loop = |a, b, i, n, acc| (if (i >= n) { acc } else { ({
+		val : I64
 		val = I64.div_trunc_by(((List.get(a, I64.to_u64_wrap(i)) ?? crash("list-at out of range")) * (List.get(b, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))), 1000)
 		osc_ring_loop(a, b, (i + 1), n, List.append(acc, val))
 	}) })
@@ -139,7 +159,9 @@ Oscillator :: [].{
 
 	osc_peak_loop : List(I64), I64, I64, I64 -> I64
 	osc_peak_loop = |samples, i, n, best| (if (i >= n) { best } else { ({
+		v : I64
 		v = (List.get(samples, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
+		abs_v : I64
 		abs_v = (if (v < 0) { (-v) } else { v })
 		osc_peak_loop(samples, (i + 1), n, (if (abs_v > best) { abs_v } else { best }))
 	}) })

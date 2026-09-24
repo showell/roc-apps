@@ -13,6 +13,7 @@ Pipeline :: [].{
 
 	pipe_filter_loop : (I64 -> Bool), List(I64), I64, I64, List(I64) -> List(I64)
 	pipe_filter_loop = |pred, xs, i, n, acc| (if (i >= n) { acc } else { ({
+		v : I64
 		v = (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 		(if pred(v) { pipe_filter_loop(pred, xs, (i + 1), n, List.append(acc, v)) } else { pipe_filter_loop(pred, xs, (i + 1), n, acc) })
 	}) })
@@ -40,6 +41,7 @@ Pipeline :: [].{
 
 	pipe_tw_loop : (I64 -> Bool), List(I64), I64, I64, List(I64) -> List(I64)
 	pipe_tw_loop = |pred, xs, i, n, acc| (if (i >= n) { acc } else { ({
+		v : I64
 		v = (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 		(if pred(v) { pipe_tw_loop(pred, xs, (i + 1), n, List.append(acc, v)) } else { acc })
 	}) })
@@ -58,7 +60,9 @@ Pipeline :: [].{
 
 	pipe_partition : (I64 -> Bool), List(I64) -> List(I64)
 	pipe_partition = |pred, xs| ({
+		yes : List(I64)
 		yes = pipe_filter(pred, xs)
+		no : List(I64)
 		no = pipe_filter(({
 			dev__1 = pred
 			|dev__2| lam_0(dev__1, dev__2)
@@ -68,12 +72,14 @@ Pipeline :: [].{
 
 	pipe_unique : List(I64) -> List(I64)
 	pipe_unique = |xs| ({
+		sorted : List(I64)
 		sorted = pipe_sort(xs)
 		pipe_dedup_adjacent(sorted, 0, U64.to_i64_wrap(List.len(sorted)), [])
 	})
 
 	pipe_dedup_adjacent : List(I64), I64, I64, List(I64) -> List(I64)
 	pipe_dedup_adjacent = |xs, i, n, acc| (if (i >= n) { acc } else { ({
+		v : I64
 		v = (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 		(if (i > 0) { (if ((List.get(xs, I64.to_u64_wrap((i - 1))) ?? crash("list-at out of range")) == v) { pipe_dedup_adjacent(xs, (i + 1), n, acc) } else { pipe_dedup_adjacent(xs, (i + 1), n, List.append(acc, v)) }) } else { pipe_dedup_adjacent(xs, (i + 1), n, List.append(acc, v)) })
 	}) })
@@ -89,16 +95,21 @@ Pipeline :: [].{
 
 	pipe_scan_loop : (I64, I64 -> I64), List(I64), I64, I64, I64, List(I64) -> List(I64)
 	pipe_scan_loop = |f, xs, acc, i, n, result| (if (i >= n) { result } else { ({
+		new_acc : I64
 		new_acc = f(acc, (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))
 		pipe_scan_loop(f, xs, new_acc, (i + 1), n, List.append(result, new_acc))
 	}) })
 
 	pipe_sort : List(I64) -> List(I64)
 	pipe_sort = |xs| ({
+		n : I64
 		n = U64.to_i64_wrap(List.len(xs))
 		(if (n <= 1) { xs } else { ({
+			mid : I64
 			mid = I64.div_trunc_by(n, 2)
+			left : List(I64)
 			left = pipe_sort(pipe_take(mid, xs))
+			right : List(I64)
 			right = pipe_sort(pipe_drop(mid, xs))
 			pipe_merge(left, right)
 		}) })
@@ -110,7 +121,9 @@ Pipeline :: [].{
 
 	pipe_merge_acc : List(I64), List(I64), List(I64) -> List(I64)
 	pipe_merge_acc = |left, right, acc| (if (U64.to_i64_wrap(List.len(left)) == 0) { List.concat(acc, right) } else { (if (U64.to_i64_wrap(List.len(right)) == 0) { List.concat(acc, left) } else { ({
+		l : I64
 		l = (List.get(left, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))
+		r : I64
 		r = (List.get(right, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))
 		(if (l <= r) { pipe_merge_acc(pipe_drop(1, left), right, List.append(acc, l)) } else { pipe_merge_acc(left, pipe_drop(1, right), List.append(acc, r)) })
 	}) }) })

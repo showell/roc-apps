@@ -95,12 +95,16 @@ main! = |_args| {
 	line!(CceText.printed(""))
 	line!(CceText.printed("=== Array-List Operations ==="))
 	({
+		xs : List(I64)
 		xs = [10, 20, 30]
+		ys : List(I64)
 		ys = (List.set(xs, I64.to_u64_wrap(1), 99) ?? crash("list-set-at past the end"))
 		({
 			line!(CceText.printed(check("set-at", CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.show_int((List.get(ys, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))), "/"), CceText.show_int((List.get(ys, I64.to_u64_wrap(1)) ?? crash("list-at out of range")))), "/"), CceText.show_int((List.get(ys, I64.to_u64_wrap(2)) ?? crash("list-at out of range")))), "10/99/30")))
 			({
+				xs2 : List(I64)
 				xs2 = [1, 2, 4, 5]
+				ys2 : List(I64)
 				ys2 = (List.insert(xs2, I64.to_u64_wrap(2), 3) ?? crash("list-insert-at past the end"))
 				({
 					line!(CceText.printed(check("insert-at", CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.show_int((List.get(ys2, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))), "/"), CceText.show_int((List.get(ys2, I64.to_u64_wrap(1)) ?? crash("list-at out of range")))), "/"), CceText.show_int((List.get(ys2, I64.to_u64_wrap(2)) ?? crash("list-at out of range")))), "/"), CceText.show_int((List.get(ys2, I64.to_u64_wrap(3)) ?? crash("list-at out of range")))), "/"), CceText.show_int((List.get(ys2, I64.to_u64_wrap(4)) ?? crash("list-at out of range")))), "1/2/3/4/5")))

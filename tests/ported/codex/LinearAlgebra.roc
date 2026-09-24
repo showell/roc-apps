@@ -26,7 +26,9 @@ LinearAlgebra :: [].{
 
 	mat_ident_data : I64, I64, I64, List(I64) -> List(I64)
 	mat_ident_data = |n, i, total, acc| (if (i >= total) { acc } else { ({
+		row : I64
 		row = I64.div_trunc_by(i, n)
+		col : I64
 		col = (i - (row * n))
 		mat_ident_data(n, (i + 1), total, List.append(acc, (if (row == col) { 1000 } else { 0 })))
 	}) })
@@ -45,6 +47,7 @@ LinearAlgebra :: [].{
 
 	mat_zip_op : List(I64), List(I64), I64, I64, List(I64), I64 -> List(I64)
 	mat_zip_op = |a, b, i, len, acc, is_add| (if (i >= len) { acc } else { ({
+		val : I64
 		val = (if (is_add == 1) { ((List.get(a, I64.to_u64_wrap(i)) ?? crash("list-at out of range")) + (List.get(b, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))) } else { ((List.get(a, I64.to_u64_wrap(i)) ?? crash("list-at out of range")) - (List.get(b, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))) })
 		mat_zip_op(a, b, (i + 1), len, List.append(acc, val), is_add)
 	}) })
@@ -60,14 +63,18 @@ LinearAlgebra :: [].{
 
 	mat_mul_data : LinearAlgebra.Matrix, LinearAlgebra.Matrix, I64, I64, List(I64) -> List(I64)
 	mat_mul_data = |a, b, i, total, acc| (if (i >= total) { acc } else { ({
+		row : I64
 		row = I64.div_trunc_by(i, b.mat_cols)
+		col : I64
 		col = (i - (row * b.mat_cols))
+		val : I64
 		val = mat_dot_row_col(a, b, row, col, 0, a.mat_cols, 0)
 		mat_mul_data(a, b, (i + 1), total, List.append(acc, val))
 	}) })
 
 	mat_dot_row_col : LinearAlgebra.Matrix, LinearAlgebra.Matrix, I64, I64, I64, I64, I64 -> I64
 	mat_dot_row_col = |a, b, row, col, k, n, acc| (if (k >= n) { acc } else { ({
+		val : I64
 		val = I64.div_trunc_by((mat_get(a, row, k) * mat_get(b, k, col)), 1000)
 		mat_dot_row_col(a, b, row, col, (k + 1), n, (acc + val))
 	}) })
@@ -77,7 +84,9 @@ LinearAlgebra :: [].{
 
 	mat_trans_data : LinearAlgebra.Matrix, I64, I64, List(I64) -> List(I64)
 	mat_trans_data = |m, i, total, acc| (if (i >= total) { acc } else { ({
+		new_row : I64
 		new_row = I64.div_trunc_by(i, m.mat_rows)
+		new_col : I64
 		new_col = (i - (new_row * m.mat_rows))
 		mat_trans_data(m, (i + 1), total, List.append(acc, mat_get(m, new_col, new_row)))
 	}) })
@@ -87,12 +96,14 @@ LinearAlgebra :: [].{
 
 	mat_det_expansion : LinearAlgebra.Matrix, I64, I64, I64, I64 -> I64
 	mat_det_expansion = |m, col, n, acc, sign| (if (col >= n) { acc } else { ({
+		cofactor : I64
 		cofactor = I64.div_trunc_by((mat_get(m, 0, col) * mat_det(mat_minor(m, 0, col))), 1000)
 		mat_det_expansion(m, (col + 1), n, (acc + (sign * cofactor)), (0 - sign))
 	}) })
 
 	mat_minor : LinearAlgebra.Matrix, I64, I64 -> LinearAlgebra.Matrix
 	mat_minor = |m, skip_row, skip_col| ({
+		n : I64
 		n = (m.mat_rows - 1)
 		LinearAlgebra.Matrix.{ mat_rows: n, mat_cols: n, mat_data: mat_minor_data(m, skip_row, skip_col, 0, 0, m.mat_rows, m.mat_cols, []) }
 	})
@@ -102,6 +113,7 @@ LinearAlgebra :: [].{
 
 	mat_solve : LinearAlgebra.Matrix, List(I64) -> List(I64)
 	mat_solve = |a, b| ({
+		n : I64
 		n = a.mat_rows
 		aug = mat_augment(a, b)
 		reduced = mat_forward_elim(aug, n, 0)
@@ -110,12 +122,14 @@ LinearAlgebra :: [].{
 
 	mat_augment : LinearAlgebra.Matrix, List(I64) -> LinearAlgebra.Matrix
 	mat_augment = |m, b| ({
+		cols : I64
 		cols = (m.mat_cols + 1)
 		LinearAlgebra.Matrix.{ mat_rows: m.mat_rows, mat_cols: cols, mat_data: mat_aug_data(m, b, 0, m.mat_rows, []) }
 	})
 
 	mat_aug_data : LinearAlgebra.Matrix, List(I64), I64, I64, List(I64) -> List(I64)
 	mat_aug_data = |m, b, row, n, acc| (if (row >= n) { acc } else { ({
+		row_data : List(I64)
 		row_data = mat_copy_row(m, row, 0, m.mat_cols, [])
 		mat_aug_data(m, b, (row + 1), n, List.concat(List.concat(acc, row_data), [(List.get(b, I64.to_u64_wrap(row)) ?? crash("list-at out of range"))]))
 	}) })
@@ -131,6 +145,7 @@ LinearAlgebra :: [].{
 
 	mat_elim_column : LinearAlgebra.Matrix, I64, I64, I64 -> LinearAlgebra.Matrix
 	mat_elim_column = |m, n, pivot, row| (if (row >= n) { m } else { ({
+		factor : I64
 		factor = I64.div_trunc_by((mat_get(m, row, pivot) * 1000), mat_get(m, pivot, pivot))
 		m2 = mat_row_reduce(m, row, pivot, factor, m.mat_cols, 0)
 		mat_elim_column(m2, n, pivot, (row + 1))
@@ -138,6 +153,7 @@ LinearAlgebra :: [].{
 
 	mat_row_reduce : LinearAlgebra.Matrix, I64, I64, I64, I64, I64 -> LinearAlgebra.Matrix
 	mat_row_reduce = |m, row, pivot, factor, cols, col| (if (col >= cols) { m } else { ({
+		val : I64
 		val = (mat_get(m, row, col) - I64.div_trunc_by((factor * mat_get(m, pivot, col)), 1000))
 		mat_row_reduce(mat_set(m, row, col, val), row, pivot, factor, cols, (col + 1))
 	}) })
@@ -147,7 +163,9 @@ LinearAlgebra :: [].{
 
 	mat_back_loop : LinearAlgebra.Matrix, I64, I64, List(I64) -> List(I64)
 	mat_back_loop = |m, n, row, x| (if (row < 0) { x } else { ({
+		sum : I64
 		sum = mat_back_sum(m, x, row, (row + 1), n, 0)
+		val : I64
 		val = I64.div_trunc_by(((mat_get(m, row, n) - sum) * 1000), mat_get(m, row, row))
 		mat_back_loop(m, n, (row - 1), (List.set(x, I64.to_u64_wrap(row), val) ?? crash("list-set-at past the end")))
 	}) })

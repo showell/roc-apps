@@ -62,6 +62,7 @@ test_pop = ({
 test_to_list : CceText
 test_to_list = ({
 	b = CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_push_back(CircularBuffer.circbuf_new(5), 1), 2), 3)
+	lst : List(I64)
 	lst = CircularBuffer.circbuf_to_list(b)
 	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("list=", CceText.show_int((List.get(lst, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))), ","), CceText.show_int((List.get(lst, I64.to_u64_wrap(1)) ?? crash("list-at out of range")))), ","), CceText.show_int((List.get(lst, I64.to_u64_wrap(2)) ?? crash("list-at out of range"))))
 })

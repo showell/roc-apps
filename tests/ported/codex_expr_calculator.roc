@@ -48,6 +48,7 @@ skip_ws = |input, pos| (if (pos >= CceText.len(input)) { pos } else { (if CceCha
 
 collect_digits : CceText, I64, I64, I64 -> I64
 collect_digits = |input, pos, len, acc| (if (pos >= len) { acc } else { (if CceChar.is_digit(CceText.char_at(input, pos)) { ({
+	d : I64
 	d = (CceChar.code(CceText.char_at(input, pos)) - 3)
 	collect_digits(input, (pos + 1), len, ((acc * 10) + d))
 }) } else { acc }) })
@@ -57,15 +58,20 @@ digit_count = |input, pos, len| (if (pos >= len) { 0 } else { (if CceChar.is_dig
 
 parse_atom : CceText, I64 -> ParseResult
 parse_atom = |input, start| ({
+	pos : I64
 	pos = skip_ws(input, start)
+	len : I64
 	len = CceText.len(input)
 	(if (pos >= len) { ParseResult.{ expr: Lit(0), pos: pos } } else { (if (CceText.char_to_text(CceText.char_at(input, pos)) == "(") { ({
 		inner = parse_additive(input, (pos + 1))
+		after : I64
 		after = skip_ws(input, inner.pos)
 		(if (after < len) { ParseResult.{ expr: inner.expr, pos: (after + 1) } } else { ParseResult.{ expr: inner.expr, pos: after } })
 	}) } else { ({
+		digits : I64
 		digits = digit_count(input, pos, len)
 		(if (digits > 0) { ({
+			value : I64
 			value = collect_digits(input, pos, len, 0)
 			ParseResult.{ expr: Lit(value), pos: (pos + digits) }
 		}) } else { ParseResult.{ expr: Lit(0), pos: pos } })
@@ -80,7 +86,9 @@ parse_multiplicative = |input, start| ({
 
 continue_multiplicative : CceText, ParseResult -> ParseResult
 continue_multiplicative = |input, current| ({
+	pos : I64
 	pos = skip_ws(input, current.pos)
+	len : I64
 	len = CceText.len(input)
 	(if (pos >= len) { current } else { (if (CceText.char_to_text(CceText.char_at(input, pos)) == "*") { ({
 		right = parse_atom(input, (pos + 1))
@@ -99,7 +107,9 @@ parse_additive = |input, start| ({
 
 continue_additive : CceText, ParseResult -> ParseResult
 continue_additive = |input, current| ({
+	pos : I64
 	pos = skip_ws(input, current.pos)
+	len : I64
 	len = CceText.len(input)
 	(if (pos >= len) { current } else { (if (CceText.char_to_text(CceText.char_at(input, pos)) == "+") { ({
 		right = parse_multiplicative(input, (pos + 1))
@@ -134,7 +144,9 @@ format = |e| (match e {
 test_expr : CceText, I64 -> CceText
 test_expr = |input, expected| ({
 	tree = parse(input)
+	result : I64
 	result = eval(tree)
+	status : CceText
 	status = (if (result == expected) { "PASS" } else { "FAIL" })
 	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(status, ": "), input), " = "), CceText.show_int(result)), " (expected "), CceText.show_int(expected)), ")  tree: "), format(tree))
 })

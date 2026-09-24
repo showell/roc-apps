@@ -58,6 +58,7 @@ Iterate :: [].{
 
 	list_zip_with_generic : (a, b -> c), List(a), List(b) -> List(c)
 	list_zip_with_generic = |f, xs, ys| ({
+		len : I64
 		len = (if (U64.to_i64_wrap(List.len(xs)) < U64.to_i64_wrap(List.len(ys))) { U64.to_i64_wrap(List.len(xs)) } else { U64.to_i64_wrap(List.len(ys)) })
 		list_zip_loop(f, xs, ys, 0, len, [])
 	})

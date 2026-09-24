@@ -32,8 +32,11 @@ no_ints = []
 
 main! = |_args| {
 	({
+		empty : List(I64)
 		empty = ListUtils.list_tail(no_ints)
+		three : List(I64)
 		three = ListUtils.list_tail([1, 2, 3])
+		one : List(I64)
 		one = ListUtils.list_tail([7])
 		({
 			line!(CceText.printed(CceText.concat("empty-len ", CceText.show_int(U64.to_i64_wrap(List.len(empty))))))

@@ -64,6 +64,7 @@ check_read_var = flag(bytes_eq(sample_read, [50, 1, 0, 0, 5, 0, 0, 14, 0, 0, 4, 
 
 check_stacked : I64
 check_stacked = ({
+	expect_ : List(I64)
 	expect_ = [3, 0, 0, 31, 2, 240, 128, 50, 1, 0, 0, 5, 0, 0, 14, 0, 0, 4, 1, 18, 10, 16, 2, 0, 4, 0, 1, 132, 0, 0, 0]
 	flag(bytes_eq(S7comm.s7_tpkt(List.concat(S7comm.s7_cotp_dt, sample_read)), expect_))
 })

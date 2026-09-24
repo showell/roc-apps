@@ -30,6 +30,7 @@ Tensor :: [].{
 
 	tensor_mm_build : Tensor.Tensor, Tensor.Tensor, I64, I64, List(I64) -> Tensor.Tensor
 	tensor_mm_build = |a, b, r, c, acc| (if (r >= a.rows) { Tensor.Tensor.{ data: acc, rows: a.rows, cols: b.cols } } else { (if (c >= b.cols) { tensor_mm_build(a, b, (r + 1), 0, acc) } else { ({
+		val : I64
 		val = tensor_mm_dot(a, b, r, c, 0, 0)
 		tensor_mm_build(a, b, r, (c + 1), List.append(acc, val))
 	}) }) })
@@ -78,6 +79,7 @@ Tensor :: [].{
 
 	tensor_max_loop : List(I64), I64, I64, I64 -> I64
 	tensor_max_loop = |data, i, len, best| (if (i >= len) { best } else { ({
+		v : I64
 		v = (List.get(data, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 		tensor_max_loop(data, (i + 1), len, (if (v > best) { v } else { best }))
 	}) })
@@ -87,6 +89,7 @@ Tensor :: [].{
 
 	tensor_argmax_loop : List(I64), I64, I64, I64, I64 -> I64
 	tensor_argmax_loop = |data, i, len, best_idx, best_val| (if (i >= len) { best_idx } else { ({
+		v : I64
 		v = (List.get(data, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 		(if (v > best_val) { tensor_argmax_loop(data, (i + 1), len, i, v) } else { tensor_argmax_loop(data, (i + 1), len, best_idx, best_val) })
 	}) })

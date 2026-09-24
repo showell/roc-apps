@@ -32,7 +32,9 @@ make_literal = |n| Reading.{ level: n, label: "lit" }
 make_revised : Reading, I64 -> Reading
 make_revised = |r, n| ({
 	rev = r
+	rv0 : I64
 	rv0 = n
+	rv1 : CceText
 	rv1 = "rev"
 	{ ..{ ..rev, level: rv0 }, label: rv1 }
 })
@@ -40,7 +42,9 @@ make_revised = |r, n| ({
 make_mixed : Reading, I64 -> Reading
 make_mixed = |r, n| ({
 	rev = r
+	rv0 : CceText
 	rv0 = "mixed"
+	rv1 : I64
 	rv1 = n
 	{ ..{ ..rev, label: rv0 }, level: rv1 }
 })

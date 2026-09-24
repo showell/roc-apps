@@ -97,7 +97,9 @@ tr_tol = F64.from_bits(4427486594234968593)
 
 pythagoras : F64 -> CceText
 pythagoras = |x| ({
+	s : F64
 	s = DeviceMath.real_sin(x)
+	c : F64
 	c = DeviceMath.real_cos(x)
 	near(((s * s) + (c * c)), 1.0, tr_tol)
 })

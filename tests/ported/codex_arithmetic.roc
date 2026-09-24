@@ -72,6 +72,7 @@ main! = |_args| {
 	line!(CceText.printed(CceText.concat("absorb: ", CceText.show_int(add5(7)))))
 	line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("match: ", classify(42)), "/"), classify(1)), "/"), classify(99))))
 	({
+		large_val : I64
 		large_val = 150
 		({
 			line!(CceText.printed(CceText.concat("clamping: ", CceText.show_int(Pct.{ p: I64.min(I64.max(large_val, 0), 100) }.p))))
@@ -81,6 +82,7 @@ main! = |_args| {
 			line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat("concat-text: ", "hello"), " "), "world")))
 			line!(CceText.printed(CceText.concat("concat-bool: ", (if (True and False) { "True" } else { "False" }))))
 			({
+				xs : List(I64)
 				xs = List.concat([1, 2], [3, 4])
 				line!(CceText.printed(CceText.concat("concat-list: ", CceText.show_int(U64.to_i64_wrap(List.len(xs))))))
 			})

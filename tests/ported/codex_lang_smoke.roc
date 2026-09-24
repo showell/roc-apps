@@ -175,9 +175,13 @@ main! = |_args| {
 	line!(CceText.printed(CceText.show_int(255)))
 	line!(CceText.printed(CceText.show_int(3735928559)))
 	({
+		chain : I64
 		chain = ({
+			a : I64
 			a = 1
+			b : I64
 			b = (a + 1)
+			c : I64
 			c = (b + a)
 			(c + b)
 		})
@@ -188,6 +192,7 @@ main! = |_args| {
 			line!(CceText.printed(area_kind(Circle(20))))
 			line!(CceText.printed(area_kind(Rect(4, 4))))
 			({
+				doubled : List(I64)
 				doubled = ListUtils.map_list(lam_0, [1, 2, 3])
 				({
 					line!(CceText.printed(CceText.show_int((List.get(doubled, I64.to_u64_wrap(1)) ?? crash("list-at out of range")))))
@@ -223,6 +228,7 @@ main! = |_args| {
 									line!(CceText.printed(CceText.show_int(Prelude.int_abs((-42)))))
 									line!(CceText.printed(CceText.substring("hello world", 0, 5)))
 									({
+										parts : List(CceText)
 										parts = CceText.split("a,b,c", ",")
 										line!(CceText.printed(CceText.show_int(U64.to_i64_wrap(List.len(parts)))))
 									})

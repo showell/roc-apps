@@ -5,6 +5,7 @@ MusicTheory :: [].{
 
 	note_freq : I64 -> I64
 	note_freq = |midi_note| ({
+		semitones : I64
 		semitones = (midi_note - 69)
 		I64.div_trunc_by((440 * mt_pow2_12ths(semitones)), 1000)
 	})
@@ -20,7 +21,9 @@ MusicTheory :: [].{
 
 	mt_note_name : I64 -> CceText
 	mt_note_name = |midi| ({
+		pc : I64
 		pc = (midi - (I64.div_trunc_by(midi, 12) * 12))
+		octave : I64
 		octave = (I64.div_trunc_by(midi, 12) - 1)
 		CceText.concat(mt_pitch_class(pc), CceText.show_int(octave))
 	})
@@ -99,6 +102,7 @@ MusicTheory :: [].{
 
 	mt_format_notes : List(I64), I64, I64, CceText -> CceText
 	mt_format_notes = |notes, i, n, acc| (if (i >= n) { acc } else { ({
+		sep : CceText
 		sep = (if (i == 0) { "" } else { "-" })
 		mt_format_notes(notes, (i + 1), n, CceText.concat(CceText.concat(acc, sep), mt_note_name((List.get(notes, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))
 	}) })

@@ -42,12 +42,19 @@ lam_3 = |x| (x >= 30)
 
 main! = |_args| {
 	({
+		xs : List(I64)
 		xs = [10, 20, 30, 40, 50]
+		doubled : List(I64)
 		doubled = Iterate.list_map_generic(lam_0, xs)
+		evens : List(I64)
 		evens = Iterate.list_filter_generic(lam_1, xs)
+		idx : I64
 		idx = Iterate.list_find_index(lam_2, xs)
+		count : I64
 		count = Iterate.list_count_where(lam_3, xs)
+		first3 : List(I64)
 		first3 = Iterate.list_take_generic(xs, 3)
+		last2 : List(I64)
 		last2 = Iterate.list_drop_generic(xs, 3)
 		({
 			line!(CceText.printed(CceText.show_int(U64.to_i64_wrap(List.len(doubled)))))

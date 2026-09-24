@@ -40,6 +40,7 @@ Melsec :: [].{
 
 	melsec_request : I64, I64, List(I64) -> List(I64)
 	melsec_request = |command, subcommand, payload| ({
+		body : List(I64)
 		body = List.concat(List.concat(List.concat(melsec_u16_le(16), melsec_u16_le(command)), melsec_u16_le(subcommand)), payload)
 		List.concat(List.concat(List.concat(List.concat([80, 0, 0, 255], melsec_u16_le(1023)), [0]), melsec_u16_le(U64.to_i64_wrap(List.len(body)))), body)
 	})

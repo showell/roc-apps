@@ -49,14 +49,18 @@ threat_to_integer = |t| (match t {
 
 scale_adc_to_celsius : I64 -> I64
 scale_adc_to_celsius = |raw| ({
+	shifted : I64
 	shifted = (raw * 150)
 	I64.div_trunc_by(shifted, 4095)
 })
 
 encode_telemetry_byte : I64, I64, I64 -> I64
 encode_telemetry_byte = |channel, temp, threat| ({
+	ch : I64
 	ch = I64.bitwise_and(channel, 7)
+	t : I64
 	t = IntOps.int_clamp(0, 255, temp)
+	thr : I64
 	thr = I64.bitwise_and(threat, 7)
 	I64.bitwise_or(I64.shl_wrap(ch, I64.to_u8_wrap(5)), I64.bitwise_or(I64.shl_wrap(thr, I64.to_u8_wrap(2)), I64.bitwise_and(t, 3)))
 })
@@ -92,18 +96,28 @@ eq_ThreatLevel = |ex, ey| (match ex {
 
 main! = |_args| {
 	({
+		raw1 : I64
 		raw1 = 2500
+		raw2 : I64
 		raw2 = 400
+		raw3 : I64
 		raw3 = 3800
 		t1 = classify_threat(raw1)
 		t2 = classify_threat(raw2)
 		t3 = classify_threat(raw3)
+		temp1 : I64
 		temp1 = scale_adc_to_celsius(raw1)
+		temp2 : I64
 		temp2 = scale_adc_to_celsius(raw2)
+		temp3 : I64
 		temp3 = scale_adc_to_celsius(raw3)
+		byte1 : I64
 		byte1 = encode_telemetry_byte(0, temp1, threat_to_integer(t1))
+		byte2 : I64
 		byte2 = encode_telemetry_byte(1, temp2, threat_to_integer(t2))
+		byte3 : I64
 		byte3 = encode_telemetry_byte(2, temp3, threat_to_integer(t3))
+		ck : I64
 		ck = checksum_byte(checksum_byte(byte1, byte2), byte3)
 		({
 			line!(CceText.printed(CceText.concat("threat-2500: ", CceText.show_int(threat_to_integer(t1)))))

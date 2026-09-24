@@ -37,6 +37,7 @@ show_bool = |b| (if b { "true" } else { "false" })
 
 cbor_rt_uint : I64 -> CceText
 cbor_rt_uint = |n| ({
+	encoded : List(I64)
 	encoded = Cbor.cbor_encode(CborUint(n))
 	(match Cbor.cbor_decode(encoded) {
 		Just(v) => (match v {
@@ -49,6 +50,7 @@ cbor_rt_uint = |n| ({
 
 cbor_rt_text : CceText -> CceText
 cbor_rt_text = |s| ({
+	encoded : List(I64)
 	encoded = Cbor.cbor_encode(CborText(s))
 	(match Cbor.cbor_decode(encoded) {
 		Just(v) => (match v {
@@ -61,6 +63,7 @@ cbor_rt_text = |s| ({
 
 cbor_rt_bool : Bool -> CceText
 cbor_rt_bool = |b| ({
+	encoded : List(I64)
 	encoded = Cbor.cbor_encode(CborBool(b))
 	(match Cbor.cbor_decode(encoded) {
 		Just(v) => (match v {
@@ -73,6 +76,7 @@ cbor_rt_bool = |b| ({
 
 cbor_rt_array : CceText
 cbor_rt_array = ({
+	arr : List(I64)
 	arr = Cbor.cbor_encode(CborArray([CborUint(1), CborUint(2), CborUint(3)]))
 	(match Cbor.cbor_decode(arr) {
 		Just(v) => (match v {
@@ -85,6 +89,7 @@ cbor_rt_array = ({
 
 cbor_rt_null : CceText
 cbor_rt_null = ({
+	null_enc : List(I64)
 	null_enc = Cbor.cbor_encode(CborNull)
 	(match Cbor.cbor_decode(null_enc) {
 		Just(v) => (match v {

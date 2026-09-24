@@ -44,18 +44,21 @@ cst_fill = |s, i, n| (if (i >= n) { s } else { cst_fill(CountMinSketch.cms_add(s
 
 cst_exact : CountMinSketch.CmSketch, I64, I64, I64 -> I64
 cst_exact = |s, i, n, acc| (if (i >= n) { acc } else { ({
+	e : I64
 	e = CountMinSketch.cms_count(s, cst_key(i))
 	cst_exact(s, (i + 1), n, (acc + (if (e == 1) { 1 } else { 0 })))
 }) })
 
 cst_worst : CountMinSketch.CmSketch, I64, I64, I64 -> I64
 cst_worst = |s, i, n, acc| (if (i >= n) { acc } else { ({
+	e : I64
 	e = CountMinSketch.cms_count(s, cst_key(i))
 	cst_worst(s, (i + 1), n, (if (e > acc) { e } else { acc }))
 }) })
 
 cst_occupied : CountMinSketch.CmSketch, I64, I64, I64, I64 -> I64
 cst_occupied = |s, row, col, w, acc| (if (col >= w) { acc } else { ({
+	v : I64
 	v = (List.get(s.cms_table, I64.to_u64_wrap(((row * w) + col))) ?? crash("list-at out of range"))
 	cst_occupied(s, row, (col + 1), w, (acc + (if (v > 0) { 1 } else { 0 })))
 }) })

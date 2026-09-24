@@ -24,6 +24,7 @@ line! = |s| echo!(Str.concat(s, "\n"))
 
 reads_in_body : I64 -> I64
 reads_in_body = |_n| ({
+	xs : List(I64)
 	xs = [10, 20, 30]
 	_unused = xs
 	(((List.get(xs, I64.to_u64_wrap(0)) ?? crash("list-at out of range")) + (List.get(xs, I64.to_u64_wrap(1)) ?? crash("list-at out of range"))) + (List.get(xs, I64.to_u64_wrap(2)) ?? crash("list-at out of range")))
@@ -31,7 +32,9 @@ reads_in_body = |_n| ({
 
 reads_in_sibling : I64 -> I64
 reads_in_sibling = |_n| ({
+	xs : List(I64)
 	xs = [40, 50]
+	a : List(I64)
 	a = xs
 	_unused = xs
 	(List.get(a, I64.to_u64_wrap(1)) ?? crash("list-at out of range"))

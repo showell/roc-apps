@@ -24,8 +24,11 @@ line! = |s| echo!(Str.concat(s, "\n"))
 
 report : I64 -> CceText
 report = |_x| ({
+	base : List(I64)
 	base = [7]
+	copied : List(I64)
 	copied = ListUtils.map_list(lam_0, base)
+	grown : List(I64)
 	grown = List.append(copied, 9)
 	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("base-len=", CceText.show_int(U64.to_i64_wrap(List.len(base)))), " grown-len="), CceText.show_int(U64.to_i64_wrap(List.len(grown)))), " grown-head="), CceText.show_int((List.get(grown, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))))
 })

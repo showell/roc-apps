@@ -1002,24 +1002,43 @@ bodyTemp_to_CelsiusBody = |fv| I64.div_trunc_by(fv, 1000)
 
 main! = |_args| {
 	({
+		t1 : Units.Duration
 		t1 = second(2)
+		t2 : Units.Duration
 		t2 = millisecond(500)
+		dur : Units.Duration
 		dur = (t1 + t2)
+		km : Units.Length
 		km = kilometer(42)
+		mi : Units.Length
 		mi = mile(26)
+		total_len : Units.Length
 		total_len = (km + mi)
+		astro : Units.AstroDistance
 		astro = aU(1)
+		ly : Units.AstroDistance
 		ly = lightYear(4)
+		star_dist : Units.AstroDistance
 		star_dist = (astro + ly)
+		data : Units.DataSize
 		data = gigabyte(2)
+		boiling : Units.Celsius
 		boiling = 100
+		bk : Units.Kelvin
 		bk = Units.celsius_to_Kelvin(boiling)
+		bf : Units.Fahrenheit
 		bf = Units.celsius_to_Fahrenheit(boiling)
+		fc : Units.Celsius
 		fc = Units.fahrenheit_to_Celsius(32)
+		angle : Units.Angle
 		angle = degree(90)
+		speed : Units.Speed
 		speed = kmPerHour(100)
+		energy : Units.Energy
 		energy = kilocalorie(2000)
+		force_1 : Units.Force
 		force_1 = newton(9)
+		power : Units.Power
 		power = horsepower(1)
 		({
 			line!(CceText.printed(CceText.concat(CceText.concat("dur: ", CceText.show_int(duration_to_Millisecond(dur))), "ms")))

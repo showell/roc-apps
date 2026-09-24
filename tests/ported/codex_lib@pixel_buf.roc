@@ -37,6 +37,7 @@ row! = |mem, gb, y| row_loop!(mem, gb, y, 0, "")
 row_loop! : Mem.Mem, PixelBuf.GopBuf, I64, I64, CceText => (Mem.Mem, CceText)
 row_loop! = |mem, gb, y, x, acc| (if (x >= 8) { (mem, acc) } else { ({
 	(mem1, v) = PixelBuf.gop_buf_get!(mem, gb, x, y)
+	c : CceText
 	c = (if (v == 0) { "." } else { (if (v == 1) { "1" } else { (if (v == 2) { "2" } else { "#" }) }) })
 	row_loop!(mem1, gb, y, (x + 1), CceText.concat(acc, c))
 }) })
@@ -102,10 +103,13 @@ line_clip_read! = |mem| ({
 	(mem1, gb) = PixelBuf.gop_buf_new!(mem, 8, 4, 0)
 	(mem2, _d) = PixelBuf.gop_buf_set!(mem1, gb, 7, 0, 3)
 	(mem3, mem__1) = PixelBuf.gop_buf_get!(mem2, gb, (-1), 1)
+	a : CceText
 	a = CceText.show_int(mem__1)
 	(mem4, mem__2) = PixelBuf.gop_buf_get!(mem3, gb, 8, 0)
+	b : CceText
 	b = CceText.show_int(mem__2)
 	(mem5, mem__3) = PixelBuf.gop_buf_get!(mem4, gb, 7, 0)
+	c : CceText
 	c = CceText.show_int(mem__3)
 	(mem5, CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("clip read: left=", a), " right="), b), " inside="), c))
 })

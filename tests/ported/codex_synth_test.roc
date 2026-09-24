@@ -31,42 +31,59 @@ line! = |s| echo!(Str.concat(s, "\n"))
 
 test_oscillators : CceText
 test_oscillators = ({
+	s1 : I64
 	s1 = Synth.osc_sine(0, 1000)
+	s2 : I64
 	s2 = Synth.osc_sine(1571, 1000)
+	sq : I64
 	sq = Synth.osc_square(500, 1000)
+	sq2 : I64
 	sq2 = Synth.osc_square((0 - 500), 1000)
+	sw : I64
 	sw = Synth.osc_saw(0, 1000)
+	tr : I64
 	tr = Synth.osc_triangle(0, 1000)
 	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("sine0=", CceText.show_int(s1)), " sine90="), CceText.show_int(s2)), " sq+="), CceText.show_int(sq)), " sq-="), CceText.show_int(sq2)), " saw0="), CceText.show_int(sw)), " tri0="), CceText.show_int(tr))
 })
 
 test_generate : CceText
 test_generate = ({
+	samples : List(I64)
 	samples = Synth.synth_generate(WaveSine, 440, 1000, 8000, 16)
+	peak : I64
 	peak = Synth.synth_peak(samples)
 	CceText.concat(CceText.concat(CceText.concat("count=", CceText.show_int(U64.to_i64_wrap(List.len(samples)))), " peak="), CceText.show_int(peak))
 })
 
 test_square_wave : CceText
 test_square_wave = ({
+	samples : List(I64)
 	samples = Synth.synth_generate(WaveSquare, 1000, 500, 8000, 8)
+	zc : I64
 	zc = Synth.synth_zero_crossings(samples)
 	CceText.concat(CceText.concat(CceText.concat("sq-count=", CceText.show_int(U64.to_i64_wrap(List.len(samples)))), " zc="), CceText.show_int(zc))
 })
 
 test_filter : CceText
 test_filter = ({
+	raw : List(I64)
 	raw = Synth.synth_generate(WaveSquare, 500, 1000, 4000, 16)
+	filtered : List(I64)
 	filtered = Synth.lpf_apply(200, raw)
+	raw_peak : I64
 	raw_peak = Synth.synth_peak(raw)
+	filt_peak : I64
 	filt_peak = Synth.synth_peak(filtered)
 	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("raw=", CceText.show_int(raw_peak)), " filt="), CceText.show_int(filt_peak)), " smoother="), (if (filt_peak < raw_peak) { "True" } else { "False" }))
 })
 
 test_mix : CceText
 test_mix = ({
+	a : List(I64)
 	a = Synth.synth_generate(WaveSine, 440, 1000, 8000, 8)
+	b : List(I64)
 	b = Synth.synth_generate(WaveSine, 880, 500, 8000, 8)
+	mixed : List(I64)
 	mixed = Synth.mix_signals(a, b, 700, 300)
 	CceText.concat(CceText.concat(CceText.concat("mixed=", CceText.show_int(U64.to_i64_wrap(List.len(mixed)))), " peak="), CceText.show_int(Synth.synth_peak(mixed)))
 })
@@ -74,9 +91,13 @@ test_mix = ({
 test_envelope_apply : CceText
 test_envelope_apply = ({
 	env = Envelope.adsr_new(50, 50, 700, 100)
+	raw : List(I64)
 	raw = Synth.synth_generate(WaveSine, 440, 1000, 4000, 32)
+	shaped : List(I64)
 	shaped = Synth.synth_apply_env(raw, env, 4000, 24)
+	raw_peak : I64
 	raw_peak = Synth.synth_peak(raw)
+	shaped_peak : I64
 	shaped_peak = Synth.synth_peak(shaped)
 	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("raw=", CceText.show_int(raw_peak)), " shaped="), CceText.show_int(shaped_peak)), " quieter="), (if (shaped_peak <= raw_peak) { "True" } else { "False" }))
 })
@@ -85,6 +106,7 @@ test_note : CceText
 test_note = ({
 	env = Envelope.adsr_new(10, 20, 800, 50)
 	n = Synth.note_new(440, 0, 100, WaveSine)
+	rendered : List(I64)
 	rendered = Synth.synth_render_note(n, 1000, 4000, env)
 	CceText.concat(CceText.concat(CceText.concat("note-samples=", CceText.show_int(U64.to_i64_wrap(List.len(rendered)))), " peak="), CceText.show_int(Synth.synth_peak(rendered)))
 })

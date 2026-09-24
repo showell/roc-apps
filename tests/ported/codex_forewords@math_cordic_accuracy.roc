@@ -56,14 +56,18 @@ acc_abs = |x| (if (x < 0) { (0 - x) } else { x })
 
 acc_err_at : I64 -> I64
 acc_err_at = |i| ({
+	a : I64
 	a = (List.get(acc_angles, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
+	es : I64
 	es = acc_abs((Cordic.cordic_sin(a) - (List.get(acc_true_sin, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))
+	ec : I64
 	ec = acc_abs((Cordic.cordic_cos(a) - (List.get(acc_true_cos, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))
 	(if (es > ec) { es } else { ec })
 })
 
 acc_worst : I64, I64 -> I64
 acc_worst = |i, so_far| (if (i >= U64.to_i64_wrap(List.len(acc_angles))) { so_far } else { ({
+	e : I64
 	e = acc_err_at(i)
 	acc_worst((i + 1), (if (e > so_far) { e } else { so_far }))
 }) })
@@ -73,18 +77,21 @@ acc_within = |i, n| (if (i >= U64.to_i64_wrap(List.len(acc_angles))) { n } else 
 
 acc_line : I64 -> CceText
 acc_line = |i| ({
+	a : I64
 	a = (List.get(acc_angles, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("  ", CceText.show_int(a)), " sin "), CceText.show_int(Cordic.cordic_sin(a))), " true "), CceText.show_int((List.get(acc_true_sin, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))), "   cos "), CceText.show_int(Cordic.cordic_cos(a))), " true "), CceText.show_int((List.get(acc_true_cos, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))), "   err "), CceText.show_int(acc_err_at(i)))
 })
 
 acc_report : CceText
 acc_report = ({
+	w : I64
 	w = acc_worst(0, 0)
 	CceText.concat(CceText.concat("worst absolute error over the sample: ", CceText.show_int(w)), " of 1000 full scale")
 })
 
 acc_count : CceText
 acc_count = ({
+	n : I64
 	n = acc_within(0, 0)
 	CceText.concat(CceText.concat(CceText.concat("within 6 of 1000: ", CceText.show_int(n)), " of "), CceText.show_int(U64.to_i64_wrap(List.len(acc_angles))))
 })

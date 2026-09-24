@@ -31,18 +31,21 @@ line! = |s| echo!(Str.concat(s, "\n"))
 
 sc_fold : I64 -> I64
 sc_fold = |_n| ({
+	x : I64
 	x = 2
 	(x + 3)
 })
 
 sc_cmp : I64 -> I64
 sc_cmp = |_n| ({
+	m : I64
 	m = 4
 	(if (m < 10) { 1 } else { 0 })
 })
 
 sc_neg : I64 -> I64
 sc_neg = |_n| ({
+	a : I64
 	a = 5
 	((-a) + 1)
 })
@@ -61,26 +64,32 @@ sc_dead = |n| ({
 
 sc_copy : I64 -> I64
 sc_copy = |n| ({
+	a : I64
 	a = n
+	b : I64
 	b = a
 	(b + 100)
 })
 
 sc_once : I64 -> I64
 sc_once = |n| ({
+	s : I64
 	s = (n * n)
 	(s + 9)
 })
 
 sc_cap : I64 -> I64
 sc_cap = |n| ({
+	x : I64
 	x = n
+	n_1 : I64
 	n_1 = (x + 1)
 	(n_1 * 2)
 })
 
 sc_lamcap : I64 -> I64
 sc_lamcap = |n| ({
+	x : I64
 	x = n
 	lam_0(x, 10)
 })

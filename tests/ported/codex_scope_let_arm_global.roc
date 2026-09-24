@@ -26,6 +26,7 @@ inner = "GLOBAL"
 arm_scoped : I64 -> CceText
 arm_scoped = |n| ({
 	_w = (if (n > 0) { ({
+		inner_1 : I64
 		inner_1 = (n * 10)
 		(inner_1 + 1)
 	}) } else { 0 })

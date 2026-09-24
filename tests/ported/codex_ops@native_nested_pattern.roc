@@ -70,7 +70,9 @@ packed = |v| (match v {
 
 scope : Tree -> I64
 scope = |v| ({
+	n : I64
 	n = 99
+	result : I64
 	result = (match v {
 		Join(Leaf(n_1), Leaf(m)) => (n_1 + m)
 		_ => 0

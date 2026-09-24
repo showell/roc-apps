@@ -44,6 +44,7 @@ rut_zeros = |i, n, acc| (if (i >= n) { acc } else { rut_zeros((i + 1), n, List.a
 
 rut_tally_one : List(I64), List(I64), I64, I64 -> List(I64)
 rut_tally_one = |counts, sample, i, n| (if (i >= n) { counts } else { ({
+	v : I64
 	v = (List.get(sample, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 	rut_tally_one((List.set(counts, I64.to_u64_wrap(v), ((List.get(counts, I64.to_u64_wrap(v)) ?? crash("list-at out of range")) + 1)) ?? crash("list-set-at past the end")), sample, (i + 1), n)
 }) })
@@ -51,18 +52,21 @@ rut_tally_one = |counts, sample, i, n| (if (i >= n) { counts } else { ({
 rut_run : List(I64), List(I64), I64, I64 -> List(I64)
 rut_run = |counts, stream, t, n| (if (t >= n) { counts } else { ({
 	rs = Reservoir.reservoir_add_all(Reservoir.reservoir_new(rut_cap), stream, ((t * 7919) + 13), 0, rut_items)
+	s : List(I64)
 	s = Reservoir.reservoir_items(rs)
 	rut_run(rut_tally_one(counts, s, 0, U64.to_i64_wrap(List.len(s))), stream, (t + 1), n)
 }) })
 
 rut_min : List(I64), I64, I64, I64 -> I64
 rut_min = |xs, i, n, acc| (if (i >= n) { acc } else { ({
+	v : I64
 	v = (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 	rut_min(xs, (i + 1), n, (if (v < acc) { v } else { acc }))
 }) })
 
 rut_max : List(I64), I64, I64, I64 -> I64
 rut_max = |xs, i, n, acc| (if (i >= n) { acc } else { ({
+	v : I64
 	v = (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 	rut_max(xs, (i + 1), n, (if (v > acc) { v } else { acc }))
 }) })
@@ -72,6 +76,7 @@ rut_sum = |xs, i, n, acc| (if (i >= n) { acc } else { rut_sum(xs, (i + 1), n, (a
 
 rut_fmt : List(I64), I64, I64, CceText -> CceText
 rut_fmt = |xs, i, n, acc| (if (i >= n) { acc } else { ({
+	sep : CceText
 	sep = (if (i == 0) { "" } else { " " })
 	rut_fmt(xs, (i + 1), n, CceText.concat(CceText.concat(acc, sep), CceText.show_int((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))
 }) })

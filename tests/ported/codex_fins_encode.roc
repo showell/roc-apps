@@ -40,6 +40,7 @@ check_read_cio = flag(bytes_eq(Fins.fins_mem_read(1, 0, 0, Fins.fins_area_cio, 0
 
 check_write_dm : I64
 check_write_dm = ({
+	expect_ : List(I64)
 	expect_ = [128, 0, 2, 0, 1, 0, 0, 0, 0, 0, 1, 2, 130, 0, 200, 0, 0, 2, 18, 52, 86, 120]
 	flag(bytes_eq(Fins.fins_mem_write(1, 0, 0, Fins.fins_area_dm, 200, [4660, 22136]), expect_))
 })

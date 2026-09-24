@@ -44,7 +44,9 @@ ont_bank = Oscillator.osc_add(Oscillator.osc_bank_new(ont_rate), ont_freq, 1000,
 
 ont_repeats : List(I64), I64, I64, I64 -> I64
 ont_repeats = |xs, i, n, acc| (if (i >= n) { acc } else { ({
+	a : I64
 	a = (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
+	b : I64
 	b = (List.get(xs, I64.to_u64_wrap((i + ont_period))) ?? crash("list-at out of range"))
 	ont_repeats(xs, (i + 1), n, (acc + (if (a == b) { 1 } else { 0 })))
 }) })

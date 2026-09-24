@@ -45,6 +45,7 @@ safe = |qs, col| safe_loop(qs, col, U64.to_i64_wrap(List.len(qs)), 0)
 
 safe_loop : List(I64), I64, I64, I64 -> Bool
 safe_loop = |qs, col, row, i| (if (i >= row) { True } else { ({
+	c : I64
 	c = (List.get(qs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 	(if (c == col) { False } else { (if (int_abs((c - col)) == (row - i)) { False } else { safe_loop(qs, col, row, (i + 1)) }) })
 }) })

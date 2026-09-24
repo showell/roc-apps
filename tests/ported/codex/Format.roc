@@ -5,21 +5,26 @@ Format :: [].{
 
 	fmt_pad_left : CceText, I64, CceText -> CceText
 	fmt_pad_left = |s, width, fill| ({
+		deficit : I64
 		deficit = (width - CceText.len(s))
 		(if (deficit <= 0) { s } else { CceText.concat(fmt_repeat(fill, deficit), s) })
 	})
 
 	fmt_pad_right : CceText, I64, CceText -> CceText
 	fmt_pad_right = |s, width, fill| ({
+		deficit : I64
 		deficit = (width - CceText.len(s))
 		(if (deficit <= 0) { s } else { CceText.concat(s, fmt_repeat(fill, deficit)) })
 	})
 
 	fmt_center : CceText, I64, CceText -> CceText
 	fmt_center = |s, width, fill| ({
+		deficit : I64
 		deficit = (width - CceText.len(s))
 		(if (deficit <= 0) { s } else { ({
+			left : I64
 			left = I64.div_trunc_by(deficit, 2)
+			right : I64
 			right = (deficit - left)
 			CceText.concat(CceText.concat(fmt_repeat(fill, left), s), fmt_repeat(fill, right))
 		}) })
@@ -36,6 +41,7 @@ Format :: [].{
 
 	fmt_join_loop : List(CceText), CceText, I64, I64, CceText -> CceText
 	fmt_join_loop = |xs, sep, i, len, acc| (if (i >= len) { acc } else { ({
+		prefix : CceText
 		prefix = (if (i == 0) { "" } else { sep })
 		fmt_join_loop(xs, sep, (i + 1), len, CceText.concat(CceText.concat(acc, prefix), (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))
 	}) })
@@ -45,25 +51,30 @@ Format :: [].{
 
 	fmt_join_ints_loop : List(I64), CceText, I64, I64, CceText -> CceText
 	fmt_join_ints_loop = |xs, sep, i, len, acc| (if (i >= len) { acc } else { ({
+		prefix : CceText
 		prefix = (if (i == 0) { "" } else { sep })
 		fmt_join_ints_loop(xs, sep, (i + 1), len, CceText.concat(CceText.concat(acc, prefix), CceText.show_int((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))
 	}) })
 
 	fmt_commas : I64 -> CceText
 	fmt_commas = |n| (if (n < 0) { CceText.concat("-", fmt_commas((0 - n))) } else { ({
+		raw : CceText
 		raw = CceText.show_int(n)
 		fmt_insert_commas(raw)
 	}) })
 
 	fmt_insert_commas : CceText -> CceText
 	fmt_insert_commas = |s| ({
+		len : I64
 		len = CceText.len(s)
 		(if (len <= 3) { s } else { fmt_comma_loop(s, (len - 1), 0, "") })
 	})
 
 	fmt_comma_loop : CceText, I64, I64, CceText -> CceText
 	fmt_comma_loop = |s, i, count, acc| (if (i < 0) { acc } else { ({
+		c : CceText
 		c = CceText.char_to_text(CceText.char_at(s, i))
+		sep : CceText
 		sep = (if (count > 0) { (if ((count - (I64.div_trunc_by(count, 3) * 3)) == 0) { "," } else { "" }) } else { "" })
 		fmt_comma_loop(s, (i - 1), (count + 1), CceText.concat(CceText.concat(c, sep), acc))
 	}) })
@@ -76,7 +87,9 @@ Format :: [].{
 
 	fmt_hex_loop : I64, CceText -> CceText
 	fmt_hex_loop = |n, acc| (if (n == 0) { acc } else { ({
+		digit : I64
 		digit = I64.bitwise_and(n, 15)
+		c : CceText
 		c = fmt_hex_digit(digit)
 		fmt_hex_loop(I64.shr_zf_wrap(n, I64.to_u8_wrap(4)), CceText.concat(c, acc))
 	}) })

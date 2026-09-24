@@ -30,19 +30,25 @@ Activation :: [].{
 
 	act_gelu_val : I64 -> I64
 	act_gelu_val = |x| ({
+		sig : I64
 		sig = act_sigmoid_val(I64.div_trunc_by((x * 1702), 1000))
 		I64.div_trunc_by((x * sig), 1000)
 	})
 
 	act_softmax : Tensor.Tensor -> Tensor.Tensor
 	act_softmax = |t| ({
+		max_val : I64
 		max_val = Tensor.tensor_max(t)
+		shifted : List(I64)
 		shifted = ListUtils.map_list(({
 			dev__1 = max_val
 			|dev__2| lam_5(dev__1, dev__2)
 		}), t.data)
+		exps : List(I64)
 		exps = ListUtils.map_list(lam_6, shifted)
+		total : I64
 		total = act_sum_list(exps, 0, U64.to_i64_wrap(List.len(exps)), 0)
+		normed : List(I64)
 		normed = (if (total == 0) { exps } else { ListUtils.map_list(({
 			dev__3 = total
 			|dev__4| lam_7(dev__3, dev__4)
@@ -52,6 +58,7 @@ Activation :: [].{
 
 	act_exp_approx : I64 -> I64
 	act_exp_approx = |x| (if (x < 0) { I64.div_trunc_by(1000000, act_exp_approx((0 - x))) } else { (if (x > 20000) { 485165195 } else { ({
+		k : I64
 		k = I64.div_trunc_by(x, 1000)
 		I64.div_trunc_by((act_exp_int(k) * act_exp_frac((x - (k * 1000)))), 1000)
 	}) }) })

@@ -38,6 +38,7 @@ poke_le! = |mem, buf, off, v, n| poke_le_loop!(mem, buf, off, v, 0, n)
 
 poke_le_loop! : Mem.Mem, I64, I64, I64, I64, I64 => (Mem.Mem, I64)
 poke_le_loop! = |mem, buf, off, v, i, n| (if (i >= n) { (mem, 0) } else { ({
+	b : I64
 	b = I64.bitwise_and(I64.shr_zf_wrap(v, I64.to_u8_wrap((i * 8))), 255)
 	(mem1, _p) = Mem.store!(mem, buf, (off + i), b, 1)
 	poke_le_loop!(mem1, buf, off, v, (i + 1), n)

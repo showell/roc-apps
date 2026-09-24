@@ -28,8 +28,11 @@ line! = |s| echo!(Str.concat(s, "\n"))
 
 main! = |_args| {
 	({
+		xs : List(I64)
 		xs = [3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5]
+		unique : List(I64)
 		unique = Pipeline.pipe_unique(xs)
+		count : I64
 		count = U64.to_i64_wrap(List.len(unique))
 		({
 			line!(CceText.printed(CceText.show_int(count)))

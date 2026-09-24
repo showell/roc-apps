@@ -44,9 +44,13 @@ line! = |s| echo!(Str.concat(s, "\n"))
 
 show_hex_word : I64 -> CceText
 show_hex_word = |w| ({
+	b0 : I64
 	b0 = I64.bitwise_and(w, 255)
+	b1 : I64
 	b1 = I64.bitwise_and(I64.shr_zf_wrap(w, I64.to_u8_wrap(8)), 255)
+	b2 : I64
 	b2 = I64.bitwise_and(I64.shr_zf_wrap(w, I64.to_u8_wrap(16)), 255)
+	b3 : I64
 	b3 = I64.bitwise_and(I64.shr_zf_wrap(w, I64.to_u8_wrap(24)), 255)
 	CceText.concat(CceText.concat(CceText.concat(hex_byte(b3), hex_byte(b2)), hex_byte(b1)), hex_byte(b0))
 })
@@ -77,6 +81,7 @@ hex_nib = |n| (match n {
 
 show_insn : List(I64) -> CceText
 show_insn = |bytes| ({
+	w : I64
 	w = ((((List.get(bytes, I64.to_u64_wrap(0)) ?? crash("list-at out of range")) + ((List.get(bytes, I64.to_u64_wrap(1)) ?? crash("list-at out of range")) * 256)) + ((List.get(bytes, I64.to_u64_wrap(2)) ?? crash("list-at out of range")) * 65536)) + ((List.get(bytes, I64.to_u64_wrap(3)) ?? crash("list-at out of range")) * 16777216))
 	show_hex_word(w)
 })
@@ -99,6 +104,7 @@ main! = |_args| {
 	line!(CceText.printed(CceText.concat("nop=", show_insn(RiscVEncoder.rv_nop))))
 	line!(CceText.printed(CceText.concat("mv a0,a1=", show_insn(RiscVEncoder.rv_mv(10, 11)))))
 	({
+		li_result : List(I64)
 		li_result = RiscVEncoder.rv_li(10, 3735928559)
 		({
 			line!(CceText.printed(CceText.concat("li a0,#DEADBEEF len=", CceText.show_int(I64.div_trunc_by(U64.to_i64_wrap(List.len(li_result)), 4)))))

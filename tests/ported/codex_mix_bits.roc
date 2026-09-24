@@ -36,14 +36,18 @@ mb_ones = |seed, i, n, acc| (if (i >= n) { acc } else { mb_ones(seed, (i + 1), n
 
 mb_alt : I64, I64, I64, I64 -> I64
 mb_alt = |seed, i, n, acc| (if (i >= n) { acc } else { ({
+	a : I64
 	a = I64.bitwise_and(Random.mix_bits(seed, i), 1)
+	b : I64
 	b = I64.bitwise_and(Random.mix_bits(seed, (i - 1)), 1)
 	mb_alt(seed, (i + 1), n, (acc + (if (a == b) { 0 } else { 1 })))
 }) })
 
 mb_old_alt : I64, I64, I64, I64 -> I64
 mb_old_alt = |seed, i, n, acc| (if (i >= n) { acc } else { ({
+	a : I64
 	a = I64.bitwise_and(mb_old(seed, i), 1)
+	b : I64
 	b = I64.bitwise_and(mb_old(seed, (i - 1)), 1)
 	mb_old_alt(seed, (i + 1), n, (acc + (if (a == b) { 0 } else { 1 })))
 }) })

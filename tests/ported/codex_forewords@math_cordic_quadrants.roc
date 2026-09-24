@@ -60,9 +60,13 @@ c = |a, got, want| CceText.concat(CceText.concat(CceText.concat(CceText.concat(C
 
 pythag : I64, I64, I64 -> I64
 pythag = |i, n, acc| (if (i > n) { acc } else { ({
+	a : I64
 	a = (i * 500)
+	sn : I64
 	sn = Cordic.cordic_sin(a)
+	cs : I64
 	cs = Cordic.cordic_cos(a)
+	m : I64
 	m = ((sn * sn) + (cs * cs))
 	pythag((i + 1), n, (if (m > 985000) { (if (m < 1015000) { (acc + 1) } else { acc }) } else { acc }))
 }) })

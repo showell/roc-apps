@@ -25,6 +25,7 @@ bus_acquire = |n| n
 
 stash_arg : I64 -> I64
 stash_arg = |n| ({
+	g : I64
 	g = bus_acquire(n)
 	U64.to_i64_wrap(List.len([g]))
 })

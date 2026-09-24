@@ -38,40 +38,50 @@ cdt_zeros = |i, n, acc| (if (i >= n) { acc } else { cdt_zeros((i + 1), n, List.a
 
 cdt_tally : I64, I64, List(I64) -> List(I64)
 cdt_tally = |seed, trials, counts| (if (seed >= trials) { counts } else { ({
+	deck : List(I64)
 	deck = cdt_fresh(0, 8, [])
+	shuffled : List(I64)
 	shuffled = CardDeck.deck_shuffle(deck, seed)
+	p : I64
 	p = cdt_pos_of(shuffled, 0, 0, 8)
 	(if (p < 0) { cdt_tally((seed + 1), trials, counts) } else { cdt_tally((seed + 1), trials, (List.set(counts, I64.to_u64_wrap(p), ((List.get(counts, I64.to_u64_wrap(p)) ?? crash("list-at out of range")) + 1)) ?? crash("list-set-at past the end"))) })
 }) })
 
 cdt_min : List(I64), I64, I64, I64 -> I64
 cdt_min = |xs, i, n, acc| (if (i >= n) { acc } else { ({
+	v : I64
 	v = (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 	cdt_min(xs, (i + 1), n, (if (v < acc) { v } else { acc }))
 }) })
 
 cdt_max : List(I64), I64, I64, I64 -> I64
 cdt_max = |xs, i, n, acc| (if (i >= n) { acc } else { ({
+	v : I64
 	v = (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 	cdt_max(xs, (i + 1), n, (if (v > acc) { v } else { acc }))
 }) })
 
 cdt_fmt : List(I64), I64, I64, CceText -> CceText
 cdt_fmt = |xs, i, n, acc| (if (i >= n) { acc } else { ({
+	sep : CceText
 	sep = (if (i == 0) { "" } else { " " })
 	cdt_fmt(xs, (i + 1), n, CceText.concat(CceText.concat(acc, sep), CceText.show_int((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))
 }) })
 
 cdt_two : I64 -> I64
 cdt_two = |seed| ({
+	deck : List(I64)
 	deck = cdt_fresh(0, 2, [])
+	shuffled : List(I64)
 	shuffled = CardDeck.deck_shuffle(deck, seed)
 	(List.get(shuffled, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))
 })
 
 cdt_alt : I64, I64, I64 -> I64
 cdt_alt = |seed, trials, acc| (if (seed >= trials) { acc } else { ({
+	a : I64
 	a = cdt_two(seed)
+	b : I64
 	b = cdt_two((seed - 1))
 	cdt_alt((seed + 1), trials, (acc + (if (a == b) { 0 } else { 1 })))
 }) })

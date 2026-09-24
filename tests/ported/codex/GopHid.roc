@@ -20,12 +20,16 @@ GopHid :: [].{
 
 	hid_usage_sc : I64 -> I64
 	hid_usage_sc = |u| ({
+		a : I64
 		a = hid_letter_sc(u)
 		(if (a != 0) { a } else { ({
+			b : I64
 			b = hid_digit_sc(u)
 			(if (b != 0) { b } else { ({
+				c : I64
 				c = hid_punct_sc(u)
 				(if (c != 0) { c } else { ({
+					d : I64
 					d = hid_fn_sc(u)
 					(if (d != 0) { d } else { hid_nav_sc(u) })
 				}) })
@@ -120,6 +124,7 @@ GopHid :: [].{
 			(mem1, mem__1) = Mem.load!(mem, prev, 0, 1)
 			Mem.store!(mem1, prev, 0, I64.bitwise_or(mem__1, hid_bit(b)), 1)
 		})
+		sc : I64
 		sc = hid_mod_sc(b)
 		(mem2, (if (sc == 0) { hid_unmapped } else { sc }))
 	})
@@ -133,6 +138,7 @@ GopHid :: [].{
 			(mem1, mem__1) = Mem.load!(mem, prev, 0, 1)
 			Mem.store!(mem1, prev, 0, I64.bitwise_and(mem__1, (255 - hid_bit(b))), 1)
 		})
+		sc : I64
 		sc = hid_mod_sc(b)
 		(mem2, (if (sc == 0) { hid_unmapped } else { I64.bitwise_or(sc, 128) }))
 	})
@@ -147,6 +153,7 @@ GopHid :: [].{
 			(mem4, mem__2) = (if (s < 0) { (mem1, 0) } else { ({
 			(mem3, mem__1) = ({
 			(mem2, _p) = Mem.store!(mem1, prev, s, u, 1)
+			sc : I64
 			sc = hid_usage_sc(u)
 			(mem2, (if (sc == 0) { hid_unmapped } else { sc }))
 		})
@@ -163,6 +170,7 @@ GopHid :: [].{
 		(mem3, mem__1) = ({
 		(mem1, u) = Mem.load!(mem, prev, i, 1)
 		(mem2, _p) = Mem.store!(mem1, prev, i, 0, 1)
+		sc : I64
 		sc = hid_usage_sc(u)
 		(mem2, (if (sc == 0) { hid_unmapped } else { I64.bitwise_or(sc, 128) }))
 	})

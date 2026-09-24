@@ -46,18 +46,22 @@ lam_1 = |x| I64.div_trunc_by((x * x), 1000)
 
 main! = |_args| {
 	({
+		root : I64
 		root = Numeric.bisect(test_f, 0, 4000, 50)
 		({
 			line!(CceText.printed(CceText.concat("bisect=", CceText.show_int(root))))
 			({
+				newton_root : I64
 				newton_root = Numeric.newton(test_f, test_df, 3000, 20)
 				({
 					line!(CceText.printed(CceText.concat("newton=", CceText.show_int(newton_root))))
 					({
+						trap : I64
 						trap = Numeric.integrate_trapezoid(lam_0, 0, 3000, 100)
 						({
 							line!(CceText.printed(CceText.concat("trap=", CceText.show_int(trap))))
 							({
+								simp : I64
 								simp = Numeric.integrate_simpson(lam_1, 0, 3000, 100)
 								({
 									line!(CceText.printed(CceText.concat("simpson=", CceText.show_int(simp))))
@@ -66,6 +70,7 @@ main! = |_args| {
 										({
 											line!(CceText.printed(CceText.concat("rk4-t=", CceText.show_int(step.rk_t))))
 											({
+												rk_ok : CceText
 												rk_ok = (if (step.rk_y < 1000) { "decaying" } else { "wrong" })
 												({
 													line!(CceText.printed(CceText.concat("rk4-y=", rk_ok)))

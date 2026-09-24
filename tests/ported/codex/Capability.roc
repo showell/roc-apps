@@ -120,8 +120,11 @@ Capability :: [].{
 
 	cap_bits_for_spec : Capability.CapSpec, I64 -> I64
 	cap_bits_for_spec = |spec, dir| ({
+		base : I64
 		base = (if (spec.cs_base_bit >= 0) { I64.shl_wrap(1, I64.to_u8_wrap(spec.cs_base_bit)) } else { 0 })
+		dirb : I64
 		dirb = (if (spec.cs_read_bit >= 0) { cap_dir_bits(dir, spec.cs_read_bit, spec.cs_write_bit) } else { 0 })
+		extra : I64
 		extra = cap_or_bits(spec.cs_extra_bits, 0, U64.to_i64_wrap(List.len(spec.cs_extra_bits)), 0)
 		I64.bitwise_or(base, I64.bitwise_or(dirb, extra))
 	})
@@ -135,6 +138,7 @@ Capability :: [].{
 	cap_id_for_name : CceText -> I64
 	cap_id_for_name = |n| ({
 		ts = capability_table
+		i : I64
 		i = cap_find_by_name(ts, n, 0, U64.to_i64_wrap(List.len(ts)))
 		(if (i < 0) { (0 - 1) } else { (List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).cs_id })
 	})
@@ -142,6 +146,7 @@ Capability :: [].{
 	cap_bits_for_name : CceText, I64 -> I64
 	cap_bits_for_name = |n, dir| ({
 		ts = capability_table
+		i : I64
 		i = cap_find_by_name(ts, n, 0, U64.to_i64_wrap(List.len(ts)))
 		(if (i < 0) { 0 } else { cap_bits_for_spec((List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), dir) })
 	})
@@ -149,6 +154,7 @@ Capability :: [].{
 	cap_bits_for_id : I64, I64 -> I64
 	cap_bits_for_id = |id, dir| ({
 		ts = capability_table
+		i : I64
 		i = cap_find_by_id(ts, id, 0, U64.to_i64_wrap(List.len(ts)))
 		(if (i < 0) { 0 } else { cap_bits_for_spec((List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), dir) })
 	})
@@ -156,6 +162,7 @@ Capability :: [].{
 	cap_names_from : List(Capability.CapSpec), I64, I64, List(CceText) -> List(CceText)
 	cap_names_from = |ts, i, len, acc| (if (i >= len) { acc } else { ({
 		s = (List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
+		a1 : List(CceText)
 		a1 = List.append(acc, s.cs_name)
 		(if (s.cs_read_bit >= 0) { cap_names_from(ts, (i + 1), len, List.append(List.append(a1, CceText.concat(s.cs_name, ".Read")), CceText.concat(s.cs_name, ".Write"))) } else { cap_names_from(ts, (i + 1), len, a1) })
 	}) })

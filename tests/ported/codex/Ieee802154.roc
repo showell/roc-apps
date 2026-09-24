@@ -40,7 +40,9 @@ Ieee802154 :: [].{
 
 	ieee_build_data_short : I64, I64, I64, I64, List(I64) -> List(I64)
 	ieee_build_data_short = |seq, dest_pan, dest_addr, src_addr, payload| ({
+		fcf : I64
 		fcf = ieee_fcf(ieee_type_data, 0, 0, 0, 1, ieee_addr_short, 0, ieee_addr_short)
+		mhr : List(I64)
 		mhr = List.concat(List.concat(List.concat(List.concat(List.concat(ieee_u16_le(fcf), [seq]), ieee_u16_le(dest_pan)), ieee_u16_le(dest_addr)), ieee_u16_le(src_addr)), payload)
 		List.concat(mhr, ieee_u16_le(ieee_fcs(mhr)))
 	})

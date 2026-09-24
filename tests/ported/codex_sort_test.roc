@@ -52,10 +52,15 @@ print_list! = |xs, i, len| ({
 
 main! = |_args| {
 	({
+		xs : List(I64)
 		xs = [5, 3, 8, 1, 9, 2, 7, 4, 6]
+		sorted : List(I64)
 		sorted = Sort.sort_by(xs, int_cmp)
+		empty : List(I64)
 		empty = Sort.sort_by([], int_cmp)
+		single : List(I64)
 		single = Sort.sort_by([42], int_cmp)
+		dupes : List(I64)
 		dupes = Sort.sort_by([3, 1, 4, 1, 5], int_cmp)
 		({
 			print_list!(sorted, 0, 9)

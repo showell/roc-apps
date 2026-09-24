@@ -36,12 +36,14 @@ line! = |s| echo!(Str.concat(s, "\n"))
 test_osc_bank : CceText
 test_osc_bank = ({
 	bank = Oscillator.osc_add(Oscillator.osc_add(Oscillator.osc_bank_new(8000), 440, 500, Oscillator.osc_type_sine, 0), 880, 300, Oscillator.osc_type_square, 0)
+	samples : List(I64)
 	samples = Oscillator.osc_bank_render(bank, 16)
 	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("bank: count=", CceText.show_int(bank.ob_count)), " samples="), CceText.show_int(U64.to_i64_wrap(List.len(samples)))), " peak="), CceText.show_int(Oscillator.osc_peak(samples)))
 })
 
 test_fm : CceText
 test_fm = ({
+	samples : List(I64)
 	samples = Oscillator.osc_fm_render(440, 110, 200, 1000, 8000, 16)
 	CceText.concat(CceText.concat(CceText.concat("fm: samples=", CceText.show_int(U64.to_i64_wrap(List.len(samples)))), " peak="), CceText.show_int(Oscillator.osc_peak(samples)))
 })
@@ -49,42 +51,54 @@ test_fm = ({
 test_pulse : CceText
 test_pulse = ({
 	bank = Oscillator.osc_add(Oscillator.osc_bank_new(8000), 440, 1000, Oscillator.osc_type_pulse, 250)
+	samples : List(I64)
 	samples = Oscillator.osc_bank_render(bank, 8)
 	CceText.concat("pulse: peak=", CceText.show_int(Oscillator.osc_peak(samples)))
 })
 
 test_distortion : CceText
 test_distortion = ({
+	input : List(I64)
 	input = [500, 800, 1200, 400, (0 - 600), (0 - 1000)]
+	output : List(I64)
 	output = AudioEffect.fx_distortion(input, 2000)
+	peak : I64
 	peak = AudioEffect.fx_find_peak(output, 0, U64.to_i64_wrap(List.len(output)), 0)
 	CceText.concat(CceText.concat(CceText.concat("dist: peak=", CceText.show_int(peak)), " clipped="), (if (peak <= 1000) { "True" } else { "False" }))
 })
 
 test_compress : CceText
 test_compress = ({
+	input : List(I64)
 	input = [200, 500, 800, 1200, 1500]
+	output : List(I64)
 	output = AudioEffect.fx_compress(input, 500, 4000)
+	last : I64
 	last = (List.get(output, I64.to_u64_wrap(4)) ?? crash("list-at out of range"))
 	CceText.concat(CceText.concat(CceText.concat("comp: last=", CceText.show_int(last)), " reduced="), (if (last < 1500) { "True" } else { "False" }))
 })
 
 test_eq : CceText
 test_eq = ({
+	input : List(I64)
 	input = [1000, (0 - 500), 800, (0 - 300), 600]
+	output : List(I64)
 	output = AudioEffect.fx_eq3(input, 500, 1000, 1500)
 	CceText.concat("eq: samples=", CceText.show_int(U64.to_i64_wrap(List.len(output))))
 })
 
 test_note_freq : CceText
 test_note_freq = ({
+	a4 : I64
 	a4 = MusicTheory.note_freq(69)
+	c4 : I64
 	c4 = MusicTheory.note_freq(60)
 	CceText.concat(CceText.concat(CceText.concat(CceText.concat("A4=", CceText.show_int(a4)), "Hz C4="), CceText.show_int(c4)), "Hz")
 })
 
 test_scale : CceText
 test_scale = ({
+	cmaj : List(I64)
 	cmaj = MusicTheory.scale_major(60)
 	CceText.concat(CceText.concat("C-major=", CceText.show_int(U64.to_i64_wrap(List.len(cmaj)))), " notes")
 })
@@ -94,7 +108,9 @@ test_chord = CceText.concat(CceText.concat(CceText.concat("Cmaj=", MusicTheory.f
 
 test_tempo : CceText
 test_tempo = ({
+	quarter : I64
 	quarter = MusicTheory.mt_note_duration(120, 4)
+	eighth : I64
 	eighth = MusicTheory.mt_note_duration(120, 8)
 	CceText.concat(CceText.concat(CceText.concat(CceText.concat("quarter=", CceText.show_int(quarter)), "ms eighth="), CceText.show_int(eighth)), "ms")
 })

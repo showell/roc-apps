@@ -38,6 +38,7 @@ Color :: [].{
 
 	rgb_lerp : Color.Rgb, Color.Rgb, I64 -> Color.Rgb
 	rgb_lerp = |a, b, t| ({
+		inv : I64
 		inv = (1000 - t)
 		Color.Rgb.{ cr: I64.div_trunc_by(((a.cr * inv) + (b.cr * t)), 1000), cg: I64.div_trunc_by(((a.cg * inv) + (b.cg * t)), 1000), cb: I64.div_trunc_by(((a.cb * inv) + (b.cb * t)), 1000) }
 	})
@@ -62,6 +63,7 @@ Color :: [].{
 
 	rgb_grayscale : Color.Rgb -> Color.Rgb
 	rgb_grayscale = |c| ({
+		lum : I64
 		lum = I64.div_trunc_by((((c.cr * 299) + (c.cg * 587)) + (c.cb * 114)), 1000)
 		Color.Rgb.{ cr: lum, cg: lum, cb: lum }
 	})
@@ -71,15 +73,24 @@ Color :: [].{
 
 	rgb_to_hsl : Color.Rgb -> Color.Hsl
 	rgb_to_hsl = |c| ({
+		r : I64
 		r = I64.div_trunc_by((c.cr * 1000), 255)
+		g : I64
 		g = I64.div_trunc_by((c.cg * 1000), 255)
+		b : I64
 		b = I64.div_trunc_by((c.cb * 1000), 255)
+		mx : I64
 		mx = col_max3(r, g, b)
+		mn : I64
 		mn = col_min3(r, g, b)
+		l : I64
 		l = I64.div_trunc_by((mx + mn), 2)
+		delta : I64
 		delta = (mx - mn)
 		(if (delta == 0) { Color.Hsl.{ ch: 0, cs: 0, cl: l } } else { ({
+			s : I64
 			s = (if (l > 500) { I64.div_trunc_by((delta * 1000), ((2000 - mx) - mn)) } else { I64.div_trunc_by((delta * 1000), (mx + mn)) })
+			h : I64
 			h = col_hue(r, g, b, mx, delta)
 			Color.Hsl.{ ch: h, cs: s, cl: l }
 		}) })
@@ -87,24 +98,31 @@ Color :: [].{
 
 	col_hue : I64, I64, I64, I64, I64 -> I64
 	col_hue = |r, g, b, mx, delta| (if (mx == r) { ({
+		raw : I64
 		raw = I64.div_trunc_by(((g - b) * 60), delta)
 		(if (raw < 0) { (raw + 360) } else { raw })
 	}) } else { (if (mx == g) { (I64.div_trunc_by(((b - r) * 60), delta) + 120) } else { (I64.div_trunc_by(((r - g) * 60), delta) + 240) }) })
 
 	hsl_to_rgb : Color.Hsl -> Color.Rgb
 	hsl_to_rgb = |c| (if (c.cs == 0) { ({
+		v : I64
 		v = I64.div_trunc_by((c.cl * 255), 1000)
 		Color.Rgb.{ cr: v, cg: v, cb: v }
 	}) } else { ({
+		q : I64
 		q = (if (c.cl < 500) { I64.div_trunc_by((c.cl * (1000 + c.cs)), 1000) } else { ((c.cl + c.cs) - I64.div_trunc_by((c.cl * c.cs), 1000)) })
+		p : I64
 		p = ((2 * c.cl) - q)
+		h : I64
 		h = c.ch
 		Color.Rgb.{ cr: hsl_channel(p, q, (h + 120)), cg: hsl_channel(p, q, h), cb: hsl_channel(p, q, (h - 120)) }
 	}) })
 
 	hsl_channel : I64, I64, I64 -> I64
 	hsl_channel = |p, q, h_raw| ({
+		h : I64
 		h = (if (h_raw < 0) { (h_raw + 360) } else { (if (h_raw >= 360) { (h_raw - 360) } else { h_raw }) })
+		val : I64
 		val = (if (h < 60) { (p + I64.div_trunc_by(((q - p) * h), 60)) } else { (if (h < 180) { q } else { (if (h < 240) { (p + I64.div_trunc_by(((q - p) * (240 - h)), 60)) } else { p }) }) })
 		I64.div_trunc_by((val * 255), 1000)
 	})
@@ -114,6 +132,7 @@ Color :: [].{
 
 	pal_grad_loop : Color.Rgb, Color.Rgb, I64, I64, List(Color.Rgb) -> List(Color.Rgb)
 	pal_grad_loop = |start, stop, steps, i, acc| (if (i >= steps) { acc } else { ({
+		t : I64
 		t = (if (steps <= 1) { 0 } else { I64.div_trunc_by((i * 1000), (steps - 1)) })
 		pal_grad_loop(start, stop, steps, (i + 1), List.append(acc, rgb_lerp(start, stop, t)))
 	}) })
@@ -123,6 +142,7 @@ Color :: [].{
 
 	pal_rainbow_loop : I64, I64, List(Color.Rgb) -> List(Color.Rgb)
 	pal_rainbow_loop = |steps, i, acc| (if (i >= steps) { acc } else { ({
+		h : I64
 		h = I64.div_trunc_by((i * 360), steps)
 		pal_rainbow_loop(steps, (i + 1), List.append(acc, hsl_to_rgb(Color.Hsl.{ ch: h, cs: 900, cl: 500 })))
 	}) })
@@ -132,24 +152,28 @@ Color :: [].{
 
 	col_max3 : I64, I64, I64 -> I64
 	col_max3 = |a, b, c| ({
+		ab : I64
 		ab = (if (a > b) { a } else { b })
 		(if (ab > c) { ab } else { c })
 	})
 
 	col_min3 : I64, I64, I64 -> I64
 	col_min3 = |a, b, c| ({
+		ab : I64
 		ab = (if (a < b) { a } else { b })
 		(if (ab < c) { ab } else { c })
 	})
 
 	lolcat_hue_mod : I64, I64 -> I64
 	lolcat_hue_mod = |raw, range| (if (range <= 0) { 0 } else { ({
+		m : I64
 		m = (raw - (I64.div_trunc_by(raw, range) * range))
 		(if (m < 0) { (m + range) } else { m })
 	}) })
 
 	lolcat_color : I64, I64, I64, I64, Color.RainbowPalette -> I64
 	lolcat_color = |row, col, freq, seed, pal| ({
+		idx : I64
 		idx = (seed + ((col + row) * freq))
 		lolcat_apply(idx, pal)
 	})
@@ -172,7 +196,9 @@ Color :: [].{
 
 	lolcat_pal : I64, I64, I64, I64, I64 -> I64
 	lolcat_pal = |idx, hue_start, hue_range, sat, lit| ({
+		offset : I64
 		offset = lolcat_hue_mod(idx, hue_range)
+		hue : I64
 		hue = lolcat_hue_mod((hue_start + offset), 360)
 		rgb_to_packed(hsl_to_rgb(Color.Hsl.{ ch: hue, cs: sat, cl: lit }))
 	})

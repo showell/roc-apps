@@ -55,6 +55,7 @@ sl_add = |x, y| (x + y)
 
 sl_mix : I64 -> I64
 sl_mix = |x| ({
+	a : I64
 	a = (x * 2)
 	(a + 3)
 })
@@ -111,12 +112,14 @@ nl_call = |n| sl_add(n, n)
 
 pmv_clash : I64, I64, I64, I64, I64 -> I64
 pmv_clash = |a, b, c, d, e| (if (d == a) { ({
+	raw : I64
 	raw = I64.div_trunc_by(((b - c) * 60), e)
 	(if (raw < 0) { (raw + 360) } else { raw })
 }) } else { (if (d == b) { (I64.div_trunc_by(((c - a) * 60), e) + 120) } else { (I64.div_trunc_by(((a - b) * 60), e) + 240) }) })
 
 coal_result : I64, I64 -> I64
 coal_result = |a, b| ({
+	s : I64
 	s = (a + 1)
 	_y = (if (b > 0) { s } else { I64.div_trunc_by(100, b) })
 	s

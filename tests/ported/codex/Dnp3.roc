@@ -49,6 +49,7 @@ Dnp3 :: [].{
 
 	dnp3_header_block : I64, I64, I64, I64 -> List(I64)
 	dnp3_header_block = |ctrl, dest, src, datalen| ({
+		h : List(I64)
 		h = dnp3_header(ctrl, dest, src, datalen)
 		List.concat(h, dnp3_crc_suffix(h))
 	})
@@ -58,7 +59,9 @@ Dnp3 :: [].{
 
 	dnp3_data_loop : List(I64), I64, I64, List(I64) -> List(I64)
 	dnp3_data_loop = |data, off, len, acc| (if (off >= len) { acc } else { ({
+		count : I64
 		count = (if ((len - off) < 16) { (len - off) } else { 16 })
+		chunk : List(I64)
 		chunk = dnp3_slice(data, off, count)
 		dnp3_data_loop(data, (off + 16), len, List.concat(List.concat(acc, chunk), dnp3_crc_suffix(chunk)))
 	}) })

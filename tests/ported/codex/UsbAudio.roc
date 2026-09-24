@@ -70,37 +70,47 @@ UsbAudio :: [].{
 
 	usb_interleave : List(I64), List(I64), UsbAudio.AudioFormat, I64, I64, List(I64) -> List(I64)
 	usb_interleave = |left, right, fmt, i, n, acc| (if (i >= n) { acc } else { ({
+		l_pcm : I64
 		l_pcm = uaf_to_pcm((List.get(left, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), fmt.afmt_bit_depth)
+		r_pcm : I64
 		r_pcm = uaf_to_pcm((List.get(right, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), fmt.afmt_bit_depth)
+		l_bytes : List(I64)
 		l_bytes = uaf_pcm_bytes(l_pcm, fmt.afmt_bit_depth)
+		r_bytes : List(I64)
 		r_bytes = uaf_pcm_bytes(r_pcm, fmt.afmt_bit_depth)
 		usb_interleave(left, right, fmt, (i + 1), n, List.concat(List.concat(acc, l_bytes), r_bytes))
 	}) })
 
 	uaf_to_pcm : I64, I64 -> I64
 	uaf_to_pcm = |fixed, bits| (if (bits == 16) { ({
+		scaled : I64
 		scaled = I64.div_trunc_by((fixed * 32767), 1000)
 		(if (scaled > 32767) { 32767 } else { (if (scaled < (0 - 32768)) { (0 - 32768) } else { scaled }) })
 	}) } else { (if (bits == 24) { ({
+		scaled : I64
 		scaled = I64.div_trunc_by((fixed * 8388607), 1000)
 		(if (scaled > 8388607) { 8388607 } else { (if (scaled < (0 - 8388608)) { (0 - 8388608) } else { scaled }) })
 	}) } else { fixed }) })
 
 	uaf_pcm_bytes : I64, I64 -> List(I64)
 	uaf_pcm_bytes = |pcm, bits| ({
+		unsigned : I64
 		unsigned = (if (pcm < 0) { ((if (bits == 16) { 65536 } else { 16777216 }) + pcm) } else { pcm })
 		(if (bits == 16) { [I64.bitwise_and(unsigned, 255), I64.bitwise_and(I64.shr_zf_wrap(unsigned, I64.to_u8_wrap(8)), 255)] } else { [I64.bitwise_and(unsigned, 255), I64.bitwise_and(I64.shr_zf_wrap(unsigned, I64.to_u8_wrap(8)), 255), I64.bitwise_and(I64.shr_zf_wrap(unsigned, I64.to_u8_wrap(16)), 255)] })
 	})
 
 	usb_audio_buffer : UsbAudio.AudioFormat, I64 -> UsbAudio.UsbAudioBuffer
 	usb_audio_buffer = |fmt, duration_ms| ({
+		samples_per_ms : I64
 		samples_per_ms = I64.div_trunc_by(fmt.afmt_sample_rate, 1000)
+		frame_size : I64
 		frame_size = (samples_per_ms * fmt.afmt_bytes_per_sample)
 		UsbAudio.UsbAudioBuffer.{ uab_frames: [], uab_frame_size: frame_size, uab_frames_per_ms: samples_per_ms, uab_total_frames: duration_ms }
 	})
 
 	usb_audio_set_volume : I64 -> List(I64)
 	usb_audio_set_volume = |volume_pct| ({
+		db_val : I64
 		db_val = (if (volume_pct >= 100) { 0 } else { (if (volume_pct <= 0) { (0 - 32768) } else { ((volume_pct - 100) * 256) }) })
 		Usb.usb_le16_encode(db_val)
 	})

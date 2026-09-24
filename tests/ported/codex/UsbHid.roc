@@ -69,6 +69,7 @@ UsbHid :: [].{
 
 	hid_scan_interfaces : List(I64), I64 -> List(UsbHid.HidInterface)
 	hid_scan_interfaces = |config_desc, total_len| ({
+		n : I64
 		n = U64.to_i64_wrap(List.len(config_desc))
 		hid_scan_loop(config_desc, 0, (if (total_len > n) { n } else { total_len }), [], None)
 	})
@@ -78,7 +79,9 @@ UsbHid :: [].{
 		Just(iface) => List.append(acc, iface)
 		None => acc
 	}) } else { ({
+		desc_len : I64
 		desc_len = (List.get(desc, I64.to_u64_wrap(offset)) ?? crash("list-at out of range"))
+		desc_type : I64
 		desc_type = (List.get(desc, I64.to_u64_wrap((offset + 1))) ?? crash("list-at out of range"))
 		(if (desc_len == 0) { acc } else { (if (desc_type == 4) { ({
 			iface = Usb.usb_parse_interface(desc, offset)
@@ -136,6 +139,7 @@ UsbHid :: [].{
 
 	hid_pad_report : List(I64), I64, I64, List(I64) -> List(I64)
 	hid_pad_report = |data, i, size, acc| (if (i >= size) { acc } else { ({
+		byte : I64
 		byte = (if (i < U64.to_i64_wrap(List.len(data))) { (List.get(data, I64.to_u64_wrap(i)) ?? crash("list-at out of range")) } else { 0 })
 		hid_pad_report(data, (i + 1), size, List.append(acc, byte))
 	}) })

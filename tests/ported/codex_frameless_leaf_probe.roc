@@ -29,6 +29,7 @@ flp_add32 = |a, b| I64.bitwise_and((a + b), 4294967295)
 
 flp_rotl32 : I64, I64 -> I64
 flp_rotl32 = |val, n| ({
+	masked : I64
 	masked = I64.bitwise_and(val, 4294967295)
 	I64.bitwise_and(I64.bitwise_or(I64.shl_wrap(masked, I64.to_u8_wrap(n)), I64.shr_zf_wrap(masked, I64.to_u8_wrap((32 - n)))), 4294967295)
 })
@@ -38,6 +39,7 @@ flp_gmul2 = |a| (if (a >= 128) { I64.bitwise_xor(I64.bitwise_and(I64.shl_wrap(a,
 
 flp_block : I64 -> I64
 flp_block = |cp| ({
+	v : I64
 	v = (cp - 128)
 	(if (v < 256) { 0 } else { (if (v < 384) { 1 } else { (if (v < 512) { 2 } else { (if (v < 640) { 3 } else { (if (v < 768) { 4 } else { (if (v < 896) { 5 } else { (if (v < 1024) { 6 } else { (if (v < 1152) { 7 } else { (if (v < 1664) { 8 } else { (if (v < 1920) { 9 } else { (if (v < 2048) { 10 } else { (0 - 1) }) }) }) }) }) }) }) }) }) }) })
 })

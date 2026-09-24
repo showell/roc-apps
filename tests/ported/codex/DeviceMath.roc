@@ -19,10 +19,15 @@ DeviceMath :: [].{
 
 	dm_sqrt_core : F64 -> F64
 	dm_sqrt_core = |r| ({
+		g0 : F64
 		g0 = ((r + 1.0) * 0.5)
+		g1 : F64
 		g1 = ((g0 + (r / g0)) * 0.5)
+		g2 : F64
 		g2 = ((g1 + (r / g1)) * 0.5)
+		g3 : F64
 		g3 = ((g2 + (r / g2)) * 0.5)
+		g4 : F64
 		g4 = ((g3 + (r / g3)) * 0.5)
 		((g4 + (r / g4)) * 0.5)
 	})
@@ -38,7 +43,9 @@ DeviceMath :: [].{
 
 	dm_reduce : F64 -> F64
 	dm_reduce = |x| ({
+		k : F64
 		k = I64.to_f64(F64.to_i64_wrap((x / dm_two_pi)))
+		r : F64
 		r = (x - (k * dm_two_pi))
 		(if (r > dm_pi) { (r - dm_two_pi) } else { (if (r < (0.0 - dm_pi)) { (r + dm_two_pi) } else { r }) })
 	})
@@ -51,26 +58,42 @@ DeviceMath :: [].{
 
 	dm_sin_poly : F64 -> F64
 	dm_sin_poly = |r| ({
+		r2 : F64
 		r2 = (r * r)
+		r3 : F64
 		r3 = (r2 * r)
+		r5 : F64
 		r5 = (r3 * r2)
+		r7 : F64
 		r7 = (r5 * r2)
+		r9 : F64
 		r9 = (r7 * r2)
+		r11 : F64
 		r11 = (r9 * r2)
+		r13 : F64
 		r13 = (r11 * r2)
+		r15 : F64
 		r15 = (r13 * r2)
 		(((((((r - (r3 / 6.0)) + (r5 / 120.0)) - (r7 / 5040.0)) + (r9 / 362880.0)) - (r11 / 39916800.0)) + (r13 / 6227020800.0)) - (r15 / 1307674368000.0))
 	})
 
 	dm_cos_poly : F64 -> F64
 	dm_cos_poly = |r| ({
+		r2 : F64
 		r2 = (r * r)
+		r4 : F64
 		r4 = (r2 * r2)
+		r6 : F64
 		r6 = (r4 * r2)
+		r8 : F64
 		r8 = (r6 * r2)
+		r10 : F64
 		r10 = (r8 * r2)
+		r12 : F64
 		r12 = (r10 * r2)
+		r14 : F64
 		r14 = (r12 * r2)
+		r16 : F64
 		r16 = (r14 * r2)
 		((((((((1.0 - (r2 / 2.0)) + (r4 / 24.0)) - (r6 / 720.0)) + (r8 / 40320.0)) - (r10 / 3628800.0)) + (r12 / 479001600.0)) - (r14 / 87178291200.0)) + (r16 / 20922789888000.0))
 	})
@@ -83,6 +106,7 @@ DeviceMath :: [].{
 
 	real_sin : F64 -> F64
 	real_sin = |x| ({
+		r : F64
 		r = dm_reduce(x)
 		(if (r < 0.0) { (0.0 - dm_sin_octant((0.0 - r))) } else { dm_sin_octant(r) })
 	})
@@ -98,11 +122,17 @@ DeviceMath :: [].{
 
 	dm_atan_series : F64 -> F64
 	dm_atan_series = |u| ({
+		u2 : F64
 		u2 = (u * u)
+		u3 : F64
 		u3 = (u2 * u)
+		u5 : F64
 		u5 = (u3 * u2)
+		u7 : F64
 		u7 = (u5 * u2)
+		u9 : F64
 		u9 = (u7 * u2)
+		u11 : F64
 		u11 = (u9 * u2)
 		(((((u - (u3 / 3.0)) + (u5 / 5.0)) - (u7 / 7.0)) + (u9 / 9.0)) - (u11 / 11.0))
 	})

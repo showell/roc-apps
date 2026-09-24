@@ -33,6 +33,7 @@ consume_in_match = |n, tag| (match tag {
 
 pass_linear : I64 -> I64
 pass_linear = |n| ({
+	result : I64
 	result = Linear.freeze(n)
 	(result + 1)
 })

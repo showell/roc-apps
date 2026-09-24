@@ -16,7 +16,9 @@ NumberTheory :: [].{
 
 	gcd : I64, I64 -> I64
 	gcd = |a, b| ({
+		x : I64
 		x = (if (a < 0) { (0 - a) } else { a })
+		y : I64
 		y = (if (b < 0) { (0 - b) } else { b })
 		gcd_loop(x, y)
 	})
@@ -26,6 +28,7 @@ NumberTheory :: [].{
 
 	lcm : I64, I64 -> I64
 	lcm = |a, b| (if (a == 0) { 0 } else { (if (b == 0) { 0 } else { ({
+		g : I64
 		g = gcd(a, b)
 		(I64.div_trunc_by(a, g) * b)
 	}) }) })
@@ -35,6 +38,7 @@ NumberTheory :: [].{
 
 	mod_exp_loop : I64, I64, I64, I64 -> I64
 	mod_exp_loop = |base, exp, m, result| (if (exp <= 0) { result } else { (if (I64.bitwise_and(exp, 1) == 1) { ({
+		r2 : I64
 		r2 = ((result * base) - (I64.div_trunc_by((result * base), m) * m))
 		mod_exp_loop(((base * base) - (I64.div_trunc_by((base * base), m) * m)), I64.shr_zf_wrap(exp, I64.to_u8_wrap(1)), m, r2)
 	}) } else { mod_exp_loop(((base * base) - (I64.div_trunc_by((base * base), m) * m)), I64.shr_zf_wrap(exp, I64.to_u8_wrap(1)), m, result) }) })
@@ -42,6 +46,7 @@ NumberTheory :: [].{
 	mod_inverse : I64, I64 -> I64
 	mod_inverse = |a, m| ({
 		r = extended_gcd(a, m)
+		x : I64
 		x = r.x
 		(if (x < 0) { (x + m) } else { x })
 	})
@@ -81,6 +86,7 @@ NumberTheory :: [].{
 
 	euler_totient_loop : I64, I64, I64 -> I64
 	euler_totient_loop = |n, result, p| (if ((p * p) > n) { (if (n > 1) { (result - I64.div_trunc_by(result, n)) } else { result }) } else { (if ((n - (I64.div_trunc_by(n, p) * p)) == 0) { ({
+		n2 : I64
 		n2 = euler_drain(n, p)
 		euler_totient_loop(n2, (result - I64.div_trunc_by(result, p)), (p + 1))
 	}) } else { euler_totient_loop(n, result, (p + 1)) }) })

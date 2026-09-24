@@ -16,6 +16,7 @@ S7comm :: [].{
 
 	s7_cotp_cr : I64, I64, I64, List(I64), List(I64) -> List(I64)
 	s7_cotp_cr = |src_ref, dst_ref, tpdu_size, src_tsap, dst_tsap| ({
+		body : List(I64)
 		body = List.concat(List.concat(List.concat(List.concat([224], s7_u16_be(dst_ref)), s7_u16_be(src_ref)), [0]), s7_cotp_cr_params(tpdu_size, src_tsap, dst_tsap))
 		List.concat([U64.to_i64_wrap(List.len(body))], body)
 	})
@@ -28,6 +29,7 @@ S7comm :: [].{
 
 	s7_setup : I64, I64, I64, I64 -> List(I64)
 	s7_setup = |pdu_ref, max_called, max_calling, pdu_size| ({
+		param : List(I64)
 		param = List.concat(List.concat(List.concat([240, 0], s7_u16_be(max_called)), s7_u16_be(max_calling)), s7_u16_be(pdu_size))
 		List.concat(s7_header(s7_rosctr_job, pdu_ref, U64.to_i64_wrap(List.len(param)), 0), param)
 	})
@@ -52,6 +54,7 @@ S7comm :: [].{
 
 	s7_read_var_single : I64, List(I64) -> List(I64)
 	s7_read_var_single = |pdu_ref, item| ({
+		param : List(I64)
 		param = List.concat([4, 1], item)
 		List.concat(s7_header(s7_rosctr_job, pdu_ref, U64.to_i64_wrap(List.len(param)), 0), param)
 	})

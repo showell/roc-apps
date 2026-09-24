@@ -44,9 +44,13 @@ lam_3 = |acc, _ch, _idx| (acc + 1)
 
 main! = |_args| {
 	({
+		r1 : I64
 		r1 = TextScan.text_fold_indexed("abc", 0, lam_1)
+		r2 : CceText
 		r2 = TextScan.text_fold_indexed("hello", "", lam_2)
+		r3 : I64
 		r3 = count_vowels("hello world")
+		r4 : I64
 		r4 = TextScan.text_fold_indexed("test", 0, lam_3)
 		({
 			line!(CceText.printed(CceText.show_int(r1)))

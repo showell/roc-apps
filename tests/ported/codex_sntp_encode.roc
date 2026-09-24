@@ -31,12 +31,14 @@ flag = |b| (if b { 1 } else { 0 })
 
 check_length_flag : I64
 check_length_flag = ({
+	req : List(I64)
 	req = Sntp.sntp_build_request(3789743076)
 	flag((if (U64.to_i64_wrap(List.len(req)) == 48) { ((List.get(req, I64.to_u64_wrap(0)) ?? crash("list-at out of range")) == 35) } else { False }))
 })
 
 check_transmit_field : I64
 check_transmit_field = ({
+	req : List(I64)
 	req = Sntp.sntp_build_request(3789743076)
 	flag(bytes_eq([(List.get(req, I64.to_u64_wrap(40)) ?? crash("list-at out of range")), (List.get(req, I64.to_u64_wrap(41)) ?? crash("list-at out of range")), (List.get(req, I64.to_u64_wrap(42)) ?? crash("list-at out of range")), (List.get(req, I64.to_u64_wrap(43)) ?? crash("list-at out of range"))], [225, 226, 227, 228]))
 })
@@ -46,6 +48,7 @@ check_roundtrip = flag((Sntp.sntp_transmit_seconds(Sntp.sntp_build_request(37897
 
 check_mode_version : I64
 check_mode_version = ({
+	req : List(I64)
 	req = Sntp.sntp_build_request(0)
 	flag((if (Sntp.sntp_mode(req) == 3) { (Sntp.sntp_version(req) == 4) } else { False }))
 })

@@ -79,6 +79,7 @@ Sound :: [].{
 	sound_seq_tick : Sound.SoundSeq, I64, Sound.SoundQueue -> Sound.SoundSeqResult
 	sound_seq_tick = |seq, dt, sq| (if seq.sseq_done { Sound.SoundSeqResult.{ ssr_seq: seq, ssr_queue: sq } } else { (if (seq.sseq_current >= seq.sseq_count) { Sound.SoundSeqResult.{ ssr_seq: Sound.SoundSeq.{ sseq_steps: seq.sseq_steps, sseq_count: seq.sseq_count, sseq_current: seq.sseq_current, sseq_elapsed: seq.sseq_elapsed, sseq_done: True }, ssr_queue: sq } } else { ({
 		step = (List.get(seq.sseq_steps, I64.to_u64_wrap(seq.sseq_current)) ?? crash("list-at out of range"))
+		new_elapsed : I64
 		new_elapsed = (seq.sseq_elapsed + dt)
 		(if (new_elapsed >= step.ss_delay) { ({
 			sq2 = sq_enqueue(sq, step.ss_effect)

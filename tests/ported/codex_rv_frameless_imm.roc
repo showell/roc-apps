@@ -32,36 +32,42 @@ pf_of = |id| I64.bitwise_and(I64.shr_zf_wrap(id, I64.to_u8_wrap(16)), 255)
 
 shl_let : I64 -> I64
 shl_let = |id| ({
+	pf : I64
 	pf = I64.bitwise_and(I64.shr_zf_wrap(id, I64.to_u8_wrap(16)), 255)
 	I64.shl_wrap(pf, I64.to_u8_wrap(8))
 })
 
 shl_let_if : I64 -> I64
 shl_let_if = |id| ({
+	pf : I64
 	pf = I64.bitwise_and(I64.shr_zf_wrap(id, I64.to_u8_wrap(16)), 255)
 	(if (pf < 240) { I64.shl_wrap(pf, I64.to_u8_wrap(8)) } else { I64.bitwise_or(I64.shl_wrap(pf, I64.to_u8_wrap(8)), I64.bitwise_and(I64.shr_zf_wrap(id, I64.to_u8_wrap(8)), 255)) })
 })
 
 shru_let : I64 -> I64
 shru_let = |id| ({
+	pf : I64
 	pf = I64.bitwise_and(I64.shr_zf_wrap(id, I64.to_u8_wrap(16)), 65535)
 	I64.shr_zf_wrap(pf, I64.to_u8_wrap(4))
 })
 
 and_let : I64 -> I64
 and_let = |id| ({
+	pf : I64
 	pf = I64.shr_zf_wrap(id, I64.to_u8_wrap(16))
 	I64.bitwise_and(pf, 255)
 })
 
 or_let : I64 -> I64
 or_let = |id| ({
+	pf : I64
 	pf = I64.bitwise_and(I64.shr_zf_wrap(id, I64.to_u8_wrap(16)), 255)
 	I64.bitwise_or(pf, 1024)
 })
 
 xor_let : I64 -> I64
 xor_let = |id| ({
+	pf : I64
 	pf = I64.bitwise_and(I64.shr_zf_wrap(id, I64.to_u8_wrap(16)), 255)
 	I64.bitwise_xor(pf, 15)
 })

@@ -23,15 +23,20 @@ Kinematic :: [].{
 
 	distance_sq_2d : I64, I64, I64, I64 -> I64
 	distance_sq_2d = |x1, y1, x2, y2| ({
+		dx : I64
 		dx = (x2 - x1)
+		dy : I64
 		dy = (y2 - y1)
 		((dx * dx) + (dy * dy))
 	})
 
 	distance_sq_3d : I64, I64, I64, I64, I64, I64 -> I64
 	distance_sq_3d = |x1, y1, z1, x2, y2, z2| ({
+		dx : I64
 		dx = (x2 - x1)
+		dy : I64
 		dy = (y2 - y1)
+		dz : I64
 		dz = (z2 - z1)
 		(((dx * dx) + (dy * dy)) + (dz * dz))
 	})

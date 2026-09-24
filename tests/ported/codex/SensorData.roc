@@ -47,6 +47,7 @@ SensorData :: [].{
 
 	ts_min_loop : List(SensorData.TimeSeriesEntry), I64, I64, I64 -> I64
 	ts_min_loop = |entries, i, len, best| (if (i >= len) { best } else { ({
+		v : I64
 		v = (List.get(entries, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).value
 		ts_min_loop(entries, (i + 1), len, (if (v < best) { v } else { best }))
 	}) })
@@ -56,6 +57,7 @@ SensorData :: [].{
 
 	ts_max_loop : List(SensorData.TimeSeriesEntry), I64, I64, I64 -> I64
 	ts_max_loop = |entries, i, len, best| (if (i >= len) { best } else { ({
+		v : I64
 		v = (List.get(entries, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).value
 		ts_max_loop(entries, (i + 1), len, (if (v > best) { v } else { best }))
 	}) })
@@ -68,6 +70,7 @@ SensorData :: [].{
 
 	ts_average : List(SensorData.TimeSeriesEntry) -> I64
 	ts_average = |entries| ({
+		len : I64
 		len = U64.to_i64_wrap(List.len(entries))
 		(if (len == 0) { 0 } else { I64.div_trunc_by(ts_sum(entries), len) })
 	})

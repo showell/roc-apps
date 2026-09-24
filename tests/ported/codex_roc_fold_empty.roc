@@ -33,6 +33,7 @@ lam_1 = |acc, x| (acc + x)
 
 main! = |_args| {
 	({
+		total : I64
 		total = lam_0([], 42, lam_1)
 		line!(CceText.printed(CceText.show_int(total)))
 	})

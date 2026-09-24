@@ -41,16 +41,22 @@ line! = |s| echo!(Str.concat(s, "\n"))
 
 show_hex_word : I64 -> CceText
 show_hex_word = |w| ({
+	b0 : I64
 	b0 = I64.bitwise_and(w, 255)
+	b1 : I64
 	b1 = I64.bitwise_and(I64.shr_zf_wrap(w, I64.to_u8_wrap(8)), 255)
+	b2 : I64
 	b2 = I64.bitwise_and(I64.shr_zf_wrap(w, I64.to_u8_wrap(16)), 255)
+	b3 : I64
 	b3 = I64.bitwise_and(I64.shr_zf_wrap(w, I64.to_u8_wrap(24)), 255)
 	CceText.concat(CceText.concat(CceText.concat(hex_byte(b3), hex_byte(b2)), hex_byte(b1)), hex_byte(b0))
 })
 
 show_hex_half : I64 -> CceText
 show_hex_half = |w| ({
+	b0 : I64
 	b0 = I64.bitwise_and(w, 255)
+	b1 : I64
 	b1 = I64.bitwise_and(I64.shr_zf_wrap(w, I64.to_u8_wrap(8)), 255)
 	CceText.concat(hex_byte(b1), hex_byte(b0))
 })
@@ -81,12 +87,14 @@ hex_nib = |n| (match n {
 
 show_insn_16 : List(I64) -> CceText
 show_insn_16 = |bytes| ({
+	w : I64
 	w = ((List.get(bytes, I64.to_u64_wrap(0)) ?? crash("list-at out of range")) + ((List.get(bytes, I64.to_u64_wrap(1)) ?? crash("list-at out of range")) * 256))
 	show_hex_half(w)
 })
 
 show_insn_32 : List(I64) -> CceText
 show_insn_32 = |bytes| ({
+	w : I64
 	w = ((((List.get(bytes, I64.to_u64_wrap(0)) ?? crash("list-at out of range")) + ((List.get(bytes, I64.to_u64_wrap(1)) ?? crash("list-at out of range")) * 256)) + ((List.get(bytes, I64.to_u64_wrap(2)) ?? crash("list-at out of range")) * 65536)) + ((List.get(bytes, I64.to_u64_wrap(3)) ?? crash("list-at out of range")) * 16777216))
 	show_hex_word(w)
 })
@@ -113,6 +121,7 @@ main! = |_args| {
 	line!(CceText.printed(CceText.concat("ldr.w r0,[r1,#16]=", show_insn_32(Thumb2Encoder.t2_ldr_w(0, 1, 16)))))
 	line!(CceText.printed(CceText.concat("str.w r0,[r1,#16]=", show_insn_32(Thumb2Encoder.t2_str_w(0, 1, 16)))))
 	({
+		li_result : List(I64)
 		li_result = Thumb2Encoder.t2_li(0, 305419896)
 		line!(CceText.printed(CceText.concat("li r0,#12345678 len=", CceText.show_int(U64.to_i64_wrap(List.len(li_result))))))
 	})

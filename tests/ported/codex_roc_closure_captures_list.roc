@@ -27,11 +27,13 @@ lam_0 = |xs, _ignored| xs
 
 main! = |_args| {
 	({
+		xs : List(I64)
 		xs = [1, 2]
 		f = ({
 			dev__1 = xs
 			|dev__2| lam_0(dev__1, dev__2)
 		})
+		result : List(I64)
 		result = f(0)
 		line!(CceText.printed(CceText.show_int(((List.get(result, I64.to_u64_wrap(0)) ?? crash("list-at out of range")) + (List.get(result, I64.to_u64_wrap(1)) ?? crash("list-at out of range"))))))
 	})

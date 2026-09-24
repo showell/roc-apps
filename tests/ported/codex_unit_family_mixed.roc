@@ -87,9 +87,13 @@ length_to_Mile = |fv| I64.div_trunc_by(fv, 1609344)
 
 main! = |_args| {
 	({
+		w : Length
 		w = millimeter(500)
+		h : Length
 		h = yard(1)
+		p : Length
 		p = perimeter(w, h)
+		fence : Length
 		fence = total_fence(meter(3), foot(10), inch(24), yard(2))
 		({
 			line!(CceText.printed(CceText.concat(CceText.concat("perimeter mm+yard: ", CceText.show_int(p)), "mm")))

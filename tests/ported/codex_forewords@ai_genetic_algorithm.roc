@@ -37,6 +37,7 @@ head_gene = |c| (List.get(c.genes, I64.to_u64_wrap(0)) ?? crash("list-at out of 
 
 head_genes : List(GeneticAlgorithm.GaChromosome), I64, I64, CceText -> CceText
 head_genes = |xs, i, n, acc| (if (i >= n) { acc } else { ({
+	sep : CceText
 	sep = (if (i == 0) { "" } else { " " })
 	head_genes(xs, (i + 1), n, CceText.concat(CceText.concat(acc, sep), CceText.show_int(head_gene((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))))
 }) })

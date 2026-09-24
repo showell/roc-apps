@@ -63,7 +63,9 @@ main! = |args| {
 	(_mem10, mem__5) = ({
 		(mem1, b) = Mem.mark(mem)
 		(mem2, _adv) = Mem.advance(mem1, 64)
+		prev : I64
 		prev = b
+		cur : I64
 		cur = (b + 8)
 		(mem3, _z0) = zero8!(mem2, prev, 0)
 		(mem4, _z1) = zero8!(mem3, cur, 0)
@@ -77,6 +79,7 @@ main! = |args| {
 						(mem6, mem__1) = Mem.load!(mem5, prev, 0, 1)
 						(mem7, mem__2) = Mem.load!(mem6, prev, 2, 1)
 						(mem8, mem__3) = Mem.load!(mem7, prev, 3, 1)
+						held : I64
 						held = ((mem__1 + mem__2) + mem__3)
 						(mem8, line!(CceText.printed(CceText.concat("prev-drained: ", CceText.show_int(held)))))
 					})

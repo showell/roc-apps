@@ -49,6 +49,7 @@ test_percentile = CceText.concat("p50=", CceText.show_int(Statistics.stat_percen
 
 test_histogram : CceText
 test_histogram = ({
+	hist : List(I64)
 	hist = Statistics.stat_histogram([1, 2, 2, 3, 3, 3, 4, 4, 5], 5)
 	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("hist=", CceText.show_int((List.get(hist, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))), ","), CceText.show_int((List.get(hist, I64.to_u64_wrap(1)) ?? crash("list-at out of range")))), ","), CceText.show_int((List.get(hist, I64.to_u64_wrap(2)) ?? crash("list-at out of range")))), ","), CceText.show_int((List.get(hist, I64.to_u64_wrap(3)) ?? crash("list-at out of range")))), ","), CceText.show_int((List.get(hist, I64.to_u64_wrap(4)) ?? crash("list-at out of range"))))
 })
@@ -58,6 +59,7 @@ test_range = CceText.concat("range=", CceText.show_int(Statistics.stat_range([3,
 
 test_wrap : CceText
 test_wrap = ({
+	wrapped : CceText
 	wrapped = TextWrap.text_wrap("the quick brown fox jumps over the lazy dog", 15)
 	CceText.concat("wrap=", wrapped)
 })

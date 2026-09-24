@@ -44,9 +44,13 @@ test_basic = ({
 	m1 = Hamt.hamt_set(m0, "hello", 42)
 	m2 = Hamt.hamt_set(m1, "world", 99)
 	m3 = Hamt.hamt_set(m2, "codex", 7)
+	r1 : CceText
 	r1 = show_maybe(Hamt.hamt_get(m3, "hello"))
+	r2 : CceText
 	r2 = show_maybe(Hamt.hamt_get(m3, "world"))
+	r3 : CceText
 	r3 = show_maybe(Hamt.hamt_get(m3, "codex"))
+	r4 : CceText
 	r4 = show_maybe(Hamt.hamt_get(m3, "missing"))
 	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("get hello=", r1), " world="), r2), " codex="), r3), " missing="), r4)
 })
@@ -76,8 +80,11 @@ test_many = |n, m| (if (n == 0) { m } else { test_many((n - 1), Hamt.hamt_set(m,
 test_scale : CceText
 test_scale = ({
 	m = test_many(100, Hamt.hamt_empty)
+	r50 : CceText
 	r50 = show_maybe(Hamt.hamt_get(m, "key-50"))
+	r1 : CceText
 	r1 = show_maybe(Hamt.hamt_get(m, "key-1"))
+	r100 : CceText
 	r100 = show_maybe(Hamt.hamt_get(m, "key-100"))
 	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("100 entries: key-50=", r50), " key-1="), r1), " key-100="), r100), " size="), CceText.show_int(Hamt.hamt_size(m)))
 })
@@ -86,7 +93,9 @@ test_persistence : CceText
 test_persistence = ({
 	m1 = Hamt.hamt_set(Hamt.hamt_set(Hamt.hamt_empty, "a", 1), "b", 2)
 	m2 = Hamt.hamt_set(m1, "c", 3)
+	m1_has_c : CceText
 	m1_has_c = (if Hamt.hamt_contains(m1, "c") { "True" } else { "False" })
+	m2_has_c : CceText
 	m2_has_c = (if Hamt.hamt_contains(m2, "c") { "True" } else { "False" })
 	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("persistence: m1 has c=", m1_has_c), " m2 has c="), m2_has_c), " m1 size="), CceText.show_int(Hamt.hamt_size(m1))), " m2 size="), CceText.show_int(Hamt.hamt_size(m2)))
 })

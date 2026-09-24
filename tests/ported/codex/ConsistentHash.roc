@@ -21,8 +21,10 @@ ConsistentHash :: [].{
 
 	chr_add_vnodes : ConsistentHash.ConsistentHashRing, I64, I64, I64 -> ConsistentHash.ConsistentHashRing
 	chr_add_vnodes = |ring, node_id, i, limit| (if (i >= limit) { ring } else { ({
+		h : I64
 		h = chr_hash_pair(node_id, i)
 		entry = ConsistentHash.HashRingEntry.{ hr_hash: h, hr_node: node_id }
+		pos : I64
 		pos = chr_find_insert(ring.hr_entries, h, 0, ring.hr_count)
 		new_entries = chr_insert_at(ring.hr_entries, pos, entry, ring.hr_count)
 		chr_add_vnodes(ConsistentHash.ConsistentHashRing.{ hr_entries: new_entries, hr_count: (ring.hr_count + 1), hr_vnodes: ring.hr_vnodes }, node_id, (i + 1), limit)
@@ -39,6 +41,7 @@ ConsistentHash :: [].{
 
 	chr_get_node : ConsistentHash.ConsistentHashRing, I64 -> I64
 	chr_get_node = |ring, key| (if (ring.hr_count == 0) { (0 - 1) } else { ({
+		h : I64
 		h = chr_hash_key(key)
 		chr_find_node(ring.hr_entries, h, 0, ring.hr_count)
 	}) })
@@ -48,6 +51,7 @@ ConsistentHash :: [].{
 
 	chr_hash_key : I64 -> I64
 	chr_hash_key = |key| ({
+		h : I64
 		h = Random.mix_bits(key, 1013904223)
 		(if (h < 0) { (-h) } else { h })
 	})
@@ -60,6 +64,7 @@ ConsistentHash :: [].{
 
 	chr_hash_pair : I64, I64 -> I64
 	chr_hash_pair = |node, vnode| ({
+		h : I64
 		h = Random.mix_bits(node, (vnode + 1))
 		(if (h < 0) { (-h) } else { h })
 	})

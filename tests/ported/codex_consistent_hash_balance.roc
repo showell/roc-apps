@@ -40,12 +40,14 @@ tally = |node, n, acc| (if (node >= n) { acc } else { tally((node + 1), n, CceTe
 
 lowest : I64, I64, I64 -> I64
 lowest = |node, n, acc| (if (node >= n) { acc } else { ({
+	c : I64
 	c = count_for(node, 0, 200, 0)
 	lowest((node + 1), n, (if (c < acc) { c } else { acc }))
 }) })
 
 highest : I64, I64, I64 -> I64
 highest = |node, n, acc| (if (node >= n) { acc } else { ({
+	c : I64
 	c = count_for(node, 0, 200, 0)
 	highest((node + 1), n, (if (c > acc) { c } else { acc }))
 }) })

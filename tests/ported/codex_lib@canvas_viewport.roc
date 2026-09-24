@@ -47,7 +47,9 @@ zoom_ladder_down = |vp, i, n, acc| (if (i >= n) { acc } else { ({
 
 roundtrip : Canvas.ViewPort, I64 -> CceText
 roundtrip = |vp, wx| ({
+	s : I64
 	s = Canvas.vp_world_to_screen_x(vp, wx)
+	w : I64
 	w = Canvas.vp_screen_to_world_x(vp, s)
 	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("w=", CceText.show_int(wx)), " s="), CceText.show_int(s)), " back="), CceText.show_int(w)), (if (w == wx) { " ok" } else { " LOST" }))
 })

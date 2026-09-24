@@ -47,10 +47,13 @@ FactLog :: [].{
 		(mem5, mem__4) = ({
 		(mem1, b0) = Mem.load!(mem, buf, off, 1)
 		(mem2, mem__1) = Mem.load!(mem1, buf, (off + 1), 1)
+		b1 : I64
 		b1 = I64.shl_wrap(mem__1, I64.to_u8_wrap(8))
 		(mem3, mem__2) = Mem.load!(mem2, buf, (off + 2), 1)
+		b2 : I64
 		b2 = I64.shl_wrap(mem__2, I64.to_u8_wrap(16))
 		(mem4, mem__3) = Mem.load!(mem3, buf, (off + 3), 1)
+		b3 : I64
 		b3 = I64.shl_wrap(mem__3, I64.to_u8_wrap(24))
 		(mem4, I64.bitwise_or(b0, I64.bitwise_or(b1, I64.bitwise_or(b2, b3))))
 	})
@@ -62,18 +65,25 @@ FactLog :: [].{
 		(mem9, mem__8) = ({
 		(mem1, b0) = Mem.load!(mem, buf, off, 1)
 		(mem2, mem__1) = Mem.load!(mem1, buf, (off + 1), 1)
+		b1 : I64
 		b1 = I64.shl_wrap(mem__1, I64.to_u8_wrap(8))
 		(mem3, mem__2) = Mem.load!(mem2, buf, (off + 2), 1)
+		b2 : I64
 		b2 = I64.shl_wrap(mem__2, I64.to_u8_wrap(16))
 		(mem4, mem__3) = Mem.load!(mem3, buf, (off + 3), 1)
+		b3 : I64
 		b3 = I64.shl_wrap(mem__3, I64.to_u8_wrap(24))
 		(mem5, mem__4) = Mem.load!(mem4, buf, (off + 4), 1)
+		b4 : I64
 		b4 = I64.shl_wrap(mem__4, I64.to_u8_wrap(32))
 		(mem6, mem__5) = Mem.load!(mem5, buf, (off + 5), 1)
+		b5 : I64
 		b5 = I64.shl_wrap(mem__5, I64.to_u8_wrap(40))
 		(mem7, mem__6) = Mem.load!(mem6, buf, (off + 6), 1)
+		b6 : I64
 		b6 = I64.shl_wrap(mem__6, I64.to_u8_wrap(48))
 		(mem8, mem__7) = Mem.load!(mem7, buf, (off + 7), 1)
+		b7 : I64
 		b7 = I64.shl_wrap(mem__7, I64.to_u8_wrap(56))
 		(mem8, I64.bitwise_or(b0, I64.bitwise_or(b1, I64.bitwise_or(b2, I64.bitwise_or(b3, I64.bitwise_or(b4, I64.bitwise_or(b5, I64.bitwise_or(b6, b7))))))))
 	})
@@ -86,6 +96,7 @@ FactLog :: [].{
 	fl_text_loop! : Mem.Mem, I64, I64, I64, I64, CceText => (Mem.Mem, CceText)
 	fl_text_loop! = |mem, buf, off, len, i, acc| (if (i >= len) { (mem, acc) } else { ({
 		(mem1, mem__1) = Mem.load!(mem, buf, (off + i), 1)
+		ch : CceText
 		ch = CceText.char_to_text(CceChar.of_code(mem__1))
 		fl_text_loop!(mem1, buf, off, len, (i + 1), CceText.concat(acc, ch))
 	}) })

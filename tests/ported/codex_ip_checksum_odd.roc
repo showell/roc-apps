@@ -33,7 +33,9 @@ line! = |s| echo!(Str.concat(s, "\n"))
 
 witness_checksum : List(I64), I64, I64, I64 -> I64
 witness_checksum = |data, i, len, sum| (if (i >= len) { ({
+	folded : I64
 	folded = (I64.bitwise_and(sum, 65535) + I64.shr_zf_wrap(sum, I64.to_u8_wrap(16)))
+	folded2 : I64
 	folded2 = (I64.bitwise_and(folded, 65535) + I64.shr_zf_wrap(folded, I64.to_u8_wrap(16)))
 	I64.bitwise_and(I64.bitwise_xor(folded2, 65535), 65535)
 }) } else { (if ((i + 1) >= len) { witness_checksum(data, (i + 1), len, (sum + I64.shl_wrap((List.get(data, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), I64.to_u8_wrap(8)))) } else { witness_checksum(data, (i + 2), len, (sum + Ethernet.read_be16(data, i))) }) })

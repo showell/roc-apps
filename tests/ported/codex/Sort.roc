@@ -5,6 +5,7 @@ Sort :: [].{
 
 	sort_by : List(a), (a, a -> I64) -> List(a)
 	sort_by = |xs, cmp| ({
+		len : I64
 		len = U64.to_i64_wrap(List.len(xs))
 		(if (len <= 1) { xs } else { qsort_by(xs, cmp, 0, (len - 1)) })
 	})

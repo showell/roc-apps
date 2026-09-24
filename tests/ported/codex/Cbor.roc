@@ -60,12 +60,14 @@ Cbor :: [].{
 
 	cbor_encode_head : I64, I64 -> List(I64)
 	cbor_encode_head = |mt, n| ({
+		major : I64
 		major = I64.shl_wrap(mt, I64.to_u8_wrap(5))
 		(if (n < 24) { [I64.bitwise_or(major, n)] } else { (if (n < 256) { [I64.bitwise_or(major, 24), n] } else { (if (n < 65536) { [I64.bitwise_or(major, 25), I64.shr_zf_wrap(n, I64.to_u8_wrap(8)), I64.bitwise_and(n, 255)] } else { [I64.bitwise_or(major, 26), I64.bitwise_and(I64.shr_zf_wrap(n, I64.to_u8_wrap(24)), 255), I64.bitwise_and(I64.shr_zf_wrap(n, I64.to_u8_wrap(16)), 255), I64.bitwise_and(I64.shr_zf_wrap(n, I64.to_u8_wrap(8)), 255), I64.bitwise_and(n, 255)] }) }) })
 	})
 
 	cbor_encode_text_value : CceText -> List(I64)
 	cbor_encode_text_value = |s| ({
+		bytes : List(I64)
 		bytes = cbor_text_to_bytes(s, 0, CceText.len(s), [])
 		List.concat(cbor_encode_head(cbor_mt_text, U64.to_i64_wrap(List.len(bytes))), bytes)
 	})
@@ -99,8 +101,11 @@ Cbor :: [].{
 
 	cbor_decode_at : List(I64), I64 -> Cbor.CborDecodeResult
 	cbor_decode_at = |bs, off| ({
+		initial : I64
 		initial = (List.get(bs, I64.to_u64_wrap(off)) ?? crash("list-at out of range"))
+		mt : I64
 		mt = I64.shr_zf_wrap(initial, I64.to_u8_wrap(5))
+		ai : I64
 		ai = I64.bitwise_and(initial, 31)
 		hr = cbor_read_arg(bs, (off + 1), ai)
 		cbor_dispatch(mt, hr.arg, bs, hr.next)
@@ -108,7 +113,9 @@ Cbor :: [].{
 
 	cbor_read_arg : List(I64), I64, I64 -> Cbor.CborHeadResult
 	cbor_read_arg = |bs, off, ai| (if (ai < 24) { Cbor.CborHeadResult.{ arg: ai, next: off } } else { (if (ai == 24) { Cbor.CborHeadResult.{ arg: (List.get(bs, I64.to_u64_wrap(off)) ?? crash("list-at out of range")), next: (off + 1) } } else { (if (ai == 25) { Cbor.CborHeadResult.{ arg: I64.bitwise_or(I64.shl_wrap((List.get(bs, I64.to_u64_wrap(off)) ?? crash("list-at out of range")), I64.to_u8_wrap(8)), (List.get(bs, I64.to_u64_wrap((off + 1))) ?? crash("list-at out of range"))), next: (off + 2) } } else { ({
+		hi : I64
 		hi = I64.bitwise_or(I64.shl_wrap((List.get(bs, I64.to_u64_wrap(off)) ?? crash("list-at out of range")), I64.to_u8_wrap(24)), I64.shl_wrap((List.get(bs, I64.to_u64_wrap((off + 1))) ?? crash("list-at out of range")), I64.to_u8_wrap(16)))
+		lo : I64
 		lo = I64.bitwise_or(I64.shl_wrap((List.get(bs, I64.to_u64_wrap((off + 2))) ?? crash("list-at out of range")), I64.to_u8_wrap(8)), (List.get(bs, I64.to_u64_wrap((off + 3))) ?? crash("list-at out of range")))
 		Cbor.CborHeadResult.{ arg: I64.bitwise_or(hi, lo), next: (off + 4) }
 	}) }) }) })
@@ -118,13 +125,16 @@ Cbor :: [].{
 
 	cbor_decode_bytes : List(I64), I64, I64 -> Cbor.CborDecodeResult
 	cbor_decode_bytes = |bs, off, len| ({
+		data : List(I64)
 		data = cbor_slice(bs, off, len, 0, [])
 		Cbor.CborDecodeResult.{ cdr_value: CborBytes(data), cdr_offset: (off + len) }
 	})
 
 	cbor_decode_text : List(I64), I64, I64 -> Cbor.CborDecodeResult
 	cbor_decode_text = |bs, off, len| ({
+		bytes : List(I64)
 		bytes = cbor_slice(bs, off, len, 0, [])
+		s : CceText
 		s = cbor_bytes_to_text(bytes, 0, U64.to_i64_wrap(List.len(bytes)), "")
 		Cbor.CborDecodeResult.{ cdr_value: CborText(s), cdr_offset: (off + len) }
 	})

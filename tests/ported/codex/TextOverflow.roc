@@ -15,6 +15,7 @@ TextOverflow :: [].{
 
 	text_overflow_start : TextOverflow.TextOverflow, I64, I64, I64, I64 -> I64
 	text_overflow_start = |mode, len, avail, advance, glyph| ({
+		fits : I64
 		fits = text_fit_count(avail, advance, glyph)
 		(if (len <= fits) { 0 } else { (match mode {
 			OverflowClip => 0
@@ -25,6 +26,7 @@ TextOverflow :: [].{
 
 	text_overflow_count : TextOverflow.TextOverflow, I64, I64, I64, I64 -> I64
 	text_overflow_count = |mode, len, avail, advance, glyph| ({
+		fits : I64
 		fits = text_fit_count(avail, advance, glyph)
 		(if (len <= fits) { len } else { (match mode {
 			OverflowClip => fits
@@ -35,6 +37,7 @@ TextOverflow :: [].{
 
 	text_overflow_dots : TextOverflow.TextOverflow, I64, I64, I64, I64 -> I64
 	text_overflow_dots = |mode, len, avail, advance, glyph| ({
+		fits : I64
 		fits = text_fit_count(avail, advance, glyph)
 		(if (len <= fits) { 0 } else { (match mode {
 			OverflowClip => 0

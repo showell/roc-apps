@@ -27,6 +27,7 @@ Bezier :: [].{
 
 	bezier3_sample_loop : Bezier.BezVec, Bezier.BezVec, Bezier.BezVec, Bezier.BezVec, I64, I64, List(Bezier.BezVec) -> List(Bezier.BezVec)
 	bezier3_sample_loop = |p0, p1, p2, p3, i, steps, acc| (if (i > steps) { acc } else { ({
+		t : I64
 		t = I64.div_trunc_by((i * 1000), steps)
 		bezier3_sample_loop(p0, p1, p2, p3, (i + 1), steps, List.append(acc, bezier3_eval(p0, p1, p2, p3, t)))
 	}) })
@@ -36,10 +37,14 @@ Bezier :: [].{
 
 	bezier3_arc_loop : Bezier.BezVec, Bezier.BezVec, Bezier.BezVec, Bezier.BezVec, I64, I64, I64, Bezier.BezVec -> I64
 	bezier3_arc_loop = |p0, p1, p2, p3, i, segments, total, prev| (if (i >= segments) { total } else { ({
+		t : I64
 		t = I64.div_trunc_by(((i + 1) * 1000), segments)
 		curr = bezier3_eval(p0, p1, p2, p3, t)
+		dx : I64
 		dx = (curr.vx - prev.vx)
+		dy : I64
 		dy = (curr.vy - prev.vy)
+		dist : I64
 		dist = MathLib.math_isqrt(((dx * dx) + (dy * dy)))
 		bezier3_arc_loop(p0, p1, p2, p3, (i + 1), segments, (total + dist), curr)
 	}) })

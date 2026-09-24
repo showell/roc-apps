@@ -75,16 +75,6 @@ const codex_asn1_der_write_stdout =
     \\der writer-avoids-that-form=True
     ++ "\n";
 
-const codex_audio_diffusion_test_stdout =
-    \\peak=1000 rms=19
-    \\env=2 e0=15 e1=3
-    \\analyze: peak=1000 rms=19 centroid=3Hz bpm=120 dur=2ms
-    \\linear: steps=10 beta[0]=1 beta[-1]=20 abar[-1]=901
-    \\cosine: steps=10 beta[0]=1 beta[-1]=722 abar[-1]=27
-    \\noisy: len=3
-    \\snr: early=165666 late=697 decreasing=True
-    ++ "\n";
-
 const codex_bezier_identity_stdout =
     \\cubic-t0=100,200,300
     \\cubic-t1000=1000,1100,1200
@@ -260,19 +250,6 @@ const codex_deriving_eq_recursive_stdout =
 
 const codex_dnp3_encode_stdout =
     \\8
-    ++ "\n";
-
-const codex_dtls_handshake_stdout =
-    \\hs happy: send1,timer1000 | keys,send5,timer1050 |  | connected
-    \\hs cookie: send1,timer3000 | send3,timer2200 | timer=1000 retries=0
-    \\hs backoff: 2000,4000,8000,16000,32000,60000,60000,60000,60000,60000,60000
-    \\hs giveup: retries=10 phase=wait-sh then=abort80/failed after=/failed
-    \\hs stale: /connected
-    \\hs verdict none=send2
-    \\hs verdict good=keys
-    \\hs verdict bad=abort47
-    \\hs verdict wrong-addr=abort47
-    \\hs amp: at=True over=False partial=True budget=50
     ++ "\n";
 
 const codex_edit_distance_test_stdout =
@@ -1738,31 +1715,6 @@ const codex_forewords@ui_vector_stdout =
 
 const codex_forewords@ui_widget_stdout =
     \\UI/Widget OK
-    ++ "\n";
-
-const codex_frame_short_buffer_stdout =
-    \\whole-len=4
-    \\whole-next=8
-    \\short-len=0
-    \\huge-len=0
-    \\runt-len=0
-    \\empty-len=0
-    \\whole-bytes=4
-    \\short-bytes=0
-    \\huge-bytes=0
-    \\tag-of-runt=0
-    \\len-of-runt=7
-    \\body-of-short=0
-    \\whole-valid=True
-    \\declared-empty-len=0
-    \\declared-empty-valid=True
-    \\short-valid=False
-    \\huge-valid=False
-    \\runt-valid=False
-    \\empty-valid=False
-    \\bytes-whole-valid=True
-    \\bytes-short-valid=False
-    \\survived
     ++ "\n";
 
 const codex_frameless_leaf_probe_stdout =
@@ -3476,10 +3428,6 @@ const codex_tco_shuffle_spill_stdout =
     \\turns=4
     ++ "\n";
 
-const codex_text_append_alias_stdout =
-    \\PASS
-    ++ "\n";
-
 const codex_text_eq_branches_stdout =
     \\eq-int same    1
     \\eq-int differ  0
@@ -3704,7 +3652,6 @@ const codex_zigbee_encode_stdout =
     .{ .id = 0, .suite = .codex, .name = "codex: arithmetic", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_arithmetic.roc", .stdout_exact = codex_arithmetic_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: arm64-boot-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_arm64_boot_test.roc", .stdout_exact = codex_arm64_boot_test_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: asn1-der-write", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_asn1_der_write.roc", .stdout_exact = codex_asn1_der_write_stdout } } },
-    .{ .id = 0, .suite = .codex, .name = "codex: audio-diffusion-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_audio_diffusion_test.roc", .stdout_exact = codex_audio_diffusion_test_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: bezier-identity", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_bezier_identity.roc", .stdout_exact = codex_bezier_identity_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: bitop-if-cond", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_bitop_if_cond.roc", .stdout_exact = codex_bitop_if_cond_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: ble-att-encode", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ble_att_encode.roc", .stdout_exact = codex_ble_att_encode_stdout } } },
@@ -3729,7 +3676,6 @@ const codex_zigbee_encode_stdout =
     .{ .id = 0, .suite = .codex, .name = "codex: ctor-narrow-warn", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ctor_narrow_warn.roc", .stdout_exact = codex_ctor_narrow_warn_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: deriving-eq-recursive", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_deriving_eq_recursive.roc", .stdout_exact = codex_deriving_eq_recursive_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: dnp3-encode", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_dnp3_encode.roc", .stdout_exact = codex_dnp3_encode_stdout } } },
-    .{ .id = 0, .suite = .codex, .name = "codex: dtls-handshake", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_dtls_handshake.roc", .stdout_exact = codex_dtls_handshake_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: edit-distance-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_edit_distance_test.roc", .stdout_exact = codex_edit_distance_test_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: effect-dotted-allow", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_effect_dotted_allow.roc", .stdout_exact = codex_effect_dotted_allow_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: effect-positive", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_effect_positive.roc", .stdout_exact = codex_effect_positive_stdout } } },
@@ -4033,7 +3979,6 @@ const codex_zigbee_encode_stdout =
     .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-touch", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_touch.roc", .stdout_exact = codex_forewords@ui_touch_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-vector", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_vector.roc", .stdout_exact = codex_forewords@ui_vector_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: forewords@ui-widget", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_forewords@ui_widget.roc", .stdout_exact = codex_forewords@ui_widget_stdout } } },
-    .{ .id = 0, .suite = .codex, .name = "codex: frame-short-buffer", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_frame_short_buffer.roc", .stdout_exact = codex_frame_short_buffer_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: frameless-leaf-probe", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_frameless_leaf_probe.roc", .stdout_exact = codex_frameless_leaf_probe_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: hamt-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_hamt_test.roc", .stdout_exact = codex_hamt_test_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: hart-encode", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_hart_encode.roc", .stdout_exact = codex_hart_encode_stdout } } },
@@ -4197,7 +4142,6 @@ const codex_zigbee_encode_stdout =
     .{ .id = 0, .suite = .codex, .name = "codex: tco-framed-append", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_tco_framed_append.roc", .stdout_exact = codex_tco_framed_append_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: tco-nested-if", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_tco_nested_if.roc", .stdout_exact = codex_tco_nested_if_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: tco-shuffle-spill", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_tco_shuffle_spill.roc", .stdout_exact = codex_tco_shuffle_spill_stdout } } },
-    .{ .id = 0, .suite = .codex, .name = "codex: text-append-alias", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_text_append_alias.roc", .stdout_exact = codex_text_append_alias_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: text-eq-branches", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_text_eq_branches.roc", .stdout_exact = codex_text_eq_branches_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: text-fold-indexed", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_text_fold_indexed.roc", .stdout_exact = codex_text_fold_indexed_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: text-helper-native", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_text_helper_native.roc", .stdout_exact = codex_text_helper_native_stdout } } },

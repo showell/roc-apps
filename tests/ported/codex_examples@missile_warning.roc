@@ -33,9 +33,13 @@ Countermeasure : [NoAction, Chaff, Flare, Jam, Evade]
 
 classify_threat : SensorReading -> ThreatLevel
 classify_threat = |s| ({
+	range_score : I64
 	range_score = (if (s.range_m < 1000) { 40 } else { (if (s.range_m < 5000) { 25 } else { (if (s.range_m < 20000) { 10 } else { 0 }) }) })
+	vel_score : I64
 	vel_score = (if (s.velocity > 3000) { 30 } else { (if (s.velocity > 1500) { 20 } else { (if (s.velocity > 500) { 10 } else { 0 }) }) })
+	ir_score : I64
 	ir_score = (if (s.ir_signal > 800) { 30 } else { (if (s.ir_signal > 400) { 15 } else { 0 }) })
+	total : I64
 	total = ((range_score + vel_score) + ir_score)
 	(if (total >= 80) { Critical } else { (if (total >= 60) { High } else { (if (total >= 35) { Medium } else { (if (total >= 15) { Low } else { None }) }) }) })
 })

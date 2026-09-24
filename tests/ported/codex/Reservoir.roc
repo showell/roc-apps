@@ -12,8 +12,10 @@ Reservoir :: [].{
 
 	reservoir_add : Reservoir.ReservoirSample, I64, I64 -> Reservoir.ReservoirSample
 	reservoir_add = |rs, item, seed| ({
+		n : I64
 		n = (rs.rs_seen + 1)
 		(if (rs.rs_count < rs.rs_capacity) { Reservoir.ReservoirSample.{ rs_items: List.append(rs.rs_items, item), rs_capacity: rs.rs_capacity, rs_count: (rs.rs_count + 1), rs_seen: n } } else { ({
+			j : I64
 			j = reservoir_rand(seed, n)
 			(if (j < rs.rs_capacity) { Reservoir.ReservoirSample.{ rs_items: (List.set(rs.rs_items, I64.to_u64_wrap(j), item) ?? crash("list-set-at past the end")), rs_capacity: rs.rs_capacity, rs_count: rs.rs_count, rs_seen: n } } else { Reservoir.ReservoirSample.{ rs_items: rs.rs_items, rs_capacity: rs.rs_capacity, rs_count: rs.rs_count, rs_seen: n } })
 		}) })

@@ -58,12 +58,14 @@ r = |what, x, got, want| CceText.concat(CceText.concat(CceText.concat(CceText.co
 
 mono : I64, I64, I64, I64 -> I64
 mono = |i, n, prev, acc| (if (i > n) { acc } else { ({
+	v : I64
 	v = Activation.act_sigmoid_val((i * 1000))
 	mono((i + 1), n, v, (if (v >= prev) { (acc + 1) } else { acc }))
 }) })
 
 mono_exp : I64, I64, I64, I64 -> I64
 mono_exp = |i, n, prev, acc| (if (i > n) { acc } else { ({
+	v : I64
 	v = Activation.act_exp_approx((i * 1000))
 	mono_exp((i + 1), n, v, (if (v >= prev) { (acc + 1) } else { acc }))
 }) })

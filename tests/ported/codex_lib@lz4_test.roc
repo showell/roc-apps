@@ -29,8 +29,11 @@ list_equal = |a, b, i, len| (if (i >= len) { True } else { (if ((List.get(a, I64
 
 check_rt : List(I64), CceText -> CceText
 check_rt = |input, label| ({
+	compressed : List(I64)
 	compressed = Lz4.lz4_compress(input)
+	decompressed : List(I64)
 	decompressed = Lz4.lz4_decompress(compressed)
+	ok : Bool
 	ok = (if (U64.to_i64_wrap(List.len(decompressed)) == U64.to_i64_wrap(List.len(input))) { list_equal(input, decompressed, 0, U64.to_i64_wrap(List.len(input))) } else { False })
 	CceText.concat(CceText.concat(label, "="), (if ok { "pass" } else { "fail" }))
 })

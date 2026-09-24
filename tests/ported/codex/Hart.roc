@@ -46,12 +46,14 @@ Hart :: [].{
 
 	hart_short_frame : I64, I64, List(I64) -> List(I64)
 	hart_short_frame = |address, command, data| ({
+		core : List(I64)
 		core = List.concat([hart_delim_stx_short, address, command, U64.to_i64_wrap(List.len(data))], data)
 		List.concat(List.concat(hart_preamble(5), core), [hart_checksum(core)])
 	})
 
 	hart_long_frame : List(I64), I64, List(I64) -> List(I64)
 	hart_long_frame = |uid, command, data| ({
+		core : List(I64)
 		core = List.concat(List.concat(List.concat([hart_delim_stx_long], uid), [command, U64.to_i64_wrap(List.len(data))]), data)
 		List.concat(List.concat(hart_preamble(5), core), [hart_checksum(core)])
 	})

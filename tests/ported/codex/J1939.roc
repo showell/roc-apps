@@ -28,6 +28,7 @@ J1939 :: [].{
 
 	j1939_pgn : I64 -> I64
 	j1939_pgn = |can_id| ({
+		pf : I64
 		pf = j1939_pf(can_id)
 		(if j1939_is_pdu1(pf) { j1939_pgn_pdu1(pf) } else { j1939_pgn_pdu2(pf, j1939_ps(can_id)) })
 	})

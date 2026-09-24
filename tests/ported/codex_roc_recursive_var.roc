@@ -22,8 +22,10 @@ line! = |s| echo!(Str.concat(s, "\n"))
 
 f : I64 -> I64
 f = |n| ({
+	state : I64
 	state = n
 	(if (n > 0) { ({
+		inner : I64
 		inner = f((n - 1))
 		(state + inner)
 	}) } else { state })

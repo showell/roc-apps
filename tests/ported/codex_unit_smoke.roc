@@ -39,13 +39,21 @@ minute_to_Second = |cv| (cv * 60)
 
 main! = |_args| {
 	({
+		t1 : Second
 		t1 = 42
+		t2 : Second
 		t2 = 8
+		d : Meter
 		d = 100
+		sum : Second
 		sum = (t1 + t2)
+		scaled : Second
 		scaled = (t1 * 3)
+		m : Minute
 		m = 2
+		s : Second
 		s = minute_to_Second(m)
+		built : Second
 		built = make_duration(99)
 		({
 			line!(CceText.printed(CceText.show_int(t1)))

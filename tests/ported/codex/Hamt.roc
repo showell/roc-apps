@@ -70,6 +70,7 @@ Hamt :: [].{
 
 	hamt_get : Hamt.HamtMap(a), CceText -> Maybe.Maybe(a)
 	hamt_get = |m, key| ({
+		hash : I64
 		hash = hamt_djb2_hash(key)
 		hamt_node_get(m.root, hash, key, 0)
 	})
@@ -80,8 +81,10 @@ Hamt :: [].{
 		HamtLeaf(_h, k, v) => (if (k == key) { Just(v) } else { None })
 		HamtCollision(h, entries) => (if (h == hash) { collision_find(entries, key) } else { None })
 		HamtBranch(bitmap, children) => ({
+			chunk : I64
 			chunk = extract_chunk(hash, level)
 			(if bitmap_has(bitmap, chunk) { ({
+				idx : I64
 				idx = bitmap_index(bitmap, chunk)
 				hamt_node_get((List.get(children, I64.to_u64_wrap(idx)) ?? crash("list-at out of range")), hash, key, (level + 1))
 			}) } else { None })
@@ -96,6 +99,7 @@ Hamt :: [].{
 
 	hamt_set : Hamt.HamtMap(a), CceText, a -> Hamt.HamtMap(a)
 	hamt_set = |m, key, value| ({
+		hash : I64
 		hash = hamt_djb2_hash(key)
 		result = hamt_node_set(m.root, hash, key, value, 0)
 		{ root: result.node, size: (m.size + result.delta) }
@@ -116,13 +120,16 @@ Hamt :: [].{
 			hamt_node_set(make_single_branch(col_node, h, level), hash, key, value, level)
 		}) })
 		HamtBranch(bitmap, children) => ({
+			chunk : I64
 			chunk = extract_chunk(hash, level)
 			(if bitmap_has(bitmap, chunk) { ({
+				idx : I64
 				idx = bitmap_index(bitmap, chunk)
 				child = (List.get(children, I64.to_u64_wrap(idx)) ?? crash("list-at out of range"))
 				result = hamt_node_set(child, hash, key, value, (level + 1))
 				{ node: HamtBranch(bitmap, list_replace_at(children, idx, result.node)), delta: result.delta }
 			}) } else { ({
+				idx : I64
 				idx = bitmap_index(bitmap, chunk)
 				new_leaf = HamtLeaf(hash, key, value)
 				{ node: HamtBranch(bitmap_set(bitmap, chunk), hamt_insert_at(children, idx, new_leaf)), delta: 1 }
@@ -132,13 +139,16 @@ Hamt :: [].{
 
 	make_single_branch : Hamt.HamtNode(a), I64, I64 -> Hamt.HamtNode(a)
 	make_single_branch = |node, hash, level| ({
+		chunk : I64
 		chunk = extract_chunk(hash, level)
 		HamtBranch(pow2(chunk), [node])
 	})
 
 	make_branch : I64, CceText, a, I64, CceText, a, I64 -> Hamt.HamtNode(a)
 	make_branch = |h1, k1, v1, h2, k2, v2, level| (if (level > 6) { HamtCollision(h1, [{ key: k1, value: v1 }, { key: k2, value: v2 }]) } else { ({
+		c1 : I64
 		c1 = extract_chunk(h1, level)
+		c2 : I64
 		c2 = extract_chunk(h2, level)
 		(if (c1 == c2) { ({
 			child = make_branch(h1, k1, v1, h2, k2, v2, (level + 1))
@@ -157,6 +167,7 @@ Hamt :: [].{
 
 	hamt_remove : Hamt.HamtMap(a), CceText -> Hamt.HamtMap(a)
 	hamt_remove = |m, key| ({
+		hash : I64
 		hash = hamt_djb2_hash(key)
 		result = hamt_node_remove(m.root, hash, key, 0)
 		(match result {
@@ -177,8 +188,10 @@ Hamt :: [].{
 			}) } else { Just(HamtCollision(h, filtered)) }) })
 		}) } else { None })
 		HamtBranch(bitmap, children) => ({
+			chunk : I64
 			chunk = extract_chunk(hash, level)
 			(if bitmap_has(bitmap, chunk) { ({
+				idx : I64
 				idx = bitmap_index(bitmap, chunk)
 				child = (List.get(children, I64.to_u64_wrap(idx)) ?? crash("list-at out of range"))
 				result = hamt_node_remove(child, hash, key, (level + 1))
@@ -186,6 +199,7 @@ Hamt :: [].{
 					None => None
 					Just(new_child) => (match new_child {
 						HamtEmpty => (if (U64.to_i64_wrap(List.len(children)) == 1) { Just(HamtEmpty) } else { ({
+							new_bitmap : I64
 							new_bitmap = (bitmap - pow2(chunk))
 							Just(HamtBranch(new_bitmap, list_remove_at(children, idx)))
 						}) })

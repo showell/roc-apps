@@ -63,12 +63,14 @@ agree = |got, want| (if (got == want) { "ok" } else { CceText.concat("MISMATCH w
 
 a : CceText, F64, I64 -> CceText
 a = |name, t, want| ({
+	got : I64
 	got = nano(DeviceMath.real_atan(t))
 	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("atan ", name), " = "), CceText.show_int(got)), "  "), agree(got, want))
 })
 
 a2 : CceText, F64, F64, I64 -> CceText
 a2 = |name, y, x, want| ({
+	got : I64
 	got = nano(DeviceMath.real_atan2(y, x))
 	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("atan2 ", name), " = "), CceText.show_int(got)), "  "), agree(got, want))
 })
@@ -78,13 +80,16 @@ rt_abs = |e| (if (e < 0) { (0 - e) } else { e })
 
 rt_ok : F64 -> I64
 rt_ok = |t| ({
+	ang : F64
 	ang = DeviceMath.real_atan(t)
+	back : F64
 	back = (DeviceMath.real_sin(ang) / DeviceMath.real_cos(ang))
 	(if (rt_abs(nano((back - t))) <= 50) { 1 } else { 0 })
 })
 
 rt_report : CceText
 rt_report = ({
+	n : I64
 	n = (((((((rt_ok(0.1) + rt_ok(0.25)) + rt_ok(0.5)) + rt_ok(1.0)) + rt_ok(1.5)) + rt_ok(3.0)) + rt_ok((0.0 - 0.5))) + rt_ok((0.0 - 1.5)))
 	CceText.concat(CceText.concat("round trip through real-sin and real-cos, within 50 nano: ", CceText.show_int(n)), " of 8")
 })

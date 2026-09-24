@@ -29,6 +29,7 @@ line! = |s| echo!(Str.concat(s, "\n"))
 
 main! = |_args| {
 	({
+		input : CceText
 		input = "name: Codex\nversion: 42\nenabled: true\n"
 		({
 			(match Yaml.yaml_parse(input) {
@@ -36,6 +37,7 @@ main! = |_args| {
 					line!(CceText.printed(CceText.concat("name=", Yaml.yaml_get_str(v, "name", "?"))))
 					line!(CceText.printed(CceText.concat("version=", CceText.show_int(Yaml.yaml_get_int(v, "version", 0)))))
 					({
+						emitted : CceText
 						emitted = Yaml.yaml_emit(v)
 						line!(CceText.printed(CceText.concat("emit-len=", CceText.show_int(CceText.len(emitted)))))
 					})
@@ -43,6 +45,7 @@ main! = |_args| {
 				None => line!(CceText.printed("parse=fail"))
 			})
 			({
+				list_input : CceText
 				list_input = "- alpha\n- beta\n- gamma\n"
 				({
 					(match Yaml.yaml_parse(list_input) {

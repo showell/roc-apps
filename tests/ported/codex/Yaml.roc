@@ -79,6 +79,7 @@ Yaml :: [].{
 
 	yaml_parse : CceText -> Maybe.Maybe(Yaml.YamlValue)
 	yaml_parse = |input| ({
+		lines : List(CceText)
 		lines = CceText.split(input, "\n")
 		result = yaml_parse_block(lines, 0, U64.to_i64_wrap(List.len(lines)), 0)
 		Just(result.value)
@@ -86,7 +87,9 @@ Yaml :: [].{
 
 	yaml_parse_block : List(CceText), I64, I64, I64 -> Yaml.YamlParseResult
 	yaml_parse_block = |lines, start, len, indent| (if (start >= len) { Yaml.YamlParseResult.{ value: YamlNull, next_line: start } } else { ({
+		line : CceText
 		line = (List.get(lines, I64.to_u64_wrap(start)) ?? crash("list-at out of range"))
+		trimmed : CceText
 		trimmed = yaml_trim(line)
 		(if (CceText.len(trimmed) == 0) { yaml_parse_block(lines, (start + 1), len, indent) } else { (if yaml_starts_with(trimmed, "#") { yaml_parse_block(lines, (start + 1), len, indent) } else { (if yaml_starts_with(trimmed, "- ") { yaml_parse_list(lines, start, len, indent) } else { (if yaml_contains(trimmed, ": ") { yaml_parse_map(lines, start, len, indent) } else { Yaml.YamlParseResult.{ value: yaml_parse_scalar(trimmed), next_line: (start + 1) } }) }) }) })
 	}) })
@@ -96,8 +99,10 @@ Yaml :: [].{
 
 	yaml_is_int : CceText -> Bool
 	yaml_is_int = |s| ({
+		len : I64
 		len = CceText.len(s)
 		(if (len == 0) { False } else { ({
+			start : I64
 			start = (if (CceChar.code(CceText.char_at(s, 0)) == 73) { 1 } else { 0 })
 			yaml_all_digits(s, start, len)
 		}) })
@@ -105,6 +110,7 @@ Yaml :: [].{
 
 	yaml_all_digits : CceText, I64, I64 -> Bool
 	yaml_all_digits = |s, i, len| (if (i >= len) { (i > 0) } else { ({
+		c : I64
 		c = CceChar.code(CceText.char_at(s, i))
 		(if (c >= 3) { (if (c <= 12) { yaml_all_digits(s, (i + 1), len) } else { False }) } else { False })
 	}) })
@@ -114,10 +120,14 @@ Yaml :: [].{
 
 	yaml_list_loop : List(CceText), I64, I64, I64, List(Yaml.YamlValue) -> Yaml.YamlParseResult
 	yaml_list_loop = |lines, pos, len, indent, acc| (if (pos >= len) { Yaml.YamlParseResult.{ value: YamlList(acc), next_line: pos } } else { ({
+		line : CceText
 		line = (List.get(lines, I64.to_u64_wrap(pos)) ?? crash("list-at out of range"))
+		line_indent : I64
 		line_indent = yaml_count_indent(line)
+		trimmed : CceText
 		trimmed = yaml_trim(line)
 		(if (line_indent < indent) { Yaml.YamlParseResult.{ value: YamlList(acc), next_line: pos } } else { (if yaml_starts_with(trimmed, "- ") { ({
+			val_str : CceText
 			val_str = yaml_trim(CceText.substring(trimmed, 2, (CceText.len(trimmed) - 2)))
 			val = yaml_parse_scalar(val_str)
 			yaml_list_loop(lines, (pos + 1), len, indent, List.append(acc, val))
@@ -129,12 +139,18 @@ Yaml :: [].{
 
 	yaml_map_loop : List(CceText), I64, I64, I64, List(Yaml.YamlPair) -> Yaml.YamlParseResult
 	yaml_map_loop = |lines, pos, len, indent, acc| (if (pos >= len) { Yaml.YamlParseResult.{ value: YamlMap(acc), next_line: pos } } else { ({
+		line : CceText
 		line = (List.get(lines, I64.to_u64_wrap(pos)) ?? crash("list-at out of range"))
+		line_indent : I64
 		line_indent = yaml_count_indent(line)
+		trimmed : CceText
 		trimmed = yaml_trim(line)
 		(if (CceText.len(trimmed) == 0) { yaml_map_loop(lines, (pos + 1), len, indent, acc) } else { (if yaml_starts_with(trimmed, "#") { yaml_map_loop(lines, (pos + 1), len, indent, acc) } else { (if (line_indent < indent) { Yaml.YamlParseResult.{ value: YamlMap(acc), next_line: pos } } else { (if yaml_contains(trimmed, ": ") { ({
+			colon : I64
 			colon = yaml_find_colon_space(trimmed, 0, CceText.len(trimmed))
+			key : CceText
 			key = CceText.substring(trimmed, 0, colon)
+			val_str : CceText
 			val_str = yaml_trim(CceText.substring(trimmed, (colon + 2), ((CceText.len(trimmed) - colon) - 2)))
 			val = yaml_parse_scalar(val_str)
 			yaml_map_loop(lines, (pos + 1), len, indent, List.append(acc, Yaml.YamlPair.{ yp_key: key, yp_value: val }))
@@ -156,7 +172,9 @@ Yaml :: [].{
 
 	yaml_emit_list : List(Yaml.YamlValue), I64, I64, I64, CceText -> CceText
 	yaml_emit_list = |items, indent, i, len, acc| (if (i >= len) { acc } else { ({
+		prefix : CceText
 		prefix = (if (i == 0) { "" } else { CceText.concat("\n", yaml_indent(indent)) })
+		val : CceText
 		val = yaml_emit_at((List.get(items, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), (indent + 2))
 		yaml_emit_list(items, indent, (i + 1), len, CceText.concat(CceText.concat(CceText.concat(acc, prefix), "- "), val))
 	}) })
@@ -164,7 +182,9 @@ Yaml :: [].{
 	yaml_emit_map : List(Yaml.YamlPair), I64, I64, I64, CceText -> CceText
 	yaml_emit_map = |pairs, indent, i, len, acc| (if (i >= len) { acc } else { ({
 		p = (List.get(pairs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
+		prefix : CceText
 		prefix = (if (i == 0) { "" } else { CceText.concat("\n", yaml_indent(indent)) })
+		val : CceText
 		val = yaml_emit_at(p.yp_value, (indent + 2))
 		yaml_emit_map(pairs, indent, (i + 1), len, CceText.concat(CceText.concat(CceText.concat(CceText.concat(acc, prefix), p.yp_key), ": "), val))
 	}) })
@@ -189,6 +209,7 @@ Yaml :: [].{
 
 	yaml_trim_right : CceText -> CceText
 	yaml_trim_right = |s| ({
+		len : I64
 		len = CceText.len(s)
 		(if (len == 0) { s } else { (if (CceChar.code(CceText.char_at(s, (len - 1))) == 2) { yaml_trim_right(CceText.substring(s, 0, (len - 1))) } else { s }) })
 	})
@@ -210,6 +231,7 @@ Yaml :: [].{
 
 	yaml_unquote : CceText -> CceText
 	yaml_unquote = |s| ({
+		len : I64
 		len = CceText.len(s)
 		(if (len < 2) { s } else { (if (CceChar.code(CceText.char_at(s, 0)) == 72) { CceText.substring(s, 1, (len - 2)) } else { (if (CceChar.code(CceText.char_at(s, 0)) == 71) { CceText.substring(s, 1, (len - 2)) } else { s }) }) })
 	})

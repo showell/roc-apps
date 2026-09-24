@@ -17,8 +17,10 @@ Envelope :: [].{
 
 	adsr_attack_decay_sustain : Envelope.AdsrEnvelope, I64 -> I64
 	adsr_attack_decay_sustain = |env, t| (if (t < env.env_attack) { (if (env.env_attack == 0) { 1000 } else { I64.div_trunc_by((t * 1000), env.env_attack) }) } else { ({
+		decay_t : I64
 		decay_t = (t - env.env_attack)
 		(if (decay_t < env.env_decay) { ({
+			progress : I64
 			progress = (if (env.env_decay == 0) { 1000 } else { I64.div_trunc_by((decay_t * 1000), env.env_decay) })
 			(1000 - I64.div_trunc_by(((1000 - env.env_sustain_level) * progress), 1000))
 		}) } else { env.env_sustain_level })
@@ -26,8 +28,10 @@ Envelope :: [].{
 
 	adsr_release_phase : Envelope.AdsrEnvelope, I64, I64 -> I64
 	adsr_release_phase = |env, time, note_off| ({
+		release_t : I64
 		release_t = (time - note_off)
 		(if (release_t >= env.env_release) { 0 } else { ({
+			level_at_release : I64
 			level_at_release = env.env_sustain_level
 			(if (env.env_release == 0) { 0 } else { (level_at_release - I64.div_trunc_by((level_at_release * release_t), env.env_release)) })
 		}) })
@@ -38,8 +42,11 @@ Envelope :: [].{
 
 	adsr_sample_loop : Envelope.AdsrEnvelope, I64, I64, I64, I64, List(I64) -> List(I64)
 	adsr_sample_loop = |env, dur, rel_at, steps, i, acc| (if (i > steps) { acc } else { ({
+		t : I64
 		t = I64.div_trunc_by((i * dur), steps)
+		released : Bool
 		released = (t >= rel_at)
+		val : I64
 		val = adsr_eval(env, t, rel_at, released)
 		adsr_sample_loop(env, dur, rel_at, steps, (i + 1), List.append(acc, val))
 	}) })

@@ -14,14 +14,18 @@ Canvas :: [].{
 
 	viewport_zoom_in : Canvas.ViewPort -> Canvas.ViewPort
 	viewport_zoom_in = |vp| ({
+		nz : I64
 		nz = (if (vp.vp_zoom < 50) { (vp.vp_zoom + 10) } else { (if (vp.vp_zoom < 200) { (vp.vp_zoom + 25) } else { (if (vp.vp_zoom < 800) { (vp.vp_zoom + 50) } else { vp.vp_zoom }) }) })
+		clamped : I64
 		clamped = (if (nz > 800) { 800 } else { nz })
 		Canvas.ViewPort.{ vp_pan_x: vp.vp_pan_x, vp_pan_y: vp.vp_pan_y, vp_zoom: clamped, vp_grid: vp.vp_grid, vp_canvas_x: vp.vp_canvas_x, vp_canvas_y: vp.vp_canvas_y, vp_canvas_w: vp.vp_canvas_w, vp_canvas_h: vp.vp_canvas_h }
 	})
 
 	viewport_zoom_out : Canvas.ViewPort -> Canvas.ViewPort
 	viewport_zoom_out = |vp| ({
+		nz : I64
 		nz = (if (vp.vp_zoom <= 25) { 10 } else { (if (vp.vp_zoom <= 50) { (vp.vp_zoom - 10) } else { (if (vp.vp_zoom <= 200) { (vp.vp_zoom - 25) } else { (vp.vp_zoom - 50) }) }) })
+		clamped : I64
 		clamped = (if (nz < 10) { 10 } else { nz })
 		Canvas.ViewPort.{ vp_pan_x: vp.vp_pan_x, vp_pan_y: vp.vp_pan_y, vp_zoom: clamped, vp_grid: vp.vp_grid, vp_canvas_x: vp.vp_canvas_x, vp_canvas_y: vp.vp_canvas_y, vp_canvas_w: vp.vp_canvas_w, vp_canvas_h: vp.vp_canvas_h }
 	})
@@ -43,6 +47,7 @@ Canvas :: [].{
 
 	vp_snap_to_grid : I64, I64 -> I64
 	vp_snap_to_grid = |val, grid| (if (grid <= 0) { val } else { ({
+		half : I64
 		half = I64.div_trunc_by(grid, 2)
 		(if (val >= 0) { (I64.div_trunc_by((val + half), grid) * grid) } else { (0 - (I64.div_trunc_by(((0 - val) + half), grid) * grid)) })
 	}) })

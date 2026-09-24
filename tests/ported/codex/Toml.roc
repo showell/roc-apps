@@ -81,14 +81,17 @@ Toml :: [].{
 
 	toml_parse : CceText -> Maybe.Maybe(Toml.TomlValue)
 	toml_parse = |input| ({
+		lines : List(CceText)
 		lines = CceText.split(input, "\n")
 		Just(toml_parse_lines(lines, 0, U64.to_i64_wrap(List.len(lines)), [], ""))
 	})
 
 	toml_parse_lines : List(CceText), I64, I64, List(Toml.TomlPair), CceText -> Toml.TomlValue
 	toml_parse_lines = |lines, i, len, pairs, current_table| (if (i >= len) { TomlTable(pairs) } else { ({
+		line : CceText
 		line = toml_trim((List.get(lines, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))
 		(if (CceText.len(line) == 0) { toml_parse_lines(lines, (i + 1), len, pairs, current_table) } else { (if toml_starts_with(line, "#") { toml_parse_lines(lines, (i + 1), len, pairs, current_table) } else { (if toml_starts_with(line, "[") { ({
+			table_name : CceText
 			table_name = toml_extract_table_name(line)
 			toml_parse_lines(lines, (i + 1), len, pairs, table_name)
 		}) } else { ({
@@ -99,9 +102,12 @@ Toml :: [].{
 
 	toml_parse_kv : CceText -> Toml.TomlPair
 	toml_parse_kv = |line| ({
+		eq_pos : I64
 		eq_pos = toml_find_char(line, 77, 0, CceText.len(line))
 		(if (eq_pos < 0) { Toml.TomlPair.{ tp_key: line, tp_value: TomlString("") } } else { ({
+			key : CceText
 			key = toml_trim(CceText.substring(line, 0, eq_pos))
+			val_str : CceText
 			val_str = toml_trim(CceText.substring(line, (eq_pos + 1), ((CceText.len(line) - eq_pos) - 1)))
 			Toml.TomlPair.{ tp_key: key, tp_value: toml_parse_value(val_str) }
 		}) })
@@ -112,7 +118,9 @@ Toml :: [].{
 
 	toml_extract_table_name : CceText -> CceText
 	toml_extract_table_name = |line| ({
+		start : I64
 		start = 1
+		end_pos : I64
 		end_pos = toml_find_char(line, 89, start, CceText.len(line))
 		(if (end_pos < 0) { "" } else { toml_trim(CceText.substring(line, start, (end_pos - start))) })
 	})
@@ -126,6 +134,7 @@ Toml :: [].{
 	toml_emit_pairs : List(Toml.TomlPair), I64, I64, CceText -> CceText
 	toml_emit_pairs = |pairs, i, len, acc| (if (i >= len) { acc } else { ({
 		p = (List.get(pairs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
+		line : CceText
 		line = CceText.concat(CceText.concat(CceText.concat(p.tp_key, " = "), toml_emit_value(p.tp_value)), "\n")
 		toml_emit_pairs(pairs, (i + 1), len, CceText.concat(acc, line))
 	}) })
@@ -142,6 +151,7 @@ Toml :: [].{
 
 	toml_emit_array : List(Toml.TomlValue), I64, I64, CceText -> CceText
 	toml_emit_array = |items, i, len, acc| (if (i >= len) { acc } else { ({
+		sep : CceText
 		sep = (if (i == 0) { "" } else { ", " })
 		toml_emit_array(items, (i + 1), len, CceText.concat(CceText.concat(acc, sep), toml_emit_value((List.get(items, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))
 	}) })
@@ -149,12 +159,14 @@ Toml :: [].{
 	toml_emit_inline : List(Toml.TomlPair), I64, I64, CceText -> CceText
 	toml_emit_inline = |pairs, i, len, acc| (if (i >= len) { acc } else { ({
 		p = (List.get(pairs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
+		sep : CceText
 		sep = (if (i == 0) { "" } else { ", " })
 		toml_emit_inline(pairs, (i + 1), len, CceText.concat(CceText.concat(CceText.concat(CceText.concat(acc, sep), p.tp_key), " = "), toml_emit_value(p.tp_value)))
 	}) })
 
 	toml_looks_like_int : CceText -> Bool
 	toml_looks_like_int = |s| (if (CceText.len(s) == 0) { False } else { ({
+		first : I64
 		first = CceChar.code(CceText.char_at(s, 0))
 		(if (first >= 3) { (if (first <= 12) { True } else { False }) } else { (if (first == 73) { (if (CceText.len(s) > 1) { True } else { False }) } else { (if (first == 76) { (if (CceText.len(s) > 1) { True } else { False }) } else { False }) }) })
 	}) })
@@ -167,6 +179,7 @@ Toml :: [].{
 
 	toml_trim_right : CceText -> CceText
 	toml_trim_right = |s| ({
+		len : I64
 		len = CceText.len(s)
 		(if (len == 0) { s } else { (if (CceChar.code(CceText.char_at(s, (len - 1))) == 2) { toml_trim_right(CceText.substring(s, 0, (len - 1))) } else { s }) })
 	})
@@ -179,12 +192,14 @@ Toml :: [].{
 
 	toml_unquote : CceText -> CceText
 	toml_unquote = |s| ({
+		len : I64
 		len = CceText.len(s)
 		(if (len < 2) { s } else { CceText.substring(s, 1, (len - 2)) })
 	})
 
 	toml_unquote_literal : CceText -> CceText
 	toml_unquote_literal = |s| ({
+		len : I64
 		len = CceText.len(s)
 		(if (len < 2) { s } else { CceText.substring(s, 1, (len - 2)) })
 	})

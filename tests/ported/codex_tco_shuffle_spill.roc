@@ -41,8 +41,11 @@ turn5 = |units, _data, _active, _w, _r| units
 loop5 : Cfg, Rng, List(I64), I64, I64 -> I64
 loop5 = |cfg, r, units, turn, active| (if (r.state >= 8) { turn } else { ({
 	r2 = rng_bump(r)
+	units2 : List(I64)
 	units2 = turn5(units, cfg.data, active, cfg.width, r2)
+	next_player : I64
 	next_player = md((active + 1), cfg.nplayers)
+	next_turn : I64
 	next_turn = (if (next_player == 0) { (turn + 1) } else { turn })
 	loop5(cfg, r2, units2, next_turn, next_player)
 }) })

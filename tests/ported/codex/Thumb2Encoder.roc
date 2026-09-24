@@ -97,20 +97,25 @@ Thumb2Encoder :: [].{
 
 	t2_push : List(I64) -> List(I64)
 	t2_push = |regs| ({
+		mask : I64
 		mask = t2_reg_mask(regs, 0, 0)
+		lr_bit : I64
 		lr_bit = (if t2_list_contains(regs, t2_lr) { 256 } else { 0 })
 		t2_encode_16(I64.bitwise_or(46080, I64.bitwise_or(lr_bit, I64.bitwise_and(mask, 255))))
 	})
 
 	t2_pop : List(I64) -> List(I64)
 	t2_pop = |regs| ({
+		mask : I64
 		mask = t2_reg_mask(regs, 0, 0)
+		pc_bit : I64
 		pc_bit = (if t2_list_contains(regs, t2_pc) { 256 } else { 0 })
 		t2_encode_16(I64.bitwise_or(48128, I64.bitwise_or(pc_bit, I64.bitwise_and(mask, 255))))
 	})
 
 	t2_reg_mask : List(I64), I64, I64 -> I64
 	t2_reg_mask = |regs, i, acc| (if (i >= U64.to_i64_wrap(List.len(regs))) { acc } else { ({
+		r : I64
 		r = (List.get(regs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 		t2_reg_mask(regs, (i + 1), I64.bitwise_or(acc, I64.shl_wrap(1, I64.to_u8_wrap(r))))
 	}) })
@@ -156,42 +161,49 @@ Thumb2Encoder :: [].{
 
 	t2_b_short : I64 -> List(I64)
 	t2_b_short = |offset| ({
+		imm11 : I64
 		imm11 = I64.bitwise_and(I64.div_trunc_by(offset, 2), 2047)
 		t2_encode_16(I64.bitwise_or(57344, imm11))
 	})
 
 	t2_beq_short : I64 -> List(I64)
 	t2_beq_short = |offset| ({
+		imm8 : I64
 		imm8 = I64.bitwise_and(I64.div_trunc_by(offset, 2), 255)
 		t2_encode_16(I64.bitwise_or(53248, imm8))
 	})
 
 	t2_bne_short : I64 -> List(I64)
 	t2_bne_short = |offset| ({
+		imm8 : I64
 		imm8 = I64.bitwise_and(I64.div_trunc_by(offset, 2), 255)
 		t2_encode_16(I64.bitwise_or(53504, imm8))
 	})
 
 	t2_blt_short : I64 -> List(I64)
 	t2_blt_short = |offset| ({
+		imm8 : I64
 		imm8 = I64.bitwise_and(I64.div_trunc_by(offset, 2), 255)
 		t2_encode_16(I64.bitwise_or(56064, imm8))
 	})
 
 	t2_bgt_short : I64 -> List(I64)
 	t2_bgt_short = |offset| ({
+		imm8 : I64
 		imm8 = I64.bitwise_and(I64.div_trunc_by(offset, 2), 255)
 		t2_encode_16(I64.bitwise_or(56320, imm8))
 	})
 
 	t2_ble_short : I64 -> List(I64)
 	t2_ble_short = |offset| ({
+		imm8 : I64
 		imm8 = I64.bitwise_and(I64.div_trunc_by(offset, 2), 255)
 		t2_encode_16(I64.bitwise_or(56576, imm8))
 	})
 
 	t2_bge_short : I64 -> List(I64)
 	t2_bge_short = |offset| ({
+		imm8 : I64
 		imm8 = I64.bitwise_and(I64.div_trunc_by(offset, 2), 255)
 		t2_encode_16(I64.bitwise_or(55808, imm8))
 	})
@@ -204,18 +216,26 @@ Thumb2Encoder :: [].{
 
 	t2_movw : I64, I64 -> List(I64)
 	t2_movw = |rd, imm16| ({
+		imm4 : I64
 		imm4 = I64.bitwise_and(I64.shr_zf_wrap(imm16, I64.to_u8_wrap(12)), 15)
+		i : I64
 		i = I64.bitwise_and(I64.shr_zf_wrap(imm16, I64.to_u8_wrap(11)), 1)
+		imm3 : I64
 		imm3 = I64.bitwise_and(I64.shr_zf_wrap(imm16, I64.to_u8_wrap(8)), 7)
+		imm8 : I64
 		imm8 = I64.bitwise_and(imm16, 255)
 		t2_encode_32(I64.bitwise_or(I64.bitwise_or(62016, I64.shl_wrap(i, I64.to_u8_wrap(10))), imm4), I64.bitwise_or(I64.bitwise_or(I64.shl_wrap(imm3, I64.to_u8_wrap(12)), I64.shl_wrap(rd, I64.to_u8_wrap(8))), imm8))
 	})
 
 	t2_movt : I64, I64 -> List(I64)
 	t2_movt = |rd, imm16| ({
+		imm4 : I64
 		imm4 = I64.bitwise_and(I64.shr_zf_wrap(imm16, I64.to_u8_wrap(12)), 15)
+		i : I64
 		i = I64.bitwise_and(I64.shr_zf_wrap(imm16, I64.to_u8_wrap(11)), 1)
+		imm3 : I64
 		imm3 = I64.bitwise_and(I64.shr_zf_wrap(imm16, I64.to_u8_wrap(8)), 7)
+		imm8 : I64
 		imm8 = I64.bitwise_and(imm16, 255)
 		t2_encode_32(I64.bitwise_or(I64.bitwise_or(62144, I64.shl_wrap(i, I64.to_u8_wrap(10))), imm4), I64.bitwise_or(I64.bitwise_or(I64.shl_wrap(imm3, I64.to_u8_wrap(12)), I64.shl_wrap(rd, I64.to_u8_wrap(8))), imm8))
 	})
@@ -255,36 +275,52 @@ Thumb2Encoder :: [].{
 
 	t2_bl : I64 -> List(I64)
 	t2_bl = |offset| ({
+		s : I64
 		s = I64.bitwise_and(I64.shr_zf_wrap(offset, I64.to_u8_wrap(24)), 1)
+		imm10 : I64
 		imm10 = I64.bitwise_and(I64.shr_zf_wrap(offset, I64.to_u8_wrap(12)), 1023)
+		j1 : I64
 		j1 = I64.bitwise_xor(I64.bitwise_and(I64.shr_zf_wrap(offset, I64.to_u8_wrap(23)), 1), I64.bitwise_xor(s, 1))
+		j2 : I64
 		j2 = I64.bitwise_xor(I64.bitwise_and(I64.shr_zf_wrap(offset, I64.to_u8_wrap(22)), 1), I64.bitwise_xor(s, 1))
+		imm11 : I64
 		imm11 = I64.bitwise_and(I64.shr_zf_wrap(offset, I64.to_u8_wrap(1)), 2047)
 		t2_encode_32(I64.bitwise_or(I64.bitwise_or(61440, I64.shl_wrap(s, I64.to_u8_wrap(10))), imm10), I64.bitwise_or(I64.bitwise_or(I64.bitwise_or(53248, I64.shl_wrap(j1, I64.to_u8_wrap(13))), I64.shl_wrap(j2, I64.to_u8_wrap(11))), imm11))
 	})
 
 	t2_b_w : I64 -> List(I64)
 	t2_b_w = |offset| ({
+		s : I64
 		s = I64.bitwise_and(I64.shr_zf_wrap(offset, I64.to_u8_wrap(24)), 1)
+		imm10 : I64
 		imm10 = I64.bitwise_and(I64.shr_zf_wrap(offset, I64.to_u8_wrap(12)), 1023)
+		j1 : I64
 		j1 = I64.bitwise_xor(I64.bitwise_and(I64.shr_zf_wrap(offset, I64.to_u8_wrap(23)), 1), I64.bitwise_xor(s, 1))
+		j2 : I64
 		j2 = I64.bitwise_xor(I64.bitwise_and(I64.shr_zf_wrap(offset, I64.to_u8_wrap(22)), 1), I64.bitwise_xor(s, 1))
+		imm11 : I64
 		imm11 = I64.bitwise_and(I64.shr_zf_wrap(offset, I64.to_u8_wrap(1)), 2047)
 		t2_encode_32(I64.bitwise_or(I64.bitwise_or(61440, I64.shl_wrap(s, I64.to_u8_wrap(10))), imm10), I64.bitwise_or(I64.bitwise_or(I64.bitwise_or(36864, I64.shl_wrap(j1, I64.to_u8_wrap(13))), I64.shl_wrap(j2, I64.to_u8_wrap(11))), imm11))
 	})
 
 	t2_add_sp_imm12 : I64, I64 -> List(I64)
 	t2_add_sp_imm12 = |rd, imm12| ({
+		i : I64
 		i = I64.bitwise_and(I64.shr_zf_wrap(imm12, I64.to_u8_wrap(11)), 1)
+		imm3 : I64
 		imm3 = I64.bitwise_and(I64.shr_zf_wrap(imm12, I64.to_u8_wrap(8)), 7)
+		imm8 : I64
 		imm8 = I64.bitwise_and(imm12, 255)
 		t2_encode_32(I64.bitwise_or(61965, I64.shl_wrap(i, I64.to_u8_wrap(10))), I64.bitwise_or(I64.bitwise_or(I64.shl_wrap(imm3, I64.to_u8_wrap(12)), I64.shl_wrap(rd, I64.to_u8_wrap(8))), imm8))
 	})
 
 	t2_sub_sp_imm12 : I64, I64 -> List(I64)
 	t2_sub_sp_imm12 = |rd, imm12| ({
+		i : I64
 		i = I64.bitwise_and(I64.shr_zf_wrap(imm12, I64.to_u8_wrap(11)), 1)
+		imm3 : I64
 		imm3 = I64.bitwise_and(I64.shr_zf_wrap(imm12, I64.to_u8_wrap(8)), 7)
+		imm8 : I64
 		imm8 = I64.bitwise_and(imm12, 255)
 		t2_encode_32(I64.bitwise_or(62125, I64.shl_wrap(i, I64.to_u8_wrap(10))), I64.bitwise_or(I64.bitwise_or(I64.shl_wrap(imm3, I64.to_u8_wrap(12)), I64.shl_wrap(rd, I64.to_u8_wrap(8))), imm8))
 	})

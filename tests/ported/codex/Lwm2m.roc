@@ -67,9 +67,13 @@ Lwm2m :: [].{
 
 	lwm2m_encode_tlv_resource : I64, List(I64) -> List(I64)
 	lwm2m_encode_tlv_resource = |resource_id, value| ({
+		len : I64
 		len = U64.to_i64_wrap(List.len(value))
+		type_byte : I64
 		type_byte = (if (resource_id < 256) { (if (len < 8) { I64.bitwise_or(192, len) } else { (if (len < 256) { 200 } else { 216 }) }) } else { (if (len < 8) { I64.bitwise_or(224, len) } else { (if (len < 256) { 232 } else { 248 }) }) })
+		id_bytes : List(I64)
 		id_bytes = (if (resource_id < 256) { [resource_id] } else { [I64.shr_zf_wrap(resource_id, I64.to_u8_wrap(8)), I64.bitwise_and(resource_id, 255)] })
+		len_bytes : List(I64)
 		len_bytes = (if (len < 8) { [] } else { (if (len < 256) { [len] } else { [I64.shr_zf_wrap(len, I64.to_u8_wrap(8)), I64.bitwise_and(len, 255)] }) })
 		List.concat(List.concat(List.concat([type_byte], id_bytes), len_bytes), value)
 	})
@@ -85,7 +89,9 @@ Lwm2m :: [].{
 
 	lwm2m_link_list : List(I64), I64, I64, CceText -> CceText
 	lwm2m_link_list = |objs, i, n, acc| (if (i >= n) { acc } else { ({
+		link : CceText
 		link = CceText.concat(CceText.concat("</", CceText.show_int((List.get(objs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))), ">")
+		sep : CceText
 		sep = (if (i > 0) { "," } else { "" })
 		lwm2m_link_list(objs, (i + 1), n, CceText.concat(CceText.concat(acc, sep), link))
 	}) })

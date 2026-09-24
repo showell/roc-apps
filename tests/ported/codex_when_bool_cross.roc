@@ -25,18 +25,26 @@ line! = |s| echo!(Str.concat(s, "\n"))
 
 spin2 : I64, I64 -> I64
 spin2 = |n, acc| (if (n == 0) { acc } else { ({
+	a : I64
 	a = (n - 1)
+	b : I64
 	b = (acc + 10)
+	c : I64
 	c = (a + 0)
+	d : I64
 	d = (b + 0)
 	spin2(c, d)
 }) })
 
 spin3 : I64, I64, I64 -> I64
 spin3 = |n, acc, k| (if (n == 0) { acc } else { ({
+	a : I64
 	a = (n - 1)
+	b : I64
 	b = (acc + 10)
+	c : I64
 	c = (a + 0)
+	d : I64
 	d = (b + 0)
 	spin3(c, d, k)
 }) })

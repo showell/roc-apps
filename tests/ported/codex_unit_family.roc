@@ -58,8 +58,11 @@ length_to_Kilometer = |fv| I64.div_trunc_by(fv, 1000000)
 
 main! = |_args| {
 	({
+		w : Length
 		w = centimeter(20)
+		h : Length
 		h = meter(1)
+		p : Length
 		p = perimeter(w, h)
 		({
 			line!(CceText.printed(CceText.show_int(p)))

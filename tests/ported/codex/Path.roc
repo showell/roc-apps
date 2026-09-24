@@ -12,32 +12,39 @@ Path :: [].{
 
 	path_ends_with_sep : CceText -> Bool
 	path_ends_with_sep = |s| ({
+		len : I64
 		len = CceText.len(s)
 		(if (len == 0) { False } else { (CceChar.code(CceText.char_at(s, (len - 1))) == path_separator) })
 	})
 
 	path_parent : CceText -> CceText
 	path_parent = |p| ({
+		idx : I64
 		idx = path_last_sep(p)
 		(if (idx < 0) { "" } else { CceText.substring(p, 0, idx) })
 	})
 
 	path_filename : CceText -> CceText
 	path_filename = |p| ({
+		idx : I64
 		idx = path_last_sep(p)
 		(if (idx < 0) { p } else { CceText.substring(p, (idx + 1), ((CceText.len(p) - idx) - 1)) })
 	})
 
 	path_stem : CceText -> CceText
 	path_stem = |p| ({
+		name : CceText
 		name = path_filename(p)
+		dot : I64
 		dot = path_last_dot(name)
 		(if (dot <= 0) { name } else { CceText.substring(name, 0, dot) })
 	})
 
 	path_extension : CceText -> CceText
 	path_extension = |p| ({
+		name : CceText
 		name = path_filename(p)
+		dot : I64
 		dot = path_last_dot(name)
 		(if (dot <= 0) { "" } else { CceText.substring(name, (dot + 1), ((CceText.len(name) - dot) - 1)) })
 	})
@@ -56,13 +63,16 @@ Path :: [].{
 
 	path_normalize : CceText -> CceText
 	path_normalize = |p| ({
+		segs : List(CceText)
 		segs = path_segments(p)
+		clean : List(CceText)
 		clean = path_remove_dots(segs, 0, U64.to_i64_wrap(List.len(segs)), [])
 		path_rejoin(clean, 0, U64.to_i64_wrap(List.len(clean)), "", path_is_absolute(p))
 	})
 
 	path_remove_dots : List(CceText), I64, I64, List(CceText) -> List(CceText)
 	path_remove_dots = |segs, i, len, acc| (if (i >= len) { acc } else { ({
+		s : CceText
 		s = (List.get(segs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 		(if (s == ".") { path_remove_dots(segs, (i + 1), len, acc) } else { (if (s == "..") { (if (U64.to_i64_wrap(List.len(acc)) > 0) { path_remove_dots(segs, (i + 1), len, path_drop_last(acc)) } else { path_remove_dots(segs, (i + 1), len, acc) }) } else { path_remove_dots(segs, (i + 1), len, List.append(acc, s)) }) })
 	}) })
@@ -75,6 +85,7 @@ Path :: [].{
 
 	path_rejoin : List(CceText), I64, I64, CceText, Bool -> CceText
 	path_rejoin = |segs, i, len, acc, abs| (if (i >= len) { (if abs { CceText.concat("/", acc) } else { acc }) } else { ({
+		sep : CceText
 		sep = (if (i == 0) { "" } else { "/" })
 		path_rejoin(segs, (i + 1), len, CceText.concat(CceText.concat(acc, sep), (List.get(segs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))), abs)
 	}) })

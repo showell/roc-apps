@@ -35,33 +35,46 @@ Probability :: [].{
 
 	normal_pdf : Probability.NormalDist, I64 -> I64
 	normal_pdf = |d, x| ({
+		z : I64
 		z = I64.div_trunc_by(((x - d.mu) * prob_scale), d.sigma)
+		z2 : I64
 		z2 = I64.div_trunc_by((z * z), prob_scale)
+		exp_term : I64
 		exp_term = prob_exp_neg(I64.div_trunc_by(z2, 2))
 		I64.div_trunc_by((exp_term * prob_scale), I64.div_trunc_by((d.sigma * prob_sqrt_2pi), prob_scale))
 	})
 
 	normal_cdf : Probability.NormalDist, I64 -> I64
 	normal_cdf = |d, x| ({
+		z : I64
 		z = I64.div_trunc_by(((x - d.mu) * prob_scale), d.sigma)
 		prob_standard_normal_cdf(z)
 	})
 
 	prob_standard_normal_cdf : I64 -> I64
 	prob_standard_normal_cdf = |z| ({
+		t : I64
 		t = I64.div_trunc_by((prob_scale * prob_scale), (prob_scale + I64.div_trunc_by((2316 * (if (z < 0) { (0 - z) } else { z })), 10000)))
+		poly : I64
 		poly = prob_horner_cdf(t)
+		density : I64
 		density = prob_exp_neg(I64.div_trunc_by((z * z), (2 * prob_scale)))
+		tail : I64
 		tail = I64.div_trunc_by(((density * poly) + I64.div_trunc_by(prob_sqrt_2pi, 2)), prob_sqrt_2pi)
 		(if (z < 0) { tail } else { (prob_scale - tail) })
 	})
 
 	prob_horner_cdf : I64 -> I64
 	prob_horner_cdf = |t| ({
+		a1 : I64
 		a1 = 319
+		a2 : I64
 		a2 = (0 - 356)
+		a3 : I64
 		a3 = 1781
+		a4 : I64
 		a4 = (0 - 1821)
+		a5 : I64
 		a5 = 1330
 		I64.div_trunc_by((t * (a1 + I64.div_trunc_by((t * (a2 + I64.div_trunc_by((t * (a3 + I64.div_trunc_by((t * (a4 + I64.div_trunc_by((t * a5), prob_scale))), prob_scale))), prob_scale))), prob_scale))), prob_scale)
 	})
@@ -71,8 +84,11 @@ Probability :: [].{
 
 	poisson_pmf : Probability.PoissonDist, I64 -> I64
 	poisson_pmf = |d, k| (if (k < 0) { 0 } else { ({
+		exp_neg_lam : I64
 		exp_neg_lam = prob_exp_neg(d.lambda)
+		lam_k : I64
 		lam_k = prob_pow(d.lambda, k)
+		k_fact : I64
 		k_fact = prob_factorial(k)
 		I64.div_trunc_by(I64.div_trunc_by((exp_neg_lam * lam_k), prob_scale), k_fact)
 	}) })
@@ -82,9 +98,13 @@ Probability :: [].{
 
 	binomial_pmf : Probability.BinomialDist, I64 -> I64
 	binomial_pmf = |d, k| (if (k < 0) { 0 } else { (if (k > d.n) { 0 } else { ({
+		c : I64
 		c = prob_choose(d.n, k)
+		pk : I64
 		pk = prob_pow(d.p, k)
+		qnk : I64
 		qnk = prob_pow((prob_scale - d.p), (d.n - k))
+		denom : I64
 		denom = prob_pow(prob_scale, d.n)
 		I64.div_trunc_by(((c * pk) * qnk), denom)
 	}) }) })
@@ -109,14 +129,18 @@ Probability :: [].{
 
 	uniform_bound : I64, I64, I64 -> I64
 	uniform_bound = |lo, hi, seed| (if (hi <= lo) { lo } else { ({
+		range : I64
 		range = ((hi - lo) + 1)
+		positive : I64
 		positive = (if (seed < 0) { (0 - seed) } else { seed })
 		(lo + (positive - (I64.div_trunc_by(positive, range) * range)))
 	}) })
 
 	prob_exp_neg : I64 -> I64
 	prob_exp_neg = |x| (if (x <= 0) { prob_scale } else { (if (x > 20000) { 0 } else { ({
+		whole : I64
 		whole = I64.div_trunc_by(x, prob_scale)
+		frac : I64
 		frac = (x - (whole * prob_scale))
 		prob_exp_fold(whole, prob_exp_neg_loop(frac, prob_scale, prob_scale, 1, 10))
 	}) }) })
@@ -126,6 +150,7 @@ Probability :: [].{
 
 	prob_exp_neg_loop : I64, I64, I64, I64, I64 -> I64
 	prob_exp_neg_loop = |x, term, sum, i, max_terms| (if (i > max_terms) { sum } else { ({
+		term2 : I64
 		term2 = (0 - I64.div_trunc_by((term * x), (i * prob_scale)))
 		prob_exp_neg_loop(x, term2, (sum + term2), (i + 1), max_terms)
 	}) })

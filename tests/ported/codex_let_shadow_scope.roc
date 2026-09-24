@@ -22,8 +22,11 @@ line! = |s| echo!(Str.concat(s, "\n"))
 
 shadowed : I64 -> I64
 shadowed = |n| ({
+	v : I64
 	v = n
+	inner : I64
 	inner = (if (n > 0) { ({
+		v_1 : I64
 		v_1 = (n * 3)
 		(v_1 + 1)
 	}) } else { v })

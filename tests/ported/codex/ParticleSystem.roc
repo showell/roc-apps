@@ -26,9 +26,13 @@ ParticleSystem :: [].{
 
 	psys_emit_loop : ParticleSystem.ParticleSystem, ParticleSystem.ParticleEmitter, I64, I64, I64 -> ParticleSystem.ParticleSystem
 	psys_emit_loop = |sys, em, num, seed, i| (if (i >= num) { sys } else { (if (sys.count >= sys.max_particles) { sys } else { ({
+		spread : I64
 		spread = em.emit_spread
+		svx : I64
 		svx = (em.emit_vx + psys_noise(psys_hash(seed, (i * 3)), spread))
+		svy : I64
 		svy = (em.emit_vy + psys_noise(psys_hash(seed, ((i * 3) + 1)), spread))
+		svz : I64
 		svz = (em.emit_vz + psys_noise(psys_hash(seed, ((i * 3) + 2)), spread))
 		p = ParticleSystem.Particle.{ part_x: em.emit_x, part_y: em.emit_y, part_z: em.emit_z, part_vx: svx, part_vy: svy, part_vz: svz, part_life: em.emit_life, part_max_life: em.emit_life, part_color: em.emit_color }
 		psys_emit_loop(ParticleSystem.ParticleSystem.{ particles: List.append(sys.particles, p), count: (sys.count + 1), max_particles: sys.max_particles }, em, num, seed, (i + 1))
@@ -36,13 +40,16 @@ ParticleSystem :: [].{
 
 	psys_hash : I64, I64 -> I64
 	psys_hash = |seed, i| ({
+		h : I64
 		h = Random.mix_bits(seed, i)
 		(if (h < 0) { (-h) } else { h })
 	})
 
 	psys_noise : I64, I64 -> I64
 	psys_noise = |hash_val, spread| (if (spread == 0) { 0 } else { ({
+		range : I64
 		range = (spread * 2)
+		positive : I64
 		positive = (if (hash_val < 0) { (-hash_val) } else { hash_val })
 		((positive - (I64.div_trunc_by(positive, range) * range)) - spread)
 	}) })

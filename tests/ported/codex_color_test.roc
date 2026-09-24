@@ -31,6 +31,7 @@ line! = |s| echo!(Str.concat(s, "\n"))
 test_pack : CceText
 test_pack = ({
 	c = Color.rgb(255, 128, 0)
+	packed : I64
 	packed = Color.rgb_to_packed(c)
 	back = Color.rgb_from_packed(packed)
 	CceText.concat(CceText.concat(CceText.concat("packed=", CceText.show_int(packed)), " back="), Color.format_rgb(back))

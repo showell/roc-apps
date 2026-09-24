@@ -4,17 +4,24 @@ Trig :: [].{
 
 	trig_normalize : I64 -> I64
 	trig_normalize = |mdeg| ({
+		m : I64
 		m = (mdeg - (I64.div_trunc_by(mdeg, 360000) * 360000))
 		(if (m < 0) { (m + 360000) } else { m })
 	})
 
 	fast_sin : I64 -> I64
 	fast_sin = |mdeg| ({
+		a : I64
 		a = trig_normalize(mdeg)
+		flip : Bool
 		flip = (a >= 180000)
+		b : I64
 		b = (if flip { (a - 180000) } else { a })
+		num : I64
 		num = ((4 * b) * (180000 - b))
+		den : I64
 		den = (40500000000 - (b * (180000 - b)))
+		r : I64
 		r = I64.div_trunc_by((num * 10000), den)
 		(if flip { (0 - r) } else { r })
 	})

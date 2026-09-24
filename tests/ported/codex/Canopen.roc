@@ -70,7 +70,9 @@ Canopen :: [].{
 
 	co_sdo_download_expedited : I64, I64, List(I64) -> List(I64)
 	co_sdo_download_expedited = |index, subindex, data| ({
+		n : I64
 		n = U64.to_i64_wrap(List.len(data))
+		command : I64
 		command = I64.bitwise_or(35, I64.shl_wrap((4 - n), I64.to_u8_wrap(2)))
 		List.concat(List.concat([command, I64.bitwise_and(index, 255), I64.bitwise_and(I64.shr_zf_wrap(index, I64.to_u8_wrap(8)), 255), subindex], data), co_zeros((4 - n), []))
 	})

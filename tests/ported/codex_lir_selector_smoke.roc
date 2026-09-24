@@ -41,6 +41,7 @@ s_apply = |s_sub_, x, y| s_sub_(x, y)
 
 s_join : I64 -> I64
 s_join = |n| (({
+	v : I64
 	v = (if (n > 0) { (n + 1) } else { (n - 1) })
 	(if (n == 0) { v } else { 0 })
 }) + 7)
@@ -53,6 +54,7 @@ s_clash = |a, b, c, d, e| (if (d == a) { I64.div_trunc_by(((b - c) * 6), e) } el
 
 s_result : I64, I64 -> I64
 s_result = |a, b| ({
+	s : I64
 	s = (a + 1)
 	_y = (if (b > 0) { s } else { I64.div_trunc_by(100, ((b * b) + 1)) })
 	s

@@ -40,6 +40,7 @@ check_read_m = flag(bytes_eq(Melsec.melsec_batch_read_words(Melsec.melsec_dev_m,
 
 check_write_d : I64
 check_write_d = ({
+	expect_ : List(I64)
 	expect_ = [80, 0, 0, 255, 255, 3, 0, 16, 0, 16, 0, 1, 20, 0, 0, 200, 0, 0, 168, 2, 0, 52, 18, 5, 0]
 	flag(bytes_eq(Melsec.melsec_batch_write_words(Melsec.melsec_dev_d, 200, [4660, 5]), expect_))
 })

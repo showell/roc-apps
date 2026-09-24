@@ -19,7 +19,9 @@ Sixlowpan :: [].{
 
 	lowpan_iphc : I64, I64, I64, I64, I64, I64, I64, I64, I64 -> List(I64)
 	lowpan_iphc = |tf, nh, hlim, cid, sac, sam, m, dac, dam| ({
+		byte0 : I64
 		byte0 = I64.bitwise_or(96, I64.bitwise_or(I64.shl_wrap(tf, I64.to_u8_wrap(3)), I64.bitwise_or(I64.shl_wrap(nh, I64.to_u8_wrap(2)), hlim)))
+		byte1 : I64
 		byte1 = I64.bitwise_or(I64.shl_wrap(cid, I64.to_u8_wrap(7)), I64.bitwise_or(I64.shl_wrap(sac, I64.to_u8_wrap(6)), I64.bitwise_or(I64.shl_wrap(sam, I64.to_u8_wrap(4)), I64.bitwise_or(I64.shl_wrap(m, I64.to_u8_wrap(3)), I64.bitwise_or(I64.shl_wrap(dac, I64.to_u8_wrap(2)), dam)))))
 		[byte0, byte1]
 	})

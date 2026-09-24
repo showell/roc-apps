@@ -31,7 +31,9 @@ line! = |s| echo!(Str.concat(s, "\n"))
 doors_agree : List(Capability.CapSpec), I64, I64, I64, I64 -> I64
 doors_agree = |ts, i, len, dir, acc| (if (i >= len) { acc } else { ({
 	s = (List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
+	by_name : I64
 	by_name = Capability.cap_bits_for_name(s.cs_name, dir)
+	by_id : I64
 	by_id = Capability.cap_bits_for_id(Capability.cap_id_for_name(s.cs_name), dir)
 	doors_agree(ts, (i + 1), len, dir, (acc + (if (by_name == by_id) { 1 } else { 0 })))
 }) })
@@ -39,6 +41,7 @@ doors_agree = |ts, i, len, dir, acc| (if (i >= len) { acc } else { ({
 doors_nonzero : List(Capability.CapSpec), I64, I64, I64, I64 -> I64
 doors_nonzero = |ts, i, len, dir, acc| (if (i >= len) { acc } else { ({
 	s = (List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
+	by_name : I64
 	by_name = Capability.cap_bits_for_name(s.cs_name, dir)
 	doors_nonzero(ts, (i + 1), len, dir, (acc + (if (by_name != 0) { 1 } else { 0 })))
 }) })
@@ -46,9 +49,13 @@ doors_nonzero = |ts, i, len, dir, acc| (if (i >= len) { acc } else { ({
 test_doors : CceText
 test_doors = ({
 	ts = Capability.capability_table
+	n : I64
 	n = U64.to_i64_wrap(List.len(ts))
+	ar : I64
 	ar = doors_agree(ts, 0, n, Capability.cap_dir_read, 0)
+	aw : I64
 	aw = doors_agree(ts, 0, n, Capability.cap_dir_write, 0)
+	arw : I64
 	arw = doors_agree(ts, 0, n, Capability.cap_dir_readwrite, 0)
 	CceText.concat(CceText.concat(CceText.concat("agree=", CceText.show_int(((ar + aw) + arw))), "/"), CceText.show_int((n * 3)))
 })
@@ -56,9 +63,13 @@ test_doors = ({
 test_nonzero : CceText
 test_nonzero = ({
 	ts = Capability.capability_table
+	n : I64
 	n = U64.to_i64_wrap(List.len(ts))
+	zr : I64
 	zr = doors_nonzero(ts, 0, n, Capability.cap_dir_read, 0)
+	zw : I64
 	zw = doors_nonzero(ts, 0, n, Capability.cap_dir_write, 0)
+	zrw : I64
 	zrw = doors_nonzero(ts, 0, n, Capability.cap_dir_readwrite, 0)
 	CceText.concat(CceText.concat(CceText.concat("granting=", CceText.show_int(((zr + zw) + zrw))), "/"), CceText.show_int((n * 3)))
 })
@@ -66,8 +77,11 @@ test_nonzero = ({
 dir_union_ok : List(Capability.CapSpec), I64, I64, I64 -> I64
 dir_union_ok = |ts, i, len, acc| (if (i >= len) { acc } else { ({
 	s = (List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
+	r : I64
 	r = Capability.cap_bits_for_name(s.cs_name, Capability.cap_dir_read)
+	w : I64
 	w = Capability.cap_bits_for_name(s.cs_name, Capability.cap_dir_write)
+	rw : I64
 	rw = Capability.cap_bits_for_name(s.cs_name, Capability.cap_dir_readwrite)
 	dir_union_ok(ts, (i + 1), len, (acc + (if (I64.bitwise_or(r, w) == rw) { 1 } else { 0 })))
 }) })
@@ -78,10 +92,15 @@ cd_both = |a, b| (if a { b } else { False })
 dir_distinct_ok : List(Capability.CapSpec), I64, I64, I64 -> I64
 dir_distinct_ok = |ts, i, len, acc| (if (i >= len) { acc } else { ({
 	s = (List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
+	r : I64
 	r = Capability.cap_bits_for_name(s.cs_name, Capability.cap_dir_read)
+	w : I64
 	w = Capability.cap_bits_for_name(s.cs_name, Capability.cap_dir_write)
+	rw : I64
 	rw = Capability.cap_bits_for_name(s.cs_name, Capability.cap_dir_readwrite)
+	directional : Bool
 	directional = (s.cs_read_bit >= 0)
+	ok : Bool
 	ok = (if directional { cd_both((r != rw), (w != rw)) } else { cd_both((r == rw), (w == rw)) })
 	dir_distinct_ok(ts, (i + 1), len, (acc + (if ok { 1 } else { 0 })))
 }) })
@@ -89,16 +108,22 @@ dir_distinct_ok = |ts, i, len, acc| (if (i >= len) { acc } else { ({
 test_directions : CceText
 test_directions = ({
 	ts = Capability.capability_table
+	n : I64
 	n = U64.to_i64_wrap(List.len(ts))
 	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("union=", CceText.show_int(dir_union_ok(ts, 0, n, 0))), "/"), CceText.show_int(n)), " refines="), CceText.show_int(dir_distinct_ok(ts, 0, n, 0))), "/"), CceText.show_int(n))
 })
 
 test_ungranted : CceText
 test_ungranted = ({
+	bad_id : I64
 	bad_id = Capability.cap_id_for_name("NotACapability")
+	r : I64
 	r = Capability.cap_bits_for_name("NotACapability", Capability.cap_dir_read)
+	w : I64
 	w = Capability.cap_bits_for_name("NotACapability", Capability.cap_dir_write)
+	rw : I64
 	rw = Capability.cap_bits_for_name("NotACapability", Capability.cap_dir_readwrite)
+	by_id : I64
 	by_id = Capability.cap_bits_for_id(999, Capability.cap_dir_readwrite)
 	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("unknown-id=", CceText.show_int(bad_id)), " unknown-name-bits="), CceText.show_int(((r + w) + rw))), " unknown-id-bits="), CceText.show_int(by_id))
 })
@@ -108,31 +133,42 @@ vocab_resolving = |ns, i, len, acc| (if (i >= len) { acc } else { vocab_resolvin
 
 test_vocab : CceText
 test_vocab = ({
+	ns : List(CceText)
 	ns = Capability.capability_names
+	n : I64
 	n = U64.to_i64_wrap(List.len(ns))
+	rows : I64
 	rows = U64.to_i64_wrap(List.len(Capability.capability_table))
 	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("names=", CceText.show_int(n)), " rows="), CceText.show_int(rows)), " resolving="), CceText.show_int(vocab_resolving(ns, 0, n, 0)))
 })
 
 test_masks : CceText
 test_masks = ({
+	cr : I64
 	cr = Capability.cap_bits_for_name("Console", Capability.cap_dir_read)
+	cw : I64
 	cw = Capability.cap_bits_for_name("Console", Capability.cap_dir_write)
+	crw : I64
 	crw = Capability.cap_bits_for_name("Console", Capability.cap_dir_readwrite)
 	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("console=", CceText.show_int(cr)), ","), CceText.show_int(cw)), ","), CceText.show_int(crw))
 })
 
 test_masks_fs : CceText
 test_masks_fs = ({
+	fr : I64
 	fr = Capability.cap_bits_for_name("FileSystem", Capability.cap_dir_read)
+	fw : I64
 	fw = Capability.cap_bits_for_name("FileSystem", Capability.cap_dir_write)
+	frw : I64
 	frw = Capability.cap_bits_for_name("FileSystem", Capability.cap_dir_readwrite)
 	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("filesystem=", CceText.show_int(fr)), ","), CceText.show_int(fw)), ","), CceText.show_int(frw))
 })
 
 test_masks_conc : CceText
 test_masks_conc = ({
+	kr : I64
 	kr = Capability.cap_bits_for_name("Concurrent", Capability.cap_dir_read)
+	krw : I64
 	krw = Capability.cap_bits_for_name("Concurrent", Capability.cap_dir_readwrite)
 	CceText.concat(CceText.concat(CceText.concat("concurrent=", CceText.show_int(kr)), ","), CceText.show_int(krw))
 })

@@ -55,19 +55,23 @@ CardDeck :: [].{
 
 	fy_shuffle : List(I64), I64, I64 -> List(I64)
 	fy_shuffle = |cards, i, seed| (if (i <= 0) { cards } else { ({
+		rng : I64
 		rng = fy_next_random(seed)
+		j : I64
 		j = fy_mod(rng, (i + 1))
 		fy_shuffle(fy_swap(cards, i, j), (i - 1), rng)
 	}) })
 
 	fy_swap : List(I64), I64, I64 -> List(I64)
 	fy_swap = |cards, i, j| (if (i == j) { cards } else { ({
+		vi : I64
 		vi = (List.get(cards, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 		(List.set((List.set(cards, I64.to_u64_wrap(i), (List.get(cards, I64.to_u64_wrap(j)) ?? crash("list-at out of range"))) ?? crash("list-set-at past the end")), I64.to_u64_wrap(j), vi) ?? crash("list-set-at past the end"))
 	}) })
 
 	fy_next_random : I64 -> I64
 	fy_next_random = |seed| ({
+		h : I64
 		h = Random.mix_bits(seed, 1)
 		(if (h < 0) { (-h) } else { h })
 	})
@@ -77,7 +81,9 @@ CardDeck :: [].{
 
 	deck_deal : List(I64), I64 -> CardDeck.DealResult
 	deck_deal = |cards, n| ({
+		hand : List(I64)
 		hand = deck_take(cards, 0, n, [])
+		remaining : List(I64)
 		remaining = deck_drop(cards, n, U64.to_i64_wrap(List.len(cards)), [])
 		CardDeck.DealResult.{ hand: hand, remaining: remaining }
 	})
@@ -99,12 +105,14 @@ CardDeck :: [].{
 
 	format_hand_loop : List(I64), I64, I64, CceText -> CceText
 	format_hand_loop = |cards, i, len, acc| (if (i >= len) { acc } else { ({
+		sep : CceText
 		sep = (if (i == 0) { "" } else { " " })
 		format_hand_loop(cards, (i + 1), len, CceText.concat(CceText.concat(acc, sep), format_card((List.get(cards, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))
 	}) })
 
 	blackjack_value : I64 -> I64
 	blackjack_value = |card| ({
+		r : I64
 		r = card_rank(card)
 		(if (r == 0) { 11 } else { (if (r >= 10) { 10 } else { (r + 1) }) })
 	})

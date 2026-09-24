@@ -34,6 +34,7 @@ MathLib :: [].{
 
 	math_isqrt_loop : I64, I64 -> I64
 	math_isqrt_loop = |n, guess| ({
+		next : I64
 		next = I64.div_trunc_by((guess + I64.div_trunc_by(n, guess)), 2)
 		(if (next >= guess) { guess } else { math_isqrt_loop(n, next) })
 	})

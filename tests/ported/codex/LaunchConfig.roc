@@ -11,7 +11,9 @@ LaunchConfig :: [].{
 
 	launch_config_for_num_elems : I64 -> LaunchConfig.LaunchConfig
 	launch_config_for_num_elems = |n| ({
+		block_size : I64
 		block_size = 256
+		grid_size : I64
 		grid_size = I64.div_trunc_by(((n + block_size) - 1), block_size)
 		launch_config_1d(grid_size, block_size)
 	})

@@ -39,6 +39,7 @@ sel_add = |c| ((if (c > 0) { 10 } else { 20 }) + 1)
 
 sel_reg : I64, I64, I64 -> I64
 sel_reg = |c, x, y| ({
+	v : I64
 	v = (if (c > 0) { x } else { y })
 	(v * 2)
 })
@@ -48,7 +49,9 @@ sel_nest = |a, b| ((if (a > 0) { (if (b > 0) { 1 } else { 2 }) } else { 3 }) + 1
 
 sel_seq : I64, I64 -> I64
 sel_seq = |a, b| ({
+	p : I64
 	p = (if (a > 0) { 5 } else { 6 })
+	q : I64
 	q = (if (b > 0) { 7 } else { 8 })
 	((p * 10) + q)
 })

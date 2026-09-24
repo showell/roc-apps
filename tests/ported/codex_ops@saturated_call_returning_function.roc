@@ -159,6 +159,7 @@ main! = |_args| {
 																					dev__27 = 1
 																					|dev__28, dev__29, dev__30, dev__31| mk3(dev__27, dev__28, dev__29)(dev__30, dev__31)
 																				})
+																				k4 : I64
 																				k4 = kk(2, 3, 20, 22)
 																				({
 																					line!(CceText.printed(CceText.concat("closure-over-two: ", CceText.show_int(k4))))
@@ -167,6 +168,7 @@ main! = |_args| {
 																							dev__32 = 1
 																							|dev__33, dev__34, dev__35| mk2(dev__32, dev__33)(dev__34, dev__35)
 																						})
+																						h3 : I64
 																						h3 = h(2, 20, 22)
 																						({
 																							line!(CceText.printed(CceText.concat("closure-arity-one-over-two: ", CceText.show_int(h3))))

@@ -82,7 +82,9 @@ Modbus :: [].{
 
 	modbus_write_multiple_registers : I64, List(I64) -> List(I64)
 	modbus_write_multiple_registers = |start, values| ({
+		qty : I64
 		qty = U64.to_i64_wrap(List.len(values))
+		byte_count : I64
 		byte_count = (qty * 2)
 		List.concat(List.concat(List.concat(List.concat([modbus_fc_write_multiple_registers], modbus_u16(start)), modbus_u16(qty)), [byte_count]), modbus_encode_registers(values, 0, qty, []))
 	})
@@ -92,7 +94,9 @@ Modbus :: [].{
 
 	modbus_write_multiple_coils : I64, List(Bool) -> List(I64)
 	modbus_write_multiple_coils = |start, coils| ({
+		qty : I64
 		qty = U64.to_i64_wrap(List.len(coils))
+		byte_count : I64
 		byte_count = I64.shr_zf_wrap((qty + 7), I64.to_u8_wrap(3))
 		List.concat(List.concat(List.concat(List.concat([modbus_fc_write_multiple_coils], modbus_u16(start)), modbus_u16(qty)), [byte_count]), modbus_pack_coils(coils, 0, byte_count, []))
 	})
@@ -102,7 +106,9 @@ Modbus :: [].{
 
 	modbus_pack_byte : List(Bool), I64, I64, I64, I64 -> I64
 	modbus_pack_byte = |coils, base, bit, acc, qty| (if (bit >= 8) { acc } else { ({
+		idx : I64
 		idx = (base + bit)
+		set : I64
 		set = (if (idx >= qty) { 0 } else { (if (List.get(coils, I64.to_u64_wrap(idx)) ?? crash("list-at out of range")) { I64.shl_wrap(1, I64.to_u8_wrap(bit)) } else { 0 }) })
 		modbus_pack_byte(coils, base, (bit + 1), I64.bitwise_or(acc, set), qty)
 	}) })
@@ -115,13 +121,16 @@ Modbus :: [].{
 
 	modbus_read_write_multiple_registers : I64, I64, I64, List(I64) -> List(I64)
 	modbus_read_write_multiple_registers = |read_start, read_qty, write_start, write_values| ({
+		qty : I64
 		qty = U64.to_i64_wrap(List.len(write_values))
 		List.concat(List.concat(List.concat(List.concat(List.concat(List.concat([modbus_fc_read_write_multiple_registers], modbus_u16(read_start)), modbus_u16(read_qty)), modbus_u16(write_start)), modbus_u16(qty)), [(qty * 2)]), modbus_encode_registers(write_values, 0, qty, []))
 	})
 
 	modbus_rtu_frame : I64, List(I64) -> List(I64)
 	modbus_rtu_frame = |unit_id, pdu| ({
+		body : List(I64)
 		body = List.concat([unit_id], pdu)
+		crc : I64
 		crc = modbus_crc16(body)
 		List.concat(body, [I64.bitwise_and(crc, 255), I64.bitwise_and(I64.shr_zf_wrap(crc, I64.to_u8_wrap(8)), 255)])
 	})
@@ -146,19 +155,23 @@ Modbus :: [].{
 
 	modbus_ascii_frame : I64, List(I64) -> List(I64)
 	modbus_ascii_frame = |unit_id, pdu| ({
+		content : List(I64)
 		content = List.concat([unit_id], pdu)
+		full : List(I64)
 		full = List.concat(content, [modbus_lrc(content)])
 		List.concat(List.concat([58], modbus_ascii_hex(full, 0, U64.to_i64_wrap(List.len(full)), [])), [13, 10])
 	})
 
 	modbus_tcp_frame : I64, I64, List(I64) -> List(I64)
 	modbus_tcp_frame = |txn, unit_id, pdu| ({
+		length : I64
 		length = (U64.to_i64_wrap(List.len(pdu)) + 1)
 		List.concat(List.concat(List.concat(List.concat(modbus_u16(txn), [0, 0]), modbus_u16(length)), [unit_id]), pdu)
 	})
 
 	modbus_parse_registers : List(I64) -> List(I64)
 	modbus_parse_registers = |pdu| ({
+		count : I64
 		count = (List.get(pdu, I64.to_u64_wrap(1)) ?? crash("list-at out of range"))
 		modbus_parse_registers_loop(pdu, 2, (2 + count), [])
 	})

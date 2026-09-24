@@ -21,10 +21,15 @@ DateTime :: [].{
 
 	unix_to_datetime : DateTime.Timestamp -> DateTime.DateTime
 	unix_to_datetime = |ts| ({
+		days : DateTime.Timestamp
 		days = I64.div_trunc_by(ts, seconds_per_day)
+		time_of_day : DateTime.Timestamp
 		time_of_day = (ts - (days * seconds_per_day))
+		hour : DateTime.Timestamp
 		hour = I64.div_trunc_by(time_of_day, seconds_per_hour)
+		minute : DateTime.Timestamp
 		minute = I64.div_trunc_by((time_of_day - (hour * seconds_per_hour)), seconds_per_minute)
+		second : DateTime.Timestamp
 		second = ((time_of_day - (hour * seconds_per_hour)) - (minute * seconds_per_minute))
 		(match days_to_ymd(days) {
 			MkTup3(y, m, d) => DateTime.DateTime.{ year: y, month: m, day: d, hour: hour, minute: minute, second: second }
@@ -36,12 +41,14 @@ DateTime :: [].{
 
 	days_to_year : I64, I64 -> Tuple.Tup3(I64, I64, I64)
 	days_to_year = |remaining, year| ({
+		days_in_y : I64
 		days_in_y = (if is_leap_year(year) { 366 } else { 365 })
 		(if (remaining < days_in_y) { days_to_month(remaining, year, 1) } else { days_to_year((remaining - days_in_y), (year + 1)) })
 	})
 
 	days_to_month : I64, I64, I64 -> Tuple.Tup3(I64, I64, I64)
 	days_to_month = |remaining, year, month| (if (month > 12) { MkTup3((year + 1), 1, (remaining + 1)) } else { ({
+		dim : I64
 		dim = days_in_month(year, month)
 		(if (remaining < dim) { MkTup3(year, month, (remaining + 1)) } else { days_to_month((remaining - dim), year, (month + 1)) })
 	}) })
@@ -54,13 +61,16 @@ DateTime :: [].{
 
 	datetime_to_unix : DateTime.DateTime -> I64
 	datetime_to_unix = |dt| ({
+		days : I64
 		days = ymd_to_days(dt.year, dt.month, dt.day)
 		((((days * seconds_per_day) + (dt.hour * seconds_per_hour)) + (dt.minute * seconds_per_minute)) + dt.second)
 	})
 
 	ymd_to_days : I64, I64, I64 -> I64
 	ymd_to_days = |year, month, day| ({
+		year_days : I64
 		year_days = count_year_days(1970, year, 0)
+		month_days : I64
 		month_days = count_month_days(year, 1, month, 0)
 		(((year_days + month_days) + day) - 1)
 	})
@@ -73,6 +83,7 @@ DateTime :: [].{
 
 	day_of_week : I64 -> I64
 	day_of_week = |unix_ts| ({
+		days : I64
 		days = I64.div_trunc_by(unix_ts, seconds_per_day)
 		((((I64.div_trunc_by((days + 4), 7) * 7) - days) - 4) + (days + 4))
 	})

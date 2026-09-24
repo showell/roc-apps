@@ -46,7 +46,9 @@ Mbus :: [].{
 
 	mbus_long_frame : I64, I64, I64, List(I64) -> List(I64)
 	mbus_long_frame = |c, a, ci, data| ({
+		body : List(I64)
 		body = List.concat([c, a, ci], data)
+		len : I64
 		len = U64.to_i64_wrap(List.len(body))
 		List.concat(List.concat([mbus_start_long, len, len, mbus_start_long], body), [mbus_checksum(body), mbus_stop])
 	})

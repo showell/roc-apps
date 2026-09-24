@@ -35,28 +35,36 @@ test_empty = CceText.concat(CceText.concat(CceText.concat("empty=", CceText.show
 
 test_basic : CceText
 test_basic = ({
+	d1 : I64
 	d1 = EditDistance.edit_distance("kitten", "sitting")
+	d2 : I64
 	d2 = EditDistance.edit_distance("saturday", "sunday")
 	CceText.concat(CceText.concat(CceText.concat("kitten-sitting=", CceText.show_int(d1)), " saturday-sunday="), CceText.show_int(d2))
 })
 
 test_single : CceText
 test_single = ({
+	d1 : I64
 	d1 = EditDistance.edit_distance("cat", "hat")
+	d2 : I64
 	d2 = EditDistance.edit_distance("cat", "cats")
+	d3 : I64
 	d3 = EditDistance.edit_distance("cat", "at")
 	CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("sub=", CceText.show_int(d1)), " ins="), CceText.show_int(d2)), " del="), CceText.show_int(d3))
 })
 
 test_similarity : CceText
 test_similarity = ({
+	s1 : I64
 	s1 = EditDistance.edit_similarity("hello", "hello")
+	s2 : I64
 	s2 = EditDistance.edit_similarity("hello", "hallo")
 	CceText.concat(CceText.concat(CceText.concat("sim-same=", CceText.show_int(s1)), " sim-close="), CceText.show_int(s2))
 })
 
 test_best_match : CceText
 test_best_match = ({
+	candidates : List(CceText)
 	candidates = ["help", "shell", "hello", "world", "helm"]
 	best = EditDistance.edit_best_match("helo", candidates)
 	CceText.concat("best=", EditDistance.format_edit_match(best))
@@ -64,7 +72,9 @@ test_best_match = ({
 
 test_within : CceText
 test_within = ({
+	candidates : List(CceText)
 	candidates = ["help", "shell", "hello", "world", "helm"]
+	matches : List(CceText)
 	matches = EditDistance.edit_within("helo", candidates, 2)
 	CceText.concat("within-2=", CceText.show_int(U64.to_i64_wrap(List.len(matches))))
 })

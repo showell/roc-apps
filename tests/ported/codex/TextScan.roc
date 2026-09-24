@@ -33,6 +33,7 @@ TextScan :: [].{
 
 	text_match_at : CceText, CceText, I64 -> Bool
 	text_match_at = |haystack, needle, offset| ({
+		nlen : I64
 		nlen = CceText.len(needle)
 		(if ((offset + nlen) > CceText.len(haystack)) { False } else { text_match_at_loop(haystack, needle, offset, 0, nlen) })
 	})
@@ -48,6 +49,7 @@ TextScan :: [].{
 
 	text_pad_left_char : CceText, I64, CceChar -> CceText
 	text_pad_left_char = |s, width, pad_char| ({
+		slen : I64
 		slen = CceText.len(s)
 		(if (slen >= width) { s } else { CceText.concat(text_repeat(CceText.char_to_text(pad_char), (width - slen)), s) })
 	})

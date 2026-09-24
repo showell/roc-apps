@@ -43,6 +43,7 @@ check_get_attr_single = flag(bytes_eq(Enip.cip_get_attr_single(4, 1, 3), [14, 3,
 
 check_send_rr_data : I64
 check_send_rr_data = ({
+	expect_ : List(I64)
 	expect_ = [111, 0, 24, 0, 68, 51, 34, 17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 0, 2, 0, 0, 0, 0, 0, 178, 0, 8, 0, 14, 3, 32, 4, 36, 1, 48, 3]
 	flag(bytes_eq(Enip.enip_send_rr_data(287454020, 10, Enip.cip_get_attr_single(4, 1, 3)), expect_))
 })

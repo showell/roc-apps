@@ -37,7 +37,9 @@ Point := { x : I64, y : I64 }.{
 
 shadow : I64 -> I64
 shadow = |x| ({
+	x_1 : I64
 	x_1 = (x + 1)
+	y : I64
 	y = (x_1 * 2)
 	(y + x_1)
 })
@@ -50,6 +52,7 @@ apply_twice = |n| ({
 
 capture : I64 -> I64
 capture = |n| ({
+	k : I64
 	k = (n + 5)
 	g = ({
 		dev__1 = k

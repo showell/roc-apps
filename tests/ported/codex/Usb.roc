@@ -75,6 +75,7 @@ Usb :: [].{
 
 	usb_parse_endpoint : List(I64), I64 -> Usb.UsbEndpoint
 	usb_parse_endpoint = |bytes, offset| (if ((offset + 7) > U64.to_i64_wrap(List.len(bytes))) { Usb.UsbEndpoint.{ ep_address: 0, ep_direction: 0, ep_type: 0, ep_max_packet: 0, ep_interval: 0 } } else { ({
+		addr : I64
 		addr = (List.get(bytes, I64.to_u64_wrap((offset + 2))) ?? crash("list-at out of range"))
 		Usb.UsbEndpoint.{ ep_address: I64.bitwise_and(addr, 15), ep_direction: I64.bitwise_and(addr, 128), ep_type: I64.bitwise_and((List.get(bytes, I64.to_u64_wrap((offset + 3))) ?? crash("list-at out of range")), 3), ep_max_packet: usb_le16(bytes, (offset + 4)), ep_interval: (List.get(bytes, I64.to_u64_wrap((offset + 6))) ?? crash("list-at out of range")) }
 	}) })
@@ -138,7 +139,9 @@ Usb :: [].{
 
 	format_usb_endpoint : Usb.UsbEndpoint -> CceText
 	format_usb_endpoint = |ep| ({
+		dir : CceText
 		dir = (if (ep.ep_direction == 128) { "IN" } else { "OUT" })
+		typ : CceText
 		typ = (if (ep.ep_type == 0) { "CTRL" } else { (if (ep.ep_type == 1) { "ISO" } else { (if (ep.ep_type == 2) { "BULK" } else { "INT" }) }) })
 		CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("EP", CceText.show_int(ep.ep_address)), " "), dir), " "), typ), " maxpkt="), CceText.show_int(ep.ep_max_packet))
 	})

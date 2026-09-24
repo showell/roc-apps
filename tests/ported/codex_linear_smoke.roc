@@ -32,7 +32,9 @@ finalize = |n| Linear.freeze(n)
 
 shadow_test : I64 -> I64
 shadow_test = |n| ({
+	base : I64
 	base = (n + 1)
+	n_1 : I64
 	n_1 = 7
 	((base + n_1) + n_1)
 })

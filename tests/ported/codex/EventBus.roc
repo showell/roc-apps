@@ -21,6 +21,7 @@ EventBus :: [].{
 	event_log_add : EventBus.EventLog, EventBus.BusEvent -> EventBus.EventLog
 	event_log_add = |log, evt| ({
 		events = (if (log.log_count >= log.log_max) { List.append(evt_drop_first(log.log_events), evt) } else { List.append(log.log_events, evt) })
+		count : I64
 		count = (if (log.log_count >= log.log_max) { log.log_max } else { (log.log_count + 1) })
 		EventBus.EventLog.{ log_events: events, log_count: count, log_max: log.log_max }
 	})
@@ -37,6 +38,7 @@ EventBus :: [].{
 	evt_filter_loop : List(EventBus.BusEvent), CceText, I64, I64, List(EventBus.BusEvent) -> List(EventBus.BusEvent)
 	evt_filter_loop = |events, topic, i, n, acc| (if (i >= n) { acc } else { ({
 		e = (List.get(events, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
+		matches : Bool
 		matches = (e.evt_topic == topic)
 		(if matches { evt_filter_loop(events, topic, (i + 1), n, List.append(acc, e)) } else { evt_filter_loop(events, topic, (i + 1), n, acc) })
 	}) })

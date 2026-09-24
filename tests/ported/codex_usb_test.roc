@@ -29,12 +29,14 @@ line! = |s| echo!(Str.concat(s, "\n"))
 test_setup_packet : CceText
 test_setup_packet = ({
 	pkt = Usb.usb_setup_get_descriptor(Usb.usb_desc_device, 0, 18)
+	bytes : List(I64)
 	bytes = Usb.usb_encode_setup(pkt)
 	CceText.concat(CceText.concat(CceText.concat("setup: len=", CceText.show_int(U64.to_i64_wrap(List.len(bytes)))), " req="), CceText.show_int(pkt.sp_request))
 })
 
 test_endpoint : CceText
 test_endpoint = ({
+	bytes : List(I64)
 	bytes = [7, 5, 129, 1, 192, 0, 1]
 	ep = Usb.usb_parse_endpoint(bytes, 0)
 	CceText.concat("ep: ", Usb.format_usb_endpoint(ep))
@@ -48,8 +50,11 @@ test_audio_format = ({
 
 test_audio_frame : CceText
 test_audio_frame = ({
+	left : List(I64)
 	left = [500, (0 - 500)]
+	right : List(I64)
 	right = [300, (0 - 300)]
+	frame : List(I64)
 	frame = UsbAudio.usb_audio_frame(left, right, UsbAudio.audio_format_cd)
 	CceText.concat("frame: bytes=", CceText.show_int(U64.to_i64_wrap(List.len(frame))))
 })

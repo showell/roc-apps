@@ -102,6 +102,7 @@ test_shru = ({
 
 test_if : I64
 test_if = ({
+	x : I64
 	x = 7
 	(if (x > 5) { 10 } else { 20 })
 })

@@ -28,12 +28,14 @@ GeneticAlgorithm :: [].{
 
 	ga_gen_individuals : I64, I64, I64, I64, I64, I64, List(GeneticAlgorithm.GaChromosome) -> List(GeneticAlgorithm.GaChromosome)
 	ga_gen_individuals = |n, genes, lo, hi, seed, i, acc| (if (i >= n) { acc } else { ({
+		chromo : List(I64)
 		chromo = ga_random_chromo(genes, lo, hi, (seed + (i * 7919)), 0, [])
 		ga_gen_individuals(n, genes, lo, hi, seed, (i + 1), List.append(acc, GeneticAlgorithm.GaChromosome.{ genes: chromo, gene_count: genes }))
 	}) })
 
 	ga_random_chromo : I64, I64, I64, I64, I64, List(I64) -> List(I64)
 	ga_random_chromo = |n, lo, hi, seed, i, acc| (if (i >= n) { acc } else { ({
+		val : I64
 		val = ga_rand_range(seed, i, lo, hi)
 		ga_random_chromo(n, lo, hi, seed, (i + 1), List.append(acc, val))
 	}) })
@@ -46,19 +48,23 @@ GeneticAlgorithm :: [].{
 
 	ga_tournament_loop : GeneticAlgorithm.GaPopulation, I64, I64, I64, I64, I64 -> I64
 	ga_tournament_loop = |pop, k, seed, i, best_idx, best_fit| (if (i >= k) { best_idx } else { ({
+		idx : I64
 		idx = ga_rand_range(seed, i, 0, (pop.pop_size - 1))
+		fit : I64
 		fit = (List.get(pop.fitness, I64.to_u64_wrap(idx)) ?? crash("list-at out of range"))
 		(if (fit > best_fit) { ga_tournament_loop(pop, k, seed, (i + 1), idx, fit) } else { ga_tournament_loop(pop, k, seed, (i + 1), best_idx, best_fit) })
 	}) })
 
 	ga_crossover : GeneticAlgorithm.GaChromosome, GeneticAlgorithm.GaChromosome, I64 -> GeneticAlgorithm.GaChromosome
 	ga_crossover = |a, b, seed| ({
+		point : I64
 		point = ga_rand_range(seed, 0, 1, (a.gene_count - 1))
 		GeneticAlgorithm.GaChromosome.{ genes: ga_splice(a.genes, b.genes, point, 0, a.gene_count, []), gene_count: a.gene_count }
 	})
 
 	ga_splice : List(I64), List(I64), I64, I64, I64, List(I64) -> List(I64)
 	ga_splice = |a, b, point, i, len, acc| (if (i >= len) { acc } else { ({
+		val : I64
 		val = (if (i < point) { (List.get(a, I64.to_u64_wrap(i)) ?? crash("list-at out of range")) } else { (List.get(b, I64.to_u64_wrap(i)) ?? crash("list-at out of range")) })
 		ga_splice(a, b, point, (i + 1), len, List.append(acc, val))
 	}) })
@@ -68,6 +74,7 @@ GeneticAlgorithm :: [].{
 
 	ga_mutate_loop : List(I64), I64, I64, I64, I64, I64, I64, List(I64) -> List(I64)
 	ga_mutate_loop = |genes, rate, lo, hi, seed, i, len, acc| (if (i >= len) { acc } else { ({
+		r : I64
 		r = ga_rand_range(seed, i, 0, 999)
 		(if (r < rate) { ga_mutate_loop(genes, rate, lo, hi, seed, (i + 1), len, List.append(acc, ga_rand_range((seed + (i * 31)), i, lo, hi))) } else { ga_mutate_loop(genes, rate, lo, hi, seed, (i + 1), len, List.append(acc, (List.get(genes, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))) })
 	}) })
@@ -80,10 +87,13 @@ GeneticAlgorithm :: [].{
 
 	ga_evolve_loop : GeneticAlgorithm.GaPopulation, GeneticAlgorithm.GaConfig, I64, I64, I64, List(GeneticAlgorithm.GaChromosome) -> List(GeneticAlgorithm.GaChromosome)
 	ga_evolve_loop = |pop, cfg, seed, i, n, acc| (if (i >= n) { acc } else { ({
+		p1 : I64
 		p1 = ga_tournament_select(pop, cfg, (seed + (i * 101)))
+		p2 : I64
 		p2 = ga_tournament_select(pop, cfg, ((seed + (i * 307)) + 1))
 		a = (List.get(pop.individuals, I64.to_u64_wrap(p1)) ?? crash("list-at out of range"))
 		b = (List.get(pop.individuals, I64.to_u64_wrap(p2)) ?? crash("list-at out of range"))
+		roll : I64
 		roll = ga_rand_range((seed + (i * 911)), i, 0, 999)
 		child = (if (roll < cfg.crossover_rate) { ga_crossover(a, b, (seed + (i * 503))) } else { a })
 		mutated = ga_mutate(child, cfg, (seed + (i * 709)))
@@ -95,12 +105,14 @@ GeneticAlgorithm :: [].{
 
 	ga_rank_loop : List(a), List(I64), List(I64), I64, List(a) -> List(a)
 	ga_rank_loop = |pop, scores, used, left, acc| (if (left <= 0) { acc } else { ({
+		bi : I64
 		bi = ga_best_unused(scores, used, 0, U64.to_i64_wrap(List.len(scores)), (0 - 1), 0)
 		(if (bi < 0) { acc } else { (if (bi >= U64.to_i64_wrap(List.len(pop))) { acc } else { ga_rank_loop(pop, scores, List.append(used, bi), (left - 1), List.append(acc, (List.get(pop, I64.to_u64_wrap(bi)) ?? crash("list-at out of range")))) }) })
 	}) })
 
 	ga_best_unused : List(I64), List(I64), I64, I64, I64, I64 -> I64
 	ga_best_unused = |scores, used, i, len, bi, bv| (if (i >= len) { bi } else { (if ga_seen(used, i, 0, U64.to_i64_wrap(List.len(used))) { ga_best_unused(scores, used, (i + 1), len, bi, bv) } else { ({
+		v : I64
 		v = (List.get(scores, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 		(if (bi < 0) { ga_best_unused(scores, used, (i + 1), len, i, v) } else { (if (v > bv) { ga_best_unused(scores, used, (i + 1), len, i, v) } else { ga_best_unused(scores, used, (i + 1), len, bi, bv) }) })
 	}) }) })
@@ -119,6 +131,7 @@ GeneticAlgorithm :: [].{
 
 	ga_offspring_loop : List(a), I64, (a, a, I64 -> a), (a, I64 -> a), I64, I64, List(a) -> List(a)
 	ga_offspring_loop = |parents, want, breed, mutate, seed, i, acc| (if (i >= want) { acc } else { ({
+		np : I64
 		np = U64.to_i64_wrap(List.len(parents))
 		(if (np <= 0) { acc } else { ({
 			m = (List.get(parents, I64.to_u64_wrap(Prelude.int_mod(i, np))) ?? crash("list-at out of range"))
@@ -152,6 +165,7 @@ GeneticAlgorithm :: [].{
 
 	ga_find_best : List(I64), I64, I64, I64, I64 -> I64
 	ga_find_best = |fit, i, len, best_idx, best_val| (if (i >= len) { best_idx } else { ({
+		v : I64
 		v = (List.get(fit, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 		(if (v > best_val) { ga_find_best(fit, (i + 1), len, i, v) } else { ga_find_best(fit, (i + 1), len, best_idx, best_val) })
 	}) })
@@ -176,6 +190,7 @@ GeneticAlgorithm :: [].{
 
 	ga_fmt_genes : List(I64), I64, I64, CceText -> CceText
 	ga_fmt_genes = |genes, i, len, acc| (if (i >= len) { acc } else { ({
+		sep : CceText
 		sep = (if (i == 0) { "" } else { "," })
 		ga_fmt_genes(genes, (i + 1), len, CceText.concat(CceText.concat(acc, sep), CceText.show_int((List.get(genes, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))
 	}) })

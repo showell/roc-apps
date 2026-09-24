@@ -47,27 +47,34 @@ Locale :: [].{
 
 	locale_format_positive : Locale.Locale, I64 -> CceText
 	locale_format_positive = |loc, n| ({
+		raw : CceText
 		raw = CceText.show_int(n)
 		(if (CceText.len(loc.thousands_sep) == 0) { raw } else { locale_insert_thousands(raw, loc.thousands_sep) })
 	})
 
 	locale_insert_thousands : CceText, CceText -> CceText
 	locale_insert_thousands = |raw, sep| ({
+		len : I64
 		len = CceText.len(raw)
 		(if (len <= 3) { raw } else { locale_insert_loop(raw, sep, (len - 1), 0, "") })
 	})
 
 	locale_insert_loop : CceText, CceText, I64, I64, CceText -> CceText
 	locale_insert_loop = |raw, sep, i, count, acc| (if (i < 0) { acc } else { ({
+		c : CceText
 		c = CceText.char_to_text(CceText.char_at(raw, i))
+		s : CceText
 		s = (if (count > 0) { (if ((count - (I64.div_trunc_by(count, 3) * 3)) == 0) { sep } else { "" }) } else { "" })
 		locale_insert_loop(raw, sep, (i - 1), (count + 1), CceText.concat(CceText.concat(c, s), acc))
 	}) })
 
 	locale_format_date : Locale.Locale, I64, I64, I64 -> CceText
 	locale_format_date = |loc, year, month, day| ({
+		y : CceText
 		y = CceText.show_int(year)
+		m : CceText
 		m = locale_two_digit(month)
+		d : CceText
 		d = locale_two_digit(day)
 		(match loc.date_order {
 			DateYMD => CceText.concat(CceText.concat(CceText.concat(CceText.concat(y, "-"), m), "-"), d)

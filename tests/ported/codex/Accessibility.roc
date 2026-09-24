@@ -95,7 +95,9 @@ Accessibility :: [].{
 
 	a11y_announce : Accessibility.A11yInfo -> CceText
 	a11y_announce = |info| ({
+		role : CceText
 		role = a11y_role_name(info.ai_role)
+		label : CceText
 		label = info.ai_label
 		(if (CceText.len(label) > 0) { CceText.concat(CceText.concat(label, ", "), role) } else { role })
 	})

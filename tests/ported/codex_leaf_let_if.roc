@@ -24,6 +24,7 @@ line! = |s| echo!(Str.concat(s, "\n"))
 
 nd : I64, I64 -> I64
 nd = |current, total| ({
+	next : I64
 	next = (current + 1)
 	(if (next >= total) { 0 } else { next })
 })

@@ -42,11 +42,17 @@ lam_3 = |x| (x > 100)
 
 main! = |_args| {
 	({
+		xs : List(I64)
 		xs = [1, 2, 3, 4, 5]
+		ys : List(I64)
 		ys = [10, 20, 30]
+		zipped : List(I64)
 		zipped = Iterate.list_zip_with_generic(lam_0, xs, ys)
+		products : List(I64)
 		products = Iterate.list_zip_with_generic(lam_1, xs, ys)
+		all_true : Bool
 		all_true = Iterate.list_all_generic(lam_2, xs)
+		any_big : Bool
 		any_big = Iterate.list_any_generic(lam_3, xs)
 		({
 			line!(CceText.printed(CceText.show_int(U64.to_i64_wrap(List.len(zipped)))))

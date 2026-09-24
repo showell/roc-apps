@@ -29,6 +29,7 @@ line! = |s| echo!(Str.concat(s, "\n"))
 
 main! = |_args| {
 	({
+		input : CceText
 		input = "title = \"My Config\"\nport = 8080\ndebug = true\n"
 		(match Toml.toml_parse(input) {
 			Just(v) => ({
@@ -37,6 +38,7 @@ main! = |_args| {
 				line!(CceText.printed(CceText.concat("debug=", (if Toml.toml_get_bool(v, "debug", False) { "true" } else { "false" }))))
 				line!(CceText.printed(CceText.concat("missing=", Toml.toml_get_str(v, "nope", "default"))))
 				({
+					emitted : CceText
 					emitted = Toml.toml_emit(v)
 					line!(CceText.printed(CceText.concat("emit-ok=", (if (CceText.len(emitted) > 0) { "yes" } else { "no" }))))
 				})
