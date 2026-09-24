@@ -198,6 +198,13 @@ uses. roc-lang/roc's own releases page is the OLD compiler.
     tar xzf roc_nightly-linux_x86_64-<tag>.tar.gz
     ln -sfn roc_nightly-linux_x86_64-<tag>/roc roc
 
+**The page builds pin one nightly: `roc-nightly.txt`** (the directory name
+under `~/build/roc-nightly/`). `fasttrack/` and `canvas_apps/` read it, both
+ends of a canvas app included, and the Windows and macOS workflows name the
+same tag. To move: unpack the new nightly as above, change the file and the
+two workflows, and rebuild every page -- each build checks itself and
+replaces its page only if everything passed.
+
 The checkout `~/showell_repos/roc` (main, zig 0.16.0 at `~/zig-0.16.0/zig`)
 is for working ON the compiler, and the wasm host builds against its
 `src/builtins`. Its debug build goes to `~/build/roc/out/bin/roc`:

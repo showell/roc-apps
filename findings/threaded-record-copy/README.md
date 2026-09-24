@@ -29,3 +29,11 @@ a recursion is free. `h` copying on every other write is not explained.
 This is why the BASIC interpreter's writes after an expression copy: its
 evaluator threads the machine and returns it. The redesign that follows from
 it: http://143.244.172.148:9100/notes/basic-machine-design.md
+
+## Retested on nightly 2026-09-23-c7852fd
+
+The `mmap` count no longer measures copies: roc#11335 is fixed, and the
+default platform allocates through a brk allocator, so every variant reads 1.
+And a regression: `h_recursive_returns_m` built `--opt=dev` overflows its
+stack on 09-23 ("Roc application overflowed its stack memory"), where 09-19's
+dev build prints 1; the 09-23 `--opt=speed` build prints 1.

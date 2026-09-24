@@ -83,7 +83,7 @@ readable = |types, id, depth|
 		Bool.False
 	} else {
 		match at(types, id).repr {
-			RocFunction(_) => Bool.False
+			RocErasedCallable(_) => Bool.False
 			RocUnknown(_) => Bool.False
 			RocStr => Bool.True
 			RocTagUnion(_) => all_tags_readable(types, AbiLayout.tag_layouts(at(types, id).layout), depth)
@@ -299,7 +299,7 @@ footer = |entries, types| {
 	var $i = 0
 	while $i < n {
 		entry = List.get(entries, $i) ?? crash("glue: entry out of range")
-		$sigs = Str.concat($sigs, "  //   ${entry.ffi_symbol} : ${shape(at(types, entry.type_id).repr)}\n")
+		$sigs = Str.concat($sigs, "  //   ${entry.ffi_symbol} : ${export_shape(types, entry.exported)}\n")
 		$i = $i + 1
 	}
 	sigs = $sigs
@@ -321,8 +321,8 @@ results = |entries, types| {
 	var $i = 0
 	while $i < n {
 		entry = List.get(entries, $i) ?? crash("glue: entry out of range")
-		$out = match at(types, entry.type_id).repr {
-			RocFunction(f) =>
+		$out = match entry.exported {
+			ProvidedProcedure(f) =>
 				if readable(types, f.ret, 0) {
 					Str.concat($out, "  // ${plain(entry.ffi_symbol)} reads what ${entry.ffi_symbol} answers\n")
 				} else {
@@ -342,8 +342,8 @@ named = |entries, types| {
 	var $i = 0
 	while $i < n {
 		entry = List.get(entries, $i) ?? crash("glue: entry out of range")
-		$out = match at(types, entry.type_id).repr {
-			RocFunction(f) =>
+		$out = match entry.exported {
+			ProvidedProcedure(f) =>
 				if readable(types, f.ret, 0) {
 					Str.concat($out, ", ${plain(entry.ffi_symbol)}: ${reader_name(f.ret)}")
 				} else {
@@ -355,6 +355,15 @@ named = |entries, types| {
 	}
 	$out
 }
+
+## What a provided symbol is: a procedure's arguments and result, or the
+## type of a value it exports.
+export_shape : Types, _ -> Str
+export_shape = |types, export|
+	match export {
+		ProvidedProcedure(f) => "${args_of(f.args)} -> t${U64.to_str(f.ret)}"
+		ProvidedData(id) => shape(at(types, id).repr)
+	}
 
 ## `roc_frame` names itself `frame`; the prefix is the host ABI's, not the
 ## reader's.
@@ -405,7 +414,7 @@ shape = |repr|
 		RocList(elem) => "List(t${U64.to_str(elem)})"
 		RocRecord(_) => "a record"
 		RocTagUnion(_) => "a tag union"
-		RocFunction(f) => "${args_of(f.args)} -> t${U64.to_str(f.ret)}"
+		RocErasedCallable(_) => "a stored function"
 		RocUnknown(what) => "unknown (${what})"
 		_ => "a vector"
 	}

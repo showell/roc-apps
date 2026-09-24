@@ -95,13 +95,16 @@ computers.
 
 ## The compiler, met
 
-The nightly (`2026-09-07-14d9829`), and what each needed:
+Built on `nightly-2026-09-07-14d9829`, now on the nightly in
+`../roc-nightly.txt` (09-22). What the compiler got wrong, and where it stands
+(retested 2026-09-24 on 09-22 and 09-23):
 
-| what | workaround |
-|---|---|
-| LLVM ends a `while $next != $d` loop after one pass when the pass is a local closure | the pass reports whether it changed anything (`Reach.fewest_over`; `findings/llvm-closure-loop-alias/`) |
-| the dev backend dropped a variable from an interpolated string in a closure | `Str.concat` (`Game.winner`) |
-| an or-pattern binding a variable in a lambda: `roc check` runs out of memory | one arm each |
-| a literal list of Strategy records crashes `roc check` | build the list with `List.map` |
-| a pure call on constants in `main!` is evaluated at compile time: a game simulation there crashes the compiler | tie it to the arguments (`seed + 0 * List.len(args)`) |
-| the built-in platform of a headerless app maps a page per allocation (86% of the time in the kernel) and its `echo!` writes no newline | `cli/`, 12.7x faster; its `Echo.line!` writes the newline |
+| what | now | workaround |
+|---|---|---|
+| LLVM ends a `while $next != $d` loop after one pass when the pass is a local closure | **still wrong on 09-23** (`findings/llvm-closure-loop-alias/`) | the pass reports whether it changed anything (`Reach.fewest_over`) |
+| the dev backend dropped a variable from an interpolated string in a closure | not reproduced small | `Str.concat` (`Game.winner`) |
+| an or-pattern binding a variable in a lambda: `roc check` ran out of memory | not reproduced small | one arm each |
+| a literal list of Strategy records crashed `roc check` | not reproduced small | `List.map` |
+| a pure call on constants in `main!` is evaluated at compile time (a game simulation there crashed the compiler) | by design; now reported while it runs (#11334) | tie it to the arguments (`seed + 0 * List.len(args)`) |
+| the built-in platform of a headerless app mapped a page per allocation | fixed from 09-23 (#11335); there, the built-in platform beats `cli/` | `cli/`, until the pin passes 09-23 |
+| a 09-22 wasm build that reuses an earlier build's cache crashes the compiler | 09-22 | `build.sh` gives the wasm builds a fresh cache |

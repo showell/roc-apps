@@ -11,7 +11,7 @@
 set -euo pipefail
 NAME="${1:?usage: run_exp.sh exp_name}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
-ROC="${ROC:-$HOME/build/roc-nightly/roc_nightly-linux_x86_64-2026-09-07-14d9829/roc}"
+ROC="${ROC:-$HOME/build/roc-nightly/$(cat "$HERE/../roc-nightly.txt")/roc}"
 OUT="$HOME/build/roc-apps/gen/fasttrack/$NAME"
 mkdir -p "$OUT"
 [ -f "$HERE/cli/platform/targets/x64musl/libhost.a" ] || "$HERE/cli/build.sh"

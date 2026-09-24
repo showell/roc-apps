@@ -48,7 +48,8 @@ jobs:
         uses: roc-lang/setup-roc@cbe782d6f165b89c87d99f50a59ac4f5f73b4427
         with:
           version: nightly-new-compiler
-          nightly-tag: nightly-2026-09-07-14d9829
+          # The nightly in roc-nightly.txt, which every build script here reads.
+          nightly-tag: nightly-2026-09-22-e494788
 
       # ReleaseFast: a plain `zig build` is a Debug host, whose checked
       # arithmetic and resource-heap checks took a third of Safari's frame.

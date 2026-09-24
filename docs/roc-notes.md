@@ -20,9 +20,13 @@ reduced program, `findings/` holds it.
   portable rounds, because Intel Macs are the same CPU generation as this box.
   `nightly-2026-09-11-793f9d8` is the last one that runs here, and a build of the
   checkout needs `src/base/sha256_rounds.zig` forced onto the portable rounds.
-- roc-ray pins `nightly-2026-09-07-14d9829`. Its `0.10.0-rc3` release bundle is
-  pinned to `nightly-2026-08-23-fb208ba`, and the 09-07 and 09-11 nightlies both
-  reject that bundle's `Text.roc`.
+- The pages build with `roc-nightly.txt`'s nightly: `nightly-2026-09-22-e494788`
+  since 2026-09-24. 09-22 changed the glue API (provides entries carry
+  `exported`; functions are `RocErasedCallable`), and `glue/JsGlue.roc` follows
+  it. 09-23 (`c7852fd`) breaks `roc glue` outright -- roc's own `DebugGlue.roc`
+  on roc's own test platform dies with "runtime error" -- so it is skipped,
+  though it has the brk allocator (#11335's fix) that 09-22 lacks. roc-ray's
+  own `0.10.0-rc3` release bundle is pinned to `nightly-2026-08-23-fb208ba`.
 - **Judge a build on the ✗ mark, never the exit code.** A warning exits
   non-zero, and a type error compiles into a crash at its site while the rest of
   the program runs.

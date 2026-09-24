@@ -41,7 +41,8 @@ let mainCanvas = null;
 
 const name = process.argv[2];
 if (!name) { console.error("usage: page_check.mjs <app>"); process.exit(2); }
-const dir = `${process.env.HOME}/build/roc-apps/next/${name}`;
+// DIR= checks a build before it is published (build.sh's staging directory).
+const dir = process.env.DIR ?? `${process.env.HOME}/build/roc-apps/next/${name}`;
 const page = readFileSync(`${dir}/index.html`, "utf8");
 // **THE PAGE NAMES ITS OWN SCRIPTS**, so they are read out of it rather than
 // by convention. There used to be three lists of them -- build.sh's `cp`, the
