@@ -1,6 +1,6 @@
-published 2026-09-21T23:10:54Z
-roc nightly-2026-09-07-14d9829
-roc-apps 98a79a3
-rocemit c0379e0
-cobblestone 7b9235e7 u61-candidate
-sha256 28c42e9b29467e4a  80344 bytes  trick_or_treat.wasm
+published 2026-09-24T11:19:31Z
+roc nightly-2026-09-22-e494788
+roc-apps e22cf26
+rocemit e6a83da
+cobblestone 9f6bdc03 u62-candidate
+sha256 feafe84ab3d8157c  86276 bytes  trick_or_treat.wasm
