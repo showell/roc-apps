@@ -500,6 +500,31 @@ difference, +0.015 a game, is +2.1 paired standard errors (0.007): the first
 change to beat the champion by more than noise. To confirm on fresh seeds,
 with other values of the ramp, before it becomes the champion's.
 
+### The base bonus swept on fresh seeds, 2026-09-24
+
+Seeds 501-1000, each dealt four times with the decks turned a seat: 2000
+games per strategy. `exp_duplicate.roc` at `ae9c5d7`.
+
+| red plays as | red won | win rate | wins with the decks turned 0 / 1 / 2 / 3 seats |
+|---|---|---|---|
+| the champion | 537 of 2000 | 0.269 | 126 / 134 / 136 / 141 |
+| base bonus 1500 | 529 of 2000 | 0.265 | 135 / 123 / 134 / 137 |
+| base bonus 2500 | 547 of 2000 | 0.274 | 133 / 135 / 137 / 142 |
+| base bonus 4000 | 527 of 2000 | 0.264 | 128 / 131 / 126 / 142 |
+
+| red plays as | difference a game | deals only it won / only the champion won | paired, in standard errors |
+|---|---|---|---|
+| base bonus 1500 | -0.004 | 89 / 97 | -0.59 |
+| base bonus 2500 | +0.005 | 130 / 120 | +0.63 |
+| base bonus 4000 | -0.005 | 148 / 158 | -0.57 |
+
+2500's +2.1 standard errors on seeds 1-500 shrank to +0.6 here. Pooled over
+4000 deals it won 256 the champion lost and lost 215 it won: about +1 point
+a game, 1.9 standard errors. The ramp is a plateau from 1000 to 4000, as the
+first base bonus tuning found; it is not what cost the champion 13 points at
+seed 69, where leaving a piece on B1 and backing one to R0 lost to tucking
+deep.
+
 ## Before these races
 
 Every race and arena number before `4a9f3b7` came from a build whose
