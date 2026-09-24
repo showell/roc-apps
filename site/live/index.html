@@ -22,6 +22,12 @@
   .shot { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 5px; margin: -2px 0 10px; background: #000; }
   /* A board game's picture is its whole square board, on the page's white. */
   .shot.board { aspect-ratio: 1 / 1; object-fit: contain; background: #fff; }
+  /* The BASIC REPL's screen, as the REPL draws it: its real output, as text. */
+  .screen { display: block; margin: -2px 0 10px; padding: 10px 12px; background: #000; color: #33ff66;
+            border: 8px solid #1d4d2a; border-radius: 4px; font: 12px/1.35 ui-monospace, Menlo, Consolas, monospace;
+            white-space: pre; overflow-x: auto; text-decoration: none; }
+  /* A card whose picture is wider than a column: two columns where they fit. */
+  @media (min-width: 600px) { .card.wide { grid-column: span 2; } }
   .card p { margin: 0; color: var(--muted); font-size: 14px; }
   .links { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; }
   .when { margin-top: 8px; font-size: 12px; color: var(--muted); }
@@ -105,7 +111,20 @@ says how to build those.</p>
 
 <h2>Interpreters</h2>
 <div class="cards">
-  <section class="card" data-app="basic">
+  <section class="card wide" data-app="basic">
+    <!-- The REPL's "Square roots by Newton" example, RUN: basic-run's transcript of it. -->
+    <a class="screen" href="basic/basic.html">RUN
+N             SQR(N)        NEWTON
+ 1             1             1
+ 2             1.414214      1.414214
+ 3             1.732051      1.732051
+ 4             2             2
+ 5             2.236068      2.236068
+ 6             2.44949       2.44949
+ 7             2.645751      2.645751
+ 8             2.828427      2.828427
+ 9             3             3
+ 10            3.162278      3.162278</a>
     <h3><a href="basic/">BASIC</a></h3>
     <p>A BASIC interpreter written in Roc, for ECMA-55 Minimal BASIC and the 1978 Creative Computing games.</p>
     <div class="links"><a href="basic/basic.html">The REPL</a><a href="basic/">How it works</a></div>
