@@ -954,7 +954,7 @@ REFUSED tls-test | `fe-carry-pass` writes its list parameter `o` and answers som
 REFUSED tls13-record | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED tls13-schedule | `fe-carry-pass` writes its list parameter `o` and answers something else
 PASS transport-cocite |
-KILLED trie-prefix-test | signal 6
+PASS trie-prefix-test |
 PASS truetype-bridge-test |
 PASS truetype-render-test |
 PASS truetype-test |
