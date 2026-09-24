@@ -35,7 +35,16 @@ reduced program, `findings/` holds it.
   time, with no step limit** (roc-lang/roc#11334). `roc check` never finishes on
   a program whose opening calls a function that loops forever, and on a
   terminating program the check takes as long as the program's own work. A
-  reduced program must still terminate (`findings/roc-check-hang/`).
+  reduced program must still terminate (`findings/roc-check-hang/`). The
+  compiler now says what it is evaluating while it runs. An experiment that
+  plays games from a constant seed must tie the seed to a run-time value
+  (`seed + 0 * List.len(args)`), or `roc check` plays the games -- and on 09-07
+  crashed doing it.
+- **A headerless app runs on a built-in echo platform** whose `echo!` writes no
+  newline. Up to 09-22 its allocator mapped a page per allocation (#11335); an
+  allocating program spent most of its time in the kernel, so fasttrack's
+  experiments run on their own platform (`fasttrack/cli/`). From 09-23 the
+  built-in platform is the faster of the two.
 - Roc deletes every `roc-*` directory in the system temp root when it runs, so a
   scratch directory must not use that prefix. It honours `TMPDIR`, which gives
   parallel builds their own.
