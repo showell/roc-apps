@@ -77,7 +77,7 @@ SKIP const-narrow-proven | expects a diagnostic
 PASS const-share |
 PASS convolution-identity |
 DIVERGES cost@accumulator-corpus | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
-REFUSED cost@giveup-beats-fuel | `ne2k-copy-into` writes its list parameter `dst` and answers something else
+REFUSED cost@giveup-beats-fuel | an opening of type (effectful (effs "Console") (scopes "") nothing)
 DIVERGES cpu-park | times cpu-park's sti;hlt against the HPET; a hosted program has no HPET and no core to halt, so only its first line (answers 0 0) is language
 PASS cross-port-refused |
 REFUSED crypto-test | type (effectful (effs "Console") (scopes "") nothing)
@@ -87,81 +87,81 @@ PASS ctor-narrow-warn |
 PASS db-csv-roundtrip |
 DIVERGES db-full-test | test-bulk-load and test-import insert 5 rows through heap-insert-encoded's list-set-at on the catalog's pages and answer only Text; the backup then scans the same catalog, which in Roc still holds the old pages (rows=21, not 26)
 DIVERGES db-row-update | list-set-at mutates in place; Roc's List.set answers a new list
-REFUSED dce-reach | type error
+PASS dce-reach |
 REFUSED deck-bracket-contract | builtin `__deck-set`
 REFUSED deck-cell-contract | builtin `__deck-set`
 REFUSED deck-record-contract | builtin `__deck-set`
 PASS deriving-eq-recursive |
-REFUSED desk-hole | `ne2k-copy-into` writes its list parameter `dst` and answers something else
-REFUSED desk-hover | `ne2k-copy-into` writes its list parameter `dst` and answers something else
-REFUSED desk-parse | `ne2k-copy-into` writes its list parameter `dst` and answers something else
-REFUSED desk-reuse | `ne2k-copy-into` writes its list parameter `dst` and answers something else
-REFUSED desk-root-guard | `ne2k-copy-into` writes its list parameter `dst` and answers something else
-REFUSED desk-span | `ne2k-copy-into` writes its list parameter `dst` and answers something else
+REFUSED desk-hole | builtin `__deck-set`
+REFUSED desk-hover | a type applied to a non-name
+REFUSED desk-parse | a type applied to a non-name
+REFUSED desk-reuse | builtin `__deck-set`
+REFUSED desk-root-guard | a type applied to a non-name
+REFUSED desk-span | a type applied to a non-name
 PASS device-buffer-alloc |
-REFUSED dhcp-acquire | `ne2k-copy-into` writes its list parameter `dst` and answers something else
-REFUSED dhcp-acquire-e1000 | `ne2k-copy-into` writes its list parameter `dst` and answers something else
+PASS dhcp-acquire |
+CRASH dhcp-acquire-e1000 | machine: -e1000-nat is not a codex-vm flag this machine models
 SLOW dhcp-renew | last never run, ? ms; ALL=1 runs it
 PASS diag-pci-map-judge |
 PASS disk-enum-parse |
 SLOW diskfacts-unpack-large | last never run, ? ms; ALL=1 runs it
 PASS dnp3-encode |
 PASS dns-answer-count |
-REFUSED dtls-fragment | `fe-carry-pass` writes its list parameter `o` and answers something else
+PASS dtls-fragment |
 PASS dtls-handshake |
-REFUSED dtls-hello | `fe-carry-pass` writes its list parameter `o` and answers something else
-REFUSED dtls-message | `fe-carry-pass` writes its list parameter `o` and answers something else
-REFUSED dtls-openssl-fragments | `fe-carry-pass` writes its list parameter `o` and answers something else
+PASS dtls-hello |
+PASS dtls-message |
+PASS dtls-openssl-fragments |
 REFUSED dtls-random | `fe-carry-pass` writes its list parameter `o` and answers something else
 PASS dtls-record |
-REFUSED e1000-aneg-budget | `e1000-copy-into` writes its list parameter `dst` and answers something else
-REFUSED e1000-asde-arms | `e1000-copy-into` writes its list parameter `dst` and answers something else
+PASS e1000-aneg-budget |
+PASS e1000-asde-arms |
 SLOW e1000-asde-nolink | last never run, ? ms; ALL=1 runs it
-REFUSED e1000-asde-speed | `e1000-copy-into` writes its list parameter `dst` and answers something else
-REFUSED e1000-bringup | `e1000-copy-into` writes its list parameter `dst` and answers something else
-REFUSED e1000-ctrl-ro | `e1000-copy-into` writes its list parameter `dst` and answers something else
+PASS e1000-asde-speed |
+PASS e1000-bringup |
+PASS e1000-ctrl-ro |
 SLOW e1000-lcd-reload | last never run, ? ms; ALL=1 runs it
-REFUSED e1000-link-budget | `e1000-copy-into` writes its list parameter `dst` and answers something else
+PASS e1000-link-budget |
 SLOW e1000-link-deadline | last never run, ? ms; ALL=1 runs it
-REFUSED e1000-match | `e1000-copy-into` writes its list parameter `dst` and answers something else
-REFUSED e1000-mdio-slow | `e1000-copy-into` writes its list parameter `dst` and answers something else
-REFUSED e1000-mdio-window | `e1000-copy-into` writes its list parameter `dst` and answers something else
+PASS e1000-match |
+PASS e1000-mdio-slow |
+PASS e1000-mdio-window |
 SLOW e1000-pch-k1 | last never run, ? ms; ALL=1 runs it
-REFUSED e1000-pch-k1-off | `e1000-copy-into` writes its list parameter `dst` and answers something else
-REFUSED e1000-phy | `e1000-copy-into` writes its list parameter `dst` and answers something else
+PASS e1000-pch-k1-off |
+PASS e1000-phy |
 SLOW e1000-phy-absent | last never run, ? ms; ALL=1 runs it
-REFUSED e1000-reset-live | `e1000-copy-into` writes its list parameter `dst` and answers something else
+PASS e1000-reset-live |
 SLOW e1000-reset-wedged | last never run, ? ms; ALL=1 runs it
-REFUSED e1000-ring-wrap | `e1000-copy-into` writes its list parameter `dst` and answers something else
-REFUSED e1000-rx-invisible | `e1000-copy-into` writes its list parameter `dst` and answers something else
-REFUSED e1000-rx-invisible-off | `e1000-copy-into` writes its list parameter `dst` and answers something else
+PASS e1000-ring-wrap |
+PASS e1000-rx-invisible |
+PASS e1000-rx-invisible-off |
 REFUSED e1000-rx-reuse | `e1000-copy-into` writes its list parameter `dst` and answers something else
-REFUSED e1000-swflag | `e1000-copy-into` writes its list parameter `dst` and answers something else
-REFUSED e1000-swflag-k1 | `e1000-copy-into` writes its list parameter `dst` and answers something else
-REFUSED e1000-swflag-mng | `e1000-copy-into` writes its list parameter `dst` and answers something else
-REFUSED e1000-swflag-refused | `e1000-copy-into` writes its list parameter `dst` and answers something else
-REFUSED e1000-swflag-strict | `e1000-copy-into` writes its list parameter `dst` and answers something else
+PASS e1000-swflag |
+PASS e1000-swflag-k1 |
+PASS e1000-swflag-mng |
+PASS e1000-swflag-refused |
+PASS e1000-swflag-strict |
 SLOW e1000-tx-deadline | last never run, ? ms; ALL=1 runs it
-REFUSED e1000-ulp-entry | `e1000-copy-into` writes its list parameter `dst` and answers something else
-REFUSED e1000-unresettable | `e1000-copy-into` writes its list parameter `dst` and answers something else
+PASS e1000-ulp-entry |
+PASS e1000-unresettable |
 REFUSED ecdsa-cert | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED ecdsa-p256 | `cb-shl1` writes its list parameter `x` and answers something else
 REFUSED ecdsa-p384 | `cb-shl1` writes its list parameter `x` and answers something else
 REFUSED ecdsa-sha384 | `cb-shl1` writes its list parameter `x` and answers something else
 DIVERGES edalias | list-set-at mutates in place; Roc's List.set answers a new list
 REFUSED edcurve | `fe-carry-pass` writes its list parameter `o` and answers something else
-REFUSED edge-mesh-admit | `nc-try-insert` writes its list parameter `history` and answers something else
-REFUSED edge-mesh-bracket | `nc-try-insert` writes its list parameter `history` and answers something else
-REFUSED edge-mesh-discover | `nc-try-insert` writes its list parameter `history` and answers something else
-REFUSED edge-mesh-failover | `nc-try-insert` writes its list parameter `history` and answers something else
-REFUSED edge-mesh-federate | `nc-try-insert` writes its list parameter `history` and answers something else
-REFUSED edge-mesh-live | `nc-try-insert` writes its list parameter `history` and answers something else
-REFUSED edge-mesh-mint | `nc-try-insert` writes its list parameter `history` and answers something else
-REFUSED edge-mesh-place | `nc-try-insert` writes its list parameter `history` and answers something else
-REFUSED edge-mesh-planes | `nc-try-insert` writes its list parameter `history` and answers something else
-REFUSED edge-mesh-prewarm | `nc-try-insert` writes its list parameter `history` and answers something else
-REFUSED edge-mesh-rewards | `nc-try-insert` writes its list parameter `history` and answers something else
-REFUSED edge-mesh-route | `nc-try-insert` writes its list parameter `history` and answers something else
+PASS edge-mesh-admit |
+PASS edge-mesh-bracket |
+PASS edge-mesh-discover |
+PASS edge-mesh-failover |
+PASS edge-mesh-federate |
+PASS edge-mesh-live |
+PASS edge-mesh-mint |
+PASS edge-mesh-place |
+PASS edge-mesh-planes |
+PASS edge-mesh-prewarm |
+PASS edge-mesh-rewards |
+PASS edge-mesh-route |
 PASS edit-distance-test |
 REFUSED edvector | `fe-carry-pass` writes its list parameter `o` and answers something else
 PASS effect-dotted-allow |
@@ -259,11 +259,11 @@ PASS forewords@ai-unet-timestep |
 PASS forewords@ai-unet-xl |
 PASS forewords@ai-upscaler |
 PASS forewords@cce-tier2 |
-REFUSED forewords@compress-brotli | `lz77-count-distinct` writes its list parameter `seen` and answers something else
-REFUSED forewords@compress-deflate | `lz77-count-distinct` writes its list parameter `seen` and answers something else
+PASS forewords@compress-brotli |
+PASS forewords@compress-deflate |
 PASS forewords@compress-huffman |
 PASS forewords@compress-lz4 |
-REFUSED forewords@compress-lz77 | `lz77-count-distinct` writes its list parameter `seen` and answers something else
+PASS forewords@compress-lz77 |
 PASS forewords@compress-rle |
 PASS forewords@core-bigint |
 PASS forewords@encode-avi |
@@ -292,7 +292,7 @@ PASS forewords@encode-mp4 |
 PASS forewords@encode-ogg |
 PASS forewords@encode-png |
 PASS forewords@encode-protobuf |
-REFUSED forewords@encode-qoi | `qoi-decode-pixels` writes its list parameter `index` and answers something else
+PASS forewords@encode-qoi |
 PASS forewords@encode-smtp |
 PASS forewords@encode-tiff |
 PASS forewords@encode-toml |
@@ -314,7 +314,7 @@ PASS forewords@engine-culling |
 PASS forewords@engine-cutscene |
 PASS forewords@engine-damage-system |
 PASS forewords@engine-debug-draw |
-REFUSED forewords@engine-edge-mesh | `nc-try-insert` writes its list parameter `history` and answers something else
+PASS forewords@engine-edge-mesh |
 PASS forewords@engine-facial-anim |
 PASS forewords@engine-fog |
 PASS forewords@engine-fractal-plant |
@@ -327,7 +327,7 @@ PASS forewords@engine-lod |
 PASS forewords@engine-material |
 PASS forewords@engine-mesh |
 PASS forewords@engine-musculature |
-REFUSED forewords@engine-nav-mesh | `nm-astar` writes its list parameter `closed` and answers something else
+PASS forewords@engine-nav-mesh |
 PASS forewords@engine-particle-renderer |
 PASS forewords@engine-physics-joint |
 PASS forewords@engine-post-process |
@@ -356,16 +356,16 @@ PASS forewords@foreword-camera |
 PASS forewords@foreword-cha-cha20 |
 PASS forewords@foreword-channel |
 PASS forewords@foreword-circular-buffer |
-REFUSED forewords@foreword-concurrent | builtin `fork`
+PASS forewords@foreword-concurrent |
 PASS forewords@foreword-consistent-hash |
 PASS forewords@foreword-console |
 PASS forewords@foreword-count-min-sketch |
 PASS forewords@foreword-date-time |
 PASS forewords@foreword-decimal |
 PASS forewords@foreword-deque |
-REFUSED forewords@foreword-diffie-hellman | `fe-carry-pass` writes its list parameter `o` and answers something else
+PASS forewords@foreword-diffie-hellman |
 PASS forewords@foreword-display |
-REFUSED forewords@foreword-ed25519 | `fe-carry-pass` writes its list parameter `o` and answers something else
+PASS forewords@foreword-ed25519 |
 PASS forewords@foreword-edit-distance |
 PASS forewords@foreword-either |
 PASS forewords@foreword-elastic-bloom |
@@ -374,23 +374,23 @@ PASS forewords@foreword-event-bus |
 PASS forewords@foreword-fact-store |
 PASS forewords@foreword-fat16 |
 PASS forewords@foreword-fat32 |
-REFUSED forewords@foreword-file-system | builtin `read-text`
+PASS forewords@foreword-file-system |
 PASS forewords@foreword-format |
 PASS forewords@foreword-fuel |
 PASS forewords@foreword-funnel-hash |
 PASS forewords@foreword-gpt |
-REFUSED forewords@foreword-graph | `graph-bfs-expand` writes its list parameter `visited` and answers something else
+PASS forewords@foreword-graph |
 PASS forewords@foreword-hamt |
 PASS forewords@foreword-history |
 PASS forewords@foreword-hkdf |
 PASS forewords@foreword-hmac |
-REFUSED forewords@foreword-identity | `fe-carry-pass` writes its list parameter `o` and answers something else
+PASS forewords@foreword-identity |
 PASS forewords@foreword-image-tensor |
 PASS forewords@foreword-interval-tree |
 PASS forewords@foreword-kv-store |
 PASS forewords@foreword-list |
 PASS forewords@foreword-list-utils |
-REFUSED forewords@foreword-load-test | builtin `get-ticks` used as a value
+PASS forewords@foreword-load-test |
 PASS forewords@foreword-locale |
 PASS forewords@foreword-location |
 PASS forewords@foreword-logger |
@@ -429,19 +429,19 @@ PASS forewords@foreword-sort |
 PASS forewords@foreword-source-def-wire |
 PASS forewords@foreword-state |
 PASS forewords@foreword-statistics |
-REFUSED forewords@foreword-string-builder | field-store
+PASS forewords@foreword-string-builder |
 PASS forewords@foreword-string-utils |
 PASS forewords@foreword-tab-complete |
 PASS forewords@foreword-text-search |
 PASS forewords@foreword-text-wrap |
 PASS forewords@foreword-time |
 PASS forewords@foreword-timing-wheel |
-REFUSED forewords@foreword-tls | `fe-carry-pass` writes its list parameter `o` and answers something else
+PASS forewords@foreword-tls |
 PASS forewords@foreword-trie |
 PASS forewords@foreword-tuple |
 PASS forewords@foreword-unicode |
 PASS forewords@foreword-union-find |
-REFUSED forewords@game-a-star | `astar-loop` writes its list parameter `closed` and answers something else
+PASS forewords@game-a-star |
 PASS forewords@game-bresenham |
 PASS forewords@game-card-deck |
 PASS forewords@game-cellular-automata |
@@ -454,9 +454,9 @@ PASS forewords@game-game-camera |
 PASS forewords@game-hex-map |
 PASS forewords@game-inventory |
 PASS forewords@game-klondike |
-REFUSED forewords@game-netcode | `nc-try-insert` writes its list parameter `history` and answers something else
+PASS forewords@game-netcode |
 PASS forewords@game-octree |
-REFUSED forewords@game-pathfinding | `dijk-loop` writes its list parameter `visited` and answers something else
+PASS forewords@game-pathfinding |
 PASS forewords@game-quadtree |
 PASS forewords@game-rasterizer |
 PASS forewords@game-raytracer |
@@ -496,7 +496,7 @@ PASS forewords@signal-audio-analysis |
 PASS forewords@signal-audio-effect |
 PASS forewords@signal-convolution |
 PASS forewords@signal-envelope |
-REFUSED forewords@signal-f-f-t | `fft-brc-loop` writes its list parameter `re` and answers something else
+PASS forewords@signal-f-f-t |
 PASS forewords@signal-filter |
 PASS forewords@signal-music-theory |
 PASS forewords@signal-noise |
@@ -510,13 +510,13 @@ PASS forewords@sim-constraint |
 PASS forewords@sim-kinematics |
 PASS forewords@sim-particle-system |
 PASS forewords@sim-physics |
-REFUSED forewords@sim-spatial-hash | `sh-insert-into-cells` writes its list parameter `cells` and answers something else
+PASS forewords@sim-spatial-hash |
 PASS forewords@sim-steering |
 PASS forewords@ui-accessibility |
 PASS forewords@ui-animation |
 PASS forewords@ui-binding |
 PASS forewords@ui-box-model |
-REFUSED forewords@ui-charts | binary cons-list
+PASS forewords@ui-charts |
 PASS forewords@ui-clipboard |
 PASS forewords@ui-cursor |
 PASS forewords@ui-dialog |
@@ -544,10 +544,10 @@ REFUSED fork-reclaim | builtin `fork`
 PASS frame-short-buffer |
 PASS frameless-leaf-probe |
 SKIP fresh-alloc-narrow | expects a diagnostic
-REFUSED fs-deny-runtime | builtin `read-text`
-REFUSED fs-handler-install | builtin `read-text`
-REFUSED fs-layer | builtin `read-text`
-REFUSED fs-servicer | builtin `read-text`
+REFUSED fs-deny-runtime | an opening scoped to FileSystem.Read "OK"
+REFUSED fs-handler-install | an opening scoped to FileSystem.Read "NOPE"
+REFUSED fs-layer | handle
+REFUSED fs-servicer | an opening scoped to FileSystem.Read "OK"
 SKIP fs-spawn-inherits | child reaches the write path and faults inside it: the trail measures verdict 0 with alive 71, write
 PASS ga-core |
 PASS geometry-test |
@@ -595,8 +595,8 @@ CRASH hpet-interrupt | machine: the HPET raised IOAPIC line 2 on vector 80, and 
 SLOW i219-k1-mechanism | last never run, ? ms; ALL=1 runs it
 REFUSED ident-letters | name `café` cannot be a Roc identifier
 REFUSED idm-key-tests | `fe-carry-pass` writes its list parameter `o` and answers something else
-REFUSED idm-read-line | `fe-carry-pass` writes its list parameter `o` and answers something else
-REFUSED idm-salt-iv-distinct | `fe-carry-pass` writes its list parameter `o` and answers something else
+PASS idm-read-line |
+PASS idm-salt-iv-distinct |
 REFUSED iec104-encode | type real-approx
 PASS ieee802154-encode |
 PASS if-in-arith |
@@ -609,7 +609,7 @@ SKIP induction-assoc | expects a diagnostic
 SKIP induction-list | expects a diagnostic
 SKIP induction-param | expects a diagnostic
 SKIP induction-parse | expects a diagnostic
-REFUSED inductive-list | type proof
+PASS inductive-list |
 PASS infra-test |
 PASS inline-cost-based |
 PASS inline-single-caller |
@@ -643,7 +643,7 @@ PASS lib@aesgcm-test |
 PASS lib@app-runner-frame |
 PASS lib@badge-tone |
 PASS lib@bencode-guard |
-REFUSED lib@brotli-ctx2-test | `lz77-count-distinct` writes its list parameter `seen` and answers something else
+REFUSED lib@brotli-ctx2-test | `brotli-read-clcl` writes its list parameter `acc` and answers something else
 REFUSED lib@brotli-dict-test | `brdix-fill` writes its list parameter `next` and answers something else
 REFUSED lib@brotli-test | `lz77-count-distinct` writes its list parameter `seen` and answers something else
 PASS lib@canvas-viewport |
@@ -678,7 +678,7 @@ PASS lib@settings-panel-render |
 PASS lib@status-badge-priority |
 PASS lib@text-overflow |
 PASS lib@text-overflow-render |
-REFUSED lib@text-trim-test | field-store
+PASS lib@text-trim-test |
 PASS lib@toml-test |
 DIVERGES lib@tree-view-nav | pins what a caller still holding the old record sees after its list is written in place; a Roc list is a value, so the caller keeps what it held
 PASS lib@utf8-cce-test |
@@ -701,7 +701,7 @@ PASS lir-selector-smoke |
 PASS lir-test-cross |
 PASS list-comprehension-copy |
 REFUSED list-cons-tail | binary cons-list
-REFUSED list-induction | type proof
+PASS list-induction |
 PASS list-literal-o1 |
 PASS list-pattern |
 PASS list-tail-empty |
@@ -720,15 +720,15 @@ PASS matrix3-test |
 PASS mbus-encode |
 REFUSED media-codec-test | `qoi-decode-pixels` writes its list parameter `index` and answers something else
 PASS melsec-encode |
-REFUSED method-template-contract-bounds-large | type error
-REFUSED method-template-contract-bounds-small | type error
-REFUSED method-template-contract-demands | type error
+PASS method-template-contract-bounds-large |
+PASS method-template-contract-bounds-small |
+PASS method-template-contract-demands |
 REFUSED method-template-contract-escape | type error
 PASS method-template-contract-lookalike |
 REFUSED method-template-contract-mono | type error
 REFUSED method-template-contract-runtime | type error
-REFUSED method-template-contract-unicode | type error
-REFUSED method-template-contract-zero | type error
+PASS method-template-contract-unicode |
+PASS method-template-contract-zero |
 REFUSED method-template-producer-guards | UNRESOLVED: method-template-producer-guards.codex cites Codex chapter Opening -- no such quire in the registry
 PASS mini-bootstrap |
 PASS mix-bits |
@@ -744,24 +744,24 @@ PASS neg-int-parse |
 REFUSED neg-real-repro | an opening of type real
 PASS negation-abutment |
 REFUSED nested-spawn | a function value from `__lam_0` (0 of 1 arguments), which reaches memory; a function value carries no state
-REFUSED net-ack-leak | `ne2k-copy-into` writes its list parameter `dst` and answers something else
+DIVERGES net-ack-leak | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
 REFUSED net-arena-pool | a function value from `__lam_0` (0 of 1 arguments), which reaches the machine; a function value carries no sta
 REFUSED net-compact-arena | builtin `address-of`
 REFUSED net-compact-copy | builtin `address-of`
-REFUSED net-drain-budget | `ne2k-copy-into` writes its list parameter `dst` and answers something else
+PASS net-drain-budget |
 SLOW net-driver-seam-bound | last never run, ? ms; ALL=1 runs it
-REFUSED net-driver-seam-no-av | `ne2k-copy-into` writes its list parameter `dst` and answers something else
+PASS net-driver-seam-no-av |
 SLOW net-io-clock | last never run, ? ms; ALL=1 runs it
-REFUSED net-poll-calibrated | `ne2k-copy-into` writes its list parameter `dst` and answers something else
-REFUSED net-poll-clamped | `ne2k-copy-into` writes its list parameter `dst` and answers something else
+CRASH net-poll-calibrated | machine: -e1000-nat is not a codex-vm flag this machine models
+PASS net-poll-clamped |
 DIVERGES net-recv-heap | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
 REFUSED network-effect | `ne2k-copy-into` writes its list parameter `dst` and answers something else
-REFUSED network-scope-deny | `ne2k-copy-into` writes its list parameter `dst` and answers something else
-REFUSED network-scope-open | `ne2k-copy-into` writes its list parameter `dst` and answers something else
-REFUSED network-scope-spawn | `ne2k-copy-into` writes its list parameter `dst` and answers something else
+REFUSED network-scope-deny | an opening scoped to Network.Write "ok.host"
+PASS network-scope-open |
+REFUSED network-scope-spawn | an opening scoped to Network.Write "ok.host"
 SKIP noalias-linear-param | expects a diagnostic
 PASS noise-test |
-REFUSED normalize-eq | type (propeq (ctd "Off" (args)) (ctd "Off" (args)))
+PASS normalize-eq |
 PASS notification-log-severity |
 PASS nrf52840-drivers |
 PASS nrf9160-drivers |
@@ -814,7 +814,7 @@ PASS ops@record-closure-field-poly |
 PASS ops@record-equality |
 REFUSED ops@record-equality-vector | a type applied to a non-name
 PASS ops@saturated-call-returning-function |
-REFUSED ops@section-title-keywords | type error
+PASS ops@section-title-keywords |
 PASS ops@substring-bounds |
 PASS ops@text-order-allowed |
 PASS ops@text-to-unicode-bytes-tier0 |
@@ -858,7 +858,7 @@ REFUSED proc-state-running | a function value from `__lam_0` (0 of 1 arguments),
 REFUSED process-exit-status | builtin `process-exit`
 SKIP proof-assume-axiom | expects a diagnostic
 SKIP proof-smoke | expects a diagnostic
-REFUSED prop-arith | type (propeq (ctd "2" (args)) (ctd "2" (args)))
+PASS prop-arith |
 SKIP prose-anchor | expects a diagnostic
 SKIP prose-binary-continuation | expects a diagnostic
 PASS prose-binary-control |
@@ -978,10 +978,10 @@ PASS thumb2-encoder |
 PASS timer-registers |
 REFUSED tls-cert | `fe-carry-pass` writes its list parameter `o` and answers something else
 REFUSED tls-cv-schemes | `fe-carry-pass` writes its list parameter `o` and answers something else
-REFUSED tls-record-framing | `ne2k-copy-into` writes its list parameter `dst` and answers something else
+PASS tls-record-framing |
 REFUSED tls-test | `fe-carry-pass` writes its list parameter `o` and answers something else
-REFUSED tls13-record | `fe-carry-pass` writes its list parameter `o` and answers something else
-REFUSED tls13-schedule | `fe-carry-pass` writes its list parameter `o` and answers something else
+PASS tls13-record |
+PASS tls13-schedule |
 PASS transport-cocite |
 PASS trie-prefix-test |
 PASS truetype-bridge-test |
@@ -1002,9 +1002,9 @@ REFUSED typeclass-method-local-independent | type error
 REFUSED typeclass-method-local-shadow | type error
 REFUSED typeclass-method-local-two-types | type error
 REFUSED typeclass-poly | type error
-REFUSED typeclass-smoke | `__compare_Integer` belongs to no chapter
+REFUSED typeclass-smoke | builtin `__dict-of-Showable` used as a value
 REFUSED typeclass-superclass-types | type error
-REFUSED udp-frame-guard | `ne2k-copy-into` writes its list parameter `dst` and answers something else
+PASS udp-frame-guard |
 PASS uefi-read-key-nofirmware |
 PASS ui-anim-test |
 PASS ui-dialog-test |
@@ -1043,7 +1043,7 @@ PASS uri-encode |
 PASS usb-desc-guard |
 PASS usb-test |
 PASS validation-rules |
-REFUSED value-eq | type (propeq (ctd "xs" (args)) (ctd "xs" (args)))
+PASS value-eq |
 CRASH vbe-mode-set | machine: port-out-16 to port 0x000001CE, Bochs VBE, which this machine does not model
 REFUSED vec-arith-hazards | type (vector 2 real)
 REFUSED vec-array | type (vector 2 real)
