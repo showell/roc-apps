@@ -32,13 +32,23 @@ fn panicImpl(msg: []const u8, _: ?usize) noreturn {
     std.c.abort();
 }
 
+// Allocation counts, reported to stderr at exit when ROC_COUNT_ALLOCS is set: the
+// same three numbers roc2rust's runtime reports, for comparing the two builds.
+var count_allocs: u64 = 0;
+var count_reallocs: u64 = 0;
+var count_bytes: u64 = 0;
+
 fn roc_alloc(length: usize, alignment: usize) callconv(.c) ?*anyopaque {
+    count_allocs += 1;
+    count_bytes += length;
     return host_alloc.alloc(allocator, length, alignment) orelse host_alloc.allocFailed();
 }
 fn roc_dealloc(ptr: *anyopaque, alignment: usize) callconv(.c) void {
     host_alloc.dealloc(allocator, ptr, alignment);
 }
 fn roc_realloc(ptr: *anyopaque, new_length: usize, alignment: usize) callconv(.c) ?*anyopaque {
+    count_reallocs += 1;
+    count_bytes += new_length;
     return host_alloc.realloc(allocator, ptr, new_length, alignment);
 }
 fn roc_dbg(bytes: [*]const u8, len: usize) callconv(.c) void {
@@ -125,7 +135,13 @@ fn main(argc: c_int, argv: [*][*:0]u8) callconv(.c) c_int {
     defer allocator.free(strs);
     for (strs, 0..) |*s, i| s.* = RocStr.fromSlice(std.mem.span(argv[i + 1]), &roc_ops);
     const args = RocList.fromSlice(RocStr, strs, true, &roc_ops);
-    return roc_main(args);
+    const code = roc_main(args);
+    if (std.c.getenv("ROC_COUNT_ALLOCS") != null) {
+        var buf: [96]u8 = undefined;
+        const line = std.fmt.bufPrint(&buf, "allocs {d} reallocs {d} bytes {d}\n", .{ count_allocs, count_reallocs, count_bytes }) catch return code;
+        _ = std.c.write(2, line.ptr, line.len);
+    }
+    return code;
 }
 
 comptime {
