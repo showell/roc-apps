@@ -33,22 +33,37 @@ fn panicImpl(msg: []const u8, _: ?usize) noreturn {
 }
 
 // Allocation counts, reported to stderr at exit when ROC_COUNT_ALLOCS is set: the
-// same three numbers roc2rust's runtime reports, for comparing the two builds.
+// same numbers roc2rust's runtime reports, for comparing the two builds. Live
+// bytes are what the program asked for, without the size prefix host_alloc adds.
 var count_allocs: u64 = 0;
 var count_reallocs: u64 = 0;
 var count_bytes: u64 = 0;
+var count_live: u64 = 0;
+var count_peak: u64 = 0;
+
+fn liveGrow(by: usize) void {
+    count_live += by;
+    count_peak = @max(count_peak, count_live);
+}
+fn liveLength(ptr: *anyopaque, alignment: usize) usize {
+    return host_alloc.storedTotalSize(ptr) - host_alloc.sizeStorageBytes(alignment);
+}
 
 fn roc_alloc(length: usize, alignment: usize) callconv(.c) ?*anyopaque {
     count_allocs += 1;
     count_bytes += length;
+    liveGrow(length);
     return host_alloc.alloc(allocator, length, alignment) orelse host_alloc.allocFailed();
 }
 fn roc_dealloc(ptr: *anyopaque, alignment: usize) callconv(.c) void {
+    count_live -= liveLength(ptr, alignment);
     host_alloc.dealloc(allocator, ptr, alignment);
 }
 fn roc_realloc(ptr: *anyopaque, new_length: usize, alignment: usize) callconv(.c) ?*anyopaque {
     count_reallocs += 1;
     count_bytes += new_length;
+    count_live -= liveLength(ptr, alignment);
+    liveGrow(new_length);
     return host_alloc.realloc(allocator, ptr, new_length, alignment);
 }
 fn roc_dbg(bytes: [*]const u8, len: usize) callconv(.c) void {
@@ -137,8 +152,8 @@ fn main(argc: c_int, argv: [*][*:0]u8) callconv(.c) c_int {
     const args = RocList.fromSlice(RocStr, strs, true, &roc_ops);
     const code = roc_main(args);
     if (std.c.getenv("ROC_COUNT_ALLOCS") != null) {
-        var buf: [96]u8 = undefined;
-        const line = std.fmt.bufPrint(&buf, "allocs {d} reallocs {d} bytes {d}\n", .{ count_allocs, count_reallocs, count_bytes }) catch return code;
+        var buf: [128]u8 = undefined;
+        const line = std.fmt.bufPrint(&buf, "allocs {d} reallocs {d} bytes {d}\npeak live bytes {d}\n", .{ count_allocs, count_reallocs, count_bytes, count_peak }) catch return code;
         _ = std.c.write(2, line.ptr, line.len);
     }
     return code;
