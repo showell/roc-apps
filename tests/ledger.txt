@@ -881,7 +881,7 @@ PASS rasterizer-test |
 PASS raytracer-test |
 PASS real-cert |
 PASS real-literal-boundary |
-DIVERGES real-show-wide | the verdict pins Codex's own printer: it reads 12345678901234567.0 as ...566, we print the double
+PASS real-show-wide |
 PASS record-smoke |
 PASS recursive-eq |
 PASS reservoir-uniform |

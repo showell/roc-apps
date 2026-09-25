@@ -3407,6 +3407,24 @@ const codex_real_literal_boundary_stdout =
     \\frac-19-parses  : 2
     ++ "\n";
 
+const codex_real_show_wide_stdout =
+    \\d09 : 123456789.0
+    \\d15 : 123456789012345.0
+    \\d16 : 1234567890123456.0
+    \\d17 : 12345678901234568.0
+    \\d18 : 123456789012345680.0
+    \\frac: 1.5
+    \\half: 0.5
+    \\p63 : 9.22337203685478e+18
+    \\n63 : -9.22337203685478e+18
+    \\e20 : 1.0e+20
+    \\e300: 1.0e+300
+    \\max : 1.79769313486232e+308
+    \\inf : inf
+    \\ninf: -inf
+    \\nan : nan
+    ++ "\n";
+
 const codex_record_smoke_stdout =
     \\rect at 10,20 area=21
     \\15
@@ -4543,6 +4561,7 @@ const codex_zigbee_encode_stdout =
     .{ .id = 0, .suite = .codex, .name = "codex: punctual-smoke", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_punctual_smoke.roc", .stdout_exact = codex_punctual_smoke_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: queue-test", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_queue_test.roc", .stdout_exact = codex_queue_test_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: real-literal-boundary", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_real_literal_boundary.roc", .stdout_exact = codex_real_literal_boundary_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: real-show-wide", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_real_show_wide.roc", .stdout_exact = codex_real_show_wide_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: record-smoke", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_record_smoke.roc", .stdout_exact = codex_record_smoke_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: recursive-eq", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_recursive_eq.roc", .stdout_exact = codex_recursive_eq_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: reservoir-uniform", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_reservoir_uniform.roc", .stdout_exact = codex_reservoir_uniform_stdout } } },

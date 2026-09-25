@@ -80,7 +80,6 @@ diverges() {
         lib@data-table-rows) echo "DataTable's dt-swap writes the keys list in place and drops the answer, and dt-insert reads the keys through its own name; in Roc the swap is lost and the sort compares stale keys" ;;
         gop-composite-translate) echo "comp-translate moves each child with __record-set and drops the answers; Codex writes the record in place, so the parent's children list sees the move, and a Roc record is a value" ;;
         db-full-test) echo "test-bulk-load and test-import insert 5 rows through heap-insert-encoded's list-set-at on the catalog's pages and answer only Text; the backup then scans the same catalog, which in Roc still holds the old pages (rows=21, not 26)" ;;
-        real-show-wide) echo "the verdict pins Codex's own printer: it reads 12345678901234567.0 as ...566, we print the double" ;;
         cost@accumulator-corpus|ops@list-growth|heap-scrub|engine-culling-cost|engine-render-heap|net-recv-heap|net-ack-leak|e1000-rx-reuse) echo "measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero" ;;
         web-mux-heap) echo "measures Codex's bump pointer with __heap-save; the machine's pointer moves for alloc-bytes, so each 65536-byte receive buffer shows, but no Roc list lives on it, so every reading lacks the lists' bytes" ;;
         cpu-park) echo "times cpu-park's sti;hlt against the HPET; a hosted program has no HPET and no core to halt, so only its first line (answers 0 0) is language" ;;
