@@ -23,7 +23,7 @@ import cdx.CceText
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 SameValueDict(a) : { same_value_impl : (a, a -> Bool) }
-RankedValueDict(a) : { super_SameValue : SameValueDict, rank_value_impl : (a -> I64) }
+RankedValueDict(a) : { super_SameValue : SameValueDict(a), rank_value_impl : (a -> I64) }
 
 integer_super : I64, I64 -> Bool
 integer_super = |x, y| ({

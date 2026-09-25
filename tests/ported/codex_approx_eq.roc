@@ -37,8 +37,8 @@ main! = |_args| {
 	check!("approx-same", Prelude.approx_eq(1.0, 1.0))
 	check!("approx-zero", Prelude.approx_eq(0.0, 0.0))
 	check!("approx-far", (if Prelude.approx_eq(1.0, 2.0) { False } else { True }))
-	check!("exact-same", (F64.to_bits(1.0) == F64.to_bits(1.0)))
-	check!("exact-zero", (F64.to_bits(0.0) == F64.to_bits(0.0)))
-	check!("exact-far", (if (F64.to_bits(1.0) == F64.to_bits(2.0)) { False } else { True }))
+	check!("exact-same", (Prelude.ordinal(1.0) == Prelude.ordinal(1.0)))
+	check!("exact-zero", (Prelude.ordinal(0.0) == Prelude.ordinal(0.0)))
+	check!("exact-far", (if (Prelude.ordinal(1.0) == Prelude.ordinal(2.0)) { False } else { True }))
 	Ok({})
 }

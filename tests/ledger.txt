@@ -21,7 +21,7 @@ PASS asn1-der-write |
 REFUSED atomic-smoke | builtin `memory-fence`
 PASS audio-diffusion-test |
 PASS av-codec-test |
-REFUSED bacnet-encode | type real-approx
+PASS bacnet-encode |
 PASS bezier-identity |
 PASS bitop-if-cond |
 PASS ble-att-encode |
@@ -597,7 +597,7 @@ REFUSED ident-letters | name `café` cannot be a Roc identifier
 PASS idm-key-tests |
 PASS idm-read-line |
 PASS idm-salt-iv-distinct |
-REFUSED iec104-encode | type real-approx
+PASS iec104-encode |
 PASS ieee802154-encode |
 PASS if-in-arith |
 PASS if-let-join |
@@ -792,24 +792,24 @@ PASS ops@list-view-bounds |
 PASS ops@match-shadowed-arm |
 PASS ops@native-nested-pattern |
 PASS ops@native-nested-tags |
-REFUSED ops@real-approx | type real-approx
-REFUSED ops@real-approx-equality | type real-approx
-REFUSED ops@real-approx-modes | type real-approx
-REFUSED ops@real-approx-negate | type real-approx
-REFUSED ops@real-bitcast | builtin `to-real-approx`
+PASS ops@real-approx |
+PASS ops@real-approx-equality |
+PASS ops@real-approx-modes |
+PASS ops@real-approx-negate |
+PASS ops@real-bitcast |
 PASS ops@real-bitcast-f64 |
 PASS ops@real-compare-negative |
 REFUSED ops@real-literal-rounding | builtin `text-to-double-bits`
-REFUSED ops@real-mode-compare | type real-approx
-REFUSED ops@real-mode-fields | builtin `to-real-approx`
-REFUSED ops@real-mode-opening | builtin `to-real-trapping`
-REFUSED ops@real-mode-show | builtin `to-real-approx`
+PASS ops@real-mode-compare |
+REFUSED ops@real-mode-fields | an opening of type (sum "Sample" (args))
+REFUSED ops@real-mode-opening | an opening of type real-trapping
+PASS ops@real-mode-show |
 PASS ops@real-neg-neg |
 PASS ops@real-negate |
-REFUSED ops@real-saturating | binary add-real-saturating
-REFUSED ops@real-saturating-finite | builtin `to-real-saturating`
-REFUSED ops@real-to-int-wide | builtin `to-real-approx`
-REFUSED ops@real-trapping | binary add-real-trapping
+PASS ops@real-saturating |
+PASS ops@real-saturating-finite |
+PASS ops@real-to-int-wide |
+PASS ops@real-trapping |
 PASS ops@record-closure-field-poly |
 PASS ops@record-equality |
 REFUSED ops@record-equality-vector | a type applied to a non-name
@@ -941,7 +941,7 @@ PASS smtp-md-test |
 PASS sntp-encode |
 PASS sort-test |
 PASS sound-test |
-REFUSED sparkplug-encode | builtin `real-approx-to-bits`
+PASS sparkplug-encode |
 REFUSED spawn-memo-table | a function value from `__lam_0` (0 of 1 arguments), which reaches the machine; a function value carries no sta
 REFUSED spawn-reuse | a function value from `__lam_0` (0 of 1 arguments), which reaches memory; a function value carries no state
 PASS sprite-test |
@@ -1055,7 +1055,7 @@ REFUSED vec-pattern | classify: vector pattern
 REFUSED vec-reduce-add | builtin `vec-splat`
 REFUSED vec-select | type (effectful (effs "Console") (scopes "") nothing)
 REFUSED vector-basic | builtin `vec-splat`
-REFUSED vector-f32 | builtin `to-real-approx`
+REFUSED vector-f32 | builtin `vec4-splat`
 REFUSED vector-f32-mask | type (vector 4 real-approx)
 REFUSED vector-int | builtin `vec-splat`
 PASS wavelet-sort-aliasing |

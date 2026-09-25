@@ -87,7 +87,7 @@ near : F64, F64, F64 -> CceText
 near = |got, want, tol| (if (t_abs((got - want)) <= (tol * t_max(1.0, t_abs(want)))) { "ok" } else { CceText.concat(CceText.concat(CceText.concat("BAD got ", CceText.of_str(Prelude.real_to_str(got))), " want "), CceText.of_str(Prelude.real_to_str(want))) })
 
 exact : F64, F64 -> CceText
-exact = |got, want| (if (F64.to_bits(got) == F64.to_bits(want)) { "ok" } else { CceText.concat(CceText.concat(CceText.concat("BAD got ", CceText.of_str(Prelude.real_to_str(got))), " want "), CceText.of_str(Prelude.real_to_str(want))) })
+exact = |got, want| (if (Prelude.ordinal(got) == Prelude.ordinal(want)) { "ok" } else { CceText.concat(CceText.concat(CceText.concat("BAD got ", CceText.of_str(Prelude.real_to_str(got))), " want "), CceText.of_str(Prelude.real_to_str(want))) })
 
 sq_tol : F64
 sq_tol = F64.from_bits(4472406533629990549)

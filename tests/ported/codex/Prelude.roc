@@ -61,6 +61,32 @@ Prelude :: [].{
 	approx_eq : F64, F64 -> Bool
 	approx_eq = |x, y| I64.abs(I64.minus_wrap(Prelude.ordinal(x), Prelude.ordinal(y))) <= 4
 
+	# `ordinal` and `approx_eq` over an f32's bits: `~` on a `Real
+	# approximate` counts f32 units.
+	ordinal32 : F32 -> I64
+	ordinal32 = |f| {
+		b = I32.to_i64(U32.to_i32_wrap(F32.to_bits(f)))
+		if b < 0 { I64.plus_wrap(I64.bitwise_xor(b, 2147483647), 1) } else { b }
+	}
+
+	approx_eq32 : F32, F32 -> Bool
+	approx_eq32 = |x, y| I64.abs(I64.minus_wrap(Prelude.ordinal32(x), Prelude.ordinal32(y))) <= 4
+
+	# A `saturating` Real answers the largest finite value for an infinity and
+	# 0 for NaN; a `trapping` one traps on either (codex/test's
+	# ops/real-saturating, real-approx-modes).
+	sat_f64 : F64 -> F64
+	sat_f64 = |x| if F64.is_nan(x) { 0.0 } else if F64.is_infinite(x) { if x > 0.0 { F64.from_bits(9218868437227405311) } else { F64.from_bits(18442240474082181119) } } else { x }
+
+	sat_f32 : F32 -> F32
+	sat_f32 = |x| if F32.is_nan(x) { F32.from_bits(0) } else if F32.is_infinite(x) { if x > F32.from_bits(0) { F32.from_bits(2139095039) } else { F32.from_bits(4286578687) } } else { x }
+
+	trap_f64 : F64 -> F64
+	trap_f64 = |x| if F64.is_finite(x) { x } else { crash("a trapping Real left the finite range") }
+
+	trap_f32 : F32 -> F32
+	trap_f32 = |x| if F32.is_finite(x) { x } else { crash("a trapping Real left the finite range") }
+
 	# `a ^ b` with a negative exponent is 0, where Roc's pow crashes
 	# (codex/test's ops/int-pow: `ipow 5 (0 - 2)` is 0).
 	int_pow : I64, I64 -> I64

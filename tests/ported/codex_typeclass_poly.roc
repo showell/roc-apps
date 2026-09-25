@@ -22,7 +22,7 @@ import cdx.CceText
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
 EquatableDict(a) : { equals_impl : (a, a -> Bool) }
-SortableDict(a) : { super_Equatable : EquatableDict, sort_key_impl : (a -> I64) }
+SortableDict(a) : { super_Equatable : EquatableDict(a), sort_key_impl : (a -> I64) }
 
 test_convert : CceText
 test_convert = CceText.show_int(convert(1, 42))
