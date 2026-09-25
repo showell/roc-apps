@@ -76,7 +76,10 @@ Ethernet :: [].{
 	eth_src_mac = |frame| (if (U64.to_i64_wrap(List.len(frame)) < 12) { [0, 0, 0, 0, 0, 0] } else { [(List.get(frame, I64.to_u64_wrap(6)) ?? crash("list-at out of range")), (List.get(frame, I64.to_u64_wrap(7)) ?? crash("list-at out of range")), (List.get(frame, I64.to_u64_wrap(8)) ?? crash("list-at out of range")), (List.get(frame, I64.to_u64_wrap(9)) ?? crash("list-at out of range")), (List.get(frame, I64.to_u64_wrap(10)) ?? crash("list-at out of range")), (List.get(frame, I64.to_u64_wrap(11)) ?? crash("list-at out of range"))] })
 
 	eth_ethertype : List(I64) -> I64
-	eth_ethertype = |frame| (if (U64.to_i64_wrap(List.len(frame)) < 14) { 0 } else { read_be16(frame, 12) })
+	eth_ethertype = |frame| eth_ethertype_within(frame, U64.to_i64_wrap(List.len(frame)))
+
+	eth_ethertype_within : List(I64), I64 -> I64
+	eth_ethertype_within = |frame, stop| (if (stop < 14) { 0 } else { read_be16(frame, 12) })
 
 	eth_payload : List(I64) -> List(I64)
 	eth_payload = |frame| eth_payload_loop(frame, eth_header_size, U64.to_i64_wrap(List.len(frame)), [])
@@ -116,13 +119,19 @@ Ethernet :: [].{
 	})
 
 	ip_length_valid_at : List(I64), I64 -> Bool
-	ip_length_valid_at = |pkt, off| (if ((U64.to_i64_wrap(List.len(pkt)) - off) < ip_header_size) { False } else { (if (ip_total_length_at(pkt, off) < ip_header_size) { False } else { (ip_total_length_at(pkt, off) <= (U64.to_i64_wrap(List.len(pkt)) - off)) }) })
+	ip_length_valid_at = |pkt, off| ip_length_valid_within(pkt, off, U64.to_i64_wrap(List.len(pkt)))
+
+	ip_length_valid_within : List(I64), I64, I64 -> Bool
+	ip_length_valid_within = |pkt, off, stop| (if ((stop - off) < ip_header_size) { False } else { (if (ip_total_length_at(pkt, off) < ip_header_size) { False } else { (ip_total_length_at(pkt, off) <= (stop - off)) }) })
 
 	ip_length_valid : List(I64) -> Bool
 	ip_length_valid = |pkt| ip_length_valid_at(pkt, 0)
 
 	ip_header_valid_at : List(I64), I64 -> Bool
-	ip_header_valid_at = |pkt, off| (if ((U64.to_i64_wrap(List.len(pkt)) - off) < ip_header_size) { False } else { (ip_checksum(pkt, off, (off + ip_header_size), 0) == 0) })
+	ip_header_valid_at = |pkt, off| ip_header_valid_within(pkt, off, U64.to_i64_wrap(List.len(pkt)))
+
+	ip_header_valid_within : List(I64), I64, I64 -> Bool
+	ip_header_valid_within = |pkt, off, stop| (if ((stop - off) < ip_header_size) { False } else { (ip_checksum(pkt, off, (off + ip_header_size), 0) == 0) })
 
 	ip_header_valid : List(I64) -> Bool
 	ip_header_valid = |pkt| ip_header_valid_at(pkt, 0)

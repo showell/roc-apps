@@ -40,7 +40,16 @@ import os, re, shutil, subprocess, sys, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "ported")
-GEN = os.path.expanduser("~/build/roc-apps/gen/tests")
+# **THE PACKAGE IS EMITTED WHOLE** (`rocemit --whole`), not read from the
+# ladder's output. The ladder's rocemit prunes each program to what its
+# opening reaches, as every upstream backend does, so its ListUtils holds
+# what THAT program calls and no two programs need agree. Whole, a chapter is
+# every definition in it, and one rocemit cannot write is a function that
+# crashes with the reason if called (a constant it cannot write is left
+# out, since Roc evaluates constants while compiling): the same text for
+# every program, which is what sharing it needs.
+GEN = os.path.expanduser("~/build/roc-apps/gen/whole")
+ROCEMIT = os.environ.get("ROCEMIT", os.path.expanduser("~/build/rust-target/release/rocemit"))
 VERDICTS = os.path.expanduser("~/build/roc-apps/gen/verdicts")
 # The compiler every roc-apps build uses: ../roc-nightly.txt.
 NIGHTLY = open(os.path.join(HERE, "..", "roc-nightly.txt")).read().strip()
@@ -73,6 +82,35 @@ def units():
         if line.startswith("PASS ") or (line.startswith("SLOW ") and "| last PASS," in line):
             out.append(line.split()[1])
     return out
+
+
+def emit_whole(order):
+    """`rocemit --whole` for each unit, in parallel, into GEN/<unit>.
+
+    Answers the units it could not emit, with the reason. A unit that
+    reaches the machine is left out: its chapters are emitted over the
+    machine's state, so they are not the ones every other test shares.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+    shutil.rmtree(GEN, ignore_errors=True)
+
+    def one(unit):
+        src = os.path.join(TESTS_ROOT, "codex", "test", unit.replace("@", "/") + ".codex")
+        d = os.path.join(GEN, unit)
+        os.makedirs(d)
+        r = subprocess.run([ROCEMIT, "--whole", src, d], capture_output=True, text=True)
+        if r.returncode != 0:
+            shutil.rmtree(d, ignore_errors=True)
+            return unit, (r.stderr.strip().split("\n") or ["rocemit failed"])[0][:110]
+        # What rocemit stubbed or left out, for the report.
+        open(os.path.join(d, "notes.txt"), "w").write(r.stderr)
+        if any("\nimport Machine\n" in "\n" + open(os.path.join(d, f)).read() for f in os.listdir(d) if f.endswith(".roc")):
+            shutil.rmtree(d, ignore_errors=True)
+            return unit, "reaches the machine"
+        return unit, None
+
+    with ThreadPoolExecutor(os.cpu_count() or 4) as ex:
+        return {u: why for u, why in ex.map(one, order) if why}
 
 
 def imports_of(text):
@@ -317,8 +355,11 @@ def main():
         shutil.rmtree(OUT, ignore_errors=True)
         os.makedirs(OUT)
     kept, dropped, times, shared = [], [], {}, {}
-    chosen = pick(units(), cap)
-    skipped = [u for u in units() if u not in set(chosen)]
+    not_emitted = emit_whole(units())
+    dropped.extend(sorted(not_emitted.items()))
+    order = [u for u in units() if u not in not_emitted]
+    chosen = pick(order, cap)
+    skipped = [u for u in order if u not in set(chosen)]
     # First pass: gather the chapters, so the package exists before a run.
     for unit in chosen:
         _, chapters, why = modules(unit)
