@@ -19,8 +19,8 @@ import Strategy
 cards : List(Str)
 cards = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "joker"]
 
-count : List(Str), Str -> I64
-count = |xs, card| U64.to_i64_wrap(List.count_if(xs, |c| c == card))
+copies : List(Str), Str -> I64
+copies = |xs, card| U64.to_i64_wrap(List.count_if(xs, |c| c == card))
 
 
 main! = |_args| {
@@ -42,12 +42,12 @@ main! = |_args| {
 	rows = List.map(
 		cards,
 		|card| {
-			w = count(won, card)
-			l = count(lost, card)
-			wd = count(won_discards, card)
-			ld = count(lost_discards, card)
-			wh = count(won_hands, card)
-			lh = count(lost_hands, card)
+			w = copies(won, card)
+			l = copies(lost, card)
+			wd = copies(won_discards, card)
+			ld = copies(lost_discards, card)
+			wh = copies(won_hands, card)
+			lh = copies(lost_hands, card)
 			dw = w + wd + wh
 			dl = l + ld + lh
 			share = if dw + dl == 0 { 0.0 } else { I64.to_f64(dw) / I64.to_f64(dw + dl) }
