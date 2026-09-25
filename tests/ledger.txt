@@ -16,7 +16,7 @@ PASS arm64-proc-cells |
 PASS arm64-send-checked |
 PASS arm64-send-refusal |
 PASS arp-cache-bound |
-REFUSED asn1-der | `fe-carry-pass` writes its list parameter `o` and answers something else
+PASS asn1-der |
 PASS asn1-der-write |
 REFUSED atomic-smoke | builtin `memory-fence`
 PASS audio-diffusion-test |
@@ -82,7 +82,7 @@ DIVERGES cpu-park | times cpu-park's sti;hlt against the HPET; a hosted program 
 PASS cross-port-refused |
 REFUSED crypto-test | type (effectful (effs "Console") (scopes "") nothing)
 SLOW crypto-vectors | last never run, ? ms; ALL=1 runs it
-REFUSED cryptobig | `cb-shl1` writes its list parameter `x` and answers something else
+PASS cryptobig |
 PASS ctor-narrow-warn |
 PASS db-csv-roundtrip |
 DIVERGES db-full-test | test-bulk-load and test-import insert 5 rows through heap-insert-encoded's list-set-at on the catalog's pages and answer only Text; the backup then scans the same catalog, which in Roc still holds the old pages (rows=21, not 26)
@@ -112,7 +112,7 @@ PASS dtls-handshake |
 PASS dtls-hello |
 PASS dtls-message |
 PASS dtls-openssl-fragments |
-REFUSED dtls-random | `fe-carry-pass` writes its list parameter `o` and answers something else
+PASS dtls-random |
 PASS dtls-record |
 PASS e1000-aneg-budget |
 PASS e1000-asde-arms |
@@ -135,7 +135,7 @@ SLOW e1000-reset-wedged | last never run, ? ms; ALL=1 runs it
 PASS e1000-ring-wrap |
 PASS e1000-rx-invisible |
 PASS e1000-rx-invisible-off |
-REFUSED e1000-rx-reuse | `e1000-copy-into` writes its list parameter `dst` and answers something else
+DIVERGES e1000-rx-reuse | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
 PASS e1000-swflag |
 PASS e1000-swflag-k1 |
 PASS e1000-swflag-mng |
@@ -144,12 +144,12 @@ PASS e1000-swflag-strict |
 SLOW e1000-tx-deadline | last never run, ? ms; ALL=1 runs it
 PASS e1000-ulp-entry |
 PASS e1000-unresettable |
-REFUSED ecdsa-cert | `fe-carry-pass` writes its list parameter `o` and answers something else
-REFUSED ecdsa-p256 | `cb-shl1` writes its list parameter `x` and answers something else
-REFUSED ecdsa-p384 | `cb-shl1` writes its list parameter `x` and answers something else
-REFUSED ecdsa-sha384 | `cb-shl1` writes its list parameter `x` and answers something else
+SLOW ecdsa-cert | last PASS, 13182 ms; ALL=1 runs it
+SLOW ecdsa-p256 | last PASS, 9308 ms; ALL=1 runs it
+SLOW ecdsa-p384 | last PASS, 28693 ms; ALL=1 runs it
+SLOW ecdsa-sha384 | last PASS, 10770 ms; ALL=1 runs it
 DIVERGES edalias | list-set-at mutates in place; Roc's List.set answers a new list
-REFUSED edcurve | `fe-carry-pass` writes its list parameter `o` and answers something else
+PASS edcurve |
 PASS edge-mesh-admit |
 PASS edge-mesh-bracket |
 PASS edge-mesh-discover |
@@ -163,7 +163,7 @@ PASS edge-mesh-prewarm |
 PASS edge-mesh-rewards |
 PASS edge-mesh-route |
 PASS edit-distance-test |
-REFUSED edvector | `fe-carry-pass` writes its list parameter `o` and answers something else
+PASS edvector |
 PASS effect-dotted-allow |
 REFUSED effect-handler-nested-same | handle
 REFUSED effect-map-effctx | `shout`, an effectful function, handed to `list-map`, which takes a pure one
@@ -410,8 +410,8 @@ PASS forewords@foreword-probability |
 PASS forewords@foreword-proof-of-work |
 PASS forewords@foreword-queue |
 PASS forewords@foreword-random |
-REFUSED forewords@foreword-ranked-text-set | `rts-build-update-loop` writes its list parameter `nodes` and answers something else
-REFUSED forewords@foreword-ranked-text-set-surface | `rts-build-update-loop` writes its list parameter `nodes` and answers something else
+REFUSED forewords@foreword-ranked-text-set | `rts-extend-path-loop`: it writes a list held in a record field and drops the answer, relying on the record ch
+REFUSED forewords@foreword-ranked-text-set-surface | `rts-extend-path-loop`: it writes a list held in a record field and drops the answer, relying on the record ch
 PASS forewords@foreword-rate-limiter |
 PASS forewords@foreword-regex |
 PASS forewords@foreword-result |
@@ -594,7 +594,7 @@ PASS history-test |
 CRASH hpet-interrupt | machine: the HPET raised IOAPIC line 2 on vector 80, and this machine delivers no interrupts
 SLOW i219-k1-mechanism | last never run, ? ms; ALL=1 runs it
 REFUSED ident-letters | name `café` cannot be a Roc identifier
-REFUSED idm-key-tests | `fe-carry-pass` writes its list parameter `o` and answers something else
+PASS idm-key-tests |
 PASS idm-read-line |
 PASS idm-salt-iv-distinct |
 REFUSED iec104-encode | type real-approx
@@ -643,15 +643,15 @@ PASS lib@aesgcm-test |
 PASS lib@app-runner-frame |
 PASS lib@badge-tone |
 PASS lib@bencode-guard |
-REFUSED lib@brotli-ctx2-test | `brotli-read-clcl` writes its list parameter `acc` and answers something else
-REFUSED lib@brotli-dict-test | `brdix-fill` writes its list parameter `next` and answers something else
-REFUSED lib@brotli-test | `lz77-count-distinct` writes its list parameter `seen` and answers something else
+PASS lib@brotli-ctx2-test |
+SLOW lib@brotli-dict-test | last PASS, 10785 ms; ALL=1 runs it
+SLOW lib@brotli-test | last PASS, 38406 ms; ALL=1 runs it
 PASS lib@canvas-viewport |
 PASS lib@cbor-guard |
 PASS lib@cbor-test |
 DIVERGES lib@data-table-rows | DataTable's dt-swap writes the keys list in place and drops the answer, and dt-insert reads the keys through its own name; in Roc the swap is lost and the sort compares stale keys
 PASS lib@decimal-test |
-REFUSED lib@deflate-dynamic-test | `lz77-count-distinct` writes its list parameter `seen` and answers something else
+PASS lib@deflate-dynamic-test |
 DIVERGES lib@detail-pane | pins what a caller still holding the old record sees after its list is written in place; a Roc list is a value, so the caller keeps what it held
 PASS lib@device-math |
 PASS lib@dropdown-options |
@@ -718,7 +718,7 @@ REFUSED mask-ops | type (effectful (effs "Console") (scopes "") nothing)
 PASS match-arms-per-line |
 PASS matrix3-test |
 PASS mbus-encode |
-REFUSED media-codec-test | `qoi-decode-pixels` writes its list parameter `index` and answers something else
+PASS media-codec-test |
 PASS melsec-encode |
 PASS method-template-contract-bounds-large |
 PASS method-template-contract-bounds-small |
@@ -755,7 +755,7 @@ SLOW net-io-clock | last never run, ? ms; ALL=1 runs it
 CRASH net-poll-calibrated | machine: -e1000-nat is not a codex-vm flag this machine models
 PASS net-poll-clamped |
 DIVERGES net-recv-heap | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
-REFUSED network-effect | `ne2k-copy-into` writes its list parameter `dst` and answers something else
+REFUSED network-effect | `net-io-wait-established-poll`: an `act` statement writes a list a later statement reads
 REFUSED network-scope-deny | an opening scoped to Network.Write "ok.host"
 PASS network-scope-open |
 REFUSED network-scope-spawn | an opening scoped to Network.Write "ok.host"
@@ -777,7 +777,7 @@ PASS ops@cce-builtin-bounds |
 PASS ops@char-at-bounds |
 PASS ops@char-encode-bands |
 PASS ops@closure-under-apply |
-REFUSED ops@collate-order | `sort-run` writes its list parameter `ks` and answers something else
+PASS ops@collate-order |
 PASS ops@div-negative-pow2 |
 PASS ops@int-add-wrapping |
 PASS ops@int-min-literal |
@@ -879,7 +879,7 @@ SKIP range-let-carry | expects a diagnostic
 SKIP range-refine-if | expects a diagnostic
 PASS rasterizer-test |
 PASS raytracer-test |
-REFUSED real-cert | `fe-carry-pass` writes its list parameter `o` and answers something else
+PASS real-cert |
 PASS real-literal-boundary |
 DIVERGES real-show-wide | the verdict pins Codex's own printer: it reads 12345678901234567.0 as ...566, we print the double
 PASS record-smoke |
@@ -902,8 +902,8 @@ PASS roc-iter-map |
 PASS roc-recursive-var |
 PASS roc-returned-closure |
 PASS rp2040-drivers |
-REFUSED rsa-pss | `cb-shl1` writes its list parameter `x` and answers something else
-REFUSED rsa-verify | `cb-shl1` writes its list parameter `x` and answers something else
+SLOW rsa-pss | last PASS, 7564 ms; ALL=1 runs it
+PASS rsa-verify |
 PASS rv-arg-order |
 PASS rv-big-literal |
 PASS rv-frameless-imm |
@@ -976,10 +976,10 @@ PASS textscan-test |
 PASS textsearch-test |
 PASS thumb2-encoder |
 PASS timer-registers |
-REFUSED tls-cert | `fe-carry-pass` writes its list parameter `o` and answers something else
-REFUSED tls-cv-schemes | `fe-carry-pass` writes its list parameter `o` and answers something else
+PASS tls-cert |
+SLOW tls-cv-schemes | last PASS, 26903 ms; ALL=1 runs it
 PASS tls-record-framing |
-REFUSED tls-test | `fe-carry-pass` writes its list parameter `o` and answers something else
+PASS tls-test |
 PASS tls13-record |
 PASS tls13-schedule |
 PASS transport-cocite |
@@ -1061,13 +1061,13 @@ REFUSED vector-int | builtin `vec-splat`
 PASS wavelet-sort-aliasing |
 SKIP wcet-budget-unchecked | expects a diagnostic
 SKIP wcet-probe | expects a diagnostic
-REFUSED web-chain | `fe-carry-pass` writes its list parameter `o` and answers something else
-REFUSED web-mux-concurrent | `ne2k-copy-into` writes its list parameter `dst` and answers something else
+PASS web-chain |
+REFUSED web-mux-concurrent | `net-io-send-drain-rx`: an `act` statement writes a list a later statement reads
 DIVERGES web-mux-heap | measures Codex's bump pointer with __heap-save; the machine's pointer moves for alloc-bytes, so each 65536-byte receive buffer shows, but no Roc list lives on it, so every reading lacks the lists' bytes
-REFUSED web-mux-idle-reap | `ne2k-copy-into` writes its list parameter `dst` and answers something else
-REFUSED web-mux-lifecycle | `ne2k-copy-into` writes its list parameter `dst` and answers something else
-REFUSED web-mux-long-run | `ne2k-copy-into` writes its list parameter `dst` and answers something else
-REFUSED web-mux-reassembly | `ne2k-copy-into` writes its list parameter `dst` and answers something else
+REFUSED web-mux-idle-reap | `net-io-send-drain-rx`: an `act` statement writes a list a later statement reads
+REFUSED web-mux-lifecycle | `net-io-send-drain-rx`: an `act` statement writes a list a later statement reads
+REFUSED web-mux-long-run | `net-io-send-drain-rx`: an `act` statement writes a list a later statement reads
+REFUSED web-mux-reassembly | `net-io-send-drain-rx`: an `act` statement writes a list a later statement reads
 PASS when-arm-nontail |
 PASS when-arm-tail-call |
 PASS when-bool-cross |
@@ -1075,7 +1075,7 @@ PASS when-bool-pattern |
 PASS when-generic-field |
 REFUSED with-timeout-test | with-timeout
 PASS workflow-parse-int |
-REFUSED x509-chain | `fe-carry-pass` writes its list parameter `o` and answers something else
-REFUSED x509-dev-cert | `fe-carry-pass` writes its list parameter `o` and answers something else
-REFUSED x509-parse | `fe-carry-pass` writes its list parameter `o` and answers something else
+PASS x509-chain |
+SLOW x509-dev-cert | last PASS, 13342 ms; ALL=1 runs it
+PASS x509-parse |
 PASS zigbee-encode |

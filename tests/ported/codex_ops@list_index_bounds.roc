@@ -32,14 +32,22 @@ read_all : List(I64) -> CceText
 read_all = |xs| walk_at(xs, 0, U64.to_i64_wrap(List.len(xs)), "")
 
 set_walk : List(I64), I64, I64 -> List(I64)
-set_walk = |xs, i, n| (if (i >= n) { xs } else { set_walk((List.set(xs, I64.to_u64_wrap(i), (i * 10)) ?? crash("list-set-at past the end")), (i + 1), n) })
+set_walk = |xs, i, n| (if (i >= n) { xs } else { ({
+	xs_v1 : List(I64)
+	xs_v1 = (List.set(xs, I64.to_u64_wrap(i), (i * 10)) ?? crash("list-set-at past the end"))
+	set_walk(xs_v1, (i + 1), n)
+}) })
 
 # --- Entry ---
 
 main! = |_args| {
 	line!(CceText.printed(CceText.concat("read:", read_all([1, 2, 3, 4]))))
 	line!(CceText.printed(CceText.concat("last=", CceText.show_int((List.get([1, 2, 3, 4], I64.to_u64_wrap(3)) ?? crash("list-at out of range"))))))
-	line!(CceText.printed(CceText.concat("set:", read_all(set_walk([1, 2, 3, 4], 0, 4)))))
+	({
+		set_walk_v1 : List(I64)
+		set_walk_v1 = set_walk([1, 2, 3, 4], 0, 4)
+		line!(CceText.printed(CceText.concat("set:", read_all(set_walk_v1))))
+	})
 	line!(CceText.printed(CceText.concat("ins-front:", read_all((List.insert([1, 2, 3], I64.to_u64_wrap(0), 99) ?? crash("list-insert-at past the end"))))))
 	line!(CceText.printed(CceText.concat("ins-mid:", read_all((List.insert([1, 2, 3], I64.to_u64_wrap(1), 99) ?? crash("list-insert-at past the end"))))))
 	line!(CceText.printed(CceText.concat("ins-end:", read_all((List.insert([1, 2, 3], I64.to_u64_wrap(3), 99) ?? crash("list-insert-at past the end"))))))

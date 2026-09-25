@@ -54,14 +54,19 @@ main! = |_args| {
 	({
 		xs : List(I64)
 		xs = [5, 3, 8, 1, 9, 2, 7, 4, 6]
+		sort_by_v1 = Sort.sort_by(xs, int_cmp)
+		_xs_v2 = sort_by_v1.1
 		sorted : List(I64)
-		sorted = Sort.sort_by(xs, int_cmp)
+		sorted = sort_by_v1.0
+		sort_by_v3 = Sort.sort_by([], int_cmp)
 		empty : List(I64)
-		empty = Sort.sort_by([], int_cmp)
+		empty = sort_by_v3.0
+		sort_by_v4 = Sort.sort_by([42], int_cmp)
 		single : List(I64)
-		single = Sort.sort_by([42], int_cmp)
+		single = sort_by_v4.0
+		sort_by_v5 = Sort.sort_by([3, 1, 4, 1, 5], int_cmp)
 		dupes : List(I64)
-		dupes = Sort.sort_by([3, 1, 4, 1, 5], int_cmp)
+		dupes = sort_by_v5.0
 		({
 			print_list!(sorted, 0, 9)
 			line!(CceText.printed(CceText.show_int(U64.to_i64_wrap(List.len(empty)))))

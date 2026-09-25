@@ -167,7 +167,9 @@ LinearAlgebra :: [].{
 		sum = mat_back_sum(m, x, row, (row + 1), n, 0)
 		val : I64
 		val = I64.div_trunc_by(((mat_get(m, row, n) - sum) * 1000), mat_get(m, row, row))
-		mat_back_loop(m, n, (row - 1), (List.set(x, I64.to_u64_wrap(row), val) ?? crash("list-set-at past the end")))
+		x_v1 : List(I64)
+		x_v1 = (List.set(x, I64.to_u64_wrap(row), val) ?? crash("list-set-at past the end"))
+		mat_back_loop(m, n, (row - 1), x_v1)
 	}) })
 
 	mat_back_sum : LinearAlgebra.Matrix, List(I64), I64, I64, I64, I64 -> I64

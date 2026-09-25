@@ -258,6 +258,22 @@ const codex_convolution_identity_stdout =
     \\lengths=5 5
     ++ "\n";
 
+const codex_cryptobig_stdout =
+    \\small 5^3 mod 13 = 8
+    \\rsa width = 256
+    \\rsa checksum = 4166400
+    \\rsa matches oracle = True
+    \\wide 65536^3 mod 17 = 1
+    \\wide 65537^3 mod 17 = 8
+    \\mod-one = 0
+    \\zero-exp = 1
+    \\empty-mod-refused = True
+    \\zero-mod-refused = True
+    \\even-mod-refused = True
+    \\wide-base-octet-refused = True
+    \\negative-exp-octet-refused = True
+    ++ "\n";
+
 const codex_ctor_narrow_warn_stdout =
     \\42
     ++ "\n";
@@ -3942,6 +3958,7 @@ const codex_zigbee_encode_stdout =
     .{ .id = 0, .suite = .codex, .name = "codex: consistent-hash-balance", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_consistent_hash_balance.roc", .stdout_exact = codex_consistent_hash_balance_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: const-share", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_const_share.roc", .stdout_exact = codex_const_share_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: convolution-identity", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_convolution_identity.roc", .stdout_exact = codex_convolution_identity_stdout } } },
+    .{ .id = 0, .suite = .codex, .name = "codex: cryptobig", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_cryptobig.roc", .stdout_exact = codex_cryptobig_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: ctor-narrow-warn", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_ctor_narrow_warn.roc", .stdout_exact = codex_ctor_narrow_warn_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: dce-reach", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_dce_reach.roc", .stdout_exact = codex_dce_reach_stdout } } },
     .{ .id = 0, .suite = .codex, .name = "codex: deriving-eq-recursive", .backend = .interpreter, .body = .{ .command = .{ .args = &.{"--opt=interpreter"}, .roc_file = "test/codex/codex_deriving_eq_recursive.roc", .stdout_exact = codex_deriving_eq_recursive_stdout } } },

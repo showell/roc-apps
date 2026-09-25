@@ -31,3 +31,14 @@
 5465 sector-read-list-growth
 5219 dhcp-renew
 5156 e1000-phy-absent
+# Added at U62 when rocemit stopped refusing list-parameter writes: all of
+# it compile-time evaluation (ecdsa-p384: 55 s `roc build`, 5 ms to run).
+38406 lib@brotli-test
+28693 ecdsa-p384
+26903 tls-cv-schemes
+13342 x509-dev-cert
+13182 ecdsa-cert
+10785 lib@brotli-dict-test
+10770 ecdsa-sha384
+9308 ecdsa-p256
+7564 rsa-pss

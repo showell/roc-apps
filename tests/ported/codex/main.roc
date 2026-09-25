@@ -27,6 +27,7 @@ package
 		Convolution,
 		Cordic,
 		CountMinSketch,
+		CryptoBig,
 		DateTime,
 		Decimal,
 		DeviceMath,

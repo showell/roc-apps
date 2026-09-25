@@ -41,8 +41,10 @@ Klondike :: [].{
 
 	klondike_new : I64 -> Klondike.KlondikeState
 	klondike_new = |seed| ({
+		deck_shuffle_v1 : List(I64)
+		deck_shuffle_v1 = CardDeck.deck_shuffle(CardDeck.deck_new, seed)
 		deck : List(I64)
-		deck = CardDeck.deck_shuffle(CardDeck.deck_new, seed)
+		deck = deck_shuffle_v1
 		klondike_deal(deck)
 	})
 
@@ -175,7 +177,8 @@ Klondike :: [].{
 					new_src = kl_remove_top(src)
 					new_dst = Klondike.Pile.{ pile_cards: List.append(dst.pile_cards, card), pile_face_up: dst.pile_face_up }
 					tab1 = (List.set(st.kl_tableau, I64.to_u64_wrap(from), new_src) ?? crash("list-set-at past the end"))
-					tab2 = (List.set(tab1, I64.to_u64_wrap(to), new_dst) ?? crash("list-set-at past the end"))
+					tab1_v1 = (List.set(tab1, I64.to_u64_wrap(to), new_dst) ?? crash("list-set-at past the end"))
+					tab2 = tab1_v1
 					MoveOk(Klondike.KlondikeState.{ kl_tableau: tab2, kl_foundation: st.kl_foundation, kl_stock: st.kl_stock, kl_waste: st.kl_waste, kl_moves: (st.kl_moves + 1) })
 				}) } else { MoveErr("card does not fit") })
 			})

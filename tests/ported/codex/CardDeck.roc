@@ -59,14 +59,18 @@ CardDeck :: [].{
 		rng = fy_next_random(seed)
 		j : I64
 		j = fy_mod(rng, (i + 1))
-		fy_shuffle(fy_swap(cards, i, j), (i - 1), rng)
+		fy_swap_v1 : List(I64)
+		fy_swap_v1 = fy_swap(cards, i, j)
+		fy_shuffle(fy_swap_v1, (i - 1), rng)
 	}) })
 
 	fy_swap : List(I64), I64, I64 -> List(I64)
 	fy_swap = |cards, i, j| (if (i == j) { cards } else { ({
 		vi : I64
 		vi = (List.get(cards, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
-		(List.set((List.set(cards, I64.to_u64_wrap(i), (List.get(cards, I64.to_u64_wrap(j)) ?? crash("list-at out of range"))) ?? crash("list-set-at past the end")), I64.to_u64_wrap(j), vi) ?? crash("list-set-at past the end"))
+		cards_v1 : List(I64)
+		cards_v1 = (List.set(cards, I64.to_u64_wrap(i), (List.get(cards, I64.to_u64_wrap(j)) ?? crash("list-at out of range"))) ?? crash("list-set-at past the end"))
+		(List.set(cards_v1, I64.to_u64_wrap(j), vi) ?? crash("list-set-at past the end"))
 	}) })
 
 	fy_next_random : I64 -> I64

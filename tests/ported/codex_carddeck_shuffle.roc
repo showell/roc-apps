@@ -40,11 +40,17 @@ cdt_tally : I64, I64, List(I64) -> List(I64)
 cdt_tally = |seed, trials, counts| (if (seed >= trials) { counts } else { ({
 	deck : List(I64)
 	deck = cdt_fresh(0, 8, [])
+	deck_shuffle_v1 : List(I64)
+	deck_shuffle_v1 = CardDeck.deck_shuffle(deck, seed)
 	shuffled : List(I64)
-	shuffled = CardDeck.deck_shuffle(deck, seed)
+	shuffled = deck_shuffle_v1
 	p : I64
 	p = cdt_pos_of(shuffled, 0, 0, 8)
-	(if (p < 0) { cdt_tally((seed + 1), trials, counts) } else { cdt_tally((seed + 1), trials, (List.set(counts, I64.to_u64_wrap(p), ((List.get(counts, I64.to_u64_wrap(p)) ?? crash("list-at out of range")) + 1)) ?? crash("list-set-at past the end"))) })
+	(if (p < 0) { cdt_tally((seed + 1), trials, counts) } else { ({
+		counts_v2 : List(I64)
+		counts_v2 = (List.set(counts, I64.to_u64_wrap(p), ((List.get(counts, I64.to_u64_wrap(p)) ?? crash("list-at out of range")) + 1)) ?? crash("list-set-at past the end"))
+		cdt_tally((seed + 1), trials, counts_v2)
+	}) })
 }) })
 
 cdt_min : List(I64), I64, I64, I64 -> I64
@@ -72,8 +78,10 @@ cdt_two : I64 -> I64
 cdt_two = |seed| ({
 	deck : List(I64)
 	deck = cdt_fresh(0, 2, [])
+	deck_shuffle_v1 : List(I64)
+	deck_shuffle_v1 = CardDeck.deck_shuffle(deck, seed)
 	shuffled : List(I64)
-	shuffled = CardDeck.deck_shuffle(deck, seed)
+	shuffled = deck_shuffle_v1
 	(List.get(shuffled, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))
 })
 
@@ -89,7 +97,8 @@ cdt_alt = |seed, trials, acc| (if (seed >= trials) { acc } else { ({
 # --- Entry ---
 
 main! = |_args| {
-	counts = cdt_tally(0, 256, cdt_zeros(0, 8, []))
+	cdt_tally_v1 = cdt_tally(0, 256, cdt_zeros(0, 8, []))
+	counts = cdt_tally_v1
 	lo = cdt_min(counts, 0, 8, 999999)
 	hi = cdt_max(counts, 0, 8, 0)
 	alt = cdt_alt(1, 256, 0)

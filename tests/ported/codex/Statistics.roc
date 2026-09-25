@@ -12,20 +12,26 @@ Statistics :: [].{
 		(if (n == 0) { 0 } else { I64.div_trunc_by(stat_sum(xs, 0, n, 0), n) })
 	})
 
-	stat_median : List(I64) -> I64
+	stat_median : List(I64) -> (I64, List(I64))
 	stat_median = |xs| ({
+		stat_sort_v1 = stat_sort(xs)
+		xs_v2 : List(I64)
+		xs_v2 = stat_sort_v1.1
 		sorted : List(I64)
-		sorted = stat_sort(xs)
+		sorted = stat_sort_v1.0
 		n : I64
 		n = U64.to_i64_wrap(List.len(sorted))
-		(if (n == 0) { 0 } else { (if ((n - (I64.div_trunc_by(n, 2) * 2)) == 1) { (List.get(sorted, I64.to_u64_wrap(I64.div_trunc_by(n, 2))) ?? crash("list-at out of range")) } else { I64.div_trunc_by(((List.get(sorted, I64.to_u64_wrap((I64.div_trunc_by(n, 2) - 1))) ?? crash("list-at out of range")) + (List.get(sorted, I64.to_u64_wrap(I64.div_trunc_by(n, 2))) ?? crash("list-at out of range"))), 2) }) })
+		(if (n == 0) { (0, xs_v2) } else { (if ((n - (I64.div_trunc_by(n, 2) * 2)) == 1) { ((List.get(sorted, I64.to_u64_wrap(I64.div_trunc_by(n, 2))) ?? crash("list-at out of range")), xs_v2) } else { (I64.div_trunc_by(((List.get(sorted, I64.to_u64_wrap((I64.div_trunc_by(n, 2) - 1))) ?? crash("list-at out of range")) + (List.get(sorted, I64.to_u64_wrap(I64.div_trunc_by(n, 2))) ?? crash("list-at out of range"))), 2), xs_v2) }) })
 	})
 
-	stat_mode : List(I64) -> I64
+	stat_mode : List(I64) -> (I64, List(I64))
 	stat_mode = |xs| ({
+		stat_sort_v1 = stat_sort(xs)
+		xs_v2 : List(I64)
+		xs_v2 = stat_sort_v1.1
 		sorted : List(I64)
-		sorted = stat_sort(xs)
-		stat_mode_scan(sorted, 0, U64.to_i64_wrap(List.len(sorted)), 0, 0, 0, 0)
+		sorted = stat_sort_v1.0
+		(stat_mode_scan(sorted, 0, U64.to_i64_wrap(List.len(sorted)), 0, 0, 0, 0), xs_v2)
 	})
 
 	stat_mode_scan : List(I64), I64, I64, I64, I64, I64, I64 -> I64
@@ -83,16 +89,19 @@ Statistics :: [].{
 		stat_fold_max(xs, (i + 1), n, (if (v > best) { v } else { best }))
 	}) })
 
-	stat_percentile : List(I64), I64 -> I64
+	stat_percentile : List(I64), I64 -> (I64, List(I64))
 	stat_percentile = |xs, p| ({
+		stat_sort_v1 = stat_sort(xs)
+		xs_v2 : List(I64)
+		xs_v2 = stat_sort_v1.1
 		sorted : List(I64)
-		sorted = stat_sort(xs)
+		sorted = stat_sort_v1.0
 		n : I64
 		n = U64.to_i64_wrap(List.len(sorted))
-		(if (n == 0) { 0 } else { ({
+		(if (n == 0) { (0, xs_v2) } else { ({
 			idx : I64
 			idx = I64.div_trunc_by((p * (n - 1)), 100)
-			(List.get(sorted, I64.to_u64_wrap(idx)) ?? crash("list-at out of range"))
+			((List.get(sorted, I64.to_u64_wrap(idx)) ?? crash("list-at out of range")), xs_v2)
 		}) })
 	})
 
@@ -117,7 +126,9 @@ Statistics :: [].{
 		bin = I64.div_trunc_by((val - lo), bin_width)
 		clamped : I64
 		clamped = (if (bin >= num_bins) { (num_bins - 1) } else { (if (bin < 0) { 0 } else { bin }) })
-		stat_hist_fill(xs, lo, bin_width, num_bins, (i + 1), n, (List.set(bins, I64.to_u64_wrap(clamped), ((List.get(bins, I64.to_u64_wrap(clamped)) ?? crash("list-at out of range")) + 1)) ?? crash("list-set-at past the end")))
+		bins_v1 : List(I64)
+		bins_v1 = (List.set(bins, I64.to_u64_wrap(clamped), ((List.get(bins, I64.to_u64_wrap(clamped)) ?? crash("list-at out of range")) + 1)) ?? crash("list-set-at past the end"))
+		stat_hist_fill(xs, lo, bin_width, num_bins, (i + 1), n, bins_v1)
 	}) })
 
 	stat_correlation : List(I64), List(I64) -> I64
@@ -158,7 +169,7 @@ Statistics :: [].{
 		stat_cw_loop(xs, lo, hi, (i + 1), n, (if (v >= lo) { (if (v <= hi) { (acc + 1) } else { acc }) } else { acc }))
 	}) })
 
-	stat_sort : List(I64) -> List(I64)
+	stat_sort : List(I64) -> (List(I64), List(I64))
 	stat_sort = |xs| Sort.sort_by(xs, stat_compare)
 
 	stat_compare : I64, I64 -> I64

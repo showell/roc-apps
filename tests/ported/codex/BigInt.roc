@@ -126,27 +126,46 @@ BigInt :: [].{
 	bigint_mul = |a, b| (if (a.bi_sign == 0) { bigint_zero } else { (if (b.bi_sign == 0) { bigint_zero } else { BigInt.BigInt.{ bi_sign: (a.bi_sign * b.bi_sign), bi_limbs: bigint_mul_limbs(a.bi_limbs, b.bi_limbs) } }) })
 
 	bigint_mul_limbs : List(I64), List(I64) -> List(I64)
-	bigint_mul_limbs = |a, b| bigint_mul_outer(a, b, 0, bigint_make_zeros((U64.to_i64_wrap(List.len(a)) + U64.to_i64_wrap(List.len(b)))))
+	bigint_mul_limbs = |a, b| ({
+		bigint_mul_outer_v1 = bigint_mul_outer(a, b, 0, bigint_make_zeros((U64.to_i64_wrap(List.len(a)) + U64.to_i64_wrap(List.len(b)))))
+		bigint_mul_outer_v1.0
+	})
 
-	bigint_mul_outer : List(I64), List(I64), I64, List(I64) -> List(I64)
-	bigint_mul_outer = |a, b, i, acc| (if (i >= U64.to_i64_wrap(List.len(a))) { bigint_strip_zeros(acc) } else { bigint_mul_outer(a, b, (i + 1), bigint_mul_inner(a, b, i, 0, 0, acc)) })
+	bigint_mul_outer : List(I64), List(I64), I64, List(I64) -> (List(I64), List(I64))
+	bigint_mul_outer = |a, b, i, acc| (if (i >= U64.to_i64_wrap(List.len(a))) { (bigint_strip_zeros(acc), acc) } else { ({
+		bigint_mul_inner_v3 = bigint_mul_inner(a, b, i, 0, 0, acc)
+		acc_v4 : List(I64)
+		acc_v4 = bigint_mul_inner_v3.1
+		bigint_mul_outer_v5 = bigint_mul_outer(a, b, (i + 1), bigint_mul_inner_v3.0)
+		(bigint_mul_outer_v5.0, acc_v4)
+	}) })
 
-	bigint_mul_inner : List(I64), List(I64), I64, I64, I64, List(I64) -> List(I64)
-	bigint_mul_inner = |a, b, i, j, carry, acc| (if (j >= U64.to_i64_wrap(List.len(b))) { (if (carry > 0) { bigint_limb_add(acc, (i + j), carry) } else { acc }) } else { ({
+	bigint_mul_inner : List(I64), List(I64), I64, I64, I64, List(I64) -> (List(I64), List(I64))
+	bigint_mul_inner = |a, b, i, j, carry, acc| (if (j >= U64.to_i64_wrap(List.len(b))) { (if (carry > 0) { bigint_limb_add(acc, (i + j), carry) } else { (acc, acc) }) } else { ({
 		prod : I64
 		prod = ((((List.get(a, I64.to_u64_wrap(i)) ?? crash("list-at out of range")) * (List.get(b, I64.to_u64_wrap(j)) ?? crash("list-at out of range"))) + (List.get(acc, I64.to_u64_wrap((i + j))) ?? crash("list-at out of range"))) + carry)
 		limb : I64
 		limb = (prod - (I64.div_trunc_by(prod, bigint_base) * bigint_base))
-		bigint_mul_inner(a, b, i, (j + 1), I64.div_trunc_by(prod, bigint_base), (List.set(acc, I64.to_u64_wrap((i + j)), limb) ?? crash("list-set-at past the end")))
+		acc_v1 : List(I64)
+		acc_v1 = (List.set(acc, I64.to_u64_wrap((i + j)), limb) ?? crash("list-set-at past the end"))
+		bigint_mul_inner(a, b, i, (j + 1), I64.div_trunc_by(prod, bigint_base), acc_v1)
 	}) })
 
-	bigint_limb_add : List(I64), I64, I64 -> List(I64)
-	bigint_limb_add = |limbs, pos, val| (if (pos >= U64.to_i64_wrap(List.len(limbs))) { List.append(limbs, val) } else { ({
+	bigint_limb_add : List(I64), I64, I64 -> (List(I64), List(I64))
+	bigint_limb_add = |limbs, pos, val| (if (pos >= U64.to_i64_wrap(List.len(limbs))) { (List.append(limbs, val), limbs) } else { ({
 		cur : I64
 		cur = (List.get(limbs, I64.to_u64_wrap(pos)) ?? crash("list-at out of range"))
 		s : I64
 		s = (cur + val)
-		(if (s < bigint_base) { (List.set(limbs, I64.to_u64_wrap(pos), s) ?? crash("list-set-at past the end")) } else { bigint_limb_add((List.set(limbs, I64.to_u64_wrap(pos), (s - bigint_base)) ?? crash("list-set-at past the end")), (pos + 1), 1) })
+		(if (s < bigint_base) { ({
+			limbs_v1 : List(I64)
+			limbs_v1 = (List.set(limbs, I64.to_u64_wrap(pos), s) ?? crash("list-set-at past the end"))
+			(limbs_v1, limbs_v1)
+		}) } else { ({
+			limbs_v2 : List(I64)
+			limbs_v2 = (List.set(limbs, I64.to_u64_wrap(pos), (s - bigint_base)) ?? crash("list-set-at past the end"))
+			bigint_limb_add(limbs_v2, (pos + 1), 1)
+		}) })
 	}) })
 
 	bigint_make_zeros : I64 -> List(I64)

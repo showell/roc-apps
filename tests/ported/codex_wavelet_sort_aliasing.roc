@@ -37,6 +37,10 @@ print_list! = |xs, i, len| ({
 # --- Entry ---
 
 main! = |_args| {
-	print_list!(Wavelet.dwt_insertion_sort([5, 3, 4, 1, 2], 0, 5), 0, 5)
+	({
+		dwt_insertion_sort_v1 : List(I64)
+		dwt_insertion_sort_v1 = Wavelet.dwt_insertion_sort([5, 3, 4, 1, 2], 0, 5)
+		print_list!(dwt_insertion_sort_v1, 0, 5)
+	})
 	Ok({})
 }

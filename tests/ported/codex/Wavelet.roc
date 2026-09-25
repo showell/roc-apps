@@ -110,8 +110,9 @@ Wavelet :: [].{
 		coeffs = dwt_forward(signal)
 		n : I64
 		n = U64.to_i64_wrap(List.len(coeffs))
+		dwt_sort_abs_v1 = dwt_sort_abs(coeffs, 0, n, [])
 		sorted_abs : List(I64)
-		sorted_abs = dwt_sort_abs(coeffs, 0, n, [])
+		sorted_abs = dwt_sort_abs_v1.0
 		cutoff_idx : I64
 		cutoff_idx = (n - I64.div_trunc_by((n * keep_percent), 100))
 		threshold : I64
@@ -128,21 +129,34 @@ Wavelet :: [].{
 		dwt_hard_threshold(coeffs, threshold, (i + 1), len, List.append(acc, (if (abs_c < threshold) { 0 } else { c })))
 	}) })
 
-	dwt_sort_abs : List(I64), I64, I64, List(I64) -> List(I64)
-	dwt_sort_abs = |coeffs, i, len, acc| (if (i >= len) { dwt_insertion_sort(acc, 0, U64.to_i64_wrap(List.len(acc))) } else { ({
+	dwt_sort_abs : List(I64), I64, I64, List(I64) -> (List(I64), List(I64))
+	dwt_sort_abs = |coeffs, i, len, acc| (if (i >= len) { ({
+		dwt_insertion_sort_v1 : List(I64)
+		dwt_insertion_sort_v1 = dwt_insertion_sort(acc, 0, U64.to_i64_wrap(List.len(acc)))
+		(dwt_insertion_sort_v1, dwt_insertion_sort_v1)
+	}) } else { ({
 		c : I64
 		c = (List.get(coeffs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
-		dwt_sort_abs(coeffs, (i + 1), len, List.append(acc, (if (c < 0) { (0 - c) } else { c })))
+		dwt_sort_abs_v2 = dwt_sort_abs(coeffs, (i + 1), len, List.append(acc, (if (c < 0) { (0 - c) } else { c })))
+		(dwt_sort_abs_v2.0, acc)
 	}) })
 
 	dwt_insertion_sort : List(I64), I64, I64 -> List(I64)
-	dwt_insertion_sort = |xs, i, len| (if (i >= len) { xs } else { dwt_insertion_sort(dwt_insert(xs, i), (i + 1), len) })
+	dwt_insertion_sort = |xs, i, len| (if (i >= len) { xs } else { ({
+		dwt_insert_v1 : List(I64)
+		dwt_insert_v1 = dwt_insert(xs, i)
+		dwt_insertion_sort(dwt_insert_v1, (i + 1), len)
+	}) })
 
 	dwt_insert : List(I64), I64 -> List(I64)
 	dwt_insert = |xs, i| (if (i <= 0) { xs } else { (if ((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")) < (List.get(xs, I64.to_u64_wrap((i - 1))) ?? crash("list-at out of range"))) { ({
 		vi : I64
 		vi = (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
-		dwt_insert((List.set((List.set(xs, I64.to_u64_wrap(i), (List.get(xs, I64.to_u64_wrap((i - 1))) ?? crash("list-at out of range"))) ?? crash("list-set-at past the end")), I64.to_u64_wrap((i - 1)), vi) ?? crash("list-set-at past the end")), (i - 1))
+		xs_v1 : List(I64)
+		xs_v1 = (List.set(xs, I64.to_u64_wrap(i), (List.get(xs, I64.to_u64_wrap((i - 1))) ?? crash("list-at out of range"))) ?? crash("list-set-at past the end"))
+		xs_v2 : List(I64)
+		xs_v2 = (List.set(xs_v1, I64.to_u64_wrap((i - 1)), vi) ?? crash("list-set-at past the end"))
+		dwt_insert(xs_v2, (i - 1))
 	}) } else { xs }) })
 
 	dwt_energy : List(I64) -> I64

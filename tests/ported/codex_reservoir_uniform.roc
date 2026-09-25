@@ -46,7 +46,9 @@ rut_tally_one : List(I64), List(I64), I64, I64 -> List(I64)
 rut_tally_one = |counts, sample, i, n| (if (i >= n) { counts } else { ({
 	v : I64
 	v = (List.get(sample, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
-	rut_tally_one((List.set(counts, I64.to_u64_wrap(v), ((List.get(counts, I64.to_u64_wrap(v)) ?? crash("list-at out of range")) + 1)) ?? crash("list-set-at past the end")), sample, (i + 1), n)
+	counts_v1 : List(I64)
+	counts_v1 = (List.set(counts, I64.to_u64_wrap(v), ((List.get(counts, I64.to_u64_wrap(v)) ?? crash("list-at out of range")) + 1)) ?? crash("list-set-at past the end"))
+	rut_tally_one(counts_v1, sample, (i + 1), n)
 }) })
 
 rut_run : List(I64), List(I64), I64, I64 -> List(I64)
@@ -54,7 +56,9 @@ rut_run = |counts, stream, t, n| (if (t >= n) { counts } else { ({
 	rs = Reservoir.reservoir_add_all(Reservoir.reservoir_new(rut_cap), stream, ((t * 7919) + 13), 0, rut_items)
 	s : List(I64)
 	s = Reservoir.reservoir_items(rs)
-	rut_run(rut_tally_one(counts, s, 0, U64.to_i64_wrap(List.len(s))), stream, (t + 1), n)
+	rut_tally_one_v1 : List(I64)
+	rut_tally_one_v1 = rut_tally_one(counts, s, 0, U64.to_i64_wrap(List.len(s)))
+	rut_run(rut_tally_one_v1, stream, (t + 1), n)
 }) })
 
 rut_min : List(I64), I64, I64, I64 -> I64
@@ -85,7 +89,8 @@ rut_fmt = |xs, i, n, acc| (if (i >= n) { acc } else { ({
 
 main! = |_args| {
 	stream = rut_stream(0, rut_items, [])
-	counts = rut_run(rut_zeros(0, rut_items, []), stream, 0, rut_trials)
+	rut_run_v1 = rut_run(rut_zeros(0, rut_items, []), stream, 0, rut_trials)
+	counts = rut_run_v1
 	lo = rut_min(counts, 0, rut_items, 999999)
 	hi = rut_max(counts, 0, rut_items, 0)
 	tot = rut_sum(counts, 0, rut_items, 0)

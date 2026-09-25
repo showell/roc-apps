@@ -131,8 +131,10 @@ after_right : I64
 after_right = ({
 	c : List(I64)
 	c = List.concat([], w_right)
+	c_v1 : List(I64)
+	c_v1 = (List.set(c, I64.to_u64_wrap(1), 99) ?? crash("list-set-at past the end"))
 	a : List(I64)
-	a = (List.set(c, I64.to_u64_wrap(1), 99) ?? crash("list-set-at past the end"))
+	a = c_v1
 	(((List.get(a, I64.to_u64_wrap(1)) ?? crash("list-at out of range")) * 1000) + (List.get(w_right, I64.to_u64_wrap(1)) ?? crash("list-at out of range")))
 })
 
@@ -143,8 +145,10 @@ after_left : I64
 after_left = ({
 	c : List(I64)
 	c = List.concat(w_left, [])
+	c_v1 : List(I64)
+	c_v1 = (List.set(c, I64.to_u64_wrap(1), 99) ?? crash("list-set-at past the end"))
 	a : List(I64)
-	a = (List.set(c, I64.to_u64_wrap(1), 99) ?? crash("list-set-at past the end"))
+	a = c_v1
 	(((List.get(a, I64.to_u64_wrap(1)) ?? crash("list-at out of range")) * 1000) + (List.get(w_left, I64.to_u64_wrap(1)) ?? crash("list-at out of range")))
 })
 
@@ -180,8 +184,10 @@ after_direct = ({
 
 after_fn : I64
 after_fn = ({
+	poke_v1 : List(I64)
+	poke_v1 = poke(w_fn)
 	a : List(I64)
-	a = poke(w_fn)
+	a = poke_v1
 	(((List.get(a, I64.to_u64_wrap(0)) ?? crash("list-at out of range")) * 1000) + (List.get(w_fn, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))
 })
 
@@ -189,8 +195,10 @@ after_alias : I64
 after_alias = ({
 	t : List(I64)
 	t = w_alias
+	t_v1 : List(I64)
+	t_v1 = (List.set(t, I64.to_u64_wrap(0), 99) ?? crash("list-set-at past the end"))
 	a : List(I64)
-	a = (List.set(t, I64.to_u64_wrap(0), 99) ?? crash("list-set-at past the end"))
+	a = t_v1
 	(((List.get(a, I64.to_u64_wrap(0)) ?? crash("list-at out of range")) * 1000) + (List.get(w_alias, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))
 })
 
@@ -253,8 +261,10 @@ field_direct = ({
 field_fn : I64
 field_fn = ({
 	h = holder
+	poke_v1 : List(I64)
+	poke_v1 = poke(h.h_fn)
 	a : List(I64)
-	a = poke(h.h_fn)
+	a = poke_v1
 	(((List.get(a, I64.to_u64_wrap(0)) ?? crash("list-at out of range")) * 1000) + (List.get(f_fn, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))
 })
 
@@ -263,8 +273,10 @@ field_alias = ({
 	h = holder
 	t : List(I64)
 	t = h.h_alias
+	t_v1 : List(I64)
+	t_v1 = (List.set(t, I64.to_u64_wrap(0), 99) ?? crash("list-set-at past the end"))
 	a : List(I64)
-	a = (List.set(t, I64.to_u64_wrap(0), 99) ?? crash("list-set-at past the end"))
+	a = t_v1
 	(((List.get(a, I64.to_u64_wrap(0)) ?? crash("list-at out of range")) * 1000) + (List.get(f_alias, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))
 })
 

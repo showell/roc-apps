@@ -35,18 +35,22 @@ Lz4 :: [].{
 		(if (len == 0) { [] } else { ({
 			table : List(I64)
 			table = lz4_init_table(lz4_hash_size, 0, [])
-			lz4_compress_loop(input, len, table, 0, 0, [])
+			lz4_compress_loop_v1 = lz4_compress_loop(input, len, table, 0, 0, [])
+			_table_v2 = lz4_compress_loop_v1.1
+			lz4_compress_loop_v1.0
 		}) })
 	})
 
-	lz4_compress_loop : List(I64), I64, List(I64), I64, I64, List(I64) -> List(I64)
-	lz4_compress_loop = |input, len, table, pos, anchor, acc| (if ((pos + lz4_min_match) > len) { lz4_emit_last_literals(input, anchor, len, acc) } else { ({
+	lz4_compress_loop : List(I64), I64, List(I64), I64, I64, List(I64) -> (List(I64), List(I64))
+	lz4_compress_loop = |input, len, table, pos, anchor, acc| (if ((pos + lz4_min_match) > len) { (lz4_emit_last_literals(input, anchor, len, acc), table) } else { ({
 		h : I64
 		h = lz4_hash4(input, pos)
 		ref : I64
 		ref = (List.get(table, I64.to_u64_wrap(h)) ?? crash("list-at out of range"))
+		table_v1 : List(I64)
+		table_v1 = (List.set(table, I64.to_u64_wrap(h), pos) ?? crash("list-set-at past the end"))
 		table2 : List(I64)
-		table2 = (List.set(table, I64.to_u64_wrap(h), pos) ?? crash("list-set-at past the end"))
+		table2 = table_v1
 		(if (ref < 0) { lz4_compress_loop(input, len, table2, (pos + 1), anchor, acc) } else { (if ((pos - ref) > lz4_max_distance) { lz4_compress_loop(input, len, table2, (pos + 1), anchor, acc) } else { (if (lz4_match4(input, pos, ref, len) == False) { lz4_compress_loop(input, len, table2, (pos + 1), anchor, acc) } else { ({
 			match_len : I64
 			match_len = lz4_extend_match(input, pos, ref, len)

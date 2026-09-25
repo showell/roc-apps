@@ -39,13 +39,19 @@ test_mean : CceText
 test_mean = CceText.concat("mean=", CceText.show_int(Statistics.stat_mean([10, 20, 30, 40, 50])))
 
 test_median : CceText
-test_median = CceText.concat("median=", CceText.show_int(Statistics.stat_median([5, 1, 9, 3, 7])))
+test_median = ({
+	stat_median_v1 = Statistics.stat_median([5, 1, 9, 3, 7])
+	CceText.concat("median=", CceText.show_int(stat_median_v1.0))
+})
 
 test_stddev : CceText
 test_stddev = CceText.concat("stddev=", CceText.show_int(Statistics.stat_std_dev([2, 4, 4, 4, 5, 5, 7, 9])))
 
 test_percentile : CceText
-test_percentile = CceText.concat("p50=", CceText.show_int(Statistics.stat_percentile([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 50)))
+test_percentile = ({
+	stat_percentile_v1 = Statistics.stat_percentile([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 50)
+	CceText.concat("p50=", CceText.show_int(stat_percentile_v1.0))
+})
 
 test_histogram : CceText
 test_histogram = ({

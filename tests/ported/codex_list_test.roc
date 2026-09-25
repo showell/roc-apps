@@ -97,8 +97,10 @@ main! = |_args| {
 	({
 		xs : List(I64)
 		xs = [10, 20, 30]
+		xs_v1 : List(I64)
+		xs_v1 = (List.set(xs, I64.to_u64_wrap(1), 99) ?? crash("list-set-at past the end"))
 		ys : List(I64)
-		ys = (List.set(xs, I64.to_u64_wrap(1), 99) ?? crash("list-set-at past the end"))
+		ys = xs_v1
 		({
 			line!(CceText.printed(check("set-at", CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.show_int((List.get(ys, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))), "/"), CceText.show_int((List.get(ys, I64.to_u64_wrap(1)) ?? crash("list-at out of range")))), "/"), CceText.show_int((List.get(ys, I64.to_u64_wrap(2)) ?? crash("list-at out of range")))), "10/99/30")))
 			({
@@ -109,7 +111,11 @@ main! = |_args| {
 				({
 					line!(CceText.printed(check("insert-at", CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.show_int((List.get(ys2, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))), "/"), CceText.show_int((List.get(ys2, I64.to_u64_wrap(1)) ?? crash("list-at out of range")))), "/"), CceText.show_int((List.get(ys2, I64.to_u64_wrap(2)) ?? crash("list-at out of range")))), "/"), CceText.show_int((List.get(ys2, I64.to_u64_wrap(3)) ?? crash("list-at out of range")))), "/"), CceText.show_int((List.get(ys2, I64.to_u64_wrap(4)) ?? crash("list-at out of range")))), "1/2/3/4/5")))
 					line!(CceText.printed(check("empty-direct", CceText.show_int(U64.to_i64_wrap(List.len((if True { [] } else { [1] })))), "0")))
-					line!(CceText.printed(check("empty-let", CceText.show_int(U64.to_i64_wrap(List.len((if True { [] } else { [1] })))), "0")))
+					({
+						zs : List(I64)
+						zs = (if True { [] } else { [1] })
+						line!(CceText.printed(check("empty-let", CceText.show_int(U64.to_i64_wrap(List.len(zs))), "0")))
+					})
 					({
 						people = [Person.{ name: "Alice", age: 30 }, Person.{ name: "Bob", age: 25 }, Person.{ name: "Carol", age: 40 }]
 						line!(CceText.printed(check("list-of-records", CceText.show_int(ages_sum(people, 0, 0)), "95")))

@@ -17,8 +17,10 @@ CountMinSketch :: [].{
 	cms_add = |sketch, key, count| ({
 		h : I64
 		h = cms_hash_key(key)
+		cms_add_rows_v1 : List(I64)
+		cms_add_rows_v1 = cms_add_rows(sketch.cms_table, h, sketch.cms_width, sketch.cms_depth, count, 0)
 		updated : List(I64)
-		updated = cms_add_rows(sketch.cms_table, h, sketch.cms_width, sketch.cms_depth, count, 0)
+		updated = cms_add_rows_v1
 		CountMinSketch.CmSketch.{ cms_table: updated, cms_width: sketch.cms_width, cms_depth: sketch.cms_depth, cms_total: (sketch.cms_total + count) }
 	})
 
@@ -30,7 +32,9 @@ CountMinSketch :: [].{
 		idx = ((row * width) + col)
 		old : I64
 		old = (List.get(table, I64.to_u64_wrap(idx)) ?? crash("list-at out of range"))
-		cms_add_rows((List.set(table, I64.to_u64_wrap(idx), (old + count)) ?? crash("list-set-at past the end")), hash, width, depth, count, (row + 1))
+		table_v1 : List(I64)
+		table_v1 = (List.set(table, I64.to_u64_wrap(idx), (old + count)) ?? crash("list-set-at past the end"))
+		cms_add_rows(table_v1, hash, width, depth, count, (row + 1))
 	}) })
 
 	cms_count : CountMinSketch.CmSketch, CceText -> I64
