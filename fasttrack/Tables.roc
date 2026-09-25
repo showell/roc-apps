@@ -60,6 +60,7 @@ Tables :: [].{
 				winners = List.join_map(all, |ts| List.map(List.keep_if(ts, |t| t.won), |t| stat(label, t)))
 				losers = List.join_map(all, |ts| losers_of(ts, label))
 				set_apart = List.join_map(all, |ts| List.join(List.map_with_index(ts, |t, i| if !t.won and List.contains(apart, i) { [stat(label, t)] } else { [] })))
+				cmp : List([Above, Below, Equal])
 				cmp = List.map(
 					all,
 					|ts| {
