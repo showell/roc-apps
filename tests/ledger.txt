@@ -723,10 +723,10 @@ PASS melsec-encode |
 PASS method-template-contract-bounds-large |
 PASS method-template-contract-bounds-small |
 PASS method-template-contract-demands |
-REFUSED method-template-contract-escape | type error
+FAIL method-template-contract-escape | compile:  ✗ undeclared type MethodTemplateContractEscape.roc:7:17 The type EscapeContractDict is not declared in this
 PASS method-template-contract-lookalike |
-REFUSED method-template-contract-mono | type error
-REFUSED method-template-contract-runtime | type error
+PASS method-template-contract-mono |
+FAIL method-template-contract-runtime | compile:  ✗ undeclared type MethodTemplateContractRuntime.roc:7:32 The type RuntimeContractDict is not declared in th
 PASS method-template-contract-unicode |
 PASS method-template-contract-zero |
 REFUSED method-template-producer-guards | UNRESOLVED: method-template-producer-guards.codex cites Codex chapter Opening -- no such quire in the registry
@@ -996,14 +996,14 @@ PASS tvar-in-declared-type |
 PASS type-checker-test |
 REFUSED type-name-existence | a type applied to a non-name
 REFUSED typeclass-compound-head | builtin `to-text`
-REFUSED typeclass-instance-nested | type error
+PASS typeclass-instance-nested |
 REFUSED typeclass-instance-types | builtin `format-value`
-REFUSED typeclass-method-local-independent | type error
-REFUSED typeclass-method-local-shadow | type error
-REFUSED typeclass-method-local-two-types | type error
-REFUSED typeclass-poly | type error
+FAIL typeclass-method-local-independent | compile:  ✗ undeclared type TypeclassMethodLocalIndependent.roc:7:35 The type IndependentMethodsDict is not declared 
+FAIL typeclass-method-local-shadow | compile:  ✗ undeclared type TypeclassMethodLocalShadow.roc:7:26 The type ConverterDict is not declared in this scope.
+FAIL typeclass-method-local-two-types | compile:  ✗ undeclared type TypeclassMethodLocalTwoTypes.roc:7:35 The type IndependentMethodsDict is not declared in 
+PASS typeclass-poly |
 REFUSED typeclass-smoke | builtin `__dict-of-Showable` used as a value
-REFUSED typeclass-superclass-types | type error
+PASS typeclass-superclass-types |
 PASS udp-frame-guard |
 PASS uefi-read-key-nofirmware |
 PASS ui-anim-test |
