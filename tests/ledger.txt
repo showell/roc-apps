@@ -995,14 +995,14 @@ PASS tuple-syntax |
 PASS tvar-in-declared-type |
 PASS type-checker-test |
 REFUSED type-name-existence | a type applied to a non-name
-REFUSED typeclass-compound-head | builtin `to-text`
+PASS typeclass-compound-head |
 PASS typeclass-instance-nested |
-REFUSED typeclass-instance-types | builtin `format-value`
+PASS typeclass-instance-types |
 PASS typeclass-method-local-independent |
 REFUSED typeclass-method-local-shadow | class dictionary `ConverterDict` is used as a value, and its methods are generic in type variables of their ow
 PASS typeclass-method-local-two-types |
 PASS typeclass-poly |
-REFUSED typeclass-smoke | builtin `__dict-of-Showable` used as a value
+PASS typeclass-smoke |
 PASS typeclass-superclass-types |
 PASS udp-frame-guard |
 PASS uefi-read-key-nofirmware |
