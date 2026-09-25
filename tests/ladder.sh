@@ -83,6 +83,7 @@ diverges() {
         real-show-wide) echo "the verdict pins Codex's own printer: it reads 12345678901234567.0 as ...566, we print the double" ;;
         cost@accumulator-corpus|ops@list-growth|heap-scrub|engine-culling-cost|engine-render-heap|net-recv-heap) echo "measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero" ;;
         web-mux-heap) echo "measures Codex's bump pointer with __heap-save; the machine's pointer moves for alloc-bytes, so each 65536-byte receive buffer shows, but no Roc list lives on it, so every reading lacks the lists' bytes" ;;
+        cpu-park) echo "times cpu-park's sti;hlt against the HPET; a hosted program has no HPET and no core to halt, so only its first line (answers 0 0) is language" ;;
     esac
 }
 # The drives a machine unit boots with and the keys typed during its run, as a

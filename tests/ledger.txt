@@ -78,7 +78,7 @@ PASS const-share |
 PASS convolution-identity |
 DIVERGES cost@accumulator-corpus | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
 REFUSED cost@giveup-beats-fuel | `ne2k-copy-into` writes its list parameter `dst` and answers something else
-REFUSED cpu-park | builtin `cpu-park` used as a value
+DIVERGES cpu-park | times cpu-park's sti;hlt against the HPET; a hosted program has no HPET and no core to halt, so only its first line (answers 0 0) is language
 PASS cross-port-refused |
 REFUSED crypto-test | type (effectful (effs "Console") (scopes "") nothing)
 SLOW crypto-vectors | last never run, ? ms; ALL=1 runs it
@@ -102,8 +102,8 @@ PASS device-buffer-alloc |
 REFUSED dhcp-acquire | `ne2k-copy-into` writes its list parameter `dst` and answers something else
 REFUSED dhcp-acquire-e1000 | `ne2k-copy-into` writes its list parameter `dst` and answers something else
 SLOW dhcp-renew | last never run, ? ms; ALL=1 runs it
-REFUSED diag-pci-map-judge | builtin `pit-input-hz` used as a value
-REFUSED disk-enum-parse | builtin `pit-input-hz` used as a value
+PASS diag-pci-map-judge |
+PASS disk-enum-parse |
 SLOW diskfacts-unpack-large | last never run, ? ms; ALL=1 runs it
 PASS dnp3-encode |
 PASS dns-answer-count |
@@ -212,13 +212,13 @@ PASS fat32-cluster-lfn |
 PASS fat32-img-longname |
 PASS fat32-longname |
 PASS fat32-longwrite |
-REFUSED fat32-parse | builtin `pit-input-hz` used as a value
+PASS fat32-parse |
 PASS fe310-drivers |
 REFUSED field-cache-shape | field-store
 PASS field-cache-text-lit |
 SKIP field-guard-refine | expects a diagnostic
 SKIP field-range-proven | expects a diagnostic
-REFUSED files-parse | builtin `pit-input-hz` used as a value
+PASS files-parse |
 PASS final-batch-test |
 PASS fins-encode |
 PASS forewords@ai-activation |
@@ -554,18 +554,18 @@ PASS geometry-test |
 PASS goose-encode |
 SLOW gop-composite-clamp | last never run, ? ms; ALL=1 runs it
 SLOW gop-composite-clip | last never run, ? ms; ALL=1 runs it
-REFUSED gop-composite-focus | builtin `pit-input-hz` used as a value
+PASS gop-composite-focus |
 SLOW gop-composite-kinds | last never run, ? ms; ALL=1 runs it
-REFUSED gop-composite-marks | builtin `pit-input-hz` used as a value
+PASS gop-composite-marks |
 SLOW gop-composite-stride | last never run, ? ms; ALL=1 runs it
 DIVERGES gop-composite-translate | comp-translate moves each child with __record-set and drops the answers; Codex writes the record in place, so the parent's children list sees the move, and a Roc record is a value
 SLOW gop-composite-vclip | last never run, ? ms; ALL=1 runs it
 SLOW gop-corner-ramp | last never run, ? ms; ALL=1 runs it
 SLOW gop-padded-stride | last never run, ? ms; ALL=1 runs it
-REFUSED gop-scene-backbuffer | builtin `pit-input-hz` used as a value
+PASS gop-scene-backbuffer |
 PASS gop-scene-viewport |
 PASS gop-stride |
-REFUSED gop-text-field | builtin `pit-input-hz` used as a value
+PASS gop-text-field |
 PASS gpu-depth-tree |
 CRASH gpu-doorbell | machine: port-out-32 to port 0x00000420, the COM3 mailbox, which this machine does not model
 PASS gpu-gauge-clamp |
@@ -735,7 +735,7 @@ PASS mix-bits |
 PASS mod-bound-return |
 PASS modbus-encode |
 PASS modprobe |
-REFUSED mouse-decode | builtin `pit-input-hz` used as a value
+PASS mouse-decode |
 PASS mqtt-encode |
 PASS mqttsn-encode |
 PASS mut-borrow-transitive |
@@ -765,7 +765,7 @@ REFUSED normalize-eq | type (propeq (ctd "Off" (args)) (ctd "Off" (args)))
 PASS notification-log-severity |
 PASS nrf52840-drivers |
 PASS nrf9160-drivers |
-REFUSED nvme-encode | builtin `pit-input-hz` used as a value
+PASS nvme-encode |
 PASS oauth-island |
 PASS occurrence-check |
 PASS opcua-encode |
@@ -849,7 +849,7 @@ PASS peek32-sign |
 PASS pi4-drivers |
 PASS pipe-unique-test |
 PASS pit-latch |
-REFUSED pit-rate | builtin `pit-input-hz` used as a value
+PASS pit-rate |
 REFUSED plug-oracle-arith | field-store
 PASS poke16-width |
 PASS poly1305 |
@@ -1028,8 +1028,8 @@ PASS ui@flex-max |
 PASS ui@flex-minima |
 PASS ui@flex-preferred |
 PASS ui@layout-stack |
-REFUSED ui@natural-size | builtin `pit-input-hz` used as a value
-REFUSED ui@scroll-viewport | builtin `pit-input-hz` used as a value
+PASS ui@natural-size |
+PASS ui@scroll-viewport |
 PASS ui@theme-ink-on |
 PASS ui@vector-raster |
 PASS ui@widget-panel-min |
