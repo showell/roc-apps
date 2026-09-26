@@ -191,15 +191,15 @@ PASS effect-widen-scope |
 REFUSED effect-widen-scope-narrow | an opening scoped to FileSystem.Read "/config/"
 PASS engine-animation |
 DIVERGES engine-culling-cost | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
-REFUSED engine-fill-guard | builtin `__heap-base` used as a value
+PASS engine-fill-guard |
 SLOW engine-mesh-gen | last never run, ? ms; ALL=1 runs it
-REFUSED engine-near-clip | builtin `__heap-base` used as a value
-REFUSED engine-persp-uv | builtin `__heap-base` used as a value
+PASS engine-near-clip |
+PASS engine-persp-uv |
 PASS engine-plane-grid |
 DIVERGES engine-render-heap | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
 SLOW engine-shading | last never run, ? ms; ALL=1 runs it
 SLOW engine-shadow | last never run, ? ms; ALL=1 runs it
-REFUSED engine-software-render | builtin `__heap-base` used as a value
+PASS engine-software-render |
 SLOW engine-texture-cost | last never run, ? ms; ALL=1 runs it
 PASS enip-encode |
 PASS eq-generic-fields |
@@ -584,7 +584,7 @@ SLOW gop-composite-vclip | last never run, ? ms; ALL=1 runs it
 SLOW gop-corner-ramp | last never run, ? ms; ALL=1 runs it
 SLOW gop-padded-stride | last never run, ? ms; ALL=1 runs it
 PASS gop-scene-backbuffer |
-REFUSED gop-scene-viewport | builtin `__heap-base` used as a value
+PASS gop-scene-viewport |
 PASS gop-stride |
 PASS gop-text-field |
 PASS gpu-depth-tree |
