@@ -89,6 +89,18 @@ diverges() {
 # Roc module: a program on the Echo platform reads no files, so an attached
 # image and a .keys timeline are file IMPORTS, and the position with nothing
 # on it is Absent. Arguments: yes/no for drive0.disk, drive1.disk and keys.txt.
+# The image behind a test's .disk or .disk2, or nothing: checked in, or
+# minted from its recipe by upstream's script (run from TESTS_ROOT, as the
+# script's paths are relative to the repo root). A refused mint is no image,
+# and the unit then fails as the test would without its disk.
+disk_for() {
+    local src=$1 ext=$2 out
+    if [ -f "$src.$ext" ]; then echo "$src.$ext"; return; fi
+    [ -f "$src.$ext-mint" ] || return
+    out=$(cd "$TESTS_ROOT" && pwsh -NoProfile -File build/mint-test-disk.ps1 -Recipe "$src.$ext-mint" 2>/dev/null | tail -1)
+    case $out in /*) [ -f "$out" ] && echo "$out" ;; *) [ -f "$TESTS_ROOT/$out" ] && echo "$TESTS_ROOT/$out" ;; esac
+}
+
 media() {
     echo "# MachineMedia -- the drives attached and the keys typed for this unit, written by tests/ladder.sh."
     [ "$1" = yes ] && echo 'import "drive0.disk" as drive0 : List(U8)'
@@ -160,8 +172,14 @@ one() {
         [ -f "$src.vmargs" ] && read -ra vmargs <<< "$(grep -v '^#' "$src.vmargs" | tr '\n' ' ')"
         rm -f "$d/drive0.disk" "$d/drive1.disk" "$d/keys.txt"
         a0=no; a1=no; k=no
-        [ -f "$src.disk" ] && { ln -s "$src.disk" "$d/drive0.disk"; a0=yes; }
-        [ -f "$src.disk2" ] && { ln -s "$src.disk2" "$d/drive1.disk"; a1=yes; }
+        # Since U63 a test's disk is not checked in: it sits beside the test
+        # as a .disk-mint (.disk2-mint) recipe, and upstream's own
+        # build/mint-test-disk.ps1 builds it (sha256-checked, reused while it
+        # still hashes right) and prints its path last. A checked-in image,
+        # where one still exists, is taken as it is.
+        disk0=$(disk_for "$src" disk); disk1=$(disk_for "$src" disk2)
+        [ -n "$disk0" ] && { ln -s "$disk0" "$d/drive0.disk"; a0=yes; }
+        [ -n "$disk1" ] && { ln -s "$disk1" "$d/drive1.disk"; a1=yes; }
         [ -f "$src.keys" ] && { ln -s "$src.keys" "$d/keys.txt"; k=yes; }
         media $a0 $a1 $k > "$d/MachineMedia.roc"
         stamp="$stamp machine $( { cat "$MACHINE"/{Machine,MachineApic,MachineCaps,MachineE1000,MachineGpu,MachineHpet,MachineIde,MachineMem,MachineNat,MachineNe2k,MachinePci,MachinePorts,MachineScreen,MachineWire,MachineDisk}.roc "$d/MachineMedia.roc"; echo "${vmargs[*]}"; stat -L -c '%s %Y' "$d"/drive*.disk "$d"/keys.txt 2>/dev/null; } | md5sum | cut -c1-16)"
@@ -195,7 +213,7 @@ one() {
 }
 
 MACHINE="$(cd "$HERE/../machine/roc" && pwd)"
-export -f one diverges media; export ROC ROC_ID ROCEMIT SRC GEN VERDICTS MACHINE TESTS_ROOT HERE
+export -f one diverges media disk_for; export ROC ROC_ID ROCEMIT SRC GEN VERDICTS MACHINE TESTS_ROOT HERE
 printf '%s\n' "${units[@]}" | xargs -P "${JOBS:-2}" -I{} bash -c 'one {}'
 ledger="$( for n in "${units[@]}"; do cat "$GEN/$n/verdict"; done )"
 [ "$full" = yes ] && echo "$ledger" > "$HERE/ledger.txt"

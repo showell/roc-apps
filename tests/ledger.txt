@@ -11,10 +11,18 @@ PASS arithmetic |
 PASS arm64-boot-test |
 PASS arm64-encoder |
 PASS arm64-http-test |
+REFUSED arm64-net-calibrate | builtin `read-cntvct-el0` used as a value
+TIMEOUT arm64-net-compact |
 PASS arm64-net-gate |
+FAIL arm64-net-peer-fin | output: < the peer's FIN took the connection to ESTABLISHED
+FAIL arm64-net-peer-fin-framed | output: < the peer's FIN took the connection to ESTABLISHED
 PASS arm64-proc-cells |
+PASS arm64-rx-recycle |
+FAIL arm64-rx-reuse | output: < list per frame over 512  : no
 PASS arm64-send-checked |
 PASS arm64-send-refusal |
+FAIL arm64-stack-heap | output: < after: 3
+REFUSED arm64-timer | builtin `read-cntfrq-el0` used as a value
 PASS arp-cache-bound |
 PASS asn1-der |
 PASS asn1-der-write |
@@ -35,7 +43,9 @@ PASS bounded-sig-runtime |
 SKIP bounded-sig-static | expects a diagnostic
 PASS bounds-proof |
 PASS bounds-prover |
+PASS brotli-rfc-conformance |
 PASS bs3-smoke |
+PASS buf-write-byte-cursor |
 SKIP builtin-narrow-proven | expects a diagnostic
 PASS call-clobber |
 PASS canopen-encode |
@@ -54,6 +64,7 @@ PASS cap-network-denied |
 PASS cap-process-family |
 PASS capability-doors |
 PASS carddeck-shuffle |
+FAIL cce-foreign-byte | output: < raw length    : 20
 PASS cce-roundtrip |
 REFUSED cce-tier1 | type (effectful (effs "Console") (scopes "") nothing)
 REFUSED cdx-export-retention | an opening of type nothing
@@ -79,10 +90,13 @@ PASS convolution-identity |
 DIVERGES cost@accumulator-corpus | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
 REFUSED cost@giveup-beats-fuel | an opening of type (effectful (effs "Console") (scopes "") nothing)
 DIVERGES cpu-park | times cpu-park's sti;hlt against the HPET; a hosted program has no HPET and no core to halt, so only its first line (answers 0 0) is language
+REFUSED cpuid-avx | builtin `cpu-cpuid-ecx`
+REFUSED cpuid-no-avx | builtin `cpu-cpuid-ecx`
 PASS cross-port-refused |
 REFUSED crypto-test | type (effectful (effs "Console") (scopes "") nothing)
 SLOW crypto-vectors | last never run, ? ms; ALL=1 runs it
 PASS cryptobig |
+REFUSED ctor-field-arrow | a type applied to a non-name
 PASS ctor-narrow-warn |
 PASS db-csv-roundtrip |
 DIVERGES db-full-test | test-bulk-load and test-import insert 5 rows through heap-insert-encoded's list-set-at on the catalog's pages and answer only Text; the backup then scans the same catalog, which in Roc still holds the old pages (rows=21, not 26)
@@ -146,6 +160,7 @@ PASS e1000-ulp-entry |
 PASS e1000-unresettable |
 SLOW ecdsa-cert | last PASS, 13182 ms; ALL=1 runs it
 SLOW ecdsa-p256 | last PASS, 9308 ms; ALL=1 runs it
+PASS ecdsa-p256-sign |
 SLOW ecdsa-p384 | last PASS, 28693 ms; ALL=1 runs it
 SLOW ecdsa-sha384 | last PASS, 10770 ms; ALL=1 runs it
 DIVERGES edalias | list-set-at mutates in place; Roc's List.set answers a new list
@@ -176,13 +191,15 @@ PASS effect-widen-scope |
 REFUSED effect-widen-scope-narrow | an opening scoped to FileSystem.Read "/config/"
 PASS engine-animation |
 DIVERGES engine-culling-cost | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
-PASS engine-fill-guard |
+REFUSED engine-fill-guard | builtin `__heap-base` used as a value
 SLOW engine-mesh-gen | last never run, ? ms; ALL=1 runs it
-PASS engine-near-clip |
+REFUSED engine-near-clip | builtin `__heap-base` used as a value
+REFUSED engine-persp-uv | builtin `__heap-base` used as a value
+PASS engine-plane-grid |
 DIVERGES engine-render-heap | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
 SLOW engine-shading | last never run, ? ms; ALL=1 runs it
 SLOW engine-shadow | last never run, ? ms; ALL=1 runs it
-PASS engine-software-render |
+REFUSED engine-software-render | builtin `__heap-base` used as a value
 SLOW engine-texture-cost | last never run, ? ms; ALL=1 runs it
 PASS enip-encode |
 PASS eq-generic-fields |
@@ -204,6 +221,7 @@ PASS fat16-list |
 PASS fat16-longname |
 PASS fat16-mkdir |
 PASS fat16-overwrite |
+PASS fat16-read-guard |
 PASS fat16-source-cr |
 PASS fat16-subdir |
 PASS fat16-write |
@@ -213,6 +231,7 @@ PASS fat32-img-longname |
 PASS fat32-longname |
 PASS fat32-longwrite |
 PASS fat32-parse |
+PASS fat32-read-guard |
 PASS fe310-drivers |
 REFUSED field-cache-shape | field-store
 PASS field-cache-text-lit |
@@ -541,6 +560,7 @@ PASS forewords@ui-vector |
 PASS forewords@ui-widget |
 REFUSED fork-nested | builtin `fork`
 REFUSED fork-reclaim | builtin `fork`
+FAIL frame-decode-cost | output: < growth=unmeasured
 PASS frame-short-buffer |
 PASS frameless-leaf-probe |
 SKIP fresh-alloc-narrow | expects a diagnostic
@@ -548,8 +568,9 @@ REFUSED fs-deny-runtime | an opening scoped to FileSystem.Read "OK"
 REFUSED fs-handler-install | an opening scoped to FileSystem.Read "NOPE"
 REFUSED fs-layer | handle
 REFUSED fs-servicer | an opening scoped to FileSystem.Read "OK"
-SKIP fs-spawn-inherits | child reaches the write path and faults inside it: the trail measures verdict 0 with alive 71, write
+REFUSED fs-spawn-inherits | an opening scoped to FileSystem.Read "OK"
 PASS ga-core |
+REFUSED generic-eq | builtin `__eqd_List`
 PASS geometry-test |
 PASS goose-encode |
 SLOW gop-composite-clamp | last never run, ? ms; ALL=1 runs it
@@ -563,7 +584,7 @@ SLOW gop-composite-vclip | last never run, ? ms; ALL=1 runs it
 SLOW gop-corner-ramp | last never run, ? ms; ALL=1 runs it
 SLOW gop-padded-stride | last never run, ? ms; ALL=1 runs it
 PASS gop-scene-backbuffer |
-PASS gop-scene-viewport |
+REFUSED gop-scene-viewport | builtin `__heap-base` used as a value
 PASS gop-stride |
 PASS gop-text-field |
 PASS gpu-depth-tree |
@@ -571,6 +592,7 @@ CRASH gpu-doorbell | machine: port-out-32 to port 0x00000420, the COM3 mailbox, 
 PASS gpu-gauge-clamp |
 PASS gpu-input-cursor |
 PASS gpu-panel-border |
+CRASH gpu-persp-uv | machine: port-out-32 to GPU port 0x408, which this machine's GPU does not model
 CRASH gpu-ptx | machine: port-out-32 to port 0x00000420, the COM3 mailbox, which this machine does not model
 PASS grounds-port |
 PASS hal-board-sleep |
@@ -582,10 +604,13 @@ PASS hal-peripheral-linear |
 PASS hal-spi-linear |
 PASS hal-tuple-linear |
 PASS hamt-test |
+REFUSED handler-capture | handle
 REFUSED handler-dotted-discharge | handle
 REFUSED handler-nested-ops | handle
+REFUSED handler-resume-value | handle
 REFUSED handler-smoke | type (effectful (effs "Config") (scopes "") int-default)
 PASS hart-encode |
+PASS heap-advance-odd |
 CRASH heap-bracket-shape | machine: port-in-byte from port 0x00000071, the CMOS clock (the host's local time), which this machi
 PASS heap-frame-reclaim |
 DIVERGES heap-scrub | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
@@ -679,10 +704,12 @@ PASS lib@status-badge-priority |
 PASS lib@text-overflow |
 PASS lib@text-overflow-render |
 PASS lib@text-trim-test |
+TIMEOUT lib@toml-guard |
 PASS lib@toml-test |
 DIVERGES lib@tree-view-nav | pins what a caller still holding the old record sees after its list is written in place; a Roc list is a value, so the caller keeps what it held
 PASS lib@utf8-cce-test |
 SLOW lib@widget-tone | last never run, ? ms; ALL=1 runs it
+TIMEOUT lib@yaml-guard |
 PASS lib@yaml-test |
 PASS linear-branch |
 PASS linear-capture-once |
@@ -707,15 +734,19 @@ PASS list-pattern |
 PASS list-tail-empty |
 PASS list-test |
 REFUSED list-view-probe | builtin `__list-len`
+PASS literal-match-covered |
 PASS literal-subpattern |
 SKIP local-narrow-proven | expects a diagnostic
 REFUSED location-sensors-stub | type (effectful (effs "Location") (scopes "") boolean)
 PASS lorawan-encode |
+REFUSED lower-child-expected | binary cons-list
 PASS lwm2m-encode |
+PASS magic-shuffle-seeds |
 PASS magic-sim-fixes |
 SKIP manifest-pin | its disk is compiled from manifest-subject by the Cobblestone compiler at test time
 REFUSED mask-ops | type (effectful (effs "Console") (scopes "") nothing)
 PASS match-arms-per-line |
+PASS match-in-record-field |
 PASS matrix3-test |
 PASS mbus-encode |
 PASS media-codec-test |
@@ -752,6 +783,7 @@ PASS net-drain-budget |
 SLOW net-driver-seam-bound | last never run, ? ms; ALL=1 runs it
 PASS net-driver-seam-no-av |
 SLOW net-io-clock | last never run, ? ms; ALL=1 runs it
+REFUSED net-io-peer-fin | `net-io-recv-wait`: an `act` statement writes a list a later statement reads
 CRASH net-poll-calibrated | machine: -e1000-nat is not a codex-vm flag this machine models
 PASS net-poll-clamped |
 DIVERGES net-recv-heap | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
@@ -771,10 +803,12 @@ PASS occurrence-check |
 PASS opcua-encode |
 PASS ops@bounded-modes-smoke |
 PASS ops@builtin-name-shadow |
+REFUSED ops@cap-grant-emit | UNRESOLVED: cap-grant-emit.codex cites Emit chapter X86-64 Boot Infrastructure -- no such quire in the registr
 PASS ops@cap-word-64 |
 PASS ops@cce-bounds-smoke |
 PASS ops@cce-builtin-bounds |
 PASS ops@char-at-bounds |
+PASS ops@char-code-at-high |
 PASS ops@char-encode-bands |
 PASS ops@closure-under-apply |
 PASS ops@collate-order |
@@ -813,6 +847,8 @@ PASS ops@real-trapping |
 PASS ops@record-closure-field-poly |
 PASS ops@record-equality |
 REFUSED ops@record-equality-vector | a type applied to a non-name
+PASS ops@record-generic-eq |
+PASS ops@runtime-bytes-unsigned |
 PASS ops@saturated-call-returning-function |
 PASS ops@section-title-keywords |
 PASS ops@substring-bounds |
@@ -820,6 +856,8 @@ PASS ops@text-order-allowed |
 PASS ops@text-to-unicode-bytes-tier0 |
 PASS ops@tier0-cyrillic-print |
 REFUSED ops@tier0-cyrillic-print-uni | builtin `print-uni`
+PASS ops@tier1-latin-print |
+PASS ops@tier2-print |
 PASS ops@unicode-bytes-roundtrip |
 PASS ops@unit-pattern-lit |
 PASS ops@unit-real-arith |
@@ -873,8 +911,8 @@ SKIP qemu-rng-absent | cross bed only: the same program as qemu-rng with NO devi
 PASS qemu-virt-board |
 PASS qr-encode |
 PASS queue-test |
-REFUSED quotes-gate | CODEGEN-HALTED: 1 error(s); no IR emitted; first CDX1000 Expected token kind mismatch, got 'WORK'
-REFUSED quotes-parse | CODEGEN-HALTED: 1 error(s); no IR emitted; first CDX1000 Expected token kind mismatch, got 'WORK'
+REFUSED quotes-gate | CODEGEN-HALTED: 2 error(s); no IR emitted; first CDX1077 `%` at column 1 begins no definition, so it would be 
+REFUSED quotes-parse | CODEGEN-HALTED: 2 error(s); no IR emitted; first CDX1077 `%` at column 1 begins no definition, so it would be 
 SKIP range-let-carry | expects a diagnostic
 SKIP range-refine-if | expects a diagnostic
 PASS rasterizer-test |
@@ -906,6 +944,7 @@ SLOW rsa-pss | last PASS, 7564 ms; ALL=1 runs it
 PASS rsa-verify |
 PASS rv-arg-order |
 PASS rv-big-literal |
+PASS rv-far-stack-param |
 PASS rv-frameless-imm |
 PASS rv-frameless-temp |
 PASS rv-param-bind |
@@ -945,6 +984,7 @@ PASS sparkplug-encode |
 REFUSED spawn-memo-table | a function value from `__lam_0` (0 of 1 arguments), which reaches the machine; a function value carries no sta
 REFUSED spawn-reuse | a function value from `__lam_0` (0 of 1 arguments), which reaches memory; a function value carries no state
 PASS sprite-test |
+PASS stack-args-spill-overlap |
 SKIP stale-sibling | expects a diagnostic
 PASS stats-wrap-test |
 PASS stm32f4-drivers |
@@ -957,15 +997,19 @@ REFUSED suggested-width | builtin `suggested-vector-width`
 PASS sum-field-eq |
 PASS synth-test |
 REFUSED tag-equal | builtin `tag-equal`
+PASS tail-call-spilled-arg |
 PASS tco-bitop-loop |
 PASS tco-direct-arg-reads |
 PASS tco-framed-append |
+PASS tco-global-bound |
 PASS tco-nested-if |
 PASS tco-shuffle-spill |
 PASS tcp-checksum-refuse |
 PASS tcp-listen-reclaim |
 PASS tcp-reliability |
+PASS tcp-rst |
 PASS tcp-seqwrap |
+PASS text-accum-owner |
 PASS text-append-alias |
 PASS text-eq-branches |
 PASS text-fold-indexed |
@@ -989,6 +1033,7 @@ PASS truetype-render-test |
 PASS truetype-test |
 REFUSED try-smoke | try
 PASS ttf-compound |
+PASS ttf-contour-order-guard |
 PASS ttf-debug |
 PASS ttt-perfect |
 PASS tuple-syntax |
@@ -1035,6 +1080,7 @@ PASS ui@vector-raster |
 PASS ui@widget-panel-min |
 PASS unconstrained-empty-list |
 PASS unconstrained-nullary-sum |
+PASS unit-bounded |
 PASS unit-family |
 PASS unit-family-mixed |
 PASS unit-smoke |
@@ -1055,18 +1101,25 @@ REFUSED vec-pattern | classify: vector pattern
 REFUSED vec-reduce-add | builtin `vec-splat`
 REFUSED vec-select | type (effectful (effs "Console") (scopes "") nothing)
 REFUSED vector-basic | builtin `vec-splat`
+REFUSED vector-eq | type (vector 2 int-default)
 REFUSED vector-f32 | builtin `vec4-splat`
 REFUSED vector-f32-mask | type (vector 4 real-approx)
 REFUSED vector-int | builtin `vec-splat`
+REFUSED vector-wide | type (vector 4 real)
+REFUSED vector-wide-avx-local | builtin `vec4d-splat`
+REFUSED vector-wide-avx-local-admitted | builtin `vec4d-splat`
+REFUSED vector-wide-no-avx | builtin `vec4d-splat`
 PASS wavelet-sort-aliasing |
 SKIP wcet-budget-unchecked | expects a diagnostic
 SKIP wcet-probe | expects a diagnostic
 PASS web-chain |
 REFUSED web-mux-concurrent | `net-io-send-drain-rx`: an `act` statement writes a list a later statement reads
+REFUSED web-mux-dangle | builtin `__memset`
 DIVERGES web-mux-heap | measures Codex's bump pointer with __heap-save; the machine's pointer moves for alloc-bytes, so each 65536-byte receive buffer shows, but no Roc list lives on it, so every reading lacks the lists' bytes
 REFUSED web-mux-idle-reap | `net-io-send-drain-rx`: an `act` statement writes a list a later statement reads
 REFUSED web-mux-lifecycle | `net-io-send-drain-rx`: an `act` statement writes a list a later statement reads
 REFUSED web-mux-long-run | `net-io-send-drain-rx`: an `act` statement writes a list a later statement reads
+REFUSED web-mux-pending-cap | `net-io-send-drain-rx`: an `act` statement writes a list a later statement reads
 REFUSED web-mux-reassembly | `net-io-send-drain-rx`: an `act` statement writes a list a later statement reads
 PASS when-arm-nontail |
 PASS when-arm-tail-call |
@@ -1078,4 +1131,5 @@ PASS workflow-parse-int |
 PASS x509-chain |
 SLOW x509-dev-cert | last PASS, 13342 ms; ALL=1 runs it
 PASS x509-parse |
+SKIP xmm-preempt | codex-vm boots it with 2 cores (.smp); this harness runs one
 PASS zigbee-encode |
