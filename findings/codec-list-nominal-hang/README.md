@@ -1,6 +1,6 @@
 # The compiler hangs on a custom-coded, `List`-backed nominal type inside a derived container
 
-**Filed as [roc-lang/roc#11728](https://github.com/roc-lang/roc/issues/11728),
+**Filed as [roc-lang/roc#11727](https://github.com/roc-lang/roc/issues/11727),
 2026-09-26.** `ISSUE.md` is the text as posted.
 
 `hangs.roc` defines `Blob := List(U8)` with its own `parser_for` and parses
