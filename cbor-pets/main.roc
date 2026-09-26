@@ -16,7 +16,7 @@ main! = |args| {
 
 	match Profile.from_cbor(input) {
 		Ok(profile) => {
-			output = profile.birthday().edit_picture().to_cbor()
+			output = profile.one_year_later().edit_picture().to_cbor()
 			echo!("out: ${hex(output)}\n")
 		}
 		Err(problem) => echo!("could not decode: ${Str.inspect(problem)}\n")

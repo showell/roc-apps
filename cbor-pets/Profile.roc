@@ -5,8 +5,10 @@ import ImageBlob
 ## The app's own type. Nothing in it mentions CBOR: `picture` is an
 ## `ImageBlob` because that's what it *is*, not to steer a serializer.
 Profile := { name : Str, pet_ages : List(U8), picture : ImageBlob }.{
-	birthday : Profile -> Profile
-	birthday = |Profile.{ name, pet_ages, picture }|
+
+	## Every pet ages by a year. (U8 ages: a 255-year-old pet would crash.)
+	one_year_later : Profile -> Profile
+	one_year_later = |Profile.{ name, pet_ages, picture }|
 		Profile.{ name, pet_ages: pet_ages.map(|age| age + 1), picture }
 
 	edit_picture : Profile -> Profile
@@ -104,7 +106,7 @@ expected = [
 
 # The whole story: decode, age the pets, edit the picture, encode.
 expect {
-	updated = Profile.from_cbor(input).map_ok(|p| p.birthday().edit_picture().to_cbor())
+	updated = Profile.from_cbor(input).map_ok(|p| p.one_year_later().edit_picture().to_cbor())
 	updated == Ok(expected)
 }
 
