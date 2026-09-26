@@ -4,15 +4,15 @@ import Random
 ParticleSystem :: [].{
 	Particle := { part_x : I64, part_y : I64, part_z : I64, part_vx : I64, part_vy : I64, part_vz : I64, part_life : I64, part_max_life : I64, part_color : I64 }.{
 		is_eq : ParticleSystem.Particle, ParticleSystem.Particle -> Bool
-		is_eq = |a, b| a.part_x == b.part_x and a.part_y == b.part_y and a.part_z == b.part_z and a.part_vx == b.part_vx and a.part_vy == b.part_vy and a.part_vz == b.part_vz and a.part_life == b.part_life and a.part_max_life == b.part_max_life and a.part_color == b.part_color
+		is_eq = |a, b| eq_Particle(a, b)
 	}
 	ParticleEmitter := { emit_x : I64, emit_y : I64, emit_z : I64, emit_vx : I64, emit_vy : I64, emit_vz : I64, emit_spread : I64, emit_life : I64, emit_color : I64 }.{
 		is_eq : ParticleSystem.ParticleEmitter, ParticleSystem.ParticleEmitter -> Bool
-		is_eq = |a, b| a.emit_x == b.emit_x and a.emit_y == b.emit_y and a.emit_z == b.emit_z and a.emit_vx == b.emit_vx and a.emit_vy == b.emit_vy and a.emit_vz == b.emit_vz and a.emit_spread == b.emit_spread and a.emit_life == b.emit_life and a.emit_color == b.emit_color
+		is_eq = |a, b| eq_ParticleEmitter(a, b)
 	}
 	ParticleSystem := { particles : List(ParticleSystem.Particle), count : I64, max_particles : I64 }.{
 		is_eq : ParticleSystem.ParticleSystem, ParticleSystem.ParticleSystem -> Bool
-		is_eq = |a, b| a.particles == b.particles and a.count == b.count and a.max_particles == b.max_particles
+		is_eq = |a, b| eq_ParticleSystem(a, b)
 	}
 
 	emitter_new : I64, I64, I64, I64, I64, I64, I64, I64, I64 -> ParticleSystem.ParticleEmitter
@@ -87,4 +87,13 @@ ParticleSystem :: [].{
 		p = (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 		psys_count_alive(ps, (i + 1), len, (acc + (if (p.part_life > 0) { 1 } else { 0 })))
 	}) })
+
+	eq_Particle : ParticleSystem.Particle, ParticleSystem.Particle -> Bool
+	eq_Particle = |ex, ey| (((((((((ex.part_x == ey.part_x) and (ex.part_y == ey.part_y)) and (ex.part_z == ey.part_z)) and (ex.part_vx == ey.part_vx)) and (ex.part_vy == ey.part_vy)) and (ex.part_vz == ey.part_vz)) and (ex.part_life == ey.part_life)) and (ex.part_max_life == ey.part_max_life)) and (ex.part_color == ey.part_color))
+
+	eq_ParticleEmitter : ParticleSystem.ParticleEmitter, ParticleSystem.ParticleEmitter -> Bool
+	eq_ParticleEmitter = |ex, ey| (((((((((ex.emit_x == ey.emit_x) and (ex.emit_y == ey.emit_y)) and (ex.emit_z == ey.emit_z)) and (ex.emit_vx == ey.emit_vx)) and (ex.emit_vy == ey.emit_vy)) and (ex.emit_vz == ey.emit_vz)) and (ex.emit_spread == ey.emit_spread)) and (ex.emit_life == ey.emit_life)) and (ex.emit_color == ey.emit_color))
+
+	eq_ParticleSystem : ParticleSystem.ParticleSystem, ParticleSystem.ParticleSystem -> Bool
+	eq_ParticleSystem = |ex, ey| (((ex.particles == ey.particles) and (ex.count == ey.count)) and (ex.max_particles == ey.max_particles))
 }

@@ -4,7 +4,7 @@ import CceText
 EditDistance :: [].{
 	EditMatch := { em_text : CceText, em_distance : I64, em_index : I64 }.{
 		is_eq : EditDistance.EditMatch, EditDistance.EditMatch -> Bool
-		is_eq = |a, b| a.em_text == b.em_text and a.em_distance == b.em_distance and a.em_index == b.em_index
+		is_eq = |a, b| eq_EditMatch(a, b)
 	}
 
 	edit_distance : CceText, CceText -> I64
@@ -96,4 +96,7 @@ EditDistance :: [].{
 
 	format_edit_match : EditDistance.EditMatch -> CceText
 	format_edit_match = |m| CceText.concat(CceText.concat(CceText.concat(m.em_text, " (d="), CceText.show_int(m.em_distance)), ")")
+
+	eq_EditMatch : EditDistance.EditMatch, EditDistance.EditMatch -> Bool
+	eq_EditMatch = |ex, ey| (((ex.em_text == ey.em_text) and (ex.em_distance == ey.em_distance)) and (ex.em_index == ey.em_index))
 }

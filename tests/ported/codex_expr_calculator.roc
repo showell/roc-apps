@@ -40,7 +40,7 @@ Expr := [Lit(I64), Add(Expr, Expr), Sub(Expr, Expr), Mul(Expr, Expr), Div(Expr, 
 }
 ParseResult := { expr : Expr, pos : I64 }.{
 	is_eq : ParseResult, ParseResult -> Bool
-	is_eq = |a, b| a.expr == b.expr and a.pos == b.pos
+	is_eq = |a, b| eq_ParseResult(a, b)
 }
 
 skip_ws : CceText, I64 -> I64
@@ -174,6 +174,9 @@ eq_Expr = |ex, ey| (match ex {
 		_ => False
 	})
 })
+
+eq_ParseResult : ParseResult, ParseResult -> Bool
+eq_ParseResult = |ex, ey| (eq_Expr(ex.expr, ey.expr) and (ex.pos == ey.pos))
 
 # --- Entry ---
 

@@ -22,7 +22,7 @@ import cdx.CceText
 line! = |s| echo!(Str.concat(s, "\n"))
 Byte := { val : I64 }.{
 	is_eq : Byte, Byte -> Bool
-	is_eq = |a, b| a.val == b.val
+	is_eq = |a, b| eq_Byte(a, b)
 }
 
 bump_right : Byte -> I64
@@ -30,6 +30,9 @@ bump_right = |b| Byte.{ val: (b.val + 1) }.val
 
 bump_left : Byte -> I64
 bump_left = |b| Byte.{ val: (1 + b.val) }.val
+
+eq_Byte : Byte, Byte -> Bool
+eq_Byte = |ex, ey| (ex.val == ey.val)
 
 # --- Entry ---
 

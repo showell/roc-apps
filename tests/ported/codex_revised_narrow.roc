@@ -23,7 +23,7 @@ import cdx.CceText
 line! = |s| echo!(Str.concat(s, "\n"))
 Reading := { level : I64, label : CceText }.{
 	is_eq : Reading, Reading -> Bool
-	is_eq = |a, b| a.level == b.level and a.label == b.label
+	is_eq = |a, b| eq_Reading(a, b)
 }
 
 make_literal : I64 -> Reading
@@ -48,6 +48,9 @@ make_mixed = |r, n| ({
 	rv1 = n
 	{ ..{ ..rev, label: rv0 }, level: rv1 }
 })
+
+eq_Reading : Reading, Reading -> Bool
+eq_Reading = |ex, ey| ((ex.level == ey.level) and (ex.label == ey.label))
 
 # --- Entry ---
 

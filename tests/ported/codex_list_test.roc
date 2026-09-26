@@ -45,7 +45,7 @@ import cdx.List_
 line! = |s| echo!(Str.concat(s, "\n"))
 Person := { name : CceText, age : I64 }.{
 	is_eq : Person, Person -> Bool
-	is_eq = |a, b| a.name == b.name and a.age == b.age
+	is_eq = |a, b| eq_Person(a, b)
 }
 
 double : I64 -> I64
@@ -71,6 +71,9 @@ nums = List_.cl_cons(1, List_.cl_cons(2, List_.cl_cons(3, List_.cl_cons(4, List_
 
 ages_sum : List(Person), I64, I64 -> I64
 ages_sum = |ps, i, acc| (if (i >= U64.to_i64_wrap(List.len(ps))) { acc } else { ages_sum(ps, (i + 1), (acc + (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).age)) })
+
+eq_Person : Person, Person -> Bool
+eq_Person = |ex, ey| ((ex.name == ey.name) and (ex.age == ey.age))
 
 # --- Entry ---
 

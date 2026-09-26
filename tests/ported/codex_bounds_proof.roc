@@ -31,11 +31,11 @@ import cdx.Prelude
 line! = |s| echo!(Str.concat(s, "\n"))
 Byte := { val : I64 }.{
 	is_eq : Byte, Byte -> Bool
-	is_eq = |a, b| a.val == b.val
+	is_eq = |a, b| eq_Byte(a, b)
 }
 Wide := { val : I64 }.{
 	is_eq : Wide, Wide -> Bool
-	is_eq = |a, b| a.val == b.val
+	is_eq = |a, b| eq_Wide(a, b)
 }
 
 byte0 : Byte
@@ -113,6 +113,12 @@ test_sub = ({
 	b = Byte.{ val: 50 }
 	(a.val - b.val)
 })
+
+eq_Byte : Byte, Byte -> Bool
+eq_Byte = |ex, ey| (ex.val == ey.val)
+
+eq_Wide : Wide, Wide -> Bool
+eq_Wide = |ex, ey| (ex.val == ey.val)
 
 # --- Entry ---
 

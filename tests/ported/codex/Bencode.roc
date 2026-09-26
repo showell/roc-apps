@@ -9,11 +9,11 @@ Bencode :: [].{
 	}
 	BenPair := { ben_key : CceText, ben_val : Bencode.BenValue }.{
 		is_eq : Bencode.BenPair, Bencode.BenPair -> Bool
-		is_eq = |a, b| a.ben_key == b.ben_key and a.ben_val == b.ben_val
+		is_eq = |a, b| eq_BenPair(a, b)
 	}
 	BenDecodeResult := { ben_value : Bencode.BenValue, ben_pos : I64, ben_ok : Bool }.{
 		is_eq : Bencode.BenDecodeResult, Bencode.BenDecodeResult -> Bool
-		is_eq = |a, b| a.ben_value == b.ben_value and a.ben_pos == b.ben_pos and a.ben_ok == b.ben_ok
+		is_eq = |a, b| eq_BenDecodeResult(a, b)
 	}
 
 	ben_encode : Bencode.BenValue -> CceText
@@ -138,4 +138,10 @@ Bencode :: [].{
 			_ => False
 		})
 	})
+
+	eq_BenPair : Bencode.BenPair, Bencode.BenPair -> Bool
+	eq_BenPair = |ex, ey| ((ex.ben_key == ey.ben_key) and eq_BenValue(ex.ben_val, ey.ben_val))
+
+	eq_BenDecodeResult : Bencode.BenDecodeResult, Bencode.BenDecodeResult -> Bool
+	eq_BenDecodeResult = |ex, ey| ((eq_BenValue(ex.ben_value, ey.ben_value) and (ex.ben_pos == ey.ben_pos)) and (ex.ben_ok == ey.ben_ok))
 }

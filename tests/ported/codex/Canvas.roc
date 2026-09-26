@@ -3,7 +3,7 @@
 Canvas :: [].{
 	ViewPort := { vp_pan_x : I64, vp_pan_y : I64, vp_zoom : I64, vp_grid : I64, vp_canvas_x : I64, vp_canvas_y : I64, vp_canvas_w : I64, vp_canvas_h : I64 }.{
 		is_eq : Canvas.ViewPort, Canvas.ViewPort -> Bool
-		is_eq = |a, b| a.vp_pan_x == b.vp_pan_x and a.vp_pan_y == b.vp_pan_y and a.vp_zoom == b.vp_zoom and a.vp_grid == b.vp_grid and a.vp_canvas_x == b.vp_canvas_x and a.vp_canvas_y == b.vp_canvas_y and a.vp_canvas_w == b.vp_canvas_w and a.vp_canvas_h == b.vp_canvas_h
+		is_eq = |a, b| eq_ViewPort(a, b)
 	}
 
 	viewport_new : I64, I64, I64, I64 -> Canvas.ViewPort
@@ -57,4 +57,7 @@ Canvas :: [].{
 
 	vp_set_canvas : Canvas.ViewPort, I64, I64, I64, I64 -> Canvas.ViewPort
 	vp_set_canvas = |vp, cx, cy, cw, ch| Canvas.ViewPort.{ vp_pan_x: vp.vp_pan_x, vp_pan_y: vp.vp_pan_y, vp_zoom: vp.vp_zoom, vp_grid: vp.vp_grid, vp_canvas_x: cx, vp_canvas_y: cy, vp_canvas_w: cw, vp_canvas_h: ch }
+
+	eq_ViewPort : Canvas.ViewPort, Canvas.ViewPort -> Bool
+	eq_ViewPort = |ex, ey| ((((((((ex.vp_pan_x == ey.vp_pan_x) and (ex.vp_pan_y == ey.vp_pan_y)) and (ex.vp_zoom == ey.vp_zoom)) and (ex.vp_grid == ey.vp_grid)) and (ex.vp_canvas_x == ey.vp_canvas_x)) and (ex.vp_canvas_y == ey.vp_canvas_y)) and (ex.vp_canvas_w == ey.vp_canvas_w)) and (ex.vp_canvas_h == ey.vp_canvas_h))
 }

@@ -3,7 +3,7 @@
 Wavelet :: [].{
 	DwtStepResult := { averages : List(I64), details : List(I64) }.{
 		is_eq : Wavelet.DwtStepResult, Wavelet.DwtStepResult -> Bool
-		is_eq = |a, b| a.averages == b.averages and a.details == b.details
+		is_eq = |a, b| eq_DwtStepResult(a, b)
 	}
 
 	dwt_forward : List(I64) -> List(I64)
@@ -182,4 +182,7 @@ Wavelet :: [].{
 
 	dwt_count_zeros : List(I64), I64, I64, I64 -> I64
 	dwt_count_zeros = |coeffs, i, len, acc| (if (i >= len) { acc } else { dwt_count_zeros(coeffs, (i + 1), len, (acc + (if ((List.get(coeffs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")) == 0) { 1 } else { 0 }))) })
+
+	eq_DwtStepResult : Wavelet.DwtStepResult, Wavelet.DwtStepResult -> Bool
+	eq_DwtStepResult = |ex, ey| ((ex.averages == ey.averages) and (ex.details == ey.details))
 }

@@ -4,7 +4,7 @@ import CceText
 Capability :: [].{
 	CapSpec := { cs_name : CceText, cs_id : I64, cs_base_bit : I64, cs_read_bit : I64, cs_write_bit : I64, cs_extra_bits : List(I64) }.{
 		is_eq : Capability.CapSpec, Capability.CapSpec -> Bool
-		is_eq = |a, b| a.cs_name == b.cs_name and a.cs_id == b.cs_id and a.cs_base_bit == b.cs_base_bit and a.cs_read_bit == b.cs_read_bit and a.cs_write_bit == b.cs_write_bit and a.cs_extra_bits == b.cs_extra_bits
+		is_eq = |a, b| eq_CapSpec(a, b)
 	}
 
 	cap_console : I64
@@ -172,4 +172,7 @@ Capability :: [].{
 		ts = capability_table
 		cap_names_from(ts, 0, U64.to_i64_wrap(List.len(ts)), [])
 	})
+
+	eq_CapSpec : Capability.CapSpec, Capability.CapSpec -> Bool
+	eq_CapSpec = |ex, ey| ((((((ex.cs_name == ey.cs_name) and (ex.cs_id == ey.cs_id)) and (ex.cs_base_bit == ey.cs_base_bit)) and (ex.cs_read_bit == ey.cs_read_bit)) and (ex.cs_write_bit == ey.cs_write_bit)) and (ex.cs_extra_bits == ey.cs_extra_bits))
 }

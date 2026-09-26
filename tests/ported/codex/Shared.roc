@@ -3,11 +3,11 @@
 Shared :: [].{
 	SharedArray := { sa_base : I64, sa_count : I64 }.{
 		is_eq : Shared.SharedArray, Shared.SharedArray -> Bool
-		is_eq = |a, b| a.sa_base == b.sa_base and a.sa_count == b.sa_count
+		is_eq = |a, b| eq_SharedArray(a, b)
 	}
 	DynamicSharedArray := { dsa_base : I64 }.{
 		is_eq : Shared.DynamicSharedArray, Shared.DynamicSharedArray -> Bool
-		is_eq = |a, b| a.dsa_base == b.dsa_base
+		is_eq = |a, b| eq_DynamicSharedArray(a, b)
 	}
 
 	make_shared_array : I64, I64 -> Shared.SharedArray
@@ -15,4 +15,10 @@ Shared :: [].{
 
 	make_dynamic_shared : I64 -> Shared.DynamicSharedArray
 	make_dynamic_shared = |base| Shared.DynamicSharedArray.{ dsa_base: base }
+
+	eq_SharedArray : Shared.SharedArray, Shared.SharedArray -> Bool
+	eq_SharedArray = |ex, ey| ((ex.sa_base == ey.sa_base) and (ex.sa_count == ey.sa_count))
+
+	eq_DynamicSharedArray : Shared.DynamicSharedArray, Shared.DynamicSharedArray -> Bool
+	eq_DynamicSharedArray = |ex, ey| (ex.dsa_base == ey.dsa_base)
 }

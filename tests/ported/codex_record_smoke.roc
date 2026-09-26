@@ -29,31 +29,31 @@ import cdx.CceText
 line! = |s| echo!(Str.concat(s, "\n"))
 Point := { x : I64, y : I64 }.{
 	is_eq : Point, Point -> Bool
-	is_eq = |a, b| a.x == b.x and a.y == b.y
+	is_eq = |a, b| eq_Point(a, b)
 }
 Rect := { origin : Point, width : I64, height : I64 }.{
 	is_eq : Rect, Rect -> Bool
-	is_eq = |a, b| a.origin == b.origin and a.width == b.width and a.height == b.height
+	is_eq = |a, b| eq_Rect(a, b)
 }
 Color : [Red, Green, Blue]
 Shape : [Circle(Color, I64), Square(Color, I64)]
 Wrapped : [Wrapped(Color, Shape)]
 TestRec := { name : CceText, effect : I64, value : I64 }.{
 	is_eq : TestRec, TestRec -> Bool
-	is_eq = |a, b| a.name == b.name and a.effect == b.effect and a.value == b.value
+	is_eq = |a, b| eq_TestRec(a, b)
 }
 Inner := { x_val : I64, y_val : I64, label : CceText }.{
 	is_eq : Inner, Inner -> Bool
-	is_eq = |a, b| a.x_val == b.x_val and a.y_val == b.y_val and a.label == b.label
+	is_eq = |a, b| eq_Inner(a, b)
 }
 Outer : [OWrapped(Inner), OPlain(I64), OEmpty]
 Rec1 := { rx : I64, ry : I64 }.{
 	is_eq : Rec1, Rec1 -> Bool
-	is_eq = |a, b| a.rx == b.rx and a.ry == b.ry
+	is_eq = |a, b| eq_Rec1(a, b)
 }
 Rec2 := { ra : CceText, rb : I64 }.{
 	is_eq : Rec2, Rec2 -> Bool
-	is_eq = |a, b| a.ra == b.ra and a.rb == b.rb
+	is_eq = |a, b| eq_Rec2(a, b)
 }
 V : [VarA(Rec1), VarB(Rec2)]
 Box_ := { box_label : CceText, apply : (I64 -> CceText) }
@@ -118,6 +118,12 @@ emit_one = |x| CceText.concat("one:", CceText.show_int(x))
 emit_two : I64 -> CceText
 emit_two = |x| CceText.concat("two:", CceText.show_int((x + x)))
 
+eq_Point : Point, Point -> Bool
+eq_Point = |ex, ey| ((ex.x == ey.x) and (ex.y == ey.y))
+
+eq_Rect : Rect, Rect -> Bool
+eq_Rect = |ex, ey| ((eq_Point(ex.origin, ey.origin) and (ex.width == ey.width)) and (ex.height == ey.height))
+
 eq_Color : Color, Color -> Bool
 eq_Color = |ex, ey| (match ex {
 	Red => (match ey {
@@ -154,10 +160,16 @@ eq_Wrapped = |ex, ey| (match ex {
 	})
 })
 
+eq_TestRec : TestRec, TestRec -> Bool
+eq_TestRec = |ex, ey| (((ex.name == ey.name) and (ex.effect == ey.effect)) and (ex.value == ey.value))
+
+eq_Inner : Inner, Inner -> Bool
+eq_Inner = |ex, ey| (((ex.x_val == ey.x_val) and (ex.y_val == ey.y_val)) and (ex.label == ey.label))
+
 eq_Outer : Outer, Outer -> Bool
 eq_Outer = |ex, ey| (match ex {
 	OWrapped(exf0) => (match ey {
-		OWrapped(eyf0) => (exf0 == eyf0)
+		OWrapped(eyf0) => eq_Inner(exf0, eyf0)
 		_ => False
 	})
 	OPlain(exf0) => (match ey {
@@ -170,14 +182,20 @@ eq_Outer = |ex, ey| (match ex {
 	})
 })
 
+eq_Rec1 : Rec1, Rec1 -> Bool
+eq_Rec1 = |ex, ey| ((ex.rx == ey.rx) and (ex.ry == ey.ry))
+
+eq_Rec2 : Rec2, Rec2 -> Bool
+eq_Rec2 = |ex, ey| ((ex.ra == ey.ra) and (ex.rb == ey.rb))
+
 eq_V : V, V -> Bool
 eq_V = |ex, ey| (match ex {
 	VarA(exf0) => (match ey {
-		VarA(eyf0) => (exf0 == eyf0)
+		VarA(eyf0) => eq_Rec1(exf0, eyf0)
 		_ => False
 	})
 	VarB(exf0) => (match ey {
-		VarB(eyf0) => (exf0 == eyf0)
+		VarB(eyf0) => eq_Rec2(exf0, eyf0)
 		_ => False
 	})
 })

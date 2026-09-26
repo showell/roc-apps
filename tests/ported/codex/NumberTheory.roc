@@ -3,15 +3,15 @@
 NumberTheory :: [].{
 	ExtGcdResult := { g : I64, x : I64, y : I64 }.{
 		is_eq : NumberTheory.ExtGcdResult, NumberTheory.ExtGcdResult -> Bool
-		is_eq = |a, b| a.g == b.g and a.x == b.x and a.y == b.y
+		is_eq = |a, b| eq_ExtGcdResult(a, b)
 	}
 	FactorPair := { prime : I64, power : I64 }.{
 		is_eq : NumberTheory.FactorPair, NumberTheory.FactorPair -> Bool
-		is_eq = |a, b| a.prime == b.prime and a.power == b.power
+		is_eq = |a, b| eq_FactorPair(a, b)
 	}
 	FactorCountResult := { remaining : I64, count : I64 }.{
 		is_eq : NumberTheory.FactorCountResult, NumberTheory.FactorCountResult -> Bool
-		is_eq = |a, b| a.remaining == b.remaining and a.count == b.count
+		is_eq = |a, b| eq_FactorCountResult(a, b)
 	}
 
 	gcd : I64, I64 -> I64
@@ -93,4 +93,13 @@ NumberTheory :: [].{
 
 	euler_drain : I64, I64 -> I64
 	euler_drain = |n, p| (if (n <= 0) { 0 } else { (if ((n - (I64.div_trunc_by(n, p) * p)) == 0) { euler_drain(I64.div_trunc_by(n, p), p) } else { n }) })
+
+	eq_ExtGcdResult : NumberTheory.ExtGcdResult, NumberTheory.ExtGcdResult -> Bool
+	eq_ExtGcdResult = |ex, ey| (((ex.g == ey.g) and (ex.x == ey.x)) and (ex.y == ey.y))
+
+	eq_FactorPair : NumberTheory.FactorPair, NumberTheory.FactorPair -> Bool
+	eq_FactorPair = |ex, ey| ((ex.prime == ey.prime) and (ex.power == ey.power))
+
+	eq_FactorCountResult : NumberTheory.FactorCountResult, NumberTheory.FactorCountResult -> Bool
+	eq_FactorCountResult = |ex, ey| ((ex.remaining == ey.remaining) and (ex.count == ey.count))
 }

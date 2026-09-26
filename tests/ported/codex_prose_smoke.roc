@@ -25,7 +25,7 @@ import cdx.CceText
 line! = |s| echo!(Str.concat(s, "\n"))
 ProseBasic := { value : I64, label : CceText }.{
 	is_eq : ProseBasic, ProseBasic -> Bool
-	is_eq = |a, b| a.value == b.value and a.label == b.label
+	is_eq = |a, b| eq_ProseBasic(a, b)
 }
 ProseResult : [Ok(I64), Err(CceText)]
 
@@ -46,6 +46,9 @@ field_sum = ((0 + 4) + 8)
 
 greet : CceText -> CceText
 greet = |name| CceText.concat(CceText.concat("Hello, ", name), "!")
+
+eq_ProseBasic : ProseBasic, ProseBasic -> Bool
+eq_ProseBasic = |ex, ey| ((ex.value == ey.value) and (ex.label == ey.label))
 
 eq_ProseResult : ProseResult, ProseResult -> Bool
 eq_ProseResult = |ex, ey| (match ex {

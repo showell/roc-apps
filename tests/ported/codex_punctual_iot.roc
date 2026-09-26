@@ -31,7 +31,7 @@ import cdx.IntOps
 line! = |s| echo!(Str.concat(s, "\n"))
 SensorReading := { raw_adc : I64, channel : I64 }.{
 	is_eq : SensorReading, SensorReading -> Bool
-	is_eq = |a, b| a.raw_adc == b.raw_adc and a.channel == b.channel
+	is_eq = |a, b| eq_SensorReading(a, b)
 }
 ThreatLevel : [ThreatNone, ThreatLow, ThreatMedium, ThreatHigh, ThreatCritical]
 
@@ -67,6 +67,9 @@ encode_telemetry_byte = |channel, temp, threat| ({
 
 checksum_byte : I64, I64 -> I64
 checksum_byte = |a, b| I64.bitwise_and((a + b), 255)
+
+eq_SensorReading : SensorReading, SensorReading -> Bool
+eq_SensorReading = |ex, ey| ((ex.raw_adc == ey.raw_adc) and (ex.channel == ey.channel))
 
 eq_ThreatLevel : ThreatLevel, ThreatLevel -> Bool
 eq_ThreatLevel = |ex, ey| (match ex {

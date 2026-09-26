@@ -44,11 +44,11 @@ Shape : [Circle(F64), Rectangle(F64, F64)]
 Result_(a) : [Success(a), Failure(CceText)]
 Person := { name : CceText, age : I64 }.{
 	is_eq : Person, Person -> Bool
-	is_eq = |a, b| a.name == b.name and a.age == b.age
+	is_eq = |a, b| eq_Person(a, b)
 }
 Box2 := { val : I64 }.{
 	is_eq : Box2, Box2 -> Bool
-	is_eq = |a, b| a.val == b.val
+	is_eq = |a, b| eq_Box2(a, b)
 }
 
 square : I64 -> I64
@@ -120,6 +120,12 @@ eq_Result = |ex, ey| (match ex {
 		_ => False
 	})
 })
+
+eq_Person : Person, Person -> Bool
+eq_Person = |ex, ey| ((ex.name == ey.name) and (ex.age == ey.age))
+
+eq_Box2 : Box2, Box2 -> Bool
+eq_Box2 = |ex, ey| (ex.val == ey.val)
 
 # --- Entry ---
 

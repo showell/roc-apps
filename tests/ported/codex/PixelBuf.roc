@@ -4,7 +4,7 @@ import Mem
 PixelBuf :: [].{
 	GopBuf := { gb_base : I64, gb_width : I64, gb_height : I64 }.{
 		is_eq : PixelBuf.GopBuf, PixelBuf.GopBuf -> Bool
-		is_eq = |a, b| a.gb_base == b.gb_base and a.gb_width == b.gb_width and a.gb_height == b.gb_height
+		is_eq = |a, b| eq_GopBuf(a, b)
 	}
 
 	gop_buf_new! : Mem.Mem, I64, I64, I64 => (Mem.Mem, PixelBuf.GopBuf)
@@ -98,4 +98,7 @@ PixelBuf :: [].{
 		rb = (bb + I64.div_trunc_by(((fb - bb) * alpha), 255))
 		gop_buf_set!(mem1, gb, x, y, ((I64.shl_wrap(rr, I64.to_u8_wrap(16)) + I64.shl_wrap(rg, I64.to_u8_wrap(8))) + rb))
 	}) })
+
+	eq_GopBuf : PixelBuf.GopBuf, PixelBuf.GopBuf -> Bool
+	eq_GopBuf = |ex, ey| (((ex.gb_base == ey.gb_base) and (ex.gb_width == ey.gb_width)) and (ex.gb_height == ey.gb_height))
 }

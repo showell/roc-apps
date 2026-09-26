@@ -7,11 +7,11 @@ import Maybe
 Klondike :: [].{
 	Pile := { pile_cards : List(I64), pile_face_up : I64 }.{
 		is_eq : Klondike.Pile, Klondike.Pile -> Bool
-		is_eq = |a, b| a.pile_cards == b.pile_cards and a.pile_face_up == b.pile_face_up
+		is_eq = |a, b| eq_Pile(a, b)
 	}
 	KlondikeState := { kl_tableau : List(Klondike.Pile), kl_foundation : List(List(I64)), kl_stock : List(I64), kl_waste : List(I64), kl_moves : I64 }.{
 		is_eq : Klondike.KlondikeState, Klondike.KlondikeState -> Bool
-		is_eq = |a, b| a.kl_tableau == b.kl_tableau and a.kl_foundation == b.kl_foundation and a.kl_stock == b.kl_stock and a.kl_waste == b.kl_waste and a.kl_moves == b.kl_moves
+		is_eq = |a, b| eq_KlondikeState(a, b)
 	}
 	MoveResult : [MoveOk(Klondike.KlondikeState), MoveErr(CceText)]
 
@@ -254,10 +254,16 @@ Klondike :: [].{
 	kl_rev_loop : List(I64), I64, List(I64) -> List(I64)
 	kl_rev_loop = |xs, i, acc| (if (i < 0) { acc } else { kl_rev_loop(xs, (i - 1), List.append(acc, (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))) })
 
+	eq_Pile : Klondike.Pile, Klondike.Pile -> Bool
+	eq_Pile = |ex, ey| ((ex.pile_cards == ey.pile_cards) and (ex.pile_face_up == ey.pile_face_up))
+
+	eq_KlondikeState : Klondike.KlondikeState, Klondike.KlondikeState -> Bool
+	eq_KlondikeState = |ex, ey| (((((ex.kl_tableau == ey.kl_tableau) and (ex.kl_foundation == ey.kl_foundation)) and (ex.kl_stock == ey.kl_stock)) and (ex.kl_waste == ey.kl_waste)) and (ex.kl_moves == ey.kl_moves))
+
 	eq_MoveResult : Klondike.MoveResult, Klondike.MoveResult -> Bool
 	eq_MoveResult = |ex, ey| (match ex {
 		MoveOk(exf0) => (match ey {
-			MoveOk(eyf0) => (exf0 == eyf0)
+			MoveOk(eyf0) => eq_KlondikeState(exf0, eyf0)
 			_ => False
 		})
 		MoveErr(exf0) => (match ey {

@@ -6,11 +6,11 @@ import Random
 ConsistentHash :: [].{
 	HashRingEntry := { hr_hash : I64, hr_node : I64 }.{
 		is_eq : ConsistentHash.HashRingEntry, ConsistentHash.HashRingEntry -> Bool
-		is_eq = |a, b| a.hr_hash == b.hr_hash and a.hr_node == b.hr_node
+		is_eq = |a, b| eq_HashRingEntry(a, b)
 	}
 	ConsistentHashRing := { hr_entries : List(ConsistentHash.HashRingEntry), hr_count : I64, hr_vnodes : I64 }.{
 		is_eq : ConsistentHash.ConsistentHashRing, ConsistentHash.ConsistentHashRing -> Bool
-		is_eq = |a, b| a.hr_entries == b.hr_entries and a.hr_count == b.hr_count and a.hr_vnodes == b.hr_vnodes
+		is_eq = |a, b| eq_ConsistentHashRing(a, b)
 	}
 
 	chr_new : I64 -> ConsistentHash.ConsistentHashRing
@@ -74,4 +74,10 @@ ConsistentHash :: [].{
 
 	chr_entry_count : ConsistentHash.ConsistentHashRing -> I64
 	chr_entry_count = |ring| ring.hr_count
+
+	eq_HashRingEntry : ConsistentHash.HashRingEntry, ConsistentHash.HashRingEntry -> Bool
+	eq_HashRingEntry = |ex, ey| ((ex.hr_hash == ey.hr_hash) and (ex.hr_node == ey.hr_node))
+
+	eq_ConsistentHashRing : ConsistentHash.ConsistentHashRing, ConsistentHash.ConsistentHashRing -> Bool
+	eq_ConsistentHashRing = |ex, ey| (((ex.hr_entries == ey.hr_entries) and (ex.hr_count == ey.hr_count)) and (ex.hr_vnodes == ey.hr_vnodes))
 }

@@ -7,11 +7,11 @@ Synth :: [].{
 	WaveType : [WaveSine, WaveSquare, WaveSaw, WaveTriangle]
 	LpfState := { lpf_prev : I64, lpf_alpha : I64 }.{
 		is_eq : Synth.LpfState, Synth.LpfState -> Bool
-		is_eq = |a, b| a.lpf_prev == b.lpf_prev and a.lpf_alpha == b.lpf_alpha
+		is_eq = |a, b| eq_LpfState(a, b)
 	}
 	Note := { note_freq : Units.Frequency, note_start : I64, note_duration : I64, note_wave : Synth.WaveType }.{
 		is_eq : Synth.Note, Synth.Note -> Bool
-		is_eq = |a, b| a.note_freq == b.note_freq and a.note_start == b.note_start and a.note_duration == b.note_duration and a.note_wave == b.note_wave
+		is_eq = |a, b| eq_Note(a, b)
 	}
 
 	osc_sine : I64, I64 -> I64
@@ -209,4 +209,10 @@ Synth :: [].{
 			_ => False
 		})
 	})
+
+	eq_LpfState : Synth.LpfState, Synth.LpfState -> Bool
+	eq_LpfState = |ex, ey| ((ex.lpf_prev == ey.lpf_prev) and (ex.lpf_alpha == ey.lpf_alpha))
+
+	eq_Note : Synth.Note, Synth.Note -> Bool
+	eq_Note = |ex, ey| ((((ex.note_freq == ey.note_freq) and (ex.note_start == ey.note_start)) and (ex.note_duration == ey.note_duration)) and eq_WaveType(ex.note_wave, ey.note_wave))
 }

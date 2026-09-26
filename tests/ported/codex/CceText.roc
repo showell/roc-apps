@@ -58,16 +58,16 @@ CceText :: List(U8).{
 
 	# x86's print tables: the code point starting each 128-code slice of tier 1
 	# (`tier1-slice-bases`), and per tier-2 slice the code it ends before and
-	# the delta to its code point, added unsigned in a 64-bit register
-	# (`tier2-rodata`).
+	# the delta to its code point, signed (`tier2-rodata`; since U63 x86 loads
+	# it with `movsxd`, so a negative delta subtracts).
 	x86_t1_bases : List(U64)
-	x86_t1_bases = [192, 320, 1024, 880, 1536, 1424, 2304, 3584, 4352, 19968, 20096, 20224, 20352, 12352, 12480, 8704]
+	x86_t1_bases = [128, 256, 1024, 880, 1536, 1424, 2304, 3584, 4352, 19968, 20096, 20224, 20352, 12352, 12480, 8704]
 
 	x86_t2_end : List(U64)
 	x86_t2_end = [2240, 2336, 2432, 23424, 30016, 41188, 41444, 41956, 42980, 43236]
 
-	x86_t2_delta : List(U64)
-	x86_t2_delta = [10112, 10112, 10112, 17536, 4294957184, 14016, 4294929692, 4294934044, 85788, 4294934044]
+	x86_t2_delta : List(I64)
+	x86_t2_delta = [10112, 10112, 10112, 17536, -10112, 14016, -37604, -33252, 85788, -33252]
 
 	# **A LITERAL IS A CceText** (`from_quote`): a Roc string literal where a CceText
 	# is wanted is its characters' codes, framed, as `of_str` reads a platform's
@@ -300,8 +300,7 @@ CceText :: List(U8).{
 	# 128 is its tier-0 code point; a unit whose top nibble is 1110 starts a
 	# 3-unit tier-2 frame; every other unit from 128 is taken as a 2-unit tier-1
 	# frame. Each byte is the low byte of the shifted value, and a unit past the
-	# end reads as 0. A sequence x86 writes that is not UTF-8 (an overlong code
-	# point from a negative tier-2 delta) arrives as U+FFFD.
+	# end reads as 0. A sequence x86 writes that is not UTF-8 arrives as U+FFFD.
 	printed : CceText -> Str
 	printed = |CceText.(s)| Str.from_utf8_lossy(CceText.print_from(s, 0, []))
 
@@ -324,7 +323,7 @@ CceText :: List(U8).{
 	x86_t2_point : U64, U64 -> U64
 	x86_t2_point = |code, k|
 		if k >= List.len(CceText.x86_t2_end) { 65533 }
-		else if code < (List.get(CceText.x86_t2_end, k) ?? 0) { code + (List.get(CceText.x86_t2_delta, k) ?? 0) }
+		else if code < (List.get(CceText.x86_t2_end, k) ?? 0) { I64.to_u64_wrap(U64.to_i64_wrap(code) + (List.get(CceText.x86_t2_delta, k) ?? 0)) }
 		else { CceText.x86_t2_point(code, k + 1) }
 
 	# A code point in 1, 2 or 3 bytes.

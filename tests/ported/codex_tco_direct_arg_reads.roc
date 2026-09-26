@@ -21,7 +21,7 @@ import cdx.CceText
 line! = |s| echo!(Str.concat(s, "\n"))
 Box_ := { v : I64 }.{
 	is_eq : Box_, Box_ -> Bool
-	is_eq = |a, b| a.v == b.v
+	is_eq = |a, b| eq_Box(a, b)
 }
 
 mk : I64 -> Box_
@@ -32,6 +32,9 @@ loop4 = |i, s, acc, n| (if (i >= n) { acc } else { ({
 	s2 = mk((s.v * 10))
 	loop4((i + 1), s2, (s.v + 1), n)
 }) })
+
+eq_Box : Box_, Box_ -> Bool
+eq_Box = |ex, ey| (ex.v == ey.v)
 
 # --- Entry ---
 

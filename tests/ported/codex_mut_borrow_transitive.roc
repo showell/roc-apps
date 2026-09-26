@@ -21,15 +21,15 @@ import cdx.CceText
 line! = |s| echo!(Str.concat(s, "\n"))
 ScanState := { pos : I64 }.{
 	is_eq : ScanState, ScanState -> Bool
-	is_eq = |a, b| a.pos == b.pos
+	is_eq = |a, b| eq_ScanState(a, b)
 }
 Trivia := { origin : ScanState }.{
 	is_eq : Trivia, Trivia -> Bool
-	is_eq = |a, b| a.origin == b.origin
+	is_eq = |a, b| eq_Trivia(a, b)
 }
 TokenLike := { kind : I64, trivia : List(Trivia) }.{
 	is_eq : TokenLike, TokenLike -> Bool
-	is_eq = |a, b| a.kind == b.kind and a.trivia == b.trivia
+	is_eq = |a, b| eq_TokenLike(a, b)
 }
 
 snapshot : ScanState, I64 -> TokenLike
@@ -41,6 +41,15 @@ scan_twice = |m| ({
 	t2 = snapshot(m, 2)
 	((t1.kind + t2.kind) + m.pos)
 })
+
+eq_ScanState : ScanState, ScanState -> Bool
+eq_ScanState = |ex, ey| (ex.pos == ey.pos)
+
+eq_Trivia : Trivia, Trivia -> Bool
+eq_Trivia = |ex, ey| eq_ScanState(ex.origin, ey.origin)
+
+eq_TokenLike : TokenLike, TokenLike -> Bool
+eq_TokenLike = |ex, ey| ((ex.kind == ey.kind) and (ex.trivia == ey.trivia))
 
 # --- Entry ---
 

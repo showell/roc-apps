@@ -23,11 +23,14 @@ import cdx.CceText
 line! = |s| echo!(Str.concat(s, "\n"))
 Box_ := { items : List(I64) }.{
 	is_eq : Box_, Box_ -> Bool
-	is_eq = |a, b| a.items == b.items
+	is_eq = |a, b| eq_Box(a, b)
 }
 
 probe : List(I64), CceText, I64, I64 -> I64
 probe = |_xs, _name, _i, len| len
+
+eq_Box : Box_, Box_ -> Bool
+eq_Box = |ex, ey| (ex.items == ey.items)
 
 # --- Entry ---
 

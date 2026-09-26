@@ -5,7 +5,7 @@ Locale :: [].{
 	TextDirection : [DirLTR, DirRTL]
 	Locale := { lang_tag : CceText, direction : Locale.TextDirection, decimal_sep : CceText, thousands_sep : CceText, date_order : Locale.DateOrder }.{
 		is_eq : Locale.Locale, Locale.Locale -> Bool
-		is_eq = |a, b| a.lang_tag == b.lang_tag and a.direction == b.direction and a.decimal_sep == b.decimal_sep and a.thousands_sep == b.thousands_sep and a.date_order == b.date_order
+		is_eq = |a, b| eq_Locale(a, b)
 	}
 	DateOrder : [DateYMD, DateMDY, DateDMY]
 
@@ -97,6 +97,9 @@ Locale :: [].{
 			_ => False
 		})
 	})
+
+	eq_Locale : Locale.Locale, Locale.Locale -> Bool
+	eq_Locale = |ex, ey| (((((ex.lang_tag == ey.lang_tag) and eq_TextDirection(ex.direction, ey.direction)) and (ex.decimal_sep == ey.decimal_sep)) and (ex.thousands_sep == ey.thousands_sep)) and eq_DateOrder(ex.date_order, ey.date_order))
 
 	eq_DateOrder : Locale.DateOrder, Locale.DateOrder -> Bool
 	eq_DateOrder = |ex, ey| (match ex {

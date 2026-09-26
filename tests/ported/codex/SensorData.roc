@@ -6,11 +6,11 @@ SensorData :: [].{
 	SensorValue : [IntValue(I64), FixedValue(I64, I64), BoolValue(Bool), Vec3Value(I64, I64, I64)]
 	SensorReading := { kind : SensorData.SensorKind, value : SensorData.SensorValue, timestamp : I64, device_id : CceText }.{
 		is_eq : SensorData.SensorReading, SensorData.SensorReading -> Bool
-		is_eq = |a, b| a.kind == b.kind and a.value == b.value and a.timestamp == b.timestamp and a.device_id == b.device_id
+		is_eq = |a, b| eq_SensorReading(a, b)
 	}
 	TimeSeriesEntry := { timestamp : I64, value : I64 }.{
 		is_eq : SensorData.TimeSeriesEntry, SensorData.TimeSeriesEntry -> Bool
-		is_eq = |a, b| a.timestamp == b.timestamp and a.value == b.value
+		is_eq = |a, b| eq_TimeSeriesEntry(a, b)
 	}
 	AlertCondition : [AboveThreshold(I64), BelowThreshold(I64), OutsideRange(I64, I64), RateOfChange(I64)]
 
@@ -146,6 +146,12 @@ SensorData :: [].{
 			_ => False
 		})
 	})
+
+	eq_SensorReading : SensorData.SensorReading, SensorData.SensorReading -> Bool
+	eq_SensorReading = |ex, ey| (((eq_SensorKind(ex.kind, ey.kind) and eq_SensorValue(ex.value, ey.value)) and (ex.timestamp == ey.timestamp)) and (ex.device_id == ey.device_id))
+
+	eq_TimeSeriesEntry : SensorData.TimeSeriesEntry, SensorData.TimeSeriesEntry -> Bool
+	eq_TimeSeriesEntry = |ex, ey| ((ex.timestamp == ey.timestamp) and (ex.value == ey.value))
 
 	eq_AlertCondition : SensorData.AlertCondition, SensorData.AlertCondition -> Bool
 	eq_AlertCondition = |ex, ey| (match ex {

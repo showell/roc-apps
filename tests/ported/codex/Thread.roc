@@ -3,7 +3,7 @@
 Thread :: [].{
 	ThreadIndex := { ti_value : I64 }.{
 		is_eq : Thread.ThreadIndex, Thread.ThreadIndex -> Bool
-		is_eq = |a, b| a.ti_value == b.ti_value
+		is_eq = |a, b| eq_ThreadIndex(a, b)
 	}
 
 	make_thread_index : I64 -> Thread.ThreadIndex
@@ -11,4 +11,7 @@ Thread :: [].{
 
 	thread_index_get : Thread.ThreadIndex -> I64
 	thread_index_get = |idx| idx.ti_value
+
+	eq_ThreadIndex : Thread.ThreadIndex, Thread.ThreadIndex -> Bool
+	eq_ThreadIndex = |ex, ey| (ex.ti_value == ey.ti_value)
 }

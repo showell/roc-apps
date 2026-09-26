@@ -30,7 +30,7 @@ import cdx.CceText
 line! = |s| echo!(Str.concat(s, "\n"))
 Pct := { p : I64 }.{
 	is_eq : Pct, Pct -> Bool
-	is_eq = |a, b| a.p == b.p
+	is_eq = |a, b| eq_Pct(a, b)
 }
 
 max : I64, I64 -> I64
@@ -64,6 +64,9 @@ add = |x, y| (x + y)
 
 apply : (I64, I64 -> I64), I64, I64 -> I64
 apply = |f, a, b| f(a, b)
+
+eq_Pct : Pct, Pct -> Bool
+eq_Pct = |ex, ey| (ex.p == ey.p)
 
 # --- Entry ---
 

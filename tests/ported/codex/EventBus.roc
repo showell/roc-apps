@@ -5,11 +5,11 @@ import Maybe
 EventBus :: [].{
 	BusEvent := { evt_topic : CceText, evt_payload : CceText, evt_timestamp : I64 }.{
 		is_eq : EventBus.BusEvent, EventBus.BusEvent -> Bool
-		is_eq = |a, b| a.evt_topic == b.evt_topic and a.evt_payload == b.evt_payload and a.evt_timestamp == b.evt_timestamp
+		is_eq = |a, b| eq_BusEvent(a, b)
 	}
 	EventLog := { log_events : List(EventBus.BusEvent), log_count : I64, log_max : I64 }.{
 		is_eq : EventBus.EventLog, EventBus.EventLog -> Bool
-		is_eq = |a, b| a.log_events == b.log_events and a.log_count == b.log_count and a.log_max == b.log_max
+		is_eq = |a, b| eq_EventLog(a, b)
 	}
 
 	event_new : CceText, CceText, I64 -> EventBus.BusEvent
@@ -60,4 +60,10 @@ EventBus :: [].{
 
 	evt_format_event_log : EventBus.EventLog -> CceText
 	evt_format_event_log = |log| CceText.concat(CceText.concat(CceText.concat(CceText.show_int(log.log_count), "/"), CceText.show_int(log.log_max)), " events")
+
+	eq_BusEvent : EventBus.BusEvent, EventBus.BusEvent -> Bool
+	eq_BusEvent = |ex, ey| (((ex.evt_topic == ey.evt_topic) and (ex.evt_payload == ey.evt_payload)) and (ex.evt_timestamp == ey.evt_timestamp))
+
+	eq_EventLog : EventBus.EventLog, EventBus.EventLog -> Bool
+	eq_EventLog = |ex, ey| (((ex.log_events == ey.log_events) and (ex.log_count == ey.log_count)) and (ex.log_max == ey.log_max))
 }

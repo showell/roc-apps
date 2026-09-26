@@ -4,11 +4,11 @@ import CceText
 Color :: [].{
 	Rgb := { cr : I64, cg : I64, cb : I64 }.{
 		is_eq : Color.Rgb, Color.Rgb -> Bool
-		is_eq = |a, b| a.cr == b.cr and a.cg == b.cg and a.cb == b.cb
+		is_eq = |a, b| eq_Rgb(a, b)
 	}
 	Hsl := { ch : I64, cs : I64, cl : I64 }.{
 		is_eq : Color.Hsl, Color.Hsl -> Bool
-		is_eq = |a, b| a.ch == b.ch and a.cs == b.cs and a.cl == b.cl
+		is_eq = |a, b| eq_Hsl(a, b)
 	}
 	RainbowPalette : [PalRainbow, PalWarm, PalCool, PalPastel, PalNeon, PalFire, PalOcean, PalForest, PalMiami, PalMatrix, PalSakura, PalAurora]
 
@@ -217,6 +217,12 @@ Color :: [].{
 
 	col_hex_digit : I64 -> CceText
 	col_hex_digit = |d| (if (d == 0) { "0" } else { (if (d == 1) { "1" } else { (if (d == 2) { "2" } else { (if (d == 3) { "3" } else { (if (d == 4) { "4" } else { (if (d == 5) { "5" } else { (if (d == 6) { "6" } else { (if (d == 7) { "7" } else { (if (d == 8) { "8" } else { (if (d == 9) { "9" } else { (if (d == 10) { "a" } else { (if (d == 11) { "b" } else { (if (d == 12) { "c" } else { (if (d == 13) { "d" } else { (if (d == 14) { "e" } else { "f" }) }) }) }) }) }) }) }) }) }) }) }) }) }) })
+
+	eq_Rgb : Color.Rgb, Color.Rgb -> Bool
+	eq_Rgb = |ex, ey| (((ex.cr == ey.cr) and (ex.cg == ey.cg)) and (ex.cb == ey.cb))
+
+	eq_Hsl : Color.Hsl, Color.Hsl -> Bool
+	eq_Hsl = |ex, ey| (((ex.ch == ey.ch) and (ex.cs == ey.cs)) and (ex.cl == ey.cl))
 
 	eq_RainbowPalette : Color.RainbowPalette, Color.RainbowPalette -> Bool
 	eq_RainbowPalette = |ex, ey| (match ex {

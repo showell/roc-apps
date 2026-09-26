@@ -25,7 +25,7 @@ import cdx.CceText
 line! = |s| echo!(Str.concat(s, "\n"))
 Account := { balance : I64, name : CceText }.{
 	is_eq : Account, Account -> Bool
-	is_eq = |a, b| a.balance == b.balance and a.name == b.name
+	is_eq = |a, b| eq_Account(a, b)
 }
 Status : [Active, Closed]
 
@@ -46,6 +46,9 @@ account_size = 16
 
 sum_balances : List(Account), I64, I64 -> I64
 sum_balances = |accounts, i, acc| (if (i >= U64.to_i64_wrap(List.len(accounts))) { acc } else { sum_balances(accounts, (i + 1), (acc + (List.get(accounts, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).balance)) })
+
+eq_Account : Account, Account -> Bool
+eq_Account = |ex, ey| ((ex.balance == ey.balance) and (ex.name == ey.name))
 
 eq_Status : Status, Status -> Bool
 eq_Status = |ex, ey| (match ex {

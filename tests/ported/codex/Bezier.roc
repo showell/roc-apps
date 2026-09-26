@@ -5,7 +5,7 @@ import MathLib
 Bezier :: [].{
 	BezVec := { vx : I64, vy : I64, vz : I64 }.{
 		is_eq : Bezier.BezVec, Bezier.BezVec -> Bool
-		is_eq = |a, b| a.vx == b.vx and a.vy == b.vy and a.vz == b.vz
+		is_eq = |a, b| eq_BezVec(a, b)
 	}
 
 	bez_lerp : Bezier.BezVec, Bezier.BezVec, I64 -> Bezier.BezVec
@@ -51,4 +51,7 @@ Bezier :: [].{
 
 	format_bezier_point : Bezier.BezVec -> CceText
 	format_bezier_point = |v| CceText.concat(CceText.concat(CceText.concat(CceText.concat("(", CceText.show_int(v.vx)), ","), CceText.show_int(v.vy)), ")")
+
+	eq_BezVec : Bezier.BezVec, Bezier.BezVec -> Bool
+	eq_BezVec = |ex, ey| (((ex.vx == ey.vx) and (ex.vy == ey.vy)) and (ex.vz == ey.vz))
 }

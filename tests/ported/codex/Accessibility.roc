@@ -7,7 +7,7 @@ Accessibility :: [].{
 	A11yLive : [LiveOff, LivePolite, LiveAssertive]
 	A11yInfo := { ai_role : Accessibility.A11yRole, ai_label : CceText, ai_description : CceText, ai_live : Accessibility.A11yLive, ai_tab_index : I64, ai_hidden : Bool, ai_expanded : Maybe.Maybe(Bool), ai_checked : Maybe.Maybe(Bool), ai_value_now : I64, ai_value_min : I64, ai_value_max : I64 }.{
 		is_eq : Accessibility.A11yInfo, Accessibility.A11yInfo -> Bool
-		is_eq = |a, b| a.ai_role == b.ai_role and a.ai_label == b.ai_label and a.ai_description == b.ai_description and a.ai_live == b.ai_live and a.ai_tab_index == b.ai_tab_index and a.ai_hidden == b.ai_hidden and a.ai_expanded == b.ai_expanded and a.ai_checked == b.ai_checked and a.ai_value_now == b.ai_value_now and a.ai_value_min == b.ai_value_min and a.ai_value_max == b.ai_value_max
+		is_eq = |a, b| eq_A11yInfo(a, b)
 	}
 
 	a11y_empty : Accessibility.A11yInfo
@@ -185,4 +185,7 @@ Accessibility :: [].{
 			_ => False
 		})
 	})
+
+	eq_A11yInfo : Accessibility.A11yInfo, Accessibility.A11yInfo -> Bool
+	eq_A11yInfo = |ex, ey| ((((((((((eq_A11yRole(ex.ai_role, ey.ai_role) and (ex.ai_label == ey.ai_label)) and (ex.ai_description == ey.ai_description)) and eq_A11yLive(ex.ai_live, ey.ai_live)) and (ex.ai_tab_index == ey.ai_tab_index)) and (ex.ai_hidden == ey.ai_hidden)) and Maybe.eq_Maybe(ex.ai_expanded, ey.ai_expanded)) and Maybe.eq_Maybe(ex.ai_checked, ey.ai_checked)) and (ex.ai_value_now == ey.ai_value_now)) and (ex.ai_value_min == ey.ai_value_min)) and (ex.ai_value_max == ey.ai_value_max))
 }

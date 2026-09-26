@@ -44,27 +44,27 @@ import cdx.CceText
 line! = |s| echo!(Str.concat(s, "\n"))
 WrapU8 := { v : I64 }.{
 	is_eq : WrapU8, WrapU8 -> Bool
-	is_eq = |a, b| a.v == b.v
+	is_eq = |a, b| eq_WrapU8(a, b)
 }
 WrapI8 := { v : I64 }.{
 	is_eq : WrapI8, WrapI8 -> Bool
-	is_eq = |a, b| a.v == b.v
+	is_eq = |a, b| eq_WrapI8(a, b)
 }
 ClampU8 := { v : I64 }.{
 	is_eq : ClampU8, ClampU8 -> Bool
-	is_eq = |a, b| a.v == b.v
+	is_eq = |a, b| eq_ClampU8(a, b)
 }
 ClampI8 := { v : I64 }.{
 	is_eq : ClampI8, ClampI8 -> Bool
-	is_eq = |a, b| a.v == b.v
+	is_eq = |a, b| eq_ClampI8(a, b)
 }
 ClampU32 := { v : I64 }.{
 	is_eq : ClampU32, ClampU32 -> Bool
-	is_eq = |a, b| a.v == b.v
+	is_eq = |a, b| eq_ClampU32(a, b)
 }
 ClampBig := { v : I64 }.{
 	is_eq : ClampBig, ClampBig -> Bool
-	is_eq = |a, b| a.v == b.v
+	is_eq = |a, b| eq_ClampBig(a, b)
 }
 
 wu8 : I64 -> I64
@@ -87,6 +87,24 @@ cbig = |n| ClampBig.{ v: I64.min(I64.max(n, 0), 10000000000) }.v
 
 wrap_add : I64, I64 -> I64
 wrap_add = |a, b| wu8((wu8(a) + wu8(b)))
+
+eq_WrapU8 : WrapU8, WrapU8 -> Bool
+eq_WrapU8 = |ex, ey| (ex.v == ey.v)
+
+eq_WrapI8 : WrapI8, WrapI8 -> Bool
+eq_WrapI8 = |ex, ey| (ex.v == ey.v)
+
+eq_ClampU8 : ClampU8, ClampU8 -> Bool
+eq_ClampU8 = |ex, ey| (ex.v == ey.v)
+
+eq_ClampI8 : ClampI8, ClampI8 -> Bool
+eq_ClampI8 = |ex, ey| (ex.v == ey.v)
+
+eq_ClampU32 : ClampU32, ClampU32 -> Bool
+eq_ClampU32 = |ex, ey| (ex.v == ey.v)
+
+eq_ClampBig : ClampBig, ClampBig -> Bool
+eq_ClampBig = |ex, ey| (ex.v == ey.v)
 
 # --- Entry ---
 

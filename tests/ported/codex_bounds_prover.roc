@@ -30,15 +30,15 @@ import cdx.Prelude
 line! = |s| echo!(Str.concat(s, "\n"))
 Byte := { val : I64 }.{
 	is_eq : Byte, Byte -> Bool
-	is_eq = |a, b| a.val == b.val
+	is_eq = |a, b| eq_Byte(a, b)
 }
 Pct := { val : I64 }.{
 	is_eq : Pct, Pct -> Bool
-	is_eq = |a, b| a.val == b.val
+	is_eq = |a, b| eq_Pct(a, b)
 }
 Small := { val : I64 }.{
 	is_eq : Small, Small -> Bool
-	is_eq = |a, b| a.val == b.val
+	is_eq = |a, b| eq_Small(a, b)
 }
 
 from_literal : Byte
@@ -83,6 +83,15 @@ from_negate = |a| ({
 	x = Pct.{ val: a }
 	Small.{ val: (-(-x.val)) }
 })
+
+eq_Byte : Byte, Byte -> Bool
+eq_Byte = |ex, ey| (ex.val == ey.val)
+
+eq_Pct : Pct, Pct -> Bool
+eq_Pct = |ex, ey| (ex.val == ey.val)
+
+eq_Small : Small, Small -> Bool
+eq_Small = |ex, ey| (ex.val == ey.val)
 
 # --- Entry ---
 

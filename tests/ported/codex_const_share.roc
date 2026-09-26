@@ -41,7 +41,7 @@ import cdx.Mem
 line! = |s| echo!(Str.concat(s, "\n"))
 Holder := { h_read : List(I64), h_direct : List(I64), h_fn : List(I64), h_alias : List(I64) }.{
 	is_eq : Holder, Holder -> Bool
-	is_eq = |a, b| a.h_read == b.h_read and a.h_direct == b.h_direct and a.h_fn == b.h_fn and a.h_alias == b.h_alias
+	is_eq = |a, b| eq_Holder(a, b)
 }
 
 table : List(I64)
@@ -279,6 +279,9 @@ field_alias = ({
 	a = t_v1
 	(((List.get(a, I64.to_u64_wrap(0)) ?? crash("list-at out of range")) * 1000) + (List.get(f_alias, I64.to_u64_wrap(0)) ?? crash("list-at out of range")))
 })
+
+eq_Holder : Holder, Holder -> Bool
+eq_Holder = |ex, ey| ((((ex.h_read == ey.h_read) and (ex.h_direct == ey.h_direct)) and (ex.h_fn == ey.h_fn)) and (ex.h_alias == ey.h_alias))
 
 lam_0 : I64 -> List(I64)
 lam_0 = |i| (List.set(w_lambda, I64.to_u64_wrap(i), 99) ?? crash("list-set-at past the end"))

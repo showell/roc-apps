@@ -5,7 +5,7 @@ import Maybe
 BigInt :: [].{
 	BigInt := { bi_sign : I64, bi_limbs : List(I64) }.{
 		is_eq : BigInt.BigInt, BigInt.BigInt -> Bool
-		is_eq = |a, b| a.bi_sign == b.bi_sign and a.bi_limbs == b.bi_limbs
+		is_eq = |a, b| eq_BigInt(a, b)
 	}
 
 	bigint_base : I64
@@ -248,4 +248,7 @@ BigInt :: [].{
 
 	bigint_mod : BigInt.BigInt, BigInt.BigInt -> BigInt.BigInt
 	bigint_mod = |a, b| bigint_sub(a, bigint_mul(bigint_divmod(a, b), b))
+
+	eq_BigInt : BigInt.BigInt, BigInt.BigInt -> Bool
+	eq_BigInt = |ex, ey| ((ex.bi_sign == ey.bi_sign) and (ex.bi_limbs == ey.bi_limbs))
 }

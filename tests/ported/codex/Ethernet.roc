@@ -3,7 +3,7 @@
 Ethernet :: [].{
 	ArpPacket := { op : I64, sender_mac : List(I64), sender_ip : List(I64), target_mac : List(I64), target_ip : List(I64) }.{
 		is_eq : Ethernet.ArpPacket, Ethernet.ArpPacket -> Bool
-		is_eq = |a, b| a.op == b.op and a.sender_mac == b.sender_mac and a.sender_ip == b.sender_ip and a.target_mac == b.target_mac and a.target_ip == b.target_ip
+		is_eq = |a, b| eq_ArpPacket(a, b)
 	}
 
 	eth_type_ipv4 : I64
@@ -175,4 +175,7 @@ Ethernet :: [].{
 
 	ip_payload : List(I64) -> List(I64)
 	ip_payload = |pkt| eth_payload_loop(pkt, ip_header_size, read_be16(pkt, 2), [])
+
+	eq_ArpPacket : Ethernet.ArpPacket, Ethernet.ArpPacket -> Bool
+	eq_ArpPacket = |ex, ey| (((((ex.op == ey.op) and (ex.sender_mac == ey.sender_mac)) and (ex.sender_ip == ey.sender_ip)) and (ex.target_mac == ey.target_mac)) and (ex.target_ip == ey.target_ip))
 }

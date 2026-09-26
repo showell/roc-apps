@@ -3,11 +3,11 @@
 Cordic :: [].{
 	CordicResult := { cos_val : I64, sin_val : I64 }.{
 		is_eq : Cordic.CordicResult, Cordic.CordicResult -> Bool
-		is_eq = |a, b| a.cos_val == b.cos_val and a.sin_val == b.sin_val
+		is_eq = |a, b| eq_CordicResult(a, b)
 	}
 	CordicVector := { angle : I64, magnitude : I64 }.{
 		is_eq : Cordic.CordicVector, Cordic.CordicVector -> Bool
-		is_eq = |a, b| a.angle == b.angle and a.magnitude == b.magnitude
+		is_eq = |a, b| eq_CordicVector(a, b)
 	}
 
 	cordic_scale : I64
@@ -111,4 +111,10 @@ Cordic :: [].{
 		next = I64.div_trunc_by((guess + I64.div_trunc_by(n, guess)), 2)
 		(if (next >= guess) { guess } else { cordic_sqrt_loop(n, next) })
 	})
+
+	eq_CordicResult : Cordic.CordicResult, Cordic.CordicResult -> Bool
+	eq_CordicResult = |ex, ey| ((ex.cos_val == ey.cos_val) and (ex.sin_val == ey.sin_val))
+
+	eq_CordicVector : Cordic.CordicVector, Cordic.CordicVector -> Bool
+	eq_CordicVector = |ex, ey| ((ex.angle == ey.angle) and (ex.magnitude == ey.magnitude))
 }

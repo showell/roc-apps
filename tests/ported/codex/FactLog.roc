@@ -1,5 +1,4 @@
 # FactLog -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
-import CceChar
 import CceText
 import Mem
 
@@ -91,14 +90,15 @@ FactLog :: [].{
 	})
 
 	fl_text! : Mem.Mem, I64, I64, I64 => (Mem.Mem, CceText)
-	fl_text! = |mem, buf, off, len| fl_text_loop!(mem, buf, off, len, 0, "")
+	fl_text! = |mem, buf, off, len| ({
+		(mem1, mem__1) = fl_text_loop!(mem, buf, off, len, 0, List.with_capacity(I64.to_u64_wrap((len + 1))))
+		(mem1, CceText.of_bytes(mem__1))
+	})
 
-	fl_text_loop! : Mem.Mem, I64, I64, I64, I64, CceText => (Mem.Mem, CceText)
+	fl_text_loop! : Mem.Mem, I64, I64, I64, I64, List(I64) => (Mem.Mem, List(I64))
 	fl_text_loop! = |mem, buf, off, len, i, acc| (if (i >= len) { (mem, acc) } else { ({
 		(mem1, mem__1) = Mem.load!(mem, buf, (off + i), 1)
-		ch : CceText
-		ch = CceText.char_to_text(CceChar.of_code(mem__1))
-		fl_text_loop!(mem1, buf, off, len, (i + 1), CceText.concat(acc, ch))
+		fl_text_loop!(mem1, buf, off, len, (i + 1), List.append(acc, mem__1))
 	}) })
 
 	fl_sectors_for : I64 -> I64

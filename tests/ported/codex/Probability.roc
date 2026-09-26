@@ -3,19 +3,19 @@
 Probability :: [].{
 	NormalDist := { mu : I64, sigma : I64 }.{
 		is_eq : Probability.NormalDist, Probability.NormalDist -> Bool
-		is_eq = |a, b| a.mu == b.mu and a.sigma == b.sigma
+		is_eq = |a, b| eq_NormalDist(a, b)
 	}
 	PoissonDist := { lambda : I64 }.{
 		is_eq : Probability.PoissonDist, Probability.PoissonDist -> Bool
-		is_eq = |a, b| a.lambda == b.lambda
+		is_eq = |a, b| eq_PoissonDist(a, b)
 	}
 	BinomialDist := { n : I64, p : I64 }.{
 		is_eq : Probability.BinomialDist, Probability.BinomialDist -> Bool
-		is_eq = |a, b| a.n == b.n and a.p == b.p
+		is_eq = |a, b| eq_BinomialDist(a, b)
 	}
 	ExponentialDist := { lambda : I64 }.{
 		is_eq : Probability.ExponentialDist, Probability.ExponentialDist -> Bool
-		is_eq = |a, b| a.lambda == b.lambda
+		is_eq = |a, b| eq_ExponentialDist(a, b)
 	}
 
 	prob_sqrt_2pi : I64
@@ -172,4 +172,16 @@ Probability :: [].{
 
 	prob_choose_loop : I64, I64, I64, I64 -> I64
 	prob_choose_loop = |n, k, acc, i| (if (i >= k) { acc } else { prob_choose_loop(n, k, I64.div_trunc_by((acc * (n - i)), (i + 1)), (i + 1)) })
+
+	eq_NormalDist : Probability.NormalDist, Probability.NormalDist -> Bool
+	eq_NormalDist = |ex, ey| ((ex.mu == ey.mu) and (ex.sigma == ey.sigma))
+
+	eq_PoissonDist : Probability.PoissonDist, Probability.PoissonDist -> Bool
+	eq_PoissonDist = |ex, ey| (ex.lambda == ey.lambda)
+
+	eq_BinomialDist : Probability.BinomialDist, Probability.BinomialDist -> Bool
+	eq_BinomialDist = |ex, ey| ((ex.n == ey.n) and (ex.p == ey.p))
+
+	eq_ExponentialDist : Probability.ExponentialDist, Probability.ExponentialDist -> Bool
+	eq_ExponentialDist = |ex, ey| (ex.lambda == ey.lambda)
 }

@@ -1,0 +1,34 @@
+# ops@tier1-latin-print
+#
+# Ported from Cobblestone's Codex test suite, not written for Roc.
+#
+#   from      https://github.com/damiant3/Cobblestone/blob/master/codex/test/ops@tier1-latin-print.codex
+#   emitted   by rocemit, https://github.com/showell/roc-apps (Codex -> Roc)
+#
+# The chapters it imports are in ./codex, a package of the Codex chapters
+# these tests are emitted from. Written by tests/package.py. Do not edit.
+#
+# Expected stdout:
+#     slice 0: ß ¿
+#     slice 1: ğ ş Œ
+#     slice 2: Ж
+#     slice 3: Ω
+
+app [main!] { cdx: "./codex/main.roc" }
+
+import cdx.CceText
+
+# TierOneLatinPrint -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+
+# The Echo platform's echo! writes no newline; a Codex line is one.
+line! = |s| echo!(Str.concat(s, "\n"))
+
+# --- Entry ---
+
+main! = |_args| {
+	line!(CceText.printed("slice 0: ß ¿"))
+	line!(CceText.printed("slice 1: ğ ş Œ"))
+	line!(CceText.printed("slice 2: Ж"))
+	line!(CceText.printed("slice 3: Ω"))
+	Ok({})
+}

@@ -6,7 +6,7 @@ import Maybe
 CircularBuffer :: [].{
 	CircBuf := { cb_data : List(I64), cb_head : I64, cb_tail : I64, cb_count : I64, cb_capacity : I64 }.{
 		is_eq : CircularBuffer.CircBuf, CircularBuffer.CircBuf -> Bool
-		is_eq = |a, b| a.cb_data == b.cb_data and a.cb_head == b.cb_head and a.cb_tail == b.cb_tail and a.cb_count == b.cb_count and a.cb_capacity == b.cb_capacity
+		is_eq = |a, b| eq_CircBuf(a, b)
 	}
 
 	circbuf_new : I64 -> CircularBuffer.CircBuf
@@ -80,4 +80,7 @@ CircularBuffer :: [].{
 		val = (List.get(buf.cb_data, I64.to_u64_wrap(MathLib.math_mod((buf.cb_head + i), buf.cb_capacity))) ?? crash("list-at out of range"))
 		circbuf_sum_loop(buf, (i + 1), n, (acc + val))
 	}) })
+
+	eq_CircBuf : CircularBuffer.CircBuf, CircularBuffer.CircBuf -> Bool
+	eq_CircBuf = |ex, ey| (((((ex.cb_data == ey.cb_data) and (ex.cb_head == ey.cb_head)) and (ex.cb_tail == ey.cb_tail)) and (ex.cb_count == ey.cb_count)) and (ex.cb_capacity == ey.cb_capacity))
 }

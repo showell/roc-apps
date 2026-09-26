@@ -6,15 +6,15 @@ import Random
 GeneticAlgorithm :: [].{
 	GaChromosome := { genes : List(I64), gene_count : I64 }.{
 		is_eq : GeneticAlgorithm.GaChromosome, GeneticAlgorithm.GaChromosome -> Bool
-		is_eq = |a, b| a.genes == b.genes and a.gene_count == b.gene_count
+		is_eq = |a, b| eq_GaChromosome(a, b)
 	}
 	GaPopulation := { individuals : List(GeneticAlgorithm.GaChromosome), fitness : List(I64), pop_size : I64, gene_count : I64, generation : I64 }.{
 		is_eq : GeneticAlgorithm.GaPopulation, GeneticAlgorithm.GaPopulation -> Bool
-		is_eq = |a, b| a.individuals == b.individuals and a.fitness == b.fitness and a.pop_size == b.pop_size and a.gene_count == b.gene_count and a.generation == b.generation
+		is_eq = |a, b| eq_GaPopulation(a, b)
 	}
 	GaConfig := { mutation_rate : I64, crossover_rate : I64, tournament_size : I64, gene_min : I64, gene_max : I64 }.{
 		is_eq : GeneticAlgorithm.GaConfig, GeneticAlgorithm.GaConfig -> Bool
-		is_eq = |a, b| a.mutation_rate == b.mutation_rate and a.crossover_rate == b.crossover_rate and a.tournament_size == b.tournament_size and a.gene_min == b.gene_min and a.gene_max == b.gene_max
+		is_eq = |a, b| eq_GaConfig(a, b)
 	}
 
 	ga_config_default : GeneticAlgorithm.GaConfig
@@ -194,4 +194,13 @@ GeneticAlgorithm :: [].{
 		sep = (if (i == 0) { "" } else { "," })
 		ga_fmt_genes(genes, (i + 1), len, CceText.concat(CceText.concat(acc, sep), CceText.show_int((List.get(genes, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))))
 	}) })
+
+	eq_GaChromosome : GeneticAlgorithm.GaChromosome, GeneticAlgorithm.GaChromosome -> Bool
+	eq_GaChromosome = |ex, ey| ((ex.genes == ey.genes) and (ex.gene_count == ey.gene_count))
+
+	eq_GaPopulation : GeneticAlgorithm.GaPopulation, GeneticAlgorithm.GaPopulation -> Bool
+	eq_GaPopulation = |ex, ey| (((((ex.individuals == ey.individuals) and (ex.fitness == ey.fitness)) and (ex.pop_size == ey.pop_size)) and (ex.gene_count == ey.gene_count)) and (ex.generation == ey.generation))
+
+	eq_GaConfig : GeneticAlgorithm.GaConfig, GeneticAlgorithm.GaConfig -> Bool
+	eq_GaConfig = |ex, ey| (((((ex.mutation_rate == ey.mutation_rate) and (ex.crossover_rate == ey.crossover_rate)) and (ex.tournament_size == ey.tournament_size)) and (ex.gene_min == ey.gene_min)) and (ex.gene_max == ey.gene_max))
 }

@@ -9,7 +9,7 @@
 # these tests are emitted from. Written by tests/package.py. Do not edit.
 #
 # Expected stdout:
-#     2004
+#     2002
 
 app [main!] {}
 
@@ -24,12 +24,9 @@ ordinary = |n| ((n + 1) + 1000)
 extra : I64
 extra = 1000
 
-unchanged : I64 -> I64
-unchanged = |n| (n + 1)
-
 # --- Entry ---
 
 main! = |_args| {
-	line!(I64.to_str(((ordinary(1) + extra) + unchanged(1))))
+	line!(I64.to_str((ordinary(1) + extra)))
 	Ok({})
 }

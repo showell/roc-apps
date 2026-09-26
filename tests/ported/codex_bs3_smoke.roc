@@ -24,11 +24,11 @@ line! = |s| echo!(Str.concat(s, "\n"))
 Maybe2(a) : [Just2(a), None2]
 Def := { name : CceText, body : CceText }.{
 	is_eq : Def, Def -> Bool
-	is_eq = |a, b| a.name == b.name and a.body == b.body
+	is_eq = |a, b| eq_Def(a, b)
 }
 Thing := { th_name : CceText, th_body : CceText }.{
 	is_eq : Thing, Thing -> Bool
-	is_eq = |a, b| a.th_name == b.th_name and a.th_body == b.th_body
+	is_eq = |a, b| eq_Thing(a, b)
 }
 Holder : [Plain(Thing)]
 Box2(a) : [Box2(a)]
@@ -61,10 +61,16 @@ eq_Maybe2 = |ex, ey| (match ex {
 	})
 })
 
+eq_Def : Def, Def -> Bool
+eq_Def = |ex, ey| ((ex.name == ey.name) and (ex.body == ey.body))
+
+eq_Thing : Thing, Thing -> Bool
+eq_Thing = |ex, ey| ((ex.th_name == ey.th_name) and (ex.th_body == ey.th_body))
+
 eq_Holder : Holder, Holder -> Bool
 eq_Holder = |ex, ey| (match ex {
 	Plain(exf0) => (match ey {
-		Plain(eyf0) => (exf0 == eyf0)
+		Plain(eyf0) => eq_Thing(exf0, eyf0)
 		_ => False
 	})
 })

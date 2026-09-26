@@ -4,7 +4,7 @@ Barrier :: [].{
 	MBarrierState : [MBUninit, MBReady, MBInvalidated]
 	MBarrier := { mb_id : I64, mb_expected : I64, mb_state : Barrier.MBarrierState }.{
 		is_eq : Barrier.MBarrier, Barrier.MBarrier -> Bool
-		is_eq = |a, b| a.mb_id == b.mb_id and a.mb_expected == b.mb_expected and a.mb_state == b.mb_state
+		is_eq = |a, b| eq_MBarrier(a, b)
 	}
 
 	eq_MBarrierState : Barrier.MBarrierState, Barrier.MBarrierState -> Bool
@@ -22,4 +22,7 @@ Barrier :: [].{
 			_ => False
 		})
 	})
+
+	eq_MBarrier : Barrier.MBarrier, Barrier.MBarrier -> Bool
+	eq_MBarrier = |ex, ey| (((ex.mb_id == ey.mb_id) and (ex.mb_expected == ey.mb_expected)) and eq_MBarrierState(ex.mb_state, ey.mb_state))
 }

@@ -4,7 +4,7 @@ import CceText
 Tensor :: [].{
 	Tensor := { data : List(I64), rows : I64, cols : I64 }.{
 		is_eq : Tensor.Tensor, Tensor.Tensor -> Bool
-		is_eq = |a, b| a.data == b.data and a.rows == b.rows and a.cols == b.cols
+		is_eq = |a, b| eq_Tensor(a, b)
 	}
 
 	tensor_new : I64, I64 -> Tensor.Tensor
@@ -99,4 +99,7 @@ Tensor :: [].{
 
 	tensor_shape : Tensor.Tensor -> CceText
 	tensor_shape = |t| CceText.concat(CceText.concat(CceText.show_int(t.rows), "x"), CceText.show_int(t.cols))
+
+	eq_Tensor : Tensor.Tensor, Tensor.Tensor -> Bool
+	eq_Tensor = |ex, ey| (((ex.data == ey.data) and (ex.rows == ey.rows)) and (ex.cols == ey.cols))
 }

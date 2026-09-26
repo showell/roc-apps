@@ -4,7 +4,7 @@ import Maybe
 Asn1 :: [].{
 	Asn1Tlv := { tlv_tag : I64, tlv_hdr : I64, tlv_off : I64, tlv_len : I64 }.{
 		is_eq : Asn1.Asn1Tlv, Asn1.Asn1Tlv -> Bool
-		is_eq = |a, b| a.tlv_tag == b.tlv_tag and a.tlv_hdr == b.tlv_hdr and a.tlv_off == b.tlv_off and a.tlv_len == b.tlv_len
+		is_eq = |a, b| eq_Asn1Tlv(a, b)
 	}
 
 	asn1_boolean : I64
@@ -153,4 +153,7 @@ Asn1 :: [].{
 
 	asn1_nth : List(Asn1.Asn1Tlv), I64 -> Maybe.Maybe(Asn1.Asn1Tlv)
 	asn1_nth = |ts, i| (if (i < 0) { None } else { (if (i >= U64.to_i64_wrap(List.len(ts))) { None } else { Just((List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))) }) })
+
+	eq_Asn1Tlv : Asn1.Asn1Tlv, Asn1.Asn1Tlv -> Bool
+	eq_Asn1Tlv = |ex, ey| ((((ex.tlv_tag == ey.tlv_tag) and (ex.tlv_hdr == ey.tlv_hdr)) and (ex.tlv_off == ey.tlv_off)) and (ex.tlv_len == ey.tlv_len))
 }

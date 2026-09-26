@@ -27,7 +27,7 @@ line! = |s| echo!(Str.concat(s, "\n"))
 ThreatLevel : [None, Low, Medium, High, Critical]
 SensorReading := { bearing : I64, range_m : I64, velocity : I64, ir_signal : I64 }.{
 	is_eq : SensorReading, SensorReading -> Bool
-	is_eq = |a, b| a.bearing == b.bearing and a.range_m == b.range_m and a.velocity == b.velocity and a.ir_signal == b.ir_signal
+	is_eq = |a, b| eq_SensorReading(a, b)
 }
 Countermeasure : [NoAction, Chaff, Flare, Jam, Evade]
 
@@ -97,6 +97,9 @@ eq_ThreatLevel = |ex, ey| (match ex {
 		_ => False
 	})
 })
+
+eq_SensorReading : SensorReading, SensorReading -> Bool
+eq_SensorReading = |ex, ey| ((((ex.bearing == ey.bearing) and (ex.range_m == ey.range_m)) and (ex.velocity == ey.velocity)) and (ex.ir_signal == ey.ir_signal))
 
 eq_Countermeasure : Countermeasure, Countermeasure -> Bool
 eq_Countermeasure = |ex, ey| (match ex {

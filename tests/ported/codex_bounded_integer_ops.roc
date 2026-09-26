@@ -27,15 +27,15 @@ import cdx.Prelude
 line! = |s| echo!(Str.concat(s, "\n"))
 Byte := { val : I64 }.{
 	is_eq : Byte, Byte -> Bool
-	is_eq = |a, b| a.val == b.val
+	is_eq = |a, b| eq_Byte(a, b)
 }
 Port := { num : I64 }.{
 	is_eq : Port, Port -> Bool
-	is_eq = |a, b| a.num == b.num
+	is_eq = |a, b| eq_Port(a, b)
 }
 Pair := { lo : I64, hi : I64 }.{
 	is_eq : Pair, Pair -> Bool
-	is_eq = |a, b| a.lo == b.lo and a.hi == b.hi
+	is_eq = |a, b| eq_Pair(a, b)
 }
 
 make_byte : I64 -> Byte
@@ -55,6 +55,15 @@ join_pair = |p| ((p.hi * 256) + p.lo)
 
 sum_bytes_acc : List(Byte), I64, I64 -> I64
 sum_bytes_acc = |bs, i, acc| (if (i == U64.to_i64_wrap(List.len(bs))) { acc } else { sum_bytes_acc(bs, (i + 1), (acc + (List.get(bs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).val)) })
+
+eq_Byte : Byte, Byte -> Bool
+eq_Byte = |ex, ey| (ex.val == ey.val)
+
+eq_Port : Port, Port -> Bool
+eq_Port = |ex, ey| (ex.num == ey.num)
+
+eq_Pair : Pair, Pair -> Bool
+eq_Pair = |ex, ey| ((ex.lo == ey.lo) and (ex.hi == ey.hi))
 
 # --- Entry ---
 

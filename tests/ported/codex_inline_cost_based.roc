@@ -21,7 +21,7 @@ import cdx.CceText
 line! = |s| echo!(Str.concat(s, "\n"))
 PBox := { first : I64, second : I64, tag : I64 }.{
 	is_eq : PBox, PBox -> Bool
-	is_eq = |a, b| a.first == b.first and a.second == b.second and a.tag == b.tag
+	is_eq = |a, b| eq_PBox(a, b)
 }
 
 make_pbox : I64, I64 -> PBox
@@ -49,6 +49,9 @@ caller_two = ({
 	bx = make_pbox(p, q)
 	(((bx.first * 100) + bx.second) + bx.tag)
 })
+
+eq_PBox : PBox, PBox -> Bool
+eq_PBox = |ex, ey| (((ex.first == ey.first) and (ex.second == ey.second)) and (ex.tag == ey.tag))
 
 # --- Entry ---
 

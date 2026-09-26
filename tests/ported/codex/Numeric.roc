@@ -3,15 +3,15 @@
 Numeric :: [].{
 	SimpsonSums := { odd : I64, even : I64 }.{
 		is_eq : Numeric.SimpsonSums, Numeric.SimpsonSums -> Bool
-		is_eq = |a, b| a.odd == b.odd and a.even == b.even
+		is_eq = |a, b| eq_SimpsonSums(a, b)
 	}
 	Rk4State := { rk_t : I64, rk_y : I64 }.{
 		is_eq : Numeric.Rk4State, Numeric.Rk4State -> Bool
-		is_eq = |a, b| a.rk_t == b.rk_t and a.rk_y == b.rk_y
+		is_eq = |a, b| eq_Rk4State(a, b)
 	}
 	Rk4VecState := { rkv_t : I64, rkv_y : List(I64) }.{
 		is_eq : Numeric.Rk4VecState, Numeric.Rk4VecState -> Bool
-		is_eq = |a, b| a.rkv_t == b.rkv_t and a.rkv_y == b.rkv_y
+		is_eq = |a, b| eq_Rk4VecState(a, b)
 	}
 
 	bisect : (I64 -> I64), I64, I64, I64 -> I64
@@ -153,4 +153,13 @@ Numeric :: [].{
 
 	num_abs : I64 -> I64
 	num_abs = |x| (if (x < 0) { (0 - x) } else { x })
+
+	eq_SimpsonSums : Numeric.SimpsonSums, Numeric.SimpsonSums -> Bool
+	eq_SimpsonSums = |ex, ey| ((ex.odd == ey.odd) and (ex.even == ey.even))
+
+	eq_Rk4State : Numeric.Rk4State, Numeric.Rk4State -> Bool
+	eq_Rk4State = |ex, ey| ((ex.rk_t == ey.rk_t) and (ex.rk_y == ey.rk_y))
+
+	eq_Rk4VecState : Numeric.Rk4VecState, Numeric.Rk4VecState -> Bool
+	eq_Rk4VecState = |ex, ey| ((ex.rkv_t == ey.rkv_t) and (ex.rkv_y == ey.rkv_y))
 }

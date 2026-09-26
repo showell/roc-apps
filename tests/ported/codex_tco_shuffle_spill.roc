@@ -22,11 +22,11 @@ import cdx.Prelude
 line! = |s| echo!(Str.concat(s, "\n"))
 Cfg := { width : I64, nplayers : I64, limit : I64, data : List(I64) }.{
 	is_eq : Cfg, Cfg -> Bool
-	is_eq = |a, b| a.width == b.width and a.nplayers == b.nplayers and a.limit == b.limit and a.data == b.data
+	is_eq = |a, b| eq_Cfg(a, b)
 }
 Rng := { state : I64 }.{
 	is_eq : Rng, Rng -> Bool
-	is_eq = |a, b| a.state == b.state
+	is_eq = |a, b| eq_Rng(a, b)
 }
 
 rng_bump : Rng -> Rng
@@ -49,6 +49,12 @@ loop5 = |cfg, r, units, turn, active| (if (r.state >= 8) { turn } else { ({
 	next_turn = (if (next_player == 0) { (turn + 1) } else { turn })
 	loop5(cfg, r2, units2, next_turn, next_player)
 }) })
+
+eq_Cfg : Cfg, Cfg -> Bool
+eq_Cfg = |ex, ey| ((((ex.width == ey.width) and (ex.nplayers == ey.nplayers)) and (ex.limit == ey.limit)) and (ex.data == ey.data))
+
+eq_Rng : Rng, Rng -> Bool
+eq_Rng = |ex, ey| (ex.state == ey.state)
 
 # --- Entry ---
 

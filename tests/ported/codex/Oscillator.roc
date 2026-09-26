@@ -5,11 +5,11 @@ import Units
 Oscillator :: [].{
 	OscBank := { ob_oscs : List(Oscillator.OscState), ob_count : I64, ob_sample_rate : Units.Frequency }.{
 		is_eq : Oscillator.OscBank, Oscillator.OscBank -> Bool
-		is_eq = |a, b| a.ob_oscs == b.ob_oscs and a.ob_count == b.ob_count and a.ob_sample_rate == b.ob_sample_rate
+		is_eq = |a, b| eq_OscBank(a, b)
 	}
 	OscState := { osc_freq : Units.Frequency, osc_phase : I64, osc_amp : I64, osc_type : I64, osc_param : I64 }.{
 		is_eq : Oscillator.OscState, Oscillator.OscState -> Bool
-		is_eq = |a, b| a.osc_freq == b.osc_freq and a.osc_phase == b.osc_phase and a.osc_amp == b.osc_amp and a.osc_type == b.osc_type and a.osc_param == b.osc_param
+		is_eq = |a, b| eq_OscState(a, b)
 	}
 
 	osc_type_sine : I64
@@ -165,4 +165,10 @@ Oscillator :: [].{
 		abs_v = (if (v < 0) { (-v) } else { v })
 		osc_peak_loop(samples, (i + 1), n, (if (abs_v > best) { abs_v } else { best }))
 	}) })
+
+	eq_OscBank : Oscillator.OscBank, Oscillator.OscBank -> Bool
+	eq_OscBank = |ex, ey| (((ex.ob_oscs == ey.ob_oscs) and (ex.ob_count == ey.ob_count)) and (ex.ob_sample_rate == ey.ob_sample_rate))
+
+	eq_OscState : Oscillator.OscState, Oscillator.OscState -> Bool
+	eq_OscState = |ex, ey| (((((ex.osc_freq == ey.osc_freq) and (ex.osc_phase == ey.osc_phase)) and (ex.osc_amp == ey.osc_amp)) and (ex.osc_type == ey.osc_type)) and (ex.osc_param == ey.osc_param))
 }

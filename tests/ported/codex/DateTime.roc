@@ -7,7 +7,7 @@ DateTime :: [].{
 	Elapsed : I64
 	DateTime := { year : I64, month : I64, day : I64, hour : I64, minute : I64, second : I64 }.{
 		is_eq : DateTime.DateTime, DateTime.DateTime -> Bool
-		is_eq = |a, b| a.year == b.year and a.month == b.month and a.day == b.day and a.hour == b.hour and a.minute == b.minute and a.second == b.second
+		is_eq = |a, b| eq_DateTime(a, b)
 	}
 
 	seconds_per_minute : I64
@@ -120,4 +120,7 @@ DateTime :: [].{
 
 	month_name : I64 -> CceText
 	month_name = |m| (if (m == 1) { "Jan" } else { (if (m == 2) { "Feb" } else { (if (m == 3) { "Mar" } else { (if (m == 4) { "Apr" } else { (if (m == 5) { "May" } else { (if (m == 6) { "Jun" } else { (if (m == 7) { "Jul" } else { (if (m == 8) { "Aug" } else { (if (m == 9) { "Sep" } else { (if (m == 10) { "Oct" } else { (if (m == 11) { "Nov" } else { (if (m == 12) { "Dec" } else { "?" }) }) }) }) }) }) }) }) }) }) }) })
+
+	eq_DateTime : DateTime.DateTime, DateTime.DateTime -> Bool
+	eq_DateTime = |ex, ey| ((((((ex.year == ey.year) and (ex.month == ey.month)) and (ex.day == ey.day)) and (ex.hour == ey.hour)) and (ex.minute == ey.minute)) and (ex.second == ey.second))
 }

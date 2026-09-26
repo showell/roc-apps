@@ -4,7 +4,7 @@ import Wrap64
 Lz4 :: [].{
 	Lz4LenResult := { length : I64, next : I64 }.{
 		is_eq : Lz4.Lz4LenResult, Lz4.Lz4LenResult -> Bool
-		is_eq = |a, b| a.length == b.length and a.next == b.next
+		is_eq = |a, b| eq_Lz4LenResult(a, b)
 	}
 
 	lz4_min_match : I64
@@ -194,4 +194,7 @@ Lz4 :: [].{
 
 	lz4_init_table : I64, I64, List(I64) -> List(I64)
 	lz4_init_table = |n, i, acc| (if (i >= n) { acc } else { lz4_init_table(n, (i + 1), List.append(acc, (0 - 1))) })
+
+	eq_Lz4LenResult : Lz4.Lz4LenResult, Lz4.Lz4LenResult -> Bool
+	eq_Lz4LenResult = |ex, ey| ((ex.length == ey.length) and (ex.next == ey.next))
 }

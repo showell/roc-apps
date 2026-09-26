@@ -4,7 +4,7 @@ import Random
 Reservoir :: [].{
 	ReservoirSample := { rs_items : List(I64), rs_capacity : I64, rs_count : I64, rs_seen : I64 }.{
 		is_eq : Reservoir.ReservoirSample, Reservoir.ReservoirSample -> Bool
-		is_eq = |a, b| a.rs_items == b.rs_items and a.rs_capacity == b.rs_capacity and a.rs_count == b.rs_count and a.rs_seen == b.rs_seen
+		is_eq = |a, b| eq_ReservoirSample(a, b)
 	}
 
 	reservoir_new : I64 -> Reservoir.ReservoirSample
@@ -35,4 +35,7 @@ Reservoir :: [].{
 
 	reservoir_seen : Reservoir.ReservoirSample -> I64
 	reservoir_seen = |rs| rs.rs_seen
+
+	eq_ReservoirSample : Reservoir.ReservoirSample, Reservoir.ReservoirSample -> Bool
+	eq_ReservoirSample = |ex, ey| ((((ex.rs_items == ey.rs_items) and (ex.rs_capacity == ey.rs_capacity)) and (ex.rs_count == ey.rs_count)) and (ex.rs_seen == ey.rs_seen))
 }

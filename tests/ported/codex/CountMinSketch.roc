@@ -7,7 +7,7 @@ import Random
 CountMinSketch :: [].{
 	CmSketch := { cms_table : List(I64), cms_width : I64, cms_depth : I64, cms_total : I64 }.{
 		is_eq : CountMinSketch.CmSketch, CountMinSketch.CmSketch -> Bool
-		is_eq = |a, b| a.cms_table == b.cms_table and a.cms_width == b.cms_width and a.cms_depth == b.cms_depth and a.cms_total == b.cms_total
+		is_eq = |a, b| eq_CmSketch(a, b)
 	}
 
 	cms_new : I64, I64 -> CountMinSketch.CmSketch
@@ -75,4 +75,7 @@ CountMinSketch :: [].{
 
 	format_cms : CountMinSketch.CmSketch -> CceText
 	format_cms = |s| CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("cms ", CceText.show_int(s.cms_width)), "x"), CceText.show_int(s.cms_depth)), " total="), CceText.show_int(s.cms_total))
+
+	eq_CmSketch : CountMinSketch.CmSketch, CountMinSketch.CmSketch -> Bool
+	eq_CmSketch = |ex, ey| ((((ex.cms_table == ey.cms_table) and (ex.cms_width == ey.cms_width)) and (ex.cms_depth == ey.cms_depth)) and (ex.cms_total == ey.cms_total))
 }

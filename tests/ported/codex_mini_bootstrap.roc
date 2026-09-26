@@ -23,7 +23,7 @@ line! = |s| echo!(Str.concat(s, "\n"))
 Color : [Red, Green, Blue(I64)]
 Point := { x : I64, y : I64 }.{
 	is_eq : Point, Point -> Bool
-	is_eq = |a, b| a.x == b.x and a.y == b.y
+	is_eq = |a, b| eq_Point(a, b)
 }
 
 show_color : Color -> CceText
@@ -57,6 +57,9 @@ eq_Color = |ex, ey| (match ex {
 		_ => False
 	})
 })
+
+eq_Point : Point, Point -> Bool
+eq_Point = |ex, ey| ((ex.x == ey.x) and (ex.y == ey.y))
 
 # --- Entry ---
 

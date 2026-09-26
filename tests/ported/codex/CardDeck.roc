@@ -5,7 +5,7 @@ import Random
 CardDeck :: [].{
 	DealResult := { hand : List(I64), remaining : List(I64) }.{
 		is_eq : CardDeck.DealResult, CardDeck.DealResult -> Bool
-		is_eq = |a, b| a.hand == b.hand and a.remaining == b.remaining
+		is_eq = |a, b| eq_DealResult(a, b)
 	}
 
 	deck_size : I64
@@ -126,4 +126,7 @@ CardDeck :: [].{
 
 	hand_total_loop : List(I64), I64, I64, I64 -> I64
 	hand_total_loop = |cards, i, len, acc| (if (i >= len) { acc } else { hand_total_loop(cards, (i + 1), len, (acc + blackjack_value((List.get(cards, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))) })
+
+	eq_DealResult : CardDeck.DealResult, CardDeck.DealResult -> Bool
+	eq_DealResult = |ex, ey| ((ex.hand == ey.hand) and (ex.remaining == ey.remaining))
 }

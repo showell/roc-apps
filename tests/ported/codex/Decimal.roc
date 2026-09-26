@@ -5,7 +5,7 @@ import CceText
 Decimal :: [].{
 	Decimal := { dec_mantissa : I64, dec_scale : I64 }.{
 		is_eq : Decimal.Decimal, Decimal.Decimal -> Bool
-		is_eq = |a, b| a.dec_mantissa == b.dec_mantissa and a.dec_scale == b.dec_scale
+		is_eq = |a, b| eq_Decimal(a, b)
 	}
 
 	dec_max_scale_digits : I64
@@ -214,4 +214,7 @@ Decimal :: [].{
 
 	dec_promote : Decimal.Decimal, I64 -> I64
 	dec_promote = |d, target_scale| (d.dec_mantissa * dec_pow10((target_scale - d.dec_scale)))
+
+	eq_Decimal : Decimal.Decimal, Decimal.Decimal -> Bool
+	eq_Decimal = |ex, ey| ((ex.dec_mantissa == ey.dec_mantissa) and (ex.dec_scale == ey.dec_scale))
 }

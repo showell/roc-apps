@@ -5,7 +5,7 @@ import MathLib
 Normalization :: [].{
 	NormParams := { norm_num_groups : I64, norm_num_channels : I64, norm_gamma : List(I64), norm_beta : List(I64), norm_eps : I64 }.{
 		is_eq : Normalization.NormParams, Normalization.NormParams -> Bool
-		is_eq = |a, b| a.norm_num_groups == b.norm_num_groups and a.norm_num_channels == b.norm_num_channels and a.norm_gamma == b.norm_gamma and a.norm_beta == b.norm_beta and a.norm_eps == b.norm_eps
+		is_eq = |a, b| eq_NormParams(a, b)
 	}
 
 	group_norm_params : I64, I64, List(I64), List(I64) -> Normalization.NormParams
@@ -208,4 +208,7 @@ Normalization :: [].{
 
 	silu_sigmoid : I64 -> I64
 	silu_sigmoid = |x| Activation.act_sigmoid_val(x)
+
+	eq_NormParams : Normalization.NormParams, Normalization.NormParams -> Bool
+	eq_NormParams = |ex, ey| (((((ex.norm_num_groups == ey.norm_num_groups) and (ex.norm_num_channels == ey.norm_num_channels)) and (ex.norm_gamma == ey.norm_gamma)) and (ex.norm_beta == ey.norm_beta)) and (ex.norm_eps == ey.norm_eps))
 }

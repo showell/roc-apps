@@ -4,16 +4,16 @@ import CceText
 Lwm2m :: [].{
 	Lwm2mObjectId := { id : I64, instance : I64 }.{
 		is_eq : Lwm2m.Lwm2mObjectId, Lwm2m.Lwm2mObjectId -> Bool
-		is_eq = |a, b| a.id == b.id and a.instance == b.instance
+		is_eq = |a, b| eq_Lwm2mObjectId(a, b)
 	}
 	Lwm2mResourceId := { object_id : I64, instance : I64, resource : I64 }.{
 		is_eq : Lwm2m.Lwm2mResourceId, Lwm2m.Lwm2mResourceId -> Bool
-		is_eq = |a, b| a.object_id == b.object_id and a.instance == b.instance and a.resource == b.resource
+		is_eq = |a, b| eq_Lwm2mResourceId(a, b)
 	}
 	Lwm2mValue : [Lwm2mString(CceText), Lwm2mInteger(I64), Lwm2mFloat(I64, I64), Lwm2mBoolean(Bool), Lwm2mOpaque(List(I64)), Lwm2mTime(I64)]
 	Lwm2mRegistration := { endpoint : CceText, lifetime : I64, binding : CceText, objects : List(I64) }.{
 		is_eq : Lwm2m.Lwm2mRegistration, Lwm2m.Lwm2mRegistration -> Bool
-		is_eq = |a, b| a.endpoint == b.endpoint and a.lifetime == b.lifetime and a.binding == b.binding and a.objects == b.objects
+		is_eq = |a, b| eq_Lwm2mRegistration(a, b)
 	}
 	LwmFirmwareState : [FwIdle, FwDownloading, FwDownloaded, FwUpdating]
 
@@ -149,6 +149,12 @@ Lwm2m :: [].{
 	lwm2m_res_current_time : I64
 	lwm2m_res_current_time = 13
 
+	eq_Lwm2mObjectId : Lwm2m.Lwm2mObjectId, Lwm2m.Lwm2mObjectId -> Bool
+	eq_Lwm2mObjectId = |ex, ey| ((ex.id == ey.id) and (ex.instance == ey.instance))
+
+	eq_Lwm2mResourceId : Lwm2m.Lwm2mResourceId, Lwm2m.Lwm2mResourceId -> Bool
+	eq_Lwm2mResourceId = |ex, ey| (((ex.object_id == ey.object_id) and (ex.instance == ey.instance)) and (ex.resource == ey.resource))
+
 	eq_Lwm2mValue : Lwm2m.Lwm2mValue, Lwm2m.Lwm2mValue -> Bool
 	eq_Lwm2mValue = |ex, ey| (match ex {
 		Lwm2mString(exf0) => (match ey {
@@ -176,6 +182,9 @@ Lwm2m :: [].{
 			_ => False
 		})
 	})
+
+	eq_Lwm2mRegistration : Lwm2m.Lwm2mRegistration, Lwm2m.Lwm2mRegistration -> Bool
+	eq_Lwm2mRegistration = |ex, ey| ((((ex.endpoint == ey.endpoint) and (ex.lifetime == ey.lifetime)) and (ex.binding == ey.binding)) and (ex.objects == ey.objects))
 
 	eq_LwmFirmwareState : Lwm2m.LwmFirmwareState, Lwm2m.LwmFirmwareState -> Bool
 	eq_LwmFirmwareState = |ex, ey| (match ex {

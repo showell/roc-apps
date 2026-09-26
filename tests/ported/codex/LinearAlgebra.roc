@@ -5,11 +5,11 @@ import ListUtils
 LinearAlgebra :: [].{
 	Matrix := { mat_rows : I64, mat_cols : I64, mat_data : List(I64) }.{
 		is_eq : LinearAlgebra.Matrix, LinearAlgebra.Matrix -> Bool
-		is_eq = |a, b| a.mat_rows == b.mat_rows and a.mat_cols == b.mat_cols and a.mat_data == b.mat_data
+		is_eq = |a, b| eq_Matrix(a, b)
 	}
 	LuResult := { lu_lower : LinearAlgebra.Matrix, lu_upper : LinearAlgebra.Matrix, lu_pivot : List(I64) }.{
 		is_eq : LinearAlgebra.LuResult, LinearAlgebra.LuResult -> Bool
-		is_eq = |a, b| a.lu_lower == b.lu_lower and a.lu_upper == b.lu_upper and a.lu_pivot == b.lu_pivot
+		is_eq = |a, b| eq_LuResult(a, b)
 	}
 
 	mat_new : I64, I64 -> LinearAlgebra.Matrix
@@ -174,6 +174,12 @@ LinearAlgebra :: [].{
 
 	mat_back_sum : LinearAlgebra.Matrix, List(I64), I64, I64, I64, I64 -> I64
 	mat_back_sum = |m, x, row, col, n, acc| (if (col >= n) { acc } else { mat_back_sum(m, x, row, (col + 1), n, (acc + I64.div_trunc_by((mat_get(m, row, col) * (List.get(x, I64.to_u64_wrap(col)) ?? crash("list-at out of range"))), 1000))) })
+
+	eq_Matrix : LinearAlgebra.Matrix, LinearAlgebra.Matrix -> Bool
+	eq_Matrix = |ex, ey| (((ex.mat_rows == ey.mat_rows) and (ex.mat_cols == ey.mat_cols)) and (ex.mat_data == ey.mat_data))
+
+	eq_LuResult : LinearAlgebra.LuResult, LinearAlgebra.LuResult -> Bool
+	eq_LuResult = |ex, ey| ((eq_Matrix(ex.lu_lower, ey.lu_lower) and eq_Matrix(ex.lu_upper, ey.lu_upper)) and (ex.lu_pivot == ey.lu_pivot))
 
 	lam_0 : I64, I64 -> I64
 	lam_0 = |s, v| I64.div_trunc_by((v * s), 1000)

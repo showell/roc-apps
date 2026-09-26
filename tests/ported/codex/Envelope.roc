@@ -3,7 +3,7 @@
 Envelope :: [].{
 	AdsrEnvelope := { env_attack : I64, env_decay : I64, env_sustain_level : I64, env_release : I64 }.{
 		is_eq : Envelope.AdsrEnvelope, Envelope.AdsrEnvelope -> Bool
-		is_eq = |a, b| a.env_attack == b.env_attack and a.env_decay == b.env_decay and a.env_sustain_level == b.env_sustain_level and a.env_release == b.env_release
+		is_eq = |a, b| eq_AdsrEnvelope(a, b)
 	}
 
 	adsr_new : I64, I64, I64, I64 -> Envelope.AdsrEnvelope
@@ -53,4 +53,7 @@ Envelope :: [].{
 
 	adsr_total_time : Envelope.AdsrEnvelope -> I64
 	adsr_total_time = |env| ((env.env_attack + env.env_decay) + env.env_release)
+
+	eq_AdsrEnvelope : Envelope.AdsrEnvelope, Envelope.AdsrEnvelope -> Bool
+	eq_AdsrEnvelope = |ex, ey| ((((ex.env_attack == ey.env_attack) and (ex.env_decay == ey.env_decay)) and (ex.env_sustain_level == ey.env_sustain_level)) and (ex.env_release == ey.env_release))
 }
