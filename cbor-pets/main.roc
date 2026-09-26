@@ -1,4 +1,4 @@
-import CborEncode
+import Cbor
 import ImageBlob
 import Profile
 
@@ -7,18 +7,16 @@ main! = |args| {
 	# (Taking the name from the command line keeps the compiler from
 	# evaluating the whole program at compile time.)
 	name = args.first().ok_or("Ada")
-	input = CborEncode.map([
-		("name", CborEncode.text(name)),
-		("pets", CborEncode.array([3, 7], CborEncode.u8)),
-		("pic", CborEncode.bytes([0x00, 0x40, 0x80, 0xFF])),
-	])
+	start : Profile
+	start = { name, pet_ages: [3, 7], picture: ImageBlob.from_bytes([0x00, 0x40, 0x80, 0xFF]) }
+	input = Cbor.to_bytes(start)
 	echo!("in:  ${hex(input)}\n")
 
-	match Profile.from_cbor(input) {
-		Ok(profile) => {
-			output = profile.one_year_later().edit_picture().to_cbor()
-			echo!("out: ${hex(output)}\n")
-		}
+	profile : Try(Profile, _)
+	profile = Cbor.parse(input)
+
+	match profile {
+		Ok(p) => echo!("out: ${hex(Cbor.to_bytes(p.one_year_later().edit_picture()))}\n")
 		Err(problem) => echo!("could not decode: ${Str.inspect(problem)}\n")
 	}
 
