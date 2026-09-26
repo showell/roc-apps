@@ -13,6 +13,7 @@ there; the others are mapped below.
 | `fasttrack/` | Fast Track, the board game, ported from Steve's elm-fasttrack: the rules and the whole page in Roc, drawn by a thin page script that patches the board | `fasttrack/README.md` |
 | `glue/` | `JsGlue.roc`, the `roc glue` spec that generates a page's frame reader from the compiler's type table | `glue/README.md` |
 | `ray/` | `fetch_exes.sh`, which pulls the canvas apps' Windows executables to a Windows machine | `ray/README.md` |
+| `cbor-pets/` | CBOR in Roc without an AST, from the Zulip thread "CBOR serialization": a profile read from CBOR, its pets aged, its picture (a blob, not a list of ints) edited, and written back | `cbor-pets/README.md` |
 | `basic/` | a BASIC interpreter written by hand in Roc, a web page that runs it, and the corpora that grade it | `basic/README.md` |
 | `gpu/` | Cobblestone's WGSL kernels, on the CPU | below |
 | `games/` | Damian's classic games, with the browser as the platform | below |
