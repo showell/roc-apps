@@ -1,6 +1,7 @@
 # A generic custom `parser_for` fails to type-check as a record field
 
-**Not filed yet.** `ISSUE.md` is the text to post.
+**Filed as [roc-lang/roc#11727](https://github.com/roc-lang/roc/issues/11727),
+2026-09-26.** `ISSUE.md` is the text as posted.
 
 `fails.roc` is the langref's own `Token` example, a `parser_for` generic
 over the format that passes the format's error through as `err`. It parses
