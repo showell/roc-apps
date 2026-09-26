@@ -6,7 +6,7 @@ import ImageBlob
 ## `ImageBlob` because that's what it *is*, not to steer a serializer.
 Profile := { name : Str, pet_ages : List(U8), picture : ImageBlob }.{
 
-	## Every pet ages by a year. (U8 ages: a 255-year-old pet would crash.)
+	## Every pet ages by a year.
 	one_year_later : Profile -> Profile
 	one_year_later = |Profile.{ name, pet_ages, picture }|
 		Profile.{ name, pet_ages: pet_ages.map(|age| age + 1), picture }
