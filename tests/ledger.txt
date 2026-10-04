@@ -46,7 +46,9 @@ PASS bounds-prover |
 PASS brotli-rfc-conformance |
 PASS bs3-smoke |
 PASS buf-write-byte-cursor |
+PASS builtin-named-local-value |
 SKIP builtin-narrow-proven | expects a diagnostic
+REFUSED builtin-value-names | builtin `hosted-kind` used as a value
 PASS call-clobber |
 PASS canopen-encode |
 PASS cap-audio |
@@ -64,12 +66,13 @@ PASS cap-network-denied |
 PASS cap-process-family |
 PASS capability-doors |
 PASS carddeck-shuffle |
-FAIL cce-foreign-byte | output: < raw length    : 20
+PASS cce-foreign-byte |
 PASS cce-roundtrip |
 REFUSED cce-tier1 | type (effectful (effs "Console") (scopes "") nothing)
 REFUSED cdx-export-retention | an opening of type nothing
 PASS chacha20poly1305 |
 PASS chapter-pages |
+REFUSED check-empty-fidelity-lifetime | UNRESOLVED: check-empty-fidelity-lifetime.codex cites Codex chapter Opening -- no such quire in the registry
 PASS circbuf-test |
 PASS cite-override-quire |
 PASS cmac-test |
@@ -94,10 +97,13 @@ REFUSED cpuid-avx | builtin `cpu-cpuid-ecx`
 REFUSED cpuid-no-avx | builtin `cpu-cpuid-ecx`
 PASS cross-port-refused |
 REFUSED crypto-test | type (effectful (effs "Console") (scopes "") nothing)
-SLOW crypto-vectors | last never run, ? ms; ALL=1 runs it
+SLOW crypto-vectors | last PASS, 63105 ms; ALL=1 runs it
 PASS cryptobig |
 REFUSED ctor-field-arrow | a type applied to a non-name
 PASS ctor-narrow-warn |
+PASS ctor-return-control |
+REFUSED ctor-return-parser | UNRESOLVED: ctor-return-parser.codex cites Codex chapter Opening -- no such quire in the registry
+PASS db-csv-quoted |
 PASS db-csv-roundtrip |
 DIVERGES db-full-test | test-bulk-load and test-import insert 5 rows through heap-insert-encoded's list-set-at on the catalog's pages and answer only Text; the backup then scans the same catalog, which in Roc still holds the old pages (rows=21, not 26)
 DIVERGES db-row-update | list-set-at mutates in place; Roc's List.set answers a new list
@@ -115,10 +121,11 @@ REFUSED desk-span | a type applied to a non-name
 PASS device-buffer-alloc |
 PASS dhcp-acquire |
 CRASH dhcp-acquire-e1000 | machine: -e1000-nat is not a codex-vm flag this machine models
-SLOW dhcp-renew | last never run, ? ms; ALL=1 runs it
+SLOW dhcp-renew | last PASS, 5219 ms; ALL=1 runs it
+PASS dhcp-window-reply |
 PASS diag-pci-map-judge |
 PASS disk-enum-parse |
-SLOW diskfacts-unpack-large | last never run, ? ms; ALL=1 runs it
+SLOW diskfacts-unpack-large | last PASS, 24858 ms; ALL=1 runs it
 PASS dnp3-encode |
 PASS dns-answer-count |
 PASS dtls-fragment |
@@ -130,22 +137,22 @@ PASS dtls-random |
 PASS dtls-record |
 PASS e1000-aneg-budget |
 PASS e1000-asde-arms |
-SLOW e1000-asde-nolink | last never run, ? ms; ALL=1 runs it
+SLOW e1000-asde-nolink | last PASS, 9675 ms; ALL=1 runs it
 PASS e1000-asde-speed |
 PASS e1000-bringup |
 PASS e1000-ctrl-ro |
-SLOW e1000-lcd-reload | last never run, ? ms; ALL=1 runs it
+SLOW e1000-lcd-reload | last PASS, 8437 ms; ALL=1 runs it
 PASS e1000-link-budget |
-SLOW e1000-link-deadline | last never run, ? ms; ALL=1 runs it
+SLOW e1000-link-deadline | last PASS, 10513 ms; ALL=1 runs it
 PASS e1000-match |
 PASS e1000-mdio-slow |
 PASS e1000-mdio-window |
-SLOW e1000-pch-k1 | last never run, ? ms; ALL=1 runs it
+SLOW e1000-pch-k1 | last PASS, 10086 ms; ALL=1 runs it
 PASS e1000-pch-k1-off |
 PASS e1000-phy |
-SLOW e1000-phy-absent | last never run, ? ms; ALL=1 runs it
+SLOW e1000-phy-absent | last PASS, 5156 ms; ALL=1 runs it
 PASS e1000-reset-live |
-SLOW e1000-reset-wedged | last never run, ? ms; ALL=1 runs it
+SLOW e1000-reset-wedged | last PASS, 23686 ms; ALL=1 runs it
 PASS e1000-ring-wrap |
 PASS e1000-rx-invisible |
 PASS e1000-rx-invisible-off |
@@ -155,14 +162,14 @@ PASS e1000-swflag-k1 |
 PASS e1000-swflag-mng |
 PASS e1000-swflag-refused |
 PASS e1000-swflag-strict |
-SLOW e1000-tx-deadline | last never run, ? ms; ALL=1 runs it
+SLOW e1000-tx-deadline | last PASS, 5530 ms; ALL=1 runs it
 PASS e1000-ulp-entry |
 PASS e1000-unresettable |
-SLOW ecdsa-cert | last PASS, 13182 ms; ALL=1 runs it
-SLOW ecdsa-p256 | last PASS, 9308 ms; ALL=1 runs it
+SLOW ecdsa-cert | last never run, ? ms; ALL=1 runs it
+SLOW ecdsa-p256 | last never run, ? ms; ALL=1 runs it
 PASS ecdsa-p256-sign |
-SLOW ecdsa-p384 | last PASS, 28693 ms; ALL=1 runs it
-SLOW ecdsa-sha384 | last PASS, 10770 ms; ALL=1 runs it
+SLOW ecdsa-p384 | last never run, ? ms; ALL=1 runs it
+SLOW ecdsa-sha384 | last never run, ? ms; ALL=1 runs it
 DIVERGES edalias | list-set-at mutates in place; Roc's List.set answers a new list
 PASS edcurve |
 PASS edge-mesh-admit |
@@ -192,15 +199,15 @@ REFUSED effect-widen-scope-narrow | an opening scoped to FileSystem.Read "/confi
 PASS engine-animation |
 DIVERGES engine-culling-cost | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
 PASS engine-fill-guard |
-SLOW engine-mesh-gen | last never run, ? ms; ALL=1 runs it
+SLOW engine-mesh-gen | last PASS, 7633 ms; ALL=1 runs it
 PASS engine-near-clip |
 PASS engine-persp-uv |
 PASS engine-plane-grid |
 DIVERGES engine-render-heap | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
-SLOW engine-shading | last never run, ? ms; ALL=1 runs it
-SLOW engine-shadow | last never run, ? ms; ALL=1 runs it
+SLOW engine-shading | last PASS, 13684 ms; ALL=1 runs it
+SLOW engine-shadow | last PASS, 17243 ms; ALL=1 runs it
 PASS engine-software-render |
-SLOW engine-texture-cost | last never run, ? ms; ALL=1 runs it
+SLOW engine-texture-cost | last PASS, 12376 ms; ALL=1 runs it
 PASS enip-encode |
 PASS eq-generic-fields |
 PASS eq-generic-recursive |
@@ -235,6 +242,7 @@ PASS fat32-read-guard |
 PASS fe310-drivers |
 REFUSED field-cache-shape | field-store
 PASS field-cache-text-lit |
+PASS field-call-arity |
 SKIP field-guard-refine | expects a diagnostic
 SKIP field-range-proven | expects a diagnostic
 PASS files-parse |
@@ -573,24 +581,34 @@ PASS ga-core |
 REFUSED generic-eq | builtin `__eqd_List`
 PASS geometry-test |
 PASS goose-encode |
-SLOW gop-composite-clamp | last never run, ? ms; ALL=1 runs it
-SLOW gop-composite-clip | last never run, ? ms; ALL=1 runs it
+SLOW gop-composite-clamp | last PASS, 12961 ms; ALL=1 runs it
+SLOW gop-composite-clip | last PASS, 10586 ms; ALL=1 runs it
 PASS gop-composite-focus |
-SLOW gop-composite-kinds | last never run, ? ms; ALL=1 runs it
+SLOW gop-composite-kinds | last PASS, 9577 ms; ALL=1 runs it
 PASS gop-composite-marks |
-SLOW gop-composite-stride | last never run, ? ms; ALL=1 runs it
+SLOW gop-composite-stride | last PASS, 7392 ms; ALL=1 runs it
 DIVERGES gop-composite-translate | comp-translate moves each child with __record-set and drops the answers; Codex writes the record in place, so the parent's children list sees the move, and a Roc record is a value
-SLOW gop-composite-vclip | last never run, ? ms; ALL=1 runs it
-SLOW gop-corner-ramp | last never run, ? ms; ALL=1 runs it
-SLOW gop-padded-stride | last never run, ? ms; ALL=1 runs it
+SLOW gop-composite-vclip | last PASS, 24161 ms; ALL=1 runs it
+SLOW gop-corner-ramp | last PASS, 5535 ms; ALL=1 runs it
+SLOW gop-padded-stride | last PASS, 6773 ms; ALL=1 runs it
 PASS gop-scene-backbuffer |
 PASS gop-scene-viewport |
 PASS gop-stride |
 PASS gop-text-field |
+CRASH gpu-attention-fused | machine: port-out-32 to port 0x00000420, the COM3 mailbox, which this machine does not model
+CRASH gpu-attention-fused-128 | machine: port-out-32 to port 0x00000420, the COM3 mailbox, which this machine does not model
+REFUSED gpu-buffers | builtin `print-uni`
+REFUSED gpu-conv2d-fast | builtin `print-uni`
+REFUSED gpu-conv2d-wmma | builtin `print-uni`
 PASS gpu-depth-tree |
 CRASH gpu-doorbell | machine: port-out-32 to port 0x00000420, the COM3 mailbox, which this machine does not model
+CRASH gpu-flux-kernels | machine: port-out-32 to port 0x00000420, the COM3 mailbox, which this machine does not model
 PASS gpu-gauge-clamp |
+REFUSED gpu-gemm-wmma | builtin `print-uni`
 PASS gpu-input-cursor |
+REFUSED gpu-layer-kernels | builtin `print-uni`
+CRASH gpu-linear-fp8 | machine: -gpu-files is not a codex-vm flag this machine models
+REFUSED gpu-linear-wmma | builtin `print-uni`
 PASS gpu-panel-border |
 CRASH gpu-persp-uv | machine: port-out-32 to GPU port 0x408, which this machine's GPU does not model
 CRASH gpu-ptx | machine: port-out-32 to port 0x00000420, the COM3 mailbox, which this machine does not model
@@ -611,13 +629,14 @@ REFUSED handler-resume-value | handle
 REFUSED handler-smoke | type (effectful (effs "Config") (scopes "") int-default)
 PASS hart-encode |
 PASS heap-advance-odd |
+FAIL heap-base-is-heap | output: < heap starts at heap-base: False
 CRASH heap-bracket-shape | machine: port-in-byte from port 0x00000071, the CMOS clock (the host's local time), which this machi
 PASS heap-frame-reclaim |
 DIVERGES heap-scrub | measures Codex's bump pointer with __heap-save; Roc counts references and has none, so every measurement reads zero
 PASS hid-decode |
 PASS history-test |
 CRASH hpet-interrupt | machine: the HPET raised IOAPIC line 2 on vector 80, and this machine delivers no interrupts
-SLOW i219-k1-mechanism | last never run, ? ms; ALL=1 runs it
+SLOW i219-k1-mechanism | last PASS, 8665 ms; ALL=1 runs it
 REFUSED ident-letters | name `café` cannot be a Roc identifier
 PASS idm-key-tests |
 PASS idm-read-line |
@@ -669,8 +688,8 @@ PASS lib@app-runner-frame |
 PASS lib@badge-tone |
 PASS lib@bencode-guard |
 PASS lib@brotli-ctx2-test |
-SLOW lib@brotli-dict-test | last PASS, 10785 ms; ALL=1 runs it
-SLOW lib@brotli-test | last PASS, 38406 ms; ALL=1 runs it
+SLOW lib@brotli-dict-test | last never run, ? ms; ALL=1 runs it
+SLOW lib@brotli-test | last never run, ? ms; ALL=1 runs it
 PASS lib@canvas-viewport |
 PASS lib@cbor-guard |
 PASS lib@cbor-test |
@@ -708,7 +727,7 @@ TIMEOUT lib@toml-guard |
 PASS lib@toml-test |
 DIVERGES lib@tree-view-nav | pins what a caller still holding the old record sees after its list is written in place; a Roc list is a value, so the caller keeps what it held
 PASS lib@utf8-cce-test |
-SLOW lib@widget-tone | last never run, ? ms; ALL=1 runs it
+SLOW lib@widget-tone | last PASS, 9967 ms; ALL=1 runs it
 TIMEOUT lib@yaml-guard |
 PASS lib@yaml-test |
 PASS linear-branch |
@@ -730,6 +749,7 @@ PASS list-comprehension-copy |
 REFUSED list-cons-tail | binary cons-list
 PASS list-induction |
 PASS list-literal-o1 |
+FAIL list-nil-heap | output: < nil 0
 PASS list-pattern |
 PASS list-tail-empty |
 PASS list-test |
@@ -744,6 +764,7 @@ PASS lwm2m-encode |
 PASS magic-shuffle-seeds |
 PASS magic-sim-fixes |
 SKIP manifest-pin | its disk is compiled from manifest-subject by the Cobblestone compiler at test time
+PASS many-parameters |
 REFUSED mask-ops | type (effectful (effs "Console") (scopes "") nothing)
 PASS match-arms-per-line |
 PASS match-in-record-field |
@@ -780,9 +801,9 @@ REFUSED net-arena-pool | a function value from `__lam_0` (0 of 1 arguments), whi
 REFUSED net-compact-arena | builtin `address-of`
 REFUSED net-compact-copy | builtin `address-of`
 PASS net-drain-budget |
-SLOW net-driver-seam-bound | last never run, ? ms; ALL=1 runs it
+SLOW net-driver-seam-bound | last PASS, 32936 ms; ALL=1 runs it
 PASS net-driver-seam-no-av |
-SLOW net-io-clock | last never run, ? ms; ALL=1 runs it
+SLOW net-io-clock | last CRASH, 13372 ms; ALL=1 runs it
 REFUSED net-io-peer-fin | `net-io-recv-wait`: an `act` statement writes a list a later statement reads
 CRASH net-poll-calibrated | machine: -e1000-nat is not a codex-vm flag this machine models
 PASS net-poll-clamped |
@@ -797,19 +818,43 @@ PASS normalize-eq |
 PASS notification-log-severity |
 PASS nrf52840-drivers |
 PASS nrf9160-drivers |
+PASS nv-acr |
+PASS nv-fifo-maxwell |
+PASS nv-fifo-refuse |
+REFUSED nv-fw-booter | builtin `__memset`
+REFUSED nv-fw-elf | builtin `__memset`
+REFUSED nv-fwsec | builtin `__memset`
+REFUSED nv-gr-init | builtin `print-uni`
+PASS nv-gsp-alloc |
+PASS nv-gsp-args |
+REFUSED nv-gsp-boot | builtin `__memset`
+PASS nv-gsp-msg |
+PASS nv-gsp-pdir |
+PASS nv-gsp-registry |
+REFUSED nv-gsp-seq | builtin `print-text`
+REFUSED nv-gsp-sysinfo | builtin `__memset`
+PASS nv-gsp-wpr |
+PASS nv-gsp-wpr-refuse |
+PASS nv-mmu-maxwell |
+PASS nv-mmu-refuse |
+REFUSED nv-qmd-maxwell | builtin `print-text`
+PASS nv-qmd-refuse |
 PASS nvme-encode |
 PASS oauth-island |
 PASS occurrence-check |
 PASS opcua-encode |
 PASS ops@bounded-modes-smoke |
 PASS ops@builtin-name-shadow |
+PASS ops@cap-grant-arm64 |
 REFUSED ops@cap-grant-emit | UNRESOLVED: cap-grant-emit.codex cites Emit chapter X86-64 Boot Infrastructure -- no such quire in the registr
+PASS ops@cap-grant-riscv |
 PASS ops@cap-word-64 |
 PASS ops@cce-bounds-smoke |
 PASS ops@cce-builtin-bounds |
 PASS ops@char-at-bounds |
 PASS ops@char-code-at-high |
 PASS ops@char-encode-bands |
+PASS ops@closure-seven-values |
 PASS ops@closure-under-apply |
 PASS ops@collate-order |
 PASS ops@div-negative-pow2 |
@@ -824,8 +869,11 @@ DIVERGES ops@list-growth | measures Codex's bump pointer with __heap-save; Roc c
 PASS ops@list-index-bounds |
 PASS ops@list-view-bounds |
 PASS ops@match-shadowed-arm |
+PASS ops@module-int-table-large |
 PASS ops@native-nested-pattern |
 PASS ops@native-nested-tags |
+PASS ops@over-apply-keeps-heap |
+REFUSED ops@pic-eoi-by-vector | builtin `get-ticks` used as a value
 PASS ops@real-approx |
 PASS ops@real-approx-equality |
 PASS ops@real-approx-modes |
@@ -851,6 +899,7 @@ PASS ops@record-generic-eq |
 PASS ops@runtime-bytes-unsigned |
 PASS ops@saturated-call-returning-function |
 PASS ops@section-title-keywords |
+PASS ops@stack-args-eighteen |
 PASS ops@substring-bounds |
 PASS ops@text-order-allowed |
 PASS ops@text-to-unicode-bytes-tier0 |
@@ -866,7 +915,7 @@ PASS ops@unit-show |
 PASS ops@unused-let-alias-discard |
 REFUSED ops@variant-address | builtin `address-of`
 REFUSED ops@vec-lanes-smoke | type (vector 2 real)
-REFUSED ops@vec-sized | type (sized-vec 1 int-default)
+REFUSED ops@vec-sized | a type applied to a non-name
 PASS osc-noise |
 PASS ota-gate-block |
 PASS ota-gate-real |
@@ -874,6 +923,7 @@ PASS ota-state-machine |
 PASS ota-update |
 REFUSED par-map | builtin `fork`
 REFUSED par-nested | builtin `fork`
+PASS param-shadows-def |
 PASS parse-test |
 PASS particle-spread |
 PASS path-real |
@@ -909,6 +959,7 @@ PASS punctual-smoke |
 SKIP qemu-rng | cross bed only: reads QEMU virt's virtio-mmio slots, which codex-vm does not model; the arm64 lane r
 SKIP qemu-rng-absent | cross bed only: the same program as qemu-rng with NO device attached (an empty .qemudev), so rng-ope
 PASS qemu-virt-board |
+FAIL qemu-virt-board-rv | output: < 4
 PASS qr-encode |
 PASS queue-test |
 REFUSED quotes-gate | CODEGEN-HALTED: 2 error(s); no IR emitted; first CDX1077 `%` at column 1 begins no definition, so it would be 
@@ -917,6 +968,7 @@ SKIP range-let-carry | expects a diagnostic
 SKIP range-refine-if | expects a diagnostic
 PASS rasterizer-test |
 PASS raytracer-test |
+REFUSED read-file-uni-bytes | builtin `read-file-uni`
 PASS real-cert |
 PASS real-literal-boundary |
 PASS real-show-wide |
@@ -940,16 +992,28 @@ PASS roc-iter-map |
 PASS roc-recursive-var |
 PASS roc-returned-closure |
 PASS rp2040-drivers |
-SLOW rsa-pss | last PASS, 7564 ms; ALL=1 runs it
+SLOW rsa-pss | last never run, ? ms; ALL=1 runs it
 PASS rsa-verify |
+PASS rv-append-then-push |
 PASS rv-arg-order |
 PASS rv-big-literal |
+PASS rv-direct-args-call |
+PASS rv-far-branch |
 PASS rv-far-stack-param |
 PASS rv-frameless-imm |
 PASS rv-frameless-temp |
+PASS rv-if-zero-tail-else |
+PASS rv-mod-wide |
 PASS rv-param-bind |
 PASS rv-param-order |
+PASS rv-tail-dest-args |
 PASS s7comm-encode |
+REFUSED sass-ctrl-maxas | builtin `print-text`
+PASS sass-ctrl-refuse |
+REFUSED sass-encode-maxas | builtin `print-text`
+PASS sass-encode-refuse |
+REFUSED sass89-hmma-refuse | builtin `print-text`
+REFUSED sass89-hmma-turingas | builtin `print-text`
 REFUSED scope-allow | an opening scoped to FileSystem.Read "/config/"
 PASS scope-console |
 REFUSED scope-handler-clause | handle
@@ -958,7 +1022,7 @@ REFUSED scope-runtime-deny | an opening scoped to FileSystem.Read "OK"
 PASS scope-runtime-open |
 REFUSED scope-runtime-spawn | an opening scoped to FileSystem.Read "OK"
 REFUSED scope-try-region | try
-SLOW sector-read-list-growth | last never run, ? ms; ALL=1 runs it
+SLOW sector-read-list-growth | last PASS, 5465 ms; ALL=1 runs it
 PASS sensor-data |
 REFUSED serial-line | field-store
 SKIP shadow-builtin-fold | expects a diagnostic
@@ -1021,16 +1085,18 @@ PASS textsearch-test |
 PASS thumb2-encoder |
 PASS timer-registers |
 PASS tls-cert |
-SLOW tls-cv-schemes | last PASS, 26903 ms; ALL=1 runs it
+SLOW tls-cv-schemes | last never run, ? ms; ALL=1 runs it
 PASS tls-record-framing |
 PASS tls-test |
 PASS tls13-record |
 PASS tls13-schedule |
+REFUSED torchzip-machine | builtin `print-uni`
 PASS transport-cocite |
 PASS trie-prefix-test |
 PASS truetype-bridge-test |
 PASS truetype-render-test |
 PASS truetype-test |
+REFUSED try-fallback-fails | type (effectful (effs "Console") (scopes "") nothing)
 REFUSED try-smoke | try
 PASS ttf-compound |
 PASS ttf-contour-order-guard |
@@ -1093,6 +1159,7 @@ PASS value-eq |
 CRASH vbe-mode-set | machine: port-out-16 to port 0x000001CE, Bochs VBE, which this machine does not model
 REFUSED vec-arith-hazards | type (vector 2 real)
 REFUSED vec-array | type (vector 2 real)
+REFUSED vec-binop-spill | builtin `vec-splat`
 REFUSED vec-extract-hazards | type (vector 2 real)
 REFUSED vec-mask-hazards | type (vector 2 real)
 REFUSED vec-nest-probe | type (vector 2 real)
@@ -1109,18 +1176,20 @@ REFUSED vector-wide | type (vector 4 real)
 REFUSED vector-wide-avx-local | builtin `vec4d-splat`
 REFUSED vector-wide-avx-local-admitted | builtin `vec4d-splat`
 REFUSED vector-wide-no-avx | builtin `vec4d-splat`
+PASS virtio-blk-chain |
+PASS wasm-fn-id-collide |
 PASS wavelet-sort-aliasing |
 SKIP wcet-budget-unchecked | expects a diagnostic
 SKIP wcet-probe | expects a diagnostic
 PASS web-chain |
-REFUSED web-mux-concurrent | `net-io-send-drain-rx`: an `act` statement writes a list a later statement reads
+REFUSED web-mux-concurrent | `net-io-resolve-hop`: an `act` statement writes a list a later statement reads
 REFUSED web-mux-dangle | builtin `__memset`
 DIVERGES web-mux-heap | measures Codex's bump pointer with __heap-save; the machine's pointer moves for alloc-bytes, so each 65536-byte receive buffer shows, but no Roc list lives on it, so every reading lacks the lists' bytes
-REFUSED web-mux-idle-reap | `net-io-send-drain-rx`: an `act` statement writes a list a later statement reads
-REFUSED web-mux-lifecycle | `net-io-send-drain-rx`: an `act` statement writes a list a later statement reads
-REFUSED web-mux-long-run | `net-io-send-drain-rx`: an `act` statement writes a list a later statement reads
-REFUSED web-mux-pending-cap | `net-io-send-drain-rx`: an `act` statement writes a list a later statement reads
-REFUSED web-mux-reassembly | `net-io-send-drain-rx`: an `act` statement writes a list a later statement reads
+REFUSED web-mux-idle-reap | `net-io-resolve-hop`: an `act` statement writes a list a later statement reads
+REFUSED web-mux-lifecycle | `net-io-resolve-hop`: an `act` statement writes a list a later statement reads
+REFUSED web-mux-long-run | `net-io-resolve-hop`: an `act` statement writes a list a later statement reads
+REFUSED web-mux-pending-cap | `net-io-resolve-hop`: an `act` statement writes a list a later statement reads
+REFUSED web-mux-reassembly | `net-io-resolve-hop`: an `act` statement writes a list a later statement reads
 PASS when-arm-nontail |
 PASS when-arm-tail-call |
 PASS when-bool-cross |
@@ -1128,8 +1197,10 @@ PASS when-bool-pattern |
 PASS when-generic-field |
 REFUSED with-timeout-test | with-timeout
 PASS workflow-parse-int |
+PASS x509-ca-issue |
 PASS x509-chain |
-SLOW x509-dev-cert | last PASS, 13342 ms; ALL=1 runs it
+SLOW x509-dev-cert | last never run, ? ms; ALL=1 runs it
 PASS x509-parse |
 SKIP xmm-preempt | codex-vm boots it with 2 cores (.smp); this harness runs one
+PASS zig-tvar-names |
 PASS zigbee-encode |
