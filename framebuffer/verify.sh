@@ -16,7 +16,7 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$HERE/.." && pwd)"
 ROC="${ROC:-$HOME/build/roc-nightly/roc}"
-CHECKOUT="${CHECKOUT:-$HOME/showell_repos/cobblestone-u62}"
+CHECKOUT="${CHECKOUT:-$HOME/showell_repos/cobblestone-u66rel}"
 GEN="$HOME/build/roc-apps/gen/framebuffer"
 NEXT="$HOME/build/roc-apps/next/framebuffer"
 VERDICTS="$HOME/build/roc-apps/gen/verdicts"

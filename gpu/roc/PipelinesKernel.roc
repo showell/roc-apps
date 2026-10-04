@@ -21,11 +21,16 @@ PipelinesKernel :: [].{
 
 	pl_hit : F32, F32, F32, F32, F32, F32, I32 -> F32
 	pl_hit = |ox, oy, oz, dx, dy, dz, i| ({
+		lx : F32
 		lx = (ox - pl_cx(i))
+		b : F32
 		b = (((dx * lx) + (dy * oy)) + (dz * oz))
+		c : F32
 		c = ((((lx * lx) + (oy * oy)) + (oz * oz)) - 0.3025)
+		disc : F32
 		disc = ((b * b) - c)
 		(if (disc < 0.0) { (0.0 - 1.0) } else { ({
+			t : F32
 			t = ((0.0 - b) - DeviceMath.real_sqrt(disc))
 			(if (t > 0.001) { t } else { (0.0 - 1.0) })
 		}) })
@@ -33,7 +38,9 @@ PipelinesKernel :: [].{
 
 	pl_nearest : F32, F32, F32, F32, F32, F32, I32, I32, F32 -> I32
 	pl_nearest = |ox, oy, oz, dx, dy, dz, i, bid, bt| (if (i >= pl_count) { bid } else { ({
+		t : F32
 		t = pl_hit(ox, oy, oz, dx, dy, dz, i)
+		take : I32
 		take = (if (t > 0.001) { (if (bt < 0.0) { 1 } else { (if (t < bt) { 1 } else { 0 }) }) } else { 0 })
 		(if (take == 1) { pl_nearest(ox, oy, oz, dx, dy, dz, I32.plus_wrap(i, 1), i, t) } else { pl_nearest(ox, oy, oz, dx, dy, dz, I32.plus_wrap(i, 1), bid, bt) })
 	}) })
@@ -46,46 +53,81 @@ PipelinesKernel :: [].{
 
 	pl_render : I32, I32 -> I32
 	pl_render = |gid, frame| ({
+		px : I32
 		px = I32.minus_wrap(gid, I32.times_wrap(Device.div(gid, pl_width), pl_width))
+		py : I32
 		py = Device.div(gid, pl_width)
+		fx : F32
 		fx = (I32.to_f32(I32.minus_wrap(px, pl_half_w)) / 384.0)
+		fy : F32
 		fy = (I32.to_f32(I32.minus_wrap(pl_half_h, py)) / 384.0)
+		rl : F32
 		rl = DeviceMath.real_sqrt((((fx * fx) + (fy * fy)) + 4.0))
+		dx : F32
 		dx = (fx / rl)
+		dy : F32
 		dy = (fy / rl)
+		dz : F32
 		dz = (2.0 / rl)
+		oz : F32
 		oz = (0.0 - 5.0)
+		id : I32
 		id = pl_nearest(0.0, 0.0, oz, dx, dy, dz, 0, I32.minus_wrap(0, 1), (0.0 - 1.0))
 		(if (id < 0) { ({
+			h : F32
 			h = pl_clamp01(((dy * 0.5) + 0.5))
 			pl_pack((0.05 + (h * 0.05)), (0.06 + (h * 0.08)), (0.1 + (h * 0.14)))
 		}) } else { ({
+			t : F32
 			t = pl_hit(0.0, 0.0, oz, dx, dy, dz, id)
+			hx : F32
 			hx = (dx * t)
+			hy : F32
 			hy = (dy * t)
+			hz : F32
 			hz = (oz + (dz * t))
+			nx : F32
 			nx = ((hx - pl_cx(id)) / 0.55)
+			ny : F32
 			ny = (hy / 0.55)
+			nz : F32
 			nz = (hz / 0.55)
+			la : F32
 			la = (I32.to_f32(frame) / 30.0)
+			lx : F32
 			lx = (DeviceMath.real_cos(la) * 0.5)
+			ly : F32
 			ly = 0.7
+			lz : F32
 			lz = ((DeviceMath.real_sin(la) * 0.5) - 0.4)
+			ll : F32
 			ll = DeviceMath.real_sqrt((((lx * lx) + (ly * ly)) + (lz * lz)))
+			ndl : F32
 			ndl = DeviceMath.real_max(0.0, ((((nx * lx) / ll) + ((ny * ly) / ll)) + ((nz * lz) / ll)))
+			vdn : F32
 			vdn = (0.0 - (((dx * nx) + (dy * ny)) + (dz * nz)))
+			hlx : F32
 			hlx = ((lx / ll) - dx)
+			hly : F32
 			hly = ((ly / ll) - dy)
+			hlz : F32
 			hlz = ((lz / ll) - dz)
+			hl : F32
 			hl = (DeviceMath.real_sqrt((((hlx * hlx) + (hly * hly)) + (hlz * hlz))) + 0.001)
+			spec : F32
 			spec = DeviceMath.real_max(0.0, ((((nx * hlx) / hl) + ((ny * hly) / hl)) + ((nz * hlz) / hl)))
+			s2 : F32
 			s2 = (spec * spec)
+			s8 : F32
 			s8 = (((s2 * s2) * s2) * s2)
 			(if (id == 0) { pl_pack(0.55, 0.35, 0.75) } else { (if (id == 1) { pl_pack((0.3 * (0.2 + ndl)), (0.6 * (0.2 + ndl)), (0.9 * (0.2 + ndl))) } else { (if (id == 2) { pl_pack(((0.85 * ndl) + s8), ((0.5 * ndl) + s8), ((0.3 * ndl) + s8)) } else { (if (id == 3) { ({
+				band : F32
 				band = (if (ndl > 0.75) { 1.0 } else { (if (ndl > 0.4) { 0.65 } else { (if (ndl > 0.15) { 0.38 } else { 0.18 }) }) })
 				pl_pack((0.9 * band), (0.55 * band), (0.35 * band))
 			}) } else { (if (id == 4) { pl_pack(((nx * 0.5) + 0.5), ((ny * 0.5) + 0.5), ((nz * 0.5) + 0.5)) } else { ({
+				fres : F32
 				fres = pl_clamp01((1.0 - vdn))
+				f5 : F32
 				f5 = ((((fres * fres) * fres) * fres) * fres)
 				pl_pack((0.1 + (f5 * 0.9)), (0.15 + (f5 * 0.85)), (0.25 + (f5 * 0.75)))
 			}) }) }) }) }) })

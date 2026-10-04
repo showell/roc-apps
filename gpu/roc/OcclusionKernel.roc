@@ -27,14 +27,23 @@ OcclusionKernel :: [].{
 
 	oc_enters : F32, F32, F32, F32, F32, F32, I32, F32, I32 -> I32
 	oc_enters = |ox, oy, oz, dx, dy, dz, i, spin, acc| (if (i >= oc_count) { acc } else { ({
+		cx : F32
 		cx = ((oc_cx(i) * DeviceMath.real_cos(spin)) - (oc_cz(i) * DeviceMath.real_sin(spin)))
+		cz : F32
 		cz = ((oc_cx(i) * DeviceMath.real_sin(spin)) + (oc_cz(i) * DeviceMath.real_cos(spin)))
+		lx : F32
 		lx = (ox - cx)
+		ly : F32
 		ly = (oy - oc_cy(i))
+		lz : F32
 		lz = (oz - cz)
+		b : F32
 		b = (((dx * lx) + (dy * ly)) + (dz * lz))
+		c : F32
 		c = ((((lx * lx) + (ly * ly)) + (lz * lz)) - 0.64)
+		disc : F32
 		disc = ((b * b) - c)
+		hit : I32
 		hit = (if (disc > 0.0) { (if (((0.0 - b) + DeviceMath.real_sqrt(disc)) > 0.0) { 1 } else { 0 }) } else { 0 })
 		oc_enters(ox, oy, oz, dx, dy, dz, I32.plus_wrap(i, 1), spin, I32.plus_wrap(acc, hit))
 	}) })
@@ -44,16 +53,27 @@ OcclusionKernel :: [].{
 
 	occlusion_step : Device.Device, I32, I32, I32 -> (Device.Device, I32)
 	occlusion_step = |dev, outb, frame, gid| ({
+		px : I32
 		px = I32.minus_wrap(gid, I32.times_wrap(Device.div(gid, oc_width), oc_width))
+		py : I32
 		py = Device.div(gid, oc_width)
+		fx : F32
 		fx = (I32.to_f32(I32.minus_wrap(px, oc_half_w)) / 384.0)
+		fy : F32
 		fy = (I32.to_f32(I32.minus_wrap(oc_half_h, py)) / 384.0)
+		rl : F32
 		rl = DeviceMath.real_sqrt((((fx * fx) + (fy * fy)) + 4.0))
+		dx : F32
 		dx = (fx / rl)
+		dy : F32
 		dy = (fy / rl)
+		dz : F32
 		dz = (2.0 / rl)
+		spin : F32
 		spin = (I32.to_f32(frame) / 45.0)
+		n : I32
 		n = oc_enters(0.0, 0.0, (0.0 - 5.0), dx, dy, dz, 0, spin, 0)
+		f : F32
 		f = (I32.to_f32(n) / 6.0)
 		({
 			Device.store(dev, outb, gid, (if (n == 0) { I32.plus_wrap(I32.plus_wrap(I32.times_wrap(8, 65536), I32.times_wrap(10, 256)), 16) } else { oc_pack((DeviceMath.real_max(0.0, (f - 0.4)) * 1.6), DeviceMath.real_min(1.0, (f * 1.4)), DeviceMath.real_max(0.0, (0.9 - (f * 1.3)))) }))

@@ -18,29 +18,50 @@ GltfKernel :: [].{
 
 	gl_mt : F32, F32, F32, F32, F32, F32, F32, F32, F32, F32, F32, F32, F32, F32, F32 -> F32
 	gl_mt = |ox, oy, oz, dx, dy, dz, v0x, v0y, v0z, v1x, v1y, v1z, v2x, v2y, v2z| ({
+		e1x : F32
 		e1x = (v1x - v0x)
+		e1y : F32
 		e1y = (v1y - v0y)
+		e1z : F32
 		e1z = (v1z - v0z)
+		e2x : F32
 		e2x = (v2x - v0x)
+		e2y : F32
 		e2y = (v2y - v0y)
+		e2z : F32
 		e2z = (v2z - v0z)
+		pvx : F32
 		pvx = ((dy * e2z) - (dz * e2y))
+		pvy : F32
 		pvy = ((dz * e2x) - (dx * e2z))
+		pvz : F32
 		pvz = ((dx * e2y) - (dy * e2x))
+		det : F32
 		det = (((e1x * pvx) + (e1y * pvy)) + (e1z * pvz))
+		adet : F32
 		adet = (if (det < 0.0) { (0.0 - det) } else { det })
 		(if (adet < F32.from_bits(925353388)) { (0.0 - 1.0) } else { ({
+			inv : F32
 			inv = (1.0 / det)
+			tvx : F32
 			tvx = (ox - v0x)
+			tvy : F32
 			tvy = (oy - v0y)
+			tvz : F32
 			tvz = (oz - v0z)
+			u : F32
 			u = ((((tvx * pvx) + (tvy * pvy)) + (tvz * pvz)) * inv)
 			(if (u < 0.0) { (0.0 - 1.0) } else { (if (u > 1.0) { (0.0 - 1.0) } else { ({
+				qvx : F32
 				qvx = ((tvy * e1z) - (tvz * e1y))
+				qvy : F32
 				qvy = ((tvz * e1x) - (tvx * e1z))
+				qvz : F32
 				qvz = ((tvx * e1y) - (tvy * e1x))
+				vv : F32
 				vv = ((((dx * qvx) + (dy * qvy)) + (dz * qvz)) * inv)
 				(if (vv < 0.0) { (0.0 - 1.0) } else { (if ((u + vv) > 1.0) { (0.0 - 1.0) } else { ({
+					t : F32
 					t = ((((e2x * qvx) + (e2y * qvy)) + (e2z * qvz)) * inv)
 					(if (t > 0.001) { t } else { (0.0 - 1.0) })
 				}) }) })
@@ -60,9 +81,13 @@ GltfKernel :: [].{
 		(dev8, c1) = Device.load(dev7, buf, I32.plus_wrap(I32.times_wrap(i, 9), 7))
 		(dev9, c2) = Device.load(dev8, buf, I32.plus_wrap(I32.times_wrap(i, 9), 8))
 		({
+			t : F32
 			t = gl_mt(ox, oy, oz, dx, dy, dz, (I32.to_f32(a0) / 1024.0), (I32.to_f32(a1) / 1024.0), (I32.to_f32(a2) / 1024.0), (I32.to_f32(b0) / 1024.0), (I32.to_f32(b1) / 1024.0), (I32.to_f32(b2) / 1024.0), (I32.to_f32(c0) / 1024.0), (I32.to_f32(c1) / 1024.0), (I32.to_f32(c2) / 1024.0))
+			take : I32
 			take = (if (t > 0.001) { (if (best_t < 0.0) { 1 } else { (if (t < best_t) { 1 } else { 0 }) }) } else { 0 })
+			nid : I32
 			nid = (if (take == 1) { i } else { best_id })
+			nt : F32
 			nt = (if (take == 1) { t } else { best_t })
 			gl_nearest(dev9, buf, ox, oy, oz, dx, dy, dz, I32.plus_wrap(i, 1), nid, nt)
 		})
@@ -73,14 +98,18 @@ GltfKernel :: [].{
 
 	gl_pack : F32, F32, F32 -> I32
 	gl_pack = |r, g, b| ({
+		ri : I32
 		ri = F32.to_i32_wrap((gl_clamp01(r) * 255.0))
+		gi : I32
 		gi = F32.to_i32_wrap((gl_clamp01(g) * 255.0))
+		bi : I32
 		bi = F32.to_i32_wrap((gl_clamp01(b) * 255.0))
 		I32.plus_wrap(I32.plus_wrap(I32.times_wrap(ri, 65536), I32.times_wrap(gi, 256)), bi)
 	})
 
 	gl_bg : I32 -> I32
 	gl_bg = |py| ({
+		h : F32
 		h = (I32.to_f32(py) / 768.0)
 		gl_pack((0.04 + (h * 0.05)), (0.05 + (h * 0.09)), (0.09 + (h * 0.15)))
 	})
@@ -96,34 +125,60 @@ GltfKernel :: [].{
 
 	gltf_step : Device.Device, I32, I32, I32, I32 -> (Device.Device, I32)
 	gltf_step = |dev, meshbuf, outb, frame, gid| ({
+		px : I32
 		px = I32.minus_wrap(gid, I32.times_wrap(Device.div(gid, gl_width), gl_width))
+		py : I32
 		py = Device.div(gid, gl_width)
+		fx : F32
 		fx = (I32.to_f32(I32.minus_wrap(px, gl_half_w)) / 384.0)
+		fy : F32
 		fy = (I32.to_f32(I32.minus_wrap(gl_half_h, py)) / 384.0)
+		rl : F32
 		rl = DeviceMath.real_sqrt((((fx * fx) + (fy * fy)) + 2.56))
+		dx0 : F32
 		dx0 = (fx / rl)
+		dy0 : F32
 		dy0 = (fy / rl)
+		dz0 : F32
 		dz0 = (1.6 / rl)
+		ay : F32
 		ay = (I32.to_f32(frame) / 38.0)
+		ax : F32
 		ax = (I32.to_f32(frame) / 57.0)
+		cy : F32
 		cy = DeviceMath.real_cos(ay)
+		sy : F32
 		sy = DeviceMath.real_sin(ay)
+		cx : F32
 		cx = DeviceMath.real_cos(ax)
+		sx : F32
 		sx = DeviceMath.real_sin(ax)
+		oz0 : F32
 		oz0 = (0.0 - 3.2)
+		oxa : F32
 		oxa = (oz0 * sy)
+		oza : F32
 		oza = (oz0 * cy)
+		ox : F32
 		ox = oxa
+		oy : F32
 		oy = (oza * sx)
+		oz : F32
 		oz = (oza * cx)
+		dxa : F32
 		dxa = ((dx0 * cy) + (dz0 * sy))
+		dza : F32
 		dza = ((0.0 - (dx0 * sy)) + (dz0 * cy))
+		dx : F32
 		dx = dxa
+		dy : F32
 		dy = ((dy0 * cx) + (dza * sx))
+		dz : F32
 		dz = ((0.0 - (dy0 * sx)) + (dza * cx))
 		({
 			(dev1, id) = gl_nearest(dev, meshbuf, ox, oy, oz, dx, dy, dz, 0, I32.minus_wrap(0, 1), (0.0 - 1.0))
 			({
+				safe : I32
 				safe = (if (id < 0) { 0 } else { id })
 				({
 					(dev2, a0) = Device.load(dev1, meshbuf, I32.times_wrap(safe, 9))
@@ -136,24 +191,43 @@ GltfKernel :: [].{
 					(dev9, c1) = Device.load(dev8, meshbuf, I32.plus_wrap(I32.times_wrap(safe, 9), 7))
 					(dev10, c2) = Device.load(dev9, meshbuf, I32.plus_wrap(I32.times_wrap(safe, 9), 8))
 					({
+						v0x : F32
 						v0x = (I32.to_f32(a0) / 1024.0)
+						v0y : F32
 						v0y = (I32.to_f32(a1) / 1024.0)
+						v0z : F32
 						v0z = (I32.to_f32(a2) / 1024.0)
+						e1x : F32
 						e1x = ((I32.to_f32(b0) / 1024.0) - v0x)
+						e1y : F32
 						e1y = ((I32.to_f32(b1) / 1024.0) - v0y)
+						e1z : F32
 						e1z = ((I32.to_f32(b2) / 1024.0) - v0z)
+						e2x : F32
 						e2x = ((I32.to_f32(c0) / 1024.0) - v0x)
+						e2y : F32
 						e2y = ((I32.to_f32(c1) / 1024.0) - v0y)
+						e2z : F32
 						e2z = ((I32.to_f32(c2) / 1024.0) - v0z)
+						nx0 : F32
 						nx0 = ((e1y * e2z) - (e1z * e2y))
+						ny0 : F32
 						ny0 = ((e1z * e2x) - (e1x * e2z))
+						nz0 : F32
 						nz0 = ((e1x * e2y) - (e1y * e2x))
+						nl : F32
 						nl = (DeviceMath.real_sqrt((((nx0 * nx0) + (ny0 * ny0)) + (nz0 * nz0))) + F32.from_bits(925353388))
+						nx : F32
 						nx = (nx0 / nl)
+						ny : F32
 						ny = (ny0 / nl)
+						nz : F32
 						nz = (nz0 / nl)
+						ndl : F32
 						ndl = (((nx * 0.35) + (ny * 0.72)) + (nz * (0.0 - 0.6)))
+						lit : F32
 						lit = (0.2 + ((if (ndl < 0.0) { (0.0 - ndl) } else { ndl }) * 0.85))
+						out : I32
 						out = (if (id < 0) { gl_bg(py) } else { gl_pack((gl_col_r(id) * lit), (gl_col_g(id) * lit), (gl_col_b(id) * lit)) })
 						Device.store(dev10, outb, gid, out)
 					})

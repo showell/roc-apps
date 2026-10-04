@@ -22,8 +22,9 @@
 # output stay in ~/build/roc-apps/gen/floor/<program>/.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/../tests/test_disk.sh"
 REPO="$(cd "$HERE/.." && pwd)"
-CHECKOUT="${CHECKOUT:-$HOME/showell_repos/cobblestone-u62}"
+CHECKOUT="${CHECKOUT:-$HOME/showell_repos/cobblestone-u66rel}"
 GEN="$HOME/build/roc-apps/gen/floor"
 VERDICTS="$HOME/build/roc-apps/gen/verdicts"
 mkdir -p "$GEN"
@@ -68,8 +69,8 @@ while IFS=$'\t' read -r path flags want hash; do
     fi
     args=()
     [ "$flags" != "-" ] && read -ra args <<< "$flags"
-    [ -f "${path%.codex}.disk" ] && args=(-disk "${path%.codex}.disk" "${args[@]}")
-    [ -f "${path%.codex}.disk2" ] && args=(-disk2 "${path%.codex}.disk2" "${args[@]}")
+    d=$(test_disk "$path" disk "$CHECKOUT"); [ -n "$d" ] && args=(-disk "$d" "${args[@]}")
+    d=$(test_disk "$path" disk2 "$CHECKOUT"); [ -n "$d" ] && args=(-disk2 "$d" "${args[@]}")
     out="$GEN/$n.$i.out"
     (cd "$CHECKOUT" && "$GEN/$n/native" "${args[@]}") > "$out" 2> "$GEN/$n.$i.err"
     code=$?

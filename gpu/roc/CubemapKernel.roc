@@ -24,45 +24,74 @@ CubemapKernel :: [].{
 
 	cm_cloud : F32, F32, F32, I32 -> F32
 	cm_cloud = |dx, dz, dy, frame| ({
+		t : F32
 		t = (1.3 / dy)
+		cx : F32
 		cx = (((dx * t) * 1.4) + (I32.to_f32(frame) / 42.0))
+		cz : F32
 		cz = ((dz * t) * 1.4)
+		n : F32
 		n = cm_noise(cx, cz)
 		(cm_clamp01(((n - 0.12) * 1.3)) * cm_clamp01((dy * 5.0)))
 	})
 
 	cm_sun : F32 -> F32
 	cm_sun = |d| (if (d <= 0.0) { 0.0 } else { ({
+		d2 : F32
 		d2 = (d * d)
+		d4 : F32
 		d4 = (d2 * d2)
 		(((d4 * d4) * d4) * d2)
 	}) })
 
 	cm_render : I32, I32 -> I32
 	cm_render = |gid, frame| ({
+		px : I32
 		px = I32.minus_wrap(gid, I32.times_wrap(Device.div(gid, cm_width), cm_width))
+		py : I32
 		py = Device.div(gid, cm_width)
+		fx : F32
 		fx = (I32.to_f32(I32.minus_wrap(px, cm_half_w)) / 512.0)
+		fy : F32
 		fy = (I32.to_f32(I32.minus_wrap(cm_half_h, py)) / 384.0)
+		yaw : F32
 		yaw = (I32.to_f32(frame) / 60.0)
+		ca : F32
 		ca = DeviceMath.real_cos(yaw)
+		sa : F32
 		sa = DeviceMath.real_sin(yaw)
+		rl : F32
 		rl = DeviceMath.real_sqrt((((fx * fx) + (fy * fy)) + 1.0))
+		dx0 : F32
 		dx0 = (fx / rl)
+		dy : F32
 		dy = (fy / rl)
+		dz0 : F32
 		dz0 = (1.0 / rl)
+		dx : F32
 		dx = ((dx0 * ca) + (dz0 * sa))
+		dz : F32
 		dz = ((0.0 - (dx0 * sa)) + (dz0 * ca))
+		sund : F32
 		sund = (((dx * 0.42) + (dy * 0.34)) - (dz * 0.84))
+		glow : F32
 		glow = (cm_sun(sund) * 0.7)
+		disk : F32
 		disk = (if (sund > 0.9965) { 1.6 } else { 0.0 })
 		(if (dy < (0.0 - 0.02)) { cm_pack((0.1 - (dy * 0.05)), (0.09 - (dy * 0.04)), 0.08) } else { ({
+			cloudv : F32
 			cloudv = (if (dy > 0.03) { cm_cloud(dx, dz, dy, frame) } else { 0.0 })
+			base_r : F32
 			base_r = (0.3 + (dy * 0.1))
+			base_g : F32
 			base_g = (0.5 + (dy * 0.3))
+			base_b : F32
 			base_b = (0.82 + (dy * 0.15))
+			skr : F32
 			skr = ((base_r + (glow * 0.9)) + disk)
+			skg : F32
 			skg = ((base_g + (glow * 0.78)) + disk)
+			skb : F32
 			skb = ((base_b + (glow * 0.45)) + disk)
 			cm_pack(((skr * (1.0 - cloudv)) + cloudv), ((skg * (1.0 - cloudv)) + cloudv), ((skb * (1.0 - cloudv)) + cloudv))
 		}) })

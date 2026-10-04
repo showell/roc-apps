@@ -11,6 +11,7 @@
 # The wasm lands in ~/build/roc-apps/next/machine/batch/, served on :9210.
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/../../tests/test_disk.sh"
 ROC="${ROC:-$HOME/build/roc-nightly/roc}"
 ROCEMIT="${ROCEMIT:-$HOME/build/rust-target/release/rocemit}"
 ZIG="${ZIG:-$HOME/zig-0.16.0/zig}"
@@ -43,9 +44,12 @@ for src in "$@"; do
         echo "$n: build failed"; exit 1
     fi
     base="${src%.codex}"
-    for ext in disk disk2 vmargs; do
-        if [ -f "$base.$ext" ]; then cp "$base.$ext" "$NEXT/$n.$ext"; else rm -f "$NEXT/$n.$ext"; fi
+    root="$(git -C "$(dirname "$src")" rev-parse --show-toplevel 2>/dev/null || dirname "$src")"
+    for ext in disk disk2; do
+        img=$(test_disk "$src" "$ext" "$root")
+        if [ -n "$img" ]; then cp "$img" "$NEXT/$n.$ext"; else rm -f "$NEXT/$n.$ext"; fi
     done
+    if [ -f "$base.vmargs" ]; then cp "$base.vmargs" "$NEXT/$n.vmargs"; else rm -f "$NEXT/$n.vmargs"; fi
     if [ -f "$VERDICTS/$n.expected" ]; then cp "$VERDICTS/$n.expected" "$NEXT/$n.expected"; else rm -f "$NEXT/$n.expected"; fi
     rm -rf "$NEXT/$n.roc"; mkdir -p "$NEXT/$n.roc"
     for f in "${emitted[@]}"; do cp "$d/$f" "$NEXT/$n.roc/"; done

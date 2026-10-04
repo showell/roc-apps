@@ -76,6 +76,8 @@ safe : Box(Model) -> I64
 safe = |boxed| MinesweeperWasm.ms_wasm_safe(Box.unbox(boxed))
 open : Box(Model), I64 -> Box(Model)
 open = |boxed, i| Box.box(MinesweeperWasm.ms_wasm_reveal(Box.unbox(boxed), i))
+flag : Box(Model), I64 -> Box(Model)
+flag = |boxed, i| Box.box(MinesweeperWasm.ms_wasm_flag(Box.unbox(boxed), i))
 ai : Box(Model) -> I64
 ai = |boxed| MinesweeperWasm.ms_wasm_ai(Box.unbox(boxed))
 
@@ -85,4 +87,4 @@ drop = |boxed| {
 	{}
 }
 
-program = { init, step, view, new, mine, shown, adj, count, hits, moves, done, won, safe, open, ai, drop, same }
+program = { init, step, view, new, mine, shown, adj, count, hits, moves, done, won, safe, open, flag, ai, drop, same }

@@ -21,35 +21,50 @@ DeferredKernel :: [].{
 
 	de_lr : I32 -> F32
 	de_lr = |k| ({
+		m : I32
 		m = I32.minus_wrap(k, I32.times_wrap(Device.div(k, 6), 6))
 		(if (m == 0) { 1.0 } else { (if (m == 1) { 0.3 } else { (if (m == 2) { 0.35 } else { (if (m == 3) { 1.0 } else { (if (m == 4) { 0.9 } else { 0.4 }) }) }) }) })
 	})
 
 	de_lg : I32 -> F32
 	de_lg = |k| ({
+		m : I32
 		m = I32.minus_wrap(k, I32.times_wrap(Device.div(k, 6), 6))
 		(if (m == 0) { 0.4 } else { (if (m == 1) { 0.5 } else { (if (m == 2) { 0.85 } else { (if (m == 3) { 0.85 } else { (if (m == 4) { 0.35 } else { 0.9 }) }) }) }) })
 	})
 
 	de_lb : I32 -> F32
 	de_lb = |k| ({
+		m : I32
 		m = I32.minus_wrap(k, I32.times_wrap(Device.div(k, 6), 6))
 		(if (m == 0) { 0.3 } else { (if (m == 1) { 1.0 } else { (if (m == 2) { 0.6 } else { (if (m == 3) { 0.3 } else { (if (m == 4) { 0.9 } else { 0.9 }) }) }) }) })
 	})
 
 	de_accum : F32, F32, F32, F32, F32, F32, F32, I32, I32, I32 -> I32
 	de_accum = |posx, posy, posz, nx, ny, nz, frame, ch, k, acc| (if (k >= de_lights) { acc } else { ({
+		la : F32
 		la = ((I32.to_f32(k) * 0.62) + frame)
+		lx : F32
 		lx = (DeviceMath.real_cos(la) * 2.7)
+		ly : F32
 		ly = (DeviceMath.real_sin((la * 0.6)) * 1.6)
+		lz : F32
 		lz = ((DeviceMath.real_sin(la) * 2.7) - 0.4)
+		ddx : F32
 		ddx = (lx - posx)
+		ddy : F32
 		ddy = (ly - posy)
+		ddz : F32
 		ddz = (lz - posz)
+		d2 : F32
 		d2 = (((ddx * ddx) + (ddy * ddy)) + (ddz * ddz))
+		dist : F32
 		dist = (DeviceMath.real_sqrt(d2) + 0.001)
+		ndl : F32
 		ndl = (DeviceMath.real_max(0.0, (((nx * ddx) + (ny * ddy)) + (nz * ddz))) / dist)
+		atten : F32
 		atten = (4.2 / (0.5 + d2))
+		lc : F32
 		lc = (if (ch == 0) { de_lr(k) } else { (if (ch == 1) { de_lg(k) } else { de_lb(k) }) })
 		de_accum(posx, posy, posz, nx, ny, nz, frame, ch, I32.plus_wrap(k, 1), I32.plus_wrap(acc, F32.to_i32_wrap((((ndl * atten) * lc) * 300.0))))
 	}) })
@@ -59,35 +74,60 @@ DeferredKernel :: [].{
 
 	deferred_step : Device.Device, I32, I32, I32, I32, I32, I32 -> (Device.Device, I32)
 	deferred_step = |dev, galb, gnrm, gdep, outb, frame, gid| ({
+		px : I32
 		px = I32.minus_wrap(gid, I32.times_wrap(Device.div(gid, de_width), de_width))
+		py : I32
 		py = Device.div(gid, de_width)
+		fx : F32
 		fx = (I32.to_f32(I32.minus_wrap(px, de_half_w)) / 384.0)
+		fy : F32
 		fy = (I32.to_f32(I32.minus_wrap(de_half_h, py)) / 384.0)
+		rl : F32
 		rl = DeviceMath.real_sqrt((((fx * fx) + (fy * fy)) + 3.24))
+		dx : F32
 		dx = (fx / rl)
+		dy : F32
 		dy = (fy / rl)
+		dz : F32
 		dz = (1.8 / rl)
 		({
 			(dev1, alb) = Device.load(dev, galb, gid)
 			(dev2, nrm) = Device.load(dev1, gnrm, gid)
 			(dev3, dep) = Device.load(dev2, gdep, gid)
 			({
+				t : F32
 				t = (I32.to_f32(dep) / 256.0)
+				posx : F32
 				posx = (dx * t)
+				posy : F32
 				posy = (dy * t)
+				posz : F32
 				posz = ((0.0 - 5.0) + (dz * t))
+				nx : F32
 				nx = ((I32.to_f32(Device.div(nrm, 65536)) / 127.0) - 1.0)
+				ny : F32
 				ny = ((I32.to_f32(I32.minus_wrap(Device.div(nrm, 256), I32.times_wrap(Device.div(nrm, 65536), 256))) / 127.0) - 1.0)
+				nz : F32
 				nz = ((I32.to_f32(I32.minus_wrap(nrm, I32.times_wrap(Device.div(nrm, 256), 256))) / 127.0) - 1.0)
+				ar : I32
 				ar = Device.div(alb, 65536)
+				ag : I32
 				ag = I32.minus_wrap(Device.div(alb, 256), I32.times_wrap(Device.div(alb, 65536), 256))
+				ab : I32
 				ab = I32.minus_wrap(alb, I32.times_wrap(Device.div(alb, 256), 256))
+				lr : I32
 				lr = de_accum(posx, posy, posz, nx, ny, nz, (I32.to_f32(frame) / 26.0), 0, 0, 0)
+				lg : I32
 				lg = de_accum(posx, posy, posz, nx, ny, nz, (I32.to_f32(frame) / 26.0), 1, 0, 0)
+				lb : I32
 				lb = de_accum(posx, posy, posz, nx, ny, nz, (I32.to_f32(frame) / 26.0), 2, 0, 0)
+				fr : I32
 				fr = de_clamp(Device.div(I32.times_wrap(ar, I32.plus_wrap(26, lr)), 255), 0, 255)
+				fg : I32
 				fg = de_clamp(Device.div(I32.times_wrap(ag, I32.plus_wrap(26, lg)), 255), 0, 255)
+				fb : I32
 				fb = de_clamp(Device.div(I32.times_wrap(ab, I32.plus_wrap(26, lb)), 255), 0, 255)
+				out : I32
 				out = (if (dep >= de_miss) { I32.plus_wrap(I32.times_wrap(20, 256), 30) } else { I32.plus_wrap(I32.plus_wrap(I32.times_wrap(fr, 65536), I32.times_wrap(fg, 256)), fb) })
 				Device.store(dev3, outb, gid, out)
 			})

@@ -51,9 +51,9 @@ which is how we found out what the doors are. This is the other arrangement:
 | `verify.sh`, `verify.tsv` | every row built and run, its console compared with what the row expects |
 | `expect/` | the consoles a fault row expects, which the unit's own verdict cannot describe |
 
-    floor/run.sh ~/showell_repos/cobblestone-u62/codex/test/fat16-write.codex -report
-    floor/run.sh ~/showell_repos/cobblestone-u62/codex/test/fat16-write.codex -fault tear-write -report
-    floor/run.sh ~/showell_repos/cobblestone-u62/codex/test/gpu-panel-border.codex -screen 640 480 640
+    floor/run.sh ~/showell_repos/cobblestone-u66rel/codex/test/fat16-write.codex -report
+    floor/run.sh ~/showell_repos/cobblestone-u66rel/codex/test/fat16-write.codex -fault tear-write -report
+    floor/run.sh ~/showell_repos/cobblestone-u66rel/codex/test/gpu-panel-border.codex -screen 640 480 640
     floor/verify.sh
     ROC=~/build/roc/fast/bin/roc floor/page.sh <unit.codex>...
     # the dev channel: http://143.244.172.148:9210/floor/
@@ -97,19 +97,20 @@ sector reads and 8 writes. Every row below is in `verify.tsv`.
 | `tear-write` | its verdict, exactly | this workload never reads back the half of a sector the tear drops |
 | `refuse-write` | `wrote False` … `bin <none>` | Fat16 reports the failure honestly and stays consistent |
 | `refuse-read` | the same | a filesystem that can read nothing writes nothing |
-| `refuse-read -fault-every 7` | `wrote-bin True`, then `bin <none>` | **a write reported as a success whose file is not there** |
+| `refuse-read -fault-every 7` | `size -1`, `wrote-bin False` | the poisoned reads are caught: the write fails, and says so |
 
-The last row is the one to look at. `Fat16` does check whether a write landed
--- `fat16-put-entry-and-write` answers True only when `block-write-sector`
-answers 0 -- so under `refuse-write` it tells the truth. It has no such
-check available for a read, because **`block-read-sector` answers an address
+The last row is the one to look at. **`block-read-sector` answers an address
 and nothing else**: there is no channel in that builtin for "this sector did
-not arrive". With every seventh read poisoned, the program writes data derived
-from sectors it never received, reports success, and cannot read the file back.
+not arrive", so a poisoned read reaches `Fat16` as data. Up to Update 65 that
+was a silent loss: with every seventh read poisoned, the program wrote data
+derived from sectors it never received, reported `wrote-bin True`, and could
+not read the file back.
 
-Nothing in the program could have noticed. That is a gap in the builtin, not a
-bug in `Fat16`, and it is an argument for what a Roc kernel on this floor needs
-that the machine never offered it: a read door with an outcome.
+Update 66's `Fat16` checks each cluster chain it reads (a cycle check, and
+`None` for a chain it did not produce), so the same run now fails the write
+and reports it: `size -1`, `wrote-bin False`. The builtin still has no read
+outcome; what catches the poison here is the filesystem distrusting what it
+reads. A Roc kernel on this floor would still want a read door with an outcome.
 
 ## The screen
 

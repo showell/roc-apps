@@ -8,20 +8,25 @@ PlasmaKernel :: [].{
 
 	pl_wrap : I32 -> I32
 	pl_wrap = |a| ({
+		m : I32
 		m = I32.minus_wrap(a, I32.times_wrap(Device.div(a, 6283), 6283))
 		(if (m < 0) { I32.plus_wrap(m, 6283) } else { m })
 	})
 
 	pl_sin_core : I32 -> I32
 	pl_sin_core = |x| ({
+		x2 : I32
 		x2 = Device.div(I32.times_wrap(x, x), 1000)
+		x3 : I32
 		x3 = Device.div(I32.times_wrap(x2, x), 1000)
+		x5 : I32
 		x5 = Device.div(I32.times_wrap(x3, x2), 1000)
 		I32.plus_wrap(I32.minus_wrap(x, Device.div(x3, 6)), Device.div(x5, 120))
 	})
 
 	pl_sin : I32 -> I32
 	pl_sin = |raw| ({
+		a : I32
 		a = pl_wrap(raw)
 		(if (a <= 1570) { pl_sin_core(a) } else { (if (a <= 3141) { pl_sin_core(I32.minus_wrap(3141, a)) } else { (if (a <= 4712) { I32.minus_wrap(0, pl_sin_core(I32.minus_wrap(a, 3141))) } else { I32.minus_wrap(0, pl_sin_core(I32.minus_wrap(6283, a))) }) }) })
 	})
@@ -34,17 +39,24 @@ PlasmaKernel :: [].{
 
 	pl_channel : I32, I32, I32 -> I32
 	pl_channel = |wave, phase, t| ({
+		s : I32
 		s = pl_sin(I32.plus_wrap(I32.plus_wrap(wave, phase), t))
 		I32.plus_wrap(128, Device.div(I32.times_wrap(s, 118), 1000))
 	})
 
 	pl_color : I32, I32 -> I32
 	pl_color = |gid, frame| ({
+		px : I32
 		px = pl_px(gid)
+		py : I32
 		py = pl_py(gid)
+		t : I32
 		t = I32.times_wrap(frame, 24)
+		r : I32
 		r = pl_channel(I32.plus_wrap(I32.times_wrap(px, 11), I32.times_wrap(py, 4)), 0, t)
+		g : I32
 		g = pl_channel(I32.times_wrap(py, 12), 2094, I32.plus_wrap(t, Device.div(t, 2)))
+		b : I32
 		b = pl_channel(I32.plus_wrap(I32.times_wrap(I32.plus_wrap(px, py), 7), I32.times_wrap(pl_sin(I32.plus_wrap(I32.times_wrap(px, 5), t)), 3)), 4188, t)
 		I32.plus_wrap(I32.plus_wrap(I32.times_wrap(r, 65536), I32.times_wrap(g, 256)), b)
 	})

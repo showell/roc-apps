@@ -41,7 +41,7 @@ ROC="${ROC:-$HOME/build/roc-nightly/$(cat "$HERE/../roc-nightly.txt")/roc}"
 # which names its date and commit.
 ROC_ID="$(readlink -f "$ROC")"
 ROCEMIT="${ROCEMIT:-$HOME/build/rust-target/release/rocemit}"
-TESTS_ROOT="${TESTS_ROOT:-$HOME/showell_repos/cobblestone-u62}"
+TESTS_ROOT="${TESTS_ROOT:-$HOME/showell_repos/cobblestone-u66rel}"
 SRC="$TESTS_ROOT/codex/test"
 GEN="$HOME/build/roc-apps/gen/tests"
 VERDICTS="$HOME/build/roc-apps/gen/verdicts"
@@ -89,17 +89,9 @@ diverges() {
 # Roc module: a program on the Echo platform reads no files, so an attached
 # image and a .keys timeline are file IMPORTS, and the position with nothing
 # on it is Absent. Arguments: yes/no for drive0.disk, drive1.disk and keys.txt.
-# The image behind a test's .disk or .disk2, or nothing: checked in, or
-# minted from its recipe by upstream's script (run from TESTS_ROOT, as the
-# script's paths are relative to the repo root). A refused mint is no image,
-# and the unit then fails as the test would without its disk.
-disk_for() {
-    local src=$1 ext=$2 out
-    if [ -f "$src.$ext" ]; then echo "$src.$ext"; return; fi
-    [ -f "$src.$ext-mint" ] || return
-    out=$(cd "$TESTS_ROOT" && pwsh -NoProfile -File build/mint-test-disk.ps1 -Recipe "$src.$ext-mint" 2>/dev/null | tail -1)
-    case $out in /*) [ -f "$out" ] && echo "$out" ;; *) [ -f "$TESTS_ROOT/$out" ] && echo "$TESTS_ROOT/$out" ;; esac
-}
+# The image behind a test's .disk or .disk2, or nothing (tests/test_disk.sh).
+. "$HERE/test_disk.sh"
+disk_for() { test_disk "$1" "$2" "$TESTS_ROOT"; }
 
 media() {
     echo "# MachineMedia -- the drives attached and the keys typed for this unit, written by tests/ladder.sh."
@@ -213,7 +205,7 @@ one() {
 }
 
 MACHINE="$(cd "$HERE/../machine/roc" && pwd)"
-export -f one diverges media disk_for; export ROC ROC_ID ROCEMIT SRC GEN VERDICTS MACHINE TESTS_ROOT HERE
+export -f one diverges media disk_for test_disk; export ROC ROC_ID ROCEMIT SRC GEN VERDICTS MACHINE TESTS_ROOT HERE
 printf '%s\n' "${units[@]}" | xargs -P "${JOBS:-2}" -I{} bash -c 'one {}'
 ledger="$( for n in "${units[@]}"; do cat "$GEN/$n/verdict"; done )"
 [ "$full" = yes ] && echo "$ledger" > "$HERE/ledger.txt"

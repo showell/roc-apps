@@ -15,7 +15,7 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROC="${ROC:-$HOME/build/roc-nightly/roc}"
 ROCEMIT="${ROCEMIT:-$HOME/build/rust-target/release/rocemit}"
-KERNELS_ROOT="${KERNELS_ROOT:-$HOME/showell_repos/cobblestone-u62}"
+KERNELS_ROOT="${KERNELS_ROOT:-$HOME/showell_repos/cobblestone-u66rel}"
 # rocemit resolves a kernel's cites (DeviceMath, DeviceEffect, ...) from the
 # checkout the kernel sits in, so they come from $KERNELS_ROOT too.
 GEN="$HOME/build/roc-apps/gen/gpu"
@@ -34,7 +34,10 @@ for src in "${kernels[@]}"; do
     k="$(basename "$src" .codex)"
     dir="$GEN/$k"
     rm -rf "$dir"; mkdir -p "$dir"
-    if ! err=$("$ROCEMIT" "$src" "$dir" 2>&1 >/dev/null); then
+    # --whole: a shared chapter is checked as ONE text, so it must be the whole
+    # chapter; pruned to a kernel's reach (GlobeKernels has an opening), its text
+    # would depend on the kernel.
+    if ! err=$("$ROCEMIT" --whole "$src" "$dir" 2>&1 >/dev/null); then
         echo "FAIL $k: $err"; fail=$((fail+1)); failed+=("$k"); continue
     fi
     cp "$HERE/roc/Device.roc" "$dir/"

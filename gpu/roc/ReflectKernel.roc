@@ -42,14 +42,22 @@ ReflectKernel :: [].{
 
 	rf_sphere_hit : F32, F32, F32, F32, F32, F32, I32 -> F32
 	rf_sphere_hit = |ox, oy, oz, dx, dy, dz, i| ({
+		lx : F32
 		lx = (ox - rf_cx(i))
+		ly : F32
 		ly = (oy - rf_cy(i))
+		lz : F32
 		lz = (oz - rf_cz(i))
+		b : F32
 		b = (((dx * lx) + (dy * ly)) + (dz * lz))
+		r : F32
 		r = rf_rad(i)
+		c : F32
 		c = ((((lx * lx) + (ly * ly)) + (lz * lz)) - (r * r))
+		disc : F32
 		disc = ((b * b) - c)
 		(if (disc < 0.0) { (0.0 - 1.0) } else { ({
+			t : F32
 			t = ((0.0 - b) - DeviceMath.real_sqrt(disc))
 			(if (t > 0.001) { t } else { (0.0 - 1.0) })
 		}) })
@@ -57,6 +65,7 @@ ReflectKernel :: [].{
 
 	rf_plane_hit : F32, F32 -> F32
 	rf_plane_hit = |oy, dy| (if (dy > (0.0 - 0.0001)) { (0.0 - 1.0) } else { ({
+		t : F32
 		t = (((0.0 - 1.0) - oy) / dy)
 		(if (t > 0.001) { t } else { (0.0 - 1.0) })
 	}) })
@@ -66,13 +75,16 @@ ReflectKernel :: [].{
 
 	rf_nearest : F32, F32, F32, F32, F32, F32, I32, I32, F32 -> I32
 	rf_nearest = |ox, oy, oz, dx, dy, dz, i, best_id, best_t| (if (i >= rf_nobj) { best_id } else { ({
+		t : F32
 		t = rf_hit(ox, oy, oz, dx, dy, dz, i)
+		take : I32
 		take = (if (t > 0.001) { (if (best_t < 0.0) { 1 } else { (if (t < best_t) { 1 } else { 0 }) }) } else { 0 })
 		(if (take == 1) { rf_nearest(ox, oy, oz, dx, dy, dz, I32.plus_wrap(i, 1), i, t) } else { rf_nearest(ox, oy, oz, dx, dy, dz, I32.plus_wrap(i, 1), best_id, best_t) })
 	}) })
 
 	rf_shadowed : F32, F32, F32, F32, F32, F32, I32 -> I32
 	rf_shadowed = |ox, oy, oz, dx, dy, dz, i| (if (i >= 3) { 0 } else { ({
+		t : F32
 		t = rf_sphere_hit(ox, oy, oz, dx, dy, dz, i)
 		(if (t > 0.001) { 1 } else { rf_shadowed(ox, oy, oz, dx, dy, dz, I32.plus_wrap(i, 1)) })
 	}) })
@@ -82,22 +94,29 @@ ReflectKernel :: [].{
 
 	rf_pack : F32, F32, F32 -> I32
 	rf_pack = |r, g, b| ({
+		ri : I32
 		ri = F32.to_i32_wrap((rf_clamp01(r) * 255.0))
+		gi : I32
 		gi = F32.to_i32_wrap((rf_clamp01(g) * 255.0))
+		bi : I32
 		bi = F32.to_i32_wrap((rf_clamp01(b) * 255.0))
 		I32.plus_wrap(I32.plus_wrap(I32.times_wrap(ri, 65536), I32.times_wrap(gi, 256)), bi)
 	})
 
 	rf_sky : F32 -> I32
 	rf_sky = |dy| ({
+		h : F32
 		h = rf_clamp01(((dy * 0.5) + 0.5))
 		rf_pack((0.05 + (h * 0.06)), (0.1 + (h * 0.16)), (0.24 + (h * 0.4)))
 	})
 
 	rf_checker : F32, F32 -> F32
 	rf_checker = |hx, hz| ({
+		ix : I32
 		ix = F32.to_i32_wrap((hx + 64.0))
+		iz : I32
 		iz = F32.to_i32_wrap((hz + 64.0))
+		s : I32
 		s = I32.plus_wrap(ix, iz)
 		(if (I32.minus_wrap(s, I32.times_wrap(Device.div(s, 2), 2)) == 0) { 0.35 } else { 0.65 })
 	})
@@ -113,65 +132,119 @@ ReflectKernel :: [].{
 
 	rf_local : F32, F32, F32, F32, F32, F32, I32, I32 -> I32
 	rf_local = |ox, oy, oz, dx, dy, dz, id, frame| ({
+		t : F32
 		t = rf_hit(ox, oy, oz, dx, dy, dz, id)
+		hx : F32
 		hx = (ox + (dx * t))
+		hy : F32
 		hy = (oy + (dy * t))
+		hz : F32
 		hz = (oz + (dz * t))
+		nx : F32
 		nx = (if (id == 3) { 0.0 } else { ((hx - rf_cx(id)) / rf_rad(id)) })
+		ny : F32
 		ny = (if (id == 3) { 1.0 } else { ((hy - rf_cy(id)) / rf_rad(id)) })
+		nz : F32
 		nz = (if (id == 3) { 0.0 } else { ((hz - rf_cz(id)) / rf_rad(id)) })
+		br : F32
 		br = (if (id == 3) { rf_checker(hx, hz) } else { rf_col_r(id) })
+		bg : F32
 		bg = (if (id == 3) { rf_checker(hx, hz) } else { rf_col_g(id) })
+		bb : F32
 		bb = (if (id == 3) { rf_checker(hx, hz) } else { rf_col_b(id) })
+		ang : F32
 		ang = (I32.to_f32(frame) / 24.0)
+		lx : F32
 		lx = (DeviceMath.real_cos(ang) * 0.6)
+		ly : F32
 		ly = 0.9
+		lz : F32
 		lz = (DeviceMath.real_sin(ang) * 0.6)
+		ll : F32
 		ll = DeviceMath.real_sqrt((((lx * lx) + (ly * ly)) + (lz * lz)))
+		ux : F32
 		ux = (lx / ll)
+		uy : F32
 		uy = (ly / ll)
+		uz : F32
 		uz = (lz / ll)
+		ndl : F32
 		ndl = DeviceMath.real_max(0.0, (((nx * ux) + (ny * uy)) + (nz * uz)))
+		sh : I32
 		sh = rf_shadowed((hx + (nx * 0.002)), (hy + (ny * 0.002)), (hz + (nz * 0.002)), ux, uy, uz, 0)
+		lit : F32
 		lit = (if (sh == 1) { 0.22 } else { (0.22 + (ndl * 0.9)) })
 		rf_pack((br * lit), (bg * lit), (bb * lit))
 	})
 
 	rf_render : I32, I32 -> I32
 	rf_render = |gid, frame| ({
+		px : I32
 		px = I32.minus_wrap(gid, I32.times_wrap(Device.div(gid, rf_width), rf_width))
+		py : I32
 		py = Device.div(gid, rf_width)
+		fx : F32
 		fx = (I32.to_f32(I32.minus_wrap(px, rf_half_w)) / 384.0)
+		fy : F32
 		fy = (I32.to_f32(I32.minus_wrap(rf_half_h, py)) / 384.0)
+		rl : F32
 		rl = DeviceMath.real_sqrt((((fx * fx) + (fy * fy)) + 2.89))
+		dx : F32
 		dx = (fx / rl)
+		dy : F32
 		dy = (fy / rl)
+		dz : F32
 		dz = (1.7 / rl)
+		ox : F32
 		ox = 0.0
+		oy : F32
 		oy = 0.7
+		oz : F32
 		oz = (0.0 - 4.0)
+		id0 : I32
 		id0 = rf_nearest(ox, oy, oz, dx, dy, dz, 0, I32.minus_wrap(0, 1), (0.0 - 1.0))
 		(if (id0 < 0) { rf_sky(dy) } else { ({
+			t0 : F32
 			t0 = rf_hit(ox, oy, oz, dx, dy, dz, id0)
+			hx : F32
 			hx = (ox + (dx * t0))
+			hy : F32
 			hy = (oy + (dy * t0))
+			hz : F32
 			hz = (oz + (dz * t0))
+			nx : F32
 			nx = (if (id0 == 3) { 0.0 } else { ((hx - rf_cx(id0)) / rf_rad(id0)) })
+			ny : F32
 			ny = (if (id0 == 3) { 1.0 } else { ((hy - rf_cy(id0)) / rf_rad(id0)) })
+			nz : F32
 			nz = (if (id0 == 3) { 0.0 } else { ((hz - rf_cz(id0)) / rf_rad(id0)) })
+			p0 : I32
 			p0 = rf_local(ox, oy, oz, dx, dy, dz, id0, frame)
+			dn : F32
 			dn = (((dx * nx) + (dy * ny)) + (dz * nz))
+			rx : F32
 			rx = (dx - ((2.0 * dn) * nx))
+			ry : F32
 			ry = (dy - ((2.0 * dn) * ny))
+			rz : F32
 			rz = (dz - ((2.0 * dn) * nz))
+			sx : F32
 			sx = (hx + (nx * 0.003))
+			sy : F32
 			sy = (hy + (ny * 0.003))
+			sz : F32
 			sz = (hz + (nz * 0.003))
+			id1 : I32
 			id1 = rf_nearest(sx, sy, sz, rx, ry, rz, 0, I32.minus_wrap(0, 1), (0.0 - 1.0))
+			pr : I32
 			pr = (if (id1 < 0) { rf_sky(ry) } else { rf_local(sx, sy, sz, rx, ry, rz, id1, frame) })
+			k : F32
 			k = rf_refl(id0)
+			cr : F32
 			cr = ((rf_un_r(p0) * (1.0 - k)) + (rf_un_r(pr) * k))
+			cg : F32
 			cg = ((rf_un_g(p0) * (1.0 - k)) + (rf_un_g(pr) * k))
+			cb : F32
 			cb = ((rf_un_b(p0) * (1.0 - k)) + (rf_un_b(pr) * k))
 			rf_pack(cr, cg, cb)
 		}) })

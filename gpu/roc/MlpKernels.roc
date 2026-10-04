@@ -12,6 +12,7 @@ MlpKernels :: [].{
 	mlp_matmul_relu_row : Device.Device, I32, I32, I32, I32, I32, I32 -> (Device.Device, I32)
 	mlp_matmul_relu_row = |dev, weights, input, bias, output, row, cols| ({
 		(dev1, sum) = mlp_dot_row(dev, weights, input, bias, row, cols)
+		activated : I32
 		activated = (if (sum > 0) { sum } else { 0 })
 		Device.store(dev1, output, row, activated)
 	})
@@ -51,6 +52,7 @@ MlpKernels :: [].{
 	mlp_relu_grad_one = |dev, grad_out, activations, grad_in, tid| ({
 		(dev1, val) = Device.load(dev, activations, tid)
 		(dev2, g) = Device.load(dev1, grad_out, tid)
+		result : I32
 		result = (if (val > 0) { g } else { 0 })
 		Device.store(dev2, grad_in, tid, result)
 	})
@@ -59,7 +61,9 @@ MlpKernels :: [].{
 	kernel_outer_product_add = |dev, grad_weights, delta, input, rows, cols| ({
 		(dev1, tid) = Device.thread_idx_x(dev)
 		({
+			row : I32
 			row = Device.div(tid, cols)
+			col : I32
 			col = I32.minus_wrap(tid, I32.times_wrap(row, cols))
 			(if (row < rows) { (if (col < cols) { mlp_outer_one(dev1, grad_weights, delta, input, row, col, cols) } else { (dev1, 0) }) } else { (dev1, 0) })
 		})
@@ -117,10 +121,15 @@ MlpKernels :: [].{
 		(dev2, m_old) = Device.load(dev1, m_buf, tid)
 		(dev3, v_old) = Device.load(dev2, v_buf, tid)
 		(dev4, p_old) = Device.load(dev3, params, tid)
+		g_scaled : I32
 		g_scaled = Device.div(g, batch_size)
+		m_new : I32
 		m_new = I32.plus_wrap(Device.div(I32.times_wrap(m_old, 9), 10), Device.div(g_scaled, 10))
+		v_new : I32
 		v_new = I32.plus_wrap(Device.div(I32.times_wrap(v_old, 999), 1000), Device.div(I32.times_wrap(g_scaled, g_scaled), 1000))
+		update : I32
 		update = Device.div(m_new, I32.plus_wrap(v_new, 1))
+		p_new : I32
 		p_new = I32.minus_wrap(p_old, update)
 		(dev5, _) = Device.store(dev4, m_buf, tid, m_new)
 		(dev6, _) = Device.store(dev5, v_buf, tid, v_new)
@@ -143,6 +152,7 @@ MlpKernels :: [].{
 	mlp_mse_one = |dev, predicted, target, loss_out, tid| ({
 		(dev1, p) = Device.load(dev, predicted, tid)
 		(dev2, t) = Device.load(dev1, target, tid)
+		diff : I32
 		diff = I32.minus_wrap(p, t)
 		Device.store(dev2, loss_out, tid, I32.times_wrap(diff, diff))
 	})

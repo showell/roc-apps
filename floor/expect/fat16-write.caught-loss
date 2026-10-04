@@ -1,7 +1,7 @@
 wrote True
 exists True
 readback Hello, disk!
-size 12
-wrote-bin True
+size -1
+wrote-bin False
 bin <none>
 absent False

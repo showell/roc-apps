@@ -1,7 +1,11 @@
 # KlondikeWasm -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+import CceText
 import Klondike
 
 KlondikeWasm :: [].{
+
+	wasm_exports : CceText
+	wasm_exports = ""
 
 	kd_wasm_copy_list : List(I64), I64, List(I64) -> List(I64)
 	kd_wasm_copy_list = |src, i, acc| (if (i >= U64.to_i64_wrap(List.len(src))) { acc } else { kd_wasm_copy_list(src, (i + 1), List.append(acc, (List.get(src, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))) })
@@ -10,7 +14,7 @@ KlondikeWasm :: [].{
 	kd_wasm_copy_of = |src| kd_wasm_copy_list(src, 0, [])
 
 	kd_copy_state : Klondike.KlondikeState -> Klondike.KlondikeState
-	kd_copy_state = |st| { col0: kd_wasm_copy_of(st.col0), col1: kd_wasm_copy_of(st.col1), col2: kd_wasm_copy_of(st.col2), col3: kd_wasm_copy_of(st.col3), col4: kd_wasm_copy_of(st.col4), col5: kd_wasm_copy_of(st.col5), col6: kd_wasm_copy_of(st.col6), downs: kd_wasm_copy_of(st.downs), founds: kd_wasm_copy_of(st.founds), stock: kd_wasm_copy_of(st.stock), waste: kd_wasm_copy_of(st.waste), draw: st.draw, sterile: st.sterile, moves: st.moves }
+	kd_copy_state = |st| Klondike.KlondikeState.{ col0: kd_wasm_copy_of(st.col0), col1: kd_wasm_copy_of(st.col1), col2: kd_wasm_copy_of(st.col2), col3: kd_wasm_copy_of(st.col3), col4: kd_wasm_copy_of(st.col4), col5: kd_wasm_copy_of(st.col5), col6: kd_wasm_copy_of(st.col6), downs: kd_wasm_copy_of(st.downs), founds: kd_wasm_copy_of(st.founds), stock: kd_wasm_copy_of(st.stock), waste: kd_wasm_copy_of(st.waste), draw: st.draw, sterile: st.sterile, moves: st.moves }
 
 	kd_wasm_rank : I64 -> I64
 	kd_wasm_rank = |c| (if (c < 0) { (-1) } else { (if (c >= 52) { (-1) } else { Klondike.kd_rank(c) }) })
@@ -59,6 +63,7 @@ KlondikeWasm :: [].{
 
 	kd_wasm_run_len : Klondike.KlondikeState, I64, I64 -> I64
 	kd_wasm_run_len = |st, c, i| (if (c < 0) { (-1) } else { (if (c >= 7) { (-1) } else { ({
+		col : List(I64)
 		col = Klondike.kd_get_col(st, c)
 		(if (i < 0) { (-1) } else { (if (i >= U64.to_i64_wrap(List.len(col))) { 0 } else { (if (i < Klondike.kd_down_at(st, c)) { 0 } else { Klondike.kd_run_len(col, i) }) }) })
 	}) }) })

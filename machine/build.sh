@@ -11,7 +11,7 @@ set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROC="${ROC:-$HOME/build/roc-nightly/roc}"
 ZIG="${ZIG:-$HOME/zig-0.16.0/zig}"
-CHECKOUT="${CHECKOUT:-$HOME/showell_repos/cobblestone-u62}"
+CHECKOUT="${CHECKOUT:-$HOME/showell_repos/cobblestone-u66rel}"
 NEXT="$HOME/build/roc-apps/next/machine"
 mkdir -p "$NEXT"
 (cd "$HERE/wasm" && "$ZIG" build --cache-dir "$HOME/build/roc-apps/zig-cache" --global-cache-dir "$HOME/build/zig-global")
@@ -25,6 +25,9 @@ if grep -q "✗" "$LOG" || [ ! -s "$NEXT/machine.wasm" ]; then
     cat "$LOG"; echo "build failed"; exit 1
 fi
 cp "$HERE/web/machine.html" "$NEXT/"
-cp "$CHECKOUT/codex/test/block-select-drives.disk" "$NEXT/drive0.img"
+. "$HERE/../tests/test_disk.sh"
+img=$(test_disk "$CHECKOUT/codex/test/block-select-drives.codex" disk "$CHECKOUT")
+[ -n "$img" ] || { echo "no image for block-select-drives (its .disk-mint did not mint)"; exit 1; }
+cp "$img" "$NEXT/drive0.img"
 ls -la "$NEXT"
 echo "dev: http://143.244.172.148:9210/machine/machine.html"

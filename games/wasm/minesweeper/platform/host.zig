@@ -28,6 +28,7 @@ extern fn roc_done(model: Model) callconv(.c) i64;
 extern fn roc_won(model: Model) callconv(.c) i64;
 extern fn roc_safe(model: Model) callconv(.c) i64;
 extern fn roc_open(model: Model, a0: i64) callconv(.c) Model;
+extern fn roc_flag(model: Model, a0: i64) callconv(.c) Model;
 extern fn roc_ai(model: Model) callconv(.c) i64;
 
 pub const panic = std.debug.FullPanic(panicImpl);
@@ -173,6 +174,16 @@ pub export fn ms_safe(h: i32) i32 {
 pub export fn ms_open(h: i32, a0: i32) i32 {
     const old = at(h);
     const next = roc_open(borrowed(old), a0);
+    // A refusal answers the state it was given; the same handle, then.
+    if (roc_same(borrowed(old), borrowed(next)) == 1) {
+        roc_drop(next);
+        return h;
+    }
+    return push(next);
+}
+pub export fn ms_flag(h: i32, a0: i32) i32 {
+    const old = at(h);
+    const next = roc_flag(borrowed(old), a0);
     // A refusal answers the state it was given; the same handle, then.
     if (roc_same(borrowed(old), borrowed(next)) == 1) {
         roc_drop(next);

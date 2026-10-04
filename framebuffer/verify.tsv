@@ -25,7 +25,7 @@
 #
 # program                                          how far    hash
 cobblestone:codex/test/gpu-panel-border.codex      runs=1     fee5df14
-cobblestone:codex/test/gpu-depth-tree.codex        runs=1     2c7c1dc1
+cobblestone:codex/test/gpu-depth-tree.codex        runs=1     1cc1d009
 cobblestone:codex/test/gpu-gauge-clamp.codex       runs=1     c990fa29
 cobblestone:codex/test/gpu-input-cursor.codex      runs=1     dbf102b2
 cobblestone:codex/test/gop-padded-stride.codex     runs=1     1989e38f
@@ -39,7 +39,7 @@ cobblestone:apps/engine-demo/EngineDemo.codex      flushes=30 fa25d97e
 cobblestone:apps/cvmm/GuiOpening.codex             flushes=3  1f50b26c
 # The demos that draw codex/test's images on the screen; their hashes are the
 # wasm builds' first, which the native builds must match.
-roc-apps:framebuffer/demos/shadow-spin.codex       runs=2     7e8c02aa
+roc-apps:framebuffer/demos/shadow-spin.codex       runs=2     5c4426df
 roc-apps:framebuffer/demos/meshes-spin.codex       runs=2     5154c50a
 roc-apps:framebuffer/demos/widgets-on-screen.codex runs=2     5489e731
 roc-apps:framebuffer/demos/qr-on-screen.codex      runs=1     e4f6b335

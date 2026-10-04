@@ -11,20 +11,25 @@ ParticlesKernel :: [].{
 
 	pa_wrap : I32 -> I32
 	pa_wrap = |a| ({
+		m : I32
 		m = I32.minus_wrap(a, I32.times_wrap(Device.div(a, 6283), 6283))
 		(if (m < 0) { I32.plus_wrap(m, 6283) } else { m })
 	})
 
 	pa_sin_core : I32 -> I32
 	pa_sin_core = |x| ({
+		x2 : I32
 		x2 = Device.div(I32.times_wrap(x, x), 1000)
+		x3 : I32
 		x3 = Device.div(I32.times_wrap(x2, x), 1000)
+		x5 : I32
 		x5 = Device.div(I32.times_wrap(x3, x2), 1000)
 		I32.plus_wrap(I32.minus_wrap(x, Device.div(x3, 6)), Device.div(x5, 120))
 	})
 
 	pa_sin : I32 -> I32
 	pa_sin = |raw| ({
+		a : I32
 		a = pa_wrap(raw)
 		(if (a <= 1570) { pa_sin_core(a) } else { (if (a <= 3141) { pa_sin_core(I32.minus_wrap(3141, a)) } else { (if (a <= 4712) { I32.minus_wrap(0, pa_sin_core(I32.minus_wrap(a, 3141))) } else { I32.minus_wrap(0, pa_sin_core(I32.minus_wrap(6283, a))) }) }) })
 	})
@@ -46,24 +51,33 @@ ParticlesKernel :: [].{
 
 	pa_acc : I32, I32, I32, I32 -> I32
 	pa_acc = |px, py, ax, ay| ({
+		dx : I32
 		dx = I32.minus_wrap(ax, px)
+		dy : I32
 		dy = I32.minus_wrap(ay, py)
+		d2 : I32
 		d2 = I32.plus_wrap(I32.times_wrap(dx, dx), I32.times_wrap(dy, dy))
+		inv : I32
 		inv = Device.div(260000, I32.plus_wrap(Device.div(d2, 256), 500))
 		Device.div(I32.times_wrap(dx, inv), 11000)
 	})
 
 	pa_acc_y : I32, I32, I32, I32 -> I32
 	pa_acc_y = |px, py, ax, ay| ({
+		dx : I32
 		dx = I32.minus_wrap(ax, px)
+		dy : I32
 		dy = I32.minus_wrap(ay, py)
+		d2 : I32
 		d2 = I32.plus_wrap(I32.times_wrap(dx, dx), I32.times_wrap(dy, dy))
+		inv : I32
 		inv = Device.div(260000, I32.plus_wrap(Device.div(d2, 256), 500))
 		Device.div(I32.times_wrap(dy, inv), 11000)
 	})
 
 	pa_wrap_pos : I32, I32 -> I32
 	pa_wrap_pos = |v, m| ({
+		r : I32
 		r = I32.minus_wrap(v, I32.times_wrap(Device.div(v, m), m))
 		(if (r < 0) { I32.plus_wrap(r, m) } else { r })
 	})
@@ -75,15 +89,25 @@ ParticlesKernel :: [].{
 		(dev3, vx) = Device.load(dev2, inb, I32.plus_wrap(I32.times_wrap(gid, 4), 2))
 		(dev4, vy) = Device.load(dev3, inb, I32.plus_wrap(I32.times_wrap(gid, 4), 3))
 		({
+			ax0 : I32
 			ax0 = pa_ax0(frame)
+			ay0 : I32
 			ay0 = pa_ay0(frame)
+			ax1 : I32
 			ax1 = pa_ax1(frame)
+			ay1 : I32
 			ay1 = pa_ay1(frame)
+			accx : I32
 			accx = I32.plus_wrap(pa_acc(px, py, ax0, ay0), pa_acc(px, py, ax1, ay1))
+			accy : I32
 			accy = I32.plus_wrap(pa_acc_y(px, py, ax0, ay0), pa_acc_y(px, py, ax1, ay1))
+			nvx : I32
 			nvx = I32.plus_wrap(I32.minus_wrap(vx, Device.div(vx, 48)), accx)
+			nvy : I32
 			nvy = I32.plus_wrap(I32.minus_wrap(vy, Device.div(vy, 48)), accy)
+			npx : I32
 			npx = pa_wrap_pos(I32.plus_wrap(px, Device.div(nvx, 16)), pa_width)
+			npy : I32
 			npy = pa_wrap_pos(I32.plus_wrap(py, Device.div(nvy, 16)), pa_height)
 			({
 				(dev5, _s0) = Device.store(dev4, outb, I32.times_wrap(gid, 4), npx)

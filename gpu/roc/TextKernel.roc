@@ -20,6 +20,7 @@ TextKernel :: [].{
 
 	tx_bit : I32, I32, I32 -> I32
 	tx_bit = |ch, col, row| (if (col < 0) { 0 } else { (if (col > 4) { 0 } else { (if (row < 0) { 0 } else { (if (row > 6) { 0 } else { ({
+		rv : I32
 		rv = tx_row(ch, row)
 		I32.minus_wrap(Device.div(rv, tx_pow2(I32.minus_wrap(4, col))), I32.times_wrap(Device.div(rv, tx_pow2(I32.minus_wrap(5, col))), 2))
 	}) }) }) }) })
@@ -29,27 +30,39 @@ TextKernel :: [].{
 
 	tx_char : I32 -> I32
 	tx_char = |i| ({
+		m : I32
 		m = I32.minus_wrap(i, I32.times_wrap(Device.div(i, tx_nchar), tx_nchar))
 		(if (m == 0) { 0 } else { (if (m == 1) { 1 } else { (if (m == 2) { 2 } else { (if (m == 3) { 3 } else { (if (m == 4) { 4 } else { (if (m == 5) { 5 } else { (if (m == 6) { 6 } else { (if (m == 7) { 7 } else { 8 }) }) }) }) }) }) }) })
 	})
 
 	tx_ison : I32, I32, I32 -> I32
 	tx_ison = |px, py, frame| ({
+		sx : I32
 		sx = I32.plus_wrap(px, I32.times_wrap(frame, 2))
+		ci : I32
 		ci = Device.div(sx, tx_cellw)
+		cx : I32
 		cx = I32.minus_wrap(sx, I32.times_wrap(ci, tx_cellw))
+		col : I32
 		col = Device.div(I32.minus_wrap(cx, 12), 16)
+		ry : I32
 		ry = I32.minus_wrap(py, 250)
+		row : I32
 		row = Device.div(ry, tx_rowh)
 		(if (cx < 12) { 0 } else { (if (cx > 92) { 0 } else { (if (ry < 0) { 0 } else { (if (row > 6) { 0 } else { tx_bit(tx_char(ci), col, row) }) }) }) })
 	})
 
 	text_step : Device.Device, I32, I32, I32 -> (Device.Device, I32)
 	text_step = |dev, outb, frame, gid| ({
+		px : I32
 		px = I32.minus_wrap(gid, I32.times_wrap(Device.div(gid, tx_width), tx_width))
+		py : I32
 		py = Device.div(gid, tx_width)
+		on : I32
 		on = tx_ison(px, py, frame)
+		shadow : I32
 		shadow = tx_ison(I32.minus_wrap(px, 4), I32.minus_wrap(py, 4), frame)
+		bgb : I32
 		bgb = I32.plus_wrap(30, Device.div(py, 12))
 		({
 			Device.store(dev, outb, gid, (if (on == 1) { I32.plus_wrap(I32.plus_wrap(I32.times_wrap(255, 65536), I32.times_wrap(245, 256)), 200) } else { (if (shadow == 1) { I32.plus_wrap(I32.plus_wrap(I32.times_wrap(8, 65536), I32.times_wrap(10, 256)), 16) } else { I32.plus_wrap(I32.plus_wrap(I32.times_wrap(22, 65536), I32.times_wrap(26, 256)), bgb) }) }))

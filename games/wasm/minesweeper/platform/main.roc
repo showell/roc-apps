@@ -20,6 +20,7 @@ platform ""
 			won : Box(model) -> I64,
 			safe : Box(model) -> I64,
 			open : Box(model), I64 -> Box(model),
+			flag : Box(model), I64 -> Box(model),
 			ai : Box(model) -> I64,
 		}
 	}
@@ -42,13 +43,14 @@ platform ""
 		"roc_won": won_for_host,
 		"roc_safe": safe_for_host,
 		"roc_open": open_for_host,
+		"roc_flag": flag_for_host,
 		"roc_ai": ai_for_host,
 	}
 	targets: {
 		inputs_dir: "targets/",
 		wasm32: {
 			inputs: ["host.wasm", app],
-			exports: ["newGame", "step", "view", "bufPtr", "ms_new", "ms_mine", "ms_shown", "ms_adj", "ms_count", "ms_hits", "ms_moves", "ms_done", "ms_won", "ms_safe", "ms_open", "ms_ai", "__heap_reset"],
+			exports: ["newGame", "step", "view", "bufPtr", "ms_new", "ms_mine", "ms_shown", "ms_adj", "ms_count", "ms_hits", "ms_moves", "ms_done", "ms_won", "ms_safe", "ms_open", "ms_flag", "ms_ai", "__heap_reset"],
 		},
 	}
 
@@ -68,4 +70,5 @@ done_for_host = program.done
 won_for_host = program.won
 safe_for_host = program.safe
 open_for_host = program.open
+flag_for_host = program.flag
 ai_for_host = program.ai

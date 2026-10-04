@@ -21,17 +21,26 @@ BloomKernel :: [].{
 
 	bl_glow : Device.Device, I32, I32, I32, I32, I32, I32 -> (Device.Device, I32)
 	bl_glow = |dev, buf, px, py, ch, k, acc| (if (k >= bl_taps) { (dev, acc) } else { ({
+		ang : F32
 		ang = (I32.to_f32(k) * 2.399)
+		rad : F32
 		rad = (DeviceMath.real_sqrt(I32.to_f32(k)) * 3.4)
+		dx : I32
 		dx = F32.to_i32_wrap((DeviceMath.real_cos(ang) * rad))
+		dy : I32
 		dy = F32.to_i32_wrap((DeviceMath.real_sin(ang) * rad))
+		sx : I32
 		sx = bl_clamp(I32.plus_wrap(px, dx), 0, 1023)
+		sy : I32
 		sy = bl_clamp(I32.plus_wrap(py, dy), 0, 767)
+		idx : I32
 		idx = I32.plus_wrap(I32.times_wrap(sy, 1024), sx)
 		({
 			(dev1, texel) = Device.load(dev, buf, idx)
 			({
+				c : I32
 				c = bl_extract(texel, ch)
+				bright : I32
 				bright = (if (c > 150) { I32.minus_wrap(c, 150) } else { 0 })
 				bl_glow(dev1, buf, px, py, ch, I32.plus_wrap(k, 1), I32.plus_wrap(acc, bright))
 			})
@@ -40,7 +49,9 @@ BloomKernel :: [].{
 
 	bloom_step : Device.Device, I32, I32, I32, I32 -> (Device.Device, I32)
 	bloom_step = |dev, scenebuf, outb, _frame, gid| ({
+		px : I32
 		px = I32.minus_wrap(gid, I32.times_wrap(Device.div(gid, bl_width), bl_width))
+		py : I32
 		py = Device.div(gid, bl_width)
 		({
 			(dev1, base) = Device.load(dev, scenebuf, gid)
@@ -48,11 +59,17 @@ BloomKernel :: [].{
 			(dev3, gg) = bl_glow(dev2, scenebuf, px, py, 1, 0, 0)
 			(dev4, gb) = bl_glow(dev3, scenebuf, px, py, 2, 0, 0)
 			({
+				br : I32
 				br = Device.div(base, 65536)
+				bg : I32
 				bg = I32.minus_wrap(Device.div(base, 256), I32.times_wrap(Device.div(base, 65536), 256))
+				bb : I32
 				bb = I32.minus_wrap(base, I32.times_wrap(Device.div(base, 256), 256))
+				fr : I32
 				fr = bl_clamp(I32.plus_wrap(br, Device.div(gr, 34)), 0, 255)
+				fg : I32
 				fg = bl_clamp(I32.plus_wrap(bg, Device.div(gg, 34)), 0, 255)
+				fb : I32
 				fb = bl_clamp(I32.plus_wrap(bb, Device.div(gb, 34)), 0, 255)
 				Device.store(dev4, outb, gid, I32.plus_wrap(I32.plus_wrap(I32.times_wrap(fr, 65536), I32.times_wrap(fg, 256)), fb))
 			})

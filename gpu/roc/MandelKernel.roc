@@ -29,9 +29,13 @@ MandelKernel :: [].{
 
 	mb_color : I32, I32 -> I32
 	mb_color = |it, frame| (if (it >= mb_max) { 0 } else { ({
+		f : I32
 		f = I32.times_wrap(frame, 2)
+		r : I32
 		r = mb_chan(it, 9, f)
+		g : I32
 		g = mb_chan(it, 6, I32.plus_wrap(40, f))
+		b : I32
 		b = mb_chan(it, 13, I32.plus_wrap(90, f))
 		I32.plus_wrap(I32.plus_wrap(I32.times_wrap(r, 65536), I32.times_wrap(g, 256)), b)
 	}) })

@@ -12,27 +12,41 @@ EarthKernel :: [].{
 
 	atan2_real : F32, F32 -> F32
 	atan2_real = |y, x| ({
+		ax : F32
 		ax = (if (x < 0.0) { (0.0 - x) } else { x })
+		ay : F32
 		ay = (if (y < 0.0) { (0.0 - y) } else { y })
+		swap : I32
 		swap = (if (ay > ax) { 1 } else { 0 })
+		cx : F32
 		cx = (if (swap == 1) { ay } else { ax })
+		cy : F32
 		cy = (if (swap == 1) { ax } else { ay })
+		angle : F32
 		angle = cordic_iterate(cx, cy, 0.0, 0)
+		a1 : F32
 		a1 = (if (swap == 1) { (1.5707964 - angle) } else { angle })
+		a2 : F32
 		a2 = (if (x < 0.0) { (3.1415927 - a1) } else { a1 })
 		(if (y < 0.0) { (0.0 - a2) } else { a2 })
 	})
 
 	cordic_iterate : F32, F32, F32, I32 -> F32
 	cordic_iterate = |cx, cy, angle, i| (if (i >= 16) { angle } else { ({
+		atan_table_val : F32
 		atan_table_val = cordic_atan_val(i)
+		power : F32
 		power = cordic_power(i)
 		(if (cy > 0.0) { ({
+			nx : F32
 			nx = (cx + (cy * power))
+			ny : F32
 			ny = (cy - (cx * power))
 			cordic_iterate(nx, ny, (angle + atan_table_val), I32.plus_wrap(i, 1))
 		}) } else { ({
+			nx : F32
 			nx = (cx - (cy * power))
+			ny : F32
 			ny = (cy + (cx * power))
 			cordic_iterate(nx, ny, (angle - atan_table_val), I32.plus_wrap(i, 1))
 		}) })
@@ -55,6 +69,7 @@ EarthKernel :: [].{
 
 	earth_sky : Device.Device, I32, I32, I32, I32 -> (Device.Device, I32)
 	earth_sky = |dev, framebuf, gid, _px, _py| ({
+		pixel : I32
 		pixel = I32.times_wrap(255, 16777216)
 		Device.store(dev, framebuf, gid, pixel)
 	})
@@ -65,6 +80,7 @@ EarthKernel :: [].{
 		(dev2, bid) = Device.block_idx_x(dev1)
 		(dev3, bdim) = Device.block_dim_x(dev2)
 		({
+			gid : I32
 			gid = I32.plus_wrap(I32.times_wrap(bid, bdim), tid)
 			(if (gid < pixel_count) { earth_pixel_work(dev3, framebuf, tex, params, tw, th, w, h, gid) } else { (dev3, 0) })
 		})
@@ -81,68 +97,120 @@ EarthKernel :: [].{
 		(dev7, i_sun_y) = Device.load(dev6, params, 6)
 		(dev8, i_sun_z) = Device.load(dev7, params, 7)
 		({
+			px : I32
 			px = I32.minus_wrap(gid, I32.times_wrap(Device.div(gid, w), w))
+			py : I32
 			py = Device.div(gid, w)
+			aspect : F32
 			aspect = (int_to_real(i_aspect) / 1000.0)
+			zoom : F32
 			zoom = (int_to_real(i_zoom) / 1000.0)
+			cam_pitch : F32
 			cam_pitch = (int_to_real(i_cam_pitch) / 1000.0)
+			earth_yaw : F32
 			earth_yaw = (int_to_real(i_earth_yaw) / 1000.0)
+			earth_pitch : F32
 			earth_pitch = (int_to_real(i_earth_pitch) / 1000.0)
 			_sun_x = (int_to_real(i_sun_x) / 1000.0)
 			_sun_y = (int_to_real(i_sun_y) / 1000.0)
 			_sun_z = (int_to_real(i_sun_z) / 1000.0)
+			ndx : F32
 			ndx = ((((int_to_real(px) / int_to_real(w)) - 0.5) * 2.0) * aspect)
+			ndy : F32
 			ndy = ((0.5 - (int_to_real(py) / int_to_real(h))) * 2.0)
+			rlen : F32
 			rlen = DeviceMath.real_sqrt((((ndx * ndx) + (ndy * ndy)) + 1.0))
+			rdx : F32
 			rdx = (ndx / rlen)
+			rdy : F32
 			rdy = (ndy / rlen)
+			rdz : F32
 			rdz = (1.0 / rlen)
+			cos_cp : F32
 			cos_cp = cordic_cos(cam_pitch)
+			sin_cp : F32
 			sin_cp = cordic_sin(cam_pitch)
+			dx : F32
 			dx = rdx
+			dy : F32
 			dy = ((cos_cp * rdy) - (sin_cp * rdz))
+			dz : F32
 			dz = ((sin_cp * rdy) + (cos_cp * rdz))
+			neg_zoom : F32
 			neg_zoom = (0.0 - zoom)
+			oy : F32
 			oy = (0.0 - (sin_cp * neg_zoom))
+			oz : F32
 			oz = (cos_cp * neg_zoom)
+			b : F32
 			b = (2.0 * ((oy * dy) + (oz * dz)))
+			c : F32
 			c = (((oy * oy) + (oz * oz)) - 1.0)
+			disc : F32
 			disc = ((b * b) - (4.0 * c))
 			(if (disc < 0.0) { earth_sky(dev8, framebuf, gid, px, py) } else { ({
+				t : F32
 				t = (((0.0 - b) - DeviceMath.real_sqrt(disc)) / 2.0)
 				(if (t < 0.001) { earth_sky(dev8, framebuf, gid, px, py) } else { ({
+					hx : F32
 					hx = (t * dx)
+					hy : F32
 					hy = (oy + (t * dy))
+					hz : F32
 					hz = (oz + (t * dz))
+					cos_ey : F32
 					cos_ey = cordic_cos(earth_yaw)
+					sin_ey : F32
 					sin_ey = cordic_sin(earth_yaw)
+					cos_ep : F32
 					cos_ep = cordic_cos(earth_pitch)
+					sin_ep : F32
 					sin_ep = cordic_sin(earth_pitch)
+					ry : F32
 					ry = ((cos_ep * hy) - (sin_ep * hz))
+					rz : F32
 					rz = ((sin_ep * hy) + (cos_ep * hz))
+					gx : F32
 					gx = ((cos_ey * hx) + (sin_ey * rz))
+					gy : F32
 					gy = ry
+					gz : F32
 					gz = ((0.0 - (sin_ey * hx)) + (cos_ey * rz))
+					lat : F32
 					lat = atan2_real(gy, DeviceMath.real_sqrt(((gx * gx) + (gz * gz))))
+					lon : F32
 					lon = atan2_real(gx, gz)
+					pi : F32
 					pi = 3.1415927
+					u : F32
 					u = (1.0 - (((lon / pi) + 1.0) * 0.5))
+					v : F32
 					v = (0.5 - (lat / pi))
+					tx_raw : I32
 					tx_raw = real_to_int((u * int_to_real(tw)))
+					tx_mod : I32
 					tx_mod = I32.minus_wrap(tx_raw, I32.times_wrap(Device.div(tx_raw, tw), tw))
+					tx_idx : I32
 					tx_idx = (if (tx_mod < 0) { I32.plus_wrap(tx_mod, tw) } else { tx_mod })
+					ty_idx : I32
 					ty_idx = clamp_int(real_to_int((v * int_to_real(th))), 0, I32.minus_wrap(th, 1))
 					_ti = I32.times_wrap(I32.plus_wrap(I32.times_wrap(ty_idx, tw), tx_idx), 3)
+					raw_u : F32
 					raw_u = ((hx + 1.0) * 0.5)
+					raw_v : F32
 					raw_v = ((hy + 1.0) * 0.5)
+					rtx : I32
 					rtx = clamp_int(real_to_int((raw_u * int_to_real(tw))), 0, I32.minus_wrap(tw, 1))
+					rty : I32
 					rty = clamp_int(real_to_int((raw_v * int_to_real(th))), 0, I32.minus_wrap(th, 1))
+					rti : I32
 					rti = I32.times_wrap(I32.plus_wrap(I32.times_wrap(rty, tw), rtx), 3)
 					({
 						(dev9, rr) = Device.load(dev8, tex, rti)
 						(dev10, rg) = Device.load(dev9, tex, I32.plus_wrap(rti, 1))
 						(dev11, rb) = Device.load(dev10, tex, I32.plus_wrap(rti, 2))
 						({
+							pixel : I32
 							pixel = I32.plus_wrap(I32.plus_wrap(I32.plus_wrap(I32.times_wrap(clamp_int(rr, 0, 255), 65536), I32.times_wrap(clamp_int(rg, 0, 255), 256)), clamp_int(rb, 0, 255)), I32.times_wrap(255, 16777216))
 							Device.store(dev11, framebuf, gid, pixel)
 						})

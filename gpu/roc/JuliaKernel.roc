@@ -27,21 +27,32 @@ JuliaKernel :: [].{
 
 	jl_color : I32, I32 -> I32
 	jl_color = |it, frame| (if (it >= jl_max) { 0 } else { ({
+		f : I32
 		f = frame
+		r : I32
 		r = jl_chan(it, 8, I32.plus_wrap(30, f))
+		g : I32
 		g = jl_chan(it, 5, I32.plus_wrap(90, f))
+		b : I32
 		b = jl_chan(it, 11, I32.plus_wrap(160, f))
 		I32.plus_wrap(I32.plus_wrap(I32.times_wrap(r, 65536), I32.times_wrap(g, 256)), b)
 	}) })
 
 	jl_render : I32, I32 -> I32
 	jl_render = |gid, frame| ({
+		px : I32
 		px = I32.minus_wrap(gid, I32.times_wrap(Device.div(gid, jl_width), jl_width))
+		py : I32
 		py = Device.div(gid, jl_width)
+		zr : F32
 		zr = (I32.to_f32(I32.minus_wrap(px, jl_half_w)) / 320.0)
+		zi : F32
 		zi = (I32.to_f32(I32.minus_wrap(py, jl_half_h)) / 320.0)
+		a : F32
 		a = (I32.to_f32(frame) / 40.0)
+		cr : F32
 		cr = (0.7885 * DeviceMath.real_cos(a))
+		ci : F32
 		ci = (0.7885 * DeviceMath.real_sin(a))
 		jl_color(jl_iter(zr, zi, cr, ci, 0), frame)
 	})

@@ -16,12 +16,13 @@
 # served on :9210.
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/../tests/test_disk.sh"
 REPO="$(cd "$HERE/.." && pwd)"
 ROC="${ROC:-$HOME/build/roc-nightly/roc}"
 ROCEMIT="${ROCEMIT:-$HOME/build/rust-target/release/rocemit}"
 ZIG="${ZIG:-$HOME/zig-0.16.0/zig}"
 ROC_CHECKOUT="${ROC_CHECKOUT:-$HOME/showell_repos/roc}"
-CHECKOUT="${CHECKOUT:-$HOME/showell_repos/cobblestone-u62}"
+CHECKOUT="${CHECKOUT:-$HOME/showell_repos/cobblestone-u66rel}"
 GEN="$HOME/build/roc-apps/gen/floor-web"
 NEXT="$HOME/build/roc-apps/next/floor"
 VERDICTS="$HOME/build/roc-apps/gen/verdicts"
@@ -53,7 +54,7 @@ for src in "$@"; do
     # What the page needs beside the wasm: the image it runs on, the screen its
     # -gop flags ask for, and the console it is supposed to print.
     rm -f "$NEXT/$n.disk" "$NEXT/$n.screen" "$NEXT/$n.expected"
-    [ -f "${src%.codex}.disk" ] && cp "${src%.codex}.disk" "$NEXT/$n.disk"
+    d=$(test_disk "$src" disk "$CHECKOUT"); [ -n "$d" ] && cp "$d" "$NEXT/$n.disk"
     if [ -f "${src%.codex}.vmargs" ] && grep -q -- '-gop' "${src%.codex}.vmargs"; then
         python3 -c '
 import sys

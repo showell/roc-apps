@@ -1,14 +1,18 @@
 # MinesweeperWasm -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+import CceText
 import Minesweeper
 import Rng
 
 MinesweeperWasm :: [].{
 
+	wasm_exports : CceText
+	wasm_exports = ""
+
 	ms_copy_grid : List(I64), I64, List(I64) -> List(I64)
 	ms_copy_grid = |src, i, acc| (if (i >= 81) { acc } else { ms_copy_grid(src, (i + 1), List.append(acc, (List.get(src, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))) })
 
 	ms_copy_state : Minesweeper.MinesweeperState -> Minesweeper.MinesweeperState
-	ms_copy_state = |st| { mine_grid: st.mine_grid, revealed: ms_copy_grid(st.revealed, 0, []), adjacent: st.adjacent, cells_revealed: st.cells_revealed, mines_hit: st.mines_hit, safe_cells: st.safe_cells, game_over: st.game_over, won: st.won, moves: st.moves, rng: st.rng }
+	ms_copy_state = |st| Minesweeper.MinesweeperState.{ mine_grid: st.mine_grid, revealed: ms_copy_grid(st.revealed, 0, []), adjacent: st.adjacent, cells_revealed: st.cells_revealed, mines_hit: st.mines_hit, safe_cells: st.safe_cells, game_over: st.game_over, won: st.won, moves: st.moves, rng: st.rng }
 
 	ms_wasm_new : I64 -> Minesweeper.MinesweeperState
 	ms_wasm_new = |seed| Minesweeper.ms_new(Rng.rng_new(seed))
@@ -42,6 +46,9 @@ MinesweeperWasm :: [].{
 
 	ms_wasm_reveal : Minesweeper.MinesweeperState, I64 -> Minesweeper.MinesweeperState
 	ms_wasm_reveal = |st, i| (if st.game_over { st } else { (if (i < 0) { st } else { (if (i >= 81) { st } else { (if ((List.get(st.revealed, I64.to_u64_wrap(i)) ?? crash("list-at out of range")) != 0) { st } else { Minesweeper.ms_reveal(ms_copy_state(st), i) }) }) }) })
+
+	ms_wasm_flag : Minesweeper.MinesweeperState, I64 -> Minesweeper.MinesweeperState
+	ms_wasm_flag = |st, i| Minesweeper.ms_toggle_flag(ms_copy_state(st), i)
 
 	ms_wasm_ai : Minesweeper.MinesweeperState -> I64
 	ms_wasm_ai = |st| (if st.game_over { (-1) } else { Minesweeper.ms_ai_pick(st) })

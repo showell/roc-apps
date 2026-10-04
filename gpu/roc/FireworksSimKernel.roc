@@ -27,6 +27,7 @@ FireworksSimKernel :: [].{
 
 	fw_floor : F32 -> F32
 	fw_floor = |x| ({
+		t : F32
 		t = I32.to_f32(F32.to_i32_wrap(x))
 		(if (t > x) { (t - 1.0) } else { t })
 	})
@@ -72,6 +73,7 @@ FireworksSimKernel :: [].{
 
 	fw_hot : F32 -> F32
 	fw_hot = |fade| ({
+		a : F32
 		a = ((fade - 0.9) / 0.1)
 		(if (a < 0.0) { 0.0 } else { ((a * a) * 0.72) })
 	})
@@ -81,37 +83,44 @@ FireworksSimKernel :: [].{
 
 	fw_shade_r : I32, F32 -> F32
 	fw_shade_r = |col, fade| ({
+		h : F32
 		h = fw_hot(fade)
 		((fw_red(col) * (1.0 - h)) + h)
 	})
 
 	fw_shade_g : I32, F32 -> F32
 	fw_shade_g = |col, fade| ({
+		h : F32
 		h = fw_hot(fade)
 		(((fw_green(col) * (1.0 - h)) + (h * 0.96)) * (0.34 + (0.66 * fw_cool(fade))))
 	})
 
 	fw_shade_b : I32, F32 -> F32
 	fw_shade_b = |col, fade| ({
+		h : F32
 		h = fw_hot(fade)
 		(((fw_blue(col) * (1.0 - h)) + (h * 0.86)) * (0.1 + (0.9 * fw_cool(fade))))
 	})
 
 	fw_twinkle : F32, F32, I32 -> F32
 	fw_twinkle = |fg, t, kind| (if (kind == fw_k_glitter) { ({
+		r : F32
 		r = fw_rand(((fg * 91.7) + (fw_floor((t * 0.5)) * 0.731)))
 		(if (r > 0.62) { (1.0 + (r * 2.4)) } else { (0.1 + (r * 0.25)) })
 	}) } else { (if (kind == fw_k_willow) { (0.72 + (0.28 * fw_rand(((fg * 13.1) + (fw_floor((t * 0.34)) * 0.417))))) } else { 1.0 }) })
 
 	fw_decay : F32, F32, F32 -> F32
 	fw_decay = |fade, a, b| ({
+		e : F32
 		e = (1.0 - fade)
 		(1.0 / ((1.0 + (a * e)) + ((b * e) * e)))
 	})
 
 	fw_bright : F32, F32, F32, I32 -> F32
 	fw_bright = |fade, fg, t, kind| (if (kind == fw_k_dead) { 0.0 } else { (if (kind == fw_k_shell) { (0.95 + (0.3 * fw_rand((fg + (fw_floor((t * 0.5)) * 0.11))))) } else { (if (kind == fw_k_smoke) { (0.03 * fade) } else { (if (kind == fw_k_trail) { (0.8 * fw_decay(fade, 7.0, 26.0)) } else { ({
+		base : F32
 		base = (0.92 * fw_decay(fade, 3.4, 9.0))
+		birth : F32
 		birth = (if (fade > 0.985) { 0.9 } else { 0.0 })
 		((base + birth) * fw_twinkle(fg, t, kind))
 	}) }) }) }) })
@@ -133,7 +142,9 @@ FireworksSimKernel :: [].{
 
 	fw_out_attr : F32, F32, I32 -> I32
 	fw_out_attr = |size, bright, kind| ({
+		s : I32
 		s = F32.to_i32_wrap(DeviceMath.real_max(0.0, DeviceMath.real_min(255.0, (size * 8.0))))
+		b : I32
 		b = F32.to_i32_wrap(DeviceMath.real_max(0.0, DeviceMath.real_min(255.0, (bright * 32.0))))
 		I32.plus_wrap(I32.plus_wrap(I32.times_wrap(s, 65536), I32.times_wrap(b, 256)), kind)
 	})
@@ -149,21 +160,37 @@ FireworksSimKernel :: [].{
 		(dev7, col) = Device.load(dev6, state, I32.plus_wrap(I32.times_wrap(gid, 8), 6))
 		(dev8, kind) = Device.load(dev7, state, I32.plus_wrap(I32.times_wrap(gid, 8), 7))
 		({
+			t : F32
 			t = I32.to_f32(frame)
+			fg : F32
 			fg = fw_rand((I32.to_f32(gid) * 0.0173))
+			wf : F32
 			wf = (I32.to_f32(wind) / 1000.0)
+			px : F32
 			px = (I32.to_f32(ipx) / 256.0)
+			py : F32
 			py = (I32.to_f32(ipy) / 256.0)
+			vx : F32
 			vx = (I32.to_f32(ivx) / 256.0)
+			vy : F32
 			vy = (I32.to_f32(ivy) / 256.0)
+			held : I32
 			held = (if (kind == fw_k_shell) { 1 } else { (if (kind == fw_k_dead) { 1 } else { 0 }) })
+			nvx : F32
 			nvx = (if (held == 1) { vx } else { fw_new_vx(vx, px, py, fg, t, kind, wf) })
+			nvy : F32
 			nvy = (if (held == 1) { vy } else { fw_new_vy(vy, px, py, fg, t, kind) })
+			npx : F32
 			npx = (if (held == 1) { px } else { (px + nvx) })
+			npy : F32
 			npy = (if (held == 1) { py } else { (py + nvy) })
+			nlife : I32
 			nlife = (if (held == 1) { life } else { fw_next_life(life, kind) })
+			nkind : I32
 			nkind = (if (held == 1) { kind } else { fw_next_kind(life, kind) })
+			fade : F32
 			fade = fw_fade(life, maxl)
+			bright : F32
 			bright = fw_bright(fade, fg, t, kind)
 			({
 				(dev9, _s0) = Device.store(dev8, state, I32.times_wrap(gid, 8), F32.to_i32_wrap((npx * 256.0)))

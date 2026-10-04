@@ -14,20 +14,25 @@ SwarmKernel :: [].{
 
 	sw_wrap : I32 -> I32
 	sw_wrap = |a| ({
+		m : I32
 		m = I32.minus_wrap(a, I32.times_wrap(Device.div(a, 6283), 6283))
 		(if (m < 0) { I32.plus_wrap(m, 6283) } else { m })
 	})
 
 	sw_sin_core : I32 -> I32
 	sw_sin_core = |x| ({
+		x2 : I32
 		x2 = Device.div(I32.times_wrap(x, x), 1000)
+		x3 : I32
 		x3 = Device.div(I32.times_wrap(x2, x), 1000)
+		x5 : I32
 		x5 = Device.div(I32.times_wrap(x3, x2), 1000)
 		I32.plus_wrap(I32.minus_wrap(x, Device.div(x3, 6)), Device.div(x5, 120))
 	})
 
 	sw_sin : I32 -> I32
 	sw_sin = |raw| ({
+		a : I32
 		a = sw_wrap(raw)
 		(if (a <= 1570) { sw_sin_core(a) } else { (if (a <= 3141) { sw_sin_core(I32.minus_wrap(3141, a)) } else { (if (a <= 4712) { I32.minus_wrap(0, sw_sin_core(I32.minus_wrap(a, 3141))) } else { I32.minus_wrap(0, sw_sin_core(I32.minus_wrap(6283, a))) }) }) })
 	})
@@ -52,6 +57,7 @@ SwarmKernel :: [].{
 
 	sw_wrap_pos : I32, I32 -> I32
 	sw_wrap_pos = |v, m| ({
+		r : I32
 		r = I32.minus_wrap(v, I32.times_wrap(Device.div(v, m), m))
 		(if (r < 0) { I32.plus_wrap(r, m) } else { r })
 	})

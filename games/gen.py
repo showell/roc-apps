@@ -37,7 +37,8 @@ GAMES = {
         ("ms_new", "ms_wasm_new", 1), ("ms_mine", "ms_wasm_mine", 2), ("ms_shown", "ms_wasm_revealed", 2),
         ("ms_adj", "ms_wasm_adjacent", 2), ("ms_count", "ms_wasm_count", 1), ("ms_hits", "ms_wasm_hits", 1),
         ("ms_moves", "ms_wasm_moves", 1), ("ms_done", "ms_wasm_done", 1), ("ms_won", "ms_wasm_won", 1),
-        ("ms_safe", "ms_wasm_safe", 1), ("ms_open", "ms_wasm_reveal", 2), ("ms_ai", "ms_wasm_ai", 1)]),
+        ("ms_safe", "ms_wasm_safe", 1), ("ms_open", "ms_wasm_reveal", 2), ("ms_flag", "ms_wasm_flag", 2),
+        ("ms_ai", "ms_wasm_ai", 1)]),
     "klondike": dict(app="KlondikeApp", shell="KlondikeWasm", exports=[
         ("kd_new", "kd_wasm_new", 2), ("kd_rank", "kd_wasm_rank", 1), ("kd_suit", "kd_wasm_suit", 1),
         ("kd_coln", "kd_wasm_col_size", 2), ("kd_card", "kd_wasm_card", 3), ("kd_down", "kd_wasm_down", 2),

@@ -17,9 +17,13 @@ NbodyKernel :: [].{
 		(dev1, jx) = Device.load(dev, buf, I32.times_wrap(j, 4))
 		(dev2, jy) = Device.load(dev1, buf, I32.plus_wrap(I32.times_wrap(j, 4), 1))
 		({
+			dx : I32
 			dx = Device.div(I32.minus_wrap(jx, myx), 256)
+			dy : I32
 			dy = Device.div(I32.minus_wrap(jy, myy), 256)
+			d2 : I32
 			d2 = I32.plus_wrap(I32.plus_wrap(I32.times_wrap(dx, dx), I32.times_wrap(dy, dy)), 32)
+			w : I32
 			w = Device.div(9000, d2)
 			nb_fx(dev2, buf, myx, myy, I32.plus_wrap(j, 1), I32.plus_wrap(acc, I32.times_wrap(dx, w)))
 		})
@@ -30,9 +34,13 @@ NbodyKernel :: [].{
 		(dev1, jx) = Device.load(dev, buf, I32.times_wrap(j, 4))
 		(dev2, jy) = Device.load(dev1, buf, I32.plus_wrap(I32.times_wrap(j, 4), 1))
 		({
+			dx : I32
 			dx = Device.div(I32.minus_wrap(jx, myx), 256)
+			dy : I32
 			dy = Device.div(I32.minus_wrap(jy, myy), 256)
+			d2 : I32
 			d2 = I32.plus_wrap(I32.plus_wrap(I32.times_wrap(dx, dx), I32.times_wrap(dy, dy)), 32)
+			w : I32
 			w = Device.div(9000, d2)
 			nb_fy(dev2, buf, myx, myy, I32.plus_wrap(j, 1), I32.plus_wrap(acc, I32.times_wrap(dy, w)))
 		})
@@ -40,6 +48,7 @@ NbodyKernel :: [].{
 
 	nb_wrap : I32, I32 -> I32
 	nb_wrap = |v, m| ({
+		r : I32
 		r = I32.minus_wrap(v, I32.times_wrap(Device.div(v, m), m))
 		(if (r < 0) { I32.plus_wrap(r, m) } else { r })
 	})
@@ -53,11 +62,17 @@ NbodyKernel :: [].{
 		(dev5, fx) = nb_fx(dev4, inb, px, py, 0, 0)
 		(dev6, fy) = nb_fy(dev5, inb, px, py, 0, 0)
 		({
+			nvx : I32
 			nvx = I32.plus_wrap(vx, Device.div(fx, 32))
+			nvy : I32
 			nvy = I32.plus_wrap(vy, Device.div(fy, 32))
+			cvx : I32
 			cvx = (if (nvx > 4200) { 4200 } else { (if (nvx < I32.minus_wrap(0, 4200)) { I32.minus_wrap(0, 4200) } else { nvx }) })
+			cvy : I32
 			cvy = (if (nvy > 4200) { 4200 } else { (if (nvy < I32.minus_wrap(0, 4200)) { I32.minus_wrap(0, 4200) } else { nvy }) })
+			npx : I32
 			npx = nb_wrap(I32.plus_wrap(px, cvx), I32.times_wrap(nb_width, 256))
+			npy : I32
 			npy = nb_wrap(I32.plus_wrap(py, cvy), I32.times_wrap(nb_height, 256))
 			({
 				(dev7, _s0) = Device.store(dev6, outb, I32.times_wrap(gid, 4), npx)

@@ -8,20 +8,25 @@ TriangleKernel :: [].{
 
 	tr_wrap : I32 -> I32
 	tr_wrap = |a| ({
+		m : I32
 		m = I32.minus_wrap(a, I32.times_wrap(Device.div(a, 6283), 6283))
 		(if (m < 0) { I32.plus_wrap(m, 6283) } else { m })
 	})
 
 	tr_sin_core : I32 -> I32
 	tr_sin_core = |x| ({
+		x2 : I32
 		x2 = Device.div(I32.times_wrap(x, x), 1000)
+		x3 : I32
 		x3 = Device.div(I32.times_wrap(x2, x), 1000)
+		x5 : I32
 		x5 = Device.div(I32.times_wrap(x3, x2), 1000)
 		I32.plus_wrap(I32.minus_wrap(x, Device.div(x3, 6)), Device.div(x5, 120))
 	})
 
 	tr_sin : I32 -> I32
 	tr_sin = |raw| ({
+		a : I32
 		a = tr_wrap(raw)
 		(if (a <= 1570) { tr_sin_core(a) } else { (if (a <= 3141) { tr_sin_core(I32.minus_wrap(3141, a)) } else { (if (a <= 4712) { I32.minus_wrap(0, tr_sin_core(I32.minus_wrap(a, 3141))) } else { I32.minus_wrap(0, tr_sin_core(I32.minus_wrap(6283, a))) }) }) })
 	})
@@ -40,23 +45,39 @@ TriangleKernel :: [].{
 
 	tr_render : I32, I32 -> I32
 	tr_render = |gid, frame| ({
+		px : I32
 		px = I32.minus_wrap(gid, I32.times_wrap(Device.div(gid, tr_width), tr_width))
+		py : I32
 		py = Device.div(gid, tr_width)
+		ax : I32
 		ax = tr_vx(frame, 0)
+		ay : I32
 		ay = tr_vy(frame, 0)
+		bx : I32
 		bx = tr_vx(frame, 1)
+		by : I32
 		by = tr_vy(frame, 1)
+		cx : I32
 		cx = tr_vx(frame, 2)
+		cy : I32
 		cy = tr_vy(frame, 2)
+		w0 : I32
 		w0 = tr_edge(bx, by, cx, cy, px, py)
+		w1 : I32
 		w1 = tr_edge(cx, cy, ax, ay, px, py)
+		w2 : I32
 		w2 = tr_edge(ax, ay, bx, by, px, py)
+		inside : Bool
 		inside = ((((w0 >= 0) and (w1 >= 0)) and (w2 >= 0)) or (((w0 <= 0) and (w1 <= 0)) and (w2 <= 0)))
 		(if (inside == False) { 0 } else { ({
+			sum : I32
 			sum = I32.plus_wrap(I32.plus_wrap(w0, w1), w2)
 			(if (sum == 0) { 0 } else { ({
+				r : I32
 				r = Device.div(I32.times_wrap(w0, 255), sum)
+				g : I32
 				g = Device.div(I32.times_wrap(w1, 255), sum)
+				b : I32
 				b = Device.div(I32.times_wrap(w2, 255), sum)
 				I32.plus_wrap(I32.plus_wrap(I32.times_wrap(r, 65536), I32.times_wrap(g, 256)), b)
 			}) })

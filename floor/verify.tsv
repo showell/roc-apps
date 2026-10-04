@@ -16,9 +16,9 @@ cobblestone:codex/test/fat16-write.codex	-fault tear-write	verdict	-
 cobblestone:codex/test/fat16-write.codex	-fault refuse-write	floor/expect/fat16-write.nothing-lands	-
 cobblestone:codex/test/fat16-write.codex	-fault refuse-write -fault-every 2	floor/expect/fat16-write.nothing-lands	-
 cobblestone:codex/test/fat16-write.codex	-fault refuse-read	floor/expect/fat16-write.nothing-lands	-
-cobblestone:codex/test/fat16-write.codex	-fault refuse-read -fault-every 7	floor/expect/fat16-write.silent-loss	-
+cobblestone:codex/test/fat16-write.codex	-fault refuse-read -fault-every 7	floor/expect/fat16-write.caught-loss	-
 cobblestone:codex/test/gpu-panel-border.codex	-screen 640 480 640	verdict	fee5df14
-cobblestone:codex/test/gpu-depth-tree.codex	-screen 640 480 640	verdict	2c7c1dc1
+cobblestone:codex/test/gpu-depth-tree.codex	-screen 640 480 640	verdict	1cc1d009
 cobblestone:codex/test/gpu-gauge-clamp.codex	-screen 640 480 640	verdict	c990fa29
 cobblestone:codex/test/gpu-input-cursor.codex	-screen 640 480 640	verdict	dbf102b2
 cobblestone:codex/test/gop-padded-stride.codex	-screen 320 240 512	verdict	1989e38f

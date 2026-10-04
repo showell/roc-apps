@@ -8,15 +8,18 @@
 #                             [-wall] [-fault <kind>] [-fault-every <n>]
 #                             [-fault-lba <lba>] [-report]
 #
-#   floor/run.sh ~/showell_repos/cobblestone-u62/codex/test/fat16-write.codex -report
+#   floor/run.sh ~/showell_repos/cobblestone-u66rel/codex/test/fat16-write.codex -report
 #   floor/run.sh .../fat16-write.codex -fault tear-write -fault-every 3 -report
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/../tests/test_disk.sh"
 GEN="$HOME/build/roc-apps/gen/floor"
 src="$(realpath "$1")"; shift
 n="$(basename "$src" .codex)"
 "$HERE/build.sh" "$src" > "$GEN/$n-build.log" 2>&1 || { tail -20 "$GEN/$n-build.log"; exit 1; }
 args=()
-case " $* " in *" -disk "*) ;; *) [ -f "${src%.codex}.disk" ] && args+=(-disk "${src%.codex}.disk") ;; esac
-case " $* " in *" -disk2 "*) ;; *) [ -f "${src%.codex}.disk2" ] && args+=(-disk2 "${src%.codex}.disk2") ;; esac
+# A minted disk is minted in the checkout the unit sits in.
+CHECKOUT="$(git -C "$(dirname "$src")" rev-parse --show-toplevel)"
+case " $* " in *" -disk "*) ;; *) d=$(test_disk "$src" disk "$CHECKOUT"); [ -n "$d" ] && args+=(-disk "$d") ;; esac
+case " $* " in *" -disk2 "*) ;; *) d=$(test_disk "$src" disk2 "$CHECKOUT"); [ -n "$d" ] && args+=(-disk2 "$d") ;; esac
 exec "$GEN/$n/native" "${args[@]}" "$@"
