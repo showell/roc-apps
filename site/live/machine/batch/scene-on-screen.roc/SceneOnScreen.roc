@@ -5,6 +5,7 @@ import pf.Echo
 echo! = |msg| Echo.line!(msg)
 
 # SceneOnScreen -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+import CceText
 import Color
 import Machine
 import Material
@@ -45,21 +46,21 @@ demo_scene = ({
 
 drawn_cols! : Machine.Machine, I64, I64, I64, I64, I64 => (Machine.Machine, I64)
 drawn_cols! = |machine, stride, w, y, x, acc| (if (x >= w) { (machine, acc) } else { ({
-	(machine1, machine__21) = Machine.load!(machine, fb_base, (((y * stride) + x) * 4), 4)
-	(if (machine__21 == sky) { drawn_cols!(machine1, stride, w, y, (x + 1), acc) } else { drawn_cols!(machine1, stride, w, y, (x + 1), (acc + 1)) })
+	(machine1, machine__1) = Machine.load!(machine, fb_base, (((y * stride) + x) * 4), 4)
+	(if (machine__1 == sky) { drawn_cols!(machine1, stride, w, y, (x + 1), acc) } else { drawn_cols!(machine1, stride, w, y, (x + 1), (acc + 1)) })
 }) })
 
 drawn_rows! : Machine.Machine, I64, I64, I64, I64, I64 => (Machine.Machine, I64)
 drawn_rows! = |machine, stride, w, h, y, acc| (if (y >= h) { (machine, acc) } else { ({
-	(machine1, machine__22) = drawn_cols!(machine, stride, w, y, 0, acc)
-	drawn_rows!(machine1, stride, w, h, (y + 1), machine__22)
+	(machine1, machine__1) = drawn_cols!(machine, stride, w, y, 0, acc)
+	drawn_rows!(machine1, stride, w, h, (y + 1), machine__1)
 }) })
 
 # --- Entry ---
 
 main! = |args| {
 	machine = Machine.boot!(args, ["Console"])
-	(machine7, machine__23) = ({
+	(machine7, machine__1) = ({
 		(machine1, w) = Machine.load!(machine, cell_width, 0, 4)
 		(machine2, h) = Machine.load!(machine1, cell_height, 0, 4)
 		(machine3, stride) = Machine.load!(machine2, cell_stride, 0, 4)
@@ -67,11 +68,11 @@ main! = |args| {
 		(machine5, _d) = Renderer3D.r3d_render_into!(machine4, tgt, demo_scene)
 		(machine6, drawn) = drawn_rows!(machine5, stride, w, h, 0, 0)
 		({
-			_ = line!(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat("screen : ", I64.to_str(w)), " x "), I64.to_str(h)), ", stride "), I64.to_str(stride)))
-			(machine6, line!(Str.concat(Str.concat(Str.concat(Str.concat("drawn  : ", I64.to_str(drawn)), " of "), I64.to_str((w * h))), " pixels")))
+			_ = line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("screen : ", CceText.show_int(w)), " x "), CceText.show_int(h)), ", stride "), CceText.show_int(stride))))
+			(machine6, line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat(CceText.concat("drawn  : ", CceText.show_int(drawn)), " of "), CceText.show_int((w * h))), " pixels"))))
 		})
 	})
-	machine__23
+	machine__1
 	Machine.halt!(machine7)
 	Ok({})
 }

@@ -7,39 +7,6 @@ Ne2k :: [].{
 	ne2k_max_frame : I64
 	ne2k_max_frame = 1536
 
-	ne2k_cr_port : I64
-	ne2k_cr_port = 768
-
-	ne2k_tpsr_port : I64
-	ne2k_tpsr_port = 772
-
-	ne2k_tbcr0_port : I64
-	ne2k_tbcr0_port = 773
-
-	ne2k_tbcr1_port : I64
-	ne2k_tbcr1_port = 774
-
-	ne2k_isr_port : I64
-	ne2k_isr_port = 775
-
-	ne2k_rsar0_port : I64
-	ne2k_rsar0_port = 776
-
-	ne2k_rsar1_port : I64
-	ne2k_rsar1_port = 777
-
-	ne2k_rbcr0_port : I64
-	ne2k_rbcr0_port = 778
-
-	ne2k_rbcr1_port : I64
-	ne2k_rbcr1_port = 779
-
-	ne2k_data_port : I64
-	ne2k_data_port = 784
-
-	ne2k_tx_page : I64
-	ne2k_tx_page = 64
-
 	ne2k_tx_buf : I64
 	ne2k_tx_buf = 34592
 
@@ -51,6 +18,7 @@ Ne2k :: [].{
 
 	ne2k_send_frame! : Machine.Machine, List(I64) => (Machine.Machine, I64)
 	ne2k_send_frame! = |machine, frame| ({
+		len : I64
 		len = U64.to_i64_wrap(List.len(frame))
 		(if (len > ne2k_max_frame) { (machine, 0) } else { ({
 			(machine1, _staged) = ne2k_stage_frame!(machine, frame, 0, len)
@@ -70,10 +38,4 @@ Ne2k :: [].{
 		(machine1, machine__1) = Machine.load!(machine, base, i, 1)
 		ne2k_read_from_buf!(machine1, base, (i + 1), len, List.append(acc, machine__1))
 	}) })
-
-	ne2k_available! : Machine.Machine => (Machine.Machine, Bool)
-	ne2k_available! = |machine| ({
-		(machine1, machine__2) = Machine.net_status(machine)
-		(machine1, (machine__2 > 0))
-	})
 }

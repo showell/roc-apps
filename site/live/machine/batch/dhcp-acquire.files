@@ -1,6 +1,6 @@
 DhcpAcquire.roc
-CCE.roc
-Cce.roc
+CceChar.roc
+CceText.roc
 Dhcp.roc
 DhcpIO.roc
 DnsResolver.roc
@@ -8,7 +8,6 @@ E1000e.roc
 Ethernet.roc
 Hamt.roc
 Hpet.roc
-ListUtils.roc
 Maybe.roc
 MemoryMap.roc
 Ne2k.roc

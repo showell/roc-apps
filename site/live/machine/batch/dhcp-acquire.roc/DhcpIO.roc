@@ -1,4 +1,5 @@
 # DhcpIO -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+import CceText
 import Dhcp
 import Machine
 import NetworkConfig
@@ -43,7 +44,7 @@ DhcpIO :: [].{
 		})
 	}) })
 
-	dhcp_io_configure! : Machine.Machine, List(I64), Str, I64, I64, I64 => (Machine.Machine, NetworkConfig.NetworkConfig)
+	dhcp_io_configure! : Machine.Machine, List(I64), CceText, I64, I64, I64 => (Machine.Machine, NetworkConfig.NetworkConfig)
 	dhcp_io_configure! = |machine, mac, hostname, xid, fuel, now| ({
 		cfg = NetworkConfig.net_config_empty(mac, hostname)
 		({
@@ -54,17 +55,4 @@ DhcpIO :: [].{
 
 	dhcp_io_apply : NetworkConfig.NetworkConfig, Dhcp.DhcpLease, I64 -> NetworkConfig.NetworkConfig
 	dhcp_io_apply = |cfg, lease, now| (if Dhcp.dhcp_is_ack(lease) { NetworkConfig.net_apply_dhcp_ack(cfg, lease, now) } else { cfg })
-
-	dhcp_io_maybe_renew! : Machine.Machine, NetworkConfig.NetworkConfig, I64, I64, I64 => (Machine.Machine, NetworkConfig.NetworkConfig)
-	dhcp_io_maybe_renew! = |machine, cfg, xid, fuel, now| (if (NetworkConfig.net_lease_due(cfg, now) == False) { (machine, cfg) } else { dhcp_io_renew!(machine, cfg, xid, fuel, now) })
-
-	dhcp_io_renew! : Machine.Machine, NetworkConfig.NetworkConfig, I64, I64, I64 => (Machine.Machine, NetworkConfig.NetworkConfig)
-	dhcp_io_renew! = |machine, cfg, xid, fuel, now| ({
-		sk = dhcp_io_socket(cfg.local_mac, cfg.local_ip)
-		({
-			(machine1, _sent) = UdpIO.udp_io_send!(machine, sk, Dhcp.dhcp_build_renew(xid, cfg.local_mac, cfg.local_ip))
-			(machine2, lease) = dhcp_io_await!(machine1, sk, fuel, Dhcp.dhcp_msg_ack)
-			(machine2, dhcp_io_apply(cfg, lease, now))
-		})
-	})
 }

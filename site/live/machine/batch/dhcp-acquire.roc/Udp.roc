@@ -2,14 +2,21 @@
 import Ethernet
 
 Udp :: [].{
-	UdpDatagram : { src_port : I64, dst_port : I64, payload : List(I64) }
-	UdpFrame : { src_ip : List(I64), dst_ip : List(I64), datagram : Udp.UdpDatagram, valid : Bool }
+	UdpDatagram := { src_port : I64, dst_port : I64, payload : List(I64) }.{
+		is_eq : Udp.UdpDatagram, Udp.UdpDatagram -> Bool
+		is_eq = |a, b| eq_UdpDatagram(a, b)
+	}
+	UdpFrame := { src_ip : List(I64), dst_ip : List(I64), datagram : Udp.UdpDatagram, valid : Bool }.{
+		is_eq : Udp.UdpFrame, Udp.UdpFrame -> Bool
+		is_eq = |a, b| eq_UdpFrame(a, b)
+	}
 
 	udp_header_size : I64
 	udp_header_size = 8
 
 	udp_build : I64, I64, List(I64) -> List(I64)
 	udp_build = |src_port, dst_port, payload| ({
+		len : I64
 		len = (udp_header_size + U64.to_i64_wrap(List.len(payload)))
 		List.concat(List.concat(List.concat(List.concat(Ethernet.write_be16(src_port), Ethernet.write_be16(dst_port)), Ethernet.write_be16(len)), [0, 0]), payload)
 	})
@@ -19,17 +26,24 @@ Udp :: [].{
 
 	udp_sum : List(I64), List(I64), List(I64) -> I64
 	udp_sum = |udp_bytes, src_ip, dst_ip| ({
+		udp_len : I64
 		udp_len = U64.to_i64_wrap(List.len(udp_bytes))
+		pseudo : List(I64)
 		pseudo = udp_pseudo_header(src_ip, dst_ip, udp_len)
+		padded : List(I64)
 		padded = (if (I64.bitwise_and(udp_len, 1) == 1) { List.concat(List.concat(pseudo, udp_bytes), [0]) } else { List.concat(pseudo, udp_bytes) })
 		Ethernet.ip_checksum(padded, 0, U64.to_i64_wrap(List.len(padded)), 0)
 	})
 
 	udp_with_checksum : List(I64), List(I64), List(I64) -> List(I64)
 	udp_with_checksum = |udp_bytes, src_ip, dst_ip| ({
+		raw : I64
 		raw = udp_sum(udp_bytes, src_ip, dst_ip)
+		cksum : I64
 		cksum = (if (raw == 0) { 65535 } else { raw })
-		(List.set((List.set(udp_bytes, I64.to_u64_wrap(6), I64.shr_zf_wrap(cksum, I64.to_u8_wrap(8))) ?? crash("list-set-at past the end")), I64.to_u64_wrap(7), I64.bitwise_and(cksum, 255)) ?? crash("list-set-at past the end"))
+		udp_bytes_v1 : List(I64)
+		udp_bytes_v1 = (List.set(udp_bytes, I64.to_u64_wrap(6), I64.shr_zf_wrap(cksum, I64.to_u8_wrap(8))) ?? crash("list-set-at past the end"))
+		(List.set(udp_bytes_v1, I64.to_u64_wrap(7), I64.bitwise_and(cksum, 255)) ?? crash("list-set-at past the end"))
 	})
 
 	udp_checksum_valid : List(I64), List(I64), List(I64) -> Bool
@@ -37,10 +51,12 @@ Udp :: [].{
 
 	udp_parse : List(I64) -> Udp.UdpDatagram
 	udp_parse = |data| ({
+		plen : I64
 		plen = U64.to_i64_wrap(List.len(data))
-		(if (plen < udp_header_size) { { src_port: 0, dst_port: 0, payload: [] } } else { ({
+		(if (plen < udp_header_size) { Udp.UdpDatagram.{ src_port: 0, dst_port: 0, payload: [] } } else { ({
+			payload_len : I64
 			payload_len = (Ethernet.read_be16(data, 4) - udp_header_size)
-			{ src_port: Ethernet.read_be16(data, 0), dst_port: Ethernet.read_be16(data, 2), payload: udp_extract_payload(data, udp_header_size, (udp_header_size + payload_len), []) }
+			Udp.UdpDatagram.{ src_port: Ethernet.read_be16(data, 0), dst_port: Ethernet.read_be16(data, 2), payload: udp_extract_payload(data, udp_header_size, (udp_header_size + payload_len), []) }
 		}) })
 	})
 
@@ -49,28 +65,23 @@ Udp :: [].{
 
 	udp_build_ip_packet : List(I64), List(I64), I64, I64, List(I64) -> List(I64)
 	udp_build_ip_packet = |src_ip, dst_ip, src_port, dst_port, payload| ({
-		udp_data = udp_with_checksum(udp_build(src_port, dst_port, payload), src_ip, dst_ip)
+		udp_with_checksum_v1 : List(I64)
+		udp_with_checksum_v1 = udp_with_checksum(udp_build(src_port, dst_port, payload), src_ip, dst_ip)
+		udp_data : List(I64)
+		udp_data = udp_with_checksum_v1
 		Ethernet.ip_build_packet(src_ip, dst_ip, Ethernet.ip_proto_udp, udp_data)
 	})
 
 	udp_build_frame : List(I64), List(I64), List(I64), List(I64), I64, I64, List(I64) -> List(I64)
 	udp_build_frame = |dst_mac, src_mac, src_ip, dst_ip, src_port, dst_port, payload| ({
+		ip_pkt : List(I64)
 		ip_pkt = udp_build_ip_packet(src_ip, dst_ip, src_port, dst_port, payload)
 		Ethernet.eth_build_frame(dst_mac, src_mac, Ethernet.eth_type_ipv4, ip_pkt)
 	})
 
-	udp_parse_ip_payload : List(I64), List(I64), List(I64) -> Udp.UdpFrame
-	udp_parse_ip_payload = |ip_payload, src_ip, dst_ip| (if (U64.to_i64_wrap(List.len(ip_payload)) < udp_header_size) { { src_ip: src_ip, dst_ip: dst_ip, datagram: { src_port: 0, dst_port: 0, payload: [] }, valid: False } } else { { src_ip: src_ip, dst_ip: dst_ip, datagram: udp_parse(ip_payload), valid: True } })
+	eq_UdpDatagram : Udp.UdpDatagram, Udp.UdpDatagram -> Bool
+	eq_UdpDatagram = |ex, ey| (((ex.src_port == ey.src_port) and (ex.dst_port == ey.dst_port)) and (ex.payload == ey.payload))
 
-	udp_datagram_length : Udp.UdpDatagram -> I64
-	udp_datagram_length = |d| U64.to_i64_wrap(List.len(d.payload))
-
-	format_udp_datagram : Udp.UdpDatagram -> Str
-	format_udp_datagram = |d| Str.concat(Str.concat(Str.concat(Str.concat(I64.to_str(d.src_port), "->"), I64.to_str(d.dst_port)), " len="), I64.to_str(udp_datagram_length(d)))
-
-	format_udp_frame : Udp.UdpFrame -> Str
-	format_udp_frame = |f| Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(udp_format_ip(f.src_ip), ":"), I64.to_str(f.datagram.src_port)), " -> "), udp_format_ip(f.dst_ip)), ":"), I64.to_str(f.datagram.dst_port)), " len="), I64.to_str(udp_datagram_length(f.datagram)))
-
-	udp_format_ip : List(I64) -> Str
-	udp_format_ip = |ip| Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat(I64.to_str((List.get(ip, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))), "."), I64.to_str((List.get(ip, I64.to_u64_wrap(1)) ?? crash("list-at out of range")))), "."), I64.to_str((List.get(ip, I64.to_u64_wrap(2)) ?? crash("list-at out of range")))), "."), I64.to_str((List.get(ip, I64.to_u64_wrap(3)) ?? crash("list-at out of range"))))
+	eq_UdpFrame : Udp.UdpFrame, Udp.UdpFrame -> Bool
+	eq_UdpFrame = |ex, ey| ((((ex.src_ip == ey.src_ip) and (ex.dst_ip == ey.dst_ip)) and eq_UdpDatagram(ex.datagram, ey.datagram)) and (ex.valid == ey.valid))
 }

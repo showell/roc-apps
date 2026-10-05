@@ -1,6 +1,7 @@
 Fat16List.roc
 CCE.roc
-Cce.roc
+CceChar.roc
+CceText.roc
 Fat16.roc
 Gpt.roc
 Maybe.roc

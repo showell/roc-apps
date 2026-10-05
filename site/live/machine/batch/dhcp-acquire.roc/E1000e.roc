@@ -1,4 +1,5 @@
 # E1000e -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+import CceText
 import Hpet
 import Machine
 import Maybe
@@ -7,9 +8,18 @@ import Pci
 import Prelude
 
 E1000e :: [].{
-	E1000Device : { e_mmio : I64, e_rx_ring : I64, e_tx_ring : I64, e_rx_bufs : I64, e_tx_bufs : I64, e_ctrl_blk : I64, e_present : Bool, e_mac : List(I64), e_mac_valid : Bool, e_pch : I64, e_ulp : I64 }
-	K1Step : { k1_value : I64, k1_owned : Bool }
-	E1000RecvResult : { r_frame : List(I64), r_has_frame : Bool }
+	E1000Device := { e_mmio : I64, e_rx_ring : I64, e_tx_ring : I64, e_rx_bufs : I64, e_tx_bufs : I64, e_ctrl_blk : I64, e_present : Bool, e_mac : List(I64), e_mac_valid : Bool, e_pch : I64, e_ulp : I64 }.{
+		is_eq : E1000e.E1000Device, E1000e.E1000Device -> Bool
+		is_eq = |a, b| eq_E1000Device(a, b)
+	}
+	K1Step := { k1_value : I64, k1_owned : Bool }.{
+		is_eq : E1000e.K1Step, E1000e.K1Step -> Bool
+		is_eq = |a, b| eq_K1Step(a, b)
+	}
+	E1000RecvResult := { r_frame : List(I64), r_has_frame : Bool }.{
+		is_eq : E1000e.E1000RecvResult, E1000e.E1000RecvResult -> Bool
+		is_eq = |a, b| eq_E1000RecvResult(a, b)
+	}
 
 	e1000_vendor_intel : I64
 	e1000_vendor_intel = 32902
@@ -37,9 +47,6 @@ E1000e :: [].{
 
 	e1000_reg_status : I64
 	e1000_reg_status = 8
-
-	e1000_reg_ctrl_ext : I64
-	e1000_reg_ctrl_ext = 24
 
 	e1000_reg_icr : I64
 	e1000_reg_icr = 192
@@ -97,18 +104,6 @@ E1000e :: [].{
 
 	e1000_reg_mdic : I64
 	e1000_reg_mdic = 32
-
-	e1000_reg_crcerrs : I64
-	e1000_reg_crcerrs = 16384
-
-	e1000_reg_mpc : I64
-	e1000_reg_mpc = 16400
-
-	e1000_reg_gprc : I64
-	e1000_reg_gprc = 16500
-
-	e1000_reg_rnbc : I64
-	e1000_reg_rnbc = 16544
 
 	e1000_ctrl_slu : I64
 	e1000_ctrl_slu = 64
@@ -223,8 +218,8 @@ E1000e :: [].{
 
 	e1000_read! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
 	e1000_read! = |machine, mmio, off| ({
-		(machine1, machine__23) = Machine.load!(machine, (mmio + off), 0, 4)
-		(machine1, I64.bitwise_and(machine__23, 4294967295))
+		(machine1, machine__1) = Machine.load!(machine, (mmio + off), 0, 4)
+		(machine1, I64.bitwise_and(machine__1, 4294967295))
 	})
 
 	e1000_write! : Machine.Machine, I64, I64, I64 => (Machine.Machine, I64)
@@ -232,17 +227,18 @@ E1000e :: [].{
 
 	e1000_align : I64, I64 -> I64
 	e1000_align = |addr, n| ({
+		r : I64
 		r = Prelude.int_mod(addr, n)
 		(if (r == 0) { addr } else { (addr + (n - r)) })
 	})
 
 	e1000_alloc_aligned! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
 	e1000_alloc_aligned! = |machine, bytes, align| ({
-		(machine2, machine__24) = ({
+		(machine2, machine__1) = ({
 		(machine1, raw) = Machine.alloc(machine, (bytes + align))
 		(machine1, e1000_align(raw, align))
 	})
-		(machine2, machine__24)
+		(machine2, machine__1)
 	})
 
 	e1000_zero_words! : Machine.Machine, I64, I64, I64 => (Machine.Machine, I64)
@@ -253,7 +249,7 @@ E1000e :: [].{
 
 	e1000_reset! : Machine.Machine, I64 => (Machine.Machine, I64)
 	e1000_reset! = |machine, mmio| ({
-		(machine8, machine__25) = ({
+		(machine8, machine__1) = ({
 		(machine1, _m1) = e1000_write!(machine, mmio, e1000_reg_imc, 4294967295)
 		(machine2, ctrl) = e1000_read!(machine1, mmio, e1000_reg_ctrl)
 		(machine3, _r) = e1000_write!(machine2, mmio, e1000_reg_ctrl, I64.bitwise_or(ctrl, e1000_ctrl_rst))
@@ -263,7 +259,7 @@ E1000e :: [].{
 		(machine7, _cleared) = e1000_read!(machine6, mmio, e1000_reg_icr)
 		(machine7, settled)
 	})
-		(machine8, machine__25)
+		(machine8, machine__1)
 	})
 
 	e1000_reset_fuel : I64
@@ -271,8 +267,8 @@ E1000e :: [].{
 
 	e1000_await_reset! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
 	e1000_await_reset! = |machine, mmio, i| (if (i >= e1000_reset_fuel) { (machine, 0) } else { ({
-		(machine1, machine__26) = e1000_read!(machine, mmio, e1000_reg_ctrl)
-		(if (I64.bitwise_and(machine__26, e1000_ctrl_rst) == 0) { (machine1, 1) } else { e1000_await_reset!(machine1, mmio, (i + 1)) })
+		(machine1, machine__1) = e1000_read!(machine, mmio, e1000_reg_ctrl)
+		(if (I64.bitwise_and(machine__1, e1000_ctrl_rst) == 0) { (machine1, 1) } else { e1000_await_reset!(machine1, mmio, (i + 1)) })
 	}) })
 
 	e1000_mdio_window_ms : I64
@@ -289,15 +285,15 @@ E1000e :: [].{
 		(machine1, _started) = Hpet.hpet_start!(machine)
 		(machine2, rate) = Hpet.hpet_ticks_per_second!(machine1)
 		(if (rate <= 0) { e1000_settle_spin!(machine2, mmio, e1000_settle_spin_fuel) } else { ({
-			(machine3, machine__27) = Hpet.hpet_ticks!(machine2)
-			e1000_await_ticks!(machine3, machine__27, I64.div_trunc_by((rate * e1000_mdio_window_ms), 1000), 0)
+			(machine3, machine__1) = Hpet.hpet_ticks!(machine2)
+			e1000_await_ticks!(machine3, machine__1, I64.div_trunc_by((rate * e1000_mdio_window_ms), 1000), 0)
 		}) })
 	})
 
 	e1000_await_ticks! : Machine.Machine, I64, I64, I64 => (Machine.Machine, I64)
 	e1000_await_ticks! = |machine, start, want, i| (if (i >= e1000_settle_ticks_fuel) { (machine, 0) } else { ({
-		(machine1, machine__28) = Hpet.hpet_ticks!(machine)
-		(if ((machine__28 - start) >= want) { (machine1, 1) } else { e1000_await_ticks!(machine1, start, want, (i + 1)) })
+		(machine1, machine__1) = Hpet.hpet_ticks!(machine)
+		(if ((machine__1 - start) >= want) { (machine1, 1) } else { e1000_await_ticks!(machine1, start, want, (i + 1)) })
 	}) })
 
 	e1000_settle_spin! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
@@ -336,9 +332,6 @@ E1000e :: [].{
 	e1000_phy_bmsr : I64
 	e1000_phy_bmsr = 1
 
-	e1000_phy_id1 : I64
-	e1000_phy_id1 = 2
-
 	e1000_bmcr_reset : I64
 	e1000_bmcr_reset = 32768
 
@@ -356,6 +349,7 @@ E1000e :: [].{
 
 	e1000_phy_read_at! : Machine.Machine, I64, I64, I64 => (Machine.Machine, I64)
 	e1000_phy_read_at! = |machine, mmio, phy, reg| ({
+		f : I64
 		f = e1000_mdic_frame(e1000_mdic_op_read, phy, reg, 0)
 		(machine1, _w) = e1000_write!(machine, mmio, e1000_reg_mdic, f)
 		e1000_await_mdic!(machine1, mmio, 0)
@@ -366,6 +360,7 @@ E1000e :: [].{
 
 	e1000_phy_write! : Machine.Machine, I64, I64, I64 => (Machine.Machine, I64)
 	e1000_phy_write! = |machine, mmio, reg, data| ({
+		f : I64
 		f = e1000_mdic_frame(e1000_mdic_op_write, e1000_phy_addr, reg, data)
 		(machine1, _w) = e1000_write!(machine, mmio, e1000_reg_mdic, f)
 		e1000_await_mdic!(machine1, mmio, 0)
@@ -394,31 +389,32 @@ E1000e :: [].{
 
 	e1000_phy_slow_mode! : Machine.Machine, I64 => (Machine.Machine, I64)
 	e1000_phy_slow_mode! = |machine, mmio| ({
-		(machine9, machine__33) = ({
+		(machine9, machine__5) = ({
 		(machine1, p) = e1000_phy_set_page!(machine, mmio, e1000_phy_port_page)
 		({
-			(machine8, machine__32) = (if (p < 0) { (machine1, 0) } else { ({
-			(machine7, machine__31) = ({
+			(machine8, machine__4) = (if (p < 0) { (machine1, 0) } else { ({
+			(machine7, machine__3) = ({
 			(machine2, cur) = e1000_phy_read!(machine1, mmio, e1000_phy_custom_mode)
 			({
-				(machine6, machine__30) = (if (cur < 0) { (machine2, 0) } else { ({
-				(machine5, machine__29) = ({
+				(machine6, machine__2) = (if (cur < 0) { (machine2, 0) } else { ({
+				(machine5, machine__1) = ({
+				want : I64
 				want = I64.bitwise_or(cur, e1000_phy_mdio_slow)
 				(machine3, w) = e1000_phy_write!(machine2, mmio, e1000_phy_custom_mode, want)
 				(machine4, _back) = e1000_phy_set_page!(machine3, mmio, 0)
 				(machine4, (if (w < 0) { 0 } else { 1 }))
 			})
-				(machine5, machine__29)
+				(machine5, machine__1)
 			}) })
-				(machine6, machine__30)
+				(machine6, machine__2)
 			})
 		})
-			(machine7, machine__31)
+			(machine7, machine__3)
 		}) })
-			(machine8, machine__32)
+			(machine8, machine__4)
 		})
 	})
-		(machine9, machine__33)
+		(machine9, machine__5)
 	})
 
 	e1000_phy_bring_up! : Machine.Machine, I64 => (Machine.Machine, I64)
@@ -426,6 +422,7 @@ E1000e :: [].{
 		(machine1, r) = e1000_phy_write!(machine, mmio, e1000_phy_bmcr, e1000_bmcr_reset)
 		(if (r < 0) { (machine1, 0) } else { ({
 			(machine2, _s) = e1000_phy_slow_mode!(machine1, mmio)
+			mode : I64
 			mode = I64.bitwise_or(e1000_bmcr_aneg_en, e1000_bmcr_aneg_rst)
 			(machine3, a) = e1000_phy_write!(machine2, mmio, e1000_phy_bmcr, mode)
 			(if (a < 0) { (machine3, 0) } else { e1000_await_aneg!(machine3, mmio, 0) })
@@ -445,8 +442,8 @@ E1000e :: [].{
 	e1000_await_aneg! = |machine, mmio, i| ({
 		(machine1, rate) = Hpet.hpet_ticks_per_second!(machine)
 		(if (rate <= 0) { e1000_await_aneg_counted!(machine1, mmio, i) } else { ({
-			(machine2, machine__34) = Hpet.hpet_ticks!(machine1)
-			e1000_await_aneg_timed!(machine2, mmio, machine__34, e1000_aneg_ticks(rate), i)
+			(machine2, machine__1) = Hpet.hpet_ticks!(machine1)
+			e1000_await_aneg_timed!(machine2, mmio, machine__1, e1000_aneg_ticks(rate), i)
 		}) })
 	})
 
@@ -460,8 +457,8 @@ E1000e :: [].{
 	e1000_await_aneg_timed! = |machine, mmio, start, want, i| (if (i >= e1000_aneg_fuel) { (machine, 0) } else { ({
 		(machine1, s) = e1000_phy_read!(machine, mmio, e1000_phy_bmsr)
 		(if (s < 0) { (machine1, 0) } else { (if (I64.bitwise_and(s, e1000_bmsr_aneg_done) != 0) { (machine1, 1) } else { ({
-			(machine2, machine__35) = Hpet.hpet_ticks!(machine1)
-			(if ((machine__35 - start) >= want) { (machine2, 0) } else { e1000_await_aneg_timed!(machine2, mmio, start, want, (i + 1)) })
+			(machine2, machine__1) = Hpet.hpet_ticks!(machine1)
+			(if ((machine__1 - start) >= want) { (machine2, 0) } else { e1000_await_aneg_timed!(machine2, mmio, start, want, (i + 1)) })
 		}) }) })
 	}) })
 
@@ -490,62 +487,54 @@ E1000e :: [].{
 		(machine1, _started) = Hpet.hpet_start!(machine)
 		(machine2, rate) = Hpet.hpet_ticks_per_second!(machine1)
 		(if (rate <= 0) { e1000_await_link!(machine2, mmio, 0) } else { ({
-			(machine3, machine__36) = Hpet.hpet_ticks!(machine2)
-			e1000_await_link_clocked!(machine3, mmio, machine__36, e1000_link_ticks(rate), e1000_link_batch_fuel)
+			(machine3, machine__1) = Hpet.hpet_ticks!(machine2)
+			e1000_await_link_clocked!(machine3, mmio, machine__1, e1000_link_ticks(rate), e1000_link_batch_fuel)
 		}) })
 	})
 
 	e1000_await_link_batch! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
 	e1000_await_link_batch! = |machine, mmio, i| (if (i <= 0) { (machine, 0) } else { ({
-		(machine1, machine__37) = e1000_read!(machine, mmio, e1000_reg_status)
-		(if (I64.bitwise_and(machine__37, e1000_status_lu) != 0) { (machine1, 1) } else { e1000_await_link_batch!(machine1, mmio, (i - 1)) })
+		(machine1, machine__1) = e1000_read!(machine, mmio, e1000_reg_status)
+		(if (I64.bitwise_and(machine__1, e1000_status_lu) != 0) { (machine1, 1) } else { e1000_await_link_batch!(machine1, mmio, (i - 1)) })
 	}) })
 
 	e1000_await_link_clocked! : Machine.Machine, I64, I64, I64, I64 => (Machine.Machine, I64)
 	e1000_await_link_clocked! = |machine, mmio, start, want, fuel| ({
-		(machine1, machine__38) = e1000_await_link_batch!(machine, mmio, e1000_link_batch)
-		(if (machine__38 == 1) { (machine1, 1) } else { (if (fuel <= 0) { (machine1, 0) } else { ({
-		(machine2, machine__39) = Hpet.hpet_ticks!(machine1)
-		(if ((machine__39 - start) >= want) { (machine2, 0) } else { e1000_await_link_clocked!(machine2, mmio, start, want, (fuel - 1)) })
+		(machine1, machine__1) = e1000_await_link_batch!(machine, mmio, e1000_link_batch)
+		(if (machine__1 == 1) { (machine1, 1) } else { (if (fuel <= 0) { (machine1, 0) } else { ({
+		(machine2, machine__2) = Hpet.hpet_ticks!(machine1)
+		(if ((machine__2 - start) >= want) { (machine2, 0) } else { e1000_await_link_clocked!(machine2, mmio, start, want, (fuel - 1)) })
 	}) }) })
 	})
 
 	e1000_await_link! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
 	e1000_await_link! = |machine, mmio, i| (if (i >= e1000_link_fuel) { (machine, 0) } else { ({
-		(machine1, machine__40) = e1000_read!(machine, mmio, e1000_reg_status)
-		(if (I64.bitwise_and(machine__40, e1000_status_lu) != 0) { (machine1, 1) } else { e1000_await_link!(machine1, mmio, (i + 1)) })
+		(machine1, machine__1) = e1000_read!(machine, mmio, e1000_reg_status)
+		(if (I64.bitwise_and(machine__1, e1000_status_lu) != 0) { (machine1, 1) } else { e1000_await_link!(machine1, mmio, (i + 1)) })
 	}) })
-
-	e1000_has_link! : Machine.Machine, E1000e.E1000Device => (Machine.Machine, Bool)
-	e1000_has_link! = |machine, d| ({
-		(machine2, machine__42) = (if d.e_present { ({
-		(machine1, machine__41) = e1000_read!(machine, d.e_mmio, e1000_reg_status)
-		(machine1, (I64.bitwise_and(machine__41, e1000_status_lu) != 0))
-	}) } else { (machine, False) })
-		(machine2, machine__42)
-	})
 
 	e1000_rah_av : I64
 	e1000_rah_av = 2147483648
 
 	e1000_mac_present! : Machine.Machine, I64 => (Machine.Machine, Bool)
 	e1000_mac_present! = |machine, mmio| ({
-		(machine1, machine__43) = e1000_read!(machine, mmio, e1000_reg_rah)
-		(machine1, (I64.bitwise_and(machine__43, e1000_rah_av) != 0))
+		(machine1, machine__1) = e1000_read!(machine, mmio, e1000_reg_rah)
+		(machine1, (I64.bitwise_and(machine__1, e1000_rah_av) != 0))
 	})
 
 	e1000_read_mac! : Machine.Machine, I64 => (Machine.Machine, List(I64))
 	e1000_read_mac! = |machine, mmio| ({
-		(machine3, machine__44) = ({
+		(machine3, machine__1) = ({
 		(machine1, lo) = e1000_read!(machine, mmio, e1000_reg_ral)
 		(machine2, hi) = e1000_read!(machine1, mmio, e1000_reg_rah)
 		(machine2, [I64.bitwise_and(lo, 255), I64.bitwise_and(I64.shr_zf_wrap(lo, I64.to_u8_wrap(8)), 255), I64.bitwise_and(I64.shr_zf_wrap(lo, I64.to_u8_wrap(16)), 255), I64.bitwise_and(I64.shr_zf_wrap(lo, I64.to_u8_wrap(24)), 255), I64.bitwise_and(hi, 255), I64.bitwise_and(I64.shr_zf_wrap(hi, I64.to_u8_wrap(8)), 255)])
 	})
-		(machine3, machine__44)
+		(machine3, machine__1)
 	})
 
 	e1000_setup_rx! : Machine.Machine, E1000e.E1000Device => (Machine.Machine, I64)
 	e1000_setup_rx! = |machine, d| ({
+		mmio : I64
 		mmio = d.e_mmio
 		(machine1, _built) = e1000_build_rx_descs!(machine, d, 0)
 		(machine2, _bl) = e1000_write!(machine1, mmio, e1000_reg_rdbal, I64.bitwise_and(d.e_rx_ring, 4294967295))
@@ -554,15 +543,20 @@ E1000e :: [].{
 		(machine5, _h) = e1000_write!(machine4, mmio, e1000_reg_rdh, 0)
 		(machine6, _t) = e1000_write!(machine5, mmio, e1000_reg_rdt, (e1000_rx_count - 1))
 		(machine7, _cur) = Machine.store!(machine6, (d.e_ctrl_blk + e1000_cb_rx_next), 0, 0, 4)
+		promisc : I64
 		promisc = I64.bitwise_or(e1000_rctl_upe, e1000_rctl_mpe)
+		flags : I64
 		flags = I64.bitwise_or(e1000_rctl_secrc, promisc)
+		rctl : I64
 		rctl = I64.bitwise_or(e1000_rctl_en, I64.bitwise_or(e1000_rctl_bam, flags))
 		e1000_write!(machine7, mmio, e1000_reg_rctl, rctl)
 	})
 
 	e1000_build_rx_descs! : Machine.Machine, E1000e.E1000Device, I64 => (Machine.Machine, I64)
 	e1000_build_rx_descs! = |machine, d, i| (if (i >= e1000_rx_count) { (machine, 0) } else { ({
+		desc : I64
 		desc = (d.e_rx_ring + (i * e1000_desc_size))
+		buf : I64
 		buf = (d.e_rx_bufs + (i * e1000_buf_size))
 		(machine1, _lo) = Machine.store!(machine, desc, 0, I64.bitwise_and(buf, 4294967295), 4)
 		(machine2, _hi) = Machine.store!(machine1, (desc + 4), 0, I64.shr_zf_wrap(buf, I64.to_u8_wrap(32)), 4)
@@ -573,6 +567,7 @@ E1000e :: [].{
 
 	e1000_setup_tx! : Machine.Machine, E1000e.E1000Device => (Machine.Machine, I64)
 	e1000_setup_tx! = |machine, d| ({
+		mmio : I64
 		mmio = d.e_mmio
 		(machine1, _cleared) = e1000_zero_words!(machine, d.e_tx_ring, (e1000_tx_count * 4), 0)
 		(machine2, _bl) = e1000_write!(machine1, mmio, e1000_reg_tdbal, I64.bitwise_and(d.e_tx_ring, 4294967295))
@@ -582,7 +577,9 @@ E1000e :: [].{
 		(machine6, _t) = e1000_write!(machine5, mmio, e1000_reg_tdt, 0)
 		(machine7, _cur) = Machine.store!(machine6, (d.e_ctrl_blk + e1000_cb_tx_next), 0, 0, 4)
 		(machine8, _g) = e1000_write!(machine7, mmio, e1000_reg_tipg, e1000_tipg_default)
+		coll : I64
 		coll = I64.bitwise_or(e1000_tctl_ct, e1000_tctl_cold)
+		tctl : I64
 		tctl = I64.bitwise_or(e1000_tctl_en, I64.bitwise_or(e1000_tctl_psp, coll))
 		e1000_write!(machine8, mmio, e1000_reg_tctl, tctl)
 	})
@@ -594,7 +591,7 @@ E1000e :: [].{
 	}) })
 
 	e1000_absent : E1000e.E1000Device
-	e1000_absent = { e_mmio: 0, e_rx_ring: 0, e_tx_ring: 0, e_rx_bufs: 0, e_tx_bufs: 0, e_ctrl_blk: 0, e_present: False, e_mac: [], e_mac_valid: False, e_pch: 0, e_ulp: 0 }
+	e1000_absent = E1000e.E1000Device.{ e_mmio: 0, e_rx_ring: 0, e_tx_ring: 0, e_rx_bufs: 0, e_tx_bufs: 0, e_ctrl_blk: 0, e_present: False, e_mac: [], e_mac_valid: False, e_pch: 0, e_ulp: 0 }
 
 	e1000_dev_i219_v : I64
 	e1000_dev_i219_v = 5560
@@ -607,12 +604,6 @@ E1000e :: [].{
 
 	e1000_extcnf_sw_own : I64
 	e1000_extcnf_sw_own = 32
-
-	e1000_extcnf_hw_own : I64
-	e1000_extcnf_hw_own = 64
-
-	e1000_extcnf_mng_own : I64
-	e1000_extcnf_mng_own = 128
 
 	e1000_extcnf_own_mask : I64
 	e1000_extcnf_own_mask = 224
@@ -628,13 +619,14 @@ E1000e :: [].{
 
 	e1000_swflag_held! : Machine.Machine, I64 => (Machine.Machine, Bool)
 	e1000_swflag_held! = |machine, mmio| ({
-		(machine1, machine__45) = e1000_read!(machine, mmio, e1000_reg_extcnf_ctrl)
-		(machine1, (I64.bitwise_and(machine__45, e1000_extcnf_sw_own) != 0))
+		(machine1, machine__1) = e1000_read!(machine, mmio, e1000_reg_extcnf_ctrl)
+		(machine1, (I64.bitwise_and(machine__1, e1000_extcnf_sw_own) != 0))
 	})
 
 	e1000_swflag_request! : Machine.Machine, I64 => (Machine.Machine, I64)
 	e1000_swflag_request! = |machine, mmio| ({
 		(machine1, cur) = e1000_read!(machine, mmio, e1000_reg_extcnf_ctrl)
+		keep : I64
 		keep = I64.bitwise_and(cur, I64.bitwise_not(e1000_extcnf_own_mask))
 		e1000_write!(machine1, mmio, e1000_reg_extcnf_ctrl, I64.bitwise_or(keep, e1000_extcnf_sw_own))
 	})
@@ -644,8 +636,8 @@ E1000e :: [].{
 		(machine1, _started) = Hpet.hpet_start!(machine)
 		(machine2, rate) = Hpet.hpet_ticks_per_second!(machine1)
 		(if (rate <= 0) { e1000_settle_spin!(machine2, mmio, e1000_swflag_spin_fuel) } else { ({
-			(machine3, machine__46) = Hpet.hpet_ticks!(machine2)
-			e1000_await_ticks!(machine3, machine__46, I64.div_trunc_by((rate * e1000_swflag_window_us), 1000000), 0)
+			(machine3, machine__1) = Hpet.hpet_ticks!(machine2)
+			e1000_await_ticks!(machine3, machine__1, I64.div_trunc_by((rate * e1000_swflag_window_us), 1000000), 0)
 		}) })
 	})
 
@@ -653,8 +645,8 @@ E1000e :: [].{
 	e1000_swflag_acquire! = |machine, mmio, fuel| (if (fuel <= 0) { (machine, 0) } else { ({
 		(machine1, _w) = e1000_swflag_request!(machine, mmio)
 		({
-			(machine2, machine__47) = e1000_swflag_held!(machine1, mmio)
-			(if machine__47 { (machine2, 1) } else { ({
+			(machine2, machine__1) = e1000_swflag_held!(machine1, mmio)
+			(if machine__1 { (machine2, 1) } else { ({
 			(machine3, _d) = e1000_swflag_pause!(machine2, mmio)
 			e1000_swflag_acquire!(machine3, mmio, (fuel - 1))
 		}) })
@@ -679,50 +671,42 @@ E1000e :: [].{
 	e1000_k1_giga_disable : I64
 	e1000_k1_giga_disable = 8192
 
-	e1000_k1_enable_bit : I64
-	e1000_k1_enable_bit = 16384
-
 	e1000_ulp_page : I64
 	e1000_ulp_page = 779
 
 	e1000_ulp_reg : I64
 	e1000_ulp_reg = 16
 
-	e1000_ulp_sticky : I64
-	e1000_ulp_sticky = 16
-
-	e1000_ulp_lanphypc : I64
-	e1000_ulp_lanphypc = 1024
-
 	e1000_ulp_entry_bits : I64
 	e1000_ulp_entry_bits = 1040
 
 	e1000_ulp_disable! : Machine.Machine, I64 => (Machine.Machine, I64)
 	e1000_ulp_disable! = |machine, mmio| ({
-		(machine10, machine__51) = ({
+		(machine10, machine__4) = ({
 		(machine1, _p) = e1000_phy_set_page!(machine, mmio, e1000_ulp_page)
 		(machine2, v0) = e1000_phy_read!(machine1, mmio, e1000_ulp_reg)
 		({
-			(machine9, machine__50) = (if (v0 < 0) { ({
-			(machine4, machine__48) = ({
+			(machine9, machine__3) = (if (v0 < 0) { ({
+			(machine4, machine__1) = ({
 			(machine3, _restore0) = e1000_phy_set_page!(machine2, mmio, 0)
 			(machine3, (0 - 1))
 		})
-			(machine4, machine__48)
+			(machine4, machine__1)
 		}) } else { ({
-			(machine8, machine__49) = ({
+			(machine8, machine__2) = ({
+			v1 : I64
 			v1 = I64.bitwise_and(v0, I64.bitwise_not(e1000_ulp_entry_bits))
 			(machine5, _w) = e1000_phy_write!(machine2, mmio, e1000_ulp_reg, v1)
 			(machine6, back) = e1000_phy_read!(machine5, mmio, e1000_ulp_reg)
 			(machine7, _restore) = e1000_phy_set_page!(machine6, mmio, 0)
 			(machine7, back)
 		})
-			(machine8, machine__49)
+			(machine8, machine__2)
 		}) })
-			(machine9, machine__50)
+			(machine9, machine__3)
 		})
 	})
-		(machine10, machine__51)
+		(machine10, machine__4)
 	})
 
 	e1000_pch_ulp_required : Bool
@@ -730,31 +714,32 @@ E1000e :: [].{
 
 	e1000_ulp_step! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
 	e1000_ulp_step! = |machine, mmio, dev_id| ({
-		(machine4, machine__54) = (if (e1000_pch_ulp_required == False) { (machine, 0) } else { ({
-		(machine3, machine__53) = (if (e1000_pch_part(dev_id) == False) { (machine, 0) } else { ({
-		(machine2, machine__52) = ({
+		(machine4, machine__3) = (if (e1000_pch_ulp_required == False) { (machine, 0) } else { ({
+		(machine3, machine__2) = (if (e1000_pch_part(dev_id) == False) { (machine, 0) } else { ({
+		(machine2, machine__1) = ({
 		(machine1, v) = e1000_ulp_disable!(machine, mmio)
 		(machine1, (if (v < 0) { (0 - 1) } else { (if (I64.bitwise_and(v, e1000_ulp_entry_bits) == 0) { 1 } else { 2 }) }))
 	})
-		(machine2, machine__52)
+		(machine2, machine__1)
 	}) })
-		(machine3, machine__53)
+		(machine3, machine__2)
 	}) })
-		(machine4, machine__54)
+		(machine4, machine__3)
 	})
 
 	e1000_k1_configure! : Machine.Machine, I64, Bool => (Machine.Machine, I64)
 	e1000_k1_configure! = |machine, mmio, enable| ({
-		(machine6, machine__55) = ({
+		(machine6, machine__1) = ({
 		(machine1, _p) = e1000_phy_set_page!(machine, mmio, e1000_phy_pcie_pm_page)
 		(machine2, v0) = e1000_phy_read!(machine1, mmio, e1000_phy_pcie_pm_reg)
+		v1 : I64
 		v1 = (if enable { I64.bitwise_and(v0, I64.bitwise_not(e1000_k1_giga_disable)) } else { I64.bitwise_or(v0, e1000_k1_giga_disable) })
 		(machine3, _w) = e1000_phy_write!(machine2, mmio, e1000_phy_pcie_pm_reg, v1)
 		(machine4, back) = e1000_phy_read!(machine3, mmio, e1000_phy_pcie_pm_reg)
 		(machine5, _restore) = e1000_phy_set_page!(machine4, mmio, 0)
 		(machine5, back)
 	})
-		(machine6, machine__55)
+		(machine6, machine__1)
 	})
 
 	e1000_pch_k1_required : Bool
@@ -762,70 +747,65 @@ E1000e :: [].{
 
 	e1000_k1_configure_guarded! : Machine.Machine, I64 => (Machine.Machine, E1000e.K1Step)
 	e1000_k1_configure_guarded! = |machine, mmio| ({
-		(machine6, machine__58) = (if (e1000_pch_swflag_required == False) { ({
-		(machine1, machine__56) = e1000_k1_configure!(machine, mmio, False)
-		(machine1, { k1_value: machine__56, k1_owned: True })
+		(machine6, machine__3) = (if (e1000_pch_swflag_required == False) { ({
+		(machine1, machine__1) = e1000_k1_configure!(machine, mmio, False)
+		(machine1, E1000e.K1Step.{ k1_value: machine__1, k1_owned: True })
 	}) } else { ({
-		(machine5, machine__57) = ({
+		(machine5, machine__2) = ({
 		(machine2, got) = e1000_swflag_acquire!(machine, mmio, e1000_swflag_fuel)
 		(machine3, v) = e1000_k1_configure!(machine2, mmio, False)
 		(machine4, _rel) = e1000_swflag_release!(machine3, mmio)
-		(machine4, { k1_value: v, k1_owned: (got != 0) })
+		(machine4, E1000e.K1Step.{ k1_value: v, k1_owned: (got != 0) })
 	})
-		(machine5, machine__57)
+		(machine5, machine__2)
 	}) })
-		(machine6, machine__58)
+		(machine6, machine__3)
 	})
 
 	e1000_pch_prepare! : Machine.Machine, I64, I64, Bool => (Machine.Machine, I64)
 	e1000_pch_prepare! = |machine, mmio, dev_id, do_k1| ({
-		(machine4, machine__61) = (if (e1000_pch_part(dev_id) == False) { (machine, 0) } else { ({
-		(machine3, machine__60) = (if (do_k1 == False) { (machine, 1) } else { ({
-		(machine2, machine__59) = ({
+		(machine4, machine__3) = (if (e1000_pch_part(dev_id) == False) { (machine, 0) } else { ({
+		(machine3, machine__2) = (if (do_k1 == False) { (machine, 1) } else { ({
+		(machine2, machine__1) = ({
 		(machine1, step) = e1000_k1_configure_guarded!(machine, mmio)
 		(machine1, (if (step.k1_value < 0) { (if step.k1_owned { 6 } else { 7 }) } else { ({
+			stuck : Bool
 			stuck = (I64.bitwise_and(step.k1_value, e1000_k1_giga_disable) != 0)
 			(if step.k1_owned { (if stuck { 3 } else { 2 }) } else { (if stuck { 5 } else { 4 }) })
 		}) }))
 	})
-		(machine2, machine__59)
+		(machine2, machine__1)
 	}) })
-		(machine3, machine__60)
+		(machine3, machine__2)
 	}) })
-		(machine4, machine__61)
+		(machine4, machine__3)
 	})
-
-	e1000_pch_lcd_reload_required : Bool
-	e1000_pch_lcd_reload_required = False
-
-	e1000_lcd_reload! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
-	e1000_lcd_reload! = |machine, mmio, dev_id| (if (e1000_pch_lcd_reload_required == False) { (machine, 0) } else { e1000_pch_prepare!(machine, mmio, dev_id, e1000_pch_k1_required) })
 
 	e1000_init! : Machine.Machine, Pci.PciDevice => (Machine.Machine, E1000e.E1000Device)
 	e1000_init! = |machine, pci_dev| ({
-		(machine8, machine__64) = ({
+		(machine8, machine__3) = ({
 		(machine1, _enabled) = Pci.pci_enable_device!(machine, pci_dev)
 		(machine2, bar) = Pci.pci_parse_bar!(machine1, pci_dev.pci_bus, pci_dev.pci_dev, pci_dev.pci_func, 0)
 		({
-			(machine7, machine__63) = (if (e1000_bar_verdict(bar) != e1000_bar_ok) { (machine2, e1000_absent) } else { ({
-			(machine6, machine__62) = ({
+			(machine7, machine__2) = (if (e1000_bar_verdict(bar) != e1000_bar_ok) { (machine2, e1000_absent) } else { ({
+			(machine6, machine__1) = ({
 			(machine3, d) = e1000_init_at!(machine2, bar.bar_base)
 			(machine4, ulp) = e1000_ulp_step!(machine3, bar.bar_base, pci_dev.pci_device_id)
 			(machine5, pch) = e1000_pch_prepare!(machine4, bar.bar_base, pci_dev.pci_device_id, e1000_pch_k1_required)
 			(machine5, { ..{ ..d, e_pch: pch }, e_ulp: ulp })
 		})
-			(machine6, machine__62)
+			(machine6, machine__1)
 		}) })
-			(machine7, machine__63)
+			(machine7, machine__2)
 		})
 	})
-		(machine8, machine__64)
+		(machine8, machine__3)
 	})
 
 	e1000_init_at! : Machine.Machine, I64 => (Machine.Machine, E1000e.E1000Device)
 	e1000_init_at! = |machine, mmio| ({
-		(machine1, machine__65) = e1000_reset!(machine, mmio)
-		(if (machine__65 == 0) { (machine1, e1000_absent) } else { e1000_init_after_reset!(machine1, mmio) })
+		(machine1, machine__1) = e1000_reset!(machine, mmio)
+		(if (machine__1 == 0) { (machine1, e1000_absent) } else { e1000_init_after_reset!(machine1, mmio) })
 	})
 
 	e1000_quiesce_ms : I64
@@ -838,14 +818,14 @@ E1000e :: [].{
 		(machine3, _started) = Hpet.hpet_start!(machine2)
 		(machine4, rate) = Hpet.hpet_ticks_per_second!(machine3)
 		(if (rate <= 0) { e1000_settle_spin!(machine4, mmio, e1000_settle_spin_fuel) } else { ({
-			(machine5, machine__66) = Hpet.hpet_ticks!(machine4)
-			e1000_await_ticks!(machine5, machine__66, I64.div_trunc_by((rate * e1000_quiesce_ms), 1000), 0)
+			(machine5, machine__1) = Hpet.hpet_ticks!(machine4)
+			e1000_await_ticks!(machine5, machine__1, I64.div_trunc_by((rate * e1000_quiesce_ms), 1000), 0)
 		}) })
 	})
 
 	e1000_init_after_reset! : Machine.Machine, I64 => (Machine.Machine, E1000e.E1000Device)
 	e1000_init_after_reset! = |machine, mmio| ({
-		(machine16, machine__67) = ({
+		(machine16, machine__1) = ({
 		(machine1, _quiet) = e1000_quiesce!(machine, mmio)
 		(machine2, rx_ring) = e1000_alloc_aligned!(machine1, (e1000_rx_count * e1000_desc_size), 16)
 		(machine3, tx_ring) = e1000_alloc_aligned!(machine2, (e1000_tx_count * e1000_desc_size), 16)
@@ -856,7 +836,7 @@ E1000e :: [].{
 		(machine8, _mta) = e1000_clear_mta!(machine7, mmio, 0)
 		(machine9, mac_ok) = e1000_mac_present!(machine8, mmio)
 		(machine10, mac) = (if mac_ok { e1000_read_mac!(machine9, mmio) } else { (machine9, []) })
-		d = { e_mmio: mmio, e_rx_ring: rx_ring, e_tx_ring: tx_ring, e_rx_bufs: rx_bufs, e_tx_bufs: tx_bufs, e_ctrl_blk: ctrl_blk, e_present: True, e_mac: mac, e_mac_valid: mac_ok, e_pch: 0, e_ulp: 0 }
+		d = E1000e.E1000Device.{ e_mmio: mmio, e_rx_ring: rx_ring, e_tx_ring: tx_ring, e_rx_bufs: rx_bufs, e_tx_bufs: tx_bufs, e_ctrl_blk: ctrl_blk, e_present: True, e_mac: mac, e_mac_valid: mac_ok, e_pch: 0, e_ulp: 0 }
 		(machine11, _rx) = e1000_setup_rx!(machine10, d)
 		(machine12, _tx) = e1000_setup_tx!(machine11, d)
 		(machine13, _sem) = (if e1000_pch_swflag_required { e1000_swflag_acquire!(machine12, mmio, e1000_swflag_fuel) } else { (machine12, 1) })
@@ -864,19 +844,18 @@ E1000e :: [].{
 		(machine15, _rel) = (if e1000_pch_swflag_required { e1000_swflag_release!(machine14, mmio) } else { (machine14, 0) })
 		(machine15, d)
 	})
-		(machine16, machine__67)
+		(machine16, machine__1)
 	})
 
 	e1000_no_frame : E1000e.E1000RecvResult
-	e1000_no_frame = { r_frame: [], r_has_frame: False }
-
-	e1000_poll_frame! : Machine.Machine, E1000e.E1000Device => (Machine.Machine, E1000e.E1000RecvResult)
-	e1000_poll_frame! = |machine, d| (if (d.e_present == False) { (machine, e1000_no_frame) } else { e1000_poll_raw!(machine, d.e_mmio, d.e_rx_ring, d.e_rx_bufs, d.e_ctrl_blk) })
+	e1000_no_frame = E1000e.E1000RecvResult.{ r_frame: [], r_has_frame: False }
 
 	e1000_poll_raw! : Machine.Machine, I64, I64, I64, I64 => (Machine.Machine, E1000e.E1000RecvResult)
 	e1000_poll_raw! = |machine, mmio, rx_ring, rx_bufs, ctrl_blk| (if (mmio == 0) { (machine, e1000_no_frame) } else { ({
-		(machine1, machine__68) = Machine.load!(machine, (ctrl_blk + e1000_cb_rx_next), 0, 4)
-		idx = I64.bitwise_and(machine__68, 4294967295)
+		(machine1, machine__1) = Machine.load!(machine, (ctrl_blk + e1000_cb_rx_next), 0, 4)
+		idx : I64
+		idx = I64.bitwise_and(machine__1, 4294967295)
+		desc : I64
 		desc = (rx_ring + (idx * e1000_desc_size))
 		(machine2, status) = Machine.load!(machine1, desc, 12, 1)
 		(if (I64.bitwise_and(status, e1000_rx_status_dd) == 0) { (machine2, e1000_no_frame) } else { e1000_take_frame!(machine2, mmio, rx_bufs, ctrl_blk, idx, desc, status) })
@@ -884,24 +863,29 @@ E1000e :: [].{
 
 	e1000_take_frame! : Machine.Machine, I64, I64, I64, I64, I64, I64 => (Machine.Machine, E1000e.E1000RecvResult)
 	e1000_take_frame! = |machine, mmio, rx_bufs, ctrl_blk, idx, desc, status| ({
-		(machine5, machine__71) = ({
-		(machine1, machine__69) = Machine.load!(machine, desc, 8, 1)
-		(machine2, machine__70) = Machine.load!(machine1, desc, 9, 1)
-		len = I64.bitwise_or(machine__69, I64.shl_wrap(machine__70, I64.to_u8_wrap(8)))
+		(machine5, machine__3) = ({
+		(machine1, machine__1) = Machine.load!(machine, desc, 8, 1)
+		(machine2, machine__2) = Machine.load!(machine1, desc, 9, 1)
+		len : I64
+		len = I64.bitwise_or(machine__1, I64.shl_wrap(machine__2, I64.to_u8_wrap(8)))
+		buf : I64
 		buf = (rx_bufs + (idx * e1000_buf_size))
+		capped : I64
 		capped = (if (len > e1000_max_frame) { e1000_max_frame } else { len })
+		whole : Bool
 		whole = (I64.bitwise_and(status, e1000_rx_status_eop) != 0)
 		(machine3, frame) = (if whole { e1000_read_bytes!(machine2, buf, 0, capped, []) } else { (machine2, []) })
 		(machine4, _recycled) = e1000_recycle_rx!(machine3, mmio, ctrl_blk, idx, desc)
-		(machine4, { r_frame: frame, r_has_frame: whole })
+		(machine4, E1000e.E1000RecvResult.{ r_frame: frame, r_has_frame: whole })
 	})
-		(machine5, machine__71)
+		(machine5, machine__3)
 	})
 
 	e1000_recycle_rx! : Machine.Machine, I64, I64, I64, I64 => (Machine.Machine, I64)
 	e1000_recycle_rx! = |machine, mmio, ctrl_blk, idx, desc| ({
 		(machine1, _cleared) = Machine.store!(machine, (desc + 8), 0, 0, 4)
 		(machine2, _top) = Machine.store!(machine1, (desc + 12), 0, 0, 4)
+		next : I64
 		next = Prelude.int_mod((idx + 1), e1000_rx_count)
 		(machine3, _saved) = Machine.store!(machine2, (ctrl_blk + e1000_cb_rx_next), 0, next, 4)
 		e1000_write!(machine3, mmio, e1000_reg_rdt, idx)
@@ -909,27 +893,32 @@ E1000e :: [].{
 
 	e1000_read_bytes! : Machine.Machine, I64, I64, I64, List(I64) => (Machine.Machine, List(I64))
 	e1000_read_bytes! = |machine, base, i, len, acc| (if (i >= len) { (machine, acc) } else { ({
-		(machine1, machine__72) = Machine.load!(machine, base, i, 1)
-		e1000_read_bytes!(machine1, base, (i + 1), len, List.append(acc, machine__72))
+		(machine1, machine__1) = Machine.load!(machine, base, i, 1)
+		e1000_read_bytes!(machine1, base, (i + 1), len, List.append(acc, machine__1))
 	}) })
 
 	e1000_send_frame! : Machine.Machine, E1000e.E1000Device, List(I64) => (Machine.Machine, I64)
 	e1000_send_frame! = |machine, d, frame| (if (d.e_present == False) { (machine, 0) } else { ({
+		len : I64
 		len = U64.to_i64_wrap(List.len(frame))
 		(if (len <= 0) { (machine, 0) } else { (if (len > e1000_max_frame) { (machine, 0) } else { e1000_send_at!(machine, d, frame, len) }) })
 	}) })
 
 	e1000_send_at! : Machine.Machine, E1000e.E1000Device, List(I64), I64 => (Machine.Machine, I64)
 	e1000_send_at! = |machine, d, frame, len| ({
-		(machine1, machine__73) = Machine.load!(machine, (d.e_ctrl_blk + e1000_cb_tx_next), 0, 4)
-		idx = I64.bitwise_and(machine__73, 4294967295)
+		(machine1, machine__1) = Machine.load!(machine, (d.e_ctrl_blk + e1000_cb_tx_next), 0, 4)
+		idx : I64
+		idx = I64.bitwise_and(machine__1, 4294967295)
+		desc : I64
 		desc = (d.e_tx_ring + (idx * e1000_desc_size))
+		buf : I64
 		buf = (d.e_tx_bufs + (idx * e1000_buf_size))
 		(machine2, _staged) = e1000_write_bytes!(machine1, buf, frame, 0, len)
 		(machine3, _lo) = Machine.store!(machine2, desc, 0, I64.bitwise_and(buf, 4294967295), 4)
 		(machine4, _hi) = Machine.store!(machine3, (desc + 4), 0, I64.shr_zf_wrap(buf, I64.to_u8_wrap(32)), 4)
 		(machine5, _mid) = Machine.store!(machine4, (desc + 8), 0, I64.bitwise_or(I64.bitwise_and(len, 65535), I64.shl_wrap(e1000_tx_cmd_all, I64.to_u8_wrap(24))), 4)
 		(machine6, _top) = Machine.store!(machine5, (desc + 12), 0, 0, 4)
+		next : I64
 		next = Prelude.int_mod((idx + 1), e1000_tx_count)
 		(machine7, _saved) = Machine.store!(machine6, (d.e_ctrl_blk + e1000_cb_tx_next), 0, next, 4)
 		(machine8, _kick) = e1000_write!(machine7, d.e_mmio, e1000_reg_tdt, next)
@@ -953,23 +942,23 @@ E1000e :: [].{
 
 	e1000_await_tx_batch! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
 	e1000_await_tx_batch! = |machine, desc, i| (if (i <= 0) { (machine, 0) } else { ({
-		(machine1, machine__74) = Machine.load!(machine, desc, 12, 1)
-		(if (I64.bitwise_and(machine__74, e1000_tx_status_dd) != 0) { (machine1, 1) } else { e1000_await_tx_batch!(machine1, desc, (i - 1)) })
+		(machine1, machine__1) = Machine.load!(machine, desc, 12, 1)
+		(if (I64.bitwise_and(machine__1, e1000_tx_status_dd) != 0) { (machine1, 1) } else { e1000_await_tx_batch!(machine1, desc, (i - 1)) })
 	}) })
 
 	e1000_await_tx_clocked! : Machine.Machine, I64, I64, I64, I64 => (Machine.Machine, I64)
 	e1000_await_tx_clocked! = |machine, desc, start, want, fuel| ({
-		(machine1, machine__75) = e1000_await_tx_batch!(machine, desc, e1000_tx_batch)
-		(if (machine__75 == 1) { (machine1, 1) } else { (if (fuel <= 0) { (machine1, 0) } else { ({
-		(machine2, machine__76) = Hpet.hpet_ticks!(machine1)
-		(if ((machine__76 - start) >= want) { (machine2, 0) } else { e1000_await_tx_clocked!(machine2, desc, start, want, (fuel - 1)) })
+		(machine1, machine__1) = e1000_await_tx_batch!(machine, desc, e1000_tx_batch)
+		(if (machine__1 == 1) { (machine1, 1) } else { (if (fuel <= 0) { (machine1, 0) } else { ({
+		(machine2, machine__2) = Hpet.hpet_ticks!(machine1)
+		(if ((machine__2 - start) >= want) { (machine2, 0) } else { e1000_await_tx_clocked!(machine2, desc, start, want, (fuel - 1)) })
 	}) }) })
 	})
 
 	e1000_await_tx_spin! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
 	e1000_await_tx_spin! = |machine, desc, i| (if (i >= e1000_tx_fuel) { (machine, 0) } else { ({
-		(machine1, machine__77) = Machine.load!(machine, desc, 12, 1)
-		(if (I64.bitwise_and(machine__77, e1000_tx_status_dd) != 0) { (machine1, 1) } else { e1000_await_tx_spin!(machine1, desc, (i + 1)) })
+		(machine1, machine__1) = Machine.load!(machine, desc, 12, 1)
+		(if (I64.bitwise_and(machine__1, e1000_tx_status_dd) != 0) { (machine1, 1) } else { e1000_await_tx_spin!(machine1, desc, (i + 1)) })
 	}) })
 
 	e1000_await_tx! : Machine.Machine, I64 => (Machine.Machine, I64)
@@ -977,8 +966,8 @@ E1000e :: [].{
 		(machine1, _started) = Hpet.hpet_start!(machine)
 		(machine2, rate) = Hpet.hpet_ticks_per_second!(machine1)
 		(if (rate <= 0) { e1000_await_tx_spin!(machine2, desc, 0) } else { ({
-			(machine3, machine__78) = Hpet.hpet_ticks!(machine2)
-			e1000_await_tx_clocked!(machine3, desc, machine__78, I64.div_trunc_by((rate * e1000_tx_window_ms), 1000), e1000_tx_batch_fuel)
+			(machine3, machine__1) = Hpet.hpet_ticks!(machine2)
+			e1000_await_tx_clocked!(machine3, desc, machine__1, I64.div_trunc_by((rate * e1000_tx_window_ms), 1000), e1000_tx_batch_fuel)
 		}) })
 	})
 
@@ -987,4 +976,13 @@ E1000e :: [].{
 		(machine1, _w) = Machine.store!(machine, base, i, (List.get(bs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), 1)
 		e1000_write_bytes!(machine1, base, bs, (i + 1), len)
 	}) })
+
+	eq_E1000Device : E1000e.E1000Device, E1000e.E1000Device -> Bool
+	eq_E1000Device = |ex, ey| (((((((((((ex.e_mmio == ey.e_mmio) and (ex.e_rx_ring == ey.e_rx_ring)) and (ex.e_tx_ring == ey.e_tx_ring)) and (ex.e_rx_bufs == ey.e_rx_bufs)) and (ex.e_tx_bufs == ey.e_tx_bufs)) and (ex.e_ctrl_blk == ey.e_ctrl_blk)) and (ex.e_present == ey.e_present)) and (ex.e_mac == ey.e_mac)) and (ex.e_mac_valid == ey.e_mac_valid)) and (ex.e_pch == ey.e_pch)) and (ex.e_ulp == ey.e_ulp))
+
+	eq_K1Step : E1000e.K1Step, E1000e.K1Step -> Bool
+	eq_K1Step = |ex, ey| ((ex.k1_value == ey.k1_value) and (ex.k1_owned == ey.k1_owned))
+
+	eq_E1000RecvResult : E1000e.E1000RecvResult, E1000e.E1000RecvResult -> Bool
+	eq_E1000RecvResult = |ex, ey| ((ex.r_frame == ey.r_frame) and (ex.r_has_frame == ey.r_has_frame))
 }

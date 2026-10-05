@@ -23,8 +23,8 @@ Hpet :: [].{
 
 	hpet_reg! : Machine.Machine, I64 => (Machine.Machine, I64)
 	hpet_reg! = |machine, off| ({
-		(machine1, machine__3) = Machine.load!(machine, (hpet_base + off), 0, 4)
-		(machine1, I64.bitwise_and(machine__3, 4294967295))
+		(machine1, machine__1) = Machine.load!(machine, (hpet_base + off), 0, 4)
+		(machine1, I64.bitwise_and(machine__1, 4294967295))
 	})
 
 	hpet_start! : Machine.Machine => (Machine.Machine, I64)
@@ -35,19 +35,19 @@ Hpet :: [].{
 
 	hpet_ticks! : Machine.Machine => (Machine.Machine, I64)
 	hpet_ticks! = |machine| ({
-		(machine6, machine__6) = ({
+		(machine6, machine__3) = ({
 		(machine1, hi1) = hpet_reg!(machine, hpet_off_counter_hi)
 		(machine2, lo) = hpet_reg!(machine1, hpet_off_counter_lo)
 		(machine3, hi2) = hpet_reg!(machine2, hpet_off_counter_hi)
 		({
-			(machine5, machine__5) = (if (hi1 == hi2) { (machine3, I64.bitwise_or(I64.shl_wrap(hi1, I64.to_u8_wrap(32)), lo)) } else { ({
-			(machine4, machine__4) = hpet_reg!(machine3, hpet_off_counter_lo)
-			(machine4, I64.bitwise_or(I64.shl_wrap(hi2, I64.to_u8_wrap(32)), machine__4))
+			(machine5, machine__2) = (if (hi1 == hi2) { (machine3, I64.bitwise_or(I64.shl_wrap(hi1, I64.to_u8_wrap(32)), lo)) } else { ({
+			(machine4, machine__1) = hpet_reg!(machine3, hpet_off_counter_lo)
+			(machine4, I64.bitwise_or(I64.shl_wrap(hi2, I64.to_u8_wrap(32)), machine__1))
 		}) })
-			(machine5, machine__5)
+			(machine5, machine__2)
 		})
 	})
-		(machine6, machine__6)
+		(machine6, machine__3)
 	})
 
 	hpet_femtoseconds_per_second : I64
@@ -55,26 +55,10 @@ Hpet :: [].{
 
 	hpet_ticks_per_second! : Machine.Machine => (Machine.Machine, I64)
 	hpet_ticks_per_second! = |machine| ({
-		(machine2, machine__7) = ({
+		(machine2, machine__1) = ({
 		(machine1, period) = hpet_reg!(machine, hpet_off_caps_period)
 		(machine1, (if (period <= 0) { 0 } else { I64.div_trunc_by(hpet_femtoseconds_per_second, period) }))
 	})
-		(machine2, machine__7)
-	})
-
-	hpet_seconds! : Machine.Machine => (Machine.Machine, I64)
-	hpet_seconds! = |machine| ({
-		(machine5, machine__10) = ({
-		(machine1, _started) = hpet_start!(machine)
-		(machine2, rate) = hpet_ticks_per_second!(machine1)
-		({
-			(machine4, machine__9) = (if (rate <= 0) { (machine2, 0) } else { ({
-			(machine3, machine__8) = hpet_ticks!(machine2)
-			(machine3, I64.div_trunc_by(machine__8, rate))
-		}) })
-			(machine4, machine__9)
-		})
-	})
-		(machine5, machine__10)
+		(machine2, machine__1)
 	})
 }
