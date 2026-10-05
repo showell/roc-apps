@@ -5,6 +5,7 @@ import pf.Echo
 echo! = |msg| Echo.line!(msg)
 
 # GlyphsOnScreen -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+import CceText
 import GlyphRasterizer
 import GopDraw
 import Mem
@@ -39,7 +40,9 @@ zoom = 3
 
 put_glyph_row! : Mem.Mem, List(I64), I64, I64, I64, I64, I64, Bool, I64, I64 => (Mem.Mem, I64)
 put_glyph_row! = |mem, px, gw, stride, rows, x0, y0, aa, y, x| (if (x >= gw) { (mem, 0) } else { ({
+	v : I64
 	v = (List.get(px, I64.to_u64_wrap(((y * gw) + x))) ?? crash("list-at out of range"))
+	grey : I64
 	grey = ((if (v > 255) { 255 } else { v }) * 65793)
 	(mem1, _d) = (if (v <= 0) { (mem, 0) } else { GopDraw.gop_fill_rect!(mem, fb_base, stride, rows, (x0 + (x * zoom)), (y0 + (y * zoom)), zoom, zoom, (if aa { grey } else { chalk })) })
 	put_glyph_row!(mem1, px, gw, stride, rows, x0, y0, aa, y, (x + 1))
@@ -54,14 +57,14 @@ put_glyph_rows! = |mem, px, gw, gh, stride, rows, x0, y0, aa, y| (if (y >= gh) {
 put_glyph! : Mem.Mem, GlyphRasterizer.RasterGlyph, I64, I64, I64, I64, Bool => (Mem.Mem, I64)
 put_glyph! = |mem, rg, stride, rows, x0, y0, aa| put_glyph_rows!(mem, rg.rg_pixels, rg.rg_width, rg.rg_height, stride, rows, x0, y0, aa, 0)
 
-size_text : GlyphRasterizer.RasterGlyph -> Str
-size_text = |rg| Str.concat(Str.concat(I64.to_str(rg.rg_width), " x "), I64.to_str(rg.rg_height))
+size_text : GlyphRasterizer.RasterGlyph -> CceText
+size_text = |rg| CceText.concat(CceText.concat(CceText.show_int(rg.rg_width), " x "), CceText.show_int(rg.rg_height))
 
 # --- Entry ---
 
 main! = |args| {
 	mem = Mem.new(U64.to_i64_wrap(List.len(args)))
-	(_mem11, mem__26) = ({
+	(_mem11, mem__1) = ({
 		(mem1, w) = Mem.load!(mem, cell_width, 0, 4)
 		(mem2, h) = Mem.load!(mem1, cell_height, 0, 4)
 		(mem3, stride) = Mem.load!(mem2, cell_stride, 0, 4)
@@ -80,10 +83,10 @@ main! = |args| {
 		(mem9, _d5) = put_glyph!(mem8, a24, stride, h, 70, 125, True)
 		(mem10, _d6) = put_glyph!(mem9, a32, stride, h, 156, 125, True)
 		({
-			_ = line!(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat("plain       : ", size_text(p16)), ", "), size_text(p24)), ", "), size_text(p32)))
-			(mem10, line!(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat("anti-aliased: ", size_text(a16)), ", "), size_text(a24)), ", "), size_text(a32))))
+			_ = line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("plain       : ", size_text(p16)), ", "), size_text(p24)), ", "), size_text(p32))))
+			(mem10, line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("anti-aliased: ", size_text(a16)), ", "), size_text(a24)), ", "), size_text(a32)))))
 		})
 	})
-	mem__26
+	mem__1
 	Ok({})
 }

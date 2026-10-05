@@ -5,6 +5,7 @@ import pf.Echo
 echo! = |msg| Echo.line!(msg)
 
 # MeshesSpin -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+import CceText
 import Color
 import Cordic
 import Material
@@ -40,7 +41,9 @@ shaded = |c| Material.emat_set_shading(Material.emat_shiny(c, 24), GouraudShaded
 
 scene_at : I64 -> Scene3D.Scene3DState
 scene_at = |angle| ({
+	ex : F64
 	ex = I64.to_f64(I64.div_trunc_by((7000 * Cordic.cordic_sin(angle)), 1000))
+	ez : F64
 	ez = I64.to_f64(I64.div_trunc_by((7000 * Cordic.cordic_cos(angle)), 1000))
 	cam = Scene3D.camera3d_new(Quaternion.vec3_new(ex, 2400.0, ez), Quaternion.vec3_new(0.0, 400.0, 0.0), 0.785)
 	stage = Scene3D.scene3d_new(cam)
@@ -58,7 +61,7 @@ scene_at = |angle| ({
 
 main! = |args| {
 	mem = Mem.new(U64.to_i64_wrap(List.len(args)))
-	(_mem7, mem__21) = ({
+	(_mem7, mem__1) = ({
 		(mem1, w) = Mem.load!(mem, cell_width, 0, 4)
 		(mem2, h) = Mem.load!(mem1, cell_height, 0, 4)
 		(mem3, stride) = Mem.load!(mem2, cell_stride, 0, 4)
@@ -66,9 +69,9 @@ main! = |args| {
 		(mem5, tgt) = Renderer3D.r3d_target_at!(mem4, fb_base, stride, w, h, sky)
 		(mem6, _d) = Renderer3D.r3d_render_into!(mem5, tgt, scene_at(angle))
 		({
-			(mem6, line!(Str.concat(Str.concat("camera : ", I64.to_str(angle)), " milliradians round the meshes")))
+			(mem6, line!(CceText.printed(CceText.concat(CceText.concat("camera : ", CceText.show_int(angle)), " milliradians round the meshes"))))
 		})
 	})
-	mem__21
+	mem__1
 	Ok({})
 }

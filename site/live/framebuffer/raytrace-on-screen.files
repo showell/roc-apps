@@ -1,9 +1,9 @@
 RaytraceOnScreen.roc
-Bresenham.roc
+CceChar.roc
+CceText.roc
 Color.roc
 Cordic.roc
 Geometry.roc
-MathLib.roc
 Prelude.roc
 Quaternion.roc
 Rasterizer.roc

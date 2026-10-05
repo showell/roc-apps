@@ -1,23 +1,23 @@
-published 2026-09-15T16:24:29Z
-roc nightly-2026-09-11-793f9d8
-roc-apps 20a985a
-rocemit fdd45bd
-cobblestone 7b9235e7 u61-candidate
-sha256 ece3712b85d3eec9  317200 bytes  EngineDemo.wasm
-sha256 3892ef80bed1716f  424283 bytes  Fireworks.wasm
-sha256 afcff9afe2a55b3a  425238 bytes  GlobeDemo.wasm
-sha256 ba1b989c190298e0  16939391 bytes  GuiOpening.wasm
-sha256 8c5612f9e7d79450  333626 bytes  glyphs-on-screen.wasm
-sha256 27c5750beb08b444  43722 bytes  gop-padded-stride.wasm
-sha256 89abedbe8e3d3fe8  1142235 bytes  gpu-depth-tree.wasm
-sha256 532d51e9bc86fe5a  1120797 bytes  gpu-gauge-clamp.wasm
-sha256 0d039d7ae0f081ff  1123199 bytes  gpu-input-cursor.wasm
-sha256 eb959adb9a311a0d  1140124 bytes  gpu-panel-border.wasm
-sha256 c974f09f75fbc4ea  687419 bytes  meshes-spin.wasm
-sha256 1002d292ee5a80bc  141360 bytes  qr-on-screen.wasm
-sha256 d765cfdf1221bdf5  151336 bytes  raytrace-on-screen.wasm
-sha256 3e3a9d59e497e104  688441 bytes  scene-on-screen.wasm
-sha256 2c14ab1c1747ed42  666684 bytes  scene-spin.wasm
-sha256 464d6f2a468c55bc  937989 bytes  shadow-spin.wasm
-sha256 e4eb773ca8b77e21  101185 bytes  sketch-on-screen.wasm
-sha256 70ab71c87d1c607c  1345876 bytes  widgets-on-screen.wasm
+published 2026-10-05T10:43:54Z
+roc nightly-2026-09-19-d025939
+roc-apps 475b0a5
+rocemit ad9a0e7
+cobblestone e7c7a6f3 
+sha256 38e92e19916b16ee  355090 bytes  EngineDemo.wasm
+sha256 507138a07d88673d  462552 bytes  Fireworks.wasm
+sha256 e646f0fff7953195  456417 bytes  GlobeDemo.wasm
+sha256 a203d1b8f012bd30  17046418 bytes  GuiOpening.wasm
+sha256 1375bfef1748782f  401489 bytes  glyphs-on-screen.wasm
+sha256 80b79623dbb8150c  66474 bytes  gop-padded-stride.wasm
+sha256 da01a8d3fc4b86bb  4818518 bytes  gpu-depth-tree.wasm
+sha256 51ed0281f04f1afe  4722745 bytes  gpu-gauge-clamp.wasm
+sha256 2a1b3e1ad3f1e3c4  4726972 bytes  gpu-input-cursor.wasm
+sha256 90940e3412fdbf01  4731037 bytes  gpu-panel-border.wasm
+sha256 6379ad2792ca495b  804252 bytes  meshes-spin.wasm
+sha256 feabf5e8b7503176  156480 bytes  qr-on-screen.wasm
+sha256 30be279a2ed9030c  182933 bytes  raytrace-on-screen.wasm
+sha256 f57ce61dd027867b  703621 bytes  scene-on-screen.wasm
+sha256 95e6efb8969e3347  762614 bytes  scene-spin.wasm
+sha256 a99ed7c88e05575a  1042265 bytes  shadow-spin.wasm
+sha256 38f70dafc21baf3b  129797 bytes  sketch-on-screen.wasm
+sha256 eabfbdf9e03a6c2f  5899230 bytes  widgets-on-screen.wasm

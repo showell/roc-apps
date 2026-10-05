@@ -1,7 +1,7 @@
 Fireworks.roc
 CCE.roc
-Cce.roc
+CceChar.roc
+CceText.roc
 KeyInput.roc
-Prelude.roc
 Wrap64.roc
 Machine.roc

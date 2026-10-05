@@ -1,6 +1,6 @@
 GlyphsOnScreen.roc
-BitmapFont.roc
-Cce.roc
+CceChar.roc
+CceText.roc
 GlyphRasterizer.roc
 GopDraw.roc
 Prelude.roc

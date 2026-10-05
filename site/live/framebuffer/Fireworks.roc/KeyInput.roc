@@ -10,9 +10,6 @@ KeyInput :: [].{
 	key_named_base : I64
 	key_named_base = 1048576
 
-	key_is_named : I64 -> Bool
-	key_is_named = |k| (k >= key_named_base)
-
 	key_enter : I64
 	key_enter = 1048577
 
@@ -102,8 +99,9 @@ KeyInput :: [].{
 
 	efi_key_decode : I64 -> I64
 	efi_key_decode = |ek| ({
+		ch : I64
 		ch = I64.bitwise_and(ek, 65535)
-		(if (ch == 0) { efi_scan_decode(I64.bitwise_and(I64.shr_zf_wrap(ek, I64.to_u8_wrap(16)), 65535)) } else { (if (ch == 13) { key_enter } else { (if (ch == 8) { key_backspace } else { (if (ch == 9) { key_tab } else { ch }) }) }) })
+		(if (ch == 0) { efi_scan_decode(I64.bitwise_and(I64.shr_zf_wrap(ek, I64.to_u8_wrap(16)), 65535)) } else { (if (ch == 13) { key_enter } else { (if (ch == 8) { key_backspace } else { (if (ch == 9) { key_tab } else { key_emit(ch) }) }) }) })
 	})
 
 	efi_scan_decode : I64 -> I64
@@ -111,40 +109,36 @@ KeyInput :: [].{
 
 	poll_key_decode! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
 	poll_key_decode! = |machine, sc, mods| (if (sc == 0) { (machine, 0) } else { (if (sc == 42) { mod_set!(machine, mods, 1) } else { (if (sc == 54) { mod_set!(machine, mods, 1) } else { (if (sc == 170) { mod_clear!(machine, mods, 1) } else { (if (sc == 182) { mod_clear!(machine, mods, 1) } else { (if (sc == 29) { mod_set!(machine, mods, 2) } else { (if (sc == 157) { mod_clear!(machine, mods, 2) } else { (if (sc == 56) { mod_set!(machine, mods, 4) } else { (if (sc == 184) { mod_clear!(machine, mods, 4) } else { (if (sc == 58) { ({
-		(machine2, machine__2) = ({
+		(machine2, machine__1) = ({
 		(machine1, _d) = Machine.store_unguarded!(machine, kbd_mod_addr, 0, I64.bitwise_xor(mods, 8), 8)
 		(machine1, 0)
 	})
-		(machine2, machine__2)
+		(machine2, machine__1)
 	}) } else { (if (sc == 186) { (machine, 0) } else { (if (sc == 69) { ({
-		(machine4, machine__3) = ({
+		(machine4, machine__2) = ({
 		(machine3, _d) = Machine.store_unguarded!(machine, kbd_mod_addr, 0, I64.bitwise_xor(mods, 16), 8)
 		(machine3, 0)
 	})
-		(machine4, machine__3)
+		(machine4, machine__2)
 	}) } else { (if (sc == 197) { (machine, 0) } else { (if (sc == 224) { mod_set!(machine, mods, 32) } else { ({
-		(machine5, machine__4) = decode_key!(machine, sc, mods)
-		(machine5, key_emit(machine__4))
+		(machine5, machine__3) = decode_key!(machine, sc, mods)
+		(machine5, key_emit(machine__3))
 	}) }) }) }) }) }) }) }) }) }) }) }) }) }) })
 
 	key_emit : I64 -> I64
 	key_emit = |k| (if (k <= 0) { 0 } else { (if (k >= key_named_base) { k } else { CCE.from_unicode(k) }) })
 
-	poll_mods! : Machine.Machine => (Machine.Machine, I64)
-	poll_mods! = |machine| ({
-		(machine1, machine__5) = Machine.load_unguarded!(machine, kbd_mod_addr, 0, 8)
-		(machine1, I64.bitwise_and(machine__5, 7))
-	})
-
 	decode_key! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
 	decode_key! = |machine, sc, mods| ({
-		(machine2, machine__6) = ({
+		(machine2, machine__1) = ({
+		e0 : I64
 		e0 = I64.bitwise_and(mods, 32)
+		cleared : I64
 		cleared = I64.bitwise_xor(mods, I64.bitwise_and(mods, 32))
 		(machine1, _d) = Machine.store_unguarded!(machine, kbd_mod_addr, 0, cleared, 8)
 		(machine1, (if (e0 > 0) { apply_mods(scancode_to_keycode(sc), cleared) } else { numpad_or_default(sc, cleared) }))
 	})
-		(machine2, machine__6)
+		(machine2, machine__1)
 	})
 
 	numpad_or_default : I64, I64 -> I64
@@ -158,20 +152,20 @@ KeyInput :: [].{
 
 	mod_set! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
 	mod_set! = |machine, mods, bit| ({
-		(machine2, machine__7) = ({
+		(machine2, machine__1) = ({
 		(machine1, _d) = Machine.store_unguarded!(machine, kbd_mod_addr, 0, I64.bitwise_or(mods, bit), 8)
 		(machine1, 0)
 	})
-		(machine2, machine__7)
+		(machine2, machine__1)
 	})
 
 	mod_clear! : Machine.Machine, I64, I64 => (Machine.Machine, I64)
 	mod_clear! = |machine, mods, bit| ({
-		(machine2, machine__8) = ({
+		(machine2, machine__1) = ({
 		(machine1, _d) = Machine.store_unguarded!(machine, kbd_mod_addr, 0, I64.bitwise_xor(mods, I64.bitwise_and(mods, bit)), 8)
 		(machine1, 0)
 	})
-		(machine2, machine__8)
+		(machine2, machine__1)
 	})
 
 	key_upper : I64 -> I64
@@ -182,7 +176,9 @@ KeyInput :: [].{
 
 	apply_letter : I64, I64 -> I64
 	apply_letter = |k, mods| ({
+		shift : I64
 		shift = I64.bitwise_and(mods, 1)
+		caps : I64
 		caps = I64.bitwise_and(mods, 8)
 		(if (shift > 0) { (if (caps > 0) { (k + 32) } else { k }) } else { (if (caps > 0) { k } else { (k + 32) }) })
 	})

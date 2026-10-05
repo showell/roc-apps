@@ -1,80 +1,51 @@
 # Event -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 import BoxModel
+import CceText
 import Maybe
 import Widget
 
 Event :: [].{
-	EventKind : [EvKeyDown(I64, I64), EvKeyUp(I64, I64), EvMouseMove(I64, I64), EvMouseDown(I64, I64, I64), EvMouseUp(I64, I64, I64), EvScroll(I64, I64, I64), EvFocus(Str), EvBlur(Str), EvResize(I64, I64), EvTimer(Str), EvNetwork(Str, I64), EvCustom(Str, I64)]
-	Event : { ev_kind : Event.EventKind, ev_target : Str, ev_timestamp : I64, ev_stopped : Bool, ev_handled : Bool }
+	EventKind : [EvKeyDown(I64, I64), EvKeyUp(I64, I64), EvMouseMove(I64, I64), EvMouseDown(I64, I64, I64), EvMouseUp(I64, I64, I64), EvScroll(I64, I64, I64), EvFocus(CceText), EvBlur(CceText), EvResize(I64, I64), EvTimer(CceText), EvNetwork(CceText, I64), EvCustom(CceText, I64)]
+	Event := { ev_kind : Event.EventKind, ev_target : CceText, ev_timestamp : I64, ev_stopped : Bool, ev_handled : Bool }.{
+		is_eq : Event.Event, Event.Event -> Bool
+		is_eq = |a, b| eq_Event(a, b)
+	}
 	HandlerResult : [HrPass(Event.Event), HrHandled(Event.Event), HrStop(Event.Event)]
-	EventHandler : { eh_widget_id : Str, eh_event_name : Str, eh_action : I64 }
-	HandlerTable : { ht_handlers : List(Event.EventHandler), ht_count : I64 }
-	EventPath : { ep_ids : List(Str), ep_count : I64 }
+	EventHandler := { eh_widget_id : CceText, eh_event_name : CceText, eh_action : I64 }.{
+		is_eq : Event.EventHandler, Event.EventHandler -> Bool
+		is_eq = |a, b| eq_EventHandler(a, b)
+	}
+	HandlerTable := { ht_handlers : List(Event.EventHandler), ht_count : I64 }.{
+		is_eq : Event.HandlerTable, Event.HandlerTable -> Bool
+		is_eq = |a, b| eq_HandlerTable(a, b)
+	}
+	EventPath := { ep_ids : List(CceText), ep_count : I64 }.{
+		is_eq : Event.EventPath, Event.EventPath -> Bool
+		is_eq = |a, b| eq_EventPath(a, b)
+	}
 
 	event_key_down : I64, I64, I64 -> Event.Event
-	event_key_down = |key, mods, ts| { ev_kind: EvKeyDown(key, mods), ev_target: "", ev_timestamp: ts, ev_stopped: False, ev_handled: False }
+	event_key_down = |key, mods, ts| Event.Event.{ ev_kind: EvKeyDown(key, mods), ev_target: "", ev_timestamp: ts, ev_stopped: False, ev_handled: False }
 
 	event_key_up : I64, I64, I64 -> Event.Event
-	event_key_up = |key, mods, ts| { ev_kind: EvKeyUp(key, mods), ev_target: "", ev_timestamp: ts, ev_stopped: False, ev_handled: False }
+	event_key_up = |key, mods, ts| Event.Event.{ ev_kind: EvKeyUp(key, mods), ev_target: "", ev_timestamp: ts, ev_stopped: False, ev_handled: False }
 
 	event_mouse_move : I64, I64, I64 -> Event.Event
-	event_mouse_move = |x, y, ts| { ev_kind: EvMouseMove(x, y), ev_target: "", ev_timestamp: ts, ev_stopped: False, ev_handled: False }
+	event_mouse_move = |x, y, ts| Event.Event.{ ev_kind: EvMouseMove(x, y), ev_target: "", ev_timestamp: ts, ev_stopped: False, ev_handled: False }
 
 	event_mouse_down : I64, I64, I64, I64 -> Event.Event
-	event_mouse_down = |x, y, btn, ts| { ev_kind: EvMouseDown(x, y, btn), ev_target: "", ev_timestamp: ts, ev_stopped: False, ev_handled: False }
+	event_mouse_down = |x, y, btn, ts| Event.Event.{ ev_kind: EvMouseDown(x, y, btn), ev_target: "", ev_timestamp: ts, ev_stopped: False, ev_handled: False }
 
 	event_mouse_up : I64, I64, I64, I64 -> Event.Event
-	event_mouse_up = |x, y, btn, ts| { ev_kind: EvMouseUp(x, y, btn), ev_target: "", ev_timestamp: ts, ev_stopped: False, ev_handled: False }
+	event_mouse_up = |x, y, btn, ts| Event.Event.{ ev_kind: EvMouseUp(x, y, btn), ev_target: "", ev_timestamp: ts, ev_stopped: False, ev_handled: False }
 
-	event_scroll : I64, I64, I64, I64 -> Event.Event
-	event_scroll = |x, y, delta, ts| { ev_kind: EvScroll(x, y, delta), ev_target: "", ev_timestamp: ts, ev_stopped: False, ev_handled: False }
-
-	event_focus : Str, I64 -> Event.Event
-	event_focus = |id, ts| { ev_kind: EvFocus(id), ev_target: id, ev_timestamp: ts, ev_stopped: False, ev_handled: False }
-
-	event_blur : Str, I64 -> Event.Event
-	event_blur = |id, ts| { ev_kind: EvBlur(id), ev_target: id, ev_timestamp: ts, ev_stopped: False, ev_handled: False }
-
-	event_resize : I64, I64, I64 -> Event.Event
-	event_resize = |w, h, ts| { ev_kind: EvResize(w, h), ev_target: "", ev_timestamp: ts, ev_stopped: False, ev_handled: False }
-
-	event_timer : Str, I64 -> Event.Event
-	event_timer = |name, ts| { ev_kind: EvTimer(name), ev_target: "", ev_timestamp: ts, ev_stopped: False, ev_handled: False }
-
-	event_network : Str, I64, I64 -> Event.Event
-	event_network = |channel, len, ts| { ev_kind: EvNetwork(channel, len), ev_target: "", ev_timestamp: ts, ev_stopped: False, ev_handled: False }
-
-	event_custom : Str, I64, I64 -> Event.Event
-	event_custom = |name, data, ts| { ev_kind: EvCustom(name, data), ev_target: "", ev_timestamp: ts, ev_stopped: False, ev_handled: False }
-
-	event_stop : Event.Event -> Event.Event
-	event_stop = |ev| { ev_kind: ev.ev_kind, ev_target: ev.ev_target, ev_timestamp: ev.ev_timestamp, ev_stopped: True, ev_handled: ev.ev_handled }
-
-	event_handle : Event.Event -> Event.Event
-	event_handle = |ev| { ev_kind: ev.ev_kind, ev_target: ev.ev_target, ev_timestamp: ev.ev_timestamp, ev_stopped: ev.ev_stopped, ev_handled: True }
-
-	event_retarget : Event.Event, Str -> Event.Event
-	event_retarget = |ev, target| { ev_kind: ev.ev_kind, ev_target: target, ev_timestamp: ev.ev_timestamp, ev_stopped: ev.ev_stopped, ev_handled: ev.ev_handled }
+	event_retarget : Event.Event, CceText -> Event.Event
+	event_retarget = |ev, target| Event.Event.{ ev_kind: ev.ev_kind, ev_target: target, ev_timestamp: ev.ev_timestamp, ev_stopped: ev.ev_stopped, ev_handled: ev.ev_handled }
 
 	handler_table_new : Event.HandlerTable
-	handler_table_new = { ht_handlers: [], ht_count: 0 }
+	handler_table_new = Event.HandlerTable.{ ht_handlers: [], ht_count: 0 }
 
-	handler_table_add : Event.HandlerTable, Str, Str, I64 -> Event.HandlerTable
-	handler_table_add = |ht, widget_id, event_name, action| ({
-		h = { eh_widget_id: widget_id, eh_event_name: event_name, eh_action: action }
-		{ ht_handlers: List.append(ht.ht_handlers, h), ht_count: (ht.ht_count + 1) }
-	})
-
-	handler_table_lookup : Event.HandlerTable, Str, Str -> Maybe.Maybe(Event.EventHandler)
-	handler_table_lookup = |ht, widget_id, event_name| ht_lookup_loop(ht.ht_handlers, widget_id, event_name, 0, ht.ht_count)
-
-	ht_lookup_loop : List(Event.EventHandler), Str, Str, I64, I64 -> Maybe.Maybe(Event.EventHandler)
-	ht_lookup_loop = |handlers, wid, ename, i, n| (if (i >= n) { None } else { ({
-		h = (List.get(handlers, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
-		(if (h.eh_widget_id == wid) { (if (h.eh_event_name == ename) { Just(h) } else { ht_lookup_loop(handlers, wid, ename, (i + 1), n) }) } else { ht_lookup_loop(handlers, wid, ename, (i + 1), n) })
-	}) })
-
-	event_target_from_mouse : Widget.WidgetNode, I64, I64 -> Str
+	event_target_from_mouse : Widget.WidgetNode, I64, I64 -> CceText
 	event_target_from_mouse = |root, mx, my| ({
 		found = ev_hit_widget(root, mx, my)
 		(match found {
@@ -101,84 +72,6 @@ Event :: [].{
 		})
 	}) })
 
-	event_path_to : Widget.WidgetNode, Str -> Event.EventPath
-	event_path_to = |root, target| ({
-		path = ev_build_path(root, target, [])
-		{ ep_ids: path, ep_count: U64.to_i64_wrap(List.len(path)) }
-	})
-
-	ev_build_path : Widget.WidgetNode, Str, List(Str) -> List(Str)
-	ev_build_path = |w, target, acc| ({
-		acc2 = List.append(acc, w.wn_id)
-		(if (w.wn_id == target) { acc2 } else { ev_build_path_children(w.wn_children, target, acc2, 0, w.wn_child_count) })
-	})
-
-	ev_build_path_children : List(Widget.WidgetNode), Str, List(Str), I64, I64 -> List(Str)
-	ev_build_path_children = |children, target, acc, i, n| (if (i >= n) { [] } else { ({
-		path = ev_build_path((List.get(children, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), target, acc)
-		(if (U64.to_i64_wrap(List.len(path)) > 0) { path } else { ev_build_path_children(children, target, acc, (i + 1), n) })
-	}) })
-
-	event_kind_name : Event.EventKind -> Str
-	event_kind_name = |k| (match k {
-		EvKeyDown(_key, _mods) => "keydown"
-		EvKeyUp(_key, _mods) => "keyup"
-		EvMouseMove(_x, _y) => "mousemove"
-		EvMouseDown(_x, _y, _btn) => "mousedown"
-		EvMouseUp(_x, _y, _btn) => "mouseup"
-		EvScroll(_x, _y, _d) => "scroll"
-		EvFocus(_id) => "focus"
-		EvBlur(_id) => "blur"
-		EvResize(_w, _h) => "resize"
-		EvTimer(_name) => "timer"
-		EvNetwork(_ch, _len) => "network"
-		EvCustom(_name, _d) => "custom"
-	})
-
-	event_is_mouse : Event.EventKind -> Bool
-	event_is_mouse = |k| (match k {
-		EvMouseMove(_x, _y) => True
-		EvMouseDown(_x, _y, _b) => True
-		EvMouseUp(_x, _y, _b) => True
-		EvScroll(_x, _y, _d) => True
-		EvKeyDown(_k2, _m) => False
-		EvKeyUp(_k2, _m) => False
-		EvFocus(_id) => False
-		EvBlur(_id) => False
-		EvResize(_w, _h) => False
-		EvTimer(_n) => False
-		EvNetwork(_c, _l) => False
-		EvCustom(_n, _d) => False
-	})
-
-	event_is_keyboard : Event.EventKind -> Bool
-	event_is_keyboard = |k| (match k {
-		EvKeyDown(_k2, _m) => True
-		EvKeyUp(_k2, _m) => True
-		EvMouseMove(_x, _y) => False
-		EvMouseDown(_x, _y, _b) => False
-		EvMouseUp(_x, _y, _b) => False
-		EvScroll(_x, _y, _d) => False
-		EvFocus(_id) => False
-		EvBlur(_id) => False
-		EvResize(_w, _h) => False
-		EvTimer(_n) => False
-		EvNetwork(_c, _l) => False
-		EvCustom(_n, _d) => False
-	})
-
-	mod_none : I64
-	mod_none = 0
-
-	mod_shift : I64
-	mod_shift = 1
-
-	mod_ctrl : I64
-	mod_ctrl = 2
-
-	mod_alt : I64
-	mod_alt = 4
-
 	btn_left : I64
 	btn_left = 0
 
@@ -187,9 +80,6 @@ Event :: [].{
 
 	btn_middle : I64
 	btn_middle = 2
-
-	format_event : Event.Event -> Str
-	format_event = |ev| Str.concat(Str.concat(Str.concat(Str.concat(event_kind_name(ev.ev_kind), " target="), ev.ev_target), " t="), I64.to_str(ev.ev_timestamp))
 
 	eq_EventKind : Event.EventKind, Event.EventKind -> Bool
 	eq_EventKind = |ex, ey| (match ex {
@@ -243,19 +133,31 @@ Event :: [].{
 		})
 	})
 
+	eq_Event : Event.Event, Event.Event -> Bool
+	eq_Event = |ex, ey| ((((eq_EventKind(ex.ev_kind, ey.ev_kind) and (ex.ev_target == ey.ev_target)) and (ex.ev_timestamp == ey.ev_timestamp)) and (ex.ev_stopped == ey.ev_stopped)) and (ex.ev_handled == ey.ev_handled))
+
 	eq_HandlerResult : Event.HandlerResult, Event.HandlerResult -> Bool
 	eq_HandlerResult = |ex, ey| (match ex {
 		HrPass(exf0) => (match ey {
-			HrPass(eyf0) => (exf0 == eyf0)
+			HrPass(eyf0) => eq_Event(exf0, eyf0)
 			_ => False
 		})
 		HrHandled(exf0) => (match ey {
-			HrHandled(eyf0) => (exf0 == eyf0)
+			HrHandled(eyf0) => eq_Event(exf0, eyf0)
 			_ => False
 		})
 		HrStop(exf0) => (match ey {
-			HrStop(eyf0) => (exf0 == eyf0)
+			HrStop(eyf0) => eq_Event(exf0, eyf0)
 			_ => False
 		})
 	})
+
+	eq_EventHandler : Event.EventHandler, Event.EventHandler -> Bool
+	eq_EventHandler = |ex, ey| (((ex.eh_widget_id == ey.eh_widget_id) and (ex.eh_event_name == ey.eh_event_name)) and (ex.eh_action == ey.eh_action))
+
+	eq_HandlerTable : Event.HandlerTable, Event.HandlerTable -> Bool
+	eq_HandlerTable = |ex, ey| ((ex.ht_handlers == ey.ht_handlers) and (ex.ht_count == ey.ht_count))
+
+	eq_EventPath : Event.EventPath, Event.EventPath -> Bool
+	eq_EventPath = |ex, ey| ((ex.ep_ids == ey.ep_ids) and (ex.ep_count == ey.ep_count))
 }

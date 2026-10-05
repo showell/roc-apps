@@ -6,6 +6,7 @@ echo! = |msg| Echo.line!(msg)
 
 # WidgetsOnScreen -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 import BitmapFont
+import CceText
 import GopComposite
 import GopDraw
 import GopFont
@@ -41,12 +42,14 @@ demo_tree = |step| Widget.widget_panel("root", DirColumn, 8, [Widget.widget_labe
 
 main! = |args| {
 	mem = Mem.new(U64.to_i64_wrap(List.len(args)))
-	(_mem8, mem__647) = ({
+	(_mem8, mem__2) = ({
 		(mem1, w) = Mem.load!(mem, cell_width, 0, 4)
 		(mem2, h) = Mem.load!(mem1, cell_height, 0, 4)
 		(mem3, stride) = Mem.load!(mem2, cell_stride, 0, 4)
-		(mem4, mem__646) = Mem.load!(mem3, cell_clock, 0, 4)
-		ticks = I64.div_trunc_by(mem__646, 100)
+		(mem4, mem__1) = Mem.load!(mem3, cell_clock, 0, 4)
+		ticks : I64
+		ticks = I64.div_trunc_by(mem__1, 100)
+		step : I64
 		step = (ticks - (I64.div_trunc_by(ticks, (gauge_steps + 1)) * (gauge_steps + 1)))
 		th = Theme.theme_terminal
 		pal = th.th_palette
@@ -54,9 +57,9 @@ main! = |args| {
 		(mem6, font) = BitmapFont.cbf_init!(mem5)
 		(mem7, _laid) = GopComposite.comp_render!(mem6, fb_base, stride, h, font, GopFont.gfont_none, demo_tree(step), th, w, h, 1)
 		({
-			(mem7, line!(Str.concat(Str.concat(Str.concat("gauge : ", I64.to_str(step)), " of "), I64.to_str(gauge_steps))))
+			(mem7, line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat("gauge : ", CceText.show_int(step)), " of "), CceText.show_int(gauge_steps)))))
 		})
 	})
-	mem__647
+	mem__2
 	Ok({})
 }

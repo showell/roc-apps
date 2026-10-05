@@ -1,45 +1,61 @@
 # Theme -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+import CceText
 
 Theme :: [].{
-	Palette : { pal_bg : I64, pal_fg : I64, pal_primary : I64, pal_secondary : I64, pal_accent : I64, pal_muted : I64, pal_error : I64, pal_success : I64, pal_warning : I64, pal_border : I64 }
+	Palette := { pal_bg : I64, pal_fg : I64, pal_primary : I64, pal_secondary : I64, pal_accent : I64, pal_muted : I64, pal_error : I64, pal_success : I64, pal_warning : I64, pal_border : I64 }.{
+		is_eq : Theme.Palette, Theme.Palette -> Bool
+		is_eq = |a, b| eq_Palette(a, b)
+	}
 	CornerStyle : [CornerSharp, CornerRound(I64), CornerBevel(I64)]
-	BorderSide : { brd_width : I64, brd_color : I64 }
-	Border : { bdr_top : Theme.BorderSide, bdr_right : Theme.BorderSide, bdr_bottom : Theme.BorderSide, bdr_left : Theme.BorderSide, bdr_corner : Theme.CornerStyle }
-	Edges : { edge_top : I64, edge_right : I64, edge_bottom : I64, edge_left : I64 }
-	Shadow : { sh_offset_x : I64, sh_offset_y : I64, sh_blur : I64, sh_color : I64, sh_enabled : Bool }
-	Gradient : { gr_start_color : I64, gr_end_color : I64, gr_vertical : Bool, gr_enabled : Bool }
-	Bevel : { bv_light : I64, bv_shade : I64, bv_width : I64, bv_raised : Bool, bv_enabled : Bool }
-	AccentBorder : { ab_side : I64, ab_width : I64, ab_color : I64, ab_enabled : Bool }
-	WidgetStyle : { ws_bg : I64, ws_fg : I64, ws_border : Theme.Border, ws_padding : Theme.Edges, ws_margin : Theme.Edges, ws_min_width : I64, ws_min_height : I64, ws_shadow : Theme.Shadow, ws_gradient : Theme.Gradient, ws_accent_border : Theme.AccentBorder, ws_bevel : Theme.Bevel }
-	StateStyles : { ss_normal : Theme.WidgetStyle, ss_hover : Theme.WidgetStyle, ss_pressed : Theme.WidgetStyle, ss_disabled : Theme.WidgetStyle, ss_focused : Theme.WidgetStyle }
-	Theme : { th_name : Str, th_palette : Theme.Palette, th_panel : Theme.StateStyles, th_button : Theme.StateStyles, th_label : Theme.StateStyles, th_input : Theme.StateStyles, th_gauge : Theme.StateStyles, th_separator : Theme.StateStyles }
+	BorderSide := { brd_width : I64, brd_color : I64 }.{
+		is_eq : Theme.BorderSide, Theme.BorderSide -> Bool
+		is_eq = |a, b| eq_BorderSide(a, b)
+	}
+	Border := { bdr_top : Theme.BorderSide, bdr_right : Theme.BorderSide, bdr_bottom : Theme.BorderSide, bdr_left : Theme.BorderSide, bdr_corner : Theme.CornerStyle }.{
+		is_eq : Theme.Border, Theme.Border -> Bool
+		is_eq = |a, b| eq_Border(a, b)
+	}
+	Edges := { edge_top : I64, edge_right : I64, edge_bottom : I64, edge_left : I64 }.{
+		is_eq : Theme.Edges, Theme.Edges -> Bool
+		is_eq = |a, b| eq_Edges(a, b)
+	}
+	Shadow := { sh_offset_x : I64, sh_offset_y : I64, sh_blur : I64, sh_color : I64, sh_enabled : Bool }.{
+		is_eq : Theme.Shadow, Theme.Shadow -> Bool
+		is_eq = |a, b| eq_Shadow(a, b)
+	}
+	Gradient := { gr_start_color : I64, gr_end_color : I64, gr_vertical : Bool, gr_enabled : Bool }.{
+		is_eq : Theme.Gradient, Theme.Gradient -> Bool
+		is_eq = |a, b| eq_Gradient(a, b)
+	}
+	Bevel := { bv_light : I64, bv_shade : I64, bv_width : I64, bv_raised : Bool, bv_enabled : Bool }.{
+		is_eq : Theme.Bevel, Theme.Bevel -> Bool
+		is_eq = |a, b| eq_Bevel(a, b)
+	}
+	AccentBorder := { ab_side : I64, ab_width : I64, ab_color : I64, ab_enabled : Bool }.{
+		is_eq : Theme.AccentBorder, Theme.AccentBorder -> Bool
+		is_eq = |a, b| eq_AccentBorder(a, b)
+	}
+	WidgetStyle := { ws_bg : I64, ws_fg : I64, ws_border : Theme.Border, ws_padding : Theme.Edges, ws_margin : Theme.Edges, ws_min_width : I64, ws_min_height : I64, ws_shadow : Theme.Shadow, ws_gradient : Theme.Gradient, ws_accent_border : Theme.AccentBorder, ws_bevel : Theme.Bevel }.{
+		is_eq : Theme.WidgetStyle, Theme.WidgetStyle -> Bool
+		is_eq = |a, b| eq_WidgetStyle(a, b)
+	}
+	StateStyles := { ss_normal : Theme.WidgetStyle, ss_hover : Theme.WidgetStyle, ss_pressed : Theme.WidgetStyle, ss_disabled : Theme.WidgetStyle, ss_focused : Theme.WidgetStyle }.{
+		is_eq : Theme.StateStyles, Theme.StateStyles -> Bool
+		is_eq = |a, b| eq_StateStyles(a, b)
+	}
+	Theme := { th_name : CceText, th_palette : Theme.Palette, th_panel : Theme.StateStyles, th_button : Theme.StateStyles, th_label : Theme.StateStyles, th_input : Theme.StateStyles, th_gauge : Theme.StateStyles, th_separator : Theme.StateStyles }.{
+		is_eq : Theme.Theme, Theme.Theme -> Bool
+		is_eq = |a, b| eq_Theme(a, b)
+	}
 
 	shadow_none : Theme.Shadow
-	shadow_none = { sh_offset_x: 0, sh_offset_y: 0, sh_blur: 0, sh_color: 0, sh_enabled: False }
-
-	shadow_subtle : I64 -> Theme.Shadow
-	shadow_subtle = |color| { sh_offset_x: 2, sh_offset_y: 2, sh_blur: 4, sh_color: color, sh_enabled: True }
-
-	shadow_medium : I64 -> Theme.Shadow
-	shadow_medium = |color| { sh_offset_x: 4, sh_offset_y: 4, sh_blur: 8, sh_color: color, sh_enabled: True }
+	shadow_none = Theme.Shadow.{ sh_offset_x: 0, sh_offset_y: 0, sh_blur: 0, sh_color: 0, sh_enabled: False }
 
 	gradient_none : Theme.Gradient
-	gradient_none = { gr_start_color: 0, gr_end_color: 0, gr_vertical: True, gr_enabled: False }
-
-	gradient_v : I64, I64 -> Theme.Gradient
-	gradient_v = |start, stop| { gr_start_color: start, gr_end_color: stop, gr_vertical: True, gr_enabled: True }
-
-	gradient_h : I64, I64 -> Theme.Gradient
-	gradient_h = |start, stop| { gr_start_color: start, gr_end_color: stop, gr_vertical: False, gr_enabled: True }
+	gradient_none = Theme.Gradient.{ gr_start_color: 0, gr_end_color: 0, gr_vertical: True, gr_enabled: False }
 
 	bevel_none : Theme.Bevel
-	bevel_none = { bv_light: 0, bv_shade: 0, bv_width: 0, bv_raised: True, bv_enabled: False }
-
-	bevel_raised : I64, I64, I64 -> Theme.Bevel
-	bevel_raised = |light, shade, w| { bv_light: light, bv_shade: shade, bv_width: w, bv_raised: True, bv_enabled: True }
-
-	bevel_recessed : I64, I64, I64 -> Theme.Bevel
-	bevel_recessed = |light, shade, w| { bv_light: light, bv_shade: shade, bv_width: w, bv_raised: False, bv_enabled: True }
+	bevel_none = Theme.Bevel.{ bv_light: 0, bv_shade: 0, bv_width: 0, bv_raised: True, bv_enabled: False }
 
 	bevel_tl : Theme.Bevel -> I64
 	bevel_tl = |b| (if b.bv_raised { b.bv_light } else { b.bv_shade })
@@ -48,58 +64,40 @@ Theme :: [].{
 	bevel_br = |b| (if b.bv_raised { b.bv_shade } else { b.bv_light })
 
 	accent_border_none : Theme.AccentBorder
-	accent_border_none = { ab_side: 0, ab_width: 0, ab_color: 0, ab_enabled: False }
-
-	accent_border_top : I64, I64 -> Theme.AccentBorder
-	accent_border_top = |width, color| { ab_side: 0, ab_width: width, ab_color: color, ab_enabled: True }
-
-	accent_border_bottom : I64, I64 -> Theme.AccentBorder
-	accent_border_bottom = |width, color| { ab_side: 2, ab_width: width, ab_color: color, ab_enabled: True }
-
-	accent_border_left : I64, I64 -> Theme.AccentBorder
-	accent_border_left = |width, color| { ab_side: 3, ab_width: width, ab_color: color, ab_enabled: True }
+	accent_border_none = Theme.AccentBorder.{ ab_side: 0, ab_width: 0, ab_color: 0, ab_enabled: False }
 
 	edges_uniform : I64 -> Theme.Edges
-	edges_uniform = |v| { edge_top: v, edge_right: v, edge_bottom: v, edge_left: v }
+	edges_uniform = |v| Theme.Edges.{ edge_top: v, edge_right: v, edge_bottom: v, edge_left: v }
 
 	edges_zero : Theme.Edges
-	edges_zero = { edge_top: 0, edge_right: 0, edge_bottom: 0, edge_left: 0 }
+	edges_zero = Theme.Edges.{ edge_top: 0, edge_right: 0, edge_bottom: 0, edge_left: 0 }
 
 	edges_xy : I64, I64 -> Theme.Edges
-	edges_xy = |x, y| { edge_top: y, edge_right: x, edge_bottom: y, edge_left: x }
+	edges_xy = |x, y| Theme.Edges.{ edge_top: y, edge_right: x, edge_bottom: y, edge_left: x }
 
 	border_side : I64, I64 -> Theme.BorderSide
-	border_side = |w, c| { brd_width: w, brd_color: c }
+	border_side = |w, c| Theme.BorderSide.{ brd_width: w, brd_color: c }
 
 	border_side_none : Theme.BorderSide
-	border_side_none = { brd_width: 0, brd_color: 0 }
+	border_side_none = Theme.BorderSide.{ brd_width: 0, brd_color: 0 }
 
 	border_uniform : I64, I64, Theme.CornerStyle -> Theme.Border
 	border_uniform = |w, c, corner| ({
 		side = border_side(w, c)
-		{ bdr_top: side, bdr_right: side, bdr_bottom: side, bdr_left: side, bdr_corner: corner }
+		Theme.Border.{ bdr_top: side, bdr_right: side, bdr_bottom: side, bdr_left: side, bdr_corner: corner }
 	})
 
 	border_none : Theme.Border
-	border_none = { bdr_top: border_side_none, bdr_right: border_side_none, bdr_bottom: border_side_none, bdr_left: border_side_none, bdr_corner: CornerSharp }
+	border_none = Theme.Border.{ bdr_top: border_side_none, bdr_right: border_side_none, bdr_bottom: border_side_none, bdr_left: border_side_none, bdr_corner: CornerSharp }
 
 	widget_style : I64, I64, Theme.Border, Theme.Edges, Theme.Edges -> Theme.WidgetStyle
-	widget_style = |bg, fg, bdr, pad, mar| { ws_bg: bg, ws_fg: fg, ws_border: bdr, ws_padding: pad, ws_margin: mar, ws_min_width: 0, ws_min_height: 0, ws_shadow: shadow_none, ws_gradient: gradient_none, ws_accent_border: accent_border_none, ws_bevel: bevel_none }
-
-	widget_style_sized : I64, I64, Theme.Border, Theme.Edges, Theme.Edges, I64, I64 -> Theme.WidgetStyle
-	widget_style_sized = |bg, fg, bdr, pad, mar, minw, minh| { ws_bg: bg, ws_fg: fg, ws_border: bdr, ws_padding: pad, ws_margin: mar, ws_min_width: minw, ws_min_height: minh, ws_shadow: shadow_none, ws_gradient: gradient_none, ws_accent_border: accent_border_none, ws_bevel: bevel_none }
-
-	widget_style_rich : I64, I64, Theme.Border, Theme.Edges, Theme.Edges, Theme.Shadow, Theme.Gradient, Theme.AccentBorder -> Theme.WidgetStyle
-	widget_style_rich = |bg, fg, bdr, pad, mar, sh, gr, ab| { ws_bg: bg, ws_fg: fg, ws_border: bdr, ws_padding: pad, ws_margin: mar, ws_min_width: 0, ws_min_height: 0, ws_shadow: sh, ws_gradient: gr, ws_accent_border: ab, ws_bevel: bevel_none }
-
-	widget_style_surface : I64, I64, Theme.Border, Theme.Edges, Theme.Edges, Theme.Gradient, Theme.Bevel -> Theme.WidgetStyle
-	widget_style_surface = |bg, fg, bdr, pad, mar, gr, bv| { ws_bg: bg, ws_fg: fg, ws_border: bdr, ws_padding: pad, ws_margin: mar, ws_min_width: 0, ws_min_height: 0, ws_shadow: shadow_none, ws_gradient: gr, ws_accent_border: accent_border_none, ws_bevel: bv }
+	widget_style = |bg, fg, bdr, pad, mar| Theme.WidgetStyle.{ ws_bg: bg, ws_fg: fg, ws_border: bdr, ws_padding: pad, ws_margin: mar, ws_min_width: 0, ws_min_height: 0, ws_shadow: shadow_none, ws_gradient: gradient_none, ws_accent_border: accent_border_none, ws_bevel: bevel_none }
 
 	widget_style_bare : Theme.WidgetStyle
 	widget_style_bare = widget_style(0, 0, border_none, edges_zero, edges_zero)
 
 	state_styles_flat : Theme.WidgetStyle -> Theme.StateStyles
-	state_styles_flat = |s| { ss_normal: s, ss_hover: s, ss_pressed: s, ss_disabled: s, ss_focused: s }
+	state_styles_flat = |s| Theme.StateStyles.{ ss_normal: s, ss_hover: s, ss_pressed: s, ss_disabled: s, ss_focused: s }
 
 	edges_h : Theme.Edges -> I64
 	edges_h = |e| (e.edge_left + e.edge_right)
@@ -108,23 +106,7 @@ Theme :: [].{
 	edges_v = |e| (e.edge_top + e.edge_bottom)
 
 	palette_terminal : Theme.Palette
-	palette_terminal = { pal_bg: 1052688, pal_fg: 13421772, pal_primary: 3394611, pal_secondary: 2263842, pal_accent: 5614335, pal_muted: 6710886, pal_error: 13369344, pal_success: 3394560, pal_warning: 13408512, pal_border: 4473924 }
-
-	palette_lcars : Theme.Palette
-	palette_lcars = { pal_bg: 0, pal_fg: 16777215, pal_primary: 16753920, pal_secondary: 10066431, pal_accent: 6737151, pal_muted: 8421504, pal_error: 13369344, pal_success: 3394560, pal_warning: 16753920, pal_border: 16753920 }
-
-	palette_minimal : Theme.Palette
-	palette_minimal = { pal_bg: 16777215, pal_fg: 2105376, pal_primary: 2236962, pal_secondary: 5592405, pal_accent: 26367, pal_muted: 10066329, pal_error: 13369344, pal_success: 2263842, pal_warning: 15105570, pal_border: 13421772 }
-
-	theme_luma : I64 -> I64
-	theme_luma = |c| I64.div_trunc_by((((299 * I64.bitwise_and(I64.shr_zf_wrap(c, I64.to_u8_wrap(16)), 255)) + (587 * I64.bitwise_and(I64.shr_zf_wrap(c, I64.to_u8_wrap(8)), 255))) + (114 * I64.bitwise_and(c, 255))), 1000)
-
-	theme_ink_on : Theme.Palette, I64 -> I64
-	theme_ink_on = |p, ground| ({
-		dark_ink = (if (theme_luma(p.pal_bg) < theme_luma(p.pal_fg)) { p.pal_bg } else { p.pal_fg })
-		light_ink = (if (theme_luma(p.pal_bg) < theme_luma(p.pal_fg)) { p.pal_fg } else { p.pal_bg })
-		(if (theme_luma(ground) > 127) { dark_ink } else { light_ink })
-	})
+	palette_terminal = Theme.Palette.{ pal_bg: 1052688, pal_fg: 13421772, pal_primary: 3394611, pal_secondary: 2263842, pal_accent: 5614335, pal_muted: 6710886, pal_error: 13369344, pal_success: 3394560, pal_warning: 13408512, pal_border: 4473924 }
 
 	theme_terminal : Theme.Theme
 	theme_terminal = ({
@@ -141,44 +123,7 @@ Theme :: [].{
 		inp_f = widget_style(pal.pal_bg, pal.pal_fg, border_uniform(2, pal.pal_accent, CornerSharp), pad, mar)
 		lbl = widget_style(0, pal.pal_fg, border_none, edges_zero, mar)
 		sep = widget_style(pal.pal_border, pal.pal_border, border_none, edges_zero, edges_xy(0, 4))
-		{ th_name: "terminal", th_palette: pal, th_panel: state_styles_flat(base), th_button: { ss_normal: btn, ss_hover: btn_h, ss_pressed: btn_p, ss_disabled: btn_d, ss_focused: btn_h }, th_label: state_styles_flat(lbl), th_input: { ss_normal: inp, ss_hover: inp, ss_pressed: inp, ss_disabled: btn_d, ss_focused: inp_f }, th_gauge: state_styles_flat(widget_style(pal.pal_bg, pal.pal_primary, bdr, edges_uniform(2), mar)), th_separator: state_styles_flat(sep) }
-	})
-
-	theme_lcars : Theme.Theme
-	theme_lcars = ({
-		pal = palette_lcars
-		round = CornerRound(12)
-		_bdr = border_uniform(2, pal.pal_primary, round)
-		pad = edges_xy(16, 8)
-		mar = edges_uniform(4)
-		base = widget_style(pal.pal_bg, pal.pal_fg, border_uniform(2, pal.pal_primary, round), pad, mar)
-		btn = widget_style_sized(pal.pal_primary, pal.pal_bg, border_none, pad, mar, 120, 40)
-		btn_h = widget_style_sized(pal.pal_secondary, pal.pal_bg, border_none, pad, mar, 120, 40)
-		btn_p = widget_style_sized(pal.pal_accent, pal.pal_bg, border_none, pad, mar, 120, 40)
-		btn_d = widget_style_sized(pal.pal_muted, pal.pal_muted, border_none, pad, mar, 120, 40)
-		inp = widget_style(pal.pal_bg, pal.pal_fg, border_uniform(2, pal.pal_secondary, round), pad, mar)
-		inp_f = widget_style(pal.pal_bg, pal.pal_fg, border_uniform(3, pal.pal_accent, round), pad, mar)
-		lbl = widget_style(0, pal.pal_fg, border_none, edges_zero, mar)
-		sep = widget_style_sized(pal.pal_primary, pal.pal_primary, border_none, edges_zero, edges_xy(0, 4), 0, 6)
-		{ th_name: "lcars", th_palette: pal, th_panel: state_styles_flat(base), th_button: { ss_normal: btn, ss_hover: btn_h, ss_pressed: btn_p, ss_disabled: btn_d, ss_focused: btn_h }, th_label: state_styles_flat(lbl), th_input: { ss_normal: inp, ss_hover: inp, ss_pressed: inp, ss_disabled: btn_d, ss_focused: inp_f }, th_gauge: state_styles_flat(widget_style(pal.pal_bg, pal.pal_accent, border_uniform(2, pal.pal_secondary, round), edges_uniform(2), mar)), th_separator: state_styles_flat(sep) }
-	})
-
-	theme_minimal : Theme.Theme
-	theme_minimal = ({
-		pal = palette_minimal
-		bdr = border_uniform(1, pal.pal_border, CornerSharp)
-		pad = edges_xy(8, 4)
-		mar = edges_uniform(2)
-		base = widget_style(pal.pal_bg, pal.pal_fg, bdr, pad, mar)
-		btn = widget_style(pal.pal_bg, pal.pal_primary, border_uniform(1, pal.pal_primary, CornerSharp), pad, mar)
-		btn_h = widget_style(pal.pal_primary, pal.pal_bg, border_uniform(1, pal.pal_primary, CornerSharp), pad, mar)
-		btn_p = widget_style(pal.pal_accent, pal.pal_bg, border_uniform(1, pal.pal_accent, CornerSharp), pad, mar)
-		btn_d = widget_style(pal.pal_muted, pal.pal_muted, border_uniform(1, pal.pal_muted, CornerSharp), pad, mar)
-		inp = widget_style(pal.pal_bg, pal.pal_fg, border_uniform(1, pal.pal_border, CornerSharp), pad, mar)
-		inp_f = widget_style(pal.pal_bg, pal.pal_fg, border_uniform(2, pal.pal_accent, CornerSharp), pad, mar)
-		lbl = widget_style(0, pal.pal_fg, border_none, edges_zero, mar)
-		sep = widget_style(pal.pal_border, pal.pal_border, border_none, edges_zero, edges_xy(0, 4))
-		{ th_name: "minimal", th_palette: pal, th_panel: state_styles_flat(base), th_button: { ss_normal: btn, ss_hover: btn_h, ss_pressed: btn_p, ss_disabled: btn_d, ss_focused: btn_h }, th_label: state_styles_flat(lbl), th_input: { ss_normal: inp, ss_hover: inp, ss_pressed: inp, ss_disabled: btn_d, ss_focused: inp_f }, th_gauge: state_styles_flat(widget_style(pal.pal_bg, pal.pal_primary, bdr, edges_uniform(2), mar)), th_separator: state_styles_flat(sep) }
+		Theme.Theme.{ th_name: "terminal", th_palette: pal, th_panel: state_styles_flat(base), th_button: Theme.StateStyles.{ ss_normal: btn, ss_hover: btn_h, ss_pressed: btn_p, ss_disabled: btn_d, ss_focused: btn_h }, th_label: state_styles_flat(lbl), th_input: Theme.StateStyles.{ ss_normal: inp, ss_hover: inp, ss_pressed: inp, ss_disabled: btn_d, ss_focused: inp_f }, th_gauge: state_styles_flat(widget_style(pal.pal_bg, pal.pal_primary, bdr, edges_uniform(2), mar)), th_separator: state_styles_flat(sep) }
 	})
 
 	theme_resolve_panel : Theme.Theme, I64 -> Theme.WidgetStyle
@@ -217,6 +162,33 @@ Theme :: [].{
 	state_focused : I64
 	state_focused = 4
 
+	flag_focused : I64
+	flag_focused = 1
+
+	flag_hovered : I64
+	flag_hovered = 2
+
+	flag_pressed : I64
+	flag_pressed = 4
+
+	flag_checked : I64
+	flag_checked = 8
+
+	flag_disabled : I64
+	flag_disabled = 16
+
+	flag_invalid : I64
+	flag_invalid = 32
+
+	flag_busy : I64
+	flag_busy = 64
+
+	flag_has : I64, I64 -> Bool
+	flag_has = |flags, f| (I64.bitwise_and(flags, f) != 0)
+
+	theme_state_of_flags : I64 -> I64
+	theme_state_of_flags = |flags| (if flag_has(flags, flag_disabled) { state_disabled } else { (if flag_has(flags, flag_pressed) { state_pressed } else { (if flag_has(flags, flag_hovered) { state_hover } else { (if flag_has(flags, flag_focused) { state_focused } else { state_normal }) }) }) })
+
 	tone_none : I64
 	tone_none = 0
 
@@ -241,11 +213,8 @@ Theme :: [].{
 		(if (tone == tone_primary) { pal.pal_primary } else { (if (tone == tone_success) { pal.pal_success } else { (if (tone == tone_warning) { pal.pal_warning } else { (if (tone == tone_error) { pal.pal_error } else { (if (tone == tone_muted) { pal.pal_muted } else { fallback }) }) }) }) })
 	})
 
-	tone_name : I64 -> Str
-	tone_name = |tone| (if (tone == tone_primary) { "primary" } else { (if (tone == tone_success) { "success" } else { (if (tone == tone_warning) { "warning" } else { (if (tone == tone_error) { "error" } else { (if (tone == tone_muted) { "muted" } else { "none" }) }) }) }) })
-
-	theme_fmt_bool : Bool -> Str
-	theme_fmt_bool = |b| (if b { "true" } else { "false" })
+	eq_Palette : Theme.Palette, Theme.Palette -> Bool
+	eq_Palette = |ex, ey| ((((((((((ex.pal_bg == ey.pal_bg) and (ex.pal_fg == ey.pal_fg)) and (ex.pal_primary == ey.pal_primary)) and (ex.pal_secondary == ey.pal_secondary)) and (ex.pal_accent == ey.pal_accent)) and (ex.pal_muted == ey.pal_muted)) and (ex.pal_error == ey.pal_error)) and (ex.pal_success == ey.pal_success)) and (ex.pal_warning == ey.pal_warning)) and (ex.pal_border == ey.pal_border))
 
 	eq_CornerStyle : Theme.CornerStyle, Theme.CornerStyle -> Bool
 	eq_CornerStyle = |ex, ey| (match ex {
@@ -262,4 +231,34 @@ Theme :: [].{
 			_ => False
 		})
 	})
+
+	eq_BorderSide : Theme.BorderSide, Theme.BorderSide -> Bool
+	eq_BorderSide = |ex, ey| ((ex.brd_width == ey.brd_width) and (ex.brd_color == ey.brd_color))
+
+	eq_Border : Theme.Border, Theme.Border -> Bool
+	eq_Border = |ex, ey| ((((eq_BorderSide(ex.bdr_top, ey.bdr_top) and eq_BorderSide(ex.bdr_right, ey.bdr_right)) and eq_BorderSide(ex.bdr_bottom, ey.bdr_bottom)) and eq_BorderSide(ex.bdr_left, ey.bdr_left)) and eq_CornerStyle(ex.bdr_corner, ey.bdr_corner))
+
+	eq_Edges : Theme.Edges, Theme.Edges -> Bool
+	eq_Edges = |ex, ey| ((((ex.edge_top == ey.edge_top) and (ex.edge_right == ey.edge_right)) and (ex.edge_bottom == ey.edge_bottom)) and (ex.edge_left == ey.edge_left))
+
+	eq_Shadow : Theme.Shadow, Theme.Shadow -> Bool
+	eq_Shadow = |ex, ey| (((((ex.sh_offset_x == ey.sh_offset_x) and (ex.sh_offset_y == ey.sh_offset_y)) and (ex.sh_blur == ey.sh_blur)) and (ex.sh_color == ey.sh_color)) and (ex.sh_enabled == ey.sh_enabled))
+
+	eq_Gradient : Theme.Gradient, Theme.Gradient -> Bool
+	eq_Gradient = |ex, ey| ((((ex.gr_start_color == ey.gr_start_color) and (ex.gr_end_color == ey.gr_end_color)) and (ex.gr_vertical == ey.gr_vertical)) and (ex.gr_enabled == ey.gr_enabled))
+
+	eq_Bevel : Theme.Bevel, Theme.Bevel -> Bool
+	eq_Bevel = |ex, ey| (((((ex.bv_light == ey.bv_light) and (ex.bv_shade == ey.bv_shade)) and (ex.bv_width == ey.bv_width)) and (ex.bv_raised == ey.bv_raised)) and (ex.bv_enabled == ey.bv_enabled))
+
+	eq_AccentBorder : Theme.AccentBorder, Theme.AccentBorder -> Bool
+	eq_AccentBorder = |ex, ey| ((((ex.ab_side == ey.ab_side) and (ex.ab_width == ey.ab_width)) and (ex.ab_color == ey.ab_color)) and (ex.ab_enabled == ey.ab_enabled))
+
+	eq_WidgetStyle : Theme.WidgetStyle, Theme.WidgetStyle -> Bool
+	eq_WidgetStyle = |ex, ey| (((((((((((ex.ws_bg == ey.ws_bg) and (ex.ws_fg == ey.ws_fg)) and eq_Border(ex.ws_border, ey.ws_border)) and eq_Edges(ex.ws_padding, ey.ws_padding)) and eq_Edges(ex.ws_margin, ey.ws_margin)) and (ex.ws_min_width == ey.ws_min_width)) and (ex.ws_min_height == ey.ws_min_height)) and eq_Shadow(ex.ws_shadow, ey.ws_shadow)) and eq_Gradient(ex.ws_gradient, ey.ws_gradient)) and eq_AccentBorder(ex.ws_accent_border, ey.ws_accent_border)) and eq_Bevel(ex.ws_bevel, ey.ws_bevel))
+
+	eq_StateStyles : Theme.StateStyles, Theme.StateStyles -> Bool
+	eq_StateStyles = |ex, ey| ((((eq_WidgetStyle(ex.ss_normal, ey.ss_normal) and eq_WidgetStyle(ex.ss_hover, ey.ss_hover)) and eq_WidgetStyle(ex.ss_pressed, ey.ss_pressed)) and eq_WidgetStyle(ex.ss_disabled, ey.ss_disabled)) and eq_WidgetStyle(ex.ss_focused, ey.ss_focused))
+
+	eq_Theme : Theme.Theme, Theme.Theme -> Bool
+	eq_Theme = |ex, ey| ((((((((ex.th_name == ey.th_name) and eq_Palette(ex.th_palette, ey.th_palette)) and eq_StateStyles(ex.th_panel, ey.th_panel)) and eq_StateStyles(ex.th_button, ey.th_button)) and eq_StateStyles(ex.th_label, ey.th_label)) and eq_StateStyles(ex.th_input, ey.th_input)) and eq_StateStyles(ex.th_gauge, ey.th_gauge)) and eq_StateStyles(ex.th_separator, ey.th_separator))
 }

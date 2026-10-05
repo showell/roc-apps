@@ -2,13 +2,13 @@
 import Mem
 
 BitmapFont :: [].{
-	CbfFont : { cbf_base : I64 }
+	CbfFont := { cbf_base : I64 }.{
+		is_eq : BitmapFont.CbfFont, BitmapFont.CbfFont -> Bool
+		is_eq = |a, b| eq_CbfFont(a, b)
+	}
 
 	cbf_glyph_height : I64
 	cbf_glyph_height = 16
-
-	cbf_glyph_width : I64
-	cbf_glyph_width = 8
 
 	cbf_glyph_count : I64
 	cbf_glyph_count = 128
@@ -21,7 +21,7 @@ BitmapFont :: [].{
 		(mem3, mem__1) = ({
 		(mem1, base) = Mem.alloc(mem, cbf_data_size)
 		(mem2, w) = cbf_write_all!(mem1, base)
-		(mem2, { cbf_base: ((base + w) - w) })
+		(mem2, BitmapFont.CbfFont.{ cbf_base: ((base + w) - w) })
 	})
 		(mem3, mem__1)
 	})
@@ -29,18 +29,9 @@ BitmapFont :: [].{
 	cbf_row! : Mem.Mem, BitmapFont.CbfFont, I64, I64 => (Mem.Mem, I64)
 	cbf_row! = |mem, font, cce, row| (if (cce < 0) { (mem, 0) } else { (if (cce >= cbf_glyph_count) { (mem, 0) } else { (if (row < 0) { (mem, 0) } else { (if (row >= cbf_glyph_height) { (mem, 0) } else { Mem.load!(mem, font.cbf_base, ((cce * cbf_glyph_height) + row), 1) }) }) }) })
 
-	cbf_pixel! : Mem.Mem, BitmapFont.CbfFont, I64, I64, I64 => (Mem.Mem, Bool)
-	cbf_pixel! = |mem, font, cce, col, row| ({
-		(mem2, mem__2) = ({
-		(mem1, glyph_byte) = cbf_row!(mem, font, cce, row)
-		(mem1, (I64.bitwise_and(I64.shr_zf_wrap(glyph_byte, I64.to_u8_wrap((7 - col))), 1) == 1))
-	})
-		(mem2, mem__2)
-	})
-
 	cbf_write_all! : Mem.Mem, I64 => (Mem.Mem, I64)
 	cbf_write_all! = |mem, base| ({
-		(mem8, mem__3) = ({
+		(mem8, mem__1) = ({
 		(mem1, w0) = cbf_write_whitespace!(mem, base)
 		(mem2, w1) = cbf_write_digits!(mem1, base)
 		(mem3, w2) = cbf_write_lower!(mem2, base)
@@ -50,23 +41,23 @@ BitmapFont :: [].{
 		(mem7, w6) = cbf_write_cyrillic!(mem6, base)
 		(mem7, ((((((w0 + w1) + w2) + w3) + w4) + w5) + w6))
 	})
-		(mem8, mem__3)
+		(mem8, mem__1)
 	})
 
 	cbf_write_whitespace! : Mem.Mem, I64 => (Mem.Mem, I64)
 	cbf_write_whitespace! = |mem, b| ({
-		(mem4, mem__4) = ({
+		(mem4, mem__1) = ({
 		(mem1, w0) = cbf_g!(mem, b, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 		(mem2, w1) = cbf_g!(mem1, b, 1, 0, 0, 0, 0, 0, 0, 0, 0)
 		(mem3, w2) = cbf_g!(mem2, b, 2, 0, 0, 0, 0, 0, 0, 0, 0)
 		(mem3, ((w0 + w1) + w2))
 	})
-		(mem4, mem__4)
+		(mem4, mem__1)
 	})
 
 	cbf_write_digits! : Mem.Mem, I64 => (Mem.Mem, I64)
 	cbf_write_digits! = |mem, b| ({
-		(mem11, mem__5) = ({
+		(mem11, mem__1) = ({
 		(mem1, w0) = cbf_g!(mem, b, 3, 60, 102, 110, 118, 102, 102, 60, 0)
 		(mem2, w1) = cbf_g!(mem1, b, 4, 24, 56, 24, 24, 24, 24, 126, 0)
 		(mem3, w2) = cbf_g!(mem2, b, 5, 60, 102, 6, 12, 24, 48, 126, 0)
@@ -79,12 +70,12 @@ BitmapFont :: [].{
 		(mem10, w9) = cbf_g!(mem9, b, 12, 60, 102, 102, 62, 6, 6, 60, 0)
 		(mem10, (((((((((w0 + w1) + w2) + w3) + w4) + w5) + w6) + w7) + w8) + w9))
 	})
-		(mem11, mem__5)
+		(mem11, mem__1)
 	})
 
 	cbf_write_lower! : Mem.Mem, I64 => (Mem.Mem, I64)
 	cbf_write_lower! = |mem, b| ({
-		(mem27, mem__6) = ({
+		(mem27, mem__1) = ({
 		(mem1, we) = cbf_g!(mem, b, 13, 0, 0, 60, 102, 126, 96, 60, 0)
 		(mem2, wt) = cbf_g!(mem1, b, 14, 48, 48, 124, 48, 48, 48, 28, 0)
 		(mem3, wa) = cbf_g!(mem2, b, 15, 0, 0, 60, 6, 62, 102, 62, 0)
@@ -113,12 +104,12 @@ BitmapFont :: [].{
 		(mem26, wz) = cbf_g!(mem25, b, 38, 0, 0, 126, 12, 24, 48, 126, 0)
 		(mem26, (((((((((((((((((((((((((we + wt) + wa) + wo) + wi) + wn) + ws) + wh) + wr) + wd) + wl) + wc) + wu) + wm) + ww) + wf) + wg) + wy) + wp) + wb) + wv) + wk) + wj) + wx) + wq) + wz))
 	})
-		(mem27, mem__6)
+		(mem27, mem__1)
 	})
 
 	cbf_write_upper! : Mem.Mem, I64 => (Mem.Mem, I64)
 	cbf_write_upper! = |mem, b| ({
-		(mem27, mem__7) = ({
+		(mem27, mem__1) = ({
 		(mem1, wE) = cbf_g!(mem, b, 39, 126, 96, 96, 124, 96, 96, 126, 0)
 		(mem2, wT) = cbf_g!(mem1, b, 40, 126, 24, 24, 24, 24, 24, 24, 0)
 		(mem3, wA) = cbf_g!(mem2, b, 41, 24, 60, 102, 102, 126, 102, 102, 0)
@@ -147,12 +138,12 @@ BitmapFont :: [].{
 		(mem26, wZ) = cbf_g!(mem25, b, 64, 126, 6, 12, 24, 48, 96, 126, 0)
 		(mem26, (((((((((((((((((((((((((wE + wT) + wA) + wO) + wI) + wN) + wS) + wH) + wR) + wD) + wL) + wC) + wU) + wM) + wW) + wF) + wG) + wY) + wP) + wB) + wV) + wK) + wJ) + wX) + wQ) + wZ))
 	})
-		(mem27, mem__7)
+		(mem27, mem__1)
 	})
 
 	cbf_write_punct! : Mem.Mem, I64 => (Mem.Mem, I64)
 	cbf_write_punct! = |mem, b| ({
-		(mem33, mem__8) = ({
+		(mem33, mem__1) = ({
 		(mem1, w65) = cbf_g!(mem, b, 65, 0, 0, 0, 0, 0, 24, 24, 0)
 		(mem2, w66) = cbf_g!(mem1, b, 66, 0, 0, 0, 0, 0, 24, 24, 48)
 		(mem3, w67) = cbf_g!(mem2, b, 67, 24, 24, 24, 24, 24, 0, 24, 0)
@@ -187,12 +178,12 @@ BitmapFont :: [].{
 		(mem32, w96) = cbf_g!(mem31, b, 96, 24, 60, 102, 0, 0, 0, 0, 0)
 		(mem32, (((((((((((((((((((((((((((((((w65 + w66) + w67) + w68) + w69) + w70) + w71) + w72) + w73) + w74) + w75) + w76) + w77) + w78) + w79) + w80) + w81) + w82) + w83) + w84) + w85) + w86) + w87) + w88) + w89) + w90) + w91) + w92) + w93) + w94) + w95) + w96))
 	})
-		(mem33, mem__8)
+		(mem33, mem__1)
 	})
 
 	cbf_write_accented! : Mem.Mem, I64 => (Mem.Mem, I64)
 	cbf_write_accented! = |mem, b| ({
-		(mem17, mem__9) = ({
+		(mem17, mem__1) = ({
 		(mem1, w97) = cbf_g!(mem, b, 97, 12, 24, 60, 102, 126, 96, 60, 0)
 		(mem2, w98) = cbf_g!(mem1, b, 98, 48, 24, 60, 102, 126, 96, 60, 0)
 		(mem3, w99) = cbf_g!(mem2, b, 99, 24, 0, 60, 102, 126, 96, 60, 0)
@@ -211,12 +202,12 @@ BitmapFont :: [].{
 		(mem16, w112) = cbf_g!(mem15, b, 112, 24, 0, 56, 24, 24, 24, 60, 0)
 		(mem16, (((((((((((((((w97 + w98) + w99) + w100) + w101) + w102) + w103) + w104) + w105) + w106) + w107) + w108) + w109) + w110) + w111) + w112))
 	})
-		(mem17, mem__9)
+		(mem17, mem__1)
 	})
 
 	cbf_write_cyrillic! : Mem.Mem, I64 => (Mem.Mem, I64)
 	cbf_write_cyrillic! = |mem, b| ({
-		(mem16, mem__10) = ({
+		(mem16, mem__1) = ({
 		(mem1, w113) = cbf_g!(mem, b, 113, 0, 0, 60, 6, 62, 102, 62, 0)
 		(mem2, w114) = cbf_g!(mem1, b, 114, 0, 0, 60, 102, 102, 102, 60, 0)
 		(mem3, w115) = cbf_g!(mem2, b, 115, 0, 0, 60, 102, 126, 96, 60, 0)
@@ -234,12 +225,13 @@ BitmapFont :: [].{
 		(mem15, w127) = cbf_g!(mem14, b, 127, 0, 0, 102, 102, 102, 102, 62, 0)
 		(mem15, ((((((((((((((w113 + w114) + w115) + w116) + w117) + w118) + w119) + w120) + w121) + w122) + w123) + w124) + w125) + w126) + w127))
 	})
-		(mem16, mem__10)
+		(mem16, mem__1)
 	})
 
 	cbf_g! : Mem.Mem, I64, I64, I64, I64, I64, I64, I64, I64, I64, I64 => (Mem.Mem, I64)
 	cbf_g! = |mem, base, cce, r2, r3, r4, r5, r6, r7, r8, r9| ({
-		(mem17, mem__11) = ({
+		(mem17, mem__1) = ({
+		off : I64
 		off = (cce * cbf_glyph_height)
 		(mem1, w0) = Mem.store!(mem, base, off, 0, 1)
 		(mem2, w1) = Mem.store!(mem1, base, (off + 1), 0, 1)
@@ -259,6 +251,9 @@ BitmapFont :: [].{
 		(mem16, w15) = Mem.store!(mem15, base, (off + 15), 0, 1)
 		(mem16, (((((((((((((((w0 + w1) + w2) + w3) + w4) + w5) + w6) + w7) + w8) + w9) + w10) + w11) + w12) + w13) + w14) + w15))
 	})
-		(mem17, mem__11)
+		(mem17, mem__1)
 	})
+
+	eq_CbfFont : BitmapFont.CbfFont, BitmapFont.CbfFont -> Bool
+	eq_CbfFont = |ex, ey| (ex.cbf_base == ey.cbf_base)
 }

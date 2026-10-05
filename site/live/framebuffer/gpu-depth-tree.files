@@ -1,10 +1,9 @@
 GpuDepthTree.roc
 BoxModel.roc
-Cce.roc
+CceChar.roc
+CceText.roc
 GpuRender.roc
 Layout.roc
-Maybe.roc
-Overlay.roc
 TextOverflow.roc
 Theme.roc
 Widget.roc

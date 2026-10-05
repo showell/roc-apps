@@ -5,6 +5,7 @@ import pf.Echo
 echo! = |msg| Echo.line!(msg)
 
 # ShadowSpin -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+import CceText
 import Color
 import Cordic
 import Material
@@ -40,7 +41,9 @@ shadow_map = 256
 
 scene_at : I64 -> Scene3D.Scene3DState
 scene_at = |angle| ({
+	lx : F64
 	lx = I64.to_f64(I64.div_trunc_by((566 * Cordic.cordic_sin((angle - 785))), 1000))
+	lz : F64
 	lz = I64.to_f64(I64.div_trunc_by((566 * Cordic.cordic_cos((angle - 785))), 1000))
 	cam = Scene3D.camera3d_new(Quaternion.vec3_new(0.0, 2600.0, 5200.0), Quaternion.vec3_new(0.0, 300.0, 0.0), 0.785)
 	stage = Scene3D.scene3d_new(cam)
@@ -55,7 +58,7 @@ scene_at = |angle| ({
 
 main! = |args| {
 	mem = Mem.new(U64.to_i64_wrap(List.len(args)))
-	(_mem7, mem__21) = ({
+	(_mem7, mem__1) = ({
 		(mem1, w) = Mem.load!(mem, cell_width, 0, 4)
 		(mem2, h) = Mem.load!(mem1, cell_height, 0, 4)
 		(mem3, stride) = Mem.load!(mem2, cell_stride, 0, 4)
@@ -63,9 +66,9 @@ main! = |args| {
 		(mem5, tgt) = Renderer3D.r3d_target_at!(mem4, fb_base, stride, w, h, sky)
 		(mem6, _d) = Renderer3D.r3d_render_shadowed!(mem5, tgt, scene_at(angle), shadow_map)
 		({
-			(mem6, line!(Str.concat(Str.concat("light : ", I64.to_str(angle)), " milliradians round the cube")))
+			(mem6, line!(CceText.printed(CceText.concat(CceText.concat("light : ", CceText.show_int(angle)), " milliradians round the cube"))))
 		})
 	})
-	mem__21
+	mem__1
 	Ok({})
 }

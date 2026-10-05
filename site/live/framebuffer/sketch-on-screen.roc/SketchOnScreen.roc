@@ -5,6 +5,7 @@ import pf.Echo
 echo! = |msg| Echo.line!(msg)
 
 # SketchOnScreen -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+import CceText
 import Mem
 import Rasterizer
 import Sprite
@@ -71,6 +72,7 @@ sketch_at = |t| ({
 	r1 = Rasterizer.fb_rect(l2, 4, 4, 20, 14, lilac)
 	c1 = Rasterizer.fb_circle_filled(r1, 62, 15, 10, coral)
 	t1 = Rasterizer.fb_tri(c1, 40, 20, 24, 50, 56, 50, lilac)
+	x : I64
 	x = ((2 + I64.div_trunc_by(t, 60)) - (I64.div_trunc_by(I64.div_trunc_by(t, 60), 70) * 70))
 	s1 = Sprite.sprite_blit_keyed(t1, arrow, x, 52, 0)
 	s2 = Sprite.sprite_blit_keyed(s1, Sprite.sprite_flip_h(arrow), (72 - x), 2, 0)
@@ -80,6 +82,7 @@ sketch_at = |t| ({
 
 copy_cols! : Mem.Mem, Rasterizer.Framebuf, I64, I64, I64, I64, I64 => (Mem.Mem, I64)
 copy_cols! = |mem, src, stride, w, h, y, x| (if (x >= w) { (mem, 0) } else { ({
+	c : I64
 	c = Rasterizer.fb_get(src, I64.div_trunc_by((x * src.fb_width), w), I64.div_trunc_by((y * src.fb_height), h))
 	(mem1, _p) = Mem.store!(mem, fb_base, (((y * stride) + x) * 4), c, 4)
 	copy_cols!(mem1, src, stride, w, h, y, (x + 1))
@@ -102,7 +105,7 @@ main! = |args| {
 		(mem4, t) = Mem.load!(mem3, cell_clock, 0, 4)
 		(mem5, _d) = copy_rows!(mem4, sketch_at(t), stride, w, h, 0)
 		({
-			(mem5, line!(Str.concat(Str.concat("clock : ", I64.to_str(t)), " ms")))
+			(mem5, line!(CceText.printed(CceText.concat(CceText.concat("clock : ", CceText.show_int(t)), " ms"))))
 		})
 	})
 	mem__1

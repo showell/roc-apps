@@ -5,6 +5,7 @@ import pf.Echo
 echo! = |msg| Echo.line!(msg)
 
 # GlobeDemo -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+import CceText
 import Machine
 import MathLib
 import Matrix4
@@ -15,9 +16,18 @@ import TerrainGen
 
 # The Echo platform's echo! writes no newline; a Codex line is one.
 line! = |s| echo!(Str.concat(s, "\n"))
-IcoTri : { t_ax : I64, t_ay : I64, t_az : I64, t_bx : I64, t_by : I64, t_bz : I64, t_cx : I64, t_cy : I64, t_cz : I64 }
-IcoPair : { ip_verts : List(Mesh.Vertex), ip_indices : List(I64) }
-GProj : { gp_sx : I64, gp_sy : I64, gp_depth : I64 }
+IcoTri := { t_ax : I64, t_ay : I64, t_az : I64, t_bx : I64, t_by : I64, t_bz : I64, t_cx : I64, t_cy : I64, t_cz : I64 }.{
+	is_eq : IcoTri, IcoTri -> Bool
+	is_eq = |a, b| eq_IcoTri(a, b)
+}
+IcoPair := { ip_verts : List(Mesh.Vertex), ip_indices : List(I64) }.{
+	is_eq : IcoPair, IcoPair -> Bool
+	is_eq = |a, b| eq_IcoPair(a, b)
+}
+GProj := { gp_sx : I64, gp_sy : I64, gp_depth : I64 }.{
+	is_eq : GProj, GProj -> Bool
+	is_eq = |a, b| eq_GProj(a, b)
+}
 
 gpu_cmd : I64
 gpu_cmd = 3187671040
@@ -40,7 +50,7 @@ earth_r = 3000
 ico_subdivisions : I64
 ico_subdivisions = 3
 
-globe_main! : Machine.Machine, I64 => (Machine.Machine, Str)
+globe_main! : Machine.Machine, I64 => (Machine.Machine, CceText)
 globe_main! = |machine, cmd| ({
 	(machine1, loaded) = TerrainGen.tg_load_earth_image!(machine)
 	(machine2, _tex) = globe_ensure_tex!(machine1, loaded)
@@ -75,39 +85,56 @@ ico_subdivide_idx = |tris, radius, acc, i, n| (if (i >= n) { acc } else { ({
 
 ico_subdivide_tri : IcoTri, I64 -> List(IcoTri)
 ico_subdivide_tri = |tri, r| ({
+	mab : List(I64)
 	mab = ico_midpoint(tri.t_ax, tri.t_ay, tri.t_az, tri.t_bx, tri.t_by, tri.t_bz, r)
+	mbc : List(I64)
 	mbc = ico_midpoint(tri.t_bx, tri.t_by, tri.t_bz, tri.t_cx, tri.t_cy, tri.t_cz, r)
+	mca : List(I64)
 	mca = ico_midpoint(tri.t_cx, tri.t_cy, tri.t_cz, tri.t_ax, tri.t_ay, tri.t_az, r)
+	mab_x : I64
 	mab_x = (List.get(mab, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))
+	mab_y : I64
 	mab_y = (List.get(mab, I64.to_u64_wrap(1)) ?? crash("list-at out of range"))
+	mab_z : I64
 	mab_z = (List.get(mab, I64.to_u64_wrap(2)) ?? crash("list-at out of range"))
+	mbc_x : I64
 	mbc_x = (List.get(mbc, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))
+	mbc_y : I64
 	mbc_y = (List.get(mbc, I64.to_u64_wrap(1)) ?? crash("list-at out of range"))
+	mbc_z : I64
 	mbc_z = (List.get(mbc, I64.to_u64_wrap(2)) ?? crash("list-at out of range"))
+	mca_x : I64
 	mca_x = (List.get(mca, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))
+	mca_y : I64
 	mca_y = (List.get(mca, I64.to_u64_wrap(1)) ?? crash("list-at out of range"))
+	mca_z : I64
 	mca_z = (List.get(mca, I64.to_u64_wrap(2)) ?? crash("list-at out of range"))
-	[{ t_ax: tri.t_ax, t_ay: tri.t_ay, t_az: tri.t_az, t_bx: mab_x, t_by: mab_y, t_bz: mab_z, t_cx: mca_x, t_cy: mca_y, t_cz: mca_z }, { t_ax: mab_x, t_ay: mab_y, t_az: mab_z, t_bx: tri.t_bx, t_by: tri.t_by, t_bz: tri.t_bz, t_cx: mbc_x, t_cy: mbc_y, t_cz: mbc_z }, { t_ax: mca_x, t_ay: mca_y, t_az: mca_z, t_bx: mbc_x, t_by: mbc_y, t_bz: mbc_z, t_cx: tri.t_cx, t_cy: tri.t_cy, t_cz: tri.t_cz }, { t_ax: mab_x, t_ay: mab_y, t_az: mab_z, t_bx: mbc_x, t_by: mbc_y, t_bz: mbc_z, t_cx: mca_x, t_cy: mca_y, t_cz: mca_z }]
+	[IcoTri.{ t_ax: tri.t_ax, t_ay: tri.t_ay, t_az: tri.t_az, t_bx: mab_x, t_by: mab_y, t_bz: mab_z, t_cx: mca_x, t_cy: mca_y, t_cz: mca_z }, IcoTri.{ t_ax: mab_x, t_ay: mab_y, t_az: mab_z, t_bx: tri.t_bx, t_by: tri.t_by, t_bz: tri.t_bz, t_cx: mbc_x, t_cy: mbc_y, t_cz: mbc_z }, IcoTri.{ t_ax: mca_x, t_ay: mca_y, t_az: mca_z, t_bx: mbc_x, t_by: mbc_y, t_bz: mbc_z, t_cx: tri.t_cx, t_cy: tri.t_cy, t_cz: tri.t_cz }, IcoTri.{ t_ax: mab_x, t_ay: mab_y, t_az: mab_z, t_bx: mbc_x, t_by: mbc_y, t_bz: mbc_z, t_cx: mca_x, t_cy: mca_y, t_cz: mca_z }]
 })
 
 ico_midpoint : I64, I64, I64, I64, I64, I64, I64 -> List(I64)
 ico_midpoint = |ax, ay, az, bx, by, bz, r| ({
+	mx : I64
 	mx = I64.div_trunc_by((ax + bx), 2)
+	my : I64
 	my = I64.div_trunc_by((ay + by), 2)
+	mz : I64
 	mz = I64.div_trunc_by((az + bz), 2)
+	len : I64
 	len = MathLib.math_isqrt((((mx * mx) + (my * my)) + (mz * mz)))
 	(if (len == 0) { [0, r, 0] } else { [I64.div_trunc_by((mx * r), len), I64.div_trunc_by((my * r), len), I64.div_trunc_by((mz * r), len)] })
 })
 
 ico_to_mesh : List(IcoTri), I64 -> Mesh.Mesh
 ico_to_mesh = |tris, radius| ({
+	n : I64
 	n = U64.to_i64_wrap(List.len(tris))
 	pair = ico_emit_idx(tris, radius, [], [], 0, 0, n)
 	Mesh.mesh_new(list_at_pair_a(pair), list_at_pair_b(pair))
 })
 
 ico_emit_idx : List(IcoTri), I64, List(Mesh.Vertex), List(I64), I64, I64, I64 -> IcoPair
-ico_emit_idx = |tris, r, verts, indices, vi, i, n| (if (i >= n) { { ip_verts: verts, ip_indices: indices } } else { ({
+ico_emit_idx = |tris, r, verts, indices, vi, i, n| (if (i >= n) { IcoPair.{ ip_verts: verts, ip_indices: indices } } else { ({
 	tri = (List.get(tris, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 	va = ico_make_vert(tri.t_ax, tri.t_ay, tri.t_az, r)
 	vb = ico_make_vert(tri.t_bx, tri.t_by, tri.t_bz, r)
@@ -117,6 +144,7 @@ ico_emit_idx = |tris, r, verts, indices, vi, i, n| (if (i >= n) { { ip_verts: ve
 	fb = (List.get(fixed, I64.to_u64_wrap(1)) ?? crash("list-at out of range"))
 	fc = (List.get(fixed, I64.to_u64_wrap(2)) ?? crash("list-at out of range"))
 	new_verts = List.append(List.append(List.append(verts, fa), fb), fc)
+	new_indices : List(I64)
 	new_indices = List.append(List.append(List.append(indices, vi), (vi + 1)), (vi + 2))
 	ico_emit_idx(tris, r, new_verts, new_indices, (vi + 3), (i + 1), n)
 }) })
@@ -126,10 +154,15 @@ ico_fix_seam = |a, b, c| ({
 	pa = ico_fix_pole(a, b, c)
 	pb = ico_fix_pole(b, a, c)
 	pc = ico_fix_pole(c, a, b)
+	ua : I64
 	ua = pa.vu
+	ub : I64
 	ub = pb.vu
+	uc : I64
 	uc = pc.vu
+	max_u : I64
 	max_u = gc_max3(ua, ub, uc)
+	min_u : I64
 	min_u = gc_min3(ua, ub, uc)
 	(if ((max_u - min_u) > 500) { ({
 		fa = (if ((max_u - ua) > 500) { ico_wrap_u(pa) } else { pa })
@@ -141,8 +174,10 @@ ico_fix_seam = |a, b, c| ({
 
 ico_fix_pole : Mesh.Vertex, Mesh.Vertex, Mesh.Vertex -> Mesh.Vertex
 ico_fix_pole = |v, n1, n2| ({
+	any : I64
 	any = (if (v.vn_y > 950) { 1 } else { (if (v.vn_y < (-950)) { 1 } else { 0 }) })
 	(if (any == 1) { ({
+		avg_u : I64
 		avg_u = I64.div_trunc_by((n1.vu + n2.vu), 2)
 		Mesh.vertex(v.vp_x, v.vp_y, v.vp_z, v.vn_x, v.vn_y, v.vn_z, avg_u, v.vv, v.v_color)
 	}) } else { v })
@@ -165,43 +200,62 @@ list_at_pair_b = |p| p.ip_indices
 
 ico_make_vert : I64, I64, I64, I64 -> Mesh.Vertex
 ico_make_vert = |x, y, z, _r| ({
+	len : I64
 	len = MathLib.math_isqrt((((x * x) + (y * y)) + (z * z)))
+	nx : I64
 	nx = (if (len == 0) { 0 } else { I64.div_trunc_by((x * 1000), len) })
+	ny : I64
 	ny = (if (len == 0) { 1000 } else { I64.div_trunc_by((y * 1000), len) })
+	nz : I64
 	nz = (if (len == 0) { 0 } else { I64.div_trunc_by((z * 1000), len) })
+	lat_deg : I64
 	lat_deg = gc_asin_deg(ny)
+	lon_deg : I64
 	lon_deg = gc_atan2_deg(nz, nx)
+	u : I64
 	u = I64.div_trunc_by(((lon_deg + 180) * 1000), 360)
+	v : I64
 	v = I64.div_trunc_by(((lat_deg + 90) * 1000), 180)
+	color : I64
 	color = earth_color(lat_deg, lon_deg)
 	Mesh.vertex(x, y, z, nx, ny, nz, u, v, color)
 })
 
 gc_asin_deg : I64 -> I64
 gc_asin_deg = |x| ({
+	clamped : I64
 	clamped = gc_clamp(x, (-1000), 1000)
+	cos_part : I64
 	cos_part = MathLib.math_isqrt((1000000 - (clamped * clamped)))
+	mrad : I64
 	mrad = gc_atan2_mrad(clamped, cos_part)
 	I64.div_trunc_by((mrad * 180), 3141)
 })
 
 gc_atan2_deg : I64, I64 -> I64
 gc_atan2_deg = |y, x| ({
+	mrad : I64
 	mrad = gc_atan2_mrad(y, x)
 	I64.div_trunc_by((mrad * 180), 3141)
 })
 
 gc_atan2_mrad : I64, I64 -> I64
 gc_atan2_mrad = |y, x| (if (x == 0) { (if (y > 0) { 1571 } else { (if (y < 0) { (-1571) } else { 0 }) }) } else { ({
+	r : I64
 	r = MathLib.math_isqrt(((x * x) + (y * y)))
+	denom : I64
 	denom = (r + x)
 	(if (denom <= 0) { (if (y >= 0) { 3141 } else { (-3141) }) } else { ({
+		ay : I64
 		ay = (if (y < 0) { (0 - y) } else { y })
 		(if (denom >= ay) { ({
+			t : I64
 			t = I64.div_trunc_by((y * 1000), (denom + 1))
 			(2 * gc_atan_poly(t))
 		}) } else { ({
+			inv : I64
 			inv = I64.div_trunc_by((denom * 1000), (ay + 1))
+			a : I64
 			a = (1571 - gc_atan_poly(inv))
 			(if (y >= 0) { (2 * a) } else { (0 - (2 * a)) })
 		}) })
@@ -210,16 +264,22 @@ gc_atan2_mrad = |y, x| (if (x == 0) { (if (y > 0) { 1571 } else { (if (y < 0) { 
 
 gc_atan_poly : I64 -> I64
 gc_atan_poly = |t| ({
+	neg : Bool
 	neg = (t < 0)
+	at : I64
 	at = (if neg { (0 - t) } else { t })
+	t2 : I64
 	t2 = I64.div_trunc_by((at * at), 1000)
+	result : I64
 	result = I64.div_trunc_by((at * (15000 + (4 * t2))), (15000 + (9 * t2)))
 	(if neg { (0 - result) } else { result })
 })
 
 ico_base_tris : I64 -> List(IcoTri)
 ico_base_tris = |r| ({
+	tr : F64
 	tr = I64.to_f64(I64.div_trunc_by((851 * r), 1000))
+	orad : F64
 	orad = I64.to_f64(I64.div_trunc_by((526 * r), 1000))
 	v0 = Quaternion.vec3_new((-orad), tr, 0.0)
 	v1 = Quaternion.vec3_new(orad, tr, 0.0)
@@ -237,59 +297,79 @@ ico_base_tris = |r| ({
 })
 
 ico_tri_from : Quaternion.Vec3, Quaternion.Vec3, Quaternion.Vec3 -> IcoTri
-ico_tri_from = |a, b, c| { t_ax: F64.to_i64_wrap(a.vx), t_ay: F64.to_i64_wrap(a.vy), t_az: F64.to_i64_wrap(a.vz), t_bx: F64.to_i64_wrap(b.vx), t_by: F64.to_i64_wrap(b.vy), t_bz: F64.to_i64_wrap(b.vz), t_cx: F64.to_i64_wrap(c.vx), t_cy: F64.to_i64_wrap(c.vy), t_cz: F64.to_i64_wrap(c.vz) }
+ico_tri_from = |a, b, c| IcoTri.{ t_ax: F64.to_i64_wrap(a.vx), t_ay: F64.to_i64_wrap(a.vy), t_az: F64.to_i64_wrap(a.vz), t_bx: F64.to_i64_wrap(b.vx), t_by: F64.to_i64_wrap(b.vy), t_bz: F64.to_i64_wrap(b.vz), t_cx: F64.to_i64_wrap(c.vx), t_cy: F64.to_i64_wrap(c.vy), t_cz: F64.to_i64_wrap(c.vz) }
 
 earth_color : I64, I64 -> I64
 earth_color = |lat, lon| ({
+	base : I64
 	base = (if (lat > 72) { 15792383 } else { (if (lat < (-67)) { 15529215 } else { (if (lat > 65) { 14740730 } else { (if (lat < (-60)) { 14215416 } else { (if earth_is_land(lat, lon) { earth_land_color(lat, lon) } else { earth_ocean_color(lat) }) }) }) }) })
+	cloud : I64
 	cloud = cloud_cover(lat, lon)
 	(if (cloud > 0) { cloud_blend(base, cloud) } else { base })
 })
 
 cloud_cover : I64, I64 -> I64
 cloud_cover = |lat, lon| ({
+	h1 : I64
 	h1 = gc_hash(I64.div_trunc_by(lat, 6), I64.div_trunc_by(lon, 10))
+	h2 : I64
 	h2 = gc_hash((I64.div_trunc_by(lat, 14) + 37), (I64.div_trunc_by(lon, 20) + 53))
+	h3 : I64
 	h3 = gc_hash((I64.div_trunc_by(lat, 3) + 71), (I64.div_trunc_by(lon, 5) + 97))
+	band : I64
 	band = gc_cloud_band(lat)
+	noise : I64
 	noise = I64.div_trunc_by(((h1 + h2) + h3), 3)
+	cov : I64
 	cov = I64.div_trunc_by((noise * band), 255)
 	(if (cov > 500) { gc_clamp(I64.div_trunc_by(((cov - 500) * 255), 500), 0, 200) } else { 0 })
 })
 
 gc_cloud_band : I64 -> I64
 gc_cloud_band = |lat| ({
+	abs_lat : I64
 	abs_lat = (if (lat < 0) { (0 - lat) } else { lat })
 	(if (abs_lat < 10) { 900 } else { (if (abs_lat < 20) { 500 } else { (if (abs_lat < 35) { 700 } else { (if (abs_lat < 55) { 800 } else { 600 }) }) }) })
 })
 
 gc_hash : I64, I64 -> I64
 gc_hash = |a, b| ({
+	x : I64
 	x = ((((a * 12289) + (b * 51349)) + 32749) * 65537)
+	y : I64
 	y = (if (x < 0) { (0 - x) } else { x })
+	z : I64
 	z = I64.div_trunc_by(y, 256)
 	(z - (I64.div_trunc_by(z, 256) * 256))
 })
 
 cloud_blend : I64, I64 -> I64
 cloud_blend = |base, amount| ({
+	br : I64
 	br = I64.div_trunc_by(base, 65536)
+	bg : I64
 	bg = (I64.div_trunc_by(base, 256) - (br * 256))
+	bb : I64
 	bb = (base - (I64.div_trunc_by(base, 256) * 256))
+	r : I64
 	r = gc_clamp((br + I64.div_trunc_by(((255 - br) * amount), 255)), 0, 255)
+	g : I64
 	g = gc_clamp((bg + I64.div_trunc_by(((255 - bg) * amount), 255)), 0, 255)
+	b : I64
 	b = gc_clamp((bb + I64.div_trunc_by(((255 - bb) * amount), 255)), 0, 255)
 	(((r * 65536) + (g * 256)) + b)
 })
 
 earth_land_color : I64, I64 -> I64
 earth_land_color = |lat, _lon| ({
+	abs_lat : I64
 	abs_lat = (if (lat < 0) { (0 - lat) } else { lat })
 	(if (abs_lat > 58) { 10535064 } else { (if (abs_lat > 48) { 4888632 } else { (if (abs_lat > 38) { 6990928 } else { (if (abs_lat > 25) { 13152360 } else { (if (abs_lat > 15) { 6336584 } else { 3708976 }) }) }) }) })
 })
 
 earth_ocean_color : I64 -> I64
 earth_ocean_color = |lat| ({
+	abs_lat : I64
 	abs_lat = (if (lat < 0) { (0 - lat) } else { lat })
 	(if (abs_lat > 55) { 3698872 } else { (if (abs_lat > 35) { 2119864 } else { 1593536 }) })
 })
@@ -337,8 +417,8 @@ globe_draw! = |machine, cmd, sphere, vp, light, eye| ({
 	(machine3, _wlz) = Machine.port_out_32!(machine2, 1030, globe_milli(light.vz))
 	(machine4, _wex) = Machine.port_out_32!(machine3, 1031, globe_milli(light.vx))
 	({
-		(machine5, machine__2) = gtris!(machine4, sphere, vp, light, eye, cmd, 0, (Mesh.mesh_triangle_count(sphere) * 3), 0)
-		globe_fire!(machine5, machine__2)
+		(machine5, machine__1) = gtris!(machine4, sphere, vp, light, eye, cmd, 0, (Mesh.mesh_triangle_count(sphere) * 3), 0)
+		globe_fire!(machine5, machine__1)
 	})
 })
 
@@ -357,31 +437,36 @@ gtris! = |machine, mesh, vp, light, eye, cmd, i, n, tri_idx| (if (i >= n) { (mac
 	p0 = gproj(v0, vp)
 	p1 = gproj(v1, vp)
 	p2 = gproj(v2, vp)
+	area : I64
 	area = (((p1.gp_sx - p0.gp_sx) * (p2.gp_sy - p0.gp_sy)) - ((p1.gp_sy - p0.gp_sy) * (p2.gp_sx - p0.gp_sx)))
 	(if (area >= 0) { gtris!(machine, mesh, vp, light, eye, cmd, (i + 3), n, tri_idx) } else { ({
+		off : I64
 		off = (tri_idx * 72)
+		c0 : I64
 		c0 = glit_color(v0, light)
+		c1 : I64
 		c1 = glit_color(v1, light)
+		c2 : I64
 		c2 = glit_color(v2, light)
-		(machine1, machine__3) = Machine.store!(machine, cmd, off, p0.gp_sx, 4)
-		(machine2, machine__4) = Machine.store!(machine1, cmd, (off + 4), p0.gp_sy, 4)
-		(machine3, machine__5) = Machine.store!(machine2, cmd, (off + 8), p1.gp_sx, 4)
-		(machine4, machine__6) = Machine.store!(machine3, cmd, (off + 12), p1.gp_sy, 4)
-		(machine5, machine__7) = Machine.store!(machine4, cmd, (off + 16), p2.gp_sx, 4)
-		(machine6, machine__8) = Machine.store!(machine5, cmd, (off + 20), p2.gp_sy, 4)
-		(machine7, machine__9) = Machine.store!(machine6, cmd, (off + 24), c0, 4)
-		(machine8, machine__10) = Machine.store!(machine7, cmd, (off + 28), c1, 4)
-		(machine9, machine__11) = Machine.store!(machine8, cmd, (off + 32), c2, 4)
-		(machine10, machine__12) = Machine.store!(machine9, cmd, (off + 36), p0.gp_depth, 4)
-		(machine11, machine__13) = Machine.store!(machine10, cmd, (off + 40), p1.gp_depth, 4)
-		(machine12, machine__14) = Machine.store!(machine11, cmd, (off + 44), p2.gp_depth, 4)
-		(machine13, machine__15) = Machine.store!(machine12, cmd, (off + 48), v0.vu, 4)
-		(machine14, machine__16) = Machine.store!(machine13, cmd, (off + 52), v0.vv, 4)
-		(machine15, machine__17) = Machine.store!(machine14, cmd, (off + 56), v1.vu, 4)
-		(machine16, machine__18) = Machine.store!(machine15, cmd, (off + 60), v1.vv, 4)
-		(machine17, machine__19) = Machine.store!(machine16, cmd, (off + 64), v2.vu, 4)
-		(machine18, machine__20) = Machine.store!(machine17, cmd, (off + 68), v2.vv, 4)
-		_w = (((((((((((((((((machine__3 + machine__4) + machine__5) + machine__6) + machine__7) + machine__8) + machine__9) + machine__10) + machine__11) + machine__12) + machine__13) + machine__14) + machine__15) + machine__16) + machine__17) + machine__18) + machine__19) + machine__20)
+		(machine1, machine__1) = Machine.store!(machine, cmd, off, p0.gp_sx, 4)
+		(machine2, machine__2) = Machine.store!(machine1, cmd, (off + 4), p0.gp_sy, 4)
+		(machine3, machine__3) = Machine.store!(machine2, cmd, (off + 8), p1.gp_sx, 4)
+		(machine4, machine__4) = Machine.store!(machine3, cmd, (off + 12), p1.gp_sy, 4)
+		(machine5, machine__5) = Machine.store!(machine4, cmd, (off + 16), p2.gp_sx, 4)
+		(machine6, machine__6) = Machine.store!(machine5, cmd, (off + 20), p2.gp_sy, 4)
+		(machine7, machine__7) = Machine.store!(machine6, cmd, (off + 24), c0, 4)
+		(machine8, machine__8) = Machine.store!(machine7, cmd, (off + 28), c1, 4)
+		(machine9, machine__9) = Machine.store!(machine8, cmd, (off + 32), c2, 4)
+		(machine10, machine__10) = Machine.store!(machine9, cmd, (off + 36), p0.gp_depth, 4)
+		(machine11, machine__11) = Machine.store!(machine10, cmd, (off + 40), p1.gp_depth, 4)
+		(machine12, machine__12) = Machine.store!(machine11, cmd, (off + 44), p2.gp_depth, 4)
+		(machine13, machine__13) = Machine.store!(machine12, cmd, (off + 48), v0.vu, 4)
+		(machine14, machine__14) = Machine.store!(machine13, cmd, (off + 52), v0.vv, 4)
+		(machine15, machine__15) = Machine.store!(machine14, cmd, (off + 56), v1.vu, 4)
+		(machine16, machine__16) = Machine.store!(machine15, cmd, (off + 60), v1.vv, 4)
+		(machine17, machine__17) = Machine.store!(machine16, cmd, (off + 64), v2.vu, 4)
+		(machine18, machine__18) = Machine.store!(machine17, cmd, (off + 68), v2.vv, 4)
+		_w = (((((((((((((((((machine__1 + machine__2) + machine__3) + machine__4) + machine__5) + machine__6) + machine__7) + machine__8) + machine__9) + machine__10) + machine__11) + machine__12) + machine__13) + machine__14) + machine__15) + machine__16) + machine__17) + machine__18)
 		gtris!(machine18, mesh, vp, light, eye, cmd, (i + 3), n, (tri_idx + 1))
 	}) })
 }) }) })
@@ -394,18 +479,23 @@ glit_color = |_v, _light| 16777215
 
 gproj : Mesh.Vertex, Matrix4.Mat4 -> GProj
 gproj = |v, mvp| ({
-	clip = Matrix4.mat4_transform_vec4(mvp, { v4x: I64.to_f64(v.vp_x), v4y: I64.to_f64(v.vp_y), v4z: I64.to_f64(v.vp_z), v4w: 1.0 })
-	(if (clip.v4w <= 0.0) { { gp_sx: (-9999), gp_sy: (-9999), gp_depth: 999999 } } else { ({
+	clip = Matrix4.mat4_transform_vec4(mvp, Matrix4.Vec4.{ v4x: I64.to_f64(v.vp_x), v4y: I64.to_f64(v.vp_y), v4z: I64.to_f64(v.vp_z), v4w: 1.0 })
+	(if (clip.v4w <= 0.0) { GProj.{ gp_sx: (-9999), gp_sy: (-9999), gp_depth: 999999 } } else { ({
+		ndc_x : F64
 		ndc_x = (clip.v4x / clip.v4w)
+		ndc_y : F64
 		ndc_y = (clip.v4y / clip.v4w)
+		ndc_z : F64
 		ndc_z = (clip.v4z / clip.v4w)
+		half_w : F64
 		half_w = I64.to_f64(I64.div_trunc_by(sw, 2))
+		half_h : F64
 		half_h = I64.to_f64(I64.div_trunc_by(sh, 2))
-		{ gp_sx: F64.to_i64_wrap((half_w + (ndc_x * half_w))), gp_sy: F64.to_i64_wrap((half_h - (ndc_y * half_h))), gp_depth: F64.to_i64_wrap(((ndc_z + 1.0) * 500000.0)) }
+		GProj.{ gp_sx: F64.to_i64_wrap((half_w + (ndc_x * half_w))), gp_sy: F64.to_i64_wrap((half_h - (ndc_y * half_h))), gp_depth: F64.to_i64_wrap(((ndc_z + 1.0) * 500000.0)) }
 	}) })
 })
 
-globe_loop! : Machine.Machine, I64, Mesh.Mesh, I64, I64, I64, I64 => (Machine.Machine, Str)
+globe_loop! : Machine.Machine, I64, Mesh.Mesh, I64, I64, I64, I64 => (Machine.Machine, CceText)
 globe_loop! = |machine, cmd, sphere, yaw, pitch, dist, frame| ({
 	(machine1, _dummy) = Machine.port_in_byte!(machine, 96)
 	({
@@ -417,33 +507,41 @@ globe_loop! = |machine, cmd, sphere, yaw, pitch, dist, frame| ({
 		(machine7, _mc1) = Machine.store!(machine6, mouse_addr, 1, 0, 1)
 		(machine8, _mc2) = Machine.store!(machine7, mouse_addr, 2, 0, 1)
 		(machine9, _ack) = Machine.store!(machine8, kb_addr, 0, 0, 1)
+		mouse_dx : I64
 		mouse_dx = (if (mdx > 127) { (mdx - 256) } else { mdx })
+		mouse_dy : I64
 		mouse_dy = (if (mdy > 127) { (mdy - 256) } else { mdy })
+		dragging : I64
 		dragging = (I64.div_trunc_by(mflags, 1) - (I64.div_trunc_by(mflags, 2) * 2))
+		yaw2 : I64
 		yaw2 = (if (dragging == 1) { (yaw - (mouse_dx * 8)) } else { (yaw + 3) })
+		pitch2 : I64
 		pitch2 = (if (dragging == 1) { gc_clamp((pitch + (mouse_dy * 8)), (-1400), 1400) } else { pitch })
 		(if (sc == 16) { (machine9, "quit") } else { (if (sc == 1) { (machine9, "quit") } else { (if (sc == 18) { globe_regen!(machine9, cmd, sphere, PkEarth, 42, yaw2, pitch2, dist, frame) } else { (if (sc == 50) { globe_regen!(machine9, cmd, sphere, PkMars, 77, yaw2, pitch2, dist, frame) } else { (if (sc == 19) { globe_regen!(machine9, cmd, sphere, PkRandom, ((frame * 7) + 1337), yaw2, pitch2, dist, frame) } else { ({
+			y3 : I64
 			y3 = (if (sc == 75) { (yaw2 - 120) } else { (if (sc == 77) { (yaw2 + 120) } else { yaw2 }) })
+			p2 : I64
 			p2 = (if (sc == 72) { gc_clamp((pitch2 + 60), (-1400), 1400) } else { (if (sc == 80) { gc_clamp((pitch2 - 60), (-1400), 1400) } else { pitch2 }) })
+			d2 : I64
 			d2 = (if (sc == 78) { gc_clamp((dist - 300), 4000, 25000) } else { (if (sc == 74) { gc_clamp((dist + 300), 4000, 25000) } else { dist }) })
 			globe_step!(machine9, cmd, sphere, y3, p2, d2, frame)
 		}) }) }) }) }) })
 	})
 })
 
-globe_regen! : Machine.Machine, I64, Mesh.Mesh, TerrainGen.PlanetKind, I64, I64, I64, I64, I64 => (Machine.Machine, Str)
+globe_regen! : Machine.Machine, I64, Mesh.Mesh, TerrainGen.PlanetKind, I64, I64, I64, I64, I64 => (Machine.Machine, CceText)
 globe_regen! = |machine, cmd, sphere, kind, seed, yaw, pitch, dist, frame| ({
 	(machine1, _gen) = TerrainGen.tg_generate!(machine, kind, seed)
 	globe_loop!(machine1, cmd, sphere, yaw, pitch, dist, (frame + 1))
 })
 
-globe_step! : Machine.Machine, I64, Mesh.Mesh, I64, I64, I64, I64 => (Machine.Machine, Str)
+globe_step! : Machine.Machine, I64, Mesh.Mesh, I64, I64, I64, I64 => (Machine.Machine, CceText)
 globe_step! = |machine, cmd, sphere, yaw, pitch, dist, frame| ({
 	(machine1, hp) = Machine.mark(machine)
 	globe_step_done!(machine1, cmd, sphere, yaw, pitch, dist, frame, hp)
 })
 
-globe_step_done! : Machine.Machine, I64, Mesh.Mesh, I64, I64, I64, I64, I64 => (Machine.Machine, Str)
+globe_step_done! : Machine.Machine, I64, Mesh.Mesh, I64, I64, I64, I64, I64 => (Machine.Machine, CceText)
 globe_step_done! = |machine, cmd, sphere, yaw, pitch, dist, frame, hp| ({
 	(machine1, _w) = globe_frame!(machine, cmd, sphere, yaw, pitch, dist)
 	({
@@ -454,9 +552,13 @@ globe_step_done! = |machine, cmd, sphere, yaw, pitch, dist, frame, hp| ({
 
 gorbit : I64, I64, I64 -> Scene3D.Camera3D
 gorbit = |yaw, pitch, dist| ({
+	sy : I64
 	sy = gc_sin(gc_wrap(yaw))
+	cy : I64
 	cy = gc_cos(gc_wrap(yaw))
+	sp : I64
 	sp = gc_sin(gc_wrap(pitch))
+	cp : I64
 	cp = gc_cos(gc_wrap(pitch))
 	Scene3D.camera3d_new(Quaternion.vec3_new(I64.to_f64(I64.div_trunc_by(((sy * cp) * dist), 1000000)), I64.to_f64(I64.div_trunc_by((sp * dist), 1000)), I64.to_f64(I64.div_trunc_by(((cy * cp) * dist), 1000000))), Quaternion.vec3_zero, 0.785)
 })
@@ -466,6 +568,7 @@ gnorm = |v| Matrix4.mat4_v3_normalize(v)
 
 gc_sin : I64 -> I64
 gc_sin = |raw| ({
+	a : I64
 	a = gc_wrap(raw)
 	(if (a <= 1570) { gc_sin_core(a) } else { (if (a <= 3141) { gc_sin_core((3141 - a)) } else { (if (a <= 4712) { (0 - gc_sin_core((a - 3141))) } else { (0 - gc_sin_core((6283 - a))) }) }) })
 })
@@ -475,14 +578,18 @@ gc_cos = |raw| gc_sin((raw + 1570))
 
 gc_sin_core : I64 -> I64
 gc_sin_core = |x| ({
+	x2 : I64
 	x2 = I64.div_trunc_by((x * x), 1000)
+	x3 : I64
 	x3 = I64.div_trunc_by((x2 * x), 1000)
+	x5 : I64
 	x5 = I64.div_trunc_by((x3 * x2), 1000)
 	((x - I64.div_trunc_by(x3, 6)) + I64.div_trunc_by(x5, 120))
 })
 
 gc_wrap : I64 -> I64
 gc_wrap = |a| ({
+	m : I64
 	m = (a - (I64.div_trunc_by(a, 6283) * 6283))
 	(if (m < 0) { (m + 6283) } else { m })
 })
@@ -490,13 +597,22 @@ gc_wrap = |a| ({
 gc_clamp : I64, I64, I64 -> I64
 gc_clamp = |v, lo, hi| (if (v < lo) { lo } else { (if (v > hi) { hi } else { v }) })
 
+eq_IcoTri : IcoTri, IcoTri -> Bool
+eq_IcoTri = |ex, ey| (((((((((ex.t_ax == ey.t_ax) and (ex.t_ay == ey.t_ay)) and (ex.t_az == ey.t_az)) and (ex.t_bx == ey.t_bx)) and (ex.t_by == ey.t_by)) and (ex.t_bz == ey.t_bz)) and (ex.t_cx == ey.t_cx)) and (ex.t_cy == ey.t_cy)) and (ex.t_cz == ey.t_cz))
+
+eq_IcoPair : IcoPair, IcoPair -> Bool
+eq_IcoPair = |ex, ey| ((ex.ip_verts == ey.ip_verts) and (ex.ip_indices == ey.ip_indices))
+
+eq_GProj : GProj, GProj -> Bool
+eq_GProj = |ex, ey| (((ex.gp_sx == ey.gp_sx) and (ex.gp_sy == ey.gp_sy)) and (ex.gp_depth == ey.gp_depth))
+
 # --- Entry ---
 
 main! = |args| {
 	machine = Machine.boot!(args, ["Console", "Device.Port", "Gpu.Compute", "Gpu.Memory"])
 	(machine1, machine__1) = globe_main!(machine, gpu_cmd)
 	result = machine__1
-	line!(result)
+	line!(CceText.printed(result))
 	Machine.halt!(machine1)
 	Ok({})
 }

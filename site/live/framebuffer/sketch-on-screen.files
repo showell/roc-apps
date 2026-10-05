@@ -1,9 +1,8 @@
 SketchOnScreen.roc
 Bresenham.roc
-Geometry.roc
+CceChar.roc
+CceText.roc
 MathLib.roc
-Prelude.roc
-Quaternion.roc
 Rasterizer.roc
 Sprite.roc
 Mem.roc

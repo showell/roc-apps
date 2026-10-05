@@ -6,6 +6,7 @@ echo! = |msg| Echo.line!(msg)
 
 # GpuGaugeClamp -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
 import BoxModel
+import CceText
 import GpuRender
 import Machine
 import Theme
@@ -25,14 +26,14 @@ fb_h = 480
 
 scan_row_band! : Machine.Machine, I64, I64, I64, I64, I64 => (Machine.Machine, I64)
 scan_row_band! = |machine, y, x, xend, target, acc| (if (x >= xend) { (machine, acc) } else { ({
-	(machine1, machine__43) = Machine.load!(machine, fb_base, (((y * fb_w) + x) * 4), 4)
-	scan_row_band!(machine1, y, (x + 4), xend, target, (acc + (if (machine__43 == target) { 1 } else { 0 })))
+	(machine1, machine__1) = Machine.load!(machine, fb_base, (((y * fb_w) + x) * 4), 4)
+	scan_row_band!(machine1, y, (x + 4), xend, target, (acc + (if (machine__1 == target) { 1 } else { 0 })))
 }) })
 
 scan_band! : Machine.Machine, I64, I64, I64, I64, I64 => (Machine.Machine, I64)
 scan_band! = |machine, y, x0, x1, target, acc| (if (y >= fb_h) { (machine, acc) } else { ({
-	(machine1, machine__44) = scan_row_band!(machine, y, x0, x1, target, 0)
-	scan_band!(machine1, (y + 1), x0, x1, target, (acc + machine__44))
+	(machine1, machine__1) = scan_row_band!(machine, y, x0, x1, target, 0)
+	scan_band!(machine1, (y + 1), x0, x1, target, (acc + machine__1))
 }) })
 
 probe_tree : Widget.WidgetNode
@@ -42,29 +43,30 @@ probe_tree = Widget.widget_panel("root", DirRow, 0, [Widget.widget_set_flex(Widg
 
 main! = |args| {
 	machine = Machine.boot!(args, ["Gpu", "Console"])
-	(machine7, machine__48) = ({
+	(machine7, machine__4) = ({
 		th = Theme.theme_terminal
 		pal = th.th_palette
 		laid = Widget.widget_layout(probe_tree, th, BoxModel.layout_rect(0, 0, fb_w, fb_h))
 		g = (List.get(laid.wn_children, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))
 		b = g.wn_bounds
+		gright : I64
 		gright = (b.lr_x + b.lr_w)
 		({
 			(machine1, _c1) = GpuRender.gr_clear!(machine, pal.pal_bg)
 			(machine2, _c2) = GpuRender.gr_clear_depth!(machine1)
 			(machine4, _n) = ({
-				(machine3, machine__45) = GpuRender.gr_render_tree!(machine2, GpuRender.gf_new(4096), laid, th, GpuRender.gr_depth_scene)
-				GpuRender.gr_flush!(machine3, machine__45.gf_idx)
+				(machine3, machine__1) = GpuRender.gr_render_tree!(machine2, GpuRender.gf_new(4096), laid, th, GpuRender.gr_depth_scene)
+				GpuRender.gr_flush!(machine3, machine__1.gf_idx)
 			})
-			(machine5, machine__46) = scan_band!(machine4, 0, b.lr_x, gright, pal.pal_primary, 0)
-			_ = line!(Str.concat("inside: ", I64.to_str((if (machine__46 > 0) { 1 } else { 0 }))))
+			(machine5, machine__2) = scan_band!(machine4, 0, b.lr_x, gright, pal.pal_primary, 0)
+			_ = line!(CceText.printed(CceText.concat("inside: ", CceText.show_int((if (machine__2 > 0) { 1 } else { 0 })))))
 			({
-				(machine6, machine__47) = scan_band!(machine5, 0, (gright + 4), (fb_w - 8), pal.pal_primary, 0)
-				(machine6, line!(Str.concat("outside: ", I64.to_str((if (machine__47 > 0) { 1 } else { 0 })))))
+				(machine6, machine__3) = scan_band!(machine5, 0, (gright + 4), (fb_w - 8), pal.pal_primary, 0)
+				(machine6, line!(CceText.printed(CceText.concat("outside: ", CceText.show_int((if (machine__3 > 0) { 1 } else { 0 }))))))
 			})
 		})
 	})
-	machine__48
+	machine__4
 	Machine.halt!(machine7)
 	Ok({})
 }

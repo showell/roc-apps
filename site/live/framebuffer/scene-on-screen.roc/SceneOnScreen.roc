@@ -5,6 +5,7 @@ import pf.Echo
 echo! = |msg| Echo.line!(msg)
 
 # SceneOnScreen -- emitted from Codex by rocemit (rust-codex-compiler). Do not edit.
+import CceText
 import Color
 import Material
 import Mem
@@ -45,21 +46,21 @@ demo_scene = ({
 
 drawn_cols! : Mem.Mem, I64, I64, I64, I64, I64 => (Mem.Mem, I64)
 drawn_cols! = |mem, stride, w, y, x, acc| (if (x >= w) { (mem, acc) } else { ({
-	(mem1, mem__21) = Mem.load!(mem, fb_base, (((y * stride) + x) * 4), 4)
-	(if (mem__21 == sky) { drawn_cols!(mem1, stride, w, y, (x + 1), acc) } else { drawn_cols!(mem1, stride, w, y, (x + 1), (acc + 1)) })
+	(mem1, mem__1) = Mem.load!(mem, fb_base, (((y * stride) + x) * 4), 4)
+	(if (mem__1 == sky) { drawn_cols!(mem1, stride, w, y, (x + 1), acc) } else { drawn_cols!(mem1, stride, w, y, (x + 1), (acc + 1)) })
 }) })
 
 drawn_rows! : Mem.Mem, I64, I64, I64, I64, I64 => (Mem.Mem, I64)
 drawn_rows! = |mem, stride, w, h, y, acc| (if (y >= h) { (mem, acc) } else { ({
-	(mem1, mem__22) = drawn_cols!(mem, stride, w, y, 0, acc)
-	drawn_rows!(mem1, stride, w, h, (y + 1), mem__22)
+	(mem1, mem__1) = drawn_cols!(mem, stride, w, y, 0, acc)
+	drawn_rows!(mem1, stride, w, h, (y + 1), mem__1)
 }) })
 
 # --- Entry ---
 
 main! = |args| {
 	mem = Mem.new(U64.to_i64_wrap(List.len(args)))
-	(_mem7, mem__23) = ({
+	(_mem7, mem__1) = ({
 		(mem1, w) = Mem.load!(mem, cell_width, 0, 4)
 		(mem2, h) = Mem.load!(mem1, cell_height, 0, 4)
 		(mem3, stride) = Mem.load!(mem2, cell_stride, 0, 4)
@@ -67,10 +68,10 @@ main! = |args| {
 		(mem5, _d) = Renderer3D.r3d_render_into!(mem4, tgt, demo_scene)
 		(mem6, drawn) = drawn_rows!(mem5, stride, w, h, 0, 0)
 		({
-			_ = line!(Str.concat(Str.concat(Str.concat(Str.concat(Str.concat("screen : ", I64.to_str(w)), " x "), I64.to_str(h)), ", stride "), I64.to_str(stride)))
-			(mem6, line!(Str.concat(Str.concat(Str.concat(Str.concat("drawn  : ", I64.to_str(drawn)), " of "), I64.to_str((w * h))), " pixels")))
+			_ = line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat(CceText.concat(CceText.concat("screen : ", CceText.show_int(w)), " x "), CceText.show_int(h)), ", stride "), CceText.show_int(stride))))
+			(mem6, line!(CceText.printed(CceText.concat(CceText.concat(CceText.concat(CceText.concat("drawn  : ", CceText.show_int(drawn)), " of "), CceText.show_int((w * h))), " pixels"))))
 		})
 	})
-	mem__23
+	mem__1
 	Ok({})
 }
