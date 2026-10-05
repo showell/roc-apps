@@ -1,8 +1,8 @@
-published 2026-09-15T16:24:28Z
-roc nightly-2026-09-11-793f9d8
-roc-apps 96a2aa0
-rocemit fdd45bd
-cobblestone 7b9235e7 u61-candidate
-sha256 d752e5496807a30f  94551 bytes  2048.wasm
-sha256 ddec3e881baced8b  128159 bytes  klondike.wasm
-sha256 f60472d96e25589f  55138 bytes  minesweeper.wasm
+published 2026-10-05T10:43:53Z
+roc nightly-2026-09-19-d025939
+roc-apps bb8f990
+rocemit ad9a0e7
+cobblestone e7c7a6f3 
+sha256 c3f588e060b5c775  74604 bytes  2048.wasm
+sha256 ac63b40a0e5c0e5c  124453 bytes  klondike.wasm
+sha256 cc36dc6bc4c21ba0  61900 bytes  minesweeper.wasm
