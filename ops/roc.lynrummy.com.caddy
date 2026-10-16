@@ -8,7 +8,12 @@
 # downloads nothing. Cross-origin isolation as on dev and staging, for the
 # framebuffer page's SharedArrayBuffer. The security headers are
 # lynrummy.com's.
+#
+# Every request is logged to /var/log/caddy/roc-access.log by the
+# `access_log` snippet that angry-gopher's deploy/Caddyfile (prod's
+# /etc/caddy/Caddyfile) defines for every site on prod (metal-vmm QUEUE 221).
 roc.lynrummy.com {
+	import access_log roc
 	root * /srv/roc-site
 	encode zstd gzip
 	header {

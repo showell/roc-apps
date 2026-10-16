@@ -12,7 +12,8 @@
 #    rsync --delete, and proves the copy verbatim: every file's sha256 on prod
 #    must equal staging's, and no file may be missing or extra.
 # 3. Installs ops/roc.lynrummy.com.caddy in /etc/caddy/sites/ when it differs
-#    from prod's copy. Caddy validates the whole config before the reload, and
+#    from prod's copy, its access log (/var/log/caddy/roc-access.log) made
+#    Caddy's first. Caddy validates the whole config before the reload, and
 #    the old block goes back if the new one fails.
 # 4. The landing page and a module must answer over HTTPS, and the landing
 #    page must be staging's byte for byte.
@@ -29,6 +30,9 @@ ip="$(dig +short @1.1.1.1 A roc.lynrummy.com | tail -1)"
 [ "$ip" = "$IP" ] || { echo "roc.lynrummy.com resolves to '$ip', not $IP; the DNS record comes first"; exit 1; }
 [ -z "$(git -C "$REPO" status --porcelain -- site/live "ops/$BLOCK")" ] || { echo "site/live/ or ops/$BLOCK has uncommitted changes"; exit 1; }
 ssh "$HOST" "grep -qxF 'import /etc/caddy/sites/*.caddy' /etc/caddy/Caddyfile" || { echo "prod's Caddyfile does not import /etc/caddy/sites/*.caddy"; exit 1; }
+# The site block imports `access_log` (metal-vmm QUEUE 221), which prod's
+# Caddyfile, angry-gopher's deploy/Caddyfile, defines.
+ssh "$HOST" "grep -q '^(access_log) {' /etc/caddy/Caddyfile" || { echo "prod's Caddyfile does not define the access_log snippet ops/$BLOCK imports: install angry-gopher's deploy/Caddyfile first"; exit 1; }
 git -C "$REPO" push -q
 
 echo "copying site/live/ at $(git -C "$REPO" log -1 --format=%h -- site/live) to $HOST:$DIR/"
@@ -47,6 +51,9 @@ else
     scp -q "$REPO/ops/$BLOCK" "$HOST:/tmp/$BLOCK"
     ssh "$HOST" "set -e
         sudo install -d -m 755 /etc/caddy/sites
+        # The block's access log, Caddy's before validate: validate runs as
+        # root and would make it root's, and the reload would then fail.
+        [ -f /var/log/caddy/roc-access.log ] || sudo install -o caddy -g caddy -m 640 /dev/null /var/log/caddy/roc-access.log
         [ -f /etc/caddy/sites/$BLOCK ] && sudo cp /etc/caddy/sites/$BLOCK /tmp/$BLOCK.old || rm -f /tmp/$BLOCK.old
         sudo install -m 644 /tmp/$BLOCK /etc/caddy/sites/$BLOCK
         if ! sudo caddy validate --adapter caddyfile --config /etc/caddy/Caddyfile >/tmp/$BLOCK.validate 2>&1; then
