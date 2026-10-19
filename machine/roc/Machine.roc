@@ -76,6 +76,8 @@ Machine :: [].{
 		hpet : MachineHpet.Hpet,
 		# -board-mmio: RAM behind the three board peripheral windows.
 		board_mmio : Bool,
+		# XSAVE and AVX, which codex-vm gives the guest unless -no-avx.
+		avx : Bool,
 		# The keystrokes a test types (its .keys), in the machine's clock, and
 		# how many have been delivered.
 		timeline : List({ at : U64, code : U8 }),
@@ -113,7 +115,7 @@ Machine :: [].{
 	vacant : Machine.Devices
 	vacant = Machine.devices_new(MachinePci.table(0, False, NoNic), MachineDisk.none)
 
-	Flags : { bridge : Bool, deep : Bool, levels : U64, backward : Bool, disks : List(Str), board_mmio : Bool, lease : U64, gop : Bool, gop_width : U64, gop_height : U64, gop_stride : U64, gop_stride_opt : U64 }
+	Flags : { bridge : Bool, deep : Bool, levels : U64, backward : Bool, disks : List(Str), board_mmio : Bool, lease : U64, gop : Bool, gop_width : U64, gop_height : U64, gop_stride : U64, gop_stride_opt : U64, avx : Bool }
 
 	# A batch run's machine, from codex-vm's command line and the effects the
 	# program's opening declares. The PCI bridge flags, the NIC's and the
@@ -126,14 +128,18 @@ Machine :: [].{
 	# threads Mem alone, to keep the program out of compile-time reach.
 	boot! : List(Str), List(Str) => Machine.Machine
 	boot! = |args, effects| {
-		(f, fe1000, fhpet) = Machine.flags(args, 0, { bridge: False, deep: False, levels: 0, backward: False, disks: ["", ""], board_mmio: False, lease: 3600, gop: False, gop_width: 640, gop_height: 480, gop_stride: 640, gop_stride_opt: 0 }, MachineE1000.new, MachineHpet.new)
+		(f, fe1000, fhpet) = Machine.flags(args, 0, { bridge: False, deep: False, levels: 0, backward: False, disks: ["", ""], board_mmio: False, lease: 3600, gop: False, gop_width: 640, gop_height: 480, gop_stride: 640, gop_stride_opt: 0, avx: True }, MachineE1000.new, MachineHpet.new)
 		levels = if !f.bridge { 0 } else if f.levels != 0 { f.levels } else if f.deep { 2 } else { 1 }
 		# The process table as the boot leaves it: the boot program's entry
 		# marked running (2) with the opening's grant, and process 1 granted the
 		# console bit (X86_64Chapter's emit-start).
 		table = MachineMem.write(MachineMem.new(U64.to_i64_wrap(List.len(args))), Machine.proc_table, 2, 8)
 		granted = MachineMem.write(table, MachineCaps.word_addr, MachineCaps.grant(effects), 8)
-		console_granted = MachineMem.write(granted, Machine.cap_addr(1), 1, 8)
+		console_granted_bare = MachineMem.write(granted, Machine.cap_addr(1), 1, 8)
+		# X86_64Boot's emit-avx-admit: the boot processor sets CR4.OSXSAVE and
+		# XCR0 = 7 when leaf 1 reports XSAVE and AVX, and says so at
+		# avx-admitted-addr (36384), which it zeroes first.
+		console_granted = MachineMem.write(console_granted_bare, 36384, if f.avx { 1 } else { 0 }, 8)
 		# codex-vm's -gop screen: a stride below the width is refused and one past
 		# 2048 clamped, and the width, height and stride go at 0x7C4, 0x7C8 and
 		# 0x7E0, where a guest booted without UEFI reads them. The framebuffer
@@ -149,7 +155,7 @@ Machine :: [].{
 		drives = MachineDisk.boot!(f.disks)
 		ide = MachineIde.attach!(drives)
 		d = Machine.devices_new(MachinePci.table(levels, f.backward, nic), drives)
-		booted = { ..d, ide: ide, ne2k: card, lease: f.lease, e1000: if fe1000.present { MachineE1000.power_on(fe1000) } else { fe1000 }, hpet: fhpet, board_mmio: f.board_mmio, timeline: Machine.timeline_of(MachineMedia.keys) }
+		booted = { ..d, ide: ide, ne2k: card, lease: f.lease, e1000: if fe1000.present { MachineE1000.power_on(fe1000) } else { fe1000 }, hpet: fhpet, board_mmio: f.board_mmio, avx: f.avx, timeline: Machine.timeline_of(MachineMedia.keys) }
 		{ mem: nic_mem, gpu: if f.gop { MachineGpu.new(f.gop_width, f.gop_height, screen_stride) } else { MachineGpu.none }, clock: 0, devices: [booted] }
 	}
 
@@ -189,6 +195,8 @@ Machine :: [].{
 				} else if a == "-gop-stride" {
 					n = U64.from_str(List.get(args, i + 1) ?? "") ?? crash("machine: -gop-stride wants a number")
 					Machine.flags(args, i + 2, { ..f, gop: True, gop_stride_opt: n }, e1000, hpet)
+				} else if a == "-no-avx" {
+					Machine.flags(args, i + 1, { ..f, avx: False }, e1000, hpet)
 				} else if a == "-disk" or a == "-disk2" {
 					path = List.get(args, i + 1) ?? crash("machine: ${a} wants a file")
 					at = if a == "-disk" { 0 } else { 1 }
@@ -225,6 +233,7 @@ Machine :: [].{
 		e1000: MachineE1000.new,
 		hpet: MachineHpet.new,
 		board_mmio: False,
+		avx: True,
 		timeline: [],
 		typed: 0,
 		scopes: Dict.empty(),
@@ -1059,6 +1068,59 @@ Machine :: [].{
 	# The running process holds capability-admin, bit 14.
 	admin : Machine.Machine -> Bool
 	admin = |m| U64.bitwise_and(MachineMem.read(m.mem, MachineCaps.word_addr, 7, 0), 0x4000) != 0
+
+	# **CPUID IS CODEX-VM'S** (tools/codex-vm.c, handle_cpuid), subleaf 0:
+	# GenuineIntel, family 6 model 3C, the hypervisor bit and RDRAND in leaf 1's
+	# ecx, and, with AVX, XSAVE, OSXSAVE and AVX there too and leaf 0Dh for
+	# XCR0 = 7 (x87, SSE, AVX: 832 bytes). `-no-avx` takes leaf 0's maximum
+	# back to 1. The brand string is codex-vm's own.
+	cpuid : Machine.Machine, I64 -> (I64, I64, I64, I64)
+	cpuid = |m, leaf| {
+		avx = Machine.devices_of(m).avx
+		if leaf == 0 {
+			(if avx { 0xD } else { 1 }, 0x756E6547, 0x6C65746E, 0x49656E69)
+		} else if leaf == 1 {
+			ecx = 0x80000000 + 0x40000000 + (if avx { 0x04000000 + 0x08000000 + 0x10000000 } else { 0 })
+			(0x000306C3, 0, ecx, 0x078BFBFF)
+		} else if leaf == 0xD and avx {
+			(7, 832, 832, 0)
+		} else if leaf == 0x80000000 {
+			(0x80000004, 0, 0, 0)
+		} else if leaf == 0x80000001 {
+			(0, 0, 0, 0x20000000 + 0x00100000)
+		} else if leaf >= 0x80000002 and leaf <= 0x80000004 {
+			at = I64.to_u64_wrap(leaf - 0x80000002) * 16
+			(Machine.brand_word(at), Machine.brand_word(at + 4), Machine.brand_word(at + 8), Machine.brand_word(at + 12))
+		} else {
+			(0, 0, 0, 0)
+		}
+	}
+
+	brand_word : U64 -> I64
+	brand_word = |at| {
+		bytes = Str.to_utf8("codex-vm virtual CPU (WHP)")
+		byte = |k| U64.to_i64_wrap(U8.to_u64(List.get(bytes, at + k) ?? 0))
+		byte(0) + byte(1) * 0x100 + byte(2) * 0x10000 + byte(3) * 0x1000000
+	}
+
+	cpu_cpuid_eax : Machine.Machine, I64 -> (Machine.Machine, I64)
+	cpu_cpuid_eax = |m, leaf| (m, Machine.cpuid(m, leaf).0)
+
+	cpu_cpuid_ebx : Machine.Machine, I64 -> (Machine.Machine, I64)
+	cpu_cpuid_ebx = |m, leaf| (m, Machine.cpuid(m, leaf).1)
+
+	cpu_cpuid_ecx : Machine.Machine, I64 -> (Machine.Machine, I64)
+	cpu_cpuid_ecx = |m, leaf| (m, Machine.cpuid(m, leaf).2)
+
+	cpu_cpuid_edx : Machine.Machine, I64 -> (Machine.Machine, I64)
+	cpu_cpuid_edx = |m, leaf| (m, Machine.cpuid(m, leaf).3)
+
+	# `rdmsr`, as codex-vm answers a guest's: the APIC base (enabled, BSP) and,
+	# for every MSR it does not store, 0, so the MTRRs read as disabled
+	# (IA32_MTRR_DEF_TYPE.E clear) and every range uncacheable. The machine
+	# keeps no EFER or syscall MSRs: nothing here writes one.
+	rdmsr : Machine.Machine, I64 -> (Machine.Machine, I64)
+	rdmsr = |m, msr| (m, if msr == 0x1B { 0xFEE00900 } else { 0 })
 
 	# `process-get-pid`: the boot program's stack is outside the spawn pool,
 	# which x86 answers as slot 0.
