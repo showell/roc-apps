@@ -133,7 +133,7 @@ Machine :: [].{
 		# The process table as the boot leaves it: the boot program's entry
 		# marked running (2) with the opening's grant, and process 1 granted the
 		# console bit (X86_64Chapter's emit-start).
-		table = MachineMem.write(MachineMem.new(U64.to_i64_wrap(List.len(args))), Machine.proc_table, 2, 8)
+		table = MachineMem.write(Machine.page_tables(MachineMem.new(U64.to_i64_wrap(List.len(args)))), Machine.proc_table, 2, 8)
 		granted = MachineMem.write(table, MachineCaps.word_addr, MachineCaps.grant(effects), 8)
 		console_granted_bare = MachineMem.write(granted, Machine.cap_addr(1), 1, 8)
 		# X86_64Boot's emit-avx-admit: the boot processor sets CR4.OSXSAVE and
@@ -1068,6 +1068,54 @@ Machine :: [].{
 	# The running process holds capability-admin, bit 14.
 	admin : Machine.Machine -> Bool
 	admin = |m| U64.bitwise_and(MachineMem.read(m.mem, MachineCaps.word_addr, 7, 0), 0x4000) != 0
+
+	# **THE BOOT'S PAGE TABLES**, as X86_64Boot builds them before anything
+	# else is written below 0xE000 (emit-build-process-page-tables, then
+	# emit-demand-unmap), and as cpu-read-cr3 finds them: the PML4 at 0x8000,
+	# the PDPT at 0x9000, and four 2 MB directories from 0xA000, three over
+	# 3 GB of RAM and one over the device gigabyte above it. A RAM entry is
+	# present, writable and large (0x83), no-execute from bare-metal-nx-boundary
+	# (page 3) up; a device entry adds PCD (0x93) and is no-execute. The boot
+	# makes the pages from the boundary to the image's code end executable
+	# again; this machine runs no image, and leaves them NX. The demand range,
+	# heap pages 8 to 1023, is unmapped until its first touch, as is the guard
+	# page below the top 32 of RAM, whose base the boot records at 36320.
+	page_tables : MachineMem.Mem -> MachineMem.Mem
+	page_tables = |mem| {
+		pml4 = MachineMem.write(mem, 0x8000, 0x9000 + 3, 8)
+		pdpt = Machine.pdpt_entries(pml4, 0)
+		pds = Machine.pd_entries(pdpt, 0)
+		demand = Machine.unmap(pds, 8, 1024)
+		guard = 1536 - 33
+		MachineMem.write(Machine.unmap(demand, guard, guard + 1), 36320, guard * 0x200000, 8)
+	}
+
+	pdpt_entries : MachineMem.Mem, U64 -> MachineMem.Mem
+	pdpt_entries = |mem, i|
+		if i >= 4 {
+			mem
+		} else {
+			Machine.pdpt_entries(MachineMem.write(mem, U64.to_i64_wrap(0x9000 + i * 8), 0xA000 + i * 4096 + 3, 8), i + 1)
+		}
+
+	pd_entries : MachineMem.Mem, U64 -> MachineMem.Mem
+	pd_entries = |mem, page|
+		if page >= 2048 {
+			mem
+		} else {
+			base = page * 0x200000
+			nx = 0x8000000000000000
+			entry = if page >= 1536 { base + 0x93 + nx } else if page >= 3 { base + 0x83 + nx } else { base + 0x83 }
+			Machine.pd_entries(MachineMem.write(mem, U64.to_i64_wrap(0xA000 + page * 8), entry, 8), page + 1)
+		}
+
+	unmap : MachineMem.Mem, U64, U64 -> MachineMem.Mem
+	unmap = |mem, page, end|
+		if page >= end {
+			mem
+		} else {
+			Machine.unmap(MachineMem.write(mem, U64.to_i64_wrap(0xA000 + page * 8), 0, 8), page + 1, end)
+		}
 
 	# **CPUID IS CODEX-VM'S** (tools/codex-vm.c, handle_cpuid), subleaf 0:
 	# GenuineIntel, family 6 model 3C, the hypervisor bit and RDRAND in leaf 1's
