@@ -33,6 +33,9 @@ on:
       apps:
         description: "the apps to build, space-separated"
         default: snake pong breakout camera workshop particles safari trick_or_treat
+      opt:
+        description: "Roc's --opt: speed (LLVM), or dev (the backend roc-ray's own CI builds Windows with)"
+        default: speed
 
 jobs:
   build:
@@ -81,7 +84,7 @@ jobs:
           ROC: roc
           OUT: out
           TARGET: x64win
-          OPT: speed
+          OPT: ${{ inputs.opt }}
           APPS: ${{ inputs.apps }}
         run: |
           for app in $APPS; do
