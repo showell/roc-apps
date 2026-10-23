@@ -8,6 +8,11 @@
 #   gh workflow run windows.yml
 #   gh run download <run-id> -n windows-exe -D ~/build/roc-apps/ray/windows
 #
+# Its inputs say which roc-ray, which Roc nightly and which apps; unset, the
+# ones this repository builds with. A probe of a newer pair names them:
+#
+#   gh workflow run windows.yml -f roc_ray_ref=<commit> -f roc_nightly=nightly-<date>-<sha> -f apps=snake
+#
 # Every app under canvas_apps/ is built. ray/fetch_exes.sh is what pulls them
 # from the build box to a Windows machine.
 #
@@ -18,6 +23,16 @@ name: Windows executables
 
 on:
   workflow_dispatch:
+    inputs:
+      roc_ray_ref:
+        description: "roc-ray's commit"
+        default: e100c9548b903ee5c7363f5997251980c4355c7b
+      roc_nightly:
+        description: "the Roc nightly (roc-nightly.txt's, as setup-roc names it)"
+        default: nightly-2026-09-22-e494788
+      apps:
+        description: "the apps to build, space-separated"
+        default: snake pong breakout camera workshop particles safari trick_or_treat
 
 jobs:
   build:
@@ -36,7 +51,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: lukewilliamboswell/roc-ray
-          ref: e100c9548b903ee5c7363f5997251980c4355c7b
+          ref: ${{ inputs.roc_ray_ref }}
           path: roc-ray
 
       - name: Install Zig
@@ -48,8 +63,9 @@ jobs:
         uses: roc-lang/setup-roc@cbe782d6f165b89c87d99f50a59ac4f5f73b4427
         with:
           version: nightly-new-compiler
-          # The nightly in roc-nightly.txt, which every build script here reads.
-          nightly-tag: nightly-2026-09-22-e494788
+          # The nightly in roc-nightly.txt, which every build script here
+          # reads, unless the run names another.
+          nightly-tag: ${{ inputs.roc_nightly }}
 
       # ReleaseFast: a plain `zig build` is a Debug host, whose checked
       # arithmetic and resource-heap checks took a third of Safari's frame.
@@ -66,8 +82,9 @@ jobs:
           OUT: out
           TARGET: x64win
           OPT: speed
+          APPS: ${{ inputs.apps }}
         run: |
-          for app in snake pong breakout camera workshop particles safari trick_or_treat; do
+          for app in $APPS; do
             canvas_apps/native.sh "$app"
           done
 
@@ -75,8 +92,10 @@ jobs:
       # executable links, loads and runs its cycles.
       - name: Run them headless
         working-directory: roc-apps
+        env:
+          APPS: ${{ inputs.apps }}
         run: |
-          for app in snake pong breakout camera workshop particles safari trick_or_treat; do
+          for app in $APPS; do
             "out/$app/$app.exe" --host-headless --host-headless-frames=3
           done
 
