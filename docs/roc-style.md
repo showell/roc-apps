@@ -1,5 +1,10 @@
 # Roc, as Steve writes it
 
+This style guide is as much about design as about style. Roc gives you
+excellent tools for making code correct by construction: tag unions,
+records, opaque types, `Try`. Using them is a discipline, though, and the
+language won't apply it for you; this guide is that discipline, written down.
+
 How Roc is written in this repository and its siblings (roc-webbox's chat,
 dog-park's physics). These are Steve's preferences, and most carry over from
 his Zig. Each one replaces a construct that can be wrong and still compile with
