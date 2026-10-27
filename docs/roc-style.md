@@ -16,7 +16,31 @@ separate style guide; its conventions sit in the pages, chiefly
 [errors](https://roc-lang.org/docs/main/langref/errors/),
 [types](https://roc-lang.org/docs/main/langref/types/) and
 [static dispatch](https://roc-lang.org/docs/main/langref/static-dispatch/).
-Where this guide and the langref disagree, this guide is deliberate.
+Where this guide and the langref disagree, this guide is deliberate. The
+chat was written against both of the rules below, and is being brought round
+(Steve, 2026-10-27: "I agree with the official stance").
+
+## Text is `Str` inside; bytes only at the door
+
+- **Text is a `Str`.** Decode it to UTF-8 once, where it enters (a request, a
+  file, a host answer), and refuse what isn't UTF-8. Past that point, work in
+  `Str` with its helpers (`split_on`, `join_with`, ...); `List(U8)` is for
+  parsing at the door, and for bytes that aren't text
+  ([strings](https://roc-lang.org/docs/main/langref/strings/)).
+- **The chat broke this everywhere:** URLs, titles and paths are glued from
+  bytes (`List.concat(Str.to_utf8("/chat/c/"), key)`). Every stored chat file
+  in production is UTF-8 (the v40 scan), so moving to `Str` needs no data
+  migration.
+- **Character literals** (`'_'`, `c - 'A' + 'a'`) are for the byte-level
+  parsing at the door. A number left in the code should be an honest number (a
+  minute, a length limit), not a byte in disguise.
+
+## Failure is a `Try`
+
+- **A function that can fail returns a `Try`, whose error tags say what went
+  wrong.** That includes a three-way read: `Try(List(U8), [Missing, Failed])`
+  keeps missing and failed apart, as the chat's `[Found, Missing, Failed]`
+  did, and lets `?` and `??` work.
 
 ## Roc's conventions we have already broken
 
@@ -48,9 +72,6 @@ The langref says these too. They're repeated here because the chat breaks them.
 - **Leave an `if` chain alone when its branches test different things in
   turn.** A sequence of effects isn't a set of cases, and a `match` would hide
   that.
-- **Character literals for bytes:** `'_'`, `'\n'`, `c - 'A' + 'a'`. They're
-  `U8`, in patterns too. A number left in the code should be an honest number
-  (a minute, a length limit), not a byte in disguise.
 
 ## Name what travels together
 
@@ -86,8 +107,8 @@ The langref says these too. They're repeated here because the chat breaks them.
 ## One workhorse at the edge
 
 - **The disk is reached through one module.** `Files.roc` is the only caller of
-  the host's file functions, and it keeps `[Found, Missing, Failed]` apart:
-  missing and failed are never one answer.
+  the host's file functions, and it keeps missing and failed apart: never one
+  answer (as a `Try`'s two error tags).
 - **A shale hunt** (`tools/roc_hunt/hunt.shale`, `fs_bypass`) flags any call
   that bypasses it. A rule a type can't express gets a hunt with plants (cases
   it must find and cases it must not).
