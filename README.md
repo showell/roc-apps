@@ -22,7 +22,7 @@ there; the others are mapped below.
 | `tests/` | Cobblestone's own suite as the emitter's ladder | below |
 | `site/`, `ops/` | the site that serves the apps: dev, staging and prod | below |
 | `findings/` | Roc behaviours we found, each with a program that shows it | |
-| `docs/` | `roc-notes.md`, how the Roc nightly behaves (the compiler, the language, what copies); the Codex forms safari uses; the machine's memory plan and structures | |
+| `docs/` | `roc-style.md`, how Steve writes Roc (tags, records, opaque types for what's validated, one workhorse at the edge); `roc-notes.md`, how the Roc nightly behaves (the compiler, the language, what copies); the Codex forms safari uses; the machine's memory plan and structures | |
 
 ## The site: Steve's Roc Apps
 

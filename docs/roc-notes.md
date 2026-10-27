@@ -1,7 +1,8 @@
 # Roc, as the nightly behaves
 
 What the new Roc compiler's nightly builds do that is easy to trip over, for
-anyone writing or emitting Roc in this repository. Where a behaviour has a
+anyone writing or emitting Roc in this repository. How the Roc is *written*
+(Steve's style) is [roc-style.md](roc-style.md). Where a behaviour has a
 reduced program, `findings/` holds it.
 
 ## The compiler
