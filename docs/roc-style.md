@@ -7,6 +7,34 @@ one that can't. The examples come from roc-webbox's chat (`chat/`), cleaned up
 this way on branch `box/roc-cleanup`. How the compiler itself behaves is in
 [roc-notes.md](roc-notes.md).
 
+**Roc's own conventions** are in its language reference, the *langref*:
+<https://roc-lang.org/docs/main/langref/> (source: `docs/langref/` in
+roc-lang/roc; our pinned copy is `~/tools/roc-258ab27/docs/langref/`). It
+covers the new compiler's syntax and is marked work in progress. It has no
+separate style guide; its conventions sit in the pages, chiefly
+[naming](https://roc-lang.org/docs/main/langref/naming/),
+[errors](https://roc-lang.org/docs/main/langref/errors/),
+[types](https://roc-lang.org/docs/main/langref/types/) and
+[static dispatch](https://roc-lang.org/docs/main/langref/static-dispatch/).
+Where this guide and the langref disagree, this guide is deliberate.
+
+## Roc's conventions we have already broken
+
+The langref says these too. They're repeated here because the chat breaks them.
+
+- **A function that can fail returns a `Try`, not a Bool.** `Files.write!`,
+  `remove!` and `append_line!` return `Bool`, "false when it failed": a caller
+  can drop the failure and `?` can't pass it on.
+  Use `Try({}, [WriteFailed])` and the like
+  ([errors](https://roc-lang.org/docs/main/langref/errors/)).
+- **An error tag names what went wrong.** The langref's `[ListWasEmpty]` says
+  why. The chat's `Err(None)` (`Conversation.dm_other`, `Paths.cut_first`) says
+  nothing, and two such errors look alike after a `?` joins them.
+- **A nominal type derives `is_eq` with `is_eq : _`.** Write one by hand only
+  when equality isn't structural. `Uid` hand-writes the structural one,
+  `|Uid.(a), Uid.(b)| a == b`, which is more code to read and to get wrong
+  ([compiler-derived methods](https://roc-lang.org/docs/main/langref/static-dispatch/#compiler-derived-methods)).
+
 ## Say which, with a tag
 
 - **A tag union, not a Bool, a magic number, or a `"1"`/`"0"` string**, for any
@@ -53,7 +81,7 @@ this way on branch `box/roc-cleanup`. How the compiler itself behaves is in
   - declare: `X := T.{ ... }` (nominal) or `X :: T` (opaque);
   - wrap: `X.(v)`. Plain `X(v)` parses as a tag.
   - unwrap: the pattern `|X.(v)| v`;
-  - compare: `==` needs an `is_eq` defined on the type.
+  - compare: `==` needs an `is_eq` on the type; `is_eq : _` derives it.
 
 ## One workhorse at the edge
 
