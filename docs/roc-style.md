@@ -329,6 +329,21 @@ is the base; these rules sharpen it.
   effect gathers input, calls a pure function for the decision, and acts on
   its answer. See [testing](#testing-and-enforcement).
 - **Effects are named for their act.** See [naming](#naming).
+- **Best-effort work runs in an aside, and gives back what it could not
+  spend.** Work the request does not stand on (a broadcast, a welcome)
+  runs between `Host.aside!(Begin)` and `Host.aside!(End)`: a read that
+  fails there fails the aside, never the request. Whatever the work was
+  owed is handed back to the host when it did not happen, so it is tried
+  again later rather than lost (metal-vmm QUEUE 288).
+
+  ```roc
+  _ = Host.aside!(Begin)
+  told = came_online!(who)
+  match (Host.aside!(End), told) {
+  	(Done, Ok({})) => {}
+  	_ => Host.presence_unspent!({})
+  }
+  ```
 
 ## Modules and visibility
 
@@ -388,6 +403,16 @@ is the base; these rules sharpen it.
   empty answer looks like a real one.
 - **Decode the host's answer into types at the door.** See
   [decode once](#make-wrong-values-impossible-to-build).
+- **Markup the host made comes in at one door.** `Html.trusted` takes a
+  string literal only; markup the host built (a script's hashed src, the
+  server's own rendered markdown) becomes `Html` in Chrome.roc alone
+  (`Chrome.src_in`, `Chrome.rendered`), so every place the page trusts bytes
+  it did not write is in one file. The hunt flags `Html.host_markup`
+  anywhere else (metal-vmm QUEUE 289).
+
+  ```roc
+  Doc({ slug, markdown, rendered: Chrome.rendered(rendered.html) })
+  ```
 
 ## Layout and formatting
 
