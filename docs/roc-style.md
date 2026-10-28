@@ -256,6 +256,17 @@ Roc's own rules are in the langref's
   below). Joining a list of pieces is `Str.join_with(pieces, sep)`, a
   function, not a method on the list at the pin. `Str.concat` is for a fold
   that builds text piece by piece.
+- **An element with attributes is built by `Html.tag`; a value never
+  reaches an attribute through a template.** `Html.tag({ name, attrs,
+  inner })` puts every attribute value through `escape`, so no caller can
+  forget it, and its names are code (lowercase letters, digits, `-`; else a
+  crash). A trusted literal that leaves a quote open for a value to follow
+  (`Html.trusted("<a href=\"")`) is a hunt finding. A template's slots
+  (`Html.fill`) hold text between elements, never inside a tag.
+
+  ```roc
+  Html.tag({ name: "a", attrs: [Attr("href", href)], inner: Html.text(label) })
+  ```
 - **Join bytes only where bytes are the point:** inside an opaque builder
   (`Html`, `JsonOut`) or a decoder at the door, with `List.join`. Text past
   the door stays `Str`.
