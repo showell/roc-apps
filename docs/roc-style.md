@@ -484,7 +484,8 @@ is the base; these rules sharpen it.
 - **Decode the host's answer into types at the door.** See
   [decode once](#make-wrong-values-impossible-to-build).
 - **A list the host would mirror goes a call at a time.** Rather than a
-  list of records crossing the seam (a new mirror, and its swaps), the Roc
+  list of records crossing the seam (one more mirror for the host to keep,
+  and a list it must own and free), the Roc
   hands the host one item per call to an effect that keeps what it is
   building, then a last call to finish it. A topic's bundle is
   `Files.bundle_add!(name, path)` for each file, then
