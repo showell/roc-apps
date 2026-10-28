@@ -150,6 +150,15 @@ Roc's own rules are in the langref's
   } => Chat.Answer
   ```
 
+  The chat takes the second form: the subject first, the rest a record,
+  so a call reads as an act on its subject with its options named:
+  `Bytes.count_while(line, { keep: Ascii.is_digit, at: 0 })`. A loop's
+  index and accumulator are fields too (`{ at: i, out }`), a one-letter
+  parameter given a field's name and keeping its own in the body. A
+  hosted effect's record is a seam record: its mirror on the host's side
+  is laid out as Roc lays it out (numbers by name, then lists by name,
+  then the small fields), asserted, and driven field by field.
+
   The stack hunt flags a signature with three or more arguments
   ([enforcement](#testing-and-enforcement)).
 - **Neighbouring arguments of one type get a record**, even when there are
