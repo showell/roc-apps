@@ -316,7 +316,7 @@ is the base; these rules sharpen it.
   of a cache is a miss too**: the next read recounts, so the write
   (`Files.write_cache!`) answers nothing and the host logs its failure;
   never fail a request whose truth is already written (a send whose message
-  is stored) over its cache (metal-vmm QUEUE 287).
+  is stored) over its cache.
 - **One damaged entry fails only itself.** Where a page or
   feed reads many entries (lines, rows, accounts), an entry that won't decode
   is left out and counted, not a failure of the whole request; a lookup of
@@ -334,7 +334,7 @@ is the base; these rules sharpen it.
   runs between `Host.aside!(Begin)` and `Host.aside!(End)`: a read that
   fails there fails the aside, never the request. Whatever the work was
   owed is handed back to the host when it did not happen, so it is tried
-  again later rather than lost (metal-vmm QUEUE 288).
+  again later rather than lost.
 
   ```roc
   _ = Host.aside!(Begin)
@@ -398,7 +398,7 @@ is the base; these rules sharpen it.
   path again, so the check and the thing checked can't drift apart. Example:
   a topic's stream is the Roc's `Chat.topic_stream(BusKey.topic(at).bytes(),
   Paths.transcript_path(at).bytes(), topic)`, which the host replays and then
-  holds (metal-vmm QUEUE 286).
+  holds.
 - **A bad name at the seam crashes (a 500) rather than returning `[]`.** An
   empty answer looks like a real one.
 - **Decode the host's answer into types at the door.** See
@@ -408,8 +408,7 @@ is the base; these rules sharpen it.
   hands the host one item per call to an effect that keeps what it is
   building, then a last call to finish it. A topic's bundle is
   `Files.bundle_add!(name, path)` for each file, then
-  `Host.serve_bundle!(name)`: two lists of bytes per call, no record
-  (metal-vmm QUEUE 291).
+  `Host.serve_bundle!(name)`: two lists of bytes per call, no record.
 - **An effect that answers the request is for bytes only the host should
   touch.** Where the answer is a file's bytes (an upload, whole or a
   range, or a bundle), the Roc decides everything (whose it is, its type,
@@ -425,10 +424,22 @@ is the base; these rules sharpen it.
   server's own rendered markdown) becomes `Html` in Chrome.roc alone
   (`Chrome.src_in`, `Chrome.rendered`), so every place the page trusts bytes
   it did not write is in one file. The hunt flags `Html.host_markup`
-  anywhere else (metal-vmm QUEUE 289).
+  anywhere else.
 
   ```roc
   Doc({ slug, markdown, rendered: Chrome.rendered(rendered.html) })
+  ```
+- **What destroys is planned as data, then handed over a step at a time.**
+  The Roc reads, decides, and builds the whole plan as a list of steps (a
+  tag union: say it, remove this, write that) before anything changes;
+  then it hands each step to an effect, in order, stopping at the first
+  that fails. The host decides only whether to act (a dry run says, a
+  confirm does), and what must go last goes last on the host's side (the
+  accounts, after every step). The dry run and the confirm are then one
+  plan, so what the preview lists is exactly what the confirm removes.
+
+  ```roc
+  Step : [Note(Kind, Str), Remove(Paths.ChatPath, [File, Tree]), Replace(Paths.ChatPath, List(U8)), Retired(Uid)]
   ```
 
 ## Layout and formatting
