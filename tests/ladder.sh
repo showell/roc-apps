@@ -48,12 +48,13 @@ VERDICTS="$HOME/build/roc-apps/gen/verdicts"
 # The verdicts change when Cobblestone's tree does, which is rarely, so
 # they are cleaned only when one is newer than the copy, or when the copy was
 # cleaned from another checkout: an older checkout's files are never newer,
-# so a switch alone would compare against the wrong verdicts.
+# so a switch alone would compare against the wrong verdicts. $GEN first:
+# the cleaning's log goes there, and a fresh build directory has none yet.
+mkdir -p "$GEN"
 if [ ! -d "$VERDICTS" ] || [ "$(cat "$VERDICTS/.root" 2>/dev/null)" != "$TESTS_ROOT" ] || [ -n "$(find "$SRC" -name '*.expected' -newer "$VERDICTS" -print -quit)" ]; then
     TESTS_ROOT="$TESTS_ROOT" "$HERE/verdicts.py" > "$GEN/.verdicts.log" 2>&1 || { echo "verdicts.py failed"; exit 2; }
     echo "$TESTS_ROOT" > "$VERDICTS/.root"
 fi
-mkdir -p "$GEN"
 if [ "${1:-}" = --like ]; then
     # Rerun one family: the units whose last verdict says this. The whole
     # sweep is a minute and a half, and most of that is the emit; picking
