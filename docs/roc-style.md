@@ -403,6 +403,23 @@ is the base; these rules sharpen it.
   empty answer looks like a real one.
 - **Decode the host's answer into types at the door.** See
   [decode once](#make-wrong-values-impossible-to-build).
+- **A list the host would mirror goes a call at a time.** Rather than a
+  list of records crossing the seam (a new mirror, and its swaps), the Roc
+  hands the host one item per call to an effect that keeps what it is
+  building, then a last call to finish it. A topic's bundle is
+  `Files.bundle_add!(name, path)` for each file, then
+  `Host.serve_bundle!(name)`: two lists of bytes per call, no record
+  (metal-vmm QUEUE 291).
+- **An effect that answers the request is for bytes only the host should
+  touch.** Where the answer is a file's bytes (an upload, whole or a
+  range, or a bundle), the Roc decides everything (whose it is, its type,
+  the range, the 404 and the 416) and passes it in one record; the host
+  answers, and the Roc returns `Chat.answered`. Everything decidable stays
+  the Roc's: the host never parses the `Range` header again.
+
+  ```roc
+  Host.serve_upload!({ first, last, size, content_type, path, part: Range })
+  ```
 - **Markup the host made comes in at one door.** `Html.trusted` takes a
   string literal only; markup the host built (a script's hashed src, the
   server's own rendered markdown) becomes `Html` in Chrome.roc alone
