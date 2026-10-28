@@ -26,7 +26,15 @@ options. Its conventions sit in the langref's pages, chiefly
 This guide follows the langref; where it goes further, it is deliberate.
 
 **How to read it:** each rule is a bold line, then why, then an example where
-one helps. Rules marked *(not yet settled)* are recent and may still change.
+one helps.
+
+**Three tools hold these rules, in order:** Roc's type checker (the rules
+written as types), `roc fmt` (layout), and
+[Shale](https://github.com/showell/shale), a small sandboxed scripting
+language we use for code tooling. Every rule here that neither of the first
+two can see, such as names, Bools that should be tags, stacking, magic
+numbers, or a file read that bypasses its module, is a Shale hunt. See
+[enforcement](#testing-and-enforcement).
 
 ## Contents
 
@@ -70,7 +78,7 @@ Roc's own rules are in the langref's
   (`load_viewer!`); anything else is a verb (`append_message!`, `fan_out!`,
   `check_member!`). A port is where bad names come from: it keeps the old
   function's noun or past tense, so rename on the way in.
-- **A command is not named as a question** *(not yet settled)*. An effect that
+- **A command is not named as a question.** An effect that
   does something and reports how it went is named for the act, not for the
   state it checks: `serve_file!` answering `[Serving, NotServing]`, not
   `held_raw!`.
@@ -231,7 +239,7 @@ is the base; these rules sharpen it.
   rebuilt from the truth, so its read answers `Try(_, [Miss])`, with missing
   and failed as one answer. Give the cache read one home
   (`Files.read_cache!`), not a fallback at each call site.
-- **One damaged entry fails only itself** *(not yet settled)*. Where a page or
+- **One damaged entry fails only itself.** Where a page or
   feed reads many entries (lines, rows, accounts), an entry that won't decode
   is left out and counted, not a failure of the whole request; a lookup of
   that entry itself still fails. One bad byte on disk must not be a lasting
@@ -272,9 +280,23 @@ is the base; these rules sharpen it.
   `[Serving, NotServing]`, `[Member, Outsider]`, and `Try({}, [Failed])` for
   one that can only succeed or fail. A Bool across the seam is as easy to
   misread there as anywhere.
-- **Keep records small where they cross into the host.** Nothing checks a Roc
-  record's layout against the host's extern struct, so a large one can drift
-  and corrupt memory instead of failing. Use a list of small records.
+- **Keep records small where they cross into the host; pass many as a list
+  of them.** The host mirrors each record by hand, in Roc's field order (by
+  sort key, then by name; a U64 comes before a List), and no compiler checks
+  that mirror. A size assertion on each one catches a missing or extra field,
+  but not two fields of the same size swapped, two `List`s say. A swap isn't
+  an error: the host reads the wrong field, and memory is misread or
+  corrupted. The chance of one grows with the number of same-typed fields, so
+  a record of a few fields of distinct types has almost nothing to get wrong,
+  and a seam test can drive each of its fields, while a 30-field record (one
+  was reverted for exactly this) has hundreds of swaps no test would notice.
+  Adding a field can also move others in Roc's order, so a large mirror must
+  be re-derived on every change. It isn't that alignment is trusted for small
+  records and not big ones: a small record is one whose hand-written mirror a
+  reader can check whole. **This limit goes when the mirror stops being
+  hand-written:** `roc glue` already agrees, field by field, with one seam
+  record when checked at compile time. Once every seam record is checked
+  that way, records can grow.
 - **A bad name at the seam crashes (a 500) rather than returning `[]`.** An
   empty answer looks like a real one.
 - **Decode the host's answer into types at the door.** See
@@ -305,10 +327,27 @@ is the base; these rules sharpen it.
 - **Test each pure mapping, and the exact bytes each builder makes,** with
   `expect`s beside the code. `roc test <app>.roc` runs every imported
   module's `expect`s (`roc test chat/main.roc` for the chat).
-- **A rule a type can't express gets a hunt with plants.** A hunt is a script
-  that flags violations (the chat's `tools/roc_hunt/hunt.shale`, whose
-  `fs_bypass` flags a file call outside `Files.roc`); its plants are cases it
-  must find and cases it must not, so the hunt itself is tested.
+- **A rule a type can't express gets a Shale hunt with plants.**
+  [Shale](https://github.com/showell/shale) is how we enforce this guide's
+  more advanced preferences: what the type checker and `roc fmt` can't see. A
+  hunt reads the code as Roc's own parser does (through `roc-ast`, so a
+  comment or a string never counts), names each finding `path:line: check:
+  why`, and is a question for a reader, not a verdict. Its plants are cases
+  it must find and cases it must not, so the hunt itself is tested
+  (`self_test=1`). The ones we run:
+  - `tools/roc_hunt/hunt.shale` in roc-webbox: `bool_returns` (a Bool that
+    should be a tag, or a question without its name), `fs_bypass` (a file
+    call outside `Files.roc`), `html_trusted_nonliteral`, magic numbers,
+    runs of same-typed arguments, positional lists, long `if` chains;
+  - Shale's `cookbook/roc/name_hunt.shale`: an effect named as a state or a
+    noun, a question with no Bool, vague names, a name its type contradicts,
+    negative flags;
+  - a stacking check, for three or more parts on one line, is being added
+    to the cookbook beside them.
+
+  A rule added here that a script can check gets a check, and a gate runs
+  it (`bool_returns` must stay 0). A finding fixed by hand and left
+  unchecked comes back.
 
 ## Tools and builds
 
