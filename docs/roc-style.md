@@ -248,7 +248,11 @@ is the base; these rules sharpen it.
   request.** A cache (a count sidecar, a window into a file) can always be
   rebuilt from the truth, so its read answers `Try(_, [Miss])`, with missing
   and failed as one answer. Give the cache read one home
-  (`Files.read_cache!`), not a fallback at each call site.
+  (`Files.read_cache!`), not a fallback at each call site. **A failed write
+  of a cache is a miss too**: the next read recounts, so the write
+  (`Files.write_cache!`) answers nothing and the host logs its failure;
+  never fail a request whose truth is already written (a send whose message
+  is stored) over its cache (metal-vmm QUEUE 287).
 - **One damaged entry fails only itself.** Where a page or
   feed reads many entries (lines, rows, accounts), an entry that won't decode
   is left out and counted, not a failure of the whole request; a lookup of
