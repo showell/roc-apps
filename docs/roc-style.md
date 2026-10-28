@@ -502,6 +502,14 @@ is the base; these rules sharpen it.
   building, then a last call to finish it. A topic's bundle is
   `Files.bundle_add!(name, path)` for each file, then
   `Host.serve_bundle!(name)`: two lists of bytes per call, no record.
+- **An answer about what the Roc handed names it by its place.** When the
+  Roc hands the host a list a call at a time, the host's answer names an
+  item by its position in that list (`conv : U64`), never by a copy of the
+  Roc's own key or URL. The Roc looks the item up, and a position past the
+  list is a crash. The meaning stays in one home, and the seam record
+  shrinks to numbers. Search hands the conversations it may look in, one
+  `search_scope_add!` at a time, and each hit names its conversation by
+  place.
 - **An effect that answers the request is for bytes only the host should
   touch.** Where the answer is a file's bytes (an upload, whole or a
   range, or a bundle), the Roc decides everything (whose it is, its type,
