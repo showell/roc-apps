@@ -452,7 +452,10 @@ is the base; these rules sharpen it.
   reader can check whole. **This limit goes when the mirror stops being
   hand-written:** `roc glue` already agrees, field by field, with one seam
   record when checked at compile time. Once every seam record is checked
-  that way, records can grow.
+  that way, records can grow. For the chat, glue now checks every one:
+  roc-webbox's `src/chat_glue_test.zig` holds each record of all its
+  hosted functions to `roc glue`'s field by field at compile time, by name
+  and offset, so a swap fails the build.
 - **The Roc decides; the host holds what lasts.** A long-lived or byte-heavy
   answer (a live stream, a file served as stored) is a decision the Roc
   makes and a primitive the host carries out: the Roc says which bus key, or
