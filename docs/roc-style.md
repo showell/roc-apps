@@ -452,27 +452,17 @@ is the base; these rules sharpen it.
   `[Serving, NotServing]`, `[Member, Outsider]`, and `Try({}, [Failed])` for
   one that can only succeed or fail. A Bool across the seam is as easy to
   misread there as anywhere.
-- **Keep records small where they cross into the host; pass many as a list
-  of them.** The host mirrors each record by hand, in Roc's field order (by
-  sort key, then by name; a U64 comes before a List), and no compiler checks
-  that mirror. A size assertion on each one catches a missing or extra field,
-  but not two fields of the same size swapped, two `List`s say. A swap isn't
-  an error: the host reads the wrong field, and memory is misread or
-  corrupted. The chance of one grows with the number of same-typed fields, so
-  a record of a few fields of distinct types has almost nothing to get wrong,
-  and a seam test can drive each of its fields, while a 30-field record (one
-  was reverted for exactly this) has hundreds of swaps no test would notice.
-  Adding a field can also move others in Roc's order, so a large mirror must
-  be re-derived on every change. It isn't that alignment is trusted for small
-  records and not big ones: a small record is one whose hand-written mirror a
-  reader can check whole. **This limit goes when the mirror stops being
-  hand-written:** `roc glue` already agrees, field by field, with one seam
-  record when checked at compile time. Once every seam record is checked
-  that way, records can grow. For the chat, glue now checks every one:
-  roc-webbox's `src/chat_glue_test.zig` holds each record of all its
-  hosted functions to `roc glue`'s field by field at compile time, by name
-  and offset, so a swap fails the build; and each tag union tag by tag, by
-  number, so the host's enums need no order check of their own.
+- **A record that crosses into the host is checked against `roc glue`,
+  field by field.** The host mirrors each record by hand, in Roc's field
+  order (by sort key, then by name; a U64 comes before a List). A size
+  assertion catches a missing or extra field but not two same-sized fields
+  swapped, and a swap isn't an error: the host reads the wrong field, and
+  memory is misread or corrupted. So the seam holds every record of every
+  hosted function to what `roc glue` generates, at compile time, by name and
+  offset, and every tag union tag by tag, by number (the chat's
+  `src/chat_glue_test.zig`). With that check a record can be as large as
+  the data is: there is no limit on its size, and a list of small records
+  is a choice made for the data, not for the mirror.
 - **The Roc decides; the host holds what lasts.** A long-lived or byte-heavy
   answer (a live stream, a file served as stored) is a decision the Roc
   makes and a primitive the host carries out: the Roc says which bus key, or
