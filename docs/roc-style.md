@@ -150,6 +150,15 @@ Roc's own rules are in the langref's
   } => Chat.Answer
   ```
 
+  The chat takes the second form: the subject first, the rest a record,
+  so a call reads as an act on its subject with its options named:
+  `Bytes.count_while(line, { keep: Ascii.is_digit, at: 0 })`. A loop's
+  index and accumulator are fields too (`{ at: i, out }`), a one-letter
+  parameter given a field's name and keeping its own in the body. A
+  hosted effect's record is a seam record: its mirror on the host's side
+  is laid out as Roc lays it out (numbers by name, then lists by name,
+  then the small fields), asserted, and driven field by field.
+
   The stack hunt flags a signature with three or more arguments
   ([enforcement](#testing-and-enforcement)).
 - **Neighbouring arguments of one type get a record**, even when there are
@@ -256,6 +265,17 @@ Roc's own rules are in the langref's
   below). Joining a list of pieces is `Str.join_with(pieces, sep)`, a
   function, not a method on the list at the pin. `Str.concat` is for a fold
   that builds text piece by piece.
+- **An element with attributes is built by `Html.tag`; a value never
+  reaches an attribute through a template.** `Html.tag({ name, attrs,
+  inner })` puts every attribute value through `escape`, so no caller can
+  forget it, and its names are code (lowercase letters, digits, `-`; else a
+  crash). A trusted literal that leaves a quote open for a value to follow
+  (`Html.trusted("<a href=\"")`) is a hunt finding. A template's slots
+  (`Html.fill`) hold text between elements, never inside a tag.
+
+  ```roc
+  Html.tag({ name: "a", attrs: [Attr("href", href)], inner: Html.text(label) })
+  ```
 - **Join bytes only where bytes are the point:** inside an opaque builder
   (`Html`, `JsonOut`) or a decoder at the door, with `List.join`. Text past
   the door stays `Str`.
@@ -279,6 +299,38 @@ Roc's own rules are in the langref's
   	\\.links a { color: ${link}; }
   	\\.links li { margin: 0 0 4px; }
   ```
+
+### `Str` and the builtins at the pin
+
+- **Read the pin's `Builtin.roc` before writing a helper.** A helper the
+  builtins already have is a second copy to keep right. The chat had
+  written, by hand: `List.split_on` and `split_on_list` (std.mem's
+  splits), `List.split_first` and `split_last` (they answer
+  `{ before, after }`), `List.starts_with` and `ends_with`, `List.map_try`
+  (all or none), `List.append_if_ok`, `List.join_map`, `List.chunks_of`
+  (fixed-size records), `I64.div_floor_by` and `I64.mod_by` (Zig's
+  `@divFloor` and `@mod`), `U64.min`, `max` and `minus_saturated`,
+  `Str.with_ascii_lowercased` and `Str.replace_each`. `Json.to_str` of a
+  `Str` is Zig's `std.json` string byte for byte; of a record it sorts the
+  fields, so an ordered object is built, not encoded.
+- **`Str.len` is no number.** It answers `LearnAboutStringsInRoc(...)`.
+  Count bytes with `Str.count_utf8_bytes`; test for none with
+  `Str.is_empty`.
+- **`Str.trim` is Unicode's.** It takes a no-break space and an em space
+  off too (`"\u(a0)x".trim() == "x"`). Where the format's spaces are ASCII
+  (the Zig's `std.mem.trim(u8, s, " \t\r\n")`), trim the bytes in that set,
+  and say why beside the helper.
+- **`U64.from_str` is lenient:** it reads `+1`, `1_000`, `0x10` and `1e3`.
+  A number at the door is strict: all digits, then `U64.from_int_digits`
+  of the digits' values.
+- **`Str.from_utf8_lossy` gives one U+FFFD per bad run of bytes.** A writer
+  that must match another byte for byte (one per byte) keeps its own, and
+  says so.
+- **A byte's class has one home** (the chat's `Ascii`: `is_digit`,
+  `is_alphabetic`, `is_whitespace`, `to_lower` and the rest), asked one
+  byte at a time of UTF-8 bytes, which never splits a character. A format
+  with its own set (markdown's five spaces, JSON's four) names it beside
+  its parser, saying how it differs, rather than borrowing a near one.
 
 ## Errors and failure
 
@@ -347,8 +399,8 @@ is the base; these rules sharpen it.
 
 ## Modules and visibility
 
-- **Private helpers live outside the `X :: [].{ }` block** *(not yet
-  settled)*. Only what sits inside the block is exposed
+- **Private helpers live outside the `X :: [].{ }` block**. Only what sits
+  inside the block is exposed
   ([modules](https://roc-lang.org/docs/main/langref/modules/)), so the block
   is the module's public surface at a glance. A helper outside names a block
   member qualified (`Feeds.sep`); the module's own `expect`s call helpers
@@ -366,6 +418,17 @@ is the base; these rules sharpen it.
   the only caller of the host's file functions, and it keeps missing and
   failed apart as a `Try`'s two error tags. Every other module asks it; a
   [hunt](#testing-and-enforcement) flags any call that bypasses it.
+- **A flow is read in one module, not five** (Steve: "We don't want to
+  force folks to read 5 different modules to understand a code flow").
+  A module whose every caller is one other module belongs with that
+  caller, unless the reason it stands alone is written down: a route
+  whole (the upload's POST and GET, the docs, the admin retire), with main
+  only dispatching to it; a rule to audit alone (which `<img>` a page may
+  hold); an effect kept apart from the pure rules the twin tests. Helpers
+  another module shares go where its callers meet (byte searches in Bytes,
+  a markdown fence in its own module), not in whichever module wrote them
+  first. What a route needs from the request (who is asking, the accounts)
+  is a module of its own too, so the route can leave main.
 
 ## The host boundary
 
@@ -429,6 +492,18 @@ is the base; these rules sharpen it.
   ```roc
   Doc({ slug, markdown, rendered: Chrome.rendered(rendered.html) })
   ```
+- **What destroys is planned as data, then handed over a step at a time.**
+  The Roc reads, decides, and builds the whole plan as a list of steps (a
+  tag union: say it, remove this, write that) before anything changes;
+  then it hands each step to an effect, in order, stopping at the first
+  that fails. The host decides only whether to act (a dry run says, a
+  confirm does), and what must go last goes last on the host's side (the
+  accounts, after every step). The dry run and the confirm are then one
+  plan, so what the preview lists is exactly what the confirm removes.
+
+  ```roc
+  Step : [Note(Kind, Str), Remove(Paths.ChatPath, [File, Tree]), Replace(Paths.ChatPath, List(U8)), Retired(Uid)]
+  ```
 
 ## Layout and formatting
 
@@ -468,7 +543,10 @@ is the base; these rules sharpen it.
   - `tools/roc_hunt/hunt.shale` in roc-webbox: `bool_returns` (a Bool that
     should be a tag, or a question without its name), `fs_bypass` (a file
     call outside `Files.roc`), `html_trusted_nonliteral`, magic numbers,
-    runs of same-typed arguments, positional lists, long `if` chains;
+    runs of same-typed arguments, positional lists, long `if` chains, and
+    `single_caller` (a module every production reference to which comes
+    from one other module, `twin` counting, unless its allowlist names it
+    with its reason);
   - Shale's `cookbook/roc/name_hunt.shale`: an effect named as a state or a
     noun, a question with no Bool, vague names, a name its type contradicts,
     negative flags, `command_tense` (an effect told what to do in past
