@@ -280,6 +280,38 @@ Roc's own rules are in the langref's
   	\\.links li { margin: 0 0 4px; }
   ```
 
+### `Str` and the builtins at the pin
+
+- **Read the pin's `Builtin.roc` before writing a helper.** A helper the
+  builtins already have is a second copy to keep right. The chat had
+  written, by hand: `List.split_on` and `split_on_list` (std.mem's
+  splits), `List.split_first` and `split_last` (they answer
+  `{ before, after }`), `List.starts_with` and `ends_with`, `List.map_try`
+  (all or none), `List.append_if_ok`, `List.join_map`, `List.chunks_of`
+  (fixed-size records), `I64.div_floor_by` and `I64.mod_by` (Zig's
+  `@divFloor` and `@mod`), `U64.min`, `max` and `minus_saturated`,
+  `Str.with_ascii_lowercased` and `Str.replace_each`. `Json.to_str` of a
+  `Str` is Zig's `std.json` string byte for byte; of a record it sorts the
+  fields, so an ordered object is built, not encoded.
+- **`Str.len` is no number.** It answers `LearnAboutStringsInRoc(...)`.
+  Count bytes with `Str.count_utf8_bytes`; test for none with
+  `Str.is_empty`.
+- **`Str.trim` is Unicode's.** It takes a no-break space and an em space
+  off too (`"\u(a0)x".trim() == "x"`). Where the format's spaces are ASCII
+  (the Zig's `std.mem.trim(u8, s, " \t\r\n")`), trim the bytes in that set,
+  and say why beside the helper.
+- **`U64.from_str` is lenient:** it reads `+1`, `1_000`, `0x10` and `1e3`.
+  A number at the door is strict: all digits, then `U64.from_int_digits`
+  of the digits' values.
+- **`Str.from_utf8_lossy` gives one U+FFFD per bad run of bytes.** A writer
+  that must match another byte for byte (one per byte) keeps its own, and
+  says so.
+- **A byte's class has one home** (the chat's `Ascii`: `is_digit`,
+  `is_alphabetic`, `is_whitespace`, `to_lower` and the rest), asked one
+  byte at a time of UTF-8 bytes, which never splits a character. A format
+  with its own set (markdown's five spaces, JSON's four) names it beside
+  its parser, saying how it differs, rather than borrowing a near one.
+
 ## Errors and failure
 
 The langref's [errors](https://roc-lang.org/docs/main/langref/errors/) page
