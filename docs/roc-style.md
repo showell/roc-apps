@@ -417,7 +417,9 @@ is the base; these rules sharpen it.
     runs of same-typed arguments, positional lists, long `if` chains;
   - Shale's `cookbook/roc/name_hunt.shale`: an effect named as a state or a
     noun, a question with no Bool, vague names, a name its type contradicts,
-    negative flags;
+    negative flags, and `command_tense` (an effect told what to do in past
+    tense: a tag union with no payloads whose tags all read as done,
+    `[Pinned, Unpinned]`);
   - a stacking check, for three or more parts on one line, is being added
     to the cookbook beside them.
 
