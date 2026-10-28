@@ -111,9 +111,31 @@ Roc's own rules are in the langref's
 
 ### Name what travels together
 
-- **Neighbouring arguments of one type get a record.** They can be swapped and
-  still type-check; a record names the fields, so order can't go wrong:
-  `appended!(conv, who, draft)`, not four `Str`s in a row
+- **A function with three or more arguments takes a record.** This is
+  **Steve's preference**, and `roc fmt` is why. A signature can't be stacked:
+  `roc fmt` refuses a trailing comma in a type annotation, so
+  `serve_topic! : Chat.Request, Route.R, Paths.TopicAt, Chat.Conv, Who => Chat.Answer`
+  stays one long line however it's written. A record stacks (it's a value),
+  names every argument where it's passed, and can't be called with two
+  swapped. So two arguments stay as they are; three or more become one record
+  argument, or two arguments where one is a record of the rest.
+
+  ```roc
+  serve_topic! : {
+  	req : Chat.Request,
+  	route : Route.R,
+  	at : Paths.TopicAt,
+  	conv : Chat.Conv,
+  	who : Who,
+  } => Chat.Answer
+  ```
+
+  The stack hunt flags a signature with three or more arguments
+  ([enforcement](#testing-and-enforcement)).
+- **Neighbouring arguments of one type get a record**, even when there are
+  only two of them: they can be swapped and still type-check, and a record
+  names the fields, so order can't go wrong: `appended!(conv, who, draft)`,
+  not four `Str`s in a row
   ([records](https://roc-lang.org/docs/main/langref/records/)).
 - **A fundamental pair is one record, with a concise comment on each field.**
   A topic's address is `TopicAt : { key, topic }`, and its comments say what a
@@ -319,7 +341,9 @@ is the base; these rules sharpen it.
 - **Stack anything with three or more parts, one per line, with a trailing
   comma**: a list, a record, a tuple, a call's arguments, a tag's payload.
   Three things on one line are hard to scan. A line over about 100 columns
-  gets stacked too.
+  gets stacked too. A type annotation's arguments can't be stacked (`roc fmt`
+  refuses the trailing comma there), so a signature with three or more
+  arguments [takes a record](#name-what-travels-together) instead.
 
   ```roc
   JsonOut.object([
