@@ -366,6 +366,17 @@ is the base; these rules sharpen it.
   the only caller of the host's file functions, and it keeps missing and
   failed apart as a `Try`'s two error tags. Every other module asks it; a
   [hunt](#testing-and-enforcement) flags any call that bypasses it.
+- **A flow is read in one module, not five** (Steve: "We don't want to
+  force folks to read 5 different modules to understand a code flow").
+  A module whose every caller is one other module belongs with that
+  caller, unless the reason it stands alone is written down: a route
+  whole (the upload's POST and GET, the docs, the admin retire), with main
+  only dispatching to it; a rule to audit alone (which `<img>` a page may
+  hold); an effect kept apart from the pure rules the twin tests. Helpers
+  another module shares go where its callers meet (byte searches in Bytes,
+  a markdown fence in its own module), not in whichever module wrote them
+  first. What a route needs from the request (who is asking, the accounts)
+  is a module of its own too, so the route can leave main.
 
 ## The host boundary
 
@@ -480,7 +491,10 @@ is the base; these rules sharpen it.
   - `tools/roc_hunt/hunt.shale` in roc-webbox: `bool_returns` (a Bool that
     should be a tag, or a question without its name), `fs_bypass` (a file
     call outside `Files.roc`), `html_trusted_nonliteral`, magic numbers,
-    runs of same-typed arguments, positional lists, long `if` chains;
+    runs of same-typed arguments, positional lists, long `if` chains, and
+    `single_caller` (a module every production reference to which comes
+    from one other module, `twin` counting, unless its allowlist names it
+    with its reason);
   - Shale's `cookbook/roc/name_hunt.shale`: an effect named as a state or a
     noun, a question with no Bool, vague names, a name its type contradicts,
     negative flags, and `command_tense` (an effect told what to do in past
