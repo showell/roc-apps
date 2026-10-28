@@ -399,8 +399,8 @@ is the base; these rules sharpen it.
 
 ## Modules and visibility
 
-- **Private helpers live outside the `X :: [].{ }` block** *(not yet
-  settled)*. Only what sits inside the block is exposed
+- **Private helpers live outside the `X :: [].{ }` block**. Only what sits
+  inside the block is exposed
   ([modules](https://roc-lang.org/docs/main/langref/modules/)), so the block
   is the module's public surface at a glance. A helper outside names a block
   member qualified (`Feeds.sep`); the module's own `expect`s call helpers
