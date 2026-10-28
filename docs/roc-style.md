@@ -510,6 +510,11 @@ is the base; these rules sharpen it.
   shrinks to numbers. Search hands the conversations it may look in, one
   `search_scope_add!` at a time, and each hit names its conversation by
   place.
+- **Words the operator reads are the Roc's.** A host counter takes a tag
+  for the kind and the Roc's bytes for the text, and keeps them; it never
+  builds a sentence from facts the Roc already has (`count!(kind, text)`).
+  An error crosses the seam as a number; when the Roc needs its name, it
+  asks for it (`name_fault!`).
 - **An effect that answers the request is for bytes only the host should
   touch.** Where the answer is a file's bytes (an upload, whole or a
   range, or a bundle), the Roc decides everything (whose it is, its type,
