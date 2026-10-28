@@ -391,9 +391,25 @@ is the base; these rules sharpen it.
   ```roc
   _ = Host.aside!(Begin)
   told = came_online!(who)
-  match (Host.aside!(End), told) {
+  match (Host.aside!(End).status, told) {
   	(Done, Ok({})) => {}
   	_ => Host.presence_unspent!({})
+  }
+  ```
+- **A failure that must not fail the request travels by an aside, not by
+  each primitive.** The primitives fail the same way everywhere (the
+  request, or the aside around them); `End` answers the aside's `fault`,
+  the host's error as a number the Roc carries and never reads, for the
+  counter that says it. Asides nest, so a step that must not fail the
+  aside around it (one member's feed, inside the welcome's message) gets
+  its own. Example: the fan-out's feed entry, each in an aside, its fault
+  handed to `report_fanout_failure!`.
+
+  ```roc
+  ended = Host.aside!(End)
+  match ended.status {
+  	Done => Host.publish!(f.key.bytes(), f.event)
+  	Failed => Host.report_fanout_failure!(f.surface, { member: f.member, key, sid, fault: ended.fault })
   }
   ```
 
@@ -465,6 +481,13 @@ is the base; these rules sharpen it.
   a topic's stream is the Roc's `Chat.topic_stream(BusKey.topic(at).bytes(),
   Paths.transcript_path(at).bytes(), topic)`, which the host replays and then
   holds.
+- **A primitive takes the bytes exactly; the rule around them is the
+  Roc's.** The host appends what it is handed (`append!(path, bytes)`,
+  answering the size after); whether a torn line needs a newline first, or
+  a feed a separator, the Roc decides from `stat!` and a one-byte
+  `read_at!`, in a pure function its `expect`s reach
+  (`Files.line_bytes`, `Files.entry_bytes`). One primitive with no rule in
+  it replaces one per rule, and the rule is tested where it lives.
 - **A bad name at the seam crashes (a 500) rather than returning `[]`.** An
   empty answer looks like a real one.
 - **Decode the host's answer into types at the door.** See
