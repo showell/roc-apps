@@ -185,6 +185,16 @@ Roc's own rules are in the langref's
   ```roc
   ChatPath.("${conv_dir(at.key)}/sessions/${at.topic}.reactions.jsonl")
   ```
+- **Build text by interpolation:** `"${base}/${topic}"`, not a chain of
+  `Str.concat` calls or a byte list joined by hand. The template reads as the
+  result. Only a `Str` goes in a slot, so convert at the slot:
+  `"${count.to_str()} messages"`. A long template is a multiline string (see
+  below). Joining a list of pieces is `Str.join_with(pieces, sep)`, a
+  function, not a method on the list at the pin. `Str.concat` is for a fold
+  that builds text piece by piece.
+- **Join bytes only where bytes are the point:** inside an opaque builder
+  (`Html`, `JsonOut`) or a decoder at the door, with `List.join`. Text past
+  the door stays `Str`.
 - **Refuse what isn't UTF-8.** A single read of text that isn't UTF-8 fails
   (`Try(Str, [Missing, Failed, NotUtf8])`). Inside a collection, the
   [damaged-entry rule](#errors-and-failure) applies instead:
