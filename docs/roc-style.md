@@ -307,6 +307,15 @@ is the base; these rules sharpen it.
   hand-written:** `roc glue` already agrees, field by field, with one seam
   record when checked at compile time. Once every seam record is checked
   that way, records can grow.
+- **The Roc decides; the host holds what lasts.** A long-lived or byte-heavy
+  answer (a live stream, a file served as stored) is a decision the Roc
+  makes and a primitive the host carries out: the Roc says which bus key, or
+  which file, after it has checked whose it is, and the host only holds the
+  connection or copies the bytes. The host never works out the key or the
+  path again, so the check and the thing checked can't drift apart. Example:
+  a topic's stream is the Roc's `Chat.topic_stream(BusKey.topic(at).bytes(),
+  Paths.transcript_path(at).bytes(), topic)`, which the host replays and then
+  holds (metal-vmm QUEUE 286).
 - **A bad name at the seam crashes (a 500) rather than returning `[]`.** An
   empty answer looks like a real one.
 - **Decode the host's answer into types at the door.** See
