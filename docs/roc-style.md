@@ -417,9 +417,15 @@ is the base; these rules sharpen it.
     runs of same-typed arguments, positional lists, long `if` chains;
   - Shale's `cookbook/roc/name_hunt.shale`: an effect named as a state or a
     noun, a question with no Bool, vague names, a name its type contradicts,
-    negative flags, and `command_tense` (an effect told what to do in past
+    negative flags, `command_tense` (an effect told what to do in past
     tense: a tag union with no payloads whose tags all read as done,
-    `[Pinned, Unpinned]`);
+    `[Pinned, Unpinned]`), and `preposition_split` (one noun given
+    different trailing prepositions in one file, `blocks_of` beside
+    `blocks_in`; a matched opposite pair and the `_from` recursion worker
+    are fine). An effect that starts with a preposition (`of!`) is a
+    `noun_effect`. The words are shared files in Shale's `cookbook/words/`,
+    and `words=1` lists every first word an effect starts with, for a
+    reader to scan;
   - a stacking check, for three or more parts on one line, is being added
     to the cookbook beside them.
 
