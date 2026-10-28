@@ -475,6 +475,13 @@ is the base; these rules sharpen it.
   module takes it, it becomes a tag union that says what it means
   (`Backlog.Given : [Sent(List(U8)), Unsent]`). Pure code never takes the
   host's list, or a `List.first` result with its `ListWasEmpty`.
+- **The host is a type, not a struct of function pointers.** A host
+  implements the seam as a type with one `pub fn` per hosted function, named
+  as the Roc's platform names it. The whole-host constructor fails the build
+  on a function that's missing or mistyped; only a test host may be partial,
+  and its gap is a named panic, never a jump to address 0. A rule every host
+  function follows (the answer when nothing can be done, the data root's
+  join) lives once in the seam, not once per function.
 - **The Roc decides; the host holds what lasts.** A long-lived or byte-heavy
   answer (a live stream, a file served as stored) is a decision the Roc
   makes and a primitive the host carries out: the Roc says which bus key, or
