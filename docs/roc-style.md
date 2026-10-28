@@ -312,7 +312,11 @@ is the base; these rules sharpen it.
   request.** A cache (a count sidecar, a window into a file) can always be
   rebuilt from the truth, so its read answers `Try(_, [Miss])`, with missing
   and failed as one answer. Give the cache read one home
-  (`Files.read_cache!`), not a fallback at each call site.
+  (`Files.read_cache!`), not a fallback at each call site. **A failed write
+  of a cache is a miss too**: the next read recounts, so the write
+  (`Files.write_cache!`) answers nothing and the host logs its failure;
+  never fail a request whose truth is already written (a send whose message
+  is stored) over its cache (metal-vmm QUEUE 287).
 - **One damaged entry fails only itself.** Where a page or
   feed reads many entries (lines, rows, accounts), an entry that won't decode
   is left out and counted, not a failure of the whole request; a lookup of
@@ -325,6 +329,21 @@ is the base; these rules sharpen it.
   effect gathers input, calls a pure function for the decision, and acts on
   its answer. See [testing](#testing-and-enforcement).
 - **Effects are named for their act.** See [naming](#naming).
+- **Best-effort work runs in an aside, and gives back what it could not
+  spend.** Work the request does not stand on (a broadcast, a welcome)
+  runs between `Host.aside!(Begin)` and `Host.aside!(End)`: a read that
+  fails there fails the aside, never the request. Whatever the work was
+  owed is handed back to the host when it did not happen, so it is tried
+  again later rather than lost (metal-vmm QUEUE 288).
+
+  ```roc
+  _ = Host.aside!(Begin)
+  told = came_online!(who)
+  match (Host.aside!(End), told) {
+  	(Done, Ok({})) => {}
+  	_ => Host.presence_unspent!({})
+  }
+  ```
 
 ## Modules and visibility
 
@@ -371,10 +390,46 @@ is the base; these rules sharpen it.
   hand-written:** `roc glue` already agrees, field by field, with one seam
   record when checked at compile time. Once every seam record is checked
   that way, records can grow.
+- **The Roc decides; the host holds what lasts.** A long-lived or byte-heavy
+  answer (a live stream, a file served as stored) is a decision the Roc
+  makes and a primitive the host carries out: the Roc says which bus key, or
+  which file, after it has checked whose it is, and the host only holds the
+  connection or copies the bytes. The host never works out the key or the
+  path again, so the check and the thing checked can't drift apart. Example:
+  a topic's stream is the Roc's `Chat.topic_stream(BusKey.topic(at).bytes(),
+  Paths.transcript_path(at).bytes(), topic)`, which the host replays and then
+  holds (metal-vmm QUEUE 286).
 - **A bad name at the seam crashes (a 500) rather than returning `[]`.** An
   empty answer looks like a real one.
 - **Decode the host's answer into types at the door.** See
   [decode once](#make-wrong-values-impossible-to-build).
+- **A list the host would mirror goes a call at a time.** Rather than a
+  list of records crossing the seam (a new mirror, and its swaps), the Roc
+  hands the host one item per call to an effect that keeps what it is
+  building, then a last call to finish it. A topic's bundle is
+  `Files.bundle_add!(name, path)` for each file, then
+  `Host.serve_bundle!(name)`: two lists of bytes per call, no record
+  (metal-vmm QUEUE 291).
+- **An effect that answers the request is for bytes only the host should
+  touch.** Where the answer is a file's bytes (an upload, whole or a
+  range, or a bundle), the Roc decides everything (whose it is, its type,
+  the range, the 404 and the 416) and passes it in one record; the host
+  answers, and the Roc returns `Chat.answered`. Everything decidable stays
+  the Roc's: the host never parses the `Range` header again.
+
+  ```roc
+  Host.serve_upload!({ first, last, size, content_type, path, part: Range })
+  ```
+- **Markup the host made comes in at one door.** `Html.trusted` takes a
+  string literal only; markup the host built (a script's hashed src, the
+  server's own rendered markdown) becomes `Html` in Chrome.roc alone
+  (`Chrome.src_in`, `Chrome.rendered`), so every place the page trusts bytes
+  it did not write is in one file. The hunt flags `Html.host_markup`
+  anywhere else (metal-vmm QUEUE 289).
+
+  ```roc
+  Doc({ slug, markdown, rendered: Chrome.rendered(rendered.html) })
+  ```
 
 ## Layout and formatting
 
