@@ -463,6 +463,18 @@ is the base; these rules sharpen it.
   `src/chat_glue_test.zig`). With that check a record can be as large as
   the data is: there is no limit on its size, and a list of small records
   is a choice made for the data, not for the mirror.
+- **A hosted function answers a fact, never a verdict.** When the Roc can
+  decide from what the host can tell it, the host gives the fact and the Roc
+  gives the verdict: `identify!` says who is asking, and `Members.admit!`
+  decides whether they may use the chat. The host keeps only what needs its
+  secrets or its state (an HMAC check, a key compare). A fact a request needs
+  everywhere is read once, at the door, and passed to every route as a
+  value, never as a lazy `[Known, Unasked]` cache.
+- **A host answer of zero or one value becomes a named tag at the door.**
+  `read_header!` and `read_query!` answer a `List(List(U8))`; before any pure
+  module takes it, it becomes a tag union that says what it means
+  (`Backlog.Given : [Sent(List(U8)), Unsent]`). Pure code never takes the
+  host's list, or a `List.first` result with its `ListWasEmpty`.
 - **The Roc decides; the host holds what lasts.** A long-lived or byte-heavy
   answer (a live stream, a file served as stored) is a decision the Roc
   makes and a primitive the host carries out: the Roc says which bus key, or
