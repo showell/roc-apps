@@ -71,8 +71,7 @@ Roc's own rules are in the langref's
   Examples: `is_valid_emoji`, `has_prefix`, `is_all_digits`, the langref's
   `is_empty`.
 - **Prefer a plain word to an abbreviation.** `topic`, not `sid`.
-- **An effect is named for its act, never as a state or a noun** *(not yet
-  settled)*. `page!`, `appended!` or `member!` read as a value or a question,
+- **An effect is named for its act, never as a state or a noun.** `page!`, `appended!` or `member!` read as a value or a question,
   not a command. A route handler is `serve_*!` for what it serves
   (`serve_topic_page!`); a lookup that can fail the request is `load_*!`
   (`load_viewer!`); anything else is a verb (`append_message!`, `fan_out!`,
@@ -84,6 +83,27 @@ Roc's own rules are in the langref's
   `held_raw!`.
 - **When a Bool becomes a tag, rename the field to the question.** See
   [tags](#a-closed-set-is-a-tag-union).
+- **Name a tag for what it is: a command, an event, or a state.** A tag that
+  tells someone what to do is an imperative verb; a tag that reports what
+  happened is past tense; a tag that says what is (a state, an answer) is a
+  noun or an adjective. The reader can then tell an instruction from a fact
+  at a glance, and a tag passed *in* as an instruction doesn't read like
+  something that has already happened.
+
+  ```roc
+  # A command, passed in:
+  Edit : [Pin, Unpin]
+
+  # An event, stored and replayed:
+  Change : [Added, Removed]
+
+  # A state:
+  Presence : [Online, Offline]
+  ```
+
+  A domain's own words for a state stay as they are, even in a command's
+  union: an HTTP answer's `NotFound` beside `Redirect` is the protocol's
+  name, not a slip. (From a suggestion on the Roc Zulip, sharpened.)
 
 ## Types and data
 
@@ -111,9 +131,31 @@ Roc's own rules are in the langref's
 
 ### Name what travels together
 
-- **Neighbouring arguments of one type get a record.** They can be swapped and
-  still type-check; a record names the fields, so order can't go wrong:
-  `appended!(conv, who, draft)`, not four `Str`s in a row
+- **A function with three or more arguments takes a record.** This is
+  **Steve's preference**, and `roc fmt` is why. A signature can't be stacked:
+  `roc fmt` refuses a trailing comma in a type annotation, so
+  `serve_topic! : Chat.Request, Route.R, Paths.TopicAt, Chat.Conv, Who => Chat.Answer`
+  stays one long line however it's written. A record stacks (it's a value),
+  names every argument where it's passed, and can't be called with two
+  swapped. So two arguments stay as they are; three or more become one record
+  argument, or two arguments where one is a record of the rest.
+
+  ```roc
+  serve_topic! : {
+  	req : Chat.Request,
+  	route : Route.R,
+  	at : Paths.TopicAt,
+  	conv : Chat.Conv,
+  	who : Who,
+  } => Chat.Answer
+  ```
+
+  The stack hunt flags a signature with three or more arguments
+  ([enforcement](#testing-and-enforcement)).
+- **Neighbouring arguments of one type get a record**, even when there are
+  only two of them: they can be swapped and still type-check, and a record
+  names the fields, so order can't go wrong: `appended!(conv, who, draft)`,
+  not four `Str`s in a row
   ([records](https://roc-lang.org/docs/main/langref/records/)).
 - **A fundamental pair is one record, with a concise comment on each field.**
   A topic's address is `TopicAt : { key, topic }`, and its comments say what a
@@ -144,6 +186,28 @@ Roc's own rules are in the langref's
   ```
 - **Combine them into the domain's real shape:**
   `ConvKey : [Dm(PairKey), Channel(ChannelName)]`.
+- **A state machine is an opaque type whose module owns the transitions.**
+  Each state is a value only the module can build, and each transition is a
+  function from one state to the next, so a caller can't make a state by
+  hand or skip a step. An ordering rule the code depends on (stored before
+  published) is then a type, not a comment. A two-state tag used inside one
+  function needs none of this; a state that crosses functions or modules
+  does. (From a suggestion on the Roc Zulip.)
+
+  ```roc
+  Welcome :: [Pending, Done].{
+
+  	## Read from the member's marker: the one way in.
+  	from_marker : Bool -> Welcome
+  	from_marker = |pending| if pending Welcome.(Pending) else Welcome.(Done)
+
+  	## The only transition: once the hello is stored.
+  	welcomed : Welcome -> Welcome
+  	welcomed = |_| Welcome.(Done)
+
+  	is_eq : _
+  }
+  ```
 - **Decode into the type at the door, once.** The function that reads a
   request, a file or a host answer turns it into `Uid`, `ConvKey`, `ChatPath`;
   nothing deeper takes the raw `Str` or bytes and decodes again.
@@ -332,7 +396,9 @@ is the base; these rules sharpen it.
 - **Stack anything with three or more parts, one per line, with a trailing
   comma**: a list, a record, a tuple, a call's arguments, a tag's payload.
   Three things on one line are hard to scan. A line over about 100 columns
-  gets stacked too.
+  gets stacked too. A type annotation's arguments can't be stacked (`roc fmt`
+  refuses the trailing comma there), so a signature with three or more
+  arguments [takes a record](#name-what-travels-together) instead.
 
   ```roc
   JsonOut.object([
@@ -364,7 +430,9 @@ is the base; these rules sharpen it.
     runs of same-typed arguments, positional lists, long `if` chains;
   - Shale's `cookbook/roc/name_hunt.shale`: an effect named as a state or a
     noun, a question with no Bool, vague names, a name its type contradicts,
-    negative flags;
+    negative flags, and `command_tense` (an effect told what to do in past
+    tense: a tag union with no payloads whose tags all read as done,
+    `[Pinned, Unpinned]`);
   - a stacking check, for three or more parts on one line, is being added
     to the cookbook beside them.
 
