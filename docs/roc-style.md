@@ -15,8 +15,10 @@ the rules are for any Roc. How the compiler itself behaves is in
 **Roc's own conventions** are in its language reference, the *langref*:
 <https://roc-lang.org/docs/main/langref/> (source: `docs/langref/` in
 roc-lang/roc; our pinned copy is `~/tools/roc-258ab27/docs/langref/`). It
-covers the new compiler's syntax and is marked work in progress. It has no
-separate style guide; its conventions sit in the pages, chiefly
+covers the new compiler's syntax and is marked work in progress. Roc has no
+style guide for code (roc-lang/roc's `docs/langref-style-guide.md` is about
+writing the langref's prose, not Roc), and `roc fmt` settles layout with no
+options. Its conventions sit in the langref's pages, chiefly
 [naming](https://roc-lang.org/docs/main/langref/naming/),
 [errors](https://roc-lang.org/docs/main/langref/errors/),
 [types](https://roc-lang.org/docs/main/langref/types/) and
