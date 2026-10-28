@@ -39,6 +39,19 @@ chat was written against both of the rules below, and is being brought round
 - **Character literals** (`'_'`, `c - 'A' + 'a'`) are for the byte-level
   parsing at the door. A number left in the code should be an honest number (a
   minute, a length limit), not a byte in disguise.
+- **A length limit counts bytes** (`Str.count_utf8_bytes`), never graphemes.
+  Limits exist to protect the disk; a convention about how long text should
+  look is social, not technical.
+- **Markup and CSS are multiline `\\` strings**, one `\\` per line. They need
+  no `\"` escaping and keep `${…}` interpolation, so the literal reads as the
+  page it makes. Leave a short single-line literal as it is
+  ([strings](https://roc-lang.org/docs/main/langref/strings/#multiline-strings)).
+
+  ```roc
+  css =
+      \\.links a { color: ${link}; }
+      \\.links li { margin: 0 0 4px; }
+  ```
 
 ## Failure is a `Try`
 
@@ -46,6 +59,25 @@ chat was written against both of the rules below, and is being brought round
   wrong.** That includes a three-way read: `Try(List(U8), [Missing, Failed])`
   keeps missing and failed apart, as the chat's `[Found, Missing, Failed]`
   did, and lets `?` and `??` work.
+- **`crash`, with a reason, on the impossible; never a silent `?? default`.**
+  A default for a case that can't happen hides the bug that makes it happen.
+  The message names the function and why the case can't arise
+  ([errors](https://roc-lang.org/docs/main/langref/errors/#when-to-crash)):
+
+  ```roc
+  Err(_) => crash "Html.fill: a template has more {s} slots than values"
+  ```
+
+  A case that *can* happen (user data, a file on disk, the end of a walk)
+  keeps its handling: an error tag, not a crash.
+- **Better still, let the pattern say it.** Match the shape you need
+  (`[first, second, ..]`, a fixed-length list pattern) instead of indexing and
+  defaulting; then there's no impossible case left to crash on.
+- **A failed read of a cache is a miss; a failed read of the truth fails the
+  request.** A cache (a count sidecar, a window into a file) can always be
+  rebuilt from the truth, so its read answers `Try(_, [Miss])` and missing and
+  failed are one answer. Give the cache read one home (`Files.read_cache!`),
+  not a fallback at each call site.
 
 ## Roc's conventions we have already broken
 
@@ -72,6 +104,16 @@ The langref says these too. They're repeated here because the chat breaks them.
   case of it, so rename the field when the tag reads wrong with it: `on : Bool`
   became `change : [Added, Removed]`, and `online : Bool` became
   `presence : [Online, Offline]`.
+- **Tags at the host boundary too.** A hosted effect answers a tag, not a
+  Bool: `[Serving, NotServing]`, `[Member, Outsider]`, and `Try({}, [Failed])`
+  for one that can only succeed or fail. A Bool across the seam is as easy to
+  misread there as anywhere.
+- **An ordering answers `[Before, Same, After]`**, fed straight to
+  `List.sort_with`, not a signed number to compare against zero.
+- **A function that does return a Bool is a question: `is_*` or `has_*`**
+  (`is_valid_emoji`, `has_prefix`, `is_all_digits`), as the langref's
+  `is_empty` is. A bare noun or adjective (`all_digits`) doesn't say which way
+  `True` points.
 - **Use `match` where a chain tests one value** against constants, tags or
   ranges (`Html.escape`, the header names).
 - **Leave an `if` chain alone when its branches test different things in
@@ -108,6 +150,24 @@ The langref says these too. They're repeated here because the chat breaks them.
   - wrap: `X.(v)`. Plain `X(v)` parses as a tag.
   - unwrap: the pattern `|X.(v)| v`;
   - compare: `==` needs an `is_eq` on the type; `is_eq : _` derives it.
+- **Decode into the type at the door, once.** The function that reads a
+  request, a file or a host answer turns it into `Uid`, `ConvKey`, `ChatPath`;
+  nothing deeper takes the raw `Str` or bytes and decodes again.
+- **A type's accessors are methods in its own block**, called as methods:
+  `key.to_str()`, `key.partner(me)`, `page.bytes()`. A module call stays where
+  the function is passed as a value (`map_ok(Uid.to_str)`) and for builders
+  that make a value from parts rather than read one
+  ([static dispatch](https://roc-lang.org/docs/main/langref/static-dispatch/)).
+  A type made nominal (`:=`) rather than an alias can carry them.
+- **JSON goes through one opaque builder** (`JsonOut :: List(U8)`, with
+  `string`, `number`, `bool`, `array`, `object`, and `bytes` the only way
+  out), never a string spliced by hand. Every field is then a whole, escaped
+  value. Html is opaque the same way: a page is built only from escaped text
+  and literal markup.
+
+  ```roc
+  JsonOut.object([("conv", JsonOut.string(conv)), ("id", JsonOut.number(id))])
+  ```
 
 ## One workhorse at the edge
 
@@ -121,14 +181,65 @@ The langref says these too. They're repeated here because the chat breaks them.
   record's layout against the host's extern struct, so a large one can drift
   and corrupt memory instead of failing. Use a list of small records, and make
   a bad name crash (a 500) rather than return `[]`.
+- **One home for a rule.** A fact the program depends on (a limit, a check,
+  how a cache is read) lives in one place, and every user asks that place. A
+  second copy that must remember to agree is the bug waiting; where a copy
+  has to exist on the far side of a seam, a test holds the two equal.
 
 ## Speed, layout, tests
 
 - **A little speed traded for robustness is fine,** especially off hot loops.
 - **`roc fmt` decides layout.** Ask for a vertical stack with a trailing comma:
   it keeps it, as `zig fmt` does.
+- **Stack anything with three or more parts, one per line, with a trailing
+  comma**: a list, a record, a tuple, a call's arguments, a tag's payload.
+  Three things on one line are hard to scan, and `roc fmt` keeps the stack.
+  A line over about 100 columns gets stacked too.
+
+  ```roc
+  JsonOut.object([
+      ("conv", JsonOut.string(conv)),
+      ("session", JsonOut.string(topic)),
+      ("id", JsonOut.number(id)),
+  ])
+  ```
+
+  That's `roc fmt`'s own shape: a call whose one argument is a stacked list
+  keeps the bracket on the call's line.
 - **Pure decisions live outside effects**, so `expect`s can reach them
   (`roc test chat/main.roc` runs every imported module's). Test each pure
   mapping, and the exact bytes each builder makes.
 - **Build tests with `--opt=dev`.** `roc build` defaults to `--opt=speed`
   (LLVM): the chat took 5 min 21 s that way, 0.9 s on the dev backend.
+
+## Recent, not yet settled
+
+- **An effect is named for its act, never as a state or a noun.** A route
+  handler is `serve_*!` for what it serves (`serve_topic_page!`); a lookup
+  that can fail the request is `load_*!` (`load_viewer!`); anything else is a
+  verb (`append_message!`, `fan_out!`, `check_member!`). `page!`,
+  `appended!` or `member!` read as a value or a question, not a command. A
+  port is where such names come from: it keeps the old function's noun or
+  past tense, so rename on the way in.
+- **A command is not named as a question.** An effect that does something
+  and reports how it went (`serve_file!` answering `[Serving, NotServing]`)
+  is named for the act, not for the state it checks (`held_raw!`).
+- **Private helpers live outside the `X :: [].{ }` block.** Only what sits
+  inside the block is exposed
+  ([modules](https://roc-lang.org/docs/main/langref/modules/)), so the block
+  is the module's public surface at a glance. A helper outside names a block
+  member qualified (`Feeds.sep`); the module's own `expect`s call helpers
+  bare.
+
+  ```roc
+  Util :: [].{
+      public_fn : Str -> Str
+      public_fn = |s| helper(s)
+  }
+
+  helper : Str -> Str
+  ```
+- **One damaged entry fails only itself.** Where a page or feed reads many
+  entries (lines, rows, accounts), an entry that won't decode is left out and
+  counted, not a failure of the whole request; a lookup of that entry itself
+  still fails. One bad byte on disk must not be a lasting 500 for everyone.
