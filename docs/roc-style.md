@@ -471,7 +471,8 @@ is the base; these rules sharpen it.
   that way, records can grow. For the chat, glue now checks every one:
   roc-webbox's `src/chat_glue_test.zig` holds each record of all its
   hosted functions to `roc glue`'s field by field at compile time, by name
-  and offset, so a swap fails the build.
+  and offset, so a swap fails the build; and each tag union tag by tag, by
+  number, so the host's enums need no order check of their own.
 - **The Roc decides; the host holds what lasts.** A long-lived or byte-heavy
   answer (a live stream, a file served as stored) is a decision the Roc
   makes and a primitive the host carries out: the Roc says which bus key, or
@@ -508,6 +509,13 @@ is the base; these rules sharpen it.
   ```roc
   Host.serve_upload!({ first, last, size, content_type, path, part: Range })
   ```
+- **A rule the whole site keeps stays the host's primitive.** What is the
+  chat's is the Roc's: a static script is `Route.asset` naming it, then
+  `Host.serve_script!(name)` answering `[Missing, Served]`, the Roc saying
+  the 404. How an embedded file is cached (its hash as its ETag, immutable
+  when asked for by it, a 304) is webbox's `serveEmbedded`, which every
+  embedded file on the site goes through, the games' too: a Roc copy of it
+  would be a second home for one rule.
 - **Markup the host made comes in at one door.** `Html.trusted` takes a
   string literal only; markup the host built (a script's hashed src, the
   server's own rendered markdown) becomes `Html` in Chrome.roc alone
