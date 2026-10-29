@@ -352,6 +352,12 @@ is the base; these rules sharpen it.
 - **Its error tags say what went wrong.** The langref's `[ListWasEmpty]` says
   why; an `Err(None)` says nothing, and two such errors look alike after a `?`
   joins them.
+- **No optionals: a value that may be absent is tagged by what it is, and
+  its absence by why.** `[Some(x), None]`, `Nothing`, and `Try(x, [None])`
+  make every caller remember what "none" meant. A topic's last message is
+  `[Latest(Message), NoMessage]`; the editor's open doc is
+  `[NoneChosen, Doc(...)]`. The same holds for a fold's "nothing found yet"
+  (`[Newest(...), NoDocs]`).
 - **Keep distinct failures apart in the tags.** A read answers
   `Try(Str, [Missing, Failed])`: missing and failed are different answers,
   and as a `Try` they still work with `?` and `??`.
