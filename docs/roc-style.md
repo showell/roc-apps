@@ -70,6 +70,10 @@ Roc's own rules are in the langref's
   A bare noun or adjective (`all_digits`) doesn't say which way `True` points.
   Examples: `is_valid_emoji`, `has_prefix`, `is_all_digits`, the langref's
   `is_empty`.
+- **A function is named for what it does,** so a reader can predict it
+  without opening it; what the caller wants it for stays in the caller.
+  Search's `conv_at(scope, at)` answers the conversation at a place, and
+  crashes past the end; as `in_scope` it read as a question.
 - **Prefer a plain word to an abbreviation.** `topic`, not `sid`.
 - **A type is named for what it holds, not where it sits.** `Entry`, `Item`,
   `Node`, `Data` and `Info` say only that a value is in a list or a tree;
