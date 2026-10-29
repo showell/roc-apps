@@ -113,6 +113,11 @@ Roc's own rules are in the langref's
   any closed set; match on it exhaustively.** A tag says which case it is; a
   Bool or a number has to be remembered
   ([tag unions](https://roc-lang.org/docs/main/langref/tag-unions/)).
+- **A flag a caller passes is a tag; a port keeps its source's named
+  predicates.** The markdown's callers say `Tight` or `Loose`, `HardWrap`
+  or `Reflow`, `Linked` or `InLabel`; inside, CommonMark's own `left`,
+  `right`, `can_open` and `can_close` stay Bools, as the spec and the
+  Zig it is held to name them (QUEUE 305).
 - **Naming the tags forces you to name the question.** A Bool usually states
   one case of it, so rename the field when the tag reads wrong with it:
   `on : Bool` becomes `change : [Added, Removed]`; `online : Bool` becomes
@@ -276,6 +281,13 @@ Roc's own rules are in the langref's
   ```roc
   Html.tag({ name: "a", attrs: [Attr("href", href)], inner: Html.text(label) })
   ```
+- **The markdown renderer is the one writer of markup by bytes** (Md,
+  MdInline, MdMedia in roc-webbox chat/; metal-vmm QUEUE 305). It is
+  parsing at the door, held byte for byte to the Zig that defines the
+  dialect, so it writes its HTML as bytes, every byte of a member's text
+  through its one escape, `MdText.escape_onto`, and every tag it lets
+  through rebuilt by MdMedia's allowlist. What it makes enters a page as
+  markup the host made would: at the one door.
 - **Join bytes only where bytes are the point:** inside an opaque builder
   (`Html`, `JsonOut`) or a decoder at the door, with `List.join`. Text past
   the door stays `Str`.
