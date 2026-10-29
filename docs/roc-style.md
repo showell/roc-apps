@@ -9,7 +9,9 @@ These are Steve's preferences for Roc in this repository and its siblings
 (roc-webbox's chat, dog-park's physics), and most carry over from his Zig.
 Each one replaces a construct that can be wrong and still compile with one
 that can't. Examples are drawn mostly from roc-webbox's chat (`chat/`), but
-the rules are for any Roc. How the compiler itself behaves is in
+the rules are for any Roc. The guide is written for Claude, which writes
+this code, so a rule is added where our own code taught it. How the
+compiler itself behaves is in
 [roc-notes.md](roc-notes.md).
 
 **Roc's own conventions** are in its language reference, the *langref*:
