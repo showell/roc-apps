@@ -103,7 +103,7 @@ Roc's own rules are in the langref's
 
   A domain's own words for a state stay as they are, even in a command's
   union: an HTTP answer's `NotFound` beside `Redirect` is the protocol's
-  name, not a slip. (From a suggestion on the Roc Zulip, sharpened.)
+  name, not a slip.
 
 ## Types and data
 
@@ -201,7 +201,7 @@ Roc's own rules are in the langref's
   hand or skip a step. An ordering rule the code depends on (stored before
   published) is then a type, not a comment. A two-state tag used inside one
   function needs none of this; a state that crosses functions or modules
-  does. (From a suggestion on the Roc Zulip.)
+  does.
 
   ```roc
   Welcome :: [Pending, Done].{
@@ -628,3 +628,7 @@ is the base; these rules sharpen it.
   [layout](#layout-and-formatting).
 - **Build tests with `--opt=dev`.** `roc build` defaults to `--opt=speed`
   (LLVM): the chat took 5 min 21 s that way, 0.9 s on the dev backend.
+
+---
+
+All of these suggestions solely reflect Steve Howell's preferences, but he thanks the Roc community (notramo in particular) for several useful suggestions.
