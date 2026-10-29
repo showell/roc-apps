@@ -456,6 +456,14 @@ is the base; these rules sharpen it.
   a markdown fence in its own module), not in whichever module wrote them
   first. What a route needs from the request (who is asking, the accounts)
   is a module of its own too, so the route can leave main.
+- **A function earns its boundary.** It names a domain concept, hides a
+  platform's fiddliness, removes real repetition, or is a pure decision an
+  `expect` reaches. A wrapper of a line or two with one caller, or a second
+  name for one function, is read better inline: the chat's `docs!` only
+  split `/post` from the rest for its one caller, a match whose other arms
+  make the same split in place. A rule of thumb, not a gate: a one-caller
+  function that is a rule's one home, or the public name of a function the
+  twins hold to its Zig, stays.
 
 ## The host boundary
 
