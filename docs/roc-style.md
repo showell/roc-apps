@@ -583,6 +583,23 @@ is the base; these rules sharpen it.
 
   That's `roc fmt`'s own shape: a call whose one argument is a stacked list
   keeps the bracket on the call's line.
+- **A call nested three deep is read inside out; write it left to right.**
+  A method chain first, where the values carry methods (the builtins' do:
+  `s.split_on("\n").map(ZigText.trim_str).drop_if(|l| l.is_empty())`); a
+  pipe where the steps are module functions; else a named middle step
+  (`now = Time.rfc3339(Host.read_time!({}))`). A chain of edits reads as
+  the order they run in:
+
+  ```roc
+  edited = text.to_utf8()
+  	|> quotes
+  	|> html_images
+  	|> md_images
+  	|> collapse_ws
+  	|> cap(350)
+  ```
+
+  not `cap(collapse_ws(md_images(html_images(quotes(md)))), 350)`.
 
 ## Testing and enforcement
 
