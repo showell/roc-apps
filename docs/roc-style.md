@@ -559,7 +559,7 @@ is the base; these rules sharpen it.
   plan, so what the preview lists is exactly what the confirm removes.
 
   ```roc
-  Step : [Note(Kind, Str), Remove(Paths.ChatPath, [File, Tree]), Replace(Paths.ChatPath, List(U8)), Retired(Uid)]
+  Step : [Note(Kind, Str), Remove(Paths.ChatPath, [File, Tree]), Replace(Paths.ChatPath, List(U8)), RetireUser(Uid)]
   ```
 
 ## Layout and formatting
