@@ -71,6 +71,11 @@ Roc's own rules are in the langref's
   Examples: `is_valid_emoji`, `has_prefix`, `is_all_digits`, the langref's
   `is_empty`.
 - **Prefer a plain word to an abbreviation.** `topic`, not `sid`.
+- **A type is named for what it holds, not where it sits.** `Entry`, `Item`,
+  `Node`, `Data` and `Info` say only that a value is in a list or a tree;
+  the domain usually has the word. One DM's row in the conversations JSON is
+  a `DmSummary`, not an `Entry`. Where the container word *is* the domain's
+  (a folder listing's entry), it stays.
 - **An effect is named for its act, never as a state or a noun.** `page!`, `appended!` or `member!` read as a value or a question,
   not a command. A route handler is `serve_*!` for what it serves
   (`serve_topic_page!`); a lookup that can fail the request is `load_*!`
