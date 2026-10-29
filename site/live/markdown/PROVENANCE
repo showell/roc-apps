@@ -1,4 +1,4 @@
-published 2026-10-29T20:06:38Z
+published 2026-10-29T20:41:16Z
 Roc compiler version nightly-2026-10-09-258ab27
-roc-markdown efc572e (its zig build playground)
-sha256 0b1155e302530acb  818375 bytes  md.wasm
+roc-markdown f446451 (its zig build playground)
+sha256 fed262cfd116f467  935168 bytes  md.wasm
