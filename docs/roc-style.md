@@ -320,7 +320,10 @@ Roc's own rules are in the langref's
   (all or none), `List.append_if_ok`, `List.join_map`, `List.chunks_of`
   (fixed-size records), `I64.div_floor_by` and `I64.mod_by` (Zig's
   `@divFloor` and `@mod`), `U64.min`, `max` and `minus_saturated`,
-  `Str.with_ascii_lowercased` and `Str.replace_each`. `Json.to_str` of a
+  `Str.with_ascii_lowercased` and `Str.replace_each`. A fold can be one
+  too: a fold whose accumulator only says whether it has found something
+  yet is `List.find_first` or `find_last`, one that keeps the larger is
+  `List.max`, and one that stops early is `List.fold_until`. `Json.to_str` of a
   `Str` is Zig's `std.json` string byte for byte; of a record it sorts the
   fields, so an ordered object is built, not encoded.
 - **`Str.len` is no number.** It answers `LearnAboutStringsInRoc(...)`.
