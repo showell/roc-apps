@@ -684,9 +684,32 @@ is the base; these rules sharpen it.
     are fine). An effect that starts with a preposition (`of!`) is a
     `noun_effect`. The words are shared files in Shale's `cookbook/words/`,
     and `words=1` lists every first word an effect starts with, for a
-    reader to scan;
-  - a stacking check, for three or more parts on one line, is being added
-    to the cookbook beside them.
+    reader to scan. Beside the names, `mixed_tense` (an effect handed a
+    union of commands and events at once, `[Pin, Unpinned]`; a `List(T)`
+    argument is judged as `T`, for this and `command_tense`) and
+    `container` (a type or record field named only by container words,
+    `Entry`, `items`, unless its doc says whose: `## A folder's entry`);
+  - Shale's `cookbook/roc/boundaries.shale`: `fixed`, a parameter every
+    production call fills with the same literal (a recursion's `at: 0`;
+    context passed down, `me` or `accounts`, is no constant), and `single`,
+    a one-caller wrapper of a line or two that no `expect`, twin or `##`
+    doc keeps (the rule of thumb in [modules](#modules-and-visibility),
+    never a gate);
+  - Shale's `cookbook/roc/errors.shale`: `error_alias` (a result's `Try`
+    whose error is a shared alias, not its tags in place) and
+    `optional_tag` (a tag named as an optional, `None` or `Some`);
+  - Shale's `cookbook/roc/nest_depth.shale`: a call nested three deep or
+    more, read inside out ([layout](#layout-and-formatting));
+  - Shale's `cookbook/roc/stack.shale`: three or more parts on one line,
+    or a line over 100 columns.
+
+  The hunt runs these cookbook checks over the chat too, as findings:
+  `stack.shale`, `name_hunt.shale`'s `command_tense`, `mixed_tense` and
+  `container`, `boundaries.shale`'s `fixed`, `errors.shale`'s
+  `error_alias` and `optional_tag`, and `nest_depth.shale` at four deep
+  (main holds none; three deep still stands in some 46 places, builders
+  and `expect`s among them, which the rule above asks to be rewritten as
+  they are touched).
 
   A rule added here that a script can check gets a check, and a gate runs
   it (`bool_returns` must stay 0). A finding fixed by hand and left
