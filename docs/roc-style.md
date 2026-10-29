@@ -166,6 +166,11 @@ Roc's own rules are in the langref's
 
   The stack hunt flags a signature with three or more arguments
   ([enforcement](#testing-and-enforcement)).
+- **A parameter every caller passes the same value is no parameter.** A
+  recursion's start (`at: 0`, `kept: 0`) belongs to an entry function that
+  takes only what varies, and the `_from` worker it calls is the one place
+  the index is passed: `Bytes.find(s, { needle })` calls
+  `find_from(s, { needle, at: 0 })`, as `quotes` calls `quotes_from`.
 - **Neighbouring arguments of one type get a record**, even when there are
   only two of them: they can be swapped and still type-check, and a record
   names the fields, so order can't go wrong: `appended!(conv, who, draft)`,
