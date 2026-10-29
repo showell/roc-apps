@@ -198,25 +198,25 @@ Roc's own rules are in the langref's
 - **A state machine is an opaque type whose module owns the transitions.**
   Each state is a value only the module can build, and each transition is a
   function from one state to the next, so a caller can't make a state by
-  hand or skip a step. An ordering rule the code depends on (stored before
-  published) is then a type, not a comment. A two-state tag used inside one
-  function needs none of this; a state that crosses functions or modules
-  does.
+  hand or skip a step. What a state claims (a search found this place) is
+  then true by construction, not by each caller's care. A two-state tag used
+  inside one function needs none of this; a state that crosses functions or
+  modules does. In the chat, a scan remembers where its next `>` is across
+  many openers:
 
   ```roc
-  Welcome :: [Pending, Done].{
+  Seen :: [Unknown, At(U64), Never].{
 
-  	## Read from the member's marker: the one way in.
-  	from_marker : Bool -> Welcome
-  	from_marker = |pending| if pending Welcome.(Pending) else Welcome.(Done)
-
-  	## The only transition: once the hello is stored.
-  	welcomed : Welcome -> Welcome
-  	welcomed = |_| Welcome.(Done)
-
-  	is_eq : _
+  	## No search made yet: where every scan starts.
+  	unknown : Seen
+  	unknown = Seen.(Unknown)
   }
+
+  ## The only transition: a search, or the answer an earlier one found.
+  find_seen : List(U8), { byte : U8, from : U64, seen : Seen } -> (Try(U64, [NotFound]), Seen)
   ```
+
+  A caller holds a `Seen` and passes it on; it can't write `At(40)` itself.
 - **Decode into the type at the door, once.** The function that reads a
   request, a file or a host answer turns it into `Uid`, `ConvKey`, `ChatPath`;
   nothing deeper takes the raw `Str` or bytes and decodes again.
