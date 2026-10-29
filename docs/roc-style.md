@@ -363,6 +363,14 @@ is the base; these rules sharpen it.
   `[Latest(Message), NoMessage]`; the editor's open doc is
   `[NoneChosen, Doc(...)]`. The same holds for a fold's "nothing found yet"
   (`[Newest(...), NoDocs]`).
+- **A `Try`'s error lists the tags that function can return, in place; no
+  shared error alias.** `Accounts.name` fails only with
+  `[NameUnreadable(Uid)]` and `admits` only with `[KindUnreadable(Uid)]`;
+  one alias of both made every caller of each handle a tag that can't
+  happen. An output union is open to its callers, so the narrow list still
+  meets a handler that takes the wide one (`Members.fail_unreadable!`), and
+  the checker holds the body to the list. An alias is for a handler's
+  input. Leaving the error to inference (`_`) is fine too.
 - **Keep distinct failures apart in the tags.** A read answers
   `Try(Str, [Missing, Failed])`: missing and failed are different answers,
   and as a `Try` they still work with `?` and `??`.
