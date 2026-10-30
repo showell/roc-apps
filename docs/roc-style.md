@@ -292,9 +292,9 @@ Roc's own rules are in the langref's
   by hand.** JSON is `JsonOut :: List(U8)`, with `string`, `number`, `bool`,
   `array`, `object`, and `bytes` the only way out, so every field is a whole,
   escaped value. Html is opaque the same way: a page is built only from
-  escaped text and literal markup. roc-webbox's chat follows this rule;
-  roc-chat doesn't yet (its JSON answers and pages are spliced, escaped by
-  hand), and moving it onto builders is a change of its own.
+  escaped text and literal markup. roc-webbox's chat and roc-chat follow
+  this rule (roc-chat's `app/JsonOut.roc` and `app/Html.roc`, the only
+  takers of an answer's JSON and a page's HTML).
 
   ```roc
   # Not this: a quote in `name` breaks the JSON.
@@ -769,9 +769,11 @@ is the base; these rules sharpen it.
   they are touched).
 
   A rule added here that a script can check gets a check, and a gate runs
-  it: roc-webbox's hunt keeps `bool_returns` at 0. roc-chat's and
-  roc-markdown's verify run no hunt yet, so run the recipes by hand before
-  a review there. A finding fixed by hand and left unchecked comes back.
+  it: roc-webbox's hunt keeps `bool_returns` at 0, and roc-chat's verify
+  holds boundaries' `fixed`, errors' two checks, nest_depth four deep,
+  name_hunt's tense and container checks, and stack's lines to stack at
+  0, each with a plant. roc-markdown's verify runs no hunt yet. A finding
+  fixed by hand and left unchecked comes back.
 
 ## Tools and builds
 

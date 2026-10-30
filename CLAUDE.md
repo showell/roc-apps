@@ -559,8 +559,7 @@ Shale (§13). The guide is as much about design as about style:
 each rule replaces a construct that can be wrong and still compile with
 one that can't. This section only points into it. Read the guide itself
 before writing Roc, and never restate its rules elsewhere. Where a repo
-hasn't caught up with a rule (roc-chat still splices its JSON and pages
-by hand, with no opaque builder), the guide says so beside the rule:
+hasn't caught up with a rule, the guide says so beside the rule:
 follow the repo's form in a small change, and move the repo onto the
 rule as a change of its own.
 
@@ -626,8 +625,9 @@ planted cases, and let the compiler judge any rewrite.
   `single` is a rule of thumb and never a gate.
 - **A rule a script can check gets a check, and a gate runs it.**
   `docs/roc-style.md`, "Testing and enforcement", lists the hunts and which
-  repo's gate runs each. Where no gate runs one yet (roc-chat's and
-  roc-markdown's verify run none), run it by hand before a review.
+  repo's gate runs each. roc-chat's verify holds its hunts at zero, each
+  with a plant; where no gate runs one yet (roc-markdown's), run it by hand
+  before a review.
 - **For agents using Shale instead of the shell,** read Shale's
   `docs/SHALE-AGENTS.md`. That part is Steve's setup only.
 
