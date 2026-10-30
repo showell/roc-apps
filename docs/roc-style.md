@@ -6,13 +6,14 @@ records, opaque types, `Try`. Using them is a discipline, though, and the
 language won't apply it for you; this guide is that discipline, written down.
 
 These are Steve's preferences for Roc in this repository and its siblings
-(roc-webbox's chat, dog-park's physics), and most carry over from his Zig.
-Each one replaces a construct that can be wrong and still compile with one
-that can't. Examples are drawn mostly from roc-webbox's chat (`chat/`), but
-the rules are for any Roc. The guide is written for Claude, which writes
-this code, so a rule is added where our own code taught it. How the
-compiler itself behaves is in
-[roc-notes.md](roc-notes.md).
+([roc-chat](https://github.com/showell/roc-chat), dog-park's physics), and
+most carry over from his Zig. Each one replaces a construct that can be wrong
+and still compile with one that can't. Examples are small and constructed (a
+cart, an order, a user id) unless the chat's own code is the clearest; a
+module named as the chat's (`Files`, `Html`) is in the older chat,
+roc-webbox's `chat/`. The rules are for any Roc. The guide is written for
+Claude, which writes this code, so a rule is added where our own code taught
+it. How the compiler itself behaves is in [roc-notes.md](roc-notes.md).
 
 **Roc's own conventions** are in its language reference, the *langref*:
 <https://roc-lang.org/docs/main/langref/> (source: `docs/langref/` in
@@ -74,13 +75,14 @@ Roc's own rules are in the langref's
   `is_empty`.
 - **A function is named for what it does,** so a reader can predict it
   without opening it; what the caller wants it for stays in the caller.
-  Search's `conv_at(scope, at)` answers the conversation at a place, and
-  crashes past the end; as `in_scope` it read as a question.
-- **Prefer a plain word to an abbreviation.** `topic`, not `sid`.
+  `item_at(cart, i)` answers the item at an index, and crashes past the
+  end; named `in_cart` it reads as a question.
+- **Prefer a plain word to an abbreviation.** `customer`, not `cust`;
+  `quantity`, not `qty`.
 - **A type is named for what it holds, not where it sits.** `Entry`, `Item`,
   `Node`, `Data` and `Info` say only that a value is in a list or a tree;
-  the domain usually has the word. One DM's row in the conversations JSON is
-  a `DmSummary`, not an `Entry`. Where the container word *is* the domain's
+  the domain usually has the word. One row of a customer's order history is
+  an `OrderSummary`, not an `Entry`. Where the container word *is* the domain's
   (a folder listing's entry), it stays.
 - **An effect is named for its act, never as a state or a noun.** `page!`, `appended!` or `member!` read as a value or a question,
   not a command. A route handler is `serve_*!` for what it serves
@@ -150,25 +152,25 @@ Roc's own rules are in the langref's
 - **A function with three or more arguments takes a record.** This is
   **Steve's preference**, and `roc fmt` is why. A signature can't be stacked:
   `roc fmt` refuses a trailing comma in a type annotation, so
-  `serve_topic! : Chat.Request, Route.R, Paths.TopicAt, Chat.Conv, Who => Chat.Answer`
-  stays one long line however it's written. A record stacks (it's a value),
+  `checkout! : Cart, Str, Str => Try({}, [Declined])`
+  stays one line however it's written, and a call can pass the coupon as
+  the address. A record stacks (it's a value),
   names every argument where it's passed, and can't be called with two
   swapped. So two arguments stay as they are; three or more become one record
   argument, or two arguments where one is a record of the rest.
 
   ```roc
-  serve_topic! : {
-  	req : Chat.Request,
-  	route : Route.R,
-  	at : Paths.TopicAt,
-  	conv : Chat.Conv,
-  	who : Who,
-  } => Chat.Answer
+  checkout! : {
+  	cart : Cart,
+  	coupon : Str,
+  	address : Str,
+  } => Try({}, [Declined])
   ```
 
-  The chat takes the second form: the subject first, the rest a record,
+  The second form is the usual one: the subject first, the rest a record,
   so a call reads as an act on its subject with its options named:
-  `Bytes.count_while(line, { keep: Ascii.is_digit, at: 0 })`. A loop's
+  `add : Cart, { item : Item, quantity : U64 } -> Cart`, called as
+  `cart.add({ item: tea, quantity: 2 })`. A loop's
   index and accumulator are fields too (`{ at: i, out }`), a one-letter
   parameter given a field's name and keeping its own in the body. A
   hosted effect's record is a seam record: its mirror on the host's side
@@ -180,16 +182,26 @@ Roc's own rules are in the langref's
 - **A parameter every caller passes the same value is no parameter.** A
   recursion's start (`at: 0`, `kept: 0`) belongs to an entry function that
   takes only what varies, and the `_from` worker it calls is the one place
-  the index is passed: `Bytes.find(s, { needle })` calls
-  `find_from(s, { needle, at: 0 })`, as `quotes` calls `quotes_from`.
+  the index is passed: `find(s, { needle })` calls
+  `find_from(s, { needle, at: 0 })`.
 - **Neighbouring arguments of one type get a record**, even when there are
   only two of them: they can be swapped and still type-check, and a record
-  names the fields, so order can't go wrong: `appended!(conv, who, draft)`,
-  not four `Str`s in a row
+  names the fields, so order can't go wrong: `copy!({ from, to })`, not
+  `copy!(src, dst)` with two `Str`s in a row
   ([records](https://roc-lang.org/docs/main/langref/records/)).
 - **A fundamental pair is one record, with a concise comment on each field.**
-  A topic's address is `TopicAt : { key, topic }`, and its comments say what a
-  key and a topic look like, in URLs and on disk.
+
+  ```roc
+  Money := {
+  	## Whole cents; negative for a refund.
+  	cents : I64,
+
+  	## The ISO 4217 code, such as "USD".
+  	currency : Str,
+  }.{
+  	is_eq : _
+  }
+  ```
 - **No list read by position.** A list of lists whose parts are known only by
   their index becomes a list of records.
 
@@ -199,54 +211,64 @@ Roc's own rules are in the langref's
   things.** A name passed where an id belongs is then a type error
   ([types](https://roc-lang.org/docs/main/langref/types/)).
 - **Use an opaque type (`::`) for anything validated.** Only its own module
-  can build one, so the validator is the only way in. In the chat: `Uid`
-  (made only by `Uid.from_str`), `ChatPath` (only `Paths` makes a path),
-  `ChannelName` (only `channel_name`), `PairKey` (only `pair_key`).
+  can build one, so the validator is the only way in. A `UserId` is all
+  digits, and `from_str` is the only way to get one:
 
   ```roc
-  Uid :: Str.{
-  	from_str : Str -> Try(Uid, [NotAUid])
-  	from_str = |text| if is_all_digits(text) Ok(Uid.(text)) else Err(NotAUid)
+  UserId :: Str.{
+  	from_str : Str -> Try(UserId, [NotAUserId])
+  	from_str = |text| if (is_all_digits(text)) Ok(UserId.(text)) else Err(NotAUserId)
 
-  	to_str : Uid -> Str
-  	to_str = |Uid.(s)| s
+  	to_str : UserId -> Str
+  	to_str = |UserId.(s)| s
 
   	is_eq : _
   }
   ```
 - **Combine them into the domain's real shape:**
-  `ConvKey : [Dm(PairKey), Channel(ChannelName)]`.
+  `Recipient : [User(UserId), Group(GroupName)]`.
 - **A state machine is an opaque type whose module owns the transitions.**
   Each state is a value only the module can build, and each transition is a
   function from one state to the next, so a caller can't make a state by
   hand or skip a step. What a state claims (a search found this place) is
   then true by construction, not by each caller's care. A two-state tag used
   inside one function needs none of this; a state that crosses functions or
-  modules does. In the chat, a scan remembers where its next `>` is across
-  many openers:
+  modules does. An order is open, then placed, then shipped:
 
   ```roc
-  Seen :: [Unknown, At(U64), Never].{
+  Order :: [Open, Placed(U64), Shipped(U64)].{
 
-  	## No search made yet: where every scan starts.
-  	unknown : Seen
-  	unknown = Seen.(Unknown)
+  	## Every order starts here.
+  	open : Order
+  	open = Order.(Open)
+
+  	place : Order, U64 -> Try(Order, [NotOpen])
+  	place = |Order.(state), id|
+  		match state {
+  			Open => Ok(Order.(Placed(id)))
+  			_ => Err(NotOpen)
+  		}
+
+  	ship : Order -> Try(Order, [NotPlaced])
+  	ship = |Order.(state)|
+  		match state {
+  			Placed(id) => Ok(Order.(Shipped(id)))
+  			_ => Err(NotPlaced)
+  		}
   }
-
-  ## The only transition: a search, or the answer an earlier one found.
-  find_seen : List(U8), { byte : U8, from : U64, seen : Seen } -> (Try(U64, [NotFound]), Seen)
   ```
 
-  A caller holds a `Seen` and passes it on; it can't write `At(40)` itself.
+  A caller holds an `Order` and passes it on; it can't write `Shipped(7)`
+  itself, or ship an order that was never placed.
 - **Decode into the type at the door, once.** The function that reads a
-  request, a file or a host answer turns it into `Uid`, `ConvKey`, `ChatPath`;
+  request, a file or a host answer turns it into `UserId`, `Recipient`, `Money`;
   nothing deeper takes the raw `Str` or bytes and decodes again.
 - **A nominal or opaque type derives `is_eq` with `is_eq : _`.** Write one by
   hand only when equality isn't structural; a hand-written structural one is
   more code to read and to get wrong
   ([compiler-derived methods](https://roc-lang.org/docs/main/langref/static-dispatch/#compiler-derived-methods)).
 - **Call a value's own functions as methods:** `messages.last()`, not
-  `List.last(messages)`; `key.to_str()`, `path.bytes()`, `count.to_str()`.
+  `List.last(messages)`; `id.to_str()`, `count.to_str()`.
   The subject comes first, as in a sentence, and a chain reads in the order
   it runs. Most readers know the form from other languages, and the Roc
   community leans toward it. Agents lean the other way, because most
@@ -255,7 +277,7 @@ Roc's own rules are in the langref's
   value's name and its annotation are for.
 
   Keep a module call where it's no method call:
-  - the function is passed as a value (`xs.map(Str.trim)`, `map_ok(Uid.to_str)`);
+  - the function is passed as a value (`xs.map(Str.trim)`, `map_ok(UserId.to_str)`);
   - the first argument isn't the module's type (`Str.from_utf8(bytes)`,
     `Str.join_with(pieces, sep)`);
   - a builder makes a value from parts rather than reading one;
@@ -273,7 +295,11 @@ Roc's own rules are in the langref's
   escaped text and literal markup.
 
   ```roc
-  JsonOut.object([("conv", JsonOut.string(conv)), ("id", JsonOut.number(id))])
+  # Not this: a quote in `name` breaks the JSON.
+  "{\"name\": \"${name}\", \"quantity\": ${quantity.to_str()}}"
+
+  # This: each field is escaped by the builder.
+  JsonOut.object([("name", JsonOut.string(name)), ("quantity", JsonOut.number(quantity))])
   ```
 
 ### Syntax at the pinned nightly
@@ -292,7 +318,13 @@ Roc's own rules are in the langref's
   ([strings](https://roc-lang.org/docs/main/langref/strings/)).
 
   ```roc
-  ChatPath.("${conv_dir(at.key)}/sessions/${at.topic}.reactions.jsonl")
+  words : List(U8) -> Try(List(Str), [NotUtf8])
+  words = |bytes| {
+  	# At the door, once:
+  	text = Str.from_utf8(bytes) ? |_| NotUtf8
+  	# Past it, Str's own helpers:
+  	Ok(text.split_on(" "))
+  }
   ```
 - **Build text by interpolation:** `"${base}/${topic}"`, not a chain of
   `Str.concat` calls or a byte list joined by hand. The template reads as the
@@ -313,7 +345,7 @@ Roc's own rules are in the langref's
   Html.tag({ name: "a", attrs: [Attr("href", href)], inner: Html.text(label) })
   ```
 - **The markdown renderer is the one writer of markup by bytes** (Md,
-  MdInline, MdMedia in roc-webbox chat/; metal-vmm QUEUE 305). It is
+  MdInline, MdMedia in roc-markdown's `package/`; metal-vmm QUEUE 305). It is
   parsing at the door, held byte for byte to the Zig that defines the
   dialect, so it writes its HTML as bytes, every byte of a member's text
   through its one escape, `MdText.escape_onto`, and every tag it lets
@@ -388,7 +420,11 @@ is the base; these rules sharpen it.
   it on. An effect that can only succeed or fail answers `Try({}, [Failed])`.
 
   ```roc
-  write! : ChatPath, List(U8) => Try({}, [Failed])
+  # Not this: a caller can ignore the Bool.
+  save! : Str, List(U8) => Bool
+
+  # This:
+  save! : Str, List(U8) => Try({}, [Failed])
   ```
 - **Its error tags say what went wrong.** The langref's `[ListWasEmpty]` says
   why; an `Err(None)` says nothing, and two such errors look alike after a `?`
@@ -400,11 +436,12 @@ is the base; these rules sharpen it.
   `[NoneChosen, Doc(...)]`. The same holds for a fold's "nothing found yet"
   (`[Newest(...), NoDocs]`).
 - **A `Try`'s error lists the tags that function can return, in place; no
-  shared error alias.** `Accounts.name` fails only with
-  `[NameUnreadable(Uid)]` and `admits` only with `[KindUnreadable(Uid)]`;
-  one alias of both made every caller of each handle a tag that can't
-  happen. An output union is open to its callers, so the narrow list still
-  meets a handler that takes the wide one (`Members.fail_unreadable!`), and
+  shared error alias.** `Cart.add` fails only with `[OutOfStock(Item)]` and
+  `Cart.remove` only with `[NotInCart(Item)]`; one alias of both,
+  `CartError : [OutOfStock(Item), NotInCart(Item)]`, makes every caller of
+  each handle a tag that can't happen. An output union is open to its
+  callers, so the narrow list still meets a handler that takes the wide one
+  (a `report_cart_error!` that handles both), and
   the checker holds the body to the list. An alias is for a handler's
   input. Leaving the error to inference (`_`) is fine too.
 - **Keep distinct failures apart in the tags.** A read answers
@@ -462,14 +499,16 @@ is the base; these rules sharpen it.
   the host's error as a number the Roc carries and never reads, for the
   counter that says it. Asides nest, so a step that must not fail the
   aside around it (one member's feed, inside the welcome's message) gets
-  its own. Example: the fan-out's feed entry, each in an aside, its fault
-  handed to `report_fanout_failure!`.
+  its own. Example: one member's feed entry, written in its own aside,
+  published only if the write held, its fault counted if not.
 
   ```roc
+  _ = Host.aside!(Begin)
+  _ = write_feed_entry!(member, event)
   ended = Host.aside!(End)
   match ended.status {
-  	Done => Host.publish!(f.key.bytes(), f.event)
-  	Failed => Host.report_fanout_failure!(f.surface, { member: f.member, key, sid, fault: ended.fault })
+  	Done => Host.publish!(member, event)
+  	Failed => Host.report_failure!(member, ended.fault)
   }
   ```
 
@@ -479,7 +518,7 @@ is the base; these rules sharpen it.
   inside the block is exposed
   ([modules](https://roc-lang.org/docs/main/langref/modules/)), so the block
   is the module's public surface at a glance. A helper outside names a block
-  member qualified (`Feeds.sep`); the module's own `expect`s call helpers
+  member qualified (`Util.public_fn`); the module's own `expect`s call helpers
   bare.
 
   ```roc
@@ -489,6 +528,7 @@ is the base; these rules sharpen it.
   }
 
   helper : Str -> Str
+  helper = |s| s.trim()
   ```
 - **A resource is reached through one module.** In the chat, `Files.roc` is
   the only caller of the host's file functions, and it keeps missing and
@@ -643,9 +683,9 @@ is the base; these rules sharpen it.
 
   ```roc
   JsonOut.object([
-  	("conv", JsonOut.string(conv)),
-  	("session", JsonOut.string(topic)),
-  	("id", JsonOut.number(id)),
+  	("name", JsonOut.string(name)),
+  	("quantity", JsonOut.number(quantity)),
+  	("cents", JsonOut.number(cents)),
   ])
   ```
 
@@ -653,27 +693,26 @@ is the base; these rules sharpen it.
   keeps the bracket on the call's line.
 - **A call nested three deep is read inside out; write it left to right.**
   A method chain first, where the values carry methods (the builtins' do:
-  `s.split_on("\n").map(ZigText.trim_str).drop_if(|l| l.is_empty())`); a
+  `s.split_on("\n").map(Str.trim).drop_if(|l| l.is_empty())`); a
   pipe where the steps are module functions; else a named middle step
   (`now = Time.rfc3339(Host.read_time!({}))`). A chain of edits reads as
   the order they run in:
 
   ```roc
-  edited = text.to_utf8()
-  	|> quotes
-  	|> html_images
-  	|> md_images
-  	|> collapse_ws
-  	|> cap(350)
+  cleaned =
+  	input
+  		|> strip_tabs
+  		|> collapse_spaces
+  		|> truncate(80)
   ```
 
-  not `cap(collapse_ws(md_images(html_images(quotes(md)))), 350)`.
+  not `truncate(collapse_spaces(strip_tabs(input)), 80)`.
 
 ## Testing and enforcement
 
 - **Test each pure mapping, and the exact bytes each builder makes,** with
   `expect`s beside the code. `roc test <app>.roc` runs every imported
-  module's `expect`s (`roc test chat/main.roc` for the chat).
+  module's `expect`s (`roc test app/main.roc` for roc-chat).
 - **A rule a type can't express gets a Shale hunt with plants.**
   [Shale](https://github.com/showell/shale) is how we enforce this guide's
   more advanced preferences: what the type checker and `roc fmt` can't see. A
