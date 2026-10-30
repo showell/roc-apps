@@ -132,7 +132,7 @@ trusting it.
   roc-chat `tools/verify.shale`, `pinned_roc` in roc-markdown
   `tools/verify.shale`, and roc-chat `tools/chat_glue.shale`.
 - **A sandbox that can't reach roc-lang's releases uses ours.** The
-  roc-apps GitHub release `toolchain-2026-10-30` carries the pinned nightly,
+  roc-apps GitHub release `toolchain-2026-10-30-0602c5f` carries the pinned nightly,
   repacked unmodified, plus `roc-ast`, each with its sha256. Check the hash
   before you untar it into `~/tools/`. That is the home of the user who
   builds: where git runs as root and builds run as another user, untar
