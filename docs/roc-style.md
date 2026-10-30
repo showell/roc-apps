@@ -17,7 +17,7 @@ it. How the compiler itself behaves is in [roc-notes.md](roc-notes.md).
 
 **Roc's own conventions** are in its language reference, the *langref*:
 <https://roc-lang.org/docs/main/langref/> (source: `docs/langref/` in
-roc-lang/roc; our pinned copy is `~/tools/roc-258ab27/docs/langref/`). It
+roc-lang/roc; read it at the pin's commit, fetched as CLAUDE.md §1 says). It
 covers the new compiler's syntax and is marked work in progress. Roc has no
 style guide for code (roc-lang/roc's `docs/langref-style-guide.md` is about
 writing the langref's prose, not Roc), and `roc fmt` settles layout with no
@@ -292,7 +292,9 @@ Roc's own rules are in the langref's
   by hand.** JSON is `JsonOut :: List(U8)`, with `string`, `number`, `bool`,
   `array`, `object`, and `bytes` the only way out, so every field is a whole,
   escaped value. Html is opaque the same way: a page is built only from
-  escaped text and literal markup.
+  escaped text and literal markup. roc-webbox's chat follows this rule;
+  roc-chat doesn't yet (its JSON answers and pages are spliced, escaped by
+  hand), and moving it onto builders is a change of its own.
 
   ```roc
   # Not this: a quote in `name` breaks the JSON.
@@ -767,8 +769,9 @@ is the base; these rules sharpen it.
   they are touched).
 
   A rule added here that a script can check gets a check, and a gate runs
-  it (`bool_returns` must stay 0). A finding fixed by hand and left
-  unchecked comes back.
+  it: roc-webbox's hunt keeps `bool_returns` at 0. roc-chat's and
+  roc-markdown's verify run no hunt yet, so run the recipes by hand before
+  a review there. A finding fixed by hand and left unchecked comes back.
 
 ## Tools and builds
 

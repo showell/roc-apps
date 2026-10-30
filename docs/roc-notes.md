@@ -49,9 +49,10 @@ reduced program, `findings/` holds it.
   allocating program spent most of its time in the kernel, so fasttrack's
   experiments run on their own platform (`fasttrack/cli/`). From 09-23 the
   built-in platform is the faster of the two.
-- Roc deletes every `roc-*` directory in the system temp root when it runs, so a
-  scratch directory must not use that prefix. It honours `TMPDIR`, which gives
-  parallel builds their own.
+- Older nightlies deleted every `roc-*` directory in the system temp root when
+  they ran; the 10-29 pin doesn't (`roc check`, `roc test` and a build all left
+  one alone). A scratch directory still shouldn't use that prefix. Roc honours
+  `TMPDIR`, which gives parallel builds their own.
 - **Linking.** `x64win` is MSVC-ABI and looks for an installed Windows SDK, so it
   cannot link on Linux (`.github/workflows/windows.yml` builds on Windows).
   `arm64mac` and `x64mac` link on Linux against roc-ray's sysroot. The wasm dev

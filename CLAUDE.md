@@ -64,7 +64,8 @@ the code should read.
 or an early version of the new one. The syntax, the builtins and the
 compiler's rules have moved since, and they move again with most nightlies.
 So you will write old forms with confidence: `\x ->` lambdas, `!` without
-`=>`, `X(v)` where the pin wants `X.(v)`, a `module [...]` header where the
+`=>`, `X(v)` to wrap a nominal or opaque value where the pin wants `X.(v)`
+(a plain `X(v)` is a tag), a `module [...]` header where the
 compiler now prefers a type module. Some of these fail to compile. Others
 compile and mean something else.
 
@@ -75,12 +76,15 @@ write it. When your memory and the pin disagree, the pin is right.
 - **Cite the langref; don't recall it.** Roc's conventions are in the
   language reference at roc-lang.org/docs/main/langref/, and a roc-lang/roc
   checkout carries it as `docs/langref/` (`functions.md`, `if-else.md`,
-  `errors.md` and the rest), next to `docs/langref-style-guide.md`.
+  `errors.md` and the rest), next to `docs/langref-style-guide.md`. Read
+  the checkout at the pin's commit, not an older one you happen to have.
 - **Read the pin's `Builtin.roc` before writing a helper.** It is
   `src/build/roc/Builtin.roc` in roc-lang/roc at the pin's commit (the hash
-  at the end of the repo's `roc-version`). `docs/roc-style.md`, "`Str` and
-  the builtins at the pin", lists helpers we wrote by hand that the
-  builtins already had.
+  at the end of the repo's `roc-version`). The toolchain release carries
+  no source, so fetch just that commit: `git init roc-src && cd roc-src &&
+  git fetch --depth 1 https://github.com/roc-lang/roc <hash> && git
+  checkout FETCH_HEAD`. `docs/roc-style.md`, "`Str` and the builtins at
+  the pin", lists helpers we wrote by hand that the builtins already had.
 - **Know the forms training gets wrong, and where they're written down.**
   Effects (`=>` and a `!` name), record update (`{ ..r, f: v }`), `var $x`
   and `while`, no shadowing and list patterns are in `docs/roc-notes.md`,
@@ -90,18 +94,20 @@ write it. When your memory and the pin disagree, the pin is right.
 - **Get the new compiler from roc-lang/nightlies.** roc-lang/roc's own
   releases page is the old compiler (`docs/roc-notes.md`, "The compiler").
 - **When unsure whether something compiles, ask the compiler.** Write the
-  form into a scratch file and run the pinned `roc check` on it. It takes
-  well under a second, which is cheaper than a guess that costs a build.
+  form into a scratch file and run the pinned `roc check` on it. Once
+  Roc's cache is warm it takes well under a second (the first check in a
+  fresh sandbox takes several), which is cheaper than a guess that costs a
+  build.
 - **Read the warnings, too.** A deprecation warning is the compiler telling
-  you what it prefers now (the 10-29 nightly warns "module header
-  deprecated" and points to type modules). Follow the code that's already
+  you what it prefers now (the pin warns "module header deprecated" and
+  points to type modules). Follow the code that's already
   in the repo for which forms we use, and ask before migrating a pattern
   across a repo.
 
 ## 2. Roc is bleeding-edge: pin it, and doubt every nightly
 
-**The problem.** Roc ships as nightlies (github.com/roc-lang/nightlies;
-`gh release list --repo roc-lang/nightlies`), and each one can change the
+**The problem.** Roc ships as nightlies (github.com/roc-lang/nightlies/releases,
+or `gh release list --repo roc-lang/nightlies`), and each one can change the
 syntax, the builtins, `roc glue`'s output and `roc fmt`'s layout. Some are
 simply broken. A project built with whatever `roc` is on the PATH can break
 when nothing in it changed, and two projects on one machine may need two
@@ -128,7 +134,10 @@ trusting it.
 - **A sandbox that can't reach roc-lang's releases uses ours.** The
   roc-apps GitHub release `toolchain-2026-10-30` carries the pinned nightly,
   repacked unmodified, plus `roc-ast`, each with its sha256. Check the hash
-  before you untar it into `~/tools/`.
+  before you untar it into `~/tools/`. That is the home of the user who
+  builds: where git runs as root and builds run as another user, untar
+  into the build user's `~/tools/`, because that's where `build.zig` looks,
+  and point Shale's `tools` mount there.
 - **Move pins lazily.** A project that's working keeps its pin until it
   next gets features. Dog Park stays on its older pin
   (`dog-park/roc/roc-version`), and roc-apps itself still uses an older
@@ -141,9 +150,10 @@ trusting it.
 - **Before you debug the compiler, ask "is it already fixed?"** Try the
   nightlies between the pin and the newest. On the 2026-10-09 pin, Roc had
   "receiver extensions": a function in one module whose first parameter
-  was another module's type also became a method on that type. So inside
-  roc-chat's `ConvAccess`, `viewer.can_post(...)` dispatched to the very
-  function being defined, and `roc check` crashed with a SIGSEGV. A few
+  was another module's type also became a method on that type. So a trial
+  rewrite of roc-chat's `ConvAccess` to `viewer.can_post(...)` dispatched
+  to the very function being defined, and `roc check` crashed with a
+  SIGSEGV. A few
   minutes of trying newer nightlies found the crash fixed on 10-10
   (roc-lang/roc#12194, `df2fd296aa`) and the rule removed on 10-28
   (#12630, `333f582d61`). The nightlies in between checked the code clean,
@@ -181,9 +191,11 @@ list is `docs/roc-notes.md`, "The compiler".
   `roc check`, so a check can hang, or take as long as the program. An
   experiment from a constant seed ties the seed to a run-time value
   (`findings/roc-check-hang/`).
-- **Keep scratch directories out of Roc's way.** Roc deletes every `roc-*`
-  directory in the system temp root when it runs, so don't name a scratch
-  directory that way. It honours `TMPDIR`; give parallel builds their own.
+- **Keep scratch directories out of Roc's way.** Older nightlies deleted
+  every `roc-*` directory in the system temp root when they ran. The pin
+  doesn't (in `roc check`, `roc test` or a build), but don't name a
+  scratch directory that way. Roc honours `TMPDIR`; give parallel builds
+  their own.
 - **"Overflowed its stack memory" means a SIGSEGV, not necessarily a deep
   recursion.** The default runtime prints it for any segfault, a read after
   free included. Look for the real cause before raising a stack size.
@@ -222,6 +234,10 @@ check the defaults first.
   code is much faster (2.7 times on BASIC's slowest program), and the dev
   backend's code is mostly stack moves, so a dev-build timing says little
   about the program (`docs/roc-notes.md`, "Speed and copying").
+- **Roc's cache grows with every distinct compile.** `~/.cache/roc` is
+  only a cache: a long run of trial compiles (a methods rewrite over a
+  repo) can leave several gigabytes there and fill a sandbox's disk. Watch
+  `df` during a long run and clear the cache after it.
 - **A build that's still slow on dev is a finding.** Look for compile-time
   evaluation first (§3), then reduce it into `findings/` (roc-apps
   `findings/roc-compile-time-memory/` is one).
@@ -296,6 +312,11 @@ counts have floors that only rise. A green is a claim: read how many ran.
   in a copy of the tree under `.zig-cache/verify/`, never in your files, and
   must fail the end to end at its own step: a red for any other reason is
   no pass. A gate no plant has turned red is a gate nobody knows can see.
+  A plant must still build: removing a variable's only use makes an
+  unused-variable warning, which fails the build before any step runs, so
+  keep every name in use. If no single fault turns a step red, the
+  property is guarded twice: say so beside the plant, and plant the guard
+  that stands alone.
 - **Frozen answers are the judge.** roc-markdown holds every corpus case's
   answers byte for byte (`TESTING.md`). `zig build judge -- --refreeze
   LABEL` rewrites one corpus and names each case that moved; re-freeze only
@@ -537,7 +558,11 @@ several people wrote it, because several did.
 Shale (§13). The guide is as much about design as about style:
 each rule replaces a construct that can be wrong and still compile with
 one that can't. This section only points into it. Read the guide itself
-before writing Roc, and never restate its rules elsewhere.
+before writing Roc, and never restate its rules elsewhere. Where a repo
+hasn't caught up with a rule (roc-chat still splices its JSON and pages
+by hand, with no opaque builder), the guide says so beside the rule:
+follow the repo's form in a small change, and move the repo onto the
+rule as a change of its own.
 
 - **Read its principles first.** Prefer a construct that can't be wrong;
   keep one home for a rule; a little speed traded for robustness is fine
@@ -600,8 +625,9 @@ planted cases, and let the compiler judge any rewrite.
   `path:line: check: why`. Fix it, or say why it stands. `boundaries`'
   `single` is a rule of thumb and never a gate.
 - **A rule a script can check gets a check, and a gate runs it.**
-  `docs/roc-style.md`, "Testing and enforcement", lists the hunts we run,
-  and `bool_returns` must stay 0.
+  `docs/roc-style.md`, "Testing and enforcement", lists the hunts and which
+  repo's gate runs each. Where no gate runs one yet (roc-chat's and
+  roc-markdown's verify run none), run it by hand before a review.
 - **For agents using Shale instead of the shell,** read Shale's
   `docs/SHALE-AGENTS.md`. That part is Steve's setup only.
 
@@ -613,9 +639,11 @@ its time and holds up everyone waiting on its report.
 
 **Our answer.** We work on Roc the way we work on any project with several
 agents, and that process changes quickly, so this section says only what's
-particular to Roc. The orchestrating session runs the long release builds
-and the long gates, detached, where it can. A subagent or cloud agent gets
-shortcuts that buy about 90% confidence fast: the dev backend (§4), `roc
-check` from the right root (§3), the quick tests, and a single targeted
-plant. Its report says which shortcuts it took, and the orchestrator runs
-the full verify before anything merges.
+particular to Roc. The orchestrating session runs the long release builds,
+cross-compiles and the long gates, detached, where it can. Between edits, a
+subagent or cloud agent uses shortcuts that buy about 90% confidence fast:
+the dev backend (§4), `roc check` from the right root (§3), the quick
+tests, and a single targeted plant. When its task asks for the repo's
+verify, it runs that too (on the dev backend it takes minutes, not hours),
+and its report says what it ran and which shortcuts it took. Either way,
+the orchestrator runs the full verify again before anything merges.
