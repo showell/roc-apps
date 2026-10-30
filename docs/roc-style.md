@@ -345,7 +345,7 @@ Roc's own rules are in the langref's
   Html.tag({ name: "a", attrs: [Attr("href", href)], inner: Html.text(label) })
   ```
 - **The markdown renderer is the one writer of markup by bytes** (Md,
-  MdInline, MdMedia in roc-markdown's `package/`; metal-vmm QUEUE 305). It is
+  MdInline, MdMedia in roc-markdown's `package/`). It is
   parsing at the door, held byte for byte to the Zig that defines the
   dialect, so it writes its HTML as bytes, every byte of a member's text
   through its one escape, `MdText.escape_onto`, and every tag it lets
@@ -503,8 +503,6 @@ is the base; these rules sharpen it.
   published only if the write held, its fault counted if not.
 
   ```roc
-  _ = Host.aside!(Begin)
-  _ = write_feed_entry!(member, event)
   ended = Host.aside!(End)
   match ended.status {
   	Done => Host.publish!(member, event)
