@@ -527,8 +527,8 @@ is the base; these rules sharpen it.
   swapped, and a swap isn't an error: the host reads the wrong field, and
   memory is misread or corrupted. So the seam holds every record of every
   hosted function to what `roc glue` generates, at compile time, by name and
-  offset, and every tag union tag by tag, by number (the chat's
-  `src/chat_glue_test.zig`). With that check a record can be as large as
+  offset, and every tag union tag by tag, by number (roc-chat's
+  `host/seam/glue_test.zig`). With that check a record can be as large as
   the data is: there is no limit on its size, and a list of small records
   is a choice made for the data, not for the mirror.
 - **A hosted function answers a fact, never a verdict.** When the Roc can

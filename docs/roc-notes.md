@@ -31,7 +31,10 @@ reduced program, `findings/` holds it.
 - **Judge a build on the ✗ mark, never the exit code.** A warning exits
   non-zero, and a type error compiles into a crash at its site while the rest of
   the program runs.
-- `roc check` reports only the file it is given; a broken import is silent.
+- **`roc check` on a root reports its imports' errors too** (checked at
+  nightly-2026-10-29: a type error in an imported module, and an import of a
+  module that doesn't exist, both fail the root's check). A file no root
+  imports is checked only when it's named.
 - **A call whose arguments are known at compile time is evaluated at compile
   time, with no step limit** (roc-lang/roc#11334). `roc check` never finishes on
   a program whose opening calls a function that loops forever, and on a
@@ -60,11 +63,11 @@ reduced program, `findings/` holds it.
   on a native build sees the same ids.
 - The default Linux runtime prints "overflowed its stack memory" for any
   SIGSEGV, a read after free included.
-- **The default platform gives every heap value its own `mmap`**
-  (roc-lang/roc#11335). `strace -c` therefore counts allocations exactly and
-  `strace -k` names the builtin that asked; the same property makes an
-  allocation-heavy program several times slower than on a C allocator
-  (`findings/roc-alloc-mmap/`).
+- **Up to 09-22, the default platform gave every heap value its own `mmap`**
+  (roc-lang/roc#11335; from 09-23 it uses brk, above). On those nightlies
+  `strace -c` counts allocations exactly and `strace -k` names the builtin
+  that asked, and an allocation-heavy program runs several times slower than
+  on a C allocator (`findings/roc-alloc-mmap/`).
 
 ## The language
 

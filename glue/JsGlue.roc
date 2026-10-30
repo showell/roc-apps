@@ -2,7 +2,7 @@
 ##
 ## Roc ships ZigGlue, RustGlue and CGlue; there is no JavaScript one, so a page
 ## that wants a Roc value has to be told the layout by hand. That is what
-## `arcade/web/shapewire.js` is: a decoder written twice, once as
+## `canvas_apps/web/shapewire.js` is: a decoder written twice, once as
 ## `ShapeWire.pack` in Roc and once as a reader in JavaScript, with nothing
 ## checking that the two agree. This generates the reader instead.
 ##
