@@ -245,12 +245,27 @@ Roc's own rules are in the langref's
   hand only when equality isn't structural; a hand-written structural one is
   more code to read and to get wrong
   ([compiler-derived methods](https://roc-lang.org/docs/main/langref/static-dispatch/#compiler-derived-methods)).
-- **A type's accessors are methods in its own block, called as methods:**
-  `key.to_str()`, `key.partner(me)`, `path.bytes()`. Keep a module call where
-  the function is passed as a value (`map_ok(Uid.to_str)`) and for builders
-  that make a value from parts rather than read one
-  ([static dispatch](https://roc-lang.org/docs/main/langref/static-dispatch/)).
-  Only a nominal or opaque type can carry methods, not an alias.
+- **Call a value's own functions as methods:** `messages.last()`, not
+  `List.last(messages)`; `key.to_str()`, `path.bytes()`, `count.to_str()`.
+  The subject comes first, as in a sentence, and a chain reads in the order
+  it runs. Most readers know the form from other languages, and the Roc
+  community leans toward it. Agents lean the other way, because most
+  functional training data has no methods, so expect to correct them. The
+  module name's one advantage, showing the type at a glance, is what the
+  value's name and its annotation are for.
+
+  Keep a module call where it's no method call:
+  - the function is passed as a value (`xs.map(Str.trim)`, `map_ok(Uid.to_str)`);
+  - the first argument isn't the module's type (`Str.from_utf8(bytes)`,
+    `Str.join_with(pieces, sep)`);
+  - a builder makes a value from parts rather than reading one;
+  - a module calls its own functions in its own body;
+  - the step is the right side of a `|>`.
+
+  Shale's `cookbook/roc/methods.shale` (`glob=app/*.roc root=app/main.roc`)
+  finds the rest and rewrites them where `roc check` and `roc test` agree: a
+  dry run by default, and `apply=1` writes. Only a nominal or opaque type can carry methods, not an
+  alias ([static dispatch](https://roc-lang.org/docs/main/langref/static-dispatch/)).
 - **Structured output goes through one opaque builder, never a string spliced
   by hand.** JSON is `JsonOut :: List(U8)`, with `string`, `number`, `bool`,
   `array`, `object`, and `bytes` the only way out, so every field is a whole,
@@ -701,7 +716,10 @@ is the base; these rules sharpen it.
   - Shale's `cookbook/roc/nest_depth.shale`: a call nested three deep or
     more, read inside out ([layout](#layout-and-formatting));
   - Shale's `cookbook/roc/stack.shale`: three or more parts on one line,
-    or a line over 100 columns.
+    or a line over 100 columns;
+  - Shale's `cookbook/roc/methods.shale`: an old-style `Module.fn(x, ...)`
+    call the compiler accepts as `x.fn(...)`, rewritten by `apply=1`
+    ([methods](#make-wrong-values-impossible-to-build)).
 
   The hunt runs these cookbook checks over the chat too, as findings:
   `stack.shale`, `name_hunt.shale`'s `command_tense`, `mixed_tense` and
