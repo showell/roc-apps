@@ -11,7 +11,9 @@ tools (Shale, our build box, a cloud agent working through a queue). None
 of it is the Roc project's official advice, and Roc's own docs win
 wherever they disagree with us. Take what fits, drop what doesn't, and
 keep your own fork. Our scope is narrow on purpose: a rule goes in only
-after our own code has broken it.
+after our own code has broken it. And this file should evolve as quickly
+as Roc itself does: when the compiler or our practice moves, the file
+moves in the same change.
 
 **What we assume you already know.** You've seen plenty of Roc in training,
 but probably not the version we build with. Roc changes fast: syntax, the
@@ -43,7 +45,7 @@ the code should read.
 11. Roc doesn't excel at every niche: hybrid architectures
 12. Many ways to write the same thing: the style guide
 13. Rules the type checker can't see: hunts and mechanical rewrites
-14. Working with several agents
+14. Agents: the long builds are the orchestrator's
 
 **The habits under all of it:**
 
@@ -603,44 +605,17 @@ planted cases, and let the compiler judge any rewrite.
 - **For agents using Shale instead of the shell,** read Shale's
   `docs/SHALE-AGENTS.md`. That part is Steve's setup only.
 
-## 14. Working with several agents
+## 14. Agents: the long builds are the orchestrator's
 
-**The problem.** More than one agent works in these repos at once, each in
-its own sandbox with its own sibling checkouts. An agent's report says what
-it believes happened, and a green it saw on its machine may not be green on
-yours. Long tasks block the person at the console, and work that isn't
-committed is lost when a session ends.
+**The problem.** Roc's slow paths are slow: an LLVM release build, a full
+gate, a cross-compile. A subagent or a cloud agent that waits on one burns
+its time and holds up everyone waiting on its report.
 
-**Our answer.** This section is the most specific to Steve, and the setup
-is his. The lessons under it are general. One orchestrating session on a
-build box splits the work and owns the merges. Short-lived "cold" subagents
-take small tasks. A cloud agent takes long chunks from a queue. Every task
-ends in a commit, and the orchestrator re-verifies before anything reaches
-main.
-
-- **A cold agent gets one fix, about 15 minutes, and a narrow brief.** The
-  brief names the goal, what's ruled out, the files to read, and the one
-  deliverable. It runs only the fast checks for its change, commits and
-  reports. It never waits on a long verify; the orchestrator runs that
-  afterwards, detached. Two agents never share a worktree.
-- **The cloud agent works long chunks from a queue and a feedback file.**
-  Each queue item is a plan-driven chunk. It ends with the repo's committed
-  verify passing (roc-chat `tools/verify.shale`, a PASS/FAIL checklist),
-  and the agent pastes that output into the feedback file.
-- **The orchestrator re-verifies and never trusts a report.** It reruns the
-  same verify command itself, then fast-forwards main and pushes. A report
-  is a claim: read how many checks ran, and that the change was among
-  them.
-- **Commit each step, and push.** Small committed steps survive a session
-  that dies, and stage files by name so nobody commits another agent's
-  work.
-- **A count can depend on the machine.** Sibling checkouts differ between
-  sandboxes, and `roc test`'s count includes path dependencies' expects.
-  A floor counts only the repo's own (§6).
-- **A script that changes state stops at the first failure.** A merge
-  script once ignored a failed fast-forward and reported "merged". Check
-  every step's result, and fail loud.
-- **Secrets never pass through an agent's output.** Keys live in a secrets
-  folder that scripts can't read or list. A program gets a key through its
-  environment, and its output shows the key's name, never its value
-  (Shale's `docs/SHALE-AGENTS.md`, "Tokens are a `secrets` mount").
+**Our answer.** We work on Roc the way we work on any project with several
+agents, and that process changes quickly, so this section says only what's
+particular to Roc. The orchestrating session runs the long release builds
+and the long gates, detached, where it can. A subagent or cloud agent gets
+shortcuts that buy about 90% confidence fast: the dev backend (§4), `roc
+check` from the right root (§3), the quick tests, and a single targeted
+plant. Its report says which shortcuts it took, and the orchestrator runs
+the full verify before anything merges.
