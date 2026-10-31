@@ -1,5 +1,5 @@
-published 2026-10-30
-Roc compiler version nightly-2026-10-29-a0a9fc2
-roc-markdown 8b33e2a (its zig build playground)
-sha256 9773e099f2e95304  884991 bytes  md.wasm
+published 2026-10-31
+Roc compiler version nightly-2026-10-30-0602c5f
+roc-markdown 88ae0b2 (its zig build playground)
+sha256 0e9e76700286986e  887304 bytes  md.wasm
 user_uploads/sample.png at the site root: the playground's uploads rule shows media from /user_uploads/ only
