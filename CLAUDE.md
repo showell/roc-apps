@@ -287,8 +287,9 @@ than what you think. None of that shows up in the word "passed".
 
 **Our answer.** One command runs every check and prints what it ran. The
 judges hold frozen answers, and an answer moves only when someone says so,
-case by case. Planted faults prove each gate can see a failure. Test
-counts have floors that only rise. A green is a claim: read how many ran.
+case by case. A planted fault proves, once, that a new test can see a
+failure. Test counts have floors that only rise. A green is a claim: read
+how many ran.
 
 - **`expect`s sit beside the code.** Test each pure mapping and the exact
   bytes each builder makes; `roc test <app>.roc` runs every imported
@@ -308,14 +309,17 @@ counts have floors that only rise. A green is a claim: read how many ran.
   a file by its path from where the run starts (`app/X.roc`, the sibling's
   `../roc-markdown/...`), older ones by its whole path, and verify reads
   both.
-- **Plants must turn red.** Each planted fault in roc-chat's verify is made
-  in a copy of the tree under `.zig-cache/verify/`, never in your files, and
-  must fail the end to end at its own step: a red for any other reason is
-  no pass. A gate no plant has turned red is a gate nobody knows can see.
-  A plant must still build: removing a variable's only use makes an
-  unused-variable warning, which fails the build before any step runs, so
-  keep every name in use. If no single fault turns a step red, the
-  property is guarded twice: say so beside the plant, and plant the guard
+- **A plant is a one-time proof, not a permanent check.** When you add a
+  test or a gate, plant the fault it should catch, see it go red at the
+  right place (a red for any other reason is no proof), revert, and say so
+  in the commit. Then let the test carry it: assert both sides of the
+  condition, the bad case refused and a near-miss good case accepted, so a
+  test that stopped seeing would fail on the good side or the bad. Running
+  every plant on every verify costs most of the run's time for a proof that
+  only needed making once. A plant must still build: removing a variable's
+  only use makes an unused-variable warning, which fails the build before
+  the test runs, so keep every name in use. If no single fault turns the
+  test red, the property is guarded twice: say so, and plant the guard
   that stands alone.
 - **Frozen answers are the judge.** roc-markdown holds every corpus case's
   answers byte for byte (`TESTING.md`). `zig build judge -- --refreeze
