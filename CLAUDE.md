@@ -314,7 +314,11 @@ how many ran.
   right place (a red for any other reason is no proof), revert, and say so
   in the commit. Then let the test carry it: assert both sides of the
   condition, the bad case refused and a near-miss good case accepted, so a
-  test that stopped seeing would fail on the good side or the bad. Running
+  test that stopped seeing would fail on the good side or the bad.
+- **A test asserts every side, not one thing.** We don't follow the "one
+  assertion per test" habit. As a principle, a test checks both sides of a
+  boolean, every tag of a union, and the values at, just under and just
+  over a boundary (14, 15 and 16 against a cap of 15). Running
   every plant on every verify costs most of the run's time for a proof that
   only needed making once. A plant must still build: removing a variable's
   only use makes an unused-variable warning, which fails the build before
