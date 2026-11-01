@@ -135,7 +135,11 @@ FastTrack :: [].{
 		Page.view(
 			model.game,
 			{
-				interactive: human and Try.is_err(Game.winner(model.game)),
+				clicks: if human and Try.is_err(Game.winner(model.game)) {
+					TakesClicks
+				} else {
+					IgnoresClicks
+				},
 				show_undo: human and History.can_undo(model.history, model.game),
 				tick: if agent_to_move(model) {
 					Codes.agent_step

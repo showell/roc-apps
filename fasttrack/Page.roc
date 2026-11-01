@@ -80,10 +80,14 @@ Page :: [].{
 	center_offset : U64 -> F64
 	center_offset = |side_count| panel_height + incircle_radius(side_count)
 
-	## What the page may offer: `interactive` is false in the computer's seat
-	## and once someone has won, and then nothing takes a click. `motions`
-	## are what the last click moved (Motion.roc), for the page to animate.
-	Flags : { interactive : Bool, show_undo : Bool, tick : U32, winner : Str, motion_id : U32, motions : List(Wire.Motion) }
+	## What the page may offer: `clicks` is IgnoresClicks in the computer's
+	## seat and once someone has won, and then nothing takes a click.
+	## `motions` are what the last click moved (Motion.roc), for the page to
+	## animate.
+	Flags : { clicks : Page.Clicks, show_undo : Bool, tick : U32, winner : Str, motion_id : U32, motions : List(Wire.Motion) }
+
+	## Whether the board answers a click.
+	Clicks : [TakesClicks, IgnoresClicks]
 
 	view : Type.Game, Page.Flags -> Wire.View
 	view = |game, flags| {
@@ -101,14 +105,14 @@ Page :: [].{
 		console =
 			if flags.winner != "" {
 				winner_view(flags.winner)
-			} else if flags.interactive {
+			} else if flags.clicks == TakesClicks {
 				player_view(active_player, active_color, undo_button)
 			} else {
 				computer_view(active_player, active_color)
 			}
 		{
 			board_size: 2.0 * center_offset(side_count) + 3.0 * Config.square_size,
-			slots: board_view(game, zone_colors, active_player, flags.interactive),
+			slots: board_view(game, zone_colors, active_player, flags.clicks),
 			labels: labels_view(game),
 			nodes: el(
 				"div",
@@ -214,8 +218,8 @@ Page :: [].{
 				.concat(team_line(player)),
 		)
 
-	board_view : Type.Game, List(Str), Type.Player, Bool -> List(Wire.Slot)
-	board_view = |game, zone_colors, active_player, interactive| {
+	board_view : Type.Game, List(Str), Type.Player, Page.Clicks -> List(Wire.Slot)
+	board_view = |game, zone_colors, active_player, clicks| {
 		side_count = List.len(zone_colors)
 		angle = 2.0 * F64.pi / U64.to_f64(side_count)
 		center = center_offset(side_count)
@@ -233,19 +237,19 @@ Page :: [].{
 							b = panel_height - (loc.y * Config.square_size) + radius
 							cx = Config.square_size + center + a * F64.cos(theta) - b * F64.sin(theta)
 							cy = Config.square_size + center + a * F64.sin(theta) + b * F64.cos(theta)
-							slot(game, active_player, interactive, { zone: NormalColor(zone_color), id: loc.id }, cx, cy)
+							slot(game, active_player, clicks, { zone: NormalColor(zone_color), id: loc.id }, cx, cy)
 						},
 					)
 				},
 			),
 		)
-		bulls_eye = slot(game, active_player, interactive, { zone: BullsEyeZone, id: "bullseye" }, Config.square_size + center, Config.square_size + center)
+		bulls_eye = slot(game, active_player, clicks, { zone: BullsEyeZone, id: "bullseye" }, Config.square_size + center, Config.square_size + center)
 		List.append(zones, bulls_eye)
 	}
 
 	## `drawLocationAtCoords`.
-	slot : Type.Game, Type.Player, Bool, Type.PieceLocation, F64, F64 -> Wire.Slot
-	slot = |game, active_player, interactive, piece_location, cx, cy| {
+	slot : Type.Game, Type.Player, Page.Clicks, Type.PieceLocation, F64, F64 -> Wire.Slot
+	slot = |game, active_player, clicks, piece_location, cx, cy| {
 		zone_color = match piece_location.zone {
 			BullsEyeZone => "black"
 			NormalColor(color) => color
@@ -269,7 +273,7 @@ Page :: [].{
 				"white"
 			}
 		click =
-			if !interactive {
+			if clicks == IgnoresClicks {
 				0
 			} else if is_start_loc {
 				Codes.start_location(square)
