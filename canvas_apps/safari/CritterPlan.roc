@@ -18,8 +18,8 @@ CritterPlan :: [].{
 		}
 	)
 
-	place_critter_via : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, Scenery.Critter -> Billboards.Placed
-	place_critter_via = |segs, ch, pose, m, hw, cr| (
+	place_critter_mapped : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, Scenery.Critter -> Billboards.Placed
+	place_critter_mapped = |segs, ch, pose, m, hw, cr| (
 		{
 			rp = Frame.map_pt(segs, ch, pose, m, cr.along, (cr.across + hw))
 			Billboards.verdict(rp, cr.height, cr.codepoint, cr.face_right)
@@ -47,16 +47,16 @@ CritterPlan :: [].{
 		}
 	)
 
-	# place_all_via builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	place_all_via : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, List(Scenery.Critter), I64 -> List(Billboards.Placed)
-	place_all_via = |segs, ch, pose, m, hw, crs, i| place_all_via_onto(segs, ch, pose, m, hw, crs, i, [])
+	# place_all_mapped builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
+	place_all_mapped : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, List(Scenery.Critter), I64 -> List(Billboards.Placed)
+	place_all_mapped = |segs, ch, pose, m, hw, crs, i| place_all_mapped_onto(segs, ch, pose, m, hw, crs, i, [])
 
-	place_all_via_onto : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, List(Scenery.Critter), I64, List(Billboards.Placed) -> List(Billboards.Placed)
-	place_all_via_onto = |segs, ch, pose, m, hw, crs, i, acc| (
+	place_all_mapped_onto : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, List(Scenery.Critter), I64, List(Billboards.Placed) -> List(Billboards.Placed)
+	place_all_mapped_onto = |segs, ch, pose, m, hw, crs, i, acc| (
 		if (i >= crs.len().to_i64_wrap()) {
 			acc
 		} else {
-			place_all_via_onto(segs, ch, pose, m, hw, crs, (i + 1), List.append(acc, place_critter_via(segs, ch, pose, m, hw, (List.get(crs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
+			place_all_mapped_onto(segs, ch, pose, m, hw, crs, (i + 1), List.append(acc, place_critter_mapped(segs, ch, pose, m, hw, (List.get(crs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
 		}
 	)
 
@@ -158,7 +158,7 @@ CritterPlan :: [].{
 	behind_billboards = |segs, ch, pose, prev_idx| (
 		{
 			pv = (List.get(segs, I64.to_u64_wrap(prev_idx)) ?? crash ("list-at out of range"))
-			List.concat(place_all_via(segs, ch, pose, Frame.prev_map(pv), (pv.width / 2.0), SafariCritter.corner_critters(pv.exit_creature, pv.length, pv.exit_right, (pv.width / 2.0)), 0), behind_ducks(segs, ch, pose, pv))
+			List.concat(place_all_mapped(segs, ch, pose, Frame.prev_map(pv), (pv.width / 2.0), SafariCritter.corner_critters(pv.exit_creature, pv.length, pv.exit_right, (pv.width / 2.0)), 0), behind_ducks(segs, ch, pose, pv))
 		}
 	)
 
