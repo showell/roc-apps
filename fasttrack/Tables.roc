@@ -26,7 +26,7 @@ Tables :: [].{
 	mean = |xs| if List.is_empty(xs) {
 		0.0
 	} else {
-		U64.to_f64(List.fold(xs, 0, |t, x| t + x)) / U64.to_f64(List.len(xs))
+		xs.fold(0.U64, |t, x| t + x).to_f64() / xs.len().to_f64()
 	}
 
 	## One game: who won, and each player's numbers.
@@ -103,7 +103,7 @@ Tables :: [].{
 				cmp = List.map(
 					all,
 					|ts| {
-						w = U64.to_f64(List.fold(List.keep_if(ts, |t| t.won), 0, |a, t| a + stat(label, t)))
+						w = ts.keep_if(|t| t.won).fold(0.U64, |a, t| a + stat(label, t)).to_f64()
 						m = mean(losers_of(ts, label))
 						if w > m {
 							Above
@@ -119,7 +119,7 @@ Tables :: [].{
 				} else {
 					" ${hundredths(mean(set_apart))} |"
 				}
-				"| ${label} | ${hundredths(mean(winners))} | ${hundredths(mean(losers))} |${apart_cell} ${U64.to_str(List.count_if(cmp, |x| x == Above))} / ${U64.to_str(List.count_if(cmp, |x| x == Equal))} / ${U64.to_str(List.count_if(cmp, |x| x == Below))} |"
+				"| ${label} | ${hundredths(mean(winners))} | ${hundredths(mean(losers))} |${apart_cell} ${cmp.count_if(|x| x == Above).to_str()} / ${cmp.count_if(|x| x == Equal).to_str()} / ${cmp.count_if(|x| x == Below).to_str()} |"
 			},
 		)
 		apart_rule = if List.is_empty(apart) {

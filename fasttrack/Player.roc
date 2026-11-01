@@ -254,7 +254,7 @@ Player :: [].{
 		var $deck = []
 		var $seed = seed0
 		while !List.is_empty($left) {
-			draw = ElmRandom.int(0, U64.to_i64_wrap(List.len($left)) - 1, $seed)
+			draw = ElmRandom.int(0, $left.len().to_i64_wrap() - 1, $seed)
 			i = I64.to_u64_wrap(draw.value)
 			$deck = List.append($deck, List.get($left, i) ?? crash ("Player.shuffle: out of range"))
 			$left = List.drop_at($left, i)

@@ -121,7 +121,7 @@ Reach :: [].{
 	fewest_over = |edges, zone_colors, color, peak| {
 		far = Board.far
 		home = Board.index_of(zone_colors, { zone: NormalColor(color), id: peak })
-		start = List.set(List.repeat({ cards: far, first: [] }, List.len(Board.all_locs(zone_colors))), home, { cards: 0, first: [] }) ?? crash ("Reach: no home")
+		start = List.set(List.repeat({ cards: far, first: [] }, Board.all_locs(zone_colors).len()), home, { cards: 0, first: [] }) ?? crash ("Reach: no home")
 		# A pass says whether it changed anything (findings/llvm-closure-loop-alias).
 		relax = |d|
 			List.fold(

@@ -190,7 +190,7 @@ Search :: [].{
 		# A turn is at most five plays (a line ends when the hand is refilled),
 		# so the depth guard never binds; max_lines is the cap that can.
 		while List.any($level, is_open) and $depth < 8 {
-			grown = List.join_map(List.keep_if($level, is_open), expand)
+			grown = $level.keep_if(is_open).join_map(expand)
 			merged = distinct_lines(grown)
 			$capped = $capped or List.len(merged) > max_lines
 			$level = List.take_first(merged, max_lines)
@@ -255,7 +255,7 @@ Search :: [].{
 				},
 			),
 		)
-		cards = ascending(List.map(p.hand, |c| I64.to_u64_wrap(Config.card_value(c))))
+		cards = ascending(p.hand.map(|c| Config.card_value(c).to_u64_wrap()))
 		List.join([
 			pieces,
 			[999],

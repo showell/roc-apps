@@ -108,7 +108,9 @@ FastTrack :: [].{
 					Human => Err(Ignored)
 				}
 			} else if code != Codes.agent_step and seat(model) == Human and Try.is_err(Game.winner(model.game)) {
-				Try.map_ok(Try.map_err(Codes.decode(model.game.zone_colors, code), |_| Ignored), |m| { msg: m, rest: [] })
+				Codes.decode(model.game.zone_colors, code)
+					.map_err(|_| Ignored)
+					.map_ok(|m| { msg: m, rest: [] })
 			} else {
 				Err(Ignored)
 			}

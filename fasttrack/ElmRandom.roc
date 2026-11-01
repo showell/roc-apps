@@ -32,16 +32,16 @@ ElmRandom :: [].{
 
 	## ToUint32 of an integer: its value modulo 2^32.
 	unsigned32 : I64 -> U64
-	unsigned32 = |n| U64.bitwise_and(I64.to_u64_wrap(n), mask)
+	unsigned32 = |n| n.to_u64_wrap().bitwise_and(mask)
 
 	peel : ElmRandom.Seed -> U64
 	peel = |seed| {
 		state = seed.state
-		shift = U64.to_u8_wrap(U64.shr_zf_wrap(state, 28) + 4)
-		mixed = signed32(U64.bitwise_xor(state, U64.shr_zf_wrap(state, shift)))
+		shift = (state.shr_zf_wrap(28) + 4).to_u8_wrap()
+		mixed = signed32(state.bitwise_xor(state.shr_zf_wrap(shift)))
 		# The product as a double, then back: exact for every |x| < 2^63.
-		word = unsigned32(F64.to_i64_wrap(I64.to_f64(mixed * 277803737)))
-		U64.bitwise_and(U64.bitwise_xor(U64.shr_zf_wrap(word, 22), word), mask)
+		word = unsigned32((mixed * 277803737).to_f64().to_i64_wrap())
+		word.shr_zf_wrap(22).bitwise_xor(word).bitwise_and(mask)
 	}
 
 	initial_seed : U64 -> ElmRandom.Seed
@@ -66,7 +66,7 @@ ElmRandom :: [].{
 		}
 		range = I64.to_u64_wrap(hi - lo + 1)
 		if U64.bitwise_and(range - 1, range) == 0 {
-			{ value: U64.to_i64_wrap(U64.bitwise_and(range - 1, peel(seed0))) + lo, seed: next(seed0) }
+			{ value: (range - 1).bitwise_and(peel(seed0)).to_i64_wrap() + lo, seed: next(seed0) }
 		} else {
 			threshold = U64.rem_by(4294967296 - range, range)
 			var $seed = seed0
@@ -75,7 +75,7 @@ ElmRandom :: [].{
 				$seed = next($seed)
 				$x = peel($seed)
 			}
-			{ value: U64.to_i64_wrap(U64.rem_by($x, range)) + lo, seed: next($seed) }
+			{ value: $x.rem_by(range).to_i64_wrap() + lo, seed: next($seed) }
 		}
 	}
 }

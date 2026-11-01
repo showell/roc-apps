@@ -136,7 +136,7 @@ main! = |_args| {
 		grown = List.join_map(open, Search.expand)
 		merged = Search.distinct_lines(grown)
 		kept = List.take_first(merged, Search.max_lines)
-		Echo.line!("| ${U64.to_str($depth + 1)} | ${U64.to_str(List.len(open))} | ${U64.to_str(List.len(grown))} | ${U64.to_str(List.len(merged))} | ${U64.to_str(List.len(kept))} | ${U64.to_str(List.len(boards(kept)))} |")
+		Echo.line!("| ${($depth + 1).to_str()} | ${open.len().to_str()} | ${grown.len().to_str()} | ${merged.len().to_str()} | ${kept.len().to_str()} | ${boards(kept).len().to_str()} |")
 		$level = kept
 		$done = List.concat($done, List.drop_if(merged, Search.is_open))
 		$depth = $depth + 1
@@ -152,7 +152,7 @@ main! = |_args| {
 			Same
 		},
 	)
-	Echo.line!("\nThe search's answer: ${U64.to_str(List.len(finals))} lines, ${U64.to_str(List.len(final_boards))} boards.\n")
+	Echo.line!("\nThe search's answer: ${finals.len().to_str()} lines, ${final_boards.len().to_str()} boards.\n")
 	Echo.line!("The boards reached most often:\n")
 	for b in List.take_first(final_boards, 3) {
 		Echo.line!("${U64.to_str(b.n)} lines reach:\n${pieces(b.example.game)}\n")

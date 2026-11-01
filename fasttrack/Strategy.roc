@@ -96,7 +96,7 @@ Strategy :: [].{
 	## What a hand is worth: each hoarded card still in it.
 	hand : List({ cards : List(Str), worth : I64 }), List(Str) -> I64
 	hand = |worths, cards|
-		List.fold(worths, 0, |total, h| total + U64.to_i64_wrap(List.count_if(cards, |c| List.contains(h.cards, c))) * h.worth)
+		worths.fold(0, |total, h| total + cards.count_if(|c| h.cards.contains(c)).to_i64_wrap() * h.worth)
 }
 
 # The table's corners (SquareValues, from Steve's ranking), and the base bonus.

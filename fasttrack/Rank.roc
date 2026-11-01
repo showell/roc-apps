@@ -159,7 +159,7 @@ Rank :: [].{
 	places_in : List(Reach.Move), List(Str), Str, Str -> Rank.Places
 	places_in = |grid, zone_colors, color, peak| {
 		order = ranked_in(grid, zone_colors, color, peak)
-		start = List.repeat(U64.highest, List.len(Board.all_locs(zone_colors)))
+		start = List.repeat(U64.highest, Board.all_locs(zone_colors).len())
 		settled = List.fold(
 			List.map_with_index(order, |row, i| { row, i }),
 			{ place: start, prev: { row: List.first(order) ?? { at: 0, loc: { zone: BullsEyeZone, id: "" }, base: 0, stage: [] }, place: 0 } },

@@ -20,7 +20,7 @@ cards : List(Str)
 cards = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "joker"]
 
 copies : List(Str), Str -> I64
-copies = |xs, card| U64.to_i64_wrap(List.count_if(xs, |c| c == card))
+copies = |xs, card| xs.count_if(|c| c == card).to_i64_wrap()
 
 main! = |_args| {
 	seats = List.repeat(Plays(Strategy.champion), 4)
