@@ -265,6 +265,12 @@ to bring its own format-only changes.
   comma, as `zig fmt` does. We stack anything with three or more parts, and
   any line over about 100 columns (`docs/roc-style.md`, "Layout and
   formatting").
+- **Run `roc fmt` until `--check` passes, then read its diff.** At 09-22
+  one pass isn't always stable (FastTrack's Page.roc took two), and the
+  formatter can copy a comment into a neighbouring record. Fix such a slip
+  in a commit of its own, never by hand-shaping around the formatter.
+- **A generator writes the layout `roc fmt` leaves,** so its
+  regenerate-and-compare check and `roc fmt --check` agree.
 - **An annotation's arguments can't be stacked.** `roc fmt` refuses the
   trailing comma there, so a signature with three or more arguments takes a
   record instead (`docs/roc-style.md`, "Name what travels together").
@@ -350,7 +356,8 @@ Read it before writing a loop that stores into a list or a record.
 
 - **Six shapes copy; learn them from the notes.** The commonest is
   `List.set(l, i, v) ?? l`: the fallback names `l`, so every store copies.
-  Write `?? crash("...")` instead. The `?? l` is a placeholder as well as
+  Write `?? crash "..."` instead (`crash` is a keyword; `roc fmt` turns
+  `crash("...")` into `crash ("...")`). The `?? l` is a placeholder as well as
   a copy, an answer nobody meant (`docs/roc-style.md`, "Errors and
   failure"). The others (`List.update` on a nested list, a value threaded down a recursion, a field taken out and written
   back in separate statements) are in the notes, with reproductions under
