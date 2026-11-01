@@ -44,26 +44,30 @@ quad_shape_want : List(I64)
 quad_shape_want = [4, 4]
 
 across_got : List(F64)
-across_got = [(List.get(quad, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).right, (List.get(quad, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).right, (List.get(quad, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).right, (List.get(quad, I64.to_u64_wrap(3)) ?? crash("list-at out of range")).right]
+across_got = [(List.get(quad, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).right, (List.get(quad, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).right, (List.get(quad, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).right, (List.get(quad, I64.to_u64_wrap(3)) ?? crash ("list-at out of range")).right]
 
 across_want : List(F64)
 across_want = [(-2.0), 2.0, 2.0, (-2.0)]
 
 along_got : List(F64)
-along_got = ({
-	last = GroundPlan.slice_quad(segs, chain, origin, 0, 19, 20, 500.0, 4.0)
-	[(List.get(quad, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).forward, (List.get(quad, I64.to_u64_wrap(3)) ?? crash("list-at out of range")).forward, (List.get(last, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).forward, (List.get(last, I64.to_u64_wrap(3)) ?? crash("list-at out of range")).forward]
-})
+along_got = (
+	{
+		last = GroundPlan.slice_quad(segs, chain, origin, 0, 19, 20, 500.0, 4.0)
+		[(List.get(quad, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).forward, (List.get(quad, I64.to_u64_wrap(3)) ?? crash ("list-at out of range")).forward, (List.get(last, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).forward, (List.get(last, I64.to_u64_wrap(3)) ?? crash ("list-at out of range")).forward]
+	}
+)
 
 along_want : List(F64)
 along_want = [0.0, 25.0, 475.0, 500.0]
 
 seam_got : List(F64)
-seam_got = ({
-	a = GroundPlan.slice_quad(segs, chain, origin, 0, 3, 20, 500.0, 4.0)
-	b = GroundPlan.slice_quad(segs, chain, origin, 0, 4, 20, 500.0, 4.0)
-	[((List.get(a, I64.to_u64_wrap(3)) ?? crash("list-at out of range")).forward - (List.get(b, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).forward), ((List.get(a, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).forward - (List.get(b, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).forward), ((List.get(a, I64.to_u64_wrap(3)) ?? crash("list-at out of range")).right - (List.get(b, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).right)]
-})
+seam_got = (
+	{
+		a = GroundPlan.slice_quad(segs, chain, origin, 0, 3, 20, 500.0, 4.0)
+		b = GroundPlan.slice_quad(segs, chain, origin, 0, 4, 20, 500.0, 4.0)
+		[((List.get(a, I64.to_u64_wrap(3)) ?? crash ("list-at out of range")).forward - (List.get(b, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).forward), ((List.get(a, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).forward - (List.get(b, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).forward), ((List.get(a, I64.to_u64_wrap(3)) ?? crash ("list-at out of range")).right - (List.get(b, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).right)]
+	}
+)
 
 seam_want : List(F64)
 seam_want = [0.0, 0.0, 0.0]
@@ -78,19 +82,23 @@ strip_want : List(Bool)
 strip_want = [True, True, True]
 
 cmd_got : List(I64)
-cmd_got = ({
-	c = (List.get(strip, I64.to_u64_wrap((strip.len().to_i64_wrap() - 1))) ?? crash("list-at out of range"))
-	[c.tag, c.color, c.color2, c.geom.len().to_i64_wrap()]
-})
+cmd_got = (
+	{
+		c = (List.get(strip, I64.to_u64_wrap((strip.len().to_i64_wrap() - 1))) ?? crash ("list-at out of range"))
+		[c.tag, c.color, c.color2, c.geom.len().to_i64_wrap()]
+	}
+)
 
 cmd_want : List(I64)
 cmd_want = [0, 3421500, 0, 0]
 
 points_got : List(Bool)
-points_got = ({
-	c = (List.get(strip, I64.to_u64_wrap((strip.len().to_i64_wrap() - 1))) ?? crash("list-at out of range"))
-	[(c.pts.len().to_i64_wrap() >= 6), (c.pts.len().to_i64_wrap() <= 10)]
-})
+points_got = (
+	{
+		c = (List.get(strip, I64.to_u64_wrap((strip.len().to_i64_wrap() - 1))) ?? crash ("list-at out of range"))
+		[(c.pts.len().to_i64_wrap() >= 6), (c.pts.len().to_i64_wrap() <= 10)]
+	}
+)
 
 points_want : List(Bool)
 points_want = [True, True]

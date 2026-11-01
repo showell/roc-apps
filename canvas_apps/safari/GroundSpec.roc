@@ -16,10 +16,12 @@ height_want : List(F64)
 height_want = [0.0, (-0.000545), (-0.008125), (-0.05078125)]
 
 carry_got : List(F64)
-carry_got = ({
-	vs = Ground.ground_verts(pts_a, 0)
-	[(List.get(vs, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).right, (List.get(vs, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).forward, (List.get(vs, I64.to_u64_wrap(3)) ?? crash("list-at out of range")).right, (List.get(vs, I64.to_u64_wrap(3)) ?? crash("list-at out of range")).forward]
-})
+carry_got = (
+	{
+		vs = Ground.ground_verts(pts_a, 0)
+		[(List.get(vs, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).right, (List.get(vs, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).forward, (List.get(vs, I64.to_u64_wrap(3)) ?? crash ("list-at out of range")).right, (List.get(vs, I64.to_u64_wrap(3)) ?? crash ("list-at out of range")).forward]
+	}
+)
 
 carry_want : List(F64)
 carry_want = [3.0, 10.0, 12.5, 100.0]
@@ -38,7 +40,13 @@ wide : I64 -> List(Geom.RiderPt)
 wide = |n| wide_acc(n, [])
 
 wide_acc : I64, List(Geom.RiderPt) -> List(Geom.RiderPt)
-wide_acc = |n, acc| (if (n <= 0) { acc } else { wide_acc((n - 1), List.append(acc, { right: I64.to_f64(n), forward: (10.0 + I64.to_f64(n)) })) })
+wide_acc = |n, acc| (
+	if (n <= 0) {
+		acc
+	} else {
+		wide_acc((n - 1), List.append(acc, { right: I64.to_f64(n), forward: (10.0 + I64.to_f64(n)) }))
+	}
+)
 
 drawn : List(Geom.RiderPt) -> List(Paint.DrawCmd)
 drawn = |ps| Ground.emit_ground_color(ps, 3112588, 685.5110432362151, 960.0)
@@ -50,10 +58,12 @@ count_want : List(I64)
 count_want = [1, 1, 0, 0, 0]
 
 cmd_got : List(I64)
-cmd_got = ({
-	c = (List.get(drawn(quad), I64.to_u64_wrap(0)) ?? crash("list-at out of range"))
-	[c.tag, c.color, c.color2, c.pts.len().to_i64_wrap(), c.geom.len().to_i64_wrap()]
-})
+cmd_got = (
+	{
+		c = (List.get(drawn(quad), I64.to_u64_wrap(0)) ?? crash ("list-at out of range"))
+		[c.tag, c.color, c.color2, c.pts.len().to_i64_wrap(), c.geom.len().to_i64_wrap()]
+	}
+)
 
 cmd_want : List(I64)
 cmd_want = [0, 3112588, 0, 8, 0]

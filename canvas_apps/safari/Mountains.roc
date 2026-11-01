@@ -32,13 +32,15 @@ Mountains :: [].{
 	chan = |color, sh| I64.to_f64(I64.bitwise_and(I64.shr_wrap(color, I64.to_u8_wrap(sh)), 255))
 
 	dimmed : I64, F64 -> I64
-	dimmed = |color, dusk| ({
-		f = (1.0 - (rock_night_dim * dusk))
-		r = F64.to_i64_wrap(Num_.round_real((chan(color, 16) * f)))
-		g = F64.to_i64_wrap(Num_.round_real((chan(color, 8) * f)))
-		b = F64.to_i64_wrap(Num_.round_real((chan(color, 0) * f)))
-		I64.bitwise_or(I64.bitwise_or(I64.shl_wrap(r, I64.to_u8_wrap(16)), I64.shl_wrap(g, I64.to_u8_wrap(8))), b)
-	})
+	dimmed = |color, dusk| (
+		{
+			f = (1.0 - (rock_night_dim * dusk))
+			r = F64.to_i64_wrap(Num_.round_real((chan(color, 16) * f)))
+			g = F64.to_i64_wrap(Num_.round_real((chan(color, 8) * f)))
+			b = F64.to_i64_wrap(Num_.round_real((chan(color, 0) * f)))
+			I64.bitwise_or(I64.bitwise_or(I64.shl_wrap(r, I64.to_u8_wrap(16)), I64.shl_wrap(g, I64.to_u8_wrap(8))), b)
+		}
+	)
 
 	snow_color : F64 -> I64
 	snow_color = |dusk| Sky.pack(Sky.lerp3(snow_day, snow_night, dusk))
@@ -59,18 +61,28 @@ Mountains :: [].{
 	roll_margin = 200.0
 
 	range_at : F64, F64, F64, F64, F64, F64 -> F64
-	range_at = |bearing, center, half, peak, freq_a, freq_b| ({
-		b = Trig.wrap((bearing - center), 64)
-		t = (b / half)
-		(if (DeviceMath.real_abs(t) >= 1.0) { 0.0 } else { range_body(b, t, peak, freq_a, freq_b) })
-	})
+	range_at = |bearing, center, half, peak, freq_a, freq_b| (
+		{
+			b = Trig.wrap((bearing - center), 64)
+			t = (b / half)
+			(
+				if (DeviceMath.real_abs(t) >= 1.0) {
+					0.0
+				} else {
+					range_body(b, t, peak, freq_a, freq_b)
+				}
+			)
+		}
+	)
 
 	range_body : F64, F64, F64, F64, F64 -> F64
-	range_body = |b, t, peak, freq_a, freq_b| ({
-		envelope = Trig.r_cos(((t * Trig.pi) / 2.0))
-		ridge = ((0.6 + (0.24 * Trig.r_cos((b * freq_a)))) + (0.16 * Trig.r_cos(((b * freq_b) + 1.0))))
-		((peak * envelope) * ridge)
-	})
+	range_body = |b, t, peak, freq_a, freq_b| (
+		{
+			envelope = Trig.r_cos(((t * Trig.pi) / 2.0))
+			ridge = ((0.6 + (0.24 * Trig.r_cos((b * freq_a)))) + (0.16 * Trig.r_cos(((b * freq_b) + 1.0))))
+			((peak * envelope) * ridge)
+		}
+	)
 
 	ground_base : F64 -> F64
 	ground_base = |bearing| (18.0 + (12.0 * Trig.r_sin(((Trig.wrap(bearing, 64) * 0.9) + 1.9))))
@@ -82,17 +94,25 @@ Mountains :: [].{
 	west_range = |bearing| range_at(bearing, west_range_bearing, 0.72, 120.0, 11.0, 27.0)
 
 	snow_peak_loop : F64, F64 -> F64
-	snow_peak_loop = |b, vm| (if (b > 0.5) { vm } else { snow_peak_loop((b + 0.01), DeviceMath.real_max(vm, north_range(b))) })
+	snow_peak_loop = |b, vm| (
+		if (b > 0.5) {
+			vm
+		} else {
+			snow_peak_loop((b + 0.01), DeviceMath.real_max(vm, north_range(b)))
+		}
+	)
 
 	snow_peak_height : F64
 	snow_peak_height = snow_peak_loop((0.0 - 0.5), (0.0 - 1.0))
 
 	snowline_at : F64, F64 -> F64
-	snowline_at = |bearing, peak| ({
-		num = (north_range(bearing) - snow_threshold)
-		above_frac = DeviceMath.real_max(0.0, DeviceMath.real_min(1.0, (num / (peak - snow_threshold))))
-		(snow_threshold - (snow_dip * above_frac))
-	})
+	snowline_at = |bearing, peak| (
+		{
+			num = (north_range(bearing) - snow_threshold)
+			above_frac = DeviceMath.real_max(0.0, DeviceMath.real_min(1.0, (num / (peak - snow_threshold))))
+			(snow_threshold - (snow_dip * above_frac))
+		}
+	)
 
 	bearing_at : F64, F64, F64, F64 -> F64
 	bearing_at = |x, heading, cam_focal, view_w| (heading + Trig.r_atan(((x - (view_w / 2.0)) / cam_focal)))
@@ -108,53 +128,97 @@ Mountains :: [].{
 	crest_pts = |f, heading, cam_focal, view_w, v_scale, x| crest_pts_acc(f, heading, cam_focal, view_w, v_scale, x, [])
 
 	crest_pts_acc : (F64 -> F64), F64, F64, F64, F64, F64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
-	crest_pts_acc = |f, heading, cam_focal, view_w, v_scale, x, acc| (if (x > (view_w + roll_margin)) { acc } else { crest_pts_acc(f, heading, cam_focal, view_w, v_scale, (x + col_step), List.append(acc, { x: x, y: ((Camera.camera_h / 2.0) - (f(bearing_at(x, heading, cam_focal, view_w)) * v_scale)) })) })
+	crest_pts_acc = |f, heading, cam_focal, view_w, v_scale, x, acc| (
+		if (x > (view_w + roll_margin)) {
+			acc
+		} else {
+			crest_pts_acc(f, heading, cam_focal, view_w, v_scale, (x + col_step), List.append(acc, { x: x, y: ((Camera.camera_h / 2.0) - (f(bearing_at(x, heading, cam_focal, view_w)) * v_scale)) }))
+		}
+	)
 
 	silhouette : (F64 -> F64), F64, F64, F64, F64, I64 -> List(Paint.DrawCmd)
-	silhouette = |f, heading, cam_focal, view_w, v_scale, color| ({
-		top = crest_pts(f, heading, cam_focal, view_w, v_scale, (0.0 - roll_margin))
-		close = [{ x: (view_w + roll_margin), y: (Camera.camera_h / 2.0) }, { x: (0.0 - roll_margin), y: (Camera.camera_h / 2.0) }]
-		Paint.push_poly(color, List.concat(top, close))
-	})
+	silhouette = |f, heading, cam_focal, view_w, v_scale, color| (
+		{
+			top = crest_pts(f, heading, cam_focal, view_w, v_scale, (0.0 - roll_margin))
+			close = [{ x: (view_w + roll_margin), y: (Camera.camera_h / 2.0) }, { x: (0.0 - roll_margin), y: (Camera.camera_h / 2.0) }]
+			Paint.push_poly(color, List.concat(top, close))
+		}
+	)
 
 	snow_columns : F64, F64, F64, F64, F64 -> List(F64)
-	snow_columns = |heading, cam_focal, view_w, peak, x| (if (x > view_w) { [] } else { snow_columns_at(heading, cam_focal, view_w, peak, x) })
+	snow_columns = |heading, cam_focal, view_w, peak, x| (
+		if (x > view_w) {
+			[]
+		} else {
+			snow_columns_at(heading, cam_focal, view_w, peak, x)
+		}
+	)
 
 	snow_columns_at : F64, F64, F64, F64, F64 -> List(F64)
-	snow_columns_at = |heading, cam_focal, view_w, peak, x| ({
-		b = bearing_at(x, heading, cam_focal, view_w)
-		rest = snow_columns(heading, cam_focal, view_w, peak, (x + col_step))
-		(if (north_range(b) > (snowline_at(b, peak) + 0.01)) { List.concat([x], rest) } else { rest })
-	})
+	snow_columns_at = |heading, cam_focal, view_w, peak, x| (
+		{
+			b = bearing_at(x, heading, cam_focal, view_w)
+			rest = snow_columns(heading, cam_focal, view_w, peak, (x + col_step))
+			(
+				if (north_range(b) > (snowline_at(b, peak) + 0.01)) {
+					List.concat([x], rest)
+				} else {
+					rest
+				}
+			)
+		}
+	)
 
 	# snow_top builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	snow_top : List(F64), F64, F64, F64, F64, I64 -> List(Camera.ScreenPt)
 	snow_top = |xs, heading, cam_focal, view_w, v_scale, i| snow_top_acc(xs, heading, cam_focal, view_w, v_scale, i, [])
 
 	snow_top_acc : List(F64), F64, F64, F64, F64, I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
-	snow_top_acc = |xs, heading, cam_focal, view_w, v_scale, i, acc| (if (i >= xs.len().to_i64_wrap()) { acc } else { snow_top_acc(xs, heading, cam_focal, view_w, v_scale, (i + 1), List.append(acc, { x: (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), y: ((Camera.camera_h / 2.0) - (north_range(bearing_at((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), heading, cam_focal, view_w)) * v_scale)) })) })
+	snow_top_acc = |xs, heading, cam_focal, view_w, v_scale, i, acc| (
+		if (i >= xs.len().to_i64_wrap()) {
+			acc
+		} else {
+			snow_top_acc(xs, heading, cam_focal, view_w, v_scale, (i + 1), List.append(acc, { x: (List.get(xs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), y: ((Camera.camera_h / 2.0) - (north_range(bearing_at((List.get(xs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), heading, cam_focal, view_w)) * v_scale)) }))
+		}
+	)
 
 	# snow_bottom builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	snow_bottom : List(F64), F64, F64, F64, F64, F64, I64 -> List(Camera.ScreenPt)
 	snow_bottom = |xs, heading, cam_focal, view_w, v_scale, peak, i| snow_bottom_acc(xs, heading, cam_focal, view_w, v_scale, peak, i, [])
 
 	snow_bottom_acc : List(F64), F64, F64, F64, F64, F64, I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
-	snow_bottom_acc = |xs, heading, cam_focal, view_w, v_scale, peak, i, acc| (if (i < 0) { acc } else { snow_bottom_acc(xs, heading, cam_focal, view_w, v_scale, peak, (i - 1), List.append(acc, { x: (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), y: ((Camera.camera_h / 2.0) - (snowline_at(bearing_at((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), heading, cam_focal, view_w), peak) * v_scale)) })) })
+	snow_bottom_acc = |xs, heading, cam_focal, view_w, v_scale, peak, i, acc| (
+		if (i < 0) {
+			acc
+		} else {
+			snow_bottom_acc(xs, heading, cam_focal, view_w, v_scale, peak, (i - 1), List.append(acc, { x: (List.get(xs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), y: ((Camera.camera_h / 2.0) - (snowline_at(bearing_at((List.get(xs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), heading, cam_focal, view_w), peak) * v_scale)) }))
+		}
+	)
 
 	draw_snow : F64, F64, F64, F64, I64 -> List(Paint.DrawCmd)
-	draw_snow = |heading, cam_focal, view_w, v_scale, snow| ({
-		peak = snow_peak_height
-		xs = snow_columns(heading, cam_focal, view_w, peak, 0.0)
-		(if (xs.len().to_i64_wrap() < 2) { [] } else { Paint.push_poly(snow, List.concat(snow_top(xs, heading, cam_focal, view_w, v_scale, 0), snow_bottom(xs, heading, cam_focal, view_w, v_scale, peak, (xs.len().to_i64_wrap() - 1)))) })
-	})
+	draw_snow = |heading, cam_focal, view_w, v_scale, snow| (
+		{
+			peak = snow_peak_height
+			xs = snow_columns(heading, cam_focal, view_w, peak, 0.0)
+			(
+				if (xs.len().to_i64_wrap() < 2) {
+					[]
+				} else {
+					Paint.push_poly(snow, List.concat(snow_top(xs, heading, cam_focal, view_w, v_scale, 0), snow_bottom(xs, heading, cam_focal, view_w, v_scale, peak, (xs.len().to_i64_wrap() - 1))))
+				}
+			)
+		}
+	)
 
 	draw : F64, F64, F64, F64 -> List(Paint.DrawCmd)
-	draw = |heading, dusk, cam_focal, view_w| ({
-		v_scale = (cam_focal / Lens.focal)
-		west = silhouette(west_range, heading, cam_focal, view_w, v_scale, dimmed(rock_west, dusk))
-		north = silhouette(north_range, heading, cam_focal, view_w, v_scale, dimmed(rock, dusk))
-		cap = draw_snow(heading, cam_focal, view_w, v_scale, snow_color(dusk))
-		ground = silhouette(ground_base, heading, cam_focal, view_w, v_scale, land)
-		List.join([west, north, cap, ground])
-	})
+	draw = |heading, dusk, cam_focal, view_w| (
+		{
+			v_scale = (cam_focal / Lens.focal)
+			west = silhouette(west_range, heading, cam_focal, view_w, v_scale, dimmed(rock_west, dusk))
+			north = silhouette(north_range, heading, cam_focal, view_w, v_scale, dimmed(rock, dusk))
+			cap = draw_snow(heading, cam_focal, view_w, v_scale, snow_color(dusk))
+			ground = silhouette(ground_base, heading, cam_focal, view_w, v_scale, land)
+			List.join([west, north, cap, ground])
+		}
+	)
 }

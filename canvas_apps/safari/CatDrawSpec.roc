@@ -10,32 +10,38 @@ feet : Camera.ScreenPt
 feet = { x: 100.0, y: 200.0 }
 
 pt_got : List(F64)
-pt_got = ({
-	a = CatDraw.cat_pt(feet, 50.0, 0.0, { x: 0.5, y: 0.4 })
-	b = CatDraw.cat_pt(feet, 50.0, 0.0, { x: 0.0, y: 0.0 })
-	c = CatDraw.cat_pt(feet, 50.0, 0.0, { x: (-1.0), y: 1.0 })
-	[a.x, a.y, b.x, b.y, c.x, c.y]
-})
+pt_got = (
+	{
+		a = CatDraw.cat_pt(feet, 50.0, 0.0, { x: 0.5, y: 0.4 })
+		b = CatDraw.cat_pt(feet, 50.0, 0.0, { x: 0.0, y: 0.0 })
+		c = CatDraw.cat_pt(feet, 50.0, 0.0, { x: (-1.0), y: 1.0 })
+		[a.x, a.y, b.x, b.y, c.x, c.y]
+	}
+)
 
 pt_want : List(F64)
 pt_want = [125.0, 180.0, 100.0, 200.0, 50.0, 150.0]
 
 lift_got : List(F64)
-lift_got = ({
-	a = CatDraw.cat_pt(feet, 50.0, 0.2, { x: 0.5, y: 0.4 })
-	b = CatDraw.cat_pt(feet, 100.0, 0.2, { x: 0.5, y: 0.4 })
-	z = CatDraw.cat_pt(feet, 50.0, 0.0, { x: 0.5, y: 0.4 })
-	[a.x, a.y, (z.y - a.y), b.y, (a.x - z.x)]
-})
+lift_got = (
+	{
+		a = CatDraw.cat_pt(feet, 50.0, 0.2, { x: 0.5, y: 0.4 })
+		b = CatDraw.cat_pt(feet, 100.0, 0.2, { x: 0.5, y: 0.4 })
+		z = CatDraw.cat_pt(feet, 50.0, 0.0, { x: 0.5, y: 0.4 })
+		[a.x, a.y, (z.y - a.y), b.y, (a.x - z.x)]
+	}
+)
 
 lift_want : List(F64)
 lift_want = [125.0, 170.0, 10.0, 140.0, 0.0]
 
 pts_got : List(F64)
-pts_got = ({
-	ps = CatDraw.cat_pts(feet, 50.0, 0.0, [{ x: 0.0, y: 0.0 }, { x: 0.5, y: 0.4 }], 0)
-	[I64.to_f64(ps.len().to_i64_wrap()), (List.get(ps, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).y, (List.get(ps, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).y]
-})
+pts_got = (
+	{
+		ps = CatDraw.cat_pts(feet, 50.0, 0.0, [{ x: 0.0, y: 0.0 }, { x: 0.5, y: 0.4 }], 0)
+		[I64.to_f64(ps.len().to_i64_wrap()), (List.get(ps, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).y, (List.get(ps, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).y]
+	}
+)
 
 pts_want : List(F64)
 pts_want = [2.0, 100.0, 200.0, 125.0, 180.0]
@@ -45,7 +51,13 @@ many : I64 -> List(Stills.StillPt)
 many = |n| many_acc(n, [])
 
 many_acc : I64, List(Stills.StillPt) -> List(Stills.StillPt)
-many_acc = |n, acc| (if (n <= 0) { acc } else { many_acc((n - 1), List.append(acc, { x: 0.0, y: 0.0 })) })
+many_acc = |n, acc| (
+	if (n <= 0) {
+		acc
+	} else {
+		many_acc((n - 1), List.append(acc, { x: 0.0, y: 0.0 }))
+	}
+)
 
 poly_of : I64 -> Stills.StillPoly
 poly_of = |n| { color: 9, grad: [], pts: many(n) }
@@ -57,16 +69,18 @@ guard_want : List(I64)
 guard_want = [256, 1, 1, 0, 0]
 
 solid_got : List(I64)
-solid_got = ({
-	c = (List.get(CatDraw.cat_poly(feet, 50.0, 0.0, poly_of(3)), I64.to_u64_wrap(0)) ?? crash("list-at out of range"))
-	[c.tag, c.color, c.color2, c.geom.len().to_i64_wrap(), c.pts.len().to_i64_wrap()]
-})
+solid_got = (
+	{
+		c = (List.get(CatDraw.cat_poly(feet, 50.0, 0.0, poly_of(3)), I64.to_u64_wrap(0)) ?? crash ("list-at out of range"))
+		[c.tag, c.color, c.color2, c.geom.len().to_i64_wrap(), c.pts.len().to_i64_wrap()]
+	}
+)
 
 solid_want : List(I64)
 solid_want = [0, 9, 0, 0, 6]
 
 polys_got : List(I64)
-polys_got = [CatDraw.cat_polys(feet, 50.0, 0.0, [poly_of(3), poly_of(4), poly_of(300)], 0).len().to_i64_wrap(), CatDraw.cat_polys(feet, 50.0, 0.0, [], 0).len().to_i64_wrap(), (List.get(CatDraw.cat_polys(feet, 50.0, 0.0, [poly_of(3), poly_of(4)], 0), I64.to_u64_wrap(1)) ?? crash("list-at out of range")).pts.len().to_i64_wrap()]
+polys_got = [CatDraw.cat_polys(feet, 50.0, 0.0, [poly_of(3), poly_of(4), poly_of(300)], 0).len().to_i64_wrap(), CatDraw.cat_polys(feet, 50.0, 0.0, [], 0).len().to_i64_wrap(), (List.get(CatDraw.cat_polys(feet, 50.0, 0.0, [poly_of(3), poly_of(4)], 0), I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).pts.len().to_i64_wrap()]
 
 polys_want : List(I64)
 polys_want = [2, 0, 8]

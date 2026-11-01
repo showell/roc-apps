@@ -15,7 +15,7 @@ origin : Frame.Pose
 origin = { along: 0.0, across: 0.0, yaw: 0.0, hw: 2.0 }
 
 has_got : List(Bool)
-has_got = [(List.get(segs, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).has_cat, (List.get(segs, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).has_cat, (List.get(segs, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).has_cat]
+has_got = [(List.get(segs, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).has_cat, (List.get(segs, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).has_cat, (List.get(segs, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).has_cat]
 
 has_want : List(Bool)
 has_want = [False, True, False]
@@ -39,24 +39,26 @@ count_want : List(I64)
 count_want = [1, 0, 0, 8]
 
 place_got : List(F64)
-place_got = [(List.get(seen, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).height, (List.get(seen, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).lift]
+place_got = [(List.get(seen, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).height, (List.get(seen, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).lift]
 
 place_want : List(F64)
 place_want = [1.7, 0.0]
 
 pose_got : List(I64)
-pose_got = [(List.get(seen, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).pose_idx]
+pose_got = [(List.get(seen, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).pose_idx]
 
 pose_want : List(I64)
 pose_want = [0]
 
 closing_got : List(F64)
-closing_got = ({
-	a = (List.get(riding(200.0), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).fwd
-	b = (List.get(riding(300.0), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).fwd
-	c = (List.get(riding(400.0), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).fwd
-	[(b - a), (c - b), ((List.get(riding(300.0), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).right - (List.get(riding(200.0), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).right)]
-})
+closing_got = (
+	{
+		a = (List.get(riding(200.0), I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).fwd
+		b = (List.get(riding(300.0), I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).fwd
+		c = (List.get(riding(400.0), I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).fwd
+		[(b - a), (c - b), ((List.get(riding(300.0), I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).right - (List.get(riding(200.0), I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).right)]
+	}
+)
 
 closing_want : List(F64)
 closing_want = [(-100.0), (-100.0), 0.0]
@@ -68,7 +70,7 @@ cull_want : List(I64)
 cull_want = [0, 1, 1, 0, 0, 0]
 
 items_got : List(I64)
-items_got = [CatPlan.cat_items(seen).len().to_i64_wrap(), CatPlan.cat_items([]).len().to_i64_wrap(), (List.get(CatPlan.cat_items(seen), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).i]
+items_got = [CatPlan.cat_items(seen).len().to_i64_wrap(), CatPlan.cat_items([]).len().to_i64_wrap(), (List.get(CatPlan.cat_items(seen), I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).i]
 
 items_want : List(I64)
 items_want = [1, 0, 0]

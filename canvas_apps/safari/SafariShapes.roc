@@ -32,17 +32,20 @@ SafariShapes :: [].{
 				r1: 340.0 * sun.scale,
 			})
 			disc = Radial({ inner: Brush.opaque(0xffe6a3), outer: Brush.opaque(0xff9d5c), x: sun.x, y: sun.y, r0: 4.0 * sun.scale, r1: 46.0 * sun.scale })
-			List.concat($out, [
-				Rect({ x: 0.0, y: 0.0, w: 960.0, h: 300.0, fill: glow }),
-				Disc({ x: sun.x, y: sun.y, r: 46.0 * sun.scale, fill: disc, clip: Within({ x: 0.0, y: 0.0, w: 960.0, h: 300.0 }) }),
-			])
+			List.concat(
+				$out,
+				[
+					Rect({ x: 0.0, y: 0.0, w: 960.0, h: 300.0, fill: glow }),
+					Disc({ x: sun.x, y: sun.y, r: 46.0 * sun.scale, fill: disc, clip: Within({ x: 0.0, y: 0.0, w: 960.0, h: 300.0 }) }),
+				],
+			)
 		} else {
 			$out
 		}
 		n = List.len(commands)
 		var $k = 0
 		while $k < n {
-			$out = List.concat($out, of_command(List.get(commands, $k) ?? crash("command out of range")))
+			$out = List.concat($out, of_command(List.get(commands, $k) ?? crash ("command out of range")))
 			$k = $k + 1
 		}
 		$out
@@ -65,6 +68,10 @@ SafariShapes :: [].{
 	polygon : List(F64), Brush.Fill -> List(Shapes.Shape)
 	polygon = |pts, fill| {
 		n = List.len(pts) // 2
-		if n < 3 { [] } else { [Poly({ pts, fill })] }
+		if n < 3 {
+			[]
+		} else {
+			[Poly({ pts, fill })]
+		}
 	}
 }

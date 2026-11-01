@@ -16,5 +16,5 @@ ViewYaw :: [].{
 	heading_for = |s| (s.heading + view_yaw_for(s))
 
 	pose_for : List(World.Segment), Pose.RiderState -> Frame.Pose
-	pose_for = |w, s| { along: s.along, across: s.across, yaw: (s.yaw + view_yaw_for(s)), hw: ((List.get(w, I64.to_u64_wrap(s.segment)) ?? crash("list-at out of range")).width / 2.0) }
+	pose_for = |w, s| { along: s.along, across: s.across, yaw: (s.yaw + view_yaw_for(s)), hw: ((List.get(w, I64.to_u64_wrap(s.segment)) ?? crash ("list-at out of range")).width / 2.0) }
 }

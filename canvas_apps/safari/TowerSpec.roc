@@ -35,10 +35,12 @@ corner_want : List(F64)
 corner_want = [(-1.0), 1.0, 1.0, (-1.0), (-1.0), (-1.0), 1.0, 1.0]
 
 ax_of : I64 -> List(F64)
-ax_of = |k| ({
-	p = Tower.base_corner_ax(k, 100.0, 0.0, 0.0)
-	[p.a, p.x]
-})
+ax_of = |k| (
+	{
+		p = Tower.base_corner_ax(k, 100.0, 0.0, 0.0)
+		[p.a, p.x]
+	}
+)
 
 ax_got : List(F64)
 ax_got = List.join([ax_of(0), ax_of(1), ax_of(2), ax_of(3)])
@@ -53,10 +55,12 @@ centre : Geom.RiderPt
 centre = { right: 0.0, forward: 100.0 }
 
 at_h : I64, F64 -> List(F64)
-at_h = |k, h| ({
-	v = Tower.corner_at(base4, centre, k, h, 1.0)
-	[v.right, v.forward, v.height]
-})
+at_h = |k, h| (
+	{
+		v = Tower.corner_at(base4, centre, k, h, 1.0)
+		[v.right, v.forward, v.height]
+	}
+)
 
 taper_got : List(F64)
 taper_got = List.join([at_h(0, 0.0), at_h(0, 40.0), at_h(0, 80.0), at_h(2, 40.0), at_h(2, 80.0)])
@@ -71,27 +75,31 @@ drop_want : List(F64)
 drop_want = [1.0, 0.5, 0.0]
 
 lerp_got : List(F64)
-lerp_got = ({
-	a = { right: 0.0, forward: 10.0, height: 20.0 }
-	b = { right: 8.0, forward: 30.0, height: 0.0 }
-	m = Tower.lerp3v(a, b, 0.25)
-	[m.right, m.forward, m.height]
-})
+lerp_got = (
+	{
+		a = { right: 0.0, forward: 10.0, height: 20.0 }
+		b = { right: 8.0, forward: 30.0, height: 0.0 }
+		m = Tower.lerp3v(a, b, 0.25)
+		[m.right, m.forward, m.height]
+	}
+)
 
 lerp_want : List(F64)
 lerp_want = [2.0, 15.0, 15.0]
 
 bar_got : List(F64)
-bar_got = (List.get(Tower.bar({ x: 0.0, y: 0.0 }, { x: 30.0, y: 40.0 }, 10.0), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).pts
+bar_got = (List.get(Tower.bar({ x: 0.0, y: 0.0 }, { x: 30.0, y: 40.0 }, 10.0), I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).pts
 
 bar_want : List(F64)
 bar_want = [(-4.0), 3.0, 26.0, 43.0, 34.0, 37.0, 4.0, (-3.0)]
 
 degenerate_got : List(F64)
-degenerate_got = ({
-	d = Tower.bar({ x: 5.0, y: 6.0 }, { x: 5.0, y: 6.0 }, 10.0)
-	List.concat([I64.to_f64(d.len().to_i64_wrap())], (List.get(d, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).pts)
-})
+degenerate_got = (
+	{
+		d = Tower.bar({ x: 5.0, y: 6.0 }, { x: 5.0, y: 6.0 }, 10.0)
+		List.concat([I64.to_f64(d.len().to_i64_wrap())], (List.get(d, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).pts)
+	}
+)
 
 degenerate_want : List(F64)
 degenerate_want = [1.0, 5.0, 6.0, 5.0, 6.0, 5.0, 6.0, 5.0, 6.0]
@@ -112,10 +120,12 @@ clip_count_want : List(I64)
 clip_count_want = [1, 1, 1, 0]
 
 cut_got : List(F64)
-cut_got = ({
-	c = Tower.bar3d_cut(v3(0.0, 0.0, 10.0), v3(8.0, 0.8, 30.0))
-	[c.right, c.forward, c.height]
-})
+cut_got = (
+	{
+		c = Tower.bar3d_cut(v3(0.0, 0.0, 10.0), v3(8.0, 0.8, 30.0))
+		[c.right, c.forward, c.height]
+	}
+)
 
 cut_want : List(F64)
 cut_want = [4.0, 0.4, 20.0]

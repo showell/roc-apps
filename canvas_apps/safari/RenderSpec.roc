@@ -21,7 +21,13 @@ seg_list : I64 -> List(World.Segment)
 seg_list = |i| seg_list_acc(i, [])
 
 seg_list_acc : I64, List(World.Segment) -> List(World.Segment)
-seg_list_acc = |i, acc| (if (i >= World.route.len().to_i64_wrap()) { acc } else { seg_list_acc((i + 1), List.append(acc, World.segment_at(i))) })
+seg_list_acc = |i, acc| (
+	if (i >= World.route.len().to_i64_wrap()) {
+		acc
+	} else {
+		seg_list_acc((i + 1), List.append(acc, World.segment_at(i)))
+	}
+)
 
 origin : Frame.Pose
 origin = { along: 0.0, across: 0.0, yaw: 0.0, hw: 2.0 }
@@ -36,13 +42,15 @@ prev_want : List(I64)
 prev_want = [0, 0, 4]
 
 merge_got : List(I64)
-merge_got = ({
-	n = frame.order.len().to_i64_wrap()
-	parts = (TreePlan.tree_items(frame.trees).len().to_i64_wrap() + TowerPlan.tower_items(frame.towers).len().to_i64_wrap())
-	more = (CritterPlan.cow_items(frame.cows).len().to_i64_wrap() + CatPlan.cat_items(frame.cats).len().to_i64_wrap())
-	rest = (TruckPlan.truck_items(frame.truck).len().to_i64_wrap() + RailPlan.rail_items(frame.rails).len().to_i64_wrap())
-	[(n - ((parts + more) + rest))]
-})
+merge_got = (
+	{
+		n = frame.order.len().to_i64_wrap()
+		parts = (TreePlan.tree_items(frame.trees).len().to_i64_wrap() + TowerPlan.tower_items(frame.towers).len().to_i64_wrap())
+		more = (CritterPlan.cow_items(frame.cows).len().to_i64_wrap() + CatPlan.cat_items(frame.cats).len().to_i64_wrap())
+		rest = (TruckPlan.truck_items(frame.truck).len().to_i64_wrap() + RailPlan.rail_items(frame.rails).len().to_i64_wrap())
+		[(n - ((parts + more) + rest))]
+	}
+)
 
 merge_want : List(I64)
 merge_want = [0]
@@ -66,7 +74,19 @@ cap_values_want : List(I64)
 cap_values_want = [640, 16, 8]
 
 descending : List(DepthSort.DepthKey), I64 -> Bool
-descending = |xs, i| (if ((i + 1) >= xs.len().to_i64_wrap()) { True } else { (if DepthSort.deeper_than((List.get(xs, I64.to_u64_wrap((i + 1))) ?? crash("list-at out of range")).fwd, (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd) { False } else { descending(xs, (i + 1)) }) })
+descending = |xs, i| (
+	if ((i + 1) >= xs.len().to_i64_wrap()) {
+		True
+	} else {
+		(
+			if DepthSort.deeper_than((List.get(xs, I64.to_u64_wrap((i + 1))) ?? crash ("list-at out of range")).fwd, (List.get(xs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).fwd) {
+				False
+			} else {
+				descending(xs, (i + 1))
+			}
+		)
+	}
+)
 
 sorted_got : List(Bool)
 sorted_got = [descending(frame.order, 0), descending([], 0)]
@@ -81,21 +101,25 @@ cull_want : List(Bool)
 cull_want = [True, True, True]
 
 seg_cull_got : List(I64)
-seg_cull_got = ({
-	a = Render.seg_cull_count(segs, [0, 1, 2, 3, 4, 5], 3)
-	b = ((List.get(segs, I64.to_u64_wrap(3)) ?? crash("list-at out of range")).cows.len().to_i64_wrap() + (List.get(segs, I64.to_u64_wrap(3)) ?? crash("list-at out of range")).pigs.len().to_i64_wrap())
-	[(a - b), Render.seg_cull_count(segs, [0, 1, 2, 3, 4, 5], 0), Render.seg_cull_count(segs, [0, 1, 2, 3, 4, 5], 2), Render.walk_seg_cull(segs, [], 0)]
-})
+seg_cull_got = (
+	{
+		a = Render.seg_cull_count(segs, [0, 1, 2, 3, 4, 5], 3)
+		b = ((List.get(segs, I64.to_u64_wrap(3)) ?? crash ("list-at out of range")).cows.len().to_i64_wrap() + (List.get(segs, I64.to_u64_wrap(3)) ?? crash ("list-at out of range")).pigs.len().to_i64_wrap())
+		[(a - b), Render.seg_cull_count(segs, [0, 1, 2, 3, 4, 5], 0), Render.seg_cull_count(segs, [0, 1, 2, 3, 4, 5], 2), Render.walk_seg_cull(segs, [], 0)]
+	}
+)
 
 seg_cull_want : List(I64)
 seg_cull_want = [0, 0, 0, 0]
 
 shrink_got : List(Bool)
-shrink_got = ({
-	long = Render.walk_seg_cull(segs, [0, 1, 2, 3, 4, 5], 0)
-	short = Render.walk_seg_cull(segs, [0, 1, 2], 0)
-	[(long > short), (short == 0)]
-})
+shrink_got = (
+	{
+		long = Render.walk_seg_cull(segs, [0, 1, 2, 3, 4, 5], 0)
+		short = Render.walk_seg_cull(segs, [0, 1, 2], 0)
+		[(long > short), (short == 0)]
+	}
+)
 
 shrink_want : List(Bool)
 shrink_want = [True, True]

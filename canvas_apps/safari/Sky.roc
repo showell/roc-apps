@@ -38,19 +38,29 @@ Sky :: [].{
 	dusk_at_set = ((0.5 * (sun_start_px - sun_fully_set_px)) / sun_start_px)
 
 	dusk_while_up : F64 -> F64
-	dusk_while_up = |h| ({
-		p = ((sun_start_px - h) / (sun_start_px - sun_fully_set_px))
-		DeviceMath.real_max(0.0, ((dusk_at_set * p) * p))
-	})
+	dusk_while_up = |h| (
+		{
+			p = ((sun_start_px - h) / (sun_start_px - sun_fully_set_px))
+			DeviceMath.real_max(0.0, ((dusk_at_set * p) * p))
+		}
+	)
 
 	dusk_after_set : F64 -> F64
 	dusk_after_set = |h| DeviceMath.real_min(1.0, (dusk_at_set + (((sun_fully_set_px - h) / sun_radius_px) * (1.0 - dusk_at_set))))
 
 	sun_set_fraction : F64 -> F64
-	sun_set_fraction = |step| ({
-		h = sun_height_px(step)
-		(if (h >= sun_fully_set_px) { dusk_while_up(h) } else { dusk_after_set(h) })
-	})
+	sun_set_fraction = |step| (
+		{
+			h = sun_height_px(step)
+			(
+				if (h >= sun_fully_set_px) {
+					dusk_while_up(h)
+				} else {
+					dusk_after_set(h)
+				}
+			)
+		}
+	)
 
 	sunset_warmth : F64 -> F64
 	sunset_warmth = |step| DeviceMath.real_max(0.0, (1.0 - (DeviceMath.real_abs(sun_height_px(step)) / warmth_falloff_px)))
@@ -77,20 +87,32 @@ Sky :: [].{
 	sky_color = |step| pack(lerp3(day_sky, dusk_sky, sun_set_fraction(step)))
 
 	horizon_color : F64 -> I64
-	horizon_color = |step| ({
-		sky = lerp3(day_sky, dusk_sky, sun_set_fraction(step))
-		pack(lerp3(sky, sunset_red, (sunset_warmth(step) * sunset_glow)))
-	})
+	horizon_color = |step| (
+		{
+			sky = lerp3(day_sky, dusk_sky, sun_set_fraction(step))
+			pack(lerp3(sky, sunset_red, (sunset_warmth(step) * sunset_glow)))
+		}
+	)
 
 	sun_pos_visible : F64, F64, F64, F64 -> Sky.SunPos
-	sun_pos_visible = |rel, step, cam_focal, view_w| ({
-		v_scale = (cam_focal / Lens.focal)
-		{ visible: True, x: ((view_w / 2.0) + (Trig.r_tan(rel) * cam_focal)), y: ((Camera.camera_h / 2.0) - (sun_height_px(step) * v_scale)), scale: v_scale }
-	})
+	sun_pos_visible = |rel, step, cam_focal, view_w| (
+		{
+			v_scale = (cam_focal / Lens.focal)
+			{ visible: True, x: ((view_w / 2.0) + (Trig.r_tan(rel) * cam_focal)), y: ((Camera.camera_h / 2.0) - (sun_height_px(step) * v_scale)), scale: v_scale }
+		}
+	)
 
 	sun_pos : F64, F64, F64, F64 -> Sky.SunPos
-	sun_pos = |heading, step, cam_focal, view_w| ({
-		rel = Trig.wrap((sun_bearing - heading), 64)
-		(if (DeviceMath.real_abs(rel) >= visible_bearing_limit) { { visible: False, x: 0.0, y: 0.0, scale: 0.0 } } else { sun_pos_visible(rel, step, cam_focal, view_w) })
-	})
+	sun_pos = |heading, step, cam_focal, view_w| (
+		{
+			rel = Trig.wrap((sun_bearing - heading), 64)
+			(
+				if (DeviceMath.real_abs(rel) >= visible_bearing_limit) {
+					{ visible: False, x: 0.0, y: 0.0, scale: 0.0 }
+				} else {
+					sun_pos_visible(rel, step, cam_focal, view_w)
+				}
+			)
+		}
+	)
 }

@@ -60,13 +60,15 @@ duck_reach_want : List(I64)
 duck_reach_want = [0, 6]
 
 order_got : List(I64)
-order_got = ({
-	d0 = CritterPlan.seg_billboards(segs, chain, origin, 0).len().to_i64_wrap()
-	f0 = farm_at(0)
-	s0 = safari_at(0)
-	k0 = CritterPlan.seg_ducks(segs, chain, origin, 0).len().to_i64_wrap()
-	[(d0 - ((f0 + s0) + k0))]
-})
+order_got = (
+	{
+		d0 = CritterPlan.seg_billboards(segs, chain, origin, 0).len().to_i64_wrap()
+		f0 = farm_at(0)
+		s0 = safari_at(0)
+		k0 = CritterPlan.seg_ducks(segs, chain, origin, 0).len().to_i64_wrap()
+		[(d0 - ((f0 + s0) + k0))]
+	}
+)
 
 order_want : List(I64)
 order_want = [0]
@@ -81,12 +83,14 @@ walk_want : List(I64)
 walk_want = [0, 0, 0]
 
 grow_got : List(Bool)
-grow_got = ({
-	a = CritterPlan.walk_billboards(segs, chain, origin).len().to_i64_wrap()
-	b = CritterPlan.walk_billboards_acc(segs, chain, origin, 1, []).len().to_i64_wrap()
-	c = CritterPlan.walk_billboards_acc(segs, chain, origin, 2, []).len().to_i64_wrap()
-	[(a >= b), (b >= c)]
-})
+grow_got = (
+	{
+		a = CritterPlan.walk_billboards(segs, chain, origin).len().to_i64_wrap()
+		b = CritterPlan.walk_billboards_acc(segs, chain, origin, 1, []).len().to_i64_wrap()
+		c = CritterPlan.walk_billboards_acc(segs, chain, origin, 2, []).len().to_i64_wrap()
+		[(a >= b), (b >= c)]
+	}
+)
 
 grow_want : List(Bool)
 grow_want = [True, True]

@@ -57,12 +57,14 @@ soon : Arc.ArcOutcome
 soon = { shoulder: ShoulderLeft, forward: 10.0, crossed: False, end_across: 0.0, frames: 2.0 }
 
 brake_got : List(Bool)
-brake_got = ({
-	far = Throttle.shoulder_brake_at(rider(0.0, 1.0, 0.0), outcome(ShoulderLeft), 0.01)
-	near_off = Throttle.shoulder_brake_at(rider(0.0, 1.0, 0.0), soon, 0.01)
-	already = Throttle.shoulder_brake_at(rider(0.0, 1.0, 0.0), outcome(ShoulderLeft), (0.0 - 9.0))
-	[(far < 0.0), (far > near_off), (already < (0.0 - 8.999))]
-})
+brake_got = (
+	{
+		far = Throttle.shoulder_brake_at(rider(0.0, 1.0, 0.0), outcome(ShoulderLeft), 0.01)
+		near_off = Throttle.shoulder_brake_at(rider(0.0, 1.0, 0.0), soon, 0.01)
+		already = Throttle.shoulder_brake_at(rider(0.0, 1.0, 0.0), outcome(ShoulderLeft), (0.0 - 9.0))
+		[(far < 0.0), (far > near_off), (already < (0.0 - 8.999))]
+	}
+)
 
 brake_want : List(Bool)
 brake_want = [True, True, True]

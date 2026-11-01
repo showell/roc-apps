@@ -26,10 +26,12 @@ count_want : List(I64)
 count_want = [1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
 
 shape_of : List(Paint.DrawCmd) -> List(I64)
-shape_of = |cs| ({
-	c = (List.get(cs, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))
-	[c.tag, c.color, c.color2, c.geom.len().to_i64_wrap(), c.pts.len().to_i64_wrap()]
-})
+shape_of = |cs| (
+	{
+		c = (List.get(cs, I64.to_u64_wrap(0)) ?? crash ("list-at out of range"))
+		[c.tag, c.color, c.color2, c.geom.len().to_i64_wrap(), c.pts.len().to_i64_wrap()]
+	}
+)
 
 solid : List(Paint.DrawCmd)
 solid = Paint.push_poly(111, tri)
@@ -56,19 +58,19 @@ tags_want : List(I64)
 tags_want = [0, 111, 0, 0, 6, 1, 222, 0, 0, 6, 3, 333, 0, 3, 0, 4, 444, 445, 3, 6, 5, 555, 556, 6, 6, 6, 666, 667, 8, 6]
 
 strength_got : List(F64)
-strength_got = [(List.get(solid, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).strength, (List.get(round, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).strength, (List.get(beacon, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).strength, (List.get(radial4, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).strength, (List.get(linear5, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).strength, (List.get(radial6, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).strength]
+strength_got = [(List.get(solid, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).strength, (List.get(round, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).strength, (List.get(beacon, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).strength, (List.get(radial4, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).strength, (List.get(linear5, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).strength, (List.get(radial6, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).strength]
 
 strength_want : List(F64)
 strength_want = [0.0, 0.75, 0.25, 0.0, 0.0, 0.0]
 
 geom_got : List(F64)
-geom_got = List.join([(List.get(beacon, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).geom, (List.get(radial4, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).geom, (List.get(linear5, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).geom, (List.get(radial6, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).geom])
+geom_got = List.join([(List.get(beacon, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).geom, (List.get(radial4, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).geom, (List.get(linear5, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).geom, (List.get(radial6, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).geom])
 
 geom_want : List(F64)
 geom_want = [10.0, 20.0, 30.0, 10.0, 20.0, 30.0, 0.25, 0.75, 1.0, 2.0, 3.0, 4.0, 0.25, 0.75, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
 
 pts_got : List(F64)
-pts_got = List.join([(List.get(solid, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).pts, (List.get(radial6, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).pts, (List.get(beacon, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).pts])
+pts_got = List.join([(List.get(solid, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).pts, (List.get(radial6, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).pts, (List.get(beacon, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).pts])
 
 pts_want : List(F64)
 pts_want = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]

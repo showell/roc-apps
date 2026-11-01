@@ -11,17 +11,25 @@ h_in : List(F64)
 h_in = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.9]
 
 placed_at : I64 -> Billboards.Placed
-placed_at = |i| ({
-	p = { right: 2.5, forward: (List.get(fwd_in, I64.to_u64_wrap(i)) ?? crash("list-at out of range")) }
-	Billboards.verdict(p, (List.get(h_in, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), 128004, True)
-})
+placed_at = |i| (
+	{
+		p = { right: 2.5, forward: (List.get(fwd_in, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")) }
+		Billboards.verdict(p, (List.get(h_in, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), 128004, True)
+	}
+)
 
 # placed_all builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 placed_all : I64 -> List(Billboards.Placed)
 placed_all = |i| placed_all_acc(i, [])
 
 placed_all_acc : I64, List(Billboards.Placed) -> List(Billboards.Placed)
-placed_all_acc = |i, acc| (if (i >= fwd_in.len().to_i64_wrap()) { acc } else { placed_all_acc((i + 1), List.append(acc, placed_at(i))) })
+placed_all_acc = |i, acc| (
+	if (i >= fwd_in.len().to_i64_wrap()) {
+		acc
+	} else {
+		placed_all_acc((i + 1), List.append(acc, placed_at(i)))
+	}
+)
 
 kept_got : List(Bool)
 kept_got = ListUtils.list_map(lam_0, placed_all(0))
@@ -36,11 +44,13 @@ culled_want : List(Bool)
 culled_want = [False, False, False, False, False, False, True, True, True, False]
 
 carried_real_got : List(F64)
-carried_real_got = ({
-	k = placed_at(3)
-	n = placed_at(1)
-	[k.b.right, k.b.fwd, k.b.height, n.b.right, n.b.fwd, n.b.height]
-})
+carried_real_got = (
+	{
+		k = placed_at(3)
+		n = placed_at(1)
+		[k.b.right, k.b.fwd, k.b.height, n.b.right, n.b.fwd, n.b.height]
+	}
+)
 
 carried_real_want : List(F64)
 carried_real_want = [2.5, 0.5, 1.0, 0.0, 0.0, 0.0]

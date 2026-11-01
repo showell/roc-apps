@@ -50,7 +50,7 @@ poly : List(F64)
 poly = [10.0, 1.0, 30.0, 2.0, 20.0, 3.0]
 
 span_got : List(F64)
-span_got = [Blit.span_lo(poly, 0, (List.get(poly, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))), Blit.span_hi(poly, 0, (List.get(poly, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))), Blit.span_lo([5.0, 99.0], 0, 5.0), Blit.span_hi([5.0, 99.0], 0, 5.0)]
+span_got = [Blit.span_lo(poly, 0, (List.get(poly, I64.to_u64_wrap(0)) ?? crash ("list-at out of range"))), Blit.span_hi(poly, 0, (List.get(poly, I64.to_u64_wrap(0)) ?? crash ("list-at out of range"))), Blit.span_lo([5.0, 99.0], 0, 5.0), Blit.span_hi([5.0, 99.0], 0, 5.0)]
 
 span_want : List(F64)
 span_want = [10.0, 30.0, 5.0, 5.0]
@@ -74,10 +74,12 @@ wide_geom_want : List(F64)
 wide_geom_want = [10.0, 30.0, 10.0, 1.0, 30.0, 2.0, 20.0, 3.0, 0.0]
 
 flat_of : Paint.DrawCmd -> List(I64)
-flat_of = |c| ({
-	e = Blit.expand_shade(c)
-	[e.tag, e.color, e.color2, e.geom.len().to_i64_wrap(), e.pts.len().to_i64_wrap()]
-})
+flat_of = |c| (
+	{
+		e = Blit.expand_shade(c)
+		[e.tag, e.color, e.color2, e.geom.len().to_i64_wrap(), e.pts.len().to_i64_wrap()]
+	}
+)
 
 flat_got : List(I64)
 flat_got = List.join([flat_of(cmd(1, 8405024, 0.0, [], poly)), flat_of(cmd(1, 8405024, 1.0, [], [5.0])), flat_of(cmd(1, 8405024, 1.0, [], [10.0, 1.0, 10.5, 2.0, 10.2, 3.0]))])
@@ -89,10 +91,12 @@ frame : List(Paint.DrawCmd)
 frame = [cmd(0, 111, 0.0, [], poly), cmd(1, 8405024, 1.0, [], poly), cmd(3, 222, 0.02, [1.0, 2.0, 0.5], []), cmd(3, 333, 0.019, [1.0, 2.0, 0.5], []), cmd(3, 444, 1.0, [1.0, 2.0, 0.49], []), cmd(4, 555, 0.0, [1.0, 2.0, 0.5], poly), cmd(4, 666, 0.0, [1.0, 2.0, 0.49], poly), cmd(5, 777, 0.0, [], poly)]
 
 frame_got : List(I64)
-frame_got = ({
-	out = Blit.blit_expand(frame)
-	[out.len().to_i64_wrap(), (List.get(out, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).tag, (List.get(out, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).color, (List.get(out, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).tag, (List.get(out, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).color, (List.get(out, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).tag, (List.get(out, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).color, (List.get(out, I64.to_u64_wrap(3)) ?? crash("list-at out of range")).tag, (List.get(out, I64.to_u64_wrap(3)) ?? crash("list-at out of range")).color, (List.get(out, I64.to_u64_wrap(4)) ?? crash("list-at out of range")).tag, (List.get(out, I64.to_u64_wrap(4)) ?? crash("list-at out of range")).color]
-})
+frame_got = (
+	{
+		out = Blit.blit_expand(frame)
+		[out.len().to_i64_wrap(), (List.get(out, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).tag, (List.get(out, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).color, (List.get(out, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).tag, (List.get(out, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).color, (List.get(out, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).tag, (List.get(out, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).color, (List.get(out, I64.to_u64_wrap(3)) ?? crash ("list-at out of range")).tag, (List.get(out, I64.to_u64_wrap(3)) ?? crash ("list-at out of range")).color, (List.get(out, I64.to_u64_wrap(4)) ?? crash ("list-at out of range")).tag, (List.get(out, I64.to_u64_wrap(4)) ?? crash ("list-at out of range")).color]
+	}
+)
 
 frame_want : List(I64)
 frame_want = [5, 0, 111, 2, 5056019, 3, 222, 4, 555, 5, 777]

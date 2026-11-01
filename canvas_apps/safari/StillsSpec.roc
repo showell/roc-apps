@@ -34,7 +34,7 @@ poly_ints_want : List(I64)
 poly_ints_want = [9066271, 4989733, 0, 1, 2, 1]
 
 reach_got : List(F64)
-reach_got = [(List.get(shaded.grad, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).ax, (List.get(shaded.pts, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).x, (List.get(solid.pts, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).y]
+reach_got = [(List.get(shaded.grad, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).ax, (List.get(shaded.pts, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).x, (List.get(solid.pts, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).y]
 
 reach_want : List(F64)
 reach_want = [2.5, 0.5, 13.5]

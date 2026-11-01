@@ -5,16 +5,32 @@ import Grade
 import Stills
 
 pts_in : List(Stills.StillPoly), I64 -> I64
-pts_in = |ps, i| (if (i >= ps.len().to_i64_wrap()) { 0 } else { ({
-	p = (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
-	(p.pts.len().to_i64_wrap() + pts_in(ps, (i + 1)))
-}) })
+pts_in = |ps, i| (
+	if (i >= ps.len().to_i64_wrap()) {
+		0
+	} else {
+		(
+			{
+				p = (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))
+				(p.pts.len().to_i64_wrap() + pts_in(ps, (i + 1)))
+			}
+		)
+	}
+)
 
 grads_in : List(Stills.StillPoly), I64 -> I64
-grads_in = |ps, i| (if (i >= ps.len().to_i64_wrap()) { 0 } else { ({
-	p = (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
-	(p.grad.len().to_i64_wrap() + grads_in(ps, (i + 1)))
-}) })
+grads_in = |ps, i| (
+	if (i >= ps.len().to_i64_wrap()) {
+		0
+	} else {
+		(
+			{
+				p = (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))
+				(p.grad.len().to_i64_wrap() + grads_in(ps, (i + 1)))
+			}
+		)
+	}
+)
 
 facts : List(Stills.StillPoly) -> List(I64)
 facts = |ps| [ps.len().to_i64_wrap(), pts_in(ps, 0), grads_in(ps, 0)]
@@ -29,10 +45,12 @@ table_want : List(I64)
 table_want = [46, 2198, 0, 46, 2198, 0, 47, 2197, 0, 34, 1715, 0, 34, 1715, 0, 34, 1715, 0, 34, 1715, 0, 0, 0, 0, 0, 0, 0]
 
 first_x : I64 -> F64
-first_x = |i| ({
-	ps = CatStills.cat_polys_for(i)
-	(List.get((List.get(ps, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).pts, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).x
-})
+first_x = |i| (
+	{
+		ps = CatStills.cat_polys_for(i)
+		(List.get((List.get(ps, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).pts, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).x
+	}
+)
 
 spot_got : List(F64)
 spot_got = [first_x(3), first_x(4), first_x(5), first_x(6)]

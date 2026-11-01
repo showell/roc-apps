@@ -19,5 +19,11 @@ Camera :: [].{
 	project_all = |ps, cf, view_w| project_all_acc(ps, cf, view_w, 0, [])
 
 	project_all_acc : List(Geom.Vec3), F64, F64, I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
-	project_all_acc = |ps, cf, view_w, i, acc| (if (i >= ps.len().to_i64_wrap()) { acc } else { project_all_acc(ps, cf, view_w, (i + 1), List.append(acc, project((List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), cf, view_w))) })
+	project_all_acc = |ps, cf, view_w, i, acc| (
+		if (i >= ps.len().to_i64_wrap()) {
+			acc
+		} else {
+			project_all_acc(ps, cf, view_w, (i + 1), List.append(acc, project((List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), cf, view_w)))
+		}
+	)
 }

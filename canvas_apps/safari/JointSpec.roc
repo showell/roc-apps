@@ -23,11 +23,13 @@ here : Frame.Mapper
 here = Frame.chain_map(0)
 
 apex_got : List(F64)
-apex_got = ({
-	r = Joint.joint_apex([], [], pose, behind_right, here, 300.0, 4.0, 4.0, True)
-	l = Joint.joint_apex([], [], pose, behind_left, here, 300.0, 4.0, 4.0, False)
-	[r.right, r.forward, l.right, l.forward]
-})
+apex_got = (
+	{
+		r = Joint.joint_apex([], [], pose, behind_right, here, 300.0, 4.0, 4.0, True)
+		l = Joint.joint_apex([], [], pose, behind_left, here, 300.0, 4.0, 4.0, False)
+		[r.right, r.forward, l.right, l.forward]
+	}
+)
 
 apex_want : List(F64)
 apex_want = [17.297297467543466, (-100.43071597950589), 21.403438709482494, (-100.55298847633645)]

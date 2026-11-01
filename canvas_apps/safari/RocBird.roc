@@ -30,14 +30,7 @@ RocBird :: [].{
 	# The logo as a still, beak toward +x. Colours are the site's logo-dark
 	# and logo-light.
 	polys : List(Stills.StillPoly)
-	polys = [
-		{ color: 6368222, grad: [], pts: [{ x: -0.0344, y: 0.5715 }, { x: -0.148, y: 0.0 }, { x: 0.0368, y: 0.1469 }, { x: 0.0183, y: 0.2577 }] },
-		{ color: 8542181, grad: [], pts: [{ x: 0.2216, y: 0.6413 }, { x: 0.3497, y: 0.5025 }, { x: 0.3679, y: 0.5849 }, { x: 0.3862, y: 0.6862 }] },
-		{ color: 8542181, grad: [], pts: [{ x: -0.0305, y: 0.9394 }, { x: -0.4811, y: 1.0 }, { x: -0.0344, y: 0.5715 }] },
-		{ color: 8542181, grad: [], pts: [{ x: 0.3497, y: 0.5025 }, { x: -0.0344, y: 0.5715 }, { x: 0.0183, y: 0.2577 }] },
-		{ color: 6368222, grad: [], pts: [{ x: 0.4717, y: 0.5849 }, { x: 0.3862, y: 0.6862 }, { x: 0.3679, y: 0.5849 }] },
-		{ color: 6368222, grad: [], pts: [{ x: -0.0344, y: 0.5715 }, { x: 0.3497, y: 0.5025 }, { x: 0.2216, y: 0.6413 }, { x: -0.0305, y: 0.9394 }] }
-	]
+	polys = [{ color: 6368222, grad: [], pts: [{ x: -0.0344, y: 0.5715 }, { x: -0.148, y: 0.0 }, { x: 0.0368, y: 0.1469 }, { x: 0.0183, y: 0.2577 }] }, { color: 8542181, grad: [], pts: [{ x: 0.2216, y: 0.6413 }, { x: 0.3497, y: 0.5025 }, { x: 0.3679, y: 0.5849 }, { x: 0.3862, y: 0.6862 }] }, { color: 8542181, grad: [], pts: [{ x: -0.0305, y: 0.9394 }, { x: -0.4811, y: 1.0 }, { x: -0.0344, y: 0.5715 }] }, { color: 8542181, grad: [], pts: [{ x: 0.3497, y: 0.5025 }, { x: -0.0344, y: 0.5715 }, { x: 0.0183, y: 0.2577 }] }, { color: 6368222, grad: [], pts: [{ x: 0.4717, y: 0.5849 }, { x: 0.3862, y: 0.6862 }, { x: 0.3679, y: 0.5849 }] }, { color: 6368222, grad: [], pts: [{ x: -0.0344, y: 0.5715 }, { x: 0.3497, y: 0.5025 }, { x: 0.2216, y: 0.6413 }, { x: -0.0305, y: 0.9394 }] }]
 
 	# A bird stands this tall, in metres, on its treetop.
 	height : F64
@@ -54,7 +47,11 @@ RocBird :: [].{
 	fifth_left = |trees, i, seen| match List.get(trees, I64.to_u64_wrap(i)) {
 		Err(_) => NoTree
 		Ok(t) => if t.across < 0.0 {
-			if seen == 4 { Found(t) } else { fifth_left(trees, i + 1, seen + 1) }
+			if seen == 4 {
+				Found(t)
+			} else {
+				fifth_left(trees, i + 1, seen + 1)
+			}
 		} else {
 			fifth_left(trees, i + 1, seen)
 		}
@@ -69,8 +66,8 @@ RocBird :: [].{
 	# where it is collected rather than where it is drawn.
 	perch : List(World.Segment), List(I64), Frame.Pose, F64, I64 -> List(RocBird.Bird)
 	perch = |segs, ch, pose, cf, d| {
-		seg_idx = List.get(ch, I64.to_u64_wrap(d)) ?? crash("chain index")
-		seg = List.get(segs, I64.to_u64_wrap(seg_idx)) ?? crash("segment")
+		seg_idx = List.get(ch, I64.to_u64_wrap(d)) ?? crash ("chain index")
+		seg = List.get(segs, I64.to_u64_wrap(seg_idx)) ?? crash ("segment")
 		match fifth_left(seg.trees, 0, 0) {
 			NoTree => []
 			Found(t) => {
@@ -93,7 +90,9 @@ RocBird :: [].{
 
 	perches_from : List(World.Segment), List(I64), Frame.Pose, F64, I64, List(RocBird.Bird) -> List(RocBird.Bird)
 	perches_from = |segs, ch, pose, cf, d, acc|
-		if d >= ch.len().to_i64_wrap() { acc } else {
+		if d >= ch.len().to_i64_wrap() {
+			acc
+		} else {
 			perches_from(segs, ch, pose, cf, d + 1, List.concat(acc, perch(segs, ch, pose, cf, d)))
 		}
 
@@ -104,9 +103,11 @@ RocBird :: [].{
 
 	bird_items_from : List(RocBird.Bird), I64 -> List(DepthSort.DepthKey)
 	bird_items_from = |bs, i|
-		if i >= bs.len().to_i64_wrap() { [] } else {
+		if i >= bs.len().to_i64_wrap() {
+			[]
+		} else {
 			List.concat(
-				[{ fwd: (List.get(bs, I64.to_u64_wrap(i)) ?? crash("bird out of range")).fwd, kind: KBird, i: i }],
+				[{ fwd: (List.get(bs, I64.to_u64_wrap(i)) ?? crash ("bird out of range")).fwd, kind: KBird, i: i }],
 				bird_items_from(bs, i + 1),
 			)
 		}

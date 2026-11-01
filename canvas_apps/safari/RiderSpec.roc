@@ -19,21 +19,25 @@ rider : F64, F64, F64, F64 -> Pose.RiderState
 rider = |along, across, v, tilt| { segment: 0, along: along, across: across, yaw: 0.0, v: v, tilt: tilt, heading: 0.0, gaze_yaw: 0.0, focus: 0.0 }
 
 step_got : List(Bool)
-step_got = ({
-	d = Rider.decide(rider(0.0, 0.0, Pose.v_base, 0.0), seg)
-	held = Rider.decide(rider(0.0, 0.0, Pose.v_base, 0.5), seg)
-	[(DeviceMath.real_abs(d.tilt_step) <= LeanSearch.max_tilt_correction), (DeviceMath.real_abs(held.tilt_step) <= LeanSearch.max_tilt_correction), (d.accel <= (VehicleLimits.a_accel + F64.from_bits(4517329193108106637)))]
-})
+step_got = (
+	{
+		d = Rider.decide(rider(0.0, 0.0, Pose.v_base, 0.0), seg)
+		held = Rider.decide(rider(0.0, 0.0, Pose.v_base, 0.5), seg)
+		[(DeviceMath.real_abs(d.tilt_step) <= LeanSearch.max_tilt_correction), (DeviceMath.real_abs(held.tilt_step) <= LeanSearch.max_tilt_correction), (d.accel <= (VehicleLimits.a_accel + F64.from_bits(4517329193108106637)))]
+	}
+)
 
 step_want : List(Bool)
 step_want = [True, True, True]
 
 leaned_got : List(Bool)
-leaned_got = ({
-	d = Rider.decide(rider(0.0, 0.0, Pose.v_base, 0.0), seg)
-	same = Throttle.get_forward_accel_decel(Pose.with_tilt(rider(0.0, 0.0, Pose.v_base, 0.0), (0.0 + d.tilt_step)), seg)
-	[(F64.to_bits(d.accel) == F64.to_bits(same))]
-})
+leaned_got = (
+	{
+		d = Rider.decide(rider(0.0, 0.0, Pose.v_base, 0.0), seg)
+		same = Throttle.get_forward_accel_decel(Pose.with_tilt(rider(0.0, 0.0, Pose.v_base, 0.0), (0.0 + d.tilt_step)), seg)
+		[(F64.to_bits(d.accel) == F64.to_bits(same))]
+	}
+)
 
 leaned_want : List(Bool)
 leaned_want = [True]
@@ -63,10 +67,12 @@ index_want : List(I64)
 index_want = [1, 1]
 
 early_got : List(Bool)
-early_got = ({
-	far = Rider.rider_state_for_next_segment(rider(100.0, 0.0, Pose.v_base, 0.0), segs)
-	[(DeviceMath.real_abs(far.across) >= (World.segment_at(1).width / 2.0))]
-})
+early_got = (
+	{
+		far = Rider.rider_state_for_next_segment(rider(100.0, 0.0, Pose.v_base, 0.0), segs)
+		[(DeviceMath.real_abs(far.across) >= (World.segment_at(1).width / 2.0))]
+	}
+)
 
 early_want : List(Bool)
 early_want = [True]
@@ -90,11 +96,13 @@ finish_want : List(F64)
 finish_want = [300.0, 0.0, 300.0, 0.0, 300.0, 0.0, 290.0, 0.5, 100.0, 0.05]
 
 done_got : List(Bool)
-done_got = ({
-	at_end = { segment: 0, along: 300.0, across: 0.0, yaw: 0.0, v: 0.0, tilt: 0.0, heading: 0.0, gaze_yaw: 0.0, focus: 0.0 }
-	short = { segment: 0, along: 299.0, across: 0.0, yaw: 0.0, v: 0.0, tilt: 0.0, heading: 0.0, gaze_yaw: 0.0, focus: 0.0 }
-	[Rider.is_finished(at_end, [World.segment_at(18)]), Rider.is_finished(short, [World.segment_at(18)]), last_seg.terminates, Rider.is_finished(rider(499.0, 0.0, Pose.v_base, 0.0), segs)]
-})
+done_got = (
+	{
+		at_end = { segment: 0, along: 300.0, across: 0.0, yaw: 0.0, v: 0.0, tilt: 0.0, heading: 0.0, gaze_yaw: 0.0, focus: 0.0 }
+		short = { segment: 0, along: 299.0, across: 0.0, yaw: 0.0, v: 0.0, tilt: 0.0, heading: 0.0, gaze_yaw: 0.0, focus: 0.0 }
+		[Rider.is_finished(at_end, [World.segment_at(18)]), Rider.is_finished(short, [World.segment_at(18)]), last_seg.terminates, Rider.is_finished(rider(499.0, 0.0, Pose.v_base, 0.0), segs)]
+	}
+)
 
 done_want : List(Bool)
 done_want = [True, False, True, False]

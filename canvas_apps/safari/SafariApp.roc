@@ -65,18 +65,42 @@ SafariApp :: [].{
 		if input.key_pressed(KeyR) {
 			{ ride: SafariRide.init, paused: Bool.False }
 		} else {
-			paused = if input.key_pressed(KeySpace) { !m.paused } else { m.paused }
+			paused = if input.key_pressed(KeySpace) {
+				!m.paused
+			} else {
+				m.paused
+			}
 			moved =
 				if input.key_down(KeyRight) {
-					repeat(m.ride, if paused { 1 } else { 4 }, SafariRide.advance)
+					repeat(
+						m.ride,
+						if paused {
+							1
+						} else {
+							4
+						},
+						SafariRide.advance,
+					)
 				} else if input.key_down(KeyLeft) {
-					repeat(m.ride, if paused { 1 } else { 4 }, SafariRide.back)
+					repeat(
+						m.ride,
+						if paused {
+							1
+						} else {
+							4
+						},
+						SafariRide.back,
+					)
 				} else if paused {
 					m.ride
 				} else {
 					SafariRide.advance(m.ride)
 				}
-			ride = if input.key_pressed(KeyJ) { next_segment(moved) } else { moved }
+			ride = if input.key_pressed(KeyJ) {
+				next_segment(moved)
+			} else {
+				moved
+			}
 			{ ride, paused }
 		}
 

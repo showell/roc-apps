@@ -46,11 +46,15 @@ Raster :: [].{
 	paint = |scene| {
 		view = view_of(scene.roll)
 		var $px = backdrop(view, Brush.opaque(scene.sky_top), Brush.opaque(scene.sky_horizon))
-		$px = if scene.sun.visible { paint_sun($px, view, scene.sun) } else { $px }
+		$px = if scene.sun.visible {
+			paint_sun($px, view, scene.sun)
+		} else {
+			$px
+		}
 		n = List.len(scene.commands)
 		var $k = 0
 		while $k < n {
-			c = List.get(scene.commands, $k) ?? crash("command out of range")
+			c = List.get(scene.commands, $k) ?? crash ("command out of range")
 			$px = command($px, view, c)
 			$k = $k + 1
 		}
@@ -79,7 +83,13 @@ Raster :: [].{
 	# The first pixel whose centre is at or past `x`.
 	first_center : F64 -> I64
 	first_center = |x| {
-		bounded = if x < -100000.0 { -100000.0 } else if x > 100000.0 { 100000.0 } else { x }
+		bounded = if x < -100000.0 {
+			-100000.0
+		} else if x > 100000.0 {
+			100000.0
+		} else {
+			x
+		}
 		F64.to_i64_wrap(Num_.ceil_real(bounded - 0.5))
 	}
 
@@ -91,7 +101,15 @@ Raster :: [].{
 	byte : F64 -> U32
 	byte = |v| {
 		n = F64.to_i64_wrap(v + 0.5)
-		I64.to_u32_wrap(if n < 0 { 0 } else if n > 255 { 255 } else { n })
+		I64.to_u32_wrap(
+			if n < 0 {
+				0
+			} else if n > 255 {
+				255
+			} else {
+				n
+			},
+		)
 	}
 
 	pack : F64, F64, F64 -> U32
@@ -115,7 +133,7 @@ Raster :: [].{
 	blend : List(U32), U64, Brush.Rgba -> List(U32)
 	blend = |pixels, idx, src| {
 		dst = List.get(pixels, idx) ?? 0
-		List.set(pixels, idx, over(dst, src)) ?? crash("pixel out of range")
+		List.set(pixels, idx, over(dst, src)) ?? crash ("pixel out of range")
 	}
 
 	# --- The backdrop and the sun ---------------------------------------------
@@ -139,7 +157,11 @@ Raster :: [].{
 					grass
 				} else {
 					t = Brush.clamp01(y / 300.0)
-					col = if t <= 0.2 { top } else { Brush.mix(top, horizon, (t - 0.2) / 0.8) }
+					col = if t <= 0.2 {
+						top
+					} else {
+						Brush.mix(top, horizon, (t - 0.2) / 0.8)
+					}
 					pack(col.r, col.g, col.b)
 				}
 				$px = List.append($px, pixel)
@@ -188,7 +210,11 @@ Raster :: [].{
 						idx = I64.to_u64_wrap($j) * width + I64.to_u64_wrap($i)
 						d = F64.sqrt((p.x - sun.x) * (p.x - sun.x) + (p.y - sun.y) * (p.y - sun.y))
 						t = Brush.clamp01((d - glow_in) / (glow_out - glow_in))
-						glow = if t <= 0.4 { Brush.mix(glow_stop0, glow_stop1, t / 0.4) } else { Brush.mix(glow_stop1, glow_stop2, (t - 0.4) / 0.6) }
+						glow = if t <= 0.4 {
+							Brush.mix(glow_stop0, glow_stop1, t / 0.4)
+						} else {
+							Brush.mix(glow_stop1, glow_stop2, (t - 0.4) / 0.6)
+						}
 						lit = blend($px, idx, glow)
 						if d < disc_r {
 							blend(lit, idx, Brush.mix(disc_c0, disc_c1, Brush.clamp01((d - disc_in) / (disc_r - disc_in))))
@@ -273,10 +299,14 @@ Raster :: [].{
 				$w = 0
 				$i = 0
 				while $i + 1 < m {
-					a = List.get(xs, $i) ?? crash("crossing out of range")
-					b = List.get(xs, $i + 1) ?? crash("crossing out of range")
+					a = List.get(xs, $i) ?? crash ("crossing out of range")
+					b = List.get(xs, $i + 1) ?? crash ("crossing out of range")
 					$w = $w + a.w
-					$px = if $w != 0 { span($px, view, fill, $j, a.x, b.x) } else { $px }
+					$px = if $w != 0 {
+						span($px, view, fill, $j, a.x, b.x)
+					} else {
+						$px
+					}
 					$i = $i + 1
 				}
 				$j = $j + 1
@@ -292,7 +322,11 @@ Raster :: [].{
 		var $xs = []
 		var $k = 0
 		while $k < n {
-			k1 = if $k + 1 == n { 0 } else { $k + 1 }
+			k1 = if $k + 1 == n {
+				0
+			} else {
+				$k + 1
+			}
 			x0 = at(dev, 2 * $k)
 			y0 = at(dev, 2 * $k + 1)
 			x1 = at(dev, 2 * k1)
@@ -306,7 +340,16 @@ Raster :: [].{
 			}
 			$k = $k + 1
 		}
-		List.sort_with($xs, |a, b| if a.x < b.x { Before } else if a.x > b.x { After } else { Same })
+		List.sort_with(
+			$xs,
+			|a, b| if a.x < b.x {
+				Before
+			} else if a.x > b.x {
+				After
+			} else {
+				Same
+			},
+		)
 	}
 
 	# The pixels of row `j` whose centres fall in [xa, xb).

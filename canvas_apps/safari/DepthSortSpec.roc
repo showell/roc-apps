@@ -11,14 +11,26 @@ fwds : List(DepthSort.DepthKey), I64 -> List(F64)
 fwds = |xs, i| fwds_acc(xs, i, [])
 
 fwds_acc : List(DepthSort.DepthKey), I64, List(F64) -> List(F64)
-fwds_acc = |xs, i, acc| (if (i >= xs.len().to_i64_wrap()) { acc } else { fwds_acc(xs, (i + 1), List.append(acc, (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd)) })
+fwds_acc = |xs, i, acc| (
+	if (i >= xs.len().to_i64_wrap()) {
+		acc
+	} else {
+		fwds_acc(xs, (i + 1), List.append(acc, (List.get(xs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).fwd))
+	}
+)
 
 # idxs builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 idxs : List(DepthSort.DepthKey), I64 -> List(I64)
 idxs = |xs, i| idxs_acc(xs, i, [])
 
 idxs_acc : List(DepthSort.DepthKey), I64, List(I64) -> List(I64)
-idxs_acc = |xs, i, acc| (if (i >= xs.len().to_i64_wrap()) { acc } else { idxs_acc(xs, (i + 1), List.append(acc, (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).i)) })
+idxs_acc = |xs, i, acc| (
+	if (i >= xs.len().to_i64_wrap()) {
+		acc
+	} else {
+		idxs_acc(xs, (i + 1), List.append(acc, (List.get(xs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).i))
+	}
+)
 
 kind_code : DepthSort.Kind -> I64
 kind_code = |k| (match k {
@@ -35,7 +47,13 @@ kinds : List(DepthSort.DepthKey), I64 -> List(I64)
 kinds = |xs, i| kinds_acc(xs, i, [])
 
 kinds_acc : List(DepthSort.DepthKey), I64, List(I64) -> List(I64)
-kinds_acc = |xs, i, acc| (if (i >= xs.len().to_i64_wrap()) { acc } else { kinds_acc(xs, (i + 1), List.append(acc, kind_code((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).kind))) })
+kinds_acc = |xs, i, acc| (
+	if (i >= xs.len().to_i64_wrap()) {
+		acc
+	} else {
+		kinds_acc(xs, (i + 1), List.append(acc, kind_code((List.get(xs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).kind)))
+	}
+)
 
 order_want : List(F64)
 order_want = [50.0, 40.0, 30.0, 30.0, 30.0, 20.0, 10.0, 10.0, 10.0, 5.0]

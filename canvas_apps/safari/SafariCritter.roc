@@ -28,10 +28,24 @@ SafariCritter :: [].{
 	})
 
 	corner_critters : Scenery.Creature, F64, Bool, F64 -> List(Scenery.Critter)
-	corner_critters = |c, along, turn_right, hw| ({
-		sp = species_of(c)
-		turn_sign = (if turn_right { 1.0 } else { (0.0 - 1.0) })
-		adult_h = sp.adult_h
-		(if sp.present { [{ along: along, across: ((0.0 - turn_sign) * ((hw + adult_rail_buffer) + (adult_h / 2.0))), codepoint: sp.cp, height: adult_h, face_right: turn_right }, { along: (along + baby_beyond), across: 0.0, codepoint: sp.cp, height: (adult_h * baby_ratio), face_right: turn_right }] } else { [] })
-	})
+	corner_critters = |c, along, turn_right, hw| (
+		{
+			sp = species_of(c)
+			turn_sign = (
+				if turn_right {
+					1.0
+				} else {
+					(0.0 - 1.0)
+				}
+			)
+			adult_h = sp.adult_h
+			(
+				if sp.present {
+					[{ along: along, across: ((0.0 - turn_sign) * ((hw + adult_rail_buffer) + (adult_h / 2.0))), codepoint: sp.cp, height: adult_h, face_right: turn_right }, { along: (along + baby_beyond), across: 0.0, codepoint: sp.cp, height: (adult_h * baby_ratio), face_right: turn_right }]
+				} else {
+					[]
+				}
+			)
+		}
+	)
 }

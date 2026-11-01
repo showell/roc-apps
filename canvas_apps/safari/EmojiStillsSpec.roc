@@ -5,19 +5,41 @@ import Grade
 import Stills
 
 pts_in : List(Stills.StillPoly), I64 -> I64
-pts_in = |ps, i| (if (i >= ps.len().to_i64_wrap()) { 0 } else { ({
-	p = (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
-	(p.pts.len().to_i64_wrap() + pts_in(ps, (i + 1)))
-}) })
+pts_in = |ps, i| (
+	if (i >= ps.len().to_i64_wrap()) {
+		0
+	} else {
+		(
+			{
+				p = (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))
+				(p.pts.len().to_i64_wrap() + pts_in(ps, (i + 1)))
+			}
+		)
+	}
+)
 
 grads_in : List(Stills.StillPoly), I64 -> I64
-grads_in = |ps, i| (if (i >= ps.len().to_i64_wrap()) { 0 } else { ({
-	p = (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
-	(p.grad.len().to_i64_wrap() + grads_in(ps, (i + 1)))
-}) })
+grads_in = |ps, i| (
+	if (i >= ps.len().to_i64_wrap()) {
+		0
+	} else {
+		(
+			{
+				p = (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))
+				(p.grad.len().to_i64_wrap() + grads_in(ps, (i + 1)))
+			}
+		)
+	}
+)
 
 facts : List(Stills.StillPoly) -> List(I64)
-facts = |ps| (if (ps.len().to_i64_wrap() == 0) { [0, 0, 0, 0] } else { [ps.len().to_i64_wrap(), pts_in(ps, 0), grads_in(ps, 0), (List.get(ps, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).color] })
+facts = |ps| (
+	if (ps.len().to_i64_wrap() == 0) {
+		[0, 0, 0, 0]
+	} else {
+		[ps.len().to_i64_wrap(), pts_in(ps, 0), grads_in(ps, 0), (List.get(ps, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).color]
+	}
+)
 
 emoji_facts : I64 -> List(I64)
 emoji_facts = |cp| facts(EmojiStills.emoji_polys_for(cp))
@@ -29,7 +51,7 @@ table_want : List(I64)
 table_want = [6, 189, 0, 4493595, 6, 257, 0, 6513507, 24, 850, 0, 16745005, 22, 713, 0, 10197915, 6, 237, 0, 13882323, 43, 2309, 40, 4989733, 16, 469, 0, 10197915, 6, 243, 0, 16735833, 0, 0, 0, 0, 0, 0, 0, 0]
 
 bull_grad : Stills.StillGrad
-bull_grad = (List.get((List.get(EmojiStills.bull_polys, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).grad, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))
+bull_grad = (List.get((List.get(EmojiStills.bull_polys, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).grad, I64.to_u64_wrap(0)) ?? crash ("list-at out of range"))
 
 bg_int_got : List(I64)
 bg_int_got = [bull_grad.kind]

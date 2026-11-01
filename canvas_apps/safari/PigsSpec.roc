@@ -36,7 +36,7 @@ herd_count_want : List(I64)
 herd_count_want = [49, 49]
 
 along_of : I64, I64 -> F64
-along_of = |r, c| (List.get(herd, I64.to_u64_wrap(((r * 7) + c))) ?? crash("list-at out of range")).along
+along_of = |r, c| (List.get(herd, I64.to_u64_wrap(((r * 7) + c))) ?? crash ("list-at out of range")).along
 
 row_alongs : I64 -> List(F64)
 row_alongs = |r| [along_of(r, 0), along_of(r, 1), along_of(r, 2), along_of(r, 3), along_of(r, 4), along_of(r, 5), along_of(r, 6)]
@@ -48,13 +48,13 @@ herd_along_want : List(F64)
 herd_along_want = [934.0, 938.0, 942.0, 946.0, 950.0, 954.0, 958.0, 952.0, 956.0, 960.0, 964.0, 968.0, 972.0, 976.0, 970.0, 974.0, 978.0, 982.0, 986.0, 990.0, 994.0]
 
 herd_across_got : List(F64)
-herd_across_got = [(List.get(herd, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(6)) ?? crash("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(7)) ?? crash("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(13)) ?? crash("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(14)) ?? crash("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(21)) ?? crash("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(28)) ?? crash("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(35)) ?? crash("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(42)) ?? crash("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(48)) ?? crash("list-at out of range")).across]
+herd_across_got = [(List.get(herd, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(6)) ?? crash ("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(7)) ?? crash ("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(13)) ?? crash ("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(14)) ?? crash ("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(21)) ?? crash ("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(28)) ?? crash ("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(35)) ?? crash ("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(42)) ?? crash ("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(48)) ?? crash ("list-at out of range")).across]
 
 herd_across_want : List(F64)
 herd_across_want = [12.0, 12.0, 18.0, 18.0, 24.0, 30.0, 36.0, 42.0, 48.0, 48.0]
 
 herd_kind_got : List(I64)
-herd_kind_got = [(List.get(herd, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).codepoint, (List.get(herd, I64.to_u64_wrap(48)) ?? crash("list-at out of range")).codepoint]
+herd_kind_got = [(List.get(herd, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).codepoint, (List.get(herd, I64.to_u64_wrap(48)) ?? crash ("list-at out of range")).codepoint]
 
 herd_kind_want : List(I64)
 herd_kind_want = [128022, 128022]

@@ -30,10 +30,12 @@ Cat :: [].{
 	grass_toehold = 0.3
 
 	cat_make : F64, F64, F64 -> Cat.Cat
-	cat_make = |lane_half, tree_offset, tree_along| ({
-		tree_x = (lane_half + tree_offset)
-		{ along: (tree_along + cat_beyond_tree), start_across: (tree_x + cat_road_gap), mid_across: ((0.0 - cat_head_x) * cat_height), end_across: ((0.0 - (lane_half + grass_toehold)) - land_hind_reach), height: cat_height }
-	})
+	cat_make = |lane_half, tree_offset, tree_along| (
+		{
+			tree_x = (lane_half + tree_offset)
+			{ along: (tree_along + cat_beyond_tree), start_across: (tree_x + cat_road_gap), mid_across: ((0.0 - cat_head_x) * cat_height), end_across: ((0.0 - (lane_half + grass_toehold)) - land_hind_reach), height: cat_height }
+		}
+	)
 
 	enters_road_steps : F64
 	enters_road_steps = 10.0
@@ -51,22 +53,56 @@ Cat :: [].{
 	road_buffer = 3.0
 
 	cat_in_danger : F64, F64 -> Bool
-	cat_in_danger = |gap_along, v| ({
-		e = (gap_along - road_buffer)
-		(if (e > 0.0) { (e <= (cross_frames * v)) } else { False })
-	})
+	cat_in_danger = |gap_along, v| (
+		{
+			e = (gap_along - road_buffer)
+			(
+				if (e > 0.0) {
+					(e <= (cross_frames * v))
+				} else {
+					False
+				}
+			)
+		}
+	)
 
 	clamp01 : F64 -> F64
-	clamp01 = |x| (if (x < 0.0) { 0.0 } else { (if (x > 1.0) { 1.0 } else { x }) })
+	clamp01 = |x| (
+		if (x < 0.0) {
+			0.0
+		} else {
+			(
+				if (x > 1.0) {
+					1.0
+				} else {
+					x
+				}
+			)
+		}
+	)
 
 	lerp : F64, F64, F64 -> F64
 	lerp = |a, b, t| (a + ((b - a) * t))
 
 	cross_t : F64, F64 -> F64
-	cross_t = |gap, v| ({
-		e = (gap - road_buffer)
-		(if (e <= 0.0) { 1.0 } else { (if (v <= F64.from_bits(4517329193108106637)) { 0.0 } else { clamp01((1.0 - (e / (cross_frames * v)))) }) })
-	})
+	cross_t = |gap, v| (
+		{
+			e = (gap - road_buffer)
+			(
+				if (e <= 0.0) {
+					1.0
+				} else {
+					(
+						if (v <= F64.from_bits(4517329193108106637)) {
+							0.0
+						} else {
+							clamp01((1.0 - (e / (cross_frames * v))))
+						}
+					)
+				}
+			)
+		}
+	)
 
 	focus_peak : F64
 	focus_peak = 1.8
@@ -78,7 +114,19 @@ Cat :: [].{
 	cat_smoothstep = |t| ((t * t) * (3.0 - (2.0 * t)))
 
 	cat_focus : F64, F64 -> F64
-	cat_focus = |gap_along, v| (if (v <= F64.from_bits(4517329193108106637)) { 0.0 } else { (if ((gap_along - road_buffer) > 0.0) { (cat_smoothstep(cross_t(gap_along, v)) * focus_peak) } else { cat_focus_past((gap_along - road_buffer), v) }) })
+	cat_focus = |gap_along, v| (
+		if (v <= F64.from_bits(4517329193108106637)) {
+			0.0
+		} else {
+			(
+				if ((gap_along - road_buffer) > 0.0) {
+					(cat_smoothstep(cross_t(gap_along, v)) * focus_peak)
+				} else {
+					cat_focus_past((gap_along - road_buffer), v)
+				}
+			)
+		}
+	)
 
 	cat_focus_past : F64, F64 -> F64
 	cat_focus_past = |e, v| ((1.0 - cat_smoothstep(DeviceMath.real_min((((0.0 - e) / v) / focus_ramp_down), 1.0))) * focus_peak)
@@ -87,10 +135,22 @@ Cat :: [].{
 	stride_steps = 5.0
 
 	gait : F64, F64 -> F64
-	gait = |p, phase_len| ({
-		c = Num_.round_real((phase_len / stride_steps))
-		((p * (if (c < 1.0) { 1.0 } else { c })) * Trig.two_pi)
-	})
+	gait = |p, phase_len| (
+		{
+			c = Num_.round_real((phase_len / stride_steps))
+			(
+				(
+					p * (
+						if (c < 1.0) {
+							1.0
+						} else {
+							c
+						}
+					)
+				) * Trig.two_pi
+			)
+		}
+	)
 
 	pose_rest : I64
 	pose_rest = 0
@@ -114,7 +174,25 @@ Cat :: [].{
 	pose_collapse = 6
 
 	leap_pose_for : F64 -> I64
-	leap_pose_for = |t| (if (t < 0.2) { pose_coil } else { (if (t < 0.7) { pose_flight } else { (if (t < 0.95) { pose_land } else { pose_collapse }) }) })
+	leap_pose_for = |t| (
+		if (t < 0.2) {
+			pose_coil
+		} else {
+			(
+				if (t < 0.7) {
+					pose_flight
+				} else {
+					(
+						if (t < 0.95) {
+							pose_land
+						} else {
+							pose_collapse
+						}
+					)
+				}
+			)
+		}
+	)
 
 	leap_height : F64
 	leap_height = 0.18
@@ -123,24 +201,70 @@ Cat :: [].{
 	pow075 = |b| DeviceMath.real_sqrt((b * DeviceMath.real_sqrt(b)))
 
 	cat_state : Cat.Cat, F64, F64 -> Cat.CatState
-	cat_state = |c, gap_along, v| ({
-		step = (cross_t(gap_along, v) * cross_frames)
-		escape_at = (enters_road_steps + frozen_steps)
-		(if (step <= enters_road_steps) { cat_entering(c, step) } else { (if (step <= escape_at) { { pose_idx: pose_frozen, across: c.mid_across, lift: 0.0 } } else { cat_escaping(c, (step - escape_at)) }) })
-	})
+	cat_state = |c, gap_along, v| (
+		{
+			step = (cross_t(gap_along, v) * cross_frames)
+			escape_at = (enters_road_steps + frozen_steps)
+			(
+				if (step <= enters_road_steps) {
+					cat_entering(c, step)
+				} else {
+					(
+						if (step <= escape_at) {
+							{ pose_idx: pose_frozen, across: c.mid_across, lift: 0.0 }
+						} else {
+							cat_escaping(c, (step - escape_at))
+						}
+					)
+				}
+			)
+		}
+	)
 
 	cat_entering : Cat.Cat, F64 -> Cat.CatState
-	cat_entering = |c, step| ({
-		p = (step / enters_road_steps)
-		{ pose_idx: (if (Trig.r_sin(gait(p, enters_road_steps)) > 0.0) { pose_stride } else { pose_rest }), across: lerp(c.start_across, c.mid_across, p), lift: 0.0 }
-	})
+	cat_entering = |c, step| (
+		{
+			p = (step / enters_road_steps)
+			{
+				pose_idx: (
+					if (Trig.r_sin(gait(p, enters_road_steps)) > 0.0) {
+						pose_stride
+					} else {
+						pose_rest
+					}
+				),
+				across: lerp(c.start_across, c.mid_across, p),
+				lift: 0.0,
+			}
+		}
+	)
 
 	cat_escaping : Cat.Cat, F64 -> Cat.CatState
-	cat_escaping = |c, raw_k| ({
-		k = (if (raw_k > escapes_steps) { escapes_steps } else { raw_k })
-		pose = leap_pose_for((k / escapes_steps))
-		(if (k < 1.0) { { pose_idx: pose, across: c.mid_across, lift: 0.0 } } else { (if (k < 3.0) { cat_airborne(c, pose, ((k - 1.0) / 2.0)) } else { { pose_idx: pose, across: c.end_across, lift: 0.0 } }) })
-	})
+	cat_escaping = |c, raw_k| (
+		{
+			k = (
+				if (raw_k > escapes_steps) {
+					escapes_steps
+				} else {
+					raw_k
+				}
+			)
+			pose = leap_pose_for((k / escapes_steps))
+			(
+				if (k < 1.0) {
+					{ pose_idx: pose, across: c.mid_across, lift: 0.0 }
+				} else {
+					(
+						if (k < 3.0) {
+							cat_airborne(c, pose, ((k - 1.0) / 2.0))
+						} else {
+							{ pose_idx: pose, across: c.end_across, lift: 0.0 }
+						}
+					)
+				}
+			)
+		}
+	)
 
 	cat_airborne : Cat.Cat, I64, F64 -> Cat.CatState
 	cat_airborne = |c, pose, b| { pose_idx: pose, across: lerp(c.mid_across, c.end_across, pow075(b)), lift: (((leap_height * 4.0) * b) * (1.0 - b)) }

@@ -6,22 +6,24 @@ import ListUtils
 import Scenery
 
 bull_count_got : List(I64)
-bull_count_got = [Herd.bull_of(True).len().to_i64_wrap(), Herd.bull_of(False).len().to_i64_wrap(), Herd.fill_cows(True).len().to_i64_wrap(), Herd.fill_cows(False).len().to_i64_wrap(), (List.get(Herd.bull_of(True), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).codepoint, Herd.bull_cp, Herd.cow_cp]
+bull_count_got = [Herd.bull_of(True).len().to_i64_wrap(), Herd.bull_of(False).len().to_i64_wrap(), Herd.fill_cows(True).len().to_i64_wrap(), Herd.fill_cows(False).len().to_i64_wrap(), (List.get(Herd.bull_of(True), I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).codepoint, Herd.bull_cp, Herd.cow_cp]
 
 bull_count_want : List(I64)
 bull_count_want = [1, 0, 15, 14, 128002, 128002, 128004]
 
 bull_face_got : List(Bool)
-bull_face_got = [(List.get(Herd.bull_of(True), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).face_right, (List.get(Herd.fill_cows(True), I64.to_u64_wrap(1)) ?? crash("list-at out of range")).face_right]
+bull_face_got = [(List.get(Herd.bull_of(True), I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).face_right, (List.get(Herd.fill_cows(True), I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).face_right]
 
 bull_face_want : List(Bool)
 bull_face_want = [False, True]
 
 bull_place_got : List(F64)
-bull_place_got = ({
-	b = (List.get(Herd.bull_of(True), I64.to_u64_wrap(0)) ?? crash("list-at out of range"))
-	[b.along, b.across, Herd.bull_dist, Herd.bull_tree_gap]
-})
+bull_place_got = (
+	{
+		b = (List.get(Herd.bull_of(True), I64.to_u64_wrap(0)) ?? crash ("list-at out of range"))
+		[b.along, b.across, Herd.bull_dist, Herd.bull_tree_gap]
+	}
+)
 
 bull_place_want : List(F64)
 bull_place_want = [24.0, (-4.805), 24.0, 0.5]
@@ -33,7 +35,7 @@ height_want : List(F64)
 height_want = [1.4, 0.7]
 
 bull_height_got : List(F64)
-bull_height_got = [Herd.bull_height, (List.get(Herd.bull_of(True), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).height]
+bull_height_got = [Herd.bull_height, (List.get(Herd.bull_of(True), I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).height]
 
 bull_height_want : List(F64)
 bull_height_want = [1.61, 1.61]
@@ -42,7 +44,7 @@ cows : List(Scenery.Critter)
 cows = Herd.cows_from(0)
 
 cow_of : I64 -> Scenery.Critter
-cow_of = |i| (List.get(cows, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
+cow_of = |i| (List.get(cows, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))
 
 alongs_got : List(F64)
 alongs_got = ListUtils.list_map(lam_0, cows)
@@ -69,10 +71,12 @@ kind_want : List(I64)
 kind_want = [14, 128004, 128004]
 
 order_got : List(F64)
-order_got = ({
-	all = Herd.fill_cows(True)
-	[(List.get(all, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).along, ((List.get(all, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).along - cow_of(0).along), ((List.get(all, I64.to_u64_wrap(14)) ?? crash("list-at out of range")).along - cow_of(13).along)]
-})
+order_got = (
+	{
+		all = Herd.fill_cows(True)
+		[(List.get(all, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).along, ((List.get(all, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).along - cow_of(0).along), ((List.get(all, I64.to_u64_wrap(14)) ?? crash ("list-at out of range")).along - cow_of(13).along)]
+	}
+)
 
 order_want : List(F64)
 order_want = [24.0, 0.0, 0.0]

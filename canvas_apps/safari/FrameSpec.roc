@@ -57,20 +57,24 @@ at_d1 : List(World.Segment) -> Geom.RiderPt
 at_d1 = |w| Frame.at(w, Frame.build_chain(w, 0), pose, 1, 50.0, 3.0)
 
 at_got : List(F64)
-at_got = ({
-	p = at_d1(World.build_world)
-	[at_d0.right, at_d0.forward, p.right, p.forward]
-})
+at_got = (
+	{
+		p = at_d1(World.build_world)
+		[at_d0.right, at_d0.forward, p.right, p.forward]
+	}
+)
 
 at_want : List(F64)
 at_want = [9.933466539753061, (-49.00332889206208), (-48.11621135085446), 431.95658232777186]
 
 behind_got : List(F64)
-behind_got = ({
-	l = Frame.map_pt([], [], pose, m_prev_left, 50.0, 3.0)
-	r = Frame.map_pt([], [], pose, m_prev_right, 50.0, 3.0)
-	[l.right, l.forward, r.right, r.forward]
-})
+behind_got = (
+	{
+		l = Frame.map_pt([], [], pose, m_prev_left, 50.0, 3.0)
+		r = Frame.map_pt([], [], pose, m_prev_right, 50.0, 3.0)
+		[l.right, l.forward, r.right, r.forward]
+	}
+)
 
 behind_want : List(F64)
 behind_want = [(-194.76069932822074), (-231.63435691739767), 239.9883995667414, (-218.13274420105967)]

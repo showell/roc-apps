@@ -36,28 +36,30 @@ trunk : List(Paint.DrawCmd)
 trunk = Tree.draw_trunk(metrics, False)
 
 trunk_got : List(F64)
-trunk_got = (List.get(trunk, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).pts
+trunk_got = (List.get(trunk, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).pts
 
 trunk_want : List(F64)
 trunk_want = [440.0, 110.0, 520.0, 110.0, 520.0, 600.0, 440.0, 600.0]
 
 trunk_tag_got : List(I64)
-trunk_tag_got = ({
-	r = Tree.draw_trunk(metrics, True)
-	[(List.get(trunk, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).tag, (List.get(r, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).tag, (List.get(trunk, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).color, (List.get(r, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).color, (List.get(r, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).pts.len().to_i64_wrap()]
-})
+trunk_tag_got = (
+	{
+		r = Tree.draw_trunk(metrics, True)
+		[(List.get(trunk, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).tag, (List.get(r, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).tag, (List.get(trunk, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).color, (List.get(r, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).color, (List.get(r, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).pts.len().to_i64_wrap()]
+	}
+)
 
 trunk_tag_want : List(I64)
 trunk_tag_want = [0, 1, 5914146, 5914146, 8]
 
 trunk_strength_got : List(F64)
-trunk_strength_got = [(List.get(trunk, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).strength, (List.get(Tree.draw_trunk(metrics, True), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).strength]
+trunk_strength_got = [(List.get(trunk, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).strength, (List.get(Tree.draw_trunk(metrics, True), I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).strength]
 
 trunk_strength_want : List(F64)
 trunk_strength_want = [0.0, 1.0]
 
 tri_got : List(F64)
-tri_got = List.concat((List.get(Tree.tier_triangle(metrics, 0, 7), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).pts, (List.get(Tree.tier_triangle(metrics, 7, 7), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).pts)
+tri_got = List.concat((List.get(Tree.tier_triangle(metrics, 0, 7), I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).pts, (List.get(Tree.tier_triangle(metrics, 7, 7), I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).pts)
 
 tri_want : List(F64)
 tri_want = [480.0, (-488.0), 580.8, (-293.6), 379.2, (-293.6), 480.0, (-34.4), 768.0, 160.0, 192.0, 160.0]

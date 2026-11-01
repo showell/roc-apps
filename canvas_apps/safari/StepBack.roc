@@ -23,9 +23,31 @@ main! = |_args| {
 		here = $m.ride.clock
 		there = SafariRide.back($m).ride.clock
 		ok = there == here - 1.0
-		$bad = if ok { $bad } else { $bad + 1 }
-		$out = Str.concat($out, "${if ok { "ok  " } else { "BAD " }}after ${I64.to_str(steps)} steps: clock ${F64.to_str(here)}, one back -> ${F64.to_str(there)}\n")
+		$bad = if ok {
+			$bad
+		} else {
+			$bad + 1
+		}
+		$out = Str.concat(
+			$out,
+			"${
+				if ok {
+					"ok  "
+				} else {
+					"BAD "
+				}
+			}after ${I64.to_str(steps)} steps: clock ${F64.to_str(here)}, one back -> ${F64.to_str(there)}\n",
+		)
 	}
-	echo!(Str.concat($out, if $bad == 0 { "every step back went back one step\n" } else { "${I64.to_str($bad)} did not go back one step\n" }))
+	echo!(
+		Str.concat(
+			$out,
+			if $bad == 0 {
+				"every step back went back one step\n"
+			} else {
+				"${I64.to_str($bad)} did not go back one step\n"
+			},
+		),
+	)
 	Ok({})
 }

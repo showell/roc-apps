@@ -26,9 +26,17 @@ Lens :: [].{
 	focal_for_gaze = |attention| (focal * (1.0 - ((1.0 - min_gaze_focal_factor) * attention)))
 
 	cam_focal : F64, F64 -> F64
-	cam_focal = |lean_frac, attention| ({
-		a = focal_for_lean(lean_frac)
-		b = focal_for_gaze(attention)
-		(if (a < b) { a } else { b })
-	})
+	cam_focal = |lean_frac, attention| (
+		{
+			a = focal_for_lean(lean_frac)
+			b = focal_for_gaze(attention)
+			(
+				if (a < b) {
+					a
+				} else {
+					b
+				}
+			)
+		}
+	)
 }

@@ -46,11 +46,13 @@ dist_want : List(F64)
 dist_want = [142.0, 0.0, 0.0]
 
 want_got : List(Bool)
-want_got = ({
-	far = Gaze.desired_gaze(rider(200.0, 0.0), distracting)
-	near = Gaze.desired_gaze(rider(320.0, 0.0), distracting)
-	[(far > 0.0), (near > far), (F64.to_bits(Gaze.desired_gaze(rider(200.0, 0.0), plain)) == F64.to_bits(0.0))]
-})
+want_got = (
+	{
+		far = Gaze.desired_gaze(rider(200.0, 0.0), distracting)
+		near = Gaze.desired_gaze(rider(320.0, 0.0), distracting)
+		[(far > 0.0), (near > far), (F64.to_bits(Gaze.desired_gaze(rider(200.0, 0.0), plain)) == F64.to_bits(0.0))]
+	}
+)
 
 want_want : List(Bool)
 want_want = [True, True, True]
@@ -65,11 +67,13 @@ swivel_want : List(F64)
 swivel_want = [0.0, 0.0, 0.0]
 
 return_got : List(Bool)
-return_got = ({
-	big = Gaze.next_gaze_yaw(head((30.0 * Trig.deg), 200.0), 0.0)
-	small = Gaze.next_gaze_yaw(head((2.0 * Trig.deg), 200.0), 0.0)
-	[(big < (30.0 * Trig.deg)), (big > 0.0), (small < (2.0 * Trig.deg)), (small > 0.0), (((30.0 * Trig.deg) - big) > ((2.0 * Trig.deg) - small))]
-})
+return_got = (
+	{
+		big = Gaze.next_gaze_yaw(head((30.0 * Trig.deg), 200.0), 0.0)
+		small = Gaze.next_gaze_yaw(head((2.0 * Trig.deg), 200.0), 0.0)
+		[(big < (30.0 * Trig.deg)), (big > 0.0), (small < (2.0 * Trig.deg)), (small > 0.0), (((30.0 * Trig.deg) - big) > ((2.0 * Trig.deg) - small))]
+	}
+)
 
 return_want : List(Bool)
 return_want = [True, True, True, True, True]
@@ -84,12 +88,14 @@ focused : F64, F64 -> Pose.RiderState
 focused = |focus, gaze_yaw| { segment: 2, along: 200.0, across: 0.0, yaw: 0.0, v: Pose.v_base, tilt: 0.0, heading: 0.0, gaze_yaw: gaze_yaw, focus: focus }
 
 focus_got : List(Bool)
-focus_got = ({
-	rising = Gaze.next_focus(focused(0.0, (20.0 * Trig.deg)), (20.0 * Trig.deg))
-	held = Gaze.next_focus(focused(0.9, (1.0 * Trig.deg)), (1.0 * Trig.deg))
-	easing = Gaze.next_focus(focused(0.9, 0.0), 0.0)
-	[(rising > 0.0), (held >= 0.9), (easing < 0.9), (easing > 0.0)]
-})
+focus_got = (
+	{
+		rising = Gaze.next_focus(focused(0.0, (20.0 * Trig.deg)), (20.0 * Trig.deg))
+		held = Gaze.next_focus(focused(0.9, (1.0 * Trig.deg)), (1.0 * Trig.deg))
+		easing = Gaze.next_focus(focused(0.9, 0.0), 0.0)
+		[(rising > 0.0), (held >= 0.9), (easing < 0.9), (easing > 0.0)]
+	}
+)
 
 focus_want : List(Bool)
 focus_want = [True, True, True, True]
@@ -107,10 +113,12 @@ gawk_want : List(Bool)
 gawk_want = [False, False, True, True]
 
 outlast_got : List(Bool)
-outlast_got = ({
-	looks = Gaze.pig_ahead(rider(341.0, 0.0), distracting).looking
-	[(looks == False), Gaze.gawk_engaged(rider(341.0, 0.0), distracting)]
-})
+outlast_got = (
+	{
+		looks = Gaze.pig_ahead(rider(341.0, 0.0), distracting).looking
+		[(looks == False), Gaze.gawk_engaged(rider(341.0, 0.0), distracting)]
+	}
+)
 
 outlast_want : List(Bool)
 outlast_want = [True, True]

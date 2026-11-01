@@ -15,7 +15,13 @@ seg_list : I64 -> List(World.Segment)
 seg_list = |i| seg_list_acc(i, [])
 
 seg_list_acc : I64, List(World.Segment) -> List(World.Segment)
-seg_list_acc = |i, acc| (if (i >= World.route.len().to_i64_wrap()) { acc } else { seg_list_acc((i + 1), List.append(acc, World.segment_at(i))) })
+seg_list_acc = |i, acc| (
+	if (i >= World.route.len().to_i64_wrap()) {
+		acc
+	} else {
+		seg_list_acc((i + 1), List.append(acc, World.segment_at(i)))
+	}
+)
 
 start_got : List(F64)
 start_got = [Safari.ride_initial.clock, Safari.ride_initial.rider.along, Safari.ride_initial.rider.across, Safari.ride_initial.rider.v, Safari.ride_initial.truck.pos, Safari.ride_initial.truck.v]
@@ -54,13 +60,15 @@ moved_want : List(Bool)
 moved_want = [True, True, True]
 
 order_got : List(Bool)
-order_got = ({
-	old_dist = World.route_distance(segs, Safari.ride_initial.rider.segment, Safari.ride_initial.rider.along)
-	new_dist = World.route_distance(segs, one.rider.segment, one.rider.along)
-	against_new = Truck.truck_next(Safari.ride_initial.truck, new_dist, segs, World.course_length(segs))
-	against_old = Truck.truck_next(Safari.ride_initial.truck, old_dist, segs, World.course_length(segs))
-	[(F64.to_bits(one.truck.pos) == F64.to_bits(against_new.pos)), (new_dist > old_dist), ((F64.to_bits(against_new.pos) == F64.to_bits(against_old.pos)) == False)]
-})
+order_got = (
+	{
+		old_dist = World.route_distance(segs, Safari.ride_initial.rider.segment, Safari.ride_initial.rider.along)
+		new_dist = World.route_distance(segs, one.rider.segment, one.rider.along)
+		against_new = Truck.truck_next(Safari.ride_initial.truck, new_dist, segs, World.course_length(segs))
+		against_old = Truck.truck_next(Safari.ride_initial.truck, old_dist, segs, World.course_length(segs))
+		[(F64.to_bits(one.truck.pos) == F64.to_bits(against_new.pos)), (new_dist > old_dist), ((F64.to_bits(against_new.pos) == F64.to_bits(against_old.pos)) == False)]
+	}
+)
 
 order_want : List(Bool)
 order_want = [True, True, True]
@@ -69,10 +77,12 @@ done : Safari.Ride
 done = { rider: { segment: 18, along: 400.0, across: 0.0, yaw: 0.0, v: 0.0, tilt: 0.0, heading: 0.0, gaze_yaw: 0.0, focus: 0.9 }, truck: { pos: 9000.0, v: 2.0, braking: True }, clock: 12345.0 }
 
 restart_got : List(F64)
-restart_got = ({
-	r = Safari.ride_next(segs, done)
-	[r.clock, r.rider.along, r.rider.v, r.truck.pos, r.rider.focus]
-})
+restart_got = (
+	{
+		r = Safari.ride_next(segs, done)
+		[r.clock, r.rider.along, r.rider.v, r.truck.pos, r.rider.focus]
+	}
+)
 
 restart_want : List(F64)
 restart_want = [0.0, 0.0, 0.3, 500.0, 0.0]
@@ -93,16 +103,18 @@ frame : List(Paint.DrawCmd)
 frame = Safari.ride_frame(segs, Safari.ride_initial)
 
 frame_got : List(Bool)
-frame_got = [(frame.len().to_i64_wrap() > 0), (Safari.ride_frame(segs, one).len().to_i64_wrap() > 0), ((List.get(frame, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).tag >= 0), ((List.get(frame, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).tag <= 6)]
+frame_got = [(frame.len().to_i64_wrap() > 0), (Safari.ride_frame(segs, one).len().to_i64_wrap() > 0), ((List.get(frame, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).tag >= 0), ((List.get(frame, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).tag <= 6)]
 
 frame_want : List(Bool)
 frame_want = [True, True, True, True]
 
 sun_got : List(Bool)
-sun_got = ({
-	s = Safari.ride_sun(segs, Safari.ride_initial)
-	[(s.visible == False), (s.scale >= 0.0)]
-})
+sun_got = (
+	{
+		s = Safari.ride_sun(segs, Safari.ride_initial)
+		[(s.visible == False), (s.scale >= 0.0)]
+	}
+)
 
 sun_want : List(Bool)
 sun_want = [True, True]

@@ -101,11 +101,13 @@ mirror_fwd_want : List(F64)
 mirror_fwd_want = [0.0]
 
 step_got : List(F64)
-step_got = ({
-	a = Bike.simulate_rider_step(rider(0.0, 0.0, Pose.v_base), 0.0, 0.0)
-	b = Bike.simulate_rider_step(rider(0.0, 0.0, Pose.v_base), 0.5, 0.25)
-	[a.across, a.yaw, a.heading, a.tilt, a.v, b.tilt, b.v, b.yaw, b.heading, Bike.yaw_per_tilt]
-})
+step_got = (
+	{
+		a = Bike.simulate_rider_step(rider(0.0, 0.0, Pose.v_base), 0.0, 0.0)
+		b = Bike.simulate_rider_step(rider(0.0, 0.0, Pose.v_base), 0.5, 0.25)
+		[a.across, a.yaw, a.heading, a.tilt, a.v, b.tilt, b.v, b.yaw, b.heading, Bike.yaw_per_tilt]
+	}
+)
 
 step_want : List(F64)
 step_want = [0.0, 0.0, 0.0, 0.0, 0.3, 0.5, 0.55, 0.05, 0.05, 0.1]

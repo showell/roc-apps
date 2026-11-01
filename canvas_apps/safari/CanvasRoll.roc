@@ -9,8 +9,16 @@ CanvasRoll :: [].{
 	roll_deadband = 0.001
 
 	rider_roll : Pose.RiderState -> F64
-	rider_roll = |s| ({
-		t = s.tilt
-		(if (DeviceMath.real_abs(t) < roll_deadband) { 0.0 } else { t })
-	})
+	rider_roll = |s| (
+		{
+			t = s.tilt
+			(
+				if (DeviceMath.real_abs(t) < roll_deadband) {
+					0.0
+				} else {
+					t
+				}
+			)
+		}
+	)
 }

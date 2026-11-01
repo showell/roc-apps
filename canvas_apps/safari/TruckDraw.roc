@@ -99,119 +99,181 @@ TruckDraw :: [].{
 	glow_sides = 16
 
 	truck_p3 : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64, F64 -> Geom.Vec3
-	truck_p3 = |segs, ch, pose, d, along, x, h| ({
-		r = Frame.at(segs, ch, pose, d, along, x)
-		{ right: r.right, forward: r.forward, height: (h - Geom.ground_drop(r.right, r.forward)) }
-	})
+	truck_p3 = |segs, ch, pose, d, along, x, h| (
+		{
+			r = Frame.at(segs, ch, pose, d, along, x)
+			{ right: r.right, forward: r.forward, height: (h - Geom.ground_drop(r.right, r.forward)) }
+		}
+	)
 
 	truck_box : F64, F64 -> TruckDraw.TruckBox
-	truck_box = |center_along, hw| ({
-		a0 = (center_along - (truck_length / 2.0))
-		a1 = (center_along + (truck_length / 2.0))
-		{ a0: a0, a1: a1, a2: (a1 + cab_length), a_roof: (a1 + (cab_length * cab_roof_frac)), xl: (hw - (truck_width / 2.0)), xr: (hw + (truck_width / 2.0)) }
-	})
+	truck_box = |center_along, hw| (
+		{
+			a0 = (center_along - (truck_length / 2.0))
+			a1 = (center_along + (truck_length / 2.0))
+			{ a0: a0, a1: a1, a2: (a1 + cab_length), a_roof: (a1 + (cab_length * cab_roof_frac)), xl: (hw - (truck_width / 2.0)), xr: (hw + (truck_width / 2.0)) }
+		}
+	)
 
 	sum_fwd : List(Geom.Vec3), I64 -> F64
-	sum_fwd = |ps, i| (if (i >= ps.len().to_i64_wrap()) { 0.0 } else { ((List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).forward + sum_fwd(ps, (i + 1))) })
+	sum_fwd = |ps, i| (
+		if (i >= ps.len().to_i64_wrap()) {
+			0.0
+		} else {
+			((List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).forward + sum_fwd(ps, (i + 1)))
+		}
+	)
 
 	truck_face : I64, List(Geom.Vec3) -> TruckDraw.TruckFace
 	truck_face = |color, ps| { color: color, fwd: (sum_fwd(ps, 0) / I64.to_f64(ps.len().to_i64_wrap())), v: ps }
 
 	truck_side : List(World.Segment), List(I64), Frame.Pose, I64, TruckDraw.TruckBox, F64 -> TruckDraw.TruckFace
-	truck_side = |segs, ch, pose, d, bx, x| ({
-		p0 = truck_p3(segs, ch, pose, d, bx.a0, x, trailer_bottom)
-		p1 = truck_p3(segs, ch, pose, d, bx.a0, x, truck_height)
-		p2 = truck_p3(segs, ch, pose, d, bx.a_roof, x, truck_height)
-		p3 = truck_p3(segs, ch, pose, d, bx.a2, x, (truck_height / 2.0))
-		p4 = truck_p3(segs, ch, pose, d, bx.a2, x, cab_bottom)
-		p5 = truck_p3(segs, ch, pose, d, bx.a1, x, cab_bottom)
-		p6 = truck_p3(segs, ch, pose, d, bx.a1, x, trailer_bottom)
-		truck_face(side_color, [p0, p1, p2, p3, p4, p5, p6])
-	})
+	truck_side = |segs, ch, pose, d, bx, x| (
+		{
+			p0 = truck_p3(segs, ch, pose, d, bx.a0, x, trailer_bottom)
+			p1 = truck_p3(segs, ch, pose, d, bx.a0, x, truck_height)
+			p2 = truck_p3(segs, ch, pose, d, bx.a_roof, x, truck_height)
+			p3 = truck_p3(segs, ch, pose, d, bx.a2, x, (truck_height / 2.0))
+			p4 = truck_p3(segs, ch, pose, d, bx.a2, x, cab_bottom)
+			p5 = truck_p3(segs, ch, pose, d, bx.a1, x, cab_bottom)
+			p6 = truck_p3(segs, ch, pose, d, bx.a1, x, trailer_bottom)
+			truck_face(side_color, [p0, p1, p2, p3, p4, p5, p6])
+		}
+	)
 
 	truck_rear : List(World.Segment), List(I64), Frame.Pose, I64, TruckDraw.TruckBox -> TruckDraw.TruckFace
-	truck_rear = |segs, ch, pose, d, bx| ({
-		p0 = truck_p3(segs, ch, pose, d, bx.a0, bx.xl, trailer_bottom)
-		p1 = truck_p3(segs, ch, pose, d, bx.a0, bx.xr, trailer_bottom)
-		p2 = truck_p3(segs, ch, pose, d, bx.a0, bx.xr, truck_height)
-		p3 = truck_p3(segs, ch, pose, d, bx.a0, bx.xl, truck_height)
-		truck_face(body_color, [p0, p1, p2, p3])
-	})
+	truck_rear = |segs, ch, pose, d, bx| (
+		{
+			p0 = truck_p3(segs, ch, pose, d, bx.a0, bx.xl, trailer_bottom)
+			p1 = truck_p3(segs, ch, pose, d, bx.a0, bx.xr, trailer_bottom)
+			p2 = truck_p3(segs, ch, pose, d, bx.a0, bx.xr, truck_height)
+			p3 = truck_p3(segs, ch, pose, d, bx.a0, bx.xl, truck_height)
+			truck_face(body_color, [p0, p1, p2, p3])
+		}
+	)
 
 	truck_roof : List(World.Segment), List(I64), Frame.Pose, I64, TruckDraw.TruckBox -> TruckDraw.TruckFace
-	truck_roof = |segs, ch, pose, d, bx| ({
-		p0 = truck_p3(segs, ch, pose, d, bx.a0, bx.xl, truck_height)
-		p1 = truck_p3(segs, ch, pose, d, bx.a0, bx.xr, truck_height)
-		p2 = truck_p3(segs, ch, pose, d, bx.a_roof, bx.xr, truck_height)
-		p3 = truck_p3(segs, ch, pose, d, bx.a_roof, bx.xl, truck_height)
-		truck_face(roof_color, [p0, p1, p2, p3])
-	})
+	truck_roof = |segs, ch, pose, d, bx| (
+		{
+			p0 = truck_p3(segs, ch, pose, d, bx.a0, bx.xl, truck_height)
+			p1 = truck_p3(segs, ch, pose, d, bx.a0, bx.xr, truck_height)
+			p2 = truck_p3(segs, ch, pose, d, bx.a_roof, bx.xr, truck_height)
+			p3 = truck_p3(segs, ch, pose, d, bx.a_roof, bx.xl, truck_height)
+			truck_face(roof_color, [p0, p1, p2, p3])
+		}
+	)
 
 	truck_windshield : List(World.Segment), List(I64), Frame.Pose, I64, TruckDraw.TruckBox -> TruckDraw.TruckFace
-	truck_windshield = |segs, ch, pose, d, bx| ({
-		p0 = truck_p3(segs, ch, pose, d, bx.a_roof, bx.xl, truck_height)
-		p1 = truck_p3(segs, ch, pose, d, bx.a_roof, bx.xr, truck_height)
-		p2 = truck_p3(segs, ch, pose, d, bx.a2, bx.xr, (truck_height / 2.0))
-		p3 = truck_p3(segs, ch, pose, d, bx.a2, bx.xl, (truck_height / 2.0))
-		truck_face(body_color, [p0, p1, p2, p3])
-	})
+	truck_windshield = |segs, ch, pose, d, bx| (
+		{
+			p0 = truck_p3(segs, ch, pose, d, bx.a_roof, bx.xl, truck_height)
+			p1 = truck_p3(segs, ch, pose, d, bx.a_roof, bx.xr, truck_height)
+			p2 = truck_p3(segs, ch, pose, d, bx.a2, bx.xr, (truck_height / 2.0))
+			p3 = truck_p3(segs, ch, pose, d, bx.a2, bx.xl, (truck_height / 2.0))
+			truck_face(body_color, [p0, p1, p2, p3])
+		}
+	)
 
 	truck_nose : List(World.Segment), List(I64), Frame.Pose, I64, TruckDraw.TruckBox -> TruckDraw.TruckFace
-	truck_nose = |segs, ch, pose, d, bx| ({
-		p0 = truck_p3(segs, ch, pose, d, bx.a2, bx.xl, (truck_height / 2.0))
-		p1 = truck_p3(segs, ch, pose, d, bx.a2, bx.xr, (truck_height / 2.0))
-		p2 = truck_p3(segs, ch, pose, d, bx.a2, bx.xr, cab_bottom)
-		p3 = truck_p3(segs, ch, pose, d, bx.a2, bx.xl, cab_bottom)
-		truck_face(body_color, [p0, p1, p2, p3])
-	})
+	truck_nose = |segs, ch, pose, d, bx| (
+		{
+			p0 = truck_p3(segs, ch, pose, d, bx.a2, bx.xl, (truck_height / 2.0))
+			p1 = truck_p3(segs, ch, pose, d, bx.a2, bx.xr, (truck_height / 2.0))
+			p2 = truck_p3(segs, ch, pose, d, bx.a2, bx.xr, cab_bottom)
+			p3 = truck_p3(segs, ch, pose, d, bx.a2, bx.xl, cab_bottom)
+			truck_face(body_color, [p0, p1, p2, p3])
+		}
+	)
 
 	truck_axles : TruckDraw.TruckBox -> List(F64)
-	truck_axles = |bx| ({
-		rear = (bx.a0 + trailer_axle_inset)
-		front = (bx.a1 - trailer_axle_inset)
-		cab = (bx.a1 + (cab_length * cab_axle_frac))
-		[(rear - (tire_pair_gap / 2.0)), (rear + (tire_pair_gap / 2.0)), (front - (tire_pair_gap / 2.0)), (front + (tire_pair_gap / 2.0)), cab]
-	})
+	truck_axles = |bx| (
+		{
+			rear = (bx.a0 + trailer_axle_inset)
+			front = (bx.a1 - trailer_axle_inset)
+			cab = (bx.a1 + (cab_length * cab_axle_frac))
+			[(rear - (tire_pair_gap / 2.0)), (rear + (tire_pair_gap / 2.0)), (front - (tire_pair_gap / 2.0)), (front + (tire_pair_gap / 2.0)), cab]
+		}
+	)
 
 	tire_pt : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64, I64 -> Geom.Vec3
-	tire_pt = |segs, ch, pose, d, ac, x, i| ({
-		th = ((I64.to_f64(i) / I64.to_f64(tire_sides)) * Trig.two_pi)
-		truck_p3(segs, ch, pose, d, (ac + (tire_radius * Trig.r_cos(th))), x, (tire_radius + (tire_radius * Trig.r_sin(th))))
-	})
+	tire_pt = |segs, ch, pose, d, ac, x, i| (
+		{
+			th = ((I64.to_f64(i) / I64.to_f64(tire_sides)) * Trig.two_pi)
+			truck_p3(segs, ch, pose, d, (ac + (tire_radius * Trig.r_cos(th))), x, (tire_radius + (tire_radius * Trig.r_sin(th))))
+		}
+	)
 
 	# tire_pts builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	tire_pts : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64, I64 -> List(Geom.Vec3)
 	tire_pts = |segs, ch, pose, d, ac, x, i| tire_pts_acc(segs, ch, pose, d, ac, x, i, [])
 
 	tire_pts_acc : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64, I64, List(Geom.Vec3) -> List(Geom.Vec3)
-	tire_pts_acc = |segs, ch, pose, d, ac, x, i, acc| (if (i >= tire_sides) { acc } else { tire_pts_acc(segs, ch, pose, d, ac, x, (i + 1), List.append(acc, tire_pt(segs, ch, pose, d, ac, x, i))) })
+	tire_pts_acc = |segs, ch, pose, d, ac, x, i, acc| (
+		if (i >= tire_sides) {
+			acc
+		} else {
+			tire_pts_acc(segs, ch, pose, d, ac, x, (i + 1), List.append(acc, tire_pt(segs, ch, pose, d, ac, x, i)))
+		}
+	)
 
 	# side_tires builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	side_tires : List(World.Segment), List(I64), Frame.Pose, I64, List(F64), F64 -> List(TruckDraw.TruckFace)
 	side_tires = |segs, ch, pose, d, axles, x| side_tires_acc(segs, ch, pose, d, axles, x, 0, [])
 
 	side_tires_acc : List(World.Segment), List(I64), Frame.Pose, I64, List(F64), F64, I64, List(TruckDraw.TruckFace) -> List(TruckDraw.TruckFace)
-	side_tires_acc = |segs, ch, pose, d, axles, x, i, acc| (if (i >= axles.len().to_i64_wrap()) { acc } else { side_tires_acc(segs, ch, pose, d, axles, x, (i + 1), List.append(acc, truck_face(tire_color, tire_pts(segs, ch, pose, d, (List.get(axles, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), x, 0)))) })
+	side_tires_acc = |segs, ch, pose, d, axles, x, i, acc| (
+		if (i >= axles.len().to_i64_wrap()) {
+			acc
+		} else {
+			side_tires_acc(segs, ch, pose, d, axles, x, (i + 1), List.append(acc, truck_face(tire_color, tire_pts(segs, ch, pose, d, (List.get(axles, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), x, 0))))
+		}
+	)
 
 	truck_faces : List(World.Segment), List(I64), Frame.Pose, I64, TruckDraw.TruckBox -> List(TruckDraw.TruckFace)
-	truck_faces = |segs, ch, pose, d, bx| ({
-		axles = truck_axles(bx)
-		List.join([[truck_side(segs, ch, pose, d, bx, bx.xl), truck_side(segs, ch, pose, d, bx, bx.xr)], [truck_rear(segs, ch, pose, d, bx), truck_roof(segs, ch, pose, d, bx)], [truck_windshield(segs, ch, pose, d, bx), truck_nose(segs, ch, pose, d, bx)], side_tires(segs, ch, pose, d, axles, bx.xl), side_tires(segs, ch, pose, d, axles, bx.xr)])
-	})
+	truck_faces = |segs, ch, pose, d, bx| (
+		{
+			axles = truck_axles(bx)
+			List.join([[truck_side(segs, ch, pose, d, bx, bx.xl), truck_side(segs, ch, pose, d, bx, bx.xr)], [truck_rear(segs, ch, pose, d, bx), truck_roof(segs, ch, pose, d, bx)], [truck_windshield(segs, ch, pose, d, bx), truck_nose(segs, ch, pose, d, bx)], side_tires(segs, ch, pose, d, axles, bx.xl), side_tires(segs, ch, pose, d, axles, bx.xr)])
+		}
+	)
 
 	# face_rest builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	face_rest : List(TruckDraw.TruckFace), I64 -> List(TruckDraw.TruckFace)
 	face_rest = |ys, j| face_rest_acc(ys, j, [])
 
 	face_rest_acc : List(TruckDraw.TruckFace), I64, List(TruckDraw.TruckFace) -> List(TruckDraw.TruckFace)
-	face_rest_acc = |ys, j, acc| (if (j >= ys.len().to_i64_wrap()) { acc } else { face_rest_acc(ys, (j + 1), List.append(acc, (List.get(ys, I64.to_u64_wrap(j)) ?? crash("list-at out of range")))) })
+	face_rest_acc = |ys, j, acc| (
+		if (j >= ys.len().to_i64_wrap()) {
+			acc
+		} else {
+			face_rest_acc(ys, (j + 1), List.append(acc, (List.get(ys, I64.to_u64_wrap(j)) ?? crash ("list-at out of range"))))
+		}
+	)
 
 	# merge_faces builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	merge_faces : List(TruckDraw.TruckFace), List(TruckDraw.TruckFace), I64, I64 -> List(TruckDraw.TruckFace)
 	merge_faces = |a, b, i, j| merge_faces_acc(a, b, i, j, [])
 
 	merge_faces_acc : List(TruckDraw.TruckFace), List(TruckDraw.TruckFace), I64, I64, List(TruckDraw.TruckFace) -> List(TruckDraw.TruckFace)
-	merge_faces_acc = |a, b, i, j, acc| (if (i >= a.len().to_i64_wrap()) { List.concat(acc, face_rest(b, j)) } else { (if (j >= b.len().to_i64_wrap()) { List.concat(acc, face_rest(a, i)) } else { (if DepthSort.deeper_than((List.get(b, I64.to_u64_wrap(j)) ?? crash("list-at out of range")).fwd, (List.get(a, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd) { merge_faces_acc(a, b, i, (j + 1), List.append(acc, (List.get(b, I64.to_u64_wrap(j)) ?? crash("list-at out of range")))) } else { merge_faces_acc(a, b, (i + 1), j, List.append(acc, (List.get(a, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))) }) }) })
+	merge_faces_acc = |a, b, i, j, acc| (
+		if (i >= a.len().to_i64_wrap()) {
+			List.concat(acc, face_rest(b, j))
+		} else {
+			(
+				if (j >= b.len().to_i64_wrap()) {
+					List.concat(acc, face_rest(a, i))
+				} else {
+					(
+						if DepthSort.deeper_than((List.get(b, I64.to_u64_wrap(j)) ?? crash ("list-at out of range")).fwd, (List.get(a, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).fwd) {
+							merge_faces_acc(a, b, i, (j + 1), List.append(acc, (List.get(b, I64.to_u64_wrap(j)) ?? crash ("list-at out of range"))))
+						} else {
+							merge_faces_acc(a, b, (i + 1), j, List.append(acc, (List.get(a, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))))
+						}
+					)
+				}
+			)
+		}
+	)
 
 	sort_faces : List(TruckDraw.TruckFace) -> List(TruckDraw.TruckFace)
 	sort_faces = |xs| {
@@ -234,7 +296,13 @@ TruckDraw :: [].{
 	draw_faces = |fs, cf, view_w, i| draw_faces_acc(fs, cf, view_w, i, [])
 
 	draw_faces_acc : List(TruckDraw.TruckFace), F64, F64, I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
-	draw_faces_acc = |fs, cf, view_w, i, acc| (if (i >= fs.len().to_i64_wrap()) { acc } else { draw_faces_acc(fs, cf, view_w, (i + 1), List.concat(acc, truck_fill((List.get(fs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).color, (List.get(fs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).v, cf, view_w))) })
+	draw_faces_acc = |fs, cf, view_w, i, acc| (
+		if (i >= fs.len().to_i64_wrap()) {
+			acc
+		} else {
+			draw_faces_acc(fs, cf, view_w, (i + 1), List.concat(acc, truck_fill((List.get(fs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).color, (List.get(fs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).v, cf, view_w)))
+		}
+	)
 
 	any_behind : List(Geom.Vec3) -> Bool
 	any_behind = |ps| ps.any(|p| p.forward <= Geom.near)
@@ -249,71 +317,117 @@ TruckDraw :: [].{
 	max_radius = |sp, c| max_radius_from(sp, c, 0)
 
 	max_radius_from : List(Camera.ScreenPt), Camera.ScreenPt, I64 -> F64
-	max_radius_from = |sp, c, i| (if (i >= sp.len().to_i64_wrap()) { 0.0 } else { DeviceMath.real_max(pt_dist((List.get(sp, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), c), max_radius_from(sp, c, (i + 1))) })
+	max_radius_from = |sp, c, i| (
+		if (i >= sp.len().to_i64_wrap()) {
+			0.0
+		} else {
+			DeviceMath.real_max(pt_dist((List.get(sp, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), c), max_radius_from(sp, c, (i + 1)))
+		}
+	)
 
 	truck_wedge : List(World.Segment), List(I64), Frame.Pose, I64, TruckDraw.TruckBox, F64, F64, F64 -> List(Paint.DrawCmd)
-	truck_wedge = |segs, ch, pose, d, bx, src_x, cf, view_w| ({
-		p0 = truck_p3(segs, ch, pose, d, bx.a2, src_x, (headlight_h - cone_near_half))
-		p1 = truck_p3(segs, ch, pose, d, bx.a2, src_x, (headlight_h + cone_near_half))
-		p2 = truck_p3(segs, ch, pose, d, (bx.a2 + cone_length), src_x, (cone_far_center + cone_far_half))
-		p3 = truck_p3(segs, ch, pose, d, (bx.a2 + cone_length), src_x, (cone_far_center - cone_far_half))
-		wedge_emit([p0, p1, p2, p3], cf, view_w)
-	})
+	truck_wedge = |segs, ch, pose, d, bx, src_x, cf, view_w| (
+		{
+			p0 = truck_p3(segs, ch, pose, d, bx.a2, src_x, (headlight_h - cone_near_half))
+			p1 = truck_p3(segs, ch, pose, d, bx.a2, src_x, (headlight_h + cone_near_half))
+			p2 = truck_p3(segs, ch, pose, d, (bx.a2 + cone_length), src_x, (cone_far_center + cone_far_half))
+			p3 = truck_p3(segs, ch, pose, d, (bx.a2 + cone_length), src_x, (cone_far_center - cone_far_half))
+			wedge_emit([p0, p1, p2, p3], cf, view_w)
+		}
+	)
 
 	wedge_emit : List(Geom.Vec3), F64, F64 -> List(Paint.DrawCmd)
-	wedge_emit = |ps, cf, view_w| (if any_behind(ps) { [] } else { wedge_cmd(ps, cf, view_w) })
+	wedge_emit = |ps, cf, view_w| (
+		if any_behind(ps) {
+			[]
+		} else {
+			wedge_cmd(ps, cf, view_w)
+		}
+	)
 
 	wedge_cmd : List(Geom.Vec3), F64, F64 -> List(Paint.DrawCmd)
-	wedge_cmd = |ps, cf, view_w| ({
-		sp = Camera.project_all(ps, cf, view_w)
-		lamp = Camera.project(mid_vec((List.get(ps, I64.to_u64_wrap(0)) ?? crash("list-at out of range")), (List.get(ps, I64.to_u64_wrap(1)) ?? crash("list-at out of range"))), cf, view_w)
-		Paint.push_grad_poly(beam_core, beam_edge, lamp.x, lamp.y, max_radius(sp, lamp), sp)
-	})
+	wedge_cmd = |ps, cf, view_w| (
+		{
+			sp = Camera.project_all(ps, cf, view_w)
+			lamp = Camera.project(mid_vec((List.get(ps, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")), (List.get(ps, I64.to_u64_wrap(1)) ?? crash ("list-at out of range"))), cf, view_w)
+			Paint.push_grad_poly(beam_core, beam_edge, lamp.x, lamp.y, max_radius(sp, lamp), sp)
+		}
+	)
 
 	truck_wedges : List(World.Segment), List(I64), Frame.Pose, I64, TruckDraw.TruckBox, F64, F64 -> List(Paint.DrawCmd)
 	truck_wedges = |segs, ch, pose, d, bx, cf, view_w| List.concat(truck_wedge(segs, ch, pose, d, bx, (bx.xl + headlight_inset), cf, view_w), truck_wedge(segs, ch, pose, d, bx, (bx.xr - headlight_inset), cf, view_w))
 
 	sum_x : List(Camera.ScreenPt), I64 -> F64
-	sum_x = |ps, i| (if (i >= ps.len().to_i64_wrap()) { 0.0 } else { ((List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).x + sum_x(ps, (i + 1))) })
+	sum_x = |ps, i| (
+		if (i >= ps.len().to_i64_wrap()) {
+			0.0
+		} else {
+			((List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).x + sum_x(ps, (i + 1)))
+		}
+	)
 
 	sum_y : List(Camera.ScreenPt), I64 -> F64
-	sum_y = |ps, i| (if (i >= ps.len().to_i64_wrap()) { 0.0 } else { ((List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).y + sum_y(ps, (i + 1))) })
+	sum_y = |ps, i| (
+		if (i >= ps.len().to_i64_wrap()) {
+			0.0
+		} else {
+			((List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).y + sum_y(ps, (i + 1)))
+		}
+	)
 
 	glow_pt : F64, F64, F64, I64 -> Camera.ScreenPt
-	glow_pt = |cx, cy, rad, i| ({
-		th = ((I64.to_f64(i) / I64.to_f64(glow_sides)) * Trig.two_pi)
-		{ x: (cx + (rad * Trig.r_cos(th))), y: (cy + (rad * Trig.r_sin(th))) }
-	})
+	glow_pt = |cx, cy, rad, i| (
+		{
+			th = ((I64.to_f64(i) / I64.to_f64(glow_sides)) * Trig.two_pi)
+			{ x: (cx + (rad * Trig.r_cos(th))), y: (cy + (rad * Trig.r_sin(th))) }
+		}
+	)
 
 	# glow_circle builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	glow_circle : F64, F64, F64, I64 -> List(Camera.ScreenPt)
 	glow_circle = |cx, cy, rad, i| glow_circle_acc(cx, cy, rad, i, [])
 
 	glow_circle_acc : F64, F64, F64, I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
-	glow_circle_acc = |cx, cy, rad, i, acc| (if (i >= glow_sides) { acc } else { glow_circle_acc(cx, cy, rad, (i + 1), List.append(acc, glow_pt(cx, cy, rad, i))) })
+	glow_circle_acc = |cx, cy, rad, i, acc| (
+		if (i >= glow_sides) {
+			acc
+		} else {
+			glow_circle_acc(cx, cy, rad, (i + 1), List.append(acc, glow_pt(cx, cy, rad, i)))
+		}
+	)
 
 	brake_glow : List(Geom.Vec3), F64, F64 -> List(Paint.DrawCmd)
-	brake_glow = |panel, cf, view_w| (if any_behind(panel) { [] } else { glow_cmd(panel, cf, view_w) })
+	brake_glow = |panel, cf, view_w| (
+		if any_behind(panel) {
+			[]
+		} else {
+			glow_cmd(panel, cf, view_w)
+		}
+	)
 
 	glow_cmd : List(Geom.Vec3), F64, F64 -> List(Paint.DrawCmd)
-	glow_cmd = |panel, cf, view_w| ({
-		sp = Camera.project_all(panel, cf, view_w)
-		cx = (sum_x(sp, 0) / 4.0)
-		cy = (sum_y(sp, 0) / 4.0)
-		rad = (max_radius(sp, { x: cx, y: cy }) * 3.2)
-		Paint.push_grad_poly(glow_core, glow_edge, cx, cy, rad, glow_circle(cx, cy, rad, 0))
-	})
+	glow_cmd = |panel, cf, view_w| (
+		{
+			sp = Camera.project_all(panel, cf, view_w)
+			cx = (sum_x(sp, 0) / 4.0)
+			cy = (sum_y(sp, 0) / 4.0)
+			rad = (max_radius(sp, { x: cx, y: cy }) * 3.2)
+			Paint.push_grad_poly(glow_core, glow_edge, cx, cy, rad, glow_circle(cx, cy, rad, 0))
+		}
+	)
 
 	brake_light : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64, F64, F64, F64 -> List(Paint.DrawCmd)
-	brake_light = |segs, ch, pose, d, a0, x0, x1, cf, view_w| ({
-		bl = (trailer_bottom + (0.2 * (truck_height - trailer_bottom)))
-		bh = (trailer_bottom + (0.5 * (truck_height - trailer_bottom)))
-		q0 = truck_p3(segs, ch, pose, d, a0, x0, bl)
-		q1 = truck_p3(segs, ch, pose, d, a0, x1, bl)
-		q2 = truck_p3(segs, ch, pose, d, a0, x1, bh)
-		q3 = truck_p3(segs, ch, pose, d, a0, x0, bh)
-		emit_brake([q0, q1, q2, q3], cf, view_w)
-	})
+	brake_light = |segs, ch, pose, d, a0, x0, x1, cf, view_w| (
+		{
+			bl = (trailer_bottom + (0.2 * (truck_height - trailer_bottom)))
+			bh = (trailer_bottom + (0.5 * (truck_height - trailer_bottom)))
+			q0 = truck_p3(segs, ch, pose, d, a0, x0, bl)
+			q1 = truck_p3(segs, ch, pose, d, a0, x1, bl)
+			q2 = truck_p3(segs, ch, pose, d, a0, x1, bh)
+			q3 = truck_p3(segs, ch, pose, d, a0, x0, bh)
+			emit_brake([q0, q1, q2, q3], cf, view_w)
+		}
+	)
 
 	emit_brake : List(Geom.Vec3), F64, F64 -> List(Paint.DrawCmd)
 	emit_brake = |panel, cf, view_w| List.concat(brake_glow(panel, cf, view_w), truck_fill(brake_color, panel, cf, view_w))
@@ -322,11 +436,25 @@ TruckDraw :: [].{
 	brake_lights = |segs, ch, pose, d, bx, cf, view_w| List.concat(brake_light(segs, ch, pose, d, bx.a0, (bx.xl + (0.1 * truck_width)), (bx.xl + (0.36 * truck_width)), cf, view_w), brake_light(segs, ch, pose, d, bx.a0, (bx.xr - (0.36 * truck_width)), (bx.xr - (0.1 * truck_width)), cf, view_w))
 
 	truck_draw_body : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64, Bool, Bool, F64, F64 -> List(Paint.DrawCmd)
-	truck_draw_body = |segs, ch, pose, d, center_along, hw, braking, headlights, cf, view_w| ({
-		bx = truck_box(center_along, hw)
-		beams = (if headlights { truck_wedges(segs, ch, pose, d, bx, cf, view_w) } else { [] })
-		body = draw_faces(sort_faces(truck_faces(segs, ch, pose, d, bx)), cf, view_w, 0)
-		lights = (if braking { brake_lights(segs, ch, pose, d, bx, cf, view_w) } else { [] })
-		List.join([beams, body, lights])
-	})
+	truck_draw_body = |segs, ch, pose, d, center_along, hw, braking, headlights, cf, view_w| (
+		{
+			bx = truck_box(center_along, hw)
+			beams = (
+				if headlights {
+					truck_wedges(segs, ch, pose, d, bx, cf, view_w)
+				} else {
+					[]
+				}
+			)
+			body = draw_faces(sort_faces(truck_faces(segs, ch, pose, d, bx)), cf, view_w, 0)
+			lights = (
+				if braking {
+					brake_lights(segs, ch, pose, d, bx, cf, view_w)
+				} else {
+					[]
+				}
+			)
+			List.join([beams, body, lights])
+		}
+	)
 }

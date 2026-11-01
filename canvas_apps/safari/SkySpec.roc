@@ -35,12 +35,14 @@ packed_want : List(I64)
 packed_want = [9358054, 2374238, 14571572]
 
 mix_got : List(F64)
-mix_got = ({
-	a = Sky.lerp3(Sky.day_sky, Sky.dusk_sky, 0.0)
-	b = Sky.lerp3(Sky.day_sky, Sky.dusk_sky, 1.0)
-	m = Sky.lerp3(Sky.day_sky, Sky.dusk_sky, 0.5)
-	[a.r, a.g, a.b, b.r, b.g, b.b, m.r, m.g, m.b]
-})
+mix_got = (
+	{
+		a = Sky.lerp3(Sky.day_sky, Sky.dusk_sky, 0.0)
+		b = Sky.lerp3(Sky.day_sky, Sky.dusk_sky, 1.0)
+		m = Sky.lerp3(Sky.day_sky, Sky.dusk_sky, 0.5)
+		[a.r, a.g, a.b, b.r, b.g, b.b, m.r, m.g, m.b]
+	}
+)
 
 mix_want : List(F64)
 mix_want = [142.0, 202.0, 230.0, 36.0, 58.0, 94.0, 89.0, 130.0, 162.0]

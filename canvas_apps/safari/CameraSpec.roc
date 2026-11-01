@@ -35,10 +35,12 @@ three : List(Geom.Vec3)
 three = [{ right: 0.0, forward: 10.0, height: 1.2 }, { right: 10.0, forward: 10.0, height: 1.2 }, { right: 0.0, forward: 10.0, height: 11.2 }]
 
 all_got : List(F64)
-all_got = ({
-	sp = Camera.project_all(three, 800.0, 960.0)
-	[I64.to_f64(sp.len().to_i64_wrap()), (List.get(sp, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).x, (List.get(sp, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).x, (List.get(sp, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).y, I64.to_f64(Camera.project_all([], 800.0, 960.0).len().to_i64_wrap())]
-})
+all_got = (
+	{
+		sp = Camera.project_all(three, 800.0, 960.0)
+		[I64.to_f64(sp.len().to_i64_wrap()), (List.get(sp, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).x, (List.get(sp, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).x, (List.get(sp, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).y, I64.to_f64(Camera.project_all([], 800.0, 960.0).len().to_i64_wrap())]
+	}
+)
 
 all_want : List(F64)
 all_want = [3.0, 480.0, 1280.0, (-500.0), 0.0]

@@ -6,10 +6,12 @@ import Grade
 import TruckDraw
 
 box_at : F64, F64 -> List(F64)
-box_at = |c, hw| ({
-	b = TruckDraw.truck_box(c, hw)
-	[b.a0, b.a1, b.a2, b.a_roof, b.xl, b.xr]
-})
+box_at = |c, hw| (
+	{
+		b = TruckDraw.truck_box(c, hw)
+		[b.a0, b.a1, b.a2, b.a_roof, b.xl, b.xr]
+	}
+)
 
 box_got : List(F64)
 box_got = List.concat(box_at(0.0, 0.0), box_at(40.0, 2.0))
@@ -64,7 +66,13 @@ colours_of : List(TruckDraw.TruckFace), I64 -> List(I64)
 colours_of = |fs, i| colours_of_acc(fs, i, [])
 
 colours_of_acc : List(TruckDraw.TruckFace), I64, List(I64) -> List(I64)
-colours_of_acc = |fs, i, acc| (if (i >= fs.len().to_i64_wrap()) { acc } else { colours_of_acc(fs, (i + 1), List.append(acc, (List.get(fs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).color)) })
+colours_of_acc = |fs, i, acc| (
+	if (i >= fs.len().to_i64_wrap()) {
+		acc
+	} else {
+		colours_of_acc(fs, (i + 1), List.append(acc, (List.get(fs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).color))
+	}
+)
 
 tied : List(TruckDraw.TruckFace)
 tied = [mark(1, 30.0), mark(2, 10.0), mark(3, 30.0), mark(4, 20.0), mark(5, 30.0)]
@@ -85,7 +93,7 @@ slack_want : List(I64)
 slack_want = [3, 1, 2, 4]
 
 small_got : List(I64)
-small_got = [TruckDraw.sort_faces([]).len().to_i64_wrap(), TruckDraw.sort_faces([mark(7, 1.0)]).len().to_i64_wrap(), (List.get(TruckDraw.sort_faces([mark(7, 1.0)]), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).color]
+small_got = [TruckDraw.sort_faces([]).len().to_i64_wrap(), TruckDraw.sort_faces([mark(7, 1.0)]).len().to_i64_wrap(), (List.get(TruckDraw.sort_faces([mark(7, 1.0)]), I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).color]
 
 small_want : List(I64)
 small_want = [0, 1, 7]
@@ -97,11 +105,13 @@ panel : List(Camera.ScreenPt)
 panel = [sp(3.0, 4.0), sp(6.0, 8.0), sp(0.0, 0.0), sp(7.0, 4.0)]
 
 halo_got : List(F64)
-halo_got = ({
-	cx = (TruckDraw.sum_x(panel, 0) / 4.0)
-	cy = (TruckDraw.sum_y(panel, 0) / 4.0)
-	[TruckDraw.sum_x(panel, 0), TruckDraw.sum_y(panel, 0), cx, cy, TruckDraw.pt_dist(sp(3.0, 4.0), sp(0.0, 0.0)), TruckDraw.max_radius(panel, sp(0.0, 0.0)), (TruckDraw.max_radius(panel, sp(0.0, 0.0)) * 3.2)]
-})
+halo_got = (
+	{
+		cx = (TruckDraw.sum_x(panel, 0) / 4.0)
+		cy = (TruckDraw.sum_y(panel, 0) / 4.0)
+		[TruckDraw.sum_x(panel, 0), TruckDraw.sum_y(panel, 0), cx, cy, TruckDraw.pt_dist(sp(3.0, 4.0), sp(0.0, 0.0)), TruckDraw.max_radius(panel, sp(0.0, 0.0)), (TruckDraw.max_radius(panel, sp(0.0, 0.0)) * 3.2)]
+	}
+)
 
 halo_want : List(F64)
 halo_want = [16.0, 16.0, 4.0, 4.0, 5.0, 10.0, 32.0]
@@ -119,10 +129,12 @@ behind_want : List(Bool)
 behind_want = [False, True, True, False, False]
 
 mid_got : List(F64)
-mid_got = ({
-	m = TruckDraw.mid_vec({ right: 1.0, forward: 2.0, height: 3.0 }, { right: 5.0, forward: 8.0, height: 11.0 })
-	[m.right, m.forward, m.height]
-})
+mid_got = (
+	{
+		m = TruckDraw.mid_vec({ right: 1.0, forward: 2.0, height: 3.0 }, { right: 5.0, forward: 8.0, height: 11.0 })
+		[m.right, m.forward, m.height]
+	}
+)
 
 mid_want : List(F64)
 mid_want = [3.0, 5.0, 7.0]

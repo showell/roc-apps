@@ -26,37 +26,41 @@ rails : List(GuardRail.RailPoly)
 rails = GuardRail.rail_emit(straight)
 
 shape_got : List(I64)
-shape_got = [rails.len().to_i64_wrap(), GuardRail.bars(straight, 0).len().to_i64_wrap(), GuardRail.posts(straight, 0).len().to_i64_wrap(), (List.get(rails, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).v.len().to_i64_wrap(), (List.get(rails, I64.to_u64_wrap(4)) ?? crash("list-at out of range")).v.len().to_i64_wrap()]
+shape_got = [rails.len().to_i64_wrap(), GuardRail.bars(straight, 0).len().to_i64_wrap(), GuardRail.posts(straight, 0).len().to_i64_wrap(), (List.get(rails, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).v.len().to_i64_wrap(), (List.get(rails, I64.to_u64_wrap(4)) ?? crash ("list-at out of range")).v.len().to_i64_wrap()]
 
 shape_want : List(I64)
 shape_want = [5, 2, 3, 4, 4]
 
 colour_got : List(I64)
-colour_got = [(List.get(rails, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).color, (List.get(rails, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).color, (List.get(rails, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).color, (List.get(rails, I64.to_u64_wrap(3)) ?? crash("list-at out of range")).color, (List.get(rails, I64.to_u64_wrap(4)) ?? crash("list-at out of range")).color]
+colour_got = [(List.get(rails, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).color, (List.get(rails, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).color, (List.get(rails, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).color, (List.get(rails, I64.to_u64_wrap(3)) ?? crash ("list-at out of range")).color, (List.get(rails, I64.to_u64_wrap(4)) ?? crash ("list-at out of range")).color]
 
 colour_want : List(I64)
 colour_want = [12765135, 12765135, 10133672, 10133672, 10133672]
 
 fwd_got : List(F64)
-fwd_got = [(List.get(rails, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).fwd, (List.get(rails, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).fwd, (List.get(rails, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).fwd, (List.get(rails, I64.to_u64_wrap(3)) ?? crash("list-at out of range")).fwd, (List.get(rails, I64.to_u64_wrap(4)) ?? crash("list-at out of range")).fwd]
+fwd_got = [(List.get(rails, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).fwd, (List.get(rails, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).fwd, (List.get(rails, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).fwd, (List.get(rails, I64.to_u64_wrap(3)) ?? crash ("list-at out of range")).fwd, (List.get(rails, I64.to_u64_wrap(4)) ?? crash ("list-at out of range")).fwd]
 
 fwd_want : List(F64)
 fwd_want = [15.0, 25.0, 10.0, 20.0, 30.0]
 
 bar_got : List(F64)
-bar_got = ({
-	v = (List.get(rails, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).v
-	[(List.get(v, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).forward, (List.get(v, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).forward, (List.get(v, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).forward, (List.get(v, I64.to_u64_wrap(3)) ?? crash("list-at out of range")).forward, (List.get(v, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).height, (List.get(v, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).height, (List.get(v, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).height, (List.get(v, I64.to_u64_wrap(3)) ?? crash("list-at out of range")).height]
-})
+bar_got = (
+	{
+		v = (List.get(rails, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).v
+		[(List.get(v, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).forward, (List.get(v, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).forward, (List.get(v, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).forward, (List.get(v, I64.to_u64_wrap(3)) ?? crash ("list-at out of range")).forward, (List.get(v, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).height, (List.get(v, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).height, (List.get(v, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).height, (List.get(v, I64.to_u64_wrap(3)) ?? crash ("list-at out of range")).height]
+	}
+)
 
 bar_want : List(F64)
 bar_want = [10.0, 20.0, 20.0, 10.0, 0.45, 0.45, 0.55, 0.55]
 
 post_got : List(F64)
-post_got = ({
-	v = (List.get(rails, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).v
-	[(List.get(v, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).forward, (List.get(v, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).forward, (List.get(v, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).forward, (List.get(v, I64.to_u64_wrap(3)) ?? crash("list-at out of range")).forward, (List.get(v, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).height, (List.get(v, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).height, (List.get(v, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).right, (List.get(v, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).right]
-})
+post_got = (
+	{
+		v = (List.get(rails, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).v
+		[(List.get(v, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).forward, (List.get(v, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).forward, (List.get(v, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).forward, (List.get(v, I64.to_u64_wrap(3)) ?? crash ("list-at out of range")).forward, (List.get(v, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).height, (List.get(v, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).height, (List.get(v, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).right, (List.get(v, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).right]
+	}
+)
 
 post_want : List(F64)
 post_want = [9.99, 10.01, 10.01, 9.99, 0.0, 0.55, 0.0, 0.0]
@@ -65,10 +69,12 @@ diagonal : List(Geom.RiderPt)
 diagonal = [pt(0.0, 10.0), pt(30.0, 50.0)]
 
 diag_got : List(F64)
-diag_got = ({
-	v = (List.get(GuardRail.posts(diagonal, 0), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).v
-	[(List.get(v, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).right, (List.get(v, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).right, (List.get(v, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).forward, (List.get(v, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).forward]
-})
+diag_got = (
+	{
+		v = (List.get(GuardRail.posts(diagonal, 0), I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).v
+		[(List.get(v, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).right, (List.get(v, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).right, (List.get(v, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).forward, (List.get(v, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).forward]
+	}
+)
 
 diag_want : List(F64)
 diag_want = [(-0.006), 0.006, 9.992, 10.008]
@@ -77,10 +83,12 @@ doubled : List(Geom.RiderPt)
 doubled = [pt(0.0, 10.0), pt(0.0, 10.0)]
 
 doubled_got : List(F64)
-doubled_got = ({
-	v = (List.get(GuardRail.posts(doubled, 0), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).v
-	[I64.to_f64(GuardRail.rail_emit(doubled).len().to_i64_wrap()), (List.get(v, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).right, (List.get(v, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).right, (List.get(v, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).forward, (List.get(v, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).forward, (List.get(v, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).height]
-})
+doubled_got = (
+	{
+		v = (List.get(GuardRail.posts(doubled, 0), I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).v
+		[I64.to_f64(GuardRail.rail_emit(doubled).len().to_i64_wrap()), (List.get(v, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).right, (List.get(v, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).right, (List.get(v, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).forward, (List.get(v, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).forward, (List.get(v, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).height]
+	}
+)
 
 doubled_want : List(F64)
 doubled_want = [3.0, 0.0, 0.0, 10.0, 10.0, 0.55]

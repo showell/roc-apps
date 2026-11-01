@@ -9,6 +9,7 @@
 # spec app's `echo!` writes none.
 
 Grade :: [].{
+
 	## Reals, each within `tol` of its want; a value that isn't finite fails.
 	reals : { name : Str, got : List(F64), want : List(F64), tol : F64 } -> Str
 	reals = |{ name, got, want, tol }|
@@ -35,7 +36,11 @@ Grade :: [].{
 				g = real_at(got, i)
 				w = real_at(want, i)
 				w_size = w.abs()
-				scale = if 1.0 > w_size { 1.0 } else { w_size }
+				scale = if 1.0 > w_size {
+					1.0
+				} else {
+					w_size
+				}
 				is_infinite_or_nan(g) or (g - w).abs() > tol * scale
 			},
 			detail: |_| "",
@@ -93,10 +98,10 @@ is_infinite_or_nan : F64 -> Bool
 is_infinite_or_nan = |x| I64.bitwise_and(U64.to_i64_wrap(F64.to_bits(x)), 9223372036854775807) >= 9218868437227405312
 
 real_at : List(F64), U64 -> F64
-real_at = |l, i| l.get(i) ?? crash("Grade: an index past a table's end, which the length check rules out")
+real_at = |l, i| l.get(i) ?? crash ("Grade: an index past a table's end, which the length check rules out")
 
 int_at : List(I64), U64 -> I64
-int_at = |l, i| l.get(i) ?? crash("Grade: an index past a table's end, which the length check rules out")
+int_at = |l, i| l.get(i) ?? crash ("Grade: an index past a table's end, which the length check rules out")
 
 bool_at : List(Bool), U64 -> Bool
-bool_at = |l, i| l.get(i) ?? crash("Grade: an index past a table's end, which the length check rules out")
+bool_at = |l, i| l.get(i) ?? crash ("Grade: an index past a table's end, which the length check rules out")

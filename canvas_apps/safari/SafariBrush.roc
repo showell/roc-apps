@@ -14,7 +14,11 @@ SafariBrush :: [].{
 		if c.tag == 2 {
 			x0 = geom(c, 0)
 			x1 = geom(c, 1)
-			if x1 == x0 { Skip } else { Span({ edge: Brush.opaque(c.color), middle: Brush.opaque(c.color2), x0, x1 }) }
+			if x1 == x0 {
+				Skip
+			} else {
+				Span({ edge: Brush.opaque(c.color), middle: Brush.opaque(c.color2), x0, x1 })
+			}
 		} else if c.tag == 4 {
 			Radial({ inner: Brush.with_alpha(c.color), outer: Brush.with_alpha(c.color2), x: geom(c, 0), y: geom(c, 1), r0: 0.0, r1: geom(c, 2) })
 		} else if c.tag == 5 {
@@ -25,7 +29,11 @@ SafariBrush :: [].{
 			dx = geom(c, 4) - ax
 			dy = geom(c, 5) - ay
 			len2 = dx * dx + dy * dy
-			if len2 == 0.0 { Skip } else { Linear({ c0: Brush.with_alpha(c.color), c1: Brush.with_alpha(c.color2), o0, o1, ax, ay, dx, dy }) }
+			if len2 == 0.0 {
+				Skip
+			} else {
+				Linear({ c0: Brush.with_alpha(c.color), c1: Brush.with_alpha(c.color2), o0, o1, ax, ay, dx, dy })
+			}
 		} else if c.tag == 6 {
 			o0 = Brush.clamp01(geom(c, 0))
 			o1 = F64.max(o0, F64.min(1.0, geom(c, 1)))

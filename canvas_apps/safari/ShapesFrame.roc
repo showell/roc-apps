@@ -16,7 +16,11 @@ import SafariShapes
 import Hex
 
 ride_to : SafariRide.Model, I64 -> SafariRide.Model
-ride_to = |m, n| if n <= 0 { m } else { ride_to(SafariRide.advance(m), n - 1) }
+ride_to = |m, n| if n <= 0 {
+	m
+} else {
+	ride_to(SafariRide.advance(m), n - 1)
+}
 
 # The shapes of the commands, filled by Raster onto `pixels`.
 paint_shapes : List(U32), Raster.View, List(Shapes.Shape) -> List(U32)
@@ -25,17 +29,17 @@ paint_shapes = |pixels, view, shapes| {
 	var $px = pixels
 	var $k = 0
 	while $k < n {
-		$px = match List.get(shapes, $k) ?? crash("shape out of range") {
+		$px = match List.get(shapes, $k) ?? crash ("shape out of range") {
 			Poly(p) => Raster.fill_polygon($px, view, p.pts, p.fill)
 			Pieces(p) => paint_pieces($px, view, p.tris, p.fill)
 			Disc(d) => {
 				col = match d.fill {
 					Flat(c) => c
-					_ => crash("a command's disc with a gradient")
+					_ => crash ("a command's disc with a gradient")
 				}
 				Raster.disc($px, view, d.x, d.y, d.r, col)
 			}
-			Rect(_) => crash("a command cut into a rectangle")
+			Rect(_) => crash ("a command cut into a rectangle")
 		}
 		$k = $k + 1
 	}
@@ -55,11 +59,15 @@ paint_pieces = |pixels, view, tris, fill| {
 }
 
 triangles : List(Shapes.Shape) -> U64
-triangles = |shapes| List.fold(shapes, 0, |n, s|
-	match s {
-		Pieces(p) => n + List.len(p.tris) // 6
-		_ => n
-	})
+triangles = |shapes| List.fold(
+	shapes,
+	0,
+	|n, s|
+		match s {
+			Pieces(p) => n + List.len(p.tris) // 6
+			_ => n
+		},
+)
 
 main! = |args| {
 	steps = I64.from_str(List.get(args, 0) ?? "0") ?? 0
@@ -74,7 +82,11 @@ main! = |args| {
 	var $differ = 0
 	var $k = 0
 	while $k < n {
-		$differ = if List.get(a, $k) == List.get(b, $k) { $differ } else { $differ + 1 }
+		$differ = if List.get(a, $k) == List.get(b, $k) {
+			$differ
+		} else {
+			$differ + 1
+		}
 		$k = $k + 1
 	}
 	var $out = List.with_capacity(n * 6 + 64)

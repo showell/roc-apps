@@ -60,10 +60,12 @@ base_want : List(I64)
 base_want = [4, 4]
 
 corner_got : List(F64)
-corner_got = ({
-	b = ItemDraw.tower_base(segs, chain, origin, a_tower, 0)
-	[(List.get(b, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).forward, (List.get(b, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).forward, (List.get(b, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).right, (List.get(b, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).right]
-})
+corner_got = (
+	{
+		b = ItemDraw.tower_base(segs, chain, origin, a_tower, 0)
+		[(List.get(b, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).forward, (List.get(b, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).forward, (List.get(b, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).right, (List.get(b, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).right]
+	}
+)
 
 corner_want : List(F64)
 corner_want = [194.0, 206.0, 14.0, 26.0]
@@ -81,13 +83,15 @@ cluster : List(TreePlan.TreeItem)
 cluster = [tree_at(10.0), tree_at(11.0), tree_at(12.0), tree_at(13.0), tree_at(14.0)]
 
 tree_got : List(Bool)
-tree_got = ({
-	near = ItemDraw.draw_one_tree(cluster, 0, 500.0)
-	far = ItemDraw.draw_one_tree(cluster, 4, 500.0)
-	near_tier = (List.get(near, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).pts.len().to_i64_wrap()
-	far_tier = (List.get(far, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).pts.len().to_i64_wrap()
-	[(near.len().to_i64_wrap() > 0), (far.len().to_i64_wrap() > 0), (near_tier > far_tier), (far_tier >= 6)]
-})
+tree_got = (
+	{
+		near = ItemDraw.draw_one_tree(cluster, 0, 500.0)
+		far = ItemDraw.draw_one_tree(cluster, 4, 500.0)
+		near_tier = (List.get(near, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).pts.len().to_i64_wrap()
+		far_tier = (List.get(far, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).pts.len().to_i64_wrap()
+		[(near.len().to_i64_wrap() > 0), (far.len().to_i64_wrap() > 0), (near_tier > far_tier), (far_tier >= 6)]
+	}
+)
 
 tree_want : List(Bool)
 tree_want = [True, True, True, True]

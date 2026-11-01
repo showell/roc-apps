@@ -42,23 +42,69 @@ Trees :: [].{
 	})
 
 	tree_height_for : I64, Bool -> F64
-	tree_height_for = |color, even| ({
-		base = (if even { (small_height * big_scale) } else { small_height })
-		(if (color == conifer_red) { (base * 2.0) } else { (if (color == conifer_gold) { (base * 3.0) } else { base }) })
-	})
+	tree_height_for = |color, even| (
+		{
+			base = (
+				if even {
+					(small_height * big_scale)
+				} else {
+					small_height
+				}
+			)
+			(
+				if (color == conifer_red) {
+					(base * 2.0)
+				} else {
+					(
+						if (color == conifer_gold) {
+							(base * 3.0)
+						} else {
+							base
+						}
+					)
+				}
+			)
+		}
+	)
 
 	tree_x_for : I64 -> F64
-	tree_x_for = |color| (if (color == conifer_gold) { ((Scenery.lane_width / 2.0) + (4.0 * tree_road_offset)) } else { ((Scenery.lane_width / 2.0) + tree_road_offset) })
+	tree_x_for = |color| (
+		if (color == conifer_gold) {
+			((Scenery.lane_width / 2.0) + (4.0 * tree_road_offset))
+		} else {
+			((Scenery.lane_width / 2.0) + tree_road_offset)
+		}
+	)
 
 	fill_trees : Scenery.Scheme, F64, F64, I64, I64 -> List(Scenery.Tree)
-	fill_trees = |scheme, length, along, k, n| (if (along > (length - tree_end_inset)) { [] } else { (if ((n + 2) > max_trees) { [] } else { fill_trees_pair(scheme, length, along, k, n) }) })
+	fill_trees = |scheme, length, along, k, n| (
+		if (along > (length - tree_end_inset)) {
+			[]
+		} else {
+			(
+				if ((n + 2) > max_trees) {
+					[]
+				} else {
+					fill_trees_pair(scheme, length, along, k, n)
+				}
+			)
+		}
+	)
 
 	fill_trees_pair : Scenery.Scheme, F64, F64, I64, I64 -> List(Scenery.Tree)
-	fill_trees_pair = |scheme, length, along, k, n| ({
-		even = ((k - (I64.div_trunc_by(k, 2) * 2)) == 0)
-		color = (if even { conifer_green } else { accent_color(scheme) })
-		height = tree_height_for(color, even)
-		x = tree_x_for(color)
-		List.concat([{ along: along, across: (0.0 - x), color: color, height: height }, { along: along, across: x, color: color, height: height }], fill_trees(scheme, length, (along + tree_spacing), (k + 1), (n + 2)))
-	})
+	fill_trees_pair = |scheme, length, along, k, n| (
+		{
+			even = ((k - (I64.div_trunc_by(k, 2) * 2)) == 0)
+			color = (
+				if even {
+					conifer_green
+				} else {
+					accent_color(scheme)
+				}
+			)
+			height = tree_height_for(color, even)
+			x = tree_x_for(color)
+			List.concat([{ along: along, across: (0.0 - x), color: color, height: height }, { along: along, across: x, color: color, height: height }], fill_trees(scheme, length, (along + tree_spacing), (k + 1), (n + 2)))
+		}
+	)
 }

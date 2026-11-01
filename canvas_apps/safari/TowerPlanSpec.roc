@@ -34,17 +34,19 @@ short_want : List(I64)
 short_want = [3, 1, 0, 3]
 
 mid_flags_got : List(Bool)
-mid_flags_got = [(List.get(segs, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).has_mid_tower, (List.get(segs, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).has_mid_tower, (List.get(segs, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).has_mid_tower]
+mid_flags_got = [(List.get(segs, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).has_mid_tower, (List.get(segs, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).has_mid_tower, (List.get(segs, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).has_mid_tower]
 
 mid_flags_want : List(Bool)
 mid_flags_want = [False, False, False]
 
 where_got : List(F64)
-where_got = ({
-	t = (List.get(TowerPlan.seg_towers(segs, chain, origin, 0), I64.to_u64_wrap(0)) ?? crash("list-at out of range"))
-	u = (List.get(TowerPlan.seg_towers(segs, chain, origin, 1), I64.to_u64_wrap(0)) ?? crash("list-at out of range"))
-	[t.a0, t.x0, u.a0, u.x0]
-})
+where_got = (
+	{
+		t = (List.get(TowerPlan.seg_towers(segs, chain, origin, 0), I64.to_u64_wrap(0)) ?? crash ("list-at out of range"))
+		u = (List.get(TowerPlan.seg_towers(segs, chain, origin, 1), I64.to_u64_wrap(0)) ?? crash ("list-at out of range"))
+		[t.a0, t.x0, u.a0, u.x0]
+	}
+)
 
 where_want : List(F64)
 where_want = [660.0, 22.0, 480.0, 22.0]
@@ -59,28 +61,34 @@ long_want : List(I64)
 long_want = [2, 1]
 
 long_where_got : List(F64)
-long_where_got = ({
-	ts = TowerPlan.walk_towers(long_segs, [0], origin)
-	[(List.get(ts, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).a0, (List.get(ts, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).x0, (List.get(ts, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).a0, (List.get(ts, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).x0, (List.get(ts, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).yaw, (List.get(ts, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).yaw]
-})
+long_where_got = (
+	{
+		ts = TowerPlan.walk_towers(long_segs, [0], origin)
+		[(List.get(ts, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).a0, (List.get(ts, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).x0, (List.get(ts, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).a0, (List.get(ts, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).x0, (List.get(ts, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).yaw, (List.get(ts, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).yaw]
+	}
+)
 
 long_where_want : List(F64)
 long_where_want = [1360.0, 22.0, 600.0, (-98.0), 0.5235987750000001, 0.0]
 
 key_got : List(F64)
-key_got = ({
-	ts = TowerPlan.walk_towers(long_segs, [0], origin)
-	[(List.get(ts, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).off, (List.get(ts, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).off, Tower.beacon_offset_for(0), Tower.beacon_offset_for(60)]
-})
+key_got = (
+	{
+		ts = TowerPlan.walk_towers(long_segs, [0], origin)
+		[(List.get(ts, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).off, (List.get(ts, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).off, Tower.beacon_offset_for(0), Tower.beacon_offset_for(60)]
+	}
+)
 
 key_want : List(F64)
 key_want = [0.0, 60.0, 0.0, 60.0]
 
 spread_got : List(F64)
-spread_got = ({
-	ts = TowerPlan.walk_towers(segs, chain, origin)
-	[(List.get(ts, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).off, (List.get(ts, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).off, (List.get(ts, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).off]
-})
+spread_got = (
+	{
+		ts = TowerPlan.walk_towers(segs, chain, origin)
+		[(List.get(ts, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).off, (List.get(ts, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).off, (List.get(ts, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).off]
+	}
+)
 
 spread_want : List(F64)
 spread_want = [0.0, 37.0, 74.0]
@@ -98,11 +106,13 @@ cull_want : List(I64)
 cull_want = [0, 0]
 
 items_got : List(I64)
-items_got = ({
-	ts = TowerPlan.walk_towers(segs, chain, origin)
-	its = TowerPlan.tower_items(ts)
-	[its.len().to_i64_wrap(), (List.get(its, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).i, (List.get(its, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).i, TowerPlan.tower_items([]).len().to_i64_wrap()]
-})
+items_got = (
+	{
+		ts = TowerPlan.walk_towers(segs, chain, origin)
+		its = TowerPlan.tower_items(ts)
+		[its.len().to_i64_wrap(), (List.get(its, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).i, (List.get(its, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).i, TowerPlan.tower_items([]).len().to_i64_wrap()]
+	}
+)
 
 items_want : List(I64)
 items_want = [3, 0, 2, 0]

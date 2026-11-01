@@ -51,7 +51,7 @@ turn_v = |segs, pos| (match Truck.next_turn(segs, pos) {
 })
 
 turn_got : List(F64)
-turn_got = [turn_dist(one_seg, 0.0), turn_dist(one_seg, 450.0), turn_dist(one_seg, 499.0), turn_v(one_seg, 0.0), turn_v(one_seg, 450.0), VehicleLimits.turn_speed((List.get(one_seg, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).exit_angle)]
+turn_got = [turn_dist(one_seg, 0.0), turn_dist(one_seg, 450.0), turn_dist(one_seg, 499.0), turn_v(one_seg, 0.0), turn_v(one_seg, 450.0), VehicleLimits.turn_speed((List.get(one_seg, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).exit_angle)]
 
 turn_want : List(F64)
 turn_want = [500.0, 50.0, 1.0, 0.222, 0.222, 0.222]

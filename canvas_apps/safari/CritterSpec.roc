@@ -16,42 +16,50 @@ feet : Camera.ScreenPt
 feet = { x: 100.0, y: 200.0 }
 
 point_got : List(F64)
-point_got = ({
-	a = Critter.map_p(feet, 1.0, 50.0, 0.5, 0.4)
-	b = Critter.map_p(feet, (0.0 - 1.0), 50.0, 0.5, 0.4)
-	c = Critter.map_p(feet, 1.0, 50.0, 0.0, 0.0)
-	[a.x, a.y, b.x, b.y, c.x, c.y]
-})
+point_got = (
+	{
+		a = Critter.map_p(feet, 1.0, 50.0, 0.5, 0.4)
+		b = Critter.map_p(feet, (0.0 - 1.0), 50.0, 0.5, 0.4)
+		c = Critter.map_p(feet, 1.0, 50.0, 0.0, 0.0)
+		[a.x, a.y, b.x, b.y, c.x, c.y]
+	}
+)
 
 point_want : List(F64)
 point_want = [125.0, 180.0, 75.0, 180.0, 100.0, 200.0]
 
 vector_got : List(F64)
-vector_got = ({
-	a = Critter.map_v(1.0, 50.0, 0.5, 0.4)
-	b = Critter.map_v((0.0 - 1.0), 50.0, 0.5, 0.4)
-	c = Critter.map_v(1.0, 50.0, 0.0, 0.0)
-	[a.x, a.y, b.x, b.y, c.x, c.y]
-})
+vector_got = (
+	{
+		a = Critter.map_v(1.0, 50.0, 0.5, 0.4)
+		b = Critter.map_v((0.0 - 1.0), 50.0, 0.5, 0.4)
+		c = Critter.map_v(1.0, 50.0, 0.0, 0.0)
+		[a.x, a.y, b.x, b.y, c.x, c.y]
+	}
+)
 
 vector_want : List(F64)
 vector_want = [25.0, (-20.0), (-25.0), (-20.0), 0.0, 0.0]
 
 anchor_got : List(F64)
-anchor_got = ({
-	p = Critter.map_p(feet, 1.0, 50.0, 0.5, 0.4)
-	v = Critter.map_v(1.0, 50.0, 0.5, 0.4)
-	[(p.x - v.x), (p.y - v.y)]
-})
+anchor_got = (
+	{
+		p = Critter.map_p(feet, 1.0, 50.0, 0.5, 0.4)
+		v = Critter.map_v(1.0, 50.0, 0.5, 0.4)
+		[(p.x - v.x), (p.y - v.y)]
+	}
+)
 
 anchor_want : List(F64)
 anchor_want = [100.0, 200.0]
 
 mapped_got : List(F64)
-mapped_got = ({
-	ps = Critter.mapped_pts(feet, 1.0, 50.0, [{ x: 0.0, y: 0.0 }, { x: 0.5, y: 0.4 }, { x: 1.0, y: 1.0 }])
-	[I64.to_f64(ps.len().to_i64_wrap()), (List.get(ps, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).y, (List.get(ps, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).y, (List.get(ps, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).y]
-})
+mapped_got = (
+	{
+		ps = Critter.mapped_pts(feet, 1.0, 50.0, [{ x: 0.0, y: 0.0 }, { x: 0.5, y: 0.4 }, { x: 1.0, y: 1.0 }])
+		[I64.to_f64(ps.len().to_i64_wrap()), (List.get(ps, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).y, (List.get(ps, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).y, (List.get(ps, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).y]
+	}
+)
 
 mapped_want : List(F64)
 mapped_want = [3.0, 100.0, 200.0, 125.0, 180.0, 150.0, 150.0]
@@ -61,7 +69,13 @@ many : I64 -> List(Stills.StillPt)
 many = |n| many_acc(n, [])
 
 many_acc : I64, List(Stills.StillPt) -> List(Stills.StillPt)
-many_acc = |n, acc| (if (n <= 0) { acc } else { many_acc((n - 1), List.append(acc, { x: 0.0, y: 0.0 })) })
+many_acc = |n, acc| (
+	if (n <= 0) {
+		acc
+	} else {
+		many_acc((n - 1), List.append(acc, { x: 0.0, y: 0.0 }))
+	}
+)
 
 flat_poly : I64 -> Stills.StillPoly
 flat_poly = |n| { color: 7, grad: [], pts: many(n) }
@@ -73,10 +87,12 @@ guard_want : List(I64)
 guard_want = [512, 1, 1, 0, 0]
 
 solid_got : List(I64)
-solid_got = ({
-	c = (List.get(Critter.critter_poly(feet, 1.0, 50.0, flat_poly(3)), I64.to_u64_wrap(0)) ?? crash("list-at out of range"))
-	[c.tag, c.color, c.pts.len().to_i64_wrap()]
-})
+solid_got = (
+	{
+		c = (List.get(Critter.critter_poly(feet, 1.0, 50.0, flat_poly(3)), I64.to_u64_wrap(0)) ?? crash ("list-at out of range"))
+		[c.tag, c.color, c.pts.len().to_i64_wrap()]
+	}
+)
 
 solid_want : List(I64)
 solid_want = [0, 7, 6]

@@ -15,7 +15,7 @@ here : Frame.Pose
 here = { along: 0.0, across: 0.0, yaw: 0.0, hw: 2.0 }
 
 lengths_got : List(F64)
-lengths_got = [(List.get(segs, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).length, (List.get(segs, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).length, (List.get(segs, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).length]
+lengths_got = [(List.get(segs, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).length, (List.get(segs, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).length, (List.get(segs, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).length]
 
 lengths_want : List(F64)
 lengths_want = [500.0, 320.0, 400.0]
@@ -48,10 +48,12 @@ fwd_want : List(F64)
 fwd_want = [100.0, 499.0]
 
 none_got : List(F64)
-none_got = ({
-	n = lead_of(2000.0)
-	[n.along, n.fwd, I64.to_f64(n.d), TruckPlan.no_truck.along, TruckPlan.no_truck.fwd, I64.to_f64(TruckPlan.no_truck.d)]
-})
+none_got = (
+	{
+		n = lead_of(2000.0)
+		[n.along, n.fwd, I64.to_f64(n.d), TruckPlan.no_truck.along, TruckPlan.no_truck.fwd, I64.to_f64(TruckPlan.no_truck.d)]
+	}
+)
 
 none_want : List(F64)
 none_want = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
@@ -72,13 +74,13 @@ behind_want : List(Bool)
 behind_want = [False, True]
 
 items_got : List(I64)
-items_got = [TruckPlan.truck_items(lead_of(100.0)).len().to_i64_wrap(), TruckPlan.truck_items(lead_of(2000.0)).len().to_i64_wrap(), TruckPlan.truck_items(TruckPlan.no_truck).len().to_i64_wrap(), (List.get(TruckPlan.truck_items(lead_of(100.0)), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).i]
+items_got = [TruckPlan.truck_items(lead_of(100.0)).len().to_i64_wrap(), TruckPlan.truck_items(lead_of(2000.0)).len().to_i64_wrap(), TruckPlan.truck_items(TruckPlan.no_truck).len().to_i64_wrap(), (List.get(TruckPlan.truck_items(lead_of(100.0)), I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).i]
 
 items_want : List(I64)
 items_want = [1, 0, 0, 0]
 
 item_fwd_got : List(F64)
-item_fwd_got = [(List.get(TruckPlan.truck_items(lead_of(499.0)), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).fwd]
+item_fwd_got = [(List.get(TruckPlan.truck_items(lead_of(499.0)), I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).fwd]
 
 item_fwd_want : List(F64)
 item_fwd_want = [499.0]
