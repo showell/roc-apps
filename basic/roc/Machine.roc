@@ -898,7 +898,7 @@ Machine :: [].{
 	# **PRINT WRAPS AT A MARGIN** where there is one: ECMA-55's, or the
 	# page's forty columns. A microcomputer's batch run has none.
 	wrap_at : Parse.Program, M -> I64
-	wrap_at = |pg, m| if pg.ecma {
+	wrap_at = |pg, _m| if pg.ecma {
 		Machine.margin
 	} else if pg.live {
 		Devices.screen_w
@@ -1042,11 +1042,11 @@ Machine :: [].{
 
 	settle : M, Fx -> M
 	settle = |m, fx| {
-		shown = Machine.emit(m, fx.said)
+		emitted = Machine.emit(m, fx.said)
 		drawn = if fx.drew {
-			{ ..shown, mt: fx.mt, mtat: fx.mtat, rlast: fx.rlast }
+			{ ..emitted, mt: fx.mt, mtat: fx.mtat, rlast: fx.rlast }
 		} else {
-			shown
+			emitted
 		}
 		made = if List.is_empty(fx.made) {
 			{ arrs: drawn.arrs, count: drawn.arr_count }
@@ -1219,7 +1219,7 @@ Machine :: [].{
 	}
 
 	next_line : Parse.Program, M, U64 -> U64
-	next_line = |pg, m, line| List.get(pg.firsts, line + 1) ?? List.len(pg.prog)
+	next_line = |pg, _m, line| List.get(pg.firsts, line + 1) ?? List.len(pg.prog)
 
 	# Both sides, then the comparison.
 	condition : Parse.Program, M, Parse.Expr, U8, Parse.Expr -> { yes : Bool, fx : Fx }
