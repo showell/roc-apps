@@ -1,0 +1,8 @@
+cp-has    ok 3
+cp-gap    ok 6
+cp-count  ok 4
+cp-place  ok 2
+cp-pose   ok 1
+cp-close  ok 3
+cp-cull   ok 6
+cp-items  ok 3

@@ -1,0 +1,15 @@
+tr-table  ok 24
+tr-size   ok 5
+tr-frac   ok 4
+tr-metric ok 6
+tr-trunk  ok 8
+tr-ttag   ok 5
+tr-tstr   ok 2
+tr-tri    ok 12
+tr-square ok 8
+tr-tri3   ok 6
+tr-line   ok 4
+tr-short  ok 6
+tr-dup    ok 6
+tr-count  ok 5
+tr-sorted ok 12

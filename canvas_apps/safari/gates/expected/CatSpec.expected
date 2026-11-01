@@ -1,0 +1,15 @@
+ct-make   ok 4
+ct-dims   ok 7
+ct-window ok 5
+ct-danger ok 6
+ct-clock  ok 12
+ct-focus  ok 11
+ct-gait   ok 7
+ct-pose   ok 15
+ct-which  ok 8
+ct-enter  ok 7
+ct-stride ok 5
+ct-frozen ok 3
+ct-leap   ok 8
+ct-wide   ok 2
+ct-flight ok 3

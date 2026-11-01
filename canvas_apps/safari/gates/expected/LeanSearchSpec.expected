@@ -1,0 +1,8 @@
+ls-target ok 9
+ls-side   ok 5
+ls-tuning ok 3
+ls-iters  ok 1
+ls-read   ok 7
+ls-brackt ok 6
+ls-centre ok 3
+ls-stable ok 2

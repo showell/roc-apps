@@ -1,0 +1,16 @@
+tk-fixed  ok 5
+tk-ratio  ok 4
+tk-init   ok 2
+tk-iflag  ok 1
+tk-sched  ok 6
+tk-turn   ok 6
+tk-none   ok 4
+tk-chain  ok 4
+tk-free   ok 3
+tk-ahead  ok 3
+tk-cap    ok 1
+tk-fflag  ok 3
+tk-brake  ok 2
+tk-bflag  ok 3
+tk-settle ok 2
+tk-bound  ok 2

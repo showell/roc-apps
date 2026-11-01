@@ -1,0 +1,14 @@
+tw-dims   ok 8
+tw-fixed  ok 3
+tw-offset ok 8
+tw-bright ok 8
+tw-corner ok 8
+tw-ax     ok 8
+tw-taper  ok 15
+tw-drop   ok 3
+tw-lerp   ok 3
+tw-bar    ok 8
+tw-degen  ok 9
+tw-width  ok 3
+tw-clip   ok 4
+tw-cut    ok 3

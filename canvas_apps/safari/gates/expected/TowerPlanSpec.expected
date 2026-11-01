@@ -1,0 +1,12 @@
+tl-fixed  ok 3
+tl-cap    ok 1
+tl-short  ok 4
+tl-mid    ok 3
+tl-where  ok 4
+tl-long   ok 2
+tl-lwhere ok 6
+tl-key    ok 4
+tl-spread ok 3
+tl-behind ok 4
+tl-cull   ok 2
+tl-items  ok 4

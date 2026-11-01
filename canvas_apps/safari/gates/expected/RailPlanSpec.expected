@@ -1,0 +1,7 @@
+rp-steps  ok 10
+rp-straig ok 6
+rp-diag   ok 5
+rp-degen  ok 3
+rp-zero   ok 3
+rp-runout ok 3
+rp-runup  ok 2

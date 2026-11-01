@@ -1,0 +1,9 @@
+rn-prev   ok 3
+rn-merge  ok 1
+rn-presnt ok 5
+rn-cap    ok 4
+rn-caps   ok 3
+rn-sorted ok 2
+rn-cull   ok 3
+rn-segcul ok 4
+rn-shrink ok 2

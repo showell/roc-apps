@@ -1,0 +1,236 @@
+-- budget: steps=40000000 reads=20000 read_bytes=400000000 output_bytes=200000
+-- SAFARI'S GATES: the 54 spec apps against their verdicts, then the native
+-- proof tools.
+--
+--   cd <roc-apps checkout> && nice -n 19 shale canvas_apps/safari/gates/run.shale
+--
+-- Run from the roc-apps root: every path is the checkout's, so a worktree
+-- gates its own tree. About two and a half minutes on the box (the specs ~75 s in
+-- two parts, the proof tools ~65 s).
+--
+-- A run holds 64 programs and a spec takes two (its build and its binary),
+-- so the gates run as child runs of this script, `part=1` and `part=2` (half
+-- the specs each) and `part=proof`, one program of this run's each. A child
+-- runs alone the same way (`... run.shale part=2`).
+--
+-- **THE SPECS:** each `<Spec>.roc` is built on the dev backend (what `roc
+-- run` runs) where it is written (its app header names lib/ as a package)
+-- and its binary run; its output must equal `expected/<Spec>.expected` byte
+-- for byte, and its build must hold no ✗. The expected files are copies of
+-- safari-codex's `units/*.expected`, the Codex program's verdicts, taken at
+-- safari-codex dcd214c; they are safari's own now (the Roc is the program,
+-- ../README.md) and change here when a spec's output rightly changes.
+--
+-- **THE PROOF TOOLS:** StepBack passes on "every step back went back one
+-- step"; ShapesFrame on "differ 0" at depths 0, 3000 and 9000. RasterFrame
+-- has no verdict of its own: its hash line at each depth is printed, a
+-- fingerprint of the frame to compare before and after a change.
+--
+-- **THE ROC IS roc-apps' PIN**, the name in `roc-nightly.txt`, installed at
+-- `build:roc-nightly/<name>/roc` (`~/build/roc-nightly/` on the box).
+--
+-- **EACH BUILD GETS A FRESH CACHE** (`XDG_CACHE_HOME`): nightly 09-22 can
+-- SIGSEGV on a build that reuses the cache of earlier ones (seen on
+-- TrigSpec), leaving no binary.
+--
+-- Each child's binaries, outputs and caches go in a folder of its own under
+-- `scratch:` (`fresh_dir`), removed when the child passes and kept, named,
+-- when it fails.
+const SAFARI = "canvas_apps/safari"
+const EXPECTED = "canvas_apps/safari/gates/expected"
+const SELF_PATH = "canvas_apps/safari/gates/run.shale"
+const SPECS = 54
+const WANT = "roc-pin: roc-apps' pinned nightly under build:, and the binaries it builds under scratch:, not under a tools mount"
+
+function roc_path()
+  if not exists("roc-nightly.txt") then fail("safari gates: no roc-nightly.txt here: run from the roc-apps root") end
+  local name = trim(read("roc-nightly.txt"))
+  local roc = "build:roc-nightly/" .. name .. "/roc"
+  if not exists(roc) then fail("safari gates: no " .. roc .. ": install roc-apps' pinned nightly " .. name .. " into ~/build/roc-nightly/" .. name .. "/") end
+  return real(roc)
+end
+
+-- One app built into `bin`, on a cache made for it alone; the build's
+-- answer.
+function build(roc, scratch, n, re)
+  local cache = scratch .. "/cache_" .. n
+  mkdir(cache)
+  local b = run({roc, "build", "--opt=dev", n .. ".roc", "--output=" .. real(scratch) .. "/bin/" .. n},
+    {timeout_ms = 600000, cwd = SAFARI, re = re, head = 4, want = WANT, env = {XDG_CACHE_HOME = real(cache)}})
+  remove_tree(cache)
+  return b
+end
+
+function first_difference(got, want)
+  local got_lines = split(got, "\n")
+  local want_lines = split(want, "\n")
+  local i = 1
+  while i <= #want_lines or i <= #got_lines do
+    local g = "<none>"
+    local w = "<none>"
+    if i <= #got_lines then g = got_lines[i] end
+    if i <= #want_lines then w = want_lines[i] end
+    if g ~= w then return "line " .. i .. ": got [" .. g .. "] want [" .. w .. "]" end
+    i = i + 1
+  end
+  return "the same lines"
+end
+
+function grade(roc, scratch, n)
+  local out = scratch .. "/bin/" .. n
+  local b = build(roc, scratch, n, "✗|SIGSEGV")
+  local row = {spec = n, build_ms = b.ms, run_ms = 0, verdict = "PASS", why = ""}
+  if b.matched_lines > 0 then
+    row.verdict = "FAIL"
+    row.why = " " .. b.matched_lines .. " ✗ in the build: " .. trim(get(b, "out", ""))
+  end
+  if not exists(out) then
+    row.verdict = "FAIL"
+    row.why = row.why .. " no binary"
+    return row
+  end
+  local r = run({real(out)}, {timeout_ms = 600000, whole = 4000000, want = WANT})
+  row.run_ms = r.ms
+  replace(out .. ".out", r.out)
+  if r.ended ~= "exit" or get(r, "code", -1) ~= 0 then
+    row.verdict = "FAIL"
+    row.why = row.why .. " ended " .. r.ended .. " " .. get(r, "code", -1)
+  end
+  local want = read(EXPECTED .. "/" .. n .. ".expected")
+  if r.out ~= want then
+    row.verdict = "FAIL"
+    row.why = row.why .. " output differs from expected/" .. n .. ".expected, " .. first_difference(r.out, want)
+  end
+  return row
+end
+
+-- The spec apps, sorted, each with its expected file, and no expected file
+-- without its spec.
+function spec_names()
+  local specs = {}
+  for p in glob(SAFARI .. "/*Spec.roc") do
+    local b = basename(p)
+    push(specs, sub(b, 1, #b - 4))
+  end
+  sort(specs)
+  if #specs ~= SPECS then fail("safari gates: expected " .. SPECS .. " spec apps, found " .. #specs) end
+  local have = set_of(specs)
+  for p in glob(EXPECTED .. "/*.expected") do
+    local b = basename(p)
+    if not has_key(have, sub(b, 1, #b - 9)) then fail("safari gates: " .. p .. " has no spec app") end
+  end
+  for n in specs do
+    if not exists(EXPECTED .. "/" .. n .. ".expected") then fail("safari gates: no " .. EXPECTED .. "/" .. n .. ".expected for " .. n) end
+  end
+  return specs
+end
+
+function grade_part(part)
+  local roc = roc_path()
+  local specs = spec_names()
+  local half = #specs // 2
+  local from = 1
+  local to = half
+  if part == "2" then
+    from = half + 1
+    to = #specs
+  end
+  local scratch = fresh_dir("scratch:", "safari-specs")
+  mkdir(scratch .. "/bin")
+  local pass = 0
+  local failed = {}
+  local build_ms = 0
+  local run_ms = 0
+  local i = from
+  while i <= to do
+    local row = grade(roc, scratch, specs[i])
+    build_ms = build_ms + row.build_ms
+    run_ms = run_ms + row.run_ms
+    if row.verdict == "PASS" then pass = pass + 1 else push(failed, row.spec) end
+    print(row.verdict .. " " .. row.spec .. "  build " .. row.build_ms .. " ms, run " .. row.run_ms .. " ms" .. row.why)
+    i = i + 1
+    yield()
+  end
+  print("specs part " .. part .. ": " .. pass .. " pass, " .. #failed .. " fail; build " .. build_ms .. " ms, run " .. run_ms .. " ms")
+  if #failed > 0 then fail("safari gates: spec(s) failed: " .. join(failed, ", ") .. "; binaries and outputs kept in " .. scratch) end
+  remove_tree(scratch)
+  return nil
+end
+
+function proof_build(roc, scratch, n)
+  local b = build(roc, scratch, n, "✗")
+  print("build " .. n .. ": " .. b.ms .. " ms, " .. b.matched_lines .. " ✗")
+  if b.matched_lines > 0 then return false end
+  return exists(scratch .. "/bin/" .. n)
+end
+
+function proof()
+  local roc = roc_path()
+  local scratch = fresh_dir("scratch:", "safari-proof")
+  local bin = scratch .. "/bin"
+  mkdir(bin)
+  local bad = 0
+  local depths = {"0", "3000", "9000"}
+  if proof_build(roc, scratch, "StepBack") then
+    local r = run({real(bin .. "/StepBack")}, {timeout_ms = 600000, tail = 20, want = WANT})
+    print(trim(r.out))
+    print("StepBack: " .. r.ms .. " ms")
+    if not contains(r.out, "every step back went back one step") then bad = bad + 1 end
+  else
+    bad = bad + 1
+  end
+  if proof_build(roc, scratch, "ShapesFrame") then
+    for d in depths do
+      local r = run({real(bin .. "/ShapesFrame"), d}, {timeout_ms = 600000, head = 1, want = WANT})
+      print("ShapesFrame " .. d .. ": " .. trim(r.out) .. " (" .. r.ms .. " ms)")
+      if not starts_with(r.out, "differ 0 ") then bad = bad + 1 end
+    end
+  else
+    bad = bad + 1
+  end
+  if proof_build(roc, scratch, "RasterFrame") then
+    for d in depths do
+      local r = run({real(bin .. "/RasterFrame"), d}, {timeout_ms = 600000, head = 1, want = WANT})
+      print("RasterFrame " .. d .. ": " .. trim(r.out) .. " (" .. r.ms .. " ms)")
+      if r.ended ~= "exit" or get(r, "code", -1) ~= 0 then bad = bad + 1 end
+    end
+  else
+    bad = bad + 1
+  end
+  print("proof tools: " .. bad .. " bad")
+  if bad > 0 then fail("safari gates: " .. bad .. " proof check(s) failed; binaries kept in " .. scratch) end
+  remove_tree(scratch)
+  return nil
+end
+
+-- Every gate, each a child run; a child that fails is named, and the rest
+-- still run.
+function all()
+  roc_path()
+  spec_names()
+  local bad = {}
+  local times = {}
+  for part in {"1", "2", "proof"} do
+    -- A child, and every roc under it, inherits this run's niceness.
+    local r = run({"shale","--root", ".", SELF_PATH, "part=" .. part}, {timeout_ms = 1800000, tail = 200})
+    for l in lines(r.out) do
+      if not starts_with(l, "── budgets") then print(l) end
+    end
+    push(times, "part=" .. part .. " " .. (r.ms // 1000) .. " s")
+    if r.ended ~= "exit" or r.code ~= 0 then push(bad, "part=" .. part) end
+  end
+  print("safari gates: " .. join(times, ", "))
+  if #bad > 0 then fail("safari gates: " .. #bad .. " failed: " .. join(bad, ", ")) end
+  print("safari gates: " .. SPECS .. "/" .. SPECS .. " specs pass, proof tools ok")
+end
+
+const PART = arg("part", "")
+if PART == "" then
+  all()
+elseif PART == "1" or PART == "2" then
+  grade_part(PART)
+elseif PART == "proof" then
+  proof()
+else
+  fail("safari gates: part= is 1, 2 or proof (none runs them all)")
+end

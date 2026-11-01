@@ -1,0 +1,6 @@
+n-round ok 28
+n-floor ok 17
+n-ceil  ok 17
+n-mod   ok 39
+n-pow2  ok 9
+n-exp   ok 18

@@ -1,0 +1,11 @@
+sf-start  ok 6
+sf-sindex ok 1
+sf-sflag  ok 2
+sf-step   ok 3
+sf-moved  ok 3
+sf-order  ok 3
+sf-restrt ok 5
+sf-rflag  ok 2
+sf-notdon ok 2
+sf-frame  ok 4
+sf-sun    ok 2

@@ -1,0 +1,10 @@
+tp-length ok 3
+tp-presnt ok 7
+tp-landed ok 4
+tp-along  ok 4
+tp-fwd    ok 2
+tp-none   ok 6
+tp-nflag  ok 2
+tp-behind ok 2
+tp-items  ok 4
+tp-ifwd   ok 1

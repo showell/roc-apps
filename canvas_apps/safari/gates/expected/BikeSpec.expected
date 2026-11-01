@@ -1,0 +1,5 @@
+bk-limit ok 2
+bk-exact ok 12
+bk-carry ok 4
+bk-seg   ok 3
+bk-pos   ok 6

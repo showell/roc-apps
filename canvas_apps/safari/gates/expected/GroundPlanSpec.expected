@@ -1,0 +1,10 @@
+gp-fixed  ok 2
+gp-colour ok 1
+gp-chunks ok 9
+gp-shape  ok 2
+gp-across ok 4
+gp-along  ok 4
+gp-seam   ok 3
+gp-strip  ok 3
+gp-cmd    ok 4
+gp-points ok 2

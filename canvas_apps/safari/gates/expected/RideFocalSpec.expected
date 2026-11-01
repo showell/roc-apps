@@ -1,0 +1,8 @@
+rf-hascat ok 2
+rf-idle   ok 4
+rf-lean   ok 4
+rf-clamp  ok 3
+rf-cat    ok 4
+rf-gaze   ok 3
+rf-min    ok 4
+rf-isone  ok 2
