@@ -33,8 +33,8 @@ Truck :: [].{
 	truck_initial : Truck.TruckState
 	truck_initial = { pos: start_ahead, v: Pose.v_base, braking: False }
 
-	next_turn_loop : List(World.Segment), F64, I64, F64 -> Truck.NextTurn
-	next_turn_loop = |segs, pos, i, cum0| (
+	next_turn_from : List(World.Segment), F64, I64, F64 -> Truck.NextTurn
+	next_turn_from = |segs, pos, i, cum0| (
 		if (i >= segs.len().to_i64_wrap()) {
 			NoTurnAhead
 		} else {
@@ -56,14 +56,14 @@ Truck :: [].{
 						}
 					)
 				} else {
-					next_turn_loop(segs, pos, (i + 1), cum)
+					next_turn_from(segs, pos, (i + 1), cum)
 				}
 			)
 		}
 	)
 
 	next_turn : List(World.Segment), F64 -> Truck.NextTurn
-	next_turn = |segs, pos| next_turn_loop(segs, pos, 0, 0.0)
+	next_turn = |segs, pos| next_turn_from(segs, pos, 0, 0.0)
 
 	truck_schedule : F64, F64 -> F64
 	truck_schedule = |rider_dist, l| ((rider_dist + finish_lead) + ((start_ahead - finish_lead) * (1.0 - (rider_dist / l))))

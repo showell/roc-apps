@@ -32,16 +32,16 @@ mod_m = [120.0, 7.5, (-120.0)]
 mod_want : List(F64)
 mod_want = [80.0, (-0.0), 0.5, (-0.0), 0.5, 119.5, 0.0, 0.5, 119.5, 0.0, 0.5, 40.0, 0.25, 5.0, (-0.0), 0.5, (-0.0), 0.5, 7.0, 0.0, 0.5, 7.0, 0.0, 0.5, 2.5, 0.25, (-40.0), (-0.0), (-119.5), (-0.0), (-119.5), (-0.5), 0.0, (-119.5), (-0.5), 0.0, (-119.5), (-80.0), (-119.75)]
 
-# mod_inner builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-mod_inner : F64, List(F64), I64 -> List(F64)
-mod_inner = |m, xs, j| mod_inner_acc(m, xs, j, [])
+# mod_row builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
+mod_row : F64, List(F64), I64 -> List(F64)
+mod_row = |m, xs, j| mod_row_onto(m, xs, j, [])
 
-mod_inner_acc : F64, List(F64), I64, List(F64) -> List(F64)
-mod_inner_acc = |m, xs, j, acc| (
+mod_row_onto : F64, List(F64), I64, List(F64) -> List(F64)
+mod_row_onto = |m, xs, j, acc| (
 	if (j >= xs.len().to_i64_wrap()) {
 		acc
 	} else {
-		mod_inner_acc(m, xs, (j + 1), List.append(acc, Num_.mod_real((List.get(xs, I64.to_u64_wrap(j)) ?? crash ("list-at out of range")), m)))
+		mod_row_onto(m, xs, (j + 1), List.append(acc, Num_.mod_real((List.get(xs, I64.to_u64_wrap(j)) ?? crash ("list-at out of range")), m)))
 	}
 )
 
@@ -54,7 +54,7 @@ mod_outer_onto = |ms, xs, i, acc| (
 	if (i >= ms.len().to_i64_wrap()) {
 		acc
 	} else {
-		mod_outer_onto(ms, xs, (i + 1), List.concat(acc, mod_inner((List.get(ms, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), xs, 0)))
+		mod_outer_onto(ms, xs, (i + 1), List.concat(acc, mod_row((List.get(ms, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), xs, 0)))
 	}
 )
 

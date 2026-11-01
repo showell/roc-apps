@@ -93,17 +93,17 @@ Mountains :: [].{
 	west_range : F64 -> F64
 	west_range = |bearing| range_at(bearing, west_range_bearing, 0.72, 120.0, 11.0, 27.0)
 
-	snow_peak_loop : F64, F64 -> F64
-	snow_peak_loop = |b, vm| (
+	snow_peak_from : F64, F64 -> F64
+	snow_peak_from = |b, vm| (
 		if (b > 0.5) {
 			vm
 		} else {
-			snow_peak_loop((b + 0.01), DeviceMath.real_max(vm, north_range(b)))
+			snow_peak_from((b + 0.01), DeviceMath.real_max(vm, north_range(b)))
 		}
 	)
 
 	snow_peak_height : F64
-	snow_peak_height = snow_peak_loop((0.0 - 0.5), (0.0 - 1.0))
+	snow_peak_height = snow_peak_from((0.0 - 0.5), (0.0 - 1.0))
 
 	snowline_at : F64, F64 -> F64
 	snowline_at = |bearing, peak| (

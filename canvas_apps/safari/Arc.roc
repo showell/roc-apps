@@ -22,8 +22,8 @@ Arc :: [].{
 	min_forward_progress : F64
 	min_forward_progress = 25.0
 
-	sim_loop : Pose.RiderState, F64, F64, F64, F64, Bool, I64, Pose.RiderState -> Arc.ArcOutcome
-	sim_loop = |start, left_bound, right_bound, start_side, start_along, crossed, i, phys| (
+	sim_from : Pose.RiderState, F64, F64, F64, F64, Bool, I64, Pose.RiderState -> Arc.ArcOutcome
+	sim_from = |start, left_bound, right_bound, start_side, start_along, crossed, i, phys| (
 		if (i >= turn_danger_steps) {
 			{ shoulder: ShoulderNone, forward: (phys.along - start_along), crossed: crossed, end_across: phys.across, frames: no_frames }
 		} else {
@@ -59,7 +59,7 @@ Arc :: [].{
 										if (forward >= min_forward_progress) {
 											{ shoulder: ShoulderNone, forward: min_forward_progress, crossed: crossed, end_across: across, frames: no_frames }
 										} else {
-											sim_loop(start, left_bound, right_bound, start_side, start_along, crossed, (i + 1), phys)
+											sim_from(start, left_bound, right_bound, start_side, start_along, crossed, (i + 1), phys)
 										}
 									)
 								}
@@ -77,7 +77,7 @@ Arc :: [].{
 			inset_hw = ((seg.width / 2.0) - straighten_margin)
 			right_bound = DeviceMath.real_max(inset_hw, state.across)
 			left_bound = DeviceMath.real_min((0.0 - inset_hw), state.across)
-			sim_loop(state, left_bound, right_bound, Trig.r_sign(state.across), state.along, False, 0, state)
+			sim_from(state, left_bound, right_bound, Trig.r_sign(state.across), state.along, False, 0, state)
 		}
 	)
 

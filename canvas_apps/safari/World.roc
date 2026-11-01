@@ -30,8 +30,8 @@ World :: [].{
 		NoTreeYet => True
 	})
 
-	next_tree_loop : List(Scenery.Tree), F64, I64, World.NearestTree -> World.NearestTree
-	next_tree_loop = |ts, desired, i, best| (
+	next_tree_with : List(Scenery.Tree), F64, I64, World.NearestTree -> World.NearestTree
+	next_tree_with = |ts, desired, i, best| (
 		if (i >= ts.len().to_i64_wrap()) {
 			best
 		} else {
@@ -58,16 +58,16 @@ World :: [].{
 			)
 			(
 				if take {
-					next_tree_loop(ts, desired, (i + 1), NearestAlong(t.along))
+					next_tree_with(ts, desired, (i + 1), NearestAlong(t.along))
 				} else {
-					next_tree_loop(ts, desired, (i + 1), best)
+					next_tree_with(ts, desired, (i + 1), best)
 				}
 			)
 		}
 	)
 
 	next_tree_along : List(Scenery.Tree), F64 -> F64
-	next_tree_along = |ts, desired| (match next_tree_loop(ts, desired, 0, NoTreeYet) {
+	next_tree_along = |ts, desired| (match next_tree_with(ts, desired, 0, NoTreeYet) {
 		NearestAlong(along) => along
 		NoTreeYet => desired
 	})
