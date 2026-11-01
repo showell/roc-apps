@@ -110,7 +110,7 @@ Rank :: [].{
 	## `ranked`, over a color's grid built once (Reach.grid).
 	ranked_in : List(Reach.Move), List(Str), Str, Str -> List(Rank.Row)
 	ranked_in = |grid, zone_colors, color, peak| {
-		tables = List.map(stages, |st| Reach.routes_in(grid, zone_colors, color, Bool.True, peak, st.hand))
+		tables = List.map(stages, |st| Reach.routes(grid, { zone_colors, color, peak }, { hand: st.hand, face: FreeFace }))
 		rows = List.join(
 			List.map_with_index(
 				Board.all_locs(zone_colors),
