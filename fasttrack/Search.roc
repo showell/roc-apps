@@ -198,10 +198,15 @@ Search :: [].{
 			$depth = $depth + 1
 		}
 		{
-			lines: List.keep_if(List.concat($done, List.keep_if($level, is_open)), |l| !List.is_empty(l.msgs)),
+			lines: finals({ done: $done, level: $level }),
 			cut: $capped or List.any($level, is_open),
 		}
 	}
+
+	## A search's answer: the lines that ended, and those still open at the
+	## last level it reached, but never the empty line.
+	finals : { done : List(Search.Line), level : List(Search.Line) } -> List(Search.Line)
+	finals = |{ done, level }| List.keep_if(List.concat(done, List.keep_if(level, is_open)), |l| !List.is_empty(l.msgs))
 
 	## The line that takes the first choice offered at every step, through
 	## the rest of the turn: a player who plays the first legal move it finds.

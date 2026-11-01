@@ -185,12 +185,17 @@ Rank :: [].{
 	}
 }
 
+colors : List(Str)
+colors = ["red", "blue", "green", "purple"]
+
+## Red's place at each of its squares, by the square's id.
+places_by_id : Rank.Places -> (Str -> U64)
+places_by_id = |p| |id| List.get(p.place, Board.index_of(colors, { zone: NormalColor("red"), id })) ?? crash "Rank's expects: red has a square of every id they name"
+
 # Red's places to B3: B4 first (a base square), then B3, B2 and B1; R4 above
 # R3; DS above R4; the pen squares share one place.
 expect {
-	colors = ["red", "blue", "green", "purple"]
-	p = Rank.places(colors, "red", "B3")
-	at = |id| List.get(p.place, Board.index_of(colors, { zone: NormalColor("red"), id })) ?? U64.highest
+	at = places_by_id(Rank.places(colors, "red", "B3"))
 	at("B4") == 0 and at("B3") == 1 and at("B2") == 2 and at("B1") == 3 and at("DS") < at("R4") and at("R4") < at("R3") and at("HP1") == at("HP4")
 }
 
@@ -198,8 +203,6 @@ expect {
 # ways in (2, or a face card then A, J, Q or K), above DS, with four (A, J,
 # Q, K -- no joker).
 expect {
-	colors = ["red", "blue", "green", "purple"]
-	p = Rank.places(colors, "red", "B1")
-	at = |id| List.get(p.place, Board.index_of(colors, { zone: NormalColor("red"), id })) ?? U64.highest
+	at = places_by_id(Rank.places(colors, "red", "B1"))
 	at("B4") == 0 and at("B3") == 1 and at("B2") == 2 and at("B1") == 3 and at("BR") == 4 and at("DS") == 5
 }

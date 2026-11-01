@@ -64,7 +64,7 @@ boards = |lines| {
 		[],
 		|runs, x|
 			match List.last(runs) {
-				Ok(r) if r.board == x.board => List.set(runs, List.len(runs) - 1, { ..r, n: r.n + 1 }) ?? runs
+				Ok(r) if r.board == x.board => List.set(runs, List.len(runs) - 1, { ..r, n: r.n + 1 }) ?? crash "exp_search_size: the last run is at len - 1"
 				_ => List.append(runs, { board: x.board, n: 1, example: x.line })
 			},
 	)
@@ -141,7 +141,7 @@ main! = |_args| {
 		$done = List.concat($done, List.drop_if(merged, Search.is_open))
 		$depth = $depth + 1
 	}
-	finals = List.keep_if(List.concat($done, List.keep_if($level, Search.is_open)), |l| !List.is_empty(l.msgs))
+	finals = Search.finals({ done: $done, level: $level })
 	final_boards = List.sort_with(
 		boards(finals),
 		|x, y| if x.n > y.n {
