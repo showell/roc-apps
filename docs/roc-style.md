@@ -188,6 +188,15 @@ Roc's own rules are in the langref's
   takes only what varies, and the `_from` worker it calls is the one place
   the index is passed: `find(s, { needle })` calls
   `find_from(s, { needle, at: 0 })`.
+- **The entry function takes the plain name; the worker is named for what
+  it adds.** Callers call `count`, `render`, `find`. The worker's suffix is
+  a preposition naming its extra parameter, so a call reads as a sentence:
+  `_from` for a start point (`count_from(xs, at)`), `_onto` for an output
+  being built (`render_onto(out, node)`), `_with` for other carried state
+  (`walk_with(tree, seen)`). A suffix that only says "I'm the helper"
+  (`_acc`, `_loop`, `_go`, `_inner`, `_helper`, `_rec`) names nothing; a
+  `_step` or `_walk` that calls itself is one too. The name hunt's
+  `worker_name` flags them.
 - **A pure function that takes only `{}` is a constant.** `empty_cart : Cart`
   says what it is; `empty_cart : {} -> Cart` makes every caller write
   `empty_cart({})` for a value that never changes. Two stay functions. A
@@ -783,7 +792,9 @@ is the base; these rules sharpen it.
     union of commands and events at once, `[Pin, Unpinned]`; a `List(T)`
     argument is judged as `T`, for this and `command_tense`) and
     `container` (a type or record field named only by container words,
-    `Entry`, `items`, unless its doc says whose: `## A folder's entry`);
+    `Entry`, `items`, unless its doc says whose: `## A folder's entry`),
+    and `worker_name` (a recursion's worker named only as a helper,
+    `count_acc`, where `count_from` says what it carries);
   - Shale's `cookbook/roc/boundaries.shale`: `fixed`, a parameter every
     production call fills with the same literal (a recursion's `at: 0`;
     context passed down, `me` or `accounts`, is no constant), and `single`,
