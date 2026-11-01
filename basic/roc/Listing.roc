@@ -17,6 +17,8 @@
 # after an operator, no space before a keyword, lowercase, `<` and `>`
 # between strings, THEN followed by a statement, an INPUT prompt, and the
 # extension statements and functions, which are not checked at all.
+#
+# keywords: for, on
 
 Listing :: [].{
 	Rejection : { why : Str, num : I64 }

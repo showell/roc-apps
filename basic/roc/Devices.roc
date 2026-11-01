@@ -61,35 +61,35 @@ Devices :: [].{
 	# these inside its own record update: `{ ..m, devices: Devices.poke_into(m.devices, a, v) }`.
 	write_text : List(D), Str -> List(D)
 	write_text = |ds, t| {
-		r = List.replace(ds, 0, Devices.none) ?? crash ("the machine has no devices")
-		List.set(r.list, 0, Devices.written(r.prev, t)) ?? crash ("the machine has no devices")
+		r = List.replace(ds, 0, Devices.none) ?? crash "the machine has no devices"
+		List.set(r.list, 0, Devices.written(r.prev, t)) ?? crash "the machine has no devices"
 	}
 
 	poke_into : List(D), U64, U8 -> List(D)
 	poke_into = |ds, a, v| {
-		r = List.replace(ds, 0, Devices.none) ?? crash ("the machine has no devices")
-		List.set(r.list, 0, Devices.poked(r.prev, a, v)) ?? crash ("the machine has no devices")
+		r = List.replace(ds, 0, Devices.none) ?? crash "the machine has no devices"
+		List.set(r.list, 0, Devices.poked(r.prev, a, v)) ?? crash "the machine has no devices"
 	}
 
 	# INPUT's prompt has gone out.
 	prompt_out : List(D) -> List(D)
 	prompt_out = |ds| {
-		r = List.replace(ds, 0, Devices.none) ?? crash ("the machine has no devices")
-		List.set(r.list, 0, Devices.prompted(r.prev)) ?? crash ("the machine has no devices")
+		r = List.replace(ds, 0, Devices.none) ?? crash "the machine has no devices"
+		List.set(r.list, 0, Devices.prompted(r.prev)) ?? crash "the machine has no devices"
 	}
 
 	# A line read: its items kept, and the line after it next.
 	reply_in : List(D), List(Str) -> List(D)
 	reply_in = |ds, vals| {
-		r = List.replace(ds, 0, Devices.none) ?? crash ("the machine has no devices")
-		List.set(r.list, 0, Devices.replied(r.prev, vals)) ?? crash ("the machine has no devices")
+		r = List.replace(ds, 0, Devices.none) ?? crash "the machine has no devices"
+		List.set(r.list, 0, Devices.replied(r.prev, vals)) ?? crash "the machine has no devices"
 	}
 
 	# A line typed, kept for INPUT to read.
 	line_in : List(D), Str -> List(D)
 	line_in = |ds, line| {
-		r = List.replace(ds, 0, Devices.none) ?? crash ("the machine has no devices")
-		List.set(r.list, 0, Devices.typed_in(r.prev, line)) ?? crash ("the machine has no devices")
+		r = List.replace(ds, 0, Devices.none) ?? crash "the machine has no devices"
+		List.set(r.list, 0, Devices.typed_in(r.prev, line)) ?? crash "the machine has no devices"
 	}
 
 	prompted : D -> D
@@ -123,7 +123,7 @@ Devices :: [].{
 		var $col = ccol
 		for c in b {
 			if c != 10 {
-				$scr = List.set($scr, Devices.cell(Devices.row_at($top, $row), $col), Devices.screen_code(c)) ?? crash ("draw: outside the screen")
+				$scr = List.set($scr, Devices.cell(Devices.row_at($top, $row), $col), Devices.screen_code(c)) ?? crash "draw: outside the screen"
 			} else {
 				{}
 			}
@@ -163,7 +163,7 @@ Devices :: [].{
 		var $b = bytes
 		var $c = 0
 		while $c < Devices.screen_w {
-			$b = List.set($b, Devices.cell(kept_row, $c), v) ?? crash ("fill_row: outside the screen")
+			$b = List.set($b, Devices.cell(kept_row, $c), v) ?? crash "fill_row: outside the screen"
 			$c = $c + 1
 		}
 		$b
@@ -281,16 +281,16 @@ Devices :: [].{
 	poked : D, U64, U8 -> D
 	poked = |d, a, v|
 		if a >= Devices.screen_base and a < Devices.screen_base + Devices.screen_cells {
-			{ ..d, scr: List.set(d.scr, Devices.kept(d, a - Devices.screen_base), v) ?? crash ("poke: screen") }
+			{ ..d, scr: List.set(d.scr, Devices.kept(d, a - Devices.screen_base), v) ?? crash "poke: screen" }
 		} else if a >= Devices.colour_base and a < Devices.colour_base + Devices.screen_cells {
-			{ ..d, col_ram: List.set(d.col_ram, Devices.kept(d, a - Devices.colour_base), v) ?? crash ("poke: colour") }
+			{ ..d, col_ram: List.set(d.col_ram, Devices.kept(d, a - Devices.colour_base), v) ?? crash "poke: colour" }
 		} else if a >= Devices.hires_base and a < Devices.hires_base + Devices.hires_cells {
 			lit = if d.drew {
 				d.pix
 			} else {
 				List.repeat(0, Devices.hires_cells)
 			}
-			{ ..d, pix: List.set(lit, a - Devices.hires_base, v) ?? crash ("poke: hires"), drew: True }
+			{ ..d, pix: List.set(lit, a - Devices.hires_base, v) ?? crash "poke: hires", drew: True }
 		} else {
 			{ ..d, mem: Vec.set(d.mem, a, v) }
 		}

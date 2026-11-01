@@ -52,8 +52,8 @@ Vec :: [].{
 
 	at_in : Tree(a), U64, U64 -> a
 	at_in = |t, unit, i| match t {
-		Leaf(xs) => List.get(xs, i) ?? crash ("Vec.at: outside the vector")
-		Node(ks) => Vec.at_in(List.get(ks, U64.div_trunc_by(i, unit)) ?? crash ("Vec.at: outside the vector"), U64.div_trunc_by(unit, Vec.width), U64.rem_by(i, unit))
+		Leaf(xs) => List.get(xs, i) ?? crash "Vec.at: outside the vector"
+		Node(ks) => Vec.at_in(List.get(ks, U64.div_trunc_by(i, unit)) ?? crash "Vec.at: outside the vector", U64.div_trunc_by(unit, Vec.width), U64.rem_by(i, unit))
 	}
 
 	# `fill` past the end.
@@ -83,11 +83,11 @@ Vec :: [].{
 
 	set_in : Tree(a), U64, U64, a -> Tree(a)
 	set_in = |t, unit, i, x| match t {
-		Leaf(xs) => Leaf(List.set(xs, i, x) ?? crash ("Vec.set: outside a leaf"))
+		Leaf(xs) => Leaf(List.set(xs, i, x) ?? crash "Vec.set: outside a leaf")
 		Node(ks) => {
 			c = U64.div_trunc_by(i, unit)
-			taken = List.replace(ks, c, Leaf([])) ?? crash ("Vec.set: outside a node")
-			Node(List.set(taken.list, c, Vec.set_in(taken.prev, U64.div_trunc_by(unit, Vec.width), U64.rem_by(i, unit), x)) ?? crash ("Vec.set: outside a node"))
+			taken = List.replace(ks, c, Leaf([])) ?? crash "Vec.set: outside a node"
+			Node(List.set(taken.list, c, Vec.set_in(taken.prev, U64.div_trunc_by(unit, Vec.width), U64.rem_by(i, unit), x)) ?? crash "Vec.set: outside a node")
 		}
 	}
 
@@ -108,14 +108,14 @@ Vec :: [].{
 	replace_in : Tree(a), U64, U64, a -> { tree : Tree(a), prev : a }
 	replace_in = |t, unit, i, x| match t {
 		Leaf(xs) => {
-			r = List.replace(xs, i, x) ?? crash ("Vec.replace: outside a leaf")
+			r = List.replace(xs, i, x) ?? crash "Vec.replace: outside a leaf"
 			{ tree: Leaf(r.list), prev: r.prev }
 		}
 		Node(ks) => {
 			c = U64.div_trunc_by(i, unit)
-			taken = List.replace(ks, c, Leaf([])) ?? crash ("Vec.replace: outside a node")
+			taken = List.replace(ks, c, Leaf([])) ?? crash "Vec.replace: outside a node"
 			inner = Vec.replace_in(taken.prev, U64.div_trunc_by(unit, Vec.width), U64.rem_by(i, unit), x)
-			{ tree: Node(List.set(taken.list, c, inner.tree) ?? crash ("Vec.replace: outside a node")), prev: inner.prev }
+			{ tree: Node(List.set(taken.list, c, inner.tree) ?? crash "Vec.replace: outside a node"), prev: inner.prev }
 		}
 	}
 }

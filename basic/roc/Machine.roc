@@ -19,6 +19,8 @@
 # **EVERY STRUCTURE A STATEMENT WRITES HAS A BOUNDED COPY.** Variables,
 # arrays and memory are persistent vectors (Vec), so when Roc does copy, it
 # copies a path of 32-entry nodes and never a whole table.
+#
+# keywords: for, on
 
 import Devices
 import Listing
@@ -869,7 +871,7 @@ Machine :: [].{
 
 	# The devices, to read.
 	devices_of : M -> Devices.D
-	devices_of = |m| List.get(m.devices, 0) ?? crash ("the machine has no devices")
+	devices_of = |m| List.get(m.devices, 0) ?? crash "the machine has no devices"
 
 	# **PRINT AND POKE SHARE ONE DISPLAY** (Devices.written).
 	emit : M, Str -> M
@@ -1211,7 +1213,7 @@ Machine :: [].{
 	# a list pushed and popped back to empty allocated every time.
 	push : List(a), U64, a -> List(a)
 	push = |xs, depth, x| if depth < List.len(xs) {
-		List.set(xs, depth, x) ?? crash ("push: inside the list")
+		List.set(xs, depth, x) ?? crash "push: inside the list"
 	} else {
 		List.append(xs, x)
 	}
@@ -1863,7 +1865,7 @@ Machine :: [].{
 
 	do_def : M, U64 -> M
 	do_def = |m, letter|
-		{ ..m, defined: List.set(m.defined, letter, True) ?? crash ("DEF: no such letter"), pc: m.pc + 1 }
+		{ ..m, defined: List.set(m.defined, letter, True) ?? crash "DEF: no such letter", pc: m.pc + 1 }
 
 	byte_of : F64 -> U8
 	byte_of = |x| U64.to_u8_wrap(I64.to_u64_wrap(I64.bitwise_and(F64.to_i64_wrap(Machine.floor(x)), 255)))

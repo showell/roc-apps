@@ -18,6 +18,8 @@
 # expression becomes the evaluations ahead of the fault, then a node that
 # stops the machine with the reason, so what a program prints before an
 # unsupported form still prints.
+#
+# keywords: for, on
 
 Parse :: [].{
 	Expr := [
