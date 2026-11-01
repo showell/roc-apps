@@ -176,14 +176,14 @@ Blit :: [].{
 
 	# blit_expand builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	blit_expand : List(Paint.DrawCmd) -> List(Paint.DrawCmd)
-	blit_expand = |cs| blit_expand_acc(cs, 0, [])
+	blit_expand = |cs| blit_expand_onto(cs, 0, [])
 
-	blit_expand_acc : List(Paint.DrawCmd), I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
-	blit_expand_acc = |cs, i, acc| (
+	blit_expand_onto : List(Paint.DrawCmd), I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
+	blit_expand_onto = |cs, i, acc| (
 		if (i >= cs.len().to_i64_wrap()) {
 			acc
 		} else {
-			blit_expand_acc(cs, (i + 1), List.concat(acc, expand_cmd((List.get(cs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
+			blit_expand_onto(cs, (i + 1), List.concat(acc, expand_cmd((List.get(cs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
 		}
 	)
 }

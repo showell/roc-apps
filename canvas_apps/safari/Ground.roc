@@ -11,14 +11,14 @@ Ground :: [].{
 
 	# ground_verts builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	ground_verts : List(Geom.RiderPt), I64 -> List(Geom.Vec3)
-	ground_verts = |ps, i| ground_verts_acc(ps, i, [])
+	ground_verts = |ps, i| ground_verts_onto(ps, i, [])
 
-	ground_verts_acc : List(Geom.RiderPt), I64, List(Geom.Vec3) -> List(Geom.Vec3)
-	ground_verts_acc = |ps, i, acc| (
+	ground_verts_onto : List(Geom.RiderPt), I64, List(Geom.Vec3) -> List(Geom.Vec3)
+	ground_verts_onto = |ps, i, acc| (
 		if (i >= ps.len().to_i64_wrap()) {
 			acc
 		} else {
-			ground_verts_acc(ps, (i + 1), List.append(acc, ground_vert((List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
+			ground_verts_onto(ps, (i + 1), List.append(acc, ground_vert((List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
 		}
 	)
 

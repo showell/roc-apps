@@ -14,23 +14,23 @@ DepthSort :: [].{
 
 	# rest_from builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	rest_from : List(DepthSort.DepthKey), I64 -> List(DepthSort.DepthKey)
-	rest_from = |ys, j| rest_from_acc(ys, j, [])
+	rest_from = |ys, j| rest_from_onto(ys, j, [])
 
-	rest_from_acc : List(DepthSort.DepthKey), I64, List(DepthSort.DepthKey) -> List(DepthSort.DepthKey)
-	rest_from_acc = |ys, j, acc| (
+	rest_from_onto : List(DepthSort.DepthKey), I64, List(DepthSort.DepthKey) -> List(DepthSort.DepthKey)
+	rest_from_onto = |ys, j, acc| (
 		if (j >= ys.len().to_i64_wrap()) {
 			acc
 		} else {
-			rest_from_acc(ys, (j + 1), List.append(acc, (List.get(ys, I64.to_u64_wrap(j)) ?? crash ("list-at out of range"))))
+			rest_from_onto(ys, (j + 1), List.append(acc, (List.get(ys, I64.to_u64_wrap(j)) ?? crash ("list-at out of range"))))
 		}
 	)
 
 	# merge_items builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	merge_items : List(DepthSort.DepthKey), List(DepthSort.DepthKey), I64, I64 -> List(DepthSort.DepthKey)
-	merge_items = |a, b, i, j| merge_items_acc(a, b, i, j, [])
+	merge_items = |a, b, i, j| merge_items_onto(a, b, i, j, [])
 
-	merge_items_acc : List(DepthSort.DepthKey), List(DepthSort.DepthKey), I64, I64, List(DepthSort.DepthKey) -> List(DepthSort.DepthKey)
-	merge_items_acc = |a, b, i, j, acc| (
+	merge_items_onto : List(DepthSort.DepthKey), List(DepthSort.DepthKey), I64, I64, List(DepthSort.DepthKey) -> List(DepthSort.DepthKey)
+	merge_items_onto = |a, b, i, j, acc| (
 		if (i >= a.len().to_i64_wrap()) {
 			List.concat(acc, rest_from(b, j))
 		} else {
@@ -40,9 +40,9 @@ DepthSort :: [].{
 				} else {
 					(
 						if deeper_than((List.get(b, I64.to_u64_wrap(j)) ?? crash ("list-at out of range")).fwd, (List.get(a, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).fwd) {
-							merge_items_acc(a, b, i, (j + 1), List.append(acc, (List.get(b, I64.to_u64_wrap(j)) ?? crash ("list-at out of range"))))
+							merge_items_onto(a, b, i, (j + 1), List.append(acc, (List.get(b, I64.to_u64_wrap(j)) ?? crash ("list-at out of range"))))
 						} else {
-							merge_items_acc(a, b, (i + 1), j, List.append(acc, (List.get(a, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))))
+							merge_items_onto(a, b, (i + 1), j, List.append(acc, (List.get(a, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))))
 						}
 					)
 				}

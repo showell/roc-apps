@@ -69,14 +69,14 @@ ItemDraw :: [].{
 
 	# tower_base builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	tower_base : List(World.Segment), List(I64), Frame.Pose, TowerPlan.TowerItem, I64 -> List(Geom.RiderPt)
-	tower_base = |w, ch, pose, tw, k| tower_base_acc(w, ch, pose, tw, k, [])
+	tower_base = |w, ch, pose, tw, k| tower_base_onto(w, ch, pose, tw, k, [])
 
-	tower_base_acc : List(World.Segment), List(I64), Frame.Pose, TowerPlan.TowerItem, I64, List(Geom.RiderPt) -> List(Geom.RiderPt)
-	tower_base_acc = |w, ch, pose, tw, k, acc| (
+	tower_base_onto : List(World.Segment), List(I64), Frame.Pose, TowerPlan.TowerItem, I64, List(Geom.RiderPt) -> List(Geom.RiderPt)
+	tower_base_onto = |w, ch, pose, tw, k, acc| (
 		if (k >= 4) {
 			acc
 		} else {
-			tower_base_acc(w, ch, pose, tw, (k + 1), List.append(acc, Frame.map_pt(w, ch, pose, tw.map, Tower.base_corner_ax(k, tw.a0, tw.x0, tw.yaw).a, Tower.base_corner_ax(k, tw.a0, tw.x0, tw.yaw).x)))
+			tower_base_onto(w, ch, pose, tw, (k + 1), List.append(acc, Frame.map_pt(w, ch, pose, tw.map, Tower.base_corner_ax(k, tw.a0, tw.x0, tw.yaw).a, Tower.base_corner_ax(k, tw.a0, tw.x0, tw.yaw).x)))
 		}
 	)
 
@@ -105,14 +105,14 @@ ItemDraw :: [].{
 
 	# draw_order builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	draw_order : List(World.Segment), List(I64), Frame.Pose, Render.Collected, Bool, F64, F64, I64 -> List(Paint.DrawCmd)
-	draw_order = |w, ch, pose, c, braking, cf, step, i| draw_order_acc(w, ch, pose, c, braking, cf, step, i, [])
+	draw_order = |w, ch, pose, c, braking, cf, step, i| draw_order_onto(w, ch, pose, c, braking, cf, step, i, [])
 
-	draw_order_acc : List(World.Segment), List(I64), Frame.Pose, Render.Collected, Bool, F64, F64, I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
-	draw_order_acc = |w, ch, pose, c, braking, cf, step, i, acc| (
+	draw_order_onto : List(World.Segment), List(I64), Frame.Pose, Render.Collected, Bool, F64, F64, I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
+	draw_order_onto = |w, ch, pose, c, braking, cf, step, i, acc| (
 		if (i >= c.order.len().to_i64_wrap()) {
 			acc
 		} else {
-			draw_order_acc(w, ch, pose, c, braking, cf, step, (i + 1), List.concat(acc, draw_item(w, ch, pose, c, (List.get(c.order, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), braking, cf, step)))
+			draw_order_onto(w, ch, pose, c, braking, cf, step, (i + 1), List.concat(acc, draw_item(w, ch, pose, c, (List.get(c.order, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), braking, cf, step)))
 		}
 	)
 }

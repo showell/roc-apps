@@ -21,14 +21,14 @@ Critter :: [].{
 
 	# mapped_pts builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	mapped_pts : Camera.ScreenPt, F64, F64, List(Stills.StillPt) -> List(Camera.ScreenPt)
-	mapped_pts = |b, s, ht, ps| mapped_pts_acc(b, s, ht, ps, 0, [])
+	mapped_pts = |b, s, ht, ps| mapped_pts_onto(b, s, ht, ps, 0, [])
 
-	mapped_pts_acc : Camera.ScreenPt, F64, F64, List(Stills.StillPt), I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
-	mapped_pts_acc = |b, s, ht, ps, i, acc| (
+	mapped_pts_onto : Camera.ScreenPt, F64, F64, List(Stills.StillPt), I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
+	mapped_pts_onto = |b, s, ht, ps, i, acc| (
 		if (i >= ps.len().to_i64_wrap()) {
 			acc
 		} else {
-			mapped_pts_acc(b, s, ht, ps, (i + 1), List.append(acc, map_p(b, s, ht, (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).y)))
+			mapped_pts_onto(b, s, ht, ps, (i + 1), List.append(acc, map_p(b, s, ht, (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).y)))
 		}
 	)
 
@@ -88,14 +88,14 @@ Critter :: [].{
 
 	# critter_polys builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	critter_polys : Camera.ScreenPt, F64, F64, List(Stills.StillPoly) -> List(Paint.DrawCmd)
-	critter_polys = |b, s, ht, ps| critter_polys_acc(b, s, ht, ps, 0, [])
+	critter_polys = |b, s, ht, ps| critter_polys_onto(b, s, ht, ps, 0, [])
 
-	critter_polys_acc : Camera.ScreenPt, F64, F64, List(Stills.StillPoly), I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
-	critter_polys_acc = |b, s, ht, ps, i, acc| (
+	critter_polys_onto : Camera.ScreenPt, F64, F64, List(Stills.StillPoly), I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
+	critter_polys_onto = |b, s, ht, ps, i, acc| (
 		if (i >= ps.len().to_i64_wrap()) {
 			acc
 		} else {
-			critter_polys_acc(b, s, ht, ps, (i + 1), List.concat(acc, critter_poly(b, s, ht, (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
+			critter_polys_onto(b, s, ht, ps, (i + 1), List.concat(acc, critter_poly(b, s, ht, (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
 		}
 	)
 

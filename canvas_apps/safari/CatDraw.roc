@@ -15,14 +15,14 @@ CatDraw :: [].{
 
 	# cat_pts builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	cat_pts : Camera.ScreenPt, F64, F64, List(Stills.StillPt), I64 -> List(Camera.ScreenPt)
-	cat_pts = |b, h, lift, ps, i| cat_pts_acc(b, h, lift, ps, i, [])
+	cat_pts = |b, h, lift, ps, i| cat_pts_onto(b, h, lift, ps, i, [])
 
-	cat_pts_acc : Camera.ScreenPt, F64, F64, List(Stills.StillPt), I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
-	cat_pts_acc = |b, h, lift, ps, i, acc| (
+	cat_pts_onto : Camera.ScreenPt, F64, F64, List(Stills.StillPt), I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
+	cat_pts_onto = |b, h, lift, ps, i, acc| (
 		if (i >= ps.len().to_i64_wrap()) {
 			acc
 		} else {
-			cat_pts_acc(b, h, lift, ps, (i + 1), List.append(acc, cat_pt(b, h, lift, (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
+			cat_pts_onto(b, h, lift, ps, (i + 1), List.append(acc, cat_pt(b, h, lift, (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
 		}
 	)
 
@@ -37,14 +37,14 @@ CatDraw :: [].{
 
 	# cat_polys builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	cat_polys : Camera.ScreenPt, F64, F64, List(Stills.StillPoly), I64 -> List(Paint.DrawCmd)
-	cat_polys = |b, h, lift, ps, i| cat_polys_acc(b, h, lift, ps, i, [])
+	cat_polys = |b, h, lift, ps, i| cat_polys_onto(b, h, lift, ps, i, [])
 
-	cat_polys_acc : Camera.ScreenPt, F64, F64, List(Stills.StillPoly), I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
-	cat_polys_acc = |b, h, lift, ps, i, acc| (
+	cat_polys_onto : Camera.ScreenPt, F64, F64, List(Stills.StillPoly), I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
+	cat_polys_onto = |b, h, lift, ps, i, acc| (
 		if (i >= ps.len().to_i64_wrap()) {
 			acc
 		} else {
-			cat_polys_acc(b, h, lift, ps, (i + 1), List.concat(acc, cat_poly(b, h, lift, (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
+			cat_polys_onto(b, h, lift, ps, (i + 1), List.concat(acc, cat_poly(b, h, lift, (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
 		}
 	)
 

@@ -125,14 +125,14 @@ Mountains :: [].{
 
 	# crest_pts builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	crest_pts : (F64 -> F64), F64, F64, F64, F64, F64 -> List(Camera.ScreenPt)
-	crest_pts = |f, heading, cam_focal, view_w, v_scale, x| crest_pts_acc(f, heading, cam_focal, view_w, v_scale, x, [])
+	crest_pts = |f, heading, cam_focal, view_w, v_scale, x| crest_pts_onto(f, heading, cam_focal, view_w, v_scale, x, [])
 
-	crest_pts_acc : (F64 -> F64), F64, F64, F64, F64, F64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
-	crest_pts_acc = |f, heading, cam_focal, view_w, v_scale, x, acc| (
+	crest_pts_onto : (F64 -> F64), F64, F64, F64, F64, F64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
+	crest_pts_onto = |f, heading, cam_focal, view_w, v_scale, x, acc| (
 		if (x > (view_w + roll_margin)) {
 			acc
 		} else {
-			crest_pts_acc(f, heading, cam_focal, view_w, v_scale, (x + col_step), List.append(acc, { x: x, y: ((Camera.camera_h / 2.0) - (f(bearing_at(x, heading, cam_focal, view_w)) * v_scale)) }))
+			crest_pts_onto(f, heading, cam_focal, view_w, v_scale, (x + col_step), List.append(acc, { x: x, y: ((Camera.camera_h / 2.0) - (f(bearing_at(x, heading, cam_focal, view_w)) * v_scale)) }))
 		}
 	)
 
@@ -171,27 +171,27 @@ Mountains :: [].{
 
 	# snow_top builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	snow_top : List(F64), F64, F64, F64, F64, I64 -> List(Camera.ScreenPt)
-	snow_top = |xs, heading, cam_focal, view_w, v_scale, i| snow_top_acc(xs, heading, cam_focal, view_w, v_scale, i, [])
+	snow_top = |xs, heading, cam_focal, view_w, v_scale, i| snow_top_onto(xs, heading, cam_focal, view_w, v_scale, i, [])
 
-	snow_top_acc : List(F64), F64, F64, F64, F64, I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
-	snow_top_acc = |xs, heading, cam_focal, view_w, v_scale, i, acc| (
+	snow_top_onto : List(F64), F64, F64, F64, F64, I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
+	snow_top_onto = |xs, heading, cam_focal, view_w, v_scale, i, acc| (
 		if (i >= xs.len().to_i64_wrap()) {
 			acc
 		} else {
-			snow_top_acc(xs, heading, cam_focal, view_w, v_scale, (i + 1), List.append(acc, { x: (List.get(xs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), y: ((Camera.camera_h / 2.0) - (north_range(bearing_at((List.get(xs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), heading, cam_focal, view_w)) * v_scale)) }))
+			snow_top_onto(xs, heading, cam_focal, view_w, v_scale, (i + 1), List.append(acc, { x: (List.get(xs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), y: ((Camera.camera_h / 2.0) - (north_range(bearing_at((List.get(xs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), heading, cam_focal, view_w)) * v_scale)) }))
 		}
 	)
 
 	# snow_bottom builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	snow_bottom : List(F64), F64, F64, F64, F64, F64, I64 -> List(Camera.ScreenPt)
-	snow_bottom = |xs, heading, cam_focal, view_w, v_scale, peak, i| snow_bottom_acc(xs, heading, cam_focal, view_w, v_scale, peak, i, [])
+	snow_bottom = |xs, heading, cam_focal, view_w, v_scale, peak, i| snow_bottom_onto(xs, heading, cam_focal, view_w, v_scale, peak, i, [])
 
-	snow_bottom_acc : List(F64), F64, F64, F64, F64, F64, I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
-	snow_bottom_acc = |xs, heading, cam_focal, view_w, v_scale, peak, i, acc| (
+	snow_bottom_onto : List(F64), F64, F64, F64, F64, F64, I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
+	snow_bottom_onto = |xs, heading, cam_focal, view_w, v_scale, peak, i, acc| (
 		if (i < 0) {
 			acc
 		} else {
-			snow_bottom_acc(xs, heading, cam_focal, view_w, v_scale, peak, (i - 1), List.append(acc, { x: (List.get(xs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), y: ((Camera.camera_h / 2.0) - (snowline_at(bearing_at((List.get(xs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), heading, cam_focal, view_w), peak) * v_scale)) }))
+			snow_bottom_onto(xs, heading, cam_focal, view_w, v_scale, peak, (i - 1), List.append(acc, { x: (List.get(xs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), y: ((Camera.camera_h / 2.0) - (snowline_at(bearing_at((List.get(xs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), heading, cam_focal, view_w), peak) * v_scale)) }))
 		}
 	)
 

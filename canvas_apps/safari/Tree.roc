@@ -80,17 +80,17 @@ Tree :: [].{
 
 	# cone_ring builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	cone_ring : F64, F64, F64, F64, F64, F64, I64, F64 -> List(Camera.ScreenPt)
-	cone_ring = |r0, f0, rad, h_base, cf, view_w, i, a| cone_ring_acc(r0, f0, rad, h_base, cf, view_w, i, a, [])
+	cone_ring = |r0, f0, rad, h_base, cf, view_w, i, a| cone_ring_onto(r0, f0, rad, h_base, cf, view_w, i, a, [])
 
-	cone_ring_acc : F64, F64, F64, F64, F64, F64, I64, F64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
-	cone_ring_acc = |r0, f0, rad, h_base, cf, view_w, i, a, acc| (
+	cone_ring_onto : F64, F64, F64, F64, F64, F64, I64, F64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
+	cone_ring_onto = |r0, f0, rad, h_base, cf, view_w, i, a, acc| (
 		if (i >= ring_n) {
 			acc
 		} else {
 			(
 				{
 					p = { right: (r0 + (rad * Trig.r_cos(a))), forward: (f0 + (rad * Trig.r_sin(a))), height: h_base }
-					cone_ring_acc(r0, f0, rad, h_base, cf, view_w, (i + 1), (a + (Trig.two_pi / 16.0)), List.append(acc, Camera.project(p, cf, view_w)))
+					cone_ring_onto(r0, f0, rad, h_base, cf, view_w, (i + 1), (a + (Trig.two_pi / 16.0)), List.append(acc, Camera.project(p, cf, view_w)))
 				}
 			)
 		}
@@ -242,10 +242,10 @@ Tree :: [].{
 
 	# tiers builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	tiers : F64, F64, F64, I64, F64, F64, Tree.Metrics, Bool, F64, I64 -> List(Paint.DrawCmd)
-	tiers = |r0, f0, height, color, cf, view_w, m, near_crown, shade, k| tiers_acc(r0, f0, height, color, cf, view_w, m, near_crown, shade, k, [])
+	tiers = |r0, f0, height, color, cf, view_w, m, near_crown, shade, k| tiers_onto(r0, f0, height, color, cf, view_w, m, near_crown, shade, k, [])
 
-	tiers_acc : F64, F64, F64, I64, F64, F64, Tree.Metrics, Bool, F64, I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
-	tiers_acc = |r0, f0, height, color, cf, view_w, m, near_crown, shade, k, acc| (
+	tiers_onto : F64, F64, F64, I64, F64, F64, Tree.Metrics, Bool, F64, I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
+	tiers_onto = |r0, f0, height, color, cf, view_w, m, near_crown, shade, k, acc| (
 		if (k >= 8) {
 			acc
 		} else {
@@ -258,7 +258,7 @@ Tree :: [].{
 							tier_triangle(m, k, color)
 						}
 					)
-					tiers_acc(r0, f0, height, color, cf, view_w, m, near_crown, shade, (k + 1), List.concat(acc, one))
+					tiers_onto(r0, f0, height, color, cf, view_w, m, near_crown, shade, (k + 1), List.concat(acc, one))
 				}
 			)
 		}

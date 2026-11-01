@@ -205,27 +205,27 @@ TruckDraw :: [].{
 
 	# tire_pts builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	tire_pts : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64, I64 -> List(Geom.Vec3)
-	tire_pts = |segs, ch, pose, d, ac, x, i| tire_pts_acc(segs, ch, pose, d, ac, x, i, [])
+	tire_pts = |segs, ch, pose, d, ac, x, i| tire_pts_onto(segs, ch, pose, d, ac, x, i, [])
 
-	tire_pts_acc : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64, I64, List(Geom.Vec3) -> List(Geom.Vec3)
-	tire_pts_acc = |segs, ch, pose, d, ac, x, i, acc| (
+	tire_pts_onto : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64, I64, List(Geom.Vec3) -> List(Geom.Vec3)
+	tire_pts_onto = |segs, ch, pose, d, ac, x, i, acc| (
 		if (i >= tire_sides) {
 			acc
 		} else {
-			tire_pts_acc(segs, ch, pose, d, ac, x, (i + 1), List.append(acc, tire_pt(segs, ch, pose, d, ac, x, i)))
+			tire_pts_onto(segs, ch, pose, d, ac, x, (i + 1), List.append(acc, tire_pt(segs, ch, pose, d, ac, x, i)))
 		}
 	)
 
 	# side_tires builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	side_tires : List(World.Segment), List(I64), Frame.Pose, I64, List(F64), F64 -> List(TruckDraw.TruckFace)
-	side_tires = |segs, ch, pose, d, axles, x| side_tires_acc(segs, ch, pose, d, axles, x, 0, [])
+	side_tires = |segs, ch, pose, d, axles, x| side_tires_onto(segs, ch, pose, d, axles, x, 0, [])
 
-	side_tires_acc : List(World.Segment), List(I64), Frame.Pose, I64, List(F64), F64, I64, List(TruckDraw.TruckFace) -> List(TruckDraw.TruckFace)
-	side_tires_acc = |segs, ch, pose, d, axles, x, i, acc| (
+	side_tires_onto : List(World.Segment), List(I64), Frame.Pose, I64, List(F64), F64, I64, List(TruckDraw.TruckFace) -> List(TruckDraw.TruckFace)
+	side_tires_onto = |segs, ch, pose, d, axles, x, i, acc| (
 		if (i >= axles.len().to_i64_wrap()) {
 			acc
 		} else {
-			side_tires_acc(segs, ch, pose, d, axles, x, (i + 1), List.append(acc, truck_face(tire_color, tire_pts(segs, ch, pose, d, (List.get(axles, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), x, 0))))
+			side_tires_onto(segs, ch, pose, d, axles, x, (i + 1), List.append(acc, truck_face(tire_color, tire_pts(segs, ch, pose, d, (List.get(axles, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), x, 0))))
 		}
 	)
 
@@ -239,23 +239,23 @@ TruckDraw :: [].{
 
 	# face_rest builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	face_rest : List(TruckDraw.TruckFace), I64 -> List(TruckDraw.TruckFace)
-	face_rest = |ys, j| face_rest_acc(ys, j, [])
+	face_rest = |ys, j| face_rest_onto(ys, j, [])
 
-	face_rest_acc : List(TruckDraw.TruckFace), I64, List(TruckDraw.TruckFace) -> List(TruckDraw.TruckFace)
-	face_rest_acc = |ys, j, acc| (
+	face_rest_onto : List(TruckDraw.TruckFace), I64, List(TruckDraw.TruckFace) -> List(TruckDraw.TruckFace)
+	face_rest_onto = |ys, j, acc| (
 		if (j >= ys.len().to_i64_wrap()) {
 			acc
 		} else {
-			face_rest_acc(ys, (j + 1), List.append(acc, (List.get(ys, I64.to_u64_wrap(j)) ?? crash ("list-at out of range"))))
+			face_rest_onto(ys, (j + 1), List.append(acc, (List.get(ys, I64.to_u64_wrap(j)) ?? crash ("list-at out of range"))))
 		}
 	)
 
 	# merge_faces builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	merge_faces : List(TruckDraw.TruckFace), List(TruckDraw.TruckFace), I64, I64 -> List(TruckDraw.TruckFace)
-	merge_faces = |a, b, i, j| merge_faces_acc(a, b, i, j, [])
+	merge_faces = |a, b, i, j| merge_faces_onto(a, b, i, j, [])
 
-	merge_faces_acc : List(TruckDraw.TruckFace), List(TruckDraw.TruckFace), I64, I64, List(TruckDraw.TruckFace) -> List(TruckDraw.TruckFace)
-	merge_faces_acc = |a, b, i, j, acc| (
+	merge_faces_onto : List(TruckDraw.TruckFace), List(TruckDraw.TruckFace), I64, I64, List(TruckDraw.TruckFace) -> List(TruckDraw.TruckFace)
+	merge_faces_onto = |a, b, i, j, acc| (
 		if (i >= a.len().to_i64_wrap()) {
 			List.concat(acc, face_rest(b, j))
 		} else {
@@ -265,9 +265,9 @@ TruckDraw :: [].{
 				} else {
 					(
 						if DepthSort.deeper_than((List.get(b, I64.to_u64_wrap(j)) ?? crash ("list-at out of range")).fwd, (List.get(a, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).fwd) {
-							merge_faces_acc(a, b, i, (j + 1), List.append(acc, (List.get(b, I64.to_u64_wrap(j)) ?? crash ("list-at out of range"))))
+							merge_faces_onto(a, b, i, (j + 1), List.append(acc, (List.get(b, I64.to_u64_wrap(j)) ?? crash ("list-at out of range"))))
 						} else {
-							merge_faces_acc(a, b, (i + 1), j, List.append(acc, (List.get(a, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))))
+							merge_faces_onto(a, b, (i + 1), j, List.append(acc, (List.get(a, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))))
 						}
 					)
 				}
@@ -293,14 +293,14 @@ TruckDraw :: [].{
 
 	# draw_faces builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	draw_faces : List(TruckDraw.TruckFace), F64, F64, I64 -> List(Paint.DrawCmd)
-	draw_faces = |fs, cf, view_w, i| draw_faces_acc(fs, cf, view_w, i, [])
+	draw_faces = |fs, cf, view_w, i| draw_faces_onto(fs, cf, view_w, i, [])
 
-	draw_faces_acc : List(TruckDraw.TruckFace), F64, F64, I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
-	draw_faces_acc = |fs, cf, view_w, i, acc| (
+	draw_faces_onto : List(TruckDraw.TruckFace), F64, F64, I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
+	draw_faces_onto = |fs, cf, view_w, i, acc| (
 		if (i >= fs.len().to_i64_wrap()) {
 			acc
 		} else {
-			draw_faces_acc(fs, cf, view_w, (i + 1), List.concat(acc, truck_fill((List.get(fs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).color, (List.get(fs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).v, cf, view_w)))
+			draw_faces_onto(fs, cf, view_w, (i + 1), List.concat(acc, truck_fill((List.get(fs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).color, (List.get(fs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).v, cf, view_w)))
 		}
 	)
 
@@ -385,14 +385,14 @@ TruckDraw :: [].{
 
 	# glow_circle builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	glow_circle : F64, F64, F64, I64 -> List(Camera.ScreenPt)
-	glow_circle = |cx, cy, rad, i| glow_circle_acc(cx, cy, rad, i, [])
+	glow_circle = |cx, cy, rad, i| glow_circle_onto(cx, cy, rad, i, [])
 
-	glow_circle_acc : F64, F64, F64, I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
-	glow_circle_acc = |cx, cy, rad, i, acc| (
+	glow_circle_onto : F64, F64, F64, I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
+	glow_circle_onto = |cx, cy, rad, i, acc| (
 		if (i >= glow_sides) {
 			acc
 		} else {
-			glow_circle_acc(cx, cy, rad, (i + 1), List.append(acc, glow_pt(cx, cy, rad, i)))
+			glow_circle_onto(cx, cy, rad, (i + 1), List.append(acc, glow_pt(cx, cy, rad, i)))
 		}
 	)
 

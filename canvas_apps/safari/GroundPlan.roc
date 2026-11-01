@@ -40,14 +40,14 @@ GroundPlan :: [].{
 
 	# road_slice builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	road_slice : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64, I64, I64, F64, F64 -> List(Paint.DrawCmd)
-	road_slice = |segs, ch, pose, d, cf, view_w, ci, n, len, wd| road_slice_acc(segs, ch, pose, d, cf, view_w, ci, n, len, wd, [])
+	road_slice = |segs, ch, pose, d, cf, view_w, ci, n, len, wd| road_slice_onto(segs, ch, pose, d, cf, view_w, ci, n, len, wd, [])
 
-	road_slice_acc : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64, I64, I64, F64, F64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
-	road_slice_acc = |segs, ch, pose, d, cf, view_w, ci, n, len, wd, acc| (
+	road_slice_onto : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64, I64, I64, F64, F64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
+	road_slice_onto = |segs, ch, pose, d, cf, view_w, ci, n, len, wd, acc| (
 		if (ci >= n) {
 			acc
 		} else {
-			road_slice_acc(segs, ch, pose, d, cf, view_w, (ci + 1), n, len, wd, List.concat(acc, emit_ground(slice_quad(segs, ch, pose, d, ci, n, len, wd), cf, view_w)))
+			road_slice_onto(segs, ch, pose, d, cf, view_w, (ci + 1), n, len, wd, List.concat(acc, emit_ground(slice_quad(segs, ch, pose, d, ci, n, len, wd), cf, view_w)))
 		}
 	)
 
@@ -100,14 +100,14 @@ GroundPlan :: [].{
 
 	# pond_shape builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	pond_shape : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, List(Pond.PondPt) -> List(Geom.RiderPt)
-	pond_shape = |segs, ch, pose, m, from_len, ps| pond_shape_acc(segs, ch, pose, m, from_len, ps, 0, [])
+	pond_shape = |segs, ch, pose, m, from_len, ps| pond_shape_onto(segs, ch, pose, m, from_len, ps, 0, [])
 
-	pond_shape_acc : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, List(Pond.PondPt), I64, List(Geom.RiderPt) -> List(Geom.RiderPt)
-	pond_shape_acc = |segs, ch, pose, m, from_len, ps, i, acc| (
+	pond_shape_onto : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, List(Pond.PondPt), I64, List(Geom.RiderPt) -> List(Geom.RiderPt)
+	pond_shape_onto = |segs, ch, pose, m, from_len, ps, i, acc| (
 		if (i >= ps.len().to_i64_wrap()) {
 			acc
 		} else {
-			pond_shape_acc(segs, ch, pose, m, from_len, ps, (i + 1), List.append(acc, Frame.map_pt(segs, ch, pose, m, (from_len + (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).cv), (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).cu)))
+			pond_shape_onto(segs, ch, pose, m, from_len, ps, (i + 1), List.append(acc, Frame.map_pt(segs, ch, pose, m, (from_len + (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).cv), (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).cu)))
 		}
 	)
 
@@ -142,14 +142,14 @@ GroundPlan :: [].{
 
 	# walk_ground builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	walk_ground : List(World.Segment), List(I64), Frame.Pose, F64, F64 -> List(Paint.DrawCmd)
-	walk_ground = |segs, ch, pose, cf, view_w| walk_ground_acc(segs, ch, pose, cf, view_w, 0, [])
+	walk_ground = |segs, ch, pose, cf, view_w| walk_ground_onto(segs, ch, pose, cf, view_w, 0, [])
 
-	walk_ground_acc : List(World.Segment), List(I64), Frame.Pose, F64, F64, I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
-	walk_ground_acc = |segs, ch, pose, cf, view_w, d, acc| (
+	walk_ground_onto : List(World.Segment), List(I64), Frame.Pose, F64, F64, I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
+	walk_ground_onto = |segs, ch, pose, cf, view_w, d, acc| (
 		if (d >= ch.len().to_i64_wrap()) {
 			acc
 		} else {
-			walk_ground_acc(segs, ch, pose, cf, view_w, (d + 1), List.concat(acc, seg_ground(segs, ch, pose, d, cf, view_w)))
+			walk_ground_onto(segs, ch, pose, cf, view_w, (d + 1), List.concat(acc, seg_ground(segs, ch, pose, d, cf, view_w)))
 		}
 	)
 

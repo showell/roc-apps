@@ -59,14 +59,14 @@ TowerPlan :: [].{
 
 	# walk_towers builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	walk_towers : List(World.Segment), List(I64), Frame.Pose -> List(TowerPlan.TowerItem)
-	walk_towers = |segs, ch, pose| walk_towers_acc(segs, ch, pose, 0, [])
+	walk_towers = |segs, ch, pose| walk_towers_onto(segs, ch, pose, 0, [])
 
-	walk_towers_acc : List(World.Segment), List(I64), Frame.Pose, I64, List(TowerPlan.TowerItem) -> List(TowerPlan.TowerItem)
-	walk_towers_acc = |segs, ch, pose, d, acc| (
+	walk_towers_onto : List(World.Segment), List(I64), Frame.Pose, I64, List(TowerPlan.TowerItem) -> List(TowerPlan.TowerItem)
+	walk_towers_onto = |segs, ch, pose, d, acc| (
 		if (d >= ch.len().to_i64_wrap()) {
 			acc
 		} else {
-			walk_towers_acc(segs, ch, pose, (d + 1), List.concat(acc, seg_towers(segs, ch, pose, d)))
+			walk_towers_onto(segs, ch, pose, (d + 1), List.concat(acc, seg_towers(segs, ch, pose, d)))
 		}
 	)
 
@@ -92,14 +92,14 @@ TowerPlan :: [].{
 
 	# tower_items builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	tower_items : List(TowerPlan.TowerItem) -> List(DepthSort.DepthKey)
-	tower_items = |ts| tower_items_acc(ts, 0, [])
+	tower_items = |ts| tower_items_onto(ts, 0, [])
 
-	tower_items_acc : List(TowerPlan.TowerItem), I64, List(DepthSort.DepthKey) -> List(DepthSort.DepthKey)
-	tower_items_acc = |ts, i, acc| (
+	tower_items_onto : List(TowerPlan.TowerItem), I64, List(DepthSort.DepthKey) -> List(DepthSort.DepthKey)
+	tower_items_onto = |ts, i, acc| (
 		if (i >= ts.len().to_i64_wrap()) {
 			acc
 		} else {
-			tower_items_acc(ts, (i + 1), List.append(acc, { fwd: (List.get(ts, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).fwd, kind: KTower, i: i }))
+			tower_items_onto(ts, (i + 1), List.append(acc, { fwd: (List.get(ts, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).fwd, kind: KTower, i: i }))
 		}
 	)
 }

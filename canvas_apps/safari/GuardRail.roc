@@ -60,14 +60,14 @@ GuardRail :: [].{
 
 	# bars builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	bars : List(Geom.RiderPt), I64 -> List(GuardRail.RailPoly)
-	bars = |path, i| bars_acc(path, i, [])
+	bars = |path, i| bars_onto(path, i, [])
 
-	bars_acc : List(Geom.RiderPt), I64, List(GuardRail.RailPoly) -> List(GuardRail.RailPoly)
-	bars_acc = |path, i, acc| (
+	bars_onto : List(Geom.RiderPt), I64, List(GuardRail.RailPoly) -> List(GuardRail.RailPoly)
+	bars_onto = |path, i, acc| (
 		if ((i + 1) >= path.len().to_i64_wrap()) {
 			acc
 		} else {
-			bars_acc(path, (i + 1), List.append(acc, bar_quad((List.get(path, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), (List.get(path, I64.to_u64_wrap((i + 1))) ?? crash ("list-at out of range")))))
+			bars_onto(path, (i + 1), List.append(acc, bar_quad((List.get(path, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), (List.get(path, I64.to_u64_wrap((i + 1))) ?? crash ("list-at out of range")))))
 		}
 	)
 
@@ -120,14 +120,14 @@ GuardRail :: [].{
 
 	# posts builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	posts : List(Geom.RiderPt), I64 -> List(GuardRail.RailPoly)
-	posts = |path, i| posts_acc(path, i, [])
+	posts = |path, i| posts_onto(path, i, [])
 
-	posts_acc : List(Geom.RiderPt), I64, List(GuardRail.RailPoly) -> List(GuardRail.RailPoly)
-	posts_acc = |path, i, acc| (
+	posts_onto : List(Geom.RiderPt), I64, List(GuardRail.RailPoly) -> List(GuardRail.RailPoly)
+	posts_onto = |path, i, acc| (
 		if (i >= path.len().to_i64_wrap()) {
 			acc
 		} else {
-			posts_acc(path, (i + 1), List.append(acc, post_quad(path, i)))
+			posts_onto(path, (i + 1), List.append(acc, post_quad(path, i)))
 		}
 	)
 
@@ -156,14 +156,14 @@ GuardRail :: [].{
 
 	# rail_draw_all builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	rail_draw_all : List(GuardRail.RailPoly), F64, F64, I64 -> List(Paint.DrawCmd)
-	rail_draw_all = |ps, cf, view_w, i| rail_draw_all_acc(ps, cf, view_w, i, [])
+	rail_draw_all = |ps, cf, view_w, i| rail_draw_all_onto(ps, cf, view_w, i, [])
 
-	rail_draw_all_acc : List(GuardRail.RailPoly), F64, F64, I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
-	rail_draw_all_acc = |ps, cf, view_w, i, acc| (
+	rail_draw_all_onto : List(GuardRail.RailPoly), F64, F64, I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
+	rail_draw_all_onto = |ps, cf, view_w, i, acc| (
 		if (i >= ps.len().to_i64_wrap()) {
 			acc
 		} else {
-			rail_draw_all_acc(ps, cf, view_w, (i + 1), List.concat(acc, rail_draw_poly((List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), cf, view_w)))
+			rail_draw_all_onto(ps, cf, view_w, (i + 1), List.concat(acc, rail_draw_poly((List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), cf, view_w)))
 		}
 	)
 }

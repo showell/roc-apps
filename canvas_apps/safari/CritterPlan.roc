@@ -36,40 +36,40 @@ CritterPlan :: [].{
 
 	# place_all builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	place_all : List(World.Segment), List(I64), Frame.Pose, I64, F64, List(Scenery.Critter) -> List(Billboards.Placed)
-	place_all = |segs, ch, pose, d, hw, crs| place_all_acc(segs, ch, pose, d, hw, crs, 0, [])
+	place_all = |segs, ch, pose, d, hw, crs| place_all_onto(segs, ch, pose, d, hw, crs, 0, [])
 
-	place_all_acc : List(World.Segment), List(I64), Frame.Pose, I64, F64, List(Scenery.Critter), I64, List(Billboards.Placed) -> List(Billboards.Placed)
-	place_all_acc = |segs, ch, pose, d, hw, crs, i, acc| (
+	place_all_onto : List(World.Segment), List(I64), Frame.Pose, I64, F64, List(Scenery.Critter), I64, List(Billboards.Placed) -> List(Billboards.Placed)
+	place_all_onto = |segs, ch, pose, d, hw, crs, i, acc| (
 		if (i >= crs.len().to_i64_wrap()) {
 			acc
 		} else {
-			place_all_acc(segs, ch, pose, d, hw, crs, (i + 1), List.append(acc, place_critter(segs, ch, pose, d, hw, (List.get(crs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
+			place_all_onto(segs, ch, pose, d, hw, crs, (i + 1), List.append(acc, place_critter(segs, ch, pose, d, hw, (List.get(crs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
 		}
 	)
 
 	# place_all_via builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	place_all_via : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, List(Scenery.Critter), I64 -> List(Billboards.Placed)
-	place_all_via = |segs, ch, pose, m, hw, crs, i| place_all_via_acc(segs, ch, pose, m, hw, crs, i, [])
+	place_all_via = |segs, ch, pose, m, hw, crs, i| place_all_via_onto(segs, ch, pose, m, hw, crs, i, [])
 
-	place_all_via_acc : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, List(Scenery.Critter), I64, List(Billboards.Placed) -> List(Billboards.Placed)
-	place_all_via_acc = |segs, ch, pose, m, hw, crs, i, acc| (
+	place_all_via_onto : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, List(Scenery.Critter), I64, List(Billboards.Placed) -> List(Billboards.Placed)
+	place_all_via_onto = |segs, ch, pose, m, hw, crs, i, acc| (
 		if (i >= crs.len().to_i64_wrap()) {
 			acc
 		} else {
-			place_all_via_acc(segs, ch, pose, m, hw, crs, (i + 1), List.append(acc, place_critter_via(segs, ch, pose, m, hw, (List.get(crs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
+			place_all_via_onto(segs, ch, pose, m, hw, crs, (i + 1), List.append(acc, place_critter_via(segs, ch, pose, m, hw, (List.get(crs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
 		}
 	)
 
 	# place_ducks builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	place_ducks : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64 -> List(Billboards.Placed)
-	place_ducks = |segs, ch, pose, m, from_len| place_ducks_acc(segs, ch, pose, m, from_len, 0, [])
+	place_ducks = |segs, ch, pose, m, from_len| place_ducks_onto(segs, ch, pose, m, from_len, 0, [])
 
-	place_ducks_acc : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, I64, List(Billboards.Placed) -> List(Billboards.Placed)
-	place_ducks_acc = |segs, ch, pose, m, from_len, i, acc| (
+	place_ducks_onto : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, I64, List(Billboards.Placed) -> List(Billboards.Placed)
+	place_ducks_onto = |segs, ch, pose, m, from_len, i, acc| (
 		if (i >= Pond.ducks.len().to_i64_wrap()) {
 			acc
 		} else {
-			place_ducks_acc(segs, ch, pose, m, from_len, (i + 1), List.append(acc, place_duck(segs, ch, pose, m, from_len, (List.get(Pond.ducks, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
+			place_ducks_onto(segs, ch, pose, m, from_len, (i + 1), List.append(acc, place_duck(segs, ch, pose, m, from_len, (List.get(Pond.ducks, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
 		}
 	)
 
@@ -143,14 +143,14 @@ CritterPlan :: [].{
 
 	# walk_billboards builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	walk_billboards : List(World.Segment), List(I64), Frame.Pose -> List(Billboards.Placed)
-	walk_billboards = |segs, ch, pose| walk_billboards_acc(segs, ch, pose, 0, [])
+	walk_billboards = |segs, ch, pose| walk_billboards_onto(segs, ch, pose, 0, [])
 
-	walk_billboards_acc : List(World.Segment), List(I64), Frame.Pose, I64, List(Billboards.Placed) -> List(Billboards.Placed)
-	walk_billboards_acc = |segs, ch, pose, d, acc| (
+	walk_billboards_onto : List(World.Segment), List(I64), Frame.Pose, I64, List(Billboards.Placed) -> List(Billboards.Placed)
+	walk_billboards_onto = |segs, ch, pose, d, acc| (
 		if (d >= ch.len().to_i64_wrap()) {
 			acc
 		} else {
-			walk_billboards_acc(segs, ch, pose, (d + 1), List.concat(acc, seg_billboards(segs, ch, pose, d)))
+			walk_billboards_onto(segs, ch, pose, (d + 1), List.concat(acc, seg_billboards(segs, ch, pose, d)))
 		}
 	)
 
@@ -185,14 +185,14 @@ CritterPlan :: [].{
 
 	# cow_items builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	cow_items : List(Billboards.Billboard) -> List(DepthSort.DepthKey)
-	cow_items = |bs| cow_items_acc(bs, 0, [])
+	cow_items = |bs| cow_items_onto(bs, 0, [])
 
-	cow_items_acc : List(Billboards.Billboard), I64, List(DepthSort.DepthKey) -> List(DepthSort.DepthKey)
-	cow_items_acc = |bs, i, acc| (
+	cow_items_onto : List(Billboards.Billboard), I64, List(DepthSort.DepthKey) -> List(DepthSort.DepthKey)
+	cow_items_onto = |bs, i, acc| (
 		if (i >= bs.len().to_i64_wrap()) {
 			acc
 		} else {
-			cow_items_acc(bs, (i + 1), List.append(acc, { fwd: (List.get(bs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).fwd, kind: KCow, i: i }))
+			cow_items_onto(bs, (i + 1), List.append(acc, { fwd: (List.get(bs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).fwd, kind: KCow, i: i }))
 		}
 	)
 }

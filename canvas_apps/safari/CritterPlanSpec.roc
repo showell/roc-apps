@@ -81,7 +81,7 @@ one_seg : List(World.Segment)
 one_seg = [World.segment_at(0)]
 
 walk_got : List(I64)
-walk_got = [CritterPlan.walk_billboards(segs, [], origin).len().to_i64_wrap(), (CritterPlan.walk_billboards(one_seg, [0], origin).len().to_i64_wrap() - CritterPlan.seg_billboards(one_seg, [0], origin, 0).len().to_i64_wrap()), CritterPlan.walk_billboards_acc(segs, chain, origin, 6, []).len().to_i64_wrap()]
+walk_got = [CritterPlan.walk_billboards(segs, [], origin).len().to_i64_wrap(), (CritterPlan.walk_billboards(one_seg, [0], origin).len().to_i64_wrap() - CritterPlan.seg_billboards(one_seg, [0], origin, 0).len().to_i64_wrap()), CritterPlan.walk_billboards_onto(segs, chain, origin, 6, []).len().to_i64_wrap()]
 
 walk_want : List(I64)
 walk_want = [0, 0, 0]
@@ -90,8 +90,8 @@ grow_got : List(Bool)
 grow_got = (
 	{
 		a = CritterPlan.walk_billboards(segs, chain, origin).len().to_i64_wrap()
-		b = CritterPlan.walk_billboards_acc(segs, chain, origin, 1, []).len().to_i64_wrap()
-		c = CritterPlan.walk_billboards_acc(segs, chain, origin, 2, []).len().to_i64_wrap()
+		b = CritterPlan.walk_billboards_onto(segs, chain, origin, 1, []).len().to_i64_wrap()
+		c = CritterPlan.walk_billboards_onto(segs, chain, origin, 2, []).len().to_i64_wrap()
 		[(a >= b), (b >= c)]
 	}
 )

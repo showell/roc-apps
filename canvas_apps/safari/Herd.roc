@@ -56,14 +56,14 @@ Herd :: [].{
 
 	# cows_from builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	cows_from : I64 -> List(Scenery.Critter)
-	cows_from = |i| cows_from_acc(i, [])
+	cows_from = |i| cows_from_onto(i, [])
 
-	cows_from_acc : I64, List(Scenery.Critter) -> List(Scenery.Critter)
-	cows_from_acc = |i, acc| (
+	cows_from_onto : I64, List(Scenery.Critter) -> List(Scenery.Critter)
+	cows_from_onto = |i, acc| (
 		if (i >= 14) {
 			acc
 		} else {
-			cows_from_acc((i + 1), List.append(acc, cow_at(i)))
+			cows_from_onto((i + 1), List.append(acc, cow_at(i)))
 		}
 	)
 
