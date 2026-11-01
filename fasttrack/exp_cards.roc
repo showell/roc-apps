@@ -22,7 +22,6 @@ cards = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "joke
 copies : List(Str), Str -> I64
 copies = |xs, card| U64.to_i64_wrap(List.count_if(xs, |c| c == card))
 
-
 main! = |_args| {
 	seats = List.repeat(Plays(Strategy.champion), 4)
 	games = 200
@@ -50,12 +49,29 @@ main! = |_args| {
 			lh = copies(lost_hands, card)
 			dw = w + wd + wh
 			dl = l + ld + lh
-			share = if dw + dl == 0 { 0.0 } else { I64.to_f64(dw) / I64.to_f64(dw + dl) }
-			se = if dw + dl == 0 { 0.0 } else { F64.sqrt(share * (1.0 - share) / I64.to_f64(dw + dl)) }
+			share = if dw + dl == 0 {
+				0.0
+			} else {
+				I64.to_f64(dw) / I64.to_f64(dw + dl)
+			}
+			se = if dw + dl == 0 {
+				0.0
+			} else {
+				F64.sqrt(share * (1.0 - share) / I64.to_f64(dw + dl))
+			}
 			{ card, score: 3 * (w + wd) - (l + ld), w, l, wd, ld, wh, lh, dw, dl, share, se }
 		},
 	)
-	ranked = List.sort_with(rows, |a, b| if a.share > b.share { Before } else if a.share < b.share { After } else { Same })
+	ranked = List.sort_with(
+		rows,
+		|a, b| if a.share > b.share {
+			Before
+		} else if a.share < b.share {
+			After
+		} else {
+			Same
+		},
+	)
 	Echo.line!("\n## Which cards win\n\n${U64.to_str(games)} games, seeds 1-${U64.to_str(games)}, four champions, each game to the first player home. A card the winner played or discarded scores +3, one a loser played or discarded -1.\n")
 	all_w = List.fold(rows, 0, |t, r| t + r.dw)
 	all_l = List.fold(rows, 0, |t, r| t + r.dl)

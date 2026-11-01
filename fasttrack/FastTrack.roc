@@ -39,7 +39,11 @@ FastTrack :: [].{
 	seats_of = |bits|
 		List.map(
 			[0, 1, 2, 3],
-			|i| if U32.bitwise_and(U32.shr_zf_wrap(bits, 2 * i), 3) == 0 { Human } else { Computer(Strategy.champion) },
+			|i| if U32.bitwise_and(U32.shr_zf_wrap(bits, 2 * i), 3) == 0 {
+				Human
+			} else {
+				Computer(Strategy.champion)
+			},
 		)
 
 	seat : FastTrack.Model -> FastTrack.Seat
@@ -57,7 +61,13 @@ FastTrack :: [].{
 	## pieces at any time, 2 partners who may once their own are home.
 	init : U64, U32, U32, U32 -> FastTrack.Model
 	init = |millis, setup, seat_bits, teams| {
-		team_style = if teams == 1 { Anytime } else if teams == 2 { OnceHome } else { Solo }
+		team_style = if teams == 1 {
+			Anytime
+		} else if teams == 2 {
+			OnceHome
+		} else {
+			Solo
+		}
 		game = Game.begin_game(millis, List.get(setups, U32.to_u64(setup)) ?? Normal, team_style)
 		{ game, history: History.reset(game), seats: seats_of(seat_bits), plan: [], motion_id: 0, motions: [] }
 	}
@@ -106,7 +116,11 @@ FastTrack :: [].{
 			Ok(s) => {
 				(history, game) = Game.update_game(s.msg, model.history, model.game)
 				motions = Motion.of(model.game, s.msg, game)
-				motion_id = if List.is_empty(motions) { model.motion_id } else { model.motion_id + 1 }
+				motion_id = if List.is_empty(motions) {
+					model.motion_id
+				} else {
+					model.motion_id + 1
+				}
 				{ ..model, game, history, plan: s.rest, motion_id, motions }
 			}
 			Err(_) => model
@@ -121,7 +135,11 @@ FastTrack :: [].{
 			{
 				interactive: human and Try.is_err(Game.winner(model.game)),
 				show_undo: human and History.can_undo(model.history, model.game),
-				tick: if agent_to_move(model) { Codes.agent_step } else { 0 },
+				tick: if agent_to_move(model) {
+					Codes.agent_step
+				} else {
+					0
+				},
 				winner: Game.winner(model.game) ?? "",
 				motion_id: model.motion_id,
 				motions: List.map(model.motions, |m| { color: m.color, path: List.map(m.path, U64.to_u32_wrap), sent_home: m.sent_home }),

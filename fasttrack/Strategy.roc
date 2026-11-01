@@ -49,7 +49,11 @@ Strategy :: [].{
 		while $s < Board.count {
 			match Piece.at(game.board, $s) {
 				Ok(c) if List.contains(cs, c) => {
-					own_base = if Board.is_base($s) and Board.zone($s) == c { U64.to_i64_wrap(Board.local($s)) - 3 } else { 0 }
+					own_base = if Board.is_base($s) and Board.zone($s) == c {
+						U64.to_i64_wrap(Board.local($s)) - 3
+					} else {
+						0
+					}
 					$total = $total + SquareValues.value(c, $s) + own_base * strategy.base_bonus
 				}
 				_ => {}
@@ -72,7 +76,18 @@ Strategy :: [].{
 			strategy.hoards,
 			|h| {
 				last = List.len(h.worth)
-				worth = if last == 0 { 0 } else { List.get(h.worth, if n < last { n } else { last - 1 }) ?? 0 }
+				worth = if last == 0 {
+					0
+				} else {
+					List.get(
+						h.worth,
+						if n < last {
+							n
+						} else {
+							last - 1
+						},
+					) ?? 0
+				}
 				{ cards: h.cards, worth }
 			},
 		)
@@ -88,10 +103,10 @@ Strategy :: [].{
 expect {
 	b4 = 7
 	SquareValues.value(0, Board.at(0, b4)) == 6100
-	and SquareValues.value(0, Board.at(1, Board.r4)) == 100
-	and SquareValues.value(0, Board.at(0, 0)) == 0
-	and SquareValues.value(1, Board.at(1, b4)) == 6100
-	and SquareValues.value(1, Board.at(2, Board.r4)) == 100
+		and SquareValues.value(0, Board.at(1, Board.r4)) == 100
+			and SquareValues.value(0, Board.at(0, 0)) == 0
+				and SquareValues.value(1, Board.at(1, b4)) == 6100
+					and SquareValues.value(1, Board.at(2, Board.r4)) == 100
 }
 
 # The champion's hoard: 1500 an A, joker or J with none home, 500 with two.
@@ -99,6 +114,6 @@ expect {
 	start = Game.begin_game(0, Normal, Solo)
 	two_home = { ..start, board: Piece.board_of(start.zone_colors, [("red", "B1", "red"), ("red", "B2", "red")]) }
 	Strategy.hoard_worths(Strategy.champion, start, "red") == [{ cards: ["A", "joker", "J"], worth: 1500 }]
-	and Strategy.hoard_worths(Strategy.champion, two_home, "red") == [{ cards: ["A", "joker", "J"], worth: 500 }]
-	and Strategy.board(Strategy.champion, two_home, ["red"]) == 5800 + 2500 + 5900 + 5000
+		and Strategy.hoard_worths(Strategy.champion, two_home, "red") == [{ cards: ["A", "joker", "J"], worth: 500 }]
+			and Strategy.board(Strategy.champion, two_home, ["red"]) == 5800 + 2500 + 5900 + 5000
 }

@@ -39,7 +39,11 @@ colors : List(Str)
 colors = ["red", "blue", "green", "purple"]
 
 loc_str : U64 -> Str
-loc_str = |s| if s == Board.bullseye { "bullseye" } else { "${List.get(colors, Board.zone(s)) ?? "?"}.${Board.loc_of(colors, s).id}" }
+loc_str = |s| if s == Board.bullseye {
+	"bullseye"
+} else {
+	"${List.get(colors, Board.zone(s)) ?? "?"}.${Board.loc_of(colors, s).id}"
+}
 
 ## The pieces a line moved: where they left and where they went.
 moved : Type.Game, Type.Game -> Str
@@ -76,11 +80,25 @@ main! = |args| {
 		|x, y| {
 			sx = Search.score(champion, g, x)
 			sy = Search.score(champion, g, y)
-			if sx > sy { Before } else if sx < sy { After } else { Same }
+			if sx > sy {
+				Before
+			} else if sx < sy {
+				After
+			} else {
+				Same
+			}
 		},
 	)
-	pick = (Search.best_line(champion, g) ?? crash("red has no play here")).line
-	alternatives = List.fold(by_score, [], |kept, l| if l.game.board == pick.game.board or List.any(kept, |k| k.game.board == l.game.board) { kept } else { List.append(kept, l) })
+	pick = (Search.best_line(champion, g) ?? crash ("red has no play here")).line
+	alternatives = List.fold(
+		by_score,
+		[],
+		|kept, l| if l.game.board == pick.game.board or List.any(kept, |k| k.game.board == l.game.board) {
+			kept
+		} else {
+			List.append(kept, l)
+		},
+	)
 	candidates = List.prepend(List.take_first(alternatives, lines - 1), pick)
 	Echo.line!("## Rollouts at seed ${U64.to_str(seed)}, red's turn ${U64.to_str(red_turn)}\n")
 	Echo.line!("Red holds ${Str.join_with(red.hand, " ")}. The champion's best ${U64.to_str(List.len(candidates))} lines, each played out ${U64.to_str(rollouts)} times from the end of red's turn, every player a champion, the undrawn cards shuffled afresh each time (the same ${U64.to_str(rollouts)} shuffles for every line).\n")
@@ -90,17 +108,36 @@ main! = |args| {
 		$results = List.append($results, { line: c, wins })
 		Echo.line!("done: ${moved(g, c.game)}: red won ${U64.to_str(List.count_if(wins, |w| w == 0))} of ${U64.to_str(rollouts)}")
 	}
-	base = (List.first($results) ?? crash("no lines")).wins
+	base = (List.first($results) ?? crash ("no lines")).wins
 	n = U64.to_f64(rollouts)
 	Echo.line!("\n| line | pieces | champion's score | red won | red's win rate | vs the champion's pick, paired | blue / green / purple won |")
 	Echo.line!("|---|---|---|---|---|---|---|")
 	for r in $results {
 		red_wins = List.count_if(r.wins, |w| w == 0)
 		rate = U64.to_f64(red_wins) / n
-		diffs = List.map_with_index(r.wins, |w, k| (if w == 0 { 1.0 } else { 0.0 }) - (if (List.get(base, k) ?? 4) == 0 { 1.0 } else { 0.0 }))
+		diffs = List.map_with_index(
+			r.wins,
+			|w, k| (
+				if w == 0 {
+					1.0
+				} else {
+					0.0
+				}
+			) - (
+				if (List.get(base, k) ?? 4) == 0 {
+					1.0
+				} else {
+					0.0
+				}
+			),
+		)
 		mean = List.fold(diffs, 0.0, |t, d| t + d) / n
 		sd = F64.sqrt(List.fold(diffs, 0.0, |t, d| t + (d - mean) * (d - mean)) / (n - 1.0))
-		tag = if r.line.game.board == pick.game.board { "champion's pick" } else { "" }
+		tag = if r.line.game.board == pick.game.board {
+			"champion's pick"
+		} else {
+			""
+		}
 		others = Str.join_with(List.map([1, 2, 3], |c| U64.to_str(List.count_if(r.wins, |w| w == c))), " / ")
 		Echo.line!("| ${tag} | ${moved(g, r.line.game)} | ${I64.to_str(Search.score(champion, g, r.line))} | ${U64.to_str(red_wins)} | ${Arena.percent(rate)} ± ${Arena.percent(F64.sqrt(rate * (1.0 - rate) / n))} | ${Arena.percent(mean)} ± ${Arena.percent(sd / F64.sqrt(n))} | ${others} |")
 	}

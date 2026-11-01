@@ -109,7 +109,7 @@ expect {
 	g = test_game([("red", "L0", "red"), ("red", "L3", "blue")], ["J"])
 	end_click = Game.update_game(SetStartLocation(Board.at(0, Board.l0)), History.init, g).1
 	Motion.of(end_click, SetEndLocation(Board.at(0, 14)), Game.update_game(SetEndLocation(Board.at(0, 14)), History.init, end_click).1)
-	== [{ color: "red", path: [11, 14], sent_home: Bool.False }, { color: "blue", path: [14, 11], sent_home: Bool.False }]
+		== [{ color: "red", path: [11, 14], sent_home: Bool.False }, { color: "blue", path: [14, 11], sent_home: Bool.False }]
 }
 
 # An undo moves nothing on the page, even when the board it restores differs.

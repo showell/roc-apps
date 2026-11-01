@@ -58,18 +58,18 @@ Reach :: [].{
 					if Board.zone(from) != Board.color_index(zone_colors, color) and !Board.is_track(from) {
 						[]
 					} else {
-					List.join_map(
-						cards,
-						|card| {
-							plain = List.map(lands(zone_colors, color, from, card), |to| { from, to, card })
-							if free_face {
-								with_face = List.join_map(face_steps(zone_colors, color, from), |step| List.map(lands(zone_colors, color, step, card), |to| { from, to, card: "face+${card}" }))
-								List.concat(plain, with_face)
-							} else {
-								plain
-							}
-						},
-					)
+						List.join_map(
+							cards,
+							|card| {
+								plain = List.map(lands(zone_colors, color, from, card), |to| { from, to, card })
+								if free_face {
+									with_face = List.join_map(face_steps(zone_colors, color, from), |step| List.map(lands(zone_colors, color, step, card), |to| { from, to, card: "face+${card}" }))
+									List.concat(plain, with_face)
+								} else {
+									plain
+								}
+							},
+						)
 					},
 			),
 		)
@@ -105,7 +105,7 @@ Reach :: [].{
 	## or short of it never passes the occupied squares.
 	usable : List(Reach.Move), List(Str), Str, Bool, Str, List(Str) -> List(Reach.Move)
 	usable = |all, zone_colors, color, free_face, peak, hand| {
-		peak_at = List.find_first_index(Config.base_locations, |id| id == peak) ?? crash("Reach: the peak is a base square")
+		peak_at = List.find_first_index(Config.base_locations, |id| id == peak) ?? crash ("Reach: the peak is a base square")
 		occupied = List.map(List.drop_first(Config.base_locations, peak_at + 1), |id| Board.index_of(zone_colors, { zone: NormalColor(color), id }))
 		List.drop_if(all, |e| (!free_face and Str.starts_with(e.card, "face+")) or List.contains(occupied, e.to) or !allowed(hand, e.card))
 	}
@@ -121,7 +121,7 @@ Reach :: [].{
 	fewest_over = |edges, zone_colors, color, peak| {
 		far = Board.far
 		home = Board.index_of(zone_colors, { zone: NormalColor(color), id: peak })
-		start = List.set(List.repeat({ cards: far, first: [] }, List.len(Board.all_locs(zone_colors))), home, { cards: 0, first: [] }) ?? crash("Reach: no home")
+		start = List.set(List.repeat({ cards: far, first: [] }, List.len(Board.all_locs(zone_colors))), home, { cards: 0, first: [] }) ?? crash ("Reach: no home")
 		# A pass says whether it changed anything (findings/llvm-closure-loop-alias).
 		relax = |d|
 			List.fold(
@@ -131,9 +131,9 @@ Reach :: [].{
 					via = (List.get(acc.d, e.to) ?? { cards: far, first: [] }).cards + 1
 					here = List.get(acc.d, e.from) ?? { cards: far, first: [] }
 					if via < here.cards {
-						{ d: List.set(acc.d, e.from, { cards: via, first: [e.card] }) ?? crash("Reach: edge out of range"), changed: Bool.True }
+						{ d: List.set(acc.d, e.from, { cards: via, first: [e.card] }) ?? crash ("Reach: edge out of range"), changed: Bool.True }
 					} else if via == here.cards and !List.contains(here.first, e.card) {
-						{ d: List.set(acc.d, e.from, { cards: via, first: List.append(here.first, e.card) }) ?? crash("Reach: edge out of range"), changed: Bool.True }
+						{ d: List.set(acc.d, e.from, { cards: via, first: List.append(here.first, e.card) }) ?? crash ("Reach: edge out of range"), changed: Bool.True }
 					} else {
 						acc
 					}
@@ -145,6 +145,7 @@ Reach :: [].{
 		}
 		$pass.d
 	}
+
 	## For each square, indexed as Board.all_locs: the fewest cards to the
 	## peak with these kinds of card, and how many shortest routes there are --
 	## every sequence of moves, a move being a card or a face card and a card.
@@ -159,10 +160,28 @@ Reach :: [].{
 		best = fewest_over(edges, zone_colors, color, peak)
 		cards_at = |i| (List.get(best, i) ?? { cards: Board.far, first: [] }).cards
 		home = Board.index_of(zone_colors, { zone: NormalColor(color), id: peak })
-		start = List.map_with_index(best, |b, i| { cards: b.cards, routes: if i == home { 1 } else { 0 } })
+		start = List.map_with_index(
+			best,
+			|b, i| {
+				cards: b.cards,
+				routes: if i == home {
+					1
+				} else {
+					0
+				},
+			},
+		)
 		# Squares n cards out take their routes from squares n - 1 out, so
 		# one sweep per distance settles every count.
-		deepest = List.fold(best, 0, |m, b| if b.cards < Board.far and b.cards > m { b.cards } else { m })
+		deepest = List.fold(
+			best,
+			0,
+			|m, b| if b.cards < Board.far and b.cards > m {
+				b.cards
+			} else {
+				m
+			},
+		)
 		var $counts = start
 		var $n = 1
 		while $n <= deepest {
@@ -174,7 +193,7 @@ Reach :: [].{
 					if cards_at(e.from) == level and cards_at(e.to) == level - 1 {
 						here = List.get(acc, e.from) ?? { cards: 0, routes: 0 }
 						via = (List.get(acc, e.to) ?? { cards: 0, routes: 0 }).routes
-						List.set(acc, e.from, { ..here, routes: here.routes + via }) ?? crash("Reach: edge out of range")
+						List.set(acc, e.from, { ..here, routes: here.routes + via }) ?? crash ("Reach: edge out of range")
 					} else {
 						acc
 					},

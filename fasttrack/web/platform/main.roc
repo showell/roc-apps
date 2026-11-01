@@ -35,6 +35,9 @@ platform ""
 import Wire
 
 init_for_host = program.init
+
 update_for_host = program.update
+
 view_for_host = program.view
+
 release_for_host = program.release

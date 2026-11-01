@@ -29,7 +29,6 @@ Codes :: [].{
 	agent_step : U32
 	agent_step = 3
 
-
 	activate_card : U64 -> U32
 	activate_card = |idx| 100 + U64.to_u32_wrap(idx)
 
@@ -43,7 +42,11 @@ Codes :: [].{
 	bulls_eye = 999
 
 	location : U64 -> U32
-	location = |s| if s == Board.bullseye { bulls_eye } else { U64.to_u32_wrap(32 * Board.zone(s) + Board.local(s)) }
+	location = |s| if s == Board.bullseye {
+		bulls_eye
+	} else {
+		U64.to_u32_wrap(32 * Board.zone(s) + Board.local(s))
+	}
 
 	start_location : U64 -> U32
 	start_location = |s| 10000 + location(s)
@@ -58,7 +61,11 @@ Codes :: [].{
 		} else {
 			zone = U32.to_u64(code // 32)
 			local = U32.to_u64(code % 32)
-			if zone < List.len(zone_colors) and local < Board.per_zone { Ok(Board.at(zone, local)) } else { Err(BadCode) }
+			if zone < List.len(zone_colors) and local < Board.per_zone {
+				Ok(Board.at(zone, local))
+			} else {
+				Err(BadCode)
+			}
 		}
 
 	## A code no view hands out is a bug, and says so.

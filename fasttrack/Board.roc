@@ -12,6 +12,7 @@ import Config
 import Type
 
 Board :: [].{
+
 	## A square no piece of this color can reach.
 	far : I64
 	far = 1000
@@ -99,23 +100,27 @@ Board :: [].{
 
 	## A square moved round by `k` zones; the bullseye stays put.
 	turn : U64, U64 -> U64
-	turn = |s, k| if s == bullseye { s } else { at((zone(s) + k) % zones, local(s)) }
+	turn = |s, k| if s == bullseye {
+		s
+	} else {
+		at((zone(s) + k) % zones, local(s))
+	}
 
 	## Square `s` as color `c` sees it.
 	relative : U64, U64 -> U64
-	relative = |c, s| List.get(List.get(relative_table, c) ?? [], s) ?? crash("Board.relative: no such square")
+	relative = |c, s| List.get(List.get(relative_table, c) ?? [], s) ?? crash ("Board.relative: no such square")
 
 	## The square color `c` calls `r`.
 	absolute : U64, U64 -> U64
-	absolute = |c, r| List.get(List.get(absolute_table, c) ?? [], r) ?? crash("Board.absolute: no such square")
+	absolute = |c, r| List.get(List.get(absolute_table, c) ?? [], r) ?? crash ("Board.absolute: no such square")
 
 	## A color's place in the game's color order.
 	color_index : List(Str), Str -> U64
-	color_index = |zone_colors, color| List.find_first_index(zone_colors, |c| c == color) ?? crash("Board: no zone ${color}")
+	color_index = |zone_colors, color| List.find_first_index(zone_colors, |c| c == color) ?? crash ("Board: no zone ${color}")
 
 	## The squares by name, for the page, the click codes and the tests.
 	square_of : Str -> U64
-	square_of = |id| List.find_first_index(Config.config_locations, |l| l.id == id) ?? crash("Board: no square ${id}")
+	square_of = |id| List.find_first_index(Config.config_locations, |l| l.id == id) ?? crash ("Board: no square ${id}")
 
 	index_of : List(Str), Type.PieceLocation -> U64
 	index_of = |zone_colors, loc|
@@ -142,6 +147,6 @@ expect Board.absolute(2, Board.relative(2, 40)) == 40 and Board.relative(3, Boar
 expect {
 	colors = ["red", "blue", "green", "purple"]
 	Board.index_of(colors, { zone: NormalColor("green"), id: "L0" }) == Board.at(2, Board.l0)
-	and Board.loc_of(colors, Board.at(3, Board.ft)) == { zone: NormalColor("purple"), id: "FT" }
-	and List.len(Board.all_locs(colors)) == Board.count
+		and Board.loc_of(colors, Board.at(3, Board.ft)) == { zone: NormalColor("purple"), id: "FT" }
+			and List.len(Board.all_locs(colors)) == Board.count
 }

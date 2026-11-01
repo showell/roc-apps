@@ -47,7 +47,7 @@ Piece :: [].{
 
 	## Only when a piece is being sent home, so there is always a square.
 	open_holding_pen_location : Type.Board, U64 -> U64
-	open_holding_pen_location = |board, c| List.find_first(Board.pen_of(c), |s| is_open(board, s)) ?? crash("Piece: no open pen square")
+	open_holding_pen_location = |board, c| List.find_first(Board.pen_of(c), |s| is_open(board, s)) ?? crash ("Piece: no open pen square")
 
 	## Every piece of another color on the open track (the bullseye too): the
 	## squares a jack may trade with.
@@ -131,7 +131,7 @@ Piece :: [].{
 	## trade) or sends it back to its own pen.
 	execute_move : Type.MoveFlavor, U64, U64, Type.Board -> Type.Board
 	execute_move = |flavor, start, end, board| {
-		start_c = at(board, start) ?? crash("Piece.execute_move: no piece to move")
+		start_c = at(board, start) ?? crash ("Piece.execute_move: no piece to move")
 		match at(board, end) {
 			Ok(end_c) =>
 				if flavor == TradePieces {
@@ -153,7 +153,11 @@ Piece :: [].{
 			pieces,
 			empty,
 			|b, (zone, id, color)| {
-				s = if zone == "BE" { Board.bullseye } else { Board.at(Board.color_index(zone_colors, zone), Board.square_of(id)) }
+				s = if zone == "BE" {
+					Board.bullseye
+				} else {
+					Board.at(Board.color_index(zone_colors, zone), Board.square_of(id))
+				}
 				place(b, s, Board.color_index(zone_colors, color))
 			},
 		)

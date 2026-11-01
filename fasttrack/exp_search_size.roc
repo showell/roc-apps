@@ -33,14 +33,32 @@ loc_str = |zone_colors, s|
 
 ## A line's board as numbers: every piece's square and color.
 board_key : Search.Line -> List(U64)
-board_key = |line| List.join(List.map_with_index(line.game.board, |v, sq| if v == 0 { [] } else { [10 * sq + U8.to_u64(v) - 1] }))
+board_key = |line| List.join(
+	List.map_with_index(
+		line.game.board,
+		|v, sq| if v == 0 {
+			[]
+		} else {
+			[10 * sq + U8.to_u64(v) - 1]
+		},
+	),
+)
 
 ## The distinct boards among these lines, each with how many lines reach it
 ## and one of them: the lines sorted by board, then counted in runs.
 boards : List(Search.Line) -> List({ board : List(U64), n : U64, example : Search.Line })
 boards = |lines| {
 	keyed = List.map(lines, |l| { board: board_key(l), line: l })
-	sorted = List.sort_with(keyed, |a, b| if Search.key_before(a.board, b.board) { Before } else if Search.key_before(b.board, a.board) { After } else { Same })
+	sorted = List.sort_with(
+		keyed,
+		|a, b| if Search.key_before(a.board, b.board) {
+			Before
+		} else if Search.key_before(b.board, a.board) {
+			After
+		} else {
+			Same
+		},
+	)
 	List.fold(
 		sorted,
 		[],
@@ -79,7 +97,13 @@ main! = |_args| {
 			n = List.len(Search.all_lines($g).lines)
 			$searches = $searches + 1
 			$total = $total + n
-			$big = $big + (if n > 100 { 1 } else { 0 })
+			$big = $big + (
+				if n > 100 {
+					1
+				} else {
+					0
+				}
+			)
 			if n > $best.n {
 				$best = { n, game: $g, turn: $turn }
 			}
@@ -118,7 +142,16 @@ main! = |_args| {
 		$depth = $depth + 1
 	}
 	finals = List.keep_if(List.concat($done, List.keep_if($level, Search.is_open)), |l| !List.is_empty(l.msgs))
-	final_boards = List.sort_with(boards(finals), |x, y| if x.n > y.n { Before } else if x.n < y.n { After } else { Same })
+	final_boards = List.sort_with(
+		boards(finals),
+		|x, y| if x.n > y.n {
+			Before
+		} else if x.n < y.n {
+			After
+		} else {
+			Same
+		},
+	)
 	Echo.line!("\nThe search's answer: ${U64.to_str(List.len(finals))} lines, ${U64.to_str(List.len(final_boards))} boards.\n")
 	Echo.line!("The boards reached most often:\n")
 	for b in List.take_first(final_boards, 3) {

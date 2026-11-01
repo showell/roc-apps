@@ -15,6 +15,7 @@
 import Board
 
 Routes :: [].{
+
 	## The longest walk a card asks for: a 10.
 	longest : U64
 	longest = 10
@@ -23,16 +24,28 @@ Routes :: [].{
 	next : U64, Bool, Bool, Bool -> List(U64)
 	next = |r, fast, leave_pen, leave_bulls|
 		if r == Board.bullseye {
-			if leave_bulls { [Board.at(3, Board.ft)] } else { [] }
+			if leave_bulls {
+				[Board.at(3, Board.ft)]
+			} else {
+				[]
+			}
 		} else {
 			z = Board.zone(r)
 			l = Board.local(r)
 			nz = (z + 1) % Board.zones
 			if l < 4 {
-				if leave_pen { [Board.at(z, Board.l0)] } else { [] }
+				if leave_pen {
+					[Board.at(z, Board.l0)]
+				} else {
+					[]
+				}
 			} else if l == Board.ft {
 				if z == 0 {
-					if fast { [Board.at(nz, Board.ft), Board.at(nz, Board.r4), Board.bullseye] } else { [Board.at(nz, Board.r4), Board.bullseye] }
+					if fast {
+						[Board.at(nz, Board.ft), Board.at(nz, Board.r4), Board.bullseye]
+					} else {
+						[Board.at(nz, Board.r4), Board.bullseye]
+					}
 				} else if fast and nz != 0 {
 					[Board.at(nz, Board.ft), Board.at(nz, Board.r4)]
 				} else {
@@ -54,7 +67,11 @@ Routes :: [].{
 					18 => [17]
 					17 => [10]
 					10 => [Board.ds]
-					9 => if z == 0 { [4] } else { [Board.hh] }
+					9 => if z == 0 {
+						[4]
+					} else {
+						[Board.hh]
+					}
 					4 => [5]
 					5 => [6]
 					6 => [7]

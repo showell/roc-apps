@@ -18,6 +18,7 @@ import Reach
 import Type
 
 Rank :: [].{
+
 	## The decks, stage by stage: each drops more kinds of card.
 	stages : List({ title : Str, hand : List(Str) })
 	stages = {
@@ -57,9 +58,17 @@ Rank :: [].{
 	by_stage : Reach.Routes, Reach.Routes -> I64
 	by_stage = |a, b|
 		if a.cards != b.cards {
-			if a.cards < b.cards { -1 } else { 1 }
+			if a.cards < b.cards {
+				-1
+			} else {
+				1
+			}
 		} else if a.routes != b.routes {
-			if a.routes > b.routes { -1 } else { 1 }
+			if a.routes > b.routes {
+				-1
+			} else {
+				1
+			}
 		} else {
 			0
 		}
@@ -69,14 +78,26 @@ Rank :: [].{
 	compare = |a, b| {
 		first = |r| List.first(r.stage) ?? { cards: Board.far, routes: 0 }
 		if a.base != b.base {
-			if a.base > b.base { -1 } else { 1 }
+			if a.base > b.base {
+				-1
+			} else {
+				1
+			}
 		} else if first(a).cards != first(b).cards {
-			if first(a).cards < first(b).cards { -1 } else { 1 }
+			if first(a).cards < first(b).cards {
+				-1
+			} else {
+				1
+			}
 		} else {
 			List.fold(
 				List.map_with_index(a.stage, |sa, i| by_stage(sa, List.get(b.stage, i) ?? { cards: Board.far, routes: 0 })),
 				0,
-				|decided, c| if decided != 0 { decided } else { c },
+				|decided, c| if decided != 0 {
+					decided
+				} else {
+					c
+				},
 			)
 		}
 	}
@@ -95,7 +116,11 @@ Rank :: [].{
 				Board.all_locs(zone_colors),
 				|loc, i| {
 					stage = List.map(tables, |t| List.get(t, i) ?? { cards: Board.far, routes: 0 })
-					id = if loc.zone == NormalColor(color) { loc.id } else { "" }
+					id = if loc.zone == NormalColor(color) {
+						loc.id
+					} else {
+						""
+					}
 					base = base_depth(id)
 					# The base squares past the peak count too: they rank first.
 					if base == 0 and (List.first(stage) ?? { cards: Board.far, routes: 0 }).cards >= Board.far {
@@ -110,7 +135,15 @@ Rank :: [].{
 			rows,
 			|a, b| {
 				c = compare(a, b)
-				if c < 0 { Before } else if c > 0 { After } else if a.at < b.at { Before } else { After }
+				if c < 0 {
+					Before
+				} else if c > 0 {
+					After
+				} else if a.at < b.at {
+					Before
+				} else {
+					After
+				}
 			},
 		)
 	}
@@ -131,11 +164,23 @@ Rank :: [].{
 			List.map_with_index(order, |row, i| { row, i }),
 			{ place: start, prev: { row: List.first(order) ?? { at: 0, loc: { zone: BullsEyeZone, id: "" }, base: 0, stage: [] }, place: 0 } },
 			|acc, x| {
-				p = if x.i > 0 and compare(acc.prev.row, x.row) == 0 { acc.prev.place } else { x.i }
-				{ place: List.set(acc.place, x.row.at, p) ?? crash("Rank: square out of range"), prev: { row: x.row, place: p } }
+				p = if x.i > 0 and compare(acc.prev.row, x.row) == 0 {
+					acc.prev.place
+				} else {
+					x.i
+				}
+				{ place: List.set(acc.place, x.row.at, p) ?? crash ("Rank: square out of range"), prev: { row: x.row, place: p } }
 			},
 		)
-		worst = List.fold(settled.place, 0, |m, p| if p != U64.highest and p > m { p } else { m })
+		worst = List.fold(
+			settled.place,
+			0,
+			|m, p| if p != U64.highest and p > m {
+				p
+			} else {
+				m
+			},
+		)
 		{ place: settled.place, worst }
 	}
 }

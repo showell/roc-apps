@@ -13,7 +13,14 @@ colors = ["red", "blue", "green", "purple"]
 
 main! = |_args| {
 	p = Rank.places(colors, "red", "B1")
-	values = List.map(p.place, |place| if place == U64.highest { 0 } else { 100 * (U64.to_i64_wrap(p.worst) - U64.to_i64_wrap(place)) })
+	values = List.map(
+		p.place,
+		|place| if place == U64.highest {
+			0
+		} else {
+			100 * (U64.to_i64_wrap(p.worst) - U64.to_i64_wrap(place))
+		},
+	)
 	zones = List.map_with_index(
 		["own zone", "the next zone", "two zones on", "the zone before your own"],
 		|title, z| {

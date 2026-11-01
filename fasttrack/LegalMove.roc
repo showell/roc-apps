@@ -21,6 +21,7 @@ import Routes
 import Type
 
 LegalMove :: [].{
+
 	## Where the piece of color `c` on `start` lands after `n` steps: once
 	## for every open walk, in Routes' order.
 	ends : Type.Board, U64, U64, I64, Bool, Bool, Bool -> List(U64)
@@ -31,14 +32,18 @@ LegalMove :: [].{
 			[]
 		} else {
 			r = Board.relative(c, start)
-			walks = if reverse { Routes.backward_walks(r, I64.to_u64_wrap(n)) } else { Routes.forward_walks(r, I64.to_u64_wrap(n)) }
+			walks = if reverse {
+				Routes.backward_walks(r, I64.to_u64_wrap(n))
+			} else {
+				Routes.forward_walks(r, I64.to_u64_wrap(n))
+			}
 			List.join_map(
 				walks,
 				|walk|
 					if List.any(walk, |x| Piece.holds(board, Board.absolute(c, x), c)) {
 						[]
 					} else {
-						[Board.absolute(c, List.last(walk) ?? crash("LegalMove: an empty walk"))]
+						[Board.absolute(c, List.last(walk) ?? crash ("LegalMove: an empty walk"))]
 					},
 			)
 		}
@@ -48,7 +53,11 @@ LegalMove :: [].{
 	walk_between : Type.Board, U64, U64, U64, I64, Bool -> List(U64)
 	walk_between = |board, c, start, end, n, reverse| {
 		r = Board.relative(c, start)
-		walks = if reverse { Routes.backward_walks(r, I64.to_u64_wrap(n)) } else { Routes.forward_walks(r, I64.to_u64_wrap(n)) }
+		walks = if reverse {
+			Routes.backward_walks(r, I64.to_u64_wrap(n))
+		} else {
+			Routes.forward_walks(r, I64.to_u64_wrap(n))
+		}
 		open = List.keep_if(
 			List.map(walks, |walk| List.map(walk, |x| Board.absolute(c, x))),
 			|walk| List.last(walk) == Ok(end) and !List.any(walk, |x| Piece.holds(board, x, c)),
@@ -71,7 +80,7 @@ LegalMove :: [].{
 				} else {
 					Bool.False
 				}
-		}
+			}
 
 	## Every forward move the hand allows; when there is none, every move
 	## backwards instead.
@@ -79,7 +88,13 @@ LegalMove :: [].{
 	get_moves_for_cards = |cards, board, zone_colors, movers| {
 		m = List.map(movers, |c| Board.color_index(zone_colors, c))
 		moves_for = |make_move_type| List.join_map(cards, |card| moves_for_type(make_move_type(card), board, m))
-		forward_moves = moves_for(|card| if card == "4" { Reverse(card) } else { WithCard(card) })
+		forward_moves = moves_for(
+			|card| if card == "4" {
+				Reverse(card)
+			} else {
+				WithCard(card)
+			},
+		)
 		if List.is_empty(forward_moves) {
 			moves_for(|card| Reverse(card))
 		} else {
@@ -120,7 +135,11 @@ LegalMove :: [].{
 						moves_for_seven(board, c, start, movers)
 					} else if move_type == WithCard("J") {
 						steps = List.map(ends(board, c, start, 1, reverse, leave_pen, leave_bulls), |end| { kind: WithCard("J"), start, end })
-						trades = if Board.is_track(start) { List.map(Piece.swappable_locs(board, c), |end| { kind: JackTrade, start, end }) } else { [] }
+						trades = if Board.is_track(start) {
+							List.map(Piece.swappable_locs(board, c), |end| { kind: JackTrade, start, end })
+						} else {
+							[]
+						}
 						List.concat(steps, trades)
 					} else {
 						List.map(ends(board, c, start, n, reverse, leave_pen, leave_bulls), |end| { kind: move_type, start, end })
@@ -128,7 +147,7 @@ LegalMove :: [].{
 				} else {
 					[]
 				}
-		}
+			}
 
 	## A seven moves one piece seven, or splits between two: the first part
 	## is offered only if some other piece can then finish the split, and

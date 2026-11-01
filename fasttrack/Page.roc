@@ -23,6 +23,7 @@ import Player
 import Type
 
 Page :: [].{
+
 	## A subtree of nodes, flattened: its root first, `parent` counted from
 	## the subtree's own start.
 	Tree : List(Wire.Node)
@@ -35,7 +36,17 @@ Page :: [].{
 			[root],
 			|acc, child| {
 				offset = U64.to_u32_wrap(List.len(acc))
-				List.concat(acc, List.map(child, |n| if n.parent == 0 { { ..n, parent: 1 } } else { { ..n, parent: n.parent + offset } }))
+				List.concat(
+					acc,
+					List.map(
+						child,
+						|n| if n.parent == 0 {
+							{ ..n, parent: 1 }
+						} else {
+							{ ..n, parent: n.parent + offset }
+						},
+					),
+				)
 			},
 		)
 	}
@@ -80,7 +91,11 @@ Page :: [].{
 		# The board is always drawn as red sees it, so a slot's place is its
 		# square's number (Board.roc).
 		zone_colors = game.zone_colors
-		undo_button = if flags.show_undo { [button("", Codes.undo, [text("oops")])] } else { [] }
+		undo_button = if flags.show_undo {
+			[button("", Codes.undo, [text("oops")])]
+		} else {
+			[]
+		}
 		side_count = List.len(zone_colors)
 		console =
 			if flags.winner != "" {
@@ -124,10 +139,27 @@ Page :: [].{
 						# The pen's centre on the screen, and the label clear of it:
 						# above for red and blue, below for green and purple.
 						pen = spot(side_count, i, -3.7, 1.2)
-						dy = if i < 2 { -1.4 * Config.square_size } else { 1.4 * Config.square_size + 4.0 }
+						dy = if i < 2 {
+							-1.4 * Config.square_size
+						} else {
+							1.4 * Config.square_size + 4.0
+						}
 						at = { x: pen.x, y: pen.y + dy }
 						n = I64.to_str(p.get_out_credits)
-						[{ x: at.x, y: at.y, text: "${n} discard${if p.get_out_credits == 1 { "" } else { "s" }}", fill: p.color }]
+						[
+							{
+								x: at.x,
+								y: at.y,
+								text: "${n} discard${
+									if p.get_out_credits == 1 {
+										""
+									} else {
+										"s"
+									}
+								}",
+								fill: p.color,
+							},
+						]
 					} else {
 						[]
 					},
@@ -178,7 +210,7 @@ Page :: [].{
 				span(List.map(player.hand, |card| el("button", card_css(color, color), 0, Bool.True, [text(card)]))),
 				div([text("the computer is playing ${color}")]),
 			]
-			.concat(team_line(player)),
+				.concat(team_line(player)),
 		)
 
 	board_view : Type.Game, List(Str), Type.Player, Bool -> List(Wire.Slot)
@@ -259,7 +291,11 @@ Page :: [].{
 			cy,
 			size: Config.square_size - Config.gutter_size,
 			fill,
-			stroke: if is_start_loc { "black" } else { zone_color },
+			stroke: if is_start_loc {
+				"black"
+			} else {
+				zone_color
+			},
 			piece: my_piece ?? "",
 			piece_r,
 			click,
@@ -301,7 +337,11 @@ Page :: [].{
 	hand_card_view : Str, Type.Player, Assoc.AssocSet(Str), U64, Str -> Page.Tree
 	hand_card_view = |color, player, playable_cards, idx, card| {
 		action = match player.turn {
-			TurnNeedCard(_) => if Assoc.set_member(playable_cards, card) { CanActivate } else { Ignore }
+			TurnNeedCard(_) => if Assoc.set_member(playable_cards, card) {
+				CanActivate
+			} else {
+				Ignore
+			}
 			TurnNeedDiscard => CanDiscard
 			TurnNeedCover => CanCover
 			_ => Ignore

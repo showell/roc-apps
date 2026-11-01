@@ -12,6 +12,7 @@ import Strategy
 import Type
 
 TeamTests :: [].{
+
 	## A partnership game with only these pieces, red to play these cards.
 	game_with : Type.Teams, List((Str, Str, Str)), List(Str) -> Type.Game
 	game_with = |teams, pieces, hand| {

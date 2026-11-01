@@ -130,7 +130,19 @@ Search :: [].{
 					_ => List.append(kept, x)
 				},
 		)
-		List.map(List.sort_with(firsts, |a, b| if a.i < b.i { Before } else if a.i > b.i { After } else { Same }), |x| x.line)
+		List.map(
+			List.sort_with(
+				firsts,
+				|a, b| if a.i < b.i {
+					Before
+				} else if a.i > b.i {
+					After
+				} else {
+					Same
+				},
+			),
+			|x| x.line,
+		)
 	}
 
 	## A line's position (position_key) and where its turn stands: two lines
@@ -158,7 +170,11 @@ Search :: [].{
 	score = |strategy, game, line| {
 		mover = Player.get_active_player(game)
 		colors = Strategy.team(mover)
-		kept = if line.drew { 0 } else { Strategy.hand(Strategy.hoard_worths(strategy, game, mover.color), Player.get_active_player(line.game).hand) }
+		kept = if line.drew {
+			0
+		} else {
+			Strategy.hand(Strategy.hoard_worths(strategy, game, mover.color), Player.get_active_player(line.game).hand)
+		}
 		Strategy.board(strategy, line.game, colors) + kept
 	}
 
@@ -204,7 +220,11 @@ Search :: [].{
 			}
 			$steps = $steps + 1
 		}
-		if List.is_empty($line.msgs) { Err(NoPlay) } else { Ok($line) }
+		if List.is_empty($line.msgs) {
+			Err(NoPlay)
+		} else {
+			Ok($line)
+		}
 	}
 
 	## A line's position as numbers: every piece as its square (Board.roc) and
@@ -215,10 +235,41 @@ Search :: [].{
 	position_key = |line| {
 		g = line.game
 		p = Player.get_active_player(g)
-		ascending = |xs| List.sort_with(xs, |a, b| if a < b { Before } else if a > b { After } else { Same })
-		pieces = List.join(List.map_with_index(g.board, |v, sq| if v == 0 { [] } else { [10 * sq + U8.to_u64(v) - 1] }))
+		ascending = |xs| List.sort_with(
+			xs,
+			|a, b| if a < b {
+				Before
+			} else if a > b {
+				After
+			} else {
+				Same
+			},
+		)
+		pieces = List.join(
+			List.map_with_index(
+				g.board,
+				|v, sq| if v == 0 {
+					[]
+				} else {
+					[10 * sq + U8.to_u64(v) - 1]
+				},
+			),
+		)
 		cards = ascending(List.map(p.hand, |c| I64.to_u64_wrap(Config.card_value(c))))
-		List.join([pieces, [999], cards, [999, I64.to_u64_wrap(p.get_out_credits), if line.drew { 1 } else { 0 }]])
+		List.join([
+			pieces,
+			[999],
+			cards,
+			[
+				999,
+				I64.to_u64_wrap(p.get_out_credits),
+				if line.drew {
+					1
+				} else {
+					0
+				},
+			],
+		])
 	}
 
 	## Lexicographic order on keys.
@@ -252,10 +303,18 @@ Search :: [].{
 			|acc, line| {
 				s = score(strategy, game, line)
 				better = !acc.found or s > acc.score or (s == acc.score and key_before(position_key(line), position_key(acc.line)))
-				if better { { line, score: s, found: Bool.True } } else { acc }
+				if better {
+					{ line, score: s, found: Bool.True }
+				} else {
+					acc
+				}
 			},
 		)
-		if best.found { Ok({ line: best.line, cut: found.cut }) } else { Err(NoPlay) }
+		if best.found {
+			Ok({ line: best.line, cut: found.cut })
+		} else {
+			Err(NoPlay)
+		}
 	}
 }
 

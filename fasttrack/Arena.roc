@@ -22,6 +22,7 @@ import Strategy
 import Type
 
 Arena :: [].{
+
 	## A seat plays a Strategy through the whole-turn search, or takes the
 	## first legal move it finds.
 	Seat : [Plays(Strategy.Strategy), FirstLegal]
@@ -73,7 +74,24 @@ Arena :: [].{
 		var $steps = 0
 		while $winner == 4 and $steps < 100000 {
 			s = step(seats, $g)
-			$r = { ..$r, skips: $r.skips + (if s.skipped { 1 } else { 0 }), cuts: $r.cuts + (if s.cut { 1 } else { 0 }) }
+			$r = {
+				..$r,
+				skips: $r.skips + (
+					if s.skipped {
+						1
+					} else {
+						0
+					}
+				),
+				cuts: $r.cuts + (
+					if s.cut {
+						1
+					} else {
+						0
+					}
+				),
+				# The first player home wins, and the game stops.
+			}
 			# The first player home wins, and the game stops.
 			$winner = List.find_first([0, 1, 2, 3], |seat| home(s.game, seat)) ?? 4
 			$g = s.game
@@ -172,9 +190,9 @@ Arena :: [].{
 	ft_hop : Type.Move -> Bool
 	ft_hop = |m|
 		forward(m)
-		and Board.is_ft(m.start)
-		and m.end != Board.bullseye
-		and (Board.is_ft(m.end) or Board.zone(m.end) != (Board.zone(m.start) + 1) % Board.zones)
+			and Board.is_ft(m.start)
+				and m.end != Board.bullseye
+					and (Board.is_ft(m.end) or Board.zone(m.end) != (Board.zone(m.start) + 1) % Board.zones)
 
 	bump : List(Arena.Tally), U64, (Arena.Tally -> Arena.Tally) -> List(Arena.Tally)
 	bump = |ts, i, f| List.set(ts, i, f(List.get(ts, i) ?? no_tally)) ?? ts
@@ -271,15 +289,29 @@ Arena :: [].{
 	percent : F64 -> Str
 	percent = |x| {
 		t = F64.to_i64_wrap(F64.abs(x) * 1000.0 + 0.5)
-		sign = if x < 0.0 and t > 0 { "-" } else { "" }
+		sign = if x < 0.0 and t > 0 {
+			"-"
+		} else {
+			""
+		}
 		"${sign}${I64.to_str(t // 10)}.${I64.to_str(t % 10)}%"
 	}
 
 	thousandths : F64 -> Str
 	thousandths = |x| {
 		t = F64.to_i64_wrap(F64.abs(x) * 1000.0 + 0.5)
-		sign = if x < 0.0 and t > 0 { "-" } else { "" }
-		pad = if t % 1000 < 10 { "00" } else if t % 1000 < 100 { "0" } else { "" }
+		sign = if x < 0.0 and t > 0 {
+			"-"
+		} else {
+			""
+		}
+		pad = if t % 1000 < 10 {
+			"00"
+		} else if t % 1000 < 100 {
+			"0"
+		} else {
+			""
+		}
 		"${sign}${I64.to_str(t // 1000)}.${pad}${I64.to_str(t % 1000)}"
 	}
 
@@ -299,7 +331,11 @@ Arena :: [].{
 		deals = List.join(blocks)
 		n = U64.to_f64(List.len(deals))
 		wins = |j| List.count_if(deals, |deal| won(deal, j))
-		win = |b| if b { 1.0 } else { 0.0 }
+		win = |b| if b {
+			1.0
+		} else {
+			0.0
+		}
 		last_seed = first_seed + List.len(blocks) - 1
 		rows = List.map_with_index(
 			labels,
@@ -320,7 +356,13 @@ Arena :: [].{
 				paired = sd(List.map(deals, |deal| win(won(deal, x.j)) - win(won(deal, 0)))) / F64.sqrt(n)
 				by_seed = sd(List.map(blocks, |bl| (U64.to_f64(List.count_if(bl, |deal| won(deal, x.j))) - U64.to_f64(List.count_if(bl, |deal| won(deal, 0)))) / 4.0)) / F64.sqrt(U64.to_f64(List.len(blocks)))
 				only = "${U64.to_str(List.count_if(deals, |deal| won(deal, x.j) and !won(deal, 0)))} / ${U64.to_str(List.count_if(deals, |deal| won(deal, 0) and !won(deal, x.j)))}"
-				"| ${x.label} | ${thousandths(diff)} | ${only} | ${thousandths(unrelated)} / ${thousandths(paired)} / ${thousandths(by_seed)} | ${if paired > 0.0 { thousandths(diff / paired) } else { "-" }} |"
+				"| ${x.label} | ${thousandths(diff)} | ${only} | ${thousandths(unrelated)} / ${thousandths(paired)} / ${thousandths(by_seed)} | ${
+					if paired > 0.0 {
+						thousandths(diff / paired)
+					} else {
+						"-"
+					}
+				} |"
 			},
 		)
 		Str.join_with(
@@ -344,9 +386,9 @@ Arena :: [].{
 expect {
 	ft = Board.at(0, Board.ft)
 	Arena.ft_hop({ kind: WithCard("2"), start: ft, end: Board.at(1, Board.ft) })
-	and Arena.ft_hop({ kind: WithCard("3"), start: ft, end: Board.at(2, Board.r4) })
-	and !Arena.ft_hop({ kind: WithCard("2"), start: ft, end: Board.at(1, 20) })
-	and !Arena.ft_hop({ kind: Reverse("4"), start: ft, end: Board.at(0, 12) })
+		and Arena.ft_hop({ kind: WithCard("3"), start: ft, end: Board.at(2, Board.r4) })
+			and !Arena.ft_hop({ kind: WithCard("2"), start: ft, end: Board.at(1, 20) })
+				and !Arena.ft_hop({ kind: Reverse("4"), start: ft, end: Board.at(0, 12) })
 }
 
 # A move with one end is made by its start click alone, and still counted:
@@ -355,6 +397,6 @@ expect {
 	start = Game.begin_game(0, Normal, Solo)
 	players = Player.update_player(start.players, 0, |p| { ..p, hand: ["2"], turn: TurnBegin })
 	g0 = Player.set_turn_to_need_card({ ..start, board: Piece.board_of(start.zone_colors, [("red", "L0", "red")]), players })
-	found = Search.first_line(g0) ?? crash("no line")
+	found = Search.first_line(g0) ?? crash ("no line")
 	Arena.moves_of(g0, found.msgs) == [{ kind: WithCard("2"), start: Board.at(0, Board.l0), end: Board.at(0, 13) }]
 }

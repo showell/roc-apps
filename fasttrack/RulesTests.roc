@@ -23,7 +23,11 @@ RulesTests :: [].{
 	board = |pieces| Piece.board_of(zone_colors, pieces)
 
 	at : Str, Str -> U64
-	at = |zone, id| if zone == "BE" { Board.bullseye } else { Board.index_of(zone_colors, { zone: NormalColor(zone), id }) }
+	at = |zone, id| if zone == "BE" {
+		Board.bullseye
+	} else {
+		Board.index_of(zone_colors, { zone: NormalColor(zone), id })
+	}
 
 	show_loc : U64 -> Str
 	show_loc = |s|
@@ -79,7 +83,8 @@ RulesTests :: [].{
 # get moves 2/3 away
 expect {
 	b = RulesTests.board([("red", "L0", "blue"), ("green", "R3", "blue"), ("blue", "L3", "blue"), ("blue", "L0", "blue"), ("green", "L3", "green")])
-	RulesTests.moves_are(RulesTests.for_cards(["2", "3"], b),
+	RulesTests.moves_are(
+		RulesTests.for_cards(["2", "3"], b),
 		[
 			"2 red.L0 red.L2",
 			"2 green.R3 green.R1",
@@ -140,34 +145,30 @@ expect {
 
 # testMovablePieces: find my pieces
 expect {
-	b = RulesTests.board(
-		[
-			("red", "L0", "blue"),
-			("red", "L2", "red"),
-			("green", "FT", "blue"),
-			("blue", "L3", "blue"),
-			("blue", "L4", "green"),
-			("blue", "HP1", "blue"),
-			("blue", "HP2", "blue"),
-			("blue", "B2", "blue"),
-			("blue", "FT", "red"),
-		],
-	)
+	b = RulesTests.board([
+		("red", "L0", "blue"),
+		("red", "L2", "red"),
+		("green", "FT", "blue"),
+		("blue", "L3", "blue"),
+		("blue", "L4", "green"),
+		("blue", "HP1", "blue"),
+		("blue", "HP2", "blue"),
+		("blue", "B2", "blue"),
+		("blue", "FT", "red"),
+	])
 	RulesTests.locs_are(Piece.movable_pieces(b, RulesTests.blue), ["red.L0", "green.FT", "blue.L3", "blue.HP2", "blue.B2"])
 }
 
 # testOtherNonPenPieces: other pieces can be found
 expect {
-	b = RulesTests.board(
-		[
-			("red", "L1", "blue"),
-			("green", "FT", "blue"),
-			("blue", "L3", "blue"),
-			("blue", "HP1", "blue"),
-			("blue", "B2", "blue"),
-			("blue", "FT", "red"),
-		],
-	)
+	b = RulesTests.board([
+		("red", "L1", "blue"),
+		("green", "FT", "blue"),
+		("blue", "L3", "blue"),
+		("blue", "HP1", "blue"),
+		("blue", "B2", "blue"),
+		("blue", "FT", "red"),
+	])
 	RulesTests.locs_are(Piece.other_non_pen_pieces(b, RulesTests.blue, RulesTests.at("red", "L1")), ["green.FT", "blue.L3", "blue.B2"])
 }
 
@@ -210,18 +211,16 @@ expect !Piece.has_piece_on_fast_track(RulesTests.board([("blue", "L0", "blue"), 
 
 # testSwappableLocs
 expect {
-	b = RulesTests.board(
-		[
-			("blue", "L0", "blue"),
-			("green", "L1", "blue"),
-			("green", "HP1", "green"),
-			("red", "HP1", "red"),
-			("red", "B1", "red"),
-			("green", "L0", "green"),
-			("blue", "L1", "green"),
-			("red", "R3", "red"),
-		],
-	)
+	b = RulesTests.board([
+		("blue", "L0", "blue"),
+		("green", "L1", "blue"),
+		("green", "HP1", "green"),
+		("red", "HP1", "red"),
+		("red", "B1", "red"),
+		("green", "L0", "green"),
+		("blue", "L1", "green"),
+		("red", "R3", "red"),
+	])
 	RulesTests.locs_are(Piece.swappable_locs(b, RulesTests.blue), ["green.L0", "blue.L1", "red.R3"])
 }
 

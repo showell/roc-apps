@@ -80,7 +80,7 @@ Player :: [].{
 	}
 
 	get_player : List(Type.Player), U64 -> Type.Player
-	get_player = |players, idx| List.get(players, idx) ?? crash("Player.get_player: no player at that index")
+	get_player = |players, idx| List.get(players, idx) ?? crash ("Player.get_player: no player at that index")
 
 	## The colors whose pieces this player may move: its own, and its
 	## partner's when its team's rules allow.
@@ -89,7 +89,11 @@ Player :: [].{
 		match player.team {
 			Solo => [player.color]
 			Partner(partner) => [player.color, partner]
-			PartnerOnceHome(partner) => if Piece.all_home(board, Board.color_index(zone_colors, player.color)) { [player.color, partner] } else { [player.color] }
+			PartnerOnceHome(partner) => if Piece.all_home(board, Board.color_index(zone_colors, player.color)) {
+				[player.color, partner]
+			} else {
+				[player.color]
+			}
 		}
 
 	get_active_player : Type.Game -> Type.Player
@@ -138,13 +142,11 @@ Player :: [].{
 	finish_seven_split = |board, zone_colors, move_colors, distance, end_loc| {
 		move_count = 7 - distance
 		moves = LegalMove.get_moves_for_move_type(FinishSplit(move_count, end_loc), board, zone_colors, move_colors)
-		TurnNeedStartLoc(
-			{
-				play_type: FinishSeven(move_count),
-				moves,
-				start_locs: Assoc.set_from_list(List.map(moves, |m| m.start)),
-			},
-		)
+		TurnNeedStartLoc({
+			play_type: FinishSeven(move_count),
+			moves,
+			start_locs: Assoc.set_from_list(List.map(moves, |m| m.start)),
+		})
 	}
 
 	clear_credits : Type.Player -> Type.Player
@@ -168,14 +170,12 @@ Player :: [].{
 		match player.turn {
 			TurnNeedStartLoc(info) => {
 				moves = List.keep_if(info.moves, |m| m.start == start_loc)
-				turn = TurnNeedEndLoc(
-					{
-						play_type: info.play_type,
-						moves,
-						start_location: start_loc,
-						end_locs: Assoc.set_from_list(List.map(moves, |m| m.end)),
-					},
-				)
+				turn = TurnNeedEndLoc({
+					play_type: info.play_type,
+					moves,
+					start_location: start_loc,
+					end_locs: Assoc.set_from_list(List.map(moves, |m| m.end)),
+				})
 				{ ..player, turn }
 			}
 			_ => player
@@ -192,7 +192,7 @@ Player :: [].{
 	update_active_player = |f, game| { ..game, players: update_player(game.players, game.active_player_idx, f) }
 
 	update_player : List(Type.Player), U64, (Type.Player -> Type.Player) -> List(Type.Player)
-	update_player = |players, idx, f| List.set(players, idx, f(get_player(players, idx))) ?? crash("update_player: no player at that index")
+	update_player = |players, idx, f| List.set(players, idx, f(get_player(players, idx))) ?? crash ("update_player: no player at that index")
 
 	set_turn : U64, Type.Turn, List(Type.Player) -> List(Type.Player)
 	set_turn = |idx, turn, players| update_player(players, idx, |player| { ..player, turn })
@@ -203,7 +203,11 @@ Player :: [].{
 			(Ok(card), TurnNeedDiscard) => {
 				# A move-again card keeps the player discarding; the caller
 				# moves to covering once there are credits enough to get out.
-				turn = if Config.is_move_again_card(card) { TurnNeedDiscard } else { TurnDone }
+				turn = if Config.is_move_again_card(card) {
+					TurnNeedDiscard
+				} else {
+					TurnDone
+				}
 				{ ..player, hand: List.drop_at(player.hand, idx), turn, get_out_credits: player.get_out_credits + 1 }
 			}
 			_ => player
@@ -213,7 +217,11 @@ Player :: [].{
 	cover_card = |idx, player|
 		match (List.get(player.hand, idx), player.turn) {
 			(Ok(card), TurnNeedCover) => {
-				turn = if Config.is_move_again_card(card) { TurnNeedCover } else { TurnDone }
+				turn = if Config.is_move_again_card(card) {
+					TurnNeedCover
+				} else {
+					TurnDone
+				}
 				{ ..player, hand: List.drop_at(player.hand, idx), turn }
 			}
 			_ => player
@@ -224,13 +232,11 @@ Player :: [].{
 		match (List.get(player.hand, idx), player.turn) {
 			(Ok(active_card), TurnNeedCard(info)) => {
 				moves = List.keep_if(info.moves, |m| LegalMove.get_card_for_move_type(m.kind) == active_card)
-				turn = TurnNeedStartLoc(
-					{
-						play_type: PlayCard(active_card),
-						moves,
-						start_locs: Assoc.set_from_list(List.map(moves, |m| m.start)),
-					},
-				)
+				turn = TurnNeedStartLoc({
+					play_type: PlayCard(active_card),
+					moves,
+					start_locs: Assoc.set_from_list(List.map(moves, |m| m.start)),
+				})
 				{ ..player, hand: List.drop_at(player.hand, idx), turn }
 			}
 			_ => player
@@ -250,7 +256,7 @@ Player :: [].{
 		while !List.is_empty($left) {
 			draw = ElmRandom.int(0, U64.to_i64_wrap(List.len($left)) - 1, $seed)
 			i = I64.to_u64_wrap(draw.value)
-			$deck = List.append($deck, List.get($left, i) ?? crash("Player.shuffle: out of range"))
+			$deck = List.append($deck, List.get($left, i) ?? crash ("Player.shuffle: out of range"))
 			$left = List.drop_at($left, i)
 			$seed = draw.seed
 		}
@@ -274,7 +280,11 @@ Player :: [].{
 
 	draw_card : Type.Player -> Type.Player
 	draw_card = |player| {
-		fresh = if List.is_empty(player.deck) { shuffle(player.seed) } else { { deck: player.deck, seed: player.seed } }
+		fresh = if List.is_empty(player.deck) {
+			shuffle(player.seed)
+		} else {
+			{ deck: player.deck, seed: player.seed }
+		}
 		match fresh.deck {
 			[card, .. as rest] => { ..player, deck: rest, seed: fresh.seed, hand: List.append(player.hand, card) }
 			[] => player

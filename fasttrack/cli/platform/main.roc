@@ -3,7 +3,9 @@
 # page for every allocation and unmaps it on free, which left an arena run
 # 86% in the kernel; this host allocates with the C library.
 platform ""
-	requires {} { main! : List(Str) => Try(_, [Exit(I8), ..]) }
+	requires {
+		main! : List(Str) => Try(_, [Exit(I8), ..])
+	}
 	exposes [Echo]
 	packages {}
 	provides { "roc_main": main_for_host! }

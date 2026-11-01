@@ -23,7 +23,11 @@ ElmRandom :: [].{
 	signed32 : U64 -> I64
 	signed32 = |bits| {
 		low = U64.bitwise_and(bits, mask)
-		if low >= 2147483648 { U64.to_i64_wrap(low) - 4294967296 } else { U64.to_i64_wrap(low) }
+		if low >= 2147483648 {
+			U64.to_i64_wrap(low) - 4294967296
+		} else {
+			U64.to_i64_wrap(low)
+		}
 	}
 
 	## ToUint32 of an integer: its value modulo 2^32.
@@ -50,8 +54,16 @@ ElmRandom :: [].{
 	## `Random.step (Random.int a b) seed`.
 	int : I64, I64, ElmRandom.Seed -> ElmRandom.Draw
 	int = |a, b, seed0| {
-		lo = if a < b { a } else { b }
-		hi = if a < b { b } else { a }
+		lo = if a < b {
+			a
+		} else {
+			b
+		}
+		hi = if a < b {
+			b
+		} else {
+			a
+		}
 		range = I64.to_u64_wrap(hi - lo + 1)
 		if U64.bitwise_and(range - 1, range) == 0 {
 			{ value: U64.to_i64_wrap(U64.bitwise_and(range - 1, peel(seed0))) + lo, seed: next(seed0) }

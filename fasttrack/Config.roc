@@ -2,6 +2,7 @@
 import Type
 
 Config :: [].{
+
 	## Discards that bring a piece out of the pen. Elm had 5; Steve's game
 	## has 4.
 	num_credits_to_get_out : I64
@@ -111,7 +112,11 @@ Config :: [].{
 			"3" => 3
 			"4" => 4
 			"5" => 5
-			"6" => if in_pen { 1 } else { 6 }
+			"6" => if in_pen {
+				1
+			} else {
+				6
+			}
 			"7" => 7
 			"8" => 8
 			"9" => 9

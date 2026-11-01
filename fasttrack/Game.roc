@@ -28,15 +28,13 @@ Game :: [].{
 	begin_dealt : U64, Setup.InitSetup, Type.Teams, U64 -> Type.Game
 	begin_dealt = |millis, init_setup, teams, rotation| {
 		zone_colors = Color.get_zone_colors(num_players)
-		begin_active_turn(
-			{
-				zone_colors,
-				board: Piece.config_pieces(init_setup, zone_colors),
-				players: Player.config_players(init_setup, zone_colors, teams, millis, rotation),
-				active_player_idx: 0,
-				num_players,
-			},
-		)
+		begin_active_turn({
+			zone_colors,
+			board: Piece.config_pieces(init_setup, zone_colors),
+			players: Player.config_players(init_setup, zone_colors, teams, millis, rotation),
+			active_player_idx: 0,
+			num_players,
+		})
 	}
 
 	update_game : Type.GameMsg, History.History(Type.Game), Type.Game -> (History.History(Type.Game), Type.Game)
@@ -77,9 +75,21 @@ Game :: [].{
 		both_home = |color, partner| home(color) and home(partner)
 		done = |player|
 			match player.team {
-				Solo => if home(player.color) { Ok(player.color) } else { Err(NoWinner) }
-				Partner(partner) => if both_home(player.color, partner) { Ok(Str.concat(player.color, Str.concat(" and ", partner))) } else { Err(NoWinner) }
-				PartnerOnceHome(partner) => if both_home(player.color, partner) { Ok(Str.concat(player.color, Str.concat(" and ", partner))) } else { Err(NoWinner) }
+				Solo => if home(player.color) {
+					Ok(player.color)
+				} else {
+					Err(NoWinner)
+				}
+				Partner(partner) => if both_home(player.color, partner) {
+					Ok(Str.concat(player.color, Str.concat(" and ", partner)))
+				} else {
+					Err(NoWinner)
+				}
+				PartnerOnceHome(partner) => if both_home(player.color, partner) {
+					Ok(Str.concat(player.color, Str.concat(" and ", partner)))
+				} else {
+					Err(NoWinner)
+				}
 			}
 		match List.find_first(game.players, |p| Try.is_ok(done(p))) {
 			Ok(p) => done(p)
