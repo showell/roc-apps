@@ -12,6 +12,7 @@ import Grade
 import Pose
 import RailPlan
 import Render
+import RocBird
 import TowerPlan
 import TreePlan
 import TruckPlan
@@ -52,7 +53,8 @@ merge_got = (
 		parts = (TreePlan.tree_items(frame.trees).len().to_i64_wrap() + TowerPlan.tower_items(frame.towers).len().to_i64_wrap())
 		more = (CritterPlan.cow_items(frame.cows).len().to_i64_wrap() + CatPlan.cat_items(frame.cats).len().to_i64_wrap())
 		rest = (TruckPlan.truck_items(frame.truck).len().to_i64_wrap() + RailPlan.rail_items(frame.rails).len().to_i64_wrap())
-		[(n - ((parts + more) + rest))]
+		birds = RocBird.bird_items(frame.birds).len().to_i64_wrap()
+		[(n - (((parts + more) + rest) + birds))]
 	}
 )
 
