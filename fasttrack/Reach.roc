@@ -86,8 +86,8 @@ Reach :: [].{
 
 	## Whether a move may be played from this hand of card kinds: its card,
 	## and its free face card (a J, Q or K) if it has one.
-	allowed : List(Str), Str -> Bool
-	allowed = |hand, card|
+	is_allowed : List(Str), Str -> Bool
+	is_allowed = |hand, card|
 		if Str.starts_with(card, "face+") {
 			List.contains(hand, Str.drop_prefix(card, "face+")) and List.any(["J", "Q", "K"], |f| List.contains(hand, f))
 		} else {
@@ -107,7 +107,7 @@ Reach :: [].{
 	usable = |all, zone_colors, color, free_face, peak, hand| {
 		peak_at = List.find_first_index(Config.base_locations, |id| id == peak) ?? crash ("Reach: the peak is a base square")
 		occupied = List.map(List.drop_first(Config.base_locations, peak_at + 1), |id| Board.index_of(zone_colors, { zone: NormalColor(color), id }))
-		List.drop_if(all, |e| (!free_face and Str.starts_with(e.card, "face+")) or List.contains(occupied, e.to) or !allowed(hand, e.card))
+		List.drop_if(all, |e| (!free_face and Str.starts_with(e.card, "face+")) or List.contains(occupied, e.to) or !is_allowed(hand, e.card))
 	}
 
 	## `fewest_cards` with only some kinds of card in the deck.

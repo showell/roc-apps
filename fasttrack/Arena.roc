@@ -277,12 +277,16 @@ Arena :: [].{
 	## A seed's block, as the log shows it.
 	block_line : List(Str), U64, List(List(Arena.Result)) -> Str
 	block_line = |labels, seed, block| {
-		counts = List.map_with_index(labels, |label, j| "${label} won ${U64.to_str(List.count_if(block, |deal| won(deal, j)))} of 4")
+		counts = List.map_with_index(labels, |label, j| "${label} won ${U64.to_str(List.count_if(block, |deal| has_red_won(deal, j)))} of 4")
 		"seed ${U64.to_str(seed)} | ${Str.join_with(counts, " | ")}"
 	}
 
-	won : List(Arena.Result), U64 -> Bool
-	won = |deal, j| (List.get(deal, j) ?? no_result).red_won
+	## Whether red won a deal when it played strategy `j`.
+	has_red_won : List(Arena.Result), U64 -> Bool
+	has_red_won = |deal, j| {
+		result = deal.get(j) ?? crash "Arena.has_red_won: a deal has a result for every strategy"
+		result.red_won
+	}
 
 	no_result : Arena.Result
 	no_result = { red_won: Bool.False, skips: 0, cuts: 0 }
@@ -332,7 +336,7 @@ Arena :: [].{
 	compare_report = |labels, first_seed, blocks| {
 		deals = List.join(blocks)
 		n = U64.to_f64(List.len(deals))
-		wins = |j| List.count_if(deals, |deal| won(deal, j))
+		wins = |j| List.count_if(deals, |deal| has_red_won(deal, j))
 		win = |b| if b {
 			1.0
 		} else {
@@ -342,7 +346,7 @@ Arena :: [].{
 		rows = List.map_with_index(
 			labels,
 			|label, j| {
-				by_rotation = Str.join_with(List.map([0, 1, 2, 3], |k| U64.to_str(List.count_if(blocks, |bl| won(List.get(bl, k) ?? [], j)))), " / ")
+				by_rotation = Str.join_with(List.map([0, 1, 2, 3], |k| U64.to_str(List.count_if(blocks, |bl| has_red_won(bl.get(k) ?? crash "Arena.compare_report: a block is four deals", j)))), " / ")
 				cuts = List.fold(deals, 0, |t, deal| t + (List.get(deal, j) ?? no_result).cuts)
 				skips = List.fold(deals, 0, |t, deal| t + (List.get(deal, j) ?? no_result).skips)
 				"| ${label} | ${U64.to_str(wins(j))} of ${U64.to_str(List.len(deals))} | ${thousandths(U64.to_f64(wins(j)) / n)} | ${by_rotation} | ${U64.to_str(cuts)} / ${U64.to_str(skips)} |"
@@ -355,9 +359,9 @@ Arena :: [].{
 				pb = U64.to_f64(wins(x.j)) / n
 				diff = pb - pa
 				unrelated = F64.sqrt(pa * (1.0 - pa) / n + pb * (1.0 - pb) / n)
-				paired = sd(List.map(deals, |deal| win(won(deal, x.j)) - win(won(deal, 0)))) / F64.sqrt(n)
-				by_seed = sd(List.map(blocks, |bl| (U64.to_f64(List.count_if(bl, |deal| won(deal, x.j))) - U64.to_f64(List.count_if(bl, |deal| won(deal, 0)))) / 4.0)) / F64.sqrt(U64.to_f64(List.len(blocks)))
-				only = "${U64.to_str(List.count_if(deals, |deal| won(deal, x.j) and !won(deal, 0)))} / ${U64.to_str(List.count_if(deals, |deal| won(deal, 0) and !won(deal, x.j)))}"
+				paired = sd(List.map(deals, |deal| win(has_red_won(deal, x.j)) - win(has_red_won(deal, 0)))) / F64.sqrt(n)
+				by_seed = sd(List.map(blocks, |bl| (U64.to_f64(List.count_if(bl, |deal| has_red_won(deal, x.j))) - U64.to_f64(List.count_if(bl, |deal| has_red_won(deal, 0)))) / 4.0)) / F64.sqrt(U64.to_f64(List.len(blocks)))
+				only = "${U64.to_str(List.count_if(deals, |deal| has_red_won(deal, x.j) and !has_red_won(deal, 0)))} / ${U64.to_str(List.count_if(deals, |deal| has_red_won(deal, 0) and !has_red_won(deal, x.j)))}"
 				"| ${x.label} | ${thousandths(diff)} | ${only} | ${thousandths(unrelated)} / ${thousandths(paired)} / ${thousandths(by_seed)} | ${
 					if paired > 0.0 {
 						thousandths(diff / paired)
