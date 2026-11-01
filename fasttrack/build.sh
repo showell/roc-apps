@@ -11,8 +11,9 @@
 # backends_check.mjs, which plays the two builds against each other and
 # fails on any difference (this nightly has miscompiled the page both ways);
 # then page_check.mjs, which plays four hundred clicks through the built page,
-# and once more to paint the landing page's picture, shot.png. Any of them failing fails
-# the build.
+# and once more to paint the landing page's picture, shot.png; last,
+# tools/gold.shale, eleven whole four-computer games held to their frozen
+# answers (tools/gold.txt). Any of them failing fails the build.
 #
 # FAST=1 is for looking at a change quickly: no tests, the dev backend only,
 # no second build and no checks -- about ten seconds. Not for a commit that
@@ -96,6 +97,8 @@ SHOT="$LOG/check-shot.png" node "$HERE/web/page_check.mjs" "$OUT" || { echo "pag
 # The landing page's picture: four computers, seed 3, 200 clicks in -- a
 # board with pieces out on the track and in the bases.
 SEED=3 SEATS=cccc CLICKS=200 SHOT="$OUT/shot.png" node "$HERE/web/page_check.mjs" "$OUT" > "$LOG/shot.log" 2>&1 || { cat "$LOG/shot.log"; echo "the landing shot failed"; exit 1; }
+# Whole games, frozen: any decision that moved anywhere moves a line.
+(cd "$HERE/.." && shale fasttrack/tools/gold.shale page="$OUT") || { echo "the gold games moved"; exit 1; }
 publish
 ls -la "$DEST"
 echo "dev: http://143.244.172.148:9210/fasttrack/"

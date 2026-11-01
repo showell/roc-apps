@@ -15,3 +15,6 @@ canvas_apps/web/platform/targets/
 
 # The fasttrack host object, rebuilt by every fasttrack/build.sh run.
 fasttrack/web/platform/targets/
+
+# Shale scripts keep their logs and answers here (fasttrack/tools/gold.shale).
+.zig-cache/

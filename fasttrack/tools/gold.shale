@@ -1,0 +1,69 @@
+-- **FAST TRACK'S WHOLE GAMES, HELD TO THEIR FROZEN ANSWERS**: eleven games
+-- of four computers played to the win through the built page, each the same
+-- as when it was frozen. From roc-apps' root, on a built page:
+--
+--   shale fasttrack/tools/gold.shale page=<build-dir>
+--
+-- build.sh runs it on the page it has just built. Each game is a run of
+-- web/page_check.mjs (SEATS=cccc, at most 5000 clicks): five seeds, Setup.roc's
+-- five scenarios on seed 9, and a partnership game. What a game answers: its
+-- click counts, the winner, the last page's text and an md5 of its board
+-- picture. The eleven together are fasttrack/tools/gold.txt, byte for byte;
+-- the click times, which vary, are cut. SearchTests freezes single choices,
+-- and this freezes whole games, so a change that moves any decision anywhere
+-- moves a line here.
+--
+-- It prints `gold: PASS, 11 games` or the first line that differs, with the
+-- whole new answer kept at .zig-cache/fasttrack-gold.txt. **A CHANGE THAT
+-- MEANS TO MOVE A GAME** (the strategy, the rules) re-freezes by copying
+-- that file over gold.txt, and its commit says why each game moved.
+--
+-- budget: steps=20000000 read_bytes=20000000 changes=100
+
+const page = arg("page", "")
+if page == "" then fail("gold: page=<build-dir>, the directory fasttrack/build.sh builds") end
+const frozen = "fasttrack/tools/gold.txt"
+const got_at = ".zig-cache/fasttrack-gold.txt"
+const shots = fresh_dir(".zig-cache", "fasttrack-gold")
+
+-- One game: page_check's lines without the click time and the board's path,
+-- then the board picture's md5.
+function game(env)
+  local shot = real(shots) .. "/board.png"
+  env.SEATS = "cccc"
+  env.CLICKS = "5000"
+  env.SHOT = shot
+  local r = run({"nice", "-n", "19", "node", "fasttrack/web/page_check.mjs", page}, {
+    cwd = ".", env = env, timeout_ms = 120000, tail = 200, width = 100000,
+    want = "tool: the page's own fasttrack.js under node, as build.sh runs it",
+  })
+  if r.code ~= 0 then fail("gold: page_check failed (" .. json_write(env) .. "):\n" .. r.out) end
+  local text = re_replace(r.out, ", [0-9.]* ms a click", "")
+  text = re_replace(text, "--- board: [^\n]*", "--- board:")
+  local sum = must(run({"md5sum", shot}, {timeout_ms = 30000, whole = 200}))
+  return text .. split(sum.out, " ")[1] .. "\n"
+end
+
+local games = {}
+for seed in {"1", "2", "5", "7", "11"} do push(games, {SEED = seed}) end
+for setup in {"1", "2", "3", "4", "5"} do push(games, {SEED = "9", SETUP = setup}) end
+push(games, {SEED = "4", TEAMS = "anytime"})
+
+local got = ""
+for env in games do got = got .. game(env) end
+remove_tree(shots)
+replace(got_at, got)
+
+const want = read(frozen)
+if got == want then
+  print("gold: PASS, " .. #games .. " games")
+else
+  local a = split(want, "\n")
+  local b = split(got, "\n")
+  local i = 1
+  while i <= #a and i <= #b and a[i] == b[i] do i = i + 1 end
+  print("gold: FAIL at line " .. i .. " of " .. frozen)
+  print("  frozen: " .. (a[i] or "(the end)"))
+  print("  now:    " .. (b[i] or "(the end)"))
+  fail("gold: the games moved; the whole answer is " .. got_at)
+end

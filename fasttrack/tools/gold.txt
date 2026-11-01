@@ -1,0 +1,77 @@
+seed 1 setup 0 seats cccc: 196 clicks (0 cards, 0 squares, 0 oops, 0 turns by hand, 196 computer clicks, purple won)
+--- the page, last:
+[board]
+purple wins!
+--- board:
+ok
+b42e1ef6f9096b59c3aba7dc9392d349
+seed 2 setup 0 seats cccc: 262 clicks (0 cards, 0 squares, 0 oops, 0 turns by hand, 262 computer clicks, blue won)
+--- the page, last:
+[board]
+blue wins!
+--- board:
+ok
+2fd4d49b8f01ede28f91b33e93157148
+seed 5 setup 0 seats cccc: 232 clicks (0 cards, 0 squares, 0 oops, 0 turns by hand, 232 computer clicks, green won)
+--- the page, last:
+[board]
+green wins!
+--- board:
+ok
+dec8f36fc9e00ceff7b1fd1ea7e8b926
+seed 7 setup 0 seats cccc: 213 clicks (0 cards, 0 squares, 0 oops, 0 turns by hand, 213 computer clicks, purple won)
+--- the page, last:
+[board]
+purple wins!
+--- board:
+ok
+9c8a29a532e29ad58fc435ca6cc27ccd
+seed 11 setup 0 seats cccc: 209 clicks (0 cards, 0 squares, 0 oops, 0 turns by hand, 209 computer clicks, purple won)
+--- the page, last:
+[board]
+purple wins!
+--- board:
+ok
+546bc8d08462f3cd2e9df8c33a12e86e
+seed 9 setup 1 seats cccc: 140 clicks (0 cards, 0 squares, 0 oops, 0 turns by hand, 140 computer clicks, blue won)
+--- the page, last:
+[board]
+blue wins!
+--- board:
+ok
+439a74cfd7412edde2203cd621dc9cf8
+seed 9 setup 2 seats cccc: 223 clicks (0 cards, 0 squares, 0 oops, 0 turns by hand, 223 computer clicks, red won)
+--- the page, last:
+[board]
+red wins!
+--- board:
+ok
+208156626fa1316c321f4c8cd4d1b579
+seed 9 setup 3 seats cccc: 209 clicks (0 cards, 0 squares, 0 oops, 0 turns by hand, 209 computer clicks, green won)
+--- the page, last:
+[board]
+green wins!
+--- board:
+ok
+05d4a70bea18c456910024bd4ebf71ee
+seed 9 setup 4 seats cccc: 212 clicks (0 cards, 0 squares, 0 oops, 0 turns by hand, 212 computer clicks, red won)
+--- the page, last:
+[board]
+red wins!
+--- board:
+ok
+2e79385214f40ce5c1401c28a9105ae6
+seed 9 setup 5 seats cccc: 132 clicks (0 cards, 0 squares, 0 oops, 0 turns by hand, 132 computer clicks, green won)
+--- the page, last:
+[board]
+green wins!
+--- board:
+ok
+1536de9c4a0dd09daca84b6c5fad2a36
+seed 4 setup 0 seats cccc teams anytime: 242 clicks (0 cards, 0 squares, 0 oops, 0 turns by hand, 242 computer clicks, red and green won)
+--- the page, last:
+[board]
+red and green win!
+--- board:
+ok
+b9ceb0c45071db5ee2c7093260aed189
