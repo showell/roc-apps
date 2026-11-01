@@ -21,10 +21,10 @@ Routes :: [].{
 	longest = 10
 
 	## The squares after `r`, for a piece whose own zone is zone 0.
-	next : U64, Bool, Bool, Bool -> List(U64)
-	next = |r, fast, leave_pen, leave_bulls|
+	next : U64, [TakeFastTrack, PassFastTrack], [LeavePen, StayInPen], [LeaveBullseye, StayInBullseye] -> List(U64)
+	next = |r, fast, pen, bullseye|
 		if r == Board.bullseye {
-			if leave_bulls {
+			if bullseye == LeaveBullseye {
 				[Board.at(3, Board.ft)]
 			} else {
 				[]
@@ -34,19 +34,19 @@ Routes :: [].{
 			l = Board.local(r)
 			nz = (z + 1) % Board.zones
 			if l < 4 {
-				if leave_pen {
+				if pen == LeavePen {
 					[Board.at(z, Board.l0)]
 				} else {
 					[]
 				}
 			} else if l == Board.ft {
 				if z == 0 {
-					if fast {
+					if fast == TakeFastTrack {
 						[Board.at(nz, Board.ft), Board.at(nz, Board.r4), Board.bullseye]
 					} else {
 						[Board.at(nz, Board.r4), Board.bullseye]
 					}
-				} else if fast and nz != 0 {
+				} else if fast == TakeFastTrack and nz != 0 {
 					[Board.at(nz, Board.ft), Board.at(nz, Board.r4)]
 				} else {
 					[Board.at(nz, Board.r4)]
@@ -124,8 +124,10 @@ Routes :: [].{
 		List.join_map(
 			Board.squares,
 			|r| {
-				fast = r != Board.bullseye and Board.local(r) == Board.ft
-				step = |s| next(s, fast, Board.is_pen(r), r == Board.bullseye)
+				fast = if r != Board.bullseye and Board.local(r) == Board.ft TakeFastTrack else PassFastTrack
+				pen = if Board.is_pen(r) LeavePen else StayInPen
+				bullseye = if r == Board.bullseye LeaveBullseye else StayInBullseye
+				step = |s| next(s, fast, pen, bullseye)
 				List.map(Board.indices(longest + 1), |n| walks(step, n, r))
 			},
 		)

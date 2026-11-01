@@ -67,7 +67,7 @@ RulesTests :: [].{
 
 	## Where a blue piece on `start` lands after `n` steps forward.
 	ends : Type.Board, U64, I64 -> List(U64)
-	ends = |b, start, n| LegalMove.ends(b, blue, start, n, Bool.False, Bool.False, Bool.False)
+	ends = |b, start, n| LegalMove.ends(b, blue, start, n, Forward, StayInPen, StayInBullseye)
 
 	for_cards : List(Str), Type.Board -> List(Type.Move)
 	for_cards = |cards, b| LegalMove.get_moves_for_cards(Assoc.set_from_list(cards), b, zone_colors, ["blue"])

@@ -30,9 +30,9 @@ Reach :: [].{
 			Board.color_index(zone_colors, color),
 			s,
 			Config.move_count_for_card(card, Board.is_pen(s)),
-			card == "4",
-			List.contains(["A", "6", "joker"], card),
-			List.contains(["J", "Q", "K"], card) and s == Board.bullseye,
+			if card == "4" Backward else Forward,
+			if List.contains(["A", "6", "joker"], card) LeavePen else StayInPen,
+			if List.contains(["J", "Q", "K"], card) and s == Board.bullseye LeaveBullseye else StayInBullseye,
 		)
 
 	Move : { from : U64, to : U64, card : Str }

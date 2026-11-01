@@ -28,9 +28,10 @@ Page :: [].{
 	## the subtree's own start.
 	Tree : List(Wire.Node)
 
-	el : Str, Str, U32, Bool, List(Page.Tree) -> Page.Tree
-	el = |tag, style, click, disabled, children| {
-		root = { parent: 0, tag, text: "", style, click, disabled }
+	el : Str, Str, U32, [Enabled, Disabled], List(Page.Tree) -> Page.Tree
+	el = |tag, style, click, state, children| {
+		# The wire's node keeps a Bool: fasttrack.js sets the DOM's `disabled`.
+		root = { parent: 0, tag, text: "", style, click, disabled: state == Disabled }
 		List.fold(
 			children,
 			[root],
@@ -52,19 +53,19 @@ Page :: [].{
 	}
 
 	div : List(Page.Tree) -> Page.Tree
-	div = |children| el("div", "", 0, Bool.False, children)
+	div = |children| el("div", "", 0, Enabled, children)
 
 	span : List(Page.Tree) -> Page.Tree
-	span = |children| el("span", "", 0, Bool.False, children)
+	span = |children| el("span", "", 0, Enabled, children)
 
 	text : Str -> Page.Tree
 	text = |s| [{ parent: 0, tag: "", text: s, style: "", click: 0, disabled: Bool.False }]
 
 	bold : Str, List(Page.Tree) -> Page.Tree
-	bold = |style, children| el("b", style, 0, Bool.False, children)
+	bold = |style, children| el("b", style, 0, Enabled, children)
 
 	button : Str, U32, List(Page.Tree) -> Page.Tree
-	button = |style, click, children| el("button", style, click, Bool.False, children)
+	button = |style, click, children| el("button", style, click, Enabled, children)
 
 	panel_width : F64
 	panel_width = 4.0 * Config.square_size
@@ -113,9 +114,9 @@ Page :: [].{
 				"div",
 				"display: flex; flex-direction: row",
 				0,
-				Bool.False,
+				Enabled,
 				[
-					div([div([div([el("board", "", 0, Bool.False, [])]), el("hr", "", 0, Bool.False, []), console])]),
+					div([div([div([el("board", "", 0, Enabled, [])]), el("hr", "", 0, Enabled, []), console])]),
 					div([cheat_sheet_view(active_player)]),
 				],
 			),
@@ -207,7 +208,7 @@ Page :: [].{
 	computer_view = |player, color|
 		div(
 			[
-				span(List.map(player.hand, |card| el("button", card_css(color, color), 0, Bool.True, [text(card)]))),
+				span(List.map(player.hand, |card| el("button", card_css(color, color), 0, Disabled, [text(card)]))),
 				div([text("the computer is playing ${color}")]),
 			]
 				.concat(team_line(player)),
@@ -348,10 +349,10 @@ Page :: [].{
 		}
 		label = [text(card)]
 		match action {
-			CanActivate => el("button", card_css(color, color), Codes.activate_card(idx), Bool.False, label)
-			CanDiscard => el("button", card_css("gray", color), Codes.discard_card(idx), Bool.False, label)
-			CanCover => el("button", card_css("gray", color), Codes.cover_card(idx), Bool.False, label)
-			Ignore => el("button", card_css("gray", "gray"), 0, Bool.True, label)
+			CanActivate => el("button", card_css(color, color), Codes.activate_card(idx), Enabled, label)
+			CanDiscard => el("button", card_css("gray", color), Codes.discard_card(idx), Enabled, label)
+			CanCover => el("button", card_css("gray", color), Codes.cover_card(idx), Enabled, label)
+			Ignore => el("button", card_css("gray", "gray"), 0, Disabled, label)
 		}
 	}
 
@@ -385,7 +386,7 @@ Page :: [].{
 			div([])
 		} else {
 			hints = List.map(List.sort_by(cards, Config.card_value), |card| div([text("${card} - ${Config.hint_for_card(card)}")]))
-			div([el("br", "", 0, Bool.False, []), bold("", [text("Cheat sheet:")]), div(hints)])
+			div([el("br", "", 0, Enabled, []), bold("", [text("Cheat sheet:")]), div(hints)])
 		}
 	}
 }

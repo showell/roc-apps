@@ -41,14 +41,14 @@ Motion :: [].{
 							Err(_) => [{ color: name(c), path: [m.start, m.end], sent_home: Bool.False }]
 						}
 					_ => {
-						(n, reverse) = match m.kind {
-							WithCard(card) => (Config.move_count_for_card(card, Board.is_pen(m.start)), card == "4")
-							Reverse(card) => (Config.move_count_for_card(card, Board.is_pen(m.start)), Bool.True)
-							StartSplit(k) => (k, Bool.False)
-							FinishSplit(k, _) => (k, Bool.False)
-							JackTrade => (1, Bool.False)
+						(n, direction) = match m.kind {
+							WithCard(card) => (Config.move_count_for_card(card, Board.is_pen(m.start)), if card == "4" Backward else Forward)
+							Reverse(card) => (Config.move_count_for_card(card, Board.is_pen(m.start)), Backward)
+							StartSplit(k) => (k, Forward)
+							FinishSplit(k, _) => (k, Forward)
+							JackTrade => (1, Forward)
 						}
-						walked = { color: name(c), path: LegalMove.walk_between(board, c, m.start, m.end, n, reverse), sent_home: Bool.False }
+						walked = { color: name(c), path: LegalMove.walk_between(board, c, m.start, m.end, n, direction), sent_home: Bool.False }
 						List.concat([walked], sent_home(board, m.end, name))
 					}
 				}
