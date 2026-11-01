@@ -3,10 +3,12 @@
 The driving screensaver, as a canvas app: a rider on a motorcycle, a route of
 nineteen segments through fields, forests and towns, and animals that cross
 when they like. It runs as a page and as a native program on roc-ray, like the
-other canvas apps (`../README.md`).
+other canvas apps (`../README.md`). **The page is the maintained side**; the
+native program is the canvas apps' roc-ray spike, which proved the concept and
+is not kept current.
 
     canvas_apps/build.sh safari       the page, http://<box>:9210/safari/
-    canvas_apps/native.sh safari      the native program
+    canvas_apps/native.sh safari      the native program (the spike, not kept current)
 
 Space pauses. Left and Right step back and forward through the ride's history —
 a frame at a time while paused, faster while it runs. J jumps to the next
