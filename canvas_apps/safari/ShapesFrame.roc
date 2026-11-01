@@ -81,7 +81,7 @@ main! = |args| {
 	$out = List.concat($out, Str.to_utf8("differ ${U64.to_str($differ)} of ${U64.to_str(n)}, triangles ${U64.to_str(triangles(shapes))}, commands ${U64.to_str(List.len(commands))}\nhash 00000000\n960 600\n"))
 	$k = 0
 	while $k < n {
-		$out = Hex.append_digits($out, { value: U32.to_i64(List.get(b, $k) ?? 0), digits: 6 })
+		$out = Hex.append_digits($out, { number: U32.to_i64(List.get(b, $k) ?? 0), digits: 6 })
 		$k = $k + 1
 	}
 	echo!(Str.from_utf8_lossy(List.append($out, 10)))

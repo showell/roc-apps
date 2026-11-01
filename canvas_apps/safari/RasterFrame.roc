@@ -27,12 +27,12 @@ main! = |args| {
 	pixels = Raster.paint({ commands: SafariRide.commands(m), roll: SafariRide.roll(m), sky_top: SafariRide.sky_top(m), sky_horizon: SafariRide.sky_horizon(m), sun: SafariRide.sun(m) })
 	var $out = List.with_capacity(List.len(pixels) * 6 + 32)
 	$out = List.concat($out, Str.to_utf8("hash "))
-	$out = Hex.append_digits($out, { value: hash(pixels), digits: 8 })
+	$out = Hex.append_digits($out, { number: hash(pixels), digits: 8 })
 	$out = List.concat($out, Str.to_utf8("\n960 600\n"))
 	n = List.len(pixels)
 	var $k = 0
 	while $k < n {
-		$out = Hex.append_digits($out, { value: U32.to_i64(List.get(pixels, $k) ?? 0), digits: 6 })
+		$out = Hex.append_digits($out, { number: U32.to_i64(List.get(pixels, $k) ?? 0), digits: 6 })
 		$k = $k + 1
 	}
 	echo!(Str.from_utf8_lossy(List.append($out, 10)))
