@@ -30,7 +30,7 @@ TeamTests :: [].{
 			game.zone_colors,
 			Player.movers(Player.get_player(game.players, 0), game.zone_colors, game.board),
 		)
-		Assoc.set_from_list(List.map(moves, |m| "${Piece.get_piece(game.board, game.zone_colors, m.start) ?? "nobody"}@${Board.loc_of(game.zone_colors, m.start).id}"))
+		Assoc.set_from_list(List.map(moves, |m| "${Piece.get_piece(game.board, game.zone_colors, m.start) ?? crash "TeamTests: a move starts where a piece stands"}@${Board.loc_of(game.zone_colors, m.start).id}"))
 	}
 
 	home : Str -> List((Str, Str, Str))

@@ -35,7 +35,7 @@ RulesTests :: [].{
 			"BE.bullseye"
 		} else {
 			loc = Board.loc_of(zone_colors, s)
-			"${List.get(zone_colors, Board.zone(s)) ?? "?"}.${loc.id}"
+			"${List.get(zone_colors, Board.zone(s)) ?? crash "show_loc: every square off the bullseye is in a seated zone"}.${loc.id}"
 		}
 
 	show_move_type : Type.MoveType -> Str

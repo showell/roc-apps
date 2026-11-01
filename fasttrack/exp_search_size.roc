@@ -28,7 +28,7 @@ loc_str = |zone_colors, s|
 	if s == Board.bullseye {
 		"bullseye"
 	} else {
-		"${List.get(zone_colors, Board.zone(s)) ?? "?"}.${Board.loc_of(zone_colors, s).id}"
+		"${List.get(zone_colors, Board.zone(s)) ?? crash "loc_str: every square off the bullseye is in a seated zone"}.${Board.loc_of(zone_colors, s).id}"
 	}
 
 ## A line's board as numbers: every piece's square and color.

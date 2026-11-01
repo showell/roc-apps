@@ -198,29 +198,37 @@ Reach :: [].{
 	}
 }
 
+colors : List(Str)
+colors = ["red", "blue", "green", "purple"]
+
+## Red's square of this id, indexed as Board.all_locs.
+red_square : Str -> U64
+red_square = |id| Board.index_of(colors, { zone: NormalColor("red"), id })
+
+## Red's fewest cards to `peak` from each of its squares, by the square's id.
+cards_by_id : Str, [FreeFace, CardsOnly] -> (Str -> I64)
+cards_by_id = |peak, face| {
+	best = Reach.fewest_cards({ zone_colors: colors, color: "red", peak }, face)
+	|id| (List.get(best, red_square(id)) ?? crash "Reach's expects: every square is in the table").cards
+}
+
 # Steve's expectations, for red: B4 0; B3 .. R4 one card; L0 .. L2 two.
 expect {
-	colors = ["red", "blue", "green", "purple"]
-	best = Reach.fewest_cards({ zone_colors: colors, color: "red", peak: "B4" }, CardsOnly)
-	n = |id| (List.get(best, Board.index_of(colors, { zone: NormalColor("red"), id })) ?? { cards: 0, first: [] }).cards
+	n = cards_by_id("B4", CardsOnly)
 	n("B4") == 0 and n("B3") == 1 and n("B1") == 1 and n("BR") == 1 and n("R0") == 1 and n("R4") == 1 and n("L0") == 2 and n("L1") == 2
 }
 
 # With a free face card, DS is one card (Q then 3), and so is L2's way
 # through it: 4 back to DS, then the face card and a 3.
 expect {
-	colors = ["red", "blue", "green", "purple"]
-	best = Reach.fewest_cards({ zone_colors: colors, color: "red", peak: "B4" }, FreeFace)
-	n = |id| (List.get(best, Board.index_of(colors, { zone: NormalColor("red"), id })) ?? { cards: 0, first: [] }).cards
+	n = cards_by_id("B4", FreeFace)
 	n("B4") == 0 and n("B3") == 1 and n("DS") == 1 and n("L2") == 2
 }
 
 # With B4 taken, B3 is the peak: B3 is 0, B2 and B1 one card, and DS one (a
 # face card, then a 2); nothing lands on B4.
 expect {
-	colors = ["red", "blue", "green", "purple"]
-	best = Reach.fewest_cards({ zone_colors: colors, color: "red", peak: "B3" }, FreeFace)
-	n = |id| (List.get(best, Board.index_of(colors, { zone: NormalColor("red"), id })) ?? { cards: 0, first: [] }).cards
+	n = cards_by_id("B3", FreeFace)
 	n("B3") == 0 and n("B2") == 1 and n("B1") == 1 and n("DS") == 1 and n("B4") >= Board.far
 }
 
@@ -228,10 +236,9 @@ expect {
 # routes each (F+5 or 6; F+7 or 8). Without the 6, R1 keeps one route and R3
 # two.
 expect {
-	colors = ["red", "blue", "green", "purple"]
 	no_joker = List.drop_if(Reach.cards, |c| c == "joker")
 	grid = Reach.grid(colors, "red")
-	at = |hand, id| List.get(Reach.routes(grid, { zone_colors: colors, color: "red", peak: "B3" }, { hand, face: FreeFace }), Board.index_of(colors, { zone: NormalColor("red"), id })) ?? { cards: 0, routes: 0 }
+	at = |hand, id| List.get(Reach.routes(grid, { zone_colors: colors, color: "red", peak: "B3" }, { hand, face: FreeFace }), red_square(id)) ?? crash "Reach's expects: every square is in the table"
 	no_six = List.drop_if(no_joker, |c| c == "6")
 	at(no_joker, "R1") == { cards: 1, routes: 2 } and at(no_joker, "R3") == { cards: 1, routes: 2 } and at(no_six, "R1") == { cards: 1, routes: 1 } and at(no_six, "R3") == { cards: 1, routes: 2 }
 }

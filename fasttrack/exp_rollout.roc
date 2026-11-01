@@ -42,16 +42,17 @@ loc_str : U64 -> Str
 loc_str = |s| if s == Board.bullseye {
 	"bullseye"
 } else {
-	"${List.get(colors, Board.zone(s)) ?? "?"}.${Board.loc_of(colors, s).id}"
+	"${List.get(colors, Board.zone(s)) ?? crash "loc_str: every square off the bullseye is in a seated zone"}.${Board.loc_of(colors, s).id}"
 }
 
 ## The pieces a line moved: where they left and where they went.
 moved : Type.Game, Type.Game -> Str
 moved = |before, after| {
 	changed = List.keep_if(Board.squares, |s| List.get(before.board, s) != List.get(after.board, s))
-	left = List.keep_if(changed, |s| (List.get(before.board, s) ?? 0) != 0)
-	went = List.keep_if(changed, |s| (List.get(after.board, s) ?? 0) != 0)
-	show = |b, ss| Str.join_with(List.map(ss, |s| "${List.get(colors, U8.to_u64(List.get(b, s) ?? 1) - 1) ?? "?"}@${loc_str(s)}"), " ")
+	piece = |b, s| List.get(b, s) ?? crash "moved: the board has every square"
+	left = List.keep_if(changed, |s| piece(before.board, s) != 0)
+	went = List.keep_if(changed, |s| piece(after.board, s) != 0)
+	show = |b, ss| Str.join_with(List.map(ss, |s| "${List.get(colors, U8.to_u64(piece(b, s)) - 1) ?? crash "moved: a piece is one of the seated colors"}@${loc_str(s)}"), " ")
 	"${show(before.board, left)} -> ${show(after.board, went)}"
 }
 
@@ -124,7 +125,7 @@ main! = |args| {
 					0.0
 				}
 			) - (
-				if (List.get(base, k) ?? 4) == 0 {
+				if (List.get(base, k) ?? crash "exp_rollout: every line has a result per rollout") == 0 {
 					1.0
 				} else {
 					0.0
