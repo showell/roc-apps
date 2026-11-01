@@ -350,8 +350,9 @@ Read it before writing a loop that stores into a list or a record.
 
 - **Six shapes copy; learn them from the notes.** The commonest is
   `List.set(l, i, v) ?? l`: the fallback names `l`, so every store copies.
-  Write `?? crash("...")` instead. The others (`List.update` on a nested
-  list, a value threaded down a recursion, a field taken out and written
+  Write `?? crash("...")` instead. The `?? l` is a placeholder as well as
+  a copy, an answer nobody meant (`docs/roc-style.md`, "Errors and
+  failure"). The others (`List.update` on a nested list, a value threaded down a recursion, a field taken out and written
   back in separate statements) are in the notes, with reproductions under
   `findings/` (`threaded-record-copy/`, `helper-arg-copy/`).
 - **Append into an accumulator.** Build a list with `List.append` in an
@@ -363,6 +364,11 @@ Read it before writing a loop that stores into a list or a record.
   One number says nothing. `tests/copycheck.sh` does exactly this: each
   probe runs a fixed number of writes into lists of growing size and
   prints `FLAT` or `LINEAR`.
+- **An experiment or a benchmark calls the code it measures.** A copy of
+  production's expressions measures the copy: it drifts from the real code
+  the day either changes, and its numbers stop meaning anything. Where the
+  experiment needs a piece the module keeps private, expose that piece and
+  call it.
 - **When you find a new copying shape, add a probe.** Put it in
   `tests/copycheck.sh` beside the known ones, with its fix as a second
   probe that reads `FLAT`, and add the shape to the notes.
@@ -586,6 +592,11 @@ rule as a change of its own.
   call stays. Agents lean toward the module form, so expect to correct it.
 - **A hosted effect answers a tag or a `Try`, never a Bool**
   ("The host boundary").
+- **A placeholder is not a value.** `?? "bogus"`, `?? "?"` or `?? 4` for
+  "none" is a made-up answer: crash with a reason where the case can't
+  happen, and tag the absence where it can ("Errors and failure"). Agents
+  reach for the placeholder to quiet the type checker, so expect to
+  correct it.
 - **The guide moves with the code.** A style decision lands with its rule
   in `docs/roc-style.md` in the same change. A rule that lands later, or
   only in a commit message, is a rule the next agent never sees.
