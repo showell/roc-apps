@@ -111,7 +111,7 @@ Piece :: [].{
 	config_pieces = |init_setup, zone_colors| {
 		starts = Setup.starting_locations(init_setup)
 		place_color = |board, c| List.fold(starts, board, |b, id| place(b, Board.at(c, Board.square_of(id)), c))
-		List.fold(List.map_with_index(zone_colors, |_, c| c), empty, place_color)
+		List.fold_with_index(zone_colors, empty, |board, _, c| place_color(board, c))
 	}
 
 	bring_player_out : U64, Type.Board -> Type.Board
