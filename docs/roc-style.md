@@ -194,9 +194,13 @@ Roc's own rules are in the langref's
   `_from` for a start point (`count_from(xs, at)`), `_onto` for an output
   being built (`render_onto(out, node)`), `_with` for other carried state
   (`walk_with(tree, seen)`). A suffix that only says "I'm the helper"
-  (`_acc`, `_loop`, `_go`, `_inner`, `_helper`, `_rec`) names nothing; a
-  `_step` or `_walk` that calls itself is one too. The name hunt's
-  `worker_name` flags them.
+  (`_acc`, `_loop`, `_inner`, `_helper`, `_rec`) names nothing; a `_step`,
+  `_walk` or `_go` that calls itself is one too. The name hunt's
+  `worker_name` flags them. A worker never stacks two prepositions: when
+  the entry's name already ends in one (`tail_from`), rename the pair so
+  each reads once, the entry for what it gives (`tail`) and the worker for
+  what it adds (`tail_onto`), never `tail_from_onto`. The hunt's
+  `stacked_preposition` flags them.
 - **A pure function that takes only `{}` is a constant.** `empty_cart : Cart`
   says what it is; `empty_cart : {} -> Cart` makes every caller write
   `empty_cart({})` for a value that never changes. Two stay functions. A

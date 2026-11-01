@@ -65,16 +65,16 @@ face_carry_want = [1846886, 4, 1381658, 3]
 mark : I64, F64 -> TruckDraw.TruckFace
 mark = |c, f| { color: c, fwd: f, v: [] }
 
-# colours_of builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-colours_of : List(TruckDraw.TruckFace), I64 -> List(I64)
-colours_of = |fs, i| colours_of_onto(fs, i, [])
+# colours builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
+colours : List(TruckDraw.TruckFace), I64 -> List(I64)
+colours = |fs, i| colours_onto(fs, i, [])
 
-colours_of_onto : List(TruckDraw.TruckFace), I64, List(I64) -> List(I64)
-colours_of_onto = |fs, i, acc| (
+colours_onto : List(TruckDraw.TruckFace), I64, List(I64) -> List(I64)
+colours_onto = |fs, i, acc| (
 	if (i >= fs.len().to_i64_wrap()) {
 		acc
 	} else {
-		colours_of_onto(fs, (i + 1), List.append(acc, (List.get(fs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).color))
+		colours_onto(fs, (i + 1), List.append(acc, (List.get(fs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).color))
 	}
 )
 
@@ -82,7 +82,7 @@ tied : List(TruckDraw.TruckFace)
 tied = [mark(1, 30.0), mark(2, 10.0), mark(3, 30.0), mark(4, 20.0), mark(5, 30.0)]
 
 tied_got : List(I64)
-tied_got = colours_of(TruckDraw.sort_faces(tied), 0)
+tied_got = colours(TruckDraw.sort_faces(tied), 0)
 
 tied_want : List(I64)
 tied_want = [1, 3, 5, 4, 2]
@@ -91,7 +91,7 @@ slack : List(TruckDraw.TruckFace)
 slack = [mark(1, 20.0), mark(2, 20.000001), mark(3, 20.01), mark(4, 19.0)]
 
 slack_got : List(I64)
-slack_got = colours_of(TruckDraw.sort_faces(slack), 0)
+slack_got = colours(TruckDraw.sort_faces(slack), 0)
 
 slack_want : List(I64)
 slack_want = [3, 1, 2, 4]

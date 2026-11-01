@@ -12,16 +12,16 @@ DepthSort :: [].{
 	## is (its kind, and its place in that kind's list).
 	DepthKey : { fwd : F64, kind : DepthSort.Kind, i : I64 }
 
-	# rest_from builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	rest_from : List(DepthSort.DepthKey), I64 -> List(DepthSort.DepthKey)
-	rest_from = |ys, j| rest_from_onto(ys, j, [])
+	# rest builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
+	rest : List(DepthSort.DepthKey), I64 -> List(DepthSort.DepthKey)
+	rest = |ys, j| rest_onto(ys, j, [])
 
-	rest_from_onto : List(DepthSort.DepthKey), I64, List(DepthSort.DepthKey) -> List(DepthSort.DepthKey)
-	rest_from_onto = |ys, j, acc| (
+	rest_onto : List(DepthSort.DepthKey), I64, List(DepthSort.DepthKey) -> List(DepthSort.DepthKey)
+	rest_onto = |ys, j, acc| (
 		if (j >= ys.len().to_i64_wrap()) {
 			acc
 		} else {
-			rest_from_onto(ys, (j + 1), List.append(acc, (List.get(ys, I64.to_u64_wrap(j)) ?? crash ("list-at out of range"))))
+			rest_onto(ys, (j + 1), List.append(acc, (List.get(ys, I64.to_u64_wrap(j)) ?? crash ("list-at out of range"))))
 		}
 	)
 
@@ -32,11 +32,11 @@ DepthSort :: [].{
 	merge_items_onto : List(DepthSort.DepthKey), List(DepthSort.DepthKey), I64, I64, List(DepthSort.DepthKey) -> List(DepthSort.DepthKey)
 	merge_items_onto = |a, b, i, j, acc| (
 		if (i >= a.len().to_i64_wrap()) {
-			List.concat(acc, rest_from(b, j))
+			List.concat(acc, rest(b, j))
 		} else {
 			(
 				if (j >= b.len().to_i64_wrap()) {
-					List.concat(acc, rest_from(a, i))
+					List.concat(acc, rest(a, i))
 				} else {
 					(
 						if deeper_than((List.get(b, I64.to_u64_wrap(j)) ?? crash ("list-at out of range")).fwd, (List.get(a, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).fwd) {

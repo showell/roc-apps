@@ -14,14 +14,14 @@ Frame :: [].{
 	max_chain = 8
 
 	build_chain : List(World.Segment), I64 -> List(I64)
-	build_chain = |segs, start| chain_from(segs, start, 0)
+	build_chain = |segs, start| chain(segs, start, 0)
 
-	# chain_from builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	chain_from : List(World.Segment), I64, I64 -> List(I64)
-	chain_from = |segs, s, n| chain_from_onto(segs, s, n, [])
+	# chain builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
+	chain : List(World.Segment), I64, I64 -> List(I64)
+	chain = |segs, s, n| chain_onto(segs, s, n, [])
 
-	chain_from_onto : List(World.Segment), I64, I64, List(I64) -> List(I64)
-	chain_from_onto = |segs, s, n, acc| (
+	chain_onto : List(World.Segment), I64, I64, List(I64) -> List(I64)
+	chain_onto = |segs, s, n, acc| (
 		if (n >= look_ahead) {
 			acc
 		} else {
@@ -33,7 +33,7 @@ Frame :: [].{
 						if (List.get(segs, I64.to_u64_wrap(s)) ?? crash ("list-at out of range")).terminates {
 							List.append(acc, s)
 						} else {
-							chain_from_onto(segs, (List.get(segs, I64.to_u64_wrap(s)) ?? crash ("list-at out of range")).exit_to, (n + 1), List.append(acc, s))
+							chain_onto(segs, (List.get(segs, I64.to_u64_wrap(s)) ?? crash ("list-at out of range")).exit_to, (n + 1), List.append(acc, s))
 						}
 					)
 				}

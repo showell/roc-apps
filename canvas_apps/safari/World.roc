@@ -179,21 +179,21 @@ World :: [].{
 		}
 	)
 
-	# segments_from builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	segments_from : I64 -> List(World.Segment)
-	segments_from = |i| segments_from_onto(i, [])
+	# segments builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
+	segments : I64 -> List(World.Segment)
+	segments = |i| segments_onto(i, [])
 
-	segments_from_onto : I64, List(World.Segment) -> List(World.Segment)
-	segments_from_onto = |i, acc| (
+	segments_onto : I64, List(World.Segment) -> List(World.Segment)
+	segments_onto = |i, acc| (
 		if (i >= route.len().to_i64_wrap()) {
 			acc
 		} else {
-			segments_from_onto((i + 1), List.append(acc, segment_at(i)))
+			segments_onto((i + 1), List.append(acc, segment_at(i)))
 		}
 	)
 
 	build_world : List(World.Segment)
-	build_world = segments_from(0)
+	build_world = segments(0)
 
 	course_length_from : List(World.Segment), I64 -> F64
 	course_length_from = |ss, i| (

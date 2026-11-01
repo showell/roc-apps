@@ -54,16 +54,16 @@ Herd :: [].{
 		}
 	)
 
-	# cows_from builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	cows_from : I64 -> List(Scenery.Critter)
-	cows_from = |i| cows_from_onto(i, [])
+	# cows builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
+	cows : I64 -> List(Scenery.Critter)
+	cows = |i| cows_onto(i, [])
 
-	cows_from_onto : I64, List(Scenery.Critter) -> List(Scenery.Critter)
-	cows_from_onto = |i, acc| (
+	cows_onto : I64, List(Scenery.Critter) -> List(Scenery.Critter)
+	cows_onto = |i, acc| (
 		if (i >= 14) {
 			acc
 		} else {
-			cows_from_onto((i + 1), List.append(acc, cow_at(i)))
+			cows_onto((i + 1), List.append(acc, cow_at(i)))
 		}
 	)
 
@@ -92,5 +92,5 @@ Herd :: [].{
 	)
 
 	fill_cows : Bool -> List(Scenery.Critter)
-	fill_cows = |bull| List.concat(bull_of(bull), cows_from(0))
+	fill_cows = |bull| List.concat(bull_of(bull), cows(0))
 }

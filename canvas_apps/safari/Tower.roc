@@ -172,16 +172,16 @@ Tower :: [].{
 		}
 	)
 
-	# ring_at builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	ring_at : List(Geom.RiderPt), Geom.RiderPt, F64, F64, F64, F64, F64, I64 -> List(Paint.DrawCmd)
-	ring_at = |base, center, h, drop, wpx, cf, view_w, k| ring_at_onto(base, center, h, drop, wpx, cf, view_w, k, [])
+	# ring builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
+	ring : List(Geom.RiderPt), Geom.RiderPt, F64, F64, F64, F64, F64, I64 -> List(Paint.DrawCmd)
+	ring = |base, center, h, drop, wpx, cf, view_w, k| ring_onto(base, center, h, drop, wpx, cf, view_w, k, [])
 
-	ring_at_onto : List(Geom.RiderPt), Geom.RiderPt, F64, F64, F64, F64, F64, I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
-	ring_at_onto = |base, center, h, drop, wpx, cf, view_w, k, acc| (
+	ring_onto : List(Geom.RiderPt), Geom.RiderPt, F64, F64, F64, F64, F64, I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
+	ring_onto = |base, center, h, drop, wpx, cf, view_w, k, acc| (
 		if (k >= 4) {
 			acc
 		} else {
-			ring_at_onto(base, center, h, drop, wpx, cf, view_w, (k + 1), List.concat(acc, bar3d(corner_at(base, center, k, h, drop), corner_at(base, center, ((k + 1) - (I64.div_trunc_by((k + 1), 4) * 4)), h, drop), wpx, cf, view_w)))
+			ring_onto(base, center, h, drop, wpx, cf, view_w, (k + 1), List.concat(acc, bar3d(corner_at(base, center, k, h, drop), corner_at(base, center, ((k + 1) - (I64.div_trunc_by((k + 1), 4) * 4)), h, drop), wpx, cf, view_w)))
 		}
 	)
 
@@ -209,7 +209,7 @@ Tower :: [].{
 						if (h <= clip_h) {
 							[]
 						} else {
-							ring_at(base, center, h, drop, wpx, cf, view_w, 0)
+							ring(base, center, h, drop, wpx, cf, view_w, 0)
 						}
 					),
 				),

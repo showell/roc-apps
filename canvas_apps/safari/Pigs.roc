@@ -59,34 +59,34 @@ Pigs :: [].{
 		}
 	)
 
-	# herd_cols_from builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	herd_cols_from : F64, I64, I64 -> List(Scenery.Critter)
-	herd_cols_from = |base, r, c| herd_cols_from_onto(base, r, c, [])
+	# herd_cols builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
+	herd_cols : F64, I64, I64 -> List(Scenery.Critter)
+	herd_cols = |base, r, c| herd_cols_onto(base, r, c, [])
 
-	herd_cols_from_onto : F64, I64, I64, List(Scenery.Critter) -> List(Scenery.Critter)
-	herd_cols_from_onto = |base, r, c, acc| (
+	herd_cols_onto : F64, I64, I64, List(Scenery.Critter) -> List(Scenery.Critter)
+	herd_cols_onto = |base, r, c, acc| (
 		if (c >= big_herd_cols) {
 			acc
 		} else {
-			herd_cols_from_onto(base, r, (c + 1), List.append(acc, herd_pig_at(base, r, c)))
+			herd_cols_onto(base, r, (c + 1), List.append(acc, herd_pig_at(base, r, c)))
 		}
 	)
 
-	# herd_rows_from builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	herd_rows_from : F64, I64 -> List(Scenery.Critter)
-	herd_rows_from = |base, r| herd_rows_from_onto(base, r, [])
+	# herd_rows builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
+	herd_rows : F64, I64 -> List(Scenery.Critter)
+	herd_rows = |base, r| herd_rows_onto(base, r, [])
 
-	herd_rows_from_onto : F64, I64, List(Scenery.Critter) -> List(Scenery.Critter)
-	herd_rows_from_onto = |base, r, acc| (
+	herd_rows_onto : F64, I64, List(Scenery.Critter) -> List(Scenery.Critter)
+	herd_rows_onto = |base, r, acc| (
 		if (r >= big_herd_rows) {
 			acc
 		} else {
-			herd_rows_from_onto(base, (r + 1), List.concat(acc, herd_cols_from(base, r, 0)))
+			herd_rows_onto(base, (r + 1), List.concat(acc, herd_cols(base, r, 0)))
 		}
 	)
 
 	fill_pig_herd : F64 -> List(Scenery.Critter)
-	fill_pig_herd = |length| herd_rows_from((length - pig_dist_before_end), 0)
+	fill_pig_herd = |length| herd_rows((length - pig_dist_before_end), 0)
 
 	pig_row_front : List(F64)
 	pig_row_front = [(0.0 - 6.0), (0.0 - 2.0), 2.0, 6.0]
@@ -94,16 +94,16 @@ Pigs :: [].{
 	pig_row_back : List(F64)
 	pig_row_back = [(0.0 - 10.0), (0.0 - 6.0), (0.0 - 2.0), 2.0, 6.0, 10.0]
 
-	# row_pigs_at builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	row_pigs_at : F64, F64, List(F64) -> List(Scenery.Critter)
-	row_pigs_at = |base, across, ds| row_pigs_at_onto(base, across, ds, 0, [])
+	# row_pigs builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
+	row_pigs : F64, F64, List(F64) -> List(Scenery.Critter)
+	row_pigs = |base, across, ds| row_pigs_onto(base, across, ds, 0, [])
 
-	row_pigs_at_onto : F64, F64, List(F64), I64, List(Scenery.Critter) -> List(Scenery.Critter)
-	row_pigs_at_onto = |base, across, ds, i, acc| (
+	row_pigs_onto : F64, F64, List(F64), I64, List(Scenery.Critter) -> List(Scenery.Critter)
+	row_pigs_onto = |base, across, ds, i, acc| (
 		if (i >= ds.len().to_i64_wrap()) {
 			acc
 		} else {
-			row_pigs_at_onto(base, across, ds, (i + 1), List.append(acc, { along: (base + (List.get(ds, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))), across: across, codepoint: pig_cp, height: pig_height, face_right: False }))
+			row_pigs_onto(base, across, ds, (i + 1), List.append(acc, { along: (base + (List.get(ds, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))), across: across, codepoint: pig_cp, height: pig_height, face_right: False }))
 		}
 	)
 
@@ -112,7 +112,7 @@ Pigs :: [].{
 		{
 			base = (length - pig_dist_before_end)
 			edge = ((Scenery.lane_width / 2.0) + Scenery.herd_road_offset)
-			List.concat(row_pigs_at(base, edge, pig_row_front), row_pigs_at(base, (edge + pig_back_row_offset), pig_row_back))
+			List.concat(row_pigs(base, edge, pig_row_front), row_pigs(base, (edge + pig_back_row_offset), pig_row_back))
 		}
 	)
 }

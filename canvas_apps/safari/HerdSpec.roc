@@ -45,7 +45,7 @@ bull_height_want : List(F64)
 bull_height_want = [1.61, 1.61]
 
 cows : List(Scenery.Critter)
-cows = Herd.cows_from(0)
+cows = Herd.cows(0)
 
 cow_of : I64 -> Scenery.Critter
 cow_of = |i| (List.get(cows, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))

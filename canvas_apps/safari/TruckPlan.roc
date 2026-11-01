@@ -11,14 +11,14 @@ TruckPlan :: [].{
 	no_truck : TruckPlan.TruckAt
 	no_truck = { present: False, d: 0, along: 0.0, fwd: 0.0 }
 
-	truck_at_from : List(World.Segment), List(I64), Frame.Pose, F64, I64 -> TruckPlan.TruckAt
-	truck_at_from = |segs, ch, pose, remaining, d| (
+	find_truck_from : List(World.Segment), List(I64), Frame.Pose, F64, I64 -> TruckPlan.TruckAt
+	find_truck_from = |segs, ch, pose, remaining, d| (
 		if (d >= ch.len().to_i64_wrap()) {
 			no_truck
 		} else {
 			(
 				if (remaining > (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).length) {
-					truck_at_from(segs, ch, pose, (remaining - (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).length), (d + 1))
+					find_truck_from(segs, ch, pose, (remaining - (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).length), (d + 1))
 				} else {
 					truck_here(segs, ch, pose, remaining, d)
 				}
@@ -43,7 +43,7 @@ TruckPlan :: [].{
 	truck_at : List(World.Segment), List(I64), Frame.Pose, F64, F64 -> TruckPlan.TruckAt
 	truck_at = |segs, ch, pose, along, lead| (
 		if (lead > 0.0) {
-			truck_at_from(segs, ch, pose, (along + lead), 0)
+			find_truck_from(segs, ch, pose, (along + lead), 0)
 		} else {
 			no_truck
 		}
