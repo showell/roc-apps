@@ -81,8 +81,8 @@ Pigs :: [].{
 	pig_row_back = [(0.0 - 10.0), (0.0 - 6.0), (0.0 - 2.0), 2.0, 6.0, 10.0]
 
 	# row_pigs_at builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	row_pigs_at : F64, F64, List(F64), I64 -> List(Scenery.Critter)
-	row_pigs_at = |base, across, ds, i| row_pigs_at_acc(base, across, ds, i, [])
+	row_pigs_at : F64, F64, List(F64) -> List(Scenery.Critter)
+	row_pigs_at = |base, across, ds| row_pigs_at_acc(base, across, ds, 0, [])
 
 	row_pigs_at_acc : F64, F64, List(F64), I64, List(Scenery.Critter) -> List(Scenery.Critter)
 	row_pigs_at_acc = |base, across, ds, i, acc| (if (i >= U64.to_i64_wrap(List.len(ds))) { acc } else { row_pigs_at_acc(base, across, ds, (i + 1), List.append(acc, { along: (base + (List.get(ds, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))), across: across, codepoint: pig_cp, height: pig_height, face_right: False })) })
@@ -91,6 +91,6 @@ Pigs :: [].{
 	fill_pig_row = |length| ({
 		base = (length - pig_dist_before_end)
 		edge = ((Scenery.lane_width / 2.0) + Scenery.herd_road_offset)
-		List.concat(row_pigs_at(base, edge, pig_row_front, 0), row_pigs_at(base, (edge + pig_back_row_offset), pig_row_back, 0))
+		List.concat(row_pigs_at(base, edge, pig_row_front), row_pigs_at(base, (edge + pig_back_row_offset), pig_row_back))
 	})
 }

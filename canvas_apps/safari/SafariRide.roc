@@ -68,7 +68,7 @@ SafariRide :: [].{
 	# every tree nearer than its own. It is collected and sorted with the rest
 	# now -- Render.collect gathers it, DepthSort orders it, ItemDraw draws it.
 	commands : SafariRide.Model -> List(Paint.DrawCmd)
-	commands = |m| Blit.blit_expand(Safari.ride_frame(m.world, m.ride), 0)
+	commands = |m| Blit.blit_expand(Safari.ride_frame(m.world, m.ride))
 
 	# The camera roll in radians: the whole frame, backdrop and commands, turns
 	# by minus this about the screen's centre.

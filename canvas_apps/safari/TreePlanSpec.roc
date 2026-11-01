@@ -71,8 +71,8 @@ height_want = [5.85, 4.5]
 items_got : List(I64)
 items_got = ({
 	ts = TreePlan.seg_trees(segs, chain, origin, 0, 500.0, 2.0, (List.get(segs, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).trees, 0)
-	its = TreePlan.tree_items(ts, 0)
-	[U64.to_i64_wrap(List.len(its)), (List.get(its, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).i, (List.get(its, I64.to_u64_wrap(27)) ?? crash("list-at out of range")).i, U64.to_i64_wrap(List.len(TreePlan.tree_items([], 0)))]
+	its = TreePlan.tree_items(ts)
+	[U64.to_i64_wrap(List.len(its)), (List.get(its, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).i, (List.get(its, I64.to_u64_wrap(27)) ?? crash("list-at out of range")).i, U64.to_i64_wrap(List.len(TreePlan.tree_items([])))]
 })
 
 items_want : List(I64)
@@ -80,7 +80,7 @@ items_want = [28, 0, 27, 0]
 
 item_fwd_got : List(F64)
 item_fwd_got = ({
-	its = TreePlan.tree_items(TreePlan.seg_trees(segs, chain, origin, 0, 500.0, 2.0, (List.get(segs, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).trees, 0), 0)
+	its = TreePlan.tree_items(TreePlan.seg_trees(segs, chain, origin, 0, 500.0, 2.0, (List.get(segs, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).trees, 0))
 	[(List.get(its, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).fwd, (List.get(its, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).fwd]
 })
 

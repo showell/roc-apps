@@ -40,8 +40,8 @@ TowerPlan :: [].{
 	})
 
 	# walk_towers builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	walk_towers : List(World.Segment), List(I64), Frame.Pose, I64 -> List(TowerPlan.TowerItem)
-	walk_towers = |segs, ch, pose, d| walk_towers_acc(segs, ch, pose, d, [])
+	walk_towers : List(World.Segment), List(I64), Frame.Pose -> List(TowerPlan.TowerItem)
+	walk_towers = |segs, ch, pose| walk_towers_acc(segs, ch, pose, 0, [])
 
 	walk_towers_acc : List(World.Segment), List(I64), Frame.Pose, I64, List(TowerPlan.TowerItem) -> List(TowerPlan.TowerItem)
 	walk_towers_acc = |segs, ch, pose, d, acc| (if (d >= U64.to_i64_wrap(List.len(ch))) { acc } else { walk_towers_acc(segs, ch, pose, (d + 1), List.concat(acc, seg_towers(segs, ch, pose, d))) })
@@ -53,14 +53,14 @@ TowerPlan :: [].{
 	})
 
 	all_towers : List(World.Segment), List(I64), Frame.Pose, I64 -> List(TowerPlan.TowerItem)
-	all_towers = |segs, ch, pose, seg_idx| (if (seg_idx > 0) { List.concat(walk_towers(segs, ch, pose, 0), behind_tower(segs, ch, pose, (seg_idx - 1))) } else { walk_towers(segs, ch, pose, 0) })
+	all_towers = |segs, ch, pose, seg_idx| (if (seg_idx > 0) { List.concat(walk_towers(segs, ch, pose), behind_tower(segs, ch, pose, (seg_idx - 1))) } else { walk_towers(segs, ch, pose) })
 
 	max_vis_towers : I64
 	max_vis_towers = 16
 
 	# tower_items builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	tower_items : List(TowerPlan.TowerItem), I64 -> List(DepthSort.Item)
-	tower_items = |ts, i| tower_items_acc(ts, i, [])
+	tower_items : List(TowerPlan.TowerItem) -> List(DepthSort.Item)
+	tower_items = |ts| tower_items_acc(ts, 0, [])
 
 	tower_items_acc : List(TowerPlan.TowerItem), I64, List(DepthSort.Item) -> List(DepthSort.Item)
 	tower_items_acc = |ts, i, acc| (if (i >= U64.to_i64_wrap(List.len(ts))) { acc } else { tower_items_acc(ts, (i + 1), List.append(acc, { fwd: (List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd, kind: KTower, i: i })) })

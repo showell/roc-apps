@@ -66,7 +66,7 @@ p : F64, F64 -> Camera.ScreenPt
 p = |x, y| { x: x, y: y }
 
 xy : List(Camera.ScreenPt) -> List(F64)
-xy = |ps| Paint.flatten_screen(ps, 0)
+xy = |ps| Paint.flatten_screen(ps)
 
 square : List(Camera.ScreenPt)
 square = [p(0.0, 0.0), p(4.0, 0.0), p(4.0, 4.0), p(0.0, 4.0), p(2.0, 2.0), p(2.0, 0.0)]

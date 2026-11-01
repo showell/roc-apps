@@ -99,12 +99,15 @@ RocBird :: [].{
 
 	# **THE DEPTH IS THE TREE'S**, which is the whole point of collecting them:
 	# how high the bird sits does not change how far away it is.
-	bird_items : List(RocBird.Bird), I64 -> List(DepthSort.Item)
-	bird_items = |bs, i|
+	bird_items : List(RocBird.Bird) -> List(DepthSort.Item)
+	bird_items = |bs| bird_items_from(bs, 0)
+
+	bird_items_from : List(RocBird.Bird), I64 -> List(DepthSort.Item)
+	bird_items_from = |bs, i|
 		if i >= U64.to_i64_wrap(List.len(bs)) { [] } else {
 			List.concat(
 				[{ fwd: (List.get(bs, I64.to_u64_wrap(i)) ?? crash("bird out of range")).fwd, kind: KBird, i: i }],
-				bird_items(bs, i + 1),
+				bird_items_from(bs, i + 1),
 			)
 		}
 
@@ -114,6 +117,6 @@ RocBird :: [].{
 	draw_one : RocBird.Bird, F64, F64 -> List(Paint.DrawCmd)
 	draw_one = |b, cf, view_w| {
 		feet = Camera.project({ right: b.right, forward: b.fwd, height: b.lift }, cf, view_w)
-		Critter.critter_polys(feet, Critter.facing(False), (height / b.fwd) * cf, polys, 0)
+		Critter.critter_polys(feet, Critter.facing(False), (height / b.fwd) * cf, polys)
 	}
 }

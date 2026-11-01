@@ -75,16 +75,16 @@ one_seg : List(World.Segment)
 one_seg = [World.segment_at(0)]
 
 walk_got : List(I64)
-walk_got = [U64.to_i64_wrap(List.len(CritterPlan.walk_billboards(segs, [], origin, 0))), (U64.to_i64_wrap(List.len(CritterPlan.walk_billboards(one_seg, [0], origin, 0))) - U64.to_i64_wrap(List.len(CritterPlan.seg_billboards(one_seg, [0], origin, 0)))), U64.to_i64_wrap(List.len(CritterPlan.walk_billboards(segs, chain, origin, 6)))]
+walk_got = [U64.to_i64_wrap(List.len(CritterPlan.walk_billboards(segs, [], origin))), (U64.to_i64_wrap(List.len(CritterPlan.walk_billboards(one_seg, [0], origin))) - U64.to_i64_wrap(List.len(CritterPlan.seg_billboards(one_seg, [0], origin, 0)))), U64.to_i64_wrap(List.len(CritterPlan.walk_billboards_acc(segs, chain, origin, 6, [])))]
 
 walk_want : List(I64)
 walk_want = [0, 0, 0]
 
 grow_got : List(Bool)
 grow_got = ({
-	a = U64.to_i64_wrap(List.len(CritterPlan.walk_billboards(segs, chain, origin, 0)))
-	b = U64.to_i64_wrap(List.len(CritterPlan.walk_billboards(segs, chain, origin, 1)))
-	c = U64.to_i64_wrap(List.len(CritterPlan.walk_billboards(segs, chain, origin, 2)))
+	a = U64.to_i64_wrap(List.len(CritterPlan.walk_billboards(segs, chain, origin)))
+	b = U64.to_i64_wrap(List.len(CritterPlan.walk_billboards_acc(segs, chain, origin, 1, [])))
+	c = U64.to_i64_wrap(List.len(CritterPlan.walk_billboards_acc(segs, chain, origin, 2, [])))
 	[(a >= b), (b >= c)]
 })
 

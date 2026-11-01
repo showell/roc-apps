@@ -36,8 +36,8 @@ three = [{ right: 0.0, forward: 10.0, height: 1.2 }, { right: 10.0, forward: 10.
 
 all_got : List(F64)
 all_got = ({
-	sp = Camera.project_all(three, 800.0, 960.0, 0)
-	[I64.to_f64(U64.to_i64_wrap(List.len(sp))), (List.get(sp, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).x, (List.get(sp, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).x, (List.get(sp, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).y, I64.to_f64(U64.to_i64_wrap(List.len(Camera.project_all([], 800.0, 960.0, 0))))]
+	sp = Camera.project_all(three, 800.0, 960.0)
+	[I64.to_f64(U64.to_i64_wrap(List.len(sp))), (List.get(sp, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).x, (List.get(sp, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).x, (List.get(sp, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).y, I64.to_f64(U64.to_i64_wrap(List.len(Camera.project_all([], 800.0, 960.0))))]
 })
 
 all_want : List(F64)

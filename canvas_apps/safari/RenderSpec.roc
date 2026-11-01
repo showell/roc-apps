@@ -38,9 +38,9 @@ prev_want = [0, 0, 4]
 merge_got : List(I64)
 merge_got = ({
 	n = U64.to_i64_wrap(List.len(frame.order))
-	parts = (U64.to_i64_wrap(List.len(TreePlan.tree_items(frame.trees, 0))) + U64.to_i64_wrap(List.len(TowerPlan.tower_items(frame.towers, 0))))
-	more = (U64.to_i64_wrap(List.len(CritterPlan.cow_items(frame.cows, 0))) + U64.to_i64_wrap(List.len(CatPlan.cat_items(frame.cats, 0))))
-	rest = (U64.to_i64_wrap(List.len(TruckPlan.truck_items(frame.truck))) + U64.to_i64_wrap(List.len(RailPlan.rail_items(frame.rails, 0))))
+	parts = (U64.to_i64_wrap(List.len(TreePlan.tree_items(frame.trees))) + U64.to_i64_wrap(List.len(TowerPlan.tower_items(frame.towers))))
+	more = (U64.to_i64_wrap(List.len(CritterPlan.cow_items(frame.cows))) + U64.to_i64_wrap(List.len(CatPlan.cat_items(frame.cats))))
+	rest = (U64.to_i64_wrap(List.len(TruckPlan.truck_items(frame.truck))) + U64.to_i64_wrap(List.len(RailPlan.rail_items(frame.rails))))
 	[(n - ((parts + more) + rest))]
 })
 

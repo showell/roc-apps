@@ -11,7 +11,7 @@ import Rider
 run : List(World.Segment), Safari.Ride, I64, U64 -> U64
 run = |world, ride, n, total|
 	if n <= 0 { total } else {
-		cmds = Blit.blit_expand(Safari.ride_frame(world, ride), 0)
+		cmds = Blit.blit_expand(Safari.ride_frame(world, ride))
 		run(world, Safari.ride_next(world, ride), n - 1, total + List.len(cmds))
 	}
 

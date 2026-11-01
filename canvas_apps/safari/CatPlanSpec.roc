@@ -68,7 +68,7 @@ cull_want : List(I64)
 cull_want = [0, 1, 1, 0, 0, 0]
 
 items_got : List(I64)
-items_got = [U64.to_i64_wrap(List.len(CatPlan.cat_items(seen, 0))), U64.to_i64_wrap(List.len(CatPlan.cat_items([], 0))), (List.get(CatPlan.cat_items(seen, 0), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).i]
+items_got = [U64.to_i64_wrap(List.len(CatPlan.cat_items(seen))), U64.to_i64_wrap(List.len(CatPlan.cat_items([]))), (List.get(CatPlan.cat_items(seen), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).i]
 
 items_want : List(I64)
 items_want = [1, 0, 0]

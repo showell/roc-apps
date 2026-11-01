@@ -20,5 +20,5 @@ Ground :: [].{
 	emit_ground_color = |ps, color, cf, view_w| (if (U64.to_i64_wrap(List.len(ps)) > 8) { [] } else { ground_clip(Geom.clip_near(ground_verts(ps, 0), Geom.near), color, cf, view_w) })
 
 	ground_clip : List(Geom.Vec3), I64, F64, F64 -> List(Paint.DrawCmd)
-	ground_clip = |vs, color, cf, view_w| (if (U64.to_i64_wrap(List.len(vs)) < 3) { [] } else { Paint.push_poly(color, Camera.project_all(vs, cf, view_w, 0)) })
+	ground_clip = |vs, color, cf, view_w| (if (U64.to_i64_wrap(List.len(vs)) < 3) { [] } else { Paint.push_poly(color, Camera.project_all(vs, cf, view_w)) })
 }

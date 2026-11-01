@@ -62,8 +62,8 @@ RailPlan :: [].{
 	joint_rails = |segs, ch, pose, from_map, to_map, from_len, from_w, to_w, exit_right| GuardRail.rail_emit(joint_rail_path(segs, ch, pose, from_map, to_map, from_len, from_w, to_w, exit_right))
 
 	# walk_rails builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	walk_rails : List(World.Segment), List(I64), Frame.Pose, I64 -> List(GuardRail.RailPoly)
-	walk_rails = |segs, ch, pose, d| walk_rails_acc(segs, ch, pose, d, [])
+	walk_rails : List(World.Segment), List(I64), Frame.Pose -> List(GuardRail.RailPoly)
+	walk_rails = |segs, ch, pose| walk_rails_acc(segs, ch, pose, 0, [])
 
 	walk_rails_acc : List(World.Segment), List(I64), Frame.Pose, I64, List(GuardRail.RailPoly) -> List(GuardRail.RailPoly)
 	walk_rails_acc = |segs, ch, pose, d, acc| (if ((d + 1) >= U64.to_i64_wrap(List.len(ch))) { acc } else { walk_rails_acc(segs, ch, pose, (d + 1), List.concat(acc, joint_rails(segs, ch, pose, Frame.chain_map(d), Frame.chain_map((d + 1)), (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash("list-at out of range")))) ?? crash("list-at out of range")).length, (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash("list-at out of range")))) ?? crash("list-at out of range")).width, (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap((d + 1))) ?? crash("list-at out of range")))) ?? crash("list-at out of range")).width, (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash("list-at out of range")))) ?? crash("list-at out of range")).exit_right))) })
@@ -75,11 +75,11 @@ RailPlan :: [].{
 	})
 
 	all_rails : List(World.Segment), List(I64), Frame.Pose, I64 -> List(GuardRail.RailPoly)
-	all_rails = |segs, ch, pose, seg_idx| (if (seg_idx > 0) { List.concat(walk_rails(segs, ch, pose, 0), behind_rails(segs, ch, pose, (seg_idx - 1))) } else { walk_rails(segs, ch, pose, 0) })
+	all_rails = |segs, ch, pose, seg_idx| (if (seg_idx > 0) { List.concat(walk_rails(segs, ch, pose), behind_rails(segs, ch, pose, (seg_idx - 1))) } else { walk_rails(segs, ch, pose) })
 
 	# rail_items builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	rail_items : List(GuardRail.RailPoly), I64 -> List(DepthSort.Item)
-	rail_items = |rs, i| rail_items_acc(rs, i, [])
+	rail_items : List(GuardRail.RailPoly) -> List(DepthSort.Item)
+	rail_items = |rs| rail_items_acc(rs, 0, [])
 
 	rail_items_acc : List(GuardRail.RailPoly), I64, List(DepthSort.Item) -> List(DepthSort.Item)
 	rail_items_acc = |rs, i, acc| (if (i >= U64.to_i64_wrap(List.len(rs))) { acc } else { rail_items_acc(rs, (i + 1), List.append(acc, { fwd: (List.get(rs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd, kind: KRail, i: i })) })

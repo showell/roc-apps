@@ -100,7 +100,7 @@ halo_got : List(F64)
 halo_got = ({
 	cx = (TruckDraw.sum_x(panel, 0) / 4.0)
 	cy = (TruckDraw.sum_y(panel, 0) / 4.0)
-	[TruckDraw.sum_x(panel, 0), TruckDraw.sum_y(panel, 0), cx, cy, TruckDraw.pt_dist(sp(3.0, 4.0), sp(0.0, 0.0)), TruckDraw.max_radius(panel, sp(0.0, 0.0), 0), (TruckDraw.max_radius(panel, sp(0.0, 0.0), 0) * 3.2)]
+	[TruckDraw.sum_x(panel, 0), TruckDraw.sum_y(panel, 0), cx, cy, TruckDraw.pt_dist(sp(3.0, 4.0), sp(0.0, 0.0)), TruckDraw.max_radius(panel, sp(0.0, 0.0)), (TruckDraw.max_radius(panel, sp(0.0, 0.0)) * 3.2)]
 })
 
 halo_want : List(F64)
@@ -113,7 +113,7 @@ circle_count_want : List(I64)
 circle_count_want = [16, 16, 16]
 
 behind_got : List(Bool)
-behind_got = [TruckDraw.any_behind([v3(10.0), v3(20.0), v3(30.0)], 0), TruckDraw.any_behind([v3(10.0), v3(0.2), v3(30.0)], 0), TruckDraw.any_behind([v3(10.0), v3(0.4), v3(30.0)], 0), TruckDraw.any_behind([v3(0.41)], 0), TruckDraw.any_behind([], 0)]
+behind_got = [TruckDraw.any_behind([v3(10.0), v3(20.0), v3(30.0)]), TruckDraw.any_behind([v3(10.0), v3(0.2), v3(30.0)]), TruckDraw.any_behind([v3(10.0), v3(0.4), v3(30.0)]), TruckDraw.any_behind([v3(0.41)]), TruckDraw.any_behind([])]
 
 behind_want : List(Bool)
 behind_want = [False, True, True, False, False]

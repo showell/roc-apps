@@ -37,8 +37,8 @@ CatPlan :: [].{
 	max_vis_cats = 8
 
 	# cat_items builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	cat_items : List(CatPlan.CatItem), I64 -> List(DepthSort.Item)
-	cat_items = |cs, i| cat_items_acc(cs, i, [])
+	cat_items : List(CatPlan.CatItem) -> List(DepthSort.Item)
+	cat_items = |cs| cat_items_acc(cs, 0, [])
 
 	cat_items_acc : List(CatPlan.CatItem), I64, List(DepthSort.Item) -> List(DepthSort.Item)
 	cat_items_acc = |cs, i, acc| (if (i >= U64.to_i64_wrap(List.len(cs))) { acc } else { cat_items_acc(cs, (i + 1), List.append(acc, { fwd: (List.get(cs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd, kind: KCat, i: i })) })

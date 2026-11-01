@@ -14,7 +14,7 @@ two : List(Camera.ScreenPt)
 two = [sp(1.0, 2.0), sp(3.0, 4.0)]
 
 flat_got : List(F64)
-flat_got = List.concat(Paint.flatten_screen(tri, 0), Paint.flatten_screen([], 0))
+flat_got = List.concat(Paint.flatten_screen(tri), Paint.flatten_screen([]))
 
 flat_want : List(F64)
 flat_want = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]

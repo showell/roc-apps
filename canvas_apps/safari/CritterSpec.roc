@@ -49,7 +49,7 @@ anchor_want = [100.0, 200.0]
 
 mapped_got : List(F64)
 mapped_got = ({
-	ps = Critter.mapped_pts(feet, 1.0, 50.0, [{ x: 0.0, y: 0.0 }, { x: 0.5, y: 0.4 }, { x: 1.0, y: 1.0 }], 0)
+	ps = Critter.mapped_pts(feet, 1.0, 50.0, [{ x: 0.0, y: 0.0 }, { x: 0.5, y: 0.4 }, { x: 1.0, y: 1.0 }])
 	[I64.to_f64(U64.to_i64_wrap(List.len(ps))), (List.get(ps, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).y, (List.get(ps, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).y, (List.get(ps, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).y]
 })
 

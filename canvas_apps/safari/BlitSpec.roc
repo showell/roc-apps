@@ -90,7 +90,7 @@ frame = [cmd(0, 111, 0.0, [], poly), cmd(1, 8405024, 1.0, [], poly), cmd(3, 222,
 
 frame_got : List(I64)
 frame_got = ({
-	out = Blit.blit_expand(frame, 0)
+	out = Blit.blit_expand(frame)
 	[U64.to_i64_wrap(List.len(out)), (List.get(out, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).tag, (List.get(out, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).color, (List.get(out, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).tag, (List.get(out, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).color, (List.get(out, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).tag, (List.get(out, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).color, (List.get(out, I64.to_u64_wrap(3)) ?? crash("list-at out of range")).tag, (List.get(out, I64.to_u64_wrap(3)) ?? crash("list-at out of range")).color, (List.get(out, I64.to_u64_wrap(4)) ?? crash("list-at out of range")).tag, (List.get(out, I64.to_u64_wrap(4)) ?? crash("list-at out of range")).color]
 })
 
@@ -98,7 +98,7 @@ frame_want : List(I64)
 frame_want = [5, 0, 111, 2, 5056019, 3, 222, 4, 555, 5, 777]
 
 empty_got : List(I64)
-empty_got = [U64.to_i64_wrap(List.len(Blit.blit_expand([], 0))), U64.to_i64_wrap(List.len(Blit.expand_cmd(cmd(3, 1, 0.5, [0.0, 0.0, 0.1], []))))]
+empty_got = [U64.to_i64_wrap(List.len(Blit.blit_expand([]))), U64.to_i64_wrap(List.len(Blit.expand_cmd(cmd(3, 1, 0.5, [0.0, 0.0, 0.1], []))))]
 
 empty_want : List(I64)
 empty_want = [0, 0]
