@@ -61,35 +61,35 @@ Devices :: [].{
 	# these inside its own record update: `{ ..m, devices: Devices.poke_into(m.devices, a, v) }`.
 	write_text : List(D), Str -> List(D)
 	write_text = |ds, t| {
-		r = List.replace(ds, 0, Devices.none) ?? crash "the machine has no devices"
-		List.set(r.list, 0, Devices.written(r.prev, t)) ?? crash "the machine has no devices"
+		r = ds.replace(0, Devices.none) ?? crash "the machine has no devices"
+		r.list.set(0, Devices.written(r.prev, t)) ?? crash "the machine has no devices"
 	}
 
 	poke_into : List(D), U64, U8 -> List(D)
 	poke_into = |ds, a, v| {
-		r = List.replace(ds, 0, Devices.none) ?? crash "the machine has no devices"
-		List.set(r.list, 0, Devices.poked(r.prev, a, v)) ?? crash "the machine has no devices"
+		r = ds.replace(0, Devices.none) ?? crash "the machine has no devices"
+		r.list.set(0, Devices.poked(r.prev, a, v)) ?? crash "the machine has no devices"
 	}
 
 	# INPUT's prompt has gone out.
 	prompt_out : List(D) -> List(D)
 	prompt_out = |ds| {
-		r = List.replace(ds, 0, Devices.none) ?? crash "the machine has no devices"
-		List.set(r.list, 0, Devices.prompted(r.prev)) ?? crash "the machine has no devices"
+		r = ds.replace(0, Devices.none) ?? crash "the machine has no devices"
+		r.list.set(0, Devices.prompted(r.prev)) ?? crash "the machine has no devices"
 	}
 
 	# A line read: its items kept, and the line after it next.
 	reply_in : List(D), List(Str) -> List(D)
 	reply_in = |ds, vals| {
-		r = List.replace(ds, 0, Devices.none) ?? crash "the machine has no devices"
-		List.set(r.list, 0, Devices.replied(r.prev, vals)) ?? crash "the machine has no devices"
+		r = ds.replace(0, Devices.none) ?? crash "the machine has no devices"
+		r.list.set(0, Devices.replied(r.prev, vals)) ?? crash "the machine has no devices"
 	}
 
 	# A line typed, kept for INPUT to read.
 	line_in : List(D), Str -> List(D)
 	line_in = |ds, line| {
-		r = List.replace(ds, 0, Devices.none) ?? crash "the machine has no devices"
-		List.set(r.list, 0, Devices.typed_in(r.prev, line)) ?? crash "the machine has no devices"
+		r = ds.replace(0, Devices.none) ?? crash "the machine has no devices"
+		r.list.set(0, Devices.typed_in(r.prev, line)) ?? crash "the machine has no devices"
 	}
 
 	prompted : D -> D
@@ -99,7 +99,7 @@ Devices :: [].{
 	replied = |d, vals| { ..d, ip: d.ip + 1, asked: False, reply: vals }
 
 	typed_in : D, Str -> D
-	typed_in = |d, line| { ..d, inp: List.append(d.inp, line) }
+	typed_in = |d, line| { ..d, inp: d.inp.append(line) }
 
 	# ---- the display ----------------------------------------------------------------
 
@@ -107,7 +107,7 @@ Devices :: [].{
 	# onto the screen at the cursor; the twenty-sixth line scrolls.
 	written : D, Str -> D
 	written = |d, t| {
-		b = Str.to_utf8(t)
+		b = t.to_utf8()
 		s = Devices.draw(d.scr, d.col_ram, d.top, d.crow, d.ccol, b)
 		{ ..d, scr: s.scr, col_ram: s.col_ram, top: s.top, crow: s.crow, ccol: s.ccol, out: Devices.append_out(d.out, t), col: Devices.col_after(b, d.col) }
 	}
@@ -123,7 +123,7 @@ Devices :: [].{
 		var $col = ccol
 		for c in b {
 			if c != 10 {
-				$scr = List.set($scr, Devices.cell(Devices.row_at($top, $row), $col), Devices.screen_code(c)) ?? crash "draw: outside the screen"
+				$scr = $scr.set(Devices.cell(Devices.row_at($top, $row), $col), Devices.screen_code(c)) ?? crash "draw: outside the screen"
 			} else {
 				{}
 			}
@@ -134,7 +134,7 @@ Devices :: [].{
 					bottom = Devices.row_at($top, 0)
 					$scr = Devices.fill_row($scr, bottom, 32)
 					$col_ram = Devices.fill_row($col_ram, bottom, 14)
-					$top = I64.rem_by($top + 1, Devices.screen_h)
+					$top = ($top + 1).rem_by(Devices.screen_h)
 				} else {
 					$row = $row + 1
 				}
@@ -153,17 +153,17 @@ Devices :: [].{
 
 	# Where a screen row is kept, given the row shown first.
 	row_at : I64, I64 -> I64
-	row_at = |top, row| I64.rem_by(top + row, Devices.screen_h)
+	row_at = |top, row| (top + row).rem_by(Devices.screen_h)
 
 	cell : I64, I64 -> U64
-	cell = |kept_row, col| I64.to_u64_wrap(kept_row * Devices.screen_w + col)
+	cell = |kept_row, col| (kept_row * Devices.screen_w + col).to_u64_wrap()
 
 	fill_row : List(U8), I64, U8 -> List(U8)
 	fill_row = |bytes, kept_row, v| {
 		var $b = bytes
 		var $c = 0
 		while $c < Devices.screen_w {
-			$b = List.set($b, Devices.cell(kept_row, $c), v) ?? crash "fill_row: outside the screen"
+			$b = $b.set(Devices.cell(kept_row, $c), v) ?? crash "fill_row: outside the screen"
 			$c = $c + 1
 		}
 		$b
@@ -204,10 +204,10 @@ Devices :: [].{
 
 	# The column after text, without making its bytes when it has no newline.
 	col_after_text : Str, I64 -> I64
-	col_after_text = |t, col| if Str.contains(t, "\n") {
-		Devices.col_after(Str.to_utf8(t), col)
+	col_after_text = |t, col| if t.contains("\n") {
+		Devices.col_after(t.to_utf8(), col)
 	} else {
-		col + U64.to_i64_wrap(Str.count_utf8_bytes(t))
+		col + t.count_utf8_bytes().to_i64_wrap()
 	}
 
 	# **A PROGRAM THAT PRINTS FOREVER MUST NOT GROW FOREVER**: the transcript
@@ -217,10 +217,10 @@ Devices :: [].{
 
 	append_out : List(Str), Str -> List(Str)
 	append_out = |out, t|
-		if List.len(out) < Devices.scrollback * 2 {
-			List.append(out, t)
+		if out.len() < Devices.scrollback * 2 {
+			out.append(t)
 		} else {
-			List.append(List.sublist(out, { start: Devices.scrollback, len: List.len(out) - Devices.scrollback }), t)
+			out.sublist({ start: Devices.scrollback, len: out.len() - Devices.scrollback }).append(t)
 		}
 
 	# The screen codes and colours in the order shown, then the framebuffer.
@@ -231,11 +231,11 @@ Devices :: [].{
 		var $row = 0
 		while $row < Devices.screen_h {
 			start_at = Devices.cell(Devices.row_at(d.top, $row), 0)
-			$codes = List.concat($codes, List.sublist(d.scr, { start: start_at, len: 40 }))
-			$colours = List.concat($colours, List.sublist(d.col_ram, { start: start_at, len: 40 }))
+			$codes = $codes.concat(d.scr.sublist({ start: start_at, len: 40 }))
+			$colours = $colours.concat(d.col_ram.sublist({ start: start_at, len: 40 }))
 			$row = $row + 1
 		}
-		List.concat(List.concat($codes, $colours), d.pix)
+		$codes.concat($colours).concat(d.pix)
 	}
 
 	# ---- memory -----------------------------------------------------------------------
@@ -264,16 +264,16 @@ Devices :: [].{
 
 	# A screen address as the cell it is kept in.
 	kept : D, U64 -> U64
-	kept = |d, i| Devices.cell(Devices.row_at(d.top, U64.to_i64_wrap(U64.div_trunc_by(i, 40))), U64.to_i64_wrap(U64.rem_by(i, 40)))
+	kept = |d, i| Devices.cell(Devices.row_at(d.top, i.div_trunc_by(40).to_i64_wrap()), i.rem_by(40).to_i64_wrap())
 
 	peek : D, U64 -> U8
 	peek = |d, a|
 		if a >= Devices.screen_base and a < Devices.screen_base + Devices.screen_cells {
-			List.get(d.scr, Devices.kept(d, a - Devices.screen_base)) ?? 0
+			d.scr.get(Devices.kept(d, a - Devices.screen_base)) ?? 0
 		} else if a >= Devices.colour_base and a < Devices.colour_base + Devices.screen_cells {
-			List.get(d.col_ram, Devices.kept(d, a - Devices.colour_base)) ?? 0
+			d.col_ram.get(Devices.kept(d, a - Devices.colour_base)) ?? 0
 		} else if a >= Devices.hires_base and a < Devices.hires_base + Devices.hires_cells {
-			List.get(d.pix, a - Devices.hires_base) ?? 0
+			d.pix.get(a - Devices.hires_base) ?? 0
 		} else {
 			Vec.get(d.mem, a, 0)
 		}
@@ -281,16 +281,16 @@ Devices :: [].{
 	poked : D, U64, U8 -> D
 	poked = |d, a, v|
 		if a >= Devices.screen_base and a < Devices.screen_base + Devices.screen_cells {
-			{ ..d, scr: List.set(d.scr, Devices.kept(d, a - Devices.screen_base), v) ?? crash "poke: screen" }
+			{ ..d, scr: d.scr.set(Devices.kept(d, a - Devices.screen_base), v) ?? crash "poke: screen" }
 		} else if a >= Devices.colour_base and a < Devices.colour_base + Devices.screen_cells {
-			{ ..d, col_ram: List.set(d.col_ram, Devices.kept(d, a - Devices.colour_base), v) ?? crash "poke: colour" }
+			{ ..d, col_ram: d.col_ram.set(Devices.kept(d, a - Devices.colour_base), v) ?? crash "poke: colour" }
 		} else if a >= Devices.hires_base and a < Devices.hires_base + Devices.hires_cells {
 			lit = if d.drew {
 				d.pix
 			} else {
 				List.repeat(0, Devices.hires_cells)
 			}
-			{ ..d, pix: List.set(lit, a - Devices.hires_base, v) ?? crash "poke: hires", drew: True }
+			{ ..d, pix: lit.set(a - Devices.hires_base, v) ?? crash "poke: hires", drew: True }
 		} else {
 			{ ..d, mem: Vec.set(d.mem, a, v) }
 		}

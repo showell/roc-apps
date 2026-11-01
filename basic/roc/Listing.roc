@@ -34,7 +34,7 @@ Listing :: [].{
 	# the line it concerns, or the line before it; -1 before any line.
 	check : Str -> Rejection
 	check = |src| {
-		b = Str.to_utf8(src)
+		b = src.to_utf8()
 		first = Listing.lines(b, 0, -1, False)
 		if first.why != "" {
 			first
@@ -48,7 +48,7 @@ Listing :: [].{
 	# `prev` is the last line number seen, `ended` that its line was END.
 	lines : List(U8), U64, I64, Bool -> Rejection
 	lines = |b, i, prev, ended|
-		if i >= List.len(b) {
+		if i >= b.len() {
 			if ended {
 				{ why: "", num: -1 }
 			} else {
@@ -105,7 +105,7 @@ Listing :: [].{
 	# upper-cased outside its quotes.
 	statements : List(U8), U64, List(Def) -> Rejection
 	statements = |b, i, fns|
-		if i >= List.len(b) {
+		if i >= b.len() {
 			{ why: "", num: -1 }
 		} else {
 			e = Listing.eol(b, i)
@@ -133,7 +133,7 @@ Listing :: [].{
 	# wherever the DEF is.
 	defs : List(U8), U64, List(Def) -> List(Def)
 	defs = |b, i, acc|
-		if i >= List.len(b) {
+		if i >= b.len() {
 			acc
 		} else {
 			e = Listing.eol(b, i)
@@ -146,7 +146,7 @@ Listing :: [].{
 				b,
 				e + 1,
 				if found {
-					List.append(acc, { k: Listing.byte(body, k + 2), param: Listing.next(body, k + 3) == 40 })
+					acc.append({ k: Listing.byte(body, k + 2), param: Listing.next(body, k + 3) == 40 })
 				} else {
 					acc
 				},
@@ -169,8 +169,7 @@ Listing :: [].{
 				i + 1,
 				stop,
 				flip,
-				List.append(
-					acc,
+				acc.append(
 					if quoted or c == 34 {
 						c
 					} else {
@@ -184,13 +183,13 @@ Listing :: [].{
 	statement = |b, i, fns| {
 		j = Listing.skip_ws(b, i)
 		kw = Listing.first_kw(b, j, Listing.keywords, 0)
-		at = j + List.len(Str.to_utf8(kw))
+		at = j + kw.to_utf8().len()
 		if kw == "" {
 			Listing.no("A statement with no keyword")
 		} else if kw != "GO" and kw != "REM" and kw != "DATA" and Listing.is_alpha(Listing.byte(b, at)) {
 			Listing.no("A keyword run together with the word after it")
 		} else if kw == "REM" or kw == "POKE" or kw == "PLOT" or kw == "SLEEP" or kw == "PAUSE" {
-			Listing.ok(List.len(b), False)
+			Listing.ok(b.len(), False)
 		} else if kw == "END" or kw == "STOP" or kw == "RETURN" or kw == "RESTORE" or kw == "RANDOMIZE" {
 			Listing.end(b, at)
 		} else if kw == "GOTO" or kw == "GOSUB" {
@@ -267,10 +266,10 @@ Listing :: [].{
 
 	first_kw : List(U8), U64, List(Str), U64 -> Str
 	first_kw = |b, j, kws, n|
-		if n >= List.len(kws) {
+		if n >= kws.len() {
 			""
 		} else {
-			w = List.get(kws, n) ?? ""
+			w = kws.get(n) ?? ""
 			if Listing.starts(b, j, w) {
 				w
 			} else {
@@ -309,7 +308,7 @@ Listing :: [].{
 	print_items = |b, i, need_sep, fns| {
 		j = Listing.skip_ws(b, i)
 		c = Listing.byte(b, j)
-		if j >= List.len(b) {
+		if j >= b.len() {
 			Listing.ok(j, False)
 		} else if c == 44 or c == 59 {
 			Listing.print_items(b, j + 1, False, fns)
@@ -544,8 +543,8 @@ Listing :: [].{
 	variable = |b, i, what, fns| {
 		j = Listing.skip_ws(b, i)
 		c = Listing.byte(b, j)
-		if j >= List.len(b) or c == 44 {
-			Listing.no(Str.concat(Str.concat("An empty entry in the ", what), " list"))
+		if j >= b.len() or c == 44 {
+			Listing.no("An empty entry in the ".concat(what).concat(" list"))
 		} else if !Listing.is_alpha(c) {
 			Listing.no("Expected a variable")
 		} else {
@@ -559,9 +558,9 @@ Listing :: [].{
 		if Listing.byte(b, j) == 34 {
 			q = Listing.quote_close(b, j + 1)
 			k = Listing.skip_ws(b, q + 1)
-			if q >= List.len(b) {
+			if q >= b.len() {
 				Listing.no("A quoted string with no closing quote")
-			} else if k >= List.len(b) {
+			} else if k >= b.len() {
 				Listing.ok(k, False)
 			} else if Listing.byte(b, k) == 44 {
 				Listing.data_items(b, k + 1)
@@ -583,7 +582,7 @@ Listing :: [].{
 	}
 
 	item_end : List(U8), U64 -> U64
-	item_end = |b, i| if i >= List.len(b) or Listing.byte(b, i) == 44 {
+	item_end = |b, i| if i >= b.len() or Listing.byte(b, i) == 44 {
 		i
 	} else {
 		Listing.item_end(b, i + 1)
@@ -733,7 +732,7 @@ Listing :: [].{
 			}
 		} else if c == 34 {
 			q = Listing.quote_close(b, j + 1)
-			if q >= List.len(b) {
+			if q >= b.len() {
 				Listing.no("A quoted string with no closing quote")
 			} else {
 				Listing.ok(q + 1, True)
@@ -819,7 +818,7 @@ Listing :: [].{
 	# none when it does not. One with no DEF anywhere is the next pass's.
 	call_fn : List(U8), U64, U8, List(Def) -> Sc
 	call_fn = |b, at, letter, fns| {
-		name = Str.concat("FN", Str.from_utf8([letter]) ?? "")
+		name = "FN".concat(Str.from_utf8([letter]) ?? "")
 		a = Listing.count_args(b, at, name, fns)
 		want = Listing.fn_arity(fns, letter, 0)
 		if a.why != "" {
@@ -834,10 +833,10 @@ Listing :: [].{
 	# 0 or 1 from the DEF, 2 when there is no DEF.
 	fn_arity : List(Def), U8, U64 -> U8
 	fn_arity = |fns, letter, n|
-		if n >= List.len(fns) {
+		if n >= fns.len() {
 			2
 		} else {
-			f = List.get(fns, n) ?? { k: 0, param: False }
+			f = fns.get(n) ?? { k: 0, param: False }
 			if f.k == letter {
 				if f.param {
 					1
@@ -875,7 +874,7 @@ Listing :: [].{
 	}
 
 	wrong_args : Str -> Sc
-	wrong_args = |name| Listing.no(Str.concat(name, " given the wrong number of arguments"))
+	wrong_args = |name| Listing.no(name.concat(" given the wrong number of arguments"))
 
 	# The extension functions are not checked: skip a balanced `( ... )`.
 	loose_args : List(U8), U64 -> U64
@@ -890,7 +889,7 @@ Listing :: [].{
 
 	skip_parens : List(U8), U64, U64 -> U64
 	skip_parens = |b, i, depth|
-		if depth == 0 or i >= List.len(b) {
+		if depth == 0 or i >= b.len() {
 			i
 		} else {
 			c = Listing.byte(b, i)
@@ -914,7 +913,7 @@ Listing :: [].{
 	no = |why| { at: 0, why: why, str: False }
 
 	end : List(U8), U64 -> Sc
-	end = |b, i| if Listing.skip_ws(b, i) < List.len(b) {
+	end = |b, i| if Listing.skip_ws(b, i) < b.len() {
 		Listing.no("Text after the end of a statement")
 	} else {
 		Listing.ok(i, False)
@@ -942,7 +941,7 @@ Listing :: [].{
 	word = |b, i, w| {
 		j = Listing.skip_ws(b, i)
 		if Listing.starts(b, j, w) {
-			j + List.len(Str.to_utf8(w))
+			j + w.to_utf8().len()
 		} else {
 			0
 		}
@@ -969,7 +968,7 @@ Listing :: [].{
 	}
 
 	quote_close : List(U8), U64 -> U64
-	quote_close = |b, i| if i >= List.len(b) or Listing.byte(b, i) == 34 {
+	quote_close = |b, i| if i >= b.len() or Listing.byte(b, i) == 34 {
 		i
 	} else {
 		Listing.quote_close(b, i + 1)
@@ -983,16 +982,16 @@ Listing :: [].{
 	}
 
 	text : List(U8), U64, U64 -> Str
-	text = |b, i, e| Str.from_utf8(List.sublist(b, { start: i, len: e - i })) ?? ""
+	text = |b, i, e| Str.from_utf8(b.sublist({ start: i, len: e - i })) ?? ""
 
 	starts : List(U8), U64, Str -> Bool
-	starts = |b, i, w| Listing.starts_from(b, i, Str.to_utf8(w), 0)
+	starts = |b, i, w| Listing.starts_from(b, i, w.to_utf8(), 0)
 
 	starts_from : List(U8), U64, List(U8), U64 -> Bool
 	starts_from = |b, i, w, k|
-		if k >= List.len(w) {
+		if k >= w.len() {
 			True
-		} else if Listing.byte(b, i + k) != (List.get(w, k) ?? 0) {
+		} else if Listing.byte(b, i + k) != (w.get(k) ?? 0) {
 			False
 		} else {
 			Listing.starts_from(b, i, w, k + 1)
@@ -1003,10 +1002,10 @@ Listing :: [].{
 	next = |b, i| Listing.byte(b, Listing.skip_ws(b, i))
 
 	byte : List(U8), U64 -> U8
-	byte = |b, i| List.get(b, i) ?? 0
+	byte = |b, i| b.get(i) ?? 0
 
 	eol : List(U8), U64 -> U64
-	eol = |b, i| if i >= List.len(b) or Listing.byte(b, i) == 10 {
+	eol = |b, i| if i >= b.len() or Listing.byte(b, i) == 10 {
 		i
 	} else {
 		Listing.eol(b, i + 1)
@@ -1046,6 +1045,6 @@ Listing :: [].{
 		if i >= e or acc > 99999999 {
 			acc
 		} else {
-			Listing.digits_val(b, i + 1, e, acc * 10 + U8.to_i64(Listing.byte(b, i)) - 48)
+			Listing.digits_val(b, i + 1, e, acc * 10 + Listing.byte(b, i).to_i64() - 48)
 		}
 }

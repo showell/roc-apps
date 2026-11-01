@@ -169,7 +169,7 @@ Parse :: [].{
 
 	load : Str, Bool -> Program
 	load = |src, ecma| {
-		ls = Parse.sort_lines(Parse.load_from(Str.to_utf8(src), 0, []))
+		ls = Parse.sort_lines(Parse.load_from(src.to_utf8(), 0, []))
 		cx = { ecma: ecma, fns: Parse.def_heads(ls) }
 		var $prog = []
 		var $marks = []
@@ -181,23 +181,23 @@ Parse :: [].{
 		var $decls = []
 		var $line = 0
 		for l in ls {
-			$firsts = List.append($firsts, List.len($prog))
-			$lines = List.append($lines, l.num)
+			$firsts = $firsts.append($prog.len())
+			$lines = $lines.append(l.num)
 			got = Parse.line_from(l.src, 0, $line, True, cx, { stmts: [], marks: [], defs: [] })
-			$prog = if List.is_empty(got.stmts) {
-				List.append($prog, Nop)
+			$prog = if got.stmts.is_empty() {
+				$prog.append(Nop)
 			} else {
-				List.concat($prog, got.stmts)
+				$prog.concat(got.stmts)
 			}
-			$marks = if List.is_empty(got.marks) {
-				List.append($marks, 0)
+			$marks = if got.marks.is_empty() {
+				$marks.append(0)
 			} else {
-				List.concat($marks, got.marks)
+				$marks.concat(got.marks)
 			}
 			for d in got.defs {
-				if !(List.get($bodied, d.letter) ?? True) {
-					$fns = List.set($fns, d.letter, d.def) ?? $fns
-					$bodied = List.set($bodied, d.letter, True) ?? $bodied
+				if !($bodied.get(d.letter) ?? True) {
+					$fns = $fns.set(d.letter, d.def) ?? $fns
+					$bodied = $bodied.set(d.letter, True) ?? $bodied
 				} else {
 					{}
 				}
@@ -209,7 +209,7 @@ Parse :: [].{
 		lines = $lines
 		firsts = $firsts
 		{
-			prog: List.map($prog, |s| Parse.resolve(s, lines, firsts)),
+			prog: $prog.map(|s| Parse.resolve(s, lines, firsts)),
 			lines: lines,
 			firsts: firsts,
 			skips: Parse.skips_of($marks),
@@ -225,7 +225,7 @@ Parse :: [].{
 	# Split on newlines, drop lines with no number, read the number.
 	load_from : List(U8), U64, List(Line) -> List(Line)
 	load_from = |b, i, acc|
-		if i >= List.len(b) {
+		if i >= b.len() {
 			acc
 		} else {
 			e = Parse.eol(b, i)
@@ -236,13 +236,13 @@ Parse :: [].{
 				if line.num < 0 {
 					acc
 				} else {
-					List.append(acc, line)
+					acc.append(line)
 				},
 			)
 		}
 
 	eol : List(U8), U64 -> U64
-	eol = |b, i| if i >= List.len(b) or Parse.byte(b, i) == 10 {
+	eol = |b, i| if i >= b.len() or Parse.byte(b, i) == 10 {
 		i
 	} else {
 		Parse.eol(b, i + 1)
@@ -271,9 +271,9 @@ Parse :: [].{
 				Parse.line_bytes(b, i + 1, e, acc)
 			} else if c == 34 {
 				j = Parse.quote_end(b, i + 1, e)
-				Parse.line_bytes(b, j, e, List.concat(acc, List.sublist(b, { start: i, len: j - i })))
+				Parse.line_bytes(b, j, e, acc.concat(b.sublist({ start: i, len: j - i })))
 			} else {
-				Parse.line_bytes(b, i + 1, e, List.append(acc, Parse.upper(c)))
+				Parse.line_bytes(b, i + 1, e, acc.append(Parse.upper(c)))
 			}
 		}
 
@@ -287,9 +287,9 @@ Parse :: [].{
 
 	in_order : List(Line), U64 -> Bool
 	in_order = |ls, i|
-		if i >= List.len(ls) {
+		if i >= ls.len() {
 			True
-		} else if (List.get(ls, i - 1) ?? { num: -1, src: [] }).num > (List.get(ls, i) ?? { num: -1, src: [] }).num {
+		} else if (ls.get(i - 1) ?? { num: -1, src: [] }).num > (ls.get(i) ?? { num: -1, src: [] }).num {
 			False
 		} else {
 			Parse.in_order(ls, i + 1)
@@ -297,18 +297,18 @@ Parse :: [].{
 
 	sort_from : List(Line), U64, List(Line) -> List(Line)
 	sort_from = |ls, i, acc|
-		if i >= List.len(ls) {
+		if i >= ls.len() {
 			acc
 		} else {
-			Parse.sort_from(ls, i + 1, Parse.insert_line(acc, List.get(ls, i) ?? { num: -1, src: [] }, 0))
+			Parse.sort_from(ls, i + 1, Parse.insert_line(acc, ls.get(i) ?? { num: -1, src: [] }, 0))
 		}
 
 	insert_line : List(Line), Line, U64 -> List(Line)
 	insert_line = |ls, l, i|
-		if i >= List.len(ls) {
-			List.append(ls, l)
-		} else if (List.get(ls, i) ?? l).num > l.num {
-			List.concat(List.append(List.sublist(ls, { start: 0, len: i }), l), List.sublist(ls, { start: i, len: List.len(ls) - i }))
+		if i >= ls.len() {
+			ls.append(l)
+		} else if (ls.get(i) ?? l).num > l.num {
+			ls.sublist({ start: 0, len: i }).append(l).concat(ls.sublist({ start: i, len: ls.len() - i }))
 		} else {
 			Parse.insert_line(ls, l, i + 1)
 		}
@@ -316,9 +316,9 @@ Parse :: [].{
 	# The first line numbered `n`, or -1: `lines` is in order.
 	find_line : List(I64), I64 -> I64
 	find_line = |lines, n| {
-		k = Parse.lower_bound(lines, n, 0, List.len(lines))
-		if (List.get(lines, k) ?? (n - 1)) == n {
-			U64.to_i64_wrap(k)
+		k = Parse.lower_bound(lines, n, 0, lines.len())
+		if (lines.get(k) ?? (n - 1)) == n {
+			k.to_i64_wrap()
 		} else {
 			-1
 		}
@@ -329,8 +329,8 @@ Parse :: [].{
 		if lo >= hi {
 			lo
 		} else {
-			mid = lo + U64.div_trunc_by(hi - lo, 2)
-			if (List.get(xs, mid) ?? n) < n {
+			mid = lo + (hi - lo).div_trunc_by(2)
+			if (xs.get(mid) ?? n) < n {
 				Parse.lower_bound(xs, n, mid + 1, hi)
 			} else {
 				Parse.lower_bound(xs, n, lo, mid)
@@ -342,8 +342,8 @@ Parse :: [].{
 		Goto(j) => Goto(Parse.resolved(j, lines, firsts))
 		Gosub(j) => Gosub(Parse.resolved(j, lines, firsts))
 		IfGo(l, op, r, j, line) => IfGo(l, op, r, Parse.resolved(j, lines, firsts), line)
-		OnGo(e, js) => OnGo(e, List.map(js, |j| Parse.resolved(j, lines, firsts)))
-		OnGosub(e, js) => OnGosub(e, List.map(js, |j| Parse.resolved(j, lines, firsts)))
+		OnGo(e, js) => OnGo(e, js.map(|j| Parse.resolved(j, lines, firsts)))
+		OnGosub(e, js) => OnGosub(e, js.map(|j| Parse.resolved(j, lines, firsts)))
 		_ => s
 	}
 
@@ -354,7 +354,7 @@ Parse :: [].{
 			if k < 0 {
 				Missing(n)
 			} else {
-				To(List.get(firsts, I64.to_u64_wrap(k)) ?? 0)
+				To(firsts.get(k.to_u64_wrap()) ?? 0)
 			}
 		}
 		_ => j
@@ -366,16 +366,16 @@ Parse :: [].{
 	# such a FOR, 2 such a NEXT.
 	skips_of : List(U8) -> List(U64)
 	skips_of = |marks| {
-		var $skips = List.repeat(Parse.none, List.len(marks))
+		var $skips = List.repeat(Parse.none, marks.len())
 		var $open = []
 		var $i = 0
 		for mark in marks {
 			if mark == 1 {
-				$open = List.append($open, $i)
-			} else if mark == 2 and !List.is_empty($open) {
-				f = List.last($open) ?? 0
-				$skips = List.set($skips, f, $i + 1) ?? $skips
-				$open = List.drop_last($open, 1)
+				$open = $open.append($i)
+			} else if mark == 2 and !$open.is_empty() {
+				f = $open.last() ?? 0
+				$skips = $skips.set(f, $i + 1) ?? $skips
+				$open = $open.drop_last(1)
 			} else {
 				{}
 			}
@@ -399,28 +399,28 @@ Parse :: [].{
 	data_items : List(U8), U64, List(Str) -> List(Str)
 	data_items = |b, i, acc| {
 		j = Parse.skip_ws(b, i)
-		if j >= List.len(b) {
+		if j >= b.len() {
 			acc
 		} else if Parse.byte(b, j) == 34 {
-			e = Parse.quote_end(b, j + 1, List.len(b))
+			e = Parse.quote_end(b, j + 1, b.len())
 			k = Parse.skip_ws(b, e)
 			Parse.data_items(
 				b,
 				if Parse.byte(b, k) == 44 {
 					k + 1
 				} else {
-					List.len(b)
+					b.len()
 				},
-				List.append(acc, Parse.text_of(b, j, e)),
+				acc.append(Parse.text_of(b, j, e)),
 			)
 		} else {
 			e = Parse.item_end(b, j)
-			Parse.data_items(b, e + 1, List.append(acc, Parse.trim_right(b, j, e)))
+			Parse.data_items(b, e + 1, acc.append(Parse.trim_right(b, j, e)))
 		}
 	}
 
 	item_end : List(U8), U64 -> U64
-	item_end = |b, i| if i >= List.len(b) or Parse.byte(b, i) == 44 {
+	item_end = |b, i| if i >= b.len() or Parse.byte(b, i) == 44 {
 		i
 	} else {
 		Parse.item_end(b, i + 1)
@@ -428,8 +428,8 @@ Parse :: [].{
 
 	trim_right : List(U8), U64, U64 -> Str
 	trim_right = |b, from, to|
-		if to > from and Parse.byte(b, U64.minus_wrap(to, 1)) == 32 {
-			Parse.trim_right(b, from, U64.minus_wrap(to, 1))
+		if to > from and Parse.byte(b, to.minus_wrap(1)) == 32 {
+			Parse.trim_right(b, from, to.minus_wrap(1))
 		} else {
 			Parse.text_of(b, from, to)
 		}
@@ -440,13 +440,13 @@ Parse :: [].{
 		d = Parse.kw(b, 0, "DIM")
 		o = Parse.kw(b, 0, "OPTION")
 		if d != 0 {
-			List.append(acc, DeclDim(Parse.dim_items(b, d, cx, []).items))
+			acc.append(DeclDim(Parse.dim_items(b, d, cx, []).items))
 		} else if o != 0 {
 			j = Parse.kw(b, o, "BASE")
 			if j == o {
-				List.append(acc, DeclBad("Expected BASE"))
+				acc.append(DeclBad("Expected BASE"))
 			} else {
-				List.append(acc, DeclOption(Parse.sum(b, j, cx).e))
+				acc.append(DeclOption(Parse.sum(b, j, cx).e))
 			}
 		} else {
 			acc
@@ -469,7 +469,7 @@ Parse :: [].{
 	heads_in : List(U8), U64, List(FnDef) -> List(FnDef)
 	heads_in = |b, i, fns| {
 		j = Parse.skip_ws(b, i)
-		if j >= List.len(b) {
+		if j >= b.len() {
 			fns
 		} else {
 			w = Parse.word_end(b, j)
@@ -478,14 +478,14 @@ Parse :: [].{
 			} else {
 				Parse.no_head
 			}
-			first = h.letter < 26 and !(List.get(fns, h.letter) ?? Parse.no_fn).known
+			first = h.letter < 26 and !(fns.get(h.letter) ?? Parse.no_fn).known
 			next = if first {
-				List.set(fns, h.letter, { known: True, param: h.param, pslot: h.pslot, body: Parse.zero }) ?? fns
+				fns.set(h.letter, { known: True, param: h.param, pslot: h.pslot, body: Parse.zero }) ?? fns
 			} else {
 				fns
 			}
 			e = Parse.stmt_end(b, j)
-			if e >= List.len(b) {
+			if e >= b.len() {
 				next
 			} else {
 				Parse.heads_in(b, e + 1, next)
@@ -506,7 +506,7 @@ Parse :: [].{
 		j = Parse.skip_ws(b, w)
 		e = Parse.word_end(b, j)
 		k = Parse.text_of(b, j, e)
-		letter = if Str.starts_with(k, "FN") and Str.count_utf8_bytes(k) == 3 {
+		letter = if k.starts_with("FN") and k.count_utf8_bytes() == 3 {
 			Parse.u64(Parse.byte(b, j + 2)) - 65
 		} else {
 			26
@@ -536,7 +536,7 @@ Parse :: [].{
 	line_from : List(U8), U64, U64, Bool, Cx, Got -> Got
 	line_from = |b, at, line, lead, cx, acc| {
 		i = Parse.skip_ws(b, at)
-		if i >= List.len(b) {
+		if i >= b.len() {
 			acc
 		} else if Parse.byte(b, i) == 58 {
 			Parse.line_from(b, i + 1, line, True, cx, acc)
@@ -554,10 +554,10 @@ Parse :: [].{
 				0
 			}
 			got = {
-				stmts: List.append(acc.stmts, s.stmt),
-				marks: List.append(acc.marks, mark),
+				stmts: acc.stmts.append(s.stmt),
+				marks: acc.marks.append(mark),
 				defs: if s.letter < 26 {
-					List.append(acc.defs, { letter: s.letter, def: s.def })
+					acc.defs.append({ letter: s.letter, def: s.def })
 				} else {
 					acc.defs
 				},
@@ -643,7 +643,7 @@ Parse :: [].{
 				Parse.last(Dim(d.items))
 			} else {
 				Parse.on(
-					if List.is_empty(d.items) {
+					if d.items.is_empty() {
 						Nop
 					} else {
 						Dim(d.items)
@@ -712,8 +712,8 @@ Parse :: [].{
 	# other expression is looked up when the jump is taken.
 	jump_of : Expr -> Jump
 	jump_of = |e| match e {
-		Num(x) => if F64.abs(x) <= Parse.huge {
-			Line(F64.to_i64_wrap(x))
+		Num(x) => if x.abs() <= Parse.huge {
+			Line(x.to_i64_wrap())
 		} else {
 			Computed(e)
 		}
@@ -845,7 +845,7 @@ Parse :: [].{
 			{ items: acc, at: Parse.stmt_end(b, w), ok: True }
 		} else {
 			s = Parse.subscripts(b, Parse.skip_ws(b, nm.at), cx)
-			items = List.append(acc, { slot: nm.slot, one: s.one, two: s.two, pair: s.pair })
+			items = acc.append({ slot: nm.slot, one: s.one, two: s.two, pair: s.pair })
 			j = Parse.skip_ws(b, s.at)
 			if !s.ok {
 				{ items: items, at: s.at, ok: False }
@@ -866,17 +866,17 @@ Parse :: [].{
 		if !nm.found {
 			{ items: acc, at: Parse.stmt_end(b, w), ok: True }
 		} else if nm.str {
-			Parse.more_targets(b, nm.at, cx, List.append(acc, { kind: 1, slot: nm.slot, one: Parse.zero, two: Parse.zero, pair: False }))
+			Parse.more_targets(b, nm.at, cx, acc.append({ kind: 1, slot: nm.slot, one: Parse.zero, two: Parse.zero, pair: False }))
 		} else if Parse.byte(b, j) == 40 {
 			s = Parse.subscripts(b, j, cx)
-			items = List.append(acc, { kind: 2, slot: nm.slot, one: s.one, two: s.two, pair: s.pair })
+			items = acc.append({ kind: 2, slot: nm.slot, one: s.one, two: s.two, pair: s.pair })
 			if !s.ok {
 				{ items: items, at: s.at, ok: False }
 			} else {
 				Parse.more_targets(b, s.at, cx, items)
 			}
 		} else {
-			Parse.more_targets(b, nm.at, cx, List.append(acc, { kind: 0, slot: nm.slot, one: Parse.zero, two: Parse.zero, pair: False }))
+			Parse.more_targets(b, nm.at, cx, acc.append({ kind: 0, slot: nm.slot, one: Parse.zero, two: Parse.zero, pair: False }))
 		}
 	}
 
@@ -895,7 +895,7 @@ Parse :: [].{
 		j = Parse.skip_ws(b, w)
 		quoted = Parse.byte(b, j) == 34
 		e = if quoted {
-			Parse.quote_end(b, j + 1, List.len(b))
+			Parse.quote_end(b, j + 1, b.len())
 		} else {
 			j
 		}
@@ -906,7 +906,7 @@ Parse :: [].{
 			k
 		}
 		prompt = if quoted {
-			Parse.text_of(b, j + 1, U64.minus_wrap(e, 1))
+			Parse.text_of(b, j + 1, e.minus_wrap(1))
 		} else {
 			""
 		}
@@ -976,7 +976,7 @@ Parse :: [].{
 		if e == j {
 			acc
 		} else {
-			more = List.append(acc, Line(Parse.digits_val(b, j, e, 0)))
+			more = acc.append(Line(Parse.digits_val(b, j, e, 0)))
 			c = Parse.skip_ws(b, e)
 			if Parse.byte(b, c) != 44 {
 				more
@@ -1003,7 +1003,7 @@ Parse :: [].{
 			Parse.last(Bad(Parse.zero, h.why))
 		} else {
 			stop = Parse.stmt_end(b, h.body)
-			body = Parse.expr(List.sublist(b, { start: h.body, len: stop - h.body }), 0, cx).e
+			body = Parse.expr(b.sublist({ start: h.body, len: stop - h.body }), 0, cx).e
 			if h.letter >= 26 {
 				Parse.on(Nop, stop)
 			} else {
@@ -1017,18 +1017,18 @@ Parse :: [].{
 	print_items : List(U8), U64, Bool, Cx, List(Item) -> { items : List(Item), newline : Bool, at : U64 }
 	print_items = |b, i, newline, cx, acc| {
 		j = Parse.skip_ws(b, i)
-		if j >= List.len(b) or Parse.byte(b, j) == 58 {
+		if j >= b.len() or Parse.byte(b, j) == 58 {
 			{ items: acc, newline: newline, at: j }
 		} else if Parse.byte(b, j) == 59 {
-			Parse.print_items(b, j + 1, False, cx, List.append(acc, Semi))
+			Parse.print_items(b, j + 1, False, cx, acc.append(Semi))
 		} else if Parse.byte(b, j) == 44 {
-			Parse.print_items(b, j + 1, False, cx, List.append(acc, Comma))
+			Parse.print_items(b, j + 1, False, cx, acc.append(Comma))
 		} else {
 			t = Parse.kw(b, j, "TAB")
 			if t != j {
 				r = Parse.sum(b, t + 1, cx)
 				e = Parse.skip_ws(b, r.at)
-				items = List.append(acc, Tab(r.e))
+				items = acc.append(Tab(r.e))
 				if !r.ok {
 					{ items: items, newline: True, at: r.at }
 				} else {
@@ -1046,7 +1046,7 @@ Parse :: [].{
 				}
 			} else {
 				r = Parse.expr(b, j, cx)
-				items = List.append(acc, Show(r.e))
+				items = acc.append(Show(r.e))
 				if !r.ok {
 					{ items: items, newline: True, at: r.at }
 				} else {
@@ -1065,8 +1065,8 @@ Parse :: [].{
 	expr = |b, i, cx| {
 		j = Parse.skip_ws(b, i)
 		if Parse.byte(b, j) == 34 {
-			e = Parse.quote_end(b, j + 1, List.len(b))
-			Parse.str_sum(b, e, Text(Parse.text_of(b, j + 1, U64.minus_wrap(e, 1))), cx)
+			e = Parse.quote_end(b, j + 1, b.len())
+			Parse.str_sum(b, e, Text(Parse.text_of(b, j + 1, e.minus_wrap(1))), cx)
 		} else {
 			w = Parse.word_end(b, j)
 			k = Parse.text_of(b, j, w)
@@ -1276,7 +1276,7 @@ Parse :: [].{
 			Parse.call_str_fn(b, w + 1, k, cx)
 		} else if Parse.fn_code(k) > 0 {
 			Parse.call_fn(b, w, k, cx)
-		} else if Str.starts_with(k, "FN") and Str.count_utf8_bytes(k) == 3 {
+		} else if k.starts_with("FN") and k.count_utf8_bytes() == 3 {
 			Parse.call_def(b, w, Parse.byte(b, i + 2), cx)
 		} else {
 			nm = Parse.name_at(b, i)
@@ -1400,7 +1400,7 @@ Parse :: [].{
 			if k == "RND" {
 				{ e: Rnd, at: j, ok: True }
 			} else {
-				Parse.fail(Str.concat("Expected ( after ", k), j)
+				Parse.fail("Expected ( after ".concat(k), j)
 			}
 		} else {
 			# LEN, ASC and VAL take a string.
@@ -1426,7 +1426,7 @@ Parse :: [].{
 	call_str_fn = |b, i, k, cx| {
 		j = Parse.skip_ws(b, i)
 		if Parse.byte(b, j) != 40 {
-			Parse.fail(Str.concat("Expected ( after ", k), j)
+			Parse.fail("Expected ( after ".concat(k), j)
 		} else {
 			a = Parse.expr(b, j + 1, cx)
 			c = Parse.skip_ws(b, a.at)
@@ -1491,11 +1491,11 @@ Parse :: [].{
 	call_def : List(U8), U64, U8, Cx -> P
 	call_def = |b, i, c, cx| {
 		letter = Parse.u64(c) - 65
-		f = List.get(cx.fns, letter) ?? Parse.no_fn
-		name = Str.concat("FN", Str.from_utf8([c]) ?? "")
+		f = cx.fns.get(letter) ?? Parse.no_fn
+		name = "FN".concat(Str.from_utf8([c]) ?? "")
 		j = Parse.skip_ws(b, i)
 		if !f.known {
-			Parse.fail(Str.concat("Undefined function: ", name), i)
+			Parse.fail("Undefined function: ".concat(name), i)
 		} else if !f.param {
 			{
 				e: CallDef(letter, False, Parse.zero),
@@ -1507,7 +1507,7 @@ Parse :: [].{
 				ok: True,
 			}
 		} else if Parse.byte(b, j) != 40 {
-			{ e: CallDef(letter, True, Fail(Str.concat("Expected ( after ", name))), at: j, ok: False }
+			{ e: CallDef(letter, True, Fail("Expected ( after ".concat(name))), at: j, ok: False }
 		} else {
 			a = Parse.sum(b, j + 1, cx)
 			e = Parse.skip_ws(b, a.at)
@@ -1535,7 +1535,7 @@ Parse :: [].{
 			w
 		}
 		places = if point {
-			I64.to_f64(U64.to_i64_wrap(f.at - w.at - 1))
+			(f.at - w.at - 1).to_i64_wrap().to_f64()
 		} else {
 			0.0
 		}
@@ -1580,7 +1580,7 @@ Parse :: [].{
 	whole : List(U8), U64, F64 -> { v : F64, at : U64 }
 	whole = |b, i, acc|
 		if Parse.is_digit(Parse.byte(b, i)) {
-			Parse.whole(b, i + 1, acc * 10.0 + I64.to_f64(U8.to_i64(Parse.byte(b, i)) - 48))
+			Parse.whole(b, i + 1, acc * 10.0 + (Parse.byte(b, i).to_i64() - 48).to_f64())
 		} else {
 			{ v: acc, at: i }
 		}
@@ -1634,16 +1634,15 @@ Parse :: [].{
 	# The name a slot stands for.
 	name_of : U64 -> Str
 	name_of = |slot| {
-		s = U64.rem_by(slot, 286)
-		letter = Str.from_utf8([U64.to_u8_wrap(65 + U64.div_trunc_by(s, 11))]) ?? "?"
-		d = U64.rem_by(s, 11)
+		s = slot.rem_by(286)
+		letter = Str.from_utf8([(65 + s.div_trunc_by(11)).to_u8_wrap()]) ?? "?"
+		d = s.rem_by(11)
 		digit = if d == 0 {
 			""
 		} else {
-			Str.from_utf8([U64.to_u8_wrap(47 + d)]) ?? ""
+			Str.from_utf8([(47 + d).to_u8_wrap()]) ?? ""
 		}
-		Str.concat(
-			Str.concat(letter, digit),
+		letter.concat(digit).concat(
 			if slot >= 286 {
 				"$"
 			} else {
@@ -1653,10 +1652,10 @@ Parse :: [].{
 	}
 
 	u64 : U8 -> U64
-	u64 = |c| I64.to_u64_wrap(U8.to_i64(c))
+	u64 = |c| c.to_i64().to_u64_wrap()
 
 	byte : List(U8), U64 -> U8
-	byte = |b, i| List.get(b, i) ?? 0
+	byte = |b, i| b.get(i) ?? 0
 
 	is_digit : U8 -> Bool
 	is_digit = |c| c >= 48 and c <= 57
@@ -1690,7 +1689,7 @@ Parse :: [].{
 	kw : List(U8), U64, Str -> U64
 	kw = |b, i, word| {
 		j = Parse.skip_ws(b, i)
-		n = Str.count_utf8_bytes(word)
+		n = word.count_utf8_bytes()
 		if Parse.text_of(b, j, j + n) == word {
 			j + n
 		} else {
@@ -1703,7 +1702,7 @@ Parse :: [].{
 		if to <= from {
 			""
 		} else {
-			Str.from_utf8(List.sublist(b, { start: from, len: to - from })) ?? ""
+			Str.from_utf8(b.sublist({ start: from, len: to - from })) ?? ""
 		}
 
 	quote_end : List(U8), U64, U64 -> U64
@@ -1719,10 +1718,10 @@ Parse :: [].{
 	# A colon outside quotes, or the end of the line.
 	stmt_end : List(U8), U64 -> U64
 	stmt_end = |b, i|
-		if i >= List.len(b) {
+		if i >= b.len() {
 			i
 		} else if Parse.byte(b, i) == 34 {
-			Parse.stmt_end(b, Parse.quote_end(b, i + 1, List.len(b)))
+			Parse.stmt_end(b, Parse.quote_end(b, i + 1, b.len()))
 		} else if Parse.byte(b, i) == 58 {
 			i
 		} else {
@@ -1742,6 +1741,6 @@ Parse :: [].{
 		if i >= e or acc > 99999999 {
 			acc
 		} else {
-			Parse.digits_val(b, i + 1, e, acc * 10 + U8.to_i64(Parse.byte(b, i)) - 48)
+			Parse.digits_val(b, i + 1, e, acc * 10 + Parse.byte(b, i).to_i64() - 48)
 		}
 }

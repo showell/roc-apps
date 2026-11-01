@@ -161,7 +161,7 @@ Machine :: [].{
 
 	floor : F64 -> F64
 	floor = |x| {
-		t = I64.to_f64(F64.to_i64_wrap(x))
+		t = x.to_i64_wrap().to_f64()
 		if x < 0.0 and t != x {
 			t - 1.0
 		} else {
@@ -185,7 +185,7 @@ Machine :: [].{
 			Machine.ln_reduce(x * 2.0, k - 1)
 		} else {
 			t = (x - 1.0) / (x + 1.0)
-			2.0 * Machine.atanh_series(t, t * t, t, 1.0, 0) + I64.to_f64(k) * Machine.ln2
+			2.0 * Machine.atanh_series(t, t * t, t, 1.0, 0) + k.to_f64() * Machine.ln2
 		}
 
 	atanh_series : F64, F64, F64, F64, I64 -> F64
@@ -207,7 +207,7 @@ Machine :: [].{
 		} else if x <= -1.0e12 {
 			-1000000000000
 		} else {
-			F64.to_i64_wrap(Machine.floor(x + 0.5))
+			Machine.floor(x + 0.5).to_i64_wrap()
 		}
 
 	# ---- printing a number ----------------------------------------------------
@@ -221,7 +221,7 @@ Machine :: [].{
 		} else {
 			" "
 		}
-		Str.concat(Str.concat(sign, Machine.fmt_mag(F64.abs(x))), " ")
+		sign.concat(Machine.fmt_mag(x.abs())).concat(" ")
 	}
 
 	# What PRINT shows for a value: a number in its dialect's format.
@@ -247,67 +247,63 @@ Machine :: [].{
 		} else {
 			" "
 		}
-		a = F64.abs(x)
+		a = x.abs()
 		mag =
 			if !(a <= Machine.huge) {
 				"INF"
 			} else if a == Machine.floor(a) and a < 9.0e18 {
-				I64.to_str(F64.to_i64_wrap(a))
+				a.to_i64_wrap().to_str()
 			} else {
 				Machine.g7(a)
 			}
-		Str.concat(Str.concat(sign, mag), " ")
+		sign.concat(mag).concat(" ")
 	}
 
 	g7 : F64 -> Str
 	g7 = |a| {
 		e0 = Machine.normal(a, 0).e
 		scaled = if e0 >= 0 {
-			a / F64.pow(10.0, I64.to_f64(e0))
+			a / F64.pow(10.0, e0.to_f64())
 		} else {
-			a * F64.pow(10.0, I64.to_f64(0 - e0))
+			a * F64.pow(10.0, (0 - e0).to_f64())
 		}
-		d0 = F64.to_i64_wrap(Machine.floor(scaled * 1000000.0 + 0.5))
+		d0 = Machine.floor(scaled * 1000000.0 + 0.5).to_i64_wrap()
 		r = if d0 >= 10000000 {
 			{ d: 1000000, e: e0 + 1 }
 		} else {
 			{ d: d0, e: e0 }
 		}
-		ds = I64.to_str(r.d)
+		ds = r.d.to_str()
 		if r.e < -4 or r.e >= 7 {
 			frac = Machine.no_zeros(Machine.drop(ds, 1))
 			mant = if frac == "" {
 				Machine.take(ds, 1)
 			} else {
-				Str.concat(Str.concat(Machine.take(ds, 1), "."), frac)
+				Machine.take(ds, 1).concat(".").concat(frac)
 			}
-			power = I64.abs(r.e)
+			power = r.e.abs()
 			digits = if power < 10 {
-				Str.concat("0", I64.to_str(power))
+				"0".concat(power.to_str())
 			} else {
-				I64.to_str(power)
+				power.to_str()
 			}
-			Str.concat(
-				Str.concat(
-					mant,
-					if r.e < 0 {
-						"e-"
-					} else {
-						"e+"
-					},
-				),
-				digits,
-			)
+			mant.concat(
+				if r.e < 0 {
+					"e-"
+				} else {
+					"e+"
+				},
+			).concat(digits)
 		} else if r.e >= 0 {
-			whole = Machine.take(ds, I64.to_u64_wrap(r.e + 1))
-			frac = Machine.no_zeros(Machine.drop(ds, I64.to_u64_wrap(r.e + 1)))
+			whole = Machine.take(ds, (r.e + 1).to_u64_wrap())
+			frac = Machine.no_zeros(Machine.drop(ds, (r.e + 1).to_u64_wrap()))
 			if frac == "" {
 				whole
 			} else {
-				Str.concat(Str.concat(whole, "."), frac)
+				whole.concat(".").concat(frac)
 			}
 		} else {
-			Str.concat(Str.concat("0.", Str.repeat("0", I64.to_u64_wrap(0 - r.e - 1))), Machine.no_zeros(ds))
+			"0.".concat("0".repeat((0 - r.e - 1).to_u64_wrap())).concat(Machine.no_zeros(ds))
 		}
 	}
 
@@ -318,16 +314,16 @@ Machine :: [].{
 		} else if !(a <= Machine.huge) {
 			"INF"
 		} else if a == Machine.floor(a) and a < 1000000000.0 {
-			I64.to_str(F64.to_i64_wrap(a))
+			a.to_i64_wrap().to_str()
 		} else {
 			n = Machine.normal(a, 0)
-			d = F64.to_i64_wrap(Machine.floor(n.m * 100000.0 + 0.5))
+			d = Machine.floor(n.m * 100000.0 + 0.5).to_i64_wrap()
 			r = if d >= 1000000 {
 				{ d: 100000, e: n.e + 1 }
 			} else {
 				{ d: d, e: n.e }
 			}
-			Machine.lay_out(I64.to_str(r.d), r.e)
+			Machine.lay_out(r.d.to_str(), r.e)
 		}
 
 	normal : F64, I64 -> { m : F64, e : I64 }
@@ -343,51 +339,47 @@ Machine :: [].{
 	lay_out : Str, I64 -> Str
 	lay_out = |ds, e|
 		if e >= 0 and e < 6 {
-			whole = Machine.take(ds, I64.to_u64_wrap(e + 1))
-			frac = Machine.no_zeros(Machine.drop(ds, I64.to_u64_wrap(e + 1)))
+			whole = Machine.take(ds, (e + 1).to_u64_wrap())
+			frac = Machine.no_zeros(Machine.drop(ds, (e + 1).to_u64_wrap()))
 			if frac == "" {
 				whole
 			} else {
-				Str.concat(Str.concat(whole, "."), frac)
+				whole.concat(".").concat(frac)
 			}
 		} else if e == -1 {
-			Str.concat(".", Machine.no_zeros(ds))
+			".".concat(Machine.no_zeros(ds))
 		} else {
 			frac = Machine.no_zeros(Machine.drop(ds, 1))
 			mant = if frac == "" {
 				Machine.take(ds, 1)
 			} else {
-				Str.concat(Str.concat(Machine.take(ds, 1), "."), frac)
+				Machine.take(ds, 1).concat(".").concat(frac)
 			}
-			Str.concat(
-				Str.concat(
-					mant,
-					if e < 0 {
-						"E-"
-					} else {
-						"E+"
-					},
-				),
-				I64.to_str(I64.abs(e)),
-			)
+			mant.concat(
+				if e < 0 {
+					"E-"
+				} else {
+					"E+"
+				},
+			).concat(e.abs().to_str())
 		}
 
 	take : Str, U64 -> Str
-	take = |t, n| Str.from_utf8(List.sublist(Str.to_utf8(t), { start: 0, len: n })) ?? ""
+	take = |t, n| Str.from_utf8(t.to_utf8().sublist({ start: 0, len: n })) ?? ""
 
 	drop : Str, U64 -> Str
 	drop = |t, n| {
-		b = Str.to_utf8(t)
-		if n >= List.len(b) {
+		b = t.to_utf8()
+		if n >= b.len() {
 			""
 		} else {
-			Str.from_utf8(List.sublist(b, { start: n, len: List.len(b) - n })) ?? ""
+			Str.from_utf8(b.sublist({ start: n, len: b.len() - n })) ?? ""
 		}
 	}
 
 	no_zeros : Str -> Str
-	no_zeros = |t| if Str.ends_with(t, "0") {
-		Machine.no_zeros(Machine.take(t, Str.count_utf8_bytes(t) - 1))
+	no_zeros = |t| if t.ends_with("0") {
+		Machine.no_zeros(Machine.take(t, t.count_utf8_bytes() - 1))
 	} else {
 		t
 	}
@@ -414,9 +406,9 @@ Machine :: [].{
 	finite : Fx, F64 -> Ev
 	finite = |fx, x|
 		if x > Machine.huge {
-			{ v: N(Machine.huge), fx: { ..fx, said: Str.concat(fx.said, "\n?Overflow\n") } }
+			{ v: N(Machine.huge), fx: { ..fx, said: fx.said.concat("\n?Overflow\n") } }
 		} else if x < 0.0 - Machine.huge {
-			{ v: N(0.0 - Machine.huge), fx: { ..fx, said: Str.concat(fx.said, "\n?Overflow\n") } }
+			{ v: N(0.0 - Machine.huge), fx: { ..fx, said: fx.said.concat("\n?Overflow\n") } }
 		} else {
 			{ v: N(x), fx: fx }
 		}
@@ -464,7 +456,7 @@ Machine :: [].{
 				if Machine.stopped(r.fx) {
 					r
 				} else {
-					{ v: S(Str.concat(Machine.str_of(l.v), Machine.str_of(r.v))), fx: r.fx }
+					{ v: S(Machine.str_of(l.v).concat(Machine.str_of(r.v))), fx: r.fx }
 				}
 			}
 		}
@@ -498,11 +490,11 @@ Machine :: [].{
 		}
 		Chr(a) => {
 			r = Machine.eval(pg, m, env, fx, a)
-			code = I64.bitwise_and(F64.to_i64_wrap(Machine.floor(Machine.num_of(r.v))), 255)
+			code = Machine.floor(Machine.num_of(r.v)).to_i64_wrap().bitwise_and(255)
 			if Machine.stopped(r.fx) {
 				r
 			} else {
-				{ v: S(List.get(Machine.chars, I64.to_u64_wrap(code)) ?? "?"), fx: r.fx }
+				{ v: S(Machine.chars.get(code.to_u64_wrap()) ?? "?"), fx: r.fx }
 			}
 		}
 		StrOf(a) => {
@@ -539,7 +531,7 @@ Machine :: [].{
 	char_table = |c, acc| if c >= 256 {
 		acc
 	} else {
-		Machine.char_table(c + 1, List.append(acc, Str.from_utf8([U64.to_u8_wrap(c)]) ?? "?"))
+		Machine.char_table(c + 1, acc.append(Str.from_utf8([c.to_u8_wrap()]) ?? "?"))
 	}
 
 	# A parameter bound by a call hides the variable of its name.
@@ -585,7 +577,7 @@ Machine :: [].{
 								Machine.huge
 							},
 						),
-						fx: { ..r.fx, said: Str.concat(r.fx.said, "\n?Division by zero\n") },
+						fx: { ..r.fx, said: r.fx.said.concat("\n?Division by zero\n") },
 					}
 				} else {
 					Machine.finite(r.fx, x / d)
@@ -600,12 +592,12 @@ Machine :: [].{
 	# through I64, so it is not asked there.
 	raise : Fx, F64, F64 -> Ev
 	raise = |fx, x, y|
-		if x < 0.0 and F64.abs(y) < 4503599627370496.0 and y != Machine.floor(y) {
+		if x < 0.0 and y.abs() < 4503599627370496.0 and y != Machine.floor(y) {
 			Machine.halt(fx, "Negative number raised to a non-integral power")
 		} else if x == 0.0 and y < 0.0 {
-			{ v: N(Machine.huge), fx: { ..fx, said: Str.concat(fx.said, "\n?Zero raised to a negative power\n") } }
+			{ v: N(Machine.huge), fx: { ..fx, said: fx.said.concat("\n?Zero raised to a negative power\n") } }
 		} else {
-			Machine.finite(fx, F64.pow(x, y))
+			Machine.finite(fx, x.pow(y))
 		}
 
 	# ECMA-55's RND is the LCG below; a microcomputer's draws from the Twister,
@@ -626,21 +618,21 @@ Machine :: [].{
 	# A 64-bit LCG (Knuth's MMIX constants); **THE NUMBER IS THE TOP 53 BITS.**
 	rnd : Fx -> Ev
 	rnd = |fx| {
-		s = U64.plus_wrap(U64.times_wrap(fx.seed, 6364136223846793005), 1442695040888963407)
-		{ v: N(I64.to_f64(U64.to_i64_wrap(U64.div_trunc_by(s, 2048))) / 9007199254740992.0), fx: { ..fx, seed: s } }
+		s = fx.seed.times_wrap(6364136223846793005).plus_wrap(1442695040888963407)
+		{ v: N(s.div_trunc_by(2048).to_i64_wrap().to_f64() / 9007199254740992.0), fx: { ..fx, seed: s } }
 	}
 
 	call : M, Fx, U8, Val -> Ev
 	call = |m, fx, code, v| {
 		x = Machine.num_of(v)
 		if code == 11 {
-			{ v: N(I64.to_f64(U8.to_i64(Machine.peek(m, Machine.addr_of(x))))), fx: fx }
+			{ v: N(Machine.peek(m, Machine.addr_of(x)).to_i64().to_f64()), fx: fx }
 		} else if code == 12 {
-			{ v: N(U64.to_f64(Str.count_utf8_bytes(Machine.str_of(v)))), fx: fx }
+			{ v: N(Machine.str_of(v).count_utf8_bytes().to_f64()), fx: fx }
 		} else if code == 13 {
-			{ v: N(I64.to_f64(U8.to_i64(List.first(Str.to_utf8(Machine.str_of(v))) ?? 0))), fx: fx }
+			{ v: N((Machine.str_of(v).to_utf8().first() ?? 0).to_i64().to_f64()), fx: fx }
 		} else if code == 14 {
-			vb = Str.to_utf8(Machine.str_of(v))
+			vb = Machine.str_of(v).to_utf8()
 			Machine.signed(fx, vb, Parse.skip_ws(vb, 0))
 		} else if code == 6 and x <= 0.0 {
 			Machine.halt(fx, "LOG of a number that is not positive")
@@ -654,16 +646,16 @@ Machine :: [].{
 	apply_fn : U8, F64 -> F64
 	apply_fn = |code, x|
 		if code == 1 {
-			F64.abs(x)
+			x.abs()
 		}
 		else if code == 2 {
-			F64.atan(x)
+			x.atan()
 		}
 		else if code == 3 {
-			F64.cos(x)
+			x.cos()
 		}
 		else if code == 4 {
-			F64.pow(Machine.e_const, x)
+			Machine.e_const.pow(x)
 		}
 		else if code == 5 {
 			Machine.floor(x)
@@ -681,13 +673,13 @@ Machine :: [].{
 			}
 		}
 		else if code == 8 {
-			F64.sin(x)
+			x.sin()
 		}
 		else if code == 9 {
-			F64.sqrt(x)
+			x.sqrt()
 		}
 		else {
-			F64.tan(x)
+			x.tan()
 		}
 
 	# **A DATUM OR A REPLY MAY CARRY A SIGN** (ECMA-55 14, 13); so may VAL's.
@@ -727,8 +719,8 @@ Machine :: [].{
 		if Machine.stopped(l.fx) {
 			l
 		} else {
-			src = Str.to_utf8(Machine.str_of(s.v))
-			len = List.len(src)
+			src = Machine.str_of(s.v).to_utf8()
+			len = src.len()
 			at = Machine.clamp(Machine.idx(Machine.num_of(c.v)), len)
 			from = if at == 0 {
 				0
@@ -752,32 +744,32 @@ Machine :: [].{
 	clamp : I64, U64 -> U64
 	clamp = |n, hi| if n <= 0 {
 		0
-	} else if I64.to_u64_wrap(n) > hi {
+	} else if n.to_u64_wrap() > hi {
 		hi
 	} else {
-		I64.to_u64_wrap(n)
+		n.to_u64_wrap()
 	}
 
 	slice : List(U8), U64, U64 -> Str
 	slice = |b, from, n|
-		if from >= List.len(b) or n == 0 {
+		if from >= b.len() or n == 0 {
 			""
 		} else {
-			fit = if from + n > List.len(b) {
-				List.len(b) - from
+			fit = if from + n > b.len() {
+				b.len() - from
 			} else {
 				n
 			}
-			Str.from_utf8(List.sublist(b, { start: from, len: fit })) ?? ""
+			Str.from_utf8(b.sublist({ start: from, len: fit })) ?? ""
 		}
 
 	# The body is evaluated with the parameter bound; a call before its DEF
 	# has run is an unsupported form.
 	call_def : Parse.Program, M, Env, Fx, U64, Bool, Parse.Expr -> Ev
 	call_def = |pg, m, env, fx, letter, param, arg| {
-		f = List.get(pg.fns, letter) ?? Parse.no_fn
-		if !(List.get(m.defined, letter) ?? False) {
-			Machine.gap_stop(fx, Str.concat("Undefined function: FN", Str.from_utf8([U64.to_u8_wrap(65 + letter)]) ?? ""))
+		f = pg.fns.get(letter) ?? Parse.no_fn
+		if !(m.defined.get(letter) ?? False) {
+			Machine.gap_stop(fx, "Undefined function: FN".concat(Str.from_utf8([(65 + letter).to_u8_wrap()]) ?? ""))
 		} else if !param {
 			Machine.eval(pg, m, env, fx, f.body)
 		} else {
@@ -804,7 +796,7 @@ Machine :: [].{
 			j: if pair {
 				Machine.idx(Machine.num_of(r2.v))
 			} else {
-				U64.to_i64_wrap(m.base)
+				m.base.to_i64_wrap()
 			},
 			fx: r2.fx,
 		}
@@ -823,16 +815,16 @@ Machine :: [].{
 		}
 		c = Machine.cell_at(shape.w, m.base, i, j)
 		fx1 = if a.n == 0 {
-			{ ..fx, made: List.append(fx.made, { slot: slot, pair: pair }) }
+			{ ..fx, made: fx.made.append({ slot: slot, pair: pair }) }
 		} else {
 			fx
 		}
-		if c < 0 or I64.to_u64_wrap(c) >= shape.n {
-			Machine.halt(fx1, Str.concat("Subscript out of range: ", Parse.name_of(slot)))
+		if c < 0 or c.to_u64_wrap() >= shape.n {
+			Machine.halt(fx1, "Subscript out of range: ".concat(Parse.name_of(slot)))
 		} else if a.n == 0 {
 			{ v: N(0.0), fx: fx1 }
 		} else {
-			{ v: N(Vec.at(a.cells, I64.to_u64_wrap(c))), fx: fx1 }
+			{ v: N(Vec.at(a.cells, c.to_u64_wrap())), fx: fx1 }
 		}
 	}
 
@@ -849,7 +841,7 @@ Machine :: [].{
 	# Where a subscript pair lands, or -1 outside the array.
 	cell_at : U64, U64, I64, I64 -> I64
 	cell_at = |w, base64, i, j| {
-		base = U64.to_i64_wrap(base64)
+		base = base64.to_i64_wrap()
 		r = i - base
 		c = j - base
 		if r < 0 or c < 0 {
@@ -860,10 +852,10 @@ Machine :: [].{
 			} else {
 				r
 			}
-		} else if c >= U64.to_i64_wrap(w) {
+		} else if c >= w.to_i64_wrap() {
 			-1
 		} else {
-			r * U64.to_i64_wrap(w) + c
+			r * w.to_i64_wrap() + c
 		}
 	}
 
@@ -871,7 +863,7 @@ Machine :: [].{
 
 	# The devices, to read.
 	devices_of : M -> Devices.D
-	devices_of = |m| List.get(m.devices, 0) ?? crash "the machine has no devices"
+	devices_of = |m| m.devices.get(0) ?? crash "the machine has no devices"
 
 	# **PRINT AND POKE SHARE ONE DISPLAY** (Devices.written).
 	emit : M, Str -> M
@@ -886,7 +878,7 @@ Machine :: [].{
 	spaces = |n| if n <= 0 {
 		""
 	} else {
-		Str.repeat(" ", I64.to_u64_wrap(n))
+		" ".repeat(n.to_u64_wrap())
 	}
 
 	zone : I64
@@ -921,7 +913,7 @@ Machine :: [].{
 				piece = match it {
 					Semi => { said: "", t: "", fx: $fx }
 					Comma => {
-						next = $col + Machine.zone - I64.rem_by($col, Machine.zone)
+						next = $col + Machine.zone - $col.rem_by(Machine.zone)
 						{
 							said: "",
 							t: if w > 0 and next >= w {
@@ -942,7 +934,7 @@ Machine :: [].{
 							} else if pg.ecma {
 								Machine.tab_ecma(x, Devices.col_after_text(r.fx.said, $col))
 							} else {
-								Machine.spaces(F64.to_i64_wrap(x) - Devices.col_after_text(r.fx.said, $col))
+								Machine.spaces(x.to_i64_wrap() - Devices.col_after_text(r.fx.said, $col))
 							},
 							fx: r.fx,
 						}
@@ -951,13 +943,13 @@ Machine :: [].{
 						r = Machine.eval(pg, m, [], $fx, e)
 						t = Machine.shown(pg, r.v)
 						c = Devices.col_after_text(r.fx.said, $col)
-						wrapped = w > 0 and c > 0 and c + U64.to_i64_wrap(Str.count_utf8_bytes(t)) > w
+						wrapped = w > 0 and c > 0 and c + t.count_utf8_bytes().to_i64_wrap() > w
 						{
 							said: r.fx.said,
 							t: if Machine.stopped(r.fx) {
 								""
 							} else if wrapped {
-								Str.concat("\n", t)
+								"\n".concat(t)
 							} else {
 								t
 							},
@@ -965,15 +957,15 @@ Machine :: [].{
 						}
 					}
 				}
-				both = Str.concat(piece.said, piece.t)
-				$text = Str.concat($text, both)
+				both = piece.said.concat(piece.t)
+				$text = $text.concat(both)
 				$col = Devices.col_after_text(both, $col)
 				$fx = { ..piece.fx, said: "" }
 			}
 		}
 		{
 			text: if newline and !Machine.stopped($fx) {
-				Str.concat($text, "\n")
+				$text.concat("\n")
 			} else {
 				$text
 			},
@@ -1000,15 +992,14 @@ Machine :: [].{
 		want = if n < 1 {
 			1
 		} else {
-			I64.rem_by(n - 1, Machine.margin) + 1
+			(n - 1).rem_by(Machine.margin) + 1
 		}
 		down = if c > want - 1 {
 			"\n"
 		} else {
 			""
 		}
-		Str.concat(
-			Str.concat(said, down),
+		said.concat(down).concat(
 			Machine.spaces(
 				want - 1 - (
 					if c > want - 1 {
@@ -1034,11 +1025,11 @@ Machine :: [].{
 	# POKE writing the machine `settle` answered copied the whole path of
 	# memory it wrote, every time (measured; the mechanism is Roc's).
 	plain : M, Fx -> Bool
-	plain = |m, fx| fx.said == "" and fx.stop == "" and List.is_empty(fx.made) and fx.seed == m.seed and !fx.drew
+	plain = |m, fx| fx.said == "" and fx.stop == "" and fx.made.is_empty() and fx.seed == m.seed and !fx.drew
 
 	# Nothing to apply but random numbers drawn: no report, no stop, no array.
 	quiet : Fx -> Bool
-	quiet = |fx| fx.said == "" and fx.stop == "" and List.is_empty(fx.made)
+	quiet = |fx| fx.said == "" and fx.stop == "" and fx.made.is_empty()
 
 	settle : M, Fx -> M
 	settle = |m, fx| {
@@ -1048,7 +1039,7 @@ Machine :: [].{
 		} else {
 			emitted
 		}
-		made = if List.is_empty(fx.made) {
+		made = if fx.made.is_empty() {
 			{ arrs: drawn.arrs, count: drawn.arr_count }
 		} else {
 			Machine.make_arrays(drawn.arrs, drawn.arr_count, drawn.base, fx.made)
@@ -1098,7 +1089,7 @@ Machine :: [].{
 	# An array's width and cell count from its bounds, without its cells.
 	bounds : U64, I64, I64 -> { w : U64, n : U64, ok : Bool }
 	bounds = |base64, d1, d2| {
-		base = U64.to_i64_wrap(base64)
+		base = base64.to_i64_wrap()
 		rows = d1 - base + 1
 		cols = d2 - base + 1
 		n = if d2 < 0 {
@@ -1113,9 +1104,9 @@ Machine :: [].{
 				w: if d2 < 0 {
 					0
 				} else {
-					I64.to_u64_wrap(cols)
+					cols.to_u64_wrap()
 				},
-				n: I64.to_u64_wrap(n),
+				n: n.to_u64_wrap(),
 				ok: True,
 			}
 		}
@@ -1126,9 +1117,9 @@ Machine :: [].{
 	set_arr = |m, slot, i, j, x| {
 		c = Machine.cell_of(m.arrs, m.base, slot, i, j)
 		if c < 0 {
-			Machine.fail(m, Str.concat("Subscript out of range: ", Parse.name_of(slot)))
+			Machine.fail(m, "Subscript out of range: ".concat(Parse.name_of(slot)))
 		} else {
-			{ ..m, arrs: Machine.arr_store(m.arrs, slot, I64.to_u64_wrap(c), x) }
+			{ ..m, arrs: Machine.arr_store(m.arrs, slot, c.to_u64_wrap(), x) }
 		}
 	}
 
@@ -1137,7 +1128,7 @@ Machine :: [].{
 	cell_of = |arrs, base, slot, i, j| {
 		a = Vec.get(arrs, slot, Machine.no_arr)
 		c = Machine.cell_at(a.w, base, i, j)
-		if c < 0 or I64.to_u64_wrap(c) >= a.n {
+		if c < 0 or c.to_u64_wrap() >= a.n {
 			-1
 		} else {
 			c
@@ -1165,18 +1156,18 @@ Machine :: [].{
 
 	landing : Parse.Program, M, Parse.Jump -> Landing
 	landing = |pg, m, jump| match jump {
-		To(i) => { at: U64.to_i64_wrap(i), n: 0, fx: Machine.fresh(m) }
+		To(i) => { at: i.to_i64_wrap(), n: 0, fx: Machine.fresh(m) }
 		Missing(n) => { at: -1, n: n, fx: Machine.fresh(m) }
 		Line(n) => { at: -1, n: n, fx: Machine.fresh(m) }
 		Computed(e) => {
 			r = Machine.eval(pg, m, [], Machine.fresh(m), e)
-			n = F64.to_i64_wrap(Machine.num_of(r.v))
+			n = Machine.num_of(r.v).to_i64_wrap()
 			k = Parse.find_line(pg.lines, n)
 			{
 				at: if k < 0 {
 					-1
 				} else {
-					U64.to_i64_wrap(List.get(pg.firsts, I64.to_u64_wrap(k)) ?? 0)
+					(pg.firsts.get(k.to_u64_wrap()) ?? 0).to_i64_wrap()
 				},
 				n: n,
 				fx: r.fx,
@@ -1201,25 +1192,25 @@ Machine :: [].{
 	land : M, Landing, U64 -> M
 	land = |m, l, back|
 		if l.at < 0 {
-			Machine.fail(m, Str.concat("No such line: ", I64.to_str(l.n)))
+			Machine.fail(m, "No such line: ".concat(l.n.to_str()))
 		} else if back == Parse.none {
-			{ ..m, pc: I64.to_u64_wrap(l.at) }
+			{ ..m, pc: l.at.to_u64_wrap() }
 		} else {
-			{ ..m, pc: I64.to_u64_wrap(l.at), ret: Machine.push(m.ret, m.rdepth, back), rdepth: m.rdepth + 1 }
+			{ ..m, pc: l.at.to_u64_wrap(), ret: Machine.push(m.ret, m.rdepth, back), rdepth: m.rdepth + 1 }
 		}
 
 	# **POPPING LOWERS THE DEPTH AND KEEPS THE ENTRY; PUSHING OVERWRITES IT.**
 	# A GOSUB and its RETURN, or a loop entered and left, reuse the same cells:
 	# a list pushed and popped back to empty allocated every time.
 	push : List(a), U64, a -> List(a)
-	push = |xs, depth, x| if depth < List.len(xs) {
-		List.set(xs, depth, x) ?? crash "push: inside the list"
+	push = |xs, depth, x| if depth < xs.len() {
+		xs.set(depth, x) ?? crash "push: inside the list"
 	} else {
-		List.append(xs, x)
+		xs.append(x)
 	}
 
 	next_line : Parse.Program, M, U64 -> U64
-	next_line = |pg, _m, line| List.get(pg.firsts, line + 1) ?? List.len(pg.prog)
+	next_line = |pg, _m, line| pg.firsts.get(line + 1) ?? pg.prog.len()
 
 	# Both sides, then the comparison.
 	condition : Parse.Program, M, Parse.Expr, U8, Parse.Expr -> { yes : Bool, fx : Fx }
@@ -1265,7 +1256,7 @@ Machine :: [].{
 		} else if op == 2 {
 			a != c
 		} else {
-			o = Machine.order(Str.to_utf8(a), Str.to_utf8(c))
+			o = Machine.order(a.to_utf8(), c.to_utf8())
 			if op == 3 {
 				o <= 0
 			} else if op == 4 {
@@ -1280,16 +1271,16 @@ Machine :: [].{
 	# -1, 0 or 1, byte by byte; a missing byte is a zero.
 	order : List(U8), List(U8) -> I64
 	order = |a, c| {
-		n = if List.len(a) > List.len(c) {
-			List.len(a)
+		n = if a.len() > c.len() {
+			a.len()
 		} else {
-			List.len(c)
+			c.len()
 		}
 		var $o = 0
 		var $i = 0
 		while $o == 0 and $i < n {
-			x = List.get(a, $i) ?? 0
-			y = List.get(c, $i) ?? 0
+			x = a.get($i) ?? 0
+			y = c.get($i) ?? 0
 			$o = if x < y {
 				-1
 			} else if x > y {
@@ -1341,9 +1332,9 @@ Machine :: [].{
 		f = { v: v, limit: limit, step: step, after: m.pc + 1 }
 		keep = Machine.outside(m.loops, m.ldepth, f.after)
 		if (f.step >= 0.0 and x > f.limit) or (f.step < 0.0 and x < f.limit) {
-			skip = List.get(pg.skips, m.pc) ?? Parse.none
+			skip = pg.skips.get(m.pc) ?? Parse.none
 			if skip == Parse.none {
-				Machine.fail({ ..m, nums: Vec.set(m.nums, f.v, x), ldepth: keep }, Str.concat("FOR without NEXT: ", Parse.name_of(f.v)))
+				Machine.fail({ ..m, nums: Vec.set(m.nums, f.v, x), ldepth: keep }, "FOR without NEXT: ".concat(Parse.name_of(f.v)))
 			} else {
 				{ ..m, nums: Vec.set(m.nums, f.v, x), ldepth: keep, pc: skip }
 			}
@@ -1376,8 +1367,8 @@ Machine :: [].{
 		if found < 0 {
 			Machine.fail(m, "NEXT without FOR")
 		} else {
-			k = I64.to_u64_wrap(found)
-			f = List.get(m.loops, k) ?? { v: 0, limit: 0.0, step: 1.0, after: 0 }
+			k = found.to_u64_wrap()
+			f = m.loops.get(k) ?? { v: 0, limit: 0.0, step: 1.0, after: 0 }
 			x = Vec.get(m.nums, f.v, 0.0) + f.step
 			if (f.step >= 0.0 and x > f.limit) or (f.step < 0.0 and x < f.limit) {
 				{ ..m, nums: Vec.set(m.nums, f.v, x), ldepth: k, pc: m.pc + 1 }
@@ -1395,7 +1386,7 @@ Machine :: [].{
 		var $i = 0
 		for f in fs {
 			if $i < depth and (!named or f.v == v) {
-				$found = U64.to_i64_wrap($i)
+				$found = $i.to_i64_wrap()
 			} else {
 				{}
 			}
@@ -1407,7 +1398,7 @@ Machine :: [].{
 	# ---- statements ---------------------------------------------------------------
 
 	step : Parse.Program, M -> M
-	step = |pg, m| match List.get(pg.prog, m.pc) {
+	step = |pg, m| match pg.prog.get(m.pc) {
 		Ok(s) => Machine.exec(pg, m, s)
 		Err(_) => { ..m, done: True }
 	}
@@ -1433,8 +1424,8 @@ Machine :: [].{
 		IfThen(l, op, r, line) => Machine.do_if_then(pg, m, l, op, r, line)
 		For(v, from, lim, st) => Machine.do_for(pg, m, v, from, lim, st)
 		Next(v, named) => Machine.do_next(m, v, named)
-		Dim(items) => Machine.parted(Machine.dim_one(pg, m, List.get(items, m.part) ?? Machine.no_item), List.len(items))
-		Read(ts) => Machine.parted(Machine.read_one(pg, m, List.get(ts, m.part) ?? Machine.no_target), List.len(ts))
+		Dim(items) => Machine.parted(Machine.dim_one(pg, m, items.get(m.part) ?? Machine.no_item), items.len())
+		Read(ts) => Machine.parted(Machine.read_one(pg, m, ts.get(m.part) ?? Machine.no_target), ts.len())
 		Restore => Machine.do_restore(m)
 		Input(prompt, ts) => Machine.do_input(pg, m, prompt, ts)
 		Sleep(e) => Machine.do_sleep(pg, m, e)
@@ -1452,7 +1443,7 @@ Machine :: [].{
 		if pg.ecma {
 			{ ..m, done: True }
 		} else {
-			said = Machine.emit(m, Str.concat(Str.concat("Break in line ", I64.to_str(Machine.line_of(pg, m.pc))), "\n"))
+			said = Machine.emit(m, "Break in line ".concat(Machine.line_of(pg, m.pc).to_str()).concat("\n"))
 			{ ..said, done: True }
 		}
 
@@ -1542,12 +1533,12 @@ Machine :: [].{
 					} else {
 						Machine.quick(x / d)
 					}
-				} else if x < 0.0 and F64.abs(d) < 4503599627370496.0 and d != Machine.floor(d) {
+				} else if x < 0.0 and d.abs() < 4503599627370496.0 and d != Machine.floor(d) {
 					Slow
 				} else if x == 0.0 and d < 0.0 {
 					Slow
 				} else {
-					Machine.quick(F64.pow(x, d))
+					Machine.quick(x.pow(d))
 				}
 		}
 	}
@@ -1557,7 +1548,7 @@ Machine :: [].{
 		Slow => Slow
 		Got(x) =>
 			if code == 11 {
-				Got(I64.to_f64(U8.to_i64(Machine.peek(m, Machine.addr_of(x)))))
+				Got(Machine.peek(m, Machine.addr_of(x)).to_i64().to_f64())
 			} else if code == 6 and x <= 0.0 {
 				Slow
 			} else if code == 9 and x < 0.0 {
@@ -1575,7 +1566,7 @@ Machine :: [].{
 		Slow => Nowhere
 		Got(x) =>
 			if !pair {
-				Cell(Machine.idx(x), U64.to_i64_wrap(m.base))
+				Cell(Machine.idx(x), m.base.to_i64_wrap())
 			} else {
 				match Machine.fast(m, two) {
 					Slow => Nowhere
@@ -1590,10 +1581,10 @@ Machine :: [].{
 		Cell(i, j) => {
 			a = Vec.at(m.arrs, s)
 			c = Machine.cell_at(a.w, m.base, i, j)
-			if a.n == 0 or c < 0 or I64.to_u64_wrap(c) >= a.n {
+			if a.n == 0 or c < 0 or c.to_u64_wrap() >= a.n {
 				Slow
 			} else {
-				Got(Vec.at(a.cells, I64.to_u64_wrap(c)))
+				Got(Vec.at(a.cells, c.to_u64_wrap()))
 			}
 		}
 	}
@@ -1630,7 +1621,7 @@ Machine :: [].{
 			Machine.took(pg, m, l, op, r, j, line)
 		}
 		No => {
-			{ ..m, pc: List.get(pg.firsts, line + 1) ?? List.len(pg.prog) }
+			{ ..m, pc: pg.firsts.get(line + 1) ?? pg.prog.len() }
 		}
 		Unknown => Machine.do_if_go_slow(pg, m, l, op, r, j, line)
 	}
@@ -1648,7 +1639,7 @@ Machine :: [].{
 			{ ..m, pc: m.pc + 1 }
 		}
 		No => {
-			{ ..m, pc: List.get(pg.firsts, line + 1) ?? List.len(pg.prog) }
+			{ ..m, pc: pg.firsts.get(line + 1) ?? pg.prog.len() }
 		}
 		Unknown => Machine.do_if_then_slow(pg, m, l, op, r, line)
 	}
@@ -1719,7 +1710,7 @@ Machine :: [].{
 		fx = if exists {
 			at.fx
 		} else {
-			{ ..at.fx, made: List.append(at.fx.made, { slot: slot, pair: pair }) }
+			{ ..at.fx, made: at.fx.made.append({ slot: slot, pair: pair }) }
 		}
 		r = if Machine.stopped(fx) {
 			{ v: N(0.0), fx: fx }
@@ -1744,7 +1735,7 @@ Machine :: [].{
 		if m.rdepth == 0 {
 			Machine.fail(m, "RETURN without GOSUB")
 		} else {
-			{ ..m, pc: List.get(m.ret, m.rdepth - 1) ?? 0, rdepth: m.rdepth - 1 }
+			{ ..m, pc: m.ret.get(m.rdepth - 1) ?? 0, rdepth: m.rdepth - 1 }
 		}
 
 	do_if_go_slow : Parse.Program, M, Parse.Expr, U8, Parse.Expr, Parse.Jump, U64 -> M
@@ -1753,7 +1744,7 @@ Machine :: [].{
 		if Machine.plain(m, c.fx) and c.yes {
 			Machine.go(m, Machine.landing(pg, m, j), Parse.none)
 		} else if Machine.plain(m, c.fx) {
-			{ ..m, pc: List.get(pg.firsts, line + 1) ?? List.len(pg.prog) }
+			{ ..m, pc: pg.firsts.get(line + 1) ?? pg.prog.len() }
 		} else {
 			d = Machine.settle(m, c.fx)
 			if d.done {
@@ -1775,7 +1766,7 @@ Machine :: [].{
 				pc: if c.yes {
 					m.pc + 1
 				} else {
-					List.get(pg.firsts, line + 1) ?? List.len(pg.prog)
+					pg.firsts.get(line + 1) ?? pg.prog.len()
 				},
 			}
 		} else {
@@ -1798,7 +1789,7 @@ Machine :: [].{
 	do_sleep = |pg, m, e| {
 		r = Machine.eval(pg, m, [], Machine.fresh(m), e)
 		d = Machine.settle(m, r.fx)
-		ms = F64.to_i64_wrap(Machine.floor(Machine.num_of(r.v) * 1000.0 + 0.5))
+		ms = Machine.floor(Machine.num_of(r.v) * 1000.0 + 0.5).to_i64_wrap()
 		if d.done {
 			d
 		} else {
@@ -1831,11 +1822,11 @@ Machine :: [].{
 		px = Machine.idx(Machine.num_of(rx.v))
 		py = Machine.idx(Machine.num_of(ry.v))
 		# Off the edge is ignored, as every plotting BASIC did.
-		inside = px >= 0 and py >= 0 and I64.to_u64_wrap(px) < Devices.hires_w and I64.to_u64_wrap(py) < Devices.hires_h
+		inside = px >= 0 and py >= 0 and px.to_u64_wrap() < Devices.hires_w and py.to_u64_wrap() < Devices.hires_h
 		if d.done {
 			d
 		} else if inside {
-			Machine.next(Machine.poke_at(d, Devices.hires_base + I64.to_u64_wrap(py) * Devices.hires_w + I64.to_u64_wrap(px), Machine.byte_of(Machine.num_of(rc.v))))
+			Machine.next(Machine.poke_at(d, Devices.hires_base + py.to_u64_wrap() * Devices.hires_w + px.to_u64_wrap(), Machine.byte_of(Machine.num_of(rc.v))))
 		} else {
 			Machine.next(d)
 		}
@@ -1865,10 +1856,10 @@ Machine :: [].{
 
 	do_def : M, U64 -> M
 	do_def = |m, letter|
-		{ ..m, defined: List.set(m.defined, letter, True) ?? crash "DEF: no such letter", pc: m.pc + 1 }
+		{ ..m, defined: m.defined.set(letter, True) ?? crash "DEF: no such letter", pc: m.pc + 1 }
 
 	byte_of : F64 -> U8
-	byte_of = |x| U64.to_u8_wrap(I64.to_u64_wrap(I64.bitwise_and(F64.to_i64_wrap(Machine.floor(x)), 255)))
+	byte_of = |x| Machine.floor(x).to_i64_wrap().bitwise_and(255).to_u64_wrap().to_u8_wrap()
 
 	# **A STATEMENT WITH A LIST STORES ONE ITEM A STEP.** READ, INPUT and DIM
 	# write the machine once per variable, and a loop over the machine would
@@ -1900,7 +1891,7 @@ Machine :: [].{
 		if d.done {
 			d
 		} else if !b.ok {
-			Machine.fail(d, Str.concat("Bad DIM bound: ", Parse.name_of(item.slot)))
+			Machine.fail(d, "Bad DIM bound: ".concat(Parse.name_of(item.slot)))
 		} else if (Vec.at(d.arrs, item.slot)).n > 0 {
 			d
 		} else {
@@ -1912,12 +1903,12 @@ Machine :: [].{
 	read_one = |pg, m, t|
 		if t.kind == 3 {
 			m
-		} else if m.dp >= List.len(pg.data) {
+		} else if m.dp >= pg.data.len() {
 			Machine.fail(m, "Out of DATA")
 		} else {
 			# ECMA-55 14.5: a string read into a numeric variable is fatal.
-			raw = List.get(pg.data, m.dp) ?? ""
-			if pg.ecma and t.kind != 1 and !Machine.is_numeric_datum(Str.to_utf8(raw)) {
+			raw = pg.data.get(m.dp) ?? ""
+			if pg.ecma and t.kind != 1 and !Machine.is_numeric_datum(raw.to_utf8()) {
 				Machine.fail(m, "A string read into a numeric variable")
 			} else {
 				Machine.store(pg, { ..m, dp: m.dp + 1 }, t, Machine.unquote(raw))
@@ -1931,7 +1922,7 @@ Machine :: [].{
 		if t.kind == 1 {
 			{ ..m, strs: Vec.set(m.strs, t.slot, raw) }
 		} else {
-			rb = Str.to_utf8(raw)
+			rb = raw.to_utf8()
 			n = Machine.signed(Machine.fresh(m), rb, Parse.skip_ws(rb, 0))
 			x = Machine.num_of(n.v)
 			if t.kind == 0 {
@@ -1951,7 +1942,7 @@ Machine :: [].{
 				fx = if exists {
 					at.fx
 				} else {
-					{ ..at.fx, made: List.append(at.fx.made, { slot: t.slot, pair: t.pair }) }
+					{ ..at.fx, made: at.fx.made.append({ slot: t.slot, pair: t.pair }) }
 				}
 				if Machine.plain(m, fx) {
 					Machine.set_arr(m, t.slot, at.i, at.j, x)
@@ -1971,7 +1962,7 @@ Machine :: [].{
 	do_input : Parse.Program, M, Str, List(Parse.Target) -> M
 	do_input = |pg, m, prompt, ts|
 		if m.part > 0 {
-			Machine.parted(Machine.store(pg, m, List.get(ts, m.part) ?? Machine.no_target, Machine.reply_value(pg, m, m.part)), List.len(ts))
+			Machine.parted(Machine.store(pg, m, ts.get(m.part) ?? Machine.no_target, Machine.reply_value(pg, m, m.part)), ts.len())
 		} else {
 			# The prompt goes out once, though the statement runs again when
 			# its line arrives.
@@ -1986,9 +1977,9 @@ Machine :: [].{
 				line = Machine.typed(m0)
 				m1 = Machine.emit(Machine.emit(m0, line), "\n")
 				vals = if pg.ecma {
-					Machine.reply_items(Str.to_utf8(line), 0, [])
+					Machine.reply_items(line.to_utf8(), 0, [])
 				} else {
-					Machine.split_commas(Str.to_utf8(line), 0, [])
+					Machine.split_commas(line.to_utf8(), 0, [])
 				}
 				# **NOTHING IS ASSIGNED UNTIL THE WHOLE REPLY FITS** (ECMA-55
 				# 13.5); a reply that does not is reported and asked again.
@@ -1999,18 +1990,18 @@ Machine :: [].{
 				}
 				taken = Machine.replied(m1, vals)
 				if why != "" {
-					Machine.emit(taken, Str.concat(Str.concat("?", why), "\n"))
-				} else if List.is_empty(ts) {
+					Machine.emit(taken, "?".concat(why).concat("\n"))
+				} else if ts.is_empty() {
 					Machine.next(taken)
 				} else {
-					Machine.parted(Machine.store(pg, taken, List.get(ts, 0) ?? Machine.no_target, Machine.reply_value(pg, taken, 0)), List.len(ts))
+					Machine.parted(Machine.store(pg, taken, ts.get(0) ?? Machine.no_target, Machine.reply_value(pg, taken, 0)), ts.len())
 				}
 			}
 		}
 
 	reply_value : Parse.Program, M, U64 -> Str
 	reply_value = |pg, m, k| {
-		raw = List.get((Machine.devices_of(m)).reply, k) ?? ""
+		raw = (Machine.devices_of(m)).reply.get(k) ?? ""
 		if pg.ecma {
 			Machine.unquote(raw)
 		} else {
@@ -2030,14 +2021,14 @@ Machine :: [].{
 	untyped : M -> Bool
 	untyped = |m| {
 		d = Machine.devices_of(m)
-		d.ip >= List.len(d.inp)
+		d.ip >= d.inp.len()
 	}
 
 	# The next line typed.
 	typed : M -> Str
 	typed = |m| {
 		d = Machine.devices_of(m)
-		List.get(d.inp, d.ip) ?? ""
+		d.inp.get(d.ip) ?? ""
 	}
 
 	# A line read: its items kept, and the line after it next.
@@ -2053,10 +2044,10 @@ Machine :: [].{
 		n = Machine.idx(Machine.num_of(r.v))
 		if d.done {
 			d
-		} else if n < 1 or I64.to_u64_wrap(n) > List.len(js) {
+		} else if n < 1 or n.to_u64_wrap() > js.len() {
 			Machine.fail(d, "ON index out of range")
 		} else {
-			Machine.go(d, Machine.landing(pg, d, List.get(js, I64.to_u64_wrap(n - 1)) ?? Missing(0)), back)
+			Machine.go(d, Machine.landing(pg, d, js.get((n - 1).to_u64_wrap()) ?? Missing(0)), back)
 		}
 	}
 
@@ -2072,7 +2063,7 @@ Machine :: [].{
 		} else if d.arr_count > 0 {
 			Machine.fail(d, "OPTION BASE after an array is used")
 		} else {
-			{ ..d, base: I64.to_u64_wrap(n), pc: d.pc + 1 }
+			{ ..d, base: n.to_u64_wrap(), pc: d.pc + 1 }
 		}
 	}
 
@@ -2085,13 +2076,13 @@ Machine :: [].{
 		e = Parse.item_end(
 			b,
 			if Parse.byte(b, s) == 34 {
-				Parse.quote_end(b, s + 1, List.len(b))
+				Parse.quote_end(b, s + 1, b.len())
 			} else {
 				s
 			},
 		)
-		more = List.append(acc, Parse.trim_right(b, s, e))
-		if e >= List.len(b) {
+		more = acc.append(Parse.trim_right(b, s, e))
+		if e >= b.len() {
 			more
 		} else {
 			Machine.reply_items(b, e + 1, more)
@@ -2101,8 +2092,8 @@ Machine :: [].{
 	split_commas : List(U8), U64, List(Str) -> List(Str)
 	split_commas = |b, i, acc| {
 		e = Parse.item_end(b, i)
-		more = List.append(acc, Parse.trim_right(b, Parse.skip_ws(b, i), e))
-		if e >= List.len(b) {
+		more = acc.append(Parse.trim_right(b, Parse.skip_ws(b, i), e))
+		if e >= b.len() {
 			more
 		} else {
 			Machine.split_commas(b, e + 1, more)
@@ -2116,9 +2107,9 @@ Machine :: [].{
 		var $k = 0
 		for t in ts {
 			if $why == "" {
-				datum = Str.to_utf8(List.get(vals, $k) ?? "")
+				datum = (vals.get($k) ?? "").to_utf8()
 				item =
-					if $k >= List.len(vals) {
+					if $k >= vals.len() {
 						"Too few items in the reply"
 					} else if t.kind == 1 {
 						if Machine.is_string_datum(datum) {
@@ -2134,7 +2125,7 @@ Machine :: [].{
 						""
 					}
 				# After the last variable, whatever its kind: items left over.
-				$why = if item == "" and $k + 1 == List.len(ts) and $k + 1 < List.len(vals) {
+				$why = if item == "" and $k + 1 == ts.len() and $k + 1 < vals.len() {
 					"Too many items in the reply"
 				} else {
 					item
@@ -2173,7 +2164,7 @@ Machine :: [].{
 					0
 				}
 			}
-		(w > s or f > w + 1) and past > 0 and past == List.len(b)
+		(w > s or f > w + 1) and past > 0 and past == b.len()
 	}
 
 	sign_len : List(U8) -> U64
@@ -2189,19 +2180,19 @@ Machine :: [].{
 	# Quoted with no quote inside, or letters, digits, `+ - .` and spaces.
 	is_string_datum : List(U8) -> Bool
 	is_string_datum = |b| {
-		n = List.len(b)
+		n = b.len()
 		if n >= 2 and Parse.byte(b, 0) == 34 and Parse.byte(b, n - 1) == 34 {
-			!List.contains(List.sublist(b, { start: 1, len: n - 2 }), 34)
+			!b.sublist({ start: 1, len: n - 2 }).contains(34)
 		} else {
-			n > 0 and List.all(b, |c| Parse.is_alpha(c) or Parse.is_digit(c) or c == 43 or c == 45 or c == 46 or c == 32)
+			n > 0 and b.all(|c| Parse.is_alpha(c) or Parse.is_digit(c) or c == 43 or c == 45 or c == 46 or c == 32)
 		}
 	}
 
 	unquote : Str -> Str
 	unquote = |t|
-		if Str.starts_with(t, "\"") and Str.ends_with(t, "\"") and Str.count_utf8_bytes(t) >= 2 {
-			b = Str.to_utf8(t)
-			Parse.text_of(b, 1, List.len(b) - 1)
+		if t.starts_with("\"") and t.ends_with("\"") and t.count_utf8_bytes() >= 2 {
+			b = t.to_utf8()
+			Parse.text_of(b, 1, b.len() - 1)
 		} else {
 			t
 		}
@@ -2287,7 +2278,7 @@ Machine :: [].{
 		why = if bad.num < 0 {
 			bad.why
 		} else {
-			Str.concat(Str.concat(Str.concat(bad.why, " (line "), I64.to_str(bad.num)), ")")
+			bad.why.concat(" (line ").concat(bad.num.to_str()).concat(")")
 		}
 		{ ..Machine.new([], 1), done: True, rejected: True, err: why }
 	}
@@ -2301,7 +2292,7 @@ Machine :: [].{
 	run_measured = |src, inp, seed, ecma| {
 		l = Machine.loaded(src, ecma)
 		m = Machine.batch(l.pg, Machine.machine_state_at_next_effect(l.pg, Machine.started(l, inp, seed)), 10)
-		{ transcript: Machine.ended(l.pg, m), steps: m.steps, statements: List.len(l.pg.prog) }
+		{ transcript: Machine.ended(l.pg, m), steps: m.steps, statements: l.pg.prog.len() }
 	}
 
 	# A listing checked and parsed: the program, and the fault that refuses the
@@ -2344,13 +2335,13 @@ Machine :: [].{
 	# A batch run's transcript, from the machine it ended as.
 	ended : Parse.Program, M -> Str
 	ended = |pg, m|
-		if !pg.ecma and !m.gap and Str.starts_with(m.err, "No such line: ") {
+		if !pg.ecma and !m.gap and m.err.starts_with("No such line: ") {
 			# basic101's words for a jump to a line that is not there.
-			Str.concat(Machine.transcript({ ..m, err: "" }), Str.concat(Str.concat(Str.concat("Error on line ", I64.to_str(Machine.line_of(pg, m.pc))), Str.concat(": Undefined line number ", Str.drop_prefix(m.err, "No such line: "))), "\n"))
+			Machine.transcript({ ..m, err: "" }).concat("Error on line ".concat(Machine.line_of(pg, m.pc).to_str()).concat(": Undefined line number ".concat(m.err.drop_prefix("No such line: "))).concat("\n"))
 		} else if m.waiting and !pg.ecma {
 			# **A MICROCOMPUTER'S BATCH RUN ENDS AS basic101's DOES** when its
 			# replies run out: the games' captures are basic101's output.
-			Str.concat(Machine.transcript(m), Str.concat(Str.concat("\nError on line ", I64.to_str(Machine.line_of(pg, m.pc))), ": No more input\n"))
+			Machine.transcript(m).concat("\nError on line ".concat(Machine.line_of(pg, m.pc).to_str()).concat(": No more input\n"))
 		} else {
 			Machine.transcript(
 				if m.waiting {
@@ -2377,7 +2368,7 @@ Machine :: [].{
 			}
 			$i = $i + 1
 		}
-		List.get(pg.lines, $k) ?? 0
+		pg.lines.get($k) ?? 0
 	}
 
 	# **A REPORTED EXCEPTION IS NOT A HALT**; what stops gets its own marker.
@@ -2385,11 +2376,11 @@ Machine :: [].{
 	transcript = |m| {
 		body = Str.join_with((Machine.devices_of(m)).out, "")
 		if m.rejected {
-			Str.concat("*** REJECTED: ", m.err)
+			"*** REJECTED: ".concat(m.err)
 		} else if m.err != "" and m.gap {
-			Str.concat(Str.concat(body, "\n*** UNSUPPORTED: "), m.err)
+			body.concat("\n*** UNSUPPORTED: ").concat(m.err)
 		} else if m.err != "" {
-			Str.concat(Str.concat(body, "\n*** HALTED: "), m.err)
+			body.concat("\n*** HALTED: ").concat(m.err)
 		} else {
 			body
 		}
@@ -2453,7 +2444,7 @@ Machine :: [].{
 
 	# **WIDER THAN A REAL MACHINE, BECAUSE THE FRAMEBUFFER IS**: 24 bits.
 	addr_of : F64 -> U64
-	addr_of = |x| I64.to_u64_wrap(I64.bitwise_and(F64.to_i64_wrap(Machine.floor(x)), 16777215))
+	addr_of = |x| Machine.floor(x).to_i64_wrap().bitwise_and(16777215).to_u64_wrap()
 
 	peek : M, U64 -> U8
 	peek = |m, a| Devices.peek(Machine.devices_of(m), a)
