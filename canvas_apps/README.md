@@ -13,6 +13,13 @@ that stays put. `workshop` is a pixel paint program you drag on.
 Six of the eight — all but `safari` and `trick_or_treat` — are roc-ray's own
 examples, by Luke Boswell, taken with only small changes to fit this scheme.
 
+**The native side is a spike that proved the concept, and it is not kept
+current.** It showed that one set of files can run on roc-ray and as a page.
+It builds against roc-ray at `e100c95` with Roc nightly 09-22 (below), and
+there is no immediate intention of following roc-ray forward. roc-ray 0.12.0
+reworks the shader API the runner uses and needs a newer Roc. The page is
+the maintained side.
+
     canvas_apps/build.sh snake       the page,   http://<box>:9210/snake/
     canvas_apps/native.sh snake      the native program
     TARGET=x64win canvas_apps/native.sh snake     for Windows
@@ -172,6 +179,7 @@ names match at all: `input.mouse.position()` is how roc-ray is read.
 
 ## The roc-ray end
 
+The native side is a spike, not kept current (see the top of this file).
 `native/CanvasAppRunner.roc` opens a window at the app's `size`, paces to its
 `fps`, converts roc-ray's snapshot into an `Input.Snapshot`, and paints.
 
