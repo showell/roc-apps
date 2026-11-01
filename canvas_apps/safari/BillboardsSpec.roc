@@ -1,5 +1,9 @@
 # BillboardsSpec -- originally emitted from Codex by rocemit; the Roc is the program now
 # and this file is edited here (safari/README.md).
+app [main!] {
+	lib: "../lib/main.roc",
+}
+
 import Billboards
 import Grade
 import ListUtils

@@ -3,6 +3,10 @@
 # Hand-written, like FrameBench.
 #
 #   roc build --opt=dev RasterFrame.roc --output=<bin>; <bin> [steps] | ray/pixels_png.mjs <png>
+app [main!] {
+	lib: "../lib/main.roc",
+}
+
 import SafariRide
 import Raster
 import Hex

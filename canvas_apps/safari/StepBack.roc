@@ -8,6 +8,10 @@
 # fills that list in a moment, which is how it was found.
 #
 #   roc build --opt=dev StepBack.roc --output=<bin>; <bin>
+app [main!] {
+	lib: "../lib/main.roc",
+}
+
 import SafariRide
 
 main! = |_args| {

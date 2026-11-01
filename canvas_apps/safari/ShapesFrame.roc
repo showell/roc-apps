@@ -9,6 +9,10 @@
 # frame as RasterFrame prints one, for ray/pixels_png.mjs.
 #
 #   roc build --opt=dev ShapesFrame.roc --output=<bin>; <bin> [steps] | ray/pixels_png.mjs <png>
+app [main!] {
+	lib: "../lib/main.roc",
+}
+
 import SafariRide
 import Raster
 import lib.Shapes

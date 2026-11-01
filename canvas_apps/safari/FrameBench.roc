@@ -3,6 +3,10 @@
 # --opt=speed build, where the wasm module has no names.
 #
 #   roc build --opt=speed FrameBench.roc --output=<bin>; <bin> 60
+app [main!] {
+	lib: "../lib/main.roc",
+}
+
 import World
 import Safari
 import Blit
