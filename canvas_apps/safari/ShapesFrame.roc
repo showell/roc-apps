@@ -44,6 +44,13 @@ paint_shapes = |pixels, view, shapes| {
 				Raster.disc($px, view, d.x, d.y, d.r, col)
 			}
 			Rect(_) => crash ("a command cut into a rectangle")
+			# Raster lays every pixel over what is there, so Over is the mode it
+			# is always in, and Add is light it cannot paint.
+			Blend(Over) => $px
+			Blend(Add) => crash ("a command lit in Add mode")
+			Image(_) => crash ("a command cut into an image")
+			# The roll is `view`, Raster's; SafariApp's lean mark is not a command.
+			View(_) => crash ("a command cut into a view mark")
 		}
 		$k = $k + 1
 	}
