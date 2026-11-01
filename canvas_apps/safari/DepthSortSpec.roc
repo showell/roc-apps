@@ -44,6 +44,7 @@ kind_code = |k| (match k {
 	KCat => 3
 	KTruck => 4
 	KRail => 5
+	KBird => 6
 })
 
 # kinds builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
