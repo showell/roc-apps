@@ -1,7 +1,7 @@
 # Font -- letters as strokes, so a movie can say something.
 #
 # Hand-written. Nothing in this vocabulary drew a glyph: Safari's critters are
-# baked polygons and its `Text.roc` is a Codex Text, not a typeface. roc-ray's
+# baked polygons, and it never prints a word. roc-ray's
 # `capture_plot` draws a title, a status line and a frame count, and that was
 # the first thing a second movie asked for that could not be said at all.
 #
