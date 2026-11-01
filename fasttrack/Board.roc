@@ -134,7 +134,9 @@ Board :: [].{
 		if s == bullseye {
 			{ zone: BullsEyeZone, id: "bullseye" }
 		} else {
-			{ zone: NormalColor(List.get(zone_colors, zone(s)) ?? "bogus"), id: (List.get(Config.config_locations, local(s)) ?? { x: 0.0, y: 0.0, id: "bogus" }).id }
+			color = zone_colors.get(zone(s)) ?? crash "Board.loc_of: a zone the game has a color for"
+			location = Config.config_locations.get(local(s)) ?? crash "Board.loc_of: a zone's square is one of its locations"
+			{ zone: NormalColor(color), id: location.id }
 		}
 
 	## Every square in order, by name.

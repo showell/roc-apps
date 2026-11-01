@@ -19,7 +19,7 @@ Motion :: [].{
 	## The motions of `msg`, which took `before` to `after`.
 	of : Type.Game, Type.GameMsg, Type.Game -> List(Motion.Motion)
 	of = |before, msg, after| {
-		name = |c| List.get(before.zone_colors, c) ?? "black"
+		name = |c| before.zone_colors.get(c) ?? crash "Motion.of: a piece of a color the game has"
 		match msg {
 			# Only a discard can bring a piece out; an undo moves nothing on
 			# the page, it just shows the earlier board.

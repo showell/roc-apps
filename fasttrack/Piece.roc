@@ -17,23 +17,28 @@ Piece :: [].{
 			_ => Err(NotFound)
 		}
 
+	## What `s` holds: 0 for nobody, else the color's place plus one. Every
+	## square number is on the board (Board.count of them).
+	square : Type.Board, U64 -> U8
+	square = |board, s| board.get(s) ?? crash "Piece.square: a square past the board"
+
 	is_open : Type.Board, U64 -> Bool
-	is_open = |board, s| (List.get(board, s) ?? 0) == 0
+	is_open = |board, s| square(board, s) == 0
 
 	holds : Type.Board, U64, U64 -> Bool
-	holds = |board, s, c| (List.get(board, s) ?? 0) == U64.to_u8_wrap(c + 1)
+	holds = |board, s, c| square(board, s) == U64.to_u8_wrap(c + 1)
 
 	place : Type.Board, U64, U64 -> Type.Board
-	place = |board, s, c| List.set(board, s, U64.to_u8_wrap(c + 1)) ?? board
+	place = |board, s, c| board.set(s, U64.to_u8_wrap(c + 1)) ?? crash "Piece.place: a square past the board"
 
 	clear : Type.Board, U64 -> Type.Board
-	clear = |board, s| List.set(board, s, 0) ?? board
+	clear = |board, s| board.set(s, 0) ?? crash "Piece.clear: a square past the board"
 
 	## The color on `s`, by name, for the page.
 	get_piece : Type.Board, List(Str), U64 -> Try(Str, [NotFound])
 	get_piece = |board, zone_colors, s|
 		match at(board, s) {
-			Ok(c) => Ok(List.get(zone_colors, c) ?? "bogus")
+			Ok(c) => Ok(zone_colors.get(c) ?? crash "Piece.get_piece: a piece of a color the game has")
 			Err(_) => Err(NotFound)
 		}
 

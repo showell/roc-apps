@@ -16,7 +16,7 @@ Color :: [].{
 			Err(_) => missing
 		}
 		len = U64.to_i64_wrap(List.len(zone_colors))
-		List.get(zone_colors, I64.to_u64_wrap(I64.mod_by(idx + step, len))) ?? "bogus"
+		zone_colors.get(I64.to_u64_wrap(I64.mod_by(idx + step, len))) ?? crash "Color.shifted: an index mod the colors' count is one of them"
 	}
 
 	next_zone_color : Str, List(Str) -> Str

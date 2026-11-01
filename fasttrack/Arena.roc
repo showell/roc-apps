@@ -33,7 +33,7 @@ Arena :: [].{
 
 	home : Type.Game, U64 -> Bool
 	home = |game, seat| {
-		color = List.get(game.zone_colors, seat) ?? ""
+		color = game.zone_colors.get(seat) ?? crash "Arena.home: a seat of the game"
 		Strategy.in_base(game, color) == 4
 	}
 
@@ -90,7 +90,6 @@ Arena :: [].{
 						0
 					}
 				),
-				# The first player home wins, and the game stops.
 			}
 			# The first player home wins, and the game stops.
 			$winner = List.find_first([0, 1, 2, 3], |seat| home(s.game, seat)) ?? 4
@@ -165,10 +164,10 @@ Arena :: [].{
 			hand = Player.get_active_player($g).hand
 			match msg {
 				ActivateCard(i) => {
-					$played = List.append($played, List.get(hand, i) ?? "?")
+					$played = $played.append(hand.get(i) ?? crash "Arena.cards_of: a line plays a card in the hand")
 				}
 				DiscardCard(i) => {
-					$discarded = List.append($discarded, List.get(hand, i) ?? "?")
+					$discarded = $discarded.append(hand.get(i) ?? crash "Arena.cards_of: a line discards a card in the hand")
 				}
 				_ => {}
 			}
@@ -195,7 +194,10 @@ Arena :: [].{
 					and (Board.is_ft(m.end) or Board.zone(m.end) != (Board.zone(m.start) + 1) % Board.zones)
 
 	bump : List(Arena.Tally), U64, (Arena.Tally -> Arena.Tally) -> List(Arena.Tally)
-	bump = |ts, i, f| List.set(ts, i, f(List.get(ts, i) ?? no_tally)) ?? ts
+	bump = |ts, i, f| {
+		tally = ts.get(i) ?? crash "Arena.bump: a seat of the game"
+		ts.set(i, f(tally)) ?? crash "Arena.bump: a seat of the game"
+	}
 
 	## Every player's game, played to the first player home and no further,
 	## with the hand each holds at the end. A turn is idle when the player
@@ -245,7 +247,7 @@ Arena :: [].{
 			turn_cards = cards_of($g, s.msgs)
 			$t = bump($t, a, |x| { ..x, cards: x.cards + cards, ft_landings: x.ft_landings + landings, ft_hops: x.ft_hops + hops, played: List.concat(x.played, turn_cards.played), discarded: List.concat(x.discarded, turn_cards.discarded) })
 			for c in [0, 1, 2, 3] {
-				color = List.get($g.zone_colors, c) ?? ""
+				color = $g.zone_colors.get(c) ?? crash "Arena.tally_game: a seat of the game"
 				before = in_pen($g, color)
 				after = in_pen(s.game, color)
 				if after > before {
@@ -371,7 +373,7 @@ Arena :: [].{
 				"| red plays as | red won | win rate | wins with the decks turned 0 / 1 / 2 / 3 seats | searches cut / turns skipped (both should be 0) |",
 				"|---|---|---|---|---|",
 				Str.join_with(rows, "\n"),
-				"\nEach against ${List.first(labels) ?? "the first"}, on the same deals:\n",
+				"\nEach against ${labels.first() ?? crash "Arena.compare_report: a report of at least one strategy"}, on the same deals:\n",
 				"| red plays as | difference a game | deals only it won / only the first won | standard error: unrelated / paired / by seed | paired, in standard errors |",
 				"|---|---|---|---|---|",
 				Str.join_with(against, "\n"),

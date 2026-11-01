@@ -32,13 +32,17 @@ Tables :: [].{
 	## One game: who won, and each player's numbers.
 	tally_line : U64, List(Arena.Tally) -> Str
 	tally_line = |seed, ts| {
-		winner = List.find_first_index(ts, |t| t.won) ?? 4
+		color = |i| colors.get(i) ?? crash "Tables.tally_line: a tally for each of the four seats"
+		winner = match ts.find_first_index(|t| t.won) {
+			Ok(i) => color(i)
+			Err(NotFound) => "nobody"
+		}
 		players = List.map_with_index(
 			ts,
 			|t, i|
-				"${List.get(colors, i) ?? ""} ${U64.to_str(t.turns)}t ${U64.to_str(t.cards)}c ${U64.to_str(t.idle)}i ${U64.to_str(t.ft_landings)}ft ${U64.to_str(t.ft_hops)}hop ${U64.to_str(t.captures)}took ${U64.to_str(t.captured)}lost",
+				"${color(i)} ${U64.to_str(t.turns)}t ${U64.to_str(t.cards)}c ${U64.to_str(t.idle)}i ${U64.to_str(t.ft_landings)}ft ${U64.to_str(t.ft_hops)}hop ${U64.to_str(t.captures)}took ${U64.to_str(t.captured)}lost",
 		)
-		"seed ${U64.to_str(seed)} | ${List.get(colors, winner) ?? "nobody"} wins | ${Str.join_with(players, " | ")}"
+		"seed ${U64.to_str(seed)} | ${winner} wins | ${Str.join_with(players, " | ")}"
 	}
 
 	## One number of a player's game.
@@ -61,7 +65,7 @@ Tables :: [].{
 	winner_table : List(List(Arena.Tally)), List(U64) -> Str
 	winner_table = |all, apart| {
 		wins = List.map_with_index(colors, |c, i| "${c} ${U64.to_str(List.count_if(all, |ts| (List.get(ts, i) ?? Arena.no_tally).won))}")
-		apart_names = Str.join_with(List.map(apart, |i| List.get(colors, i) ?? ""), " and ")
+		apart_names = Str.join_with(apart.map(|i| colors.get(i) ?? crash "Tables.winner_table: a seat set apart is one of the four"), " and ")
 		apart_head = if List.is_empty(apart) {
 			""
 		} else {
