@@ -52,10 +52,22 @@ Tower :: [].{
 	})
 
 	corner_u : I64 -> F64
-	corner_u = |k| (if (k == 0) { (0.0 - 1.0) } else { (if (k == 1) { 1.0 } else { (if (k == 2) { 1.0 } else { (0.0 - 1.0) }) }) })
+	corner_u = |k|
+		match k {
+			0 => -1.0
+			1 => 1.0
+			2 => 1.0
+			_ => -1.0
+		}
 
 	corner_v : I64 -> F64
-	corner_v = |k| (if (k == 0) { (0.0 - 1.0) } else { (if (k == 1) { (0.0 - 1.0) } else { (if (k == 2) { 1.0 } else { 1.0 }) }) })
+	corner_v = |k|
+		match k {
+			0 => -1.0
+			1 => -1.0
+			2 => 1.0
+			_ => 1.0
+		}
 
 	base_corner_ax : I64, F64, F64, F64 -> Geom.AX
 	base_corner_ax = |k, a0, x0, yaw| ({
