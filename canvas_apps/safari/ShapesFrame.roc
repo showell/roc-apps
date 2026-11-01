@@ -13,6 +13,7 @@ import SafariRide
 import Raster
 import lib.Shapes
 import SafariShapes
+import Hex
 
 ride_to : SafariRide.Model, I64 -> SafariRide.Model
 ride_to = |m, n| if n <= 0 { m } else { ride_to(SafariRide.advance(m), n - 1) }
@@ -60,20 +61,6 @@ triangles = |shapes| List.fold(shapes, 0, |n, s|
 		_ => n
 	})
 
-hex_digit : I64 -> U8
-hex_digit = |d| I64.to_u8_wrap(if d < 10 { d + 48 } else { d + 87 })
-
-append_hex : List(U8), I64, U64 -> List(U8)
-append_hex = |out, v, digits| {
-	var $out = out
-	var $k = digits
-	while $k > 0 {
-		$k = $k - 1
-		$out = List.append($out, hex_digit(I64.bitwise_and(I64.shr_wrap(v, U64.to_u8_wrap(4 * $k)), 15)))
-	}
-	$out
-}
-
 main! = |args| {
 	steps = I64.from_str(List.get(args, 0) ?? "0") ?? 0
 	m = ride_to(SafariRide.init, steps)
@@ -94,7 +81,7 @@ main! = |args| {
 	$out = List.concat($out, Str.to_utf8("differ ${U64.to_str($differ)} of ${U64.to_str(n)}, triangles ${U64.to_str(triangles(shapes))}, commands ${U64.to_str(List.len(commands))}\nhash 00000000\n960 600\n"))
 	$k = 0
 	while $k < n {
-		$out = append_hex($out, U32.to_i64(List.get(b, $k) ?? 0), 6)
+		$out = Hex.append_digits($out, { value: U32.to_i64(List.get(b, $k) ?? 0), digits: 6 })
 		$k = $k + 1
 	}
 	echo!(Str.from_utf8_lossy(List.append($out, 10)))

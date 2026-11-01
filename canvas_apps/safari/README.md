@@ -48,7 +48,8 @@ with a hash (`pixels_png.mjs` turns that into a PNG), `ShapesFrame.roc` paints
 the frame from its shapes and from its commands and counts the pixels that
 differ, `StepBack.roc` checks that one step back goes back exactly one step at
 depths either side of the history's cap, and `FrameBench.roc` is a loop over
-the frame for `perf`.
+the frame for `perf`. RasterFrame and ShapesFrame write their hex through
+`Hex.roc`.
 
 They, and the spec apps, are not built by `build.sh` or `native.sh`.
 `emitted.sh` and `retest.sh`, which emitted and graded the spec apps, refuse to
