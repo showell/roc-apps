@@ -3,11 +3,7 @@
 import Frame
 import Geom
 import Grade
-import Text
 import World
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 bound_got : List(I64)
 bound_got = [Frame.look_ahead, Frame.max_chain]
@@ -82,12 +78,48 @@ behind_want = [(-194.76069932822074), (-231.63435691739767), 239.9883995667414, 
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_ints([28, 21, 73, 32, 16, 25, 18, 22], bound_got, bound_want)))
-	line!(Text.printed(Grade.grade_ints([28, 21, 73, 21, 16, 25, 14, 13], route_got, route_want)))
-	line!(Text.printed(Grade.grade_ints([28, 21, 73, 26, 15, 31, 17, 2], map_int_got, map_int_want)))
-	line!(Text.printed(Grade.grade_reals([28, 21, 73, 26, 15, 31, 21, 2], map_real_got, map_real_want, 0.0)))
-	line!(Text.printed(Grade.grade_bools([28, 21, 73, 26, 15, 31, 32, 2], map_bool_got, map_bool_want)))
-	line!(Text.printed(Grade.grade_rel([28, 21, 73, 15, 14, 2, 2, 2], at_got, at_want, F64.from_bits(4497644614860975944))))
-	line!(Text.printed(Grade.grade_rel([28, 21, 73, 32, 13, 20, 17, 18, 22], behind_got, behind_want, F64.from_bits(4502148214488346440))))
+	verdicts = [
+		Grade.ints({
+			name: "fr-bound",
+			got: bound_got,
+			want: bound_want,
+		}),
+		Grade.ints({
+			name: "fr-route",
+			got: route_got,
+			want: route_want,
+		}),
+		Grade.ints({
+			name: "fr-mapi ",
+			got: map_int_got,
+			want: map_int_want,
+		}),
+		Grade.reals({
+			name: "fr-mapr ",
+			got: map_real_got,
+			want: map_real_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "fr-mapb ",
+			got: map_bool_got,
+			want: map_bool_want,
+		}),
+		Grade.rel({
+			name: "fr-at   ",
+			got: at_got,
+			want: at_want,
+			tol: F64.from_bits(4497644614860975944),
+		}),
+		Grade.rel({
+			name: "fr-behind",
+			got: behind_got,
+			want: behind_want,
+			tol: F64.from_bits(4502148214488346440),
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

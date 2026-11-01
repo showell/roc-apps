@@ -3,11 +3,7 @@
 import Camera
 import Geom
 import Grade
-import Text
 import TruckDraw
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 box_at : F64, F64 -> List(F64)
 box_at = |c, hw| ({
@@ -134,17 +130,75 @@ mid_want = [3.0, 5.0, 7.0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([14, 22, 73, 32, 16, 36, 2, 2, 2], box_got, box_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([14, 22, 73, 32, 16, 14, 14, 16, 26], bottom_got, bottom_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([14, 22, 73, 15, 36, 23, 13, 19, 2], axles_got, axles_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([14, 22, 73, 18, 15, 36, 23, 13, 2], axle_count_got, axle_count_want)))
-	line!(Text.printed(Grade.grade_reals([14, 22, 73, 28, 15, 24, 13, 2, 2], face_got, face_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([14, 22, 73, 24, 15, 21, 21, 30, 2], face_carry_got, face_carry_want)))
-	line!(Text.printed(Grade.grade_ints([14, 22, 73, 14, 17, 13, 22, 2, 2], tied_got, tied_want)))
-	line!(Text.printed(Grade.grade_ints([14, 22, 73, 19, 23, 15, 24, 34, 2], slack_got, slack_want)))
-	line!(Text.printed(Grade.grade_ints([14, 22, 73, 19, 26, 15, 23, 23, 2], small_got, small_want)))
-	line!(Text.printed(Grade.grade_reals([14, 22, 73, 20, 15, 23, 16, 2, 2], halo_got, halo_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([14, 22, 73, 24, 17, 21, 24, 23, 13], circle_count_got, circle_count_want)))
-	line!(Text.printed(Grade.grade_bools([14, 22, 73, 32, 13, 20, 17, 18, 22], behind_got, behind_want)))
+	verdicts = [
+		Grade.reals({
+			name: "td-box   ",
+			got: box_got,
+			want: box_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "td-bottom",
+			got: bottom_got,
+			want: bottom_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "td-axles ",
+			got: axles_got,
+			want: axles_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "td-naxle ",
+			got: axle_count_got,
+			want: axle_count_want,
+		}),
+		Grade.reals({
+			name: "td-face  ",
+			got: face_got,
+			want: face_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "td-carry ",
+			got: face_carry_got,
+			want: face_carry_want,
+		}),
+		Grade.ints({
+			name: "td-tied  ",
+			got: tied_got,
+			want: tied_want,
+		}),
+		Grade.ints({
+			name: "td-slack ",
+			got: slack_got,
+			want: slack_want,
+		}),
+		Grade.ints({
+			name: "td-small ",
+			got: small_got,
+			want: small_want,
+		}),
+		Grade.reals({
+			name: "td-halo  ",
+			got: halo_got,
+			want: halo_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "td-circle",
+			got: circle_count_got,
+			want: circle_count_want,
+		}),
+		Grade.bools({
+			name: "td-behind",
+			got: behind_got,
+			want: behind_want,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

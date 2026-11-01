@@ -3,10 +3,6 @@
 import Grade
 import ListUtils
 import Num_
-import Text
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 round_in : List(F64)
 round_in = [(-255.5), (-128.5), (-90.0), (-80.4), (-70.5), (-2.5), (-1.5), (-0.5000000000000001), (-0.5), (-0.49999999999999994), (-0.25), 0.0, 0.25, 0.49999999999999994, 0.5, 1.5, 2.5, 4.5, 14.5, 19.5, 29.5, 49.5, 70.5, 127.5, 128.5, 254.5, 255.0, 1048576.5]
@@ -61,11 +57,46 @@ exp_want = [F64.from_bits(3957129287720677213), F64.from_bits(428212004091789523
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([18, 73, 21, 16, 25, 18, 22], ListUtils.list_map(Num_.round_real, round_in), round_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([18, 73, 28, 23, 16, 16, 21], ListUtils.list_map(Num_.floor_real, floor_in), floor_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([18, 73, 24, 13, 17, 23, 2], ListUtils.list_map(Num_.ceil_real, floor_in), ceil_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([18, 73, 26, 16, 22, 2, 2], mod_outer(mod_m, mod_x, 0), mod_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([18, 73, 31, 16, 27, 5, 2], ListUtils.list_map(Num_.pow2_int, pow2_k), pow2_want, 0.0)))
-	line!(Text.printed(Grade.grade_rel([18, 73, 13, 36, 31, 2, 2], ListUtils.list_map(Num_.exp_real, exp_in), exp_want, F64.from_bits(4382569440205035030))))
+	verdicts = [
+		Grade.reals({
+			name: "n-round",
+			got: ListUtils.list_map(Num_.round_real, round_in),
+			want: round_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "n-floor",
+			got: ListUtils.list_map(Num_.floor_real, floor_in),
+			want: floor_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "n-ceil ",
+			got: ListUtils.list_map(Num_.ceil_real, floor_in),
+			want: ceil_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "n-mod  ",
+			got: mod_outer(mod_m, mod_x, 0),
+			want: mod_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "n-pow2 ",
+			got: ListUtils.list_map(Num_.pow2_int, pow2_k),
+			want: pow2_want,
+			tol: 0.0,
+		}),
+		Grade.rel({
+			name: "n-exp  ",
+			got: ListUtils.list_map(Num_.exp_real, exp_in),
+			want: exp_want,
+			tol: F64.from_bits(4382569440205035030),
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

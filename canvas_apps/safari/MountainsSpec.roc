@@ -3,10 +3,6 @@
 import Grade
 import Mountains
 import Sky
-import Text
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 palette_got : List(I64)
 palette_got = [Mountains.rock, Mountains.rock_west, Mountains.land]
@@ -101,20 +97,91 @@ crest_want = [True, True, True, False, True]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_ints([26, 14, 73, 31, 15, 23, 2, 2, 2], palette_got, palette_want)))
-	line!(Text.printed(Grade.grade_reals([26, 14, 73, 24, 20, 15, 18, 2, 2], chan_got, chan_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([26, 14, 73, 22, 17, 26, 2, 2, 2], dim_got, dim_want)))
-	line!(Text.printed(Grade.grade_ints([26, 14, 73, 19, 18, 16, 27, 2, 2], snow_got, snow_want)))
-	line!(Text.printed(Grade.grade_bools([26, 14, 73, 16, 21, 22, 13, 21, 2], night_order_got, night_order_want)))
-	line!(Text.printed(Grade.grade_reals([26, 14, 73, 18, 16, 21, 14, 20, 2], north_edge_got, north_edge_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([26, 14, 73, 27, 13, 19, 14, 2, 2], west_edge_got, west_edge_want, 0.0)))
-	line!(Text.printed(Grade.grade_bools([26, 14, 73, 17, 18, 19, 17, 22, 13], inside_got, inside_want)))
-	line!(Text.printed(Grade.grade_reals([26, 14, 73, 19, 20, 15, 31, 13, 2], shape_got, shape_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([26, 14, 73, 19, 18, 16, 27, 23, 18], snowline_got, snowline_want, 0.0)))
-	line!(Text.printed(Grade.grade_bools([26, 14, 73, 32, 15, 18, 22, 2, 2], band_got, band_want)))
-	line!(Text.printed(Grade.grade_bools([26, 14, 73, 31, 13, 15, 34, 2, 2], peak_got, peak_want)))
-	line!(Text.printed(Grade.grade_reals([26, 14, 73, 32, 13, 15, 21, 2, 2], bearing_got, bearing_want, 0.0)))
-	line!(Text.printed(Grade.grade_bools([26, 14, 73, 19, 31, 21, 13, 15, 22], spread_got, spread_want)))
-	line!(Text.printed(Grade.grade_bools([26, 14, 73, 24, 21, 13, 19, 14, 2], crest_got, crest_want)))
+	verdicts = [
+		Grade.ints({
+			name: "mt-pal   ",
+			got: palette_got,
+			want: palette_want,
+		}),
+		Grade.reals({
+			name: "mt-chan  ",
+			got: chan_got,
+			want: chan_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "mt-dim   ",
+			got: dim_got,
+			want: dim_want,
+		}),
+		Grade.ints({
+			name: "mt-snow  ",
+			got: snow_got,
+			want: snow_want,
+		}),
+		Grade.bools({
+			name: "mt-order ",
+			got: night_order_got,
+			want: night_order_want,
+		}),
+		Grade.reals({
+			name: "mt-north ",
+			got: north_edge_got,
+			want: north_edge_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "mt-west  ",
+			got: west_edge_got,
+			want: west_edge_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "mt-inside",
+			got: inside_got,
+			want: inside_want,
+		}),
+		Grade.reals({
+			name: "mt-shape ",
+			got: shape_got,
+			want: shape_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "mt-snowln",
+			got: snowline_got,
+			want: snowline_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "mt-band  ",
+			got: band_got,
+			want: band_want,
+		}),
+		Grade.bools({
+			name: "mt-peak  ",
+			got: peak_got,
+			want: peak_want,
+		}),
+		Grade.reals({
+			name: "mt-bear  ",
+			got: bearing_got,
+			want: bearing_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "mt-spread",
+			got: spread_got,
+			want: spread_want,
+		}),
+		Grade.bools({
+			name: "mt-crest ",
+			got: crest_got,
+			want: crest_want,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

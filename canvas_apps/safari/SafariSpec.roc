@@ -4,12 +4,8 @@ import Grade
 import Paint
 import Rider
 import Safari
-import Text
 import Truck
 import World
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 segs : List(World.Segment)
 segs = seg_list(0)
@@ -114,16 +110,68 @@ sun_want = [True, True]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([19, 28, 73, 19, 14, 15, 21, 14, 2], start_got, start_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([19, 28, 73, 19, 17, 18, 22, 13, 36], start_index_got, start_index_want)))
-	line!(Text.printed(Grade.grade_bools([19, 28, 73, 19, 28, 23, 15, 29, 2], start_flag_got, start_flag_want)))
-	line!(Text.printed(Grade.grade_reals([19, 28, 73, 19, 14, 13, 31, 2, 2], step_got, step_want, 0.0)))
-	line!(Text.printed(Grade.grade_bools([19, 28, 73, 26, 16, 33, 13, 22, 2], moved_got, moved_want)))
-	line!(Text.printed(Grade.grade_bools([19, 28, 73, 16, 21, 22, 13, 21, 2], order_got, order_want)))
-	line!(Text.printed(Grade.grade_reals([19, 28, 73, 21, 13, 19, 14, 21, 14], restart_got, restart_want, 0.0)))
-	line!(Text.printed(Grade.grade_bools([19, 28, 73, 21, 28, 23, 15, 29, 2], restart_flag_got, restart_flag_want)))
-	line!(Text.printed(Grade.grade_bools([19, 28, 73, 18, 16, 14, 22, 16, 18], not_done_got, not_done_want)))
-	line!(Text.printed(Grade.grade_bools([19, 28, 73, 28, 21, 15, 26, 13, 2], frame_got, frame_want)))
-	line!(Text.printed(Grade.grade_bools([19, 28, 73, 19, 25, 18, 2, 2, 2], sun_got, sun_want)))
+	verdicts = [
+		Grade.reals({
+			name: "sf-start ",
+			got: start_got,
+			want: start_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "sf-sindex",
+			got: start_index_got,
+			want: start_index_want,
+		}),
+		Grade.bools({
+			name: "sf-sflag ",
+			got: start_flag_got,
+			want: start_flag_want,
+		}),
+		Grade.reals({
+			name: "sf-step  ",
+			got: step_got,
+			want: step_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "sf-moved ",
+			got: moved_got,
+			want: moved_want,
+		}),
+		Grade.bools({
+			name: "sf-order ",
+			got: order_got,
+			want: order_want,
+		}),
+		Grade.reals({
+			name: "sf-restrt",
+			got: restart_got,
+			want: restart_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "sf-rflag ",
+			got: restart_flag_got,
+			want: restart_flag_want,
+		}),
+		Grade.bools({
+			name: "sf-notdon",
+			got: not_done_got,
+			want: not_done_want,
+		}),
+		Grade.bools({
+			name: "sf-frame ",
+			got: frame_got,
+			want: frame_want,
+		}),
+		Grade.bools({
+			name: "sf-sun   ",
+			got: sun_got,
+			want: sun_want,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

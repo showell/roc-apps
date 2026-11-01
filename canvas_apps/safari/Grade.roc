@@ -1,69 +1,102 @@
 # Grade -- originally emitted from Codex by rocemit; the Roc is the program now
 # and this file is edited here (safari/README.md).
-import Text
+#
+# THE SPEC APPS' VERDICT LINES. A spec app prints one line for each table it
+# checks, and the lines are held byte for byte to safari-codex's
+# `units/<Spec>.expected`: `<name> ok <count>`, `<name> BAD at <index>` where
+# the table first goes wrong (with both values for integers), or
+# `<name> BAD length <got> want <want>`. Each line ends in a newline, because a
+# spec app's `echo!` writes none.
 
 Grade :: [].{
+	## Reals, each within `tol` of its want; a value that isn't finite fails.
+	reals : { name : Str, got : List(F64), want : List(F64), tol : F64 } -> Str
+	reals = |{ name, got, want, tol }|
+		verdict({
+			name,
+			got: got.len(),
+			want: want.len(),
+			is_bad: |i| {
+				g = real_at(got, i)
+				is_infinite_or_nan(g) or (g - real_at(want, i)).abs() > tol
+			},
+			detail: |_| "",
+		})
 
-	g_abs : F64 -> F64
-	g_abs = |x| (if (x < 0.0) { (0.0 - x) } else { x })
+	## Reals, each within `tol` of its want scaled by the want's size (at
+	## least 1); a value that isn't finite fails.
+	rel : { name : Str, got : List(F64), want : List(F64), tol : F64 } -> Str
+	rel = |{ name, got, want, tol }|
+		verdict({
+			name,
+			got: got.len(),
+			want: want.len(),
+			is_bad: |i| {
+				g = real_at(got, i)
+				w = real_at(want, i)
+				w_size = w.abs()
+				scale = if 1.0 > w_size { 1.0 } else { w_size }
+				is_infinite_or_nan(g) or (g - w).abs() > tol * scale
+			},
+			detail: |_| "",
+		})
 
-	g_finite : F64 -> Bool
-	g_finite = |x| (I64.bitwise_and(U64.to_i64_wrap(F64.to_bits(x)), 9223372036854775807) < 9218868437227405312)
+	## Integers, each equal to its want; a miss names both values.
+	ints : { name : Str, got : List(I64), want : List(I64) } -> Str
+	ints = |{ name, got, want }|
+		verdict({
+			name,
+			got: got.len(),
+			want: want.len(),
+			is_bad: |i| int_at(got, i) != int_at(want, i),
+			detail: |i| " got ${int_at(got, i).to_str()} want ${int_at(want, i).to_str()}",
+		})
 
-	first_real_diff : List(F64), List(F64), F64, I64 -> I64
-	first_real_diff = |got, want, tol, i| (if (i >= U64.to_i64_wrap(List.len(got))) { (0 - 1) } else { (if g_finite((List.get(got, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))) { (if (g_abs(((List.get(got, I64.to_u64_wrap(i)) ?? crash("list-at out of range")) - (List.get(want, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))) > tol) { i } else { first_real_diff(got, want, tol, (i + 1)) }) } else { i }) })
-
-	grade_reals : List(U8), List(F64), List(F64), F64 -> List(U8)
-	grade_reals = |name, got, want, tol| (if (U64.to_i64_wrap(List.len(got)) != U64.to_i64_wrap(List.len(want))) { List.concat(List.concat(List.concat(List.concat(name, [2, 58, 41, 48, 2, 23, 13, 18, 29, 14, 20, 2]), Text.show_int(U64.to_i64_wrap(List.len(got)))), [2, 27, 15, 18, 14, 2]), Text.show_int(U64.to_i64_wrap(List.len(want)))) } else { ({
-		i = first_real_diff(got, want, tol, 0)
-		(if (i < 0) { List.concat(List.concat(name, [2, 16, 34, 2]), Text.show_int(U64.to_i64_wrap(List.len(got)))) } else { List.concat(List.concat(name, [2, 58, 41, 48, 2, 15, 14, 2]), Text.show_int(i)) })
-	}) })
-
-	g_max : F64, F64 -> F64
-	g_max = |a, b| (if (a > b) { a } else { b })
-
-	first_rel_diff : List(F64), List(F64), F64, I64 -> I64
-	first_rel_diff = |got, want, tol, i| (if (i >= U64.to_i64_wrap(List.len(got))) { (0 - 1) } else { (if g_finite((List.get(got, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))) { ({
-		w = (List.get(want, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
-		(if (g_abs(((List.get(got, I64.to_u64_wrap(i)) ?? crash("list-at out of range")) - w)) > (tol * g_max(1.0, g_abs(w)))) { i } else { first_rel_diff(got, want, tol, (i + 1)) })
-	}) } else { i }) })
-
-	grade_rel : List(U8), List(F64), List(F64), F64 -> List(U8)
-	grade_rel = |name, got, want, tol| (if (U64.to_i64_wrap(List.len(got)) != U64.to_i64_wrap(List.len(want))) { List.concat(List.concat(List.concat(List.concat(name, [2, 58, 41, 48, 2, 23, 13, 18, 29, 14, 20, 2]), Text.show_int(U64.to_i64_wrap(List.len(got)))), [2, 27, 15, 18, 14, 2]), Text.show_int(U64.to_i64_wrap(List.len(want)))) } else { ({
-		i = first_rel_diff(got, want, tol, 0)
-		(if (i < 0) { List.concat(List.concat(name, [2, 16, 34, 2]), Text.show_int(U64.to_i64_wrap(List.len(got)))) } else { List.concat(List.concat(name, [2, 58, 41, 48, 2, 15, 14, 2]), Text.show_int(i)) })
-	}) })
-
-	grade_px : List(U8), List(F64), List(F64), F64, F64 -> List(U8)
-	grade_px = |name, got, want, atol, rtol| (if (U64.to_i64_wrap(List.len(got)) != U64.to_i64_wrap(List.len(want))) { List.concat(List.concat(List.concat(List.concat(name, [2, 58, 41, 48, 2, 23, 13, 18, 29, 14, 20, 2]), Text.show_int(U64.to_i64_wrap(List.len(got)))), [2, 27, 15, 18, 14, 2]), Text.show_int(U64.to_i64_wrap(List.len(want)))) } else { ({
-		i = first_px_diff(got, want, atol, rtol, 0)
-		(if (i < 0) { List.concat(List.concat(name, [2, 16, 34, 2]), Text.show_int(U64.to_i64_wrap(List.len(got)))) } else { List.concat(List.concat(name, [2, 58, 41, 48, 2, 15, 14, 2]), Text.show_int(i)) })
-	}) })
-
-	first_px_diff : List(F64), List(F64), F64, F64, I64 -> I64
-	first_px_diff = |got, want, atol, rtol, i| (if (i >= U64.to_i64_wrap(List.len(got))) { (0 - 1) } else { (if g_finite((List.get(got, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))) { ({
-		w = (List.get(want, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
-		(if (g_abs(((List.get(got, I64.to_u64_wrap(i)) ?? crash("list-at out of range")) - w)) > (atol + (rtol * g_abs(w)))) { i } else { first_px_diff(got, want, atol, rtol, (i + 1)) })
-	}) } else { i }) })
-
-	first_int_diff : List(I64), List(I64), I64 -> I64
-	first_int_diff = |got, want, i| (if (i >= U64.to_i64_wrap(List.len(got))) { (0 - 1) } else { (if ((List.get(got, I64.to_u64_wrap(i)) ?? crash("list-at out of range")) != (List.get(want, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))) { i } else { first_int_diff(got, want, (i + 1)) }) })
-
-	grade_ints : List(U8), List(I64), List(I64) -> List(U8)
-	grade_ints = |name, got, want| (if (U64.to_i64_wrap(List.len(got)) != U64.to_i64_wrap(List.len(want))) { List.concat(List.concat(List.concat(List.concat(name, [2, 58, 41, 48, 2, 23, 13, 18, 29, 14, 20, 2]), Text.show_int(U64.to_i64_wrap(List.len(got)))), [2, 27, 15, 18, 14, 2]), Text.show_int(U64.to_i64_wrap(List.len(want)))) } else { ({
-		i = first_int_diff(got, want, 0)
-		(if (i < 0) { List.concat(List.concat(name, [2, 16, 34, 2]), Text.show_int(U64.to_i64_wrap(List.len(got)))) } else { List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(name, [2, 58, 41, 48, 2, 15, 14, 2]), Text.show_int(i)), [2, 29, 16, 14, 2]), Text.show_int((List.get(got, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))), [2, 27, 15, 18, 14, 2]), Text.show_int((List.get(want, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))) })
-	}) })
-
-	bool_eq : Bool, Bool -> Bool
-	bool_eq = |a, b| (if a { b } else { (if b { False } else { True }) })
-
-	first_bool_diff : List(Bool), List(Bool), I64 -> I64
-	first_bool_diff = |got, want, i| (if (i >= U64.to_i64_wrap(List.len(got))) { (0 - 1) } else { (if bool_eq((List.get(got, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), (List.get(want, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))) { first_bool_diff(got, want, (i + 1)) } else { i }) })
-
-	grade_bools : List(U8), List(Bool), List(Bool) -> List(U8)
-	grade_bools = |name, got, want| (if (U64.to_i64_wrap(List.len(got)) != U64.to_i64_wrap(List.len(want))) { List.concat(List.concat(List.concat(List.concat(name, [2, 58, 41, 48, 2, 23, 13, 18, 29, 14, 20, 2]), Text.show_int(U64.to_i64_wrap(List.len(got)))), [2, 27, 15, 18, 14, 2]), Text.show_int(U64.to_i64_wrap(List.len(want)))) } else { ({
-		i = first_bool_diff(got, want, 0)
-		(if (i < 0) { List.concat(List.concat(name, [2, 16, 34, 2]), Text.show_int(U64.to_i64_wrap(List.len(got)))) } else { List.concat(List.concat(name, [2, 58, 41, 48, 2, 15, 14, 2]), Text.show_int(i)) })
-	}) })
+	## Bools, each equal to its want.
+	bools : { name : Str, got : List(Bool), want : List(Bool) } -> Str
+	bools = |{ name, got, want }|
+		verdict({
+			name,
+			got: got.len(),
+			want: want.len(),
+			is_bad: |i| bool_at(got, i) != bool_at(want, i),
+			detail: |_| "",
+		})
 }
+
+## The line for a table of `got` values against `want`: `is_bad` is asked of
+## each index while the lengths agree, and `detail` follows a miss's index.
+verdict : { name : Str, got : U64, want : U64, is_bad : U64 -> Bool, detail : U64 -> Str } -> Str
+verdict = |{ name, got, want, is_bad, detail }|
+	if got != want {
+		"${name} BAD length ${got.to_str()} want ${want.to_str()}\n"
+	} else {
+		match first_bad_from({ count: got, is_bad, at: 0 }) {
+			BadAt(i) => "${name} BAD at ${i.to_str()}${detail(i)}\n"
+			AllGood => "${name} ok ${got.to_str()}\n"
+		}
+	}
+
+## The first index from `at` below `count` at which `is_bad` holds.
+first_bad_from : { count : U64, is_bad : U64 -> Bool, at : U64 } -> [BadAt(U64), AllGood]
+first_bad_from = |{ count, is_bad, at }|
+	if at >= count {
+		AllGood
+	} else if is_bad(at) {
+		BadAt(at)
+	} else {
+		first_bad_from({ count, is_bad, at: at + 1 })
+	}
+
+## The exponent's bits all set: an infinity or a NaN.
+is_infinite_or_nan : F64 -> Bool
+is_infinite_or_nan = |x| I64.bitwise_and(U64.to_i64_wrap(F64.to_bits(x)), 9223372036854775807) >= 9218868437227405312
+
+real_at : List(F64), U64 -> F64
+real_at = |l, i| l.get(i) ?? crash("Grade: an index past a table's end, which the length check rules out")
+
+int_at : List(I64), U64 -> I64
+int_at = |l, i| l.get(i) ?? crash("Grade: an index past a table's end, which the length check rules out")
+
+bool_at : List(Bool), U64 -> Bool
+bool_at = |l, i| l.get(i) ?? crash("Grade: an index past a table's end, which the length check rules out")

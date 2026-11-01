@@ -1,13 +1,9 @@
 # TruckSpec -- originally emitted from Codex by rocemit; the Roc is the program now
 # and this file is edited here (safari/README.md).
 import Grade
-import Text
 import Truck
 import VehicleLimits
 import World
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 fixed_got : List(F64)
 fixed_got = [Truck.start_ahead, Truck.finish_lead, Truck.truck_turn_caution, Truck.truck_brake_distance, Truck.truck_max_v]
@@ -144,21 +140,101 @@ boundary_want = [True, False]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([14, 34, 73, 28, 17, 36, 13, 22, 2], fixed_got, fixed_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([14, 34, 73, 21, 15, 14, 17, 16, 2], ratio_got, ratio_want, F64.from_bits(4427486594234968593))))
-	line!(Text.printed(Grade.grade_reals([14, 34, 73, 17, 18, 17, 14, 2, 2], initial_got, initial_want, 0.0)))
-	line!(Text.printed(Grade.grade_bools([14, 34, 73, 17, 28, 23, 15, 29, 2], initial_flag_got, initial_flag_want)))
-	line!(Text.printed(Grade.grade_reals([14, 34, 73, 19, 24, 20, 13, 22, 2], sched_got, sched_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([14, 34, 73, 14, 25, 21, 18, 2, 2], turn_got, turn_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([14, 34, 73, 18, 16, 18, 13, 2, 2], none_got, none_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([14, 34, 73, 24, 20, 15, 17, 18, 2], chain_got, chain_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([14, 34, 73, 28, 21, 13, 13, 2, 2], free_got, free_want, F64.from_bits(4427486594234968593))))
-	line!(Text.printed(Grade.grade_reals([14, 34, 73, 15, 20, 13, 15, 22, 2], ahead_got, ahead_want, F64.from_bits(4427486594234968593))))
-	line!(Text.printed(Grade.grade_reals([14, 34, 73, 24, 15, 31, 2, 2, 2], capped_got, capped_want, 0.0)))
-	line!(Text.printed(Grade.grade_bools([14, 34, 73, 28, 28, 23, 15, 29, 2], free_flag_got, free_flag_want)))
-	line!(Text.printed(Grade.grade_reals([14, 34, 73, 32, 21, 15, 34, 13, 2], brake_got, brake_want, F64.from_bits(4427486594234968593))))
-	line!(Text.printed(Grade.grade_bools([14, 34, 73, 32, 28, 23, 15, 29, 2], brake_flag_got, brake_flag_want)))
-	line!(Text.printed(Grade.grade_bools([14, 34, 73, 19, 13, 14, 14, 23, 13], settled_got, settled_want)))
-	line!(Text.printed(Grade.grade_bools([14, 34, 73, 32, 16, 25, 18, 22, 2], boundary_got, boundary_want)))
+	verdicts = [
+		Grade.reals({
+			name: "tk-fixed ",
+			got: fixed_got,
+			want: fixed_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "tk-ratio ",
+			got: ratio_got,
+			want: ratio_want,
+			tol: F64.from_bits(4427486594234968593),
+		}),
+		Grade.reals({
+			name: "tk-init  ",
+			got: initial_got,
+			want: initial_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "tk-iflag ",
+			got: initial_flag_got,
+			want: initial_flag_want,
+		}),
+		Grade.reals({
+			name: "tk-sched ",
+			got: sched_got,
+			want: sched_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "tk-turn  ",
+			got: turn_got,
+			want: turn_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "tk-none  ",
+			got: none_got,
+			want: none_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "tk-chain ",
+			got: chain_got,
+			want: chain_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "tk-free  ",
+			got: free_got,
+			want: free_want,
+			tol: F64.from_bits(4427486594234968593),
+		}),
+		Grade.reals({
+			name: "tk-ahead ",
+			got: ahead_got,
+			want: ahead_want,
+			tol: F64.from_bits(4427486594234968593),
+		}),
+		Grade.reals({
+			name: "tk-cap   ",
+			got: capped_got,
+			want: capped_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "tk-fflag ",
+			got: free_flag_got,
+			want: free_flag_want,
+		}),
+		Grade.reals({
+			name: "tk-brake ",
+			got: brake_got,
+			want: brake_want,
+			tol: F64.from_bits(4427486594234968593),
+		}),
+		Grade.bools({
+			name: "tk-bflag ",
+			got: brake_flag_got,
+			want: brake_flag_want,
+		}),
+		Grade.bools({
+			name: "tk-settle",
+			got: settled_got,
+			want: settled_want,
+		}),
+		Grade.bools({
+			name: "tk-bound ",
+			got: boundary_got,
+			want: boundary_want,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

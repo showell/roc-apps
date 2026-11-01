@@ -2,12 +2,8 @@
 # and this file is edited here (safari/README.md).
 import Frame
 import Grade
-import Text
 import TruckPlan
 import World
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 segs : List(World.Segment)
 segs = [World.segment_at(0), World.segment_at(1), World.segment_at(2)]
@@ -90,15 +86,65 @@ item_fwd_want = [499.0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([14, 31, 73, 23, 13, 18, 29, 14, 20], lengths_got, lengths_want, 0.0)))
-	line!(Text.printed(Grade.grade_bools([14, 31, 73, 31, 21, 13, 19, 18, 14], present_got, present_want)))
-	line!(Text.printed(Grade.grade_ints([14, 31, 73, 23, 15, 18, 22, 13, 22], landed_got, landed_want)))
-	line!(Text.printed(Grade.grade_reals([14, 31, 73, 15, 23, 16, 18, 29, 2], along_got, along_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([14, 31, 73, 28, 27, 22, 2, 2, 2], fwd_got, fwd_want, 0.0001)))
-	line!(Text.printed(Grade.grade_reals([14, 31, 73, 18, 16, 18, 13, 2, 2], none_got, none_want, 0.0)))
-	line!(Text.printed(Grade.grade_bools([14, 31, 73, 18, 28, 23, 15, 29, 2], none_flag_got, none_flag_want)))
-	line!(Text.printed(Grade.grade_bools([14, 31, 73, 32, 13, 20, 17, 18, 22], behind_got, behind_want)))
-	line!(Text.printed(Grade.grade_ints([14, 31, 73, 17, 14, 13, 26, 19, 2], items_got, items_want)))
-	line!(Text.printed(Grade.grade_reals([14, 31, 73, 17, 28, 27, 22, 2, 2], item_fwd_got, item_fwd_want, 0.0001)))
+	verdicts = [
+		Grade.reals({
+			name: "tp-length",
+			got: lengths_got,
+			want: lengths_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "tp-presnt",
+			got: present_got,
+			want: present_want,
+		}),
+		Grade.ints({
+			name: "tp-landed",
+			got: landed_got,
+			want: landed_want,
+		}),
+		Grade.reals({
+			name: "tp-along ",
+			got: along_got,
+			want: along_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "tp-fwd   ",
+			got: fwd_got,
+			want: fwd_want,
+			tol: 0.0001,
+		}),
+		Grade.reals({
+			name: "tp-none  ",
+			got: none_got,
+			want: none_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "tp-nflag ",
+			got: none_flag_got,
+			want: none_flag_want,
+		}),
+		Grade.bools({
+			name: "tp-behind",
+			got: behind_got,
+			want: behind_want,
+		}),
+		Grade.ints({
+			name: "tp-items ",
+			got: items_got,
+			want: items_want,
+		}),
+		Grade.reals({
+			name: "tp-ifwd  ",
+			got: item_fwd_got,
+			want: item_fwd_want,
+			tol: 0.0001,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

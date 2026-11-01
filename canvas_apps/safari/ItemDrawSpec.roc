@@ -4,13 +4,9 @@ import Frame
 import Grade
 import ItemDraw
 import SceneLimits
-import Text
 import TowerPlan
 import TreePlan
 import World
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 fixed_got : List(F64)
 fixed_got = [SceneLimits.crown_shade_dist, SceneLimits.detail_dist]
@@ -99,13 +95,53 @@ tree_want = [True, True, True, True]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([17, 22, 73, 28, 17, 36, 13, 22, 2], fixed_got, fixed_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([17, 22, 73, 24, 16, 25, 18, 14, 2], count_got, count_want)))
-	line!(Text.printed(Grade.grade_ints([17, 22, 73, 14, 17, 13, 2, 2, 2], tie_got, tie_want)))
-	line!(Text.printed(Grade.grade_reals([17, 22, 73, 19, 20, 15, 22, 13, 2], shade_got, shade_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([17, 22, 73, 32, 15, 19, 13, 2, 2], base_got, base_want)))
-	line!(Text.printed(Grade.grade_reals([17, 22, 73, 24, 16, 21, 18, 13, 21], corner_got, corner_want, 0.0001)))
-	line!(Text.printed(Grade.grade_bools([17, 22, 73, 14, 16, 27, 13, 21, 2], tower_got, tower_want)))
-	line!(Text.printed(Grade.grade_bools([17, 22, 73, 14, 21, 13, 13, 2, 2], tree_got, tree_want)))
+	verdicts = [
+		Grade.reals({
+			name: "id-fixed ",
+			got: fixed_got,
+			want: fixed_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "id-count ",
+			got: count_got,
+			want: count_want,
+		}),
+		Grade.ints({
+			name: "id-tie   ",
+			got: tie_got,
+			want: tie_want,
+		}),
+		Grade.reals({
+			name: "id-shade ",
+			got: shade_got,
+			want: shade_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "id-base  ",
+			got: base_got,
+			want: base_want,
+		}),
+		Grade.reals({
+			name: "id-corner",
+			got: corner_got,
+			want: corner_want,
+			tol: 0.0001,
+		}),
+		Grade.bools({
+			name: "id-tower ",
+			got: tower_got,
+			want: tower_want,
+		}),
+		Grade.bools({
+			name: "id-tree  ",
+			got: tree_got,
+			want: tree_want,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

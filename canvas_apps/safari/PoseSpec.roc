@@ -2,10 +2,6 @@
 # and this file is edited here (safari/README.md).
 import Grade
 import Pose
-import Text
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 probe : Pose.RiderState
 probe = { segment: 7, along: 11.0, across: 2.5, yaw: 0.75, v: 3.25, tilt: 0.125, heading: 4.5, gaze_yaw: 0.375, focus: 6.75 }
@@ -37,10 +33,38 @@ twice_want = [11.0, 2.5, 0.75, 3.25, 9.5, 4.5, 0.375, 6.75]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([31, 73, 17, 18, 17, 14, 2, 2], reals(Pose.initial_rider_state), init_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([31, 73, 17, 18, 17, 14, 19, 29], seg(Pose.initial_rider_state), init_seg_want)))
-	line!(Text.printed(Grade.grade_reals([31, 73, 14, 17, 23, 14, 2, 2], reals(Pose.with_tilt(probe, new_tilt)), tilt_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([31, 73, 14, 17, 23, 14, 19, 29], seg(Pose.with_tilt(probe, new_tilt)), tilt_seg_want)))
-	line!(Text.printed(Grade.grade_reals([31, 73, 14, 27, 17, 24, 13, 2], reals(Pose.with_tilt(Pose.with_tilt(probe, 1.5), new_tilt)), twice_want, 0.0)))
+	verdicts = [
+		Grade.reals({
+			name: "p-init  ",
+			got: reals(Pose.initial_rider_state),
+			want: init_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "p-initsg",
+			got: seg(Pose.initial_rider_state),
+			want: init_seg_want,
+		}),
+		Grade.reals({
+			name: "p-tilt  ",
+			got: reals(Pose.with_tilt(probe, new_tilt)),
+			want: tilt_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "p-tiltsg",
+			got: seg(Pose.with_tilt(probe, new_tilt)),
+			want: tilt_seg_want,
+		}),
+		Grade.reals({
+			name: "p-twice ",
+			got: reals(Pose.with_tilt(Pose.with_tilt(probe, 1.5), new_tilt)),
+			want: twice_want,
+			tol: 0.0,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

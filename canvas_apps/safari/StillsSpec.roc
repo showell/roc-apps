@@ -2,10 +2,6 @@
 # and this file is edited here (safari/README.md).
 import Grade
 import Stills
-import Text
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 pt : Stills.StillPt
 pt = { x: 0.5, y: 1.5 }
@@ -46,9 +42,32 @@ reach_want = [2.5, 0.5, 13.5]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([19, 73, 29, 21, 15, 22, 21], grad_reals_got, grad_reals_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([19, 73, 29, 21, 15, 22, 17], grad_ints_got, grad_ints_want)))
-	line!(Text.printed(Grade.grade_ints([19, 73, 31, 16, 23, 30, 2], poly_ints_got, poly_ints_want)))
-	line!(Text.printed(Grade.grade_reals([19, 73, 21, 13, 15, 24, 20], reach_got, reach_want, 0.0)))
+	verdicts = [
+		Grade.reals({
+			name: "s-gradr",
+			got: grad_reals_got,
+			want: grad_reals_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "s-gradi",
+			got: grad_ints_got,
+			want: grad_ints_want,
+		}),
+		Grade.ints({
+			name: "s-poly ",
+			got: poly_ints_got,
+			want: poly_ints_want,
+		}),
+		Grade.reals({
+			name: "s-reach",
+			got: reach_got,
+			want: reach_want,
+			tol: 0.0,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

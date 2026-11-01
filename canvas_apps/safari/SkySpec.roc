@@ -3,10 +3,6 @@
 import Grade
 import Lens
 import Sky
-import Text
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 height_got : List(F64)
 height_got = [Sky.sun_height_px(0.0), Sky.sun_start_px, Sky.sun_radius_px, Sky.sun_fully_set_px, Sky.warmth_falloff_px, Sky.visible_bearing_limit]
@@ -70,13 +66,54 @@ place_want = [480.0, 56.0, 1.0, 0.0, 0.0, 0.0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([19, 34, 73, 20, 13, 17, 29, 20, 14], height_got, height_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([19, 34, 73, 13, 18, 22, 19, 2, 2], ends_got, ends_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([19, 34, 73, 19, 34, 30, 2, 2, 2], sky_got, sky_want)))
-	line!(Text.printed(Grade.grade_ints([19, 34, 73, 20, 16, 21, 17, 38, 2], horizon_got, horizon_want)))
-	line!(Text.printed(Grade.grade_ints([19, 34, 73, 31, 15, 24, 34, 13, 22], packed_got, packed_want)))
-	line!(Text.printed(Grade.grade_reals([19, 34, 73, 26, 17, 36, 2, 2, 2], mix_got, mix_want, 0.0)))
-	line!(Text.printed(Grade.grade_bools([19, 34, 73, 33, 17, 19, 2, 2, 2], visible_got, visible_want)))
-	line!(Text.printed(Grade.grade_reals([19, 34, 73, 31, 23, 15, 24, 13, 2], place_got, place_want, 0.0)))
+	verdicts = [
+		Grade.reals({
+			name: "sk-height",
+			got: height_got,
+			want: height_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "sk-ends  ",
+			got: ends_got,
+			want: ends_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "sk-sky   ",
+			got: sky_got,
+			want: sky_want,
+		}),
+		Grade.ints({
+			name: "sk-horiz ",
+			got: horizon_got,
+			want: horizon_want,
+		}),
+		Grade.ints({
+			name: "sk-packed",
+			got: packed_got,
+			want: packed_want,
+		}),
+		Grade.reals({
+			name: "sk-mix   ",
+			got: mix_got,
+			want: mix_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "sk-vis   ",
+			got: visible_got,
+			want: visible_want,
+		}),
+		Grade.reals({
+			name: "sk-place ",
+			got: place_got,
+			want: place_want,
+			tol: 0.0,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

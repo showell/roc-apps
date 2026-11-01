@@ -8,14 +8,10 @@ import Grade
 import Pose
 import RailPlan
 import Render
-import Text
 import TowerPlan
 import TreePlan
 import TruckPlan
 import World
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 segs : List(World.Segment)
 segs = seg_list(0)
@@ -107,14 +103,55 @@ shrink_want = [True, True]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_ints([21, 18, 73, 31, 21, 13, 33, 2, 2], prev_got, prev_want)))
-	line!(Text.printed(Grade.grade_ints([21, 18, 73, 26, 13, 21, 29, 13, 2], merge_got, merge_want)))
-	line!(Text.printed(Grade.grade_bools([21, 18, 73, 31, 21, 13, 19, 18, 14], present_got, present_want)))
-	line!(Text.printed(Grade.grade_bools([21, 18, 73, 24, 15, 31, 2, 2, 2], cap_got, cap_want)))
-	line!(Text.printed(Grade.grade_ints([21, 18, 73, 24, 15, 31, 19, 2, 2], cap_values_got, cap_values_want)))
-	line!(Text.printed(Grade.grade_bools([21, 18, 73, 19, 16, 21, 14, 13, 22], sorted_got, sorted_want)))
-	line!(Text.printed(Grade.grade_bools([21, 18, 73, 24, 25, 23, 23, 2, 2], cull_got, cull_want)))
-	line!(Text.printed(Grade.grade_ints([21, 18, 73, 19, 13, 29, 24, 25, 23], seg_cull_got, seg_cull_want)))
-	line!(Text.printed(Grade.grade_bools([21, 18, 73, 19, 20, 21, 17, 18, 34], shrink_got, shrink_want)))
+	verdicts = [
+		Grade.ints({
+			name: "rn-prev  ",
+			got: prev_got,
+			want: prev_want,
+		}),
+		Grade.ints({
+			name: "rn-merge ",
+			got: merge_got,
+			want: merge_want,
+		}),
+		Grade.bools({
+			name: "rn-presnt",
+			got: present_got,
+			want: present_want,
+		}),
+		Grade.bools({
+			name: "rn-cap   ",
+			got: cap_got,
+			want: cap_want,
+		}),
+		Grade.ints({
+			name: "rn-caps  ",
+			got: cap_values_got,
+			want: cap_values_want,
+		}),
+		Grade.bools({
+			name: "rn-sorted",
+			got: sorted_got,
+			want: sorted_want,
+		}),
+		Grade.bools({
+			name: "rn-cull  ",
+			got: cull_got,
+			want: cull_want,
+		}),
+		Grade.ints({
+			name: "rn-segcul",
+			got: seg_cull_got,
+			want: seg_cull_want,
+		}),
+		Grade.bools({
+			name: "rn-shrink",
+			got: shrink_got,
+			want: shrink_want,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

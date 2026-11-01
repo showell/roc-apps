@@ -3,10 +3,6 @@
 import Bike
 import Grade
 import Pose
-import Text
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 limit_got : List(F64)
 limit_got = [Bike.yaw_per_tilt, Bike.max_lean]
@@ -53,10 +49,39 @@ pos_want = [121.25108639750266, 2.5532642799382796, 122.00167174017032, 2.870827
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([32, 34, 73, 23, 17, 26, 17, 14], limit_got, limit_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([32, 34, 73, 13, 36, 15, 24, 14], exact_got, exact_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([32, 34, 73, 24, 15, 21, 21, 30], carried_real_got, carried_real_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([32, 34, 73, 19, 13, 29, 2, 2], carried_int_got, carried_int_want)))
-	line!(Text.printed(Grade.grade_rel([32, 34, 73, 31, 16, 19, 2, 2], pos_got, pos_want, F64.from_bits(4472406533629990549))))
+	verdicts = [
+		Grade.reals({
+			name: "bk-limit",
+			got: limit_got,
+			want: limit_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "bk-exact",
+			got: exact_got,
+			want: exact_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "bk-carry",
+			got: carried_real_got,
+			want: carried_real_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "bk-seg  ",
+			got: carried_int_got,
+			want: carried_int_want,
+		}),
+		Grade.rel({
+			name: "bk-pos  ",
+			got: pos_got,
+			want: pos_want,
+			tol: F64.from_bits(4472406533629990549),
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

@@ -2,10 +2,6 @@
 # and this file is edited here (safari/README.md).
 import DepthSort
 import Grade
-import Text
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 mixed : List(DepthSort.Item)
 mixed = [{ fwd: 30.0, kind: KTree, i: 0 }, { fwd: 10.0, kind: KCow, i: 1 }, { fwd: 30.0, kind: KRail, i: 2 }, { fwd: 50.0, kind: KTower, i: 3 }, { fwd: 10.0, kind: KCat, i: 4 }, { fwd: 20.0, kind: KTruck, i: 5 }, { fwd: 30.0, kind: KTree, i: 6 }, { fwd: 40.0, kind: KRail, i: 7 }, { fwd: 10.0, kind: KCow, i: 8 }, { fwd: 5.0, kind: KCat, i: 9 }]
@@ -71,9 +67,31 @@ slack_want = [0, 1, 1, 0, 0, 1, 1, 0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([22, 73, 16, 21, 22, 13, 21, 2], fwds(DepthSort.sort_items(mixed), 0), order_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([22, 73, 19, 14, 15, 32, 23, 13], idxs(DepthSort.sort_items(mixed), 0), stable_want)))
-	line!(Text.printed(Grade.grade_ints([22, 73, 34, 17, 18, 22, 2, 2], kinds(DepthSort.sort_items(mixed), 0), kind_want)))
-	line!(Text.printed(Grade.grade_ints([22, 73, 19, 23, 15, 24, 34, 2], slack_got, slack_want)))
+	verdicts = [
+		Grade.reals({
+			name: "d-order ",
+			got: fwds(DepthSort.sort_items(mixed), 0),
+			want: order_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "d-stable",
+			got: idxs(DepthSort.sort_items(mixed), 0),
+			want: stable_want,
+		}),
+		Grade.ints({
+			name: "d-kind  ",
+			got: kinds(DepthSort.sort_items(mixed), 0),
+			want: kind_want,
+		}),
+		Grade.ints({
+			name: "d-slack ",
+			got: slack_got,
+			want: slack_want,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

@@ -2,10 +2,6 @@
 # and this file is edited here (safari/README.md).
 import Grade
 import Scenery
-import Text
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 road_got : List(F64)
 road_got = [Scenery.lane_width, Scenery.herd_road_offset]
@@ -69,11 +65,42 @@ rec_bools_want = [True]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([19, 24, 73, 21, 16, 15, 22], road_got, road_want, 0.0)))
-	line!(Text.printed(Grade.grade_bools([19, 24, 73, 31, 16, 18, 22], pond_got, pond_want)))
-	line!(Text.printed(Grade.grade_ints([19, 24, 73, 24, 16, 22, 13], code_got, code_want)))
-	line!(Text.printed(Grade.grade_reals([19, 24, 73, 21, 13, 24, 21], rec_reals_got, rec_reals_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([19, 24, 73, 21, 13, 24, 17], rec_ints_got, rec_ints_want)))
-	line!(Text.printed(Grade.grade_bools([19, 24, 73, 21, 13, 24, 32], rec_bools_got, rec_bools_want)))
+	verdicts = [
+		Grade.reals({
+			name: "sc-road",
+			got: road_got,
+			want: road_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "sc-pond",
+			got: pond_got,
+			want: pond_want,
+		}),
+		Grade.ints({
+			name: "sc-code",
+			got: code_got,
+			want: code_want,
+		}),
+		Grade.reals({
+			name: "sc-recr",
+			got: rec_reals_got,
+			want: rec_reals_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "sc-reci",
+			got: rec_ints_got,
+			want: rec_ints_want,
+		}),
+		Grade.bools({
+			name: "sc-recb",
+			got: rec_bools_got,
+			want: rec_bools_want,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

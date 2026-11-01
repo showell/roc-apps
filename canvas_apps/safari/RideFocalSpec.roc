@@ -7,11 +7,7 @@ import Grade
 import Lens
 import Pose
 import RideFocal
-import Text
 import World
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 segs : List(World.Segment)
 segs = [World.segment_at(0), World.segment_at(1), World.segment_at(2)]
@@ -82,13 +78,53 @@ is_one_want = [0.0, 0.0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_bools([21, 28, 73, 20, 15, 19, 24, 15, 14], has_cat_got, has_cat_want)))
-	line!(Text.printed(Grade.grade_reals([21, 28, 73, 17, 22, 23, 13, 2, 2], idle_got, idle_want, 0.0)))
-	line!(Text.printed(Grade.grade_bools([21, 28, 73, 23, 13, 15, 18, 2, 2], lean_got, lean_want)))
-	line!(Text.printed(Grade.grade_reals([21, 28, 73, 24, 23, 15, 26, 31, 2], clamp_got, clamp_want, 0.0)))
-	line!(Text.printed(Grade.grade_bools([21, 28, 73, 24, 15, 14, 2, 2, 2], cat_got, cat_want)))
-	line!(Text.printed(Grade.grade_bools([21, 28, 73, 29, 15, 38, 13, 2, 2], gaze_got, gaze_want)))
-	line!(Text.printed(Grade.grade_bools([21, 28, 73, 26, 17, 18, 2, 2, 2], min_got, min_want)))
-	line!(Text.printed(Grade.grade_reals([21, 28, 73, 17, 19, 16, 18, 13, 2], is_one_got, is_one_want, 0.0)))
+	verdicts = [
+		Grade.bools({
+			name: "rf-hascat",
+			got: has_cat_got,
+			want: has_cat_want,
+		}),
+		Grade.reals({
+			name: "rf-idle  ",
+			got: idle_got,
+			want: idle_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "rf-lean  ",
+			got: lean_got,
+			want: lean_want,
+		}),
+		Grade.reals({
+			name: "rf-clamp ",
+			got: clamp_got,
+			want: clamp_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "rf-cat   ",
+			got: cat_got,
+			want: cat_want,
+		}),
+		Grade.bools({
+			name: "rf-gaze  ",
+			got: gaze_got,
+			want: gaze_want,
+		}),
+		Grade.bools({
+			name: "rf-min   ",
+			got: min_got,
+			want: min_want,
+		}),
+		Grade.reals({
+			name: "rf-isone ",
+			got: is_one_got,
+			want: is_one_want,
+			tol: 0.0,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

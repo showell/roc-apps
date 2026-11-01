@@ -3,10 +3,6 @@
 import CatStills
 import Grade
 import Stills
-import Text
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 pts_in : List(Stills.StillPoly), I64 -> I64
 pts_in = |ps, i| (if (i >= U64.to_i64_wrap(List.len(ps))) { 0 } else { ({
@@ -47,7 +43,21 @@ spot_want = [0.5062, 0.6873, 0.6467, 0.6377]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_ints([24, 19, 73, 14, 15, 32, 23, 13], table_got, table_want)))
-	line!(Text.printed(Grade.grade_reals([24, 19, 73, 19, 31, 16, 14, 2], spot_got, spot_want, 0.0)))
+	verdicts = [
+		Grade.ints({
+			name: "cs-table",
+			got: table_got,
+			want: table_want,
+		}),
+		Grade.reals({
+			name: "cs-spot ",
+			got: spot_got,
+			want: spot_want,
+			tol: 0.0,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

@@ -3,10 +3,6 @@
 import Camera
 import Geom
 import Grade
-import Text
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 at : F64, F64, F64 -> Camera.ScreenPt
 at = |right, forward, height| Camera.project({ right: right, forward: forward, height: height }, 800.0, 960.0)
@@ -50,10 +46,40 @@ all_want = [3.0, 480.0, 1280.0, (-500.0), 0.0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([24, 26, 73, 36, 2, 2, 2, 2], x_got, x_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([24, 26, 73, 30, 2, 2, 2, 2], y_got, y_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([24, 26, 73, 22, 13, 31, 14, 20], depth_got, depth_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([24, 26, 73, 28, 17, 36, 13, 22], fixed_got, fixed_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([24, 26, 73, 15, 23, 23, 2, 2], all_got, all_want, 0.0)))
+	verdicts = [
+		Grade.reals({
+			name: "cm-x    ",
+			got: x_got,
+			want: x_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "cm-y    ",
+			got: y_got,
+			want: y_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "cm-depth",
+			got: depth_got,
+			want: depth_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "cm-fixed",
+			got: fixed_got,
+			want: fixed_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "cm-all  ",
+			got: all_got,
+			want: all_want,
+			tol: 0.0,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

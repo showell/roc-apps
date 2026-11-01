@@ -3,14 +3,10 @@
 import Arc
 import Grade
 import Pose
-import Text
 import Throttle
 import lib.Trig
 import VehicleLimits
 import World
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 fixed_got : List(F64)
 fixed_got = [Throttle.tilt_hold, Throttle.brake_decay, (Throttle.tilt_hold / Trig.deg)]
@@ -113,16 +109,71 @@ compose_want = [True, True, True]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([14, 20, 73, 28, 17, 36, 13, 22, 2], fixed_got, fixed_want, F64.from_bits(4427486594234968593))))
-	line!(Text.printed(Grade.grade_reals([14, 20, 73, 24, 16, 21, 18, 13, 21], corner_got, corner_want, 0.0)))
-	line!(Text.printed(Grade.grade_bools([14, 20, 73, 24, 26, 17, 18, 2, 2], corner_min_got, corner_min_want)))
-	line!(Text.printed(Grade.grade_reals([14, 20, 73, 24, 15, 14, 2, 2, 2], cat_got, cat_want, 0.0)))
-	line!(Text.printed(Grade.grade_bools([14, 20, 73, 21, 16, 15, 22, 2, 2], road_got, road_want)))
-	line!(Text.printed(Grade.grade_bools([14, 20, 73, 32, 21, 15, 34, 13, 2], brake_got, brake_want)))
-	line!(Text.printed(Grade.grade_bools([14, 20, 73, 38, 13, 21, 16, 2, 2], zero_frames_got, zero_frames_want)))
-	line!(Text.printed(Grade.grade_reals([14, 20, 73, 24, 23, 15, 26, 31, 2], clamp_got, clamp_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([14, 20, 73, 27, 20, 16, 23, 13, 2], whole_got, whole_want, F64.from_bits(4427486594234968593))))
-	line!(Text.printed(Grade.grade_reals([14, 20, 73, 14, 17, 23, 14, 2, 2], tilt_got, tilt_want, F64.from_bits(4427486594234968593))))
-	line!(Text.printed(Grade.grade_bools([14, 20, 73, 24, 16, 26, 31, 2, 2], compose_got, compose_want)))
+	verdicts = [
+		Grade.reals({
+			name: "th-fixed ",
+			got: fixed_got,
+			want: fixed_want,
+			tol: F64.from_bits(4427486594234968593),
+		}),
+		Grade.reals({
+			name: "th-corner",
+			got: corner_got,
+			want: corner_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "th-cmin  ",
+			got: corner_min_got,
+			want: corner_min_want,
+		}),
+		Grade.reals({
+			name: "th-cat   ",
+			got: cat_got,
+			want: cat_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "th-road  ",
+			got: road_got,
+			want: road_want,
+		}),
+		Grade.bools({
+			name: "th-brake ",
+			got: brake_got,
+			want: brake_want,
+		}),
+		Grade.bools({
+			name: "th-zero  ",
+			got: zero_frames_got,
+			want: zero_frames_want,
+		}),
+		Grade.reals({
+			name: "th-clamp ",
+			got: clamp_got,
+			want: clamp_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "th-whole ",
+			got: whole_got,
+			want: whole_want,
+			tol: F64.from_bits(4427486594234968593),
+		}),
+		Grade.reals({
+			name: "th-tilt  ",
+			got: tilt_got,
+			want: tilt_want,
+			tol: F64.from_bits(4427486594234968593),
+		}),
+		Grade.bools({
+			name: "th-comp  ",
+			got: compose_got,
+			want: compose_want,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

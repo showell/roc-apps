@@ -3,11 +3,7 @@
 import CritterPlan
 import Frame
 import Grade
-import Text
 import World
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 reach_got : List(I64)
 reach_got = [CritterPlan.farm_seg_reach, CritterPlan.safari_seg_reach]
@@ -104,15 +100,60 @@ behind_want = [True, True, True]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_ints([24, 18, 73, 21, 13, 15, 24, 20, 2], reach_got, reach_want)))
-	line!(Text.printed(Grade.grade_bools([24, 18, 73, 24, 25, 14, 16, 28, 28], cutoff_got, cutoff_want)))
-	line!(Text.printed(Grade.grade_ints([24, 18, 73, 14, 13, 21, 26, 2, 2], term_got, term_want)))
-	line!(Text.printed(Grade.grade_bools([24, 18, 73, 14, 28, 23, 15, 29, 2], term_flag_got, term_flag_want)))
-	line!(Text.printed(Grade.grade_bools([24, 18, 73, 22, 25, 24, 34, 2, 2], duck_got, duck_want)))
-	line!(Text.printed(Grade.grade_ints([24, 18, 73, 22, 21, 13, 15, 24, 20], duck_reach_got, duck_reach_want)))
-	line!(Text.printed(Grade.grade_ints([24, 18, 73, 16, 21, 22, 13, 21, 2], order_got, order_want)))
-	line!(Text.printed(Grade.grade_ints([24, 18, 73, 27, 15, 23, 34, 2, 2], walk_got, walk_want)))
-	line!(Text.printed(Grade.grade_bools([24, 18, 73, 29, 21, 16, 27, 2, 2], grow_got, grow_want)))
-	line!(Text.printed(Grade.grade_bools([24, 18, 73, 32, 13, 20, 17, 18, 22], behind_got, behind_want)))
+	verdicts = [
+		Grade.ints({
+			name: "cn-reach ",
+			got: reach_got,
+			want: reach_want,
+		}),
+		Grade.bools({
+			name: "cn-cutoff",
+			got: cutoff_got,
+			want: cutoff_want,
+		}),
+		Grade.ints({
+			name: "cn-term  ",
+			got: term_got,
+			want: term_want,
+		}),
+		Grade.bools({
+			name: "cn-tflag ",
+			got: term_flag_got,
+			want: term_flag_want,
+		}),
+		Grade.bools({
+			name: "cn-duck  ",
+			got: duck_got,
+			want: duck_want,
+		}),
+		Grade.ints({
+			name: "cn-dreach",
+			got: duck_reach_got,
+			want: duck_reach_want,
+		}),
+		Grade.ints({
+			name: "cn-order ",
+			got: order_got,
+			want: order_want,
+		}),
+		Grade.ints({
+			name: "cn-walk  ",
+			got: walk_got,
+			want: walk_want,
+		}),
+		Grade.bools({
+			name: "cn-grow  ",
+			got: grow_got,
+			want: grow_want,
+		}),
+		Grade.bools({
+			name: "cn-behind",
+			got: behind_got,
+			want: behind_want,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

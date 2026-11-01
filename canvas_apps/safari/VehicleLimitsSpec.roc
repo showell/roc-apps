@@ -2,12 +2,8 @@
 # and this file is edited here (safari/README.md).
 import Grade
 import ListUtils
-import Text
 import lib.Trig
 import VehicleLimits
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 to_rad : F64 -> F64
 to_rad = |d| (d * Trig.deg)
@@ -33,8 +29,28 @@ env_want = [0.01, 2.5, 60.0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([33, 73, 14, 15, 32, 23, 13], ListUtils.list_map(VehicleLimits.turn_speed, ListUtils.list_map(to_rad, table_deg)), table_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([33, 73, 13, 22, 29, 13, 2], ListUtils.list_map(VehicleLimits.turn_speed, ListUtils.list_map(to_rad, edge_deg)), edge_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([33, 73, 13, 18, 33, 2, 2], env_got, env_want, 0.0)))
+	verdicts = [
+		Grade.reals({
+			name: "v-table",
+			got: ListUtils.list_map(VehicleLimits.turn_speed, ListUtils.list_map(to_rad, table_deg)),
+			want: table_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "v-edge ",
+			got: ListUtils.list_map(VehicleLimits.turn_speed, ListUtils.list_map(to_rad, edge_deg)),
+			want: edge_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "v-env  ",
+			got: env_got,
+			want: env_want,
+			tol: 0.0,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

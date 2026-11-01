@@ -2,11 +2,7 @@
 # and this file is edited here (safari/README.md).
 import Cat
 import Grade
-import Text
 import lib.Trig
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 the_cat : Cat.Cat
 the_cat = Cat.cat_make(2.0, 1.0, 100.0)
@@ -110,20 +106,96 @@ flight_want = [0.27775, 0.0421875, (-3.49)]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([24, 14, 73, 26, 15, 34, 13, 2, 2], make_got, make_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([24, 14, 73, 22, 17, 26, 19, 2, 2], dims_got, dims_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([24, 14, 73, 27, 17, 18, 22, 16, 27], window_got, window_want, 0.0)))
-	line!(Text.printed(Grade.grade_bools([24, 14, 73, 22, 15, 18, 29, 13, 21], danger_got, danger_want)))
-	line!(Text.printed(Grade.grade_reals([24, 14, 73, 24, 23, 16, 24, 34, 2], t_got, t_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([24, 14, 73, 28, 16, 24, 25, 19, 2], focus_got, focus_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([24, 14, 73, 29, 15, 17, 14, 2, 2], cycles_got, cycles_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([24, 14, 73, 31, 16, 19, 13, 2, 2], pose_got, pose_want)))
-	line!(Text.printed(Grade.grade_ints([24, 14, 73, 27, 20, 17, 24, 20, 2], which_got, which_want)))
-	line!(Text.printed(Grade.grade_reals([24, 14, 73, 13, 18, 14, 13, 21, 2], entering_got, entering_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([24, 14, 73, 19, 14, 21, 17, 22, 13], stride_got, stride_want)))
-	line!(Text.printed(Grade.grade_reals([24, 14, 73, 28, 21, 16, 38, 13, 18], frozen_got, frozen_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([24, 14, 73, 23, 13, 15, 31, 2, 2], leap_got, leap_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([24, 14, 73, 27, 17, 22, 13, 2, 2], make_wide_got, make_wide_want, F64.from_bits(4427486594234968593))))
-	line!(Text.printed(Grade.grade_reals([24, 14, 73, 28, 23, 17, 29, 20, 14], flight_got, flight_want, F64.from_bits(4427486594234968593))))
+	verdicts = [
+		Grade.reals({
+			name: "ct-make  ",
+			got: make_got,
+			want: make_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "ct-dims  ",
+			got: dims_got,
+			want: dims_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "ct-window",
+			got: window_got,
+			want: window_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "ct-danger",
+			got: danger_got,
+			want: danger_want,
+		}),
+		Grade.reals({
+			name: "ct-clock ",
+			got: t_got,
+			want: t_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "ct-focus ",
+			got: focus_got,
+			want: focus_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "ct-gait  ",
+			got: cycles_got,
+			want: cycles_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "ct-pose  ",
+			got: pose_got,
+			want: pose_want,
+		}),
+		Grade.ints({
+			name: "ct-which ",
+			got: which_got,
+			want: which_want,
+		}),
+		Grade.reals({
+			name: "ct-enter ",
+			got: entering_got,
+			want: entering_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "ct-stride",
+			got: stride_got,
+			want: stride_want,
+		}),
+		Grade.reals({
+			name: "ct-frozen",
+			got: frozen_got,
+			want: frozen_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "ct-leap  ",
+			got: leap_got,
+			want: leap_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "ct-wide  ",
+			got: make_wide_got,
+			want: make_wide_want,
+			tol: F64.from_bits(4427486594234968593),
+		}),
+		Grade.reals({
+			name: "ct-flight",
+			got: flight_got,
+			want: flight_want,
+			tol: F64.from_bits(4427486594234968593),
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

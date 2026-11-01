@@ -3,11 +3,7 @@
 import Grade
 import ListUtils
 import Scenery
-import Text
 import Trees
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 colour_got : List(I64)
 colour_got = [Trees.conifer_green, Trees.conifer_gold, Trees.conifer_red, Trees.max_trees]
@@ -81,14 +77,60 @@ lam_3 = |t| t.height
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_ints([14, 21, 73, 24, 16, 23, 16, 25, 21], colour_got, colour_want)))
-	line!(Text.printed(Grade.grade_reals([14, 21, 73, 22, 17, 26, 2, 2, 2], dim_got, dim_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([14, 21, 73, 15, 24, 24, 13, 18, 14], accent_got, accent_want)))
-	line!(Text.printed(Grade.grade_reals([14, 21, 73, 20, 36, 2, 2, 2, 2], hx_got, hx_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([14, 21, 73, 15, 23, 16, 18, 29, 2], along_got, along_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([14, 21, 73, 15, 24, 21, 16, 19, 19], across_got, across_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([14, 21, 73, 24, 16, 23, 16, 25, 21, 19], colours_got, colours_want)))
-	line!(Text.printed(Grade.grade_reals([14, 21, 73, 20, 13, 17, 29, 20, 14], heights_got, heights_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([14, 21, 73, 19, 14, 16, 31, 19, 2], stops_got, stops_want)))
+	verdicts = [
+		Grade.ints({
+			name: "tr-colour",
+			got: colour_got,
+			want: colour_want,
+		}),
+		Grade.reals({
+			name: "tr-dim   ",
+			got: dim_got,
+			want: dim_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "tr-accent",
+			got: accent_got,
+			want: accent_want,
+		}),
+		Grade.reals({
+			name: "tr-hx    ",
+			got: hx_got,
+			want: hx_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "tr-along ",
+			got: along_got,
+			want: along_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "tr-across",
+			got: across_got,
+			want: across_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "tr-colours",
+			got: colours_got,
+			want: colours_want,
+		}),
+		Grade.reals({
+			name: "tr-height",
+			got: heights_got,
+			want: heights_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "tr-stops ",
+			got: stops_got,
+			want: stops_want,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

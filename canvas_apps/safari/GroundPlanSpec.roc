@@ -5,11 +5,7 @@ import Geom
 import Grade
 import GroundPlan
 import Paint
-import Text
 import World
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 fixed_got : List(F64)
 fixed_got = [GroundPlan.road_chunk, GroundPlan.entry_road_dist]
@@ -102,15 +98,64 @@ points_want = [True, True]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([29, 31, 73, 28, 17, 36, 13, 22, 2], fixed_got, fixed_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([29, 31, 73, 24, 16, 23, 16, 25, 21], colour_got, colour_want)))
-	line!(Text.printed(Grade.grade_ints([29, 31, 73, 24, 20, 25, 18, 34, 19], chunks_got, chunks_want)))
-	line!(Text.printed(Grade.grade_ints([29, 31, 73, 19, 20, 15, 31, 13, 2], quad_shape_got, quad_shape_want)))
-	line!(Text.printed(Grade.grade_reals([29, 31, 73, 15, 24, 21, 16, 19, 19], across_got, across_want, 0.0001)))
-	line!(Text.printed(Grade.grade_reals([29, 31, 73, 15, 23, 16, 18, 29, 2], along_got, along_want, 0.0001)))
-	line!(Text.printed(Grade.grade_reals([29, 31, 73, 19, 13, 15, 26, 2, 2], seam_got, seam_want, 0.0)))
-	line!(Text.printed(Grade.grade_bools([29, 31, 73, 19, 14, 21, 17, 31, 2], strip_got, strip_want)))
-	line!(Text.printed(Grade.grade_ints([29, 31, 73, 24, 26, 22, 2, 2, 2], cmd_got, cmd_want)))
-	line!(Text.printed(Grade.grade_bools([29, 31, 73, 31, 16, 17, 18, 14, 19], points_got, points_want)))
+	verdicts = [
+		Grade.reals({
+			name: "gp-fixed ",
+			got: fixed_got,
+			want: fixed_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "gp-colour",
+			got: colour_got,
+			want: colour_want,
+		}),
+		Grade.ints({
+			name: "gp-chunks",
+			got: chunks_got,
+			want: chunks_want,
+		}),
+		Grade.ints({
+			name: "gp-shape ",
+			got: quad_shape_got,
+			want: quad_shape_want,
+		}),
+		Grade.reals({
+			name: "gp-across",
+			got: across_got,
+			want: across_want,
+			tol: 0.0001,
+		}),
+		Grade.reals({
+			name: "gp-along ",
+			got: along_got,
+			want: along_want,
+			tol: 0.0001,
+		}),
+		Grade.reals({
+			name: "gp-seam  ",
+			got: seam_got,
+			want: seam_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "gp-strip ",
+			got: strip_got,
+			want: strip_want,
+		}),
+		Grade.ints({
+			name: "gp-cmd   ",
+			got: cmd_got,
+			want: cmd_want,
+		}),
+		Grade.bools({
+			name: "gp-points",
+			got: points_got,
+			want: points_want,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

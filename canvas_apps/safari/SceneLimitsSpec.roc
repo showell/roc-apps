@@ -2,10 +2,6 @@
 # and this file is edited here (safari/README.md).
 import Grade
 import SceneLimits
-import Text
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 culls_got : List(F64)
 culls_got = [SceneLimits.detail_dist, SceneLimits.crown_shade_dist, SceneLimits.min_scenery_px]
@@ -16,6 +12,16 @@ culls_want = [200.0, 80.0, 2.0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([19, 23, 73, 24, 25, 23, 23], culls_got, culls_want, 0.0)))
+	verdicts = [
+		Grade.reals({
+			name: "sl-cull",
+			got: culls_got,
+			want: culls_want,
+			tol: 0.0,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

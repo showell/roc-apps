@@ -2,11 +2,7 @@
 # and this file is edited here (safari/README.md).
 import Grade
 import Pose
-import Text
 import ViewYaw
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 s0 : Pose.RiderState
 s0 = { segment: 0, along: 0.0, across: 0.0, yaw: 0.0, v: 0.3, tilt: 0.0, heading: 0.0, gaze_yaw: 0.0, focus: 0.0 }
@@ -44,8 +40,28 @@ head_want = [0.0, 4.89375, 0.825, (-1.9875), 0.6875]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([33, 30, 73, 28, 21, 15, 24], frac_got, frac_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([33, 30, 73, 30, 15, 27, 2], yaw_got, yaw_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([33, 30, 73, 20, 13, 15, 22], head_got, head_want, 0.0)))
+	verdicts = [
+		Grade.reals({
+			name: "vy-frac",
+			got: frac_got,
+			want: frac_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "vy-yaw ",
+			got: yaw_got,
+			want: yaw_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "vy-head",
+			got: head_got,
+			want: head_want,
+			tol: 0.0,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

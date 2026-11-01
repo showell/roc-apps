@@ -3,10 +3,6 @@
 import Grade
 import ListUtils
 import Pond
-import Text
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 size_got : List(I64)
 size_got = [U64.to_i64_wrap(List.len(Pond.water_outline)), U64.to_i64_wrap(List.len(Pond.bank)), U64.to_i64_wrap(List.len(Pond.ducks)), Pond.water_color, Pond.bank_color, Pond.duck_codepoint]
@@ -38,9 +34,31 @@ face_want = [True, False, True, True, False, True]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_ints([31, 22, 73, 19, 17, 38, 13], size_got, size_want)))
-	line!(Text.printed(Grade.grade_reals([31, 22, 73, 19, 31, 16, 14], spot_got, spot_want, 0.0)))
-	line!(Text.printed(Grade.grade_bools([31, 22, 73, 17, 18, 2, 2], inside_got, inside_want)))
-	line!(Text.printed(Grade.grade_bools([31, 22, 73, 28, 15, 24, 13], face_got, face_want)))
+	verdicts = [
+		Grade.ints({
+			name: "pd-size",
+			got: size_got,
+			want: size_want,
+		}),
+		Grade.reals({
+			name: "pd-spot",
+			got: spot_got,
+			want: spot_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "pd-in  ",
+			got: inside_got,
+			want: inside_want,
+		}),
+		Grade.bools({
+			name: "pd-face",
+			got: face_got,
+			want: face_want,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

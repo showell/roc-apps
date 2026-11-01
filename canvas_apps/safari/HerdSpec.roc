@@ -4,10 +4,6 @@ import Grade
 import Herd
 import ListUtils
 import Scenery
-import Text
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 bull_count_got : List(I64)
 bull_count_got = [U64.to_i64_wrap(List.len(Herd.bull_of(True))), U64.to_i64_wrap(List.len(Herd.bull_of(False))), U64.to_i64_wrap(List.len(Herd.fill_cows(True))), U64.to_i64_wrap(List.len(Herd.fill_cows(False))), (List.get(Herd.bull_of(True), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).codepoint, Herd.bull_cp, Herd.cow_cp]
@@ -99,16 +95,73 @@ lam_2 = |c| c.height
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_ints([20, 22, 73, 32, 25, 23, 23, 2, 2], bull_count_got, bull_count_want)))
-	line!(Text.printed(Grade.grade_bools([20, 22, 73, 28, 15, 24, 13, 2, 2], bull_face_got, bull_face_want)))
-	line!(Text.printed(Grade.grade_reals([20, 22, 73, 31, 23, 15, 24, 13, 2], bull_place_got, bull_place_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([20, 22, 73, 20, 13, 17, 29, 20, 14], height_got, height_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([20, 22, 73, 32, 25, 23, 23, 20, 2], bull_height_got, bull_height_want, F64.from_bits(4427486594234968593))))
-	line!(Text.printed(Grade.grade_reals([20, 22, 73, 24, 15, 23, 33, 13, 19], calves_got, calves_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([20, 22, 73, 34, 17, 18, 22, 2, 2], kind_got, kind_want)))
-	line!(Text.printed(Grade.grade_reals([20, 22, 73, 16, 21, 22, 13, 21, 2], order_got, order_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([20, 22, 73, 19, 31, 15, 24, 13, 2], spacing_got, spacing_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([20, 22, 73, 15, 23, 16, 18, 29, 2], alongs_got, alongs_want, 1.5)))
-	line!(Text.printed(Grade.grade_reals([20, 22, 73, 15, 24, 21, 16, 19, 19], acrosses_got, acrosses_want, 1.2)))
+	verdicts = [
+		Grade.ints({
+			name: "hd-bull  ",
+			got: bull_count_got,
+			want: bull_count_want,
+		}),
+		Grade.bools({
+			name: "hd-face  ",
+			got: bull_face_got,
+			want: bull_face_want,
+		}),
+		Grade.reals({
+			name: "hd-place ",
+			got: bull_place_got,
+			want: bull_place_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "hd-height",
+			got: height_got,
+			want: height_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "hd-bullh ",
+			got: bull_height_got,
+			want: bull_height_want,
+			tol: F64.from_bits(4427486594234968593),
+		}),
+		Grade.reals({
+			name: "hd-calves",
+			got: calves_got,
+			want: calves_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "hd-kind  ",
+			got: kind_got,
+			want: kind_want,
+		}),
+		Grade.reals({
+			name: "hd-order ",
+			got: order_got,
+			want: order_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "hd-space ",
+			got: spacing_got,
+			want: spacing_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "hd-along ",
+			got: alongs_got,
+			want: alongs_want,
+			tol: 1.5,
+		}),
+		Grade.reals({
+			name: "hd-across",
+			got: acrosses_got,
+			want: acrosses_want,
+			tol: 1.2,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

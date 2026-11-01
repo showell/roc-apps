@@ -2,12 +2,8 @@
 # and this file is edited here (safari/README.md).
 import Frame
 import Grade
-import Text
 import TreePlan
 import World
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 segs : List(World.Segment)
 segs = [World.segment_at(0), World.segment_at(1), World.segment_at(2)]
@@ -94,14 +90,59 @@ item_fwd_want = [6.0, 36.0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_ints([14, 13, 73, 31, 23, 15, 18, 14, 2], planted_got, planted_want)))
-	line!(Text.printed(Grade.grade_reals([14, 13, 73, 16, 18, 13, 2, 2, 2], one_got, one_want, 0.0001)))
-	line!(Text.printed(Grade.grade_ints([14, 13, 73, 24, 16, 23, 16, 25, 21], one_colour_got, one_colour_want)))
-	line!(Text.printed(Grade.grade_ints([14, 13, 73, 24, 25, 23, 23, 2, 2], cull_got, cull_want)))
-	line!(Text.printed(Grade.grade_ints([14, 13, 73, 19, 13, 29, 3, 2, 2], seg0_got, seg0_want)))
-	line!(Text.printed(Grade.grade_reals([14, 13, 73, 16, 21, 22, 13, 21, 2], order_got, order_want, 0.0001)))
-	line!(Text.printed(Grade.grade_reals([14, 13, 73, 20, 13, 17, 29, 20, 14], height_got, height_want, F64.from_bits(4427486594234968593))))
-	line!(Text.printed(Grade.grade_ints([14, 13, 73, 17, 14, 13, 26, 19, 2], items_got, items_want)))
-	line!(Text.printed(Grade.grade_reals([14, 13, 73, 17, 28, 27, 22, 2, 2], item_fwd_got, item_fwd_want, 0.0001)))
+	verdicts = [
+		Grade.ints({
+			name: "te-plant ",
+			got: planted_got,
+			want: planted_want,
+		}),
+		Grade.reals({
+			name: "te-one   ",
+			got: one_got,
+			want: one_want,
+			tol: 0.0001,
+		}),
+		Grade.ints({
+			name: "te-colour",
+			got: one_colour_got,
+			want: one_colour_want,
+		}),
+		Grade.ints({
+			name: "te-cull  ",
+			got: cull_got,
+			want: cull_want,
+		}),
+		Grade.ints({
+			name: "te-seg0  ",
+			got: seg0_got,
+			want: seg0_want,
+		}),
+		Grade.reals({
+			name: "te-order ",
+			got: order_got,
+			want: order_want,
+			tol: 0.0001,
+		}),
+		Grade.reals({
+			name: "te-height",
+			got: height_got,
+			want: height_want,
+			tol: F64.from_bits(4427486594234968593),
+		}),
+		Grade.ints({
+			name: "te-items ",
+			got: items_got,
+			want: items_want,
+		}),
+		Grade.reals({
+			name: "te-ifwd  ",
+			got: item_fwd_got,
+			want: item_fwd_want,
+			tol: 0.0001,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

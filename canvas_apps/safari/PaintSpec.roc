@@ -3,10 +3,6 @@
 import Camera
 import Grade
 import Paint
-import Text
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 sp : F64, F64 -> Camera.ScreenPt
 sp = |x, y| { x: x, y: y }
@@ -80,11 +76,44 @@ pts_want = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([31, 15, 73, 28, 23, 15, 14, 2, 2], flat_got, flat_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([31, 15, 73, 29, 25, 15, 21, 22, 2], count_got, count_want)))
-	line!(Text.printed(Grade.grade_ints([31, 15, 73, 14, 15, 29, 19, 2, 2], tags_got, tags_want)))
-	line!(Text.printed(Grade.grade_reals([31, 15, 73, 19, 14, 21, 13, 18, 29], strength_got, strength_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([31, 15, 73, 29, 13, 16, 26, 2, 2], geom_got, geom_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([31, 15, 73, 31, 14, 19, 2, 2, 2], pts_got, pts_want, 0.0)))
+	verdicts = [
+		Grade.reals({
+			name: "pa-flat  ",
+			got: flat_got,
+			want: flat_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "pa-guard ",
+			got: count_got,
+			want: count_want,
+		}),
+		Grade.ints({
+			name: "pa-tags  ",
+			got: tags_got,
+			want: tags_want,
+		}),
+		Grade.reals({
+			name: "pa-streng",
+			got: strength_got,
+			want: strength_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "pa-geom  ",
+			got: geom_got,
+			want: geom_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "pa-pts   ",
+			got: pts_got,
+			want: pts_want,
+			tol: 0.0,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

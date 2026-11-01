@@ -3,10 +3,6 @@
 import EmojiStills
 import Grade
 import Stills
-import Text
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 pts_in : List(Stills.StillPoly), I64 -> I64
 pts_in = |ps, i| (if (i >= U64.to_i64_wrap(List.len(ps))) { 0 } else { ({
@@ -50,8 +46,26 @@ bg_real_want = [0.0, 1.0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_ints([13, 19, 73, 14, 15, 32, 23, 13], table_got, table_want)))
-	line!(Text.printed(Grade.grade_ints([13, 19, 73, 32, 29, 17, 2, 2], bg_int_got, bg_int_want)))
-	line!(Text.printed(Grade.grade_reals([13, 19, 73, 32, 29, 21, 2, 2], bg_real_got, bg_real_want, 0.0)))
+	verdicts = [
+		Grade.ints({
+			name: "es-table",
+			got: table_got,
+			want: table_want,
+		}),
+		Grade.ints({
+			name: "es-bgi  ",
+			got: bg_int_got,
+			want: bg_int_want,
+		}),
+		Grade.reals({
+			name: "es-bgr  ",
+			got: bg_real_got,
+			want: bg_real_want,
+			tol: 0.0,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

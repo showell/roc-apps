@@ -2,13 +2,9 @@
 # and this file is edited here (safari/README.md).
 import Frame
 import Grade
-import Text
 import Tower
 import TowerPlan
 import World
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 fixed_got : List(F64)
 fixed_got = [TowerPlan.tower_beyond, TowerPlan.tower_right, TowerPlan.seg_tower_left]
@@ -114,17 +110,75 @@ items_want = [3, 0, 2, 0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([14, 23, 73, 28, 17, 36, 13, 22, 2], fixed_got, fixed_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([14, 23, 73, 24, 15, 31, 2, 2, 2], cap_got, cap_want)))
-	line!(Text.printed(Grade.grade_ints([14, 23, 73, 19, 20, 16, 21, 14, 2], short_got, short_want)))
-	line!(Text.printed(Grade.grade_bools([14, 23, 73, 26, 17, 22, 2, 2, 2], mid_flags_got, mid_flags_want)))
-	line!(Text.printed(Grade.grade_reals([14, 23, 73, 27, 20, 13, 21, 13, 2], where_got, where_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([14, 23, 73, 23, 16, 18, 29, 2, 2], long_got, long_want)))
-	line!(Text.printed(Grade.grade_reals([14, 23, 73, 23, 27, 20, 13, 21, 13], long_where_got, long_where_want, F64.from_bits(4427486594234968593))))
-	line!(Text.printed(Grade.grade_reals([14, 23, 73, 34, 13, 30, 2, 2, 2], key_got, key_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([14, 23, 73, 19, 31, 21, 13, 15, 22], spread_got, spread_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([14, 23, 73, 32, 13, 20, 17, 18, 22], behind_got, behind_want)))
-	line!(Text.printed(Grade.grade_ints([14, 23, 73, 24, 25, 23, 23, 2, 2], cull_got, cull_want)))
-	line!(Text.printed(Grade.grade_ints([14, 23, 73, 17, 14, 13, 26, 19, 2], items_got, items_want)))
+	verdicts = [
+		Grade.reals({
+			name: "tl-fixed ",
+			got: fixed_got,
+			want: fixed_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "tl-cap   ",
+			got: cap_got,
+			want: cap_want,
+		}),
+		Grade.ints({
+			name: "tl-short ",
+			got: short_got,
+			want: short_want,
+		}),
+		Grade.bools({
+			name: "tl-mid   ",
+			got: mid_flags_got,
+			want: mid_flags_want,
+		}),
+		Grade.reals({
+			name: "tl-where ",
+			got: where_got,
+			want: where_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "tl-long  ",
+			got: long_got,
+			want: long_want,
+		}),
+		Grade.reals({
+			name: "tl-lwhere",
+			got: long_where_got,
+			want: long_where_want,
+			tol: F64.from_bits(4427486594234968593),
+		}),
+		Grade.reals({
+			name: "tl-key   ",
+			got: key_got,
+			want: key_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "tl-spread",
+			got: spread_got,
+			want: spread_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "tl-behind",
+			got: behind_got,
+			want: behind_want,
+		}),
+		Grade.ints({
+			name: "tl-cull  ",
+			got: cull_got,
+			want: cull_want,
+		}),
+		Grade.ints({
+			name: "tl-items ",
+			got: items_got,
+			want: items_want,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

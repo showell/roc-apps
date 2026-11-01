@@ -3,10 +3,6 @@
 import Blit
 import Grade
 import Paint
-import Text
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 chan_got : List(I64)
 chan_got = [Blit.chan_r(8405024), Blit.chan_g(8405024), Blit.chan_b(8405024), Blit.pack_rgb(Blit.chan_r(8405024), Blit.chan_g(8405024), Blit.chan_b(8405024)), Blit.chan_r(16777215), Blit.chan_g(16777215), Blit.chan_b(16777215), Blit.chan_r(0), Blit.pack_rgb(0, 0, 0), Blit.pack_rgb(255, 255, 255)]
@@ -110,18 +106,78 @@ empty_want = [0, 0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_ints([32, 23, 73, 24, 20, 15, 18, 2, 2], chan_got, chan_want)))
-	line!(Text.printed(Grade.grade_ints([32, 23, 73, 19, 20, 15, 22, 13, 2], shade_got, shade_want)))
-	line!(Text.printed(Grade.grade_ints([32, 23, 73, 19, 14, 16, 31, 19, 2], stops_got, stops_want)))
-	line!(Text.printed(Grade.grade_ints([32, 23, 73, 38, 13, 21, 16, 2, 2], zero_got, zero_want)))
-	line!(Text.printed(Grade.grade_ints([32, 23, 73, 29, 23, 16, 27, 2, 2], glow_got, glow_want)))
-	line!(Text.printed(Grade.grade_bools([32, 23, 73, 33, 17, 19, 2, 2, 2], visible_got, visible_want)))
-	line!(Text.printed(Grade.grade_reals([32, 23, 73, 23, 17, 26, 17, 14, 19], limits_got, limits_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([32, 23, 73, 19, 31, 15, 18, 2, 2], span_got, span_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([32, 23, 73, 27, 17, 22, 13, 2, 2], wide_got, wide_want)))
-	line!(Text.printed(Grade.grade_reals([32, 23, 73, 27, 29, 13, 16, 26, 2], wide_geom_got, wide_geom_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([32, 23, 73, 28, 23, 15, 14, 2, 2], flat_got, flat_want)))
-	line!(Text.printed(Grade.grade_ints([32, 23, 73, 28, 21, 15, 26, 13, 2], frame_got, frame_want)))
-	line!(Text.printed(Grade.grade_ints([32, 23, 73, 13, 26, 31, 14, 30, 2], empty_got, empty_want)))
+	verdicts = [
+		Grade.ints({
+			name: "bl-chan  ",
+			got: chan_got,
+			want: chan_want,
+		}),
+		Grade.ints({
+			name: "bl-shade ",
+			got: shade_got,
+			want: shade_want,
+		}),
+		Grade.ints({
+			name: "bl-stops ",
+			got: stops_got,
+			want: stops_want,
+		}),
+		Grade.ints({
+			name: "bl-zero  ",
+			got: zero_got,
+			want: zero_want,
+		}),
+		Grade.ints({
+			name: "bl-glow  ",
+			got: glow_got,
+			want: glow_want,
+		}),
+		Grade.bools({
+			name: "bl-vis   ",
+			got: visible_got,
+			want: visible_want,
+		}),
+		Grade.reals({
+			name: "bl-limits",
+			got: limits_got,
+			want: limits_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "bl-span  ",
+			got: span_got,
+			want: span_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "bl-wide  ",
+			got: wide_got,
+			want: wide_want,
+		}),
+		Grade.reals({
+			name: "bl-wgeom ",
+			got: wide_geom_got,
+			want: wide_geom_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "bl-flat  ",
+			got: flat_got,
+			want: flat_want,
+		}),
+		Grade.ints({
+			name: "bl-frame ",
+			got: frame_got,
+			want: frame_want,
+		}),
+		Grade.ints({
+			name: "bl-empty ",
+			got: empty_got,
+			want: empty_want,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

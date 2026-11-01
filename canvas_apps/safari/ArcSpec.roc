@@ -4,11 +4,7 @@ import Arc
 import Bike
 import Grade
 import Pose
-import Text
 import World
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 fixed_got : List(F64)
 fixed_got = [Arc.no_frames, Arc.straighten_margin, Arc.min_forward_progress]
@@ -117,17 +113,77 @@ step_want = [0.0, 0.0, 0.0, 0.0, 0.3, 0.5, 0.55, 0.05, 0.05, 0.1]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([15, 21, 73, 28, 17, 36, 13, 22, 2], fixed_got, fixed_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([15, 21, 73, 19, 14, 13, 31, 19, 2], steps_got, steps_want)))
-	line!(Text.printed(Grade.grade_reals([15, 21, 73, 19, 14, 21, 15, 17, 29], straight_got, straight_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([15, 21, 73, 27, 17, 22, 13, 2, 2], wide_got, wide_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([15, 21, 73, 19, 14, 16, 31, 2, 2], stopped_got, stopped_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([15, 21, 73, 18, 16, 18, 13, 2, 2], none_got, none_want)))
-	line!(Text.printed(Grade.grade_bools([15, 21, 73, 24, 21, 16, 19, 19, 2], crossed_got, crossed_want)))
-	line!(Text.printed(Grade.grade_ints([15, 21, 73, 19, 17, 22, 13, 2, 2], leaving_got, leaving_want)))
-	line!(Text.printed(Grade.grade_bools([15, 21, 73, 23, 13, 28, 14, 2, 2], left_got, left_want)))
-	line!(Text.printed(Grade.grade_reals([15, 21, 73, 26, 17, 21, 21, 16, 21], mirror_got, mirror_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([15, 21, 73, 26, 28, 27, 22, 2, 2], mirror_fwd_got, mirror_fwd_want, F64.from_bits(4517329193108106637))))
-	line!(Text.printed(Grade.grade_reals([15, 21, 73, 19, 14, 13, 31, 2, 2], step_got, step_want, 0.0)))
+	verdicts = [
+		Grade.reals({
+			name: "ar-fixed ",
+			got: fixed_got,
+			want: fixed_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "ar-steps ",
+			got: steps_got,
+			want: steps_want,
+		}),
+		Grade.reals({
+			name: "ar-straig",
+			got: straight_got,
+			want: straight_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "ar-wide  ",
+			got: wide_got,
+			want: wide_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "ar-stop  ",
+			got: stopped_got,
+			want: stopped_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "ar-none  ",
+			got: none_got,
+			want: none_want,
+		}),
+		Grade.bools({
+			name: "ar-cross ",
+			got: crossed_got,
+			want: crossed_want,
+		}),
+		Grade.ints({
+			name: "ar-side  ",
+			got: leaving_got,
+			want: leaving_want,
+		}),
+		Grade.bools({
+			name: "ar-left  ",
+			got: left_got,
+			want: left_want,
+		}),
+		Grade.reals({
+			name: "ar-mirror",
+			got: mirror_got,
+			want: mirror_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "ar-mfwd  ",
+			got: mirror_fwd_got,
+			want: mirror_fwd_want,
+			tol: F64.from_bits(4517329193108106637),
+		}),
+		Grade.reals({
+			name: "ar-step  ",
+			got: step_got,
+			want: step_want,
+			tol: 0.0,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

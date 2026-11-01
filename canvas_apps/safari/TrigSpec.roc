@@ -2,11 +2,7 @@
 # and this file is edited here (safari/README.md).
 import Grade
 import ListUtils
-import Text
 import lib.Trig
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 ang : List(F64)
 ang = [0.0, 0.3, 0.7, 1.0, 1.5, 2.0, 3.0, 4.5, 6.0]
@@ -26,8 +22,28 @@ atan_want = [0.0, 0.24497866312686414, 0.4636476090008061, 0.7853981633974483, 1
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([14, 73, 19, 17, 18, 2], ListUtils.list_map(Trig.r_sin, ang), sin_want, F64.from_bits(4502148214488346440))))
-	line!(Text.printed(Grade.grade_reals([14, 73, 24, 16, 19, 2], ListUtils.list_map(Trig.r_cos, ang), cos_want, F64.from_bits(4506651814115716936))))
-	line!(Text.printed(Grade.grade_reals([14, 73, 15, 14, 15, 18], ListUtils.list_map(Trig.r_atan, atan_in), atan_want, F64.from_bits(4382569440205035030))))
+	verdicts = [
+		Grade.reals({
+			name: "t-sin ",
+			got: ListUtils.list_map(Trig.r_sin, ang),
+			want: sin_want,
+			tol: F64.from_bits(4502148214488346440),
+		}),
+		Grade.reals({
+			name: "t-cos ",
+			got: ListUtils.list_map(Trig.r_cos, ang),
+			want: cos_want,
+			tol: F64.from_bits(4506651814115716936),
+		}),
+		Grade.reals({
+			name: "t-atan",
+			got: ListUtils.list_map(Trig.r_atan, atan_in),
+			want: atan_want,
+			tol: F64.from_bits(4382569440205035030),
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

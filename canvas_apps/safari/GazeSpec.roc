@@ -3,12 +3,8 @@
 import Gaze
 import Grade
 import Pose
-import Text
 import lib.Trig
 import World
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 fixed_got : List(F64)
 fixed_got = [Gaze.gaze_look_dist, Gaze.focus_decay, Gaze.pig_gaze_speed, Gaze.pig_gaze_settle_dist, (Gaze.gaze_release_angle / Trig.deg), (Gaze.gaze_swivel_rate / Trig.deg), (Gaze.gaze_return_rate / Trig.deg), (Gaze.gaze_return_snap / Trig.deg), (Gaze.eyes_on_road_yaw / Trig.deg), Gaze.gaze_return_ease]
@@ -122,18 +118,81 @@ outlast_want = [True, True]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([29, 38, 73, 28, 17, 36, 13, 22, 2], fixed_got, fixed_want, F64.from_bits(4427486594234968593))))
-	line!(Text.printed(Grade.grade_reals([29, 38, 73, 19, 26, 16, 16, 14, 20], smooth_got, smooth_want, 0.0)))
-	line!(Text.printed(Grade.grade_bools([29, 38, 73, 23, 13, 29, 19, 2, 2], legs_got, legs_want)))
-	line!(Text.printed(Grade.grade_bools([29, 38, 73, 23, 16, 16, 34, 2, 2], looking_got, looking_want)))
-	line!(Text.printed(Grade.grade_reals([29, 38, 73, 22, 17, 19, 14, 2, 2], dist_got, dist_want, 0.0)))
-	line!(Text.printed(Grade.grade_bools([29, 38, 73, 27, 15, 18, 14, 2, 2], want_got, want_want)))
-	line!(Text.printed(Grade.grade_reals([29, 38, 73, 19, 27, 17, 33, 13, 23], swivel_got, swivel_want, 0.0)))
-	line!(Text.printed(Grade.grade_bools([29, 38, 73, 21, 13, 14, 25, 21, 18], return_got, return_want)))
-	line!(Text.printed(Grade.grade_reals([29, 38, 73, 19, 18, 15, 31, 2, 2], snap_got, snap_want, 0.0)))
-	line!(Text.printed(Grade.grade_bools([29, 38, 73, 28, 16, 24, 25, 19, 2], focus_got, focus_want)))
-	line!(Text.printed(Grade.grade_reals([29, 38, 73, 28, 13, 18, 22, 19, 2], focus_ends_got, focus_ends_want, 0.0)))
-	line!(Text.printed(Grade.grade_bools([29, 38, 73, 29, 15, 27, 34, 2, 2], gawk_got, gawk_want)))
-	line!(Text.printed(Grade.grade_bools([29, 38, 73, 16, 25, 14, 23, 19, 14], outlast_got, outlast_want)))
+	verdicts = [
+		Grade.reals({
+			name: "gz-fixed ",
+			got: fixed_got,
+			want: fixed_want,
+			tol: F64.from_bits(4427486594234968593),
+		}),
+		Grade.reals({
+			name: "gz-smooth",
+			got: smooth_got,
+			want: smooth_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "gz-legs  ",
+			got: legs_got,
+			want: legs_want,
+		}),
+		Grade.bools({
+			name: "gz-look  ",
+			got: looking_got,
+			want: looking_want,
+		}),
+		Grade.reals({
+			name: "gz-dist  ",
+			got: dist_got,
+			want: dist_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "gz-want  ",
+			got: want_got,
+			want: want_want,
+		}),
+		Grade.reals({
+			name: "gz-swivel",
+			got: swivel_got,
+			want: swivel_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "gz-return",
+			got: return_got,
+			want: return_want,
+		}),
+		Grade.reals({
+			name: "gz-snap  ",
+			got: snap_got,
+			want: snap_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "gz-focus ",
+			got: focus_got,
+			want: focus_want,
+		}),
+		Grade.reals({
+			name: "gz-fends ",
+			got: focus_ends_got,
+			want: focus_ends_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "gz-gawk  ",
+			got: gawk_got,
+			want: gawk_want,
+		}),
+		Grade.bools({
+			name: "gz-outlst",
+			got: outlast_got,
+			want: outlast_want,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

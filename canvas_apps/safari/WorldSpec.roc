@@ -1,12 +1,8 @@
 # WorldSpec -- originally emitted from Codex by rocemit; the Roc is the program now
 # and this file is edited here (safari/README.md).
 import Grade
-import Text
 import lib.Trig
 import World
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 route_shape_got : List(I64)
 route_shape_got = [U64.to_i64_wrap(List.len(World.route)), World.pig_count_to(0, 0), World.pig_count_to(3, 0), World.pig_count_to(11, 0), World.pig_count_to(12, 0), World.pig_count_to(19, 0)]
@@ -92,18 +88,81 @@ cat_want = [0.816, 0.816, 1.7, 1.7]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_ints([27, 16, 73, 19, 20, 15, 31, 13, 2], route_shape_got, route_shape_want)))
-	line!(Text.printed(Grade.grade_reals([27, 16, 73, 20, 13, 15, 22, 2, 2], headings_got, headings_want, F64.from_bits(4427486594234968593))))
-	line!(Text.printed(Grade.grade_reals([27, 16, 73, 19, 14, 13, 31, 2, 2], steps_got, steps_want, F64.from_bits(4427486594234968593))))
-	line!(Text.printed(Grade.grade_reals([27, 16, 73, 23, 13, 18, 29, 14, 20], length_got, length_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([27, 16, 73, 13, 36, 17, 14, 2, 2], exit_got, exit_want)))
-	line!(Text.printed(Grade.grade_bools([27, 16, 73, 28, 23, 15, 29, 19, 2], flags_got, flags_want)))
-	line!(Text.printed(Grade.grade_reals([27, 16, 73, 15, 18, 29, 23, 13, 2], angle_got, angle_want, F64.from_bits(4427486594234968593))))
-	line!(Text.printed(Grade.grade_reals([27, 16, 73, 24, 16, 26, 26, 17, 14], commit_got, commit_want, F64.from_bits(4487126258331716666))))
-	line!(Text.printed(Grade.grade_ints([27, 16, 73, 31, 17, 29, 19, 2, 2], pigs_got, pigs_want)))
-	line!(Text.printed(Grade.grade_bools([27, 16, 73, 22, 17, 19, 14, 21, 2], distract_got, distract_want)))
-	line!(Text.printed(Grade.grade_ints([27, 16, 73, 24, 16, 27, 19, 2, 2], cows_got, cows_want)))
-	line!(Text.printed(Grade.grade_ints([27, 16, 73, 14, 21, 13, 13, 19, 2], trees_got, trees_want)))
-	line!(Text.printed(Grade.grade_reals([27, 16, 73, 24, 15, 14, 2, 2, 2], cat_got, cat_want, 0.0)))
+	verdicts = [
+		Grade.ints({
+			name: "wo-shape ",
+			got: route_shape_got,
+			want: route_shape_want,
+		}),
+		Grade.reals({
+			name: "wo-head  ",
+			got: headings_got,
+			want: headings_want,
+			tol: F64.from_bits(4427486594234968593),
+		}),
+		Grade.reals({
+			name: "wo-step  ",
+			got: steps_got,
+			want: steps_want,
+			tol: F64.from_bits(4427486594234968593),
+		}),
+		Grade.reals({
+			name: "wo-length",
+			got: length_got,
+			want: length_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "wo-exit  ",
+			got: exit_got,
+			want: exit_want,
+		}),
+		Grade.bools({
+			name: "wo-flags ",
+			got: flags_got,
+			want: flags_want,
+		}),
+		Grade.reals({
+			name: "wo-angle ",
+			got: angle_got,
+			want: angle_want,
+			tol: F64.from_bits(4427486594234968593),
+		}),
+		Grade.reals({
+			name: "wo-commit",
+			got: commit_got,
+			want: commit_want,
+			tol: F64.from_bits(4487126258331716666),
+		}),
+		Grade.ints({
+			name: "wo-pigs  ",
+			got: pigs_got,
+			want: pigs_want,
+		}),
+		Grade.bools({
+			name: "wo-distr ",
+			got: distract_got,
+			want: distract_want,
+		}),
+		Grade.ints({
+			name: "wo-cows  ",
+			got: cows_got,
+			want: cows_want,
+		}),
+		Grade.ints({
+			name: "wo-trees ",
+			got: trees_got,
+			want: trees_want,
+		}),
+		Grade.reals({
+			name: "wo-cat   ",
+			got: cat_got,
+			want: cat_want,
+			tol: 0.0,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

@@ -3,10 +3,6 @@
 import Billboards
 import Grade
 import ListUtils
-import Text
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 fwd_in : List(F64)
 fwd_in = [(-5.0), 0.3, 0.4, 0.5, 300.0, 342.0, 343.0, 400.0, 10.0, 50.0]
@@ -82,12 +78,47 @@ lam_1 = |p| p.size_culled
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_bools([32, 32, 73, 34, 13, 31, 14, 2], kept_got, kept_want)))
-	line!(Text.printed(Grade.grade_bools([32, 32, 73, 24, 25, 23, 23, 13, 22], culled_got, culled_want)))
-	line!(Text.printed(Grade.grade_reals([32, 32, 73, 24, 15, 21, 21, 30], carried_real_got, carried_real_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([32, 32, 73, 24, 31, 2, 2, 2], carried_int_got, carried_int_want)))
-	line!(Text.printed(Grade.grade_bools([32, 32, 73, 28, 15, 24, 13, 2], carried_bool_got, carried_bool_want)))
-	line!(Text.printed(Grade.grade_ints([32, 32, 73, 24, 16, 25, 18, 14], harvest_got, harvest_want)))
-	line!(Text.printed(Grade.grade_reals([32, 32, 73, 28, 23, 16, 16, 21], floor_got, floor_want, 0.0)))
+	verdicts = [
+		Grade.bools({
+			name: "bb-kept ",
+			got: kept_got,
+			want: kept_want,
+		}),
+		Grade.bools({
+			name: "bb-culled",
+			got: culled_got,
+			want: culled_want,
+		}),
+		Grade.reals({
+			name: "bb-carry",
+			got: carried_real_got,
+			want: carried_real_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "bb-cp   ",
+			got: carried_int_got,
+			want: carried_int_want,
+		}),
+		Grade.bools({
+			name: "bb-face ",
+			got: carried_bool_got,
+			want: carried_bool_want,
+		}),
+		Grade.ints({
+			name: "bb-count",
+			got: harvest_got,
+			want: harvest_want,
+		}),
+		Grade.reals({
+			name: "bb-floor",
+			got: floor_got,
+			want: floor_want,
+			tol: 0.0,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

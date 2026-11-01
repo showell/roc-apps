@@ -2,11 +2,7 @@
 # and this file is edited here (safari/README.md).
 import Geom
 import Grade
-import Text
 import Tower
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 dims_got : List(F64)
 dims_got = [Tower.tower_height, Tower.tower_half, Tower.stage_height, Tower.rod_half, Tower.rod_w, Tower.earth_radius, Tower.beacon_radius, Tower.beacon_period]
@@ -127,19 +123,92 @@ cut_want = [4.0, 0.4, 20.0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([14, 27, 73, 22, 17, 26, 19, 2, 2], dims_got, dims_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([14, 27, 73, 28, 17, 36, 13, 22, 2], fixed_got, fixed_want)))
-	line!(Text.printed(Grade.grade_reals([14, 27, 73, 16, 28, 28, 19, 13, 14], offsets_got, offsets_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([14, 27, 73, 32, 21, 17, 29, 20, 14], bright_got, bright_want, F64.from_bits(4502148214488346440))))
-	line!(Text.printed(Grade.grade_reals([14, 27, 73, 24, 16, 21, 18, 13, 21], corner_got, corner_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([14, 27, 73, 15, 36, 2, 2, 2, 2], ax_got, ax_want, F64.from_bits(4517329193108106637))))
-	line!(Text.printed(Grade.grade_reals([14, 27, 73, 14, 15, 31, 13, 21, 2], taper_got, taper_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([14, 27, 73, 22, 21, 16, 31, 2, 2], drop_got, drop_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([14, 27, 73, 23, 13, 21, 31, 2, 2], lerp_got, lerp_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([14, 27, 73, 32, 15, 21, 2, 2, 2], bar_got, bar_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([14, 27, 73, 22, 13, 29, 13, 18, 2], degenerate_got, degenerate_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([14, 27, 73, 27, 17, 22, 14, 20, 2], width_got, width_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([14, 27, 73, 24, 23, 17, 31, 2, 2], clip_count_got, clip_count_want)))
-	line!(Text.printed(Grade.grade_reals([14, 27, 73, 24, 25, 14, 2, 2, 2], cut_got, cut_want, 0.0)))
+	verdicts = [
+		Grade.reals({
+			name: "tw-dims  ",
+			got: dims_got,
+			want: dims_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "tw-fixed ",
+			got: fixed_got,
+			want: fixed_want,
+		}),
+		Grade.reals({
+			name: "tw-offset",
+			got: offsets_got,
+			want: offsets_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "tw-bright",
+			got: bright_got,
+			want: bright_want,
+			tol: F64.from_bits(4502148214488346440),
+		}),
+		Grade.reals({
+			name: "tw-corner",
+			got: corner_got,
+			want: corner_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "tw-ax    ",
+			got: ax_got,
+			want: ax_want,
+			tol: F64.from_bits(4517329193108106637),
+		}),
+		Grade.reals({
+			name: "tw-taper ",
+			got: taper_got,
+			want: taper_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "tw-drop  ",
+			got: drop_got,
+			want: drop_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "tw-lerp  ",
+			got: lerp_got,
+			want: lerp_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "tw-bar   ",
+			got: bar_got,
+			want: bar_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "tw-degen ",
+			got: degenerate_got,
+			want: degenerate_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "tw-width ",
+			got: width_got,
+			want: width_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "tw-clip  ",
+			got: clip_count_got,
+			want: clip_count_want,
+		}),
+		Grade.reals({
+			name: "tw-cut   ",
+			got: cut_got,
+			want: cut_want,
+			tol: 0.0,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

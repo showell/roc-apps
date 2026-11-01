@@ -3,10 +3,6 @@
 import Frame
 import Grade
 import Joint
-import Text
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 outer_got : List(F64)
 outer_got = [Joint.outer_cu(True, 4.0), Joint.outer_cu(False, 4.0), Joint.outer_cu(True, 7.5), Joint.outer_cu(False, 7.5)]
@@ -39,7 +35,22 @@ apex_want = [17.297297467543466, (-100.43071597950589), 21.403438709482494, (-10
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([35, 14, 73, 16, 25, 14, 13, 21], outer_got, outer_want, 0.0)))
-	line!(Text.printed(Grade.grade_rel([35, 14, 73, 15, 31, 13, 36, 2], apex_got, apex_want, F64.from_bits(4502148214488346440))))
+	verdicts = [
+		Grade.reals({
+			name: "jt-outer",
+			got: outer_got,
+			want: outer_want,
+			tol: 0.0,
+		}),
+		Grade.rel({
+			name: "jt-apex ",
+			got: apex_got,
+			want: apex_want,
+			tol: F64.from_bits(4502148214488346440),
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

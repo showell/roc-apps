@@ -2,10 +2,6 @@
 # and this file is edited here (safari/README.md).
 import Geom
 import Grade
-import Text
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 gd_right : List(F64)
 gd_right = [0.0, 3.0, (-5.0), 12.5]
@@ -73,9 +69,34 @@ cn_walk_acc = |vs, i, acc| (if (i >= U64.to_i64_wrap(List.len(vs))) { acc } else
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([29, 73, 22, 21, 16, 31, 2], gd_walk(0), gd_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([29, 73, 21, 17, 22, 13, 21], tr_walk(0), tr_want, F64.from_bits(4517329193108106637))))
-	line!(Text.printed(Grade.grade_reals([29, 73, 26, 13, 13, 14, 2], lm_got, lm_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([29, 73, 24, 23, 17, 31, 2], cn_walk(Geom.clip_near(poly, 0.4), 0), cn_want, 0.0)))
+	verdicts = [
+		Grade.reals({
+			name: "g-drop ",
+			got: gd_walk(0),
+			want: gd_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "g-rider",
+			got: tr_walk(0),
+			want: tr_want,
+			tol: F64.from_bits(4517329193108106637),
+		}),
+		Grade.reals({
+			name: "g-meet ",
+			got: lm_got,
+			want: lm_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "g-clip ",
+			got: cn_walk(Geom.clip_near(poly, 0.4), 0),
+			want: cn_want,
+			tol: 0.0,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

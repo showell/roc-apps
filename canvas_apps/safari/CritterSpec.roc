@@ -5,10 +5,6 @@ import Critter
 import EmojiStills
 import Grade
 import Stills
-import Text
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 facing_got : List(F64)
 facing_got = [Critter.facing(True), Critter.facing(False)]
@@ -103,14 +99,60 @@ unknown_want = [0, 0, 6]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([24, 21, 73, 28, 15, 24, 17, 18, 29], facing_got, facing_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([24, 21, 73, 31, 16, 17, 18, 14, 2], point_got, point_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([24, 21, 73, 33, 13, 24, 14, 16, 21], vector_got, vector_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([24, 21, 73, 15, 18, 24, 20, 16, 21], anchor_got, anchor_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([24, 21, 73, 26, 15, 31, 31, 13, 22], mapped_got, mapped_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([24, 21, 73, 29, 25, 15, 21, 22, 2], guard_got, guard_want)))
-	line!(Text.printed(Grade.grade_ints([24, 21, 73, 19, 16, 23, 17, 22, 2], solid_got, solid_want)))
-	line!(Text.printed(Grade.grade_ints([24, 21, 73, 19, 17, 38, 13, 2, 2], size_got, size_want)))
-	line!(Text.printed(Grade.grade_ints([24, 21, 73, 25, 18, 34, 18, 27, 18], unknown_got, unknown_want)))
+	verdicts = [
+		Grade.reals({
+			name: "cr-facing",
+			got: facing_got,
+			want: facing_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "cr-point ",
+			got: point_got,
+			want: point_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "cr-vector",
+			got: vector_got,
+			want: vector_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "cr-anchor",
+			got: anchor_got,
+			want: anchor_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "cr-mapped",
+			got: mapped_got,
+			want: mapped_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "cr-guard ",
+			got: guard_got,
+			want: guard_want,
+		}),
+		Grade.ints({
+			name: "cr-solid ",
+			got: solid_got,
+			want: solid_want,
+		}),
+		Grade.ints({
+			name: "cr-size  ",
+			got: size_got,
+			want: size_want,
+		}),
+		Grade.ints({
+			name: "cr-unknwn",
+			got: unknown_got,
+			want: unknown_want,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

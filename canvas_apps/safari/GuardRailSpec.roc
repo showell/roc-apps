@@ -3,10 +3,6 @@
 import Geom
 import Grade
 import GuardRail
-import Text
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 dims_got : List(F64)
 dims_got = [GuardRail.rail_height, GuardRail.rail_thickness, GuardRail.rail_post_width, GuardRail.bar_top, GuardRail.bar_bot, GuardRail.half_post]
@@ -98,15 +94,66 @@ short_want = [0, 0, 3, 0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_reals([29, 25, 73, 22, 17, 26, 19, 2, 2], dims_got, dims_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([29, 25, 73, 28, 17, 36, 13, 22, 2], fixed_got, fixed_want)))
-	line!(Text.printed(Grade.grade_ints([29, 25, 73, 19, 20, 15, 31, 13, 2], shape_got, shape_want)))
-	line!(Text.printed(Grade.grade_ints([29, 25, 73, 24, 16, 23, 16, 25, 21], colour_got, colour_want)))
-	line!(Text.printed(Grade.grade_reals([29, 25, 73, 28, 27, 22, 2, 2, 2], fwd_got, fwd_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([29, 25, 73, 32, 15, 21, 2, 2, 2], bar_got, bar_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([29, 25, 73, 31, 16, 19, 14, 2, 2], post_got, post_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([29, 25, 73, 22, 17, 15, 29, 2, 2], diag_got, diag_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([29, 25, 73, 22, 16, 25, 32, 23, 13], doubled_got, doubled_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([29, 25, 73, 19, 20, 16, 21, 14, 2], short_got, short_want)))
+	verdicts = [
+		Grade.reals({
+			name: "gu-dims  ",
+			got: dims_got,
+			want: dims_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "gu-fixed ",
+			got: fixed_got,
+			want: fixed_want,
+		}),
+		Grade.ints({
+			name: "gu-shape ",
+			got: shape_got,
+			want: shape_want,
+		}),
+		Grade.ints({
+			name: "gu-colour",
+			got: colour_got,
+			want: colour_want,
+		}),
+		Grade.reals({
+			name: "gu-fwd   ",
+			got: fwd_got,
+			want: fwd_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "gu-bar   ",
+			got: bar_got,
+			want: bar_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "gu-post  ",
+			got: post_got,
+			want: post_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "gu-diag  ",
+			got: diag_got,
+			want: diag_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "gu-double",
+			got: doubled_got,
+			want: doubled_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "gu-short ",
+			got: short_got,
+			want: short_want,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

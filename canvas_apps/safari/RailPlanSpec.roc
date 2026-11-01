@@ -5,11 +5,7 @@ import Geom
 import Grade
 import GuardRail
 import RailPlan
-import Text
 import World
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 steps_got : List(I64)
 steps_got = [RailPlan.leg_steps(0.0), RailPlan.leg_steps(0.4), RailPlan.leg_steps(0.5), RailPlan.leg_steps(1.0), RailPlan.leg_steps(1.4), RailPlan.leg_steps(1.5), RailPlan.leg_steps(2.5), RailPlan.leg_steps(10.0), RailPlan.leg_steps(49.6), RailPlan.leg_steps(50.0)]
@@ -83,12 +79,50 @@ runup_want = [490.0, 500.0]
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_ints([21, 31, 73, 19, 14, 13, 31, 19, 2], steps_got, steps_want)))
-	line!(Text.printed(Grade.grade_reals([21, 31, 73, 19, 14, 21, 15, 17, 29], straight_got, straight_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([21, 31, 73, 22, 17, 15, 29, 2, 2], diagonal_got, diagonal_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([21, 31, 73, 22, 13, 29, 13, 18, 2], degenerate_got, degenerate_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([21, 31, 73, 38, 13, 21, 16, 2, 2], from_zero_got, from_zero_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([21, 31, 73, 21, 25, 18, 16, 25, 14], runout_got, runout_want)))
-	line!(Text.printed(Grade.grade_reals([21, 31, 73, 21, 25, 18, 25, 31, 2], runup_got, runup_want, 0.0001)))
+	verdicts = [
+		Grade.ints({
+			name: "rp-steps ",
+			got: steps_got,
+			want: steps_want,
+		}),
+		Grade.reals({
+			name: "rp-straig",
+			got: straight_got,
+			want: straight_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "rp-diag  ",
+			got: diagonal_got,
+			want: diagonal_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "rp-degen ",
+			got: degenerate_got,
+			want: degenerate_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "rp-zero  ",
+			got: from_zero_got,
+			want: from_zero_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "rp-runout",
+			got: runout_got,
+			want: runout_want,
+		}),
+		Grade.reals({
+			name: "rp-runup ",
+			got: runup_got,
+			want: runup_want,
+			tol: 0.0001,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }

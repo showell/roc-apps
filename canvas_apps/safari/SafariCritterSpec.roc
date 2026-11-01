@@ -4,10 +4,6 @@ import Grade
 import ListUtils
 import SafariCritter
 import Scenery
-import Text
-
-# The Echo platform's echo! writes no newline; a Codex line is one.
-line! = |s| echo!(Str.concat(s, "\n"))
 
 present_got : List(Bool)
 present_got = [SafariCritter.species_of(Elephant).present, SafariCritter.species_of(Giraffe).present, SafariCritter.species_of(Zebra).present, SafariCritter.species_of(Rhino).present, SafariCritter.species_of(DuckPond).present, SafariCritter.species_of(NoCreature).present]
@@ -102,15 +98,65 @@ lam_4 = |c| c.face_right
 # --- Entry ---
 
 main! = |_args| {
-	line!(Text.printed(Grade.grade_bools([19, 34, 73, 31, 21, 13, 19, 13, 18, 14], present_got, present_want)))
-	line!(Text.printed(Grade.grade_ints([19, 34, 73, 24, 31, 2, 2, 2, 2], cp_got, cp_want)))
-	line!(Text.printed(Grade.grade_reals([19, 34, 73, 20, 13, 17, 29, 20, 14], height_got, height_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([19, 34, 73, 22, 17, 26, 19, 2, 2], dims_got, dims_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([19, 34, 73, 15, 24, 21, 16, 19, 19], across_got, across_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([19, 34, 73, 15, 23, 16, 18, 29, 2], along_got, along_want, 0.0)))
-	line!(Text.printed(Grade.grade_reals([19, 34, 73, 24, 20, 2, 2, 2, 2], ch_got, ch_want, 0.0)))
-	line!(Text.printed(Grade.grade_ints([19, 34, 73, 24, 24, 31, 2, 2, 2], ccp_got, ccp_want)))
-	line!(Text.printed(Grade.grade_bools([19, 34, 73, 28, 15, 24, 13, 2, 2], face_got, face_want)))
-	line!(Text.printed(Grade.grade_ints([19, 34, 73, 24, 16, 25, 18, 14, 2], count_got, count_want)))
+	verdicts = [
+		Grade.bools({
+			name: "sk-present",
+			got: present_got,
+			want: present_want,
+		}),
+		Grade.ints({
+			name: "sk-cp    ",
+			got: cp_got,
+			want: cp_want,
+		}),
+		Grade.reals({
+			name: "sk-height",
+			got: height_got,
+			want: height_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "sk-dims  ",
+			got: dims_got,
+			want: dims_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "sk-across",
+			got: across_got,
+			want: across_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "sk-along ",
+			got: along_got,
+			want: along_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "sk-ch    ",
+			got: ch_got,
+			want: ch_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "sk-ccp   ",
+			got: ccp_got,
+			want: ccp_want,
+		}),
+		Grade.bools({
+			name: "sk-face  ",
+			got: face_got,
+			want: face_want,
+		}),
+		Grade.ints({
+			name: "sk-count ",
+			got: count_got,
+			want: count_want,
+		}),
+	]
+	for verdict in verdicts {
+		echo!(verdict)
+	}
 	Ok({})
 }
