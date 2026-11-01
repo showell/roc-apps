@@ -45,9 +45,15 @@ Game :: [].{
 			ActivateCard(idx) => save_prior(Player.update_active_player(|p| Player.activate_card(idx, p), game))
 			DiscardCard(idx) => {
 				discarded = Player.update_active_player(|p| Player.discard_card(idx, p), game)
-				save_prior(Player.ensure_hand_not_empty(Move.maybe_get_out_via_discard(discarded)))
+				got_out = Move.maybe_get_out_via_discard(discarded)
+				refilled = Player.ensure_hand_not_empty(got_out)
+				save_prior(refilled)
 			}
-			CoverCard(idx) => save_prior(Player.ensure_hand_not_empty(Player.update_active_player(|p| Player.cover_card(idx, p), game)))
+			CoverCard(idx) => {
+				covered = Player.update_active_player(|p| Player.cover_card(idx, p), game)
+				refilled = Player.ensure_hand_not_empty(covered)
+				save_prior(refilled)
+			}
 			RotateBoard => {
 				rotated = rotate_board(game)
 				(History.reset(rotated), rotated)
