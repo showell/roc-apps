@@ -202,7 +202,7 @@ uses. roc-lang/roc's own releases page is the OLD compiler.
 **The page builds pin one nightly: `roc-nightly.txt`** (the directory name
 under `~/build/roc-nightly/`). `fasttrack/` and `canvas_apps/` read it, both
 ends of a canvas app included, and the Windows and macOS workflows name the
-same tag. To move: unpack the new nightly as above, change the file and the
+same tag. BASIC has a pin of its own, `basic/roc-version`, at `~/tools/roc-<pin>/roc`. To move: unpack the new nightly as above, change the file and the
 two workflows, and rebuild every page -- each build checks itself and
 replaces its page only if everything passed.
 

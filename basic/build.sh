@@ -7,9 +7,8 @@
 # Lands at ~/build/roc-apps/next/basic/, served on :9210 by roc-site.
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# **NOT ../roc-nightly.txt**: BasicApp crashes every nightly after 09-11
-# (findings/basic-compiler-crash), so BASIC builds on the last one that works.
-ROC="${ROC:-$HOME/build/roc-nightly/roc_nightly-linux_x86_64-2026-09-11-793f9d8/roc}"
+BASIC_HERE="$HERE"
+. "$HERE/pinned-roc.sh"
 ZIG="${ZIG:-$HOME/zig-0.16.0/zig}"
 NEXT="$HOME/build/roc-apps/next/basic"
 mkdir -p "$NEXT"

@@ -12,7 +12,8 @@
 # basic/check-fast.sh read it.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROC="${ROC:-$HOME/build/roc-nightly/roc}"
+BASIC_HERE="$HERE"
+. "$HERE/pinned-roc.sh"
 OUT="$HOME/build/roc-apps/gen/basic"
 mkdir -p "$OUT/tmp"
 # The Roc compiler keeps its build files under TMPDIR; a build of its own
