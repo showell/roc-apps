@@ -99,10 +99,10 @@ RocBird :: [].{
 
 	# **THE DEPTH IS THE TREE'S**, which is the whole point of collecting them:
 	# how high the bird sits does not change how far away it is.
-	bird_items : List(RocBird.Bird) -> List(DepthSort.Item)
+	bird_items : List(RocBird.Bird) -> List(DepthSort.DepthKey)
 	bird_items = |bs| bird_items_from(bs, 0)
 
-	bird_items_from : List(RocBird.Bird), I64 -> List(DepthSort.Item)
+	bird_items_from : List(RocBird.Bird), I64 -> List(DepthSort.DepthKey)
 	bird_items_from = |bs, i|
 		if i >= U64.to_i64_wrap(List.len(bs)) { [] } else {
 			List.concat(

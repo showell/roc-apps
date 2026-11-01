@@ -58,7 +58,7 @@ ItemDraw :: [].{
 	draw_one_truck : List(World.Segment), List(I64), Frame.Pose, TruckPlan.TruckAt, Bool, F64, F64 -> List(Paint.DrawCmd)
 	draw_one_truck = |w, ch, pose, tk, braking, cf, step| TruckDraw.truck_draw_body(w, ch, pose, tk.d, tk.along, ((List.get(w, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(tk.d)) ?? crash("list-at out of range")))) ?? crash("list-at out of range")).width / 2.0), braking, Mountains.sun_behind_mountains(step), cf, Lens.camera_w)
 
-	draw_item : List(World.Segment), List(I64), Frame.Pose, Render.Collected, DepthSort.Item, Bool, F64, F64 -> List(Paint.DrawCmd)
+	draw_item : List(World.Segment), List(I64), Frame.Pose, Render.Collected, DepthSort.DepthKey, Bool, F64, F64 -> List(Paint.DrawCmd)
 	draw_item = |w, ch, pose, c, it, braking, cf, step| (match it.kind {
 		KTree => draw_one_tree(c.trees, it.i, cf)
 		KTower => draw_one_tower(w, ch, pose, (List.get(c.towers, I64.to_u64_wrap(it.i)) ?? crash("list-at out of range")), cf, step)

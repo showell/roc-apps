@@ -78,9 +78,9 @@ RailPlan :: [].{
 	all_rails = |segs, ch, pose, seg_idx| (if (seg_idx > 0) { List.concat(walk_rails(segs, ch, pose), behind_rails(segs, ch, pose, (seg_idx - 1))) } else { walk_rails(segs, ch, pose) })
 
 	# rail_items builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	rail_items : List(GuardRail.RailPoly) -> List(DepthSort.Item)
+	rail_items : List(GuardRail.RailPoly) -> List(DepthSort.DepthKey)
 	rail_items = |rs| rail_items_acc(rs, 0, [])
 
-	rail_items_acc : List(GuardRail.RailPoly), I64, List(DepthSort.Item) -> List(DepthSort.Item)
+	rail_items_acc : List(GuardRail.RailPoly), I64, List(DepthSort.DepthKey) -> List(DepthSort.DepthKey)
 	rail_items_acc = |rs, i, acc| (if (i >= U64.to_i64_wrap(List.len(rs))) { acc } else { rail_items_acc(rs, (i + 1), List.append(acc, { fwd: (List.get(rs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd, kind: KRail, i: i })) })
 }

@@ -3,21 +3,21 @@
 import DepthSort
 import Grade
 
-mixed : List(DepthSort.Item)
+mixed : List(DepthSort.DepthKey)
 mixed = [{ fwd: 30.0, kind: KTree, i: 0 }, { fwd: 10.0, kind: KCow, i: 1 }, { fwd: 30.0, kind: KRail, i: 2 }, { fwd: 50.0, kind: KTower, i: 3 }, { fwd: 10.0, kind: KCat, i: 4 }, { fwd: 20.0, kind: KTruck, i: 5 }, { fwd: 30.0, kind: KTree, i: 6 }, { fwd: 40.0, kind: KRail, i: 7 }, { fwd: 10.0, kind: KCow, i: 8 }, { fwd: 5.0, kind: KCat, i: 9 }]
 
 # fwds builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-fwds : List(DepthSort.Item), I64 -> List(F64)
+fwds : List(DepthSort.DepthKey), I64 -> List(F64)
 fwds = |xs, i| fwds_acc(xs, i, [])
 
-fwds_acc : List(DepthSort.Item), I64, List(F64) -> List(F64)
+fwds_acc : List(DepthSort.DepthKey), I64, List(F64) -> List(F64)
 fwds_acc = |xs, i, acc| (if (i >= U64.to_i64_wrap(List.len(xs))) { acc } else { fwds_acc(xs, (i + 1), List.append(acc, (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd)) })
 
 # idxs builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-idxs : List(DepthSort.Item), I64 -> List(I64)
+idxs : List(DepthSort.DepthKey), I64 -> List(I64)
 idxs = |xs, i| idxs_acc(xs, i, [])
 
-idxs_acc : List(DepthSort.Item), I64, List(I64) -> List(I64)
+idxs_acc : List(DepthSort.DepthKey), I64, List(I64) -> List(I64)
 idxs_acc = |xs, i, acc| (if (i >= U64.to_i64_wrap(List.len(xs))) { acc } else { idxs_acc(xs, (i + 1), List.append(acc, (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).i)) })
 
 kind_code : DepthSort.Kind -> I64
@@ -31,10 +31,10 @@ kind_code = |k| (match k {
 })
 
 # kinds builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-kinds : List(DepthSort.Item), I64 -> List(I64)
+kinds : List(DepthSort.DepthKey), I64 -> List(I64)
 kinds = |xs, i| kinds_acc(xs, i, [])
 
-kinds_acc : List(DepthSort.Item), I64, List(I64) -> List(I64)
+kinds_acc : List(DepthSort.DepthKey), I64, List(I64) -> List(I64)
 kinds_acc = |xs, i, acc| (if (i >= U64.to_i64_wrap(List.len(xs))) { acc } else { kinds_acc(xs, (i + 1), List.append(acc, kind_code((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).kind))) })
 
 order_want : List(F64)
@@ -46,16 +46,16 @@ stable_want = [3, 7, 0, 2, 6, 5, 1, 4, 8, 9]
 kind_want : List(I64)
 kind_want = [1, 5, 0, 5, 0, 4, 2, 3, 2, 3]
 
-tie_near : List(DepthSort.Item)
+tie_near : List(DepthSort.DepthKey)
 tie_near = [{ fwd: 100.0, kind: KTree, i: 0 }, { fwd: 100.000004, kind: KTree, i: 1 }]
 
-tie_far : List(DepthSort.Item)
+tie_far : List(DepthSort.DepthKey)
 tie_far = [{ fwd: 100.0, kind: KTree, i: 0 }, { fwd: 100.00001, kind: KTree, i: 1 }]
 
-zero_near : List(DepthSort.Item)
+zero_near : List(DepthSort.DepthKey)
 zero_near = [{ fwd: 0.5, kind: KTree, i: 0 }, { fwd: 0.50000004, kind: KTree, i: 1 }]
 
-zero_far : List(DepthSort.Item)
+zero_far : List(DepthSort.DepthKey)
 zero_far = [{ fwd: 0.5, kind: KTree, i: 0 }, { fwd: 0.5000001, kind: KTree, i: 1 }]
 
 slack_got : List(I64)

@@ -23,6 +23,6 @@ TruckPlan :: [].{
 	truck_at : List(World.Segment), List(I64), Frame.Pose, F64, F64 -> TruckPlan.TruckAt
 	truck_at = |segs, ch, pose, along, lead| (if (lead > 0.0) { truck_step(segs, ch, pose, (along + lead), 0) } else { no_truck })
 
-	truck_items : TruckPlan.TruckAt -> List(DepthSort.Item)
+	truck_items : TruckPlan.TruckAt -> List(DepthSort.DepthKey)
 	truck_items = |t| (if t.present { [{ fwd: t.fwd, kind: KTruck, i: 0 }] } else { [] })
 }

@@ -59,9 +59,9 @@ TowerPlan :: [].{
 	max_vis_towers = 16
 
 	# tower_items builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	tower_items : List(TowerPlan.TowerItem) -> List(DepthSort.Item)
+	tower_items : List(TowerPlan.TowerItem) -> List(DepthSort.DepthKey)
 	tower_items = |ts| tower_items_acc(ts, 0, [])
 
-	tower_items_acc : List(TowerPlan.TowerItem), I64, List(DepthSort.Item) -> List(DepthSort.Item)
+	tower_items_acc : List(TowerPlan.TowerItem), I64, List(DepthSort.DepthKey) -> List(DepthSort.DepthKey)
 	tower_items_acc = |ts, i, acc| (if (i >= U64.to_i64_wrap(List.len(ts))) { acc } else { tower_items_acc(ts, (i + 1), List.append(acc, { fwd: (List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd, kind: KTower, i: i })) })
 }

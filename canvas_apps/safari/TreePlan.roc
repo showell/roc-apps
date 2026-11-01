@@ -34,9 +34,9 @@ TreePlan :: [].{
 	max_vis_trees = 640
 
 	# tree_items builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	tree_items : List(TreePlan.TreeItem) -> List(DepthSort.Item)
+	tree_items : List(TreePlan.TreeItem) -> List(DepthSort.DepthKey)
 	tree_items = |ts| tree_items_acc(ts, 0, [])
 
-	tree_items_acc : List(TreePlan.TreeItem), I64, List(DepthSort.Item) -> List(DepthSort.Item)
+	tree_items_acc : List(TreePlan.TreeItem), I64, List(DepthSort.DepthKey) -> List(DepthSort.DepthKey)
 	tree_items_acc = |ts, i, acc| (if (i >= U64.to_i64_wrap(List.len(ts))) { acc } else { tree_items_acc(ts, (i + 1), List.append(acc, { fwd: (List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd, kind: KTree, i: i })) })
 }

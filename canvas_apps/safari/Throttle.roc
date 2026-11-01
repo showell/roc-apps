@@ -37,11 +37,11 @@ Throttle :: [].{
 	shoulder_brake : Pose.RiderState, World.Segment, F64 -> F64
 	shoulder_brake = |state, seg, a| ({
 		sim = Arc.project_arc(state, seg)
-		(if stayed_on_road(sim) { a } else { shoulder_brake_at(state, sim, a) })
+		(if has_stayed_on_road(sim) { a } else { shoulder_brake_at(state, sim, a) })
 	})
 
-	stayed_on_road : Arc.ArcOutcome -> Bool
-	stayed_on_road = |sim| (match sim.shoulder {
+	has_stayed_on_road : Arc.ArcOutcome -> Bool
+	has_stayed_on_road = |sim| (match sim.shoulder {
 		ShoulderNone => True
 		ShoulderLeft => False
 		ShoulderRight => False

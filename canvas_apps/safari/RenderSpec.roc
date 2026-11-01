@@ -65,7 +65,7 @@ cap_values_got = [TreePlan.max_vis_trees, TowerPlan.max_vis_towers, CatPlan.max_
 cap_values_want : List(I64)
 cap_values_want = [640, 16, 8]
 
-descending : List(DepthSort.Item), I64 -> Bool
+descending : List(DepthSort.DepthKey), I64 -> Bool
 descending = |xs, i| (if ((i + 1) >= U64.to_i64_wrap(List.len(xs))) { True } else { (if DepthSort.deeper_than((List.get(xs, I64.to_u64_wrap((i + 1))) ?? crash("list-at out of range")).fwd, (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd) { False } else { descending(xs, (i + 1)) }) })
 
 sorted_got : List(Bool)

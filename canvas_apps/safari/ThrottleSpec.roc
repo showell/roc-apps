@@ -48,7 +48,7 @@ outcome : Arc.Shoulder -> Arc.ArcOutcome
 outcome = |sh| { shoulder: sh, forward: 10.0, crossed: False, end_across: 0.0, frames: 40.0 }
 
 road_got : List(Bool)
-road_got = [Throttle.stayed_on_road(outcome(ShoulderNone)), Throttle.stayed_on_road(outcome(ShoulderLeft)), Throttle.stayed_on_road(outcome(ShoulderRight))]
+road_got = [Throttle.has_stayed_on_road(outcome(ShoulderNone)), Throttle.has_stayed_on_road(outcome(ShoulderLeft)), Throttle.has_stayed_on_road(outcome(ShoulderRight))]
 
 road_want : List(Bool)
 road_want = [True, False, False]

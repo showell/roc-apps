@@ -15,7 +15,7 @@ import RocBird
 import World
 
 Render :: [].{
-	Collected : { trees : List(TreePlan.TreeItem), towers : List(TowerPlan.TowerItem), cows : List(Billboards.Billboard), cats : List(CatPlan.CatItem), rails : List(GuardRail.RailPoly), truck : TruckPlan.TruckAt, order : List(DepthSort.Item), cull_seg : I64, cull_size : I64, birds : List(RocBird.Bird) }
+	Collected : { trees : List(TreePlan.TreeItem), towers : List(TowerPlan.TowerItem), cows : List(Billboards.Billboard), cats : List(CatPlan.CatItem), rails : List(GuardRail.RailPoly), truck : TruckPlan.TruckAt, order : List(DepthSort.DepthKey), cull_seg : I64, cull_size : I64, birds : List(RocBird.Bird) }
 
 	seg_cull_count : List(World.Segment), List(I64), I64 -> I64
 	seg_cull_count = |segs, ch, d| ({

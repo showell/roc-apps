@@ -102,9 +102,9 @@ CritterPlan :: [].{
 	max_vis_critters = 320
 
 	# cow_items builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	cow_items : List(Billboards.Billboard) -> List(DepthSort.Item)
+	cow_items : List(Billboards.Billboard) -> List(DepthSort.DepthKey)
 	cow_items = |bs| cow_items_acc(bs, 0, [])
 
-	cow_items_acc : List(Billboards.Billboard), I64, List(DepthSort.Item) -> List(DepthSort.Item)
+	cow_items_acc : List(Billboards.Billboard), I64, List(DepthSort.DepthKey) -> List(DepthSort.DepthKey)
 	cow_items_acc = |bs, i, acc| (if (i >= U64.to_i64_wrap(List.len(bs))) { acc } else { cow_items_acc(bs, (i + 1), List.append(acc, { fwd: (List.get(bs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd, kind: KCow, i: i })) })
 }
