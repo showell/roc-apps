@@ -65,10 +65,7 @@ Geom :: [].{
 	both_sides : Bool, Bool -> Bool
 	both_sides = |a_in, b_in| (if a_in { b_in } else { (if b_in { False } else { True }) })
 
-	# clip_near_edge builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	clip_near_edge : List(Geom.Vec3), F64, I64 -> List(Geom.Vec3)
-	clip_near_edge = |poly, near_, i| clip_near_edge_acc(poly, near_, i, [])
-
+	# clip_near_edge_acc is an accumulator loop, which is linear where appending a recursive call is quadratic.
 	clip_near_edge_acc : List(Geom.Vec3), F64, I64, List(Geom.Vec3) -> List(Geom.Vec3)
 	clip_near_edge_acc = |poly, near_, i, acc| ({
 		n = poly.len().to_i64_wrap()
@@ -83,6 +80,7 @@ Geom :: [].{
 		}) })
 	})
 
-	clip_near : List(Geom.Vec3), F64 -> List(Geom.Vec3)
-	clip_near = |poly, near_| clip_near_edge(poly, near_, 0)
+	## The polygon cut to what lies at or past the near plane, `near` ahead.
+	clip_near : List(Geom.Vec3) -> List(Geom.Vec3)
+	clip_near = |poly| clip_near_edge_acc(poly, near, 0, [])
 }

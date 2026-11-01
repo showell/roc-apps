@@ -98,7 +98,7 @@ GuardRail :: [].{
 
 	rail_draw_poly : GuardRail.RailPoly, F64, F64 -> List(Paint.DrawCmd)
 	rail_draw_poly = |rp, cf, view_w| ({
-		clipped = Geom.clip_near(rp.v, Geom.near)
+		clipped = Geom.clip_near(rp.v)
 		(if (clipped.len().to_i64_wrap() < 3) { [] } else { Paint.push_poly(rp.color, Camera.project_all(clipped, cf, view_w)) })
 	})
 

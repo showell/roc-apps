@@ -214,10 +214,20 @@ TruckDraw :: [].{
 	merge_faces_acc = |a, b, i, j, acc| (if (i >= a.len().to_i64_wrap()) { List.concat(acc, face_rest(b, j)) } else { (if (j >= b.len().to_i64_wrap()) { List.concat(acc, face_rest(a, i)) } else { (if DepthSort.deeper_than((List.get(b, I64.to_u64_wrap(j)) ?? crash("list-at out of range")).fwd, (List.get(a, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd) { merge_faces_acc(a, b, i, (j + 1), List.append(acc, (List.get(b, I64.to_u64_wrap(j)) ?? crash("list-at out of range")))) } else { merge_faces_acc(a, b, (i + 1), j, List.append(acc, (List.get(a, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))) }) }) })
 
 	sort_faces : List(TruckDraw.TruckFace) -> List(TruckDraw.TruckFace)
-	sort_faces = |xs| (if (xs.len().to_i64_wrap() <= 1) { xs } else { merge_faces(sort_faces(ListUtils.list_take(xs, I64.div_trunc_by(xs.len().to_i64_wrap(), 2))), sort_faces(ListUtils.list_drop(xs, I64.div_trunc_by(xs.len().to_i64_wrap(), 2))), 0, 0) })
+	sort_faces = |xs| {
+		n = xs.len().to_i64_wrap()
+		if n <= 1 {
+			xs
+		} else {
+			half = I64.div_trunc_by(n, 2)
+			front = sort_faces(ListUtils.list_take(xs, half))
+			back = sort_faces(ListUtils.list_drop(xs, half))
+			merge_faces(front, back, 0, 0)
+		}
+	}
 
 	truck_fill : I64, List(Geom.Vec3), F64, F64 -> List(Paint.DrawCmd)
-	truck_fill = |color, ps, cf, view_w| Paint.push_poly(color, Camera.project_all(Geom.clip_near(ps, Geom.near), cf, view_w))
+	truck_fill = |color, ps, cf, view_w| Paint.push_poly(color, Camera.project_all(Geom.clip_near(ps), cf, view_w))
 
 	# draw_faces builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	draw_faces : List(TruckDraw.TruckFace), F64, F64, I64 -> List(Paint.DrawCmd)

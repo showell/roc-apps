@@ -90,7 +90,7 @@ main! = |_args| {
 		}),
 		Grade.reals({
 			name: "g-clip ",
-			got: cn_walk(Geom.clip_near(poly, 0.4), 0),
+			got: cn_walk(Geom.clip_near(poly), 0),
 			want: cn_want,
 			tol: 0.0,
 		}),

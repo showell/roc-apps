@@ -32,7 +32,17 @@ DepthSort :: [].{
 	deeper_than = |x, y| ((x - y) > (sort_tie * DeviceMath.real_max(DeviceMath.real_abs(y), 1.0)))
 
 	sort_items : List(DepthSort.DepthKey) -> List(DepthSort.DepthKey)
-	sort_items = |xs| (if (xs.len().to_i64_wrap() <= 1) { xs } else { merge_items(sort_items(ListUtils.list_take(xs, I64.div_trunc_by(xs.len().to_i64_wrap(), 2))), sort_items(ListUtils.list_drop(xs, I64.div_trunc_by(xs.len().to_i64_wrap(), 2))), 0, 0) })
+	sort_items = |xs| {
+		n = xs.len().to_i64_wrap()
+		if n <= 1 {
+			xs
+		} else {
+			half = I64.div_trunc_by(n, 2)
+			front = sort_items(ListUtils.list_take(xs, half))
+			back = sort_items(ListUtils.list_drop(xs, half))
+			merge_items(front, back, 0, 0)
+		}
+	}
 
 	eq_Kind : DepthSort.Kind, DepthSort.Kind -> Bool
 	eq_Kind = |ex, ey| (match ex {
