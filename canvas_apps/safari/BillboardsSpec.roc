@@ -24,14 +24,14 @@ placed_at = |i| (
 
 # placed_all builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 placed_all : I64 -> List(Billboards.Placed)
-placed_all = |i| placed_all_acc(i, [])
+placed_all = |i| placed_all_onto(i, [])
 
-placed_all_acc : I64, List(Billboards.Placed) -> List(Billboards.Placed)
-placed_all_acc = |i, acc| (
+placed_all_onto : I64, List(Billboards.Placed) -> List(Billboards.Placed)
+placed_all_onto = |i, acc| (
 	if (i >= fwd_in.len().to_i64_wrap()) {
 		acc
 	} else {
-		placed_all_acc((i + 1), List.append(acc, placed_at(i)))
+		placed_all_onto((i + 1), List.append(acc, placed_at(i)))
 	}
 )
 

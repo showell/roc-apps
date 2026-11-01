@@ -18,14 +18,14 @@ gd_want = [0.0, 0.000545, 0.008125, 0.05078125]
 
 # gd_walk builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 gd_walk : I64 -> List(F64)
-gd_walk = |i| gd_walk_acc(i, [])
+gd_walk = |i| gd_walk_onto(i, [])
 
-gd_walk_acc : I64, List(F64) -> List(F64)
-gd_walk_acc = |i, acc| (
+gd_walk_onto : I64, List(F64) -> List(F64)
+gd_walk_onto = |i, acc| (
 	if (i >= gd_right.len().to_i64_wrap()) {
 		acc
 	} else {
-		gd_walk_acc((i + 1), List.append(acc, Geom.ground_drop((List.get(gd_right, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), (List.get(gd_forward, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
+		gd_walk_onto((i + 1), List.append(acc, Geom.ground_drop((List.get(gd_right, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), (List.get(gd_forward, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
 	}
 )
 
@@ -43,17 +43,17 @@ tr_want = [(-3.5), (-5.0), (-2.869971008611849), 6.404160086203927, 15.223140686
 
 # tr_walk builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 tr_walk : I64 -> List(F64)
-tr_walk = |i| tr_walk_acc(i, [])
+tr_walk = |i| tr_walk_onto(i, [])
 
-tr_walk_acc : I64, List(F64) -> List(F64)
-tr_walk_acc = |i, acc| (
+tr_walk_onto : I64, List(F64) -> List(F64)
+tr_walk_onto = |i, acc| (
 	if (i >= tr_a.len().to_i64_wrap()) {
 		acc
 	} else {
 		(
 			{
 				p = Geom.to_rider((List.get(tr_a, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), (List.get(tr_x, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), 5.0, 0.5, (List.get(tr_yaw, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), 3.0)
-				tr_walk_acc((i + 1), List.append(List.append(acc, p.right), p.forward))
+				tr_walk_onto((i + 1), List.append(List.append(acc, p.right), p.forward))
 			}
 		)
 	}
@@ -78,17 +78,17 @@ cn_want = [(-1.0), 2.0, 0.0, 1.0, 2.0, 0.5, 1.0, 0.4, 0.7666666666666666, (-1.0)
 
 # cn_walk builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 cn_walk : List(Geom.Vec3), I64 -> List(F64)
-cn_walk = |vs, i| cn_walk_acc(vs, i, [])
+cn_walk = |vs, i| cn_walk_onto(vs, i, [])
 
-cn_walk_acc : List(Geom.Vec3), I64, List(F64) -> List(F64)
-cn_walk_acc = |vs, i, acc| (
+cn_walk_onto : List(Geom.Vec3), I64, List(F64) -> List(F64)
+cn_walk_onto = |vs, i, acc| (
 	if (i >= vs.len().to_i64_wrap()) {
 		acc
 	} else {
 		(
 			{
 				v = (List.get(vs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))
-				cn_walk_acc(vs, (i + 1), List.append(List.append(List.append(acc, v.right), v.forward), v.height))
+				cn_walk_onto(vs, (i + 1), List.append(List.append(List.append(acc, v.right), v.forward), v.height))
 			}
 		)
 	}

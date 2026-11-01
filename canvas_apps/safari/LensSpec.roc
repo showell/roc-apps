@@ -37,14 +37,14 @@ cam_want = [685.5110432362151, 239.92886513267527, 418.16173637409116, 574.11549
 
 # cam_walk builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 cam_walk : I64 -> List(F64)
-cam_walk = |i| cam_walk_acc(i, [])
+cam_walk = |i| cam_walk_onto(i, [])
 
-cam_walk_acc : I64, List(F64) -> List(F64)
-cam_walk_acc = |i, acc| (
+cam_walk_onto : I64, List(F64) -> List(F64)
+cam_walk_onto = |i, acc| (
 	if (i >= cam_lean.len().to_i64_wrap()) {
 		acc
 	} else {
-		cam_walk_acc((i + 1), List.append(acc, Lens.cam_focal((List.get(cam_lean, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), (List.get(cam_gaze, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
+		cam_walk_onto((i + 1), List.append(acc, Lens.cam_focal((List.get(cam_lean, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), (List.get(cam_gaze, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
 	}
 )
 

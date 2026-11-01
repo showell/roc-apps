@@ -67,14 +67,14 @@ mark = |c, f| { color: c, fwd: f, v: [] }
 
 # colours_of builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 colours_of : List(TruckDraw.TruckFace), I64 -> List(I64)
-colours_of = |fs, i| colours_of_acc(fs, i, [])
+colours_of = |fs, i| colours_of_onto(fs, i, [])
 
-colours_of_acc : List(TruckDraw.TruckFace), I64, List(I64) -> List(I64)
-colours_of_acc = |fs, i, acc| (
+colours_of_onto : List(TruckDraw.TruckFace), I64, List(I64) -> List(I64)
+colours_of_onto = |fs, i, acc| (
 	if (i >= fs.len().to_i64_wrap()) {
 		acc
 	} else {
-		colours_of_acc(fs, (i + 1), List.append(acc, (List.get(fs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).color))
+		colours_of_onto(fs, (i + 1), List.append(acc, (List.get(fs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).color))
 	}
 )
 

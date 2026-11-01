@@ -47,14 +47,14 @@ mod_inner_acc = |m, xs, j, acc| (
 
 # mod_outer builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 mod_outer : List(F64), List(F64), I64 -> List(F64)
-mod_outer = |ms, xs, i| mod_outer_acc(ms, xs, i, [])
+mod_outer = |ms, xs, i| mod_outer_onto(ms, xs, i, [])
 
-mod_outer_acc : List(F64), List(F64), I64, List(F64) -> List(F64)
-mod_outer_acc = |ms, xs, i, acc| (
+mod_outer_onto : List(F64), List(F64), I64, List(F64) -> List(F64)
+mod_outer_onto = |ms, xs, i, acc| (
 	if (i >= ms.len().to_i64_wrap()) {
 		acc
 	} else {
-		mod_outer_acc(ms, xs, (i + 1), List.concat(acc, mod_inner((List.get(ms, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), xs, 0)))
+		mod_outer_onto(ms, xs, (i + 1), List.concat(acc, mod_inner((List.get(ms, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), xs, 0)))
 	}
 )
 

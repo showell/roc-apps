@@ -41,14 +41,14 @@ two_points = [{ right: (-5.0), forward: 10.0 }, { right: 5.0, forward: 10.0 }]
 
 # wide builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 wide : I64 -> List(Geom.RiderPt)
-wide = |n| wide_acc(n, [])
+wide = |n| wide_onto(n, [])
 
-wide_acc : I64, List(Geom.RiderPt) -> List(Geom.RiderPt)
-wide_acc = |n, acc| (
+wide_onto : I64, List(Geom.RiderPt) -> List(Geom.RiderPt)
+wide_onto = |n, acc| (
 	if (n <= 0) {
 		acc
 	} else {
-		wide_acc((n - 1), List.append(acc, { right: I64.to_f64(n), forward: (10.0 + I64.to_f64(n)) }))
+		wide_onto((n - 1), List.append(acc, { right: I64.to_f64(n), forward: (10.0 + I64.to_f64(n)) }))
 	}
 )
 

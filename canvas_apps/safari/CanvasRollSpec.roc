@@ -25,14 +25,14 @@ as_rider = |t| { segment: 0, along: 0.0, across: 0.0, yaw: 0.0, v: 0.3, tilt: t,
 
 # roll_walk builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 roll_walk : I64 -> List(F64)
-roll_walk = |i| roll_walk_acc(i, [])
+roll_walk = |i| roll_walk_onto(i, [])
 
-roll_walk_acc : I64, List(F64) -> List(F64)
-roll_walk_acc = |i, acc| (
+roll_walk_onto : I64, List(F64) -> List(F64)
+roll_walk_onto = |i, acc| (
 	if (i >= tilt_in.len().to_i64_wrap()) {
 		acc
 	} else {
-		roll_walk_acc((i + 1), List.append(acc, CanvasRoll.rider_roll(as_rider((List.get(tilt_in, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))))))
+		roll_walk_onto((i + 1), List.append(acc, CanvasRoll.rider_roll(as_rider((List.get(tilt_in, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))))))
 	}
 )
 
