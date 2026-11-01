@@ -3,6 +3,10 @@
 # (B4) 6100, the worst (the pen) 0. Every color sees the same board from its
 # own zone, so the table is red's.
 #
+# What it writes is what `roc fmt` at the pin would leave it as: one value a
+# line, the square it is beside it, so build.sh's regenerate-and-compare and
+# fmt agree.
+#
 #   cd fasttrack && roc gen_square_values.roc > SquareValues.roc
 import Board
 import Config
@@ -11,27 +15,34 @@ import Rank
 colors : List(Str)
 colors = ["red", "blue", "green", "purple"]
 
+## The zones as Board.relative lays them out, from the piece's own.
+zone_titles : List(Str)
+zone_titles = ["own zone", "the next zone", "two zones on", "the zone before your own"]
+
+## 100 points for each place a square stands above the worst; 0 for a square
+## the ranking never reaches (Rank.places answers U64.highest there).
+points_for : U64, U64 -> I64
+points_for = |worst, place|
+	if place == U64.highest {
+		0
+	} else {
+		100 * (U64.to_i64_wrap(worst) - U64.to_i64_wrap(place))
+	}
+
+## A zone's lines of the table: its title, then each square's value with the
+## square's name beside it.
+zone_lines : List(I64), { title : Str, zone : U64 } -> Str
+zone_lines = |values, { title, zone }| {
+	zone_values = values.sublist({ start: zone * Board.per_zone, len: Board.per_zone })
+	lines = List.map2(Config.config_locations, zone_values, |location, points| "\t\t${points.to_str()}, # ${location.id}\n")
+	Str.join_with(lines, "").with_prefix("\t\t# ${title}\n")
+}
+
 main! = |_args| {
-	p = Rank.places(colors, "red", "B1")
-	values = List.map(
-		p.place,
-		|place| if place == U64.highest {
-			0
-		} else {
-			100 * (U64.to_i64_wrap(p.worst) - U64.to_i64_wrap(place))
-		},
-	)
-	zones = List.map_with_index(
-		["own zone", "the next zone", "two zones on", "the zone before your own"],
-		|title, z| {
-			row = List.map_with_index(
-				Config.config_locations,
-				|l, s| "${l.id} ${I64.to_str(List.get(values, z * Board.per_zone + s) ?? 0)}",
-			)
-			"\t\t# ${title}: ${Str.join_with(row, ", ")}\n\t\t${Str.join_with(List.map(List.sublist(values, { start: z * Board.per_zone, len: Board.per_zone }), I64.to_str), ", ")},\n"
-		},
-	)
-	bulls = List.get(values, 4 * Board.per_zone) ?? 0
+	ranking = Rank.places(colors, "red", "B1")
+	values = ranking.place.map(|place| points_for(ranking.worst, place))
+	zones = zone_titles.map_with_index(|title, zone| zone_lines(values, { title, zone }))
+	bullseye = values.get(4 * Board.per_zone) ?? crash "gen_square_values: Rank.places ranks the bullseye"
 	echo!(
 		Str.join_with(
 			[
@@ -48,11 +59,16 @@ main! = |_args| {
 				"\tvalues : List(I64)\n",
 				"\tvalues = [\n",
 				Str.join_with(zones, ""),
-				"\t\t# the bullseye\n\t\t${I64.to_str(bulls)},\n",
+				"\t\t# the bullseye\n",
+				"\t\t${bullseye.to_str()},\n",
 				"\t]\n\n",
 				"\t## Square `s` to a piece of color `c` (its place in the color order).\n",
-				"\tvalue : U64, U64 -> I64\n",
-				"\tvalue = |c, s| List.get(values, Board.relative(c, s)) ?? 0\n",
+				"\tpoints : U64, U64 -> I64\n",
+				"\tpoints = |c, s|\n",
+				"\t\tmatch values.get(Board.relative(c, s)) {\n",
+				"\t\t\tOk(worth) => worth\n",
+				"\t\t\tErr(OutOfBounds) => crash \"SquareValues.points: Board.relative answers a square of the table\"\n",
+				"\t\t}\n",
 				"}\n",
 			],
 			"",

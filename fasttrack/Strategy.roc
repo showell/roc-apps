@@ -54,7 +54,7 @@ Strategy :: [].{
 					} else {
 						0
 					}
-					$total = $total + SquareValues.value(c, $s) + own_base * strategy.base_bonus
+					$total = $total + SquareValues.points(c, $s) + own_base * strategy.base_bonus
 				}
 				_ => {}
 			}
@@ -102,11 +102,11 @@ Strategy :: [].{
 # The table's corners (SquareValues, from Steve's ranking), and the base bonus.
 expect {
 	b4 = 7
-	SquareValues.value(0, Board.at(0, b4)) == 6100
-		and SquareValues.value(0, Board.at(1, Board.r4)) == 100
-			and SquareValues.value(0, Board.at(0, 0)) == 0
-				and SquareValues.value(1, Board.at(1, b4)) == 6100
-					and SquareValues.value(1, Board.at(2, Board.r4)) == 100
+	SquareValues.points(0, Board.at(0, b4)) == 6100
+		and SquareValues.points(0, Board.at(1, Board.r4)) == 100
+			and SquareValues.points(0, Board.at(0, 0)) == 0
+				and SquareValues.points(1, Board.at(1, b4)) == 6100
+					and SquareValues.points(1, Board.at(2, Board.r4)) == 100
 }
 
 # The champion's hoard: 1500 an A, joker or J with none home, 500 with two.
