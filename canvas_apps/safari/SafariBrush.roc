@@ -43,8 +43,5 @@ SafariBrush :: [].{
 			Flat(Brush.opaque(c.color))
 		}
 	geom : Paint.DrawCmd, U64 -> F64
-	geom = |c, i| at(c.geom, i)
-
-	at : List(F64), U64 -> F64
-	at = |xs, i| List.get(xs, i) ?? 0.0
+	geom = |c, i| c.geom.get(i) ?? 0.0
 }
