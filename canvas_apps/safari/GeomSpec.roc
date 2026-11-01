@@ -17,7 +17,7 @@ gd_walk : I64 -> List(F64)
 gd_walk = |i| gd_walk_acc(i, [])
 
 gd_walk_acc : I64, List(F64) -> List(F64)
-gd_walk_acc = |i, acc| (if (i >= U64.to_i64_wrap(List.len(gd_right))) { acc } else { gd_walk_acc((i + 1), List.append(acc, Geom.ground_drop((List.get(gd_right, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), (List.get(gd_forward, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))) })
+gd_walk_acc = |i, acc| (if (i >= gd_right.len().to_i64_wrap()) { acc } else { gd_walk_acc((i + 1), List.append(acc, Geom.ground_drop((List.get(gd_right, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), (List.get(gd_forward, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))) })
 
 tr_a : List(F64)
 tr_a = [0.0, 12.0, 40.0, 7.5]
@@ -36,7 +36,7 @@ tr_walk : I64 -> List(F64)
 tr_walk = |i| tr_walk_acc(i, [])
 
 tr_walk_acc : I64, List(F64) -> List(F64)
-tr_walk_acc = |i, acc| (if (i >= U64.to_i64_wrap(List.len(tr_a))) { acc } else { ({
+tr_walk_acc = |i, acc| (if (i >= tr_a.len().to_i64_wrap()) { acc } else { ({
 	p = Geom.to_rider((List.get(tr_a, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), (List.get(tr_x, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), 5.0, 0.5, (List.get(tr_yaw, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), 3.0)
 	tr_walk_acc((i + 1), List.append(List.append(acc, p.right), p.forward))
 }) })
@@ -61,7 +61,7 @@ cn_walk : List(Geom.Vec3), I64 -> List(F64)
 cn_walk = |vs, i| cn_walk_acc(vs, i, [])
 
 cn_walk_acc : List(Geom.Vec3), I64, List(F64) -> List(F64)
-cn_walk_acc = |vs, i, acc| (if (i >= U64.to_i64_wrap(List.len(vs))) { acc } else { ({
+cn_walk_acc = |vs, i, acc| (if (i >= vs.len().to_i64_wrap()) { acc } else { ({
 	v = (List.get(vs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 	cn_walk_acc(vs, (i + 1), List.append(List.append(List.append(acc, v.right), v.forward), v.height))
 }) })

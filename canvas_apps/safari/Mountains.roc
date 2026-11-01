@@ -132,7 +132,7 @@ Mountains :: [].{
 	snow_top = |xs, heading, cam_focal, view_w, v_scale, i| snow_top_acc(xs, heading, cam_focal, view_w, v_scale, i, [])
 
 	snow_top_acc : List(F64), F64, F64, F64, F64, I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
-	snow_top_acc = |xs, heading, cam_focal, view_w, v_scale, i, acc| (if (i >= U64.to_i64_wrap(List.len(xs))) { acc } else { snow_top_acc(xs, heading, cam_focal, view_w, v_scale, (i + 1), List.append(acc, { x: (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), y: ((Camera.camera_h / 2.0) - (north_range(bearing_at((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), heading, cam_focal, view_w)) * v_scale)) })) })
+	snow_top_acc = |xs, heading, cam_focal, view_w, v_scale, i, acc| (if (i >= xs.len().to_i64_wrap()) { acc } else { snow_top_acc(xs, heading, cam_focal, view_w, v_scale, (i + 1), List.append(acc, { x: (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), y: ((Camera.camera_h / 2.0) - (north_range(bearing_at((List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), heading, cam_focal, view_w)) * v_scale)) })) })
 
 	# snow_bottom builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	snow_bottom : List(F64), F64, F64, F64, F64, F64, I64 -> List(Camera.ScreenPt)
@@ -145,7 +145,7 @@ Mountains :: [].{
 	draw_snow = |heading, cam_focal, view_w, v_scale, snow| ({
 		peak = snow_peak_height
 		xs = snow_columns(heading, cam_focal, view_w, peak, 0.0)
-		(if (U64.to_i64_wrap(List.len(xs)) < 2) { [] } else { Paint.push_poly(snow, List.concat(snow_top(xs, heading, cam_focal, view_w, v_scale, 0), snow_bottom(xs, heading, cam_focal, view_w, v_scale, peak, (U64.to_i64_wrap(List.len(xs)) - 1)))) })
+		(if (xs.len().to_i64_wrap() < 2) { [] } else { Paint.push_poly(snow, List.concat(snow_top(xs, heading, cam_focal, view_w, v_scale, 0), snow_bottom(xs, heading, cam_focal, view_w, v_scale, peak, (xs.len().to_i64_wrap() - 1)))) })
 	})
 
 	draw : F64, F64, F64, F64 -> List(Paint.DrawCmd)

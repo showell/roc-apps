@@ -17,8 +17,8 @@ Billboards :: [].{
 	verdict = |rp, h, cp, fr| (if (rp.forward <= Geom.near) { { b: no_billboard, kept: False, size_culled: False } } else { (if (((h / rp.forward) * Lens.focal) < min_critter_px) { { b: no_billboard, kept: False, size_culled: True } } else { { b: { right: rp.right, fwd: rp.forward, height: h, cp: cp, face_right: fr }, kept: True, size_culled: False } }) })
 
 	kept_of : List(Billboards.Placed), I64 -> List(Billboards.Billboard)
-	kept_of = |ps, i| (if (i >= U64.to_i64_wrap(List.len(ps))) { [] } else { (if (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).kept { List.concat([(List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).b], kept_of(ps, (i + 1))) } else { kept_of(ps, (i + 1)) }) })
+	kept_of = |ps, i| (if (i >= ps.len().to_i64_wrap()) { [] } else { (if (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).kept { List.concat([(List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).b], kept_of(ps, (i + 1))) } else { kept_of(ps, (i + 1)) }) })
 
 	size_culled_of : List(Billboards.Placed), I64 -> I64
-	size_culled_of = |ps, i| (if (i >= U64.to_i64_wrap(List.len(ps))) { 0 } else { (if (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).size_culled { (1 + size_culled_of(ps, (i + 1))) } else { size_culled_of(ps, (i + 1)) }) })
+	size_culled_of = |ps, i| (if (i >= ps.len().to_i64_wrap()) { 0 } else { (if (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).size_culled { (1 + size_culled_of(ps, (i + 1))) } else { size_culled_of(ps, (i + 1)) }) })
 }

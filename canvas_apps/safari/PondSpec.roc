@@ -5,7 +5,7 @@ import ListUtils
 import Pond
 
 size_got : List(I64)
-size_got = [U64.to_i64_wrap(List.len(Pond.water_outline)), U64.to_i64_wrap(List.len(Pond.bank)), U64.to_i64_wrap(List.len(Pond.ducks)), Pond.water_color, Pond.bank_color, Pond.duck_codepoint]
+size_got = [Pond.water_outline.len().to_i64_wrap(), Pond.bank.len().to_i64_wrap(), Pond.ducks.len().to_i64_wrap(), Pond.water_color, Pond.bank_color, Pond.duck_codepoint]
 
 size_want : List(I64)
 size_want = [7, 6, 6, 3112588, 12759680, 129414]

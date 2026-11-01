@@ -12,7 +12,7 @@ table_want : List(F64)
 table_want = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.35, 0.44, 0.53, 0.63, 0.72, 0.81, 0.91, 1.0]
 
 size_got : List(I64)
-size_got = [U64.to_i64_wrap(List.len(Tree.tier_top)), U64.to_i64_wrap(List.len(Tree.tier_bot)), U64.to_i64_wrap(List.len(Tree.tier_wide)), Tree.ring_n, Tree.trunk_color]
+size_got = [Tree.tier_top.len().to_i64_wrap(), Tree.tier_bot.len().to_i64_wrap(), Tree.tier_wide.len().to_i64_wrap(), Tree.ring_n, Tree.trunk_color]
 
 size_want : List(I64)
 size_want = [8, 8, 8, 16, 5914146]
@@ -44,7 +44,7 @@ trunk_want = [440.0, 110.0, 520.0, 110.0, 520.0, 600.0, 440.0, 600.0]
 trunk_tag_got : List(I64)
 trunk_tag_got = ({
 	r = Tree.draw_trunk(m, True)
-	[(List.get(trunk, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).tag, (List.get(r, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).tag, (List.get(trunk, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).color, (List.get(r, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).color, U64.to_i64_wrap(List.len((List.get(r, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).pts))]
+	[(List.get(trunk, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).tag, (List.get(r, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).tag, (List.get(trunk, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).color, (List.get(r, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).color, (List.get(r, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).pts.len().to_i64_wrap()]
 })
 
 trunk_tag_want : List(I64)
@@ -102,7 +102,7 @@ dup_want : List(F64)
 dup_want = [0.0, 0.0, 4.0, 0.0, 4.0, 4.0]
 
 count_got : List(I64)
-count_got = [U64.to_i64_wrap(List.len(Tree.convex_hull_pts(square))), U64.to_i64_wrap(List.len(Tree.convex_hull_pts([p(0.0, 0.0), p(4.0, 0.0), p(2.0, 3.0)]))), U64.to_i64_wrap(List.len(Tree.convex_hull_pts([p(0.0, 0.0), p(1.0, 1.0), p(2.0, 2.0), p(3.0, 3.0)]))), U64.to_i64_wrap(List.len(Tree.convex_hull_pts([p(1.0, 2.0), p(0.0, 0.0)]))), U64.to_i64_wrap(List.len(Tree.convex_hull_pts([p(0.0, 0.0), p(0.0, 0.0), p(4.0, 0.0), p(4.0, 4.0)])))]
+count_got = [Tree.convex_hull_pts(square).len().to_i64_wrap(), Tree.convex_hull_pts([p(0.0, 0.0), p(4.0, 0.0), p(2.0, 3.0)]).len().to_i64_wrap(), Tree.convex_hull_pts([p(0.0, 0.0), p(1.0, 1.0), p(2.0, 2.0), p(3.0, 3.0)]).len().to_i64_wrap(), Tree.convex_hull_pts([p(1.0, 2.0), p(0.0, 0.0)]).len().to_i64_wrap(), Tree.convex_hull_pts([p(0.0, 0.0), p(0.0, 0.0), p(4.0, 0.0), p(4.0, 4.0)]).len().to_i64_wrap()]
 
 count_want : List(I64)
 count_want = [4, 3, 2, 2, 3]

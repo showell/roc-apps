@@ -28,7 +28,7 @@ origin : Frame.Pose
 origin = { along: 0.0, across: 0.0, yaw: 0.0, hw: 2.0 }
 
 short_got : List(I64)
-short_got = [U64.to_i64_wrap(List.len(TowerPlan.walk_towers(segs, chain, origin))), U64.to_i64_wrap(List.len(TowerPlan.seg_towers(segs, chain, origin, 0))), U64.to_i64_wrap(List.len(TowerPlan.seg_mid_tower(segs, chain, origin, 0))), U64.to_i64_wrap(List.len(TowerPlan.all_towers(segs, chain, origin, 0)))]
+short_got = [TowerPlan.walk_towers(segs, chain, origin).len().to_i64_wrap(), TowerPlan.seg_towers(segs, chain, origin, 0).len().to_i64_wrap(), TowerPlan.seg_mid_tower(segs, chain, origin, 0).len().to_i64_wrap(), TowerPlan.all_towers(segs, chain, origin, 0).len().to_i64_wrap()]
 
 short_want : List(I64)
 short_want = [3, 1, 0, 3]
@@ -53,7 +53,7 @@ long_segs : List(World.Segment)
 long_segs = [World.segment_at(6)]
 
 long_got : List(I64)
-long_got = [U64.to_i64_wrap(List.len(TowerPlan.walk_towers(long_segs, [0], origin))), U64.to_i64_wrap(List.len(TowerPlan.seg_mid_tower(long_segs, [0], origin, 0)))]
+long_got = [TowerPlan.walk_towers(long_segs, [0], origin).len().to_i64_wrap(), TowerPlan.seg_mid_tower(long_segs, [0], origin, 0).len().to_i64_wrap()]
 
 long_want : List(I64)
 long_want = [2, 1]
@@ -86,13 +86,13 @@ spread_want : List(F64)
 spread_want = [0.0, 37.0, 74.0]
 
 behind_got : List(I64)
-behind_got = [U64.to_i64_wrap(List.len(TowerPlan.all_towers(segs, chain, origin, 0))), U64.to_i64_wrap(List.len(TowerPlan.all_towers(segs, chain, origin, 1))), U64.to_i64_wrap(List.len(TowerPlan.all_towers(segs, chain, origin, 2))), U64.to_i64_wrap(List.len(TowerPlan.behind_tower(segs, chain, origin, 0)))]
+behind_got = [TowerPlan.all_towers(segs, chain, origin, 0).len().to_i64_wrap(), TowerPlan.all_towers(segs, chain, origin, 1).len().to_i64_wrap(), TowerPlan.all_towers(segs, chain, origin, 2).len().to_i64_wrap(), TowerPlan.behind_tower(segs, chain, origin, 0).len().to_i64_wrap()]
 
 behind_want : List(I64)
 behind_want = [3, 4, 4, 1]
 
 cull_got : List(I64)
-cull_got = [U64.to_i64_wrap(List.len(TowerPlan.walk_towers(segs, chain, { along: 5000.0, across: 0.0, yaw: 0.0, hw: 2.0 }))), U64.to_i64_wrap(List.len(TowerPlan.walk_towers(segs, [], origin)))]
+cull_got = [TowerPlan.walk_towers(segs, chain, { along: 5000.0, across: 0.0, yaw: 0.0, hw: 2.0 }).len().to_i64_wrap(), TowerPlan.walk_towers(segs, [], origin).len().to_i64_wrap()]
 
 cull_want : List(I64)
 cull_want = [0, 0]
@@ -101,7 +101,7 @@ items_got : List(I64)
 items_got = ({
 	ts = TowerPlan.walk_towers(segs, chain, origin)
 	its = TowerPlan.tower_items(ts)
-	[U64.to_i64_wrap(List.len(its)), (List.get(its, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).i, (List.get(its, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).i, U64.to_i64_wrap(List.len(TowerPlan.tower_items([])))]
+	[its.len().to_i64_wrap(), (List.get(its, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).i, (List.get(its, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).i, TowerPlan.tower_items([]).len().to_i64_wrap()]
 })
 
 items_want : List(I64)

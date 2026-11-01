@@ -70,7 +70,7 @@ GroundPlan :: [].{
 	pond_shape = |segs, ch, pose, m, from_len, ps| pond_shape_acc(segs, ch, pose, m, from_len, ps, 0, [])
 
 	pond_shape_acc : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, List(Pond.PondPt), I64, List(Geom.RiderPt) -> List(Geom.RiderPt)
-	pond_shape_acc = |segs, ch, pose, m, from_len, ps, i, acc| (if (i >= U64.to_i64_wrap(List.len(ps))) { acc } else { pond_shape_acc(segs, ch, pose, m, from_len, ps, (i + 1), List.append(acc, Frame.map_pt(segs, ch, pose, m, (from_len + (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).cv), (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).cu))) })
+	pond_shape_acc = |segs, ch, pose, m, from_len, ps, i, acc| (if (i >= ps.len().to_i64_wrap()) { acc } else { pond_shape_acc(segs, ch, pose, m, from_len, ps, (i + 1), List.append(acc, Frame.map_pt(segs, ch, pose, m, (from_len + (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).cv), (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).cu))) })
 
 	emit_pond_ground : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, F64, F64 -> List(Paint.DrawCmd)
 	emit_pond_ground = |segs, ch, pose, m, from_len, cf, view_w| List.concat(Ground.emit_ground_color(pond_shape(segs, ch, pose, m, from_len, Pond.water_outline), Pond.water_color, cf, view_w), Ground.emit_ground_color(pond_shape(segs, ch, pose, m, from_len, Pond.bank), Pond.bank_color, cf, view_w))
@@ -79,7 +79,7 @@ GroundPlan :: [].{
 	seg_ground = |segs, ch, pose, d, cf, view_w| List.join([seg_road(segs, ch, pose, d, cf, view_w), seg_joint_ground(segs, ch, pose, d, cf, view_w), seg_pond_ground(segs, ch, pose, d, cf, view_w)])
 
 	seg_joint_ground : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64 -> List(Paint.DrawCmd)
-	seg_joint_ground = |segs, ch, pose, d, cf, view_w| (if ((d + 1) >= U64.to_i64_wrap(List.len(ch))) { [] } else { emit_joint_ground(segs, ch, pose, Frame.chain_map(d), Frame.chain_map((d + 1)), (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash("list-at out of range")))) ?? crash("list-at out of range")).length, (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash("list-at out of range")))) ?? crash("list-at out of range")).width, (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap((d + 1))) ?? crash("list-at out of range")))) ?? crash("list-at out of range")).width, (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash("list-at out of range")))) ?? crash("list-at out of range")).exit_right, cf, view_w) })
+	seg_joint_ground = |segs, ch, pose, d, cf, view_w| (if ((d + 1) >= ch.len().to_i64_wrap()) { [] } else { emit_joint_ground(segs, ch, pose, Frame.chain_map(d), Frame.chain_map((d + 1)), (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash("list-at out of range")))) ?? crash("list-at out of range")).length, (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash("list-at out of range")))) ?? crash("list-at out of range")).width, (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap((d + 1))) ?? crash("list-at out of range")))) ?? crash("list-at out of range")).width, (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash("list-at out of range")))) ?? crash("list-at out of range")).exit_right, cf, view_w) })
 
 	seg_pond_ground : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64 -> List(Paint.DrawCmd)
 	seg_pond_ground = |segs, ch, pose, d, cf, view_w| ({
@@ -92,7 +92,7 @@ GroundPlan :: [].{
 	walk_ground = |segs, ch, pose, cf, view_w| walk_ground_acc(segs, ch, pose, cf, view_w, 0, [])
 
 	walk_ground_acc : List(World.Segment), List(I64), Frame.Pose, F64, F64, I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
-	walk_ground_acc = |segs, ch, pose, cf, view_w, d, acc| (if (d >= U64.to_i64_wrap(List.len(ch))) { acc } else { walk_ground_acc(segs, ch, pose, cf, view_w, (d + 1), List.concat(acc, seg_ground(segs, ch, pose, d, cf, view_w))) })
+	walk_ground_acc = |segs, ch, pose, cf, view_w, d, acc| (if (d >= ch.len().to_i64_wrap()) { acc } else { walk_ground_acc(segs, ch, pose, cf, view_w, (d + 1), List.concat(acc, seg_ground(segs, ch, pose, d, cf, view_w))) })
 
 	behind_ground : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64 -> List(Paint.DrawCmd)
 	behind_ground = |segs, ch, pose, prev_idx, cf, view_w| ({

@@ -20,11 +20,11 @@ Render :: [].{
 	seg_cull_count : List(World.Segment), List(I64), I64 -> I64
 	seg_cull_count = |segs, ch, d| ({
 		sg = (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash("list-at out of range")))) ?? crash("list-at out of range"))
-		(if (d >= CritterPlan.farm_seg_reach) { (U64.to_i64_wrap(List.len(sg.cows)) + U64.to_i64_wrap(List.len(sg.pigs))) } else { 0 })
+		(if (d >= CritterPlan.farm_seg_reach) { (sg.cows.len().to_i64_wrap() + sg.pigs.len().to_i64_wrap()) } else { 0 })
 	})
 
 	walk_seg_cull : List(World.Segment), List(I64), I64 -> I64
-	walk_seg_cull = |segs, ch, d| (if (d >= U64.to_i64_wrap(List.len(ch))) { 0 } else { (seg_cull_count(segs, ch, d) + walk_seg_cull(segs, ch, (d + 1))) })
+	walk_seg_cull = |segs, ch, d| (if (d >= ch.len().to_i64_wrap()) { 0 } else { (seg_cull_count(segs, ch, d) + walk_seg_cull(segs, ch, (d + 1))) })
 
 	prev_index : I64 -> I64
 	prev_index = |seg_idx| (if (seg_idx > 0) { (seg_idx - 1) } else { 0 })

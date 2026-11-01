@@ -18,7 +18,7 @@ up_road : Frame.Pose
 up_road = { along: 100.0, across: 0.0, yaw: 0.0, hw: 2.0 }
 
 planted_got : List(I64)
-planted_got = [U64.to_i64_wrap(List.len((List.get(segs, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).trees)), U64.to_i64_wrap(List.len((List.get(segs, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).trees)), U64.to_i64_wrap(List.len((List.get(segs, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).trees)), TreePlan.max_vis_trees]
+planted_got = [(List.get(segs, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).trees.len().to_i64_wrap(), (List.get(segs, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).trees.len().to_i64_wrap(), (List.get(segs, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).trees.len().to_i64_wrap(), TreePlan.max_vis_trees]
 
 planted_want : List(I64)
 planted_want = [28, 16, 22, 640]
@@ -33,19 +33,19 @@ one_want : List(F64)
 one_want = [3.5, 120.0, 5.85]
 
 one_colour_got : List(I64)
-one_colour_got = [U64.to_i64_wrap(List.len(one)), (List.get(one, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).color]
+one_colour_got = [one.len().to_i64_wrap(), (List.get(one, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).color]
 
 one_colour_want : List(I64)
 one_colour_want = [1, 1858082]
 
 cull_got : List(I64)
-cull_got = [U64.to_i64_wrap(List.len(TreePlan.place_tree(segs, chain, origin, 0, 500.0, 2.0, { along: 0.4, across: 3.5, color: 1858082, height: 5.85 }))), U64.to_i64_wrap(List.len(TreePlan.place_tree(segs, chain, origin, 0, 500.0, 2.0, { along: 0.5, across: 3.5, color: 1858082, height: 5.85 }))), U64.to_i64_wrap(List.len(TreePlan.place_tree(segs, chain, origin, 0, 1.0, 2.0, { along: 120.0, across: 3.5, color: 1858082, height: 5.85 }))), U64.to_i64_wrap(List.len(TreePlan.place_tree(segs, chain, origin, 0, 500.0, 2.0, { along: 2000.0, across: 3.5, color: 1858082, height: 5.85 })))]
+cull_got = [TreePlan.place_tree(segs, chain, origin, 0, 500.0, 2.0, { along: 0.4, across: 3.5, color: 1858082, height: 5.85 }).len().to_i64_wrap(), TreePlan.place_tree(segs, chain, origin, 0, 500.0, 2.0, { along: 0.5, across: 3.5, color: 1858082, height: 5.85 }).len().to_i64_wrap(), TreePlan.place_tree(segs, chain, origin, 0, 1.0, 2.0, { along: 120.0, across: 3.5, color: 1858082, height: 5.85 }).len().to_i64_wrap(), TreePlan.place_tree(segs, chain, origin, 0, 500.0, 2.0, { along: 2000.0, across: 3.5, color: 1858082, height: 5.85 }).len().to_i64_wrap()]
 
 cull_want : List(I64)
 cull_want = [0, 1, 0, 0]
 
 seg0_got : List(I64)
-seg0_got = [U64.to_i64_wrap(List.len(TreePlan.seg_trees(segs, chain, origin, 0, 500.0, 2.0, (List.get(segs, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).trees, 0))), U64.to_i64_wrap(List.len(TreePlan.seg_trees(segs, chain, up_road, 0, 500.0, 2.0, (List.get(segs, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).trees, 0))), U64.to_i64_wrap(List.len(TreePlan.seg_trees(segs, chain, origin, 0, 1.0, 2.0, (List.get(segs, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).trees, 0)))]
+seg0_got = [TreePlan.seg_trees(segs, chain, origin, 0, 500.0, 2.0, (List.get(segs, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).trees, 0).len().to_i64_wrap(), TreePlan.seg_trees(segs, chain, up_road, 0, 500.0, 2.0, (List.get(segs, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).trees, 0).len().to_i64_wrap(), TreePlan.seg_trees(segs, chain, origin, 0, 1.0, 2.0, (List.get(segs, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).trees, 0).len().to_i64_wrap()]
 
 seg0_want : List(I64)
 seg0_want = [28, 20, 0]
@@ -72,7 +72,7 @@ items_got : List(I64)
 items_got = ({
 	ts = TreePlan.seg_trees(segs, chain, origin, 0, 500.0, 2.0, (List.get(segs, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).trees, 0)
 	its = TreePlan.tree_items(ts)
-	[U64.to_i64_wrap(List.len(its)), (List.get(its, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).i, (List.get(its, I64.to_u64_wrap(27)) ?? crash("list-at out of range")).i, U64.to_i64_wrap(List.len(TreePlan.tree_items([])))]
+	[its.len().to_i64_wrap(), (List.get(its, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).i, (List.get(its, I64.to_u64_wrap(27)) ?? crash("list-at out of range")).i, TreePlan.tree_items([]).len().to_i64_wrap()]
 })
 
 items_want : List(I64)

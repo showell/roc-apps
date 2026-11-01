@@ -25,7 +25,7 @@ import World
 ItemDraw :: [].{
 
 	closer_count : List(TreePlan.TreeItem), F64, I64 -> I64
-	closer_count = |ts, f, i| (if (i >= U64.to_i64_wrap(List.len(ts))) { 0 } else { (if ((List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd < f) { (1 + closer_count(ts, f, (i + 1))) } else { closer_count(ts, f, (i + 1)) }) })
+	closer_count = |ts, f, i| (if (i >= ts.len().to_i64_wrap()) { 0 } else { (if ((List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd < f) { (1 + closer_count(ts, f, (i + 1))) } else { closer_count(ts, f, (i + 1)) }) })
 
 	crown_shade_of : F64 -> F64
 	crown_shade_of = |fwd| ({
@@ -74,5 +74,5 @@ ItemDraw :: [].{
 	draw_order = |w, ch, pose, c, braking, cf, step, i| draw_order_acc(w, ch, pose, c, braking, cf, step, i, [])
 
 	draw_order_acc : List(World.Segment), List(I64), Frame.Pose, Render.Collected, Bool, F64, F64, I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
-	draw_order_acc = |w, ch, pose, c, braking, cf, step, i, acc| (if (i >= U64.to_i64_wrap(List.len(c.order))) { acc } else { draw_order_acc(w, ch, pose, c, braking, cf, step, (i + 1), List.concat(acc, draw_item(w, ch, pose, c, (List.get(c.order, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), braking, cf, step))) })
+	draw_order_acc = |w, ch, pose, c, braking, cf, step, i, acc| (if (i >= c.order.len().to_i64_wrap()) { acc } else { draw_order_acc(w, ch, pose, c, braking, cf, step, (i + 1), List.concat(acc, draw_item(w, ch, pose, c, (List.get(c.order, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), braking, cf, step))) })
 }

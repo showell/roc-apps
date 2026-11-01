@@ -33,14 +33,14 @@ mod_inner : F64, List(F64), I64 -> List(F64)
 mod_inner = |m, xs, j| mod_inner_acc(m, xs, j, [])
 
 mod_inner_acc : F64, List(F64), I64, List(F64) -> List(F64)
-mod_inner_acc = |m, xs, j, acc| (if (j >= U64.to_i64_wrap(List.len(xs))) { acc } else { mod_inner_acc(m, xs, (j + 1), List.append(acc, Num_.mod_real((List.get(xs, I64.to_u64_wrap(j)) ?? crash("list-at out of range")), m))) })
+mod_inner_acc = |m, xs, j, acc| (if (j >= xs.len().to_i64_wrap()) { acc } else { mod_inner_acc(m, xs, (j + 1), List.append(acc, Num_.mod_real((List.get(xs, I64.to_u64_wrap(j)) ?? crash("list-at out of range")), m))) })
 
 # mod_outer builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 mod_outer : List(F64), List(F64), I64 -> List(F64)
 mod_outer = |ms, xs, i| mod_outer_acc(ms, xs, i, [])
 
 mod_outer_acc : List(F64), List(F64), I64, List(F64) -> List(F64)
-mod_outer_acc = |ms, xs, i, acc| (if (i >= U64.to_i64_wrap(List.len(ms))) { acc } else { mod_outer_acc(ms, xs, (i + 1), List.concat(acc, mod_inner((List.get(ms, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), xs, 0))) })
+mod_outer_acc = |ms, xs, i, acc| (if (i >= ms.len().to_i64_wrap()) { acc } else { mod_outer_acc(ms, xs, (i + 1), List.concat(acc, mod_inner((List.get(ms, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), xs, 0))) })
 
 pow2_k : List(I64)
 pow2_k = [(-55), (-20), (-8), (-1), 0, 1, 8, 20, 55]

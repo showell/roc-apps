@@ -57,7 +57,7 @@ heights_want : List(F64)
 heights_want = [5.8500000000000005, 5.8500000000000005, 13.5, 13.5, 5.8500000000000005, 5.8500000000000005, 13.5, 13.5, 5.8500000000000005, 5.8500000000000005, 13.5, 13.5, 5.8500000000000005, 5.8500000000000005]
 
 stops_got : List(I64)
-stops_got = [U64.to_i64_wrap(List.len(filled)), U64.to_i64_wrap(List.len(Trees.fill_trees(AllGreen, 100.0, Trees.tree_start_inset, 0, 0))), U64.to_i64_wrap(List.len(Trees.fill_trees(AllGreen, 5000.0, Trees.tree_start_inset, 0, 0))), U64.to_i64_wrap(List.len(Trees.fill_trees(AllGreen, 50.0, Trees.tree_start_inset, 0, 0)))]
+stops_got = [filled.len().to_i64_wrap(), Trees.fill_trees(AllGreen, 100.0, Trees.tree_start_inset, 0, 0).len().to_i64_wrap(), Trees.fill_trees(AllGreen, 5000.0, Trees.tree_start_inset, 0, 0).len().to_i64_wrap(), Trees.fill_trees(AllGreen, 50.0, Trees.tree_start_inset, 0, 0).len().to_i64_wrap()]
 
 stops_want : List(I64)
 stops_want = [14, 2, 96, 0]

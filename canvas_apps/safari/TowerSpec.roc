@@ -90,7 +90,7 @@ bar_want = [(-4.0), 3.0, 26.0, 43.0, 34.0, 37.0, 4.0, (-3.0)]
 degenerate_got : List(F64)
 degenerate_got = ({
 	d = Tower.bar({ x: 5.0, y: 6.0 }, { x: 5.0, y: 6.0 }, 10.0)
-	List.concat([I64.to_f64(U64.to_i64_wrap(List.len(d)))], (List.get(d, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).pts)
+	List.concat([I64.to_f64(d.len().to_i64_wrap())], (List.get(d, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).pts)
 })
 
 degenerate_want : List(F64)
@@ -106,7 +106,7 @@ v3 : F64, F64, F64 -> Geom.Vec3
 v3 = |r, f, h| { right: r, forward: f, height: h }
 
 clip_count_got : List(I64)
-clip_count_got = [U64.to_i64_wrap(List.len(Tower.bar3d(v3(0.0, 10.0, 0.0), v3(1.0, 20.0, 0.0), 4.0, 500.0, 960.0))), U64.to_i64_wrap(List.len(Tower.bar3d(v3(0.0, 0.0, 0.0), v3(0.0, 0.8, 0.0), 4.0, 500.0, 960.0))), U64.to_i64_wrap(List.len(Tower.bar3d(v3(0.0, 0.8, 0.0), v3(0.0, 0.0, 0.0), 4.0, 500.0, 960.0))), U64.to_i64_wrap(List.len(Tower.bar3d(v3(0.0, 0.0, 0.0), v3(0.0, 0.2, 0.0), 4.0, 500.0, 960.0)))]
+clip_count_got = [Tower.bar3d(v3(0.0, 10.0, 0.0), v3(1.0, 20.0, 0.0), 4.0, 500.0, 960.0).len().to_i64_wrap(), Tower.bar3d(v3(0.0, 0.0, 0.0), v3(0.0, 0.8, 0.0), 4.0, 500.0, 960.0).len().to_i64_wrap(), Tower.bar3d(v3(0.0, 0.8, 0.0), v3(0.0, 0.0, 0.0), 4.0, 500.0, 960.0).len().to_i64_wrap(), Tower.bar3d(v3(0.0, 0.0, 0.0), v3(0.0, 0.2, 0.0), 4.0, 500.0, 960.0).len().to_i64_wrap()]
 
 clip_count_want : List(I64)
 clip_count_want = [1, 1, 1, 0]

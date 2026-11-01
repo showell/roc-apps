@@ -38,7 +38,7 @@ quad : List(Geom.RiderPt)
 quad = GroundPlan.slice_quad(segs, chain, origin, 0, 0, 20, 500.0, 4.0)
 
 quad_shape_got : List(I64)
-quad_shape_got = [U64.to_i64_wrap(List.len(quad)), U64.to_i64_wrap(List.len(GroundPlan.slice_quad(segs, chain, origin, 0, 19, 20, 500.0, 4.0)))]
+quad_shape_got = [quad.len().to_i64_wrap(), GroundPlan.slice_quad(segs, chain, origin, 0, 19, 20, 500.0, 4.0).len().to_i64_wrap()]
 
 quad_shape_want : List(I64)
 quad_shape_want = [4, 4]
@@ -72,15 +72,15 @@ strip : List(Paint.DrawCmd)
 strip = GroundPlan.seg_road(segs, chain, origin, 0, 500.0, 960.0)
 
 strip_got : List(Bool)
-strip_got = [(U64.to_i64_wrap(List.len(strip)) > 0), (U64.to_i64_wrap(List.len(strip)) <= GroundPlan.chunks_for(500.0)), (U64.to_i64_wrap(List.len(GroundPlan.seg_road(segs, chain, { along: 5000.0, across: 0.0, yaw: 0.0, hw: 2.0 }, 0, 500.0, 960.0))) == 0)]
+strip_got = [(strip.len().to_i64_wrap() > 0), (strip.len().to_i64_wrap() <= GroundPlan.chunks_for(500.0)), (GroundPlan.seg_road(segs, chain, { along: 5000.0, across: 0.0, yaw: 0.0, hw: 2.0 }, 0, 500.0, 960.0).len().to_i64_wrap() == 0)]
 
 strip_want : List(Bool)
 strip_want = [True, True, True]
 
 cmd_got : List(I64)
 cmd_got = ({
-	c = (List.get(strip, I64.to_u64_wrap((U64.to_i64_wrap(List.len(strip)) - 1))) ?? crash("list-at out of range"))
-	[c.tag, c.color, c.color2, U64.to_i64_wrap(List.len(c.geom))]
+	c = (List.get(strip, I64.to_u64_wrap((strip.len().to_i64_wrap() - 1))) ?? crash("list-at out of range"))
+	[c.tag, c.color, c.color2, c.geom.len().to_i64_wrap()]
 })
 
 cmd_want : List(I64)
@@ -88,8 +88,8 @@ cmd_want = [0, 3421500, 0, 0]
 
 points_got : List(Bool)
 points_got = ({
-	c = (List.get(strip, I64.to_u64_wrap((U64.to_i64_wrap(List.len(strip)) - 1))) ?? crash("list-at out of range"))
-	[(U64.to_i64_wrap(List.len(c.pts)) >= 6), (U64.to_i64_wrap(List.len(c.pts)) <= 10)]
+	c = (List.get(strip, I64.to_u64_wrap((strip.len().to_i64_wrap() - 1))) ?? crash("list-at out of range"))
+	[(c.pts.len().to_i64_wrap() >= 6), (c.pts.len().to_i64_wrap() <= 10)]
 })
 
 points_want : List(Bool)

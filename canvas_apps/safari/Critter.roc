@@ -18,7 +18,7 @@ Critter :: [].{
 	mapped_pts = |b, s, ht, ps| mapped_pts_acc(b, s, ht, ps, 0, [])
 
 	mapped_pts_acc : Camera.ScreenPt, F64, F64, List(Stills.StillPt), I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
-	mapped_pts_acc = |b, s, ht, ps, i, acc| (if (i >= U64.to_i64_wrap(List.len(ps))) { acc } else { mapped_pts_acc(b, s, ht, ps, (i + 1), List.append(acc, map_p(b, s, ht, (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).y))) })
+	mapped_pts_acc = |b, s, ht, ps, i, acc| (if (i >= ps.len().to_i64_wrap()) { acc } else { mapped_pts_acc(b, s, ht, ps, (i + 1), List.append(acc, map_p(b, s, ht, (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).y))) })
 
 	max_critter_pts : I64
 	max_critter_pts = 512
@@ -27,7 +27,7 @@ Critter :: [].{
 	map_v = |s, ht, x, y| { x: ((s * x) * ht), y: (0.0 - (y * ht)) }
 
 	critter_poly : Camera.ScreenPt, F64, F64, Stills.StillPoly -> List(Paint.DrawCmd)
-	critter_poly = |b, s, ht, poly| (if (U64.to_i64_wrap(List.len(poly.pts)) > max_critter_pts) { [] } else { (if (U64.to_i64_wrap(List.len(poly.grad)) > 0) { critter_grad(b, s, ht, poly, (List.get(poly.grad, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))) } else { Paint.push_poly(poly.color, mapped_pts(b, s, ht, poly.pts)) }) })
+	critter_poly = |b, s, ht, poly| (if (poly.pts.len().to_i64_wrap() > max_critter_pts) { [] } else { (if (poly.grad.len().to_i64_wrap() > 0) { critter_grad(b, s, ht, poly, (List.get(poly.grad, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))) } else { Paint.push_poly(poly.color, mapped_pts(b, s, ht, poly.pts)) }) })
 
 	critter_grad : Camera.ScreenPt, F64, F64, Stills.StillPoly, Stills.StillGrad -> List(Paint.DrawCmd)
 	critter_grad = |b, s, ht, poly, g| ({
@@ -55,7 +55,7 @@ Critter :: [].{
 	critter_polys = |b, s, ht, ps| critter_polys_acc(b, s, ht, ps, 0, [])
 
 	critter_polys_acc : Camera.ScreenPt, F64, F64, List(Stills.StillPoly), I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
-	critter_polys_acc = |b, s, ht, ps, i, acc| (if (i >= U64.to_i64_wrap(List.len(ps))) { acc } else { critter_polys_acc(b, s, ht, ps, (i + 1), List.concat(acc, critter_poly(b, s, ht, (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))) })
+	critter_polys_acc = |b, s, ht, ps, i, acc| (if (i >= ps.len().to_i64_wrap()) { acc } else { critter_polys_acc(b, s, ht, ps, (i + 1), List.concat(acc, critter_poly(b, s, ht, (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))) })
 
 	critter_draw : F64, F64, F64, I64, Bool, F64, F64 -> List(Paint.DrawCmd)
 	critter_draw = |right, forward, height, cp, face_right, cf, view_w| ({

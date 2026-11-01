@@ -15,7 +15,7 @@ seg_list : I64 -> List(World.Segment)
 seg_list = |i| seg_list_acc(i, [])
 
 seg_list_acc : I64, List(World.Segment) -> List(World.Segment)
-seg_list_acc = |i, acc| (if (i >= U64.to_i64_wrap(List.len(World.route))) { acc } else { seg_list_acc((i + 1), List.append(acc, World.segment_at(i))) })
+seg_list_acc = |i, acc| (if (i >= World.route.len().to_i64_wrap()) { acc } else { seg_list_acc((i + 1), List.append(acc, World.segment_at(i))) })
 
 start_got : List(F64)
 start_got = [Safari.ride_initial.clock, Safari.ride_initial.rider.along, Safari.ride_initial.rider.across, Safari.ride_initial.rider.v, Safari.ride_initial.truck.pos, Safari.ride_initial.truck.v]
@@ -93,7 +93,7 @@ frame : List(Paint.DrawCmd)
 frame = Safari.ride_frame(segs, Safari.ride_initial)
 
 frame_got : List(Bool)
-frame_got = [(U64.to_i64_wrap(List.len(frame)) > 0), (U64.to_i64_wrap(List.len(Safari.ride_frame(segs, one))) > 0), ((List.get(frame, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).tag >= 0), ((List.get(frame, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).tag <= 6)]
+frame_got = [(frame.len().to_i64_wrap() > 0), (Safari.ride_frame(segs, one).len().to_i64_wrap() > 0), ((List.get(frame, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).tag >= 0), ((List.get(frame, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).tag <= 6)]
 
 frame_want : List(Bool)
 frame_want = [True, True, True, True]

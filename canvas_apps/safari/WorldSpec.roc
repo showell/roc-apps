@@ -5,7 +5,7 @@ import lib.Trig
 import World
 
 route_shape_got : List(I64)
-route_shape_got = [U64.to_i64_wrap(List.len(World.route)), World.pig_count_to(0, 0), World.pig_count_to(3, 0), World.pig_count_to(11, 0), World.pig_count_to(12, 0), World.pig_count_to(19, 0)]
+route_shape_got = [World.route.len().to_i64_wrap(), World.pig_count_to(0, 0), World.pig_count_to(3, 0), World.pig_count_to(11, 0), World.pig_count_to(12, 0), World.pig_count_to(19, 0)]
 
 route_shape_want : List(I64)
 route_shape_want = [19, 0, 1, 2, 3, 9]
@@ -56,7 +56,7 @@ commit_want : List(F64)
 commit_want = [498.32180073764545, 319.2720595314676, 1199.647346038583]
 
 pigs_got : List(I64)
-pigs_got = [U64.to_i64_wrap(List.len(seg(0).pigs)), U64.to_i64_wrap(List.len(seg(2).pigs)), U64.to_i64_wrap(List.len(seg(10).pigs)), U64.to_i64_wrap(List.len(seg(11).pigs)), U64.to_i64_wrap(List.len(seg(13).pigs)), U64.to_i64_wrap(List.len(seg(18).pigs))]
+pigs_got = [seg(0).pigs.len().to_i64_wrap(), seg(2).pigs.len().to_i64_wrap(), seg(10).pigs.len().to_i64_wrap(), seg(11).pigs.len().to_i64_wrap(), seg(13).pigs.len().to_i64_wrap(), seg(18).pigs.len().to_i64_wrap()]
 
 pigs_want : List(I64)
 pigs_want = [0, 49, 49, 10, 10, 10]
@@ -68,13 +68,13 @@ distract_want : List(Bool)
 distract_want = [False, True, True, False, False]
 
 cows_got : List(I64)
-cows_got = [U64.to_i64_wrap(List.len(seg(0).cows)), U64.to_i64_wrap(List.len(seg(3).cows)), U64.to_i64_wrap(List.len(seg(4).cows)), U64.to_i64_wrap(List.len(seg(18).cows))]
+cows_got = [seg(0).cows.len().to_i64_wrap(), seg(3).cows.len().to_i64_wrap(), seg(4).cows.len().to_i64_wrap(), seg(18).cows.len().to_i64_wrap()]
 
 cows_want : List(I64)
 cows_want = [14, 14, 15, 15]
 
 trees_got : List(I64)
-trees_got = [U64.to_i64_wrap(List.len(seg(0).trees)), U64.to_i64_wrap(List.len(seg(1).trees)), U64.to_i64_wrap(List.len(seg(6).trees)), U64.to_i64_wrap(List.len(seg(18).trees))]
+trees_got = [seg(0).trees.len().to_i64_wrap(), seg(1).trees.len().to_i64_wrap(), seg(6).trees.len().to_i64_wrap(), seg(18).trees.len().to_i64_wrap()]
 
 trees_want : List(I64)
 trees_want = [28, 16, 74, 14]

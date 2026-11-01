@@ -44,7 +44,7 @@ drawn : List(Geom.RiderPt) -> List(Paint.DrawCmd)
 drawn = |ps| Ground.emit_ground_color(ps, 3112588, 685.5110432362151, 960.0)
 
 count_got : List(I64)
-count_got = [U64.to_i64_wrap(List.len(drawn(quad))), U64.to_i64_wrap(List.len(drawn(wide(8)))), U64.to_i64_wrap(List.len(drawn(wide(9)))), U64.to_i64_wrap(List.len(drawn(behind))), U64.to_i64_wrap(List.len(drawn(two_points)))]
+count_got = [drawn(quad).len().to_i64_wrap(), drawn(wide(8)).len().to_i64_wrap(), drawn(wide(9)).len().to_i64_wrap(), drawn(behind).len().to_i64_wrap(), drawn(two_points).len().to_i64_wrap()]
 
 count_want : List(I64)
 count_want = [1, 1, 0, 0, 0]
@@ -52,7 +52,7 @@ count_want = [1, 1, 0, 0, 0]
 cmd_got : List(I64)
 cmd_got = ({
 	c = (List.get(drawn(quad), I64.to_u64_wrap(0)) ?? crash("list-at out of range"))
-	[c.tag, c.color, c.color2, U64.to_i64_wrap(List.len(c.pts)), U64.to_i64_wrap(List.len(c.geom))]
+	[c.tag, c.color, c.color2, c.pts.len().to_i64_wrap(), c.geom.len().to_i64_wrap()]
 })
 
 cmd_want : List(I64)

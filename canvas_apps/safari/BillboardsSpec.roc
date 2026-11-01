@@ -21,7 +21,7 @@ placed_all : I64 -> List(Billboards.Placed)
 placed_all = |i| placed_all_acc(i, [])
 
 placed_all_acc : I64, List(Billboards.Placed) -> List(Billboards.Placed)
-placed_all_acc = |i, acc| (if (i >= U64.to_i64_wrap(List.len(fwd_in))) { acc } else { placed_all_acc((i + 1), List.append(acc, placed_at(i))) })
+placed_all_acc = |i, acc| (if (i >= fwd_in.len().to_i64_wrap()) { acc } else { placed_all_acc((i + 1), List.append(acc, placed_at(i))) })
 
 kept_got : List(Bool)
 kept_got = ListUtils.list_map(lam_0, placed_all(0))
@@ -58,7 +58,7 @@ carried_bool_want : List(Bool)
 carried_bool_want = [True, False]
 
 harvest_got : List(I64)
-harvest_got = [U64.to_i64_wrap(List.len(Billboards.kept_of(placed_all(0), 0))), Billboards.size_culled_of(placed_all(0), 0), U64.to_i64_wrap(List.len(placed_all(0)))]
+harvest_got = [Billboards.kept_of(placed_all(0), 0).len().to_i64_wrap(), Billboards.size_culled_of(placed_all(0), 0), placed_all(0).len().to_i64_wrap()]
 
 harvest_want : List(I64)
 harvest_want = [4, 3, 10]

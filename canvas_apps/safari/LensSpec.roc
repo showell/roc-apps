@@ -36,7 +36,7 @@ cam_walk : I64 -> List(F64)
 cam_walk = |i| cam_walk_acc(i, [])
 
 cam_walk_acc : I64, List(F64) -> List(F64)
-cam_walk_acc = |i, acc| (if (i >= U64.to_i64_wrap(List.len(cam_lean))) { acc } else { cam_walk_acc((i + 1), List.append(acc, Lens.cam_focal((List.get(cam_lean, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), (List.get(cam_gaze, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))) })
+cam_walk_acc = |i, acc| (if (i >= cam_lean.len().to_i64_wrap()) { acc } else { cam_walk_acc((i + 1), List.append(acc, Lens.cam_focal((List.get(cam_lean, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), (List.get(cam_gaze, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))))) })
 
 # --- Entry ---
 

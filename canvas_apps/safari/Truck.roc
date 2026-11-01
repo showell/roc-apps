@@ -34,7 +34,7 @@ Truck :: [].{
 	truck_initial = { pos: start_ahead, v: Pose.v_base, braking: False }
 
 	next_turn_loop : List(World.Segment), F64, I64, F64 -> Truck.NextTurn
-	next_turn_loop = |segs, pos, i, cum0| (if (i >= U64.to_i64_wrap(List.len(segs))) { NoTurnAhead } else { next_turn_step(segs, pos, i, (cum0 + (List.get(segs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).length)) })
+	next_turn_loop = |segs, pos, i, cum0| (if (i >= segs.len().to_i64_wrap()) { NoTurnAhead } else { next_turn_step(segs, pos, i, (cum0 + (List.get(segs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).length)) })
 
 	next_turn_step : List(World.Segment), F64, I64, F64 -> Truck.NextTurn
 	next_turn_step = |segs, pos, i, cum| ({

@@ -72,7 +72,7 @@ behind_want : List(Bool)
 behind_want = [False, True]
 
 items_got : List(I64)
-items_got = [U64.to_i64_wrap(List.len(TruckPlan.truck_items(lead_of(100.0)))), U64.to_i64_wrap(List.len(TruckPlan.truck_items(lead_of(2000.0)))), U64.to_i64_wrap(List.len(TruckPlan.truck_items(TruckPlan.no_truck))), (List.get(TruckPlan.truck_items(lead_of(100.0)), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).i]
+items_got = [TruckPlan.truck_items(lead_of(100.0)).len().to_i64_wrap(), TruckPlan.truck_items(lead_of(2000.0)).len().to_i64_wrap(), TruckPlan.truck_items(TruckPlan.no_truck).len().to_i64_wrap(), (List.get(TruckPlan.truck_items(lead_of(100.0)), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).i]
 
 items_want : List(I64)
 items_want = [1, 0, 0, 0]

@@ -74,14 +74,14 @@ Tree :: [].{
 	less_xy = |a, b| (if (a.x < b.x) { True } else { (if (F64.to_bits(a.x) == F64.to_bits(b.x)) { (a.y < b.y) } else { False }) })
 
 	hull_insert : Camera.ScreenPt, List(Camera.ScreenPt), I64 -> List(Camera.ScreenPt)
-	hull_insert = |p, xs, i| (if (i >= U64.to_i64_wrap(List.len(xs))) { List.concat(xs, [p]) } else { (if less_xy(p, (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))) { List.join([ListUtils.list_take(xs, i), [p], ListUtils.list_drop(xs, i)]) } else { hull_insert(p, xs, (i + 1)) }) })
+	hull_insert = |p, xs, i| (if (i >= xs.len().to_i64_wrap()) { List.concat(xs, [p]) } else { (if less_xy(p, (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))) { List.join([ListUtils.list_take(xs, i), [p], ListUtils.list_drop(xs, i)]) } else { hull_insert(p, xs, (i + 1)) }) })
 
 	sort_pts : List(Camera.ScreenPt), I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
-	sort_pts = |src, i, acc| (if (i >= U64.to_i64_wrap(List.len(src))) { acc } else { sort_pts(src, (i + 1), hull_insert((List.get(src, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), acc, 0)) })
+	sort_pts = |src, i, acc| (if (i >= src.len().to_i64_wrap()) { acc } else { sort_pts(src, (i + 1), hull_insert((List.get(src, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), acc, 0)) })
 
 	hull_trim : List(Camera.ScreenPt), Camera.ScreenPt -> List(Camera.ScreenPt)
 	hull_trim = |hull, p| ({
-		n = U64.to_i64_wrap(List.len(hull))
+		n = hull.len().to_i64_wrap()
 		(if (n < 2) { hull } else { ({
 			a = (List.get(hull, I64.to_u64_wrap((n - 2))) ?? crash("list-at out of range"))
 			b = (List.get(hull, I64.to_u64_wrap((n - 1))) ?? crash("list-at out of range"))
@@ -91,7 +91,7 @@ Tree :: [].{
 	})
 
 	lower_chain : List(Camera.ScreenPt), I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
-	lower_chain = |ps, i, hull| (if (i >= U64.to_i64_wrap(List.len(ps))) { hull } else { ({
+	lower_chain = |ps, i, hull| (if (i >= ps.len().to_i64_wrap()) { hull } else { ({
 		p = (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 		lower_chain(ps, (i + 1), List.concat(hull_trim(hull, p), [p]))
 	}) })
@@ -104,12 +104,12 @@ Tree :: [].{
 
 	convex_hull_pts : List(Camera.ScreenPt) -> List(Camera.ScreenPt)
 	convex_hull_pts = |ps| ({
-		n = U64.to_i64_wrap(List.len(ps))
+		n = ps.len().to_i64_wrap()
 		(if (n < 3) { ps } else { ({
 			sorted = sort_pts(ps, 0, [])
 			lo = lower_chain(sorted, 0, [])
 			up = upper_chain(sorted, (n - 1), [])
-			List.concat(ListUtils.list_take(lo, (U64.to_i64_wrap(List.len(lo)) - 1)), ListUtils.list_take(up, (U64.to_i64_wrap(List.len(up)) - 1)))
+			List.concat(ListUtils.list_take(lo, (lo.len().to_i64_wrap() - 1)), ListUtils.list_take(up, (up.len().to_i64_wrap() - 1)))
 		}) })
 	})
 
@@ -122,7 +122,7 @@ Tree :: [].{
 			apex = Camera.project({ right: r0, forward: f0, height: h_apex }, cf, view_w)
 			ring = List.concat(cone_ring(r0, f0, rad, h_base, cf, view_w, 0, 0.0), [apex])
 			hull = convex_hull_pts(ring)
-			(if (U64.to_i64_wrap(List.len(hull)) < 3) { [] } else { Paint.push_round_poly(color, shade, hull) })
+			(if (hull.len().to_i64_wrap() < 3) { [] } else { Paint.push_round_poly(color, shade, hull) })
 		}) })
 	})
 

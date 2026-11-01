@@ -44,7 +44,7 @@ TowerPlan :: [].{
 	walk_towers = |segs, ch, pose| walk_towers_acc(segs, ch, pose, 0, [])
 
 	walk_towers_acc : List(World.Segment), List(I64), Frame.Pose, I64, List(TowerPlan.TowerItem) -> List(TowerPlan.TowerItem)
-	walk_towers_acc = |segs, ch, pose, d, acc| (if (d >= U64.to_i64_wrap(List.len(ch))) { acc } else { walk_towers_acc(segs, ch, pose, (d + 1), List.concat(acc, seg_towers(segs, ch, pose, d))) })
+	walk_towers_acc = |segs, ch, pose, d, acc| (if (d >= ch.len().to_i64_wrap()) { acc } else { walk_towers_acc(segs, ch, pose, (d + 1), List.concat(acc, seg_towers(segs, ch, pose, d))) })
 
 	behind_tower : List(World.Segment), List(I64), Frame.Pose, I64 -> List(TowerPlan.TowerItem)
 	behind_tower = |segs, ch, pose, prev_idx| ({
@@ -63,5 +63,5 @@ TowerPlan :: [].{
 	tower_items = |ts| tower_items_acc(ts, 0, [])
 
 	tower_items_acc : List(TowerPlan.TowerItem), I64, List(DepthSort.DepthKey) -> List(DepthSort.DepthKey)
-	tower_items_acc = |ts, i, acc| (if (i >= U64.to_i64_wrap(List.len(ts))) { acc } else { tower_items_acc(ts, (i + 1), List.append(acc, { fwd: (List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd, kind: KTower, i: i })) })
+	tower_items_acc = |ts, i, acc| (if (i >= ts.len().to_i64_wrap()) { acc } else { tower_items_acc(ts, (i + 1), List.append(acc, { fwd: (List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd, kind: KTower, i: i })) })
 }

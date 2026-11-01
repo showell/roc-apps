@@ -50,7 +50,7 @@ anchor_want = [100.0, 200.0]
 mapped_got : List(F64)
 mapped_got = ({
 	ps = Critter.mapped_pts(feet, 1.0, 50.0, [{ x: 0.0, y: 0.0 }, { x: 0.5, y: 0.4 }, { x: 1.0, y: 1.0 }])
-	[I64.to_f64(U64.to_i64_wrap(List.len(ps))), (List.get(ps, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).y, (List.get(ps, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).y, (List.get(ps, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).y]
+	[I64.to_f64(ps.len().to_i64_wrap()), (List.get(ps, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).y, (List.get(ps, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).y, (List.get(ps, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).y]
 })
 
 mapped_want : List(F64)
@@ -67,7 +67,7 @@ flat_poly : I64 -> Stills.StillPoly
 flat_poly = |n| { color: 7, grad: [], pts: many(n) }
 
 guard_got : List(I64)
-guard_got = [Critter.max_critter_pts, U64.to_i64_wrap(List.len(Critter.critter_poly(feet, 1.0, 50.0, flat_poly(3)))), U64.to_i64_wrap(List.len(Critter.critter_poly(feet, 1.0, 50.0, flat_poly(512)))), U64.to_i64_wrap(List.len(Critter.critter_poly(feet, 1.0, 50.0, flat_poly(513)))), U64.to_i64_wrap(List.len(Critter.critter_poly(feet, 1.0, 50.0, flat_poly(2))))]
+guard_got = [Critter.max_critter_pts, Critter.critter_poly(feet, 1.0, 50.0, flat_poly(3)).len().to_i64_wrap(), Critter.critter_poly(feet, 1.0, 50.0, flat_poly(512)).len().to_i64_wrap(), Critter.critter_poly(feet, 1.0, 50.0, flat_poly(513)).len().to_i64_wrap(), Critter.critter_poly(feet, 1.0, 50.0, flat_poly(2)).len().to_i64_wrap()]
 
 guard_want : List(I64)
 guard_want = [512, 1, 1, 0, 0]
@@ -75,14 +75,14 @@ guard_want = [512, 1, 1, 0, 0]
 solid_got : List(I64)
 solid_got = ({
 	c = (List.get(Critter.critter_poly(feet, 1.0, 50.0, flat_poly(3)), I64.to_u64_wrap(0)) ?? crash("list-at out of range"))
-	[c.tag, c.color, U64.to_i64_wrap(List.len(c.pts))]
+	[c.tag, c.color, c.pts.len().to_i64_wrap()]
 })
 
 solid_want : List(I64)
 solid_want = [0, 7, 6]
 
 drawn : F64, F64 -> I64
-drawn = |forward, height| U64.to_i64_wrap(List.len(Critter.critter_draw(0.0, forward, height, 128024, False, 500.0, 960.0)))
+drawn = |forward, height| Critter.critter_draw(0.0, forward, height, 128024, False, 500.0, 960.0).len().to_i64_wrap()
 
 size_got : List(I64)
 size_got = [drawn(1000.0, 2.0), drawn(2000.0, 2.0), drawn(1000.0, 1.9), drawn(100.0, 2.0)]
@@ -91,7 +91,7 @@ size_want : List(I64)
 size_want = [6, 0, 0, 6]
 
 unknown_got : List(I64)
-unknown_got = [U64.to_i64_wrap(List.len(EmojiStills.emoji_polys_for(1))), U64.to_i64_wrap(List.len(Critter.critter_draw(0.0, 100.0, 2.0, 1, False, 500.0, 960.0))), U64.to_i64_wrap(List.len(EmojiStills.emoji_polys_for(128024)))]
+unknown_got = [EmojiStills.emoji_polys_for(1).len().to_i64_wrap(), Critter.critter_draw(0.0, 100.0, 2.0, 1, False, 500.0, 960.0).len().to_i64_wrap(), EmojiStills.emoji_polys_for(128024).len().to_i64_wrap()]
 
 unknown_want : List(I64)
 unknown_want = [0, 0, 6]

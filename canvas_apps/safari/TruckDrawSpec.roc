@@ -30,7 +30,7 @@ axles_want : List(F64)
 axles_want = [(-3.2), (-2.0), 2.0, 3.2, 6.125, 36.8, 38.0, 42.0, 43.2, 46.125]
 
 axle_count_got : List(I64)
-axle_count_got = [U64.to_i64_wrap(List.len(TruckDraw.truck_axles(TruckDraw.truck_box(0.0, 0.0))))]
+axle_count_got = [TruckDraw.truck_axles(TruckDraw.truck_box(0.0, 0.0)).len().to_i64_wrap()]
 
 axle_count_want : List(I64)
 axle_count_want = [5]
@@ -51,7 +51,7 @@ face_want : List(F64)
 face_want = [25.0, 3.0]
 
 face_carry_got : List(I64)
-face_carry_got = [quad_face.color, U64.to_i64_wrap(List.len(quad_face.v)), tri_face.color, U64.to_i64_wrap(List.len(tri_face.v))]
+face_carry_got = [quad_face.color, quad_face.v.len().to_i64_wrap(), tri_face.color, tri_face.v.len().to_i64_wrap()]
 
 face_carry_want : List(I64)
 face_carry_want = [1846886, 4, 1381658, 3]
@@ -64,7 +64,7 @@ colours_of : List(TruckDraw.TruckFace), I64 -> List(I64)
 colours_of = |fs, i| colours_of_acc(fs, i, [])
 
 colours_of_acc : List(TruckDraw.TruckFace), I64, List(I64) -> List(I64)
-colours_of_acc = |fs, i, acc| (if (i >= U64.to_i64_wrap(List.len(fs))) { acc } else { colours_of_acc(fs, (i + 1), List.append(acc, (List.get(fs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).color)) })
+colours_of_acc = |fs, i, acc| (if (i >= fs.len().to_i64_wrap()) { acc } else { colours_of_acc(fs, (i + 1), List.append(acc, (List.get(fs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).color)) })
 
 tied : List(TruckDraw.TruckFace)
 tied = [mark(1, 30.0), mark(2, 10.0), mark(3, 30.0), mark(4, 20.0), mark(5, 30.0)]
@@ -85,7 +85,7 @@ slack_want : List(I64)
 slack_want = [3, 1, 2, 4]
 
 small_got : List(I64)
-small_got = [U64.to_i64_wrap(List.len(TruckDraw.sort_faces([]))), U64.to_i64_wrap(List.len(TruckDraw.sort_faces([mark(7, 1.0)]))), (List.get(TruckDraw.sort_faces([mark(7, 1.0)]), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).color]
+small_got = [TruckDraw.sort_faces([]).len().to_i64_wrap(), TruckDraw.sort_faces([mark(7, 1.0)]).len().to_i64_wrap(), (List.get(TruckDraw.sort_faces([mark(7, 1.0)]), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).color]
 
 small_want : List(I64)
 small_want = [0, 1, 7]
@@ -107,7 +107,7 @@ halo_want : List(F64)
 halo_want = [16.0, 16.0, 4.0, 4.0, 5.0, 10.0, 32.0]
 
 circle_count_got : List(I64)
-circle_count_got = [U64.to_i64_wrap(List.len(TruckDraw.glow_circle(0.0, 0.0, 10.0, 0))), TruckDraw.glow_sides, TruckDraw.tire_sides]
+circle_count_got = [TruckDraw.glow_circle(0.0, 0.0, 10.0, 0).len().to_i64_wrap(), TruckDraw.glow_sides, TruckDraw.tire_sides]
 
 circle_count_want : List(I64)
 circle_count_want = [16, 16, 16]

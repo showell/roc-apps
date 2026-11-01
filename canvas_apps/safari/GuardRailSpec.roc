@@ -26,7 +26,7 @@ rails : List(GuardRail.RailPoly)
 rails = GuardRail.rail_emit(straight)
 
 shape_got : List(I64)
-shape_got = [U64.to_i64_wrap(List.len(rails)), U64.to_i64_wrap(List.len(GuardRail.bars(straight, 0))), U64.to_i64_wrap(List.len(GuardRail.posts(straight, 0))), U64.to_i64_wrap(List.len((List.get(rails, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).v)), U64.to_i64_wrap(List.len((List.get(rails, I64.to_u64_wrap(4)) ?? crash("list-at out of range")).v))]
+shape_got = [rails.len().to_i64_wrap(), GuardRail.bars(straight, 0).len().to_i64_wrap(), GuardRail.posts(straight, 0).len().to_i64_wrap(), (List.get(rails, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).v.len().to_i64_wrap(), (List.get(rails, I64.to_u64_wrap(4)) ?? crash("list-at out of range")).v.len().to_i64_wrap()]
 
 shape_want : List(I64)
 shape_want = [5, 2, 3, 4, 4]
@@ -79,14 +79,14 @@ doubled = [pt(0.0, 10.0), pt(0.0, 10.0)]
 doubled_got : List(F64)
 doubled_got = ({
 	v = (List.get(GuardRail.posts(doubled, 0), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).v
-	[I64.to_f64(U64.to_i64_wrap(List.len(GuardRail.rail_emit(doubled)))), (List.get(v, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).right, (List.get(v, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).right, (List.get(v, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).forward, (List.get(v, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).forward, (List.get(v, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).height]
+	[I64.to_f64(GuardRail.rail_emit(doubled).len().to_i64_wrap()), (List.get(v, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).right, (List.get(v, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).right, (List.get(v, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).forward, (List.get(v, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).forward, (List.get(v, I64.to_u64_wrap(2)) ?? crash("list-at out of range")).height]
 })
 
 doubled_want : List(F64)
 doubled_want = [3.0, 0.0, 0.0, 10.0, 10.0, 0.55]
 
 short_got : List(I64)
-short_got = [U64.to_i64_wrap(List.len(GuardRail.rail_emit([]))), U64.to_i64_wrap(List.len(GuardRail.rail_emit([pt(0.0, 10.0)]))), U64.to_i64_wrap(List.len(GuardRail.rail_emit(doubled))), U64.to_i64_wrap(List.len(GuardRail.bars([pt(0.0, 10.0)], 0)))]
+short_got = [GuardRail.rail_emit([]).len().to_i64_wrap(), GuardRail.rail_emit([pt(0.0, 10.0)]).len().to_i64_wrap(), GuardRail.rail_emit(doubled).len().to_i64_wrap(), GuardRail.bars([pt(0.0, 10.0)], 0).len().to_i64_wrap()]
 
 short_want : List(I64)
 short_want = [0, 0, 3, 0]

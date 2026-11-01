@@ -54,7 +54,7 @@ a_tower : TowerPlan.TowerItem
 a_tower = { map: Frame.chain_map(0), a0: 200.0, x0: 22.0, yaw: 0.0, fwd: 200.0, off: 0.0 }
 
 base_got : List(I64)
-base_got = [U64.to_i64_wrap(List.len(ItemDraw.tower_base(segs, chain, origin, a_tower, 0))), U64.to_i64_wrap(List.len(ItemDraw.tower_base(segs, chain, origin, { map: Frame.chain_map(0), a0: 200.0, x0: 22.0, yaw: 1.0, fwd: 200.0, off: 0.0 }, 0)))]
+base_got = [ItemDraw.tower_base(segs, chain, origin, a_tower, 0).len().to_i64_wrap(), ItemDraw.tower_base(segs, chain, origin, { map: Frame.chain_map(0), a0: 200.0, x0: 22.0, yaw: 1.0, fwd: 200.0, off: 0.0 }, 0).len().to_i64_wrap()]
 
 base_want : List(I64)
 base_want = [4, 4]
@@ -69,7 +69,7 @@ corner_want : List(F64)
 corner_want = [194.0, 206.0, 14.0, 26.0]
 
 drawn : F64 -> I64
-drawn = |a0| U64.to_i64_wrap(List.len(ItemDraw.draw_one_tower(segs, chain, origin, { map: Frame.chain_map(0), a0: a0, x0: 22.0, yaw: 0.0, fwd: a0, off: 0.0 }, 500.0, 0.0)))
+drawn = |a0| ItemDraw.draw_one_tower(segs, chain, origin, { map: Frame.chain_map(0), a0: a0, x0: 22.0, yaw: 0.0, fwd: a0, off: 0.0 }, 500.0, 0.0).len().to_i64_wrap()
 
 tower_got : List(Bool)
 tower_got = [(drawn(200.0) > 0), (drawn(1000.0) > 0), (drawn((0.0 - 100.0)) == 0)]
@@ -84,9 +84,9 @@ tree_got : List(Bool)
 tree_got = ({
 	near = ItemDraw.draw_one_tree(cluster, 0, 500.0)
 	far = ItemDraw.draw_one_tree(cluster, 4, 500.0)
-	near_tier = U64.to_i64_wrap(List.len((List.get(near, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).pts))
-	far_tier = U64.to_i64_wrap(List.len((List.get(far, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).pts))
-	[(U64.to_i64_wrap(List.len(near)) > 0), (U64.to_i64_wrap(List.len(far)) > 0), (near_tier > far_tier), (far_tier >= 6)]
+	near_tier = (List.get(near, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).pts.len().to_i64_wrap()
+	far_tier = (List.get(far, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).pts.len().to_i64_wrap()
+	[(near.len().to_i64_wrap() > 0), (far.len().to_i64_wrap() > 0), (near_tier > far_tier), (far_tier >= 6)]
 })
 
 tree_want : List(Bool)

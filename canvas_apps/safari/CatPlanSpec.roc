@@ -33,7 +33,7 @@ seen : List(CatPlan.CatItem)
 seen = riding(300.0)
 
 count_got : List(I64)
-count_got = [U64.to_i64_wrap(List.len(seen)), U64.to_i64_wrap(List.len(CatPlan.seg_cat(segs, chain, origin, 0, 500.0, 0.0, 1.0))), U64.to_i64_wrap(List.len(CatPlan.seg_cat(segs, chain, origin, 2, 500.0, 0.0, 1.0))), CatPlan.max_vis_cats]
+count_got = [seen.len().to_i64_wrap(), CatPlan.seg_cat(segs, chain, origin, 0, 500.0, 0.0, 1.0).len().to_i64_wrap(), CatPlan.seg_cat(segs, chain, origin, 2, 500.0, 0.0, 1.0).len().to_i64_wrap(), CatPlan.max_vis_cats]
 
 count_want : List(I64)
 count_want = [1, 0, 0, 8]
@@ -62,13 +62,13 @@ closing_want : List(F64)
 closing_want = [(-100.0), (-100.0), 0.0]
 
 cull_got : List(I64)
-cull_got = [U64.to_i64_wrap(List.len(riding(0.0))), U64.to_i64_wrap(List.len(riding(200.0))), U64.to_i64_wrap(List.len(riding(500.0))), U64.to_i64_wrap(List.len(riding(600.0))), U64.to_i64_wrap(List.len(CatPlan.walk_cats(segs, [], origin, 500.0, 0.0, 1.0, 0))), U64.to_i64_wrap(List.len(CatPlan.walk_cats(segs, [0], origin, 500.0, 0.0, 1.0, 0)))]
+cull_got = [riding(0.0).len().to_i64_wrap(), riding(200.0).len().to_i64_wrap(), riding(500.0).len().to_i64_wrap(), riding(600.0).len().to_i64_wrap(), CatPlan.walk_cats(segs, [], origin, 500.0, 0.0, 1.0, 0).len().to_i64_wrap(), CatPlan.walk_cats(segs, [0], origin, 500.0, 0.0, 1.0, 0).len().to_i64_wrap()]
 
 cull_want : List(I64)
 cull_want = [0, 1, 1, 0, 0, 0]
 
 items_got : List(I64)
-items_got = [U64.to_i64_wrap(List.len(CatPlan.cat_items(seen))), U64.to_i64_wrap(List.len(CatPlan.cat_items([]))), (List.get(CatPlan.cat_items(seen), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).i]
+items_got = [CatPlan.cat_items(seen).len().to_i64_wrap(), CatPlan.cat_items([]).len().to_i64_wrap(), (List.get(CatPlan.cat_items(seen), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).i]
 
 items_want : List(I64)
 items_want = [1, 0, 0]

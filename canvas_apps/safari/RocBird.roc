@@ -93,7 +93,7 @@ RocBird :: [].{
 
 	perches_from : List(World.Segment), List(I64), Frame.Pose, F64, I64, List(RocBird.Bird) -> List(RocBird.Bird)
 	perches_from = |segs, ch, pose, cf, d, acc|
-		if d >= U64.to_i64_wrap(List.len(ch)) { acc } else {
+		if d >= ch.len().to_i64_wrap() { acc } else {
 			perches_from(segs, ch, pose, cf, d + 1, List.concat(acc, perch(segs, ch, pose, cf, d)))
 		}
 
@@ -104,7 +104,7 @@ RocBird :: [].{
 
 	bird_items_from : List(RocBird.Bird), I64 -> List(DepthSort.DepthKey)
 	bird_items_from = |bs, i|
-		if i >= U64.to_i64_wrap(List.len(bs)) { [] } else {
+		if i >= bs.len().to_i64_wrap() { [] } else {
 			List.concat(
 				[{ fwd: (List.get(bs, I64.to_u64_wrap(i)) ?? crash("bird out of range")).fwd, kind: KBird, i: i }],
 				bird_items_from(bs, i + 1),

@@ -31,7 +31,7 @@ World :: [].{
 	})
 
 	next_tree_loop : List(Scenery.Tree), F64, I64, World.NearestTree -> World.NearestTree
-	next_tree_loop = |ts, desired, i, best| (if (i >= U64.to_i64_wrap(List.len(ts))) { best } else { next_tree_step(ts, desired, i, best) })
+	next_tree_loop = |ts, desired, i, best| (if (i >= ts.len().to_i64_wrap()) { best } else { next_tree_step(ts, desired, i, best) })
 
 	next_tree_step : List(Scenery.Tree), F64, I64, World.NearestTree -> World.NearestTree
 	next_tree_step = |ts, desired, i, best| ({
@@ -72,13 +72,13 @@ World :: [].{
 	segments_from = |i| segments_from_acc(i, [])
 
 	segments_from_acc : I64, List(World.Segment) -> List(World.Segment)
-	segments_from_acc = |i, acc| (if (i >= U64.to_i64_wrap(List.len(route))) { acc } else { segments_from_acc((i + 1), List.append(acc, segment_at(i))) })
+	segments_from_acc = |i, acc| (if (i >= route.len().to_i64_wrap()) { acc } else { segments_from_acc((i + 1), List.append(acc, segment_at(i))) })
 
 	build_world : List(World.Segment)
 	build_world = segments_from(0)
 
 	course_length_from : List(World.Segment), I64 -> F64
-	course_length_from = |ss, i| (if (i >= U64.to_i64_wrap(List.len(ss))) { 0.0 } else { ((List.get(ss, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).length + course_length_from(ss, (i + 1))) })
+	course_length_from = |ss, i| (if (i >= ss.len().to_i64_wrap()) { 0.0 } else { ((List.get(ss, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).length + course_length_from(ss, (i + 1))) })
 
 	course_length : List(World.Segment) -> F64
 	course_length = |ss| course_length_from(ss, 0)

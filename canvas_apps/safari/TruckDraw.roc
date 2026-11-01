@@ -112,10 +112,10 @@ TruckDraw :: [].{
 	})
 
 	sum_fwd : List(Geom.Vec3), I64 -> F64
-	sum_fwd = |ps, i| (if (i >= U64.to_i64_wrap(List.len(ps))) { 0.0 } else { ((List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).forward + sum_fwd(ps, (i + 1))) })
+	sum_fwd = |ps, i| (if (i >= ps.len().to_i64_wrap()) { 0.0 } else { ((List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).forward + sum_fwd(ps, (i + 1))) })
 
 	truck_face : I64, List(Geom.Vec3) -> TruckDraw.TruckFace
-	truck_face = |color, ps| { color: color, fwd: (sum_fwd(ps, 0) / I64.to_f64(U64.to_i64_wrap(List.len(ps)))), v: ps }
+	truck_face = |color, ps| { color: color, fwd: (sum_fwd(ps, 0) / I64.to_f64(ps.len().to_i64_wrap())), v: ps }
 
 	truck_side : List(World.Segment), List(I64), Frame.Pose, I64, TruckDraw.TruckBox, F64 -> TruckDraw.TruckFace
 	truck_side = |segs, ch, pose, d, bx, x| ({
@@ -191,7 +191,7 @@ TruckDraw :: [].{
 	side_tires = |segs, ch, pose, d, axles, x| side_tires_acc(segs, ch, pose, d, axles, x, 0, [])
 
 	side_tires_acc : List(World.Segment), List(I64), Frame.Pose, I64, List(F64), F64, I64, List(TruckDraw.TruckFace) -> List(TruckDraw.TruckFace)
-	side_tires_acc = |segs, ch, pose, d, axles, x, i, acc| (if (i >= U64.to_i64_wrap(List.len(axles))) { acc } else { side_tires_acc(segs, ch, pose, d, axles, x, (i + 1), List.append(acc, truck_face(tire_color, tire_pts(segs, ch, pose, d, (List.get(axles, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), x, 0)))) })
+	side_tires_acc = |segs, ch, pose, d, axles, x, i, acc| (if (i >= axles.len().to_i64_wrap()) { acc } else { side_tires_acc(segs, ch, pose, d, axles, x, (i + 1), List.append(acc, truck_face(tire_color, tire_pts(segs, ch, pose, d, (List.get(axles, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), x, 0)))) })
 
 	truck_faces : List(World.Segment), List(I64), Frame.Pose, I64, TruckDraw.TruckBox -> List(TruckDraw.TruckFace)
 	truck_faces = |segs, ch, pose, d, bx| ({
@@ -204,17 +204,17 @@ TruckDraw :: [].{
 	face_rest = |ys, j| face_rest_acc(ys, j, [])
 
 	face_rest_acc : List(TruckDraw.TruckFace), I64, List(TruckDraw.TruckFace) -> List(TruckDraw.TruckFace)
-	face_rest_acc = |ys, j, acc| (if (j >= U64.to_i64_wrap(List.len(ys))) { acc } else { face_rest_acc(ys, (j + 1), List.append(acc, (List.get(ys, I64.to_u64_wrap(j)) ?? crash("list-at out of range")))) })
+	face_rest_acc = |ys, j, acc| (if (j >= ys.len().to_i64_wrap()) { acc } else { face_rest_acc(ys, (j + 1), List.append(acc, (List.get(ys, I64.to_u64_wrap(j)) ?? crash("list-at out of range")))) })
 
 	# merge_faces builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	merge_faces : List(TruckDraw.TruckFace), List(TruckDraw.TruckFace), I64, I64 -> List(TruckDraw.TruckFace)
 	merge_faces = |a, b, i, j| merge_faces_acc(a, b, i, j, [])
 
 	merge_faces_acc : List(TruckDraw.TruckFace), List(TruckDraw.TruckFace), I64, I64, List(TruckDraw.TruckFace) -> List(TruckDraw.TruckFace)
-	merge_faces_acc = |a, b, i, j, acc| (if (i >= U64.to_i64_wrap(List.len(a))) { List.concat(acc, face_rest(b, j)) } else { (if (j >= U64.to_i64_wrap(List.len(b))) { List.concat(acc, face_rest(a, i)) } else { (if DepthSort.deeper_than((List.get(b, I64.to_u64_wrap(j)) ?? crash("list-at out of range")).fwd, (List.get(a, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd) { merge_faces_acc(a, b, i, (j + 1), List.append(acc, (List.get(b, I64.to_u64_wrap(j)) ?? crash("list-at out of range")))) } else { merge_faces_acc(a, b, (i + 1), j, List.append(acc, (List.get(a, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))) }) }) })
+	merge_faces_acc = |a, b, i, j, acc| (if (i >= a.len().to_i64_wrap()) { List.concat(acc, face_rest(b, j)) } else { (if (j >= b.len().to_i64_wrap()) { List.concat(acc, face_rest(a, i)) } else { (if DepthSort.deeper_than((List.get(b, I64.to_u64_wrap(j)) ?? crash("list-at out of range")).fwd, (List.get(a, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).fwd) { merge_faces_acc(a, b, i, (j + 1), List.append(acc, (List.get(b, I64.to_u64_wrap(j)) ?? crash("list-at out of range")))) } else { merge_faces_acc(a, b, (i + 1), j, List.append(acc, (List.get(a, I64.to_u64_wrap(i)) ?? crash("list-at out of range")))) }) }) })
 
 	sort_faces : List(TruckDraw.TruckFace) -> List(TruckDraw.TruckFace)
-	sort_faces = |xs| (if (U64.to_i64_wrap(List.len(xs)) <= 1) { xs } else { merge_faces(sort_faces(ListUtils.list_take(xs, I64.div_trunc_by(U64.to_i64_wrap(List.len(xs)), 2))), sort_faces(ListUtils.list_drop(xs, I64.div_trunc_by(U64.to_i64_wrap(List.len(xs)), 2))), 0, 0) })
+	sort_faces = |xs| (if (xs.len().to_i64_wrap() <= 1) { xs } else { merge_faces(sort_faces(ListUtils.list_take(xs, I64.div_trunc_by(xs.len().to_i64_wrap(), 2))), sort_faces(ListUtils.list_drop(xs, I64.div_trunc_by(xs.len().to_i64_wrap(), 2))), 0, 0) })
 
 	truck_fill : I64, List(Geom.Vec3), F64, F64 -> List(Paint.DrawCmd)
 	truck_fill = |color, ps, cf, view_w| Paint.push_poly(color, Camera.project_all(Geom.clip_near(ps, Geom.near), cf, view_w))
@@ -224,7 +224,7 @@ TruckDraw :: [].{
 	draw_faces = |fs, cf, view_w, i| draw_faces_acc(fs, cf, view_w, i, [])
 
 	draw_faces_acc : List(TruckDraw.TruckFace), F64, F64, I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
-	draw_faces_acc = |fs, cf, view_w, i, acc| (if (i >= U64.to_i64_wrap(List.len(fs))) { acc } else { draw_faces_acc(fs, cf, view_w, (i + 1), List.concat(acc, truck_fill((List.get(fs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).color, (List.get(fs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).v, cf, view_w))) })
+	draw_faces_acc = |fs, cf, view_w, i, acc| (if (i >= fs.len().to_i64_wrap()) { acc } else { draw_faces_acc(fs, cf, view_w, (i + 1), List.concat(acc, truck_fill((List.get(fs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).color, (List.get(fs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).v, cf, view_w))) })
 
 	any_behind : List(Geom.Vec3) -> Bool
 	any_behind = |ps| ps.any(|p| p.forward <= Geom.near)
@@ -239,7 +239,7 @@ TruckDraw :: [].{
 	max_radius = |sp, c| max_radius_from(sp, c, 0)
 
 	max_radius_from : List(Camera.ScreenPt), Camera.ScreenPt, I64 -> F64
-	max_radius_from = |sp, c, i| (if (i >= U64.to_i64_wrap(List.len(sp))) { 0.0 } else { DeviceMath.real_max(pt_dist((List.get(sp, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), c), max_radius_from(sp, c, (i + 1))) })
+	max_radius_from = |sp, c, i| (if (i >= sp.len().to_i64_wrap()) { 0.0 } else { DeviceMath.real_max(pt_dist((List.get(sp, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), c), max_radius_from(sp, c, (i + 1))) })
 
 	truck_wedge : List(World.Segment), List(I64), Frame.Pose, I64, TruckDraw.TruckBox, F64, F64, F64 -> List(Paint.DrawCmd)
 	truck_wedge = |segs, ch, pose, d, bx, src_x, cf, view_w| ({
@@ -264,10 +264,10 @@ TruckDraw :: [].{
 	truck_wedges = |segs, ch, pose, d, bx, cf, view_w| List.concat(truck_wedge(segs, ch, pose, d, bx, (bx.xl + headlight_inset), cf, view_w), truck_wedge(segs, ch, pose, d, bx, (bx.xr - headlight_inset), cf, view_w))
 
 	sum_x : List(Camera.ScreenPt), I64 -> F64
-	sum_x = |ps, i| (if (i >= U64.to_i64_wrap(List.len(ps))) { 0.0 } else { ((List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).x + sum_x(ps, (i + 1))) })
+	sum_x = |ps, i| (if (i >= ps.len().to_i64_wrap()) { 0.0 } else { ((List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).x + sum_x(ps, (i + 1))) })
 
 	sum_y : List(Camera.ScreenPt), I64 -> F64
-	sum_y = |ps, i| (if (i >= U64.to_i64_wrap(List.len(ps))) { 0.0 } else { ((List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).y + sum_y(ps, (i + 1))) })
+	sum_y = |ps, i| (if (i >= ps.len().to_i64_wrap()) { 0.0 } else { ((List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).y + sum_y(ps, (i + 1))) })
 
 	glow_pt : F64, F64, F64, I64 -> Camera.ScreenPt
 	glow_pt = |cx, cy, rad, i| ({

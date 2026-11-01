@@ -28,7 +28,7 @@ grad_ints_want : List(I64)
 grad_ints_want = [2, 16711680, 255]
 
 poly_ints_got : List(I64)
-poly_ints_got = [solid.color, shaded.color, U64.to_i64_wrap(List.len(solid.grad)), U64.to_i64_wrap(List.len(shaded.grad)), U64.to_i64_wrap(List.len(solid.pts)), U64.to_i64_wrap(List.len(shaded.pts))]
+poly_ints_got = [solid.color, shaded.color, solid.grad.len().to_i64_wrap(), shaded.grad.len().to_i64_wrap(), solid.pts.len().to_i64_wrap(), shaded.pts.len().to_i64_wrap()]
 
 poly_ints_want : List(I64)
 poly_ints_want = [9066271, 4989733, 0, 1, 2, 1]

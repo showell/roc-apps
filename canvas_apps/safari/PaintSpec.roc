@@ -20,7 +20,7 @@ flat_want : List(F64)
 flat_want = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
 
 count_got : List(I64)
-count_got = [U64.to_i64_wrap(List.len(Paint.push_poly(7, tri))), U64.to_i64_wrap(List.len(Paint.push_poly(7, two))), U64.to_i64_wrap(List.len(Paint.push_poly(7, []))), U64.to_i64_wrap(List.len(Paint.push_round_poly(7, 0.5, tri))), U64.to_i64_wrap(List.len(Paint.push_round_poly(7, 0.5, two))), U64.to_i64_wrap(List.len(Paint.push_grad_poly(7, 8, 0.0, 0.0, 1.0, tri))), U64.to_i64_wrap(List.len(Paint.push_grad_poly(7, 8, 0.0, 0.0, 1.0, two))), U64.to_i64_wrap(List.len(Paint.push_linear_grad_poly(7, 8, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, tri))), U64.to_i64_wrap(List.len(Paint.push_linear_grad_poly(7, 8, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, two))), U64.to_i64_wrap(List.len(Paint.push_radial_grad_poly(7, 8, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, tri))), U64.to_i64_wrap(List.len(Paint.push_radial_grad_poly(7, 8, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, two))), U64.to_i64_wrap(List.len(Paint.push_beacon(7, 1.0, 2.0, 3.0, 0.5)))]
+count_got = [Paint.push_poly(7, tri).len().to_i64_wrap(), Paint.push_poly(7, two).len().to_i64_wrap(), Paint.push_poly(7, []).len().to_i64_wrap(), Paint.push_round_poly(7, 0.5, tri).len().to_i64_wrap(), Paint.push_round_poly(7, 0.5, two).len().to_i64_wrap(), Paint.push_grad_poly(7, 8, 0.0, 0.0, 1.0, tri).len().to_i64_wrap(), Paint.push_grad_poly(7, 8, 0.0, 0.0, 1.0, two).len().to_i64_wrap(), Paint.push_linear_grad_poly(7, 8, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, tri).len().to_i64_wrap(), Paint.push_linear_grad_poly(7, 8, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, two).len().to_i64_wrap(), Paint.push_radial_grad_poly(7, 8, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, tri).len().to_i64_wrap(), Paint.push_radial_grad_poly(7, 8, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, two).len().to_i64_wrap(), Paint.push_beacon(7, 1.0, 2.0, 3.0, 0.5).len().to_i64_wrap()]
 
 count_want : List(I64)
 count_want = [1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
@@ -28,7 +28,7 @@ count_want = [1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
 shape_of : List(Paint.DrawCmd) -> List(I64)
 shape_of = |cs| ({
 	c = (List.get(cs, I64.to_u64_wrap(0)) ?? crash("list-at out of range"))
-	[c.tag, c.color, c.color2, U64.to_i64_wrap(List.len(c.geom)), U64.to_i64_wrap(List.len(c.pts))]
+	[c.tag, c.color, c.color2, c.geom.len().to_i64_wrap(), c.pts.len().to_i64_wrap()]
 })
 
 solid : List(Paint.DrawCmd)

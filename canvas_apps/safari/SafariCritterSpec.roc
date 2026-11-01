@@ -75,7 +75,7 @@ face_want : List(Bool)
 face_want = [True, True, False, False, True, True, False, False]
 
 count_got : List(I64)
-count_got = [U64.to_i64_wrap(List.len(pair_a)), U64.to_i64_wrap(List.len(SafariCritter.corner_critters(DuckPond, 100.0, True, 2.0))), U64.to_i64_wrap(List.len(SafariCritter.corner_critters(NoCreature, 100.0, True, 2.0)))]
+count_got = [pair_a.len().to_i64_wrap(), SafariCritter.corner_critters(DuckPond, 100.0, True, 2.0).len().to_i64_wrap(), SafariCritter.corner_critters(NoCreature, 100.0, True, 2.0).len().to_i64_wrap()]
 
 count_want : List(I64)
 count_want = [2, 0, 0]

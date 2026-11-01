@@ -12,7 +12,7 @@ bound_want : List(I64)
 bound_want = [7, 8]
 
 route_facts : List(World.Segment) -> List(I64)
-route_facts = |w| [U64.to_i64_wrap(List.len(w)), U64.to_i64_wrap(List.len(Frame.build_chain(w, 0))), U64.to_i64_wrap(List.len(Frame.build_chain(w, 15))), U64.to_i64_wrap(List.len(Frame.build_chain(w, 18)))]
+route_facts = |w| [w.len().to_i64_wrap(), Frame.build_chain(w, 0).len().to_i64_wrap(), Frame.build_chain(w, 15).len().to_i64_wrap(), Frame.build_chain(w, 18).len().to_i64_wrap()]
 
 route_got : List(I64)
 route_got = route_facts(World.build_world)

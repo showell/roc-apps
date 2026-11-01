@@ -34,7 +34,7 @@ lift_want = [125.0, 170.0, 10.0, 140.0, 0.0]
 pts_got : List(F64)
 pts_got = ({
 	ps = CatDraw.cat_pts(feet, 50.0, 0.0, [{ x: 0.0, y: 0.0 }, { x: 0.5, y: 0.4 }], 0)
-	[I64.to_f64(U64.to_i64_wrap(List.len(ps))), (List.get(ps, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).y, (List.get(ps, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).y]
+	[I64.to_f64(ps.len().to_i64_wrap()), (List.get(ps, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).y, (List.get(ps, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(1)) ?? crash("list-at out of range")).y]
 })
 
 pts_want : List(F64)
@@ -51,7 +51,7 @@ poly_of : I64 -> Stills.StillPoly
 poly_of = |n| { color: 9, grad: [], pts: many(n) }
 
 guard_got : List(I64)
-guard_got = [CatDraw.max_cat_pts, U64.to_i64_wrap(List.len(CatDraw.cat_poly(feet, 50.0, 0.0, poly_of(3)))), U64.to_i64_wrap(List.len(CatDraw.cat_poly(feet, 50.0, 0.0, poly_of(256)))), U64.to_i64_wrap(List.len(CatDraw.cat_poly(feet, 50.0, 0.0, poly_of(257)))), U64.to_i64_wrap(List.len(CatDraw.cat_poly(feet, 50.0, 0.0, poly_of(2))))]
+guard_got = [CatDraw.max_cat_pts, CatDraw.cat_poly(feet, 50.0, 0.0, poly_of(3)).len().to_i64_wrap(), CatDraw.cat_poly(feet, 50.0, 0.0, poly_of(256)).len().to_i64_wrap(), CatDraw.cat_poly(feet, 50.0, 0.0, poly_of(257)).len().to_i64_wrap(), CatDraw.cat_poly(feet, 50.0, 0.0, poly_of(2)).len().to_i64_wrap()]
 
 guard_want : List(I64)
 guard_want = [256, 1, 1, 0, 0]
@@ -59,35 +59,35 @@ guard_want = [256, 1, 1, 0, 0]
 solid_got : List(I64)
 solid_got = ({
 	c = (List.get(CatDraw.cat_poly(feet, 50.0, 0.0, poly_of(3)), I64.to_u64_wrap(0)) ?? crash("list-at out of range"))
-	[c.tag, c.color, c.color2, U64.to_i64_wrap(List.len(c.geom)), U64.to_i64_wrap(List.len(c.pts))]
+	[c.tag, c.color, c.color2, c.geom.len().to_i64_wrap(), c.pts.len().to_i64_wrap()]
 })
 
 solid_want : List(I64)
 solid_want = [0, 9, 0, 0, 6]
 
 polys_got : List(I64)
-polys_got = [U64.to_i64_wrap(List.len(CatDraw.cat_polys(feet, 50.0, 0.0, [poly_of(3), poly_of(4), poly_of(300)], 0))), U64.to_i64_wrap(List.len(CatDraw.cat_polys(feet, 50.0, 0.0, [], 0))), U64.to_i64_wrap(List.len((List.get(CatDraw.cat_polys(feet, 50.0, 0.0, [poly_of(3), poly_of(4)], 0), I64.to_u64_wrap(1)) ?? crash("list-at out of range")).pts))]
+polys_got = [CatDraw.cat_polys(feet, 50.0, 0.0, [poly_of(3), poly_of(4), poly_of(300)], 0).len().to_i64_wrap(), CatDraw.cat_polys(feet, 50.0, 0.0, [], 0).len().to_i64_wrap(), (List.get(CatDraw.cat_polys(feet, 50.0, 0.0, [poly_of(3), poly_of(4)], 0), I64.to_u64_wrap(1)) ?? crash("list-at out of range")).pts.len().to_i64_wrap()]
 
 polys_want : List(I64)
 polys_want = [2, 0, 8]
 
 drawn : F64, F64 -> I64
-drawn = |forward, height| U64.to_i64_wrap(List.len(CatDraw.cat_draw(0.0, forward, height, 0, 0.0, 500.0, 960.0)))
+drawn = |forward, height| CatDraw.cat_draw(0.0, forward, height, 0, 0.0, 500.0, 960.0).len().to_i64_wrap()
 
 size_got : List(I64)
 size_got = [drawn(850.0, 1.7), drawn(851.0, 1.7), drawn(2000.0, 1.7)]
 
 size_want : List(I64)
-size_want = [U64.to_i64_wrap(List.len(CatStills.cat_polys_for(0))), 0, 0]
+size_want = [CatStills.cat_polys_for(0).len().to_i64_wrap(), 0, 0]
 
 count_got : List(I64)
-count_got = [U64.to_i64_wrap(List.len(CatDraw.cat_draw(0.0, 100.0, 1.7, 0, 0.0, 500.0, 960.0))), U64.to_i64_wrap(List.len(CatDraw.cat_draw(0.0, 100.0, 1.7, 0, 0.3, 500.0, 960.0))), U64.to_i64_wrap(List.len(CatDraw.cat_draw(0.0, 100.0, 1.7, 2, 0.0, 500.0, 960.0)))]
+count_got = [CatDraw.cat_draw(0.0, 100.0, 1.7, 0, 0.0, 500.0, 960.0).len().to_i64_wrap(), CatDraw.cat_draw(0.0, 100.0, 1.7, 0, 0.3, 500.0, 960.0).len().to_i64_wrap(), CatDraw.cat_draw(0.0, 100.0, 1.7, 2, 0.0, 500.0, 960.0).len().to_i64_wrap()]
 
 count_want : List(I64)
-count_want = [U64.to_i64_wrap(List.len(CatStills.cat_polys_for(0))), U64.to_i64_wrap(List.len(CatStills.cat_polys_for(0))), U64.to_i64_wrap(List.len(CatStills.cat_polys_for(2)))]
+count_want = [CatStills.cat_polys_for(0).len().to_i64_wrap(), CatStills.cat_polys_for(0).len().to_i64_wrap(), CatStills.cat_polys_for(2).len().to_i64_wrap()]
 
 table_got : List(Bool)
-table_got = [(U64.to_i64_wrap(List.len(CatStills.cat_polys_for(0))) > 0), (U64.to_i64_wrap(List.len(CatStills.cat_polys_for(1))) > 0), (U64.to_i64_wrap(List.len(CatStills.cat_polys_for(2))) > 0), (U64.to_i64_wrap(List.len(CatStills.cat_polys_for(3))) > 0), (U64.to_i64_wrap(List.len(CatStills.cat_polys_for(4))) > 0), (U64.to_i64_wrap(List.len(CatStills.cat_polys_for(5))) > 0), (U64.to_i64_wrap(List.len(CatStills.cat_polys_for(6))) > 0)]
+table_got = [(CatStills.cat_polys_for(0).len().to_i64_wrap() > 0), (CatStills.cat_polys_for(1).len().to_i64_wrap() > 0), (CatStills.cat_polys_for(2).len().to_i64_wrap() > 0), (CatStills.cat_polys_for(3).len().to_i64_wrap() > 0), (CatStills.cat_polys_for(4).len().to_i64_wrap() > 0), (CatStills.cat_polys_for(5).len().to_i64_wrap() > 0), (CatStills.cat_polys_for(6).len().to_i64_wrap() > 0)]
 
 table_want : List(Bool)
 table_want = [True, True, True, True, True, True, True]

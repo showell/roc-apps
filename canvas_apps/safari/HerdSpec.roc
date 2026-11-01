@@ -6,7 +6,7 @@ import ListUtils
 import Scenery
 
 bull_count_got : List(I64)
-bull_count_got = [U64.to_i64_wrap(List.len(Herd.bull_of(True))), U64.to_i64_wrap(List.len(Herd.bull_of(False))), U64.to_i64_wrap(List.len(Herd.fill_cows(True))), U64.to_i64_wrap(List.len(Herd.fill_cows(False))), (List.get(Herd.bull_of(True), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).codepoint, Herd.bull_cp, Herd.cow_cp]
+bull_count_got = [Herd.bull_of(True).len().to_i64_wrap(), Herd.bull_of(False).len().to_i64_wrap(), Herd.fill_cows(True).len().to_i64_wrap(), Herd.fill_cows(False).len().to_i64_wrap(), (List.get(Herd.bull_of(True), I64.to_u64_wrap(0)) ?? crash("list-at out of range")).codepoint, Herd.bull_cp, Herd.cow_cp]
 
 bull_count_want : List(I64)
 bull_count_want = [1, 0, 15, 14, 128002, 128002, 128004]
@@ -63,7 +63,7 @@ calves_want : List(F64)
 calves_want = [1.4, 0.7, 1.4, 1.4, 1.4, 0.7, 1.4, 1.4, 1.4, 0.7, 1.4, 1.4, 1.4, 0.7]
 
 kind_got : List(I64)
-kind_got = [U64.to_i64_wrap(List.len(cows)), cow_of(0).codepoint, cow_of(13).codepoint]
+kind_got = [cows.len().to_i64_wrap(), cow_of(0).codepoint, cow_of(13).codepoint]
 
 kind_want : List(I64)
 kind_want = [14, 128004, 128004]

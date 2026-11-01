@@ -5,19 +5,19 @@ import Grade
 import Stills
 
 pts_in : List(Stills.StillPoly), I64 -> I64
-pts_in = |ps, i| (if (i >= U64.to_i64_wrap(List.len(ps))) { 0 } else { ({
+pts_in = |ps, i| (if (i >= ps.len().to_i64_wrap()) { 0 } else { ({
 	p = (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
-	(U64.to_i64_wrap(List.len(p.pts)) + pts_in(ps, (i + 1)))
+	(p.pts.len().to_i64_wrap() + pts_in(ps, (i + 1)))
 }) })
 
 grads_in : List(Stills.StillPoly), I64 -> I64
-grads_in = |ps, i| (if (i >= U64.to_i64_wrap(List.len(ps))) { 0 } else { ({
+grads_in = |ps, i| (if (i >= ps.len().to_i64_wrap()) { 0 } else { ({
 	p = (List.get(ps, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
-	(U64.to_i64_wrap(List.len(p.grad)) + grads_in(ps, (i + 1)))
+	(p.grad.len().to_i64_wrap() + grads_in(ps, (i + 1)))
 }) })
 
 facts : List(Stills.StillPoly) -> List(I64)
-facts = |ps| (if (U64.to_i64_wrap(List.len(ps)) == 0) { [0, 0, 0, 0] } else { [U64.to_i64_wrap(List.len(ps)), pts_in(ps, 0), grads_in(ps, 0), (List.get(ps, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).color] })
+facts = |ps| (if (ps.len().to_i64_wrap() == 0) { [0, 0, 0, 0] } else { [ps.len().to_i64_wrap(), pts_in(ps, 0), grads_in(ps, 0), (List.get(ps, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).color] })
 
 emoji_facts : I64 -> List(I64)
 emoji_facts = |cp| facts(EmojiStills.emoji_polys_for(cp))

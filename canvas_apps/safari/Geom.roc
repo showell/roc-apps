@@ -71,7 +71,7 @@ Geom :: [].{
 
 	clip_near_edge_acc : List(Geom.Vec3), F64, I64, List(Geom.Vec3) -> List(Geom.Vec3)
 	clip_near_edge_acc = |poly, near_, i, acc| ({
-		n = U64.to_i64_wrap(List.len(poly))
+		n = poly.len().to_i64_wrap()
 		(if (i >= n) { acc } else { ({
 			a = (List.get(poly, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 			b = (List.get(poly, I64.to_u64_wrap(((i + 1) - (I64.div_trunc_by((i + 1), n) * n)))) ?? crash("list-at out of range"))

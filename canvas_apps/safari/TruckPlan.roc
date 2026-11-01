@@ -12,7 +12,7 @@ TruckPlan :: [].{
 	no_truck = { present: False, d: 0, along: 0.0, fwd: 0.0 }
 
 	truck_step : List(World.Segment), List(I64), Frame.Pose, F64, I64 -> TruckPlan.TruckAt
-	truck_step = |segs, ch, pose, remaining, d| (if (d >= U64.to_i64_wrap(List.len(ch))) { no_truck } else { (if (remaining > (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash("list-at out of range")))) ?? crash("list-at out of range")).length) { truck_step(segs, ch, pose, (remaining - (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash("list-at out of range")))) ?? crash("list-at out of range")).length), (d + 1)) } else { truck_here(segs, ch, pose, remaining, d) }) })
+	truck_step = |segs, ch, pose, remaining, d| (if (d >= ch.len().to_i64_wrap()) { no_truck } else { (if (remaining > (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash("list-at out of range")))) ?? crash("list-at out of range")).length) { truck_step(segs, ch, pose, (remaining - (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash("list-at out of range")))) ?? crash("list-at out of range")).length), (d + 1)) } else { truck_here(segs, ch, pose, remaining, d) }) })
 
 	truck_here : List(World.Segment), List(I64), Frame.Pose, F64, I64 -> TruckPlan.TruckAt
 	truck_here = |segs, ch, pose, remaining, d| ({

@@ -85,7 +85,7 @@ Pigs :: [].{
 	row_pigs_at = |base, across, ds| row_pigs_at_acc(base, across, ds, 0, [])
 
 	row_pigs_at_acc : F64, F64, List(F64), I64, List(Scenery.Critter) -> List(Scenery.Critter)
-	row_pigs_at_acc = |base, across, ds, i, acc| (if (i >= U64.to_i64_wrap(List.len(ds))) { acc } else { row_pigs_at_acc(base, across, ds, (i + 1), List.append(acc, { along: (base + (List.get(ds, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))), across: across, codepoint: pig_cp, height: pig_height, face_right: False })) })
+	row_pigs_at_acc = |base, across, ds, i, acc| (if (i >= ds.len().to_i64_wrap()) { acc } else { row_pigs_at_acc(base, across, ds, (i + 1), List.append(acc, { along: (base + (List.get(ds, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))), across: across, codepoint: pig_cp, height: pig_height, face_right: False })) })
 
 	fill_pig_row : F64 -> List(Scenery.Critter)
 	fill_pig_row = |length| ({

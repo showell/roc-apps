@@ -30,7 +30,7 @@ herd : List(Scenery.Critter)
 herd = Pigs.fill_pig_herd(1000.0)
 
 herd_count_got : List(I64)
-herd_count_got = [U64.to_i64_wrap(List.len(herd)), U64.to_i64_wrap(List.len(Pigs.fill_pig_herd(500.0)))]
+herd_count_got = [herd.len().to_i64_wrap(), Pigs.fill_pig_herd(500.0).len().to_i64_wrap()]
 
 herd_count_want : List(I64)
 herd_count_want = [49, 49]
@@ -63,7 +63,7 @@ row : List(Scenery.Critter)
 row = Pigs.fill_pig_row(1000.0)
 
 row_count_got : List(I64)
-row_count_got = [U64.to_i64_wrap(List.len(row)), U64.to_i64_wrap(List.len(Pigs.pig_row_front)), U64.to_i64_wrap(List.len(Pigs.pig_row_back))]
+row_count_got = [row.len().to_i64_wrap(), Pigs.pig_row_front.len().to_i64_wrap(), Pigs.pig_row_back.len().to_i64_wrap()]
 
 row_count_want : List(I64)
 row_count_want = [10, 4, 6]
