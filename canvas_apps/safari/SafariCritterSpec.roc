@@ -42,7 +42,7 @@ pair_d : List(Scenery.Critter)
 pair_d = SafariCritter.corner_critters(Rhino, 0.0, False, 2.0)
 
 all_four : List(Scenery.Critter)
-all_four = List.concat(List.concat(List.concat(pair_a, pair_b), pair_c), pair_d)
+all_four = List.join([pair_a, pair_b, pair_c, pair_d])
 
 across_got : List(F64)
 across_got = ListUtils.list_map(lam_0, all_four)

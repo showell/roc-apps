@@ -79,7 +79,7 @@ Geom :: [].{
 			b_in = (b.forward >= near_)
 			kept = (if a_in { [a] } else { [] })
 			crossed = (if both_sides(a_in, b_in) { [] } else { clip_cross(a, b, near_) })
-			clip_near_edge_acc(poly, near_, (i + 1), List.concat(acc, List.concat(kept, crossed)))
+			clip_near_edge_acc(poly, near_, (i + 1), List.join([acc, kept, crossed]))
 		}) })
 	})
 

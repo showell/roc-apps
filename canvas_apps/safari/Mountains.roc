@@ -155,6 +155,6 @@ Mountains :: [].{
 		north = silhouette(north_range, heading, cam_focal, view_w, v_scale, dimmed(rock, dusk))
 		cap = draw_snow(heading, cam_focal, view_w, v_scale, snow_color(dusk))
 		ground = silhouette(ground_base, heading, cam_focal, view_w, v_scale, land)
-		List.concat(List.concat(List.concat(west, north), cap), ground)
+		List.join([west, north, cap, ground])
 	})
 }

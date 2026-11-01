@@ -55,7 +55,7 @@ RailPlan :: [].{
 		of_pt = Frame.map_pt(segs, ch, pose, from_map, from_len, fcu)
 		ot_pt = Frame.map_pt(segs, ch, pose, to_map, 0.0, tx)
 		q = Joint.joint_apex(segs, ch, pose, from_map, to_map, from_len, from_w, to_w, exit_right)
-		List.concat(List.concat(List.concat(rail_run_up(segs, ch, pose, from_map, from_len, fcu, GuardRail.rail_runout), push_leg(of_pt, q)), push_leg(q, ot_pt)), rail_run_out(segs, ch, pose, to_map, tx, 1))
+		List.join([rail_run_up(segs, ch, pose, from_map, from_len, fcu, GuardRail.rail_runout), push_leg(of_pt, q), push_leg(q, ot_pt), rail_run_out(segs, ch, pose, to_map, tx, 1)])
 	})
 
 	joint_rails : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, Frame.Mapper, F64, F64, F64, Bool -> List(GuardRail.RailPoly)

@@ -59,7 +59,7 @@ zero_far : List(DepthSort.Item)
 zero_far = [{ fwd: 0.5, kind: KTree, i: 0 }, { fwd: 0.5000001, kind: KTree, i: 1 }]
 
 slack_got : List(I64)
-slack_got = List.concat(List.concat(List.concat(idxs(DepthSort.sort_items(tie_near), 0), idxs(DepthSort.sort_items(tie_far), 0)), idxs(DepthSort.sort_items(zero_near), 0)), idxs(DepthSort.sort_items(zero_far), 0))
+slack_got = List.join([idxs(DepthSort.sort_items(tie_near), 0), idxs(DepthSort.sort_items(tie_far), 0), idxs(DepthSort.sort_items(zero_near), 0), idxs(DepthSort.sort_items(zero_far), 0)])
 
 slack_want : List(I64)
 slack_want = [0, 1, 1, 0, 0, 1, 1, 0]

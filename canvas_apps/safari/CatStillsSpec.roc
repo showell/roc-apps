@@ -23,7 +23,7 @@ pose_facts : I64 -> List(I64)
 pose_facts = |i| facts(CatStills.cat_polys_for(i))
 
 table_got : List(I64)
-table_got = List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(pose_facts(0), pose_facts(1)), pose_facts(2)), pose_facts(3)), pose_facts(4)), pose_facts(5)), pose_facts(6)), pose_facts(7)), pose_facts((0 - 1)))
+table_got = List.join([pose_facts(0), pose_facts(1), pose_facts(2), pose_facts(3), pose_facts(4), pose_facts(5), pose_facts(6), pose_facts(7), pose_facts((0 - 1))])
 
 table_want : List(I64)
 table_want = [46, 2198, 0, 46, 2198, 0, 47, 2197, 0, 34, 1715, 0, 34, 1715, 0, 34, 1715, 0, 34, 1715, 0, 0, 0, 0, 0, 0, 0]

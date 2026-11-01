@@ -23,7 +23,7 @@ emoji_facts : I64 -> List(I64)
 emoji_facts = |cp| facts(EmojiStills.emoji_polys_for(cp))
 
 table_got : List(I64)
-table_got = List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(List.concat(emoji_facts(129414), emoji_facts(128024)), emoji_facts(129426)), emoji_facts(129427)), emoji_facts(129423)), emoji_facts(128002)), emoji_facts(128004)), emoji_facts(128022)), emoji_facts(129425)), emoji_facts(0))
+table_got = List.join([emoji_facts(129414), emoji_facts(128024), emoji_facts(129426), emoji_facts(129427), emoji_facts(129423), emoji_facts(128002), emoji_facts(128004), emoji_facts(128022), emoji_facts(129425), emoji_facts(0)])
 
 table_want : List(I64)
 table_want = [6, 189, 0, 4493595, 6, 257, 0, 6513507, 24, 850, 0, 16745005, 22, 713, 0, 10197915, 6, 237, 0, 13882323, 43, 2309, 40, 4989733, 16, 469, 0, 10197915, 6, 243, 0, 16735833, 0, 0, 0, 0, 0, 0, 0, 0]

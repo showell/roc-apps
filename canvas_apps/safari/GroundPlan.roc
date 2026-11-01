@@ -76,7 +76,7 @@ GroundPlan :: [].{
 	emit_pond_ground = |segs, ch, pose, m, from_len, cf, view_w| List.concat(Ground.emit_ground_color(pond_shape(segs, ch, pose, m, from_len, Pond.water_outline, 0), Pond.water_color, cf, view_w), Ground.emit_ground_color(pond_shape(segs, ch, pose, m, from_len, Pond.bank, 0), Pond.bank_color, cf, view_w))
 
 	seg_ground : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64 -> List(Paint.DrawCmd)
-	seg_ground = |segs, ch, pose, d, cf, view_w| List.concat(List.concat(seg_road(segs, ch, pose, d, cf, view_w), seg_joint_ground(segs, ch, pose, d, cf, view_w)), seg_pond_ground(segs, ch, pose, d, cf, view_w))
+	seg_ground = |segs, ch, pose, d, cf, view_w| List.join([seg_road(segs, ch, pose, d, cf, view_w), seg_joint_ground(segs, ch, pose, d, cf, view_w), seg_pond_ground(segs, ch, pose, d, cf, view_w)])
 
 	seg_joint_ground : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64 -> List(Paint.DrawCmd)
 	seg_joint_ground = |segs, ch, pose, d, cf, view_w| (if ((d + 1) >= U64.to_i64_wrap(List.len(ch))) { [] } else { emit_joint_ground(segs, ch, pose, Frame.chain_map(d), Frame.chain_map((d + 1)), (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash("list-at out of range")))) ?? crash("list-at out of range")).length, (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash("list-at out of range")))) ?? crash("list-at out of range")).width, (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap((d + 1))) ?? crash("list-at out of range")))) ?? crash("list-at out of range")).width, (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash("list-at out of range")))) ?? crash("list-at out of range")).exit_right, cf, view_w) })

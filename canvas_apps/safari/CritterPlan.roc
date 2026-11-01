@@ -76,7 +76,7 @@ CritterPlan :: [].{
 	seg_billboards : List(World.Segment), List(I64), Frame.Pose, I64 -> List(Billboards.Placed)
 	seg_billboards = |segs, ch, pose, d| ({
 		hw = ((List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash("list-at out of range")))) ?? crash("list-at out of range")).width / 2.0)
-		List.concat(List.concat(seg_farm(segs, ch, pose, d, hw), seg_safari(segs, ch, pose, d, hw)), seg_ducks(segs, ch, pose, d))
+		List.join([seg_farm(segs, ch, pose, d, hw), seg_safari(segs, ch, pose, d, hw), seg_ducks(segs, ch, pose, d)])
 	})
 
 	# walk_billboards builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.

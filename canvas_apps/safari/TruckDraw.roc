@@ -196,7 +196,7 @@ TruckDraw :: [].{
 	truck_faces : List(World.Segment), List(I64), Frame.Pose, I64, TruckDraw.TruckBox -> List(TruckDraw.TruckFace)
 	truck_faces = |segs, ch, pose, d, bx| ({
 		axles = truck_axles(bx)
-		List.concat(List.concat(List.concat(List.concat([truck_side(segs, ch, pose, d, bx, bx.xl), truck_side(segs, ch, pose, d, bx, bx.xr)], [truck_rear(segs, ch, pose, d, bx), truck_roof(segs, ch, pose, d, bx)]), [truck_windshield(segs, ch, pose, d, bx), truck_nose(segs, ch, pose, d, bx)]), side_tires(segs, ch, pose, d, axles, bx.xl, 0)), side_tires(segs, ch, pose, d, axles, bx.xr, 0))
+		List.join([[truck_side(segs, ch, pose, d, bx, bx.xl), truck_side(segs, ch, pose, d, bx, bx.xr)], [truck_rear(segs, ch, pose, d, bx), truck_roof(segs, ch, pose, d, bx)], [truck_windshield(segs, ch, pose, d, bx), truck_nose(segs, ch, pose, d, bx)], side_tires(segs, ch, pose, d, axles, bx.xl, 0), side_tires(segs, ch, pose, d, axles, bx.xr, 0)])
 	})
 
 	# face_rest builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
@@ -314,6 +314,6 @@ TruckDraw :: [].{
 		beams = (if headlights { truck_wedges(segs, ch, pose, d, bx, cf, view_w) } else { [] })
 		body = draw_faces(sort_faces(truck_faces(segs, ch, pose, d, bx)), cf, view_w, 0)
 		lights = (if braking { brake_lights(segs, ch, pose, d, bx, cf, view_w) } else { [] })
-		List.concat(List.concat(beams, body), lights)
+		List.join([beams, body, lights])
 	})
 }

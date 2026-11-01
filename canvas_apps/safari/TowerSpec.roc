@@ -41,7 +41,7 @@ ax_of = |k| ({
 })
 
 ax_got : List(F64)
-ax_got = List.concat(List.concat(List.concat(ax_of(0), ax_of(1)), ax_of(2)), ax_of(3))
+ax_got = List.join([ax_of(0), ax_of(1), ax_of(2), ax_of(3)])
 
 ax_want : List(F64)
 ax_want = [94.0, (-6.0), 94.0, 6.0, 106.0, 6.0, 106.0, (-6.0)]
@@ -59,7 +59,7 @@ at_h = |k, h| ({
 })
 
 taper_got : List(F64)
-taper_got = List.concat(List.concat(List.concat(List.concat(at_h(0, 0.0), at_h(0, 40.0)), at_h(0, 80.0)), at_h(2, 40.0)), at_h(2, 80.0))
+taper_got = List.join([at_h(0, 0.0), at_h(0, 40.0), at_h(0, 80.0), at_h(2, 40.0), at_h(2, 80.0)])
 
 taper_want : List(F64)
 taper_want = [(-6.0), 94.0, (-1.0), (-3.0), 97.0, 39.0, 0.0, 100.0, 79.0, 3.0, 103.0, 39.0, 0.0, 100.0, 79.0]

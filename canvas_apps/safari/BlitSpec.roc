@@ -17,7 +17,7 @@ shade_want : List(I64)
 shade_want = [77, 38, 19, 255, 255, 255, 0, 5056019]
 
 stops_got : List(I64)
-stops_got = List.concat(List.concat(Blit.width_shade_stops(8405024, 1.0), Blit.width_shade_stops(8405024, 0.5)), [Blit.width_shade_edge(8405024, 1.0), Blit.width_shade_middle(8405024, 1.0)])
+stops_got = List.join([Blit.width_shade_stops(8405024, 1.0), Blit.width_shade_stops(8405024, 0.5), [Blit.width_shade_edge(8405024, 1.0), Blit.width_shade_middle(8405024, 1.0)]])
 
 stops_want : List(I64)
 stops_want = [5056019, 10506280, 5056019, 6697754, 9455652, 6697754, 5056019, 10506280]
@@ -68,7 +68,7 @@ wide_want : List(I64)
 wide_want = [2, 5056019, 10506280, 2, 6]
 
 wide_geom_got : List(F64)
-wide_geom_got = List.concat(List.concat(wide.geom, wide.pts), [wide.strength])
+wide_geom_got = List.join([wide.geom, wide.pts, [wide.strength]])
 
 wide_geom_want : List(F64)
 wide_geom_want = [10.0, 30.0, 10.0, 1.0, 30.0, 2.0, 20.0, 3.0, 0.0]
@@ -80,7 +80,7 @@ flat_of = |c| ({
 })
 
 flat_got : List(I64)
-flat_got = List.concat(List.concat(flat_of(cmd(1, 8405024, 0.0, [], poly)), flat_of(cmd(1, 8405024, 1.0, [], [5.0]))), flat_of(cmd(1, 8405024, 1.0, [], [10.0, 1.0, 10.5, 2.0, 10.2, 3.0])))
+flat_got = List.join([flat_of(cmd(1, 8405024, 0.0, [], poly)), flat_of(cmd(1, 8405024, 1.0, [], [5.0])), flat_of(cmd(1, 8405024, 1.0, [], [10.0, 1.0, 10.5, 2.0, 10.2, 3.0]))])
 
 flat_want : List(I64)
 flat_want = [0, 8405024, 0, 0, 6, 0, 8405024, 0, 0, 1, 0, 8405024, 0, 0, 6]

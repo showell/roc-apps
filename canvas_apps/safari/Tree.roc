@@ -74,7 +74,7 @@ Tree :: [].{
 	less_xy = |a, b| (if (a.x < b.x) { True } else { (if (F64.to_bits(a.x) == F64.to_bits(b.x)) { (a.y < b.y) } else { False }) })
 
 	hull_insert : Camera.ScreenPt, List(Camera.ScreenPt), I64 -> List(Camera.ScreenPt)
-	hull_insert = |p, xs, i| (if (i >= U64.to_i64_wrap(List.len(xs))) { List.concat(xs, [p]) } else { (if less_xy(p, (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))) { List.concat(List.concat(ListUtils.list_take(xs, i), [p]), ListUtils.list_drop(xs, i)) } else { hull_insert(p, xs, (i + 1)) }) })
+	hull_insert = |p, xs, i| (if (i >= U64.to_i64_wrap(List.len(xs))) { List.concat(xs, [p]) } else { (if less_xy(p, (List.get(xs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))) { List.join([ListUtils.list_take(xs, i), [p], ListUtils.list_drop(xs, i)]) } else { hull_insert(p, xs, (i + 1)) }) })
 
 	sort_pts : List(Camera.ScreenPt), I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
 	sort_pts = |src, i, acc| (if (i >= U64.to_i64_wrap(List.len(src))) { acc } else { sort_pts(src, (i + 1), hull_insert((List.get(src, I64.to_u64_wrap(i)) ?? crash("list-at out of range")), acc, 0)) })

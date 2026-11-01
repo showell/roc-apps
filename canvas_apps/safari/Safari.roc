@@ -38,7 +38,7 @@ Safari :: [].{
 		vy = ViewYaw.view_yaw_for(s)
 		pose = ViewYaw.pose_for(w, s)
 		ch = Frame.build_chain(w, s.segment)
-		List.concat(List.concat(Mountains.draw((s.heading + vy), Sky.sun_set_fraction(r.clock), cf, Lens.camera_w), GroundPlan.frame_ground(w, s.segment, pose, cf, Lens.camera_w)), ItemDraw.draw_order(w, ch, pose, Render.collect(w, s.segment, pose, cf, s.along, s.v, r.truck.pos), r.truck.braking, cf, r.clock, 0))
+		List.join([Mountains.draw((s.heading + vy), Sky.sun_set_fraction(r.clock), cf, Lens.camera_w), GroundPlan.frame_ground(w, s.segment, pose, cf, Lens.camera_w), ItemDraw.draw_order(w, ch, pose, Render.collect(w, s.segment, pose, cf, s.along, s.v, r.truck.pos), r.truck.braking, cf, r.clock, 0)])
 	})
 
 	ride_sun : List(World.Segment), Safari.Ride -> Sky.SunPos

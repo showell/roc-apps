@@ -6,7 +6,7 @@ import Paint
 import Tree
 
 table_got : List(F64)
-table_got = List.concat(List.concat(Tree.tier_top, Tree.tier_bot), Tree.tier_wide)
+table_got = List.join([Tree.tier_top, Tree.tier_bot, Tree.tier_wide])
 
 table_want : List(F64)
 table_want = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.35, 0.44, 0.53, 0.63, 0.72, 0.81, 0.91, 1.0]
@@ -90,7 +90,7 @@ line_want : List(F64)
 line_want = [0.0, 0.0, 3.0, 3.0]
 
 short_got : List(F64)
-short_got = List.concat(List.concat(xy(Tree.convex_hull_pts([p(1.0, 2.0), p(0.0, 0.0)])), xy(Tree.convex_hull_pts([p(9.0, 9.0)]))), xy(Tree.convex_hull_pts([])))
+short_got = List.join([xy(Tree.convex_hull_pts([p(1.0, 2.0), p(0.0, 0.0)])), xy(Tree.convex_hull_pts([p(9.0, 9.0)])), xy(Tree.convex_hull_pts([]))])
 
 short_want : List(F64)
 short_want = [1.0, 2.0, 0.0, 0.0, 9.0, 9.0]

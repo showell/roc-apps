@@ -50,7 +50,7 @@ radial6 : List(Paint.DrawCmd)
 radial6 = Paint.push_radial_grad_poly(666, 667, 0.25, 0.75, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, tri)
 
 tags_got : List(I64)
-tags_got = List.concat(List.concat(List.concat(List.concat(List.concat(shape_of(solid), shape_of(round)), shape_of(beacon)), shape_of(radial4)), shape_of(linear5)), shape_of(radial6))
+tags_got = List.join([shape_of(solid), shape_of(round), shape_of(beacon), shape_of(radial4), shape_of(linear5), shape_of(radial6)])
 
 tags_want : List(I64)
 tags_want = [0, 111, 0, 0, 6, 1, 222, 0, 0, 6, 3, 333, 0, 3, 0, 4, 444, 445, 3, 6, 5, 555, 556, 6, 6, 6, 666, 667, 8, 6]
@@ -62,13 +62,13 @@ strength_want : List(F64)
 strength_want = [0.0, 0.75, 0.25, 0.0, 0.0, 0.0]
 
 geom_got : List(F64)
-geom_got = List.concat(List.concat(List.concat((List.get(beacon, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).geom, (List.get(radial4, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).geom), (List.get(linear5, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).geom), (List.get(radial6, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).geom)
+geom_got = List.join([(List.get(beacon, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).geom, (List.get(radial4, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).geom, (List.get(linear5, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).geom, (List.get(radial6, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).geom])
 
 geom_want : List(F64)
 geom_want = [10.0, 20.0, 30.0, 10.0, 20.0, 30.0, 0.25, 0.75, 1.0, 2.0, 3.0, 4.0, 0.25, 0.75, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
 
 pts_got : List(F64)
-pts_got = List.concat(List.concat((List.get(solid, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).pts, (List.get(radial6, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).pts), (List.get(beacon, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).pts)
+pts_got = List.join([(List.get(solid, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).pts, (List.get(radial6, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).pts, (List.get(beacon, I64.to_u64_wrap(0)) ?? crash("list-at out of range")).pts])
 
 pts_want : List(F64)
 pts_want = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]

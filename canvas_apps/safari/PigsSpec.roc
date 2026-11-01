@@ -42,7 +42,7 @@ row_alongs : I64 -> List(F64)
 row_alongs = |r| [along_of(r, 0), along_of(r, 1), along_of(r, 2), along_of(r, 3), along_of(r, 4), along_of(r, 5), along_of(r, 6)]
 
 herd_along_got : List(F64)
-herd_along_got = List.concat(List.concat(row_alongs(0), row_alongs(3)), row_alongs(6))
+herd_along_got = List.join([row_alongs(0), row_alongs(3), row_alongs(6)])
 
 herd_along_want : List(F64)
 herd_along_want = [934.0, 938.0, 942.0, 946.0, 950.0, 954.0, 958.0, 952.0, 956.0, 960.0, 964.0, 968.0, 972.0, 976.0, 970.0, 974.0, 978.0, 982.0, 986.0, 990.0, 994.0]
@@ -81,7 +81,7 @@ row_across_want : List(F64)
 row_across_want = [12.0, 12.0, 12.0, 12.0, 18.0, 18.0, 18.0, 18.0, 18.0, 18.0]
 
 offsets_got : List(F64)
-offsets_got = List.concat(List.concat(Pigs.pig_row_front, Pigs.pig_row_back), [Pigs.pig_back_row_offset, Pigs.pig_herd_first_col, Pigs.pig_col_spacing, Pigs.pig_row_depth, Pigs.pig_jitter_along, Pigs.pig_jitter_across])
+offsets_got = List.join([Pigs.pig_row_front, Pigs.pig_row_back, [Pigs.pig_back_row_offset, Pigs.pig_herd_first_col, Pigs.pig_col_spacing, Pigs.pig_row_depth, Pigs.pig_jitter_along, Pigs.pig_jitter_across]])
 
 offsets_want : List(F64)
 offsets_want = [(-6.0), (-2.0), 2.0, 6.0, (-10.0), (-6.0), (-2.0), 2.0, 6.0, 10.0, 6.0, (-6.0), 4.0, 6.0, 1.2, 1.0]

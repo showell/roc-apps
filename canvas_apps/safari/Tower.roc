@@ -140,7 +140,7 @@ Tower :: [].{
 		j = ((k + 1) - (I64.div_trunc_by((k + 1), 4) * 4))
 		kj = bar3d(lerp3v(corner_at(base, center, k, lo, drop), corner_at(base, center, j, hi, drop), f), corner_at(base, center, j, hi, drop), wpx, cf, view_w)
 		jk = bar3d(lerp3v(corner_at(base, center, j, lo, drop), corner_at(base, center, k, hi, drop), f), corner_at(base, center, k, hi, drop), wpx, cf, view_w)
-		List.concat(List.concat(kj, jk), brace_at(base, center, lo, hi, f, drop, wpx, cf, view_w, (k + 1)))
+		List.join([kj, jk, brace_at(base, center, lo, hi, f, drop, wpx, cf, view_w, (k + 1))])
 	})
 
 	braces : List(Geom.RiderPt), Geom.RiderPt, F64, F64, F64, F64, F64, I64 -> List(Paint.DrawCmd)
@@ -179,6 +179,6 @@ Tower :: [].{
 		r = rings(base, center, stage_height, drop, drop, wpx, cf, view_w)
 		x = braces(base, center, drop, drop, wpx, cf, view_w, 0)
 		b = draw_beacon(Camera.project(apex, cf, view_w), center.forward, cf, view_w, beacon_brightness(beacon_phase))
-		List.concat(List.concat(List.concat(l, r), x), b)
+		List.join([l, r, x, b])
 	})
 }
