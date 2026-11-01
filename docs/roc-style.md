@@ -721,13 +721,6 @@ is the base; these rules sharpen it.
   why`, and is a question for a reader, not a verdict. Its plants are cases
   it must find and cases it must not, so the hunt itself is tested
   (`self_test=1`). The ones we run:
-  - `tools/roc_hunt/hunt.shale` in roc-webbox: `bool_returns` (a Bool that
-    should be a tag, or a question without its name), `fs_bypass` (a file
-    call outside `Files.roc`), `html_trusted_nonliteral`, magic numbers,
-    runs of same-typed arguments, positional lists, long `if` chains, and
-    `single_caller` (a module every production reference to which comes
-    from one other module, `twin` counting, unless its allowlist names it
-    with its reason);
   - Shale's `cookbook/roc/name_hunt.shale`: an effect named as a state or a
     noun, a question with no Bool, vague names, a name its type contradicts,
     negative flags, `command_tense` (an effect told what to do in past
