@@ -79,6 +79,10 @@ Roc's own rules are in the langref's
   end; named `in_cart` it reads as a question.
 - **Prefer a plain word to an abbreviation.** `customer`, not `cust`;
   `quantity`, not `qty`.
+- **A top-level value or a field is never one letter.** `board_width`, not
+  `w`; `row`, not `y`. It is read far from where it is set, so its name is
+  all the reader has. A local or a lambda's parameter can be short: its
+  definition is in view.
 - **A type is named for what it holds, not where it sits.** `Entry`, `Item`,
   `Node`, `Data` and `Info` say only that a value is in a list or a tree;
   the domain usually has the word. One row of a customer's order history is
@@ -184,6 +188,14 @@ Roc's own rules are in the langref's
   takes only what varies, and the `_from` worker it calls is the one place
   the index is passed: `find(s, { needle })` calls
   `find_from(s, { needle, at: 0 })`.
+- **A pure function that takes only `{}` is a constant.** `empty_cart : Cart`
+  says what it is; `empty_cart : {} -> Cart` makes every caller write
+  `empty_cart({})` for a value that never changes. Two stay functions. A
+  value generic over a type variable can't be a constant: the pin refuses
+  one ("value is not polymorphic") and asks for a `{}` function, so
+  `signed_out : {} -> Viewer(id)` stays. And a constant is computed at
+  compile time (CLAUDE.md §3), so one that does real work, a search or a
+  large table, stays a `{}` function with a comment saying so.
 - **Neighbouring arguments of one type get a record**, even when there are
   only two of them: they can be swapped and still type-check, and a record
   names the fields, so order can't go wrong: `copy!({ from, to })`, not
@@ -390,7 +402,10 @@ Roc's own rules are in the langref's
   `Str.with_ascii_lowercased` and `Str.replace_each`. A fold can be one
   too: a fold whose accumulator only says whether it has found something
   yet is `List.find_first` or `find_last`, one that keeps the larger is
-  `List.max`, and one that stops early is `List.fold_until`. `Json.to_str` of a
+  `List.max`, and one that stops early is `List.fold_until`. A fold that
+  needs each index is `List.fold_with_index`, and a list of indexes is a
+  range, `List.from_iter(U64.until(0, n))`; neither needs
+  `List.map_with_index(xs, |_, i| i)`. `Json.to_str` of a
   `Str` is Zig's `std.json` string byte for byte; of a record it sorts the
   fields, so an ordered object is built, not encoded.
 - **`Str.len` is no number.** It answers `LearnAboutStringsInRoc(...)`.
@@ -459,6 +474,25 @@ is the base; these rules sharpen it.
   ```
 - **A case that *can* happen keeps its handling: an error tag, not a crash.**
   User data, a file on disk, the end of a walk.
+- **A placeholder is not a value.** `?? "bogus"`, `?? "?"`, or `?? 4` for
+  "no winner" makes up an answer the type allows and the program never
+  means; it flows on and shows up far away as a wrong answer. A number
+  kept to mean "none" (`no_frames = 1e9`) is the same thing. Where the
+  index can't be wrong, crash with a reason; where it can, tag the absence
+  (no optionals, above). On a list being written the placeholder also
+  copies the list (`List.set(l, i, v) ?? l`, CLAUDE.md §7).
+
+  ```roc
+  # Not this: seat 4 is no seat.
+  winner = seats.find_first(|seat| has_finished(game, seat)) ?? 4
+
+  # This: the absence is a state.
+  winner =
+  	match seats.find_first(|seat| has_finished(game, seat)) {
+  		Ok(seat) => Won(seat)
+  		Err(NotFound) => StillPlaying
+  	}
+  ```
 - **A failed read of a cache is a miss; a failed read of the truth fails the
   request.** A cache (a count sidecar, a window into a file) can always be
   rebuilt from the truth, so its read answers `Try(_, [Miss])`, with missing
@@ -707,12 +741,26 @@ is the base; these rules sharpen it.
   ```
 
   not `truncate(collapse_spaces(strip_tabs(input)), 80)`.
+- **A state that changes in steps names each step,** even two deep.
+  `save(refill_hand(activate(game, card)))` hides the states between; a
+  name for each says what the game is at that point, and the steps read in
+  the order they happen:
+
+  ```roc
+  activated = game.activate(card)
+  refilled = activated.refill_hand()
+  save(refilled)
+  ```
 
 ## Testing and enforcement
 
 - **Test each pure mapping, and the exact bytes each builder makes,** with
   `expect`s beside the code. `roc test <app>.roc` runs every imported
   module's `expect`s (`roc test app/main.roc` for roc-chat).
+- **Tests too large to sit beside the code get their own module,
+  `<Module>Spec.roc`:** `CartSpec.roc` tests `Cart.roc`. The hunts read a
+  `*Spec.roc` file, or one under `test/`, as tests: its helpers aren't
+  judged, and its calls don't count as production's.
 - **A rule a type can't express gets a Shale hunt with plants.**
   [Shale](https://github.com/showell/shale) is how we enforce this guide's
   more advanced preferences: what the type checker and `roc fmt` can't see. A
