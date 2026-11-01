@@ -148,7 +148,11 @@ seen = |m, look| {
 		rlast: F64.to_bits(m.rlast),
 		arrays: m.arr_count,
 		outs: List.len(d.out),
-		last: if List.is_empty(d.out) { "" } else { List.get(d.out, List.len(d.out) - 1) ?? "" },
+		last: if List.is_empty(d.out) {
+			""
+		} else {
+			List.get(d.out, List.len(d.out) - 1) ?? ""
+		},
 		col: d.col,
 		rdepth: m.rdepth,
 		ldepth: m.ldepth,
@@ -161,31 +165,56 @@ seen = |m, look| {
 cell : Machine.M, U64, I64, I64 -> U64
 cell = |m, slot, i, j| {
 	c = Machine.cell_of(m.arrs, m.base, slot, i, j)
-	if c < 0 { 18446744073709551615 } else { F64.to_bits(Vec.at((Vec.at(m.arrs, slot)).cells, I64.to_u64_wrap(c))) }
+	if c < 0 {
+		18446744073709551615
+	} else {
+		F64.to_bits(Vec.at((Vec.at(m.arrs, slot)).cells, I64.to_u64_wrap(c)))
+	}
 }
 
 shown : Seen -> Str
 shown = |s|
 	Str.join_with(
 		[
-			"pc", U64.to_str(s.pc),
-			"done", flag(s.done),
-			"err", s.err,
-			"gap", flag(s.gap),
-			"waiting", flag(s.waiting),
-			"pause", I64.to_str(s.pause),
-			"seed", U64.to_str(s.seed),
-			"mtat", U64.to_str(s.mtat),
-			"rlast", F64.to_str(F64.from_bits(s.rlast)),
-			"arrays", U64.to_str(s.arrays),
-			"out", U64.to_str(s.outs), s.last,
-			"col", I64.to_str(s.col),
-			"rdepth", U64.to_str(s.rdepth),
-			"ldepth", U64.to_str(s.ldepth),
-			"named", F64.to_str(F64.from_bits(s.one)), F64.to_str(F64.from_bits(s.two)),
+			"pc",
+			U64.to_str(s.pc),
+			"done",
+			flag(s.done),
+			"err",
+			s.err,
+			"gap",
+			flag(s.gap),
+			"waiting",
+			flag(s.waiting),
+			"pause",
+			I64.to_str(s.pause),
+			"seed",
+			U64.to_str(s.seed),
+			"mtat",
+			U64.to_str(s.mtat),
+			"rlast",
+			F64.to_str(F64.from_bits(s.rlast)),
+			"arrays",
+			U64.to_str(s.arrays),
+			"out",
+			U64.to_str(s.outs),
+			s.last,
+			"col",
+			I64.to_str(s.col),
+			"rdepth",
+			U64.to_str(s.rdepth),
+			"ldepth",
+			U64.to_str(s.ldepth),
+			"named",
+			F64.to_str(F64.from_bits(s.one)),
+			F64.to_str(F64.from_bits(s.two)),
 		],
 		" ",
 	)
 
 flag : Bool -> Str
-flag = |b| if b { "yes" } else { "no" }
+flag = |b| if b {
+	"yes"
+} else {
+	"no"
+}

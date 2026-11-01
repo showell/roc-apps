@@ -23,7 +23,11 @@ view = |boxed| {
 	r = Box.unbox(boxed)
 	# A flag byte first, 1 when the program drew pixels, so the page knows
 	# which display to show rather than guessing from a length.
-	flag = if (Machine.devices_of(r.m)).drew { 1 } else { 0 }
+	flag = if (Machine.devices_of(r.m)).drew {
+		1
+	} else {
+		0
+	}
 	List.concat(List.concat([flag], Machine.screen(r.m)), Str.to_utf8(Machine.transcript(r.m)))
 }
 

@@ -12,7 +12,15 @@ CommandLine :: [].{
 			acc
 		} else {
 			c = List.get(b, i) ?? 32
-			next = if c == 13 { acc } else if c == 10 or c == 9 { List.append(acc, c) } else if c < 32 or c > 126 { List.append(acc, 32) } else { List.append(acc, c) }
+			next = if c == 13 {
+				acc
+			} else if c == 10 or c == 9 {
+				List.append(acc, c)
+			} else if c < 32 or c > 126 {
+				List.append(acc, 32)
+			} else {
+				List.append(acc, c)
+			}
 			CommandLine.clean_bytes(b, i + 1, next)
 		}
 
@@ -24,7 +32,11 @@ CommandLine :: [].{
 	lines_from : List(U8), U64, U64, List(Str) -> List(Str)
 	lines_from = |b, from, i, acc|
 		if i >= List.len(b) {
-			if i > from { List.append(acc, CommandLine.piece(b, from, i)) } else { acc }
+			if i > from {
+				List.append(acc, CommandLine.piece(b, from, i))
+			} else {
+				acc
+			}
 		} else if (List.get(b, i) ?? 0) == 10 {
 			CommandLine.lines_from(b, i + 1, i + 1, List.append(acc, CommandLine.piece(b, from, i)))
 		} else {

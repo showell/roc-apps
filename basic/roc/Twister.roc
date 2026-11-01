@@ -30,10 +30,10 @@ Twister :: [].{
 			prev = List.get($mt, $i - 1) ?? 0
 			cur = List.get($mt, $i) ?? 0
 			x = U32.plus_wrap(U32.bitwise_xor(cur, U32.times_wrap(U32.bitwise_xor(prev, U32.div_trunc_by(prev, 1073741824)), 1664525)), seed)
-			$mt = List.set($mt, $i, x) ?? crash("by_array: inside the state")
+			$mt = List.set($mt, $i, x) ?? crash ("by_array: inside the state")
 			$i = $i + 1
 			if $i >= 624 {
-				$mt = List.set($mt, 0, List.get($mt, 623) ?? 0) ?? crash("by_array: inside the state")
+				$mt = List.set($mt, 0, List.get($mt, 623) ?? 0) ?? crash ("by_array: inside the state")
 				$i = 1
 			} else {
 				{}
@@ -45,17 +45,17 @@ Twister :: [].{
 			prev = List.get($mt, $i - 1) ?? 0
 			cur = List.get($mt, $i) ?? 0
 			x = U32.minus_wrap(U32.bitwise_xor(cur, U32.times_wrap(U32.bitwise_xor(prev, U32.div_trunc_by(prev, 1073741824)), 1566083941)), U64.to_u32_wrap($i))
-			$mt = List.set($mt, $i, x) ?? crash("by_array: inside the state")
+			$mt = List.set($mt, $i, x) ?? crash ("by_array: inside the state")
 			$i = $i + 1
 			if $i >= 624 {
-				$mt = List.set($mt, 0, List.get($mt, 623) ?? 0) ?? crash("by_array: inside the state")
+				$mt = List.set($mt, 0, List.get($mt, 623) ?? 0) ?? crash ("by_array: inside the state")
 				$i = 1
 			} else {
 				{}
 			}
 			$k = $k - 1
 		}
-		List.set($mt, 0, 2147483648) ?? crash("by_array: inside the state")
+		List.set($mt, 0, 2147483648) ?? crash ("by_array: inside the state")
 	}
 
 	twist : List(U32) -> List(U32)
@@ -64,9 +64,13 @@ Twister :: [].{
 		var $kk = 0
 		while $kk < 624 {
 			y = U32.bitwise_or(U32.bitwise_and(List.get($mt, $kk) ?? 0, 2147483648), U32.bitwise_and(List.get($mt, U64.rem_by($kk + 1, 624)) ?? 0, 2147483647))
-			mag = if U32.bitwise_and(y, 1) == 1 { 2567483615 } else { 0 }
+			mag = if U32.bitwise_and(y, 1) == 1 {
+				2567483615
+			} else {
+				0
+			}
 			x = U32.bitwise_xor(U32.bitwise_xor(List.get($mt, U64.rem_by($kk + 397, 624)) ?? 0, U32.div_trunc_by(y, 2)), mag)
-			$mt = List.set($mt, $kk, x) ?? crash("twist: inside the state")
+			$mt = List.set($mt, $kk, x) ?? crash ("twist: inside the state")
 			$kk = $kk + 1
 		}
 		$mt

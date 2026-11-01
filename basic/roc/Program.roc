@@ -36,7 +36,11 @@ Program :: [].{
 	check : Str -> Listing.Rejection
 	check = |src| {
 		f = Program.collect(Str.to_utf8(src), 0, { nums: [], jumps: [], loops: [], defs: [], fn_uses: [], dims: [], options: [], arrays: [], simples: [], why: "", at: -1 })
-		if f.why != "" { { why: f.why, num: f.at } } else { Program.judge(f) }
+		if f.why != "" {
+			{ why: f.why, num: f.at }
+		} else {
+			Program.judge(f)
+		}
 	}
 
 	# ---- the facts ---------------------------------------------------------
@@ -47,7 +51,11 @@ Program :: [].{
 			f
 		} else {
 			e = Listing.eol(b, i)
-			stop = if e > i and Listing.byte(b, e - 1) == 13 { e - 1 } else { e }
+			stop = if e > i and Listing.byte(b, e - 1) == 13 {
+				e - 1
+			} else {
+				e
+			}
 			s = Listing.skip_ws(b, i)
 			if s >= stop {
 				Program.collect(b, e + 1, f)
@@ -70,7 +78,11 @@ Program :: [].{
 				Program.dim_facts(f1, n, ts, 1)
 			} else if kw == "DEF" {
 				name = Program.tok_v(ts, 1)
-				body_from = if Program.tok_v(ts, 2) == "(" { 6 } else { 3 }
+				body_from = if Program.tok_v(ts, 2) == "(" {
+					6
+				} else {
+					3
+				}
 				if Program.named_line(f1.defs, name, 0) >= 0 {
 					{ ..f1, why: "A function defined twice", at: n }
 				} else if Program.has_tok(ts, body_from, 3, name) {
@@ -79,8 +91,16 @@ Program :: [].{
 					Program.refs({ ..f1, defs: List.append(f1.defs, { name: name, n: n }) }, n, ts, body_from)
 				}
 			} else {
-				f2 = if kw == "FOR" or kw == "NEXT" { { ..f1, loops: List.append(f1.loops, { n: n, open: kw == "FOR", v: Program.tok_v(ts, 1) }) } } else { f1 }
-				f3 = if kw == "OPTION" { { ..f2, options: List.append(f2.options, { name: Program.tok_v(ts, 2), n: n }) } } else { f2 }
+				f2 = if kw == "FOR" or kw == "NEXT" {
+					{ ..f1, loops: List.append(f1.loops, { n: n, open: kw == "FOR", v: Program.tok_v(ts, 1) }) }
+				} else {
+					f1
+				}
+				f3 = if kw == "OPTION" {
+					{ ..f2, options: List.append(f2.options, { name: Program.tok_v(ts, 2), n: n }) }
+				} else {
+					f2
+				}
 				Program.refs(f3, n, ts, 1)
 			}
 		}
@@ -96,7 +116,16 @@ Program :: [].{
 			v = Program.tok_v(ts, idx)
 			after_go = idx > 0 and Program.tok_v(ts, idx - 1) == "GO"
 			jumping = Program.tok_k(ts, idx) == 2 and (v == "GOTO" or v == "GOSUB" or v == "THEN" or (after_go and (v == "TO" or v == "SUB")))
-			Program.jumps_in(ts, idx + 1, n, if jumping { Program.jump_list(ts, idx + 1, n, acc) } else { acc })
+			Program.jumps_in(
+				ts,
+				idx + 1,
+				n,
+				if jumping {
+					Program.jump_list(ts, idx + 1, n, acc)
+				} else {
+					acc
+				},
+			)
 		}
 
 	jump_list : List(Tok), U64, I64, List(Jump) -> List(Jump)
@@ -105,7 +134,11 @@ Program :: [].{
 			acc
 		} else {
 			more = List.append(acc, { from: n, to: Program.int_of(Program.tok_v(ts, j)) })
-			if Program.tok_v(ts, j + 1) == "," { Program.jump_list(ts, j + 2, n, more) } else { more }
+			if Program.tok_v(ts, j + 1) == "," {
+				Program.jump_list(ts, j + 2, n, more)
+			} else {
+				more
+			}
 		}
 
 	# `DIM A(n), B(n, m)`: the arity and the smallest bound of each.
@@ -117,12 +150,44 @@ Program :: [].{
 			name = Program.tok_v(ts, j)
 			one = Program.int_of(Program.tok_v(ts, j + 2))
 			two = Program.tok_v(ts, j + 3) == ","
-			low = if two and Program.int_of(Program.tok_v(ts, j + 4)) < one { Program.int_of(Program.tok_v(ts, j + 4)) } else { one }
-			past = if two { j + 6 } else { j + 4 }
+			low = if two and Program.int_of(Program.tok_v(ts, j + 4)) < one {
+				Program.int_of(Program.tok_v(ts, j + 4))
+			} else {
+				one
+			}
+			past = if two {
+				j + 6
+			} else {
+				j + 4
+			}
 			if Program.dim_index(f.dims, name, 0) >= 0 {
 				{ ..f, why: "An array dimensioned twice", at: n }
 			} else {
-				Program.dim_facts({ ..f, dims: List.append(f.dims, { name: name, n: n, arity: if two { 2 } else { 1 }, low: low }) }, n, ts, if Program.tok_v(ts, past) == "," { past + 1 } else { past })
+				Program.dim_facts(
+					{
+						..f,
+						dims: List.append(
+							f.dims,
+							{
+								name: name,
+								n: n,
+								arity: if two {
+									2
+								} else {
+									1
+								},
+								low: low,
+							},
+						),
+					},
+					n,
+					ts,
+					if Program.tok_v(ts, past) == "," {
+						past + 1
+					} else {
+						past
+					},
+				)
 			}
 		}
 
@@ -161,7 +226,11 @@ Program :: [].{
 			} else if v == "(" {
 				Program.arity(ts, j + 1, depth + 1, count)
 			} else if v == ")" {
-				if depth == 1 { count } else { Program.arity(ts, j + 1, depth - 1, count) }
+				if depth == 1 {
+					count
+				} else {
+					Program.arity(ts, j + 1, depth - 1, count)
+				}
 			} else if v == "," and depth == 1 {
 				Program.arity(ts, j + 1, depth, count + 1)
 			} else {
@@ -174,13 +243,23 @@ Program :: [].{
 	judge : Facts -> Listing.Rejection
 	judge = |f| {
 		missing = Program.missing_target(f.jumps, f.nums, 0)
-		if missing.why != "" { missing } else {
+		if missing.why != "" {
+			missing
+		} else {
 			loops = Program.pair_loops(f.loops, 0, [], [])
-			if loops.why != "" { { why: loops.why, num: loops.at } } else {
+			if loops.why != "" {
+				{ why: loops.why, num: loops.at }
+			} else {
 				into = Program.jump_into(f.jumps, loops.blocks, 0)
-				if into.why != "" { into } else {
+				if into.why != "" {
+					into
+				} else {
 					fns = Program.fn_order(f.fn_uses, f.defs, 0)
-					if fns.why != "" { fns } else { Program.arrays_judged(f) }
+					if fns.why != "" {
+						fns
+					} else {
+						Program.arrays_judged(f)
+					}
 				}
 			}
 		}
@@ -195,7 +274,11 @@ Program :: [].{
 			Program.fine
 		} else {
 			j = List.get(js, i) ?? { from: 0, to: 0 }
-			if List.contains(nums, j.to) { Program.missing_target(js, nums, i + 1) } else { { why: "A jump to a line that does not exist", num: j.from } }
+			if List.contains(nums, j.to) {
+				Program.missing_target(js, nums, i + 1)
+			} else {
+				{ why: "A jump to a line that does not exist", num: j.from }
+			}
 		}
 
 	Paired : { why : Str, at : I64, blocks : List(Jump) }
@@ -204,7 +287,11 @@ Program :: [].{
 	pair_loops : List(Loop), U64, List(Loop), List(Jump) -> Paired
 	pair_loops = |ls, i, stack, blocks|
 		if i >= List.len(ls) {
-			if List.is_empty(stack) { { why: "", at: -1, blocks: blocks } } else { { why: "A FOR without a NEXT", at: (List.last(stack) ?? { n: -1, open: True, v: "" }).n, blocks: blocks } }
+			if List.is_empty(stack) {
+				{ why: "", at: -1, blocks: blocks }
+			} else {
+				{ why: "A FOR without a NEXT", at: (List.last(stack) ?? { n: -1, open: True, v: "" }).n, blocks: blocks }
+			}
 		} else {
 			l = List.get(ls, i) ?? { n: -1, open: True, v: "" }
 			top = List.last(stack) ?? { n: -1, open: True, v: "" }
@@ -223,7 +310,13 @@ Program :: [].{
 
 	loop_open : List(Loop), Str, U64 -> Bool
 	loop_open = |stack, v, i|
-		if i >= List.len(stack) { False } else if (List.get(stack, i) ?? { n: -1, open: True, v: "" }).v == v { True } else { Program.loop_open(stack, v, i + 1) }
+		if i >= List.len(stack) {
+			False
+		} else if (List.get(stack, i) ?? { n: -1, open: True, v: "" }).v == v {
+			True
+		} else {
+			Program.loop_open(stack, v, i + 1)
+		}
 
 	# A jump from outside a FOR block to a line inside it, past the FOR.
 	jump_into : List(Jump), List(Jump), U64 -> Listing.Rejection
@@ -232,7 +325,11 @@ Program :: [].{
 			Program.fine
 		} else {
 			j = List.get(js, i) ?? { from: 0, to: 0 }
-			if Program.enters(blocks, j, 0) { { why: "A jump into a FOR block", num: j.from } } else { Program.jump_into(js, blocks, i + 1) }
+			if Program.enters(blocks, j, 0) {
+				{ why: "A jump into a FOR block", num: j.from }
+			} else {
+				Program.jump_into(js, blocks, i + 1)
+			}
 		}
 
 	enters : List(Jump), Jump, U64 -> Bool
@@ -241,7 +338,11 @@ Program :: [].{
 			False
 		} else {
 			bl = List.get(blocks, i) ?? { from: 0, to: 0 }
-			if bl.from < j.to and j.to <= bl.to and !(bl.from <= j.from and j.from <= bl.to) { True } else { Program.enters(blocks, j, i + 1) }
+			if bl.from < j.to and j.to <= bl.to and !(bl.from <= j.from and j.from <= bl.to) {
+				True
+			} else {
+				Program.enters(blocks, j, i + 1)
+			}
 		}
 
 	fn_order : List(Named), List(Named), U64 -> Listing.Rejection
@@ -272,20 +373,38 @@ Program :: [].{
 			{ why: "OPTION BASE after an array is used", num: first.n }
 		} else {
 			low = Program.low_dim(f.dims, base, 0)
-			if low.why != "" { low } else {
+			if low.why != "" {
+				low
+			} else {
 				uses = Program.array_uses(f.arrays, f.dims, 0, [])
-				if uses.why != "" { uses } else { Program.clash(f.simples, f.dims, f.arrays, 0) }
+				if uses.why != "" {
+					uses
+				} else {
+					Program.clash(f.simples, f.dims, f.arrays, 0)
+				}
 			}
 		}
 	}
 
 	any_dim_before : List(Dim), I64, U64 -> Bool
 	any_dim_before = |ds, n, i|
-		if i >= List.len(ds) { False } else if (List.get(ds, i) ?? { name: "", n: n, arity: 1, low: 0 }).n < n { True } else { Program.any_dim_before(ds, n, i + 1) }
+		if i >= List.len(ds) {
+			False
+		} else if (List.get(ds, i) ?? { name: "", n: n, arity: 1, low: 0 }).n < n {
+			True
+		} else {
+			Program.any_dim_before(ds, n, i + 1)
+		}
 
 	any_use_before : List(Use), I64, U64 -> Bool
 	any_use_before = |us, n, i|
-		if i >= List.len(us) { False } else if (List.get(us, i) ?? { name: "", n: n, arity: 1 }).n < n { True } else { Program.any_use_before(us, n, i + 1) }
+		if i >= List.len(us) {
+			False
+		} else if (List.get(us, i) ?? { name: "", n: n, arity: 1 }).n < n {
+			True
+		} else {
+			Program.any_use_before(us, n, i + 1)
+		}
 
 	low_dim : List(Dim), I64, U64 -> Listing.Rejection
 	low_dim = |ds, base, i|
@@ -293,7 +412,11 @@ Program :: [].{
 			Program.fine
 		} else {
 			d = List.get(ds, i) ?? { name: "", n: 0, arity: 1, low: base }
-			if d.low < base { { why: "A DIM bound below OPTION BASE", num: d.n } } else { Program.low_dim(ds, base, i + 1) }
+			if d.low < base {
+				{ why: "A DIM bound below OPTION BASE", num: d.n }
+			} else {
+				Program.low_dim(ds, base, i + 1)
+			}
 		}
 
 	# `seen` is the first arity of each array with no DIM.
@@ -314,7 +437,16 @@ Program :: [].{
 			} else if di < 0 and si >= 0 and s.arity != u.arity {
 				{ why: "An array used with different numbers of subscripts", num: u.n }
 			} else {
-				Program.array_uses(us, ds, i + 1, if di < 0 and si < 0 { List.append(seen, u) } else { seen })
+				Program.array_uses(
+					us,
+					ds,
+					i + 1,
+					if di < 0 and si < 0 {
+						List.append(seen, u)
+					} else {
+						seen
+					},
+				)
 			}
 		}
 
@@ -335,19 +467,43 @@ Program :: [].{
 
 	named_line : List(Named), Str, U64 -> I64
 	named_line = |xs, name, i|
-		if i >= List.len(xs) { -1 } else if (List.get(xs, i) ?? { name: "", n: -1 }).name == name { (List.get(xs, i) ?? { name: "", n: -1 }).n } else { Program.named_line(xs, name, i + 1) }
+		if i >= List.len(xs) {
+			-1
+		} else if (List.get(xs, i) ?? { name: "", n: -1 }).name == name {
+			(List.get(xs, i) ?? { name: "", n: -1 }).n
+		} else {
+			Program.named_line(xs, name, i + 1)
+		}
 
 	dim_index : List(Dim), Str, U64 -> I64
 	dim_index = |ds, name, i|
-		if i >= List.len(ds) { -1 } else if (List.get(ds, i) ?? { name: "", n: 0, arity: 1, low: 0 }).name == name { U64.to_i64_wrap(i) } else { Program.dim_index(ds, name, i + 1) }
+		if i >= List.len(ds) {
+			-1
+		} else if (List.get(ds, i) ?? { name: "", n: 0, arity: 1, low: 0 }).name == name {
+			U64.to_i64_wrap(i)
+		} else {
+			Program.dim_index(ds, name, i + 1)
+		}
 
 	use_index : List(Use), Str, U64 -> I64
 	use_index = |us, name, i|
-		if i >= List.len(us) { -1 } else if (List.get(us, i) ?? { name: "", n: 0, arity: 1 }).name == name { U64.to_i64_wrap(i) } else { Program.use_index(us, name, i + 1) }
+		if i >= List.len(us) {
+			-1
+		} else if (List.get(us, i) ?? { name: "", n: 0, arity: 1 }).name == name {
+			U64.to_i64_wrap(i)
+		} else {
+			Program.use_index(us, name, i + 1)
+		}
 
 	has_tok : List(Tok), U64, U8, Str -> Bool
 	has_tok = |ts, i, k, v|
-		if i >= List.len(ts) { False } else if Program.tok_k(ts, i) == k and Program.tok_v(ts, i) == v { True } else { Program.has_tok(ts, i + 1, k, v) }
+		if i >= List.len(ts) {
+			False
+		} else if Program.tok_k(ts, i) == k and Program.tok_v(ts, i) == v {
+			True
+		} else {
+			Program.has_tok(ts, i + 1, k, v)
+		}
 
 	tok_k : List(Tok), U64 -> U8
 	tok_k = |ts, i| (List.get(ts, i) ?? { k: 0, v: "" }).k
@@ -371,7 +527,11 @@ Program :: [].{
 			acc
 		} else if c == 34 {
 			q = Listing.quote_close(b, j + 1)
-			e = if q >= List.len(b) { q } else { q + 1 }
+			e = if q >= List.len(b) {
+				q
+			} else {
+				q + 1
+			}
 			Program.tokens(b, e, List.append(acc, { k: 6, v: Listing.text(b, j, e) }))
 		} else if Listing.is_digit(c) or (c == 46 and Listing.is_digit(Listing.byte(b, j + 1))) {
 			e = Listing.number_end(b, j)
@@ -385,7 +545,11 @@ Program :: [].{
 				Program.tokens(b, e, List.append(acc, { k: 2, v: w }))
 			} else {
 				e0 = Listing.name_end(b, j)
-				e = if Listing.byte(b, e0) == 36 { e0 + 1 } else { e0 }
+				e = if Listing.byte(b, e0) == 36 {
+					e0 + 1
+				} else {
+					e0
+				}
 				Program.tokens(b, e, List.append(acc, { k: 4, v: Listing.text(b, j, e) }))
 			}
 		} else {
