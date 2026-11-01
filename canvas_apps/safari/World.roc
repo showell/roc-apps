@@ -3,7 +3,6 @@
 import Cat
 import lib.DeviceMath
 import Herd
-import Maybe
 import Pigs
 import Scenery
 import Trees
@@ -22,24 +21,30 @@ World :: [].{
 	route : List(World.Cfg)
 	route = [cfg(500.0, AllGreen, 50.0, False, False, False, False, Elephant), cfg(320.0, AllGreen, (0.0 - 70.0), True, False, False, False, Elephant), cfg(400.0, AllGreen, 20.0, False, True, False, False, Elephant), cfg(300.0, YellowGreen, 20.0, False, False, False, False, Elephant), cfg(300.0, AllGreen, (0.0 - 70.0), False, False, True, False, Giraffe), cfg(300.0, AllGreen, (0.0 - 70.0), False, False, True, False, Elephant), cfg(1200.0, RedGreen, 80.0, False, False, True, False, Rhino), cfg(300.0, AllGreen, 15.0, False, False, True, False, Elephant), cfg(300.0, AllGreen, (0.0 - 70.0), False, False, True, False, Elephant), cfg(800.0, AllGreen, 15.0, False, False, True, False, Elephant), cfg(300.0, AllGreen, 15.0, False, True, True, False, Elephant), cfg(300.0, AllGreen, 15.0, False, True, True, False, Elephant), cfg(300.0, RedGreen, 15.0, True, True, True, False, DuckPond), cfg(400.0, AllGreen, (0.0 - 50.0), False, True, True, False, Elephant), cfg(300.0, AllGreen, 50.0, False, True, True, False, Elephant), cfg(300.0, RedGreen, (0.0 - 50.0), False, False, True, False, Zebra), cfg(300.0, AllGreen, 50.0, False, True, True, False, Elephant), cfg(300.0, AllGreen, (0.0 - 50.0), False, True, True, False, Elephant), cfg(300.0, RedGreen, 0.0, True, True, True, True, NoCreature)]
 
-	tree_improves : Maybe.Maybe(F64), F64 -> Bool
+	## The nearest tree along so far, in a walk of a segment's trees.
+	NearestTree : [NearestAlong(F64), NoTreeYet]
+
+	tree_improves : World.NearestTree, F64 -> Bool
 	tree_improves = |best, a| (match best {
-		Just(b) => (a < b)
-		None => True
+		NearestAlong(b) => (a < b)
+		NoTreeYet => True
 	})
 
-	next_tree_loop : List(Scenery.Tree), F64, I64, Maybe.Maybe(F64) -> Maybe.Maybe(F64)
+	next_tree_loop : List(Scenery.Tree), F64, I64, World.NearestTree -> World.NearestTree
 	next_tree_loop = |ts, desired, i, best| (if (i >= U64.to_i64_wrap(List.len(ts))) { best } else { next_tree_step(ts, desired, i, best) })
 
-	next_tree_step : List(Scenery.Tree), F64, I64, Maybe.Maybe(F64) -> Maybe.Maybe(F64)
+	next_tree_step : List(Scenery.Tree), F64, I64, World.NearestTree -> World.NearestTree
 	next_tree_step = |ts, desired, i, best| ({
 		t = (List.get(ts, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
 		take = (if (t.across > 0.0) { (if (t.along >= desired) { tree_improves(best, t.along) } else { False }) } else { False })
-		(if take { next_tree_loop(ts, desired, (i + 1), Just(t.along)) } else { next_tree_loop(ts, desired, (i + 1), best) })
+		(if take { next_tree_loop(ts, desired, (i + 1), NearestAlong(t.along)) } else { next_tree_loop(ts, desired, (i + 1), best) })
 	})
 
 	next_tree_along : List(Scenery.Tree), F64 -> F64
-	next_tree_along = |ts, desired| Maybe.from_maybe(next_tree_loop(ts, desired, 0, None), desired)
+	next_tree_along = |ts, desired| (match next_tree_loop(ts, desired, 0, NoTreeYet) {
+		NearestAlong(along) => along
+		NoTreeYet => desired
+	})
 
 	heading_step : I64 -> F64
 	heading_step = |i| ({

@@ -1,7 +1,6 @@
 # Truck -- originally emitted from Codex by rocemit; the Roc is the program now
 # and this file is edited here (safari/README.md).
 import lib.DeviceMath
-import Maybe
 import Pose
 import VehicleLimits
 import World
@@ -9,6 +8,9 @@ import World
 Truck :: [].{
 	TruckState : { pos : F64, v : F64, braking : Bool }
 	Turn : { dist : F64, v_turn : F64 }
+
+	## The next turn of the route past a point, or none: the route ends first.
+	NextTurn : [TurnAhead(Truck.Turn), NoTurnAhead]
 
 	start_ahead : F64
 	start_ahead = 500.0
@@ -31,16 +33,16 @@ Truck :: [].{
 	truck_initial : Truck.TruckState
 	truck_initial = { pos: start_ahead, v: Pose.v_base, braking: False }
 
-	next_turn_loop : List(World.Segment), F64, I64, F64 -> Maybe.Maybe(Truck.Turn)
-	next_turn_loop = |segs, pos, i, cum0| (if (i >= U64.to_i64_wrap(List.len(segs))) { None } else { next_turn_step(segs, pos, i, (cum0 + (List.get(segs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).length)) })
+	next_turn_loop : List(World.Segment), F64, I64, F64 -> Truck.NextTurn
+	next_turn_loop = |segs, pos, i, cum0| (if (i >= U64.to_i64_wrap(List.len(segs))) { NoTurnAhead } else { next_turn_step(segs, pos, i, (cum0 + (List.get(segs, I64.to_u64_wrap(i)) ?? crash("list-at out of range")).length)) })
 
-	next_turn_step : List(World.Segment), F64, I64, F64 -> Maybe.Maybe(Truck.Turn)
+	next_turn_step : List(World.Segment), F64, I64, F64 -> Truck.NextTurn
 	next_turn_step = |segs, pos, i, cum| ({
 		s = (List.get(segs, I64.to_u64_wrap(i)) ?? crash("list-at out of range"))
-		(if (pos < cum) { (if s.terminates { None } else { Just({ dist: (cum - pos), v_turn: VehicleLimits.turn_speed(s.exit_angle) }) }) } else { next_turn_loop(segs, pos, (i + 1), cum) })
+		(if (pos < cum) { (if s.terminates { NoTurnAhead } else { TurnAhead({ dist: (cum - pos), v_turn: VehicleLimits.turn_speed(s.exit_angle) }) }) } else { next_turn_loop(segs, pos, (i + 1), cum) })
 	})
 
-	next_turn : List(World.Segment), F64 -> Maybe.Maybe(Truck.Turn)
+	next_turn : List(World.Segment), F64 -> Truck.NextTurn
 	next_turn = |segs, pos| next_turn_loop(segs, pos, 0, 0.0)
 
 	truck_schedule : F64, F64 -> F64
@@ -50,8 +52,8 @@ Truck :: [].{
 	truck_next = |truck, rider_dist, segs, l| ({
 		scheduled = truck_schedule(rider_dist, l)
 		(match next_turn(segs, truck.pos) {
-			Just(turn) => (if (turn.dist <= truck_brake_distance) { truck_braking(truck, turn) } else { truck_free(truck, scheduled) })
-			None => truck_free(truck, scheduled)
+			TurnAhead(turn) => (if (turn.dist <= truck_brake_distance) { truck_braking(truck, turn) } else { truck_free(truck, scheduled) })
+			NoTurnAhead => truck_free(truck, scheduled)
 		})
 	})
 

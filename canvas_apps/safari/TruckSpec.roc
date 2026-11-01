@@ -40,14 +40,14 @@ one_seg = [World.segment_at(0)]
 
 turn_dist : List(World.Segment), F64 -> F64
 turn_dist = |segs, pos| (match Truck.next_turn(segs, pos) {
-	Just(t) => t.dist
-	None => (0.0 - 1.0)
+	TurnAhead(t) => t.dist
+	NoTurnAhead => (0.0 - 1.0)
 })
 
 turn_v : List(World.Segment), F64 -> F64
 turn_v = |segs, pos| (match Truck.next_turn(segs, pos) {
-	Just(t) => t.v_turn
-	None => (0.0 - 1.0)
+	TurnAhead(t) => t.v_turn
+	NoTurnAhead => (0.0 - 1.0)
 })
 
 turn_got : List(F64)
