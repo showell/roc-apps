@@ -77,8 +77,33 @@ Roc's own rules are in the langref's
   without opening it; what the caller wants it for stays in the caller.
   `item_at(cart, i)` answers the item at an index, and crashes past the
   end; named `in_cart` it reads as a question.
+- **A pure function is named by a noun for what it gives, a verb for what
+  it does, or a participle for what it did to its argument;** never an
+  adjective, and never a participle about something it wasn't given.
+  `escaped(text)` is the text, escaped; a page that says why a request was
+  refused is a `refusal`, since `refused(why)` was handed no request.
+
+  ```roc
+  escaped : Str -> Str
+  refusal : Str -> Html
+  ```
 - **Prefer a plain word to an abbreviation.** `customer`, not `cust`;
   `quantity`, not `qty`.
+- **Use the domain's exact word, keep Roc's words for Roc, and name a
+  function and its inverse as a mirrored pair.** `record`, `tag` and
+  `module` mean Roc's things to a Roc reader: `<p>` is a tag, and what
+  `Html.element` builds is an element. A reader that knows `read_message`
+  finds `write_message` without looking.
+
+  ```roc
+  Html.element({ name: "p", attrs: [], inner: Html.text(body) })
+  write_message : Message -> Str  # beside read_message : Str -> Try(Message, _)
+  ```
+
+  Shale's `name_hunt` checks part of this as `taken_word`: a top-level
+  or member function named only by Roc's word (`record`, `tag`), unless it gives that
+  very thing (`record : Key -> ApiKey.Record`), and a value named only by a
+  number (`three`).
 - **A top-level value or a field is never one letter.** `board_width`, not
   `w`; `row`, not `y`. It is read far from where it is set, so its name is
   all the reader has. A local or a lambda's parameter can be short: its
@@ -88,6 +113,31 @@ Roc's own rules are in the langref's
   the domain usually has the word. One row of a customer's order history is
   an `OrderSummary`, not an `Entry`. Where the container word *is* the domain's
   (a folder listing's entry), it stays.
+- **A record that reports an act names its fields for the things;** its
+  type already names the act. A field `added` says again what `Joined`
+  says, and hides that it holds a user.
+
+  ```roc
+  Joined : { directory : Directory, user : User }  # not { directory, added : User }
+  ```
+- **A method on a type that holds more than one kind of thing names its
+  object.** `Directory.remove` could remove a member, an invite or a
+  topic; `remove_member` says which, beside `add_member`. A type that holds
+  one kind keeps the bare verb: a conversation holds only messages.
+
+  ```roc
+  Directory.remove_member(directory, user)
+  Conversation.append(conversation, message)
+  ```
+- **An error tag that wraps another module's error names where it came
+  from; a leaf error tag names what went wrong.** The wrapper's name is the
+  source, its payload the source's own tags, so nothing is renamed on the
+  way up; a leaf has no source, so it says the fault.
+
+  ```roc
+  Author(id, fault)  # fault is one of Author.from_str's tags
+  BadHead(id)        # a leaf: the head itself is wrong
+  ```
 - **An effect is named for its act, never as a state or a noun.** `page!`, `appended!` or `member!` read as a value or a question,
   not a command. A route handler is `serve_*!` for what it serves
   (`serve_topic_page!`); a lookup that can fail the request is `load_*!`
@@ -360,8 +410,8 @@ Roc's own rules are in the langref's
   below). Joining a list of pieces is `Str.join_with(pieces, sep)`, a
   function, not a method on the list at the pin. `Str.concat` is for a fold
   that builds text piece by piece.
-- **An element with attributes is built by `Html.tag`; a value never
-  reaches an attribute through a template.** `Html.tag({ name, attrs,
+- **An element with attributes is built by `Html.element`; a value never
+  reaches an attribute through a template.** `Html.element({ name, attrs,
   inner })` puts every attribute value through `escape`, so no caller can
   forget it, and its names are code (lowercase letters, digits, `-`; else a
   crash). A trusted literal that leaves a quote open for a value to follow
@@ -369,7 +419,7 @@ Roc's own rules are in the langref's
   (`Html.fill`) hold text between elements, never inside a tag.
 
   ```roc
-  Html.tag({ name: "a", attrs: [Attr("href", href)], inner: Html.text(label) })
+  Html.element({ name: "a", attrs: [Attr("href", href)], inner: Html.text(label) })
   ```
 - **The markdown renderer is the one writer of markup by bytes** (Md,
   MdInline, MdMedia in roc-markdown's `package/`). It is
@@ -798,7 +848,10 @@ is the base; these rules sharpen it.
     `container` (a type or record field named only by container words,
     `Entry`, `items`, unless its doc says whose: `## A folder's entry`),
     and `worker_name` (a recursion's worker named only as a helper,
-    `count_acc`, where `count_from` says what it carries);
+    `count_acc`, where `count_from` says what it carries), and
+    `taken_word` (a function named only by Roc's own word, `record` or
+    `tag`, or a value only by a number, `three`: part of
+    [naming](#naming)'s "keep Roc's words for Roc");
   - Shale's `cookbook/roc/boundaries.shale`: `fixed`, a parameter every
     production call fills with the same literal (a recursion's `at: 0`;
     context passed down, `me` or `accounts`, is no constant), and `single`,
