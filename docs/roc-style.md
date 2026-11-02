@@ -89,6 +89,18 @@ Roc's own rules are in the langref's
   ```
 - **Prefer a plain word to an abbreviation.** `customer`, not `cust`;
   `quantity`, not `qty`.
+- **Prefer a two-part name that says what a thing is to a short one that
+  is cute or sounds like something else.** One word saves a few letters
+  and costs the reader a guess. An order whose every part is checked,
+  waiting only for its number, named `Order.Submission`, reads as an
+  event, the act of submitting; `Order.Unnumbered` says what it is, and a
+  value of it is `unnumbered_order`. Repeating the module's noun is fine:
+  the name is read far from the module.
+
+  ```roc
+  place : Orders, Order.Unnumbered -> Try(Order, [Full])  # not Order.Submission
+  placed = orders.place(unnumbered_order)                 # not orders.place(submission)
+  ```
 - **Use the domain's exact word, keep Roc's words for Roc, and name a
   function and its inverse as a mirrored pair.** `record`, `tag` and
   `module` mean Roc's things to a Roc reader: `<p>` is a tag, and what
