@@ -820,6 +820,39 @@ is the base; these rules sharpen it.
 - **Test each pure mapping, and the exact bytes each builder makes,** with
   `expect`s beside the code. `roc test <app>.roc` runs every imported
   module's `expect`s (`roc test app/main.roc` for roc-chat).
+- **An `expect` keeps each input beside its expected answer.** A list of
+  inputs mapped and compared to a separate list of answers makes the
+  reader count positions to pair them:
+
+  ```roc
+  expect
+  	[
+  		{ held: 90, adding: 9 },
+  		{ held: 90, adding: 11 },
+  	].map(room)
+  		== [
+  			Fits,
+  			Overflows,
+  		]
+  ```
+
+  Write one `expect` per case; where many cases share an answer, check
+  the list with `.all`; where many differ, check a list of `(input,
+  answer)` pairs:
+
+  ```roc
+  expect room({ held: 90, adding: 9 }) == Fits
+  expect room({ held: 90, adding: 11 }) == Overflows
+  expect ["Steve!", "R2D2"].all(|text| named(text) == Err(ForbiddenCharacter))
+  expect
+  	[
+  		(Class(token("author")), " class=\"author\""),
+  		(Required, " required"),
+  	].all(|(attr, expected)| attribute(attr) == expected)
+  ```
+
+  A tuple or record of results compared to a tuple or record of answers
+  has the same fault; write an `and` chain of equalities instead.
 - **Tests too large to sit beside the code get their own module,
   `<Module>Spec.roc`:** `CartSpec.roc` tests `Cart.roc`. The hunts read a
   `*Spec.roc` file, or one under `test/`, as tests: its helpers aren't
