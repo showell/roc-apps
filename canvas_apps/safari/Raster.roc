@@ -32,30 +32,33 @@ Raster :: [].{
 
 	## The cosine and sine of the camera's roll. The canvas translates to the
 	## centre, rotates by minus the roll and translates back.
-	View : { cos : F64, sin : F64 }
+	Rotation : { cos : F64, sin : F64 }
 
-	Pt : { x : F64, y : F64 }
+	## A point in the scene, before the roll turns it onto the screen.
+	ScenePoint := { x : F64, y : F64 }.{
+		is_eq : _
+	}
 
 	## The frame: the sky and the grass, the sun, then every command.
 	paint : Raster.Scene -> List(U32)
 	paint = |scene| {
-		view = view_of(scene.roll)
+		rotation = rotation_of(scene.roll)
 		sky = { top: Brush.opaque(scene.sky_top), horizon: Brush.opaque(scene.sky_horizon) }
-		var $px = backdrop(view, sky)
-		$px = if SafariShapes.is_sun_shown(scene.sun) paint_sun($px, { view, sun: scene.sun }) else $px
+		var $px = backdrop(rotation, sky)
+		$px = if SafariShapes.is_sun_shown(scene.sun) paint_sun($px, { rotation, sun: scene.sun }) else $px
 		for draw_command in scene.commands {
-			$px = command($px, { view, draw_command })
+			$px = command($px, { rotation, draw_command })
 		}
 		$px
 	}
 
-	view_of : F64 -> Raster.View
-	view_of = |roll| { cos: F64.cos(roll), sin: F64.sin(roll) }
+	rotation_of : F64 -> Raster.Rotation
+	rotation_of = |roll| { cos: F64.cos(roll), sin: F64.sin(roll) }
 
 	## A disc at an alpha: the pixels whose centres are strictly inside.
-	disc : List(U32), { view : Raster.View, center : Raster.Pt, radius : F64, color : Brush.Rgba } -> List(U32)
-	disc = |pixels, { view, center, radius, color }| {
-		on_screen = to_device(view, center)
+	disc : List(U32), { rotation : Raster.Rotation, center : Raster.ScenePoint, radius : F64, color : Brush.Rgba } -> List(U32)
+	disc = |pixels, { rotation, center, radius, color }| {
+		on_screen = to_device(rotation, center)
 		rows = pixels_between({ from: on_screen.y - radius, to: on_screen.y + radius, count: Screen.height_px })
 		var $px = pixels
 		var $row = rows.first
@@ -64,7 +67,7 @@ Raster :: [].{
 			half_squared = radius * radius - dy * dy
 			$px = if half_squared > 0.0 {
 				half = F64.sqrt(half_squared)
-				span($px, { view, fill: Flat(color), row: $row, from: on_screen.x - half, to: on_screen.x + half })
+				span($px, { rotation, fill: Flat(color), row: $row, from: on_screen.x - half, to: on_screen.x + half })
 			} else {
 				$px
 			}
@@ -75,15 +78,15 @@ Raster :: [].{
 
 	## A polygon, as scene coordinates x0, y0, x1, y1, ..., filled by the
 	## nonzero rule.
-	fill_polygon : List(U32), { view : Raster.View, pts : List(F64), fill : Brush.Fill } -> List(U32)
-	fill_polygon = |pixels, { view, pts, fill }|
+	fill_polygon : List(U32), { rotation : Raster.Rotation, pts : List(F64), fill : Brush.Fill } -> List(U32)
+	fill_polygon = |pixels, { rotation, pts, fill }|
 		if pts.len() // 2 < 3 {
 			pixels
 		} else {
 			corners = pts.chunks_of(2).map(
 				|pair|
 					match pair {
-						[x, y] => to_device(view, { x, y })
+						[x, y] => to_device(rotation, Raster.ScenePoint.({ x, y }))
 						_ => crash "Raster.fill_polygon: a polygon's coordinates come in pairs"
 					},
 			)
@@ -97,15 +100,16 @@ Raster :: [].{
 			var $px = pixels
 			var $row = rows.first
 			while $row <= rows.last {
-				$px = fill_row($px, { view, fill, row: $row, crossings: row_crossings(edges, pixel_center($row)) })
+				$px = fill_row($px, { rotation, fill, row: $row, crossings: row_crossings(edges, pixel_center($row)) })
 				$row = $row + 1
 			}
 			$px
 		}
 }
 
-## The screen's centre, which the roll turns about.
-center : Raster.Pt
+## The screen's centre, which the roll turns about: the same point in the
+## scene and on the screen.
+center : { x : F64, y : F64 }
 center = { x: Screen.width / 2.0, y: Screen.height / 2.0 }
 
 grass_pixel : U32
@@ -115,8 +119,13 @@ grass_pixel = I64.to_u32_wrap(SafariShapes.grass_color)
 ## 1 down the screen, -1 up it.
 Crossing : { x : F64, winding : I64 }
 
+## A point on the screen, where the roll has turned a scene point.
+DevicePoint := { x : F64, y : F64 }.{
+	is_eq : _
+}
+
 ## A polygon's edge, on the screen.
-Edge : { from : Raster.Pt, to : Raster.Pt }
+Edge : { from : DevicePoint, to : DevicePoint }
 
 ## A stretch of a row, from one crossing to the next.
 RowSpan : { from : F64, to : F64 }
@@ -127,18 +136,18 @@ WindingWalk : { winding : I64, inside : List(RowSpan) }
 
 # --- Geometry -----------------------------------------------------------------
 
-to_device : Raster.View, Raster.Pt -> Raster.Pt
-to_device = |view, { x, y }| {
+to_device : Raster.Rotation, Raster.ScenePoint -> DevicePoint
+to_device = |rotation, Raster.ScenePoint.({ x, y })| {
 	dx = x - center.x
 	dy = y - center.y
-	{ x: center.x + dx * view.cos + dy * view.sin, y: center.y - dx * view.sin + dy * view.cos }
+	DevicePoint.({ x: center.x + dx * rotation.cos + dy * rotation.sin, y: center.y - dx * rotation.sin + dy * rotation.cos })
 }
 
-to_scene : Raster.View, Raster.Pt -> Raster.Pt
-to_scene = |view, { x, y }| {
+to_scene : Raster.Rotation, DevicePoint -> Raster.ScenePoint
+to_scene = |rotation, DevicePoint.({ x, y })| {
 	dx = x - center.x
 	dy = y - center.y
-	{ x: center.x + dx * view.cos - dy * view.sin, y: center.y + dx * view.sin + dy * view.cos }
+	Raster.ScenePoint.({ x: center.x + dx * rotation.cos - dy * rotation.sin, y: center.y + dx * rotation.sin + dy * rotation.cos })
 }
 
 ## The centre of the pixel at `index` in its row or column.
@@ -225,15 +234,15 @@ blend = |pixels, { at, color }| {
 ## horizon, then fades to the horizon colour; the grass is below it. The fade
 ## divides by the horizon rather than shading a Linear brush, whose arithmetic
 ## rounds differently.
-backdrop : Raster.View, { top : Brush.Rgba, horizon : Brush.Rgba } -> List(U32)
-backdrop = |view, sky| {
+backdrop : Raster.Rotation, { top : Brush.Rgba, horizon : Brush.Rgba } -> List(U32)
+backdrop = |rotation, sky| {
 	var $px = List.with_capacity(I64.to_u64_wrap(Screen.width_px * Screen.height_px))
 	var $row = 0
 	var $column = 0
 	while $row < Screen.height_px {
 		$column = 0
 		while $column < Screen.width_px {
-			y = to_scene(view, { x: pixel_center($column), y: pixel_center($row) }).y
+			y = to_scene(rotation, DevicePoint.({ x: pixel_center($column), y: pixel_center($row) })).y
 			pixel = if y >= Screen.grass_top_y {
 				grass_pixel
 			} else {
@@ -257,10 +266,10 @@ backdrop = |view, sky| {
 ## The sun's glow and then its disc, as SafariShapes paints them, both
 ## clipped to the sky, before the commands, so the mountains set the sun
 ## behind them.
-paint_sun : List(U32), { view : Raster.View, sun : Sky.SunPos } -> List(U32)
-paint_sun = |pixels, { view, sun }| {
+paint_sun : List(U32), { rotation : Raster.Rotation, sun : Sky.SunPos } -> List(U32)
+paint_sun = |pixels, { rotation, sun }| {
 	fills = SafariShapes.sun_fills(sun)
-	on_screen = to_device(view, { x: sun.x, y: sun.y })
+	on_screen = to_device(rotation, Raster.ScenePoint.({ x: sun.x, y: sun.y }))
 	rows = pixels_between({ from: on_screen.y - fills.glow_radius, to: on_screen.y + fills.glow_radius, count: Screen.height_px })
 	columns = pixels_between({ from: on_screen.x - fills.glow_radius, to: on_screen.x + fills.glow_radius, count: Screen.width_px })
 	var $px = pixels
@@ -269,7 +278,7 @@ paint_sun = |pixels, { view, sun }| {
 	while $row <= rows.last {
 		$column = columns.first
 		while $column <= columns.last {
-			p = to_scene(view, { x: pixel_center($column), y: pixel_center($row) })
+			p = to_scene(rotation, DevicePoint.({ x: pixel_center($column), y: pixel_center($row) }))
 			$px = if p.x >= 0.0 and p.x < Screen.width and p.y >= 0.0 and p.y < Screen.horizon_y {
 				at = pixel_index({ row: $row, column: $column })
 				lit = blend($px, { at, color: Brush.shade(fills.glow, p.x, p.y) })
@@ -291,13 +300,13 @@ paint_sun = |pixels, { view, sun }| {
 
 # --- The commands -------------------------------------------------------------
 
-command : List(U32), { view : Raster.View, draw_command : Paint.DrawCmd } -> List(U32)
-command = |pixels, { view, draw_command }|
+command : List(U32), { rotation : Raster.Rotation, draw_command : Paint.DrawCmd } -> List(U32)
+command = |pixels, { rotation, draw_command }|
 	if draw_command.tag == Paint.beacon_tag {
 		match draw_command.geom {
 			[x, y, radius] => {
 				color = Brush.opaque(draw_command.color)
-				Raster.disc(pixels, { view, center: { x, y }, radius, color: { ..color, a: draw_command.strength } })
+				Raster.disc(pixels, { rotation, center: Raster.ScenePoint.({ x, y }), radius, color: { ..color, a: draw_command.strength } })
 			}
 			_ => crash "Raster.command: a beacon's geometry is its x, y and radius"
 		}
@@ -306,7 +315,7 @@ command = |pixels, { view, draw_command }|
 		match fill {
 			Skip => pixels
 			Flat(_) | Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) =>
-				Raster.fill_polygon(pixels, { view, pts: draw_command.pts, fill })
+				Raster.fill_polygon(pixels, { rotation, pts: draw_command.pts, fill })
 			}
 	}
 
@@ -338,11 +347,11 @@ crossing = |{ from, to }, y| {
 
 ## One row of a polygon: the spans between its crossings where the winding is
 ## not zero.
-fill_row : List(U32), { view : Raster.View, fill : Brush.Fill, row : I64, crossings : List(Crossing) } -> List(U32)
-fill_row = |pixels, { view, fill, row, crossings }| {
+fill_row : List(U32), { rotation : Raster.Rotation, fill : Brush.Fill, row : I64, crossings : List(Crossing) } -> List(U32)
+fill_row = |pixels, { rotation, fill, row, crossings }| {
 	var $px = pixels
 	for inside in inside_spans(crossings) {
-		$px = span($px, { view, fill, row, from: inside.from, to: inside.to })
+		$px = span($px, { rotation, fill, row, from: inside.from, to: inside.to })
 	}
 	$px
 }
@@ -369,8 +378,8 @@ walk_crossing = |so_far, { enter, leave }| {
 }
 
 ## The pixels of `row` whose centres fall in [from, to).
-span : List(U32), { view : Raster.View, fill : Brush.Fill, row : I64, from : F64, to : F64 } -> List(U32)
-span = |pixels, { view, fill, row, from, to }| {
+span : List(U32), { rotation : Raster.Rotation, fill : Brush.Fill, row : I64, from : F64, to : F64 } -> List(U32)
+span = |pixels, { rotation, fill, row, from, to }| {
 	columns = pixels_between({ from, to, count: Screen.width_px })
 	y = pixel_center(row)
 	var $px = pixels
@@ -380,7 +389,7 @@ span = |pixels, { view, fill, row, from, to }| {
 		color = match fill {
 			Flat(flat) => flat
 			Skip | Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) => {
-				p = to_scene(view, { x: pixel_center($column), y })
+				p = to_scene(rotation, DevicePoint.({ x: pixel_center($column), y }))
 				Brush.shade(fill, p.x, p.y)
 			}
 		}

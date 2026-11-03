@@ -28,21 +28,21 @@ ride_to = |m, n| if n <= 0 {
 }
 
 # The shapes of the commands, filled by Raster onto `pixels`.
-paint_shapes : List(U32), Raster.View, List(Shapes.Shape) -> List(U32)
-paint_shapes = |pixels, view, shapes| {
+paint_shapes : List(U32), Raster.Rotation, List(Shapes.Shape) -> List(U32)
+paint_shapes = |pixels, rotation, shapes| {
 	n = List.len(shapes)
 	var $px = pixels
 	var $k = 0
 	while $k < n {
 		$px = match List.get(shapes, $k) ?? crash ("shape out of range") {
-			Poly(p) => Raster.fill_polygon($px, { view, pts: p.pts, fill: p.fill })
-			Pieces(p) => paint_pieces($px, view, p.tris, p.fill)
+			Poly(p) => Raster.fill_polygon($px, { rotation, pts: p.pts, fill: p.fill })
+			Pieces(p) => paint_pieces($px, rotation, p.tris, p.fill)
 			Disc(d) => {
 				col = match d.fill {
 					Flat(c) => c
 					_ => crash ("a command's disc with a gradient")
 				}
-				Raster.disc($px, { view, center: { x: d.x, y: d.y }, radius: d.r, color: col })
+				Raster.disc($px, { rotation, center: Raster.ScenePoint.({ x: d.x, y: d.y }), radius: d.r, color: col })
 			}
 			Rect(_) => crash ("a command cut into a rectangle")
 			# Raster lays every pixel over what is there, so Over is the mode it
@@ -50,21 +50,21 @@ paint_shapes = |pixels, view, shapes| {
 			Blend(Over) => $px
 			Blend(Add) => crash ("a command lit in Add mode")
 			Image(_) => crash ("a command cut into an image")
-			# The roll is `view`, Raster's; SafariApp's lean mark is not a command.
-			View(_) => crash ("a command cut into a view mark")
+			# The roll is `rotation`, Raster's; SafariApp's lean mark is not a command.
+			View(_) => crash ("a command cut into a rotation mark")
 		}
 		$k = $k + 1
 	}
 	$px
 }
 
-paint_pieces : List(U32), Raster.View, List(F64), _ -> List(U32)
-paint_pieces = |pixels, view, tris, fill| {
+paint_pieces : List(U32), Raster.Rotation, List(F64), _ -> List(U32)
+paint_pieces = |pixels, rotation, tris, fill| {
 	m = List.len(tris) // 6
 	var $px = pixels
 	var $k = 0
 	while $k < m {
-		$px = Raster.fill_polygon($px, { view, pts: List.sublist(tris, { start: 6 * $k, len: 6 }), fill })
+		$px = Raster.fill_polygon($px, { rotation, pts: List.sublist(tris, { start: 6 * $k, len: 6 }), fill })
 		$k = $k + 1
 	}
 	$px
@@ -89,7 +89,7 @@ main! = |args| {
 	scene = { commands, roll, sky_top: SafariRide.sky_top(m), sky_horizon: SafariRide.sky_horizon(m), sun: SafariRide.sun(m) }
 	shapes = Shapes.cut(List.join_map(commands, SafariShapes.of_command))
 	a = Raster.paint(scene)
-	b = paint_shapes(Raster.paint({ ..scene, commands: [] }), Raster.view_of(roll), shapes)
+	b = paint_shapes(Raster.paint({ ..scene, commands: [] }), Raster.rotation_of(roll), shapes)
 	n = List.len(a)
 	var $differ = 0
 	var $k = 0
