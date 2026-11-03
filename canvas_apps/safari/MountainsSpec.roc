@@ -1,5 +1,6 @@
-# MountainsSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are Mountains' checks: its colours by day and at dusk, where each
+## range rises and ends, the snowline, the bearing across the screen, and when
+## the skyline hides the sun.
 app [main!] {
 	lib: "../lib/main.roc",
 }
@@ -15,13 +16,13 @@ palette_want : List(I64)
 palette_want = [5991055, 3752799, 4886339]
 
 chan_got : List(F64)
-chan_got = [Mountains.chan(Mountains.rock, 16), Mountains.chan(Mountains.rock, 8), Mountains.chan(Mountains.rock, 0), Mountains.chan(16777215, 16), Mountains.chan(0, 0)]
+chan_got = [Mountains.channel(Mountains.rock, 16), Mountains.channel(Mountains.rock, 8), Mountains.channel(Mountains.rock, 0), Mountains.channel(16777215, 16), Mountains.channel(0, 0)]
 
 chan_want : List(F64)
 chan_want = [91.0, 106.0, 143.0, 255.0, 0.0]
 
 dim_got : List(I64)
-dim_got = [Mountains.dimmed(Mountains.rock, 0.0), Mountains.dimmed(Mountains.rock_west, 0.0), Mountains.dimmed(Mountains.land, 0.0), Mountains.dimmed(Mountains.rock, 1.0), Mountains.dimmed(Mountains.rock_west, 1.0), Mountains.dimmed(Mountains.land, 1.0), Mountains.dimmed(Mountains.rock, 0.5)]
+dim_got = [Mountains.color_at_dusk(Mountains.rock, 0.0), Mountains.color_at_dusk(Mountains.rock_west, 0.0), Mountains.color_at_dusk(Mountains.land, 0.0), Mountains.color_at_dusk(Mountains.rock, 1.0), Mountains.color_at_dusk(Mountains.rock_west, 1.0), Mountains.color_at_dusk(Mountains.land, 1.0), Mountains.color_at_dusk(Mountains.rock, 0.5)]
 
 dim_want : List(I64)
 dim_want = [5991055, 3752799, 4886339, 3028296, 1909296, 2443298, 4477035]
@@ -33,7 +34,7 @@ snow_want : List(I64)
 snow_want = [15660024, 4609128, 10134704, 15660024, 4609128]
 
 night_order_got : List(Bool)
-night_order_got = [(Mountains.snow_color(1.0) > Mountains.dimmed(Mountains.rock, 1.0)), (Mountains.snow_color(0.0) > Mountains.dimmed(Mountains.rock, 0.0))]
+night_order_got = [(Mountains.snow_color(1.0) > Mountains.color_at_dusk(Mountains.rock, 1.0)), (Mountains.snow_color(0.0) > Mountains.color_at_dusk(Mountains.rock, 0.0))]
 
 night_order_want : List(Bool)
 night_order_want = [True, True]
@@ -63,13 +64,13 @@ shape_want : List(F64)
 shape_want = [(-2.0416), 124.0, 10.0, 2.0, 200.0, 0.5]
 
 snowline_got : List(F64)
-snowline_got = [Mountains.snowline_at(0.9, Mountains.snow_peak_height), Mountains.snowline_at(2.0, Mountains.snow_peak_height)]
+snowline_got = [Mountains.snowline(0.9), Mountains.snowline(2.0)]
 
 snowline_want : List(F64)
 snowline_want = [124.0, 124.0]
 
 band_got : List(Bool)
-band_got = [(Mountains.snowline_at(0.0, Mountains.snow_peak_height) < Mountains.snow_threshold), (Mountains.snowline_at(0.0, Mountains.snow_peak_height) > (Mountains.snow_threshold - Mountains.snow_dip)), (Mountains.snowline_at(0.5, Mountains.snow_peak_height) <= Mountains.snow_threshold), (Mountains.snowline_at(0.5, Mountains.snow_peak_height) >= (Mountains.snow_threshold - Mountains.snow_dip))]
+band_got = [(Mountains.snowline(0.0) < Mountains.snow_threshold), (Mountains.snowline(0.0) > (Mountains.snow_threshold - Mountains.snow_dip)), (Mountains.snowline(0.5) <= Mountains.snow_threshold), (Mountains.snowline(0.5) >= (Mountains.snow_threshold - Mountains.snow_dip))]
 
 band_want : List(Bool)
 band_want = [True, True, True, True]
@@ -80,20 +81,32 @@ peak_got = [(Mountains.snow_peak_height > Mountains.snow_threshold), (Mountains.
 peak_want : List(Bool)
 peak_want = [True, True]
 
+## The bearing seen at `x` across a 960-pixel screen.
+bearing : { heading : F64, cam_focal : F64, x : F64 } -> F64
+bearing = |{ heading, cam_focal, x }| Mountains.bearing_at({ heading, cam_focal, view_w: 960.0 }, x)
+
 bearing_got : List(F64)
-bearing_got = [Mountains.bearing_at(480.0, 0.0, 500.0, 960.0), Mountains.bearing_at(480.0, 1.25, 500.0, 960.0), Mountains.bearing_at(480.0, 1.25, 100.0, 960.0)]
+bearing_got = [
+	bearing({ heading: 0.0, cam_focal: 500.0, x: 480.0 }),
+	bearing({ heading: 1.25, cam_focal: 500.0, x: 480.0 }),
+	bearing({ heading: 1.25, cam_focal: 100.0, x: 480.0 }),
+]
 
 bearing_want : List(F64)
 bearing_want = [0.0, 1.25, 1.25]
 
 spread_got : List(Bool)
-spread_got = [(Mountains.bearing_at(0.0, 0.0, 500.0, 960.0) < Mountains.bearing_at(480.0, 0.0, 500.0, 960.0)), (Mountains.bearing_at(480.0, 0.0, 500.0, 960.0) < Mountains.bearing_at(960.0, 0.0, 500.0, 960.0)), (Mountains.bearing_at(960.0, 0.0, 100.0, 960.0) > Mountains.bearing_at(960.0, 0.0, 500.0, 960.0))]
+spread_got = [
+	bearing({ heading: 0.0, cam_focal: 500.0, x: 0.0 }) < bearing({ heading: 0.0, cam_focal: 500.0, x: 480.0 }),
+	bearing({ heading: 0.0, cam_focal: 500.0, x: 480.0 }) < bearing({ heading: 0.0, cam_focal: 500.0, x: 960.0 }),
+	bearing({ heading: 0.0, cam_focal: 100.0, x: 960.0 }) > bearing({ heading: 0.0, cam_focal: 500.0, x: 960.0 }),
+]
 
 spread_want : List(Bool)
 spread_want = [True, True, True]
 
 crest_got : List(Bool)
-crest_got = [(Mountains.horizon_crest_px(0.0) >= Mountains.ground_base(0.0)), (Mountains.horizon_crest_px(2.0) >= Mountains.ground_base(2.0)), (Mountains.horizon_crest_px(0.0) >= Mountains.north_range(0.0)), Mountains.sun_behind_mountains(0.0), Mountains.sun_behind_mountains(6000.0)]
+crest_got = [(Mountains.horizon_crest_px(0.0) >= Mountains.ground_base(0.0)), (Mountains.horizon_crest_px(2.0) >= Mountains.ground_base(2.0)), (Mountains.horizon_crest_px(0.0) >= Mountains.north_range(0.0)), Mountains.is_sun_behind_mountains(0.0), Mountains.is_sun_behind_mountains(6000.0)]
 
 crest_want : List(Bool)
 crest_want = [True, True, True, False, True]

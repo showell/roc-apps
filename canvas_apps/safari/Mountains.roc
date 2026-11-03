@@ -1,5 +1,8 @@
-# Mountains -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## The skyline, drawn behind everything else: a high range to the north with
+## snow on its peaks, a lower range to the west, and the rolling land in front
+## of both. Each is a silhouette across the screen whose height depends only on
+## the bearing it is seen at, so the skyline turns with the rider but never
+## comes nearer. The rock darkens at dusk, and the snow goes blue.
 import Camera
 import lib.DeviceMath
 import Lens
@@ -10,15 +13,19 @@ import lib.Trig
 
 Mountains :: [].{
 
+	## How the skyline is seen: the rider's heading, and the camera.
+	Sight : { heading : F64, cam_focal : F64, view_w : F64 }
+
 	rock : I64
-	rock = 5991055
+	rock = 0x5B6A8F
 
 	rock_west : I64
-	rock_west = 3752799
+	rock_west = 0x39435F
 
 	land : I64
-	land = 4886339
+	land = 0x4A8F43
 
+	## How much of its light the rock loses at full dusk.
 	rock_night_dim : F64
 	rock_night_dim = 0.5
 
@@ -28,19 +35,20 @@ Mountains :: [].{
 	snow_night : Sky.Rgb
 	snow_night = { r: 70.0, g: 84.0, b: 104.0 }
 
-	chan : I64, I64 -> F64
-	chan = |color, sh| I64.to_f64(I64.bitwise_and(I64.shr_wrap(color, I64.to_u8_wrap(sh)), 255))
+	## One of a colour's channels: 16 is red, 8 green and 0 blue.
+	channel : I64, U8 -> F64
+	channel = |color, shift| color.shr_wrap(shift).bitwise_and(255).to_f64()
 
-	dimmed : I64, F64 -> I64
-	dimmed = |color, dusk| (
-		{
-			f = (1.0 - (rock_night_dim * dusk))
-			r = F64.to_i64_wrap(Num_.round_real((chan(color, 16) * f)))
-			g = F64.to_i64_wrap(Num_.round_real((chan(color, 8) * f)))
-			b = F64.to_i64_wrap(Num_.round_real((chan(color, 0) * f)))
-			I64.bitwise_or(I64.bitwise_or(I64.shl_wrap(r, I64.to_u8_wrap(16)), I64.shl_wrap(g, I64.to_u8_wrap(8))), b)
-		}
-	)
+	## A rock colour at `dusk`, from 0 (day) to 1 (night).
+	color_at_dusk : I64, F64 -> I64
+	color_at_dusk = |color, dusk| {
+		light = (1.0 - (rock_night_dim * dusk))
+		Sky.pack({
+			r: Num_.round_real((channel(color, 16) * light)),
+			g: Num_.round_real((channel(color, 8) * light)),
+			b: Num_.round_real((channel(color, 0) * light)),
+		})
+	}
 
 	snow_color : F64 -> I64
 	snow_color = |dusk| Sky.pack(Sky.lerp3(snow_day, snow_night, dusk))
@@ -48,177 +56,154 @@ Mountains :: [].{
 	west_range_bearing : F64
 	west_range_bearing = (0.0 - 2.0416)
 
+	## The north range is snowy above this height.
 	snow_threshold : F64
 	snow_threshold = 124.0
 
+	## How far the snowline dips below the threshold under the highest peak.
 	snow_dip : F64
 	snow_dip = 10.0
 
+	## The silhouettes are sampled every `col_step` pixels across the screen.
 	col_step : F64
 	col_step = 2.0
 
+	## How far past each side of the screen the silhouettes reach, so the
+	## rider's roll never shows their ends.
 	roll_margin : F64
 	roll_margin = 200.0
 
-	range_at : F64, F64, F64, F64, F64, F64 -> F64
-	range_at = |bearing, center, half, peak, freq_a, freq_b| (
-		{
-			b = Trig.wrap((bearing - center), 64)
-			t = (b / half)
-			(
-				if (DeviceMath.real_abs(t) >= 1.0) {
-					0.0
-				} else {
-					range_body(b, t, peak, freq_a, freq_b)
-				}
-			)
-		}
-	)
-
-	range_body : F64, F64, F64, F64, F64 -> F64
-	range_body = |b, t, peak, freq_a, freq_b| (
-		{
-			envelope = Trig.r_cos(((t * Trig.pi) / 2.0))
-			ridge = ((0.6 + (0.24 * Trig.r_cos((b * freq_a)))) + (0.16 * Trig.r_cos(((b * freq_b) + 1.0))))
-			((peak * envelope) * ridge)
-		}
-	)
-
+	## The rolling land: low, and all the way round.
 	ground_base : F64 -> F64
 	ground_base = |bearing| (18.0 + (12.0 * Trig.r_sin(((Trig.wrap(bearing, 64) * 0.9) + 1.9))))
 
 	north_range : F64 -> F64
-	north_range = |bearing| range_at(bearing, 0.0, 0.95, 150.0, 8.0, 21.0)
+	north_range = |bearing| range_height(north, bearing)
 
 	west_range : F64 -> F64
-	west_range = |bearing| range_at(bearing, west_range_bearing, 0.72, 120.0, 11.0, 27.0)
+	west_range = |bearing| range_height(west, bearing)
 
-	snow_peak_from : F64, F64 -> F64
-	snow_peak_from = |b, vm| (
-		if (b > 0.5) {
-			vm
-		} else {
-			snow_peak_from((b + 0.01), DeviceMath.real_max(vm, north_range(b)))
-		}
-	)
-
+	## The height of the north range's highest peak, as its samples find it.
 	snow_peak_height : F64
-	snow_peak_height = snow_peak_from((0.0 - 0.5), (0.0 - 1.0))
+	snow_peak_height = highest_north_from((-0.5 + 0.01), north_range(-0.5))
 
-	snowline_at : F64, F64 -> F64
-	snowline_at = |bearing, peak| (
-		{
-			num = (north_range(bearing) - snow_threshold)
-			above_frac = DeviceMath.real_max(0.0, DeviceMath.real_min(1.0, (num / (peak - snow_threshold))))
-			(snow_threshold - (snow_dip * above_frac))
-		}
-	)
+	## The snowline's height at `bearing`: at the threshold, dipping lower
+	## under the higher peaks.
+	snowline : F64 -> F64
+	snowline = |bearing| {
+		above_threshold = (north_range(bearing) - snow_threshold)
+		above_fraction = DeviceMath.real_max(0.0, DeviceMath.real_min(1.0, (above_threshold / (snow_peak_height - snow_threshold))))
+		(snow_threshold - (snow_dip * above_fraction))
+	}
 
-	bearing_at : F64, F64, F64, F64 -> F64
-	bearing_at = |x, heading, cam_focal, view_w| (heading + Trig.r_atan(((x - (view_w / 2.0)) / cam_focal)))
+	## The bearing seen at `x` across the screen.
+	bearing_at : Mountains.Sight, F64 -> F64
+	bearing_at = |sight, x| (sight.heading + Trig.r_atan(((x - (sight.view_w / 2.0)) / sight.cam_focal)))
 
+	## The skyline's height at `bearing`: the highest of the land and the two
+	## ranges.
 	horizon_crest_px : F64 -> F64
 	horizon_crest_px = |bearing| DeviceMath.real_max(west_range(bearing), DeviceMath.real_max(north_range(bearing), ground_base(bearing)))
 
-	sun_behind_mountains : F64 -> Bool
-	sun_behind_mountains = |step| ((Sky.sun_height_px(step) + Sky.sun_radius_px) < horizon_crest_px(Sky.sun_bearing))
+	## Whether the sun, at `step`, has sunk behind the skyline.
+	is_sun_behind_mountains : F64 -> Bool
+	is_sun_behind_mountains = |step| ((Sky.sun_height_px(step) + Sky.sun_radius_px) < horizon_crest_px(Sky.sun_bearing))
 
-	# crest_pts builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	crest_pts : (F64 -> F64), F64, F64, F64, F64, F64 -> List(Camera.ScreenPt)
-	crest_pts = |f, heading, cam_focal, view_w, v_scale, x| crest_pts_onto(f, heading, cam_focal, view_w, v_scale, x, [])
+	## The skyline, back to front: the west range, the north range, the
+	## north's snow, then the land.
+	draw : { heading : F64, dusk : F64, cam_focal : F64, view_w : F64 } -> List(Paint.DrawCmd)
+	draw = |{ heading, dusk, cam_focal, view_w }| {
+		sight = { heading, cam_focal, view_w }
+		List.join([
+			silhouette(sight, { height_at: west_range, color: color_at_dusk(rock_west, dusk) }),
+			silhouette(sight, { height_at: north_range, color: color_at_dusk(rock, dusk) }),
+			snow(sight, snow_color(dusk)),
+			silhouette(sight, { height_at: ground_base, color: land }),
+		])
+	}
+}
 
-	crest_pts_onto : (F64 -> F64), F64, F64, F64, F64, F64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
-	crest_pts_onto = |f, heading, cam_focal, view_w, v_scale, x, acc| (
-		if (x > (view_w + roll_margin)) {
-			acc
-		} else {
-			crest_pts_onto(f, heading, cam_focal, view_w, v_scale, (x + col_step), List.append(acc, { x: x, y: ((Camera.camera_h / 2.0) - (f(bearing_at(x, heading, cam_focal, view_w)) * v_scale)) }))
-		}
+## A mountain range: the bearing of its middle, how far it reaches either
+## side, its height there, and the two frequencies of the ridges along it.
+MountainRange : { center : F64, half_width : F64, peak : F64, ridge_a : F64, ridge_b : F64 }
+
+north : MountainRange
+north = { center: 0.0, half_width: 0.95, peak: 150.0, ridge_a: 8.0, ridge_b: 21.0 }
+
+west : MountainRange
+west = { center: Mountains.west_range_bearing, half_width: 0.72, peak: 120.0, ridge_a: 11.0, ridge_b: 27.0 }
+
+## A range's height at `bearing`: highest in its middle, falling to nothing at
+## its ends, with two ridges along it.
+range_height : MountainRange, F64 -> F64
+range_height = |range, bearing| {
+	from_center = Trig.wrap((bearing - range.center), 64)
+	t = (from_center / range.half_width)
+	if (DeviceMath.real_abs(t) >= 1.0) {
+		0.0
+	} else {
+		envelope = Trig.r_cos(((t * Trig.pi) / 2.0))
+		ridge = ((0.6 + (0.24 * Trig.r_cos((from_center * range.ridge_a)))) + (0.16 * Trig.r_cos(((from_center * range.ridge_b) + 1.0))))
+		((range.peak * envelope) * ridge)
+	}
+}
+
+## The highest the north range reaches, sampled every hundredth of a radian
+## from `bearing` to half a radian, each sample's bearing the last's plus the
+## step.
+highest_north_from : F64, F64 -> F64
+highest_north_from = |bearing, highest|
+	if (bearing > 0.5) {
+		highest
+	} else {
+		highest_north_from((bearing + 0.01), DeviceMath.real_max(highest, Mountains.north_range(bearing)))
+	}
+
+## The screen's horizon, where a height of zero is drawn.
+horizon_y : F64
+horizon_y = (Camera.camera_h / 2.0)
+
+## The screen's y for a height on the skyline.
+height_y : Mountains.Sight, F64 -> F64
+height_y = |sight, height| (horizon_y - (height * (sight.cam_focal / Lens.focal)))
+
+## The columns sampled, every `col_step` pixels from `from` up to `to`.
+columns : { from : F64, to : F64 } -> List(F64)
+columns = |{ from, to }| columns_onto([], { at: from, to })
+
+columns_onto : List(F64), { at : F64, to : F64 } -> List(F64)
+columns_onto = |sampled, { at, to }|
+	if (at > to) {
+		sampled
+	} else {
+		columns_onto(sampled.append(at), { at: (at + Mountains.col_step), to })
+	}
+
+## A silhouette across the screen, its top at `height_at` each bearing, closed
+## along the horizon.
+silhouette : Mountains.Sight, { height_at : F64 -> F64, color : I64 } -> List(Paint.DrawCmd)
+silhouette = |sight, { height_at, color }| {
+	left = (0.0 - Mountains.roll_margin)
+	right = (sight.view_w + Mountains.roll_margin)
+	crest = columns({ from: left, to: right }).map(|x| { x, y: height_y(sight, height_at(Mountains.bearing_at(sight, x))) })
+	Paint.push_poly(color, crest.concat([{ x: right, y: horizon_y }, { x: left, y: horizon_y }]))
+}
+
+## The north range's snow: along its crest where the range is above the
+## snowline, then back along the snowline.
+snow : Mountains.Sight, I64 -> List(Paint.DrawCmd)
+snow = |sight, color| {
+	snowy = columns({ from: 0.0, to: sight.view_w }).keep_if(
+		|x| {
+			bearing = Mountains.bearing_at(sight, x)
+			Mountains.north_range(bearing) > (Mountains.snowline(bearing) + 0.01)
+		},
 	)
-
-	silhouette : (F64 -> F64), F64, F64, F64, F64, I64 -> List(Paint.DrawCmd)
-	silhouette = |f, heading, cam_focal, view_w, v_scale, color| (
-		{
-			top = crest_pts(f, heading, cam_focal, view_w, v_scale, (0.0 - roll_margin))
-			close = [{ x: (view_w + roll_margin), y: (Camera.camera_h / 2.0) }, { x: (0.0 - roll_margin), y: (Camera.camera_h / 2.0) }]
-			Paint.push_poly(color, List.concat(top, close))
-		}
-	)
-
-	snow_columns : F64, F64, F64, F64, F64 -> List(F64)
-	snow_columns = |heading, cam_focal, view_w, peak, x| (
-		if (x > view_w) {
-			[]
-		} else {
-			snow_columns_at(heading, cam_focal, view_w, peak, x)
-		}
-	)
-
-	snow_columns_at : F64, F64, F64, F64, F64 -> List(F64)
-	snow_columns_at = |heading, cam_focal, view_w, peak, x| (
-		{
-			b = bearing_at(x, heading, cam_focal, view_w)
-			rest = snow_columns(heading, cam_focal, view_w, peak, (x + col_step))
-			(
-				if (north_range(b) > (snowline_at(b, peak) + 0.01)) {
-					List.concat([x], rest)
-				} else {
-					rest
-				}
-			)
-		}
-	)
-
-	# snow_top builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	snow_top : List(F64), F64, F64, F64, F64, I64 -> List(Camera.ScreenPt)
-	snow_top = |xs, heading, cam_focal, view_w, v_scale, i| snow_top_onto(xs, heading, cam_focal, view_w, v_scale, i, [])
-
-	snow_top_onto : List(F64), F64, F64, F64, F64, I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
-	snow_top_onto = |xs, heading, cam_focal, view_w, v_scale, i, acc| (
-		if (i >= xs.len().to_i64_wrap()) {
-			acc
-		} else {
-			snow_top_onto(xs, heading, cam_focal, view_w, v_scale, (i + 1), List.append(acc, { x: (List.get(xs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), y: ((Camera.camera_h / 2.0) - (north_range(bearing_at((List.get(xs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), heading, cam_focal, view_w)) * v_scale)) }))
-		}
-	)
-
-	# snow_bottom builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	snow_bottom : List(F64), F64, F64, F64, F64, F64, I64 -> List(Camera.ScreenPt)
-	snow_bottom = |xs, heading, cam_focal, view_w, v_scale, peak, i| snow_bottom_onto(xs, heading, cam_focal, view_w, v_scale, peak, i, [])
-
-	snow_bottom_onto : List(F64), F64, F64, F64, F64, F64, I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
-	snow_bottom_onto = |xs, heading, cam_focal, view_w, v_scale, peak, i, acc| (
-		if (i < 0) {
-			acc
-		} else {
-			snow_bottom_onto(xs, heading, cam_focal, view_w, v_scale, peak, (i - 1), List.append(acc, { x: (List.get(xs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), y: ((Camera.camera_h / 2.0) - (snowline_at(bearing_at((List.get(xs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), heading, cam_focal, view_w), peak) * v_scale)) }))
-		}
-	)
-
-	draw_snow : F64, F64, F64, F64, I64 -> List(Paint.DrawCmd)
-	draw_snow = |heading, cam_focal, view_w, v_scale, snow| (
-		{
-			peak = snow_peak_height
-			xs = snow_columns(heading, cam_focal, view_w, peak, 0.0)
-			(
-				if (xs.len().to_i64_wrap() < 2) {
-					[]
-				} else {
-					Paint.push_poly(snow, List.concat(snow_top(xs, heading, cam_focal, view_w, v_scale, 0), snow_bottom(xs, heading, cam_focal, view_w, v_scale, peak, (xs.len().to_i64_wrap() - 1))))
-				}
-			)
-		}
-	)
-
-	draw : F64, F64, F64, F64 -> List(Paint.DrawCmd)
-	draw = |heading, dusk, cam_focal, view_w| (
-		{
-			v_scale = (cam_focal / Lens.focal)
-			west = silhouette(west_range, heading, cam_focal, view_w, v_scale, dimmed(rock_west, dusk))
-			north = silhouette(north_range, heading, cam_focal, view_w, v_scale, dimmed(rock, dusk))
-			cap = draw_snow(heading, cam_focal, view_w, v_scale, snow_color(dusk))
-			ground = silhouette(ground_base, heading, cam_focal, view_w, v_scale, land)
-			List.join([west, north, cap, ground])
-		}
-	)
+	if (snowy.len() < 2) {
+		[]
+	} else {
+		crest = snowy.map(|x| { x, y: height_y(sight, Mountains.north_range(Mountains.bearing_at(sight, x))) })
+		snowline = snowy.fold_rev([], |x, back| back.append({ x, y: height_y(sight, Mountains.snowline(Mountains.bearing_at(sight, x))) }))
+		Paint.push_poly(color, crest.concat(snowline))
+	}
 }

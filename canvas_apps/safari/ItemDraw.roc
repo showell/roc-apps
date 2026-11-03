@@ -117,7 +117,7 @@ ItemDraw :: [].{
 				across: ((List.get(w, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(tk.d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).width / 2.0),
 			},
 			lights: {
-				headlights: if Mountains.sun_behind_mountains(step) On else Off,
+				headlights: if Mountains.is_sun_behind_mountains(step) On else Off,
 				brake_lights: if braking On else Off,
 			},
 			cam_focal: cf,

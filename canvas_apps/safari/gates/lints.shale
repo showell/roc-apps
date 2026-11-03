@@ -16,16 +16,16 @@ const LINTS = {
     {"state_effect", 0}, {"question", 0}, {"vague", 0}, {"name_type", 0}, {"negative", 0},
     {"noun_effect", 0}, {"command_tense", 0}, {"mixed_tense", 0}, {"container", 0},
     {"preposition_split", 0}, {"short_name", 0}, {"worker_name", 0}, {"stacked_preposition", 0},
-    {"taken_word", 5}, {"bare_participle", 8},
+    {"taken_word", 5}, {"bare_participle", 7},
   }},
   {recipe = "errors", args = {}, budget = {}, counts = {
     {"error_alias", 0}, {"optional_tag", 0}, {"set_fallback", 0}, {"placeholder", 3},
   }},
-  {recipe = "nest_depth", args = {"min=4"}, budget = {}, counts = {{"nested", 65}}},
+  {recipe = "nest_depth", args = {"min=4"}, budget = {}, counts = {{"nested", 60}}},
   {recipe = "boundaries", args = {}, budget = {}, counts = {
     {"single", 6}, {"fixed", 0}, {"entry", 0}, {"constant", 0}, {"bool_param", 0},
   }},
-  {recipe = "stack", args = {}, budget = {"--budget", "steps=4000000000"}, counts = {{"to stack", 2677}}},
+  {recipe = "stack", args = {}, budget = {"--budget", "steps=4000000000"}, counts = {{"to stack", 2647}}},
 }
 
 -- The number a summary line gives for `check`: "check N", or "N check" for
