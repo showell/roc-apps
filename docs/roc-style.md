@@ -291,6 +291,11 @@ Roc's own rules are in the langref's
   ```
 - **No list read by position.** A list of lists whose parts are known only by
   their index becomes a list of records.
+- **When one of two neighbours of the same type is a checked value, give it
+  its own opaque type.** `part(body : List(U8), boundary : List(U8))` can be
+  called with the two swapped, or with a boundary nobody checked. With
+  `boundary : Form.Boundary`, made only by the function that checks it, the
+  swap doesn't compile and the check can't be skipped.
 
 ### Make wrong values impossible to build
 
@@ -390,6 +395,10 @@ Roc's own rules are in the langref's
   # This: each field is escaped by the builder.
   JsonOut.object([("name", JsonOut.string(name)), ("quantity", JsonOut.number(quantity))])
   ```
+- **An opaque type keeps its sources, never a value derived from them
+  beside them.** A file name kept as `{ kind, name }` can say `.png` while
+  its kind says `Jpeg`; kept as `{ kind, digits }`, the name is built from
+  both when asked, and the two can't disagree.
 
 ### Syntax at the pinned nightly
 
