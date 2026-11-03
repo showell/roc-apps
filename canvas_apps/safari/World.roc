@@ -38,7 +38,6 @@ World :: [].{
 		exit_right : Bool,
 		exit_to : I64,
 		commit_along : F64,
-		north_heading : F64,
 		has_mid_tower : Bool,
 		has_cat : Bool,
 		cat : Cat.Crossing,
@@ -72,15 +71,6 @@ World :: [].{
 		{ length: 300.0, scheme: AllGreen, turn_deg: -50.0, cat: NoCat, pigs: WithPigs, bull: WithBull, ending: Continues, creature: Elephant },
 		{ length: 300.0, scheme: RedGreen, turn_deg: 0.0, cat: WithCat, pigs: WithPigs, bull: WithBull, ending: Terminates, creature: NoCreature },
 	]
-
-	## How far a segment's turn swings the heading, in radians.
-	turn : World.SegmentPlan -> F64
-	turn = |plan| (if (plan.turn_deg >= 0.0) 1.0 else -1.0) * (DeviceMath.real_abs(plan.turn_deg) * Trig.deg)
-
-	## The heading at the start of segment `index`: the turns before it,
-	## summed in order from the first.
-	heading_at : I64 -> F64
-	heading_at = |index| route.take_first(I64.to_u64_wrap(index)).fold(0.0, |heading, plan| (heading + turn(plan)))
 
 	## How many of the segments before `index` have pigs.
 	pig_segments_before : I64 -> I64
@@ -144,7 +134,6 @@ segment = |plan, index| {
 		exit_right: (plan.turn_deg >= 0.0),
 		exit_to: if terminates index else (index + 1),
 		commit_along: if terminates plan.length else (plan.length - ((Scenery.lane_width / 2.0) / Trig.r_tan(angle))),
-		north_heading: World.heading_at(index),
 		has_mid_tower: (plan.length > World.mid_tower_min_length),
 		has_cat: match plan.cat {
 			WithCat => True

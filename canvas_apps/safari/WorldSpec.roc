@@ -1,5 +1,5 @@
-## These are World's checks: the route's shape, its headings and turns, and
-## what the segments built from it hold.
+## These are World's checks: the route's shape, and what the segments built
+## from it hold.
 app [main!] {
 	lib: "../lib/main.roc",
 }
@@ -13,18 +13,6 @@ route_shape_got = List.concat([World.route.len().to_i64_wrap()], [0, 3, 11, 12, 
 
 route_shape_want : List(I64)
 route_shape_want = [19, 0, 1, 2, 3, 9]
-
-headings_got : List(F64)
-headings_got = World.route.map_with_index(|_, index| World.heading_at(U64.to_i64_wrap(index)) / Trig.deg)
-
-headings_want : List(F64)
-headings_want = [0.0, 50.0, (-20.0), 0.0, 20.0, (-50.0), (-120.0), (-40.0), (-25.0), (-95.0), (-80.0), (-65.0), (-50.0), (-35.0), (-85.0), (-35.0), (-85.0), (-35.0), (-85.0)]
-
-steps_got : List(F64)
-steps_got = [0, 1, 6, 18].map(|index| World.turn(World.route.get(index) ?? crash "WorldSpec: the route has 19 segments") / Trig.deg)
-
-steps_want : List(F64)
-steps_want = [50.0, (-70.0), 80.0, 0.0]
 
 seg : I64 -> World.Segment
 seg = |i| World.segment_at(i)
@@ -97,18 +85,6 @@ main! = |_args| {
 			name: "wo-shape ",
 			got: route_shape_got,
 			want: route_shape_want,
-		}),
-		Grade.reals({
-			name: "wo-head  ",
-			got: headings_got,
-			want: headings_want,
-			tol: F64.from_bits(4427486594234968593),
-		}),
-		Grade.reals({
-			name: "wo-step  ",
-			got: steps_got,
-			want: steps_want,
-			tol: F64.from_bits(4427486594234968593),
 		}),
 		Grade.reals({
 			name: "wo-length",
