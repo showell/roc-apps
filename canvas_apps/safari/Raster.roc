@@ -45,7 +45,12 @@ Raster :: [].{
 		rotation = rotation_of(scene.roll)
 		sky = { top_color: Brush.opaque(scene.sky_top), horizon_color: Brush.opaque(scene.sky_horizon) }
 		var $px = backdrop(rotation, sky)
-		$px = if SafariShapes.is_sun_shown(scene.sun) paint_sun($px, { rotation, sun: scene.sun }) else $px
+		$px =
+			if SafariShapes.is_sun_shown(scene.sun) {
+				paint_sun($px, { rotation, sun: scene.sun })
+			} else {
+				$px
+			}
 		for draw_command in scene.commands {
 			$px = paint_command($px, { rotation, draw_command })
 		}
@@ -142,14 +147,24 @@ to_device : Raster.Rotation, Raster.ScenePoint -> DevicePoint
 to_device = |rotation, Raster.ScenePoint.({ x, y })| {
 	dx = x - center.x
 	dy = y - center.y
-	DevicePoint.({ x: center.x + dx * rotation.cos + dy * rotation.sin, y: center.y - dx * rotation.sin + dy * rotation.cos })
+	DevicePoint.(
+		{
+			x: center.x + dx * rotation.cos + dy * rotation.sin,
+			y: center.y - dx * rotation.sin + dy * rotation.cos,
+		},
+	)
 }
 
 to_scene : Raster.Rotation, DevicePoint -> Raster.ScenePoint
 to_scene = |rotation, DevicePoint.({ x, y })| {
 	dx = x - center.x
 	dy = y - center.y
-	Raster.ScenePoint.({ x: center.x + dx * rotation.cos - dy * rotation.sin, y: center.y + dx * rotation.sin + dy * rotation.cos })
+	Raster.ScenePoint.(
+		{
+			x: center.x + dx * rotation.cos - dy * rotation.sin,
+			y: center.y + dx * rotation.sin + dy * rotation.cos,
+		},
+	)
 }
 
 ## The centre of the pixel at `index` in its row or column.
@@ -243,11 +258,14 @@ blend = |pixels, { at, color }| {
 
 # --- The backdrop and the sun -------------------------------------------------
 
+## The sky's colour at the top of the screen and at the horizon.
+SkyColors : { top_color : Brush.Rgba, horizon_color : Brush.Rgba }
+
 ## The sky holds its top colour to SafariShapes' stop on the way down to the
 ## horizon, then fades to the horizon colour; the grass is below it. The fade
 ## divides by the horizon rather than shading a Linear brush, whose arithmetic
 ## rounds differently.
-backdrop : Raster.Rotation, { top_color : Brush.Rgba, horizon_color : Brush.Rgba } -> List(U32)
+backdrop : Raster.Rotation, SkyColors -> List(U32)
 backdrop = |rotation, sky| {
 	var $px = List.with_capacity(I64.to_u64_wrap(Screen.width_px * Screen.height_px))
 	for row in I64.until(0, Screen.height_px) {
