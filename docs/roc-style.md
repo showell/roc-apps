@@ -308,7 +308,13 @@ Roc's own rules are in the langref's
   `(Stream, Post) => …` and `(Stream, Put) => …`, a new tag is a compile
   error that forces a decision, where `(Stream, _)` takes it silently. When
   the repeated body passes about six lines, extract a helper (Steve,
-  2026-11-03).
+  2026-11-03). Arms that share a body can still be one arm by alternation
+  at the top level (`Flat(_) | Span(_) => …`), and one tag that splits on a
+  condition takes a guard (`Cones if tall => …`).
+- **A float keeps its order of operations when code is rewritten.** A sum
+  that was right-nested stays a `fold_rev`, and a value stepped by
+  `+ step` stays an accumulation, never `i * step`: each rounds
+  differently, and a picture or a hash changes.
 - **A closed set that needs no checking is nominal, not opaque.** Every
   value of `Script := [Palette, Chrome, Compose, Feed]` is valid, so there
   is nothing to guard, and callers write `Script.Chrome`. Opaque is for

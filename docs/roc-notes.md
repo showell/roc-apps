@@ -94,6 +94,8 @@ reduced program, `findings/` holds it.
   are named (`plus_wrap`, `shl_wrap`, ...). A bare fractional literal is a
   `Dec`.
 - F64 has no `exp`, `log`, `floor` or `round`.
+- A helper defined outside a module's `X :: [].{ }` block must qualify the block's members (`Tree.ring_n`); a bare name is "not in scope".
+- `List.reverse` doesn't exist at the 09-22 nightly; `fold_rev` with `append` does the job.
 - `List.set` answers a `Try`. `List.sort_with` takes a comparator answering
   `Before`, `Same` or `After`.
 - The Echo platform's `args` has no program name at index 0.
