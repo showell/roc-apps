@@ -25,7 +25,7 @@ const LINTS = {
   {recipe = "boundaries", args = {}, budget = {}, counts = {
     {"single", 4}, {"fixed", 0}, {"entry", 0}, {"constant", 0}, {"bool_param", 0},
   }},
-  {recipe = "stack", args = {}, budget = {"--budget", "steps=4000000000"}, counts = {{"to stack", 2632}}},
+  {recipe = "stack", args = {}, budget = {"--budget", "steps=4000000000"}, counts = {{"to stack", 2626}}},
 }
 
 -- The number a summary line gives for `check`: "check N", or "N check" for

@@ -15,6 +15,7 @@ import Paint
 import Sky
 import lib.Brush
 import SafariBrush
+import SafariShapes
 import Num_
 
 Raster :: [].{
@@ -40,7 +41,7 @@ Raster :: [].{
 		view = view_of(scene.roll)
 		sky = { top: Brush.opaque(scene.sky_top), horizon: Brush.opaque(scene.sky_horizon) }
 		var $px = backdrop(view, sky)
-		$px = if scene.sun.visible paint_sun($px, { view, sun: scene.sun }) else $px
+		$px = if SafariShapes.is_sun_shown(scene.sun) paint_sun($px, { view, sun: scene.sun }) else $px
 		for draw_command in scene.commands {
 			$px = command($px, { view, draw_command })
 		}
@@ -122,8 +123,8 @@ horizon = center.y
 grass_top : F64
 grass_top = horizon - 1.0
 
-grass : U32
-grass = 0x4a8f43
+grass_pixel : U32
+grass_pixel = I64.to_u32_wrap(SafariShapes.grass_color)
 
 ## Where a row of pixels crosses a polygon's edge, and the way the edge runs:
 ## 1 down the screen, -1 up it.
@@ -235,8 +236,10 @@ blend = |pixels, { at, color }| {
 
 # --- The backdrop and the sun -------------------------------------------------
 
-## The sky band holds the top colour to a fifth of the way down to the
-## horizon, then fades to the horizon colour; the grass is below it.
+## The sky holds its top colour to SafariShapes' stop on the way down to the
+## horizon, then fades to the horizon colour; the grass is below it. The fade
+## divides by the horizon rather than shading a Linear brush, whose arithmetic
+## rounds differently.
 backdrop : Raster.View, { top : Brush.Rgba, horizon : Brush.Rgba } -> List(U32)
 backdrop = |view, sky| {
 	var $px = List.with_capacity(I64.to_u64_wrap(width * height))
@@ -247,13 +250,14 @@ backdrop = |view, sky| {
 		while $column < width {
 			y = to_scene(view, { x: pixel_center($column), y: pixel_center($row) }).y
 			pixel = if y >= grass_top {
-				grass
+				grass_pixel
 			} else {
 				t = Brush.clamp01(y / horizon)
-				color = if t <= 0.2 {
+				stop = SafariShapes.sky_top_stop
+				color = if t <= stop {
 					sky.top
 				} else {
-					Brush.mix(sky.top, sky.horizon, (t - 0.2) / 0.8)
+					Brush.mix(sky.top, sky.horizon, (t - stop) / (1.0 - stop))
 				}
 				pack({ r: color.r, g: color.g, b: color.b })
 			}
@@ -265,63 +269,41 @@ backdrop = |view, sky| {
 	$px
 }
 
-## The sun's glow fades through these from its inner radius to its outer.
-glow : { inner : Brush.Rgba, middle : Brush.Rgba, outer : Brush.Rgba }
-glow = {
-	inner: { r: 255.0, g: 201.0, b: 128.0, a: 0.85 },
-	middle: { r: 255.0, g: 150.0, b: 92.0, a: 0.32 },
-	outer: { r: 255.0, g: 150.0, b: 92.0, a: 0.0 },
-}
-
-## A warm glow and then the disc, both clipped to the sky, before the
-## commands, so the mountains set the sun behind them.
+## The sun's glow and then its disc, as SafariShapes paints them, both
+## clipped to the sky, before the commands, so the mountains set the sun
+## behind them.
 paint_sun : List(U32), { view : Raster.View, sun : Sky.SunPos } -> List(U32)
-paint_sun = |pixels, { view, sun }|
-	if sun.scale <= 0.0 {
-		pixels
-	} else {
-		glow_inner = 8.0 * sun.scale
-		glow_outer = 340.0 * sun.scale
-		disc_inner = 4.0 * sun.scale
-		disc_outer = 46.0 * sun.scale
-		disc_core = Brush.opaque(0xffe6a3)
-		disc_rim = Brush.opaque(0xff9d5c)
-		screen_width = I64.to_f64(width)
-		on_screen = to_device(view, { x: sun.x, y: sun.y })
-		rows = pixels_between({ from: on_screen.y - glow_outer, to: on_screen.y + glow_outer, count: height })
-		columns = pixels_between({ from: on_screen.x - glow_outer, to: on_screen.x + glow_outer, count: width })
-		var $px = pixels
-		var $row = rows.first
-		var $column = columns.first
-		while $row <= rows.last {
-			$column = columns.first
-			while $column <= columns.last {
-				p = to_scene(view, { x: pixel_center($column), y: pixel_center($row) })
-				$px = if p.x >= 0.0 and p.x < screen_width and p.y >= 0.0 and p.y < horizon {
-					at = pixel_index({ row: $row, column: $column })
-					distance = F64.sqrt((p.x - sun.x) * (p.x - sun.x) + (p.y - sun.y) * (p.y - sun.y))
-					t = Brush.clamp01((distance - glow_inner) / (glow_outer - glow_inner))
-					glow_color = if t <= 0.4 {
-						Brush.mix(glow.inner, glow.middle, t / 0.4)
-					} else {
-						Brush.mix(glow.middle, glow.outer, (t - 0.4) / 0.6)
-					}
-					lit = blend($px, { at, color: glow_color })
-					if distance < disc_outer {
-						toward_rim = Brush.clamp01((distance - disc_inner) / (disc_outer - disc_inner))
-						blend(lit, { at, color: Brush.mix(disc_core, disc_rim, toward_rim) })
-					} else {
-						lit
-					}
+paint_sun = |pixels, { view, sun }| {
+	fills = SafariShapes.sun_fills(sun)
+	screen_width = I64.to_f64(width)
+	on_screen = to_device(view, { x: sun.x, y: sun.y })
+	rows = pixels_between({ from: on_screen.y - fills.glow_radius, to: on_screen.y + fills.glow_radius, count: height })
+	columns = pixels_between({ from: on_screen.x - fills.glow_radius, to: on_screen.x + fills.glow_radius, count: width })
+	var $px = pixels
+	var $row = rows.first
+	var $column = columns.first
+	while $row <= rows.last {
+		$column = columns.first
+		while $column <= columns.last {
+			p = to_scene(view, { x: pixel_center($column), y: pixel_center($row) })
+			$px = if p.x >= 0.0 and p.x < screen_width and p.y >= 0.0 and p.y < horizon {
+				at = pixel_index({ row: $row, column: $column })
+				lit = blend($px, { at, color: Brush.shade(fills.glow, p.x, p.y) })
+				distance = F64.sqrt((p.x - sun.x) * (p.x - sun.x) + (p.y - sun.y) * (p.y - sun.y))
+				if distance < fills.disc_radius {
+					blend(lit, { at, color: Brush.shade(fills.disc, p.x, p.y) })
 				} else {
-					$px
+					lit
 				}
-				$column = $column + 1
+			} else {
+				$px
 			}
-			$row = $row + 1
+			$column = $column + 1
 		}
-		$px
+		$row = $row + 1
 	}
+	$px
+}
 
 # --- The commands -------------------------------------------------------------
 
