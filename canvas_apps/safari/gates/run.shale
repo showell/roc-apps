@@ -22,9 +22,13 @@
 -- ../README.md) and change here when a spec's output rightly changes.
 --
 -- **THE PROOF TOOLS:** StepBack passes on "every step back went back one
--- step"; ShapesFrame on "differ 0" at depths 0, 3000 and 9000. RasterFrame
--- has no verdict of its own: its hash line at each depth is printed, a
--- fingerprint of the frame to compare before and after a change.
+-- step"; ShapesFrame on "differ 0" at depths 0, 3000, 5025 and 9000.
+-- RasterFrame has no verdict of its own: its hash line at each depth is
+-- printed, a fingerprint of the frame to compare before and after a change.
+-- A depth is there for what its frame shows. At 5025 the truck is close,
+-- braking, with its headlights on: of these frames, only 5025 shows the
+-- truck's lights (beams, brake lights and their glow), and only 5025 and 0
+-- show its body.
 --
 -- **THE ROC IS roc-apps' PIN**, the name in `roc-nightly.txt`, installed at
 -- `build:roc-nightly/<name>/roc` (`~/build/roc-nightly/` on the box).
@@ -170,7 +174,7 @@ function proof()
   local bin = scratch .. "/bin"
   mkdir(bin)
   local bad = 0
-  local depths = {"0", "3000", "9000"}
+  local depths = {"0", "3000", "5025", "9000"}
   if proof_build(roc, scratch, "StepBack") then
     local r = run({real(bin .. "/StepBack")}, {timeout_ms = 600000, tail = 20, want = WANT})
     print(trim(r.out))
