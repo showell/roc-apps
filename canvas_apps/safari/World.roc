@@ -141,7 +141,13 @@ segment = |plan, index| {
 		},
 		mid_tower: if (plan.length > World.mid_tower_min_length) MidTower else NoMidTower,
 		cat: match plan.cat {
-			WithCat => Waits(Cat.crossing({ lane_half_width: (Scenery.lane_width / 2.0), tree_offset: Trees.tree_road_offset, tree_along: nearest_tree_ahead(trees, Cat.cat_along) }))
+			WithCat => Waits(
+				Cat.crossing({
+					lane_half_width: (Scenery.lane_width / 2.0),
+					tree_offset: Trees.tree_road_offset,
+					tree_along: nearest_tree_ahead(trees, Cat.cat_along),
+				}),
+			)
 			NoCat => NoCat
 		},
 		ending: match plan.ending {
