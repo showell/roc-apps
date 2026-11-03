@@ -5,14 +5,17 @@ app [main!] {
 }
 
 import Camera
+import DepthSort
 import Geom
 import Grade
-import TruckDraw
+import TruckBody
+import TruckLights
+import TruckShape
 
 box_at : F64, F64 -> List(F64)
 box_at = |c, hw| (
 	{
-		b = TruckDraw.truck_box(c, hw)
+		b = TruckShape.truck_box(c, hw)
 		[b.a0, b.a1, b.a2, b.a_roof, b.xl, b.xr]
 	}
 )
@@ -24,19 +27,19 @@ box_want : List(F64)
 box_want = [(-4.2), 4.2, 7.7, 5.25, (-1.2), 1.2, 35.8, 44.2, 47.7, 45.25, 0.8, 3.2]
 
 bottom_got : List(F64)
-bottom_got = [TruckDraw.tire_radius, TruckDraw.trailer_bottom, TruckDraw.cab_bottom, TruckDraw.truck_height, TruckDraw.truck_width, TruckDraw.truck_length]
+bottom_got = [TruckShape.tire_radius, TruckShape.trailer_bottom, TruckShape.cab_bottom, TruckShape.truck_height, TruckShape.truck_width, TruckShape.truck_length]
 
 bottom_want : List(F64)
 bottom_want = [0.5, 1.12, 0.5, 3.6, 2.4, 8.4]
 
 axles_got : List(F64)
-axles_got = List.concat(TruckDraw.truck_axles(TruckDraw.truck_box(0.0, 0.0)), TruckDraw.truck_axles(TruckDraw.truck_box(40.0, 2.0)))
+axles_got = List.concat(TruckBody.truck_axles(TruckShape.truck_box(0.0, 0.0)), TruckBody.truck_axles(TruckShape.truck_box(40.0, 2.0)))
 
 axles_want : List(F64)
 axles_want = [(-3.2), (-2.0), 2.0, 3.2, 6.125, 36.8, 38.0, 42.0, 43.2, 46.125]
 
 axle_count_got : List(I64)
-axle_count_got = [TruckDraw.truck_axles(TruckDraw.truck_box(0.0, 0.0)).len().to_i64_wrap()]
+axle_count_got = [TruckBody.truck_axles(TruckShape.truck_box(0.0, 0.0)).len().to_i64_wrap()]
 
 axle_count_want : List(I64)
 axle_count_want = [5]
@@ -44,11 +47,11 @@ axle_count_want = [5]
 v3 : F64 -> Geom.Vec3
 v3 = |f| { right: 0.0, forward: f, height: 0.0 }
 
-quad_face : TruckDraw.TruckFace
-quad_face = TruckDraw.truck_face(1846886, [v3(10.0), v3(20.0), v3(30.0), v3(40.0)])
+quad_face : TruckBody.TruckFace
+quad_face = TruckBody.truck_face(1846886, [v3(10.0), v3(20.0), v3(30.0), v3(40.0)])
 
-tri_face : TruckDraw.TruckFace
-tri_face = TruckDraw.truck_face(1381658, [v3(1.0), v3(2.0), v3(6.0)])
+tri_face : TruckBody.TruckFace
+tri_face = TruckBody.truck_face(1381658, [v3(1.0), v3(2.0), v3(6.0)])
 
 face_got : List(F64)
 face_got = [quad_face.fwd, tri_face.fwd]
@@ -62,14 +65,14 @@ face_carry_got = [quad_face.color, quad_face.v.len().to_i64_wrap(), tri_face.col
 face_carry_want : List(I64)
 face_carry_want = [1846886, 4, 1381658, 3]
 
-mark : I64, F64 -> TruckDraw.TruckFace
+mark : I64, F64 -> TruckBody.TruckFace
 mark = |c, f| { color: c, fwd: f, v: [] }
 
 # colours builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-colours : List(TruckDraw.TruckFace), I64 -> List(I64)
+colours : List(TruckBody.TruckFace), I64 -> List(I64)
 colours = |fs, i| colours_onto(fs, i, [])
 
-colours_onto : List(TruckDraw.TruckFace), I64, List(I64) -> List(I64)
+colours_onto : List(TruckBody.TruckFace), I64, List(I64) -> List(I64)
 colours_onto = |fs, i, acc| (
 	if (i >= fs.len().to_i64_wrap()) {
 		acc
@@ -78,26 +81,26 @@ colours_onto = |fs, i, acc| (
 	}
 )
 
-tied : List(TruckDraw.TruckFace)
+tied : List(TruckBody.TruckFace)
 tied = [mark(1, 30.0), mark(2, 10.0), mark(3, 30.0), mark(4, 20.0), mark(5, 30.0)]
 
 tied_got : List(I64)
-tied_got = colours(TruckDraw.sort_faces(tied), 0)
+tied_got = colours(DepthSort.sort_by(tied, |face| face.fwd), 0)
 
 tied_want : List(I64)
 tied_want = [1, 3, 5, 4, 2]
 
-slack : List(TruckDraw.TruckFace)
+slack : List(TruckBody.TruckFace)
 slack = [mark(1, 20.0), mark(2, 20.000001), mark(3, 20.01), mark(4, 19.0)]
 
 slack_got : List(I64)
-slack_got = colours(TruckDraw.sort_faces(slack), 0)
+slack_got = colours(DepthSort.sort_by(slack, |face| face.fwd), 0)
 
 slack_want : List(I64)
 slack_want = [3, 1, 2, 4]
 
 small_got : List(I64)
-small_got = [TruckDraw.sort_faces([]).len().to_i64_wrap(), TruckDraw.sort_faces([mark(7, 1.0)]).len().to_i64_wrap(), (List.get(TruckDraw.sort_faces([mark(7, 1.0)]), I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).color]
+small_got = [DepthSort.sort_by([], |face| face.fwd).len().to_i64_wrap(), DepthSort.sort_by([mark(7, 1.0)], |face| face.fwd).len().to_i64_wrap(), (List.get(DepthSort.sort_by([mark(7, 1.0)], |face| face.fwd), I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).color]
 
 small_want : List(I64)
 small_want = [0, 1, 7]
@@ -111,9 +114,9 @@ panel = [sp(3.0, 4.0), sp(6.0, 8.0), sp(0.0, 0.0), sp(7.0, 4.0)]
 halo_got : List(F64)
 halo_got = (
 	{
-		cx = (TruckDraw.sum_x(panel, 0) / 4.0)
-		cy = (TruckDraw.sum_y(panel, 0) / 4.0)
-		[TruckDraw.sum_x(panel, 0), TruckDraw.sum_y(panel, 0), cx, cy, TruckDraw.pt_dist(sp(3.0, 4.0), sp(0.0, 0.0)), TruckDraw.max_radius(panel, sp(0.0, 0.0)), (TruckDraw.max_radius(panel, sp(0.0, 0.0)) * 3.2)]
+		cx = (TruckLights.sum_x(panel, 0) / 4.0)
+		cy = (TruckLights.sum_y(panel, 0) / 4.0)
+		[TruckLights.sum_x(panel, 0), TruckLights.sum_y(panel, 0), cx, cy, TruckLights.pt_dist(sp(3.0, 4.0), sp(0.0, 0.0)), TruckLights.max_radius(panel, sp(0.0, 0.0)), (TruckLights.max_radius(panel, sp(0.0, 0.0)) * 3.2)]
 	}
 )
 
@@ -121,13 +124,13 @@ halo_want : List(F64)
 halo_want = [16.0, 16.0, 4.0, 4.0, 5.0, 10.0, 32.0]
 
 circle_count_got : List(I64)
-circle_count_got = [TruckDraw.glow_circle(0.0, 0.0, 10.0, 0).len().to_i64_wrap(), TruckDraw.glow_sides, TruckDraw.tire_sides]
+circle_count_got = [TruckLights.glow_circle(0.0, 0.0, 10.0, 0).len().to_i64_wrap(), TruckLights.glow_sides, TruckBody.tire_sides]
 
 circle_count_want : List(I64)
 circle_count_want = [16, 16, 16]
 
 behind_got : List(Bool)
-behind_got = [TruckDraw.any_behind([v3(10.0), v3(20.0), v3(30.0)]), TruckDraw.any_behind([v3(10.0), v3(0.2), v3(30.0)]), TruckDraw.any_behind([v3(10.0), v3(0.4), v3(30.0)]), TruckDraw.any_behind([v3(0.41)]), TruckDraw.any_behind([])]
+behind_got = [TruckLights.any_behind([v3(10.0), v3(20.0), v3(30.0)]), TruckLights.any_behind([v3(10.0), v3(0.2), v3(30.0)]), TruckLights.any_behind([v3(10.0), v3(0.4), v3(30.0)]), TruckLights.any_behind([v3(0.41)]), TruckLights.any_behind([])]
 
 behind_want : List(Bool)
 behind_want = [False, True, True, False, False]
@@ -135,7 +138,7 @@ behind_want = [False, True, True, False, False]
 mid_got : List(F64)
 mid_got = (
 	{
-		m = TruckDraw.mid_vec({ right: 1.0, forward: 2.0, height: 3.0 }, { right: 5.0, forward: 8.0, height: 11.0 })
+		m = TruckLights.mid_vec({ right: 1.0, forward: 2.0, height: 3.0 }, { right: 5.0, forward: 8.0, height: 11.0 })
 		[m.right, m.forward, m.height]
 	}
 )

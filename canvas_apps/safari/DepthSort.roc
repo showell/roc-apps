@@ -13,10 +13,10 @@ DepthSort :: [].{
 	DepthKey : { fwd : F64, kind : DepthSort.Kind, i : I64 }
 
 	# rest builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	rest : List(DepthSort.DepthKey), I64 -> List(DepthSort.DepthKey)
+	rest : List(item), I64 -> List(item)
 	rest = |ys, j| rest_onto(ys, j, [])
 
-	rest_onto : List(DepthSort.DepthKey), I64, List(DepthSort.DepthKey) -> List(DepthSort.DepthKey)
+	rest_onto : List(item), I64, List(item) -> List(item)
 	rest_onto = |ys, j, acc| (
 		if (j >= ys.len().to_i64_wrap()) {
 			acc
@@ -26,11 +26,11 @@ DepthSort :: [].{
 	)
 
 	# merge_items builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	merge_items : List(DepthSort.DepthKey), List(DepthSort.DepthKey), I64, I64 -> List(DepthSort.DepthKey)
-	merge_items = |a, b, i, j| merge_items_onto(a, b, i, j, [])
+	merge_items : List(item), List(item), I64, I64, (item -> F64) -> List(item)
+	merge_items = |a, b, i, j, depth_of| merge_items_onto(a, b, i, j, depth_of, [])
 
-	merge_items_onto : List(DepthSort.DepthKey), List(DepthSort.DepthKey), I64, I64, List(DepthSort.DepthKey) -> List(DepthSort.DepthKey)
-	merge_items_onto = |a, b, i, j, acc| (
+	merge_items_onto : List(item), List(item), I64, I64, (item -> F64), List(item) -> List(item)
+	merge_items_onto = |a, b, i, j, depth_of, acc| (
 		if (i >= a.len().to_i64_wrap()) {
 			List.concat(acc, rest(b, j))
 		} else {
@@ -39,10 +39,10 @@ DepthSort :: [].{
 					List.concat(acc, rest(a, i))
 				} else {
 					(
-						if deeper_than((List.get(b, I64.to_u64_wrap(j)) ?? crash ("list-at out of range")).fwd, (List.get(a, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).fwd) {
-							merge_items_onto(a, b, i, (j + 1), List.append(acc, (List.get(b, I64.to_u64_wrap(j)) ?? crash ("list-at out of range"))))
+						if deeper_than(depth_of((List.get(b, I64.to_u64_wrap(j)) ?? crash ("list-at out of range"))), depth_of((List.get(a, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))) {
+							merge_items_onto(a, b, i, (j + 1), depth_of, List.append(acc, (List.get(b, I64.to_u64_wrap(j)) ?? crash ("list-at out of range"))))
 						} else {
-							merge_items_onto(a, b, (i + 1), j, List.append(acc, (List.get(a, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))))
+							merge_items_onto(a, b, (i + 1), j, depth_of, List.append(acc, (List.get(a, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))))
 						}
 					)
 				}
@@ -56,16 +56,16 @@ DepthSort :: [].{
 	deeper_than : F64, F64 -> Bool
 	deeper_than = |x, y| ((x - y) > (sort_tie * DeviceMath.real_max(DeviceMath.real_abs(y), 1.0)))
 
-	sort_items : List(DepthSort.DepthKey) -> List(DepthSort.DepthKey)
-	sort_items = |xs| {
+	sort_by : List(item), (item -> F64) -> List(item)
+	sort_by = |xs, depth_of| {
 		n = xs.len().to_i64_wrap()
 		if n <= 1 {
 			xs
 		} else {
 			half = I64.div_trunc_by(n, 2)
-			front = sort_items(ListUtils.list_take(xs, half))
-			back = sort_items(ListUtils.list_drop(xs, half))
-			merge_items(front, back, 0, 0)
+			front = sort_by(ListUtils.list_take(xs, half), depth_of)
+			back = sort_by(ListUtils.list_drop(xs, half), depth_of)
+			merge_items(front, back, 0, 0, depth_of)
 		}
 	}
 

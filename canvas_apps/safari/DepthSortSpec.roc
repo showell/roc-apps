@@ -82,7 +82,7 @@ zero_far : List(DepthSort.DepthKey)
 zero_far = [{ fwd: 0.5, kind: KTree, i: 0 }, { fwd: 0.5000001, kind: KTree, i: 1 }]
 
 slack_got : List(I64)
-slack_got = List.join([idxs(DepthSort.sort_items(tie_near), 0), idxs(DepthSort.sort_items(tie_far), 0), idxs(DepthSort.sort_items(zero_near), 0), idxs(DepthSort.sort_items(zero_far), 0)])
+slack_got = List.join([idxs(DepthSort.sort_by(tie_near, |key| key.fwd), 0), idxs(DepthSort.sort_by(tie_far, |key| key.fwd), 0), idxs(DepthSort.sort_by(zero_near, |key| key.fwd), 0), idxs(DepthSort.sort_by(zero_far, |key| key.fwd), 0)])
 
 slack_want : List(I64)
 slack_want = [0, 1, 1, 0, 0, 1, 1, 0]
@@ -93,18 +93,18 @@ main! = |_args| {
 	verdicts = [
 		Grade.reals({
 			name: "d-order ",
-			got: fwds(DepthSort.sort_items(mixed), 0),
+			got: fwds(DepthSort.sort_by(mixed, |key| key.fwd), 0),
 			want: order_want,
 			tol: 0.0,
 		}),
 		Grade.ints({
 			name: "d-stable",
-			got: idxs(DepthSort.sort_items(mixed), 0),
+			got: idxs(DepthSort.sort_by(mixed, |key| key.fwd), 0),
 			want: stable_want,
 		}),
 		Grade.ints({
 			name: "d-kind  ",
-			got: kinds(DepthSort.sort_items(mixed), 0),
+			got: kinds(DepthSort.sort_by(mixed, |key| key.fwd), 0),
 			want: kind_want,
 		}),
 		Grade.ints({
