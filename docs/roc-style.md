@@ -304,6 +304,11 @@ Roc's own rules are in the langref's
 - **Use a nominal type (`:=`) where values of the same shape mean different
   things.** A name passed where an id belongs is then a type error
   ([types](https://roc-lang.org/docs/main/langref/types/)).
+- **Spell out the arms of a match on a closed set; no wildcard.** With
+  `(Stream, Post) => …` and `(Stream, Put) => …`, a new tag is a compile
+  error that forces a decision, where `(Stream, _)` takes it silently. When
+  the repeated body passes about six lines, extract a helper (Steve,
+  2026-11-03).
 - **A closed set that needs no checking is nominal, not opaque.** Every
   value of `Script := [Palette, Chrome, Compose, Feed]` is valid, so there
   is nothing to guard, and callers write `Script.Chrome`. Opaque is for
