@@ -128,11 +128,11 @@ Roc's own rules are in the langref's
   an `OrderSummary`, not an `Entry`. Where the container word *is* the domain's
   (a folder listing's entry), it stays.
 - **A record that reports an act names its fields for the things;** its
-  type already names the act. A field `added` says again what `Joined`
-  says, and hides that it holds a user.
+  type, a noun, already names the act. A field `added` says again what
+  `Addition` says, and hides that it holds a user.
 
   ```roc
-  Joined : { directory : Directory, user : User }  # not { directory, added : User }
+  Addition : { directory : Directory, user : User }  # not { directory, added : User }
   ```
 - **A method on a type that holds more than one kind of thing names its
   object.** `Directory.remove` could remove a member, an invite or a
