@@ -98,7 +98,7 @@ CritterPlan :: [].{
 		{
 			sg = (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range"))
 			match sg.ending {
-				Continues =>
+				Continues(_) =>
 					if (d >= safari_seg_reach) {
 						[]
 					} else {

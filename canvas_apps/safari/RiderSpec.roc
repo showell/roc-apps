@@ -65,7 +65,15 @@ turn_want : List(F64)
 turn_want = [0.0, 0.0]
 
 index_got : List(I64)
-index_got = [crossed.segment, seg.exit_to]
+index_got = [crossed.segment, next_of(seg)]
+
+## The segment after one that continues.
+next_of : World.Segment -> I64
+next_of = |segment|
+	match segment.ending {
+		Continues({ next }) => next
+		Terminates => crash "RiderSpec.next_of: segment 0 continues"
+	}
 
 index_want : List(I64)
 index_want = [1, 1]
@@ -82,7 +90,7 @@ early_want : List(Bool)
 early_want = [True]
 
 resolve_got : List(I64)
-resolve_got = [Rider.resolve_cross(rider(100.0, 0.0, Pose.v_base, 0.0), seg, segs).segment, Rider.resolve_cross(rider(499.0, 0.0, Pose.v_base, 0.0), seg, segs).segment]
+resolve_got = [Rider.resolve_cross(rider(100.0, 0.0, Pose.v_base, 0.0), segs).segment, Rider.resolve_cross(rider(499.0, 0.0, Pose.v_base, 0.0), segs).segment]
 
 resolve_want : List(I64)
 resolve_want = [0, 1]
@@ -94,7 +102,7 @@ last_seg = World.segment_at(18)
 is_route_end : World.Segment -> Bool
 is_route_end = |segment|
 	match segment.ending {
-		Continues => False
+		Continues(_) => False
 		Terminates => True
 	}
 

@@ -30,7 +30,7 @@ Frame :: [].{
 					acc
 				} else {
 					match (List.get(segs, I64.to_u64_wrap(s)) ?? crash ("list-at out of range")).ending {
-						Continues => chain_onto(segs, (List.get(segs, I64.to_u64_wrap(s)) ?? crash ("list-at out of range")).exit_to, (n + 1), List.append(acc, s))
+						Continues({ next }) => chain_onto(segs, next, (n + 1), List.append(acc, s))
 						Terminates => List.append(acc, s)
 					}
 				}

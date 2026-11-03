@@ -36,11 +36,10 @@ World :: [].{
 		pig_attention : [Distracting, Unnoticed],
 		exit_angle : F64,
 		exit_right : Bool,
-		exit_to : I64,
 		commit_along : F64,
 		mid_tower : [MidTower, NoMidTower],
 		cat : [Waits(Cat.Crossing), NoCat],
-		ending : [Continues, Terminates],
+		ending : [Continues({ next : I64 }), Terminates],
 		exit_creature : Scenery.Creature,
 	}
 
@@ -127,10 +126,6 @@ segment = |plan, index| {
 		pig_attention,
 		exit_angle: angle,
 		exit_right: (plan.turn_deg >= 0.0),
-		exit_to: match plan.ending {
-			Continues => (index + 1)
-			Terminates => index
-		},
 		commit_along: match plan.ending {
 			Continues => (plan.length - ((Scenery.lane_width / 2.0) / Trig.r_tan(angle)))
 			Terminates => plan.length
@@ -140,7 +135,10 @@ segment = |plan, index| {
 			WithCat => Waits(Cat.crossing({ lane_half_width: (Scenery.lane_width / 2.0), tree_offset: Trees.tree_road_offset, tree_along: nearest_tree_ahead(trees, Cat.cat_along) }))
 			NoCat => NoCat
 		},
-		ending: plan.ending,
+		ending: match plan.ending {
+			Continues => Continues({ next: (index + 1) })
+			Terminates => Terminates
+		},
 		exit_creature: match plan.ending {
 			Continues => plan.creature
 			Terminates => NoCreature

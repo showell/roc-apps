@@ -25,10 +25,10 @@ length_want : List(F64)
 length_want = [500.0, 320.0, 1200.0, 800.0, 300.0, 4.0, 4.0]
 
 exit_got : List(I64)
-exit_got = [seg(0).exit_to, seg(1).exit_to, seg(17).exit_to, seg(18).exit_to]
+exit_got = [0, 1, 17].map(|index| next_of(seg(index)))
 
 exit_want : List(I64)
-exit_want = [1, 2, 18, 18]
+exit_want = [1, 2, 18]
 
 flags_got : List(Bool)
 flags_got = List.join([
@@ -87,8 +87,16 @@ cat_want = [0.816, 0.816, 1.7, 1.7]
 is_route_end : World.Segment -> Bool
 is_route_end = |segment|
 	match segment.ending {
-		Continues => False
+		Continues(_) => False
 		Terminates => True
+	}
+
+## The segment after one that continues.
+next_of : World.Segment -> I64
+next_of = |segment|
+	match segment.ending {
+		Continues({ next }) => next
+		Terminates => crash "WorldSpec.next_of: segments 0, 1 and 17 continue"
 	}
 
 ## Whether a segment has a mast halfway along.

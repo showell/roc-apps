@@ -26,6 +26,11 @@ Rider :: [].{
 		{
 			seg = (List.get(segs, I64.to_u64_wrap(rs.segment)) ?? crash ("list-at out of range"))
 			hw = (seg.width / 2.0)
+			next =
+				match seg.ending {
+					Continues({ next: index }) => index
+					Terminates => crash "Rider.rider_state_for_next_segment: the route's last segment has none after it"
+				}
 			theta = seg.exit_angle
 			sgn = (
 				if seg.exit_right {
@@ -38,7 +43,7 @@ Rider :: [].{
 			s = Trig.r_sin(theta)
 			da = (rs.along - (seg.length + (hw * s)))
 			dx = (rs.across - ((sgn * hw) * (1.0 - c)))
-			{ segment: seg.exit_to, along: ((c * da) + ((sgn * s) * dx)), across: ((((0.0 - sgn) * s) * da) + (c * dx)), yaw: (rs.yaw - (sgn * theta)), v: rs.v, tilt: rs.tilt, heading: rs.heading, gaze_yaw: 0.0, focus: rs.focus }
+			{ segment: next, along: ((c * da) + ((sgn * s) * dx)), across: ((((0.0 - sgn) * s) * da) + (c * dx)), yaw: (rs.yaw - (sgn * theta)), v: rs.v, tilt: rs.tilt, heading: rs.heading, gaze_yaw: 0.0, focus: rs.focus }
 		}
 	)
 
@@ -71,12 +76,12 @@ Rider :: [].{
 	stopped_at : Pose.RiderState, F64 -> Pose.RiderState
 	stopped_at = |s, at| { segment: s.segment, along: at, across: s.across, yaw: s.yaw, v: 0.0, tilt: s.tilt, heading: s.heading, gaze_yaw: s.gaze_yaw, focus: s.focus }
 
-	resolve_cross : Pose.RiderState, World.Segment, List(World.Segment) -> Pose.RiderState
-	resolve_cross = |moved, seg, segs| (
+	resolve_cross : Pose.RiderState, List(World.Segment) -> Pose.RiderState
+	resolve_cross = |moved, segs| (
 		{
 			on_next = rider_state_for_next_segment(moved, segs)
 			(
-				if (DeviceMath.real_abs(on_next.across) < ((List.get(segs, I64.to_u64_wrap(seg.exit_to)) ?? crash ("list-at out of range")).width / 2.0)) {
+				if (DeviceMath.real_abs(on_next.across) < ((List.get(segs, I64.to_u64_wrap(on_next.segment)) ?? crash ("list-at out of range")).width / 2.0)) {
 					on_next
 				} else {
 					moved
@@ -93,7 +98,7 @@ Rider :: [].{
 			moved = Bike.simulate_rider_step(state, dec.tilt_step, dec.accel)
 			resolved =
 				match seg.ending {
-					Continues => resolve_cross(moved, seg, segs)
+					Continues(_) => resolve_cross(moved, segs)
 					Terminates => finish_clamp(moved, seg)
 				}
 			Gaze.next_rider_gaze(resolved, segs)
@@ -105,7 +110,7 @@ Rider :: [].{
 		{
 			seg = (List.get(segs, I64.to_u64_wrap(s.segment)) ?? crash ("list-at out of range"))
 			match seg.ending {
-				Continues => False
+				Continues(_) => False
 				Terminates => (s.along >= seg.length)
 			}
 		}

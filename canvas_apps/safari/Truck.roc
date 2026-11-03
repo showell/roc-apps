@@ -49,7 +49,7 @@ Truck :: [].{
 			(
 				if (pos < cum) {
 					match s.ending {
-						Continues => TurnAhead({ dist: (cum - pos), v_turn: VehicleLimits.turn_speed(s.exit_angle) })
+						Continues(_) => TurnAhead({ dist: (cum - pos), v_turn: VehicleLimits.turn_speed(s.exit_angle) })
 						Terminates => NoTurnAhead
 					}
 				} else {
