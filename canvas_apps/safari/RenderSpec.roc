@@ -85,7 +85,7 @@ descending = |xs, i| (
 		True
 	} else {
 		(
-			if DepthSort.deeper_than((List.get(xs, I64.to_u64_wrap((i + 1))) ?? crash ("list-at out of range")).fwd, (List.get(xs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).fwd) {
+			if DepthSort.is_farther({ this: (List.get(xs, I64.to_u64_wrap((i + 1))) ?? crash ("list-at out of range")).fwd, that: (List.get(xs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).fwd }) {
 				False
 			} else {
 				descending(xs, (i + 1))
