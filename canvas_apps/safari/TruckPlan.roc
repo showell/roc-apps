@@ -3,6 +3,7 @@
 import DepthSort
 import Frame
 import Geom
+import Scenery
 import World
 
 TruckPlan :: [].{
@@ -29,7 +30,7 @@ TruckPlan :: [].{
 	truck_here : List(World.Segment), List(I64), Frame.Pose, F64, I64 -> TruckPlan.TruckAt
 	truck_here = |segs, ch, pose, remaining, d| (
 		{
-			c = Frame.at(segs, ch, pose, d, remaining, ((List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).width / 2.0))
+			c = Frame.at(segs, ch, pose, d, remaining, (Scenery.lane_width / 2.0))
 			(
 				if (c.forward > Geom.near) {
 					{ present: True, d: d, along: remaining, fwd: c.forward }

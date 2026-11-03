@@ -1,6 +1,7 @@
 # Frame -- originally emitted from Codex by rocemit; the Roc is the program now
 # and this file is edited here (safari/README.md).
 import Geom
+import Scenery
 import World
 
 Frame :: [].{
@@ -46,7 +47,7 @@ Frame :: [].{
 			(
 				{
 					seg = (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap((k - 1))) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range"))
-					p = Geom.next_to_cur(a, x, seg.length, seg.exit_angle, seg.exit_right, seg.width)
+					p = Geom.next_to_cur(a, x, seg.length, seg.exit_angle, seg.exit_right, Scenery.lane_width)
 					compose_down(segs, ch, (k - 1), p.a, p.x)
 				}
 			)
@@ -65,7 +66,7 @@ Frame :: [].{
 	chain_map = |d| { is_chain: True, d: d, prev_len: 0.0, prev_angle: 0.0, prev_right: False, prev_w: 0.0 }
 
 	prev_map : World.Segment -> Frame.Mapper
-	prev_map = |s| { is_chain: False, d: 0, prev_len: s.length, prev_angle: s.exit_angle, prev_right: s.exit_right, prev_w: s.width }
+	prev_map = |s| { is_chain: False, d: 0, prev_len: s.length, prev_angle: s.exit_angle, prev_right: s.exit_right, prev_w: Scenery.lane_width }
 
 	map_pt : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, F64 -> Geom.RiderPt
 	map_pt = |segs, ch, pose, m, a, x| (

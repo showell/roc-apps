@@ -19,10 +19,10 @@ seg : I64 -> World.Segment
 seg = |i| World.segment_at(i)
 
 length_got : List(F64)
-length_got = [seg(0).length, seg(1).length, seg(6).length, seg(9).length, seg(18).length, seg(0).width, seg(18).width]
+length_got = [seg(0).length, seg(1).length, seg(6).length, seg(9).length, seg(18).length]
 
 length_want : List(F64)
-length_want = [500.0, 320.0, 1200.0, 800.0, 300.0, 4.0, 4.0]
+length_want = [500.0, 320.0, 1200.0, 800.0, 300.0]
 
 exit_got : List(I64)
 exit_got = [0, 1, 17].map(|index| next_of(seg(index)))

@@ -3,6 +3,7 @@
 import DepthSort
 import Frame
 import Geom
+import Scenery
 import Tower
 import World
 
@@ -39,7 +40,7 @@ TowerPlan :: [].{
 	seg_towers = |segs, ch, pose, d| (
 		{
 			sg = (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range"))
-			List.concat(tower_if_ahead(segs, ch, pose, Frame.chain_map(d), (sg.length + tower_beyond), ((sg.width / 2.0) + tower_right), tower_yaw, (List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range"))), seg_mid_tower(segs, ch, pose, d))
+			List.concat(tower_if_ahead(segs, ch, pose, Frame.chain_map(d), (sg.length + tower_beyond), ((Scenery.lane_width / 2.0) + tower_right), tower_yaw, (List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range"))), seg_mid_tower(segs, ch, pose, d))
 		}
 	)
 
@@ -48,7 +49,7 @@ TowerPlan :: [].{
 		{
 			sg = (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range"))
 			match sg.mid_tower {
-				MidTower => tower_if_ahead(segs, ch, pose, Frame.chain_map(d), (sg.length / 2.0), ((sg.width / 2.0) - seg_tower_left), 0.0, ((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")) + 60))
+				MidTower => tower_if_ahead(segs, ch, pose, Frame.chain_map(d), (sg.length / 2.0), ((Scenery.lane_width / 2.0) - seg_tower_left), 0.0, ((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")) + 60))
 				NoMidTower => []
 			}
 		}
@@ -71,7 +72,7 @@ TowerPlan :: [].{
 	behind_tower = |segs, ch, pose, prev_idx| (
 		{
 			pv = (List.get(segs, I64.to_u64_wrap(prev_idx)) ?? crash ("list-at out of range"))
-			tower_if_ahead(segs, ch, pose, Frame.prev_map(pv), (pv.length + tower_beyond), ((pv.width / 2.0) + tower_right), tower_yaw, prev_idx)
+			tower_if_ahead(segs, ch, pose, Frame.prev_map(pv), (pv.length + tower_beyond), ((Scenery.lane_width / 2.0) + tower_right), tower_yaw, prev_idx)
 		}
 	)
 

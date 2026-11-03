@@ -9,7 +9,6 @@ import lib.DeviceMath
 import Grade
 import LeanSearch
 import Pose
-import World
 
 target_got : List(F64)
 target_got = [LeanSearch.lean_target(0.5), LeanSearch.lean_target((0.0 - 0.5)), LeanSearch.lean_target(2.0), LeanSearch.lean_target((0.0 - 2.0)), LeanSearch.lean_target(0.04), LeanSearch.lean_target((0.0 - 0.04)), LeanSearch.lean_target(0.0), LeanSearch.lean_target(0.039), LeanSearch.lean_target((0.0 - 0.039))]
@@ -44,20 +43,17 @@ read_got = [LeanSearch.want_more_right(outcome(ShoulderLeft, 99.0), 0.5), LeanSe
 read_want : List(Bool)
 read_want = [True, True, False, False, True, False, False]
 
-seg : World.Segment
-seg = World.segment_at(0)
-
 rider : F64, F64 -> Pose.RiderState
 rider = |across, tilt| { segment: 0, along: 0.0, across: across, yaw: 0.0, v: Pose.v_base, tilt: tilt, heading: 0.0, gaze_yaw: 0.0, focus: 0.0 }
 
 centred : F64
-centred = LeanSearch.best_tilt_correction(rider(0.0, 0.0), seg)
+centred = LeanSearch.best_tilt_correction(rider(0.0, 0.0))
 
 offset : F64
-offset = LeanSearch.best_tilt_correction(rider(1.0, 0.0), seg)
+offset = LeanSearch.best_tilt_correction(rider(1.0, 0.0))
 
 held : F64
-held = LeanSearch.best_tilt_correction(rider(0.0, 0.5), seg)
+held = LeanSearch.best_tilt_correction(rider(0.0, 0.5))
 
 bracket_got : List(Bool)
 bracket_got = [(centred >= (0.0 - LeanSearch.max_tilt_correction)), (centred <= LeanSearch.max_tilt_correction), (offset >= (0.0 - LeanSearch.max_tilt_correction)), (offset <= LeanSearch.max_tilt_correction), (held >= (0.5 - LeanSearch.max_tilt_correction)), (held <= (0.5 + LeanSearch.max_tilt_correction))]
@@ -72,7 +68,7 @@ centred_on_want : List(Bool)
 centred_on_want = [True, True, True]
 
 stable_got : List(F64)
-stable_got = [(LeanSearch.best_tilt_correction(rider(1.0, 0.0), seg) - offset), (LeanSearch.best_tilt_correction(rider(0.0, 0.5), seg) - held)]
+stable_got = [(LeanSearch.best_tilt_correction(rider(1.0, 0.0)) - offset), (LeanSearch.best_tilt_correction(rider(0.0, 0.5)) - held)]
 
 stable_want : List(F64)
 stable_want = [0.0, 0.0]

@@ -4,7 +4,6 @@ import Arc
 import lib.DeviceMath
 import Pose
 import lib.Trig
-import World
 
 LeanSearch :: [].{
 
@@ -42,24 +41,24 @@ LeanSearch :: [].{
 	lean_search_iters : I64
 	lean_search_iters = 12
 
-	search_lean : Pose.RiderState, World.Segment, F64, F64, F64, I64 -> F64
-	search_lean = |state, seg, target, lo, hi, i| (
+	search_lean : Pose.RiderState, F64, F64, F64, I64 -> F64
+	search_lean = |state, target, lo, hi, i| (
 		if (i >= lean_search_iters) {
 			((lo + hi) / 2.0)
 		} else {
-			search_step(state, seg, target, lo, hi, i, ((lo + hi) / 2.0))
+			search_step(state, target, lo, hi, i, ((lo + hi) / 2.0))
 		}
 	)
 
-	search_step : Pose.RiderState, World.Segment, F64, F64, F64, I64, F64 -> F64
-	search_step = |state, seg, target, lo, hi, i, mid| (
-		if want_more_right(Arc.project_arc(Pose.with_tilt(state, mid), seg), target) {
-			search_lean(state, seg, target, mid, hi, (i + 1))
+	search_step : Pose.RiderState, F64, F64, F64, I64, F64 -> F64
+	search_step = |state, target, lo, hi, i, mid| (
+		if want_more_right(Arc.project_arc(Pose.with_tilt(state, mid)), target) {
+			search_lean(state, target, mid, hi, (i + 1))
 		} else {
-			search_lean(state, seg, target, lo, mid, (i + 1))
+			search_lean(state, target, lo, mid, (i + 1))
 		}
 	)
 
-	best_tilt_correction : Pose.RiderState, World.Segment -> F64
-	best_tilt_correction = |state, seg| search_lean(state, seg, lean_target(state.across), (state.tilt - max_tilt_correction), (state.tilt + max_tilt_correction), 0)
+	best_tilt_correction : Pose.RiderState -> F64
+	best_tilt_correction = |state| search_lean(state, lean_target(state.across), (state.tilt - max_tilt_correction), (state.tilt + max_tilt_correction), 0)
 }

@@ -5,6 +5,7 @@ import lib.DeviceMath
 import Gaze
 import LeanSearch
 import Pose
+import Scenery
 import Throttle
 import lib.Trig
 import VehicleLimits
@@ -16,7 +17,7 @@ Rider :: [].{
 	decide : Pose.RiderState, World.Segment -> Rider.Decision
 	decide = |state, seg| (
 		{
-			tilt_step = (LeanSearch.best_tilt_correction(state, seg) - state.tilt)
+			tilt_step = (LeanSearch.best_tilt_correction(state) - state.tilt)
 			{ tilt_step: tilt_step, accel: Throttle.get_forward_accel_decel(Pose.with_tilt(state, (state.tilt + tilt_step)), seg) }
 		}
 	)
@@ -25,7 +26,7 @@ Rider :: [].{
 	rider_state_for_next_segment = |rs, segs| (
 		{
 			seg = (List.get(segs, I64.to_u64_wrap(rs.segment)) ?? crash ("list-at out of range"))
-			hw = (seg.width / 2.0)
+			hw = (Scenery.lane_width / 2.0)
 			next =
 				match seg.ending {
 					Continues({ next: index }) => index
@@ -81,7 +82,7 @@ Rider :: [].{
 		{
 			on_next = rider_state_for_next_segment(moved, segs)
 			(
-				if (DeviceMath.real_abs(on_next.across) < ((List.get(segs, I64.to_u64_wrap(on_next.segment)) ?? crash ("list-at out of range")).width / 2.0)) {
+				if (DeviceMath.real_abs(on_next.across) < (Scenery.lane_width / 2.0)) {
 					on_next
 				} else {
 					moved

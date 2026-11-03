@@ -9,6 +9,7 @@ import Grade
 import LeanSearch
 import Pose
 import Rider
+import Scenery
 import Throttle
 import VehicleLimits
 import World
@@ -82,7 +83,7 @@ early_got : List(Bool)
 early_got = (
 	{
 		far = Rider.rider_state_for_next_segment(rider(100.0, 0.0, Pose.v_base, 0.0), segs)
-		[(DeviceMath.real_abs(far.across) >= (World.segment_at(1).width / 2.0))]
+		[(DeviceMath.real_abs(far.across) >= (Scenery.lane_width / 2.0))]
 	}
 )
 
@@ -131,7 +132,7 @@ next : Pose.RiderState
 next = Rider.get_next_rider_state(rider(0.0, 0.0, Pose.v_base, 0.0), segs)
 
 frame_got : List(Bool)
-frame_got = [(next.along > 0.0), (next.v > 0.0), (next.segment == 0), (DeviceMath.real_abs(next.across) < (seg.width / 2.0)), (next.v <= VehicleLimits.v_max)]
+frame_got = [(next.along > 0.0), (next.v > 0.0), (next.segment == 0), (DeviceMath.real_abs(next.across) < (Scenery.lane_width / 2.0)), (next.v <= VehicleLimits.v_max)]
 
 frame_want : List(Bool)
 frame_want = [True, True, True, True, True]

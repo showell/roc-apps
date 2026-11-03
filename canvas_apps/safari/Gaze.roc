@@ -65,7 +65,7 @@ Gaze :: [].{
 	pig_ahead_near : Pose.RiderState, World.Segment -> Gaze.PigLook
 	pig_ahead_near = |state, seg| (
 		{
-			pig = Pigs.gaze_pig(seg.length, (seg.width / 2.0))
+			pig = Pigs.gaze_pig(seg.length, (Scenery.lane_width / 2.0))
 			dist = (pig.along - state.along)
 			(
 				if (dist > gaze_look_dist) {
@@ -96,7 +96,7 @@ Gaze :: [].{
 		if (pig_ahead(state, seg).looking == False) {
 			0.0
 		} else {
-			desired_gaze_at(state, Pigs.gaze_pig(seg.length, (seg.width / 2.0)))
+			desired_gaze_at(state, Pigs.gaze_pig(seg.length, (Scenery.lane_width / 2.0)))
 		}
 	)
 
@@ -139,7 +139,7 @@ Gaze :: [].{
 	gawk_engaged : Pose.RiderState, World.Segment -> Bool
 	gawk_engaged = |state, seg|
 		match seg.pig_attention {
-			Distracting => (state.along >= (Pigs.gaze_pig(seg.length, (seg.width / 2.0)).along - gaze_look_dist))
+			Distracting => (state.along >= (Pigs.gaze_pig(seg.length, (Scenery.lane_width / 2.0)).along - gaze_look_dist))
 			Unnoticed => False
 		}
 
@@ -161,7 +161,7 @@ Gaze :: [].{
 	pig_gaze_brake_easing : Pose.RiderState, World.Segment -> Gaze.GazeBrake
 	pig_gaze_brake_easing = |state, seg| (
 		{
-			d = ((Pigs.gaze_pig(seg.length, (seg.width / 2.0)).along - state.along) - pig_gaze_settle_dist)
+			d = ((Pigs.gaze_pig(seg.length, (Scenery.lane_width / 2.0)).along - state.along) - pig_gaze_settle_dist)
 			{ engaged: True, accel: (((pig_gaze_speed * pig_gaze_speed) - (state.v * state.v)) / (2.0 * DeviceMath.real_max(d, 1.0))) }
 		}
 	)

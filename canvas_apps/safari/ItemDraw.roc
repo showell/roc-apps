@@ -20,6 +20,7 @@ import TreePlan
 import TruckDraw
 import TruckPlan
 import RocBird
+import Scenery
 import World
 
 ItemDraw :: [].{
@@ -114,7 +115,7 @@ ItemDraw :: [].{
 			road: { world: w, chain: ch, pose, segment: tk.d },
 			center: {
 				along: tk.along,
-				across: ((List.get(w, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(tk.d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).width / 2.0),
+				across: (Scenery.lane_width / 2.0),
 			},
 			lights: {
 				headlights: if Mountains.is_sun_behind_mountains(step) On else Off,

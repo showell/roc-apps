@@ -8,7 +8,6 @@ import Arc
 import Bike
 import Grade
 import Pose
-import World
 
 fixed_got : List(F64)
 fixed_got = [Arc.no_frames, Arc.straighten_margin, Arc.min_forward_progress]
@@ -22,9 +21,6 @@ steps_got = [Arc.turn_danger_steps]
 steps_want : List(I64)
 steps_want = [2000]
 
-seg : World.Segment
-seg = World.segment_at(0)
-
 rider : F64, F64, F64 -> Pose.RiderState
 rider = |across, tilt, v| { segment: 0, along: 0.0, across: across, yaw: 0.0, v: v, tilt: tilt, heading: 0.0, gaze_yaw: 0.0, focus: 0.0 }
 
@@ -36,7 +32,7 @@ side = |o| (match o.shoulder {
 })
 
 straight : Arc.ArcOutcome
-straight = Arc.project_arc(rider(0.0, 0.0, Pose.v_base), seg)
+straight = Arc.project_arc(rider(0.0, 0.0, Pose.v_base))
 
 straight_got : List(F64)
 straight_got = [straight.forward, straight.end_across, straight.frames]
@@ -45,7 +41,7 @@ straight_want : List(F64)
 straight_want = [25.0, 0.0, 1000000000.0]
 
 wide : Arc.ArcOutcome
-wide = Arc.project_arc(rider(3.0, 0.0, Pose.v_base), seg)
+wide = Arc.project_arc(rider(3.0, 0.0, Pose.v_base))
 
 wide_got : List(F64)
 wide_got = [wide.forward, wide.end_across, wide.frames]
@@ -54,7 +50,7 @@ wide_want : List(F64)
 wide_want = [25.0, 3.0, 1000000000.0]
 
 stopped : Arc.ArcOutcome
-stopped = Arc.project_arc(rider(0.0, 0.0, 0.0), seg)
+stopped = Arc.project_arc(rider(0.0, 0.0, 0.0))
 
 stopped_got : List(F64)
 stopped_got = [stopped.forward, stopped.end_across, stopped.frames]
@@ -75,10 +71,10 @@ crossed_want : List(Bool)
 crossed_want = [False, False, False]
 
 leaning : Arc.ArcOutcome
-leaning = Arc.project_arc(rider(0.0, 0.2, Pose.v_base), seg)
+leaning = Arc.project_arc(rider(0.0, 0.2, Pose.v_base))
 
 other_way : Arc.ArcOutcome
-other_way = Arc.project_arc(rider(0.0, (0.0 - 0.2), Pose.v_base), seg)
+other_way = Arc.project_arc(rider(0.0, (0.0 - 0.2), Pose.v_base))
 
 leaving_got : List(I64)
 leaving_got = [side(leaning), side(other_way)]

@@ -45,7 +45,7 @@ Safari :: [].{
 			s = r.rider
 			cf = RideFocal.ride_focal(w, s)
 			vy = ViewYaw.view_yaw_for(s)
-			pose = ViewYaw.pose_for(w, s)
+			pose = ViewYaw.pose_for(s)
 			ch = Frame.build_chain(w, s.segment)
 			List.join([Mountains.draw({ heading: (s.heading + vy), dusk: Sky.sun_set_fraction(r.clock), cam_focal: cf, view_w: Screen.width }), GroundPlan.frame_ground(w, s.segment, pose, cf, Screen.width), ItemDraw.draw_order(w, ch, pose, Render.collect(w, s.segment, pose, cf, s.along, s.v, r.truck.pos), r.truck.braking, cf, r.clock, 0)])
 		}

@@ -3,8 +3,8 @@
 import Bike
 import lib.DeviceMath
 import Pose
+import Scenery
 import lib.Trig
-import World
 
 Arc :: [].{
 	Shoulder : [ShoulderLeft, ShoulderNone, ShoulderRight]
@@ -71,10 +71,10 @@ Arc :: [].{
 		}
 	)
 
-	project_arc : Pose.RiderState, World.Segment -> Arc.ArcOutcome
-	project_arc = |state, seg| (
+	project_arc : Pose.RiderState -> Arc.ArcOutcome
+	project_arc = |state| (
 		{
-			inset_hw = ((seg.width / 2.0) - straighten_margin)
+			inset_hw = ((Scenery.lane_width / 2.0) - straighten_margin)
 			right_bound = DeviceMath.real_max(inset_hw, state.across)
 			left_bound = DeviceMath.real_min((0.0 - inset_hw), state.across)
 			sim_from(state, left_bound, right_bound, Trig.r_sign(state.across), state.along, False, 0, state)

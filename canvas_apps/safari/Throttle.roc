@@ -77,10 +77,10 @@ Throttle :: [].{
 	brake_decay : F64
 	brake_decay = 20.0
 
-	shoulder_brake : Pose.RiderState, World.Segment, F64 -> F64
-	shoulder_brake = |state, seg, a| (
+	shoulder_brake : Pose.RiderState, F64 -> F64
+	shoulder_brake = |state, a| (
 		{
-			sim = Arc.project_arc(state, seg)
+			sim = Arc.project_arc(state)
 			(
 				if has_stayed_on_road(sim) {
 					a
@@ -176,7 +176,7 @@ Throttle :: [].{
 				}
 			)
 			a3 = pig_gate(state, seg, cat_gate(state, seg, a1))
-			a4 = shoulder_brake(state, seg, a3)
+			a4 = shoulder_brake(state, a3)
 			(clamp_v(state, seg, v_end, (state.v + a4), near) - state.v)
 		}
 	)

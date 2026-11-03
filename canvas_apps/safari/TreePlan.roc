@@ -52,7 +52,7 @@ TreePlan :: [].{
 		if (d >= ch.len().to_i64_wrap()) {
 			acc
 		} else {
-			walk_trees_onto(segs, ch, pose, cf, (d + 1), List.concat(acc, seg_trees(segs, ch, pose, d, cf, ((List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).width / 2.0), (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).trees, 0)))
+			walk_trees_onto(segs, ch, pose, cf, (d + 1), List.concat(acc, seg_trees(segs, ch, pose, d, cf, (Scenery.lane_width / 2.0), (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).trees, 0)))
 		}
 	)
 

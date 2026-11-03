@@ -7,6 +7,7 @@ import Geom
 import GuardRail
 import Joint
 import Num_
+import Scenery
 import World
 
 RailPlan :: [].{
@@ -90,8 +91,8 @@ RailPlan :: [].{
 		}
 	)
 
-	joint_rails : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, Frame.Mapper, F64, F64, F64, Bool -> List(GuardRail.RailPoly)
-	joint_rails = |segs, ch, pose, from_map, to_map, from_len, from_w, to_w, exit_right| GuardRail.rail_emit(joint_rail_path(segs, ch, pose, from_map, to_map, from_len, from_w, to_w, exit_right))
+	joint_rails : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, Frame.Mapper, F64, Bool -> List(GuardRail.RailPoly)
+	joint_rails = |segs, ch, pose, from_map, to_map, from_len, exit_right| GuardRail.rail_emit(joint_rail_path(segs, ch, pose, from_map, to_map, from_len, Scenery.lane_width, Scenery.lane_width, exit_right))
 
 	# walk_rails builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	walk_rails : List(World.Segment), List(I64), Frame.Pose -> List(GuardRail.RailPoly)
@@ -102,7 +103,7 @@ RailPlan :: [].{
 		if ((d + 1) >= ch.len().to_i64_wrap()) {
 			acc
 		} else {
-			walk_rails_onto(segs, ch, pose, (d + 1), List.concat(acc, joint_rails(segs, ch, pose, Frame.chain_map(d), Frame.chain_map((d + 1)), (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).length, (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).width, (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap((d + 1))) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).width, (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).exit_right)))
+			walk_rails_onto(segs, ch, pose, (d + 1), List.concat(acc, joint_rails(segs, ch, pose, Frame.chain_map(d), Frame.chain_map((d + 1)), (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).length, (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).exit_right)))
 		}
 	)
 
@@ -110,7 +111,7 @@ RailPlan :: [].{
 	behind_rails = |segs, ch, pose, prev_idx| (
 		{
 			pv = (List.get(segs, I64.to_u64_wrap(prev_idx)) ?? crash ("list-at out of range"))
-			joint_rails(segs, ch, pose, Frame.prev_map(pv), Frame.chain_map(0), pv.length, pv.width, (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).width, pv.exit_right)
+			joint_rails(segs, ch, pose, Frame.prev_map(pv), Frame.chain_map(0), pv.length, pv.exit_right)
 		}
 	)
 

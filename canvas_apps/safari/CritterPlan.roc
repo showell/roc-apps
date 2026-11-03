@@ -132,7 +132,7 @@ CritterPlan :: [].{
 	seg_billboards : List(World.Segment), List(I64), Frame.Pose, I64 -> List(Billboards.Placed)
 	seg_billboards = |segs, ch, pose, d| (
 		{
-			hw = ((List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).width / 2.0)
+			hw = (Scenery.lane_width / 2.0)
 			List.join([seg_farm(segs, ch, pose, d, hw), seg_safari(segs, ch, pose, d, hw), seg_ducks(segs, ch, pose, d)])
 		}
 	)
@@ -154,7 +154,7 @@ CritterPlan :: [].{
 	behind_billboards = |segs, ch, pose, prev_idx| (
 		{
 			pv = (List.get(segs, I64.to_u64_wrap(prev_idx)) ?? crash ("list-at out of range"))
-			List.concat(place_all_mapped(segs, ch, pose, Frame.prev_map(pv), (pv.width / 2.0), SafariCritter.corner_critters(pv.exit_creature, pv.length, pv.exit_right, (pv.width / 2.0)), 0), behind_ducks(segs, ch, pose, pv))
+			List.concat(place_all_mapped(segs, ch, pose, Frame.prev_map(pv), (Scenery.lane_width / 2.0), SafariCritter.corner_critters(pv.exit_creature, pv.length, pv.exit_right, (Scenery.lane_width / 2.0)), 0), behind_ducks(segs, ch, pose, pv))
 		}
 	)
 

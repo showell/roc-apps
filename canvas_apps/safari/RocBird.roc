@@ -71,7 +71,7 @@ RocBird :: [].{
 		match fifth_left(seg.trees, 0, 0) {
 			NoTree => []
 			Found(t) => {
-				rp = Frame.at(segs, ch, pose, d, t.along, t.across + seg.width / 2.0)
+				rp = Frame.at(segs, ch, pose, d, t.along, t.across + Scenery.lane_width / 2.0)
 				if rp.forward <= Geom.near {
 					[]
 				} else if (height / rp.forward) * cf < SceneLimits.min_scenery_px {

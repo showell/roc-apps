@@ -29,7 +29,6 @@ World :: [].{
 	## One segment of road, built from its plan.
 	Segment : {
 		length : F64,
-		width : F64,
 		trees : List(Scenery.Tree),
 		cows : List(Scenery.Critter),
 		pigs : List(Scenery.Critter),
@@ -115,7 +114,6 @@ segment = |plan, index| {
 		}
 	{
 		length: plan.length,
-		width: Scenery.lane_width,
 		trees,
 		cows: Herd.fill_cows(plan.bull),
 		pigs: match (plan.pigs, pig_attention) {

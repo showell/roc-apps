@@ -64,7 +64,7 @@ GroundPlan :: [].{
 	seg_road = |segs, ch, pose, d, cf, view_w| (
 		{
 			sg = (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range"))
-			road_slice(segs, ch, pose, d, cf, view_w, 0, chunks_for(sg.length), sg.length, sg.width)
+			road_slice(segs, ch, pose, d, cf, view_w, 0, chunks_for(sg.length), sg.length, Scenery.lane_width)
 		}
 	)
 
@@ -95,8 +95,8 @@ GroundPlan :: [].{
 		}
 	)
 
-	emit_joint_ground : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, Frame.Mapper, F64, F64, F64, Bool, F64, F64 -> List(Paint.DrawCmd)
-	emit_joint_ground = |segs, ch, pose, from_map, to_map, from_len, from_w, to_w, exit_right, cf, view_w| List.concat(emit_ground(joint_approach(segs, ch, pose, from_map, from_len, from_w), cf, view_w), emit_ground(joint_pavement(segs, ch, pose, from_map, to_map, from_len, from_w, to_w, exit_right), cf, view_w))
+	emit_joint_ground : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, Frame.Mapper, F64, Bool, F64, F64 -> List(Paint.DrawCmd)
+	emit_joint_ground = |segs, ch, pose, from_map, to_map, from_len, exit_right, cf, view_w| List.concat(emit_ground(joint_approach(segs, ch, pose, from_map, from_len, Scenery.lane_width), cf, view_w), emit_ground(joint_pavement(segs, ch, pose, from_map, to_map, from_len, Scenery.lane_width, Scenery.lane_width, exit_right), cf, view_w))
 
 	# pond_shape builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	pond_shape : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, List(Pond.PondPt) -> List(Geom.RiderPt)
@@ -122,7 +122,7 @@ GroundPlan :: [].{
 		if ((d + 1) >= ch.len().to_i64_wrap()) {
 			[]
 		} else {
-			emit_joint_ground(segs, ch, pose, Frame.chain_map(d), Frame.chain_map((d + 1)), (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).length, (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).width, (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap((d + 1))) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).width, (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).exit_right, cf, view_w)
+			emit_joint_ground(segs, ch, pose, Frame.chain_map(d), Frame.chain_map((d + 1)), (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).length, (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).exit_right, cf, view_w)
 		}
 	)
 
@@ -157,7 +157,7 @@ GroundPlan :: [].{
 	behind_ground = |segs, ch, pose, prev_idx, cf, view_w| (
 		{
 			pv = (List.get(segs, I64.to_u64_wrap(prev_idx)) ?? crash ("list-at out of range"))
-			List.concat(emit_joint_ground(segs, ch, pose, Frame.prev_map(pv), Frame.chain_map(0), pv.length, pv.width, (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).width, pv.exit_right, cf, view_w), behind_pond_ground(segs, ch, pose, pv, cf, view_w))
+			List.concat(emit_joint_ground(segs, ch, pose, Frame.prev_map(pv), Frame.chain_map(0), pv.length, pv.exit_right, cf, view_w), behind_pond_ground(segs, ch, pose, pv, cf, view_w))
 		}
 	)
 
