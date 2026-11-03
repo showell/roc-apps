@@ -111,9 +111,9 @@ center = { x: Screen.width / 2.0, y: Screen.height / 2.0 }
 grass_pixel : U32
 grass_pixel = I64.to_u32_wrap(SafariShapes.grass_color)
 
-## Where a row of pixels crosses a polygon's edge, and the way the edge runs:
-## 1 down the screen, -1 up it.
-Crossing : { x : F64, winding : I64 }
+## Where a row of pixels crosses a polygon's edge, and which way the edge
+## runs on the screen.
+Crossing : { x : F64, direction : [Down, Up] }
 
 ## A point on the screen, where the roll has turned a scene point.
 DevicePoint := { x : F64, y : F64 }.{
@@ -184,6 +184,9 @@ pixel_index = |{ row, column }| I64.to_u64_wrap(row * Screen.width_px + column)
 
 # --- Pixels -------------------------------------------------------------------
 
+## A pixel's red, green and blue, each 0 to 255.
+Rgb : { r : F64, g : F64, b : F64 }
+
 byte : F64 -> U32
 byte = |v| {
 	n = F64.to_i64_wrap(v + 0.5)
@@ -198,16 +201,20 @@ byte = |v| {
 	)
 }
 
-pack : { r : F64, g : F64, b : F64 } -> U32
+pack : Rgb -> U32
 pack = |{ r, g, b }| {
 	red = byte(r).shl_wrap(16)
 	green = byte(g).shl_wrap(8)
 	red.bitwise_or(green).bitwise_or(byte(b))
 }
 
-## One of a pixel's channels: 16 is red, 8 green and 0 blue.
-channel : U32, U8 -> F64
-channel = |pixel, shift| U32.to_f64(U32.bitwise_and(U32.shr_wrap(pixel, shift), 255))
+## A pixel's channels: the mirror of `pack`.
+unpacked_pixel : U32 -> Rgb
+unpacked_pixel = |pixel| {
+	r: pixel.shr_wrap(16).bitwise_and(255).to_f64(),
+	g: pixel.shr_wrap(8).bitwise_and(255).to_f64(),
+	b: pixel.bitwise_and(255).to_f64(),
+}
 
 ## `src` over the opaque pixel `dst`.
 over : U32, Brush.Rgba -> U32
@@ -218,10 +225,11 @@ over = |dst, src|
 		dst
 	} else {
 		kept = 1.0 - src.a
+		under = unpacked_pixel(dst)
 		pack({
-			r: src.r * src.a + channel(dst, 16) * kept,
-			g: src.g * src.a + channel(dst, 8) * kept,
-			b: src.b * src.a + channel(dst, 0) * kept,
+			r: src.r * src.a + under.r * kept,
+			g: src.g * src.a + under.g * kept,
+			b: src.b * src.a + under.b * kept,
 		})
 	}
 
@@ -330,9 +338,9 @@ crossing : Edge, F64 -> List(Crossing)
 crossing = |{ from, to }, y| {
 	x = from.x + (y - from.y) * (to.x - from.x) / (to.y - from.y)
 	if from.y <= y and y < to.y {
-		[{ x, winding: 1 }]
+		[{ x, direction: Down }]
 	} else if to.y <= y and y < from.y {
-		[{ x, winding: -1 }]
+		[{ x, direction: Up }]
 	} else {
 		[]
 	}
@@ -360,7 +368,12 @@ inside_spans = |crossings| {
 ## The walk after one more pair of neighbouring crossings.
 walk_crossing : WindingWalk, { enter : Crossing, leave : Crossing } -> WindingWalk
 walk_crossing = |so_far, { enter, leave }| {
-	winding = so_far.winding + enter.winding
+	turn =
+		match enter.direction {
+			Down => 1
+			Up => -1
+		}
+	winding = so_far.winding + turn
 	inside =
 		if winding == 0 {
 			so_far.inside
