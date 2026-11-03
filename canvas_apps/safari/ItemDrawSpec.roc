@@ -57,19 +57,11 @@ origin = { along: 0.0, across: 0.0, yaw: 0.0, hw: 2.0 }
 a_tower : TowerPlan.TowerItem
 a_tower = { map: Frame.chain_map(0), a0: 200.0, x0: 22.0, yaw: 0.0, fwd: 200.0, off: 0.0 }
 
-base_got : List(I64)
-base_got = [ItemDraw.tower_base(segs, chain, origin, a_tower, 0).len().to_i64_wrap(), ItemDraw.tower_base(segs, chain, origin, { map: Frame.chain_map(0), a0: 200.0, x0: 22.0, yaw: 1.0, fwd: 200.0, off: 0.0 }, 0).len().to_i64_wrap()]
-
-base_want : List(I64)
-base_want = [4, 4]
-
 corner_got : List(F64)
-corner_got = (
-	{
-		b = ItemDraw.tower_base(segs, chain, origin, a_tower, 0)
-		[(List.get(b, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).forward, (List.get(b, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).forward, (List.get(b, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).right, (List.get(b, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).right]
-	}
-)
+corner_got = {
+	footprint = ItemDraw.tower_footprint(segs, chain, origin, a_tower)
+	[footprint.back_left.forward, footprint.front_right.forward, footprint.back_left.right, footprint.back_right.right]
+}
 
 corner_want : List(F64)
 corner_want = [194.0, 206.0, 14.0, 26.0]
@@ -125,11 +117,6 @@ main! = |_args| {
 			got: shade_got,
 			want: shade_want,
 			tol: 0.0,
-		}),
-		Grade.ints({
-			name: "id-base  ",
-			got: base_got,
-			want: base_want,
 		}),
 		Grade.reals({
 			name: "id-corner",

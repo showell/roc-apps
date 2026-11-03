@@ -67,21 +67,30 @@ ItemDraw :: [].{
 		}
 	)
 
-	# tower_base builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	tower_base : List(World.Segment), List(I64), Frame.Pose, TowerPlan.TowerItem, I64 -> List(Geom.RiderPt)
-	tower_base = |w, ch, pose, tw, k| tower_base_onto(w, ch, pose, tw, k, [])
-
-	tower_base_onto : List(World.Segment), List(I64), Frame.Pose, TowerPlan.TowerItem, I64, List(Geom.RiderPt) -> List(Geom.RiderPt)
-	tower_base_onto = |w, ch, pose, tw, k, acc| (
-		if (k >= 4) {
-			acc
-		} else {
-			tower_base_onto(w, ch, pose, tw, (k + 1), List.append(acc, Frame.map_pt(w, ch, pose, tw.map, Tower.base_corner_ax(k, tw.a0, tw.x0, tw.yaw).a, Tower.base_corner_ax(k, tw.a0, tw.x0, tw.yaw).x)))
+	## Where a mast's four footprint corners stand in the rider's view.
+	tower_footprint : List(World.Segment), List(I64), Frame.Pose, TowerPlan.TowerItem -> Tower.Footprint
+	tower_footprint = |w, ch, pose, tw| {
+		corner_point = |corner| {
+			on_map = Tower.base_corner_ax(corner, tw.a0, tw.x0, tw.yaw)
+			Frame.map_pt(w, ch, pose, tw.map, on_map.a, on_map.x)
 		}
-	)
+		{
+			back_left: corner_point(BackLeft),
+			back_right: corner_point(BackRight),
+			front_right: corner_point(FrontRight),
+			front_left: corner_point(FrontLeft),
+		}
+	}
 
 	draw_one_tower : List(World.Segment), List(I64), Frame.Pose, TowerPlan.TowerItem, F64, F64 -> List(Paint.DrawCmd)
-	draw_one_tower = |w, ch, pose, tw, cf, step| Tower.draw_flat(tower_base(w, ch, pose, tw, 0), Frame.map_pt(w, ch, pose, tw.map, tw.a0, tw.x0), cf, Lens.camera_w, (step + tw.off))
+	draw_one_tower = |w, ch, pose, tw, cf, step|
+		Tower.draw({
+			footprint: tower_footprint(w, ch, pose, tw),
+			center: Frame.map_pt(w, ch, pose, tw.map, tw.a0, tw.x0),
+			cam_focal: cf,
+			view_w: Lens.camera_w,
+			beacon_phase: (step + tw.off),
+		})
 
 	draw_one_critter : Billboards.Billboard, F64 -> List(Paint.DrawCmd)
 	draw_one_critter = |b, cf| Critter.critter_draw(b.right, b.fwd, b.height, b.cp, b.face_right, cf, Lens.camera_w)

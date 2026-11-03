@@ -1,5 +1,8 @@
-# Tower -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## A radio mast: a square lattice that tapers from a 12 m footprint to a
+## point 80 m up. It is drawn as rods (four legs, a ring every 20 m, and
+## crossed braces in the lowest two stages) with a blinking beacon on top.
+## The earth curves away under a far mast, so it sinks below the horizon
+## from the bottom up.
 import Camera
 import lib.DeviceMath
 import Geom
@@ -30,6 +33,8 @@ Tower :: [].{
 	tower_metal : I64
 	tower_metal = 10133672
 
+	## The earth's radius for sinking masts. It is far smaller than the real
+	## one, so a mast sinks visibly as it recedes.
 	earth_radius : F64
 	earth_radius = 20000.0
 
@@ -42,278 +47,248 @@ Tower :: [].{
 	beacon_period : F64
 	beacon_period = 120.0
 
+	## A corner of the mast's square footprint, as seen along the route.
+	Corner : [BackLeft, BackRight, FrontRight, FrontLeft]
+
+	## Where the footprint's four corners stand in the rider's view.
+	Footprint : {
+		back_left : Geom.RiderPt,
+		back_right : Geom.RiderPt,
+		front_right : Geom.RiderPt,
+		front_left : Geom.RiderPt,
+	}
+
+	## How a rod is drawn: its width on screen, and the camera.
+	RodView : {
+		rod_width_px : F64,
+		cam_focal : F64,
+		view_w : F64,
+	}
+
+	## One mast, ready to draw: where it stands, how far the earth's curve
+	## has sunk it, and how its rods are drawn.
+	Mast : {
+		footprint : Tower.Footprint,
+		center : Geom.RiderPt,
+		sunk : F64,
+		view : Tower.RodView,
+	}
+
+	## The corners in drawing order, going round the square.
+	corners : List(Tower.Corner)
+	corners = [BackLeft, BackRight, FrontRight, FrontLeft]
+
+	## The corner after this one, going round the square.
+	next_corner : Tower.Corner -> Tower.Corner
+	next_corner = |corner|
+		match corner {
+			BackLeft => BackRight
+			BackRight => FrontRight
+			FrontRight => FrontLeft
+			FrontLeft => BackLeft
+		}
+
+	## Which way a corner lies from the footprint's centre, across the route
+	## and along it.
+	corner_offset : Tower.Corner -> { across : F64, along : F64 }
+	corner_offset = |corner|
+		match corner {
+			BackLeft => { across: -1.0, along: -1.0 }
+			BackRight => { across: 1.0, along: -1.0 }
+			FrontRight => { across: 1.0, along: 1.0 }
+			FrontLeft => { across: -1.0, along: 1.0 }
+		}
+
+	footprint_corner : Tower.Footprint, Tower.Corner -> Geom.RiderPt
+	footprint_corner = |footprint, corner|
+		match corner {
+			BackLeft => footprint.back_left
+			BackRight => footprint.back_right
+			FrontRight => footprint.front_right
+			FrontLeft => footprint.front_left
+		}
+
 	beacon_offset_for : I64 -> F64
 	beacon_offset_for = |n| I64.to_f64(((n * 37) - (I64.div_trunc_by((n * 37), 120) * 120)))
 
 	beacon_brightness : F64 -> F64
-	beacon_brightness = |phase| (
+	beacon_brightness = |phase| {
+		wrapped = Num_.mod_real((Num_.mod_real(phase, beacon_period) + beacon_period), beacon_period)
+		((1.0 - Trig.r_cos((((2.0 * Trig.pi) * wrapped) / beacon_period))) / 2.0)
+	}
+
+	## Where a footprint corner stands on the map, for a mast centred at
+	## `along` and `across` and turned by `yaw`.
+	base_corner_ax : Tower.Corner, F64, F64, F64 -> Geom.AX
+	base_corner_ax = |corner, along, across, yaw| {
+		offset = corner_offset(corner)
+		du = (offset.across * tower_half)
+		dv = (offset.along * tower_half)
+		cy = Trig.r_cos(yaw)
+		sy = Trig.r_sin(yaw)
+		{ a: (along + ((du * sy) + (dv * cy))), x: (across + ((du * cy) - (dv * sy))) }
+	}
+
+	## How far the earth's curve hides the bottom of a mast standing at `p`.
+	sunk_below_horizon : Geom.RiderPt -> F64
+	sunk_below_horizon = |p| (((p.right * p.right) + (p.forward * p.forward)) / (2.0 * earth_radius))
+
+	## The point `fraction` of the way from `from` to `to`.
+	point_between : { from : Geom.Vec3, to : Geom.Vec3, fraction : F64 } -> Geom.Vec3
+	point_between = |{ from, to, fraction }| {
+		right: (from.right + ((to.right - from.right) * fraction)),
+		forward: (from.forward + ((to.forward - from.forward) * fraction)),
+		height: (from.height + ((to.height - from.height) * fraction)),
+	}
+
+	## A corner of the mast at height `h`: drawn in toward the centre as the
+	## mast tapers, and lowered by how far the mast has sunk.
+	corner_at : Tower.Mast, Tower.Corner, F64 -> Geom.Vec3
+	corner_at = |mast, corner, h| {
+		t = (h / tower_height)
+		bottom = footprint_corner(mast.footprint, corner)
 		{
-			wrapped = Num_.mod_real((Num_.mod_real(phase, beacon_period) + beacon_period), beacon_period)
-			((1.0 - Trig.r_cos((((2.0 * Trig.pi) * wrapped) / beacon_period))) / 2.0)
+			right: (bottom.right + ((mast.center.right - bottom.right) * t)),
+			forward: (bottom.forward + ((mast.center.forward - bottom.forward) * t)),
+			height: (h - mast.sunk),
 		}
-	)
+	}
 
-	corner_u : I64 -> F64
-	corner_u = |k|
-		match k {
-			0 => -1.0
-			1 => 1.0
-			2 => 1.0
-			_ => -1.0
-		}
-
-	corner_v : I64 -> F64
-	corner_v = |k|
-		match k {
-			0 => -1.0
-			1 => -1.0
-			2 => 1.0
-			_ => 1.0
-		}
-
-	base_corner_ax : I64, F64, F64, F64 -> Geom.AX
-	base_corner_ax = |k, a0, x0, yaw| (
-		{
-			du = (corner_u(k) * tower_half)
-			dv = (corner_v(k) * tower_half)
-			cy = Trig.r_cos(yaw)
-			sy = Trig.r_sin(yaw)
-			{ a: (a0 + ((du * sy) + (dv * cy))), x: (x0 + ((du * cy) - (dv * sy))) }
-		}
-	)
-
-	tower_ground_drop : Geom.RiderPt -> F64
-	tower_ground_drop = |p| (((p.right * p.right) + (p.forward * p.forward)) / (2.0 * earth_radius))
-
-	lerp3v : Geom.Vec3, Geom.Vec3, F64 -> Geom.Vec3
-	lerp3v = |a, b, t| { right: (a.right + ((b.right - a.right) * t)), forward: (a.forward + ((b.forward - a.forward) * t)), height: (a.height + ((b.height - a.height) * t)) }
-
-	corner_at : List(Geom.RiderPt), Geom.RiderPt, I64, F64, F64 -> Geom.Vec3
-	corner_at = |base, center, k, h, drop| (
-		{
-			t = (h / tower_height)
-			bk = (List.get(base, I64.to_u64_wrap(k)) ?? crash ("list-at out of range"))
-			{ right: (bk.right + ((center.right - bk.right) * t)), forward: (bk.forward + ((center.forward - bk.forward) * t)), height: (h - drop) }
-		}
-	)
-
-	bar : Camera.ScreenPt, Camera.ScreenPt, F64 -> List(Paint.DrawCmd)
-	bar = |a, b, wpx| (
-		{
-			dx = (b.x - a.x)
-			dy = (b.y - a.y)
-			raw = DeviceMath.real_sqrt(((dx * dx) + (dy * dy)))
-			len = (
-				if (raw < 0.0001) {
-					1.0
-				} else {
-					raw
-				}
-			)
-			rod_quad(a, b, ((((0.0 - dy) / len) * wpx) / 2.0), (((dx / len) * wpx) / 2.0))
-		}
-	)
+	## A rod between two points on screen, `width_px` wide.
+	screen_rod : { from : Camera.ScreenPt, to : Camera.ScreenPt, width_px : F64 } -> List(Paint.DrawCmd)
+	screen_rod = |{ from, to, width_px }| {
+		dx = (to.x - from.x)
+		dy = (to.y - from.y)
+		raw = DeviceMath.real_sqrt(((dx * dx) + (dy * dy)))
+		len = if (raw < 0.0001) 1.0 else raw
+		rod_quad(from, to, ((((0.0 - dy) / len) * width_px) / 2.0), (((dx / len) * width_px) / 2.0))
+	}
 
 	rod_quad : Camera.ScreenPt, Camera.ScreenPt, F64, F64 -> List(Paint.DrawCmd)
 	rod_quad = |a, b, ox, oy| Paint.push_poly(tower_metal, [{ x: (a.x + ox), y: (a.y + oy) }, { x: (b.x + ox), y: (b.y + oy) }, { x: (b.x - ox), y: (b.y - oy) }, { x: (a.x - ox), y: (a.y - oy) }])
 
-	bar3d : Geom.Vec3, Geom.Vec3, F64, F64, F64 -> List(Paint.DrawCmd)
-	bar3d = |a, b, wpx, cf, view_w| (
-		{
-			a_in = (a.forward >= Geom.near)
-			b_in = (b.forward >= Geom.near)
-			(
-				if a_in {
-					(
-						if b_in {
-							bar3d_draw(a, b, wpx, cf, view_w)
-						} else {
-							bar3d_draw(a, bar3d_cut(a, b), wpx, cf, view_w)
-						}
-					)
-				} else {
-					(
-						if b_in {
-							bar3d_draw(bar3d_cut(a, b), b, wpx, cf, view_w)
-						} else {
-							[]
-						}
-					)
-				}
-			)
+	## A rod between two points in the rider's view. A rod with one end
+	## behind the near plane is cut there; one with both ends behind it is
+	## not drawn.
+	rod : Tower.RodView, { from : Geom.Vec3, to : Geom.Vec3 } -> List(Paint.DrawCmd)
+	rod = |view, { from, to }|
+		match (sight_of(from), sight_of(to)) {
+			(InView, InView) => rod_on_screen(view, { from, to })
+			(InView, BehindCamera) => rod_on_screen(view, { from, to: cut_at_near({ from, to }) })
+			(BehindCamera, InView) => rod_on_screen(view, { from: cut_at_near({ from, to }), to })
+			(BehindCamera, BehindCamera) => []
 		}
-	)
 
-	bar3d_cut : Geom.Vec3, Geom.Vec3 -> Geom.Vec3
-	bar3d_cut = |a, b| lerp3v(a, b, ((Geom.near - a.forward) / (b.forward - a.forward)))
+	sight_of : Geom.Vec3 -> [InView, BehindCamera]
+	sight_of = |point| if (point.forward >= Geom.near) InView else BehindCamera
 
-	bar3d_draw : Geom.Vec3, Geom.Vec3, F64, F64, F64 -> List(Paint.DrawCmd)
-	bar3d_draw = |a, b, wpx, cf, view_w| bar(Camera.project(a, cf, view_w), Camera.project(b, cf, view_w), wpx)
+	## Where the line from `from` to `to` crosses the near plane.
+	cut_at_near : { from : Geom.Vec3, to : Geom.Vec3 } -> Geom.Vec3
+	cut_at_near = |{ from, to }| point_between({ from, to, fraction: ((Geom.near - from.forward) / (to.forward - from.forward)) })
 
-	rod_px : F64, F64, F64 -> F64
-	rod_px = |forward, cf, view_w| (
-		{
-			p1 = Camera.project({ right: 1.0, forward: forward, height: 0.0 }, cf, view_w)
-			p0 = Camera.project({ right: 0.0, forward: forward, height: 0.0 }, cf, view_w)
-			(rod_w * (p1.x - p0.x))
-		}
-	)
+	rod_on_screen : Tower.RodView, { from : Geom.Vec3, to : Geom.Vec3 } -> List(Paint.DrawCmd)
+	rod_on_screen = |view, { from, to }|
+		screen_rod({
+			from: Camera.project(from, view.cam_focal, view.view_w),
+			to: Camera.project(to, view.cam_focal, view.view_w),
+			width_px: view.rod_width_px,
+		})
 
-	# tower_legs builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	tower_legs : List(Geom.RiderPt), Geom.RiderPt, Geom.Vec3, F64, F64, F64, F64, F64, I64 -> List(Paint.DrawCmd)
-	tower_legs = |base, center, apex, clip_h, drop, wpx, cf, view_w, k| tower_legs_onto(base, center, apex, clip_h, drop, wpx, cf, view_w, k, [])
+	## How many pixels one metre across spans at distance `forward`.
+	metre_px : { forward : F64, cam_focal : F64, view_w : F64 } -> F64
+	metre_px = |{ forward, cam_focal, view_w }| {
+		p1 = Camera.project({ right: 1.0, forward: forward, height: 0.0 }, cam_focal, view_w)
+		p0 = Camera.project({ right: 0.0, forward: forward, height: 0.0 }, cam_focal, view_w)
+		(p1.x - p0.x)
+	}
 
-	tower_legs_onto : List(Geom.RiderPt), Geom.RiderPt, Geom.Vec3, F64, F64, F64, F64, F64, I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
-	tower_legs_onto = |base, center, apex, clip_h, drop, wpx, cf, view_w, k, acc| (
-		if (k >= 4) {
-			acc
-		} else {
-			tower_legs_onto(base, center, apex, clip_h, drop, wpx, cf, view_w, (k + 1), List.concat(acc, bar3d(corner_at(base, center, k, clip_h, drop), apex, wpx, cf, view_w)))
-		}
-	)
+	## A rod's width on screen at distance `forward`.
+	rod_width_at : { forward : F64, cam_focal : F64, view_w : F64 } -> F64
+	rod_width_at = |camera| (rod_w * metre_px(camera))
 
-	# ring builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	ring : List(Geom.RiderPt), Geom.RiderPt, F64, F64, F64, F64, F64, I64 -> List(Paint.DrawCmd)
-	ring = |base, center, h, drop, wpx, cf, view_w, k| ring_onto(base, center, h, drop, wpx, cf, view_w, k, [])
+	## The four legs, from the footprint's corners up to the apex.
+	legs : Tower.Mast, Geom.Vec3 -> List(Paint.DrawCmd)
+	legs = |mast, apex| List.join_map(corners, |corner| rod(mast.view, { from: corner_at(mast, corner, mast.sunk), to: apex }))
 
-	ring_onto : List(Geom.RiderPt), Geom.RiderPt, F64, F64, F64, F64, F64, I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
-	ring_onto = |base, center, h, drop, wpx, cf, view_w, k, acc| (
-		if (k >= 4) {
-			acc
-		} else {
-			ring_onto(base, center, h, drop, wpx, cf, view_w, (k + 1), List.concat(acc, bar3d(corner_at(base, center, k, h, drop), corner_at(base, center, ((k + 1) - (I64.div_trunc_by((k + 1), 4) * 4)), h, drop), wpx, cf, view_w)))
-		}
-	)
+	## The ring of rods round the mast at height `h`.
+	ring : Tower.Mast, F64 -> List(Paint.DrawCmd)
+	ring = |mast, h| List.join_map(corners, |corner| rod(mast.view, { from: corner_at(mast, corner, h), to: corner_at(mast, next_corner(corner), h) }))
 
-	# rings builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	rings : List(Geom.RiderPt), Geom.RiderPt, F64, F64, F64, F64, F64, F64 -> List(Paint.DrawCmd)
-	rings = |base, center, h, clip_h, drop, wpx, cf, view_w| rings_onto(base, center, h, clip_h, drop, wpx, cf, view_w, [])
+	## A ring at every stage below the top, bottom first, leaving out those
+	## the earth has hidden.
+	rings : Tower.Mast -> List(Paint.DrawCmd)
+	rings = |mast| List.join_map(ring_heights_from(stage_height), |h| if (h <= mast.sunk) [] else ring(mast, h))
 
-	rings_onto : List(Geom.RiderPt), Geom.RiderPt, F64, F64, F64, F64, F64, F64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
-	rings_onto = |base, center, h, clip_h, drop, wpx, cf, view_w, acc| (
-		if (h >= tower_height) {
-			acc
-		} else {
-			rings_onto(
-				base,
-				center,
-				(h + stage_height),
-				clip_h,
-				drop,
-				wpx,
-				cf,
-				view_w,
-				List.concat(
-					acc,
-					(
-						if (h <= clip_h) {
-							[]
-						} else {
-							ring(base, center, h, drop, wpx, cf, view_w, 0)
-						}
-					),
-				),
-			)
-		}
-	)
+	ring_heights_from : F64 -> List(F64)
+	ring_heights_from = |h| if (h >= tower_height) [] else List.concat([h], ring_heights_from((h + stage_height)))
 
-	brace_at : List(Geom.RiderPt), Geom.RiderPt, F64, F64, F64, F64, F64, F64, F64, I64 -> List(Paint.DrawCmd)
-	brace_at = |base, center, lo, hi, f, drop, wpx, cf, view_w, k| (
-		if (k >= 4) {
+	## The crossed braces of the lowest stages, bottom first. A stage the
+	## earth has partly hidden starts its braces at the horizon.
+	braces : Tower.Mast -> List(Paint.DrawCmd)
+	braces = |mast| List.join_map(brace_stages_from(0), |stage| brace_stage(mast, stage))
+
+	brace_stages_from : I64 -> List(I64)
+	brace_stages_from = |stage| if (stage >= brace_stages) [] else List.concat([stage], brace_stages_from((stage + 1)))
+
+	brace_stage : Tower.Mast, I64 -> List(Paint.DrawCmd)
+	brace_stage = |mast, stage| {
+		stage_bottom = (I64.to_f64(stage) * stage_height)
+		stage_top = (stage_bottom + stage_height)
+		if (stage_top <= mast.sunk) {
 			[]
 		} else {
-			brace_pair(base, center, lo, hi, f, drop, wpx, cf, view_w, k)
+			hidden_fraction = ((DeviceMath.real_max(stage_bottom, mast.sunk) - stage_bottom) / stage_height)
+			List.join_map(corners, |corner| brace_pair(mast, { corner, stage_bottom, stage_top, hidden_fraction }))
 		}
-	)
+	}
 
-	brace_pair : List(Geom.RiderPt), Geom.RiderPt, F64, F64, F64, F64, F64, F64, F64, I64 -> List(Paint.DrawCmd)
-	brace_pair = |base, center, lo, hi, f, drop, wpx, cf, view_w, k| (
-		{
-			j = ((k + 1) - (I64.div_trunc_by((k + 1), 4) * 4))
-			kj = bar3d(lerp3v(corner_at(base, center, k, lo, drop), corner_at(base, center, j, hi, drop), f), corner_at(base, center, j, hi, drop), wpx, cf, view_w)
-			jk = bar3d(lerp3v(corner_at(base, center, j, lo, drop), corner_at(base, center, k, hi, drop), f), corner_at(base, center, k, hi, drop), wpx, cf, view_w)
-			List.join([kj, jk, brace_at(base, center, lo, hi, f, drop, wpx, cf, view_w, (k + 1))])
-		}
-	)
+	## The two braces crossing the face from `corner` to the next corner: one
+	## rising each way.
+	brace_pair : Tower.Mast, { corner : Tower.Corner, stage_bottom : F64, stage_top : F64, hidden_fraction : F64 } -> List(Paint.DrawCmd)
+	brace_pair = |mast, { corner, stage_bottom, stage_top, hidden_fraction }| {
+		next = next_corner(corner)
+		brace_up = rod(
+			mast.view,
+			{
+				from: point_between({ from: corner_at(mast, corner, stage_bottom), to: corner_at(mast, next, stage_top), fraction: hidden_fraction }),
+				to: corner_at(mast, next, stage_top),
+			},
+		)
+		brace_down = rod(
+			mast.view,
+			{
+				from: point_between({ from: corner_at(mast, next, stage_bottom), to: corner_at(mast, corner, stage_top), fraction: hidden_fraction }),
+				to: corner_at(mast, corner, stage_top),
+			},
+		)
+		List.concat(brace_up, brace_down)
+	}
 
-	braces : List(Geom.RiderPt), Geom.RiderPt, F64, F64, F64, F64, F64, I64 -> List(Paint.DrawCmd)
-	braces = |base, center, clip_h, drop, wpx, cf, view_w, stage| (
-		if (stage >= brace_stages) {
+	## The beacon on the apex, at its brightness; too dim or too small, it
+	## isn't drawn.
+	beacon : Tower.Mast, Geom.Vec3, F64 -> List(Paint.DrawCmd)
+	beacon = |mast, apex, brightness| {
+		apex_on_screen = Camera.project(apex, mast.view.cam_focal, mast.view.view_w)
+		if (brightness < 0.02) {
 			[]
 		} else {
-			brace_stage(base, center, clip_h, drop, wpx, cf, view_w, stage)
+			radius = (beacon_radius * metre_px({ forward: mast.center.forward, cam_focal: mast.view.cam_focal, view_w: mast.view.view_w }))
+			if (radius < 0.5) [] else Paint.push_beacon(beacon_color, apex_on_screen.x, apex_on_screen.y, radius, brightness)
 		}
-	)
+	}
 
-	brace_stage : List(Geom.RiderPt), Geom.RiderPt, F64, F64, F64, F64, F64, I64 -> List(Paint.DrawCmd)
-	brace_stage = |base, center, clip_h, drop, wpx, cf, view_w, stage| (
-		{
-			lo = (I64.to_f64(stage) * stage_height)
-			hi = (lo + stage_height)
-			rest = braces(base, center, clip_h, drop, wpx, cf, view_w, (stage + 1))
-			(
-				if (hi <= clip_h) {
-					rest
-				} else {
-					List.concat(brace_at(base, center, lo, hi, ((DeviceMath.real_max(lo, clip_h) - lo) / stage_height), drop, wpx, cf, view_w, 0), rest)
-				}
-			)
-		}
-	)
-
-	draw_beacon : Camera.ScreenPt, F64, F64, F64, F64 -> List(Paint.DrawCmd)
-	draw_beacon = |apex_s, forward, cf, view_w, bright| (
-		if (bright < 0.02) {
+	## The whole mast: legs, rings, braces and beacon, in that order. A mast
+	## behind the camera, or sunk wholly below the horizon, draws nothing.
+	draw : { footprint : Tower.Footprint, center : Geom.RiderPt, cam_focal : F64, view_w : F64, beacon_phase : F64 } -> List(Paint.DrawCmd)
+	draw = |{ footprint, center, cam_focal, view_w, beacon_phase }| {
+		sunk = sunk_below_horizon(center)
+		if (center.forward < Geom.near or sunk >= tower_height) {
 			[]
 		} else {
-			beacon_disc(apex_s, forward, cf, view_w, bright)
+			view = { rod_width_px: rod_width_at({ forward: center.forward, cam_focal, view_w }), cam_focal, view_w }
+			mast = { footprint, center, sunk, view }
+			apex = { right: center.right, forward: center.forward, height: (tower_height - sunk) }
+			List.join([legs(mast, apex), rings(mast), braces(mast), beacon(mast, apex, beacon_brightness(beacon_phase))])
 		}
-	)
-
-	beacon_disc : Camera.ScreenPt, F64, F64, F64, F64 -> List(Paint.DrawCmd)
-	beacon_disc = |apex_s, forward, cf, view_w, bright| (
-		{
-			p1 = Camera.project({ right: 1.0, forward: forward, height: 0.0 }, cf, view_w)
-			p0 = Camera.project({ right: 0.0, forward: forward, height: 0.0 }, cf, view_w)
-			r = (beacon_radius * (p1.x - p0.x))
-			(
-				if (r < 0.5) {
-					[]
-				} else {
-					Paint.push_beacon(beacon_color, apex_s.x, apex_s.y, r, bright)
-				}
-			)
-		}
-	)
-
-	draw_flat : List(Geom.RiderPt), Geom.RiderPt, F64, F64, F64 -> List(Paint.DrawCmd)
-	draw_flat = |base, center, cf, view_w, beacon_phase| (
-		if (center.forward < Geom.near) {
-			[]
-		} else {
-			draw_flat_body(base, center, cf, view_w, beacon_phase, tower_ground_drop(center))
-		}
-	)
-
-	draw_flat_body : List(Geom.RiderPt), Geom.RiderPt, F64, F64, F64, F64 -> List(Paint.DrawCmd)
-	draw_flat_body = |base, center, cf, view_w, beacon_phase, drop| (
-		if (drop >= tower_height) {
-			[]
-		} else {
-			draw_flat_rods(base, center, cf, view_w, beacon_phase, drop)
-		}
-	)
-
-	draw_flat_rods : List(Geom.RiderPt), Geom.RiderPt, F64, F64, F64, F64 -> List(Paint.DrawCmd)
-	draw_flat_rods = |base, center, cf, view_w, beacon_phase, drop| (
-		{
-			apex = { right: center.right, forward: center.forward, height: (tower_height - drop) }
-			wpx = rod_px(center.forward, cf, view_w)
-			l = tower_legs(base, center, apex, drop, drop, wpx, cf, view_w, 0)
-			r = rings(base, center, stage_height, drop, drop, wpx, cf, view_w)
-			x = braces(base, center, drop, drop, wpx, cf, view_w, 0)
-			b = draw_beacon(Camera.project(apex, cf, view_w), center.forward, cf, view_w, beacon_brightness(beacon_phase))
-			List.join([l, r, x, b])
-		}
-	)
+	}
 }

@@ -1,5 +1,5 @@
-# TowerSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are Tower's checks: its dimensions, the beacon, the footprint's
+## corners, the taper, how far the earth sinks a mast, and rods on screen.
 app [main!] {
 	lib: "../lib/main.roc",
 }
@@ -33,47 +33,55 @@ bright_want : List(F64)
 bright_want = [0.0, 1.0, 0.5, 0.5, 0.0, 1.0, 1.0, 0.0]
 
 corner_got : List(F64)
-corner_got = [Tower.corner_u(0), Tower.corner_u(1), Tower.corner_u(2), Tower.corner_u(3), Tower.corner_v(0), Tower.corner_v(1), Tower.corner_v(2), Tower.corner_v(3)]
+corner_got = List.concat(Tower.corners.map(|corner| Tower.corner_offset(corner).across), Tower.corners.map(|corner| Tower.corner_offset(corner).along))
 
 corner_want : List(F64)
 corner_want = [(-1.0), 1.0, 1.0, (-1.0), (-1.0), (-1.0), 1.0, 1.0]
 
-ax_of : I64 -> List(F64)
-ax_of = |k| (
-	{
-		p = Tower.base_corner_ax(k, 100.0, 0.0, 0.0)
-		[p.a, p.x]
-	}
-)
+ax_of : Tower.Corner -> List(F64)
+ax_of = |corner| {
+	p = Tower.base_corner_ax(corner, 100.0, 0.0, 0.0)
+	[p.a, p.x]
+}
 
 ax_got : List(F64)
-ax_got = List.join([ax_of(0), ax_of(1), ax_of(2), ax_of(3)])
+ax_got = List.join_map(Tower.corners, ax_of)
 
 ax_want : List(F64)
 ax_want = [94.0, (-6.0), 94.0, 6.0, 106.0, 6.0, 106.0, (-6.0)]
 
-base4 : List(Geom.RiderPt)
-base4 = [{ right: (-6.0), forward: 94.0 }, { right: 6.0, forward: 94.0 }, { right: 6.0, forward: 106.0 }, { right: (-6.0), forward: 106.0 }]
+# A camera that only the rod checks read.
+view : Tower.RodView
+view = { rod_width_px: 4.0, cam_focal: 500.0, view_w: 960.0 }
 
-centre : Geom.RiderPt
-centre = { right: 0.0, forward: 100.0 }
+# A mast 12 m square, centred 100 m ahead, sunk 1 m.
+mast : Tower.Mast
+mast = {
+	footprint: {
+		back_left: { right: (-6.0), forward: 94.0 },
+		back_right: { right: 6.0, forward: 94.0 },
+		front_right: { right: 6.0, forward: 106.0 },
+		front_left: { right: (-6.0), forward: 106.0 },
+	},
+	center: { right: 0.0, forward: 100.0 },
+	sunk: 1.0,
+	view,
+}
 
-at_h : I64, F64 -> List(F64)
-at_h = |k, h| (
-	{
-		v = Tower.corner_at(base4, centre, k, h, 1.0)
-		[v.right, v.forward, v.height]
-	}
-)
+at_h : Tower.Corner, F64 -> List(F64)
+at_h = |corner, h| {
+	v = Tower.corner_at(mast, corner, h)
+	[v.right, v.forward, v.height]
+}
 
 taper_got : List(F64)
-taper_got = List.join([at_h(0, 0.0), at_h(0, 40.0), at_h(0, 80.0), at_h(2, 40.0), at_h(2, 80.0)])
+taper_got = List.join([at_h(BackLeft, 0.0), at_h(BackLeft, 40.0), at_h(BackLeft, 80.0), at_h(FrontRight, 40.0), at_h(FrontRight, 80.0)])
 
 taper_want : List(F64)
 taper_want = [(-6.0), 94.0, (-1.0), (-3.0), 97.0, 39.0, 0.0, 100.0, 79.0, 3.0, 103.0, 39.0, 0.0, 100.0, 79.0]
 
 drop_got : List(F64)
-drop_got = [Tower.tower_ground_drop({ right: 0.0, forward: 200.0 }), Tower.tower_ground_drop({ right: 100.0, forward: 100.0 }), Tower.tower_ground_drop({ right: 0.0, forward: 0.0 })]
+drop_got = [Tower.sunk_below_horizon({ right: 0.0, forward: 200.0 }), Tower.sunk_below_horizon({ right: 100.0, forward: 100.0 }), Tower.sunk_below_horizon({ right: 0.0, forward: 0.0 })]
 
 drop_want : List(F64)
 drop_want = [1.0, 0.5, 0.0]
@@ -83,7 +91,7 @@ lerp_got = (
 	{
 		a = { right: 0.0, forward: 10.0, height: 20.0 }
 		b = { right: 8.0, forward: 30.0, height: 0.0 }
-		m = Tower.lerp3v(a, b, 0.25)
+		m = Tower.point_between({ from: a, to: b, fraction: 0.25 })
 		[m.right, m.forward, m.height]
 	}
 )
@@ -92,7 +100,7 @@ lerp_want : List(F64)
 lerp_want = [2.0, 15.0, 15.0]
 
 bar_got : List(F64)
-bar_got = (List.get(Tower.bar({ x: 0.0, y: 0.0 }, { x: 30.0, y: 40.0 }, 10.0), I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).pts
+bar_got = (List.first(Tower.screen_rod({ from: { x: 0.0, y: 0.0 }, to: { x: 30.0, y: 40.0 }, width_px: 10.0 })) ?? crash "TowerSpec: a rod is one quad").pts
 
 bar_want : List(F64)
 bar_want = [(-4.0), 3.0, 26.0, 43.0, 34.0, 37.0, 4.0, (-3.0)]
@@ -100,8 +108,8 @@ bar_want = [(-4.0), 3.0, 26.0, 43.0, 34.0, 37.0, 4.0, (-3.0)]
 degenerate_got : List(F64)
 degenerate_got = (
 	{
-		d = Tower.bar({ x: 5.0, y: 6.0 }, { x: 5.0, y: 6.0 }, 10.0)
-		List.concat([I64.to_f64(d.len().to_i64_wrap())], (List.get(d, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).pts)
+		d = Tower.screen_rod({ from: { x: 5.0, y: 6.0 }, to: { x: 5.0, y: 6.0 }, width_px: 10.0 })
+		List.concat([I64.to_f64(d.len().to_i64_wrap())], (List.first(d) ?? crash "TowerSpec: a rod is one quad").pts)
 	}
 )
 
@@ -109,7 +117,7 @@ degenerate_want : List(F64)
 degenerate_want = [1.0, 5.0, 6.0, 5.0, 6.0, 5.0, 6.0, 5.0, 6.0]
 
 width_got : List(F64)
-width_got = [Tower.rod_px(10.0, 500.0, 960.0), Tower.rod_px(25.0, 500.0, 960.0), Tower.rod_px(50.0, 500.0, 960.0)]
+width_got = [10.0, 25.0, 50.0].map(|forward| Tower.rod_width_at({ forward, cam_focal: 500.0, view_w: 960.0 }))
 
 width_want : List(F64)
 width_want = [12.0, 4.8, 2.4]
@@ -118,7 +126,12 @@ v3 : F64, F64, F64 -> Geom.Vec3
 v3 = |r, f, h| { right: r, forward: f, height: h }
 
 clip_count_got : List(I64)
-clip_count_got = [Tower.bar3d(v3(0.0, 10.0, 0.0), v3(1.0, 20.0, 0.0), 4.0, 500.0, 960.0).len().to_i64_wrap(), Tower.bar3d(v3(0.0, 0.0, 0.0), v3(0.0, 0.8, 0.0), 4.0, 500.0, 960.0).len().to_i64_wrap(), Tower.bar3d(v3(0.0, 0.8, 0.0), v3(0.0, 0.0, 0.0), 4.0, 500.0, 960.0).len().to_i64_wrap(), Tower.bar3d(v3(0.0, 0.0, 0.0), v3(0.0, 0.2, 0.0), 4.0, 500.0, 960.0).len().to_i64_wrap()]
+clip_count_got = [
+	{ from: v3(0.0, 10.0, 0.0), to: v3(1.0, 20.0, 0.0) },
+	{ from: v3(0.0, 0.0, 0.0), to: v3(0.0, 0.8, 0.0) },
+	{ from: v3(0.0, 0.8, 0.0), to: v3(0.0, 0.0, 0.0) },
+	{ from: v3(0.0, 0.0, 0.0), to: v3(0.0, 0.2, 0.0) },
+].map(|ends| Tower.rod(view, ends).len().to_i64_wrap())
 
 clip_count_want : List(I64)
 clip_count_want = [1, 1, 1, 0]
@@ -126,7 +139,7 @@ clip_count_want = [1, 1, 1, 0]
 cut_got : List(F64)
 cut_got = (
 	{
-		c = Tower.bar3d_cut(v3(0.0, 0.0, 10.0), v3(8.0, 0.8, 30.0))
+		c = Tower.cut_at_near({ from: v3(0.0, 0.0, 10.0), to: v3(8.0, 0.8, 30.0) })
 		[c.right, c.forward, c.height]
 	}
 )
