@@ -51,19 +51,16 @@ Gaze :: [].{
 	no_look = { looking: False, dist: 0.0 }
 
 	pig_ahead : Pose.RiderState, World.Segment -> Gaze.PigLook
-	pig_ahead = |state, seg| (
-		if (seg.pigs_distract == False) {
-			no_look
-		} else {
-			(
+	pig_ahead = |state, seg|
+		match seg.pig_attention {
+			Distracting =>
 				if (DeviceMath.real_abs(state.yaw) > eyes_on_road_yaw) {
 					no_look
 				} else {
 					pig_ahead_near(state, seg)
 				}
-			)
+			Unnoticed => no_look
 		}
-	)
 
 	pig_ahead_near : Pose.RiderState, World.Segment -> Gaze.PigLook
 	pig_ahead_near = |state, seg| (
@@ -140,13 +137,11 @@ Gaze :: [].{
 	)
 
 	gawk_engaged : Pose.RiderState, World.Segment -> Bool
-	gawk_engaged = |state, seg| (
-		if (seg.pigs_distract == False) {
-			False
-		} else {
-			(state.along >= (Pigs.gaze_pig(seg.length, (seg.width / 2.0)).along - gaze_look_dist))
+	gawk_engaged = |state, seg|
+		match seg.pig_attention {
+			Distracting => (state.along >= (Pigs.gaze_pig(seg.length, (seg.width / 2.0)).along - gaze_look_dist))
+			Unnoticed => False
 		}
-	)
 
 	pig_gaze_brake : Pose.RiderState, World.Segment -> Gaze.GazeBrake
 	pig_gaze_brake = |state, seg| (

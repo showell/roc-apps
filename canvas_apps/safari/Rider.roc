@@ -91,13 +91,11 @@ Rider :: [].{
 			seg = (List.get(segs, I64.to_u64_wrap(state.segment)) ?? crash ("list-at out of range"))
 			dec = decide(state, seg)
 			moved = Bike.simulate_rider_step(state, dec.tilt_step, dec.accel)
-			resolved = (
-				if seg.terminates {
-					finish_clamp(moved, seg)
-				} else {
-					resolve_cross(moved, seg, segs)
+			resolved =
+				match seg.ending {
+					Continues => resolve_cross(moved, seg, segs)
+					Terminates => finish_clamp(moved, seg)
 				}
-			)
 			Gaze.next_rider_gaze(resolved, segs)
 		}
 	)
@@ -106,13 +104,10 @@ Rider :: [].{
 	is_finished = |s, segs| (
 		{
 			seg = (List.get(segs, I64.to_u64_wrap(s.segment)) ?? crash ("list-at out of range"))
-			(
-				if seg.terminates {
-					(s.along >= seg.length)
-				} else {
-					False
-				}
-			)
+			match seg.ending {
+				Continues => False
+				Terminates => (s.along >= seg.length)
+			}
 		}
 	)
 }

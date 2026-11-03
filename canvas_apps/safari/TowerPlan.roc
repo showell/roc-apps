@@ -47,13 +47,10 @@ TowerPlan :: [].{
 	seg_mid_tower = |segs, ch, pose, d| (
 		{
 			sg = (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range"))
-			(
-				if sg.has_mid_tower {
-					tower_if_ahead(segs, ch, pose, Frame.chain_map(d), (sg.length / 2.0), ((sg.width / 2.0) - seg_tower_left), 0.0, ((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")) + 60))
-				} else {
-					[]
-				}
-			)
+			match sg.mid_tower {
+				MidTower => tower_if_ahead(segs, ch, pose, Frame.chain_map(d), (sg.length / 2.0), ((sg.width / 2.0) - seg_tower_left), 0.0, ((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")) + 60))
+				NoMidTower => []
+			}
 		}
 	)
 

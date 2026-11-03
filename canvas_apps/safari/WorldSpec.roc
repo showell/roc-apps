@@ -4,6 +4,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Cat
 import Grade
 import lib.Trig
 import World
@@ -30,7 +31,12 @@ exit_want : List(I64)
 exit_want = [1, 2, 18, 18]
 
 flags_got : List(Bool)
-flags_got = [seg(0).terminates, seg(18).terminates, seg(0).exit_right, seg(1).exit_right, seg(6).exit_right, seg(18).exit_right, seg(0).has_mid_tower, seg(6).has_mid_tower, seg(9).has_mid_tower, seg(0).has_cat, seg(1).has_cat, seg(12).has_cat, seg(18).has_cat]
+flags_got = List.join([
+	[0, 18].map(|index| is_route_end(seg(index))),
+	[0, 1, 6, 18].map(|index| seg(index).exit_right),
+	[0, 6, 9].map(|index| has_mid_tower(seg(index))),
+	[0, 1, 12, 18].map(|index| has_cat(seg(index))),
+])
 
 flags_want : List(Bool)
 flags_want = [False, True, True, False, True, True, False, True, False, False, True, True, True]
@@ -54,7 +60,7 @@ pigs_want : List(I64)
 pigs_want = [0, 49, 49, 10, 10, 10]
 
 distract_got : List(Bool)
-distract_got = [seg(0).pigs_distract, seg(2).pigs_distract, seg(10).pigs_distract, seg(11).pigs_distract, seg(18).pigs_distract]
+distract_got = [0, 2, 10, 11, 18].map(|index| is_distracting(seg(index)))
 
 distract_want : List(Bool)
 distract_want = [False, True, True, False, False]
@@ -72,10 +78,50 @@ trees_want : List(I64)
 trees_want = [28, 16, 74, 14]
 
 cat_got : List(F64)
-cat_got = [seg(0).cat.mid_across, seg(18).cat.mid_across, seg(0).cat.height, seg(18).cat.height]
+cat_got = [crossing_at(1).mid_across, crossing_at(18).mid_across, crossing_at(1).height, crossing_at(18).height]
 
 cat_want : List(F64)
 cat_want = [0.816, 0.816, 1.7, 1.7]
+
+## Whether the route ends with a segment.
+is_route_end : World.Segment -> Bool
+is_route_end = |segment|
+	match segment.ending {
+		Continues => False
+		Terminates => True
+	}
+
+## Whether a segment has a mast halfway along.
+has_mid_tower : World.Segment -> Bool
+has_mid_tower = |segment|
+	match segment.mid_tower {
+		MidTower => True
+		NoMidTower => False
+	}
+
+## Whether a segment has a cat waiting by the road.
+has_cat : World.Segment -> Bool
+has_cat = |segment|
+	match segment.cat {
+		Waits(_) => True
+		NoCat => False
+	}
+
+## Whether a segment's pigs draw the rider's eye.
+is_distracting : World.Segment -> Bool
+is_distracting = |segment|
+	match segment.pig_attention {
+		Distracting => True
+		Unnoticed => False
+	}
+
+## The cat crossing at a segment that has one.
+crossing_at : I64 -> Cat.Crossing
+crossing_at = |index|
+	match seg(index).cat {
+		Waits(crossing) => crossing
+		NoCat => crash "WorldSpec.crossing_at: segments 1 and 18 have a cat"
+	}
 
 # --- Entry ---
 

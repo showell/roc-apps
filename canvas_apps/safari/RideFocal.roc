@@ -14,13 +14,10 @@ RideFocal :: [].{
 	cat_attention = |w, s| (
 		{
 			seg = (List.get(w, I64.to_u64_wrap(s.segment)) ?? crash ("list-at out of range"))
-			(
-				if seg.has_cat {
-					Cat.focus({ gap: (seg.cat.along - s.along), speed: s.v })
-				} else {
-					0.0
-				}
-			)
+			match seg.cat {
+				Waits(crossing) => Cat.focus({ gap: (crossing.along - s.along), speed: s.v })
+				NoCat => 0.0
+			}
 		}
 	)
 

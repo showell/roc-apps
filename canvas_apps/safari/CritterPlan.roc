@@ -97,19 +97,15 @@ CritterPlan :: [].{
 	seg_safari = |segs, ch, pose, d, hw| (
 		{
 			sg = (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range"))
-			(
-				if sg.terminates {
-					[]
-				} else {
-					(
-						if (d >= safari_seg_reach) {
-							[]
-						} else {
-							place_all(segs, ch, pose, d, hw, SafariCritter.corner_critters(sg.exit_creature, sg.length, sg.exit_right, hw))
-						}
-					)
-				}
-			)
+			match sg.ending {
+				Continues =>
+					if (d >= safari_seg_reach) {
+						[]
+					} else {
+						place_all(segs, ch, pose, d, hw, SafariCritter.corner_critters(sg.exit_creature, sg.length, sg.exit_right, hw))
+					}
+				Terminates => []
+			}
 		}
 	)
 

@@ -48,13 +48,10 @@ Truck :: [].{
 			s = (List.get(segs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))
 			(
 				if (pos < cum) {
-					(
-						if s.terminates {
-							NoTurnAhead
-						} else {
-							TurnAhead({ dist: (cum - pos), v_turn: VehicleLimits.turn_speed(s.exit_angle) })
-						}
-					)
+					match s.ending {
+						Continues => TurnAhead({ dist: (cum - pos), v_turn: VehicleLimits.turn_speed(s.exit_angle) })
+						Terminates => NoTurnAhead
+					}
 				} else {
 					next_turn_from(segs, pos, (i + 1), cum)
 				}

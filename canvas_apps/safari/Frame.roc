@@ -29,13 +29,10 @@ Frame :: [].{
 				if (n >= max_chain) {
 					acc
 				} else {
-					(
-						if (List.get(segs, I64.to_u64_wrap(s)) ?? crash ("list-at out of range")).terminates {
-							List.append(acc, s)
-						} else {
-							chain_onto(segs, (List.get(segs, I64.to_u64_wrap(s)) ?? crash ("list-at out of range")).exit_to, (n + 1), List.append(acc, s))
-						}
-					)
+					match (List.get(segs, I64.to_u64_wrap(s)) ?? crash ("list-at out of range")).ending {
+						Continues => chain_onto(segs, (List.get(segs, I64.to_u64_wrap(s)) ?? crash ("list-at out of range")).exit_to, (n + 1), List.append(acc, s))
+						Terminates => List.append(acc, s)
+					}
 				}
 			)
 		}

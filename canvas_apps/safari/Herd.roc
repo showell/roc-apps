@@ -45,14 +45,12 @@ Herd :: [].{
 	herd_jitter_across : F64
 	herd_jitter_across = 1.2
 
-	bull_of : Bool -> List(Scenery.Critter)
-	bull_of = |bull| (
-		if bull {
-			[{ along: bull_dist, across: (0.0 - ((((Scenery.lane_width / 2.0) + Trees.tree_road_offset) + (bull_height / 2.0)) + bull_tree_gap)), codepoint: bull_cp, height: bull_height, face_right: False }]
-		} else {
-			[]
+	bull_of : [WithBull, NoBull] -> List(Scenery.Critter)
+	bull_of = |bull|
+		match bull {
+			WithBull => [{ along: bull_dist, across: (0.0 - ((((Scenery.lane_width / 2.0) + Trees.tree_road_offset) + (bull_height / 2.0)) + bull_tree_gap)), codepoint: bull_cp, height: bull_height, face_right: False }]
+			NoBull => []
 		}
-	)
 
 	# cows builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	cows : I64 -> List(Scenery.Critter)
@@ -91,6 +89,6 @@ Herd :: [].{
 		}
 	)
 
-	fill_cows : Bool -> List(Scenery.Critter)
+	fill_cows : [WithBull, NoBull] -> List(Scenery.Critter)
 	fill_cows = |bull| List.concat(bull_of(bull), cows(0))
 }

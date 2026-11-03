@@ -33,15 +33,14 @@ World :: [].{
 		trees : List(Scenery.Tree),
 		cows : List(Scenery.Critter),
 		pigs : List(Scenery.Critter),
-		pigs_distract : Bool,
+		pig_attention : [Distracting, Unnoticed],
 		exit_angle : F64,
 		exit_right : Bool,
 		exit_to : I64,
 		commit_along : F64,
-		has_mid_tower : Bool,
-		has_cat : Bool,
-		cat : Cat.Crossing,
-		terminates : Bool,
+		mid_tower : [MidTower, NoMidTower],
+		cat : [Waits(Cat.Crossing), NoCat],
+		ending : [Continues, Terminates],
 		exit_creature : Scenery.Creature,
 	}
 
@@ -109,39 +108,43 @@ segment = |plan, index| {
 	trees = Trees.fill_trees(plan.scheme, plan.length, Trees.tree_start_inset, 0, 0)
 	# The first few segments with pigs show them as a herd, which draws the
 	# rider's eye; after that they are a row.
-	distract = has_pigs(plan) and (World.pig_segments_before((index + 1)) <= Pigs.pig_novelty_count)
-	terminates =
-		match plan.ending {
-			Continues => False
-			Terminates => True
+	pig_attention =
+		if has_pigs(plan) and (World.pig_segments_before((index + 1)) <= Pigs.pig_novelty_count) {
+			Distracting
+		} else {
+			Unnoticed
 		}
 	{
 		length: plan.length,
 		width: Scenery.lane_width,
 		trees,
-		cows: Herd.fill_cows(
-			match plan.bull {
-				WithBull => True
-				NoBull => False
-			},
-		),
-		pigs: match plan.pigs {
-			WithPigs => if distract Pigs.fill_pig_herd(plan.length) else Pigs.fill_pig_row(plan.length)
-			NoPigs => []
+		cows: Herd.fill_cows(plan.bull),
+		pigs: match (plan.pigs, pig_attention) {
+			(WithPigs, Distracting) => Pigs.fill_pig_herd(plan.length)
+			(WithPigs, Unnoticed) => Pigs.fill_pig_row(plan.length)
+			(NoPigs, Distracting) | (NoPigs, Unnoticed) => []
 		},
-		pigs_distract: distract,
+		pig_attention,
 		exit_angle: angle,
 		exit_right: (plan.turn_deg >= 0.0),
-		exit_to: if terminates index else (index + 1),
-		commit_along: if terminates plan.length else (plan.length - ((Scenery.lane_width / 2.0) / Trig.r_tan(angle))),
-		has_mid_tower: (plan.length > World.mid_tower_min_length),
-		has_cat: match plan.cat {
-			WithCat => True
-			NoCat => False
+		exit_to: match plan.ending {
+			Continues => (index + 1)
+			Terminates => index
 		},
-		cat: Cat.crossing({ lane_half_width: (Scenery.lane_width / 2.0), tree_offset: Trees.tree_road_offset, tree_along: nearest_tree_ahead(trees, Cat.cat_along) }),
-		terminates,
-		exit_creature: if terminates NoCreature else plan.creature,
+		commit_along: match plan.ending {
+			Continues => (plan.length - ((Scenery.lane_width / 2.0) / Trig.r_tan(angle)))
+			Terminates => plan.length
+		},
+		mid_tower: if (plan.length > World.mid_tower_min_length) MidTower else NoMidTower,
+		cat: match plan.cat {
+			WithCat => Waits(Cat.crossing({ lane_half_width: (Scenery.lane_width / 2.0), tree_offset: Trees.tree_road_offset, tree_along: nearest_tree_ahead(trees, Cat.cat_along) }))
+			NoCat => NoCat
+		},
+		ending: plan.ending,
+		exit_creature: match plan.ending {
+			Continues => plan.creature
+			Terminates => NoCreature
+		},
 	}
 }
 

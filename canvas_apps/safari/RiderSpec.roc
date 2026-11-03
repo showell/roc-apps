@@ -90,6 +90,14 @@ resolve_want = [0, 1]
 last_seg : World.Segment
 last_seg = World.segment_at(18)
 
+## Whether the route ends with a segment.
+is_route_end : World.Segment -> Bool
+is_route_end = |segment|
+	match segment.ending {
+		Continues => False
+		Terminates => True
+	}
+
 ended : F64, F64 -> Pose.RiderState
 ended = |along, v| Rider.finish_clamp({ segment: 0, along: along, across: 0.0, yaw: 0.0, v: v, tilt: 0.0, heading: 0.0, gaze_yaw: 0.0, focus: 0.0 }, last_seg)
 
@@ -104,7 +112,7 @@ done_got = (
 	{
 		at_end = { segment: 0, along: 300.0, across: 0.0, yaw: 0.0, v: 0.0, tilt: 0.0, heading: 0.0, gaze_yaw: 0.0, focus: 0.0 }
 		short = { segment: 0, along: 299.0, across: 0.0, yaw: 0.0, v: 0.0, tilt: 0.0, heading: 0.0, gaze_yaw: 0.0, focus: 0.0 }
-		[Rider.is_finished(at_end, [World.segment_at(18)]), Rider.is_finished(short, [World.segment_at(18)]), last_seg.terminates, Rider.is_finished(rider(499.0, 0.0, Pose.v_base, 0.0), segs)]
+		[Rider.is_finished(at_end, [World.segment_at(18)]), Rider.is_finished(short, [World.segment_at(18)]), is_route_end(last_seg), Rider.is_finished(rider(499.0, 0.0, Pose.v_base, 0.0), segs)]
 	}
 )
 

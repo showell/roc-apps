@@ -38,7 +38,15 @@ short_want : List(I64)
 short_want = [3, 1, 0, 3]
 
 mid_flags_got : List(Bool)
-mid_flags_got = [(List.get(segs, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).has_mid_tower, (List.get(segs, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).has_mid_tower, (List.get(segs, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).has_mid_tower]
+mid_flags_got = segs.map(has_mid_tower)
+
+## Whether a segment has a mast halfway along.
+has_mid_tower : World.Segment -> Bool
+has_mid_tower = |seg|
+	match seg.mid_tower {
+		MidTower => True
+		NoMidTower => False
+	}
 
 mid_flags_want : List(Bool)
 mid_flags_want = [False, False, False]

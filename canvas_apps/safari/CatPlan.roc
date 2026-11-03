@@ -5,6 +5,7 @@ import DepthSort
 import Frame
 import Geom
 import SceneLimits
+import Scenery
 import World
 
 CatPlan :: [].{
@@ -19,20 +20,20 @@ CatPlan :: [].{
 		}
 	)
 
-	cat_item : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64, World.Segment, F64 -> List(CatPlan.CatItem)
-	cat_item = |w, ch, pose, d, cf, gap, sg, v| (
+	cat_item : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64, Cat.Crossing, F64 -> List(CatPlan.CatItem)
+	cat_item = |w, ch, pose, d, cf, gap, crossing, v| (
 		{
-			st = Cat.state(sg.cat, { gap: (gap + sg.cat.along), speed: v })
-			rp = Frame.at(w, ch, pose, d, sg.cat.along, (st.across + (sg.width / 2.0)))
+			st = Cat.state(crossing, { gap: (gap + crossing.along), speed: v })
+			rp = Frame.at(w, ch, pose, d, crossing.along, (st.across + (Scenery.lane_width / 2.0)))
 			(
 				if (rp.forward <= Geom.near) {
 					[]
 				} else {
 					(
-						if (((sg.cat.height / rp.forward) * cf) < SceneLimits.min_scenery_px) {
+						if (((crossing.height / rp.forward) * cf) < SceneLimits.min_scenery_px) {
 							[]
 						} else {
-							[{ right: rp.right, fwd: rp.forward, height: sg.cat.height, pose_idx: Cat.pose_index(st.pose), lift: st.lift }]
+							[{ right: rp.right, fwd: rp.forward, height: crossing.height, pose_idx: Cat.pose_index(st.pose), lift: st.lift }]
 						}
 					)
 				}
@@ -44,13 +45,10 @@ CatPlan :: [].{
 	seg_cat = |w, ch, pose, d, cf, along, v| (
 		{
 			sg = (List.get(w, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range"))
-			(
-				if sg.has_cat {
-					cat_item(w, ch, pose, d, cf, chain_gap(w, ch, along, d), sg, v)
-				} else {
-					[]
-				}
-			)
+			match sg.cat {
+				Waits(crossing) => cat_item(w, ch, pose, d, cf, chain_gap(w, ch, along, d), crossing, v)
+				NoCat => []
+			}
 		}
 	)
 

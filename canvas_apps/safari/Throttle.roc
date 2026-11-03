@@ -37,12 +37,12 @@ Throttle :: [].{
 	)
 
 	cat_gate : Pose.RiderState, World.Segment, F64 -> F64
-	cat_gate = |state, seg, a| (
-		if seg.has_cat {
-			(
+	cat_gate = |state, seg, a|
+		match seg.cat {
+			Waits(crossing) =>
 				if (a > 0.0) {
 					(
-						if Cat.is_in_danger({ gap: (seg.cat.along - state.along), speed: state.v }) {
+						if Cat.is_in_danger({ gap: (crossing.along - state.along), speed: state.v }) {
 							0.0
 						} else {
 							a
@@ -51,11 +51,8 @@ Throttle :: [].{
 				} else {
 					a
 				}
-			)
-		} else {
-			a
+			NoCat => a
 		}
-	)
 
 	pig_gate : Pose.RiderState, World.Segment, F64 -> F64
 	pig_gate = |state, seg, a| (
@@ -165,13 +162,11 @@ Throttle :: [].{
 					VehicleLimits.a_accel
 				}
 			)
-			v_end = (
-				if seg.terminates {
-					0.0
-				} else {
-					VehicleLimits.turn_speed(seg.exit_angle)
+			v_end =
+				match seg.ending {
+					Continues => VehicleLimits.turn_speed(seg.exit_angle)
+					Terminates => 0.0
 				}
-			)
 			near = ((seg.length - state.along) <= VehicleLimits.approach_intersection_dist)
 			a1 = (
 				if near {

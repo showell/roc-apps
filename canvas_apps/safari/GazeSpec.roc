@@ -32,7 +32,15 @@ rider : F64, F64 -> Pose.RiderState
 rider = |along, yaw| { segment: 2, along: along, across: 0.0, yaw: yaw, v: Pose.v_base, tilt: 0.0, heading: 0.0, gaze_yaw: 0.0, focus: 0.0 }
 
 legs_got : List(Bool)
-legs_got = [plain.pigs_distract, distracting.pigs_distract]
+legs_got = [plain, distracting].map(is_distracting)
+
+## Whether a segment's pigs draw the rider's eye.
+is_distracting : World.Segment -> Bool
+is_distracting = |seg|
+	match seg.pig_attention {
+		Distracting => True
+		Unnoticed => False
+	}
 
 legs_want : List(Bool)
 legs_want = [False, True]

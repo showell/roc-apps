@@ -19,7 +19,15 @@ origin : Frame.Pose
 origin = { along: 0.0, across: 0.0, yaw: 0.0, hw: 2.0 }
 
 has_got : List(Bool)
-has_got = [(List.get(segs, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).has_cat, (List.get(segs, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).has_cat, (List.get(segs, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).has_cat]
+has_got = segs.map(has_cat)
+
+## Whether a segment has a cat waiting by the road.
+has_cat : World.Segment -> Bool
+has_cat = |seg|
+	match seg.cat {
+		Waits(_) => True
+		NoCat => False
+	}
 
 has_want : List(Bool)
 has_want = [False, True, False]

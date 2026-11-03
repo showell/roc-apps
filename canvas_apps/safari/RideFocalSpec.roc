@@ -20,7 +20,15 @@ rider : I64, F64, F64, F64 -> Pose.RiderState
 rider = |segment, along, tilt, focus| { segment: segment, along: along, across: 0.0, yaw: 0.0, v: Pose.v_base, tilt: tilt, heading: 0.0, gaze_yaw: 0.0, focus: focus }
 
 has_cat_got : List(Bool)
-has_cat_got = [(List.get(segs, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).has_cat, (List.get(segs, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).has_cat]
+has_cat_got = segs.take_first(2).map(has_cat)
+
+## Whether a segment has a cat waiting by the road.
+has_cat : World.Segment -> Bool
+has_cat = |seg|
+	match seg.cat {
+		Waits(_) => True
+		NoCat => False
+	}
 
 has_cat_want : List(Bool)
 has_cat_want = [False, True]
