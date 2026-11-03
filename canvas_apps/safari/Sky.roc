@@ -1,9 +1,9 @@
 # Sky -- originally emitted from Codex by rocemit; the Roc is the program now
 # and this file is edited here (safari/README.md).
-import Camera
 import lib.DeviceMath
 import Lens
 import Num_
+import Screen
 import lib.Trig
 
 Sky :: [].{
@@ -98,7 +98,7 @@ Sky :: [].{
 	sun_pos_visible = |rel, step, cam_focal, view_w| (
 		{
 			v_scale = (cam_focal / Lens.focal)
-			{ visible: True, x: ((view_w / 2.0) + (Trig.r_tan(rel) * cam_focal)), y: ((Camera.camera_h / 2.0) - (sun_height_px(step) * v_scale)), scale: v_scale }
+			{ visible: True, x: ((view_w / 2.0) + (Trig.r_tan(rel) * cam_focal)), y: (Screen.horizon_y - (sun_height_px(step) * v_scale)), scale: v_scale }
 		}
 	)
 

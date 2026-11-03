@@ -1,17 +1,15 @@
 # Lens -- originally emitted from Codex by rocemit; the Roc is the program now
 # and this file is edited here (safari/README.md).
+import Screen
 import lib.Trig
 
 Lens :: [].{
-
-	camera_w : F64
-	camera_w = 960.0
 
 	fov_deg : F64
 	fov_deg = 70.0
 
 	focal : F64
-	focal = ((camera_w / 2.0) / Trig.r_tan(((fov_deg / 2.0) * Trig.deg)))
+	focal = ((Screen.width / 2.0) / Trig.r_tan(((fov_deg / 2.0) * Trig.deg)))
 
 	min_focal_factor : F64
 	min_focal_factor = 0.35

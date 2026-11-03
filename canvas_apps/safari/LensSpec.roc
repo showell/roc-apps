@@ -7,9 +7,10 @@ app [main!] {
 import Grade
 import Lens
 import ListUtils
+import Screen
 
 base_got : List(F64)
-base_got = [Lens.camera_w, Lens.fov_deg, Lens.focal]
+base_got = [Screen.width, Lens.fov_deg, Lens.focal]
 
 base_want : List(F64)
 base_want = [960.0, 70.0, 685.5110432362151]

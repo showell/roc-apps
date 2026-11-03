@@ -9,6 +9,7 @@ app [main!] {
 
 import SafariRide
 import Raster
+import Screen
 import Hex
 
 ride_to : SafariRide.Model, I64 -> SafariRide.Model
@@ -40,7 +41,7 @@ main! = |args| {
 	var $out = List.with_capacity(List.len(pixels) * 6 + 32)
 	$out = List.concat($out, Str.to_utf8("hash "))
 	$out = Hex.append_digits($out, { number: hash(pixels), digits: 8 })
-	$out = List.concat($out, Str.to_utf8("\n960 600\n"))
+	$out = List.concat($out, Str.to_utf8("\n${Screen.width_px.to_str()} ${Screen.height_px.to_str()}\n"))
 	n = List.len(pixels)
 	var $k = 0
 	while $k < n {

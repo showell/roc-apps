@@ -1,18 +1,16 @@
 # Camera -- originally emitted from Codex by rocemit; the Roc is the program now
 # and this file is edited here (safari/README.md).
 import Geom
+import Screen
 
 Camera :: [].{
 	ScreenPt : { x : F64, y : F64 }
-
-	camera_h : F64
-	camera_h = 600.0
 
 	eye_h : F64
 	eye_h = 1.2
 
 	project : Geom.Vec3, F64, F64 -> Camera.ScreenPt
-	project = |p, cf, view_w| { x: ((view_w / 2.0) + ((p.right / p.forward) * cf)), y: ((camera_h / 2.0) - (((p.height - eye_h) / p.forward) * cf)) }
+	project = |p, cf, view_w| { x: ((view_w / 2.0) + ((p.right / p.forward) * cf)), y: (Screen.horizon_y - (((p.height - eye_h) / p.forward) * cf)) }
 
 	# project_all builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	project_all : List(Geom.Vec3), F64, F64 -> List(Camera.ScreenPt)

@@ -17,19 +17,14 @@ import lib.Input
 import lib.Shapes
 import SafariRide
 import SafariShapes
+import Screen
 
 SafariApp :: [].{
 	Model : { ride : SafariRide.Model, paused : Bool }
 
-	width : F64
-	width = 960.0
-
-	height : F64
-	height = 600.0
-
 	canvas_app : CanvasApp.CanvasApp(SafariApp.Model)
 	canvas_app = {
-		size: { width, height },
+		size: { width: Screen.width, height: Screen.height },
 		# **THIRTY, BY EYE.** The drive's motion is written per tick, and
 		# thirty is the speed it is meant to look like.
 		fps: 30,
@@ -49,7 +44,7 @@ SafariApp :: [].{
 	## `View` mark in front of everything else.
 	frame : SafariRide.Model -> List(Shapes.Shape)
 	frame = |ride| {
-		centre = { x: width / 2.0, y: height / 2.0 }
+		centre = { x: Screen.width / 2.0, y: Screen.height / 2.0 }
 		lean = View(World({ target: centre, offset: centre, rotation: 0.0 - SafariRide.roll(ride) * degrees, zoom: 1.0 }))
 		List.prepend(
 			SafariShapes.frame(SafariRide.commands(ride), SafariRide.sky_top(ride), SafariRide.sky_horizon(ride), SafariRide.sun(ride)),

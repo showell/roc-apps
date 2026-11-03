@@ -3,11 +3,11 @@
 ## of both. Each is a silhouette across the screen whose height depends only on
 ## the bearing it is seen at, so the skyline turns with the rider but never
 ## comes nearer. The rock darkens at dusk, and the snow goes blue.
-import Camera
 import lib.DeviceMath
 import Lens
 import Num_
 import Paint
+import Screen
 import Sky
 import lib.Trig
 
@@ -161,7 +161,7 @@ highest_north_from = |bearing, highest|
 
 ## The screen's horizon, where a height of zero is drawn.
 horizon_y : F64
-horizon_y = (Camera.camera_h / 2.0)
+horizon_y = Screen.horizon_y
 
 ## The screen's y for a height on the skyline.
 height_y : Mountains.Sight, F64 -> F64

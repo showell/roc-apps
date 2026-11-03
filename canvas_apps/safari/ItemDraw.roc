@@ -8,11 +8,11 @@ import DepthSort
 import Frame
 import Geom
 import GuardRail
-import Lens
 import Mountains
 import Paint
 import Render
 import SceneLimits
+import Screen
 import Tower
 import TowerPlan
 import Tree
@@ -69,7 +69,7 @@ ItemDraw :: [].{
 				height: t.height,
 				color: t.color,
 				cam_focal: cf,
-				view_w: Lens.camera_w,
+				view_w: Screen.width,
 				trunk: if (closer_count(ts, t.fwd, 0) < 4) RoundCorners else SharpCorners,
 				crown: if (t.fwd < SceneLimits.detail_dist) Cones else Triangles,
 				shade: crown_shade_of(t.fwd),
@@ -98,15 +98,15 @@ ItemDraw :: [].{
 			footprint: tower_footprint(w, ch, pose, tw),
 			center: Frame.map_pt(w, ch, pose, tw.map, tw.a0, tw.x0),
 			cam_focal: cf,
-			view_w: Lens.camera_w,
+			view_w: Screen.width,
 			beacon_phase: (step + tw.off),
 		})
 
 	draw_one_critter : Billboards.Billboard, F64 -> List(Paint.DrawCmd)
-	draw_one_critter = |b, cf| Critter.critter_draw(b.right, b.fwd, b.height, b.cp, b.face_right, cf, Lens.camera_w)
+	draw_one_critter = |b, cf| Critter.critter_draw(b.right, b.fwd, b.height, b.cp, b.face_right, cf, Screen.width)
 
 	draw_one_cat : CatPlan.CatItem, F64 -> List(Paint.DrawCmd)
-	draw_one_cat = |k, cf| CatDraw.cat_draw(k.right, k.fwd, k.height, k.pose_idx, k.lift, cf, Lens.camera_w)
+	draw_one_cat = |k, cf| CatDraw.cat_draw(k.right, k.fwd, k.height, k.pose_idx, k.lift, cf, Screen.width)
 
 	draw_one_truck : List(World.Segment), List(I64), Frame.Pose, TruckPlan.TruckAt, Bool, F64, F64 -> List(Paint.DrawCmd)
 	draw_one_truck = |w, ch, pose, tk, braking, cf, step|
@@ -121,18 +121,18 @@ ItemDraw :: [].{
 				brake_lights: if braking On else Off,
 			},
 			cam_focal: cf,
-			view_w: Lens.camera_w,
+			view_w: Screen.width,
 		})
 
 	draw_item : List(World.Segment), List(I64), Frame.Pose, Render.Collected, DepthSort.DepthKey, Bool, F64, F64 -> List(Paint.DrawCmd)
 	draw_item = |w, ch, pose, c, it, braking, cf, step| (match it.kind {
 		KTree => draw_one_tree(c.trees, it.i, cf)
 		KTower => draw_one_tower(w, ch, pose, (List.get(c.towers, I64.to_u64_wrap(it.i)) ?? crash ("list-at out of range")), cf, step)
-		KRail => GuardRail.rail_draw_poly((List.get(c.rails, I64.to_u64_wrap(it.i)) ?? crash ("list-at out of range")), cf, Lens.camera_w)
+		KRail => GuardRail.rail_draw_poly((List.get(c.rails, I64.to_u64_wrap(it.i)) ?? crash ("list-at out of range")), cf, Screen.width)
 		KCow => draw_one_critter((List.get(c.cows, I64.to_u64_wrap(it.i)) ?? crash ("list-at out of range")), cf)
 		KCat => draw_one_cat((List.get(c.cats, I64.to_u64_wrap(it.i)) ?? crash ("list-at out of range")), cf)
 		KTruck => draw_one_truck(w, ch, pose, c.truck, braking, cf, step)
-		KBird => RocBird.draw_one((List.get(c.birds, I64.to_u64_wrap(it.i)) ?? crash ("bird out of range")), cf, Lens.camera_w)
+		KBird => RocBird.draw_one((List.get(c.birds, I64.to_u64_wrap(it.i)) ?? crash ("bird out of range")), cf, Screen.width)
 	})
 
 	# draw_order builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.

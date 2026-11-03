@@ -16,6 +16,7 @@ import Sky
 import lib.Brush
 import SafariBrush
 import SafariShapes
+import Screen
 import Num_
 
 Raster :: [].{
@@ -55,7 +56,7 @@ Raster :: [].{
 	disc : List(U32), { view : Raster.View, center : Raster.Pt, radius : F64, color : Brush.Rgba } -> List(U32)
 	disc = |pixels, { view, center, radius, color }| {
 		on_screen = to_device(view, center)
-		rows = pixels_between({ from: on_screen.y - radius, to: on_screen.y + radius, count: height })
+		rows = pixels_between({ from: on_screen.y - radius, to: on_screen.y + radius, count: Screen.height_px })
 		var $px = pixels
 		var $row = rows.first
 		while $row <= rows.last {
@@ -91,7 +92,7 @@ Raster :: [].{
 			rows = pixels_between({
 				from: corners.fold(first_y, |top, corner| F64.min(top, corner.y)),
 				to: corners.fold(first_y, |bottom, corner| F64.max(bottom, corner.y)),
-				count: height,
+				count: Screen.height_px,
 			})
 			var $px = pixels
 			var $row = rows.first
@@ -103,25 +104,9 @@ Raster :: [].{
 		}
 }
 
-## The screen's size in pixels.
-width : I64
-width = 960
-
-height : I64
-height = 600
-
 ## The screen's centre, which the roll turns about.
 center : Raster.Pt
-center = { x: I64.to_f64(width) / 2.0, y: I64.to_f64(height) / 2.0 }
-
-## The horizon crosses the middle of the screen.
-horizon : F64
-horizon = center.y
-
-## The grass starts a pixel above the horizon, which the blitter overlaps to
-## beat a seam under the roll.
-grass_top : F64
-grass_top = horizon - 1.0
+center = { x: Screen.width / 2.0, y: Screen.height / 2.0 }
 
 grass_pixel : U32
 grass_pixel = I64.to_u32_wrap(SafariShapes.grass_color)
@@ -183,7 +168,7 @@ pixels_between = |{ from, to, count }| {
 
 ## Where the pixel at `row` and `column` is in the list.
 pixel_index : { row : I64, column : I64 } -> U64
-pixel_index = |{ row, column }| I64.to_u64_wrap(row * width + column)
+pixel_index = |{ row, column }| I64.to_u64_wrap(row * Screen.width_px + column)
 
 # --- Pixels -------------------------------------------------------------------
 
@@ -242,17 +227,17 @@ blend = |pixels, { at, color }| {
 ## rounds differently.
 backdrop : Raster.View, { top : Brush.Rgba, horizon : Brush.Rgba } -> List(U32)
 backdrop = |view, sky| {
-	var $px = List.with_capacity(I64.to_u64_wrap(width * height))
+	var $px = List.with_capacity(I64.to_u64_wrap(Screen.width_px * Screen.height_px))
 	var $row = 0
 	var $column = 0
-	while $row < height {
+	while $row < Screen.height_px {
 		$column = 0
-		while $column < width {
+		while $column < Screen.width_px {
 			y = to_scene(view, { x: pixel_center($column), y: pixel_center($row) }).y
-			pixel = if y >= grass_top {
+			pixel = if y >= Screen.grass_top_y {
 				grass_pixel
 			} else {
-				t = Brush.clamp01(y / horizon)
+				t = Brush.clamp01(y / Screen.horizon_y)
 				stop = SafariShapes.sky_top_stop
 				color = if t <= stop {
 					sky.top
@@ -275,10 +260,9 @@ backdrop = |view, sky| {
 paint_sun : List(U32), { view : Raster.View, sun : Sky.SunPos } -> List(U32)
 paint_sun = |pixels, { view, sun }| {
 	fills = SafariShapes.sun_fills(sun)
-	screen_width = I64.to_f64(width)
 	on_screen = to_device(view, { x: sun.x, y: sun.y })
-	rows = pixels_between({ from: on_screen.y - fills.glow_radius, to: on_screen.y + fills.glow_radius, count: height })
-	columns = pixels_between({ from: on_screen.x - fills.glow_radius, to: on_screen.x + fills.glow_radius, count: width })
+	rows = pixels_between({ from: on_screen.y - fills.glow_radius, to: on_screen.y + fills.glow_radius, count: Screen.height_px })
+	columns = pixels_between({ from: on_screen.x - fills.glow_radius, to: on_screen.x + fills.glow_radius, count: Screen.width_px })
 	var $px = pixels
 	var $row = rows.first
 	var $column = columns.first
@@ -286,7 +270,7 @@ paint_sun = |pixels, { view, sun }| {
 		$column = columns.first
 		while $column <= columns.last {
 			p = to_scene(view, { x: pixel_center($column), y: pixel_center($row) })
-			$px = if p.x >= 0.0 and p.x < screen_width and p.y >= 0.0 and p.y < horizon {
+			$px = if p.x >= 0.0 and p.x < Screen.width and p.y >= 0.0 and p.y < Screen.horizon_y {
 				at = pixel_index({ row: $row, column: $column })
 				lit = blend($px, { at, color: Brush.shade(fills.glow, p.x, p.y) })
 				distance = F64.sqrt((p.x - sun.x) * (p.x - sun.x) + (p.y - sun.y) * (p.y - sun.y))
@@ -387,7 +371,7 @@ walk_crossing = |so_far, { enter, leave }| {
 ## The pixels of `row` whose centres fall in [from, to).
 span : List(U32), { view : Raster.View, fill : Brush.Fill, row : I64, from : F64, to : F64 } -> List(U32)
 span = |pixels, { view, fill, row, from, to }| {
-	columns = pixels_between({ from, to, count: width })
+	columns = pixels_between({ from, to, count: Screen.width_px })
 	y = pixel_center(row)
 	var $px = pixels
 	var $column = columns.first

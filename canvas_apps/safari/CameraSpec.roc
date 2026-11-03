@@ -7,6 +7,7 @@ app [main!] {
 import Camera
 import Geom
 import Grade
+import Screen
 
 at : F64, F64, F64 -> Camera.ScreenPt
 at = |right, forward, height| Camera.project({ right: right, forward: forward, height: height }, 800.0, 960.0)
@@ -30,7 +31,7 @@ depth_want : List(F64)
 depth_want = [1280.0, 880.0, 680.0, (-500.0), (-100.0), 100.0]
 
 fixed_got : List(F64)
-fixed_got = [Camera.camera_h, Camera.eye_h]
+fixed_got = [Screen.height, Camera.eye_h]
 
 fixed_want : List(F64)
 fixed_want = [600.0, 1.2]

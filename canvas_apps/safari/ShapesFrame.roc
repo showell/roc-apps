@@ -17,6 +17,7 @@ import SafariRide
 import Raster
 import lib.Shapes
 import SafariShapes
+import Screen
 import Hex
 
 ride_to : SafariRide.Model, I64 -> SafariRide.Model
@@ -101,7 +102,7 @@ main! = |args| {
 		$k = $k + 1
 	}
 	var $out = List.with_capacity(n * 6 + 64)
-	$out = List.concat($out, Str.to_utf8("differ ${U64.to_str($differ)} of ${U64.to_str(n)}, triangles ${U64.to_str(triangles(shapes))}, commands ${U64.to_str(List.len(commands))}\nhash 00000000\n960 600\n"))
+	$out = List.concat($out, Str.to_utf8("differ ${U64.to_str($differ)} of ${U64.to_str(n)}, triangles ${U64.to_str(triangles(shapes))}, commands ${U64.to_str(List.len(commands))}\nhash 00000000\n${Screen.width_px.to_str()} ${Screen.height_px.to_str()}\n"))
 	$k = 0
 	while $k < n {
 		$out = Hex.append_digits($out, { number: U32.to_i64(List.get(b, $k) ?? 0), digits: 6 })

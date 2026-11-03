@@ -3,13 +3,13 @@
 import Frame
 import GroundPlan
 import ItemDraw
-import Lens
 import Mountains
 import Paint
 import Pose
 import Render
 import RideFocal
 import Rider
+import Screen
 import Sky
 import Truck
 import ViewYaw
@@ -47,7 +47,7 @@ Safari :: [].{
 			vy = ViewYaw.view_yaw_for(s)
 			pose = ViewYaw.pose_for(w, s)
 			ch = Frame.build_chain(w, s.segment)
-			List.join([Mountains.draw({ heading: (s.heading + vy), dusk: Sky.sun_set_fraction(r.clock), cam_focal: cf, view_w: Lens.camera_w }), GroundPlan.frame_ground(w, s.segment, pose, cf, Lens.camera_w), ItemDraw.draw_order(w, ch, pose, Render.collect(w, s.segment, pose, cf, s.along, s.v, r.truck.pos), r.truck.braking, cf, r.clock, 0)])
+			List.join([Mountains.draw({ heading: (s.heading + vy), dusk: Sky.sun_set_fraction(r.clock), cam_focal: cf, view_w: Screen.width }), GroundPlan.frame_ground(w, s.segment, pose, cf, Screen.width), ItemDraw.draw_order(w, ch, pose, Render.collect(w, s.segment, pose, cf, s.along, s.v, r.truck.pos), r.truck.braking, cf, r.clock, 0)])
 		}
 	)
 
@@ -55,7 +55,7 @@ Safari :: [].{
 	ride_sun = |w, r| (
 		{
 			cf = RideFocal.ride_focal(w, r.rider)
-			Sky.sun_pos(ViewYaw.heading_for(r.rider), r.clock, cf, Lens.camera_w)
+			Sky.sun_pos(ViewYaw.heading_for(r.rider), r.clock, cf, Screen.width)
 		}
 	)
 }
