@@ -43,11 +43,11 @@ Raster :: [].{
 	paint : Raster.Scene -> List(U32)
 	paint = |scene| {
 		rotation = rotation_of(scene.roll)
-		sky = { top: Brush.opaque(scene.sky_top), horizon: Brush.opaque(scene.sky_horizon) }
+		sky = { top_color: Brush.opaque(scene.sky_top), horizon_color: Brush.opaque(scene.sky_horizon) }
 		var $px = backdrop(rotation, sky)
 		$px = if SafariShapes.is_sun_shown(scene.sun) paint_sun($px, { rotation, sun: scene.sun }) else $px
 		for draw_command in scene.commands {
-			$px = command($px, { rotation, draw_command })
+			$px = paint_command($px, { rotation, draw_command })
 		}
 		$px
 	}
@@ -56,8 +56,8 @@ Raster :: [].{
 	rotation_of = |roll| { cos: F64.cos(roll), sin: F64.sin(roll) }
 
 	## A disc at an alpha: the pixels whose centres are strictly inside.
-	disc : List(U32), { rotation : Raster.Rotation, center : Raster.ScenePoint, radius : F64, color : Brush.Rgba } -> List(U32)
-	disc = |pixels, { rotation, center, radius, color }| {
+	paint_disc : List(U32), { rotation : Raster.Rotation, center : Raster.ScenePoint, radius : F64, color : Brush.Rgba } -> List(U32)
+	paint_disc = |pixels, { rotation, center, radius, color }| {
 		on_screen = to_device(rotation, center)
 		rows = pixels_between({ from: on_screen.y - radius, to: on_screen.y + radius, count: Screen.height_px })
 		var $px = pixels
@@ -66,7 +66,7 @@ Raster :: [].{
 			half_squared = radius * radius - dy * dy
 			$px = if half_squared > 0.0 {
 				half = F64.sqrt(half_squared)
-				span($px, { rotation, fill: Flat(color), row, from: on_screen.x - half, to: on_screen.x + half })
+				paint_span($px, { rotation, fill: Flat(color), row, from: on_screen.x - half, to: on_screen.x + half })
 			} else {
 				$px
 			}
@@ -134,7 +134,7 @@ RowSpan : { from : F64, to : F64 }
 
 ## A walk along a row's crossings: the winding so far, and the stretches
 ## found inside.
-WindingWalk : { winding : I64, inside : List(RowSpan) }
+WindingWalk : { winding : I64, spans : List(RowSpan) }
 
 # --- Geometry -----------------------------------------------------------------
 
@@ -189,8 +189,8 @@ pixel_index = |{ row, column }| I64.to_u64_wrap(row * Screen.width_px + column)
 ## A pixel's red, green and blue, each 0 to 255.
 Rgb : { r : F64, g : F64, b : F64 }
 
-byte : F64 -> U32
-byte = |v| {
+channel_byte : F64 -> U32
+channel_byte = |v| {
 	n = F64.to_i64_wrap(v + 0.5)
 	I64.to_u32_wrap(
 		if n < 0 {
@@ -203,14 +203,14 @@ byte = |v| {
 	)
 }
 
-pack : Rgb -> U32
-pack = |{ r, g, b }| {
-	red = byte(r).shl_wrap(16)
-	green = byte(g).shl_wrap(8)
-	red.bitwise_or(green).bitwise_or(byte(b))
+packed_pixel : Rgb -> U32
+packed_pixel = |{ r, g, b }| {
+	red = channel_byte(r).shl_wrap(16)
+	green = channel_byte(g).shl_wrap(8)
+	red.bitwise_or(green).bitwise_or(channel_byte(b))
 }
 
-## A pixel's channels: the mirror of `pack`.
+## A pixel's channels: the mirror of `packed_pixel`.
 unpacked_pixel : U32 -> Rgb
 unpacked_pixel = |pixel| {
 	r: pixel.shr_wrap(16).bitwise_and(255).to_f64(),
@@ -222,13 +222,13 @@ unpacked_pixel = |pixel| {
 over : U32, Brush.Rgba -> U32
 over = |dst, src|
 	if src.a >= 1.0 {
-		pack({ r: src.r, g: src.g, b: src.b })
+		packed_pixel({ r: src.r, g: src.g, b: src.b })
 	} else if src.a <= 0.0 {
 		dst
 	} else {
 		kept = 1.0 - src.a
 		under = unpacked_pixel(dst)
-		pack({
+		packed_pixel({
 			r: src.r * src.a + under.r * kept,
 			g: src.g * src.a + under.g * kept,
 			b: src.b * src.a + under.b * kept,
@@ -247,7 +247,7 @@ blend = |pixels, { at, color }| {
 ## horizon, then fades to the horizon colour; the grass is below it. The fade
 ## divides by the horizon rather than shading a Linear brush, whose arithmetic
 ## rounds differently.
-backdrop : Raster.Rotation, { top : Brush.Rgba, horizon : Brush.Rgba } -> List(U32)
+backdrop : Raster.Rotation, { top_color : Brush.Rgba, horizon_color : Brush.Rgba } -> List(U32)
 backdrop = |rotation, sky| {
 	var $px = List.with_capacity(I64.to_u64_wrap(Screen.width_px * Screen.height_px))
 	for row in I64.until(0, Screen.height_px) {
@@ -259,11 +259,11 @@ backdrop = |rotation, sky| {
 				t = Brush.clamp01(y / Screen.horizon_y)
 				stop = SafariShapes.sky_top_stop
 				color = if t <= stop {
-					sky.top
+					sky.top_color
 				} else {
-					Brush.mix(sky.top, sky.horizon, (t - stop) / (1.0 - stop))
+					Brush.mix(sky.top_color, sky.horizon_color, (t - stop) / (1.0 - stop))
 				}
-				pack({ r: color.r, g: color.g, b: color.b })
+				packed_pixel({ r: color.r, g: color.g, b: color.b })
 			}
 			$px = $px.append(pixel)
 		}
@@ -303,15 +303,15 @@ paint_sun = |pixels, { rotation, sun }| {
 
 # --- The commands -------------------------------------------------------------
 
-command : List(U32), { rotation : Raster.Rotation, draw_command : Paint.DrawCmd } -> List(U32)
-command = |pixels, { rotation, draw_command }|
+paint_command : List(U32), { rotation : Raster.Rotation, draw_command : Paint.DrawCmd } -> List(U32)
+paint_command = |pixels, { rotation, draw_command }|
 	if draw_command.tag == Paint.beacon_tag {
 		match draw_command.geom {
 			[x, y, radius] => {
 				color = Brush.opaque(draw_command.color)
-				Raster.disc(pixels, { rotation, center: Raster.ScenePoint.({ x, y }), radius, color: { ..color, a: draw_command.strength } })
+				Raster.paint_disc(pixels, { rotation, center: Raster.ScenePoint.({ x, y }), radius, color: { ..color, a: draw_command.strength } })
 			}
-			_ => crash "Raster.command: a beacon's geometry is its x, y and radius"
+			_ => crash "Raster.paint_command: a beacon's geometry is its x, y and radius"
 		}
 	} else {
 		fill = SafariBrush.of_command(draw_command)
@@ -356,8 +356,8 @@ edge_x_at = |{ from, to }, y| from.x + (y - from.y) * (to.x - from.x) / (to.y - 
 fill_row : List(U32), { rotation : Raster.Rotation, fill : Brush.Fill, row : I64, crossings : List(Crossing) } -> List(U32)
 fill_row = |pixels, { rotation, fill, row, crossings }| {
 	var $px = pixels
-	for inside in inside_spans(crossings) {
-		$px = span($px, { rotation, fill, row, from: inside.from, to: inside.to })
+	for row_span in inside_spans(crossings) {
+		$px = paint_span($px, { rotation, fill, row, from: row_span.from, to: row_span.to })
 	}
 	$px
 }
@@ -366,31 +366,31 @@ fill_row = |pixels, { rotation, fill, row, crossings }| {
 ## winding is not zero.
 inside_spans : List(Crossing) -> List(RowSpan)
 inside_spans = |crossings| {
-	neighbours = crossings.map2(crossings.drop_first(1), |enter, leave| { enter, leave })
-	neighbours.fold({ winding: 0, inside: [] }, walk_crossing).inside
+	neighbours = crossings.map2(crossings.drop_first(1), |left, right| { left, right })
+	neighbours.fold({ winding: 0, spans: [] }, walk_crossing).spans
 }
 
 ## The walk after one more pair of neighbouring crossings.
-walk_crossing : WindingWalk, { enter : Crossing, leave : Crossing } -> WindingWalk
-walk_crossing = |so_far, { enter, leave }| {
+walk_crossing : WindingWalk, { left : Crossing, right : Crossing } -> WindingWalk
+walk_crossing = |so_far, { left, right }| {
 	turn =
-		match enter.direction {
+		match left.direction {
 			Down => 1
 			Up => -1
 		}
 	winding = so_far.winding + turn
-	inside =
+	spans =
 		if winding == 0 {
-			so_far.inside
+			so_far.spans
 		} else {
-			so_far.inside.append({ from: enter.x, to: leave.x })
+			so_far.spans.append({ from: left.x, to: right.x })
 		}
-	{ winding, inside }
+	{ winding, spans }
 }
 
 ## The pixels of `row` whose centres fall in [from, to).
-span : List(U32), { rotation : Raster.Rotation, fill : Brush.Fill, row : I64, from : F64, to : F64 } -> List(U32)
-span = |pixels, { rotation, fill, row, from, to }| {
+paint_span : List(U32), { rotation : Raster.Rotation, fill : Brush.Fill, row : I64, from : F64, to : F64 } -> List(U32)
+paint_span = |pixels, { rotation, fill, row, from, to }| {
 	columns = pixels_between({ from, to, count: Screen.width_px })
 	y = pixel_center(row)
 	var $px = pixels
@@ -402,7 +402,7 @@ span = |pixels, { rotation, fill, row, from, to }| {
 				p = to_scene(rotation, DevicePoint.({ x: pixel_center(column), y }))
 				Brush.shade(fill, p.x, p.y)
 			}
-			Skip => crash "Raster.span: a Skip brush paints nothing, and no caller fills with one"
+			Skip => crash "Raster.paint_span: a Skip brush paints nothing, and no caller fills with one"
 		}
 		$px = blend($px, { at, color })
 	}

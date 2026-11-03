@@ -42,7 +42,7 @@ paint_shapes = |pixels, rotation, shapes| {
 					Flat(c) => c
 					_ => crash ("a command's disc with a gradient")
 				}
-				Raster.disc($px, { rotation, center: Raster.ScenePoint.({ x: d.x, y: d.y }), radius: d.r, color: col })
+				Raster.paint_disc($px, { rotation, center: Raster.ScenePoint.({ x: d.x, y: d.y }), radius: d.r, color: col })
 			}
 			Rect(_) => crash ("a command cut into a rectangle")
 			# Raster lays every pixel over what is there, so Over is the mode it
