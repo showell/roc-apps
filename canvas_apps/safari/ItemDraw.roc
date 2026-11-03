@@ -63,7 +63,17 @@ ItemDraw :: [].{
 	draw_one_tree = |ts, i, cf| (
 		{
 			t = (List.get(ts, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))
-			Tree.tree_draw(t.right, t.fwd, t.height, t.color, cf, Lens.camera_w, (closer_count(ts, t.fwd, 0) < 4), (t.fwd < SceneLimits.detail_dist), crown_shade_of(t.fwd))
+			Tree.draw({
+				right: t.right,
+				forward: t.fwd,
+				height: t.height,
+				color: t.color,
+				cam_focal: cf,
+				view_w: Lens.camera_w,
+				trunk: if (closer_count(ts, t.fwd, 0) < 4) RoundCorners else SharpCorners,
+				crown: if (t.fwd < SceneLimits.detail_dist) Cones else Triangles,
+				shade: crown_shade_of(t.fwd),
+			})
 		}
 	)
 
