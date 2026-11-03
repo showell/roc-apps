@@ -99,7 +99,20 @@ ItemDraw :: [].{
 	draw_one_cat = |k, cf| CatDraw.cat_draw(k.right, k.fwd, k.height, k.pose_idx, k.lift, cf, Lens.camera_w)
 
 	draw_one_truck : List(World.Segment), List(I64), Frame.Pose, TruckPlan.TruckAt, Bool, F64, F64 -> List(Paint.DrawCmd)
-	draw_one_truck = |w, ch, pose, tk, braking, cf, step| TruckDraw.truck_draw_body(w, ch, pose, tk.d, tk.along, ((List.get(w, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(tk.d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).width / 2.0), braking, Mountains.sun_behind_mountains(step), cf, Lens.camera_w)
+	draw_one_truck = |w, ch, pose, tk, braking, cf, step|
+		TruckDraw.draw({
+			road: { world: w, chain: ch, pose, segment: tk.d },
+			center: {
+				along: tk.along,
+				across: ((List.get(w, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(tk.d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).width / 2.0),
+			},
+			lights: {
+				headlights: if Mountains.sun_behind_mountains(step) On else Off,
+				brake_lights: if braking On else Off,
+			},
+			cam_focal: cf,
+			view_w: Lens.camera_w,
+		})
 
 	draw_item : List(World.Segment), List(I64), Frame.Pose, Render.Collected, DepthSort.DepthKey, Bool, F64, F64 -> List(Paint.DrawCmd)
 	draw_item = |w, ch, pose, c, it, braking, cf, step| (match it.kind {

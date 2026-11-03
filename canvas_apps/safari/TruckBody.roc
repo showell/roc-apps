@@ -1,175 +1,213 @@
-# TruckBody draws the truck's body: the trailer and cab's five faces and its
-# tyres, sorted far to near so the nearer faces paint over the farther ones.
+## TruckBody draws the truck's body: the five faces of its trailer and cab,
+## and its tyres. They are painted far to near, so a nearer face covers a
+## farther one.
 import DepthSort
-import Frame
 import Geom
 import Paint
 import lib.Trig
 import TruckShape
-import World
 
 TruckBody :: [].{
-	TruckFace : { color : I64, fwd : F64, v : List(Geom.Vec3) }
 
-	tire_pair_gap : F64
-	tire_pair_gap = 1.2
+	## A flat face of the truck, and its depth: the mean of its corners'
+	## distances ahead, by which the faces are ordered for painting.
+	TruckFace : { color : I64, depth : F64, corners : List(Geom.Vec3) }
 
-	trailer_axle_inset : F64
-	trailer_axle_inset = 1.6
-
-	cab_axle_frac : F64
-	cab_axle_frac = 0.55
-
+	## A tyre is drawn as a polygon with this many corners.
 	tire_sides : I64
 	tire_sides = 16
 
-	body_color : I64
-	body_color = 1846886
+	## The truck's body, its farthest faces painted first.
+	draw : TruckShape.TruckInView -> List(Paint.DrawCmd)
+	draw = |truck|
+		DepthSort.sort_by(faces(truck), |face| face.depth)
+			.join_map(|face| TruckShape.fill(truck, { color: face.color, corners: face.corners }))
 
-	roof_color : I64
-	roof_color = 3822248
+	## A face of `color` with these corners.
+	face : I64, List(Geom.Vec3) -> TruckBody.TruckFace
+	face = |color, corners| { color, depth: (sum_of_forward(corners) / corners.len().to_f64()), corners }
 
-	side_color : I64
-	side_color = 1384784
-
-	tire_color : I64
-	tire_color = 1381658
-
-	sum_fwd : List(Geom.Vec3), I64 -> F64
-	sum_fwd = |ps, i| (
-		if (i >= ps.len().to_i64_wrap()) {
-			0.0
-		} else {
-			((List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).forward + sum_fwd(ps, (i + 1)))
-		}
-	)
-
-	truck_face : I64, List(Geom.Vec3) -> TruckBody.TruckFace
-	truck_face = |color, ps| { color: color, fwd: (sum_fwd(ps, 0) / I64.to_f64(ps.len().to_i64_wrap())), v: ps }
-
-	truck_side : List(World.Segment), List(I64), Frame.Pose, I64, TruckShape.TruckBox, F64 -> TruckBody.TruckFace
-	truck_side = |segs, ch, pose, d, bx, x| (
-		{
-			p0 = TruckShape.truck_p3(segs, ch, pose, d, bx.a0, x, TruckShape.trailer_bottom)
-			p1 = TruckShape.truck_p3(segs, ch, pose, d, bx.a0, x, TruckShape.truck_height)
-			p2 = TruckShape.truck_p3(segs, ch, pose, d, bx.a_roof, x, TruckShape.truck_height)
-			p3 = TruckShape.truck_p3(segs, ch, pose, d, bx.a2, x, (TruckShape.truck_height / 2.0))
-			p4 = TruckShape.truck_p3(segs, ch, pose, d, bx.a2, x, TruckShape.cab_bottom)
-			p5 = TruckShape.truck_p3(segs, ch, pose, d, bx.a1, x, TruckShape.cab_bottom)
-			p6 = TruckShape.truck_p3(segs, ch, pose, d, bx.a1, x, TruckShape.trailer_bottom)
-			truck_face(side_color, [p0, p1, p2, p3, p4, p5, p6])
-		}
-	)
-
-	truck_rear : List(World.Segment), List(I64), Frame.Pose, I64, TruckShape.TruckBox -> TruckBody.TruckFace
-	truck_rear = |segs, ch, pose, d, bx| (
-		{
-			p0 = TruckShape.truck_p3(segs, ch, pose, d, bx.a0, bx.xl, TruckShape.trailer_bottom)
-			p1 = TruckShape.truck_p3(segs, ch, pose, d, bx.a0, bx.xr, TruckShape.trailer_bottom)
-			p2 = TruckShape.truck_p3(segs, ch, pose, d, bx.a0, bx.xr, TruckShape.truck_height)
-			p3 = TruckShape.truck_p3(segs, ch, pose, d, bx.a0, bx.xl, TruckShape.truck_height)
-			truck_face(body_color, [p0, p1, p2, p3])
-		}
-	)
-
-	truck_roof : List(World.Segment), List(I64), Frame.Pose, I64, TruckShape.TruckBox -> TruckBody.TruckFace
-	truck_roof = |segs, ch, pose, d, bx| (
-		{
-			p0 = TruckShape.truck_p3(segs, ch, pose, d, bx.a0, bx.xl, TruckShape.truck_height)
-			p1 = TruckShape.truck_p3(segs, ch, pose, d, bx.a0, bx.xr, TruckShape.truck_height)
-			p2 = TruckShape.truck_p3(segs, ch, pose, d, bx.a_roof, bx.xr, TruckShape.truck_height)
-			p3 = TruckShape.truck_p3(segs, ch, pose, d, bx.a_roof, bx.xl, TruckShape.truck_height)
-			truck_face(roof_color, [p0, p1, p2, p3])
-		}
-	)
-
-	truck_windshield : List(World.Segment), List(I64), Frame.Pose, I64, TruckShape.TruckBox -> TruckBody.TruckFace
-	truck_windshield = |segs, ch, pose, d, bx| (
-		{
-			p0 = TruckShape.truck_p3(segs, ch, pose, d, bx.a_roof, bx.xl, TruckShape.truck_height)
-			p1 = TruckShape.truck_p3(segs, ch, pose, d, bx.a_roof, bx.xr, TruckShape.truck_height)
-			p2 = TruckShape.truck_p3(segs, ch, pose, d, bx.a2, bx.xr, (TruckShape.truck_height / 2.0))
-			p3 = TruckShape.truck_p3(segs, ch, pose, d, bx.a2, bx.xl, (TruckShape.truck_height / 2.0))
-			truck_face(body_color, [p0, p1, p2, p3])
-		}
-	)
-
-	truck_nose : List(World.Segment), List(I64), Frame.Pose, I64, TruckShape.TruckBox -> TruckBody.TruckFace
-	truck_nose = |segs, ch, pose, d, bx| (
-		{
-			p0 = TruckShape.truck_p3(segs, ch, pose, d, bx.a2, bx.xl, (TruckShape.truck_height / 2.0))
-			p1 = TruckShape.truck_p3(segs, ch, pose, d, bx.a2, bx.xr, (TruckShape.truck_height / 2.0))
-			p2 = TruckShape.truck_p3(segs, ch, pose, d, bx.a2, bx.xr, TruckShape.cab_bottom)
-			p3 = TruckShape.truck_p3(segs, ch, pose, d, bx.a2, bx.xl, TruckShape.cab_bottom)
-			truck_face(body_color, [p0, p1, p2, p3])
-		}
-	)
-
-	truck_axles : TruckShape.TruckBox -> List(F64)
-	truck_axles = |bx| (
-		{
-			rear = (bx.a0 + trailer_axle_inset)
-			front = (bx.a1 - trailer_axle_inset)
-			cab = (bx.a1 + (TruckShape.cab_length * cab_axle_frac))
-			[(rear - (tire_pair_gap / 2.0)), (rear + (tire_pair_gap / 2.0)), (front - (tire_pair_gap / 2.0)), (front + (tire_pair_gap / 2.0)), cab]
-		}
-	)
-
-	tire_pt : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64, I64 -> Geom.Vec3
-	tire_pt = |segs, ch, pose, d, ac, x, i| (
-		{
-			th = ((I64.to_f64(i) / I64.to_f64(tire_sides)) * Trig.two_pi)
-			TruckShape.truck_p3(segs, ch, pose, d, (ac + (TruckShape.tire_radius * Trig.r_cos(th))), x, (TruckShape.tire_radius + (TruckShape.tire_radius * Trig.r_sin(th))))
-		}
-	)
-
-	# tire_pts builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	tire_pts : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64, I64 -> List(Geom.Vec3)
-	tire_pts = |segs, ch, pose, d, ac, x, i| tire_pts_onto(segs, ch, pose, d, ac, x, i, [])
-
-	tire_pts_onto : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64, I64, List(Geom.Vec3) -> List(Geom.Vec3)
-	tire_pts_onto = |segs, ch, pose, d, ac, x, i, acc| (
-		if (i >= tire_sides) {
-			acc
-		} else {
-			tire_pts_onto(segs, ch, pose, d, ac, x, (i + 1), List.append(acc, tire_pt(segs, ch, pose, d, ac, x, i)))
-		}
-	)
-
-	# side_tires builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	side_tires : List(World.Segment), List(I64), Frame.Pose, I64, List(F64), F64 -> List(TruckBody.TruckFace)
-	side_tires = |segs, ch, pose, d, axles, x| side_tires_onto(segs, ch, pose, d, axles, x, 0, [])
-
-	side_tires_onto : List(World.Segment), List(I64), Frame.Pose, I64, List(F64), F64, I64, List(TruckBody.TruckFace) -> List(TruckBody.TruckFace)
-	side_tires_onto = |segs, ch, pose, d, axles, x, i, acc| (
-		if (i >= axles.len().to_i64_wrap()) {
-			acc
-		} else {
-			side_tires_onto(segs, ch, pose, d, axles, x, (i + 1), List.append(acc, truck_face(tire_color, tire_pts(segs, ch, pose, d, (List.get(axles, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), x, 0))))
-		}
-	)
-
-	truck_faces : List(World.Segment), List(I64), Frame.Pose, I64, TruckShape.TruckBox -> List(TruckBody.TruckFace)
-	truck_faces = |segs, ch, pose, d, bx| (
-		{
-			axles = truck_axles(bx)
-			List.join([[truck_side(segs, ch, pose, d, bx, bx.xl), truck_side(segs, ch, pose, d, bx, bx.xr)], [truck_rear(segs, ch, pose, d, bx), truck_roof(segs, ch, pose, d, bx)], [truck_windshield(segs, ch, pose, d, bx), truck_nose(segs, ch, pose, d, bx)], side_tires(segs, ch, pose, d, axles, bx.xl), side_tires(segs, ch, pose, d, axles, bx.xr)])
-		}
-	)
-
-	# draw_faces builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	draw_faces : List(TruckBody.TruckFace), F64, F64, I64 -> List(Paint.DrawCmd)
-	draw_faces = |fs, cf, view_w, i| draw_faces_onto(fs, cf, view_w, i, [])
-
-	draw_faces_onto : List(TruckBody.TruckFace), F64, F64, I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
-	draw_faces_onto = |fs, cf, view_w, i, acc| (
-		if (i >= fs.len().to_i64_wrap()) {
-			acc
-		} else {
-			draw_faces_onto(fs, cf, view_w, (i + 1), List.concat(acc, TruckShape.truck_fill((List.get(fs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).color, (List.get(fs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).v, cf, view_w)))
-		}
-	)
-
-	body : List(World.Segment), List(I64), Frame.Pose, I64, TruckShape.TruckBox, F64, F64 -> List(Paint.DrawCmd)
-	body = |segs, ch, pose, d, bx, cf, view_w| draw_faces(DepthSort.sort_by(truck_faces(segs, ch, pose, d, bx), |face| face.fwd), cf, view_w, 0)
+	## Where the truck's axles are along the road, back to front: a pair
+	## under the back of the trailer, a pair under its front, and one under
+	## the cab.
+	axles : TruckShape.TruckBox -> List(F64)
+	axles = |box| {
+		back_pair = (box.rear + trailer_axle_inset)
+		front_pair = (box.trailer_front - trailer_axle_inset)
+		[
+			(back_pair - (axle_pair_gap / 2.0)),
+			(back_pair + (axle_pair_gap / 2.0)),
+			(front_pair - (axle_pair_gap / 2.0)),
+			(front_pair + (axle_pair_gap / 2.0)),
+			(box.trailer_front + (TruckShape.cab_length * cab_axle_fraction)),
+		]
+	}
 }
+
+body_color : I64
+body_color = 0x1C2E66
+
+roof_color : I64
+roof_color = 0x3A52A8
+
+side_color : I64
+side_color = 0x152150
+
+tire_color : I64
+tire_color = 0x15151A
+
+## How far in from each end of the trailer the middle of its pair of axles is.
+trailer_axle_inset : F64
+trailer_axle_inset = 1.6
+
+## The distance between the two axles of a pair.
+axle_pair_gap : F64
+axle_pair_gap = 1.2
+
+## How far forward of the trailer the cab's axle is, as a fraction of the
+## cab's length.
+cab_axle_fraction : F64
+cab_axle_fraction = 0.55
+
+## Where the windshield meets the nose: half the truck's height.
+hood_height : F64
+hood_height = (TruckShape.truck_height / 2.0)
+
+## Summed from the last corner to the first. A float sum's rounding depends
+## on its order, and another order can move a pixel.
+sum_of_forward : List(Geom.Vec3) -> F64
+sum_of_forward = |corners| corners.fold_rev(0.0, |corner, sum| corner.forward + sum)
+
+## The truck's faces: its two sides, its back, its roof, its windshield, its
+## nose, then its tyres, the left side's and then the right's.
+faces : TruckShape.TruckInView -> List(TruckBody.TruckFace)
+faces = |truck| {
+	box = truck.box
+	axles = TruckBody.axles(box)
+	List.join([
+		[
+			side(truck, box.left),
+			side(truck, box.right),
+			back(truck),
+			roof(truck),
+			windshield(truck),
+			nose(truck),
+		],
+		axles.map(|axle| tire(truck, { axle, across: box.left })),
+		axles.map(|axle| tire(truck, { axle, across: box.right })),
+	])
+}
+
+## A face of `color` whose corners are the truck's points `corners`.
+face_in_view : TruckShape.TruckInView, { color : I64, corners : List(TruckShape.RoadPoint) } -> TruckBody.TruckFace
+face_in_view = |truck, { color, corners }| TruckBody.face(color, corners.map(|corner| TruckShape.point(truck, corner)))
+
+## A side of the truck at `across`: up the back of the trailer, along its
+## roof and the cab's, down the windshield's edge and the nose, back along
+## the cab's floor, and down to the trailer's floor.
+side : TruckShape.TruckInView, F64 -> TruckBody.TruckFace
+side = |truck, across| {
+	box = truck.box
+	face_in_view(
+		truck,
+		{
+			color: side_color,
+			corners: [
+				{ along: box.rear, across, height: TruckShape.trailer_bottom },
+				{ along: box.rear, across, height: TruckShape.truck_height },
+				{ along: box.roof_front, across, height: TruckShape.truck_height },
+				{ along: box.nose, across, height: hood_height },
+				{ along: box.nose, across, height: TruckShape.cab_bottom },
+				{ along: box.trailer_front, across, height: TruckShape.cab_bottom },
+				{ along: box.trailer_front, across, height: TruckShape.trailer_bottom },
+			],
+		},
+	)
+}
+
+back : TruckShape.TruckInView -> TruckBody.TruckFace
+back = |truck| {
+	box = truck.box
+	face_in_view(
+		truck,
+		{
+			color: body_color,
+			corners: [
+				{ along: box.rear, across: box.left, height: TruckShape.trailer_bottom },
+				{ along: box.rear, across: box.right, height: TruckShape.trailer_bottom },
+				{ along: box.rear, across: box.right, height: TruckShape.truck_height },
+				{ along: box.rear, across: box.left, height: TruckShape.truck_height },
+			],
+		},
+	)
+}
+
+## The roof of the trailer and the cab, one flat face.
+roof : TruckShape.TruckInView -> TruckBody.TruckFace
+roof = |truck| {
+	box = truck.box
+	face_in_view(
+		truck,
+		{
+			color: roof_color,
+			corners: [
+				{ along: box.rear, across: box.left, height: TruckShape.truck_height },
+				{ along: box.rear, across: box.right, height: TruckShape.truck_height },
+				{ along: box.roof_front, across: box.right, height: TruckShape.truck_height },
+				{ along: box.roof_front, across: box.left, height: TruckShape.truck_height },
+			],
+		},
+	)
+}
+
+windshield : TruckShape.TruckInView -> TruckBody.TruckFace
+windshield = |truck| {
+	box = truck.box
+	face_in_view(
+		truck,
+		{
+			color: body_color,
+			corners: [
+				{ along: box.roof_front, across: box.left, height: TruckShape.truck_height },
+				{ along: box.roof_front, across: box.right, height: TruckShape.truck_height },
+				{ along: box.nose, across: box.right, height: hood_height },
+				{ along: box.nose, across: box.left, height: hood_height },
+			],
+		},
+	)
+}
+
+nose : TruckShape.TruckInView -> TruckBody.TruckFace
+nose = |truck| {
+	box = truck.box
+	face_in_view(
+		truck,
+		{
+			color: body_color,
+			corners: [
+				{ along: box.nose, across: box.left, height: hood_height },
+				{ along: box.nose, across: box.right, height: hood_height },
+				{ along: box.nose, across: box.right, height: TruckShape.cab_bottom },
+				{ along: box.nose, across: box.left, height: TruckShape.cab_bottom },
+			],
+		},
+	)
+}
+
+## The tyre on the axle at `axle` along the road, on the side at `across`:
+## a circle standing on the road.
+tire : TruckShape.TruckInView, { axle : F64, across : F64 } -> TruckBody.TruckFace
+tire = |truck, { axle, across }|
+	face_in_view(
+		truck,
+		{
+			color: tire_color,
+			corners: TruckShape.circle_angles(TruckBody.tire_sides).map(
+				|angle| {
+					along: (axle + (TruckShape.tire_radius * Trig.r_cos(angle))),
+					across,
+					height: (TruckShape.tire_radius + (TruckShape.tire_radius * Trig.r_sin(angle))),
+				},
+			),
+		},
+	)

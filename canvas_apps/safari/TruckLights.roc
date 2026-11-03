@@ -1,179 +1,207 @@
-# TruckLights draws the truck's lights: the two headlight beams ahead of the
-# cab, and the two brake lights on the trailer's rear, each with its glow.
+## TruckLights draws the truck's lights: the beams of its two headlights,
+## reaching along the road ahead of the cab, and its two brake lights on the
+## back of the trailer, each with a glow around it. A beam or a glow is a
+## gradient, whose colours are 0xAARRGGBB, opacity in the top byte; a brake
+## lamp is a flat 0xRRGGBB, as the body's faces are.
 import Camera
 import lib.DeviceMath
-import Frame
 import Geom
 import Paint
 import lib.Trig
 import TruckShape
-import World
 
 TruckLights :: [].{
-	headlight_h : F64
-	headlight_h = 1.0
 
-	headlight_inset : F64
-	headlight_inset = 0.3
+	## The two headlight beams, each a little in from its side.
+	headlight_beams : TruckShape.TruckInView -> List(Paint.DrawCmd)
+	headlight_beams = |truck|
+		List.concat(
+			beam(truck, (truck.box.left + headlight_inset)),
+			beam(truck, (truck.box.right - headlight_inset)),
+		)
 
-	cone_near_half : F64
-	cone_near_half = 0.25
+	## The two brake lights, one in from each side of the trailer's back.
+	brake_lights : TruckShape.TruckInView -> List(Paint.DrawCmd)
+	brake_lights = |truck| {
+		box = truck.box
+		List.concat(
+			brake_light(
+				truck,
+				{
+					left: (box.left + brake_lamp_outer_edge),
+					right: (box.left + brake_lamp_inner_edge),
+				},
+			),
+			brake_light(
+				truck,
+				{
+					left: (box.right - brake_lamp_inner_edge),
+					right: (box.right - brake_lamp_outer_edge),
+				},
+			),
+		)
+	}
 
-	cone_far_center : F64
-	cone_far_center = 0.7
-
-	cone_far_half : F64
-	cone_far_half = 0.9
-
-	cone_length : F64
-	cone_length = 20.4
-
-	beam_core : I64
-	beam_core = 3288332502
-
-	beam_edge : I64
-	beam_edge = 1174403286
-
-	glow_core : I64
-	glow_core = 3875491900
-
-	glow_edge : I64
-	glow_edge = 16722456
-
-	brake_color : I64
-	brake_color = 16722456
-
+	## A glow is drawn as a polygon with this many corners.
 	glow_sides : I64
 	glow_sides = 16
 
-	any_behind : List(Geom.Vec3) -> Bool
-	any_behind = |ps| ps.any(|p| p.forward <= Geom.near)
+	## Whether any of `points` is at or behind the camera's near plane.
+	has_point_behind_camera : List(Geom.Vec3) -> Bool
+	has_point_behind_camera = |points| points.any(|point| point.forward <= Geom.near)
 
-	mid_vec : Geom.Vec3, Geom.Vec3 -> Geom.Vec3
-	mid_vec = |p, q| { right: ((p.right + q.right) / 2.0), forward: ((p.forward + q.forward) / 2.0), height: ((p.height + q.height) / 2.0) }
+	## The point halfway between `from` and `to`.
+	midpoint : { from : Geom.Vec3, to : Geom.Vec3 } -> Geom.Vec3
+	midpoint = |{ from, to }| {
+		right: ((from.right + to.right) / 2.0),
+		forward: ((from.forward + to.forward) / 2.0),
+		height: ((from.height + to.height) / 2.0),
+	}
 
-	pt_dist : Camera.ScreenPt, Camera.ScreenPt -> F64
-	pt_dist = |p, c| DeviceMath.real_sqrt((((p.x - c.x) * (p.x - c.x)) + ((p.y - c.y) * (p.y - c.y))))
+	## The distance between two points on screen.
+	distance : { from : Camera.ScreenPt, to : Camera.ScreenPt } -> F64
+	distance = |{ from, to }| {
+		dx = (from.x - to.x)
+		dy = (from.y - to.y)
+		DeviceMath.real_sqrt(((dx * dx) + (dy * dy)))
+	}
 
-	max_radius : List(Camera.ScreenPt), Camera.ScreenPt -> F64
-	max_radius = |sp, c| max_radius_from(sp, c, 0)
+	## How far the farthest of `points` is from `center`.
+	farthest_from : List(Camera.ScreenPt), Camera.ScreenPt -> F64
+	farthest_from = |points, center|
+		points.fold_rev(0.0, |point, farthest| DeviceMath.real_max(TruckLights.distance({ from: point, to: center }), farthest))
 
-	max_radius_from : List(Camera.ScreenPt), Camera.ScreenPt, I64 -> F64
-	max_radius_from = |sp, c, i| (
-		if (i >= sp.len().to_i64_wrap()) {
-			0.0
-		} else {
-			DeviceMath.real_max(pt_dist((List.get(sp, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), c), max_radius_from(sp, c, (i + 1)))
-		}
-	)
-
-	truck_wedge : List(World.Segment), List(I64), Frame.Pose, I64, TruckShape.TruckBox, F64, F64, F64 -> List(Paint.DrawCmd)
-	truck_wedge = |segs, ch, pose, d, bx, src_x, cf, view_w| (
+	## The center of a polygon on screen: the mean of its corners. Each sum
+	## runs from the last corner to the first; a float sum's rounding depends
+	## on its order, and another order can move a pixel.
+	center_of : List(Camera.ScreenPt) -> Camera.ScreenPt
+	center_of = |corners| {
+		count = corners.len().to_f64()
 		{
-			p0 = TruckShape.truck_p3(segs, ch, pose, d, bx.a2, src_x, (headlight_h - cone_near_half))
-			p1 = TruckShape.truck_p3(segs, ch, pose, d, bx.a2, src_x, (headlight_h + cone_near_half))
-			p2 = TruckShape.truck_p3(segs, ch, pose, d, (bx.a2 + cone_length), src_x, (cone_far_center + cone_far_half))
-			p3 = TruckShape.truck_p3(segs, ch, pose, d, (bx.a2 + cone_length), src_x, (cone_far_center - cone_far_half))
-			wedge_emit([p0, p1, p2, p3], cf, view_w)
+			x: (corners.fold_rev(0.0, |corner, sum| corner.x + sum) / count),
+			y: (corners.fold_rev(0.0, |corner, sum| corner.y + sum) / count),
 		}
-	)
+	}
 
-	wedge_emit : List(Geom.Vec3), F64, F64 -> List(Paint.DrawCmd)
-	wedge_emit = |ps, cf, view_w| (
-		if any_behind(ps) {
-			[]
-		} else {
-			wedge_cmd(ps, cf, view_w)
-		}
-	)
+	## How far a brake light's glow reaches from `center`, the lamp's
+	## center.
+	glow_radius : List(Camera.ScreenPt), Camera.ScreenPt -> F64
+	glow_radius = |lamp, center| (TruckLights.farthest_from(lamp, center) * glow_reach)
 
-	wedge_cmd : List(Geom.Vec3), F64, F64 -> List(Paint.DrawCmd)
-	wedge_cmd = |ps, cf, view_w| (
-		{
-			sp = Camera.project_all(ps, cf, view_w)
-			lamp = Camera.project(mid_vec((List.get(ps, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")), (List.get(ps, I64.to_u64_wrap(1)) ?? crash ("list-at out of range"))), cf, view_w)
-			Paint.push_grad_poly(beam_core, beam_edge, lamp.x, lamp.y, max_radius(sp, lamp), sp)
-		}
-	)
-
-	truck_wedges : List(World.Segment), List(I64), Frame.Pose, I64, TruckShape.TruckBox, F64, F64 -> List(Paint.DrawCmd)
-	truck_wedges = |segs, ch, pose, d, bx, cf, view_w| List.concat(truck_wedge(segs, ch, pose, d, bx, (bx.xl + headlight_inset), cf, view_w), truck_wedge(segs, ch, pose, d, bx, (bx.xr - headlight_inset), cf, view_w))
-
-	sum_x : List(Camera.ScreenPt), I64 -> F64
-	sum_x = |ps, i| (
-		if (i >= ps.len().to_i64_wrap()) {
-			0.0
-		} else {
-			((List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).x + sum_x(ps, (i + 1)))
-		}
-	)
-
-	sum_y : List(Camera.ScreenPt), I64 -> F64
-	sum_y = |ps, i| (
-		if (i >= ps.len().to_i64_wrap()) {
-			0.0
-		} else {
-			((List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).y + sum_y(ps, (i + 1)))
-		}
-	)
-
-	glow_pt : F64, F64, F64, I64 -> Camera.ScreenPt
-	glow_pt = |cx, cy, rad, i| (
-		{
-			th = ((I64.to_f64(i) / I64.to_f64(glow_sides)) * Trig.two_pi)
-			{ x: (cx + (rad * Trig.r_cos(th))), y: (cy + (rad * Trig.r_sin(th))) }
-		}
-	)
-
-	# glow_circle builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	glow_circle : F64, F64, F64, I64 -> List(Camera.ScreenPt)
-	glow_circle = |cx, cy, rad, i| glow_circle_onto(cx, cy, rad, i, [])
-
-	glow_circle_onto : F64, F64, F64, I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
-	glow_circle_onto = |cx, cy, rad, i, acc| (
-		if (i >= glow_sides) {
-			acc
-		} else {
-			glow_circle_onto(cx, cy, rad, (i + 1), List.append(acc, glow_pt(cx, cy, rad, i)))
-		}
-	)
-
-	brake_glow : List(Geom.Vec3), F64, F64 -> List(Paint.DrawCmd)
-	brake_glow = |panel, cf, view_w| (
-		if any_behind(panel) {
-			[]
-		} else {
-			glow_cmd(panel, cf, view_w)
-		}
-	)
-
-	glow_cmd : List(Geom.Vec3), F64, F64 -> List(Paint.DrawCmd)
-	glow_cmd = |panel, cf, view_w| (
-		{
-			sp = Camera.project_all(panel, cf, view_w)
-			cx = (sum_x(sp, 0) / 4.0)
-			cy = (sum_y(sp, 0) / 4.0)
-			rad = (max_radius(sp, { x: cx, y: cy }) * 3.2)
-			Paint.push_grad_poly(glow_core, glow_edge, cx, cy, rad, glow_circle(cx, cy, rad, 0))
-		}
-	)
-
-	brake_light : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64, F64, F64, F64 -> List(Paint.DrawCmd)
-	brake_light = |segs, ch, pose, d, a0, x0, x1, cf, view_w| (
-		{
-			bl = (TruckShape.trailer_bottom + (0.2 * (TruckShape.truck_height - TruckShape.trailer_bottom)))
-			bh = (TruckShape.trailer_bottom + (0.5 * (TruckShape.truck_height - TruckShape.trailer_bottom)))
-			q0 = TruckShape.truck_p3(segs, ch, pose, d, a0, x0, bl)
-			q1 = TruckShape.truck_p3(segs, ch, pose, d, a0, x1, bl)
-			q2 = TruckShape.truck_p3(segs, ch, pose, d, a0, x1, bh)
-			q3 = TruckShape.truck_p3(segs, ch, pose, d, a0, x0, bh)
-			emit_brake([q0, q1, q2, q3], cf, view_w)
-		}
-	)
-
-	emit_brake : List(Geom.Vec3), F64, F64 -> List(Paint.DrawCmd)
-	emit_brake = |panel, cf, view_w| List.concat(brake_glow(panel, cf, view_w), TruckShape.truck_fill(brake_color, panel, cf, view_w))
-
-	brake_lights : List(World.Segment), List(I64), Frame.Pose, I64, TruckShape.TruckBox, F64, F64 -> List(Paint.DrawCmd)
-	brake_lights = |segs, ch, pose, d, bx, cf, view_w| List.concat(brake_light(segs, ch, pose, d, bx.a0, (bx.xl + (0.1 * TruckShape.truck_width)), (bx.xl + (0.36 * TruckShape.truck_width)), cf, view_w), brake_light(segs, ch, pose, d, bx.a0, (bx.xr - (0.36 * TruckShape.truck_width)), (bx.xr - (0.1 * TruckShape.truck_width)), cf, view_w))
+	## A circle round `center`, as a polygon of `glow_sides` corners.
+	glow_outline : { center : Camera.ScreenPt, radius : F64 } -> List(Camera.ScreenPt)
+	glow_outline = |{ center, radius }|
+		TruckShape.circle_angles(TruckLights.glow_sides).map(
+			|angle| {
+				x: (center.x + (radius * Trig.r_cos(angle))),
+				y: (center.y + (radius * Trig.r_sin(angle))),
+			},
+		)
 }
+
+## How high the headlights are, and how far in from the truck's sides.
+headlight_height : F64
+headlight_height = 1.0
+
+headlight_inset : F64
+headlight_inset = 0.3
+
+## A beam is a vertical wedge from its lamp: half a metre tall there, and
+## 1.8 m tall, centred 0.7 m above the road, where it ends `beam_length`
+## ahead of the cab's nose.
+beam_half_height_at_lamp : F64
+beam_half_height_at_lamp = 0.25
+
+beam_length : F64
+beam_length = 20.4
+
+beam_far_center : F64
+beam_far_center = 0.7
+
+beam_far_half_height : F64
+beam_far_half_height = 0.9
+
+## The beam is one warm white, more opaque at the lamp than at its edge.
+beam_core : I64
+beam_core = 0xC3FFF8D6
+
+beam_edge : I64
+beam_edge = 0x45FFF8D6
+
+## A brake lamp spans from a tenth of the truck's width in from its side
+## to just over a third, and from a fifth of the way up the trailer's back
+## to half way.
+brake_lamp_outer_edge : F64
+brake_lamp_outer_edge = (0.1 * TruckShape.truck_width)
+
+brake_lamp_inner_edge : F64
+brake_lamp_inner_edge = (0.36 * TruckShape.truck_width)
+
+brake_lamp_bottom : F64
+brake_lamp_bottom = (TruckShape.trailer_bottom + (0.2 * (TruckShape.truck_height - TruckShape.trailer_bottom)))
+
+brake_lamp_top : F64
+brake_lamp_top = (TruckShape.trailer_bottom + (0.5 * (TruckShape.truck_height - TruckShape.trailer_bottom)))
+
+brake_color : I64
+brake_color = 0xFF2A18
+
+glow_core : I64
+glow_core = 0xE6FF503C
+
+## The glow fades out to the brake lamp's own colour at no opacity:
+## `brake_color`'s top byte is 0.
+glow_edge : I64
+glow_edge = brake_color
+
+## A glow reaches this many times as far as its lamp's farthest corner.
+glow_reach : F64
+glow_reach = 3.2
+
+## The beam of the headlight at `across`, brightest at the lamp. A beam
+## with a corner behind the camera is not drawn.
+beam : TruckShape.TruckInView, F64 -> List(Paint.DrawCmd)
+beam = |truck, across| {
+	at_lamp = |height| TruckShape.point(truck, { along: truck.box.nose, across, height })
+	at_far_end = |height| TruckShape.point(truck, { along: (truck.box.nose + beam_length), across, height })
+	lamp_bottom = at_lamp((headlight_height - beam_half_height_at_lamp))
+	lamp_top = at_lamp((headlight_height + beam_half_height_at_lamp))
+	far_top = at_far_end((beam_far_center + beam_far_half_height))
+	far_bottom = at_far_end((beam_far_center - beam_far_half_height))
+	corners = [lamp_bottom, lamp_top, far_top, far_bottom]
+	if TruckLights.has_point_behind_camera(corners) {
+		[]
+	} else {
+		on_screen = Camera.project_all(corners, truck.cam_focal, truck.view_w)
+		lamp = Camera.project(TruckLights.midpoint({ from: lamp_bottom, to: lamp_top }), truck.cam_focal, truck.view_w)
+		Paint.push_grad_poly(beam_core, beam_edge, lamp.x, lamp.y, TruckLights.farthest_from(on_screen, lamp), on_screen)
+	}
+}
+
+## A brake light on the back of the trailer, from `left` to `right` across
+## it: its glow, then the lamp over the glow.
+brake_light : TruckShape.TruckInView, { left : F64, right : F64 } -> List(Paint.DrawCmd)
+brake_light = |truck, { left, right }| {
+	rear = truck.box.rear
+	lamp =
+		[
+			{ along: rear, across: left, height: brake_lamp_bottom },
+			{ along: rear, across: right, height: brake_lamp_bottom },
+			{ along: rear, across: right, height: brake_lamp_top },
+			{ along: rear, across: left, height: brake_lamp_top },
+		].map(|corner| TruckShape.point(truck, corner))
+	List.concat(glow(truck, lamp), TruckShape.fill(truck, { color: brake_color, corners: lamp }))
+}
+
+## The glow round a brake lamp. A lamp with a corner behind the camera has
+## no glow; the lamp itself is cut at the near plane like the body's faces.
+glow : TruckShape.TruckInView, List(Geom.Vec3) -> List(Paint.DrawCmd)
+glow = |truck, lamp|
+	if TruckLights.has_point_behind_camera(lamp) {
+		[]
+	} else {
+		on_screen = Camera.project_all(lamp, truck.cam_focal, truck.view_w)
+		center = TruckLights.center_of(on_screen)
+		radius = TruckLights.glow_radius(on_screen, center)
+		Paint.push_grad_poly(glow_core, glow_edge, center.x, center.y, radius, TruckLights.glow_outline({ center, radius }))
+	}
