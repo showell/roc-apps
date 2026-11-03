@@ -5,9 +5,18 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Angle
 import Grade
 import Mountains
 import Sky
+
+## The bearing `radians` to the right of north.
+at : F64 -> Angle.Bearing
+at = |radians| Angle.Bearing.radians(radians)
+
+## The west range's middle, `radians` to its right.
+west_by : F64 -> Angle.Bearing
+west_by = |radians| Mountains.west_range_bearing.plus(Angle.Turn.radians(radians))
 
 palette_got : List(I64)
 palette_got = [Mountains.rock, Mountains.rock_west, Mountains.land]
@@ -40,37 +49,37 @@ night_order_want : List(Bool)
 night_order_want = [True, True]
 
 north_edge_got : List(F64)
-north_edge_got = [Mountains.north_range(0.95), Mountains.north_range(1.0), Mountains.north_range(2.0), Mountains.north_range((0.0 - 0.95)), Mountains.north_range((0.0 - 3.0))]
+north_edge_got = [Mountains.north_range(at(0.95)), Mountains.north_range(at(1.0)), Mountains.north_range(at(2.0)), Mountains.north_range(at(-0.95)), Mountains.north_range(at(-3.0))]
 
 north_edge_want : List(F64)
 north_edge_want = [0.0, 0.0, 0.0, 0.0, 0.0]
 
 west_edge_got : List(F64)
-west_edge_got = [Mountains.west_range((Mountains.west_range_bearing + 0.8)), Mountains.west_range((Mountains.west_range_bearing - 0.8)), Mountains.west_range(0.0), Mountains.west_range(1.5)]
+west_edge_got = [Mountains.west_range(west_by(0.8)), Mountains.west_range(west_by(-0.8)), Mountains.west_range(at(0.0)), Mountains.west_range(at(1.5))]
 
 west_edge_want : List(F64)
 west_edge_want = [0.0, 0.0, 0.0, 0.0]
 
 inside_got : List(Bool)
-inside_got = [(Mountains.north_range(0.0) > 0.0), (Mountains.north_range(0.94) > 0.0), (Mountains.north_range(0.0) > Mountains.snow_threshold), (Mountains.north_range(0.9) > Mountains.snow_threshold), (Mountains.west_range(Mountains.west_range_bearing) > 0.0)]
+inside_got = [(Mountains.north_range(at(0.0)) > 0.0), (Mountains.north_range(at(0.94)) > 0.0), (Mountains.north_range(at(0.0)) > Mountains.snow_threshold), (Mountains.north_range(at(0.9)) > Mountains.snow_threshold), (Mountains.west_range(Mountains.west_range_bearing) > 0.0)]
 
 inside_want : List(Bool)
 inside_want = [True, True, True, False, True]
 
 shape_got : List(F64)
-shape_got = [Mountains.west_range_bearing, Mountains.snow_threshold, Mountains.snow_dip, Mountains.col_step, Mountains.roll_margin, Mountains.rock_night_dim]
+shape_got = [Mountains.west_range_bearing.to_radians(), Mountains.snow_threshold, Mountains.snow_dip, Mountains.col_step, Mountains.roll_margin, Mountains.rock_night_dim]
 
 shape_want : List(F64)
 shape_want = [(-2.0416), 124.0, 10.0, 2.0, 200.0, 0.5]
 
 snowline_got : List(F64)
-snowline_got = [Mountains.snowline(0.9), Mountains.snowline(2.0)]
+snowline_got = [Mountains.snowline(at(0.9)), Mountains.snowline(at(2.0))]
 
 snowline_want : List(F64)
 snowline_want = [124.0, 124.0]
 
 band_got : List(Bool)
-band_got = [(Mountains.snowline(0.0) < Mountains.snow_threshold), (Mountains.snowline(0.0) > (Mountains.snow_threshold - Mountains.snow_dip)), (Mountains.snowline(0.5) <= Mountains.snow_threshold), (Mountains.snowline(0.5) >= (Mountains.snow_threshold - Mountains.snow_dip))]
+band_got = [(Mountains.snowline(at(0.0)) < Mountains.snow_threshold), (Mountains.snowline(at(0.0)) > (Mountains.snow_threshold - Mountains.snow_dip)), (Mountains.snowline(at(0.5)) <= Mountains.snow_threshold), (Mountains.snowline(at(0.5)) >= (Mountains.snow_threshold - Mountains.snow_dip))]
 
 band_want : List(Bool)
 band_want = [True, True, True, True]
@@ -83,7 +92,7 @@ peak_want = [True, True]
 
 ## The bearing seen at `x` across a 960-pixel screen.
 bearing : { heading : F64, cam_focal : F64, x : F64 } -> F64
-bearing = |{ heading, cam_focal, x }| Mountains.bearing_at({ heading, cam_focal, view_w: 960.0 }, x)
+bearing = |{ heading, cam_focal, x }| Mountains.bearing_at({ heading: at(heading), cam_focal, view_w: 960.0 }, x).to_radians()
 
 bearing_got : List(F64)
 bearing_got = [
@@ -106,7 +115,7 @@ spread_want : List(Bool)
 spread_want = [True, True, True]
 
 crest_got : List(Bool)
-crest_got = [(Mountains.horizon_crest_px(0.0) >= Mountains.ground_base(0.0)), (Mountains.horizon_crest_px(2.0) >= Mountains.ground_base(2.0)), (Mountains.horizon_crest_px(0.0) >= Mountains.north_range(0.0)), Mountains.is_sun_behind_mountains(0.0), Mountains.is_sun_behind_mountains(6000.0)]
+crest_got = [(Mountains.horizon_crest_px(at(0.0)) >= Mountains.ground_base(at(0.0))), (Mountains.horizon_crest_px(at(2.0)) >= Mountains.ground_base(at(2.0))), (Mountains.horizon_crest_px(at(0.0)) >= Mountains.north_range(at(0.0))), Mountains.is_sun_behind_mountains(0.0), Mountains.is_sun_behind_mountains(6000.0)]
 
 crest_want : List(Bool)
 crest_want = [True, True, True, False, True]

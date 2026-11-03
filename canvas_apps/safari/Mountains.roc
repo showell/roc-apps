@@ -3,6 +3,7 @@
 ## of both. Each is a silhouette across the screen whose height depends only on
 ## the bearing it is seen at, so the skyline turns with the rider but never
 ## comes nearer. The rock darkens at dusk, and the snow goes blue.
+import Angle
 import lib.DeviceMath
 import Lens
 import Num_
@@ -14,7 +15,7 @@ import lib.Trig
 Mountains :: [].{
 
 	## How the skyline is seen: the rider's heading, and the camera.
-	Sight : { heading : F64, cam_focal : F64, view_w : F64 }
+	Sight : { heading : Angle.Bearing, cam_focal : F64, view_w : F64 }
 
 	rock : I64
 	rock = 0x5B6A8F
@@ -53,8 +54,8 @@ Mountains :: [].{
 	snow_color : F64 -> I64
 	snow_color = |dusk| Sky.pack(Sky.lerp3(snow_day, snow_night, dusk))
 
-	west_range_bearing : F64
-	west_range_bearing = (0.0 - 2.0416)
+	west_range_bearing : Angle.Bearing
+	west_range_bearing = Angle.Bearing.radians(-2.0416)
 
 	## The north range is snowy above this height.
 	snow_threshold : F64
@@ -74,22 +75,25 @@ Mountains :: [].{
 	roll_margin = 200.0
 
 	## The rolling land: low, and all the way round.
-	ground_base : F64 -> F64
-	ground_base = |bearing| (18.0 + (12.0 * Trig.r_sin(((Trig.wrap(bearing, 64) * 0.9) + 1.9))))
+	ground_base : Angle.Bearing -> F64
+	ground_base = |bearing| 18.0 + 12.0 * Trig.r_sin(bearing.turn_from_north().to_radians() * 0.9 + 1.9)
 
-	north_range : F64 -> F64
+	north_range : Angle.Bearing -> F64
 	north_range = |bearing| range_height(north, bearing)
 
-	west_range : F64 -> F64
+	west_range : Angle.Bearing -> F64
 	west_range = |bearing| range_height(west, bearing)
 
 	## The height of the north range's highest peak, as its samples find it.
 	snow_peak_height : F64
-	snow_peak_height = highest_north_from((-0.5 + 0.01), north_range(-0.5))
+	snow_peak_height = {
+		first = Angle.Bearing.radians(-0.5)
+		north_peak_height_from({ at: first.plus(peak_sample_step), highest: north_range(first) })
+	}
 
 	## The snowline's height at `bearing`: at the threshold, dipping lower
 	## under the higher peaks.
-	snowline : F64 -> F64
+	snowline : Angle.Bearing -> F64
 	snowline = |bearing| {
 		above_threshold = (north_range(bearing) - snow_threshold)
 		above_fraction = DeviceMath.real_max(0.0, DeviceMath.real_min(1.0, (above_threshold / (snow_peak_height - snow_threshold))))
@@ -97,21 +101,24 @@ Mountains :: [].{
 	}
 
 	## The bearing seen at `x` across the screen.
-	bearing_at : Mountains.Sight, F64 -> F64
-	bearing_at = |sight, x| (sight.heading + Trig.r_atan(((x - (sight.view_w / 2.0)) / sight.cam_focal)))
+	bearing_at : Mountains.Sight, F64 -> Angle.Bearing
+	bearing_at = |sight, x| {
+		off_center = Angle.Turn.radians(Trig.r_atan((x - sight.view_w / 2.0) / sight.cam_focal))
+		sight.heading.plus(off_center)
+	}
 
 	## The skyline's height at `bearing`: the highest of the land and the two
 	## ranges.
-	horizon_crest_px : F64 -> F64
+	horizon_crest_px : Angle.Bearing -> F64
 	horizon_crest_px = |bearing| DeviceMath.real_max(west_range(bearing), DeviceMath.real_max(north_range(bearing), ground_base(bearing)))
 
 	## Whether the sun, at `step`, has sunk behind the skyline.
 	is_sun_behind_mountains : F64 -> Bool
-	is_sun_behind_mountains = |step| ((Sky.sun_height_px(step) + Sky.sun_radius_px) < horizon_crest_px(Sky.sun_bearing))
+	is_sun_behind_mountains = |step| ((Sky.sun_height_px(step) + Sky.sun_radius_px) < horizon_crest_px(Angle.Bearing.radians(Sky.sun_bearing)))
 
 	## The skyline, back to front: the west range, the north range, the
 	## north's snow, then the land.
-	draw : { heading : F64, dusk : F64, cam_focal : F64, view_w : F64 } -> List(Paint.DrawCmd)
+	draw : { heading : Angle.Bearing, dusk : F64, cam_focal : F64, view_w : F64 } -> List(Paint.DrawCmd)
 	draw = |{ heading, dusk, cam_focal, view_w }| {
 		sight = { heading, cam_focal, view_w }
 		List.join([
@@ -125,38 +132,62 @@ Mountains :: [].{
 
 ## A mountain range: the bearing of its middle, how far it reaches either
 ## side, its height there, and the two frequencies of the ridges along it.
-MountainRange : { center : F64, half_width : F64, peak : F64, ridge_a : F64, ridge_b : F64 }
+## The ridge frequencies are cycles per radian of turn from the middle.
+MountainRange : {
+	center : Angle.Bearing,
+	half_width : Angle.Turn,
+	peak : F64,
+	ridge_a : F64,
+	ridge_b : F64,
+}
 
 north : MountainRange
-north = { center: 0.0, half_width: 0.95, peak: 150.0, ridge_a: 8.0, ridge_b: 21.0 }
+north = {
+	center: Angle.north,
+	half_width: Angle.Turn.radians(0.95),
+	peak: 150.0,
+	ridge_a: 8.0,
+	ridge_b: 21.0,
+}
 
 west : MountainRange
-west = { center: Mountains.west_range_bearing, half_width: 0.72, peak: 120.0, ridge_a: 11.0, ridge_b: 27.0 }
+west = {
+	center: Mountains.west_range_bearing,
+	half_width: Angle.Turn.radians(0.72),
+	peak: 120.0,
+	ridge_a: 11.0,
+	ridge_b: 27.0,
+}
 
 ## A range's height at `bearing`: highest in its middle, falling to nothing at
 ## its ends, with two ridges along it.
-range_height : MountainRange, F64 -> F64
+range_height : MountainRange, Angle.Bearing -> F64
 range_height = |range, bearing| {
-	from_center = Trig.wrap((bearing - range.center), 64)
-	t = (from_center / range.half_width)
-	if (DeviceMath.real_abs(t) >= 1.0) {
+	from_center = bearing.turn_from(range.center)
+	fraction = from_center.fraction_of(range.half_width)
+	if DeviceMath.real_abs(fraction) >= 1.0 {
 		0.0
 	} else {
-		envelope = Trig.r_cos(((t * Trig.pi) / 2.0))
-		ridge = ((0.6 + (0.24 * Trig.r_cos((from_center * range.ridge_a)))) + (0.16 * Trig.r_cos(((from_center * range.ridge_b) + 1.0))))
-		((range.peak * envelope) * ridge)
+		envelope = Trig.r_cos(fraction * Trig.pi / 2.0)
+		radians = from_center.to_radians()
+		ridge = 0.6 + 0.24 * Trig.r_cos(radians * range.ridge_a) + 0.16 * Trig.r_cos(radians * range.ridge_b + 1.0)
+		range.peak * envelope * ridge
 	}
 }
 
-## The highest the north range reaches, sampled every hundredth of a radian
-## from `bearing` to half a radian, each sample's bearing the last's plus the
-## step.
-highest_north_from : F64, F64 -> F64
-highest_north_from = |bearing, highest|
-	if (bearing > 0.5) {
+## The north range's peak is searched for every hundredth of a radian.
+peak_sample_step : Angle.Turn
+peak_sample_step = Angle.Turn.radians(0.01)
+
+## The north range's peak height between `at` and half a radian, or
+## `highest` where that is higher. Each sample's bearing is the last's plus
+## the step.
+north_peak_height_from : { at : Angle.Bearing, highest : F64 } -> F64
+north_peak_height_from = |{ at, highest }|
+	if at > Angle.Bearing.radians(0.5) {
 		highest
 	} else {
-		highest_north_from((bearing + 0.01), DeviceMath.real_max(highest, Mountains.north_range(bearing)))
+		north_peak_height_from({ at: at.plus(peak_sample_step), highest: DeviceMath.real_max(highest, Mountains.north_range(at)) })
 	}
 
 ## The screen's horizon, where a height of zero is drawn.
@@ -181,7 +212,7 @@ columns_onto = |sampled, { at, to }|
 
 ## A silhouette across the screen, its top at `height_at` each bearing, closed
 ## along the horizon.
-silhouette : Mountains.Sight, { height_at : F64 -> F64, color : I64 } -> List(Paint.DrawCmd)
+silhouette : Mountains.Sight, { height_at : Angle.Bearing -> F64, color : I64 } -> List(Paint.DrawCmd)
 silhouette = |sight, { height_at, color }| {
 	left = (0.0 - Mountains.roll_margin)
 	right = (sight.view_w + Mountains.roll_margin)
