@@ -669,6 +669,12 @@ is the base; these rules sharpen it.
   make the same split in place. A rule of thumb, not a gate: a one-caller
   function that is a rule's one home, or the public name of a function the
   twins hold to its Zig, stays.
+- **A building block never imports a type built from it.** If a narrower
+  caller needs the same operation, it uses a builtin or keeps its own call,
+  and a test holds the two equal. A letter-folding module that took
+  `[Written, Strict(StrictName)]` only so strict names could reuse its fold
+  had its dependency backwards; the strict name now lowercases with
+  `Str.with_ascii_lowercased`, and a test holds both keys equal.
 
 ## The host boundary
 
@@ -935,6 +941,10 @@ is the base; these rules sharpen it.
   name_hunt's tense and container checks, and stack's lines to stack at
   0, each with a plant. roc-markdown's verify runs no hunt yet. A finding
   fixed by hand and left unchecked comes back.
+- **A test helper builds its input from the value's own spelling, never
+  from a count of steps.** `stem({ name: "Élodie", id: "5" }) == "elodie-5"`
+  reads beside its answer; `stem("Élodie", 4)`, meaning the id after four
+  `next`s, makes the reader do arithmetic.
 
 ## Tools and builds
 

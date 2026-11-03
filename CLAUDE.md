@@ -308,7 +308,9 @@ how many ran.
   (`roc_floor`, `zig_floor`) and the end to end to an exact step count. A
   count below its floor fails, so a test that silently stopped running
   can't hide. Raise a floor when you add tests; never lower one to get a
-  green.
+  green. Grouping cases that share an answer into one `.all` expect lowers
+  the count with no case lost; that is the one honest reason a count falls,
+  and the commit says so.
 - **`roc test` counts your path dependencies' expects too.** roc-chat's run
   includes roc-markdown's, so the total moves with the sibling checkout.
   verify counts only files under the repo's own root. Recent nightlies name
@@ -403,11 +405,17 @@ one.
   `append_audit!` says its failure is "the host's to log alone", because
   the audit is a record of what happened, not the request's work. That is
   a reason the code can't show; a restatement of the code is not.
-- **A file's top comment says what the file is.** It opens with a short
-  headline in caps, then what the file does, how to run it, and what it
-  promises: roc-chat `tools/get_roc.sh` ("THE PINNED ROC, INSTALLED"),
-  `app/Ascii.roc` ("ASCII BYTE CHECKS", and why roc-markdown keeps its own
-  copy) and `tools/verify.shale` ("EVERY CHECK OF roc-chat, IN ONE RUN").
+- **A file's top comment says what the file does, in plain, complete
+  sentences for a reader who arrives cold.** gopher-roc
+  `app/ConversationRoute.roc` opens: "This module moves data between the web
+  interface and the file system. It doesn't do any heavy lifting itself."
+  No caps headline: a count in one goes stale, and a fragment's "its"
+  refers to nothing. Name what you refer to, explain or drop jargon, and say
+  what does happen rather than what "never" happens.
+- **Few comments; the bar is high.** A comment stays only when it says what
+  the code and its tests can't. A comment that claims a rule enforced
+  somewhere else ("times never go backwards") goes: the code that enforces
+  it, and its test, say it better.
 - **A README orients.** It says what the thing is, what to do before you
   build, and the pitfalls, with a status that is hedged and dated. See
   roc-chat `README.md`: "Status (2026-10-29)", "Before you build",
