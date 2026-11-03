@@ -33,7 +33,7 @@ SafariRide :: [].{
 	hist_cap = 2048
 
 	init : SafariRide.Model
-	init = { world: World.build_world, ride: Safari.ride_initial, hist: [] }
+	init = { world: World.segments, ride: Safari.ride_initial, hist: [] }
 
 	advance : SafariRide.Model -> SafariRide.Model
 	advance = |m| {

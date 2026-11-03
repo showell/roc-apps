@@ -10,7 +10,7 @@ import lib.Trig
 import World
 
 route_shape_got : List(I64)
-route_shape_got = List.concat([World.route.len().to_i64_wrap()], [0, 3, 11, 12, 19].map(World.pig_segments_before))
+route_shape_got = List.concat([World.route.len().to_i64_wrap()], [0, 2, 10, 11, 18].map(World.pig_segments_through))
 
 route_shape_want : List(I64)
 route_shape_want = [19, 0, 1, 2, 3, 9]

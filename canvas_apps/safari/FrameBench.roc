@@ -23,7 +23,7 @@ run = |world, ride, n, total|
 
 main! = |args| {
 	n = I64.from_str(List.get(args, 0) ?? "60") ?? 60
-	world = World.build_world
+	world = World.segments
 	total = run(world, Safari.ride_initial, n, 0)
 	echo!(
 		Str.concat(

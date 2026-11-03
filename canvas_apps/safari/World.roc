@@ -69,26 +69,27 @@ World :: [].{
 		{ length: 300.0, scheme: RedGreen, turn_deg: 0.0, cat: WithCat, pigs: WithPigs, bull: WithBull, ending: Terminates, creature: NoCreature },
 	]
 
-	## How many of the segments before `index` have pigs.
-	pig_segments_before : I64 -> I64
-	pig_segments_before = |index| route.take_first(I64.to_u64_wrap(index)).keep_if(has_pigs).len().to_i64_wrap()
+	## How many of the segments up to and including `index` have pigs.
+	pig_segments_through : I64 -> I64
+	pig_segments_through = |index| route.take_first(I64.to_u64_wrap(index + 1)).keep_if(has_pigs).len().to_i64_wrap()
 
 	## Segment `index` of the route.
 	segment_at : I64 -> World.Segment
 	segment_at = |index| segment(route.get(I64.to_u64_wrap(index)) ?? crash "World.segment_at: the route has no segment there", index)
 
-	build_world : List(World.Segment)
-	build_world = route.map_with_index(|plan, index| segment(plan, U64.to_i64_wrap(index)))
+	## Every segment of the route, in order.
+	segments : List(World.Segment)
+	segments = route.map_with_index(|plan, index| segment(plan, U64.to_i64_wrap(index)))
 
 	## The segments' length, end to end. It is summed from the last segment to
 	## the first: a float sum's rounding depends on its order, and another
 	## order can move a pixel.
 	course_length : List(World.Segment) -> F64
-	course_length = |segments| segments.fold_rev(0.0, |seg, sum| (seg.length + sum))
+	course_length = |world| world.fold_rev(0.0, |seg, sum| (seg.length + sum))
 
 	## How far along the route a point `along` into segment `index` is.
-	route_distance : List(World.Segment), I64, F64 -> F64
-	route_distance = |segments, index, along| (course_length(segments.take_first(I64.to_u64_wrap(index))) + along)
+	route_distance : List(World.Segment), { index : I64, along : F64 } -> F64
+	route_distance = |world, { index, along }| (course_length(world.take_first(I64.to_u64_wrap(index))) + along)
 }
 
 ## Whether a segment's plan has pigs along it.
@@ -107,7 +108,7 @@ segment = |plan, index| {
 	# The first few segments with pigs show them as a herd, which draws the
 	# rider's eye; after that they are a row.
 	pig_attention =
-		if has_pigs(plan) and (World.pig_segments_before((index + 1)) <= Pigs.pig_novelty_count) {
+		if has_pigs(plan) and (World.pig_segments_through(index) <= Pigs.pig_novelty_count) {
 			Distracting
 		} else {
 			Unnoticed

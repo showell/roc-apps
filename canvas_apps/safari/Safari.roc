@@ -34,7 +34,7 @@ Safari :: [].{
 	ride_step = |w, r| (
 		{
 			nx = Rider.get_next_rider_state(r.rider, w)
-			dist = World.route_distance(w, nx.segment, nx.along)
+			dist = World.route_distance(w, { index: nx.segment, along: nx.along })
 			{ rider: nx, truck: Truck.truck_next(r.truck, dist, w, World.course_length(w)), clock: (r.clock + 1.0) }
 		}
 	)

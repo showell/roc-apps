@@ -19,7 +19,7 @@ route_facts : List(World.Segment) -> List(I64)
 route_facts = |w| [w.len().to_i64_wrap(), Frame.build_chain(w, 0).len().to_i64_wrap(), Frame.build_chain(w, 15).len().to_i64_wrap(), Frame.build_chain(w, 18).len().to_i64_wrap()]
 
 route_got : List(I64)
-route_got = route_facts(World.build_world)
+route_got = route_facts(World.segments)
 
 route_want : List(I64)
 route_want = [19, 7, 4, 1]
@@ -63,7 +63,7 @@ at_d1 = |w| Frame.at(w, Frame.build_chain(w, 0), pose, 1, 50.0, 3.0)
 at_got : List(F64)
 at_got = (
 	{
-		p = at_d1(World.build_world)
+		p = at_d1(World.segments)
 		[at_d0.right, at_d0.forward, p.right, p.forward]
 	}
 )

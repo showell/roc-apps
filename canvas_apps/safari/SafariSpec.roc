@@ -66,8 +66,8 @@ moved_want = [True, True, True]
 order_got : List(Bool)
 order_got = (
 	{
-		old_dist = World.route_distance(segs, Safari.ride_initial.rider.segment, Safari.ride_initial.rider.along)
-		new_dist = World.route_distance(segs, one.rider.segment, one.rider.along)
+		old_dist = World.route_distance(segs, { index: Safari.ride_initial.rider.segment, along: Safari.ride_initial.rider.along })
+		new_dist = World.route_distance(segs, { index: one.rider.segment, along: one.rider.along })
 		against_new = Truck.truck_next(Safari.ride_initial.truck, new_dist, segs, World.course_length(segs))
 		against_old = Truck.truck_next(Safari.ride_initial.truck, old_dist, segs, World.course_length(segs))
 		[(F64.to_bits(one.truck.pos) == F64.to_bits(against_new.pos)), (new_dist > old_dist), ((F64.to_bits(against_new.pos) == F64.to_bits(against_old.pos)) == False)]
