@@ -77,15 +77,17 @@ Roc's own rules are in the langref's
   without opening it; what the caller wants it for stays in the caller.
   `item_at(cart, i)` answers the item at an index, and crashes past the
   end; named `in_cart` it reads as a question.
-- **A pure function is named by a noun for what it gives, a verb for what
-  it does, or a participle for what it did to its argument;** never an
-  adjective, and never a participle about something it wasn't given.
-  `escaped(text)` is the text, escaped; a page that says why a request was
-  refused is a `refusal`, since `refused(why)` was handed no request.
+- **A pure function is named by a noun for what it gives, or a verb for
+  what it does; never by an adjective or a bare past participle.** A lone
+  participle (`added`, `joined`, `named`, `escaped`) reads as a Bool:
+  `if added(...)` looks like a question. Name the thing it gives
+  (`escaped_text`, `user_by_name`) or what it does (`add_user`). A page that
+  says why a request was refused is a `refusal`, not `refused(why)`.
 
   ```roc
-  escaped : Str -> Str
+  escaped_text : Str -> Str
   refusal : Str -> Html
+  user_by_name : Users, Name -> Try(User, [NoSuchUser])
   ```
 - **Prefer a plain word to an abbreviation.** `customer`, not `cust`;
   `quantity`, not `qty`.
