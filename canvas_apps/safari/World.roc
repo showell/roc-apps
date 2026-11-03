@@ -1,5 +1,7 @@
-# World -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## The ride's world: the route, nineteen segments of road, each built once
+## from its line in `route`. A segment holds its scenery (trees, cows, pigs,
+## a cat by a tree), how it turns into the next, where the rider commits to
+## that turn, and the creature waiting at its end.
 import Cat
 import lib.DeviceMath
 import Herd
@@ -9,213 +11,169 @@ import Trees
 import lib.Trig
 
 World :: [].{
-	Cfg : { length : F64, scheme : Scenery.Scheme, turn_deg : F64, cat : Bool, pigs : Bool, bull : Bool, terminates : Bool, creature : Scenery.Creature }
-	Segment : { length : F64, width : F64, trees : List(Scenery.Tree), cows : List(Scenery.Critter), pigs : List(Scenery.Critter), pigs_distract : Bool, exit_angle : F64, exit_right : Bool, exit_to : I64, commit_along : F64, north_heading : F64, has_mid_tower : Bool, has_cat : Bool, cat : Cat.Crossing, terminates : Bool, exit_creature : Scenery.Creature }
 
+	## One segment of the route as planned: its length and scenery, its turn
+	## into the next in degrees (right is positive), what lives along it, and
+	## the creature at its end.
+	SegmentPlan : {
+		length : F64,
+		scheme : Scenery.Scheme,
+		turn_deg : F64,
+		cat : [WithCat, NoCat],
+		pigs : [WithPigs, NoPigs],
+		bull : [WithBull, NoBull],
+		ending : [Continues, Terminates],
+		creature : Scenery.Creature,
+	}
+
+	## One segment of road, built from its plan.
+	Segment : {
+		length : F64,
+		width : F64,
+		trees : List(Scenery.Tree),
+		cows : List(Scenery.Critter),
+		pigs : List(Scenery.Critter),
+		pigs_distract : Bool,
+		exit_angle : F64,
+		exit_right : Bool,
+		exit_to : I64,
+		commit_along : F64,
+		north_heading : F64,
+		has_mid_tower : Bool,
+		has_cat : Bool,
+		cat : Cat.Crossing,
+		terminates : Bool,
+		exit_creature : Scenery.Creature,
+	}
+
+	## A segment longer than this has a mast halfway along.
 	mid_tower_min_length : F64
 	mid_tower_min_length = 1000.0
 
-	cfg : F64, Scenery.Scheme, F64, Bool, Bool, Bool, Bool, Scenery.Creature -> World.Cfg
-	cfg = |len, sch, turn, c, p, b, t, cr| { length: len, scheme: sch, turn_deg: turn, cat: c, pigs: p, bull: b, terminates: t, creature: cr }
+	route : List(World.SegmentPlan)
+	route = [
+		{ length: 500.0, scheme: AllGreen, turn_deg: 50.0, cat: NoCat, pigs: NoPigs, bull: NoBull, ending: Continues, creature: Elephant },
+		{ length: 320.0, scheme: AllGreen, turn_deg: -70.0, cat: WithCat, pigs: NoPigs, bull: NoBull, ending: Continues, creature: Elephant },
+		{ length: 400.0, scheme: AllGreen, turn_deg: 20.0, cat: NoCat, pigs: WithPigs, bull: NoBull, ending: Continues, creature: Elephant },
+		{ length: 300.0, scheme: YellowGreen, turn_deg: 20.0, cat: NoCat, pigs: NoPigs, bull: NoBull, ending: Continues, creature: Elephant },
+		{ length: 300.0, scheme: AllGreen, turn_deg: -70.0, cat: NoCat, pigs: NoPigs, bull: WithBull, ending: Continues, creature: Giraffe },
+		{ length: 300.0, scheme: AllGreen, turn_deg: -70.0, cat: NoCat, pigs: NoPigs, bull: WithBull, ending: Continues, creature: Elephant },
+		{ length: 1200.0, scheme: RedGreen, turn_deg: 80.0, cat: NoCat, pigs: NoPigs, bull: WithBull, ending: Continues, creature: Rhino },
+		{ length: 300.0, scheme: AllGreen, turn_deg: 15.0, cat: NoCat, pigs: NoPigs, bull: WithBull, ending: Continues, creature: Elephant },
+		{ length: 300.0, scheme: AllGreen, turn_deg: -70.0, cat: NoCat, pigs: NoPigs, bull: WithBull, ending: Continues, creature: Elephant },
+		{ length: 800.0, scheme: AllGreen, turn_deg: 15.0, cat: NoCat, pigs: NoPigs, bull: WithBull, ending: Continues, creature: Elephant },
+		{ length: 300.0, scheme: AllGreen, turn_deg: 15.0, cat: NoCat, pigs: WithPigs, bull: WithBull, ending: Continues, creature: Elephant },
+		{ length: 300.0, scheme: AllGreen, turn_deg: 15.0, cat: NoCat, pigs: WithPigs, bull: WithBull, ending: Continues, creature: Elephant },
+		{ length: 300.0, scheme: RedGreen, turn_deg: 15.0, cat: WithCat, pigs: WithPigs, bull: WithBull, ending: Continues, creature: DuckPond },
+		{ length: 400.0, scheme: AllGreen, turn_deg: -50.0, cat: NoCat, pigs: WithPigs, bull: WithBull, ending: Continues, creature: Elephant },
+		{ length: 300.0, scheme: AllGreen, turn_deg: 50.0, cat: NoCat, pigs: WithPigs, bull: WithBull, ending: Continues, creature: Elephant },
+		{ length: 300.0, scheme: RedGreen, turn_deg: -50.0, cat: NoCat, pigs: NoPigs, bull: WithBull, ending: Continues, creature: Zebra },
+		{ length: 300.0, scheme: AllGreen, turn_deg: 50.0, cat: NoCat, pigs: WithPigs, bull: WithBull, ending: Continues, creature: Elephant },
+		{ length: 300.0, scheme: AllGreen, turn_deg: -50.0, cat: NoCat, pigs: WithPigs, bull: WithBull, ending: Continues, creature: Elephant },
+		{ length: 300.0, scheme: RedGreen, turn_deg: 0.0, cat: WithCat, pigs: WithPigs, bull: WithBull, ending: Terminates, creature: NoCreature },
+	]
 
-	route : List(World.Cfg)
-	route = [cfg(500.0, AllGreen, 50.0, False, False, False, False, Elephant), cfg(320.0, AllGreen, (0.0 - 70.0), True, False, False, False, Elephant), cfg(400.0, AllGreen, 20.0, False, True, False, False, Elephant), cfg(300.0, YellowGreen, 20.0, False, False, False, False, Elephant), cfg(300.0, AllGreen, (0.0 - 70.0), False, False, True, False, Giraffe), cfg(300.0, AllGreen, (0.0 - 70.0), False, False, True, False, Elephant), cfg(1200.0, RedGreen, 80.0, False, False, True, False, Rhino), cfg(300.0, AllGreen, 15.0, False, False, True, False, Elephant), cfg(300.0, AllGreen, (0.0 - 70.0), False, False, True, False, Elephant), cfg(800.0, AllGreen, 15.0, False, False, True, False, Elephant), cfg(300.0, AllGreen, 15.0, False, True, True, False, Elephant), cfg(300.0, AllGreen, 15.0, False, True, True, False, Elephant), cfg(300.0, RedGreen, 15.0, True, True, True, False, DuckPond), cfg(400.0, AllGreen, (0.0 - 50.0), False, True, True, False, Elephant), cfg(300.0, AllGreen, 50.0, False, True, True, False, Elephant), cfg(300.0, RedGreen, (0.0 - 50.0), False, False, True, False, Zebra), cfg(300.0, AllGreen, 50.0, False, True, True, False, Elephant), cfg(300.0, AllGreen, (0.0 - 50.0), False, True, True, False, Elephant), cfg(300.0, RedGreen, 0.0, True, True, True, True, NoCreature)]
+	## How far a segment's turn swings the heading, in radians.
+	turn : World.SegmentPlan -> F64
+	turn = |plan| (if (plan.turn_deg >= 0.0) 1.0 else -1.0) * (DeviceMath.real_abs(plan.turn_deg) * Trig.deg)
 
-	## The nearest tree along so far, in a walk of a segment's trees.
-	NearestTree : [NearestAlong(F64), NoTreeYet]
-
-	tree_improves : World.NearestTree, F64 -> Bool
-	tree_improves = |best, a| (match best {
-		NearestAlong(b) => (a < b)
-		NoTreeYet => True
-	})
-
-	next_tree_with : List(Scenery.Tree), F64, I64, World.NearestTree -> World.NearestTree
-	next_tree_with = |ts, desired, i, best| (
-		if (i >= ts.len().to_i64_wrap()) {
-			best
-		} else {
-			next_tree_step(ts, desired, i, best)
-		}
-	)
-
-	next_tree_step : List(Scenery.Tree), F64, I64, World.NearestTree -> World.NearestTree
-	next_tree_step = |ts, desired, i, best| (
-		{
-			t = (List.get(ts, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))
-			take = (
-				if (t.across > 0.0) {
-					(
-						if (t.along >= desired) {
-							tree_improves(best, t.along)
-						} else {
-							False
-						}
-					)
-				} else {
-					False
-				}
-			)
-			(
-				if take {
-					next_tree_with(ts, desired, (i + 1), NearestAlong(t.along))
-				} else {
-					next_tree_with(ts, desired, (i + 1), best)
-				}
-			)
-		}
-	)
-
-	next_tree_along : List(Scenery.Tree), F64 -> F64
-	next_tree_along = |ts, desired| (match next_tree_with(ts, desired, 0, NoTreeYet) {
-		NearestAlong(along) => along
-		NoTreeYet => desired
-	})
-
-	heading_step : I64 -> F64
-	heading_step = |i| (
-		{
-			c = (List.get(route, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))
-			(
-				(
-					if (c.turn_deg >= 0.0) {
-						1.0
-					} else {
-						(0.0 - 1.0)
-					}
-				) * (DeviceMath.real_abs(c.turn_deg) * Trig.deg)
-			)
-		}
-	)
-
+	## The heading at the start of segment `index`: the turns before it,
+	## summed in order from the first.
 	heading_at : I64 -> F64
-	heading_at = |i| (
-		if (i <= 0) {
-			0.0
-		} else {
-			(heading_at((i - 1)) + heading_step((i - 1)))
-		}
-	)
+	heading_at = |index| route.take_first(I64.to_u64_wrap(index)).fold(0.0, |heading, plan| (heading + turn(plan)))
 
-	pig_count_to : I64, I64 -> I64
-	pig_count_to = |i, acc| (
-		if (i <= 0) {
-			acc
-		} else {
-			pig_count_to(
-				(i - 1),
-				(
-					if (List.get(route, I64.to_u64_wrap((i - 1))) ?? crash ("list-at out of range")).pigs {
-						(acc + 1)
-					} else {
-						acc
-					}
-				),
-			)
-		}
-	)
+	## How many of the segments before `index` have pigs.
+	pig_segments_before : I64 -> I64
+	pig_segments_before = |index| route.take_first(I64.to_u64_wrap(index)).keep_if(has_pigs).len().to_i64_wrap()
 
+	## Segment `index` of the route.
 	segment_at : I64 -> World.Segment
-	segment_at = |i| (
-		{
-			c = (List.get(route, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))
-			angle = (DeviceMath.real_abs(c.turn_deg) * Trig.deg)
-			trees = Trees.fill_trees(c.scheme, c.length, Trees.tree_start_inset, 0, 0)
-			distract = (
-				if c.pigs {
-					(pig_count_to((i + 1), 0) <= Pigs.pig_novelty_count)
-				} else {
-					False
-				}
-			)
-			{
-				length: c.length,
-				width: Scenery.lane_width,
-				trees: trees,
-				cows: Herd.fill_cows(c.bull),
-				pigs: (
-					if c.pigs {
-						(
-							if distract {
-								Pigs.fill_pig_herd(c.length)
-							} else {
-								Pigs.fill_pig_row(c.length)
-							}
-						)
-					} else {
-						[]
-					}
-				),
-				pigs_distract: distract,
-				exit_angle: angle,
-				exit_right: (c.turn_deg >= 0.0),
-				exit_to: (
-					if c.terminates {
-						i
-					} else {
-						(i + 1)
-					}
-				),
-				commit_along: (
-					if c.terminates {
-						c.length
-					} else {
-						(c.length - ((Scenery.lane_width / 2.0) / Trig.r_tan(angle)))
-					}
-				),
-				north_heading: heading_at(i),
-				has_mid_tower: (c.length > mid_tower_min_length),
-				has_cat: c.cat,
-				cat: Cat.crossing({ lane_half_width: (Scenery.lane_width / 2.0), tree_offset: Trees.tree_road_offset, tree_along: next_tree_along(trees, Cat.cat_along) }),
-				terminates: c.terminates,
-				exit_creature: (
-					if c.terminates {
-						NoCreature
-					} else {
-						c.creature
-					}
-				),
-			}
-		}
-	)
-
-	# segments builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	segments : I64 -> List(World.Segment)
-	segments = |i| segments_onto(i, [])
-
-	segments_onto : I64, List(World.Segment) -> List(World.Segment)
-	segments_onto = |i, acc| (
-		if (i >= route.len().to_i64_wrap()) {
-			acc
-		} else {
-			segments_onto((i + 1), List.append(acc, segment_at(i)))
-		}
-	)
+	segment_at = |index| segment(route.get(I64.to_u64_wrap(index)) ?? crash "World.segment_at: the route has no segment there", index)
 
 	build_world : List(World.Segment)
-	build_world = segments(0)
+	build_world = route.map_with_index(|plan, index| segment(plan, U64.to_i64_wrap(index)))
 
-	course_length_from : List(World.Segment), I64 -> F64
-	course_length_from = |ss, i| (
-		if (i >= ss.len().to_i64_wrap()) {
-			0.0
-		} else {
-			((List.get(ss, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).length + course_length_from(ss, (i + 1)))
-		}
-	)
-
+	## The segments' length, end to end. It is summed from the last segment to
+	## the first: a float sum's rounding depends on its order, and another
+	## order can move a pixel.
 	course_length : List(World.Segment) -> F64
-	course_length = |ss| course_length_from(ss, 0)
+	course_length = |segments| segments.fold_rev(0.0, |seg, sum| (seg.length + sum))
 
-	route_distance_from : List(World.Segment), I64, I64 -> F64
-	route_distance_from = |ss, seg, i| (
-		if (i >= seg) {
-			0.0
-		} else {
-			((List.get(ss, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).length + route_distance_from(ss, seg, (i + 1)))
-		}
-	)
-
+	## How far along the route a point `along` into segment `index` is.
 	route_distance : List(World.Segment), I64, F64 -> F64
-	route_distance = |ss, seg, along| (route_distance_from(ss, seg, 0) + along)
+	route_distance = |segments, index, along| (course_length(segments.take_first(I64.to_u64_wrap(index))) + along)
+}
+
+## Whether a segment's plan has pigs along it.
+has_pigs : World.SegmentPlan -> Bool
+has_pigs = |plan|
+	match plan.pigs {
+		WithPigs => True
+		NoPigs => False
+	}
+
+## A segment built from its plan, the route's `index`th.
+segment : World.SegmentPlan, I64 -> World.Segment
+segment = |plan, index| {
+	angle = (DeviceMath.real_abs(plan.turn_deg) * Trig.deg)
+	trees = Trees.fill_trees(plan.scheme, plan.length, Trees.tree_start_inset, 0, 0)
+	# The first few segments with pigs show them as a herd, which draws the
+	# rider's eye; after that they are a row.
+	distract = has_pigs(plan) and (World.pig_segments_before((index + 1)) <= Pigs.pig_novelty_count)
+	terminates =
+		match plan.ending {
+			Continues => False
+			Terminates => True
+		}
+	{
+		length: plan.length,
+		width: Scenery.lane_width,
+		trees,
+		cows: Herd.fill_cows(
+			match plan.bull {
+				WithBull => True
+				NoBull => False
+			},
+		),
+		pigs: match plan.pigs {
+			WithPigs => if distract Pigs.fill_pig_herd(plan.length) else Pigs.fill_pig_row(plan.length)
+			NoPigs => []
+		},
+		pigs_distract: distract,
+		exit_angle: angle,
+		exit_right: (plan.turn_deg >= 0.0),
+		exit_to: if terminates index else (index + 1),
+		commit_along: if terminates plan.length else (plan.length - ((Scenery.lane_width / 2.0) / Trig.r_tan(angle))),
+		north_heading: World.heading_at(index),
+		has_mid_tower: (plan.length > World.mid_tower_min_length),
+		has_cat: match plan.cat {
+			WithCat => True
+			NoCat => False
+		},
+		cat: Cat.crossing({ lane_half_width: (Scenery.lane_width / 2.0), tree_offset: Trees.tree_road_offset, tree_along: nearest_tree_ahead(trees, Cat.cat_along) }),
+		terminates,
+		exit_creature: if terminates NoCreature else plan.creature,
+	}
+}
+
+## The nearest tree along the road at or past `along`, on the right; `along`
+## itself when there is none. A segment's cat waits by it.
+nearest_tree_ahead : List(Scenery.Tree), F64 -> F64
+nearest_tree_ahead = |trees, along| {
+	nearest = trees.fold(
+		NoTreeYet,
+		|best, tree|
+			if (tree.across > 0.0 and tree.along >= along) {
+				match best {
+					NearestAlong(nearest_along) => if (tree.along < nearest_along) NearestAlong(tree.along) else best
+					NoTreeYet => NearestAlong(tree.along)
+				}
+			} else {
+				best
+			},
+	)
+	match nearest {
+		NearestAlong(nearest_along) => nearest_along
+		NoTreeYet => along
+	}
 }

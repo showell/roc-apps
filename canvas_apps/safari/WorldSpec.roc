@@ -1,5 +1,5 @@
-# WorldSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are World's checks: the route's shape, its headings and turns, and
+## what the segments built from it hold.
 app [main!] {
 	lib: "../lib/main.roc",
 }
@@ -9,19 +9,19 @@ import lib.Trig
 import World
 
 route_shape_got : List(I64)
-route_shape_got = [World.route.len().to_i64_wrap(), World.pig_count_to(0, 0), World.pig_count_to(3, 0), World.pig_count_to(11, 0), World.pig_count_to(12, 0), World.pig_count_to(19, 0)]
+route_shape_got = List.concat([World.route.len().to_i64_wrap()], [0, 3, 11, 12, 19].map(World.pig_segments_before))
 
 route_shape_want : List(I64)
 route_shape_want = [19, 0, 1, 2, 3, 9]
 
 headings_got : List(F64)
-headings_got = [(World.heading_at(0) / Trig.deg), (World.heading_at(1) / Trig.deg), (World.heading_at(2) / Trig.deg), (World.heading_at(3) / Trig.deg), (World.heading_at(4) / Trig.deg), (World.heading_at(5) / Trig.deg), (World.heading_at(6) / Trig.deg), (World.heading_at(7) / Trig.deg), (World.heading_at(8) / Trig.deg), (World.heading_at(9) / Trig.deg), (World.heading_at(10) / Trig.deg), (World.heading_at(11) / Trig.deg), (World.heading_at(12) / Trig.deg), (World.heading_at(13) / Trig.deg), (World.heading_at(14) / Trig.deg), (World.heading_at(15) / Trig.deg), (World.heading_at(16) / Trig.deg), (World.heading_at(17) / Trig.deg), (World.heading_at(18) / Trig.deg)]
+headings_got = World.route.map_with_index(|_, index| World.heading_at(U64.to_i64_wrap(index)) / Trig.deg)
 
 headings_want : List(F64)
 headings_want = [0.0, 50.0, (-20.0), 0.0, 20.0, (-50.0), (-120.0), (-40.0), (-25.0), (-95.0), (-80.0), (-65.0), (-50.0), (-35.0), (-85.0), (-35.0), (-85.0), (-35.0), (-85.0)]
 
 steps_got : List(F64)
-steps_got = [(World.heading_step(0) / Trig.deg), (World.heading_step(1) / Trig.deg), (World.heading_step(6) / Trig.deg), (World.heading_step(18) / Trig.deg)]
+steps_got = [0, 1, 6, 18].map(|index| World.turn(World.route.get(index) ?? crash "WorldSpec: the route has 19 segments") / Trig.deg)
 
 steps_want : List(F64)
 steps_want = [50.0, (-70.0), 80.0, 0.0]
