@@ -41,8 +41,13 @@ Paint :: [].{
 		}
 	)
 
+	## The tag of a beacon: a disc whose geometry is its x, y and radius, and
+	## whose strength is its alpha.
+	beacon_tag : I64
+	beacon_tag = 3
+
 	push_beacon : I64, F64, F64, F64, F64 -> List(Paint.DrawCmd)
-	push_beacon = |color, x, y, r, alpha| [{ tag: 3, color: color, color2: 0, strength: alpha, geom: [x, y, r], pts: [] }]
+	push_beacon = |color, x, y, r, alpha| [{ tag: beacon_tag, color: color, color2: 0, strength: alpha, geom: [x, y, r], pts: [] }]
 
 	push_grad_poly : I64, I64, F64, F64, F64, List(Camera.ScreenPt) -> List(Paint.DrawCmd)
 	push_grad_poly = |rgba_center, rgba_edge, cx, cy, r, ps| (

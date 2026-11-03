@@ -54,7 +54,7 @@ SafariShapes :: [].{
 	# One command's shapes: a disc, or its polygon with its brush.
 	of_command : Paint.DrawCmd -> List(Shapes.Shape)
 	of_command = |c|
-		if c.tag == 3 {
+		if c.tag == Paint.beacon_tag {
 			col = Brush.opaque(c.color)
 			[Disc({ x: SafariBrush.geom(c, 0), y: SafariBrush.geom(c, 1), r: SafariBrush.geom(c, 2), fill: Flat({ ..col, a: c.strength }), clip: Anywhere })]
 		} else {

@@ -21,11 +21,11 @@ const LINTS = {
   {recipe = "errors", args = {}, budget = {}, counts = {
     {"error_alias", 0}, {"optional_tag", 0}, {"set_fallback", 0}, {"placeholder", 3},
   }},
-  {recipe = "nest_depth", args = {"min=4"}, budget = {}, counts = {{"nested", 67}}},
+  {recipe = "nest_depth", args = {"min=4"}, budget = {}, counts = {{"nested", 66}}},
   {recipe = "boundaries", args = {}, budget = {}, counts = {
     {"single", 7}, {"fixed", 0}, {"entry", 0}, {"constant", 0}, {"bool_param", 0},
   }},
-  {recipe = "stack", args = {}, budget = {"--budget", "steps=4000000000"}, counts = {{"to stack", 2725}}},
+  {recipe = "stack", args = {}, budget = {"--budget", "steps=4000000000"}, counts = {{"to stack", 2717}}},
 }
 
 -- The number a summary line gives for `check`: "check N", or "N check" for
