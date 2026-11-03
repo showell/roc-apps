@@ -13,6 +13,9 @@
 -- the specs each) and `part=proof`, one program of this run's each. A child
 -- runs alone the same way (`... run.shale part=2`).
 --
+-- **THE LINTS** (gates/lints.shale) run first: shale's Roc lints, each count
+-- held exactly, lowered as the code is fixed.
+--
 -- **THE SPECS:** each `<Spec>.roc` is built on the dev backend (what `roc
 -- run` runs) where it is written (its app header names lib/ as a package)
 -- and its binary run; its output must equal `expected/<Spec>.expected` byte
@@ -214,6 +217,12 @@ function all()
   spec_names()
   local bad = {}
   local times = {}
+  local lints = run({"shale", "--root", ".", SAFARI .. "/gates/lints.shale"}, {timeout_ms = 1800000, tail = 40})
+  for l in lines(lints.out) do
+    if not starts_with(l, "── ") then print(l) end
+  end
+  push(times, "lints " .. (lints.ms // 1000) .. " s")
+  if lints.ended ~= "exit" or lints.code ~= 0 then push(bad, "lints") end
   for part in {"1", "2", "proof"} do
     -- A child, and every roc under it, inherits this run's niceness.
     local r = run({"shale","--root", ".", SELF_PATH, "part=" .. part}, {timeout_ms = 1800000, tail = 200})
