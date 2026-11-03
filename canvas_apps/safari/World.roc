@@ -71,7 +71,7 @@ World :: [].{
 
 	## How many of the segments up to and including `index` have pigs.
 	pig_segments_through : I64 -> I64
-	pig_segments_through = |index| route.take_first(I64.to_u64_wrap(index + 1)).keep_if(has_pigs).len().to_i64_wrap()
+	pig_segments_through = |index| route.take_first(count_before(index) + 1).keep_if(has_pigs).len().to_i64_wrap()
 
 	## Segment `index` of the route.
 	segment_at : I64 -> World.Segment
@@ -89,8 +89,18 @@ World :: [].{
 
 	## How far along the route a point `along` into segment `index` is.
 	route_distance : List(World.Segment), { index : I64, along : F64 } -> F64
-	route_distance = |world, { index, along }| (course_length(world.take_first(I64.to_u64_wrap(index))) + along)
+	route_distance = |world, { index, along }| (course_length(world.take_first(count_before(index))) + along)
 }
+
+## How many segments come before `index`, for take_first. A segment's index
+## is never negative, so a negative one is its caller's bug.
+count_before : I64 -> U64
+count_before = |index|
+	if index < 0 {
+		crash "World.count_before: a segment's index is never negative"
+	} else {
+		I64.to_u64_wrap(index)
+	}
 
 ## Whether a segment's plan has pigs along it.
 has_pigs : World.SegmentPlan -> Bool
