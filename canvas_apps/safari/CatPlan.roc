@@ -22,7 +22,7 @@ CatPlan :: [].{
 	cat_item : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64, World.Segment, F64 -> List(CatPlan.CatItem)
 	cat_item = |w, ch, pose, d, cf, gap, sg, v| (
 		{
-			st = Cat.cat_state(sg.cat, (gap + sg.cat.along), v)
+			st = Cat.state(sg.cat, { gap: (gap + sg.cat.along), speed: v })
 			rp = Frame.at(w, ch, pose, d, sg.cat.along, (st.across + (sg.width / 2.0)))
 			(
 				if (rp.forward <= Geom.near) {
@@ -32,7 +32,7 @@ CatPlan :: [].{
 						if (((sg.cat.height / rp.forward) * cf) < SceneLimits.min_scenery_px) {
 							[]
 						} else {
-							[{ right: rp.right, fwd: rp.forward, height: sg.cat.height, pose_idx: st.pose_idx, lift: st.lift }]
+							[{ right: rp.right, fwd: rp.forward, height: sg.cat.height, pose_idx: Cat.pose_index(st.pose), lift: st.lift }]
 						}
 					)
 				}

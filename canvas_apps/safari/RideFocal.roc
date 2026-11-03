@@ -16,7 +16,7 @@ RideFocal :: [].{
 			seg = (List.get(w, I64.to_u64_wrap(s.segment)) ?? crash ("list-at out of range"))
 			(
 				if seg.has_cat {
-					Cat.cat_focus((seg.cat.along - s.along), s.v)
+					Cat.focus({ gap: (seg.cat.along - s.along), speed: s.v })
 				} else {
 					0.0
 				}

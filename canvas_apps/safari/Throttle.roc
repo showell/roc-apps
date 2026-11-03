@@ -42,7 +42,7 @@ Throttle :: [].{
 			(
 				if (a > 0.0) {
 					(
-						if Cat.cat_in_danger((seg.cat.along - state.along), state.v) {
+						if Cat.is_in_danger({ gap: (seg.cat.along - state.along), speed: state.v }) {
 							0.0
 						} else {
 							a

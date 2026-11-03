@@ -1,5 +1,6 @@
-# CatSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are Cat's checks: where a cat crosses, its sizes and timings, when it
+## is in danger, its progress and the rider's focus, its stride, its poses,
+## and where it is as it walks out, freezes and leaps.
 app [main!] {
 	lib: "../lib/main.roc",
 }
@@ -8,8 +9,12 @@ import Cat
 import Grade
 import lib.Trig
 
-the_cat : Cat.Cat
-the_cat = Cat.cat_make(2.0, 1.0, 100.0)
+the_cat : Cat.Crossing
+the_cat = Cat.crossing({ lane_half_width: 2.0, tree_offset: 1.0, tree_along: 100.0 })
+
+## A rider `gap` metres short of the cat, at `speed` metres a step.
+coming : F64, F64 -> Cat.Approach
+coming = |gap, speed| { gap, speed }
 
 make_got : List(F64)
 make_got = [the_cat.along, the_cat.start_across, the_cat.mid_across, the_cat.height]
@@ -36,46 +41,90 @@ window_want : List(F64)
 window_want = [10.0, 24.0, 4.0, 38.0, 3.0]
 
 danger_got : List(Bool)
-danger_got = [Cat.cat_in_danger(41.0, 1.0), Cat.cat_in_danger(42.0, 1.0), Cat.cat_in_danger(3.0, 1.0), Cat.cat_in_danger(2.0, 1.0), Cat.cat_in_danger(41.0, 0.0), Cat.cat_in_danger(22.0, 1.0)]
+danger_got = [
+	coming(41.0, 1.0),
+	coming(42.0, 1.0),
+	coming(3.0, 1.0),
+	coming(2.0, 1.0),
+	coming(41.0, 0.0),
+	coming(22.0, 1.0),
+].map(Cat.is_in_danger)
 
 danger_want : List(Bool)
 danger_want = [True, False, False, False, False, True]
 
 t_got : List(F64)
-t_got = [Cat.cross_t(41.0, 1.0), Cat.cross_t(22.0, 1.0), Cat.cross_t(3.0, 1.0), Cat.cross_t(2.0, 1.0), Cat.cross_t(100.0, 1.0), Cat.cross_t(41.0, 0.0), Cat.clamp01((0.0 - 0.5)), Cat.clamp01(0.25), Cat.clamp01(1.5), Cat.lerp(2.0, 6.0, 0.25), Cat.lerp(2.0, 6.0, 0.0), Cat.lerp(2.0, 6.0, 1.0)]
+t_got = List.join([
+	[
+		coming(41.0, 1.0),
+		coming(22.0, 1.0),
+		coming(3.0, 1.0),
+		coming(2.0, 1.0),
+		coming(100.0, 1.0),
+		coming(41.0, 0.0),
+	].map(Cat.crossing_progress),
+	[(0.0 - 0.5), 0.25, 1.5].map(Cat.clamp01),
+	[0.25, 0.0, 1.0].map(|fraction| Cat.lerp({ from: 2.0, to: 6.0, fraction })),
+])
 
 t_want : List(F64)
 t_want = [0.0, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.25, 1.0, 3.0, 2.0, 6.0]
 
 focus_got : List(F64)
-focus_got = [Cat.cat_smoothstep(0.0), Cat.cat_smoothstep(0.5), Cat.cat_smoothstep(1.0), Cat.cat_focus(41.0, 1.0), Cat.cat_focus(22.0, 1.0), Cat.cat_focus(3.0, 1.0), Cat.cat_focus((0.0 - 38.5), 1.0), Cat.cat_focus((0.0 - 80.0), 1.0), Cat.cat_focus(22.0, 0.0), Cat.focus_peak, Cat.focus_ramp_down]
+focus_got = List.join([
+	[0.0, 0.5, 1.0].map(Cat.smoothstep),
+	[
+		coming(41.0, 1.0),
+		coming(22.0, 1.0),
+		coming(3.0, 1.0),
+		coming((0.0 - 38.5), 1.0),
+		coming((0.0 - 80.0), 1.0),
+		coming(22.0, 0.0),
+	].map(Cat.focus),
+	[Cat.focus_peak, Cat.focus_ramp_down],
+])
+
+## The stride angle `progress` through a walk of `steps`, in whole turns.
+turns : F64, F64 -> F64
+turns = |progress, steps| (Cat.stride_angle({ progress, steps }) / Trig.two_pi)
 
 focus_want : List(F64)
 focus_want = [0.0, 0.5, 1.0, 0.0, 0.9, 1.8, 0.9, 0.0, 0.0, 1.8, 83.0]
 
 cycles_got : List(F64)
-cycles_got = [Cat.gait(0.0, 10.0), (Cat.gait(1.0, 10.0) / Trig.two_pi), (Cat.gait(0.5, 10.0) / Trig.two_pi), (Cat.gait(1.0, 20.0) / Trig.two_pi), (Cat.gait(1.0, 3.0) / Trig.two_pi), (Cat.gait(1.0, 0.0) / Trig.two_pi), Cat.stride_steps]
+cycles_got = [
+	Cat.stride_angle({ progress: 0.0, steps: 10.0 }),
+	turns(1.0, 10.0),
+	turns(0.5, 10.0),
+	turns(1.0, 20.0),
+	turns(1.0, 3.0),
+	turns(1.0, 0.0),
+	Cat.stride_steps,
+]
 
 cycles_want : List(F64)
 cycles_want = [0.0, 2.0, 1.0, 4.0, 1.0, 1.0, 5.0]
 
 pose_got : List(I64)
-pose_got = [Cat.pose_rest, Cat.pose_stride, Cat.pose_frozen, Cat.pose_coil, Cat.pose_flight, Cat.pose_land, Cat.pose_collapse, Cat.leap_pose_for(0.0), Cat.leap_pose_for(0.19), Cat.leap_pose_for(0.2), Cat.leap_pose_for(0.69), Cat.leap_pose_for(0.7), Cat.leap_pose_for(0.94), Cat.leap_pose_for(0.95), Cat.leap_pose_for(1.0)]
+pose_got = List.concat(
+	[Rest, Stride, Frozen, Coil, Flight, Land, Collapse],
+	[0.0, 0.19, 0.2, 0.69, 0.7, 0.94, 0.95, 1.0].map(Cat.leap_pose),
+).map(Cat.pose_index)
 
 pose_want : List(I64)
 pose_want = [0, 1, 2, 3, 4, 5, 6, 3, 3, 4, 4, 5, 5, 6, 6]
 
 phase_of : F64 -> Cat.CatState
-phase_of = |gap| Cat.cat_state(the_cat, gap, 1.0)
+phase_of = |gap| Cat.state(the_cat, coming(gap, 1.0))
 
 which_got : List(I64)
-which_got = [phase_of(41.0).pose_idx, phase_of(31.5).pose_idx, phase_of(30.0).pose_idx, phase_of(7.0).pose_idx, phase_of(6.5).pose_idx, phase_of(6.0).pose_idx, phase_of(4.0).pose_idx, phase_of(3.0).pose_idx]
+which_got = [41.0, 31.5, 30.0, 7.0, 6.5, 6.0, 4.0, 3.0].map(|gap| Cat.pose_index(phase_of(gap).pose))
 
 which_want : List(I64)
 which_want = [0, 0, 2, 2, 3, 4, 5, 6]
 
 walking : F64 -> Cat.CatState
-walking = |step| Cat.cat_entering(the_cat, step)
+walking = |step| Cat.entering(the_cat, step)
 
 entering_got : List(F64)
 entering_got = [walking(0.0).across, walking(1.25).across, walking(3.75).across, walking(6.25).across, walking(8.75).across, walking(0.0).lift, walking(8.75).lift]
@@ -84,7 +133,7 @@ entering_want : List(F64)
 entering_want = [4.5, 4.0395, 3.1185, 2.1975, 1.2765, 0.0, 0.0]
 
 stride_got : List(I64)
-stride_got = [walking(0.0).pose_idx, walking(1.25).pose_idx, walking(3.75).pose_idx, walking(6.25).pose_idx, walking(8.75).pose_idx]
+stride_got = [0.0, 1.25, 3.75, 6.25, 8.75].map(|step| Cat.pose_index(walking(step).pose))
 
 stride_want : List(I64)
 stride_want = [0, 1, 0, 1, 0]
@@ -96,7 +145,7 @@ frozen_want : List(F64)
 frozen_want = [0.816, 0.816, 0.0]
 
 leap_got : List(F64)
-leap_got = [phase_of(6.5).across, phase_of(6.5).lift, phase_of(6.0).across, phase_of(6.0).lift, Cat.pow075(0.0), Cat.pow075(1.0), Cat.pow075(0.0625), Cat.leap_height]
+leap_got = [phase_of(6.5).across, phase_of(6.5).lift, phase_of(6.0).across, phase_of(6.0).lift, Cat.three_quarter_power(0.0), Cat.three_quarter_power(1.0), Cat.three_quarter_power(0.0625), Cat.leap_height]
 
 leap_want : List(F64)
 leap_want = [0.816, 0.0, 0.816, 0.0, 0.0, 1.0, 0.125, 0.18]

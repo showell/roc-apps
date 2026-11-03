@@ -10,7 +10,7 @@ import lib.Trig
 
 World :: [].{
 	Cfg : { length : F64, scheme : Scenery.Scheme, turn_deg : F64, cat : Bool, pigs : Bool, bull : Bool, terminates : Bool, creature : Scenery.Creature }
-	Segment : { length : F64, width : F64, trees : List(Scenery.Tree), cows : List(Scenery.Critter), pigs : List(Scenery.Critter), pigs_distract : Bool, exit_angle : F64, exit_right : Bool, exit_to : I64, commit_along : F64, north_heading : F64, has_mid_tower : Bool, has_cat : Bool, cat : Cat.Cat, terminates : Bool, exit_creature : Scenery.Creature }
+	Segment : { length : F64, width : F64, trees : List(Scenery.Tree), cows : List(Scenery.Critter), pigs : List(Scenery.Critter), pigs_distract : Bool, exit_angle : F64, exit_right : Bool, exit_to : I64, commit_along : F64, north_heading : F64, has_mid_tower : Bool, has_cat : Bool, cat : Cat.Crossing, terminates : Bool, exit_creature : Scenery.Creature }
 
 	mid_tower_min_length : F64
 	mid_tower_min_length = 1000.0
@@ -166,7 +166,7 @@ World :: [].{
 				north_heading: heading_at(i),
 				has_mid_tower: (c.length > mid_tower_min_length),
 				has_cat: c.cat,
-				cat: Cat.cat_make((Scenery.lane_width / 2.0), Trees.tree_road_offset, next_tree_along(trees, Cat.cat_along)),
+				cat: Cat.crossing({ lane_half_width: (Scenery.lane_width / 2.0), tree_offset: Trees.tree_road_offset, tree_along: next_tree_along(trees, Cat.cat_along) }),
 				terminates: c.terminates,
 				exit_creature: (
 					if c.terminates {
