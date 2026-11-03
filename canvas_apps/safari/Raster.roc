@@ -77,30 +77,32 @@ Raster :: [].{
 	## A polygon, as scene coordinates x0, y0, x1, y1, ..., filled by the
 	## nonzero rule.
 	fill_polygon : List(U32), { rotation : Raster.Rotation, pts : List(F64), fill : Brush.Fill } -> List(U32)
-	fill_polygon = |pixels, { rotation, pts, fill }|
-		if pts.len() // 2 < 3 {
-			pixels
-		} else {
-			corners = pts.chunks_of(2).map(
-				|pair|
-					match pair {
-						[x, y] => to_device(rotation, Raster.ScenePoint.({ x, y }))
-						_ => crash "Raster.fill_polygon: a polygon's coordinates come in pairs"
-					},
-			)
-			edges = List.map2(corners, corners.drop_first(1).concat(corners.take_first(1)), |from, to| { from, to })
-			first_y = (corners.first() ?? crash "Raster.fill_polygon: a polygon has corners").y
-			rows = pixels_between({
-				from: corners.fold(first_y, |top, corner| F64.min(top, corner.y)),
-				to: corners.fold(first_y, |bottom, corner| F64.max(bottom, corner.y)),
-				count: Screen.height_px,
-			})
-			var $px = pixels
-			for row in I64.until(rows.start, rows.end) {
-				$px = fill_row($px, { rotation, fill, row, crossings: row_crossings(edges, pixel_center(row)) })
+	fill_polygon = |pixels, { rotation, pts, fill }| {
+		corners = pts.chunks_of(2).map(
+			|pair|
+				match pair {
+					[x, y] => to_device(rotation, Raster.ScenePoint.({ x, y }))
+					_ => crash "Raster.fill_polygon: a polygon's coordinates come in pairs"
+				},
+		)
+		match corners {
+			[first, _, _, ..] => {
+				edges = corners.map2(corners.drop_first(1).concat(corners.take_first(1)), |from, to| { from, to })
+				rows = pixels_between({
+					from: corners.fold(first.y, |top, corner| F64.min(top, corner.y)),
+					to: corners.fold(first.y, |bottom, corner| F64.max(bottom, corner.y)),
+					count: Screen.height_px,
+				})
+				var $px = pixels
+				for row in I64.until(rows.start, rows.end) {
+					$px = fill_row($px, { rotation, fill, row, crossings: row_crossings(edges, pixel_center(row)) })
+				}
+				$px
 			}
-			$px
+			# Fewer than three corners enclose nothing.
+			_ => pixels
 		}
+	}
 }
 
 ## The screen's centre, which the roll turns about: the same point in the
@@ -335,16 +337,19 @@ row_crossings = |edges, y|
 	)
 
 crossing : Edge, F64 -> List(Crossing)
-crossing = |{ from, to }, y| {
-	x = from.x + (y - from.y) * (to.x - from.x) / (to.y - from.y)
-	if from.y <= y and y < to.y {
-		[{ x, direction: Down }]
-	} else if to.y <= y and y < from.y {
-		[{ x, direction: Up }]
+crossing = |edge, y|
+	if edge.from.y <= y and y < edge.to.y {
+		[{ x: edge_x_at(edge, y), direction: Down }]
+	} else if edge.to.y <= y and y < edge.from.y {
+		[{ x: edge_x_at(edge, y), direction: Up }]
 	} else {
 		[]
 	}
-}
+
+## Where the edge is across the screen at the height `y`, which is between
+## its ends, so the division is by a height that isn't zero.
+edge_x_at : Edge, F64 -> F64
+edge_x_at = |{ from, to }, y| from.x + (y - from.y) * (to.x - from.x) / (to.y - from.y)
 
 ## One row of a polygon: the spans between its crossings where the winding is
 ## not zero.
@@ -361,7 +366,7 @@ fill_row = |pixels, { rotation, fill, row, crossings }| {
 ## winding is not zero.
 inside_spans : List(Crossing) -> List(RowSpan)
 inside_spans = |crossings| {
-	neighbours = List.map2(crossings, crossings.drop_first(1), |enter, leave| { enter, leave })
+	neighbours = crossings.map2(crossings.drop_first(1), |enter, leave| { enter, leave })
 	neighbours.fold({ winding: 0, inside: [] }, walk_crossing).inside
 }
 
@@ -393,10 +398,11 @@ span = |pixels, { rotation, fill, row, from, to }| {
 		at = pixel_index({ row, column })
 		color = match fill {
 			Flat(flat) => flat
-			Skip | Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) => {
+			Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) => {
 				p = to_scene(rotation, DevicePoint.({ x: pixel_center(column), y }))
 				Brush.shade(fill, p.x, p.y)
 			}
+			Skip => crash "Raster.span: a Skip brush paints nothing, and no caller fills with one"
 		}
 		$px = blend($px, { at, color })
 	}
