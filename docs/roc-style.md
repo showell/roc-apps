@@ -536,6 +536,13 @@ is the base; these rules sharpen it.
   (a `report_cart_error!` that handles both), and
   the checker holds the body to the list. An alias is for a handler's
   input. Leaving the error to inference (`_`) is fine too.
+- **When an argument's tag decides which errors can happen, split the
+  function by that tag**, so each answers only its own errors. If
+  `Accounts.add({ joining: [Person, BotOf(Person)] })` answers
+  `[NoSuchOwner, Full]`, a caller that only ever passes `Person` has to
+  crash on `NoSuchOwner`, an error a person can't get. As `add_person`
+  (`[Full]`) and `add_bot` (`[NoSuchOwner, Full]`), the impossible case
+  can't be written.
 - **Keep distinct failures apart in the tags.** A read answers
   `Try(Str, [Missing, Failed])`: missing and failed are different answers,
   and as a `Try` they still work with `?` and `??`.
