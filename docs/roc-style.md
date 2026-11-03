@@ -304,6 +304,10 @@ Roc's own rules are in the langref's
 - **Use a nominal type (`:=`) where values of the same shape mean different
   things.** A name passed where an id belongs is then a type error
   ([types](https://roc-lang.org/docs/main/langref/types/)).
+- **A closed set that needs no checking is nominal, not opaque.** Every
+  value of `Script := [Palette, Chrome, Compose, Feed]` is valid, so there
+  is nothing to guard, and callers write `Script.Chrome`. Opaque is for
+  values a constructor must check.
 - **Use an opaque type (`::`) for anything validated.** Only its own module
   can build one, so the validator is the only way in. A `UserId` is all
   digits, and `from_str` is the only way to get one:

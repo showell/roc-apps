@@ -86,6 +86,7 @@ reduced program, `findings/` holds it.
 - `targets`, `requires`, `provides`, `exposes`, `packages`, `platform` and
   `app` are reserved words in ordinary modules too.
 - List patterns are `[]` and `[h, .. as t]`; `.. as _` is invalid.
+- An alternatives pattern nested inside a tuple pattern, `(Stream, Post | Other)`, is "not yet implemented" at the 10-30 nightly. Write the specific arms, then a wildcard arm.
 - Record update is `{ ..r, f: v }`. `var $x` and `while` rebind in place.
 - Only self tail calls are removed: two mutually recursive functions need a
   forwarder.
