@@ -7,10 +7,10 @@
 ## paint means, and the colour it gives a point, is Brush's. The pixels are
 ## 0xRRGGBB, row-major.
 ##
-## The loops over pixels are `while` and `for` over a `var` list, and every
-## store falls back with `crash`: a list threaded down a recursion, or named in
-## a store's fallback, is copied on the next store (docs/roc-notes.md, "Speed
-## and copying").
+## Every write lands in place: the pixels are a `var` list, and every store
+## falls back with `crash`. A list threaded down a recursion, or named in a
+## store's fallback, would be copied on the next store (docs/roc-notes.md,
+## "Speed and copying").
 import Paint
 import Sky
 import lib.Brush
@@ -61,17 +61,15 @@ Raster :: [].{
 		on_screen = to_device(rotation, center)
 		rows = pixels_between({ from: on_screen.y - radius, to: on_screen.y + radius, count: Screen.height_px })
 		var $px = pixels
-		var $row = rows.first
-		while $row <= rows.last {
-			dy = pixel_center($row) - on_screen.y
+		for row in I64.until(rows.start, rows.end) {
+			dy = pixel_center(row) - on_screen.y
 			half_squared = radius * radius - dy * dy
 			$px = if half_squared > 0.0 {
 				half = F64.sqrt(half_squared)
-				span($px, { rotation, fill: Flat(color), row: $row, from: on_screen.x - half, to: on_screen.x + half })
+				span($px, { rotation, fill: Flat(color), row, from: on_screen.x - half, to: on_screen.x + half })
 			} else {
 				$px
 			}
-			$row = $row + 1
 		}
 		$px
 	}
@@ -98,10 +96,8 @@ Raster :: [].{
 				count: Screen.height_px,
 			})
 			var $px = pixels
-			var $row = rows.first
-			while $row <= rows.last {
-				$px = fill_row($px, { rotation, fill, row: $row, crossings: row_crossings(edges, pixel_center($row)) })
-				$row = $row + 1
+			for row in I64.until(rows.start, rows.end) {
+				$px = fill_row($px, { rotation, fill, row, crossings: row_crossings(edges, pixel_center(row)) })
 			}
 			$px
 		}
@@ -123,6 +119,10 @@ Crossing : { x : F64, winding : I64 }
 DevicePoint := { x : F64, y : F64 }.{
 	is_eq : _
 }
+
+## Pixels from `start` up to but not including `end`; none when `end` is not
+## past `start`.
+PixelRange : { start : I64, end : I64 }
 
 ## A polygon's edge, on the screen.
 Edge : { from : DevicePoint, to : DevicePoint }
@@ -154,7 +154,10 @@ to_scene = |rotation, DevicePoint.({ x, y })| {
 pixel_center : I64 -> F64
 pixel_center = |index| I64.to_f64(index) + 0.5
 
-## The first pixel whose centre is at or past `x`.
+## The first pixel whose centre is at or past `x`. A coordinate far off the
+## screen (a point projected from just beside the camera) is first clamped to
+## ±100000, well past any screen but small enough that its conversion to an
+## integer can't wrap round to a pixel on it.
 first_pixel_past : F64 -> I64
 first_pixel_past = |x| {
 	bounded = if x < -100000.0 {
@@ -168,11 +171,11 @@ first_pixel_past = |x| {
 }
 
 ## The pixels of a row or a column `count` long whose centres fall in
-## [from, to): none when `first` is past `last`.
-pixels_between : { from : F64, to : F64, count : I64 } -> { first : I64, last : I64 }
+## [from, to), as the range from `start` up to but not including `end`.
+pixels_between : { from : F64, to : F64, count : I64 } -> PixelRange
 pixels_between = |{ from, to, count }| {
-	first: I64.max(0, first_pixel_past(from)),
-	last: I64.min(count - 1, first_pixel_past(to) - 1),
+	start: I64.max(0, first_pixel_past(from)),
+	end: I64.min(count, first_pixel_past(to)),
 }
 
 ## Where the pixel at `row` and `column` is in the list.
@@ -237,12 +240,9 @@ blend = |pixels, { at, color }| {
 backdrop : Raster.Rotation, { top : Brush.Rgba, horizon : Brush.Rgba } -> List(U32)
 backdrop = |rotation, sky| {
 	var $px = List.with_capacity(I64.to_u64_wrap(Screen.width_px * Screen.height_px))
-	var $row = 0
-	var $column = 0
-	while $row < Screen.height_px {
-		$column = 0
-		while $column < Screen.width_px {
-			y = to_scene(rotation, DevicePoint.({ x: pixel_center($column), y: pixel_center($row) })).y
+	for row in I64.until(0, Screen.height_px) {
+		for column in I64.until(0, Screen.width_px) {
+			y = to_scene(rotation, DevicePoint.({ x: pixel_center(column), y: pixel_center(row) })).y
 			pixel = if y >= Screen.grass_top_y {
 				grass_pixel
 			} else {
@@ -256,9 +256,7 @@ backdrop = |rotation, sky| {
 				pack({ r: color.r, g: color.g, b: color.b })
 			}
 			$px = $px.append(pixel)
-			$column = $column + 1
 		}
-		$row = $row + 1
 	}
 	$px
 }
@@ -273,14 +271,11 @@ paint_sun = |pixels, { rotation, sun }| {
 	rows = pixels_between({ from: on_screen.y - fills.glow_radius, to: on_screen.y + fills.glow_radius, count: Screen.height_px })
 	columns = pixels_between({ from: on_screen.x - fills.glow_radius, to: on_screen.x + fills.glow_radius, count: Screen.width_px })
 	var $px = pixels
-	var $row = rows.first
-	var $column = columns.first
-	while $row <= rows.last {
-		$column = columns.first
-		while $column <= columns.last {
-			p = to_scene(rotation, DevicePoint.({ x: pixel_center($column), y: pixel_center($row) }))
+	for row in I64.until(rows.start, rows.end) {
+		for column in I64.until(columns.start, columns.end) {
+			p = to_scene(rotation, DevicePoint.({ x: pixel_center(column), y: pixel_center(row) }))
 			$px = if p.x >= 0.0 and p.x < Screen.width and p.y >= 0.0 and p.y < Screen.horizon_y {
-				at = pixel_index({ row: $row, column: $column })
+				at = pixel_index({ row, column })
 				lit = blend($px, { at, color: Brush.shade(fills.glow, p.x, p.y) })
 				distance = F64.sqrt((p.x - sun.x) * (p.x - sun.x) + (p.y - sun.y) * (p.y - sun.y))
 				if distance < fills.disc_radius {
@@ -291,9 +286,7 @@ paint_sun = |pixels, { rotation, sun }| {
 			} else {
 				$px
 			}
-			$column = $column + 1
 		}
-		$row = $row + 1
 	}
 	$px
 }
@@ -383,18 +376,16 @@ span = |pixels, { rotation, fill, row, from, to }| {
 	columns = pixels_between({ from, to, count: Screen.width_px })
 	y = pixel_center(row)
 	var $px = pixels
-	var $column = columns.first
-	while $column <= columns.last {
-		at = pixel_index({ row, column: $column })
+	for column in I64.until(columns.start, columns.end) {
+		at = pixel_index({ row, column })
 		color = match fill {
 			Flat(flat) => flat
 			Skip | Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) => {
-				p = to_scene(rotation, DevicePoint.({ x: pixel_center($column), y }))
+				p = to_scene(rotation, DevicePoint.({ x: pixel_center(column), y }))
 				Brush.shade(fill, p.x, p.y)
 			}
 		}
 		$px = blend($px, { at, color })
-		$column = $column + 1
 	}
 	$px
 }
