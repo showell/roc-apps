@@ -454,7 +454,15 @@ crosses it.)
   render step to a work budget sized by the message's length, and
   `Md.hostility` answers `Renderable` or `TooMuchFormatting` before you
   render, so a POST can refuse a message built to blow up
-  (`package/Md.roc`; `README.md`, "A bounded cost").
+  (`package/Md.roc`; `README.md`, "A bounded cost"). The host follows the
+  same rule: it asks the Roc to judge a request's head (origin and size
+  allowance) before reading its body, and caps the bytes in flight across
+  all connections, so a hostile page can't fill memory with bodies that
+  will only be refused (gopher-roc `app/main.roc`, `admission`).
+- **A cross-site GET is a request too.** A page's stream, image or script
+  can be fetched by another site's page in the viewer's browser. Refuse a
+  foreign `Origin` on every method, and a cross-site `Sec-Fetch-Site` on a
+  GET that isn't a top-level navigation (gopher-roc `app/RequestOrigin.roc`).
 - **Decode at the door into an opaque type.** Only its own module can
   build one, so the checks are the only way in (`docs/roc-style.md`, "Make
   wrong values impossible to build"). roc-chat `app/Principal.roc`'s ids
