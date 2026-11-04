@@ -9,10 +9,11 @@
 #
 #   roc build --opt=dev StepBack.roc --output=<bin>; <bin>
 app [main!] {
-	lib: "../lib/main.roc",
+	lib: "../../lib/main.roc",
+	game: "../game.roc",
 }
 
-import SafariRide
+import game.SafariRide
 
 main! = |_args| {
 	var $out = ""

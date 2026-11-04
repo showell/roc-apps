@@ -1,12 +1,12 @@
-## SafariFrame is test code: the game never runs it. It paints one Safari
-## frame into a list of 0xRRGGBB pixels, in Roc: the sky and the grass
-## (BackdropPixels), the sun (SunPixels), then every draw command in paint
-## order, all turned by the camera's roll (the rider's lean, which tilts the
-## whole picture about the centre of the screen). Its pixels are exact and the
-## same on every run.
+## SafariFrame is test code, like everything in this gates folder: the game
+## never runs any of it. SafariFrame paints one Safari frame into a list of
+## 0xRRGGBB pixels, in Roc: the sky and the grass (BackdropPixels), the sun
+## (SunPixels), then every draw command in paint order, all turned by the
+## camera's roll (the rider's lean, which tilts the whole picture about the
+## centre of the screen). Its pixels are exact and the same on every run.
 ##
 ## That is what Safari's gate needs. The gate is a script we run before a
-## change lands (gates/run.shale), and it builds two programs on SafariFrame
+## change lands (run.shale, in this folder), and it builds two programs on SafariFrame
 ## to check the drawing pixel for pixel. RasterFrame prints a hash of a
 ## frame's pixels, so we can confirm that a change which shouldn't alter the
 ## picture leaves the hash the same. ShapesFrame paints a frame from its draw
@@ -26,10 +26,10 @@
 ## row or column covers, PixelColor packs and blends pixels, and ScanlineFill
 ## fills polygons and discs.
 import BackdropPixels
-import Paint
-import Sky
-import SafariBrush
-import Screen
+import game.Paint
+import game.Sky
+import game.SafariBrush
+import game.Screen
 import lib.Brush
 import PixelGrid
 import ScanlineFill

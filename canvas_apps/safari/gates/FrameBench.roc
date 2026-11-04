@@ -4,13 +4,14 @@
 #
 #   roc build --opt=speed FrameBench.roc --output=<bin>; <bin> 60
 app [main!] {
-	lib: "../lib/main.roc",
+	lib: "../../lib/main.roc",
+	game: "../game.roc",
 }
 
-import World
-import Safari
-import Blit
-import Rider
+import game.World
+import game.Safari
+import game.Blit
+import game.Rider
 
 run : List(World.Segment), Safari.Ride, I64, U64 -> U64
 run = |world, ride, n, total|

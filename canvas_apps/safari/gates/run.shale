@@ -57,13 +57,13 @@ function roc_path()
   return real(roc)
 end
 
--- One app built into `bin`, on a cache made for it alone; the build's
--- answer.
-function build(roc, scratch, n, re)
+-- One app, from the folder `dir`, built into `bin` on a cache made for it
+-- alone; the build's answer.
+function build(roc, scratch, dir, n, re)
   local cache = scratch .. "/cache_" .. n
   mkdir(cache)
   local b = run({roc, "build", "--opt=dev", n .. ".roc", "--output=" .. real(scratch) .. "/bin/" .. n},
-    {timeout_ms = 600000, cwd = SAFARI, re = re, head = 4, want = WANT, env = {XDG_CACHE_HOME = real(cache)}})
+    {timeout_ms = 600000, cwd = dir, re = re, head = 4, want = WANT, env = {XDG_CACHE_HOME = real(cache)}})
   remove_tree(cache)
   return b
 end
@@ -85,7 +85,7 @@ end
 
 function grade(roc, scratch, n)
   local out = scratch .. "/bin/" .. n
-  local b = build(roc, scratch, n, "✗|SIGSEGV")
+  local b = build(roc, scratch, SAFARI, n, "✗|SIGSEGV")
   local row = {spec = n, build_ms = b.ms, run_ms = 0, verdict = "PASS", why = ""}
   if b.matched_lines > 0 then
     row.verdict = "FAIL"
@@ -165,7 +165,7 @@ function grade_part(part)
 end
 
 function proof_build(roc, scratch, n)
-  local b = build(roc, scratch, n, "✗")
+  local b = build(roc, scratch, SAFARI .. "/gates", n, "✗")
   print("build " .. n .. ": " .. b.ms .. " ms, " .. b.matched_lines .. " ✗")
   if b.matched_lines > 0 then return false end
   return exists(scratch .. "/bin/" .. n)

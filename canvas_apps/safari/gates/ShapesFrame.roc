@@ -1,6 +1,6 @@
 ## ShapesFrame checks that the shapes the browser is given cover exactly what
-## Safari's draw commands cover. It is test code, a program Safari's gate runs
-## (see SafariFrame for more context). It paints a frame twice: once as
+## Safari's draw commands cover. Safari's gate runs it (see SafariFrame for
+## more context). It paints a frame twice: once as
 ## SafariFrame paints it, and once with the commands replaced by the shapes
 ## they become for the browser, painted by ShapesPixels, the Roc twin of
 ## web/shapes_canvas.js. Gradients included, the two agree pixel for pixel
@@ -12,15 +12,16 @@
 ##
 ##   roc build --opt=dev ShapesFrame.roc --output=<bin>; <bin> [steps] | node pixels_png.mjs <png>
 app [main!] {
-	lib: "../lib/main.roc",
+	lib: "../../lib/main.roc",
+	game: "../game.roc",
 }
 
-import SafariRide
+import game.SafariRide
 import SafariFrame
 import ShapesPixels
 import lib.Shapes
-import SafariShapes
-import Screen
+import game.SafariShapes
+import game.Screen
 import Hex
 
 ride_to : SafariRide.Model, I64 -> SafariRide.Model

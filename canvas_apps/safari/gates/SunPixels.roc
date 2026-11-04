@@ -1,14 +1,13 @@
-## SunPixels paints Safari's sun into a frame's pixels for SafariFrame, so it
-## is test code too: the game never runs it (see SafariFrame for more
-## context). It paints the sun's glow and then its disc, as SafariShapes
+## SunPixels paints Safari's sun into a frame's pixels for SafariFrame (see
+## SafariFrame for more context). It paints the sun's glow and then its disc, as SafariShapes
 ## describes them, and clips both to the sky. The frame paints the sun before
 ## the draw commands, so the mountains can hide it.
 import lib.Brush
 import PixelGrid
-import SafariShapes
-import Screen
+import game.SafariShapes
+import game.Screen
 import ScreenRoll
-import Sky
+import game.Sky
 
 SunPixels :: [].{
 

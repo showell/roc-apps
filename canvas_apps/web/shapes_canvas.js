@@ -4,7 +4,7 @@
 // that type, reads them out of the wasm, and this file does what a canvas
 // does with them. It answers one name, `ShapesCanvas`, with `paint`.
 //
-// Its Roc twin is safari/ShapesPixels.roc, which paints the same shapes into
+// Its Roc twin is safari/gates/ShapesPixels.roc, which paints the same shapes into
 // exact pixels, with no anti-aliasing, for Safari's gate. The gate checks the
 // twin, not this file, since Roc can't run a canvas. This file is checked by
 // page_check.mjs, which runs every built page against a stand-in canvas, and

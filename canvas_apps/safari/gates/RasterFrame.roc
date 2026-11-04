@@ -1,16 +1,17 @@
 ## RasterFrame paints one Safari frame with SafariFrame and prints it: a hash
 ## line, the size, then every pixel as six hex digits, which pixels_png.mjs
-## turns into a PNG. It is test code, a program Safari's gate runs (see
-## SafariFrame for more context).
+## turns into a PNG. Safari's gate runs it (see SafariFrame for more
+## context).
 ##
 ##   roc build --opt=dev RasterFrame.roc --output=<bin>; <bin> [steps] | node pixels_png.mjs <png>
 app [main!] {
-	lib: "../lib/main.roc",
+	lib: "../../lib/main.roc",
+	game: "../game.roc",
 }
 
-import SafariRide
+import game.SafariRide
 import SafariFrame
-import Screen
+import game.Screen
 import Hex
 
 ride_to : SafariRide.Model, I64 -> SafariRide.Model

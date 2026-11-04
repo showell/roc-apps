@@ -37,7 +37,7 @@ Every module that began as an emission says so in its header.
 | `Safari.roc` and the chapter modules | the world, the route, the rider, the animals, the scenery, and how each is drawn |
 | `RocBird.roc` | the bird, the first thing here that was never Codex |
 | `*Spec.roc` | the 54 spec apps, each chapter's checks, graded by `gates/` |
-| `gates/` | the spec apps' and the proof tools' gate, `run.shale`, and the specs' expected outputs |
+| `gates/` | test code the game never runs: the gate, `run.shale`, and its lints; the specs' expected outputs; the proof tools and the modules only they use, which reach the game's modules through the package `game.roc` |
 
 **The rider's lean is a camera.** The whole frame, backdrop and all, turns by
 minus the roll about the middle of the screen, so the world banks into a turn.
@@ -46,7 +46,7 @@ and both runners paint it the way they paint any camera.
 
 ## The native proof tools
 
-`SafariFrame.roc` paints a frame into exact pixels, for the gate only; its
+Everything here lives in `gates/`. `SafariFrame.roc` paints a frame into exact pixels; its
 header says what it is for, why the game paints differently, and which
 generic modules it builds on.
 
@@ -66,8 +66,7 @@ builds and judges them, from the roc-apps root:
 It builds each spec app on roc-apps' pinned nightly (`roc-nightly.txt`,
 installed at `~/build/roc-nightly/<name>/roc`) and compares its output with
 `gates/expected/<Spec>.expected`, then runs StepBack, ShapesFrame and
-RasterFrame at steps 0, 3000, 5025 and 9000. About 75 s for the specs and 65 s for
-the proof tools; `part=1`, `part=2` or `part=proof` runs one piece. The
+RasterFrame at steps 0, 3000, 5025 and 9000. `part=1`, `part=2` or `part=proof` runs one piece. The
 expected files began as the Codex verdicts (safari-codex's `units/`) and are
 safari's own now: when a spec's output rightly changes, its expected file
 changes with it. The script's header has the rest.

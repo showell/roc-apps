@@ -43,7 +43,7 @@ for lint in LINTS do
   local argv = {"shale"}
   for b in lint.budget do push(argv, b) end
   push(argv, real("cookbook:roc/" .. lint.recipe .. ".shale"))
-  push(argv, "glob=*.roc")
+  push(argv, "glob=**/*.roc")
   for a in lint.args do push(argv, a) end
   -- `whole`, not `tail`: name_hunt's summary is one long line.
   local r = run(argv, {cwd = SAFARI, timeout_ms = 600000, whole = 4000000})

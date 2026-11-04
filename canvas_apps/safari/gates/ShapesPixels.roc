@@ -1,9 +1,9 @@
 ## ShapesPixels paints a frame's shapes into exact pixels with ScanlineFill.
-## It is test code: the game never runs it (see SafariFrame for more context).
-## Its twin is web/shapes_canvas.js, which paints the same shapes onto the
-## browser's canvas in the game. ShapesFrame paints a frame from its draw
-## commands, paints it again from the shapes the browser is given using this
-## module, and the gate requires the two to agree pixel for pixel.
+## (See SafariFrame for more context.) Its twin is web/shapes_canvas.js, which
+## paints the same shapes onto the browser's canvas in the game. ShapesFrame
+## paints a frame from its draw commands, paints it again from the shapes the
+## browser is given using this module, and the gate requires the two to agree
+## pixel for pixel.
 ##
 ## It paints only what Safari's draw commands become: polygons, triangle
 ## pieces and unclipped flat discs, each laid over what is there. Any other
@@ -37,7 +37,16 @@ paint_shape = |pixels, { roll, shape }|
 				Skip | Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) => crash "ShapesPixels: a command's disc with a gradient"
 			}
 			match d.clip {
-				Anywhere => ScanlineFill.fill_disc(pixels, { roll, center: ScreenRoll.ScenePoint.({ x: d.x, y: d.y }), radius: d.r, color })
+				Anywhere =>
+					ScanlineFill.fill_disc(
+						pixels,
+						{
+							roll,
+							center: ScreenRoll.ScenePoint.({ x: d.x, y: d.y }),
+							radius: d.r,
+							color,
+						},
+					)
 				Within(_) => crash "ShapesPixels: a command's disc clipped to a rectangle"
 			}
 		}
