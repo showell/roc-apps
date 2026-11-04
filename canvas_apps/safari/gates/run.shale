@@ -85,11 +85,11 @@ end
 
 function grade(roc, scratch, n)
   local out = scratch .. "/bin/" .. n
-  local b = build(roc, scratch, SAFARI, n, "✗|SIGSEGV")
+  local b = build(roc, scratch, SAFARI, n, "✗|●|SIGSEGV")
   local row = {spec = n, build_ms = b.ms, run_ms = 0, verdict = "PASS", why = ""}
   if b.matched_lines > 0 then
     row.verdict = "FAIL"
-    row.why = " " .. b.matched_lines .. " ✗ in the build: " .. trim(get(b, "out", ""))
+    row.why = " " .. b.matched_lines .. " errors or warnings (✗ or ●) in the build: " .. trim(get(b, "out", ""))
   end
   if not exists(out) then
     row.verdict = "FAIL"
@@ -165,8 +165,8 @@ function grade_part(part)
 end
 
 function proof_build(roc, scratch, n)
-  local b = build(roc, scratch, SAFARI .. "/gates", n, "✗")
-  print("build " .. n .. ": " .. b.ms .. " ms, " .. b.matched_lines .. " ✗")
+  local b = build(roc, scratch, SAFARI .. "/gates", n, "✗|●")
+  print("build " .. n .. ": " .. b.ms .. " ms, " .. b.matched_lines .. " errors or warnings")
   if b.matched_lines > 0 then return false end
   return exists(scratch .. "/bin/" .. n)
 end
