@@ -11,7 +11,11 @@ GuardRail :: [].{
 
 	## A quad of the rail: its corners, its colour, and how far ahead it
 	## is, the mean of its corners' distances, for the depth sort.
-	RailPoly : { corners : List(Geom.Vec3), color : I64, forward : F64 }
+	RailPoly : {
+		corners : List(Geom.Vec3),
+		color : I64,
+		forward : F64,
+	}
 
 	rail_height : F64
 	rail_height = 0.5
@@ -59,7 +63,11 @@ GuardRail :: [].{
 
 	## A stretch of bar between each two neighbouring points of `path`.
 	bars : List(Geom.RiderPt) -> List(GuardRail.RailPoly)
-	bars = |path| List.map2(path, path.drop_first(1), |from, to| bar({ from, to }))
+	bars = |path| List.map2(
+		path,
+		path.drop_first(1),
+		|from, to| bar({ from, to }),
+	)
 
 	## A post at each point of `path`, turned to face along the path from
 	## the point before it to the point after it. A post at an end of the
@@ -68,7 +76,12 @@ GuardRail :: [].{
 	posts = |path| {
 		before = path.take_first(1).concat(path.drop_last(1))
 		after = path.drop_first(1).concat(path.take_last(1))
-		List.map3(before, path, after, |previous, at, next| post(at, { previous, next }))
+		List.map3(
+			before,
+			path,
+			after,
+			|previous, at, next| post(at, { previous, next }),
+		)
 	}
 
 	## A quad on screen, cut at the camera's near plane; a quad with fewer
@@ -86,7 +99,11 @@ GuardRail :: [].{
 
 ## A quad with these corners, in `color`.
 rail_quad : List(Geom.Vec3), I64 -> GuardRail.RailPoly
-rail_quad = |corners, color| { corners, color, forward: mean_forward(corners) }
+rail_quad = |corners, color| {
+	corners,
+	color,
+	forward: mean_forward(corners),
+}
 
 ## The mean of the corners' distances ahead, summed from the first corner
 ## to the last; a float sum's rounding depends on its order.
@@ -99,7 +116,11 @@ mean_forward = |corners| {
 
 ## A point of the path, at `height` above the ground.
 at_height : Geom.RiderPt, F64 -> Geom.Vec3
-at_height = |point, height| { right: point.right, forward: point.forward, height }
+at_height = |point, height| {
+	right: point.right,
+	forward: point.forward,
+	height,
+}
 
 ## The bar from `from` to `to`, bottom edge first.
 bar : { from : Geom.RiderPt, to : Geom.RiderPt } -> GuardRail.RailPoly

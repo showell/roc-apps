@@ -11,9 +11,28 @@ TruckDraw :: [].{
 	Lights : { headlights : [On, Off], brake_lights : [On, Off] }
 
 	## The truck whose trailer is centred at `center` on `road`.
-	draw : { road : TruckShape.Road, center : { along : F64, across : F64 }, lights : TruckDraw.Lights, cam_focal : F64, view_w : F64 } -> List(Paint.DrawCmd)
-	draw = |{ road, center, lights, cam_focal, view_w }| {
-		truck = { road, box: TruckShape.truck_box(center), cam_focal, view_w }
+	draw : {
+		road : TruckShape.Road,
+		center : { along : F64, across : F64 },
+		lights : TruckDraw.Lights,
+		cam_focal : F64,
+		view_w : F64,
+	} -> List(Paint.DrawCmd)
+	draw = |
+		{
+			road,
+			center,
+			lights,
+			cam_focal,
+			view_w,
+		},
+	| {
+		truck = {
+			road,
+			box: TruckShape.truck_box(center),
+			cam_focal,
+			view_w,
+		}
 		beams =
 			match lights.headlights {
 				On => TruckLights.headlight_beams(truck)
@@ -24,6 +43,10 @@ TruckDraw :: [].{
 				On => TruckLights.brake_lights(truck)
 				Off => []
 			}
-		List.join([beams, TruckBody.draw(truck), brake_lights])
+		List.join([
+			beams,
+			TruckBody.draw(truck),
+			brake_lights,
+		])
 	}
 }

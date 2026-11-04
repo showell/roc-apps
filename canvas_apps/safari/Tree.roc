@@ -36,19 +36,55 @@ Tree :: [].{
 	## One tier of the crown: where its top and its bottom are, as fractions of
 	## the foliage down from the crown's top, and how wide its bottom is, as a
 	## fraction of the crown's width.
-	Tier : { top : F64, bottom : F64, width : F64 }
+	Tier : {
+		top : F64,
+		bottom : F64,
+		width : F64,
+	}
 
 	## The tiers, top to bottom. Each overlaps the next.
 	tiers : List(Tree.Tier)
 	tiers = [
-		{ top: 0.0, bottom: 0.3, width: 0.35 },
-		{ top: 0.1, bottom: 0.4, width: 0.44 },
-		{ top: 0.2, bottom: 0.5, width: 0.53 },
-		{ top: 0.3, bottom: 0.6, width: 0.63 },
-		{ top: 0.4, bottom: 0.7, width: 0.72 },
-		{ top: 0.5, bottom: 0.8, width: 0.81 },
-		{ top: 0.6, bottom: 0.9, width: 0.91 },
-		{ top: 0.7, bottom: 1.0, width: 1.0 },
+		{
+			top: 0.0,
+			bottom: 0.3,
+			width: 0.35,
+		},
+		{
+			top: 0.1,
+			bottom: 0.4,
+			width: 0.44,
+		},
+		{
+			top: 0.2,
+			bottom: 0.5,
+			width: 0.53,
+		},
+		{
+			top: 0.3,
+			bottom: 0.6,
+			width: 0.63,
+		},
+		{
+			top: 0.4,
+			bottom: 0.7,
+			width: 0.72,
+		},
+		{
+			top: 0.5,
+			bottom: 0.8,
+			width: 0.81,
+		},
+		{
+			top: 0.6,
+			bottom: 0.9,
+			width: 0.91,
+		},
+		{
+			top: 0.7,
+			bottom: 1.0,
+			width: 1.0,
+		},
 	]
 
 	trunk_color : I64
@@ -79,20 +115,57 @@ Tree :: [].{
 	## less than a pixel tall isn't drawn.
 	draw : Tree.TreeInView -> List(Paint.DrawCmd)
 	draw = |tree| {
-		seen = outline({ right: tree.right, forward: tree.forward, height: tree.height, cam_focal: tree.cam_focal, view_w: tree.view_w })
+		seen = outline({
+			right: tree.right,
+			forward: tree.forward,
+			height: tree.height,
+			cam_focal: tree.cam_focal,
+			view_w: tree.view_w,
+		})
 		if seen.height_px < 1.0 {
 			[]
 		} else {
-			List.concat(draw_trunk(seen, tree.trunk), tiers.join_map(|tier| draw_tier(tree, { seen, tier })))
+			List.concat(
+				draw_trunk(seen, tree.trunk),
+				tiers.join_map(|tier| draw_tier(tree, { seen, tier })),
+			)
 		}
 	}
 
 	## Where a tree of `height` metres, standing `right` and `forward` of the
 	## rider, is on the screen.
-	outline : { right : F64, forward : F64, height : F64, cam_focal : F64, view_w : F64 } -> Tree.Outline
-	outline = |{ right, forward, height, cam_focal, view_w }| {
-		base = Camera.project({ right, forward, height: 0.0 }, { cam_focal, view_w })
-		top = Camera.project({ right, forward, height }, { cam_focal, view_w })
+	outline : {
+		right : F64,
+		forward : F64,
+		height : F64,
+		cam_focal : F64,
+		view_w : F64,
+	} -> Tree.Outline
+	outline = |
+		{
+			right,
+			forward,
+			height,
+			cam_focal,
+			view_w,
+		},
+	| {
+		base = Camera.project(
+			{
+				right,
+				forward,
+				height: 0.0,
+			},
+			{ cam_focal, view_w },
+		)
+		top = Camera.project(
+			{
+				right,
+				forward,
+				height,
+			},
+			{ cam_focal, view_w },
+		)
 		height_px = (base.y - top.y)
 		foliage_px = (height_px * crown_height)
 		crown_bottom_y = (base.y - (height_px * visible_trunk))
@@ -119,7 +192,11 @@ Tree :: [].{
 			{ x: left, y: seen.base_y },
 		]
 		match corners {
-			RoundCorners => Paint.push_round_poly(trunk_color, 1.0, points)
+			RoundCorners => Paint.push_round_poly(
+				trunk_color,
+				1.0,
+				points,
+			)
 			SharpCorners => Paint.push_poly(trunk_color, points)
 		}
 	}
@@ -162,7 +239,11 @@ Tree :: [].{
 			[],
 			|sorted, point|
 				match sorted.find_first_index(|placed| is_before(point, placed)) {
-					Ok(at) => List.join([sorted.take_first(at), [point], sorted.drop_first(at)])
+					Ok(at) => List.join([
+						sorted.take_first(at),
+						[point],
+						sorted.drop_first(at),
+					])
 					Err(NotFound) => sorted.append(point)
 				},
 		)
@@ -177,7 +258,11 @@ is_before = |a, b| a.x < b.x or (F64.to_bits(a.x) == F64.to_bits(b.x) and a.y < 
 trim_hull : List(Camera.ScreenPt), Camera.ScreenPt -> List(Camera.ScreenPt)
 trim_hull = |hull, point|
 	match hull {
-		[.., a, b] => {
+		[
+			..,
+			a,
+			b,
+		] => {
 			turn = (((b.x - a.x) * (point.y - a.y)) - ((b.y - a.y) * (point.x - a.x)))
 			if (turn <= 0.0) trim_hull(hull.drop_last(1), point) else hull
 		}
@@ -205,7 +290,10 @@ draw_tier : Tree.TreeInView, { seen : Tree.Outline, tier : Tree.Tier } -> List(P
 draw_tier = |tree, { seen, tier }| {
 	radius = ((Tree.crown_width * tier.width) * tree.height)
 	match tree.crown {
-		Cones if (tree.forward - radius) < Tree.min_cone_forward => Tree.tier_triangle(seen, { tier, color: tree.color })
+		Cones if (tree.forward - radius) < Tree.min_cone_forward => Tree.tier_triangle(
+			seen,
+			{ tier, color: tree.color },
+		)
 		Cones => tier_cone(tree, { tier, radius })
 		Triangles => Tree.tier_triangle(seen, { tier, color: tree.color })
 	}
@@ -216,7 +304,14 @@ tier_cone : Tree.TreeInView, { tier : Tree.Tier, radius : F64 } -> List(Paint.Dr
 tier_cone = |tree, { tier, radius }| {
 	base_height = ((Tree.visible_trunk + (Tree.crown_height * (1.0 - tier.bottom))) * tree.height)
 	apex_height = ((Tree.visible_trunk + (Tree.crown_height * (1.0 - tier.top))) * tree.height)
-	apex = Camera.project({ right: tree.right, forward: tree.forward, height: apex_height }, { cam_focal: tree.cam_focal, view_w: tree.view_w })
+	apex = Camera.project(
+		{
+			right: tree.right,
+			forward: tree.forward,
+			height: apex_height,
+		},
+		{ cam_focal: tree.cam_focal, view_w: tree.view_w },
+	)
 	ring = ring_angles.map(
 		|angle| {
 			on_ring = {
@@ -228,5 +323,9 @@ tier_cone = |tree, { tier, radius }| {
 		},
 	)
 	hull = Tree.convex_hull(ring.append(apex))
-	if (hull.len() < 3) [] else Paint.push_round_poly(tree.color, tree.shade, hull)
+	if (hull.len() < 3) [] else Paint.push_round_poly(
+		tree.color,
+		tree.shade,
+		hull,
+	)
 }

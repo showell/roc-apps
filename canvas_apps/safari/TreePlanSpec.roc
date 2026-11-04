@@ -12,18 +12,37 @@ import TreePlan
 import World
 
 segs : List(World.Segment)
-segs = [World.segment_at(0), World.segment_at(1), World.segment_at(2)]
+segs = [
+	World.segment_at(0),
+	World.segment_at(1),
+	World.segment_at(2),
+]
 
 origin : Frame.Pose
-origin = { along: 0.0, across: 0.0, yaw: 0.0, hw: 2.0 }
+origin = {
+	along: 0.0,
+	across: 0.0,
+	yaw: 0.0,
+	hw: 2.0,
+}
 
 up_road : Frame.Pose
-up_road = { along: 100.0, across: 0.0, yaw: 0.0, hw: 2.0 }
+up_road = {
+	along: 100.0,
+	across: 0.0,
+	yaw: 0.0,
+	hw: 2.0,
+}
 
 ## The first three segments, seen from `pose` through a camera of focal
 ## length `cam_focal`.
 view_from : Frame.Pose, F64 -> TreePlan.View
-view_from = |pose, cam_focal| { world: segs, chain: [0, 1, 2], pose, cam_focal }
+view_from = |pose, cam_focal| {
+	world: segs,
+	chain: [0, 1, 2],
+	pose,
+	cam_focal,
+}
 
 from_origin : TreePlan.View
 from_origin = view_from(origin, 500.0)
@@ -31,7 +50,15 @@ from_origin = view_from(origin, 500.0)
 ## A green tree `along` metres into the first segment, 3.5 m right of the
 ## road's middle.
 green_tree_at : F64 -> { place : I64, tree : Scenery.Tree }
-green_tree_at = |along| { place: 0, tree: { along, across: 3.5, color: 1858082, height: 5.85 } }
+green_tree_at = |along| {
+	place: 0,
+	tree: {
+		along,
+		across: 3.5,
+		color: 1858082,
+		height: 5.85,
+	},
+}
 
 planted_got : List(I64)
 planted_got = List.concat(segs.map(|seg| seg.trees.len().to_i64_wrap()), [TreePlan.max_vis_trees])
@@ -40,16 +67,26 @@ planted_want : List(I64)
 planted_want = [28, 16, 22, 640]
 
 lone_tree : TreePlan.TreeItem
-lone_tree = TreePlan.tree_in_view(from_origin, green_tree_at(120.0)).first() ?? crash "TreePlanSpec: a tree 120 m ahead is in view"
+lone_tree = TreePlan.tree_in_view(
+	from_origin,
+	green_tree_at(120.0),
+).first() ?? crash "TreePlanSpec: a tree 120 m ahead is in view"
 
 one_got : List(F64)
-one_got = [lone_tree.right, lone_tree.fwd, lone_tree.height]
+one_got = [
+	lone_tree.right,
+	lone_tree.fwd,
+	lone_tree.height,
+]
 
 one_want : List(F64)
 one_want = [3.5, 120.0, 5.85]
 
 one_colour_got : List(I64)
-one_colour_got = [TreePlan.tree_in_view(from_origin, green_tree_at(120.0)).len().to_i64_wrap(), lone_tree.color]
+one_colour_got = [
+	TreePlan.tree_in_view(from_origin, green_tree_at(120.0)).len().to_i64_wrap(),
+	lone_tree.color,
+]
 
 one_colour_want : List(I64)
 one_colour_want = [1, 1858082]
@@ -66,7 +103,11 @@ cull_want : List(I64)
 cull_want = [0, 1, 0, 0]
 
 seg0_got : List(I64)
-seg0_got = [from_origin, view_from(up_road, 500.0), view_from(origin, 1.0)].map(|view| TreePlan.segment_trees(view, 0).len().to_i64_wrap())
+seg0_got = [
+	from_origin,
+	view_from(up_road, 500.0),
+	view_from(origin, 1.0),
+].map(|view| TreePlan.segment_trees(view, 0).len().to_i64_wrap())
 
 seg0_want : List(I64)
 seg0_want = [28, 20, 0]
@@ -79,10 +120,22 @@ planted_tree : U64 -> TreePlan.TreeItem
 planted_tree = |i| first_segment.get(i) ?? crash "TreePlanSpec: the first segment has 28 trees in view"
 
 order_got : List(F64)
-order_got = [planted_tree(0).fwd, planted_tree(1).fwd, planted_tree(2).fwd, planted_tree(0).right, planted_tree(1).right]
+order_got = [
+	planted_tree(0).fwd,
+	planted_tree(1).fwd,
+	planted_tree(2).fwd,
+	planted_tree(0).right,
+	planted_tree(1).right,
+]
 
 order_want : List(F64)
-order_want = [6.0, 6.0, 36.0, (-3.5), 3.5]
+order_want = [
+	6.0,
+	6.0,
+	36.0,
+	(-3.5),
+	3.5,
+]
 
 height_got : List(F64)
 height_got = [planted_tree(0).height, planted_tree(2).height]
@@ -106,7 +159,12 @@ tree_place_at = |i|
 	}
 
 items_got : List(I64)
-items_got = [keys.len().to_i64_wrap(), tree_place_at(0), tree_place_at(27), TreePlan.depth_keys([]).len().to_i64_wrap()]
+items_got = [
+	keys.len().to_i64_wrap(),
+	tree_place_at(0),
+	tree_place_at(27),
+	TreePlan.depth_keys([]).len().to_i64_wrap(),
+]
 
 items_want : List(I64)
 items_want = [28, 0, 27, 0]

@@ -12,14 +12,30 @@ import Grade
 import World
 
 segs : List(World.Segment)
-segs = [World.segment_at(0), World.segment_at(1), World.segment_at(2)]
+segs = [
+	World.segment_at(0),
+	World.segment_at(1),
+	World.segment_at(2),
+]
 
 origin : Frame.Pose
-origin = { along: 0.0, across: 0.0, yaw: 0.0, hw: 2.0 }
+origin = {
+	along: 0.0,
+	across: 0.0,
+	yaw: 0.0,
+	hw: 2.0,
+}
 
 ## The first three segments seen from the origin, at 1 m a step.
 from_origin : CatPlan.View
-from_origin = { world: segs, chain: [0, 1, 2], pose: origin, cam_focal: 500.0, rider_along: 0.0, speed: 1.0 }
+from_origin = {
+	world: segs,
+	chain: [0, 1, 2],
+	pose: origin,
+	cam_focal: 500.0,
+	rider_along: 0.0,
+	speed: 1.0,
+}
 
 has_got : List(Bool)
 has_got = segs.map(has_cat)
@@ -36,14 +52,36 @@ has_want : List(Bool)
 has_want = [False, True, False]
 
 gap_got : List(F64)
-gap_got = [0.0, 120.0].join_map(|rider_along| [0, 1, 2].map(|place| CatPlan.gap_to_segment({ ..from_origin, rider_along }, place)))
+gap_got = [0.0, 120.0].join_map(
+	|rider_along| [
+		0,
+		1,
+		2,
+	].map(|place| CatPlan.gap_to_segment({ ..from_origin, rider_along }, place)),
+)
 
 gap_want : List(F64)
-gap_want = [0.0, 500.0, 820.0, (-120.0), 380.0, 700.0]
+gap_want = [
+	0.0,
+	500.0,
+	820.0,
+	(-120.0),
+	380.0,
+	700.0,
+]
 
 ## The cats in view for a rider `along` metres into the first segment.
 riding : F64 -> List(CatPlan.CatItem)
-riding = |along| CatPlan.in_view({ ..from_origin, pose: { along, across: 0.0, yaw: 0.0, hw: 2.0 }, rider_along: along })
+riding = |along| CatPlan.in_view({
+	..from_origin,
+	pose: {
+		along,
+		across: 0.0,
+		yaw: 0.0,
+		hw: 2.0,
+	},
+	rider_along: along,
+})
 
 seen : List(CatPlan.CatItem)
 seen = riding(300.0)
@@ -83,7 +121,11 @@ closing_got = [
 ]
 
 closing_want : List(F64)
-closing_want = [(-100.0), (-100.0), 0.0]
+closing_want = [
+	(-100.0),
+	(-100.0),
+	0.0,
+]
 
 cull_got : List(I64)
 cull_got = [
@@ -102,7 +144,11 @@ cull_want = [0, 1, 1, 0, 0, 0]
 items_got : List(Bool)
 items_got = {
 	key = CatPlan.depth_keys(seen).first() ?? crash "CatPlanSpec: one cat is in view"
-	[CatPlan.depth_keys(seen).len() == 1, CatPlan.depth_keys([]).len() == 0, key.subject == Cat(0)]
+	[
+		CatPlan.depth_keys(seen).len() == 1,
+		CatPlan.depth_keys([]).len() == 0,
+		key.subject == Cat(0),
+	]
 }
 
 items_want : List(Bool)

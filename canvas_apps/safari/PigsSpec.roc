@@ -12,13 +12,26 @@ gaze : Scenery.Critter
 gaze = Pigs.gaze_pig(1000.0)
 
 gaze_got : List(F64)
-gaze_got = [gaze.along, gaze.across, gaze.height, Pigs.pig_height, Pigs.pig_dist_before_end, Pigs.gaze_pig_along_offset]
+gaze_got = [
+	gaze.along,
+	gaze.across,
+	gaze.height,
+	Pigs.pig_height,
+	Pigs.pig_dist_before_end,
+	Pigs.gaze_pig_along_offset,
+]
 
 gaze_got_want : List(F64)
 gaze_got_want = [942.0, 12.0, 1.1, 1.1, 60.0, 2.0]
 
 gaze_kind_got : List(I64)
-gaze_kind_got = [gaze.codepoint, Pigs.pig_codepoint, Pigs.pig_novelty_count, Pigs.big_herd_cols, Pigs.big_herd_rows]
+gaze_kind_got = [
+	gaze.codepoint,
+	Pigs.pig_codepoint,
+	Pigs.pig_novelty_count,
+	Pigs.big_herd_cols,
+	Pigs.big_herd_rows,
+]
 
 gaze_kind_want : List(I64)
 gaze_kind_want = [128022, 128022, 2, 7, 7]
@@ -49,7 +62,29 @@ herd_along_got : List(F64)
 herd_along_got = [0, 3, 6].join_map(row_alongs)
 
 herd_along_want : List(F64)
-herd_along_want = [934.0, 938.0, 942.0, 946.0, 950.0, 954.0, 958.0, 952.0, 956.0, 960.0, 964.0, 968.0, 972.0, 976.0, 970.0, 974.0, 978.0, 982.0, 986.0, 990.0, 994.0]
+herd_along_want = [
+	934.0,
+	938.0,
+	942.0,
+	946.0,
+	950.0,
+	954.0,
+	958.0,
+	952.0,
+	956.0,
+	960.0,
+	964.0,
+	968.0,
+	972.0,
+	976.0,
+	970.0,
+	974.0,
+	978.0,
+	982.0,
+	986.0,
+	990.0,
+	994.0,
+]
 
 herd_across_got : List(F64)
 herd_across_got = [0, 6, 7, 13, 14, 21, 28, 35, 42, 48].map(|i| herd_pig_at(i).across)
@@ -67,7 +102,11 @@ row : List(Scenery.Critter)
 row = Pigs.fill_pig_row(1000.0)
 
 row_count_got : List(I64)
-row_count_got = [row.len().to_i64_wrap(), Pigs.pig_row_front.len().to_i64_wrap(), Pigs.pig_row_back.len().to_i64_wrap()]
+row_count_got = [
+	row.len().to_i64_wrap(),
+	Pigs.pig_row_front.len().to_i64_wrap(),
+	Pigs.pig_row_back.len().to_i64_wrap(),
+]
 
 row_count_want : List(I64)
 row_count_want = [10, 4, 6]
@@ -99,7 +138,24 @@ offsets_got = List.join([
 ])
 
 offsets_want : List(F64)
-offsets_want = [(-6.0), (-2.0), 2.0, 6.0, (-10.0), (-6.0), (-2.0), 2.0, 6.0, 10.0, 6.0, (-6.0), 4.0, 6.0, 1.2, 1.0]
+offsets_want = [
+	(-6.0),
+	(-2.0),
+	2.0,
+	6.0,
+	(-10.0),
+	(-6.0),
+	(-2.0),
+	2.0,
+	6.0,
+	10.0,
+	6.0,
+	(-6.0),
+	4.0,
+	6.0,
+	1.2,
+	1.0,
+]
 
 # --- Entry ---
 

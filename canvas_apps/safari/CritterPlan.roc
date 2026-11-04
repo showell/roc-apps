@@ -96,7 +96,10 @@ CritterPlan :: [].{
 		if position >= safari_reach {
 			[]
 		} else {
-			pond_sightings(scene, { mapper: Frame.chain_map(position), segment: segment_at(scene, position) })
+			pond_sightings(
+				scene,
+				{ mapper: Frame.chain_map(position), segment: segment_at(scene, position) },
+			)
 		}
 
 	## The corner's animals and the pond's ducks of the world's segment at
@@ -112,7 +115,10 @@ CritterPlan :: [].{
 
 	## The ducks of `segment`, the one before the rider's, if it has a pond.
 	ducks_behind : CritterPlan.Scene, World.Segment -> List(Billboards.Sighting)
-	ducks_behind = |scene, segment| pond_sightings(scene, { mapper: Frame.prev_map(segment), segment })
+	ducks_behind = |scene, segment| pond_sightings(
+		scene,
+		{ mapper: Frame.prev_map(segment), segment },
+	)
 
 	## The depth-sort keys of the critters to draw, each naming its billboard
 	## by its place in `billboards`.
@@ -136,7 +142,11 @@ segment_at = |scene, position| {
 }
 
 ## A critter, placed through `mapper` on the road's map, as the rider sees it.
-sight_critter : CritterPlan.Scene, { mapper : Frame.Mapper, critter : Scenery.Critter } -> Billboards.Sighting
+sight_critter : CritterPlan.Scene,
+{
+	mapper : Frame.Mapper,
+	critter : Scenery.Critter,
+} -> Billboards.Sighting
 sight_critter = |scene, { mapper, critter }|
 	Billboards.sighting({
 		at: Frame.map_pt(
@@ -152,7 +162,11 @@ sight_critter = |scene, { mapper, critter }|
 		facing: if (critter.face_right) FacesRight else FacesLeft,
 	})
 
-corner_sightings : CritterPlan.Scene, { mapper : Frame.Mapper, segment : World.Segment } -> List(Billboards.Sighting)
+corner_sightings : CritterPlan.Scene,
+{
+	mapper : Frame.Mapper,
+	segment : World.Segment,
+} -> List(Billboards.Sighting)
 corner_sightings = |scene, { mapper, segment }|
 	SafariCritter.corner_critters({
 		creature: segment.exit_creature,
@@ -164,7 +178,11 @@ corner_sightings = |scene, { mapper, segment }|
 
 ## The ducks on `segment`'s pond, if it has one. A duck's place is measured
 ## from the corner at the segment's end.
-pond_sightings : CritterPlan.Scene, { mapper : Frame.Mapper, segment : World.Segment } -> List(Billboards.Sighting)
+pond_sightings : CritterPlan.Scene,
+{
+	mapper : Frame.Mapper,
+	segment : World.Segment,
+} -> List(Billboards.Sighting)
 pond_sightings = |scene, { mapper, segment }|
 	if Scenery.is_pond(segment.exit_creature) {
 		Pond.ducks.map(

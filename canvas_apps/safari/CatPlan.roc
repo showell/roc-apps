@@ -13,7 +13,13 @@ CatPlan :: [].{
 
 	## A cat to draw: where it stands in the rider's view, its height, its
 	## pose, and how high its leap has raised it.
-	CatItem : { right : F64, fwd : F64, height : F64, pose : Cat.Pose, lift : F64 }
+	CatItem : {
+		right : F64,
+		fwd : F64,
+		height : F64,
+		pose : Cat.Pose,
+		lift : F64,
+	}
 
 	## What the cats are seen from: the world's segments, the chain of them
 	## ahead of the rider, the rider's pose, the camera's focal length, how
@@ -85,9 +91,20 @@ cat_in_view = |view, { place, crossing }| {
 	} else if ((crossing.height / seen.forward) * view.cam_focal) < SceneLimits.min_scenery_px {
 		[]
 	} else {
-		[{ right: seen.right, fwd: seen.forward, height: crossing.height, pose: state.pose, lift: state.lift }]
+		[
+			{
+				right: seen.right,
+				fwd: seen.forward,
+				height: crossing.height,
+				pose: state.pose,
+				lift: state.lift,
+			},
+		]
 	}
 }
 
 world_segment : CatPlan.View, I64 -> World.Segment
-world_segment = |view, seg_index| view.world.get(I64.to_u64_wrap(seg_index)) ?? crash "CatPlan: no such segment"
+world_segment = |
+	view,
+	seg_index,
+| view.world.get(I64.to_u64_wrap(seg_index)) ?? crash "CatPlan: no such segment"

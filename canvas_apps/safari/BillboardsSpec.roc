@@ -23,7 +23,12 @@ sightings =
 		{ forward: 50.0, height: 0.9 },
 	].map(
 		|{ forward, height }|
-			Billboards.sighting({ at: { right: 2.5, forward }, height, codepoint: 128004, facing: FacesRight }),
+			Billboards.sighting({
+				at: { right: 2.5, forward },
+				height,
+				codepoint: 128004,
+				facing: FacesRight,
+			}),
 	)
 
 is_in_view : Billboards.Sighting -> Bool
@@ -54,7 +59,14 @@ near_cow : Billboards.Billboard
 near_cow = billboard_of(sightings.get(3) ?? crash "BillboardsSpec: ten sightings")
 
 left_bull : Billboards.Billboard
-left_bull = billboard_of(Billboards.sighting({ at: { right: (-1.5), forward: 50.0 }, height: 1.6, codepoint: 128002, facing: FacesLeft }))
+left_bull = billboard_of(
+	Billboards.sighting({
+		at: { right: (-1.5), forward: 50.0 },
+		height: 1.6,
+		codepoint: 128002,
+		facing: FacesLeft,
+	}),
+)
 
 kept_got : List(Bool)
 kept_got = sightings.map(is_in_view)
@@ -69,10 +81,24 @@ culled_want : List(Bool)
 culled_want = [False, False, False, False, False, False, True, True, True, False]
 
 carried_real_got : List(F64)
-carried_real_got = [near_cow.right, near_cow.forward, near_cow.height, left_bull.right, left_bull.forward, left_bull.height]
+carried_real_got = [
+	near_cow.right,
+	near_cow.forward,
+	near_cow.height,
+	left_bull.right,
+	left_bull.forward,
+	left_bull.height,
+]
 
 carried_real_want : List(F64)
-carried_real_want = [2.5, 0.5, 1.0, (-1.5), 50.0, 1.6]
+carried_real_want = [
+	2.5,
+	0.5,
+	1.0,
+	(-1.5),
+	50.0,
+	1.6,
+]
 
 carried_int_got : List(I64)
 carried_int_got = [near_cow.codepoint, left_bull.codepoint]

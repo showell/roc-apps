@@ -51,7 +51,10 @@ SafariFrame :: [].{
 	paint : SafariFrame.Scene -> List(U32)
 	paint = |scene| {
 		roll = SafariFrame.screen_roll(scene.roll)
-		var $px = BackdropPixels.paint(roll, { sky_top: scene.sky_top, sky_horizon: scene.sky_horizon })
+		var $px = BackdropPixels.paint(
+			roll,
+			{ sky_top: scene.sky_top, sky_horizon: scene.sky_horizon },
+		)
 		$px = SunPixels.paint($px, { roll, sun: scene.sun })
 		for draw_command in scene.commands {
 			$px = paint_command($px, { roll, draw_command })
@@ -82,7 +85,11 @@ paint_command : List(U32), { roll : ScreenRoll, draw_command : Paint.DrawCmd } -
 paint_command = |pixels, { roll, draw_command }|
 	if draw_command.tag == Paint.beacon_tag {
 		match draw_command.geom {
-			[x, y, radius] => {
+			[
+				x,
+				y,
+				radius,
+			] => {
 				opaque = Brush.opaque(draw_command.color)
 				ScanlineFill.fill_disc(
 					pixels,
@@ -101,6 +108,13 @@ paint_command = |pixels, { roll, draw_command }|
 		match fill {
 			Skip => pixels
 			Flat(_) | Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) =>
-				ScanlineFill.fill_polygon(pixels, { roll, pts: draw_command.pts, fill })
+				ScanlineFill.fill_polygon(
+					pixels,
+					{
+						roll,
+						pts: draw_command.pts,
+						fill,
+					},
+				)
 		}
 	}

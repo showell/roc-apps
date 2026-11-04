@@ -21,8 +21,18 @@ Blit :: [].{
 	blue_of = |color| I64.bitwise_and(color, 255)
 
 	## A colour as 0xRRGGBB from its three channels.
-	pack_rgb : { red : I64, green : I64, blue : I64 } -> I64
-	pack_rgb = |{ red, green, blue }| {
+	pack_rgb : {
+		red : I64,
+		green : I64,
+		blue : I64,
+	} -> I64
+	pack_rgb = |
+		{
+			red,
+			green,
+			blue,
+		},
+	| {
 		red_bits = I64.shl_wrap(red, 16)
 		green_bits = I64.shl_wrap(green, 8)
 		I64.bitwise_or(I64.bitwise_or(red_bits, green_bits), blue)
@@ -55,11 +65,18 @@ Blit :: [].{
 
 	## A shaded polygon's colour in its middle.
 	width_shade_middle : I64, F64 -> I64
-	width_shade_middle = |color, strength| shade_color(color, (1.0 + (shade_middle_lift * strength)))
+	width_shade_middle = |color, strength| shade_color(
+		color,
+		(1.0 + (shade_middle_lift * strength)),
+	)
 
 	## A shaded polygon's colours from edge to edge.
 	width_shade_stops : I64, F64 -> List(I64)
-	width_shade_stops = |color, strength| [width_shade_edge(color, strength), width_shade_middle(color, strength), width_shade_edge(color, strength)]
+	width_shade_stops = |color, strength| [
+		width_shade_edge(color, strength),
+		width_shade_middle(color, strength),
+		width_shade_edge(color, strength),
+	]
 
 	min_disc_radius : F64
 	min_disc_radius = 0.5
@@ -74,7 +91,12 @@ Blit :: [].{
 	min_shade_width = 1.0
 
 	is_disc_visible : { radius : F64, alpha : F64 } -> Bool
-	is_disc_visible = |{ radius, alpha }| ((radius >= min_disc_radius) and (alpha >= min_disc_alpha))
+	is_disc_visible = |
+		{
+			radius,
+			alpha,
+		},
+	| ((radius >= min_disc_radius) and (alpha >= min_disc_alpha))
 
 	is_radial_visible : F64 -> Bool
 	is_radial_visible = |radius| (radius >= min_gradient_radius)
@@ -110,7 +132,12 @@ Blit :: [].{
 	expand_cmd = |cmd|
 		match kind_of(cmd) {
 			ShadedAcross => [expand_shade(cmd)]
-			Disc => if (is_disc_visible({ radius: radius_of(cmd), alpha: cmd.strength })) [cmd] else []
+			Disc => if (
+				is_disc_visible({
+					radius: radius_of(cmd),
+					alpha: cmd.strength,
+				})
+			) [cmd] else []
 			RadialGradient => if (is_radial_visible(radius_of(cmd))) [cmd] else []
 			Unchanged => [cmd]
 		}
@@ -135,7 +162,12 @@ kind_of = |cmd|
 radius_of : Paint.DrawCmd -> F64
 radius_of = |cmd|
 	match cmd.geom {
-		[_, _, radius, ..] => radius
+		[
+			_,
+			_,
+			radius,
+			..,
+		] => radius
 		_ => crash "Blit.radius_of: a disc's geometry is its x, y and radius"
 	}
 
@@ -151,7 +183,14 @@ xs_of = |pts|
 	)
 
 as_solid : Paint.DrawCmd -> Paint.DrawCmd
-as_solid = |cmd| { tag: 0, color: cmd.color, color2: 0, strength: 0.0, geom: [], pts: cmd.pts }
+as_solid = |cmd| {
+	tag: 0,
+	color: cmd.color,
+	color2: 0,
+	strength: 0.0,
+	geom: [],
+	pts: cmd.pts,
+}
 
 as_span_shade : Paint.DrawCmd, Blit.Span -> Paint.DrawCmd
 as_span_shade = |cmd, span| {

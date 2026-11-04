@@ -10,7 +10,16 @@ import lib.Trig
 import World
 
 route_shape_got : List(I64)
-route_shape_got = List.concat([World.route.len().to_i64_wrap()], [0, 2, 10, 11, 18].map(World.pig_segments_through))
+route_shape_got = List.concat(
+	[World.route.len().to_i64_wrap()],
+	[
+		0,
+		2,
+		10,
+		11,
+		18,
+	].map(World.pig_segments_through),
+)
 
 route_shape_want : List(I64)
 route_shape_want = [19, 0, 1, 2, 3, 9]
@@ -19,7 +28,13 @@ seg : I64 -> World.Segment
 seg = |i| World.segment_at(i)
 
 length_got : List(F64)
-length_got = [seg(0).length, seg(1).length, seg(6).length, seg(9).length, seg(18).length]
+length_got = [
+	seg(0).length,
+	seg(1).length,
+	seg(6).length,
+	seg(9).length,
+	seg(18).length,
+]
 
 length_want : List(F64)
 length_want = [500.0, 320.0, 1200.0, 800.0, 300.0]
@@ -42,19 +57,36 @@ flags_want : List(Bool)
 flags_want = [False, True, True, False, True, True, False, True, False, False, True, True, True]
 
 angle_got : List(F64)
-angle_got = [(seg(0).exit_angle / Trig.deg), (seg(1).exit_angle / Trig.deg), (seg(6).exit_angle / Trig.deg), (seg(18).exit_angle / Trig.deg), seg(18).commit_along]
+angle_got = [
+	(seg(0).exit_angle / Trig.deg),
+	(seg(1).exit_angle / Trig.deg),
+	(seg(6).exit_angle / Trig.deg),
+	(seg(18).exit_angle / Trig.deg),
+	seg(18).commit_along,
+]
 
 angle_want : List(F64)
 angle_want = [50.0, 70.0, 80.0, 0.0, 300.0]
 
 commit_got : List(F64)
-commit_got = [seg(0).commit_along, seg(1).commit_along, seg(6).commit_along]
+commit_got = [
+	seg(0).commit_along,
+	seg(1).commit_along,
+	seg(6).commit_along,
+]
 
 commit_want : List(F64)
 commit_want = [498.32180073764545, 319.2720595314676, 1199.647346038583]
 
 pigs_got : List(I64)
-pigs_got = [seg(0).pigs.len().to_i64_wrap(), seg(2).pigs.len().to_i64_wrap(), seg(10).pigs.len().to_i64_wrap(), seg(11).pigs.len().to_i64_wrap(), seg(13).pigs.len().to_i64_wrap(), seg(18).pigs.len().to_i64_wrap()]
+pigs_got = [
+	seg(0).pigs.len().to_i64_wrap(),
+	seg(2).pigs.len().to_i64_wrap(),
+	seg(10).pigs.len().to_i64_wrap(),
+	seg(11).pigs.len().to_i64_wrap(),
+	seg(13).pigs.len().to_i64_wrap(),
+	seg(18).pigs.len().to_i64_wrap(),
+]
 
 pigs_want : List(I64)
 pigs_want = [0, 49, 49, 10, 10, 10]
@@ -66,19 +98,34 @@ distract_want : List(Bool)
 distract_want = [False, True, True, False, False]
 
 cows_got : List(I64)
-cows_got = [seg(0).cows.len().to_i64_wrap(), seg(3).cows.len().to_i64_wrap(), seg(4).cows.len().to_i64_wrap(), seg(18).cows.len().to_i64_wrap()]
+cows_got = [
+	seg(0).cows.len().to_i64_wrap(),
+	seg(3).cows.len().to_i64_wrap(),
+	seg(4).cows.len().to_i64_wrap(),
+	seg(18).cows.len().to_i64_wrap(),
+]
 
 cows_want : List(I64)
 cows_want = [14, 14, 15, 15]
 
 trees_got : List(I64)
-trees_got = [seg(0).trees.len().to_i64_wrap(), seg(1).trees.len().to_i64_wrap(), seg(6).trees.len().to_i64_wrap(), seg(18).trees.len().to_i64_wrap()]
+trees_got = [
+	seg(0).trees.len().to_i64_wrap(),
+	seg(1).trees.len().to_i64_wrap(),
+	seg(6).trees.len().to_i64_wrap(),
+	seg(18).trees.len().to_i64_wrap(),
+]
 
 trees_want : List(I64)
 trees_want = [28, 16, 74, 14]
 
 cat_got : List(F64)
-cat_got = [crossing_at(1).mid_across, crossing_at(18).mid_across, crossing_at(1).height, crossing_at(18).height]
+cat_got = [
+	crossing_at(1).mid_across,
+	crossing_at(18).mid_across,
+	crossing_at(1).height,
+	crossing_at(18).height,
+]
 
 cat_want : List(F64)
 cat_want = [0.816, 0.816, 1.7, 1.7]

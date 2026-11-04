@@ -6,7 +6,11 @@ import VehicleLimits
 import World
 
 Truck :: [].{
-	TruckState : { pos : F64, v : F64, braking : Bool }
+	TruckState : {
+		pos : F64,
+		v : F64,
+		braking : Bool,
+	}
 	Turn : { dist : F64, v_turn : F64 }
 
 	## The next turn of the route past a point, or none: the route ends first.
@@ -31,42 +35,89 @@ Truck :: [].{
 	truck_max_v = (1.1 * VehicleLimits.v_max)
 
 	truck_initial : Truck.TruckState
-	truck_initial = { pos: start_ahead, v: Pose.v_base, braking: False }
+	truck_initial = {
+		pos: start_ahead,
+		v: Pose.v_base,
+		braking: False,
+	}
 
 	next_turn_from : List(World.Segment), F64, I64, F64 -> Truck.NextTurn
-	next_turn_from = |segs, pos, i, cum0| (
+	next_turn_from = |
+		segs,
+		pos,
+		i,
+		cum0,
+	| (
 		if i >= segs.len().to_i64_wrap() {
 			NoTurnAhead
 		} else {
-			next_turn_step(segs, pos, i, (cum0 + (List.get(segs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).length))
+			next_turn_step(
+				segs,
+				pos,
+				i,
+				(
+					cum0 + (
+						List.get(
+							segs,
+							I64.to_u64_wrap(i),
+						) ?? crash ("list-at out of range")
+					).length
+				),
+			)
 		}
 	)
 
 	next_turn_step : List(World.Segment), F64, I64, F64 -> Truck.NextTurn
-	next_turn_step = |segs, pos, i, cum| (
+	next_turn_step = |
+		segs,
+		pos,
+		i,
+		cum,
+	| (
 		{
 			s = (List.get(segs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))
 			(
 				if pos < cum {
 					match s.ending {
-						Continues(_) => TurnAhead({ dist: (cum - pos), v_turn: VehicleLimits.turn_speed(s.exit_angle) })
+						Continues(_) => TurnAhead({
+							dist: (cum - pos),
+							v_turn: VehicleLimits.turn_speed(s.exit_angle),
+						})
 						Terminates => NoTurnAhead
 					}
 				} else {
-					next_turn_from(segs, pos, (i + 1), cum)
+					next_turn_from(
+						segs,
+						pos,
+						(i + 1),
+						cum,
+					)
 				}
 			)
 		}
 	)
 
 	next_turn : List(World.Segment), F64 -> Truck.NextTurn
-	next_turn = |segs, pos| next_turn_from(segs, pos, 0, 0.0)
+	next_turn = |segs, pos| next_turn_from(
+		segs,
+		pos,
+		0,
+		0.0,
+	)
 
 	truck_schedule : F64, F64 -> F64
-	truck_schedule = |rider_dist, l| ((rider_dist + finish_lead) + ((start_ahead - finish_lead) * (1.0 - (rider_dist / l))))
+	truck_schedule = |
+		rider_dist,
+		l,
+	| ((rider_dist + finish_lead) + ((start_ahead - finish_lead) * (1.0 - (rider_dist / l))))
 
 	truck_next : Truck.TruckState, F64, List(World.Segment), F64 -> Truck.TruckState
-	truck_next = |truck, rider_dist, segs, l| (
+	truck_next = |
+		truck,
+		rider_dist,
+		segs,
+		l,
+	| (
 		{
 			scheduled = truck_schedule(rider_dist, l)
 			(
@@ -96,7 +147,11 @@ Truck :: [].{
 				}
 			)
 			v = DeviceMath.real_max(target, (truck.v + a))
-			{ pos: (truck.pos + v), v: v, braking: (v < truck.v) }
+			{
+				pos: (truck.pos + v),
+				v: v,
+				braking: (v < truck.v),
+			}
 		}
 	)
 
@@ -110,7 +165,11 @@ Truck :: [].{
 					truck.v
 				}
 			)
-			{ pos: (truck.pos + v), v: v, braking: False }
+			{
+				pos: (truck.pos + v),
+				v: v,
+				braking: False,
+			}
 		}
 	)
 }

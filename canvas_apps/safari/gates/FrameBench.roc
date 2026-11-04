@@ -18,7 +18,11 @@ import game.Rider
 BenchRun : { ride : Safari.Ride, commands : U64 }
 
 ride_frames : List(World.Segment), BenchRun, I64 -> BenchRun
-ride_frames = |world, bench_run, steps|
+ride_frames = |
+	world,
+	bench_run,
+	steps,
+|
 	if steps <= 0 {
 		bench_run
 	} else {
@@ -41,7 +45,11 @@ main! = |args| {
 			Err(OutOfBounds) => 60
 		}
 	world = World.segments
-	done = ride_frames(world, { ride: Safari.ride_initial, commands: 0 }, steps)
+	done = ride_frames(
+		world,
+		{ ride: Safari.ride_initial, commands: 0 },
+		steps,
+	)
 	finished = if (Rider.is_finished(done.ride.rider, world)) "yes" else "no"
 	echo!("${done.commands.to_str()} commands over the frames; finished ${finished}\n")
 	Ok({})

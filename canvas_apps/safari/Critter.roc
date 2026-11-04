@@ -73,7 +73,14 @@ Critter :: [].{
 	## its still mirrored. A critter less than a pixel tall isn't drawn.
 	draw : Billboards.Billboard, { cam_focal : F64, view_w : F64 } -> List(Paint.DrawCmd)
 	draw = |critter, { cam_focal, view_w }| {
-		on_screen = |height| Camera.project({ right: critter.right, forward: critter.forward, height }, { cam_focal, view_w })
+		on_screen = |height| Camera.project(
+			{
+				right: critter.right,
+				forward: critter.forward,
+				height,
+			},
+			{ cam_focal, view_w },
+		)
 		feet = on_screen(0.0)
 		height_px = (feet.y - on_screen(critter.height).y)
 		if height_px < 1.0 {
@@ -84,7 +91,14 @@ Critter :: [].{
 					FacesLeft => AsDrawn
 					FacesRight => Mirrored
 				}
-			Critter.draw_still({ feet, flip, height_px }, EmojiStills.emoji_polys_for(critter.codepoint))
+			Critter.draw_still(
+				{
+					feet,
+					flip,
+					height_px,
+				},
+				EmojiStills.emoji_polys_for(critter.codepoint),
+			)
 		}
 	}
 }
@@ -93,7 +107,11 @@ Critter :: [].{
 gradient_shape : Stills.StillGrad -> [Linear, Radial]
 gradient_shape = |gradient| if (gradient.kind == 1) Linear else Radial
 
-draw_gradient_poly : Critter.Anchor, { gradient : Stills.StillGrad, points : List(Camera.ScreenPt) } -> List(Paint.DrawCmd)
+draw_gradient_poly : Critter.Anchor,
+{
+	gradient : Stills.StillGrad,
+	points : List(Camera.ScreenPt),
+} -> List(Paint.DrawCmd)
 draw_gradient_poly = |anchor, { gradient, points }|
 	match gradient_shape(gradient) {
 		Linear => {

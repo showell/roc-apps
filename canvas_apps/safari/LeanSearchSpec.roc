@@ -12,19 +12,49 @@ import LeanSearch
 import Pose
 
 target_got : List(F64)
-target_got = [LeanSearch.lean_target(0.5), LeanSearch.lean_target((0.0 - 0.5)), LeanSearch.lean_target(2.0), LeanSearch.lean_target((0.0 - 2.0)), LeanSearch.lean_target(0.04), LeanSearch.lean_target((0.0 - 0.04)), LeanSearch.lean_target(0.0), LeanSearch.lean_target(0.039), LeanSearch.lean_target((0.0 - 0.039))]
+target_got = [
+	LeanSearch.lean_target(0.5),
+	LeanSearch.lean_target((0.0 - 0.5)),
+	LeanSearch.lean_target(2.0),
+	LeanSearch.lean_target((0.0 - 2.0)),
+	LeanSearch.lean_target(0.04),
+	LeanSearch.lean_target((0.0 - 0.04)),
+	LeanSearch.lean_target(0.0),
+	LeanSearch.lean_target(0.039),
+	LeanSearch.lean_target((0.0 - 0.039)),
+]
 
 target_want : List(F64)
-target_want = [0.15, (-0.15), 0.6, (-0.6), 0.012, (-0.012), 0.04, 0.04, (-0.04)]
+target_want = [
+	0.15,
+	(-0.15),
+	0.6,
+	(-0.6),
+	0.012,
+	(-0.012),
+	0.04,
+	0.04,
+	(-0.04),
+]
 
 side_got : List(Bool)
-side_got = [(LeanSearch.lean_target(2.0) > 0.0), (LeanSearch.lean_target(2.0) < 2.0), (LeanSearch.lean_target((0.0 - 2.0)) < 0.0), (LeanSearch.lean_target((0.0 - 2.0)) > (0.0 - 2.0)), (LeanSearch.lean_target(0.0) > 0.0)]
+side_got = [
+	(LeanSearch.lean_target(2.0) > 0.0),
+	(LeanSearch.lean_target(2.0) < 2.0),
+	(LeanSearch.lean_target((0.0 - 2.0)) < 0.0),
+	(LeanSearch.lean_target((0.0 - 2.0)) > (0.0 - 2.0)),
+	(LeanSearch.lean_target(0.0) > 0.0),
+]
 
 side_want : List(Bool)
 side_want = [True, True, True, True, True]
 
 tuning_got : List(F64)
-tuning_got = [LeanSearch.asymptote_tuning, LeanSearch.center_lane_epsilon, max_correction]
+tuning_got = [
+	LeanSearch.asymptote_tuning,
+	LeanSearch.center_lane_epsilon,
+	max_correction,
+]
 
 tuning_want : List(F64)
 tuning_want = [0.3, 0.04, 0.017453292519943295]
@@ -36,16 +66,40 @@ iters_want : List(I64)
 iters_want = [12]
 
 outcome : Arc.Shoulder, F64 -> Arc.ArcOutcome
-outcome = |sh, end_across| { shoulder: sh, forward: 10.0, crossed: False, end_across: end_across, frames: 100.0 }
+outcome = |sh, end_across| {
+	shoulder: sh,
+	forward: 10.0,
+	crossed: False,
+	end_across: end_across,
+	frames: 100.0,
+}
 
 read_got : List(Bool)
-read_got = [LeanSearch.want_more_right(outcome(ShoulderLeft, 99.0), 0.5), LeanSearch.want_more_right(outcome(ShoulderLeft, (0.0 - 99.0)), 0.5), LeanSearch.want_more_right(outcome(ShoulderRight, 99.0), 0.5), LeanSearch.want_more_right(outcome(ShoulderRight, (0.0 - 99.0)), 0.5), LeanSearch.want_more_right(outcome(ShoulderNone, 0.4), 0.5), LeanSearch.want_more_right(outcome(ShoulderNone, 0.6), 0.5), LeanSearch.want_more_right(outcome(ShoulderNone, 0.5), 0.5)]
+read_got = [
+	LeanSearch.want_more_right(outcome(ShoulderLeft, 99.0), 0.5),
+	LeanSearch.want_more_right(outcome(ShoulderLeft, (0.0 - 99.0)), 0.5),
+	LeanSearch.want_more_right(outcome(ShoulderRight, 99.0), 0.5),
+	LeanSearch.want_more_right(outcome(ShoulderRight, (0.0 - 99.0)), 0.5),
+	LeanSearch.want_more_right(outcome(ShoulderNone, 0.4), 0.5),
+	LeanSearch.want_more_right(outcome(ShoulderNone, 0.6), 0.5),
+	LeanSearch.want_more_right(outcome(ShoulderNone, 0.5), 0.5),
+]
 
 read_want : List(Bool)
 read_want = [True, True, False, False, True, False, False]
 
 rider : F64, F64 -> Pose.RiderState
-rider = |across, tilt| { segment: 0, along: 0.0, across: across, yaw: Angle.Turn.radians(0.0), v: Pose.v_base, tilt: Angle.Lean.radians(tilt), heading: Angle.Bearing.radians(0.0), gaze_yaw: Angle.Turn.radians(0.0), focus: 0.0 }
+rider = |across, tilt| {
+	segment: 0,
+	along: 0.0,
+	across: across,
+	yaw: Angle.Turn.radians(0.0),
+	v: Pose.v_base,
+	tilt: Angle.Lean.radians(tilt),
+	heading: Angle.Bearing.radians(0.0),
+	gaze_yaw: Angle.Turn.radians(0.0),
+	focus: 0.0,
+}
 
 ## The most the lean changes in a step, in radians.
 max_correction : F64
@@ -65,13 +119,24 @@ held : F64
 held = best_lean(rider(0.0, 0.5))
 
 bracket_got : List(Bool)
-bracket_got = [(centred >= (0.0 - max_correction)), (centred <= max_correction), (offset >= (0.0 - max_correction)), (offset <= max_correction), (held >= (0.5 - max_correction)), (held <= (0.5 + max_correction))]
+bracket_got = [
+	(centred >= (0.0 - max_correction)),
+	(centred <= max_correction),
+	(offset >= (0.0 - max_correction)),
+	(offset <= max_correction),
+	(held >= (0.5 - max_correction)),
+	(held <= (0.5 + max_correction)),
+]
 
 bracket_want : List(Bool)
 bracket_want = [True, True, True, True, True, True]
 
 centred_on_got : List(Bool)
-centred_on_got = [(DeviceMath.real_abs((held - 0.5)) <= max_correction), (DeviceMath.real_abs(centred) <= max_correction), (held > centred)]
+centred_on_got = [
+	(DeviceMath.real_abs((held - 0.5)) <= max_correction),
+	(DeviceMath.real_abs(centred) <= max_correction),
+	(held > centred),
+]
 
 centred_on_want : List(Bool)
 centred_on_want = [True, True, True]

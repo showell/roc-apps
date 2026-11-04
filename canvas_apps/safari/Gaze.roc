@@ -73,7 +73,11 @@ Gaze :: [].{
 				if dist > gaze_look_dist {
 					no_look
 				} else {
-					pig_in_sight(state, pig, dist)
+					pig_in_sight(
+						state,
+						pig,
+						dist,
+					)
 				}
 			)
 		}
@@ -82,8 +86,17 @@ Gaze :: [].{
 	## The pig `dist` ahead is in sight while it is less than the release
 	## angle from the way the bike points.
 	pig_in_sight : Pose.RiderState, Scenery.Critter, F64 -> Gaze.PigLook
-	pig_in_sight = |state, pig, dist| {
-		toward_pig = Angle.Turn.radians(Trig.r_atan2(pig.across - state.across, dist)).minus(state.yaw)
+	pig_in_sight = |
+		state,
+		pig,
+		dist,
+	| {
+		toward_pig = Angle.Turn.radians(
+			Trig.r_atan2(
+				pig.across - state.across,
+				dist,
+			),
+		).minus(state.yaw)
 		if toward_pig.abs() >= gaze_release_angle {
 			no_look
 		} else {
@@ -102,7 +115,12 @@ Gaze :: [].{
 		}
 
 	desired_gaze_at : Pose.RiderState, Scenery.Critter -> Angle.Turn
-	desired_gaze_at = |state, pig| Angle.Turn.radians(Trig.r_atan2(pig.across - state.across, pig.along - state.along)).minus(state.yaw)
+	desired_gaze_at = |state, pig| Angle.Turn.radians(
+		Trig.r_atan2(
+			pig.across - state.across,
+			pig.along - state.along,
+		),
+	).minus(state.yaw)
 
 	## Whether a gaze is exactly the rest position: +0.0, which `desired_gaze`
 	## answers when there is nothing to look at.
@@ -133,14 +151,21 @@ Gaze :: [].{
 		if is_at_rest(gaze_yaw) {
 			DeviceMath.real_max(0.0, state.focus - focus_decay)
 		} else {
-			DeviceMath.real_max(state.focus, DeviceMath.real_min(gaze_yaw.abs().fraction_of(gaze_release_angle), 1.0))
+			DeviceMath.real_max(
+				state.focus,
+				DeviceMath.real_min(gaze_yaw.abs().fraction_of(gaze_release_angle), 1.0),
+			)
 		}
 
 	next_rider_gaze : Pose.RiderState, List(World.Segment) -> Pose.RiderState
 	next_rider_gaze = |state, segs| {
 		seg = segs.get(state.segment.to_u64_wrap()) ?? crash "Gaze.next_rider_gaze: the rider's segment is on the route"
 		gaze_yaw = next_gaze_yaw(state, desired_gaze(state, seg))
-		{ ..state, gaze_yaw, focus: next_focus(state, gaze_yaw) }
+		{
+			..state,
+			gaze_yaw,
+			focus: next_focus(state, gaze_yaw),
+		}
 	}
 
 	gawk_engaged : Pose.RiderState, World.Segment -> Bool
@@ -169,7 +194,17 @@ Gaze :: [].{
 	pig_gaze_brake_easing = |state, seg| (
 		{
 			d = ((Pigs.gaze_pig(seg.length).along - state.along) - pig_gaze_settle_dist)
-			{ engaged: True, accel: (((pig_gaze_speed * pig_gaze_speed) - (state.v * state.v)) / (2.0 * DeviceMath.real_max(d, 1.0))) }
+			{
+				engaged: True,
+				accel: (
+					((pig_gaze_speed * pig_gaze_speed) - (state.v * state.v)) / (
+						2.0 * DeviceMath.real_max(
+							d,
+							1.0,
+						)
+					)
+				),
+			}
 		}
 	)
 }

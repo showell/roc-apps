@@ -15,8 +15,20 @@ ScanlineFill :: [].{
 
 	## A polygon, as scene coordinates x0, y0, x1, y1, ..., filled by the
 	## nonzero rule.
-	fill_polygon : List(U32), { roll : ScreenRoll, pts : List(F64), fill : Brush.Fill } -> List(U32)
-	fill_polygon = |pixels, { roll, pts, fill }| {
+	fill_polygon : List(U32),
+	{
+		roll : ScreenRoll,
+		pts : List(F64),
+		fill : Brush.Fill,
+	} -> List(U32)
+	fill_polygon = |
+		pixels,
+		{
+			roll,
+			pts,
+			fill,
+		},
+	| {
 		corners = pts.chunks_of(2).map(
 			|pair|
 				match pair {
@@ -25,7 +37,12 @@ ScanlineFill :: [].{
 				},
 		)
 		match corners {
-			[first, _, _, ..] => {
+			[
+				first,
+				_,
+				_,
+				..,
+			] => {
 				next_corners = corners.drop_first(1).concat(corners.take_first(1))
 				edges = corners.map2(next_corners, |from, to| { from, to })
 				rows = PixelGrid.pixels_between({
@@ -36,7 +53,15 @@ ScanlineFill :: [].{
 				var $px = pixels
 				for row in rows.start.until(rows.end) {
 					edge_crossings = row_edge_crossings(edges, PixelGrid.pixel_center(row))
-					$px = fill_row($px, { roll, fill, row, edge_crossings })
+					$px = fill_row(
+						$px,
+						{
+							roll,
+							fill,
+							row,
+							edge_crossings,
+						},
+					)
 				}
 				$px
 			}
@@ -46,8 +71,22 @@ ScanlineFill :: [].{
 	}
 
 	## A disc of one colour: the pixels whose centres are strictly inside.
-	fill_disc : List(U32), { roll : ScreenRoll, center : ScreenRoll.ScenePoint, radius : F64, color : Brush.Rgba } -> List(U32)
-	fill_disc = |pixels, { roll, center, radius, color }| {
+	fill_disc : List(U32),
+	{
+		roll : ScreenRoll,
+		center : ScreenRoll.ScenePoint,
+		radius : F64,
+		color : Brush.Rgba,
+	} -> List(U32)
+	fill_disc = |
+		pixels,
+		{
+			roll,
+			center,
+			radius,
+			color,
+		},
+	| {
 		on_screen = roll.to_screen(center)
 		rows = PixelGrid.pixels_between({
 			from: on_screen.y - radius,
@@ -60,7 +99,16 @@ ScanlineFill :: [].{
 			half_squared = radius * radius - dy * dy
 			$px = if half_squared > 0.0 {
 				half = F64.sqrt(half_squared)
-				paint_span($px, { roll, fill: Flat(color), row, from: on_screen.x - half, to: on_screen.x + half })
+				paint_span(
+					$px,
+					{
+						roll,
+						fill: Flat(color),
+						row,
+						from: on_screen.x - half,
+						to: on_screen.x + half,
+					},
+				)
 			} else {
 				$px
 			}
@@ -115,11 +163,34 @@ edge_x_at = |{ from, to }, y| from.x + (y - from.y) * (to.x - from.x) / (to.y - 
 
 ## One row of a polygon: the spans between its edge crossings where the
 ## winding is not zero.
-fill_row : List(U32), { roll : ScreenRoll, fill : Brush.Fill, row : PixelGrid.Coordinate, edge_crossings : List(EdgeCrossing) } -> List(U32)
-fill_row = |pixels, { roll, fill, row, edge_crossings }| {
+fill_row : List(U32),
+{
+	roll : ScreenRoll,
+	fill : Brush.Fill,
+	row : PixelGrid.Coordinate,
+	edge_crossings : List(EdgeCrossing),
+} -> List(U32)
+fill_row = |
+	pixels,
+	{
+		roll,
+		fill,
+		row,
+		edge_crossings,
+	},
+| {
 	var $px = pixels
 	for row_span in inside_spans(edge_crossings) {
-		$px = paint_span($px, { roll, fill, row, from: row_span.from, to: row_span.to })
+		$px = paint_span(
+			$px,
+			{
+				roll,
+				fill,
+				row,
+				from: row_span.from,
+				to: row_span.to,
+			},
+		)
 	}
 	$px
 }
@@ -151,18 +222,46 @@ walk_edge_crossing = |so_far, { left, right }| {
 }
 
 ## The pixels of `row` whose centres fall in [from, to).
-paint_span : List(U32), { roll : ScreenRoll, fill : Brush.Fill, row : PixelGrid.Coordinate, from : F64, to : F64 } -> List(U32)
-paint_span = |pixels, { roll, fill, row, from, to }| {
-	columns = PixelGrid.pixels_between({ from, to, count: roll.width_px() })
+paint_span : List(U32),
+{
+	roll : ScreenRoll,
+	fill : Brush.Fill,
+	row : PixelGrid.Coordinate,
+	from : F64,
+	to : F64,
+} -> List(U32)
+paint_span = |
+	pixels,
+	{
+		roll,
+		fill,
+		row,
+		from,
+		to,
+	},
+| {
+	columns = PixelGrid.pixels_between({
+		from,
+		to,
+		count: roll.width_px(),
+	})
 	width = roll.width_px()
 	var $px = pixels
 	for column in columns.start.until(columns.end) {
-		at = PixelGrid.pixel_index({ row, column, width })
+		at = PixelGrid.pixel_index({
+			row,
+			column,
+			width,
+		})
 		color = match fill {
 			Flat(flat) => flat
 			Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) => {
 				p = roll.to_scene(ScreenRoll.pixel_point({ row, column }))
-				Brush.shade(fill, p.x, p.y)
+				Brush.shade(
+					fill,
+					p.x,
+					p.y,
+				)
 			}
 			Skip => crash "ScanlineFill.paint_span: no caller fills with a Skip brush"
 		}

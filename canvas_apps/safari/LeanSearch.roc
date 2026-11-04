@@ -47,15 +47,45 @@ LeanSearch :: [].{
 
 	## The lean between `low` and `high` whose arc ends nearest `target`
 	## across the road, after the bisection's remaining steps from `at`.
-	search_lean_from : Pose.RiderState, { target : F64, low : Angle.Lean, high : Angle.Lean, at : I64 } -> Angle.Lean
-	search_lean_from = |state, { target, low, high, at }| {
+	search_lean_from : Pose.RiderState,
+	{
+		target : F64,
+		low : Angle.Lean,
+		high : Angle.Lean,
+		at : I64,
+	} -> Angle.Lean
+	search_lean_from = |
+		state,
+		{
+			target,
+			low,
+			high,
+			at,
+		},
+	| {
 		mid = low.halfway_to(high)
 		if at >= lean_search_iters {
 			mid
 		} else if want_more_right(Arc.project_arc(Pose.with_tilt(state, mid)), target) {
-			search_lean_from(state, { target, low: mid, high, at: at + 1 })
+			search_lean_from(
+				state,
+				{
+					target,
+					low: mid,
+					high,
+					at: at + 1,
+				},
+			)
 		} else {
-			search_lean_from(state, { target, low, high: mid, at: at + 1 })
+			search_lean_from(
+				state,
+				{
+					target,
+					low,
+					high: mid,
+					at: at + 1,
+				},
+			)
 		}
 	}
 

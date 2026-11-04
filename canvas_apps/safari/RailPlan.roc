@@ -16,7 +16,11 @@ RailPlan :: [].{
 
 	## The road in view: the world's segments, the chain of them ahead of
 	## the rider, and the rider's pose.
-	Road : { world : List(World.Segment), chain : List(I64), pose : Frame.Pose }
+	Road : {
+		world : List(World.Segment),
+		chain : List(I64),
+		pose : Frame.Pose,
+	}
 
 	## The rails at every bend in view, for a rider on segment `segment` of
 	## the world: the bends along the chain ahead, then the bend from the
@@ -46,8 +50,18 @@ RailPlan :: [].{
 	}
 
 	## `steps` + 1 points evenly spaced from `from` to `to`, both included.
-	evenly_spaced : { from : Geom.RiderPt, to : Geom.RiderPt, steps : I64 } -> List(Geom.RiderPt)
-	evenly_spaced = |{ from, to, steps }| {
+	evenly_spaced : {
+		from : Geom.RiderPt,
+		to : Geom.RiderPt,
+		steps : I64,
+	} -> List(Geom.RiderPt)
+	evenly_spaced = |
+		{
+			from,
+			to,
+			steps,
+		},
+	| {
 		dr = (to.right - from.right)
 		df = (to.forward - from.forward)
 		List.from_iter(I64.to(0, steps)).map(
@@ -65,18 +79,41 @@ RailPlan :: [].{
 		dr = (to.right - from.right)
 		df = (to.forward - from.forward)
 		steps = RailPlan.leg_steps(DeviceMath.real_sqrt(((dr * dr) + (df * df))))
-		RailPlan.evenly_spaced({ from, to, steps }).drop_first(1)
+		RailPlan.evenly_spaced({
+			from,
+			to,
+			steps,
+		}).drop_first(1)
 	}
 
 	## The rail along the last `rail_runout` metres of a segment `length`
 	## long, which is on the map at `place`, `across` from its left edge: a
 	## point a metre, ending at the segment's end.
-	run_up : RailPlan.Road, { place : Frame.Mapper, length : F64, across : F64 } -> List(Geom.RiderPt)
-	run_up = |road, { place, length, across }|
+	run_up : RailPlan.Road,
+	{
+		place : Frame.Mapper,
+		length : F64,
+		across : F64,
+	} -> List(Geom.RiderPt)
+	run_up = |
+		road,
+		{
+			place,
+			length,
+			across,
+		},
+	|
 		List.from_iter(I64.to(0, GuardRail.rail_runout)).map(
 			|metres_in| {
 				metres_left = (GuardRail.rail_runout - metres_in)
-				on_map(road, { place, along: (length - metres_left.to_f64()), across })
+				on_map(
+					road,
+					{
+						place,
+						along: (length - metres_left.to_f64()),
+						across,
+					},
+				)
 			},
 		)
 
@@ -86,7 +123,16 @@ RailPlan :: [].{
 	run_out : RailPlan.Road, { place : Frame.Mapper, across : F64 } -> List(Geom.RiderPt)
 	run_out = |road, { place, across }|
 		List.from_iter(I64.to(1, GuardRail.rail_runout))
-			.map(|metres_in| on_map(road, { place, along: metres_in.to_f64(), across }))
+			.map(
+				|metres_in| on_map(
+					road,
+					{
+						place,
+						along: metres_in.to_f64(),
+						across,
+					},
+				),
+			)
 }
 
 ## A turn from one segment into the next: where each segment is on the
@@ -100,8 +146,27 @@ Bend : {
 
 ## A point `along` a segment on the map at `place`, `across` from its left
 ## edge.
-on_map : RailPlan.Road, { place : Frame.Mapper, along : F64, across : F64 } -> Geom.RiderPt
-on_map = |road, { place, along, across }| Frame.map_pt(road.world, road.chain, road.pose, place, along, across)
+on_map : RailPlan.Road,
+{
+	place : Frame.Mapper,
+	along : F64,
+	across : F64,
+} -> Geom.RiderPt
+on_map = |
+	road,
+	{
+		place,
+		along,
+		across,
+	},
+| Frame.map_pt(
+	road.world,
+	road.chain,
+	road.pose,
+	place,
+	along,
+	across,
+)
 
 ## The bend at the end of the segment at `position` in the chain.
 bend_after : RailPlan.Road, I64 -> Bend
@@ -141,8 +206,22 @@ rails_at = |road, bend| GuardRail.quads_along(rail_path(road, bend))
 rail_path : RailPlan.Road, Bend -> List(Geom.RiderPt)
 rail_path = |road, bend| {
 	outer_edge = Joint.outer_cu(bend.exit_right)
-	end_before = on_map(road, { place: bend.before, along: bend.length_before, across: outer_edge })
-	start_after = on_map(road, { place: bend.after, along: 0.0, across: outer_edge })
+	end_before = on_map(
+		road,
+		{
+			place: bend.before,
+			along: bend.length_before,
+			across: outer_edge,
+		},
+	)
+	start_after = on_map(
+		road,
+		{
+			place: bend.after,
+			along: 0.0,
+			across: outer_edge,
+		},
+	)
 	apex = Joint.joint_apex(
 		road.world,
 		road.chain,
@@ -153,7 +232,14 @@ rail_path = |road, bend| {
 		bend.exit_right,
 	)
 	List.join([
-		RailPlan.run_up(road, { place: bend.before, length: bend.length_before, across: outer_edge }),
+		RailPlan.run_up(
+			road,
+			{
+				place: bend.before,
+				length: bend.length_before,
+				across: outer_edge,
+			},
+		),
 		RailPlan.leg({ from: end_before, to: apex }),
 		RailPlan.leg({ from: apex, to: start_after }),
 		RailPlan.run_out(road, { place: bend.after, across: outer_edge }),

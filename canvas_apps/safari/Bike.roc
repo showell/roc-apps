@@ -15,7 +15,11 @@ Bike :: [].{
 
 	## The rider one step on, after leaning by `lean_step` and speeding up by
 	## `accel`.
-	simulate_rider_step : Pose.RiderState, { lean_step : Angle.Lean, accel : F64 } -> Pose.RiderState
+	simulate_rider_step : Pose.RiderState,
+	{
+		lean_step : Angle.Lean,
+		accel : F64,
+	} -> Pose.RiderState
 	simulate_rider_step = |s, { lean_step, accel }| {
 		tilt = s.tilt.plus(lean_step)
 		v = s.v + accel

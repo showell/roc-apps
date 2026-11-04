@@ -9,7 +9,17 @@ import Grade
 import Pose
 
 probe : Pose.RiderState
-probe = { segment: 7, along: 11.0, across: 2.5, yaw: Angle.Turn.radians(0.75), v: 3.25, tilt: Angle.Lean.radians(0.125), heading: Angle.Bearing.radians(4.5), gaze_yaw: Angle.Turn.radians(0.375), focus: 6.75 }
+probe = {
+	segment: 7,
+	along: 11.0,
+	across: 2.5,
+	yaw: Angle.Turn.radians(0.75),
+	v: 3.25,
+	tilt: Angle.Lean.radians(0.125),
+	heading: Angle.Bearing.radians(4.5),
+	gaze_yaw: Angle.Turn.radians(0.375),
+	focus: 6.75,
+}
 
 new_tilt : Angle.Lean
 new_tilt = Angle.Lean.radians(9.5)
@@ -18,7 +28,16 @@ leaned_once : Pose.RiderState
 leaned_once = Pose.with_tilt(probe, Angle.Lean.radians(1.5))
 
 reals : Pose.RiderState -> List(F64)
-reals = |s| [s.along, s.across, s.yaw.to_radians(), s.v, s.tilt.to_radians(), s.heading.to_radians(), s.gaze_yaw.to_radians(), s.focus]
+reals = |s| [
+	s.along,
+	s.across,
+	s.yaw.to_radians(),
+	s.v,
+	s.tilt.to_radians(),
+	s.heading.to_radians(),
+	s.gaze_yaw.to_radians(),
+	s.focus,
+]
 
 seg : Pose.RiderState -> List(I64)
 seg = |s| [s.segment]

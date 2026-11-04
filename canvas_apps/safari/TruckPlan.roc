@@ -12,7 +12,16 @@ TruckPlan :: [].{
 	## The truck, if it is in view: the place in the chain of the segment it
 	## is on, how far along that segment it is, and how far ahead of the
 	## rider.
-	TruckAt : [Ahead({ place : I64, along : F64, fwd : F64 }), NoTruck]
+	TruckAt : [
+		Ahead(
+			{
+				place : I64,
+				along : F64,
+				fwd : F64,
+			},
+		),
+		NoTruck,
+	]
 
 	## What the truck is seen from: the world's segments, the chain of them
 	## ahead of the rider, the rider's pose, how far along its segment the
@@ -65,9 +74,20 @@ truck_from = |view, { remaining, place }|
 ## the middle of the lane, if it is in front of the camera.
 truck_on_segment : TruckPlan.View, { along : F64, place : I64 } -> TruckPlan.TruckAt
 truck_on_segment = |view, { along, place }| {
-	center = Frame.at(view.world, view.chain, view.pose, place, along, (Scenery.lane_width / 2.0))
+	center = Frame.at(
+		view.world,
+		view.chain,
+		view.pose,
+		place,
+		along,
+		(Scenery.lane_width / 2.0),
+	)
 	if center.forward > Geom.near {
-		Ahead({ place, along, fwd: center.forward })
+		Ahead({
+			place,
+			along,
+			fwd: center.forward,
+		})
 	} else {
 		NoTruck
 	}

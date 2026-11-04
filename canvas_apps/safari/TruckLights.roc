@@ -69,7 +69,13 @@ TruckLights :: [].{
 	## How far the farthest of `points` is from `center`.
 	farthest_from : List(Camera.ScreenPt), Camera.ScreenPt -> F64
 	farthest_from = |points, center|
-		points.fold_rev(0.0, |point, farthest| DeviceMath.real_max(TruckLights.distance({ from: point, to: center }), farthest))
+		points.fold_rev(
+			0.0,
+			|point, farthest| DeviceMath.real_max(
+				TruckLights.distance({ from: point, to: center }),
+				farthest,
+			),
+		)
 
 	## The center of a polygon on screen: the mean of its corners. Each sum
 	## runs from the last corner to the first; a float sum's rounding depends
@@ -162,19 +168,51 @@ glow_reach = 3.2
 ## with a corner behind the camera is not drawn.
 beam : TruckShape.TruckInView, F64 -> List(Paint.DrawCmd)
 beam = |truck, across| {
-	at_lamp = |height| TruckShape.point(truck, { along: truck.box.nose, across, height })
-	at_far_end = |height| TruckShape.point(truck, { along: (truck.box.nose + beam_length), across, height })
+	at_lamp = |height| TruckShape.point(
+		truck,
+		{
+			along: truck.box.nose,
+			across,
+			height,
+		},
+	)
+	at_far_end = |height| TruckShape.point(
+		truck,
+		{
+			along: (truck.box.nose + beam_length),
+			across,
+			height,
+		},
+	)
 	lamp_bottom = at_lamp((headlight_height - beam_half_height_at_lamp))
 	lamp_top = at_lamp((headlight_height + beam_half_height_at_lamp))
 	far_top = at_far_end((beam_far_center + beam_far_half_height))
 	far_bottom = at_far_end((beam_far_center - beam_far_half_height))
-	corners = [lamp_bottom, lamp_top, far_top, far_bottom]
+	corners = [
+		lamp_bottom,
+		lamp_top,
+		far_top,
+		far_bottom,
+	]
 	if TruckLights.has_point_behind_camera(corners) {
 		[]
 	} else {
-		on_screen = Camera.project_all(corners, { cam_focal: truck.cam_focal, view_w: truck.view_w })
-		lamp = Camera.project(TruckLights.midpoint({ from: lamp_bottom, to: lamp_top }), { cam_focal: truck.cam_focal, view_w: truck.view_w })
-		Paint.push_grad_poly(beam_core, beam_edge, lamp.x, lamp.y, TruckLights.farthest_from(on_screen, lamp), on_screen)
+		on_screen = Camera.project_all(
+			corners,
+			{ cam_focal: truck.cam_focal, view_w: truck.view_w },
+		)
+		lamp = Camera.project(
+			TruckLights.midpoint({ from: lamp_bottom, to: lamp_top }),
+			{ cam_focal: truck.cam_focal, view_w: truck.view_w },
+		)
+		Paint.push_grad_poly(
+			beam_core,
+			beam_edge,
+			lamp.x,
+			lamp.y,
+			TruckLights.farthest_from(on_screen, lamp),
+			on_screen,
+		)
 	}
 }
 
@@ -185,10 +223,26 @@ brake_light = |truck, { left, right }| {
 	rear = truck.box.rear
 	lamp =
 		[
-			{ along: rear, across: left, height: brake_lamp_bottom },
-			{ along: rear, across: right, height: brake_lamp_bottom },
-			{ along: rear, across: right, height: brake_lamp_top },
-			{ along: rear, across: left, height: brake_lamp_top },
+			{
+				along: rear,
+				across: left,
+				height: brake_lamp_bottom,
+			},
+			{
+				along: rear,
+				across: right,
+				height: brake_lamp_bottom,
+			},
+			{
+				along: rear,
+				across: right,
+				height: brake_lamp_top,
+			},
+			{
+				along: rear,
+				across: left,
+				height: brake_lamp_top,
+			},
 		].map(|corner| TruckShape.point(truck, corner))
 	List.concat(glow(truck, lamp), TruckShape.fill(truck, { color: brake_color, corners: lamp }))
 }
@@ -203,5 +257,12 @@ glow = |truck, lamp|
 		on_screen = Camera.project_all(lamp, { cam_focal: truck.cam_focal, view_w: truck.view_w })
 		center = TruckLights.center_of(on_screen)
 		radius = TruckLights.glow_radius(on_screen, center)
-		Paint.push_grad_poly(glow_core, glow_edge, center.x, center.y, radius, TruckLights.glow_outline({ center, radius }))
+		Paint.push_grad_poly(
+			glow_core,
+			glow_edge,
+			center.x,
+			center.y,
+			radius,
+			TruckLights.glow_outline({ center, radius }),
+		)
 	}

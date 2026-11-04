@@ -29,7 +29,11 @@ SafariApp :: [].{
 		# thirty is the speed it is meant to look like.
 		fps: 30,
 		init: { ride: SafariRide.init, paused: Bool.False },
-		advance: |m, input, _dt| step(m, input),
+		advance: |
+			m,
+			input,
+			_dt,
+		| step(m, input),
 		frame: |m| frame(m.ride),
 		sounds: |_m| 0,
 		tones: [],
@@ -45,9 +49,21 @@ SafariApp :: [].{
 	frame : SafariRide.Model -> List(Shapes.Shape)
 	frame = |ride| {
 		centre = { x: Screen.width / 2.0, y: Screen.height / 2.0 }
-		lean = View(World({ target: centre, offset: centre, rotation: 0.0 - SafariRide.roll(ride) * degrees, zoom: 1.0 }))
+		lean = View(
+			World({
+				target: centre,
+				offset: centre,
+				rotation: 0.0 - SafariRide.roll(ride) * degrees,
+				zoom: 1.0,
+			}),
+		)
 		List.prepend(
-			SafariShapes.frame(SafariRide.commands(ride), SafariRide.sky_top(ride), SafariRide.sky_horizon(ride), SafariRide.sun(ride)),
+			SafariShapes.frame(
+				SafariRide.commands(ride),
+				SafariRide.sky_top(ride),
+				SafariRide.sky_horizon(ride),
+				SafariRide.sun(ride),
+			),
 			lean,
 		)
 	}
@@ -100,7 +116,11 @@ SafariApp :: [].{
 		}
 
 	repeat : SafariRide.Model, I64, (SafariRide.Model -> SafariRide.Model) -> SafariRide.Model
-	repeat = |ride, n, move| {
+	repeat = |
+		ride,
+		n,
+		move,
+	| {
 		var $ride = ride
 		var $i = 0
 		while $i < n {

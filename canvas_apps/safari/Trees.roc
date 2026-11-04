@@ -93,13 +93,35 @@ Trees :: [].{
 	## A segment's trees, in pairs from its start, each pair's left tree
 	## first.
 	plant : { scheme : Scenery.Scheme, length : F64 } -> List(Scenery.Tree)
-	plant = |{ scheme, length }| plant_onto([], { scheme, length, along: tree_start_inset, size: Big })
+	plant = |{ scheme, length }| plant_onto(
+		[],
+		{
+			scheme,
+			length,
+			along: tree_start_inset,
+			size: Big,
+		},
+	)
 }
 
 ## The trees planted so far, and the pairs from `along` on, each pair the
 ## other size from the one before.
-plant_onto : List(Scenery.Tree), { scheme : Scenery.Scheme, length : F64, along : F64, size : Trees.PairSize } -> List(Scenery.Tree)
-plant_onto = |planted, { scheme, length, along, size }|
+plant_onto : List(Scenery.Tree),
+{
+	scheme : Scenery.Scheme,
+	length : F64,
+	along : F64,
+	size : Trees.PairSize,
+} -> List(Scenery.Tree)
+plant_onto = |
+	planted,
+	{
+		scheme,
+		length,
+		along,
+		size,
+	},
+|
 	if along > (length - Trees.tree_end_inset) {
 		planted
 	} else if (planted.len().to_i64_wrap() + 2) > Trees.max_trees {
@@ -113,12 +135,30 @@ plant_onto = |planted, { scheme, length, along, size }|
 		tree_color = Trees.color(conifer)
 		tree_height = Trees.height({ conifer, size })
 		from_middle = Trees.across(conifer)
-		left = { along, across: (0.0 - from_middle), color: tree_color, height: tree_height }
-		right = { along, across: from_middle, color: tree_color, height: tree_height }
+		left = {
+			along,
+			across: (0.0 - from_middle),
+			color: tree_color,
+			height: tree_height,
+		}
+		right = {
+			along,
+			across: from_middle,
+			color: tree_color,
+			height: tree_height,
+		}
 		next_size =
 			match size {
 				Big => Small
 				Small => Big
 			}
-		plant_onto(planted.append(left).append(right), { scheme, length, along: (along + Trees.tree_spacing), size: next_size })
+		plant_onto(
+			planted.append(left).append(right),
+			{
+				scheme,
+				length,
+				along: (along + Trees.tree_spacing),
+				size: next_size,
+			},
+		)
 	}

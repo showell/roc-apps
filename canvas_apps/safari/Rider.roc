@@ -21,7 +21,13 @@ Rider :: [].{
 	decide : Pose.RiderState, World.Segment -> Rider.Decision
 	decide = |state, seg| {
 		tilt_step = LeanSearch.best_tilt_correction(state).minus(state.tilt)
-		{ tilt_step, accel: Throttle.get_forward_accel_decel(Pose.with_tilt(state, state.tilt.plus(tilt_step)), seg) }
+		{
+			tilt_step,
+			accel: Throttle.get_forward_accel_decel(
+				Pose.with_tilt(state, state.tilt.plus(tilt_step)),
+				seg,
+			),
+		}
 	}
 
 	rider_state_for_next_segment : Pose.RiderState, List(World.Segment) -> Pose.RiderState
@@ -84,7 +90,11 @@ Rider :: [].{
 	)
 
 	stopped_at : Pose.RiderState, F64 -> Pose.RiderState
-	stopped_at = |s, at| { ..s, along: at, v: 0.0 }
+	stopped_at = |s, at| {
+		..s,
+		along: at,
+		v: 0.0,
+	}
 
 	resolve_cross : Pose.RiderState, List(World.Segment) -> Pose.RiderState
 	resolve_cross = |moved, segs| (

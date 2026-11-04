@@ -10,10 +10,19 @@ import TruckPlan
 import World
 
 segs : List(World.Segment)
-segs = [World.segment_at(0), World.segment_at(1), World.segment_at(2)]
+segs = [
+	World.segment_at(0),
+	World.segment_at(1),
+	World.segment_at(2),
+]
 
 here : Frame.Pose
-here = { along: 0.0, across: 0.0, yaw: 0.0, hw: 2.0 }
+here = {
+	along: 0.0,
+	across: 0.0,
+	yaw: 0.0,
+	hw: 2.0,
+}
 
 lengths_got : List(F64)
 lengths_got = segs.map(|seg| seg.length)
@@ -24,7 +33,13 @@ lengths_want = [500.0, 320.0, 400.0]
 ## The truck `lead` metres ahead of a rider at the start of the chain,
 ## seen from `pose`.
 truck_seen_from : Frame.Pose, F64 -> TruckPlan.TruckAt
-truck_seen_from = |pose, lead| TruckPlan.in_view({ world: segs, chain: [0, 1, 2], pose, rider_along: 0.0, lead })
+truck_seen_from = |pose, lead| TruckPlan.in_view({
+	world: segs,
+	chain: [0, 1, 2],
+	pose,
+	rider_along: 0.0,
+	lead,
+})
 
 lead_of : F64 -> TruckPlan.TruckAt
 lead_of = |lead| truck_seen_from(here, lead)
@@ -38,7 +53,11 @@ is_ahead = |truck|
 	}
 
 ## Where the truck is, for a lead that puts it in view.
-ahead_of : F64 -> { place : I64, along : F64, fwd : F64 }
+ahead_of : F64 -> {
+	place : I64,
+	along : F64,
+	fwd : F64,
+}
 ahead_of = |lead|
 	match lead_of(lead) {
 		Ahead(truck) => truck
@@ -46,7 +65,15 @@ ahead_of = |lead|
 	}
 
 present_got : List(Bool)
-present_got = [100.0, 499.0, 600.0, 900.0, 2000.0, 0.0, (0.0 - 50.0)].map(|lead| is_ahead(lead_of(lead)))
+present_got = [
+	100.0,
+	499.0,
+	600.0,
+	900.0,
+	2000.0,
+	0.0,
+	(0.0 - 50.0),
+].map(|lead| is_ahead(lead_of(lead)))
 
 present_want : List(Bool)
 present_want = [True, True, True, True, False, False, False]
@@ -77,8 +104,28 @@ none_flag_want = [False, False]
 
 behind_got : List(Bool)
 behind_got = [
-	is_ahead(truck_seen_from({ along: 100.0, across: 0.0, yaw: 0.0, hw: 2.0 }, 100.0)),
-	is_ahead(truck_seen_from({ along: 99.0, across: 0.0, yaw: 0.0, hw: 2.0 }, 100.0)),
+	is_ahead(
+		truck_seen_from(
+			{
+				along: 100.0,
+				across: 0.0,
+				yaw: 0.0,
+				hw: 2.0,
+			},
+			100.0,
+		),
+	),
+	is_ahead(
+		truck_seen_from(
+			{
+				along: 99.0,
+				across: 0.0,
+				yaw: 0.0,
+				hw: 2.0,
+			},
+			100.0,
+		),
+	),
 ]
 
 behind_want : List(Bool)

@@ -11,31 +11,89 @@ import Paint
 import Tree
 
 table_got : List(F64)
-table_got = List.join([Tree.tiers.map(|tier| tier.top), Tree.tiers.map(|tier| tier.bottom), Tree.tiers.map(|tier| tier.width)])
+table_got = List.join([
+	Tree.tiers.map(|tier| tier.top),
+	Tree.tiers.map(|tier| tier.bottom),
+	Tree.tiers.map(|tier| tier.width),
+])
 
 table_want : List(F64)
-table_want = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.35, 0.44, 0.53, 0.63, 0.72, 0.81, 0.91, 1.0]
+table_want = [
+	0.0,
+	0.1,
+	0.2,
+	0.3,
+	0.4,
+	0.5,
+	0.6,
+	0.7,
+	0.3,
+	0.4,
+	0.5,
+	0.6,
+	0.7,
+	0.8,
+	0.9,
+	1.0,
+	0.35,
+	0.44,
+	0.53,
+	0.63,
+	0.72,
+	0.81,
+	0.91,
+	1.0,
+]
 
 size_got : List(I64)
-size_got = [Tree.tiers.len().to_i64_wrap(), Tree.ring_n, Tree.trunk_color]
+size_got = [
+	Tree.tiers.len().to_i64_wrap(),
+	Tree.ring_n,
+	Tree.trunk_color,
+]
 
 size_want : List(I64)
 size_want = [8, 16, 5914146]
 
 frac_got : List(F64)
-frac_got = [Tree.visible_trunk, Tree.crown_height, Tree.crown_width, Tree.min_cone_forward]
+frac_got = [
+	Tree.visible_trunk,
+	Tree.crown_height,
+	Tree.crown_width,
+	Tree.min_cone_forward,
+]
 
 frac_want : List(F64)
 frac_want = [0.44, 0.648, 0.288, 0.4]
 
 outline : Tree.Outline
-outline = Tree.outline({ right: 0.0, forward: 2.0, height: 4.0, cam_focal: 500.0, view_w: 960.0 })
+outline = Tree.outline({
+	right: 0.0,
+	forward: 2.0,
+	height: 4.0,
+	cam_focal: 500.0,
+	view_w: 960.0,
+})
 
 metric_got : List(F64)
-metric_got = [outline.base_x, outline.base_y, outline.height_px, outline.foliage_px, outline.crown_top_y, outline.crown_half_width]
+metric_got = [
+	outline.base_x,
+	outline.base_y,
+	outline.height_px,
+	outline.foliage_px,
+	outline.crown_top_y,
+	outline.crown_half_width,
+]
 
 metric_want : List(F64)
-metric_want = [480.0, 600.0, 1000.0, 648.0, (-488.0), 288.0]
+metric_want = [
+	480.0,
+	600.0,
+	1000.0,
+	648.0,
+	(-488.0),
+	288.0,
+]
 
 trunk : List(Paint.DrawCmd)
 trunk = Tree.draw_trunk(outline, SharpCorners)
@@ -79,11 +137,27 @@ tri_got : List(F64)
 tri_got = {
 	top_tier = Tree.tiers.first() ?? crash "TreeSpec: a tree has tiers"
 	bottom_tier = Tree.tiers.last() ?? crash "TreeSpec: a tree has tiers"
-	List.concat(only(Tree.tier_triangle(outline, { tier: top_tier, color: 7 })).pts, only(Tree.tier_triangle(outline, { tier: bottom_tier, color: 7 })).pts)
+	List.concat(
+		only(Tree.tier_triangle(outline, { tier: top_tier, color: 7 })).pts,
+		only(Tree.tier_triangle(outline, { tier: bottom_tier, color: 7 })).pts,
+	)
 }
 
 tri_want : List(F64)
-tri_want = [480.0, (-488.0), 580.8, (-293.6), 379.2, (-293.6), 480.0, (-34.4), 768.0, 160.0, 192.0, 160.0]
+tri_want = [
+	480.0,
+	(-488.0),
+	580.8,
+	(-293.6),
+	379.2,
+	(-293.6),
+	480.0,
+	(-34.4),
+	768.0,
+	160.0,
+	192.0,
+	160.0,
+]
 
 pt : F64, F64 -> Camera.ScreenPt
 pt = |x, y| { x: x, y: y }
@@ -92,7 +166,14 @@ xy : List(Camera.ScreenPt) -> List(F64)
 xy = |ps| Paint.flatten_screen(ps)
 
 square : List(Camera.ScreenPt)
-square = [pt(0.0, 0.0), pt(4.0, 0.0), pt(4.0, 4.0), pt(0.0, 4.0), pt(2.0, 2.0), pt(2.0, 0.0)]
+square = [
+	pt(0.0, 0.0),
+	pt(4.0, 0.0),
+	pt(4.0, 4.0),
+	pt(0.0, 4.0),
+	pt(2.0, 2.0),
+	pt(2.0, 0.0),
+]
 
 square_got : List(F64)
 square_got = xy(Tree.convex_hull(square))
@@ -101,31 +182,75 @@ square_want : List(F64)
 square_want = [0.0, 0.0, 4.0, 0.0, 4.0, 4.0, 0.0, 4.0]
 
 tri3_got : List(F64)
-tri3_got = xy(Tree.convex_hull([pt(0.0, 0.0), pt(4.0, 0.0), pt(2.0, 3.0)]))
+tri3_got = xy(
+	Tree.convex_hull([
+		pt(0.0, 0.0),
+		pt(4.0, 0.0),
+		pt(2.0, 3.0),
+	]),
+)
 
 tri3_want : List(F64)
 tri3_want = [0.0, 0.0, 4.0, 0.0, 2.0, 3.0]
 
 line_got : List(F64)
-line_got = xy(Tree.convex_hull([pt(0.0, 0.0), pt(1.0, 1.0), pt(2.0, 2.0), pt(3.0, 3.0)]))
+line_got = xy(
+	Tree.convex_hull([
+		pt(0.0, 0.0),
+		pt(1.0, 1.0),
+		pt(2.0, 2.0),
+		pt(3.0, 3.0),
+	]),
+)
 
 line_want : List(F64)
 line_want = [0.0, 0.0, 3.0, 3.0]
 
 short_got : List(F64)
-short_got = List.join([xy(Tree.convex_hull([pt(1.0, 2.0), pt(0.0, 0.0)])), xy(Tree.convex_hull([pt(9.0, 9.0)])), xy(Tree.convex_hull([]))])
+short_got = List.join([
+	xy(Tree.convex_hull([pt(1.0, 2.0), pt(0.0, 0.0)])),
+	xy(Tree.convex_hull([pt(9.0, 9.0)])),
+	xy(Tree.convex_hull([])),
+])
 
 short_want : List(F64)
 short_want = [1.0, 2.0, 0.0, 0.0, 9.0, 9.0]
 
 dup_got : List(F64)
-dup_got = xy(Tree.convex_hull([pt(0.0, 0.0), pt(0.0, 0.0), pt(4.0, 0.0), pt(4.0, 4.0)]))
+dup_got = xy(
+	Tree.convex_hull([
+		pt(0.0, 0.0),
+		pt(0.0, 0.0),
+		pt(4.0, 0.0),
+		pt(4.0, 4.0),
+	]),
+)
 
 dup_want : List(F64)
 dup_want = [0.0, 0.0, 4.0, 0.0, 4.0, 4.0]
 
 count_got : List(I64)
-count_got = [Tree.convex_hull(square).len().to_i64_wrap(), Tree.convex_hull([pt(0.0, 0.0), pt(4.0, 0.0), pt(2.0, 3.0)]).len().to_i64_wrap(), Tree.convex_hull([pt(0.0, 0.0), pt(1.0, 1.0), pt(2.0, 2.0), pt(3.0, 3.0)]).len().to_i64_wrap(), Tree.convex_hull([pt(1.0, 2.0), pt(0.0, 0.0)]).len().to_i64_wrap(), Tree.convex_hull([pt(0.0, 0.0), pt(0.0, 0.0), pt(4.0, 0.0), pt(4.0, 4.0)]).len().to_i64_wrap()]
+count_got = [
+	Tree.convex_hull(square).len().to_i64_wrap(),
+	Tree.convex_hull([
+		pt(0.0, 0.0),
+		pt(4.0, 0.0),
+		pt(2.0, 3.0),
+	]).len().to_i64_wrap(),
+	Tree.convex_hull([
+		pt(0.0, 0.0),
+		pt(1.0, 1.0),
+		pt(2.0, 2.0),
+		pt(3.0, 3.0),
+	]).len().to_i64_wrap(),
+	Tree.convex_hull([pt(1.0, 2.0), pt(0.0, 0.0)]).len().to_i64_wrap(),
+	Tree.convex_hull([
+		pt(0.0, 0.0),
+		pt(0.0, 0.0),
+		pt(4.0, 0.0),
+		pt(4.0, 4.0),
+	]).len().to_i64_wrap(),
+]
 
 count_want : List(I64)
 count_want = [4, 3, 2, 2, 3]

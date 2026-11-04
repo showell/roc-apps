@@ -11,7 +11,11 @@ CatDraw :: [].{
 	## Where the cat is on screen: where its feet are, its height in pixels,
 	## and how far it is raised off the ground, in the still's units (a cat's
 	## height is 1).
-	Anchor : { feet : Camera.ScreenPt, height_px : F64, lift : F64 }
+	Anchor : {
+		feet : Camera.ScreenPt,
+		height_px : F64,
+		lift : F64,
+	}
 
 	## A polygon with more corners than this is not drawn.
 	max_cat_pts : I64
@@ -48,14 +52,45 @@ CatDraw :: [].{
 		cam_focal : F64,
 		view_w : F64,
 	} -> List(Paint.DrawCmd)
-	draw = |{ right, forward, height, pose, lift, cam_focal, view_w }| {
-		feet = Camera.project({ right, forward, height: 0.0 }, { cam_focal, view_w })
-		top = Camera.project({ right, forward, height }, { cam_focal, view_w })
+	draw = |
+		{
+			right,
+			forward,
+			height,
+			pose,
+			lift,
+			cam_focal,
+			view_w,
+		},
+	| {
+		feet = Camera.project(
+			{
+				right,
+				forward,
+				height: 0.0,
+			},
+			{ cam_focal, view_w },
+		)
+		top = Camera.project(
+			{
+				right,
+				forward,
+				height,
+			},
+			{ cam_focal, view_w },
+		)
 		height_px = (feet.y - top.y)
 		if height_px < 1.0 {
 			[]
 		} else {
-			polygons({ feet, height_px, lift }, CatStills.pose_polys(pose))
+			polygons(
+				{
+					feet,
+					height_px,
+					lift,
+				},
+				CatStills.pose_polys(pose),
+			)
 		}
 	}
 }

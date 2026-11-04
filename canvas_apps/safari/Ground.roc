@@ -9,13 +9,29 @@ Ground :: [].{
 
 	## A point on the ground, lowered by the earth's curve.
 	ground_point : Geom.RiderPt -> Geom.Vec3
-	ground_point = |point| { right: point.right, forward: point.forward, height: (0.0 - Geom.ground_drop(point.right, point.forward)) }
+	ground_point = |point| {
+		right: point.right,
+		forward: point.forward,
+		height: (0.0 - Geom.ground_drop(point.right, point.forward)),
+	}
 
 	## A patch of `color` with these corners, cut at the camera's near plane.
 	## A patch with more than eight corners, or with fewer than three left
 	## in front of the camera, draws nothing.
-	draw : { corners : List(Geom.RiderPt), color : I64, cam_focal : F64, view_w : F64 } -> List(Paint.DrawCmd)
-	draw = |{ corners, color, cam_focal, view_w }|
+	draw : {
+		corners : List(Geom.RiderPt),
+		color : I64,
+		cam_focal : F64,
+		view_w : F64,
+	} -> List(Paint.DrawCmd)
+	draw = |
+		{
+			corners,
+			color,
+			cam_focal,
+			view_w,
+		},
+	|
 		if corners.len() > 8 {
 			[]
 		} else {

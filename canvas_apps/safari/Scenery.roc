@@ -4,8 +4,19 @@
 Scenery :: [].{
 	Scheme : [AllGreen, YellowGreen, RedGreen]
 	Creature : [NoCreature, Elephant, Giraffe, Zebra, Rhino, DuckPond]
-	Tree : { along : F64, across : F64, color : I64, height : F64 }
-	Critter : { along : F64, across : F64, codepoint : I64, height : F64, face_right : Bool }
+	Tree : {
+		along : F64,
+		across : F64,
+		color : I64,
+		height : F64,
+	}
+	Critter : {
+		along : F64,
+		across : F64,
+		codepoint : I64,
+		height : F64,
+		face_right : Bool,
+	}
 
 	lane_width : F64
 	lane_width = 4.0

@@ -113,14 +113,22 @@ Tower :: [].{
 
 	beacon_brightness : F64 -> F64
 	beacon_brightness = |phase| {
-		wrapped = Num_.mod_real((Num_.mod_real(phase, beacon_period) + beacon_period), beacon_period)
+		wrapped = Num_.mod_real(
+			(Num_.mod_real(phase, beacon_period) + beacon_period),
+			beacon_period,
+		)
 		((1.0 - Trig.r_cos((((2.0 * Trig.pi) * wrapped) / beacon_period))) / 2.0)
 	}
 
 	## Where a footprint corner stands on the map, for a mast centred at
 	## `along` and `across` and turned by `yaw`.
 	base_corner_ax : Tower.Corner, F64, F64, F64 -> Geom.AX
-	base_corner_ax = |corner, along, across, yaw| {
+	base_corner_ax = |
+		corner,
+		along,
+		across,
+		yaw,
+	| {
 		offset = corner_offset(corner)
 		du = (offset.across * tower_half)
 		dv = (offset.along * tower_half)
@@ -134,8 +142,18 @@ Tower :: [].{
 	sunk_below_horizon = |p| (((p.right * p.right) + (p.forward * p.forward)) / (2.0 * earth_radius))
 
 	## The point `fraction` of the way from `from` to `to`.
-	point_between : { from : Geom.Vec3, to : Geom.Vec3, fraction : F64 } -> Geom.Vec3
-	point_between = |{ from, to, fraction }| {
+	point_between : {
+		from : Geom.Vec3,
+		to : Geom.Vec3,
+		fraction : F64,
+	} -> Geom.Vec3
+	point_between = |
+		{
+			from,
+			to,
+			fraction,
+		},
+	| {
 		right: (from.right + ((to.right - from.right) * fraction)),
 		forward: (from.forward + ((to.forward - from.forward) * fraction)),
 		height: (from.height + ((to.height - from.height) * fraction)),
@@ -144,7 +162,11 @@ Tower :: [].{
 	## A corner of the mast at height `h`: drawn in toward the centre as the
 	## mast tapers, and lowered by how far the mast has sunk.
 	corner_at : Tower.Mast, Tower.Corner, F64 -> Geom.Vec3
-	corner_at = |mast, corner, h| {
+	corner_at = |
+		mast,
+		corner,
+		h,
+	| {
 		t = (h / tower_height)
 		bottom = footprint_corner(mast.footprint, corner)
 		{
@@ -155,17 +177,45 @@ Tower :: [].{
 	}
 
 	## A rod between two points on screen, `width_px` wide.
-	screen_rod : { from : Camera.ScreenPt, to : Camera.ScreenPt, width_px : F64 } -> List(Paint.DrawCmd)
-	screen_rod = |{ from, to, width_px }| {
+	screen_rod : {
+		from : Camera.ScreenPt,
+		to : Camera.ScreenPt,
+		width_px : F64,
+	} -> List(Paint.DrawCmd)
+	screen_rod = |
+		{
+			from,
+			to,
+			width_px,
+		},
+	| {
 		dx = (to.x - from.x)
 		dy = (to.y - from.y)
 		raw = DeviceMath.real_sqrt(((dx * dx) + (dy * dy)))
 		len = if (raw < 0.0001) 1.0 else raw
-		rod_quad(from, to, ((((0.0 - dy) / len) * width_px) / 2.0), (((dx / len) * width_px) / 2.0))
+		rod_quad(
+			from,
+			to,
+			((((0.0 - dy) / len) * width_px) / 2.0),
+			(((dx / len) * width_px) / 2.0),
+		)
 	}
 
 	rod_quad : Camera.ScreenPt, Camera.ScreenPt, F64, F64 -> List(Paint.DrawCmd)
-	rod_quad = |a, b, ox, oy| Paint.push_poly(tower_metal, [{ x: (a.x + ox), y: (a.y + oy) }, { x: (b.x + ox), y: (b.y + oy) }, { x: (b.x - ox), y: (b.y - oy) }, { x: (a.x - ox), y: (a.y - oy) }])
+	rod_quad = |
+		a,
+		b,
+		ox,
+		oy,
+	| Paint.push_poly(
+		tower_metal,
+		[
+			{ x: (a.x + ox), y: (a.y + oy) },
+			{ x: (b.x + ox), y: (b.y + oy) },
+			{ x: (b.x - ox), y: (b.y - oy) },
+			{ x: (a.x - ox), y: (a.y - oy) },
+		],
+	)
 
 	## A rod between two points in the rider's view. A rod with one end
 	## behind the near plane is cut there; one with both ends behind it is
@@ -184,7 +234,11 @@ Tower :: [].{
 
 	## Where the line from `from` to `to` crosses the near plane.
 	cut_at_near : { from : Geom.Vec3, to : Geom.Vec3 } -> Geom.Vec3
-	cut_at_near = |{ from, to }| point_between({ from, to, fraction: ((Geom.near - from.forward) / (to.forward - from.forward)) })
+	cut_at_near = |{ from, to }| point_between({
+		from,
+		to,
+		fraction: ((Geom.near - from.forward) / (to.forward - from.forward)),
+	})
 
 	rod_on_screen : Tower.RodView, { from : Geom.Vec3, to : Geom.Vec3 } -> List(Paint.DrawCmd)
 	rod_on_screen = |view, { from, to }|
@@ -195,32 +249,96 @@ Tower :: [].{
 		})
 
 	## How many pixels one metre across spans at distance `forward`.
-	metre_px : { forward : F64, cam_focal : F64, view_w : F64 } -> F64
-	metre_px = |{ forward, cam_focal, view_w }| {
-		p1 = Camera.project({ right: 1.0, forward: forward, height: 0.0 }, { cam_focal, view_w })
-		p0 = Camera.project({ right: 0.0, forward: forward, height: 0.0 }, { cam_focal, view_w })
+	metre_px : {
+		forward : F64,
+		cam_focal : F64,
+		view_w : F64,
+	} -> F64
+	metre_px = |
+		{
+			forward,
+			cam_focal,
+			view_w,
+		},
+	| {
+		p1 = Camera.project(
+			{
+				right: 1.0,
+				forward: forward,
+				height: 0.0,
+			},
+			{ cam_focal, view_w },
+		)
+		p0 = Camera.project(
+			{
+				right: 0.0,
+				forward: forward,
+				height: 0.0,
+			},
+			{ cam_focal, view_w },
+		)
 		(p1.x - p0.x)
 	}
 
 	## A rod's width on screen at distance `forward`.
-	rod_width_at : { forward : F64, cam_focal : F64, view_w : F64 } -> F64
+	rod_width_at : {
+		forward : F64,
+		cam_focal : F64,
+		view_w : F64,
+	} -> F64
 	rod_width_at = |camera| (rod_w * metre_px(camera))
 
 	## The four legs, from the footprint's corners up to the apex.
 	legs : Tower.Mast, Geom.Vec3 -> List(Paint.DrawCmd)
-	legs = |mast, apex| List.join_map(corners, |corner| rod(mast.view, { from: corner_at(mast, corner, mast.sunk), to: apex }))
+	legs = |mast, apex| List.join_map(
+		corners,
+		|corner| rod(
+			mast.view,
+			{
+				from: corner_at(
+					mast,
+					corner,
+					mast.sunk,
+				),
+				to: apex,
+			},
+		),
+	)
 
 	## The ring of rods round the mast at height `h`.
 	ring : Tower.Mast, F64 -> List(Paint.DrawCmd)
-	ring = |mast, h| List.join_map(corners, |corner| rod(mast.view, { from: corner_at(mast, corner, h), to: corner_at(mast, next_corner(corner), h) }))
+	ring = |mast, h| List.join_map(
+		corners,
+		|corner| rod(
+			mast.view,
+			{
+				from: corner_at(
+					mast,
+					corner,
+					h,
+				),
+				to: corner_at(
+					mast,
+					next_corner(corner),
+					h,
+				),
+			},
+		),
+	)
 
 	## A ring at every stage below the top, bottom first, leaving out those
 	## the earth has hidden.
 	rings : Tower.Mast -> List(Paint.DrawCmd)
-	rings = |mast| List.join_map(ring_heights_from(stage_height), |h| if (h <= mast.sunk) [] else ring(mast, h))
+	rings = |mast| List.join_map(
+		ring_heights_from(stage_height),
+		|h| if (h <= mast.sunk) [] else ring(mast, h),
+	)
 
 	ring_heights_from : F64 -> List(F64)
-	ring_heights_from = |h| if (h >= tower_height) [] else List.concat([h], ring_heights_from((h + stage_height)))
+	ring_heights_from = |h| if (h >= tower_height) [] else List.concat(
+		[h],
+		ring_heights_from((h + stage_height)),
+	)
 
 	## The crossed braces of the lowest stages, bottom first. A stage the
 	## earth has partly hidden starts its braces at the horizon.
@@ -228,7 +346,10 @@ Tower :: [].{
 	braces = |mast| List.join_map(brace_stages_from(0), |stage| brace_stage(mast, stage))
 
 	brace_stages_from : I64 -> List(I64)
-	brace_stages_from = |stage| if (stage >= brace_stages) [] else List.concat([stage], brace_stages_from((stage + 1)))
+	brace_stages_from = |stage| if (stage >= brace_stages) [] else List.concat(
+		[stage],
+		brace_stages_from((stage + 1)),
+	)
 
 	brace_stage : Tower.Mast, I64 -> List(Paint.DrawCmd)
 	brace_stage = |mast, stage| {
@@ -237,28 +358,92 @@ Tower :: [].{
 		if stage_top <= mast.sunk {
 			[]
 		} else {
-			hidden_fraction = ((DeviceMath.real_max(stage_bottom, mast.sunk) - stage_bottom) / stage_height)
-			List.join_map(corners, |corner| brace_pair(mast, { corner, stage_bottom, stage_top, hidden_fraction }))
+			hidden_fraction = (
+				(
+					DeviceMath.real_max(
+						stage_bottom,
+						mast.sunk,
+					) - stage_bottom
+				) / stage_height
+			)
+			List.join_map(
+				corners,
+				|corner| brace_pair(
+					mast,
+					{
+						corner,
+						stage_bottom,
+						stage_top,
+						hidden_fraction,
+					},
+				),
+			)
 		}
 	}
 
 	## The two braces crossing the face from `corner` to the next corner: one
 	## rising each way.
-	brace_pair : Tower.Mast, { corner : Tower.Corner, stage_bottom : F64, stage_top : F64, hidden_fraction : F64 } -> List(Paint.DrawCmd)
-	brace_pair = |mast, { corner, stage_bottom, stage_top, hidden_fraction }| {
+	brace_pair : Tower.Mast,
+	{
+		corner : Tower.Corner,
+		stage_bottom : F64,
+		stage_top : F64,
+		hidden_fraction : F64,
+	} -> List(Paint.DrawCmd)
+	brace_pair = |
+		mast,
+		{
+			corner,
+			stage_bottom,
+			stage_top,
+			hidden_fraction,
+		},
+	| {
 		next = next_corner(corner)
 		brace_up = rod(
 			mast.view,
 			{
-				from: point_between({ from: corner_at(mast, corner, stage_bottom), to: corner_at(mast, next, stage_top), fraction: hidden_fraction }),
-				to: corner_at(mast, next, stage_top),
+				from: point_between({
+					from: corner_at(
+						mast,
+						corner,
+						stage_bottom,
+					),
+					to: corner_at(
+						mast,
+						next,
+						stage_top,
+					),
+					fraction: hidden_fraction,
+				}),
+				to: corner_at(
+					mast,
+					next,
+					stage_top,
+				),
 			},
 		)
 		brace_down = rod(
 			mast.view,
 			{
-				from: point_between({ from: corner_at(mast, next, stage_bottom), to: corner_at(mast, corner, stage_top), fraction: hidden_fraction }),
-				to: corner_at(mast, corner, stage_top),
+				from: point_between({
+					from: corner_at(
+						mast,
+						next,
+						stage_bottom,
+					),
+					to: corner_at(
+						mast,
+						corner,
+						stage_top,
+					),
+					fraction: hidden_fraction,
+				}),
+				to: corner_at(
+					mast,
+					corner,
+					stage_top,
+				),
 			},
 		)
 		List.concat(brace_up, brace_down)
@@ -267,28 +452,87 @@ Tower :: [].{
 	## The beacon on the apex, at its brightness; too dim or too small, it
 	## isn't drawn.
 	beacon : Tower.Mast, Geom.Vec3, F64 -> List(Paint.DrawCmd)
-	beacon = |mast, apex, brightness| {
-		apex_on_screen = Camera.project(apex, { cam_focal: mast.view.cam_focal, view_w: mast.view.view_w })
+	beacon = |
+		mast,
+		apex,
+		brightness,
+	| {
+		apex_on_screen = Camera.project(
+			apex,
+			{ cam_focal: mast.view.cam_focal, view_w: mast.view.view_w },
+		)
 		if brightness < 0.02 {
 			[]
 		} else {
-			radius = (beacon_radius * metre_px({ forward: mast.center.forward, cam_focal: mast.view.cam_focal, view_w: mast.view.view_w }))
-			if (radius < 0.5) [] else Paint.push_beacon(beacon_color, apex_on_screen.x, apex_on_screen.y, radius, brightness)
+			radius = (
+				beacon_radius * metre_px({
+					forward: mast.center.forward,
+					cam_focal: mast.view.cam_focal,
+					view_w: mast.view.view_w,
+				})
+			)
+			if (radius < 0.5) [] else Paint.push_beacon(
+				beacon_color,
+				apex_on_screen.x,
+				apex_on_screen.y,
+				radius,
+				brightness,
+			)
 		}
 	}
 
 	## The whole mast: legs, rings, braces and beacon, in that order. A mast
 	## behind the camera, or sunk wholly below the horizon, draws nothing.
-	draw : { footprint : Tower.Footprint, center : Geom.RiderPt, cam_focal : F64, view_w : F64, beacon_phase : F64 } -> List(Paint.DrawCmd)
-	draw = |{ footprint, center, cam_focal, view_w, beacon_phase }| {
+	draw : {
+		footprint : Tower.Footprint,
+		center : Geom.RiderPt,
+		cam_focal : F64,
+		view_w : F64,
+		beacon_phase : F64,
+	} -> List(Paint.DrawCmd)
+	draw = |
+		{
+			footprint,
+			center,
+			cam_focal,
+			view_w,
+			beacon_phase,
+		},
+	| {
 		sunk = sunk_below_horizon(center)
 		if center.forward < Geom.near or sunk >= tower_height {
 			[]
 		} else {
-			view = { rod_width_px: rod_width_at({ forward: center.forward, cam_focal, view_w }), cam_focal, view_w }
-			mast = { footprint, center, sunk, view }
-			apex = { right: center.right, forward: center.forward, height: (tower_height - sunk) }
-			List.join([legs(mast, apex), rings(mast), braces(mast), beacon(mast, apex, beacon_brightness(beacon_phase))])
+			view = {
+				rod_width_px: rod_width_at({
+					forward: center.forward,
+					cam_focal,
+					view_w,
+				}),
+				cam_focal,
+				view_w,
+			}
+			mast = {
+				footprint,
+				center,
+				sunk,
+				view,
+			}
+			apex = {
+				right: center.right,
+				forward: center.forward,
+				height: (tower_height - sunk),
+			}
+			List.join([
+				legs(mast, apex),
+				rings(mast),
+				braces(mast),
+				beacon(
+					mast,
+					apex,
+					beacon_brightness(beacon_phase),
+				),
+			])
 		}
 	}
 }

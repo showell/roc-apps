@@ -21,7 +21,11 @@ import Lens
 import RocBird
 
 SafariRide :: [].{
-	Model : { world : List(World.Segment), ride : Safari.Ride, hist : List(Safari.Ride) }
+	Model : {
+		world : List(World.Segment),
+		ride : Safari.Ride,
+		hist : List(Safari.Ride),
+	}
 
 	# How far back a step back can go: 2048 frames, about half the route.
 	#
@@ -33,7 +37,11 @@ SafariRide :: [].{
 	hist_cap = 2048
 
 	init : SafariRide.Model
-	init = { world: World.segments, ride: Safari.ride_initial, hist: [] }
+	init = {
+		world: World.segments,
+		ride: Safari.ride_initial,
+		hist: [],
+	}
 
 	advance : SafariRide.Model -> SafariRide.Model
 	advance = |m| {
@@ -50,13 +58,21 @@ SafariRide :: [].{
 			} else {
 				List.append(List.drop_first(m.hist, hist_cap // 2), m.ride)
 			}
-		{ world: m.world, ride: Safari.ride_next(m.world, m.ride), hist: hist }
+		{
+			world: m.world,
+			ride: Safari.ride_next(m.world, m.ride),
+			hist: hist,
+		}
 	}
 
 	back : SafariRide.Model -> SafariRide.Model
 	back = |m| {
 		match List.last(m.hist) {
-			Ok(prev) => { world: m.world, ride: prev, hist: List.drop_last(m.hist, 1) }
+			Ok(prev) => {
+				world: m.world,
+				ride: prev,
+				hist: List.drop_last(m.hist, 1),
+			}
 			Err(_) => m
 		}
 	}

@@ -28,7 +28,11 @@ Cat :: [].{
 
 	## The cat at a moment: its pose, where it is across the road, and how
 	## high it is off the ground.
-	CatState : { pose : Cat.Pose, across : F64, lift : F64 }
+	CatState : {
+		pose : Cat.Pose,
+		across : F64,
+		lift : F64,
+	}
 
 	## How the rider comes on a cat: the gap from the rider ahead to it, in
 	## metres, and the rider's speed, in metres a step.
@@ -65,8 +69,18 @@ Cat :: [].{
 
 	## The crossing of a cat by the tree `tree_offset` out from the lane's
 	## edge and `tree_along` along the segment.
-	crossing : { lane_half_width : F64, tree_offset : F64, tree_along : F64 } -> Cat.Crossing
-	crossing = |{ lane_half_width, tree_offset, tree_along }| {
+	crossing : {
+		lane_half_width : F64,
+		tree_offset : F64,
+		tree_along : F64,
+	} -> Cat.Crossing
+	crossing = |
+		{
+			lane_half_width,
+			tree_offset,
+			tree_along,
+		},
+	| {
 		tree_across = (lane_half_width + tree_offset)
 		{
 			along: (tree_along + cat_beyond_tree),
@@ -115,8 +129,18 @@ Cat :: [].{
 			x
 		}
 
-	lerp : { from : F64, to : F64, fraction : F64 } -> F64
-	lerp = |{ from, to, fraction }| (from + ((to - from) * fraction))
+	lerp : {
+		from : F64,
+		to : F64,
+		fraction : F64,
+	} -> F64
+	lerp = |
+		{
+			from,
+			to,
+			fraction,
+		},
+	| (from + ((to - from) * fraction))
 
 	## How far through its crossing the cat is, from 0 to 1. A cat the rider
 	## has reached is across; for a rider standing still, a cat ahead hasn't
@@ -212,7 +236,11 @@ Cat :: [].{
 		if step <= enters_road_steps {
 			entering(cat, step)
 		} else if step <= escape_at {
-			{ pose: Frozen, across: cat.mid_across, lift: 0.0 }
+			{
+				pose: Frozen,
+				across: cat.mid_across,
+				lift: 0.0,
+			}
 		} else {
 			escaping(cat, (step - escape_at))
 		}
@@ -223,8 +251,19 @@ Cat :: [].{
 	entering = |cat, step| {
 		progress = (step / enters_road_steps)
 		{
-			pose: if (Trig.r_sin(stride_angle({ progress, steps: enters_road_steps })) > 0.0) Stride else Rest,
-			across: lerp({ from: cat.start_across, to: cat.mid_across, fraction: progress }),
+			pose: if (
+				Trig.r_sin(
+					stride_angle({
+						progress,
+						steps: enters_road_steps,
+					}),
+				) > 0.0
+			) Stride else Rest,
+			across: lerp({
+				from: cat.start_across,
+				to: cat.mid_across,
+				fraction: progress,
+			}),
 			lift: 0.0,
 		}
 	}
@@ -237,11 +276,19 @@ escaping = |cat, step| {
 	clamped = if (step > Cat.escapes_steps) Cat.escapes_steps else step
 	pose = Cat.leap_pose((clamped / Cat.escapes_steps))
 	if clamped < 1.0 {
-		{ pose, across: cat.mid_across, lift: 0.0 }
+		{
+			pose,
+			across: cat.mid_across,
+			lift: 0.0,
+		}
 	} else if clamped < 3.0 {
 		airborne(cat, { pose, flown: ((clamped - 1.0) / 2.0) })
 	} else {
-		{ pose, across: cat.end_across, lift: 0.0 }
+		{
+			pose,
+			across: cat.end_across,
+			lift: 0.0,
+		}
 	}
 }
 
@@ -250,6 +297,10 @@ escaping = |cat, step| {
 airborne : Cat.Crossing, { pose : Cat.Pose, flown : F64 } -> Cat.CatState
 airborne = |cat, { pose, flown }| {
 	pose,
-	across: Cat.lerp({ from: cat.mid_across, to: cat.end_across, fraction: Cat.three_quarter_power(flown) }),
+	across: Cat.lerp({
+		from: cat.mid_across,
+		to: cat.end_across,
+		fraction: Cat.three_quarter_power(flown),
+	}),
 	lift: (((Cat.leap_height * 4.0) * flown) * (1.0 - flown)),
 }

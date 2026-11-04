@@ -13,25 +13,127 @@ view : Camera.View
 view = { cam_focal: 800.0, view_w: 960.0 }
 
 at : F64, F64, F64 -> Camera.ScreenPt
-at = |right, forward, height| Camera.project({ right, forward, height }, view)
+at = |
+	right,
+	forward,
+	height,
+| Camera.project(
+	{
+		right,
+		forward,
+		height,
+	},
+	view,
+)
 
 x_got : List(F64)
-x_got = [at(0.0, 10.0, 1.2).x, at(10.0, 10.0, 1.2).x, at((0.0 - 5.0), 10.0, 1.2).x, at(10.0, 5.0, 1.2).x]
+x_got = [
+	at(
+		0.0,
+		10.0,
+		1.2,
+	).x,
+	at(
+		10.0,
+		10.0,
+		1.2,
+	).x,
+	at(
+		(0.0 - 5.0),
+		10.0,
+		1.2,
+	).x,
+	at(
+		10.0,
+		5.0,
+		1.2,
+	).x,
+]
 
 x_want : List(F64)
 x_want = [480.0, 1280.0, 80.0, 2080.0]
 
 y_got : List(F64)
-y_got = [at(0.0, 10.0, 1.2).y, at(0.0, 10.0, 11.2).y, at(0.0, 10.0, 6.2).y, at(0.0, 10.0, 0.2).y, at(0.0, 4.0, 3.2).y]
+y_got = [
+	at(
+		0.0,
+		10.0,
+		1.2,
+	).y,
+	at(
+		0.0,
+		10.0,
+		11.2,
+	).y,
+	at(
+		0.0,
+		10.0,
+		6.2,
+	).y,
+	at(
+		0.0,
+		10.0,
+		0.2,
+	).y,
+	at(
+		0.0,
+		4.0,
+		3.2,
+	).y,
+]
 
 y_want : List(F64)
-y_want = [300.0, (-500.0), (-100.0), 380.0, (-100.0)]
+y_want = [
+	300.0,
+	(-500.0),
+	(-100.0),
+	380.0,
+	(-100.0),
+]
 
 depth_got : List(F64)
-depth_got = [at(4.0, 4.0, 1.2).x, at(4.0, 8.0, 1.2).x, at(4.0, 16.0, 1.2).x, at(0.0, 4.0, 5.2).y, at(0.0, 8.0, 5.2).y, at(0.0, 16.0, 5.2).y]
+depth_got = [
+	at(
+		4.0,
+		4.0,
+		1.2,
+	).x,
+	at(
+		4.0,
+		8.0,
+		1.2,
+	).x,
+	at(
+		4.0,
+		16.0,
+		1.2,
+	).x,
+	at(
+		0.0,
+		4.0,
+		5.2,
+	).y,
+	at(
+		0.0,
+		8.0,
+		5.2,
+	).y,
+	at(
+		0.0,
+		16.0,
+		5.2,
+	).y,
+]
 
 depth_want : List(F64)
-depth_want = [1280.0, 880.0, 680.0, (-500.0), (-100.0), 100.0]
+depth_want = [
+	1280.0,
+	880.0,
+	680.0,
+	(-500.0),
+	(-100.0),
+	100.0,
+]
 
 fixed_got : List(F64)
 fixed_got = [Screen.height, Camera.eye_h]
@@ -40,7 +142,23 @@ fixed_want : List(F64)
 fixed_want = [600.0, 1.2]
 
 ahead_right_above : List(Geom.Vec3)
-ahead_right_above = [{ right: 0.0, forward: 10.0, height: 1.2 }, { right: 10.0, forward: 10.0, height: 1.2 }, { right: 0.0, forward: 10.0, height: 11.2 }]
+ahead_right_above = [
+	{
+		right: 0.0,
+		forward: 10.0,
+		height: 1.2,
+	},
+	{
+		right: 10.0,
+		forward: 10.0,
+		height: 1.2,
+	},
+	{
+		right: 0.0,
+		forward: 10.0,
+		height: 11.2,
+	},
+]
 
 all_got : List(F64)
 all_got = {
@@ -58,7 +176,13 @@ all_got = {
 }
 
 all_want : List(F64)
-all_want = [3.0, 480.0, 1280.0, (-500.0), 0.0]
+all_want = [
+	3.0,
+	480.0,
+	1280.0,
+	(-500.0),
+	0.0,
+]
 
 # --- Entry ---
 

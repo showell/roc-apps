@@ -29,5 +29,9 @@ Stills :: [].{
 	}
 
 	## One polygon of a still: its colour, and its gradient if it has one.
-	StillPoly : { color : I64, grad : List(Stills.StillGrad), pts : List(Stills.StillPt) }
+	StillPoly : {
+		color : I64,
+		grad : List(Stills.StillGrad),
+		pts : List(Stills.StillPt),
+	}
 }

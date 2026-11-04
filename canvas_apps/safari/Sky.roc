@@ -9,11 +9,19 @@ import Screen
 import lib.Trig
 
 Sky :: [].{
-	Rgb : { r : F64, g : F64, b : F64 }
+	Rgb : {
+		r : F64,
+		g : F64,
+		b : F64,
+	}
 
 	## Where the sun stands on the screen, and how large it is drawn beside
 	## its size at rest.
-	SunPlace : { x : F64, y : F64, scale : F64 }
+	SunPlace : {
+		x : F64,
+		y : F64,
+		scale : F64,
+	}
 
 	## The sun in a frame: in view at its place, or out of view, too far to
 	## the side of where the rider faces.
@@ -59,24 +67,49 @@ Sky :: [].{
 	## How warm the horizon is at a step: most while the sun touches it, none
 	## once the sun is `warmth_falloff_px` above or below.
 	sunset_warmth : F64 -> F64
-	sunset_warmth = |step| DeviceMath.real_max(0.0, (1.0 - (DeviceMath.real_abs(sun_height_px(step)) / warmth_falloff_px)))
+	sunset_warmth = |step| DeviceMath.real_max(
+		0.0,
+		(1.0 - (DeviceMath.real_abs(sun_height_px(step)) / warmth_falloff_px)),
+	)
 
 	day_sky : Sky.Rgb
-	day_sky = { r: 142.0, g: 202.0, b: 230.0 }
+	day_sky = {
+		r: 142.0,
+		g: 202.0,
+		b: 230.0,
+	}
 
 	dusk_sky : Sky.Rgb
-	dusk_sky = { r: 36.0, g: 58.0, b: 94.0 }
+	dusk_sky = {
+		r: 36.0,
+		g: 58.0,
+		b: 94.0,
+	}
 
 	sunset_red : Sky.Rgb
-	sunset_red = { r: 222.0, g: 88.0, b: 52.0 }
+	sunset_red = {
+		r: 222.0,
+		g: 88.0,
+		b: 52.0,
+	}
 
 	sunset_glow : F64
 	sunset_glow = 0.85
 
 	## The colour `fraction` of the way from `from` to `to`, each channel
 	## rounded to a whole value.
-	color_between : { from : Sky.Rgb, to : Sky.Rgb, fraction : F64 } -> Sky.Rgb
-	color_between = |{ from, to, fraction }| {
+	color_between : {
+		from : Sky.Rgb,
+		to : Sky.Rgb,
+		fraction : F64,
+	} -> Sky.Rgb
+	color_between = |
+		{
+			from,
+			to,
+			fraction,
+		},
+	| {
 		r: Num_.round_real((from.r + ((to.r - from.r) * fraction))),
 		g: Num_.round_real((from.g + ((to.g - from.g) * fraction))),
 		b: Num_.round_real((from.b + ((to.b - from.b) * fraction))),
@@ -97,16 +130,38 @@ Sky :: [].{
 	## The sky's colour at the horizon, as 0xRRGGBB: the sky warmed toward
 	## sunset red.
 	horizon_color : F64 -> I64
-	horizon_color = |step| pack(color_between({ from: sky_at(step), to: sunset_red, fraction: (sunset_warmth(step) * sunset_glow) }))
+	horizon_color = |step| pack(
+		color_between({
+			from: sky_at(step),
+			to: sunset_red,
+			fraction: (sunset_warmth(step) * sunset_glow),
+		}),
+	)
 
 	## The sun in a frame, for a rider facing `heading`.
-	sun_pos : { heading : F64, step : F64, view : Camera.View } -> Sky.SunPos
-	sun_pos = |{ heading, step, view }| {
+	sun_pos : {
+		heading : F64,
+		step : F64,
+		view : Camera.View,
+	} -> Sky.SunPos
+	sun_pos = |
+		{
+			heading,
+			step,
+			view,
+		},
+	| {
 		bearing_from_view = Trig.wrap((sun_bearing - heading), 64)
 		if DeviceMath.real_abs(bearing_from_view) >= visible_bearing_limit {
 			OutOfView
 		} else {
-			InView(sun_place({ bearing_from_view, step, view }))
+			InView(
+				sun_place({
+					bearing_from_view,
+					step,
+					view,
+				}),
+			)
 		}
 	}
 }
@@ -122,13 +177,30 @@ dusk_while_up = |height| {
 ## How far toward dusk the sky is once the sun has fully set, darkening on
 ## to full dusk as it sinks a further radius.
 dusk_after_set : F64 -> F64
-dusk_after_set = |height| DeviceMath.real_min(1.0, (Sky.dusk_at_set + (((Sky.sun_fully_set_px - height) / Sky.sun_radius_px) * (1.0 - Sky.dusk_at_set))))
+dusk_after_set = |height| DeviceMath.real_min(
+	1.0,
+	(Sky.dusk_at_set + (((Sky.sun_fully_set_px - height) / Sky.sun_radius_px) * (1.0 - Sky.dusk_at_set))),
+)
 
 sky_at : F64 -> Sky.Rgb
-sky_at = |step| Sky.color_between({ from: Sky.day_sky, to: Sky.dusk_sky, fraction: Sky.sun_set_fraction(step) })
+sky_at = |step| Sky.color_between({
+	from: Sky.day_sky,
+	to: Sky.dusk_sky,
+	fraction: Sky.sun_set_fraction(step),
+})
 
-sun_place : { bearing_from_view : F64, step : F64, view : Camera.View } -> Sky.SunPlace
-sun_place = |{ bearing_from_view, step, view }| {
+sun_place : {
+	bearing_from_view : F64,
+	step : F64,
+	view : Camera.View,
+} -> Sky.SunPlace
+sun_place = |
+	{
+		bearing_from_view,
+		step,
+		view,
+	},
+| {
 	scale = (view.cam_focal / Lens.focal)
 	{
 		x: ((view.view_w / 2.0) + (Trig.r_tan(bearing_from_view) * view.cam_focal)),

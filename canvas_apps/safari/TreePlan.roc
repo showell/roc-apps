@@ -12,7 +12,12 @@ TreePlan :: [].{
 
 	## A tree to draw: where it stands in the rider's view, its height and
 	## its colour.
-	TreeItem : { right : F64, fwd : F64, height : F64, color : I64 }
+	TreeItem : {
+		right : F64,
+		fwd : F64,
+		height : F64,
+		color : I64,
+	}
 
 	## What the trees are seen from: the world's segments, the chain of them
 	## ahead of the rider, the rider's pose, and the camera's focal length.
@@ -60,7 +65,14 @@ TreePlan :: [].{
 		} else if ((tree.height / seen.forward) * view.cam_focal) < SceneLimits.min_scenery_px {
 			[]
 		} else {
-			[{ right: seen.right, fwd: seen.forward, height: tree.height, color: tree.color }]
+			[
+				{
+					right: seen.right,
+					fwd: seen.forward,
+					height: tree.height,
+					color: tree.color,
+				},
+			]
 		}
 	}
 

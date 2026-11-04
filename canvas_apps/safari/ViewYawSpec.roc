@@ -10,19 +10,69 @@ import Pose
 import ViewYaw
 
 s0 : Pose.RiderState
-s0 = { segment: 0, along: 0.0, across: 0.0, yaw: Angle.Turn.radians(0.0), v: 0.3, tilt: Angle.Lean.radians(0.0), heading: Angle.Bearing.radians(0.0), gaze_yaw: Angle.Turn.radians(0.0), focus: 0.0 }
+s0 = {
+	segment: 0,
+	along: 0.0,
+	across: 0.0,
+	yaw: Angle.Turn.radians(0.0),
+	v: 0.3,
+	tilt: Angle.Lean.radians(0.0),
+	heading: Angle.Bearing.radians(0.0),
+	gaze_yaw: Angle.Turn.radians(0.0),
+	focus: 0.0,
+}
 
 s1 : Pose.RiderState
-s1 = { segment: 0, along: 0.0, across: 0.0, yaw: Angle.Turn.radians(0.0), v: 0.3, tilt: Angle.Lean.radians(0.125), heading: Angle.Bearing.radians(4.5), gaze_yaw: Angle.Turn.radians(0.375), focus: 0.0 }
+s1 = {
+	segment: 0,
+	along: 0.0,
+	across: 0.0,
+	yaw: Angle.Turn.radians(0.0),
+	v: 0.3,
+	tilt: Angle.Lean.radians(0.125),
+	heading: Angle.Bearing.radians(4.5),
+	gaze_yaw: Angle.Turn.radians(0.375),
+	focus: 0.0,
+}
 
 s2 : Pose.RiderState
-s2 = { segment: 0, along: 0.0, across: 0.0, yaw: Angle.Turn.radians(0.0), v: 0.3, tilt: Angle.Lean.radians(0.5), heading: Angle.Bearing.radians(1.0), gaze_yaw: Angle.Turn.radians((-0.25)), focus: 0.0 }
+s2 = {
+	segment: 0,
+	along: 0.0,
+	across: 0.0,
+	yaw: Angle.Turn.radians(0.0),
+	v: 0.3,
+	tilt: Angle.Lean.radians(0.5),
+	heading: Angle.Bearing.radians(1.0),
+	gaze_yaw: Angle.Turn.radians((-0.25)),
+	focus: 0.0,
+}
 
 s3 : Pose.RiderState
-s3 = { segment: 0, along: 0.0, across: 0.0, yaw: Angle.Turn.radians(0.0), v: 0.3, tilt: Angle.Lean.radians((-0.75)), heading: Angle.Bearing.radians((-2.0)), gaze_yaw: Angle.Turn.radians(0.125), focus: 0.0 }
+s3 = {
+	segment: 0,
+	along: 0.0,
+	across: 0.0,
+	yaw: Angle.Turn.radians(0.0),
+	v: 0.3,
+	tilt: Angle.Lean.radians((-0.75)),
+	heading: Angle.Bearing.radians((-2.0)),
+	gaze_yaw: Angle.Turn.radians(0.125),
+	focus: 0.0,
+}
 
 s4 : Pose.RiderState
-s4 = { segment: 0, along: 0.0, across: 0.0, yaw: Angle.Turn.radians(0.0), v: 0.3, tilt: Angle.Lean.radians(1.25), heading: Angle.Bearing.radians(0.5), gaze_yaw: Angle.Turn.radians(0.0), focus: 0.0 }
+s4 = {
+	segment: 0,
+	along: 0.0,
+	across: 0.0,
+	yaw: Angle.Turn.radians(0.0),
+	v: 0.3,
+	tilt: Angle.Lean.radians(1.25),
+	heading: Angle.Bearing.radians(0.5),
+	gaze_yaw: Angle.Turn.radians(0.0),
+	focus: 0.0,
+}
 
 frac_got : List(F64)
 frac_got = [ViewYaw.head_yaw_frac]
@@ -31,16 +81,40 @@ frac_want : List(F64)
 frac_want = [0.15]
 
 yaw_got : List(F64)
-yaw_got = [s0, s1, s2, s3, s4].map(|s| ViewYaw.view_yaw_for(s).to_radians())
+yaw_got = [
+	s0,
+	s1,
+	s2,
+	s3,
+	s4,
+].map(|s| ViewYaw.view_yaw_for(s).to_radians())
 
 yaw_want : List(F64)
-yaw_want = [0.0, 0.39375, (-0.175), 0.012500000000000011, 0.1875]
+yaw_want = [
+	0.0,
+	0.39375,
+	(-0.175),
+	0.012500000000000011,
+	0.1875,
+]
 
 head_got : List(F64)
-head_got = [s0, s1, s2, s3, s4].map(|s| ViewYaw.heading_for(s).to_radians())
+head_got = [
+	s0,
+	s1,
+	s2,
+	s3,
+	s4,
+].map(|s| ViewYaw.heading_for(s).to_radians())
 
 head_want : List(F64)
-head_want = [0.0, 4.89375, 0.825, (-1.9875), 0.6875]
+head_want = [
+	0.0,
+	4.89375,
+	0.825,
+	(-1.9875),
+	0.6875,
+]
 
 # --- Entry ---
 

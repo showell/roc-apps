@@ -15,7 +15,11 @@ import lib.Trig
 Mountains :: [].{
 
 	## How the skyline is seen: the rider's heading, and the camera.
-	Sight : { heading : Angle.Bearing, cam_focal : F64, view_w : F64 }
+	Sight : {
+		heading : Angle.Bearing,
+		cam_focal : F64,
+		view_w : F64,
+	}
 
 	rock : I64
 	rock = 0x5B6A8F
@@ -31,10 +35,18 @@ Mountains :: [].{
 	rock_night_dim = 0.5
 
 	snow_day : Sky.Rgb
-	snow_day = { r: 238.0, g: 243.0, b: 248.0 }
+	snow_day = {
+		r: 238.0,
+		g: 243.0,
+		b: 248.0,
+	}
 
 	snow_night : Sky.Rgb
-	snow_night = { r: 70.0, g: 84.0, b: 104.0 }
+	snow_night = {
+		r: 70.0,
+		g: 84.0,
+		b: 104.0,
+	}
 
 	## One of a colour's channels: 16 is red, 8 green and 0 blue.
 	channel : I64, U8 -> F64
@@ -52,7 +64,13 @@ Mountains :: [].{
 	}
 
 	snow_color : F64 -> I64
-	snow_color = |dusk| Sky.pack(Sky.color_between({ from: snow_day, to: snow_night, fraction: dusk }))
+	snow_color = |dusk| Sky.pack(
+		Sky.color_between({
+			from: snow_day,
+			to: snow_night,
+			fraction: dusk,
+		}),
+	)
 
 	west_range_bearing : Angle.Bearing
 	west_range_bearing = Angle.Bearing.radians(-2.0416)
@@ -96,7 +114,10 @@ Mountains :: [].{
 	snowline : Angle.Bearing -> F64
 	snowline = |bearing| {
 		above_threshold = (north_range(bearing) - snow_threshold)
-		above_fraction = DeviceMath.real_max(0.0, DeviceMath.real_min(1.0, (above_threshold / (snow_peak_height - snow_threshold))))
+		above_fraction = DeviceMath.real_max(
+			0.0,
+			DeviceMath.real_min(1.0, (above_threshold / (snow_peak_height - snow_threshold))),
+		)
 		(snow_threshold - (snow_dip * above_fraction))
 	}
 
@@ -110,7 +131,10 @@ Mountains :: [].{
 	## The skyline's height at `bearing`: the highest of the land and the two
 	## ranges.
 	horizon_crest_px : Angle.Bearing -> F64
-	horizon_crest_px = |bearing| DeviceMath.real_max(west_range(bearing), DeviceMath.real_max(north_range(bearing), ground_base(bearing)))
+	horizon_crest_px = |bearing| DeviceMath.real_max(
+		west_range(bearing),
+		DeviceMath.real_max(north_range(bearing), ground_base(bearing)),
+	)
 
 	## Whether the sun, at `step`, has sunk behind the skyline.
 	is_sun_behind_mountains : F64 -> Bool
@@ -118,9 +142,25 @@ Mountains :: [].{
 
 	## The skyline, back to front: the west range, the north range, the
 	## north's snow, then the land.
-	draw : { heading : Angle.Bearing, dusk : F64, cam_focal : F64, view_w : F64 } -> List(Paint.DrawCmd)
-	draw = |{ heading, dusk, cam_focal, view_w }| {
-		sight = { heading, cam_focal, view_w }
+	draw : {
+		heading : Angle.Bearing,
+		dusk : F64,
+		cam_focal : F64,
+		view_w : F64,
+	} -> List(Paint.DrawCmd)
+	draw = |
+		{
+			heading,
+			dusk,
+			cam_focal,
+			view_w,
+		},
+	| {
+		sight = {
+			heading,
+			cam_focal,
+			view_w,
+		}
 		List.join([
 			silhouette(sight, { height_at: west_range, color: color_at_dusk(rock_west, dusk) }),
 			silhouette(sight, { height_at: north_range, color: color_at_dusk(rock, dusk) }),
@@ -187,7 +227,10 @@ north_peak_height_from = |{ at, highest }|
 	if at > Angle.Bearing.radians(0.5) {
 		highest
 	} else {
-		north_peak_height_from({ at: at.plus(peak_sample_step), highest: DeviceMath.real_max(highest, Mountains.north_range(at)) })
+		north_peak_height_from({
+			at: at.plus(peak_sample_step),
+			highest: DeviceMath.real_max(highest, Mountains.north_range(at)),
+		})
 	}
 
 ## The screen's horizon, where a height of zero is drawn.
@@ -212,11 +255,20 @@ columns_onto = |sampled, { at, to }|
 
 ## A silhouette across the screen, its top at `height_at` each bearing, closed
 ## along the horizon.
-silhouette : Mountains.Sight, { height_at : Angle.Bearing -> F64, color : I64 } -> List(Paint.DrawCmd)
+silhouette : Mountains.Sight,
+{
+	height_at : Angle.Bearing -> F64,
+	color : I64,
+} -> List(Paint.DrawCmd)
 silhouette = |sight, { height_at, color }| {
 	left = (0.0 - Mountains.roll_margin)
 	right = (sight.view_w + Mountains.roll_margin)
-	crest = columns({ from: left, to: right }).map(|x| { x, y: height_y(sight, height_at(Mountains.bearing_at(sight, x))) })
+	crest = columns({ from: left, to: right }).map(
+		|x| {
+			x,
+			y: height_y(sight, height_at(Mountains.bearing_at(sight, x))),
+		},
+	)
 	Paint.push_poly(color, crest.concat([{ x: right, y: horizon_y }, { x: left, y: horizon_y }]))
 }
 
@@ -233,8 +285,19 @@ snow = |sight, color| {
 	if snowy.len() < 2 {
 		[]
 	} else {
-		crest = snowy.map(|x| { x, y: height_y(sight, Mountains.north_range(Mountains.bearing_at(sight, x))) })
-		snowline = snowy.fold_rev([], |x, back| back.append({ x, y: height_y(sight, Mountains.snowline(Mountains.bearing_at(sight, x))) }))
+		crest = snowy.map(
+			|x| {
+				x,
+				y: height_y(sight, Mountains.north_range(Mountains.bearing_at(sight, x))),
+			},
+		)
+		snowline = snowy.fold_rev(
+			[],
+			|x, back| back.append({
+				x,
+				y: height_y(sight, Mountains.snowline(Mountains.bearing_at(sight, x))),
+			}),
+		)
 		Paint.push_poly(color, crest.concat(snowline))
 	}
 }

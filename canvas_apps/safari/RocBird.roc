@@ -30,7 +30,65 @@ RocBird :: [].{
 	# The logo as a still, beak toward +x. Colours are the site's logo-dark
 	# and logo-light.
 	polys : List(Stills.StillPoly)
-	polys = [{ color: 6368222, grad: [], pts: [{ x: -0.0344, y: 0.5715 }, { x: -0.148, y: 0.0 }, { x: 0.0368, y: 0.1469 }, { x: 0.0183, y: 0.2577 }] }, { color: 8542181, grad: [], pts: [{ x: 0.2216, y: 0.6413 }, { x: 0.3497, y: 0.5025 }, { x: 0.3679, y: 0.5849 }, { x: 0.3862, y: 0.6862 }] }, { color: 8542181, grad: [], pts: [{ x: -0.0305, y: 0.9394 }, { x: -0.4811, y: 1.0 }, { x: -0.0344, y: 0.5715 }] }, { color: 8542181, grad: [], pts: [{ x: 0.3497, y: 0.5025 }, { x: -0.0344, y: 0.5715 }, { x: 0.0183, y: 0.2577 }] }, { color: 6368222, grad: [], pts: [{ x: 0.4717, y: 0.5849 }, { x: 0.3862, y: 0.6862 }, { x: 0.3679, y: 0.5849 }] }, { color: 6368222, grad: [], pts: [{ x: -0.0344, y: 0.5715 }, { x: 0.3497, y: 0.5025 }, { x: 0.2216, y: 0.6413 }, { x: -0.0305, y: 0.9394 }] }]
+	polys = [
+		{
+			color: 6368222,
+			grad: [],
+			pts: [
+				{ x: -0.0344, y: 0.5715 },
+				{ x: -0.148, y: 0.0 },
+				{ x: 0.0368, y: 0.1469 },
+				{ x: 0.0183, y: 0.2577 },
+			],
+		},
+		{
+			color: 8542181,
+			grad: [],
+			pts: [
+				{ x: 0.2216, y: 0.6413 },
+				{ x: 0.3497, y: 0.5025 },
+				{ x: 0.3679, y: 0.5849 },
+				{ x: 0.3862, y: 0.6862 },
+			],
+		},
+		{
+			color: 8542181,
+			grad: [],
+			pts: [
+				{ x: -0.0305, y: 0.9394 },
+				{ x: -0.4811, y: 1.0 },
+				{ x: -0.0344, y: 0.5715 },
+			],
+		},
+		{
+			color: 8542181,
+			grad: [],
+			pts: [
+				{ x: 0.3497, y: 0.5025 },
+				{ x: -0.0344, y: 0.5715 },
+				{ x: 0.0183, y: 0.2577 },
+			],
+		},
+		{
+			color: 6368222,
+			grad: [],
+			pts: [
+				{ x: 0.4717, y: 0.5849 },
+				{ x: 0.3862, y: 0.6862 },
+				{ x: 0.3679, y: 0.5849 },
+			],
+		},
+		{
+			color: 6368222,
+			grad: [],
+			pts: [
+				{ x: -0.0344, y: 0.5715 },
+				{ x: 0.3497, y: 0.5025 },
+				{ x: 0.2216, y: 0.6413 },
+				{ x: -0.0305, y: 0.9394 },
+			],
+		},
+	]
 
 	# A bird stands this tall, in metres, on its treetop.
 	height : F64
@@ -44,40 +102,79 @@ RocBird :: [].{
 	# it faces screen-right; on a right-hand tree that is out into the trees.
 	# From a left-hand one, the same unflipped bird faces the road.
 	fifth_left : List(Scenery.Tree), I64, I64 -> [Found(Scenery.Tree), NoTree]
-	fifth_left = |trees, i, seen| match List.get(trees, I64.to_u64_wrap(i)) {
+	fifth_left = |
+		trees,
+		i,
+		seen,
+	| match List.get(trees, I64.to_u64_wrap(i)) {
 		Err(_) => NoTree
 		Ok(t) => if t.across < 0.0 {
 			if seen == 4 {
 				Found(t)
 			} else {
-				fifth_left(trees, i + 1, seen + 1)
+				fifth_left(
+					trees,
+					i + 1,
+					seen + 1,
+				)
 			}
 		} else {
-			fifth_left(trees, i + 1, seen)
+			fifth_left(
+				trees,
+				i + 1,
+				seen,
+			)
 		}
 	}
 
 	# One bird, placed: where it is and how far up its tree its feet go. The
 	# same shape every other collected item has -- where, not what.
-	Bird : { right : F64, fwd : F64, lift : F64 }
+	Bird : {
+		right : F64,
+		fwd : F64,
+		lift : F64,
+	}
 
 	# The bird for chain position d, or nothing when its tree is behind the
 	# near plane or too small to draw. Culled here, as every kind is culled
 	# where it is collected rather than where it is drawn.
 	perch : List(World.Segment), List(I64), Frame.Pose, F64, I64 -> List(RocBird.Bird)
-	perch = |segs, ch, pose, cf, d| {
+	perch = |
+		segs,
+		ch,
+		pose,
+		cf,
+		d,
+	| {
 		seg_idx = List.get(ch, I64.to_u64_wrap(d)) ?? crash ("chain index")
 		seg = List.get(segs, I64.to_u64_wrap(seg_idx)) ?? crash ("segment")
-		match fifth_left(seg.trees, 0, 0) {
+		match fifth_left(
+			seg.trees,
+			0,
+			0,
+		) {
 			NoTree => []
 			Found(t) => {
-				rp = Frame.at(segs, ch, pose, d, t.along, t.across + Scenery.lane_width / 2.0)
+				rp = Frame.at(
+					segs,
+					ch,
+					pose,
+					d,
+					t.along,
+					t.across + Scenery.lane_width / 2.0,
+				)
 				if rp.forward <= Geom.near {
 					[]
 				} else if (height / rp.forward) * cf < SceneLimits.min_scenery_px {
 					[]
 				} else {
-					[{ right: rp.right, fwd: rp.forward, lift: t.height }]
+					[
+						{
+							right: rp.right,
+							fwd: rp.forward,
+							lift: t.height,
+						},
+					]
 				}
 			}
 		}
@@ -86,14 +183,49 @@ RocBird :: [].{
 	# Every bird in the chain, nearest segment first. The sort puts them where
 	# they belong.
 	perches : List(World.Segment), List(I64), Frame.Pose, F64 -> List(RocBird.Bird)
-	perches = |segs, ch, pose, cf| perches_from(segs, ch, pose, cf, 0, [])
+	perches = |
+		segs,
+		ch,
+		pose,
+		cf,
+	| perches_from(
+		segs,
+		ch,
+		pose,
+		cf,
+		0,
+		[],
+	)
 
 	perches_from : List(World.Segment), List(I64), Frame.Pose, F64, I64, List(RocBird.Bird) -> List(RocBird.Bird)
-	perches_from = |segs, ch, pose, cf, d, acc|
+	perches_from = |
+		segs,
+		ch,
+		pose,
+		cf,
+		d,
+		acc,
+	|
 		if d >= ch.len().to_i64_wrap() {
 			acc
 		} else {
-			perches_from(segs, ch, pose, cf, d + 1, List.concat(acc, perch(segs, ch, pose, cf, d)))
+			perches_from(
+				segs,
+				ch,
+				pose,
+				cf,
+				d + 1,
+				List.concat(
+					acc,
+					perch(
+						segs,
+						ch,
+						pose,
+						cf,
+						d,
+					),
+				),
+			)
 		}
 
 	# **THE DEPTH IS THE TREE'S**, which is the whole point of collecting them:
@@ -105,8 +237,26 @@ RocBird :: [].{
 	# and unflipped its beak points toward +x, which from a left-hand tree is
 	# across the road.
 	draw_one : RocBird.Bird, F64, F64 -> List(Paint.DrawCmd)
-	draw_one = |b, cf, view_w| {
-		feet = Camera.project({ right: b.right, forward: b.fwd, height: b.lift }, { cam_focal: cf, view_w })
-		Critter.draw_still({ feet, flip: AsDrawn, height_px: (height / b.fwd) * cf }, polys)
+	draw_one = |
+		b,
+		cf,
+		view_w,
+	| {
+		feet = Camera.project(
+			{
+				right: b.right,
+				forward: b.fwd,
+				height: b.lift,
+			},
+			{ cam_focal: cf, view_w },
+		)
+		Critter.draw_still(
+			{
+				feet,
+				flip: AsDrawn,
+				height_px: (height / b.fwd) * cf,
+			},
+			polys,
+		)
 	}
 }

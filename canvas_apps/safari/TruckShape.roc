@@ -43,7 +43,11 @@ TruckShape :: [].{
 
 	## A point on the truck: how far along the road, how far across it, and
 	## how high above it.
-	RoadPoint : { along : F64, across : F64, height : F64 }
+	RoadPoint : {
+		along : F64,
+		across : F64,
+		height : F64,
+	}
 
 	trailer_length : F64
 	trailer_length = 8.4
@@ -87,9 +91,23 @@ TruckShape :: [].{
 	## curves away from the rider, so the point is lowered by how far the
 	## ground has dropped beneath it.
 	point : TruckShape.TruckInView, TruckShape.RoadPoint -> Geom.Vec3
-	point = |truck, { along, across, height }| {
+	point = |
+		truck,
+		{
+			along,
+			across,
+			height,
+		},
+	| {
 		road = truck.road
-		on_ground = Frame.at(road.world, road.chain, road.pose, road.segment, along, across)
+		on_ground = Frame.at(
+			road.world,
+			road.chain,
+			road.pose,
+			road.segment,
+			along,
+			across,
+		)
 		{
 			right: on_ground.right,
 			forward: on_ground.forward,
@@ -100,12 +118,23 @@ TruckShape :: [].{
 	## The angles of the corners of a circle drawn as a polygon with `sides`
 	## corners, going round from angle 0.
 	circle_angles : I64 -> List(F64)
-	circle_angles = |sides| List.from_iter(I64.until(0, sides)).map(|corner| ((I64.to_f64(corner) / I64.to_f64(sides)) * Trig.two_pi))
+	circle_angles = |sides| List.from_iter(
+		I64.until(
+			0,
+			sides,
+		),
+	).map(|corner| ((I64.to_f64(corner) / I64.to_f64(sides)) * Trig.two_pi))
 
 	## A flat-coloured polygon on the truck, cut at the near plane and
 	## projected.
 	fill : TruckShape.TruckInView, { color : I64, corners : List(Geom.Vec3) } -> List(Paint.DrawCmd)
-	fill = |truck, { color, corners }| Paint.push_poly(color, Camera.project_all(Geom.clip_near(corners), { cam_focal: truck.cam_focal, view_w: truck.view_w }))
+	fill = |truck, { color, corners }| Paint.push_poly(
+		color,
+		Camera.project_all(
+			Geom.clip_near(corners),
+			{ cam_focal: truck.cam_focal, view_w: truck.view_w },
+		),
+	)
 }
 
 ## How far forward of the trailer the cab's flat roof reaches, as a fraction

@@ -29,8 +29,22 @@ ShapesPixels :: [].{
 paint_shape : List(U32), { roll : ScreenRoll, shape : Shapes.Shape } -> List(U32)
 paint_shape = |pixels, { roll, shape }|
 	match shape {
-		Poly(p) => ScanlineFill.fill_polygon(pixels, { roll, pts: p.pts, fill: p.fill })
-		Pieces(p) => paint_pieces(pixels, { roll, tris: p.tris, fill: p.fill })
+		Poly(p) => ScanlineFill.fill_polygon(
+			pixels,
+			{
+				roll,
+				pts: p.pts,
+				fill: p.fill,
+			},
+		)
+		Pieces(p) => paint_pieces(
+			pixels,
+			{
+				roll,
+				tris: p.tris,
+				fill: p.fill,
+			},
+		)
 		Disc(d) => {
 			color = match d.fill {
 				Flat(flat) => flat
@@ -61,13 +75,32 @@ paint_shape = |pixels, { roll, shape }|
 	}
 
 ## The triangles, six numbers each, all filled with one brush.
-paint_pieces : List(U32), { roll : ScreenRoll, tris : List(F64), fill : Brush.Fill } -> List(U32)
-paint_pieces = |pixels, { roll, tris, fill }| {
+paint_pieces : List(U32),
+{
+	roll : ScreenRoll,
+	tris : List(F64),
+	fill : Brush.Fill,
+} -> List(U32)
+paint_pieces = |
+	pixels,
+	{
+		roll,
+		tris,
+		fill,
+	},
+| {
 	count = tris.len() // 6
 	var $px = pixels
 	var $k = 0
 	while $k < count {
-		$px = ScanlineFill.fill_polygon($px, { roll, pts: tris.sublist({ start: 6 * $k, len: 6 }), fill })
+		$px = ScanlineFill.fill_polygon(
+			$px,
+			{
+				roll,
+				pts: tris.sublist({ start: 6 * $k, len: 6 }),
+				fill,
+			},
+		)
 		$k = $k + 1
 	}
 	$px

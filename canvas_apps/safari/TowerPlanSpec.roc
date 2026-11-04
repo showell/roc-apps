@@ -12,7 +12,11 @@ import TowerPlan
 import World
 
 fixed_got : List(F64)
-fixed_got = [TowerPlan.tower_beyond, TowerPlan.tower_right, TowerPlan.mid_tower_left]
+fixed_got = [
+	TowerPlan.tower_beyond,
+	TowerPlan.tower_right,
+	TowerPlan.mid_tower_left,
+]
 
 fixed_want : List(F64)
 fixed_want = [160.0, 20.0, 100.0]
@@ -24,15 +28,29 @@ cap_want : List(I64)
 cap_want = [16]
 
 segs : List(World.Segment)
-segs = [World.segment_at(0), World.segment_at(1), World.segment_at(2)]
+segs = [
+	World.segment_at(0),
+	World.segment_at(1),
+	World.segment_at(2),
+]
 
 origin : Frame.Pose
-origin = { along: 0.0, across: 0.0, yaw: 0.0, hw: 2.0 }
+origin = {
+	along: 0.0,
+	across: 0.0,
+	yaw: 0.0,
+	hw: 2.0,
+}
 
 ## The first three segments seen from the origin, the rider on segment
 ## `rider_segment`.
 short_view : I64 -> TowerPlan.View
-short_view = |rider_segment| { world: segs, chain: [0, 1, 2], pose: origin, rider_segment }
+short_view = |rider_segment| {
+	world: segs,
+	chain: [0, 1, 2],
+	pose: origin,
+	rider_segment,
+}
 
 from_origin : TowerPlan.View
 from_origin = short_view(0)
@@ -64,20 +82,36 @@ mid_flags_want = [False, False, False]
 
 ## The first mast in view on the segment at `place` in the chain.
 first_tower_on : I64 -> TowerPlan.TowerItem
-first_tower_on = |place| TowerPlan.segment_towers(from_origin, place).first() ?? crash "TowerPlanSpec: the first two segments' masts are in view"
+first_tower_on = |place| TowerPlan.segment_towers(
+	from_origin,
+	place,
+).first() ?? crash "TowerPlanSpec: the first two segments' masts are in view"
 
 where_got : List(F64)
-where_got = [first_tower_on(0).along, first_tower_on(0).across, first_tower_on(1).along, first_tower_on(1).across]
+where_got = [
+	first_tower_on(0).along,
+	first_tower_on(0).across,
+	first_tower_on(1).along,
+	first_tower_on(1).across,
+]
 
 where_want : List(F64)
 where_want = [660.0, 22.0, 480.0, 22.0]
 
 ## The 1200 m segment alone, seen from the origin.
 long_view : TowerPlan.View
-long_view = { world: [World.segment_at(6)], chain: [0], pose: origin, rider_segment: 0 }
+long_view = {
+	world: [World.segment_at(6)],
+	chain: [0],
+	pose: origin,
+	rider_segment: 0,
+}
 
 long_got : List(I64)
-long_got = [TowerPlan.along_chain(long_view).len().to_i64_wrap(), TowerPlan.mid_tower(long_view, 0).len().to_i64_wrap()]
+long_got = [
+	TowerPlan.along_chain(long_view).len().to_i64_wrap(),
+	TowerPlan.mid_tower(long_view, 0).len().to_i64_wrap(),
+]
 
 long_want : List(I64)
 long_want = [2, 1]
@@ -90,13 +124,32 @@ long_tower : U64 -> TowerPlan.TowerItem
 long_tower = |i| long_towers.get(i) ?? crash "TowerPlanSpec: the long segment has two masts in view"
 
 long_where_got : List(F64)
-long_where_got = [long_tower(0).along, long_tower(0).across, long_tower(1).along, long_tower(1).across, long_tower(0).yaw, long_tower(1).yaw]
+long_where_got = [
+	long_tower(0).along,
+	long_tower(0).across,
+	long_tower(1).along,
+	long_tower(1).across,
+	long_tower(0).yaw,
+	long_tower(1).yaw,
+]
 
 long_where_want : List(F64)
-long_where_want = [1360.0, 22.0, 600.0, (-98.0), 0.5235987750000001, 0.0]
+long_where_want = [
+	1360.0,
+	22.0,
+	600.0,
+	(-98.0),
+	0.5235987750000001,
+	0.0,
+]
 
 key_got : List(F64)
-key_got = [long_tower(0).beacon_offset, long_tower(1).beacon_offset, Tower.beacon_offset_for(0), Tower.beacon_offset_for(60)]
+key_got = [
+	long_tower(0).beacon_offset,
+	long_tower(1).beacon_offset,
+	Tower.beacon_offset_for(0),
+	Tower.beacon_offset_for(60),
+]
 
 key_want : List(F64)
 key_want = [0.0, 60.0, 0.0, 60.0]
@@ -120,7 +173,15 @@ behind_want = [3, 4, 4, 1]
 
 cull_got : List(I64)
 cull_got = [
-	TowerPlan.along_chain({ ..from_origin, pose: { along: 5000.0, across: 0.0, yaw: 0.0, hw: 2.0 } }).len().to_i64_wrap(),
+	TowerPlan.along_chain({
+		..from_origin,
+		pose: {
+			along: 5000.0,
+			across: 0.0,
+			yaw: 0.0,
+			hw: 2.0,
+		},
+	}).len().to_i64_wrap(),
 	TowerPlan.along_chain({ ..from_origin, chain: [] }).len().to_i64_wrap(),
 ]
 
@@ -143,7 +204,12 @@ tower_place_at = |i|
 	}
 
 items_got : List(I64)
-items_got = [keys.len().to_i64_wrap(), tower_place_at(0), tower_place_at(2), TowerPlan.depth_keys([]).len().to_i64_wrap()]
+items_got = [
+	keys.len().to_i64_wrap(),
+	tower_place_at(0),
+	tower_place_at(2),
+	TowerPlan.depth_keys([]).len().to_i64_wrap(),
+]
 
 items_want : List(I64)
 items_want = [3, 0, 2, 0]

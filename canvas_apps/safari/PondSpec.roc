@@ -8,7 +8,14 @@ import Grade
 import Pond
 
 size_got : List(I64)
-size_got = [Pond.water_outline.len().to_i64_wrap(), Pond.bank.len().to_i64_wrap(), Pond.ducks.len().to_i64_wrap(), Pond.water_color, Pond.bank_color, Pond.duck_codepoint]
+size_got = [
+	Pond.water_outline.len().to_i64_wrap(),
+	Pond.bank.len().to_i64_wrap(),
+	Pond.ducks.len().to_i64_wrap(),
+	Pond.water_color,
+	Pond.bank_color,
+	Pond.duck_codepoint,
+]
 
 size_want : List(I64)
 size_want = [7, 6, 6, 3112588, 12759680, 129414]
@@ -30,7 +37,15 @@ spot_got = {
 }
 
 spot_want : List(F64)
-spot_want = [(-2.0), 3.0, (-15.0), 32.0, (-5.0), 29.0, 0.9]
+spot_want = [
+	(-2.0),
+	3.0,
+	(-15.0),
+	32.0,
+	(-5.0),
+	29.0,
+	0.9,
+]
 
 inside : Pond.Duck -> Bool
 inside = |duck|

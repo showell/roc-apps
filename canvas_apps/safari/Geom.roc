@@ -4,7 +4,11 @@ import lib.Trig
 
 Geom :: [].{
 	RiderPt : { right : F64, forward : F64 }
-	Vec3 : { right : F64, forward : F64, height : F64 }
+	Vec3 : {
+		right : F64,
+		forward : F64,
+		height : F64,
+	}
 	AX : { a : F64, x : F64 }
 
 	ground_radius : F64
@@ -14,7 +18,14 @@ Geom :: [].{
 	ground_drop = |right, forward| (((right * right) + (forward * forward)) / (2.0 * ground_radius))
 
 	to_rider : F64, F64, F64, F64, F64, F64 -> Geom.RiderPt
-	to_rider = |a, x, cam_along, cam_across, yaw, hw| (
+	to_rider = |
+		a,
+		x,
+		cam_along,
+		cam_across,
+		yaw,
+		hw,
+	| (
 		{
 			d_a = (a - cam_along)
 			d_x = (x - (cam_across + hw))
@@ -25,13 +36,23 @@ Geom :: [].{
 	)
 
 	next_to_cur : F64, F64, F64, F64, Bool, F64 -> Geom.AX
-	next_to_cur = |a_b, x_b, seg_len, theta, turns_right, width| (
+	next_to_cur = |
+		a_b,
+		x_b,
+		seg_len,
+		theta,
+		turns_right,
+		width,
+	| (
 		{
 			c = Trig.r_cos(theta)
 			s = Trig.r_sin(theta)
 			(
 				if turns_right {
-					{ a: ((((a_b * c) - (x_b * s)) + (width * s)) + seg_len), x: (((x_b * c) + (a_b * s)) + (width * (1.0 - c))) }
+					{
+						a: ((((a_b * c) - (x_b * s)) + (width * s)) + seg_len),
+						x: (((x_b * c) + (a_b * s)) + (width * (1.0 - c))),
+					}
 				} else {
 					{ a: (((a_b * c) + (x_b * s)) + seg_len), x: ((x_b * c) - (a_b * s)) }
 				}
@@ -40,7 +61,14 @@ Geom :: [].{
 	)
 
 	cur_to_next : F64, F64, F64, F64, Bool, F64 -> Geom.AX
-	cur_to_next = |a, x, seg_len, theta, turns_right, width| (
+	cur_to_next = |
+		a,
+		x,
+		seg_len,
+		theta,
+		turns_right,
+		width,
+	| (
 		{
 			c = Trig.r_cos(theta)
 			s = Trig.r_sin(theta)
@@ -66,7 +94,12 @@ Geom :: [].{
 	)
 
 	line_meet : Geom.RiderPt, Geom.RiderPt, Geom.RiderPt, Geom.RiderPt -> Geom.RiderPt
-	line_meet = |a0, a1, b0, b1| (
+	line_meet = |
+		a0,
+		a1,
+		b0,
+		b1,
+	| (
 		{
 			dax = (a1.right - a0.right)
 			daf = (a1.forward - a0.forward)
@@ -81,10 +114,20 @@ Geom :: [].{
 	near = 0.4
 
 	clip_cross : Geom.Vec3, Geom.Vec3, F64 -> List(Geom.Vec3)
-	clip_cross = |a, b, near_| (
+	clip_cross = |
+		a,
+		b,
+		near_,
+	| (
 		{
 			f = ((near_ - a.forward) / (b.forward - a.forward))
-			[{ right: (a.right + (f * (b.right - a.right))), forward: near_, height: (a.height + (f * (b.height - a.height))) }]
+			[
+				{
+					right: (a.right + (f * (b.right - a.right))),
+					forward: near_,
+					height: (a.height + (f * (b.height - a.height))),
+				},
+			]
 		}
 	)
 
@@ -105,7 +148,12 @@ Geom :: [].{
 
 	# clip_near_onto is an accumulator loop, which is linear where appending a recursive call is quadratic.
 	clip_near_onto : List(Geom.Vec3), F64, I64, List(Geom.Vec3) -> List(Geom.Vec3)
-	clip_near_onto = |poly, near_, i, acc| (
+	clip_near_onto = |
+		poly,
+		near_,
+		i,
+		acc,
+	| (
 		{
 			n = poly.len().to_i64_wrap()
 			(
@@ -114,8 +162,18 @@ Geom :: [].{
 				} else {
 					(
 						{
-							a = (List.get(poly, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))
-							b = (List.get(poly, I64.to_u64_wrap(((i + 1) - (I64.div_trunc_by((i + 1), n) * n)))) ?? crash ("list-at out of range"))
+							a = (
+								List.get(
+									poly,
+									I64.to_u64_wrap(i),
+								) ?? crash ("list-at out of range")
+							)
+							b = (
+								List.get(
+									poly,
+									I64.to_u64_wrap(((i + 1) - (I64.div_trunc_by((i + 1), n) * n))),
+								) ?? crash ("list-at out of range")
+							)
 							a_in = (a.forward >= near_)
 							b_in = (b.forward >= near_)
 							kept = (
@@ -129,10 +187,23 @@ Geom :: [].{
 								if both_sides(a_in, b_in) {
 									[]
 								} else {
-									clip_cross(a, b, near_)
+									clip_cross(
+										a,
+										b,
+										near_,
+									)
 								}
 							)
-							clip_near_onto(poly, near_, (i + 1), List.join([acc, kept, crossed]))
+							clip_near_onto(
+								poly,
+								near_,
+								(i + 1),
+								List.join([
+									acc,
+									kept,
+									crossed,
+								]),
+							)
 						}
 					)
 				}
@@ -142,5 +213,10 @@ Geom :: [].{
 
 	## The polygon cut to what lies at or past the near plane, `near` ahead.
 	clip_near : List(Geom.Vec3) -> List(Geom.Vec3)
-	clip_near = |poly| clip_near_onto(poly, near, 0, [])
+	clip_near = |poly| clip_near_onto(
+		poly,
+		near,
+		0,
+		[],
+	)
 }

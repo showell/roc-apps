@@ -10,14 +10,23 @@ import Grade
 import lib.Trig
 
 the_cat : Cat.Crossing
-the_cat = Cat.crossing({ lane_half_width: 2.0, tree_offset: 1.0, tree_along: 100.0 })
+the_cat = Cat.crossing({
+	lane_half_width: 2.0,
+	tree_offset: 1.0,
+	tree_along: 100.0,
+})
 
 ## A rider `gap` metres short of the cat, at `speed` metres a step.
 coming : F64, F64 -> Cat.Approach
 coming = |gap, speed| { gap, speed }
 
 make_got : List(F64)
-make_got = [the_cat.along, the_cat.start_across, the_cat.mid_across, the_cat.height]
+make_got = [
+	the_cat.along,
+	the_cat.start_across,
+	the_cat.mid_across,
+	the_cat.height,
+]
 
 make_want : List(F64)
 make_want = [102.0, 4.5, 0.816, 1.7]
@@ -29,13 +38,35 @@ make_wide_want : List(F64)
 make_wide_want = [(-3.49), 4.306]
 
 dims_got : List(F64)
-dims_got = [Cat.cat_height, Cat.cat_along, Cat.cat_road_gap, Cat.cat_beyond_tree, Cat.cat_head_x, Cat.land_hind_reach, Cat.grass_toehold]
+dims_got = [
+	Cat.cat_height,
+	Cat.cat_along,
+	Cat.cat_road_gap,
+	Cat.cat_beyond_tree,
+	Cat.cat_head_x,
+	Cat.land_hind_reach,
+	Cat.grass_toehold,
+]
 
 dims_want : List(F64)
-dims_want = [1.7, 105.0, 1.5, 2.0, (-0.48), 1.19, 0.3]
+dims_want = [
+	1.7,
+	105.0,
+	1.5,
+	2.0,
+	(-0.48),
+	1.19,
+	0.3,
+]
 
 window_got : List(F64)
-window_got = [Cat.enters_road_steps, Cat.frozen_steps, Cat.escapes_steps, Cat.cross_frames, Cat.road_buffer]
+window_got = [
+	Cat.enters_road_steps,
+	Cat.frozen_steps,
+	Cat.escapes_steps,
+	Cat.cross_frames,
+	Cat.road_buffer,
+]
 
 window_want : List(F64)
 window_want = [10.0, 24.0, 4.0, 38.0, 3.0]
@@ -63,8 +94,18 @@ t_got = List.join([
 		coming(100.0, 1.0),
 		coming(41.0, 0.0),
 	].map(Cat.crossing_progress),
-	[(0.0 - 0.5), 0.25, 1.5].map(Cat.clamp01),
-	[0.25, 0.0, 1.0].map(|fraction| Cat.lerp({ from: 2.0, to: 6.0, fraction })),
+	[
+		(0.0 - 0.5),
+		0.25,
+		1.5,
+	].map(Cat.clamp01),
+	[0.25, 0.0, 1.0].map(
+		|fraction| Cat.lerp({
+			from: 2.0,
+			to: 6.0,
+			fraction,
+		}),
+	),
 ])
 
 t_want : List(F64)
@@ -118,7 +159,16 @@ phase_of : F64 -> Cat.CatState
 phase_of = |gap| Cat.state(the_cat, coming(gap, 1.0))
 
 which_got : List(I64)
-which_got = [41.0, 31.5, 30.0, 7.0, 6.5, 6.0, 4.0, 3.0].map(|gap| Cat.pose_index(phase_of(gap).pose))
+which_got = [
+	41.0,
+	31.5,
+	30.0,
+	7.0,
+	6.5,
+	6.0,
+	4.0,
+	3.0,
+].map(|gap| Cat.pose_index(phase_of(gap).pose))
 
 which_want : List(I64)
 which_want = [0, 0, 2, 2, 3, 4, 5, 6]
@@ -127,7 +177,15 @@ walking : F64 -> Cat.CatState
 walking = |step| Cat.entering(the_cat, step)
 
 entering_got : List(F64)
-entering_got = [walking(0.0).across, walking(1.25).across, walking(3.75).across, walking(6.25).across, walking(8.75).across, walking(0.0).lift, walking(8.75).lift]
+entering_got = [
+	walking(0.0).across,
+	walking(1.25).across,
+	walking(3.75).across,
+	walking(6.25).across,
+	walking(8.75).across,
+	walking(0.0).lift,
+	walking(8.75).lift,
+]
 
 entering_want : List(F64)
 entering_want = [4.5, 4.0395, 3.1185, 2.1975, 1.2765, 0.0, 0.0]
@@ -139,22 +197,43 @@ stride_want : List(I64)
 stride_want = [0, 1, 0, 1, 0]
 
 frozen_got : List(F64)
-frozen_got = [phase_of(30.0).across, phase_of(7.0).across, phase_of(30.0).lift]
+frozen_got = [
+	phase_of(30.0).across,
+	phase_of(7.0).across,
+	phase_of(30.0).lift,
+]
 
 frozen_want : List(F64)
 frozen_want = [0.816, 0.816, 0.0]
 
 leap_got : List(F64)
-leap_got = [phase_of(6.5).across, phase_of(6.5).lift, phase_of(6.0).across, phase_of(6.0).lift, Cat.three_quarter_power(0.0), Cat.three_quarter_power(1.0), Cat.three_quarter_power(0.0625), Cat.leap_height]
+leap_got = [
+	phase_of(6.5).across,
+	phase_of(6.5).lift,
+	phase_of(6.0).across,
+	phase_of(6.0).lift,
+	Cat.three_quarter_power(0.0),
+	Cat.three_quarter_power(1.0),
+	Cat.three_quarter_power(0.0625),
+	Cat.leap_height,
+]
 
 leap_want : List(F64)
 leap_want = [0.816, 0.0, 0.816, 0.0, 0.0, 1.0, 0.125, 0.18]
 
 flight_got : List(F64)
-flight_got = [phase_of(5.875).across, phase_of(5.875).lift, phase_of(4.0).across]
+flight_got = [
+	phase_of(5.875).across,
+	phase_of(5.875).lift,
+	phase_of(4.0).across,
+]
 
 flight_want : List(F64)
-flight_want = [0.27775, 0.0421875, (-3.49)]
+flight_want = [
+	0.27775,
+	0.0421875,
+	(-3.49),
+]
 
 # --- Entry ---
 

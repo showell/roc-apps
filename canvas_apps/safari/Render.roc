@@ -46,7 +46,18 @@ Render :: [].{
 
 	## Everything in view from `viewpoint`, each kind cut to its plan's cap.
 	collect : Render.Viewpoint -> Render.Scene
-	collect = |{ world, chain, pose, cam_focal, rider_segment, rider_along, speed, truck_position }| {
+	collect = |
+		{
+			world,
+			chain,
+			pose,
+			cam_focal,
+			rider_segment,
+			rider_along,
+			speed,
+			truck_position,
+		},
+	| {
 		road = {
 			world,
 			chain,
@@ -90,7 +101,12 @@ Render :: [].{
 			rider_along,
 			lead: truck_position - rider_distance,
 		})
-		birds = RocBird.perches(world, chain, pose, cam_focal)
+		birds = RocBird.perches(
+			world,
+			chain,
+			pose,
+			cam_focal,
+		)
 		# Keys about as far away as each other keep the order they are joined
 		# in, so this order decides which of two tied things is painted over
 		# the other.

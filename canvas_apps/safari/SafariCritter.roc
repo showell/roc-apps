@@ -41,7 +41,14 @@ SafariCritter :: [].{
 		turn : [TurnsLeft, TurnsRight],
 		lane_half_width : F64,
 	} -> List(Scenery.Critter)
-	corner_critters = |{ creature, corner_along, turn, lane_half_width }|
+	corner_critters = |
+		{
+			creature,
+			corner_along,
+			turn,
+			lane_half_width,
+		},
+	|
 		match species_of(creature) {
 			NoSpecies => []
 			Species(species) => {

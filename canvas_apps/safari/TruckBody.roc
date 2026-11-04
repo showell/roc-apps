@@ -11,7 +11,11 @@ TruckBody :: [].{
 
 	## A flat face of the truck, and its depth: the mean of its corners'
 	## distances ahead, by which the faces are ordered for painting.
-	TruckFace : { color : I64, depth : F64, corners : List(Geom.Vec3) }
+	TruckFace : {
+		color : I64,
+		depth : F64,
+		corners : List(Geom.Vec3),
+	}
 
 	## A tyre is drawn as a polygon with this many corners.
 	tire_sides : I64
@@ -25,7 +29,11 @@ TruckBody :: [].{
 
 	## A face of `color` with these corners.
 	face : I64, List(Geom.Vec3) -> TruckBody.TruckFace
-	face = |color, corners| { color, depth: (sum_of_forward(corners) / corners.len().to_f64()), corners }
+	face = |color, corners| {
+		color,
+		depth: (sum_of_forward(corners) / corners.len().to_f64()),
+		corners,
+	}
 
 	## Where the truck's axles are along the road, back to front: a pair
 	## under the back of the trailer, a pair under its front, and one under
@@ -99,8 +107,15 @@ faces = |truck| {
 }
 
 ## A face of `color` whose corners are the truck's points `corners`.
-face_in_view : TruckShape.TruckInView, { color : I64, corners : List(TruckShape.RoadPoint) } -> TruckBody.TruckFace
-face_in_view = |truck, { color, corners }| TruckBody.face(color, corners.map(|corner| TruckShape.point(truck, corner)))
+face_in_view : TruckShape.TruckInView,
+{
+	color : I64,
+	corners : List(TruckShape.RoadPoint),
+} -> TruckBody.TruckFace
+face_in_view = |truck, { color, corners }| TruckBody.face(
+	color,
+	corners.map(|corner| TruckShape.point(truck, corner)),
+)
 
 ## A side of the truck at `across`: up the back of the trailer, along its
 ## roof and the cab's, down the windshield's edge and the nose, back along
@@ -113,13 +128,41 @@ side = |truck, across| {
 		{
 			color: side_color,
 			corners: [
-				{ along: box.rear, across, height: TruckShape.trailer_bottom },
-				{ along: box.rear, across, height: TruckShape.truck_height },
-				{ along: box.roof_front, across, height: TruckShape.truck_height },
-				{ along: box.nose, across, height: hood_height },
-				{ along: box.nose, across, height: TruckShape.cab_bottom },
-				{ along: box.trailer_front, across, height: TruckShape.cab_bottom },
-				{ along: box.trailer_front, across, height: TruckShape.trailer_bottom },
+				{
+					along: box.rear,
+					across,
+					height: TruckShape.trailer_bottom,
+				},
+				{
+					along: box.rear,
+					across,
+					height: TruckShape.truck_height,
+				},
+				{
+					along: box.roof_front,
+					across,
+					height: TruckShape.truck_height,
+				},
+				{
+					along: box.nose,
+					across,
+					height: hood_height,
+				},
+				{
+					along: box.nose,
+					across,
+					height: TruckShape.cab_bottom,
+				},
+				{
+					along: box.trailer_front,
+					across,
+					height: TruckShape.cab_bottom,
+				},
+				{
+					along: box.trailer_front,
+					across,
+					height: TruckShape.trailer_bottom,
+				},
 			],
 		},
 	)
@@ -133,10 +176,26 @@ back = |truck| {
 		{
 			color: body_color,
 			corners: [
-				{ along: box.rear, across: box.left, height: TruckShape.trailer_bottom },
-				{ along: box.rear, across: box.right, height: TruckShape.trailer_bottom },
-				{ along: box.rear, across: box.right, height: TruckShape.truck_height },
-				{ along: box.rear, across: box.left, height: TruckShape.truck_height },
+				{
+					along: box.rear,
+					across: box.left,
+					height: TruckShape.trailer_bottom,
+				},
+				{
+					along: box.rear,
+					across: box.right,
+					height: TruckShape.trailer_bottom,
+				},
+				{
+					along: box.rear,
+					across: box.right,
+					height: TruckShape.truck_height,
+				},
+				{
+					along: box.rear,
+					across: box.left,
+					height: TruckShape.truck_height,
+				},
 			],
 		},
 	)
@@ -151,10 +210,26 @@ roof = |truck| {
 		{
 			color: roof_color,
 			corners: [
-				{ along: box.rear, across: box.left, height: TruckShape.truck_height },
-				{ along: box.rear, across: box.right, height: TruckShape.truck_height },
-				{ along: box.roof_front, across: box.right, height: TruckShape.truck_height },
-				{ along: box.roof_front, across: box.left, height: TruckShape.truck_height },
+				{
+					along: box.rear,
+					across: box.left,
+					height: TruckShape.truck_height,
+				},
+				{
+					along: box.rear,
+					across: box.right,
+					height: TruckShape.truck_height,
+				},
+				{
+					along: box.roof_front,
+					across: box.right,
+					height: TruckShape.truck_height,
+				},
+				{
+					along: box.roof_front,
+					across: box.left,
+					height: TruckShape.truck_height,
+				},
 			],
 		},
 	)
@@ -168,10 +243,26 @@ windshield = |truck| {
 		{
 			color: body_color,
 			corners: [
-				{ along: box.roof_front, across: box.left, height: TruckShape.truck_height },
-				{ along: box.roof_front, across: box.right, height: TruckShape.truck_height },
-				{ along: box.nose, across: box.right, height: hood_height },
-				{ along: box.nose, across: box.left, height: hood_height },
+				{
+					along: box.roof_front,
+					across: box.left,
+					height: TruckShape.truck_height,
+				},
+				{
+					along: box.roof_front,
+					across: box.right,
+					height: TruckShape.truck_height,
+				},
+				{
+					along: box.nose,
+					across: box.right,
+					height: hood_height,
+				},
+				{
+					along: box.nose,
+					across: box.left,
+					height: hood_height,
+				},
 			],
 		},
 	)
@@ -185,10 +276,26 @@ nose = |truck| {
 		{
 			color: body_color,
 			corners: [
-				{ along: box.nose, across: box.left, height: hood_height },
-				{ along: box.nose, across: box.right, height: hood_height },
-				{ along: box.nose, across: box.right, height: TruckShape.cab_bottom },
-				{ along: box.nose, across: box.left, height: TruckShape.cab_bottom },
+				{
+					along: box.nose,
+					across: box.left,
+					height: hood_height,
+				},
+				{
+					along: box.nose,
+					across: box.right,
+					height: hood_height,
+				},
+				{
+					along: box.nose,
+					across: box.right,
+					height: TruckShape.cab_bottom,
+				},
+				{
+					along: box.nose,
+					across: box.left,
+					height: TruckShape.cab_bottom,
+				},
 			],
 		},
 	)

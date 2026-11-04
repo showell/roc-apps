@@ -16,11 +16,19 @@ feet = { x: 100.0, y: 200.0 }
 
 ## A still 50 pixels tall, standing on `feet`, as drawn.
 upright : Critter.Anchor
-upright = { feet, flip: AsDrawn, height_px: 50.0 }
+upright = {
+	feet,
+	flip: AsDrawn,
+	height_px: 50.0,
+}
 
 ## The same still, mirrored.
 mirrored : Critter.Anchor
-mirrored = { feet, flip: Mirrored, height_px: 50.0 }
+mirrored = {
+	feet,
+	flip: Mirrored,
+	height_px: 50.0,
+}
 
 facing_got : List(F64)
 facing_got = [Critter.x_sign(Mirrored), Critter.x_sign(AsDrawn)]
@@ -33,7 +41,14 @@ point_got = {
 	a = Critter.screen_point(upright, { x: 0.5, y: 0.4 })
 	b = Critter.screen_point(mirrored, { x: 0.5, y: 0.4 })
 	c = Critter.screen_point(upright, { x: 0.0, y: 0.0 })
-	[a.x, a.y, b.x, b.y, c.x, c.y]
+	[
+		a.x,
+		a.y,
+		b.x,
+		b.y,
+		c.x,
+		c.y,
+	]
 }
 
 point_want : List(F64)
@@ -44,11 +59,25 @@ vector_got = {
 	a = Critter.screen_vector(upright, { x: 0.5, y: 0.4 })
 	b = Critter.screen_vector(mirrored, { x: 0.5, y: 0.4 })
 	c = Critter.screen_vector(upright, { x: 0.0, y: 0.0 })
-	[a.x, a.y, b.x, b.y, c.x, c.y]
+	[
+		a.x,
+		a.y,
+		b.x,
+		b.y,
+		c.x,
+		c.y,
+	]
 }
 
 vector_want : List(F64)
-vector_want = [25.0, (-20.0), (-25.0), (-20.0), 0.0, 0.0]
+vector_want = [
+	25.0,
+	(-20.0),
+	(-25.0),
+	(-20.0),
+	0.0,
+	0.0,
+]
 
 anchor_got : List(F64)
 anchor_got = {
@@ -62,7 +91,14 @@ anchor_want = [100.0, 200.0]
 
 mapped_got : List(F64)
 mapped_got = {
-	points = Critter.screen_points(upright, [{ x: 0.0, y: 0.0 }, { x: 0.5, y: 0.4 }, { x: 1.0, y: 1.0 }])
+	points = Critter.screen_points(
+		upright,
+		[
+			{ x: 0.0, y: 0.0 },
+			{ x: 0.5, y: 0.4 },
+			{ x: 1.0, y: 1.0 },
+		],
+	)
 	List.concat([points.len().to_f64()], points.join_map(|point| [point.x, point.y]))
 }
 
@@ -71,7 +107,11 @@ mapped_want = [3.0, 100.0, 200.0, 125.0, 180.0, 150.0, 150.0]
 
 ## A solid polygon of colour 7 with `count` points, all at the feet.
 flat_poly : U64 -> Stills.StillPoly
-flat_poly = |count| { color: 7, grad: [], pts: List.repeat({ x: 0.0, y: 0.0 }, count) }
+flat_poly = |count| {
+	color: 7,
+	grad: [],
+	pts: List.repeat({ x: 0.0, y: 0.0 }, count),
+}
 
 poly_command_count : U64 -> I64
 poly_command_count = |count| Critter.draw_poly(upright, flat_poly(count)).len().to_i64_wrap()
@@ -90,8 +130,15 @@ guard_want = [512, 1, 1, 0, 0]
 
 solid_got : List(I64)
 solid_got = {
-	command = Critter.draw_poly(upright, flat_poly(3)).first() ?? crash "CritterSpec: a solid polygon is one command"
-	[command.tag, command.color, command.pts.len().to_i64_wrap()]
+	command = Critter.draw_poly(
+		upright,
+		flat_poly(3),
+	).first() ?? crash "CritterSpec: a solid polygon is one command"
+	[
+		command.tag,
+		command.color,
+		command.pts.len().to_i64_wrap(),
+	]
 }
 
 solid_want : List(I64)
@@ -99,10 +146,26 @@ solid_want = [0, 7, 6]
 
 ## How many commands draw an elephant of `height` metres, `forward` metres
 ## ahead.
-command_count : { forward : F64, height : F64, codepoint : I64 } -> I64
-command_count = |{ forward, height, codepoint }|
+command_count : {
+	forward : F64,
+	height : F64,
+	codepoint : I64,
+} -> I64
+command_count = |
+	{
+		forward,
+		height,
+		codepoint,
+	},
+|
 	Critter.draw(
-		{ right: 0.0, forward, height, codepoint, facing: FacesLeft },
+		{
+			right: 0.0,
+			forward,
+			height,
+			codepoint,
+			facing: FacesLeft,
+		},
 		{ cam_focal: 500.0, view_w: 960.0 },
 	).len().to_i64_wrap()
 
@@ -111,10 +174,26 @@ elephant = 128024
 
 size_got : List(I64)
 size_got = [
-	command_count({ forward: 1000.0, height: 2.0, codepoint: elephant }),
-	command_count({ forward: 2000.0, height: 2.0, codepoint: elephant }),
-	command_count({ forward: 1000.0, height: 1.9, codepoint: elephant }),
-	command_count({ forward: 100.0, height: 2.0, codepoint: elephant }),
+	command_count({
+		forward: 1000.0,
+		height: 2.0,
+		codepoint: elephant,
+	}),
+	command_count({
+		forward: 2000.0,
+		height: 2.0,
+		codepoint: elephant,
+	}),
+	command_count({
+		forward: 1000.0,
+		height: 1.9,
+		codepoint: elephant,
+	}),
+	command_count({
+		forward: 100.0,
+		height: 2.0,
+		codepoint: elephant,
+	}),
 ]
 
 size_want : List(I64)
@@ -123,7 +202,11 @@ size_want = [6, 0, 0, 6]
 unknown_got : List(I64)
 unknown_got = [
 	EmojiStills.emoji_polys_for(1).len().to_i64_wrap(),
-	command_count({ forward: 100.0, height: 2.0, codepoint: 1 }),
+	command_count({
+		forward: 100.0,
+		height: 2.0,
+		codepoint: 1,
+	}),
 	EmojiStills.emoji_polys_for(elephant).len().to_i64_wrap(),
 ]
 

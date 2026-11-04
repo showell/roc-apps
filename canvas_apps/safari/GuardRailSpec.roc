@@ -10,13 +10,25 @@ import Grade
 import GuardRail
 
 dims_got : List(F64)
-dims_got = [GuardRail.rail_height, GuardRail.rail_thickness, GuardRail.rail_post_width, GuardRail.bar_top, GuardRail.bar_bot, GuardRail.half_post]
+dims_got = [
+	GuardRail.rail_height,
+	GuardRail.rail_thickness,
+	GuardRail.rail_post_width,
+	GuardRail.bar_top,
+	GuardRail.bar_bot,
+	GuardRail.half_post,
+]
 
 dims_want : List(F64)
 dims_want = [0.5, 0.1, 0.02, 0.55, 0.45, 0.01]
 
 fixed_got : List(I64)
-fixed_got = [GuardRail.rail_metal, GuardRail.rail_post_metal, GuardRail.rail_runout, GuardRail.max_rail_polys.to_i64_wrap()]
+fixed_got = [
+	GuardRail.rail_metal,
+	GuardRail.rail_post_metal,
+	GuardRail.rail_runout,
+	GuardRail.max_rail_polys.to_i64_wrap(),
+]
 
 fixed_want : List(I64)
 fixed_want = [12765135, 10133672, 10, 3072]
@@ -31,7 +43,11 @@ corner_at : GuardRail.RailPoly, U64 -> Geom.Vec3
 corner_at = |quad, i| quad.corners.get(i) ?? crash "GuardRailSpec: a quad has four corners"
 
 straight : List(Geom.RiderPt)
-straight = [pt(0.0, 10.0), pt(0.0, 20.0), pt(0.0, 30.0)]
+straight = [
+	pt(0.0, 10.0),
+	pt(0.0, 20.0),
+	pt(0.0, 30.0),
+]
 
 rails : List(GuardRail.RailPoly)
 rails = GuardRail.quads_along(straight)
@@ -101,7 +117,12 @@ diag_got = {
 }
 
 diag_want : List(F64)
-diag_want = [(-0.006), 0.006, 9.992, 10.008]
+diag_want = [
+	(-0.006),
+	0.006,
+	9.992,
+	10.008,
+]
 
 doubled : List(Geom.RiderPt)
 doubled = [pt(0.0, 10.0), pt(0.0, 10.0)]

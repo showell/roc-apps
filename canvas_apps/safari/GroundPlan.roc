@@ -45,8 +45,22 @@ GroundPlan :: [].{
 		cam_focal : F64,
 		view_w : F64,
 	} -> List(Paint.DrawCmd)
-	draw = |{ world, segment, pose, cam_focal, view_w }| {
-		view = { world, chain: Frame.build_chain(world, segment), pose, cam_focal, view_w }
+	draw = |
+		{
+			world,
+			segment,
+			pose,
+			cam_focal,
+			view_w,
+		},
+	| {
+		view = {
+			world,
+			chain: Frame.build_chain(world, segment),
+			pose,
+			cam_focal,
+			view_w,
+		}
 		positions = List.from_iter(I64.until(0, view.chain.len().to_i64_wrap()))
 		ahead = positions.join_map(|position| segment_ground(view, position))
 		if segment > 0 {
@@ -71,7 +85,15 @@ GroundPlan :: [].{
 		chunks = GroundPlan.chunk_count(length)
 		List.from_iter(I64.until(0, chunks)).join_map(
 			|chunk| {
-				corners = GroundPlan.chunk_corners(view, { position, length, chunks, chunk })
+				corners = GroundPlan.chunk_corners(
+					view,
+					{
+						position,
+						length,
+						chunks,
+						chunk,
+					},
+				)
 				paint(view, { corners, color: GroundPlan.road_color })
 			},
 		)
@@ -88,10 +110,25 @@ GroundPlan :: [].{
 
 	## A chunk's corners: across its near end, then back across its far end.
 	chunk_corners : GroundPlan.View, GroundPlan.RoadChunk -> List(Geom.RiderPt)
-	chunk_corners = |view, { position, length, chunks, chunk }| {
+	chunk_corners = |
+		view,
+		{
+			position,
+			length,
+			chunks,
+			chunk,
+		},
+	| {
 		near_end = ((length * chunk.to_f64()) / chunks.to_f64())
 		far_end = ((length * (chunk + 1).to_f64()) / chunks.to_f64())
-		at = |along, across| Frame.at(view.world, view.chain, view.pose, position, along, across)
+		at = |along, across| Frame.at(
+			view.world,
+			view.chain,
+			view.pose,
+			position,
+			along,
+			across,
+		)
 		[
 			at(near_end, 0.0),
 			at(near_end, Scenery.lane_width),
@@ -112,7 +149,12 @@ Bend : {
 
 ## A patch of ground in `color`, as the view's camera sees it.
 paint : GroundPlan.View, { corners : List(Geom.RiderPt), color : I64 } -> List(Paint.DrawCmd)
-paint = |view, { corners, color }| Ground.draw({ corners, color, cam_focal: view.cam_focal, view_w: view.view_w })
+paint = |view, { corners, color }| Ground.draw({
+	corners,
+	color,
+	cam_focal: view.cam_focal,
+	view_w: view.view_w,
+})
 
 ## The segment at `position` in the chain.
 segment_in_chain : GroundPlan.View, I64 -> World.Segment
@@ -131,7 +173,13 @@ segment_ground = |view, position| {
 		if (position + 1) >= view.chain.len().to_i64_wrap() {
 			[]
 		} else {
-			bend_ground(view, bend_out_of(segment, { before: Frame.chain_map(position), after: Frame.chain_map((position + 1)) }))
+			bend_ground(
+				view,
+				bend_out_of(
+					segment,
+					{ before: Frame.chain_map(position), after: Frame.chain_map((position + 1)) },
+				),
+			)
 		}
 	List.join([
 		GroundPlan.segment_road(view, position),
@@ -154,7 +202,12 @@ ground_behind = |view, index| {
 
 ## The bend at the end of `segment`, which is on the map as `before`.
 bend_out_of : World.Segment, { before : Frame.Mapper, after : Frame.Mapper } -> Bend
-bend_out_of = |segment, { before, after }| { before, after, length_before: segment.length, exit_right: segment.exit_right }
+bend_out_of = |segment, { before, after }| {
+	before,
+	after,
+	length_before: segment.length,
+	exit_right: segment.exit_right,
+}
 
 ## A bend's paving: the road just before it, then the corner it cuts.
 bend_ground : GroundPlan.View, Bend -> List(Paint.DrawCmd)
@@ -167,7 +220,14 @@ bend_ground = |view, bend|
 ## The last `approach_length` of the road before a bend.
 approach : GroundPlan.View, Bend -> List(Geom.RiderPt)
 approach = |view, bend| {
-	before = |along, across| Frame.map_pt(view.world, view.chain, view.pose, bend.before, along, across)
+	before = |along, across| Frame.map_pt(
+		view.world,
+		view.chain,
+		view.pose,
+		bend.before,
+		along,
+		across,
+	)
 	start = (bend.length_before - GroundPlan.approach_length)
 	[
 		before(bend.length_before, 0.0),
@@ -182,8 +242,22 @@ approach = |view, bend| {
 ## and back to the outer edge where the segment after starts.
 bend_corner : GroundPlan.View, Bend -> List(Geom.RiderPt)
 bend_corner = |view, bend| {
-	before = |along, across| Frame.map_pt(view.world, view.chain, view.pose, bend.before, along, across)
-	after = |along, across| Frame.map_pt(view.world, view.chain, view.pose, bend.after, along, across)
+	before = |along, across| Frame.map_pt(
+		view.world,
+		view.chain,
+		view.pose,
+		bend.before,
+		along,
+		across,
+	)
+	after = |along, across| Frame.map_pt(
+		view.world,
+		view.chain,
+		view.pose,
+		bend.after,
+		along,
+		across,
+	)
 	inner_edge = if (bend.exit_right) Scenery.lane_width else 0.0
 	outer_edge = Joint.outer_cu(bend.exit_right)
 	apex = Joint.joint_apex(
@@ -205,11 +279,24 @@ bend_corner = |view, bend| {
 
 ## The pond past the end of `segment`, which is on the map at `place`:
 ## its water, then its bank. A segment that ends at no pond has none.
-pond_ground : GroundPlan.View, { segment : World.Segment, place : Frame.Mapper } -> List(Paint.DrawCmd)
+pond_ground : GroundPlan.View,
+{
+	segment : World.Segment,
+	place : Frame.Mapper,
+} -> List(Paint.DrawCmd)
 pond_ground = |view, { segment, place }|
 	if Scenery.is_pond(segment.exit_creature) {
 		on_map = |outline|
-			outline.map(|point| Frame.map_pt(view.world, view.chain, view.pose, place, (segment.length + point.along), point.across))
+			outline.map(
+				|point| Frame.map_pt(
+					view.world,
+					view.chain,
+					view.pose,
+					place,
+					(segment.length + point.along),
+					point.across,
+				),
+			)
 		List.concat(
 			paint(view, { corners: on_map(Pond.water_outline), color: Pond.water_color }),
 			paint(view, { corners: on_map(Pond.bank), color: Pond.bank_color }),

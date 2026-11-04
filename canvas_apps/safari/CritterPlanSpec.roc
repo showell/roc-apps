@@ -17,7 +17,12 @@ reach_want : List(I64)
 reach_want = [3, 5]
 
 origin : Frame.Pose
-origin = { along: 0.0, across: 0.0, yaw: 0.0, hw: 2.0 }
+origin = {
+	along: 0.0,
+	across: 0.0,
+	yaw: 0.0,
+	hw: 2.0,
+}
 
 ## The first six segments, chained in order.
 scene : CritterPlan.Scene
@@ -29,7 +34,11 @@ scene = {
 
 ## The world's segment `index` alone.
 lone : I64 -> CritterPlan.Scene
-lone = |index| { world: [World.segment_at(index)], chain: [0], pose: origin }
+lone = |index| {
+	world: [World.segment_at(index)],
+	chain: [0],
+	pose: origin,
+}
 
 farm_at : I64 -> I64
 farm_at = |position| CritterPlan.farm_sightings(scene, position).len().to_i64_wrap()
@@ -68,7 +77,12 @@ duck_count : I64 -> I64
 duck_count = |index| CritterPlan.duck_sightings(lone(index), 0).len().to_i64_wrap()
 
 duck_got : List(Bool)
-duck_got = [(duck_count(12) > 0), (duck_count(0) == 0), (duck_count(4) == 0), (duck_count(18) == 0)]
+duck_got = [
+	(duck_count(12) > 0),
+	(duck_count(0) == 0),
+	(duck_count(4) == 0),
+	(duck_count(18) == 0),
+]
 
 duck_want : List(Bool)
 duck_want = [True, True, True, True]
@@ -99,7 +113,12 @@ count_from = |position|
 walk_got : List(I64)
 walk_got = [
 	CritterPlan.sightings_ahead({ ..scene, chain: [] }).len().to_i64_wrap(),
-	(CritterPlan.sightings_ahead(lone(0)).len().to_i64_wrap() - CritterPlan.sightings_at(lone(0), 0).len().to_i64_wrap()),
+	(
+		CritterPlan.sightings_ahead(lone(0)).len().to_i64_wrap() - CritterPlan.sightings_at(
+			lone(0),
+			0,
+		).len().to_i64_wrap()
+	),
 	(CritterPlan.sightings_ahead(scene).len().to_i64_wrap() - count_from(0)),
 ]
 

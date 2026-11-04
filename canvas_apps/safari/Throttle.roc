@@ -18,7 +18,12 @@ Throttle :: [].{
 	tilt_hold = Angle.Lean.radians(2.0 * Trig.deg)
 
 	corner_brake : Pose.RiderState, World.Segment, F64, F64 -> F64
-	corner_brake = |state, seg, v_end, a| (
+	corner_brake = |
+		state,
+		seg,
+		v_end,
+		a,
+	| (
 		{
 			d = (seg.commit_along - state.along)
 			corner_a = (
@@ -39,12 +44,19 @@ Throttle :: [].{
 	)
 
 	cat_gate : Pose.RiderState, World.Segment, F64 -> F64
-	cat_gate = |state, seg, a|
+	cat_gate = |
+		state,
+		seg,
+		a,
+	|
 		match seg.cat {
 			Waits(crossing) =>
 				if a > 0.0 {
 					(
-						if Cat.is_in_danger({ gap: (crossing.along - state.along), speed: state.v }) {
+						if Cat.is_in_danger({
+							gap: (crossing.along - state.along),
+							speed: state.v,
+						}) {
 							0.0
 						} else {
 							a
@@ -57,7 +69,11 @@ Throttle :: [].{
 		}
 
 	pig_gate : Pose.RiderState, World.Segment, F64 -> F64
-	pig_gate = |state, seg, a| (
+	pig_gate = |
+		state,
+		seg,
+		a,
+	| (
 		{
 			b = Gaze.pig_gaze_brake(state, seg)
 			(
@@ -90,7 +106,11 @@ Throttle :: [].{
 				if has_stayed_on_road(sim) {
 					a
 				} else {
-					shoulder_brake_at(state, sim, a)
+					shoulder_brake_at(
+						state,
+						sim,
+						a,
+					)
 				}
 			)
 		}
@@ -106,10 +126,23 @@ Throttle :: [].{
 	)
 
 	shoulder_brake_at : Pose.RiderState, Arc.ArcOutcome, F64 -> F64
-	shoulder_brake_at = |state, sim, a| (
+	shoulder_brake_at = |
+		state,
+		sim,
+		a,
+	| (
 		{
 			n = sim.frames
-			sa = (((0.0 - state.v) / (2.0 * DeviceMath.real_max(n, 1.0))) * Num_.exp_real(((0.0 - n) / brake_decay)))
+			sa = (
+				(
+					(0.0 - state.v) / (
+						2.0 * DeviceMath.real_max(
+							n,
+							1.0,
+						)
+					)
+				) * Num_.exp_real(((0.0 - n) / brake_decay))
+			)
 			(
 				if sa < a {
 					sa
@@ -121,7 +154,13 @@ Throttle :: [].{
 	)
 
 	clamp_v : Pose.RiderState, World.Segment, F64, F64, Bool -> F64
-	clamp_v = |state, seg, v_end, v0, near| (
+	clamp_v = |
+		state,
+		seg,
+		v_end,
+		v0,
+		near,
+	| (
 		{
 			v1 = (
 				if v0 > VehicleLimits.v_max {
@@ -177,14 +216,35 @@ Throttle :: [].{
 			near = ((seg.length - state.along) <= VehicleLimits.approach_intersection_dist)
 			a1 = (
 				if near {
-					corner_brake(state, seg, v_end, a0)
+					corner_brake(
+						state,
+						seg,
+						v_end,
+						a0,
+					)
 				} else {
 					a0
 				}
 			)
-			a3 = pig_gate(state, seg, cat_gate(state, seg, a1))
+			a3 = pig_gate(
+				state,
+				seg,
+				cat_gate(
+					state,
+					seg,
+					a1,
+				),
+			)
 			a4 = shoulder_brake(state, a3)
-			(clamp_v(state, seg, v_end, (state.v + a4), near) - state.v)
+			(
+				clamp_v(
+					state,
+					seg,
+					v_end,
+					(state.v + a4),
+					near,
+				) - state.v
+			)
 		}
 	)
 }

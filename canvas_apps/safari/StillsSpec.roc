@@ -30,25 +30,57 @@ grad = {
 }
 
 solid : Stills.StillPoly
-solid = { color: 9066271, grad: [], pts: [pt, { x: 12.5, y: 13.5 }] }
+solid = {
+	color: 9066271,
+	grad: [],
+	pts: [pt, { x: 12.5, y: 13.5 }],
+}
 
 shaded : Stills.StillPoly
-shaded = { color: 4989733, grad: [grad], pts: [pt] }
+shaded = {
+	color: 4989733,
+	grad: [grad],
+	pts: [pt],
+}
 
 grad_reals_got : List(F64)
-grad_reals_got = [grad.off0, grad.off1, grad.ax, grad.ay, grad.bx, grad.by, grad.cx, grad.cy, grad.ux, grad.uy, grad.vx, grad.vy]
+grad_reals_got = [
+	grad.off0,
+	grad.off1,
+	grad.ax,
+	grad.ay,
+	grad.bx,
+	grad.by,
+	grad.cx,
+	grad.cy,
+	grad.ux,
+	grad.uy,
+	grad.vx,
+	grad.vy,
+]
 
 grad_reals_want : List(F64)
 grad_reals_want = [0.25, 0.75, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 11.5]
 
 grad_ints_got : List(I64)
-grad_ints_got = [grad.kind, grad.rgba0, grad.rgba1]
+grad_ints_got = [
+	grad.kind,
+	grad.rgba0,
+	grad.rgba1,
+]
 
 grad_ints_want : List(I64)
 grad_ints_want = [2, 16711680, 255]
 
 poly_ints_got : List(I64)
-poly_ints_got = [solid.color, shaded.color, solid.grad.len().to_i64_wrap(), shaded.grad.len().to_i64_wrap(), solid.pts.len().to_i64_wrap(), shaded.pts.len().to_i64_wrap()]
+poly_ints_got = [
+	solid.color,
+	shaded.color,
+	solid.grad.len().to_i64_wrap(),
+	shaded.grad.len().to_i64_wrap(),
+	solid.pts.len().to_i64_wrap(),
+	shaded.pts.len().to_i64_wrap(),
+]
 
 poly_ints_want : List(I64)
 poly_ints_want = [9066271, 4989733, 0, 1, 2, 1]
@@ -58,7 +90,11 @@ reach_got = {
 	shading = shaded.grad.get(0) ?? crash "StillsSpec: the shaded polygon has a gradient"
 	shaded_point = shaded.pts.get(0) ?? crash "StillsSpec: the shaded polygon has a point"
 	solid_second = solid.pts.get(1) ?? crash "StillsSpec: the solid polygon has a second point"
-	[shading.ax, shaded_point.x, solid_second.y]
+	[
+		shading.ax,
+		shaded_point.x,
+		solid_second.y,
+	]
 }
 
 reach_want : List(F64)

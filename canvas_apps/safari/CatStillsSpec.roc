@@ -24,7 +24,29 @@ table_got : List(I64)
 table_got = poses.join_map(|pose| facts(CatStills.pose_polys(pose)))
 
 table_want : List(I64)
-table_want = [46, 2198, 0, 46, 2198, 0, 47, 2197, 0, 34, 1715, 0, 34, 1715, 0, 34, 1715, 0, 34, 1715, 0]
+table_want = [
+	46,
+	2198,
+	0,
+	46,
+	2198,
+	0,
+	47,
+	2197,
+	0,
+	34,
+	1715,
+	0,
+	34,
+	1715,
+	0,
+	34,
+	1715,
+	0,
+	34,
+	1715,
+	0,
+]
 
 ## The x of the first corner of a pose's first polygon.
 first_x : Cat.Pose -> F64

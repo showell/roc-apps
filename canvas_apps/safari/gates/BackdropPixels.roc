@@ -35,9 +35,17 @@ BackdropPixels :: [].{
 					color = if t <= stop {
 						top_color
 					} else {
-						Brush.mix(top_color, horizon_color, (t - stop) / (1.0 - stop))
+						Brush.mix(
+							top_color,
+							horizon_color,
+							(t - stop) / (1.0 - stop),
+						)
 					}
-					PixelColor.pack({ r: color.r, g: color.g, b: color.b })
+					PixelColor.pack({
+						r: color.r,
+						g: color.g,
+						b: color.b,
+					})
 				}
 				$px = $px.append(pixel)
 			}

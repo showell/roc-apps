@@ -9,7 +9,13 @@ import lib.Trig
 
 Arc :: [].{
 	Shoulder : [ShoulderLeft, ShoulderNone, ShoulderRight]
-	ArcOutcome : { shoulder : Arc.Shoulder, forward : F64, crossed : Bool, end_across : F64, frames : F64 }
+	ArcOutcome : {
+		shoulder : Arc.Shoulder,
+		forward : F64,
+		crossed : Bool,
+		end_across : F64,
+		frames : F64,
+	}
 
 	no_frames : F64
 	no_frames = 1000000000.0
@@ -24,16 +30,49 @@ Arc :: [].{
 	min_forward_progress = 25.0
 
 	sim_from : Pose.RiderState, F64, F64, F64, F64, Bool, I64, Pose.RiderState -> Arc.ArcOutcome
-	sim_from = |start, left_bound, right_bound, start_side, start_along, crossed, i, phys| (
+	sim_from = |
+		start,
+		left_bound,
+		right_bound,
+		start_side,
+		start_along,
+		crossed,
+		i,
+		phys,
+	| (
 		if i >= turn_danger_steps {
-			{ shoulder: ShoulderNone, forward: (phys.along - start_along), crossed: crossed, end_across: phys.across, frames: no_frames }
+			{
+				shoulder: ShoulderNone,
+				forward: (phys.along - start_along),
+				crossed: crossed,
+				end_across: phys.across,
+				frames: no_frames,
+			}
 		} else {
-			sim_step(start, left_bound, right_bound, start_side, start_along, crossed, i, Bike.simulate_rider_step(phys, { lean_step: Angle.upright, accel: 0.0 }))
+			sim_step(
+				start,
+				left_bound,
+				right_bound,
+				start_side,
+				start_along,
+				crossed,
+				i,
+				Bike.simulate_rider_step(phys, { lean_step: Angle.upright, accel: 0.0 }),
+			)
 		}
 	)
 
 	sim_step : Pose.RiderState, F64, F64, F64, F64, Bool, I64, Pose.RiderState -> Arc.ArcOutcome
-	sim_step = |start, left_bound, right_bound, start_side, start_along, crossed0, i, phys| (
+	sim_step = |
+		start,
+		left_bound,
+		right_bound,
+		start_side,
+		start_along,
+		crossed0,
+		i,
+		phys,
+	| (
 		{
 			across = phys.across
 			forward = (phys.along - start_along)
@@ -46,21 +85,54 @@ Arc :: [].{
 			)
 			(
 				if across < left_bound {
-					{ shoulder: ShoulderLeft, forward: DeviceMath.real_min(forward, min_forward_progress), crossed: crossed, end_across: across, frames: I64.to_f64(i) }
+					{
+						shoulder: ShoulderLeft,
+						forward: DeviceMath.real_min(forward, min_forward_progress),
+						crossed: crossed,
+						end_across: across,
+						frames: I64.to_f64(i),
+					}
 				} else {
 					(
 						if across > right_bound {
-							{ shoulder: ShoulderRight, forward: DeviceMath.real_min(forward, min_forward_progress), crossed: crossed, end_across: across, frames: I64.to_f64(i) }
+							{
+								shoulder: ShoulderRight,
+								forward: DeviceMath.real_min(forward, min_forward_progress),
+								crossed: crossed,
+								end_across: across,
+								frames: I64.to_f64(i),
+							}
 						} else {
 							(
 								if forward < 0.0 {
-									{ shoulder: ShoulderNone, forward: forward, crossed: crossed, end_across: across, frames: no_frames }
+									{
+										shoulder: ShoulderNone,
+										forward: forward,
+										crossed: crossed,
+										end_across: across,
+										frames: no_frames,
+									}
 								} else {
 									(
 										if forward >= min_forward_progress {
-											{ shoulder: ShoulderNone, forward: min_forward_progress, crossed: crossed, end_across: across, frames: no_frames }
+											{
+												shoulder: ShoulderNone,
+												forward: min_forward_progress,
+												crossed: crossed,
+												end_across: across,
+												frames: no_frames,
+											}
 										} else {
-											sim_from(start, left_bound, right_bound, start_side, start_along, crossed, (i + 1), phys)
+											sim_from(
+												start,
+												left_bound,
+												right_bound,
+												start_side,
+												start_along,
+												crossed,
+												(i + 1),
+												phys,
+											)
 										}
 									)
 								}
@@ -78,7 +150,16 @@ Arc :: [].{
 			inset_hw = ((Scenery.lane_width / 2.0) - straighten_margin)
 			right_bound = DeviceMath.real_max(inset_hw, state.across)
 			left_bound = DeviceMath.real_min((0.0 - inset_hw), state.across)
-			sim_from(state, left_bound, right_bound, Trig.r_sign(state.across), state.along, False, 0, state)
+			sim_from(
+				state,
+				left_bound,
+				right_bound,
+				Trig.r_sign(state.across),
+				state.along,
+				False,
+				0,
+				state,
+			)
 		}
 	)
 

@@ -44,24 +44,57 @@ height_want : List(F64)
 height_want = [2.8, 4.5, 1.6, 2.2]
 
 dims_got : List(F64)
-dims_got = [SafariCritter.adult_rail_buffer, SafariCritter.baby_ratio, SafariCritter.baby_beyond]
+dims_got = [
+	SafariCritter.adult_rail_buffer,
+	SafariCritter.baby_ratio,
+	SafariCritter.baby_beyond,
+]
 
 dims_want : List(F64)
 dims_want = [1.5, 0.5, 14.0]
 
 all_four : List(Scenery.Critter)
 all_four = List.join([
-	SafariCritter.corner_critters({ creature: Elephant, corner_along: 100.0, turn: TurnsRight, lane_half_width: 2.0 }),
-	SafariCritter.corner_critters({ creature: Giraffe, corner_along: 50.0, turn: TurnsLeft, lane_half_width: 2.0 }),
-	SafariCritter.corner_critters({ creature: Zebra, corner_along: 10.0, turn: TurnsRight, lane_half_width: 2.5 }),
-	SafariCritter.corner_critters({ creature: Rhino, corner_along: 0.0, turn: TurnsLeft, lane_half_width: 2.0 }),
+	SafariCritter.corner_critters({
+		creature: Elephant,
+		corner_along: 100.0,
+		turn: TurnsRight,
+		lane_half_width: 2.0,
+	}),
+	SafariCritter.corner_critters({
+		creature: Giraffe,
+		corner_along: 50.0,
+		turn: TurnsLeft,
+		lane_half_width: 2.0,
+	}),
+	SafariCritter.corner_critters({
+		creature: Zebra,
+		corner_along: 10.0,
+		turn: TurnsRight,
+		lane_half_width: 2.5,
+	}),
+	SafariCritter.corner_critters({
+		creature: Rhino,
+		corner_along: 0.0,
+		turn: TurnsLeft,
+		lane_half_width: 2.0,
+	}),
 ])
 
 across_got : List(F64)
 across_got = all_four.map(|critter| critter.across)
 
 across_want : List(F64)
-across_want = [(-4.9), 0.0, 5.75, 0.0, (-4.8), 0.0, 4.6, 0.0]
+across_want = [
+	(-4.9),
+	0.0,
+	5.75,
+	0.0,
+	(-4.8),
+	0.0,
+	4.6,
+	0.0,
+]
 
 along_got : List(F64)
 along_got = all_four.map(|critter| critter.along)
@@ -89,10 +122,19 @@ face_want = [True, True, False, False, True, True, False, False]
 
 corner_count : Scenery.Creature -> I64
 corner_count = |creature|
-	SafariCritter.corner_critters({ creature, corner_along: 100.0, turn: TurnsRight, lane_half_width: 2.0 }).len().to_i64_wrap()
+	SafariCritter.corner_critters({
+		creature,
+		corner_along: 100.0,
+		turn: TurnsRight,
+		lane_half_width: 2.0,
+	}).len().to_i64_wrap()
 
 count_got : List(I64)
-count_got = [corner_count(Elephant), corner_count(DuckPond), corner_count(NoCreature)]
+count_got = [
+	corner_count(Elephant),
+	corner_count(DuckPond),
+	corner_count(NoCreature),
+]
 
 count_want : List(I64)
 count_want = [2, 0, 0]

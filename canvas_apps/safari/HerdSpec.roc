@@ -38,10 +38,20 @@ bull_face_want : List(Bool)
 bull_face_want = [False, True]
 
 bull_place_got : List(F64)
-bull_place_got = [the_bull.along, the_bull.across, Herd.bull_dist, Herd.bull_tree_gap]
+bull_place_got = [
+	the_bull.along,
+	the_bull.across,
+	Herd.bull_dist,
+	Herd.bull_tree_gap,
+]
 
 bull_place_want : List(F64)
-bull_place_want = [24.0, (-4.805), 24.0, 0.5]
+bull_place_want = [
+	24.0,
+	(-4.805),
+	24.0,
+	0.5,
+]
 
 height_got : List(F64)
 height_got = [Herd.cow_height, Herd.calf_height]
@@ -65,7 +75,22 @@ acrosses_got : List(F64)
 acrosses_got = Herd.cows.map(|cow| cow.across)
 
 acrosses_want : List(F64)
-acrosses_want = [(-12.0), (-17.0), (-22.0), (-12.0), (-17.0), (-22.0), (-12.0), (-17.0), (-22.0), (-12.0), (-17.0), (-22.0), (-12.0), (-17.0)]
+acrosses_want = [
+	(-12.0),
+	(-17.0),
+	(-22.0),
+	(-12.0),
+	(-17.0),
+	(-22.0),
+	(-12.0),
+	(-17.0),
+	(-22.0),
+	(-12.0),
+	(-17.0),
+	(-22.0),
+	(-12.0),
+	(-17.0),
+]
 
 calves_got : List(F64)
 calves_got = Herd.cows.map(|cow| cow.height)
@@ -74,7 +99,11 @@ calves_want : List(F64)
 calves_want = [1.4, 0.7, 1.4, 1.4, 1.4, 0.7, 1.4, 1.4, 1.4, 0.7, 1.4, 1.4, 1.4, 0.7]
 
 kind_got : List(I64)
-kind_got = [Herd.cows.len().to_i64_wrap(), cow_of(0).codepoint, cow_of(13).codepoint]
+kind_got = [
+	Herd.cows.len().to_i64_wrap(),
+	cow_of(0).codepoint,
+	cow_of(13).codepoint,
+]
 
 kind_want : List(I64)
 kind_want = [14, 128004, 128004]

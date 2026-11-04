@@ -131,7 +131,12 @@ TowerPlan :: [].{
 	## The masts as the depth sort sees them: each one's distance ahead, and
 	## its place in `towers`.
 	depth_keys : List(TowerPlan.TowerItem) -> List(DepthSort.DepthKey)
-	depth_keys = |towers| towers.map_with_index(|tower, i| { forward: tower.fwd, subject: Tower(i) })
+	depth_keys = |towers| towers.map_with_index(
+		|tower, i| {
+			forward: tower.fwd,
+			subject: Tower(i),
+		},
+	)
 }
 
 ## A mast halfway along a segment takes its beacon's blink from a key this
@@ -142,18 +147,56 @@ mid_tower_beacon_step = 60
 
 ## A mast standing at `along` and `across` in the segment that `map` maps,
 ## if it is in front of the camera: one item, or none.
-tower_if_ahead : TowerPlan.View, { map : Frame.Mapper, along : F64, across : F64, yaw : F64, beacon_key : I64 } -> List(TowerPlan.TowerItem)
-tower_if_ahead = |view, { map, along, across, yaw, beacon_key }| {
-	center = Frame.map_pt(view.world, view.chain, view.pose, map, along, across)
+tower_if_ahead : TowerPlan.View,
+{
+	map : Frame.Mapper,
+	along : F64,
+	across : F64,
+	yaw : F64,
+	beacon_key : I64,
+} -> List(TowerPlan.TowerItem)
+tower_if_ahead = |
+	view,
+	{
+		map,
+		along,
+		across,
+		yaw,
+		beacon_key,
+	},
+| {
+	center = Frame.map_pt(
+		view.world,
+		view.chain,
+		view.pose,
+		map,
+		along,
+		across,
+	)
 	if center.forward <= Geom.near {
 		[]
 	} else {
-		[{ map, along, across, yaw, fwd: center.forward, beacon_offset: Tower.beacon_offset_for(beacon_key) }]
+		[
+			{
+				map,
+				along,
+				across,
+				yaw,
+				fwd: center.forward,
+				beacon_offset: Tower.beacon_offset_for(beacon_key),
+			},
+		]
 	}
 }
 
 chain_segment_index : TowerPlan.View, I64 -> I64
-chain_segment_index = |view, place| view.chain.get(I64.to_u64_wrap(place)) ?? crash "TowerPlan: no such place in the chain"
+chain_segment_index = |
+	view,
+	place,
+| view.chain.get(I64.to_u64_wrap(place)) ?? crash "TowerPlan: no such place in the chain"
 
 world_segment : TowerPlan.View, I64 -> World.Segment
-world_segment = |view, seg_index| view.world.get(I64.to_u64_wrap(seg_index)) ?? crash "TowerPlan: no such segment"
+world_segment = |
+	view,
+	seg_index,
+| view.world.get(I64.to_u64_wrap(seg_index)) ?? crash "TowerPlan: no such segment"

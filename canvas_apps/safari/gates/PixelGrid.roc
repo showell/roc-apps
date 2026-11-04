@@ -52,8 +52,18 @@ PixelGrid :: [].{
 	## The pixels of a row or a column `count` long whose centres fall in
 	## [from, to). Each end is held to 0..`count` in an I64 before it becomes a
 	## coordinate, so a place far off the grid never wraps onto it.
-	pixels_between : { from : F64, to : F64, count : PixelGrid.Coordinate } -> PixelGrid.CoordinateRange
-	pixels_between = |{ from, to, count: PixelGrid.Coordinate.(count) }| {
+	pixels_between : {
+		from : F64,
+		to : F64,
+		count : PixelGrid.Coordinate,
+	} -> PixelGrid.CoordinateRange
+	pixels_between = |
+		{
+			from,
+			to,
+			count: PixelGrid.Coordinate.(count),
+		},
+	| {
 		length = U16.to_i64(count)
 		{
 			start: nearest_coordinate({ place: first_pixel_past(from), length }),
@@ -63,8 +73,18 @@ PixelGrid :: [].{
 
 	## Where the pixel at `row` and `column` is in the list of a grid `width`
 	## pixels wide. The product is a U64, which holds any grid's size.
-	pixel_index : { row : PixelGrid.Coordinate, column : PixelGrid.Coordinate, width : PixelGrid.Coordinate } -> U64
-	pixel_index = |{ row, column, width }| row.to_u64() * width.to_u64() + column.to_u64()
+	pixel_index : {
+		row : PixelGrid.Coordinate,
+		column : PixelGrid.Coordinate,
+		width : PixelGrid.Coordinate,
+	} -> U64
+	pixel_index = |
+		{
+			row,
+			column,
+			width,
+		},
+	| row.to_u64() * width.to_u64() + column.to_u64()
 
 	## `color` laid over the pixel at `at`.
 	blend : List(U32), { at : U64, color : Brush.Rgba } -> List(U32)

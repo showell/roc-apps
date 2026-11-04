@@ -5,10 +5,20 @@ import lib.Brush
 PixelColor :: [].{
 
 	## A pixel's red, green and blue, each 0 to 255.
-	Rgb : { r : F64, g : F64, b : F64 }
+	Rgb : {
+		r : F64,
+		g : F64,
+		b : F64,
+	}
 
 	pack : PixelColor.Rgb -> U32
-	pack = |{ r, g, b }| {
+	pack = |
+		{
+			r,
+			g,
+			b,
+		},
+	| {
 		red = channel_byte(r).shl_wrap(16)
 		green = channel_byte(g).shl_wrap(8)
 		red.bitwise_or(green).bitwise_or(channel_byte(b))
@@ -18,7 +28,11 @@ PixelColor :: [].{
 	over : U32, Brush.Rgba -> U32
 	over = |pixel, color|
 		if color.a >= 1.0 {
-			PixelColor.pack({ r: color.r, g: color.g, b: color.b })
+			PixelColor.pack({
+				r: color.r,
+				g: color.g,
+				b: color.b,
+			})
 		} else if color.a <= 0.0 {
 			pixel
 		} else {

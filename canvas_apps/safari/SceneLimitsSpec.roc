@@ -8,7 +8,11 @@ import Grade
 import SceneLimits
 
 culls_got : List(F64)
-culls_got = [SceneLimits.detail_dist, SceneLimits.crown_shade_dist, SceneLimits.min_scenery_px]
+culls_got = [
+	SceneLimits.detail_dist,
+	SceneLimits.crown_shade_dist,
+	SceneLimits.min_scenery_px,
+]
 
 culls_want : List(F64)
 culls_want = [200.0, 80.0, 2.0]

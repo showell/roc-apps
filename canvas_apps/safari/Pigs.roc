@@ -59,10 +59,22 @@ Pigs :: [].{
 	## Where the pigs of the front and back rows are along the road, from the
 	## pigs' place.
 	pig_row_front : List(F64)
-	pig_row_front = [(0.0 - 6.0), (0.0 - 2.0), 2.0, 6.0]
+	pig_row_front = [
+		(0.0 - 6.0),
+		(0.0 - 2.0),
+		2.0,
+		6.0,
+	]
 
 	pig_row_back : List(F64)
-	pig_row_back = [(0.0 - 10.0), (0.0 - 6.0), (0.0 - 2.0), 2.0, 6.0, 10.0]
+	pig_row_back = [
+		(0.0 - 10.0),
+		(0.0 - 6.0),
+		(0.0 - 2.0),
+		2.0,
+		6.0,
+		10.0,
+	]
 
 	## The pig that catches the rider's eye, on a segment `length` metres
 	## long.
@@ -99,7 +111,13 @@ road_edge : F64
 road_edge = (Scenery.lane_width / 2.0)
 
 pig : { along : F64, across : F64 } -> Scenery.Critter
-pig = |{ along, across }| { along, across, codepoint: Pigs.pig_codepoint, height: Pigs.pig_height, face_right: False }
+pig = |{ along, across }| {
+	along,
+	across,
+	codepoint: Pigs.pig_codepoint,
+	height: Pigs.pig_height,
+	face_right: False,
+}
 
 herd_pig : F64, { row : I64, column : I64 } -> Scenery.Critter
 herd_pig = |herd_along, { row, column }| {

@@ -24,8 +24,18 @@ ScreenRoll :: {
 	}
 
 	## A screen `width` by `height` pixels, and the camera's roll in radians.
-	of : { roll : F64, width : PixelGrid.Coordinate, height : PixelGrid.Coordinate } -> ScreenRoll
-	of = |{ roll, width, height }|
+	of : {
+		roll : F64,
+		width : PixelGrid.Coordinate,
+		height : PixelGrid.Coordinate,
+	} -> ScreenRoll
+	of = |
+		{
+			roll,
+			width,
+			height,
+		},
+	|
 		ScreenRoll.(
 			{
 				cos: F64.cos(roll),
@@ -43,7 +53,10 @@ ScreenRoll :: {
 	height_px = |ScreenRoll.(screen)| screen.height_px
 
 	## The centre of a pixel, as a point on the screen.
-	pixel_point : { row : PixelGrid.Coordinate, column : PixelGrid.Coordinate } -> ScreenRoll.ScreenPoint
+	pixel_point : {
+		row : PixelGrid.Coordinate,
+		column : PixelGrid.Coordinate,
+	} -> ScreenRoll.ScreenPoint
 	pixel_point = |{ row, column }|
 		ScreenRoll.ScreenPoint.(
 			{

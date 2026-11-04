@@ -25,7 +25,10 @@ RideFocal :: [].{
 	## The camera's focal length for where the rider is and how they ride.
 	ride_focal : List(World.Segment), Pose.RiderState -> F64
 	ride_focal = |world, rider| {
-		lean_frac = DeviceMath.real_min((DeviceMath.real_abs(rider.tilt.to_radians()) / Bike.max_lean.to_radians()), 1.0)
+		lean_frac = DeviceMath.real_min(
+			(DeviceMath.real_abs(rider.tilt.to_radians()) / Bike.max_lean.to_radians()),
+			1.0,
+		)
 		attention = DeviceMath.real_max(cat_attention(world, rider), Gaze.gaze_focus(rider.focus))
 		Lens.cam_focal({ lean_frac, attention })
 	}

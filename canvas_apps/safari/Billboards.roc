@@ -36,7 +36,14 @@ Billboards :: [].{
 		codepoint : I64,
 		facing : Billboards.Facing,
 	} -> Billboards.Sighting
-	sighting = |{ at, height, codepoint, facing }|
+	sighting = |
+		{
+			at,
+			height,
+			codepoint,
+			facing,
+		},
+	|
 		if at.forward <= Geom.near {
 			BehindCamera
 		} else if ((height / at.forward) * Lens.focal) < min_critter_px {
