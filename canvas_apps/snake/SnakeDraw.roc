@@ -119,7 +119,11 @@ SnakeDraw :: [].{
 		var $i = 0
 		while $i < n {
 			c = List.get(cells, $i) ?? { x: 0, y: 0 }
-			t = if n <= 1 { 0.0 } else { U64.to_f64($i) / U64.to_f64(n - 1) }
+			t = if n <= 1 {
+				0.0
+			} else {
+				U64.to_f64($i) / U64.to_f64(n - 1)
+			}
 			p = cell_at(c)
 			$out = List.append($out, Shapes.rounded_rect(p.x + 2.0, p.y + 2.0, cell - 4.0, cell - 4.0, 5.0, 6, Flat(Brush.mix(snake_head, snake_tail, t))))
 			$i = $i + 1
@@ -131,14 +135,14 @@ SnakeDraw :: [].{
 	glow : Rules.World, F64 -> List(Shapes.Shape)
 	glow = |world, elapsed| {
 		beat = Trig.pulse(elapsed)
-		f = middle_of(world.food)
-		h = middle_of(world.snake.head())
+		food_center = middle_of(world.food)
+		head_center = middle_of(world.snake.head())
 		food_r = cell * (1.0 + 0.5 * beat)
 		head_r = cell * 1.5
 		[
 			Blend(Add),
-			Shapes.halo(f.x, f.y, food_r, food_neon, 0.3137254901960784),
-			Shapes.halo(h.x, h.y, head_r, snake_head, 0.25098039215686274),
+			Shapes.halo(food_center.x, food_center.y, food_r, food_neon, 0.3137254901960784),
+			Shapes.halo(head_center.x, head_center.y, head_r, snake_head, 0.25098039215686274),
 			Blend(Over),
 		]
 	}

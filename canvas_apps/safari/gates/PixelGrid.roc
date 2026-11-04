@@ -43,7 +43,7 @@ PixelGrid :: [].{
 
 	## Pixels from `start` up to but not including `end`; none when `end` is not
 	## past `start`.
-	Range : { start : PixelGrid.Coordinate, end : PixelGrid.Coordinate }
+	CoordinateRange : { start : PixelGrid.Coordinate, end : PixelGrid.Coordinate }
 
 	## The centre of the pixel at `place` in its row or column.
 	pixel_center : PixelGrid.Coordinate -> F64
@@ -52,7 +52,7 @@ PixelGrid :: [].{
 	## The pixels of a row or a column `count` long whose centres fall in
 	## [from, to). Each end is held to 0..`count` in an I64 before it becomes a
 	## coordinate, so a place far off the grid never wraps onto it.
-	pixels_between : { from : F64, to : F64, count : PixelGrid.Coordinate } -> PixelGrid.Range
+	pixels_between : { from : F64, to : F64, count : PixelGrid.Coordinate } -> PixelGrid.CoordinateRange
 	pixels_between = |{ from, to, count: PixelGrid.Coordinate.(count) }| {
 		length = U16.to_i64(count)
 		{
