@@ -35,5 +35,5 @@ log="$dest/build-$TARGET-$OPT.log"
 t0=$(date +%s)
 (cd "$HERE/$name" && "$ROC" build main.roc --target="$TARGET" --opt="$OPT" --output="$exe") > "$log" 2>&1 || true
 secs=$(( $(date +%s) - t0 ))
-if grep -q "✗" "$log" || [ ! -s "$exe" ]; then cat "$log"; echo "build failed after ${secs}s"; exit 1; fi
+if grep -q -e "✗" -e "●" "$log" || [ ! -s "$exe" ]; then cat "$log"; echo "build failed after ${secs}s"; exit 1; fi
 echo "built $exe ($OPT) in ${secs}s"

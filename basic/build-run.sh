@@ -27,7 +27,7 @@ for app in BasicRun:basic-run BasicCheck:basic-check; do
     # executable.
     (cd "$HERE/roc" && "$ROC" build "$src" --opt=dev --output="$OUT/$exe") > "$OUT/build-$exe.log" 2>&1
     t1=$EPOCHREALTIME
-    if grep -q "✗" "$OUT/build-$exe.log" || [ ! -x "$OUT/$exe" ]; then
+    if grep -q -e "✗" -e "●" "$OUT/build-$exe.log" || [ ! -x "$OUT/$exe" ]; then
         cat "$OUT/build-$exe.log"; echo "build of $exe failed"; exit 1
     fi
     printf 'Roc compiler, %s -> %s: %.2f s\n' "$src" "$exe" "$(echo "$t1 - $t0" | bc)"

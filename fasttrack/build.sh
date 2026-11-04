@@ -43,7 +43,7 @@ publish() { rm -rf "$DEST.old"; [ -d "$DEST" ] && mv "$DEST" "$DEST.old"; mv "$O
 if [ -n "${FAST:-}" ]; then
     (cd "$HERE/web" && "$ZIG" build --cache-dir "$HOME/build/roc-apps/zig-cache" --global-cache-dir "$HOME/build/zig-global")
     (cd "$HERE" && XDG_CACHE_HOME="$CACHE" "$ROC" build web.roc --target=wasm32 --opt=dev --output="$OUT/fasttrack.wasm") > "$LOG/build-dev.log" 2>&1 || true
-    if grep -q "✗" "$LOG/build-dev.log" || [ ! -s "$OUT/fasttrack.wasm" ]; then cat "$LOG/build-dev.log"; echo "build failed"; exit 1; fi
+    if grep -q -e "✗" -e "●" "$LOG/build-dev.log" || [ ! -s "$OUT/fasttrack.wasm" ]; then cat "$LOG/build-dev.log"; echo "build failed"; exit 1; fi
     "$ROC" glue "$HERE/../glue/JsGlue.roc" "$OUT" "$HERE/web/platform/main.roc" > "$LOG/glue.log" 2>&1 || { cat "$LOG/glue.log"; echo "glue failed"; exit 1; }
     cp "$HERE/web/fasttrack.js" "$OUT/"
     cp "$HERE/web/page.html" "$OUT/index.html"
@@ -56,7 +56,7 @@ fi
 (cd "$HERE" && "$ROC" gen_square_values.roc) > "$LOG/SquareValues.roc" 2> "$LOG/gen.log" || true
 cmp -s "$LOG/SquareValues.roc" "$HERE/SquareValues.roc" || { diff "$HERE/SquareValues.roc" "$LOG/SquareValues.roc" | head; echo "SquareValues.roc is stale: roc gen_square_values.roc > SquareValues.roc"; exit 1; }
 (cd "$HERE" && "$ROC" test web.roc) > "$LOG/test.log" 2>&1 || true
-if grep -q "✗" "$LOG/test.log" || ! grep -q "^All ([0-9]*) tests passed" "$LOG/test.log"; then
+if grep -q -e "✗" -e "●" "$LOG/test.log" || ! grep -q "^All ([0-9]*) tests passed" "$LOG/test.log"; then
     cat "$LOG/test.log"; echo "tests failed"; exit 1
 fi
 tail -1 "$LOG/test.log"
@@ -65,7 +65,7 @@ tail -1 "$LOG/test.log"
 # champion's frozen choices (SearchTests).
 for m in Arena Rank SearchTests; do
     (cd "$HERE" && "$ROC" test "$m.roc") > "$LOG/test-$m.log" 2>&1 || true
-    if grep -q "✗" "$LOG/test-$m.log" || ! grep -q "^All ([0-9]*) tests passed" "$LOG/test-$m.log"; then
+    if grep -q -e "✗" -e "●" "$LOG/test-$m.log" || ! grep -q "^All ([0-9]*) tests passed" "$LOG/test-$m.log"; then
         cat "$LOG/test-$m.log"; echo "$m tests failed"; exit 1
     fi
     echo "$m: $(tail -1 "$LOG/test-$m.log")"
@@ -75,14 +75,14 @@ done
 
 start=$(date +%s)
 (cd "$HERE" && XDG_CACHE_HOME="$CACHE" "$ROC" build web.roc --target=wasm32 --opt=speed --output="$OUT/fasttrack.wasm") > "$LOG/build.log" 2>&1 || true
-if grep -q "✗" "$LOG/build.log" || [ ! -s "$OUT/fasttrack.wasm" ]; then cat "$LOG/build.log"; echo "build failed"; exit 1; fi
+if grep -q -e "✗" -e "●" "$LOG/build.log" || [ ! -s "$OUT/fasttrack.wasm" ]; then cat "$LOG/build.log"; echo "build failed"; exit 1; fi
 echo "wasm (LLVM): $(( $(date +%s) - start )) s"
 
 # The same source through the dev backend, beside the build rather than in it.
 DEV="$LOG/dev-build"
 rm -rf "$DEV"; mkdir -p "$DEV"
 (cd "$HERE" && XDG_CACHE_HOME="$CACHE" "$ROC" build web.roc --target=wasm32 --opt=dev --output="$DEV/fasttrack.wasm") > "$LOG/build-dev.log" 2>&1 || true
-if grep -q "✗" "$LOG/build-dev.log" || [ ! -s "$DEV/fasttrack.wasm" ]; then cat "$LOG/build-dev.log"; echo "dev build failed"; exit 1; fi
+if grep -q -e "✗" -e "●" "$LOG/build-dev.log" || [ ! -s "$DEV/fasttrack.wasm" ]; then cat "$LOG/build-dev.log"; echo "dev build failed"; exit 1; fi
 
 "$ROC" glue "$HERE/../glue/JsGlue.roc" "$OUT" "$HERE/web/platform/main.roc" > "$LOG/glue.log" 2>&1 \
     || { cat "$LOG/glue.log"; echo "glue failed"; exit 1; }

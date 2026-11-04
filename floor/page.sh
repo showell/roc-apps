@@ -47,7 +47,7 @@ for src in "$@"; do
     # not the verdict: an error is marked ✗, and a failed build leaves no wasm.
     rm -f "$NEXT/$n.wasm"
     (cd "$d" && "$ROC" build "$app" --target=wasm32 --opt=dev --output="$NEXT/$n.wasm") > "$d/build.log" 2>&1 || true
-    if grep -q "✗" "$d/build.log" || [ ! -s "$NEXT/$n.wasm" ]; then
+    if grep -q -e "✗" -e "●" "$d/build.log" || [ ! -s "$NEXT/$n.wasm" ]; then
         grep -a -m3 -A3 "✗" "$d/build.log" || tail -20 "$d/build.log"
         echo "$n: build failed"; exit 1
     fi

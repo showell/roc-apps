@@ -43,7 +43,7 @@ for src in "$@"; do
     # executable.
     rm -f "$d/native"
     (cd "$d" && "$ROC" build "$app" --opt=dev --output="$d/native") > "$d/build.log" 2>&1 || true
-    if grep -q "✗" "$d/build.log" || [ ! -x "$d/native" ]; then
+    if grep -q -e "✗" -e "●" "$d/build.log" || [ ! -x "$d/native" ]; then
         grep -a -m3 -A3 "✗" "$d/build.log" || tail -20 "$d/build.log"
         echo "$n: build failed"; exit 1
     fi

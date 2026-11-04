@@ -39,7 +39,7 @@ rm -f "$OUT/$name.wasm"
 # **ROC EXITS NON-ZERO FOR A WARNING**, so the verdict is an error mark or a
 # missing module, not the exit code.
 (cd "$HERE/$name" && XDG_CACHE_HOME="$CACHE" "$ROC" build web.roc --target=wasm32 --opt=speed --output="$OUT/$name.wasm") > "$LOG" 2>&1 || true
-if grep -q "✗" "$LOG" || [ ! -s "$OUT/$name.wasm" ]; then cat "$LOG"; echo "build failed"; exit 1; fi
+if grep -q -e "✗" -e "●" "$LOG" || [ ! -s "$OUT/$name.wasm" ]; then cat "$LOG"; echo "build failed"; exit 1; fi
 
 # **THE FRAME READER IS GENERATED**, from the platform's own type table, by
 # the compiler that built the wasm. Not checked in, never edited.

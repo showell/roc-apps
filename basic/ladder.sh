@@ -98,7 +98,21 @@ grade() {
     else echo "FAIL $n | $(diff "$out" "$CORPUS/$suite/$n.output" | grep -m1 '^[<>]' | cut -c1-90)"; fi
 }
 ledger="$( for n in "${names[@]}"; do grade "$n"; done )"
+# A full run is held to the tracked ledger: each program's outcome must be
+# the one recorded there, so a program that starts failing, or passing, fails
+# the run. The run writes the new ledger, `git diff` shows what moved, and the
+# ledger is committed again with the reason.
+moved=""
+if [ $# -eq 0 ] && [ "${#names[@]}" -gt 0 ]; then
+    moved="$(diff <(cut -d' ' -f1,2 "$HERE/ledger-$suite.txt") <(echo "$ledger" | cut -d' ' -f1,2))"
+fi
 echo "$ledger" > "$HERE/ledger-$suite.txt"
 echo "$ledger" | grep -v '^PASS' | sort | head -40
 echo "--- by outcome:"; echo "$ledger" | cut -d' ' -f1 | sort | uniq -c | sort -rn
 echo "$(echo "$ledger" | grep -c '^PASS') pass of ${#names[@]} -- $suite"
+if [ -n "$moved" ]; then
+    echo "$moved"
+    echo "FAIL: outcomes moved from basic/ledger-$suite.txt; see git diff"
+    exit 1
+fi
+echo "every outcome as basic/ledger-$suite.txt records it"

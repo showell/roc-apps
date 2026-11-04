@@ -14,8 +14,9 @@ mkdir -p "$NEXT"
 (cd "$HERE/wasm" && "$ZIG" build --cache-dir "$HOME/build/roc-apps/zig-cache" --global-cache-dir "$HOME/build/zig-global")
 # **THE DEV BACKEND, AS FOR basic-run.** The page sleeps a millisecond a
 # PRINT on purpose, so it has no use for LLVM's speed.
-# **THE ROC COMPILER EXITS NON-ZERO FOR A WARNING**, so its exit code is not
-# the verdict: an error is marked ✗, and a failed build leaves no module.
+# The Roc compiler exits non-zero for a warning too, so its exit code is not
+# the verdict: an error is marked ✗ and a warning ●, either fails the build,
+# and a failed build leaves no module.
 # The log stays out of the served directory.
 LOG="$HOME/build/roc-apps/gen/basic/build-page.log"
 mkdir -p "$(dirname "$LOG")"
@@ -25,7 +26,7 @@ NEW="$(mktemp -d)"
 trap 'rm -rf "$NEW"' EXIT
 rm -f "$NEXT/build.log"
 (cd "$HERE/roc" && "$ROC" build BasicApp.roc --target=wasm32 --opt=dev --output="$NEW/basic.wasm") > "$LOG" 2>&1 || true
-if grep -q "✗" "$LOG" || [ ! -s "$NEW/basic.wasm" ]; then
+if grep -q -e "✗" -e "●" "$LOG" || [ ! -s "$NEW/basic.wasm" ]; then
     cat "$LOG"; echo "build failed"; exit 1
 fi
 mv "$NEW/basic.wasm" "$NEXT/basic.wasm"

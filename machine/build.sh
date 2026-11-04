@@ -21,7 +21,7 @@ LOG="$HOME/build/roc-apps/gen/machine/build-page.log"
 mkdir -p "$(dirname "$LOG")"
 rm -f "$NEXT/machine.wasm"
 (cd "$HERE/roc" && "$ROC" build MachineApp.roc --target=wasm32 --opt=dev --output="$NEXT/machine.wasm") > "$LOG" 2>&1 || true
-if grep -q "✗" "$LOG" || [ ! -s "$NEXT/machine.wasm" ]; then
+if grep -q -e "✗" -e "●" "$LOG" || [ ! -s "$NEXT/machine.wasm" ]; then
     cat "$LOG"; echo "build failed"; exit 1
 fi
 cp "$HERE/web/machine.html" "$NEXT/"

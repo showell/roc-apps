@@ -20,7 +20,7 @@ mkdir -p "$OUT"
 host="$HERE/cli/platform/targets/x64musl/libhost.a"
 if [ ! -f "$host" ] || [ -n "$(find "$HERE/cli/platform/host.zig" "$HERE/cli/build.zig" -newer "$host")" ]; then "$HERE/cli/build.sh"; fi
 (cd "$HERE" && "$ROC" build "$NAME.roc" --opt=speed --output="$OUT/$NAME") > "$OUT/build.log" 2>&1 || true
-if grep -q "✗" "$OUT/build.log" || [ ! -x "$OUT/$NAME" ]; then cat "$OUT/build.log"; echo "build failed"; exit 1; fi
+if grep -q -e "✗" -e "●" "$OUT/build.log" || [ ! -x "$OUT/$NAME" ]; then cat "$OUT/build.log"; echo "build failed"; exit 1; fi
 head -1 "$OUT/build.log"
 cd "$OUT"
 if [ -s log.md ]; then mv log.md "log-$(date -r log.md +%Y%m%d-%H%M%S).md"; fi

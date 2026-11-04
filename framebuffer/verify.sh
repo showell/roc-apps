@@ -70,7 +70,7 @@ for row in "${rows[@]}"; do
     app="$(head -1 "$NEXT/$n.files")"
     rm -f "$d/native"
     (cd "$d/roc" && "$ROC" build "$app" --opt=dev --output="$d/native") > "$d/native.log" 2>&1
-    if grep -q "✗" "$d/native.log" || [ ! -x "$d/native" ]; then
+    if grep -q -e "✗" -e "●" "$d/native.log" || [ ! -x "$d/native" ]; then
         echo "FAIL $n | the native build failed; see $d/native.log"
         failed=1
         continue
