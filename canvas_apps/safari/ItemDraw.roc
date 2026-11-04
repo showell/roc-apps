@@ -129,7 +129,7 @@ ItemDraw :: [].{
 	draw_item = |w, ch, pose, c, it, braking, cf, step| (match it.kind {
 		KTree => draw_one_tree(c.trees, it.i, cf)
 		KTower => draw_one_tower(w, ch, pose, (List.get(c.towers, I64.to_u64_wrap(it.i)) ?? crash ("list-at out of range")), cf, step)
-		KRail => GuardRail.rail_draw_poly((List.get(c.rails, I64.to_u64_wrap(it.i)) ?? crash ("list-at out of range")), cf, Screen.width)
+		KRail => GuardRail.draw((List.get(c.rails, I64.to_u64_wrap(it.i)) ?? crash ("list-at out of range")), { cam_focal: cf, view_w: Screen.width })
 		KCow => draw_one_critter((List.get(c.cows, I64.to_u64_wrap(it.i)) ?? crash ("list-at out of range")), cf)
 		KCat => draw_one_cat((List.get(c.cats, I64.to_u64_wrap(it.i)) ?? crash ("list-at out of range")), cf)
 		KTruck => draw_one_truck(w, ch, pose, c.truck, braking, cf, step)

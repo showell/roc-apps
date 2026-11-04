@@ -1,13 +1,17 @@
-# GuardRail -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## A guard rail: a metal bar half a metre up, on thin posts, along a path
+## on the ground. Each stretch of bar between two points of the path, and
+## each post, is a flat quad, which the depth sort places among the frame's
+## other things.
 import Camera
 import lib.DeviceMath
 import Geom
-import ListUtils
 import Paint
 
 GuardRail :: [].{
-	RailPoly : { v : List(Geom.Vec3), color : I64, fwd : F64 }
+
+	## A quad of the rail: its corners, its colour, and how far ahead it
+	## is, the mean of its corners' distances, for the depth sort.
+	RailPoly : { corners : List(Geom.Vec3), color : I64, forward : F64 }
 
 	rail_height : F64
 	rail_height = 0.5
@@ -19,15 +23,18 @@ GuardRail :: [].{
 	rail_post_width = 0.02
 
 	rail_metal : I64
-	rail_metal = 12765135
+	rail_metal = 0xC2C7CF
 
 	rail_post_metal : I64
-	rail_post_metal = 10133672
+	rail_post_metal = 0x9AA0A8
 
+	## How many metres the rail runs on, a post a metre, past each end of
+	## a bend.
 	rail_runout : I64
 	rail_runout = 10
 
-	max_rail_polys : I64
+	## The most quads one rail draws.
+	max_rail_polys : U64
 	max_rail_polys = 3072
 
 	bar_top : F64
@@ -39,131 +46,94 @@ GuardRail :: [].{
 	half_post : F64
 	half_post = (rail_post_width / 2.0)
 
-	rail_poly : Geom.Vec3, Geom.Vec3, Geom.Vec3, Geom.Vec3, I64 -> GuardRail.RailPoly
-	rail_poly = |p0, p1, p2, p3, color| (
-		{
-			fwd = ((((p0.forward + p1.forward) + p2.forward) + p3.forward) / 4.0)
-			{ v: [p0, p1, p2, p3], color: color, fwd: fwd }
-		}
-	)
-
-	bar_quad : Geom.RiderPt, Geom.RiderPt -> GuardRail.RailPoly
-	bar_quad = |p, q| (
-		{
-			p_bot = { right: p.right, forward: p.forward, height: bar_bot }
-			q_bot = { right: q.right, forward: q.forward, height: bar_bot }
-			q_top = { right: q.right, forward: q.forward, height: bar_top }
-			p_top = { right: p.right, forward: p.forward, height: bar_top }
-			rail_poly(p_bot, q_bot, q_top, p_top, rail_metal)
-		}
-	)
-
-	# bars builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	bars : List(Geom.RiderPt), I64 -> List(GuardRail.RailPoly)
-	bars = |path, i| bars_onto(path, i, [])
-
-	bars_onto : List(Geom.RiderPt), I64, List(GuardRail.RailPoly) -> List(GuardRail.RailPoly)
-	bars_onto = |path, i, acc| (
-		if ((i + 1) >= path.len().to_i64_wrap()) {
-			acc
-		} else {
-			bars_onto(path, (i + 1), List.append(acc, bar_quad((List.get(path, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), (List.get(path, I64.to_u64_wrap((i + 1))) ?? crash ("list-at out of range")))))
-		}
-	)
-
-	post_box : Geom.RiderPt, F64, F64 -> GuardRail.RailPoly
-	post_box = |p, ox, ofwd| (
-		{
-			back_foot = { right: (p.right - ox), forward: (p.forward - ofwd), height: 0.0 }
-			fore_foot = { right: (p.right + ox), forward: (p.forward + ofwd), height: 0.0 }
-			fore_head = { right: (p.right + ox), forward: (p.forward + ofwd), height: bar_top }
-			back_head = { right: (p.right - ox), forward: (p.forward - ofwd), height: bar_top }
-			rail_poly(back_foot, fore_foot, fore_head, back_head, rail_post_metal)
-		}
-	)
-
-	post_quad : List(Geom.RiderPt), I64 -> GuardRail.RailPoly
-	post_quad = |path, i| (
-		{
-			n = path.len().to_i64_wrap()
-			ia = (
-				if (i == 0) {
-					0
-				} else {
-					(i - 1)
-				}
-			)
-			ib = (
-				if ((i + 1) >= n) {
-					(n - 1)
-				} else {
-					(i + 1)
-				}
-			)
-			a = (List.get(path, I64.to_u64_wrap(ia)) ?? crash ("list-at out of range"))
-			b = (List.get(path, I64.to_u64_wrap(ib)) ?? crash ("list-at out of range"))
-			dr = (b.right - a.right)
-			df = (b.forward - a.forward)
-			raw = DeviceMath.real_sqrt(((dr * dr) + (df * df)))
-			run = (
-				if (F64.to_bits(raw) == F64.to_bits(0.0)) {
-					1.0
-				} else {
-					raw
-				}
-			)
-			ox = ((dr / run) * half_post)
-			ofwd = ((df / run) * half_post)
-			post_box((List.get(path, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), ox, ofwd)
-		}
-	)
-
-	# posts builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	posts : List(Geom.RiderPt), I64 -> List(GuardRail.RailPoly)
-	posts = |path, i| posts_onto(path, i, [])
-
-	posts_onto : List(Geom.RiderPt), I64, List(GuardRail.RailPoly) -> List(GuardRail.RailPoly)
-	posts_onto = |path, i, acc| (
-		if (i >= path.len().to_i64_wrap()) {
-			acc
-		} else {
-			posts_onto(path, (i + 1), List.append(acc, post_quad(path, i)))
-		}
-	)
-
-	rail_emit : List(Geom.RiderPt) -> List(GuardRail.RailPoly)
-	rail_emit = |path| (
-		if (path.len().to_i64_wrap() < 2) {
+	## The rail along `path`: the bars, then the posts, at most
+	## `max_rail_polys` quads in all. A path of fewer than two points has
+	## no rail.
+	quads_along : List(Geom.RiderPt) -> List(GuardRail.RailPoly)
+	quads_along = |path|
+		if (path.len() < 2) {
 			[]
 		} else {
-			ListUtils.list_take(List.concat(bars(path, 0), posts(path, 0)), max_rail_polys)
+			GuardRail.bars(path).concat(GuardRail.posts(path)).take_first(max_rail_polys)
 		}
-	)
 
-	rail_draw_poly : GuardRail.RailPoly, F64, F64 -> List(Paint.DrawCmd)
-	rail_draw_poly = |rp, cf, view_w| (
-		{
-			clipped = Geom.clip_near(rp.v)
-			(
-				if (clipped.len().to_i64_wrap() < 3) {
-					[]
-				} else {
-					Paint.push_poly(rp.color, Camera.project_all(clipped, cf, view_w))
-				}
-			)
-		}
-	)
+	## A stretch of bar between each two neighbouring points of `path`.
+	bars : List(Geom.RiderPt) -> List(GuardRail.RailPoly)
+	bars = |path| List.map2(path, path.drop_first(1), |from, to| bar({ from, to }))
 
-	# rail_draw_all builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	rail_draw_all : List(GuardRail.RailPoly), F64, F64, I64 -> List(Paint.DrawCmd)
-	rail_draw_all = |ps, cf, view_w, i| rail_draw_all_onto(ps, cf, view_w, i, [])
+	## A post at each point of `path`, turned to face along the path from
+	## the point before it to the point after it. A post at an end of the
+	## path takes its own point in place of the one it lacks.
+	posts : List(Geom.RiderPt) -> List(GuardRail.RailPoly)
+	posts = |path| {
+		before = path.take_first(1).concat(path.drop_last(1))
+		after = path.drop_first(1).concat(path.take_last(1))
+		List.map3(before, path, after, |previous, at, next| post(at, { previous, next }))
+	}
 
-	rail_draw_all_onto : List(GuardRail.RailPoly), F64, F64, I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
-	rail_draw_all_onto = |ps, cf, view_w, i, acc| (
-		if (i >= ps.len().to_i64_wrap()) {
-			acc
+	## A quad on screen, cut at the camera's near plane; a quad with fewer
+	## than three corners left in front of the camera draws nothing.
+	draw : GuardRail.RailPoly, { cam_focal : F64, view_w : F64 } -> List(Paint.DrawCmd)
+	draw = |quad, { cam_focal, view_w }| {
+		in_front = Geom.clip_near(quad.corners)
+		if (in_front.len() < 3) {
+			[]
 		} else {
-			rail_draw_all_onto(ps, cf, view_w, (i + 1), List.concat(acc, rail_draw_poly((List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), cf, view_w)))
+			Paint.push_poly(quad.color, Camera.project_all(in_front, cam_focal, view_w))
 		}
+	}
+}
+
+## A quad with these corners, in `color`.
+rail_quad : List(Geom.Vec3), I64 -> GuardRail.RailPoly
+rail_quad = |corners, color| { corners, color, forward: mean_forward(corners) }
+
+## The mean of the corners' distances ahead, summed from the first corner
+## to the last; a float sum's rounding depends on its order.
+mean_forward : List(Geom.Vec3) -> F64
+mean_forward = |corners| {
+	first = corners.first() ?? crash "GuardRail: a quad has corners"
+	sum = corners.drop_first(1).fold(first.forward, |total, corner| total + corner.forward)
+	sum / corners.len().to_f64()
+}
+
+## A point of the path, raised to `height`.
+raised : Geom.RiderPt, F64 -> Geom.Vec3
+raised = |point, height| { right: point.right, forward: point.forward, height }
+
+## The bar from `from` to `to`, bottom edge first.
+bar : { from : Geom.RiderPt, to : Geom.RiderPt } -> GuardRail.RailPoly
+bar = |{ from, to }|
+	rail_quad(
+		[
+			raised(from, GuardRail.bar_bot),
+			raised(to, GuardRail.bar_bot),
+			raised(to, GuardRail.bar_top),
+			raised(from, GuardRail.bar_top),
+		],
+		GuardRail.rail_metal,
+	)
+
+## The post at `at`, half its width to each side of it along the path from
+## `previous` to `next`, from the ground to the top of the bar. Two points
+## at one place give no direction, and the post then has no width.
+post : Geom.RiderPt, { previous : Geom.RiderPt, next : Geom.RiderPt } -> GuardRail.RailPoly
+post = |at, { previous, next }| {
+	dr = (next.right - previous.right)
+	df = (next.forward - previous.forward)
+	length = DeviceMath.real_sqrt(((dr * dr) + (df * df)))
+	run = if (length.to_bits() == 0) 1.0 else length
+	half_right = ((dr / run) * GuardRail.half_post)
+	half_forward = ((df / run) * GuardRail.half_post)
+	back = { right: (at.right - half_right), forward: (at.forward - half_forward) }
+	front = { right: (at.right + half_right), forward: (at.forward + half_forward) }
+	rail_quad(
+		[
+			raised(back, 0.0),
+			raised(front, 0.0),
+			raised(front, GuardRail.bar_top),
+			raised(back, GuardRail.bar_top),
+		],
+		GuardRail.rail_post_metal,
 	)
 }
