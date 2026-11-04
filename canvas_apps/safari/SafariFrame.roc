@@ -1,9 +1,9 @@
 ## SafariFrame is test code: the game never runs it. It paints one Safari
-## frame into a list of 0xRRGGBB pixels, in Roc: the sky and the grass, the
-## sun (SunPixels paints it), then every draw command in paint order, all
-## turned by the camera's roll (the rider's lean, which tilts the whole picture
-## about the centre of the screen). Its pixels are exact and the same on every
-## run.
+## frame into a list of 0xRRGGBB pixels, in Roc: the sky and the grass
+## (BackdropPixels), the sun (SunPixels), then every draw command in paint
+## order, all turned by the camera's roll (the rider's lean, which tilts the
+## whole picture about the centre of the screen). Its pixels are exact and the
+## same on every run.
 ##
 ## That is what Safari's gate needs. The gate is a script we run before a
 ## change lands (gates/run.shale), and it builds two programs on SafariFrame
@@ -24,13 +24,12 @@
 ## turns points by the roll, PixelGrid finds the pixels that a stretch of a
 ## row or column covers, PixelColor packs and blends pixels, and ScanlineFill
 ## fills polygons and discs.
+import BackdropPixels
 import Paint
 import Sky
 import SafariBrush
-import SafariShapes
 import Screen
 import lib.Brush
-import PixelColor
 import PixelGrid
 import ScanlineFill
 import ScreenRoll
@@ -51,11 +50,7 @@ SafariFrame :: [].{
 	paint : SafariFrame.Scene -> List(U32)
 	paint = |scene| {
 		roll = SafariFrame.screen_roll(scene.roll)
-		sky = {
-			top_color: Brush.opaque(scene.sky_top),
-			horizon_color: Brush.opaque(scene.sky_horizon),
-		}
-		var $px = backdrop(roll, sky)
+		var $px = BackdropPixels.paint(roll, { sky_top: scene.sky_top, sky_horizon: scene.sky_horizon })
 		$px = SunPixels.paint($px, { roll, sun: scene.sun })
 		for draw_command in scene.commands {
 			$px = paint_command($px, { roll, draw_command })
@@ -79,40 +74,6 @@ screen_width = PixelGrid.Coordinate.from_i64(Screen.width_px)
 
 screen_height : PixelGrid.Coordinate
 screen_height = PixelGrid.Coordinate.from_i64(Screen.height_px)
-
-grass_pixel : U32
-grass_pixel = I64.to_u32_wrap(SafariShapes.grass_color)
-
-## The sky's colour at the top of the screen and at the horizon.
-SkyColors : { top_color : Brush.Rgba, horizon_color : Brush.Rgba }
-
-## The sky holds its top colour to SafariShapes' stop on the way down to the
-## horizon, then fades to the horizon colour; the grass is below it. The fade
-## divides by the horizon rather than shading a Linear brush, whose arithmetic
-## rounds differently.
-backdrop : ScreenRoll, SkyColors -> List(U32)
-backdrop = |roll, sky| {
-	var $px = List.with_capacity(screen_width.to_u64() * screen_height.to_u64())
-	for row in PixelGrid.Coordinate.first.until(screen_height) {
-		for column in PixelGrid.Coordinate.first.until(screen_width) {
-			y = roll.to_scene(ScreenRoll.pixel_point({ row, column })).y
-			pixel = if y >= Screen.grass_top_y {
-				grass_pixel
-			} else {
-				t = Brush.clamp01(y / Screen.horizon_y)
-				stop = SafariShapes.sky_top_stop
-				color = if t <= stop {
-					sky.top_color
-				} else {
-					Brush.mix(sky.top_color, sky.horizon_color, (t - stop) / (1.0 - stop))
-				}
-				PixelColor.pack({ r: color.r, g: color.g, b: color.b })
-			}
-			$px = $px.append(pixel)
-		}
-	}
-	$px
-}
 
 ## A beacon is a disc at the command's strength; every other command is a
 ## polygon filled with its brush.
