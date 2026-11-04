@@ -110,20 +110,24 @@ ItemDraw :: [].{
 	draw_one_cat = |k, cf| CatDraw.cat_draw(k.right, k.fwd, k.height, k.pose_idx, k.lift, cf, Screen.width)
 
 	draw_one_truck : List(World.Segment), List(I64), Frame.Pose, TruckPlan.TruckAt, Bool, F64, F64 -> List(Paint.DrawCmd)
-	draw_one_truck = |w, ch, pose, tk, braking, cf, step|
-		TruckDraw.draw({
-			road: { world: w, chain: ch, pose, segment: tk.d },
-			center: {
-				along: tk.along,
-				across: (Scenery.lane_width / 2.0),
-			},
-			lights: {
-				headlights: if Mountains.is_sun_behind_mountains(step) On else Off,
-				brake_lights: if braking On else Off,
-			},
-			cam_focal: cf,
-			view_w: Screen.width,
-		})
+	draw_one_truck = |w, ch, pose, truck_at, braking, cf, step|
+		match truck_at {
+			Ahead(tk) =>
+				TruckDraw.draw({
+					road: { world: w, chain: ch, pose, segment: tk.place },
+					center: {
+						along: tk.along,
+						across: (Scenery.lane_width / 2.0),
+					},
+					lights: {
+						headlights: if Mountains.is_sun_behind_mountains(step) On else Off,
+						brake_lights: if braking On else Off,
+					},
+					cam_focal: cf,
+					view_w: Screen.width,
+				})
+			NoTruck => crash "ItemDraw.draw_one_truck: the depth order holds a truck only when one is in view"
+		}
 
 	draw_item : List(World.Segment), List(I64), Frame.Pose, Render.Collected, DepthSort.DepthKey, Bool, F64, F64 -> List(Paint.DrawCmd)
 	draw_item = |w, ch, pose, c, it, braking, cf, step| (match it.kind {

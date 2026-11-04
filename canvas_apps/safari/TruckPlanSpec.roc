@@ -1,5 +1,5 @@
-# TruckPlanSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are TruckPlan's checks: where on the chain the truck is found,
+## whether it is in view, and the key the depth sort reads.
 app [main!] {
 	lib: "../lib/main.roc",
 }
@@ -12,79 +12,98 @@ import World
 segs : List(World.Segment)
 segs = [World.segment_at(0), World.segment_at(1), World.segment_at(2)]
 
-chain : List(I64)
-chain = [0, 1, 2]
-
 here : Frame.Pose
 here = { along: 0.0, across: 0.0, yaw: 0.0, hw: 2.0 }
 
 lengths_got : List(F64)
-lengths_got = [(List.get(segs, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).length, (List.get(segs, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).length, (List.get(segs, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).length]
+lengths_got = segs.map(|seg| seg.length)
 
 lengths_want : List(F64)
 lengths_want = [500.0, 320.0, 400.0]
 
+## The truck `lead` metres ahead of a rider at the start of the chain,
+## seen from `pose`.
+truck_seen_from : Frame.Pose, F64 -> TruckPlan.TruckAt
+truck_seen_from = |pose, lead| TruckPlan.in_view({ world: segs, chain: [0, 1, 2], pose, rider_along: 0.0, lead })
+
 lead_of : F64 -> TruckPlan.TruckAt
-lead_of = |lead| TruckPlan.truck_at(segs, chain, here, 0.0, lead)
+lead_of = |lead| truck_seen_from(here, lead)
+
+## Whether the truck is in view.
+is_ahead : TruckPlan.TruckAt -> Bool
+is_ahead = |truck|
+	match truck {
+		Ahead(_) => True
+		NoTruck => False
+	}
+
+## Where the truck is, for a lead that puts it in view.
+ahead_of : F64 -> { place : I64, along : F64, fwd : F64 }
+ahead_of = |lead|
+	match lead_of(lead) {
+		Ahead(truck) => truck
+		NoTruck => crash "TruckPlanSpec: this lead puts the truck in view"
+	}
 
 present_got : List(Bool)
-present_got = [lead_of(100.0).present, lead_of(499.0).present, lead_of(600.0).present, lead_of(900.0).present, lead_of(2000.0).present, lead_of(0.0).present, lead_of((0.0 - 50.0)).present]
+present_got = [100.0, 499.0, 600.0, 900.0, 2000.0, 0.0, (0.0 - 50.0)].map(|lead| is_ahead(lead_of(lead)))
 
 present_want : List(Bool)
 present_want = [True, True, True, True, False, False, False]
 
 landed_got : List(I64)
-landed_got = [lead_of(100.0).d, lead_of(499.0).d, lead_of(600.0).d, lead_of(900.0).d]
+landed_got = [100.0, 499.0, 600.0, 900.0].map(|lead| ahead_of(lead).place)
 
 landed_want : List(I64)
 landed_want = [0, 0, 1, 2]
 
 along_got : List(F64)
-along_got = [lead_of(100.0).along, lead_of(499.0).along, lead_of(600.0).along, lead_of(900.0).along]
+along_got = [100.0, 499.0, 600.0, 900.0].map(|lead| ahead_of(lead).along)
 
 along_want : List(F64)
 along_want = [100.0, 499.0, 100.0, 80.0]
 
 fwd_got : List(F64)
-fwd_got = [lead_of(100.0).fwd, lead_of(499.0).fwd]
+fwd_got = [ahead_of(100.0).fwd, ahead_of(499.0).fwd]
 
 fwd_want : List(F64)
 fwd_want = [100.0, 499.0]
 
-none_got : List(F64)
-none_got = (
-	{
-		n = lead_of(2000.0)
-		[n.along, n.fwd, I64.to_f64(n.d), TruckPlan.no_truck.along, TruckPlan.no_truck.fwd, I64.to_f64(TruckPlan.no_truck.d)]
-	}
-)
-
-none_want : List(F64)
-none_want = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-
 none_flag_got : List(Bool)
-none_flag_got = [TruckPlan.no_truck.present, lead_of(2000.0).present]
+none_flag_got = [is_ahead(NoTruck), is_ahead(lead_of(2000.0))]
 
 none_flag_want : List(Bool)
 none_flag_want = [False, False]
 
-behind : TruckPlan.TruckAt
-behind = TruckPlan.truck_at(segs, chain, { along: 100.0, across: 0.0, yaw: 0.0, hw: 2.0 }, 0.0, 100.0)
-
 behind_got : List(Bool)
-behind_got = [behind.present, TruckPlan.truck_at(segs, chain, { along: 99.0, across: 0.0, yaw: 0.0, hw: 2.0 }, 0.0, 100.0).present]
+behind_got = [
+	is_ahead(truck_seen_from({ along: 100.0, across: 0.0, yaw: 0.0, hw: 2.0 }, 100.0)),
+	is_ahead(truck_seen_from({ along: 99.0, across: 0.0, yaw: 0.0, hw: 2.0 }, 100.0)),
+]
 
 behind_want : List(Bool)
 behind_want = [False, True]
 
+## The depth key of a truck in view.
+key_of : F64 -> { fwd : F64, i : I64 }
+key_of = |lead| {
+	key = TruckPlan.depth_keys(lead_of(lead)).first() ?? crash "TruckPlanSpec: a truck in view has a depth key"
+	{ fwd: key.fwd, i: key.i }
+}
+
 items_got : List(I64)
-items_got = [TruckPlan.truck_items(lead_of(100.0)).len().to_i64_wrap(), TruckPlan.truck_items(lead_of(2000.0)).len().to_i64_wrap(), TruckPlan.truck_items(TruckPlan.no_truck).len().to_i64_wrap(), (List.get(TruckPlan.truck_items(lead_of(100.0)), I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).i]
+items_got = [
+	TruckPlan.depth_keys(lead_of(100.0)).len().to_i64_wrap(),
+	TruckPlan.depth_keys(lead_of(2000.0)).len().to_i64_wrap(),
+	TruckPlan.depth_keys(NoTruck).len().to_i64_wrap(),
+	key_of(100.0).i,
+]
 
 items_want : List(I64)
 items_want = [1, 0, 0, 0]
 
 item_fwd_got : List(F64)
-item_fwd_got = [(List.get(TruckPlan.truck_items(lead_of(499.0)), I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).fwd]
+item_fwd_got = [key_of(499.0).fwd]
 
 item_fwd_want : List(F64)
 item_fwd_want = [499.0]
@@ -120,12 +139,6 @@ main! = |_args| {
 			got: fwd_got,
 			want: fwd_want,
 			tol: 0.0001,
-		}),
-		Grade.reals({
-			name: "tp-none  ",
-			got: none_got,
-			want: none_want,
-			tol: 0.0,
 		}),
 		Grade.bools({
 			name: "tp-nflag ",

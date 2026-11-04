@@ -59,11 +59,11 @@ Render :: [].{
 			cows = ListUtils.list_take(Billboards.kept_of(placed, 0), CritterPlan.max_vis_critters)
 			cats = ListUtils.list_take(CatPlan.walk_cats(segs, ch, pose, cf, along, v, 0), CatPlan.max_vis_cats)
 			rails = RailPlan.all_rails(segs, ch, pose, seg_idx)
-			tk = TruckPlan.truck_at(segs, ch, pose, along, (truck_pos - World.route_distance(segs, { index: seg_idx, along })))
+			tk = TruckPlan.in_view({ world: segs, chain: ch, pose, rider_along: along, lead: (truck_pos - World.route_distance(segs, { index: seg_idx, along })) })
 			# Roc's own flair, collected like every other kind so the sort can put
 			# it behind a nearer tree. See RocBird.
 			birds = RocBird.perches(segs, ch, pose, cf)
-			{ trees: trees, towers: towers, cows: cows, cats: cats, rails: rails, truck: tk, birds: birds, order: DepthSort.sort_by(List.join([RocBird.bird_items(birds), TreePlan.depth_keys(trees), TowerPlan.depth_keys(towers), CritterPlan.cow_items(cows), CatPlan.cat_items(cats), TruckPlan.truck_items(tk), RailPlan.rail_items(rails)]), |key| key.fwd), cull_seg: walk_seg_cull(segs, ch, 0), cull_size: Billboards.size_culled_of(placed, 0) }
+			{ trees: trees, towers: towers, cows: cows, cats: cats, rails: rails, truck: tk, birds: birds, order: DepthSort.sort_by(List.join([RocBird.bird_items(birds), TreePlan.depth_keys(trees), TowerPlan.depth_keys(towers), CritterPlan.cow_items(cows), CatPlan.cat_items(cats), TruckPlan.depth_keys(tk), RailPlan.rail_items(rails)]), |key| key.fwd), cull_seg: walk_seg_cull(segs, ch, 0), cull_size: Billboards.size_culled_of(placed, 0) }
 		}
 	)
 }

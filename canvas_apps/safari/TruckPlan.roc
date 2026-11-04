@@ -1,5 +1,6 @@
-# TruckPlan -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## TruckPlan finds the truck ahead of the rider in a frame: how far along
+## the chain of segments ahead it is, and whether it is in front of the
+## camera.
 import DepthSort
 import Frame
 import Geom
@@ -7,55 +8,67 @@ import Scenery
 import World
 
 TruckPlan :: [].{
-	TruckAt : { present : Bool, d : I64, along : F64, fwd : F64 }
 
-	no_truck : TruckPlan.TruckAt
-	no_truck = { present: False, d: 0, along: 0.0, fwd: 0.0 }
+	## The truck, if it is in view: the place in the chain of the segment it
+	## is on, how far along that segment it is, and how far ahead of the
+	## rider.
+	TruckAt : [Ahead({ place : I64, along : F64, fwd : F64 }), NoTruck]
 
-	find_truck_from : List(World.Segment), List(I64), Frame.Pose, F64, I64 -> TruckPlan.TruckAt
-	find_truck_from = |segs, ch, pose, remaining, d| (
-		if (d >= ch.len().to_i64_wrap()) {
-			no_truck
+	## What the truck is seen from: the world's segments, the chain of them
+	## ahead of the rider, the rider's pose, how far along its segment the
+	## rider is, and how far ahead of the rider the truck is.
+	View : {
+		world : List(World.Segment),
+		chain : List(I64),
+		pose : Frame.Pose,
+		rider_along : F64,
+		lead : F64,
+	}
+
+	## The truck, if it is ahead of the rider, on the chain, and in front of
+	## the camera.
+	in_view : TruckPlan.View -> TruckPlan.TruckAt
+	in_view = |view|
+		if (view.lead > 0.0) {
+			truck_from(view, { remaining: (view.rider_along + view.lead), place: 0 })
 		} else {
-			(
-				if (remaining > (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).length) {
-					find_truck_from(segs, ch, pose, (remaining - (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).length), (d + 1))
-				} else {
-					truck_here(segs, ch, pose, remaining, d)
-				}
-			)
+			NoTruck
 		}
-	)
 
-	truck_here : List(World.Segment), List(I64), Frame.Pose, F64, I64 -> TruckPlan.TruckAt
-	truck_here = |segs, ch, pose, remaining, d| (
-		{
-			c = Frame.at(segs, ch, pose, d, remaining, (Scenery.lane_width / 2.0))
-			(
-				if (c.forward > Geom.near) {
-					{ present: True, d: d, along: remaining, fwd: c.forward }
-				} else {
-					no_truck
-				}
-			)
+	## The truck as the depth sort sees it: its distance ahead, if it is in
+	## view.
+	depth_keys : TruckPlan.TruckAt -> List(DepthSort.DepthKey)
+	depth_keys = |truck|
+		match truck {
+			Ahead(truck_ahead) => [{ fwd: truck_ahead.fwd, kind: KTruck, i: 0 }]
+			NoTruck => []
 		}
-	)
+}
 
-	truck_at : List(World.Segment), List(I64), Frame.Pose, F64, F64 -> TruckPlan.TruckAt
-	truck_at = |segs, ch, pose, along, lead| (
-		if (lead > 0.0) {
-			find_truck_from(segs, ch, pose, (along + lead), 0)
-		} else {
-			no_truck
+## The truck `remaining` metres past the start of the segment at `place` in
+## the chain, found by walking on through the segments it is past.
+truck_from : TruckPlan.View, { remaining : F64, place : I64 } -> TruckPlan.TruckAt
+truck_from = |view, { remaining, place }|
+	match view.chain.get(I64.to_u64_wrap(place)) {
+		Err(OutOfBounds) => NoTruck
+		Ok(seg_index) => {
+			segment = view.world.get(I64.to_u64_wrap(seg_index)) ?? crash "TruckPlan: no such segment"
+			if (remaining > segment.length) {
+				truck_from(view, { remaining: (remaining - segment.length), place: (place + 1) })
+			} else {
+				truck_on_segment(view, { along: remaining, place })
+			}
 		}
-	)
+	}
 
-	truck_items : TruckPlan.TruckAt -> List(DepthSort.DepthKey)
-	truck_items = |t| (
-		if t.present {
-			[{ fwd: t.fwd, kind: KTruck, i: 0 }]
-		} else {
-			[]
-		}
-	)
+## The truck `along` metres into the segment at `place` in the chain, in
+## the middle of the lane, if it is in front of the camera.
+truck_on_segment : TruckPlan.View, { along : F64, place : I64 } -> TruckPlan.TruckAt
+truck_on_segment = |view, { along, place }| {
+	center = Frame.at(view.world, view.chain, view.pose, place, along, (Scenery.lane_width / 2.0))
+	if (center.forward > Geom.near) {
+		Ahead({ place, along, fwd: center.forward })
+	} else {
+		NoTruck
+	}
 }
