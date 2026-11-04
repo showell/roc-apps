@@ -1,5 +1,6 @@
-# ItemDrawSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are ItemDraw's checks: how many trees are nearer than a distance,
+## how a crown's shade falls off, where a mast's corners stand, and that
+## masts and trees draw at all, a near tree in more detail than a far one.
 app [main!] {
 	lib: "../lib/main.roc",
 }
@@ -7,6 +8,7 @@ app [main!] {
 import Frame
 import Grade
 import ItemDraw
+import Paint
 import SceneLimits
 import TowerPlan
 import TreePlan
@@ -19,75 +21,124 @@ fixed_want : List(F64)
 fixed_want = [80.0, 200.0]
 
 tree_at : F64 -> TreePlan.TreeItem
-tree_at = |fwd| { right: 0.0, fwd: fwd, height: 5.85, color: 1858082 }
+tree_at = |fwd| {
+	right: 0.0,
+	fwd: fwd,
+	height: 5.85,
+	color: 1858082,
+}
 
 spread : List(TreePlan.TreeItem)
-spread = [tree_at(10.0), tree_at(20.0), tree_at(30.0), tree_at(40.0), tree_at(50.0)]
+spread = [10.0, 20.0, 30.0, 40.0, 50.0].map(tree_at)
+
+nearer_count : List(TreePlan.TreeItem), F64 -> I64
+nearer_count = |trees, forward| ItemDraw.nearer_count(trees, forward).to_i64_wrap()
 
 count_got : List(I64)
-count_got = [ItemDraw.closer_count(spread, 10.0, 0), ItemDraw.closer_count(spread, 30.0, 0), ItemDraw.closer_count(spread, 50.0, 0), ItemDraw.closer_count(spread, 60.0, 0), ItemDraw.closer_count(spread, 5.0, 0), ItemDraw.closer_count([], 10.0, 0)]
+count_got = [
+	nearer_count(spread, 10.0),
+	nearer_count(spread, 30.0),
+	nearer_count(spread, 50.0),
+	nearer_count(spread, 60.0),
+	nearer_count(spread, 5.0),
+	nearer_count([], 10.0),
+]
 
 count_want : List(I64)
-count_want = [0, 2, 4, 5, 0, (6 - 6)]
+count_want = [0, 2, 4, 5, 0, 0]
 
 tied : List(TreePlan.TreeItem)
-tied = [tree_at(20.0), tree_at(20.0), tree_at(20.0), tree_at(20.0)]
+tied = List.repeat(tree_at(20.0), 4)
 
 tie_got : List(I64)
-tie_got = [ItemDraw.closer_count(tied, 20.0, 0), ItemDraw.closer_count(tied, 20.1, 0), ItemDraw.closer_count(tied, 19.9, 0)]
+tie_got = [20.0, 20.1, 19.9].map(|forward| nearer_count(tied, forward))
 
 tie_want : List(I64)
 tie_want = [0, 4, 0]
 
 shade_got : List(F64)
-shade_got = [ItemDraw.crown_shade_of(0.0), ItemDraw.crown_shade_of(20.0), ItemDraw.crown_shade_of(40.0), ItemDraw.crown_shade_of(80.0), ItemDraw.crown_shade_of(200.0), ItemDraw.crown_shade_of((0.0 - 50.0))]
+shade_got = [0.0, 20.0, 40.0, 80.0, 200.0, -50.0].map(ItemDraw.crown_shade)
 
 shade_want : List(F64)
 shade_want = [1.0, 0.75, 0.5, 0.0, 0.0, 1.0]
 
 segs : List(World.Segment)
-segs = [World.segment_at(0), World.segment_at(1), World.segment_at(2)]
+segs = [0, 1, 2].map(World.segment_at)
 
-chain : List(I64)
-chain = [0, 1, 2]
+# The rider at the start of the route, at the ride's first step.
+context : ItemDraw.Context
+context = {
+	world: segs,
+	chain: [0, 1, 2],
+	pose: {
+		along: 0.0,
+		across: 0.0,
+		yaw: 0.0,
+		hw: 2.0,
+	},
+	cam_focal: 500.0,
+	clock: 0.0,
+	brake_lights: Off,
+}
 
-origin : Frame.Pose
-origin = { along: 0.0, across: 0.0, yaw: 0.0, hw: 2.0 }
-
-a_tower : TowerPlan.TowerItem
-a_tower = { map: Frame.chain_map(0), along: 200.0, across: 22.0, yaw: 0.0, fwd: 200.0, beacon_offset: 0.0 }
+## A mast `along` metres down the first segment, 22 m across.
+tower_along : F64 -> TowerPlan.TowerItem
+tower_along = |along| {
+	map: Frame.chain_map(0),
+	along,
+	across: 22.0,
+	yaw: 0.0,
+	fwd: along,
+	beacon_offset: 0.0,
+}
 
 corner_got : List(F64)
 corner_got = {
-	footprint = ItemDraw.tower_footprint(segs, chain, origin, a_tower)
-	[footprint.back_left.forward, footprint.front_right.forward, footprint.back_left.right, footprint.back_right.right]
+	footprint = ItemDraw.tower_footprint(context, tower_along(200.0))
+	[
+		footprint.back_left.forward,
+		footprint.front_right.forward,
+		footprint.back_left.right,
+		footprint.back_right.right,
+	]
 }
 
 corner_want : List(F64)
 corner_want = [194.0, 206.0, 14.0, 26.0]
 
-drawn : F64 -> I64
-drawn = |a0| ItemDraw.draw_one_tower(segs, chain, origin, { map: Frame.chain_map(0), along: a0, across: 22.0, yaw: 0.0, fwd: a0, beacon_offset: 0.0 }, 500.0, 0.0).len().to_i64_wrap()
+tower_command_count : F64 -> U64
+tower_command_count = |along| ItemDraw.draw_tower(context, tower_along(along)).len()
 
 tower_got : List(Bool)
-tower_got = [(drawn(200.0) > 0), (drawn(1000.0) > 0), (drawn((0.0 - 100.0)) == 0)]
+tower_got = [
+	(tower_command_count(200.0) > 0),
+	(tower_command_count(1000.0) > 0),
+	(tower_command_count(-100.0) == 0),
+]
 
 tower_want : List(Bool)
 tower_want = [True, True, True]
 
 cluster : List(TreePlan.TreeItem)
-cluster = [tree_at(10.0), tree_at(11.0), tree_at(12.0), tree_at(13.0), tree_at(14.0)]
+cluster = [10.0, 11.0, 12.0, 13.0, 14.0].map(tree_at)
+
+second_command_points : List(Paint.DrawCmd) -> U64
+second_command_points = |commands| {
+	second = commands.get(1) ?? crash "ItemDrawSpec: a tree in view draws a trunk and tiers"
+	second.pts.len()
+}
 
 tree_got : List(Bool)
-tree_got = (
-	{
-		near = ItemDraw.draw_one_tree(cluster, 0, 500.0)
-		far = ItemDraw.draw_one_tree(cluster, 4, 500.0)
-		near_tier = (List.get(near, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).pts.len().to_i64_wrap()
-		far_tier = (List.get(far, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).pts.len().to_i64_wrap()
-		[(near.len().to_i64_wrap() > 0), (far.len().to_i64_wrap() > 0), (near_tier > far_tier), (far_tier >= 6)]
-	}
-)
+tree_got = {
+	near = ItemDraw.draw_tree(tree_at(10.0), { trees: cluster, cam_focal: 500.0 })
+	far = ItemDraw.draw_tree(tree_at(14.0), { trees: cluster, cam_focal: 500.0 })
+	[
+		(near.len() > 0),
+		(far.len() > 0),
+		(second_command_points(near) > second_command_points(far)),
+		(second_command_points(far) >= 6),
+	]
+}
 
 tree_want : List(Bool)
 tree_want = [True, True, True, True]

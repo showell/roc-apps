@@ -85,10 +85,10 @@ behind_want : List(Bool)
 behind_want = [False, True]
 
 ## The depth key of a truck in view.
-key_of : F64 -> { fwd : F64, i : I64 }
+key_of : F64 -> { forward : F64 }
 key_of = |lead| {
 	key = TruckPlan.depth_keys(lead_of(lead)).first() ?? crash "TruckPlanSpec: a truck in view has a depth key"
-	{ fwd: key.fwd, i: key.i }
+	{ forward: key.forward }
 }
 
 items_got : List(I64)
@@ -96,14 +96,14 @@ items_got = [
 	TruckPlan.depth_keys(lead_of(100.0)).len().to_i64_wrap(),
 	TruckPlan.depth_keys(lead_of(2000.0)).len().to_i64_wrap(),
 	TruckPlan.depth_keys(NoTruck).len().to_i64_wrap(),
-	key_of(100.0).i,
+	TruckPlan.depth_keys(lead_of(100.0)).count_if(|key| key.subject == Truck).to_i64_wrap(),
 ]
 
 items_want : List(I64)
-items_want = [1, 0, 0, 0]
+items_want = [1, 0, 0, 1]
 
 item_fwd_got : List(F64)
-item_fwd_got = [key_of(499.0).fwd]
+item_fwd_got = [key_of(499.0).forward]
 
 item_fwd_want : List(F64)
 item_fwd_want = [499.0]

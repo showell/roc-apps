@@ -101,7 +101,12 @@ cull_want = [0, 1, 1, 0, 0, 0]
 items_got : List(I64)
 items_got = {
 	key = CatPlan.depth_keys(seen).first() ?? crash "CatPlanSpec: one cat is in view"
-	[CatPlan.depth_keys(seen).len().to_i64_wrap(), CatPlan.depth_keys([]).len().to_i64_wrap(), key.i]
+	place =
+		match key.subject {
+			Cat(at) => at.to_i64_wrap()
+			Tree(_) | Tower(_) | Critter(_) | Truck | Rail(_) | Bird(_) => crash "CatPlanSpec: a cat's key names a cat"
+		}
+	[CatPlan.depth_keys(seen).len().to_i64_wrap(), CatPlan.depth_keys([]).len().to_i64_wrap(), place]
 }
 
 items_want : List(I64)

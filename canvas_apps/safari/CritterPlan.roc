@@ -120,9 +120,8 @@ CritterPlan :: [].{
 	cow_items = |billboards|
 		billboards.map_with_index(
 			|billboard, i| {
-				fwd: billboard.forward,
-				kind: KCow,
-				i: i.to_i64_wrap(),
+				forward: billboard.forward,
+				subject: Critter(i),
 			},
 		)
 }

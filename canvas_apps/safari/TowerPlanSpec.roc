@@ -134,8 +134,16 @@ keys = TowerPlan.depth_keys(TowerPlan.along_chain(from_origin))
 key_at : U64 -> DepthSort.DepthKey
 key_at = |i| keys.get(i) ?? crash "TowerPlanSpec: three masts are in view"
 
+## The place in the mast list that the key at `i` names.
+tower_place_at : U64 -> I64
+tower_place_at = |i|
+	match key_at(i).subject {
+		Tower(place) => place.to_i64_wrap()
+		Tree(_) | Critter(_) | Cat(_) | Truck | Rail(_) | Bird(_) => crash "TowerPlanSpec: a mast's key names a mast"
+	}
+
 items_got : List(I64)
-items_got = [keys.len().to_i64_wrap(), key_at(0).i, key_at(2).i, TowerPlan.depth_keys([]).len().to_i64_wrap()]
+items_got = [keys.len().to_i64_wrap(), tower_place_at(0), tower_place_at(2), TowerPlan.depth_keys([]).len().to_i64_wrap()]
 
 items_want : List(I64)
 items_want = [3, 0, 2, 0]

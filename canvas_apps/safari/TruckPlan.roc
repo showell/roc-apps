@@ -40,7 +40,7 @@ TruckPlan :: [].{
 	depth_keys : TruckPlan.TruckAt -> List(DepthSort.DepthKey)
 	depth_keys = |truck|
 		match truck {
-			Ahead(truck_ahead) => [{ fwd: truck_ahead.fwd, kind: KTruck, i: 0 }]
+			Ahead(truck_ahead) => [{ forward: truck_ahead.fwd, subject: Truck }]
 			NoTruck => []
 		}
 }

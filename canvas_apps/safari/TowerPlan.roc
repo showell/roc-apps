@@ -131,7 +131,7 @@ TowerPlan :: [].{
 	## The masts as the depth sort sees them: each one's distance ahead, and
 	## its place in `towers`.
 	depth_keys : List(TowerPlan.TowerItem) -> List(DepthSort.DepthKey)
-	depth_keys = |towers| towers.map_with_index(|tower, i| { fwd: tower.fwd, kind: KTower, i: U64.to_i64_wrap(i) })
+	depth_keys = |towers| towers.map_with_index(|tower, i| { forward: tower.fwd, subject: Tower(i) })
 }
 
 ## A mast halfway along a segment takes its beacon's blink from a key this

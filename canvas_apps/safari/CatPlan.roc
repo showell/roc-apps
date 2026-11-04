@@ -62,7 +62,7 @@ CatPlan :: [].{
 	## The cats as the depth sort sees them: each one's distance ahead, and
 	## its place in `cats`.
 	depth_keys : List(CatPlan.CatItem) -> List(DepthSort.DepthKey)
-	depth_keys = |cats| cats.map_with_index(|cat, i| { fwd: cat.fwd, kind: KCat, i: U64.to_i64_wrap(i) })
+	depth_keys = |cats| cats.map_with_index(|cat, i| { forward: cat.fwd, subject: Cat(i) })
 }
 
 ## The cat crossing the segment at `place` in the chain, as far through its

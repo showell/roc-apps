@@ -45,8 +45,29 @@ Safari :: [].{
 			s = r.rider
 			cf = RideFocal.ride_focal(w, s)
 			pose = ViewYaw.pose_for(s)
-			ch = Frame.build_chain(w, s.segment)
-			List.join([Mountains.draw({ heading: ViewYaw.heading_for(s), dusk: Sky.sun_set_fraction(r.clock), cam_focal: cf, view_w: Screen.width }), GroundPlan.draw({ world: w, segment: s.segment, pose, cam_focal: cf, view_w: Screen.width }), ItemDraw.draw_order(w, ch, pose, Render.collect(w, s.segment, pose, cf, s.along, s.v, r.truck.pos), r.truck.braking, cf, r.clock, 0)])
+			chain = Frame.build_chain(w, s.segment)
+			scene = Render.collect({
+				world: w,
+				chain,
+				pose,
+				cam_focal: cf,
+				rider_segment: s.segment,
+				rider_along: s.along,
+				speed: s.v,
+				truck_position: r.truck.pos,
+			})
+			roadside = ItemDraw.draw(
+				scene,
+				{
+					world: w,
+					chain,
+					pose,
+					cam_focal: cf,
+					clock: r.clock,
+					brake_lights: if r.truck.braking On else Off,
+				},
+			)
+			List.join([Mountains.draw({ heading: ViewYaw.heading_for(s), dusk: Sky.sun_set_fraction(r.clock), cam_focal: cf, view_w: Screen.width }), GroundPlan.draw({ world: w, segment: s.segment, pose, cam_focal: cf, view_w: Screen.width }), roadside])
 		}
 	)
 
