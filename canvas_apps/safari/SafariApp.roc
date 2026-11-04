@@ -10,8 +10,8 @@
 # while it runs. J jumps to the next of the route's nineteen segments, and R
 # starts the drive again.
 #
-# Raster still paints a frame into pixels, and ShapesFrame checks the two
-# against each other, natively; neither is on the path a runner takes.
+# SafariFrame paints a frame into pixels for the native proof tools
+# (README.md); no runner paints that way.
 import lib.CanvasApp
 import lib.Input
 import lib.Shapes

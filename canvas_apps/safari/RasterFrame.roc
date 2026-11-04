@@ -1,4 +1,4 @@
-# Paint one Safari frame with Raster, natively, and print it: a hash line, the
+# Paint one Safari frame with SafariFrame, natively, and print it: a hash line, the
 # size, then every pixel as six hex digits, for ray/pixels_png.mjs.
 # Hand-written, like FrameBench.
 #
@@ -8,7 +8,7 @@ app [main!] {
 }
 
 import SafariRide
-import Raster
+import SafariFrame
 import Screen
 import Hex
 
@@ -37,7 +37,13 @@ hash = |pixels| List.fold(
 main! = |args| {
 	steps = I64.from_str(List.get(args, 0) ?? "0") ?? 0
 	m = ride_to(SafariRide.init, steps)
-	pixels = Raster.paint({ commands: SafariRide.commands(m), roll: SafariRide.roll(m), sky_top: SafariRide.sky_top(m), sky_horizon: SafariRide.sky_horizon(m), sun: SafariRide.sun(m) })
+	pixels = SafariFrame.paint({
+		commands: SafariRide.commands(m),
+		roll: SafariRide.roll(m),
+		sky_top: SafariRide.sky_top(m),
+		sky_horizon: SafariRide.sky_horizon(m),
+		sun: SafariRide.sun(m),
+	})
 	var $out = List.with_capacity(List.len(pixels) * 6 + 32)
 	$out = List.concat($out, Str.to_utf8("hash "))
 	$out = Hex.append_digits($out, { number: hash(pixels), digits: 8 })

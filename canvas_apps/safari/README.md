@@ -33,6 +33,7 @@ Every module that began as an emission says so in its header.
 | `SafariRide.roc` | the drive for any platform: the ride between frames, the history for stepping back, and what a frame shows — the commands, the roll, the sky colours, the sun |
 | `SafariShapes.roc` | a frame as shapes: the sky's gradient, the grass, the sun and its glow, and every command |
 | `SafariBrush.roc` | a command's paint read once into a `Brush.Fill` |
+| `SafariFrame.roc` | a frame painted into pixels in Roc, for the proof tools below |
 | `Safari.roc` and the chapter modules | the world, the route, the rider, the animals, the scenery, and how each is drawn |
 | `RocBird.roc` | the bird, the first thing here that was never Codex |
 | `*Spec.roc` | the 54 spec apps, each chapter's checks, graded by `gates/` |
@@ -45,11 +46,22 @@ and both runners paint it the way they paint any camera.
 
 ## The native proof tools
 
-Five modules that check the frame without a screen: `Raster.roc` paints a frame
-into 960×600 pixels in Roc, `RasterFrame.roc` prints one frame's pixels as hex
-with a hash (`pixels_png.mjs` turns that into a PNG), `ShapesFrame.roc` paints
-the frame from its shapes and from its commands and counts the pixels that
-differ, `StepBack.roc` checks that one step back goes back exactly one step at
+`SafariFrame.roc` is a reference painter in Roc: it paints a frame into 960×600
+pixels that are exact and the same on every run, so the gate can fingerprint a
+frame and compare two ways of painting it. Neither runner paints this way. The
+page hands its shapes to `shapewire.js`, because wasm reaches a canvas only
+through JS anyway, and the browser's canvas paints paths and gradients
+natively and anti-aliased, far faster than Roc can fill every pixel and copy
+the frame out; the native program hands them to roc-ray. SafariFrame has no
+anti-aliasing. What it builds on knows nothing of Safari: `ScreenRoll.roc`
+turns points by the camera's roll, `PixelGrid.roc` finds the pixels a stretch
+covers, `PixelColor.roc` packs and blends 0xRRGGBB pixels, and
+`ScanlineFill.roc` fills polygons and discs.
+
+Four programs check the frame without a screen: `RasterFrame.roc` prints one
+frame's pixels as hex with a hash (`pixels_png.mjs` turns that into a PNG),
+`ShapesFrame.roc` paints the frame from its shapes and from its commands and
+counts the pixels that differ, `StepBack.roc` checks that one step back goes back exactly one step at
 depths either side of the history's cap, and `FrameBench.roc` is a loop over
 the frame for `perf`. RasterFrame and ShapesFrame write their hex through
 `Hex.roc`.
@@ -62,7 +74,7 @@ builds and judges them, from the roc-apps root:
 It builds each spec app on roc-apps' pinned nightly (`roc-nightly.txt`,
 installed at `~/build/roc-nightly/<name>/roc`) and compares its output with
 `gates/expected/<Spec>.expected`, then runs StepBack, ShapesFrame and
-RasterFrame at steps 0, 3000 and 9000. About 75 s for the specs and 65 s for
+RasterFrame at steps 0, 3000, 5025 and 9000. About 75 s for the specs and 65 s for
 the proof tools; `part=1`, `part=2` or `part=proof` runs one piece. The
 expected files began as the Codex verdicts (safari-codex's `units/`) and are
 safari's own now: when a spec's output rightly changes, its expected file

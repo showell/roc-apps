@@ -1,6 +1,7 @@
 # Brush -- the paint a shape is filled with: a flat colour or one of five
-# gradients, its geometry in scene coordinates. Raster shades one on the CPU,
-# BrushGlsl on the GPU and shapewire.js on a canvas, all from what is here.
+# gradients, its geometry in scene coordinates. Safari's ScanlineFill shades
+# one on the CPU, BrushGlsl on the GPU and shapewire.js on a canvas, all from
+# what is here.
 #
 # **EVERY APP'S**, which is why it sits in lib/ rather than in safari/.
 # Reading a brush out of a Codex draw command is Safari's business and is in

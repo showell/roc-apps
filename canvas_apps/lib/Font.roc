@@ -8,7 +8,7 @@
 # **A LETTER IS A FEW STROKES, AND A STROKE IS A POLYGON** -- the same quad
 # `Shapes.line` builds -- so text needs no new shape, no new brush, and nothing
 # new on any wire. It draws identically on the GPU, on the canvas and in
-# Raster, because by the time anyone sees it it is only polygons.
+# ScanlineFill, because by the time anyone sees it it is only polygons.
 #
 # **THE GRID IS 5 WIDE AND 6 TALL**, x 0..4 and y 0..6 with y down: cap at 0,
 # x-height at 2, baseline at 6, descenders to 8. A glyph advances 6. `size` is
