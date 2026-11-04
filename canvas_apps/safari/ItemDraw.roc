@@ -1,12 +1,10 @@
-# ItemDraw -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
-import Billboards
+## ItemDraw paints the things beside the road in depth order, far to near,
+## each by its own kind's module.
 import CatDraw
 import CatPlan
 import Critter
 import DepthSort
 import Frame
-import Geom
 import GuardRail
 import Mountains
 import Paint
@@ -25,65 +23,64 @@ import World
 
 ItemDraw :: [].{
 
-	closer_count : List(TreePlan.TreeItem), F64, I64 -> I64
-	closer_count = |ts, f, i| (
-		if (i >= ts.len().to_i64_wrap()) {
-			0
-		} else {
-			(
-				if ((List.get(ts, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).fwd < f) {
-					(1 + closer_count(ts, f, (i + 1)))
-				} else {
-					closer_count(ts, f, (i + 1))
-				}
-			)
-		}
-	)
+	## What every thing in a frame is drawn with: the world, the chain of
+	## segments ahead (indexes into `world`, the rider's own first), the
+	## rider's pose, the camera's focal length, the ride's clock, which sets
+	## the masts' beacons and the truck's headlights, and the truck's brake
+	## lights.
+	Context : {
+		world : List(World.Segment),
+		chain : List(I64),
+		pose : Frame.Pose,
+		cam_focal : F64,
+		clock : F64,
+		brake_lights : [On, Off],
+	}
 
-	crown_shade_of : F64 -> F64
-	crown_shade_of = |fwd| (
-		{
-			raw = (1.0 - (fwd / SceneLimits.crown_shade_dist))
-			(
-				if (raw < 0.0) {
-					0.0
-				} else {
-					(
-						if (raw > 1.0) {
-							1.0
-						} else {
-							raw
-						}
-					)
-				}
-			)
-		}
-	)
+	## A tree with fewer than this many trees nearer than it gets a round
+	## trunk.
+	round_trunks : U64
+	round_trunks = 4
 
-	draw_one_tree : List(TreePlan.TreeItem), I64, F64 -> List(Paint.DrawCmd)
-	draw_one_tree = |ts, i, cf| (
-		{
-			t = (List.get(ts, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))
-			Tree.draw({
-				right: t.right,
-				forward: t.fwd,
-				height: t.height,
-				color: t.color,
-				cam_focal: cf,
-				view_w: Screen.width,
-				trunk: if (closer_count(ts, t.fwd, 0) < 4) RoundCorners else SharpCorners,
-				crown: if (t.fwd < SceneLimits.detail_dist) Cones else Triangles,
-				shade: crown_shade_of(t.fwd),
-			})
-		}
-	)
+	## The scene's things, painted far to near.
+	draw : Render.Scene, ItemDraw.Context -> List(Paint.DrawCmd)
+	draw = |scene, context| scene.order.join_map(|key| draw_one(scene, context, key))
+
+	## How many of `trees` are nearer than `forward`.
+	nearer_count : List(TreePlan.TreeItem), F64 -> U64
+	nearer_count = |trees, forward| trees.count_if(|tree| tree.fwd < forward)
+
+	## How much a crown is shaded at distance `forward`: fully at the camera,
+	## falling evenly to none at SceneLimits.crown_shade_dist.
+	crown_shade : F64 -> F64
+	crown_shade = |forward| {
+		raw = (1.0 - (forward / SceneLimits.crown_shade_dist))
+		if (raw < 0.0) 0.0 else if (raw > 1.0) 1.0 else raw
+	}
+
+	## A tree, drawn in more detail the nearer it is: its trunk is round when
+	## few of `trees` are nearer, and its crown is cones when it is nearer
+	## than SceneLimits.detail_dist.
+	draw_tree : TreePlan.TreeItem, { trees : List(TreePlan.TreeItem), cam_focal : F64 } -> List(Paint.DrawCmd)
+	draw_tree = |tree, { trees, cam_focal }|
+		Tree.draw({
+			right: tree.right,
+			forward: tree.fwd,
+			height: tree.height,
+			color: tree.color,
+			cam_focal,
+			view_w: Screen.width,
+			trunk: if (ItemDraw.nearer_count(trees, tree.fwd) < ItemDraw.round_trunks) RoundCorners else SharpCorners,
+			crown: if (tree.fwd < SceneLimits.detail_dist) Cones else Triangles,
+			shade: ItemDraw.crown_shade(tree.fwd),
+		})
 
 	## Where a mast's four footprint corners stand in the rider's view.
-	tower_footprint : List(World.Segment), List(I64), Frame.Pose, TowerPlan.TowerItem -> Tower.Footprint
-	tower_footprint = |w, ch, pose, tw| {
+	tower_footprint : ItemDraw.Context, TowerPlan.TowerItem -> Tower.Footprint
+	tower_footprint = |context, tower| {
 		corner_point = |corner| {
-			on_map = Tower.base_corner_ax(corner, tw.along, tw.across, tw.yaw)
-			Frame.map_pt(w, ch, pose, tw.map, on_map.a, on_map.x)
+			on_map = Tower.base_corner_ax(corner, tower.along, tower.across, tower.yaw)
+			Frame.map_pt(context.world, context.chain, context.pose, tower.map, on_map.a, on_map.x)
 		}
 		{
 			back_left: corner_point(BackLeft),
@@ -93,63 +90,67 @@ ItemDraw :: [].{
 		}
 	}
 
-	draw_one_tower : List(World.Segment), List(I64), Frame.Pose, TowerPlan.TowerItem, F64, F64 -> List(Paint.DrawCmd)
-	draw_one_tower = |w, ch, pose, tw, cf, step|
+	## A mast, its beacon blinking on the ride's clock.
+	draw_tower : ItemDraw.Context, TowerPlan.TowerItem -> List(Paint.DrawCmd)
+	draw_tower = |context, tower|
 		Tower.draw({
-			footprint: tower_footprint(w, ch, pose, tw),
-			center: Frame.map_pt(w, ch, pose, tw.map, tw.along, tw.across),
-			cam_focal: cf,
+			footprint: ItemDraw.tower_footprint(context, tower),
+			center: Frame.map_pt(context.world, context.chain, context.pose, tower.map, tower.along, tower.across),
+			cam_focal: context.cam_focal,
 			view_w: Screen.width,
-			beacon_phase: (step + tw.beacon_offset),
+			beacon_phase: (context.clock + tower.beacon_offset),
 		})
+}
 
-	draw_one_critter : Billboards.Billboard, F64 -> List(Paint.DrawCmd)
-	draw_one_critter = |b, cf| Critter.draw(b, { cam_focal: cf, view_w: Screen.width })
+## One thing in the depth order, looked up in its kind's list and drawn.
+draw_one : Render.Scene, ItemDraw.Context, DepthSort.DepthKey -> List(Paint.DrawCmd)
+draw_one = |scene, context, key| {
+	camera = { cam_focal: context.cam_focal, view_w: Screen.width }
+	match key.subject {
+		Tree(place) => ItemDraw.draw_tree(at_place(scene.trees, place), { trees: scene.trees, cam_focal: context.cam_focal })
+		Tower(place) => ItemDraw.draw_tower(context, at_place(scene.towers, place))
+		Rail(place) => GuardRail.draw(at_place(scene.rails, place), camera)
+		Critter(place) => Critter.draw(at_place(scene.critters, place), camera)
+		Cat(place) => draw_cat(at_place(scene.cats, place), camera)
+		Truck => draw_truck(context, scene.truck)
+		Bird(place) => RocBird.draw_one(at_place(scene.birds, place), context.cam_focal, Screen.width)
+	}
+}
 
-	draw_one_cat : CatPlan.CatItem, F64 -> List(Paint.DrawCmd)
-	draw_one_cat = |k, cf| CatDraw.draw({ right: k.right, forward: k.fwd, height: k.height, pose: k.pose, lift: k.lift, cam_focal: cf, view_w: Screen.width })
+## The thing at `place` in its kind's list.
+at_place : List(thing), U64 -> thing
+at_place = |things, place| things.get(place) ?? crash "ItemDraw.at_place: the depth order names only places in its lists"
 
-	draw_one_truck : List(World.Segment), List(I64), Frame.Pose, TruckPlan.TruckAt, Bool, F64, F64 -> List(Paint.DrawCmd)
-	draw_one_truck = |w, ch, pose, truck_at, braking, cf, step|
-		match truck_at {
-			Ahead(tk) =>
-				TruckDraw.draw({
-					road: { world: w, chain: ch, pose, segment: tk.place },
-					center: {
-						along: tk.along,
-						across: (Scenery.lane_width / 2.0),
-					},
-					lights: {
-						headlights: if Mountains.is_sun_behind_mountains(step) On else Off,
-						brake_lights: if braking On else Off,
-					},
-					cam_focal: cf,
-					view_w: Screen.width,
-				})
-			NoTruck => crash "ItemDraw.draw_one_truck: the depth order holds a truck only when one is in view"
-		}
-
-	draw_item : List(World.Segment), List(I64), Frame.Pose, Render.Collected, DepthSort.DepthKey, Bool, F64, F64 -> List(Paint.DrawCmd)
-	draw_item = |w, ch, pose, c, it, braking, cf, step| (match it.subject {
-		Tree(at) => draw_one_tree(c.trees, at.to_i64_wrap(), cf)
-		Tower(at) => draw_one_tower(w, ch, pose, (List.get(c.towers, at) ?? crash ("list-at out of range")), cf, step)
-		Rail(at) => GuardRail.draw((List.get(c.rails, at) ?? crash ("list-at out of range")), { cam_focal: cf, view_w: Screen.width })
-		Critter(at) => draw_one_critter((List.get(c.cows, at) ?? crash ("list-at out of range")), cf)
-		Cat(at) => draw_one_cat((List.get(c.cats, at) ?? crash ("list-at out of range")), cf)
-		Truck => draw_one_truck(w, ch, pose, c.truck, braking, cf, step)
-		Bird(at) => RocBird.draw_one((List.get(c.birds, at) ?? crash ("bird out of range")), cf, Screen.width)
+draw_cat : CatPlan.CatItem, { cam_focal : F64, view_w : F64 } -> List(Paint.DrawCmd)
+draw_cat = |cat, { cam_focal, view_w }|
+	CatDraw.draw({
+		right: cat.right,
+		forward: cat.fwd,
+		height: cat.height,
+		pose: cat.pose,
+		lift: cat.lift,
+		cam_focal,
+		view_w,
 	})
 
-	# draw_order builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	draw_order : List(World.Segment), List(I64), Frame.Pose, Render.Collected, Bool, F64, F64, I64 -> List(Paint.DrawCmd)
-	draw_order = |w, ch, pose, c, braking, cf, step, i| draw_order_onto(w, ch, pose, c, braking, cf, step, i, [])
-
-	draw_order_onto : List(World.Segment), List(I64), Frame.Pose, Render.Collected, Bool, F64, F64, I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
-	draw_order_onto = |w, ch, pose, c, braking, cf, step, i, acc| (
-		if (i >= c.order.len().to_i64_wrap()) {
-			acc
-		} else {
-			draw_order_onto(w, ch, pose, c, braking, cf, step, (i + 1), List.concat(acc, draw_item(w, ch, pose, c, (List.get(c.order, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), braking, cf, step)))
-		}
-	)
-}
+## The truck, in the middle of its lane, its headlights on once the sun is
+## behind the mountains.
+draw_truck : ItemDraw.Context, TruckPlan.TruckAt -> List(Paint.DrawCmd)
+draw_truck = |context, truck_at|
+	match truck_at {
+		Ahead(truck) =>
+			TruckDraw.draw({
+				road: { world: context.world, chain: context.chain, pose: context.pose, segment: truck.place },
+				center: {
+					along: truck.along,
+					across: (Scenery.lane_width / 2.0),
+				},
+				lights: {
+					headlights: if Mountains.is_sun_behind_mountains(context.clock) On else Off,
+					brake_lights: context.brake_lights,
+				},
+				cam_focal: context.cam_focal,
+				view_w: Screen.width,
+			})
+		NoTruck => crash "ItemDraw.draw_truck: the depth order holds a truck only when one is in view"
+	}
