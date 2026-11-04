@@ -60,15 +60,18 @@ Herd :: [].{
 	bull_of : [WithBull, NoBull] -> List(Scenery.Critter)
 	bull_of = |bull|
 		match bull {
-			WithBull => [
-				{
-					along: bull_dist,
-					across: (0.0 - ((((Scenery.lane_width / 2.0) + Trees.tree_road_offset) + (bull_height / 2.0)) + bull_tree_gap)),
-					codepoint: bull_codepoint,
-					height: bull_height,
-					face_right: False,
-				},
-			]
+			WithBull => {
+				tree_line = ((Scenery.lane_width / 2.0) + Trees.tree_road_offset)
+				[
+					{
+						along: bull_dist,
+						across: (0.0 - ((tree_line + (bull_height / 2.0)) + bull_tree_gap)),
+						codepoint: bull_codepoint,
+						height: bull_height,
+						face_right: False,
+					},
+				]
+			}
 			NoBull => []
 		}
 

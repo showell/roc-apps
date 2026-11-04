@@ -16,7 +16,11 @@ CritterPlan :: [].{
 	## The road as the rider sees it: every segment of the world, the chain of
 	## segments ahead (indexes into `world`, the rider's own first), and where
 	## the rider is.
-	Scene : { world : List(World.Segment), chain : List(I64), pose : Frame.Pose }
+	Scene : {
+		world : List(World.Segment),
+		chain : List(I64),
+		pose : Frame.Pose,
+	}
 
 	## Farm animals are sighted on this many segments of the chain.
 	farm_reach : I64
@@ -35,7 +39,10 @@ CritterPlan :: [].{
 	sightings : CritterPlan.Scene, I64 -> List(Billboards.Sighting)
 	sightings = |scene, rider_segment|
 		if (rider_segment > 0) {
-			List.concat(CritterPlan.sightings_ahead(scene), CritterPlan.sightings_behind(scene, (rider_segment - 1)))
+			List.concat(
+				CritterPlan.sightings_ahead(scene),
+				CritterPlan.sightings_behind(scene, (rider_segment - 1)),
+			)
 		} else {
 			CritterPlan.sightings_ahead(scene)
 		}
@@ -96,7 +103,7 @@ CritterPlan :: [].{
 	## `index`, the one before the rider's.
 	sightings_behind : CritterPlan.Scene, I64 -> List(Billboards.Sighting)
 	sightings_behind = |scene, index| {
-		segment = scene.world.get(index.to_u64_wrap()) ?? crash "CritterPlan.sightings_behind: the rider's segment has one before it"
+		segment = scene.world.get(index.to_u64_wrap()) ?? crash "CritterPlan.sightings_behind: no segment before the rider's"
 		List.concat(
 			corner_sightings(scene, { mapper: Frame.prev_map(segment), segment }),
 			CritterPlan.ducks_behind(scene, segment),
@@ -110,7 +117,14 @@ CritterPlan :: [].{
 	## The depth-sort keys of the critters to draw, each naming its billboard
 	## by its place in `billboards`.
 	cow_items : List(Billboards.Billboard) -> List(DepthSort.DepthKey)
-	cow_items = |billboards| billboards.map_with_index(|billboard, i| { fwd: billboard.forward, kind: KCow, i: i.to_i64_wrap() })
+	cow_items = |billboards|
+		billboards.map_with_index(
+			|billboard, i| {
+				fwd: billboard.forward,
+				kind: KCow,
+				i: i.to_i64_wrap(),
+			},
+		)
 }
 
 lane_half_width : F64
@@ -118,15 +132,22 @@ lane_half_width = (Scenery.lane_width / 2.0)
 
 segment_at : CritterPlan.Scene, I64 -> World.Segment
 segment_at = |scene, position| {
-	index = scene.chain.get(position.to_u64_wrap()) ?? crash "CritterPlan.segment_at: a position is in the chain"
-	scene.world.get(index.to_u64_wrap()) ?? crash "CritterPlan.segment_at: the chain holds indexes into the world"
+	index = scene.chain.get(position.to_u64_wrap()) ?? crash "CritterPlan.segment_at: no such chain position"
+	scene.world.get(index.to_u64_wrap()) ?? crash "CritterPlan.segment_at: the chain names a missing segment"
 }
 
 ## A critter, placed through `mapper` on the road's map, as the rider sees it.
 sight_critter : CritterPlan.Scene, { mapper : Frame.Mapper, critter : Scenery.Critter } -> Billboards.Sighting
 sight_critter = |scene, { mapper, critter }|
 	Billboards.sighting({
-		at: Frame.map_pt(scene.world, scene.chain, scene.pose, mapper, critter.along, (critter.across + lane_half_width)),
+		at: Frame.map_pt(
+			scene.world,
+			scene.chain,
+			scene.pose,
+			mapper,
+			critter.along,
+			(critter.across + lane_half_width),
+		),
 		height: critter.height,
 		codepoint: critter.codepoint,
 		facing: facing_of(critter.face_right),
@@ -150,7 +171,14 @@ pond_sightings = |scene, { mapper, segment }|
 		Pond.ducks.map(
 			|duck|
 				Billboards.sighting({
-					at: Frame.map_pt(scene.world, scene.chain, scene.pose, mapper, (segment.length + duck.p.cv), duck.p.cu),
+					at: Frame.map_pt(
+						scene.world,
+						scene.chain,
+						scene.pose,
+						mapper,
+						(segment.length + duck.p.cv),
+						duck.p.cu,
+					),
 					height: Pond.duck_height,
 					codepoint: Pond.duck_codepoint,
 					facing: facing_of(duck.face_right),

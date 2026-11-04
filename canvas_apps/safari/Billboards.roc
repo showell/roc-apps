@@ -19,21 +19,36 @@ Billboards :: [].{
 	}
 
 	## What became of a critter placed in the rider's view.
-	Sighting : [InView(Billboards.Billboard), BehindCamera, TooSmall]
+	Sighting : [
+		InView(Billboards.Billboard),
+		BehindCamera,
+		TooSmall,
+	]
 
-	## A critter this many pixels tall, or less, is too small to draw.
+	## A critter shorter than this many pixels is too small to draw.
 	min_critter_px : F64
 	min_critter_px = 2.0
 
 	## A critter of `height` metres at `at` in the rider's view.
-	sighting : { at : Geom.RiderPt, height : F64, codepoint : I64, facing : Billboards.Facing } -> Billboards.Sighting
+	sighting : {
+		at : Geom.RiderPt,
+		height : F64,
+		codepoint : I64,
+		facing : Billboards.Facing,
+	} -> Billboards.Sighting
 	sighting = |{ at, height, codepoint, facing }|
 		if (at.forward <= Geom.near) {
 			BehindCamera
 		} else if (((height / at.forward) * Lens.focal) < min_critter_px) {
 			TooSmall
 		} else {
-			InView({ right: at.right, forward: at.forward, height, codepoint, facing })
+			InView({
+				right: at.right,
+				forward: at.forward,
+				height,
+				codepoint,
+				facing,
+			})
 		}
 
 	## The billboards of the critters in view, in order.

@@ -17,7 +17,11 @@ Critter :: [].{
 
 	## Where a still stands on screen: its feet, which way it is drawn, and
 	## its height in pixels.
-	Anchor : { feet : Camera.ScreenPt, flip : Critter.Flip, height_px : F64 }
+	Anchor : {
+		feet : Camera.ScreenPt,
+		flip : Critter.Flip,
+		height_px : F64,
+	}
 
 	## A polygon with more points than this is not drawn.
 	max_still_points : U64
@@ -54,9 +58,10 @@ Critter :: [].{
 		if (poly.pts.len() > max_still_points) {
 			[]
 		} else {
+			points = Critter.screen_points(anchor, poly.pts)
 			match poly.grad.first() {
-				Ok(gradient) => draw_gradient_poly(anchor, { gradient, points: Critter.screen_points(anchor, poly.pts) })
-				Err(ListWasEmpty) => Paint.push_poly(poly.color, Critter.screen_points(anchor, poly.pts))
+				Ok(gradient) => draw_gradient_poly(anchor, { gradient, points })
+				Err(ListWasEmpty) => Paint.push_poly(poly.color, points)
 			}
 		}
 
@@ -68,9 +73,9 @@ Critter :: [].{
 	## its still mirrored. A critter less than a pixel tall isn't drawn.
 	draw : Billboards.Billboard, { cam_focal : F64, view_w : F64 } -> List(Paint.DrawCmd)
 	draw = |critter, { cam_focal, view_w }| {
-		feet = Camera.project({ right: critter.right, forward: critter.forward, height: 0.0 }, cam_focal, view_w)
-		head = Camera.project({ right: critter.right, forward: critter.forward, height: critter.height }, cam_focal, view_w)
-		height_px = (feet.y - head.y)
+		on_screen = |height| Camera.project({ right: critter.right, forward: critter.forward, height }, cam_focal, view_w)
+		feet = on_screen(0.0)
+		height_px = (feet.y - on_screen(critter.height).y)
 		if (height_px < 1.0) {
 			[]
 		} else {
@@ -94,12 +99,34 @@ draw_gradient_poly = |anchor, { gradient, points }|
 		Linear => {
 			start = Critter.screen_point(anchor, { x: gradient.ax, y: gradient.ay })
 			stop = Critter.screen_point(anchor, { x: gradient.bx, y: gradient.by })
-			Paint.push_linear_grad_poly(gradient.rgba0, gradient.rgba1, gradient.off0, gradient.off1, start.x, start.y, stop.x, stop.y, points)
+			Paint.push_linear_grad_poly(
+				gradient.rgba0,
+				gradient.rgba1,
+				gradient.off0,
+				gradient.off1,
+				start.x,
+				start.y,
+				stop.x,
+				stop.y,
+				points,
+			)
 		}
 		Radial => {
 			center = Critter.screen_point(anchor, { x: gradient.cx, y: gradient.cy })
 			u = Critter.screen_vector(anchor, { x: gradient.ux, y: gradient.uy })
 			v = Critter.screen_vector(anchor, { x: gradient.vx, y: gradient.vy })
-			Paint.push_radial_grad_poly(gradient.rgba0, gradient.rgba1, gradient.off0, gradient.off1, center.x, center.y, u.x, u.y, v.x, v.y, points)
+			Paint.push_radial_grad_poly(
+				gradient.rgba0,
+				gradient.rgba1,
+				gradient.off0,
+				gradient.off1,
+				center.x,
+				center.y,
+				u.x,
+				u.y,
+				v.x,
+				v.y,
+				points,
+			)
 		}
 	}

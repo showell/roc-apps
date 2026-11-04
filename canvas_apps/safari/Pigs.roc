@@ -67,15 +67,20 @@ Pigs :: [].{
 	## The pig that catches the rider's eye, on a segment `length` metres
 	## long.
 	gaze_pig : F64 -> Scenery.Critter
-	gaze_pig = |length| pig({ along: ((length - pig_dist_before_end) + gaze_pig_along_offset), across: (road_edge + Scenery.herd_road_offset) })
+	gaze_pig = |length|
+		pig({
+			along: ((length - pig_dist_before_end) + gaze_pig_along_offset),
+			across: (road_edge + Scenery.herd_road_offset),
+		})
 
 	## The big herd on a segment `length` metres long, row by row from the
 	## road.
 	fill_pig_herd : F64 -> List(Scenery.Critter)
 	fill_pig_herd = |length| {
 		herd_along = (length - pig_dist_before_end)
+		columns = List.from_iter(I64.until(0, big_herd_cols))
 		List.from_iter(I64.until(0, big_herd_rows))
-			.join_map(|row| List.from_iter(I64.until(0, big_herd_cols)).map(|column| herd_pig(herd_along, { row, column })))
+			.join_map(|row| columns.map(|column| herd_pig(herd_along, { row, column })))
 	}
 
 	## The two rows of pigs on a segment `length` metres long, front row first.
@@ -101,7 +106,8 @@ herd_pig = |herd_along, { row, column }| {
 	i = ((row * Pigs.big_herd_cols) + column).to_f64()
 	fr = row.to_f64()
 	fc = column.to_f64()
-	in_line = (((herd_along + Pigs.pig_herd_first_col) + (fc * Pigs.pig_col_spacing)) + (fr * Pigs.pig_row_depth))
+	first_column = (herd_along + Pigs.pig_herd_first_col)
+	in_line = ((first_column + (fc * Pigs.pig_col_spacing)) + (fr * Pigs.pig_row_depth))
 	in_row = ((road_edge + Scenery.herd_road_offset) + (fr * Pigs.pig_row_depth))
 	pig({
 		along: (in_line + (Pigs.pig_jitter_along * Trig.r_sin((i * 2.3)))),
@@ -110,4 +116,5 @@ herd_pig = |herd_along, { row, column }| {
 }
 
 pig_row : F64, { across : F64, offsets : List(F64) } -> List(Scenery.Critter)
-pig_row = |herd_along, { across, offsets }| offsets.map(|offset| pig({ along: (herd_along + offset), across }))
+pig_row = |herd_along, { across, offsets }|
+	offsets.map(|offset| pig({ along: (herd_along + offset), across }))
