@@ -14,19 +14,20 @@ size_want : List(I64)
 size_want = [7, 6, 6, 3112588, 12759680, 129414]
 
 spot_got : List(F64)
-spot_got =
-	match (Pond.water_outline, Pond.bank) {
-		([water_first, _, _, _, water_fifth, ..], [bank_first, ..]) => [
-			water_first.across,
-			water_first.along,
-			water_fifth.across,
-			water_fifth.along,
-			bank_first.across,
-			bank_first.along,
-			Pond.duck_height,
-		]
-		_ => crash "PondSpec: the water has five points or more, and the bank one"
-	}
+spot_got = {
+	water_first = Pond.water_outline.get(0) ?? crash "PondSpec: the water has a first point"
+	water_fifth = Pond.water_outline.get(4) ?? crash "PondSpec: the water has a fifth point"
+	bank_first = Pond.bank.get(0) ?? crash "PondSpec: the bank has a first point"
+	[
+		water_first.across,
+		water_first.along,
+		water_fifth.across,
+		water_fifth.along,
+		bank_first.across,
+		bank_first.along,
+		Pond.duck_height,
+	]
+}
 
 spot_want : List(F64)
 spot_want = [(-2.0), 3.0, (-15.0), 32.0, (-5.0), 29.0, 0.9]

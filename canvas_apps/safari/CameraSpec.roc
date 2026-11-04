@@ -43,17 +43,19 @@ three : List(Geom.Vec3)
 three = [{ right: 0.0, forward: 10.0, height: 1.2 }, { right: 10.0, forward: 10.0, height: 1.2 }, { right: 0.0, forward: 10.0, height: 11.2 }]
 
 all_got : List(F64)
-all_got =
-	match Camera.project_all(three, view) {
-		[ahead, right, above] => [
-			3.0,
-			ahead.x,
-			right.x,
-			above.y,
-			I64.to_f64(Camera.project_all([], view).len().to_i64_wrap()),
-		]
-		_ => crash "CameraSpec: three points project to three"
-	}
+all_got = {
+	projected = Camera.project_all(three, view)
+	ahead = projected.get(0) ?? crash "CameraSpec: three points project to three"
+	right = projected.get(1) ?? crash "CameraSpec: three points project to three"
+	above = projected.get(2) ?? crash "CameraSpec: three points project to three"
+	[
+		I64.to_f64(projected.len().to_i64_wrap()),
+		ahead.x,
+		right.x,
+		above.y,
+		I64.to_f64(Camera.project_all([], view).len().to_i64_wrap()),
+	]
+}
 
 all_want : List(F64)
 all_want = [3.0, 480.0, 1280.0, (-500.0), 0.0]

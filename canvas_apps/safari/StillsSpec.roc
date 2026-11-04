@@ -54,11 +54,12 @@ poly_ints_want : List(I64)
 poly_ints_want = [9066271, 4989733, 0, 1, 2, 1]
 
 reach_got : List(F64)
-reach_got =
-	match (shaded.grad, shaded.pts, solid.pts) {
-		([shading], [shaded_point], [_, solid_second]) => [shading.ax, shaded_point.x, solid_second.y]
-		_ => crash "StillsSpec: the shaded polygon has one gradient and one point, the solid one two points"
-	}
+reach_got = {
+	shading = shaded.grad.get(0) ?? crash "StillsSpec: the shaded polygon has a gradient"
+	shaded_point = shaded.pts.get(0) ?? crash "StillsSpec: the shaded polygon has a point"
+	solid_second = solid.pts.get(1) ?? crash "StillsSpec: the solid polygon has a second point"
+	[shading.ax, shaded_point.x, solid_second.y]
+}
 
 reach_want : List(F64)
 reach_want = [2.5, 0.5, 13.5]

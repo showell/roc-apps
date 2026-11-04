@@ -76,12 +76,17 @@ visible_want : List(Bool)
 visible_want = [True, False]
 
 place_got : List(F64)
-place_got =
-	match facing {
+place_got = place_numbers(facing).concat(place_numbers(away))
+
+## Where the sun stands, or nothing when it is out of view.
+place_numbers : Sky.SunPos -> List(F64)
+place_numbers = |sun|
+	match sun {
 		InView(place) => [place.x, place.y, place.scale]
 		OutOfView => []
 	}
 
+# The rider faces the sun, then away from it.
 place_want : List(F64)
 place_want = [480.0, 56.0, 1.0]
 

@@ -189,7 +189,7 @@ CanvasAppRunner :: [].{
 			Key4 => d.key_pressed(Key4)
 		}
 
-	update! : CanvasApp.CanvasApp(model), CanvasAppRunner.Model(model), App.Input(CanvasAppRunner.Msg), App.Io => Try(CanvasAppRunner.Model(model), [Exit(I64), ..])
+	update! : CanvasApp.CanvasApp(model), CanvasAppRunner.Model(model), App.Input(CanvasAppRunner.Msg), App.Io => Try(CanvasAppRunner.Model(model), [Exit(I64)])
 	update! = |game, model, input, _io| {
 		# Roc reads `game.advance(m, k)` as a method call, so the field is
 		# bound first. See CanvasApp.roc.
@@ -210,14 +210,14 @@ CanvasAppRunner :: [].{
 		}
 	}
 
-	render! : CanvasApp.CanvasApp(model), CanvasAppRunner.Model(model), Draw.Frame => Try({}, [Exit(I64), ScopeLimit, ScopeUnavailable, ..])
+	render! : CanvasApp.CanvasApp(model), CanvasAppRunner.Model(model), Draw.Frame => Try({}, [Exit(I64), ScopeLimit, ScopeUnavailable])
 	render! = |game, model, frame| {
 		draw!(game, model, frame)?
 		show_fps!(model.fps, frame)
 		Ok({})
 	}
 
-	draw! : CanvasApp.CanvasApp(model), CanvasAppRunner.Model(model), Draw.Frame => Try({}, [ScopeLimit, ScopeUnavailable, ..])
+	draw! : CanvasApp.CanvasApp(model), CanvasAppRunner.Model(model), Draw.Frame => Try({}, [ScopeLimit, ScopeUnavailable])
 	draw! = |game, model, frame| {
 		the_frame = game.frame
 		# roc-ray fills convex polygons only, so a concave one is cut here. A

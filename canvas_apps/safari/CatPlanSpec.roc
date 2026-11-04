@@ -98,19 +98,15 @@ cull_got = [
 cull_want : List(I64)
 cull_want = [0, 1, 1, 0, 0, 0]
 
-items_got : List(I64)
+## One cat in view gives one key, which names the first cat; none gives none.
+items_got : List(Bool)
 items_got = {
 	key = CatPlan.depth_keys(seen).first() ?? crash "CatPlanSpec: one cat is in view"
-	place =
-		match key.subject {
-			Cat(at) => at.to_i64_wrap()
-			Tree(_) | Tower(_) | Critter(_) | Truck | Rail(_) | Bird(_) => crash "CatPlanSpec: a cat's key names a cat"
-		}
-	[CatPlan.depth_keys(seen).len().to_i64_wrap(), CatPlan.depth_keys([]).len().to_i64_wrap(), place]
+	[CatPlan.depth_keys(seen).len() == 1, CatPlan.depth_keys([]).len() == 0, key.subject == Cat(0)]
 }
 
-items_want : List(I64)
-items_want = [1, 0, 0]
+items_want : List(Bool)
+items_want = [True, True, True]
 
 # --- Entry ---
 
@@ -154,7 +150,7 @@ main! = |_args| {
 			got: cull_got,
 			want: cull_want,
 		}),
-		Grade.ints({
+		Grade.bools({
 			name: "cp-items ",
 			got: items_got,
 			want: items_want,
