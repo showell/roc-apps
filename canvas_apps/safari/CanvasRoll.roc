@@ -1,5 +1,5 @@
-# CanvasRoll -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## How far the canvas rolls with the rider's lean. A lean inside the
+## deadband leaves the canvas level.
 import lib.DeviceMath
 import Pose
 
@@ -9,16 +9,5 @@ CanvasRoll :: [].{
 	roll_deadband = 0.001
 
 	rider_roll : Pose.RiderState -> F64
-	rider_roll = |s| (
-		{
-			t = s.tilt
-			(
-				if (DeviceMath.real_abs(t) < roll_deadband) {
-					0.0
-				} else {
-					t
-				}
-			)
-		}
-	)
+	rider_roll = |rider| if (DeviceMath.real_abs(rider.tilt) < roll_deadband) 0.0 else rider.tilt
 }
