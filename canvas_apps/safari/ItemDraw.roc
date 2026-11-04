@@ -82,7 +82,7 @@ ItemDraw :: [].{
 	tower_footprint : List(World.Segment), List(I64), Frame.Pose, TowerPlan.TowerItem -> Tower.Footprint
 	tower_footprint = |w, ch, pose, tw| {
 		corner_point = |corner| {
-			on_map = Tower.base_corner_ax(corner, tw.a0, tw.x0, tw.yaw)
+			on_map = Tower.base_corner_ax(corner, tw.along, tw.across, tw.yaw)
 			Frame.map_pt(w, ch, pose, tw.map, on_map.a, on_map.x)
 		}
 		{
@@ -97,10 +97,10 @@ ItemDraw :: [].{
 	draw_one_tower = |w, ch, pose, tw, cf, step|
 		Tower.draw({
 			footprint: tower_footprint(w, ch, pose, tw),
-			center: Frame.map_pt(w, ch, pose, tw.map, tw.a0, tw.x0),
+			center: Frame.map_pt(w, ch, pose, tw.map, tw.along, tw.across),
 			cam_focal: cf,
 			view_w: Screen.width,
-			beacon_phase: (step + tw.off),
+			beacon_phase: (step + tw.beacon_offset),
 		})
 
 	draw_one_critter : Billboards.Billboard, F64 -> List(Paint.DrawCmd)

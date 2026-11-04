@@ -1,9 +1,10 @@
-# TowerPlanSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are TowerPlan's checks: where the masts stand, which are in
+## view, their beacons' offsets, and the keys the depth sort reads.
 app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import DepthSort
 import Frame
 import Grade
 import Tower
@@ -11,7 +12,7 @@ import TowerPlan
 import World
 
 fixed_got : List(F64)
-fixed_got = [TowerPlan.tower_beyond, TowerPlan.tower_right, TowerPlan.seg_tower_left]
+fixed_got = [TowerPlan.tower_beyond, TowerPlan.tower_right, TowerPlan.mid_tower_left]
 
 fixed_want : List(F64)
 fixed_want = [160.0, 20.0, 100.0]
@@ -25,14 +26,24 @@ cap_want = [16]
 segs : List(World.Segment)
 segs = [World.segment_at(0), World.segment_at(1), World.segment_at(2)]
 
-chain : List(I64)
-chain = [0, 1, 2]
-
 origin : Frame.Pose
 origin = { along: 0.0, across: 0.0, yaw: 0.0, hw: 2.0 }
 
+## The first three segments seen from the origin, the rider on segment
+## `rider_segment`.
+short_view : I64 -> TowerPlan.View
+short_view = |rider_segment| { world: segs, chain: [0, 1, 2], pose: origin, rider_segment }
+
+from_origin : TowerPlan.View
+from_origin = short_view(0)
+
 short_got : List(I64)
-short_got = [TowerPlan.walk_towers(segs, chain, origin).len().to_i64_wrap(), TowerPlan.seg_towers(segs, chain, origin, 0).len().to_i64_wrap(), TowerPlan.seg_mid_tower(segs, chain, origin, 0).len().to_i64_wrap(), TowerPlan.all_towers(segs, chain, origin, 0).len().to_i64_wrap()]
+short_got = [
+	TowerPlan.along_chain(from_origin).len().to_i64_wrap(),
+	TowerPlan.segment_towers(from_origin, 0).len().to_i64_wrap(),
+	TowerPlan.mid_tower(from_origin, 0).len().to_i64_wrap(),
+	TowerPlan.in_view(from_origin).len().to_i64_wrap(),
+]
 
 short_want : List(I64)
 short_want = [3, 1, 0, 3]
@@ -51,80 +62,80 @@ has_mid_tower = |seg|
 mid_flags_want : List(Bool)
 mid_flags_want = [False, False, False]
 
+## The first mast in view on the segment at `place` in the chain.
+first_tower_on : I64 -> TowerPlan.TowerItem
+first_tower_on = |place| TowerPlan.segment_towers(from_origin, place).first() ?? crash "TowerPlanSpec: the first two segments' masts are in view"
+
 where_got : List(F64)
-where_got = (
-	{
-		t = (List.get(TowerPlan.seg_towers(segs, chain, origin, 0), I64.to_u64_wrap(0)) ?? crash ("list-at out of range"))
-		u = (List.get(TowerPlan.seg_towers(segs, chain, origin, 1), I64.to_u64_wrap(0)) ?? crash ("list-at out of range"))
-		[t.a0, t.x0, u.a0, u.x0]
-	}
-)
+where_got = [first_tower_on(0).along, first_tower_on(0).across, first_tower_on(1).along, first_tower_on(1).across]
 
 where_want : List(F64)
 where_want = [660.0, 22.0, 480.0, 22.0]
 
-long_segs : List(World.Segment)
-long_segs = [World.segment_at(6)]
+## The 1200 m segment alone, seen from the origin.
+long_view : TowerPlan.View
+long_view = { world: [World.segment_at(6)], chain: [0], pose: origin, rider_segment: 0 }
 
 long_got : List(I64)
-long_got = [TowerPlan.walk_towers(long_segs, [0], origin).len().to_i64_wrap(), TowerPlan.seg_mid_tower(long_segs, [0], origin, 0).len().to_i64_wrap()]
+long_got = [TowerPlan.along_chain(long_view).len().to_i64_wrap(), TowerPlan.mid_tower(long_view, 0).len().to_i64_wrap()]
 
 long_want : List(I64)
 long_want = [2, 1]
 
+long_towers : List(TowerPlan.TowerItem)
+long_towers = TowerPlan.along_chain(long_view)
+
+## The long segment's mast at `i`: its end mast, then its mid mast.
+long_tower : U64 -> TowerPlan.TowerItem
+long_tower = |i| long_towers.get(i) ?? crash "TowerPlanSpec: the long segment has two masts in view"
+
 long_where_got : List(F64)
-long_where_got = (
-	{
-		ts = TowerPlan.walk_towers(long_segs, [0], origin)
-		[(List.get(ts, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).a0, (List.get(ts, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).x0, (List.get(ts, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).a0, (List.get(ts, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).x0, (List.get(ts, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).yaw, (List.get(ts, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).yaw]
-	}
-)
+long_where_got = [long_tower(0).along, long_tower(0).across, long_tower(1).along, long_tower(1).across, long_tower(0).yaw, long_tower(1).yaw]
 
 long_where_want : List(F64)
 long_where_want = [1360.0, 22.0, 600.0, (-98.0), 0.5235987750000001, 0.0]
 
 key_got : List(F64)
-key_got = (
-	{
-		ts = TowerPlan.walk_towers(long_segs, [0], origin)
-		[(List.get(ts, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).off, (List.get(ts, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).off, Tower.beacon_offset_for(0), Tower.beacon_offset_for(60)]
-	}
-)
+key_got = [long_tower(0).beacon_offset, long_tower(1).beacon_offset, Tower.beacon_offset_for(0), Tower.beacon_offset_for(60)]
 
 key_want : List(F64)
 key_want = [0.0, 60.0, 0.0, 60.0]
 
 spread_got : List(F64)
-spread_got = (
-	{
-		ts = TowerPlan.walk_towers(segs, chain, origin)
-		[(List.get(ts, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).off, (List.get(ts, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).off, (List.get(ts, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).off]
-	}
-)
+spread_got = TowerPlan.along_chain(from_origin).map(|tower| tower.beacon_offset)
 
 spread_want : List(F64)
 spread_want = [0.0, 37.0, 74.0]
 
 behind_got : List(I64)
-behind_got = [TowerPlan.all_towers(segs, chain, origin, 0).len().to_i64_wrap(), TowerPlan.all_towers(segs, chain, origin, 1).len().to_i64_wrap(), TowerPlan.all_towers(segs, chain, origin, 2).len().to_i64_wrap(), TowerPlan.behind_tower(segs, chain, origin, 0).len().to_i64_wrap()]
+behind_got = [
+	TowerPlan.in_view(short_view(0)).len().to_i64_wrap(),
+	TowerPlan.in_view(short_view(1)).len().to_i64_wrap(),
+	TowerPlan.in_view(short_view(2)).len().to_i64_wrap(),
+	TowerPlan.tower_behind(short_view(1)).len().to_i64_wrap(),
+]
 
 behind_want : List(I64)
 behind_want = [3, 4, 4, 1]
 
 cull_got : List(I64)
-cull_got = [TowerPlan.walk_towers(segs, chain, { along: 5000.0, across: 0.0, yaw: 0.0, hw: 2.0 }).len().to_i64_wrap(), TowerPlan.walk_towers(segs, [], origin).len().to_i64_wrap()]
+cull_got = [
+	TowerPlan.along_chain({ ..from_origin, pose: { along: 5000.0, across: 0.0, yaw: 0.0, hw: 2.0 } }).len().to_i64_wrap(),
+	TowerPlan.along_chain({ ..from_origin, chain: [] }).len().to_i64_wrap(),
+]
 
 cull_want : List(I64)
 cull_want = [0, 0]
 
+keys : List(DepthSort.DepthKey)
+keys = TowerPlan.depth_keys(TowerPlan.along_chain(from_origin))
+
+## The depth key at `i`.
+key_at : U64 -> DepthSort.DepthKey
+key_at = |i| keys.get(i) ?? crash "TowerPlanSpec: three masts are in view"
+
 items_got : List(I64)
-items_got = (
-	{
-		ts = TowerPlan.walk_towers(segs, chain, origin)
-		its = TowerPlan.tower_items(ts)
-		[its.len().to_i64_wrap(), (List.get(its, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).i, (List.get(its, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).i, TowerPlan.tower_items([]).len().to_i64_wrap()]
-	}
-)
+items_got = [keys.len().to_i64_wrap(), key_at(0).i, key_at(2).i, TowerPlan.depth_keys([]).len().to_i64_wrap()]
 
 items_want : List(I64)
 items_want = [3, 0, 2, 0]

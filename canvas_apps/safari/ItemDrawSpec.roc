@@ -55,7 +55,7 @@ origin : Frame.Pose
 origin = { along: 0.0, across: 0.0, yaw: 0.0, hw: 2.0 }
 
 a_tower : TowerPlan.TowerItem
-a_tower = { map: Frame.chain_map(0), a0: 200.0, x0: 22.0, yaw: 0.0, fwd: 200.0, off: 0.0 }
+a_tower = { map: Frame.chain_map(0), along: 200.0, across: 22.0, yaw: 0.0, fwd: 200.0, beacon_offset: 0.0 }
 
 corner_got : List(F64)
 corner_got = {
@@ -67,7 +67,7 @@ corner_want : List(F64)
 corner_want = [194.0, 206.0, 14.0, 26.0]
 
 drawn : F64 -> I64
-drawn = |a0| ItemDraw.draw_one_tower(segs, chain, origin, { map: Frame.chain_map(0), a0: a0, x0: 22.0, yaw: 0.0, fwd: a0, off: 0.0 }, 500.0, 0.0).len().to_i64_wrap()
+drawn = |a0| ItemDraw.draw_one_tower(segs, chain, origin, { map: Frame.chain_map(0), along: a0, across: 22.0, yaw: 0.0, fwd: a0, beacon_offset: 0.0 }, 500.0, 0.0).len().to_i64_wrap()
 
 tower_got : List(Bool)
 tower_got = [(drawn(200.0) > 0), (drawn(1000.0) > 0), (drawn((0.0 - 100.0)) == 0)]
