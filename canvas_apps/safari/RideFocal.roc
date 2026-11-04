@@ -24,7 +24,7 @@ RideFocal :: [].{
 	ride_focal : List(World.Segment), Pose.RiderState -> F64
 	ride_focal = |w, s| (
 		{
-			lean_frac = DeviceMath.real_min((DeviceMath.real_abs(s.tilt) / Bike.max_lean), 1.0)
+			lean_frac = DeviceMath.real_min((DeviceMath.real_abs(s.tilt.to_radians()) / Bike.max_lean.to_radians()), 1.0)
 			attention = DeviceMath.real_max(cat_attention(w, s), Gaze.gaze_focus(s.focus))
 			Lens.cam_focal(lean_frac, attention)
 		}

@@ -4,6 +4,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Angle
 import lib.DeviceMath
 import Grade
 import LeanSearch
@@ -21,14 +22,14 @@ seg : World.Segment
 seg = World.segment_at(0)
 
 rider : F64, F64, F64, F64 -> Pose.RiderState
-rider = |along, across, v, tilt| { segment: 0, along: along, across: across, yaw: 0.0, v: v, tilt: tilt, heading: 0.0, gaze_yaw: 0.0, focus: 0.0 }
+rider = |along, across, v, tilt| { segment: 0, along: along, across: across, yaw: Angle.Turn.radians(0.0), v: v, tilt: Angle.Lean.radians(tilt), heading: Angle.Bearing.radians(0.0), gaze_yaw: Angle.Turn.radians(0.0), focus: 0.0 }
 
 step_got : List(Bool)
 step_got = (
 	{
 		d = Rider.decide(rider(0.0, 0.0, Pose.v_base, 0.0), seg)
 		held = Rider.decide(rider(0.0, 0.0, Pose.v_base, 0.5), seg)
-		[(DeviceMath.real_abs(d.tilt_step) <= LeanSearch.max_tilt_correction), (DeviceMath.real_abs(held.tilt_step) <= LeanSearch.max_tilt_correction), (d.accel <= (VehicleLimits.a_accel + F64.from_bits(4517329193108106637)))]
+		[(d.tilt_step.abs() <= LeanSearch.max_tilt_correction), (held.tilt_step.abs() <= LeanSearch.max_tilt_correction), (d.accel <= (VehicleLimits.a_accel + F64.from_bits(4517329193108106637)))]
 	}
 )
 
@@ -39,7 +40,7 @@ leaned_got : List(Bool)
 leaned_got = (
 	{
 		d = Rider.decide(rider(0.0, 0.0, Pose.v_base, 0.0), seg)
-		same = Throttle.get_forward_accel_decel(Pose.with_tilt(rider(0.0, 0.0, Pose.v_base, 0.0), (0.0 + d.tilt_step)), seg)
+		same = Throttle.get_forward_accel_decel(Pose.with_tilt(rider(0.0, 0.0, Pose.v_base, 0.0), Angle.upright.plus(d.tilt_step)), seg)
 		[(F64.to_bits(d.accel) == F64.to_bits(same))]
 	}
 )
@@ -48,19 +49,19 @@ leaned_want : List(Bool)
 leaned_want = [True]
 
 at_seam : Pose.RiderState
-at_seam = { segment: 0, along: 499.0, across: 0.5, yaw: 0.1, v: 1.25, tilt: 0.05, heading: 0.7, gaze_yaw: 0.3, focus: 0.4 }
+at_seam = { segment: 0, along: 499.0, across: 0.5, yaw: Angle.Turn.radians(0.1), v: 1.25, tilt: Angle.Lean.radians(0.05), heading: Angle.Bearing.radians(0.7), gaze_yaw: Angle.Turn.radians(0.3), focus: 0.4 }
 
 crossed : Pose.RiderState
 crossed = Rider.rider_state_for_next_segment(at_seam, segs)
 
 carry_got : List(F64)
-carry_got = [crossed.v, crossed.tilt, crossed.focus, crossed.gaze_yaw]
+carry_got = [crossed.v, crossed.tilt.to_radians(), crossed.focus, crossed.gaze_yaw.to_radians()]
 
 carry_want : List(F64)
 carry_want = [1.25, 0.05, 0.4, 0.0]
 
 turn_got : List(F64)
-turn_got = [(crossed.heading - 0.7), (crossed.yaw - (0.1 - seg.exit_angle))]
+turn_got = [(crossed.heading.to_radians() - 0.7), (crossed.yaw.to_radians() - (0.1 - seg.exit_angle))]
 
 turn_want : List(F64)
 turn_want = [0.0, 0.0]
@@ -108,7 +109,7 @@ is_route_end = |segment|
 	}
 
 ended : F64, F64 -> Pose.RiderState
-ended = |along, v| Rider.finish_clamp({ segment: 0, along: along, across: 0.0, yaw: 0.0, v: v, tilt: 0.0, heading: 0.0, gaze_yaw: 0.0, focus: 0.0 }, last_seg)
+ended = |along, v| Rider.finish_clamp({ segment: 0, along: along, across: 0.0, yaw: Angle.Turn.radians(0.0), v: v, tilt: Angle.Lean.radians(0.0), heading: Angle.Bearing.radians(0.0), gaze_yaw: Angle.Turn.radians(0.0), focus: 0.0 }, last_seg)
 
 finish_got : List(F64)
 finish_got = [ended(300.0, 0.5).along, ended(300.0, 0.5).v, ended(310.0, 0.5).along, ended(310.0, 0.5).v, ended(290.0, 0.05).along, ended(290.0, 0.05).v, ended(290.0, 0.5).along, ended(290.0, 0.5).v, ended(100.0, 0.05).along, ended(100.0, 0.05).v]
@@ -119,8 +120,8 @@ finish_want = [300.0, 0.0, 300.0, 0.0, 300.0, 0.0, 290.0, 0.5, 100.0, 0.05]
 done_got : List(Bool)
 done_got = (
 	{
-		at_end = { segment: 0, along: 300.0, across: 0.0, yaw: 0.0, v: 0.0, tilt: 0.0, heading: 0.0, gaze_yaw: 0.0, focus: 0.0 }
-		short = { segment: 0, along: 299.0, across: 0.0, yaw: 0.0, v: 0.0, tilt: 0.0, heading: 0.0, gaze_yaw: 0.0, focus: 0.0 }
+		at_end = { segment: 0, along: 300.0, across: 0.0, yaw: Angle.Turn.radians(0.0), v: 0.0, tilt: Angle.Lean.radians(0.0), heading: Angle.Bearing.radians(0.0), gaze_yaw: Angle.Turn.radians(0.0), focus: 0.0 }
+		short = { segment: 0, along: 299.0, across: 0.0, yaw: Angle.Turn.radians(0.0), v: 0.0, tilt: Angle.Lean.radians(0.0), heading: Angle.Bearing.radians(0.0), gaze_yaw: Angle.Turn.radians(0.0), focus: 0.0 }
 		[Rider.is_finished(at_end, [World.segment_at(18)]), Rider.is_finished(short, [World.segment_at(18)]), is_route_end(last_seg), Rider.is_finished(rider(499.0, 0.0, Pose.v_base, 0.0), segs)]
 	}
 )

@@ -1,5 +1,6 @@
 # Throttle -- originally emitted from Codex by rocemit; the Roc is the program now
 # and this file is edited here (safari/README.md).
+import Angle
 import Arc
 import Cat
 import lib.DeviceMath
@@ -12,8 +13,9 @@ import World
 
 Throttle :: [].{
 
-	tilt_hold : F64
-	tilt_hold = (2.0 * Trig.deg)
+	## The rider holds the throttle off while leaning this far or further.
+	tilt_hold : Angle.Lean
+	tilt_hold = Angle.Lean.radians(2.0 * Trig.deg)
 
 	corner_brake : Pose.RiderState, World.Segment, F64, F64 -> F64
 	corner_brake = |state, seg, v_end, a| (
@@ -156,7 +158,7 @@ Throttle :: [].{
 	get_forward_accel_decel = |state, seg| (
 		{
 			a0 = (
-				if (DeviceMath.real_abs(state.tilt) >= tilt_hold) {
+				if state.tilt.abs() >= tilt_hold {
 					0.0
 				} else {
 					VehicleLimits.a_accel

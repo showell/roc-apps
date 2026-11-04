@@ -1,6 +1,5 @@
 # Safari -- originally emitted from Codex by rocemit; the Roc is the program now
 # and this file is edited here (safari/README.md).
-import Angle
 import Frame
 import GroundPlan
 import ItemDraw
@@ -45,10 +44,9 @@ Safari :: [].{
 		{
 			s = r.rider
 			cf = RideFocal.ride_focal(w, s)
-			vy = ViewYaw.view_yaw_for(s)
 			pose = ViewYaw.pose_for(s)
 			ch = Frame.build_chain(w, s.segment)
-			List.join([Mountains.draw({ heading: Angle.Bearing.radians(s.heading + vy), dusk: Sky.sun_set_fraction(r.clock), cam_focal: cf, view_w: Screen.width }), GroundPlan.draw({ world: w, segment: s.segment, pose, cam_focal: cf, view_w: Screen.width }), ItemDraw.draw_order(w, ch, pose, Render.collect(w, s.segment, pose, cf, s.along, s.v, r.truck.pos), r.truck.braking, cf, r.clock, 0)])
+			List.join([Mountains.draw({ heading: ViewYaw.heading_for(s), dusk: Sky.sun_set_fraction(r.clock), cam_focal: cf, view_w: Screen.width }), GroundPlan.draw({ world: w, segment: s.segment, pose, cam_focal: cf, view_w: Screen.width }), ItemDraw.draw_order(w, ch, pose, Render.collect(w, s.segment, pose, cf, s.along, s.v, r.truck.pos), r.truck.braking, cf, r.clock, 0)])
 		}
 	)
 
@@ -56,7 +54,7 @@ Safari :: [].{
 	ride_sun = |w, r| (
 		{
 			cf = RideFocal.ride_focal(w, r.rider)
-			Sky.sun_pos(ViewYaw.heading_for(r.rider), r.clock, cf, Screen.width)
+			Sky.sun_pos(ViewYaw.heading_for(r.rider).to_radians(), r.clock, cf, Screen.width)
 		}
 	)
 }

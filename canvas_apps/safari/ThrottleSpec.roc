@@ -4,6 +4,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Angle
 import Arc
 import Grade
 import Pose
@@ -12,8 +13,12 @@ import lib.Trig
 import VehicleLimits
 import World
 
+## The lean the throttle holds off at, in radians.
+tilt_hold : F64
+tilt_hold = Throttle.tilt_hold.to_radians()
+
 fixed_got : List(F64)
-fixed_got = [Throttle.tilt_hold, Throttle.brake_decay, (Throttle.tilt_hold / Trig.deg)]
+fixed_got = [tilt_hold, Throttle.brake_decay, (tilt_hold / Trig.deg)]
 
 fixed_want : List(F64)
 fixed_want = [0.03490658503988659, 20.0, 2.0]
@@ -22,7 +27,7 @@ seg : World.Segment
 seg = World.segment_at(0)
 
 rider_at : F64, F64, F64, F64 -> Pose.RiderState
-rider_at = |across, along, v, tilt| { segment: 0, along: along, across: across, yaw: 0.0, v: v, tilt: tilt, heading: 0.0, gaze_yaw: 0.0, focus: 0.0 }
+rider_at = |across, along, v, tilt| { segment: 0, along: along, across: across, yaw: Angle.Turn.radians(0.0), v: v, tilt: Angle.Lean.radians(tilt), heading: Angle.Bearing.radians(0.0), gaze_yaw: Angle.Turn.radians(0.0), focus: 0.0 }
 
 rider : F64, F64, F64 -> Pose.RiderState
 rider = |along, v, tilt| rider_at(0.0, along, v, tilt)
@@ -101,13 +106,13 @@ wide : F64 -> F64
 wide = |tilt| Throttle.get_forward_accel_decel(rider_at(100.0, 0.0, 0.3, tilt), seg)
 
 tilt_got : List(F64)
-tilt_got = [wide((0.0 - 0.001)), wide((0.0 - Throttle.tilt_hold)), wide(((0.0 - Throttle.tilt_hold) - 0.5))]
+tilt_got = [wide((0.0 - 0.001)), wide((0.0 - tilt_hold)), wide(((0.0 - tilt_hold) - 0.5))]
 
 tilt_want : List(F64)
 tilt_want = [0.01, 0.0, 0.0]
 
 compose_got : List(Bool)
-compose_got = [(decide(0.0, 0.3, (Throttle.tilt_hold - 0.001)) < 0.0), (decide(0.0, 0.3, 0.001) > 0.0), (decide(0.0, 0.3, (0.0 - (Throttle.tilt_hold - 0.001))) < 0.0)]
+compose_got = [(decide(0.0, 0.3, (tilt_hold - 0.001)) < 0.0), (decide(0.0, 0.3, 0.001) > 0.0), (decide(0.0, 0.3, (0.0 - (tilt_hold - 0.001))) < 0.0)]
 
 compose_want : List(Bool)
 compose_want = [True, True, True]

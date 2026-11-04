@@ -4,6 +4,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Angle
 import Arc
 import Bike
 import Grade
@@ -22,7 +23,7 @@ steps_want : List(I64)
 steps_want = [2000]
 
 rider : F64, F64, F64 -> Pose.RiderState
-rider = |across, tilt, v| { segment: 0, along: 0.0, across: across, yaw: 0.0, v: v, tilt: tilt, heading: 0.0, gaze_yaw: 0.0, focus: 0.0 }
+rider = |across, tilt, v| { segment: 0, along: 0.0, across: across, yaw: Angle.Turn.radians(0.0), v: v, tilt: Angle.Lean.radians(tilt), heading: Angle.Bearing.radians(0.0), gaze_yaw: Angle.Turn.radians(0.0), focus: 0.0 }
 
 side : Arc.ArcOutcome -> I64
 side = |o| (match o.shoulder {
@@ -103,9 +104,9 @@ mirror_fwd_want = [0.0]
 step_got : List(F64)
 step_got = (
 	{
-		a = Bike.simulate_rider_step(rider(0.0, 0.0, Pose.v_base), 0.0, 0.0)
-		b = Bike.simulate_rider_step(rider(0.0, 0.0, Pose.v_base), 0.5, 0.25)
-		[a.across, a.yaw, a.heading, a.tilt, a.v, b.tilt, b.v, b.yaw, b.heading, Bike.yaw_per_tilt]
+		a = Bike.simulate_rider_step(rider(0.0, 0.0, Pose.v_base), { lean_step: Angle.upright, accel: 0.0 })
+		b = Bike.simulate_rider_step(rider(0.0, 0.0, Pose.v_base), { lean_step: Angle.Lean.radians(0.5), accel: 0.25 })
+		[a.across, a.yaw.to_radians(), a.heading.to_radians(), a.tilt.to_radians(), a.v, b.tilt.to_radians(), b.v, b.yaw.to_radians(), b.heading.to_radians(), Bike.yaw_per_tilt]
 	}
 )
 

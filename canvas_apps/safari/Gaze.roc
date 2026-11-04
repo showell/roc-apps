@@ -1,5 +1,7 @@
-# Gaze -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## Where the rider looks. A pig by the road catches the rider's eye: the gaze
+## swivels toward it, the rider slows to look, and the gaze eases back to the
+## road once the pig is behind.
+import Angle
 import lib.DeviceMath
 import Pigs
 import Pose
@@ -14,20 +16,20 @@ Gaze :: [].{
 	gaze_look_dist : F64
 	gaze_look_dist = 150.0
 
-	gaze_release_angle : F64
-	gaze_release_angle = (35.0 * Trig.deg)
+	gaze_release_angle : Angle.Turn
+	gaze_release_angle = Angle.Turn.radians(35.0 * Trig.deg)
 
-	gaze_swivel_rate : F64
-	gaze_swivel_rate = (4.0 * Trig.deg)
+	gaze_swivel_rate : Angle.Turn
+	gaze_swivel_rate = Angle.Turn.radians(4.0 * Trig.deg)
 
-	gaze_return_rate : F64
-	gaze_return_rate = (0.2 * Trig.deg)
+	gaze_return_rate : Angle.Turn
+	gaze_return_rate = Angle.Turn.radians(0.2 * Trig.deg)
 
 	gaze_return_ease : F64
 	gaze_return_ease = 0.05
 
-	gaze_return_snap : F64
-	gaze_return_snap = (0.02 * Trig.deg)
+	gaze_return_snap : Angle.Turn
+	gaze_return_snap = Angle.Turn.radians(0.02 * Trig.deg)
 
 	focus_decay : F64
 	focus_decay = 0.0012
@@ -38,8 +40,8 @@ Gaze :: [].{
 	pig_gaze_settle_dist : F64
 	pig_gaze_settle_dist = 25.0
 
-	eyes_on_road_yaw : F64
-	eyes_on_road_yaw = (6.0 * Trig.deg)
+	eyes_on_road_yaw : Angle.Turn
+	eyes_on_road_yaw = Angle.Turn.radians(6.0 * Trig.deg)
 
 	smoothstep : F64 -> F64
 	smoothstep = |t| ((t * t) * (3.0 - (2.0 * t)))
@@ -54,7 +56,7 @@ Gaze :: [].{
 	pig_ahead = |state, seg|
 		match seg.pig_attention {
 			Distracting =>
-				if (DeviceMath.real_abs(state.yaw) > eyes_on_road_yaw) {
+				if state.yaw.abs() > eyes_on_road_yaw {
 					no_look
 				} else {
 					pig_ahead_near(state, seg)
@@ -71,70 +73,75 @@ Gaze :: [].{
 				if (dist > gaze_look_dist) {
 					no_look
 				} else {
-					pig_ahead_bearing(state, pig, dist)
+					pig_in_sight(state, pig, dist)
 				}
 			)
 		}
 	)
 
-	pig_ahead_bearing : Pose.RiderState, Scenery.Critter, F64 -> Gaze.PigLook
-	pig_ahead_bearing = |state, pig, dist| (
-		{
-			bearing = (Trig.r_atan2((pig.across - state.across), dist) - state.yaw)
-			(
-				if (DeviceMath.real_abs(bearing) >= gaze_release_angle) {
-					no_look
-				} else {
-					{ looking: True, dist: dist }
-				}
-			)
-		}
-	)
-
-	desired_gaze : Pose.RiderState, World.Segment -> F64
-	desired_gaze = |state, seg| (
-		if (pig_ahead(state, seg).looking == False) {
-			0.0
+	## The pig `dist` ahead is in sight while it is less than the release
+	## angle from the way the bike points.
+	pig_in_sight : Pose.RiderState, Scenery.Critter, F64 -> Gaze.PigLook
+	pig_in_sight = |state, pig, dist| {
+		toward_pig = Angle.Turn.radians(Trig.r_atan2(pig.across - state.across, dist)).minus(state.yaw)
+		if toward_pig.abs() >= gaze_release_angle {
+			no_look
 		} else {
+			{ looking: True, dist }
+		}
+	}
+
+	## The turn the rider wants to look: toward the pig in sight, or
+	## straight ahead.
+	desired_gaze : Pose.RiderState, World.Segment -> Angle.Turn
+	desired_gaze = |state, seg|
+		if pig_ahead(state, seg).looking {
 			desired_gaze_at(state, Pigs.gaze_pig(seg.length))
-		}
-	)
-
-	desired_gaze_at : Pose.RiderState, Scenery.Critter -> F64
-	desired_gaze_at = |state, pig| (Trig.r_atan2((pig.across - state.across), (pig.along - state.along)) - state.yaw)
-
-	next_gaze_yaw : Pose.RiderState, F64 -> F64
-	next_gaze_yaw = |state, want| (
-		if ((F64.to_bits(want) == F64.to_bits(0.0)) == False) {
-			(state.gaze_yaw + DeviceMath.real_max((0.0 - gaze_swivel_rate), DeviceMath.real_min(gaze_swivel_rate, (want - state.gaze_yaw))))
 		} else {
-			(
-				if (DeviceMath.real_abs(state.gaze_yaw) <= gaze_return_snap) {
-					0.0
-				} else {
-					(state.gaze_yaw - (Trig.r_sign(state.gaze_yaw) * DeviceMath.real_min(gaze_return_rate, (DeviceMath.real_abs(state.gaze_yaw) * gaze_return_ease))))
-				}
-			)
+			Angle.straight_ahead
 		}
-	)
 
-	next_focus : Pose.RiderState, F64 -> F64
-	next_focus = |state, gaze_yaw| (
-		if (F64.to_bits(gaze_yaw) == F64.to_bits(0.0)) {
-			DeviceMath.real_max(0.0, (state.focus - focus_decay))
+	desired_gaze_at : Pose.RiderState, Scenery.Critter -> Angle.Turn
+	desired_gaze_at = |state, pig| Angle.Turn.radians(Trig.r_atan2(pig.across - state.across, pig.along - state.along)).minus(state.yaw)
+
+	## Whether a gaze is exactly the rest position: +0.0, which `desired_gaze`
+	## answers when there is nothing to look at.
+	is_at_rest : Angle.Turn -> Bool
+	is_at_rest = |gaze| F64.to_bits(gaze.to_radians()) == F64.to_bits(0.0)
+
+	## The gaze one step on. It swivels toward `want` at no more than the
+	## swivel rate; with nothing to look at it eases back toward the road,
+	## and snaps there once it is close.
+	next_gaze_yaw : Pose.RiderState, Angle.Turn -> Angle.Turn
+	next_gaze_yaw = |state, want| {
+		gaze = state.gaze_yaw
+		if !is_at_rest(want) {
+			gaze.plus(want.minus(gaze).within(gaze_swivel_rate))
+		} else if gaze.abs() <= gaze_return_snap {
+			Angle.straight_ahead
 		} else {
-			DeviceMath.real_max(state.focus, DeviceMath.real_min((DeviceMath.real_abs(gaze_yaw) / gaze_release_angle), 1.0))
+			easing = gaze_return_rate.min(gaze.abs().times(gaze_return_ease))
+			direction = Trig.r_sign(gaze.to_radians())
+			gaze.minus(easing.times(direction))
 		}
-	)
+	}
+
+	## The rider's focus after the gaze moves to `gaze_yaw`: it fades while
+	## the gaze rests, and rises with how far the gaze has turned.
+	next_focus : Pose.RiderState, Angle.Turn -> F64
+	next_focus = |state, gaze_yaw|
+		if is_at_rest(gaze_yaw) {
+			DeviceMath.real_max(0.0, state.focus - focus_decay)
+		} else {
+			DeviceMath.real_max(state.focus, DeviceMath.real_min(gaze_yaw.abs().fraction_of(gaze_release_angle), 1.0))
+		}
 
 	next_rider_gaze : Pose.RiderState, List(World.Segment) -> Pose.RiderState
-	next_rider_gaze = |state, segs| (
-		{
-			want = desired_gaze(state, (List.get(segs, I64.to_u64_wrap(state.segment)) ?? crash ("list-at out of range")))
-			gy = next_gaze_yaw(state, want)
-			{ segment: state.segment, along: state.along, across: state.across, yaw: state.yaw, v: state.v, tilt: state.tilt, heading: state.heading, gaze_yaw: gy, focus: next_focus(state, gy) }
-		}
-	)
+	next_rider_gaze = |state, segs| {
+		seg = segs.get(state.segment.to_u64_wrap()) ?? crash "Gaze.next_rider_gaze: the rider's segment is on the route"
+		gaze_yaw = next_gaze_yaw(state, desired_gaze(state, seg))
+		{ ..state, gaze_yaw, focus: next_focus(state, gaze_yaw) }
+	}
 
 	gawk_engaged : Pose.RiderState, World.Segment -> Bool
 	gawk_engaged = |state, seg|

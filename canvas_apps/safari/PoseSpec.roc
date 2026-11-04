@@ -4,17 +4,21 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Angle
 import Grade
 import Pose
 
 probe : Pose.RiderState
-probe = { segment: 7, along: 11.0, across: 2.5, yaw: 0.75, v: 3.25, tilt: 0.125, heading: 4.5, gaze_yaw: 0.375, focus: 6.75 }
+probe = { segment: 7, along: 11.0, across: 2.5, yaw: Angle.Turn.radians(0.75), v: 3.25, tilt: Angle.Lean.radians(0.125), heading: Angle.Bearing.radians(4.5), gaze_yaw: Angle.Turn.radians(0.375), focus: 6.75 }
 
-new_tilt : F64
-new_tilt = 9.5
+new_tilt : Angle.Lean
+new_tilt = Angle.Lean.radians(9.5)
+
+leaned_once : Pose.RiderState
+leaned_once = Pose.with_tilt(probe, Angle.Lean.radians(1.5))
 
 reals : Pose.RiderState -> List(F64)
-reals = |s| [s.along, s.across, s.yaw, s.v, s.tilt, s.heading, s.gaze_yaw, s.focus]
+reals = |s| [s.along, s.across, s.yaw.to_radians(), s.v, s.tilt.to_radians(), s.heading.to_radians(), s.gaze_yaw.to_radians(), s.focus]
 
 seg : Pose.RiderState -> List(I64)
 seg = |s| [s.segment]
@@ -62,7 +66,7 @@ main! = |_args| {
 		}),
 		Grade.reals({
 			name: "p-twice ",
-			got: reals(Pose.with_tilt(Pose.with_tilt(probe, 1.5), new_tilt)),
+			got: reals(Pose.with_tilt(leaned_once, new_tilt)),
 			want: twice_want,
 			tol: 0.0,
 		}),

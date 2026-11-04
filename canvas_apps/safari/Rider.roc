@@ -1,5 +1,7 @@
-# Rider -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## The rider's decisions and one step of the ride: how far to lean and how
+## hard to accelerate, then the move, the crossing onto the next segment, the
+## stop at the route's end, and where the rider looks.
+import Angle
 import Bike
 import lib.DeviceMath
 import Gaze
@@ -12,15 +14,15 @@ import VehicleLimits
 import World
 
 Rider :: [].{
-	Decision : { tilt_step : F64, accel : F64 }
+	Decision : { tilt_step : Angle.Lean, accel : F64 }
 
+	## The lean toward the best line, and the throttle for the bike once
+	## it leans so.
 	decide : Pose.RiderState, World.Segment -> Rider.Decision
-	decide = |state, seg| (
-		{
-			tilt_step = (LeanSearch.best_tilt_correction(state) - state.tilt)
-			{ tilt_step: tilt_step, accel: Throttle.get_forward_accel_decel(Pose.with_tilt(state, (state.tilt + tilt_step)), seg) }
-		}
-	)
+	decide = |state, seg| {
+		tilt_step = LeanSearch.best_tilt_correction(state).minus(state.tilt)
+		{ tilt_step, accel: Throttle.get_forward_accel_decel(Pose.with_tilt(state, state.tilt.plus(tilt_step)), seg) }
+	}
 
 	rider_state_for_next_segment : Pose.RiderState, List(World.Segment) -> Pose.RiderState
 	rider_state_for_next_segment = |rs, segs| (
@@ -44,7 +46,14 @@ Rider :: [].{
 			s = Trig.r_sin(theta)
 			da = (rs.along - (seg.length + (hw * s)))
 			dx = (rs.across - ((sgn * hw) * (1.0 - c)))
-			{ segment: next, along: ((c * da) + ((sgn * s) * dx)), across: ((((0.0 - sgn) * s) * da) + (c * dx)), yaw: (rs.yaw - (sgn * theta)), v: rs.v, tilt: rs.tilt, heading: rs.heading, gaze_yaw: 0.0, focus: rs.focus }
+			{
+				..rs,
+				segment: next,
+				along: ((c * da) + ((sgn * s) * dx)),
+				across: ((((0.0 - sgn) * s) * da) + (c * dx)),
+				yaw: rs.yaw.minus(Angle.Turn.radians(sgn * theta)),
+				gaze_yaw: Angle.straight_ahead,
+			}
 		}
 	)
 
@@ -75,7 +84,7 @@ Rider :: [].{
 	)
 
 	stopped_at : Pose.RiderState, F64 -> Pose.RiderState
-	stopped_at = |s, at| { segment: s.segment, along: at, across: s.across, yaw: s.yaw, v: 0.0, tilt: s.tilt, heading: s.heading, gaze_yaw: s.gaze_yaw, focus: s.focus }
+	stopped_at = |s, at| { ..s, along: at, v: 0.0 }
 
 	resolve_cross : Pose.RiderState, List(World.Segment) -> Pose.RiderState
 	resolve_cross = |moved, segs| (
@@ -96,7 +105,7 @@ Rider :: [].{
 		{
 			seg = (List.get(segs, I64.to_u64_wrap(state.segment)) ?? crash ("list-at out of range"))
 			dec = decide(state, seg)
-			moved = Bike.simulate_rider_step(state, dec.tilt_step, dec.accel)
+			moved = Bike.simulate_rider_step(state, { lean_step: dec.tilt_step, accel: dec.accel })
 			resolved =
 				match seg.ending {
 					Continues(_) => resolve_cross(moved, segs)

@@ -4,6 +4,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Angle
 import Grade
 import Paint
 import Rider
@@ -78,7 +79,7 @@ order_want : List(Bool)
 order_want = [True, True, True]
 
 done : Safari.Ride
-done = { rider: { segment: 18, along: 400.0, across: 0.0, yaw: 0.0, v: 0.0, tilt: 0.0, heading: 0.0, gaze_yaw: 0.0, focus: 0.9 }, truck: { pos: 9000.0, v: 2.0, braking: True }, clock: 12345.0 }
+done = { rider: { segment: 18, along: 400.0, across: 0.0, yaw: Angle.Turn.radians(0.0), v: 0.0, tilt: Angle.Lean.radians(0.0), heading: Angle.Bearing.radians(0.0), gaze_yaw: Angle.Turn.radians(0.0), focus: 0.9 }, truck: { pos: 9000.0, v: 2.0, braking: True }, clock: 12345.0 }
 
 restart_got : List(F64)
 restart_got = (

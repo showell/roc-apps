@@ -4,6 +4,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Angle
 import CanvasRoll
 import Grade
 import Pose
@@ -21,7 +22,7 @@ roll_want : List(F64)
 roll_want = [0.0, 0.0, 0.0, 0.0, 0.0, 0.001, (-0.001), 0.002, (-0.002), 0.35, (-0.42)]
 
 as_rider : F64 -> Pose.RiderState
-as_rider = |t| { segment: 0, along: 0.0, across: 0.0, yaw: 0.0, v: 0.3, tilt: t, heading: 0.0, gaze_yaw: 0.0, focus: 0.0 }
+as_rider = |t| { segment: 0, along: 0.0, across: 0.0, yaw: Angle.Turn.radians(0.0), v: 0.3, tilt: Angle.Lean.radians(t), heading: Angle.Bearing.radians(0.0), gaze_yaw: Angle.Turn.radians(0.0), focus: 0.0 }
 
 # roll_walk builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 roll_walk : I64 -> List(F64)

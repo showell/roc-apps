@@ -4,6 +4,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Angle
 import Bike
 import lib.DeviceMath
 import Gaze
@@ -16,8 +17,12 @@ import World
 segs : List(World.Segment)
 segs = [World.segment_at(0), World.segment_at(1), World.segment_at(2)]
 
+## The bike's greatest lean, in radians.
+max_lean : F64
+max_lean = Bike.max_lean.to_radians()
+
 rider : I64, F64, F64, F64 -> Pose.RiderState
-rider = |segment, along, tilt, focus| { segment: segment, along: along, across: 0.0, yaw: 0.0, v: Pose.v_base, tilt: tilt, heading: 0.0, gaze_yaw: 0.0, focus: focus }
+rider = |segment, along, tilt, focus| { segment: segment, along: along, across: 0.0, yaw: Angle.Turn.radians(0.0), v: Pose.v_base, tilt: Angle.Lean.radians(tilt), heading: Angle.Bearing.radians(0.0), gaze_yaw: Angle.Turn.radians(0.0), focus: focus }
 
 has_cat_got : List(Bool)
 has_cat_got = segs.take_first(2).map(has_cat)
@@ -43,13 +48,13 @@ leaned : F64 -> F64
 leaned = |tilt| RideFocal.ride_focal(segs, rider(0, 0.0, tilt, 0.0))
 
 lean_got : List(Bool)
-lean_got = [(leaned((Bike.max_lean / 2.0)) < leaned(0.0)), (leaned(Bike.max_lean) < leaned((Bike.max_lean / 2.0))), (leaned((0.0 - Bike.max_lean)) < leaned(0.0)), (leaned(0.0) <= Lens.focal)]
+lean_got = [(leaned((max_lean / 2.0)) < leaned(0.0)), (leaned(max_lean) < leaned((max_lean / 2.0))), (leaned((0.0 - max_lean)) < leaned(0.0)), (leaned(0.0) <= Lens.focal)]
 
 lean_want : List(Bool)
 lean_want = [True, True, True, True]
 
 clamp_got : List(F64)
-clamp_got = [(leaned(Bike.max_lean) - leaned((0.0 - Bike.max_lean))), (leaned((Bike.max_lean * 2.0)) - leaned(Bike.max_lean)), (leaned((Bike.max_lean * 10.0)) - leaned(Bike.max_lean))]
+clamp_got = [(leaned(max_lean) - leaned((0.0 - max_lean))), (leaned((max_lean * 2.0)) - leaned(max_lean)), (leaned((max_lean * 10.0)) - leaned(max_lean))]
 
 clamp_want : List(F64)
 clamp_want = [0.0, 0.0, 0.0]
@@ -67,10 +72,10 @@ gaze_want : List(Bool)
 gaze_want = [True, True, True]
 
 both : F64
-both = RideFocal.ride_focal(segs, rider(0, 0.0, Bike.max_lean, 1.0))
+both = RideFocal.ride_focal(segs, rider(0, 0.0, max_lean, 1.0))
 
 lean_only : F64
-lean_only = RideFocal.ride_focal(segs, rider(0, 0.0, Bike.max_lean, 0.0))
+lean_only = RideFocal.ride_focal(segs, rider(0, 0.0, max_lean, 0.0))
 
 gaze_only : F64
 gaze_only = RideFocal.ride_focal(segs, rider(0, 0.0, 0.0, 1.0))

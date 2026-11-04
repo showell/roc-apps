@@ -1,5 +1,6 @@
 # Arc -- originally emitted from Codex by rocemit; the Roc is the program now
 # and this file is edited here (safari/README.md).
+import Angle
 import Bike
 import lib.DeviceMath
 import Pose
@@ -27,7 +28,7 @@ Arc :: [].{
 		if (i >= turn_danger_steps) {
 			{ shoulder: ShoulderNone, forward: (phys.along - start_along), crossed: crossed, end_across: phys.across, frames: no_frames }
 		} else {
-			sim_step(start, left_bound, right_bound, start_side, start_along, crossed, i, Bike.simulate_rider_step(phys, 0.0, 0.0))
+			sim_step(start, left_bound, right_bound, start_side, start_along, crossed, i, Bike.simulate_rider_step(phys, { lean_step: Angle.upright, accel: 0.0 }))
 		}
 	)
 

@@ -11,7 +11,7 @@ CanvasRoll :: [].{
 	rider_roll : Pose.RiderState -> F64
 	rider_roll = |s| (
 		{
-			t = s.tilt
+			t = s.tilt.to_radians()
 			(
 				if (DeviceMath.real_abs(t) < roll_deadband) {
 					0.0

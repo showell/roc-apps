@@ -1,5 +1,6 @@
-# LeanSearch -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## How far the rider leans. A bisection over leans near the current one
+## finds the lean whose coasting arc ends nearest the line the rider wants.
+import Angle
 import Arc
 import lib.DeviceMath
 import Pose
@@ -35,30 +36,37 @@ LeanSearch :: [].{
 		}
 	)
 
-	max_tilt_correction : F64
-	max_tilt_correction = (1.0 * Trig.deg)
+	## The most the lean changes in one step.
+	max_tilt_correction : Angle.Lean
+	max_tilt_correction = Angle.Lean.radians(1.0 * Trig.deg)
 
 	lean_search_iters : I64
 	lean_search_iters = 12
 
-	search_lean : Pose.RiderState, F64, F64, F64, I64 -> F64
-	search_lean = |state, target, lo, hi, i| (
-		if (i >= lean_search_iters) {
-			((lo + hi) / 2.0)
+	## The lean between `low` and `high` whose arc ends nearest `target`
+	## across the road, after the bisection's remaining steps from `at`.
+	search_lean_from : Pose.RiderState, { target : F64, low : Angle.Lean, high : Angle.Lean, at : I64 } -> Angle.Lean
+	search_lean_from = |state, { target, low, high, at }| {
+		mid = low.halfway_to(high)
+		if at >= lean_search_iters {
+			mid
+		} else if want_more_right(Arc.project_arc(Pose.with_tilt(state, mid)), target) {
+			search_lean_from(state, { target, low: mid, high, at: at + 1 })
 		} else {
-			search_step(state, target, lo, hi, i, ((lo + hi) / 2.0))
+			search_lean_from(state, { target, low, high: mid, at: at + 1 })
 		}
-	)
+	}
 
-	search_step : Pose.RiderState, F64, F64, F64, I64, F64 -> F64
-	search_step = |state, target, lo, hi, i, mid| (
-		if want_more_right(Arc.project_arc(Pose.with_tilt(state, mid)), target) {
-			search_lean(state, target, mid, hi, (i + 1))
-		} else {
-			search_lean(state, target, lo, mid, (i + 1))
-		}
-	)
-
-	best_tilt_correction : Pose.RiderState -> F64
-	best_tilt_correction = |state| search_lean(state, lean_target(state.across), (state.tilt - max_tilt_correction), (state.tilt + max_tilt_correction), 0)
+	## The lean for the next step: within the most one step can change it.
+	best_tilt_correction : Pose.RiderState -> Angle.Lean
+	best_tilt_correction = |state|
+		search_lean_from(
+			state,
+			{
+				target: lean_target(state.across),
+				low: state.tilt.minus(max_tilt_correction),
+				high: state.tilt.plus(max_tilt_correction),
+				at: 0,
+			},
+		)
 }
