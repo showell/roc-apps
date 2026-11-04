@@ -1,5 +1,9 @@
-# Critter -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## Critter draws a still, a picture made of polygons, standing on screen.
+## A still is drawn in a unit frame: its feet at the origin, y up, and its
+## height 1. Critter scales it to its height in pixels, stands it on its feet,
+## and mirrors it when asked. A critter in view is drawn from the emoji still
+## for its codepoint.
+import Billboards
 import Camera
 import EmojiStills
 import Paint
@@ -7,111 +11,122 @@ import Stills
 
 Critter :: [].{
 
-	map_p : Camera.ScreenPt, F64, F64, F64, F64 -> Camera.ScreenPt
-	map_p = |b, s, ht, x, y| { x: (b.x + ((s * x) * ht)), y: (b.y - (y * ht)) }
+	## Which way a still is drawn: as its polygons are, or mirrored left to
+	## right.
+	Flip : [AsDrawn, Mirrored]
 
-	facing : Bool -> F64
-	facing = |face_right| (
-		if face_right {
-			(0.0 - 1.0)
-		} else {
-			1.0
+	## Where a still stands on screen: its feet, which way it is drawn, and
+	## its height in pixels.
+	Anchor : {
+		feet : Camera.ScreenPt,
+		flip : Critter.Flip,
+		height_px : F64,
+	}
+
+	## A polygon with more points than this is not drawn.
+	max_still_points : U64
+	max_still_points = 512
+
+	## The sign that a still's x is multiplied by.
+	x_sign : Critter.Flip -> F64
+	x_sign = |flip|
+		match flip {
+			AsDrawn => 1.0
+			Mirrored => (0.0 - 1.0)
 		}
-	)
 
-	# mapped_pts builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	mapped_pts : Camera.ScreenPt, F64, F64, List(Stills.StillPt) -> List(Camera.ScreenPt)
-	mapped_pts = |b, s, ht, ps| mapped_pts_onto(b, s, ht, ps, 0, [])
+	## Where a point of the still lands on screen.
+	screen_point : Critter.Anchor, Stills.StillPt -> Camera.ScreenPt
+	screen_point = |anchor, point| {
+		x: (anchor.feet.x + ((x_sign(anchor.flip) * point.x) * anchor.height_px)),
+		y: (anchor.feet.y - (point.y * anchor.height_px)),
+	}
 
-	mapped_pts_onto : Camera.ScreenPt, F64, F64, List(Stills.StillPt), I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
-	mapped_pts_onto = |b, s, ht, ps, i, acc| (
-		if (i >= ps.len().to_i64_wrap()) {
-			acc
-		} else {
-			mapped_pts_onto(b, s, ht, ps, (i + 1), List.append(acc, map_p(b, s, ht, (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).y)))
-		}
-	)
+	## How far, and which way, a step in the still goes on screen.
+	screen_vector : Critter.Anchor, Stills.StillPt -> Camera.ScreenPt
+	screen_vector = |anchor, step| {
+		x: ((x_sign(anchor.flip) * step.x) * anchor.height_px),
+		y: (0.0 - (step.y * anchor.height_px)),
+	}
 
-	max_critter_pts : I64
-	max_critter_pts = 512
+	screen_points : Critter.Anchor, List(Stills.StillPt) -> List(Camera.ScreenPt)
+	screen_points = |anchor, points| points.map(|point| Critter.screen_point(anchor, point))
 
-	map_v : F64, F64, F64, F64 -> Camera.ScreenPt
-	map_v = |s, ht, x, y| { x: ((s * x) * ht), y: (0.0 - (y * ht)) }
-
-	critter_poly : Camera.ScreenPt, F64, F64, Stills.StillPoly -> List(Paint.DrawCmd)
-	critter_poly = |b, s, ht, poly| (
-		if (poly.pts.len().to_i64_wrap() > max_critter_pts) {
+	## One polygon of a still, filled with its colour or its gradient.
+	draw_poly : Critter.Anchor, Stills.StillPoly -> List(Paint.DrawCmd)
+	draw_poly = |anchor, poly|
+		if (poly.pts.len() > max_still_points) {
 			[]
 		} else {
-			(
-				if (poly.grad.len().to_i64_wrap() > 0) {
-					critter_grad(b, s, ht, poly, (List.get(poly.grad, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")))
-				} else {
-					Paint.push_poly(poly.color, mapped_pts(b, s, ht, poly.pts))
-				}
-			)
+			points = Critter.screen_points(anchor, poly.pts)
+			match poly.grad.first() {
+				Ok(gradient) => draw_gradient_poly(anchor, { gradient, points })
+				Err(ListWasEmpty) => Paint.push_poly(poly.color, points)
+			}
 		}
-	)
 
-	critter_grad : Camera.ScreenPt, F64, F64, Stills.StillPoly, Stills.StillGrad -> List(Paint.DrawCmd)
-	critter_grad = |b, s, ht, poly, g| (
-		{
-			pts = mapped_pts(b, s, ht, poly.pts)
-			(
-				if (g.kind == 1) {
-					critter_linear(b, s, ht, g, pts)
-				} else {
-					critter_radial(b, s, ht, g, pts)
-				}
-			)
-		}
-	)
+	## A whole still, its polygons in order.
+	draw_still : Critter.Anchor, List(Stills.StillPoly) -> List(Paint.DrawCmd)
+	draw_still = |anchor, polys| polys.join_map(|poly| Critter.draw_poly(anchor, poly))
 
-	critter_linear : Camera.ScreenPt, F64, F64, Stills.StillGrad, List(Camera.ScreenPt) -> List(Paint.DrawCmd)
-	critter_linear = |b, s, ht, g, pts| (
-		{
-			p0 = map_p(b, s, ht, g.ax, g.ay)
-			p1 = map_p(b, s, ht, g.bx, g.by)
-			Paint.push_linear_grad_poly(g.rgba0, g.rgba1, g.off0, g.off1, p0.x, p0.y, p1.x, p1.y, pts)
-		}
-	)
-
-	critter_radial : Camera.ScreenPt, F64, F64, Stills.StillGrad, List(Camera.ScreenPt) -> List(Paint.DrawCmd)
-	critter_radial = |b, s, ht, g, pts| (
-		{
-			c = map_p(b, s, ht, g.cx, g.cy)
-			u = map_v(s, ht, g.ux, g.uy)
-			v = map_v(s, ht, g.vx, g.vy)
-			Paint.push_radial_grad_poly(g.rgba0, g.rgba1, g.off0, g.off1, c.x, c.y, u.x, u.y, v.x, v.y, pts)
-		}
-	)
-
-	# critter_polys builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	critter_polys : Camera.ScreenPt, F64, F64, List(Stills.StillPoly) -> List(Paint.DrawCmd)
-	critter_polys = |b, s, ht, ps| critter_polys_onto(b, s, ht, ps, 0, [])
-
-	critter_polys_onto : Camera.ScreenPt, F64, F64, List(Stills.StillPoly), I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
-	critter_polys_onto = |b, s, ht, ps, i, acc| (
-		if (i >= ps.len().to_i64_wrap()) {
-			acc
+	## A critter in view. An emoji faces left, so a critter facing right is
+	## its still mirrored. A critter less than a pixel tall isn't drawn.
+	draw : Billboards.Billboard, { cam_focal : F64, view_w : F64 } -> List(Paint.DrawCmd)
+	draw = |critter, { cam_focal, view_w }| {
+		on_screen = |height| Camera.project({ right: critter.right, forward: critter.forward, height }, cam_focal, view_w)
+		feet = on_screen(0.0)
+		height_px = (feet.y - on_screen(critter.height).y)
+		if (height_px < 1.0) {
+			[]
 		} else {
-			critter_polys_onto(b, s, ht, ps, (i + 1), List.concat(acc, critter_poly(b, s, ht, (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
-		}
-	)
-
-	critter_draw : F64, F64, F64, I64, Bool, F64, F64 -> List(Paint.DrawCmd)
-	critter_draw = |right, forward, height, cp, face_right, cf, view_w| (
-		{
-			base = Camera.project({ right: right, forward: forward, height: 0.0 }, cf, view_w)
-			top = Camera.project({ right: right, forward: forward, height: height }, cf, view_w)
-			h = (base.y - top.y)
-			(
-				if (h < 1.0) {
-					[]
-				} else {
-					critter_polys(base, facing(face_right), h, EmojiStills.emoji_polys_for(cp))
+			flip =
+				match critter.facing {
+					FacesLeft => AsDrawn
+					FacesRight => Mirrored
 				}
+			Critter.draw_still({ feet, flip, height_px }, EmojiStills.emoji_polys_for(critter.codepoint))
+		}
+	}
+}
+
+## A still's gradient is linear when its kind is 1, and radial otherwise.
+gradient_shape : Stills.StillGrad -> [Linear, Radial]
+gradient_shape = |gradient| if (gradient.kind == 1) Linear else Radial
+
+draw_gradient_poly : Critter.Anchor, { gradient : Stills.StillGrad, points : List(Camera.ScreenPt) } -> List(Paint.DrawCmd)
+draw_gradient_poly = |anchor, { gradient, points }|
+	match gradient_shape(gradient) {
+		Linear => {
+			start = Critter.screen_point(anchor, { x: gradient.ax, y: gradient.ay })
+			stop = Critter.screen_point(anchor, { x: gradient.bx, y: gradient.by })
+			Paint.push_linear_grad_poly(
+				gradient.rgba0,
+				gradient.rgba1,
+				gradient.off0,
+				gradient.off1,
+				start.x,
+				start.y,
+				stop.x,
+				stop.y,
+				points,
 			)
 		}
-	)
-}
+		Radial => {
+			center = Critter.screen_point(anchor, { x: gradient.cx, y: gradient.cy })
+			u = Critter.screen_vector(anchor, { x: gradient.ux, y: gradient.uy })
+			v = Critter.screen_vector(anchor, { x: gradient.vx, y: gradient.vy })
+			Paint.push_radial_grad_poly(
+				gradient.rgba0,
+				gradient.rgba1,
+				gradient.off0,
+				gradient.off1,
+				center.x,
+				center.y,
+				u.x,
+				u.y,
+				v.x,
+				v.y,
+				points,
+			)
+		}
+	}

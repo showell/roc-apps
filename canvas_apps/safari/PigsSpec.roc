@@ -1,5 +1,5 @@
-# PigsSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are Pigs' checks: the pig that catches the rider's eye, the big
+## herd's size and places, and the two rows.
 app [main!] {
 	lib: "../lib/main.roc",
 }
@@ -9,7 +9,7 @@ import Pigs
 import Scenery
 
 gaze : Scenery.Critter
-gaze = Pigs.gaze_pig(1000.0, 2.0)
+gaze = Pigs.gaze_pig(1000.0)
 
 gaze_got : List(F64)
 gaze_got = [gaze.along, gaze.across, gaze.height, Pigs.pig_height, Pigs.pig_dist_before_end, Pigs.gaze_pig_along_offset]
@@ -18,7 +18,7 @@ gaze_got_want : List(F64)
 gaze_got_want = [942.0, 12.0, 1.1, 1.1, 60.0, 2.0]
 
 gaze_kind_got : List(I64)
-gaze_kind_got = [gaze.codepoint, Pigs.pig_cp, Pigs.pig_novelty_count, Pigs.big_herd_cols, Pigs.big_herd_rows]
+gaze_kind_got = [gaze.codepoint, Pigs.pig_codepoint, Pigs.pig_novelty_count, Pigs.big_herd_cols, Pigs.big_herd_rows]
 
 gaze_kind_want : List(I64)
 gaze_kind_want = [128022, 128022, 2, 7, 7]
@@ -32,32 +32,33 @@ gaze_face_want = [False]
 herd : List(Scenery.Critter)
 herd = Pigs.fill_pig_herd(1000.0)
 
+herd_pig_at : U64 -> Scenery.Critter
+herd_pig_at = |i| herd.get(i) ?? crash "PigsSpec: the big herd has 49 pigs"
+
 herd_count_got : List(I64)
 herd_count_got = [herd.len().to_i64_wrap(), Pigs.fill_pig_herd(500.0).len().to_i64_wrap()]
 
 herd_count_want : List(I64)
 herd_count_want = [49, 49]
 
-along_of : I64, I64 -> F64
-along_of = |r, c| (List.get(herd, I64.to_u64_wrap(((r * 7) + c))) ?? crash ("list-at out of range")).along
-
-row_alongs : I64 -> List(F64)
-row_alongs = |r| [along_of(r, 0), along_of(r, 1), along_of(r, 2), along_of(r, 3), along_of(r, 4), along_of(r, 5), along_of(r, 6)]
+## Where each pig of the herd's row `row` is along the road.
+row_alongs : U64 -> List(F64)
+row_alongs = |row| [0, 1, 2, 3, 4, 5, 6].map(|column| herd_pig_at(((row * 7) + column)).along)
 
 herd_along_got : List(F64)
-herd_along_got = List.join([row_alongs(0), row_alongs(3), row_alongs(6)])
+herd_along_got = [0, 3, 6].join_map(row_alongs)
 
 herd_along_want : List(F64)
 herd_along_want = [934.0, 938.0, 942.0, 946.0, 950.0, 954.0, 958.0, 952.0, 956.0, 960.0, 964.0, 968.0, 972.0, 976.0, 970.0, 974.0, 978.0, 982.0, 986.0, 990.0, 994.0]
 
 herd_across_got : List(F64)
-herd_across_got = [(List.get(herd, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(6)) ?? crash ("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(7)) ?? crash ("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(13)) ?? crash ("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(14)) ?? crash ("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(21)) ?? crash ("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(28)) ?? crash ("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(35)) ?? crash ("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(42)) ?? crash ("list-at out of range")).across, (List.get(herd, I64.to_u64_wrap(48)) ?? crash ("list-at out of range")).across]
+herd_across_got = [0, 6, 7, 13, 14, 21, 28, 35, 42, 48].map(|i| herd_pig_at(i).across)
 
 herd_across_want : List(F64)
 herd_across_want = [12.0, 12.0, 18.0, 18.0, 24.0, 30.0, 36.0, 42.0, 48.0, 48.0]
 
 herd_kind_got : List(I64)
-herd_kind_got = [(List.get(herd, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).codepoint, (List.get(herd, I64.to_u64_wrap(48)) ?? crash ("list-at out of range")).codepoint]
+herd_kind_got = [herd_pig_at(0).codepoint, herd_pig_at(48).codepoint]
 
 herd_kind_want : List(I64)
 herd_kind_want = [128022, 128022]
@@ -72,28 +73,33 @@ row_count_want : List(I64)
 row_count_want = [10, 4, 6]
 
 row_along_got : List(F64)
-row_along_got = row.map(lam_0)
+row_along_got = row.map(|pig| pig.along)
 
 row_along_want : List(F64)
 row_along_want = [934.0, 938.0, 942.0, 946.0, 930.0, 934.0, 938.0, 942.0, 946.0, 950.0]
 
 row_across_got : List(F64)
-row_across_got = row.map(lam_1)
+row_across_got = row.map(|pig| pig.across)
 
 row_across_want : List(F64)
 row_across_want = [12.0, 12.0, 12.0, 12.0, 18.0, 18.0, 18.0, 18.0, 18.0, 18.0]
 
 offsets_got : List(F64)
-offsets_got = List.join([Pigs.pig_row_front, Pigs.pig_row_back, [Pigs.pig_back_row_offset, Pigs.pig_herd_first_col, Pigs.pig_col_spacing, Pigs.pig_row_depth, Pigs.pig_jitter_along, Pigs.pig_jitter_across]])
+offsets_got = List.join([
+	Pigs.pig_row_front,
+	Pigs.pig_row_back,
+	[
+		Pigs.pig_back_row_offset,
+		Pigs.pig_herd_first_col,
+		Pigs.pig_col_spacing,
+		Pigs.pig_row_depth,
+		Pigs.pig_jitter_along,
+		Pigs.pig_jitter_across,
+	],
+])
 
 offsets_want : List(F64)
 offsets_want = [(-6.0), (-2.0), 2.0, 6.0, (-10.0), (-6.0), (-2.0), 2.0, 6.0, 10.0, 6.0, (-6.0), 4.0, 6.0, 1.2, 1.0]
-
-lam_0 : Scenery.Critter -> F64
-lam_0 = |p| p.along
-
-lam_1 : Scenery.Critter -> F64
-lam_1 = |p| p.across
 
 # --- Entry ---
 

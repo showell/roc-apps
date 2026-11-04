@@ -1,16 +1,17 @@
-# Herd -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## A herd of cows grazes on the left of the road, in columns of three that
+## run back from it, each cow a little out of line. A bull may stand in
+## front of the herd, by the trees.
 import Scenery
 import Trees
 import lib.Trig
 
 Herd :: [].{
 
-	bull_cp : I64
-	bull_cp = 128002
+	bull_codepoint : I64
+	bull_codepoint = 128002
 
-	cow_cp : I64
-	cow_cp = 128004
+	cow_codepoint : I64
+	cow_codepoint = 128004
 
 	cow_height : F64
 	cow_height = 1.4
@@ -21,74 +22,83 @@ Herd :: [].{
 	bull_height : F64
 	bull_height = (cow_height * 1.15)
 
+	## How far along its segment the bull stands.
 	bull_dist : F64
 	bull_dist = 24.0
 
+	## The gap between the bull's side and the trees.
 	bull_tree_gap : F64
 	bull_tree_gap = 0.5
 
 	herd_gap_behind_bull : F64
 	herd_gap_behind_bull = 6.0
 
+	## How many cows the herd has.
+	herd_size : I64
+	herd_size = 14
+
+	## The distance between the herd's columns, along the road.
 	herd_col_spacing : F64
 	herd_col_spacing = 6.0
 
+	## How far along the road each row back is moved from the one in front.
 	herd_row_stagger : F64
 	herd_row_stagger = 2.0
 
+	## The distance between the herd's rows, away from the road.
 	herd_row_depth : F64
 	herd_row_depth = 5.0
 
+	## How far a cow strays from its place, along the road and across it.
 	herd_jitter_along : F64
 	herd_jitter_along = 1.5
 
 	herd_jitter_across : F64
 	herd_jitter_across = 1.2
 
+	## The bull, when the herd has one.
 	bull_of : [WithBull, NoBull] -> List(Scenery.Critter)
 	bull_of = |bull|
 		match bull {
-			WithBull => [{ along: bull_dist, across: (0.0 - ((((Scenery.lane_width / 2.0) + Trees.tree_road_offset) + (bull_height / 2.0)) + bull_tree_gap)), codepoint: bull_cp, height: bull_height, face_right: False }]
+			WithBull => {
+				tree_line = ((Scenery.lane_width / 2.0) + Trees.tree_road_offset)
+				[
+					{
+						along: bull_dist,
+						across: (0.0 - ((tree_line + (bull_height / 2.0)) + bull_tree_gap)),
+						codepoint: bull_codepoint,
+						height: bull_height,
+						face_right: False,
+					},
+				]
+			}
 			NoBull => []
 		}
 
-	# cows builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	cows : I64 -> List(Scenery.Critter)
-	cows = |i| cows_onto(i, [])
+	## The herd's cows, column by column from the front. Every fourth cow,
+	## from the second, is a calf.
+	cows : List(Scenery.Critter)
+	cows = List.from_iter(I64.until(0, herd_size)).map(cow_at)
 
-	cows_onto : I64, List(Scenery.Critter) -> List(Scenery.Critter)
-	cows_onto = |i, acc| (
-		if (i >= 14) {
-			acc
-		} else {
-			cows_onto((i + 1), List.append(acc, cow_at(i)))
-		}
-	)
-
-	cow_at : I64 -> Scenery.Critter
-	cow_at = |i| (
-		{
-			fi = I64.to_f64(i)
-			col = I64.to_f64(I64.div_trunc_by(i, 3))
-			row = I64.to_f64((i - (I64.div_trunc_by(i, 3) * 3)))
-			along = ((((bull_dist + herd_gap_behind_bull) + (col * herd_col_spacing)) + ((row - 1.0) * herd_row_stagger)) + (herd_jitter_along * Trig.r_sin((fi * 2.7))))
-			across = (0.0 - ((((Scenery.lane_width / 2.0) + Scenery.herd_road_offset) + (row * herd_row_depth)) + (herd_jitter_across * Trig.r_cos((fi * 1.9)))))
-			{
-				along: along,
-				across: across,
-				codepoint: cow_cp,
-				height: (
-					if ((i - (I64.div_trunc_by(i, 4) * 4)) == 1) {
-						calf_height
-					} else {
-						cow_height
-					}
-				),
-				face_right: True,
-			}
-		}
-	)
-
+	## The bull, if there is one, then the cows.
 	fill_cows : [WithBull, NoBull] -> List(Scenery.Critter)
-	fill_cows = |bull| List.concat(bull_of(bull), cows(0))
+	fill_cows = |bull| List.concat(Herd.bull_of(bull), Herd.cows)
+}
+
+cow_at : I64 -> Scenery.Critter
+cow_at = |i| {
+	fi = i.to_f64()
+	column = i.div_trunc_by(3).to_f64()
+	row = i.rem_by(3).to_f64()
+	herd_front = (Herd.bull_dist + Herd.herd_gap_behind_bull)
+	in_line = ((herd_front + (column * Herd.herd_col_spacing)) + ((row - 1.0) * Herd.herd_row_stagger))
+	road_edge = ((Scenery.lane_width / 2.0) + Scenery.herd_road_offset)
+	out_from_road = ((road_edge + (row * Herd.herd_row_depth)) + (Herd.herd_jitter_across * Trig.r_cos((fi * 1.9))))
+	{
+		along: (in_line + (Herd.herd_jitter_along * Trig.r_sin((fi * 2.7)))),
+		across: (0.0 - out_from_road),
+		codepoint: Herd.cow_codepoint,
+		height: if (i.rem_by(4) == 1) Herd.calf_height else Herd.cow_height,
+		face_right: True,
+	}
 }

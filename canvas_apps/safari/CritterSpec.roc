@@ -1,5 +1,6 @@
-# CritterSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are Critter's checks: how a still's points and vectors land on
+## screen, mirrored and not, the guard on a polygon's size, and when a
+## critter is too small, or unknown, to draw.
 app [main!] {
 	lib: "../lib/main.roc",
 }
@@ -10,108 +11,121 @@ import EmojiStills
 import Grade
 import Stills
 
+feet : Camera.ScreenPt
+feet = { x: 100.0, y: 200.0 }
+
+## A still 50 pixels tall, standing on `feet`, as drawn.
+upright : Critter.Anchor
+upright = { feet, flip: AsDrawn, height_px: 50.0 }
+
+## The same still, mirrored.
+mirrored : Critter.Anchor
+mirrored = { feet, flip: Mirrored, height_px: 50.0 }
+
 facing_got : List(F64)
-facing_got = [Critter.facing(True), Critter.facing(False)]
+facing_got = [Critter.x_sign(Mirrored), Critter.x_sign(AsDrawn)]
 
 facing_want : List(F64)
 facing_want = [(-1.0), 1.0]
 
-feet : Camera.ScreenPt
-feet = { x: 100.0, y: 200.0 }
-
 point_got : List(F64)
-point_got = (
-	{
-		a = Critter.map_p(feet, 1.0, 50.0, 0.5, 0.4)
-		b = Critter.map_p(feet, (0.0 - 1.0), 50.0, 0.5, 0.4)
-		c = Critter.map_p(feet, 1.0, 50.0, 0.0, 0.0)
-		[a.x, a.y, b.x, b.y, c.x, c.y]
-	}
-)
+point_got = {
+	a = Critter.screen_point(upright, { x: 0.5, y: 0.4 })
+	b = Critter.screen_point(mirrored, { x: 0.5, y: 0.4 })
+	c = Critter.screen_point(upright, { x: 0.0, y: 0.0 })
+	[a.x, a.y, b.x, b.y, c.x, c.y]
+}
 
 point_want : List(F64)
 point_want = [125.0, 180.0, 75.0, 180.0, 100.0, 200.0]
 
 vector_got : List(F64)
-vector_got = (
-	{
-		a = Critter.map_v(1.0, 50.0, 0.5, 0.4)
-		b = Critter.map_v((0.0 - 1.0), 50.0, 0.5, 0.4)
-		c = Critter.map_v(1.0, 50.0, 0.0, 0.0)
-		[a.x, a.y, b.x, b.y, c.x, c.y]
-	}
-)
+vector_got = {
+	a = Critter.screen_vector(upright, { x: 0.5, y: 0.4 })
+	b = Critter.screen_vector(mirrored, { x: 0.5, y: 0.4 })
+	c = Critter.screen_vector(upright, { x: 0.0, y: 0.0 })
+	[a.x, a.y, b.x, b.y, c.x, c.y]
+}
 
 vector_want : List(F64)
 vector_want = [25.0, (-20.0), (-25.0), (-20.0), 0.0, 0.0]
 
 anchor_got : List(F64)
-anchor_got = (
-	{
-		p = Critter.map_p(feet, 1.0, 50.0, 0.5, 0.4)
-		v = Critter.map_v(1.0, 50.0, 0.5, 0.4)
-		[(p.x - v.x), (p.y - v.y)]
-	}
-)
+anchor_got = {
+	p = Critter.screen_point(upright, { x: 0.5, y: 0.4 })
+	v = Critter.screen_vector(upright, { x: 0.5, y: 0.4 })
+	[(p.x - v.x), (p.y - v.y)]
+}
 
 anchor_want : List(F64)
 anchor_want = [100.0, 200.0]
 
 mapped_got : List(F64)
-mapped_got = (
-	{
-		ps = Critter.mapped_pts(feet, 1.0, 50.0, [{ x: 0.0, y: 0.0 }, { x: 0.5, y: 0.4 }, { x: 1.0, y: 1.0 }])
-		[I64.to_f64(ps.len().to_i64_wrap()), (List.get(ps, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).y, (List.get(ps, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).y, (List.get(ps, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).y]
-	}
-)
+mapped_got = {
+	points = Critter.screen_points(upright, [{ x: 0.0, y: 0.0 }, { x: 0.5, y: 0.4 }, { x: 1.0, y: 1.0 }])
+	List.concat([points.len().to_f64()], points.join_map(|point| [point.x, point.y]))
+}
 
 mapped_want : List(F64)
 mapped_want = [3.0, 100.0, 200.0, 125.0, 180.0, 150.0, 150.0]
 
-# many builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-many : I64 -> List(Stills.StillPt)
-many = |n| many_onto(n, [])
+## A solid polygon of colour 7 with `count` points, all at the feet.
+flat_poly : U64 -> Stills.StillPoly
+flat_poly = |count| { color: 7, grad: [], pts: List.repeat({ x: 0.0, y: 0.0 }, count) }
 
-many_onto : I64, List(Stills.StillPt) -> List(Stills.StillPt)
-many_onto = |n, acc| (
-	if (n <= 0) {
-		acc
-	} else {
-		many_onto((n - 1), List.append(acc, { x: 0.0, y: 0.0 }))
-	}
-)
-
-flat_poly : I64 -> Stills.StillPoly
-flat_poly = |n| { color: 7, grad: [], pts: many(n) }
+poly_command_count : U64 -> I64
+poly_command_count = |count| Critter.draw_poly(upright, flat_poly(count)).len().to_i64_wrap()
 
 guard_got : List(I64)
-guard_got = [Critter.max_critter_pts, Critter.critter_poly(feet, 1.0, 50.0, flat_poly(3)).len().to_i64_wrap(), Critter.critter_poly(feet, 1.0, 50.0, flat_poly(512)).len().to_i64_wrap(), Critter.critter_poly(feet, 1.0, 50.0, flat_poly(513)).len().to_i64_wrap(), Critter.critter_poly(feet, 1.0, 50.0, flat_poly(2)).len().to_i64_wrap()]
+guard_got = [
+	Critter.max_still_points.to_i64_wrap(),
+	poly_command_count(3),
+	poly_command_count(512),
+	poly_command_count(513),
+	poly_command_count(2),
+]
 
 guard_want : List(I64)
 guard_want = [512, 1, 1, 0, 0]
 
 solid_got : List(I64)
-solid_got = (
-	{
-		c = (List.get(Critter.critter_poly(feet, 1.0, 50.0, flat_poly(3)), I64.to_u64_wrap(0)) ?? crash ("list-at out of range"))
-		[c.tag, c.color, c.pts.len().to_i64_wrap()]
-	}
-)
+solid_got = {
+	command = Critter.draw_poly(upright, flat_poly(3)).first() ?? crash "CritterSpec: a solid polygon is one command"
+	[command.tag, command.color, command.pts.len().to_i64_wrap()]
+}
 
 solid_want : List(I64)
 solid_want = [0, 7, 6]
 
-drawn : F64, F64 -> I64
-drawn = |forward, height| Critter.critter_draw(0.0, forward, height, 128024, False, 500.0, 960.0).len().to_i64_wrap()
+## How many commands draw an elephant of `height` metres, `forward` metres
+## ahead.
+command_count : { forward : F64, height : F64, codepoint : I64 } -> I64
+command_count = |{ forward, height, codepoint }|
+	Critter.draw(
+		{ right: 0.0, forward, height, codepoint, facing: FacesLeft },
+		{ cam_focal: 500.0, view_w: 960.0 },
+	).len().to_i64_wrap()
+
+elephant : I64
+elephant = 128024
 
 size_got : List(I64)
-size_got = [drawn(1000.0, 2.0), drawn(2000.0, 2.0), drawn(1000.0, 1.9), drawn(100.0, 2.0)]
+size_got = [
+	command_count({ forward: 1000.0, height: 2.0, codepoint: elephant }),
+	command_count({ forward: 2000.0, height: 2.0, codepoint: elephant }),
+	command_count({ forward: 1000.0, height: 1.9, codepoint: elephant }),
+	command_count({ forward: 100.0, height: 2.0, codepoint: elephant }),
+]
 
 size_want : List(I64)
 size_want = [6, 0, 0, 6]
 
 unknown_got : List(I64)
-unknown_got = [EmojiStills.emoji_polys_for(1).len().to_i64_wrap(), Critter.critter_draw(0.0, 100.0, 2.0, 1, False, 500.0, 960.0).len().to_i64_wrap(), EmojiStills.emoji_polys_for(128024).len().to_i64_wrap()]
+unknown_got = [
+	EmojiStills.emoji_polys_for(1).len().to_i64_wrap(),
+	command_count({ forward: 100.0, height: 2.0, codepoint: 1 }),
+	EmojiStills.emoji_polys_for(elephant).len().to_i64_wrap(),
+]
 
 unknown_want : List(I64)
 unknown_want = [0, 0, 6]

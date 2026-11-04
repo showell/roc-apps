@@ -1,51 +1,72 @@
-# SafariCritter -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## At a corner where the road turns, a safari animal stands on the outside of
+## the bend, beyond the guard rail, and its baby stands in the middle of the
+## road a little past the corner. Both face the way the road turns.
 import Scenery
 
 SafariCritter :: [].{
-	Species : { present : Bool, cp : I64, adult_h : F64 }
 
-	no_species : SafariCritter.Species
-	no_species = { present: False, cp: 0, adult_h: 0.0 }
+	## A safari animal: its emoji, and how tall a grown one stands, in metres.
+	Species : { codepoint : I64, adult_height : F64 }
 
+	## How far beyond the guard rail the grown animal stands.
 	adult_rail_buffer : F64
 	adult_rail_buffer = 1.5
 
+	## A baby's height, as a fraction of its parent's.
 	baby_ratio : F64
 	baby_ratio = 0.5
 
+	## How far past the corner the baby stands.
 	baby_beyond : F64
 	baby_beyond = 14.0
 
-	species_of : Scenery.Creature -> SafariCritter.Species
-	species_of = |c| (match c {
-		Elephant => { present: True, cp: 128024, adult_h: 2.8 }
-		Giraffe => { present: True, cp: 129426, adult_h: 4.5 }
-		Zebra => { present: True, cp: 129427, adult_h: 1.6 }
-		Rhino => { present: True, cp: 129423, adult_h: 2.2 }
-		DuckPond => no_species
-		NoCreature => no_species
-	})
-
-	corner_critters : Scenery.Creature, F64, Bool, F64 -> List(Scenery.Critter)
-	corner_critters = |c, along, turn_right, hw| (
-		{
-			sp = species_of(c)
-			turn_sign = (
-				if turn_right {
-					1.0
-				} else {
-					(0.0 - 1.0)
-				}
-			)
-			adult_h = sp.adult_h
-			(
-				if sp.present {
-					[{ along: along, across: ((0.0 - turn_sign) * ((hw + adult_rail_buffer) + (adult_h / 2.0))), codepoint: sp.cp, height: adult_h, face_right: turn_right }, { along: (along + baby_beyond), across: 0.0, codepoint: sp.cp, height: (adult_h * baby_ratio), face_right: turn_right }]
-				} else {
-					[]
-				}
-			)
+	## The animal a corner's creature is. A pond's ducks are placed with the
+	## pond, not here.
+	species_of : Scenery.Creature -> [Species(SafariCritter.Species), NoSpecies]
+	species_of = |creature|
+		match creature {
+			Elephant => Species({ codepoint: 128024, adult_height: 2.8 })
+			Giraffe => Species({ codepoint: 129426, adult_height: 4.5 })
+			Zebra => Species({ codepoint: 129427, adult_height: 1.6 })
+			Rhino => Species({ codepoint: 129423, adult_height: 2.2 })
+			DuckPond => NoSpecies
+			NoCreature => NoSpecies
 		}
-	)
+
+	## The animal and its baby at a corner `corner_along` metres along its
+	## segment, on a road `lane_half_width` metres either side of its middle.
+	corner_critters : {
+		creature : Scenery.Creature,
+		corner_along : F64,
+		turn : [TurnsLeft, TurnsRight],
+		lane_half_width : F64,
+	} -> List(Scenery.Critter)
+	corner_critters = |{ creature, corner_along, turn, lane_half_width }|
+		match species_of(creature) {
+			NoSpecies => []
+			Species(species) => {
+				{ inward, face_right } =
+					match turn {
+						TurnsRight => { inward: 1.0, face_right: True }
+						TurnsLeft => { inward: (0.0 - 1.0), face_right: False }
+					}
+				out_from_middle = ((lane_half_width + adult_rail_buffer) + (species.adult_height / 2.0))
+				[
+					{
+						along: corner_along,
+						across: ((0.0 - inward) * out_from_middle),
+						codepoint: species.codepoint,
+						height: species.adult_height,
+						face_right,
+					},
+					{
+						along: (corner_along + baby_beyond),
+						across: 0.0,
+						codepoint: species.codepoint,
+						height: (species.adult_height * baby_ratio),
+						face_right,
+					},
+				]
+			}
+		}
 }

@@ -1,5 +1,8 @@
-# CritterPlan -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## CritterPlan sights every critter on the road ahead from where the rider
+## is: the farm animals of the nearest segments, the safari animal and its
+## baby at each corner, and the ducks on each pond. The critters of the
+## segment before the rider's are sighted too, so the corner the rider has
+## just turned keeps its animals.
 import Billboards
 import DepthSort
 import Frame
@@ -10,185 +13,180 @@ import World
 
 CritterPlan :: [].{
 
-	place_critter : List(World.Segment), List(I64), Frame.Pose, I64, F64, Scenery.Critter -> Billboards.Placed
-	place_critter = |segs, ch, pose, d, hw, cr| (
-		{
-			rp = Frame.at(segs, ch, pose, d, cr.along, (cr.across + hw))
-			Billboards.verdict(rp, cr.height, cr.codepoint, cr.face_right)
-		}
-	)
+	## The road as the rider sees it: every segment of the world, the chain of
+	## segments ahead (indexes into `world`, the rider's own first), and where
+	## the rider is.
+	Scene : {
+		world : List(World.Segment),
+		chain : List(I64),
+		pose : Frame.Pose,
+	}
 
-	place_critter_mapped : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, Scenery.Critter -> Billboards.Placed
-	place_critter_mapped = |segs, ch, pose, m, hw, cr| (
-		{
-			rp = Frame.map_pt(segs, ch, pose, m, cr.along, (cr.across + hw))
-			Billboards.verdict(rp, cr.height, cr.codepoint, cr.face_right)
-		}
-	)
+	## Farm animals are sighted on this many segments of the chain.
+	farm_reach : I64
+	farm_reach = 3
 
-	place_duck : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, Pond.Duck -> Billboards.Placed
-	place_duck = |segs, ch, pose, m, from_len, dk| (
-		{
-			rp = Frame.map_pt(segs, ch, pose, m, (from_len + dk.p.cv), dk.p.cu)
-			Billboards.verdict(rp, Pond.duck_height, Pond.duck_codepoint, dk.face_right)
-		}
-	)
+	## Safari animals and ducks are sighted on this many.
+	safari_reach : I64
+	safari_reach = 5
 
-	# place_all builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	place_all : List(World.Segment), List(I64), Frame.Pose, I64, F64, List(Scenery.Critter) -> List(Billboards.Placed)
-	place_all = |segs, ch, pose, d, hw, crs| place_all_onto(segs, ch, pose, d, hw, crs, 0, [])
-
-	place_all_onto : List(World.Segment), List(I64), Frame.Pose, I64, F64, List(Scenery.Critter), I64, List(Billboards.Placed) -> List(Billboards.Placed)
-	place_all_onto = |segs, ch, pose, d, hw, crs, i, acc| (
-		if (i >= crs.len().to_i64_wrap()) {
-			acc
-		} else {
-			place_all_onto(segs, ch, pose, d, hw, crs, (i + 1), List.append(acc, place_critter(segs, ch, pose, d, hw, (List.get(crs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
-		}
-	)
-
-	# place_all_mapped builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	place_all_mapped : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, List(Scenery.Critter), I64 -> List(Billboards.Placed)
-	place_all_mapped = |segs, ch, pose, m, hw, crs, i| place_all_mapped_onto(segs, ch, pose, m, hw, crs, i, [])
-
-	place_all_mapped_onto : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, List(Scenery.Critter), I64, List(Billboards.Placed) -> List(Billboards.Placed)
-	place_all_mapped_onto = |segs, ch, pose, m, hw, crs, i, acc| (
-		if (i >= crs.len().to_i64_wrap()) {
-			acc
-		} else {
-			place_all_mapped_onto(segs, ch, pose, m, hw, crs, (i + 1), List.append(acc, place_critter_mapped(segs, ch, pose, m, hw, (List.get(crs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
-		}
-	)
-
-	# place_ducks builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	place_ducks : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64 -> List(Billboards.Placed)
-	place_ducks = |segs, ch, pose, m, from_len| place_ducks_onto(segs, ch, pose, m, from_len, 0, [])
-
-	place_ducks_onto : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, I64, List(Billboards.Placed) -> List(Billboards.Placed)
-	place_ducks_onto = |segs, ch, pose, m, from_len, i, acc| (
-		if (i >= Pond.ducks.len().to_i64_wrap()) {
-			acc
-		} else {
-			place_ducks_onto(segs, ch, pose, m, from_len, (i + 1), List.append(acc, place_duck(segs, ch, pose, m, from_len, (List.get(Pond.ducks, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
-		}
-	)
-
-	farm_seg_reach : I64
-	farm_seg_reach = 3
-
-	safari_seg_reach : I64
-	safari_seg_reach = 5
-
-	seg_farm : List(World.Segment), List(I64), Frame.Pose, I64, F64 -> List(Billboards.Placed)
-	seg_farm = |segs, ch, pose, d, hw| (
-		{
-			sg = (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range"))
-			(
-				if (d >= farm_seg_reach) {
-					[]
-				} else {
-					List.concat(place_all(segs, ch, pose, d, hw, sg.cows), place_all(segs, ch, pose, d, hw, sg.pigs))
-				}
-			)
-		}
-	)
-
-	seg_safari : List(World.Segment), List(I64), Frame.Pose, I64, F64 -> List(Billboards.Placed)
-	seg_safari = |segs, ch, pose, d, hw| (
-		{
-			sg = (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range"))
-			match sg.ending {
-				Continues(_) =>
-					if (d >= safari_seg_reach) {
-						[]
-					} else {
-						place_all(segs, ch, pose, d, hw, SafariCritter.corner_critters(sg.exit_creature, sg.length, sg.exit_right, hw))
-					}
-				Terminates => []
-			}
-		}
-	)
-
-	seg_ducks : List(World.Segment), List(I64), Frame.Pose, I64 -> List(Billboards.Placed)
-	seg_ducks = |segs, ch, pose, d| (
-		{
-			sg = (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range"))
-			(
-				if (d >= safari_seg_reach) {
-					[]
-				} else {
-					(
-						if Scenery.is_pond(sg.exit_creature) {
-							place_ducks(segs, ch, pose, Frame.chain_map(d), sg.length)
-						} else {
-							[]
-						}
-					)
-				}
-			)
-		}
-	)
-
-	seg_billboards : List(World.Segment), List(I64), Frame.Pose, I64 -> List(Billboards.Placed)
-	seg_billboards = |segs, ch, pose, d| (
-		{
-			hw = (Scenery.lane_width / 2.0)
-			List.join([seg_farm(segs, ch, pose, d, hw), seg_safari(segs, ch, pose, d, hw), seg_ducks(segs, ch, pose, d)])
-		}
-	)
-
-	# walk_billboards builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	walk_billboards : List(World.Segment), List(I64), Frame.Pose -> List(Billboards.Placed)
-	walk_billboards = |segs, ch, pose| walk_billboards_onto(segs, ch, pose, 0, [])
-
-	walk_billboards_onto : List(World.Segment), List(I64), Frame.Pose, I64, List(Billboards.Placed) -> List(Billboards.Placed)
-	walk_billboards_onto = |segs, ch, pose, d, acc| (
-		if (d >= ch.len().to_i64_wrap()) {
-			acc
-		} else {
-			walk_billboards_onto(segs, ch, pose, (d + 1), List.concat(acc, seg_billboards(segs, ch, pose, d)))
-		}
-	)
-
-	behind_billboards : List(World.Segment), List(I64), Frame.Pose, I64 -> List(Billboards.Placed)
-	behind_billboards = |segs, ch, pose, prev_idx| (
-		{
-			pv = (List.get(segs, I64.to_u64_wrap(prev_idx)) ?? crash ("list-at out of range"))
-			List.concat(place_all_mapped(segs, ch, pose, Frame.prev_map(pv), (Scenery.lane_width / 2.0), SafariCritter.corner_critters(pv.exit_creature, pv.length, pv.exit_right, (Scenery.lane_width / 2.0)), 0), behind_ducks(segs, ch, pose, pv))
-		}
-	)
-
-	behind_ducks : List(World.Segment), List(I64), Frame.Pose, World.Segment -> List(Billboards.Placed)
-	behind_ducks = |segs, ch, pose, pv| (
-		if Scenery.is_pond(pv.exit_creature) {
-			place_ducks(segs, ch, pose, Frame.prev_map(pv), pv.length)
-		} else {
-			[]
-		}
-	)
-
-	all_placed : List(World.Segment), List(I64), Frame.Pose, I64 -> List(Billboards.Placed)
-	all_placed = |segs, ch, pose, seg_idx| (
-		if (seg_idx > 0) {
-			List.concat(walk_billboards(segs, ch, pose), behind_billboards(segs, ch, pose, (seg_idx - 1)))
-		} else {
-			walk_billboards(segs, ch, pose)
-		}
-	)
-
+	## No more critters than this are drawn in a frame.
 	max_vis_critters : I64
 	max_vis_critters = 320
 
-	# cow_items builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	cow_items : List(Billboards.Billboard) -> List(DepthSort.DepthKey)
-	cow_items = |bs| cow_items_onto(bs, 0, [])
-
-	cow_items_onto : List(Billboards.Billboard), I64, List(DepthSort.DepthKey) -> List(DepthSort.DepthKey)
-	cow_items_onto = |bs, i, acc| (
-		if (i >= bs.len().to_i64_wrap()) {
-			acc
+	## Every critter ahead, nearest segment first, then those of the segment
+	## before `rider_segment`, when there is one.
+	sightings : CritterPlan.Scene, I64 -> List(Billboards.Sighting)
+	sightings = |scene, rider_segment|
+		if (rider_segment > 0) {
+			List.concat(
+				CritterPlan.sightings_ahead(scene),
+				CritterPlan.sightings_behind(scene, (rider_segment - 1)),
+			)
 		} else {
-			cow_items_onto(bs, (i + 1), List.append(acc, { fwd: (List.get(bs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).fwd, kind: KCow, i: i }))
+			CritterPlan.sightings_ahead(scene)
 		}
-	)
+
+	## The critters of every segment in the chain, nearest first.
+	sightings_ahead : CritterPlan.Scene -> List(Billboards.Sighting)
+	sightings_ahead = |scene|
+		List.from_iter(I64.until(0, scene.chain.len().to_i64_wrap()))
+			.join_map(|position| CritterPlan.sightings_at(scene, position))
+
+	## The critters of the segment at `position` in the chain: its farm
+	## animals, its corner's animals, then its pond's ducks.
+	sightings_at : CritterPlan.Scene, I64 -> List(Billboards.Sighting)
+	sightings_at = |scene, position|
+		List.join([
+			CritterPlan.farm_sightings(scene, position),
+			CritterPlan.safari_sightings(scene, position),
+			CritterPlan.duck_sightings(scene, position),
+		])
+
+	## The cows, then the pigs, of the segment at `position` in the chain.
+	farm_sightings : CritterPlan.Scene, I64 -> List(Billboards.Sighting)
+	farm_sightings = |scene, position|
+		if (position >= farm_reach) {
+			[]
+		} else {
+			segment = segment_at(scene, position)
+			List.concat(segment.cows, segment.pigs)
+				.map(|critter| sight_critter(scene, { mapper: Frame.chain_map(position), critter }))
+		}
+
+	## The animals at the corner that ends the segment at `position` in the
+	## chain. The road's last segment ends with no corner.
+	safari_sightings : CritterPlan.Scene, I64 -> List(Billboards.Sighting)
+	safari_sightings = |scene, position| {
+		segment = segment_at(scene, position)
+		match segment.ending {
+			Continues(_) =>
+				if (position >= safari_reach) {
+					[]
+				} else {
+					corner_sightings(scene, { mapper: Frame.chain_map(position), segment })
+				}
+			Terminates => []
+		}
+	}
+
+	## The ducks of the segment at `position` in the chain, if it has a pond.
+	duck_sightings : CritterPlan.Scene, I64 -> List(Billboards.Sighting)
+	duck_sightings = |scene, position|
+		if (position >= safari_reach) {
+			[]
+		} else {
+			pond_sightings(scene, { mapper: Frame.chain_map(position), segment: segment_at(scene, position) })
+		}
+
+	## The corner's animals and the pond's ducks of the world's segment at
+	## `index`, the one before the rider's.
+	sightings_behind : CritterPlan.Scene, I64 -> List(Billboards.Sighting)
+	sightings_behind = |scene, index| {
+		segment = scene.world.get(index.to_u64_wrap()) ?? crash "CritterPlan.sightings_behind: no segment before the rider's"
+		List.concat(
+			corner_sightings(scene, { mapper: Frame.prev_map(segment), segment }),
+			CritterPlan.ducks_behind(scene, segment),
+		)
+	}
+
+	## The ducks of `segment`, the one before the rider's, if it has a pond.
+	ducks_behind : CritterPlan.Scene, World.Segment -> List(Billboards.Sighting)
+	ducks_behind = |scene, segment| pond_sightings(scene, { mapper: Frame.prev_map(segment), segment })
+
+	## The depth-sort keys of the critters to draw, each naming its billboard
+	## by its place in `billboards`.
+	cow_items : List(Billboards.Billboard) -> List(DepthSort.DepthKey)
+	cow_items = |billboards|
+		billboards.map_with_index(
+			|billboard, i| {
+				fwd: billboard.forward,
+				kind: KCow,
+				i: i.to_i64_wrap(),
+			},
+		)
 }
+
+lane_half_width : F64
+lane_half_width = (Scenery.lane_width / 2.0)
+
+segment_at : CritterPlan.Scene, I64 -> World.Segment
+segment_at = |scene, position| {
+	index = scene.chain.get(position.to_u64_wrap()) ?? crash "CritterPlan.segment_at: no such chain position"
+	scene.world.get(index.to_u64_wrap()) ?? crash "CritterPlan.segment_at: the chain names a missing segment"
+}
+
+## A critter, placed through `mapper` on the road's map, as the rider sees it.
+sight_critter : CritterPlan.Scene, { mapper : Frame.Mapper, critter : Scenery.Critter } -> Billboards.Sighting
+sight_critter = |scene, { mapper, critter }|
+	Billboards.sighting({
+		at: Frame.map_pt(
+			scene.world,
+			scene.chain,
+			scene.pose,
+			mapper,
+			critter.along,
+			(critter.across + lane_half_width),
+		),
+		height: critter.height,
+		codepoint: critter.codepoint,
+		facing: facing_of(critter.face_right),
+	})
+
+corner_sightings : CritterPlan.Scene, { mapper : Frame.Mapper, segment : World.Segment } -> List(Billboards.Sighting)
+corner_sightings = |scene, { mapper, segment }|
+	SafariCritter.corner_critters({
+		creature: segment.exit_creature,
+		corner_along: segment.length,
+		turn: if segment.exit_right TurnsRight else TurnsLeft,
+		lane_half_width,
+	})
+		.map(|critter| sight_critter(scene, { mapper, critter }))
+
+## The ducks on `segment`'s pond, if it has one. A duck's place is measured
+## from the corner at the segment's end.
+pond_sightings : CritterPlan.Scene, { mapper : Frame.Mapper, segment : World.Segment } -> List(Billboards.Sighting)
+pond_sightings = |scene, { mapper, segment }|
+	if Scenery.is_pond(segment.exit_creature) {
+		Pond.ducks.map(
+			|duck|
+				Billboards.sighting({
+					at: Frame.map_pt(
+						scene.world,
+						scene.chain,
+						scene.pose,
+						mapper,
+						(segment.length + duck.p.cv),
+						duck.p.cu,
+					),
+					height: Pond.duck_height,
+					codepoint: Pond.duck_codepoint,
+					facing: facing_of(duck.face_right),
+				}),
+		)
+	} else {
+		[]
+	}
+
+facing_of : Bool -> Billboards.Facing
+facing_of = |face_right| if face_right FacesRight else FacesLeft
