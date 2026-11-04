@@ -1,19 +1,18 @@
-# TreePlanSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are TreePlan's checks: which trees are in view, where they
+## stand, and the keys the depth sort reads.
 app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import DepthSort
 import Frame
 import Grade
+import Scenery
 import TreePlan
 import World
 
 segs : List(World.Segment)
 segs = [World.segment_at(0), World.segment_at(1), World.segment_at(2)]
-
-chain : List(I64)
-chain = [0, 1, 2]
 
 origin : Frame.Pose
 origin = { along: 0.0, across: 0.0, yaw: 0.0, hw: 2.0 }
@@ -21,80 +20,91 @@ origin = { along: 0.0, across: 0.0, yaw: 0.0, hw: 2.0 }
 up_road : Frame.Pose
 up_road = { along: 100.0, across: 0.0, yaw: 0.0, hw: 2.0 }
 
+## The first three segments, seen from `pose` through a camera of focal
+## length `cam_focal`.
+view_from : Frame.Pose, F64 -> TreePlan.View
+view_from = |pose, cam_focal| { world: segs, chain: [0, 1, 2], pose, cam_focal }
+
+from_origin : TreePlan.View
+from_origin = view_from(origin, 500.0)
+
+## A green tree `along` metres into the first segment, 3.5 m right of the
+## road's middle.
+green_tree_at : F64 -> { place : I64, tree : Scenery.Tree }
+green_tree_at = |along| { place: 0, tree: { along, across: 3.5, color: 1858082, height: 5.85 } }
+
 planted_got : List(I64)
-planted_got = [(List.get(segs, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).trees.len().to_i64_wrap(), (List.get(segs, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).trees.len().to_i64_wrap(), (List.get(segs, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).trees.len().to_i64_wrap(), TreePlan.max_vis_trees]
+planted_got = List.concat(segs.map(|seg| seg.trees.len().to_i64_wrap()), [TreePlan.max_vis_trees])
 
 planted_want : List(I64)
 planted_want = [28, 16, 22, 640]
 
-one : List(TreePlan.TreeItem)
-one = TreePlan.place_tree(segs, chain, origin, 0, 500.0, 2.0, { along: 120.0, across: 3.5, color: 1858082, height: 5.85 })
+lone_tree : TreePlan.TreeItem
+lone_tree = TreePlan.tree_in_view(from_origin, green_tree_at(120.0)).first() ?? crash "TreePlanSpec: a tree 120 m ahead is in view"
 
 one_got : List(F64)
-one_got = [(List.get(one, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).right, (List.get(one, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).fwd, (List.get(one, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).height]
+one_got = [lone_tree.right, lone_tree.fwd, lone_tree.height]
 
 one_want : List(F64)
 one_want = [3.5, 120.0, 5.85]
 
 one_colour_got : List(I64)
-one_colour_got = [one.len().to_i64_wrap(), (List.get(one, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).color]
+one_colour_got = [TreePlan.tree_in_view(from_origin, green_tree_at(120.0)).len().to_i64_wrap(), lone_tree.color]
 
 one_colour_want : List(I64)
 one_colour_want = [1, 1858082]
 
 cull_got : List(I64)
-cull_got = [TreePlan.place_tree(segs, chain, origin, 0, 500.0, 2.0, { along: 0.4, across: 3.5, color: 1858082, height: 5.85 }).len().to_i64_wrap(), TreePlan.place_tree(segs, chain, origin, 0, 500.0, 2.0, { along: 0.5, across: 3.5, color: 1858082, height: 5.85 }).len().to_i64_wrap(), TreePlan.place_tree(segs, chain, origin, 0, 1.0, 2.0, { along: 120.0, across: 3.5, color: 1858082, height: 5.85 }).len().to_i64_wrap(), TreePlan.place_tree(segs, chain, origin, 0, 500.0, 2.0, { along: 2000.0, across: 3.5, color: 1858082, height: 5.85 }).len().to_i64_wrap()]
+cull_got = [
+	TreePlan.tree_in_view(from_origin, green_tree_at(0.4)),
+	TreePlan.tree_in_view(from_origin, green_tree_at(0.5)),
+	TreePlan.tree_in_view(view_from(origin, 1.0), green_tree_at(120.0)),
+	TreePlan.tree_in_view(from_origin, green_tree_at(2000.0)),
+].map(|seen| seen.len().to_i64_wrap())
 
 cull_want : List(I64)
 cull_want = [0, 1, 0, 0]
 
 seg0_got : List(I64)
-seg0_got = [TreePlan.seg_trees(segs, chain, origin, 0, 500.0, 2.0, (List.get(segs, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).trees, 0).len().to_i64_wrap(), TreePlan.seg_trees(segs, chain, up_road, 0, 500.0, 2.0, (List.get(segs, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).trees, 0).len().to_i64_wrap(), TreePlan.seg_trees(segs, chain, origin, 0, 1.0, 2.0, (List.get(segs, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).trees, 0).len().to_i64_wrap()]
+seg0_got = [from_origin, view_from(up_road, 500.0), view_from(origin, 1.0)].map(|view| TreePlan.segment_trees(view, 0).len().to_i64_wrap())
 
 seg0_want : List(I64)
 seg0_want = [28, 20, 0]
 
+first_segment : List(TreePlan.TreeItem)
+first_segment = TreePlan.segment_trees(from_origin, 0)
+
+## The first segment's tree at `i`, in planting order.
+planted_tree : U64 -> TreePlan.TreeItem
+planted_tree = |i| first_segment.get(i) ?? crash "TreePlanSpec: the first segment has 28 trees in view"
+
 order_got : List(F64)
-order_got = (
-	{
-		ts = TreePlan.seg_trees(segs, chain, origin, 0, 500.0, 2.0, (List.get(segs, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).trees, 0)
-		[(List.get(ts, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).fwd, (List.get(ts, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).fwd, (List.get(ts, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).fwd, (List.get(ts, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).right, (List.get(ts, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).right]
-	}
-)
+order_got = [planted_tree(0).fwd, planted_tree(1).fwd, planted_tree(2).fwd, planted_tree(0).right, planted_tree(1).right]
 
 order_want : List(F64)
 order_want = [6.0, 6.0, 36.0, (-3.5), 3.5]
 
 height_got : List(F64)
-height_got = (
-	{
-		ts = TreePlan.seg_trees(segs, chain, origin, 0, 500.0, 2.0, (List.get(segs, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).trees, 0)
-		[(List.get(ts, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).height, (List.get(ts, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).height]
-	}
-)
+height_got = [planted_tree(0).height, planted_tree(2).height]
 
 height_want : List(F64)
 height_want = [5.85, 4.5]
 
+keys : List(DepthSort.DepthKey)
+keys = TreePlan.depth_keys(first_segment)
+
+## The depth key at `i`.
+key_at : U64 -> DepthSort.DepthKey
+key_at = |i| keys.get(i) ?? crash "TreePlanSpec: the first segment has 28 keys"
+
 items_got : List(I64)
-items_got = (
-	{
-		ts = TreePlan.seg_trees(segs, chain, origin, 0, 500.0, 2.0, (List.get(segs, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).trees, 0)
-		its = TreePlan.tree_items(ts)
-		[its.len().to_i64_wrap(), (List.get(its, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).i, (List.get(its, I64.to_u64_wrap(27)) ?? crash ("list-at out of range")).i, TreePlan.tree_items([]).len().to_i64_wrap()]
-	}
-)
+items_got = [keys.len().to_i64_wrap(), key_at(0).i, key_at(27).i, TreePlan.depth_keys([]).len().to_i64_wrap()]
 
 items_want : List(I64)
 items_want = [28, 0, 27, 0]
 
 item_fwd_got : List(F64)
-item_fwd_got = (
-	{
-		its = TreePlan.tree_items(TreePlan.seg_trees(segs, chain, origin, 0, 500.0, 2.0, (List.get(segs, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).trees, 0))
-		[(List.get(its, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).fwd, (List.get(its, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).fwd]
-	}
-)
+item_fwd_got = [key_at(0).fwd, key_at(2).fwd]
 
 item_fwd_want : List(F64)
 item_fwd_want = [6.0, 36.0]

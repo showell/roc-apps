@@ -54,7 +54,7 @@ Render :: [].{
 		{
 			ch = Frame.build_chain(segs, seg_idx)
 			placed = CritterPlan.all_placed(segs, ch, pose, seg_idx)
-			trees = ListUtils.list_take(TreePlan.walk_trees(segs, ch, pose, cf, 0), TreePlan.max_vis_trees)
+			trees = ListUtils.list_take(TreePlan.in_view({ world: segs, chain: ch, pose, cam_focal: cf }), TreePlan.max_vis_trees)
 			towers = ListUtils.list_take(TowerPlan.all_towers(segs, ch, pose, seg_idx), TowerPlan.max_vis_towers)
 			cows = ListUtils.list_take(Billboards.kept_of(placed, 0), CritterPlan.max_vis_critters)
 			cats = ListUtils.list_take(CatPlan.walk_cats(segs, ch, pose, cf, along, v, 0), CatPlan.max_vis_cats)
@@ -63,7 +63,7 @@ Render :: [].{
 			# Roc's own flair, collected like every other kind so the sort can put
 			# it behind a nearer tree. See RocBird.
 			birds = RocBird.perches(segs, ch, pose, cf)
-			{ trees: trees, towers: towers, cows: cows, cats: cats, rails: rails, truck: tk, birds: birds, order: DepthSort.sort_by(List.join([RocBird.bird_items(birds), TreePlan.tree_items(trees), TowerPlan.tower_items(towers), CritterPlan.cow_items(cows), CatPlan.cat_items(cats), TruckPlan.truck_items(tk), RailPlan.rail_items(rails)]), |key| key.fwd), cull_seg: walk_seg_cull(segs, ch, 0), cull_size: Billboards.size_culled_of(placed, 0) }
+			{ trees: trees, towers: towers, cows: cows, cats: cats, rails: rails, truck: tk, birds: birds, order: DepthSort.sort_by(List.join([RocBird.bird_items(birds), TreePlan.depth_keys(trees), TowerPlan.tower_items(towers), CritterPlan.cow_items(cows), CatPlan.cat_items(cats), TruckPlan.truck_items(tk), RailPlan.rail_items(rails)]), |key| key.fwd), cull_seg: walk_seg_cull(segs, ch, 0), cull_size: Billboards.size_culled_of(placed, 0) }
 		}
 	)
 }

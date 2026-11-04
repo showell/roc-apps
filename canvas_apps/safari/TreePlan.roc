@@ -1,5 +1,6 @@
-# TreePlan -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## TreePlan finds the roadside trees the rider can see in a frame: those
+## planted along the chain of segments ahead that stand in front of the
+## camera and are tall enough on screen to draw.
 import DepthSort
 import Frame
 import Geom
@@ -8,67 +9,63 @@ import Scenery
 import World
 
 TreePlan :: [].{
+
+	## A tree to draw: where it stands in the rider's view, its height and
+	## its colour.
 	TreeItem : { right : F64, fwd : F64, height : F64, color : I64 }
 
-	place_tree : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64, Scenery.Tree -> List(TreePlan.TreeItem)
-	place_tree = |segs, ch, pose, d, cf, hw, tr| (
-		{
-			rp = Frame.at(segs, ch, pose, d, tr.along, (tr.across + hw))
-			(
-				if (rp.forward <= Geom.near) {
-					[]
-				} else {
-					(
-						if (((tr.height / rp.forward) * cf) < SceneLimits.min_scenery_px) {
-							[]
-						} else {
-							[{ right: rp.right, fwd: rp.forward, height: tr.height, color: tr.color }]
-						}
-					)
-				}
-			)
-		}
-	)
+	## What the trees are seen from: the world's segments, the chain of them
+	## ahead of the rider, the rider's pose, and the camera's focal length.
+	View : {
+		world : List(World.Segment),
+		chain : List(I64),
+		pose : Frame.Pose,
+		cam_focal : F64,
+	}
 
-	# seg_trees builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	seg_trees : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64, List(Scenery.Tree), I64 -> List(TreePlan.TreeItem)
-	seg_trees = |segs, ch, pose, d, cf, hw, trs, i| seg_trees_onto(segs, ch, pose, d, cf, hw, trs, i, [])
-
-	seg_trees_onto : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64, List(Scenery.Tree), I64, List(TreePlan.TreeItem) -> List(TreePlan.TreeItem)
-	seg_trees_onto = |segs, ch, pose, d, cf, hw, trs, i, acc| (
-		if (i >= trs.len().to_i64_wrap()) {
-			acc
-		} else {
-			seg_trees_onto(segs, ch, pose, d, cf, hw, trs, (i + 1), List.concat(acc, place_tree(segs, ch, pose, d, cf, hw, (List.get(trs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
-		}
-	)
-
-	# walk_trees builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	walk_trees : List(World.Segment), List(I64), Frame.Pose, F64, I64 -> List(TreePlan.TreeItem)
-	walk_trees = |segs, ch, pose, cf, d| walk_trees_onto(segs, ch, pose, cf, d, [])
-
-	walk_trees_onto : List(World.Segment), List(I64), Frame.Pose, F64, I64, List(TreePlan.TreeItem) -> List(TreePlan.TreeItem)
-	walk_trees_onto = |segs, ch, pose, cf, d, acc| (
-		if (d >= ch.len().to_i64_wrap()) {
-			acc
-		} else {
-			walk_trees_onto(segs, ch, pose, cf, (d + 1), List.concat(acc, seg_trees(segs, ch, pose, d, cf, (Scenery.lane_width / 2.0), (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range")).trees, 0)))
-		}
-	)
-
+	## At most this many trees are drawn in a frame.
 	max_vis_trees : I64
 	max_vis_trees = 640
 
-	# tree_items builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	tree_items : List(TreePlan.TreeItem) -> List(DepthSort.DepthKey)
-	tree_items = |ts| tree_items_onto(ts, 0, [])
+	## The trees in view, the nearest segment's first, and each segment's in
+	## the order it plants them.
+	in_view : TreePlan.View -> List(TreePlan.TreeItem)
+	in_view = |view| {
+		places = List.from_iter(U64.until(0, view.chain.len()))
+		places.join_map(|place| segment_trees(view, U64.to_i64_wrap(place)))
+	}
 
-	tree_items_onto : List(TreePlan.TreeItem), I64, List(DepthSort.DepthKey) -> List(DepthSort.DepthKey)
-	tree_items_onto = |ts, i, acc| (
-		if (i >= ts.len().to_i64_wrap()) {
-			acc
+	## The trees in view on the segment at `place` in the chain.
+	segment_trees : TreePlan.View, I64 -> List(TreePlan.TreeItem)
+	segment_trees = |view, place| {
+		seg_index = view.chain.get(I64.to_u64_wrap(place)) ?? crash "TreePlan.segment_trees: no such place in the chain"
+		segment = view.world.get(I64.to_u64_wrap(seg_index)) ?? crash "TreePlan.segment_trees: no such segment"
+		segment.trees.join_map(|tree| tree_in_view(view, { place, tree }))
+	}
+
+	## A tree on the segment at `place` in the chain, if it is in view: one
+	## item, or none.
+	tree_in_view : TreePlan.View, { place : I64, tree : Scenery.Tree } -> List(TreePlan.TreeItem)
+	tree_in_view = |view, { place, tree }| {
+		seen = Frame.at(
+			view.world,
+			view.chain,
+			view.pose,
+			place,
+			tree.along,
+			(tree.across + (Scenery.lane_width / 2.0)),
+		)
+		if (seen.forward <= Geom.near) {
+			[]
+		} else if (((tree.height / seen.forward) * view.cam_focal) < SceneLimits.min_scenery_px) {
+			[]
 		} else {
-			tree_items_onto(ts, (i + 1), List.append(acc, { fwd: (List.get(ts, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).fwd, kind: KTree, i: i }))
+			[{ right: seen.right, fwd: seen.forward, height: tree.height, color: tree.color }]
 		}
-	)
+	}
+
+	## The trees as the depth sort sees them: each one's distance ahead, and
+	## its place in `trees`.
+	depth_keys : List(TreePlan.TreeItem) -> List(DepthSort.DepthKey)
+	depth_keys = |trees| trees.map_with_index(|tree, i| { fwd: tree.fwd, kind: KTree, i: U64.to_i64_wrap(i) })
 }

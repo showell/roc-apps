@@ -50,7 +50,7 @@ merge_got : List(I64)
 merge_got = (
 	{
 		n = frame.order.len().to_i64_wrap()
-		parts = (TreePlan.tree_items(frame.trees).len().to_i64_wrap() + TowerPlan.tower_items(frame.towers).len().to_i64_wrap())
+		parts = (TreePlan.depth_keys(frame.trees).len().to_i64_wrap() + TowerPlan.tower_items(frame.towers).len().to_i64_wrap())
 		more = (CritterPlan.cow_items(frame.cows).len().to_i64_wrap() + CatPlan.cat_items(frame.cats).len().to_i64_wrap())
 		rest = (TruckPlan.truck_items(frame.truck).len().to_i64_wrap() + RailPlan.rail_items(frame.rails).len().to_i64_wrap())
 		birds = RocBird.bird_items(frame.birds).len().to_i64_wrap()
