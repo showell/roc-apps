@@ -1,66 +1,61 @@
-# CatDraw -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## CatDraw draws the cat: the still for the pose it is in, scaled to its
+## height on screen and raised as it leaps.
 import Camera
+import Cat
 import CatStills
 import Paint
 import Stills
 
 CatDraw :: [].{
 
+	## Where the cat is on screen: where its feet are, its height in pixels,
+	## and how far it is raised off the ground, in the still's units (a cat's
+	## height is 1).
+	Anchor : { feet : Camera.ScreenPt, height_px : F64, lift : F64 }
+
+	## A polygon with more corners than this is not drawn.
 	max_cat_pts : I64
 	max_cat_pts = 256
 
-	cat_pt : Camera.ScreenPt, F64, F64, Stills.StillPt -> Camera.ScreenPt
-	cat_pt = |b, h, lift, p| { x: (b.x + (p.x * h)), y: (b.y - ((p.y + lift) * h)) }
+	## A corner of the still, on screen.
+	screen_point : CatDraw.Anchor, Stills.StillPt -> Camera.ScreenPt
+	screen_point = |anchor, pt| {
+		x: (anchor.feet.x + (pt.x * anchor.height_px)),
+		y: (anchor.feet.y - ((pt.y + anchor.lift) * anchor.height_px)),
+	}
 
-	# cat_pts builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	cat_pts : Camera.ScreenPt, F64, F64, List(Stills.StillPt), I64 -> List(Camera.ScreenPt)
-	cat_pts = |b, h, lift, ps, i| cat_pts_onto(b, h, lift, ps, i, [])
-
-	cat_pts_onto : Camera.ScreenPt, F64, F64, List(Stills.StillPt), I64, List(Camera.ScreenPt) -> List(Camera.ScreenPt)
-	cat_pts_onto = |b, h, lift, ps, i, acc| (
-		if (i >= ps.len().to_i64_wrap()) {
-			acc
-		} else {
-			cat_pts_onto(b, h, lift, ps, (i + 1), List.append(acc, cat_pt(b, h, lift, (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
-		}
-	)
-
-	cat_poly : Camera.ScreenPt, F64, F64, Stills.StillPoly -> List(Paint.DrawCmd)
-	cat_poly = |b, h, lift, poly| (
+	## One polygon of the still, on screen.
+	polygon : CatDraw.Anchor, Stills.StillPoly -> List(Paint.DrawCmd)
+	polygon = |anchor, poly|
 		if (poly.pts.len().to_i64_wrap() > max_cat_pts) {
 			[]
 		} else {
-			Paint.push_poly(poly.color, cat_pts(b, h, lift, poly.pts, 0))
+			Paint.push_poly(poly.color, poly.pts.map(|pt| screen_point(anchor, pt)))
 		}
-	)
 
-	# cat_polys builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	cat_polys : Camera.ScreenPt, F64, F64, List(Stills.StillPoly), I64 -> List(Paint.DrawCmd)
-	cat_polys = |b, h, lift, ps, i| cat_polys_onto(b, h, lift, ps, i, [])
+	## A still's polygons on screen, in order.
+	polygons : CatDraw.Anchor, List(Stills.StillPoly) -> List(Paint.DrawCmd)
+	polygons = |anchor, polys| polys.join_map(|poly| polygon(anchor, poly))
 
-	cat_polys_onto : Camera.ScreenPt, F64, F64, List(Stills.StillPoly), I64, List(Paint.DrawCmd) -> List(Paint.DrawCmd)
-	cat_polys_onto = |b, h, lift, ps, i, acc| (
-		if (i >= ps.len().to_i64_wrap()) {
-			acc
+	## The cat standing `right` and `forward` of the camera, `height` tall,
+	## in `pose` and raised by `lift`. A cat under a pixel tall is not drawn.
+	draw : {
+		right : F64,
+		forward : F64,
+		height : F64,
+		pose : Cat.Pose,
+		lift : F64,
+		cam_focal : F64,
+		view_w : F64,
+	} -> List(Paint.DrawCmd)
+	draw = |{ right, forward, height, pose, lift, cam_focal, view_w }| {
+		feet = Camera.project({ right, forward, height: 0.0 }, cam_focal, view_w)
+		top = Camera.project({ right, forward, height }, cam_focal, view_w)
+		height_px = (feet.y - top.y)
+		if (height_px < 1.0) {
+			[]
 		} else {
-			cat_polys_onto(b, h, lift, ps, (i + 1), List.concat(acc, cat_poly(b, h, lift, (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
+			polygons({ feet, height_px, lift }, CatStills.pose_polys(pose))
 		}
-	)
-
-	cat_draw : F64, F64, F64, I64, F64, F64, F64 -> List(Paint.DrawCmd)
-	cat_draw = |right, forward, height, pose_idx, lift, cf, view_w| (
-		{
-			base = Camera.project({ right: right, forward: forward, height: 0.0 }, cf, view_w)
-			top = Camera.project({ right: right, forward: forward, height: height }, cf, view_w)
-			h = (base.y - top.y)
-			(
-				if (h < 1.0) {
-					[]
-				} else {
-					cat_polys(base, h, lift, CatStills.cat_polys_for(pose_idx), 0)
-				}
-			)
-		}
-	)
+	}
 }

@@ -1,63 +1,41 @@
-# CatStillsSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are CatStills' checks: how many polygons, corners and gradient
+## stops each pose's still has, and where four of them start.
 app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Cat
 import CatStills
 import Grade
 import Stills
 
-pts_in : List(Stills.StillPoly), I64 -> I64
-pts_in = |ps, i| (
-	if (i >= ps.len().to_i64_wrap()) {
-		0
-	} else {
-		(
-			{
-				p = (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))
-				(p.pts.len().to_i64_wrap() + pts_in(ps, (i + 1)))
-			}
-		)
-	}
-)
-
-grads_in : List(Stills.StillPoly), I64 -> I64
-grads_in = |ps, i| (
-	if (i >= ps.len().to_i64_wrap()) {
-		0
-	} else {
-		(
-			{
-				p = (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))
-				(p.grad.len().to_i64_wrap() + grads_in(ps, (i + 1)))
-			}
-		)
-	}
-)
-
+## A still's polygon count, corner count and gradient stop count.
 facts : List(Stills.StillPoly) -> List(I64)
-facts = |ps| [ps.len().to_i64_wrap(), pts_in(ps, 0), grads_in(ps, 0)]
+facts = |polys| [
+	polys.len().to_i64_wrap(),
+	polys.fold(0, |sum, poly| sum + poly.pts.len().to_i64_wrap()),
+	polys.fold(0, |sum, poly| sum + poly.grad.len().to_i64_wrap()),
+]
 
-pose_facts : I64 -> List(I64)
-pose_facts = |i| facts(CatStills.cat_polys_for(i))
+poses : List(Cat.Pose)
+poses = [Rest, Stride, Frozen, Coil, Flight, Land, Collapse]
 
 table_got : List(I64)
-table_got = List.join([pose_facts(0), pose_facts(1), pose_facts(2), pose_facts(3), pose_facts(4), pose_facts(5), pose_facts(6), pose_facts(7), pose_facts((0 - 1))])
+table_got = poses.join_map(|pose| facts(CatStills.pose_polys(pose)))
 
 table_want : List(I64)
-table_want = [46, 2198, 0, 46, 2198, 0, 47, 2197, 0, 34, 1715, 0, 34, 1715, 0, 34, 1715, 0, 34, 1715, 0, 0, 0, 0, 0, 0, 0]
+table_want = [46, 2198, 0, 46, 2198, 0, 47, 2197, 0, 34, 1715, 0, 34, 1715, 0, 34, 1715, 0, 34, 1715, 0]
 
-first_x : I64 -> F64
-first_x = |i| (
-	{
-		ps = CatStills.cat_polys_for(i)
-		(List.get((List.get(ps, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).pts, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).x
-	}
-)
+## The x of the first corner of a pose's first polygon.
+first_x : Cat.Pose -> F64
+first_x = |pose| {
+	first_poly = CatStills.pose_polys(pose).first() ?? crash "CatStillsSpec: every pose has polygons"
+	first_pt = first_poly.pts.first() ?? crash "CatStillsSpec: every polygon has corners"
+	first_pt.x
+}
 
 spot_got : List(F64)
-spot_got = [first_x(3), first_x(4), first_x(5), first_x(6)]
+spot_got = [Coil, Flight, Land, Collapse].map(first_x)
 
 spot_want : List(F64)
 spot_want = [0.5062, 0.6873, 0.6467, 0.6377]

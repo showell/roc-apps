@@ -1,10 +1,11 @@
-# CatDrawSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are CatDraw's checks: where a still's corners land on screen,
+## the corner guard, and how many polygons a cat draws.
 app [main!] {
 	lib: "../lib/main.roc",
 }
 
 import Camera
+import Cat
 import CatDraw
 import CatStills
 import Grade
@@ -13,99 +14,101 @@ import Stills
 feet : Camera.ScreenPt
 feet = { x: 100.0, y: 200.0 }
 
+## A cat 50 px tall, standing at `feet`.
+standing : CatDraw.Anchor
+standing = { feet, height_px: 50.0, lift: 0.0 }
+
 pt_got : List(F64)
-pt_got = (
-	{
-		a = CatDraw.cat_pt(feet, 50.0, 0.0, { x: 0.5, y: 0.4 })
-		b = CatDraw.cat_pt(feet, 50.0, 0.0, { x: 0.0, y: 0.0 })
-		c = CatDraw.cat_pt(feet, 50.0, 0.0, { x: (-1.0), y: 1.0 })
-		[a.x, a.y, b.x, b.y, c.x, c.y]
-	}
+pt_got = [{ x: 0.5, y: 0.4 }, { x: 0.0, y: 0.0 }, { x: (-1.0), y: 1.0 }].join_map(
+	|pt| {
+		on_screen = CatDraw.screen_point(standing, pt)
+		[on_screen.x, on_screen.y]
+	},
 )
 
 pt_want : List(F64)
 pt_want = [125.0, 180.0, 100.0, 200.0, 50.0, 150.0]
 
 lift_got : List(F64)
-lift_got = (
-	{
-		a = CatDraw.cat_pt(feet, 50.0, 0.2, { x: 0.5, y: 0.4 })
-		b = CatDraw.cat_pt(feet, 100.0, 0.2, { x: 0.5, y: 0.4 })
-		z = CatDraw.cat_pt(feet, 50.0, 0.0, { x: 0.5, y: 0.4 })
-		[a.x, a.y, (z.y - a.y), b.y, (a.x - z.x)]
-	}
-)
+lift_got = {
+	a = CatDraw.screen_point({ ..standing, lift: 0.2 }, { x: 0.5, y: 0.4 })
+	b = CatDraw.screen_point({ feet, height_px: 100.0, lift: 0.2 }, { x: 0.5, y: 0.4 })
+	z = CatDraw.screen_point(standing, { x: 0.5, y: 0.4 })
+	[a.x, a.y, (z.y - a.y), b.y, (a.x - z.x)]
+}
 
 lift_want : List(F64)
 lift_want = [125.0, 170.0, 10.0, 140.0, 0.0]
 
+## A polygon of colour 9 with `n` corners, all at the feet.
+poly_of : U64 -> Stills.StillPoly
+poly_of = |n| { color: 9, grad: [], pts: List.repeat({ x: 0.0, y: 0.0 }, n) }
+
 pts_got : List(F64)
-pts_got = (
-	{
-		ps = CatDraw.cat_pts(feet, 50.0, 0.0, [{ x: 0.0, y: 0.0 }, { x: 0.5, y: 0.4 }], 0)
-		[I64.to_f64(ps.len().to_i64_wrap()), (List.get(ps, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).y, (List.get(ps, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).x, (List.get(ps, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).y]
-	}
-)
+pts_got = {
+	on_screen = [{ x: 0.0, y: 0.0 }, { x: 0.5, y: 0.4 }].map(|pt| CatDraw.screen_point(standing, pt))
+	List.concat([I64.to_f64(on_screen.len().to_i64_wrap())], on_screen.join_map(|pt| [pt.x, pt.y]))
+}
 
 pts_want : List(F64)
 pts_want = [2.0, 100.0, 200.0, 125.0, 180.0]
 
-# many builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-many : I64 -> List(Stills.StillPt)
-many = |n| many_onto(n, [])
-
-many_onto : I64, List(Stills.StillPt) -> List(Stills.StillPt)
-many_onto = |n, acc| (
-	if (n <= 0) {
-		acc
-	} else {
-		many_onto((n - 1), List.append(acc, { x: 0.0, y: 0.0 }))
-	}
-)
-
-poly_of : I64 -> Stills.StillPoly
-poly_of = |n| { color: 9, grad: [], pts: many(n) }
-
 guard_got : List(I64)
-guard_got = [CatDraw.max_cat_pts, CatDraw.cat_poly(feet, 50.0, 0.0, poly_of(3)).len().to_i64_wrap(), CatDraw.cat_poly(feet, 50.0, 0.0, poly_of(256)).len().to_i64_wrap(), CatDraw.cat_poly(feet, 50.0, 0.0, poly_of(257)).len().to_i64_wrap(), CatDraw.cat_poly(feet, 50.0, 0.0, poly_of(2)).len().to_i64_wrap()]
+guard_got = List.concat([CatDraw.max_cat_pts], [3, 256, 257, 2].map(|n| CatDraw.polygon(standing, poly_of(n)).len().to_i64_wrap()))
 
 guard_want : List(I64)
 guard_want = [256, 1, 1, 0, 0]
 
 solid_got : List(I64)
-solid_got = (
-	{
-		c = (List.get(CatDraw.cat_poly(feet, 50.0, 0.0, poly_of(3)), I64.to_u64_wrap(0)) ?? crash ("list-at out of range"))
-		[c.tag, c.color, c.color2, c.geom.len().to_i64_wrap(), c.pts.len().to_i64_wrap()]
-	}
-)
+solid_got = {
+	c = CatDraw.polygon(standing, poly_of(3)).first() ?? crash "CatDrawSpec: a triangle is one command"
+	[c.tag, c.color, c.color2, c.geom.len().to_i64_wrap(), c.pts.len().to_i64_wrap()]
+}
 
 solid_want : List(I64)
 solid_want = [0, 9, 0, 0, 6]
 
 polys_got : List(I64)
-polys_got = [CatDraw.cat_polys(feet, 50.0, 0.0, [poly_of(3), poly_of(4), poly_of(300)], 0).len().to_i64_wrap(), CatDraw.cat_polys(feet, 50.0, 0.0, [], 0).len().to_i64_wrap(), (List.get(CatDraw.cat_polys(feet, 50.0, 0.0, [poly_of(3), poly_of(4)], 0), I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).pts.len().to_i64_wrap()]
+polys_got = {
+	two = CatDraw.polygons(standing, [poly_of(3), poly_of(4)])
+	second = two.get(1) ?? crash "CatDrawSpec: two polygons are two commands"
+	[
+		CatDraw.polygons(standing, [poly_of(3), poly_of(4), poly_of(300)]).len().to_i64_wrap(),
+		CatDraw.polygons(standing, []).len().to_i64_wrap(),
+		second.pts.len().to_i64_wrap(),
+	]
+}
 
 polys_want : List(I64)
 polys_want = [2, 0, 8]
 
-drawn : F64, F64 -> I64
-drawn = |forward, height| CatDraw.cat_draw(0.0, forward, height, 0, 0.0, 500.0, 960.0).len().to_i64_wrap()
+## The cat `forward` metres ahead, `height` tall, in `pose` and raised by
+## `lift`, through a 500 px focal length on a 960 px view.
+cat_commands : { forward : F64, height : F64, pose : Cat.Pose, lift : F64 } -> I64
+cat_commands = |{ forward, height, pose, lift }| CatDraw.draw({ right: 0.0, forward, height, pose, lift, cam_focal: 500.0, view_w: 960.0 }).len().to_i64_wrap()
+
+## How many commands a resting cat makes `forward` metres ahead.
+command_count : F64, F64 -> I64
+command_count = |forward, height| cat_commands({ forward, height, pose: Rest, lift: 0.0 })
 
 size_got : List(I64)
-size_got = [drawn(850.0, 1.7), drawn(851.0, 1.7), drawn(2000.0, 1.7)]
+size_got = [command_count(850.0, 1.7), command_count(851.0, 1.7), command_count(2000.0, 1.7)]
 
 size_want : List(I64)
-size_want = [CatStills.cat_polys_for(0).len().to_i64_wrap(), 0, 0]
+size_want = [CatStills.pose_polys(Rest).len().to_i64_wrap(), 0, 0]
 
 count_got : List(I64)
-count_got = [CatDraw.cat_draw(0.0, 100.0, 1.7, 0, 0.0, 500.0, 960.0).len().to_i64_wrap(), CatDraw.cat_draw(0.0, 100.0, 1.7, 0, 0.3, 500.0, 960.0).len().to_i64_wrap(), CatDraw.cat_draw(0.0, 100.0, 1.7, 2, 0.0, 500.0, 960.0).len().to_i64_wrap()]
+count_got = [
+	{ forward: 100.0, height: 1.7, pose: Rest, lift: 0.0 },
+	{ forward: 100.0, height: 1.7, pose: Rest, lift: 0.3 },
+	{ forward: 100.0, height: 1.7, pose: Frozen, lift: 0.0 },
+].map(cat_commands)
 
 count_want : List(I64)
-count_want = [CatStills.cat_polys_for(0).len().to_i64_wrap(), CatStills.cat_polys_for(0).len().to_i64_wrap(), CatStills.cat_polys_for(2).len().to_i64_wrap()]
+count_want = [Rest, Rest, Frozen].map(|pose| CatStills.pose_polys(pose).len().to_i64_wrap())
 
 table_got : List(Bool)
-table_got = [(CatStills.cat_polys_for(0).len().to_i64_wrap() > 0), (CatStills.cat_polys_for(1).len().to_i64_wrap() > 0), (CatStills.cat_polys_for(2).len().to_i64_wrap() > 0), (CatStills.cat_polys_for(3).len().to_i64_wrap() > 0), (CatStills.cat_polys_for(4).len().to_i64_wrap() > 0), (CatStills.cat_polys_for(5).len().to_i64_wrap() > 0), (CatStills.cat_polys_for(6).len().to_i64_wrap() > 0)]
+table_got = [Rest, Stride, Frozen, Coil, Flight, Land, Collapse].map(|pose| CatStills.pose_polys(pose).len() > 0)
 
 table_want : List(Bool)
 table_want = [True, True, True, True, True, True, True]
