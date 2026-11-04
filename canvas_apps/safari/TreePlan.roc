@@ -38,7 +38,8 @@ TreePlan :: [].{
 	## The trees in view on the segment at `place` in the chain.
 	segment_trees : TreePlan.View, I64 -> List(TreePlan.TreeItem)
 	segment_trees = |view, place| {
-		segment = world_segment(view, chain_segment_index(view, place))
+		seg_index = view.chain.get(I64.to_u64_wrap(place)) ?? crash "TreePlan.segment_trees: no such place in the chain"
+		segment = view.world.get(I64.to_u64_wrap(seg_index)) ?? crash "TreePlan.segment_trees: no such segment"
 		segment.trees.join_map(|tree| tree_in_view(view, { place, tree }))
 	}
 
@@ -68,9 +69,3 @@ TreePlan :: [].{
 	depth_keys : List(TreePlan.TreeItem) -> List(DepthSort.DepthKey)
 	depth_keys = |trees| trees.map_with_index(|tree, i| { fwd: tree.fwd, kind: KTree, i: U64.to_i64_wrap(i) })
 }
-
-chain_segment_index : TreePlan.View, I64 -> I64
-chain_segment_index = |view, place| view.chain.get(I64.to_u64_wrap(place)) ?? crash "TreePlan: no such place in the chain"
-
-world_segment : TreePlan.View, I64 -> World.Segment
-world_segment = |view, seg_index| view.world.get(I64.to_u64_wrap(seg_index)) ?? crash "TreePlan: no such segment"

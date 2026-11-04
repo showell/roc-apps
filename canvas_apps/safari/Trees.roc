@@ -115,12 +115,10 @@ plant_onto = |planted, { scheme, length, along, size }|
 		from_middle = Trees.across(conifer)
 		left = { along, across: (0.0 - from_middle), color: tree_color, height: tree_height }
 		right = { along, across: from_middle, color: tree_color, height: tree_height }
-		plant_onto(planted.append(left).append(right), { scheme, length, along: (along + Trees.tree_spacing), size: other_size(size) })
-	}
-
-other_size : Trees.PairSize -> Trees.PairSize
-other_size = |size|
-	match size {
-		Big => Small
-		Small => Big
+		next_size =
+			match size {
+				Big => Small
+				Small => Big
+			}
+		plant_onto(planted.append(left).append(right), { scheme, length, along: (along + Trees.tree_spacing), size: next_size })
 	}
