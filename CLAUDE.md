@@ -330,8 +330,10 @@ claim: read how many ran.
   over a boundary (14, 15 and 16 against a cap of 15). Running
   every plant on every verify costs most of the run's time for a proof that
   only needed making once. A plant must still build: removing a variable's
-  only use makes an unused-variable warning, which fails the build before
-  the test runs, so keep every name in use. If no single fault turns the
+  only use makes an unused-variable warning, and a constant condition such
+  as `if Bool.False` makes an unconditional-condition warning; either fails
+  the build before the test runs. Keep every name in use, and plant with a
+  value the compiler can't settle. If no single fault turns the
   test red, the property is guarded twice: say so, and plant the guard
   that stands alone.
 - **Frozen answers are the judge.** roc-markdown holds every corpus case's
