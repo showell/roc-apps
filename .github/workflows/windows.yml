@@ -26,10 +26,10 @@ on:
     inputs:
       roc_ray_ref:
         description: "roc-ray's commit"
-        default: e100c9548b903ee5c7363f5997251980c4355c7b
+        default: 23eec6e8e93aceff6701df564a9ac336d5d4b9ea
       roc_nightly:
         description: "the Roc nightly, as setup-roc names it"
-        default: nightly-2026-09-22-e494788
+        default: nightly-2026-11-03-34bd006
       apps:
         description: "the apps to build, space-separated"
         default: snake pong breakout camera workshop particles safari trick_or_treat
@@ -60,14 +60,14 @@ jobs:
       - name: Install Zig
         uses: xyzzylabs/setup-zig@09d85d9dbb73308882e7a26e61a8f706eed40df1 # v1.0.2, on Node 24
         with:
-          version: 0.16.0
+          version: 0.17.0
 
       - name: Install Roc
         uses: roc-lang/setup-roc@cbe782d6f165b89c87d99f50a59ac4f5f73b4427
         with:
           version: nightly-new-compiler
-          # The nightly roc-ray e100c95 builds with, unless the run names
-          # another; the rest of roc-apps uses the one in roc-version.
+          # The nightly in roc-version, unless the run names another;
+          # pinned-roc.sh refuses any other for the canvas apps.
           nightly-tag: ${{ inputs.roc_nightly }}
 
       # ReleaseFast: a plain `zig build` is a Debug host, whose checked

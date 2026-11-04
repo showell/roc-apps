@@ -1,10 +1,11 @@
 #!/bin/bash
-# **A GAME AS A NATIVE PROGRAM**, on roc-ray, from the same files the page runs.
+# This script builds a canvas app as a native program on roc-ray, from the
+# same files the page runs.
 #
 #   canvas_apps/native.sh snake
 #   TARGET=x64win canvas_apps/native.sh snake     Windows; links only where the SDK is
 #
-# **NOTHING IS STAGED AND NOTHING IS REWRITTEN**, as with the page. The one
+# Nothing is staged and nothing is rewritten, as with the page. The one
 # thing this needs from outside the repository is roc-ray, which
 # <app>/main.roc names as a sibling of roc-apps. That is a
 # path in the source rather than something a script edits, so it has to be true.
@@ -12,7 +13,7 @@ set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../pinned-roc.sh"
 OUT="${OUT:-$HOME/build/roc-apps/canvas_apps}"
-TARGET="${TARGET:-x64glibc}"
+TARGET="${TARGET:-x64v1glibc}"
 OPT="${OPT:-dev}"
 name="${1:?usage: canvas_apps/native.sh <app>}"
 app="$HERE/$name/main.roc"

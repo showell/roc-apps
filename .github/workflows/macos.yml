@@ -38,21 +38,20 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: lukewilliamboswell/roc-ray
-          ref: e100c9548b903ee5c7363f5997251980c4355c7b
+          ref: 23eec6e8e93aceff6701df564a9ac336d5d4b9ea
           path: roc-ray
 
       - name: Install Zig
         uses: xyzzylabs/setup-zig@09d85d9dbb73308882e7a26e61a8f706eed40df1 # v1.0.2, on Node 24
         with:
-          version: 0.16.0
+          version: 0.17.0
 
       - name: Install Roc
         uses: roc-lang/setup-roc@cbe782d6f165b89c87d99f50a59ac4f5f73b4427
         with:
           version: nightly-new-compiler
-          # The nightly roc-ray e100c95 builds with; the rest of roc-apps uses
-          # the one in roc-version.
-          nightly-tag: nightly-2026-09-22-e494788
+          # The nightly in roc-version, which pinned-roc.sh requires.
+          nightly-tag: nightly-2026-11-03-34bd006
 
       # ReleaseFast: a plain `zig build` is a Debug host, whose checked
       # arithmetic and resource-heap checks took a third of Safari's frame.

@@ -13,12 +13,12 @@ that stays put. `workshop` is a pixel paint program you drag on.
 Six of the eight — all but `safari` and `trick_or_treat` — are roc-ray's own
 examples, by Luke Boswell, taken with only small changes to fit this scheme.
 
-**The native side is a spike that proved the concept, and it is not kept
-current.** It showed that one set of files can run on roc-ray and as a page.
-It builds against roc-ray at `e100c95` with Roc nightly 09-22 (below), and
-there is no immediate intention of following roc-ray forward. roc-ray 0.12.0
-reworks the shader API the runner uses and needs a newer Roc. The page is
-the maintained side.
+**The native side runs on roc-ray 0.12.0** (`23eec6e`), with the
+repository's pinned nightly; roc-ray names no compiler of its own. It shows
+that one set of files can run on roc-ray and as a page. The page is the side
+we check most: the safari gate and every page build judge it, while the
+native side is checked by `roc check` here and by the Windows workflow,
+which builds every app and runs it headless.
 
     canvas_apps/build.sh snake       the page,   http://<box>:9210/snake/
     canvas_apps/native.sh snake      the native program
@@ -311,8 +311,7 @@ long movie wants: `FRAMES=1500`.
 | `safari` | this repository's own screensaver, which began as a Codex program; `safari/README.md` |
 | `trick_or_treat` | this repository's own |
 
-The roc-ray examples were taken at commit `e100c95`, which is also the roc-ray
-CI pins. Each ported file says in its own docstring what changed in it and why,
+The roc-ray examples were taken at commit `e100c95`. Each ported file says in its own docstring what changed in it and why,
 which is the copy to trust. The shape of the change is the same throughout: the
 rules keep their arithmetic and change their import lines, and the drawing is
 rewritten, because upstream draws into a `Draw.Frame` and here a frame is a

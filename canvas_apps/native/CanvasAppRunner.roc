@@ -1,10 +1,10 @@
-# CanvasAppRunner -- the whole of running a canvas app on roc-ray, for any app.
+# CanvasAppRunner runs any canvas app on roc-ray.
 #
 # An app's main.roc names its CanvasApp value and hands it here. What is in this
 # file is what web/canvas_app_runner.js does on a page: the window, the clock,
 # the keyboard, and the painting. Neither knows which app it is running.
 #
-# **THE KEYBOARD IS THE POINT OF THE SEAM.** roc-ray hands the host's own
+# The keyboard is where the two ends meet. roc-ray hands the host's own
 # `Devices.Snapshot`; this converts it into an `Input.Snapshot`, which is the
 # same thing a browser's event loop builds out of keydown and keyup. So an
 # app's `read_controls` -- the one function that touches the keyboard -- is
@@ -29,6 +29,7 @@ import rr.Devices
 import rr.Mouse as HostMouse
 import rr.Draw
 import rr.Math
+import rr.Shader
 import lib.Brush
 import lib.BrushGlsl
 import lib.CanvasApp
@@ -38,19 +39,23 @@ import lib.Mouse
 import lib.Shapes
 
 CanvasAppRunner :: [].{
-	Gpu : {
-		shader : Draw.Shader,
-		mode : Draw.F32Uniform,
-		clip : Draw.Vec4Uniform,
-		color_a : Draw.Vec4Uniform,
-		color_b : Draw.Vec4Uniform,
-		color_c : Draw.Vec4Uniform,
-		geom_a : Draw.Vec4Uniform,
-		geom_b : Draw.Vec4Uniform,
-		geom_c : Draw.Vec4Uniform,
+
+	## The values BrushGlsl's fragment shader reads, by its uniforms' names:
+	## which shading, where it may paint, and the colours and geometry that
+	## shading wants. Every field is sent with every shape, so a slot the
+	## shading doesn't read is zero.
+	BrushUniforms : {
+		mode : F32,
+		clip : Math.Vec4,
+		color_a : Math.Vec4,
+		color_b : Math.Vec4,
+		color_c : Math.Vec4,
+		geom_a : Math.Vec4,
+		geom_b : Math.Vec4,
+		geom_c : Math.Vec4,
 	}
 
-	Model(model) : { state : model, fps : Bool, target : Draw.RenderTexture, gpu : CanvasAppRunner.Gpu }
+	Model(model) : { state : model, fps : Bool, target : Draw.RenderTexture, shader : Shader(CanvasAppRunner.BrushUniforms) }
 
 	Msg : []
 
@@ -66,32 +71,21 @@ CanvasAppRunner :: [].{
 		}
 	}
 
-	init! : CanvasApp.CanvasApp(model) -> App.Init(CanvasAppRunner.Model(model), [TextureGenerationFailed, ResourceLimit, ShaderLoadFailed, UniformNotFound, RenderTextureLoadFailed])
+	init! : CanvasApp.CanvasApp(model) -> App.Init(CanvasAppRunner.Model(model), _)
 	init! = |game| App.init(
-		# **THE GAME SETS THE RATE**, as it does on a page: the rules are a
+		# The game sets the frame rate, as it does on a page: the rules are a
 		# function of the ticks and the keys, not of how long a frame took.
 		App.default.with_title(game.title).with_size({ width: F64.to_i32_wrap(game.size.width), height: F64.to_i32_wrap(game.size.height) }).with_frame_pacing(Capped(game.fps)),
 		|_io| {
 			target = Draw.RenderTexture.load!(target_size(game))?
 			Assets.set_texture_filter!(target.texture(), Bilinear)
-			shader = Draw.Shader.from_source!({ vertex_source: BrushGlsl.vertex, fragment_source: BrushGlsl.fragment })?
-			gpu = {
-				shader,
-				mode: shader.uniform_f32!("mode")?,
-				clip: shader.uniform_vec4!("clip")?,
-				color_a: shader.uniform_vec4!("colorA")?,
-				color_b: shader.uniform_vec4!("colorB")?,
-				color_c: shader.uniform_vec4!("colorC")?,
-				geom_a: shader.uniform_vec4!("geomA")?,
-				geom_b: shader.uniform_vec4!("geomB")?,
-				geom_c: shader.uniform_vec4!("geomC")?,
-			}
-			Ok({ state: game.init, fps: Bool.False, target, gpu })
+			shader = Shader.from_source!({ vertex_source: BrushGlsl.vertex, fragment_source: BrushGlsl.fragment }, uniforms_of(Skip, Anywhere))?
+			Ok({ state: game.init, fps: Bool.False, target, shader })
 		},
 	)
 
-	# **THE ONE PLACE THE HOST'S KEYBOARD BECOMES THE GAME'S.** Every key the
-	# canvas_apps knows, asked of roc-ray's snapshot and written into ours. The arms
+	# This is the one place the host's keyboard becomes the game's: every key
+	# the canvas apps know, asked of roc-ray's snapshot and written into ours. The arms
 	# look tautological because the tags are spelled the same on purpose; they
 	# are two different types, and this is the bridge.
 	watched_keys : List(Keys.Key)
@@ -243,7 +237,7 @@ CanvasAppRunner :: [].{
 			model.target,
 			|big| {
 				big.clear!(Color.black)
-				draw_runs!(model.gpu, game.size, big, shapes)
+				draw_runs!(model.shader, game.size, big, shapes)
 				Ok({})
 			},
 		)?
@@ -265,7 +259,7 @@ CanvasAppRunner :: [].{
 		Camera.new({ target: { x: mid_x, y: mid_y }, offset: { x: mid_x * zoom, y: mid_y * zoom }, rotation, zoom })
 	}
 
-	# **THE TWO MARKS ARE ONE PROBLEM.** A blend says how the shapes after it
+	# The two kinds of mark are handled together. A blend says how the shapes after it
 	# combine and a view says where they are, and raylib takes each as a scope
 	# rather than a flag. So the frame is walked once and cut into runs: the
 	# shapes between two marks share a space and a mode and are drawn inside
@@ -276,8 +270,8 @@ CanvasAppRunner :: [].{
 	# there does not disturb the blend; cutting the frame twice here, once per
 	# mark, would have reset the mode at every view boundary and lit a glow on
 	# a page that was flat natively.
-	draw_runs! : CanvasAppRunner.Gpu, { width : F64, height : F64 }, Draw.Frame, List(Shapes.Shape) => {}
-	draw_runs! = |gpu, size, frame, shapes| {
+	draw_runs! : Shader(CanvasAppRunner.BrushUniforms), { width : F64, height : F64 }, Draw.Frame, List(Shapes.Shape) => {}
+	draw_runs! = |shader, size, frame, shapes| {
 		n = List.len(shapes)
 		var $run = List.with_capacity(n)
 		var $space = Screen
@@ -286,12 +280,12 @@ CanvasAppRunner :: [].{
 		while $k < n {
 			match List.get(shapes, $k) ?? crash ("shape out of range") {
 				Blend(next) => {
-					draw_run!(gpu, size, frame, $run, $space, $mode)
+					draw_run!(shader, size, frame, $run, $space, $mode)
 					$run = List.with_capacity(n - $k)
 					$mode = next
 				}
 				View(next) => {
-					draw_run!(gpu, size, frame, $run, $space, $mode)
+					draw_run!(shader, size, frame, $run, $space, $mode)
 					$run = List.with_capacity(n - $k)
 					$space = next
 				}
@@ -301,18 +295,18 @@ CanvasAppRunner :: [].{
 			}
 			$k = $k + 1
 		}
-		draw_run!(gpu, size, frame, $run, $space, $mode)
+		draw_run!(shader, size, frame, $run, $space, $mode)
 	}
 
-	draw_run! : CanvasAppRunner.Gpu, { width : F64, height : F64 }, Draw.Frame, List(Shapes.Shape), Shapes.Space, Shapes.Mode => {}
-	draw_run! = |gpu, size, frame, run, space, mode|
+	draw_run! : Shader(CanvasAppRunner.BrushUniforms), { width : F64, height : F64 }, Draw.Frame, List(Shapes.Shape), Shapes.Space, Shapes.Mode => {}
+	draw_run! = |shader, size, frame, run, space, mode|
 		if List.is_empty(run) {
 			{}
 		} else {
 			scope = frame.with_camera!(
 				staged(size, space),
 				|seen| {
-					draw_under!(gpu, seen, run, mode)
+					draw_under!(shader, seen, run, mode)
 					Ok({})
 				},
 			)
@@ -322,15 +316,15 @@ CanvasAppRunner :: [].{
 			}
 		}
 
-	draw_under! : CanvasAppRunner.Gpu, Draw.Frame, List(Shapes.Shape), Shapes.Mode => {}
-	draw_under! = |gpu, frame, run, mode|
+	draw_under! : Shader(CanvasAppRunner.BrushUniforms), Draw.Frame, List(Shapes.Shape), Shapes.Mode => {}
+	draw_under! = |shader, frame, run, mode|
 		match mode {
-			Over => draw_all!(gpu, frame, run)
+			Over => draw_all!(shader, frame, run)
 			Add => {
 				scope = frame.with_blend_mode!(
 					Draw.additive_blend,
 					|lit| {
-						draw_all!(gpu, lit, run)
+						draw_all!(shader, lit, run)
 						Ok({})
 					},
 				)
@@ -341,8 +335,8 @@ CanvasAppRunner :: [].{
 			}
 		}
 
-	# **THE GAME'S LENS, THROUGH THE ONE THE WHOLE FRAME IS DRAWN AT.** Every
-	# frame here is painted into a texture at twice the window and scaled back
+	# The game's camera, combined with the scaling the whole frame is drawn at.
+	# Every frame here is painted into a texture at twice the window and scaled back
 	# down, which is a camera of its own, and raylib's camera scopes do not
 	# nest. Both are similarity transforms, so their composition is one
 	# camera: scaling the offset and the zoom is the whole of it.
@@ -359,24 +353,24 @@ CanvasAppRunner :: [].{
 				})
 		}
 
-	draw_all! : CanvasAppRunner.Gpu, Draw.Frame, List(Shapes.Shape) => {}
-	draw_all! = |gpu, frame, shapes| {
+	draw_all! : Shader(CanvasAppRunner.BrushUniforms), Draw.Frame, List(Shapes.Shape) => {}
+	draw_all! = |shader, frame, shapes| {
 		n = List.len(shapes)
 		var $k = 0
 		while $k < n {
-			draw_shape!(gpu, frame, List.get(shapes, $k) ?? crash ("shape out of range"))
+			draw_shape!(shader, frame, List.get(shapes, $k) ?? crash ("shape out of range"))
 			$k = $k + 1
 		}
 		{}
 	}
 
-	draw_shape! : CanvasAppRunner.Gpu, Draw.Frame, Shapes.Shape => {}
-	draw_shape! = |gpu, frame, shape|
+	draw_shape! : Shader(CanvasAppRunner.BrushUniforms), Draw.Frame, Shapes.Shape => {}
+	draw_shape! = |shader, frame, shape|
 		match shape {
-			Poly(p) => with_fill!(gpu, frame, p.fill, Anywhere, |f, col| f.convex_polygon!({ points: points(p.pts), style: Draw.filled(col) }))
-			Pieces(p) => with_fill!(gpu, frame, p.fill, Anywhere, |f, col| draw_triangles!(f, p.tris, col))
-			Disc(d) => with_fill!(gpu, frame, d.fill, d.clip, |f, col| f.circle!({ center: point(d.x, d.y), radius: F64.to_f32_wrap(d.r), style: Draw.filled(col) }))
-			Rect(r) => with_fill!(gpu, frame, r.fill, Anywhere, |f, col| f.rectangle!({ x: F64.to_f32_wrap(r.x), y: F64.to_f32_wrap(r.y), width: F64.to_f32_wrap(r.w), height: F64.to_f32_wrap(r.h), style: Draw.filled(col) }))
+			Poly(p) => with_fill!(shader, frame, p.fill, Anywhere, |f, col| f.convex_polygon!({ points: points(p.pts), style: Draw.filled(col) }))
+			Pieces(p) => with_fill!(shader, frame, p.fill, Anywhere, |f, col| draw_triangles!(f, p.tris, col))
+			Disc(d) => with_fill!(shader, frame, d.fill, d.clip, |f, col| f.circle!({ center: point(d.x, d.y), radius: F64.to_f32_wrap(d.r), style: Draw.filled(col) }))
+			Rect(r) => with_fill!(shader, frame, r.fill, Anywhere, |f, col| f.rectangle!({ x: F64.to_f32_wrap(r.x), y: F64.to_f32_wrap(r.y), width: F64.to_f32_wrap(r.w), height: F64.to_f32_wrap(r.h), style: Draw.filled(col) }))
 			# **roc-ray IS HANDED THE RECTANGLES**, as it is handed triangles
 			# for a concave polygon: each painter gets a frame in the form it
 			# can paint. A canvas has `putImageData`; here a texture would be
@@ -415,81 +409,92 @@ CanvasAppRunner :: [].{
 	span : U64 -> F64
 	span = |n| I64.to_f64(U64.to_i64_wrap(n))
 
-	# Draw with a flat colour directly, or through the shader: its uniforms set for
-	# the fill and the geometry drawn in white, which the shader ignores.
-	with_fill! : CanvasAppRunner.Gpu, Draw.Frame, Brush.Fill, Shapes.Clip, (Draw.Frame, Color.Rgba => {}) => {}
-	with_fill! = |gpu, frame, fill, clip, draw_it!|
+	# Draw with a flat colour directly, or through the shader: its uniforms
+	# made from the fill, and the geometry drawn in white, which the shader
+	# ignores.
+	with_fill! : Shader(CanvasAppRunner.BrushUniforms), Draw.Frame, Brush.Fill, Shapes.Clip, (Draw.Frame, Color.Rgba => {}) => {}
+	with_fill! = |shader, frame, fill, clip, draw_it!|
 		match fill {
 			Skip => {}
 			Flat(col) if unclipped(clip) => draw_it!(frame, color_of(col))
 			_ => {
 				scope = frame.with_shader!(
-					gpu.shader,
+					shader.with_uniforms(uniforms_of(fill, clip)),
 					|shaded| {
-						set_uniforms!(gpu, fill, clip)
 						draw_it!(shaded, Color.white)
 						Ok({})
 					},
 				)
 				match scope {
 					Ok({}) => {}
-					Err(_) => crash ("the player: a shader scope was refused")
+					Err(_) => crash "the player: a shader scope was refused"
 				}
 			}
 		}
 
-	# The fill, into the uniforms BrushGlsl reads: which shading, where it may
-	# paint, and the colours and geometry that shading wants.
-	set_uniforms! : CanvasAppRunner.Gpu, Brush.Fill, Shapes.Clip => {}
-	set_uniforms! = |gpu, fill, clip| {
-		# A zero width is "no clip"; the shader keeps every fragment.
-		gpu.clip.set!(
-			match clip {
-				Anywhere => vec(0.0, 0.0, 0.0, 0.0)
+	# The fill as the uniforms BrushGlsl reads. A zero clip width means no
+	# clip, so the shader keeps every fragment.
+	uniforms_of : Brush.Fill, Shapes.Clip -> CanvasAppRunner.BrushUniforms
+	uniforms_of = |fill, clip| {
+		none = vec(0.0, 0.0, 0.0, 0.0)
+		blank = {
+			mode: F64.to_f32_wrap(BrushGlsl.mode_of(fill)),
+			clip: match clip {
+				Anywhere => none
 				Within(r) => vec(r.x, r.y, r.w, r.h)
 			},
-		)
-		gpu.mode.set!(F64.to_f32_wrap(BrushGlsl.mode_of(fill)))
+			color_a: none,
+			color_b: none,
+			color_c: none,
+			geom_a: none,
+			geom_b: none,
+			geom_c: none,
+		}
 		match fill {
-			Skip => {}
-			Flat(c) => gpu.color_a.set!(rgba_vec(c))
+			Skip => blank
+			Flat(c) => { ..blank, color_a: rgba_vec(c) }
 			Span(p) => {
-				gpu.color_a.set!(rgba_vec(p.edge))
-				gpu.color_b.set!(rgba_vec(p.middle))
-				gpu.geom_a.set!(vec(p.x0, p.x1, 0.0, 0.0))
+				..blank,
+				color_a: rgba_vec(p.edge),
+				color_b: rgba_vec(p.middle),
+				geom_a: vec(p.x0, p.x1, 0.0, 0.0),
 			}
 			Radial(p) => {
-				gpu.color_a.set!(rgba_vec(p.inner))
-				gpu.color_b.set!(rgba_vec(p.outer))
-				gpu.geom_a.set!(vec(p.x, p.y, p.r0, p.r1))
+				..blank,
+				color_a: rgba_vec(p.inner),
+				color_b: rgba_vec(p.outer),
+				geom_a: vec(p.x, p.y, p.r0, p.r1),
 			}
 			Linear(p) => {
-				gpu.color_a.set!(rgba_vec(p.c0))
-				gpu.color_b.set!(rgba_vec(p.c1))
-				gpu.geom_a.set!(vec(p.o0, p.o1, 0.0, 0.0))
-				gpu.geom_b.set!(vec(p.ax, p.ay, p.dx, p.dy))
+				..blank,
+				color_a: rgba_vec(p.c0),
+				color_b: rgba_vec(p.c1),
+				geom_a: vec(p.o0, p.o1, 0.0, 0.0),
+				geom_b: vec(p.ax, p.ay, p.dx, p.dy),
 			}
 			Ellipse(p) => {
-				gpu.color_a.set!(rgba_vec(p.c0))
-				gpu.color_b.set!(rgba_vec(p.c1))
-				gpu.geom_a.set!(vec(p.o0, p.o1, 0.0, 0.0))
-				gpu.geom_b.set!(vec(p.x, p.y, 0.0, 0.0))
-				gpu.geom_c.set!(vec(p.ia, p.ib, p.ic, p.id))
+				..blank,
+				color_a: rgba_vec(p.c0),
+				color_b: rgba_vec(p.c1),
+				geom_a: vec(p.o0, p.o1, 0.0, 0.0),
+				geom_b: vec(p.x, p.y, 0.0, 0.0),
+				geom_c: vec(p.ia, p.ib, p.ic, p.id),
 			}
 			Glow(p) => {
-				gpu.color_a.set!(rgba_vec(p.c0))
-				gpu.color_b.set!(rgba_vec(p.c1))
-				gpu.color_c.set!(rgba_vec(p.c2))
-				gpu.geom_a.set!(vec(p.x, p.y, p.r0, p.r1))
+				..blank,
+				color_a: rgba_vec(p.c0),
+				color_b: rgba_vec(p.c1),
+				color_c: rgba_vec(p.c2),
+				geom_a: vec(p.x, p.y, p.r0, p.r1),
 			}
 		}
 	}
 
-	rgba_vec : Brush.Rgba -> Draw.Vec4
+	rgba_vec : Brush.Rgba -> Math.Vec4
 	rgba_vec = |c| vec(c.r / 255.0, c.g / 255.0, c.b / 255.0, c.a)
 
-	vec : F64, F64, F64, F64 -> Draw.Vec4
-	vec = |x, y, z, w| { x: F64.to_f32_wrap(x), y: F64.to_f32_wrap(y), z: F64.to_f32_wrap(z), w: F64.to_f32_wrap(w) }
+	vec : F64, F64, F64, F64 -> Math.Vec4
+	vec = |x, y, z, w| Math.vec4(F64.to_f32_wrap(x), F64.to_f32_wrap(y), F64.to_f32_wrap(z), F64.to_f32_wrap(w))
 
 	color_of : Brush.Rgba -> Color.Rgba
 	color_of = |c| Color.rgba(byte(c.r), byte(c.g), byte(c.b), byte(c.a * 255.0))
@@ -546,8 +551,7 @@ CanvasAppRunner :: [].{
 			{}
 		}
 
-	# **THE RUNNER IS A FUNCTION OF THE GAME IT RUNS.** An app names its game
-	# and hands it over; nothing here is found by name.
+	# An app names its game and hands it over; nothing here is found by name.
 	program = |game| {
 		init!: init!(game),
 		update!: |model, input, io| update!(game, model, input, io),
