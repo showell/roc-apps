@@ -36,7 +36,7 @@ the maintained side.
 | `snake/main.roc` | the app on roc-ray, reaching the runner as `native.CanvasAppRunner` |
 | `snake/web.roc` | the app as a page, on `web/platform/`, through `lib.WasmApp` |
 | `lib/` | a package every app shares: `CanvasApp` `WasmApp` `Shapes` `Brush` `Input` `Keys` `Mouse` `Math` `Color` `Camera` `Font` `Random` `Trig` `DeviceMath` `BrushGlsl` `View` |
-| `web/` | the page's end: the wasm platform and host, `build.zig` and `options.zig` (the host object, rebuilt by every page build), `canvas_app_runner.js`, `shapewire.js`, `page_check.mjs`, `mini_canvas.mjs`, `camera_check.mjs` |
+| `web/` | the page's end: the wasm platform and host, `build.zig` and `options.zig` (the host object, rebuilt by every page build), `canvas_app_runner.js`, `shapes_canvas.js`, `page_check.mjs`, `mini_canvas.mjs`, `camera_check.mjs` |
 | `native/` | roc-ray's end, as a package: `CanvasAppRunner.roc` |
 
 An app's own directory holds a `<Name>App.roc` with the `CanvasApp` value in
@@ -77,7 +77,7 @@ The page's own part is one object, before the script tags:
 window.SHOW = { wasm: '<name>.wasm', loading: 'Loading…' };
 </script>
 <script src="roc_glue.js"></script>
-<script src="shapewire.js"></script>
+<script src="shapes_canvas.js"></script>
 <script src="canvas_app_runner.js"></script>
 ```
 
@@ -223,7 +223,7 @@ page binds `RocGlue.frame` rather than a numbered type.
 A page loads three scripts in order and the wasm:
 
     roc_glue.js             reads a frame out of wasm memory
-    shapewire.js            paints shapes onto a canvas
+    shapes_canvas.js            paints shapes onto a canvas
     canvas_app_runner.js    the clock, the keyboard, the pointer, the speaker
 
 **One call for a frame.** `computeFrame()` asks Roc for a new frame and answers
@@ -268,7 +268,7 @@ compared with another. It fails if the page drew nothing but its background, or
 if the picture never changed.
 
 With `SHOT=<file>.png`, every canvas is also a real one: `mini_canvas.mjs`, a
-dependency-free software rasterizer for exactly the canvas calls `shapewire.js`
+dependency-free software rasterizer for exactly the canvas calls `shapes_canvas.js`
 and `canvas_app_runner.js` make — paths, nonzero fill, linear and concentric
 radial gradients, clip, the additive composite, images — supersampled for
 anti-aliasing, with PNGs through node's own zlib. The real painter runs
@@ -281,7 +281,7 @@ the same for the driving game's cat.
 Because the input is scripted and the clock is virtual, a shot is the same on
 every run of the same build, so a changed picture is a changed program.
 
-`camera_check.mjs` hands `shapewire.js` a view mark and checks the canvas
+`camera_check.mjs` hands `shapes_canvas.js` a view mark and checks the canvas
 matrix it builds against the same map written the geometric way,
 `screen = zoom · R(rotation) · (world − target) + offset`, at four cameras and
 four points.

@@ -1,8 +1,9 @@
-# Paint one Safari frame with SafariFrame, natively, and print it: a hash line, the
-# size, then every pixel as six hex digits, for ray/pixels_png.mjs.
-# Hand-written, like FrameBench.
-#
-#   roc build --opt=dev RasterFrame.roc --output=<bin>; <bin> [steps] | ray/pixels_png.mjs <png>
+## RasterFrame paints one Safari frame with SafariFrame and prints it: a hash
+## line, the size, then every pixel as six hex digits, which pixels_png.mjs
+## turns into a PNG. It is test code, a program Safari's gate runs (see
+## SafariFrame for more context).
+##
+##   roc build --opt=dev RasterFrame.roc --output=<bin>; <bin> [steps] | node pixels_png.mjs <png>
 app [main!] {
 	lib: "../lib/main.roc",
 }

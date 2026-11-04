@@ -3,7 +3,7 @@
 // <height>`, then every pixel as six hex digits (0xRRGGBB, row-major). Prints
 // the hash line and writes the image.
 //
-//   <RasterFrame binary> [steps] | ray/pixels_png.mjs <out.png>
+//   <RasterFrame binary> [steps] | node pixels_png.mjs <out.png>
 import { deflateSync } from "node:zlib";
 import { readFileSync, writeFileSync } from "node:fs";
 

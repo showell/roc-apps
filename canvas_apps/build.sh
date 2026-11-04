@@ -45,7 +45,7 @@ if grep -q "✗" "$LOG" || [ ! -s "$OUT/$name.wasm" ]; then cat "$LOG"; echo "bu
 # the compiler that built the wasm. Not checked in, never edited.
 "$ROC" glue "$HERE/../glue/JsGlue.roc" "$OUT" "$HERE/web/platform/main.roc" > "$LOG.glue" 2>&1 \
     || { cat "$LOG.glue"; echo "glue failed"; exit 1; }
-cp "$HERE/web/shapewire.js" "$HERE/web/canvas_app_runner.js" "$OUT/"
+cp "$HERE/web/shapes_canvas.js" "$HERE/web/canvas_app_runner.js" "$OUT/"
 # **WHICH COMPILER BUILT THIS**, recorded where the build happens rather than
 # guessed later: these pin the nightly roc-ray pins, and the `roc` symlink
 # points at a different one.

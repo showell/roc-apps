@@ -1,12 +1,10 @@
-# Frame -- what a frame IS, declared by the platform so the compiler knows.
-#
-# EXPERIMENT. The shipped platform says `frame : Box(model) -> List(U32)`,
-# which means ShapeWire.pack has flattened the picture before the compiler
-# sees it, and generated glue can only ever produce a list-of-integers reader.
-# This says the real type, so the type table carries the whole vocabulary.
-#
-# Structural unions throughout (`:`, not `:=`), so lib/Shapes.roc's Shape
-# unifies with this one by shape rather than by name.
+## Frame says what a frame is, so the compiler knows: the platform's `frame`
+## returns a `List(Frame.Shape)`. The type table the compiler reports then
+## carries every shape and fill, and `roc glue` generates the page's reader,
+## roc_glue.js, from it. shapes_canvas.js paints what that reader returns.
+##
+## The unions are structural (`:`, not `:=`), so lib/Shapes.roc's Shape
+## unifies with this one by shape rather than by name.
 Frame :: [].{
 	Rgba : { r : F64, g : F64, b : F64, a : F64 }
 

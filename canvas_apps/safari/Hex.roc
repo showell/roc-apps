@@ -1,6 +1,7 @@
-# THE HEX DIGITS THE NATIVE PROOF TOOLS PRINT. RasterFrame and ShapesFrame
-# print a frame's pixels as six hex digits each, for ray/pixels_png.mjs, and
-# RasterFrame prints its hash as eight. Hand-written, like them.
+## Hex writes the hex digits that RasterFrame and ShapesFrame print, so it is
+## test code too (see SafariFrame for more context). They print a frame's
+## pixels as six hex digits each, for pixels_png.mjs, and RasterFrame prints
+## its hash as eight.
 
 Hex :: [].{
 

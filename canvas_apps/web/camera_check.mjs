@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 // **DOES A VIEW MARK PUT A WORLD POINT WHERE Camera.roc SAYS IT DOES?**
 //
-// A camera reaches the page as four settings and leaves shapewire.js as a
+// A camera reaches the page as four settings and leaves shapes_canvas.js as a
 // canvas matrix, and a canvas matrix is six numbers in an order that is easy
 // to get wrong: `setTransform(a, b, c, d, e, f)` maps (x, y) to
 // (a·x + c·y + e, b·x + d·y + f), so `b` and `c` are the transposed pair and
 // swapping them mirrors a rotated world instead of turning it.
 //
-// So this hands shapewire.js a view mark and asks where it puts points, and
+// So this hands shapes_canvas.js a view mark and asks where it puts points, and
 // compares that against the map written the way Camera.roc writes it:
 //
 //     screen = zoom · R(rotation) · (world − target) + offset
@@ -41,9 +41,9 @@ function transformFor(shapes) {
   });
   const sandbox = { Math, Error, Array, Uint32Array, Float32Array, DataView };
   vm.createContext(sandbox);
-  // shapewire.js answers one name and answers it as a `const`, which a vm
+  // shapes_canvas.js answers one name and answers it as a `const`, which a vm
   // context does not expose as a property, so the script says so itself.
-  vm.runInContext(`${readFileSync(`${here}shapewire.js`, "utf8")}\nglobalThis.wire = ShapeWire;`, sandbox);
+  vm.runInContext(`${readFileSync(`${here}shapes_canvas.js`, "utf8")}\nglobalThis.wire = ShapesCanvas;`, sandbox);
   sandbox.wire.paint(ctx, shapes);
   return seen[0] ?? null;
 }

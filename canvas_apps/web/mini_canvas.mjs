@@ -1,5 +1,5 @@
 // mini_canvas — a dependency-free software rasterizer for the part of
-// CanvasRenderingContext2D that shapewire.js and canvas_app_runner.js use, so a
+// CanvasRenderingContext2D that shapes_canvas.js and canvas_app_runner.js use, so a
 // canvas app's frame can be SEEN without a browser.
 //
 // Ported from angry-gopher's games/driving/mini_canvas.ts, which does the same

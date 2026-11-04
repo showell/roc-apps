@@ -1,10 +1,10 @@
 ## JsGlue -- generate JavaScript readers for a Roc platform's types.
 ##
-## Roc ships ZigGlue, RustGlue and CGlue; there is no JavaScript one, so a page
-## that wants a Roc value has to be told the layout by hand. That is what
-## `canvas_apps/web/shapewire.js` is: a decoder written twice, once as
-## `ShapeWire.pack` in Roc and once as a reader in JavaScript, with nothing
-## checking that the two agree. This generates the reader instead.
+## Roc ships ZigGlue, RustGlue and CGlue; there is no JavaScript one. Without
+## one, a page that wants a Roc value must be told its layout by hand, in a
+## decoder that nothing checks against the Roc side. This generates the reader
+## from the layout the compiler reports; the canvas apps' pages read their
+## frames this way.
 ##
 ##   roc glue glue/JsGlue.roc <out-dir> <platform>/main.roc
 ##
@@ -16,7 +16,7 @@
 ##   - the signature of every provided function, as a comment, so a host author
 ##     can see what it is binding.
 ##
-## **WASM IS 32-BIT**, so every layout fact used here is the `*32` one. The
+## Wasm is 32-bit, so every layout fact used here is the `*32` one. The
 ## compiler carries both widths; a 64-bit host would take the others.
 app [make_glue] { pf: platform glue }
 

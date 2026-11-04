@@ -1,15 +1,15 @@
 # Brush -- the paint a shape is filled with: a flat colour or one of five
 # gradients, its geometry in scene coordinates. Safari's ScanlineFill shades
-# one on the CPU, BrushGlsl on the GPU and shapewire.js on a canvas, all from
+# one on the CPU, BrushGlsl on the GPU and shapes_canvas.js on a canvas, all from
 # what is here.
 #
 # **EVERY APP'S**, which is why it sits in lib/ rather than in safari/.
 # Reading a brush out of a Codex draw command is Safari's business and is in
 # SafariBrush.roc.
 #
-# Hand-written. The tags are shapewire.js's, and so is what they mean: gradients
+# Hand-written. The tags are shapes_canvas.js's, and so is what they mean: gradients
 # mix unpremultiplied, as the canvas specification says, and an offset outside
-# [0, 1] is clamped as shapewire.js clamps it.
+# [0, 1] is clamped as shapes_canvas.js clamps it.
 
 Brush :: [].{
 	# Red, green and blue in 0..255, alpha in 0..1.

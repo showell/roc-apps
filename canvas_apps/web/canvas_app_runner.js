@@ -1,17 +1,16 @@
 // canvas_app_runner — the browser half of canvas_apps, and the twin of
 // native/CanvasAppRunner.roc. It loads an app's wasm, runs the clock and the
-// keyboard, and hands each frame to ShapeWire to paint.
+// keyboard, and hands each frame to ShapesCanvas to paint.
 //
-// **NOT ONLY GAMES.** Six programs are built against this file and two of them
-// are not games: `camera` is a world you fly around and `trick_or_treat` is a
-// movie you can scrub. What they share is that they are a Roc value on a
-// canvas, stepped at their own rate and drawn from what they answer. The
-// `game` in the names below is older than that and has not been made honest
-// yet.
+// Not every program built against this file is a game: `camera` is a world
+// you fly around and `trick_or_treat` is a movie you can scrub. What they
+// share is that each is a Roc value on a canvas, stepped at its own rate and
+// drawn from what it answers. The `game` in the names below is older than
+// that.
 //
 // The app is the same Roc that runs natively. What is in here is only what a
 // browser does differently: keep the input, pace the clock, show the speaker.
-// Reading a frame and filling a canvas is shapewire.js, which this loads
+// Reading a frame and filling a canvas is shapes_canvas.js, which this loads
 // first and which knows nothing about any of them.
 //
 //   window.SHOW = { wasm: 'snake.wasm', loading: '…' }
@@ -262,7 +261,7 @@ async function main(show) {
     ctx.globalCompositeOperation = 'source-over';
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, width, height);
-    ShapeWire.paint(ctx, game.frame());
+    ShapesCanvas.paint(ctx, game.frame());
     drawSpeaker(ctx, width, height, toneCount, ringing, now);
   };
 

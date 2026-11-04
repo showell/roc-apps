@@ -10,11 +10,12 @@
 ## to check the drawing pixel for pixel. RasterFrame prints a hash of a
 ## frame's pixels, so we can confirm that a change which shouldn't alter the
 ## picture leaves the hash the same. ShapesFrame paints a frame from its draw
-## commands, paints it again from the shapes the browser is given, and counts
-## the pixels that differ; the gate requires none.
+## commands, paints it again from the shapes the browser is given (with
+## ShapesPixels, the Roc twin of shapes_canvas.js), and counts the pixels
+## that differ; the gate requires none.
 ##
 ## The game itself paints differently. In the browser, the Roc program (built
-## to wasm) hands each frame to the page as shapes, and shapewire.js paints
+## to wasm) hands each frame to the page as shapes, and shapes_canvas.js paints
 ## them with the browser's canvas. Wasm reaches a canvas only through JS in
 ## any case, and a canvas paints paths and gradients natively and
 ## anti-aliased, far faster than Roc could fill every pixel and copy the

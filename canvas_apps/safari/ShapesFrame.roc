@@ -1,23 +1,23 @@
-# Check Shapes' cutting of a frame against ScanlineFill's polygon fill,
-# natively. Hand-written, like RasterFrame.
-#
-# The frame is painted twice: once as SafariFrame paints it, and once with the
-# commands replaced by the shapes Shapes cuts them into, each piece filled by
-# ScanlineFill with the piece's brush. Gradients included, the two agree pixel for
-# pixel when the pieces cover exactly what their polygon covers. It prints how
-# many pixels differ and how many triangles the cutting made, then the cut
-# frame as RasterFrame prints one, for ray/pixels_png.mjs.
-#
-#   roc build --opt=dev ShapesFrame.roc --output=<bin>; <bin> [steps] | ray/pixels_png.mjs <png>
+## ShapesFrame checks that the shapes the browser is given cover exactly what
+## Safari's draw commands cover. It is test code, a program Safari's gate runs
+## (see SafariFrame for more context). It paints a frame twice: once as
+## SafariFrame paints it, and once with the commands replaced by the shapes
+## they become for the browser, painted by ShapesPixels, the Roc twin of
+## web/shapes_canvas.js. Gradients included, the two agree pixel for pixel
+## when the shapes cover exactly what their commands do.
+##
+## It prints how many pixels differ, how many triangles cutting the shapes
+## made and how many commands there were, then the shapes' frame in
+## RasterFrame's format, which pixels_png.mjs turns into a PNG.
+##
+##   roc build --opt=dev ShapesFrame.roc --output=<bin>; <bin> [steps] | node pixels_png.mjs <png>
 app [main!] {
 	lib: "../lib/main.roc",
 }
 
 import SafariRide
 import SafariFrame
-import ScanlineFill
-import ScreenRoll
-import lib.Brush
+import ShapesPixels
 import lib.Shapes
 import SafariShapes
 import Screen
@@ -28,54 +28,6 @@ ride_to = |m, n| if n <= 0 {
 	m
 } else {
 	ride_to(SafariRide.advance(m), n - 1)
-}
-
-# The shapes of the commands, filled by ScanlineFill onto `pixels`.
-paint_shapes : List(U32), { roll : ScreenRoll, shapes : List(Shapes.Shape) } -> List(U32)
-paint_shapes = |pixels, { roll, shapes }| {
-	n = List.len(shapes)
-	var $px = pixels
-	var $k = 0
-	while $k < n {
-		$px = match List.get(shapes, $k) ?? crash ("shape out of range") {
-			Poly(p) => ScanlineFill.fill_polygon($px, { roll, pts: p.pts, fill: p.fill })
-			Pieces(p) => paint_pieces($px, { roll, tris: p.tris, fill: p.fill })
-			Disc(d) => {
-				col = match d.fill {
-					Flat(c) => c
-					_ => crash ("a command's disc with a gradient")
-				}
-				ScanlineFill.fill_disc($px, { roll, center: ScreenRoll.ScenePoint.({ x: d.x, y: d.y }), radius: d.r, color: col })
-			}
-			Rect(_) => crash ("a command cut into a rectangle")
-			# ScanlineFill lays every pixel over what is there, so Over is the
-			# mode it is always in, and Add is light it cannot paint.
-			Blend(Over) => $px
-			Blend(Add) => crash ("a command lit in Add mode")
-			Image(_) => crash ("a command cut into an image")
-			# The roll is `roll`, SafariFrame's; SafariApp's lean mark is not a command.
-			View(_) => crash ("a command cut into a rotation mark")
-		}
-		$k = $k + 1
-	}
-	$px
-}
-
-paint_pieces : List(U32),
-{
-	roll : ScreenRoll,
-	tris : List(F64),
-	fill : Brush.Fill,
-} -> List(U32)
-paint_pieces = |pixels, { roll, tris, fill }| {
-	m = List.len(tris) // 6
-	var $px = pixels
-	var $k = 0
-	while $k < m {
-		$px = ScanlineFill.fill_polygon($px, { roll, pts: List.sublist(tris, { start: 6 * $k, len: 6 }), fill })
-		$k = $k + 1
-	}
-	$px
 }
 
 triangles : List(Shapes.Shape) -> U64
@@ -104,7 +56,7 @@ main! = |args| {
 	shapes = Shapes.cut(List.join_map(commands, SafariShapes.of_command))
 	a = SafariFrame.paint(scene)
 	backdrop = SafariFrame.paint({ ..scene, commands: [] })
-	b = paint_shapes(backdrop, { roll: SafariFrame.screen_roll(roll), shapes })
+	b = ShapesPixels.paint(backdrop, { roll: SafariFrame.screen_roll(roll), shapes })
 	n = List.len(a)
 	var $differ = 0
 	var $k = 0

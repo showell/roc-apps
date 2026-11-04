@@ -546,7 +546,7 @@ part, so a machine checks it, not a reader.
   runs one set of Roc files two ways: natively on roc-ray
   (`<app>/main.roc`) and as a page (`<app>/web.roc`). The page's
   `web/canvas_app_runner.js` only keeps the input and paces the clock, and
-  `web/shapewire.js` paints each frame. roc-apps `fasttrack/` and
+  `web/shapes_canvas.js` paints each frame. roc-apps `fasttrack/` and
   roc-markdown `playground/` (the package on a wasm32-freestanding host,
   `playground/platform/host.zig`) follow the same split.
 - **On a server, Zig carries the network.** roc-chat's `host/` is a Zig
