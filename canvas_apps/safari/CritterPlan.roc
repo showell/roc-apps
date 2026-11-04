@@ -102,7 +102,7 @@ CritterPlan :: [].{
 					if (d >= safari_seg_reach) {
 						[]
 					} else {
-						place_all(segs, ch, pose, d, hw, SafariCritter.corner_critters(sg.exit_creature, sg.length, sg.exit_right, hw))
+						place_all(segs, ch, pose, d, hw, SafariCritter.corner_critters({ creature: sg.exit_creature, corner_along: sg.length, turn: if sg.exit_right TurnsRight else TurnsLeft, lane_half_width: hw }))
 					}
 				Terminates => []
 			}
@@ -154,7 +154,7 @@ CritterPlan :: [].{
 	behind_billboards = |segs, ch, pose, prev_idx| (
 		{
 			pv = (List.get(segs, I64.to_u64_wrap(prev_idx)) ?? crash ("list-at out of range"))
-			List.concat(place_all_mapped(segs, ch, pose, Frame.prev_map(pv), (Scenery.lane_width / 2.0), SafariCritter.corner_critters(pv.exit_creature, pv.length, pv.exit_right, (Scenery.lane_width / 2.0)), 0), behind_ducks(segs, ch, pose, pv))
+			List.concat(place_all_mapped(segs, ch, pose, Frame.prev_map(pv), (Scenery.lane_width / 2.0), SafariCritter.corner_critters({ creature: pv.exit_creature, corner_along: pv.length, turn: if pv.exit_right TurnsRight else TurnsLeft, lane_half_width: (Scenery.lane_width / 2.0) }), 0), behind_ducks(segs, ch, pose, pv))
 		}
 	)
 
