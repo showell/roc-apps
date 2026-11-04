@@ -1,5 +1,5 @@
-# GroundSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are Ground's checks: how far the earth's curve lowers a point, and
+## which patches draw.
 app [main!] {
 	lib: "../lib/main.roc",
 }
@@ -7,28 +7,33 @@ app [main!] {
 import Geom
 import Grade
 import Ground
-import ListUtils
 import Paint
 
-pts_a : List(Geom.RiderPt)
-pts_a = [{ right: 0.0, forward: 0.0 }, { right: 3.0, forward: 10.0 }, { right: (-5.0), forward: 40.0 }, { right: 12.5, forward: 100.0 }]
+points : List(Geom.RiderPt)
+points = [{ right: 0.0, forward: 0.0 }, { right: 3.0, forward: 10.0 }, { right: (-5.0), forward: 40.0 }, { right: 12.5, forward: 100.0 }]
+
+on_ground : List(Geom.Vec3)
+on_ground = points.map(Ground.ground_point)
 
 height_got : List(F64)
-height_got = ListUtils.list_map(lam_0, Ground.ground_verts(pts_a, 0))
+height_got = on_ground.map(|point| point.height)
 
 height_want : List(F64)
 height_want = [0.0, (-0.000545), (-0.008125), (-0.05078125)]
 
 carry_got : List(F64)
-carry_got = (
-	{
-		vs = Ground.ground_verts(pts_a, 0)
-		[(List.get(vs, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).right, (List.get(vs, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).forward, (List.get(vs, I64.to_u64_wrap(3)) ?? crash ("list-at out of range")).right, (List.get(vs, I64.to_u64_wrap(3)) ?? crash ("list-at out of range")).forward]
-	}
-)
+carry_got = [
+	point_at(on_ground, 1).right,
+	point_at(on_ground, 1).forward,
+	point_at(on_ground, 3).right,
+	point_at(on_ground, 3).forward,
+]
 
 carry_want : List(F64)
 carry_want = [3.0, 10.0, 12.5, 100.0]
+
+point_at : List(Geom.Vec3), U64 -> Geom.Vec3
+point_at = |list, i| list.get(i) ?? crash "GroundSpec: an index past the list's end"
 
 quad : List(Geom.RiderPt)
 quad = [{ right: (-5.0), forward: 10.0 }, { right: 5.0, forward: 10.0 }, { right: 5.0, forward: 20.0 }, { right: (-5.0), forward: 20.0 }]
@@ -39,43 +44,39 @@ behind = [{ right: (-5.0), forward: (-10.0) }, { right: 5.0, forward: (-10.0) },
 two_points : List(Geom.RiderPt)
 two_points = [{ right: (-5.0), forward: 10.0 }, { right: 5.0, forward: 10.0 }]
 
-# wide builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-wide : I64 -> List(Geom.RiderPt)
-wide = |n| wide_onto(n, [])
-
-wide_onto : I64, List(Geom.RiderPt) -> List(Geom.RiderPt)
-wide_onto = |n, acc| (
-	if (n <= 0) {
-		acc
-	} else {
-		wide_onto((n - 1), List.append(acc, { right: I64.to_f64(n), forward: (10.0 + I64.to_f64(n)) }))
-	}
-)
+## A patch of `count` corners, all ahead of the camera.
+corners_ahead : I64 -> List(Geom.RiderPt)
+corners_ahead = |count|
+	List.from_iter(I64.until(0, count)).map(
+		|k| {
+			offset = (count - k).to_f64()
+			{ right: offset, forward: (10.0 + offset) }
+		},
+	)
 
 drawn : List(Geom.RiderPt) -> List(Paint.DrawCmd)
-drawn = |ps| Ground.emit_ground_color(ps, 3112588, 685.5110432362151, 960.0)
+drawn = |corners| Ground.draw({ corners, color: 3112588, cam_focal: 685.5110432362151, view_w: 960.0 })
 
 count_got : List(I64)
-count_got = [drawn(quad).len().to_i64_wrap(), drawn(wide(8)).len().to_i64_wrap(), drawn(wide(9)).len().to_i64_wrap(), drawn(behind).len().to_i64_wrap(), drawn(two_points).len().to_i64_wrap()]
+count_got = [
+	drawn(quad).len().to_i64_wrap(),
+	drawn(corners_ahead(8)).len().to_i64_wrap(),
+	drawn(corners_ahead(9)).len().to_i64_wrap(),
+	drawn(behind).len().to_i64_wrap(),
+	drawn(two_points).len().to_i64_wrap(),
+]
 
 count_want : List(I64)
 count_want = [1, 1, 0, 0, 0]
 
 cmd_got : List(I64)
-cmd_got = (
-	{
-		c = (List.get(drawn(quad), I64.to_u64_wrap(0)) ?? crash ("list-at out of range"))
-		[c.tag, c.color, c.color2, c.pts.len().to_i64_wrap(), c.geom.len().to_i64_wrap()]
-	}
-)
+cmd_got = {
+	cmd = drawn(quad).first() ?? crash "GroundSpec: the quad draws one command"
+	[cmd.tag, cmd.color, cmd.color2, cmd.pts.len().to_i64_wrap(), cmd.geom.len().to_i64_wrap()]
+}
 
 cmd_want : List(I64)
 cmd_want = [0, 3112588, 0, 8, 0]
-
-lam_0 : Geom.Vec3 -> F64
-lam_0 = |v| v.height
-
-# --- Entry ---
 
 main! = |_args| {
 	verdicts = [
