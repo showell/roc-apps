@@ -1,10 +1,13 @@
-## SafariFrame paints one Safari frame into a list of 0xRRGGBB pixels, in
-## Roc: the sky and the grass, the sun, then every draw command in paint
-## order, all turned by the camera's roll. It is a reference painter for the
-## gate's proof tools. Its pixels are exact and the same on every run, so
-## RasterFrame can fingerprint a frame by a hash of them, and ShapesFrame can
-## paint a frame from its commands and from its shapes and compare the two
-## pixel for pixel.
+## SafariFrame is test code: the game never runs it. It paints one Safari
+## frame into a list of 0xRRGGBB pixels, in Roc: the sky and the grass, the
+## sun, then every draw command in paint order, all turned by the camera's
+## roll. Its pixels are exact and the same on every run, which is what the
+## gates need. The gates are the checks we run before a change lands, and two
+## of them paint frames with SafariFrame to validate the drawing pixel for
+## pixel: RasterFrame prints a hash of a frame's pixels, which must come out
+## the same before and after a change that shouldn't alter the picture, and
+## ShapesFrame paints a frame from its commands and again from its shapes and
+## requires the two to match.
 ##
 ## Neither runner paints this way. On the page, the Roc answers the frame as
 ## shapes and shapewire.js paints them with the browser's canvas; natively,
@@ -64,10 +67,17 @@ SafariFrame :: [].{
 	screen_roll = |roll|
 		ScreenRoll.of({
 			roll,
-			width: Screen.width_px,
-			height: Screen.height_px,
+			width: screen_width,
+			height: screen_height,
 		})
 }
+
+## Safari's screen, in pixels across and down.
+screen_width : PixelGrid.Coordinate
+screen_width = PixelGrid.Coordinate.from_i64(Screen.width_px)
+
+screen_height : PixelGrid.Coordinate
+screen_height = PixelGrid.Coordinate.from_i64(Screen.height_px)
 
 grass_pixel : U32
 grass_pixel = I64.to_u32_wrap(SafariShapes.grass_color)
@@ -76,7 +86,7 @@ grass_pixel = I64.to_u32_wrap(SafariShapes.grass_color)
 SkyColors : { top_color : Brush.Rgba, horizon_color : Brush.Rgba }
 
 ## The centre of a pixel, as a point on the screen.
-pixel_point : { row : I64, column : I64 } -> ScreenRoll.ScreenPoint
+pixel_point : { row : PixelGrid.Coordinate, column : PixelGrid.Coordinate } -> ScreenRoll.ScreenPoint
 pixel_point = |{ row, column }|
 	ScreenRoll.ScreenPoint.(
 		{
@@ -91,9 +101,9 @@ pixel_point = |{ row, column }|
 ## rounds differently.
 backdrop : ScreenRoll, SkyColors -> List(U32)
 backdrop = |roll, sky| {
-	var $px = List.with_capacity(I64.to_u64_wrap(Screen.width_px * Screen.height_px))
-	for row in I64.until(0, Screen.height_px) {
-		for column in I64.until(0, Screen.width_px) {
+	var $px = List.with_capacity(screen_width.to_u64() * screen_height.to_u64())
+	for row in PixelGrid.Coordinate.first.until(screen_height) {
+		for column in PixelGrid.Coordinate.first.until(screen_width) {
 			y = roll.to_scene(pixel_point({ row, column })).y
 			pixel = if y >= Screen.grass_top_y {
 				grass_pixel
@@ -123,19 +133,19 @@ paint_sun = |pixels, { roll, sun }| {
 	rows = PixelGrid.pixels_between({
 		from: on_screen.y - fills.glow_radius,
 		to: on_screen.y + fills.glow_radius,
-		count: Screen.height_px,
+		count: screen_height,
 	})
 	columns = PixelGrid.pixels_between({
 		from: on_screen.x - fills.glow_radius,
 		to: on_screen.x + fills.glow_radius,
-		count: Screen.width_px,
+		count: screen_width,
 	})
 	var $px = pixels
-	for row in I64.until(rows.start, rows.end) {
-		for column in I64.until(columns.start, columns.end) {
+	for row in rows.start.until(rows.end) {
+		for column in columns.start.until(columns.end) {
 			p = roll.to_scene(pixel_point({ row, column }))
 			$px = if p.x >= 0.0 and p.x < Screen.width and p.y >= 0.0 and p.y < Screen.horizon_y {
-				at = PixelGrid.pixel_index({ row, column, width: Screen.width_px })
+				at = PixelGrid.pixel_index({ row, column, width: screen_width })
 				lit = PixelGrid.blend($px, { at, color: Brush.shade(fills.glow, p.x, p.y) })
 				distance = F64.sqrt((p.x - sun.x) * (p.x - sun.x) + (p.y - sun.y) * (p.y - sun.y))
 				if distance < fills.disc_radius {

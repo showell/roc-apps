@@ -10,26 +10,61 @@ import PixelColor
 
 PixelGrid :: [].{
 
+	## A pixel's place along a row or down a column, counted from 0 at the
+	## grid's left or top edge. The length of a row or a column is one too:
+	## the place just past its last pixel. Rows and columns share the type
+	## because a range and a centre mean the same along either, and the one
+	## call that takes both, `pixel_index`, names each in its record.
+	Coordinate := U16.{
+		is_eq : _
+
+		## The first pixel of a row or a column.
+		first : PixelGrid.Coordinate
+		first = PixelGrid.Coordinate.(0)
+
+		## A place worked out in a wider type, once it is on the grid. A
+		## negative one, or one past 65535, would wrap, so it crashes.
+		from_i64 : I64 -> PixelGrid.Coordinate
+		from_i64 = |place|
+			PixelGrid.Coordinate.(place.to_u16_try() ?? crash "PixelGrid.Coordinate.from_i64: a place off any grid")
+
+		## The places from `start` up to but not including `end`; none when
+		## `end` is not past `start`.
+		until : PixelGrid.Coordinate, PixelGrid.Coordinate -> Iter(PixelGrid.Coordinate)
+		until = |PixelGrid.Coordinate.(start), PixelGrid.Coordinate.(end)|
+			U16.until(start, end).map(|place| PixelGrid.Coordinate.(place))
+
+		to_f64 : PixelGrid.Coordinate -> F64
+		to_f64 = |PixelGrid.Coordinate.(place)| U16.to_f64(place)
+
+		to_u64 : PixelGrid.Coordinate -> U64
+		to_u64 = |PixelGrid.Coordinate.(place)| U16.to_u64(place)
+	}
+
 	## Pixels from `start` up to but not including `end`; none when `end` is not
 	## past `start`.
-	Range : { start : I64, end : I64 }
+	Range : { start : PixelGrid.Coordinate, end : PixelGrid.Coordinate }
 
-	## The centre of the pixel at `index` in its row or column.
-	pixel_center : I64 -> F64
-	pixel_center = |index| I64.to_f64(index) + 0.5
+	## The centre of the pixel at `place` in its row or column.
+	pixel_center : PixelGrid.Coordinate -> F64
+	pixel_center = |place| place.to_f64() + 0.5
 
 	## The pixels of a row or a column `count` long whose centres fall in
-	## [from, to).
-	pixels_between : { from : F64, to : F64, count : I64 } -> PixelGrid.Range
-	pixels_between = |{ from, to, count }| {
-		start: I64.max(0, first_pixel_past(from)),
-		end: I64.min(count, first_pixel_past(to)),
+	## [from, to). Each end is held to 0..`count` in an I64 before it becomes a
+	## coordinate, so a place far off the grid never wraps onto it.
+	pixels_between : { from : F64, to : F64, count : PixelGrid.Coordinate } -> PixelGrid.Range
+	pixels_between = |{ from, to, count: PixelGrid.Coordinate.(count) }| {
+		length = U16.to_i64(count)
+		{
+			start: nearest_coordinate({ place: first_pixel_past(from), length }),
+			end: nearest_coordinate({ place: first_pixel_past(to), length }),
+		}
 	}
 
 	## Where the pixel at `row` and `column` is in the list of a grid `width`
-	## pixels wide.
-	pixel_index : { row : I64, column : I64, width : I64 } -> U64
-	pixel_index = |{ row, column, width }| I64.to_u64_wrap(row * width + column)
+	## pixels wide. The product is a U64, which holds any grid's size.
+	pixel_index : { row : PixelGrid.Coordinate, column : PixelGrid.Coordinate, width : PixelGrid.Coordinate } -> U64
+	pixel_index = |{ row, column, width }| row.to_u64() * width.to_u64() + column.to_u64()
 
 	## `color` laid over the pixel at `at`.
 	blend : List(U32), { at : U64, color : Brush.Rgba } -> List(U32)
@@ -38,6 +73,13 @@ PixelGrid :: [].{
 		new_pixel = PixelColor.over(pixel, color)
 		pixels.set(at, new_pixel) ?? crash "PixelGrid.blend: a pixel off the grid"
 	}
+}
+
+## The coordinate on a row or a column `length` long nearest `place`.
+nearest_coordinate : { place : I64, length : I64 } -> PixelGrid.Coordinate
+nearest_coordinate = |{ place, length }| {
+	on_or_after_first = I64.max(0, place)
+	PixelGrid.Coordinate.from_i64(I64.min(length, on_or_after_first))
 }
 
 ## The first pixel whose centre is at or past `x`. A coordinate far off the

@@ -34,9 +34,9 @@ ScanlineFill :: [].{
 					count: roll.height_px(),
 				})
 				var $px = pixels
-				for row in I64.until(rows.start, rows.end) {
-					crossings = row_crossings(edges, PixelGrid.pixel_center(row))
-					$px = fill_row($px, { roll, fill, row, crossings })
+				for row in rows.start.until(rows.end) {
+					edge_crossings = row_edge_crossings(edges, PixelGrid.pixel_center(row))
+					$px = fill_row($px, { roll, fill, row, edge_crossings })
 				}
 				$px
 			}
@@ -55,7 +55,7 @@ ScanlineFill :: [].{
 			count: roll.height_px(),
 		})
 		var $px = pixels
-		for row in I64.until(rows.start, rows.end) {
+		for row in rows.start.until(rows.end) {
 			dy = PixelGrid.pixel_center(row) - on_screen.y
 			half_squared = radius * radius - dy * dy
 			$px = if half_squared > 0.0 {
@@ -71,23 +71,23 @@ ScanlineFill :: [].{
 
 ## Where a row of pixels crosses a polygon's edge, and which way the edge
 ## runs on the screen.
-Crossing : { x : F64, direction : [Down, Up] }
+EdgeCrossing : { x : F64, direction : [Down, Up] }
 
 ## A polygon's edge, on the screen.
 Edge : { from : ScreenRoll.ScreenPoint, to : ScreenRoll.ScreenPoint }
 
-## A stretch of a row, from one crossing to the next.
+## A stretch of a row, from one edge crossing to the next.
 RowSpan : { from : F64, to : F64 }
 
-## A walk along a row's crossings: the winding so far, and the stretches
-## found inside.
+## A walk along a row's edge crossings: the winding so far, and the
+## stretches found inside.
 WindingWalk : { winding : I64, spans : List(RowSpan) }
 
 ## Where the row at `y` crosses the polygon's edges, left to right. An edge
 ## holds its upper end and not its lower.
-row_crossings : List(Edge), F64 -> List(Crossing)
-row_crossings = |edges, y|
-	edges.join_map(|edge| crossing(edge, y)).sort_with(
+row_edge_crossings : List(Edge), F64 -> List(EdgeCrossing)
+row_edge_crossings = |edges, y|
+	edges.join_map(|edge| edge_crossing(edge, y)).sort_with(
 		|a, b| if a.x < b.x {
 			Before
 		} else if a.x > b.x {
@@ -97,8 +97,9 @@ row_crossings = |edges, y|
 		},
 	)
 
-crossing : Edge, F64 -> List(Crossing)
-crossing = |edge, y|
+## Where the row at `y` crosses this one edge, if it does.
+edge_crossing : Edge, F64 -> List(EdgeCrossing)
+edge_crossing = |edge, y|
 	if edge.from.y <= y and y < edge.to.y {
 		[{ x: edge_x_at(edge, y), direction: Down }]
 	} else if edge.to.y <= y and y < edge.from.y {
@@ -112,28 +113,28 @@ crossing = |edge, y|
 edge_x_at : Edge, F64 -> F64
 edge_x_at = |{ from, to }, y| from.x + (y - from.y) * (to.x - from.x) / (to.y - from.y)
 
-## One row of a polygon: the spans between its crossings where the winding is
-## not zero.
-fill_row : List(U32), { roll : ScreenRoll, fill : Brush.Fill, row : I64, crossings : List(Crossing) } -> List(U32)
-fill_row = |pixels, { roll, fill, row, crossings }| {
+## One row of a polygon: the spans between its edge crossings where the
+## winding is not zero.
+fill_row : List(U32), { roll : ScreenRoll, fill : Brush.Fill, row : PixelGrid.Coordinate, edge_crossings : List(EdgeCrossing) } -> List(U32)
+fill_row = |pixels, { roll, fill, row, edge_crossings }| {
 	var $px = pixels
-	for row_span in inside_spans(crossings) {
+	for row_span in inside_spans(edge_crossings) {
 		$px = paint_span($px, { roll, fill, row, from: row_span.from, to: row_span.to })
 	}
 	$px
 }
 
-## The stretches between neighbouring crossings, left to right, where the
-## winding is not zero.
-inside_spans : List(Crossing) -> List(RowSpan)
-inside_spans = |crossings| {
-	neighbours = crossings.map2(crossings.drop_first(1), |left, right| { left, right })
-	neighbours.fold({ winding: 0, spans: [] }, walk_crossing).spans
+## The stretches between neighbouring edge crossings, left to right,
+## where the winding is not zero.
+inside_spans : List(EdgeCrossing) -> List(RowSpan)
+inside_spans = |edge_crossings| {
+	neighbours = edge_crossings.map2(edge_crossings.drop_first(1), |left, right| { left, right })
+	neighbours.fold({ winding: 0, spans: [] }, walk_edge_crossing).spans
 }
 
-## The walk after one more pair of neighbouring crossings.
-walk_crossing : WindingWalk, { left : Crossing, right : Crossing } -> WindingWalk
-walk_crossing = |so_far, { left, right }| {
+## The walk after one more pair of neighbouring edge crossings.
+walk_edge_crossing : WindingWalk, { left : EdgeCrossing, right : EdgeCrossing } -> WindingWalk
+walk_edge_crossing = |so_far, { left, right }| {
 	turn =
 		match left.direction {
 			Down => 1
@@ -150,13 +151,13 @@ walk_crossing = |so_far, { left, right }| {
 }
 
 ## The pixels of `row` whose centres fall in [from, to).
-paint_span : List(U32), { roll : ScreenRoll, fill : Brush.Fill, row : I64, from : F64, to : F64 } -> List(U32)
+paint_span : List(U32), { roll : ScreenRoll, fill : Brush.Fill, row : PixelGrid.Coordinate, from : F64, to : F64 } -> List(U32)
 paint_span = |pixels, { roll, fill, row, from, to }| {
 	columns = PixelGrid.pixels_between({ from, to, count: roll.width_px() })
 	width = roll.width_px()
 	y = PixelGrid.pixel_center(row)
 	var $px = pixels
-	for column in I64.until(columns.start, columns.end) {
+	for column in columns.start.until(columns.end) {
 		at = PixelGrid.pixel_index({ row, column, width })
 		color = match fill {
 			Flat(flat) => flat
