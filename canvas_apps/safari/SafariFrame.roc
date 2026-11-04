@@ -1,25 +1,28 @@
 ## SafariFrame is test code: the game never runs it. It paints one Safari
 ## frame into a list of 0xRRGGBB pixels, in Roc: the sky and the grass, the
 ## sun, then every draw command in paint order, all turned by the camera's
-## roll. Its pixels are exact and the same on every run, which is what the
-## gates need. The gates are the checks we run before a change lands, and two
-## of them paint frames with SafariFrame to validate the drawing pixel for
-## pixel: RasterFrame prints a hash of a frame's pixels, which must come out
-## the same before and after a change that shouldn't alter the picture, and
-## ShapesFrame paints a frame from its commands and again from its shapes and
-## requires the two to match.
+## roll (the rider's lean, which tilts the whole picture about the centre of
+## the screen). Its pixels are exact and the same on every run.
 ##
-## Neither runner paints this way. On the page, the Roc answers the frame as
-## shapes and shapewire.js paints them with the browser's canvas; natively,
-## roc-ray fills them. A wasm module reaches a canvas only through JS in any
-## case, and a canvas paints paths and gradients natively and anti-aliased,
-## far faster than Roc can fill every pixel and copy the frame out. This
-## painter has no anti-aliasing.
+## That is what Safari's gate needs. The gate is a script we run before a
+## change lands (gates/run.shale), and it builds two programs on SafariFrame
+## to check the drawing pixel for pixel. RasterFrame prints a hash of a
+## frame's pixels, so we can confirm that a change which shouldn't alter the
+## picture leaves the hash the same. ShapesFrame paints a frame from its draw
+## commands, paints it again from the shapes the browser is given, and counts
+## the pixels that differ; the gate requires none.
+##
+## The game itself paints differently. In the browser, the Roc program (built
+## to wasm) hands each frame to the page as shapes, and shapewire.js paints
+## them with the browser's canvas. Wasm reaches a canvas only through JS in
+## any case, and a canvas paints paths and gradients natively and
+## anti-aliased, far faster than Roc could fill every pixel and copy the
+## frame out. This painter has no anti-aliasing.
 ##
 ## What is generic lives in modules that know nothing of Safari: ScreenRoll
-## turns points by the roll, PixelGrid finds the pixels a stretch covers,
-## PixelColor packs and blends pixels, and ScanlineFill fills polygons and
-## discs.
+## turns points by the roll, PixelGrid finds the pixels that a stretch of a
+## row or column covers, PixelColor packs and blends pixels, and ScanlineFill
+## fills polygons and discs.
 import Paint
 import Sky
 import SafariBrush

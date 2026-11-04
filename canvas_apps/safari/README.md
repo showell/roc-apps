@@ -46,17 +46,9 @@ and both runners paint it the way they paint any camera.
 
 ## The native proof tools
 
-`SafariFrame.roc` is a reference painter in Roc: it paints a frame into 960×600
-pixels that are exact and the same on every run, so the gate can fingerprint a
-frame and compare two ways of painting it. Neither runner paints this way. The
-page hands its shapes to `shapewire.js`, because wasm reaches a canvas only
-through JS anyway, and the browser's canvas paints paths and gradients
-natively and anti-aliased, far faster than Roc can fill every pixel and copy
-the frame out; the native program hands them to roc-ray. SafariFrame has no
-anti-aliasing. What it builds on knows nothing of Safari: `ScreenRoll.roc`
-turns points by the camera's roll, `PixelGrid.roc` finds the pixels a stretch
-covers, `PixelColor.roc` packs and blends 0xRRGGBB pixels, and
-`ScanlineFill.roc` fills polygons and discs.
+`SafariFrame.roc` paints a frame into exact pixels, for the gate only; its
+header says what it is for, why the game paints differently, and which
+generic modules it builds on.
 
 Four programs check the frame without a screen: `RasterFrame.roc` prints one
 frame's pixels as hex with a hash (`pixels_png.mjs` turns that into a PNG),
