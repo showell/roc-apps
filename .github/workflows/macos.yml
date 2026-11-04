@@ -42,7 +42,7 @@ jobs:
           path: roc-ray
 
       - name: Install Zig
-        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
+        uses: xyzzylabs/setup-zig@09d85d9dbb73308882e7a26e61a8f706eed40df1 # v1.0.2, on Node 24
         with:
           version: 0.16.0
 
