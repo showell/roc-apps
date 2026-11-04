@@ -8,7 +8,7 @@ import lib.Brush
 
 SafariBrush :: [].{
 	# The brush a polygon command names. A beacon (Paint.beacon_tag) is a disc,
-	# not a polygon, and has no brush here; Raster and Shapes read its colour
+	# not a polygon, and has no brush here; SafariFrame and SafariShapes read its colour
 	# and alpha directly.
 	of_command : Paint.DrawCmd -> Brush.Fill
 	of_command = |c|
