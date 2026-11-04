@@ -12,7 +12,7 @@
 # polygons, carried in the same unit frame as the baked stills (feet at y 0,
 # y up, height 1) and drawn through the same still machinery a critter uses:
 # Frame.at places the tree in the rider's frame, Camera.project puts its top
-# on the screen, and Critter.critter_polys maps the polygons onto that anchor
+# on the screen, and Critter.draw_still maps the polygons onto that anchor
 # at the tree's depth. The app appends the birds after the frame, so they
 # paint on top of everything; a bird on a treetop is rarely behind anything.
 import Stills
@@ -40,7 +40,7 @@ RocBird :: [].{
 	# and across < 0 is the left side.
 	#
 	# **IT USED TO BE THE RIGHT, AND THE BIRD LOOKED AWAY FROM THE ROAD.** The
-	# still's beak points toward +x and `facing(False)` leaves it that way, so
+	# still's beak points toward +x and `AsDrawn` leaves it that way, so
 	# it faces screen-right; on a right-hand tree that is out into the trees.
 	# From a left-hand one, the same unflipped bird faces the road.
 	fifth_left : List(Scenery.Tree), I64, I64 -> [Found(Scenery.Tree), NoTree]
@@ -118,6 +118,6 @@ RocBird :: [].{
 	draw_one : RocBird.Bird, F64, F64 -> List(Paint.DrawCmd)
 	draw_one = |b, cf, view_w| {
 		feet = Camera.project({ right: b.right, forward: b.fwd, height: b.lift }, cf, view_w)
-		Critter.critter_polys(feet, Critter.facing(False), (height / b.fwd) * cf, polys)
+		Critter.draw_still({ feet, flip: AsDrawn, height_px: (height / b.fwd) * cf }, polys)
 	}
 }

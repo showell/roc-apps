@@ -1,78 +1,97 @@
-# BillboardsSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are Billboards' checks: which critters are in view, behind the
+## camera or too small to draw, and what a billboard carries.
 app [main!] {
 	lib: "../lib/main.roc",
 }
 
 import Billboards
 import Grade
-import ListUtils
 
-fwd_in : List(F64)
-fwd_in = [(-5.0), 0.3, 0.4, 0.5, 300.0, 342.0, 343.0, 400.0, 10.0, 50.0]
+## A cow 2.5 m to the right, at each distance and height.
+sightings : List(Billboards.Sighting)
+sightings =
+	[
+		{ forward: (-5.0), height: 1.0 },
+		{ forward: 0.3, height: 1.0 },
+		{ forward: 0.4, height: 1.0 },
+		{ forward: 0.5, height: 1.0 },
+		{ forward: 300.0, height: 1.0 },
+		{ forward: 342.0, height: 1.0 },
+		{ forward: 343.0, height: 1.0 },
+		{ forward: 400.0, height: 1.0 },
+		{ forward: 10.0, height: 0.0 },
+		{ forward: 50.0, height: 0.9 },
+	].map(
+		|{ forward, height }|
+			Billboards.sighting({ at: { right: 2.5, forward }, height, codepoint: 128004, facing: FacesRight }),
+	)
 
-h_in : List(F64)
-h_in = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.9]
-
-placed_at : I64 -> Billboards.Placed
-placed_at = |i| (
-	{
-		p = { right: 2.5, forward: (List.get(fwd_in, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")) }
-		Billboards.verdict(p, (List.get(h_in, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), 128004, True)
+is_in_view : Billboards.Sighting -> Bool
+is_in_view = |sighting|
+	match sighting {
+		InView(_) => True
+		BehindCamera => False
+		TooSmall => False
 	}
-)
 
-# placed_all builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-placed_all : I64 -> List(Billboards.Placed)
-placed_all = |i| placed_all_onto(i, [])
-
-placed_all_onto : I64, List(Billboards.Placed) -> List(Billboards.Placed)
-placed_all_onto = |i, acc| (
-	if (i >= fwd_in.len().to_i64_wrap()) {
-		acc
-	} else {
-		placed_all_onto((i + 1), List.append(acc, placed_at(i)))
+is_too_small : Billboards.Sighting -> Bool
+is_too_small = |sighting|
+	match sighting {
+		TooSmall => True
+		InView(_) => False
+		BehindCamera => False
 	}
-)
+
+billboard_of : Billboards.Sighting -> Billboards.Billboard
+billboard_of = |sighting|
+	match sighting {
+		InView(billboard) => billboard
+		BehindCamera => crash "BillboardsSpec: this critter is in view"
+		TooSmall => crash "BillboardsSpec: this critter is in view"
+	}
+
+near_cow : Billboards.Billboard
+near_cow = billboard_of(sightings.get(3) ?? crash "BillboardsSpec: ten sightings")
+
+left_bull : Billboards.Billboard
+left_bull = billboard_of(Billboards.sighting({ at: { right: (-1.5), forward: 50.0 }, height: 1.6, codepoint: 128002, facing: FacesLeft }))
 
 kept_got : List(Bool)
-kept_got = ListUtils.list_map(lam_0, placed_all(0))
+kept_got = sightings.map(is_in_view)
 
 kept_want : List(Bool)
 kept_want = [False, False, False, True, True, True, False, False, False, True]
 
 culled_got : List(Bool)
-culled_got = ListUtils.list_map(lam_1, placed_all(0))
+culled_got = sightings.map(is_too_small)
 
 culled_want : List(Bool)
 culled_want = [False, False, False, False, False, False, True, True, True, False]
 
 carried_real_got : List(F64)
-carried_real_got = (
-	{
-		k = placed_at(3)
-		n = placed_at(1)
-		[k.b.right, k.b.fwd, k.b.height, n.b.right, n.b.fwd, n.b.height]
-	}
-)
+carried_real_got = [near_cow.right, near_cow.forward, near_cow.height, left_bull.right, left_bull.forward, left_bull.height]
 
 carried_real_want : List(F64)
-carried_real_want = [2.5, 0.5, 1.0, 0.0, 0.0, 0.0]
+carried_real_want = [2.5, 0.5, 1.0, (-1.5), 50.0, 1.6]
 
 carried_int_got : List(I64)
-carried_int_got = [placed_at(3).b.cp, placed_at(1).b.cp]
+carried_int_got = [near_cow.codepoint, left_bull.codepoint]
 
 carried_int_want : List(I64)
-carried_int_want = [128004, 0]
+carried_int_want = [128004, 128002]
 
 carried_bool_got : List(Bool)
-carried_bool_got = [placed_at(3).b.face_right, placed_at(1).b.face_right]
+carried_bool_got = [near_cow.facing == FacesRight, left_bull.facing == FacesRight]
 
 carried_bool_want : List(Bool)
 carried_bool_want = [True, False]
 
 harvest_got : List(I64)
-harvest_got = [Billboards.kept_of(placed_all(0), 0).len().to_i64_wrap(), Billboards.size_culled_of(placed_all(0), 0), placed_all(0).len().to_i64_wrap()]
+harvest_got = [
+	Billboards.billboards_in_view(sightings).len().to_i64_wrap(),
+	Billboards.too_small_count(sightings),
+	sightings.len().to_i64_wrap(),
+]
 
 harvest_want : List(I64)
 harvest_want = [4, 3, 10]
@@ -82,12 +101,6 @@ floor_got = [Billboards.min_critter_px]
 
 floor_want : List(F64)
 floor_want = [2.0]
-
-lam_0 : Billboards.Placed -> Bool
-lam_0 = |p| p.kept
-
-lam_1 : Billboards.Placed -> Bool
-lam_1 = |p| p.size_culled
 
 # --- Entry ---
 

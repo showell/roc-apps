@@ -10,35 +10,35 @@ import World
 
 CritterPlan :: [].{
 
-	place_critter : List(World.Segment), List(I64), Frame.Pose, I64, F64, Scenery.Critter -> Billboards.Placed
+	place_critter : List(World.Segment), List(I64), Frame.Pose, I64, F64, Scenery.Critter -> Billboards.Sighting
 	place_critter = |segs, ch, pose, d, hw, cr| (
 		{
 			rp = Frame.at(segs, ch, pose, d, cr.along, (cr.across + hw))
-			Billboards.verdict(rp, cr.height, cr.codepoint, cr.face_right)
+			Billboards.sighting({ at: rp, height: cr.height, codepoint: cr.codepoint, facing: if cr.face_right FacesRight else FacesLeft })
 		}
 	)
 
-	place_critter_mapped : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, Scenery.Critter -> Billboards.Placed
+	place_critter_mapped : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, Scenery.Critter -> Billboards.Sighting
 	place_critter_mapped = |segs, ch, pose, m, hw, cr| (
 		{
 			rp = Frame.map_pt(segs, ch, pose, m, cr.along, (cr.across + hw))
-			Billboards.verdict(rp, cr.height, cr.codepoint, cr.face_right)
+			Billboards.sighting({ at: rp, height: cr.height, codepoint: cr.codepoint, facing: if cr.face_right FacesRight else FacesLeft })
 		}
 	)
 
-	place_duck : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, Pond.Duck -> Billboards.Placed
+	place_duck : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, Pond.Duck -> Billboards.Sighting
 	place_duck = |segs, ch, pose, m, from_len, dk| (
 		{
 			rp = Frame.map_pt(segs, ch, pose, m, (from_len + dk.p.cv), dk.p.cu)
-			Billboards.verdict(rp, Pond.duck_height, Pond.duck_codepoint, dk.face_right)
+			Billboards.sighting({ at: rp, height: Pond.duck_height, codepoint: Pond.duck_codepoint, facing: if dk.face_right FacesRight else FacesLeft })
 		}
 	)
 
 	# place_all builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	place_all : List(World.Segment), List(I64), Frame.Pose, I64, F64, List(Scenery.Critter) -> List(Billboards.Placed)
+	place_all : List(World.Segment), List(I64), Frame.Pose, I64, F64, List(Scenery.Critter) -> List(Billboards.Sighting)
 	place_all = |segs, ch, pose, d, hw, crs| place_all_onto(segs, ch, pose, d, hw, crs, 0, [])
 
-	place_all_onto : List(World.Segment), List(I64), Frame.Pose, I64, F64, List(Scenery.Critter), I64, List(Billboards.Placed) -> List(Billboards.Placed)
+	place_all_onto : List(World.Segment), List(I64), Frame.Pose, I64, F64, List(Scenery.Critter), I64, List(Billboards.Sighting) -> List(Billboards.Sighting)
 	place_all_onto = |segs, ch, pose, d, hw, crs, i, acc| (
 		if (i >= crs.len().to_i64_wrap()) {
 			acc
@@ -48,10 +48,10 @@ CritterPlan :: [].{
 	)
 
 	# place_all_mapped builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	place_all_mapped : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, List(Scenery.Critter), I64 -> List(Billboards.Placed)
+	place_all_mapped : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, List(Scenery.Critter), I64 -> List(Billboards.Sighting)
 	place_all_mapped = |segs, ch, pose, m, hw, crs, i| place_all_mapped_onto(segs, ch, pose, m, hw, crs, i, [])
 
-	place_all_mapped_onto : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, List(Scenery.Critter), I64, List(Billboards.Placed) -> List(Billboards.Placed)
+	place_all_mapped_onto : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, List(Scenery.Critter), I64, List(Billboards.Sighting) -> List(Billboards.Sighting)
 	place_all_mapped_onto = |segs, ch, pose, m, hw, crs, i, acc| (
 		if (i >= crs.len().to_i64_wrap()) {
 			acc
@@ -61,10 +61,10 @@ CritterPlan :: [].{
 	)
 
 	# place_ducks builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	place_ducks : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64 -> List(Billboards.Placed)
+	place_ducks : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64 -> List(Billboards.Sighting)
 	place_ducks = |segs, ch, pose, m, from_len| place_ducks_onto(segs, ch, pose, m, from_len, 0, [])
 
-	place_ducks_onto : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, I64, List(Billboards.Placed) -> List(Billboards.Placed)
+	place_ducks_onto : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, I64, List(Billboards.Sighting) -> List(Billboards.Sighting)
 	place_ducks_onto = |segs, ch, pose, m, from_len, i, acc| (
 		if (i >= Pond.ducks.len().to_i64_wrap()) {
 			acc
@@ -79,7 +79,7 @@ CritterPlan :: [].{
 	safari_seg_reach : I64
 	safari_seg_reach = 5
 
-	seg_farm : List(World.Segment), List(I64), Frame.Pose, I64, F64 -> List(Billboards.Placed)
+	seg_farm : List(World.Segment), List(I64), Frame.Pose, I64, F64 -> List(Billboards.Sighting)
 	seg_farm = |segs, ch, pose, d, hw| (
 		{
 			sg = (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range"))
@@ -93,7 +93,7 @@ CritterPlan :: [].{
 		}
 	)
 
-	seg_safari : List(World.Segment), List(I64), Frame.Pose, I64, F64 -> List(Billboards.Placed)
+	seg_safari : List(World.Segment), List(I64), Frame.Pose, I64, F64 -> List(Billboards.Sighting)
 	seg_safari = |segs, ch, pose, d, hw| (
 		{
 			sg = (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range"))
@@ -109,7 +109,7 @@ CritterPlan :: [].{
 		}
 	)
 
-	seg_ducks : List(World.Segment), List(I64), Frame.Pose, I64 -> List(Billboards.Placed)
+	seg_ducks : List(World.Segment), List(I64), Frame.Pose, I64 -> List(Billboards.Sighting)
 	seg_ducks = |segs, ch, pose, d| (
 		{
 			sg = (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range"))
@@ -129,7 +129,7 @@ CritterPlan :: [].{
 		}
 	)
 
-	seg_billboards : List(World.Segment), List(I64), Frame.Pose, I64 -> List(Billboards.Placed)
+	seg_billboards : List(World.Segment), List(I64), Frame.Pose, I64 -> List(Billboards.Sighting)
 	seg_billboards = |segs, ch, pose, d| (
 		{
 			hw = (Scenery.lane_width / 2.0)
@@ -138,10 +138,10 @@ CritterPlan :: [].{
 	)
 
 	# walk_billboards builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	walk_billboards : List(World.Segment), List(I64), Frame.Pose -> List(Billboards.Placed)
+	walk_billboards : List(World.Segment), List(I64), Frame.Pose -> List(Billboards.Sighting)
 	walk_billboards = |segs, ch, pose| walk_billboards_onto(segs, ch, pose, 0, [])
 
-	walk_billboards_onto : List(World.Segment), List(I64), Frame.Pose, I64, List(Billboards.Placed) -> List(Billboards.Placed)
+	walk_billboards_onto : List(World.Segment), List(I64), Frame.Pose, I64, List(Billboards.Sighting) -> List(Billboards.Sighting)
 	walk_billboards_onto = |segs, ch, pose, d, acc| (
 		if (d >= ch.len().to_i64_wrap()) {
 			acc
@@ -150,7 +150,7 @@ CritterPlan :: [].{
 		}
 	)
 
-	behind_billboards : List(World.Segment), List(I64), Frame.Pose, I64 -> List(Billboards.Placed)
+	behind_billboards : List(World.Segment), List(I64), Frame.Pose, I64 -> List(Billboards.Sighting)
 	behind_billboards = |segs, ch, pose, prev_idx| (
 		{
 			pv = (List.get(segs, I64.to_u64_wrap(prev_idx)) ?? crash ("list-at out of range"))
@@ -158,7 +158,7 @@ CritterPlan :: [].{
 		}
 	)
 
-	behind_ducks : List(World.Segment), List(I64), Frame.Pose, World.Segment -> List(Billboards.Placed)
+	behind_ducks : List(World.Segment), List(I64), Frame.Pose, World.Segment -> List(Billboards.Sighting)
 	behind_ducks = |segs, ch, pose, pv| (
 		if Scenery.is_pond(pv.exit_creature) {
 			place_ducks(segs, ch, pose, Frame.prev_map(pv), pv.length)
@@ -167,7 +167,7 @@ CritterPlan :: [].{
 		}
 	)
 
-	all_placed : List(World.Segment), List(I64), Frame.Pose, I64 -> List(Billboards.Placed)
+	all_placed : List(World.Segment), List(I64), Frame.Pose, I64 -> List(Billboards.Sighting)
 	all_placed = |segs, ch, pose, seg_idx| (
 		if (seg_idx > 0) {
 			List.concat(walk_billboards(segs, ch, pose), behind_billboards(segs, ch, pose, (seg_idx - 1)))
@@ -188,7 +188,7 @@ CritterPlan :: [].{
 		if (i >= bs.len().to_i64_wrap()) {
 			acc
 		} else {
-			cow_items_onto(bs, (i + 1), List.append(acc, { fwd: (List.get(bs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).fwd, kind: KCow, i: i }))
+			cow_items_onto(bs, (i + 1), List.append(acc, { fwd: (List.get(bs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).forward, kind: KCow, i: i }))
 		}
 	)
 }

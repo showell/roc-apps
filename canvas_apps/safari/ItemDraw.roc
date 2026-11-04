@@ -104,7 +104,7 @@ ItemDraw :: [].{
 		})
 
 	draw_one_critter : Billboards.Billboard, F64 -> List(Paint.DrawCmd)
-	draw_one_critter = |b, cf| Critter.critter_draw(b.right, b.fwd, b.height, b.cp, b.face_right, cf, Screen.width)
+	draw_one_critter = |b, cf| Critter.draw(b, { cam_focal: cf, view_w: Screen.width })
 
 	draw_one_cat : CatPlan.CatItem, F64 -> List(Paint.DrawCmd)
 	draw_one_cat = |k, cf| CatDraw.cat_draw(k.right, k.fwd, k.height, k.pose_idx, k.lift, cf, Screen.width)
