@@ -29,62 +29,76 @@ Arc :: [].{
 	min_forward_progress : F64
 	min_forward_progress = 25.0
 
-	sim_from : Pose.RiderState, F64, F64, F64, F64, Bool, I64, Pose.RiderState -> Arc.ArcOutcome
+	## What holds for the whole of one projected arc: the road's edges, and
+	## the side and distance along the road the rider started from.
+	ArcCourse : {
+		left_bound : F64,
+		right_bound : F64,
+		start_side : F64,
+		start_along : F64,
+	}
+
+	## Where a projected arc has reached: whether it has crossed the centre
+	## line, how many frames it has run, and the coasting rider.
+	ArcProgress : {
+		has_crossed : Bool,
+		frame_count : I64,
+		coasting_rider : Pose.RiderState,
+	}
+
+	sim_from : Arc.ArcCourse, Arc.ArcProgress -> Arc.ArcOutcome
 	sim_from = |
-		start,
-		left_bound,
-		right_bound,
-		start_side,
-		start_along,
-		crossed,
-		i,
-		phys,
+		course,
+		{
+			has_crossed: crossed,
+			frame_count: i,
+			coasting_rider: phys,
+		},
 	| (
 		if i >= turn_danger_steps {
 			{
 				shoulder: ShoulderNone,
-				forward: (phys.along - start_along),
+				forward: (phys.along - course.start_along),
 				crossed: crossed,
 				end_across: phys.across,
 				frames: no_frames,
 			}
 		} else {
 			sim_step(
-				start,
-				left_bound,
-				right_bound,
-				start_side,
-				start_along,
-				crossed,
-				i,
-				Bike.simulate_rider_step(phys, { lean_step: Angle.upright, accel: 0.0 }),
+				course,
+				{
+					has_crossed: crossed,
+					frame_count: i,
+					coasting_rider: Bike.simulate_rider_step(
+						phys,
+						{ lean_step: Angle.upright, accel: 0.0 },
+					),
+				},
 			)
 		}
 	)
 
-	sim_step : Pose.RiderState, F64, F64, F64, F64, Bool, I64, Pose.RiderState -> Arc.ArcOutcome
+	sim_step : Arc.ArcCourse, Arc.ArcProgress -> Arc.ArcOutcome
 	sim_step = |
-		start,
-		left_bound,
-		right_bound,
-		start_side,
-		start_along,
-		crossed0,
-		i,
-		phys,
+		course,
+		{
+			has_crossed: crossed0,
+			frame_count: i,
+			coasting_rider: phys,
+		},
 	| (
 		{
 			across = phys.across
-			forward = (phys.along - start_along)
+			forward = (phys.along - course.start_along)
 			crossed = (
-				if (across * start_side) < 0.0 {
+				if (across * course.start_side) < 0.0 {
 					True
 				} else {
 					crossed0
 				}
 			)
 			(
-				if across < left_bound {
+				if across < course.left_bound {
 					{
 						shoulder: ShoulderLeft,
 						forward: DeviceMath.real_min(forward, min_forward_progress),
@@ -94,7 +108,7 @@ Arc :: [].{
 					}
 				} else {
 					(
-						if across > right_bound {
+						if across > course.right_bound {
 							{
 								shoulder: ShoulderRight,
 								forward: DeviceMath.real_min(forward, min_forward_progress),
@@ -124,14 +138,12 @@ Arc :: [].{
 											}
 										} else {
 											sim_from(
-												start,
-												left_bound,
-												right_bound,
-												start_side,
-												start_along,
-												crossed,
-												(i + 1),
-												phys,
+												course,
+												{
+													has_crossed: crossed,
+													frame_count: i + 1,
+													coasting_rider: phys,
+												},
 											)
 										}
 									)
@@ -151,14 +163,17 @@ Arc :: [].{
 			right_bound = DeviceMath.real_max(inset_hw, state.across)
 			left_bound = DeviceMath.real_min((0.0 - inset_hw), state.across)
 			sim_from(
-				state,
-				left_bound,
-				right_bound,
-				Trig.r_sign(state.across),
-				state.along,
-				False,
-				0,
-				state,
+				{
+					left_bound,
+					right_bound,
+					start_side: Trig.r_sign(state.across),
+					start_along: state.along,
+				},
+				{
+					has_crossed: False,
+					frame_count: 0,
+					coasting_rider: state,
+				},
 			)
 		}
 	)

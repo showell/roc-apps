@@ -85,9 +85,11 @@ ax_of : Tower.Corner -> List(F64)
 ax_of = |corner| {
 	p = Tower.base_corner_ax(
 		corner,
-		100.0,
-		0.0,
-		0.0,
+		{
+			along: 100.0,
+			across: 0.0,
+			yaw: 0.0,
+		},
 	)
 	[p.a, p.x]
 }
@@ -131,11 +133,7 @@ mast = {
 
 at_h : Tower.Corner, F64 -> List(F64)
 at_h = |corner, h| {
-	v = Tower.corner_at(
-		mast,
-		corner,
-		h,
-	)
+	v = Tower.corner_at(mast, { corner, height_on_mast: h })
 	[
 		v.right,
 		v.forward,
@@ -267,66 +265,55 @@ width_got = [
 width_want : List(F64)
 width_want = [12.0, 4.8, 2.4]
 
-v3 : F64, F64, F64 -> Geom.Vec3
-v3 = |
-	r,
-	f,
-	h,
-| {
-	right: r,
-	forward: f,
-	height: h,
-}
-
 clip_count_got : List(I64)
 clip_count_got = [
 	{
-		from: v3(
-			0.0,
-			10.0,
-			0.0,
-		),
-		to: v3(
-			1.0,
-			20.0,
-			0.0,
-		),
+		from: {
+			right: 0.0,
+			forward: 10.0,
+			height: 0.0,
+		},
+		to: {
+			right: 1.0,
+			forward: 20.0,
+			height: 0.0,
+		},
 	},
 	{
-		from: v3(
-			0.0,
-			0.0,
-			0.0,
-		),
-		to: v3(
-			0.0,
-			0.8,
-			0.0,
-		),
+		from: {
+			right: 0.0,
+			forward: 0.0,
+			height: 0.0,
+		},
+		to: {
+			right: 0.0,
+			forward: 0.8,
+			height: 0.0,
+		},
 	},
 	{
-		from: v3(
-			0.0,
-			0.8,
-			0.0,
-		),
-		to: v3(
-			0.0,
-			0.0,
-			0.0,
-		),
+		from: {
+			right: 0.0,
+			forward: 0.8,
+			height: 0.0,
+		},
+		to: {
+			right: 0.0,
+			forward: 0.0,
+			height: 0.0,
+		},
 	},
 	{
-		from: v3(
-			0.0,
-			0.0,
-			0.0,
-		),
-		to: v3(
-			0.0,
-			0.2,
-			0.0,
-		),
+		from: {
+			right: 0.0,
+			forward: 0.0,
+			height: 0.0,
+		},
+		to: {
+			right: 0.0,
+			forward: 0.2,
+			height: 0.0,
+		},
 	},
 ].map(|ends| Tower.rod(view, ends).len().to_i64_wrap())
 
@@ -337,16 +324,16 @@ cut_got : List(F64)
 cut_got = (
 	{
 		c = Tower.cut_at_near({
-			from: v3(
-				0.0,
-				0.0,
-				10.0,
-			),
-			to: v3(
-				8.0,
-				0.8,
-				30.0,
-			),
+			from: {
+				right: 0.0,
+				forward: 0.0,
+				height: 10.0,
+			},
+			to: {
+				right: 8.0,
+				forward: 0.8,
+				height: 30.0,
+			},
 		})
 		[
 			c.right,

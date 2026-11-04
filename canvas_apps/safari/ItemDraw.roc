@@ -87,9 +87,11 @@ ItemDraw :: [].{
 		corner_point = |corner| {
 			on_map = Tower.base_corner_ax(
 				corner,
-				tower.along,
-				tower.across,
-				tower.yaw,
+				{
+					along: tower.along,
+					across: tower.across,
+					yaw: tower.yaw,
+				},
 			)
 			Frame.map_pt(
 				context.world,
@@ -149,8 +151,7 @@ draw_one = |scene, { context, key }| {
 		Bird(place) =>
 			RocBird.draw_one(
 				at_place(scene.birds, place),
-				context.cam_focal,
-				Screen.width,
+				{ cam_focal: context.cam_focal, view_w: Screen.width },
 			)
 	}
 }

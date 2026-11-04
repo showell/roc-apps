@@ -73,24 +73,20 @@ Gaze :: [].{
 				if dist > gaze_look_dist {
 					no_look
 				} else {
-					pig_in_sight(
-						state,
-						pig,
-						dist,
-					)
+					pig_in_sight(state, { gaze_pig: pig, distance_ahead: dist })
 				}
 			)
 		}
 	)
 
-	## The pig `dist` ahead is in sight while it is less than the release
-	## angle from the way the bike points.
-	pig_in_sight : Pose.RiderState, Scenery.Critter, F64 -> Gaze.PigLook
-	pig_in_sight = |
-		state,
-		pig,
-		dist,
-	| {
+	## The pig `distance_ahead` up the road is in sight while it is less
+	## than the release angle from the way the bike points.
+	pig_in_sight : Pose.RiderState,
+	{
+		gaze_pig : Scenery.Critter,
+		distance_ahead : F64,
+	} -> Gaze.PigLook
+	pig_in_sight = |state, { gaze_pig: pig, distance_ahead: dist }| {
 		toward_pig = Angle.Turn.radians(
 			Trig.r_atan2(
 				pig.across - state.across,

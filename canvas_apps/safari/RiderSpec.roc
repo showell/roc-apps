@@ -25,12 +25,22 @@ segs = [
 seg : World.Segment
 seg = World.segment_at(0)
 
-rider : F64, F64, F64, F64 -> Pose.RiderState
+## Where a test rider is on segment 0 and how it moves.
+RiderSpot : {
+	along : F64,
+	across : F64,
+	speed : F64,
+	tilt_radians : F64,
+}
+
+rider : RiderSpot -> Pose.RiderState
 rider = |
-	along,
-	across,
-	v,
-	tilt,
+	{
+		along,
+		across,
+		speed: v,
+		tilt_radians: tilt,
+	},
 | {
 	segment: 0,
 	along: along,
@@ -47,21 +57,21 @@ step_got : List(Bool)
 step_got = (
 	{
 		d = Rider.decide(
-			rider(
-				0.0,
-				0.0,
-				Pose.v_base,
-				0.0,
-			),
+			rider({
+				along: 0.0,
+				across: 0.0,
+				speed: Pose.v_base,
+				tilt_radians: 0.0,
+			}),
 			seg,
 		)
 		held = Rider.decide(
-			rider(
-				0.0,
-				0.0,
-				Pose.v_base,
-				0.5,
-			),
+			rider({
+				along: 0.0,
+				across: 0.0,
+				speed: Pose.v_base,
+				tilt_radians: 0.5,
+			}),
 			seg,
 		)
 		[
@@ -79,22 +89,22 @@ leaned_got : List(Bool)
 leaned_got = (
 	{
 		d = Rider.decide(
-			rider(
-				0.0,
-				0.0,
-				Pose.v_base,
-				0.0,
-			),
+			rider({
+				along: 0.0,
+				across: 0.0,
+				speed: Pose.v_base,
+				tilt_radians: 0.0,
+			}),
 			seg,
 		)
 		same = Throttle.get_forward_accel_decel(
 			Pose.with_tilt(
-				rider(
-					0.0,
-					0.0,
-					Pose.v_base,
-					0.0,
-				),
+				rider({
+					along: 0.0,
+					across: 0.0,
+					speed: Pose.v_base,
+					tilt_radians: 0.0,
+				}),
 				Angle.upright.plus(d.tilt_step),
 			),
 			seg,
@@ -160,12 +170,12 @@ early_got : List(Bool)
 early_got = (
 	{
 		far = Rider.rider_state_for_next_segment(
-			rider(
-				100.0,
-				0.0,
-				Pose.v_base,
-				0.0,
-			),
+			rider({
+				along: 100.0,
+				across: 0.0,
+				speed: Pose.v_base,
+				tilt_radians: 0.0,
+			}),
 			segs,
 		)
 		[(DeviceMath.real_abs(far.across) >= (Scenery.lane_width / 2.0))]
@@ -178,21 +188,21 @@ early_want = [True]
 resolve_got : List(I64)
 resolve_got = [
 	Rider.resolve_cross(
-		rider(
-			100.0,
-			0.0,
-			Pose.v_base,
-			0.0,
-		),
+		rider({
+			along: 100.0,
+			across: 0.0,
+			speed: Pose.v_base,
+			tilt_radians: 0.0,
+		}),
 		segs,
 	).segment,
 	Rider.resolve_cross(
-		rider(
-			499.0,
-			0.0,
-			Pose.v_base,
-			0.0,
-		),
+		rider({
+			along: 499.0,
+			across: 0.0,
+			speed: Pose.v_base,
+			tilt_radians: 0.0,
+		}),
 		segs,
 	).segment,
 ]
@@ -274,12 +284,12 @@ done_got = (
 			Rider.is_finished(short, [World.segment_at(18)]),
 			is_route_end(last_seg),
 			Rider.is_finished(
-				rider(
-					499.0,
-					0.0,
-					Pose.v_base,
-					0.0,
-				),
+				rider({
+					along: 499.0,
+					across: 0.0,
+					speed: Pose.v_base,
+					tilt_radians: 0.0,
+				}),
 				segs,
 			),
 		]
@@ -291,12 +301,12 @@ done_want = [True, False, True, False]
 
 next : Pose.RiderState
 next = Rider.get_next_rider_state(
-	rider(
-		0.0,
-		0.0,
-		Pose.v_base,
-		0.0,
-	),
+	rider({
+		along: 0.0,
+		across: 0.0,
+		speed: Pose.v_base,
+		tilt_radians: 0.0,
+	}),
 	segs,
 )
 

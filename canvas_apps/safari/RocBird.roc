@@ -101,29 +101,24 @@ RocBird :: [].{
 	# still's beak points toward +x and `AsDrawn` leaves it that way, so
 	# it faces screen-right; on a right-hand tree that is out into the trees.
 	# From a left-hand one, the same unflipped bird faces the road.
-	fifth_left : List(Scenery.Tree), I64, I64 -> [Found(Scenery.Tree), NoTree]
+	fifth_left : List(Scenery.Tree),
+	{
+		tree_index : I64,
+		left_trees_seen : I64,
+	} -> [Found(Scenery.Tree), NoTree]
 	fifth_left = |
 		trees,
-		i,
-		seen,
+		{ tree_index: i, left_trees_seen: seen },
 	| match List.get(trees, I64.to_u64_wrap(i)) {
 		Err(_) => NoTree
 		Ok(t) => if t.across < 0.0 {
 			if seen == 4 {
 				Found(t)
 			} else {
-				fifth_left(
-					trees,
-					i + 1,
-					seen + 1,
-				)
+				fifth_left(trees, { tree_index: i + 1, left_trees_seen: seen + 1 })
 			}
 		} else {
-			fifth_left(
-				trees,
-				i + 1,
-				seen,
-			)
+			fifth_left(trees, { tree_index: i + 1, left_trees_seen: seen })
 		}
 	}
 
@@ -135,24 +130,32 @@ RocBird :: [].{
 		lift : F64,
 	}
 
+	## The road the birds are collected along: the world's segments, the
+	## chain of them ahead of the rider, the rider's pose, and the lens's
+	## focal length in pixels.
+	View : {
+		world : List(World.Segment),
+		chain : List(I64),
+		pose : Frame.Pose,
+		cam_focal : F64,
+	}
+
 	# The bird for chain position d, or nothing when its tree is behind the
 	# near plane or too small to draw. Culled here, as every kind is culled
 	# where it is collected rather than where it is drawn.
-	perch : List(World.Segment), List(I64), Frame.Pose, F64, I64 -> List(RocBird.Bird)
+	perch : RocBird.View, I64 -> List(RocBird.Bird)
 	perch = |
-		segs,
-		ch,
-		pose,
-		cf,
+		{
+			world: segs,
+			chain: ch,
+			pose,
+			cam_focal: cf,
+		},
 		d,
 	| {
 		seg_idx = List.get(ch, I64.to_u64_wrap(d)) ?? crash ("chain index")
 		seg = List.get(segs, I64.to_u64_wrap(seg_idx)) ?? crash ("segment")
-		match fifth_left(
-			seg.trees,
-			0,
-			0,
-		) {
+		match fifth_left(seg.trees, { tree_index: 0, left_trees_seen: 0 }) {
 			NoTree => []
 			Found(t) => {
 				rp = Frame.at(
@@ -182,49 +185,24 @@ RocBird :: [].{
 
 	# Every bird in the chain, nearest segment first. The sort puts them where
 	# they belong.
-	perches : List(World.Segment), List(I64), Frame.Pose, F64 -> List(RocBird.Bird)
-	perches = |
-		segs,
-		ch,
-		pose,
-		cf,
-	| perches_from(
-		segs,
-		ch,
-		pose,
-		cf,
-		0,
-		[],
-	)
+	perches : RocBird.View -> List(RocBird.Bird)
+	perches = |view| perches_from(view, { place: 0, birds_found: [] })
 
-	perches_from : List(World.Segment), List(I64), Frame.Pose, F64, I64, List(RocBird.Bird) -> List(RocBird.Bird)
-	perches_from = |
-		segs,
-		ch,
-		pose,
-		cf,
-		d,
-		acc,
-	|
-		if d >= ch.len().to_i64_wrap() {
+	perches_from : RocBird.View,
+	{
+		place : I64,
+		birds_found : List(RocBird.Bird),
+	} -> List(RocBird.Bird)
+	perches_from = |view, { place: d, birds_found: acc }|
+		if d >= view.chain.len().to_i64_wrap() {
 			acc
 		} else {
 			perches_from(
-				segs,
-				ch,
-				pose,
-				cf,
-				d + 1,
-				List.concat(
-					acc,
-					perch(
-						segs,
-						ch,
-						pose,
-						cf,
-						d,
-					),
-				),
+				view,
+				{
+					place: d + 1,
+					birds_found: List.concat(acc, perch(view, d)),
+				},
 			)
 		}
 
@@ -236,19 +214,16 @@ RocBird :: [].{
 	# One bird, drawn where the sort says. Its feet go at the top of its tree,
 	# and unflipped its beak points toward +x, which from a left-hand tree is
 	# across the road.
-	draw_one : RocBird.Bird, F64, F64 -> List(Paint.DrawCmd)
-	draw_one = |
-		b,
-		cf,
-		view_w,
-	| {
+	draw_one : RocBird.Bird, Camera.View -> List(Paint.DrawCmd)
+	draw_one = |b, camera_view| {
+		cf = camera_view.cam_focal
 		feet = Camera.project(
 			{
 				right: b.right,
 				forward: b.fwd,
 				height: b.lift,
 			},
-			{ cam_focal: cf, view_w },
+			camera_view,
 		)
 		Critter.draw_still(
 			{

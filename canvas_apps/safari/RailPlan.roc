@@ -222,15 +222,7 @@ rail_path = |road, bend| {
 			across: outer_edge,
 		},
 	)
-	apex = Joint.joint_apex(
-		road.world,
-		road.chain,
-		road.pose,
-		bend.before,
-		bend.after,
-		bend.length_before,
-		bend.exit_right,
-	)
+	apex = Joint.joint_apex(road, bend)
 	List.join([
 		RailPlan.run_up(
 			road,

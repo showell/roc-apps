@@ -60,9 +60,11 @@ SafariApp :: [].{
 		List.prepend(
 			SafariShapes.frame(
 				SafariRide.commands(ride),
-				SafariRide.sky_top(ride),
-				SafariRide.sky_horizon(ride),
-				SafariRide.sun(ride),
+				{
+					sky_top_color: SafariRide.sky_top(ride),
+					sky_horizon_color: SafariRide.sky_horizon(ride),
+					sun_position: SafariRide.sun(ride),
+				},
 			),
 			lean,
 		)
@@ -85,22 +87,26 @@ SafariApp :: [].{
 				if input.key_down(KeyRight) {
 					repeat(
 						m.ride,
-						if paused {
-							1
-						} else {
-							4
+						{
+							step_count: if paused {
+								1
+							} else {
+								4
+							},
+							step_once: SafariRide.advance,
 						},
-						SafariRide.advance,
 					)
 				} else if input.key_down(KeyLeft) {
 					repeat(
 						m.ride,
-						if paused {
-							1
-						} else {
-							4
+						{
+							step_count: if paused {
+								1
+							} else {
+								4
+							},
+							step_once: SafariRide.back,
 						},
-						SafariRide.back,
 					)
 				} else if paused {
 					m.ride
@@ -115,12 +121,13 @@ SafariApp :: [].{
 			{ ride, paused }
 		}
 
-	repeat : SafariRide.Model, I64, (SafariRide.Model -> SafariRide.Model) -> SafariRide.Model
-	repeat = |
-		ride,
-		n,
-		move,
-	| {
+	## The ride after `step_once` has moved it `step_count` times.
+	repeat : SafariRide.Model,
+	{
+		step_count : I64,
+		step_once : SafariRide.Model -> SafariRide.Model,
+	} -> SafariRide.Model
+	repeat = |ride, { step_count: n, step_once: move }| {
 		var $ride = ride
 		var $i = 0
 		while $i < n {

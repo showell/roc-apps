@@ -79,12 +79,19 @@ SafariShapes :: [].{
 	}
 
 	# The frame in paint order: the sky, the grass, the sun, then every command.
-	frame : List(Paint.DrawCmd), I64, I64, Sky.SunPos -> List(Shapes.Shape)
+	frame : List(Paint.DrawCmd),
+	{
+		sky_top_color : I64,
+		sky_horizon_color : I64,
+		sun_position : Sky.SunPos,
+	} -> List(Shapes.Shape)
 	frame = |
 		commands,
-		sky_top,
-		sky_horizon,
-		sun,
+		{
+			sky_top_color: sky_top,
+			sky_horizon_color: sky_horizon,
+			sun_position: sun,
+		},
 	| {
 		var $out = List.with_capacity(2 * List.len(commands) + 8)
 		# Oversized, as the blitter draws them, so the rolled frame's corners stay

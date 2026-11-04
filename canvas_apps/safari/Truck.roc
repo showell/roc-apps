@@ -41,38 +41,59 @@ Truck :: [].{
 		braking: False,
 	}
 
-	next_turn_from : List(World.Segment), F64, I64, F64 -> Truck.NextTurn
+	## The next turn at or after segment `segment_index`, which starts
+	## `segment_start` along the route.
+	next_turn_from : List(World.Segment),
+	{
+		truck_position : F64,
+		segment_index : I64,
+		segment_start : F64,
+	} -> Truck.NextTurn
 	next_turn_from = |
 		segs,
-		pos,
-		i,
-		cum0,
+		{
+			truck_position: pos,
+			segment_index: i,
+			segment_start: cum0,
+		},
 	| (
 		if i >= segs.len().to_i64_wrap() {
 			NoTurnAhead
 		} else {
 			next_turn_step(
 				segs,
-				pos,
-				i,
-				(
-					cum0 + (
-						List.get(
-							segs,
-							I64.to_u64_wrap(i),
-						) ?? crash ("list-at out of range")
-					).length
-				),
+				{
+					truck_position: pos,
+					segment_index: i,
+					segment_end: (
+						cum0 + (
+							List.get(
+								segs,
+								I64.to_u64_wrap(i),
+							) ?? crash ("list-at out of range")
+						).length
+					),
+				},
 			)
 		}
 	)
 
-	next_turn_step : List(World.Segment), F64, I64, F64 -> Truck.NextTurn
+	## The turn at the end of segment `segment_index`, which ends
+	## `segment_end` along the route, if the truck is short of it; else the
+	## next turn after it.
+	next_turn_step : List(World.Segment),
+	{
+		truck_position : F64,
+		segment_index : I64,
+		segment_end : F64,
+	} -> Truck.NextTurn
 	next_turn_step = |
 		segs,
-		pos,
-		i,
-		cum,
+		{
+			truck_position: pos,
+			segment_index: i,
+			segment_end: cum,
+		},
 	| (
 		{
 			s = (List.get(segs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))
@@ -88,9 +109,11 @@ Truck :: [].{
 				} else {
 					next_turn_from(
 						segs,
-						pos,
-						(i + 1),
-						cum,
+						{
+							truck_position: pos,
+							segment_index: i + 1,
+							segment_start: cum,
+						},
 					)
 				}
 			)
@@ -100,9 +123,11 @@ Truck :: [].{
 	next_turn : List(World.Segment), F64 -> Truck.NextTurn
 	next_turn = |segs, pos| next_turn_from(
 		segs,
-		pos,
-		0,
-		0.0,
+		{
+			truck_position: pos,
+			segment_index: 0,
+			segment_start: 0.0,
+		},
 	)
 
 	truck_schedule : F64, F64 -> F64
@@ -111,12 +136,21 @@ Truck :: [].{
 		l,
 	| ((rider_dist + finish_lead) + ((start_ahead - finish_lead) * (1.0 - (rider_dist / l))))
 
-	truck_next : Truck.TruckState, F64, List(World.Segment), F64 -> Truck.TruckState
+	## The truck a frame on: where the rider is along the route, the
+	## world's segments, and the route's whole length decide its pace.
+	truck_next : Truck.TruckState,
+	{
+		rider_distance : F64,
+		world : List(World.Segment),
+		route_length : F64,
+	} -> Truck.TruckState
 	truck_next = |
 		truck,
-		rider_dist,
-		segs,
-		l,
+		{
+			rider_distance: rider_dist,
+			world: segs,
+			route_length: l,
+		},
 	| (
 		{
 			scheduled = truck_schedule(rider_dist, l)

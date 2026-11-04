@@ -47,9 +47,11 @@ Safari :: [].{
 				rider: nx,
 				truck: Truck.truck_next(
 					r.truck,
-					dist,
-					w,
-					World.course_length(w),
+					{
+						rider_distance: dist,
+						world: w,
+						route_length: World.course_length(w),
+					},
 				),
 				clock: (r.clock + 1.0),
 			}
