@@ -32,87 +32,86 @@ count_got = [
 	Paint.push_poly(7, tri).len().to_i64_wrap(),
 	Paint.push_poly(7, line_ends).len().to_i64_wrap(),
 	Paint.push_poly(7, []).len().to_i64_wrap(),
-	Paint.push_round_poly(
-		7,
-		0.5,
+	Paint.push_round_poly(tri, { fill_color: 7, round_strength: 0.5 }).len().to_i64_wrap(),
+	Paint.push_round_poly(line_ends, { fill_color: 7, round_strength: 0.5 }).len().to_i64_wrap(),
+	Paint.push_grad_poly(
 		tri,
-	).len().to_i64_wrap(),
-	Paint.push_round_poly(
-		7,
-		0.5,
-		line_ends,
+		{
+			center_rgba: 7,
+			edge_rgba: 8,
+			gradient_center: sp(0.0, 0.0),
+			gradient_radius: 1.0,
+		},
 	).len().to_i64_wrap(),
 	Paint.push_grad_poly(
-		7,
-		8,
-		0.0,
-		0.0,
-		1.0,
-		tri,
-	).len().to_i64_wrap(),
-	Paint.push_grad_poly(
-		7,
-		8,
-		0.0,
-		0.0,
-		1.0,
 		line_ends,
+		{
+			center_rgba: 7,
+			edge_rgba: 8,
+			gradient_center: sp(0.0, 0.0),
+			gradient_radius: 1.0,
+		},
 	).len().to_i64_wrap(),
 	Paint.push_linear_grad_poly(
-		7,
-		8,
-		0.0,
-		1.0,
-		0.0,
-		0.0,
-		1.0,
-		1.0,
 		tri,
+		{
+			color_stops: {
+				start_rgba: 7,
+				end_rgba: 8,
+				start_offset: 0.0,
+				end_offset: 1.0,
+			},
+			start_point: sp(0.0, 0.0),
+			end_point: sp(1.0, 1.0),
+		},
 	).len().to_i64_wrap(),
 	Paint.push_linear_grad_poly(
-		7,
-		8,
-		0.0,
-		1.0,
-		0.0,
-		0.0,
-		1.0,
-		1.0,
 		line_ends,
+		{
+			color_stops: {
+				start_rgba: 7,
+				end_rgba: 8,
+				start_offset: 0.0,
+				end_offset: 1.0,
+			},
+			start_point: sp(0.0, 0.0),
+			end_point: sp(1.0, 1.0),
+		},
 	).len().to_i64_wrap(),
 	Paint.push_radial_grad_poly(
-		7,
-		8,
-		0.0,
-		1.0,
-		0.0,
-		0.0,
-		1.0,
-		0.0,
-		0.0,
-		1.0,
 		tri,
+		{
+			color_stops: {
+				start_rgba: 7,
+				end_rgba: 8,
+				start_offset: 0.0,
+				end_offset: 1.0,
+			},
+			center_point: sp(0.0, 0.0),
+			axis_u: sp(1.0, 0.0),
+			axis_v: sp(0.0, 1.0),
+		},
 	).len().to_i64_wrap(),
 	Paint.push_radial_grad_poly(
-		7,
-		8,
-		0.0,
-		1.0,
-		0.0,
-		0.0,
-		1.0,
-		0.0,
-		0.0,
-		1.0,
 		line_ends,
+		{
+			color_stops: {
+				start_rgba: 7,
+				end_rgba: 8,
+				start_offset: 0.0,
+				end_offset: 1.0,
+			},
+			center_point: sp(0.0, 0.0),
+			axis_u: sp(1.0, 0.0),
+			axis_v: sp(0.0, 1.0),
+		},
 	).len().to_i64_wrap(),
-	Paint.push_beacon(
-		7,
-		1.0,
-		2.0,
-		3.0,
-		0.5,
-	).len().to_i64_wrap(),
+	Paint.push_beacon({
+		beacon_color: 7,
+		beacon_center: sp(1.0, 2.0),
+		beacon_radius: 3.0,
+		beacon_alpha: 0.5,
+	}).len().to_i64_wrap(),
 ]
 
 count_want : List(I64)
@@ -136,57 +135,56 @@ solid : List(Paint.DrawCmd)
 solid = Paint.push_poly(111, tri)
 
 round : List(Paint.DrawCmd)
-round = Paint.push_round_poly(
-	222,
-	0.75,
-	tri,
-)
+round = Paint.push_round_poly(tri, { fill_color: 222, round_strength: 0.75 })
 
 beacon : List(Paint.DrawCmd)
-beacon = Paint.push_beacon(
-	333,
-	10.0,
-	20.0,
-	30.0,
-	0.25,
-)
+beacon = Paint.push_beacon({
+	beacon_color: 333,
+	beacon_center: sp(10.0, 20.0),
+	beacon_radius: 30.0,
+	beacon_alpha: 0.25,
+})
 
 radial4 : List(Paint.DrawCmd)
 radial4 = Paint.push_grad_poly(
-	444,
-	445,
-	10.0,
-	20.0,
-	30.0,
 	tri,
+	{
+		center_rgba: 444,
+		edge_rgba: 445,
+		gradient_center: sp(10.0, 20.0),
+		gradient_radius: 30.0,
+	},
 )
 
 linear5 : List(Paint.DrawCmd)
 linear5 = Paint.push_linear_grad_poly(
-	555,
-	556,
-	0.25,
-	0.75,
-	1.0,
-	2.0,
-	3.0,
-	4.0,
 	tri,
+	{
+		color_stops: {
+			start_rgba: 555,
+			end_rgba: 556,
+			start_offset: 0.25,
+			end_offset: 0.75,
+		},
+		start_point: sp(1.0, 2.0),
+		end_point: sp(3.0, 4.0),
+	},
 )
 
 radial6 : List(Paint.DrawCmd)
 radial6 = Paint.push_radial_grad_poly(
-	666,
-	667,
-	0.25,
-	0.75,
-	1.0,
-	2.0,
-	3.0,
-	4.0,
-	5.0,
-	6.0,
 	tri,
+	{
+		color_stops: {
+			start_rgba: 666,
+			end_rgba: 667,
+			start_offset: 0.25,
+			end_offset: 0.75,
+		},
+		center_point: sp(1.0, 2.0),
+		axis_u: sp(3.0, 4.0),
+		axis_v: sp(5.0, 6.0),
+	},
 )
 
 tags_got : List(I64)

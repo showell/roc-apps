@@ -12,42 +12,31 @@ import Screen
 view : Camera.View
 view = { cam_focal: 800.0, view_w: 960.0 }
 
-at : F64, F64, F64 -> Camera.ScreenPt
-at = |
-	right,
-	forward,
-	height,
-| Camera.project(
-	{
-		right,
-		forward,
-		height,
-	},
-	view,
-)
+at : Geom.Vec3 -> Camera.ScreenPt
+at = |point| Camera.project(point, view)
 
 x_got : List(F64)
 x_got = [
-	at(
-		0.0,
-		10.0,
-		1.2,
-	).x,
-	at(
-		10.0,
-		10.0,
-		1.2,
-	).x,
-	at(
-		(0.0 - 5.0),
-		10.0,
-		1.2,
-	).x,
-	at(
-		10.0,
-		5.0,
-		1.2,
-	).x,
+	at({
+		right: 0.0,
+		forward: 10.0,
+		height: 1.2,
+	}).x,
+	at({
+		right: 10.0,
+		forward: 10.0,
+		height: 1.2,
+	}).x,
+	at({
+		right: (0.0 - 5.0),
+		forward: 10.0,
+		height: 1.2,
+	}).x,
+	at({
+		right: 10.0,
+		forward: 5.0,
+		height: 1.2,
+	}).x,
 ]
 
 x_want : List(F64)
@@ -55,31 +44,31 @@ x_want = [480.0, 1280.0, 80.0, 2080.0]
 
 y_got : List(F64)
 y_got = [
-	at(
-		0.0,
-		10.0,
-		1.2,
-	).y,
-	at(
-		0.0,
-		10.0,
-		11.2,
-	).y,
-	at(
-		0.0,
-		10.0,
-		6.2,
-	).y,
-	at(
-		0.0,
-		10.0,
-		0.2,
-	).y,
-	at(
-		0.0,
-		4.0,
-		3.2,
-	).y,
+	at({
+		right: 0.0,
+		forward: 10.0,
+		height: 1.2,
+	}).y,
+	at({
+		right: 0.0,
+		forward: 10.0,
+		height: 11.2,
+	}).y,
+	at({
+		right: 0.0,
+		forward: 10.0,
+		height: 6.2,
+	}).y,
+	at({
+		right: 0.0,
+		forward: 10.0,
+		height: 0.2,
+	}).y,
+	at({
+		right: 0.0,
+		forward: 4.0,
+		height: 3.2,
+	}).y,
 ]
 
 y_want : List(F64)
@@ -93,36 +82,36 @@ y_want = [
 
 depth_got : List(F64)
 depth_got = [
-	at(
-		4.0,
-		4.0,
-		1.2,
-	).x,
-	at(
-		4.0,
-		8.0,
-		1.2,
-	).x,
-	at(
-		4.0,
-		16.0,
-		1.2,
-	).x,
-	at(
-		0.0,
-		4.0,
-		5.2,
-	).y,
-	at(
-		0.0,
-		8.0,
-		5.2,
-	).y,
-	at(
-		0.0,
-		16.0,
-		5.2,
-	).y,
+	at({
+		right: 4.0,
+		forward: 4.0,
+		height: 1.2,
+	}).x,
+	at({
+		right: 4.0,
+		forward: 8.0,
+		height: 1.2,
+	}).x,
+	at({
+		right: 4.0,
+		forward: 16.0,
+		height: 1.2,
+	}).x,
+	at({
+		right: 0.0,
+		forward: 4.0,
+		height: 5.2,
+	}).y,
+	at({
+		right: 0.0,
+		forward: 8.0,
+		height: 5.2,
+	}).y,
+	at({
+		right: 0.0,
+		forward: 16.0,
+		height: 5.2,
+	}).y,
 ]
 
 depth_want : List(F64)

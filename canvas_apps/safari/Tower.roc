@@ -471,13 +471,12 @@ Tower :: [].{
 					view_w: mast.view.view_w,
 				})
 			)
-			if (radius < 0.5) [] else Paint.push_beacon(
+			if (radius < 0.5) [] else Paint.push_beacon({
 				beacon_color,
-				apex_on_screen.x,
-				apex_on_screen.y,
-				radius,
-				brightness,
-			)
+				beacon_center: apex_on_screen,
+				beacon_radius: radius,
+				beacon_alpha: brightness,
+			})
 		}
 	}
 

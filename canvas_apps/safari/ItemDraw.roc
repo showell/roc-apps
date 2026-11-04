@@ -92,12 +92,16 @@ ItemDraw :: [].{
 				tower.yaw,
 			)
 			Frame.map_pt(
-				context.world,
-				context.chain,
-				context.pose,
-				tower.map,
-				on_map.a,
-				on_map.x,
+				{
+					world: context.world,
+					chain: context.chain,
+					pose: context.pose,
+				},
+				{
+					mapper: tower.map,
+					along: on_map.a,
+					across: on_map.x,
+				},
 			)
 		}
 		{
@@ -114,12 +118,16 @@ ItemDraw :: [].{
 		Tower.draw({
 			footprint: ItemDraw.tower_footprint(context, tower),
 			center: Frame.map_pt(
-				context.world,
-				context.chain,
-				context.pose,
-				tower.map,
-				tower.along,
-				tower.across,
+				{
+					world: context.world,
+					chain: context.chain,
+					pose: context.pose,
+				},
+				{
+					mapper: tower.map,
+					along: tower.along,
+					across: tower.across,
+				},
 			),
 			cam_focal: context.cam_focal,
 			view_w: Screen.width,

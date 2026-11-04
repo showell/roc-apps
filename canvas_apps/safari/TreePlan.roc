@@ -53,12 +53,16 @@ TreePlan :: [].{
 	tree_in_view : TreePlan.View, { place : I64, tree : Scenery.Tree } -> List(TreePlan.TreeItem)
 	tree_in_view = |view, { place, tree }| {
 		seen = Frame.at(
-			view.world,
-			view.chain,
-			view.pose,
-			place,
-			tree.along,
-			(tree.across + (Scenery.lane_width / 2.0)),
+			{
+				world: view.world,
+				chain: view.chain,
+				pose: view.pose,
+			},
+			{
+				segments_ahead: place,
+				along: tree.along,
+				across: (tree.across + (Scenery.lane_width / 2.0)),
+			},
 		)
 		if seen.forward <= Geom.near {
 			[]

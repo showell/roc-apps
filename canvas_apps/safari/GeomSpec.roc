@@ -82,12 +82,21 @@ tr_walk_onto = |i, acc| (
 		(
 			{
 				p = Geom.to_rider(
-					(List.get(tr_a, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")),
-					(List.get(tr_x, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")),
-					5.0,
-					0.5,
-					(List.get(tr_yaw, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")),
-					3.0,
+					{
+						a: (List.get(tr_a, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")),
+						x: (List.get(tr_x, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")),
+					},
+					{
+						along: 5.0,
+						across: 0.5,
+						yaw: (
+							List.get(
+								tr_yaw,
+								I64.to_u64_wrap(i),
+							) ?? crash ("list-at out of range")
+						),
+						hw: 3.0,
+					},
 				)
 				tr_walk_onto((i + 1), List.append(List.append(acc, p.right), p.forward))
 			}
@@ -101,12 +110,16 @@ lm_want = [0.0, 4.0]
 lm_got : List(F64)
 lm_got = (
 	{
-		q = Geom.line_meet(
-			{ right: 0.0, forward: 0.0 },
-			{ right: 0.0, forward: 1.0 },
-			{ right: (-2.0), forward: 4.0 },
-			{ right: 3.0, forward: 4.0 },
-		)
+		q = Geom.line_meet({
+			first_line: {
+				start_point: { right: 0.0, forward: 0.0 },
+				end_point: { right: 0.0, forward: 1.0 },
+			},
+			second_line: {
+				start_point: { right: (-2.0), forward: 4.0 },
+				end_point: { right: 3.0, forward: 4.0 },
+			},
+		})
 		[q.right, q.forward]
 	}
 )
@@ -152,19 +165,11 @@ cn_want = [
 ]
 
 # cn_walk builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-cn_walk : List(Geom.Vec3), I64 -> List(F64)
-cn_walk = |vs, i| cn_walk_onto(
-	vs,
-	i,
-	[],
-)
+cn_walk : List(Geom.Vec3) -> List(F64)
+cn_walk = |vs| cn_walk_onto(vs, { at_index: 0, flat_coords: [] })
 
-cn_walk_onto : List(Geom.Vec3), I64, List(F64) -> List(F64)
-cn_walk_onto = |
-	vs,
-	i,
-	acc,
-| (
+cn_walk_onto : List(Geom.Vec3), { at_index : I64, flat_coords : List(F64) } -> List(F64)
+cn_walk_onto = |vs, { at_index: i, flat_coords: acc }| (
 	if i >= vs.len().to_i64_wrap() {
 		acc
 	} else {
@@ -173,12 +178,14 @@ cn_walk_onto = |
 				v = (List.get(vs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))
 				cn_walk_onto(
 					vs,
-					(i + 1),
-					acc.concat([
-						v.right,
-						v.forward,
-						v.height,
-					]),
+					{
+						at_index: (i + 1),
+						flat_coords: acc.concat([
+							v.right,
+							v.forward,
+							v.height,
+						]),
+					},
 				)
 			}
 		)
@@ -209,7 +216,7 @@ main! = |_args| {
 		}),
 		Grade.reals({
 			name: "g-clip ",
-			got: cn_walk(Geom.clip_near(poly), 0),
+			got: cn_walk(Geom.clip_near(poly)),
 			want: cn_want,
 			tol: 0.0,
 		}),

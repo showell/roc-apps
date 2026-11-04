@@ -193,9 +193,8 @@ Tree :: [].{
 		]
 		match corners {
 			RoundCorners => Paint.push_round_poly(
-				trunk_color,
-				1.0,
 				points,
+				{ fill_color: trunk_color, round_strength: 1.0 },
 			)
 			SharpCorners => Paint.push_poly(trunk_color, points)
 		}
@@ -324,8 +323,7 @@ tier_cone = |tree, { tier, radius }| {
 	)
 	hull = Tree.convex_hull(ring.append(apex))
 	if (hull.len() < 3) [] else Paint.push_round_poly(
-		tree.color,
-		tree.shade,
 		hull,
+		{ fill_color: tree.color, round_strength: tree.shade },
 	)
 }

@@ -11,44 +11,52 @@ Geom :: [].{
 	}
 	AX : { a : F64, x : F64 }
 
+	## Where the camera stands on the current segment, and which way it faces.
+	Pose : {
+		along : F64,
+		across : F64,
+		yaw : F64,
+		hw : F64,
+	}
+
+	## The bend from one segment into the next: the length of the segment
+	## before it, the angle it turns through, which way, and the lane's width.
+	Turn : {
+		segment_length : F64,
+		turn_angle : F64,
+		turns_right : Bool,
+		lane_width : F64,
+	}
+
+	## A line through two points.
+	Line : { start_point : Geom.RiderPt, end_point : Geom.RiderPt }
+
 	ground_radius : F64
 	ground_radius = 100000.0
 
 	ground_drop : F64, F64 -> F64
 	ground_drop = |right, forward| (((right * right) + (forward * forward)) / (2.0 * ground_radius))
 
-	to_rider : F64, F64, F64, F64, F64, F64 -> Geom.RiderPt
-	to_rider = |
-		a,
-		x,
-		cam_along,
-		cam_across,
-		yaw,
-		hw,
-	| (
+	to_rider : Geom.AX, Geom.Pose -> Geom.RiderPt
+	to_rider = |{ a, x }, pose| (
 		{
-			d_a = (a - cam_along)
-			d_x = (x - (cam_across + hw))
-			c = Trig.r_cos(yaw)
-			s = Trig.r_sin(yaw)
+			d_a = (a - pose.along)
+			d_x = (x - (pose.across + pose.hw))
+			c = Trig.r_cos(pose.yaw)
+			s = Trig.r_sin(pose.yaw)
 			{ forward: ((d_a * c) + (d_x * s)), right: (((0.0 - d_a) * s) + (d_x * c)) }
 		}
 	)
 
-	next_to_cur : F64, F64, F64, F64, Bool, F64 -> Geom.AX
-	next_to_cur = |
-		a_b,
-		x_b,
-		seg_len,
-		theta,
-		turns_right,
-		width,
-	| (
+	next_to_cur : Geom.AX, Geom.Turn -> Geom.AX
+	next_to_cur = |{ a: a_b, x: x_b }, turn| (
 		{
-			c = Trig.r_cos(theta)
-			s = Trig.r_sin(theta)
+			seg_len = turn.segment_length
+			width = turn.lane_width
+			c = Trig.r_cos(turn.turn_angle)
+			s = Trig.r_sin(turn.turn_angle)
 			(
-				if turns_right {
+				if turn.turns_right {
 					{
 						a: ((((a_b * c) - (x_b * s)) + (width * s)) + seg_len),
 						x: (((x_b * c) + (a_b * s)) + (width * (1.0 - c))),
@@ -60,20 +68,15 @@ Geom :: [].{
 		}
 	)
 
-	cur_to_next : F64, F64, F64, F64, Bool, F64 -> Geom.AX
-	cur_to_next = |
-		a,
-		x,
-		seg_len,
-		theta,
-		turns_right,
-		width,
-	| (
+	cur_to_next : Geom.AX, Geom.Turn -> Geom.AX
+	cur_to_next = |{ a, x }, turn| (
 		{
-			c = Trig.r_cos(theta)
-			s = Trig.r_sin(theta)
+			seg_len = turn.segment_length
+			width = turn.lane_width
+			c = Trig.r_cos(turn.turn_angle)
+			s = Trig.r_sin(turn.turn_angle)
 			(
-				if turns_right {
+				if turn.turns_right {
 					(
 						{
 							a0 = ((a - seg_len) - (width * s))
@@ -93,14 +96,13 @@ Geom :: [].{
 		}
 	)
 
-	line_meet : Geom.RiderPt, Geom.RiderPt, Geom.RiderPt, Geom.RiderPt -> Geom.RiderPt
-	line_meet = |
-		a0,
-		a1,
-		b0,
-		b1,
-	| (
+	line_meet : { first_line : Geom.Line, second_line : Geom.Line } -> Geom.RiderPt
+	line_meet = |{ first_line, second_line }| (
 		{
+			a0 = first_line.start_point
+			a1 = first_line.end_point
+			b0 = second_line.start_point
+			b1 = second_line.end_point
 			dax = (a1.right - a0.right)
 			daf = (a1.forward - a0.forward)
 			dbx = (b1.right - b0.right)
@@ -113,18 +115,14 @@ Geom :: [].{
 	near : F64
 	near = 0.4
 
-	clip_cross : Geom.Vec3, Geom.Vec3, F64 -> List(Geom.Vec3)
-	clip_cross = |
-		a,
-		b,
-		near_,
-	| (
+	clip_cross : { edge_start : Geom.Vec3, edge_end : Geom.Vec3 } -> List(Geom.Vec3)
+	clip_cross = |{ edge_start: a, edge_end: b }| (
 		{
-			f = ((near_ - a.forward) / (b.forward - a.forward))
+			f = ((near - a.forward) / (b.forward - a.forward))
 			[
 				{
 					right: (a.right + (f * (b.right - a.right))),
-					forward: near_,
+					forward: near,
 					height: (a.height + (f * (b.height - a.height))),
 				},
 			]
@@ -147,13 +145,12 @@ Geom :: [].{
 	)
 
 	# clip_near_onto is an accumulator loop, which is linear where appending a recursive call is quadratic.
-	clip_near_onto : List(Geom.Vec3), F64, I64, List(Geom.Vec3) -> List(Geom.Vec3)
-	clip_near_onto = |
-		poly,
-		near_,
-		i,
-		acc,
-	| (
+	clip_near_onto : List(Geom.Vec3),
+	{
+		corner_index : I64,
+		clipped : List(Geom.Vec3),
+	} -> List(Geom.Vec3)
+	clip_near_onto = |poly, { corner_index: i, clipped: acc }| (
 		{
 			n = poly.len().to_i64_wrap()
 			(
@@ -174,8 +171,8 @@ Geom :: [].{
 									I64.to_u64_wrap(((i + 1) - (I64.div_trunc_by((i + 1), n) * n))),
 								) ?? crash ("list-at out of range")
 							)
-							a_in = (a.forward >= near_)
-							b_in = (b.forward >= near_)
+							a_in = (a.forward >= near)
+							b_in = (b.forward >= near)
 							kept = (
 								if a_in {
 									[a]
@@ -187,22 +184,19 @@ Geom :: [].{
 								if both_sides(a_in, b_in) {
 									[]
 								} else {
-									clip_cross(
-										a,
-										b,
-										near_,
-									)
+									clip_cross({ edge_start: a, edge_end: b })
 								}
 							)
 							clip_near_onto(
 								poly,
-								near_,
-								(i + 1),
-								List.join([
-									acc,
-									kept,
-									crossed,
-								]),
+								{
+									corner_index: (i + 1),
+									clipped: List.join([
+										acc,
+										kept,
+										crossed,
+									]),
+								},
 							)
 						}
 					)
@@ -213,10 +207,5 @@ Geom :: [].{
 
 	## The polygon cut to what lies at or past the near plane, `near` ahead.
 	clip_near : List(Geom.Vec3) -> List(Geom.Vec3)
-	clip_near = |poly| clip_near_onto(
-		poly,
-		near,
-		0,
-		[],
-	)
+	clip_near = |poly| clip_near_onto(poly, { corner_index: 0, clipped: [] })
 }

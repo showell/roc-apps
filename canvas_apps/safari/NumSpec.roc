@@ -202,74 +202,78 @@ mod_want = [
 ]
 
 # mod_row builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-mod_row : F64, List(F64), I64 -> List(F64)
-mod_row = |
-	m,
+mod_row : F64, List(F64) -> List(F64)
+mod_row = |m, xs| mod_row_onto(
 	xs,
-	j,
-| mod_row_onto(
-	m,
-	xs,
-	j,
-	[],
+	{
+		modulus: m,
+		at_index: 0,
+		remainders: [],
+	},
 )
 
-mod_row_onto : F64, List(F64), I64, List(F64) -> List(F64)
+mod_row_onto : List(F64),
+{
+	modulus : F64,
+	at_index : I64,
+	remainders : List(F64),
+} -> List(F64)
 mod_row_onto = |
-	m,
 	xs,
-	j,
-	acc,
+	{
+		modulus: m,
+		at_index: j,
+		remainders: acc,
+	},
 | (
 	if j >= xs.len().to_i64_wrap() {
 		acc
 	} else {
 		x = List.get(xs, I64.to_u64_wrap(j)) ?? crash "NumSpec: j is within xs"
 		mod_row_onto(
-			m,
 			xs,
-			(j + 1),
-			acc.append(Num_.mod_real(x, m)),
+			{
+				modulus: m,
+				at_index: (j + 1),
+				remainders: acc.append(Num_.mod_real(x, m)),
+			},
 		)
 	}
 )
 
 # mod_outer builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-mod_outer : List(F64), List(F64), I64 -> List(F64)
-mod_outer = |
-	ms,
-	xs,
-	i,
-| mod_outer_onto(
-	ms,
-	xs,
-	i,
-	[],
-)
+mod_outer : { moduli : List(F64), values : List(F64) } -> List(F64)
+mod_outer = |{ moduli, values }| mod_outer_onto({
+	moduli,
+	values,
+	at_index: 0,
+	remainders: [],
+})
 
-mod_outer_onto : List(F64), List(F64), I64, List(F64) -> List(F64)
+mod_outer_onto : {
+	moduli : List(F64),
+	values : List(F64),
+	at_index : I64,
+	remainders : List(F64),
+} -> List(F64)
 mod_outer_onto = |
-	ms,
-	xs,
-	i,
-	acc,
+	{
+		moduli: ms,
+		values: xs,
+		at_index: i,
+		remainders: acc,
+	},
 | (
 	if i >= ms.len().to_i64_wrap() {
 		acc
 	} else {
 		m = List.get(ms, I64.to_u64_wrap(i)) ?? crash "NumSpec: i is within ms"
-		mod_outer_onto(
-			ms,
-			xs,
-			(i + 1),
-			acc.concat(
-				mod_row(
-					m,
-					xs,
-					0,
-				),
-			),
-		)
+		mod_outer_onto({
+			moduli: ms,
+			values: xs,
+			at_index: (i + 1),
+			remainders: acc.concat(mod_row(m, xs)),
+		})
 	}
 )
 
@@ -367,11 +371,7 @@ main! = |_args| {
 		}),
 		Grade.reals({
 			name: "n-mod  ",
-			got: mod_outer(
-				mod_m,
-				mod_x,
-				0,
-			),
+			got: mod_outer({ moduli: mod_m, values: mod_x }),
 			want: mod_want,
 			tol: 0.0,
 		}),
