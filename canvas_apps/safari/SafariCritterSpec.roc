@@ -5,7 +5,6 @@ app [main!] {
 }
 
 import Grade
-import ListUtils
 import SafariCritter
 import Scenery
 
@@ -49,31 +48,31 @@ all_four : List(Scenery.Critter)
 all_four = List.join([pair_a, pair_b, pair_c, pair_d])
 
 across_got : List(F64)
-across_got = ListUtils.list_map(lam_0, all_four)
+across_got = all_four.map(lam_0)
 
 across_want : List(F64)
 across_want = [(-4.9), 0.0, 5.75, 0.0, (-4.8), 0.0, 4.6, 0.0]
 
 along_got : List(F64)
-along_got = ListUtils.list_map(lam_1, all_four)
+along_got = all_four.map(lam_1)
 
 along_want : List(F64)
 along_want = [100.0, 114.0, 50.0, 64.0, 10.0, 24.0, 0.0, 14.0]
 
 ch_got : List(F64)
-ch_got = ListUtils.list_map(lam_2, all_four)
+ch_got = all_four.map(lam_2)
 
 ch_want : List(F64)
 ch_want = [2.8, 1.4, 4.5, 2.25, 1.6, 0.8, 2.2, 1.1]
 
 ccp_got : List(I64)
-ccp_got = ListUtils.list_map(lam_3, all_four)
+ccp_got = all_four.map(lam_3)
 
 ccp_want : List(I64)
 ccp_want = [128024, 128024, 129426, 129426, 129427, 129427, 129423, 129423]
 
 face_got : List(Bool)
-face_got = ListUtils.list_map(lam_4, all_four)
+face_got = all_four.map(lam_4)
 
 face_want : List(Bool)
 face_want = [True, True, False, False, True, True, False, False]

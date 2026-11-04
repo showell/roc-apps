@@ -6,7 +6,6 @@ app [main!] {
 
 import Billboards
 import Grade
-import ListUtils
 
 fwd_in : List(F64)
 fwd_in = [(-5.0), 0.3, 0.4, 0.5, 300.0, 342.0, 343.0, 400.0, 10.0, 50.0]
@@ -36,13 +35,13 @@ placed_all_onto = |i, acc| (
 )
 
 kept_got : List(Bool)
-kept_got = ListUtils.list_map(lam_0, placed_all(0))
+kept_got = placed_all(0).map(lam_0)
 
 kept_want : List(Bool)
 kept_want = [False, False, False, True, True, True, False, False, False, True]
 
 culled_got : List(Bool)
-culled_got = ListUtils.list_map(lam_1, placed_all(0))
+culled_got = placed_all(0).map(lam_1)
 
 culled_want : List(Bool)
 culled_want = [False, False, False, False, False, False, True, True, True, False]

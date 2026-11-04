@@ -9,10 +9,10 @@ import Grade
 import Joint
 
 outer_got : List(F64)
-outer_got = [Joint.outer_cu(True, 4.0), Joint.outer_cu(False, 4.0), Joint.outer_cu(True, 7.5), Joint.outer_cu(False, 7.5)]
+outer_got = [Joint.outer_cu(True), Joint.outer_cu(False)]
 
 outer_want : List(F64)
-outer_want = [0.0, 4.0, 0.0, 7.5]
+outer_want = [0.0, 4.0]
 
 pose : Frame.Pose
 pose = { along: 100.0, across: 1.0, yaw: 0.2, hw: 2.0 }
@@ -29,8 +29,8 @@ here = Frame.chain_map(0)
 apex_got : List(F64)
 apex_got = (
 	{
-		r = Joint.joint_apex([], [], pose, behind_right, here, 300.0, 4.0, 4.0, True)
-		l = Joint.joint_apex([], [], pose, behind_left, here, 300.0, 4.0, 4.0, False)
+		r = Joint.joint_apex([], [], pose, behind_right, here, 300.0, True)
+		l = Joint.joint_apex([], [], pose, behind_left, here, 300.0, False)
 		[r.right, r.forward, l.right, l.forward]
 	}
 )

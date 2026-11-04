@@ -6,7 +6,6 @@ import CritterPlan
 import DepthSort
 import Frame
 import GuardRail
-import ListUtils
 import RailPlan
 import TowerPlan
 import TreePlan
@@ -54,11 +53,11 @@ Render :: [].{
 		{
 			ch = Frame.build_chain(segs, seg_idx)
 			placed = CritterPlan.all_placed(segs, ch, pose, seg_idx)
-			trees = ListUtils.list_take(TreePlan.in_view({ world: segs, chain: ch, pose, cam_focal: cf }), TreePlan.max_vis_trees)
-			towers = ListUtils.list_take(TowerPlan.in_view({ world: segs, chain: ch, pose, rider_segment: seg_idx }), TowerPlan.max_vis_towers)
-			cows = ListUtils.list_take(Billboards.kept_of(placed, 0), CritterPlan.max_vis_critters)
-			cats = ListUtils.list_take(CatPlan.in_view({ world: segs, chain: ch, pose, cam_focal: cf, rider_along: along, speed: v }), CatPlan.max_vis_cats)
-			rails = RailPlan.all_rails(segs, ch, pose, seg_idx)
+			trees = TreePlan.in_view({ world: segs, chain: ch, pose, cam_focal: cf }).take_first(TreePlan.max_vis_trees.to_u64_wrap())
+			towers = TowerPlan.in_view({ world: segs, chain: ch, pose, rider_segment: seg_idx }).take_first(TowerPlan.max_vis_towers.to_u64_wrap())
+			cows = Billboards.kept_of(placed, 0).take_first(CritterPlan.max_vis_critters.to_u64_wrap())
+			cats = CatPlan.in_view({ world: segs, chain: ch, pose, cam_focal: cf, rider_along: along, speed: v }).take_first(CatPlan.max_vis_cats.to_u64_wrap())
+			rails = RailPlan.all_rails({ world: segs, chain: ch, pose }, seg_idx)
 			tk = TruckPlan.in_view({ world: segs, chain: ch, pose, rider_along: along, lead: (truck_pos - World.route_distance(segs, { index: seg_idx, along })) })
 			# Roc's own flair, collected like every other kind so the sort can put
 			# it behind a nearer tree. See RocBird.

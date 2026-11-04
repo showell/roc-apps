@@ -1,5 +1,5 @@
-# GroundPlanSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are GroundPlan's checks: how the road along a segment is cut into
+## chunks, where a chunk's corners are, and what the road draws.
 app [main!] {
 	lib: "../lib/main.roc",
 }
@@ -12,7 +12,7 @@ import Paint
 import World
 
 fixed_got : List(F64)
-fixed_got = [GroundPlan.road_chunk, GroundPlan.entry_road_dist]
+fixed_got = [GroundPlan.road_chunk, GroundPlan.approach_length]
 
 fixed_want : List(F64)
 fixed_want = [25.0, 40.0]
@@ -24,90 +24,102 @@ colour_want : List(I64)
 colour_want = [3421500]
 
 chunks_got : List(I64)
-chunks_got = [GroundPlan.chunks_for(25.0), GroundPlan.chunks_for(25.1), GroundPlan.chunks_for(50.0), GroundPlan.chunks_for(49.9), GroundPlan.chunks_for(1.0), GroundPlan.chunks_for(0.0), GroundPlan.chunks_for(500.0), GroundPlan.chunks_for(320.0), GroundPlan.chunks_for(1200.0)]
+chunks_got = [25.0, 25.1, 50.0, 49.9, 1.0, 0.0, 500.0, 320.0, 1200.0].map(GroundPlan.chunk_count)
 
 chunks_want : List(I64)
 chunks_want = [1, 2, 2, 2, 1, 1, 20, 13, 48]
 
-segs : List(World.Segment)
-segs = [World.segment_at(0), World.segment_at(1), World.segment_at(2)]
+# The first three segments, the rider at the start of the first, and a
+# camera only the drawing checks read.
+view : GroundPlan.View
+view = {
+	world: [World.segment_at(0), World.segment_at(1), World.segment_at(2)],
+	chain: [0, 1, 2],
+	pose: { along: 0.0, across: 0.0, yaw: 0.0, hw: 2.0 },
+	cam_focal: 500.0,
+	view_w: 960.0,
+}
 
-chain : List(I64)
-chain = [0, 1, 2]
+## Chunk `chunk` of the first segment's 20, which is 500 m long.
+chunk_of_first : I64 -> List(Geom.RiderPt)
+chunk_of_first = |chunk| GroundPlan.chunk_corners(view, { position: 0, length: 500.0, chunks: 20, chunk })
 
-origin : Frame.Pose
-origin = { along: 0.0, across: 0.0, yaw: 0.0, hw: 2.0 }
+corner : List(Geom.RiderPt), U64 -> Geom.RiderPt
+corner = |corners, i| corners.get(i) ?? crash "GroundPlanSpec: a chunk has four corners"
 
-quad : List(Geom.RiderPt)
-quad = GroundPlan.slice_quad(segs, chain, origin, 0, 0, 20, 500.0, 4.0)
+first_chunk : List(Geom.RiderPt)
+first_chunk = chunk_of_first(0)
+
+last_chunk : List(Geom.RiderPt)
+last_chunk = chunk_of_first(19)
 
 quad_shape_got : List(I64)
-quad_shape_got = [quad.len().to_i64_wrap(), GroundPlan.slice_quad(segs, chain, origin, 0, 19, 20, 500.0, 4.0).len().to_i64_wrap()]
+quad_shape_got = [first_chunk.len().to_i64_wrap(), last_chunk.len().to_i64_wrap()]
 
 quad_shape_want : List(I64)
 quad_shape_want = [4, 4]
 
 across_got : List(F64)
-across_got = [(List.get(quad, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).right, (List.get(quad, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).right, (List.get(quad, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).right, (List.get(quad, I64.to_u64_wrap(3)) ?? crash ("list-at out of range")).right]
+across_got = first_chunk.map(|point| point.right)
 
 across_want : List(F64)
 across_want = [(-2.0), 2.0, 2.0, (-2.0)]
 
 along_got : List(F64)
-along_got = (
-	{
-		last = GroundPlan.slice_quad(segs, chain, origin, 0, 19, 20, 500.0, 4.0)
-		[(List.get(quad, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).forward, (List.get(quad, I64.to_u64_wrap(3)) ?? crash ("list-at out of range")).forward, (List.get(last, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).forward, (List.get(last, I64.to_u64_wrap(3)) ?? crash ("list-at out of range")).forward]
-	}
-)
+along_got = [
+	corner(first_chunk, 0).forward,
+	corner(first_chunk, 3).forward,
+	corner(last_chunk, 0).forward,
+	corner(last_chunk, 3).forward,
+]
 
 along_want : List(F64)
 along_want = [0.0, 25.0, 475.0, 500.0]
 
 seam_got : List(F64)
-seam_got = (
-	{
-		a = GroundPlan.slice_quad(segs, chain, origin, 0, 3, 20, 500.0, 4.0)
-		b = GroundPlan.slice_quad(segs, chain, origin, 0, 4, 20, 500.0, 4.0)
-		[((List.get(a, I64.to_u64_wrap(3)) ?? crash ("list-at out of range")).forward - (List.get(b, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).forward), ((List.get(a, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).forward - (List.get(b, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).forward), ((List.get(a, I64.to_u64_wrap(3)) ?? crash ("list-at out of range")).right - (List.get(b, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).right)]
-	}
-)
+seam_got = {
+	before = chunk_of_first(3)
+	after = chunk_of_first(4)
+	[
+		(corner(before, 3).forward - corner(after, 0).forward),
+		(corner(before, 2).forward - corner(after, 1).forward),
+		(corner(before, 3).right - corner(after, 0).right),
+	]
+}
 
 seam_want : List(F64)
 seam_want = [0.0, 0.0, 0.0]
 
 strip : List(Paint.DrawCmd)
-strip = GroundPlan.seg_road(segs, chain, origin, 0, 500.0, 960.0)
+strip = GroundPlan.segment_road(view, 0)
+
+far_ahead : Frame.Pose
+far_ahead = { along: 5000.0, across: 0.0, yaw: 0.0, hw: 2.0 }
 
 strip_got : List(Bool)
-strip_got = [(strip.len().to_i64_wrap() > 0), (strip.len().to_i64_wrap() <= GroundPlan.chunks_for(500.0)), (GroundPlan.seg_road(segs, chain, { along: 5000.0, across: 0.0, yaw: 0.0, hw: 2.0 }, 0, 500.0, 960.0).len().to_i64_wrap() == 0)]
+strip_got = [
+	(strip.len() > 0),
+	(strip.len().to_i64_wrap() <= GroundPlan.chunk_count(500.0)),
+	(GroundPlan.segment_road({ ..view, pose: far_ahead }, 0).len() == 0),
+]
 
 strip_want : List(Bool)
 strip_want = [True, True, True]
 
+last_cmd : Paint.DrawCmd
+last_cmd = strip.last() ?? crash "GroundPlanSpec: the road draws"
+
 cmd_got : List(I64)
-cmd_got = (
-	{
-		c = (List.get(strip, I64.to_u64_wrap((strip.len().to_i64_wrap() - 1))) ?? crash ("list-at out of range"))
-		[c.tag, c.color, c.color2, c.geom.len().to_i64_wrap()]
-	}
-)
+cmd_got = [last_cmd.tag, last_cmd.color, last_cmd.color2, last_cmd.geom.len().to_i64_wrap()]
 
 cmd_want : List(I64)
 cmd_want = [0, 3421500, 0, 0]
 
 points_got : List(Bool)
-points_got = (
-	{
-		c = (List.get(strip, I64.to_u64_wrap((strip.len().to_i64_wrap() - 1))) ?? crash ("list-at out of range"))
-		[(c.pts.len().to_i64_wrap() >= 6), (c.pts.len().to_i64_wrap() <= 10)]
-	}
-)
+points_got = [(last_cmd.pts.len() >= 6), (last_cmd.pts.len() <= 10)]
 
 points_want : List(Bool)
 points_want = [True, True]
-
-# --- Entry ---
 
 main! = |_args| {
 	verdicts = [

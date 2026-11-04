@@ -2,24 +2,27 @@
 # and this file is edited here (safari/README.md).
 import Frame
 import Geom
+import Scenery
 import World
 
 Joint :: [].{
 
-	outer_cu : Bool, F64 -> F64
-	outer_cu = |exit_right, wd| (
+	## How far across the road its outer edge at a bend is: the left edge
+	## when the road turns right, the right edge when it turns left.
+	outer_cu : Bool -> F64
+	outer_cu = |exit_right| (
 		if exit_right {
 			0.0
 		} else {
-			wd
+			Scenery.lane_width
 		}
 	)
 
-	joint_apex : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, Frame.Mapper, F64, F64, F64, Bool -> Geom.RiderPt
-	joint_apex = |segs, ch, pose, from_map, to_map, from_len, from_w, to_w, exit_right| (
+	joint_apex : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, Frame.Mapper, F64, Bool -> Geom.RiderPt
+	joint_apex = |segs, ch, pose, from_map, to_map, from_len, exit_right| (
 		{
-			fcu = outer_cu(exit_right, from_w)
-			tx = outer_cu(exit_right, to_w)
+			fcu = outer_cu(exit_right)
+			tx = outer_cu(exit_right)
 			Geom.line_meet(Frame.map_pt(segs, ch, pose, from_map, from_len, fcu), Frame.map_pt(segs, ch, pose, from_map, (from_len + 1.0), fcu), Frame.map_pt(segs, ch, pose, to_map, 0.0, tx), Frame.map_pt(segs, ch, pose, to_map, 1.0, tx))
 		}
 	)

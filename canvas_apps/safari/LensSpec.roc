@@ -6,7 +6,6 @@ app [main!] {
 
 import Grade
 import Lens
-import ListUtils
 import Screen
 
 base_got : List(F64)
@@ -61,13 +60,13 @@ main! = |_args| {
 		}),
 		Grade.rel({
 			name: "l-lean ",
-			got: ListUtils.list_map(Lens.focal_for_lean, lean_in),
+			got: lean_in.map(Lens.focal_for_lean),
 			want: lean_want,
 			tol: F64.from_bits(4472406533629990549),
 		}),
 		Grade.rel({
 			name: "l-gaze ",
-			got: ListUtils.list_map(Lens.focal_for_gaze, gaze_in),
+			got: gaze_in.map(Lens.focal_for_gaze),
 			want: gaze_want,
 			tol: F64.from_bits(4472406533629990549),
 		}),

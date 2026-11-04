@@ -1,42 +1,29 @@
-# Ground -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## Ground paints a flat patch of ground, such as a stretch of road or a
+## pond, as one polygon. The patch follows the earth's curve down as it
+## goes away from the rider.
 import Camera
 import Geom
 import Paint
 
 Ground :: [].{
 
-	ground_vert : Geom.RiderPt -> Geom.Vec3
-	ground_vert = |p| { right: p.right, forward: p.forward, height: (0.0 - Geom.ground_drop(p.right, p.forward)) }
+	## A point on the ground, lowered by the earth's curve.
+	ground_point : Geom.RiderPt -> Geom.Vec3
+	ground_point = |point| { right: point.right, forward: point.forward, height: (0.0 - Geom.ground_drop(point.right, point.forward)) }
 
-	# ground_verts builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	ground_verts : List(Geom.RiderPt), I64 -> List(Geom.Vec3)
-	ground_verts = |ps, i| ground_verts_onto(ps, i, [])
-
-	ground_verts_onto : List(Geom.RiderPt), I64, List(Geom.Vec3) -> List(Geom.Vec3)
-	ground_verts_onto = |ps, i, acc| (
-		if (i >= ps.len().to_i64_wrap()) {
-			acc
-		} else {
-			ground_verts_onto(ps, (i + 1), List.append(acc, ground_vert((List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
-		}
-	)
-
-	emit_ground_color : List(Geom.RiderPt), I64, F64, F64 -> List(Paint.DrawCmd)
-	emit_ground_color = |ps, color, cf, view_w| (
-		if (ps.len().to_i64_wrap() > 8) {
+	## A patch of `color` with these corners, cut at the camera's near plane.
+	## A patch with more than eight corners, or with fewer than three left
+	## in front of the camera, draws nothing.
+	draw : { corners : List(Geom.RiderPt), color : I64, cam_focal : F64, view_w : F64 } -> List(Paint.DrawCmd)
+	draw = |{ corners, color, cam_focal, view_w }|
+		if (corners.len() > 8) {
 			[]
 		} else {
-			ground_clip(Geom.clip_near(ground_verts(ps, 0)), color, cf, view_w)
+			in_front = Geom.clip_near(corners.map(Ground.ground_point))
+			if (in_front.len() < 3) {
+				[]
+			} else {
+				Paint.push_poly(color, Camera.project_all(in_front, cam_focal, view_w))
+			}
 		}
-	)
-
-	ground_clip : List(Geom.Vec3), I64, F64, F64 -> List(Paint.DrawCmd)
-	ground_clip = |vs, color, cf, view_w| (
-		if (vs.len().to_i64_wrap() < 3) {
-			[]
-		} else {
-			Paint.push_poly(color, Camera.project_all(vs, cf, view_w))
-		}
-	)
 }

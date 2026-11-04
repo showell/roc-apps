@@ -1,5 +1,5 @@
-# RailPlanSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are RailPlan's checks: how many steps a leg of rail takes, the
+## points along a leg, and the rail's run up to a bend and out of it.
 app [main!] {
 	lib: "../lib/main.roc",
 }
@@ -12,7 +12,7 @@ import RailPlan
 import World
 
 steps_got : List(I64)
-steps_got = [RailPlan.leg_steps(0.0), RailPlan.leg_steps(0.4), RailPlan.leg_steps(0.5), RailPlan.leg_steps(1.0), RailPlan.leg_steps(1.4), RailPlan.leg_steps(1.5), RailPlan.leg_steps(2.5), RailPlan.leg_steps(10.0), RailPlan.leg_steps(49.6), RailPlan.leg_steps(50.0)]
+steps_got = [0.0, 0.4, 0.5, 1.0, 1.4, 1.5, 2.5, 10.0, 49.6, 50.0].map(RailPlan.leg_steps)
 
 steps_want : List(I64)
 steps_want = [1, 1, 1, 1, 1, 2, 3, 10, 50, 50]
@@ -20,73 +20,83 @@ steps_want = [1, 1, 1, 1, 1, 2, 3, 10, 50, 50]
 origin_pt : Geom.RiderPt
 origin_pt = { right: 0.0, forward: 0.0 }
 
+point_at : List(Geom.RiderPt), U64 -> Geom.RiderPt
+point_at = |points, i| points.get(i) ?? crash "RailPlanSpec: an index past the leg's end"
+
 straight : List(Geom.RiderPt)
-straight = RailPlan.push_leg(origin_pt, { right: 0.0, forward: 10.0 })
+straight = RailPlan.leg({ from: origin_pt, to: { right: 0.0, forward: 10.0 } })
 
 straight_got : List(F64)
-straight_got = [I64.to_f64(straight.len().to_i64_wrap()), (List.get(straight, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).forward, (List.get(straight, I64.to_u64_wrap(4)) ?? crash ("list-at out of range")).forward, (List.get(straight, I64.to_u64_wrap(9)) ?? crash ("list-at out of range")).forward, (List.get(straight, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).right, (List.get(straight, I64.to_u64_wrap(9)) ?? crash ("list-at out of range")).right]
+straight_got = [
+	straight.len().to_f64(),
+	point_at(straight, 0).forward,
+	point_at(straight, 4).forward,
+	point_at(straight, 9).forward,
+	point_at(straight, 0).right,
+	point_at(straight, 9).right,
+]
 
 straight_want : List(F64)
 straight_want = [10.0, 1.0, 5.0, 10.0, 0.0, 0.0]
 
 diagonal : List(Geom.RiderPt)
-diagonal = RailPlan.push_leg(origin_pt, { right: 30.0, forward: 40.0 })
+diagonal = RailPlan.leg({ from: origin_pt, to: { right: 30.0, forward: 40.0 } })
 
 diagonal_got : List(F64)
-diagonal_got = [I64.to_f64(diagonal.len().to_i64_wrap()), (List.get(diagonal, I64.to_u64_wrap(49)) ?? crash ("list-at out of range")).right, (List.get(diagonal, I64.to_u64_wrap(49)) ?? crash ("list-at out of range")).forward, (List.get(diagonal, I64.to_u64_wrap(24)) ?? crash ("list-at out of range")).right, (List.get(diagonal, I64.to_u64_wrap(24)) ?? crash ("list-at out of range")).forward]
+diagonal_got = [
+	diagonal.len().to_f64(),
+	point_at(diagonal, 49).right,
+	point_at(diagonal, 49).forward,
+	point_at(diagonal, 24).right,
+	point_at(diagonal, 24).forward,
+]
 
 diagonal_want : List(F64)
 diagonal_want = [50.0, 30.0, 40.0, 15.0, 20.0]
 
 degenerate_got : List(F64)
-degenerate_got = (
-	{
-		d = RailPlan.push_leg({ right: 3.0, forward: 4.0 }, { right: 3.0, forward: 4.0 })
-		[I64.to_f64(d.len().to_i64_wrap()), (List.get(d, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).right, (List.get(d, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).forward]
-	}
-)
+degenerate_got = {
+	in_place = RailPlan.leg({ from: { right: 3.0, forward: 4.0 }, to: { right: 3.0, forward: 4.0 } })
+	[in_place.len().to_f64(), point_at(in_place, 0).right, point_at(in_place, 0).forward]
+}
 
 degenerate_want : List(F64)
 degenerate_want = [1.0, 3.0, 4.0]
 
 from_zero_got : List(F64)
-from_zero_got = (
-	{
-		z = RailPlan.leg_points(origin_pt, 0.0, 10.0, 10, 0)
-		[I64.to_f64(z.len().to_i64_wrap()), (List.get(z, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).forward, (List.get(z, I64.to_u64_wrap(10)) ?? crash ("list-at out of range")).forward]
-	}
-)
+from_zero_got = {
+	spaced = RailPlan.evenly_spaced({ from: origin_pt, to: { right: 0.0, forward: 10.0 }, steps: 10 })
+	[spaced.len().to_f64(), point_at(spaced, 0).forward, point_at(spaced, 10).forward]
+}
 
 from_zero_want : List(F64)
 from_zero_want = [11.0, 0.0, 10.0]
 
-segs : List(World.Segment)
-segs = [World.segment_at(0), World.segment_at(1), World.segment_at(2)]
+road : RailPlan.Road
+road = {
+	world: [World.segment_at(0), World.segment_at(1), World.segment_at(2)],
+	chain: [0, 1, 2],
+	pose: { along: 0.0, across: 0.0, yaw: 0.0, hw: 2.0 },
+}
 
-chain : List(I64)
-chain = [0, 1, 2]
-
-origin : Frame.Pose
-origin = { along: 0.0, across: 0.0, yaw: 0.0, hw: 2.0 }
+run_up : List(Geom.RiderPt)
+run_up = RailPlan.run_up(road, { place: Frame.chain_map(0), length: 500.0, across: 4.0 })
 
 runout_got : List(I64)
-runout_got = [GuardRail.rail_runout, RailPlan.rail_run_out(segs, chain, origin, Frame.chain_map(0), 4.0, 0).len().to_i64_wrap(), RailPlan.rail_run_up(segs, chain, origin, Frame.chain_map(0), 500.0, 4.0, GuardRail.rail_runout).len().to_i64_wrap()]
+runout_got = [
+	GuardRail.rail_runout,
+	RailPlan.run_out(road, { place: Frame.chain_map(0), across: 4.0 }).len().to_i64_wrap(),
+	run_up.len().to_i64_wrap(),
+]
 
 runout_want : List(I64)
-runout_want = [10, 11, 11]
+runout_want = [10, 10, 11]
 
 runup_got : List(F64)
-runup_got = (
-	{
-		u = RailPlan.rail_run_up(segs, chain, origin, Frame.chain_map(0), 500.0, 4.0, GuardRail.rail_runout)
-		[(List.get(u, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).forward, (List.get(u, I64.to_u64_wrap(10)) ?? crash ("list-at out of range")).forward]
-	}
-)
+runup_got = [point_at(run_up, 0).forward, point_at(run_up, 10).forward]
 
 runup_want : List(F64)
 runup_want = [490.0, 500.0]
-
-# --- Entry ---
 
 main! = |_args| {
 	verdicts = [

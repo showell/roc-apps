@@ -5,7 +5,6 @@ app [main!] {
 }
 
 import Grade
-import ListUtils
 import lib.Trig
 import VehicleLimits
 
@@ -36,13 +35,13 @@ main! = |_args| {
 	verdicts = [
 		Grade.reals({
 			name: "v-table",
-			got: ListUtils.list_map(VehicleLimits.turn_speed, ListUtils.list_map(to_rad, table_deg)),
+			got: table_deg.map(to_rad).map(VehicleLimits.turn_speed),
 			want: table_want,
 			tol: 0.0,
 		}),
 		Grade.reals({
 			name: "v-edge ",
-			got: ListUtils.list_map(VehicleLimits.turn_speed, ListUtils.list_map(to_rad, edge_deg)),
+			got: edge_deg.map(to_rad).map(VehicleLimits.turn_speed),
 			want: edge_want,
 			tol: 0.0,
 		}),

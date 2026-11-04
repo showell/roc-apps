@@ -5,7 +5,6 @@ app [main!] {
 }
 
 import Grade
-import ListUtils
 import Num_
 
 round_in : List(F64)
@@ -76,19 +75,19 @@ main! = |_args| {
 	verdicts = [
 		Grade.reals({
 			name: "n-round",
-			got: ListUtils.list_map(Num_.round_real, round_in),
+			got: round_in.map(Num_.round_real),
 			want: round_want,
 			tol: 0.0,
 		}),
 		Grade.reals({
 			name: "n-floor",
-			got: ListUtils.list_map(Num_.floor_real, floor_in),
+			got: floor_in.map(Num_.floor_real),
 			want: floor_want,
 			tol: 0.0,
 		}),
 		Grade.reals({
 			name: "n-ceil ",
-			got: ListUtils.list_map(Num_.ceil_real, floor_in),
+			got: floor_in.map(Num_.ceil_real),
 			want: ceil_want,
 			tol: 0.0,
 		}),
@@ -100,13 +99,13 @@ main! = |_args| {
 		}),
 		Grade.reals({
 			name: "n-pow2 ",
-			got: ListUtils.list_map(Num_.pow2_int, pow2_k),
+			got: pow2_k.map(Num_.pow2_int),
 			want: pow2_want,
 			tol: 0.0,
 		}),
 		Grade.rel({
 			name: "n-exp  ",
-			got: ListUtils.list_map(Num_.exp_real, exp_in),
+			got: exp_in.map(Num_.exp_real),
 			want: exp_want,
 			tol: F64.from_bits(4382569440205035030),
 		}),
