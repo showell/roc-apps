@@ -1,12 +1,9 @@
-# Grade -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
-#
-# THE SPEC APPS' VERDICT LINES. A spec app prints one line for each table it
-# checks, and the lines are held byte for byte to safari-codex's
-# `units/<Spec>.expected`: `<name> ok <count>`, `<name> BAD at <index>` where
-# the table first goes wrong (with both values for integers), or
-# `<name> BAD length <got> want <want>`. Each line ends in a newline, because a
-# spec app's `echo!` writes none.
+## Grade writes a spec app's verdict lines. A spec app prints one line for
+## each table it checks, and the gate holds the lines byte for byte to the
+## spec's file in `gates/expected/`. A line is `<name> ok <count>`,
+## `<name> BAD at <index>` where the table first goes wrong (with both
+## values, for integers), or `<name> BAD length <got> want <want>`. Each
+## line ends in a newline, because a spec app's `echo!` writes none.
 
 Grade :: [].{
 
