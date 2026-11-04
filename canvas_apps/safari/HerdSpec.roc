@@ -6,7 +6,6 @@ app [main!] {
 
 import Grade
 import Herd
-import ListUtils
 import Scenery
 
 bull_count_got : List(I64)
@@ -51,19 +50,19 @@ cow_of : I64 -> Scenery.Critter
 cow_of = |i| (List.get(cows, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))
 
 alongs_got : List(F64)
-alongs_got = ListUtils.list_map(lam_0, cows)
+alongs_got = cows.map(lam_0)
 
 alongs_want : List(F64)
 alongs_want = [28.0, 30.0, 32.0, 34.0, 36.0, 38.0, 40.0, 42.0, 44.0, 46.0, 48.0, 50.0, 52.0, 54.0]
 
 acrosses_got : List(F64)
-acrosses_got = ListUtils.list_map(lam_1, cows)
+acrosses_got = cows.map(lam_1)
 
 acrosses_want : List(F64)
 acrosses_want = [(-12.0), (-17.0), (-22.0), (-12.0), (-17.0), (-22.0), (-12.0), (-17.0), (-22.0), (-12.0), (-17.0), (-22.0), (-12.0), (-17.0)]
 
 calves_got : List(F64)
-calves_got = ListUtils.list_map(lam_2, cows)
+calves_got = cows.map(lam_2)
 
 calves_want : List(F64)
 calves_want = [1.4, 0.7, 1.4, 1.4, 1.4, 0.7, 1.4, 1.4, 1.4, 0.7, 1.4, 1.4, 1.4, 0.7]

@@ -5,7 +5,6 @@ app [main!] {
 }
 
 import Grade
-import ListUtils
 import Pigs
 import Scenery
 
@@ -73,13 +72,13 @@ row_count_want : List(I64)
 row_count_want = [10, 4, 6]
 
 row_along_got : List(F64)
-row_along_got = ListUtils.list_map(lam_0, row)
+row_along_got = row.map(lam_0)
 
 row_along_want : List(F64)
 row_along_want = [934.0, 938.0, 942.0, 946.0, 930.0, 934.0, 938.0, 942.0, 946.0, 950.0]
 
 row_across_got : List(F64)
-row_across_got = ListUtils.list_map(lam_1, row)
+row_across_got = row.map(lam_1)
 
 row_across_want : List(F64)
 row_across_want = [12.0, 12.0, 12.0, 12.0, 18.0, 18.0, 18.0, 18.0, 18.0, 18.0]

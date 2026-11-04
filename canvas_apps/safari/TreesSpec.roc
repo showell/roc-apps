@@ -5,7 +5,6 @@ app [main!] {
 }
 
 import Grade
-import ListUtils
 import Scenery
 import Trees
 
@@ -37,25 +36,25 @@ filled : List(Scenery.Tree)
 filled = Trees.fill_trees(YellowGreen, 300.0, Trees.tree_start_inset, 0, 0)
 
 along_got : List(F64)
-along_got = ListUtils.list_map(lam_0, filled)
+along_got = filled.map(lam_0)
 
 along_want : List(F64)
 along_want = [6.0, 6.0, 36.0, 36.0, 66.0, 66.0, 96.0, 96.0, 126.0, 126.0, 156.0, 156.0, 186.0, 186.0]
 
 across_got : List(F64)
-across_got = ListUtils.list_map(lam_1, filled)
+across_got = filled.map(lam_1)
 
 across_want : List(F64)
 across_want = [(-3.5), 3.5, (-8.0), 8.0, (-3.5), 3.5, (-8.0), 8.0, (-3.5), 3.5, (-8.0), 8.0, (-3.5), 3.5]
 
 colours_got : List(I64)
-colours_got = ListUtils.list_map(lam_2, filled)
+colours_got = filled.map(lam_2)
 
 colours_want : List(I64)
 colours_want = [1858082, 1858082, 13605400, 13605400, 1858082, 1858082, 13605400, 13605400, 1858082, 1858082, 13605400, 13605400, 1858082, 1858082]
 
 heights_got : List(F64)
-heights_got = ListUtils.list_map(lam_3, filled)
+heights_got = filled.map(lam_3)
 
 heights_want : List(F64)
 heights_want = [5.8500000000000005, 5.8500000000000005, 13.5, 13.5, 5.8500000000000005, 5.8500000000000005, 13.5, 13.5, 5.8500000000000005, 5.8500000000000005, 13.5, 13.5, 5.8500000000000005, 5.8500000000000005]

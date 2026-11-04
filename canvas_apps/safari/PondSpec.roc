@@ -5,7 +5,6 @@ app [main!] {
 }
 
 import Grade
-import ListUtils
 import Pond
 
 size_got : List(I64)
@@ -48,7 +47,7 @@ inside = |d| (
 )
 
 inside_got : List(Bool)
-inside_got = ListUtils.list_map(inside, Pond.ducks)
+inside_got = Pond.ducks.map(inside)
 
 inside_want : List(Bool)
 inside_want = [True, True, True, True, True, True]

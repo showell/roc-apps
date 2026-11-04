@@ -5,7 +5,6 @@ app [main!] {
 }
 
 import Grade
-import ListUtils
 import lib.Trig
 
 ang : List(F64)
@@ -29,19 +28,19 @@ main! = |_args| {
 	verdicts = [
 		Grade.reals({
 			name: "t-sin ",
-			got: ListUtils.list_map(Trig.r_sin, ang),
+			got: ang.map(Trig.r_sin),
 			want: sin_want,
 			tol: F64.from_bits(4502148214488346440),
 		}),
 		Grade.reals({
 			name: "t-cos ",
-			got: ListUtils.list_map(Trig.r_cos, ang),
+			got: ang.map(Trig.r_cos),
 			want: cos_want,
 			tol: F64.from_bits(4506651814115716936),
 		}),
 		Grade.reals({
 			name: "t-atan",
-			got: ListUtils.list_map(Trig.r_atan, atan_in),
+			got: atan_in.map(Trig.r_atan),
 			want: atan_want,
 			tol: F64.from_bits(4382569440205035030),
 		}),
