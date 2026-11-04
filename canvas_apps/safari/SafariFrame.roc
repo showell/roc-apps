@@ -1,10 +1,13 @@
-## SafariFrame paints one Safari frame into a list of 0xRRGGBB pixels, in
-## Roc: the sky and the grass, the sun, then every draw command in paint
-## order, all turned by the camera's roll. It is a reference painter for the
-## gate's proof tools. Its pixels are exact and the same on every run, so
-## RasterFrame can fingerprint a frame by a hash of them, and ShapesFrame can
-## paint a frame from its commands and from its shapes and compare the two
-## pixel for pixel.
+## SafariFrame is test code: the game never runs it. It paints one Safari
+## frame into a list of 0xRRGGBB pixels, in Roc: the sky and the grass, the
+## sun, then every draw command in paint order, all turned by the camera's
+## roll. Its pixels are exact and the same on every run, which is what the
+## gates need. The gates are the checks we run before a change lands, and two
+## of them paint frames with SafariFrame to validate the drawing pixel for
+## pixel: RasterFrame prints a hash of a frame's pixels, which must come out
+## the same before and after a change that shouldn't alter the picture, and
+## ShapesFrame paints a frame from its commands and again from its shapes and
+## requires the two to match.
 ##
 ## Neither runner paints this way. On the page, the Roc answers the frame as
 ## shapes and shapewire.js paints them with the browser's canvas; natively,
