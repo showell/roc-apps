@@ -23,7 +23,12 @@ segs : List(World.Segment)
 segs = List.from_iter(I64.until(0, World.route.len().to_i64_wrap())).map(World.segment_at)
 
 origin : Frame.Pose
-origin = { along: 0.0, across: 0.0, yaw: 0.0, hw: 2.0 }
+origin = {
+	along: 0.0,
+	across: 0.0,
+	yaw: 0.0,
+	hw: 2.0,
+}
 
 scene : Render.Scene
 scene = Render.collect({
@@ -40,11 +45,16 @@ scene = Render.collect({
 merge_got : List(I64)
 merge_got = {
 	n = scene.order.len().to_i64_wrap()
-	parts = (TreePlan.depth_keys(scene.trees).len().to_i64_wrap() + TowerPlan.depth_keys(scene.towers).len().to_i64_wrap())
-	more = (CritterPlan.cow_items(scene.critters).len().to_i64_wrap() + CatPlan.depth_keys(scene.cats).len().to_i64_wrap())
-	rest = (TruckPlan.depth_keys(scene.truck).len().to_i64_wrap() + RailPlan.rail_items(scene.rails).len().to_i64_wrap())
-	birds = RocBird.bird_items(scene.birds).len().to_i64_wrap()
-	[(n - (((parts + more) + rest) + birds))]
+	kind_counts = [
+		TreePlan.depth_keys(scene.trees).len(),
+		TowerPlan.depth_keys(scene.towers).len(),
+		CritterPlan.cow_items(scene.critters).len(),
+		CatPlan.depth_keys(scene.cats).len(),
+		TruckPlan.depth_keys(scene.truck).len(),
+		RailPlan.rail_items(scene.rails).len(),
+		RocBird.bird_items(scene.birds).len(),
+	]
+	[(n - List.sum(kind_counts).to_i64_wrap())]
 }
 
 merge_want : List(I64)
@@ -74,7 +84,11 @@ cap_want : List(Bool)
 cap_want = [True, True, True, True]
 
 cap_values_got : List(I64)
-cap_values_got = [TreePlan.max_vis_trees, TowerPlan.max_vis_towers, CatPlan.max_vis_cats]
+cap_values_got = [
+	TreePlan.max_vis_trees,
+	TowerPlan.max_vis_towers,
+	CatPlan.max_vis_cats,
+]
 
 cap_values_want : List(I64)
 cap_values_want = [640, 16, 8]
@@ -82,7 +96,11 @@ cap_values_want = [640, 16, 8]
 ## Whether no key in `keys` is farther than the one before it.
 is_far_to_near : List(DepthSort.DepthKey) -> Bool
 is_far_to_near = |keys|
-	List.map2(keys, keys.drop_first(1), |before, after| DepthSort.is_farther({ this: after.forward, that: before.forward }))
+	List.map2(
+		keys,
+		keys.drop_first(1),
+		|before, after| DepthSort.is_farther({ this: after.forward, that: before.forward }),
+	)
 		.all(|is_out_of_order| !is_out_of_order)
 
 sorted_got : List(Bool)

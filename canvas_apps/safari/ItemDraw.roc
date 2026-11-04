@@ -44,7 +44,7 @@ ItemDraw :: [].{
 
 	## The scene's things, painted far to near.
 	draw : Render.Scene, ItemDraw.Context -> List(Paint.DrawCmd)
-	draw = |scene, context| scene.order.join_map(|key| draw_one(scene, context, key))
+	draw = |scene, context| scene.order.join_map(|key| draw_one(scene, { context, key }))
 
 	## How many of `trees` are nearer than `forward`.
 	nearer_count : List(TreePlan.TreeItem), F64 -> U64
@@ -61,8 +61,13 @@ ItemDraw :: [].{
 	## A tree, drawn in more detail the nearer it is: its trunk is round when
 	## few of `trees` are nearer, and its crown is cones when it is nearer
 	## than SceneLimits.detail_dist.
-	draw_tree : TreePlan.TreeItem, { trees : List(TreePlan.TreeItem), cam_focal : F64 } -> List(Paint.DrawCmd)
-	draw_tree = |tree, { trees, cam_focal }|
+	draw_tree : TreePlan.TreeItem,
+	{
+		trees : List(TreePlan.TreeItem),
+		cam_focal : F64,
+	} -> List(Paint.DrawCmd)
+	draw_tree = |tree, { trees, cam_focal }| {
+		nearer = ItemDraw.nearer_count(trees, tree.fwd)
 		Tree.draw({
 			right: tree.right,
 			forward: tree.fwd,
@@ -70,17 +75,30 @@ ItemDraw :: [].{
 			color: tree.color,
 			cam_focal,
 			view_w: Screen.width,
-			trunk: if (ItemDraw.nearer_count(trees, tree.fwd) < ItemDraw.round_trunks) RoundCorners else SharpCorners,
+			trunk: if (nearer < ItemDraw.round_trunks) RoundCorners else SharpCorners,
 			crown: if (tree.fwd < SceneLimits.detail_dist) Cones else Triangles,
 			shade: ItemDraw.crown_shade(tree.fwd),
 		})
+	}
 
 	## Where a mast's four footprint corners stand in the rider's view.
 	tower_footprint : ItemDraw.Context, TowerPlan.TowerItem -> Tower.Footprint
 	tower_footprint = |context, tower| {
 		corner_point = |corner| {
-			on_map = Tower.base_corner_ax(corner, tower.along, tower.across, tower.yaw)
-			Frame.map_pt(context.world, context.chain, context.pose, tower.map, on_map.a, on_map.x)
+			on_map = Tower.base_corner_ax(
+				corner,
+				tower.along,
+				tower.across,
+				tower.yaw,
+			)
+			Frame.map_pt(
+				context.world,
+				context.chain,
+				context.pose,
+				tower.map,
+				on_map.a,
+				on_map.x,
+			)
 		}
 		{
 			back_left: corner_point(BackLeft),
@@ -95,7 +113,14 @@ ItemDraw :: [].{
 	draw_tower = |context, tower|
 		Tower.draw({
 			footprint: ItemDraw.tower_footprint(context, tower),
-			center: Frame.map_pt(context.world, context.chain, context.pose, tower.map, tower.along, tower.across),
+			center: Frame.map_pt(
+				context.world,
+				context.chain,
+				context.pose,
+				tower.map,
+				tower.along,
+				tower.across,
+			),
 			cam_focal: context.cam_focal,
 			view_w: Screen.width,
 			beacon_phase: (context.clock + tower.beacon_offset),
@@ -103,23 +128,37 @@ ItemDraw :: [].{
 }
 
 ## One thing in the depth order, looked up in its kind's list and drawn.
-draw_one : Render.Scene, ItemDraw.Context, DepthSort.DepthKey -> List(Paint.DrawCmd)
-draw_one = |scene, context, key| {
+draw_one : Render.Scene,
+{
+	context : ItemDraw.Context,
+	key : DepthSort.DepthKey,
+} -> List(Paint.DrawCmd)
+draw_one = |scene, { context, key }| {
 	camera = { cam_focal: context.cam_focal, view_w: Screen.width }
 	match key.subject {
-		Tree(place) => ItemDraw.draw_tree(at_place(scene.trees, place), { trees: scene.trees, cam_focal: context.cam_focal })
+		Tree(place) =>
+			ItemDraw.draw_tree(
+				at_place(scene.trees, place),
+				{ trees: scene.trees, cam_focal: context.cam_focal },
+			)
 		Tower(place) => ItemDraw.draw_tower(context, at_place(scene.towers, place))
 		Rail(place) => GuardRail.draw(at_place(scene.rails, place), camera)
 		Critter(place) => Critter.draw(at_place(scene.critters, place), camera)
 		Cat(place) => draw_cat(at_place(scene.cats, place), camera)
 		Truck => draw_truck(context, scene.truck)
-		Bird(place) => RocBird.draw_one(at_place(scene.birds, place), context.cam_focal, Screen.width)
-	}
+		Bird(place) =>
+			RocBird.draw_one(
+				at_place(scene.birds, place),
+				context.cam_focal,
+				Screen.width,
+			)
+		}
 }
 
 ## The thing at `place` in its kind's list.
 at_place : List(thing), U64 -> thing
-at_place = |things, place| things.get(place) ?? crash "ItemDraw.at_place: the depth order names only places in its lists"
+at_place = |things, place|
+	things.get(place) ?? crash "ItemDraw.at_place: the depth order names only places in its lists"
 
 draw_cat : CatPlan.CatItem, { cam_focal : F64, view_w : F64 } -> List(Paint.DrawCmd)
 draw_cat = |cat, { cam_focal, view_w }|
@@ -140,7 +179,12 @@ draw_truck = |context, truck_at|
 	match truck_at {
 		Ahead(truck) =>
 			TruckDraw.draw({
-				road: { world: context.world, chain: context.chain, pose: context.pose, segment: truck.place },
+				road: {
+					world: context.world,
+					chain: context.chain,
+					pose: context.pose,
+					segment: truck.place,
+				},
 				center: {
 					along: truck.along,
 					across: (Scenery.lane_width / 2.0),
@@ -152,5 +196,5 @@ draw_truck = |context, truck_at|
 				cam_focal: context.cam_focal,
 				view_w: Screen.width,
 			})
-		NoTruck => crash "ItemDraw.draw_truck: the depth order holds a truck only when one is in view"
+		NoTruck => crash "ItemDraw.draw_truck: the truck is in the depth order only in view"
 	}

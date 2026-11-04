@@ -31,7 +31,12 @@ sorted_by_forward = |keys| DepthSort.sort_by(keys, |key| key.forward)
 place_of : DepthSort.DepthKey -> I64
 place_of = |key|
 	match key.subject {
-		Tree(place) | Tower(place) | Critter(place) | Cat(place) | Rail(place) | Bird(place) => place.to_i64_wrap()
+		Tree(place) => place.to_i64_wrap()
+		Tower(place) => place.to_i64_wrap()
+		Critter(place) => place.to_i64_wrap()
+		Cat(place) => place.to_i64_wrap()
+		Rail(place) => place.to_i64_wrap()
+		Bird(place) => place.to_i64_wrap()
 		Truck => crash "DepthSortSpec: no key here names the truck"
 	}
 

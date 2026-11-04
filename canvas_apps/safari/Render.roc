@@ -47,14 +47,49 @@ Render :: [].{
 	## Everything in view from `viewpoint`, each kind cut to its plan's cap.
 	collect : Render.Viewpoint -> Render.Scene
 	collect = |{ world, chain, pose, cam_focal, rider_segment, rider_along, speed, truck_position }| {
-		road = { world, chain, pose }
-		trees = TreePlan.in_view({ world, chain, pose, cam_focal }).take_first(TreePlan.max_vis_trees.to_u64_wrap())
-		towers = TowerPlan.in_view({ world, chain, pose, rider_segment }).take_first(TowerPlan.max_vis_towers.to_u64_wrap())
-		critters = Billboards.billboards_in_view(CritterPlan.sightings(road, rider_segment)).take_first(CritterPlan.max_vis_critters.to_u64_wrap())
-		cats = CatPlan.in_view({ world, chain, pose, cam_focal, rider_along, speed }).take_first(CatPlan.max_vis_cats.to_u64_wrap())
+		road = {
+			world,
+			chain,
+			pose,
+		}
+		trees =
+			TreePlan.in_view({
+				world,
+				chain,
+				pose,
+				cam_focal,
+			})
+				.take_first(TreePlan.max_vis_trees.to_u64_wrap())
+		towers =
+			TowerPlan.in_view({
+				world,
+				chain,
+				pose,
+				rider_segment,
+			})
+				.take_first(TowerPlan.max_vis_towers.to_u64_wrap())
+		critters =
+			Billboards.billboards_in_view(CritterPlan.sightings(road, rider_segment))
+				.take_first(CritterPlan.max_vis_critters.to_u64_wrap())
+		cats =
+			CatPlan.in_view({
+				world,
+				chain,
+				pose,
+				cam_focal,
+				rider_along,
+				speed,
+			})
+				.take_first(CatPlan.max_vis_cats.to_u64_wrap())
 		rails = RailPlan.all_rails(road, rider_segment)
-		lead = truck_position - World.route_distance(world, { index: rider_segment, along: rider_along })
-		truck = TruckPlan.in_view({ world, chain, pose, rider_along, lead })
+		rider_distance = World.route_distance(world, { index: rider_segment, along: rider_along })
+		truck = TruckPlan.in_view({
+			world,
+			chain,
+			pose,
+			rider_along,
+			lead: truck_position - rider_distance,
+		})
 		birds = RocBird.perches(world, chain, pose, cam_focal)
 		# Keys about as far away as each other keep the order they are joined
 		# in, so this order decides which of two tied things is painted over
