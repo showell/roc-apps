@@ -39,7 +39,7 @@ Arena :: [].{
 
 	## The next player's turn.
 	rotate : Type.Game -> Type.Game
-	rotate = |game| Game.update_game(RotateBoard, History.init, game).1
+	rotate = |game| Game.update_game(RotateBoard, History.init({}), game).1
 
 	Step : { game : Type.Game, msgs : List(Type.GameMsg), skipped : Bool, cut : Bool }
 
@@ -148,7 +148,7 @@ Arena :: [].{
 		var $moves = []
 		for msg in msgs {
 			$moves = List.concat($moves, Move.made($g, msg))
-			$g = Game.update_game(msg, History.init, $g).1
+			$g = Game.update_game(msg, History.init({}), $g).1
 		}
 		$moves
 	}
@@ -171,7 +171,7 @@ Arena :: [].{
 				}
 				_ => {}
 			}
-			$g = Game.update_game(msg, History.init, $g).1
+			$g = Game.update_game(msg, History.init({}), $g).1
 		}
 		{ played: $played, discarded: $discarded }
 	}

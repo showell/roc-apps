@@ -85,12 +85,12 @@ test_game = |pieces, hand| {
 	start = Game.begin_game(0, Normal, Solo)
 	players = Player.update_player(start.players, 0, |p| { ..p, hand, turn: TurnBegin })
 	ready = Player.set_turn_to_need_card({ ..start, board: Piece.board_of(start.zone_colors, pieces), players })
-	Game.update_game(ActivateCard(0), History.init, ready).1
+	Game.update_game(ActivateCard(0), History.init({}), ready).1
 }
 
 ## What a click at `s` moves.
 motions_at : Type.Game, U64 -> List(Motion.Motion)
-motions_at = |g, s| Motion.of(g, SetStartLocation(s), Game.update_game(SetStartLocation(s), History.init, g).1)
+motions_at = |g, s| Motion.of(g, SetStartLocation(s), Game.update_game(SetStartLocation(s), History.init({}), g).1)
 
 # A 3 walks red's piece from L0 up to L3, square by square.
 expect {
@@ -107,14 +107,14 @@ expect {
 # A jack trades: each piece goes to the other's square.
 expect {
 	g = test_game([("red", "L0", "red"), ("red", "L3", "blue")], ["J"])
-	end_click = Game.update_game(SetStartLocation(Board.at(0, Board.l0)), History.init, g).1
-	Motion.of(end_click, SetEndLocation(Board.at(0, 14)), Game.update_game(SetEndLocation(Board.at(0, 14)), History.init, end_click).1)
+	end_click = Game.update_game(SetStartLocation(Board.at(0, Board.l0)), History.init({}), g).1
+	Motion.of(end_click, SetEndLocation(Board.at(0, 14)), Game.update_game(SetEndLocation(Board.at(0, 14)), History.init({}), end_click).1)
 		== [{ color: "red", path: [11, 14], sent_home: Bool.False }, { color: "blue", path: [14, 11], sent_home: Bool.False }]
 }
 
 # An undo moves nothing on the page, even when the board it restores differs.
 expect {
 	g = test_game([("red", "L0", "red"), ("red", "HP1", "red")], ["3"])
-	moved = Game.update_game(SetStartLocation(Board.at(0, Board.l0)), History.init, g).1
+	moved = Game.update_game(SetStartLocation(Board.at(0, Board.l0)), History.init({}), g).1
 	Motion.of(moved, UndoAction, g) == []
 }

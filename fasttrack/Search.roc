@@ -62,7 +62,7 @@ Search :: [].{
 
 	apply : Search.Line, Type.GameMsg -> Search.Line
 	apply = |line, msg| {
-		(_, game) = Game.update_game(msg, History.init, line.game)
+		(_, game) = Game.update_game(msg, History.init({}), line.game)
 		{ game, msgs: List.append(line.msgs, msg), drew: line.drew or hand_size(game) > hand_size(line.game) }
 	}
 

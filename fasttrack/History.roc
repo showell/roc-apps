@@ -6,8 +6,8 @@
 History :: [].{
 	History(a) : { states : List(a) }
 
-	init : History.History(a)
-	init = { states: [] }
+	init : {} -> History.History(a)
+	init = |{}| { states: [] }
 
 	prior_states : History.History(a), a -> List(a) where [a.is_eq : a, a -> Bool]
 	prior_states = |history, state|
