@@ -140,7 +140,7 @@ rails_at = |road, bend| GuardRail.quads_along(rail_path(road, bend))
 ## and along it.
 rail_path : RailPlan.Road, Bend -> List(Geom.RiderPt)
 rail_path = |road, bend| {
-	outer_edge = Joint.outer_cu(bend.exit_right, Scenery.lane_width)
+	outer_edge = Joint.outer_cu(bend.exit_right)
 	end_before = on_map(road, { place: bend.before, along: bend.length_before, across: outer_edge })
 	start_after = on_map(road, { place: bend.after, along: 0.0, across: outer_edge })
 	apex = Joint.joint_apex(
@@ -150,8 +150,6 @@ rail_path = |road, bend| {
 		bend.before,
 		bend.after,
 		bend.length_before,
-		Scenery.lane_width,
-		Scenery.lane_width,
 		bend.exit_right,
 	)
 	List.join([

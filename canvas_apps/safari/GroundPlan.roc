@@ -185,7 +185,7 @@ bend_corner = |view, bend| {
 	before = |along, across| Frame.map_pt(view.world, view.chain, view.pose, bend.before, along, across)
 	after = |along, across| Frame.map_pt(view.world, view.chain, view.pose, bend.after, along, across)
 	inner_edge = if bend.exit_right Scenery.lane_width else 0.0
-	outer_edge = Joint.outer_cu(bend.exit_right, Scenery.lane_width)
+	outer_edge = Joint.outer_cu(bend.exit_right)
 	apex = Joint.joint_apex(
 		view.world,
 		view.chain,
@@ -193,8 +193,6 @@ bend_corner = |view, bend| {
 		bend.before,
 		bend.after,
 		bend.length_before,
-		Scenery.lane_width,
-		Scenery.lane_width,
 		bend.exit_right,
 	)
 	[

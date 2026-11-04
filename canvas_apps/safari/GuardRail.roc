@@ -97,19 +97,19 @@ mean_forward = |corners| {
 	sum / corners.len().to_f64()
 }
 
-## A point of the path, raised to `height`.
-raised : Geom.RiderPt, F64 -> Geom.Vec3
-raised = |point, height| { right: point.right, forward: point.forward, height }
+## A point of the path, at `height` above the ground.
+at_height : Geom.RiderPt, F64 -> Geom.Vec3
+at_height = |point, height| { right: point.right, forward: point.forward, height }
 
 ## The bar from `from` to `to`, bottom edge first.
 bar : { from : Geom.RiderPt, to : Geom.RiderPt } -> GuardRail.RailPoly
 bar = |{ from, to }|
 	rail_quad(
 		[
-			raised(from, GuardRail.bar_bot),
-			raised(to, GuardRail.bar_bot),
-			raised(to, GuardRail.bar_top),
-			raised(from, GuardRail.bar_top),
+			at_height(from, GuardRail.bar_bot),
+			at_height(to, GuardRail.bar_bot),
+			at_height(to, GuardRail.bar_top),
+			at_height(from, GuardRail.bar_top),
 		],
 		GuardRail.rail_metal,
 	)
@@ -129,10 +129,10 @@ post = |at, { previous, next }| {
 	front = { right: (at.right + half_right), forward: (at.forward + half_forward) }
 	rail_quad(
 		[
-			raised(back, 0.0),
-			raised(front, 0.0),
-			raised(front, GuardRail.bar_top),
-			raised(back, GuardRail.bar_top),
+			at_height(back, 0.0),
+			at_height(front, 0.0),
+			at_height(front, GuardRail.bar_top),
+			at_height(back, GuardRail.bar_top),
 		],
 		GuardRail.rail_post_metal,
 	)

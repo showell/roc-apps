@@ -54,16 +54,16 @@ corners_ahead = |count|
 		},
 	)
 
-drawn : List(Geom.RiderPt) -> List(Paint.DrawCmd)
-drawn = |corners| Ground.draw({ corners, color: 3112588, cam_focal: 685.5110432362151, view_w: 960.0 })
+patch_commands : List(Geom.RiderPt) -> List(Paint.DrawCmd)
+patch_commands = |corners| Ground.draw({ corners, color: 3112588, cam_focal: 685.5110432362151, view_w: 960.0 })
 
 count_got : List(I64)
 count_got = [
-	drawn(quad).len().to_i64_wrap(),
-	drawn(corners_ahead(8)).len().to_i64_wrap(),
-	drawn(corners_ahead(9)).len().to_i64_wrap(),
-	drawn(behind).len().to_i64_wrap(),
-	drawn(two_points).len().to_i64_wrap(),
+	patch_commands(quad).len().to_i64_wrap(),
+	patch_commands(corners_ahead(8)).len().to_i64_wrap(),
+	patch_commands(corners_ahead(9)).len().to_i64_wrap(),
+	patch_commands(behind).len().to_i64_wrap(),
+	patch_commands(two_points).len().to_i64_wrap(),
 ]
 
 count_want : List(I64)
@@ -71,7 +71,7 @@ count_want = [1, 1, 0, 0, 0]
 
 cmd_got : List(I64)
 cmd_got = {
-	cmd = drawn(quad).first() ?? crash "GroundSpec: the quad draws one command"
+	cmd = patch_commands(quad).first() ?? crash "GroundSpec: the quad draws one command"
 	[cmd.tag, cmd.color, cmd.color2, cmd.pts.len().to_i64_wrap(), cmd.geom.len().to_i64_wrap()]
 }
 
