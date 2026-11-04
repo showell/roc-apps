@@ -22,7 +22,7 @@ Render :: [].{
 		{
 			sg = (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap(d)) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range"))
 			(
-				if (d >= CritterPlan.farm_seg_reach) {
+				if (d >= CritterPlan.farm_reach) {
 					(sg.cows.len().to_i64_wrap() + sg.pigs.len().to_i64_wrap())
 				} else {
 					0
@@ -53,7 +53,7 @@ Render :: [].{
 	collect = |segs, seg_idx, pose, cf, along, v, truck_pos| (
 		{
 			ch = Frame.build_chain(segs, seg_idx)
-			placed = CritterPlan.all_placed(segs, ch, pose, seg_idx)
+			placed = CritterPlan.sightings({ world: segs, chain: ch, pose }, seg_idx)
 			trees = ListUtils.list_take(TreePlan.walk_trees(segs, ch, pose, cf, 0), TreePlan.max_vis_trees)
 			towers = ListUtils.list_take(TowerPlan.all_towers(segs, ch, pose, seg_idx), TowerPlan.max_vis_towers)
 			cows = ListUtils.list_take(Billboards.billboards_in_view(placed), CritterPlan.max_vis_critters)
