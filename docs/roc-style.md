@@ -271,7 +271,7 @@ Roc's own rules are in the langref's
   value generic over a type variable can't be a constant: the pin refuses
   one ("value is not polymorphic") and asks for a `{}` function, so
   `signed_out : {} -> Viewer(id)` stays. And a constant is computed at
-  compile time (CLAUDE.md §3), so one that does real work, a search or a
+  compile time (CLAUDE.md §4), so one that does real work, a search or a
   large table, stays a `{}` function with a comment saying so.
 - **Neighbouring arguments of one type get a record**, even when there are
   only two of them: they can be swapped and still type-check, and a record
@@ -588,7 +588,7 @@ is the base; these rules sharpen it.
   kept to mean "none" (`no_frames = 1e9`) is the same thing. Where the
   index can't be wrong, crash with a reason; where it can, tag the absence
   (no optionals, above). On a list being written the placeholder also
-  copies the list (`List.set(l, i, v) ?? l`, CLAUDE.md §7).
+  copies the list (`List.set(l, i, v) ?? l`, CLAUDE.md §10).
 
   ```roc
   # Not this: seat 4 is no seat.
@@ -953,20 +953,10 @@ is the base; these rules sharpen it.
     call the compiler accepts as `x.fn(...)`, rewritten by `apply=1`
     ([methods](#make-wrong-values-impossible-to-build)).
 
-  The hunt runs these cookbook checks over the chat too, as findings:
-  `stack.shale`, `name_hunt.shale`'s `command_tense`, `mixed_tense` and
-  `container`, `boundaries.shale`'s `fixed`, `errors.shale`'s
-  `error_alias` and `optional_tag`, and `nest_depth.shale` at four deep
-  (main holds none; three deep still stands in some 46 places, builders
-  and `expect`s among them, which the rule above asks to be rewritten as
-  they are touched).
-
   A rule added here that a script can check gets a check, and a gate runs
-  it: roc-webbox's hunt keeps `bool_returns` at 0, and roc-chat's verify
-  holds boundaries' `fixed`, errors' two checks, nest_depth four deep,
-  name_hunt's tense and container checks, and stack's lines to stack at
-  0, each with a plant. roc-markdown's verify runs no hunt yet. A finding
-  fixed by hand and left unchecked comes back.
+  it, held at zero findings: a finding fixed by hand and left unchecked
+  comes back. How the gates run the hunts, and the rest of the bar every
+  change clears, is CLAUDE.md's: §3, "The bar for every change", and §7.
 - **A test helper builds its input from the value's own spelling, never
   from a count of steps.** `stem({ name: "Élodie", id: "5" }) == "elodie-5"`
   reads beside its answer; `stem("Élodie", 4)`, meaning the id after four
@@ -974,10 +964,9 @@ is the base; these rules sharpen it.
 
 ## Tools and builds
 
-- **Run `roc fmt`; its layout wins.** See
-  [layout](#layout-and-formatting).
-- **Build tests with `--opt=dev`.** `roc build` defaults to `--opt=speed`
-  (LLVM): the chat took 5 min 21 s that way, 0.9 s on the dev backend.
+How we work, as opposed to how the code reads, is in CLAUDE.md: `roc fmt`,
+zero warnings and the gate in §3, "The bar for every change", and the dev
+backend for every inner loop in §9, "Builds are slow by default".
 
 ---
 

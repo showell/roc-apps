@@ -23,10 +23,11 @@ read the code that's here, and when your memory and the pinned compiler
 disagree, the compiler is right.
 
 **How this file is laid out.** Each section names a problem you'll hit
-working in Roc today, then gives our answer to it. The sections run
-roughly from least to most opinionated, so the early ones should fit
-almost any Roc project, and the later ones are where you're most likely to
-fork. The style guide, [docs/roc-style.md](docs/roc-style.md), is the
+working in Roc today, then gives our answer to it. The sections run in the
+order a change meets them: what to know before you start (1-2), the bar
+every change clears and the checks behind it (3-8), the craft of writing
+Roc that is fast and documented (9-12), the architecture around it (13-14),
+and how agents share the work (15). The style guide, [docs/roc-style.md](docs/roc-style.md), is the
 companion to this file: this file says how we work, and the guide says how
 the code should read.
 
@@ -34,23 +35,24 @@ the code should read.
 
 1. Your Roc knowledge is out of date
 2. Roc is bleeding-edge: pin it, and doubt every nightly
-3. Reading the compiler's verdict
-4. Builds are slow by default
+3. The bar for every change
+4. Reading the compiler's verdict
 5. Formatting: `roc fmt` decides
-6. Testing: frozen answers, planted faults, floors that only rise
-7. Performance: know what copies
-8. Docs and comments
-9. Security habits for Roc services
-10. The standard library is still growing: pragmatism and patience
-11. Roc doesn't excel at every niche: hybrid architectures
-12. Many ways to write the same thing: the style guide
-13. Rules the type checker can't see: hunts and mechanical rewrites
-14. Agents: the long builds are the orchestrator's
+6. Testing: frozen answers, planted faults, exact counts
+7. Rules the type checker can't see: hunts and mechanical rewrites
+8. Many ways to write the same thing: the style guide
+9. Builds are slow by default
+10. Performance: know what copies
+11. Docs and comments
+12. The standard library is still growing: pragmatism and patience
+13. Roc doesn't excel at every niche: hybrid architectures
+14. Security habits for Roc services
+15. Agents: the long builds are the orchestrator's
 
 **The habits under all of it:**
 
 - **Make a failure loud.** A check that can't run fails; it doesn't skip.
-  A fallback nobody chose is a bug.
+  A fallback nobody chose is a bug, and so is a warning left standing.
 - **Prove the check can see.** A test, a lint or a judge counts only once
   a planted fault has turned it red.
 - **Read the record, not your memory.** Check what the compiler, the test
@@ -98,11 +100,10 @@ write it. When your memory and the pin disagree, the pin is right.
   Roc's cache is warm it takes well under a second (the first check in a
   fresh sandbox takes several), which is cheaper than a guess that costs a
   build.
-- **Read the warnings, too.** A deprecation warning is the compiler telling
-  you what it prefers now (the pin warns "module header deprecated" and
-  points to type modules). Follow the code that's already
-  in the repo for which forms we use, and ask before migrating a pattern
-  across a repo.
+- **Read the warnings, and fix them.** A warning fails the bar (§3). A
+  deprecation warning is also the compiler telling you what it prefers now.
+  Follow the code that's already in the repo for which forms we use, and
+  ask before migrating a pattern across a repo.
 
 ## 2. Roc is bleeding-edge: pin it, and doubt every nightly
 
@@ -162,7 +163,40 @@ trusting it.
   compiler's version.** Any rewrite or check that the compiler approved
   under an older pin may need checking again after a move.
 
-## 3. Reading the compiler's verdict
+## 3. The bar for every change
+
+**The problem.** Each check here is cheap, and each one skipped costs more
+later. A warning left standing hides the next one. A file nobody formatted
+turns up in someone else's diff. A test on a skip list has stopped being a
+test, and a lint held at "no worse than today" lets every problem it found
+today stand for good. Small tolerances pile up, and an agent adds to
+whatever pile it finds.
+
+**Our answer.** Every change clears the same bar, in this order, before it
+is committed. "It was like that before" is not a reason to leave something:
+a problem you find is yours to fix, or to raise with Steve.
+
+1. **`roc fmt` at the pin on every file you touched,** until
+   `roc fmt --check` passes (§5). The gate runs `roc fmt --check` over
+   the whole repo, and no file is exempt.
+2. **`roc check` from a root that reaches the change, with zero errors and
+   zero warnings** (§4). A warning is a failure, whoever caused it:
+   fix it, never leave it for later.
+3. **The repo's gate, whole.** Each repo has one Shale script that runs
+   every check and prints a line per check with its numbers (roc-chat
+   `tools/verify.shale`; in roc-apps, safari's
+   `canvas_apps/safari/gates/run.shale`). Run all of it, not a hand-picked
+   part, and read how many things ran (§6). When you change a gate,
+   plant the fault it should catch, see it go red, and take the plant out.
+4. **No skips, no allowlists, no ratchets.** A check that can't run fails;
+   it isn't skipped. A hunt is held at zero findings, not at today's count,
+   and a test count is held exactly, not to a floor. Where an exception is
+   truly necessary, it is named singly in the gate, beside its reason, and
+   it is a debt to raise with Steve, not a setting.
+5. **Commit with the gate's verdict.** The message says what ran and what
+   it found, so the next reader knows what the green covered.
+
+## 4. Reading the compiler's verdict
 
 **The problem.** The compiler's exit code doesn't mean what it seems to. A
 clean program with one unused variable exits non-zero, and a program with a
@@ -180,7 +214,8 @@ list is `docs/roc-notes.md`, "The compiler".
   or ● (a warning), and the last line counts both ("1 error and 0
   warnings"). A warning alone exits 2. A type error still produces a
   binary, which dies with "runtime error" at the error's site while the
-  rest of the program runs. Zero ✗ is the bar, whatever the exit code.
+  rest of the program runs. The bar is zero ✗ and zero ●, whatever the
+  exit code. A gate that builds Roc counts both marks in the build's output.
 - **Check from a root that reaches your change.** `roc check` on an app or
   test root reports errors in every module it imports. A file nothing
   imports is checked only when you name it. After an edit, check the root
@@ -204,43 +239,6 @@ list is `docs/roc-notes.md`, "The compiler".
   `README.md` saying what it shows (`findings/roc-check-hang/` also keeps
   the upstream `ISSUE.md`). Before reducing, try the newer nightlies: it
   may be fixed already (see §2).
-
-## 4. Builds are slow by default
-
-**The problem.** `roc build` defaults to `--opt=speed`, which runs the code
-through LLVM. That is the right choice for a release and the wrong one for
-everything else. The chat app took 5 min 21 s to build that way and 0.9 s on
-the dev backend. BASIC's LLVM build took 1,420 s where the dev backend
-took 6 s. An agent that keeps the default waits minutes per iteration and
-usually blames the program, or Roc, rather than the flag.
-
-**Our answer.** Use the dev backend in every inner loop and LLVM only for a
-release. Treat a slow loop as a bug to find, not a wait to sit through:
-check the defaults first.
-
-- **Build with `--opt=dev` while working.** That covers tests, checks,
-  experiments and the fix loop (`docs/roc-style.md`, "Tools and builds").
-  `roc check` takes no `--opt`.
-- **Tie Roc's mode to the host's in the build script.** roc-chat
-  `build.zig` has `rocOpt`, which picks `.dev` for a Debug build (every
-  test) and `.speed` for a release, and passes it to each `roc build`
-  through `appArchive`. roc-markdown's `build.zig` follows the same shape,
-  and builds its playground's wasm with `.dev`.
-- **Give compile time and run time as two numbers.** "The test took 90 s"
-  hides which half was slow. More than about a second to compile a small
-  app is suspicious. Check which backend ran before anything else;
-  `roc check --timings` shows how long each compiler phase took.
-- **Measure speed on the release build, never in the fix loop.** LLVM's
-  code is much faster (2.7 times on BASIC's slowest program), and the dev
-  backend's code is mostly stack moves, so a dev-build timing says little
-  about the program (`docs/roc-notes.md`, "Speed and copying").
-- **Roc's cache grows with every distinct compile.** `~/.cache/roc` is
-  only a cache: a long run of trial compiles (a methods rewrite over a
-  repo) can leave several gigabytes there and fill a sandbox's disk. Watch
-  `df` during a long run and clear the cache after it.
-- **A build that's still slow on dev is a finding.** Look for compile-time
-  evaluation first (§3), then reduce it into `findings/` (roc-apps
-  `findings/roc-compile-time-memory/` is one).
 
 ## 5. Formatting: `roc fmt` decides
 
@@ -285,7 +283,7 @@ to bring its own format-only changes.
   `cookbook/roc/same_code.shale` compares two builds instruction by
   instruction with those names masked.
 
-## 6. Testing: frozen answers, planted faults, floors that only rise
+## 6. Testing: frozen answers, planted faults, exact counts
 
 **The problem.** A green run can mean nothing ran. A test can be rewritten
 to agree with broken code, and a count can quietly measure something other
@@ -294,8 +292,8 @@ than what you think. None of that shows up in the word "passed".
 **Our answer.** One command runs every check and prints what it ran. The
 judges hold frozen answers, and an answer moves only when someone says so,
 case by case. A planted fault proves, once, that a new test can see a
-failure. Test counts have floors that only rise. A green is a claim: read
-how many ran.
+failure. Test counts are held exactly, and nothing is skipped. A green is a
+claim: read how many ran.
 
 - **`expect`s sit beside the code.** Test each pure mapping and the exact
   bytes each builder makes; `roc test <app>.roc` runs every imported
@@ -304,13 +302,16 @@ how many ran.
   line per check, `PASS` or `FAIL` with its numbers, and exits 0 only when
   every line passed. roc-markdown has its own `tools/verify.shale`. Run the
   verify, not a hand-picked subset, before you call a change sound.
-- **Floors only rise.** verify holds the test counts to floors
-  (`roc_floor`, `zig_floor`) and the end to end to an exact step count. A
-  count below its floor fails, so a test that silently stopped running
-  can't hide. Raise a floor when you add tests; never lower one to get a
-  green. Grouping cases that share an answer into one `.all` expect lowers
-  the count with no case lost; that is the one honest reason a count falls,
-  and the commit says so.
+- **Counts are exact.** The gate holds each test count to the exact
+  number, so a test that silently stopped running can't hide, and neither
+  can one that was added but never ran. A change in a count goes with the
+  change that caused it, and the commit says why: tests added, or cases
+  that share an answer grouped into one `.all` expect. roc-chat's verify
+  still holds floors (`roc_floor`, `zig_floor`) and moves to exact counts
+  when it is next touched.
+- **Nothing is skipped.** A test that can't run is a failure, not a skip,
+  and there is no list of known failures or slow tests left out. Where one
+  is truly necessary, see §3.
 - **`roc test` counts your path dependencies' expects too.** roc-chat's run
   includes roc-markdown's, so the total moves with the sibling checkout.
   verify counts only files under the repo's own root. Recent nightlies name
@@ -344,7 +345,136 @@ how many ran.
   disagree, find out which one is wrong. Changing the answer is a
   re-freeze, and it needs a reason you can state per case.
 
-## 7. Performance: know what copies
+## 7. Rules the type checker can't see: hunts and mechanical rewrites
+
+**The problem.** Many of the style guide's rules are invisible to `roc
+check` and `roc fmt`: a vague name, a Bool that should be a tag, a call
+nested three deep, three arguments on one line, a parameter every caller
+fills with the same literal. A reviewer catches some, an agent writes the
+rest back in, and a finding fixed by hand and left unchecked comes back.
+
+**Our answer.** This section and the next are the most specific to Steve. We write these
+checks in Shale (github.com/showell/shale), his scripting language, as
+recipes in its `cookbook/roc/`. You don't need Shale for the idea, which
+carries to any tool: read Roc with Roc's own parser, prove each check on
+planted cases, and let the compiler judge any rewrite.
+
+- **Read Roc with Roc's own parser, never a regex.** The recipes read the
+  tree from `roc-ast`, so a comment or a string never counts and a broken
+  annotation reads as Roc reads it (`cookbook/roc/README.md`,
+  `name_hunt.shale`). roc-apps's toolchain release carries `roc-ast`.
+- **Each check proves itself on plants.** A plant is a case the check must
+  find, or must leave alone. `self_test=1` runs a recipe on its own
+  (`cookbook/roc/plants/<recipe>/`), so the hunt itself is tested.
+- **The compiler judges a rewrite.** A syntax tree can't know a type, so
+  `methods.shale`, which turns `List.map(xs, f)` into `xs.map(f)`, keeps a
+  file's rewrite only if `roc check` passes and `roc test`'s summary is
+  unchanged. Any other error puts the file back. It runs the repo's own
+  pin, read from `roc-version`, because method lookup has changed between
+  nightlies.
+- **The recipes.** `name_hunt` (awkward names, tense, container words),
+  `errors` (an error alias, an optional tag), `boundaries` (a one-caller
+  wrapper, a fixed parameter), `nest_depth`, `stack` (three or more on a
+  line, or past 100 columns), `roc_commas` (trailing commas so `roc fmt`
+  stacks long lines), `methods`, `same_code` (two builds the same machine
+  code, the judge of a pure reformat) and `tree_patch`. Each is a recipe,
+  not a builtin: copy one and change it for the job.
+- **A finding is a question for a reader.** Each prints
+  `path:line: check: why`. Fix it, or answer it in the code the hunt
+  reads: `boundaries`' `single`, for instance, accepts a one-caller
+  wrapper that a `##` doc or an `expect` keeps. A gate holds each hunt it
+  runs at zero, never at a count.
+- **A rule a script can check gets a check, and a gate runs it.**
+  `docs/roc-style.md`, "Testing and enforcement", lists the hunts. roc-chat's
+  verify holds its hunts at zero, each with a plant. Where no gate runs one
+  yet (roc-markdown's), run it by hand before a review, and add it to the
+  gate as a change of its own.
+- **For agents using Shale instead of the shell,** read Shale's
+  `docs/SHALE-AGENTS.md`. That part is Steve's setup only.
+
+## 8. Many ways to write the same thing: the style guide
+
+**The problem.** Roc is a very flexible language. A call can be a function
+or a method, a step can be piped or nested, a choice can be a Bool or a
+tag, and a type can be an alias, a nominal type or an opaque one. Each
+form compiles, so agents drift between them, and the code reads as if
+several people wrote it, because several did.
+
+**Our answer.** One style guide, `docs/roc-style.md`, held in place by
+Shale (§7). The guide is as much about design as about style:
+each rule replaces a construct that can be wrong and still compile with
+one that can't. This section only points into it. Read the guide itself
+before writing Roc, and never restate its rules elsewhere. Where a repo
+hasn't caught up with a rule, the guide says so beside the rule:
+follow the repo's form in a small change, and move the repo onto the
+rule as a change of its own.
+
+- **Read its principles first.** Prefer a construct that can't be wrong;
+  keep one home for a rule; a little speed traded for robustness is fine
+  (`docs/roc-style.md`, "Principles").
+- **A closed set is a tag union,** not a Bool, a magic number or a
+  `"1"`/`"0"` string ("A closed set is a tag union").
+- **A run of same-typed arguments takes a record.** Three or more
+  arguments become a record, and so do two neighbours of one type, which
+  could be swapped and still type-check ("Name what travels together").
+- **Use an opaque type for anything validated,** so its validator is the
+  only way in ("Make wrong values impossible to build").
+- **Call a value's own functions as methods:** `messages.last()`, not
+  `List.last(messages)`. The same section lists the five places a module
+  call stays. Agents lean toward the module form, so expect to correct it.
+- **A hosted effect answers a tag or a `Try`, never a Bool**
+  ("The host boundary").
+- **A placeholder is not a value.** `?? "bogus"`, `?? "?"` or `?? 4` for
+  "none" is a made-up answer: crash with a reason where the case can't
+  happen, and tag the absence where it can ("Errors and failure"). Agents
+  reach for the placeholder to quiet the type checker, so expect to
+  correct it.
+- **The guide moves with the code.** A style decision lands with its rule
+  in `docs/roc-style.md` in the same change. A rule that lands later, or
+  only in a commit message, is a rule the next agent never sees.
+- **A rule goes in only after our own code broke it.** The guide is
+  written from violations we've seen, not from a wish list, and its
+  examples come from our code. That scope is narrow on purpose, so if you
+  like it, fork it and grow your own from what your code breaks.
+
+## 9. Builds are slow by default
+
+**The problem.** `roc build` defaults to `--opt=speed`, which runs the code
+through LLVM. That is the right choice for a release and the wrong one for
+everything else. The chat app took 5 min 21 s to build that way and 0.9 s on
+the dev backend. BASIC's LLVM build took 1,420 s where the dev backend
+took 6 s. An agent that keeps the default waits minutes per iteration and
+usually blames the program, or Roc, rather than the flag.
+
+**Our answer.** Use the dev backend in every inner loop and LLVM only for a
+release. Treat a slow loop as a bug to find, not a wait to sit through:
+check the defaults first.
+
+- **Build with `--opt=dev` while working.** That covers tests, checks,
+  experiments and the fix loop (`docs/roc-style.md`, "Tools and builds").
+  `roc check` takes no `--opt`.
+- **Tie Roc's mode to the host's in the build script.** roc-chat
+  `build.zig` has `rocOpt`, which picks `.dev` for a Debug build (every
+  test) and `.speed` for a release, and passes it to each `roc build`
+  through `appArchive`. roc-markdown's `build.zig` follows the same shape,
+  and builds its playground's wasm with `.dev`.
+- **Give compile time and run time as two numbers.** "The test took 90 s"
+  hides which half was slow. More than about a second to compile a small
+  app is suspicious. Check which backend ran before anything else;
+  `roc check --timings` shows how long each compiler phase took.
+- **Measure speed on the release build, never in the fix loop.** LLVM's
+  code is much faster (2.7 times on BASIC's slowest program), and the dev
+  backend's code is mostly stack moves, so a dev-build timing says little
+  about the program (`docs/roc-notes.md`, "Speed and copying").
+- **Roc's cache grows with every distinct compile.** `~/.cache/roc` is
+  only a cache: a long run of trial compiles (a methods rewrite over a
+  repo) can leave several gigabytes there and fill a sandbox's disk. Watch
+  `df` during a long run and clear the cache after it.
+- **A build that's still slow on dev is a finding.** Look for compile-time
+  evaluation first (§4), then reduce it into `findings/` (roc-apps
+  `findings/roc-compile-time-memory/` is one).
+
+## 10. Performance: know what copies
 
 **The problem.** Roc writes into a list in place only when nothing else
 refers to it, and nothing reports a copy: not the type checker, not the
@@ -385,7 +515,7 @@ Read it before writing a loop that stores into a list or a record.
   rarely written part behind a list of one or a `Box`, not inline (the
   notes, same section, say which suits what).
 
-## 8. Docs and comments
+## 11. Docs and comments
 
 **The problem.** Docs go stale the day the code moves, and nothing fails
 when they do. Comments that narrate how the code got here ("used to",
@@ -433,60 +563,7 @@ one.
   "Fixes Q250" or "per R-7" means nothing to the next reader and rots when
   the tracker moves. State the rule itself, in words.
 
-## 9. Security habits for Roc services
-
-**The problem.** A Roc service sits behind a host that reads untrusted
-bytes off the network and holds the secrets. Roc's purity rules out a
-whole class of bugs, but not a wrong decision, an unbounded loop over
-hostile input, or a secret written to a log. And the Roc can be the bug.
-
-**Our answer.** Secrets stay in the host. Every cost is bounded by the
-input, bytes become typed values at the door, and the host trusts the Roc
-only as far as a short list allows. Each refusal is proven by a planted
-fault, and nothing we write down or print carries a secret or private
-text. (§11 covers the seam itself; this section is about what
-crosses it.)
-
-- **Secrets never cross the seam.** The Roc asks the host to `sign!` and
-  `verify!`, and never holds the signing key. GitHub's client secret and
-  token stay on the host side too (roc-chat `README.md`, "The model").
-- **Bound the cost before doing the work.** roc-markdown charges every
-  render step to a work budget sized by the message's length, and
-  `Md.hostility` answers `Renderable` or `TooMuchFormatting` before you
-  render, so a POST can refuse a message built to blow up
-  (`package/Md.roc`; `README.md`, "A bounded cost"). The host follows the
-  same rule: it asks the Roc to judge a request's head (origin and size
-  allowance) before reading its body, and caps the bytes in flight across
-  all connections, so a hostile page can't fill memory with bodies that
-  will only be refused (gopher-roc `app/main.roc`, `admission`).
-- **A cross-site GET is a request too.** A page's stream, image or script
-  can be fetched by another site's page in the viewer's browser. Refuse a
-  foreign `Origin` on every method, and a cross-site `Sec-Fetch-Site` on a
-  GET that isn't a top-level navigation (gopher-roc `app/RequestOrigin.roc`).
-- **Decode at the door into an opaque type.** Only its own module can
-  build one, so the checks are the only way in (`docs/roc-style.md`, "Make
-  wrong values impossible to build"). roc-chat `app/Principal.roc`'s ids
-  are opaque and refuse 0. An `AuditCodec` entry is made only by its
-  constructors or `decode`.
-- **The host allowlists what the Roc may set.** roc-chat
-  `host/call.zig` `allowed_headers` is `set-cookie`, `cache-control` and
-  `location`. Any other name, or a CR, LF or NUL, is a 500, because it is
-  the Roc's bug. The host owns `content-length` and `connection`.
-- **Each refusal is a planted fault in verify.** A check that refuses
-  something counts once a copy of the tree with that refusal removed goes
-  red: roc-chat `tools/verify.shale` plants a forged session cookie, a
-  revoked key that still works, and a cross-origin POST. roc-markdown's
-  verify plants an image from another origin and a `javascript:` src.
-- **An audit never holds a secret.** roc-chat `app/AuditCodec.roc` records
-  public numbers and words only, never a token, hash, cookie, nonce, OAuth
-  code or login.
-- **Neither a judge nor an error page prints private text.** roc-markdown's
-  judge prints counts and failing case ids, never a case's text, so it can
-  judge real messages (`TESTING.md`). roc-chat's 500 after a Roc crash
-  carries nothing of the request, and `host/crash_test.zig` sends a
-  `secret-header-value` to prove it.
-
-## 10. The standard library is still growing: pragmatism and patience
+## 12. The standard library is still growing: pragmatism and patience
 
 **The problem.** Roc's standard library is still being built. Some things
 you'd expect aren't there yet, some are there under a different name than
@@ -528,7 +605,7 @@ the builtins catch up.
   and where one has landed, move the callers to it and delete ours in the
   same change.
 
-## 11. Roc doesn't excel at every niche: hybrid architectures
+## 13. Roc doesn't excel at every niche: hybrid architectures
 
 **The problem.** Roc is a general purpose language, and it compiles to
 wasm for the browser too, but it isn't the best tool for every job. Filling
@@ -583,97 +660,60 @@ part, so a machine checks it, not a reader.
   step against `src/play/walk_reference.zig`, a plain Zig reference that
   shares none of the Roc's code.
 
-## 12. Many ways to write the same thing: the style guide
+## 14. Security habits for Roc services
 
-**The problem.** Roc is a very flexible language. A call can be a function
-or a method, a step can be piped or nested, a choice can be a Bool or a
-tag, and a type can be an alias, a nominal type or an opaque one. Each
-form compiles, so agents drift between them, and the code reads as if
-several people wrote it, because several did.
+**The problem.** A Roc service sits behind a host that reads untrusted
+bytes off the network and holds the secrets. Roc's purity rules out a
+whole class of bugs, but not a wrong decision, an unbounded loop over
+hostile input, or a secret written to a log. And the Roc can be the bug.
 
-**Our answer.** One style guide, `docs/roc-style.md`, held in place by
-Shale (§13). The guide is as much about design as about style:
-each rule replaces a construct that can be wrong and still compile with
-one that can't. This section only points into it. Read the guide itself
-before writing Roc, and never restate its rules elsewhere. Where a repo
-hasn't caught up with a rule, the guide says so beside the rule:
-follow the repo's form in a small change, and move the repo onto the
-rule as a change of its own.
+**Our answer.** Secrets stay in the host. Every cost is bounded by the
+input, bytes become typed values at the door, and the host trusts the Roc
+only as far as a short list allows. Each refusal is proven by a planted
+fault, and nothing we write down or print carries a secret or private
+text. (§13 covers the seam itself; this section is about what
+crosses it.)
 
-- **Read its principles first.** Prefer a construct that can't be wrong;
-  keep one home for a rule; a little speed traded for robustness is fine
-  (`docs/roc-style.md`, "Principles").
-- **A closed set is a tag union,** not a Bool, a magic number or a
-  `"1"`/`"0"` string ("A closed set is a tag union").
-- **A run of same-typed arguments takes a record.** Three or more
-  arguments become a record, and so do two neighbours of one type, which
-  could be swapped and still type-check ("Name what travels together").
-- **Use an opaque type for anything validated,** so its validator is the
-  only way in ("Make wrong values impossible to build").
-- **Call a value's own functions as methods:** `messages.last()`, not
-  `List.last(messages)`. The same section lists the five places a module
-  call stays. Agents lean toward the module form, so expect to correct it.
-- **A hosted effect answers a tag or a `Try`, never a Bool**
-  ("The host boundary").
-- **A placeholder is not a value.** `?? "bogus"`, `?? "?"` or `?? 4` for
-  "none" is a made-up answer: crash with a reason where the case can't
-  happen, and tag the absence where it can ("Errors and failure"). Agents
-  reach for the placeholder to quiet the type checker, so expect to
-  correct it.
-- **The guide moves with the code.** A style decision lands with its rule
-  in `docs/roc-style.md` in the same change. A rule that lands later, or
-  only in a commit message, is a rule the next agent never sees.
-- **A rule goes in only after our own code broke it.** The guide is
-  written from violations we've seen, not from a wish list, and its
-  examples come from our code. That scope is narrow on purpose, so if you
-  like it, fork it and grow your own from what your code breaks.
+- **Secrets never cross the seam.** The Roc asks the host to `sign!` and
+  `verify!`, and never holds the signing key. GitHub's client secret and
+  token stay on the host side too (roc-chat `README.md`, "The model").
+- **Bound the cost before doing the work.** roc-markdown charges every
+  render step to a work budget sized by the message's length, and
+  `Md.hostility` answers `Renderable` or `TooMuchFormatting` before you
+  render, so a POST can refuse a message built to blow up
+  (`package/Md.roc`; `README.md`, "A bounded cost"). The host follows the
+  same rule: it asks the Roc to judge a request's head (origin and size
+  allowance) before reading its body, and caps the bytes in flight across
+  all connections, so a hostile page can't fill memory with bodies that
+  will only be refused (gopher-roc `app/main.roc`, `admission`).
+- **A cross-site GET is a request too.** A page's stream, image or script
+  can be fetched by another site's page in the viewer's browser. Refuse a
+  foreign `Origin` on every method, and a cross-site `Sec-Fetch-Site` on a
+  GET that isn't a top-level navigation (gopher-roc `app/RequestOrigin.roc`).
+- **Decode at the door into an opaque type.** Only its own module can
+  build one, so the checks are the only way in (`docs/roc-style.md`, "Make
+  wrong values impossible to build"). roc-chat `app/Principal.roc`'s ids
+  are opaque and refuse 0. An `AuditCodec` entry is made only by its
+  constructors or `decode`.
+- **The host allowlists what the Roc may set.** roc-chat
+  `host/call.zig` `allowed_headers` is `set-cookie`, `cache-control` and
+  `location`. Any other name, or a CR, LF or NUL, is a 500, because it is
+  the Roc's bug. The host owns `content-length` and `connection`.
+- **Each refusal is a planted fault in verify.** A check that refuses
+  something counts once a copy of the tree with that refusal removed goes
+  red: roc-chat `tools/verify.shale` plants a forged session cookie, a
+  revoked key that still works, and a cross-origin POST. roc-markdown's
+  verify plants an image from another origin and a `javascript:` src.
+- **An audit never holds a secret.** roc-chat `app/AuditCodec.roc` records
+  public numbers and words only, never a token, hash, cookie, nonce, OAuth
+  code or login.
+- **Neither a judge nor an error page prints private text.** roc-markdown's
+  judge prints counts and failing case ids, never a case's text, so it can
+  judge real messages (`TESTING.md`). roc-chat's 500 after a Roc crash
+  carries nothing of the request, and `host/crash_test.zig` sends a
+  `secret-header-value` to prove it.
 
-## 13. Rules the type checker can't see: hunts and mechanical rewrites
-
-**The problem.** Many of the style guide's rules are invisible to `roc
-check` and `roc fmt`: a vague name, a Bool that should be a tag, a call
-nested three deep, three arguments on one line, a parameter every caller
-fills with the same literal. A reviewer catches some, an agent writes the
-rest back in, and a finding fixed by hand and left unchecked comes back.
-
-**Our answer.** This section and the next are the most specific to Steve. We write these
-checks in Shale (github.com/showell/shale), his scripting language, as
-recipes in its `cookbook/roc/`. You don't need Shale for the idea, which
-carries to any tool: read Roc with Roc's own parser, prove each check on
-planted cases, and let the compiler judge any rewrite.
-
-- **Read Roc with Roc's own parser, never a regex.** The recipes read the
-  tree from `roc-ast`, so a comment or a string never counts and a broken
-  annotation reads as Roc reads it (`cookbook/roc/README.md`,
-  `name_hunt.shale`). roc-apps's toolchain release carries `roc-ast`.
-- **Each check proves itself on plants.** A plant is a case the check must
-  find, or must leave alone. `self_test=1` runs a recipe on its own
-  (`cookbook/roc/plants/<recipe>/`), so the hunt itself is tested.
-- **The compiler judges a rewrite.** A syntax tree can't know a type, so
-  `methods.shale`, which turns `List.map(xs, f)` into `xs.map(f)`, keeps a
-  file's rewrite only if `roc check` passes and `roc test`'s summary is
-  unchanged. Any other error puts the file back. It runs the repo's own
-  pin, read from `roc-version`, because method lookup has changed between
-  nightlies.
-- **The recipes.** `name_hunt` (awkward names, tense, container words),
-  `errors` (an error alias, an optional tag), `boundaries` (a one-caller
-  wrapper, a fixed parameter), `nest_depth`, `stack` (three or more on a
-  line, or past 100 columns), `roc_commas` (trailing commas so `roc fmt`
-  stacks long lines), `methods`, `same_code` (two builds the same machine
-  code, the judge of a pure reformat) and `tree_patch`. Each is a recipe,
-  not a builtin: copy one and change it for the job.
-- **A finding is a question for a reader, not a verdict.** Each prints
-  `path:line: check: why`. Fix it, or say why it stands. `boundaries`'
-  `single` is a rule of thumb and never a gate.
-- **A rule a script can check gets a check, and a gate runs it.**
-  `docs/roc-style.md`, "Testing and enforcement", lists the hunts and which
-  repo's gate runs each. roc-chat's verify holds its hunts at zero, each
-  with a plant; where no gate runs one yet (roc-markdown's), run it by hand
-  before a review.
-- **For agents using Shale instead of the shell,** read Shale's
-  `docs/SHALE-AGENTS.md`. That part is Steve's setup only.
-
-## 14. Agents: the long builds are the orchestrator's
+## 15. Agents: the long builds are the orchestrator's
 
 **The problem.** Roc's slow paths are slow: an LLVM release build, a full
 gate, a cross-compile. A subagent or a cloud agent that waits on one burns
@@ -684,7 +724,7 @@ agents, and that process changes quickly, so this section says only what's
 particular to Roc. The orchestrating session runs the long release builds,
 cross-compiles and the long gates, detached, where it can. Between edits, a
 subagent or cloud agent uses shortcuts that buy about 90% confidence fast:
-the dev backend (§4), `roc check` from the right root (§3), the quick
+the dev backend (§9), `roc check` from the right root (§4), the quick
 tests, and a single targeted plant. When its task asks for the repo's
 verify, it runs that too (on the dev backend it takes minutes, not hours),
 and its report says what it ran and which shortcuts it took. Either way,
