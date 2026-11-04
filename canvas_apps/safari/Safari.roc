@@ -55,7 +55,7 @@ Safari :: [].{
 	ride_sun = |w, r| (
 		{
 			cf = RideFocal.ride_focal(w, r.rider)
-			Sky.sun_pos(ViewYaw.heading_for(r.rider), r.clock, cf, Screen.width)
+			Sky.sun_pos({ heading: ViewYaw.heading_for(r.rider), step: r.clock, view: { cam_focal: cf, view_w: Screen.width } })
 		}
 	)
 }

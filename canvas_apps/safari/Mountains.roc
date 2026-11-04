@@ -51,7 +51,7 @@ Mountains :: [].{
 	}
 
 	snow_color : F64 -> I64
-	snow_color = |dusk| Sky.pack(Sky.lerp3(snow_day, snow_night, dusk))
+	snow_color = |dusk| Sky.pack(Sky.color_between({ from: snow_day, to: snow_night, fraction: dusk }))
 
 	west_range_bearing : F64
 	west_range_bearing = (0.0 - 2.0416)

@@ -1,5 +1,7 @@
-# Sky -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## The sky through the ride: the sun sinks a little with every step, the
+## sky darkens toward dusk as it goes, and the horizon warms red while the
+## sun is near it. The sun is drawn only while the rider faces it.
+import Camera
 import lib.DeviceMath
 import Lens
 import Num_
@@ -8,7 +10,14 @@ import lib.Trig
 
 Sky :: [].{
 	Rgb : { r : F64, g : F64, b : F64 }
-	SunPos : { visible : Bool, x : F64, y : F64, scale : F64 }
+
+	## Where the sun stands on the screen, and how large it is drawn beside
+	## its size at rest.
+	SunPlace : { x : F64, y : F64, scale : F64 }
+
+	## The sun in a frame: in view at its place, or out of view, too far to
+	## the side of where the rider faces.
+	SunPos : [InView(Sky.SunPlace), OutOfView]
 
 	sun_bearing : F64
 	sun_bearing = (0.0 - 2.2176)
@@ -31,37 +40,24 @@ Sky :: [].{
 	visible_bearing_limit : F64
 	visible_bearing_limit = 1.4
 
+	## How high the sun stands above the horizon at a step, in pixels at
+	## rest; below it once negative.
 	sun_height_px : F64 -> F64
 	sun_height_px = |step| (sun_start_px - (sun_drop_px_per_step * step))
 
+	## How far toward dusk the sky is when the sun has just set.
 	dusk_at_set : F64
 	dusk_at_set = ((0.5 * (sun_start_px - sun_fully_set_px)) / sun_start_px)
 
-	dusk_while_up : F64 -> F64
-	dusk_while_up = |h| (
-		{
-			p = ((sun_start_px - h) / (sun_start_px - sun_fully_set_px))
-			DeviceMath.real_max(0.0, ((dusk_at_set * p) * p))
-		}
-	)
-
-	dusk_after_set : F64 -> F64
-	dusk_after_set = |h| DeviceMath.real_min(1.0, (dusk_at_set + (((sun_fully_set_px - h) / sun_radius_px) * (1.0 - dusk_at_set))))
-
+	## How far toward dusk the sky is at a step, from 0 (day) to 1 (dusk).
 	sun_set_fraction : F64 -> F64
-	sun_set_fraction = |step| (
-		{
-			h = sun_height_px(step)
-			(
-				if (h >= sun_fully_set_px) {
-					dusk_while_up(h)
-				} else {
-					dusk_after_set(h)
-				}
-			)
-		}
-	)
+	sun_set_fraction = |step| {
+		height = sun_height_px(step)
+		if (height >= sun_fully_set_px) dusk_while_up(height) else dusk_after_set(height)
+	}
 
+	## How warm the horizon is at a step: most while the sun touches it, none
+	## once the sun is `warmth_falloff_px` above or below.
 	sunset_warmth : F64 -> F64
 	sunset_warmth = |step| DeviceMath.real_max(0.0, (1.0 - (DeviceMath.real_abs(sun_height_px(step)) / warmth_falloff_px)))
 
@@ -77,42 +73,58 @@ Sky :: [].{
 	sunset_glow : F64
 	sunset_glow = 0.85
 
-	lerp3 : Sky.Rgb, Sky.Rgb, F64 -> Sky.Rgb
-	lerp3 = |a, b, t| { r: Num_.round_real((a.r + ((b.r - a.r) * t))), g: Num_.round_real((a.g + ((b.g - a.g) * t))), b: Num_.round_real((a.b + ((b.b - a.b) * t))) }
+	## The colour `fraction` of the way from `from` to `to`, each channel
+	## rounded to a whole value.
+	color_between : { from : Sky.Rgb, to : Sky.Rgb, fraction : F64 } -> Sky.Rgb
+	color_between = |{ from, to, fraction }| {
+		r: Num_.round_real((from.r + ((to.r - from.r) * fraction))),
+		g: Num_.round_real((from.g + ((to.g - from.g) * fraction))),
+		b: Num_.round_real((from.b + ((to.b - from.b) * fraction))),
+	}
 
+	## A colour as 0xRRGGBB.
 	pack : Sky.Rgb -> I64
 	pack = |c| I64.bitwise_or(I64.bitwise_or(I64.shl_wrap(F64.to_i64_wrap(c.r), I64.to_u8_wrap(16)), I64.shl_wrap(F64.to_i64_wrap(c.g), I64.to_u8_wrap(8))), F64.to_i64_wrap(c.b))
 
+	## The sky's colour at the top of the frame, as 0xRRGGBB.
 	sky_color : F64 -> I64
-	sky_color = |step| pack(lerp3(day_sky, dusk_sky, sun_set_fraction(step)))
+	sky_color = |step| pack(sky_at(step))
 
+	## The sky's colour at the horizon, as 0xRRGGBB: the sky warmed toward
+	## sunset red.
 	horizon_color : F64 -> I64
-	horizon_color = |step| (
-		{
-			sky = lerp3(day_sky, dusk_sky, sun_set_fraction(step))
-			pack(lerp3(sky, sunset_red, (sunset_warmth(step) * sunset_glow)))
-		}
-	)
+	horizon_color = |step| pack(color_between({ from: sky_at(step), to: sunset_red, fraction: (sunset_warmth(step) * sunset_glow) }))
 
-	sun_pos_visible : F64, F64, F64, F64 -> Sky.SunPos
-	sun_pos_visible = |rel, step, cam_focal, view_w| (
-		{
-			v_scale = (cam_focal / Lens.focal)
-			{ visible: True, x: ((view_w / 2.0) + (Trig.r_tan(rel) * cam_focal)), y: (Screen.horizon_y - (sun_height_px(step) * v_scale)), scale: v_scale }
+	## The sun in a frame, for a rider facing `heading`.
+	sun_pos : { heading : F64, step : F64, view : Camera.View } -> Sky.SunPos
+	sun_pos = |{ heading, step, view }| {
+		bearing_from_view = Trig.wrap((sun_bearing - heading), 64)
+		if (DeviceMath.real_abs(bearing_from_view) >= visible_bearing_limit) {
+			OutOfView
+		} else {
+			InView(sun_place({ bearing_from_view, step, view }))
 		}
-	)
+	}
+}
 
-	sun_pos : F64, F64, F64, F64 -> Sky.SunPos
-	sun_pos = |heading, step, cam_focal, view_w| (
-		{
-			rel = Trig.wrap((sun_bearing - heading), 64)
-			(
-				if (DeviceMath.real_abs(rel) >= visible_bearing_limit) {
-					{ visible: False, x: 0.0, y: 0.0, scale: 0.0 }
-				} else {
-					sun_pos_visible(rel, step, cam_focal, view_w)
-				}
-			)
-		}
-	)
+dusk_while_up : F64 -> F64
+dusk_while_up = |height| {
+	set_so_far = ((Sky.sun_start_px - height) / (Sky.sun_start_px - Sky.sun_fully_set_px))
+	DeviceMath.real_max(0.0, ((Sky.dusk_at_set * set_so_far) * set_so_far))
+}
+
+dusk_after_set : F64 -> F64
+dusk_after_set = |height| DeviceMath.real_min(1.0, (Sky.dusk_at_set + (((Sky.sun_fully_set_px - height) / Sky.sun_radius_px) * (1.0 - Sky.dusk_at_set))))
+
+sky_at : F64 -> Sky.Rgb
+sky_at = |step| Sky.color_between({ from: Sky.day_sky, to: Sky.dusk_sky, fraction: Sky.sun_set_fraction(step) })
+
+sun_place : { bearing_from_view : F64, step : F64, view : Camera.View } -> Sky.SunPlace
+sun_place = |{ bearing_from_view, step, view }| {
+	scale = (view.cam_focal / Lens.focal)
+	{
+		x: ((view.view_w / 2.0) + (Trig.r_tan(bearing_from_view) * view.cam_focal)),
+		y: (Screen.horizon_y - (Sky.sun_height_px(step) * scale)),
+		scale,
+	}
 }
