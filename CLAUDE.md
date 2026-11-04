@@ -183,7 +183,8 @@ a problem you find is yours to fix, or to raise with Steve.
    fix it, never leave it for later.
 3. **The repo's gate, whole.** Each repo has one Shale script that runs
    every check and prints a line per check with its numbers (roc-chat
-   `tools/verify.shale`; in roc-apps, safari's
+   `tools/verify.shale`). roc-apps has one for the whole repository,
+   `check.shale` at its root, and each tree runs its own as well (safari's
    `canvas_apps/safari/gates/run.shale`). Run all of it, not a hand-picked
    part, and read how many things ran (§6). When you change a gate,
    plant the fault it should catch, see it go red, and take the plant out.

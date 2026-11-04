@@ -1,0 +1,128 @@
+-- This script holds every hand-written Roc file in roc-apps to the bar that
+-- CLAUDE.md §3 sets: `roc fmt --check` passes over all of them, and
+-- `roc check` finds no errors and no warnings in any app. It runs the
+-- pinned compiler (`roc-version`, installed at tools:roc-<pin>/roc) and
+-- prints a line for each app that fails, then one verdict line.
+--
+--   cd <roc-apps checkout> && shale check.shale
+--
+-- Each app is checked from its own folder, so it reports every module it
+-- imports. The number of apps is held exactly (APPS), so an app that stops
+-- being found fails the run as surely as one that stops compiling; add or
+-- remove an app, and change the number with it.
+--
+-- Two places are left out, each for the reason beside it in EXCEPTIONS.
+-- Each is a debt, named here and nowhere else.
+--
+-- budget: steps=200000000
+
+const APPS = 88
+const CHUNK = 50
+const SELF_PATH = "check.shale"
+const WANT = "roc-pin: the repository's pinned nightly"
+
+const EXCEPTIONS = {
+  {prefix = "tests/", why = "Codex's generated tests, written by rocemit and judged by tests/ladder.sh; Codex is parked"},
+  {prefix = "gpu/roc/", why = "Codex's kernels as rocemit emits them, written by gpu/emitted.sh; Codex is parked"},
+  {prefix = "games/roc/", why = "Codex's games as rocemit emits them, written by games/emitted.sh; Codex is parked"},
+  {prefix = "findings/roc-check-hang/", why = "programs that hang `roc check` on purpose: the finding is the hang"},
+  {prefix = "site/", why = "the published site's copies, built from the trees checked here"},
+}
+
+function excepted(path)
+  for e in EXCEPTIONS do
+    if starts_with(path, e.prefix) then return true end
+  end
+  return false
+end
+
+function roc_path()
+  if not exists("roc-version") then fail("check: no roc-version here: run from the roc-apps root") end
+  local pin = trim(read("roc-version"))
+  local roc = "tools:roc-" .. pin .. "/roc"
+  if not exists(roc) then fail("check: no " .. roc .. ": install " .. pin .. " at ~/tools/roc-" .. pin .. "/") end
+  local v = run({real(roc), "version"}, {timeout_ms = 30000, whole = 4000, want = WANT})
+  if trim(v.out) ~= "Roc compiler version " .. pin then fail("check: " .. roc .. " is " .. trim(v.out) .. ", not " .. pin) end
+  return real(roc)
+end
+
+-- The tracked Roc files that aren't excepted; with `apps_only`, the apps.
+function roc_files(apps_only)
+  local argv = {"git", "ls-files", "*.roc"}
+  if apps_only then argv = {"git", "grep", "-l", "-E", "^app \\[", "--", "*.roc"} end
+  local r = run(argv, {timeout_ms = 30000, whole = 4000000})
+  local kept = {}
+  for f in lines(trim(r.out)) do
+    if not excepted(f) then push(kept, f) end
+  end
+  return kept
+end
+
+-- One app's check: nil when clean, else why not.
+function check_app(roc, path)
+  local m = re_find(path, "^(.*)/([^/]+)$")
+  local r = run({"nice", "-n", "19", roc, "check", m.groups[2]}, {cwd = m.groups[1], timeout_ms = 120000, whole = 4000000, want = WANT})
+  if not has_key(r, "code") then return "no answer in 120 s" end
+  if r.code == 0 and contains(r.out, "No errors found") then return nil end
+  local summary = "exit " .. r.code
+  for l in lines(r.out) do
+    if contains(l, "errors and") then summary = trim(l) end
+  end
+  return summary
+end
+
+-- One chunk of the apps, run as a child so each child has its own budget of
+-- programs.
+function part(k)
+  local roc = roc_path()
+  local apps = roc_files(true)
+  local bad = 0
+  local first = (k - 1) * CHUNK + 1
+  local last = k * CHUNK
+  if last > #apps then last = #apps end
+  local i = first
+  while i <= last do
+    local why = check_app(roc, apps[i])
+    if why ~= nil then
+      print("FAIL " .. apps[i] .. ": " .. why)
+      bad = bad + 1
+    end
+    i = i + 1
+  end
+  print("part " .. k .. ": " .. (last - first + 1) .. " apps, " .. bad .. " failed")
+  if bad > 0 then fail("check: part " .. k .. " failed") end
+end
+
+function all()
+  local roc = roc_path()
+  local files = roc_files(false)
+  local fmt = {roc, "fmt", "--check"}
+  for f in files do push(fmt, f) end
+  local f = run(fmt, {timeout_ms = 600000, whole = 4000000, want = WANT})
+  local failed = {}
+  if f.code ~= 0 then
+    print("FAIL roc fmt --check: " .. trim(f.out))
+    push(failed, "fmt")
+  else
+    print("roc fmt: " .. #files .. " files clean")
+  end
+  local apps = roc_files(true)
+  if #apps ~= APPS then
+    print("FAIL apps: found " .. #apps .. ", held at " .. APPS)
+    push(failed, "app count")
+  end
+  local parts = (#apps + CHUNK - 1) // CHUNK
+  local k = 1
+  while k <= parts do
+    local r = run({"shale", "--root", ".", SELF_PATH, "part=" .. k}, {timeout_ms = 3600000, tail = 60})
+    print(trim(r.out))
+    if r.code ~= 0 then push(failed, "part " .. k) end
+    k = k + 1
+  end
+  for e in EXCEPTIONS do print("left out: " .. e.prefix .. " (" .. e.why .. ")") end
+  if #failed > 0 then fail("check: " .. join(failed, ", ") .. " failed") end
+  print("check: " .. #apps .. " apps without errors or warnings, " .. #files .. " files formatted")
+end
+
+const PART = arg("part", "")
+if PART == "" then all() else part(tonumber(PART)) end

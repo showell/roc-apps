@@ -199,7 +199,10 @@ others at `~/tools/roc-<pin>/roc`, and nothing uses `roc` from the PATH:
     gh release download <pin> -R roc-lang/nightlies -p 'roc_nightly-linux_x86_64-*.tar.gz'
     tar xzf roc_nightly-linux_x86_64-*.tar.gz && mv roc_nightly-linux_x86_64-<date-sha> roc-<pin>
 
-Every script that runs Roc sources `pinned-roc.sh`, which refuses a compiler
+`shale check.shale` holds the whole repository to the pin: every
+hand-written file formatted, and every app checked with no errors or
+warnings, apart from the trees it names and says why. Every script that
+runs Roc sources `pinned-roc.sh`, which refuses a compiler
 whose `roc version` isn't the pin; the safari gate makes the same check, and
 the Windows and macOS workflows name the same tag. To move the pin: install
 the new nightly, change `roc-version` and the two workflows, run `roc fmt`
