@@ -155,14 +155,13 @@ paint_span : List(U32), { roll : ScreenRoll, fill : Brush.Fill, row : PixelGrid.
 paint_span = |pixels, { roll, fill, row, from, to }| {
 	columns = PixelGrid.pixels_between({ from, to, count: roll.width_px() })
 	width = roll.width_px()
-	y = PixelGrid.pixel_center(row)
 	var $px = pixels
 	for column in columns.start.until(columns.end) {
 		at = PixelGrid.pixel_index({ row, column, width })
 		color = match fill {
 			Flat(flat) => flat
 			Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) => {
-				p = roll.to_scene(ScreenRoll.ScreenPoint.({ x: PixelGrid.pixel_center(column), y }))
+				p = roll.to_scene(ScreenRoll.pixel_point({ row, column }))
 				Brush.shade(fill, p.x, p.y)
 			}
 			Skip => crash "ScanlineFill.paint_span: no caller fills with a Skip brush"

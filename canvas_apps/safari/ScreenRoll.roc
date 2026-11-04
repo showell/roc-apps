@@ -42,6 +42,16 @@ ScreenRoll :: {
 	height_px : ScreenRoll -> PixelGrid.Coordinate
 	height_px = |ScreenRoll.(screen)| screen.height_px
 
+	## The centre of a pixel, as a point on the screen.
+	pixel_point : { row : PixelGrid.Coordinate, column : PixelGrid.Coordinate } -> ScreenRoll.ScreenPoint
+	pixel_point = |{ row, column }|
+		ScreenRoll.ScreenPoint.(
+			{
+				x: PixelGrid.pixel_center(column),
+				y: PixelGrid.pixel_center(row),
+			},
+		)
+
 	to_screen : ScreenRoll, ScreenRoll.ScenePoint -> ScreenRoll.ScreenPoint
 	to_screen = |ScreenRoll.(screen), ScreenRoll.ScenePoint.({ x, y })| {
 		center = screen.center
