@@ -43,7 +43,12 @@ triangles = |shapes| List.fold(
 )
 
 main! = |args| {
-	steps = I64.from_str(List.get(args, 0) ?? "0") ?? 0
+	# With no argument, the run takes its usual number of steps.
+	steps =
+		match args.get(0) {
+			Ok(text) => I64.from_str(text) ?? crash "ShapesFrame: the steps argument is a whole number"
+			Err(OutOfBounds) => 0
+		}
 	m = ride_to(SafariRide.init, steps)
 	commands = SafariRide.commands(m)
 	roll = SafariRide.roll(m)

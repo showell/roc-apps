@@ -25,7 +25,9 @@ gd_walk_onto = |i, acc| (
 	if i >= gd_right.len().to_i64_wrap() {
 		acc
 	} else {
-		gd_walk_onto((i + 1), List.append(acc, Geom.ground_drop((List.get(gd_right, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), (List.get(gd_forward, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
+		right = List.get(gd_right, I64.to_u64_wrap(i)) ?? crash "GeomSpec: a right for every case"
+		forward = List.get(gd_forward, I64.to_u64_wrap(i)) ?? crash "GeomSpec: a forward for every case"
+		gd_walk_onto((i + 1), acc.append(Geom.ground_drop(right, forward)))
 	}
 )
 
@@ -88,7 +90,7 @@ cn_walk_onto = |vs, i, acc| (
 		(
 			{
 				v = (List.get(vs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))
-				cn_walk_onto(vs, (i + 1), List.append(List.append(List.append(acc, v.right), v.forward), v.height))
+				cn_walk_onto(vs, (i + 1), acc.concat([v.right, v.forward, v.height]))
 			}
 		)
 	}

@@ -111,15 +111,15 @@ snap_got = [gaze_after(head(return_snap, 200.0), 0.0), gaze_after(head((0.0 - re
 snap_want : List(F64)
 snap_want = [0.0, 0.0, 0.0]
 
-focused : F64, F64 -> Pose.RiderState
-focused = |focus, gaze_yaw| { segment: 2, along: 200.0, across: 0.0, yaw: Angle.Turn.radians(0.0), v: Pose.v_base, tilt: Angle.Lean.radians(0.0), heading: Angle.Bearing.radians(0.0), gaze_yaw: Angle.Turn.radians(gaze_yaw), focus: focus }
+rider_with_focus : F64, F64 -> Pose.RiderState
+rider_with_focus = |focus, gaze_yaw| { segment: 2, along: 200.0, across: 0.0, yaw: Angle.Turn.radians(0.0), v: Pose.v_base, tilt: Angle.Lean.radians(0.0), heading: Angle.Bearing.radians(0.0), gaze_yaw: Angle.Turn.radians(gaze_yaw), focus: focus }
 
 focus_got : List(Bool)
 focus_got = (
 	{
-		rising = focus_after(focused(0.0, (20.0 * Trig.deg)), (20.0 * Trig.deg))
-		held = focus_after(focused(0.9, (1.0 * Trig.deg)), (1.0 * Trig.deg))
-		easing = focus_after(focused(0.9, 0.0), 0.0)
+		rising = focus_after(rider_with_focus(0.0, (20.0 * Trig.deg)), (20.0 * Trig.deg))
+		held = focus_after(rider_with_focus(0.9, (1.0 * Trig.deg)), (1.0 * Trig.deg))
+		easing = focus_after(rider_with_focus(0.9, 0.0), 0.0)
 		[(rising > 0.0), (held >= 0.9), (easing < 0.9), (easing > 0.0)]
 	}
 )
@@ -128,7 +128,7 @@ focus_want : List(Bool)
 focus_want = [True, True, True, True]
 
 focus_ends_got : List(F64)
-focus_ends_got = [focus_after(focused(0.0, 0.0), 0.0), focus_after(focused(0.0, (90.0 * Trig.deg)), (90.0 * Trig.deg))]
+focus_ends_got = [focus_after(rider_with_focus(0.0, 0.0), 0.0), focus_after(rider_with_focus(0.0, (90.0 * Trig.deg)), (90.0 * Trig.deg))]
 
 focus_ends_want : List(F64)
 focus_ends_want = [0.0, 1.0]

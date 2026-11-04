@@ -46,20 +46,20 @@ start_flag_got = [Safari.ride_initial.truck.braking, Rider.is_finished(Safari.ri
 start_flag_want : List(Bool)
 start_flag_want = [False, False]
 
-one : Safari.Ride
-one = Safari.ride_next(segs, Safari.ride_initial)
+after_one_step : Safari.Ride
+after_one_step = Safari.ride_next(segs, Safari.ride_initial)
 
-two : Safari.Ride
-two = Safari.ride_next(segs, one)
+after_two_steps : Safari.Ride
+after_two_steps = Safari.ride_next(segs, after_one_step)
 
 step_got : List(F64)
-step_got = [one.clock, two.clock, (two.clock - one.clock)]
+step_got = [after_one_step.clock, after_two_steps.clock, (after_two_steps.clock - after_one_step.clock)]
 
 step_want : List(F64)
 step_want = [1.0, 2.0, 1.0]
 
 moved_got : List(Bool)
-moved_got = [(one.rider.along > Safari.ride_initial.rider.along), (one.truck.pos > Safari.ride_initial.truck.pos), (two.rider.along > one.rider.along)]
+moved_got = [(after_one_step.rider.along > Safari.ride_initial.rider.along), (after_one_step.truck.pos > Safari.ride_initial.truck.pos), (after_two_steps.rider.along > after_one_step.rider.along)]
 
 moved_want : List(Bool)
 moved_want = [True, True, True]
@@ -68,10 +68,10 @@ order_got : List(Bool)
 order_got = (
 	{
 		old_dist = World.route_distance(segs, { index: Safari.ride_initial.rider.segment, along: Safari.ride_initial.rider.along })
-		new_dist = World.route_distance(segs, { index: one.rider.segment, along: one.rider.along })
+		new_dist = World.route_distance(segs, { index: after_one_step.rider.segment, along: after_one_step.rider.along })
 		against_new = Truck.truck_next(Safari.ride_initial.truck, new_dist, segs, World.course_length(segs))
 		against_old = Truck.truck_next(Safari.ride_initial.truck, old_dist, segs, World.course_length(segs))
-		[(F64.to_bits(one.truck.pos) == F64.to_bits(against_new.pos)), (new_dist > old_dist), ((F64.to_bits(against_new.pos) == F64.to_bits(against_old.pos)) == False)]
+		[(F64.to_bits(after_one_step.truck.pos) == F64.to_bits(against_new.pos)), (new_dist > old_dist), ((F64.to_bits(against_new.pos) == F64.to_bits(against_old.pos)) == False)]
 	}
 )
 
@@ -99,7 +99,7 @@ restart_flag_want : List(Bool)
 restart_flag_want = [True, False]
 
 not_done_got : List(Bool)
-not_done_got = [(one.clock > 0.0), (Rider.is_finished(one.rider, segs) == False)]
+not_done_got = [(after_one_step.clock > 0.0), (Rider.is_finished(after_one_step.rider, segs) == False)]
 
 not_done_want : List(Bool)
 not_done_want = [True, True]
@@ -108,7 +108,7 @@ frame : List(Paint.DrawCmd)
 frame = Safari.ride_frame(segs, Safari.ride_initial)
 
 frame_got : List(Bool)
-frame_got = [(frame.len().to_i64_wrap() > 0), (Safari.ride_frame(segs, one).len().to_i64_wrap() > 0), ((List.get(frame, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).tag >= 0), ((List.get(frame, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).tag <= 6)]
+frame_got = [(frame.len().to_i64_wrap() > 0), (Safari.ride_frame(segs, after_one_step).len().to_i64_wrap() > 0), ((List.get(frame, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).tag >= 0), ((List.get(frame, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).tag <= 6)]
 
 frame_want : List(Bool)
 frame_want = [True, True, True, True]

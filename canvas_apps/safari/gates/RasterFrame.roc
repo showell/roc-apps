@@ -23,21 +23,34 @@ ride_to = |m, n| if n <= 0 {
 
 # FNV-1a over each pixel's four little-endian bytes. The product stays under
 # 2^57, so it needs no wrapping arithmetic.
+## One byte folded into an FNV-1a hash.
+fnv_step : I64, I64 -> I64
+fnv_step = |h, byte| I64.bitwise_and(I64.bitwise_xor(h, byte) * 16777619, 4294967295)
+
+## The byte of `v` that starts `shift` bits up.
+byte_of : I64, U8 -> I64
+byte_of = |v, shift| I64.bitwise_and(I64.shr_wrap(v, shift), 255)
+
 hash : List(U32) -> I64
 hash = |pixels| List.fold(
 	pixels,
 	2166136261,
 	|h, p| {
 		v = U32.to_i64(p)
-		b0 = I64.bitwise_and(I64.bitwise_xor(h, I64.bitwise_and(v, 255)) * 16777619, 4294967295)
-		b1 = I64.bitwise_and(I64.bitwise_xor(b0, I64.bitwise_and(I64.shr_wrap(v, 8), 255)) * 16777619, 4294967295)
-		b2 = I64.bitwise_and(I64.bitwise_xor(b1, I64.bitwise_and(I64.shr_wrap(v, 16), 255)) * 16777619, 4294967295)
-		I64.bitwise_and(I64.bitwise_xor(b2, I64.bitwise_and(I64.shr_wrap(v, 24), 255)) * 16777619, 4294967295)
+		b0 = fnv_step(h, byte_of(v, 0))
+		b1 = fnv_step(b0, byte_of(v, 8))
+		b2 = fnv_step(b1, byte_of(v, 16))
+		fnv_step(b2, byte_of(v, 24))
 	},
 )
 
 main! = |args| {
-	steps = I64.from_str(List.get(args, 0) ?? "0") ?? 0
+	# With no argument, the run takes its usual number of steps.
+	steps =
+		match args.get(0) {
+			Ok(text) => I64.from_str(text) ?? crash "RasterFrame: the steps argument is a whole number"
+			Err(OutOfBounds) => 0
+		}
 	m = ride_to(SafariRide.init, steps)
 	pixels = SafariFrame.paint({
 		commands: SafariRide.commands(m),

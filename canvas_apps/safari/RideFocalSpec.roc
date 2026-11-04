@@ -65,17 +65,17 @@ idle_got = [
 idle_want : List(F64)
 idle_want = [0.0, 0.0, 0.0, 0.0]
 
-leaned : F64 -> F64
-leaned = |tilt| RideFocal.ride_focal(segs, { ..upright, tilt: Angle.Lean.radians(tilt) })
+focal_at_tilt : F64 -> F64
+focal_at_tilt = |tilt| RideFocal.ride_focal(segs, { ..upright, tilt: Angle.Lean.radians(tilt) })
 
 lean_got : List(Bool)
-lean_got = [(leaned((max_lean / 2.0)) < leaned(0.0)), (leaned(max_lean) < leaned((max_lean / 2.0))), (leaned((0.0 - max_lean)) < leaned(0.0)), (leaned(0.0) <= Lens.focal)]
+lean_got = [(focal_at_tilt((max_lean / 2.0)) < focal_at_tilt(0.0)), (focal_at_tilt(max_lean) < focal_at_tilt((max_lean / 2.0))), (focal_at_tilt((0.0 - max_lean)) < focal_at_tilt(0.0)), (focal_at_tilt(0.0) <= Lens.focal)]
 
 lean_want : List(Bool)
 lean_want = [True, True, True, True]
 
 clamp_got : List(F64)
-clamp_got = [(leaned(max_lean) - leaned((0.0 - max_lean))), (leaned((max_lean * 2.0)) - leaned(max_lean)), (leaned((max_lean * 10.0)) - leaned(max_lean))]
+clamp_got = [(focal_at_tilt(max_lean) - focal_at_tilt((0.0 - max_lean))), (focal_at_tilt((max_lean * 2.0)) - focal_at_tilt(max_lean)), (focal_at_tilt((max_lean * 10.0)) - focal_at_tilt(max_lean))]
 
 clamp_want : List(F64)
 clamp_want = [0.0, 0.0, 0.0]

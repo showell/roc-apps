@@ -34,7 +34,12 @@ ride_frames = |world, bench_run, steps|
 	}
 
 main! = |args| {
-	steps = I64.from_str(List.get(args, 0) ?? "60") ?? 60
+	# With no argument, the run takes its usual number of steps.
+	steps =
+		match args.get(0) {
+			Ok(text) => I64.from_str(text) ?? crash "FrameBench: the steps argument is a whole number"
+			Err(OutOfBounds) => 60
+		}
 	world = World.segments
 	done = ride_frames(world, { ride: Safari.ride_initial, commands: 0 }, steps)
 	finished = if (Rider.is_finished(done.ride.rider, world)) "yes" else "no"

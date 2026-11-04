@@ -14,8 +14,8 @@ sp = |x, y| { x: x, y: y }
 tri : List(Camera.ScreenPt)
 tri = [sp(1.0, 2.0), sp(3.0, 4.0), sp(5.0, 6.0)]
 
-two : List(Camera.ScreenPt)
-two = [sp(1.0, 2.0), sp(3.0, 4.0)]
+line_ends : List(Camera.ScreenPt)
+line_ends = [sp(1.0, 2.0), sp(3.0, 4.0)]
 
 flat_got : List(F64)
 flat_got = List.concat(Paint.flatten_screen(tri), Paint.flatten_screen([]))
@@ -24,7 +24,7 @@ flat_want : List(F64)
 flat_want = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
 
 count_got : List(I64)
-count_got = [Paint.push_poly(7, tri).len().to_i64_wrap(), Paint.push_poly(7, two).len().to_i64_wrap(), Paint.push_poly(7, []).len().to_i64_wrap(), Paint.push_round_poly(7, 0.5, tri).len().to_i64_wrap(), Paint.push_round_poly(7, 0.5, two).len().to_i64_wrap(), Paint.push_grad_poly(7, 8, 0.0, 0.0, 1.0, tri).len().to_i64_wrap(), Paint.push_grad_poly(7, 8, 0.0, 0.0, 1.0, two).len().to_i64_wrap(), Paint.push_linear_grad_poly(7, 8, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, tri).len().to_i64_wrap(), Paint.push_linear_grad_poly(7, 8, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, two).len().to_i64_wrap(), Paint.push_radial_grad_poly(7, 8, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, tri).len().to_i64_wrap(), Paint.push_radial_grad_poly(7, 8, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, two).len().to_i64_wrap(), Paint.push_beacon(7, 1.0, 2.0, 3.0, 0.5).len().to_i64_wrap()]
+count_got = [Paint.push_poly(7, tri).len().to_i64_wrap(), Paint.push_poly(7, line_ends).len().to_i64_wrap(), Paint.push_poly(7, []).len().to_i64_wrap(), Paint.push_round_poly(7, 0.5, tri).len().to_i64_wrap(), Paint.push_round_poly(7, 0.5, line_ends).len().to_i64_wrap(), Paint.push_grad_poly(7, 8, 0.0, 0.0, 1.0, tri).len().to_i64_wrap(), Paint.push_grad_poly(7, 8, 0.0, 0.0, 1.0, line_ends).len().to_i64_wrap(), Paint.push_linear_grad_poly(7, 8, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, tri).len().to_i64_wrap(), Paint.push_linear_grad_poly(7, 8, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, line_ends).len().to_i64_wrap(), Paint.push_radial_grad_poly(7, 8, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, tri).len().to_i64_wrap(), Paint.push_radial_grad_poly(7, 8, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, line_ends).len().to_i64_wrap(), Paint.push_beacon(7, 1.0, 2.0, 3.0, 0.5).len().to_i64_wrap()]
 
 count_want : List(I64)
 count_want = [1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]

@@ -108,11 +108,11 @@ is_route_end = |segment|
 		Terminates => True
 	}
 
-ended : F64, F64 -> Pose.RiderState
-ended = |along, v| Rider.finish_clamp({ segment: 0, along: along, across: 0.0, yaw: Angle.Turn.radians(0.0), v: v, tilt: Angle.Lean.radians(0.0), heading: Angle.Bearing.radians(0.0), gaze_yaw: Angle.Turn.radians(0.0), focus: 0.0 }, last_seg)
+clamped_at_finish : F64, F64 -> Pose.RiderState
+clamped_at_finish = |along, v| Rider.finish_clamp({ segment: 0, along: along, across: 0.0, yaw: Angle.Turn.radians(0.0), v: v, tilt: Angle.Lean.radians(0.0), heading: Angle.Bearing.radians(0.0), gaze_yaw: Angle.Turn.radians(0.0), focus: 0.0 }, last_seg)
 
 finish_got : List(F64)
-finish_got = [ended(300.0, 0.5).along, ended(300.0, 0.5).v, ended(310.0, 0.5).along, ended(310.0, 0.5).v, ended(290.0, 0.05).along, ended(290.0, 0.05).v, ended(290.0, 0.5).along, ended(290.0, 0.5).v, ended(100.0, 0.05).along, ended(100.0, 0.05).v]
+finish_got = [clamped_at_finish(300.0, 0.5).along, clamped_at_finish(300.0, 0.5).v, clamped_at_finish(310.0, 0.5).along, clamped_at_finish(310.0, 0.5).v, clamped_at_finish(290.0, 0.05).along, clamped_at_finish(290.0, 0.05).v, clamped_at_finish(290.0, 0.5).along, clamped_at_finish(290.0, 0.5).v, clamped_at_finish(100.0, 0.05).along, clamped_at_finish(100.0, 0.05).v]
 
 finish_want : List(F64)
 finish_want = [300.0, 0.0, 300.0, 0.0, 300.0, 0.0, 290.0, 0.5, 100.0, 0.05]

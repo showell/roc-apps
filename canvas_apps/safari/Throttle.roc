@@ -79,6 +79,9 @@ Throttle :: [].{
 	brake_decay : F64
 	brake_decay = 20.0
 
+	## The acceleration `a`, unless the arc ahead leaves the road; then the
+	## brake for the shoulder it reaches. One of the gates `get_forward_accel_decel`
+	## passes the acceleration through in turn.
 	shoulder_brake : Pose.RiderState, F64 -> F64
 	shoulder_brake = |state, a| (
 		{

@@ -16,16 +16,16 @@ const LINTS = {
     {"state_effect", 0}, {"question", 0}, {"vague", 0}, {"name_type", 0}, {"negative", 0},
     {"noun_effect", 0}, {"command_tense", 0}, {"mixed_tense", 0}, {"container", 0},
     {"preposition_split", 0}, {"short_name", 0}, {"worker_name", 0}, {"stacked_preposition", 0},
-    {"taken_word", 4}, {"bare_participle", 3},
+    {"taken_word", 0}, {"bare_participle", 0},
   }},
   {recipe = "errors", args = {}, budget = {}, counts = {
-    {"error_alias", 0}, {"optional_tag", 0}, {"set_fallback", 0}, {"placeholder", 3},
+    {"error_alias", 0}, {"optional_tag", 0}, {"set_fallback", 0}, {"placeholder", 0},
   }},
-  {recipe = "nest_depth", args = {"min=4"}, budget = {}, counts = {{"nested", 10}}},
+  {recipe = "nest_depth", args = {"min=4"}, budget = {}, counts = {{"nested", 0}}},
   {recipe = "boundaries", args = {}, budget = {}, counts = {
-    {"single", 1}, {"fixed", 0}, {"entry", 0}, {"constant", 0}, {"bool_param", 0},
+    {"single", 0}, {"fixed", 0}, {"entry", 0}, {"constant", 0}, {"bool_param", 0},
   }},
-  {recipe = "stack", args = {}, budget = {"--budget", "steps=4000000000"}, counts = {{"to stack", 1904}}},
+  {recipe = "stack", args = {}, budget = {"--budget", "steps=4000000000"}, counts = {{"to stack", 1905}}},
 }
 
 -- The number a summary line gives for `check`: "check N", or "N check" for

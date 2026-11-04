@@ -39,12 +39,12 @@ fixed_got = [Screen.height, Camera.eye_h]
 fixed_want : List(F64)
 fixed_want = [600.0, 1.2]
 
-three : List(Geom.Vec3)
-three = [{ right: 0.0, forward: 10.0, height: 1.2 }, { right: 10.0, forward: 10.0, height: 1.2 }, { right: 0.0, forward: 10.0, height: 11.2 }]
+ahead_right_above : List(Geom.Vec3)
+ahead_right_above = [{ right: 0.0, forward: 10.0, height: 1.2 }, { right: 10.0, forward: 10.0, height: 1.2 }, { right: 0.0, forward: 10.0, height: 11.2 }]
 
 all_got : List(F64)
 all_got = {
-	projected = Camera.project_all(three, view)
+	projected = Camera.project_all(ahead_right_above, view)
 	ahead = projected.get(0) ?? crash "CameraSpec: three points project to three"
 	right = projected.get(1) ?? crash "CameraSpec: three points project to three"
 	above = projected.get(2) ?? crash "CameraSpec: three points project to three"

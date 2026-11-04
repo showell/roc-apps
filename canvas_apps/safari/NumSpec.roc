@@ -40,7 +40,8 @@ mod_row_onto = |m, xs, j, acc| (
 	if j >= xs.len().to_i64_wrap() {
 		acc
 	} else {
-		mod_row_onto(m, xs, (j + 1), List.append(acc, Num_.mod_real((List.get(xs, I64.to_u64_wrap(j)) ?? crash ("list-at out of range")), m)))
+		x = List.get(xs, I64.to_u64_wrap(j)) ?? crash "NumSpec: j is within xs"
+		mod_row_onto(m, xs, (j + 1), acc.append(Num_.mod_real(x, m)))
 	}
 )
 
@@ -53,7 +54,8 @@ mod_outer_onto = |ms, xs, i, acc| (
 	if i >= ms.len().to_i64_wrap() {
 		acc
 	} else {
-		mod_outer_onto(ms, xs, (i + 1), List.concat(acc, mod_row((List.get(ms, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), xs, 0)))
+		m = List.get(ms, I64.to_u64_wrap(i)) ?? crash "NumSpec: i is within ms"
+		mod_outer_onto(ms, xs, (i + 1), acc.concat(mod_row(m, xs, 0)))
 	}
 )
 

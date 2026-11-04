@@ -46,7 +46,8 @@ Frame :: [].{
 		} else {
 			(
 				{
-					seg = (List.get(segs, I64.to_u64_wrap((List.get(ch, I64.to_u64_wrap((k - 1))) ?? crash ("list-at out of range")))) ?? crash ("list-at out of range"))
+					chosen = List.get(ch, I64.to_u64_wrap(k - 1)) ?? crash "Frame.compose_down: the chain has a segment at each step"
+					seg = List.get(segs, I64.to_u64_wrap(chosen)) ?? crash "Frame.compose_down: the chain names a segment of the world"
 					p = Geom.next_to_cur(a, x, seg.length, seg.exit_angle, seg.exit_right, Scenery.lane_width)
 					compose_down(segs, ch, (k - 1), p.a, p.x)
 				}

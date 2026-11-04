@@ -22,7 +22,11 @@ Blit :: [].{
 
 	## A colour as 0xRRGGBB from its three channels.
 	pack_rgb : { red : I64, green : I64, blue : I64 } -> I64
-	pack_rgb = |{ red, green, blue }| I64.bitwise_or(I64.bitwise_or(I64.shl_wrap(red, I64.to_u8_wrap(16)), I64.shl_wrap(green, I64.to_u8_wrap(8))), blue)
+	pack_rgb = |{ red, green, blue }| {
+		red_bits = I64.shl_wrap(red, 16)
+		green_bits = I64.shl_wrap(green, 8)
+		I64.bitwise_or(I64.bitwise_or(red_bits, green_bits), blue)
+	}
 
 	## One channel scaled by `factor`, rounded, and held at 255 at most.
 	shade_channel : I64, F64 -> I64
