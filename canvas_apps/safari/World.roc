@@ -114,7 +114,7 @@ has_pigs = |plan|
 segment : World.SegmentPlan, I64 -> World.Segment
 segment = |plan, index| {
 	angle = (DeviceMath.real_abs(plan.turn_deg) * Trig.deg)
-	trees = Trees.fill_trees(plan.scheme, plan.length, Trees.tree_start_inset, 0, 0)
+	trees = Trees.plant({ scheme: plan.scheme, length: plan.length })
 	# The first few segments with pigs show them as a herd, which draws the
 	# rider's eye; after that they are a row.
 	pig_attention =

@@ -1,8 +1,17 @@
-# Trees -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## Trees plants a segment's roadside conifers: a tree each side of the road
+## every 30 m, from just past the segment's start to well short of its end.
+## The pairs alternate between big green trees and smaller ones in the
+## segment's accent colour, and a gold tree stands farther from the road.
 import Scenery
 
 Trees :: [].{
+
+	## A conifer's kind, which sets its colour, its height and how far from
+	## the road it stands.
+	Conifer : [Green, Gold, Red]
+
+	## The size of a pair of trees.
+	PairSize : [Big, Small]
 
 	conifer_green : I64
 	conifer_green = 1858082
@@ -13,98 +22,105 @@ Trees :: [].{
 	conifer_red : I64
 	conifer_red = 11680298
 
+	## A small green tree's height, in metres.
 	small_height : F64
 	small_height = 4.5
 
+	## How much taller a tree in a big pair is.
 	big_scale : F64
 	big_scale = 1.3
 
 	tree_spacing : F64
 	tree_spacing = 30.0
 
+	## How far from the road's edge a tree stands; a gold one, four times
+	## as far.
 	tree_road_offset : F64
 	tree_road_offset = 1.5
 
+	## How far into a segment its first pair stands.
 	tree_start_inset : F64
 	tree_start_inset = 6.0
 
+	## No pair stands closer than this to a segment's end.
 	tree_end_inset : F64
 	tree_end_inset = 85.0
 
+	## At most this many trees stand on a segment.
 	max_trees : I64
 	max_trees = 96
 
-	accent_color : Scenery.Scheme -> I64
-	accent_color = |s| (match s {
-		YellowGreen => conifer_gold
-		RedGreen => conifer_red
-		AllGreen => conifer_green
-	})
-
-	tree_height_for : I64, Bool -> F64
-	tree_height_for = |color, even| (
-		{
-			base = (
-				if even {
-					(small_height * big_scale)
-				} else {
-					small_height
-				}
-			)
-			(
-				if (color == conifer_red) {
-					(base * 2.0)
-				} else {
-					(
-						if (color == conifer_gold) {
-							(base * 3.0)
-						} else {
-							base
-						}
-					)
-				}
-			)
+	## The conifer that sets off a scheme's green.
+	accent : Scenery.Scheme -> Trees.Conifer
+	accent = |scheme|
+		match scheme {
+			YellowGreen => Gold
+			RedGreen => Red
+			AllGreen => Green
 		}
-	)
 
-	tree_x_for : I64 -> F64
-	tree_x_for = |color| (
-		if (color == conifer_gold) {
-			((Scenery.lane_width / 2.0) + (4.0 * tree_road_offset))
-		} else {
-			((Scenery.lane_width / 2.0) + tree_road_offset)
+	color : Trees.Conifer -> I64
+	color = |conifer|
+		match conifer {
+			Green => conifer_green
+			Gold => conifer_gold
+			Red => conifer_red
 		}
-	)
 
-	fill_trees : Scenery.Scheme, F64, F64, I64, I64 -> List(Scenery.Tree)
-	fill_trees = |scheme, length, along, k, n| (
-		if (along > (length - tree_end_inset)) {
-			[]
-		} else {
-			(
-				if ((n + 2) > max_trees) {
-					[]
-				} else {
-					fill_trees_pair(scheme, length, along, k, n)
-				}
-			)
+	## A conifer's height, in metres.
+	height : { conifer : Trees.Conifer, size : Trees.PairSize } -> F64
+	height = |{ conifer, size }| {
+		base =
+			match size {
+				Big => (small_height * big_scale)
+				Small => small_height
+			}
+		match conifer {
+			Green => base
+			Red => (base * 2.0)
+			Gold => (base * 3.0)
 		}
-	)
+	}
 
-	fill_trees_pair : Scenery.Scheme, F64, F64, I64, I64 -> List(Scenery.Tree)
-	fill_trees_pair = |scheme, length, along, k, n| (
-		{
-			even = ((k - (I64.div_trunc_by(k, 2) * 2)) == 0)
-			color = (
-				if even {
-					conifer_green
-				} else {
-					accent_color(scheme)
-				}
-			)
-			height = tree_height_for(color, even)
-			x = tree_x_for(color)
-			List.concat([{ along: along, across: (0.0 - x), color: color, height: height }, { along: along, across: x, color: color, height: height }], fill_trees(scheme, length, (along + tree_spacing), (k + 1), (n + 2)))
+	## How far from the middle of the road a conifer stands, either side.
+	across : Trees.Conifer -> F64
+	across = |conifer|
+		match conifer {
+			Gold => ((Scenery.lane_width / 2.0) + (4.0 * tree_road_offset))
+			Green | Red => ((Scenery.lane_width / 2.0) + tree_road_offset)
 		}
-	)
+
+	## A segment's trees, in pairs from its start, each pair's left tree
+	## first.
+	plant : { scheme : Scenery.Scheme, length : F64 } -> List(Scenery.Tree)
+	plant = |{ scheme, length }| plant_onto([], { scheme, length, along: tree_start_inset, size: Big })
 }
+
+## The trees planted so far, and the pairs from `along` on, each pair the
+## other size from the one before.
+plant_onto : List(Scenery.Tree), { scheme : Scenery.Scheme, length : F64, along : F64, size : Trees.PairSize } -> List(Scenery.Tree)
+plant_onto = |planted, { scheme, length, along, size }|
+	if (along > (length - Trees.tree_end_inset)) {
+		planted
+	} else if ((planted.len().to_i64_wrap() + 2) > Trees.max_trees) {
+		planted
+	} else {
+		conifer =
+			match size {
+				Big => Green
+				Small => Trees.accent(scheme)
+			}
+		tree_color = Trees.color(conifer)
+		tree_height = Trees.height({ conifer, size })
+		from_middle = Trees.across(conifer)
+		left = { along, across: (0.0 - from_middle), color: tree_color, height: tree_height }
+		right = { along, across: from_middle, color: tree_color, height: tree_height }
+		plant_onto(planted.append(left).append(right), { scheme, length, along: (along + Trees.tree_spacing), size: other_size(size) })
+	}
+
+other_size : Trees.PairSize -> Trees.PairSize
+other_size = |size|
+	match size {
+		Big => Small
+		Small => Big
+	}
