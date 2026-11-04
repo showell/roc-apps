@@ -372,6 +372,21 @@ planted cases, and let the compiler judge any rewrite.
   unchanged. Any other error puts the file back. It runs the repo's own
   pin, read from `roc-version`, because method lookup has changed between
   nightlies.
+- **Run the rewriters lazily, on the files you touch.** Before you commit
+  a change to a Roc file, run the recipes that rewrite code over it, from
+  the repo's root and at the repo's pin, with `--undo-on-stop`: first
+  `methods.shale apply=1` (an old-style `Module.fn(x, ...)` call becomes
+  `x.fn(...)`), then `roc_commas.shale` (long lines stacked with a
+  trailing comma), then `roc fmt`. Then run the hunts over the same files
+  and fix what they find, so a file you touched leaves clean. A repo-wide
+  sweep is a task of its own, done when Steve asks for it.
+- **A rewrite is its own commit,** apart from any change in behaviour, as a
+  reformat is (§5). The message names each recipe and what it changed.
+  After it, `roc check` is clean (zero ✗, zero ●) and the gate passes; for
+  a rewrite that shouldn't change the program, `same_code.shale` shows the
+  same machine code. What a recipe can't rewrite (a function type's
+  arguments, which `roc_commas` can't stack) is fixed by hand, here with a
+  record.
 - **The recipes.** `name_hunt` (awkward names, tense, container words),
   `errors` (an error alias, an optional tag), `boundaries` (a one-caller
   wrapper, a fixed parameter), `nest_depth`, `stack` (three or more on a
