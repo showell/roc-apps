@@ -138,9 +138,11 @@ free = Truck.truck_next(
 		v: 0.3,
 		braking: False,
 	},
-	0.0,
-	one_seg,
-	1000.0,
+	{
+		rider_distance: 0.0,
+		world: one_seg,
+		route_length: 1000.0,
+	},
 )
 
 free_got : List(F64)
@@ -160,9 +162,11 @@ ahead = Truck.truck_next(
 		v: 0.5,
 		braking: False,
 	},
-	0.0,
-	one_seg,
-	1000.0,
+	{
+		rider_distance: 0.0,
+		world: one_seg,
+		route_length: 1000.0,
+	},
 )
 
 behind : Truck.TruckState
@@ -172,9 +176,11 @@ behind = Truck.truck_next(
 		v: 0.5,
 		braking: False,
 	},
-	0.0,
-	one_seg,
-	1000.0,
+	{
+		rider_distance: 0.0,
+		world: one_seg,
+		route_length: 1000.0,
+	},
 )
 
 ahead_got : List(F64)
@@ -194,9 +200,11 @@ capped = Truck.truck_next(
 		v: Truck.truck_max_v,
 		braking: False,
 	},
-	0.0,
-	one_seg,
-	1000.0,
+	{
+		rider_distance: 0.0,
+		world: one_seg,
+		route_length: 1000.0,
+	},
 )
 
 capped_got : List(F64)
@@ -222,9 +230,11 @@ braking = Truck.truck_next(
 		v: 0.3,
 		braking: False,
 	},
-	0.0,
-	one_seg,
-	1000.0,
+	{
+		rider_distance: 0.0,
+		world: one_seg,
+		route_length: 1000.0,
+	},
 )
 
 brake_got : List(F64)
@@ -250,9 +260,11 @@ settled = Truck.truck_next(
 		v: 0.1776,
 		braking: True,
 	},
-	0.0,
-	one_seg,
-	1000.0,
+	{
+		rider_distance: 0.0,
+		world: one_seg,
+		route_length: 1000.0,
+	},
 )
 
 settled_got : List(Bool)
@@ -270,9 +282,11 @@ boundary_got = [
 				v: 0.3,
 				braking: False,
 			},
-			0.0,
-			one_seg,
-			1000.0,
+			{
+				rider_distance: 0.0,
+				world: one_seg,
+				route_length: 1000.0,
+			},
 		).v < 0.3
 	),
 	(
@@ -282,9 +296,11 @@ boundary_got = [
 				v: 0.3,
 				braking: False,
 			},
-			0.0,
-			one_seg,
-			1000.0,
+			{
+				rider_distance: 0.0,
+				world: one_seg,
+				route_length: 1000.0,
+			},
 		).v < 0.3
 	),
 ]

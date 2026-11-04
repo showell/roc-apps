@@ -122,12 +122,19 @@ Tower :: [].{
 
 	## Where a footprint corner stands on the map, for a mast centred at
 	## `along` and `across` and turned by `yaw`.
-	base_corner_ax : Tower.Corner, F64, F64, F64 -> Geom.AX
+	base_corner_ax : Tower.Corner,
+	{
+		along : F64,
+		across : F64,
+		yaw : F64,
+	} -> Geom.AX
 	base_corner_ax = |
 		corner,
-		along,
-		across,
-		yaw,
+		{
+			along,
+			across,
+			yaw,
+		},
 	| {
 		offset = corner_offset(corner)
 		du = (offset.across * tower_half)
@@ -159,14 +166,10 @@ Tower :: [].{
 		height: (from.height + ((to.height - from.height) * fraction)),
 	}
 
-	## A corner of the mast at height `h`: drawn in toward the centre as the
-	## mast tapers, and lowered by how far the mast has sunk.
-	corner_at : Tower.Mast, Tower.Corner, F64 -> Geom.Vec3
-	corner_at = |
-		mast,
-		corner,
-		h,
-	| {
+	## A corner of the mast at `height_on_mast`: drawn in toward the centre
+	## as the mast tapers, and lowered by how far the mast has sunk.
+	corner_at : Tower.Mast, { corner : Tower.Corner, height_on_mast : F64 } -> Geom.Vec3
+	corner_at = |mast, { corner, height_on_mast: h }| {
 		t = (h / tower_height)
 		bottom = footprint_corner(mast.footprint, corner)
 		{
@@ -193,20 +196,29 @@ Tower :: [].{
 		dy = (to.y - from.y)
 		raw = DeviceMath.real_sqrt(((dx * dx) + (dy * dy)))
 		len = if (raw < 0.0001) 1.0 else raw
-		rod_quad(
+		rod_quad({
 			from,
 			to,
-			((((0.0 - dy) / len) * width_px) / 2.0),
-			(((dx / len) * width_px) / 2.0),
-		)
+			offset_x: ((((0.0 - dy) / len) * width_px) / 2.0),
+			offset_y: (((dx / len) * width_px) / 2.0),
+		})
 	}
 
-	rod_quad : Camera.ScreenPt, Camera.ScreenPt, F64, F64 -> List(Paint.DrawCmd)
+	## The quad of a rod from `from` to `to`, its sides `offset_x` and
+	## `offset_y` either side of the line between them.
+	rod_quad : {
+		from : Camera.ScreenPt,
+		to : Camera.ScreenPt,
+		offset_x : F64,
+		offset_y : F64,
+	} -> List(Paint.DrawCmd)
 	rod_quad = |
-		a,
-		b,
-		ox,
-		oy,
+		{
+			from: a,
+			to: b,
+			offset_x: ox,
+			offset_y: oy,
+		},
 	| Paint.push_poly(
 		tower_metal,
 		[
@@ -295,11 +307,7 @@ Tower :: [].{
 		|corner| rod(
 			mast.view,
 			{
-				from: corner_at(
-					mast,
-					corner,
-					mast.sunk,
-				),
+				from: corner_at(mast, { corner, height_on_mast: mast.sunk }),
 				to: apex,
 			},
 		),
@@ -312,16 +320,8 @@ Tower :: [].{
 		|corner| rod(
 			mast.view,
 			{
-				from: corner_at(
-					mast,
-					corner,
-					h,
-				),
-				to: corner_at(
-					mast,
-					next_corner(corner),
-					h,
-				),
+				from: corner_at(mast, { corner, height_on_mast: h }),
+				to: corner_at(mast, { corner: next_corner(corner), height_on_mast: h }),
 			},
 		),
 	)
@@ -404,46 +404,22 @@ Tower :: [].{
 			mast.view,
 			{
 				from: point_between({
-					from: corner_at(
-						mast,
-						corner,
-						stage_bottom,
-					),
-					to: corner_at(
-						mast,
-						next,
-						stage_top,
-					),
+					from: corner_at(mast, { corner, height_on_mast: stage_bottom }),
+					to: corner_at(mast, { corner: next, height_on_mast: stage_top }),
 					fraction: hidden_fraction,
 				}),
-				to: corner_at(
-					mast,
-					next,
-					stage_top,
-				),
+				to: corner_at(mast, { corner: next, height_on_mast: stage_top }),
 			},
 		)
 		brace_down = rod(
 			mast.view,
 			{
 				from: point_between({
-					from: corner_at(
-						mast,
-						next,
-						stage_bottom,
-					),
-					to: corner_at(
-						mast,
-						corner,
-						stage_top,
-					),
+					from: corner_at(mast, { corner: next, height_on_mast: stage_bottom }),
+					to: corner_at(mast, { corner, height_on_mast: stage_top }),
 					fraction: hidden_fraction,
 				}),
-				to: corner_at(
-					mast,
-					corner,
-					stage_top,
-				),
+				to: corner_at(mast, { corner, height_on_mast: stage_top }),
 			},
 		)
 		List.concat(brace_up, brace_down)
@@ -451,12 +427,8 @@ Tower :: [].{
 
 	## The beacon on the apex, at its brightness; too dim or too small, it
 	## isn't drawn.
-	beacon : Tower.Mast, Geom.Vec3, F64 -> List(Paint.DrawCmd)
-	beacon = |
-		mast,
-		apex,
-		brightness,
-	| {
+	beacon : Tower.Mast, { apex : Geom.Vec3, brightness : F64 } -> List(Paint.DrawCmd)
+	beacon = |mast, { apex, brightness }| {
 		apex_on_screen = Camera.project(
 			apex,
 			{ cam_focal: mast.view.cam_focal, view_w: mast.view.view_w },
@@ -526,11 +498,7 @@ Tower :: [].{
 				legs(mast, apex),
 				rings(mast),
 				braces(mast),
-				beacon(
-					mast,
-					apex,
-					beacon_brightness(beacon_phase),
-				),
+				beacon(mast, { apex, brightness: beacon_brightness(beacon_phase) }),
 			])
 		}
 	}

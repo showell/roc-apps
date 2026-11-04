@@ -101,12 +101,12 @@ Render :: [].{
 			rider_along,
 			lead: truck_position - rider_distance,
 		})
-		birds = RocBird.perches(
+		birds = RocBird.perches({
 			world,
 			chain,
 			pose,
 			cam_focal,
-		)
+		})
 		# Keys about as far away as each other keep the order they are joined
 		# in, so this order decides which of two tied things is painted over
 		# the other.

@@ -17,12 +17,8 @@ import game.Rider
 ## The ride after `steps` more frames, and the draw commands counted so far.
 BenchRun : { ride : Safari.Ride, commands : U64 }
 
-ride_frames : List(World.Segment), BenchRun, I64 -> BenchRun
-ride_frames = |
-	world,
-	bench_run,
-	steps,
-|
+ride_frames : List(World.Segment), { bench_run : BenchRun, steps_left : I64 } -> BenchRun
+ride_frames = |world, { bench_run, steps_left: steps }|
 	if steps <= 0 {
 		bench_run
 	} else {
@@ -30,10 +26,12 @@ ride_frames = |
 		ride_frames(
 			world,
 			{
-				ride: Safari.ride_next(world, bench_run.ride),
-				commands: bench_run.commands + List.len(cmds),
+				bench_run: {
+					ride: Safari.ride_next(world, bench_run.ride),
+					commands: bench_run.commands + List.len(cmds),
+				},
+				steps_left: steps - 1,
 			},
-			steps - 1,
 		)
 	}
 
@@ -47,8 +45,10 @@ main! = |args| {
 	world = World.segments
 	done = ride_frames(
 		world,
-		{ ride: Safari.ride_initial, commands: 0 },
-		steps,
+		{
+			bench_run: { ride: Safari.ride_initial, commands: 0 },
+			steps_left: steps,
+		},
 	)
 	finished = if (Rider.is_finished(done.ride.rider, world)) "yes" else "no"
 	echo!("${done.commands.to_str()} commands over the frames; finished ${finished}\n")

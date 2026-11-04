@@ -95,15 +95,19 @@ order_got = (
 		)
 		against_new = Truck.truck_next(
 			Safari.ride_initial.truck,
-			new_dist,
-			segs,
-			World.course_length(segs),
+			{
+				rider_distance: new_dist,
+				world: segs,
+				route_length: World.course_length(segs),
+			},
 		)
 		against_old = Truck.truck_next(
 			Safari.ride_initial.truck,
-			old_dist,
-			segs,
-			World.course_length(segs),
+			{
+				rider_distance: old_dist,
+				world: segs,
+				route_length: World.course_length(segs),
+			},
 		)
 		[
 			(F64.to_bits(after_one_step.truck.pos) == F64.to_bits(against_new.pos)),

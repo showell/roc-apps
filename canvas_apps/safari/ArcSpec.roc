@@ -26,11 +26,20 @@ steps_got = [Arc.turn_danger_steps]
 steps_want : List(I64)
 steps_want = [2000]
 
-rider : F64, F64, F64 -> Pose.RiderState
+## A test rider at the start of segment 0.
+StartingRider : {
+	across : F64,
+	tilt_radians : F64,
+	speed : F64,
+}
+
+rider : StartingRider -> Pose.RiderState
 rider = |
-	across,
-	tilt,
-	v,
+	{
+		across,
+		tilt_radians: tilt,
+		speed: v,
+	},
 | {
 	segment: 0,
 	along: 0.0,
@@ -54,11 +63,11 @@ side = |o| (
 
 straight : Arc.ArcOutcome
 straight = Arc.project_arc(
-	rider(
-		0.0,
-		0.0,
-		Pose.v_base,
-	),
+	rider({
+		across: 0.0,
+		tilt_radians: 0.0,
+		speed: Pose.v_base,
+	}),
 )
 
 straight_got : List(F64)
@@ -73,11 +82,11 @@ straight_want = [25.0, 0.0, 1000000000.0]
 
 wide : Arc.ArcOutcome
 wide = Arc.project_arc(
-	rider(
-		3.0,
-		0.0,
-		Pose.v_base,
-	),
+	rider({
+		across: 3.0,
+		tilt_radians: 0.0,
+		speed: Pose.v_base,
+	}),
 )
 
 wide_got : List(F64)
@@ -92,11 +101,11 @@ wide_want = [25.0, 3.0, 1000000000.0]
 
 stopped : Arc.ArcOutcome
 stopped = Arc.project_arc(
-	rider(
-		0.0,
-		0.0,
-		0.0,
-	),
+	rider({
+		across: 0.0,
+		tilt_radians: 0.0,
+		speed: 0.0,
+	}),
 )
 
 stopped_got : List(F64)
@@ -131,20 +140,20 @@ crossed_want = [False, False, False]
 
 leaning : Arc.ArcOutcome
 leaning = Arc.project_arc(
-	rider(
-		0.0,
-		0.2,
-		Pose.v_base,
-	),
+	rider({
+		across: 0.0,
+		tilt_radians: 0.2,
+		speed: Pose.v_base,
+	}),
 )
 
 other_way : Arc.ArcOutcome
 other_way = Arc.project_arc(
-	rider(
-		0.0,
-		(0.0 - 0.2),
-		Pose.v_base,
-	),
+	rider({
+		across: 0.0,
+		tilt_radians: (0.0 - 0.2),
+		speed: Pose.v_base,
+	}),
 )
 
 leaving_got : List(I64)
@@ -183,19 +192,19 @@ step_got : List(F64)
 step_got = (
 	{
 		a = Bike.simulate_rider_step(
-			rider(
-				0.0,
-				0.0,
-				Pose.v_base,
-			),
+			rider({
+				across: 0.0,
+				tilt_radians: 0.0,
+				speed: Pose.v_base,
+			}),
 			{ lean_step: Angle.upright, accel: 0.0 },
 		)
 		b = Bike.simulate_rider_step(
-			rider(
-				0.0,
-				0.0,
-				Pose.v_base,
-			),
+			rider({
+				across: 0.0,
+				tilt_radians: 0.0,
+				speed: Pose.v_base,
+			}),
 			{ lean_step: Angle.Lean.radians(0.5), accel: 0.25 },
 		)
 		[

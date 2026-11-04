@@ -18,15 +18,38 @@ Joint :: [].{
 		}
 	)
 
-	joint_apex : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, Frame.Mapper, F64, Bool -> Geom.RiderPt
+	## The road as the rider sees it: the world's segments, the chain of
+	## them ahead of the rider, and the rider's pose.
+	RoadAhead : {
+		world : List(World.Segment),
+		chain : List(I64),
+		pose : Frame.Pose,
+	}
+
+	## Where one segment meets the next: the maps of the segment before
+	## the bend and the one after it, the length of the one before, and
+	## whether the road turns right.
+	Bend : {
+		before : Frame.Mapper,
+		after : Frame.Mapper,
+		length_before : F64,
+		exit_right : Bool,
+	}
+
+	## Where the outer edges of the two segments at a bend meet.
+	joint_apex : Joint.RoadAhead, Joint.Bend -> Geom.RiderPt
 	joint_apex = |
-		segs,
-		ch,
-		pose,
-		from_map,
-		to_map,
-		from_len,
-		exit_right,
+		{
+			world: segs,
+			chain: ch,
+			pose,
+		},
+		{
+			before: from_map,
+			after: to_map,
+			length_before: from_len,
+			exit_right,
+		},
 	| (
 		{
 			fcu = outer_cu(exit_right)

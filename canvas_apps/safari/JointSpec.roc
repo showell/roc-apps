@@ -49,22 +49,30 @@ apex_got : List(F64)
 apex_got = (
 	{
 		r = Joint.joint_apex(
-			[],
-			[],
-			pose,
-			behind_right,
-			here,
-			300.0,
-			True,
+			{
+				world: [],
+				chain: [],
+				pose: pose,
+			},
+			{
+				before: behind_right,
+				after: here,
+				length_before: 300.0,
+				exit_right: True,
+			},
 		)
 		l = Joint.joint_apex(
-			[],
-			[],
-			pose,
-			behind_left,
-			here,
-			300.0,
-			False,
+			{
+				world: [],
+				chain: [],
+				pose: pose,
+			},
+			{
+				before: behind_left,
+				after: here,
+				length_before: 300.0,
+				exit_right: False,
+			},
 		)
 		[
 			r.right,

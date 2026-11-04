@@ -277,13 +277,12 @@ bend_corner = |view, bend| {
 	inner_edge = if (bend.exit_right) Scenery.lane_width else 0.0
 	outer_edge = Joint.outer_cu(bend.exit_right)
 	apex = Joint.joint_apex(
-		view.world,
-		view.chain,
-		view.pose,
-		bend.before,
-		bend.after,
-		bend.length_before,
-		bend.exit_right,
+		{
+			world: view.world,
+			chain: view.chain,
+			pose: view.pose,
+		},
+		bend,
 	)
 	[
 		before(bend.length_before, inner_edge),
