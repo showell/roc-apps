@@ -97,14 +97,22 @@ keys = TreePlan.depth_keys(first_segment)
 key_at : U64 -> DepthSort.DepthKey
 key_at = |i| keys.get(i) ?? crash "TreePlanSpec: the first segment has 28 keys"
 
+## The place in the tree list that the key at `i` names.
+tree_place_at : U64 -> I64
+tree_place_at = |i|
+	match key_at(i).subject {
+		Tree(place) => place.to_i64_wrap()
+		Tower(_) | Critter(_) | Cat(_) | Truck | Rail(_) | Bird(_) => crash "TreePlanSpec: a tree's key names a tree"
+	}
+
 items_got : List(I64)
-items_got = [keys.len().to_i64_wrap(), key_at(0).i, key_at(27).i, TreePlan.depth_keys([]).len().to_i64_wrap()]
+items_got = [keys.len().to_i64_wrap(), tree_place_at(0), tree_place_at(27), TreePlan.depth_keys([]).len().to_i64_wrap()]
 
 items_want : List(I64)
 items_want = [28, 0, 27, 0]
 
 item_fwd_got : List(F64)
-item_fwd_got = [key_at(0).fwd, key_at(2).fwd]
+item_fwd_got = [key_at(0).forward, key_at(2).forward]
 
 item_fwd_want : List(F64)
 item_fwd_want = [6.0, 36.0]

@@ -5,12 +5,14 @@ import lib.DeviceMath
 
 DepthSort :: [].{
 
-	## The kinds of thing a frame draws in depth order.
-	Kind : [KTree, KTower, KCow, KCat, KTruck, KRail, KBird]
+	## Which thing in the frame a key stands for: its kind, and its place in
+	## that kind's list. A frame has at most one truck, so the truck has no
+	## place.
+	Subject : [Tree(U64), Tower(U64), Critter(U64), Cat(U64), Truck, Rail(U64), Bird(U64)]
 
-	## A thing to draw, as the sort sees it: how far ahead it is, and which it
-	## is (its kind, and its place in that kind's list).
-	DepthKey : { fwd : F64, kind : DepthSort.Kind, i : I64 }
+	## A thing to draw, as the sort sees it: how far ahead it is, and which
+	## thing it is.
+	DepthKey : { forward : F64, subject : DepthSort.Subject }
 
 	## `items` from far to near, by `depth_of`: a stable merge sort.
 	sort_by : List(item), (item -> F64) -> List(item)

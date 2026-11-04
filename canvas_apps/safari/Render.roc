@@ -62,7 +62,7 @@ Render :: [].{
 			# Roc's own flair, collected like every other kind so the sort can put
 			# it behind a nearer tree. See RocBird.
 			birds = RocBird.perches(segs, ch, pose, cf)
-			{ trees: trees, towers: towers, cows: cows, cats: cats, rails: rails, truck: tk, birds: birds, order: DepthSort.sort_by(List.join([RocBird.bird_items(birds), TreePlan.depth_keys(trees), TowerPlan.depth_keys(towers), CritterPlan.cow_items(cows), CatPlan.depth_keys(cats), TruckPlan.depth_keys(tk), RailPlan.rail_items(rails)]), |key| key.fwd), cull_seg: walk_seg_cull(segs, ch, 0), cull_size: Billboards.too_small_count(placed) }
+			{ trees: trees, towers: towers, cows: cows, cats: cats, rails: rails, truck: tk, birds: birds, order: DepthSort.sort_by(List.join([RocBird.bird_items(birds), TreePlan.depth_keys(trees), TowerPlan.depth_keys(towers), CritterPlan.cow_items(cows), CatPlan.depth_keys(cats), TruckPlan.depth_keys(tk), RailPlan.rail_items(rails)]), |key| key.forward), cull_seg: walk_seg_cull(segs, ch, 0), cull_size: Billboards.too_small_count(placed) }
 		}
 	)
 }

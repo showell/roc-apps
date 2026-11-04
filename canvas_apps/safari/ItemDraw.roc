@@ -130,14 +130,14 @@ ItemDraw :: [].{
 		}
 
 	draw_item : List(World.Segment), List(I64), Frame.Pose, Render.Collected, DepthSort.DepthKey, Bool, F64, F64 -> List(Paint.DrawCmd)
-	draw_item = |w, ch, pose, c, it, braking, cf, step| (match it.kind {
-		KTree => draw_one_tree(c.trees, it.i, cf)
-		KTower => draw_one_tower(w, ch, pose, (List.get(c.towers, I64.to_u64_wrap(it.i)) ?? crash ("list-at out of range")), cf, step)
-		KRail => GuardRail.draw((List.get(c.rails, I64.to_u64_wrap(it.i)) ?? crash ("list-at out of range")), { cam_focal: cf, view_w: Screen.width })
-		KCow => draw_one_critter((List.get(c.cows, I64.to_u64_wrap(it.i)) ?? crash ("list-at out of range")), cf)
-		KCat => draw_one_cat((List.get(c.cats, I64.to_u64_wrap(it.i)) ?? crash ("list-at out of range")), cf)
-		KTruck => draw_one_truck(w, ch, pose, c.truck, braking, cf, step)
-		KBird => RocBird.draw_one((List.get(c.birds, I64.to_u64_wrap(it.i)) ?? crash ("bird out of range")), cf, Screen.width)
+	draw_item = |w, ch, pose, c, it, braking, cf, step| (match it.subject {
+		Tree(at) => draw_one_tree(c.trees, at.to_i64_wrap(), cf)
+		Tower(at) => draw_one_tower(w, ch, pose, (List.get(c.towers, at) ?? crash ("list-at out of range")), cf, step)
+		Rail(at) => GuardRail.draw((List.get(c.rails, at) ?? crash ("list-at out of range")), { cam_focal: cf, view_w: Screen.width })
+		Critter(at) => draw_one_critter((List.get(c.cows, at) ?? crash ("list-at out of range")), cf)
+		Cat(at) => draw_one_cat((List.get(c.cats, at) ?? crash ("list-at out of range")), cf)
+		Truck => draw_one_truck(w, ch, pose, c.truck, braking, cf, step)
+		Bird(at) => RocBird.draw_one((List.get(c.birds, at) ?? crash ("bird out of range")), cf, Screen.width)
 	})
 
 	# draw_order builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
