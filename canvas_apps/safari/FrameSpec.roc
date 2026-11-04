@@ -92,22 +92,30 @@ map_bool_want = [True, False, False, False, True]
 
 at_d0 : Geom.RiderPt
 at_d0 = Frame.at(
-	[],
-	[],
-	pose,
-	0,
-	50.0,
-	3.0,
+	{
+		world: [],
+		chain: [],
+		pose,
+	},
+	{
+		segments_ahead: 0,
+		along: 50.0,
+		across: 3.0,
+	},
 )
 
 at_d1 : List(World.Segment) -> Geom.RiderPt
 at_d1 = |w| Frame.at(
-	w,
-	Frame.build_chain(w, 0),
-	pose,
-	1,
-	50.0,
-	3.0,
+	{
+		world: w,
+		chain: Frame.build_chain(w, 0),
+		pose,
+	},
+	{
+		segments_ahead: 1,
+		along: 50.0,
+		across: 3.0,
+	},
 )
 
 at_got : List(F64)
@@ -135,20 +143,28 @@ behind_got : List(F64)
 behind_got = (
 	{
 		l = Frame.map_pt(
-			[],
-			[],
-			pose,
-			m_prev_left,
-			50.0,
-			3.0,
+			{
+				world: [],
+				chain: [],
+				pose,
+			},
+			{
+				mapper: m_prev_left,
+				along: 50.0,
+				across: 3.0,
+			},
 		)
 		r = Frame.map_pt(
-			[],
-			[],
-			pose,
-			m_prev_right,
-			50.0,
-			3.0,
+			{
+				world: [],
+				chain: [],
+				pose,
+			},
+			{
+				mapper: m_prev_right,
+				along: 50.0,
+				across: 3.0,
+			},
 		)
 		[
 			l.right,

@@ -5,12 +5,16 @@ import Scenery
 import World
 
 Frame :: [].{
-	Pose : {
-		along : F64,
-		across : F64,
-		yaw : F64,
-		hw : F64,
+	Pose : Geom.Pose
+
+	## The road in view: the world's segments, the chain of them ahead of
+	## the rider, and the rider's pose.
+	RoadView : {
+		world : List(World.Segment),
+		chain : List(I64),
+		pose : Frame.Pose,
 	}
+
 	Mapper : {
 		is_chain : Bool,
 		d : I64,
@@ -27,31 +31,29 @@ Frame :: [].{
 	max_chain = 8
 
 	build_chain : List(World.Segment), I64 -> List(I64)
-	build_chain = |segs, start| chain(
+	build_chain = |segs, start| chain_onto(
 		segs,
-		start,
-		0,
+		{
+			segment_at: start,
+			chain_length: 0,
+			chain: [],
+		},
 	)
 
-	# chain builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-	chain : List(World.Segment), I64, I64 -> List(I64)
-	chain = |
-		segs,
-		s,
-		n,
-	| chain_onto(
-		segs,
-		s,
-		n,
-		[],
-	)
-
-	chain_onto : List(World.Segment), I64, I64, List(I64) -> List(I64)
+	# An accumulator loop: linear, where appending a recursive call is quadratic.
+	chain_onto : List(World.Segment),
+	{
+		segment_at : I64,
+		chain_length : I64,
+		chain : List(I64),
+	} -> List(I64)
 	chain_onto = |
 		segs,
-		s,
-		n,
-		acc,
+		{
+			segment_at: s,
+			chain_length: n,
+			chain: acc,
+		},
 	| (
 		if n >= look_ahead {
 			acc
@@ -68,9 +70,11 @@ Frame :: [].{
 					).ending {
 						Continues({ next }) => chain_onto(
 							segs,
-							next,
-							(n + 1),
-							List.append(acc, s),
+							{
+								segment_at: next,
+								chain_length: (n + 1),
+								chain: List.append(acc, s),
+							},
 						)
 						Terminates => List.append(acc, s)
 					}
@@ -79,16 +83,22 @@ Frame :: [].{
 		}
 	)
 
-	compose_down : List(World.Segment), List(I64), I64, F64, F64 -> Geom.AX
+	compose_down : Geom.AX,
+	{
+		world : List(World.Segment),
+		chain : List(I64),
+		segments_ahead : I64,
+	} -> Geom.AX
 	compose_down = |
-		segs,
-		ch,
-		k,
-		a,
-		x,
+		point,
+		{
+			world: segs,
+			chain: ch,
+			segments_ahead: k,
+		},
 	| (
 		if k <= 0 {
-			{ a: a, x: x }
+			point
 		} else {
 			(
 				{
@@ -101,52 +111,52 @@ Frame :: [].{
 						I64.to_u64_wrap(chosen),
 					) ?? crash "Frame.compose_down: the chain names a segment of the world"
 					p = Geom.next_to_cur(
-						a,
-						x,
-						seg.length,
-						seg.exit_angle,
-						seg.exit_right,
-						Scenery.lane_width,
+						point,
+						{
+							segment_length: seg.length,
+							turn_angle: seg.exit_angle,
+							turns_right: seg.exit_right,
+							lane_width: Scenery.lane_width,
+						},
 					)
 					compose_down(
-						segs,
-						ch,
-						(k - 1),
-						p.a,
-						p.x,
+						p,
+						{
+							world: segs,
+							chain: ch,
+							segments_ahead: (k - 1),
+						},
 					)
 				}
 			)
 		}
 	)
 
-	at : List(World.Segment), List(I64), Frame.Pose, I64, F64, F64 -> Geom.RiderPt
+	at : Frame.RoadView,
+	{
+		segments_ahead : I64,
+		along : F64,
+		across : F64,
+	} -> Geom.RiderPt
 	at = |
-		segs,
-		ch,
-		pose,
-		d,
-		a,
-		x,
-	| (
+		road,
 		{
-			p = compose_down(
-				segs,
-				ch,
-				d,
-				a,
-				x,
-			)
-			Geom.to_rider(
-				p.a,
-				p.x,
-				pose.along,
-				pose.across,
-				pose.yaw,
-				pose.hw,
-			)
-		}
-	)
+			segments_ahead,
+			along,
+			across,
+		},
+	|
+		Geom.to_rider(
+			compose_down(
+				{ a: along, x: across },
+				{
+					world: road.world,
+					chain: road.chain,
+					segments_ahead,
+				},
+			),
+			road.pose,
+		)
 
 	chain_map : I64 -> Frame.Mapper
 	chain_map = |d| {
@@ -168,44 +178,41 @@ Frame :: [].{
 		prev_w: Scenery.lane_width,
 	}
 
-	map_pt : List(World.Segment), List(I64), Frame.Pose, Frame.Mapper, F64, F64 -> Geom.RiderPt
+	map_pt : Frame.RoadView,
+	{
+		mapper : Frame.Mapper,
+		along : F64,
+		across : F64,
+	} -> Geom.RiderPt
 	map_pt = |
-		segs,
-		ch,
-		pose,
-		m,
-		a,
-		x,
+		road,
+		{
+			mapper: m,
+			along,
+			across,
+		},
 	| (
 		if m.is_chain {
 			at(
-				segs,
-				ch,
-				pose,
-				m.d,
-				a,
-				x,
+				road,
+				{
+					segments_ahead: m.d,
+					along,
+					across,
+				},
 			)
 		} else {
-			(
-				{
-					p = Geom.cur_to_next(
-						a,
-						x,
-						m.prev_len,
-						m.prev_angle,
-						m.prev_right,
-						m.prev_w,
-					)
-					Geom.to_rider(
-						p.a,
-						p.x,
-						pose.along,
-						pose.across,
-						pose.yaw,
-						pose.hw,
-					)
-				}
+			Geom.to_rider(
+				Geom.cur_to_next(
+					{ a: along, x: across },
+					{
+						segment_length: m.prev_len,
+						turn_angle: m.prev_angle,
+						turns_right: m.prev_right,
+						lane_width: m.prev_w,
+					},
+				),
+				road.pose,
 			)
 		}
 	)

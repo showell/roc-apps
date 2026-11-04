@@ -79,12 +79,16 @@ cat_in_view = |view, { place, crossing }| {
 	gap = CatPlan.gap_to_segment(view, place)
 	state = Cat.state(crossing, { gap: (gap + crossing.along), speed: view.speed })
 	seen = Frame.at(
-		view.world,
-		view.chain,
-		view.pose,
-		place,
-		crossing.along,
-		(state.across + (Scenery.lane_width / 2.0)),
+		{
+			world: view.world,
+			chain: view.chain,
+			pose: view.pose,
+		},
+		{
+			segments_ahead: place,
+			along: crossing.along,
+			across: (state.across + (Scenery.lane_width / 2.0)),
+		},
 	)
 	if seen.forward <= Geom.near {
 		[]

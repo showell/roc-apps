@@ -107,6 +107,15 @@ Critter :: [].{
 gradient_shape : Stills.StillGrad -> [Linear, Radial]
 gradient_shape = |gradient| if (gradient.kind == 1) Linear else Radial
 
+## A still's gradient colours and their offsets, as Paint takes them.
+stops_of : Stills.StillGrad -> Paint.ColorStops
+stops_of = |gradient| {
+	start_rgba: gradient.rgba0,
+	end_rgba: gradient.rgba1,
+	start_offset: gradient.off0,
+	end_offset: gradient.off1,
+}
+
 draw_gradient_poly : Critter.Anchor,
 {
 	gradient : Stills.StillGrad,
@@ -118,15 +127,12 @@ draw_gradient_poly = |anchor, { gradient, points }|
 			start = Critter.screen_point(anchor, { x: gradient.ax, y: gradient.ay })
 			stop = Critter.screen_point(anchor, { x: gradient.bx, y: gradient.by })
 			Paint.push_linear_grad_poly(
-				gradient.rgba0,
-				gradient.rgba1,
-				gradient.off0,
-				gradient.off1,
-				start.x,
-				start.y,
-				stop.x,
-				stop.y,
 				points,
+				{
+					color_stops: stops_of(gradient),
+					start_point: start,
+					end_point: stop,
+				},
 			)
 		}
 		Radial => {
@@ -134,17 +140,13 @@ draw_gradient_poly = |anchor, { gradient, points }|
 			u = Critter.screen_vector(anchor, { x: gradient.ux, y: gradient.uy })
 			v = Critter.screen_vector(anchor, { x: gradient.vx, y: gradient.vy })
 			Paint.push_radial_grad_poly(
-				gradient.rgba0,
-				gradient.rgba1,
-				gradient.off0,
-				gradient.off1,
-				center.x,
-				center.y,
-				u.x,
-				u.y,
-				v.x,
-				v.y,
 				points,
+				{
+					color_stops: stops_of(gradient),
+					center_point: center,
+					axis_u: u,
+					axis_v: v,
+				},
 			)
 		}
 	}

@@ -14,18 +14,14 @@ Paint :: [].{
 
 	# flatten_screen builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
 	flatten_screen : List(Camera.ScreenPt) -> List(F64)
-	flatten_screen = |ps| flatten_screen_onto(
-		ps,
-		0,
-		[],
-	)
+	flatten_screen = |ps| flatten_screen_onto(ps, { at_index: 0, flat_coords: [] })
 
-	flatten_screen_onto : List(Camera.ScreenPt), I64, List(F64) -> List(F64)
-	flatten_screen_onto = |
-		ps,
-		i,
-		acc,
-	| (
+	flatten_screen_onto : List(Camera.ScreenPt),
+	{
+		at_index : I64,
+		flat_coords : List(F64),
+	} -> List(F64)
+	flatten_screen_onto = |ps, { at_index: i, flat_coords: acc }| (
 		if i >= ps.len().to_i64_wrap() {
 			acc
 		} else {
@@ -34,8 +30,10 @@ Paint :: [].{
 					p = (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))
 					flatten_screen_onto(
 						ps,
-						(i + 1),
-						List.append(List.append(acc, p.x), p.y),
+						{
+							at_index: (i + 1),
+							flat_coords: List.append(List.append(acc, p.x), p.y),
+						},
 					)
 				}
 			)
@@ -60,21 +58,21 @@ Paint :: [].{
 		}
 	)
 
-	push_round_poly : I64, F64, List(Camera.ScreenPt) -> List(Paint.DrawCmd)
-	push_round_poly = |
-		color,
-		strength,
-		ps,
-	| (
+	push_round_poly : List(Camera.ScreenPt),
+	{
+		fill_color : I64,
+		round_strength : F64,
+	} -> List(Paint.DrawCmd)
+	push_round_poly = |ps, { fill_color, round_strength }| (
 		if ps.len().to_i64_wrap() < 3 {
 			[]
 		} else {
 			[
 				{
 					tag: 1,
-					color: color,
+					color: fill_color,
 					color2: 0,
-					strength: strength,
+					strength: round_strength,
 					geom: [],
 					pts: flatten_screen(ps),
 				},
@@ -87,36 +85,57 @@ Paint :: [].{
 	beacon_tag : I64
 	beacon_tag = 3
 
-	push_beacon : I64, F64, F64, F64, F64 -> List(Paint.DrawCmd)
+	push_beacon : {
+		beacon_color : I64,
+		beacon_center : Camera.ScreenPt,
+		beacon_radius : F64,
+		beacon_alpha : F64,
+	} -> List(Paint.DrawCmd)
 	push_beacon = |
-		color,
-		x,
-		y,
-		r,
-		alpha,
+		{
+			beacon_color,
+			beacon_center,
+			beacon_radius,
+			beacon_alpha,
+		},
 	| [
 		{
 			tag: beacon_tag,
-			color: color,
+			color: beacon_color,
 			color2: 0,
-			strength: alpha,
+			strength: beacon_alpha,
 			geom: [
-				x,
-				y,
-				r,
+				beacon_center.x,
+				beacon_center.y,
+				beacon_radius,
 			],
 			pts: [],
 		},
 	]
 
-	push_grad_poly : I64, I64, F64, F64, F64, List(Camera.ScreenPt) -> List(Paint.DrawCmd)
+	## A gradient's two colours, and where each sits along it.
+	ColorStops : {
+		start_rgba : I64,
+		end_rgba : I64,
+		start_offset : F64,
+		end_offset : F64,
+	}
+
+	push_grad_poly : List(Camera.ScreenPt),
+	{
+		center_rgba : I64,
+		edge_rgba : I64,
+		gradient_center : Camera.ScreenPt,
+		gradient_radius : F64,
+	} -> List(Paint.DrawCmd)
 	push_grad_poly = |
-		rgba_center,
-		rgba_edge,
-		cx,
-		cy,
-		r,
 		ps,
+		{
+			center_rgba,
+			edge_rgba,
+			gradient_center,
+			gradient_radius,
+		},
 	| (
 		if ps.len().to_i64_wrap() < 3 {
 			[]
@@ -124,13 +143,13 @@ Paint :: [].{
 			[
 				{
 					tag: 4,
-					color: rgba_center,
-					color2: rgba_edge,
+					color: center_rgba,
+					color2: edge_rgba,
 					strength: 0.0,
 					geom: [
-						cx,
-						cy,
-						r,
+						gradient_center.x,
+						gradient_center.y,
+						gradient_radius,
 					],
 					pts: flatten_screen(ps),
 				},
@@ -138,17 +157,19 @@ Paint :: [].{
 		}
 	)
 
-	push_linear_grad_poly : I64, I64, F64, F64, F64, F64, F64, F64, List(Camera.ScreenPt) -> List(Paint.DrawCmd)
+	push_linear_grad_poly : List(Camera.ScreenPt),
+	{
+		color_stops : Paint.ColorStops,
+		start_point : Camera.ScreenPt,
+		end_point : Camera.ScreenPt,
+	} -> List(Paint.DrawCmd)
 	push_linear_grad_poly = |
-		rgba0,
-		rgba1,
-		off0,
-		off1,
-		ax,
-		ay,
-		bx,
-		by,
 		ps,
+		{
+			color_stops,
+			start_point,
+			end_point,
+		},
 	| (
 		if ps.len().to_i64_wrap() < 3 {
 			[]
@@ -156,16 +177,16 @@ Paint :: [].{
 			[
 				{
 					tag: 5,
-					color: rgba0,
-					color2: rgba1,
+					color: color_stops.start_rgba,
+					color2: color_stops.end_rgba,
 					strength: 0.0,
 					geom: [
-						off0,
-						off1,
-						ax,
-						ay,
-						bx,
-						by,
+						color_stops.start_offset,
+						color_stops.end_offset,
+						start_point.x,
+						start_point.y,
+						end_point.x,
+						end_point.y,
 					],
 					pts: flatten_screen(ps),
 				},
@@ -173,19 +194,21 @@ Paint :: [].{
 		}
 	)
 
-	push_radial_grad_poly : I64, I64, F64, F64, F64, F64, F64, F64, F64, F64, List(Camera.ScreenPt) -> List(Paint.DrawCmd)
+	push_radial_grad_poly : List(Camera.ScreenPt),
+	{
+		color_stops : Paint.ColorStops,
+		center_point : Camera.ScreenPt,
+		axis_u : Camera.ScreenPt,
+		axis_v : Camera.ScreenPt,
+	} -> List(Paint.DrawCmd)
 	push_radial_grad_poly = |
-		rgba0,
-		rgba1,
-		off0,
-		off1,
-		cx,
-		cy,
-		ux,
-		uy,
-		vx,
-		vy,
 		ps,
+		{
+			color_stops,
+			center_point,
+			axis_u,
+			axis_v,
+		},
 	| (
 		if ps.len().to_i64_wrap() < 3 {
 			[]
@@ -193,18 +216,18 @@ Paint :: [].{
 			[
 				{
 					tag: 6,
-					color: rgba0,
-					color2: rgba1,
+					color: color_stops.start_rgba,
+					color2: color_stops.end_rgba,
 					strength: 0.0,
 					geom: [
-						off0,
-						off1,
-						cx,
-						cy,
-						ux,
-						uy,
-						vx,
-						vy,
+						color_stops.start_offset,
+						color_stops.end_offset,
+						center_point.x,
+						center_point.y,
+						axis_u.x,
+						axis_u.y,
+						axis_v.x,
+						axis_v.y,
 					],
 					pts: flatten_screen(ps),
 				},

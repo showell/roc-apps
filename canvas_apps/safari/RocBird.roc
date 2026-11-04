@@ -156,12 +156,16 @@ RocBird :: [].{
 			NoTree => []
 			Found(t) => {
 				rp = Frame.at(
-					segs,
-					ch,
-					pose,
-					d,
-					t.along,
-					t.across + Scenery.lane_width / 2.0,
+					{
+						world: segs,
+						chain: ch,
+						pose: pose,
+					},
+					{
+						segments_ahead: d,
+						along: t.along,
+						across: t.across + Scenery.lane_width / 2.0,
+					},
 				)
 				if rp.forward <= Geom.near {
 					[]

@@ -101,12 +101,16 @@ TruckShape :: [].{
 	| {
 		road = truck.road
 		on_ground = Frame.at(
-			road.world,
-			road.chain,
-			road.pose,
-			road.segment,
-			along,
-			across,
+			{
+				world: road.world,
+				chain: road.chain,
+				pose: road.pose,
+			},
+			{
+				segments_ahead: road.segment,
+				along,
+				across,
+			},
 		)
 		{
 			right: on_ground.right,

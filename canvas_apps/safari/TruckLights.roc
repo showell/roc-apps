@@ -206,12 +206,13 @@ beam = |truck, across| {
 			{ cam_focal: truck.cam_focal, view_w: truck.view_w },
 		)
 		Paint.push_grad_poly(
-			beam_core,
-			beam_edge,
-			lamp.x,
-			lamp.y,
-			TruckLights.farthest_from(on_screen, lamp),
 			on_screen,
+			{
+				center_rgba: beam_core,
+				edge_rgba: beam_edge,
+				gradient_center: lamp,
+				gradient_radius: TruckLights.farthest_from(on_screen, lamp),
+			},
 		)
 	}
 }
@@ -258,11 +259,12 @@ glow = |truck, lamp|
 		center = TruckLights.center_of(on_screen)
 		radius = TruckLights.glow_radius(on_screen, center)
 		Paint.push_grad_poly(
-			glow_core,
-			glow_edge,
-			center.x,
-			center.y,
-			radius,
 			TruckLights.glow_outline({ center, radius }),
+			{
+				center_rgba: glow_core,
+				edge_rgba: glow_edge,
+				gradient_center: center,
+				gradient_radius: radius,
+			},
 		)
 	}

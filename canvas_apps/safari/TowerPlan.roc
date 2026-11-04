@@ -166,12 +166,16 @@ tower_if_ahead = |
 	},
 | {
 	center = Frame.map_pt(
-		view.world,
-		view.chain,
-		view.pose,
-		map,
-		along,
-		across,
+		{
+			world: view.world,
+			chain: view.chain,
+			pose: view.pose,
+		},
+		{
+			mapper: map,
+			along,
+			across,
+		},
 	)
 	if center.forward <= Geom.near {
 		[]

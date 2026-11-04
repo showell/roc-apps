@@ -160,12 +160,16 @@ on_map = |
 		across,
 	},
 | Frame.map_pt(
-	road.world,
-	road.chain,
-	road.pose,
-	place,
-	along,
-	across,
+	{
+		world: road.world,
+		chain: road.chain,
+		pose: road.pose,
+	},
+	{
+		mapper: place,
+		along,
+		across,
+	},
 )
 
 ## The bend at the end of the segment at `position` in the chain.

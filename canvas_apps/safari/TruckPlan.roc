@@ -75,12 +75,16 @@ truck_from = |view, { remaining, place }|
 truck_on_segment : TruckPlan.View, { along : F64, place : I64 } -> TruckPlan.TruckAt
 truck_on_segment = |view, { along, place }| {
 	center = Frame.at(
-		view.world,
-		view.chain,
-		view.pose,
-		place,
-		along,
-		(Scenery.lane_width / 2.0),
+		{
+			world: view.world,
+			chain: view.chain,
+			pose: view.pose,
+		},
+		{
+			segments_ahead: place,
+			along: along,
+			across: (Scenery.lane_width / 2.0),
+		},
 	)
 	if center.forward > Geom.near {
 		Ahead({

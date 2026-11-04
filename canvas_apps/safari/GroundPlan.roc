@@ -122,12 +122,16 @@ GroundPlan :: [].{
 		near_end = ((length * chunk.to_f64()) / chunks.to_f64())
 		far_end = ((length * (chunk + 1).to_f64()) / chunks.to_f64())
 		at = |along, across| Frame.at(
-			view.world,
-			view.chain,
-			view.pose,
-			position,
-			along,
-			across,
+			{
+				world: view.world,
+				chain: view.chain,
+				pose: view.pose,
+			},
+			{
+				segments_ahead: position,
+				along,
+				across,
+			},
 		)
 		[
 			at(near_end, 0.0),
@@ -221,12 +225,16 @@ bend_ground = |view, bend|
 approach : GroundPlan.View, Bend -> List(Geom.RiderPt)
 approach = |view, bend| {
 	before = |along, across| Frame.map_pt(
-		view.world,
-		view.chain,
-		view.pose,
-		bend.before,
-		along,
-		across,
+		{
+			world: view.world,
+			chain: view.chain,
+			pose: view.pose,
+		},
+		{
+			mapper: bend.before,
+			along,
+			across,
+		},
 	)
 	start = (bend.length_before - GroundPlan.approach_length)
 	[
@@ -243,20 +251,28 @@ approach = |view, bend| {
 bend_corner : GroundPlan.View, Bend -> List(Geom.RiderPt)
 bend_corner = |view, bend| {
 	before = |along, across| Frame.map_pt(
-		view.world,
-		view.chain,
-		view.pose,
-		bend.before,
-		along,
-		across,
+		{
+			world: view.world,
+			chain: view.chain,
+			pose: view.pose,
+		},
+		{
+			mapper: bend.before,
+			along,
+			across,
+		},
 	)
 	after = |along, across| Frame.map_pt(
-		view.world,
-		view.chain,
-		view.pose,
-		bend.after,
-		along,
-		across,
+		{
+			world: view.world,
+			chain: view.chain,
+			pose: view.pose,
+		},
+		{
+			mapper: bend.after,
+			along,
+			across,
+		},
 	)
 	inner_edge = if (bend.exit_right) Scenery.lane_width else 0.0
 	outer_edge = Joint.outer_cu(bend.exit_right)
@@ -289,12 +305,16 @@ pond_ground = |view, { segment, place }|
 		on_map = |outline|
 			outline.map(
 				|point| Frame.map_pt(
-					view.world,
-					view.chain,
-					view.pose,
-					place,
-					(segment.length + point.along),
-					point.across,
+					{
+						world: view.world,
+						chain: view.chain,
+						pose: view.pose,
+					},
+					{
+						mapper: place,
+						along: (segment.length + point.along),
+						across: point.across,
+					},
 				),
 			)
 		List.concat(

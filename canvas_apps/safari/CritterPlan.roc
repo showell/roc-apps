@@ -150,12 +150,16 @@ sight_critter : CritterPlan.Scene,
 sight_critter = |scene, { mapper, critter }|
 	Billboards.sighting({
 		at: Frame.map_pt(
-			scene.world,
-			scene.chain,
-			scene.pose,
-			mapper,
-			critter.along,
-			(critter.across + lane_half_width),
+			{
+				world: scene.world,
+				chain: scene.chain,
+				pose: scene.pose,
+			},
+			{
+				mapper,
+				along: critter.along,
+				across: (critter.across + lane_half_width),
+			},
 		),
 		height: critter.height,
 		codepoint: critter.codepoint,
@@ -189,12 +193,16 @@ pond_sightings = |scene, { mapper, segment }|
 			|duck|
 				Billboards.sighting({
 					at: Frame.map_pt(
-						scene.world,
-						scene.chain,
-						scene.pose,
-						mapper,
-						(segment.length + duck.at.along),
-						duck.at.across,
+						{
+							world: scene.world,
+							chain: scene.chain,
+							pose: scene.pose,
+						},
+						{
+							mapper,
+							along: (segment.length + duck.at.along),
+							across: duck.at.across,
+						},
 					),
 					height: Pond.duck_height,
 					codepoint: Pond.duck_codepoint,
