@@ -3,12 +3,14 @@
 ## turns one when it translates to the centre, rotates by minus the roll and
 ## translates back; a point on the screen turns back into the scene by the
 ## roll. The centre is the same point in both.
+import PixelGrid
+
 ScreenRoll :: {
 	cos : F64,
 	sin : F64,
 	center : { x : F64, y : F64 },
-	width_px : I64,
-	height_px : I64,
+	width_px : PixelGrid.Coordinate,
+	height_px : PixelGrid.Coordinate,
 }.{
 
 	## A point in the scene, before the roll turns it onto the screen.
@@ -22,22 +24,22 @@ ScreenRoll :: {
 	}
 
 	## A screen `width` by `height` pixels, and the camera's roll in radians.
-	of : { roll : F64, width : I64, height : I64 } -> ScreenRoll
+	of : { roll : F64, width : PixelGrid.Coordinate, height : PixelGrid.Coordinate } -> ScreenRoll
 	of = |{ roll, width, height }|
 		ScreenRoll.(
 			{
 				cos: F64.cos(roll),
 				sin: F64.sin(roll),
-				center: { x: I64.to_f64(width) / 2.0, y: I64.to_f64(height) / 2.0 },
+				center: { x: width.to_f64() / 2.0, y: height.to_f64() / 2.0 },
 				width_px: width,
 				height_px: height,
 			},
 		)
 
-	width_px : ScreenRoll -> I64
+	width_px : ScreenRoll -> PixelGrid.Coordinate
 	width_px = |ScreenRoll.(screen)| screen.width_px
 
-	height_px : ScreenRoll -> I64
+	height_px : ScreenRoll -> PixelGrid.Coordinate
 	height_px = |ScreenRoll.(screen)| screen.height_px
 
 	to_screen : ScreenRoll, ScreenRoll.ScenePoint -> ScreenRoll.ScreenPoint

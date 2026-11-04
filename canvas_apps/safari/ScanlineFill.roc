@@ -34,7 +34,7 @@ ScanlineFill :: [].{
 					count: roll.height_px(),
 				})
 				var $px = pixels
-				for row in I64.until(rows.start, rows.end) {
+				for row in rows.start.until(rows.end) {
 					edge_crossings = row_edge_crossings(edges, PixelGrid.pixel_center(row))
 					$px = fill_row($px, { roll, fill, row, edge_crossings })
 				}
@@ -55,7 +55,7 @@ ScanlineFill :: [].{
 			count: roll.height_px(),
 		})
 		var $px = pixels
-		for row in I64.until(rows.start, rows.end) {
+		for row in rows.start.until(rows.end) {
 			dy = PixelGrid.pixel_center(row) - on_screen.y
 			half_squared = radius * radius - dy * dy
 			$px = if half_squared > 0.0 {
@@ -115,7 +115,7 @@ edge_x_at = |{ from, to }, y| from.x + (y - from.y) * (to.x - from.x) / (to.y - 
 
 ## One row of a polygon: the spans between its edge crossings where the
 ## winding is not zero.
-fill_row : List(U32), { roll : ScreenRoll, fill : Brush.Fill, row : I64, edge_crossings : List(EdgeCrossing) } -> List(U32)
+fill_row : List(U32), { roll : ScreenRoll, fill : Brush.Fill, row : PixelGrid.Coordinate, edge_crossings : List(EdgeCrossing) } -> List(U32)
 fill_row = |pixels, { roll, fill, row, edge_crossings }| {
 	var $px = pixels
 	for row_span in inside_spans(edge_crossings) {
@@ -151,13 +151,13 @@ walk_edge_crossing = |so_far, { left, right }| {
 }
 
 ## The pixels of `row` whose centres fall in [from, to).
-paint_span : List(U32), { roll : ScreenRoll, fill : Brush.Fill, row : I64, from : F64, to : F64 } -> List(U32)
+paint_span : List(U32), { roll : ScreenRoll, fill : Brush.Fill, row : PixelGrid.Coordinate, from : F64, to : F64 } -> List(U32)
 paint_span = |pixels, { roll, fill, row, from, to }| {
 	columns = PixelGrid.pixels_between({ from, to, count: roll.width_px() })
 	width = roll.width_px()
 	y = PixelGrid.pixel_center(row)
 	var $px = pixels
-	for column in I64.until(columns.start, columns.end) {
+	for column in columns.start.until(columns.end) {
 		at = PixelGrid.pixel_index({ row, column, width })
 		color = match fill {
 			Flat(flat) => flat
