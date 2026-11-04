@@ -14,7 +14,7 @@ spin = |m, b, i, n|
 		m
 	} else {
 		r = eval(m, b, 0, 0.0)
-		spin({ ..m, num: List.set(m.num, 7, r.v - (List.get(m.num, 7) ?? 0.0)) ?? crash("oob"), pc: r.at }, b, i + 1, n)
+		spin({ ..m, num: List.set(m.num, 7, r.v - (List.get(m.num, 7) ?? 0.0)) ?? crash ("oob"), pc: r.at }, b, i + 1, n)
 	}
 
 main! = |args| {

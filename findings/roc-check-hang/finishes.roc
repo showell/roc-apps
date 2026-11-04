@@ -1,6 +1,10 @@
 app [main!] {}
 
-loop_forever = |n| if n < 0 { 0 } else { loop_forever(n) }
+loop_forever = |n| if n < 0 {
+	0
+} else {
+	loop_forever(n)
+}
 
 main! = |args| {
 	seed = List.len(args)

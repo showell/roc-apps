@@ -100,15 +100,15 @@ Machine :: [].{
 	open : Machine.Machine -> Machine.Opened
 	open = |m| {
 		{ mem, gpu, clock, devices } = m
-		taken = List.replace(devices, 0, Machine.vacant) ?? crash("machine: the devices' slot")
+		taken = List.replace(devices, 0, Machine.vacant) ?? crash ("machine: the devices' slot")
 		{ mem: mem, gpu: gpu, clock: clock, slot: taken.list, d: taken.prev }
 	}
 
 	close : Machine.Opened -> Machine.Machine
-	close = |o| { mem: o.mem, gpu: o.gpu, clock: o.clock, devices: List.set(o.slot, 0, o.d) ?? crash("machine: the devices' slot") }
+	close = |o| { mem: o.mem, gpu: o.gpu, clock: o.clock, devices: List.set(o.slot, 0, o.d) ?? crash ("machine: the devices' slot") }
 
 	devices_of : Machine.Machine -> Machine.Devices
-	devices_of = |m| List.get(m.devices, 0) ?? crash("machine: the devices' slot")
+	devices_of = |m| List.get(m.devices, 0) ?? crash ("machine: the devices' slot")
 
 	vacant : Machine.Devices
 	vacant = Machine.devices_new(MachinePci.table(0, False, NoNic), MachineDisk.none)
@@ -127,7 +127,15 @@ Machine :: [].{
 	boot! : List(Str), List(Str) => Machine.Machine
 	boot! = |args, effects| {
 		(f, fe1000, fhpet) = Machine.flags(args, 0, { bridge: False, deep: False, levels: 0, backward: False, disks: ["", ""], board_mmio: False, lease: 3600, gop: False, gop_width: 640, gop_height: 480, gop_stride: 640, gop_stride_opt: 0 }, MachineE1000.new, MachineHpet.new)
-		levels = if !f.bridge { 0 } else if f.levels != 0 { f.levels } else if f.deep { 2 } else { 1 }
+		levels = if !f.bridge {
+			0
+		} else if f.levels != 0 {
+			f.levels
+		} else if f.deep {
+			2
+		} else {
+			1
+		}
 		# The process table as the boot leaves it: the boot program's entry
 		# marked running (2) with the opening's grant, and process 1 granted the
 		# console bit (X86_64Chapter's emit-start).
@@ -138,10 +146,35 @@ Machine :: [].{
 		# 2048 clamped, and the width, height and stride go at 0x7C4, 0x7C8 and
 		# 0x7E0, where a guest booted without UEFI reads them. The framebuffer
 		# itself is RAM at 0xBF000000.
-		opt = if f.gop_stride_opt < f.gop_width { 0 } else if f.gop_stride_opt > 2048 { 2048 } else { f.gop_stride_opt }
-		screen_stride = if opt > f.gop_width { opt } else { f.gop_stride }
-		mem = if f.gop { MachineMem.write(MachineMem.write(MachineMem.write(console_granted, 0x7C4, f.gop_width, 4), 0x7C8, f.gop_height, 4), 0x7E0, screen_stride, 4) } else { console_granted }
-		nic = if fe1000.present { Nic(if fe1000.i219 { 0x15B8 } else { 0x100E }, fe1000.faults.bme_clear) } else { NoNic }
+		opt = if f.gop_stride_opt < f.gop_width {
+			0
+		} else if f.gop_stride_opt > 2048 {
+			2048
+		} else {
+			f.gop_stride_opt
+		}
+		screen_stride = if opt > f.gop_width {
+			opt
+		} else {
+			f.gop_stride
+		}
+		mem = if f.gop {
+			MachineMem.write(MachineMem.write(MachineMem.write(console_granted, 0x7C4, f.gop_width, 4), 0x7C8, f.gop_height, 4), 0x7E0, screen_stride, 4)
+		} else {
+			console_granted
+		}
+		nic = if fe1000.present {
+			Nic(
+				if fe1000.i219 {
+					0x15B8
+				} else {
+					0x100E
+				},
+				fe1000.faults.bme_clear,
+			)
+		} else {
+			NoNic
+		}
 		# The boot probes the NE2000 and copies its station address out
 		# (X86_64Boot's emit-nic-init); every run starts with that done.
 		(card, address) = MachineNe2k.booted
@@ -149,8 +182,30 @@ Machine :: [].{
 		drives = MachineDisk.boot!(f.disks)
 		ide = MachineIde.attach!(drives)
 		d = Machine.devices_new(MachinePci.table(levels, f.backward, nic), drives)
-		booted = { ..d, ide: ide, ne2k: card, lease: f.lease, e1000: if fe1000.present { MachineE1000.power_on(fe1000) } else { fe1000 }, hpet: fhpet, board_mmio: f.board_mmio, timeline: Machine.timeline_of(MachineMedia.keys) }
-		{ mem: nic_mem, gpu: if f.gop { MachineGpu.new(f.gop_width, f.gop_height, screen_stride) } else { MachineGpu.none }, clock: 0, devices: [booted] }
+		booted = {
+			..d,
+			ide: ide,
+			ne2k: card,
+			lease: f.lease,
+			e1000: if fe1000.present {
+				MachineE1000.power_on(fe1000)
+			} else {
+				fe1000
+			},
+			hpet: fhpet,
+			board_mmio: f.board_mmio,
+			timeline: Machine.timeline_of(MachineMedia.keys),
+		}
+		{
+			mem: nic_mem,
+			gpu: if f.gop {
+				MachineGpu.new(f.gop_width, f.gop_height, screen_stride)
+			} else {
+				MachineGpu.none
+			},
+			clock: 0,
+			devices: [booted],
+		}
 	}
 
 	# -pci-bridge is one level, -pci-bridge-deep two, -pci-bridge-levels N
@@ -171,35 +226,39 @@ Machine :: [].{
 				} else if a == "-pci-bridge-backward" {
 					Machine.flags(args, i + 1, { ..f, bridge: True, backward: True }, e1000, hpet)
 				} else if a == "-pci-bridge-levels" {
-					n = U64.from_str(List.get(args, i + 1) ?? "") ?? crash("machine: -pci-bridge-levels wants a number")
+					n = U64.from_str(List.get(args, i + 1) ?? "") ?? crash ("machine: -pci-bridge-levels wants a number")
 					Machine.flags(args, i + 2, { ..f, bridge: True, levels: n }, e1000, hpet)
 				} else if a == "-board-mmio" {
 					Machine.flags(args, i + 1, { ..f, board_mmio: True }, e1000, hpet)
 				} else if a == "-dhcp-lease" {
-					n = U64.from_str(List.get(args, i + 1) ?? "") ?? crash("machine: -dhcp-lease wants a number")
+					n = U64.from_str(List.get(args, i + 1) ?? "") ?? crash ("machine: -dhcp-lease wants a number")
 					Machine.flags(args, i + 2, { ..f, lease: n }, e1000, hpet)
 				} else if a == "-gop" {
 					Machine.flags(args, i + 1, { ..f, gop: True }, e1000, hpet)
 				} else if a == "-gop-width" {
-					n = U64.from_str(List.get(args, i + 1) ?? "") ?? crash("machine: -gop-width wants a number")
+					n = U64.from_str(List.get(args, i + 1) ?? "") ?? crash ("machine: -gop-width wants a number")
 					Machine.flags(args, i + 2, { ..f, gop: True, gop_width: n, gop_stride: n }, e1000, hpet)
 				} else if a == "-gop-height" {
-					n = U64.from_str(List.get(args, i + 1) ?? "") ?? crash("machine: -gop-height wants a number")
+					n = U64.from_str(List.get(args, i + 1) ?? "") ?? crash ("machine: -gop-height wants a number")
 					Machine.flags(args, i + 2, { ..f, gop: True, gop_height: n }, e1000, hpet)
 				} else if a == "-gop-stride" {
-					n = U64.from_str(List.get(args, i + 1) ?? "") ?? crash("machine: -gop-stride wants a number")
+					n = U64.from_str(List.get(args, i + 1) ?? "") ?? crash ("machine: -gop-stride wants a number")
 					Machine.flags(args, i + 2, { ..f, gop: True, gop_stride_opt: n }, e1000, hpet)
 				} else if a == "-disk" or a == "-disk2" {
-					path = List.get(args, i + 1) ?? crash("machine: ${a} wants a file")
-					at = if a == "-disk" { 0 } else { 1 }
-					Machine.flags(args, i + 2, { ..f, disks: List.set(f.disks, at, path) ?? crash("machine: no such drive position") }, e1000, hpet)
+					path = List.get(args, i + 1) ?? crash ("machine: ${a} wants a file")
+					at = if a == "-disk" {
+						0
+					} else {
+						1
+					}
+					Machine.flags(args, i + 2, { ..f, disks: List.set(f.disks, at, path) ?? crash ("machine: no such drive position") }, e1000, hpet)
 				} else {
 					match MachineE1000.flag(e1000, a, List.get(args, i + 1) ?? "") {
 						Took(e, n) => Machine.flags(args, i + n, f, e, hpet)
 						NotMine =>
 							match MachineHpet.flag(hpet, a) {
 								Took(h) => Machine.flags(args, i + 1, f, e1000, h)
-								NotMine => crash("machine: ${a} is not a codex-vm flag this machine models")
+								NotMine => crash ("machine: ${a} is not a codex-vm flag this machine models")
 							}
 					}
 				}
@@ -339,7 +398,15 @@ Machine :: [].{
 		if left == 0 {
 			"0x${acc}"
 		} else {
-			d = Str.from_utf8([U64.to_u8_wrap(if U64.bitwise_and(v, 15) < 10 { 48 + U64.bitwise_and(v, 15) } else { 55 + U64.bitwise_and(v, 15) })]) ?? "?"
+			d = Str.from_utf8([
+				U64.to_u8_wrap(
+					if U64.bitwise_and(v, 15) < 10 {
+						48 + U64.bitwise_and(v, 15)
+					} else {
+						55 + U64.bitwise_and(v, 15)
+					},
+				),
+			]) ?? "?"
 			Machine.hex_go(U64.shr_zf_wrap(v, 4), left - 1, Str.concat(d, acc))
 		}
 
@@ -377,7 +444,7 @@ Machine :: [].{
 			Hpet => Machine.hpet_load(m, Machine.register_width("read of the HPET's registers", width, a))
 			Lapic => Machine.lapic_load(m, Machine.register_width("read of the local APIC's registers", width, a))
 			Ioapic => Machine.ioapic_load(m, Machine.register_width("read of the IOAPIC's registers", width, a))
-			Nothing(what) => crash("machine: a read at ${Machine.hex(I64.to_u64_wrap(a))}, ${what}")
+			Nothing(what) => crash ("machine: a read at ${Machine.hex(I64.to_u64_wrap(a))}, ${what}")
 		}
 	}
 
@@ -393,7 +460,7 @@ Machine :: [].{
 			Hpet => (Machine.hpet_store(m, Machine.register_width("write to the HPET's registers", width, a), U64.bitwise_and(u, 0xFFFFFFFF)), 0)
 			Lapic => (Machine.lapic_store(m, Machine.register_width("write to the local APIC's registers", width, a), U64.bitwise_and(u, 0xFFFFFFFF)), 0)
 			Ioapic => (Machine.ioapic_store(m, Machine.register_width("write to the IOAPIC's registers", width, a), U64.bitwise_and(u, 0xFFFFFFFF)), 0)
-			Nothing(what) => crash("machine: a write at ${Machine.hex(I64.to_u64_wrap(a))}, ${what}")
+			Nothing(what) => crash ("machine: a write at ${Machine.hex(I64.to_u64_wrap(a))}, ${what}")
 		}
 	}
 
@@ -402,7 +469,7 @@ Machine :: [].{
 	register_width : Str, I64, I64 -> I64
 	register_width = |what, width, a|
 		if width != 4 {
-			crash("machine: a ${I64.to_str(width)}-byte ${what}, which this machine takes 32 bits at a time")
+			crash ("machine: a ${I64.to_str(width)}-byte ${what}, which this machine takes 32 bits at a time")
 		} else {
 			a
 		}
@@ -453,7 +520,7 @@ Machine :: [].{
 		clock = m.clock + Machine.access_cost
 		match MachineApic.lapic_write(Machine.devices_of(m).apic, clock, I64.to_u64_wrap(a - MachineApic.lapic_base), u) {
 			Wrote(apic) => Machine.with_apic(m, clock, apic)
-			StartsCores => crash("machine: a start-up IPI, which starts the application processors, and this machine has one core")
+			StartsCores => crash ("machine: a start-up IPI, which starts the application processors, and this machine has one core")
 		}
 	}
 
@@ -487,7 +554,7 @@ Machine :: [].{
 			Raised(line) =>
 				match MachineApic.delivers(d.apic, line) {
 					Nowhere => h
-					Vector(v) => crash("machine: the HPET raised IOAPIC line ${U64.to_str(line)} on vector ${U64.to_str(v)}, and this machine delivers no interrupts")
+					Vector(v) => crash ("machine: the HPET raised IOAPIC line ${U64.to_str(line)} on vector ${U64.to_str(v)}, and this machine delivers no interrupts")
 				}
 		}
 	}
@@ -691,7 +758,16 @@ Machine :: [].{
 		if MachineIde.claims(p) {
 			(Machine.ide_out!(m, p, v), 0)
 		} else if p >= 0x300 and p < 0x320 {
-			Machine.ne2k_write!(m, p - 0x300, v, if builtin == "port-out-byte" { 1 } else { 2 })
+			Machine.ne2k_write!(
+				m,
+				p - 0x300,
+				v,
+				if builtin == "port-out-byte" {
+					1
+				} else {
+					2
+				},
+			)
 		} else {
 			Machine.port_write(m, p, v, builtin)
 		}
@@ -723,7 +799,15 @@ Machine :: [].{
 	ne2k_read : Machine.Machine, U64, U64 -> (Machine.Machine, I64)
 	ne2k_read = |m, off, mask| {
 		o = Machine.open(m)
-		(card, v) = MachineNe2k.read(o.d.ne2k, off, if mask == 0xFF { 1 } else { 2 })
+		(card, v) = MachineNe2k.read(
+			o.d.ne2k,
+			off,
+			if mask == 0xFF {
+				1
+			} else {
+				2
+			},
+		)
 		(Machine.close({ ..o, clock: o.clock + Machine.access_cost, d: { ..o.d, ne2k: card } }), U64.to_i64_wrap(U64.bitwise_and(v, mask)))
 	}
 
@@ -744,7 +828,7 @@ Machine :: [].{
 							Machine.answered!(frames, 0)
 							List.sublist(List.concat(o.d.rx, frames), { start: 0, len: 256 })
 						}
-						Host(what) => crash("machine: the program sent a frame to ${what}, which this machine does not have")
+						Host(what) => crash ("machine: the program sent a frame to ${what}, which this machine does not have")
 					}
 				}
 				_ => o.d.rx
@@ -945,14 +1029,14 @@ Machine :: [].{
 	gpu_page_denied : Machine.Machine, I64 -> Bool
 	gpu_page_denied = |m, addr|
 		U64.div_trunc_by(I64.to_u64_wrap(addr), 0x1000000) == 190
-		and U64.bitwise_and(MachineMem.read(m.mem, MachineCaps.word_addr, 7, 0), MachineCaps.bit(MachineCaps.gpu_memory)) == 0
+			and U64.bitwise_and(MachineMem.read(m.mem, MachineCaps.word_addr, 7, 0), MachineCaps.bit(MachineCaps.gpu_memory)) == 0
 
 	port_write : Machine.Machine, U64, U64, Str -> (Machine.Machine, I64)
 	port_write = |m, p, v, builtin| {
 		clock = m.clock + Machine.access_cost
 		match MachinePorts.write(Machine.devices_of(m).ports, clock, p, v) {
 			Wrote(ports) => (Machine.with_ports(m, clock, ports), 0)
-			Claimed(device) => crash("machine: ${builtin} to port ${Machine.hex(p)}, ${device}, which this machine does not model")
+			Claimed(device) => crash ("machine: ${builtin} to port ${Machine.hex(p)}, ${device}, which this machine does not model")
 		}
 	}
 
@@ -961,7 +1045,7 @@ Machine :: [].{
 		clock = m.clock + Machine.access_cost
 		match MachinePorts.read(Machine.devices_of(m).ports, clock, p) {
 			Read(ports, v) => (Machine.with_ports(m, clock, ports), U64.to_i64_wrap(U64.bitwise_and(v, mask)))
-			Claimed(device) => crash("machine: ${builtin} from port ${Machine.hex(p)}, ${device}, which this machine does not model")
+			Claimed(device) => crash ("machine: ${builtin} from port ${Machine.hex(p)}, ${device}, which this machine does not model")
 		}
 	}
 
@@ -1072,7 +1156,7 @@ Machine :: [].{
 	process_yield : Machine.Machine -> (Machine.Machine, I64)
 	process_yield = |m|
 		match Machine.ready_slot(m, 1) {
-			Ok(pid) => crash("machine: process-yield found process ${I64.to_str(pid)} ready, and this machine runs no process but the booted one")
+			Ok(pid) => crash ("machine: process-yield found process ${I64.to_str(pid)} ready, and this machine runs no process but the booted one")
 			Err(_) => (m, 0)
 		}
 
@@ -1093,7 +1177,11 @@ Machine :: [].{
 
 	# `process-get-cap`: a process's capability word; -1 past the table.
 	process_get_cap : Machine.Machine, I64 -> (Machine.Machine, I64)
-	process_get_cap = |m, pid| if pid >= 16 { (m, -1) } else { Machine.load_unguarded(m, Machine.cap_addr(pid), 0, 8) }
+	process_get_cap = |m, pid| if pid >= 16 {
+		(m, -1)
+	} else {
+		Machine.load_unguarded(m, Machine.cap_addr(pid), 0, 8)
+	}
 
 	# `process-restrict-cap`: clears one bit of a process's word and answers 0,
 	# or answers -1 when the running process lacks capability-admin or the pid
@@ -1129,10 +1217,24 @@ Machine :: [].{
 	# the empty text, which admits everything, when none was or the pid is past
 	# the table.
 	process_get_scope : Machine.Machine, I64 -> (Machine.Machine, Str)
-	process_get_scope = |m, pid| (m, if pid >= 16 { "" } else { Dict.get(Machine.devices_of(m).scopes, I64.to_u64_wrap(pid)) ?? "" })
+	process_get_scope = |m, pid| (
+		m,
+		if pid >= 16 {
+			""
+		} else {
+			Dict.get(Machine.devices_of(m).scopes, I64.to_u64_wrap(pid)) ?? ""
+		},
+	)
 
 	process_get_network_scope : Machine.Machine, I64 -> (Machine.Machine, Str)
-	process_get_network_scope = |m, pid| (m, if pid >= 16 { "" } else { Dict.get(Machine.devices_of(m).net_scopes, I64.to_u64_wrap(pid)) ?? "" })
+	process_get_network_scope = |m, pid| (
+		m,
+		if pid >= 16 {
+			""
+		} else {
+			Dict.get(Machine.devices_of(m).net_scopes, I64.to_u64_wrap(pid)) ?? ""
+		},
+	)
 
 	copy_in : MachineMem.Mem, I64, List(U8), U64 -> MachineMem.Mem
 	copy_in = |mem, base, bytes, i|
@@ -1175,7 +1277,7 @@ Machine :: [].{
 		if MachineMem.read(m.mem, 30704, 7, 0) == 0 {
 			(m, -1)
 		} else {
-			crash("machine: uefi-read-key-ex with a UEFI system table, which this machine does not model")
+			crash ("machine: uefi-read-key-ex with a UEFI system table, which this machine does not model")
 		}
 
 	# `uefi-read-key`: the key cell exchanged with zero, as its scancode byte.
@@ -1188,7 +1290,11 @@ Machine :: [].{
 		clock =
 			if code == 0 {
 				match List.get(due.d.timeline, due.d.typed) {
-					Ok(next) => if next.at > due.clock { next.at } else { due.clock }
+					Ok(next) => if next.at > due.clock {
+						next.at
+					} else {
+						due.clock
+					}
 					Err(_) => due.clock
 				}
 			} else {
@@ -1217,7 +1323,7 @@ Machine :: [].{
 	# the end of the line.
 	timeline_of : List(U8) -> List({ at : U64, code : U8 })
 	timeline_of = |bytes| {
-		text = Str.from_utf8(bytes) ?? crash("machine: the .keys timeline is not UTF-8")
+		text = Str.from_utf8(bytes) ?? crash ("machine: the .keys timeline is not UTF-8")
 		Machine.events_of(Str.split_on(text, "\n"), 0, [])
 	}
 
@@ -1241,11 +1347,11 @@ Machine :: [].{
 				} else {
 					match Str.split_first(event, ":") {
 						Ok(halves) => {
-							ms = U64.from_str(Str.trim(halves.before)) ?? crash("machine: .keys time `${halves.before}`, which this machine reads in whole milliseconds")
-							code = U8.from_str(Str.trim(halves.after)) ?? crash("machine: .keys scancode `${halves.after}`")
+							ms = U64.from_str(Str.trim(halves.before)) ?? crash ("machine: .keys time `${halves.before}`, which this machine reads in whole milliseconds")
+							code = U8.from_str(Str.trim(halves.after)) ?? crash ("machine: .keys scancode `${halves.after}`")
 							Machine.line_events(parts, i + 1, List.append(acc, { at: U64.div_trunc_by(ms * MachineHpet.hz, 1000), code: code }))
 						}
-						Err(_) => crash("machine: .keys event `${event}` is not time:scancode")
+						Err(_) => crash ("machine: .keys event `${event}` is not time:scancode")
 					}
 				}
 			}

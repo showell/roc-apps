@@ -5,8 +5,8 @@
 ##
 ##   roc build --opt=dev RasterFrame.roc --output=<bin>; <bin> [steps] | node pixels_png.mjs <png>
 app [main!] {
-	lib: "../../lib/main.roc",
 	game: "../game.roc",
+	lib: "../../lib/main.roc",
 }
 
 import game.SafariRide

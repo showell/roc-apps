@@ -36,8 +36,8 @@ inside : Pond.Duck -> Bool
 inside = |duck|
 	duck.at.across <= -1.0
 		and duck.at.across >= -31.0
-			and duck.at.along >= 3.0
-				and duck.at.along <= 32.0
+		and duck.at.along >= 3.0
+		and duck.at.along <= 32.0
 
 inside_got : List(Bool)
 inside_got = Pond.ducks.map(inside)

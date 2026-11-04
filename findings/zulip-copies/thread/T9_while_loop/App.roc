@@ -5,7 +5,11 @@ M : { num : List(F64), scr : List(U8), out : List(Str), pc : U64 }
 
 walk : M, List(U8), U64 -> M
 walk = |m, b, i|
-	if i >= List.len(b) { m } else { walk(m, b, i + 1) }
+	if i >= List.len(b) {
+		m
+	} else {
+		walk(m, b, i + 1)
+	}
 
 spin : M, List(U8), U64 -> M
 spin = |m0, b, n| {
@@ -13,7 +17,7 @@ spin = |m0, b, n| {
 	var $i = 0
 	while $i < n {
 		m1 = walk($m, b, 0)
-		$m = { ..m1, num: List.set(m1.num, 7, 1.0) ?? crash("oob"), pc: $i }
+		$m = { ..m1, num: List.set(m1.num, 7, 1.0) ?? crash ("oob"), pc: $i }
 		$i = $i + 1
 	}
 	$m

@@ -86,7 +86,14 @@ MachineApic :: [].{
 			Wrote({ ..apic, div_cfg: val })
 		} else if off == 0x380 {
 			counted = { ..apic, init_count: val }
-			Wrote({ ..counted, fire_at: if val == 0 { 0 } else { MachineApic.input_ticks(clock) + MachineApic.period(counted) } })
+			Wrote({
+				..counted,
+				fire_at: if val == 0 {
+					0
+				} else {
+					MachineApic.input_ticks(clock) + MachineApic.period(counted)
+				},
+			})
 		} else if off == 0xF0 {
 			Wrote({ ..apic, sivr: val })
 		} else if off == 0x310 {
@@ -94,7 +101,11 @@ MachineApic :: [].{
 		} else if off == 0x300 {
 			deliver = U64.bitwise_and(U64.shr_zf_wrap(val, 8), 7)
 			dest = U64.bitwise_and(U64.shr_zf_wrap(val, 18), 3)
-			if deliver == 6 and dest == 3 { StartsCores } else { Wrote({ ..apic, icr_lo: val }) }
+			if deliver == 6 and dest == 3 {
+				StartsCores
+			} else {
+				Wrote({ ..apic, icr_lo: val })
+			}
 		} else {
 			Wrote(apic)
 		}
@@ -108,7 +119,13 @@ MachineApic :: [].{
 	period : MachineApic.Apic -> U64
 	period = |apic| {
 		raw = apic.init_count * MachineApic.divisor(apic.div_cfg)
-		if raw < 100000 { 100000 } else if raw > 500000000 { 500000000 } else { raw }
+		if raw < 100000 {
+			100000
+		} else if raw > 500000000 {
+			500000000
+		} else {
+			raw
+		}
 	}
 
 	divisor : U64 -> U64
@@ -126,8 +143,21 @@ MachineApic :: [].{
 		} else {
 			now = MachineApic.input_ticks(clock)
 			whole = MachineApic.period(apic)
-			left = if apic.fire_at > now { apic.fire_at - now } else { 0 }
-			U64.div_trunc_by(apic.init_count * (if left > whole { whole } else { left }), whole)
+			left = if apic.fire_at > now {
+				apic.fire_at - now
+			} else {
+				0
+			}
+			U64.div_trunc_by(
+				apic.init_count * (
+					if left > whole {
+						whole
+					} else {
+						left
+					}
+				),
+				whole,
+			)
 		}
 
 	# ---- the IOAPIC -------------------------------------------------------
@@ -145,7 +175,11 @@ MachineApic :: [].{
 				0x170020
 			} else if sel >= 0x10 and sel < 0x40 {
 				entry = List.get(apic.redir, U64.div_trunc_by(sel - 0x10, 2)) ?? 0
-				if U64.rem_by(sel - 0x10, 2) == 1 { U64.shr_zf_wrap(entry, 32) } else { U64.bitwise_and(entry, 0xFFFFFFFF) }
+				if U64.rem_by(sel - 0x10, 2) == 1 {
+					U64.shr_zf_wrap(entry, 32)
+				} else {
+					U64.bitwise_and(entry, 0xFFFFFFFF)
+				}
 			} else {
 				0
 			}
@@ -164,8 +198,12 @@ MachineApic :: [].{
 			} else if sel >= 0x10 and sel < 0x40 {
 				i = U64.div_trunc_by(sel - 0x10, 2)
 				entry = List.get(apic.redir, i) ?? 0
-				updated = if U64.rem_by(sel - 0x10, 2) == 1 { U64.bitwise_or(U64.bitwise_and(entry, 0xFFFFFFFF), U64.shl_wrap(val, 32)) } else { U64.bitwise_or(U64.bitwise_and(entry, 0xFFFFFFFF00000000), val) }
-				{ ..apic, redir: List.set(apic.redir, i, updated) ?? crash("machine: the IOAPIC has no entry ${U64.to_str(i)}") }
+				updated = if U64.rem_by(sel - 0x10, 2) == 1 {
+					U64.bitwise_or(U64.bitwise_and(entry, 0xFFFFFFFF), U64.shl_wrap(val, 32))
+				} else {
+					U64.bitwise_or(U64.bitwise_and(entry, 0xFFFFFFFF00000000), val)
+				}
+				{ ..apic, redir: List.set(apic.redir, i, updated) ?? crash ("machine: the IOAPIC has no entry ${U64.to_str(i)}") }
 			} else {
 				apic
 			}
@@ -179,6 +217,10 @@ MachineApic :: [].{
 	delivers = |apic, line| {
 		entry = List.get(apic.redir, line) ?? 0x10000
 		vector = U64.bitwise_and(entry, 0xFF)
-		if U64.bitwise_and(entry, 0x10000) != 0 or vector < 32 { Nowhere } else { Vector(vector) }
+		if U64.bitwise_and(entry, 0x10000) != 0 or vector < 32 {
+			Nowhere
+		} else {
+			Vector(vector)
+		}
 	}
 }

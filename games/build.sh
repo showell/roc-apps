@@ -9,7 +9,7 @@
 # The platforms and hosts are written by games/gen.py, which runs first.
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROC="${ROC:-$HOME/build/roc-nightly/roc}"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../pinned-roc.sh"
 ZIG="${ZIG:-$HOME/zig-0.16.0/zig}"
 NEXT="$HOME/build/roc-apps/next/games"
 mkdir -p "$NEXT"

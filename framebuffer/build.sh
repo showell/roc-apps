@@ -13,7 +13,7 @@
 # served on :9210.
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROC="${ROC:-$HOME/build/roc-nightly/roc}"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../pinned-roc.sh"
 ROCEMIT="${ROCEMIT:-$HOME/build/rust-target/release/rocemit}"
 ZIG="${ZIG:-$HOME/zig-0.16.0/zig}"
 ROC_CHECKOUT="${ROC_CHECKOUT:-$HOME/showell_repos/roc}"

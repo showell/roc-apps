@@ -30,6 +30,7 @@ Input :: [].{
 	# `mouse` is a field rather than a method, so a game reaches the pointer
 	# exactly as it does on roc-ray: `input.mouse.position()`.
 	Snapshot := { held : U32, struck : U32, mouse : Mouse.Snapshot }.{
+
 		## Whether a key is held down now, however long it has been.
 		key_down : Snapshot, Keys.Key -> Bool
 		key_down = |snapshot, key| U32.bitwise_and(snapshot.held, Keys.bit(key)) != 0

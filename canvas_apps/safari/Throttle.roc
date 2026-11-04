@@ -22,14 +22,14 @@ Throttle :: [].{
 		{
 			d = (seg.commit_along - state.along)
 			corner_a = (
-				if (d <= F64.from_bits(4517329193108106637)) {
+				if d <= F64.from_bits(4517329193108106637) {
 					0.0
 				} else {
 					(((v_end * v_end) - (state.v * state.v)) / (2.0 * d))
 				}
 			)
 			(
-				if (corner_a < a) {
+				if corner_a < a {
 					corner_a
 				} else {
 					a
@@ -42,7 +42,7 @@ Throttle :: [].{
 	cat_gate = |state, seg, a|
 		match seg.cat {
 			Waits(crossing) =>
-				if (a > 0.0) {
+				if a > 0.0 {
 					(
 						if Cat.is_in_danger({ gap: (crossing.along - state.along), speed: state.v }) {
 							0.0
@@ -63,7 +63,7 @@ Throttle :: [].{
 			(
 				if b.engaged {
 					(
-						if (b.accel < a) {
+						if b.accel < a {
 							b.accel
 						} else {
 							a
@@ -94,11 +94,13 @@ Throttle :: [].{
 	)
 
 	has_stayed_on_road : Arc.ArcOutcome -> Bool
-	has_stayed_on_road = |sim| (match sim.shoulder {
-		ShoulderNone => True
-		ShoulderLeft => False
-		ShoulderRight => False
-	})
+	has_stayed_on_road = |sim| (
+		match sim.shoulder {
+			ShoulderNone => True
+			ShoulderLeft => False
+			ShoulderRight => False
+		}
+	)
 
 	shoulder_brake_at : Pose.RiderState, Arc.ArcOutcome, F64 -> F64
 	shoulder_brake_at = |state, sim, a| (
@@ -106,7 +108,7 @@ Throttle :: [].{
 			n = sim.frames
 			sa = (((0.0 - state.v) / (2.0 * DeviceMath.real_max(n, 1.0))) * Num_.exp_real(((0.0 - n) / brake_decay)))
 			(
-				if (sa < a) {
+				if sa < a {
 					sa
 				} else {
 					a
@@ -119,14 +121,14 @@ Throttle :: [].{
 	clamp_v = |state, seg, v_end, v0, near| (
 		{
 			v1 = (
-				if (v0 > VehicleLimits.v_max) {
+				if v0 > VehicleLimits.v_max {
 					VehicleLimits.v_max
 				} else {
 					v0
 				}
 			)
 			v2 = (
-				if (v1 < 0.0) {
+				if v1 < 0.0 {
 					0.0
 				} else {
 					v1
@@ -135,7 +137,7 @@ Throttle :: [].{
 			(
 				if near {
 					(
-						if (v2 < v_end) {
+						if v2 < v_end {
 							(
 								if Gaze.gawk_engaged(state, seg) {
 									v2

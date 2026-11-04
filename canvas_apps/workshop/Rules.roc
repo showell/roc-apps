@@ -21,6 +21,7 @@ import lib.Math
 import lib.Mouse
 
 Rules :: [].{
+
 	## Whether the last step painted, and which cell, so that holding the
 	## button across one cell paints it once and sounds once.
 	PaintState := [Idle, Painted(U64)].{
@@ -98,7 +99,11 @@ Rules :: [].{
 		var $found = Err(Outside)
 		var $i = 0
 		while $i < 4 {
-			$found = if Math.contains(swatch_bounds($i), point) { Ok($i) } else { $found }
+			$found = if Math.contains(swatch_bounds($i), point) {
+				Ok($i)
+			} else {
+				$found
+			}
 			$i = $i + 1
 		}
 		$found
@@ -211,27 +216,27 @@ expect Rules.cell_at({ x: Rules.canvas_x + Rules.canvas_size, y: Rules.canvas_y 
 ## Holding the button across ONE cell paints it once and sounds once; the
 ## second step over the same cell is silent and changes nothing.
 expect {
-    at = { x: Rules.canvas_x + 10, y: Rules.canvas_y + 10 }
-    held = Input.none.with_mouse(Mouse.of(Mouse.bit(Left), 0, at.x, at.y, 0))
-    first = Rules.step(Rules.start, held)
-    again = Rules.step(first.world, held)
-    first.sounds == Rules.tone_paint(1) and again.sounds == 0 and again.world.pixels == first.world.pixels
+	at = { x: Rules.canvas_x + 10, y: Rules.canvas_y + 10 }
+	held = Input.none.with_mouse(Mouse.of(Mouse.bit(Left), 0, at.x, at.y, 0))
+	first = Rules.step(Rules.start, held)
+	again = Rules.step(first.world, held)
+	first.sounds == Rules.tone_paint(1) and again.sounds == 0 and again.world.pixels == first.world.pixels
 }
 
 ## A stroke paints the colour the digit chose, in the same step.
 expect {
-    at = { x: Rules.canvas_x + 10, y: Rules.canvas_y + 10 }
-    keyed = Input.none.with_key_pressed(Key4).with_mouse(Mouse.of(Mouse.bit(Left), 0, at.x, at.y, 0))
-    after = Rules.step(Rules.start, keyed)
-    List.get(after.world.pixels, 0) == Ok(Rules.palette_color(3)) and after.sounds == 16
+	at = { x: Rules.canvas_x + 10, y: Rules.canvas_y + 10 }
+	keyed = Input.none.with_key_pressed(Key4).with_mouse(Mouse.of(Mouse.bit(Left), 0, at.x, at.y, 0))
+	after = Rules.step(Rules.start, keyed)
+	List.get(after.world.pixels, 0) == Ok(Rules.palette_color(3)) and after.sounds == 16
 }
 
 ## C restores the design and says so.
 expect {
-    at = { x: Rules.canvas_x + 10, y: Rules.canvas_y + 10 }
-    painted = Rules.step(Rules.start, Input.none.with_mouse(Mouse.of(Mouse.bit(Left), 0, at.x, at.y, 0))).world
-    restored = Rules.step(painted, Input.none.with_key_pressed(KeyC))
-    restored.world.pixels == Rules.initial_pixels and restored.sounds == 1
+	at = { x: Rules.canvas_x + 10, y: Rules.canvas_y + 10 }
+	painted = Rules.step(Rules.start, Input.none.with_mouse(Mouse.of(Mouse.bit(Left), 0, at.x, at.y, 0))).world
+	restored = Rules.step(painted, Input.none.with_key_pressed(KeyC))
+	restored.world.pixels == Rules.initial_pixels and restored.sounds == 1
 }
 
 ## Every swatch stays inside the palette panel, which is what makes hitting it
@@ -242,19 +247,19 @@ expect Rules.swatch_bounds(3).y + Rules.swatch_bounds(3).height <= 456
 ## Clicking a swatch chooses that colour and says so; clicking the panel
 ## between two of them does not.
 expect {
-    on = Math.center(Rules.swatch_bounds(2))
-    click = Input.none.with_mouse(Mouse.of(0, Mouse.bit(Left), on.x, on.y, 0))
-    after = Rules.step(Rules.start, click)
-    after.world.palette == 2 and after.sounds == Rules.tone_paint(2)
+	on = Math.center(Rules.swatch_bounds(2))
+	click = Input.none.with_mouse(Mouse.of(0, Mouse.bit(Left), on.x, on.y, 0))
+	after = Rules.step(Rules.start, click)
+	after.world.palette == 2 and after.sounds == Rules.tone_paint(2)
 }
 expect {
-    click = Input.none.with_mouse(Mouse.of(0, Mouse.bit(Left), 600, 470, 0))
-    Rules.step(Rules.start, click).world.palette == Rules.start.palette
+	click = Input.none.with_mouse(Mouse.of(0, Mouse.bit(Left), 600, 470, 0))
+	Rules.step(Rules.start, click).world.palette == Rules.start.palette
 }
 
 ## And a click on a swatch is not a brush stroke: the canvas is untouched.
 expect {
-    on = Math.center(Rules.swatch_bounds(3))
-    click = Input.none.with_mouse(Mouse.of(0, Mouse.bit(Left), on.x, on.y, 0))
-    Rules.step(Rules.start, click).world.pixels == Rules.initial_pixels
+	on = Math.center(Rules.swatch_bounds(3))
+	click = Input.none.with_mouse(Mouse.of(0, Mouse.bit(Left), on.x, on.y, 0))
+	Rules.step(Rules.start, click).world.pixels == Rules.initial_pixels
 }

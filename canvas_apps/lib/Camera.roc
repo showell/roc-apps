@@ -17,6 +17,7 @@ import Math
 import Shapes
 
 Camera :: [].{
+
 	## Target, screen offset, clockwise rotation in degrees, and zoom factor.
 	Settings : {
 		target : Math.Vec2,
@@ -32,6 +33,7 @@ Camera :: [].{
 		rotation : F32,
 		zoom : F32,
 	}.{
+
 		## World-space point placed at the camera offset.
 		target : Camera2D -> Math.Vec2
 		target = |camera| camera.target
@@ -165,7 +167,11 @@ Camera :: [].{
 	fallback_zoom = 0.000001
 
 	sane_scalar : F32 -> F32
-	sane_scalar = |value| if F32.is_finite(value) { value } else { 0 }
+	sane_scalar = |value| if F32.is_finite(value) {
+		value
+	} else {
+		0
+	}
 
 	sane_vec : Math.Vec2 -> Math.Vec2
 	sane_vec = |v| { x: sane_scalar(v.x), y: sane_scalar(v.y) }
@@ -191,7 +197,7 @@ expect {
 
 # A follow camera puts its target under the middle of the screen.
 expect Camera.follow({ x: 900, y: 700 }, { screen: { x: 800, y: 600 }, zoom: 2 }).world_to_screen({ x: 900, y: 700 })
-    == { x: 400, y: 300 }
+	== { x: 400, y: 300 }
 
 # Zoom cannot be zero, whatever it is asked for.
 expect Camera.default.with_zoom(0).zoom() == Camera.fallback_zoom

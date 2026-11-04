@@ -17,7 +17,7 @@
 # Every build prints its time. Nothing is written outside a temporary directory.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROC="${ROC:-$HOME/build/roc-nightly/roc}"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../pinned-roc.sh"
 T="$(mktemp -d)"
 trap 'rm -rf "$T"' EXIT
 SIZES=${SIZES:-"286 4096 65536"}

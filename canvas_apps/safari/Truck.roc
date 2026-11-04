@@ -35,7 +35,7 @@ Truck :: [].{
 
 	next_turn_from : List(World.Segment), F64, I64, F64 -> Truck.NextTurn
 	next_turn_from = |segs, pos, i, cum0| (
-		if (i >= segs.len().to_i64_wrap()) {
+		if i >= segs.len().to_i64_wrap() {
 			NoTurnAhead
 		} else {
 			next_turn_step(segs, pos, i, (cum0 + (List.get(segs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")).length))
@@ -47,7 +47,7 @@ Truck :: [].{
 		{
 			s = (List.get(segs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))
 			(
-				if (pos < cum) {
+				if pos < cum {
 					match s.ending {
 						Continues(_) => TurnAhead({ dist: (cum - pos), v_turn: VehicleLimits.turn_speed(s.exit_angle) })
 						Terminates => NoTurnAhead
@@ -69,16 +69,18 @@ Truck :: [].{
 	truck_next = |truck, rider_dist, segs, l| (
 		{
 			scheduled = truck_schedule(rider_dist, l)
-			(match next_turn(segs, truck.pos) {
-				TurnAhead(turn) => (
-					if (turn.dist <= truck_brake_distance) {
-						truck_braking(truck, turn)
-					} else {
-						truck_free(truck, scheduled)
-					}
-				)
-				NoTurnAhead => truck_free(truck, scheduled)
-			})
+			(
+				match next_turn(segs, truck.pos) {
+					TurnAhead(turn) => (
+						if turn.dist <= truck_brake_distance {
+							truck_braking(truck, turn)
+						} else {
+							truck_free(truck, scheduled)
+						}
+					)
+					NoTurnAhead => truck_free(truck, scheduled)
+				}
+			)
 		}
 	)
 
@@ -87,7 +89,7 @@ Truck :: [].{
 		{
 			target = (turn.v_turn * truck_turn_caution)
 			a = (
-				if (turn.dist > F64.from_bits(4517329193108106637)) {
+				if turn.dist > F64.from_bits(4517329193108106637) {
 					(((target * target) - (truck.v * truck.v)) / (2.0 * turn.dist))
 				} else {
 					0.0
@@ -102,7 +104,7 @@ Truck :: [].{
 	truck_free = |truck, scheduled| (
 		{
 			v = (
-				if (truck.pos < scheduled) {
+				if truck.pos < scheduled {
 					DeviceMath.real_min(truck_max_v, (truck.v + truck_chase_accel))
 				} else {
 					truck.v

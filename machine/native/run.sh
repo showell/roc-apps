@@ -11,7 +11,7 @@
 # written in place, so give it copies.
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROC="${ROC:-$HOME/build/roc-nightly/roc}"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../pinned-roc.sh"
 ROCEMIT="${ROCEMIT:-$HOME/build/rust-target/release/rocemit}"
 src="$1"; shift
 n="$(basename "$src" .codex)"

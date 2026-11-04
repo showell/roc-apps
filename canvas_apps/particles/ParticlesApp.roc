@@ -33,7 +33,11 @@ ParticlesApp :: [].{
 			} else {
 				{ x: F32.to_f64(pointer.x), y: F32.to_f64(pointer.y) }
 			}
-		spread = if input.key_down(KeySpace) { Particles.spread_wide } else { Particles.spread_narrow }
+		spread = if input.key_down(KeySpace) {
+			Particles.spread_wide
+		} else {
+			Particles.spread_narrow
+		}
 		Particles.advance(m, at, spread)
 	}
 }

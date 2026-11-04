@@ -35,8 +35,7 @@
 # unless ALL=1, with its last real verdict).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# The compiler every roc-apps build uses: ../roc-nightly.txt.
-ROC="${ROC:-$HOME/build/roc-nightly/$(cat "$HERE/../roc-nightly.txt")/roc}"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../pinned-roc.sh"
 # The roc a verdict came from is part of its stamp: the nightly's directory,
 # which names its date and commit.
 ROC_ID="$(readlink -f "$ROC")"

@@ -19,7 +19,6 @@ import PongDraw
 PongApp :: [].{
 	Model : { world : Rules.World, sounds : U32 }
 
-
 	canvas_app : CanvasApp.CanvasApp(PongApp.Model)
 	canvas_app = {
 		size: { width: 800.0, height: 600.0 },
@@ -42,8 +41,18 @@ PongApp :: [].{
 	read_controls = |devices| {
 		pointer = devices.mouse
 		{
-			move: if devices.key_down(KeyW) { -1 } else if devices.key_down(KeyS) { 1 } else { 0 },
-			aim: if pointer.button_down(Left) { AimAt(pointer.position().y) } else { NoAim },
+			move: if devices.key_down(KeyW) {
+				-1
+			} else if devices.key_down(KeyS) {
+				1
+			} else {
+				0
+			},
+			aim: if pointer.button_down(Left) {
+				AimAt(pointer.position().y)
+			} else {
+				NoAim
+			},
 			new_match_pressed: devices.key_pressed(KeySpace) or pointer.button_pressed(Left),
 		}
 	}

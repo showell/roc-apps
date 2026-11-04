@@ -134,9 +134,21 @@ CanvasAppRunner :: [].{
 	some : Bool, Bool, Bool -> U32
 	some = |left, right, middle| {
 		var $bits = 0
-		$bits = if left { U32.bitwise_or($bits, Mouse.bit(Left)) } else { $bits }
-		$bits = if right { U32.bitwise_or($bits, Mouse.bit(Right)) } else { $bits }
-		if middle { U32.bitwise_or($bits, Mouse.bit(Middle)) } else { $bits }
+		$bits = if left {
+			U32.bitwise_or($bits, Mouse.bit(Left))
+		} else {
+			$bits
+		}
+		$bits = if right {
+			U32.bitwise_or($bits, Mouse.bit(Right))
+		} else {
+			$bits
+		}
+		if middle {
+			U32.bitwise_or($bits, Mouse.bit(Middle))
+		} else {
+			$bits
+		}
 	}
 
 	host_key_down : Devices.Snapshot, Keys.Key -> Bool
@@ -205,7 +217,11 @@ CanvasAppRunner :: [].{
 			# last frame happened to take, so a rally is the same rally
 			# whatever the machine is doing.
 			dt = 1.0 / I32.to_f32(game.fps)
-			fps = if input.devices.key_pressed(KeyF) { !model.fps } else { model.fps }
+			fps = if input.devices.key_pressed(KeyF) {
+				!model.fps
+			} else {
+				model.fps
+			}
 			Ok({ ..model, state: advance(model.state, keys, dt), fps })
 		}
 	}
@@ -223,11 +239,14 @@ CanvasAppRunner :: [].{
 		# roc-ray fills convex polygons only, so a concave one is cut here. A
 		# game does not know or care; a canvas does not ask.
 		shapes = Shapes.cut(the_frame(model.state))
-		frame.with_render_texture!(model.target, |big| {
-			big.clear!(Color.black)
-			draw_runs!(model.gpu, game.size, big, shapes)
-			Ok({})
-		})?
+		frame.with_render_texture!(
+			model.target,
+			|big| {
+				big.clear!(Color.black)
+				draw_runs!(model.gpu, game.size, big, shapes)
+				Ok({})
+			},
+		)?
 		frame.texture!({ texture: model.target.texture(), source: model.target.source(), dest: Math.rect(0, 0, F64.to_f32_wrap(game.size.width), F64.to_f32_wrap(game.size.height)), origin: Math.zero, rotation: 0, tint: Color.white })
 		Ok({})
 	}
@@ -265,7 +284,7 @@ CanvasAppRunner :: [].{
 		var $mode = Over
 		var $k = 0
 		while $k < n {
-			match List.get(shapes, $k) ?? crash("shape out of range") {
+			match List.get(shapes, $k) ?? crash ("shape out of range") {
 				Blend(next) => {
 					draw_run!(gpu, size, frame, $run, $space, $mode)
 					$run = List.with_capacity(n - $k)
@@ -290,13 +309,16 @@ CanvasAppRunner :: [].{
 		if List.is_empty(run) {
 			{}
 		} else {
-			scope = frame.with_camera!(staged(size, space), |seen| {
-				draw_under!(gpu, seen, run, mode)
-				Ok({})
-			})
+			scope = frame.with_camera!(
+				staged(size, space),
+				|seen| {
+					draw_under!(gpu, seen, run, mode)
+					Ok({})
+				},
+			)
 			match scope {
 				Ok({}) => {}
-				Err(_) => crash("the runner: a camera scope was refused")
+				Err(_) => crash ("the runner: a camera scope was refused")
 			}
 		}
 
@@ -305,13 +327,16 @@ CanvasAppRunner :: [].{
 		match mode {
 			Over => draw_all!(gpu, frame, run)
 			Add => {
-				scope = frame.with_blend_mode!(Draw.additive_blend, |lit| {
-					draw_all!(gpu, lit, run)
-					Ok({})
-				})
+				scope = frame.with_blend_mode!(
+					Draw.additive_blend,
+					|lit| {
+						draw_all!(gpu, lit, run)
+						Ok({})
+					},
+				)
 				match scope {
 					Ok({}) => {}
-					Err(_) => crash("the runner: a blend scope was refused")
+					Err(_) => crash ("the runner: a blend scope was refused")
 				}
 			}
 		}
@@ -339,7 +364,7 @@ CanvasAppRunner :: [].{
 		n = List.len(shapes)
 		var $k = 0
 		while $k < n {
-			draw_shape!(gpu, frame, List.get(shapes, $k) ?? crash("shape out of range"))
+			draw_shape!(gpu, frame, List.get(shapes, $k) ?? crash ("shape out of range"))
 			$k = $k + 1
 		}
 		{}
@@ -398,14 +423,17 @@ CanvasAppRunner :: [].{
 			Skip => {}
 			Flat(col) if unclipped(clip) => draw_it!(frame, color_of(col))
 			_ => {
-				scope = frame.with_shader!(gpu.shader, |shaded| {
-					set_uniforms!(gpu, fill, clip)
-					draw_it!(shaded, Color.white)
-					Ok({})
-				})
+				scope = frame.with_shader!(
+					gpu.shader,
+					|shaded| {
+						set_uniforms!(gpu, fill, clip)
+						draw_it!(shaded, Color.white)
+						Ok({})
+					},
+				)
 				match scope {
 					Ok({}) => {}
-					Err(_) => crash("the player: a shader scope was refused")
+					Err(_) => crash ("the player: a shader scope was refused")
 				}
 			}
 		}
@@ -469,7 +497,15 @@ CanvasAppRunner :: [].{
 	byte : F64 -> U8
 	byte = |v| {
 		n = F64.to_i64_wrap(v + 0.5)
-		I64.to_u8_wrap(if n < 0 { 0 } else if n > 255 { 255 } else { n })
+		I64.to_u8_wrap(
+			if n < 0 {
+				0
+			} else if n > 255 {
+				255
+			} else {
+				n
+			},
+		)
 	}
 
 	draw_triangles! : Draw.Frame, List(F64), Color.Rgba => {}

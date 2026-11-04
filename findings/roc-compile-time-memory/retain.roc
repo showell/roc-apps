@@ -4,7 +4,11 @@
 #
 # The bound is a literal, so the whole loop is evaluated at compile time.
 spin : List(U8), I64, I64 -> List(U8)
-spin = |l, i, n| if i >= n { l } else { spin(List.set(l, I64.to_u64_wrap(I64.rem_by(i, 65536)), 7.U8) ?? l, i + 1, n) }
+spin = |l, i, n| if i >= n {
+	l
+} else {
+	spin(List.set(l, I64.to_u64_wrap(I64.rem_by(i, 65536)), 7.U8) ?? l, i + 1, n)
+}
 
 main! = |_args| {
 	l = spin(List.repeat(0.U8, 65536), 0, 40000)

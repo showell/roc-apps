@@ -181,7 +181,14 @@ Machine :: [].{
 	block_write_sector! = |m, lba, buf| {
 		if Machine.block_granted!(m) {
 			outcome = Disk.write!(I64.to_u64_wrap(lba), Machine.at(buf))
-			(m, if outcome == 3 { 1 } else { 0 })
+			(
+				m,
+				if outcome == 3 {
+					1
+				} else {
+					0
+				},
+			)
 		} else {
 			(m, 0)
 		}
@@ -213,7 +220,7 @@ Machine :: [].{
 		if table == 0 {
 			(m, -1)
 		} else {
-			crash("floor: uefi-read-key-ex with a UEFI system table, which this platform does not model")
+			crash ("floor: uefi-read-key-ex with a UEFI system table, which this platform does not model")
 		}
 	}
 

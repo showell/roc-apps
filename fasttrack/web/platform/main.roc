@@ -20,9 +20,9 @@ platform ""
 	packages {}
 	provides {
 		"roc_init": init_for_host,
+		"roc_release": release_for_host,
 		"roc_update": update_for_host,
 		"roc_view": view_for_host,
-		"roc_release": release_for_host,
 	}
 	targets: {
 		inputs_dir: "targets/",

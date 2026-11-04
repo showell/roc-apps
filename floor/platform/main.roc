@@ -11,22 +11,24 @@
 # protocol describes. floor/roc/Machine.roc stands in for the Machine rocemit
 # writes, door for door, over exactly these.
 platform ""
-	requires {} { main! : List(Str) => Try(_, [Exit(I8), ..]) }
-	exposes [Echo, Heap, Port, Disk, Clock]
+	requires {
+		main! : List(Str) => Try(_, [Exit(I8), ..])
+	}
+	exposes [Clock, Disk, Echo, Heap, Port]
 	packages {}
 	provides { "roc_main": main_for_host! }
 	hosted {
+		"roc_clock_now": Clock.now!,
+		"roc_clock_wait": Clock.wait!,
+		"roc_disk_read": Disk.read!,
+		"roc_disk_sector_count": Disk.sector_count!,
+		"roc_disk_select": Disk.select!,
+		"roc_disk_write": Disk.write!,
 		"roc_echo_line": Echo.line!,
 		"roc_heap_load": Heap.load!,
 		"roc_heap_store": Heap.store!,
 		"roc_port_in": Port.in!,
 		"roc_port_out": Port.out!,
-		"roc_disk_select": Disk.select!,
-		"roc_disk_sector_count": Disk.sector_count!,
-		"roc_disk_read": Disk.read!,
-		"roc_disk_write": Disk.write!,
-		"roc_clock_now": Clock.now!,
-		"roc_clock_wait": Clock.wait!,
 	}
 	targets: {
 		inputs_dir: "targets/",

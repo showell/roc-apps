@@ -78,7 +78,7 @@ LegalMove :: [].{
 				} else {
 					Bool.False
 				}
-			}
+		}
 
 	## Every forward move the hand allows; when there is none, every move
 	## backwards instead.
@@ -124,10 +124,10 @@ LegalMove :: [].{
 					card = get_card_for_move_type(move_type)
 					direction = match move_type {
 						Reverse(_) => Backward
-						_ => if card == "4" Backward else Forward
+						_ => if (card == "4") Backward else Forward
 					}
-					pen = if List.contains(["A", "joker", "6"], card) LeavePen else StayInPen
-					bullseye = if List.contains(["J", "Q", "K"], card) and start == Board.bullseye LeaveBullseye else StayInBullseye
+					pen = if (List.contains(["A", "joker", "6"], card)) LeavePen else StayInPen
+					bullseye = if (List.contains(["J", "Q", "K"], card) and start == Board.bullseye) LeaveBullseye else StayInBullseye
 					n = move_count_for_move_type(move_type, Board.is_pen(start))
 					if move_type == WithCard("7") {
 						moves_for_seven(board, c, start, movers)
@@ -145,7 +145,7 @@ LegalMove :: [].{
 				} else {
 					[]
 				}
-			}
+		}
 
 	## A seven moves one piece seven, or splits between two: the first part
 	## is offered only if some other piece can then finish the split, and

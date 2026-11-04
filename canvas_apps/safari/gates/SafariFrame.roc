@@ -102,5 +102,5 @@ paint_command = |pixels, { roll, draw_command }|
 			Skip => pixels
 			Flat(_) | Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) =>
 				ScanlineFill.fill_polygon(pixels, { roll, pts: draw_command.pts, fill })
-			}
+		}
 	}

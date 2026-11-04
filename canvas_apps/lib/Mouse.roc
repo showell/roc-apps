@@ -25,6 +25,7 @@ Mouse :: [].{
 	# IS NOT CALLED wheel_delta**, which roc-ray also has and which means
 	# something else there -- both axes, as a Vec2. One name, one meaning.
 	Snapshot := { held : U32, struck : U32, at : { x : F32, y : F32 }, wheel : F32 }.{
+
 		## Whether a button is down now, however long it has been.
 		button_down : Snapshot, Mouse.Button -> Bool
 		button_down = |snapshot, button| U32.bitwise_and(snapshot.held, bit(button)) != 0

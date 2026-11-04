@@ -11,9 +11,9 @@
 # package reference may.
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# The compiler every roc-apps build uses (../roc-nightly.txt), so both ends of
-# a game are built by one.
-ROC="${ROC:-$HOME/build/roc-nightly/$(cat "$HERE/../roc-nightly.txt")/roc}"
+# The compiler every roc-apps build uses, so both ends of a game are built
+# by one.
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../pinned-roc.sh"
 ZIG="${ZIG:-$HOME/zig-0.16.0/zig}"
 name="${1:?usage: canvas_apps/build.sh <app>}"
 app="$HERE/$name/web.roc"

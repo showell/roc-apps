@@ -43,16 +43,20 @@ one_seg : List(World.Segment)
 one_seg = [World.segment_at(0)]
 
 turn_dist : List(World.Segment), F64 -> F64
-turn_dist = |segs, pos| (match Truck.next_turn(segs, pos) {
-	TurnAhead(t) => t.dist
-	NoTurnAhead => (0.0 - 1.0)
-})
+turn_dist = |segs, pos| (
+	match Truck.next_turn(segs, pos) {
+		TurnAhead(t) => t.dist
+		NoTurnAhead => (0.0 - 1.0)
+	}
+)
 
 turn_v : List(World.Segment), F64 -> F64
-turn_v = |segs, pos| (match Truck.next_turn(segs, pos) {
-	TurnAhead(t) => t.v_turn
-	NoTurnAhead => (0.0 - 1.0)
-})
+turn_v = |segs, pos| (
+	match Truck.next_turn(segs, pos) {
+		TurnAhead(t) => t.v_turn
+		NoTurnAhead => (0.0 - 1.0)
+	}
+)
 
 turn_got : List(F64)
 turn_got = [turn_dist(one_seg, 0.0), turn_dist(one_seg, 450.0), turn_dist(one_seg, 499.0), turn_v(one_seg, 0.0), turn_v(one_seg, 450.0), VehicleLimits.turn_speed((List.get(one_seg, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).exit_angle)]

@@ -106,7 +106,7 @@ Machine :: [].{
 		if table == 0 {
 			(m, -1)
 		} else {
-			crash("framebuffer: uefi-read-key-ex with a UEFI system table, which this platform does not model")
+			crash ("framebuffer: uefi-read-key-ex with a UEFI system table, which this platform does not model")
 		}
 	}
 

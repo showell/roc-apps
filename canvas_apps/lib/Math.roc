@@ -48,7 +48,13 @@ Math :: [].{
 		point.x >= left(r) and point.x <= right(r) and point.y >= top(r) and point.y <= bottom(r)
 
 	clamp : F32, F32, F32 -> F32
-	clamp = |v, lo, hi| if v < lo { lo } else if v > hi { hi } else { v }
+	clamp = |v, lo, hi| if v < lo {
+		lo
+	} else if v > hi {
+		hi
+	} else {
+		v
+	}
 
 	distance_squared : Math.Vec2, Math.Vec2 -> F32
 	distance_squared = |a, b| {

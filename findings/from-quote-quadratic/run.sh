@@ -3,7 +3,7 @@
 # Str and as T (a nominal with from_quote). Fresh cache each time.
 set -u
 cd "$(dirname "$0")"
-ROC="${ROC:-$HOME/build/roc-nightly/$(cat ../../roc-nightly.txt)/roc}"
+. ../../pinned-roc.sh
 W="$(mktemp -d)"; cp T.roc "$W/"
 for kind in str quote; do for n in 100 200 400 800; do
     python3 gen.py $kind $n > "$W/p.roc"

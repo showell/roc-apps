@@ -150,5 +150,5 @@ expect {
 	colors = ["red", "blue", "green", "purple"]
 	Board.index_of(colors, { zone: NormalColor("green"), id: "L0" }) == Board.at(2, Board.l0)
 		and Board.loc_of(colors, Board.at(3, Board.ft)) == { zone: NormalColor("purple"), id: "FT" }
-			and List.len(Board.all_locs(colors)) == Board.count
+		and List.len(Board.all_locs(colors)) == Board.count
 }

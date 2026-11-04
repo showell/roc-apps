@@ -63,8 +63,8 @@ builds and judges them, from the roc-apps root:
 
     nice -n 19 shale canvas_apps/safari/gates/run.shale
 
-It builds each spec app on roc-apps' pinned nightly (`roc-nightly.txt`,
-installed at `~/build/roc-nightly/<name>/roc`) and compares its output with
+It builds each spec app on roc-apps' pinned nightly (`roc-version`,
+installed at `~/tools/roc-<pin>/roc`) and compares its output with
 `gates/expected/<Spec>.expected`, then runs StepBack, ShapesFrame and
 RasterFrame at steps 0, 3000, 5025 and 9000. `part=1`, `part=2` or `part=proof` runs one piece. The
 expected files began as the Codex verdicts (safari-codex's `units/`) and are

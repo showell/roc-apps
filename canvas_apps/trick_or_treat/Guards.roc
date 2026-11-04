@@ -103,6 +103,10 @@ Guards :: [].{
 	unit : F64, F64 -> { x : F64, z : F64 }
 	unit = |x, z| {
 		d = F64.sqrt(x * x + z * z)
-		if d <= 0.000001 { { x: 0.0, z: 1.0 } } else { { x: x / d, z: z / d } }
+		if d <= 0.000001 {
+			{ x: 0.0, z: 1.0 }
+		} else {
+			{ x: x / d, z: z / d }
+		}
 	}
 }

@@ -168,7 +168,7 @@ nearest_tree_ahead = |trees, along| {
 	nearest = trees.fold(
 		NoTreeYet,
 		|best, tree|
-			if (tree.across > 0.0 and tree.along >= along) {
+			if tree.across > 0.0 and tree.along >= along {
 				match best {
 					NearestAlong(nearest_along) => if (tree.along < nearest_along) NearestAlong(tree.along) else best
 					NoTreeYet => NearestAlong(tree.along)

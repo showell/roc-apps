@@ -6,8 +6,7 @@ no hand-written serialization code for the profile.
     in:  {"name": "Ada", "pet_ages": [3, 7], "picture": h'004080FF'}
     out: {"name": "Ada", "pet_ages": [4, 8], "picture": h'FFBF7F00'}
 
-Tested with `nightly-2026-09-22-e494788` (the one in `roc-nightly.txt`) and
-`nightly-2026-09-25-1ab6804`:
+It builds with the repository's pinned nightly (`../roc-version`):
 
     roc test Profile.roc     # 16 expects across the three modules
     roc main.roc             # prints the in/out bytes as hex

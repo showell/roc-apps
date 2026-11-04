@@ -6,7 +6,7 @@
 #   findings/threaded-record-copy/run.sh
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROC="${ROC:-$HOME/build/roc-nightly/roc}"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../pinned-roc.sh"
 T="$(mktemp -d)"
 trap 'rm -rf "$T"' EXIT
 for d in "$HERE"/*/; do

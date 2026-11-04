@@ -123,7 +123,7 @@ MachineGpu :: [].{
 		match MachineGpu.word_of(g, a) {
 			Plane(i, b) => U32.to_u64(U32.bitwise_and(U32.shr_zf_wrap(List.get(g.planes, i) ?? 0, U64.to_u8_wrap(b * 8)), 255))
 			Cmd(i, b) => U32.to_u64(U32.bitwise_and(U32.shr_zf_wrap(List.get(g.cmd, i) ?? 0, U64.to_u8_wrap(b * 8)), 255))
-			Outside => crash("machine: a read that runs past the GPU region's edge")
+			Outside => crash ("machine: a read that runs past the GPU region's edge")
 		}
 
 	# The low `width` bytes of `u` from `a`, little-endian. A whole aligned word
@@ -131,8 +131,8 @@ MachineGpu :: [].{
 	store : MachineGpu.Gpu, I64, U64, I64 -> MachineGpu.Gpu
 	store = |g, a, u, width|
 		match MachineGpu.word_of(g, a) {
-			Plane(i, 0) if width == 4 => { ..g, planes: List.set(g.planes, i, U64.to_u32_wrap(u)) ?? crash("machine: GPU plane index") }
-			Cmd(i, 0) if width == 4 => { ..g, cmd: List.set(g.cmd, i, U64.to_u32_wrap(u)) ?? crash("machine: GPU command index") }
+			Plane(i, 0) if width == 4 => { ..g, planes: List.set(g.planes, i, U64.to_u32_wrap(u)) ?? crash ("machine: GPU plane index") }
+			Cmd(i, 0) if width == 4 => { ..g, cmd: List.set(g.cmd, i, U64.to_u32_wrap(u)) ?? crash ("machine: GPU command index") }
 			_ => MachineGpu.store_bytes(g, a, u, width)
 		}
 
@@ -154,7 +154,7 @@ MachineGpu :: [].{
 		match MachineGpu.word_of(g, a) {
 			Plane(i, k) => { ..g, planes: MachineGpu.with_byte(g.planes, i, k, b) }
 			Cmd(i, k) => { ..g, cmd: MachineGpu.with_byte(g.cmd, i, k, b) }
-			Outside => crash("machine: a write that runs past the GPU region's edge")
+			Outside => crash ("machine: a write that runs past the GPU region's edge")
 		}
 
 	with_byte : List(U32), U64, U64, U64 -> List(U32)
@@ -162,7 +162,7 @@ MachineGpu :: [].{
 		shift = U64.to_u8_wrap(k * 8)
 		old = List.get(xs, i) ?? 0
 		cleared = U32.bitwise_and(old, U32.bitwise_xor(U32.shl_wrap(255, shift), 0xFFFFFFFF))
-		List.set(xs, i, U32.bitwise_or(cleared, U32.shl_wrap(U64.to_u32_wrap(b), shift))) ?? crash("machine: GPU byte index")
+		List.set(xs, i, U32.bitwise_or(cleared, U32.shl_wrap(U64.to_u32_wrap(b), shift))) ?? crash ("machine: GPU byte index")
 	}
 
 	# ---- the ports ----------------------------------------------------------
@@ -175,9 +175,9 @@ MachineGpu :: [].{
 		} else if port == 0x402 and U64.bitwise_and(v, 0xFFFFFFFF) == 0 {
 			MachineGpu.clear_depth(g)
 		} else if port == 0x402 {
-			crash("machine: port-out-32 to port 0x402 arms the GPU's shadow map, which this machine does not model")
+			crash ("machine: port-out-32 to port 0x402 arms the GPU's shadow map, which this machine does not model")
 		} else if port == 0x400 and U64.bitwise_and(v, 0x40000000) != 0 {
-			crash("machine: port-out-32 to port 0x400 with the shadow flag, a shadow pass this machine does not model")
+			crash ("machine: port-out-32 to port 0x400 with the shadow flag, a shadow pass this machine does not model")
 		} else if port == 0x403 {
 			# The viewport's origin, which does nothing until 0x40F arms it.
 			g
@@ -185,18 +185,25 @@ MachineGpu :: [].{
 			# Zero disarms the viewport, which this machine never arms.
 			g
 		} else if port == 0x40F {
-			crash("machine: port-out-32 to port 0x40F arms the GPU's viewport, which this machine does not model")
+			crash ("machine: port-out-32 to port 0x40F arms the GPU's viewport, which this machine does not model")
 		} else if port == 0x410 and U64.bitwise_and(v, 0xFFFFFFFF) == 0 {
 			# Zero turns the cinematic pass off, which this machine never turns on.
 			g
 		} else if port == 0x410 {
-			crash("machine: port-out-32 to port 0x410 turns on the GPU's cinematic pass, which this machine does not model")
+			crash ("machine: port-out-32 to port 0x410 turns on the GPU's cinematic pass, which this machine does not model")
 		} else if port == 0x400 {
 			# codex-vm reads the count as an int: one with bit 31 set draws nothing.
 			n = I32.to_i64(U32.to_i32_wrap(U64.to_u32_wrap(v)))
-			MachineGpu.flush(g, if n < 0 { 0 } else { I64.to_u64_wrap(n) })
+			MachineGpu.flush(
+				g,
+				if n < 0 {
+					0
+				} else {
+					I64.to_u64_wrap(n)
+				},
+			)
 		} else {
-			crash("machine: port-out-32 to GPU port ${MachineGpu.hex(port)}, which this machine's GPU does not model")
+			crash ("machine: port-out-32 to GPU port ${MachineGpu.hex(port)}, which this machine's GPU does not model")
 		}
 
 	# A read of a port in 0x400-0x417: 0x403 answers that a rasterizer is there,
@@ -209,7 +216,7 @@ MachineGpu :: [].{
 		} else if port == 0x40E or port == 0x40F {
 			0
 		} else {
-			crash("machine: port-in-32 from GPU port ${MachineGpu.hex(port)}, which this machine's GPU does not model")
+			crash ("machine: port-in-32 from GPU port ${MachineGpu.hex(port)}, which this machine's GPU does not model")
 		}
 
 	hex : U64 -> Str
@@ -221,7 +228,15 @@ MachineGpu :: [].{
 			"0x${acc}"
 		} else {
 			d = U64.bitwise_and(v, 15)
-			c = Str.from_utf8([U64.to_u8_wrap(if d < 10 { 48 + d } else { 55 + d })]) ?? "?"
+			c = Str.from_utf8([
+				U64.to_u8_wrap(
+					if d < 10 {
+						48 + d
+					} else {
+						55 + d
+					},
+				),
+			]) ?? "?"
 			MachineGpu.hex_go(U64.shr_zf_wrap(v, 4), left - 1, Str.concat(c, acc))
 		}
 
@@ -250,7 +265,7 @@ MachineGpu :: [].{
 		var $xs = xs
 		var $i = from
 		while $i < from + n {
-			$xs = List.set($xs, $i, v) ?? crash("machine: GPU fill index")
+			$xs = List.set($xs, $i, v) ?? crash ("machine: GPU fill index")
 			$i = $i + 1
 		}
 		$xs
@@ -264,7 +279,11 @@ MachineGpu :: [].{
 		if g.stride != g.width {
 			g
 		} else {
-			n = if count > MachineGpu.max_tris { MachineGpu.max_tris } else { count }
+			n = if count > MachineGpu.max_tris {
+				MachineGpu.max_tris
+			} else {
+				count
+			}
 			drawn = { ..g, frames: g.frames + 1, planes: MachineGpu.triangles(g.planes, g.cmd, g.width, g.height, n) }
 			MachineGpu.glow_pass(drawn)
 		}
@@ -296,7 +315,7 @@ MachineGpu :: [].{
 		x2 = MachineGpu.int_at(cmd, at + 4)
 		y2 = MachineGpu.int_at(cmd, at + 5)
 		if (List.get(cmd, at + 12) ?? 0) != 0 or (List.get(cmd, at + 13) ?? 0) != 0 or (List.get(cmd, at + 14) ?? 0) != 0 or (List.get(cmd, at + 15) ?? 0) != 0 or (List.get(cmd, at + 16) ?? 0) != 0 or (List.get(cmd, at + 17) ?? 0) != 0 {
-			crash("machine: a textured triangle, which this machine's GPU does not draw")
+			crash ("machine: a textured triangle, which this machine's GPU does not draw")
 		} else {
 			minx = I64.max(I64.min(x0, I64.min(x1, x2)), 0)
 			miny = I64.max(I64.min(y0, I64.min(y1, y2)), 0)
@@ -306,8 +325,16 @@ MachineGpu :: [].{
 			if minx > maxx or miny > maxy or area == 0 {
 				planes
 			} else {
-				sign = if area > 0 { 1 } else { -1 }
-				abs_area = if area > 0 { area } else { 0 - area }
+				sign = if area > 0 {
+					1
+				} else {
+					-1
+				}
+				abs_area = if area > 0 {
+					area
+				} else {
+					0 - area
+				}
 				c0 = List.get(cmd, at + 6) ?? 0
 				c1 = List.get(cmd, at + 7) ?? 0
 				c2 = List.get(cmd, at + 8) ?? 0
@@ -328,7 +355,7 @@ MachineGpu :: [].{
 							idx = I64.to_u64_wrap($y) * w + I64.to_u64_wrap($x)
 							if depth < (List.get($p, idx) ?? 0) {
 								pixel = MachineGpu.lerp(c0, c1, c2, bw0, bw1, bw2, abs_area)
-								$p = List.set(List.set($p, fb0 + idx, pixel) ?? crash("machine: GPU pixel index"), idx, depth) ?? crash("machine: GPU depth index")
+								$p = List.set(List.set($p, fb0 + idx, pixel) ?? crash ("machine: GPU pixel index"), idx, depth) ?? crash ("machine: GPU depth index")
 							}
 						}
 						$x = $x + 1
@@ -381,7 +408,15 @@ MachineGpu :: [].{
 		var $d = glow
 		var $i = 0
 		while $i < w * h {
-			$d = List.set($d, $i, if (List.get(planes, fb0 + $i) ?? 0) == bg { 255 } else { 0 }) ?? crash("machine: glow index")
+			$d = List.set(
+				$d,
+				$i,
+				if (List.get(planes, fb0 + $i) ?? 0) == bg {
+					255
+				} else {
+					0
+				},
+			) ?? crash ("machine: glow index")
 			$i = $i + 1
 		}
 		var $pass = 0
@@ -426,7 +461,7 @@ MachineGpu :: [].{
 		here = List.get(d, at) ?? 0
 		there = List.get(d, from) ?? 0
 		if U8.to_u64(here) > U8.to_u64(there) + 1 {
-			List.set(d, at, there + 1) ?? crash("machine: glow index")
+			List.set(d, at, there + 1) ?? crash ("machine: glow index")
 		} else {
 			d
 		}
@@ -445,7 +480,7 @@ MachineGpu :: [].{
 				r = U64.min(U32.to_u64(U32.bitwise_and(U32.shr_zf_wrap(px, 16), 255)) + U64.div_trunc_by(25 * cube, 4096), 255)
 				gr = U64.min(U32.to_u64(U32.bitwise_and(U32.shr_zf_wrap(px, 8), 255)) + U64.div_trunc_by(55 * cube, 4096), 255)
 				b = U64.min(U32.to_u64(U32.bitwise_and(px, 255)) + U64.div_trunc_by(150 * cube, 4096), 255)
-				$p = List.set($p, n + $i, U64.to_u32_wrap(r * 65536 + gr * 256 + b)) ?? crash("machine: glow pixel index")
+				$p = List.set($p, n + $i, U64.to_u32_wrap(r * 65536 + gr * 256 + b)) ?? crash ("machine: glow pixel index")
 			}
 			$i = $i + 1
 		}

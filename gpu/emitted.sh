@@ -13,7 +13,7 @@
 # a full green run: the modules copied into gpu/roc/, where they are tracked.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROC="${ROC:-$HOME/build/roc-nightly/roc}"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../pinned-roc.sh"
 ROCEMIT="${ROCEMIT:-$HOME/build/rust-target/release/rocemit}"
 KERNELS_ROOT="${KERNELS_ROOT:-$HOME/showell_repos/cobblestone-u66rel}"
 # rocemit resolves a kernel's cites (DeviceMath, DeviceEffect, ...) from the

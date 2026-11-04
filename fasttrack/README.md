@@ -10,8 +10,8 @@ wasm and draws what Roc answers.
     fasttrack/build.sh          tests, builds and checks; publishes the dev page
     FAST=1 fasttrack/build.sh   the dev backend alone, no checks: a quick look
 
-It needs the Roc nightly named in `../roc-nightly.txt` (unpacked under
-`~/build/roc-nightly/`, see the top-level README), zig 0.16 at
+It needs the Roc nightly named in `../roc-version` (installed at
+`~/tools/roc-<pin>/roc`, see the top-level README), zig 0.16 at
 `~/zig-0.16.0/zig`, node, and roc-apps beside it: `../glue/JsGlue.roc` writes
 the page's reader, and the page loads `../shared/home.js` (`site/build.sh`).
 A build publishes to `~/build/roc-apps/next/fasttrack/` only if every check
@@ -119,7 +119,7 @@ computers.
 ## The compiler, met
 
 Built on `nightly-2026-09-07-14d9829`, now on the nightly in
-`../roc-nightly.txt` (09-22). What the compiler got wrong, and where it stands
+`../roc-version`. What the compiler got wrong, and where it stands
 (retested 2026-09-24 on 09-22 and 09-23):
 
 | what | now | workaround |

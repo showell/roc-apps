@@ -12,7 +12,7 @@
 # small: it prints how long the build took, and a minute is the limit.
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROC="${ROC:-$HOME/build/roc-nightly/roc}"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../pinned-roc.sh"
 ROCEMIT="${ROCEMIT:-$HOME/build/rust-target/release/rocemit}"
 OPT="${OPT:-dev}"
 OUT="$HOME/build/roc-apps/gen/raybench"

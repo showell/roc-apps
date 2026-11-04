@@ -13,7 +13,7 @@
 set -euo pipefail
 NAME="${1:?usage: run_exp.sh exp_name}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
-ROC="${ROC:-$HOME/build/roc-nightly/$(cat "$HERE/../roc-nightly.txt")/roc}"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../pinned-roc.sh"
 OUT="$HOME/build/roc-apps/gen/fasttrack/$NAME"
 mkdir -p "$OUT"
 # The platform's host, rebuilt when its source is newer than the library.

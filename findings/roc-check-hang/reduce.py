@@ -11,7 +11,8 @@ still going.
 """
 import os, subprocess, sys, time
 
-ROC = os.environ.get("ROC", os.path.expanduser("~/build/roc-nightly/roc"))
+PIN = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "roc-version")).read().strip()
+ROC = os.environ.get("ROC", os.path.expanduser(f"~/tools/roc-{PIN}/roc"))
 HERE = os.path.dirname(os.path.abspath(__file__))
 src = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "hang.roc")
 LIMIT = int(sys.argv[2]) if len(sys.argv) > 2 else 15

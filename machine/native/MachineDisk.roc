@@ -30,7 +30,7 @@ MachineDisk :: [].{
 				if p == "" or Drive.open!(i, p) {
 					MachineDisk.open!(paths, i + 1)
 				} else {
-					crash("machine: cannot open ${p} as drive ${U64.to_str(i)}")
+					crash ("machine: cannot open ${p} as drive ${U64.to_str(i)}")
 				}
 		}
 
@@ -38,10 +38,18 @@ MachineDisk :: [].{
 	select = |ds, n| { ..ds, selected: n }
 
 	sector_count! : MachineDisk.Drives => U64
-	sector_count! = |ds| if ds.selected >= 2 { 0 } else { Drive.sector_count!(ds.selected) }
+	sector_count! = |ds| if ds.selected >= 2 {
+		0
+	} else {
+		Drive.sector_count!(ds.selected)
+	}
 
 	read! : MachineDisk.Drives, U64 => List(U8)
-	read! = |ds, lba| if ds.selected >= 2 { List.repeat(255.U8, 512) } else { Drive.read!(ds.selected, lba) }
+	read! = |ds, lba| if ds.selected >= 2 {
+		List.repeat(255.U8, 512)
+	} else {
+		Drive.read!(ds.selected, lba)
+	}
 
 	write! : MachineDisk.Drives, U64, List(U8) => MachineDisk.Drives
 	write! = |ds, lba, sector|

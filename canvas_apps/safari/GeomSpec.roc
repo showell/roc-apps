@@ -22,7 +22,7 @@ gd_walk = |i| gd_walk_onto(i, [])
 
 gd_walk_onto : I64, List(F64) -> List(F64)
 gd_walk_onto = |i, acc| (
-	if (i >= gd_right.len().to_i64_wrap()) {
+	if i >= gd_right.len().to_i64_wrap() {
 		acc
 	} else {
 		gd_walk_onto((i + 1), List.append(acc, Geom.ground_drop((List.get(gd_right, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), (List.get(gd_forward, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
@@ -47,7 +47,7 @@ tr_walk = |i| tr_walk_onto(i, [])
 
 tr_walk_onto : I64, List(F64) -> List(F64)
 tr_walk_onto = |i, acc| (
-	if (i >= tr_a.len().to_i64_wrap()) {
+	if i >= tr_a.len().to_i64_wrap() {
 		acc
 	} else {
 		(
@@ -82,7 +82,7 @@ cn_walk = |vs, i| cn_walk_onto(vs, i, [])
 
 cn_walk_onto : List(Geom.Vec3), I64, List(F64) -> List(F64)
 cn_walk_onto = |vs, i, acc| (
-	if (i >= vs.len().to_i64_wrap()) {
+	if i >= vs.len().to_i64_wrap() {
 		acc
 	} else {
 		(

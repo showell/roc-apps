@@ -16,11 +16,11 @@ platform ""
 	exposes []
 	packages {}
 	provides {
+		"roc_drop": drop_for_host,
+		"roc_key": key_for_host,
 		"roc_new": new_for_host,
 		"roc_step": step_for_host,
-		"roc_key": key_for_host,
 		"roc_view": view_for_host,
-		"roc_drop": drop_for_host,
 	}
 	targets: {
 		inputs_dir: "targets/",
@@ -31,7 +31,11 @@ platform ""
 	}
 
 new_for_host = program.new
+
 step_for_host = program.step
+
 key_for_host = program.key
+
 view_for_host = program.view
+
 drop_for_host = program.drop

@@ -26,7 +26,13 @@ MachineNat :: [].{
 		if len < 14 {
 			Replies([])
 		} else if ethertype == 0x0806 {
-			Replies(if len < 42 { [] } else { [MachineNat.arp_reply(f)] })
+			Replies(
+				if len < 42 {
+					[]
+				} else {
+					[MachineNat.arp_reply(f)]
+				},
+			)
 		} else if ethertype != 0x0800 or len < 34 {
 			Replies([])
 		} else {
@@ -34,13 +40,23 @@ MachineNat :: [].{
 			proto = MachineNat.byte(f, 23)
 			if proto == 6 and len >= 14 + ihl + 20 {
 				flags = MachineNat.byte(f, 14 + ihl + 13)
-				if U64.bitwise_and(flags, 0x12) == 0x02 { Host("a TCP connection to the host") } else { Replies([]) }
+				if U64.bitwise_and(flags, 0x12) == 0x02 {
+					Host("a TCP connection to the host")
+				} else {
+					Replies([])
+				}
 			} else if proto == 17 and len >= 14 + ihl + 8 {
 				udp = 14 + ihl
 				dport = MachineNat.be16(f, udp + 2)
 				udp_len = MachineNat.be16(f, udp + 4)
 				avail = len - udp - 8
-				payload = if udp_len < 8 { 0 } else if udp_len - 8 > avail { avail } else { udp_len - 8 }
+				payload = if udp_len < 8 {
+					0
+				} else if udp_len - 8 > avail {
+					avail
+				} else {
+					udp_len - 8
+				}
 				if dport == 67 and payload > 0 {
 					Replies(MachineNat.dhcp(f, List.sublist(f, { start: udp + 8, len: payload }), lease))
 				} else if dport == 53 and payload > 0 {
@@ -56,17 +72,15 @@ MachineNat :: [].{
 
 	arp_reply : List(U8) -> List(U8)
 	arp_reply = |req|
-		List.join(
-			[
-				List.sublist(req, { start: 6, len: 6 }),
-				MachineNat.gateway_mac,
-				[0x08, 0x06, 0, 1, 0x08, 0, 6, 4, 0, 2],
-				MachineNat.gateway_mac,
-				List.sublist(req, { start: 38, len: 4 }),
-				List.sublist(req, { start: 6, len: 6 }),
-				List.sublist(req, { start: 28, len: 4 }),
-			],
-		)
+		List.join([
+			List.sublist(req, { start: 6, len: 6 }),
+			MachineNat.gateway_mac,
+			[0x08, 0x06, 0, 1, 0x08, 0, 6, 4, 0, 2],
+			MachineNat.gateway_mac,
+			List.sublist(req, { start: 38, len: 4 }),
+			List.sublist(req, { start: 6, len: 6 }),
+			List.sublist(req, { start: 28, len: 4 }),
+		])
 
 	# DHCP's answer to a DISCOVER (an offer) or a REQUEST (an ack), broadcast
 	# from the server's port to the client's.
@@ -78,7 +92,29 @@ MachineNat :: [].{
 		} else {
 			client = List.sublist(frame, { start: 6, len: 6 })
 			bootp = List.join([[2, 1, 6, 0], List.sublist(msg, { start: 4, len: 4 }), List.repeat(0.U8, 8), MachineNat.guest, MachineNat.gateway, List.repeat(0.U8, 4), client, List.repeat(0.U8, 202)])
-			options = List.join([[99, 130, 83, 99, 53, 1, if kind == 1 { 2 } else { 5 }, 54, 4], MachineNat.gateway, [1, 4, 255, 255, 255, 0, 3, 4], MachineNat.gateway, [6, 4, 10, 0, 2, 3, 51, 4], MachineNat.be32(lease), [255]])
+			options = List.join([
+				[
+					99,
+					130,
+					83,
+					99,
+					53,
+					1,
+					if kind == 1 {
+						2
+					} else {
+						5
+					},
+					54,
+					4,
+				],
+				MachineNat.gateway,
+				[1, 4, 255, 255, 255, 0, 3, 4],
+				MachineNat.gateway,
+				[6, 4, 10, 0, 2, 3, 51, 4],
+				MachineNat.be32(lease),
+				[255],
+			])
 			match MachineNat.udp_frame(client, MachineNat.gateway, [255, 255, 255, 255], 67, 68, List.concat(bootp, options)) {
 				Ok(reply) => [reply]
 				Err(_) => []
@@ -103,7 +139,15 @@ MachineNat :: [].{
 				if i + 2 + olen > len {
 					found
 				} else {
-					MachineNat.dhcp_type(msg, i + 2 + olen, if opt == 53 and olen >= 1 { MachineNat.byte(msg, i + 2) } else { found })
+					MachineNat.dhcp_type(
+						msg,
+						i + 2 + olen,
+						if opt == 53 and olen >= 1 {
+							MachineNat.byte(msg, i + 2)
+						} else {
+							found
+						},
+					)
 				}
 			}
 		}
@@ -123,7 +167,17 @@ MachineNat :: [].{
 			udp_bare = List.join([MachineNat.be16_bytes(sport), MachineNat.be16_bytes(dport), MachineNat.be16_bytes(udp_len), [0, 0], payload])
 			pseudo = List.join([src_ip, dst_ip, [0, 17], MachineNat.be16_bytes(udp_len)])
 			sum = MachineNat.checksum(List.concat(pseudo, udp_bare), 0, 0)
-			udp = List.join([List.sublist(udp_bare, { start: 0, len: 6 }), MachineNat.be16_bytes(if sum == 0 { 0xFFFF } else { sum }), payload])
+			udp = List.join([
+				List.sublist(udp_bare, { start: 0, len: 6 }),
+				MachineNat.be16_bytes(
+					if sum == 0 {
+						0xFFFF
+					} else {
+						sum
+					},
+				),
+				payload,
+			])
 			Ok(List.join([dst_mac, MachineNat.gateway_mac, [0x08, 0x00], ip, udp]))
 		}
 	}
@@ -139,7 +193,11 @@ MachineNat :: [].{
 		}
 
 	fold : U64 -> U64
-	fold = |s| if s > 0xFFFF { MachineNat.fold(U64.bitwise_and(s, 0xFFFF) + U64.div_trunc_by(s, 0x10000)) } else { s }
+	fold = |s| if s > 0xFFFF {
+		MachineNat.fold(U64.bitwise_and(s, 0xFFFF) + U64.div_trunc_by(s, 0x10000))
+	} else {
+		s
+	}
 
 	byte : List(U8), U64 -> U64
 	byte = |bytes, i| U8.to_u64(List.get(bytes, i) ?? 0)

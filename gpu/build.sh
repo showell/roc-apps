@@ -7,7 +7,7 @@
 # Lands at ~/build/roc-apps/next/gpu/, served on :9210 by roc-site.
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROC="${ROC:-$HOME/build/roc-nightly/roc}"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../pinned-roc.sh"
 ZIG="${ZIG:-$HOME/zig-0.16.0/zig}"
 NEXT="$HOME/build/roc-apps/next/gpu"
 mkdir -p "$NEXT"

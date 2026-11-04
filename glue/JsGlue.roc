@@ -102,8 +102,12 @@ all_readable = |types, fields, depth| {
 	var $ok = Bool.True
 	var $i = 0
 	while $i < n {
-		field = List.get(fields, $i) ?? crash("glue: field out of range")
-		$ok = if field.is_padding { $ok } else { $ok and readable(types, field.type_id, depth + 1) }
+		field = List.get(fields, $i) ?? crash ("glue: field out of range")
+		$ok = if field.is_padding {
+			$ok
+		} else {
+			$ok and readable(types, field.type_id, depth + 1)
+		}
 		$i = $i + 1
 	}
 	$ok
@@ -113,7 +117,11 @@ reader : Types, U64 -> Str
 reader = |types, id| {
 	info = at(types, id)
 	name = reader_name(id)
-	match if readable(types, id, 0) { body(types, id, info.repr) } else { Skipped } {
+	match if readable(types, id, 0) {
+		body(types, id, info.repr)
+	} else {
+		Skipped
+	} {
 		Skipped => ""
 		Reads(expr) => "  // ${shape(info.repr)}\n  const ${name} = (view, at) => ${expr};\n\n"
 	}
@@ -157,13 +165,17 @@ all_tags_readable = |types, tags, depth| {
 	var $ok = Bool.True
 	var $i = 0
 	while $i < n {
-		tag = List.get(tags, $i) ?? crash("glue: tag out of range")
+		tag = List.get(tags, $i) ?? crash ("glue: tag out of range")
 		fine = if List.is_empty(tag.payload_fields) {
 			all_payloads_readable(types, tag.payload, depth)
 		} else {
 			all_readable(types, tag.payload_fields, depth)
 		}
-		$ok = if fine { $ok } else { Bool.False }
+		$ok = if fine {
+			$ok
+		} else {
+			Bool.False
+		}
 		$i = $i + 1
 	}
 	$ok
@@ -175,8 +187,12 @@ all_payloads_readable = |types, payload, depth| {
 	var $ok = Bool.True
 	var $i = 0
 	while $i < n {
-		id = List.get(payload, $i) ?? crash("glue: payload out of range")
-		$ok = if readable(types, id, depth + 1) { $ok } else { Bool.False }
+		id = List.get(payload, $i) ?? crash ("glue: payload out of range")
+		$ok = if readable(types, id, depth + 1) {
+			$ok
+		} else {
+			Bool.False
+		}
 		$i = $i + 1
 	}
 	$ok
@@ -200,7 +216,7 @@ tag_union_body = |types, id| {
 	var $arms = ""
 	var $i = 0
 	while $i < n {
-		tag = List.get(tags, $i) ?? crash("glue: tag out of range")
+		tag = List.get(tags, $i) ?? crash ("glue: tag out of range")
 		$arms = Str.concat($arms, "      case ${U64.to_str(tag.discriminant)}: return ${tag_value(tag)};\n")
 		$i = $i + 1
 	}
@@ -230,7 +246,7 @@ discriminant_read = |size, offset|
 tag_value : _ -> Str
 tag_value = |tag|
 	if List.is_empty(tag.payload_fields) and List.len(tag.payload) == 1 {
-		single = List.get(tag.payload, 0) ?? crash("glue: payload out of range")
+		single = List.get(tag.payload, 0) ?? crash ("glue: payload out of range")
 		Str.concat(Str.concat("({ tag: \"", tag.name), "\", value: ${reader_name(single)}(view, at + 0) })")
 	} else {
 		named_value(tag)
@@ -243,7 +259,7 @@ named_value = |tag| {
 	var $out = ""
 	var $i = 0
 	while $i < n {
-		field = List.get(fields, $i) ?? crash("glue: payload field out of range")
+		field = List.get(fields, $i) ?? crash ("glue: payload field out of range")
 		$out = if field.is_padding {
 			$out
 		} else {
@@ -260,7 +276,11 @@ named_value = |tag| {
 
 ## A payload the source never named arrives as index "0"; `value` reads better.
 payload_name : Str -> Str
-payload_name = |name| if name == "0" { "value" } else { name }
+payload_name = |name| if name == "0" {
+	"value"
+} else {
+	name
+}
 
 ## A list is a pointer, a length and a capacity; the elements sit end to end,
 ## each as wide as the compiler says that element is.
@@ -281,7 +301,7 @@ record_body = |types, id, _record| {
 	var $out = "({"
 	var $i = 0
 	while $i < n {
-		field = List.get(fields, $i) ?? crash("glue: field out of range")
+		field = List.get(fields, $i) ?? crash ("glue: field out of range")
 		$out = if field.is_padding {
 			$out
 		} else {
@@ -298,7 +318,7 @@ footer = |entries, types| {
 	var $sigs = ""
 	var $i = 0
 	while $i < n {
-		entry = List.get(entries, $i) ?? crash("glue: entry out of range")
+		entry = List.get(entries, $i) ?? crash ("glue: entry out of range")
 		$sigs = Str.concat($sigs, "  //   ${entry.ffi_symbol} : ${export_shape(types, entry.exported)}\n")
 		$i = $i + 1
 	}
@@ -320,7 +340,7 @@ results = |entries, types| {
 	var $out = ""
 	var $i = 0
 	while $i < n {
-		entry = List.get(entries, $i) ?? crash("glue: entry out of range")
+		entry = List.get(entries, $i) ?? crash ("glue: entry out of range")
 		$out = match entry.exported {
 			ProvidedProcedure(f) =>
 				if readable(types, f.ret, 0) {
@@ -341,7 +361,7 @@ named = |entries, types| {
 	var $out = ""
 	var $i = 0
 	while $i < n {
-		entry = List.get(entries, $i) ?? crash("glue: entry out of range")
+		entry = List.get(entries, $i) ?? crash ("glue: entry out of range")
 		$out = match entry.exported {
 			ProvidedProcedure(f) =>
 				if readable(types, f.ret, 0) {
@@ -383,7 +403,11 @@ exported = |types| {
 	var $i = 0
 	while $i < n {
 		$out = if readable(types, $i, 0) {
-			if Str.is_empty($out) { reader_name($i) } else { Str.concat($out, ", ${reader_name($i)}") }
+			if Str.is_empty($out) {
+				reader_name($i)
+			} else {
+				Str.concat($out, ", ${reader_name($i)}")
+			}
 		} else {
 			$out
 		}
@@ -426,14 +450,22 @@ args_of = |args| {
 	var $i = 0
 	while $i < n {
 		$out = Str.concat($out, "t${U64.to_str(List.get(args, $i) ?? 0)}")
-		$out = if $i + 1 < n { Str.concat($out, ", ") } else { $out }
+		$out = if $i + 1 < n {
+			Str.concat($out, ", ")
+		} else {
+			$out
+		}
 		$i = $i + 1
 	}
-	if n == 0 { "()" } else { $out }
+	if n == 0 {
+		"()"
+	} else {
+		$out
+	}
 }
 
 reader_name : U64 -> Str
 reader_name = |id| "read_t${U64.to_str(id)}"
 
 at : Types, U64 -> _
-at = |types, id| List.get(types.types, id) ?? crash("glue: type id out of range")
+at = |types, id| List.get(types.types, id) ?? crash ("glue: type id out of range")

@@ -3,7 +3,9 @@
 # emitted Codex program runs to its end in one call, and the page reads back
 # the console, the drives as the program left them, and a crash's message.
 platform ""
-	requires {} { main! : List(Str) => Try(_, [Exit(I8), ..]) }
+	requires {
+		main! : List(Str) => Try(_, [Exit(I8), ..])
+	}
 	exposes [Drive, Echo, Screen, Wire]
 	packages {}
 	provides { "roc_main": main_for_host! }

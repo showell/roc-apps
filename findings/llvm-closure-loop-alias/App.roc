@@ -9,13 +9,13 @@ answer = |n| {
 			|acc, e| {
 				via = (List.get(acc, e.to) ?? 1000) + e.cost
 				if via < (List.get(acc, e.from) ?? 1000) {
-					List.set(acc, e.from, via) ?? crash("relax: out of range")
+					List.set(acc, e.from, via) ?? crash ("relax: out of range")
 				} else {
 					acc
 				}
 			},
 		)
-	start = List.set(List.repeat(1000, n), 0, 0) ?? crash("start")
+	start = List.set(List.repeat(1000, n), 0, 0) ?? crash ("start")
 	var $d = start
 	var $next = relax(start)
 	var $passes = 1

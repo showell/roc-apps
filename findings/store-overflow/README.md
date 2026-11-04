@@ -6,7 +6,7 @@ interpreter before `Machine.roc`; it is not in the tree, and `repro.sh` takes
 it from 33e04d7.
 
 `repro.sh` runs `10 READ A(1) / 20 DATA 9 / 30 PRINT A(1) / 40 END` twice
-on the nightly compiler (`~/build/roc-nightly/roc`):
+on the nightly compiler (the repository's pin, `~/tools/roc-<pin>/roc`):
 
     direct: exit 1, output ''  overflowed its stack memory
     fresh:  exit 0, output ' 9 '

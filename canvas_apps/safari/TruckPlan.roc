@@ -29,7 +29,7 @@ TruckPlan :: [].{
 	## the camera.
 	in_view : TruckPlan.View -> TruckPlan.TruckAt
 	in_view = |view|
-		if (view.lead > 0.0) {
+		if view.lead > 0.0 {
 			truck_from(view, { remaining: (view.rider_along + view.lead), place: 0 })
 		} else {
 			NoTruck
@@ -53,7 +53,7 @@ truck_from = |view, { remaining, place }|
 		Err(OutOfBounds) => NoTruck
 		Ok(seg_index) => {
 			segment = view.world.get(I64.to_u64_wrap(seg_index)) ?? crash "TruckPlan: no such segment"
-			if (remaining > segment.length) {
+			if remaining > segment.length {
 				truck_from(view, { remaining: (remaining - segment.length), place: (place + 1) })
 			} else {
 				truck_on_segment(view, { along: remaining, place })
@@ -66,7 +66,7 @@ truck_from = |view, { remaining, place }|
 truck_on_segment : TruckPlan.View, { along : F64, place : I64 } -> TruckPlan.TruckAt
 truck_on_segment = |view, { along, place }| {
 	center = Frame.at(view.world, view.chain, view.pose, place, along, (Scenery.lane_width / 2.0))
-	if (center.forward > Geom.near) {
+	if center.forward > Geom.near {
 		Ahead({ place, along, fwd: center.forward })
 	} else {
 		NoTruck

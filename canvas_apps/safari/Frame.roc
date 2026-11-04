@@ -23,11 +23,11 @@ Frame :: [].{
 
 	chain_onto : List(World.Segment), I64, I64, List(I64) -> List(I64)
 	chain_onto = |segs, s, n, acc| (
-		if (n >= look_ahead) {
+		if n >= look_ahead {
 			acc
 		} else {
 			(
-				if (n >= max_chain) {
+				if n >= max_chain {
 					acc
 				} else {
 					match (List.get(segs, I64.to_u64_wrap(s)) ?? crash ("list-at out of range")).ending {
@@ -41,7 +41,7 @@ Frame :: [].{
 
 	compose_down : List(World.Segment), List(I64), I64, F64, F64 -> Geom.AX
 	compose_down = |segs, ch, k, a, x| (
-		if (k <= 0) {
+		if k <= 0 {
 			{ a: a, x: x }
 		} else {
 			(

@@ -7,7 +7,7 @@
 #   machine/batch/probes/device-write/run.sh
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROC="${ROC:-$HOME/build/roc-nightly/roc}"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../../../pinned-roc.sh"
 N="${N:-200000}"
 W="$HOME/build/roc-apps/gen/probes/device-write"
 mkdir -p "$W"

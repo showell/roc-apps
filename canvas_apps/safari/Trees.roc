@@ -100,9 +100,9 @@ Trees :: [].{
 ## other size from the one before.
 plant_onto : List(Scenery.Tree), { scheme : Scenery.Scheme, length : F64, along : F64, size : Trees.PairSize } -> List(Scenery.Tree)
 plant_onto = |planted, { scheme, length, along, size }|
-	if (along > (length - Trees.tree_end_inset)) {
+	if along > (length - Trees.tree_end_inset) {
 		planted
-	} else if ((planted.len().to_i64_wrap() + 2) > Trees.max_trees) {
+	} else if (planted.len().to_i64_wrap() + 2) > Trees.max_trees {
 		planted
 	} else {
 		conifer =

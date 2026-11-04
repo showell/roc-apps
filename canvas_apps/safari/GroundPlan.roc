@@ -49,7 +49,7 @@ GroundPlan :: [].{
 		view = { world, chain: Frame.build_chain(world, segment), pose, cam_focal, view_w }
 		positions = List.from_iter(I64.until(0, view.chain.len().to_i64_wrap()))
 		ahead = positions.join_map(|position| segment_ground(view, position))
-		if (segment > 0) {
+		if segment > 0 {
 			ahead.concat(ground_behind(view, (segment - 1)))
 		} else {
 			ahead
@@ -128,7 +128,7 @@ segment_ground : GroundPlan.View, I64 -> List(Paint.DrawCmd)
 segment_ground = |view, position| {
 	segment = segment_in_chain(view, position)
 	bend =
-		if ((position + 1) >= view.chain.len().to_i64_wrap()) {
+		if (position + 1) >= view.chain.len().to_i64_wrap() {
 			[]
 		} else {
 			bend_ground(view, bend_out_of(segment, { before: Frame.chain_map(position), after: Frame.chain_map((position + 1)) }))
@@ -184,7 +184,7 @@ bend_corner : GroundPlan.View, Bend -> List(Geom.RiderPt)
 bend_corner = |view, bend| {
 	before = |along, across| Frame.map_pt(view.world, view.chain, view.pose, bend.before, along, across)
 	after = |along, across| Frame.map_pt(view.world, view.chain, view.pose, bend.after, along, across)
-	inner_edge = if bend.exit_right Scenery.lane_width else 0.0
+	inner_edge = if (bend.exit_right) Scenery.lane_width else 0.0
 	outer_edge = Joint.outer_cu(bend.exit_right)
 	apex = Joint.joint_apex(
 		view.world,

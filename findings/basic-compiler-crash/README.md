@@ -10,5 +10,5 @@ a native `--opt=dev` build:
     Fault address: 0xfffffffffffffff8
 
 (09-15 dies of SIGILL on this box for any program.) BASIC is parked, so
-`basic/build.sh` pins 09-11 instead of `../../roc-nightly.txt`. Found
+`basic/build.sh` pinned 09-11 then. Found
 2026-09-24 moving the pages to 09-22.

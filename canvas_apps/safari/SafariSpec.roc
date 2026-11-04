@@ -21,7 +21,7 @@ seg_list = |i| seg_list_onto(i, [])
 
 seg_list_onto : I64, List(World.Segment) -> List(World.Segment)
 seg_list_onto = |i, acc| (
-	if (i >= World.route.len().to_i64_wrap()) {
+	if i >= World.route.len().to_i64_wrap() {
 		acc
 	} else {
 		seg_list_onto((i + 1), List.append(acc, World.segment_at(i)))

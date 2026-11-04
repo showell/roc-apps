@@ -27,7 +27,7 @@ CatDraw :: [].{
 	## One polygon of the still, on screen.
 	polygon : CatDraw.Anchor, Stills.StillPoly -> List(Paint.DrawCmd)
 	polygon = |anchor, poly|
-		if (poly.pts.len().to_i64_wrap() > max_cat_pts) {
+		if poly.pts.len().to_i64_wrap() > max_cat_pts {
 			[]
 		} else {
 			Paint.push_poly(poly.color, poly.pts.map(|pt| screen_point(anchor, pt)))
@@ -52,7 +52,7 @@ CatDraw :: [].{
 		feet = Camera.project({ right, forward, height: 0.0 }, { cam_focal, view_w })
 		top = Camera.project({ right, forward, height }, { cam_focal, view_w })
 		height_px = (feet.y - top.y)
-		if (height_px < 1.0) {
+		if height_px < 1.0 {
 			[]
 		} else {
 			polygons({ feet, height_px, lift }, CatStills.pose_polys(pose))

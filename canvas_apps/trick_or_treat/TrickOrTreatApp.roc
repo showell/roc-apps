@@ -22,6 +22,7 @@ import lib.Input
 import Halloween
 
 TrickOrTreatApp :: [].{
+
 	## The movie's own state is the tick; `paused` is the viewer's.
 	Model : { tick : I64, paused : Bool }
 
@@ -46,11 +47,19 @@ TrickOrTreatApp :: [].{
 	## four times that while it is running, so a nudge is a nudge and a hold
 	## is a hunt.
 	scrub : Bool -> I64
-	scrub = |paused| if paused { 1 } else { 4 }
+	scrub = |paused| if paused {
+		1
+	} else {
+		4
+	}
 
 	step : TrickOrTreatApp.Model, Input.Snapshot -> TrickOrTreatApp.Model
 	step = |m, input| {
-		paused = if input.key_pressed(KeySpace) { !m.paused } else { m.paused }
+		paused = if input.key_pressed(KeySpace) {
+			!m.paused
+		} else {
+			m.paused
+		}
 		speed = scrub(paused)
 		# Right and Left scrub whether it is running or not; with neither
 		# held, a paused movie sits still and a running one advances by one.
@@ -66,16 +75,26 @@ TrickOrTreatApp :: [].{
 			}
 		# J is the old `skip`: a second on, which for a movie with one
 		# scene is what skipping to the next one meant.
-		jumped = if input.key_pressed(KeyJ) { moved + 60 } else { moved }
-		tick = if input.key_pressed(KeyR) { 0 } else if jumped < 0 { 0 } else { jumped }
+		jumped = if input.key_pressed(KeyJ) {
+			moved + 60
+		} else {
+			moved
+		}
+		tick = if input.key_pressed(KeyR) {
+			0
+		} else if jumped < 0 {
+			0
+		} else {
+			jumped
+		}
 		{ tick, paused }
 	}
 }
 
 ## Space pauses, and a paused movie sits on the frame it was on.
 expect {
-    held = TrickOrTreatApp.step(TrickOrTreatApp.canvas_app.init, Input.none.with_key_pressed(KeySpace))
-    held.paused and TrickOrTreatApp.step(held, Input.none).tick == held.tick
+	held = TrickOrTreatApp.step(TrickOrTreatApp.canvas_app.init, Input.none.with_key_pressed(KeySpace))
+	held.paused and TrickOrTreatApp.step(held, Input.none).tick == held.tick
 }
 
 ## Left scrubs backwards and stops at the beginning rather than before it.

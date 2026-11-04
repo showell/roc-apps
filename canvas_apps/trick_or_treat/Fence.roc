@@ -83,20 +83,28 @@ Fence :: [].{
 
 	side_picket : View.View, F64, F64 -> List(Shapes.Shape)
 	side_picket = |v, x, f|
-		Panels.world(v, [
-			{ right: x, forward: f, height: 0.0 },
-			{ right: x, forward: f + picket_wide, height: 0.0 },
-			{ right: x, forward: f + picket_wide, height: fence_high - 0.16 },
-			{ right: x, forward: f + picket_wide / 2.0, height: fence_high },
-			{ right: x, forward: f, height: fence_high - 0.16 },
-		], Flat(fence_c))
+		Panels.world(
+			v,
+			[
+				{ right: x, forward: f, height: 0.0 },
+				{ right: x, forward: f + picket_wide, height: 0.0 },
+				{ right: x, forward: f + picket_wide, height: fence_high - 0.16 },
+				{ right: x, forward: f + picket_wide / 2.0, height: fence_high },
+				{ right: x, forward: f, height: fence_high - 0.16 },
+			],
+			Flat(fence_c),
+		)
 
 	side_rail : View.View, F64, F64, F64 -> List(Shapes.Shape)
 	side_rail = |v, now, x, y|
-		Panels.world(v, [
-			{ right: x, forward: fence_at - now, height: y },
-			{ right: x, forward: yard_deep - now, height: y },
-			{ right: x, forward: yard_deep - now, height: y + 0.1 },
-			{ right: x, forward: fence_at - now, height: y + 0.1 },
-		], Flat(fence_c))
+		Panels.world(
+			v,
+			[
+				{ right: x, forward: fence_at - now, height: y },
+				{ right: x, forward: yard_deep - now, height: y },
+				{ right: x, forward: yard_deep - now, height: y + 0.1 },
+				{ right: x, forward: fence_at - now, height: y + 0.1 },
+			],
+			Flat(fence_c),
+		)
 }

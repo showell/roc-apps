@@ -62,13 +62,13 @@ Rider :: [].{
 		{
 			in_zone = ((seg.length - moved.along) < VehicleLimits.approach_intersection_dist)
 			(
-				if (moved.along >= seg.length) {
+				if moved.along >= seg.length {
 					stopped_at(moved, seg.length)
 				} else {
 					(
 						if in_zone {
 							(
-								if (moved.v < 0.1) {
+								if moved.v < 0.1 {
 									stopped_at(moved, seg.length)
 								} else {
 									moved
@@ -91,7 +91,7 @@ Rider :: [].{
 		{
 			on_next = rider_state_for_next_segment(moved, segs)
 			(
-				if (DeviceMath.real_abs(on_next.across) < (Scenery.lane_width / 2.0)) {
+				if DeviceMath.real_abs(on_next.across) < (Scenery.lane_width / 2.0) {
 					on_next
 				} else {
 					moved

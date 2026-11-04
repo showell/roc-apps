@@ -98,11 +98,26 @@ View :: [].{
 		var $i = 0
 		while $i < n {
 			a = List.get(pts, $i) ?? { right: 0.0, forward: 1.0, height: 0.0 }
-			b = List.get(pts, if $i + 1 == n { 0 } else { $i + 1 }) ?? { right: 0.0, forward: 1.0, height: 0.0 }
+			b = List.get(
+				pts,
+				if $i + 1 == n {
+					0
+				} else {
+					$i + 1
+				},
+			) ?? { right: 0.0, forward: 1.0, height: 0.0 }
 			a_in = a.forward > near
 			b_in = b.forward > near
-			$out = if a_in { List.append($out, a) } else { $out }
-			$out = if a_in == b_in { $out } else { List.append($out, crossing(a, b)) }
+			$out = if a_in {
+				List.append($out, a)
+			} else {
+				$out
+			}
+			$out = if a_in == b_in {
+				$out
+			} else {
+				List.append($out, crossing(a, b))
+			}
 			$i = $i + 1
 		}
 		$out
@@ -112,7 +127,11 @@ View :: [].{
 	crossing : View.At, View.At -> View.At
 	crossing = |a, b| {
 		d = b.forward - a.forward
-		t = if d == 0.0 { 0.0 } else { (near - a.forward) / d }
+		t = if d == 0.0 {
+			0.0
+		} else {
+			(near - a.forward) / d
+		}
 		{ right: a.right + (b.right - a.right) * t, forward: near, height: a.height + (b.height - a.height) * t }
 	}
 }

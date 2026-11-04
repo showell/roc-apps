@@ -69,9 +69,9 @@ MachineNe2k :: [].{
 		if i >= 32 {
 			mem
 		} else if i < 12 {
-			MachineNe2k.prom(i + 1, List.set(mem, i, List.get(MachineNe2k.station, U64.div_trunc_by(i, 2)) ?? 0) ?? crash("MachineNe2k: the PROM is outside card memory"))
+			MachineNe2k.prom(i + 1, List.set(mem, i, List.get(MachineNe2k.station, U64.div_trunc_by(i, 2)) ?? 0) ?? crash ("MachineNe2k: the PROM is outside card memory"))
 		} else {
-			MachineNe2k.prom(i + 1, List.set(mem, i, 0xFF) ?? crash("MachineNe2k: the PROM is outside card memory"))
+			MachineNe2k.prom(i + 1, List.set(mem, i, 0xFF) ?? crash ("MachineNe2k: the PROM is outside card memory"))
 		}
 
 	# The card as x86's boot leaves it (X86_64Boot's emit-nic-init): probed,
@@ -122,7 +122,11 @@ MachineNe2k :: [].{
 				(next, Nothing)
 			} else {
 				at = c.tpsr * 256
-				frame = if at + c.tbcr <= MachineNe2k.mem_size and c.tbcr > 0 { List.sublist(c.mem, { start: at, len: c.tbcr }) } else { [] }
+				frame = if at + c.tbcr <= MachineNe2k.mem_size and c.tbcr > 0 {
+					List.sublist(c.mem, { start: at, len: c.tbcr })
+				} else {
+					[]
+				}
 				({ ..next, isr: U64.bitwise_or(next.isr, 0x02) }, Transmit(frame))
 			}
 		} else if c.page == 0 {
@@ -161,11 +165,11 @@ MachineNe2k :: [].{
 			}
 		} else if c.page == 1 {
 			if off >= 1 and off <= 6 {
-				({ ..c, par: List.set(c.par, off - 1, U64.to_u8_wrap(v)) ?? crash("MachineNe2k: no such PAR register") }, Nothing)
+				({ ..c, par: List.set(c.par, off - 1, U64.to_u8_wrap(v)) ?? crash ("MachineNe2k: no such PAR register") }, Nothing)
 			} else if off == 7 {
 				({ ..c, curr: v }, Nothing)
 			} else if off >= 8 and off <= 15 {
-				({ ..c, mar: List.set(c.mar, off - 8, U64.to_u8_wrap(v)) ?? crash("MachineNe2k: no such MAR register") }, Nothing)
+				({ ..c, mar: List.set(c.mar, off - 8, U64.to_u8_wrap(v)) ?? crash ("MachineNe2k: no such MAR register") }, Nothing)
 			} else {
 				(c, Nothing)
 			}
@@ -182,11 +186,42 @@ MachineNe2k :: [].{
 		} else if off == 0x10 {
 			MachineNe2k.dma_read(c, size)
 		} else if off == 0 {
-			(c, c.page * 64 + (if c.started { 2 } else { 0 }))
+			(
+				c,
+				c.page * 64 + (
+					if c.started {
+						2
+					} else {
+						0
+					}
+				),
+			)
 		} else if c.page == 0 {
-			(c, if off == 0x03 { c.bnry } else if off == 0x04 { 1 } else if off == 0x07 { c.isr } else { 0 })
+			(
+				c,
+				if off == 0x03 {
+					c.bnry
+				} else if off == 0x04 {
+					1
+				} else if off == 0x07 {
+					c.isr
+				} else {
+					0
+				},
+			)
 		} else if c.page == 1 {
-			(c, if off >= 1 and off <= 6 { MachineNe2k.byte(c.par, off - 1) } else if off == 7 { c.curr } else if off >= 8 and off <= 15 { MachineNe2k.byte(c.mar, off - 8) } else { 0 })
+			(
+				c,
+				if off >= 1 and off <= 6 {
+					MachineNe2k.byte(c.par, off - 1)
+				} else if off == 7 {
+					c.curr
+				} else if off >= 8 and off <= 15 {
+					MachineNe2k.byte(c.mar, off - 8)
+				} else {
+					0
+				},
+			)
 		} else {
 			(c, 0)
 		}
@@ -199,14 +234,22 @@ MachineNe2k :: [].{
 	dma_write : MachineNe2k.Card, U64, U64 -> MachineNe2k.Card
 	dma_write = |c, val, size| {
 		one = MachineNe2k.dma_put(c, U64.bitwise_and(val, 0xFF))
-		two = if size >= 2 { MachineNe2k.dma_put(one, U64.bitwise_and(U64.div_trunc_by(val, 256), 0xFF)) } else { one }
-		if two.rbcr == 0 { ({ ..two, isr: U64.bitwise_or(two.isr, 0x40) }) } else { two }
+		two = if size >= 2 {
+			MachineNe2k.dma_put(one, U64.bitwise_and(U64.div_trunc_by(val, 256), 0xFF))
+		} else {
+			one
+		}
+		if two.rbcr == 0 {
+			({ ..two, isr: U64.bitwise_or(two.isr, 0x40) })
+		} else {
+			two
+		}
 	}
 
 	dma_put : MachineNe2k.Card, U64 -> MachineNe2k.Card
 	dma_put = |c, b|
 		if c.rbcr > 0 and c.rsar < MachineNe2k.mem_size {
-			({ ..c, mem: List.set(c.mem, c.rsar, U64.to_u8_wrap(b)) ?? crash("MachineNe2k: remote DMA outside card memory"), rsar: c.rsar + 1, rbcr: c.rbcr - 1 })
+			({ ..c, mem: List.set(c.mem, c.rsar, U64.to_u8_wrap(b)) ?? crash ("MachineNe2k: remote DMA outside card memory"), rsar: c.rsar + 1, rbcr: c.rbcr - 1 })
 		} else {
 			c
 		}
@@ -215,8 +258,16 @@ MachineNe2k :: [].{
 	dma_read : MachineNe2k.Card, U64 -> (MachineNe2k.Card, U64)
 	dma_read = |c, size| {
 		(one, lo, took) = MachineNe2k.dma_take(c)
-		(two, hi, _) = if took and size >= 2 { MachineNe2k.dma_take(one) } else { (one, 0, False) }
-		done = if two.rbcr == 0 { ({ ..two, isr: U64.bitwise_or(two.isr, 0x40) }) } else { two }
+		(two, hi, _) = if took and size >= 2 {
+			MachineNe2k.dma_take(one)
+		} else {
+			(one, 0, False)
+		}
+		done = if two.rbcr == 0 {
+			({ ..two, isr: U64.bitwise_or(two.isr, 0x40) })
+		} else {
+			two
+		}
 		(done, lo + hi * 256)
 	}
 
@@ -225,7 +276,11 @@ MachineNe2k :: [].{
 		if c.rbcr > 0 and c.rsar < MachineNe2k.mem_size {
 			b = MachineNe2k.byte(c.mem, c.rsar)
 			at = c.rsar + 1
-			wrapped = if at >= c.pstop * 256 and c.pstop > c.pstart { c.pstart * 256 } else { at }
+			wrapped = if at >= c.pstop * 256 and c.pstop > c.pstart {
+				c.pstart * 256
+			} else {
+				at
+			}
 			({ ..c, rsar: wrapped, rbcr: c.rbcr - 1 }, b, True)
 		} else {
 			(c, 0, False)
@@ -250,16 +305,28 @@ MachineNe2k :: [].{
 				total = len + U64.bitwise_and(len, 1) + 4
 				pages = U64.div_trunc_by(total + 255, 256)
 				ring = U64.to_i64_wrap(c.pstop) - U64.to_i64_wrap(c.pstart)
-				used = if ring <= 0 { 0 } else { I64.rem_by(U64.to_i64_wrap(c.curr) - U64.to_i64_wrap(c.bnry) + ring, ring) }
+				used = if ring <= 0 {
+					0
+				} else {
+					I64.rem_by(U64.to_i64_wrap(c.curr) - U64.to_i64_wrap(c.bnry) + ring, ring)
+				}
 				if ring <= 0 or U64.to_i64_wrap(pages) > ring - used - 1 {
 					(c, i)
 				} else {
 					after = c.curr + pages
-					next = if after >= c.pstop { c.pstart + (after - c.pstop) } else { after }
+					next = if after >= c.pstop {
+						c.pstart + (after - c.pstop)
+					} else {
+						after
+					}
 					header = [0x01, U64.to_u8_wrap(next), U64.to_u8_wrap(total), U64.to_u8_wrap(U64.div_trunc_by(total, 256))]
 					bytes = List.concat(List.concat(header, frame), List.repeat(0.U8, total - 4 - len))
 					at = c.curr * 256
-					first = if c.pstop * 256 > at { c.pstop * 256 - at } else { 0 }
+					first = if c.pstop * 256 > at {
+						c.pstop * 256 - at
+					} else {
+						0
+					}
 					laid = MachineNe2k.lay(c.mem, bytes, 0, at, first, c.pstart * 256)
 					MachineNe2k.inject_from({ ..c, mem: laid, curr: U64.bitwise_and(next, 0xFF), isr: U64.bitwise_or(c.isr, 0x01) }, queue, i + 1)
 				}
@@ -271,8 +338,12 @@ MachineNe2k :: [].{
 		match List.get(bytes, i) {
 			Err(_) => mem
 			Ok(b) => {
-				to = if i < first { at + i } else { start + (i - first) }
-				MachineNe2k.lay(List.set(mem, to, b) ?? crash("MachineNe2k: a received frame outside card memory"), bytes, i + 1, at, first, start)
+				to = if i < first {
+					at + i
+				} else {
+					start + (i - first)
+				}
+				MachineNe2k.lay(List.set(mem, to, b) ?? crash ("MachineNe2k: a received frame outside card memory"), bytes, i + 1, at, first, start)
 			}
 		}
 }

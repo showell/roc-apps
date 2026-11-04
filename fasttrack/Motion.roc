@@ -42,7 +42,7 @@ Motion :: [].{
 						}
 					_ => {
 						(n, direction) = match m.kind {
-							WithCard(card) => (Config.move_count_for_card(card, Board.is_pen(m.start)), if card == "4" Backward else Forward)
+							WithCard(card) => (Config.move_count_for_card(card, Board.is_pen(m.start)), if (card == "4") Backward else Forward)
 							Reverse(card) => (Config.move_count_for_card(card, Board.is_pen(m.start)), Backward)
 							StartSplit(k) => (k, Forward)
 							FinishSplit(k, _) => (k, Forward)

@@ -25,7 +25,7 @@ Arc :: [].{
 
 	sim_from : Pose.RiderState, F64, F64, F64, F64, Bool, I64, Pose.RiderState -> Arc.ArcOutcome
 	sim_from = |start, left_bound, right_bound, start_side, start_along, crossed, i, phys| (
-		if (i >= turn_danger_steps) {
+		if i >= turn_danger_steps {
 			{ shoulder: ShoulderNone, forward: (phys.along - start_along), crossed: crossed, end_across: phys.across, frames: no_frames }
 		} else {
 			sim_step(start, left_bound, right_bound, start_side, start_along, crossed, i, Bike.simulate_rider_step(phys, { lean_step: Angle.upright, accel: 0.0 }))
@@ -38,26 +38,26 @@ Arc :: [].{
 			across = phys.across
 			forward = (phys.along - start_along)
 			crossed = (
-				if ((across * start_side) < 0.0) {
+				if (across * start_side) < 0.0 {
 					True
 				} else {
 					crossed0
 				}
 			)
 			(
-				if (across < left_bound) {
+				if across < left_bound {
 					{ shoulder: ShoulderLeft, forward: DeviceMath.real_min(forward, min_forward_progress), crossed: crossed, end_across: across, frames: I64.to_f64(i) }
 				} else {
 					(
-						if (across > right_bound) {
+						if across > right_bound {
 							{ shoulder: ShoulderRight, forward: DeviceMath.real_min(forward, min_forward_progress), crossed: crossed, end_across: across, frames: I64.to_f64(i) }
 						} else {
 							(
-								if (forward < 0.0) {
+								if forward < 0.0 {
 									{ shoulder: ShoulderNone, forward: forward, crossed: crossed, end_across: across, frames: no_frames }
 								} else {
 									(
-										if (forward >= min_forward_progress) {
+										if forward >= min_forward_progress {
 											{ shoulder: ShoulderNone, forward: min_forward_progress, crossed: crossed, end_across: across, frames: no_frames }
 										} else {
 											sim_from(start, left_bound, right_bound, start_side, start_along, crossed, (i + 1), phys)
@@ -83,18 +83,26 @@ Arc :: [].{
 	)
 
 	eq_Shoulder : Arc.Shoulder, Arc.Shoulder -> Bool
-	eq_Shoulder = |ex, ey| (match ex {
-		ShoulderLeft => (match ey {
-			ShoulderLeft => True
-			_ => False
-		})
-		ShoulderNone => (match ey {
-			ShoulderNone => True
-			_ => False
-		})
-		ShoulderRight => (match ey {
-			ShoulderRight => True
-			_ => False
-		})
-	})
+	eq_Shoulder = |ex, ey| (
+		match ex {
+			ShoulderLeft => (
+				match ey {
+					ShoulderLeft => True
+					_ => False
+				}
+			)
+			ShoulderNone => (
+				match ey {
+					ShoulderNone => True
+					_ => False
+				}
+			)
+			ShoulderRight => (
+				match ey {
+					ShoulderRight => True
+					_ => False
+				}
+			)
+		}
+	)
 }

@@ -31,7 +31,7 @@ MachineDisk :: [].{
 	boot! : List(Str) => MachineDisk.Drives
 	boot! = |paths|
 		if List.any(paths, |p| p != "") {
-			crash("machine: -disk names a file on the host; the modelled disk attaches MachineMedia's images, and the native platform opens files")
+			crash ("machine: -disk names a file on the host; the modelled disk attaches MachineMedia's images, and the native platform opens files")
 		} else {
 			MachineDisk.attach(MachineMedia.drives)
 		}
@@ -59,7 +59,11 @@ MachineDisk :: [].{
 
 	# The selected position, when it is on the primary channel.
 	drive : MachineDisk.Drives -> MachineDisk.Drive
-	drive = |ds| if ds.selected >= 2 { Absent } else { List.get(ds.drives, ds.selected) ?? Absent }
+	drive = |ds| if ds.selected >= 2 {
+		Absent
+	} else {
+		List.get(ds.drives, ds.selected) ?? Absent
+	}
 
 	sector_count : MachineDisk.Drives -> U64
 	sector_count = |ds|

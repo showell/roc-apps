@@ -204,7 +204,7 @@ columns = |{ from, to }| columns_onto([], { at: from, to })
 
 columns_onto : List(F64), { at : F64, to : F64 } -> List(F64)
 columns_onto = |sampled, { at, to }|
-	if (at > to) {
+	if at > to {
 		sampled
 	} else {
 		columns_onto(sampled.append(at), { at: (at + Mountains.col_step), to })
@@ -230,7 +230,7 @@ snow = |sight, color| {
 			Mountains.north_range(bearing) > (Mountains.snowline(bearing) + 0.01)
 		},
 	)
-	if (snowy.len() < 2) {
+	if snowy.len() < 2 {
 		[]
 	} else {
 		crest = snowy.map(|x| { x, y: height_y(sight, Mountains.north_range(Mountains.bearing_at(sight, x))) })

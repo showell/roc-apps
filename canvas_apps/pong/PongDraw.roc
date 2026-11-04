@@ -127,9 +127,17 @@ PongDraw :: [].{
 		var $out = Font.centered(hint, w / 2.0, h - 34.0, 17.0, Color.brush(Rules.hint_color))
 		if Rules.is_over(world) {
 			left_won = world.left.score >= 5
-			won = if left_won { "LEFT WINS" } else { "RIGHT WINS" }
+			won = if left_won {
+				"LEFT WINS"
+			} else {
+				"RIGHT WINS"
+			}
 			again = "PRESS SPACE FOR A NEW MATCH"
-			tint = if left_won { Rules.left_neon } else { Rules.right_neon }
+			tint = if left_won {
+				Rules.left_neon
+			} else {
+				Rules.right_neon
+			}
 			dim = Color.brush(Rules.field_bottom)
 			$out = List.concat([Rect({ x: 0.0, y: 0.0, w: w, h: h, fill: Flat({ ..dim, a: 0.75 }) })], $out)
 			$out = List.concat($out, Font.centered(won, w / 2.0, 248.0, 40.0, Color.brush(tint)))

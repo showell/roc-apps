@@ -1,0 +1,9 @@
+# roc-apps' compiler, sourced by every script that runs Roc: the nightly
+# named in roc-version at the repository's root, installed side by side at
+# ~/tools/roc-<pin>/roc (CLAUDE.md §2). ROC may name another binary, and is
+# refused unless `roc version` names the pin.
+ROC_APPS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROC_PIN="$(cat "$ROC_APPS_ROOT/roc-version")"
+ROC="${ROC:-$HOME/tools/roc-$ROC_PIN/roc}"
+[ -x "$ROC" ] || { echo "no $ROC: install $ROC_PIN at ~/tools/roc-$ROC_PIN/"; exit 1; }
+"$ROC" version | grep -qxF "Roc compiler version $ROC_PIN" || { echo "$ROC is $("$ROC" version), not $ROC_PIN"; exit 1; }

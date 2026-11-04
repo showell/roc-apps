@@ -189,22 +189,22 @@ a debug build of the emitter; the default is the release one.
 
 ## The compiler
 
-**Use the nightly.** roc-lang/nightlies publishes a release build of the new
-compiler every day (`gh release list -R roc-lang/nightlies`); the tarball's
-`roc` is installed as `~/build/roc-nightly/roc` and is what everything here
-uses. roc-lang/roc's own releases page is the OLD compiler.
+**One nightly for the whole repository, named in `roc-version`.**
+roc-lang/nightlies publishes a release build of the new compiler every day
+(`gh release list -R roc-lang/nightlies`); roc-lang/roc's own releases page
+is the old compiler. The pinned nightly is installed side by side with
+others at `~/tools/roc-<pin>/roc`, and nothing uses `roc` from the PATH:
 
-    cd ~/build/roc-nightly
-    gh release download <tag> -R roc-lang/nightlies -p 'roc_nightly-linux_x86_64-*.tar.gz'
-    tar xzf roc_nightly-linux_x86_64-<tag>.tar.gz
-    ln -sfn roc_nightly-linux_x86_64-<tag>/roc roc
+    cd ~/tools
+    gh release download <pin> -R roc-lang/nightlies -p 'roc_nightly-linux_x86_64-*.tar.gz'
+    tar xzf roc_nightly-linux_x86_64-*.tar.gz && mv roc_nightly-linux_x86_64-<date-sha> roc-<pin>
 
-**The page builds pin one nightly: `roc-nightly.txt`** (the directory name
-under `~/build/roc-nightly/`). `fasttrack/` and `canvas_apps/` read it, both
-ends of a canvas app included, and the Windows and macOS workflows name the
-same tag. BASIC has a pin of its own, `basic/roc-version`, at `~/tools/roc-<pin>/roc`. To move: unpack the new nightly as above, change the file and the
-two workflows, and rebuild every page -- each build checks itself and
-replaces its page only if everything passed.
+Every script that runs Roc sources `pinned-roc.sh`, which refuses a compiler
+whose `roc version` isn't the pin; the safari gate makes the same check, and
+the Windows and macOS workflows name the same tag. To move the pin: install
+the new nightly, change `roc-version` and the two workflows, run `roc fmt`
+over the repository and commit that apart, then run every tree's own
+checks.
 
 The checkout `~/showell_repos/roc` (main, zig 0.16.0 at `~/zig-0.16.0/zig`)
 is for working ON the compiler, and the wasm host builds against its

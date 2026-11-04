@@ -23,14 +23,14 @@ step = |args, n, r|
 			} else if w == "c" {
 				step(args, n + 1, { ..r, c: True })
 			} else if w == "lease" {
-				k = U64.from_str(List.get(args, n + 1) ?? "") ?? crash("lease wants a number")
+				k = U64.from_str(List.get(args, n + 1) ?? "") ?? crash ("lease wants a number")
 				step(args, n + 2, { ..r, lease: k })
 			} else if w == "ab" {
 				step(args, n + 1, { ..r, a: True, b: True })
 			} else if w == "w" {
-				step(args, n + 1, { ..r, words: List.set(r.words, 0, w) ?? crash("no word") })
+				step(args, n + 1, { ..r, words: List.set(r.words, 0, w) ?? crash ("no word") })
 			} else {
-				crash("no such word: ${w}")
+				crash ("no such word: ${w}")
 			}
 	}
 

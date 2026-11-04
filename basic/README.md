@@ -34,8 +34,6 @@ control ladder (below) is how each one was found.
     basic/wasm/             the page's platform and host
     basic/web/basic.html    the page: the REPL
     basic/web/index.html    the page about it: what it is, what Roc makes hard, what it stands on, where it could go
-    basic/roc-version       BASIC's own Roc pin; the rest of the repo reads ../roc-nightly.txt
-    basic/pinned-roc.sh     the pinned compiler, ~/tools/roc-<pin>/roc, refused unless `roc version` names the pin
     basic/build.sh          the page and its module, into the dev channel
     basic/build-run.sh      basic-run and basic-check, built once (the dev backend)
     basic/corpus.sh         the corpus as the scripts read it: a program's listing and replies

@@ -9,11 +9,13 @@ import lib.Trig
 LeanSearch :: [].{
 
 	want_more_right : Arc.ArcOutcome, F64 -> Bool
-	want_more_right = |sim, target| (match sim.shoulder {
-		ShoulderLeft => True
-		ShoulderRight => False
-		ShoulderNone => (sim.end_across < target)
-	})
+	want_more_right = |sim, target| (
+		match sim.shoulder {
+			ShoulderLeft => True
+			ShoulderRight => False
+			ShoulderNone => (sim.end_across < target)
+		}
+	)
 
 	asymptote_tuning : F64
 	asymptote_tuning = 0.3
@@ -23,9 +25,9 @@ LeanSearch :: [].{
 
 	lean_target : F64 -> F64
 	lean_target = |across| (
-		if (DeviceMath.real_abs(across) < center_lane_epsilon) {
+		if DeviceMath.real_abs(across) < center_lane_epsilon {
 			(
-				if (across >= 0.0) {
+				if across >= 0.0 {
 					center_lane_epsilon
 				} else {
 					(0.0 - center_lane_epsilon)

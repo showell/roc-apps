@@ -6,7 +6,11 @@ M : { num : List(F64), scr : List(U8), out : List(Str), pc : U64 }
 
 walk : M, List(U8), U64 -> M
 walk = |m, b, i|
-	if i >= List.len(b) { m } else { walk(m, b, i + 1) }
+	if i >= List.len(b) {
+		m
+	} else {
+		walk(m, b, i + 1)
+	}
 
 spin : M, List(U8), U64, U64, U64 -> M
 spin = |m, b, k, i, n|
@@ -14,7 +18,7 @@ spin = |m, b, k, i, n|
 		m
 	} else {
 		m1 = walk(m, b, 0)
-		spin({ ..m1, num: List.set(m1.num, k, 1.0) ?? crash("oob"), pc: i }, b, k, i + 1, n)
+		spin({ ..m1, num: List.set(m1.num, k, 1.0) ?? crash ("oob"), pc: i }, b, k, i + 1, n)
 	}
 
 main! = |args| {

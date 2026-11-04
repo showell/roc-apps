@@ -3,7 +3,9 @@
 # its drives through Drive, which the host answers from files on the host --
 # codex-vm's `-disk` and `-disk2`, read and written in place.
 platform ""
-	requires {} { main! : List(Str) => Try(_, [Exit(I8), ..]) }
+	requires {
+		main! : List(Str) => Try(_, [Exit(I8), ..])
+	}
 	exposes [Drive, Echo]
 	packages {}
 	provides { "roc_main": main_for_host! }

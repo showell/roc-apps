@@ -10,7 +10,7 @@
 # path in the source rather than something a script edits, so it has to be true.
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROC="${ROC:-$HOME/build/roc-nightly/$(cat "$HERE/../roc-nightly.txt")/roc}"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../pinned-roc.sh"
 OUT="${OUT:-$HOME/build/roc-apps/canvas_apps}"
 TARGET="${TARGET:-x64glibc}"
 OPT="${OPT:-dev}"

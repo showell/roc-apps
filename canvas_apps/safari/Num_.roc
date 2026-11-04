@@ -9,11 +9,11 @@ Num_ :: [].{
 			t = I64.to_f64(F64.to_i64_wrap(x))
 			f = (x - t)
 			(
-				if (f >= 0.5) {
+				if f >= 0.5 {
 					(t + 1.0)
 				} else {
 					(
-						if (f <= (0.0 - 0.5)) {
+						if f <= (0.0 - 0.5) {
 							(t - 1.0)
 						} else {
 							t
@@ -29,7 +29,7 @@ Num_ :: [].{
 		{
 			t = I64.to_f64(F64.to_i64_wrap(x))
 			(
-				if (t > x) {
+				if t > x {
 					(t - 1.0)
 				} else {
 					t
@@ -65,7 +65,7 @@ Num_ :: [].{
 
 	pow2_up : I64, F64 -> F64
 	pow2_up = |k, acc| (
-		if (k <= 0) {
+		if k <= 0 {
 			acc
 		} else {
 			pow2_up((k - 1), (acc * 2.0))
@@ -74,7 +74,7 @@ Num_ :: [].{
 
 	pow2_down : I64, F64 -> F64
 	pow2_down = |k, acc| (
-		if (k >= 0) {
+		if k >= 0 {
 			acc
 		} else {
 			pow2_down((k + 1), (acc * 0.5))
@@ -83,7 +83,7 @@ Num_ :: [].{
 
 	pow2_int : I64 -> F64
 	pow2_int = |k| (
-		if (k >= 0) {
+		if k >= 0 {
 			pow2_up(k, 1.0)
 		} else {
 			pow2_down(k, 1.0)

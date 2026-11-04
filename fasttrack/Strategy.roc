@@ -104,9 +104,9 @@ expect {
 	b4 = 7
 	SquareValues.points(0, Board.at(0, b4)) == 6100
 		and SquareValues.points(0, Board.at(1, Board.r4)) == 100
-			and SquareValues.points(0, Board.at(0, 0)) == 0
-				and SquareValues.points(1, Board.at(1, b4)) == 6100
-					and SquareValues.points(1, Board.at(2, Board.r4)) == 100
+		and SquareValues.points(0, Board.at(0, 0)) == 0
+		and SquareValues.points(1, Board.at(1, b4)) == 6100
+		and SquareValues.points(1, Board.at(2, Board.r4)) == 100
 }
 
 # The champion's hoard: 1500 an A, joker or J with none home, 500 with two.
@@ -115,5 +115,5 @@ expect {
 	two_home = { ..start, board: Piece.board_of(start.zone_colors, [("red", "B1", "red"), ("red", "B2", "red")]) }
 	Strategy.hoard_worths(Strategy.champion, start, "red") == [{ cards: ["A", "joker", "J"], worth: 1500 }]
 		and Strategy.hoard_worths(Strategy.champion, two_home, "red") == [{ cards: ["A", "joker", "J"], worth: 500 }]
-			and Strategy.board(Strategy.champion, two_home, ["red"]) == 5800 + 2500 + 5900 + 5000
+		and Strategy.board(Strategy.champion, two_home, ["red"]) == 5800 + 2500 + 5900 + 5000
 }

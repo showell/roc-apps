@@ -7,7 +7,7 @@
 #   machine/batch/probes/gpu-frame/run.sh [stage]    stage: all (default) or clear
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROC="${ROC:-$HOME/build/roc-nightly/roc}"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../../../pinned-roc.sh"
 W="$HOME/build/roc-apps/gen/probes/gpu-frame"
 mkdir -p "$W"
 cp "$HERE/Probe.roc" "$HERE/../../../roc/MachineGpu.roc" "$W/"

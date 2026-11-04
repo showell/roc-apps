@@ -62,7 +62,11 @@ Halloween :: [].{
 		$out = List.concat($out, Night.street(v, now))
 		$out = List.concat($out, Fence.shapes(v, now))
 		$out = List.concat($out, Streetlight.shapes(v, 0.0 - 1.1 - now))
-		$out = if hf > View.near { List.concat($out, House.shapes(v, hf, Walk.door_open(tick))) } else { $out }
+		$out = if hf > View.near {
+			List.concat($out, House.shapes(v, hf, Walk.door_open(tick)))
+		} else {
+			$out
+		}
 		$out = List.concat($out, Witch.shapes(v, hf, Walk.witch_in(tick)))
 		$out = List.concat($out, Night.path(v, now, house_at))
 		tilt = (1.0 - Walk.attend(tick)) * Trig.pi / 4.0

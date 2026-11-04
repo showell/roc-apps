@@ -25,7 +25,7 @@ RailPlan :: [].{
 	all_rails = |road, segment| {
 		bends_ahead = List.from_iter(I64.until(0, (road.chain.len().to_i64_wrap() - 1)))
 		ahead = bends_ahead.join_map(|position| rails_at(road, bend_after(road, position)))
-		if (segment > 0) {
+		if segment > 0 {
 			ahead.concat(rails_behind(road, (segment - 1)))
 		} else {
 			ahead

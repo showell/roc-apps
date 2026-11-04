@@ -152,7 +152,7 @@ draw_one = |scene, { context, key }| {
 				context.cam_focal,
 				Screen.width,
 			)
-		}
+	}
 }
 
 ## The thing at `place` in its kind's list.
@@ -190,7 +190,7 @@ draw_truck = |context, truck_at|
 					across: (Scenery.lane_width / 2.0),
 				},
 				lights: {
-					headlights: if Mountains.is_sun_behind_mountains(context.clock) On else Off,
+					headlights: if (Mountains.is_sun_behind_mountains(context.clock)) On else Off,
 					brake_lights: context.brake_lights,
 				},
 				cam_focal: context.cam_focal,

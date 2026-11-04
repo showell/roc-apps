@@ -14,56 +14,80 @@ Scenery :: [].{
 	herd_road_offset = 10.0
 
 	is_pond : Scenery.Creature -> Bool
-	is_pond = |c| (match c {
-		DuckPond => True
-		NoCreature => False
-		Elephant => False
-		Giraffe => False
-		Zebra => False
-		Rhino => False
-	})
+	is_pond = |c| (
+		match c {
+			DuckPond => True
+			NoCreature => False
+			Elephant => False
+			Giraffe => False
+			Zebra => False
+			Rhino => False
+		}
+	)
 
 	eq_Scheme : Scenery.Scheme, Scenery.Scheme -> Bool
-	eq_Scheme = |ex, ey| (match ex {
-		AllGreen => (match ey {
-			AllGreen => True
-			_ => False
-		})
-		YellowGreen => (match ey {
-			YellowGreen => True
-			_ => False
-		})
-		RedGreen => (match ey {
-			RedGreen => True
-			_ => False
-		})
-	})
+	eq_Scheme = |ex, ey| (
+		match ex {
+			AllGreen => (
+				match ey {
+					AllGreen => True
+					_ => False
+				}
+			)
+			YellowGreen => (
+				match ey {
+					YellowGreen => True
+					_ => False
+				}
+			)
+			RedGreen => (
+				match ey {
+					RedGreen => True
+					_ => False
+				}
+			)
+		}
+	)
 
 	eq_Creature : Scenery.Creature, Scenery.Creature -> Bool
-	eq_Creature = |ex, ey| (match ex {
-		NoCreature => (match ey {
-			NoCreature => True
-			_ => False
-		})
-		Elephant => (match ey {
-			Elephant => True
-			_ => False
-		})
-		Giraffe => (match ey {
-			Giraffe => True
-			_ => False
-		})
-		Zebra => (match ey {
-			Zebra => True
-			_ => False
-		})
-		Rhino => (match ey {
-			Rhino => True
-			_ => False
-		})
-		DuckPond => (match ey {
-			DuckPond => True
-			_ => False
-		})
-	})
+	eq_Creature = |ex, ey| (
+		match ex {
+			NoCreature => (
+				match ey {
+					NoCreature => True
+					_ => False
+				}
+			)
+			Elephant => (
+				match ey {
+					Elephant => True
+					_ => False
+				}
+			)
+			Giraffe => (
+				match ey {
+					Giraffe => True
+					_ => False
+				}
+			)
+			Zebra => (
+				match ey {
+					Zebra => True
+					_ => False
+				}
+			)
+			Rhino => (
+				match ey {
+					Rhino => True
+					_ => False
+				}
+			)
+			DuckPond => (
+				match ey {
+					DuckPond => True
+					_ => False
+				}
+			)
+		}
+	)
 }

@@ -73,29 +73,36 @@ Particles :: [].{
 
 	initial : I64, List(Particles.Particle) -> List(Particles.Particle)
 	initial = |i, acc|
-		if i >= count { acc } else {
+		if i >= count {
+			acc
+		} else {
 			seed = unit_hash(i, 0)
 			initial(
 				i + 1,
-				List.append(acc, {
-					x: 0.0,
-					y: 0.0,
-					vx: 0.0,
-					vy: 0.0,
-					# Stagger the first respawn so the fountain fills rather
-					# than pulsing.
-					life: seed * 2.8,
-					seed: seed,
-					phase: unit_hash(i, 1),
-					tint: rem(i, 4),
-				}),
+				List.append(
+					acc,
+					{
+						x: 0.0,
+						y: 0.0,
+						vx: 0.0,
+						vy: 0.0,
+						# Stagger the first respawn so the fountain fills rather
+						# than pulsing.
+						life: seed * 2.8,
+						seed: seed,
+						phase: unit_hash(i, 1),
+						tint: rem(i, 4),
+					},
+				),
 			)
 		}
 
 	stepped : List(Particles.Particle), { x : F64, y : F64 }, F64, U64, List(Particles.Particle) -> List(Particles.Particle)
 	stepped = |ps, at, spread, i, acc|
-		if i >= List.len(ps) { acc } else {
-			stepped(ps, at, spread, i + 1, List.append(acc, step(List.get(ps, i) ?? crash("particle"), at, spread)))
+		if i >= List.len(ps) {
+			acc
+		} else {
+			stepped(ps, at, spread, i + 1, List.append(acc, step(List.get(ps, i) ?? crash ("particle"), at, spread)))
 		}
 
 	step : Particles.Particle, { x : F64, y : F64 }, F64 -> Particles.Particle
@@ -120,7 +127,15 @@ Particles :: [].{
 	# Their four colours.
 	palette : I64 -> Brush.Rgba
 	palette = |i|
-		if i == 0 { Brush.opaque(0xffd166) } else if i == 1 { Brush.opaque(0xef476f) } else if i == 2 { Brush.opaque(0x06d6a0) } else { Brush.opaque(0x118ab2) }
+		if i == 0 {
+			Brush.opaque(0xffd166)
+		} else if i == 1 {
+			Brush.opaque(0xef476f)
+		} else if i == 2 {
+			Brush.opaque(0x06d6a0)
+		} else {
+			Brush.opaque(0x118ab2)
+		}
 
 	shapes : Particles.Model -> List(Shapes.Shape)
 	shapes = |m| {
@@ -129,7 +144,7 @@ Particles :: [].{
 		$out = List.append($out, Rect({ x: 0.0, y: 0.0, w: width, h: height, fill: Flat(Brush.opaque(0x0b0e17)) }))
 		var $i = 0
 		while $i < n {
-			p = List.get(m.particles, $i) ?? crash("particle")
+			p = List.get(m.particles, $i) ?? crash ("particle")
 			# Their sprite is 3 to 9 pixels across, sized by the same seed.
 			r = (3.0 + 6.0 * p.seed) / 2.0
 			$out = List.append($out, Disc({ x: p.x, y: p.y, r: r, fill: Flat(palette(p.tint)), clip: Anywhere }))

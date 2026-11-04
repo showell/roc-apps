@@ -109,7 +109,7 @@ Geom :: [].{
 		{
 			n = poly.len().to_i64_wrap()
 			(
-				if (i >= n) {
+				if i >= n {
 					acc
 				} else {
 					(

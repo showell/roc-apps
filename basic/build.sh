@@ -7,8 +7,7 @@
 # Lands at ~/build/roc-apps/next/basic/, served on :9210 by roc-site.
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BASIC_HERE="$HERE"
-. "$HERE/pinned-roc.sh"
+. "$HERE/../pinned-roc.sh"
 ZIG="${ZIG:-$HOME/zig-0.16.0/zig}"
 NEXT="$HOME/build/roc-apps/next/basic"
 mkdir -p "$NEXT"

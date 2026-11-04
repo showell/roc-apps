@@ -27,24 +27,24 @@ platform ""
 	exposes []
 	packages {}
 	provides {
+		"roc_adj": adj_for_host,
+		"roc_ai": ai_for_host,
+		"roc_count": count_for_host,
+		"roc_done": done_for_host,
+		"roc_drop": drop_for_host,
+		"roc_flag": flag_for_host,
+		"roc_hits": hits_for_host,
 		"roc_init": init_for_host,
+		"roc_mine": mine_for_host,
+		"roc_moves": moves_for_host,
+		"roc_new": new_for_host,
+		"roc_open": open_for_host,
+		"roc_safe": safe_for_host,
+		"roc_same": same_for_host,
+		"roc_shown": shown_for_host,
 		"roc_step": step_for_host,
 		"roc_view": view_for_host,
-		"roc_drop": drop_for_host,
-		"roc_same": same_for_host,
-		"roc_new": new_for_host,
-		"roc_mine": mine_for_host,
-		"roc_shown": shown_for_host,
-		"roc_adj": adj_for_host,
-		"roc_count": count_for_host,
-		"roc_hits": hits_for_host,
-		"roc_moves": moves_for_host,
-		"roc_done": done_for_host,
 		"roc_won": won_for_host,
-		"roc_safe": safe_for_host,
-		"roc_open": open_for_host,
-		"roc_flag": flag_for_host,
-		"roc_ai": ai_for_host,
 	}
 	targets: {
 		inputs_dir: "targets/",
@@ -55,20 +55,37 @@ platform ""
 	}
 
 init_for_host = program.init
+
 step_for_host = program.step
+
 view_for_host = program.view
+
 drop_for_host = program.drop
+
 same_for_host = program.same
+
 new_for_host = program.new
+
 mine_for_host = program.mine
+
 shown_for_host = program.shown
+
 adj_for_host = program.adj
+
 count_for_host = program.count
+
 hits_for_host = program.hits
+
 moves_for_host = program.moves
+
 done_for_host = program.done
+
 won_for_host = program.won
+
 safe_for_host = program.safe
+
 open_for_host = program.open
+
 flag_for_host = program.flag
+
 ai_for_host = program.ai

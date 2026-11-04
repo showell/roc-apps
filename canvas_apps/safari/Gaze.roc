@@ -70,7 +70,7 @@ Gaze :: [].{
 			pig = Pigs.gaze_pig(seg.length)
 			dist = (pig.along - state.along)
 			(
-				if (dist > gaze_look_dist) {
+				if dist > gaze_look_dist {
 					no_look
 				} else {
 					pig_in_sight(state, pig, dist)
@@ -152,11 +152,11 @@ Gaze :: [].{
 
 	pig_gaze_brake : Pose.RiderState, World.Segment -> Gaze.GazeBrake
 	pig_gaze_brake = |state, seg| (
-		if (gawk_engaged(state, seg) == False) {
+		if gawk_engaged(state, seg) == False {
 			{ engaged: False, accel: 0.0 }
 		} else {
 			(
-				if (state.v <= pig_gaze_speed) {
+				if state.v <= pig_gaze_speed {
 					{ engaged: True, accel: 0.0 }
 				} else {
 					pig_gaze_brake_easing(state, seg)

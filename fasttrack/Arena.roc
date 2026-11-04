@@ -190,8 +190,8 @@ Arena :: [].{
 	ft_hop = |m|
 		forward(m)
 			and Board.is_ft(m.start)
-				and m.end != Board.bullseye
-					and (Board.is_ft(m.end) or Board.zone(m.end) != (Board.zone(m.start) + 1) % Board.zones)
+			and m.end != Board.bullseye
+			and (Board.is_ft(m.end) or Board.zone(m.end) != (Board.zone(m.start) + 1) % Board.zones)
 
 	bump : List(Arena.Tally), U64, (Arena.Tally -> Arena.Tally) -> List(Arena.Tally)
 	bump = |ts, i, f| {
@@ -399,8 +399,8 @@ expect {
 	ft = Board.at(0, Board.ft)
 	Arena.ft_hop({ kind: WithCard("2"), start: ft, end: Board.at(1, Board.ft) })
 		and Arena.ft_hop({ kind: WithCard("3"), start: ft, end: Board.at(2, Board.r4) })
-			and !Arena.ft_hop({ kind: WithCard("2"), start: ft, end: Board.at(1, 20) })
-				and !Arena.ft_hop({ kind: Reverse("4"), start: ft, end: Board.at(0, 12) })
+		and !Arena.ft_hop({ kind: WithCard("2"), start: ft, end: Board.at(1, 20) })
+		and !Arena.ft_hop({ kind: Reverse("4"), start: ft, end: Board.at(0, 12) })
 }
 
 # A move with one end is made by its start click alone, and still counted:

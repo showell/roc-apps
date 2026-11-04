@@ -18,7 +18,7 @@
 #   tests/copycheck.sh naming   one
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROC="${ROC:-$HOME/build/roc-nightly/roc}"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../pinned-roc.sh"
 W="$HOME/build/roc-apps/gen/copycheck"
 mkdir -p "$W"
 WRITES=${WRITES:-8192}

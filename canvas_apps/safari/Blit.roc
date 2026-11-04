@@ -94,11 +94,11 @@ Blit :: [].{
 	## shaded and wide enough, else a solid polygon.
 	expand_shade : Paint.DrawCmd -> Paint.DrawCmd
 	expand_shade = |cmd|
-		if (cmd.strength <= 0.0 or cmd.pts.len() < 2) {
+		if cmd.strength <= 0.0 or cmd.pts.len() < 2 {
 			as_solid(cmd)
 		} else {
 			span = x_span(cmd.pts)
-			if is_too_narrow_to_shade(span) as_solid(cmd) else as_span_shade(cmd, span)
+			if (is_too_narrow_to_shade(span)) as_solid(cmd) else as_span_shade(cmd, span)
 		}
 
 	## What the blitter paints for one command: none, it, or its expansion.
@@ -106,8 +106,8 @@ Blit :: [].{
 	expand_cmd = |cmd|
 		match kind_of(cmd) {
 			ShadedAcross => [expand_shade(cmd)]
-			Disc => if is_disc_visible({ radius: radius_of(cmd), alpha: cmd.strength }) [cmd] else []
-			RadialGradient => if is_radial_visible(radius_of(cmd)) [cmd] else []
+			Disc => if (is_disc_visible({ radius: radius_of(cmd), alpha: cmd.strength })) [cmd] else []
+			RadialGradient => if (is_radial_visible(radius_of(cmd))) [cmd] else []
 			Unchanged => [cmd]
 		}
 

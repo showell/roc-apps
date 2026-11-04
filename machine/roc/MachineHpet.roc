@@ -54,7 +54,11 @@ MachineHpet :: [].{
 
 	# The main counter when the machine's clock reads `clock`.
 	count : MachineHpet.Hpet, U64 -> U64
-	count = |h, clock| if U64.bitwise_and(h.config, 1) == 0 { h.banked } else { h.banked + (clock - h.epoch) }
+	count = |h, clock| if U64.bitwise_and(h.config, 1) == 0 {
+		h.banked
+	} else {
+		h.banked + (clock - h.epoch)
+	}
 
 	# A 32-bit read `off` bytes into the window, when the clock reads `clock`.
 	read : MachineHpet.Hpet, U64, U64 -> U64
@@ -133,7 +137,11 @@ MachineHpet :: [].{
 			(h, Quiet)
 		} else {
 			fired = { ..h, int_status: U64.bitwise_or(h.int_status, 1) }
-			raised = if U64.bitwise_and(U64.shr_zf_wrap(h.t0_config, 2), 1) == 1 { Raised(U64.bitwise_and(U64.shr_zf_wrap(h.t0_config, 9), 0x1F)) } else { Quiet }
+			raised = if U64.bitwise_and(U64.shr_zf_wrap(h.t0_config, 2), 1) == 1 {
+				Raised(U64.bitwise_and(U64.shr_zf_wrap(h.t0_config, 9), 0x1F))
+			} else {
+				Quiet
+			}
 			step = h.t0_comparator
 			rearmed =
 				if U64.bitwise_and(U64.shr_zf_wrap(h.t0_config, 3), 1) == 1 and step != 0 {

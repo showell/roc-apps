@@ -38,7 +38,7 @@ CritterPlan :: [].{
 	## before `rider_segment`, when there is one.
 	sightings : CritterPlan.Scene, I64 -> List(Billboards.Sighting)
 	sightings = |scene, rider_segment|
-		if (rider_segment > 0) {
+		if rider_segment > 0 {
 			List.concat(
 				CritterPlan.sightings_ahead(scene),
 				CritterPlan.sightings_behind(scene, (rider_segment - 1)),
@@ -66,7 +66,7 @@ CritterPlan :: [].{
 	## The cows, then the pigs, of the segment at `position` in the chain.
 	farm_sightings : CritterPlan.Scene, I64 -> List(Billboards.Sighting)
 	farm_sightings = |scene, position|
-		if (position >= farm_reach) {
+		if position >= farm_reach {
 			[]
 		} else {
 			segment = segment_at(scene, position)
@@ -81,7 +81,7 @@ CritterPlan :: [].{
 		segment = segment_at(scene, position)
 		match segment.ending {
 			Continues(_) =>
-				if (position >= safari_reach) {
+				if position >= safari_reach {
 					[]
 				} else {
 					corner_sightings(scene, { mapper: Frame.chain_map(position), segment })
@@ -93,7 +93,7 @@ CritterPlan :: [].{
 	## The ducks of the segment at `position` in the chain, if it has a pond.
 	duck_sightings : CritterPlan.Scene, I64 -> List(Billboards.Sighting)
 	duck_sightings = |scene, position|
-		if (position >= safari_reach) {
+		if position >= safari_reach {
 			[]
 		} else {
 			pond_sightings(scene, { mapper: Frame.chain_map(position), segment: segment_at(scene, position) })
@@ -149,7 +149,7 @@ sight_critter = |scene, { mapper, critter }|
 		),
 		height: critter.height,
 		codepoint: critter.codepoint,
-		facing: if critter.face_right FacesRight else FacesLeft,
+		facing: if (critter.face_right) FacesRight else FacesLeft,
 	})
 
 corner_sightings : CritterPlan.Scene, { mapper : Frame.Mapper, segment : World.Segment } -> List(Billboards.Sighting)
@@ -157,7 +157,7 @@ corner_sightings = |scene, { mapper, segment }|
 	SafariCritter.corner_critters({
 		creature: segment.exit_creature,
 		corner_along: segment.length,
-		turn: if segment.exit_right TurnsRight else TurnsLeft,
+		turn: if (segment.exit_right) TurnsRight else TurnsLeft,
 		lane_half_width,
 	})
 		.map(|critter| sight_critter(scene, { mapper, critter }))

@@ -40,7 +40,7 @@ exit 2
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # The compiler is roc-lang/nightlies' build of the new compiler (README);
 # ROC=~/build/roc/out/bin/roc runs the debug build from the checkout.
-ROC="${ROC:-$HOME/build/roc-nightly/roc}"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../pinned-roc.sh"
 ROCEMIT="${ROCEMIT:-$HOME/build/rust-target/release/rocemit}"
 UNITS="${SAFARI_UNITS:-$HOME/showell_repos/safari-codex/units}"
 OUT="$HOME/build/roc-apps/gen"

@@ -26,19 +26,33 @@ camera = Raytracer.rt_camera_new(Quaternion.vec3_new(0.0, 0.0, 0.0), 1000)
 # Every pixel's closest hit, and the sum of the whole distances hit.
 trace_rows : Raytracer.RtScene, I64, I64, I64 -> I64
 trace_rows = |scene, x, y, acc|
-	if y >= 120 { acc }
-	else if x >= 160 { trace_rows(scene, 0, y + 1, acc) }
+	if y >= 120 {
+		acc
+	}
+	else if x >= 160 {
+		trace_rows(scene, 0, y + 1, acc)
+	}
 	else {
 		hit = Raytracer.rt_trace(Raytracer.rt_pixel_ray(camera, x, y, 160, 120), scene)
-		d = if hit.rt_did_hit { F64.to_i64_wrap(hit.rt_dist) } else { 0 }
+		d = if hit.rt_did_hit {
+			F64.to_i64_wrap(hit.rt_dist)
+		} else {
+			0
+		}
 		trace_rows(scene, x + 1, y, I64.plus_wrap(acc, d))
 	}
 
 run : Str, I64, I64, I64 -> I64
 run = |mode, n, t, acc|
-	if n <= 0 { acc } else {
+	if n <= 0 {
+		acc
+	} else {
 		scene = scene_at(t)
-		got = if mode == "trace" { trace_rows(scene, 0, 0, 0) } else { List.fold(Raytracer.rt_render(scene, camera, 160, 120).fb_pixels, 0, |a, p| I64.plus_wrap(a, p)) }
+		got = if mode == "trace" {
+			trace_rows(scene, 0, 0, 0)
+		} else {
+			List.fold(Raytracer.rt_render(scene, camera, 160, 120).fb_pixels, 0, |a, p| I64.plus_wrap(a, p))
+		}
 		run(mode, n - 1, t + 100, I64.plus_wrap(acc, got))
 	}
 

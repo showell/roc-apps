@@ -16,7 +16,6 @@ import BreakoutDraw
 BreakoutApp :: [].{
 	Model : { world : Rules.World, elapsed : F64, sounds : U32 }
 
-
 	canvas_app : CanvasApp.CanvasApp(BreakoutApp.Model)
 	canvas_app = {
 		size: { width: BreakoutDraw.w, height: BreakoutDraw.h },
@@ -42,9 +41,19 @@ BreakoutApp :: [].{
 		right = devices.key_down(KeyRight) or devices.key_down(KeyD)
 		pointer = devices.mouse
 		{
-			move: if left { Left } else if right { Right } else { Still },
-			aim: if pointer.button_down(Left) { AimAt(pointer.position().x) } else { NoAim },
-			action_pressed: devices.key_pressed(KeySpace) or pointer.button_pressed(Left)
+			move: if left {
+				Left
+			} else if right {
+				Right
+			} else {
+				Still
+			},
+			aim: if pointer.button_down(Left) {
+				AimAt(pointer.position().x)
+			} else {
+				NoAim
+			},
+			action_pressed: devices.key_pressed(KeySpace) or pointer.button_pressed(Left),
 		}
 	}
 

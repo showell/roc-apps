@@ -16,7 +16,7 @@
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FB="$(cd "$HERE/.." && pwd)"
-ROC="${ROC:-$HOME/build/roc-nightly/roc}"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../pinned-roc.sh"
 LIMIT="${LIMIT:-1200}"
 GEN="$HOME/build/roc-apps/gen/framebuffer"
 NEXT="$HOME/build/roc-apps/next/framebuffer"

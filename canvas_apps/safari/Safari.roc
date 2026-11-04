@@ -64,7 +64,7 @@ Safari :: [].{
 					pose,
 					cam_focal: cf,
 					clock: r.clock,
-					brake_lights: if r.truck.braking On else Off,
+					brake_lights: if (r.truck.braking) On else Off,
 				},
 			)
 			List.join([Mountains.draw({ heading: ViewYaw.heading_for(s), dusk: Sky.sun_set_fraction(r.clock), cam_focal: cf, view_w: Screen.width }), GroundPlan.draw({ world: w, segment: s.segment, pose, cam_focal: cf, view_w: Screen.width }), roadside])

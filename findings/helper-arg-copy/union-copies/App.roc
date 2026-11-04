@@ -4,11 +4,11 @@ M : { fuel : I64, mem : T }
 
 set_t : T, U64, U8 -> T
 set_t = |t, i, x| match t {
-	Leaf(xs) => Leaf(List.set(xs, i, x) ?? crash("leaf"))
+	Leaf(xs) => Leaf(List.set(xs, i, x) ?? crash ("leaf"))
 	Node(ks) => {
 		c = U64.div_trunc_by(i, 32)
-		taken = List.replace(ks, c, []) ?? crash("node")
-		Node(List.set(taken.list, c, List.set(taken.prev, U64.rem_by(i, 32), x) ?? crash("inner")) ?? crash("node"))
+		taken = List.replace(ks, c, []) ?? crash ("node")
+		Node(List.set(taken.list, c, List.set(taken.prev, U64.rem_by(i, 32), x) ?? crash ("inner")) ?? crash ("node"))
 	}
 }
 

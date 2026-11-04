@@ -85,7 +85,14 @@ MachineIde :: [].{
 	read! = |ide, drives, p| {
 		d = MachineIde.active(ide)
 		if !d.present {
-			(ide, if p == 0x1F7 or p == 0x3F6 { 0x00 } else { 0xFF })
+			(
+				ide,
+				if p == 0x1F7 or p == 0x3F6 {
+					0x00
+				} else {
+					0xFF
+				},
+			)
 		} else if p == 0x1F7 or p == 0x3F6 {
 			(ide, d.status)
 		} else if p == 0x1F0 {
@@ -133,10 +140,18 @@ MachineIde :: [].{
 	claims = |p| (p >= 0x1F0 and p <= 0x1F7) or p == 0x3F6
 
 	active : MachineIde.Ide -> MachineIde.Position
-	active = |ide| if ide.selected == 1 { ide.slave } else { ide.master }
+	active = |ide| if ide.selected == 1 {
+		ide.slave
+	} else {
+		ide.master
+	}
 
 	with_active : MachineIde.Ide, MachineIde.Position -> MachineIde.Ide
-	with_active = |ide, d| if ide.selected == 1 { ({ ..ide, slave: d }) } else { ({ ..ide, master: d }) }
+	with_active = |ide, d| if ide.selected == 1 {
+		({ ..ide, slave: d })
+	} else {
+		({ ..ide, master: d })
+	}
 
 	# LBA28: the three address registers and the drive/head register's low
 	# nibble.
@@ -149,7 +164,11 @@ MachineIde :: [].{
 	command! : MachineIde.Position, MachineDisk.Drives, U64, U64 => MachineIde.Position
 	command! = |d, drives, pos, c| {
 		lba = MachineIde.lba_of(d)
-		count = if d.sect_count == 0 { 256 } else { d.sect_count }
+		count = if d.sect_count == 0 {
+			256
+		} else {
+			d.sect_count
+		}
 		if (c == 0x20 or c == 0x30) and lba >= d.sectors {
 			{ ..d, status: 0x51, error: 0x10 }
 		} else if c == 0x20 {
@@ -240,10 +259,18 @@ MachineIde :: [].{
 	identity_byte = |sectors, i|
 		if i >= 54 and i < 94 {
 			k = i - 54
-			c = if U64.bitwise_and(k, 1) == 0 { k + 1 } else { k - 1 }
+			c = if U64.bitwise_and(k, 1) == 0 {
+				k + 1
+			} else {
+				k - 1
+			}
 			List.get(Str.to_utf8("CODEX VM IDE DISK"), c) ?? 32
 		} else if i >= 120 and i < 124 {
-			lba28 = if sectors > 0x0FFFFFFF { 0x0FFFFFFF } else { sectors }
+			lba28 = if sectors > 0x0FFFFFFF {
+				0x0FFFFFFF
+			} else {
+				sectors
+			}
 			U64.to_u8_wrap(U64.div_trunc_by(lba28, U64.shl_wrap(1, U64.to_u8_wrap(8 * (i - 120)))))
 		} else if i >= 200 and i < 208 {
 			U64.to_u8_wrap(U64.div_trunc_by(sectors, U64.shl_wrap(1, U64.to_u8_wrap(8 * (i - 200)))))

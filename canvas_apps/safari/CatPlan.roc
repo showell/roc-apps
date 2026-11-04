@@ -80,9 +80,9 @@ cat_in_view = |view, { place, crossing }| {
 		crossing.along,
 		(state.across + (Scenery.lane_width / 2.0)),
 	)
-	if (seen.forward <= Geom.near) {
+	if seen.forward <= Geom.near {
 		[]
-	} else if (((crossing.height / seen.forward) * view.cam_focal) < SceneLimits.min_scenery_px) {
+	} else if ((crossing.height / seen.forward) * view.cam_focal) < SceneLimits.min_scenery_px {
 		[]
 	} else {
 		[{ right: seen.right, fwd: seen.forward, height: crossing.height, pose: state.pose, lift: state.lift }]

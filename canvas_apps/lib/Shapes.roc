@@ -129,7 +129,11 @@ Shapes :: [].{
 	# and it only works where the background is a known flat colour.
 	ring : F64, F64, F64, F64, U64, Brush.Fill -> List(Shapes.Shape)
 	ring = |x, y, r, w, sides, fill| {
-		n = if sides < 3 { 3 } else { sides }
+		n = if sides < 3 {
+			3
+		} else {
+			sides
+		}
 		var $out = List.with_capacity(n)
 		var $k = 0
 		while $k < n {
@@ -161,7 +165,7 @@ Shapes :: [].{
 		while $i < n {
 			$out = List.append(
 				$out,
-				match List.get(shapes, $i) ?? crash("shape out of range") {
+				match List.get(shapes, $i) ?? crash ("shape out of range") {
 					Poly(p) => Poly({ pts: pulled(p.pts, axis, k), fill: p.fill })
 					Pieces(p) => Pieces({ tris: pulled(p.tris, axis, k), fill: p.fill })
 					Disc(d) => Disc({ x: axis + (d.x - axis) * k, y: d.y, r: d.r, fill: d.fill, clip: d.clip })
@@ -170,7 +174,17 @@ Shapes :: [].{
 					Rect(r) => {
 						a = axis + (r.x - axis) * k
 						b = axis + (r.x + r.w - axis) * k
-						Rect({ x: F64.min(a, b), y: r.y, w: if b < a { a - b } else { b - a }, h: r.h, fill: r.fill })
+						Rect({
+							x: F64.min(a, b),
+							y: r.y,
+							w: if b < a {
+								a - b
+							} else {
+								b - a
+							},
+							h: r.h,
+							fill: r.fill,
+						})
 					}
 					# A mark is not geometry; turning a figure does not touch it.
 					Blend(m) => Blend(m)
@@ -180,7 +194,15 @@ Shapes :: [].{
 					Image(i) => {
 						a = axis + (i.x - axis) * k
 						b = axis + (i.x + i.w - axis) * k
-						Image({ ..i, x: F64.min(a, b), w: if b < a { a - b } else { b - a } })
+						Image({
+							..i,
+							x: F64.min(a, b),
+							w: if b < a {
+								a - b
+							} else {
+								b - a
+							},
+						})
 					}
 				},
 			)
@@ -252,7 +274,11 @@ Shapes :: [].{
 	}
 
 	sqrt : F64 -> F64
-	sqrt = |v| if v <= 0.0 { 0.0 } else { F64.sqrt(v) }
+	sqrt = |v| if v <= 0.0 {
+		0.0
+	} else {
+		F64.sqrt(v)
+	}
 
 	# Where a shape is allowed to paint, when it is not allowed everywhere.
 	Clip : [Anywhere, Within({ x : F64, y : F64, w : F64, h : F64 })]
@@ -281,7 +307,7 @@ Shapes :: [].{
 		while $k < n {
 			$out = List.concat(
 				$out,
-				match List.get(shapes, $k) ?? crash("shape out of range") {
+				match List.get(shapes, $k) ?? crash ("shape out of range") {
 					Poly(p) =>
 						if is_convex(p.pts) {
 							[Poly(p)]
@@ -336,7 +362,11 @@ Shapes :: [].{
 		var $sum = 0.0
 		var $k = 0
 		while $k < n {
-			k1 = if $k + 1 == n { 0 } else { $k + 1 }
+			k1 = if $k + 1 == n {
+				0
+			} else {
+				$k + 1
+			}
 			$sum = $sum + at(pts, 2 * $k) * at(pts, 2 * k1 + 1) - at(pts, 2 * k1) * at(pts, 2 * $k + 1)
 			$k = $k + 1
 		}
@@ -362,21 +392,49 @@ Shapes :: [].{
 		var $ydir = 0.0
 		var $k = 0
 		while $k < n and !$bad {
-			k1 = if $k + 1 >= n { $k + 1 - n } else { $k + 1 }
-			k2 = if $k + 2 >= n { $k + 2 - n } else { $k + 2 }
+			k1 = if $k + 1 >= n {
+				$k + 1 - n
+			} else {
+				$k + 1
+			}
+			k2 = if $k + 2 >= n {
+				$k + 2 - n
+			} else {
+				$k + 2
+			}
 			x0 = at(pts, 2 * $k)
 			y0 = at(pts, 2 * $k + 1)
 			x1 = at(pts, 2 * k1)
 			y1 = at(pts, 2 * k1 + 1)
 			turn = cross3(x0, y0, x1, y1, at(pts, 2 * k2), at(pts, 2 * k2 + 1))
 			$bad = turn * $sign < 0.0
-			$sign = if $sign == 0.0 { turn } else { $sign }
+			$sign = if $sign == 0.0 {
+				turn
+			} else {
+				$sign
+			}
 			dx = x1 - x0
 			dy = y1 - y0
-			$xflips = if dx != 0.0 and $xdir != 0.0 and (dx > 0.0) != ($xdir > 0.0) { $xflips + 1 } else { $xflips }
-			$yflips = if dy != 0.0 and $ydir != 0.0 and (dy > 0.0) != ($ydir > 0.0) { $yflips + 1 } else { $yflips }
-			$xdir = if dx != 0.0 { dx } else { $xdir }
-			$ydir = if dy != 0.0 { dy } else { $ydir }
+			$xflips = if dx != 0.0 and $xdir != 0.0 and (dx > 0.0) != ($xdir > 0.0) {
+				$xflips + 1
+			} else {
+				$xflips
+			}
+			$yflips = if dy != 0.0 and $ydir != 0.0 and (dy > 0.0) != ($ydir > 0.0) {
+				$yflips + 1
+			} else {
+				$yflips
+			}
+			$xdir = if dx != 0.0 {
+				dx
+			} else {
+				$xdir
+			}
+			$ydir = if dy != 0.0 {
+				dy
+			} else {
+				$ydir
+			}
 			$k = $k + 1
 		}
 		!$bad and $xflips <= flip_limit and $yflips <= flip_limit
@@ -388,7 +446,11 @@ Shapes :: [].{
 	triangulate : List(F64) -> List(F64)
 	triangulate = |pts| {
 		n = List.len(pts) // 2
-		orient = if twice_area(pts) >= 0.0 { 1.0 } else { -1.0 }
+		orient = if twice_area(pts) >= 0.0 {
+			1.0
+		} else {
+			-1.0
+		}
 		var $idx = List.with_capacity(n)
 		var $k = 0
 		while $k < n {
@@ -400,11 +462,19 @@ Shapes :: [].{
 		var $misses = 0
 		while List.len($idx) > 3 and $misses < List.len($idx) {
 			m = List.len($idx)
-			ip = if $i == 0 { m - 1 } else { $i - 1 }
-			inx = if $i + 1 >= m { 0 } else { $i + 1 }
-			a = List.get($idx, ip) ?? crash("vertex out of range")
-			b = List.get($idx, $i) ?? crash("vertex out of range")
-			c = List.get($idx, inx) ?? crash("vertex out of range")
+			ip = if $i == 0 {
+				m - 1
+			} else {
+				$i - 1
+			}
+			inx = if $i + 1 >= m {
+				0
+			} else {
+				$i + 1
+			}
+			a = List.get($idx, ip) ?? crash ("vertex out of range")
+			b = List.get($idx, $i) ?? crash ("vertex out of range")
+			c = List.get($idx, inx) ?? crash ("vertex out of range")
 			ax = at(pts, 2 * a)
 			ay = at(pts, 2 * a + 1)
 			bx = at(pts, 2 * b)
@@ -413,10 +483,32 @@ Shapes :: [].{
 			cy = at(pts, 2 * c + 1)
 			turn = cross3(ax, ay, bx, by, cx, cy) * orient
 			ear = turn >= 0.0 and !any_inside(pts, $idx, a, b, c, orient)
-			$out = if ear and turn > 0.0 { List.concat($out, [ax, ay, bx, by, cx, cy]) } else { $out }
-			$idx = if ear { List.drop_at($idx, $i) } else { $idx }
-			$misses = if ear { 0 } else { $misses + 1 }
-			$i = if ear { (if $i >= List.len($idx) { 0 } else { $i }) } else { inx }
+			$out = if ear and turn > 0.0 {
+				List.concat($out, [ax, ay, bx, by, cx, cy])
+			} else {
+				$out
+			}
+			$idx = if ear {
+				List.drop_at($idx, $i)
+			} else {
+				$idx
+			}
+			$misses = if ear {
+				0
+			} else {
+				$misses + 1
+			}
+			$i = if ear {
+				(
+					if $i >= List.len($idx) {
+						0
+					} else {
+						$i
+					}
+				)
+			} else {
+				inx
+			}
 		}
 		fan(pts, $idx, $out)
 	}
@@ -435,7 +527,7 @@ Shapes :: [].{
 		var $found = Bool.False
 		var $k = 0
 		while $k < m and !$found {
-			p = List.get(idx, $k) ?? crash("vertex out of range")
+			p = List.get(idx, $k) ?? crash ("vertex out of range")
 			px = at(pts, 2 * p)
 			py = at(pts, 2 * p + 1)
 			$found = p != a and p != b and p != c and cross3(ax, ay, bx, by, px, py) * orient > 0.0 and cross3(bx, by, cx, cy, px, py) * orient > 0.0 and cross3(cx, cy, ax, ay, px, py) * orient > 0.0
@@ -452,8 +544,8 @@ Shapes :: [].{
 		var $out = out
 		var $k = 1
 		while $k + 1 < m {
-			p = List.get(idx, $k) ?? crash("vertex out of range")
-			q = List.get(idx, $k + 1) ?? crash("vertex out of range")
+			p = List.get(idx, $k) ?? crash ("vertex out of range")
+			q = List.get(idx, $k + 1) ?? crash ("vertex out of range")
 			$out = List.concat($out, [at(pts, 2 * first), at(pts, 2 * first + 1), at(pts, 2 * p), at(pts, 2 * p + 1), at(pts, 2 * q), at(pts, 2 * q + 1)])
 			$k = $k + 1
 		}

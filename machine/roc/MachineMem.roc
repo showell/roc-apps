@@ -51,7 +51,11 @@ MachineMem :: [].{
 		}
 
 	pow32 : I64 -> U64
-	pow32 = |k| if k <= 0 { 1 } else { 32 * MachineMem.pow32(k - 1) }
+	pow32 = |k| if k <= 0 {
+		1
+	} else {
+		32 * MachineMem.pow32(k - 1)
+	}
 
 	# ---- reading --------------------------------------------------------
 
@@ -124,8 +128,8 @@ MachineMem :: [].{
 	set_at = |node, a, level, v|
 		if level <= 0 {
 			match node {
-				Leaf(bytes) => Leaf(List.set(bytes, MachineMem.part(a, 0), v) ?? crash("Mem: offset outside a leaf"))
-				_ => Leaf(List.set(List.repeat(0.U8, MachineMem.leaf_size), MachineMem.part(a, 0), v) ?? crash("Mem: offset outside a leaf"))
+				Leaf(bytes) => Leaf(List.set(bytes, MachineMem.part(a, 0), v) ?? crash ("Mem: offset outside a leaf"))
+				_ => Leaf(List.set(List.repeat(0.U8, MachineMem.leaf_size), MachineMem.part(a, 0), v) ?? crash ("Mem: offset outside a leaf"))
 			}
 		} else {
 			i = MachineMem.part(a, level)
@@ -133,8 +137,8 @@ MachineMem :: [].{
 				Branch(cs) => cs
 				_ => List.repeat(Empty, MachineMem.fan)
 			}
-			taken = List.replace(kids, i, Empty) ?? crash("Mem: index outside a node")
-			Branch(List.set(taken.list, i, MachineMem.set_at(taken.prev, a, level - 1, v)) ?? crash("Mem: index outside a node"))
+			taken = List.replace(kids, i, Empty) ?? crash ("Mem: index outside a node")
+			Branch(List.set(taken.list, i, MachineMem.set_at(taken.prev, a, level - 1, v)) ?? crash ("Mem: index outside a node"))
 		}
 
 	# `set_at` for `width` bytes of `u` that share the leaf `a` is in.
@@ -151,8 +155,8 @@ MachineMem :: [].{
 				Branch(cs) => cs
 				_ => List.repeat(Empty, MachineMem.fan)
 			}
-			taken = List.replace(kids, i, Empty) ?? crash("Mem: index outside a node")
-			Branch(List.set(taken.list, i, MachineMem.set_span(taken.prev, a, level - 1, u, width)) ?? crash("Mem: index outside a node"))
+			taken = List.replace(kids, i, Empty) ?? crash ("Mem: index outside a node")
+			Branch(List.set(taken.list, i, MachineMem.set_span(taken.prev, a, level - 1, u, width)) ?? crash ("Mem: index outside a node"))
 		}
 
 	put_bytes : List(U8), U64, U64, I64 -> List(U8)
@@ -160,6 +164,6 @@ MachineMem :: [].{
 		if left <= 0 {
 			bytes
 		} else {
-			MachineMem.put_bytes(List.set(bytes, i, U64.to_u8_wrap(u)) ?? crash("Mem: offset outside a leaf"), i + 1, U64.div_trunc_by(u, 256), left - 1)
+			MachineMem.put_bytes(List.set(bytes, i, U64.to_u8_wrap(u)) ?? crash ("Mem: offset outside a leaf"), i + 1, U64.div_trunc_by(u, 256), left - 1)
 		}
 }

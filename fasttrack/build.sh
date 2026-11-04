@@ -20,8 +20,7 @@
 # changes the game.
 set -eu
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# The compiler every roc-apps page builds with: ../roc-nightly.txt.
-ROC="${ROC:-$HOME/build/roc-nightly/$(cat "$HERE/../roc-nightly.txt")/roc}"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../pinned-roc.sh"
 ZIG="${ZIG:-$HOME/zig-0.16.0/zig}"
 
 LOG="$HOME/build/roc-apps/gen/fasttrack"

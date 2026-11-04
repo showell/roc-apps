@@ -181,14 +181,21 @@ MachineE1000 :: [].{
 	}
 
 	number : Str, Str -> U64
-	number = |a, s| U64.from_str(s) ?? crash("machine: ${a} wants a number")
+	number = |a, s| U64.from_str(s) ?? crash ("machine: ${a} wants a number")
 
 	# The device as it comes up on the bus: the PHY at reset, and the MNG bit
 	# firmware holds from power-up under -i219-mng-holds.
 	power_on : MachineE1000.E1000 -> MachineE1000.E1000
 	power_on = |e| {
 		fresh = MachineE1000.phy_reset(e)
-		{ ..fresh, extcnf: if e.faults.mng_holds { MachineE1000.ext_mng } else { 0 } }
+		{
+			..fresh,
+			extcnf: if e.faults.mng_holds {
+				MachineE1000.ext_mng
+			} else {
+				0
+			},
+		}
 	}
 
 	# The PHY register file at reset: auto-negotiation enabled, the model's own
@@ -199,7 +206,11 @@ MachineE1000 :: [].{
 		phy: List.concat([0x1000, 0, 0x0154, 0x0C00], List.repeat(0, 28)),
 		page: 0,
 		custom_mode: MachineE1000.custom_mode_reset,
-		k1: if e.faults.k1_nvm { MachineE1000.k1_enable } else { 0 },
+		k1: if e.faults.k1_nvm {
+			MachineE1000.k1_enable
+		} else {
+			0
+		},
 	}
 
 	claims : I64 -> Bool
@@ -217,7 +228,11 @@ MachineE1000 :: [].{
 		} else if off == MachineE1000.reg_gprc or off == MachineE1000.reg_rnbc or off == MachineE1000.reg_mpc or off == MachineE1000.reg_crcerrs {
 			v = MachineE1000.get(e, off)
 			cleared = MachineE1000.put(e, off, 0)
-			counted = if off == MachineE1000.reg_gprc { { ..cleared, gprc_reads: cleared.gprc_reads + 1 } } else { cleared }
+			counted = if off == MachineE1000.reg_gprc {
+				{ ..cleared, gprc_reads: cleared.gprc_reads + 1 }
+			} else {
+				cleared
+			}
 			(counted, mem, v)
 		} else if off == MachineE1000.reg_status {
 			(e, mem, MachineE1000.status(e))
@@ -225,10 +240,26 @@ MachineE1000 :: [].{
 			(e, mem, e.extcnf)
 		} else if off == MachineE1000.reg_ral {
 			# 52:54:00:AB:CD:EF
-			(e, mem, if e.faults.no_mac { 0 } else { 0xAB005452 })
+			(
+				e,
+				mem,
+				if e.faults.no_mac {
+					0
+				} else {
+					0xAB005452
+				},
+			)
 		} else if off == MachineE1000.reg_rah {
 			# Address valid, and the last two bytes.
-			(e, mem, if e.faults.no_mac { 0 } else { 0x8000EFCD })
+			(
+				e,
+				mem,
+				if e.faults.no_mac {
+					0
+				} else {
+					0x8000EFCD
+				},
+			)
 		} else if off == MachineE1000.reg_rdh {
 			(moved, mem1) = MachineE1000.deliver(e, mem, dma)
 			(moved, mem1, MachineE1000.get(moved, MachineE1000.reg_rdh))
@@ -242,10 +273,22 @@ MachineE1000 :: [].{
 	status : MachineE1000.E1000 -> U64
 	status = |e| {
 		v = MachineE1000.get(e, MachineE1000.reg_status)
-		linked = if MachineE1000.link_up(e) { U64.bitwise_or(v, 2) } else { v }
+		linked = if MachineE1000.link_up(e) {
+			U64.bitwise_or(v, 2)
+		} else {
+			v
+		}
 		if e.faults.asde {
-			phy_speed = if MachineE1000.any_bits(MachineE1000.phy_reg(e, 1), MachineE1000.bmsr_aneg_done) { 2 } else { 0 }
-			speed = if MachineE1000.any_bits(MachineE1000.get(e, MachineE1000.reg_ctrl), MachineE1000.ctrl_asde) { 0 } else { phy_speed }
+			phy_speed = if MachineE1000.any_bits(MachineE1000.phy_reg(e, 1), MachineE1000.bmsr_aneg_done) {
+				2
+			} else {
+				0
+			}
+			speed = if MachineE1000.any_bits(MachineE1000.get(e, MachineE1000.reg_ctrl), MachineE1000.ctrl_asde) {
+				0
+			} else {
+				phy_speed
+			}
 			U64.bitwise_or(MachineE1000.clear(linked, 0x3C0), U64.shl_wrap(speed, 6))
 		} else {
 			linked
@@ -265,16 +308,35 @@ MachineE1000 :: [].{
 				# RST clears itself unless the device is wedged in reset.
 				bmsr = MachineE1000.clear(MachineE1000.phy_reg(e, 1), U64.bitwise_or(MachineE1000.bmsr_aneg_done, MachineE1000.bmsr_link))
 				reset = { ..MachineE1000.set_phy(e, 1, bmsr), reset_at: ResetAt(clock) }
-				(MachineE1000.put(reset, off, if e.faults.no_reset { val } else { MachineE1000.clear(val, MachineE1000.ctrl_rst) }), mem)
+				(
+					MachineE1000.put(
+						reset,
+						off,
+						if e.faults.no_reset {
+							val
+						} else {
+							MachineE1000.clear(val, MachineE1000.ctrl_rst)
+						},
+					),
+					mem,
+				)
 			} else {
 				(MachineE1000.put(e, off, val), mem)
 			}
 		} else if off == MachineE1000.reg_rctl {
 			# Disabling the receiver is the quiesce that clears a poisoned ring.
 			live = MachineE1000.any_bits(val, MachineE1000.rctl_en)
-			quiet = if live { e } else { { ..e, poisoned: False } }
+			quiet = if live {
+				e
+			} else {
+				{ ..e, poisoned: False }
+			}
 			stored = MachineE1000.put(quiet, off, val)
-			if live { MachineE1000.deliver(stored, mem, dma) } else { (stored, mem) }
+			if live {
+				MachineE1000.deliver(stored, mem, dma)
+			} else {
+				(stored, mem)
+			}
 		} else if off == MachineE1000.reg_rdbal or off == MachineE1000.reg_rdbah or off == MachineE1000.reg_rdlen {
 			live = MachineE1000.any_bits(MachineE1000.get(e, MachineE1000.reg_rctl), MachineE1000.rctl_en)
 			stored = MachineE1000.put(e, off, val)
@@ -285,7 +347,17 @@ MachineE1000 :: [].{
 			} else {
 				slots = U64.div_trunc_by(MachineE1000.get(e, MachineE1000.reg_rdlen), 16)
 				stored = MachineE1000.put(e, off, val)
-				({ ..stored, rx_cursor: if slots == 0 { 0 } else { U64.rem_by(val, slots) } }, mem)
+				(
+					{
+						..stored,
+						rx_cursor: if slots == 0 {
+							0
+						} else {
+							U64.rem_by(val, slots)
+						},
+					},
+					mem,
+				)
 			}
 		} else if off == MachineE1000.reg_rdt {
 			MachineE1000.deliver(MachineE1000.put(e, off, val), mem, dma)
@@ -338,7 +410,11 @@ MachineE1000 :: [].{
 		} else {
 			ring = MachineE1000.ring(e, MachineE1000.reg_rdbal, MachineE1000.reg_rdbah)
 			slots = U64.div_trunc_by(MachineE1000.get(e, MachineE1000.reg_rdlen), 16)
-			if ring == 0 or slots == 0 { (e, mem) } else { MachineE1000.receive(e, mem, ring, slots) }
+			if ring == 0 or slots == 0 {
+				(e, mem)
+			} else {
+				MachineE1000.receive(e, mem, ring, slots)
+			}
 		}
 	}
 
@@ -391,7 +467,11 @@ MachineE1000 :: [].{
 		if head == stop {
 			(MachineE1000.put(e, MachineE1000.reg_tdh, head), mem)
 		} else {
-			marked = if e.faults.no_tx_dd { mem } else { MachineMem.write(mem, U64.to_i64_wrap(ring + head * 16 + 12), 1, 1) }
+			marked = if e.faults.no_tx_dd {
+				mem
+			} else {
+				MachineMem.write(mem, U64.to_i64_wrap(ring + head * 16 + 12), 1, 1)
+			}
 			MachineE1000.send(e, marked, ring, slots, U64.rem_by(head + 1, slots), stop)
 		}
 
@@ -401,11 +481,66 @@ MachineE1000 :: [].{
 	# A broadcast frame from the station address with EtherType 0x88B5.
 	canned : List(U8)
 	canned = [
-		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x52, 0x54, 0x00, 0xAB, 0xCD, 0xEF, 0x88, 0xB5,
-		0xC0, 0xDE, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B,
-		0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19,
-		0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
-		0x28, 0x29, 0x2A, 0x2B,
+		0xFF,
+		0xFF,
+		0xFF,
+		0xFF,
+		0xFF,
+		0xFF,
+		0x52,
+		0x54,
+		0x00,
+		0xAB,
+		0xCD,
+		0xEF,
+		0x88,
+		0xB5,
+		0xC0,
+		0xDE,
+		0x00,
+		0x01,
+		0x02,
+		0x03,
+		0x04,
+		0x05,
+		0x06,
+		0x07,
+		0x08,
+		0x09,
+		0x0A,
+		0x0B,
+		0x0C,
+		0x0D,
+		0x0E,
+		0x0F,
+		0x10,
+		0x11,
+		0x12,
+		0x13,
+		0x14,
+		0x15,
+		0x16,
+		0x17,
+		0x18,
+		0x19,
+		0x1A,
+		0x1B,
+		0x1C,
+		0x1D,
+		0x1E,
+		0x1F,
+		0x20,
+		0x21,
+		0x22,
+		0x23,
+		0x24,
+		0x25,
+		0x26,
+		0x27,
+		0x28,
+		0x29,
+		0x2A,
+		0x2B,
 	]
 
 	fill : MachineMem.Mem, I64, List(U8), U64 -> MachineMem.Mem
@@ -464,10 +599,22 @@ MachineE1000 :: [].{
 	phy_write = |e, val, reg, refused| {
 		given = U64.bitwise_and(val, MachineE1000.mdic_data)
 		resets = reg == 0 and MachineE1000.any_bits(given, 0x8000)
-		after_reset = if resets { MachineE1000.phy_reset(e) } else { e }
-		unreset = if resets { MachineE1000.clear(given, 0x8000) } else { given }
+		after_reset = if resets {
+			MachineE1000.phy_reset(e)
+		} else {
+			e
+		}
+		unreset = if resets {
+			MachineE1000.clear(given, 0x8000)
+		} else {
+			given
+		}
 		restarts = reg == 0 and MachineE1000.any_bits(unreset, 0x0200)
-		data = if restarts { MachineE1000.clear(unreset, 0x0200) } else { unreset }
+		data = if restarts {
+			MachineE1000.clear(unreset, 0x0200)
+		} else {
+			unreset
+		}
 		negotiated =
 			if restarts and !after_reset.faults.no_link {
 				MachineE1000.set_phy(after_reset, 1, U64.bitwise_or(MachineE1000.phy_reg(after_reset, 1), U64.bitwise_or(MachineE1000.bmsr_aneg_done, MachineE1000.bmsr_link)))
@@ -527,11 +674,19 @@ MachineE1000 :: [].{
 	extcnf_write : MachineE1000.E1000, U64 -> MachineE1000.E1000
 	extcnf_write = |e, val| {
 		writes = e.extcnf_writes + 1
-		held = if e.faults.mng_release_after != 0 and writes >= e.faults.mng_release_after { MachineE1000.clear(e.extcnf, MachineE1000.ext_mng) } else { e.extcnf }
+		held = if e.faults.mng_release_after != 0 and writes >= e.faults.mng_release_after {
+			MachineE1000.clear(e.extcnf, MachineE1000.ext_mng)
+		} else {
+			e.extcnf
+		}
 		mng = U64.bitwise_and(held, MachineE1000.ext_mng)
 		violated = e.violated or (e.faults.extcnf_strict and MachineE1000.any_bits(val, U64.bitwise_or(MachineE1000.ext_mng, MachineE1000.ext_hw)))
 		free = U64.bitwise_or(mng, U64.bitwise_and(held, MachineE1000.ext_hw)) == 0
-		keep = if MachineE1000.any_bits(val, MachineE1000.ext_sw) and free and !(e.faults.extcnf_strict and violated) { U64.bitwise_or(mng, MachineE1000.ext_sw) } else { mng }
+		keep = if MachineE1000.any_bits(val, MachineE1000.ext_sw) and free and !(e.faults.extcnf_strict and violated) {
+			U64.bitwise_or(mng, MachineE1000.ext_sw)
+		} else {
+			mng
+		}
 		owner_bits = U64.bitwise_or(MachineE1000.ext_sw, U64.bitwise_or(MachineE1000.ext_hw, MachineE1000.ext_mng))
 		{ ..e, extcnf_writes: writes, violated: violated, extcnf: U64.bitwise_or(MachineE1000.clear(val, owner_bits), keep) }
 	}
@@ -548,7 +703,7 @@ MachineE1000 :: [].{
 	phy_reg = |e, r| List.get(e.phy, r) ?? 0
 
 	set_phy : MachineE1000.E1000, U64, U64 -> MachineE1000.E1000
-	set_phy = |e, r, v| { ..e, phy: List.set(e.phy, r, v) ?? crash("e1000: no PHY register ${U64.to_str(r)}") }
+	set_phy = |e, r, v| { ..e, phy: List.set(e.phy, r, v) ?? crash ("e1000: no PHY register ${U64.to_str(r)}") }
 
 	any_bits : U64, U64 -> Bool
 	any_bits = |v, bits| U64.bitwise_and(v, bits) != 0

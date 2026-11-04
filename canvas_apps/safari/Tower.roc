@@ -234,7 +234,7 @@ Tower :: [].{
 	brace_stage = |mast, stage| {
 		stage_bottom = (I64.to_f64(stage) * stage_height)
 		stage_top = (stage_bottom + stage_height)
-		if (stage_top <= mast.sunk) {
+		if stage_top <= mast.sunk {
 			[]
 		} else {
 			hidden_fraction = ((DeviceMath.real_max(stage_bottom, mast.sunk) - stage_bottom) / stage_height)
@@ -269,7 +269,7 @@ Tower :: [].{
 	beacon : Tower.Mast, Geom.Vec3, F64 -> List(Paint.DrawCmd)
 	beacon = |mast, apex, brightness| {
 		apex_on_screen = Camera.project(apex, { cam_focal: mast.view.cam_focal, view_w: mast.view.view_w })
-		if (brightness < 0.02) {
+		if brightness < 0.02 {
 			[]
 		} else {
 			radius = (beacon_radius * metre_px({ forward: mast.center.forward, cam_focal: mast.view.cam_focal, view_w: mast.view.view_w }))
@@ -282,7 +282,7 @@ Tower :: [].{
 	draw : { footprint : Tower.Footprint, center : Geom.RiderPt, cam_focal : F64, view_w : F64, beacon_phase : F64 } -> List(Paint.DrawCmd)
 	draw = |{ footprint, center, cam_focal, view_w, beacon_phase }| {
 		sunk = sunk_below_horizon(center)
-		if (center.forward < Geom.near or sunk >= tower_height) {
+		if center.forward < Geom.near or sunk >= tower_height {
 			[]
 		} else {
 			view = { rod_width_px: rod_width_at({ forward: center.forward, cam_focal, view_w }), cam_focal, view_w }

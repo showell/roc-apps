@@ -37,9 +37,9 @@ Billboards :: [].{
 		facing : Billboards.Facing,
 	} -> Billboards.Sighting
 	sighting = |{ at, height, codepoint, facing }|
-		if (at.forward <= Geom.near) {
+		if at.forward <= Geom.near {
 			BehindCamera
-		} else if (((height / at.forward) * Lens.focal) < min_critter_px) {
+		} else if ((height / at.forward) * Lens.focal) < min_critter_px {
 			TooSmall
 		} else {
 			InView({

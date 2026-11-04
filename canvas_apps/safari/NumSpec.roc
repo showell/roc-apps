@@ -37,7 +37,7 @@ mod_row = |m, xs, j| mod_row_onto(m, xs, j, [])
 
 mod_row_onto : F64, List(F64), I64, List(F64) -> List(F64)
 mod_row_onto = |m, xs, j, acc| (
-	if (j >= xs.len().to_i64_wrap()) {
+	if j >= xs.len().to_i64_wrap() {
 		acc
 	} else {
 		mod_row_onto(m, xs, (j + 1), List.append(acc, Num_.mod_real((List.get(xs, I64.to_u64_wrap(j)) ?? crash ("list-at out of range")), m)))
@@ -50,7 +50,7 @@ mod_outer = |ms, xs, i| mod_outer_onto(ms, xs, i, [])
 
 mod_outer_onto : List(F64), List(F64), I64, List(F64) -> List(F64)
 mod_outer_onto = |ms, xs, i, acc| (
-	if (i >= ms.len().to_i64_wrap()) {
+	if i >= ms.len().to_i64_wrap() {
 		acc
 	} else {
 		mod_outer_onto(ms, xs, (i + 1), List.concat(acc, mod_row((List.get(ms, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), xs, 0)))

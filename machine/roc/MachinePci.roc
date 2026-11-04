@@ -81,14 +81,26 @@ MachinePci :: [].{
 		} else {
 			(with_bridge, b) = MachinePci.add(ds, MachinePci.fresh(6966, 12, 6, 4, 0, 0, 0))
 			placed = match b {
-				At(i) => MachinePci.change(with_bridge, i, |d| {
-					..d,
-					header: 1,
-					bus: lv - 1,
-					slot: if lv == 1 { i } else { 1 },
-					secondary: if backward and lv == levels { 0 } else { lv },
-					subordinate: levels,
-				})
+				At(i) => MachinePci.change(
+					with_bridge,
+					i,
+					|d| {
+						..d,
+						header: 1,
+						bus: lv - 1,
+						slot: if lv == 1 {
+							i
+						} else {
+							1
+						},
+						secondary: if backward and lv == levels {
+							0
+						} else {
+							lv
+						},
+						subordinate: levels,
+					},
+				)
 				Full => with_bridge
 			}
 			(with_endpoint, e) = MachinePci.add(placed, MachinePci.fresh(6900, 4161, 2, 0, 0, 0, 0))
@@ -112,7 +124,18 @@ MachinePci :: [].{
 		progif: progif,
 		header: 0,
 		bars: [bar0, 0, 0, 0, 0, 0],
-		sizes: [if bar0 == 0 { 0 } else { 65536 }, 0, 0, 0, 0, 0],
+		sizes: [
+			if bar0 == 0 {
+				0
+			} else {
+				65536
+			},
+			0,
+			0,
+			0,
+			0,
+			0,
+		],
 		probing: [False, False, False, False, False, False],
 		irq: irq,
 		command: 3,
@@ -126,11 +149,15 @@ MachinePci :: [].{
 	add : List(MachinePci.Device), MachinePci.Device -> (List(MachinePci.Device), [At(U64), Full])
 	add = |ds, d| {
 		i = List.len(ds)
-		if i >= MachinePci.max_devices { (ds, Full) } else { (List.append(ds, { ..d, slot: i }), At(i)) }
+		if i >= MachinePci.max_devices {
+			(ds, Full)
+		} else {
+			(List.append(ds, { ..d, slot: i }), At(i))
+		}
 	}
 
 	change : List(MachinePci.Device), U64, (MachinePci.Device -> MachinePci.Device) -> List(MachinePci.Device)
-	change = |ds, i, f| List.update(ds, i, f) ?? crash("Pci: no device at that index")
+	change = |ds, i, f| List.update(ds, i, f) ?? crash ("Pci: no device at that index")
 
 	# ---- the ports --------------------------------------------------------
 
@@ -159,7 +186,11 @@ MachinePci :: [].{
 	find : List(MachinePci.Device), U64, U64, U64 -> [Found(U64, MachinePci.Device), Missing]
 	find = |ds, bus, slot, i|
 		match List.get(ds, i) {
-			Ok(d) => if d.bus == bus and d.slot == slot { Found(i, d) } else { MachinePci.find(ds, bus, slot, i + 1) }
+			Ok(d) => if d.bus == bus and d.slot == slot {
+				Found(i, d)
+			} else {
+				MachinePci.find(ds, bus, slot, i + 1)
+			}
 			Err(_) => Missing
 		}
 
@@ -187,7 +218,11 @@ MachinePci :: [].{
 		} else if off == 12 {
 			d.header * 65536
 		} else if d.header == 1 {
-			if off == 24 { d.bus + d.secondary * 256 + d.subordinate * 65536 } else { 0 }
+			if off == 24 {
+				d.bus + d.secondary * 256 + d.subordinate * 65536
+			} else {
+				0
+			}
 		} else if off >= 16 and off <= 36 {
 			MachinePci.bar(d, U64.div_trunc_by(off - 16, 4))
 		} else if off == 60 {
@@ -218,7 +253,11 @@ MachinePci :: [].{
 	master_of : List(MachinePci.Device), U64, U64, U64 -> Bool
 	master_of = |ds, vendor, class, i|
 		match List.get(ds, i) {
-			Ok(d) => if d.vendor == vendor and d.class == class { U64.bitwise_and(d.command, 4) != 0 } else { MachinePci.master_of(ds, vendor, class, i + 1) }
+			Ok(d) => if d.vendor == vendor and d.class == class {
+				U64.bitwise_and(d.command, 4) != 0
+			} else {
+				MachinePci.master_of(ds, vendor, class, i + 1)
+			}
 			Err(_) => False
 		}
 
@@ -229,7 +268,7 @@ MachinePci :: [].{
 	write : MachinePci.Pci, U64 -> MachinePci.Pci
 	write = |pci, v|
 		match MachinePci.target(pci) {
-			Hit(i, d, off) => { ..pci, devices: List.set(pci.devices, i, MachinePci.written(d, off, v)) ?? crash("Pci: no device at that index") }
+			Hit(i, d, off) => { ..pci, devices: List.set(pci.devices, i, MachinePci.written(d, off, v)) ?? crash ("Pci: no device at that index") }
 			_ => pci
 		}
 
@@ -237,13 +276,24 @@ MachinePci :: [].{
 	written = |d, off, v|
 		if off == 4 {
 			cmd = U64.bitwise_and(v, 65535)
-			{ ..d, command: if d.bme_locked { U64.bitwise_and(cmd, 0xFFFB) } else { cmd } }
+			{
+				..d,
+				command: if d.bme_locked {
+					U64.bitwise_and(cmd, 0xFFFB)
+				} else {
+					cmd
+				},
+			}
 		} else if d.header == 1 or off < 16 or off > 36 {
 			d
 		} else {
 			k = U64.div_trunc_by(off - 16, 4)
 			sizing = v == MachinePci.all_ones
-			probing = List.set(d.probing, k, sizing) ?? crash("Pci: no such BAR")
-			if sizing { { ..d, probing: probing } } else { { ..d, probing: probing, bars: List.set(d.bars, k, v) ?? crash("Pci: no such BAR") } }
+			probing = List.set(d.probing, k, sizing) ?? crash ("Pci: no such BAR")
+			if sizing {
+				{ ..d, probing: probing }
+			} else {
+				{ ..d, probing: probing, bars: List.set(d.bars, k, v) ?? crash ("Pci: no such BAR") }
+			}
 		}
 }

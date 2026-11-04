@@ -56,7 +56,7 @@ TowerPlan :: [].{
 	## the segment behind the rider.
 	in_view : TowerPlan.View -> List(TowerPlan.TowerItem)
 	in_view = |view|
-		if (view.rider_segment > 0) {
+		if view.rider_segment > 0 {
 			List.concat(along_chain(view), tower_behind(view))
 		} else {
 			along_chain(view)
@@ -145,7 +145,7 @@ mid_tower_beacon_step = 60
 tower_if_ahead : TowerPlan.View, { map : Frame.Mapper, along : F64, across : F64, yaw : F64, beacon_key : I64 } -> List(TowerPlan.TowerItem)
 tower_if_ahead = |view, { map, along, across, yaw, beacon_key }| {
 	center = Frame.map_pt(view.world, view.chain, view.pose, map, along, across)
-	if (center.forward <= Geom.near) {
+	if center.forward <= Geom.near {
 		[]
 	} else {
 		[{ map, along, across, yaw, fwd: center.forward, beacon_offset: Tower.beacon_offset_for(beacon_key) }]

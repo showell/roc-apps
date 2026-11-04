@@ -19,7 +19,6 @@ import SnakeDraw
 SnakeApp :: [].{
 	Model : { world : Rules.World, elapsed : F64, sounds : U32 }
 
-
 	canvas_app : CanvasApp.CanvasApp(SnakeApp.Model)
 	canvas_app = {
 		size: { width: SnakeDraw.w, height: SnakeDraw.h },
@@ -48,7 +47,10 @@ SnakeApp :: [].{
 			} else {
 				KeepDirection
 			}
-		{ requested_direction, restart_pressed: devices.key_pressed(KeySpace),  }
+		{
+			requested_direction,
+			restart_pressed: devices.key_pressed(KeySpace),
+		}
 	}
 
 	step : SnakeApp.Model, Input.Snapshot, F32 -> SnakeApp.Model

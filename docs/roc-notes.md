@@ -11,23 +11,10 @@ reduced program, `findings/` holds it.
   roc-lang/roc's own releases page is the old compiler. A debug build of the
   checkout is for working on the compiler: its checker is quadratic in a file's
   literals, where the nightly's is linear.
-- **A nightly from 2026-09-12 on does not run on this box.** Since roc-lang/roc
-  `a02ff3b0ce`, type digests are SHA-256 computed with the CPU's SHA-256
-  instructions, and `sha` is in the x86_64 Linux release build's CPU floor, so
-  `nightly-2026-09-15-fe09c42` dies with SIGILL (exit 132) the first time it
-  digests a type -- which `roc check` on four lines already does. This box's CPU
-  has no `sha_ni`; GitHub's x64 and arm64 Linux runners do, and run that nightly.
-  x86_64 macOS is exempt from the floor and computes the same digests with
-  portable rounds, because Intel Macs are the same CPU generation as this box.
-  `nightly-2026-09-11-793f9d8` is the last one that runs here, and a build of the
-  checkout needs `src/base/sha256_rounds.zig` forced onto the portable rounds.
-- The pages build with `roc-nightly.txt`'s nightly: `nightly-2026-09-22-e494788`
-  since 2026-09-24. 09-22 changed the glue API (provides entries carry
-  `exported`; functions are `RocErasedCallable`), and `glue/JsGlue.roc` follows
-  it. 09-23 (`c7852fd`) breaks `roc glue` outright -- roc's own `DebugGlue.roc`
-  on roc's own test platform dies with "runtime error" -- so it is skipped,
-  though it has the brk allocator (#11335's fix) that 09-22 lacks. roc-ray's
-  own `0.10.0-rc3` release bundle is pinned to `nightly-2026-08-23-fb208ba`.
+- **The repository builds with one nightly, the one `roc-version` names**
+  (`nightly-2026-11-03-34bd006`), installed at `~/tools/roc-<pin>/roc`. The
+  glue API that `glue/JsGlue.roc` follows changed at 09-22: provides entries
+  carry `exported`, and functions are `RocErasedCallable`.
 - **Judge a build on the ✗ mark, never the exit code.** A warning exits
   non-zero, and a type error compiles into a crash at its site while the rest of
   the program runs.

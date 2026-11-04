@@ -51,9 +51,9 @@ OUT = os.path.join(HERE, "ported")
 GEN = os.path.expanduser("~/build/roc-apps/gen/whole")
 ROCEMIT = os.environ.get("ROCEMIT", os.path.expanduser("~/build/rust-target/release/rocemit"))
 VERDICTS = os.path.expanduser("~/build/roc-apps/gen/verdicts")
-# The compiler every roc-apps build uses: ../roc-nightly.txt.
-NIGHTLY = open(os.path.join(HERE, "..", "roc-nightly.txt")).read().strip()
-ROC = os.environ.get("ROC", os.path.expanduser(f"~/build/roc-nightly/{NIGHTLY}/roc"))
+# The compiler every roc-apps build uses: the pin in ../roc-version.
+PIN = open(os.path.join(HERE, "..", "roc-version")).read().strip()
+ROC = os.environ.get("ROC", os.path.expanduser(f"~/tools/roc-{PIN}/roc"))
 TESTS_ROOT = os.environ.get("TESTS_ROOT", os.path.expanduser("~/showell_repos/cobblestone-u66rel"))
 COBBLESTONE = "https://github.com/damiant3/Cobblestone"
 ROC_APPS = "https://github.com/showell/roc-apps"

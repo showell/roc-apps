@@ -6,7 +6,7 @@ spin = |m, b, i, n|
 	if i >= n {
 		m
 	} else {
-		spin({ ..m, num: List.set(m.num, 7, 1.0) ?? crash("oob"), pc: i + List.len(b) }, b, i + 1, n)
+		spin({ ..m, num: List.set(m.num, 7, 1.0) ?? crash ("oob"), pc: i + List.len(b) }, b, i + 1, n)
 	}
 
 main! = |args| {

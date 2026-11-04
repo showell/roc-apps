@@ -46,6 +46,7 @@ Rules :: [].{
 	## Gameplay sees intentions, not the keys currently bound to them.
 	Controls : {
 		move : F32,
+
 		## Where the player wants the paddle's middle, when they can say it
 		## outright. A key can only push; a pointer can point.
 		aim : [NoAim, AimAt(F32)],
@@ -86,7 +87,6 @@ Rules :: [].{
 	trail_length = 14.U64
 
 	trail_spacing = 11.F32
-
 
 	# --- Palette: one dark field, two rival neons, one warm ball ---
 	field_top = Color.from_hex_rgb(0x141a35)
@@ -144,7 +144,7 @@ Rules :: [].{
 			ball: {
 				pos: { x: screen_w * 0.5, y: screen_h * 0.5 },
 				velocity: {
-					x: if direction.value == 0 (init_vx * -1) else init_vx,
+					x: if (direction.value == 0) (init_vx * -1) else init_vx,
 					y: serve.value,
 				},
 			},
@@ -173,7 +173,7 @@ Rules :: [].{
 	# --- Win screen: freeze the field and wait for SPACE to start a new game ---
 	step_game_over : World, Controls -> (World, List(GameEvent))
 	step_game_over = |world, controls| {
-		next_world = if controls.new_match_pressed new_match(world) else { ..world, flash: { ..world.flash, intensity: F32.max(world.flash.intensity - 0.02, 0) } }
+		next_world = if (controls.new_match_pressed) new_match(world) else { ..world, flash: { ..world.flash, intensity: F32.max(world.flash.intensity - 0.02, 0) } }
 		(next_world, [])
 	}
 
@@ -183,7 +183,6 @@ Rules :: [].{
 	## one field from.
 	step_playing : World, Controls, F32 -> (World, List(GameEvent))
 	step_playing = |world, controls, dt| {
-
 		# --- Left paddle: an aim places it, a key pushes it ---
 		left_y =
 			match controls.aim {
@@ -193,7 +192,7 @@ Rules :: [].{
 
 		# --- Right paddle: simple AI tracks the ball's vertical position ---
 		right_center = world.right.paddle_y + paddle_h * 0.5
-		right_dir = if world.ball.pos.y < right_center - 4 (ai_speed * -1) else if world.ball.pos.y > right_center + 4 ai_speed else 0
+		right_dir = if (world.ball.pos.y < right_center - 4) (ai_speed * -1) else if (world.ball.pos.y > right_center + 4) ai_speed else 0
 		right_y = Math.clamp(world.right.paddle_y + right_dir * dt, 0, screen_h - paddle_h)
 
 		# --- Move ball ---
@@ -203,8 +202,8 @@ Rules :: [].{
 		# Bounce off top / bottom walls
 		hit_top = ny0 - ball_r < 0
 		hit_bottom = ny0 + ball_r > screen_h
-		ny = if hit_top ball_r else if hit_bottom (screen_h - ball_r) else ny0
-		vy_wall = if hit_top (world.ball.velocity.y * -1) else if hit_bottom (world.ball.velocity.y * -1) else world.ball.velocity.y
+		ny = if (hit_top) ball_r else if (hit_bottom) (screen_h - ball_r) else ny0
+		vy_wall = if (hit_top) (world.ball.velocity.y * -1) else if (hit_bottom) (world.ball.velocity.y * -1) else world.ball.velocity.y
 
 		# Paddle geometry
 		left_rect = left_paddle(left_y)
@@ -218,9 +217,9 @@ Rules :: [].{
 		left_paddle_center = Math.center(left_rect).y
 		right_paddle_center = Math.center(right_rect).y
 
-		nx = if hit_left (Math.right(left_rect) + ball_r) else if hit_right (Math.left(right_rect) - ball_r) else nx0
-		vx = if hit_left (world.ball.velocity.x * -1) else if hit_right (world.ball.velocity.x * -1) else world.ball.velocity.x
-		vy = if hit_left ((ny - left_paddle_center) * bounce_factor) else if hit_right ((ny - right_paddle_center) * bounce_factor) else vy_wall
+		nx = if (hit_left) (Math.right(left_rect) + ball_r) else if (hit_right) (Math.left(right_rect) - ball_r) else nx0
+		vx = if (hit_left) (world.ball.velocity.x * -1) else if (hit_right) (world.ball.velocity.x * -1) else world.ball.velocity.x
+		vy = if (hit_left) ((ny - left_paddle_center) * bounce_factor) else if (hit_right) ((ny - right_paddle_center) * bounce_factor) else vy_wall
 
 		# --- Scoring: ball left the field on the left or right edge ---
 		out_left = nx - ball_r < 0
@@ -228,21 +227,21 @@ Rules :: [].{
 		# Draw randomness only when a new serve is actually needed.
 		# The generator only advances when a serve is actually needed, so an idle
 		# rally does not consume draws.
-		serve = if out_left or out_right random_serve_vy(world.rng) else { value: vy, state: world.rng }
+		serve = if (out_left or out_right) random_serve_vy(world.rng) else { value: vy, state: world.rng }
 
 		final_ball = {
 			pos: {
-				x: if out_left or out_right (screen_w * 0.5) else nx,
-				y: if out_left or out_right (screen_h * 0.5) else ny,
+				x: if (out_left or out_right) (screen_w * 0.5) else nx,
+				y: if (out_left or out_right) (screen_h * 0.5) else ny,
 			},
 			velocity: {
-				x: if out_left (init_vx * -1) else if out_right init_vx else vx,
-				y: if out_left or out_right serve.value else vy,
+				x: if (out_left) (init_vx * -1) else if (out_right) init_vx else vx,
+				y: if (out_left or out_right) serve.value else vy,
 			},
 		}
 
-		left = { paddle_y: left_y, score: if out_right world.left.score + 1 else world.left.score }
-		right = { paddle_y: right_y, score: if out_left world.right.score + 1 else world.right.score }
+		left = { paddle_y: left_y, score: if (out_right) world.left.score + 1 else world.left.score }
+		right = { paddle_y: right_y, score: if (out_left) world.right.score + 1 else world.right.score }
 
 		scored = out_left or out_right
 		paddled = hit_left or hit_right
@@ -251,20 +250,20 @@ Rules :: [].{
 		# flashes hard in the scorer's colour, a hit gently, and otherwise the
 		# previous flash decays.
 		flash_intensity =
-			if scored 1.0
-			else if paddled 0.45
-			else if hit_top or hit_bottom 0.22
+			if (scored) 1.0
+			else if (paddled) 0.45
+			else if (hit_top or hit_bottom) 0.22
 			else F32.max(world.flash.intensity - dt * 2.4, 0)
 		flash_color =
-			if out_right left_neon
-			else if out_left right_neon
-			else if hit_left left_neon
-			else if hit_right right_neon
+			if (out_right) left_neon
+			else if (out_left) right_neon
+			else if (hit_left) left_neon
+			else if (hit_right) right_neon
 			else world.flash.color
 
 		# A serve teleports the ball, so the trail is cleared rather than stretched
 		# across the field as one long streak.
-		trail = if scored [] else push_trail(world.trail, final_ball.pos)
+		trail = if (scored) [] else push_trail(world.trail, final_ball.pos)
 
 		next = {
 			..world,
@@ -280,10 +279,10 @@ Rules :: [].{
 		(
 			next,
 			List.concat(
-				if hit_left or hit_right [PaddleHit] else [],
+				if (hit_left or hit_right) [PaddleHit] else [],
 				List.concat(
-					if hit_top or hit_bottom [WallHit] else [],
-					if out_left or out_right [PointScored] else [],
+					if (hit_top or hit_bottom) [WallHit] else [],
+					if (out_left or out_right) [PointScored] else [],
 				),
 			),
 		)

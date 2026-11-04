@@ -107,9 +107,9 @@ Cat :: [].{
 
 	clamp01 : F64 -> F64
 	clamp01 = |x|
-		if (x < 0.0) {
+		if x < 0.0 {
 			0.0
-		} else if (x > 1.0) {
+		} else if x > 1.0 {
 			1.0
 		} else {
 			x
@@ -124,9 +124,9 @@ Cat :: [].{
 	crossing_progress : Cat.Approach -> F64
 	crossing_progress = |{ gap, speed }| {
 		gap_left = (gap - road_buffer)
-		if (gap_left <= 0.0) {
+		if gap_left <= 0.0 {
 			1.0
-		} else if (speed <= standstill) {
+		} else if speed <= standstill {
 			0.0
 		} else {
 			clamp01((1.0 - (gap_left / (cross_frames * speed))))
@@ -149,9 +149,9 @@ Cat :: [].{
 	focus : Cat.Approach -> F64
 	focus = |approach| {
 		gap_left = (approach.gap - road_buffer)
-		if (approach.speed <= standstill) {
+		if approach.speed <= standstill {
 			0.0
-		} else if (gap_left > 0.0) {
+		} else if gap_left > 0.0 {
 			(smoothstep(crossing_progress(approach)) * focus_peak)
 		} else {
 			steps_past = (((0.0 - gap_left) / approach.speed) / focus_ramp_down)
@@ -174,11 +174,11 @@ Cat :: [].{
 	## The cat's pose at `progress` through its leap.
 	leap_pose : F64 -> Cat.Pose
 	leap_pose = |progress|
-		if (progress < 0.2) {
+		if progress < 0.2 {
 			Coil
-		} else if (progress < 0.7) {
+		} else if progress < 0.7 {
 			Flight
-		} else if (progress < 0.95) {
+		} else if progress < 0.95 {
 			Land
 		} else {
 			Collapse
@@ -209,9 +209,9 @@ Cat :: [].{
 	state = |cat, approach| {
 		step = (crossing_progress(approach) * cross_frames)
 		escape_at = (enters_road_steps + frozen_steps)
-		if (step <= enters_road_steps) {
+		if step <= enters_road_steps {
 			entering(cat, step)
-		} else if (step <= escape_at) {
+		} else if step <= escape_at {
 			{ pose: Frozen, across: cat.mid_across, lift: 0.0 }
 		} else {
 			escaping(cat, (step - escape_at))
@@ -236,9 +236,9 @@ escaping : Cat.Crossing, F64 -> Cat.CatState
 escaping = |cat, step| {
 	clamped = if (step > Cat.escapes_steps) Cat.escapes_steps else step
 	pose = Cat.leap_pose((clamped / Cat.escapes_steps))
-	if (clamped < 1.0) {
+	if clamped < 1.0 {
 		{ pose, across: cat.mid_across, lift: 0.0 }
-	} else if (clamped < 3.0) {
+	} else if clamped < 3.0 {
 		airborne(cat, { pose, flown: ((clamped - 1.0) / 2.0) })
 	} else {
 		{ pose, across: cat.end_across, lift: 0.0 }

@@ -1,9 +1,14 @@
 M : { num : List(F64), scr : List(U8), out : List(Str), pc : U64 }
+
 R : { m : M, v : F64, at : U64 }
 
 eval : M, List(U8), U64, F64 -> R
 eval = |m, b, i, acc|
-	if i >= List.len(b) { { m: m, v: acc, at: i } } else { eval({ ..m, pc: i }, b, i + 1, acc + U8.to_f64(List.get(b, i) ?? 0)) }
+	if i >= List.len(b) {
+		{ m: m, v: acc, at: i }
+	} else {
+		eval({ ..m, pc: i }, b, i + 1, acc + U8.to_f64(List.get(b, i) ?? 0))
+	}
 
 spin : M, List(U8), U64, U64 -> M
 spin = |m, b, i, n|
@@ -11,7 +16,7 @@ spin = |m, b, i, n|
 		m
 	} else {
 		r = eval(m, b, 0, 0.0)
-		spin({ ..r.m, num: List.set(r.m.num, 7, r.v) ?? crash("oob"), pc: r.at }, b, i + 1, n)
+		spin({ ..r.m, num: List.set(r.m.num, 7, r.v) ?? crash ("oob"), pc: r.at }, b, i + 1, n)
 	}
 
 main! = |args| {

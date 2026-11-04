@@ -55,9 +55,9 @@ TreePlan :: [].{
 			tree.along,
 			(tree.across + (Scenery.lane_width / 2.0)),
 		)
-		if (seen.forward <= Geom.near) {
+		if seen.forward <= Geom.near {
 			[]
-		} else if (((tree.height / seen.forward) * view.cam_focal) < SceneLimits.min_scenery_px) {
+		} else if ((tree.height / seen.forward) * view.cam_focal) < SceneLimits.min_scenery_px {
 			[]
 		} else {
 			[{ right: seen.right, fwd: seen.forward, height: tree.height, color: tree.color }]

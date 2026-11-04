@@ -28,12 +28,12 @@ platform ""
 	exposes []
 	packages {}
 	provides {
-		"roc_start": start_for_host,
-		"roc_resume": resume_for_host,
-		"roc_view": view_for_host,
-		"roc_status": status_for_host,
-		"roc_pause": pause_for_host,
 		"roc_drop": drop_for_host,
+		"roc_pause": pause_for_host,
+		"roc_resume": resume_for_host,
+		"roc_start": start_for_host,
+		"roc_status": status_for_host,
+		"roc_view": view_for_host,
 	}
 	targets: {
 		inputs_dir: "targets/",
@@ -44,8 +44,13 @@ platform ""
 	}
 
 start_for_host = program.start
+
 resume_for_host = program.resume
+
 view_for_host = program.view
+
 status_for_host = program.status
+
 pause_for_host = program.pause
+
 drop_for_host = program.drop

@@ -16,11 +16,11 @@ Ground :: [].{
 	## in front of the camera, draws nothing.
 	draw : { corners : List(Geom.RiderPt), color : I64, cam_focal : F64, view_w : F64 } -> List(Paint.DrawCmd)
 	draw = |{ corners, color, cam_focal, view_w }|
-		if (corners.len() > 8) {
+		if corners.len() > 8 {
 			[]
 		} else {
 			in_front = Geom.clip_near(corners.map(Ground.ground_point))
-			if (in_front.len() < 3) {
+			if in_front.len() < 3 {
 				[]
 			} else {
 				Paint.push_poly(color, Camera.project_all(in_front, { cam_focal, view_w }))

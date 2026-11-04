@@ -90,7 +90,14 @@ MachinePorts :: [].{
 				(next, v) = MachinePorts.pit_read(ports, clock, p)
 				Read(next, v)
 			}
-			Speaker => Read(ports, if ports.speaker { 3 } else { 0 })
+			Speaker => Read(
+				ports,
+				if ports.speaker {
+					3
+				} else {
+					0
+				},
+			)
 			CmosIndex => Read(ports, 0xFF)
 			CmosData => MachinePorts.cmos_read(ports)
 			Device(name) => Claimed(name)
@@ -118,14 +125,18 @@ MachinePorts :: [].{
 	# ---- the PIT ----------------------------------------------------------
 
 	channel : MachinePorts.Ports, U64 -> MachinePorts.Channel
-	channel = |ports, ch| List.get(ports.pit, ch) ?? crash("machine: the PIT has no channel ${U64.to_str(ch)}")
+	channel = |ports, ch| List.get(ports.pit, ch) ?? crash ("machine: the PIT has no channel ${U64.to_str(ch)}")
 
 	set_channel : MachinePorts.Ports, U64, MachinePorts.Channel -> MachinePorts.Ports
-	set_channel = |ports, ch, c| { ..ports, pit: List.set(ports.pit, ch, c) ?? crash("machine: the PIT has no channel ${U64.to_str(ch)}") }
+	set_channel = |ports, ch, c| { ..ports, pit: List.set(ports.pit, ch, c) ?? crash ("machine: the PIT has no channel ${U64.to_str(ch)}") }
 
 	# A reload of 0 is 65536.
 	divisor : MachinePorts.Channel -> U64
-	divisor = |c| if c.reload == 0 { 65536 } else { c.reload }
+	divisor = |c| if c.reload == 0 {
+		65536
+	} else {
+		c.reload
+	}
 
 	# Where a channel's count stands: down from the reload value, by two in
 	# mode 3, the square wave, and by one in every other mode.
@@ -135,7 +146,11 @@ MachinePorts :: [].{
 		elapsed = U64.div_trunc_by(clock, 12)
 		if c.mode == 3 {
 			half = U64.div_trunc_by(div, 2)
-			if half == 0 { 0 } else { div - 2 * U64.rem_by(elapsed, half) }
+			if half == 0 {
+				0
+			} else {
+				div - 2 * U64.rem_by(elapsed, half)
+			}
 		} else {
 			div - U64.rem_by(elapsed, div)
 		}
@@ -167,7 +182,11 @@ MachinePorts :: [].{
 			high = U64.bitwise_and(c.reload, 0x00FF)
 			next =
 				if c.access == 3 {
-					if c.load_hi { { ..c, reload: U64.bitwise_or(high, U64.shl_wrap(val, 8)), load_hi: False } } else { { ..c, reload: U64.bitwise_or(low, val), load_hi: True } }
+					if c.load_hi {
+						{ ..c, reload: U64.bitwise_or(high, U64.shl_wrap(val, 8)), load_hi: False }
+					} else {
+						{ ..c, reload: U64.bitwise_or(low, val), load_hi: True }
+					}
 				} else if c.access == 2 {
 					{ ..c, reload: U64.bitwise_or(high, U64.shl_wrap(val, 8)) }
 				} else {
@@ -185,7 +204,11 @@ MachinePorts :: [].{
 		} else {
 			ch = p - 0x40
 			c = MachinePorts.channel(ports, ch)
-			n = if c.latch_valid { c.latched } else { MachinePorts.count(c, clock) }
+			n = if c.latch_valid {
+				c.latched
+			} else {
+				MachinePorts.count(c, clock)
+			}
 			low = U64.bitwise_and(n, 0xFF)
 			high = U64.bitwise_and(U64.shr_zf_wrap(n, 8), 0xFF)
 			if c.access == 3 {

@@ -42,7 +42,11 @@ key = |boxed, code| {
 }
 
 run : Model, I64 -> Model
-run = |model, budget| if budget <= 0 or idle(model) { model } else { run(one(model), budget - 1) }
+run = |model, budget| if budget <= 0 or idle(model) {
+	model
+} else {
+	run(one(model), budget - 1)
+}
 
 idle : Model -> Bool
 idle = |model|
@@ -119,7 +123,11 @@ view = |boxed| {
 	model = Box.unbox(boxed)
 	m = model.m
 	d = Machine.devices_of(m)
-	status = if idle(model) { 1 } else { 5 }
+	status = if idle(model) {
+		1
+	} else {
+		5
+	}
 	head = List.concat([status], u32(d.steps))
 	con = List.concat(u32(List.len(d.console)), d.console)
 	pci = List.concat(u32(List.len(model.found)), rows(model.found, 0, []))
@@ -175,7 +183,11 @@ hex_digits : List(Str)
 hex_digits = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"]
 
 two : U64 -> Str
-two = |n| if n < 10 { "0${U64.to_str(n)}" } else { U64.to_str(n) }
+two = |n| if n < 10 {
+	"0${U64.to_str(n)}"
+} else {
+	U64.to_str(n)
+}
 
 # A PS/2 set-1 scancode's letter, for the echo.
 letter : I64 -> Str

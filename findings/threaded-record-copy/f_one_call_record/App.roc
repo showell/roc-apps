@@ -1,4 +1,5 @@
 M : { num : List(F64), scr : List(U8), out : List(Str), pc : U64 }
+
 R : { m : M, v : F64, at : U64 }
 
 eval : M, List(U8), U64 -> R
@@ -10,7 +11,7 @@ spin = |m, b, i, n|
 		m
 	} else {
 		r = eval(m, b, 0)
-		spin({ ..r.m, num: List.set(r.m.num, 7, r.v) ?? crash("oob"), pc: r.at }, b, i + 1, n)
+		spin({ ..r.m, num: List.set(r.m.num, 7, r.v) ?? crash ("oob"), pc: r.at }, b, i + 1, n)
 	}
 
 main! = |args| {

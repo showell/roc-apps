@@ -39,11 +39,23 @@ Brush :: [].{
 			Flat(col) => col
 			Span(p) => {
 				t = clamp01((x - p.x0) / (p.x1 - p.x0))
-				if t <= 0.5 { mix(p.edge, p.middle, t * 2.0) } else { mix(p.middle, p.edge, (t - 0.5) * 2.0) }
+				if t <= 0.5 {
+					mix(p.edge, p.middle, t * 2.0)
+				} else {
+					mix(p.middle, p.edge, (t - 0.5) * 2.0)
+				}
 			}
 			Radial(p) => {
 				d = F64.sqrt((x - p.x) * (x - p.x) + (y - p.y) * (y - p.y))
-				mix(p.inner, p.outer, if p.r1 > p.r0 { clamp01((d - p.r0) / (p.r1 - p.r0)) } else { 1.0 })
+				mix(
+					p.inner,
+					p.outer,
+					if p.r1 > p.r0 {
+						clamp01((d - p.r0) / (p.r1 - p.r0))
+					} else {
+						1.0
+					},
+				)
 			}
 			Linear(p) => two_stop(p.c0, p.o0, p.c1, p.o1, clamp01(((x - p.ax) * p.dx + (y - p.ay) * p.dy) / (p.dx * p.dx + p.dy * p.dy)))
 			Ellipse(p) => {
@@ -55,8 +67,16 @@ Brush :: [].{
 			}
 			Glow(p) => {
 				d = F64.sqrt((x - p.x) * (x - p.x) + (y - p.y) * (y - p.y))
-				t = if p.r1 > p.r0 { clamp01((d - p.r0) / (p.r1 - p.r0)) } else { 1.0 }
-				if t <= 0.4 { mix(p.c0, p.c1, t / 0.4) } else { mix(p.c1, p.c2, (t - 0.4) / 0.6) }
+				t = if p.r1 > p.r0 {
+					clamp01((d - p.r0) / (p.r1 - p.r0))
+				} else {
+					1.0
+				}
+				if t <= 0.4 {
+					mix(p.c0, p.c1, t / 0.4)
+				} else {
+					mix(p.c1, p.c2, (t - 0.4) / 0.6)
+				}
 			}
 		}
 
@@ -78,9 +98,21 @@ Brush :: [].{
 	mix = |p, q, t| { r: p.r + (q.r - p.r) * t, g: p.g + (q.g - p.g) * t, b: p.b + (q.b - p.b) * t, a: p.a + (q.a - p.a) * t }
 
 	clamp01 : F64 -> F64
-	clamp01 = |t| if t < 0.0 { 0.0 } else if t > 1.0 { 1.0 } else { t }
+	clamp01 = |t| if t < 0.0 {
+		0.0
+	} else if t > 1.0 {
+		1.0
+	} else {
+		t
+	}
 
 	# Two stops at offsets o0 <= o1: the first colour up to o0, the second from o1.
 	two_stop : Brush.Rgba, F64, Brush.Rgba, F64, F64 -> Brush.Rgba
-	two_stop = |c0, o0, c1, o1, t| if t <= o0 { c0 } else if t >= o1 { c1 } else { mix(c0, c1, (t - o0) / (o1 - o0)) }
+	two_stop = |c0, o0, c1, o1, t| if t <= o0 {
+		c0
+	} else if t >= o1 {
+		c1
+	} else {
+		mix(c0, c1, (t - o0) / (o1 - o0))
+	}
 }

@@ -21,7 +21,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$HERE/.." && pwd)"
 NEXT="$HOME/build/roc-apps/next"
 LIVE="$HERE/live"
-ROC="${ROC:-$HOME/build/roc-nightly/roc}"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../pinned-roc.sh"
 ROCEMIT_REPO="$HOME/showell_repos/rust-codex-compiler"
 COBBLESTONE="${COBBLESTONE:-$HOME/showell_repos/cobblestone-u66rel}"
 [ $# -eq 1 ] || { echo "usage: site/publish.sh <app> | home"; exit 2; }

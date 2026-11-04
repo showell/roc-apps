@@ -47,7 +47,13 @@ Rules :: [].{
 		Camera.follow(world.player, { screen, zoom: world.zoom }).with_rotation(world.rotation)
 
 	axis : Bool, Bool -> F32
-	axis = |negative, positive| if negative { -1 } else if positive { 1 } else { 0 }
+	axis = |negative, positive| if negative {
+		-1
+	} else if positive {
+		1
+	} else {
+		0
+	}
 
 	## Moves the player from the current keyboard state and elapsed time.
 	## Passing only these values keeps the movement rules easy to test
@@ -78,7 +84,11 @@ Rules :: [].{
 		player = move_player(world.player, input, dt)
 		zoom = Math.clamp(world.zoom + pointer.wheel * 0.1, 0.5, 2.5)
 		turn = axis(input.key_down(KeyQ), input.key_down(KeyE))
-		rotation = if input.key_pressed(KeyR) { 0 } else { world.rotation + turn * 90 * dt }
+		rotation = if input.key_pressed(KeyR) {
+			0
+		} else {
+			world.rotation + turn * 90 * dt
+		}
 		{ player, zoom, rotation, mouse: pointer.position() }
 	}
 }

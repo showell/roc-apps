@@ -44,41 +44,41 @@ platform ""
 	exposes []
 	packages {}
 	provides {
-		"roc_init": init_for_host,
-		"roc_step": step_for_host,
-		"roc_view": view_for_host,
-		"roc_drop": drop_for_host,
-		"roc_same": same_for_host,
-		"roc_new": new_for_host,
-		"roc_rank": rank_for_host,
-		"roc_suit": suit_for_host,
-		"roc_coln": coln_for_host,
+		"roc_ai": ai_for_host,
+		"roc_can": can_for_host,
+		"roc_candraw": candraw_for_host,
+		"roc_canrecyc": canrecyc_for_host,
 		"roc_card": card_for_host,
+		"roc_coln": coln_for_host,
 		"roc_down": down_for_host,
+		"roc_draw": draw_for_host,
+		"roc_drawn": drawn_for_host,
+		"roc_drop": drop_for_host,
 		"roc_found": found_for_host,
 		"roc_foundcard": foundcard_for_host,
-		"roc_stockn": stockn_for_host,
-		"roc_wasten": wasten_for_host,
-		"roc_wastetop": wastetop_for_host,
 		"roc_founded": founded_for_host,
-		"roc_moves": moves_for_host,
-		"roc_drawn": drawn_for_host,
-		"roc_won": won_for_host,
-		"roc_runlen": runlen_for_host,
-		"roc_can": can_for_host,
-		"roc_move": move_for_host,
-		"roc_candraw": candraw_for_host,
-		"roc_draw": draw_for_host,
-		"roc_canrecyc": canrecyc_for_host,
-		"roc_recycle": recycle_for_host,
-		"roc_ai": ai_for_host,
+		"roc_init": init_for_host,
 		"roc_mfrom": mfrom_for_host,
+		"roc_move": move_for_host,
+		"roc_moves": moves_for_host,
 		"roc_mstart": mstart_for_host,
 		"roc_mto": mto_for_host,
-		"roc_run": run_for_host,
+		"roc_new": new_for_host,
+		"roc_rank": rank_for_host,
+		"roc_recycle": recycle_for_host,
 		"roc_rfound": rfound_for_host,
 		"roc_rmoves": rmoves_for_host,
+		"roc_run": run_for_host,
+		"roc_runlen": runlen_for_host,
 		"roc_rwon": rwon_for_host,
+		"roc_same": same_for_host,
+		"roc_step": step_for_host,
+		"roc_stockn": stockn_for_host,
+		"roc_suit": suit_for_host,
+		"roc_view": view_for_host,
+		"roc_wasten": wasten_for_host,
+		"roc_wastetop": wastetop_for_host,
+		"roc_won": won_for_host,
 	}
 	targets: {
 		inputs_dir: "targets/",
@@ -89,37 +89,71 @@ platform ""
 	}
 
 init_for_host = program.init
+
 step_for_host = program.step
+
 view_for_host = program.view
+
 drop_for_host = program.drop
+
 same_for_host = program.same
+
 new_for_host = program.new
+
 rank_for_host = program.rank
+
 suit_for_host = program.suit
+
 coln_for_host = program.coln
+
 card_for_host = program.card
+
 down_for_host = program.down
+
 found_for_host = program.found
+
 foundcard_for_host = program.foundcard
+
 stockn_for_host = program.stockn
+
 wasten_for_host = program.wasten
+
 wastetop_for_host = program.wastetop
+
 founded_for_host = program.founded
+
 moves_for_host = program.moves
+
 drawn_for_host = program.drawn
+
 won_for_host = program.won
+
 runlen_for_host = program.runlen
+
 can_for_host = program.can
+
 move_for_host = program.move
+
 candraw_for_host = program.candraw
+
 draw_for_host = program.draw
+
 canrecyc_for_host = program.canrecyc
+
 recycle_for_host = program.recycle
+
 ai_for_host = program.ai
+
 mfrom_for_host = program.mfrom
+
 mstart_for_host = program.mstart
+
 mto_for_host = program.mto
+
 run_for_host = program.run
+
 rfound_for_host = program.rfound
+
 rmoves_for_host = program.rmoves
+
 rwon_for_host = program.rwon

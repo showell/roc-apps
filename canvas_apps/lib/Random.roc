@@ -43,7 +43,11 @@ Random :: [].{
 	bounded_i32 : I32, I32 -> Random.Generator(I32)
 	bounded_i32 = |lo, hi| |state| {
 		turned = turn(state)
-		span = if hi >= lo { I32.to_i64(hi - lo) + 1 } else { 1 }
+		span = if hi >= lo {
+			I32.to_i64(hi - lo) + 1
+		} else {
+			1
+		}
 		# The high bits are the well-mixed ones in an LCG, so the draw comes
 		# from the top of the word rather than the bottom.
 		drawn = U64.to_i64_wrap(U64.shr_wrap(turned.bits, 8))

@@ -27,5 +27,7 @@ platform ""
 	}
 
 init_for_host = program.init
+
 step_for_host = program.step
+
 view_for_host = program.view

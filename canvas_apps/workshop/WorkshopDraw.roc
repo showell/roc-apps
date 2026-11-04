@@ -16,6 +16,7 @@ import lib.Shapes
 import Rules
 
 WorkshopDraw :: [].{
+
 	## The shared surface palette for the workshop's chrome. The four paint
 	## colours are the artwork; everything around them stays quiet.
 	theme : { bg : Brush.Rgba, panel : Brush.Rgba, edge : Brush.Rgba, ink : Brush.Rgba, muted : Brush.Rgba, faint : Brush.Rgba, accent : Brush.Rgba }
@@ -125,13 +126,21 @@ WorkshopDraw :: [].{
 		} else {
 			{}
 		}
-		lip = if chosen { 3.0 } else { 2.0 }
+		lip = if chosen {
+			3.0
+		} else {
+			2.0
+		}
 		$out = List.append($out, Shapes.rounded_rect(x - lip, y - lip, w + lip * 2.0, h + lip * 2.0, 8.0 + lip, 8, Flat(edge)))
 		$out = List.append($out, Shapes.rounded_rect(x, y, w, h, 8.0, 8, Flat(Color.brush(Rules.palette_color(index)))))
 
 		# The number beside the swatch, centred on upstream's anchor.
 		digit = U64.to_str(index + 1)
-		ink = if chosen { theme.ink } else { theme.faint }
+		ink = if chosen {
+			theme.ink
+		} else {
+			theme.faint
+		}
 		List.concat($out, Font.text(digit, 752.0 - Font.width_of(digit, 18.0) / 2.0, y + 25.0 - 9.0, 18.0, ink))
 	}
 
@@ -169,4 +178,3 @@ WorkshopDraw :: [].{
 	f : F32 -> F64
 	f = |value| F32.to_f64(value)
 }
-

@@ -26,11 +26,13 @@ rider : F64, F64, F64 -> Pose.RiderState
 rider = |across, tilt, v| { segment: 0, along: 0.0, across: across, yaw: Angle.Turn.radians(0.0), v: v, tilt: Angle.Lean.radians(tilt), heading: Angle.Bearing.radians(0.0), gaze_yaw: Angle.Turn.radians(0.0), focus: 0.0 }
 
 side : Arc.ArcOutcome -> I64
-side = |o| (match o.shoulder {
-	ShoulderLeft => (-1)
-	ShoulderNone => 0
-	ShoulderRight => 1
-})
+side = |o| (
+	match o.shoulder {
+		ShoulderLeft => (-1)
+		ShoulderNone => 0
+		ShoulderRight => 1
+	}
+)
 
 straight : Arc.ArcOutcome
 straight = Arc.project_arc(rider(0.0, 0.0, Pose.v_base))

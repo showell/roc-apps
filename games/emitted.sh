@@ -11,7 +11,7 @@
 # same text from both.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROC="${ROC:-$HOME/build/roc-nightly/roc}"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../pinned-roc.sh"
 ROCEMIT="${ROCEMIT:-$HOME/build/rust-target/release/rocemit}"
 GAMES_ROOT="${GAMES_ROOT:-$HOME/showell_repos/cobblestone-u66rel}"
 GEN="$HOME/build/roc-apps/gen/games"

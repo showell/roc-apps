@@ -25,22 +25,22 @@ platform ""
 	exposes []
 	packages {}
 	provides {
-		"roc_init": init_for_host,
-		"roc_step": step_for_host,
-		"roc_view": view_for_host,
-		"roc_drop": drop_for_host,
-		"roc_same": same_for_host,
-		"roc_new": new_for_host,
-		"roc_cell": cell_for_host,
-		"roc_score": score_for_host,
-		"roc_moves": moves_for_host,
-		"roc_done": done_for_host,
-		"roc_max": max_for_host,
-		"roc_empty": empty_for_host,
-		"roc_sum": sum_for_host,
-		"roc_can": can_for_host,
-		"roc_move": move_for_host,
 		"roc_ai": ai_for_host,
+		"roc_can": can_for_host,
+		"roc_cell": cell_for_host,
+		"roc_done": done_for_host,
+		"roc_drop": drop_for_host,
+		"roc_empty": empty_for_host,
+		"roc_init": init_for_host,
+		"roc_max": max_for_host,
+		"roc_move": move_for_host,
+		"roc_moves": moves_for_host,
+		"roc_new": new_for_host,
+		"roc_same": same_for_host,
+		"roc_score": score_for_host,
+		"roc_step": step_for_host,
+		"roc_sum": sum_for_host,
+		"roc_view": view_for_host,
 	}
 	targets: {
 		inputs_dir: "targets/",
@@ -51,18 +51,33 @@ platform ""
 	}
 
 init_for_host = program.init
+
 step_for_host = program.step
+
 view_for_host = program.view
+
 drop_for_host = program.drop
+
 same_for_host = program.same
+
 new_for_host = program.new
+
 cell_for_host = program.cell
+
 score_for_host = program.score
+
 moves_for_host = program.moves
+
 done_for_host = program.done
+
 max_for_host = program.max
+
 empty_for_host = program.empty
+
 sum_for_host = program.sum
+
 can_for_host = program.can
+
 move_for_host = program.move
+
 ai_for_host = program.ai

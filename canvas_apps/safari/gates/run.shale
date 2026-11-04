@@ -33,8 +33,8 @@
 -- truck's lights (beams, brake lights and their glow), and only 5025 and 0
 -- show its body.
 --
--- **THE ROC IS roc-apps' PIN**, the name in `roc-nightly.txt`, installed at
--- `build:roc-nightly/<name>/roc` (`~/build/roc-nightly/` on the box).
+-- **THE ROC IS roc-apps' PIN**, the nightly named in `roc-version`, installed
+-- at `tools:roc-<pin>/roc` (`~/tools/` on the box).
 --
 -- **EACH BUILD GETS A FRESH CACHE** (`XDG_CACHE_HOME`): nightly 09-22 can
 -- SIGSEGV on a build that reuses the cache of earlier ones (seen on
@@ -47,13 +47,15 @@ const SAFARI = "canvas_apps/safari"
 const EXPECTED = "canvas_apps/safari/gates/expected"
 const SELF_PATH = "canvas_apps/safari/gates/run.shale"
 const SPECS = 54
-const WANT = "roc-pin: roc-apps' pinned nightly under build:, and the binaries it builds under scratch:, not under a tools mount"
+const WANT = "roc-pin: roc-apps' pinned nightly, and the binaries it builds under scratch:"
 
 function roc_path()
-  if not exists("roc-nightly.txt") then fail("safari gates: no roc-nightly.txt here: run from the roc-apps root") end
-  local name = trim(read("roc-nightly.txt"))
-  local roc = "build:roc-nightly/" .. name .. "/roc"
-  if not exists(roc) then fail("safari gates: no " .. roc .. ": install roc-apps' pinned nightly " .. name .. " into ~/build/roc-nightly/" .. name .. "/") end
+  if not exists("roc-version") then fail("safari gates: no roc-version here: run from the roc-apps root") end
+  local pin = trim(read("roc-version"))
+  local roc = "tools:roc-" .. pin .. "/roc"
+  if not exists(roc) then fail("safari gates: no " .. roc .. ": install roc-apps' pinned nightly " .. pin .. " at ~/tools/roc-" .. pin .. "/") end
+  local v = run({real(roc), "version"}, {timeout_ms = 30000, whole = 4000, want = WANT})
+  if trim(v.out) ~= "Roc compiler version " .. pin then fail("safari gates: " .. roc .. " is " .. trim(v.out) .. ", not " .. pin) end
   return real(roc)
 end
 

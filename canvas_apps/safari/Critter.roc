@@ -55,7 +55,7 @@ Critter :: [].{
 	## One polygon of a still, filled with its colour or its gradient.
 	draw_poly : Critter.Anchor, Stills.StillPoly -> List(Paint.DrawCmd)
 	draw_poly = |anchor, poly|
-		if (poly.pts.len() > max_still_points) {
+		if poly.pts.len() > max_still_points {
 			[]
 		} else {
 			points = Critter.screen_points(anchor, poly.pts)
@@ -76,7 +76,7 @@ Critter :: [].{
 		on_screen = |height| Camera.project({ right: critter.right, forward: critter.forward, height }, { cam_focal, view_w })
 		feet = on_screen(0.0)
 		height_px = (feet.y - on_screen(critter.height).y)
-		if (height_px < 1.0) {
+		if height_px < 1.0 {
 			[]
 		} else {
 			flip =

@@ -25,7 +25,7 @@ DepthSort :: [].{
 	## `items` from far to near, by `depth_of`: a stable merge sort.
 	sort_by : List(item), (item -> F64) -> List(item)
 	sort_by = |items, depth_of|
-		if (items.len() <= 1) {
+		if items.len() <= 1 {
 			items
 		} else {
 			half = items.len() // 2

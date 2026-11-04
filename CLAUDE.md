@@ -141,8 +141,7 @@ trusting it.
   and point Shale's `tools` mount there.
 - **Move pins lazily.** A project that's working keeps its pin until it
   next gets features. Dog Park stays on its older pin
-  (`dog-park/roc/roc-version`), and roc-apps itself still uses an older
-  scheme and an older nightly (`roc-nightly.txt`, README "The compiler").
+  (`dog-park/roc/roc-version`).
 - **A pin move is its own commit.** Change `roc-version`, then run the full
   verify and regenerate any ABI snapshot with `roc glue` (roc-chat
   `tools/chat_glue.shale`) to check the seam hasn't moved. If `roc fmt` now

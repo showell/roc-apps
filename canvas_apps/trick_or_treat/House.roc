@@ -49,12 +49,16 @@ House :: [].{
 				List.concat($out, Panels.panel(v, hf, 0.0 - 0.53, 0.0, 0.53, 1.93, Flat(spill))),
 				# The floor of the hall, which is what the door sweeps over
 				# and what she stands on.
-				Panels.world(v, [
-					{ right: 0.0 - 0.53, forward: hf, height: 0.0 },
-					{ right: 0.53, forward: hf, height: 0.0 },
-					{ right: 0.53, forward: hf + hall_deep, height: 0.0 },
-					{ right: 0.0 - 0.53, forward: hf + hall_deep, height: 0.0 },
-				], Flat(floor_c)),
+				Panels.world(
+					v,
+					[
+						{ right: 0.0 - 0.53, forward: hf, height: 0.0 },
+						{ right: 0.53, forward: hf, height: 0.0 },
+						{ right: 0.53, forward: hf + hall_deep, height: 0.0 },
+						{ right: 0.0 - 0.53, forward: hf + hall_deep, height: 0.0 },
+					],
+					Flat(floor_c),
+				),
 			)
 		} else {
 			$out
@@ -80,11 +84,15 @@ House :: [].{
 		a = open * leaf_swing
 		fx = hinge_at + leaf_wide * Trig.r_cos(a)
 		ff = hf + leaf_wide * Trig.r_sin(a)
-		Panels.world(v, [
-			{ right: hinge_at, forward: hf, height: 1.95 },
-			{ right: fx, forward: ff, height: 1.95 },
-			{ right: fx, forward: ff, height: 0.0 },
-			{ right: hinge_at, forward: hf, height: 0.0 },
-		], Flat(door_c))
+		Panels.world(
+			v,
+			[
+				{ right: hinge_at, forward: hf, height: 1.95 },
+				{ right: fx, forward: ff, height: 1.95 },
+				{ right: fx, forward: ff, height: 0.0 },
+				{ right: hinge_at, forward: hf, height: 0.0 },
+			],
+			Flat(door_c),
+		)
 	}
 }

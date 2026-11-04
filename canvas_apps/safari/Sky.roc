@@ -99,7 +99,7 @@ Sky :: [].{
 	sun_pos : { heading : F64, step : F64, view : Camera.View } -> Sky.SunPos
 	sun_pos = |{ heading, step, view }| {
 		bearing_from_view = Trig.wrap((sun_bearing - heading), 64)
-		if (DeviceMath.real_abs(bearing_from_view) >= visible_bearing_limit) {
+		if DeviceMath.real_abs(bearing_from_view) >= visible_bearing_limit {
 			OutOfView
 		} else {
 			InView(sun_place({ bearing_from_view, step, view }))

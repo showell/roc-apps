@@ -5,7 +5,9 @@
 # once a frame, or, for a program that draws in a loop of its own, shows each
 # GPU flush as it comes; the native host checks the same frames' hashes.
 platform ""
-	requires {} { main! : List(Str) => Try(_, [Exit(I8), ..]) }
+	requires {
+		main! : List(Str) => Try(_, [Exit(I8), ..])
+	}
 	exposes [Echo, Heap, Port]
 	packages {}
 	provides { "roc_main": main_for_host! }

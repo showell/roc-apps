@@ -28,7 +28,7 @@ on:
         description: "roc-ray's commit"
         default: e100c9548b903ee5c7363f5997251980c4355c7b
       roc_nightly:
-        description: "the Roc nightly (roc-nightly.txt's, as setup-roc names it)"
+        description: "the Roc nightly, as setup-roc names it"
         default: nightly-2026-09-22-e494788
       apps:
         description: "the apps to build, space-separated"
@@ -66,8 +66,8 @@ jobs:
         uses: roc-lang/setup-roc@cbe782d6f165b89c87d99f50a59ac4f5f73b4427
         with:
           version: nightly-new-compiler
-          # The nightly in roc-nightly.txt, which every build script here
-          # reads, unless the run names another.
+          # The nightly roc-ray e100c95 builds with, unless the run names
+          # another; the rest of roc-apps uses the one in roc-version.
           nightly-tag: ${{ inputs.roc_nightly }}
 
       # ReleaseFast: a plain `zig build` is a Debug host, whose checked

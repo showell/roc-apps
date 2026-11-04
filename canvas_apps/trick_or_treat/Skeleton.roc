@@ -46,7 +46,6 @@ Skeleton :: [].{
 	# height and suits the company it keeps.
 	figure : F64, F64, F64, F64 -> List(Shapes.Shape)
 	figure = |t, base, feet_y, s| {
-
 		# The dance: a bob on the double beat, a sway on the beat, and the
 		# limbs alternating about it.
 		bob = Trig.r_cos(2.0 * t) * 7.0 * s
@@ -99,13 +98,16 @@ Skeleton :: [].{
 	arm = |acc, x, y, s, upper, fore| {
 		elbow = end_of(x, y, upper, 34.0 * s)
 		hand = end_of(elbow.x, elbow.y, upper + fore, 30.0 * s)
-		List.concat(acc, [
-			rib(x, y, elbow.x, elbow.y, 7.0 * s),
-			rib(elbow.x, elbow.y, hand.x, hand.y, 6.0 * s),
-			joint(x, y, 6.0 * s),
-			joint(elbow.x, elbow.y, 5.0 * s),
-			joint(hand.x, hand.y, 5.0 * s),
-		])
+		List.concat(
+			acc,
+			[
+				rib(x, y, elbow.x, elbow.y, 7.0 * s),
+				rib(elbow.x, elbow.y, hand.x, hand.y, 6.0 * s),
+				joint(x, y, 6.0 * s),
+				joint(elbow.x, elbow.y, 5.0 * s),
+				joint(hand.x, hand.y, 5.0 * s),
+			],
+		)
 	}
 
 	# A thigh and a shin, with a hip, a knee and a foot.
@@ -114,12 +116,15 @@ Skeleton :: [].{
 		knee = end_of(x, y, thigh, 44.0 * s)
 		foot = end_of(knee.x, knee.y, thigh + shin, 42.0 * s)
 		toe = end_of(foot.x, foot.y, thigh + shin + 1.4, 16.0 * s)
-		List.concat(acc, [
-			rib(x, y, knee.x, knee.y, 9.0 * s),
-			rib(knee.x, knee.y, foot.x, foot.y, 7.0 * s),
-			rib(foot.x, foot.y, toe.x, toe.y, 6.0 * s),
-			joint(x, y, 7.0 * s),
-			joint(knee.x, knee.y, 6.0 * s),
-		])
+		List.concat(
+			acc,
+			[
+				rib(x, y, knee.x, knee.y, 9.0 * s),
+				rib(knee.x, knee.y, foot.x, foot.y, 7.0 * s),
+				rib(foot.x, foot.y, toe.x, toe.y, 6.0 * s),
+				joint(x, y, 7.0 * s),
+				joint(knee.x, knee.y, 6.0 * s),
+			],
+		)
 	}
 }

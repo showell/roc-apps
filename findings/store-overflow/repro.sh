@@ -5,7 +5,7 @@
 #   findings/store-overflow/repro.sh
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROC="${ROC:-$HOME/build/roc-nightly/roc}"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../pinned-roc.sh"
 T="$(mktemp -d)"
 trap 'rm -rf "$T"' EXIT
 # The old interpreter is no longer in the tree; its modules come from 33e04d7,

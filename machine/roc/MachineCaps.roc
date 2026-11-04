@@ -84,8 +84,16 @@ MachineCaps :: [].{
 		match List.get(effects, i) {
 			Err(_) => acc
 			Ok(e) => {
-				cover = if MachineCaps.has_row(e) { e } else { MachineCaps.base(e) }
-				next = if MachineCaps.has_row(cover) and !List.contains(acc, cover) { List.append(acc, cover) } else { acc }
+				cover = if MachineCaps.has_row(e) {
+					e
+				} else {
+					MachineCaps.base(e)
+				}
+				next = if MachineCaps.has_row(cover) and !List.contains(acc, cover) {
+					List.append(acc, cover)
+				} else {
+					acc
+				}
 				MachineCaps.rows(effects, i + 1, next)
 			}
 		}
@@ -149,13 +157,21 @@ MachineCaps :: [].{
 		}
 
 	bit : I64 -> U64
-	bit = |n| if n < 0 { 0 } else { U64.shl_wrap(1, U64.to_u8_wrap(I64.to_u64_wrap(n))) }
+	bit = |n| if n < 0 {
+		0
+	} else {
+		U64.shl_wrap(1, U64.to_u8_wrap(I64.to_u64_wrap(n)))
+	}
 
 	row : Str, U64 -> Try(MachineCaps.Row, [NoRow])
 	row = |name, i|
 		match List.get(MachineCaps.table, i) {
 			Err(_) => Err(NoRow)
-			Ok(r) => if r.name == name { Ok(r) } else { MachineCaps.row(name, i + 1) }
+			Ok(r) => if r.name == name {
+				Ok(r)
+			} else {
+				MachineCaps.row(name, i + 1)
+			}
 		}
 
 	has_row : Str -> Bool

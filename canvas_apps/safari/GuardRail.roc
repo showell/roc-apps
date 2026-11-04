@@ -51,7 +51,7 @@ GuardRail :: [].{
 	## no rail.
 	quads_along : List(Geom.RiderPt) -> List(GuardRail.RailPoly)
 	quads_along = |path|
-		if (path.len() < 2) {
+		if path.len() < 2 {
 			[]
 		} else {
 			GuardRail.bars(path).concat(GuardRail.posts(path)).take_first(max_rail_polys)
@@ -76,7 +76,7 @@ GuardRail :: [].{
 	draw : GuardRail.RailPoly, { cam_focal : F64, view_w : F64 } -> List(Paint.DrawCmd)
 	draw = |quad, { cam_focal, view_w }| {
 		in_front = Geom.clip_near(quad.corners)
-		if (in_front.len() < 3) {
+		if in_front.len() < 3 {
 			[]
 		} else {
 			Paint.push_poly(quad.color, Camera.project_all(in_front, { cam_focal, view_w }))

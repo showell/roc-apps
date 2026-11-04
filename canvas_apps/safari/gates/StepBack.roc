@@ -9,8 +9,8 @@
 #
 #   roc build --opt=dev StepBack.roc --output=<bin>; <bin>
 app [main!] {
-	lib: "../../lib/main.roc",
 	game: "../game.roc",
+	lib: "../../lib/main.roc",
 }
 
 import game.SafariRide

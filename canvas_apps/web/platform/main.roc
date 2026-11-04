@@ -25,17 +25,17 @@ platform ""
 	exposes [Frame]
 	packages {}
 	provides {
-		"roc_init": init_for_host,
 		"roc_advance": advance_for_host,
+		"roc_fps": fps_for_host,
 		"roc_frame": frame_for_host,
+		"roc_height": height_for_host,
+		"roc_init": init_for_host,
 		"roc_release": release_for_host,
 		"roc_sounds": sounds_for_host,
 		"roc_tone_count": tone_count_for_host,
 		"roc_tone_freq": tone_freq_for_host,
 		"roc_tone_ms": tone_ms_for_host,
 		"roc_width": width_for_host,
-		"roc_height": height_for_host,
-		"roc_fps": fps_for_host,
 	}
 	targets: {
 		inputs_dir: "targets/",
@@ -48,13 +48,23 @@ platform ""
 import Frame
 
 init_for_host = program.init
+
 advance_for_host = program.advance
+
 frame_for_host = program.frame
+
 release_for_host = program.release
+
 sounds_for_host = program.sounds
+
 tone_count_for_host = program.tone_count
+
 tone_freq_for_host = program.tone_freq
+
 tone_ms_for_host = program.tone_ms
+
 width_for_host = program.width
+
 height_for_host = program.height
+
 fps_for_host = program.fps

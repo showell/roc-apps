@@ -41,10 +41,14 @@ Panels :: [].{
 	# the middle: the walkway, which is wider the nearer it is.
 	strip : View.View, F64, F64, F64, Brush.Fill -> List(Shapes.Shape)
 	strip = |v, half, near_f, far_f, fill|
-		world(v, [
-			{ right: 0.0 - half, forward: near_f, height: 0.0 },
-			{ right: half, forward: near_f, height: 0.0 },
-			{ right: half, forward: far_f, height: 0.0 },
-			{ right: 0.0 - half, forward: far_f, height: 0.0 },
-		], fill)
+		world(
+			v,
+			[
+				{ right: 0.0 - half, forward: near_f, height: 0.0 },
+				{ right: half, forward: near_f, height: 0.0 },
+				{ right: half, forward: far_f, height: 0.0 },
+				{ right: 0.0 - half, forward: far_f, height: 0.0 },
+			],
+			fill,
+		)
 }

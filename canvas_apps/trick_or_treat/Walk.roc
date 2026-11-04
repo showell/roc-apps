@@ -83,7 +83,11 @@ Walk :: [].{
 			u = I64.to_f64(s)
 			r = I64.to_f64(back_ramp)
 			# The area under a pace that ramps up and then holds.
-			d = if u < r { back_speed * u * u / (2.0 * r) } else { back_speed * (u - r / 2.0) }
+			d = if u < r {
+				back_speed * u * u / (2.0 * r)
+			} else {
+				back_speed * (u - r / 2.0)
+			}
 			F64.min(d, arrived)
 		}
 	}
@@ -113,7 +117,16 @@ Walk :: [].{
 	stride : I64 -> F64
 	stride = |tick| {
 		d = here(tick) - here(tick - 5)
-		F64.min(1.0, (if d < 0.0 { 0.0 - d } else { d }) * 20.0)
+		F64.min(
+			1.0,
+			(
+				if d < 0.0 {
+					0.0 - d
+				} else {
+					d
+				}
+			) * 20.0,
+		)
 	}
 
 	# How far open the door is, and how far down the hall she has come.

@@ -17,7 +17,7 @@ nightly is `nightly-2026-09-11-793f9d8`; the PR is against `main` at
 ```
 machine/batch/build.sh            # once, with no units: builds the platform's host.wasm
 cd findings/wasm-reloc-order
-~/build/roc-nightly/roc build Repro.roc --target=wasm32 --opt=dev --output=/tmp/repro.wasm
+~/tools/roc-$(cat ../../roc-version)/roc build Repro.roc --target=wasm32 --opt=dev --output=/tmp/repro.wasm
 ```
 
 The platform is `machine/batch/platform`: Echo's shape, `main! : List(Str) =>
