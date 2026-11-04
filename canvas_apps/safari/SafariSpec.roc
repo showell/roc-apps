@@ -114,15 +114,15 @@ frame_want : List(Bool)
 frame_want = [True, True, True, True]
 
 sun_got : List(Bool)
-sun_got = (
-	{
-		s = Safari.ride_sun(segs, Safari.ride_initial)
-		[(s.visible == False), (s.scale >= 0.0)]
+# The ride starts facing away from the sun.
+sun_got =
+	match Safari.ride_sun(segs, Safari.ride_initial) {
+		InView(_) => [False]
+		OutOfView => [True]
 	}
-)
 
 sun_want : List(Bool)
-sun_want = [True, True]
+sun_want = [True]
 
 # --- Entry ---
 

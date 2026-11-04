@@ -49,10 +49,9 @@ SafariFrame :: [].{
 		}
 		var $px = backdrop(roll, sky)
 		$px =
-			if SafariShapes.is_sun_shown(scene.sun) {
-				paint_sun($px, { roll, sun: scene.sun })
-			} else {
-				$px
+			match scene.sun {
+				InView(sun) if SafariShapes.is_sun_shown(sun) => paint_sun($px, { roll, sun })
+				InView(_) | OutOfView => $px
 			}
 		for draw_command in scene.commands {
 			$px = paint_command($px, { roll, draw_command })
@@ -117,7 +116,7 @@ backdrop = |roll, sky| {
 ## The sun's glow and then its disc, as SafariShapes paints them, both
 ## clipped to the sky, before the commands, so the mountains set the sun
 ## behind them.
-paint_sun : List(U32), { roll : ScreenRoll, sun : Sky.SunPos } -> List(U32)
+paint_sun : List(U32), { roll : ScreenRoll, sun : Sky.SunPlace } -> List(U32)
 paint_sun = |pixels, { roll, sun }| {
 	fills = SafariShapes.sun_fills(sun)
 	on_screen = roll.to_screen(ScreenRoll.ScenePoint.({ x: sun.x, y: sun.y }))

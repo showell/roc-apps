@@ -189,16 +189,16 @@ Tower :: [].{
 	rod_on_screen : Tower.RodView, { from : Geom.Vec3, to : Geom.Vec3 } -> List(Paint.DrawCmd)
 	rod_on_screen = |view, { from, to }|
 		screen_rod({
-			from: Camera.project(from, view.cam_focal, view.view_w),
-			to: Camera.project(to, view.cam_focal, view.view_w),
+			from: Camera.project(from, { cam_focal: view.cam_focal, view_w: view.view_w }),
+			to: Camera.project(to, { cam_focal: view.cam_focal, view_w: view.view_w }),
 			width_px: view.rod_width_px,
 		})
 
 	## How many pixels one metre across spans at distance `forward`.
 	metre_px : { forward : F64, cam_focal : F64, view_w : F64 } -> F64
 	metre_px = |{ forward, cam_focal, view_w }| {
-		p1 = Camera.project({ right: 1.0, forward: forward, height: 0.0 }, cam_focal, view_w)
-		p0 = Camera.project({ right: 0.0, forward: forward, height: 0.0 }, cam_focal, view_w)
+		p1 = Camera.project({ right: 1.0, forward: forward, height: 0.0 }, { cam_focal, view_w })
+		p0 = Camera.project({ right: 0.0, forward: forward, height: 0.0 }, { cam_focal, view_w })
 		(p1.x - p0.x)
 	}
 
@@ -268,7 +268,7 @@ Tower :: [].{
 	## isn't drawn.
 	beacon : Tower.Mast, Geom.Vec3, F64 -> List(Paint.DrawCmd)
 	beacon = |mast, apex, brightness| {
-		apex_on_screen = Camera.project(apex, mast.view.cam_focal, mast.view.view_w)
+		apex_on_screen = Camera.project(apex, { cam_focal: mast.view.cam_focal, view_w: mast.view.view_w })
 		if (brightness < 0.02) {
 			[]
 		} else {

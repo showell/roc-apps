@@ -1,5 +1,5 @@
-# StillsSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are Stills's checks: a gradient's fields, and polygons with and
+## without one.
 app [main!] {
 	lib: "../lib/main.roc",
 }
@@ -11,7 +11,23 @@ pt : Stills.StillPt
 pt = { x: 0.5, y: 1.5 }
 
 grad : Stills.StillGrad
-grad = { kind: 2, rgba0: 16711680, rgba1: 255, off0: 0.25, off1: 0.75, ax: 2.5, ay: 3.5, bx: 4.5, by: 5.5, cx: 6.5, cy: 7.5, ux: 8.5, uy: 9.5, vx: 10.5, vy: 11.5 }
+grad = {
+	kind: 2,
+	rgba0: 16711680,
+	rgba1: 255,
+	off0: 0.25,
+	off1: 0.75,
+	ax: 2.5,
+	ay: 3.5,
+	bx: 4.5,
+	by: 5.5,
+	cx: 6.5,
+	cy: 7.5,
+	ux: 8.5,
+	uy: 9.5,
+	vx: 10.5,
+	vy: 11.5,
+}
 
 solid : Stills.StillPoly
 solid = { color: 9066271, grad: [], pts: [pt, { x: 12.5, y: 13.5 }] }
@@ -38,7 +54,11 @@ poly_ints_want : List(I64)
 poly_ints_want = [9066271, 4989733, 0, 1, 2, 1]
 
 reach_got : List(F64)
-reach_got = [(List.get(shaded.grad, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).ax, (List.get(shaded.pts, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).x, (List.get(solid.pts, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).y]
+reach_got =
+	match (shaded.grad, shaded.pts, solid.pts) {
+		([shading], [shaded_point], [_, solid_second]) => [shading.ax, shaded_point.x, solid_second.y]
+		_ => crash "StillsSpec: the shaded polygon has one gradient and one point, the solid one two points"
+	}
 
 reach_want : List(F64)
 reach_want = [2.5, 0.5, 13.5]

@@ -1,9 +1,11 @@
-# SkySpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are Sky's checks: the sun's height, the dusk and the warmth from
+## start to end, the colours, and where the sun stands when the rider faces
+## it and when they face away.
 app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Camera
 import Grade
 import Lens
 import Sky
@@ -41,9 +43,9 @@ packed_want = [9358054, 2374238, 14571572]
 mix_got : List(F64)
 mix_got = (
 	{
-		a = Sky.lerp3(Sky.day_sky, Sky.dusk_sky, 0.0)
-		b = Sky.lerp3(Sky.day_sky, Sky.dusk_sky, 1.0)
-		m = Sky.lerp3(Sky.day_sky, Sky.dusk_sky, 0.5)
+		a = Sky.color_between({ from: Sky.day_sky, to: Sky.dusk_sky, fraction: 0.0 })
+		b = Sky.color_between({ from: Sky.day_sky, to: Sky.dusk_sky, fraction: 1.0 })
+		m = Sky.color_between({ from: Sky.day_sky, to: Sky.dusk_sky, fraction: 0.5 })
 		[a.r, a.g, a.b, b.r, b.g, b.b, m.r, m.g, m.b]
 	}
 )
@@ -51,23 +53,37 @@ mix_got = (
 mix_want : List(F64)
 mix_want = [142.0, 202.0, 230.0, 36.0, 58.0, 94.0, 89.0, 130.0, 162.0]
 
+view : Camera.View
+view = { cam_focal: Lens.focal, view_w: 960.0 }
+
 facing : Sky.SunPos
-facing = Sky.sun_pos((0.0 - 2.2176), 0.0, Lens.focal, 960.0)
+facing = Sky.sun_pos({ heading: (0.0 - 2.2176), step: 0.0, view })
 
 away : Sky.SunPos
-away = Sky.sun_pos(0.0, 0.0, Lens.focal, 960.0)
+away = Sky.sun_pos({ heading: 0.0, step: 0.0, view })
+
+is_in_view : Sky.SunPos -> Bool
+is_in_view = |sun|
+	match sun {
+		InView(_) => True
+		OutOfView => False
+	}
 
 visible_got : List(Bool)
-visible_got = [facing.visible, away.visible]
+visible_got = [is_in_view(facing), is_in_view(away)]
 
 visible_want : List(Bool)
 visible_want = [True, False]
 
 place_got : List(F64)
-place_got = [facing.x, facing.y, facing.scale, away.x, away.y, away.scale]
+place_got =
+	match facing {
+		InView(place) => [place.x, place.y, place.scale]
+		OutOfView => []
+	}
 
 place_want : List(F64)
-place_want = [480.0, 56.0, 1.0, 0.0, 0.0, 0.0]
+place_want = [480.0, 56.0, 1.0]
 
 # --- Entry ---
 

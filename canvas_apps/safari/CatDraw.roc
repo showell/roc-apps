@@ -49,8 +49,8 @@ CatDraw :: [].{
 		view_w : F64,
 	} -> List(Paint.DrawCmd)
 	draw = |{ right, forward, height, pose, lift, cam_focal, view_w }| {
-		feet = Camera.project({ right, forward, height: 0.0 }, cam_focal, view_w)
-		top = Camera.project({ right, forward, height }, cam_focal, view_w)
+		feet = Camera.project({ right, forward, height: 0.0 }, { cam_focal, view_w })
+		top = Camera.project({ right, forward, height }, { cam_focal, view_w })
 		height_px = (feet.y - top.y)
 		if (height_px < 1.0) {
 			[]

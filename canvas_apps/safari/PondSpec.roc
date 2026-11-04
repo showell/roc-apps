@@ -1,5 +1,5 @@
-# PondSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are Pond's checks: its sizes and colours, a few of its points, and
+## that every duck is on the water, facing its own way.
 app [main!] {
 	lib: "../lib/main.roc",
 }
@@ -14,37 +14,29 @@ size_want : List(I64)
 size_want = [7, 6, 6, 3112588, 12759680, 129414]
 
 spot_got : List(F64)
-spot_got = [(List.get(Pond.water_outline, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).cu, (List.get(Pond.water_outline, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).cv, (List.get(Pond.water_outline, I64.to_u64_wrap(4)) ?? crash ("list-at out of range")).cu, (List.get(Pond.water_outline, I64.to_u64_wrap(4)) ?? crash ("list-at out of range")).cv, (List.get(Pond.bank, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).cu, (List.get(Pond.bank, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).cv, Pond.duck_height]
+spot_got =
+	match (Pond.water_outline, Pond.bank) {
+		([water_first, _, _, _, water_fifth, ..], [bank_first, ..]) => [
+			water_first.across,
+			water_first.along,
+			water_fifth.across,
+			water_fifth.along,
+			bank_first.across,
+			bank_first.along,
+			Pond.duck_height,
+		]
+		_ => crash "PondSpec: the water has five points or more, and the bank one"
+	}
 
 spot_want : List(F64)
 spot_want = [(-2.0), 3.0, (-15.0), 32.0, (-5.0), 29.0, 0.9]
 
 inside : Pond.Duck -> Bool
-inside = |d| (
-	if (d.p.cu > (-1.0)) {
-		False
-	} else {
-		(
-			if (d.p.cu < (-31.0)) {
-				False
-			} else {
-				(
-					if (d.p.cv < 3.0) {
-						False
-					} else {
-						(
-							if (d.p.cv > 32.0) {
-								False
-							} else {
-								True
-							}
-						)
-					}
-				)
-			}
-		)
-	}
-)
+inside = |duck|
+	duck.at.across <= -1.0
+		and duck.at.across >= -31.0
+			and duck.at.along >= 3.0
+				and duck.at.along <= 32.0
 
 inside_got : List(Bool)
 inside_got = Pond.ducks.map(inside)
@@ -53,7 +45,7 @@ inside_want : List(Bool)
 inside_want = [True, True, True, True, True, True]
 
 face_got : List(Bool)
-face_got = [(List.get(Pond.ducks, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).face_right, (List.get(Pond.ducks, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).face_right, (List.get(Pond.ducks, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).face_right, (List.get(Pond.ducks, I64.to_u64_wrap(3)) ?? crash ("list-at out of range")).face_right, (List.get(Pond.ducks, I64.to_u64_wrap(4)) ?? crash ("list-at out of range")).face_right, (List.get(Pond.ducks, I64.to_u64_wrap(5)) ?? crash ("list-at out of range")).face_right]
+face_got = Pond.ducks.map(|duck| duck.facing == FacesRight)
 
 face_want : List(Bool)
 face_want = [True, False, True, True, False, True]

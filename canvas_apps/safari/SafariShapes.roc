@@ -31,12 +31,12 @@ SafariShapes :: [].{
 		disc_radius : F64,
 	}
 
-	## Whether a frame shows the sun at all.
-	is_sun_shown : Sky.SunPos -> Bool
-	is_sun_shown = |sun| sun.visible and sun.scale > 0.0
+	## Whether a frame shows the sun in view at its place.
+	is_sun_shown : Sky.SunPlace -> Bool
+	is_sun_shown = |sun| sun.scale > 0.0
 
 	## The sun's glow and disc where it stands, sized by its scale.
-	sun_fills : Sky.SunPos -> SafariShapes.SunFills
+	sun_fills : Sky.SunPlace -> SafariShapes.SunFills
 	sun_fills = |sun| {
 		glow_radius = 340.0 * sun.scale
 		disc_radius = Sky.sun_radius_px * sun.scale
@@ -73,18 +73,20 @@ SafariShapes :: [].{
 		sky = Linear({ c0: Brush.opaque(sky_top), c1: Brush.opaque(sky_horizon), o0: sky_top_stop, o1: 1.0, ax: 0.0, ay: 0.0, dx: 0.0, dy: Screen.horizon_y })
 		$out = List.append($out, Rect({ x: -1080.0, y: -1260.0, w: 3120.0, h: 1560.0, fill: sky }))
 		$out = List.append($out, Rect({ x: -1080.0, y: Screen.grass_top_y, w: 3120.0, h: 1561.0, fill: Flat(Brush.opaque(grass_color)) }))
-		$out = if is_sun_shown(sun) {
-			fills = sun_fills(sun)
-			List.concat(
-				$out,
-				[
-					Rect({ x: 0.0, y: 0.0, w: Screen.width, h: Screen.horizon_y, fill: fills.glow }),
-					Disc({ x: sun.x, y: sun.y, r: fills.disc_radius, fill: fills.disc, clip: Within({ x: 0.0, y: 0.0, w: Screen.width, h: Screen.horizon_y }) }),
-				],
-			)
-		} else {
-			$out
-		}
+		$out =
+			match sun {
+				InView(place) if is_sun_shown(place) => {
+					fills = sun_fills(place)
+					List.concat(
+						$out,
+						[
+							Rect({ x: 0.0, y: 0.0, w: Screen.width, h: Screen.horizon_y, fill: fills.glow }),
+							Disc({ x: place.x, y: place.y, r: fills.disc_radius, fill: fills.disc, clip: Within({ x: 0.0, y: 0.0, w: Screen.width, h: Screen.horizon_y }) }),
+						],
+					)
+				}
+				InView(_) | OutOfView => $out
+			}
 		n = List.len(commands)
 		var $k = 0
 		while $k < n {

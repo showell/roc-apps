@@ -1,5 +1,5 @@
-# LensSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are Lens's checks: the focal length at rest, for a lean, for the
+## rider's attention, and the two together.
 app [main!] {
 	lib: "../lib/main.roc",
 }
@@ -26,27 +26,18 @@ gaze_in = [0.0, 0.5, 1.0, 1.5]
 gaze_want : List(F64)
 gaze_want = [685.5110432362151, 551.8363898051531, 418.16173637409116, 284.4870829430293]
 
-cam_lean : List(F64)
-cam_lean = [0.0, 1.0, 0.0, 0.5, 0.9, 0.6]
-
-cam_gaze : List(F64)
-cam_gaze = [0.0, 0.0, 1.0, 0.3, 1.4, 0.5]
+cam_in : List({ lean_frac : F64, attention : F64 })
+cam_in = [
+	{ lean_frac: 0.0, attention: 0.0 },
+	{ lean_frac: 1.0, attention: 0.0 },
+	{ lean_frac: 0.0, attention: 1.0 },
+	{ lean_frac: 0.5, attention: 0.3 },
+	{ lean_frac: 0.9, attention: 1.4 },
+	{ lean_frac: 0.6, attention: 0.5 },
+]
 
 cam_want : List(F64)
 cam_want = [685.5110432362151, 239.92886513267527, 418.16173637409116, 574.1154987103301, 311.2220136292417, 525.1014591189407]
-
-# cam_walk builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-cam_walk : I64 -> List(F64)
-cam_walk = |i| cam_walk_onto(i, [])
-
-cam_walk_onto : I64, List(F64) -> List(F64)
-cam_walk_onto = |i, acc| (
-	if (i >= cam_lean.len().to_i64_wrap()) {
-		acc
-	} else {
-		cam_walk_onto((i + 1), List.append(acc, Lens.cam_focal((List.get(cam_lean, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")), (List.get(cam_gaze, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")))))
-	}
-)
 
 # --- Entry ---
 
@@ -72,7 +63,7 @@ main! = |_args| {
 		}),
 		Grade.rel({
 			name: "l-cam  ",
-			got: cam_walk(0),
+			got: cam_in.map(Lens.cam_focal),
 			want: cam_want,
 			tol: F64.from_bits(4472406533629990549),
 		}),

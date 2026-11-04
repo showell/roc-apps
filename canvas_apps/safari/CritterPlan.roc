@@ -149,7 +149,7 @@ sight_critter = |scene, { mapper, critter }|
 		),
 		height: critter.height,
 		codepoint: critter.codepoint,
-		facing: facing_of(critter.face_right),
+		facing: if critter.face_right FacesRight else FacesLeft,
 	})
 
 corner_sightings : CritterPlan.Scene, { mapper : Frame.Mapper, segment : World.Segment } -> List(Billboards.Sighting)
@@ -175,17 +175,14 @@ pond_sightings = |scene, { mapper, segment }|
 						scene.chain,
 						scene.pose,
 						mapper,
-						(segment.length + duck.p.cv),
-						duck.p.cu,
+						(segment.length + duck.at.along),
+						duck.at.across,
 					),
 					height: Pond.duck_height,
 					codepoint: Pond.duck_codepoint,
-					facing: facing_of(duck.face_right),
+					facing: duck.facing,
 				}),
 		)
 	} else {
 		[]
 	}
-
-facing_of : Bool -> Billboards.Facing
-facing_of = |face_right| if face_right FacesRight else FacesLeft

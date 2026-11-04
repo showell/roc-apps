@@ -1,5 +1,5 @@
-# EmojiStills -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## The animals by the road, each a still traced from its emoji, looked up
+## by the emoji's code point.
 import Stills
 
 EmojiStills :: [].{

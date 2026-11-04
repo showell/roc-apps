@@ -1,5 +1,5 @@
-# CanvasRollSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are CanvasRoll's checks: leans inside the deadband, at its edge,
+## and well past it, each way.
 app [main!] {
 	lib: "../lib/main.roc",
 }
@@ -22,20 +22,17 @@ roll_want : List(F64)
 roll_want = [0.0, 0.0, 0.0, 0.0, 0.0, 0.001, (-0.001), 0.002, (-0.002), 0.35, (-0.42)]
 
 as_rider : F64 -> Pose.RiderState
-as_rider = |t| { segment: 0, along: 0.0, across: 0.0, yaw: Angle.Turn.radians(0.0), v: 0.3, tilt: Angle.Lean.radians(t), heading: Angle.Bearing.radians(0.0), gaze_yaw: Angle.Turn.radians(0.0), focus: 0.0 }
-
-# roll_walk builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
-roll_walk : I64 -> List(F64)
-roll_walk = |i| roll_walk_onto(i, [])
-
-roll_walk_onto : I64, List(F64) -> List(F64)
-roll_walk_onto = |i, acc| (
-	if (i >= tilt_in.len().to_i64_wrap()) {
-		acc
-	} else {
-		roll_walk_onto((i + 1), List.append(acc, CanvasRoll.rider_roll(as_rider((List.get(tilt_in, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))))))
-	}
-)
+as_rider = |tilt| {
+	segment: 0,
+	along: 0.0,
+	across: 0.0,
+	yaw: Angle.Turn.radians(0.0),
+	v: 0.3,
+	tilt: Angle.Lean.radians(tilt),
+	heading: Angle.Bearing.radians(0.0),
+	gaze_yaw: Angle.Turn.radians(0.0),
+	focus: 0.0,
+}
 
 # --- Entry ---
 
@@ -49,7 +46,7 @@ main! = |_args| {
 		}),
 		Grade.reals({
 			name: "cr-roll",
-			got: roll_walk(0),
+			got: tilt_in.map(|tilt| CanvasRoll.rider_roll(as_rider(tilt))),
 			want: roll_want,
 			tol: 0.0,
 		}),
