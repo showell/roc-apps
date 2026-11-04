@@ -209,7 +209,7 @@ pond_ground : GroundPlan.View, { segment : World.Segment, place : Frame.Mapper }
 pond_ground = |view, { segment, place }|
 	if Scenery.is_pond(segment.exit_creature) {
 		on_map = |outline|
-			outline.map(|point| Frame.map_pt(view.world, view.chain, view.pose, place, (segment.length + point.cv), point.cu))
+			outline.map(|point| Frame.map_pt(view.world, view.chain, view.pose, place, (segment.length + point.along), point.across))
 		List.concat(
 			paint(view, { corners: on_map(Pond.water_outline), color: Pond.water_color }),
 			paint(view, { corners: on_map(Pond.bank), color: Pond.bank_color }),
