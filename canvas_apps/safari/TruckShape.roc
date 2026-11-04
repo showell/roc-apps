@@ -105,7 +105,7 @@ TruckShape :: [].{
 	## A flat-coloured polygon on the truck, cut at the near plane and
 	## projected.
 	fill : TruckShape.TruckInView, { color : I64, corners : List(Geom.Vec3) } -> List(Paint.DrawCmd)
-	fill = |truck, { color, corners }| Paint.push_poly(color, Camera.project_all(Geom.clip_near(corners), truck.cam_focal, truck.view_w))
+	fill = |truck, { color, corners }| Paint.push_poly(color, Camera.project_all(Geom.clip_near(corners), { cam_focal: truck.cam_focal, view_w: truck.view_w }))
 }
 
 ## How far forward of the trailer the cab's flat roof reaches, as a fraction

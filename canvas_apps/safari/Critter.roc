@@ -73,7 +73,7 @@ Critter :: [].{
 	## its still mirrored. A critter less than a pixel tall isn't drawn.
 	draw : Billboards.Billboard, { cam_focal : F64, view_w : F64 } -> List(Paint.DrawCmd)
 	draw = |critter, { cam_focal, view_w }| {
-		on_screen = |height| Camera.project({ right: critter.right, forward: critter.forward, height }, cam_focal, view_w)
+		on_screen = |height| Camera.project({ right: critter.right, forward: critter.forward, height }, { cam_focal, view_w })
 		feet = on_screen(0.0)
 		height_px = (feet.y - on_screen(critter.height).y)
 		if (height_px < 1.0) {

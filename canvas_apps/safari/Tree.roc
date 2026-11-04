@@ -91,8 +91,8 @@ Tree :: [].{
 	## rider, is on the screen.
 	outline : { right : F64, forward : F64, height : F64, cam_focal : F64, view_w : F64 } -> Tree.Outline
 	outline = |{ right, forward, height, cam_focal, view_w }| {
-		base = Camera.project({ right, forward, height: 0.0 }, cam_focal, view_w)
-		top = Camera.project({ right, forward, height }, cam_focal, view_w)
+		base = Camera.project({ right, forward, height: 0.0 }, { cam_focal, view_w })
+		top = Camera.project({ right, forward, height }, { cam_focal, view_w })
 		height_px = (base.y - top.y)
 		foliage_px = (height_px * crown_height)
 		crown_bottom_y = (base.y - (height_px * visible_trunk))
@@ -216,7 +216,7 @@ tier_cone : Tree.TreeInView, { tier : Tree.Tier, radius : F64 } -> List(Paint.Dr
 tier_cone = |tree, { tier, radius }| {
 	base_height = ((Tree.visible_trunk + (Tree.crown_height * (1.0 - tier.bottom))) * tree.height)
 	apex_height = ((Tree.visible_trunk + (Tree.crown_height * (1.0 - tier.top))) * tree.height)
-	apex = Camera.project({ right: tree.right, forward: tree.forward, height: apex_height }, tree.cam_focal, tree.view_w)
+	apex = Camera.project({ right: tree.right, forward: tree.forward, height: apex_height }, { cam_focal: tree.cam_focal, view_w: tree.view_w })
 	ring = ring_angles.map(
 		|angle| {
 			on_ring = {
@@ -224,7 +224,7 @@ tier_cone = |tree, { tier, radius }| {
 				forward: (tree.forward + (radius * Trig.r_sin(angle))),
 				height: base_height,
 			}
-			Camera.project(on_ring, tree.cam_focal, tree.view_w)
+			Camera.project(on_ring, { cam_focal: tree.cam_focal, view_w: tree.view_w })
 		},
 	)
 	hull = Tree.convex_hull(ring.append(apex))

@@ -117,7 +117,7 @@ RocBird :: [].{
 	# across the road.
 	draw_one : RocBird.Bird, F64, F64 -> List(Paint.DrawCmd)
 	draw_one = |b, cf, view_w| {
-		feet = Camera.project({ right: b.right, forward: b.fwd, height: b.lift }, cf, view_w)
+		feet = Camera.project({ right: b.right, forward: b.fwd, height: b.lift }, { cam_focal: cf, view_w })
 		Critter.draw_still({ feet, flip: AsDrawn, height_px: (height / b.fwd) * cf }, polys)
 	}
 }

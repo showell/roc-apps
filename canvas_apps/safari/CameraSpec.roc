@@ -1,5 +1,5 @@
-# CameraSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are Camera's checks: where a point lands across and down the
+## screen, how depth shrinks it, and a list projected at once.
 app [main!] {
 	lib: "../lib/main.roc",
 }
@@ -9,8 +9,11 @@ import Geom
 import Grade
 import Screen
 
+view : Camera.View
+view = { cam_focal: 800.0, view_w: 960.0 }
+
 at : F64, F64, F64 -> Camera.ScreenPt
-at = |right, forward, height| Camera.project({ right: right, forward: forward, height: height }, 800.0, 960.0)
+at = |right, forward, height| Camera.project({ right, forward, height }, view)
 
 x_got : List(F64)
 x_got = [at(0.0, 10.0, 1.2).x, at(10.0, 10.0, 1.2).x, at((0.0 - 5.0), 10.0, 1.2).x, at(10.0, 5.0, 1.2).x]
@@ -40,12 +43,17 @@ three : List(Geom.Vec3)
 three = [{ right: 0.0, forward: 10.0, height: 1.2 }, { right: 10.0, forward: 10.0, height: 1.2 }, { right: 0.0, forward: 10.0, height: 11.2 }]
 
 all_got : List(F64)
-all_got = (
-	{
-		sp = Camera.project_all(three, 800.0, 960.0)
-		[I64.to_f64(sp.len().to_i64_wrap()), (List.get(sp, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).x, (List.get(sp, I64.to_u64_wrap(1)) ?? crash ("list-at out of range")).x, (List.get(sp, I64.to_u64_wrap(2)) ?? crash ("list-at out of range")).y, I64.to_f64(Camera.project_all([], 800.0, 960.0).len().to_i64_wrap())]
+all_got =
+	match Camera.project_all(three, view) {
+		[ahead, right, above] => [
+			3.0,
+			ahead.x,
+			right.x,
+			above.y,
+			I64.to_f64(Camera.project_all([], view).len().to_i64_wrap()),
+		]
+		_ => crash "CameraSpec: three points project to three"
 	}
-)
 
 all_want : List(F64)
 all_want = [3.0, 480.0, 1280.0, (-500.0), 0.0]
