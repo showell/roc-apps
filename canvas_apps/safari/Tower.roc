@@ -10,6 +10,7 @@ import Fraction
 import Geom
 import Paint
 import lib.Trig
+import lib.Brush
 import Screen
 import lib.Shapes
 
@@ -466,3 +467,211 @@ Tower :: [].{
 		}
 	}
 }
+
+expect Tower.tower_height == 80.0
+expect Tower.tower_half == 6.0
+expect Tower.stage_height == 20.0
+expect Tower.rod_half == 0.12
+expect Tower.rod_w == 0.24
+expect Tower.earth_radius == 20000.0
+expect Tower.beacon_radius == 3.0
+
+expect Tower.brace_stages == 2
+expect Tower.tower_metal == 10133672
+expect Tower.beacon_color == 16723942
+
+expect Tower.corners.map(|corner| Tower.corner_offset(corner).across) == [-1.0, 1.0, 1.0, -1.0]
+expect Tower.corners.map(|corner| Tower.corner_offset(corner).along) == [-1.0, -1.0, 1.0, 1.0]
+
+expect {
+	[
+		(BackLeft, { along: 94.0, across: -6.0 }),
+		(BackRight, { along: 94.0, across: 6.0 }),
+		(FrontRight, { along: 106.0, across: 6.0 }),
+		(FrontLeft, { along: 106.0, across: -6.0 }),
+	].all(
+		|(corner, want)| {
+			got = Tower.base_corner_on_road(
+				corner,
+				{
+					along: 100.0,
+					across: 0.0,
+					yaw: Angle.straight_ahead,
+				},
+			)
+			along_miss = (got.along - want.along).abs()
+			across_miss = (got.across - want.across).abs()
+			along_miss <= 0.000001 and across_miss <= 0.000001
+		},
+	)
+}
+
+sample_rod_view : Tower.RodView
+sample_rod_view = {
+	rod_width_px: 4.0,
+	cam_focal: 500.0,
+}
+
+# A mast 12 m square, centred 100 m ahead, sunk 1 m.
+sample_mast : Tower.Mast
+sample_mast = {
+	footprint: {
+		back_left: { right: -6.0, forward: 94.0 },
+		back_right: { right: 6.0, forward: 94.0 },
+		front_right: { right: 6.0, forward: 106.0 },
+		front_left: { right: -6.0, forward: 106.0 },
+	},
+	center: { right: 0.0, forward: 100.0 },
+	sunk: 1.0,
+	view: sample_rod_view,
+}
+
+expect
+	Tower.corner_at(sample_mast, { corner: BackLeft, height_on_mast: 0.0 })
+		== {
+			right: -6.0,
+			forward: 94.0,
+			height: -1.0,
+		}
+expect
+	Tower.corner_at(sample_mast, { corner: BackLeft, height_on_mast: 40.0 })
+		== {
+			right: -3.0,
+			forward: 97.0,
+			height: 39.0,
+		}
+expect
+	Tower.corner_at(sample_mast, { corner: BackLeft, height_on_mast: 80.0 })
+		== {
+			right: 0.0,
+			forward: 100.0,
+			height: 79.0,
+		}
+expect
+	Tower.corner_at(sample_mast, { corner: FrontRight, height_on_mast: 40.0 })
+		== {
+			right: 3.0,
+			forward: 103.0,
+			height: 39.0,
+		}
+expect
+	Tower.corner_at(sample_mast, { corner: FrontRight, height_on_mast: 80.0 })
+		== {
+			right: 0.0,
+			forward: 100.0,
+			height: 79.0,
+		}
+
+expect Tower.sunk_below_horizon({ right: 0.0, forward: 200.0 }) == 1.0
+expect Tower.sunk_below_horizon({ right: 100.0, forward: 100.0 }) == 0.5
+expect Tower.sunk_below_horizon({ right: 0.0, forward: 0.0 }) == 0.0
+
+expect
+	Tower.point_between({
+		from: {
+			right: 0.0,
+			forward: 10.0,
+			height: 20.0,
+		},
+		to: {
+			right: 8.0,
+			forward: 30.0,
+			height: 0.0,
+		},
+		fraction: Fraction.of(0.25),
+	})
+		== {
+			right: 2.0,
+			forward: 15.0,
+			height: 15.0,
+		}
+
+expect
+	Tower.screen_rod({
+		from: { x: 0.0, y: 0.0 },
+		to: { x: 30.0, y: 40.0 },
+		width_px: 10.0,
+	})
+		== [
+			Poly({
+				pts: [-4.0, 3.0, 26.0, 43.0, 34.0, 37.0, 4.0, -3.0],
+				fill: Flat(Brush.opaque(Tower.tower_metal)),
+			}),
+		]
+
+# A rod of no length is still one quad, all at its one point.
+expect
+	Tower.screen_rod({
+		from: { x: 5.0, y: 6.0 },
+		to: { x: 5.0, y: 6.0 },
+		width_px: 10.0,
+	})
+		== [
+			Poly({
+				pts: [5.0, 6.0, 5.0, 6.0, 5.0, 6.0, 5.0, 6.0],
+				fill: Flat(Brush.opaque(Tower.tower_metal)),
+			}),
+		]
+
+expect Tower.rod_width_at({ forward: 10.0, cam_focal: 500.0 }) == 12.0
+expect Tower.rod_width_at({ forward: 25.0, cam_focal: 500.0 }) == 4.8
+expect Tower.rod_width_at({ forward: 50.0, cam_focal: 500.0 }) == 2.4
+
+rod_along_road : F64, F64 -> List(Shapes.Shape)
+rod_along_road = |start, end|
+	Tower.rod(
+		sample_rod_view,
+		{
+			from: {
+				right: 0.0,
+				forward: start,
+				height: 0.0,
+			},
+			to: {
+				right: 0.0,
+				forward: end,
+				height: 0.0,
+			},
+		},
+	)
+
+# A rod is cut at the near plane, and one wholly behind it draws nothing.
+expect
+	Tower.rod(
+		sample_rod_view,
+		{
+			from: {
+				right: 0.0,
+				forward: 10.0,
+				height: 0.0,
+			},
+			to: {
+				right: 1.0,
+				forward: 20.0,
+				height: 0.0,
+			},
+		},
+	).len()
+		== 1
+expect rod_along_road(0.0, 0.8).len() == 1
+expect rod_along_road(0.8, 0.0).len() == 1
+expect rod_along_road(0.0, 0.2).len() == 0
+
+expect
+	Tower.cut_at_near({
+		from: {
+			right: 0.0,
+			forward: 0.0,
+			height: 10.0,
+		},
+		to: {
+			right: 8.0,
+			forward: 0.8,
+			height: 30.0,
+		},
+	})
+		== {
+			right: 4.0,
+			forward: 0.4,
+			height: 20.0,
+		}

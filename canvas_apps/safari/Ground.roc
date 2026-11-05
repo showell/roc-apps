@@ -4,6 +4,7 @@
 import Camera
 import Geom
 import Paint
+import lib.Brush
 import lib.Shapes
 
 Ground :: [].{
@@ -41,4 +42,69 @@ Ground :: [].{
 				Paint.push_poly(color, Camera.project_all(in_front, cam_focal))
 			}
 		}
+}
+
+expect Ground.ground_point({ right: 0.0, forward: 0.0 }).height == 0.0
+expect
+	Ground.ground_point({ right: 3.0, forward: 10.0 })
+		== {
+			right: 3.0,
+			forward: 10.0,
+			height: -0.000545,
+		}
+expect Ground.ground_point({ right: -5.0, forward: 40.0 }).height == -0.008125
+expect
+	Ground.ground_point({ right: 12.5, forward: 100.0 })
+		== {
+			right: 12.5,
+			forward: 100.0,
+			height: -0.05078125,
+		}
+
+patch_shapes : List(Geom.RiderPoint) -> List(Shapes.Shape)
+patch_shapes = |corners|
+	Ground.draw({
+		corners,
+		color: 3112588,
+		cam_focal: 685.5110432362151,
+	})
+
+patch_ahead : List(Geom.RiderPoint)
+patch_ahead = [
+	{ right: -5.0, forward: 10.0 },
+	{ right: 5.0, forward: 10.0 },
+	{ right: 5.0, forward: 20.0 },
+	{ right: -5.0, forward: 20.0 },
+]
+
+# A patch of `count` corners, all ahead of the camera.
+corners_ahead : I64 -> List(Geom.RiderPoint)
+corners_ahead = |count|
+	List.from_iter(I64.until(0, count)).map(
+		|k| {
+			offset = (count - k).to_f64()
+			{ right: offset, forward: 10.0 + offset }
+		},
+	)
+
+expect patch_shapes(patch_ahead).len() == 1
+expect patch_shapes(corners_ahead(8)).len() == 1
+expect patch_shapes(corners_ahead(9)).len() == 0
+
+expect
+	patch_shapes([
+		{ right: -5.0, forward: -10.0 },
+		{ right: 5.0, forward: -10.0 },
+		{ right: 5.0, forward: -20.0 },
+		{ right: -5.0, forward: -20.0 },
+	]).len()
+		== 0
+
+expect patch_shapes([{ right: -5.0, forward: 10.0 }, { right: 5.0, forward: 10.0 }]).len() == 0
+
+expect {
+	match patch_shapes(patch_ahead) {
+		[Poly(polygon)] => polygon.fill == Flat(Brush.opaque(3112588)) and polygon.pts.len() == 8
+		_ => False
+	}
 }
