@@ -3,15 +3,17 @@
 Small interactive Roc programs that run two ways from one set of files: as a
 native program on roc-ray, and as a page in a browser.
 
-Eight of them, covering a few different kinds of program. `safari` is a
+Nine of them, covering a few different kinds of program. `safari` is a
 driving screensaver. `snake`, `pong` and `breakout` are arcade games.
 `particles` is a fountain of four thousand sprites that follows the pointer.
 `camera` is a world larger than the window, with a camera over it and a HUD
 that stays put. `workshop` is a pixel paint program you drag on.
-`trick_or_treat` is a movie you can scrub.
+`trick_or_treat` is a movie you can scrub. `cat_widget` is a small page for
+the Safari tutorial: drag across it and the cat's crossing plays under the
+pointer, from Safari's own modules.
 
-Six of the eight — all but `safari` and `trick_or_treat` — are roc-ray's own
-examples, by Luke Boswell, taken with only small changes to fit this scheme.
+Six of the nine — all but `safari`, `trick_or_treat` and `cat_widget` — are
+roc-ray's own examples, by Luke Boswell, taken with only small changes to fit this scheme.
 
 **The native side runs on roc-ray 0.12.0** (`23eec6e`), with the
 repository's pinned nightly; roc-ray names no compiler of its own. It shows
@@ -309,7 +311,7 @@ long movie wants: `FRAMES=1500`.
 | `snake`, `pong`, `breakout`, `camera`, `particles` | roc-ray's examples of the same names |
 | `workshop` | roc-ray's `generated_assets`, the Pixel Workshop |
 | `safari` | this repository's own screensaver, which began as a Codex program; `safari/README.md` |
-| `trick_or_treat` | this repository's own |
+| `trick_or_treat`, `cat_widget` | this repository's own |
 
 The roc-ray examples were taken at commit `e100c95`. Each ported file says in its own docstring what changed in it and why,
 which is the copy to trust. The shape of the change is the same throughout: the

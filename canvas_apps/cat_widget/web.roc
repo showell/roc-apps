@@ -1,0 +1,14 @@
+# The cat's widget, as a page: the wasm module a browser runs. main.roc beside
+# it is the same app on roc-ray.
+app [Model, program] {
+	game: "../safari/game.roc",
+	lib: "../lib/main.roc",
+	pf: platform "../web/platform/main.roc",
+}
+
+import lib.WasmApp
+import CatWidgetApp
+
+Model : CatWidgetApp.Model
+
+program = WasmApp.program(CatWidgetApp.canvas_app)
