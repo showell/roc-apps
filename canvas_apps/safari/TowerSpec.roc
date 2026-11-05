@@ -4,6 +4,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Angle
 import Geom
 import Grade
 import Tower
@@ -88,7 +89,7 @@ ax_of = |corner| {
 		{
 			along: 100.0,
 			across: 0.0,
-			yaw: 0.0,
+			yaw: Angle.straight_ahead,
 		},
 	)
 	[p.along, p.across]

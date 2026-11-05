@@ -3,6 +3,7 @@
 ## crossed braces in the lowest two stages) with a blinking beacon on top.
 ## The earth curves away under a far mast, so it sinks below the horizon
 ## from the bottom up.
+import Angle
 import Camera
 import lib.DeviceMath
 import Geom
@@ -126,7 +127,7 @@ Tower :: [].{
 	{
 		along : F64,
 		across : F64,
-		yaw : F64,
+		yaw : Angle.Turn,
 	} -> Geom.RoadPoint
 	base_corner_on_road = |
 		corner,
@@ -139,8 +140,8 @@ Tower :: [].{
 		offset = corner_offset(corner)
 		du = (offset.across * tower_half)
 		dv = (offset.along * tower_half)
-		cy = Trig.r_cos(yaw)
-		sy = Trig.r_sin(yaw)
+		cy = Trig.r_cos(yaw.to_radians())
+		sy = Trig.r_sin(yaw.to_radians())
 		{ along: (along + ((du * sy) + (dv * cy))), across: (across + ((du * cy) - (dv * sy))) }
 	}
 

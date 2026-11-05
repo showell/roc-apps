@@ -2,6 +2,7 @@
 ## stands past the end of every segment, off to the right, and a long
 ## segment has one more halfway along, off to the left. The mast past the
 ## end of the segment behind the rider is seen too.
+import Angle
 import DepthSort
 import Frame
 import Geom
@@ -18,7 +19,7 @@ TowerPlan :: [].{
 		place : Frame.SegmentPlace,
 		along : F64,
 		across : F64,
-		yaw : F64,
+		yaw : Angle.Turn,
 		forward : F64,
 		beacon_offset : F64,
 	}
@@ -45,8 +46,8 @@ TowerPlan :: [].{
 	mid_tower_left = 100.0
 
 	## How far a mast past a segment's end is turned: 30 degrees.
-	tower_yaw : F64
-	tower_yaw = ((30.0 * 3.14159265) / 180.0)
+	tower_yaw : Angle.Turn
+	tower_yaw = Angle.Turn.radians((30.0 * 3.14159265) / 180.0)
 
 	## At most this many masts are drawn in a frame.
 	max_vis_towers : I64
@@ -104,7 +105,7 @@ TowerPlan :: [].{
 						place: InChain(position),
 						along: (segment.length / 2.0),
 						across: ((Scenery.lane_width / 2.0) - mid_tower_left),
-						yaw: 0.0,
+						yaw: Angle.straight_ahead,
 						beacon_key: index.to_i64() + mid_tower_beacon_step,
 					},
 				)
@@ -153,7 +154,7 @@ tower_if_ahead : TowerPlan.View,
 	place : Frame.SegmentPlace,
 	along : F64,
 	across : F64,
-	yaw : F64,
+	yaw : Angle.Turn,
 	beacon_key : I64,
 } -> List(TowerPlan.TowerItem)
 tower_if_ahead = |

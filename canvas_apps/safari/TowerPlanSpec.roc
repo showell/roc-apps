@@ -130,8 +130,8 @@ long_where_got = [
 	long_tower(0).across,
 	long_tower(1).along,
 	long_tower(1).across,
-	long_tower(0).yaw,
-	long_tower(1).yaw,
+	long_tower(0).yaw.to_radians(),
+	long_tower(1).yaw.to_radians(),
 ]
 
 long_where_want : List(F64)
