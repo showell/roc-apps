@@ -4,12 +4,9 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Angle
 import Grade
-import lib.Trig
 import VehicleLimits
-
-to_rad : F64 -> F64
-to_rad = |d| (d * Trig.deg)
 
 table_deg : List(F64)
 table_deg = [15.0, 20.0, 30.0, 50.0, 70.0, 80.0]
@@ -48,13 +45,13 @@ main! = |_args| {
 	verdicts = [
 		Grade.reals({
 			name: "v-table",
-			got: table_deg.map(to_rad).map(VehicleLimits.turn_speed),
+			got: table_deg.map(Angle.Turn.degrees).map(VehicleLimits.turn_speed),
 			want: table_want,
 			tol: 0.0,
 		}),
 		Grade.reals({
 			name: "v-edge ",
-			got: edge_deg.map(to_rad).map(VehicleLimits.turn_speed),
+			got: edge_deg.map(Angle.Turn.degrees).map(VehicleLimits.turn_speed),
 			want: edge_want,
 			tol: 0.0,
 		}),

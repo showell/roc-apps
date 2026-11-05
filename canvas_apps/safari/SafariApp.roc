@@ -53,7 +53,7 @@ SafariApp :: [].{
 			World({
 				target: centre,
 				offset: centre,
-				rotation: 0.0 - SafariRide.roll(ride) * degrees,
+				rotation: 0.0 - SafariRide.roll(ride).to_radians() * degrees,
 				zoom: 1.0,
 			}),
 		)

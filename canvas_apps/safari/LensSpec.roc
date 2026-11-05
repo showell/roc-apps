@@ -7,11 +7,12 @@ app [main!] {
 import Grade
 import Lens
 import Screen
+import lib.Trig
 
 base_got : List(F64)
 base_got = [
 	Screen.width,
-	Lens.fov_deg,
+	Lens.field_of_view.to_radians() / Trig.deg,
 	Lens.focal,
 ]
 

@@ -5,6 +5,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Angle
 import Camera
 import Grade
 import Lens
@@ -17,7 +18,7 @@ height_got = [
 	Sky.sun_radius_px,
 	Sky.sun_fully_set_px,
 	Sky.warmth_falloff_px,
-	Sky.visible_bearing_limit,
+	Sky.visible_turn_limit.to_radians(),
 ]
 
 height_want : List(F64)
@@ -120,14 +121,14 @@ view = { cam_focal: Lens.focal, view_w: 960.0 }
 
 facing : Sky.SunPos
 facing = Sky.sun_pos({
-	heading: (0.0 - 2.2176),
+	heading: Angle.Bearing.radians(0.0 - 2.2176),
 	step: 0.0,
 	view,
 })
 
 away : Sky.SunPos
 away = Sky.sun_pos({
-	heading: 0.0,
+	heading: Angle.north,
 	step: 0.0,
 	view,
 })

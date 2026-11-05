@@ -2,8 +2,8 @@
 ## its entry in `route`. A segment holds its scenery (trees, cows, pigs, a cat
 ## by a tree), how it turns into the next, where the rider commits to that
 ## turn, and the creature waiting at its end.
+import Angle
 import Cat
-import lib.DeviceMath
 import Geom
 import Herd
 import Pigs
@@ -54,12 +54,12 @@ World :: [].{
 	}
 
 	## One segment of the route as planned: its length and scenery, its turn
-	## into the next in degrees (right is positive), what lives along it, and
+	## into the next (right is positive), what lives along it, and
 	## the creature at its end.
 	SegmentPlan : {
 		length : F64,
 		scheme : Scenery.Scheme,
-		turn_degrees : F64,
+		turn : Angle.Turn,
 		cat : [WithCat, NoCat],
 		pigs : Pigs.PigPresence,
 		bull : [WithBull, NoBull],
@@ -74,7 +74,7 @@ World :: [].{
 		cows : List(Scenery.Critter),
 		pigs : List(Scenery.Critter),
 		pig_attention : Pigs.PigAttention,
-		exit_angle : F64,
+		exit_angle : Angle.Turn,
 		exit_side : Geom.TurnSide,
 		commit_along : F64,
 		mid_tower : [MidTower, NoMidTower],
@@ -92,7 +92,7 @@ World :: [].{
 		{
 			length: 500.0,
 			scheme: AllGreen,
-			turn_degrees: 50.0,
+			turn: Angle.Turn.degrees(50.0),
 			cat: NoCat,
 			pigs: NoPigs,
 			bull: NoBull,
@@ -102,7 +102,7 @@ World :: [].{
 		{
 			length: 320.0,
 			scheme: AllGreen,
-			turn_degrees: -70.0,
+			turn: Angle.Turn.degrees(-70.0),
 			cat: WithCat,
 			pigs: NoPigs,
 			bull: NoBull,
@@ -112,7 +112,7 @@ World :: [].{
 		{
 			length: 400.0,
 			scheme: AllGreen,
-			turn_degrees: 20.0,
+			turn: Angle.Turn.degrees(20.0),
 			cat: NoCat,
 			pigs: WithPigs,
 			bull: NoBull,
@@ -122,7 +122,7 @@ World :: [].{
 		{
 			length: 300.0,
 			scheme: YellowGreen,
-			turn_degrees: 20.0,
+			turn: Angle.Turn.degrees(20.0),
 			cat: NoCat,
 			pigs: NoPigs,
 			bull: NoBull,
@@ -132,7 +132,7 @@ World :: [].{
 		{
 			length: 300.0,
 			scheme: AllGreen,
-			turn_degrees: -70.0,
+			turn: Angle.Turn.degrees(-70.0),
 			cat: NoCat,
 			pigs: NoPigs,
 			bull: WithBull,
@@ -142,7 +142,7 @@ World :: [].{
 		{
 			length: 300.0,
 			scheme: AllGreen,
-			turn_degrees: -70.0,
+			turn: Angle.Turn.degrees(-70.0),
 			cat: NoCat,
 			pigs: NoPigs,
 			bull: WithBull,
@@ -152,7 +152,7 @@ World :: [].{
 		{
 			length: 1200.0,
 			scheme: RedGreen,
-			turn_degrees: 80.0,
+			turn: Angle.Turn.degrees(80.0),
 			cat: NoCat,
 			pigs: NoPigs,
 			bull: WithBull,
@@ -162,7 +162,7 @@ World :: [].{
 		{
 			length: 300.0,
 			scheme: AllGreen,
-			turn_degrees: 15.0,
+			turn: Angle.Turn.degrees(15.0),
 			cat: NoCat,
 			pigs: NoPigs,
 			bull: WithBull,
@@ -172,7 +172,7 @@ World :: [].{
 		{
 			length: 300.0,
 			scheme: AllGreen,
-			turn_degrees: -70.0,
+			turn: Angle.Turn.degrees(-70.0),
 			cat: NoCat,
 			pigs: NoPigs,
 			bull: WithBull,
@@ -182,7 +182,7 @@ World :: [].{
 		{
 			length: 800.0,
 			scheme: AllGreen,
-			turn_degrees: 15.0,
+			turn: Angle.Turn.degrees(15.0),
 			cat: NoCat,
 			pigs: NoPigs,
 			bull: WithBull,
@@ -192,7 +192,7 @@ World :: [].{
 		{
 			length: 300.0,
 			scheme: AllGreen,
-			turn_degrees: 15.0,
+			turn: Angle.Turn.degrees(15.0),
 			cat: NoCat,
 			pigs: WithPigs,
 			bull: WithBull,
@@ -202,7 +202,7 @@ World :: [].{
 		{
 			length: 300.0,
 			scheme: AllGreen,
-			turn_degrees: 15.0,
+			turn: Angle.Turn.degrees(15.0),
 			cat: NoCat,
 			pigs: WithPigs,
 			bull: WithBull,
@@ -212,7 +212,7 @@ World :: [].{
 		{
 			length: 300.0,
 			scheme: RedGreen,
-			turn_degrees: 15.0,
+			turn: Angle.Turn.degrees(15.0),
 			cat: WithCat,
 			pigs: WithPigs,
 			bull: WithBull,
@@ -222,7 +222,7 @@ World :: [].{
 		{
 			length: 400.0,
 			scheme: AllGreen,
-			turn_degrees: -50.0,
+			turn: Angle.Turn.degrees(-50.0),
 			cat: NoCat,
 			pigs: WithPigs,
 			bull: WithBull,
@@ -232,7 +232,7 @@ World :: [].{
 		{
 			length: 300.0,
 			scheme: AllGreen,
-			turn_degrees: 50.0,
+			turn: Angle.Turn.degrees(50.0),
 			cat: NoCat,
 			pigs: WithPigs,
 			bull: WithBull,
@@ -242,7 +242,7 @@ World :: [].{
 		{
 			length: 300.0,
 			scheme: RedGreen,
-			turn_degrees: -50.0,
+			turn: Angle.Turn.degrees(-50.0),
 			cat: NoCat,
 			pigs: NoPigs,
 			bull: WithBull,
@@ -252,7 +252,7 @@ World :: [].{
 		{
 			length: 300.0,
 			scheme: AllGreen,
-			turn_degrees: 50.0,
+			turn: Angle.Turn.degrees(50.0),
 			cat: NoCat,
 			pigs: WithPigs,
 			bull: WithBull,
@@ -262,7 +262,7 @@ World :: [].{
 		{
 			length: 300.0,
 			scheme: AllGreen,
-			turn_degrees: -50.0,
+			turn: Angle.Turn.degrees(-50.0),
 			cat: NoCat,
 			pigs: WithPigs,
 			bull: WithBull,
@@ -272,7 +272,7 @@ World :: [].{
 		{
 			length: 300.0,
 			scheme: RedGreen,
-			turn_degrees: 0.0,
+			turn: Angle.Turn.degrees(0.0),
 			cat: WithCat,
 			pigs: WithPigs,
 			bull: WithBull,
@@ -319,7 +319,7 @@ World :: [].{
 ## The segment at `index` of the route, built from its plan.
 built_segment : World.SegmentPlan, World.SegmentIndex -> World.Segment
 built_segment = |plan, index| {
-	exit_angle = DeviceMath.real_abs(plan.turn_degrees) * Trig.deg
+	exit_angle = plan.turn.abs()
 	trees = Trees.plant({ scheme: plan.scheme, length: plan.length })
 	pig_attention = Pigs.attention_of({
 		presence: plan.pigs,
@@ -336,9 +336,12 @@ built_segment = |plan, index| {
 		}),
 		pig_attention,
 		exit_angle,
-		exit_side: if (plan.turn_degrees >= 0.0) TurnsRight else TurnsLeft,
+		exit_side: if (plan.turn >= Angle.straight_ahead) TurnsRight else TurnsLeft,
 		commit_along: match plan.ending {
-			Continues => plan.length - Scenery.lane_width / 2.0 / Trig.r_tan(exit_angle)
+			Continues => {
+				exit_tan = Trig.r_tan(exit_angle.to_radians())
+				plan.length - Scenery.lane_width / 2.0 / exit_tan
+			}
 			Terminates => plan.length
 		},
 		mid_tower: if (plan.length > World.mid_tower_min_length) MidTower else NoMidTower,

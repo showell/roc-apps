@@ -40,7 +40,7 @@ LeanSearch :: [].{
 
 	## The most the lean changes in one step.
 	max_tilt_correction : Angle.Lean
-	max_tilt_correction = Angle.Lean.radians(1.0 * Trig.deg)
+	max_tilt_correction = Angle.Lean.degrees(1.0)
 
 	lean_search_iters : I64
 	lean_search_iters = 12

@@ -5,6 +5,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Angle
 import Frame
 import Grade
 import ItemDraw
@@ -74,7 +75,7 @@ context = {
 		pose: {
 			along: 0.0,
 			across: 0.0,
-			yaw: 0.0,
+			yaw: Angle.straight_ahead,
 			half_width: 2.0,
 		},
 	},
@@ -89,7 +90,7 @@ tower_along = |along| {
 	place: InChain(Frame.ChainPosition.first),
 	along,
 	across: 22.0,
-	yaw: 0.0,
+	yaw: Angle.straight_ahead,
 	forward: along,
 	beacon_offset: 0.0,
 }

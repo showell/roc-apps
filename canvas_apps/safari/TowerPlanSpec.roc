@@ -4,6 +4,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Angle
 import DepthSort
 import Frame
 import Grade
@@ -38,7 +39,7 @@ origin : Frame.Pose
 origin = {
 	along: 0.0,
 	across: 0.0,
-	yaw: 0.0,
+	yaw: Angle.straight_ahead,
 	half_width: 2.0,
 }
 
@@ -129,8 +130,8 @@ long_where_got = [
 	long_tower(0).across,
 	long_tower(1).along,
 	long_tower(1).across,
-	long_tower(0).yaw,
-	long_tower(1).yaw,
+	long_tower(0).yaw.to_radians(),
+	long_tower(1).yaw.to_radians(),
 ]
 
 long_where_want : List(F64)
@@ -180,7 +181,7 @@ cull_got = [
 		pose: {
 			along: 5000.0,
 			across: 0.0,
-			yaw: 0.0,
+			yaw: Angle.straight_ahead,
 			half_width: 2.0,
 		},
 	}).len().to_i64_wrap(),

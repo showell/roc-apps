@@ -4,6 +4,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Angle
 import Frame
 import Grade
 import TruckPlan
@@ -20,7 +21,7 @@ here : Frame.Pose
 here = {
 	along: 0.0,
 	across: 0.0,
-	yaw: 0.0,
+	yaw: Angle.straight_ahead,
 	half_width: 2.0,
 }
 
@@ -109,7 +110,7 @@ behind_got = [
 			{
 				along: 100.0,
 				across: 0.0,
-				yaw: 0.0,
+				yaw: Angle.straight_ahead,
 				half_width: 2.0,
 			},
 			100.0,
@@ -120,7 +121,7 @@ behind_got = [
 			{
 				along: 99.0,
 				across: 0.0,
-				yaw: 0.0,
+				yaw: Angle.straight_ahead,
 				half_width: 2.0,
 			},
 			100.0,

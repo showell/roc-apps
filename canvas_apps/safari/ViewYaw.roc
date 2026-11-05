@@ -23,7 +23,7 @@ ViewYaw :: [].{
 	pose_for = |s| {
 		along: s.along,
 		across: s.across,
-		yaw: s.yaw.plus(view_yaw_for(s)).to_radians(),
+		yaw: s.yaw.plus(view_yaw_for(s)),
 		half_width: Scenery.lane_width / 2.0,
 	}
 }

@@ -11,7 +11,7 @@ Bike :: [].{
 	yaw_per_tilt = 0.1
 
 	max_lean : Angle.Lean
-	max_lean = Angle.Lean.radians(20.0 * Trig.deg)
+	max_lean = Angle.Lean.degrees(20.0)
 
 	## The rider one step on, after leaning by `lean_step` and speeding up by
 	## `accel`.

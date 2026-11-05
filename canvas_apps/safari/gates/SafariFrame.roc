@@ -25,6 +25,7 @@
 ## turns points by the roll, PixelGrid finds the pixels that a stretch of a
 ## row or column covers, PixelColor packs and blends pixels, and ScanlineFill
 ## fills polygons and discs.
+import game.Angle
 import BackdropPixels
 import game.Paint
 import game.Sky
@@ -41,7 +42,7 @@ SafariFrame :: [].{
 	## What a frame shows, in SafariRide's terms.
 	Scene : {
 		commands : List(Paint.DrawCmd),
-		roll : F64,
+		roll : Angle.Lean,
 		sky_top : I64,
 		sky_horizon : I64,
 		sun : Sky.SunPos,
@@ -63,10 +64,10 @@ SafariFrame :: [].{
 	}
 
 	## Safari's screen, seen through the camera's roll.
-	screen_roll : F64 -> ScreenRoll
+	screen_roll : Angle.Lean -> ScreenRoll
 	screen_roll = |roll|
 		ScreenRoll.of({
-			roll,
+			roll: roll.to_radians(),
 			width: screen_width,
 			height: screen_height,
 		})

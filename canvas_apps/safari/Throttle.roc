@@ -15,7 +15,7 @@ Throttle :: [].{
 
 	## The rider holds the throttle off while leaning this far or further.
 	tilt_hold : Angle.Lean
-	tilt_hold = Angle.Lean.radians(2.0 * Trig.deg)
+	tilt_hold = Angle.Lean.degrees(2.0)
 
 	corner_brake : Pose.RiderState,
 	{

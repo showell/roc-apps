@@ -4,6 +4,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Angle
 import DepthSort
 import Frame
 import Grade
@@ -22,7 +23,7 @@ origin : Frame.Pose
 origin = {
 	along: 0.0,
 	across: 0.0,
-	yaw: 0.0,
+	yaw: Angle.straight_ahead,
 	half_width: 2.0,
 }
 
@@ -30,7 +31,7 @@ up_road : Frame.Pose
 up_road = {
 	along: 100.0,
 	across: 0.0,
-	yaw: 0.0,
+	yaw: Angle.straight_ahead,
 	half_width: 2.0,
 }
 

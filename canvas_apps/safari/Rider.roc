@@ -40,7 +40,7 @@ Rider :: [].{
 					Continues({ next: index }) => index
 					Terminates => crash "Rider.rider_state_for_next_segment: past the route's end"
 				}
-			theta = seg.exit_angle
+			theta = seg.exit_angle.to_radians()
 			sgn =
 				match seg.exit_side {
 					TurnsRight => 1.0
@@ -55,7 +55,7 @@ Rider :: [].{
 				segment: next,
 				along: ((c * da) + ((sgn * s) * dx)),
 				across: ((((0.0 - sgn) * s) * da) + (c * dx)),
-				yaw: rs.yaw.minus(Angle.Turn.radians(sgn * theta)),
+				yaw: rs.yaw.minus(seg.exit_angle.times(sgn)),
 				gaze_yaw: Angle.straight_ahead,
 			}
 		}

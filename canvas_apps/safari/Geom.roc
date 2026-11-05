@@ -7,6 +7,7 @@
 ## matters. This module carries a road point round a bend into the segment
 ## before or after it, turns a road point into the rider's view, and cuts a
 ## polygon at the near plane, the closest thing the camera can see.
+import Angle
 import lib.Trig
 
 Geom :: [].{
@@ -30,7 +31,7 @@ Geom :: [].{
 	Pose : {
 		along : F64,
 		across : F64,
-		yaw : F64,
+		yaw : Angle.Turn,
 		half_width : F64,
 	}
 
@@ -41,7 +42,7 @@ Geom :: [].{
 	## before it, the angle it turns through, which way, and the lane's width.
 	Bend : {
 		segment_length : F64,
-		turn_angle : F64,
+		turn_angle : Angle.Turn,
 		turn_side : Geom.TurnSide,
 		lane_width : F64,
 	}
@@ -62,8 +63,8 @@ Geom :: [].{
 	to_rider_point = |{ along, across }, pose| {
 		ahead = along - pose.along
 		aside = across - (pose.across + pose.half_width)
-		cos_yaw = Trig.r_cos(pose.yaw)
-		sin_yaw = Trig.r_sin(pose.yaw)
+		cos_yaw = Trig.r_cos(pose.yaw.to_radians())
+		sin_yaw = Trig.r_sin(pose.yaw.to_radians())
 		{
 			forward: ahead * cos_yaw + aside * sin_yaw,
 			right: (0.0 - ahead) * sin_yaw + aside * cos_yaw,
@@ -75,8 +76,8 @@ Geom :: [].{
 	in_segment_before = |{ along, across }, bend| {
 		length = bend.segment_length
 		width = bend.lane_width
-		cos_turn = Trig.r_cos(bend.turn_angle)
-		sin_turn = Trig.r_sin(bend.turn_angle)
+		cos_turn = Trig.r_cos(bend.turn_angle.to_radians())
+		sin_turn = Trig.r_sin(bend.turn_angle.to_radians())
 		match bend.turn_side {
 			TurnsRight => {
 				along: along * cos_turn - across * sin_turn + width * sin_turn + length,
@@ -94,8 +95,8 @@ Geom :: [].{
 	in_segment_after = |{ along, across }, bend| {
 		length = bend.segment_length
 		width = bend.lane_width
-		cos_turn = Trig.r_cos(bend.turn_angle)
-		sin_turn = Trig.r_sin(bend.turn_angle)
+		cos_turn = Trig.r_cos(bend.turn_angle.to_radians())
+		sin_turn = Trig.r_sin(bend.turn_angle.to_radians())
 		match bend.turn_side {
 			TurnsRight => {
 				past_end = along - length - width * sin_turn
