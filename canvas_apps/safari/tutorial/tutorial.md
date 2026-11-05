@@ -379,6 +379,94 @@ digraph screen {
 
 Notice what isn't in this chapter: a cat in `RideMoment`, an update loop, or a flag saying the cat has already crossed. Roc doesn't force that, but pure functions make the stateless version the easy one to write, and every `->` shows it stayed that way.
 
+## The beacons and the headlights
+
+The cat walked out of its place in the order. Two clock-driven things were left behind when it did, and both are brief.
+
+### A blink
+
+```dot
+digraph beacon {
+  node [shape=box, fontname="Helvetica"];
+  TowerSighting [style=bold];
+  ItemDraw -> Render;
+  ItemDraw -> TowerSighting;
+  ItemDraw -> Tower;
+  Render -> TowerSighting;
+  TowerSighting -> Clock;
+  TowerSighting -> Steps;
+  TowerSighting -> Fraction;
+  Clock -> Steps;
+  Tower -> Fraction;
+}
+```
+
+A beacon is the only thing in Safari Ride that repeats on the clock, so it's the first thing that needs to ask how far into a cycle it is. That question isn't about an instant of the ride. It's about a length of time, and Safari Ride keeps those two apart.
+
+*[The beacon widget goes here: drag the clock and watch the masts blink out of step.]*
+
+`Clock` says which step it is. `Steps` says how long something lasts. Both are opaque `U32`s, and `Clock.minus` turns two clocks into `Steps`, the same way two `Angle.Bearing`s make an `Angle.Turn`. Adding two clocks means nothing, so `Clock` has no `plus`, and no code can. Call this *places and distances*: one opaque type for where something is, a second for how far apart two of them are, and only the sums that make sense.
+
+Here, `wrapped_to` is `Steps`'s one way to reach `%`. The result is a `Fraction` built with `of`, because `(1 - cos) / 2` can only be in range:
+
+{{code TowerSighting.beacon_brightness}}
+
+Each mast starts somewhere else in the cycle, so the masts along a road don't blink together. This function is one line of method calls, and every call in it is on a `Steps`:
+
+{{code TowerSighting.beacon_offset_for}}
+
+The sighting calls both, adding the two `Steps`. `view.clock.minus(Clock.start)` is how a place becomes a distance, and it says which distance: the one from the start of the ride.
+
+{{code TowerSighting.tower_if_ahead from "if center.forward <= Geom.near_plane" to "view.clock.minus(Clock.start)"}}
+
+Its caller gives each mast its key, the segment's index. Records with named fields stand in for what would otherwise be five arguments in a row, and `InChain(position)` is a tag carrying a payload, saying where the segment lies from the rider:
+
+{{code TowerSighting.segment_towers from "end_tower = tower_if_ahead(" to "end_tower.concat(mid_tower(view, position))"}}
+
+A mast halfway along a segment takes the key plus 60. That's a small piece of number theory hiding in a constant: 60 staggers of 37 steps come to 2,220, which is 18 periods of 120 and 60 left over, so the mid-mast blinks exactly opposite the end mast.
+
+Notice where the clock stops. `TowerItem.beacon_brightness` is a `Fraction`, and neither `Tower` nor `ItemDraw` imports `Clock`. A sighting decides, and drawing paints. A beacon's blink is decided in the same place as whether the mast is in view at all.
+
+There's no blink abstraction. `Animation.Alternates` also follows a wave, and the resemblance ends there: it picks a pose, and this picks a brightness. Nothing else in the game blinks.
+
+The clock counts steps, not seconds, so pausing the ride freezes the beacons, and stepping back runs them backwards.
+
+### One switch
+
+```dot
+digraph headlights {
+  node [shape=box, fontname="Helvetica"];
+  RideMoment [style=bold];
+  RideMoment -> Mountains;
+  RideMoment -> Sky;
+  RideMoment -> Truck;
+  RideMoment -> ItemDraw;
+  Mountains -> Sky;
+  Mountains -> Clock;
+  Sky -> Clock;
+  ItemDraw -> TruckDraw;
+  TruckDraw -> Truck;
+}
+```
+
+The truck's headlights come on once the sun has gone behind the mountains, at step 4,039 of a ride that lasts 7,040. `Mountains` knows the skyline and already imports `Sky`, so the question is asked there. The argument is an opaque `Clock`, and the answer is a plain `Bool`, which is about to be turned into something better:
+
+{{code Mountains.is_sun_behind_mountains}}
+
+`Truck.Lights` is a record of two tag unions, written in place. `[On, Off]` needs no declaration, and two independent lamps aren't one state with four values, so they're two fields:
+
+{{code Truck.Lights}}
+
+`RideMoment` puts it together. It has to be up here. `Truck` is in the ride half of the system and `Mountains` is in the view, and no arrow goes from the first to the second. `RideMoment` imports both.
+
+{{code RideMoment.truck_lights}}
+
+Lamps are to the truck what a pose is to a cat. The sighting carries them, and the drawing does what they say, with each `match` covering both tags:
+
+{{code TruckDraw.draw from "beams =" to "].join()"}}
+
+That's the clock-driven things. Each is a function with a `Clock` in its arguments, and nothing about them outlives the frame.
+
 ## Zooming back out
 
 *[This chapter ties the tour together once the stepped things, the proof and the platform are written. It returns to the flipbook and the first diagram: the clock ticks, and everything composes from three stored fields.]*
