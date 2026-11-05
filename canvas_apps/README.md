@@ -30,6 +30,8 @@ which builds every app and runs it headless.
     KEYS=3:Space DRAG=200,100,200,500 node canvas_apps/web/page_check.mjs pong
     node canvas_apps/web/camera_check.mjs
 
+`ARCHITECTURE.md` says how an app runs, and what isn't Roc.
+
 ## Layout
 
 | | |
