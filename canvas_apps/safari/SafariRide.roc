@@ -1,17 +1,11 @@
-# SafariRide -- the screensaver between frames, and what a frame shows, for
-# any platform that draws it.
-#
-# Hand-written, beside the emitted chapters it calls. It holds what the Codex
-# program cannot -- the ride between frames, a history for stepping back --
-# and says what a frame is in the terms a painter needs: the draw commands
-# after blit expansion, the camera roll, the two sky colours and the sun.
-# SafariApp turns it into a canvas app: the keys, the pause, and the frame
-# leaned by the roll.
+## SafariRide is the screensaver between frames, for any platform that draws
+## it. It keeps the ride and a history for stepping back, and it says what a
+## frame shows in the terms a painter needs: the shapes, the camera roll, the
+## two sky colours and the sun. SafariApp turns it into a canvas app, with the
+## keys, the pause, and the frame leaned by the roll.
 import Angle
 import World
 import Safari
-import Blit
-import Paint
 import Sky
 import Rider
 import CanvasRoll
@@ -19,6 +13,7 @@ import RideFocal
 import ViewYaw
 import Frame
 import Lens
+import lib.Shapes
 
 SafariRide :: [].{
 	Model : {
@@ -77,16 +72,12 @@ SafariRide :: [].{
 		}
 	}
 
-	# The frame's commands in paint order, expanded as the blitter reads them.
-	#
-	# **THE BIRD IS NOT PASTED ON THE END ANY MORE.** It used to be: the frame,
-	# then the Roc flair concatenated after it, which put a bird in front of
-	# every tree nearer than its own. It is collected and sorted with the rest
-	# now -- Render.collect gathers it, DepthSort orders it, ItemDraw draws it.
-	commands : SafariRide.Model -> List(Paint.DrawCmd)
-	commands = |m| Blit.blit_expand(Safari.ride_frame(m.world, m.ride))
+	## The frame's shapes in paint order. A bird is sorted by depth with
+	## everything else, so a nearer tree hides it.
+	shapes : SafariRide.Model -> List(Shapes.Shape)
+	shapes = |m| Safari.ride_frame(m.world, m.ride)
 
-	# The camera roll: the whole frame, backdrop and commands, turns
+	# The camera roll: the whole frame, backdrop and shapes, turns
 	# by minus this about the screen's centre.
 	roll : SafariRide.Model -> Angle.Lean
 	roll = |m| CanvasRoll.rider_roll(m.ride.rider.tilt)

@@ -4,7 +4,6 @@ import Frame
 import GroundPlan
 import ItemDraw
 import Mountains
-import Paint
 import Pose
 import Render
 import RideFocal
@@ -14,6 +13,7 @@ import Sky
 import Truck
 import ViewYaw
 import World
+import lib.Shapes
 
 Safari :: [].{
 	Ride : {
@@ -58,7 +58,7 @@ Safari :: [].{
 		}
 	)
 
-	ride_frame : List(World.Segment), Safari.Ride -> List(Paint.DrawCmd)
+	ride_frame : List(World.Segment), Safari.Ride -> List(Shapes.Shape)
 	ride_frame = |w, r| (
 		{
 			s = r.rider

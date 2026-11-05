@@ -4,6 +4,7 @@
 import Camera
 import Geom
 import Paint
+import lib.Shapes
 
 Ground :: [].{
 
@@ -23,7 +24,7 @@ Ground :: [].{
 		color : I64,
 		cam_focal : F64,
 		view_w : F64,
-	} -> List(Paint.DrawCmd)
+	} -> List(Shapes.Shape)
 	draw = |
 		{
 			corners,

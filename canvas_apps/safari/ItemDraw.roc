@@ -7,7 +7,6 @@ import DepthSort
 import Frame
 import GuardRail
 import Mountains
-import Paint
 import Render
 import SceneLimits
 import Screen
@@ -19,6 +18,7 @@ import TruckDraw
 import TruckPlan
 import RocBird
 import Scenery
+import lib.Shapes
 
 ItemDraw :: [].{
 
@@ -38,7 +38,7 @@ ItemDraw :: [].{
 	round_trunk_limit = 4
 
 	## The scene's things, painted far to near.
-	draw : Render.Scene, ItemDraw.Context -> List(Paint.DrawCmd)
+	draw : Render.Scene, ItemDraw.Context -> List(Shapes.Shape)
 	draw = |scene, context|
 		scene.order.join_map(|depth_key| draw_subject(scene, { context, depth_key }))
 
@@ -62,7 +62,7 @@ ItemDraw :: [].{
 	{
 		trees : List(TreePlan.TreeItem),
 		cam_focal : F64,
-	} -> List(Paint.DrawCmd)
+	} -> List(Shapes.Shape)
 	draw_tree = |tree, { trees, cam_focal }| {
 		nearer_trees = ItemDraw.nearer_tree_count(trees, tree.forward)
 		Tree.draw({
@@ -108,7 +108,7 @@ ItemDraw :: [].{
 	}
 
 	## A mast, its beacon blinking on the ride's clock.
-	draw_tower : ItemDraw.Context, TowerPlan.TowerItem -> List(Paint.DrawCmd)
+	draw_tower : ItemDraw.Context, TowerPlan.TowerItem -> List(Shapes.Shape)
 	draw_tower = |context, tower|
 		Tower.draw({
 			footprint: ItemDraw.tower_footprint(context, tower),
@@ -131,7 +131,7 @@ draw_subject : Render.Scene,
 {
 	context : ItemDraw.Context,
 	depth_key : DepthSort.DepthKey,
-} -> List(Paint.DrawCmd)
+} -> List(Shapes.Shape)
 draw_subject = |scene, { context, depth_key }| {
 	camera = { cam_focal: context.cam_focal, view_w: Screen.width }
 	match depth_key.subject {
@@ -155,7 +155,7 @@ thing_at = |things, place|
 	things.get(place.to_u64())
 		?? crash "ItemDraw.thing_at: the depth order names only places in its lists"
 
-draw_cat : CatPlan.CatItem, { cam_focal : F64, view_w : F64 } -> List(Paint.DrawCmd)
+draw_cat : CatPlan.CatItem, { cam_focal : F64, view_w : F64 } -> List(Shapes.Shape)
 draw_cat = |cat, { cam_focal, view_w }|
 	CatDraw.draw({
 		right: cat.right,
@@ -169,7 +169,7 @@ draw_cat = |cat, { cam_focal, view_w }|
 
 ## The truck, in the middle of its lane, its headlights on once the sun is
 ## behind the mountains.
-draw_truck : ItemDraw.Context, TruckPlan.TruckAt -> List(Paint.DrawCmd)
+draw_truck : ItemDraw.Context, TruckPlan.TruckAt -> List(Shapes.Shape)
 draw_truck = |context, truck_at|
 	match truck_at {
 		Ahead(truck) =>

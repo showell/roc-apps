@@ -5,13 +5,14 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
-import Camera
 import Critter
 import EmojiStills
 import Grade
 import Stills
+import Screen
+import ShapeRead
 
-feet : Camera.ScreenPt
+feet : Screen.Point
 feet = { x: 100.0, y: 200.0 }
 
 ## A still 50 pixels tall, standing on `feet`, as drawn.
@@ -113,16 +114,16 @@ flat_poly = |count| {
 	pts: List.repeat({ x: 0.0, y: 0.0 }, count),
 }
 
-poly_command_count : U64 -> I64
-poly_command_count = |count| Critter.draw_poly(upright, flat_poly(count)).len().to_i64_wrap()
+poly_shape_count : U64 -> I64
+poly_shape_count = |count| Critter.draw_poly(upright, flat_poly(count)).len().to_i64_wrap()
 
 guard_got : List(I64)
 guard_got = [
 	Critter.max_still_points.to_i64_wrap(),
-	poly_command_count(3),
-	poly_command_count(512),
-	poly_command_count(513),
-	poly_command_count(2),
+	poly_shape_count(3),
+	poly_shape_count(512),
+	poly_shape_count(513),
+	poly_shape_count(2),
 ]
 
 guard_want : List(I64)
@@ -130,28 +131,27 @@ guard_want = [512, 1, 1, 0, 0]
 
 solid_got : List(I64)
 solid_got = {
-	command = Critter.draw_poly(
+	shape = Critter.draw_poly(
 		upright,
 		flat_poly(3),
-	).first() ?? crash "CritterSpec: a solid polygon is one command"
+	).first() ?? crash "CritterSpec: a solid polygon is one shape"
 	[
-		command.tag,
-		command.color,
-		command.pts.len().to_i64_wrap(),
+		ShapeRead.flat_color_of(shape),
+		ShapeRead.pts_of(shape).len().to_i64_wrap(),
 	]
 }
 
 solid_want : List(I64)
-solid_want = [0, 7, 6]
+solid_want = [7, 6]
 
-## How many commands draw an elephant of `height` metres, `forward` metres
+## How many shapes draw an elephant of `height` metres, `forward` metres
 ## ahead.
-command_count : {
+shape_count : {
 	forward : F64,
 	height : F64,
 	codepoint : I64,
 } -> I64
-command_count = |
+shape_count = |
 	{
 		forward,
 		height,
@@ -174,22 +174,22 @@ elephant = 128024
 
 size_got : List(I64)
 size_got = [
-	command_count({
+	shape_count({
 		forward: 1000.0,
 		height: 2.0,
 		codepoint: elephant,
 	}),
-	command_count({
+	shape_count({
 		forward: 2000.0,
 		height: 2.0,
 		codepoint: elephant,
 	}),
-	command_count({
+	shape_count({
 		forward: 1000.0,
 		height: 1.9,
 		codepoint: elephant,
 	}),
-	command_count({
+	shape_count({
 		forward: 100.0,
 		height: 2.0,
 		codepoint: elephant,
@@ -202,7 +202,7 @@ size_want = [6, 0, 0, 6]
 unknown_got : List(I64)
 unknown_got = [
 	EmojiStills.emoji_polys_for(1).len().to_i64_wrap(),
-	command_count({
+	shape_count({
 		forward: 100.0,
 		height: 2.0,
 		codepoint: 1,

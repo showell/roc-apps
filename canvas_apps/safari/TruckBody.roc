@@ -3,9 +3,9 @@
 ## farther one.
 import DepthSort
 import Geom
-import Paint
 import lib.Trig
 import TruckShape
+import lib.Shapes
 
 TruckBody :: [].{
 
@@ -22,7 +22,7 @@ TruckBody :: [].{
 	tire_sides = 16
 
 	## The truck's body, its farthest faces painted first.
-	draw : TruckShape.TruckInView -> List(Paint.DrawCmd)
+	draw : TruckShape.TruckInView -> List(Shapes.Shape)
 	draw = |truck|
 		DepthSort.sort_by(faces(truck), |face| face.depth)
 			.join_map(|face| TruckShape.fill(truck, { color: face.color, corners: face.corners }))

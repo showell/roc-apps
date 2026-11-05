@@ -1,13 +1,14 @@
-## ShapesFrame checks that the shapes the browser is given cover exactly what
-## Safari's draw commands cover. Safari's gate runs it (see SafariFrame for
-## more context). It paints a frame twice: once as
-## SafariFrame paints it, and once with the commands replaced by the shapes
-## they become for the browser, painted by ShapesPixels, the Roc twin of
-## web/shapes_canvas.js. Gradients included, the two agree pixel for pixel
-## when the shapes cover exactly what their commands do.
+## ShapesFrame checks that cutting a frame changes nothing on screen. The
+## browser fills a concave polygon itself, but roc-ray fills only convex ones,
+## so the native runner draws what Shapes.cut makes of a frame: each concave
+## polygon as triangles. Safari's gate runs this check (see SafariFrame for
+## more context). It paints a frame twice with ShapesPixels: once as
+## SafariFrame paints it, with its polygons whole, and once with them cut.
+## Gradients included, the two agree pixel for pixel when the triangles cover
+## exactly what their polygons do.
 ##
 ## It prints how many pixels differ, how many triangles cutting the shapes
-## made and how many commands there were, then the shapes' frame in
+## made and how many shapes there were, then the shapes' frame in
 ## RasterFrame's format, which pixels_png.mjs turns into a PNG.
 ##
 ##   roc build --opt=dev ShapesFrame.roc --output=<bin>; <bin> [steps] | node pixels_png.mjs <png>
@@ -20,7 +21,6 @@ import game.SafariRide
 import SafariFrame
 import ShapesPixels
 import lib.Shapes
-import game.SafariShapes
 import game.Screen
 import Hex
 
@@ -50,19 +50,19 @@ main! = |args| {
 			Err(OutOfBounds) => 0
 		}
 	m = ride_to(SafariRide.init, steps)
-	commands = SafariRide.commands(m)
+	ride_shapes = SafariRide.shapes(m)
 	roll = SafariRide.roll(m)
 	scene = {
-		commands,
+		shapes: ride_shapes,
 		roll,
 		sky_top: SafariRide.sky_top(m),
 		sky_horizon: SafariRide.sky_horizon(m),
 		sun: SafariRide.sun(m),
 	}
-	shapes = Shapes.cut(List.join_map(commands, SafariShapes.of_command))
+	cut_shapes = Shapes.cut(ride_shapes)
 	a = SafariFrame.paint(scene)
-	backdrop = SafariFrame.paint({ ..scene, commands: [] })
-	b = ShapesPixels.paint(backdrop, { roll: SafariFrame.screen_roll(roll), shapes })
+	backdrop = SafariFrame.paint({ ..scene, shapes: [] })
+	b = ShapesPixels.paint(backdrop, { roll: SafariFrame.screen_roll(roll), shapes: cut_shapes })
 	n = List.len(a)
 	var $differ = 0
 	var $k = 0
@@ -76,7 +76,7 @@ main! = |args| {
 	}
 	var $out = List.with_capacity(n * 6 + 64)
 	differing = "differ ${U64.to_str($differ)} of ${U64.to_str(n)}"
-	totals = "triangles ${triangles(shapes).to_str()}, commands ${commands.len().to_str()}"
+	totals = "triangles ${triangles(cut_shapes).to_str()}, shapes ${ride_shapes.len().to_str()}"
 	size = "${Screen.width_px.to_str()} ${Screen.height_px.to_str()}"
 	$out = List.concat($out, Str.to_utf8("${differing}, ${totals}\nhash 00000000\n${size}\n"))
 	$k = 0

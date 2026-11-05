@@ -11,6 +11,7 @@ import Paint
 import Screen
 import Sky
 import lib.Trig
+import lib.Shapes
 
 Mountains :: [].{
 
@@ -151,7 +152,7 @@ Mountains :: [].{
 		dusk : F64,
 		cam_focal : F64,
 		view_w : F64,
-	} -> List(Paint.DrawCmd)
+	} -> List(Shapes.Shape)
 	draw = |
 		{
 			heading,
@@ -265,7 +266,7 @@ silhouette : Mountains.Sight,
 {
 	height_at : Angle.Bearing -> F64,
 	color : I64,
-} -> List(Paint.DrawCmd)
+} -> List(Shapes.Shape)
 silhouette = |sight, { height_at, color }| {
 	left = (0.0 - Mountains.roll_margin)
 	right = (sight.view_w + Mountains.roll_margin)
@@ -280,7 +281,7 @@ silhouette = |sight, { height_at, color }| {
 
 ## The north range's snow: along its crest where the range is above the
 ## snowline, then back along the snowline.
-snow : Mountains.Sight, I64 -> List(Paint.DrawCmd)
+snow : Mountains.Sight, I64 -> List(Shapes.Shape)
 snow = |sight, color| {
 	snowy = columns({ from: 0.0, to: sight.view_w }).keep_if(
 		|x| {

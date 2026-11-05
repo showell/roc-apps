@@ -2,7 +2,7 @@ cd-pt     ok 6
 cd-lift   ok 5
 cd-pts    ok 5
 cd-guard  ok 5
-cd-solid  ok 5
+cd-solid  ok 2
 cd-polys  ok 3
 cd-size   ok 3
 cd-count  ok 3

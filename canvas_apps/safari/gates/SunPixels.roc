@@ -1,7 +1,7 @@
 ## SunPixels paints Safari's sun into a frame's pixels for SafariFrame (see
 ## SafariFrame for more context). It paints the sun's glow and then its disc, as SafariShapes
 ## describes them, and clips both to the sky. The frame paints the sun before
-## the draw commands, so the mountains can hide it.
+## the ride's shapes, so the mountains can hide it.
 import lib.Brush
 import PixelGrid
 import game.SafariShapes

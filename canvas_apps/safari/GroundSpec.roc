@@ -7,7 +7,8 @@ app [main!] {
 import Geom
 import Grade
 import Ground
-import Paint
+import ShapeRead
+import lib.Shapes
 
 points : List(Geom.RiderPoint)
 points = [
@@ -74,8 +75,8 @@ corners_ahead = |count|
 		},
 	)
 
-patch_commands : List(Geom.RiderPoint) -> List(Paint.DrawCmd)
-patch_commands = |corners| Ground.draw({
+patch_shapes : List(Geom.RiderPoint) -> List(Shapes.Shape)
+patch_shapes = |corners| Ground.draw({
 	corners,
 	color: 3112588,
 	cam_focal: 685.5110432362151,
@@ -84,30 +85,27 @@ patch_commands = |corners| Ground.draw({
 
 count_got : List(I64)
 count_got = [
-	patch_commands(quad).len().to_i64_wrap(),
-	patch_commands(corners_ahead(8)).len().to_i64_wrap(),
-	patch_commands(corners_ahead(9)).len().to_i64_wrap(),
-	patch_commands(behind).len().to_i64_wrap(),
-	patch_commands(two_points).len().to_i64_wrap(),
+	patch_shapes(quad).len().to_i64_wrap(),
+	patch_shapes(corners_ahead(8)).len().to_i64_wrap(),
+	patch_shapes(corners_ahead(9)).len().to_i64_wrap(),
+	patch_shapes(behind).len().to_i64_wrap(),
+	patch_shapes(two_points).len().to_i64_wrap(),
 ]
 
 count_want : List(I64)
 count_want = [1, 1, 0, 0, 0]
 
-cmd_got : List(I64)
-cmd_got = {
-	cmd = patch_commands(quad).first() ?? crash "GroundSpec: the quad draws one command"
+shape_got : List(I64)
+shape_got = {
+	shape = patch_shapes(quad).first() ?? crash "GroundSpec: the quad draws one shape"
 	[
-		cmd.tag,
-		cmd.color,
-		cmd.color2,
-		cmd.pts.len().to_i64_wrap(),
-		cmd.geom.len().to_i64_wrap(),
+		ShapeRead.flat_color_of(shape),
+		ShapeRead.pts_of(shape).len().to_i64_wrap(),
 	]
 }
 
-cmd_want : List(I64)
-cmd_want = [0, 3112588, 0, 8, 0]
+shape_want : List(I64)
+shape_want = [3112588, 8]
 
 main! = |_args| {
 	verdicts = [
@@ -129,9 +127,9 @@ main! = |_args| {
 			want: count_want,
 		}),
 		Grade.ints({
-			name: "gr-cmd   ",
-			got: cmd_got,
-			want: cmd_want,
+			name: "gr-shape ",
+			got: shape_got,
+			want: shape_want,
 		}),
 	]
 	for verdict in verdicts {

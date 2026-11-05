@@ -53,7 +53,7 @@ main! = |args| {
 		}
 	m = ride_to(SafariRide.init, steps)
 	pixels = SafariFrame.paint({
-		commands: SafariRide.commands(m),
+		shapes: SafariRide.shapes(m),
 		roll: SafariRide.roll(m),
 		sky_top: SafariRide.sky_top(m),
 		sky_horizon: SafariRide.sky_horizon(m),

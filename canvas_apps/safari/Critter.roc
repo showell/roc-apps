@@ -8,6 +8,8 @@ import Camera
 import EmojiStills
 import Paint
 import Stills
+import Screen
+import lib.Shapes
 
 Critter :: [].{
 
@@ -18,7 +20,7 @@ Critter :: [].{
 	## Where a still stands on screen: its feet, which way it is drawn, and
 	## its height in pixels.
 	Anchor : {
-		feet : Camera.ScreenPt,
+		feet : Screen.Point,
 		flip : Critter.Flip,
 		height_px : F64,
 	}
@@ -36,24 +38,24 @@ Critter :: [].{
 		}
 
 	## Where a point of the still lands on screen.
-	screen_point : Critter.Anchor, Stills.StillPt -> Camera.ScreenPt
+	screen_point : Critter.Anchor, Stills.StillPt -> Screen.Point
 	screen_point = |anchor, point| {
 		x: (anchor.feet.x + ((x_sign(anchor.flip) * point.x) * anchor.height_px)),
 		y: (anchor.feet.y - (point.y * anchor.height_px)),
 	}
 
 	## How far, and which way, a step in the still goes on screen.
-	screen_vector : Critter.Anchor, Stills.StillPt -> Camera.ScreenPt
+	screen_vector : Critter.Anchor, Stills.StillPt -> Screen.Point
 	screen_vector = |anchor, step| {
 		x: ((x_sign(anchor.flip) * step.x) * anchor.height_px),
 		y: (0.0 - (step.y * anchor.height_px)),
 	}
 
-	screen_points : Critter.Anchor, List(Stills.StillPt) -> List(Camera.ScreenPt)
+	screen_points : Critter.Anchor, List(Stills.StillPt) -> List(Screen.Point)
 	screen_points = |anchor, points| points.map(|point| Critter.screen_point(anchor, point))
 
 	## One polygon of a still, filled with its colour or its gradient.
-	draw_poly : Critter.Anchor, Stills.StillPoly -> List(Paint.DrawCmd)
+	draw_poly : Critter.Anchor, Stills.StillPoly -> List(Shapes.Shape)
 	draw_poly = |anchor, poly|
 		if poly.pts.len() > max_still_points {
 			[]
@@ -66,12 +68,12 @@ Critter :: [].{
 		}
 
 	## A whole still, its polygons in order.
-	draw_still : Critter.Anchor, List(Stills.StillPoly) -> List(Paint.DrawCmd)
+	draw_still : Critter.Anchor, List(Stills.StillPoly) -> List(Shapes.Shape)
 	draw_still = |anchor, polys| polys.join_map(|poly| Critter.draw_poly(anchor, poly))
 
 	## A critter in view. An emoji faces left, so a critter facing right is
 	## its still mirrored. A critter less than a pixel tall isn't drawn.
-	draw : Billboards.Billboard, { cam_focal : F64, view_w : F64 } -> List(Paint.DrawCmd)
+	draw : Billboards.Billboard, { cam_focal : F64, view_w : F64 } -> List(Shapes.Shape)
 	draw = |critter, { cam_focal, view_w }| {
 		on_screen = |height| Camera.project(
 			{
@@ -119,8 +121,8 @@ stops_of = |gradient| {
 draw_gradient_poly : Critter.Anchor,
 {
 	gradient : Stills.StillGrad,
-	points : List(Camera.ScreenPt),
-} -> List(Paint.DrawCmd)
+	points : List(Screen.Point),
+} -> List(Shapes.Shape)
 draw_gradient_poly = |anchor, { gradient, points }|
 	match gradient_shape(gradient) {
 		Linear => {

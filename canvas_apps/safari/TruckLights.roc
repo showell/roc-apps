@@ -9,11 +9,13 @@ import Geom
 import Paint
 import lib.Trig
 import TruckShape
+import Screen
+import lib.Shapes
 
 TruckLights :: [].{
 
 	## The two headlight beams, each a little in from its side.
-	headlight_beams : TruckShape.TruckInView -> List(Paint.DrawCmd)
+	headlight_beams : TruckShape.TruckInView -> List(Shapes.Shape)
 	headlight_beams = |truck|
 		List.concat(
 			beam(truck, (truck.box.left + headlight_inset)),
@@ -21,7 +23,7 @@ TruckLights :: [].{
 		)
 
 	## The two brake lights, one in from each side of the trailer's back.
-	brake_lights : TruckShape.TruckInView -> List(Paint.DrawCmd)
+	brake_lights : TruckShape.TruckInView -> List(Shapes.Shape)
 	brake_lights = |truck| {
 		box = truck.box
 		List.concat(
@@ -59,7 +61,7 @@ TruckLights :: [].{
 	}
 
 	## The distance between two points on screen.
-	distance : { from : Camera.ScreenPt, to : Camera.ScreenPt } -> F64
+	distance : { from : Screen.Point, to : Screen.Point } -> F64
 	distance = |{ from, to }| {
 		dx = (from.x - to.x)
 		dy = (from.y - to.y)
@@ -67,7 +69,7 @@ TruckLights :: [].{
 	}
 
 	## How far the farthest of `points` is from `center`.
-	farthest_from : List(Camera.ScreenPt), Camera.ScreenPt -> F64
+	farthest_from : List(Screen.Point), Screen.Point -> F64
 	farthest_from = |points, center|
 		points.fold_rev(
 			0.0,
@@ -80,7 +82,7 @@ TruckLights :: [].{
 	## The center of a polygon on screen: the mean of its corners. Each sum
 	## runs from the last corner to the first; a float sum's rounding depends
 	## on its order, and another order can move a pixel.
-	center_of : List(Camera.ScreenPt) -> Camera.ScreenPt
+	center_of : List(Screen.Point) -> Screen.Point
 	center_of = |corners| {
 		count = corners.len().to_f64()
 		{
@@ -91,11 +93,11 @@ TruckLights :: [].{
 
 	## How far a brake light's glow reaches from `center`, the lamp's
 	## center.
-	glow_radius : List(Camera.ScreenPt), Camera.ScreenPt -> F64
+	glow_radius : List(Screen.Point), Screen.Point -> F64
 	glow_radius = |lamp, center| (TruckLights.farthest_from(lamp, center) * glow_reach)
 
 	## A circle round `center`, as a polygon of `glow_sides` corners.
-	glow_outline : { center : Camera.ScreenPt, radius : F64 } -> List(Camera.ScreenPt)
+	glow_outline : { center : Screen.Point, radius : F64 } -> List(Screen.Point)
 	glow_outline = |{ center, radius }|
 		TruckShape.circle_angles(TruckLights.glow_sides).map(
 			|angle| {
@@ -169,7 +171,7 @@ glow_reach = 3.2
 
 ## The beam of the headlight at `across`, brightest at the lamp. A beam
 ## with a corner behind the camera is not drawn.
-beam : TruckShape.TruckInView, F64 -> List(Paint.DrawCmd)
+beam : TruckShape.TruckInView, F64 -> List(Shapes.Shape)
 beam = |truck, across| {
 	at_lamp = |height| TruckShape.point(
 		truck,
@@ -222,7 +224,7 @@ beam = |truck, across| {
 
 ## A brake light on the back of the trailer, from `left` to `right` across
 ## it: its glow, then the lamp over the glow.
-brake_light : TruckShape.TruckInView, { left : F64, right : F64 } -> List(Paint.DrawCmd)
+brake_light : TruckShape.TruckInView, { left : F64, right : F64 } -> List(Shapes.Shape)
 brake_light = |truck, { left, right }| {
 	rear = truck.box.rear
 	lamp =
@@ -253,7 +255,7 @@ brake_light = |truck, { left, right }| {
 
 ## The glow round a brake lamp. A lamp with a corner behind the camera has
 ## no glow; the lamp itself is cut at the near plane like the body's faces.
-glow : TruckShape.TruckInView, List(Geom.SpacePoint) -> List(Paint.DrawCmd)
+glow : TruckShape.TruckInView, List(Geom.SpacePoint) -> List(Shapes.Shape)
 glow = |truck, lamp|
 	if TruckLights.has_point_behind_camera(lamp) {
 		[]

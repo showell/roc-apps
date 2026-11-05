@@ -8,6 +8,7 @@ import Angle
 import Geom
 import Grade
 import Tower
+import ShapeRead
 
 dims_got : List(F64)
 dims_got = [
@@ -210,15 +211,15 @@ lerp_want : List(F64)
 lerp_want = [2.0, 15.0, 15.0]
 
 bar_got : List(F64)
-bar_got = (
+bar_got = ShapeRead.pts_of(
 	List.first(
 		Tower.screen_rod({
 			from: { x: 0.0, y: 0.0 },
 			to: { x: 30.0, y: 40.0 },
 			width_px: 10.0,
 		}),
-	) ?? crash "TowerSpec: a rod is one quad"
-).pts
+	) ?? crash "TowerSpec: a rod is one quad",
+)
 
 bar_want : List(F64)
 bar_want = [
@@ -242,7 +243,7 @@ degenerate_got = (
 		})
 		List.concat(
 			[I64.to_f64(d.len().to_i64_wrap())],
-			(List.first(d) ?? crash "TowerSpec: a rod is one quad").pts,
+			ShapeRead.pts_of(List.first(d) ?? crash "TowerSpec: a rod is one quad"),
 		)
 	}
 )
