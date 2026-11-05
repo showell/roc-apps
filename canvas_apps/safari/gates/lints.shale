@@ -6,7 +6,7 @@
 --
 --   cd <roc-apps checkout> && shale canvas_apps/safari/gates/lints.shale
 --
--- It takes about ten seconds, and run.shale runs it first.
+-- It takes a minute or two, and run.shale runs it first.
 
 const SAFARI = "canvas_apps/safari"
 
@@ -28,6 +28,10 @@ const LINTS = {
   -- BirdStills, CatStills and EmojiStills are drawing data: tables of points
   -- that read better side by side than one number to a line.
   {recipe = "stack", args = {"skip=BirdStills.roc,CatStills.roc,EmojiStills.roc"}, budget = {"--budget", "steps=4000000000"}, counts = {{"to stack", 0}, {"long", 0}}},
+  {recipe = "vocabulary", args = {"words=vocabulary.txt"}, budget = {}, counts = {{"retired_name", 174}, {"retired_comment", 47}}},
+  {recipe = "name_types", args = {"table=name_types.txt"}, budget = {}, counts = {{"name_type", 16}, {"bare_beside_unit", 55}, {"no_value", 2}}},
+  {recipe = "families", args = {}, budget = {}, counts = {{"family", 5}, {"twin_name", 9}}},
+  {recipe = "plain_names", args = {}, budget = {}, counts = {{"pure_mutator", 11}, {"abbreviation", 55}, {"module_doc", 14}}},
 }
 
 -- The number a summary line gives for `check`: "check N", or "N check" for

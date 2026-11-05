@@ -1,0 +1,5 @@
+dist: Distance
+steps: Steps
+fraction: Fraction
+frames: none
+count: U8, U16, U32, U64, I32, I64

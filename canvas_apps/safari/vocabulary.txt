@@ -1,0 +1,4 @@
+lean: tilt
+tower: mast
+tour: drive, journey
+step: tick
