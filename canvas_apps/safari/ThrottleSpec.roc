@@ -193,7 +193,7 @@ cat_seg = World.route_segment(3)
 
 cat_got : List(F64)
 cat_got = [
-	Throttle.cat_gate(
+	Throttle.crossing_gate(
 		rider({
 			along: 0.0,
 			speed: Speed.metres_a_step(0.3),
@@ -204,7 +204,7 @@ cat_got = [
 			offered_accel: Acceleration.metres_a_step_each_step(0.01),
 		},
 	),
-	Throttle.cat_gate(
+	Throttle.crossing_gate(
 		rider({
 			along: 0.0,
 			speed: Speed.metres_a_step(0.3),
@@ -215,7 +215,7 @@ cat_got = [
 			offered_accel: Acceleration.metres_a_step_each_step(0.0 - 5.0),
 		},
 	),
-	Throttle.cat_gate(
+	Throttle.crossing_gate(
 		rider({
 			along: 120.0,
 			speed: Speed.metres_a_step(0.3),
@@ -226,7 +226,7 @@ cat_got = [
 			offered_accel: Acceleration.metres_a_step_each_step(0.01),
 		},
 	),
-	Throttle.cat_gate(
+	Throttle.crossing_gate(
 		rider({
 			along: 120.0,
 			speed: Speed.metres_a_step(0.3),
@@ -237,7 +237,7 @@ cat_got = [
 			offered_accel: Acceleration.metres_a_step_each_step(0.0 - 5.0),
 		},
 	),
-	Throttle.cat_gate(
+	Throttle.crossing_gate(
 		rider({
 			along: 0.0,
 			speed: Speed.metres_a_step(0.3),

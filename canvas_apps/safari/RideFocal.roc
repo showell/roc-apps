@@ -1,8 +1,8 @@
 ## The lens the ride is seen through. The view widens as the rider leans,
-## and as the rider's attention is caught, by a cat waiting ahead or by a
+## and as the rider's attention is caught, by a crossing on the road or by a
 ## look to the side.
 import Bike
-import Cat
+import CrossingReaction
 import lib.DeviceMath
 import Gaze
 import Lens
@@ -11,19 +11,10 @@ import World
 
 RideFocal :: [].{
 
-	## How strongly a cat waiting on the rider's segment holds the rider's
-	## attention; none where no cat waits.
-	cat_attention : List(World.Segment), Pose.RiderState -> F64
-	cat_attention = |world, rider| {
-		segment = rider.segment.segment_in(world)
-		match segment.crossing {
-			CatCrosses(crossing) => Cat.focus({
-				gap: (crossing.along - rider.along),
-				speed: rider.speed,
-			})
-			BirdFlies(_) | QuietRoad => 0.0
-		}
-	}
+	## How strongly the crossing on the rider's segment holds their attention.
+	crossing_attention : List(World.Segment), Pose.RiderState -> F64
+	crossing_attention = |world, rider|
+		CrossingReaction.reaction_to(rider.segment.segment_in(world), rider).eye_pull
 
 	## The camera's focal length for where the rider is and how they ride.
 	ride_focal : List(World.Segment), Pose.RiderState -> F64
@@ -32,7 +23,10 @@ RideFocal :: [].{
 			(DeviceMath.real_abs(rider.tilt.to_radians()) / Bike.max_lean.to_radians()),
 			1.0,
 		)
-		attention = DeviceMath.real_max(cat_attention(world, rider), Gaze.gaze_focus(rider.focus))
+		attention = DeviceMath.real_max(
+			crossing_attention(world, rider),
+			Gaze.gaze_focus(rider.focus),
+		)
 		Lens.cam_focal({ lean_frac, attention })
 	}
 }

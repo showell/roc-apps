@@ -69,7 +69,7 @@ has_cat_want = [False, True]
 idle_got : List(F64)
 idle_got = [
 	(RideFocal.ride_focal(segs, upright) - Lens.focal),
-	RideFocal.cat_attention(segs, upright),
+	RideFocal.crossing_attention(segs, upright),
 	Gaze.gaze_focus(0.0),
 	(Lens.cam_focal({ lean_frac: 0.0, attention: 0.0 }) - Lens.focal),
 ]
@@ -103,9 +103,14 @@ clamp_want = [0.0, 0.0, 0.0]
 
 cat_got : List(Bool)
 cat_got = [
-	(RideFocal.cat_attention(segs, near_cat_on(1)) > 0.0),
-	(RideFocal.cat_attention(segs, { ..upright, segment: World.SegmentIndex.number(1) }) > 0.0),
-	(RideFocal.cat_attention(segs, near_cat_on(0)) > 0.0),
+	(RideFocal.crossing_attention(segs, near_cat_on(1)) > 0.0),
+	(
+		RideFocal.crossing_attention(
+			segs,
+			{ ..upright, segment: World.SegmentIndex.number(1) },
+		) > 0.0
+	),
+	(RideFocal.crossing_attention(segs, near_cat_on(0)) > 0.0),
 	(RideFocal.ride_focal(segs, near_cat_on(1)) < RideFocal.ride_focal(segs, near_cat_on(0))),
 ]
 

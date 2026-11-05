@@ -3,7 +3,7 @@
 import Acceleration
 import Angle
 import Arc
-import Cat
+import CrossingReaction
 import lib.DeviceMath
 import Gaze
 import Num_
@@ -52,29 +52,17 @@ Throttle :: [].{
 		}
 	)
 
-	cat_gate : Pose.RiderState,
+	## The acceleration `a`, held at steady while the segment's crossing holds
+	## the throttle. It stops the rider speeding up, and never brakes.
+	crossing_gate : Pose.RiderState,
 	{
 		road_segment : World.Segment,
 		offered_accel : Acceleration,
 	} -> Acceleration
-	cat_gate = |state, { road_segment: seg, offered_accel: a }|
-		match seg.crossing {
-			CatCrosses(crossing) =>
-				if a > Acceleration.steady {
-					(
-						if Cat.is_in_danger({
-							gap: (crossing.along - state.along),
-							speed: state.speed,
-						}) {
-							Acceleration.steady
-						} else {
-							a
-						}
-					)
-				} else {
-					a
-				}
-			BirdFlies(_) | QuietRoad => a
+	crossing_gate = |state, { road_segment: seg, offered_accel: a }|
+		match CrossingReaction.reaction_to(seg, state).throttle {
+			Held if a > Acceleration.steady => Acceleration.steady
+			Held | Free => a
 		}
 
 	pig_gate : Pose.RiderState,
@@ -241,7 +229,7 @@ Throttle :: [].{
 					a0
 				}
 			)
-			a2 = cat_gate(state, { road_segment: seg, offered_accel: a1 })
+			a2 = crossing_gate(state, { road_segment: seg, offered_accel: a1 })
 			a3 = pig_gate(state, { road_segment: seg, offered_accel: a2 })
 			a4 = shoulder_brake(state, a3)
 			(
