@@ -76,6 +76,10 @@ the shot is missing:
 
 Copy an existing app's `main.roc` and `web.roc`; they differ from each other
 only in their platform, the runner they hand the value to, and one comment.
+A tutorial widget lives only on a page, so it has no `main.roc`: `build.sh`
+never reads one, `web.roc` is its one app root, and `native.sh` says there is
+no app. Roc finds a module's packages by walking up to a `main.roc`, so checking
+one of its modules alone takes `roc check --main=web.roc <Module>.roc`.
 
 The page's own part is one object, before the script tags:
 

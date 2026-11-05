@@ -1,5 +1,4 @@
-# The beacons' widget, as a page: the wasm module a browser runs. main.roc beside
-# it is the same app on roc-ray.
+# The beacons' widget, as a page: the wasm module a browser runs.
 app [Model, program] {
 	game: "../safari/game.roc",
 	lib: "../lib/main.roc",
