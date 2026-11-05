@@ -85,35 +85,20 @@ danger_want : List(Bool)
 danger_want = [True, False, False, False, False, True]
 
 t_got : List(F64)
-t_got = List.join([
-	[
-		coming(41.0, 1.0),
-		coming(22.0, 1.0),
-		coming(3.0, 1.0),
-		coming(2.0, 1.0),
-		coming(100.0, 1.0),
-		coming(41.0, 0.0),
-	].map(Cat.crossing_progress),
-	[
-		(0.0 - 0.5),
-		0.25,
-		1.5,
-	].map(Cat.clamp01),
-	[0.25, 0.0, 1.0].map(
-		|fraction| Cat.lerp({
-			from: 2.0,
-			to: 6.0,
-			fraction,
-		}),
-	),
-])
+t_got = [
+	coming(41.0, 1.0),
+	coming(22.0, 1.0),
+	coming(3.0, 1.0),
+	coming(2.0, 1.0),
+	coming(100.0, 1.0),
+	coming(41.0, 0.0),
+].map(Cat.crossing_progress)
 
 t_want : List(F64)
-t_want = [0.0, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.25, 1.0, 3.0, 2.0, 6.0]
+t_want = [0.0, 0.5, 1.0, 1.0, 0.0, 0.0]
 
 focus_got : List(F64)
 focus_got = List.join([
-	[0.0, 0.5, 1.0].map(Cat.smoothstep),
 	[
 		coming(41.0, 1.0),
 		coming(22.0, 1.0),
@@ -130,7 +115,7 @@ turns : F64, F64 -> F64
 turns = |progress, steps| (Cat.stride_angle({ progress, steps }) / Trig.two_pi)
 
 focus_want : List(F64)
-focus_want = [0.0, 0.5, 1.0, 0.0, 0.9, 1.8, 0.9, 0.0, 0.0, 1.8, 83.0]
+focus_want = [0.0, 0.9, 1.8, 0.9, 0.0, 0.0, 1.8, 83.0]
 
 cycles_got : List(F64)
 cycles_got = [

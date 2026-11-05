@@ -3,6 +3,7 @@
 ## road once the pig is behind.
 import Angle
 import lib.DeviceMath
+import Easing
 import Pigs
 import Pose
 import Scenery
@@ -43,11 +44,8 @@ Gaze :: [].{
 	eyes_on_road_yaw : Angle.Turn
 	eyes_on_road_yaw = Angle.Turn.degrees(6.0)
 
-	smoothstep : F64 -> F64
-	smoothstep = |t| ((t * t) * (3.0 - (2.0 * t)))
-
 	gaze_focus : F64 -> F64
-	gaze_focus = |f| smoothstep(f)
+	gaze_focus = |f| Easing.smoothstep(f)
 
 	no_look : Gaze.PigLook
 	no_look = { looking: False, dist: 0.0 }

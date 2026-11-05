@@ -3,7 +3,7 @@
 ## next tree on the far side, and perches there. Where it is depends only on
 ## how far the rider is from the tree it left, as the cat's crossing does, so
 ## stepping back through a ride shows the same bird.
-import Cat
+import Easing
 import lib.Trig
 import Scenery
 
@@ -75,7 +75,7 @@ BirdFlight :: [].{
 	## How far through its flight the bird is, from 0 to 1, with the rider
 	## `gap` metres from the tree it left.
 	flight_progress : F64 -> F64
-	flight_progress = |gap| Cat.clamp01((takeoff_gap - gap) / (takeoff_gap - landing_gap))
+	flight_progress = |gap| Easing.clamp01((takeoff_gap - gap) / (takeoff_gap - landing_gap))
 
 	## The bird with the rider `gap` metres from the tree it left.
 	state : BirdFlight.Flight, F64 -> BirdFlight.BirdState
@@ -125,7 +125,7 @@ perch_on = |tree| {
 ## The bird `progress` of the way along a smooth path that rises in the middle.
 flying : BirdFlight.Flight, F64 -> BirdFlight.BirdState
 flying = |{ from, to }, progress| {
-	eased = Cat.smoothstep(progress)
+	eased = Easing.smoothstep(progress)
 	between = |start, end| start + (end - start) * eased
 	arc = BirdFlight.flight_arc * 4.0 * progress * (1.0 - progress)
 	{

@@ -6,6 +6,7 @@
 ## rider is `road_buffer` metres from it. The rider's eye is drawn to it while
 ## it crosses, and lets it go after.
 import lib.DeviceMath
+import Easing
 import Num_
 import lib.Trig
 
@@ -119,29 +120,6 @@ Cat :: [].{
 		gap_left > 0.0 and gap_left <= (cross_frames * speed)
 	}
 
-	clamp01 : F64 -> F64
-	clamp01 = |x|
-		if x < 0.0 {
-			0.0
-		} else if x > 1.0 {
-			1.0
-		} else {
-			x
-		}
-
-	lerp : {
-		from : F64,
-		to : F64,
-		fraction : F64,
-	} -> F64
-	lerp = |
-		{
-			from,
-			to,
-			fraction,
-		},
-	| (from + ((to - from) * fraction))
-
 	## How far through its crossing the cat is, from 0 to 1. A cat the rider
 	## has reached is across; for a rider standing still, a cat ahead hasn't
 	## started.
@@ -153,7 +131,7 @@ Cat :: [].{
 		} else if speed <= standstill {
 			0.0
 		} else {
-			clamp01((1.0 - (gap_left / (cross_frames * speed))))
+			Easing.clamp01((1.0 - (gap_left / (cross_frames * speed))))
 		}
 	}
 
@@ -165,9 +143,6 @@ Cat :: [].{
 	focus_ramp_down : F64
 	focus_ramp_down = 83.0
 
-	smoothstep : F64 -> F64
-	smoothstep = |t| ((t * t) * (3.0 - (2.0 * t)))
-
 	## How hard the cat holds the rider's eye: rising as it crosses, then
 	## fading once the rider is past.
 	focus : Cat.Approach -> F64
@@ -176,10 +151,10 @@ Cat :: [].{
 		if approach.speed <= standstill {
 			0.0
 		} else if gap_left > 0.0 {
-			(smoothstep(crossing_progress(approach)) * focus_peak)
+			(Easing.smoothstep(crossing_progress(approach)) * focus_peak)
 		} else {
 			steps_past = (((0.0 - gap_left) / approach.speed) / focus_ramp_down)
-			((1.0 - smoothstep(DeviceMath.real_min(steps_past, 1.0))) * focus_peak)
+			((1.0 - Easing.smoothstep(DeviceMath.real_min(steps_past, 1.0))) * focus_peak)
 		}
 	}
 
@@ -259,7 +234,7 @@ Cat :: [].{
 					}),
 				) > 0.0
 			) Stride else Rest,
-			across: lerp({
+			across: Easing.lerp({
 				from: cat.start_across,
 				to: cat.mid_across,
 				fraction: progress,
@@ -297,7 +272,7 @@ escaping = |cat, step| {
 airborne : Cat.Crossing, { pose : Cat.Pose, flown : F64 } -> Cat.CatState
 airborne = |cat, { pose, flown }| {
 	pose,
-	across: Cat.lerp({
+	across: Easing.lerp({
 		from: cat.mid_across,
 		to: cat.end_across,
 		fraction: Cat.three_quarter_power(flown),
