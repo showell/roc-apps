@@ -187,3 +187,116 @@ herd_pig = |herd_along, { row, column }| {
 pig_row : Along, { across : Across, offsets : List(Distance) } -> List(Scenery.Critter)
 pig_row = |herd_along, { across, offsets }|
 	offsets.map(|offset| pig({ along: herd_along.plus(offset), across }))
+
+eye_catcher : Scenery.Critter
+eye_catcher = Pigs.gaze_pig(Distance.metres(1000.0))
+
+expect eye_catcher.along.to_metres() == 942.0
+expect eye_catcher.across.to_metres() == 12.0
+expect eye_catcher.height.to_metres() == 1.1
+expect Pigs.pig_height.to_metres() == 1.1
+expect Pigs.pig_dist_before_end.to_metres() == 60.0
+expect Pigs.gaze_pig_along_offset.to_metres() == 2.0
+expect eye_catcher.codepoint == 128022
+expect Pigs.pig_codepoint == 128022
+expect Pigs.pig_novelty_count.to_i64() == 2
+expect Pigs.big_herd_cols == 7
+expect Pigs.big_herd_rows == 7
+expect !eye_catcher.face_right
+
+big_herd : List(Scenery.Critter)
+big_herd = Pigs.fill_pig_herd(Distance.metres(1000.0))
+
+herd_pig_at : U64 -> Scenery.Critter
+herd_pig_at = |i| big_herd.get(i) ?? crash "Pigs: the big herd has 49 pigs"
+
+expect big_herd.len() == 49
+expect Pigs.fill_pig_herd(Distance.metres(500.0)).len() == 49
+expect herd_pig_at(0).codepoint == 128022
+expect herd_pig_at(48).codepoint == 128022
+
+# Rows 0, 3 and 6 along the road, each pig within the jitter of its place.
+expect
+	[
+		(0, 934.0),
+		(1, 938.0),
+		(2, 942.0),
+		(3, 946.0),
+		(4, 950.0),
+		(5, 954.0),
+		(6, 958.0),
+		(21, 952.0),
+		(22, 956.0),
+		(23, 960.0),
+		(24, 964.0),
+		(25, 968.0),
+		(26, 972.0),
+		(27, 976.0),
+		(42, 970.0),
+		(43, 974.0),
+		(44, 978.0),
+		(45, 982.0),
+		(46, 986.0),
+		(47, 990.0),
+		(48, 994.0),
+	].all(|(i, along)| (herd_pig_at(i).along.to_metres() - along).abs() <= 1.2)
+
+expect
+	[
+		(0, 12.0),
+		(6, 12.0),
+		(7, 18.0),
+		(13, 18.0),
+		(14, 24.0),
+		(21, 30.0),
+		(28, 36.0),
+		(35, 42.0),
+		(42, 48.0),
+		(48, 48.0),
+	].all(|(i, across)| (herd_pig_at(i).across.to_metres() - across).abs() <= 1.0)
+
+two_rows : List(Scenery.Critter)
+two_rows = Pigs.fill_pig_row(Distance.metres(1000.0))
+
+expect two_rows.len() == 10
+expect Pigs.pig_row_front.len() == 4
+expect Pigs.pig_row_back.len() == 6
+
+expect
+	two_rows.map(|critter| critter.along.to_metres())
+		== [
+			934.0,
+			938.0,
+			942.0,
+			946.0,
+			930.0,
+			934.0,
+			938.0,
+			942.0,
+			946.0,
+			950.0,
+		]
+
+expect
+	two_rows.map(|critter| critter.across.to_metres())
+		== [
+			12.0,
+			12.0,
+			12.0,
+			12.0,
+			18.0,
+			18.0,
+			18.0,
+			18.0,
+			18.0,
+			18.0,
+		]
+
+expect Pigs.pig_row_front.map(Distance.to_metres) == [-6.0, -2.0, 2.0, 6.0]
+expect Pigs.pig_row_back.map(Distance.to_metres) == [-10.0, -6.0, -2.0, 2.0, 6.0, 10.0]
+expect Pigs.pig_back_row_offset.to_metres() == 6.0
+expect Pigs.pig_herd_first_col.to_metres() == -6.0
+expect Pigs.pig_col_spacing.to_metres() == 4.0
+expect Pigs.pig_row_depth.to_metres() == 6.0
+expect Pigs.pig_jitter_along.to_metres() == 1.2
+expect Pigs.pig_jitter_across.to_metres() == 1.0

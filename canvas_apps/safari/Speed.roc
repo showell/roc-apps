@@ -70,3 +70,9 @@ Speed :: F64.{
 
 	is_eq : _
 }
+
+expect Speed.metres_a_step(2.0).distance_in(Beats.of(38.0)).to_metres() == 76.0
+expect Speed.at_rest.distance_in(Beats.of(38.0)).to_metres() == 0.0
+expect Speed.metres_a_step(2.0).beats_to_cover(Distance.metres(5.0)).to_f64() == 2.5
+expect Speed.metres_a_step(0.5).beats_to_cover(Distance.metres(5.0)).to_f64() == 10.0
+expect Speed.metres_a_step(0.5).step_length().to_metres() == 0.5

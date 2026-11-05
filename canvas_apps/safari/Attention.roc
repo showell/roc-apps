@@ -32,3 +32,10 @@ Attention :: F64.{
 
 	is_eq : _
 }
+
+expect Attention.none.to_f64() == 0.0
+expect Attention.of(1.8).to_f64() == 1.8
+expect Attention.from_fraction(Fraction.of(0.5)).to_f64() == 0.5
+expect Attention.of(1.8).portion(Fraction.of(0.5)).to_f64() == 0.9
+expect Attention.of(0.3).max(Attention.of(1.4)).to_f64() == 1.4
+expect Attention.of(1.4).max(Attention.of(0.3)).to_f64() == 1.4

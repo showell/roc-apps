@@ -72,3 +72,35 @@ VehicleLimits :: [].{
 		}
 	)
 }
+
+expect VehicleLimits.a_accel.to_metres_a_step_each_step() == 0.01
+expect VehicleLimits.v_max.to_metres_a_step() == 2.5
+expect VehicleLimits.approach_intersection_dist.to_metres() == 60.0
+
+## The speed for a turn of this many degrees.
+speed_for_turn : F64 -> F64
+speed_for_turn = |degrees| VehicleLimits.turn_speed(Angle.Turn.degrees(degrees)).to_metres_a_step()
+
+expect
+	[
+		(15.0, 1.297),
+		(20.0, 0.84),
+		(30.0, 0.461),
+		(50.0, 0.222),
+		(70.0, 0.139),
+		(80.0, 0.117),
+	].all(|(degrees, speed)| speed_for_turn(degrees) == speed)
+
+# A turn counts as the whole degree it rounds to, and takes its speed the same
+# either way. Any turn not in the table takes the 50 degree speed.
+expect
+	[
+		(14.5, 1.297),
+		(14.4, 0.222),
+		(15.4, 1.297),
+		(15.5, 0.222),
+		(30.5, 0.222),
+		(0.0, 0.222),
+		(-15.0, 0.222),
+		(-50.0, 0.222),
+	].all(|(degrees, speed)| speed_for_turn(degrees) == speed)

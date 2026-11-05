@@ -28,3 +28,18 @@ Clock :: U32.{
 
 	is_eq : _
 }
+
+expect Clock.start.to_f64() == 0.0
+expect Clock.start.next().to_f64() == 1.0
+expect Clock.start.next().next().to_f64() == 2.0
+expect Clock.at_step(5699).next().to_f64() == 5700.0
+expect Clock.at_step(0) == Clock.start
+expect Clock.start.next() == Clock.at_step(1)
+expect !(Clock.start == Clock.at_step(1))
+expect !(Clock.at_step(7).next() == Clock.at_step(7))
+expect Clock.at_step(9).minus(Clock.at_step(9)).to_f64() == 0.0
+expect Clock.at_step(9).minus(Clock.at_step(8)).to_f64() == 1.0
+expect Clock.at_step(9).minus(Clock.start).to_f64() == 9.0
+expect Clock.start.next().minus(Clock.start).to_f64() == 1.0
+expect Clock.start.to_str() == "0"
+expect Clock.at_step(5700).to_str() == "5700"

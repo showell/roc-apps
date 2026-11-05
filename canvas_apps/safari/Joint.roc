@@ -73,3 +73,47 @@ Joint :: [].{
 		})
 	}
 }
+
+right_turn : Angle.Turn
+right_turn = Angle.Turn.radians(0.8726646259971648)
+
+left_turn : Angle.Turn
+left_turn = Angle.Turn.radians(0.0 - 1.2217304763960306)
+
+expect Joint.outer_edge(right_turn).to_metres() == 0.0
+expect Joint.outer_edge(left_turn).to_metres() == 4.0
+
+## The apex of a bend from a segment 300 m long, just behind the rider's.
+apex_after_turn : Angle.Turn -> Geom.RiderPoint
+apex_after_turn = |turn|
+	Joint.joint_apex(
+		{
+			world: [],
+			chain: [],
+			pose: {
+				along: Along.metres(100.0),
+				across: Across.metres(1.0),
+				yaw: Angle.Turn.radians(0.2),
+				half_width: Distance.metres(2.0),
+			},
+		},
+		{
+			before: JustBehind({
+				segment_length: Distance.metres(300.0),
+				turn,
+				lane_width: Distance.metres(4.0),
+			}),
+			after: InChain(Frame.ChainPosition.first),
+			length_before: Distance.metres(300.0),
+			turn,
+		},
+	)
+
+# Each is within 1e-7 of its want, scaled up by a want past 1.
+expect
+	[
+		(apex_after_turn(right_turn).right, 17.297297467543466),
+		(apex_after_turn(right_turn).forward, -100.43071597950589),
+		(apex_after_turn(left_turn).right, 21.403438709482494),
+		(apex_after_turn(left_turn).forward, -100.55298847633645),
+	].all(|(got, want)| (got - want).abs() <= 0.0000001 * want.abs().max(1.0))

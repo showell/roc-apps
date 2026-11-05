@@ -200,3 +200,121 @@ Gaze :: [].{
 		}
 	)
 }
+
+# Each is within 1e-12 of its want.
+expect
+	[
+		(Gaze.gaze_look_dist.to_metres(), 150.0),
+		(Gaze.focus_decay, 0.0012),
+		(Gaze.pig_gaze_speed.to_metres_a_step(), 0.2),
+		(Gaze.pig_gaze_settle_dist.to_metres(), 25.0),
+		(Gaze.gaze_release_angle.to_radians() / Trig.deg, 35.0),
+		(Gaze.gaze_swivel_rate.to_radians() / Trig.deg, 4.0),
+		(Gaze.gaze_return_rate.to_radians() / Trig.deg, 0.2),
+		(Gaze.gaze_return_snap.to_radians() / Trig.deg, 0.02),
+		(Gaze.eyes_on_road_yaw.to_radians() / Trig.deg, 6.0),
+		(Gaze.gaze_return_ease, 0.05),
+	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
+
+expect Gaze.gaze_focus(Fraction.of(0.5)).to_f64() == 0.5
+
+plain : World.Segment
+plain = World.route_segment(0)
+
+distracting : World.Segment
+distracting = World.route_segment(2)
+
+expect plain.pig_attention == Unnoticed
+expect distracting.pig_attention == Distracting
+
+## A rider on the distracting segment, at rest in every other way. Gaze doesn't
+## import Along, so `along` is a distance from the segment's start.
+rider : F64, F64 -> Pose.RiderState
+rider = |along, yaw| {
+	..Pose.initial_rider_state,
+	segment: World.SegmentIndex.number(2),
+	along: Pose.initial_rider_state.along.plus(Distance.metres(along)),
+	yaw: Angle.Turn.radians(yaw),
+}
+
+expect !(Gaze.pig_ahead(rider(200.0, 0.0), plain).looking)
+expect !(Gaze.pig_ahead(rider(200.0, (10.0 * Trig.deg)), distracting).looking)
+expect !(Gaze.pig_ahead(rider(100.0, 0.0), distracting).looking)
+expect !(Gaze.pig_ahead(rider(341.0, 0.0), distracting).looking)
+expect Gaze.pig_ahead(rider(200.0, 0.0), distracting).looking
+expect !Gaze.no_look.looking
+expect Gaze.pig_ahead(rider(200.0, 0.0), distracting).dist.to_metres() == 142.0
+expect Gaze.pig_ahead(rider(100.0, 0.0), distracting).dist.to_metres() == 0.0
+expect Gaze.no_look.dist.to_metres() == 0.0
+
+expect {
+	far = Gaze.desired_gaze(rider(200.0, 0.0), distracting).to_radians()
+	near = Gaze.desired_gaze(rider(320.0, 0.0), distracting).to_radians()
+	far > 0.0 and near > far
+}
+
+expect Gaze.desired_gaze(rider(200.0, 0.0), plain).to_radians().to_bits() == F64.to_bits(0.0)
+
+## A rider looking `gaze_yaw` from straight ahead.
+head : F64, F64 -> Pose.RiderState
+head = |gaze_yaw, along| {
+	..rider(along, 0.0),
+	gaze_yaw: Angle.Turn.radians(gaze_yaw),
+}
+
+## The gaze one step after `state`, wanting `want` radians.
+gaze_after : Pose.RiderState, F64 -> F64
+gaze_after = |state, want| Gaze.next_gaze_yaw(state, Angle.Turn.radians(want)).to_radians()
+
+## The focus after the gaze moves to `gaze` radians.
+focus_after : Pose.RiderState, F64 -> F64
+focus_after = |state, gaze| Gaze.next_focus(state, Angle.Turn.radians(gaze)).to_f64()
+
+swivel_rate : F64
+swivel_rate = Gaze.gaze_swivel_rate.to_radians()
+
+return_snap : F64
+return_snap = Gaze.gaze_return_snap.to_radians()
+
+expect gaze_after(head(0.0, 200.0), 1.0) - swivel_rate == 0.0
+expect gaze_after(head(0.0, 200.0), (0.0 - 1.0)) + swivel_rate == 0.0
+expect gaze_after(head(0.0, 200.0), (swivel_rate / 2.0)) - (swivel_rate / 2.0) == 0.0
+
+expect {
+	big = gaze_after(head((30.0 * Trig.deg), 200.0), 0.0)
+	small = gaze_after(head((2.0 * Trig.deg), 200.0), 0.0)
+	big < (30.0 * Trig.deg)
+		and big > 0.0
+		and small < (2.0 * Trig.deg)
+		and small > 0.0
+		and ((30.0 * Trig.deg) - big) > ((2.0 * Trig.deg) - small)
+}
+
+expect gaze_after(head(return_snap, 200.0), 0.0) == 0.0
+expect gaze_after(head((0.0 - return_snap), 200.0), 0.0) == 0.0
+expect gaze_after(head(0.0, 200.0), 0.0) == 0.0
+
+## A rider with this focus, looking `gaze_yaw` from straight ahead.
+rider_with_focus : F64, F64 -> Pose.RiderState
+rider_with_focus = |focus, gaze_yaw| {
+	..head(gaze_yaw, 200.0),
+	focus: Fraction.of(focus),
+}
+
+expect {
+	rising = focus_after(rider_with_focus(0.0, (20.0 * Trig.deg)), (20.0 * Trig.deg))
+	held = focus_after(rider_with_focus(0.9, (1.0 * Trig.deg)), (1.0 * Trig.deg))
+	easing = focus_after(rider_with_focus(0.9, 0.0), 0.0)
+	rising > 0.0 and held >= 0.9 and easing < 0.9 and easing > 0.0
+}
+
+expect focus_after(rider_with_focus(0.0, 0.0), 0.0) == 0.0
+expect focus_after(rider_with_focus(0.0, (90.0 * Trig.deg)), (90.0 * Trig.deg)) == 1.0
+expect !(Gaze.gawk_engaged(rider(200.0, 0.0), plain))
+expect !(Gaze.gawk_engaged(rider(100.0, 0.0), distracting))
+expect Gaze.gawk_engaged(rider(200.0, 0.0), distracting)
+expect Gaze.gawk_engaged(rider(341.0, 0.0), distracting)
+
+# The gawking outlasts the look.
+expect !Gaze.pig_ahead(rider(341.0, 0.0), distracting).looking
+expect Gaze.gawk_engaged(rider(341.0, 0.0), distracting)
