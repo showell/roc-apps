@@ -52,8 +52,8 @@ Throttle :: [].{
 		}
 	)
 
-	## The acceleration `a`, held at steady while the segment's crossing holds
-	## the throttle. It stops the rider speeding up, and never brakes.
+	## The acceleration `a`, or none while the segment's crossing says the rider
+	## may not accelerate. It stops the rider speeding up, and never brakes.
 	crossing_gate : Pose.RiderState,
 	{
 		road_segment : World.Segment,

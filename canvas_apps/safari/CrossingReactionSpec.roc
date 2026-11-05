@@ -40,7 +40,7 @@ rider_at = |along, speed| {
 to_cat : F64, F64 -> CrossingReaction.Reaction
 to_cat = |gap, speed| CrossingReaction.reaction_to(cat_segment, rider_at(cat_along - gap, speed))
 
-## A reaction's throttle as a number: 0 free, 1 held.
+## A reaction's throttle as a number: 1 when the rider may not accelerate.
 held_number : CrossingReaction.Reaction -> I64
 held_number = |reaction|
 	match reaction.throttle {
