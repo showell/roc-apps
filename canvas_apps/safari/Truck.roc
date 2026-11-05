@@ -9,12 +9,15 @@ import World
 Truck :: [].{
 
 	## Where the truck is along the route, how fast it is going, and whether
-	## it is braking.
+	## its brake lights are on.
 	TruckState : {
 		route_position : F64,
 		speed : Speed,
-		is_braking : Bool,
+		brake_lights : [On, Off],
 	}
+
+	## Which of the truck's lights are on.
+	Lights : { headlights : [On, Off], brake_lights : [On, Off] }
 
 	## A turn ahead of the truck: how far off it is, and how fast it can be
 	## taken.
@@ -49,7 +52,7 @@ Truck :: [].{
 	initial_truck = {
 		route_position: start_lead,
 		speed: VehicleLimits.v_base,
-		is_braking: False,
+		brake_lights: Off,
 	}
 
 	## The next turn of `world` past `route_position`.
@@ -142,7 +145,7 @@ advance_braking = |truck, turn| {
 	{
 		route_position: truck.route_position + speed.to_metres_a_step(),
 		speed,
-		is_braking: speed < truck.speed,
+		brake_lights: if (speed < truck.speed) On else Off,
 	}
 }
 
@@ -159,6 +162,6 @@ advance_on_schedule = |truck, schedule| {
 	{
 		route_position: truck.route_position + speed.to_metres_a_step(),
 		speed,
-		is_braking: False,
+		brake_lights: Off,
 	}
 }

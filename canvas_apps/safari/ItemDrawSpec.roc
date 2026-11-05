@@ -82,7 +82,6 @@ context = {
 	},
 	cam_focal: 500.0,
 	clock: 0.0,
-	brake_lights: Off,
 }
 
 ## A mast `along` metres down the first segment, 22 m across.

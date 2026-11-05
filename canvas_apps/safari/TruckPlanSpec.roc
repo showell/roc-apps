@@ -7,6 +7,7 @@ app [main!] {
 import Angle
 import Frame
 import Grade
+import Truck
 import TruckPlan
 import World
 
@@ -31,16 +32,20 @@ lengths_got = segs.map(|seg| seg.length)
 lengths_want : List(F64)
 lengths_want = [500.0, 320.0, 400.0]
 
-## The truck `lead` metres ahead of a rider at the start of the chain,
-## seen from `pose`.
-truck_seen_from : Frame.Pose, F64 -> TruckPlan.TruckAt
-truck_seen_from = |pose, lead| TruckPlan.in_view({
+## What a truck `lead` metres ahead of a rider at the start of the chain is
+## seen from, from `pose`, with its lights off.
+truck_view : Frame.Pose, F64 -> TruckPlan.View
+truck_view = |pose, lead| {
 	world: segs,
 	chain: [0, 1, 2].map(World.SegmentIndex.number),
 	pose,
 	rider_along: 0.0,
 	lead,
-})
+	lights: { headlights: Off, brake_lights: Off },
+}
+
+truck_seen_from : Frame.Pose, F64 -> TruckPlan.TruckAt
+truck_seen_from = |pose, lead| TruckPlan.in_view(truck_view(pose, lead))
 
 lead_of : F64 -> TruckPlan.TruckAt
 lead_of = |lead| truck_seen_from(here, lead)
@@ -57,7 +62,9 @@ is_ahead = |truck|
 ahead_of : F64 -> {
 	position : Frame.ChainPosition,
 	along : F64,
+	across : F64,
 	forward : F64,
+	lights : Truck.Lights,
 }
 ahead_of = |lead|
 	match lead_of(lead) {
@@ -90,6 +97,31 @@ along_got = [100.0, 499.0, 600.0, 900.0].map(|lead| ahead_of(lead).along)
 
 along_want : List(F64)
 along_want = [100.0, 499.0, 100.0, 80.0]
+
+across_got : List(F64)
+across_got = [100.0, 499.0, 600.0, 900.0].map(|lead| ahead_of(lead).across)
+
+across_want : List(F64)
+across_want = [2.0, 2.0, 2.0, 2.0]
+
+## The lights a truck in view shows, when it has `lights` on.
+lights_shown : Truck.Lights -> Truck.Lights
+lights_shown = |lights|
+	match TruckPlan.in_view({ ..truck_view(here, 100.0), lights }) {
+		Ahead(truck) => truck.lights
+		NoTruck => crash "TruckPlanSpec: this lead puts the truck in view"
+	}
+
+lights_got : List(Bool)
+lights_got = [
+	{ headlights: Off, brake_lights: Off },
+	{ headlights: Off, brake_lights: On },
+	{ headlights: On, brake_lights: Off },
+	{ headlights: On, brake_lights: On },
+].map(|lights| lights_shown(lights) == lights)
+
+lights_want : List(Bool)
+lights_want = [True, True, True, True]
 
 fwd_got : List(F64)
 fwd_got = [ahead_of(100.0).forward, ahead_of(499.0).forward]
@@ -182,6 +214,17 @@ main! = |_args| {
 			got: along_got,
 			want: along_want,
 			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "tp-across",
+			got: across_got,
+			want: across_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "tp-lights",
+			got: lights_got,
+			want: lights_want,
 		}),
 		Grade.reals({
 			name: "tp-fwd   ",

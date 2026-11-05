@@ -1,23 +1,26 @@
 ## TruckPlan finds the truck ahead of the rider in a frame: how far along
-## the chain of segments ahead it is, and whether it is in front of the
-## camera.
+## the chain of segments ahead it is, whether it is in front of the camera,
+## and which of its lights the drawing shows.
 import DepthSort
 import Frame
 import Geom
 import Scenery
+import Truck
 import World
 
 TruckPlan :: [].{
 
 	## The truck, if it is in view: the position in the chain of the segment it
-	## is on, how far along that segment it is, and how far ahead of the
-	## rider.
+	## is on, how far along and across that segment it is, how far ahead of the
+	## rider, and which of its lights are on.
 	TruckAt : [
 		Ahead(
 			{
 				position : Frame.ChainPosition,
 				along : F64,
+				across : F64,
 				forward : F64,
+				lights : Truck.Lights,
 			},
 		),
 		NoTruck,
@@ -25,13 +28,15 @@ TruckPlan :: [].{
 
 	## What the truck is seen from: the world's segments, the chain of them
 	## ahead of the rider, the rider's pose, how far along its segment the
-	## rider is, and how far ahead of the rider the truck is.
+	## rider is, how far ahead of the rider the truck is, and which of its
+	## lights are on.
 	View : {
 		world : List(World.Segment),
 		chain : List(World.SegmentIndex),
 		pose : Frame.Pose,
 		rider_along : F64,
 		lead : F64,
+		lights : Truck.Lights,
 	}
 
 	## The truck, if it is ahead of the rider, on the chain, and in front of
@@ -84,6 +89,7 @@ truck_on_segment : TruckPlan.View,
 	position : Frame.ChainPosition,
 } -> TruckPlan.TruckAt
 truck_on_segment = |view, { along, position }| {
+	across = Scenery.lane_width / 2.0
 	center = Frame.rider_point_ahead(
 		{
 			world: view.world,
@@ -93,14 +99,16 @@ truck_on_segment = |view, { along, position }| {
 		{
 			position: position,
 			along: along,
-			across: (Scenery.lane_width / 2.0),
+			across,
 		},
 	)
 	if center.forward > Geom.near_plane {
 		Ahead({
 			position,
 			along,
+			across,
 			forward: center.forward,
+			lights: view.lights,
 		})
 	} else {
 		NoTruck

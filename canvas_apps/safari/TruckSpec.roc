@@ -43,7 +43,7 @@ initial_want : List(F64)
 initial_want = [500.0, 0.3]
 
 initial_flag_got : List(Bool)
-initial_flag_got = [Truck.initial_truck.is_braking]
+initial_flag_got = [Truck.initial_truck.brake_lights == On]
 
 initial_flag_want : List(Bool)
 initial_flag_want = [False]
@@ -140,7 +140,7 @@ free = Truck.advance(
 	{
 		route_position: 100.0,
 		speed: Speed.metres_a_step(0.3),
-		is_braking: False,
+		brake_lights: Off,
 	},
 	{
 		rider_distance: 0.0,
@@ -164,7 +164,7 @@ ahead = Truck.advance(
 	{
 		route_position: 600.0,
 		speed: Speed.metres_a_step(0.5),
-		is_braking: False,
+		brake_lights: Off,
 	},
 	{
 		rider_distance: 0.0,
@@ -178,7 +178,7 @@ behind = Truck.advance(
 	{
 		route_position: 400.0,
 		speed: Speed.metres_a_step(0.5),
-		is_braking: False,
+		brake_lights: Off,
 	},
 	{
 		rider_distance: 0.0,
@@ -202,7 +202,7 @@ capped = Truck.advance(
 	{
 		route_position: 100.0,
 		speed: Truck.top_speed,
-		is_braking: False,
+		brake_lights: Off,
 	},
 	{
 		rider_distance: 0.0,
@@ -219,9 +219,9 @@ capped_want = [2.75]
 
 free_flag_got : List(Bool)
 free_flag_got = [
-	free.is_braking,
-	ahead.is_braking,
-	capped.is_braking,
+	free.brake_lights == On,
+	ahead.brake_lights == On,
+	capped.brake_lights == On,
 ]
 
 free_flag_want : List(Bool)
@@ -232,7 +232,7 @@ braking = Truck.advance(
 	{
 		route_position: 450.0,
 		speed: Speed.metres_a_step(0.3),
-		is_braking: False,
+		brake_lights: Off,
 	},
 	{
 		rider_distance: 0.0,
@@ -249,7 +249,7 @@ brake_want = [0.2994154176, 0.2994154176]
 
 brake_flag_got : List(Bool)
 brake_flag_got = [
-	braking.is_braking,
+	braking.brake_lights == On,
 	(braking.speed < Speed.metres_a_step(0.3)),
 	(braking.speed > Speed.metres_a_step(0.1776)),
 ]
@@ -262,7 +262,7 @@ settled = Truck.advance(
 	{
 		route_position: 450.0,
 		speed: Speed.metres_a_step(0.1776),
-		is_braking: True,
+		brake_lights: On,
 	},
 	{
 		rider_distance: 0.0,
@@ -273,7 +273,7 @@ settled = Truck.advance(
 
 settled_got : List(Bool)
 settled_got = [
-	settled.is_braking,
+	settled.brake_lights == On,
 	(F64.to_bits(settled.speed.to_metres_a_step()) == F64.to_bits(0.1776)),
 ]
 
@@ -287,7 +287,7 @@ boundary_got = [
 			{
 				route_position: 440.0,
 				speed: Speed.metres_a_step(0.3),
-				is_braking: False,
+				brake_lights: Off,
 			},
 			{
 				rider_distance: 0.0,
@@ -301,7 +301,7 @@ boundary_got = [
 			{
 				route_position: 439.0,
 				speed: Speed.metres_a_step(0.3),
-				is_braking: False,
+				brake_lights: Off,
 			},
 			{
 				rider_distance: 0.0,

@@ -62,6 +62,14 @@ Safari :: [].{
 		}
 	)
 
+	## Which of the truck's lights are on: its headlights once the sun is behind
+	## the mountains, and its brake lights as its last step left them.
+	truck_lights : Safari.Ride -> Truck.Lights
+	truck_lights = |r| {
+		headlights: if (Mountains.is_sun_behind_mountains(r.clock)) On else Off,
+		brake_lights: r.truck.brake_lights,
+	}
+
 	ride_frame : List(World.Segment), Safari.Ride -> List(Shapes.Shape)
 	ride_frame = |w, r| (
 		{
@@ -77,7 +85,7 @@ Safari :: [].{
 				rider_segment: s.segment,
 				rider_along: s.along,
 				speed: s.speed,
-				truck_position: r.truck.route_position,
+				truck: { route_position: r.truck.route_position, lights: truck_lights(r) },
 			})
 			roadside = ItemDraw.draw(
 				scene,
@@ -89,7 +97,6 @@ Safari :: [].{
 					},
 					cam_focal: cf,
 					clock: r.clock,
-					brake_lights: if (r.truck.is_braking) On else Off,
 				},
 			)
 			[

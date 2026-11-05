@@ -51,7 +51,7 @@ start_index_want = [0]
 
 start_flag_got : List(Bool)
 start_flag_got = [
-	Safari.ride_initial.truck.is_braking,
+	Safari.ride_initial.truck.brake_lights == On,
 	Rider.is_finished(Safari.ride_initial.rider, segs),
 ]
 
@@ -140,7 +140,7 @@ done = {
 	truck: {
 		route_position: 9000.0,
 		speed: Speed.metres_a_step(2.0),
-		is_braking: True,
+		brake_lights: On,
 	},
 	clock: 12345.0,
 }
@@ -165,7 +165,7 @@ restart_want = [0.0, 0.0, 0.3, 500.0, 0.0]
 restart_flag_got : List(Bool)
 restart_flag_got = [
 	Rider.is_finished(done.rider, segs),
-	Safari.ride_next(segs, done).truck.is_braking,
+	Safari.ride_next(segs, done).truck.brake_lights == On,
 ]
 
 restart_flag_want : List(Bool)
@@ -199,6 +199,26 @@ sun_got = [Safari.ride_sun(segs, Safari.ride_initial) == OutOfView]
 
 sun_want : List(Bool)
 sun_want = [True]
+
+## The truck's lights at `clock`, with its brake lights left as given.
+lights_at : { clock : F64, brake_lights : [On, Off] } -> Truck.Lights
+lights_at = |{ clock, brake_lights }|
+	Safari.truck_lights({
+		..Safari.ride_initial,
+		truck: { ..Safari.ride_initial.truck, brake_lights },
+		clock,
+	})
+
+lights_got : List(Bool)
+lights_got = [
+	lights_at({ clock: 0.0, brake_lights: Off }) == { headlights: Off, brake_lights: Off },
+	lights_at({ clock: 0.0, brake_lights: On }) == { headlights: Off, brake_lights: On },
+	lights_at({ clock: 5700.0, brake_lights: Off }) == { headlights: On, brake_lights: Off },
+	lights_at({ clock: 5700.0, brake_lights: On }) == { headlights: On, brake_lights: On },
+]
+
+lights_want : List(Bool)
+lights_want = [True, True, True, True]
 
 # --- Entry ---
 
@@ -261,6 +281,11 @@ main! = |_args| {
 			name: "sf-sun   ",
 			got: sun_got,
 			want: sun_want,
+		}),
+		Grade.bools({
+			name: "sf-lights",
+			got: lights_got,
+			want: lights_want,
 		}),
 	]
 	for verdict in verdicts {

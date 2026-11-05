@@ -40,7 +40,10 @@ scene = Render.collect({
 	rider_segment: World.SegmentIndex.first,
 	rider_along: 0.0,
 	speed: VehicleLimits.v_base,
-	truck_position: 500.0,
+	truck: {
+		route_position: 500.0,
+		lights: { headlights: Off, brake_lights: Off },
+	},
 })
 
 merge_got : List(I64)

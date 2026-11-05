@@ -11,6 +11,7 @@ import GuardRail
 import RailPlan
 import TowerPlan
 import TreePlan
+import Truck
 import TruckPlan
 import RocBird
 import Speed
@@ -33,8 +34,8 @@ Render :: [].{
 
 	## Where the frame is seen from: the world, the chain of segments ahead
 	## (indexes into `world`, the rider's own first), the rider's pose, the
-	## camera's focal length, and where along the route the rider and the
-	## truck are.
+	## camera's focal length, where along the route the rider is, and where
+	## the truck is and which of its lights are on.
 	Viewpoint : {
 		world : List(World.Segment),
 		chain : List(World.SegmentIndex),
@@ -43,7 +44,7 @@ Render :: [].{
 		rider_segment : World.SegmentIndex,
 		rider_along : F64,
 		speed : Speed,
-		truck_position : F64,
+		truck : { route_position : F64, lights : Truck.Lights },
 	}
 
 	## Everything in view from `viewpoint`, each kind cut to its plan's cap.
@@ -57,7 +58,7 @@ Render :: [].{
 			rider_segment,
 			rider_along,
 			speed,
-			truck_position,
+			truck,
 		},
 	| {
 		road = {
@@ -99,12 +100,13 @@ Render :: [].{
 			world,
 			{ index: rider_segment, along: rider_along },
 		)
-		truck = TruckPlan.in_view({
+		truck_at = TruckPlan.in_view({
 			world,
 			chain,
 			pose,
 			rider_along,
-			lead: truck_position - rider_distance,
+			lead: truck.route_position - rider_distance,
+			lights: truck.lights,
 		})
 		birds = BirdPlan.in_view({
 			world,
@@ -122,7 +124,7 @@ Render :: [].{
 			TowerPlan.depth_keys(towers),
 			CritterPlan.cow_items(critters),
 			CatPlan.depth_keys(cats),
-			TruckPlan.depth_keys(truck),
+			TruckPlan.depth_keys(truck_at),
 			RailPlan.depth_keys(rails),
 		].join()
 		{
@@ -131,7 +133,7 @@ Render :: [].{
 			critters,
 			cats,
 			rails,
-			truck,
+			truck: truck_at,
 			birds,
 			order: DepthSort.sort_by(keys, |key| key.forward),
 		}

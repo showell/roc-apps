@@ -6,7 +6,6 @@ import Critter
 import DepthSort
 import Frame
 import GuardRail
-import Mountains
 import Render
 import SceneLimits
 import Screen
@@ -17,19 +16,16 @@ import TreePlan
 import TruckDraw
 import TruckPlan
 import RocBird
-import Scenery
 import lib.Shapes
 
 ItemDraw :: [].{
 
 	## What every thing in a frame is drawn with: the road, the camera's focal
-	## length, the ride's clock, which sets the masts' beacons and the truck's
-	## headlights, and the truck's brake lights.
+	## length, and the ride's clock, which sets the masts' beacons.
 	Context : {
 		road : Frame.RoadView,
 		cam_focal : F64,
 		clock : F64,
-		brake_lights : [On, Off],
 	}
 
 	## A tree with fewer than this many trees nearer than it gets a round
@@ -167,8 +163,7 @@ draw_cat = |cat, { cam_focal, view_w }|
 		view_w,
 	})
 
-## The truck, in the middle of its lane, its headlights on once the sun is
-## behind the mountains.
+## The truck, where its plan found it and with the lights its plan gives it.
 draw_truck : ItemDraw.Context, TruckPlan.TruckAt -> List(Shapes.Shape)
 draw_truck = |context, truck_at|
 	match truck_at {
@@ -180,14 +175,8 @@ draw_truck = |context, truck_at|
 					pose: context.road.pose,
 					position: truck.position,
 				},
-				center: {
-					along: truck.along,
-					across: (Scenery.lane_width / 2.0),
-				},
-				lights: {
-					headlights: if (Mountains.is_sun_behind_mountains(context.clock)) On else Off,
-					brake_lights: context.brake_lights,
-				},
+				center: { along: truck.along, across: truck.across },
+				lights: truck.lights,
 				cam_focal: context.cam_focal,
 				view_w: Screen.width,
 			})
