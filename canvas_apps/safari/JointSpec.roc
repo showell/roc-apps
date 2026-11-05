@@ -3,6 +3,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Angle
 import Frame
 import Grade
 import Joint
@@ -17,14 +18,14 @@ pose : Frame.Pose
 pose = {
 	along: 100.0,
 	across: 1.0,
-	yaw: 0.2,
+	yaw: Angle.Turn.radians(0.2),
 	half_width: 2.0,
 }
 
 behind_right : Frame.SegmentPlace
 behind_right = JustBehind({
 	segment_length: 300.0,
-	turn_angle: 0.8726646259971648,
+	turn_angle: Angle.Turn.radians(0.8726646259971648),
 	turn_side: TurnsRight,
 	lane_width: 4.0,
 })
@@ -32,7 +33,7 @@ behind_right = JustBehind({
 behind_left : Frame.SegmentPlace
 behind_left = JustBehind({
 	segment_length: 300.0,
-	turn_angle: 1.2217304763960306,
+	turn_angle: Angle.Turn.radians(1.2217304763960306),
 	turn_side: TurnsLeft,
 	lane_width: 4.0,
 })

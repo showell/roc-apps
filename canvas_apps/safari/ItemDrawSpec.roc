@@ -5,6 +5,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Angle
 import Frame
 import Grade
 import ItemDraw
@@ -74,7 +75,7 @@ context = {
 		pose: {
 			along: 0.0,
 			across: 0.0,
-			yaw: 0.0,
+			yaw: Angle.straight_ahead,
 			half_width: 2.0,
 		},
 	},

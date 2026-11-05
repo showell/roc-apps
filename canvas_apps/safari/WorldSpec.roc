@@ -58,10 +58,10 @@ flags_want = [False, True, True, False, True, True, False, True, False, False, T
 
 angle_got : List(F64)
 angle_got = [
-	(seg(0).exit_angle / Trig.deg),
-	(seg(1).exit_angle / Trig.deg),
-	(seg(6).exit_angle / Trig.deg),
-	(seg(18).exit_angle / Trig.deg),
+	(seg(0).exit_angle.to_radians() / Trig.deg),
+	(seg(1).exit_angle.to_radians() / Trig.deg),
+	(seg(6).exit_angle.to_radians() / Trig.deg),
+	(seg(18).exit_angle.to_radians() / Trig.deg),
 	seg(18).commit_along,
 ]
 

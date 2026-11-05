@@ -60,6 +60,10 @@ Angle :: [].{
 		radians : F64 -> Angle.Turn
 		radians = |r| Angle.Turn.(r)
 
+		## The turn of this many degrees.
+		degrees : F64 -> Angle.Turn
+		degrees = |d| Angle.Turn.(d * Trig.deg)
+
 		to_radians : Angle.Turn -> F64
 		to_radians = |Angle.Turn.(r)| r
 

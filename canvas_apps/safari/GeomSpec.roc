@@ -4,6 +4,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Angle
 import Geom
 import Grade
 
@@ -99,11 +100,11 @@ tr_walk_onto = |i, acc| (
 					{
 						along: 5.0,
 						across: 0.5,
-						yaw: (
+						yaw: Angle.Turn.radians(
 							List.get(
 								tr_yaw,
 								I64.to_u64_wrap(i),
-							) ?? crash ("list-at out of range")
+							) ?? crash ("list-at out of range"),
 						),
 						half_width: 3.0,
 					},

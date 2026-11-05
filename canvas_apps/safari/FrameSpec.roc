@@ -4,6 +4,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Angle
 import Frame
 import Geom
 import Grade
@@ -36,7 +37,7 @@ pose : Frame.Pose
 pose = {
 	along: 100.0,
 	across: 1.0,
-	yaw: 0.2,
+	yaw: Angle.Turn.radians(0.2),
 	half_width: 2.0,
 }
 
@@ -46,7 +47,7 @@ m_chain = InChain(Frame.ChainPosition.number(3))
 m_prev_left : Frame.SegmentPlace
 m_prev_left = JustBehind({
 	segment_length: 300.0,
-	turn_angle: 1.2217304763960306,
+	turn_angle: Angle.Turn.radians(1.2217304763960306),
 	turn_side: TurnsLeft,
 	lane_width: 4.0,
 })
@@ -54,7 +55,7 @@ m_prev_left = JustBehind({
 m_prev_right : Frame.SegmentPlace
 m_prev_right = JustBehind({
 	segment_length: 300.0,
-	turn_angle: 0.8726646259971648,
+	turn_angle: Angle.Turn.radians(0.8726646259971648),
 	turn_side: TurnsRight,
 	lane_width: 4.0,
 })

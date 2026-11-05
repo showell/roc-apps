@@ -1,5 +1,6 @@
 # VehicleLimits -- originally emitted from Codex by rocemit; the Roc is the program now
 # and this file is edited here (safari/README.md).
+import Angle
 import Num_
 import lib.Trig
 
@@ -14,10 +15,10 @@ VehicleLimits :: [].{
 	approach_intersection_dist : F64
 	approach_intersection_dist = 60.0
 
-	turn_speed : F64 -> F64
-	turn_speed = |angle_rad| (
+	turn_speed : Angle.Turn -> F64
+	turn_speed = |turn| (
 		{
-			d = Num_.round_real(((angle_rad * 180.0) / Trig.pi))
+			d = Num_.round_real(((turn.to_radians() * 180.0) / Trig.pi))
 			(
 				if F64.to_bits(d) == F64.to_bits(15.0) {
 					1.297
