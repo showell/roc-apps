@@ -20,7 +20,7 @@ import TruckPlan
 import World
 
 segs : List(World.Segment)
-segs = List.from_iter(U32.until(0, World.route.len().to_u32_wrap())).map(World.segment_at)
+segs = List.from_iter(U32.until(0, World.route.len().to_u32_wrap())).map(World.route_segment)
 
 origin : Frame.Pose
 origin = {

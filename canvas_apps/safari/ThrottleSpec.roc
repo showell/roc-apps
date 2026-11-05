@@ -28,7 +28,7 @@ fixed_want : List(F64)
 fixed_want = [0.03490658503988659, 20.0, 2.0]
 
 seg : World.Segment
-seg = World.segment_at(0)
+seg = World.route_segment(0)
 
 ## Where a test rider is on segment 0 and how it moves.
 RiderSpot : {
@@ -187,7 +187,7 @@ corner_min_want : List(Bool)
 corner_min_want = [True, True, True]
 
 cat_seg : World.Segment
-cat_seg = World.segment_at(1)
+cat_seg = World.route_segment(1)
 
 cat_got : List(F64)
 cat_got = [

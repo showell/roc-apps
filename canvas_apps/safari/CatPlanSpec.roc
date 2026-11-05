@@ -13,9 +13,9 @@ import World
 
 segs : List(World.Segment)
 segs = [
-	World.segment_at(0),
-	World.segment_at(1),
-	World.segment_at(2),
+	World.route_segment(0),
+	World.route_segment(1),
+	World.route_segment(2),
 ]
 
 origin : Frame.Pose
@@ -140,7 +140,10 @@ cull_got = [
 	riding(500.0).len().to_i64_wrap(),
 	riding(600.0).len().to_i64_wrap(),
 	CatPlan.in_view({ ..from_origin, chain: [] }).len().to_i64_wrap(),
-	CatPlan.in_view({ ..from_origin, chain: [0].map(World.SegmentIndex.number) }).len().to_i64_wrap(),
+	CatPlan.in_view({
+		..from_origin,
+		chain: [0].map(World.SegmentIndex.number),
+	}).len().to_i64_wrap(),
 ]
 
 cull_want : List(I64)

@@ -253,7 +253,11 @@ Tower :: [].{
 		fraction: ((Geom.near_plane - from.forward) / (to.forward - from.forward)),
 	})
 
-	rod_on_screen : Tower.RodView, { from : Geom.SpacePoint, to : Geom.SpacePoint } -> List(Paint.DrawCmd)
+	rod_on_screen : Tower.RodView,
+	{
+		from : Geom.SpacePoint,
+		to : Geom.SpacePoint,
+	} -> List(Paint.DrawCmd)
 	rod_on_screen = |view, { from, to }|
 		screen_rod({
 			from: Camera.project(from, { cam_focal: view.cam_focal, view_w: view.view_w }),

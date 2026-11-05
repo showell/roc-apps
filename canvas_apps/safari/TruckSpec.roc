@@ -58,7 +58,7 @@ sched_want : List(F64)
 sched_want = [500.0, 650.0, 800.0, 1100.0, 100.0, 500.0]
 
 one_seg : List(World.Segment)
-one_seg = [World.segment_at(0)]
+one_seg = [World.route_segment(0)]
 
 turn_dist : List(World.Segment), F64 -> F64
 turn_dist = |segs, route_position| (
@@ -100,7 +100,7 @@ none_got : List(F64)
 none_got = [
 	turn_dist(one_seg, 500.0),
 	turn_dist(one_seg, 900.0),
-	turn_dist([World.segment_at(18)], 0.0),
+	turn_dist([World.route_segment(18)], 0.0),
 	turn_dist([], 0.0),
 ]
 
@@ -113,7 +113,7 @@ none_want = [
 ]
 
 two_seg : List(World.Segment)
-two_seg = [World.segment_at(0), World.segment_at(1)]
+two_seg = [World.route_segment(0), World.route_segment(1)]
 
 chain_got : List(F64)
 chain_got = [

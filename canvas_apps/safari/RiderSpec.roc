@@ -17,13 +17,13 @@ import World
 
 segs : List(World.Segment)
 segs = [
-	World.segment_at(0),
-	World.segment_at(1),
-	World.segment_at(2),
+	World.route_segment(0),
+	World.route_segment(1),
+	World.route_segment(2),
 ]
 
 seg : World.Segment
-seg = World.segment_at(0)
+seg = World.route_segment(0)
 
 ## Where a test rider is on segment 0 and how it moves.
 RiderSpot : {
@@ -211,7 +211,7 @@ resolve_want : List(I64)
 resolve_want = [0, 1]
 
 last_seg : World.Segment
-last_seg = World.segment_at(18)
+last_seg = World.route_segment(18)
 
 ## Whether the route ends with a segment.
 is_route_end : World.Segment -> Bool
@@ -280,8 +280,8 @@ done_got = (
 			focus: 0.0,
 		}
 		[
-			Rider.is_finished(at_end, [World.segment_at(18)]),
-			Rider.is_finished(short, [World.segment_at(18)]),
+			Rider.is_finished(at_end, [World.route_segment(18)]),
+			Rider.is_finished(short, [World.route_segment(18)]),
 			is_route_end(last_seg),
 			Rider.is_finished(
 				rider({

@@ -24,7 +24,7 @@ seg_list_onto = |i, acc| (
 	if i >= World.route.len().to_u32_wrap() {
 		acc
 	} else {
-		seg_list_onto((i + 1), List.append(acc, World.segment_at(i)))
+		seg_list_onto((i + 1), List.append(acc, World.route_segment(i)))
 	}
 )
 
@@ -109,10 +109,12 @@ order_got = (
 				route_length: World.route_length(segs),
 			},
 		)
+		new_position = against_new.route_position
+		old_position = against_old.route_position
 		[
-			(F64.to_bits(after_one_step.truck.route_position) == F64.to_bits(against_new.route_position)),
+			(F64.to_bits(after_one_step.truck.route_position) == F64.to_bits(new_position)),
 			(new_dist > old_dist),
-			((F64.to_bits(against_new.route_position) == F64.to_bits(against_old.route_position)) == False),
+			((F64.to_bits(new_position) == F64.to_bits(old_position)) == False),
 		]
 	}
 )
@@ -159,7 +161,10 @@ restart_want : List(F64)
 restart_want = [0.0, 0.0, 0.3, 500.0, 0.0]
 
 restart_flag_got : List(Bool)
-restart_flag_got = [Rider.is_finished(done.rider, segs), Safari.ride_next(segs, done).truck.is_braking]
+restart_flag_got = [
+	Rider.is_finished(done.rider, segs),
+	Safari.ride_next(segs, done).truck.is_braking,
+]
 
 restart_flag_want : List(Bool)
 restart_flag_want = [True, False]

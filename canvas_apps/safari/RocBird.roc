@@ -11,7 +11,7 @@
 # Codex version does not. The bird is roc-lang.org's logo, six purple
 # polygons, carried in the same unit frame as the baked stills (feet at y 0,
 # y up, height 1) and drawn through the same still machinery a critter uses:
-# Frame.at places the tree in the rider's frame, Camera.project puts its top
+# Frame.rider_point_ahead places the tree in the rider's frame, Camera.project puts its top
 # on the screen, and Critter.draw_still maps the polygons onto that anchor
 # at the tree's depth. The app appends the birds after the frame, so they
 # paint on top of everything; a bird on a treetop is rarely behind anything.
@@ -186,15 +186,25 @@ RocBird :: [].{
 		}
 	}
 
-	# Every bird in the chain, nearest segment first. The sort puts them where
-	# they belong.
+	## Every bird in the chain, nearest segment first. The sort puts them where
+	## they belong.
 	perches : RocBird.View -> List(RocBird.Bird)
-	perches = |view| Frame.ChainPosition.all_in(view.chain).join_map(|position| perch(view, position))
+	perches = |view| Frame.ChainPosition.all_in(view.chain).join_map(
+		|position| perch(
+			view,
+			position,
+		),
+	)
 
 	# **THE DEPTH IS THE TREE'S**, which is the whole point of collecting them:
 	# how high the bird sits does not change how far away it is.
 	bird_items : List(RocBird.Bird) -> List(DepthSort.DepthKey)
-	bird_items = |bs| bs.map_with_index(|bird, i| { forward: bird.forward, subject: Bird(i.to_u32_wrap()) })
+	bird_items = |bs| bs.map_with_index(
+		|bird, i| {
+			forward: bird.forward,
+			subject: Bird(i.to_u32_wrap()),
+		},
+	)
 
 	# One bird, drawn where the sort says. Its feet go at the top of its tree,
 	# and unflipped its beak points toward +x, which from a left-hand tree is

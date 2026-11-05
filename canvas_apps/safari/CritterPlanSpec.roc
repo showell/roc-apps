@@ -27,7 +27,7 @@ origin = {
 ## The first six segments, chained in order.
 scene : CritterPlan.Scene
 scene = {
-	world: [0, 1, 2, 3, 4, 5].map(World.segment_at),
+	world: [0, 1, 2, 3, 4, 5].map(World.route_segment),
 	chain: [0, 1, 2, 3, 4, 5].map(World.SegmentIndex.number),
 	pose: origin,
 }
@@ -35,13 +35,16 @@ scene = {
 ## The world's segment `index` alone.
 lone : U32 -> CritterPlan.Scene
 lone = |index| {
-	world: [World.segment_at(index)],
+	world: [World.route_segment(index)],
 	chain: [0].map(World.SegmentIndex.number),
 	pose: origin,
 }
 
 farm_at : U32 -> I64
-farm_at = |number| CritterPlan.farm_sightings(scene, Frame.ChainPosition.number(number)).len().to_i64_wrap()
+farm_at = |number| CritterPlan.farm_sightings(
+	scene,
+	Frame.ChainPosition.number(number),
+).len().to_i64_wrap()
 
 safari_at : U32 -> I64
 safari_at = |number|
@@ -143,8 +146,8 @@ grow_want = [True, True]
 behind_got : List(Bool)
 behind_got = [
 	(CritterPlan.sightings_behind(scene, World.SegmentIndex.number(4)).len() > 0),
-	(CritterPlan.ducks_behind(scene, World.segment_at(12)).len() > 0),
-	(CritterPlan.ducks_behind(scene, World.segment_at(0)).len() == 0),
+	(CritterPlan.ducks_behind(scene, World.route_segment(12)).len() > 0),
+	(CritterPlan.ducks_behind(scene, World.route_segment(0)).len() == 0),
 ]
 
 behind_want : List(Bool)

@@ -63,7 +63,7 @@ shade_want : List(F64)
 shade_want = [1.0, 0.75, 0.5, 0.0, 0.0, 1.0]
 
 segs : List(World.Segment)
-segs = [0, 1, 2].map(World.segment_at)
+segs = [0, 1, 2].map(World.route_segment)
 
 # The rider at the start of the route, at the ride's first step.
 context : ItemDraw.Context

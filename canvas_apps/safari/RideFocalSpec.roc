@@ -15,7 +15,7 @@ import RideFocal
 import World
 
 segs : List(World.Segment)
-segs = [0, 1, 2].map(World.segment_at)
+segs = [0, 1, 2].map(World.route_segment)
 
 ## The bike's greatest lean, in radians.
 max_lean : F64

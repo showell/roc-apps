@@ -59,7 +59,11 @@ TruckPlan :: [].{
 
 ## The truck `remaining` metres past the start of the segment at `position` in
 ## the chain, found by walking on through the segments it is past.
-truck_from : TruckPlan.View, { remaining : F64, position : Frame.ChainPosition } -> TruckPlan.TruckAt
+truck_from : TruckPlan.View,
+{
+	remaining : F64,
+	position : Frame.ChainPosition,
+} -> TruckPlan.TruckAt
 truck_from = |view, { remaining, position }|
 	if position.is_past_end_of(view.chain) {
 		NoTruck
@@ -74,7 +78,11 @@ truck_from = |view, { remaining, position }|
 
 ## The truck `along` metres into the segment at `position` in the chain, in
 ## the middle of the lane, if it is in front of the camera.
-truck_on_segment : TruckPlan.View, { along : F64, position : Frame.ChainPosition } -> TruckPlan.TruckAt
+truck_on_segment : TruckPlan.View,
+{
+	along : F64,
+	position : Frame.ChainPosition,
+} -> TruckPlan.TruckAt
 truck_on_segment = |view, { along, position }| {
 	center = Frame.rider_point_ahead(
 		{

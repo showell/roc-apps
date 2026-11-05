@@ -37,9 +37,9 @@ view : GroundPlan.View
 view = {
 	road: {
 		world: [
-			World.segment_at(0),
-			World.segment_at(1),
-			World.segment_at(2),
+			World.route_segment(0),
+			World.route_segment(1),
+			World.route_segment(2),
 		],
 		chain: [0, 1, 2].map(World.SegmentIndex.number),
 		pose: {
@@ -131,7 +131,12 @@ strip_got : List(Bool)
 strip_got = [
 	(strip.len() > 0),
 	(strip.len().to_u32_wrap() <= GroundPlan.chunks_along(500.0)),
-	(GroundPlan.segment_road({ ..view, road: { ..view.road, pose: far_ahead } }, Frame.ChainPosition.first).len() == 0),
+	(
+		GroundPlan.segment_road(
+			{ ..view, road: { ..view.road, pose: far_ahead } },
+			Frame.ChainPosition.first,
+		).len() == 0
+	),
 ]
 
 strip_want : List(Bool)

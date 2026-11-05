@@ -29,9 +29,9 @@ cap_want = [16]
 
 segs : List(World.Segment)
 segs = [
-	World.segment_at(0),
-	World.segment_at(1),
-	World.segment_at(2),
+	World.route_segment(0),
+	World.route_segment(1),
+	World.route_segment(2),
 ]
 
 origin : Frame.Pose
@@ -101,7 +101,7 @@ where_want = [660.0, 22.0, 480.0, 22.0]
 ## The 1200 m segment alone, seen from the origin.
 long_view : TowerPlan.View
 long_view = {
-	world: [World.segment_at(6)],
+	world: [World.route_segment(6)],
 	chain: [0].map(World.SegmentIndex.number),
 	pose: origin,
 	rider_segment: World.SegmentIndex.first,

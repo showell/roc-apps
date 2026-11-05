@@ -1,5 +1,5 @@
-# GeomSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are Geom's checks: the ground's drop, a road point in the rider's view,
+## two lines crossing, and a polygon cut at the near plane.
 app [main!] {
 	lib: "../lib/main.roc",
 }
@@ -83,8 +83,18 @@ tr_walk_onto = |i, acc| (
 			{
 				p = Geom.to_rider_point(
 					{
-						along: (List.get(tr_a, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")),
-						across: (List.get(tr_x, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")),
+						along: (
+							List.get(
+								tr_a,
+								I64.to_u64_wrap(i),
+							) ?? crash ("list-at out of range")
+						),
+						across: (
+							List.get(
+								tr_x,
+								I64.to_u64_wrap(i),
+							) ?? crash ("list-at out of range")
+						),
 					},
 					{
 						along: 5.0,

@@ -1,5 +1,4 @@
-# JointSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are Joint's checks: a bend's outer edge and its apex.
 app [main!] {
 	lib: "../lib/main.roc",
 }

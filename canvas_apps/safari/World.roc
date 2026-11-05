@@ -289,11 +289,11 @@ World :: [].{
 			.to_u32_wrap()
 
 	## Segment `number` of the route, counting from 0.
-	segment_at : U32 -> World.Segment
-	segment_at = |number| {
+	route_segment : U32 -> World.Segment
+	route_segment = |number| {
 		index = World.SegmentIndex.number(number)
 		plan = route.get(index.count_before())
-			?? crash "World.segment_at: the route has no segment there"
+			?? crash "World.route_segment: the route has no segment there"
 		built_segment(plan, index)
 	}
 

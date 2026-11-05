@@ -92,9 +92,9 @@ from_zero_want = [11.0, 0.0, 10.0]
 road : Frame.RoadView
 road = {
 	world: [
-		World.segment_at(0),
-		World.segment_at(1),
-		World.segment_at(2),
+		World.route_segment(0),
+		World.route_segment(1),
+		World.route_segment(2),
 	],
 	chain: [0, 1, 2].map(World.SegmentIndex.number),
 	pose: {
@@ -118,7 +118,10 @@ run_up = RailPlan.run_up(
 runout_got : List(I64)
 runout_got = [
 	GuardRail.rail_runout.to_i64(),
-	RailPlan.run_out(road, { place: InChain(Frame.ChainPosition.first), across: 4.0 }).len().to_i64_wrap(),
+	RailPlan.run_out(
+		road,
+		{ place: InChain(Frame.ChainPosition.first), across: 4.0 },
+	).len().to_i64_wrap(),
 	run_up.len().to_i64_wrap(),
 ]
 

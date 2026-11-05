@@ -130,7 +130,11 @@ TruckShape :: [].{
 
 	## A flat-coloured polygon on the truck, cut at the near plane and
 	## projected.
-	fill : TruckShape.TruckInView, { color : I64, corners : List(Geom.SpacePoint) } -> List(Paint.DrawCmd)
+	fill : TruckShape.TruckInView,
+	{
+		color : I64,
+		corners : List(Geom.SpacePoint),
+	} -> List(Paint.DrawCmd)
 	fill = |truck, { color, corners }| Paint.push_poly(
 		color,
 		Camera.project_all(

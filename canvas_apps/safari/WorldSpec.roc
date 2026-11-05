@@ -25,7 +25,7 @@ route_shape_want : List(I64)
 route_shape_want = [19, 0, 1, 2, 3, 9]
 
 seg : U32 -> World.Segment
-seg = |i| World.segment_at(i)
+seg = |i| World.route_segment(i)
 
 length_got : List(F64)
 length_got = [

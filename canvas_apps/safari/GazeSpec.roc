@@ -40,10 +40,10 @@ smooth_want : List(F64)
 smooth_want = [0.0, 0.5, 1.0, 0.5]
 
 plain : World.Segment
-plain = World.segment_at(0)
+plain = World.route_segment(0)
 
 distracting : World.Segment
-distracting = World.segment_at(2)
+distracting = World.route_segment(2)
 
 rider : F64, F64 -> Pose.RiderState
 rider = |along, yaw| {

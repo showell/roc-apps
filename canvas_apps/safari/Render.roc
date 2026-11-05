@@ -93,7 +93,10 @@ Render :: [].{
 			})
 				.take_first(CatPlan.max_vis_cats.to_u64_wrap())
 		rails = RailPlan.all_rails(road, rider_segment)
-		rider_distance = World.distance_along_route(world, { index: rider_segment, along: rider_along })
+		rider_distance = World.distance_along_route(
+			world,
+			{ index: rider_segment, along: rider_along },
+		)
 		truck = TruckPlan.in_view({
 			world,
 			chain,

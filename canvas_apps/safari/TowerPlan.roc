@@ -57,7 +57,10 @@ TowerPlan :: [].{
 	in_view : TowerPlan.View -> List(TowerPlan.TowerItem)
 	in_view = |view|
 		match view.rider_segment.previous() {
-			Previous(segment_behind) => List.concat(along_chain(view), tower_behind(view, segment_behind))
+			Previous(segment_behind) => List.concat(
+				along_chain(view),
+				tower_behind(view, segment_behind),
+			)
 			AtRouteStart => along_chain(view)
 		}
 

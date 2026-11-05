@@ -89,7 +89,7 @@ map_real_got = [
 	bend_of(m_prev_left).lane_width,
 	bend_of(m_prev_right).segment_length,
 	bend_of(m_prev_right).lane_width,
-	bend_of(Frame.place_behind(World.segment_at(0))).segment_length,
+	bend_of(Frame.place_behind(World.route_segment(0))).segment_length,
 ]
 
 map_real_want : List(F64)
