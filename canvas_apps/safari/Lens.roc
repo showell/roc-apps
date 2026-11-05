@@ -43,3 +43,46 @@ Lens :: [].{
 		if (for_lean < for_gaze) for_lean else for_gaze
 	}
 }
+
+## Whether `got` is within 1e-9 of `want`, scaled up by a want past 1.
+is_close : F64, F64 -> Bool
+is_close = |got, want| (got - want).abs() <= 0.000000001 * want.abs().max(1.0)
+
+expect
+	[
+		(Screen.width, 960.0),
+		(Lens.field_of_view.to_radians() / Trig.deg, 70.0),
+		(Lens.focal, 685.5110432362151),
+	].all(|(got, want)| is_close(got, want))
+
+expect
+	[
+		(0.0, 685.5110432362151),
+		(0.25, 657.6621571047439),
+		(0.5, 574.1154987103301),
+		(0.75, 434.8710680529739),
+		(1.0, 239.92886513267527),
+	].all(|(lean, want)| is_close(Lens.focal_for_lean(Fraction.of(lean)), want))
+
+expect
+	[
+		(0.0, 685.5110432362151),
+		(0.5, 551.8363898051531),
+		(1.0, 418.16173637409116),
+		(1.5, 284.4870829430293),
+	].all(|(look, want)| is_close(Lens.focal_for_gaze(Attention.of(look)), want))
+
+expect
+	[
+		((0.0, 0.0), 685.5110432362151),
+		((1.0, 0.0), 239.92886513267527),
+		((0.0, 1.0), 418.16173637409116),
+		((0.5, 0.3), 574.1154987103301),
+		((0.9, 1.4), 311.2220136292417),
+		((0.6, 0.5), 525.1014591189407),
+	].all(
+		|((lean, look), want)| {
+			got = Lens.cam_focal({ lean_frac: Fraction.of(lean), attention: Attention.of(look) })
+			is_close(got, want)
+		},
+	)

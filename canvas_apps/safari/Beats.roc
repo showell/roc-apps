@@ -43,3 +43,21 @@ Beats :: F64.{
 
 	is_eq : _
 }
+
+expect Beats.zero.to_f64() == 0.0
+expect Beats.of(1.5).plus(Beats.of(2.25)).to_f64() == 3.75
+expect Beats.of(1.5).minus(Beats.of(2.25)).to_f64() == -0.75
+expect Beats.of(38.0).times(0.5).to_f64() == 19.0
+expect Beats.of(38.0).portion(Fraction.of(0.25)).to_f64() == 9.5
+
+# A ratio can be under 1, 1 itself, or past it.
+expect Beats.of(2.0).ratio_to(Beats.of(8.0)) == 0.25
+expect Beats.of(8.0).ratio_to(Beats.of(8.0)) == 1.0
+expect Beats.of(12.0).ratio_to(Beats.of(8.0)) == 1.5
+
+expect Beats.of(2.0) < Beats.of(2.5)
+expect !(Beats.of(2.5) < Beats.of(2.5))
+expect Beats.of(2.5) <= Beats.of(2.5)
+expect !(Beats.of(3.0) <= Beats.of(2.5))
+expect Beats.of(2.5) == Beats.of(2.5)
+expect !(Beats.of(2.5) == Beats.of(3.0))

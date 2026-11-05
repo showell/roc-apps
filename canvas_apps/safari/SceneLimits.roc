@@ -12,3 +12,7 @@ SceneLimits :: [].{
 	min_scenery_px : F64
 	min_scenery_px = 2.0
 }
+
+expect SceneLimits.detail_dist == 200.0
+expect SceneLimits.crown_shade_dist == 80.0
+expect SceneLimits.min_scenery_px == 2.0
