@@ -89,7 +89,7 @@ SafariRide :: [].{
 	# The camera roll: the whole frame, backdrop and commands, turns
 	# by minus this about the screen's centre.
 	roll : SafariRide.Model -> Angle.Lean
-	roll = |m| CanvasRoll.rider_roll(m.ride.rider)
+	roll = |m| CanvasRoll.rider_roll(m.ride.rider.tilt)
 
 	# The sky at the top of the frame and at the horizon, as 0xRRGGBB.
 	sky_top : SafariRide.Model -> I64

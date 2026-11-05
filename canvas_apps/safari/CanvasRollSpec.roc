@@ -7,9 +7,6 @@ app [main!] {
 import Angle
 import CanvasRoll
 import Grade
-import World
-import Pose
-import Speed
 
 band_got : List(F64)
 band_got = [CanvasRoll.roll_deadband.to_radians()]
@@ -47,19 +44,6 @@ roll_want = [
 	(-0.42),
 ]
 
-as_rider : F64 -> Pose.RiderState
-as_rider = |tilt| {
-	segment: World.SegmentIndex.number(0),
-	along: 0.0,
-	across: 0.0,
-	yaw: Angle.Turn.radians(0.0),
-	speed: Speed.metres_a_step(0.3),
-	tilt: Angle.Lean.radians(tilt),
-	heading: Angle.Bearing.radians(0.0),
-	gaze_yaw: Angle.Turn.radians(0.0),
-	focus: 0.0,
-}
-
 # --- Entry ---
 
 main! = |_args| {
@@ -72,7 +56,7 @@ main! = |_args| {
 		}),
 		Grade.reals({
 			name: "cr-roll",
-			got: tilt_in.map(|tilt| CanvasRoll.rider_roll(as_rider(tilt)).to_radians()),
+			got: tilt_in.map(|tilt| CanvasRoll.rider_roll(Angle.Lean.radians(tilt)).to_radians()),
 			want: roll_want,
 			tol: 0.0,
 		}),

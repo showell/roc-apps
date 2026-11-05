@@ -5,7 +5,7 @@
 ## draws their eye. A bird asks nothing. The pigs' gaze is no crossing, and is
 ## Gaze's.
 import Cat
-import Pose
+import Speed
 import World
 
 CrossingReaction :: [].{
@@ -15,7 +15,7 @@ CrossingReaction :: [].{
 	Reaction : { throttle : [MayAccelerate, NoAcceleration], eye_pull : F64 }
 
 	## The reaction to `segment`'s crossing of a rider on that segment.
-	reaction_to : World.Segment, Pose.RiderState -> CrossingReaction.Reaction
+	reaction_to : World.Segment, { along : F64, speed : Speed, ..others } -> CrossingReaction.Reaction
 	reaction_to = |segment, rider|
 		match segment.crossing {
 			CatCrosses(crossing) => {
