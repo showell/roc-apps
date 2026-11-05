@@ -122,14 +122,14 @@ view = { cam_focal: Lens.focal, view_w: 960.0 }
 facing : Sky.SunPos
 facing = Sky.sun_pos({
 	heading: Angle.Bearing.radians(0.0 - 2.2176),
-	step: 0.0,
+	clock: 0.0,
 	view,
 })
 
 away : Sky.SunPos
 away = Sky.sun_pos({
 	heading: Angle.north,
-	step: 0.0,
+	clock: 0.0,
 	view,
 })
 

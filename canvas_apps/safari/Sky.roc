@@ -49,28 +49,28 @@ Sky :: [].{
 	visible_turn_limit : Angle.Turn
 	visible_turn_limit = Angle.Turn.radians(1.4)
 
-	## How high the sun stands above the horizon at a step, in pixels at
+	## How high the sun stands above the horizon at `clock`, in pixels at
 	## rest; below it once negative.
 	sun_height_px : F64 -> F64
-	sun_height_px = |step| (sun_start_px - (sun_drop_px_per_step * step))
+	sun_height_px = |clock| (sun_start_px - (sun_drop_px_per_step * clock))
 
 	## How far toward dusk the sky is when the sun has just set.
 	dusk_at_set : F64
 	dusk_at_set = ((0.5 * (sun_start_px - sun_fully_set_px)) / sun_start_px)
 
-	## How far toward dusk the sky is at a step, from 0 (day) to 1 (dusk).
+	## How far toward dusk the sky is at `clock`, from 0 (day) to 1 (dusk).
 	sun_set_fraction : F64 -> F64
-	sun_set_fraction = |step| {
-		height = sun_height_px(step)
+	sun_set_fraction = |clock| {
+		height = sun_height_px(clock)
 		if (height >= sun_fully_set_px) dusk_while_up(height) else dusk_after_set(height)
 	}
 
-	## How warm the horizon is at a step: most while the sun touches it, none
+	## How warm the horizon is at `clock`: most while the sun touches it, none
 	## once the sun is `warmth_falloff_px` above or below.
 	sunset_warmth : F64 -> F64
-	sunset_warmth = |step| DeviceMath.real_max(
+	sunset_warmth = |clock| DeviceMath.real_max(
 		0.0,
-		(1.0 - (DeviceMath.real_abs(sun_height_px(step)) / warmth_falloff_px)),
+		(1.0 - (DeviceMath.real_abs(sun_height_px(clock)) / warmth_falloff_px)),
 	)
 
 	day_sky : Sky.Rgb
@@ -126,29 +126,29 @@ Sky :: [].{
 
 	## The sky's colour at the top of the frame, as 0xRRGGBB.
 	sky_color : F64 -> I64
-	sky_color = |step| pack(sky_at(step))
+	sky_color = |clock| pack(sky_at(clock))
 
 	## The sky's colour at the horizon, as 0xRRGGBB: the sky warmed toward
 	## sunset red.
 	horizon_color : F64 -> I64
-	horizon_color = |step| pack(
+	horizon_color = |clock| pack(
 		color_between({
-			from: sky_at(step),
+			from: sky_at(clock),
 			to: sunset_red,
-			fraction: (sunset_warmth(step) * sunset_glow),
+			fraction: (sunset_warmth(clock) * sunset_glow),
 		}),
 	)
 
 	## The sun in a frame, for a rider facing `heading`.
 	sun_pos : {
 		heading : Angle.Bearing,
-		step : F64,
+		clock : F64,
 		view : Camera.View,
 	} -> Sky.SunPos
 	sun_pos = |
 		{
 			heading,
-			step,
+			clock,
 			view,
 		},
 	| {
@@ -159,7 +159,7 @@ Sky :: [].{
 			InView(
 				sun_place({
 					turn_from_view,
-					step,
+					clock,
 					view,
 				}),
 			)
@@ -184,28 +184,28 @@ dusk_after_set = |height| {
 }
 
 sky_at : F64 -> Sky.Rgb
-sky_at = |step| Sky.color_between({
+sky_at = |clock| Sky.color_between({
 	from: Sky.day_sky,
 	to: Sky.dusk_sky,
-	fraction: Sky.sun_set_fraction(step),
+	fraction: Sky.sun_set_fraction(clock),
 })
 
 sun_place : {
 	turn_from_view : Angle.Turn,
-	step : F64,
+	clock : F64,
 	view : Camera.View,
 } -> Sky.SunPlace
 sun_place = |
 	{
 		turn_from_view,
-		step,
+		clock,
 		view,
 	},
 | {
 	scale = (view.cam_focal / Lens.focal)
 	{
 		x: ((view.view_w / 2.0) + (Trig.r_tan(turn_from_view.to_radians()) * view.cam_focal)),
-		y: (Screen.horizon_y - (Sky.sun_height_px(step) * scale)),
+		y: (Screen.horizon_y - (Sky.sun_height_px(clock) * scale)),
 		scale,
 	}
 }

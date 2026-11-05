@@ -137,10 +137,10 @@ Mountains :: [].{
 		DeviceMath.real_max(north_range(bearing), ground_base(bearing)),
 	)
 
-	## Whether the sun, at `step`, has sunk behind the skyline.
+	## Whether the sun, at `clock`, has sunk behind the skyline.
 	is_sun_behind_mountains : F64 -> Bool
-	is_sun_behind_mountains = |step| {
-		sun_top_px = (Sky.sun_height_px(step) + Sky.sun_radius_px)
+	is_sun_behind_mountains = |clock| {
+		sun_top_px = (Sky.sun_height_px(clock) + Sky.sun_radius_px)
 		sun_top_px < horizon_crest_px(Sky.sun_bearing)
 	}
 
