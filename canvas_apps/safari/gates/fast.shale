@@ -1,0 +1,180 @@
+-- budget: steps=100000000 read_bytes=100000000
+-- This is safari's fast tier, for each edit. It stops at its first failure.
+--
+--   cd <roc-apps checkout> && nice -n 19 shale canvas_apps/safari/gates/fast.shale
+--
+-- It runs `roc check`, then `roc test` from gates/CrossModuleExpects.roc, then
+-- the one-file lints (lints.shale) on the .roc files changed since this
+-- checkout's last green, then builds RasterFrame and holds one frame to its
+-- line in gates/proof.expected. Every run names what it left to the merge gate.
+--
+-- A frame stands in for the other depths because an arithmetic slip no expect
+-- covers moves the picture. FRAME_DEPTH is 5700, the truck ahead at dusk with
+-- its lights on, because that scene shows the most of the game: a constant
+-- nudged in one drawing module moved it for 12 of 17 modules, where 3000 moved
+-- for 9 and 1586 for 7.
+--
+-- Each checkout has a folder under the box's build folder, with its own Roc
+-- cache and its record of the last green. The record holds a hash of each file
+-- it judged, and of the rules, so a change to the rules judges every file again.
+
+use("cookbook:roc/pinned.shale")
+
+const SAFARI = "canvas_apps/safari"
+const PROOF_EXPECTED = "canvas_apps/safari/gates/proof.expected"
+const LINTS = "canvas_apps/safari/gates/lints.shale"
+const WANT = "roc-pin: roc-apps' pinned nightly, and the binary it builds"
+const FRAME_DEPTH = "5700"
+
+function checkout_folder()
+  return "build:roc-apps/safari-gate-caches/fast" .. substitute(real("."), "/", "-")
+end
+
+-- The file's hash, for each path of `paths`.
+function hashes_of(paths)
+  local r = run({"git", "hash-object", "--stdin-paths"}, {timeout_ms = 30000, whole = 1000000, stdin = join(paths, "\n") .. "\n"})
+  local hashes = lines(trim(r.out))
+  local found = {}
+  local k = 1
+  while k <= #paths do
+    found[paths[k]] = hashes[k]
+    k = k + 1
+  end
+  return found
+end
+
+-- Every .roc file of safari's, as the lints read them: from safari's folder.
+function safari_files()
+  local r = run({"git", "ls-files", "--cached", "--others", "--exclude-standard", "--", SAFARI .. "/*.roc"}, {timeout_ms = 30000, whole = 1000000})
+  local kept = {}
+  for f in lines(trim(r.out)) do
+    if exists(f) then push(kept, f) end
+  end
+  return kept
+end
+
+-- What the lints' verdicts rest on, beside the file judged.
+function rule_files()
+  local rules = {LINTS, SAFARI .. "/vocabulary.txt", SAFARI .. "/name_types.txt"}
+  for f in glob("cookbook:roc/*.shale") do push(rules, real(f)) end
+  return rules
+end
+
+function record_of(hashes)
+  local paths = keys(hashes)
+  local text = {}
+  for p in sort(paths) do push(text, hashes[p] .. " " .. p) end
+  return join(text, "\n") .. "\n"
+end
+
+function read_record(path)
+  local held = {}
+  for l in lines(trim(read_or(path, ""))) do
+    local parts = split(l, " ")
+    if #parts == 2 then held[parts[2]] = parts[1] end
+  end
+  return held
+end
+
+-- The `files=` that lints.shale needs: the changed files, or `every`.
+function changed_files(held, hashes, sources)
+  if #keys(held) == 0 then
+    print("no green on record for this checkout: judging every file")
+    return "every"
+  end
+  for p in keys(hashes) do
+    if not ends_with(p, ".roc") and get(held, p, "") ~= hashes[p] then
+      print("the lints' rules changed in " .. p .. ": judging every file")
+      return "every"
+    end
+  end
+  local changed = {}
+  for p in sources do
+    if get(held, p, "") ~= hashes[p] then push(changed, sub(p, #SAFARI + 2)) end
+  end
+  return join(changed, ",")
+end
+
+function check(roc, env)
+  local r = run({roc, "check", "web.roc"}, {timeout_ms = 120000, cwd = SAFARI, whole = 4000000, want = WANT, env = env})
+  if r.ended ~= "exit" or get(r, "code", -1) ~= 0 or not contains(r.out, "No errors found") then
+    print(trim(r.out))
+    fail("safari fast: roc check failed")
+  end
+  print("roc check web.roc: clean, " .. r.ms .. " ms")
+  return nil
+end
+
+function test(roc, env)
+  local r = run({roc, "test", "gates/CrossModuleExpects.roc"}, {timeout_ms = 120000, cwd = SAFARI, whole = 4000000, want = WANT, env = env})
+  local summary = re_find(r.out, "All \\(([0-9]+)\\) tests passed")
+  if r.ended ~= "exit" or get(r, "code", -1) ~= 0 or summary == nil or tonumber(summary.group) == 0 then
+    print(trim(r.out))
+    fail("safari fast: roc test failed")
+  end
+  print("roc test gates/CrossModuleExpects.roc: " .. summary.group .. " passed, " .. r.ms .. " ms")
+  return nil
+end
+
+function lint(files)
+  if files == "" then
+    print("lints: nothing changed since this checkout's last green")
+    return nil
+  end
+  local r = run({"shale", "--root", ".", LINTS, "files=" .. files}, {timeout_ms = 600000, whole = 1000000})
+  for l in lines(trim(r.out)) do
+    if not starts_with(l, "── budgets") then print(l) end
+  end
+  if r.ended ~= "exit" or get(r, "code", -1) ~= 0 then fail("safari fast: the lints failed") end
+  print("lints on " .. files .. ": " .. r.ms .. " ms")
+  return nil
+end
+
+function held_frame()
+  local mark = "RasterFrame " .. FRAME_DEPTH .. ": "
+  for l in lines(read(PROOF_EXPECTED)) do
+    if starts_with(l, mark) then return l end
+  end
+  fail("safari fast: " .. PROOF_EXPECTED .. " holds no line for " .. mark)
+end
+
+function frame(roc, folder, env)
+  local tool = folder .. "/RasterFrame"
+  if exists(tool) then remove(tool) end
+  local b = run({roc, "build", "--opt=dev", "RasterFrame.roc", "--output=" .. real(folder) .. "/RasterFrame"},
+    {timeout_ms = 120000, cwd = SAFARI .. "/gates", re = "✗|●", head = 40, want = WANT, env = env})
+  if b.matched_lines > 0 or not exists(tool) then
+    print(trim(b.out))
+    fail("safari fast: RasterFrame didn't build")
+  end
+  local r = run({real(tool), "held", FRAME_DEPTH}, {timeout_ms = 120000, whole = 1000, want = WANT})
+  local got = trim(r.out)
+  if r.ended ~= "exit" or get(r, "code", -1) ~= 0 or got ~= held_frame() then
+    fail("safari fast: the frame moved: this tree draws `" .. got .. "`, and " .. PROOF_EXPECTED .. " holds `" .. held_frame() .. "`")
+  end
+  print(got .. ", as held; built in " .. b.ms .. " ms, drawn in " .. r.ms .. " ms")
+  return nil
+end
+
+function main()
+  local roc = roc_bin("safari fast", false)
+  local folder = checkout_folder()
+  if not exists(folder) then mkdir(folder) end
+  local env = {XDG_CACHE_HOME = real(folder)}
+  local record = folder .. "/green.txt"
+  local sources = safari_files()
+  local judged = {}
+  for f in sources do push(judged, f) end
+  for f in rule_files() do push(judged, f) end
+  local hashes = hashes_of(judged)
+  check(roc, env)
+  test(roc, env)
+  lint(changed_files(read_record(record), hashes, sources))
+  frame(roc, folder, env)
+  replace(record, record_of(hashes))
+  print("safari fast: green")
+  print("NOT RUN, left to the merge gate: the roots web.roc and lib, the whole-tree lints and held counts, the tutorial, StepBack, ShapesFrame, the other held depths, the page")
+  return nil
+end
+
+main()

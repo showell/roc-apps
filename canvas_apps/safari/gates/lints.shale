@@ -1,36 +1,71 @@
 -- This script runs shale's Roc lints over safari and holds each count at the
--- number below, zero, so a finding fails the run.
+-- number in LINTS, so a moved count fails the run.
 --
 --   cd <roc-apps checkout> && shale canvas_apps/safari/gates/lints.shale
 --
--- It takes a minute or two, and run.shale runs it first.
+-- It takes about a minute, and run.shale runs it first.
+--
+-- With `files=`, which fast.shale gives it, it judges only those files, named
+-- from safari's folder and separated by commas, or `files=every`, and only by
+-- the checks one file can answer. A check held at zero fails on its first
+-- finding. A count held above zero can't be judged from part of the tree, so
+-- its findings are reported and pass.
 
 const SAFARI = "canvas_apps/safari"
+const FILES = arg("files", "")
 
--- Each lint, its arguments, and the exact count of each check it prints.
+-- More files than this go through each recipe at once, because a run may start
+-- only 64 programs.
+const MOST_ONE_AT_A_TIME = 6
+
+-- `whole_tree` names the checks that one file can't answer, because they read
+-- across files. The fast tier skips them, and a recipe with nothing else in it.
+-- `skip` names files of drawing data, tables of points that read better side
+-- by side than one number to a line.
 const LINTS = {
   {recipe = "name_hunt", args = {}, budget = {}, counts = {
     {"state_effect", 0}, {"question", 0}, {"vague", 0}, {"name_type", 0}, {"negative", 0},
     {"noun_effect", 0}, {"command_tense", 0}, {"mixed_tense", 0}, {"container", 0},
     {"preposition_split", 0}, {"short_name", 0}, {"worker_name", 0}, {"stacked_preposition", 0},
     {"taken_word", 0}, {"bare_participle", 0},
-  }},
+  }, whole_tree = {"command_tense", "mixed_tense", "preposition_split"}},
   {recipe = "errors", args = {}, budget = {}, counts = {
     {"error_alias", 0}, {"optional_tag", 0}, {"set_fallback", 0}, {"placeholder", 0},
-  }},
+  }, whole_tree = {"error_alias"}},
   {recipe = "nest_depth", args = {"min=4"}, budget = {}, counts = {{"nested", 0}}},
   {recipe = "parens", args = {}, budget = {}, counts = {{"paren_if", 0}, {"wrapped_body", 0}, {"else_block", 0}}},
   {recipe = "boundaries", args = {}, budget = {}, counts = {
     {"single", 0}, {"fixed", 0}, {"entry", 0}, {"constant", 0}, {"bool_param", 0},
-  }},
-  -- BirdStills, CatStills and EmojiStills are drawing data: tables of points
-  -- that read better side by side than one number to a line.
-  {recipe = "stack", args = {"skip=BirdStills.roc,CatStills.roc,EmojiStills.roc"}, budget = {"--budget", "steps=4000000000"}, counts = {{"to stack", 0}, {"long", 0}}},
+  }, whole_tree = {"single", "fixed", "entry", "constant", "bool_param"}},
+  {recipe = "stack", args = {}, budget = {"--budget", "steps=4000000000"}, counts = {{"to stack", 0}, {"long", 0}},
+    skip = {"BirdStills.roc", "CatStills.roc", "EmojiStills.roc"}},
   {recipe = "vocabulary", args = {"words=vocabulary.txt"}, budget = {}, counts = {{"retired_name", 173}, {"retired_comment", 46}}},
-  {recipe = "name_types", args = {"table=name_types.txt"}, budget = {}, counts = {{"name_type", 12}, {"bare_beside_unit", 55}, {"no_value", 1}}},
-  {recipe = "families", args = {}, budget = {}, counts = {{"family", 5}, {"twin_name", 9}}},
+  {recipe = "name_types", args = {"table=name_types.txt"}, budget = {}, counts = {{"name_type", 12}, {"bare_beside_unit", 55}, {"no_value", 1}},
+    whole_tree = {"bare_beside_unit"}},
+  {recipe = "families", args = {}, budget = {}, counts = {{"family", 5}, {"twin_name", 9}}, whole_tree = {"family", "twin_name"}},
   {recipe = "plain_names", args = {}, budget = {}, counts = {{"pure_mutator", 11}, {"abbreviation", 55}, {"module_doc", 14}}},
 }
+
+-- The command that runs `lint` over `glob`, in safari's folder.
+function lint_argv(lint, glob)
+  local argv = {"shale"}
+  for b in lint.budget do push(argv, b) end
+  push(argv, real("cookbook:roc/" .. lint.recipe .. ".shale"))
+  push(argv, "glob=" .. glob)
+  for a in lint.args do push(argv, a) end
+  local skip = get(lint, "skip", {})
+  if #skip > 0 and glob == "**/*.roc" then push(argv, "skip=" .. join(skip, ",")) end
+  return argv
+end
+
+-- A recipe's last line of counts.
+function lint_summary(out)
+  local summary = ""
+  for l in lines(trim(out)) do
+    if not starts_with(l, "──") and trim(l) ~= "" then summary = l end
+  end
+  return summary
+end
 
 -- The number a summary line gives for `check`: "check N", or "N check" for
 -- stack's "N to stack" and "N long".
@@ -42,33 +77,95 @@ function count_in(line, check)
   return nil
 end
 
-local wrong = {}
-for lint in LINTS do
-  local argv = {"shale"}
-  for b in lint.budget do push(argv, b) end
-  push(argv, real("cookbook:roc/" .. lint.recipe .. ".shale"))
-  push(argv, "glob=**/*.roc")
-  for a in lint.args do push(argv, a) end
-  -- `whole`, not `tail`: name_hunt's summary is one long line.
-  local r = run(argv, {cwd = SAFARI, timeout_ms = 600000, whole = 4000000})
-  local summary = ""
-  for l in lines(trim(r.out)) do
-    if not starts_with(l, "──") and trim(l) ~= "" then summary = l end
-  end
-  local said = {}
+function is_whole_tree(lint, check)
+  return has_item(get(lint, "whole_tree", {}), check)
+end
+
+function named_checks(lint)
+  local named = {}
   for c in lint.counts do
-    local got = count_in(summary, c[1])
-    if got == nil then
-      push(wrong, lint.recipe .. ": no count for " .. c[1] .. " in its last line: " .. summary)
-    elseif got ~= c[2] then
-      push(wrong, lint.recipe .. ": " .. c[1] .. " is " .. got .. ", held at " .. c[2])
-    end
-    push(said, c[1] .. " " .. tostring(got))
+    if not is_whole_tree(lint, c[1]) then push(named, c[1]) end
   end
-  print(lint.recipe .. ": " .. join(said, ", "))
+  return named
 end
-if #wrong > 0 then
-  for w in wrong do print("WRONG " .. w) end
-  fail("safari lints: " .. #wrong .. " count(s) moved; fix the code")
+
+-- The lines of `out` that are findings of `check`.
+function findings_of(out, check)
+  local mark = ": " .. substitute(check, "to stack", "stack") .. ":"
+  local found = {}
+  for l in lines(out) do
+    if contains(l, mark) then push(found, l) end
+  end
+  return found
 end
-print("safari lints: every count as held")
+
+-- One recipe's run over `glob`, judged by the checks one file can answer.
+function judge_part(lint, glob)
+  local r = run(lint_argv(lint, glob), {cwd = SAFARI, timeout_ms = 600000, whole = 4000000})
+  if contains(r.out, "refused: ") then fail("safari lints: " .. lint.recipe .. " refused " .. glob .. ": " .. trim(r.out)) end
+  local summary = lint_summary(r.out)
+  for c in lint.counts do
+    if not is_whole_tree(lint, c[1]) then
+      local got = count_in(summary, c[1])
+      if got == nil then fail("safari lints: " .. lint.recipe .. ": no count for " .. c[1] .. " in its last line: " .. summary) end
+      if got > 0 then
+        if c[2] == 0 or glob ~= "**/*.roc" then
+          for l in findings_of(r.out, c[1]) do print(l) end
+        end
+        if c[2] == 0 then fail("safari lints: " .. lint.recipe .. ": " .. got .. " " .. c[1] .. " in " .. glob .. ", held at zero") end
+        print("safari lints: " .. got .. " " .. c[1] .. " in " .. glob .. " reported, not judged: held at " .. c[2] .. " over the whole tree")
+      end
+    end
+  end
+  return nil
+end
+
+function judge_files()
+  local files = split(FILES, ",")
+  if FILES == "every" or #files > MOST_ONE_AT_A_TIME then files = {"**/*.roc"} end
+  local whole = {}
+  for lint in LINTS do
+    if #named_checks(lint) == 0 then
+      push(whole, lint.recipe)
+    else
+      for f in files do
+        if not has_item(get(lint, "skip", {}), f) then judge_part(lint, f) end
+      end
+      for c in get(lint, "whole_tree", {}) do push(whole, c) end
+    end
+  end
+  print("safari lints: not run, they need the whole tree: " .. join(whole, ", "))
+  return nil
+end
+
+function judge_tree()
+  local wrong = {}
+  for lint in LINTS do
+    -- `whole`, not `tail`: name_hunt's summary is one long line.
+    local r = run(lint_argv(lint, "**/*.roc"), {cwd = SAFARI, timeout_ms = 600000, whole = 4000000})
+    local summary = lint_summary(r.out)
+    local said = {}
+    for c in lint.counts do
+      local got = count_in(summary, c[1])
+      if got == nil then
+        push(wrong, lint.recipe .. ": no count for " .. c[1] .. " in its last line: " .. summary)
+      elseif got ~= c[2] then
+        push(wrong, lint.recipe .. ": " .. c[1] .. " is " .. got .. ", held at " .. c[2])
+      end
+      push(said, c[1] .. " " .. tostring(got))
+    end
+    print(lint.recipe .. ": " .. join(said, ", "))
+  end
+  if #wrong > 0 then
+    for w in wrong do print("WRONG " .. w) end
+    fail("safari lints: " .. #wrong .. " count(s) moved; fix the code")
+  end
+  print("safari lints: every count as held")
+  return nil
+end
+
+if FILES == "" then
+  judge_tree()
+else
+  judge_files()
+end
