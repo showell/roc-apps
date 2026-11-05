@@ -89,7 +89,7 @@ turn_got = [
 				one_seg,
 				I64.to_u64_wrap(0),
 			) ?? crash ("list-at out of range")
-		).exit_angle,
+		).exit_turn.abs(),
 	),
 ]
 

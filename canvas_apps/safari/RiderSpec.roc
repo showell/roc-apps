@@ -146,7 +146,7 @@ carry_want = [1.25, 0.05, 0.4, 0.0]
 turn_got : List(F64)
 turn_got = [
 	(crossed.heading.to_radians() - 0.7),
-	(crossed.yaw.to_radians() - (0.1 - seg.exit_angle.to_radians())),
+	(crossed.yaw.to_radians() - (0.1 - seg.exit_turn.to_radians())),
 ]
 
 turn_want : List(F64)

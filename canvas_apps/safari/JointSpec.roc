@@ -9,7 +9,7 @@ import Grade
 import Joint
 
 outer_got : List(F64)
-outer_got = [Joint.outer_edge(TurnsRight), Joint.outer_edge(TurnsLeft)]
+outer_got = [Joint.outer_edge(right_turn), Joint.outer_edge(left_turn)]
 
 outer_want : List(F64)
 outer_want = [0.0, 4.0]
@@ -22,19 +22,23 @@ pose = {
 	half_width: 2.0,
 }
 
+right_turn : Angle.Turn
+right_turn = Angle.Turn.radians(0.8726646259971648)
+
+left_turn : Angle.Turn
+left_turn = Angle.Turn.radians(0.0 - 1.2217304763960306)
+
 behind_right : Frame.SegmentPlace
 behind_right = JustBehind({
 	segment_length: 300.0,
-	turn_angle: Angle.Turn.radians(0.8726646259971648),
-	turn_side: TurnsRight,
+	turn: right_turn,
 	lane_width: 4.0,
 })
 
 behind_left : Frame.SegmentPlace
 behind_left = JustBehind({
 	segment_length: 300.0,
-	turn_angle: Angle.Turn.radians(1.2217304763960306),
-	turn_side: TurnsLeft,
+	turn: left_turn,
 	lane_width: 4.0,
 })
 
@@ -54,7 +58,7 @@ apex_got = (
 				before: behind_right,
 				after: here,
 				length_before: 300.0,
-				exit_side: TurnsRight,
+				turn: right_turn,
 			},
 		)
 		l = Joint.joint_apex(
@@ -67,7 +71,7 @@ apex_got = (
 				before: behind_left,
 				after: here,
 				length_before: 300.0,
-				exit_side: TurnsLeft,
+				turn: left_turn,
 			},
 		)
 		[

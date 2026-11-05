@@ -156,7 +156,7 @@ rails_at = |road, bend| GuardRail.quads_along(rail_path(road, bend))
 ## and along it.
 rail_path : Frame.RoadView, Joint.PlacedBend -> List(Geom.RiderPoint)
 rail_path = |road, bend| {
-	outer_edge = Joint.outer_edge(bend.exit_side)
+	outer_edge = Joint.outer_edge(bend.turn)
 	end_before = Frame.rider_point_at(
 		road,
 		{

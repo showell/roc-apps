@@ -35,15 +35,12 @@ Geom :: [].{
 		half_width : F64,
 	}
 
-	## Which way the road turns at a bend.
-	TurnSide : [TurnsLeft, TurnsRight]
-
 	## The bend from one segment into the next: the length of the segment
-	## before it, the angle it turns through, which way, and the lane's width.
+	## before it, the turn it makes, positive to the right, and the lane's
+	## width.
 	Bend : {
 		segment_length : F64,
-		turn_angle : Angle.Turn,
-		turn_side : Geom.TurnSide,
+		turn : Angle.Turn,
 		lane_width : F64,
 	}
 
@@ -76,14 +73,16 @@ Geom :: [].{
 	in_segment_before = |{ along, across }, bend| {
 		length = bend.segment_length
 		width = bend.lane_width
-		cos_turn = Trig.r_cos(bend.turn_angle.to_radians())
-		sin_turn = Trig.r_sin(bend.turn_angle.to_radians())
-		match bend.turn_side {
-			TurnsRight => {
+		turn_size = bend.turn.abs().to_radians()
+		cos_turn = Trig.r_cos(turn_size)
+		sin_turn = Trig.r_sin(turn_size)
+		if bend.turn.is_right() {
+			{
 				along: along * cos_turn - across * sin_turn + width * sin_turn + length,
 				across: across * cos_turn + along * sin_turn + width * (1.0 - cos_turn),
 			}
-			TurnsLeft => {
+		} else {
+			{
 				along: along * cos_turn + across * sin_turn + length,
 				across: across * cos_turn - along * sin_turn,
 			}
@@ -95,23 +94,21 @@ Geom :: [].{
 	in_segment_after = |{ along, across }, bend| {
 		length = bend.segment_length
 		width = bend.lane_width
-		cos_turn = Trig.r_cos(bend.turn_angle.to_radians())
-		sin_turn = Trig.r_sin(bend.turn_angle.to_radians())
-		match bend.turn_side {
-			TurnsRight => {
-				past_end = along - length - width * sin_turn
-				past_edge = across - width * (1.0 - cos_turn)
-				{
-					along: past_end * cos_turn + past_edge * sin_turn,
-					across: (0.0 - past_end) * sin_turn + past_edge * cos_turn,
-				}
+		turn_size = bend.turn.abs().to_radians()
+		cos_turn = Trig.r_cos(turn_size)
+		sin_turn = Trig.r_sin(turn_size)
+		if bend.turn.is_right() {
+			past_end = along - length - width * sin_turn
+			past_edge = across - width * (1.0 - cos_turn)
+			{
+				along: past_end * cos_turn + past_edge * sin_turn,
+				across: (0.0 - past_end) * sin_turn + past_edge * cos_turn,
 			}
-			TurnsLeft => {
-				past_end = along - length
-				{
-					along: past_end * cos_turn - across * sin_turn,
-					across: past_end * sin_turn + across * cos_turn,
-				}
+		} else {
+			past_end = along - length
+			{
+				along: past_end * cos_turn - across * sin_turn,
+				across: past_end * sin_turn + across * cos_turn,
 			}
 		}
 	}

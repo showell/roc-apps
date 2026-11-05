@@ -40,22 +40,23 @@ Rider :: [].{
 					Continues({ next: index }) => index
 					Terminates => crash "Rider.rider_state_for_next_segment: past the route's end"
 				}
-			theta = seg.exit_angle.to_radians()
-			sgn =
-				match seg.exit_side {
-					TurnsRight => 1.0
-					TurnsLeft => 0.0 - 1.0
-				}
+			theta = seg.exit_turn.to_radians()
 			c = Trig.r_cos(theta)
 			s = Trig.r_sin(theta)
-			da = (rs.along - (seg.length + (hw * s)))
-			dx = (rs.across - ((sgn * hw) * (1.0 - c)))
+			da = (rs.along - (seg.length + (hw * DeviceMath.real_abs(s))))
+			corner_shift = (hw * (1.0 - c))
+			dx =
+				if seg.exit_turn.is_right() {
+					rs.across - corner_shift
+				} else {
+					rs.across + corner_shift
+				}
 			{
 				..rs,
 				segment: next,
-				along: ((c * da) + ((sgn * s) * dx)),
-				across: ((((0.0 - sgn) * s) * da) + (c * dx)),
-				yaw: rs.yaw.minus(seg.exit_angle.times(sgn)),
+				along: ((c * da) + (s * dx)),
+				across: (((0.0 - s) * da) + (c * dx)),
+				yaw: rs.yaw.minus(seg.exit_turn),
 				gaze_yaw: Angle.straight_ahead,
 			}
 		}

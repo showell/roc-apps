@@ -1,6 +1,7 @@
 ## At a corner where the road turns, a safari animal stands on the outside of
 ## the bend, beyond the guard rail, and its baby stands in the middle of the
 ## road a little past the corner. Both face the way the road turns.
+import Angle
 import Scenery
 
 SafariCritter :: [].{
@@ -38,7 +39,7 @@ SafariCritter :: [].{
 	corner_critters : {
 		creature : Scenery.Creature,
 		corner_along : F64,
-		turn : [TurnsLeft, TurnsRight],
+		turn : Angle.Turn,
 		lane_half_width : F64,
 	} -> List(Scenery.Critter)
 	corner_critters = |
@@ -53,9 +54,10 @@ SafariCritter :: [].{
 			NoSpecies => []
 			Species(species) => {
 				{ inward, face_right } =
-					match turn {
-						TurnsRight => { inward: 1.0, face_right: True }
-						TurnsLeft => { inward: (0.0 - 1.0), face_right: False }
+					if turn.is_right() {
+						{ inward: 1.0, face_right: True }
+					} else {
+						{ inward: (0.0 - 1.0), face_right: False }
 					}
 				clear_of_rail = (lane_half_width + adult_rail_buffer)
 				out_from_middle = (clear_of_rail + (species.adult_height / 2.0))

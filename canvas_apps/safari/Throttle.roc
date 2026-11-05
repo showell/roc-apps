@@ -213,7 +213,7 @@ Throttle :: [].{
 			)
 			v_end =
 				match seg.ending {
-					Continues(_) => VehicleLimits.turn_speed(seg.exit_angle)
+					Continues(_) => VehicleLimits.turn_speed(seg.exit_turn.abs())
 					Terminates => 0.0
 				}
 			near = ((seg.length - state.along) <= VehicleLimits.approach_intersection_dist)

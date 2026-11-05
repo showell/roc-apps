@@ -4,7 +4,6 @@
 ## turn, and the creature waiting at its end.
 import Angle
 import Cat
-import Geom
 import Herd
 import Pigs
 import Scenery
@@ -74,8 +73,10 @@ World :: [].{
 		cows : List(Scenery.Critter),
 		pigs : List(Scenery.Critter),
 		pig_attention : Pigs.PigAttention,
-		exit_angle : Angle.Turn,
-		exit_side : Geom.TurnSide,
+
+		## The turn into the next segment: positive to the right, negative to
+		## the left.
+		exit_turn : Angle.Turn,
 		commit_along : F64,
 		mid_tower : [MidTower, NoMidTower],
 		cat : [Waits(Cat.Crossing), NoCat],
@@ -319,7 +320,6 @@ World :: [].{
 ## The segment at `index` of the route, built from its plan.
 built_segment : World.SegmentPlan, World.SegmentIndex -> World.Segment
 built_segment = |plan, index| {
-	exit_angle = plan.turn.abs()
 	trees = Trees.plant({ scheme: plan.scheme, length: plan.length })
 	pig_attention = Pigs.attention_of({
 		presence: plan.pigs,
@@ -335,11 +335,10 @@ built_segment = |plan, index| {
 			length: plan.length,
 		}),
 		pig_attention,
-		exit_angle,
-		exit_side: if (plan.turn >= Angle.straight_ahead) TurnsRight else TurnsLeft,
+		exit_turn: plan.turn,
 		commit_along: match plan.ending {
 			Continues => {
-				exit_tan = Trig.r_tan(exit_angle.to_radians())
+				exit_tan = Trig.r_tan(plan.turn.abs().to_radians())
 				plan.length - Scenery.lane_width / 2.0 / exit_tan
 			}
 			Terminates => plan.length

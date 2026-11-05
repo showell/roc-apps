@@ -47,16 +47,14 @@ m_chain = InChain(Frame.ChainPosition.number(3))
 m_prev_left : Frame.SegmentPlace
 m_prev_left = JustBehind({
 	segment_length: 300.0,
-	turn_angle: Angle.Turn.radians(1.2217304763960306),
-	turn_side: TurnsLeft,
+	turn: Angle.Turn.radians(0.0 - 1.2217304763960306),
 	lane_width: 4.0,
 })
 
 m_prev_right : Frame.SegmentPlace
 m_prev_right = JustBehind({
 	segment_length: 300.0,
-	turn_angle: Angle.Turn.radians(0.8726646259971648),
-	turn_side: TurnsRight,
+	turn: Angle.Turn.radians(0.8726646259971648),
 	lane_width: 4.0,
 })
 
@@ -76,7 +74,7 @@ is_in_chain = |place|
 	}
 
 turns_right : Frame.SegmentPlace -> Bool
-turns_right = |place| bend_of(place).turn_side == TurnsRight
+turns_right = |place| bend_of(place).turn.is_right()
 
 map_int_got : List(I64)
 map_int_got = [Frame.ChainPosition.number(3).to_i64(), Frame.ChainPosition.first.next().to_i64()]

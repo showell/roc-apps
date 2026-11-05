@@ -92,8 +92,7 @@ Frame :: [].{
 	bend_out_of : World.Segment -> Geom.Bend
 	bend_out_of = |segment| {
 		segment_length: segment.length,
-		turn_angle: segment.exit_angle,
-		turn_side: segment.exit_side,
+		turn: segment.exit_turn,
 		lane_width: Scenery.lane_width,
 	}
 

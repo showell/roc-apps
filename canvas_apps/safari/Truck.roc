@@ -123,7 +123,7 @@ next_turn_on = |segments, { route_position, segment_start }|
 					Continues(_) =>
 						TurnAhead({
 							distance: segment_end - route_position,
-							turn_speed: VehicleLimits.turn_speed(segment.exit_angle),
+							turn_speed: VehicleLimits.turn_speed(segment.exit_turn.abs()),
 						})
 					Terminates => NoTurnAhead
 				}

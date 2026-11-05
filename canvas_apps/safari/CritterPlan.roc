@@ -172,7 +172,7 @@ corner_sightings = |scene, { place, segment }|
 	SafariCritter.corner_critters({
 		creature: segment.exit_creature,
 		corner_along: segment.length,
-		turn: segment.exit_side,
+		turn: segment.exit_turn,
 		lane_half_width,
 	})
 		.map(|critter| sight_critter(scene, { place, critter }))

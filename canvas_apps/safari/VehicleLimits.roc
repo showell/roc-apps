@@ -15,6 +15,8 @@ VehicleLimits :: [].{
 	approach_intersection_dist : F64
 	approach_intersection_dist = 60.0
 
+	## The speed a turn of this size can be taken at, to the right or the left
+	## alike: a caller passes the turn's `abs`.
 	turn_speed : Angle.Turn -> F64
 	turn_speed = |turn| (
 		{

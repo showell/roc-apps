@@ -58,10 +58,10 @@ flags_want = [False, True, True, False, True, True, False, True, False, False, T
 
 angle_got : List(F64)
 angle_got = [
-	(seg(0).exit_angle.to_radians() / Trig.deg),
-	(seg(1).exit_angle.to_radians() / Trig.deg),
-	(seg(6).exit_angle.to_radians() / Trig.deg),
-	(seg(18).exit_angle.to_radians() / Trig.deg),
+	(seg(0).exit_turn.abs().to_radians() / Trig.deg),
+	(seg(1).exit_turn.abs().to_radians() / Trig.deg),
+	(seg(6).exit_turn.abs().to_radians() / Trig.deg),
+	(seg(18).exit_turn.abs().to_radians() / Trig.deg),
 	seg(18).commit_along,
 ]
 
@@ -148,11 +148,7 @@ next_of = |segment|
 
 ## Whether a segment ends by turning right.
 turns_right : World.Segment -> Bool
-turns_right = |segment|
-	match segment.exit_side {
-		TurnsRight => True
-		TurnsLeft => False
-	}
+turns_right = |segment| segment.exit_turn.is_right()
 
 ## Whether a segment has a mast halfway along.
 has_mid_tower : World.Segment -> Bool

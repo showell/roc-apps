@@ -4,6 +4,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Angle
 import Grade
 import SafariCritter
 import Scenery
@@ -58,25 +59,25 @@ all_four = List.join([
 	SafariCritter.corner_critters({
 		creature: Elephant,
 		corner_along: 100.0,
-		turn: TurnsRight,
+		turn: Angle.Turn.degrees(50.0),
 		lane_half_width: 2.0,
 	}),
 	SafariCritter.corner_critters({
 		creature: Giraffe,
 		corner_along: 50.0,
-		turn: TurnsLeft,
+		turn: Angle.Turn.degrees(-70.0),
 		lane_half_width: 2.0,
 	}),
 	SafariCritter.corner_critters({
 		creature: Zebra,
 		corner_along: 10.0,
-		turn: TurnsRight,
+		turn: Angle.Turn.degrees(50.0),
 		lane_half_width: 2.5,
 	}),
 	SafariCritter.corner_critters({
 		creature: Rhino,
 		corner_along: 0.0,
-		turn: TurnsLeft,
+		turn: Angle.Turn.degrees(-70.0),
 		lane_half_width: 2.0,
 	}),
 ])
@@ -125,7 +126,7 @@ corner_count = |creature|
 	SafariCritter.corner_critters({
 		creature,
 		corner_along: 100.0,
-		turn: TurnsRight,
+		turn: Angle.Turn.degrees(50.0),
 		lane_half_width: 2.0,
 	}).len().to_i64_wrap()
 

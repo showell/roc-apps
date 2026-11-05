@@ -220,12 +220,8 @@ approach = |view, bend| {
 ## and back to the outer edge where the segment after starts.
 bend_corner : GroundPlan.View, Joint.PlacedBend -> List(Geom.RiderPoint)
 bend_corner = |view, bend| {
-	inner_edge =
-		match bend.exit_side {
-			TurnsRight => Scenery.lane_width
-			TurnsLeft => 0.0
-		}
-	outer_edge = Joint.outer_edge(bend.exit_side)
+	inner_edge = if (bend.turn.is_right()) Scenery.lane_width else 0.0
+	outer_edge = Joint.outer_edge(bend.turn)
 	end_at = |across| Frame.rider_point_at(
 		view.road,
 		{

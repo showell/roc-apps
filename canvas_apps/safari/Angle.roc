@@ -13,7 +13,8 @@
 ## north, and a bearing grows to the rider's right. A turn is the angle
 ## between two directions, such as how far the rider's gaze is from straight
 ## ahead. A turn added to a bearing gives a bearing, and two bearings give
-## the turn between them, but two bearings can't be added.
+## the turn between them, but two bearings can't be added. A turn to the
+## right is positive, and a turn to the left negative.
 ##
 ## The third type, a lean, measures roll: how far the bike tips from
 ## upright. A lean is never added to a direction. It turns the bike only
@@ -96,6 +97,11 @@ Angle :: [].{
 		## How many of `whole` this turn is: negative for a turn to the left.
 		fraction_of : Angle.Turn, Angle.Turn -> F64
 		fraction_of = |Angle.Turn.(t), Angle.Turn.(whole)| t / whole
+
+		## Whether this turn goes right. Straight ahead counts as right, so
+		## every turn lies on one side or the other.
+		is_right : Angle.Turn -> Bool
+		is_right = |Angle.Turn.(t)| t >= 0.0
 
 		is_gt : Angle.Turn, Angle.Turn -> Bool
 		is_gt = |Angle.Turn.(t), Angle.Turn.(other)| t > other
