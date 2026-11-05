@@ -88,7 +88,8 @@ seen = riding(300.0)
 
 ## The first cat in view for a rider `along` metres in.
 first_cat : F64 -> CatPlan.CatItem
-first_cat = |along| riding(along).first() ?? crash "CatPlanSpec: the second segment's cat is in view"
+first_cat = |along|
+	riding(along).first() ?? crash "CatPlanSpec: the second segment's cat is in view"
 
 count_got : List(I64)
 count_got = [

@@ -91,9 +91,11 @@ cow_at = |i| {
 	column = i.div_trunc_by(3).to_f64()
 	row = i.rem_by(3).to_f64()
 	herd_front = (Herd.bull_dist + Herd.herd_gap_behind_bull)
-	in_line = ((herd_front + (column * Herd.herd_col_spacing)) + ((row - 1.0) * Herd.herd_row_stagger))
+	column_place = (herd_front + (column * Herd.herd_col_spacing))
+	in_line = (column_place + ((row - 1.0) * Herd.herd_row_stagger))
 	road_edge = ((Scenery.lane_width / 2.0) + Scenery.herd_road_offset)
-	out_from_road = ((road_edge + (row * Herd.herd_row_depth)) + (Herd.herd_jitter_across * Trig.r_cos((fi * 1.9))))
+	row_place = (road_edge + (row * Herd.herd_row_depth))
+	out_from_road = (row_place + (Herd.herd_jitter_across * Trig.r_cos((fi * 1.9))))
 	{
 		along: (in_line + (Herd.herd_jitter_along * Trig.r_sin((fi * 2.7)))),
 		across: (0.0 - out_from_road),

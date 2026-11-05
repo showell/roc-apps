@@ -242,12 +242,13 @@ World :: [].{
 
 	## How many of the segments up to and including `index` have pigs.
 	pig_segments_through : I64 -> I64
-	pig_segments_through = |index| route.take_first(count_before(index) + 1).keep_if(has_pigs).len().to_i64_wrap()
+	pig_segments_through = |index|
+		route.take_first(count_before(index) + 1).keep_if(has_pigs).len().to_i64_wrap()
 
 	## Segment `index` of the route.
 	segment_at : I64 -> World.Segment
 	segment_at = |index| segment(
-		route.get(I64.to_u64_wrap(index)) ?? crash "World.segment_at: the route has no segment there",
+		route.get(index.to_u64_wrap()) ?? crash "World.segment_at: the route has no segment there",
 		index,
 	)
 
@@ -347,7 +348,8 @@ nearest_tree_ahead = |trees, along| {
 		|best, tree|
 			if tree.across > 0.0 and tree.along >= along {
 				match best {
-					NearestAlong(nearest_along) => if (tree.along < nearest_along) NearestAlong(tree.along) else best
+					NearestAlong(nearest_along) =>
+						if (tree.along < nearest_along) NearestAlong(tree.along) else best
 					NoTreeYet => NearestAlong(tree.along)
 				}
 			} else {

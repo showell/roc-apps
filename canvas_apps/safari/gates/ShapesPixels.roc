@@ -48,7 +48,8 @@ paint_shape = |pixels, { roll, shape }|
 		Disc(d) => {
 			color = match d.fill {
 				Flat(flat) => flat
-				Skip | Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) => crash "ShapesPixels: a command's disc with a gradient"
+				Skip | Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) =>
+					crash "ShapesPixels: a command's disc with a gradient"
 			}
 			match d.clip {
 				Anywhere =>

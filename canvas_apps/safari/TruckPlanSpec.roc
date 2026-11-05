@@ -134,7 +134,8 @@ behind_want = [False, True]
 ## The depth key of a truck in view.
 key_of : F64 -> { forward : F64 }
 key_of = |lead| {
-	key = TruckPlan.depth_keys(lead_of(lead)).first() ?? crash "TruckPlanSpec: a truck in view has a depth key"
+	key = TruckPlan.depth_keys(lead_of(lead)).first()
+		?? crash "TruckPlanSpec: a truck in view has a depth key"
 	{ forward: key.forward }
 }
 

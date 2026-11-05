@@ -57,7 +57,8 @@ SafariCritter :: [].{
 						TurnsRight => { inward: 1.0, face_right: True }
 						TurnsLeft => { inward: (0.0 - 1.0), face_right: False }
 					}
-				out_from_middle = ((lane_half_width + adult_rail_buffer) + (species.adult_height / 2.0))
+				clear_of_rail = (lane_half_width + adult_rail_buffer)
+				out_from_middle = (clear_of_rail + (species.adult_height / 2.0))
 				[
 					{
 						along: corner_along,

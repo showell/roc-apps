@@ -117,7 +117,8 @@ first_segment = TreePlan.segment_trees(from_origin, 0)
 
 ## The first segment's tree at `i`, in planting order.
 planted_tree : U64 -> TreePlan.TreeItem
-planted_tree = |i| first_segment.get(i) ?? crash "TreePlanSpec: the first segment has 28 trees in view"
+planted_tree = |i|
+	first_segment.get(i) ?? crash "TreePlanSpec: the first segment has 28 trees in view"
 
 order_got : List(F64)
 order_got = [
@@ -155,7 +156,8 @@ tree_place_at : U64 -> I64
 tree_place_at = |i|
 	match key_at(i).subject {
 		Tree(place) => place.to_i64_wrap()
-		Tower(_) | Critter(_) | Cat(_) | Truck | Rail(_) | Bird(_) => crash "TreePlanSpec: a tree's key names a tree"
+		Tower(_) | Critter(_) | Cat(_) | Truck | Rail(_) | Bird(_) =>
+			crash "TreePlanSpec: a tree's key names a tree"
 	}
 
 items_got : List(I64)

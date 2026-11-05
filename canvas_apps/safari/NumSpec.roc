@@ -201,7 +201,7 @@ mod_want = [
 	(-119.75),
 ]
 
-# mod_row builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
+# An accumulator loop is linear, where appending a recursive call is quadratic.
 mod_row : F64, List(F64) -> List(F64)
 mod_row = |m, xs| mod_row_onto(
 	xs,
@@ -241,7 +241,7 @@ mod_row_onto = |
 	}
 )
 
-# mod_outer builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
+# An accumulator loop is linear, where appending a recursive call is quadratic.
 mod_outer : { moduli : List(F64), values : List(F64) } -> List(F64)
 mod_outer = |{ moduli, values }| mod_outer_onto({
 	moduli,

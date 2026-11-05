@@ -39,7 +39,7 @@ main! = |args| {
 	# With no argument, the run takes its usual number of steps.
 	steps =
 		match args.get(0) {
-			Ok(text) => I64.from_str(text) ?? crash "FrameBench: the steps argument is a whole number"
+			Ok(text) => I64.from_str(text) ?? crash "FrameBench: steps must be a whole number"
 			Err(OutOfBounds) => 60
 		}
 	world = World.segments

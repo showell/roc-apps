@@ -107,7 +107,9 @@ Geom :: [].{
 			daf = (a1.forward - a0.forward)
 			dbx = (b1.right - b0.right)
 			dbf = (b1.forward - b0.forward)
-			t = ((((b0.right - a0.right) * dbf) - ((b0.forward - a0.forward) * dbx)) / ((dax * dbf) - (daf * dbx)))
+			offset_cross = (((b0.right - a0.right) * dbf) - ((b0.forward - a0.forward) * dbx))
+			direction_cross = ((dax * dbf) - (daf * dbx))
+			t = (offset_cross / direction_cross)
 			{ right: (a0.right + (t * dax)), forward: (a0.forward + (t * daf)) }
 		}
 	)
@@ -144,7 +146,7 @@ Geom :: [].{
 		}
 	)
 
-	# clip_near_onto is an accumulator loop, which is linear where appending a recursive call is quadratic.
+	# An accumulator loop is linear, where appending a recursive call is quadratic.
 	clip_near_onto : List(Geom.Vec3),
 	{
 		corner_index : I64,

@@ -51,7 +51,8 @@ table_want = [
 ## The x of the first corner of a pose's first polygon.
 first_x : Cat.Pose -> F64
 first_x = |pose| {
-	first_poly = CatStills.pose_polys(pose).first() ?? crash "CatStillsSpec: every pose has polygons"
+	first_poly = CatStills.pose_polys(pose).first()
+		?? crash "CatStillsSpec: every pose has polygons"
 	first_pt = first_poly.pts.first() ?? crash "CatStillsSpec: every polygon has corners"
 	first_pt.x
 }

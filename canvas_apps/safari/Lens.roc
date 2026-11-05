@@ -21,7 +21,8 @@ Lens :: [].{
 
 	## The focal length for a lean, from 0 (upright) to 1 (the deepest lean).
 	focal_for_lean : F64 -> F64
-	focal_for_lean = |lean_frac| (focal * (1.0 - (((1.0 - min_focal_factor) * lean_frac) * lean_frac)))
+	focal_for_lean = |lean_frac|
+		(focal * (1.0 - (((1.0 - min_focal_factor) * lean_frac) * lean_frac)))
 
 	## The focal length for the rider's attention, from 0 upward.
 	focal_for_gaze : F64 -> F64
