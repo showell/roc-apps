@@ -124,6 +124,8 @@ Opaque types do the most work in this next function. `Angle.Bearing` is a direct
 
 `turn_from_view.abs() >= visible_turn_limit` compares two `Turn`s. The code never touches radians until `sun_place` has to do trigonometry.
 
+{{fails turn_as_bearing}}
+
 ## The cat
 
 The cat is the best scene in Safari Ride. It walks out, freezes in the lane as the rider bears down on it, and leaps clear at the last moment.
@@ -187,6 +189,8 @@ A timeline is data, so the cat's whole performance reads in one place, like a sc
 {{code Cat.crossing_timeline}}
 
 There are two tracks because a cat's looks and its movement change at different moments. Its body moves just ahead of its path, so the `looks` track cuts at 0.8, 2.8 and 3.8 steps into the escape while the `path` track cuts at 1 and 3. One list of phases tying them together wouldn't fit the cat or the bird.
+
+{{code Cat.crossing_timeline from "looks:" to "finally: Holds(Collapse),"}}
 
 `Timeline(pose)` takes a type parameter, which is how a cat and a bird share it. A cat's pose is a closed tag union, and nothing outside `Cat` needs to know its tags. Because it's closed, a `match` on it that misses a pose won't compile.
 
