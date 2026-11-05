@@ -25,11 +25,12 @@
 -- ../README.md) and change here when a spec's output rightly changes.
 --
 -- The proof tools: StepBack passes on "every step back went back one step",
--- and ShapesFrame on "differ 0" at depths 0, 100, 3000, 5025 and 9000. All their
+-- and ShapesFrame on "differ 0" at every depth. All their
 -- output, and RasterFrame's hash of the frame at each depth, is held exactly
 -- to gates/proof.expected. A change that rightly alters the picture changes
 -- that file with it, and the commit says why.
--- A depth is there for what its frame shows. At 100 a Roc bird is in flight.
+-- A depth is there for what its frame shows. At 100 a Roc bird is in flight,
+-- at 500 a cat is frozen in the lane, and at 518 it is in mid-leap.
 -- At 5025 the truck is close,
 -- braking, with its headlights on: of these frames, only 5025 shows the
 -- truck's lights (beams, brake lights and their glow), and only 5025 and 0
@@ -182,7 +183,7 @@ function proof()
   local bin = scratch .. "/bin"
   mkdir(bin)
   local bad = 0
-  local depths = {"0", "100", "3000", "5025", "9000"}
+  local depths = {"0", "100", "500", "518", "3000", "5025", "9000"}
   local held = {}
   if proof_build(roc, scratch, "StepBack") then
     local r = run({real(bin .. "/StepBack")}, {timeout_ms = 600000, tail = 20, want = WANT})
