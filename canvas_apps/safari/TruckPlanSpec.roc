@@ -11,9 +11,9 @@ import World
 
 segs : List(World.Segment)
 segs = [
-	World.segment_at(0),
-	World.segment_at(1),
-	World.segment_at(2),
+	World.route_segment(0),
+	World.route_segment(1),
+	World.route_segment(2),
 ]
 
 here : Frame.Pose
@@ -21,7 +21,7 @@ here = {
 	along: 0.0,
 	across: 0.0,
 	yaw: 0.0,
-	hw: 2.0,
+	half_width: 2.0,
 }
 
 lengths_got : List(F64)
@@ -35,7 +35,7 @@ lengths_want = [500.0, 320.0, 400.0]
 truck_seen_from : Frame.Pose, F64 -> TruckPlan.TruckAt
 truck_seen_from = |pose, lead| TruckPlan.in_view({
 	world: segs,
-	chain: [0, 1, 2],
+	chain: [0, 1, 2].map(World.SegmentIndex.number),
 	pose,
 	rider_along: 0.0,
 	lead,
@@ -54,9 +54,9 @@ is_ahead = |truck|
 
 ## Where the truck is, for a lead that puts it in view.
 ahead_of : F64 -> {
-	place : I64,
+	position : Frame.ChainPosition,
 	along : F64,
-	fwd : F64,
+	forward : F64,
 }
 ahead_of = |lead|
 	match lead_of(lead) {
@@ -79,7 +79,7 @@ present_want : List(Bool)
 present_want = [True, True, True, True, False, False, False]
 
 landed_got : List(I64)
-landed_got = [100.0, 499.0, 600.0, 900.0].map(|lead| ahead_of(lead).place)
+landed_got = [100.0, 499.0, 600.0, 900.0].map(|lead| ahead_of(lead).position.to_i64())
 
 landed_want : List(I64)
 landed_want = [0, 0, 1, 2]
@@ -91,7 +91,7 @@ along_want : List(F64)
 along_want = [100.0, 499.0, 100.0, 80.0]
 
 fwd_got : List(F64)
-fwd_got = [ahead_of(100.0).fwd, ahead_of(499.0).fwd]
+fwd_got = [ahead_of(100.0).forward, ahead_of(499.0).forward]
 
 fwd_want : List(F64)
 fwd_want = [100.0, 499.0]
@@ -110,7 +110,7 @@ behind_got = [
 				along: 100.0,
 				across: 0.0,
 				yaw: 0.0,
-				hw: 2.0,
+				half_width: 2.0,
 			},
 			100.0,
 		),
@@ -121,7 +121,7 @@ behind_got = [
 				along: 99.0,
 				across: 0.0,
 				yaw: 0.0,
-				hw: 2.0,
+				half_width: 2.0,
 			},
 			100.0,
 		),

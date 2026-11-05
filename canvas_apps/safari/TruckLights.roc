@@ -47,11 +47,11 @@ TruckLights :: [].{
 	glow_sides = 16
 
 	## Whether any of `points` is at or behind the camera's near plane.
-	has_point_behind_camera : List(Geom.Vec3) -> Bool
-	has_point_behind_camera = |points| points.any(|point| point.forward <= Geom.near)
+	has_point_behind_camera : List(Geom.SpacePoint) -> Bool
+	has_point_behind_camera = |points| points.any(|point| point.forward <= Geom.near_plane)
 
 	## The point halfway between `from` and `to`.
-	midpoint : { from : Geom.Vec3, to : Geom.Vec3 } -> Geom.Vec3
+	midpoint : { from : Geom.SpacePoint, to : Geom.SpacePoint } -> Geom.SpacePoint
 	midpoint = |{ from, to }| {
 		right: ((from.right + to.right) / 2.0),
 		forward: ((from.forward + to.forward) / 2.0),
@@ -253,7 +253,7 @@ brake_light = |truck, { left, right }| {
 
 ## The glow round a brake lamp. A lamp with a corner behind the camera has
 ## no glow; the lamp itself is cut at the near plane like the body's faces.
-glow : TruckShape.TruckInView, List(Geom.Vec3) -> List(Paint.DrawCmd)
+glow : TruckShape.TruckInView, List(Geom.SpacePoint) -> List(Paint.DrawCmd)
 glow = |truck, lamp|
 	if TruckLights.has_point_behind_camera(lamp) {
 		[]

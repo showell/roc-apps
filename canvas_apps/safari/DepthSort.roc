@@ -9,13 +9,13 @@ DepthSort :: [].{
 	## that kind's list. A frame has at most one truck, so the truck has no
 	## place.
 	Subject : [
-		Tree(U64),
-		Tower(U64),
-		Critter(U64),
-		Cat(U64),
+		Tree(U32),
+		Tower(U32),
+		Critter(U32),
+		Cat(U32),
 		Truck,
-		Rail(U64),
-		Bird(U64),
+		Rail(U32),
+		Bird(U32),
 	]
 
 	## A thing to draw, as the sort sees it: how far ahead it is, and which

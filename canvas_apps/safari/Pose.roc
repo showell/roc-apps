@@ -2,6 +2,7 @@
 ## is, which way it points, how fast it goes, how far it leans, and where the
 ## rider is looking.
 import Angle
+import World
 
 Pose :: [].{
 
@@ -11,7 +12,7 @@ Pose :: [].{
 	## rider's look away from the way the bike points, and `focus` how
 	## closely the rider is watching something.
 	RiderState : {
-		segment : I64,
+		segment : World.SegmentIndex,
 		along : F64,
 		across : F64,
 		yaw : Angle.Turn,
@@ -27,7 +28,7 @@ Pose :: [].{
 
 	initial_rider_state : Pose.RiderState
 	initial_rider_state = {
-		segment: 0,
+		segment: World.SegmentIndex.first,
 		along: 0.0,
 		across: 0.0,
 		yaw: Angle.straight_ahead,

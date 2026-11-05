@@ -13,9 +13,9 @@ import World
 
 segs : List(World.Segment)
 segs = [
-	World.segment_at(0),
-	World.segment_at(1),
-	World.segment_at(2),
+	World.route_segment(0),
+	World.route_segment(1),
+	World.route_segment(2),
 ]
 
 origin : Frame.Pose
@@ -23,7 +23,7 @@ origin = {
 	along: 0.0,
 	across: 0.0,
 	yaw: 0.0,
-	hw: 2.0,
+	half_width: 2.0,
 }
 
 up_road : Frame.Pose
@@ -31,7 +31,7 @@ up_road = {
 	along: 100.0,
 	across: 0.0,
 	yaw: 0.0,
-	hw: 2.0,
+	half_width: 2.0,
 }
 
 ## The first three segments, seen from `pose` through a camera of focal
@@ -39,7 +39,7 @@ up_road = {
 view_from : Frame.Pose, F64 -> TreePlan.View
 view_from = |pose, cam_focal| {
 	world: segs,
-	chain: [0, 1, 2],
+	chain: [0, 1, 2].map(World.SegmentIndex.number),
 	pose,
 	cam_focal,
 }
@@ -49,9 +49,9 @@ from_origin = view_from(origin, 500.0)
 
 ## A green tree `along` metres into the first segment, 3.5 m right of the
 ## road's middle.
-green_tree_at : F64 -> { place : I64, tree : Scenery.Tree }
+green_tree_at : F64 -> { position : Frame.ChainPosition, tree : Scenery.Tree }
 green_tree_at = |along| {
-	place: 0,
+	position: Frame.ChainPosition.first,
 	tree: {
 		along,
 		across: 3.5,
@@ -75,7 +75,7 @@ lone_tree = TreePlan.tree_in_view(
 one_got : List(F64)
 one_got = [
 	lone_tree.right,
-	lone_tree.fwd,
+	lone_tree.forward,
 	lone_tree.height,
 ]
 
@@ -107,13 +107,13 @@ seg0_got = [
 	from_origin,
 	view_from(up_road, 500.0),
 	view_from(origin, 1.0),
-].map(|view| TreePlan.segment_trees(view, 0).len().to_i64_wrap())
+].map(|view| TreePlan.segment_trees(view, Frame.ChainPosition.first).len().to_i64_wrap())
 
 seg0_want : List(I64)
 seg0_want = [28, 20, 0]
 
 first_segment : List(TreePlan.TreeItem)
-first_segment = TreePlan.segment_trees(from_origin, 0)
+first_segment = TreePlan.segment_trees(from_origin, Frame.ChainPosition.first)
 
 ## The first segment's tree at `i`, in planting order.
 planted_tree : U64 -> TreePlan.TreeItem
@@ -122,9 +122,9 @@ planted_tree = |i|
 
 order_got : List(F64)
 order_got = [
-	planted_tree(0).fwd,
-	planted_tree(1).fwd,
-	planted_tree(2).fwd,
+	planted_tree(0).forward,
+	planted_tree(1).forward,
+	planted_tree(2).forward,
 	planted_tree(0).right,
 	planted_tree(1).right,
 ]
@@ -151,11 +151,11 @@ keys = TreePlan.depth_keys(first_segment)
 key_at : U64 -> DepthSort.DepthKey
 key_at = |i| keys.get(i) ?? crash "TreePlanSpec: the first segment has 28 keys"
 
-## The place in the tree list that the key at `i` names.
+## The position in the tree list that the key at `i` names.
 tree_place_at : U64 -> I64
 tree_place_at = |i|
 	match key_at(i).subject {
-		Tree(place) => place.to_i64_wrap()
+		Tree(position) => position.to_i64()
 		Tower(_) | Critter(_) | Cat(_) | Truck | Rail(_) | Bird(_) =>
 			crash "TreePlanSpec: a tree's key names a tree"
 	}

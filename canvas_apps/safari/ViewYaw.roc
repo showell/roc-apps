@@ -24,6 +24,6 @@ ViewYaw :: [].{
 		along: s.along,
 		across: s.across,
 		yaw: s.yaw.plus(view_yaw_for(s)).to_radians(),
-		hw: Scenery.lane_width / 2.0,
+		half_width: Scenery.lane_width / 2.0,
 	}
 }

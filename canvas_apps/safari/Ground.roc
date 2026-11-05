@@ -8,18 +8,18 @@ import Paint
 Ground :: [].{
 
 	## A point on the ground, lowered by the earth's curve.
-	ground_point : Geom.RiderPt -> Geom.Vec3
+	ground_point : Geom.RiderPoint -> Geom.SpacePoint
 	ground_point = |point| {
 		right: point.right,
 		forward: point.forward,
-		height: (0.0 - Geom.ground_drop(point.right, point.forward)),
+		height: (0.0 - Geom.ground_drop(point)),
 	}
 
 	## A patch of `color` with these corners, cut at the camera's near plane.
 	## A patch with more than eight corners, or with fewer than three left
 	## in front of the camera, draws nothing.
 	draw : {
-		corners : List(Geom.RiderPt),
+		corners : List(Geom.RiderPoint),
 		color : I64,
 		cam_focal : F64,
 		view_w : F64,

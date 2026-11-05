@@ -20,23 +20,23 @@ import TruckPlan
 import World
 
 segs : List(World.Segment)
-segs = List.from_iter(I64.until(0, World.route.len().to_i64_wrap())).map(World.segment_at)
+segs = List.from_iter(U32.until(0, World.route.len().to_u32_wrap())).map(World.route_segment)
 
 origin : Frame.Pose
 origin = {
 	along: 0.0,
 	across: 0.0,
 	yaw: 0.0,
-	hw: 2.0,
+	half_width: 2.0,
 }
 
 scene : Render.Scene
 scene = Render.collect({
 	world: segs,
-	chain: Frame.build_chain(segs, 0),
+	chain: Frame.chain_ahead(segs, World.SegmentIndex.first),
 	pose: origin,
 	cam_focal: 500.0,
-	rider_segment: 0,
+	rider_segment: World.SegmentIndex.first,
 	rider_along: 0.0,
 	speed: Pose.v_base,
 	truck_position: 500.0,
@@ -51,7 +51,7 @@ merge_got = {
 		CritterPlan.cow_items(scene.critters).len(),
 		CatPlan.depth_keys(scene.cats).len(),
 		TruckPlan.depth_keys(scene.truck).len(),
-		RailPlan.rail_items(scene.rails).len(),
+		RailPlan.depth_keys(scene.rails).len(),
 		RocBird.bird_items(scene.birds).len(),
 	]
 	[(n - List.sum(kind_counts).to_i64_wrap())]

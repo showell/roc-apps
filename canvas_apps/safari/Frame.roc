@@ -1,219 +1,164 @@
-# Frame -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## Frame finds where the road lies from where the rider is. The chain is the
+## line of segments the rider can see, the rider's own first, and a point on
+## any segment of it, or on the segment just behind the rider, is carried
+## back round the bends between to the rider's own segment and into the
+## rider's view.
 import Geom
 import Scenery
 import World
 
 Frame :: [].{
+
 	Pose : Geom.Pose
 
 	## The road in view: the world's segments, the chain of them ahead of
 	## the rider, and the rider's pose.
 	RoadView : {
 		world : List(World.Segment),
-		chain : List(I64),
+		chain : List(World.SegmentIndex),
 		pose : Frame.Pose,
 	}
 
-	Mapper : {
-		is_chain : Bool,
-		d : I64,
-		prev_len : F64,
-		prev_angle : F64,
-		prev_right : Bool,
-		prev_w : F64,
+	## A segment's place in the chain, counted from the rider's own at 0. It
+	## says how many segments ahead of the rider that segment is, where a
+	## World.SegmentIndex says where it is in the route.
+	ChainPosition :: U32.{
+
+		number : U32 -> Frame.ChainPosition
+		number = |n| Frame.ChainPosition.(n)
+
+		to_i64 : Frame.ChainPosition -> I64
+		to_i64 = |Frame.ChainPosition.(n)| n.to_i64()
+
+		## The rider's own segment.
+		first : Frame.ChainPosition
+		first = Frame.ChainPosition.(0)
+
+		next : Frame.ChainPosition -> Frame.ChainPosition
+		next = |Frame.ChainPosition.(n)| Frame.ChainPosition.(n + 1)
+
+		## Every position in `chain`, the rider's own first.
+		all_in : List(World.SegmentIndex) -> List(Frame.ChainPosition)
+		all_in = |chain|
+			List.from_iter(U32.until(0, chain.len().to_u32_wrap())).map(Frame.ChainPosition.number)
+
+		## The segment at this position in `chain`.
+		index_in : Frame.ChainPosition, List(World.SegmentIndex) -> World.SegmentIndex
+		index_in = |Frame.ChainPosition.(n), chain|
+			chain.get(n.to_u64()) ?? crash "Frame.ChainPosition.index_in: past the chain's end"
+
+		## The segments of `chain` before this position, the rider's own first.
+		before_in : Frame.ChainPosition, List(World.SegmentIndex) -> List(World.SegmentIndex)
+		before_in = |Frame.ChainPosition.(n), chain| chain.take_first(n.to_u64())
+
+		## Whether this position is the last one in `chain`.
+		is_last_in : Frame.ChainPosition, List(World.SegmentIndex) -> Bool
+		is_last_in = |Frame.ChainPosition.(n), chain| n.to_u64() + 1 >= chain.len()
+
+		## Whether `chain` stops before this position.
+		is_past_end_of : Frame.ChainPosition, List(World.SegmentIndex) -> Bool
+		is_past_end_of = |Frame.ChainPosition.(n), chain| n.to_u64() >= chain.len()
+
+		## Whether this position is among the first `count` of a chain.
+		is_within_first : Frame.ChainPosition, U32 -> Bool
+		is_within_first = |Frame.ChainPosition.(n), count| n < count
+
+		is_eq : _
 	}
 
-	look_ahead : I64
+	## Where a segment lies from the rider: at a position in the chain, or
+	## just behind the rider, round the bend into the rider's segment.
+	SegmentPlace : [InChain(Frame.ChainPosition), JustBehind(Geom.Bend)]
+
+	## The most segments a chain holds.
+	look_ahead : U32
 	look_ahead = 7
 
-	max_chain : I64
-	max_chain = 8
+	## The chain from the segment at `start`: as far as the rider can see, or
+	## to the route's end.
+	chain_ahead : List(World.Segment), World.SegmentIndex -> List(World.SegmentIndex)
+	chain_ahead = |world, start| chain_onto(world, { index: start, chain: [] })
 
-	build_chain : List(World.Segment), I64 -> List(I64)
-	build_chain = |segs, start| chain_onto(
-		segs,
-		{
-			segment_at: start,
-			chain_length: 0,
-			chain: [],
-		},
-	)
+	## The bend at the end of `segment`.
+	bend_out_of : World.Segment -> Geom.Bend
+	bend_out_of = |segment| {
+		segment_length: segment.length,
+		turn_angle: segment.exit_angle,
+		turn_side: segment.exit_side,
+		lane_width: Scenery.lane_width,
+	}
 
-	# An accumulator loop: linear, where appending a recursive call is quadratic.
-	chain_onto : List(World.Segment),
+	## The place of `segment`, which is just behind the rider.
+	place_behind : World.Segment -> Frame.SegmentPlace
+	place_behind = |segment| JustBehind(bend_out_of(segment))
+
+	## A point on the segment at `position` in the chain, in the rider's view.
+	rider_point_ahead : Frame.RoadView,
 	{
-		segment_at : I64,
-		chain_length : I64,
-		chain : List(I64),
-	} -> List(I64)
-	chain_onto = |
-		segs,
-		{
-			segment_at: s,
-			chain_length: n,
-			chain: acc,
-		},
-	| (
-		if n >= look_ahead {
-			acc
-		} else {
-			(
-				if n >= max_chain {
-					acc
-				} else {
-					match (
-						List.get(
-							segs,
-							I64.to_u64_wrap(s),
-						) ?? crash ("list-at out of range")
-					).ending {
-						Continues({ next }) => chain_onto(
-							segs,
-							{
-								segment_at: next,
-								chain_length: (n + 1),
-								chain: List.append(acc, s),
-							},
-						)
-						Terminates => List.append(acc, s)
-					}
-				}
-			)
-		}
-	)
-
-	compose_down : Geom.AX,
-	{
-		world : List(World.Segment),
-		chain : List(I64),
-		segments_ahead : I64,
-	} -> Geom.AX
-	compose_down = |
-		point,
-		{
-			world: segs,
-			chain: ch,
-			segments_ahead: k,
-		},
-	| (
-		if k <= 0 {
-			point
-		} else {
-			(
-				{
-					chosen = List.get(
-						ch,
-						I64.to_u64_wrap(k - 1),
-					) ?? crash "Frame.compose_down: the chain has a segment at each step"
-					seg = List.get(
-						segs,
-						I64.to_u64_wrap(chosen),
-					) ?? crash "Frame.compose_down: the chain names a segment of the world"
-					p = Geom.next_to_cur(
-						point,
-						{
-							segment_length: seg.length,
-							turn_angle: seg.exit_angle,
-							turns_right: seg.exit_right,
-							lane_width: Scenery.lane_width,
-						},
-					)
-					compose_down(
-						p,
-						{
-							world: segs,
-							chain: ch,
-							segments_ahead: (k - 1),
-						},
-					)
-				}
-			)
-		}
-	)
-
-	at : Frame.RoadView,
-	{
-		segments_ahead : I64,
+		position : Frame.ChainPosition,
 		along : F64,
 		across : F64,
-	} -> Geom.RiderPt
-	at = |
+	} -> Geom.RiderPoint
+	rider_point_ahead = |
 		road,
 		{
-			segments_ahead,
+			position,
+			along,
+			across,
+		},
+	| {
+		on_rider_segment = position.before_in(road.chain).fold_rev(
+			{ along, across },
+			|index, point| Geom.in_segment_before(point, bend_out_of(index.segment_in(road.world))),
+		)
+		Geom.to_rider_point(on_rider_segment, road.pose)
+	}
+
+	## A point on the segment at `place`, in the rider's view.
+	rider_point_at : Frame.RoadView,
+	{
+		place : Frame.SegmentPlace,
+		along : F64,
+		across : F64,
+	} -> Geom.RiderPoint
+	rider_point_at = |
+		road,
+		{
+			place,
 			along,
 			across,
 		},
 	|
-		Geom.to_rider(
-			compose_down(
-				{ a: along, x: across },
-				{
-					world: road.world,
-					chain: road.chain,
-					segments_ahead,
-				},
-			),
-			road.pose,
-		)
-
-	chain_map : I64 -> Frame.Mapper
-	chain_map = |d| {
-		is_chain: True,
-		d: d,
-		prev_len: 0.0,
-		prev_angle: 0.0,
-		prev_right: False,
-		prev_w: 0.0,
-	}
-
-	prev_map : World.Segment -> Frame.Mapper
-	prev_map = |s| {
-		is_chain: False,
-		d: 0,
-		prev_len: s.length,
-		prev_angle: s.exit_angle,
-		prev_right: s.exit_right,
-		prev_w: Scenery.lane_width,
-	}
-
-	map_pt : Frame.RoadView,
-	{
-		mapper : Frame.Mapper,
-		along : F64,
-		across : F64,
-	} -> Geom.RiderPt
-	map_pt = |
-		road,
-		{
-			mapper: m,
-			along,
-			across,
-		},
-	| (
-		if m.is_chain {
-			at(
-				road,
-				{
-					segments_ahead: m.d,
-					along,
-					across,
-				},
-			)
-		} else {
-			Geom.to_rider(
-				Geom.cur_to_next(
-					{ a: along, x: across },
+		match place {
+			InChain(position) =>
+				rider_point_ahead(
+					road,
 					{
-						segment_length: m.prev_len,
-						turn_angle: m.prev_angle,
-						turns_right: m.prev_right,
-						lane_width: m.prev_w,
+						position,
+						along,
+						across,
 					},
-				),
-				road.pose,
-			)
+				)
+			JustBehind(bend) =>
+				Geom.to_rider_point(Geom.in_segment_after({ along, across }, bend), road.pose)
 		}
-	)
 }
+
+## `chain` with the segment at `index` and those after it added, up to the
+## limit. An accumulator is linear, where appending a recursive call's answer
+## is quadratic.
+chain_onto : List(World.Segment),
+{
+	index : World.SegmentIndex,
+	chain : List(World.SegmentIndex),
+} -> List(World.SegmentIndex)
+chain_onto = |world, { index, chain }|
+	if chain.len() >= Frame.look_ahead.to_u64() {
+		chain
+	} else {
+		longer_chain = chain.append(index)
+		match index.segment_in(world).ending {
+			Continues({ next }) => chain_onto(world, { index: next, chain: longer_chain })
+			Terminates => longer_chain
+		}
+	}

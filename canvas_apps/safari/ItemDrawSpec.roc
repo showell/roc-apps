@@ -21,9 +21,9 @@ fixed_want : List(F64)
 fixed_want = [80.0, 200.0]
 
 tree_at : F64 -> TreePlan.TreeItem
-tree_at = |fwd| {
+tree_at = |forward| {
 	right: 0.0,
-	fwd: fwd,
+	forward: forward,
 	height: 5.85,
 	color: 1858082,
 }
@@ -32,7 +32,7 @@ spread : List(TreePlan.TreeItem)
 spread = [10.0, 20.0, 30.0, 40.0, 50.0].map(tree_at)
 
 nearer_count : List(TreePlan.TreeItem), F64 -> I64
-nearer_count = |trees, forward| ItemDraw.nearer_count(trees, forward).to_i64_wrap()
+nearer_count = |trees, forward| ItemDraw.nearer_tree_count(trees, forward).to_i64()
 
 count_got : List(I64)
 count_got = [
@@ -63,18 +63,20 @@ shade_want : List(F64)
 shade_want = [1.0, 0.75, 0.5, 0.0, 0.0, 1.0]
 
 segs : List(World.Segment)
-segs = [0, 1, 2].map(World.segment_at)
+segs = [0, 1, 2].map(World.route_segment)
 
 # The rider at the start of the route, at the ride's first step.
 context : ItemDraw.Context
 context = {
-	world: segs,
-	chain: [0, 1, 2],
-	pose: {
-		along: 0.0,
-		across: 0.0,
-		yaw: 0.0,
-		hw: 2.0,
+	road: {
+		world: segs,
+		chain: [0, 1, 2].map(World.SegmentIndex.number),
+		pose: {
+			along: 0.0,
+			across: 0.0,
+			yaw: 0.0,
+			half_width: 2.0,
+		},
 	},
 	cam_focal: 500.0,
 	clock: 0.0,
@@ -84,11 +86,11 @@ context = {
 ## A mast `along` metres down the first segment, 22 m across.
 tower_along : F64 -> TowerPlan.TowerItem
 tower_along = |along| {
-	map: Frame.chain_map(0),
+	place: InChain(Frame.ChainPosition.first),
 	along,
 	across: 22.0,
 	yaw: 0.0,
-	fwd: along,
+	forward: along,
 	beacon_offset: 0.0,
 }
 

@@ -9,15 +9,15 @@ import World
 
 TruckPlan :: [].{
 
-	## The truck, if it is in view: the place in the chain of the segment it
+	## The truck, if it is in view: the position in the chain of the segment it
 	## is on, how far along that segment it is, and how far ahead of the
 	## rider.
 	TruckAt : [
 		Ahead(
 			{
-				place : I64,
+				position : Frame.ChainPosition,
 				along : F64,
-				fwd : F64,
+				forward : F64,
 			},
 		),
 		NoTruck,
@@ -28,7 +28,7 @@ TruckPlan :: [].{
 	## rider is, and how far ahead of the rider the truck is.
 	View : {
 		world : List(World.Segment),
-		chain : List(I64),
+		chain : List(World.SegmentIndex),
 		pose : Frame.Pose,
 		rider_along : F64,
 		lead : F64,
@@ -39,7 +39,10 @@ TruckPlan :: [].{
 	in_view : TruckPlan.View -> TruckPlan.TruckAt
 	in_view = |view|
 		if view.lead > 0.0 {
-			truck_from(view, { remaining: (view.rider_along + view.lead), place: 0 })
+			truck_from(
+				view,
+				{ remaining: (view.rider_along + view.lead), position: Frame.ChainPosition.first },
+			)
 		} else {
 			NoTruck
 		}
@@ -49,48 +52,55 @@ TruckPlan :: [].{
 	depth_keys : TruckPlan.TruckAt -> List(DepthSort.DepthKey)
 	depth_keys = |truck|
 		match truck {
-			Ahead(truck_ahead) => [{ forward: truck_ahead.fwd, subject: Truck }]
+			Ahead(truck_ahead) => [{ forward: truck_ahead.forward, subject: Truck }]
 			NoTruck => []
 		}
 }
 
-## The truck `remaining` metres past the start of the segment at `place` in
+## The truck `remaining` metres past the start of the segment at `position` in
 ## the chain, found by walking on through the segments it is past.
-truck_from : TruckPlan.View, { remaining : F64, place : I64 } -> TruckPlan.TruckAt
-truck_from = |view, { remaining, place }|
-	match view.chain.get(I64.to_u64_wrap(place)) {
-		Err(OutOfBounds) => NoTruck
-		Ok(seg_index) => {
-			segment = view.world.get(seg_index.to_u64_wrap()) ?? crash "TruckPlan: no such segment"
-			if remaining > segment.length {
-				truck_from(view, { remaining: (remaining - segment.length), place: (place + 1) })
-			} else {
-				truck_on_segment(view, { along: remaining, place })
-			}
+truck_from : TruckPlan.View,
+{
+	remaining : F64,
+	position : Frame.ChainPosition,
+} -> TruckPlan.TruckAt
+truck_from = |view, { remaining, position }|
+	if position.is_past_end_of(view.chain) {
+		NoTruck
+	} else {
+		segment = position.index_in(view.chain).segment_in(view.world)
+		if remaining > segment.length {
+			truck_from(view, { remaining: (remaining - segment.length), position: position.next() })
+		} else {
+			truck_on_segment(view, { along: remaining, position })
 		}
 	}
 
-## The truck `along` metres into the segment at `place` in the chain, in
+## The truck `along` metres into the segment at `position` in the chain, in
 ## the middle of the lane, if it is in front of the camera.
-truck_on_segment : TruckPlan.View, { along : F64, place : I64 } -> TruckPlan.TruckAt
-truck_on_segment = |view, { along, place }| {
-	center = Frame.at(
+truck_on_segment : TruckPlan.View,
+{
+	along : F64,
+	position : Frame.ChainPosition,
+} -> TruckPlan.TruckAt
+truck_on_segment = |view, { along, position }| {
+	center = Frame.rider_point_ahead(
 		{
 			world: view.world,
 			chain: view.chain,
 			pose: view.pose,
 		},
 		{
-			segments_ahead: place,
+			position: position,
 			along: along,
 			across: (Scenery.lane_width / 2.0),
 		},
 	)
-	if center.forward > Geom.near {
+	if center.forward > Geom.near_plane {
 		Ahead({
-			place,
+			position,
 			along,
-			fwd: center.forward,
+			forward: center.forward,
 		})
 	} else {
 		NoTruck

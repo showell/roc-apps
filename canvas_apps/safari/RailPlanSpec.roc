@@ -12,19 +12,21 @@ import RailPlan
 import World
 
 steps_got : List(I64)
-steps_got = [0.0, 0.4, 0.5, 1.0, 1.4, 1.5, 2.5, 10.0, 49.6, 50.0].map(RailPlan.leg_steps)
+steps_got = [0.0, 0.4, 0.5, 1.0, 1.4, 1.5, 2.5, 10.0, 49.6, 50.0].map(
+	|distance| RailPlan.leg_steps(distance).to_i64(),
+)
 
 steps_want : List(I64)
 steps_want = [1, 1, 1, 1, 1, 2, 3, 10, 50, 50]
 
-origin_pt : Geom.RiderPt
+origin_pt : Geom.RiderPoint
 origin_pt = { right: 0.0, forward: 0.0 }
 
-point_at : List(Geom.RiderPt), U64 -> Geom.RiderPt
+point_at : List(Geom.RiderPoint), U64 -> Geom.RiderPoint
 point_at = |points, i| points.get(i) ?? crash "RailPlanSpec: an index past the leg's end"
 
-straight : List(Geom.RiderPt)
-straight = RailPlan.leg({ from: origin_pt, to: { right: 0.0, forward: 10.0 } })
+straight : List(Geom.RiderPoint)
+straight = RailPlan.rail_leg({ from: origin_pt, to: { right: 0.0, forward: 10.0 } })
 
 straight_got : List(F64)
 straight_got = [
@@ -39,8 +41,8 @@ straight_got = [
 straight_want : List(F64)
 straight_want = [10.0, 1.0, 5.0, 10.0, 0.0, 0.0]
 
-diagonal : List(Geom.RiderPt)
-diagonal = RailPlan.leg({ from: origin_pt, to: { right: 30.0, forward: 40.0 } })
+diagonal : List(Geom.RiderPoint)
+diagonal = RailPlan.rail_leg({ from: origin_pt, to: { right: 30.0, forward: 40.0 } })
 
 diagonal_got : List(F64)
 diagonal_got = [
@@ -56,7 +58,7 @@ diagonal_want = [50.0, 30.0, 40.0, 15.0, 20.0]
 
 degenerate_got : List(F64)
 degenerate_got = {
-	in_place = RailPlan.leg({
+	in_place = RailPlan.rail_leg({
 		from: { right: 3.0, forward: 4.0 },
 		to: { right: 3.0, forward: 4.0 },
 	})
@@ -87,27 +89,27 @@ from_zero_got = {
 from_zero_want : List(F64)
 from_zero_want = [11.0, 0.0, 10.0]
 
-road : RailPlan.Road
+road : Frame.RoadView
 road = {
 	world: [
-		World.segment_at(0),
-		World.segment_at(1),
-		World.segment_at(2),
+		World.route_segment(0),
+		World.route_segment(1),
+		World.route_segment(2),
 	],
-	chain: [0, 1, 2],
+	chain: [0, 1, 2].map(World.SegmentIndex.number),
 	pose: {
 		along: 0.0,
 		across: 0.0,
 		yaw: 0.0,
-		hw: 2.0,
+		half_width: 2.0,
 	},
 }
 
-run_up : List(Geom.RiderPt)
+run_up : List(Geom.RiderPoint)
 run_up = RailPlan.run_up(
 	road,
 	{
-		place: Frame.chain_map(0),
+		place: InChain(Frame.ChainPosition.first),
 		length: 500.0,
 		across: 4.0,
 	},
@@ -115,8 +117,11 @@ run_up = RailPlan.run_up(
 
 runout_got : List(I64)
 runout_got = [
-	GuardRail.rail_runout,
-	RailPlan.run_out(road, { place: Frame.chain_map(0), across: 4.0 }).len().to_i64_wrap(),
+	GuardRail.rail_runout.to_i64(),
+	RailPlan.run_out(
+		road,
+		{ place: InChain(Frame.ChainPosition.first), across: 4.0 },
+	).len().to_i64_wrap(),
 	run_up.len().to_i64_wrap(),
 ]
 

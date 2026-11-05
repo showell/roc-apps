@@ -11,7 +11,7 @@
 # Codex version does not. The bird is roc-lang.org's logo, six purple
 # polygons, carried in the same unit frame as the baked stills (feet at y 0,
 # y up, height 1) and drawn through the same still machinery a critter uses:
-# Frame.at places the tree in the rider's frame, Camera.project puts its top
+# Frame.rider_point_ahead places the tree in the rider's frame, Camera.project puts its top
 # on the screen, and Critter.draw_still maps the polygons onto that anchor
 # at the tree's depth. The app appends the birds after the frame, so they
 # paint on top of everything; a bird on a treetop is rarely behind anything.
@@ -126,7 +126,7 @@ RocBird :: [].{
 	# same shape every other collected item has -- where, not what.
 	Bird : {
 		right : F64,
-		fwd : F64,
+		forward : F64,
 		lift : F64,
 	}
 
@@ -135,15 +135,15 @@ RocBird :: [].{
 	## focal length in pixels.
 	View : {
 		world : List(World.Segment),
-		chain : List(I64),
+		chain : List(World.SegmentIndex),
 		pose : Frame.Pose,
 		cam_focal : F64,
 	}
 
-	# The bird for chain position d, or nothing when its tree is behind the
+	# The bird for `position` in the chain, or nothing when its tree is behind the
 	# near plane or too small to draw. Culled here, as every kind is culled
 	# where it is collected rather than where it is drawn.
-	perch : RocBird.View, I64 -> List(RocBird.Bird)
+	perch : RocBird.View, Frame.ChainPosition -> List(RocBird.Bird)
 	perch = |
 		{
 			world: segs,
@@ -151,26 +151,25 @@ RocBird :: [].{
 			pose,
 			cam_focal: cf,
 		},
-		d,
+		position,
 	| {
-		seg_idx = List.get(ch, I64.to_u64_wrap(d)) ?? crash ("chain index")
-		seg = List.get(segs, I64.to_u64_wrap(seg_idx)) ?? crash ("segment")
+		seg = position.index_in(ch).segment_in(segs)
 		match fifth_left(seg.trees, { tree_index: 0, left_trees_seen: 0 }) {
 			NoTree => []
 			Found(t) => {
-				rp = Frame.at(
+				rp = Frame.rider_point_ahead(
 					{
 						world: segs,
 						chain: ch,
 						pose: pose,
 					},
 					{
-						segments_ahead: d,
+						position,
 						along: t.along,
 						across: t.across + Scenery.lane_width / 2.0,
 					},
 				)
-				if rp.forward <= Geom.near {
+				if rp.forward <= Geom.near_plane {
 					[]
 				} else if (height / rp.forward) * cf < SceneLimits.min_scenery_px {
 					[]
@@ -178,7 +177,7 @@ RocBird :: [].{
 					[
 						{
 							right: rp.right,
-							fwd: rp.forward,
+							forward: rp.forward,
 							lift: t.height,
 						},
 					]
@@ -187,33 +186,25 @@ RocBird :: [].{
 		}
 	}
 
-	# Every bird in the chain, nearest segment first. The sort puts them where
-	# they belong.
+	## Every bird in the chain, nearest segment first. The sort puts them where
+	## they belong.
 	perches : RocBird.View -> List(RocBird.Bird)
-	perches = |view| perches_from(view, { place: 0, birds_found: [] })
-
-	perches_from : RocBird.View,
-	{
-		place : I64,
-		birds_found : List(RocBird.Bird),
-	} -> List(RocBird.Bird)
-	perches_from = |view, { place: d, birds_found: acc }|
-		if d >= view.chain.len().to_i64_wrap() {
-			acc
-		} else {
-			perches_from(
-				view,
-				{
-					place: d + 1,
-					birds_found: List.concat(acc, perch(view, d)),
-				},
-			)
-		}
+	perches = |view| Frame.ChainPosition.all_in(view.chain).join_map(
+		|position| perch(
+			view,
+			position,
+		),
+	)
 
 	# **THE DEPTH IS THE TREE'S**, which is the whole point of collecting them:
 	# how high the bird sits does not change how far away it is.
 	bird_items : List(RocBird.Bird) -> List(DepthSort.DepthKey)
-	bird_items = |bs| bs.map_with_index(|bird, i| { forward: bird.fwd, subject: Bird(i) })
+	bird_items = |bs| bs.map_with_index(
+		|bird, i| {
+			forward: bird.forward,
+			subject: Bird(i.to_u32_wrap()),
+		},
+	)
 
 	# One bird, drawn where the sort says. Its feet go at the top of its tree,
 	# and unflipped its beak points toward +x, which from a left-hand tree is
@@ -224,7 +215,7 @@ RocBird :: [].{
 		feet = Camera.project(
 			{
 				right: b.right,
-				forward: b.fwd,
+				forward: b.forward,
 				height: b.lift,
 			},
 			camera_view,
@@ -233,7 +224,7 @@ RocBird :: [].{
 			{
 				feet,
 				flip: AsDrawn,
-				height_px: (height / b.fwd) * cf,
+				height_px: (height / b.forward) * cf,
 			},
 			polys,
 		)

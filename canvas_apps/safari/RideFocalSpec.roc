@@ -15,7 +15,7 @@ import RideFocal
 import World
 
 segs : List(World.Segment)
-segs = [0, 1, 2].map(World.segment_at)
+segs = [0, 1, 2].map(World.route_segment)
 
 ## The bike's greatest lean, in radians.
 max_lean : F64
@@ -24,7 +24,7 @@ max_lean = Bike.max_lean.to_radians()
 # A rider at the start of the first segment, upright and looking ahead.
 upright : Pose.RiderState
 upright = {
-	segment: 0,
+	segment: World.SegmentIndex.number(0),
 	along: 0.0,
 	across: 0.0,
 	yaw: Angle.Turn.radians(0.0),
@@ -37,10 +37,10 @@ upright = {
 
 # A rider 120 m along a segment: near enough to its cat, if it has one, to
 # notice it.
-near_cat_on : I64 -> Pose.RiderState
-near_cat_on = |segment| {
+near_cat_on : U32 -> Pose.RiderState
+near_cat_on = |number| {
 	..upright,
-	segment,
+	segment: World.SegmentIndex.number(number),
 	along: 120.0,
 }
 
@@ -96,7 +96,7 @@ clamp_want = [0.0, 0.0, 0.0]
 cat_got : List(Bool)
 cat_got = [
 	(RideFocal.cat_attention(segs, near_cat_on(1)) > 0.0),
-	(RideFocal.cat_attention(segs, { ..upright, segment: 1 }) > 0.0),
+	(RideFocal.cat_attention(segs, { ..upright, segment: World.SegmentIndex.number(1) }) > 0.0),
 	(RideFocal.cat_attention(segs, near_cat_on(0)) > 0.0),
 	(RideFocal.ride_focal(segs, near_cat_on(1)) < RideFocal.ride_focal(segs, near_cat_on(0))),
 ]

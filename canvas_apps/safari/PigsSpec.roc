@@ -28,7 +28,7 @@ gaze_kind_got : List(I64)
 gaze_kind_got = [
 	gaze.codepoint,
 	Pigs.pig_codepoint,
-	Pigs.pig_novelty_count,
+	Pigs.pig_novelty_count.to_i64(),
 	Pigs.big_herd_cols,
 	Pigs.big_herd_rows,
 ]

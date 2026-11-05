@@ -18,14 +18,14 @@ route_shape_got = List.concat(
 		10,
 		11,
 		18,
-	].map(World.pig_segments_through),
+	].map(|number| World.pig_segments_through(World.SegmentIndex.number(number)).to_i64()),
 )
 
 route_shape_want : List(I64)
 route_shape_want = [19, 0, 1, 2, 3, 9]
 
-seg : I64 -> World.Segment
-seg = |i| World.segment_at(i)
+seg : U32 -> World.Segment
+seg = |i| World.route_segment(i)
 
 length_got : List(F64)
 length_got = [
@@ -48,7 +48,7 @@ exit_want = [1, 2, 18]
 flags_got : List(Bool)
 flags_got = List.join([
 	[0, 18].map(|index| is_route_end(seg(index))),
-	[0, 1, 6, 18].map(|index| seg(index).exit_right),
+	[0, 1, 6, 18].map(|index| turns_right(seg(index))),
 	[0, 6, 9].map(|index| has_mid_tower(seg(index))),
 	[0, 1, 12, 18].map(|index| has_cat(seg(index))),
 ])
@@ -142,8 +142,16 @@ is_route_end = |segment|
 next_of : World.Segment -> I64
 next_of = |segment|
 	match segment.ending {
-		Continues({ next }) => next
+		Continues({ next }) => next.to_i64()
 		Terminates => crash "WorldSpec.next_of: segments 0, 1 and 17 continue"
+	}
+
+## Whether a segment ends by turning right.
+turns_right : World.Segment -> Bool
+turns_right = |segment|
+	match segment.exit_side {
+		TurnsRight => True
+		TurnsLeft => False
 	}
 
 ## Whether a segment has a mast halfway along.
@@ -171,7 +179,7 @@ is_distracting = |segment|
 	}
 
 ## The cat crossing at a segment that has one.
-crossing_at : I64 -> Cat.Crossing
+crossing_at : U32 -> Cat.Crossing
 crossing_at = |index|
 	match seg(index).cat {
 		Waits(crossing) => crossing

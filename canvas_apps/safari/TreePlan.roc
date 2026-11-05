@@ -14,7 +14,7 @@ TreePlan :: [].{
 	## its colour.
 	TreeItem : {
 		right : F64,
-		fwd : F64,
+		forward : F64,
 		height : F64,
 		color : I64,
 	}
@@ -23,7 +23,7 @@ TreePlan :: [].{
 	## ahead of the rider, the rider's pose, and the camera's focal length.
 	View : {
 		world : List(World.Segment),
-		chain : List(I64),
+		chain : List(World.SegmentIndex),
 		pose : Frame.Pose,
 		cam_focal : F64,
 	}
@@ -36,37 +36,38 @@ TreePlan :: [].{
 	## the order it plants them.
 	in_view : TreePlan.View -> List(TreePlan.TreeItem)
 	in_view = |view| {
-		places = List.from_iter(U64.until(0, view.chain.len()))
-		places.join_map(|place| segment_trees(view, U64.to_i64_wrap(place)))
+		positions = Frame.ChainPosition.all_in(view.chain)
+		positions.join_map(|position| segment_trees(view, position))
 	}
 
-	## The trees in view on the segment at `place` in the chain.
-	segment_trees : TreePlan.View, I64 -> List(TreePlan.TreeItem)
-	segment_trees = |view, place| {
-		seg_index = view.chain.get(I64.to_u64_wrap(place))
-			?? crash "TreePlan.segment_trees: no such place in the chain"
-		segment = view.world.get(I64.to_u64_wrap(seg_index))
-			?? crash "TreePlan.segment_trees: no such segment"
-		segment.trees.join_map(|tree| tree_in_view(view, { place, tree }))
+	## The trees in view on the segment at `position` in the chain.
+	segment_trees : TreePlan.View, Frame.ChainPosition -> List(TreePlan.TreeItem)
+	segment_trees = |view, position| {
+		segment = position.index_in(view.chain).segment_in(view.world)
+		segment.trees.join_map(|tree| tree_in_view(view, { position, tree }))
 	}
 
-	## A tree on the segment at `place` in the chain, if it is in view: one
+	## A tree on the segment at `position` in the chain, if it is in view: one
 	## item, or none.
-	tree_in_view : TreePlan.View, { place : I64, tree : Scenery.Tree } -> List(TreePlan.TreeItem)
-	tree_in_view = |view, { place, tree }| {
-		seen = Frame.at(
+	tree_in_view : TreePlan.View,
+	{
+		position : Frame.ChainPosition,
+		tree : Scenery.Tree,
+	} -> List(TreePlan.TreeItem)
+	tree_in_view = |view, { position, tree }| {
+		seen = Frame.rider_point_ahead(
 			{
 				world: view.world,
 				chain: view.chain,
 				pose: view.pose,
 			},
 			{
-				segments_ahead: place,
+				position: position,
 				along: tree.along,
 				across: (tree.across + (Scenery.lane_width / 2.0)),
 			},
 		)
-		if seen.forward <= Geom.near {
+		if seen.forward <= Geom.near_plane {
 			[]
 		} else if ((tree.height / seen.forward) * view.cam_focal) < SceneLimits.min_scenery_px {
 			[]
@@ -74,7 +75,7 @@ TreePlan :: [].{
 			[
 				{
 					right: seen.right,
-					fwd: seen.forward,
+					forward: seen.forward,
 					height: tree.height,
 					color: tree.color,
 				},
@@ -83,7 +84,12 @@ TreePlan :: [].{
 	}
 
 	## The trees as the depth sort sees them: each one's distance ahead, and
-	## its place in `trees`.
+	## its position in `trees`.
 	depth_keys : List(TreePlan.TreeItem) -> List(DepthSort.DepthKey)
-	depth_keys = |trees| trees.map_with_index(|tree, i| { forward: tree.fwd, subject: Tree(i) })
+	depth_keys = |trees| trees.map_with_index(
+		|tree, i| {
+			forward: tree.forward,
+			subject: Tree(i.to_u32_wrap()),
+		},
+	)
 }

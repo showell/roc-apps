@@ -9,7 +9,7 @@ import Grade
 import Ground
 import Paint
 
-points : List(Geom.RiderPt)
+points : List(Geom.RiderPoint)
 points = [
 	{ right: 0.0, forward: 0.0 },
 	{ right: 3.0, forward: 10.0 },
@@ -17,7 +17,7 @@ points = [
 	{ right: 12.5, forward: 100.0 },
 ]
 
-on_ground : List(Geom.Vec3)
+on_ground : List(Geom.SpacePoint)
 on_ground = points.map(Ground.ground_point)
 
 height_got : List(F64)
@@ -42,10 +42,10 @@ carry_got = [
 carry_want : List(F64)
 carry_want = [3.0, 10.0, 12.5, 100.0]
 
-point_at : List(Geom.Vec3), U64 -> Geom.Vec3
+point_at : List(Geom.SpacePoint), U64 -> Geom.SpacePoint
 point_at = |list, i| list.get(i) ?? crash "GroundSpec: an index past the list's end"
 
-quad : List(Geom.RiderPt)
+quad : List(Geom.RiderPoint)
 quad = [
 	{ right: (-5.0), forward: 10.0 },
 	{ right: 5.0, forward: 10.0 },
@@ -53,7 +53,7 @@ quad = [
 	{ right: (-5.0), forward: 20.0 },
 ]
 
-behind : List(Geom.RiderPt)
+behind : List(Geom.RiderPoint)
 behind = [
 	{ right: (-5.0), forward: (-10.0) },
 	{ right: 5.0, forward: (-10.0) },
@@ -61,11 +61,11 @@ behind = [
 	{ right: (-5.0), forward: (-20.0) },
 ]
 
-two_points : List(Geom.RiderPt)
+two_points : List(Geom.RiderPoint)
 two_points = [{ right: (-5.0), forward: 10.0 }, { right: 5.0, forward: 10.0 }]
 
 ## A patch of `count` corners, all ahead of the camera.
-corners_ahead : I64 -> List(Geom.RiderPt)
+corners_ahead : I64 -> List(Geom.RiderPoint)
 corners_ahead = |count|
 	List.from_iter(I64.until(0, count)).map(
 		|k| {
@@ -74,7 +74,7 @@ corners_ahead = |count|
 		},
 	)
 
-patch_commands : List(Geom.RiderPt) -> List(Paint.DrawCmd)
+patch_commands : List(Geom.RiderPoint) -> List(Paint.DrawCmd)
 patch_commands = |corners| Ground.draw({
 	corners,
 	color: 3112588,

@@ -1,5 +1,5 @@
-# TruckSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are Truck's checks: its constants, its schedule, the turns it finds,
+## and how it moves when free and when braking.
 app [main!] {
 	lib: "../lib/main.roc",
 }
@@ -11,11 +11,11 @@ import World
 
 fixed_got : List(F64)
 fixed_got = [
-	Truck.start_ahead,
+	Truck.start_lead,
 	Truck.finish_lead,
-	Truck.truck_turn_caution,
-	Truck.truck_brake_distance,
-	Truck.truck_max_v,
+	Truck.turn_caution,
+	Truck.brake_distance,
+	Truck.top_speed,
 ]
 
 fixed_want : List(F64)
@@ -23,55 +23,55 @@ fixed_want = [500.0, 100.0, 0.8, 60.0, 2.75]
 
 ratio_got : List(F64)
 ratio_got = [
-	Truck.truck_chase_accel,
-	Truck.truck_max_v,
-	(Truck.truck_chase_accel / VehicleLimits.a_accel),
-	(Truck.truck_max_v / VehicleLimits.v_max),
+	Truck.chase_acceleration,
+	Truck.top_speed,
+	(Truck.chase_acceleration / VehicleLimits.a_accel),
+	(Truck.top_speed / VehicleLimits.v_max),
 ]
 
 ratio_want : List(F64)
 ratio_want = [0.011, 2.75, 1.1, 1.1]
 
 initial_got : List(F64)
-initial_got = [Truck.truck_initial.pos, Truck.truck_initial.v]
+initial_got = [Truck.initial_truck.route_position, Truck.initial_truck.speed]
 
 initial_want : List(F64)
 initial_want = [500.0, 0.3]
 
 initial_flag_got : List(Bool)
-initial_flag_got = [Truck.truck_initial.braking]
+initial_flag_got = [Truck.initial_truck.is_braking]
 
 initial_flag_want : List(Bool)
 initial_flag_want = [False]
 
 sched_got : List(F64)
 sched_got = [
-	Truck.truck_schedule(0.0, 1000.0),
-	Truck.truck_schedule(250.0, 1000.0),
-	Truck.truck_schedule(500.0, 1000.0),
-	Truck.truck_schedule(1000.0, 1000.0),
-	(Truck.truck_schedule(1000.0, 1000.0) - 1000.0),
-	(Truck.truck_schedule(0.0, 1000.0) - 0.0),
+	Truck.scheduled_position({ rider_distance: 0.0, route_length: 1000.0 }),
+	Truck.scheduled_position({ rider_distance: 250.0, route_length: 1000.0 }),
+	Truck.scheduled_position({ rider_distance: 500.0, route_length: 1000.0 }),
+	Truck.scheduled_position({ rider_distance: 1000.0, route_length: 1000.0 }),
+	(Truck.scheduled_position({ rider_distance: 1000.0, route_length: 1000.0 }) - 1000.0),
+	(Truck.scheduled_position({ rider_distance: 0.0, route_length: 1000.0 }) - 0.0),
 ]
 
 sched_want : List(F64)
 sched_want = [500.0, 650.0, 800.0, 1100.0, 100.0, 500.0]
 
 one_seg : List(World.Segment)
-one_seg = [World.segment_at(0)]
+one_seg = [World.route_segment(0)]
 
 turn_dist : List(World.Segment), F64 -> F64
-turn_dist = |segs, pos| (
-	match Truck.next_turn(segs, pos) {
-		TurnAhead(t) => t.dist
+turn_dist = |segs, route_position| (
+	match Truck.next_turn(segs, route_position) {
+		TurnAhead(t) => t.distance
 		NoTurnAhead => (0.0 - 1.0)
 	}
 )
 
 turn_v : List(World.Segment), F64 -> F64
-turn_v = |segs, pos| (
-	match Truck.next_turn(segs, pos) {
-		TurnAhead(t) => t.v_turn
+turn_v = |segs, route_position| (
+	match Truck.next_turn(segs, route_position) {
+		TurnAhead(t) => t.turn_speed
 		NoTurnAhead => (0.0 - 1.0)
 	}
 )
@@ -100,7 +100,7 @@ none_got : List(F64)
 none_got = [
 	turn_dist(one_seg, 500.0),
 	turn_dist(one_seg, 900.0),
-	turn_dist([World.segment_at(18)], 0.0),
+	turn_dist([World.route_segment(18)], 0.0),
 	turn_dist([], 0.0),
 ]
 
@@ -113,7 +113,7 @@ none_want = [
 ]
 
 two_seg : List(World.Segment)
-two_seg = [World.segment_at(0), World.segment_at(1)]
+two_seg = [World.route_segment(0), World.route_segment(1)]
 
 chain_got : List(F64)
 chain_got = [
@@ -132,11 +132,11 @@ chain_want = [
 ]
 
 free : Truck.TruckState
-free = Truck.truck_next(
+free = Truck.advance(
 	{
-		pos: 100.0,
-		v: 0.3,
-		braking: False,
+		route_position: 100.0,
+		speed: 0.3,
+		is_braking: False,
 	},
 	{
 		rider_distance: 0.0,
@@ -147,20 +147,20 @@ free = Truck.truck_next(
 
 free_got : List(F64)
 free_got = [
-	free.v,
-	free.pos,
-	(free.v - 0.3),
+	free.speed,
+	free.route_position,
+	(free.speed - 0.3),
 ]
 
 free_want : List(F64)
 free_want = [0.311, 100.311, 0.011]
 
 ahead : Truck.TruckState
-ahead = Truck.truck_next(
+ahead = Truck.advance(
 	{
-		pos: 600.0,
-		v: 0.5,
-		braking: False,
+		route_position: 600.0,
+		speed: 0.5,
+		is_braking: False,
 	},
 	{
 		rider_distance: 0.0,
@@ -170,11 +170,11 @@ ahead = Truck.truck_next(
 )
 
 behind : Truck.TruckState
-behind = Truck.truck_next(
+behind = Truck.advance(
 	{
-		pos: 400.0,
-		v: 0.5,
-		braking: False,
+		route_position: 400.0,
+		speed: 0.5,
+		is_braking: False,
 	},
 	{
 		rider_distance: 0.0,
@@ -185,20 +185,20 @@ behind = Truck.truck_next(
 
 ahead_got : List(F64)
 ahead_got = [
-	ahead.v,
-	ahead.pos,
-	(behind.v - ahead.v),
+	ahead.speed,
+	ahead.route_position,
+	(behind.speed - ahead.speed),
 ]
 
 ahead_want : List(F64)
 ahead_want = [0.5, 600.5, 0.011]
 
 capped : Truck.TruckState
-capped = Truck.truck_next(
+capped = Truck.advance(
 	{
-		pos: 100.0,
-		v: Truck.truck_max_v,
-		braking: False,
+		route_position: 100.0,
+		speed: Truck.top_speed,
+		is_braking: False,
 	},
 	{
 		rider_distance: 0.0,
@@ -208,27 +208,27 @@ capped = Truck.truck_next(
 )
 
 capped_got : List(F64)
-capped_got = [capped.v]
+capped_got = [capped.speed]
 
 capped_want : List(F64)
 capped_want = [2.75]
 
 free_flag_got : List(Bool)
 free_flag_got = [
-	free.braking,
-	ahead.braking,
-	capped.braking,
+	free.is_braking,
+	ahead.is_braking,
+	capped.is_braking,
 ]
 
 free_flag_want : List(Bool)
 free_flag_want = [False, False, False]
 
 braking : Truck.TruckState
-braking = Truck.truck_next(
+braking = Truck.advance(
 	{
-		pos: 450.0,
-		v: 0.3,
-		braking: False,
+		route_position: 450.0,
+		speed: 0.3,
+		is_braking: False,
 	},
 	{
 		rider_distance: 0.0,
@@ -238,27 +238,27 @@ braking = Truck.truck_next(
 )
 
 brake_got : List(F64)
-brake_got = [braking.v, (braking.pos - 450.0)]
+brake_got = [braking.speed, (braking.route_position - 450.0)]
 
 brake_want : List(F64)
 brake_want = [0.2994154176, 0.2994154176]
 
 brake_flag_got : List(Bool)
 brake_flag_got = [
-	braking.braking,
-	(braking.v < 0.3),
-	(braking.v > 0.1776),
+	braking.is_braking,
+	(braking.speed < 0.3),
+	(braking.speed > 0.1776),
 ]
 
 brake_flag_want : List(Bool)
 brake_flag_want = [True, True, True]
 
 settled : Truck.TruckState
-settled = Truck.truck_next(
+settled = Truck.advance(
 	{
-		pos: 450.0,
-		v: 0.1776,
-		braking: True,
+		route_position: 450.0,
+		speed: 0.1776,
+		is_braking: True,
 	},
 	{
 		rider_distance: 0.0,
@@ -268,7 +268,7 @@ settled = Truck.truck_next(
 )
 
 settled_got : List(Bool)
-settled_got = [settled.braking, (F64.to_bits(settled.v) == F64.to_bits(0.1776))]
+settled_got = [settled.is_braking, (F64.to_bits(settled.speed) == F64.to_bits(0.1776))]
 
 settled_want : List(Bool)
 settled_want = [False, True]
@@ -276,32 +276,32 @@ settled_want = [False, True]
 boundary_got : List(Bool)
 boundary_got = [
 	(
-		Truck.truck_next(
+		Truck.advance(
 			{
-				pos: 440.0,
-				v: 0.3,
-				braking: False,
+				route_position: 440.0,
+				speed: 0.3,
+				is_braking: False,
 			},
 			{
 				rider_distance: 0.0,
 				world: one_seg,
 				route_length: 1000.0,
 			},
-		).v < 0.3
+		).speed < 0.3
 	),
 	(
-		Truck.truck_next(
+		Truck.advance(
 			{
-				pos: 439.0,
-				v: 0.3,
-				braking: False,
+				route_position: 439.0,
+				speed: 0.3,
+				is_braking: False,
 			},
 			{
 				rider_distance: 0.0,
 				world: one_seg,
 				route_length: 1000.0,
 			},
-		).v < 0.3
+		).speed < 0.3
 	),
 ]
 

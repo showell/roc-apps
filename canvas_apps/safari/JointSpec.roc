@@ -1,5 +1,4 @@
-# JointSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are Joint's checks: a bend's outer edge and its apex.
 app [main!] {
 	lib: "../lib/main.roc",
 }
@@ -9,7 +8,7 @@ import Grade
 import Joint
 
 outer_got : List(F64)
-outer_got = [Joint.outer_cu(True), Joint.outer_cu(False)]
+outer_got = [Joint.outer_edge(TurnsRight), Joint.outer_edge(TurnsLeft)]
 
 outer_want : List(F64)
 outer_want = [0.0, 4.0]
@@ -19,31 +18,27 @@ pose = {
 	along: 100.0,
 	across: 1.0,
 	yaw: 0.2,
-	hw: 2.0,
+	half_width: 2.0,
 }
 
-behind_right : Frame.Mapper
-behind_right = {
-	is_chain: False,
-	d: 0,
-	prev_len: 300.0,
-	prev_angle: 0.8726646259971648,
-	prev_right: True,
-	prev_w: 4.0,
-}
+behind_right : Frame.SegmentPlace
+behind_right = JustBehind({
+	segment_length: 300.0,
+	turn_angle: 0.8726646259971648,
+	turn_side: TurnsRight,
+	lane_width: 4.0,
+})
 
-behind_left : Frame.Mapper
-behind_left = {
-	is_chain: False,
-	d: 0,
-	prev_len: 300.0,
-	prev_angle: 1.2217304763960306,
-	prev_right: False,
-	prev_w: 4.0,
-}
+behind_left : Frame.SegmentPlace
+behind_left = JustBehind({
+	segment_length: 300.0,
+	turn_angle: 1.2217304763960306,
+	turn_side: TurnsLeft,
+	lane_width: 4.0,
+})
 
-here : Frame.Mapper
-here = Frame.chain_map(0)
+here : Frame.SegmentPlace
+here = InChain(Frame.ChainPosition.first)
 
 apex_got : List(F64)
 apex_got = (
@@ -58,7 +53,7 @@ apex_got = (
 				before: behind_right,
 				after: here,
 				length_before: 300.0,
-				exit_right: True,
+				exit_side: TurnsRight,
 			},
 		)
 		l = Joint.joint_apex(
@@ -71,7 +66,7 @@ apex_got = (
 				before: behind_left,
 				after: here,
 				length_before: 300.0,
-				exit_right: False,
+				exit_side: TurnsLeft,
 			},
 		)
 		[

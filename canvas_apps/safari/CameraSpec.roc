@@ -12,7 +12,7 @@ import Screen
 view : Camera.View
 view = { cam_focal: 800.0, view_w: 960.0 }
 
-at : Geom.Vec3 -> Camera.ScreenPt
+at : Geom.SpacePoint -> Camera.ScreenPt
 at = |point| Camera.project(point, view)
 
 x_got : List(F64)
@@ -130,7 +130,7 @@ fixed_got = [Screen.height, Camera.eye_h]
 fixed_want : List(F64)
 fixed_want = [600.0, 1.2]
 
-ahead_right_above : List(Geom.Vec3)
+ahead_right_above : List(Geom.SpacePoint)
 ahead_right_above = [
 	{
 		right: 0.0,

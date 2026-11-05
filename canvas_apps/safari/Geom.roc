@@ -1,213 +1,179 @@
-# Geom -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## The geometry of the road and of the rider's view.
+##
+## The road is a line of straight segments, and a point on it is measured
+## within one segment: metres along it from its start, and metres across it
+## from its left edge. A point in the rider's view is measured from the
+## rider: metres to the right, metres forward, and metres up where height
+## matters. This module carries a road point round a bend into the segment
+## before or after it, turns a road point into the rider's view, and cuts a
+## polygon at the near plane, the closest thing the camera can see.
 import lib.Trig
 
 Geom :: [].{
-	RiderPt : { right : F64, forward : F64 }
-	Vec3 : {
+
+	## A point on the ground in the rider's view.
+	RiderPoint : { right : F64, forward : F64 }
+
+	## A point in the rider's view, at a height above the level of the rider.
+	SpacePoint : {
 		right : F64,
 		forward : F64,
 		height : F64,
 	}
-	AX : { a : F64, x : F64 }
+
+	## A point on one segment of the road.
+	RoadPoint : { along : F64, across : F64 }
 
 	## Where the camera stands on the current segment, and which way it faces.
+	## `across` is measured from the middle of the lane, which is `half_width`
+	## from its left edge.
 	Pose : {
 		along : F64,
 		across : F64,
 		yaw : F64,
-		hw : F64,
+		half_width : F64,
 	}
+
+	## Which way the road turns at a bend.
+	TurnSide : [TurnsLeft, TurnsRight]
 
 	## The bend from one segment into the next: the length of the segment
 	## before it, the angle it turns through, which way, and the lane's width.
-	Turn : {
+	Bend : {
 		segment_length : F64,
 		turn_angle : F64,
-		turns_right : Bool,
+		turn_side : Geom.TurnSide,
 		lane_width : F64,
 	}
 
 	## A line through two points.
-	Line : { start_point : Geom.RiderPt, end_point : Geom.RiderPt }
+	Line : { start_point : Geom.RiderPoint, end_point : Geom.RiderPoint }
 
+	## The radius of the earth the ground curves over.
 	ground_radius : F64
 	ground_radius = 100000.0
 
-	ground_drop : F64, F64 -> F64
-	ground_drop = |right, forward| (((right * right) + (forward * forward)) / (2.0 * ground_radius))
+	## How far the ground has curved away below level at `point`.
+	ground_drop : Geom.RiderPoint -> F64
+	ground_drop = |{ right, forward }| (right * right + forward * forward) / (2.0 * ground_radius)
 
-	to_rider : Geom.AX, Geom.Pose -> Geom.RiderPt
-	to_rider = |{ a, x }, pose| (
+	## A point on the current segment, as the camera at `pose` sees it.
+	to_rider_point : Geom.RoadPoint, Geom.Pose -> Geom.RiderPoint
+	to_rider_point = |{ along, across }, pose| {
+		ahead = along - pose.along
+		aside = across - (pose.across + pose.half_width)
+		cos_yaw = Trig.r_cos(pose.yaw)
+		sin_yaw = Trig.r_sin(pose.yaw)
 		{
-			d_a = (a - pose.along)
-			d_x = (x - (pose.across + pose.hw))
-			c = Trig.r_cos(pose.yaw)
-			s = Trig.r_sin(pose.yaw)
-			{ forward: ((d_a * c) + (d_x * s)), right: (((0.0 - d_a) * s) + (d_x * c)) }
+			forward: ahead * cos_yaw + aside * sin_yaw,
+			right: (0.0 - ahead) * sin_yaw + aside * cos_yaw,
 		}
-	)
+	}
 
-	next_to_cur : Geom.AX, Geom.Turn -> Geom.AX
-	next_to_cur = |{ a: a_b, x: x_b }, turn| (
-		{
-			seg_len = turn.segment_length
-			width = turn.lane_width
-			c = Trig.r_cos(turn.turn_angle)
-			s = Trig.r_sin(turn.turn_angle)
-			(
-				if turn.turns_right {
-					{
-						a: ((((a_b * c) - (x_b * s)) + (width * s)) + seg_len),
-						x: (((x_b * c) + (a_b * s)) + (width * (1.0 - c))),
-					}
-				} else {
-					{ a: (((a_b * c) + (x_b * s)) + seg_len), x: ((x_b * c) - (a_b * s)) }
-				}
-			)
+	## A point on the segment after `bend`, measured on the segment before it.
+	in_segment_before : Geom.RoadPoint, Geom.Bend -> Geom.RoadPoint
+	in_segment_before = |{ along, across }, bend| {
+		length = bend.segment_length
+		width = bend.lane_width
+		cos_turn = Trig.r_cos(bend.turn_angle)
+		sin_turn = Trig.r_sin(bend.turn_angle)
+		match bend.turn_side {
+			TurnsRight => {
+				along: along * cos_turn - across * sin_turn + width * sin_turn + length,
+				across: across * cos_turn + along * sin_turn + width * (1.0 - cos_turn),
+			}
+			TurnsLeft => {
+				along: along * cos_turn + across * sin_turn + length,
+				across: across * cos_turn - along * sin_turn,
+			}
 		}
-	)
+	}
 
-	cur_to_next : Geom.AX, Geom.Turn -> Geom.AX
-	cur_to_next = |{ a, x }, turn| (
-		{
-			seg_len = turn.segment_length
-			width = turn.lane_width
-			c = Trig.r_cos(turn.turn_angle)
-			s = Trig.r_sin(turn.turn_angle)
-			(
-				if turn.turns_right {
-					(
-						{
-							a0 = ((a - seg_len) - (width * s))
-							x0 = (x - (width * (1.0 - c)))
-							{ a: ((a0 * c) + (x0 * s)), x: (((0.0 - a0) * s) + (x0 * c)) }
-						}
-					)
-				} else {
-					(
-						{
-							a0 = (a - seg_len)
-							{ a: ((a0 * c) - (x * s)), x: ((a0 * s) + (x * c)) }
-						}
-					)
-				}
-			)
-		}
-	)
-
-	line_meet : { first_line : Geom.Line, second_line : Geom.Line } -> Geom.RiderPt
-	line_meet = |{ first_line, second_line }| (
-		{
-			a0 = first_line.start_point
-			a1 = first_line.end_point
-			b0 = second_line.start_point
-			b1 = second_line.end_point
-			dax = (a1.right - a0.right)
-			daf = (a1.forward - a0.forward)
-			dbx = (b1.right - b0.right)
-			dbf = (b1.forward - b0.forward)
-			offset_cross = (((b0.right - a0.right) * dbf) - ((b0.forward - a0.forward) * dbx))
-			direction_cross = ((dax * dbf) - (daf * dbx))
-			t = (offset_cross / direction_cross)
-			{ right: (a0.right + (t * dax)), forward: (a0.forward + (t * daf)) }
-		}
-	)
-
-	near : F64
-	near = 0.4
-
-	clip_cross : { edge_start : Geom.Vec3, edge_end : Geom.Vec3 } -> List(Geom.Vec3)
-	clip_cross = |{ edge_start: a, edge_end: b }| (
-		{
-			f = ((near - a.forward) / (b.forward - a.forward))
-			[
+	## A point on the segment before `bend`, measured on the segment after it.
+	in_segment_after : Geom.RoadPoint, Geom.Bend -> Geom.RoadPoint
+	in_segment_after = |{ along, across }, bend| {
+		length = bend.segment_length
+		width = bend.lane_width
+		cos_turn = Trig.r_cos(bend.turn_angle)
+		sin_turn = Trig.r_sin(bend.turn_angle)
+		match bend.turn_side {
+			TurnsRight => {
+				past_end = along - length - width * sin_turn
+				past_edge = across - width * (1.0 - cos_turn)
 				{
-					right: (a.right + (f * (b.right - a.right))),
-					forward: near,
-					height: (a.height + (f * (b.height - a.height))),
-				},
-			]
-		}
-	)
-
-	both_sides : Bool, Bool -> Bool
-	both_sides = |a_in, b_in| (
-		if a_in {
-			b_in
-		} else {
-			(
-				if b_in {
-					False
-				} else {
-					True
+					along: past_end * cos_turn + past_edge * sin_turn,
+					across: (0.0 - past_end) * sin_turn + past_edge * cos_turn,
 				}
-			)
+			}
+			TurnsLeft => {
+				past_end = along - length
+				{
+					along: past_end * cos_turn - across * sin_turn,
+					across: past_end * sin_turn + across * cos_turn,
+				}
+			}
 		}
-	)
+	}
 
-	# An accumulator loop is linear, where appending a recursive call is quadratic.
-	clip_near_onto : List(Geom.Vec3),
-	{
-		corner_index : I64,
-		clipped : List(Geom.Vec3),
-	} -> List(Geom.Vec3)
-	clip_near_onto = |poly, { corner_index: i, clipped: acc }| (
+	## Where two lines cross. They must not be parallel.
+	line_crossing : { first_line : Geom.Line, second_line : Geom.Line } -> Geom.RiderPoint
+	line_crossing = |{ first_line, second_line }| {
+		first_start = first_line.start_point
+		second_start = second_line.start_point
+		first_rightward = first_line.end_point.right - first_start.right
+		first_forward = first_line.end_point.forward - first_start.forward
+		second_rightward = second_line.end_point.right - second_start.right
+		second_forward = second_line.end_point.forward - second_start.forward
+		gap_rightward = second_start.right - first_start.right
+		gap_forward = second_start.forward - first_start.forward
+		offset_cross = gap_rightward * second_forward - gap_forward * second_rightward
+		direction_cross = first_rightward * second_forward - first_forward * second_rightward
+		fraction = offset_cross / direction_cross
 		{
-			n = poly.len().to_i64_wrap()
-			(
-				if i >= n {
-					acc
-				} else {
-					(
-						{
-							a = (
-								List.get(
-									poly,
-									I64.to_u64_wrap(i),
-								) ?? crash ("list-at out of range")
-							)
-							b = (
-								List.get(
-									poly,
-									I64.to_u64_wrap(((i + 1) - (I64.div_trunc_by((i + 1), n) * n))),
-								) ?? crash ("list-at out of range")
-							)
-							a_in = (a.forward >= near)
-							b_in = (b.forward >= near)
-							kept = (
-								if a_in {
-									[a]
-								} else {
-									[]
-								}
-							)
-							crossed = (
-								if both_sides(a_in, b_in) {
-									[]
-								} else {
-									clip_cross({ edge_start: a, edge_end: b })
-								}
-							)
-							clip_near_onto(
-								poly,
-								{
-									corner_index: (i + 1),
-									clipped: List.join([
-										acc,
-										kept,
-										crossed,
-									]),
-								},
-							)
-						}
-					)
-				}
-			)
+			right: first_start.right + fraction * first_rightward,
+			forward: first_start.forward + fraction * first_forward,
 		}
-	)
+	}
 
-	## The polygon cut to what lies at or past the near plane, `near` ahead.
-	clip_near : List(Geom.Vec3) -> List(Geom.Vec3)
-	clip_near = |poly| clip_near_onto(poly, { corner_index: 0, clipped: [] })
+	## The closest distance ahead that the camera can see.
+	near_plane : F64
+	near_plane = 0.4
+
+	## The polygon cut to what lies at or past the near plane.
+	clip_near : List(Geom.SpacePoint) -> List(Geom.SpacePoint)
+	clip_near = |polygon| {
+		next_corners = polygon.drop_first(1).concat(polygon.take_first(1))
+		edges = polygon.map2(next_corners, |from, to| { from, to })
+		edges.fold(List.with_capacity(2 * polygon.len()), clip_edge_onto)
+	}
+}
+
+## `clipped` with what one edge of a polygon adds to it: the edge's first
+## corner if that is in view, then the point where the edge crosses the near
+## plane if it does.
+clip_edge_onto : List(Geom.SpacePoint),
+{
+	from : Geom.SpacePoint,
+	to : Geom.SpacePoint,
+} -> List(Geom.SpacePoint)
+clip_edge_onto = |clipped, { from, to }| {
+	is_from_in_view = from.forward >= Geom.near_plane
+	is_to_in_view = to.forward >= Geom.near_plane
+	with_corner = if (is_from_in_view) clipped.append(from) else clipped
+	if is_from_in_view == is_to_in_view {
+		with_corner
+	} else {
+		with_corner.append(near_plane_crossing({ from, to }))
+	}
+}
+
+## Where an edge that has one end on each side crosses the near plane.
+near_plane_crossing : { from : Geom.SpacePoint, to : Geom.SpacePoint } -> Geom.SpacePoint
+near_plane_crossing = |{ from, to }| {
+	fraction = (Geom.near_plane - from.forward) / (to.forward - from.forward)
+	{
+		right: from.right + fraction * (to.right - from.right),
+		forward: Geom.near_plane,
+		height: from.height + fraction * (to.height - from.height),
+	}
 }

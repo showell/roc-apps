@@ -29,9 +29,9 @@ cap_want = [16]
 
 segs : List(World.Segment)
 segs = [
-	World.segment_at(0),
-	World.segment_at(1),
-	World.segment_at(2),
+	World.route_segment(0),
+	World.route_segment(1),
+	World.route_segment(2),
 ]
 
 origin : Frame.Pose
@@ -39,27 +39,27 @@ origin = {
 	along: 0.0,
 	across: 0.0,
 	yaw: 0.0,
-	hw: 2.0,
+	half_width: 2.0,
 }
 
 ## The first three segments seen from the origin, the rider on segment
 ## `rider_segment`.
-short_view : I64 -> TowerPlan.View
+short_view : World.SegmentIndex -> TowerPlan.View
 short_view = |rider_segment| {
 	world: segs,
-	chain: [0, 1, 2],
+	chain: [0, 1, 2].map(World.SegmentIndex.number),
 	pose: origin,
 	rider_segment,
 }
 
 from_origin : TowerPlan.View
-from_origin = short_view(0)
+from_origin = short_view(World.SegmentIndex.first)
 
 short_got : List(I64)
 short_got = [
 	TowerPlan.along_chain(from_origin).len().to_i64_wrap(),
-	TowerPlan.segment_towers(from_origin, 0).len().to_i64_wrap(),
-	TowerPlan.mid_tower(from_origin, 0).len().to_i64_wrap(),
+	TowerPlan.segment_towers(from_origin, Frame.ChainPosition.first).len().to_i64_wrap(),
+	TowerPlan.mid_tower(from_origin, Frame.ChainPosition.first).len().to_i64_wrap(),
 	TowerPlan.in_view(from_origin).len().to_i64_wrap(),
 ]
 
@@ -80,11 +80,11 @@ has_mid_tower = |seg|
 mid_flags_want : List(Bool)
 mid_flags_want = [False, False, False]
 
-## The first mast in view on the segment at `place` in the chain.
-first_tower_on : I64 -> TowerPlan.TowerItem
-first_tower_on = |place| TowerPlan.segment_towers(
+## The first mast in view on the segment at `position` in the chain.
+first_tower_on : U32 -> TowerPlan.TowerItem
+first_tower_on = |number| TowerPlan.segment_towers(
 	from_origin,
-	place,
+	Frame.ChainPosition.number(number),
 ).first() ?? crash "TowerPlanSpec: the first two segments' masts are in view"
 
 where_got : List(F64)
@@ -101,16 +101,16 @@ where_want = [660.0, 22.0, 480.0, 22.0]
 ## The 1200 m segment alone, seen from the origin.
 long_view : TowerPlan.View
 long_view = {
-	world: [World.segment_at(6)],
-	chain: [0],
+	world: [World.route_segment(6)],
+	chain: [0].map(World.SegmentIndex.number),
 	pose: origin,
-	rider_segment: 0,
+	rider_segment: World.SegmentIndex.first,
 }
 
 long_got : List(I64)
 long_got = [
 	TowerPlan.along_chain(long_view).len().to_i64_wrap(),
-	TowerPlan.mid_tower(long_view, 0).len().to_i64_wrap(),
+	TowerPlan.mid_tower(long_view, Frame.ChainPosition.first).len().to_i64_wrap(),
 ]
 
 long_want : List(I64)
@@ -162,10 +162,12 @@ spread_want = [0.0, 37.0, 74.0]
 
 behind_got : List(I64)
 behind_got = [
-	TowerPlan.in_view(short_view(0)).len().to_i64_wrap(),
-	TowerPlan.in_view(short_view(1)).len().to_i64_wrap(),
-	TowerPlan.in_view(short_view(2)).len().to_i64_wrap(),
-	TowerPlan.tower_behind(short_view(1)).len().to_i64_wrap(),
+	TowerPlan.in_view(short_view(World.SegmentIndex.first)).len().to_i64_wrap(),
+	TowerPlan.in_view(short_view(World.SegmentIndex.number(1))).len().to_i64_wrap(),
+	TowerPlan.in_view(short_view(World.SegmentIndex.number(2))).len().to_i64_wrap(),
+	TowerPlan.tower_behind(short_view(World.SegmentIndex.number(1)), World.SegmentIndex.first)
+		.len()
+		.to_i64_wrap(),
 ]
 
 behind_want : List(I64)
@@ -179,7 +181,7 @@ cull_got = [
 			along: 5000.0,
 			across: 0.0,
 			yaw: 0.0,
-			hw: 2.0,
+			half_width: 2.0,
 		},
 	}).len().to_i64_wrap(),
 	TowerPlan.along_chain({ ..from_origin, chain: [] }).len().to_i64_wrap(),
@@ -195,11 +197,11 @@ keys = TowerPlan.depth_keys(TowerPlan.along_chain(from_origin))
 key_at : U64 -> DepthSort.DepthKey
 key_at = |i| keys.get(i) ?? crash "TowerPlanSpec: three masts are in view"
 
-## The place in the mast list that the key at `i` names.
+## The position in the mast list that the key at `i` names.
 tower_place_at : U64 -> I64
 tower_place_at = |i|
 	match key_at(i).subject {
-		Tower(place) => place.to_i64_wrap()
+		Tower(position) => position.to_i64()
 		Tree(_) | Critter(_) | Cat(_) | Truck | Rail(_) | Bird(_) =>
 			crash "TowerPlanSpec: a mast's key names a mast"
 	}

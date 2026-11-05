@@ -40,14 +40,14 @@ smooth_want : List(F64)
 smooth_want = [0.0, 0.5, 1.0, 0.5]
 
 plain : World.Segment
-plain = World.segment_at(0)
+plain = World.route_segment(0)
 
 distracting : World.Segment
-distracting = World.segment_at(2)
+distracting = World.route_segment(2)
 
 rider : F64, F64 -> Pose.RiderState
 rider = |along, yaw| {
-	segment: 2,
+	segment: World.SegmentIndex.number(2),
 	along: along,
 	across: 0.0,
 	yaw: Angle.Turn.radians(yaw),
@@ -120,7 +120,7 @@ want_want = [True, True, True]
 
 head : F64, F64 -> Pose.RiderState
 head = |gaze_yaw, along| {
-	segment: 2,
+	segment: World.SegmentIndex.number(2),
 	along: along,
 	across: 0.0,
 	yaw: Angle.Turn.radians(0.0),
@@ -185,7 +185,7 @@ snap_want = [0.0, 0.0, 0.0]
 
 rider_with_focus : F64, F64 -> Pose.RiderState
 rider_with_focus = |focus, gaze_yaw| {
-	segment: 2,
+	segment: World.SegmentIndex.number(2),
 	along: 200.0,
 	across: 0.0,
 	yaw: Angle.Turn.radians(0.0),

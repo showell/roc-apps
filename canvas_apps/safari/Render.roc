@@ -35,10 +35,10 @@ Render :: [].{
 	## truck are.
 	Viewpoint : {
 		world : List(World.Segment),
-		chain : List(I64),
+		chain : List(World.SegmentIndex),
 		pose : Frame.Pose,
 		cam_focal : F64,
-		rider_segment : I64,
+		rider_segment : World.SegmentIndex,
 		rider_along : F64,
 		speed : F64,
 		truck_position : F64,
@@ -93,7 +93,10 @@ Render :: [].{
 			})
 				.take_first(CatPlan.max_vis_cats.to_u64_wrap())
 		rails = RailPlan.all_rails(road, rider_segment)
-		rider_distance = World.route_distance(world, { index: rider_segment, along: rider_along })
+		rider_distance = World.distance_along_route(
+			world,
+			{ index: rider_segment, along: rider_along },
+		)
 		truck = TruckPlan.in_view({
 			world,
 			chain,
@@ -117,7 +120,7 @@ Render :: [].{
 			CritterPlan.cow_items(critters),
 			CatPlan.depth_keys(cats),
 			TruckPlan.depth_keys(truck),
-			RailPlan.rail_items(rails),
+			RailPlan.depth_keys(rails),
 		])
 		{
 			trees,

@@ -12,7 +12,7 @@ GuardRail :: [].{
 	## A quad of the rail: its corners, its colour, and how far ahead it
 	## is, the mean of its corners' distances, for the depth sort.
 	RailPoly : {
-		corners : List(Geom.Vec3),
+		corners : List(Geom.SpacePoint),
 		color : I64,
 		forward : F64,
 	}
@@ -34,7 +34,7 @@ GuardRail :: [].{
 
 	## How many metres the rail runs on, a post a metre, past each end of
 	## a bend.
-	rail_runout : I64
+	rail_runout : U32
 	rail_runout = 10
 
 	## The most quads one rail draws.
@@ -53,7 +53,7 @@ GuardRail :: [].{
 	## The rail along `path`: the bars, then the posts, at most
 	## `max_rail_polys` quads in all. A path of fewer than two points has
 	## no rail.
-	quads_along : List(Geom.RiderPt) -> List(GuardRail.RailPoly)
+	quads_along : List(Geom.RiderPoint) -> List(GuardRail.RailPoly)
 	quads_along = |path|
 		if path.len() < 2 {
 			[]
@@ -62,7 +62,7 @@ GuardRail :: [].{
 		}
 
 	## A stretch of bar between each two neighbouring points of `path`.
-	bars : List(Geom.RiderPt) -> List(GuardRail.RailPoly)
+	bars : List(Geom.RiderPoint) -> List(GuardRail.RailPoly)
 	bars = |path| List.map2(
 		path,
 		path.drop_first(1),
@@ -72,7 +72,7 @@ GuardRail :: [].{
 	## A post at each point of `path`, turned to face along the path from
 	## the point before it to the point after it. A post at an end of the
 	## path takes its own point in place of the one it lacks.
-	posts : List(Geom.RiderPt) -> List(GuardRail.RailPoly)
+	posts : List(Geom.RiderPoint) -> List(GuardRail.RailPoly)
 	posts = |path| {
 		before = path.take_first(1).concat(path.drop_last(1))
 		after = path.drop_first(1).concat(path.take_last(1))
@@ -98,7 +98,7 @@ GuardRail :: [].{
 }
 
 ## A quad with these corners, in `color`.
-rail_quad : List(Geom.Vec3), I64 -> GuardRail.RailPoly
+rail_quad : List(Geom.SpacePoint), I64 -> GuardRail.RailPoly
 rail_quad = |corners, color| {
 	corners,
 	color,
@@ -107,7 +107,7 @@ rail_quad = |corners, color| {
 
 ## The mean of the corners' distances ahead, summed from the first corner
 ## to the last; a float sum's rounding depends on its order.
-mean_forward : List(Geom.Vec3) -> F64
+mean_forward : List(Geom.SpacePoint) -> F64
 mean_forward = |corners| {
 	first = corners.first() ?? crash "GuardRail: a quad has corners"
 	sum = corners.drop_first(1).fold(first.forward, |total, corner| total + corner.forward)
@@ -115,7 +115,7 @@ mean_forward = |corners| {
 }
 
 ## A point of the path, at `height` above the ground.
-at_height : Geom.RiderPt, F64 -> Geom.Vec3
+at_height : Geom.RiderPoint, F64 -> Geom.SpacePoint
 at_height = |point, height| {
 	right: point.right,
 	forward: point.forward,
@@ -123,7 +123,7 @@ at_height = |point, height| {
 }
 
 ## The bar from `from` to `to`, bottom edge first.
-bar : { from : Geom.RiderPt, to : Geom.RiderPt } -> GuardRail.RailPoly
+bar : { from : Geom.RiderPoint, to : Geom.RiderPoint } -> GuardRail.RailPoly
 bar = |{ from, to }|
 	rail_quad(
 		[
@@ -138,7 +138,7 @@ bar = |{ from, to }|
 ## The post at `at`, half its width to each side of it along the path from
 ## `previous` to `next`, from the ground to the top of the bar. Two points
 ## at one place give no direction, and the post then has no width.
-post : Geom.RiderPt, { previous : Geom.RiderPt, next : Geom.RiderPt } -> GuardRail.RailPoly
+post : Geom.RiderPoint, { previous : Geom.RiderPoint, next : Geom.RiderPoint } -> GuardRail.RailPoly
 post = |at, { previous, next }| {
 	dr = (next.right - previous.right)
 	df = (next.forward - previous.forward)

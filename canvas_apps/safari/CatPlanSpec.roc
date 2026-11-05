@@ -13,9 +13,9 @@ import World
 
 segs : List(World.Segment)
 segs = [
-	World.segment_at(0),
-	World.segment_at(1),
-	World.segment_at(2),
+	World.route_segment(0),
+	World.route_segment(1),
+	World.route_segment(2),
 ]
 
 origin : Frame.Pose
@@ -23,14 +23,14 @@ origin = {
 	along: 0.0,
 	across: 0.0,
 	yaw: 0.0,
-	hw: 2.0,
+	half_width: 2.0,
 }
 
 ## The first three segments seen from the origin, at 1 m a step.
 from_origin : CatPlan.View
 from_origin = {
 	world: segs,
-	chain: [0, 1, 2],
+	chain: [0, 1, 2].map(World.SegmentIndex.number),
 	pose: origin,
 	cam_focal: 500.0,
 	rider_along: 0.0,
@@ -57,7 +57,12 @@ gap_got = [0.0, 120.0].join_map(
 		0,
 		1,
 		2,
-	].map(|place| CatPlan.gap_to_segment({ ..from_origin, rider_along }, place)),
+	].map(
+		|number| CatPlan.gap_to_segment(
+			{ ..from_origin, rider_along },
+			Frame.ChainPosition.number(number),
+		),
+	),
 )
 
 gap_want : List(F64)
@@ -78,7 +83,7 @@ riding = |along| CatPlan.in_view({
 		along,
 		across: 0.0,
 		yaw: 0.0,
-		hw: 2.0,
+		half_width: 2.0,
 	},
 	rider_along: along,
 })
@@ -94,8 +99,8 @@ first_cat = |along|
 count_got : List(I64)
 count_got = [
 	seen.len().to_i64_wrap(),
-	CatPlan.segment_cat(from_origin, 0).len().to_i64_wrap(),
-	CatPlan.segment_cat(from_origin, 2).len().to_i64_wrap(),
+	CatPlan.segment_cat(from_origin, Frame.ChainPosition.first).len().to_i64_wrap(),
+	CatPlan.segment_cat(from_origin, Frame.ChainPosition.number(2)).len().to_i64_wrap(),
 	CatPlan.max_vis_cats,
 ]
 
@@ -116,8 +121,8 @@ pose_want = [0]
 
 closing_got : List(F64)
 closing_got = [
-	(first_cat(300.0).fwd - first_cat(200.0).fwd),
-	(first_cat(400.0).fwd - first_cat(300.0).fwd),
+	(first_cat(300.0).forward - first_cat(200.0).forward),
+	(first_cat(400.0).forward - first_cat(300.0).forward),
 	(first_cat(300.0).right - first_cat(200.0).right),
 ]
 
@@ -135,7 +140,10 @@ cull_got = [
 	riding(500.0).len().to_i64_wrap(),
 	riding(600.0).len().to_i64_wrap(),
 	CatPlan.in_view({ ..from_origin, chain: [] }).len().to_i64_wrap(),
-	CatPlan.in_view({ ..from_origin, chain: [0] }).len().to_i64_wrap(),
+	CatPlan.in_view({
+		..from_origin,
+		chain: [0].map(World.SegmentIndex.number),
+	}).len().to_i64_wrap(),
 ]
 
 cull_want : List(I64)

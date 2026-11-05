@@ -17,13 +17,13 @@ import World
 
 segs : List(World.Segment)
 segs = [
-	World.segment_at(0),
-	World.segment_at(1),
-	World.segment_at(2),
+	World.route_segment(0),
+	World.route_segment(1),
+	World.route_segment(2),
 ]
 
 seg : World.Segment
-seg = World.segment_at(0)
+seg = World.route_segment(0)
 
 ## Where a test rider is on segment 0 and how it moves.
 RiderSpot : {
@@ -42,7 +42,7 @@ rider = |
 		tilt_radians: tilt,
 	},
 | {
-	segment: 0,
+	segment: World.SegmentIndex.number(0),
 	along: along,
 	across: across,
 	yaw: Angle.Turn.radians(0.0),
@@ -118,7 +118,7 @@ leaned_want = [True]
 
 at_seam : Pose.RiderState
 at_seam = {
-	segment: 0,
+	segment: World.SegmentIndex.number(0),
 	along: 499.0,
 	across: 0.5,
 	yaw: Angle.Turn.radians(0.1),
@@ -153,13 +153,13 @@ turn_want : List(F64)
 turn_want = [0.0, 0.0]
 
 index_got : List(I64)
-index_got = [crossed.segment, next_of(seg)]
+index_got = [crossed.segment.to_i64(), next_of(seg)]
 
 ## The segment after one that continues.
 next_of : World.Segment -> I64
 next_of = |segment|
 	match segment.ending {
-		Continues({ next }) => next
+		Continues({ next }) => next.to_i64()
 		Terminates => crash "RiderSpec.next_of: segment 0 continues"
 	}
 
@@ -195,7 +195,7 @@ resolve_got = [
 			tilt_radians: 0.0,
 		}),
 		segs,
-	).segment,
+	).segment.to_i64(),
 	Rider.resolve_cross(
 		rider({
 			along: 499.0,
@@ -204,14 +204,14 @@ resolve_got = [
 			tilt_radians: 0.0,
 		}),
 		segs,
-	).segment,
+	).segment.to_i64(),
 ]
 
 resolve_want : List(I64)
 resolve_want = [0, 1]
 
 last_seg : World.Segment
-last_seg = World.segment_at(18)
+last_seg = World.route_segment(18)
 
 ## Whether the route ends with a segment.
 is_route_end : World.Segment -> Bool
@@ -224,7 +224,7 @@ is_route_end = |segment|
 clamped_at_finish : F64, F64 -> Pose.RiderState
 clamped_at_finish = |along, v| Rider.finish_clamp(
 	{
-		segment: 0,
+		segment: World.SegmentIndex.number(0),
 		along: along,
 		across: 0.0,
 		yaw: Angle.Turn.radians(0.0),
@@ -258,7 +258,7 @@ done_got : List(Bool)
 done_got = (
 	{
 		at_end = {
-			segment: 0,
+			segment: World.SegmentIndex.number(0),
 			along: 300.0,
 			across: 0.0,
 			yaw: Angle.Turn.radians(0.0),
@@ -269,7 +269,7 @@ done_got = (
 			focus: 0.0,
 		}
 		short = {
-			segment: 0,
+			segment: World.SegmentIndex.number(0),
 			along: 299.0,
 			across: 0.0,
 			yaw: Angle.Turn.radians(0.0),
@@ -280,8 +280,8 @@ done_got = (
 			focus: 0.0,
 		}
 		[
-			Rider.is_finished(at_end, [World.segment_at(18)]),
-			Rider.is_finished(short, [World.segment_at(18)]),
+			Rider.is_finished(at_end, [World.route_segment(18)]),
+			Rider.is_finished(short, [World.route_segment(18)]),
 			is_route_end(last_seg),
 			Rider.is_finished(
 				rider({
@@ -314,7 +314,7 @@ frame_got : List(Bool)
 frame_got = [
 	(next.along > 0.0),
 	(next.v > 0.0),
-	(next.segment == 0),
+	(next.segment == World.SegmentIndex.first),
 	(DeviceMath.real_abs(next.across) < (Scenery.lane_width / 2.0)),
 	(next.v <= VehicleLimits.v_max),
 ]

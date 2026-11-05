@@ -7,11 +7,12 @@ app [main!] {
 import Angle
 import Grade
 import Pose
+import World
 import ViewYaw
 
 s0 : Pose.RiderState
 s0 = {
-	segment: 0,
+	segment: World.SegmentIndex.number(0),
 	along: 0.0,
 	across: 0.0,
 	yaw: Angle.Turn.radians(0.0),
@@ -24,7 +25,7 @@ s0 = {
 
 s1 : Pose.RiderState
 s1 = {
-	segment: 0,
+	segment: World.SegmentIndex.number(0),
 	along: 0.0,
 	across: 0.0,
 	yaw: Angle.Turn.radians(0.0),
@@ -37,7 +38,7 @@ s1 = {
 
 s2 : Pose.RiderState
 s2 = {
-	segment: 0,
+	segment: World.SegmentIndex.number(0),
 	along: 0.0,
 	across: 0.0,
 	yaw: Angle.Turn.radians(0.0),
@@ -50,7 +51,7 @@ s2 = {
 
 s3 : Pose.RiderState
 s3 = {
-	segment: 0,
+	segment: World.SegmentIndex.number(0),
 	along: 0.0,
 	across: 0.0,
 	yaw: Angle.Turn.radians(0.0),
@@ -63,7 +64,7 @@ s3 = {
 
 s4 : Pose.RiderState
 s4 = {
-	segment: 0,
+	segment: World.SegmentIndex.number(0),
 	along: 0.0,
 	across: 0.0,
 	yaw: Angle.Turn.radians(0.0),
