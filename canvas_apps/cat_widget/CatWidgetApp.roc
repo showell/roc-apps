@@ -157,14 +157,14 @@ road = {
 ## The cat as `gap` finds it, drawn by Safari's own stills.
 cat_shapes : F64 -> List(Shapes.Shape)
 cat_shapes = |gap| {
-	moment = Cat.moment_at(crossing, { gap, speed: rider_speed })
+	instant = Cat.instant_at(crossing, { gap, speed: rider_speed })
 	CatDraw.polygons(
 		{
-			feet: { x: lane_middle_x + moment.spot.across * pixels_a_metre, y: feet_y },
+			feet: { x: lane_middle_x + instant.spot.across * pixels_a_metre, y: feet_y },
 			height_px: crossing.height * pixels_a_metre,
-			lift: moment.spot.lift,
+			lift: instant.spot.lift,
 		},
-		CatStills.pose_polys(moment.pose),
+		CatStills.pose_polys(instant.pose),
 	)
 }
 
@@ -205,14 +205,14 @@ ruler = |gap| {
 status_lines : F64 -> List(Str)
 status_lines = |gap| {
 	approach = { gap, speed: rider_speed }
-	moment = Cat.moment_at(crossing, approach)
+	instant = Cat.instant_at(crossing, approach)
 	reaction = CrossingReaction.reaction_to(
 		cat_segment,
 		{ along: crossing.along - gap, speed: rider_speed },
 	)
 	[
 		stage_text(Cat.crossing_stage(approach)),
-		"Pose: ${pose_name(moment.pose)}",
+		"Pose: ${pose_name(instant.pose)}",
 		"Gap: ${tenths_text(gap)} m",
 		throttle_text(reaction.throttle),
 	]

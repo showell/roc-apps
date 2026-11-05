@@ -197,25 +197,25 @@ path_cuts_want = [
 	3.0,
 ]
 
-## The moment at each stage: a stage's rest is the timeline's own, and playing
+## The instant at each stage: a stage's rest is the timeline's own, and playing
 ## reaches a beat by `progress` times the timeline's length.
-stage_moment_got : List(Bool)
-stage_moment_got = [
-	cut_timeline.moment(Waiting).pose == BeforeIt,
-	cut_timeline.moment(Past(5.0)).pose == AfterIt,
-	cut_timeline.moment(Playing(Fraction.zero)).pose == First,
-	cut_timeline.moment(Playing(Fraction.of(0.3))).pose == Second,
-	cut_timeline.moment(Playing(Fraction.whole)).pose == Fourth,
+stage_instant_got : List(Bool)
+stage_instant_got = [
+	cut_timeline.instant(Waiting).pose == BeforeIt,
+	cut_timeline.instant(Past(5.0)).pose == AfterIt,
+	cut_timeline.instant(Playing(Fraction.zero)).pose == First,
+	cut_timeline.instant(Playing(Fraction.of(0.3))).pose == Second,
+	cut_timeline.instant(Playing(Fraction.whole)).pose == Fourth,
 ]
 
-stage_moment_want : List(Bool)
-stage_moment_want = List.repeat(True, 5)
+stage_instant_want : List(Bool)
+stage_instant_want = List.repeat(True, 5)
 
 stage_spot_got : List(F64)
 stage_spot_got = [
-	cut_timeline.moment(Waiting).spot.across,
-	cut_timeline.moment(Past(5.0)).spot.across,
-	cut_timeline.moment(Playing(Fraction.of(0.5))).spot.across,
+	cut_timeline.instant(Waiting).spot.across,
+	cut_timeline.instant(Past(5.0)).spot.across,
+	cut_timeline.instant(Playing(Fraction.of(0.5))).spot.across,
 ]
 
 stage_spot_want : List(F64)
@@ -401,8 +401,8 @@ main! = |_args| {
 		}),
 		Grade.bools({
 			name: "an-stage     ",
-			got: stage_moment_got,
-			want: stage_moment_want,
+			got: stage_instant_got,
+			want: stage_instant_want,
 		}),
 		Grade.reals({
 			name: "an-stage-spot",

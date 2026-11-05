@@ -1,12 +1,12 @@
 ## How a critter plays out as the rider comes. Animation holds two ideas that
 ## know nothing of each other. A rule, `over_gap` or `over_beats`, turns where
 ## the rider is into a stage: waiting, playing, or past. A timeline turns a
-## stage into a moment: how the critter looks and where it is. A timeline is
+## stage into an instant: how the critter looks and where it is. A timeline is
 ## data, so a critter's whole animation reads in one place, as a score.
 ##
 ## A timeline runs on two tracks, one for how the critter looks and one for
 ## where it goes, because the two change at different points. Each track's
-## cuts are in beats from the start of the timeline. The moments before and
+## cuts are in beats from the start of the timeline. The instants before and
 ## after are the timeline's own, because a critter can rest somewhere no
 ## stretch of a track ever reaches.
 ##
@@ -128,22 +128,22 @@ Animation :: [].{
 	## has something to play: it runs to the timeline's end.
 	Track(kind) : { stretches : List(Animation.Stretch(kind)), finally : kind }
 
-	## A critter at one moment: how it looks, and where it is.
-	Moment(pose) : { pose : pose, spot : Animation.Spot }
+	## A critter at one instant: how it looks, and where it is.
+	Instant(pose) : { pose : pose, spot : Animation.Spot }
 
 	## A whole animation: how many beats long it is, the critter at rest before
 	## and after, how it looks, and where it goes.
 	Timeline(pose) := {
 		length : Beats,
-		before : Animation.Moment(pose),
-		after : Animation.Moment(pose),
+		before : Animation.Instant(pose),
+		after : Animation.Instant(pose),
 		looks : Animation.Track(Animation.Looks(pose)),
 		path : Animation.Track(Animation.Path),
 	}.{
 
 		## The critter at `stage`.
-		moment : Animation.Timeline(pose), Animation.Stage -> Animation.Moment(pose)
-		moment = |timeline, stage| {
+		instant : Animation.Timeline(pose), Animation.Stage -> Animation.Instant(pose)
+		instant = |timeline, stage| {
 			Animation.Timeline.(score) = timeline
 			match stage {
 				Waiting => score.before
@@ -153,7 +153,7 @@ Animation :: [].{
 		}
 
 		## The critter at `beat` of the animation.
-		at_beat : Animation.Timeline(pose), Beats -> Animation.Moment(pose)
+		at_beat : Animation.Timeline(pose), Beats -> Animation.Instant(pose)
 		at_beat = |Animation.Timeline.(score), beat| {
 			looks = playing_at(score.looks, { beat, length: score.length })
 			path = playing_at(score.path, { beat, length: score.length })

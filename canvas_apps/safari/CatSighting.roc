@@ -82,13 +82,13 @@ cat_in_view = |
 	},
 | {
 	gap = Frame.gap_to_segment(view.road, position)
-	moment = Cat.moment_at(crossing, { gap: (gap + crossing.along), speed })
+	instant = Cat.instant_at(crossing, { gap: (gap + crossing.along), speed })
 	seen = Frame.rider_point_ahead(
 		view.road,
 		{
 			position: position,
-			along: (crossing.along + moment.spot.along),
-			across: (moment.spot.across + (Scenery.lane_width / 2.0)),
+			along: (crossing.along + instant.spot.along),
+			across: (instant.spot.across + (Scenery.lane_width / 2.0)),
 		},
 	)
 	if seen.forward <= Geom.near_plane {
@@ -101,8 +101,8 @@ cat_in_view = |
 				right: seen.right,
 				forward: seen.forward,
 				height: crossing.height,
-				pose: moment.pose,
-				lift: moment.spot.lift,
+				pose: instant.pose,
+				lift: instant.spot.lift,
 			},
 		]
 	}

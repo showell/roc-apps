@@ -33,16 +33,16 @@ Render :: [].{
 		order : List(DepthSort.DepthKey),
 	}
 
-	## The ride at the frame's instant: the rider's speed, where the truck is
-	## and which of its lights are on, and the clock.
-	RideInstant : {
+	## What the sightings read beyond the road: the rider's speed, where the
+	## truck is and which of its lights are on, and the clock.
+	MovingParts : {
 		speed : Speed,
 		truck : { route_position : F64, lights : Truck.Lights },
 		clock : Clock,
 	}
 
 	## Everything in view from `view`, each kind cut to its sighting's cap.
-	collect : Frame.Viewpoint, Render.RideInstant -> Render.Scene
+	collect : Frame.Viewpoint, Render.MovingParts -> Render.Scene
 	collect = |
 		view,
 		{

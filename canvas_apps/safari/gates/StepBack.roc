@@ -25,8 +25,8 @@ main! = |_args| {
 			$tour = Tour.advance($tour)
 			$k = $k + 1
 		}
-		here = $tour.moment.clock
-		there = Tour.back($tour).moment.clock
+		here = $tour.instant.clock
+		there = Tour.back($tour).instant.clock
 		ok = there.next() == here
 		$bad = if ok {
 			$bad

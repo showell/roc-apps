@@ -50,16 +50,16 @@ main! = |args| {
 			Err(OutOfBounds) => 0
 		}
 	tour = ride_to(Tour.initial, steps)
-	moment_shapes = Tour.shapes(tour)
+	instant_shapes = Tour.shapes(tour)
 	roll = Tour.roll(tour)
 	scene = {
-		shapes: moment_shapes,
+		shapes: instant_shapes,
 		roll,
 		sky_top: Tour.sky_top(tour),
 		sky_horizon: Tour.sky_horizon(tour),
 		sun: Tour.sun(tour),
 	}
-	cut_shapes = Shapes.cut(moment_shapes)
+	cut_shapes = Shapes.cut(instant_shapes)
 	a = SafariFrame.paint(scene)
 	backdrop = SafariFrame.paint({ ..scene, shapes: [] })
 	b = ShapesPixels.paint(backdrop, { roll: SafariFrame.screen_roll(roll), shapes: cut_shapes })
@@ -76,7 +76,7 @@ main! = |args| {
 	}
 	var $out = List.with_capacity(n * 6 + 64)
 	differing = "differ ${U64.to_str($differ)} of ${U64.to_str(n)}"
-	totals = "triangles ${triangles(cut_shapes).to_str()}, shapes ${moment_shapes.len().to_str()}"
+	totals = "triangles ${triangles(cut_shapes).to_str()}, shapes ${instant_shapes.len().to_str()}"
 	size = "${Screen.width_px.to_str()} ${Screen.height_px.to_str()}"
 	$out = List.concat($out, Str.to_utf8("${differing}, ${totals}\nhash 00000000\n${size}\n"))
 	$k = 0

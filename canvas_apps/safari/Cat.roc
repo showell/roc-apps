@@ -257,8 +257,8 @@ Cat :: [].{
 	}
 
 	## The cat as the rider comes on it.
-	moment_at : Cat.Crossing, Animation.Approach -> Animation.Moment(Cat.Pose)
-	moment_at = |cat, approach| crossing_timeline(cat).moment(crossing_stage(approach))
+	instant_at : Cat.Crossing, Animation.Approach -> Animation.Instant(Cat.Pose)
+	instant_at = |cat, approach| crossing_timeline(cat).instant(crossing_stage(approach))
 }
 
 ## The spot `across` the road, on the ground where the cat crosses.

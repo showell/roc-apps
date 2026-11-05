@@ -83,7 +83,7 @@ A sighting answers one question each frame: which of these can the rider see rig
 
 A record is the plainest shape in Roc, and it's all this needs. `RideMoment := { ... }.{ ... }` makes the module's own type out of one: a nominal type, which can carry a block, and the block holds the definitions other modules can reach.
 
-{{code RideMoment.RideMoment from "One moment of the ride" to "}.{"}}
+{{code RideInstant.RideInstant from "One instant of the ride" to "}.{"}}
 
 Those three fields are the whole of what Safari Ride keeps from one step to the next. The cat has no state, and neither does the bird, the sun or the beacons. Each frame works them all out again from the rider, the truck and the clock.
 
@@ -225,7 +225,7 @@ digraph cat {
 
 The slider isn't scrubbing a video. Every position of it is a call to this function. The arrow is `->` again, so the type already says there's no hidden cat being updated somewhere. Method syntax chains the two halves of the job: `.moment(...)` is defined on the `Timeline` that `crossing_timeline` returns.
 
-{{code Cat.moment_at}}
+{{code Cat.instant_at}}
 
 A crossing and an approach go in, and a moment comes out. The same crossing at the same approach gives the same cat, a thousand frames apart. `crossing_stage` decides how far along things are, and `crossing_timeline` decides what that looks like. They know nothing of each other.
 

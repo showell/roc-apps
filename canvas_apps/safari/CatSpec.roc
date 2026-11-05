@@ -145,7 +145,7 @@ cycles_want : List(F64)
 cycles_want = [0.0, 2.0, 1.0, 4.0, 1.0, 1.0, 5.0]
 
 ## The cat at `beat` of its crossing.
-crossing_at : F64 -> Animation.Moment(Cat.Pose)
+crossing_at : F64 -> Animation.Instant(Cat.Pose)
 crossing_at = |beat| Cat.crossing_timeline(the_cat).at_beat(Beats.of(beat))
 
 pose_got : List(I64)
@@ -195,8 +195,8 @@ cut_want = [
 	6,
 ]
 
-phase_of : F64 -> Animation.Moment(Cat.Pose)
-phase_of = |gap| Cat.moment_at(the_cat, coming(gap, 1.0))
+phase_of : F64 -> Animation.Instant(Cat.Pose)
+phase_of = |gap| Cat.instant_at(the_cat, coming(gap, 1.0))
 
 which_got : List(I64)
 which_got = [

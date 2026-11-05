@@ -104,19 +104,19 @@ BirdFlight :: [].{
 	flight_stage = |gap| Animation.over_gap({ starts_at: takeoff_gap, ends_at: landing_gap }, gap)
 
 	## The bird on `route` with the rider `gap` metres from the tree it starts on.
-	route_moment_at : BirdFlight.Route, F64 -> Animation.Moment(BirdFlight.Pose)
-	route_moment_at = |route, gap|
+	route_instant_at : BirdFlight.Route, F64 -> Animation.Instant(BirdFlight.Pose)
+	route_instant_at = |route, gap|
 		match route {
-			Flies(flight) => moment_at(flight, gap)
+			Flies(flight) => instant_at(flight, gap)
 			Sits(tree) => sitting_on(tree)
 		}
 
 	## The bird with the rider `gap` metres from the tree it left.
-	moment_at : BirdFlight.Flight, F64 -> Animation.Moment(BirdFlight.Pose)
-	moment_at = |flight, gap| flight_timeline(flight).moment(flight_stage(gap))
+	instant_at : BirdFlight.Flight, F64 -> Animation.Instant(BirdFlight.Pose)
+	instant_at = |flight, gap| flight_timeline(flight).instant(flight_stage(gap))
 
 	## The bird as it sits on top of `tree`.
-	sitting_on : Scenery.Tree -> Animation.Moment(BirdFlight.Pose)
+	sitting_on : Scenery.Tree -> Animation.Instant(BirdFlight.Pose)
 	sitting_on = |tree| { pose: Perched, spot: tree_top(tree) }
 
 	## A flight's timeline is one beat long, so a cut on it is a share of the

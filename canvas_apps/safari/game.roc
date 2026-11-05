@@ -9,7 +9,7 @@ package
 		CatDraw,
 		CatStills,
 		CrossingReaction,
-		RideMoment,
+		RideInstant,
 		Rider,
 		SafariShapes,
 		Scenery,
