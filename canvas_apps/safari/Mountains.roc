@@ -303,3 +303,158 @@ snow = |sight, color| {
 		Paint.push_poly(color, crest.concat(snowline))
 	}
 }
+
+# The bearing `radians` to the right of north.
+north_by : F64 -> Angle.Bearing
+north_by = |radians| Angle.Bearing.radians(radians)
+
+# The west range's middle, `radians` to its right.
+west_by : F64 -> Angle.Bearing
+west_by = |radians| Mountains.west_range_bearing.plus(Angle.Turn.radians(radians))
+
+expect Mountains.rock == 5991055
+expect Mountains.rock_west == 3752799
+expect Mountains.land == 4886339
+
+expect Mountains.channel(Mountains.rock, 16) == 91.0
+expect Mountains.channel(Mountains.rock, 8) == 106.0
+expect Mountains.channel(Mountains.rock, 0) == 143.0
+expect Mountains.channel(16777215, 16) == 255.0
+expect Mountains.channel(0, 0) == 0.0
+
+expect Mountains.color_at_dusk(Mountains.rock, Fraction.zero) == 5991055
+expect Mountains.color_at_dusk(Mountains.rock_west, Fraction.zero) == 3752799
+expect Mountains.color_at_dusk(Mountains.land, Fraction.zero) == 4886339
+expect Mountains.color_at_dusk(Mountains.rock, Fraction.whole) == 3028296
+expect Mountains.color_at_dusk(Mountains.rock_west, Fraction.whole) == 1909296
+expect Mountains.color_at_dusk(Mountains.land, Fraction.whole) == 2443298
+expect Mountains.color_at_dusk(Mountains.rock, Fraction.of(0.5)) == 4477035
+
+expect Mountains.snow_color(Fraction.zero) == 15660024
+expect Mountains.snow_color(Fraction.whole) == 4609128
+expect Mountains.snow_color(Fraction.of(0.5)) == 10134704
+expect Sky.pack(Mountains.snow_day) == 15660024
+expect Sky.pack(Mountains.snow_night) == 4609128
+
+expect Mountains.snow_color(Fraction.whole) > Mountains.color_at_dusk(
+	Mountains.rock,
+	Fraction.whole,
+)
+expect Mountains.snow_color(Fraction.zero) > Mountains.color_at_dusk(Mountains.rock, Fraction.zero)
+
+expect [0.95, 1.0, 2.0, -0.95, -3.0].all(|radians| Mountains.north_range(north_by(radians)) == 0.0)
+expect
+	[
+		west_by(0.8),
+		west_by(-0.8),
+		north_by(0.0),
+		north_by(1.5),
+	].all(|sight| Mountains.west_range(sight) == 0.0)
+
+expect Mountains.north_range(north_by(0.0)) > 0.0
+expect Mountains.north_range(north_by(0.94)) > 0.0
+expect Mountains.north_range(north_by(0.0)) > Mountains.snow_threshold
+expect !(Mountains.north_range(north_by(0.9)) > Mountains.snow_threshold)
+expect Mountains.west_range(Mountains.west_range_bearing) > 0.0
+
+expect Mountains.west_range_bearing.to_radians() == -2.0416
+expect Mountains.snow_threshold == 124.0
+expect Mountains.snow_dip == 10.0
+expect Mountains.col_step == 2.0
+expect Mountains.roll_margin == 200.0
+expect Mountains.rock_night_dim.to_f64() == 0.5
+
+expect Mountains.snowline(north_by(0.9)) == 124.0
+expect Mountains.snowline(north_by(2.0)) == 124.0
+
+expect Mountains.snowline(north_by(0.0)) < Mountains.snow_threshold
+expect Mountains.snowline(north_by(0.0)) > Mountains.snow_threshold - Mountains.snow_dip
+expect Mountains.snowline(north_by(0.5)) <= Mountains.snow_threshold
+expect Mountains.snowline(north_by(0.5)) >= Mountains.snow_threshold - Mountains.snow_dip
+
+expect Mountains.snow_peak_height > Mountains.snow_threshold
+expect Mountains.snow_peak_height < 150.0
+
+# The bearing seen at `x` across a 960-pixel screen.
+seen_bearing : {
+	heading : F64,
+	cam_focal : F64,
+	x : F64,
+} -> F64
+seen_bearing = |
+	{
+		heading,
+		cam_focal,
+		x,
+	},
+|
+	Mountains.bearing_at(
+		{
+			heading: north_by(heading),
+			cam_focal,
+		},
+		x,
+	).to_radians()
+
+expect
+	seen_bearing({
+		heading: 0.0,
+		cam_focal: 500.0,
+		x: 480.0,
+	})
+		== 0.0
+expect
+	seen_bearing({
+		heading: 1.25,
+		cam_focal: 500.0,
+		x: 480.0,
+	})
+		== 1.25
+expect
+	seen_bearing({
+		heading: 1.25,
+		cam_focal: 100.0,
+		x: 480.0,
+	})
+		== 1.25
+
+# Bearings grow across the screen, and a shorter focal length spreads them.
+expect
+	seen_bearing({
+		heading: 0.0,
+		cam_focal: 500.0,
+		x: 0.0,
+	})
+		< seen_bearing({
+			heading: 0.0,
+			cam_focal: 500.0,
+			x: 480.0,
+		})
+expect
+	seen_bearing({
+		heading: 0.0,
+		cam_focal: 500.0,
+		x: 480.0,
+	})
+		< seen_bearing({
+			heading: 0.0,
+			cam_focal: 500.0,
+			x: 960.0,
+		})
+expect
+	seen_bearing({
+		heading: 0.0,
+		cam_focal: 100.0,
+		x: 960.0,
+	})
+		> seen_bearing({
+			heading: 0.0,
+			cam_focal: 500.0,
+			x: 960.0,
+		})
+
+expect Mountains.horizon_crest_px(north_by(0.0)) >= Mountains.ground_base(north_by(0.0))
+expect Mountains.horizon_crest_px(north_by(2.0)) >= Mountains.ground_base(north_by(2.0))
+expect Mountains.horizon_crest_px(north_by(0.0)) >= Mountains.north_range(north_by(0.0))
+expect !Mountains.is_sun_behind_mountains(Clock.at_step(0))
+expect Mountains.is_sun_behind_mountains(Clock.at_step(6000))

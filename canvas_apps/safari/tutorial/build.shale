@@ -1,6 +1,6 @@
 -- budget: steps=100000000 arena_bytes=1000000000
 -- This builds the safari tutorial. It reads tutorial.md, prose with lines
--- like `{{code Cat.moment_at}}`, and writes build/tutorial.md, where each
+-- like `{{code Cat.instant_at}}`, and writes build/tutorial.md, where each
 -- such line is a fenced roc block holding that definition as the source has
 -- it, with its `##` doc comment and its annotation, dedented.
 --

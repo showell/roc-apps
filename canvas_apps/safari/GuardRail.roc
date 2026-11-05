@@ -154,3 +154,81 @@ post = |at, { previous, next }| {
 		GuardRail.rail_post_metal,
 	)
 }
+
+expect GuardRail.rail_height == 0.5
+expect GuardRail.rail_thickness == 0.1
+expect GuardRail.rail_post_width == 0.02
+expect GuardRail.bar_top == 0.55
+expect GuardRail.bar_bot == 0.45
+expect GuardRail.half_post == 0.01
+
+expect GuardRail.rail_metal == 12765135
+expect GuardRail.rail_post_metal == 10133672
+expect GuardRail.rail_runout == 10
+expect GuardRail.max_rail_polys == 3072
+
+first_post : List(Geom.RiderPoint) -> GuardRail.RailPoly
+first_post = |route| GuardRail.posts(route).first() ?? crash "a route of two points has posts"
+
+corner_at : GuardRail.RailPoly, U64 -> Geom.SpacePoint
+corner_at = |quad, i| quad.corners.get(i) ?? crash "a quad has four corners"
+
+straight_route : List(Geom.RiderPoint)
+straight_route = [
+	{ right: 0.0, forward: 10.0 },
+	{ right: 0.0, forward: 20.0 },
+	{ right: 0.0, forward: 30.0 },
+]
+
+straight_rail : List(GuardRail.RailPoly)
+straight_rail = GuardRail.quads_along(straight_route)
+
+first_bar : GuardRail.RailPoly
+first_bar = straight_rail.first() ?? crash "a straight route has a rail"
+
+expect straight_rail.len() == 5
+expect GuardRail.bars(straight_route).len() == 2
+expect GuardRail.posts(straight_route).len() == 3
+expect straight_rail.all(|quad| quad.corners.len() == 4)
+
+expect
+	straight_rail.map(|quad| quad.color)
+		== [12765135, 12765135, 10133672, 10133672, 10133672]
+expect straight_rail.map(|quad| quad.forward) == [15.0, 25.0, 10.0, 20.0, 30.0]
+
+# The first bar runs from one post to the next, between the bar's two heights.
+expect first_bar.corners.map(|corner| corner.forward) == [10.0, 20.0, 20.0, 10.0]
+expect first_bar.corners.map(|corner| corner.height) == [0.45, 0.45, 0.55, 0.55]
+
+# A post is square to the path, and stands from the ground to the bar's top.
+expect first_post(straight_route).corners.map(|corner| corner.forward) == [9.99, 10.01, 10.01, 9.99]
+expect corner_at(first_post(straight_route), 0).height == 0.0
+expect corner_at(first_post(straight_route), 2).height == 0.55
+expect corner_at(first_post(straight_route), 0).right == 0.0
+expect corner_at(first_post(straight_route), 1).right == 0.0
+
+diagonal_post : GuardRail.RailPoly
+diagonal_post = first_post([{ right: 0.0, forward: 10.0 }, { right: 30.0, forward: 50.0 }])
+
+expect corner_at(diagonal_post, 0).right == -0.006
+expect corner_at(diagonal_post, 1).right == 0.006
+expect corner_at(diagonal_post, 0).forward == 9.992
+expect corner_at(diagonal_post, 1).forward == 10.008
+
+doubled_route : List(Geom.RiderPoint)
+doubled_route = [{ right: 0.0, forward: 10.0 }, { right: 0.0, forward: 10.0 }]
+
+doubled_post : GuardRail.RailPoly
+doubled_post = first_post(doubled_route)
+
+# A path that goes nowhere keeps its posts, each with no width.
+expect GuardRail.quads_along(doubled_route).len() == 3
+expect corner_at(doubled_post, 0).right == 0.0
+expect corner_at(doubled_post, 1).right == 0.0
+expect corner_at(doubled_post, 0).forward == 10.0
+expect corner_at(doubled_post, 1).forward == 10.0
+expect corner_at(doubled_post, 2).height == 0.55
+
+expect GuardRail.quads_along([]).len() == 0
+expect GuardRail.quads_along([{ right: 0.0, forward: 10.0 }]).len() == 0
+expect GuardRail.bars([{ right: 0.0, forward: 10.0 }]).len() == 0

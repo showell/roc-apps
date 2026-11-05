@@ -215,3 +215,91 @@ sun_place = |
 		scale,
 	}
 }
+
+expect Sky.sun_height_px(Clock.at_step(0)) == 244.0
+expect Sky.sun_start_px == 244.0
+expect Sky.sun_radius_px == 46.0
+expect Sky.sun_fully_set_px == -46.0
+expect Sky.warmth_falloff_px == 110.0
+expect Sky.visible_turn_limit.to_radians() == 1.4
+expect Sky.dusk_at(Clock.at_step(0)).to_f64() == 0.0
+expect Sky.sunset_warmth(Clock.at_step(0)).to_f64() == 0.0
+expect Sky.dusk_at(Clock.at_step(6000)).to_f64() == 1.0
+expect Sky.sunset_warmth(Clock.at_step(6000)).to_f64() == 0.0
+expect Sky.sunset_glow.to_f64() == 0.85
+
+# The sky and the horizon at each thousandth step of the ride.
+expect Sky.sky_color(Clock.at_step(0)) == 9358054
+expect Sky.sky_color(Clock.at_step(1000)) == 9160418
+expect Sky.sky_color(Clock.at_step(2000)) == 8633304
+expect Sky.sky_color(Clock.at_step(3000)) == 7710918
+expect Sky.sky_color(Clock.at_step(4000)) == 6393260
+expect Sky.sky_color(Clock.at_step(5000)) == 4219010
+expect Sky.sky_color(Clock.at_step(6000)) == 2374238
+expect Sky.horizon_color(Clock.at_step(0)) == 9358054
+expect Sky.horizon_color(Clock.at_step(1000)) == 9160418
+expect Sky.horizon_color(Clock.at_step(2000)) == 8633304
+expect Sky.horizon_color(Clock.at_step(3000)) == 10324366
+expect Sky.horizon_color(Clock.at_step(4000)) == 13262919
+expect Sky.horizon_color(Clock.at_step(5000)) == 8019301
+expect Sky.horizon_color(Clock.at_step(6000)) == 2374238
+expect Sky.pack(Sky.day_sky) == 9358054
+expect Sky.pack(Sky.dusk_sky) == 2374238
+expect Sky.pack(Sky.sunset_red) == 14571572
+
+expect
+	Sky.color_between({
+		from: Sky.day_sky,
+		to: Sky.dusk_sky,
+		fraction: Fraction.zero,
+	})
+		== {
+			r: 142.0,
+			g: 202.0,
+			b: 230.0,
+		}
+
+expect
+	Sky.color_between({
+		from: Sky.day_sky,
+		to: Sky.dusk_sky,
+		fraction: Fraction.whole,
+	})
+		== {
+			r: 36.0,
+			g: 58.0,
+			b: 94.0,
+		}
+
+expect
+	Sky.color_between({
+		from: Sky.day_sky,
+		to: Sky.dusk_sky,
+		fraction: Fraction.of(0.5),
+	})
+		== {
+			r: 89.0,
+			g: 130.0,
+			b: 162.0,
+		}
+
+# The rider faces the sun, then away from it.
+expect
+	Sky.sun_pos({
+		heading: Angle.Bearing.radians(0.0 - 2.2176),
+		clock: Clock.start,
+		cam_focal: Lens.focal,
+	})
+		== InView({
+			x: 480.0,
+			y: 56.0,
+			scale: 1.0,
+		})
+
+expect
+	Sky.sun_pos({
+		heading: Angle.north,
+		clock: Clock.start,
+		cam_focal: Lens.focal,
+	})
+		== OutOfView

@@ -6,6 +6,8 @@ import BirdFlight
 import BirdStills
 import Camera
 import Critter
+import Distance
+import lib.Brush
 import lib.Shapes
 
 RocBird :: [].{
@@ -15,17 +17,17 @@ RocBird :: [].{
 	PlacedBird : {
 		right : F64,
 		forward : F64,
-		lift : F64,
+		lift : Distance,
 		pose : BirdFlight.Pose,
 	}
 
-	## How tall a bird stands, in metres.
-	bird_height : F64
-	bird_height = 2.2
+	## How tall a bird stands.
+	bird_height : Distance
+	bird_height = Distance.metres(2.2)
 
 	## How tall a bird `forward` metres ahead is on screen.
 	height_px : { forward : F64, cam_focal : F64 } -> F64
-	height_px = |{ forward, cam_focal }| (bird_height / forward) * cam_focal
+	height_px = |{ forward, cam_focal }| (bird_height.to_metres() / forward) * cam_focal
 
 	## A bird on screen, its feet where it is. Its still is unflipped: a bird
 	## from a left-hand tree crosses the road toward +x, the way its beak points.
@@ -35,7 +37,7 @@ RocBird :: [].{
 			{
 				right: bird.right,
 				forward: bird.forward,
-				height: bird.lift,
+				height: bird.lift.to_metres(),
 			},
 			cam_focal,
 		)
@@ -48,4 +50,61 @@ RocBird :: [].{
 			BirdStills.pose_polys(bird.pose),
 		)
 	}
+}
+
+# A perched bird straight ahead, its feet at the camera's height, so they land
+# on the horizon in the middle of the screen.
+level_bird : RocBird.PlacedBird
+level_bird = {
+	right: 0.0,
+	forward: 110.0,
+	lift: Distance.metres(Camera.eye_h),
+	pose: Perched,
+}
+
+expect
+	[
+		(RocBird.bird_height.to_metres(), 2.2),
+		(RocBird.height_px({ forward: 110.0, cam_focal: 500.0 }), 10.0),
+		(RocBird.height_px({ forward: 220.0, cam_focal: 500.0 }), 5.0),
+		(RocBird.height_px({ forward: 110.0, cam_focal: 1000.0 }), 20.0),
+	].all(|(got, want)| (got - want).abs() <= 0.000000001)
+
+# The perched still's first corner is (-0.0344, 0.5715), at a height of 10 px
+# from feet at (480, 300). 11 m to the right and 11 m above the camera, at
+# 110 m, is 50 px each way.
+expect {
+	first_corner = |bird|
+		match RocBird.draw(bird, 500.0) {
+			[Poly(polygon), ..] => polygon.pts.take_first(2)
+			_ => crash "a bird draws polygons"
+		}
+	moved_bird = {
+		..level_bird,
+		right: 11.0,
+		lift: Distance.metres(Camera.eye_h + 11.0),
+	}
+	[
+		(level_bird, [479.656, 294.285]),
+		(moved_bird, [529.656, 244.285]),
+	].all(
+		|(bird, want)| {
+			got = first_corner(bird)
+			got.len() == 2 and got.map2(want, |x, y| (x - y).abs()).all(|miss| miss <= 0.000000001)
+		},
+	)
+}
+
+# Each still's polygons, in their colours, as a bird in each pose draws them.
+expect {
+	fill_of = |shape|
+		match shape {
+			Poly(polygon) => polygon.fill
+			_ => crash "a bird's still is polygons"
+		}
+	drawn = [Side(WingsDown), Diving].join_map(
+		|pose| RocBird.draw({ ..level_bird, pose }, 500.0).map(fill_of),
+	)
+	stills = List.concat(BirdStills.side_wings_down, BirdStills.diving)
+	drawn == stills.map(|poly| Flat(Brush.opaque(poly.color)))
 }

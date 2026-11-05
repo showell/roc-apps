@@ -3,6 +3,7 @@
 ## if it is in front of the camera and tall enough on screen to draw.
 import Cat
 import DepthSort
+import Distance
 import Frame
 import Geom
 import SceneLimits
@@ -16,7 +17,7 @@ CatSighting :: [].{
 	CatItem : {
 		right : F64,
 		forward : F64,
-		height : F64,
+		height : Distance,
 		pose : Cat.Pose,
 		lift : F64,
 	}
@@ -82,18 +83,19 @@ cat_in_view = |
 	},
 | {
 	gap = Frame.gap_to_segment(view.road, position)
-	moment = Cat.moment_at(crossing, { gap: (gap + crossing.along), speed })
+	instant = Cat.instant_at(crossing, { gap: gap.plus(crossing.along.from_start()), speed })
 	seen = Frame.rider_point_ahead(
 		view.road,
 		{
 			position: position,
-			along: (crossing.along + moment.spot.along),
-			across: (moment.spot.across + (Scenery.lane_width / 2.0)),
+			along: crossing.along.plus(instant.spot.along.from_start()),
+			across: Scenery.from_left_edge(instant.spot.across),
 		},
 	)
+	height_px = (crossing.height.to_metres() / seen.forward) * view.cam_focal
 	if seen.forward <= Geom.near_plane {
 		[]
-	} else if ((crossing.height / seen.forward) * view.cam_focal) < SceneLimits.min_scenery_px {
+	} else if height_px < SceneLimits.min_scenery_px {
 		[]
 	} else {
 		[
@@ -101,8 +103,8 @@ cat_in_view = |
 				right: seen.right,
 				forward: seen.forward,
 				height: crossing.height,
-				pose: moment.pose,
-				lift: moment.spot.lift,
+				pose: instant.pose,
+				lift: instant.spot.lift,
 			},
 		]
 	}

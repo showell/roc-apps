@@ -9,6 +9,7 @@ import game.Cat
 import game.CatDraw
 import game.CatStills
 import game.CrossingReaction
+import game.Distance
 import game.Scenery
 import game.Speed
 import game.World
@@ -21,9 +22,8 @@ import lib.Shapes
 
 CatWidgetApp :: [].{
 
-	## The whole state of the widget: the gap from the rider to the cat, in
-	## metres.
-	Model : { gap : F64 }
+	## The whole state of the widget: the gap from the rider to the cat.
+	Model : { gap : Distance }
 
 	canvas_app : CanvasApp.CanvasApp(CatWidgetApp.Model)
 	canvas_app = {
@@ -49,8 +49,8 @@ canvas_height : F64
 canvas_height = 360.0
 
 ## The gap at the canvas's left edge. At its right edge the gap is zero.
-farthest_gap : F64
-farthest_gap = 50.0
+farthest_gap : Distance
+farthest_gap = Distance.metres(50.0)
 
 ## A typical speed on the ride. At one metre a step, the crossing's beats read
 ## as metres on the ruler.
@@ -68,13 +68,13 @@ followed_pointer = |model, input|
 	}
 
 ## The gap under a pointer at `x`, which may be off the canvas during a drag.
-gap_under : F64 -> F64
+gap_under : F64 -> Distance
 gap_under = |x|
-	farthest_gap * (1.0 - Brush.clamp01(x / canvas_width))
+	farthest_gap.times(1.0 - Brush.clamp01(x / canvas_width))
 
 ## Where `gap` sits on the ruler.
-ruler_x : F64 -> F64
-ruler_x = |gap| canvas_width * (1.0 - gap / farthest_gap)
+ruler_x : Distance -> F64
+ruler_x = |gap| canvas_width * (1.0 - gap.ratio_to(farthest_gap))
 
 ## The cat's crossing on a segment that has one.
 cat_crossing : World.Segment -> Try(Cat.Crossing, [NoCat])
@@ -94,7 +94,7 @@ crossing : Cat.Crossing
 crossing = cat_crossing(cat_segment) ?? crash "CatWidgetApp.crossing: this segment has a cat"
 
 ## Everything on the canvas at `gap`.
-frame_at : F64 -> List(Shapes.Shape)
+frame_at : Distance -> List(Shapes.Shape)
 frame_at = |gap|
 	[
 		road,
@@ -127,7 +127,7 @@ flat = |color| Flat(Brush.opaque(color))
 ## The sky, the grass, and the lane between the verges.
 road : List(Shapes.Shape)
 road = {
-	lane_width_px = Scenery.lane_width * pixels_a_metre
+	lane_width_px = Scenery.lane_width.to_metres() * pixels_a_metre
 	ground_height = ground_bottom_y - ground_top_y
 	[
 		Rect({
@@ -155,16 +155,16 @@ road = {
 }
 
 ## The cat as `gap` finds it, drawn by Safari's own stills.
-cat_shapes : F64 -> List(Shapes.Shape)
+cat_shapes : Distance -> List(Shapes.Shape)
 cat_shapes = |gap| {
-	moment = Cat.moment_at(crossing, { gap, speed: rider_speed })
+	instant = Cat.instant_at(crossing, { gap, speed: rider_speed })
 	CatDraw.polygons(
 		{
-			feet: { x: lane_middle_x + moment.spot.across * pixels_a_metre, y: feet_y },
-			height_px: crossing.height * pixels_a_metre,
-			lift: moment.spot.lift,
+			feet: { x: lane_middle_x + instant.spot.across.to_metres() * pixels_a_metre, y: feet_y },
+			height_px: crossing.height.to_metres() * pixels_a_metre,
+			lift: instant.spot.lift,
 		},
-		CatStills.pose_polys(moment.pose),
+		CatStills.pose_polys(instant.pose),
 	)
 }
 
@@ -173,9 +173,9 @@ ruler_y = 232.0
 
 ## A bar with the stretch where the cat crosses marked on it, and a dot for
 ## the rider.
-ruler : F64 -> List(Shapes.Shape)
+ruler : Distance -> List(Shapes.Shape)
 ruler = |gap| {
-	crossing_starts_x = ruler_x(Cat.road_buffer + rider_speed.distance_in(Cat.crossing_beats))
+	crossing_starts_x = ruler_x(Cat.road_buffer.plus(rider_speed.distance_in(Cat.crossing_beats)))
 	[
 		Rect({
 			x: 0.0,
@@ -202,18 +202,18 @@ ruler = |gap| {
 }
 
 ## What the crossing and the rider's reaction to it are at `gap`, a line each.
-status_lines : F64 -> List(Str)
+status_lines : Distance -> List(Str)
 status_lines = |gap| {
 	approach = { gap, speed: rider_speed }
-	moment = Cat.moment_at(crossing, approach)
+	instant = Cat.instant_at(crossing, approach)
 	reaction = CrossingReaction.reaction_to(
 		cat_segment,
-		{ along: crossing.along - gap, speed: rider_speed },
+		{ along: crossing.along.minus(gap), speed: rider_speed },
 	)
 	[
 		stage_text(Cat.crossing_stage(approach)),
-		"Pose: ${pose_name(moment.pose)}",
-		"Gap: ${tenths_text(gap)} m",
+		"Pose: ${pose_name(instant.pose)}",
+		"Gap: ${tenths_text(gap.to_metres())} m",
 		throttle_text(reaction.throttle),
 	]
 }
@@ -264,8 +264,8 @@ tenths_text = |metres| {
 }
 
 expect gap_under(0.0 - 5.0) == farthest_gap and gap_under(0.0) == farthest_gap
-expect gap_under(canvas_width) == 0.0 and gap_under(canvas_width + 5.0) == 0.0
-expect gap_under(canvas_width / 2.0) == 25.0
+expect gap_under(canvas_width) == Distance.zero and gap_under(canvas_width + 5.0) == Distance.zero
+expect gap_under(canvas_width / 2.0) == Distance.metres(25.0)
 expect ruler_x(gap_under(160.0)) == 160.0
 
 ## A snapshot with the left button held or not, the pointer mid-canvas.
@@ -280,11 +280,11 @@ pointer_at_middle = |held| Input.none.with_mouse(
 	),
 )
 
-expect followed_pointer({ gap: 7.0 }, pointer_at_middle(1)).gap == 25.0
-expect followed_pointer({ gap: 7.0 }, pointer_at_middle(0)).gap == 7.0
+expect followed_pointer({ gap: Distance.metres(7.0) }, pointer_at_middle(1)).gap == Distance.metres(25.0)
+expect followed_pointer({ gap: Distance.metres(7.0) }, pointer_at_middle(0)).gap == Distance.metres(7.0)
 
 expect
-	status_lines(50.0)
+	status_lines(Distance.metres(50.0))
 		== [
 			"Waiting",
 			"Pose: Rest",
@@ -293,7 +293,7 @@ expect
 		]
 
 expect
-	status_lines(21.0)
+	status_lines(Distance.metres(21.0))
 		== [
 			"Playing: 52%",
 			"Pose: Frozen",
@@ -302,7 +302,7 @@ expect
 		]
 
 expect
-	status_lines(1.5)
+	status_lines(Distance.metres(1.5))
 		== [
 			"Past",
 			"Pose: Collapse",

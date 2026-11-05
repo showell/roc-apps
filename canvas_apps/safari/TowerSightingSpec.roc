@@ -8,6 +8,9 @@ import Angle
 import Clock
 import DepthSort
 import Frame
+import Across
+import Along
+import Distance
 import Grade
 import Steps
 import TowerSighting
@@ -15,9 +18,9 @@ import World
 
 fixed_got : List(F64)
 fixed_got = [
-	TowerSighting.tower_beyond,
-	TowerSighting.tower_right,
-	TowerSighting.mid_tower_left,
+	TowerSighting.tower_beyond.to_metres(),
+	TowerSighting.tower_right.to_metres(),
+	TowerSighting.mid_tower_left.to_metres(),
 	TowerSighting.beacon_period.to_f64(),
 	TowerSighting.beacon_stagger.to_f64(),
 ]
@@ -40,10 +43,10 @@ segs = [
 
 origin : Frame.Pose
 origin = {
-	along: 0.0,
-	across: 0.0,
+	along: Along.metres(0.0),
+	across: Across.metres(0.0),
 	yaw: Angle.straight_ahead,
-	half_width: 2.0,
+	half_width: Distance.metres(2.0),
 }
 
 ## Three segments seen from the origin, the rider on the first of them, the
@@ -99,10 +102,10 @@ first_tower_on = |number| TowerSighting.segment_towers(
 
 where_got : List(F64)
 where_got = [
-	first_tower_on(0).along,
-	first_tower_on(0).across,
-	first_tower_on(1).along,
-	first_tower_on(1).across,
+	first_tower_on(0).along.to_metres(),
+	first_tower_on(0).across.to_metres(),
+	first_tower_on(1).along.to_metres(),
+	first_tower_on(1).across.to_metres(),
 ]
 
 where_want : List(F64)
@@ -137,10 +140,10 @@ long_tower = |i| long_towers.get(i) ?? crash "TowerSightingSpec: the long segmen
 
 long_where_got : List(F64)
 long_where_got = [
-	long_tower(0).along,
-	long_tower(0).across,
-	long_tower(1).along,
-	long_tower(1).across,
+	long_tower(0).along.to_metres(),
+	long_tower(0).across.to_metres(),
+	long_tower(1).along.to_metres(),
+	long_tower(1).across.to_metres(),
 	long_tower(0).yaw.to_radians(),
 	long_tower(1).yaw.to_radians(),
 ]
@@ -229,7 +232,7 @@ cull_got : List(I64)
 cull_got = [
 	TowerSighting.along_chain({
 		..from_origin,
-		road: { ..from_origin.road, pose: { ..origin, along: 5000.0 } },
+		road: { ..from_origin.road, pose: { ..origin, along: Along.metres(5000.0) } },
 	}).len().to_i64_wrap(),
 	TowerSighting.along_chain({
 		..from_origin,

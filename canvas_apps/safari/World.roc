@@ -2,9 +2,12 @@
 ## its entry in `route`. A segment holds its scenery (trees, cows, pigs, a cat
 ## by a tree), how it turns into the next, where the rider commits to that
 ## turn, and the creature waiting at its end.
+import Across
+import Along
 import Angle
 import BirdFlight
 import Cat
+import Distance
 import Herd
 import Pigs
 import Scenery
@@ -60,7 +63,7 @@ World :: [].{
 	## into the next (right is positive), what lives along it, and
 	## the creature at its end.
 	SegmentPlan : {
-		length : F64,
+		length : Distance,
 		scheme : Scenery.Scheme,
 		turn : Angle.Turn,
 		crossing : [CatCrosses, BirdCrosses, QuietRoad],
@@ -72,7 +75,7 @@ World :: [].{
 
 	## One segment of road, built from its plan.
 	Segment : {
-		length : F64,
+		length : Distance,
 		trees : List(Scenery.Tree),
 		cows : List(Scenery.Critter),
 		pigs : List(Scenery.Critter),
@@ -81,7 +84,7 @@ World :: [].{
 		## The turn into the next segment: positive to the right, negative to
 		## the left.
 		exit_turn : Angle.Turn,
-		commit_along : F64,
+		commit_along : Along,
 		mid_tower : [MidTower, NoMidTower],
 
 		## What crosses the road here, at most one thing, so that the rider has
@@ -97,13 +100,13 @@ World :: [].{
 	}
 
 	## A segment longer than this has a mast halfway along.
-	mid_tower_min_length : F64
-	mid_tower_min_length = 1000.0
+	mid_tower_min_length : Distance
+	mid_tower_min_length = Distance.metres(1000.0)
 
 	route : List(World.SegmentPlan)
 	route = [
 		{
-			length: 500.0,
+			length: Distance.metres(500.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(50.0),
 			crossing: BirdCrosses,
@@ -113,7 +116,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 320.0,
+			length: Distance.metres(320.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(-70.0),
 			crossing: QuietRoad,
@@ -123,7 +126,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 400.0,
+			length: Distance.metres(400.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(20.0),
 			crossing: QuietRoad,
@@ -133,7 +136,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 300.0,
+			length: Distance.metres(300.0),
 			scheme: YellowGreen,
 			turn: Angle.Turn.degrees(20.0),
 			crossing: CatCrosses,
@@ -143,7 +146,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 300.0,
+			length: Distance.metres(300.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(-70.0),
 			crossing: QuietRoad,
@@ -153,7 +156,7 @@ World :: [].{
 			creature: Giraffe,
 		},
 		{
-			length: 300.0,
+			length: Distance.metres(300.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(-70.0),
 			crossing: BirdCrosses,
@@ -163,7 +166,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 1200.0,
+			length: Distance.metres(1200.0),
 			scheme: RedGreen,
 			turn: Angle.Turn.degrees(80.0),
 			crossing: QuietRoad,
@@ -173,7 +176,7 @@ World :: [].{
 			creature: Rhino,
 		},
 		{
-			length: 300.0,
+			length: Distance.metres(300.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(15.0),
 			crossing: QuietRoad,
@@ -183,7 +186,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 300.0,
+			length: Distance.metres(300.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(-70.0),
 			crossing: QuietRoad,
@@ -193,7 +196,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 800.0,
+			length: Distance.metres(800.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(15.0),
 			crossing: CatCrosses,
@@ -203,7 +206,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 300.0,
+			length: Distance.metres(300.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(15.0),
 			crossing: QuietRoad,
@@ -213,7 +216,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 300.0,
+			length: Distance.metres(300.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(15.0),
 			crossing: QuietRoad,
@@ -223,7 +226,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 300.0,
+			length: Distance.metres(300.0),
 			scheme: RedGreen,
 			turn: Angle.Turn.degrees(15.0),
 			crossing: QuietRoad,
@@ -233,7 +236,7 @@ World :: [].{
 			creature: DuckPond,
 		},
 		{
-			length: 400.0,
+			length: Distance.metres(400.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(-50.0),
 			crossing: QuietRoad,
@@ -243,7 +246,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 300.0,
+			length: Distance.metres(300.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(50.0),
 			crossing: BirdCrosses,
@@ -253,7 +256,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 300.0,
+			length: Distance.metres(300.0),
 			scheme: RedGreen,
 			turn: Angle.Turn.degrees(-50.0),
 			crossing: QuietRoad,
@@ -263,7 +266,7 @@ World :: [].{
 			creature: Zebra,
 		},
 		{
-			length: 300.0,
+			length: Distance.metres(300.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(50.0),
 			crossing: QuietRoad,
@@ -273,7 +276,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 300.0,
+			length: Distance.metres(300.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(-50.0),
 			crossing: QuietRoad,
@@ -283,7 +286,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 300.0,
+			length: Distance.metres(300.0),
 			scheme: RedGreen,
 			turn: Angle.Turn.degrees(0.0),
 			crossing: CatCrosses,
@@ -320,13 +323,18 @@ World :: [].{
 	## The segments' length, end to end. It is summed from the last segment to
 	## the first: a float sum's rounding depends on its order, and another
 	## order can move a pixel.
-	route_length : List(World.Segment) -> F64
-	route_length = |world| world.fold_rev(0.0, |segment, sum| segment.length + sum)
+	route_length : List(World.Segment) -> Distance
+	route_length = |world| world.fold_rev(Distance.zero, |segment, sum| segment.length.plus(sum))
 
-	## How far along the route a point `along` into the segment at `index` is.
-	distance_along_route : List(World.Segment), { index : World.SegmentIndex, along : F64 } -> F64
+	## How far along the route the point at `along` on the segment at `index`
+	## is.
+	distance_along_route : List(World.Segment),
+	{
+		index : World.SegmentIndex,
+		along : Along,
+	} -> Distance
 	distance_along_route = |world, { index, along }|
-		route_length(world.take_first(index.count_before())) + along
+		route_length(world.take_first(index.count_before())).plus(along.from_start())
 }
 
 ## The segment at `index` of the route, built from its plan.
@@ -351,15 +359,15 @@ built_segment = |plan, index| {
 		commit_along: match plan.ending {
 			Continues => {
 				exit_tan = Trig.r_tan(plan.turn.abs().to_radians())
-				plan.length - Scenery.lane_width / 2.0 / exit_tan
+				Along.at(plan.length.minus(Scenery.lane_half_width.divided_by(exit_tan)))
 			}
-			Terminates => plan.length
+			Terminates => Along.at(plan.length)
 		},
 		mid_tower: if (plan.length > World.mid_tower_min_length) MidTower else NoMidTower,
 		crossing: match plan.crossing {
 			CatCrosses => CatCrosses(
 				Cat.crossing({
-					lane_half_width: (Scenery.lane_width / 2.0),
+					lane_half_width: Scenery.lane_half_width,
 					tree_offset: Trees.tree_road_offset,
 					tree_along: nearest_tree_ahead(trees, Cat.cat_along),
 				}),
@@ -380,12 +388,12 @@ built_segment = |plan, index| {
 
 ## The nearest tree along the road at or past `along`, on the right; `along`
 ## itself when there is none. A segment's cat waits by it.
-nearest_tree_ahead : List(Scenery.Tree), F64 -> F64
+nearest_tree_ahead : List(Scenery.Tree), Along -> Along
 nearest_tree_ahead = |trees, along| {
 	nearest = trees.fold(
 		NoTreeYet,
 		|best, tree|
-			if tree.across > 0.0 and tree.along >= along {
+			if tree.across > Across.middle and tree.along >= along {
 				match best {
 					NearestAlong(nearest_along) =>
 						if (tree.along < nearest_along) NearestAlong(tree.along) else best

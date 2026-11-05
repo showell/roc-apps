@@ -304,3 +304,416 @@ xs_of = |pts|
 				[] => crash "Paint.xs_of: a chunk of points holds an x"
 			},
 	)
+
+triangle : List(Screen.Point)
+triangle = [
+	{ x: 1.0, y: 2.0 },
+	{ x: 3.0, y: 4.0 },
+	{ x: 5.0, y: 6.0 },
+]
+
+triangle_pts : List(F64)
+triangle_pts = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+
+line_ends : List(Screen.Point)
+line_ends = [{ x: 1.0, y: 2.0 }, { x: 3.0, y: 4.0 }]
+
+origin : Screen.Point
+origin = { x: 0.0, y: 0.0 }
+
+plain_stops : Paint.ColorStops
+plain_stops = {
+	start_rgba: 7,
+	end_rgba: 8,
+	start_offset: 0.0,
+	end_offset: 1.0,
+}
+
+inner_stops : Paint.ColorStops
+inner_stops = {
+	start_rgba: 666,
+	end_rgba: 667,
+	start_offset: 0.25,
+	end_offset: 0.75,
+}
+
+radial_poly : List(Screen.Point), F64 -> List(Shapes.Shape)
+radial_poly = |corners, gradient_radius|
+	Paint.push_grad_poly(
+		corners,
+		{
+			center_rgba: 7,
+			edge_rgba: 8,
+			gradient_center: origin,
+			gradient_radius,
+		},
+	)
+
+linear_poly : List(Screen.Point) -> List(Shapes.Shape)
+linear_poly = |corners|
+	Paint.push_linear_grad_poly(
+		corners,
+		{
+			color_stops: plain_stops,
+			start_point: origin,
+			end_point: { x: 1.0, y: 1.0 },
+		},
+	)
+
+ellipse_poly : List(Screen.Point) -> List(Shapes.Shape)
+ellipse_poly = |corners|
+	Paint.push_radial_grad_poly(
+		corners,
+		{
+			color_stops: plain_stops,
+			center_point: origin,
+			axis_u: { x: 1.0, y: 0.0 },
+			axis_v: { x: 0.0, y: 1.0 },
+		},
+	)
+
+expect Paint.flatten_screen(triangle) == triangle_pts
+expect Paint.flatten_screen([]) == []
+
+# A builder given too few points, or too small a gradient, draws nothing.
+expect Paint.push_poly(7, triangle).len() == 1
+expect Paint.push_poly(7, line_ends).len() == 0
+expect Paint.push_poly(7, []).len() == 0
+expect Paint.push_round_poly(
+	triangle,
+	{ fill_color: 7, round_strength: Fraction.of(0.5) },
+).len() == 1
+expect Paint.push_round_poly(
+	line_ends,
+	{ fill_color: 7, round_strength: Fraction.of(0.5) },
+).len() == 0
+expect radial_poly(triangle, 1.0).len() == 1
+expect radial_poly(line_ends, 1.0).len() == 0
+expect radial_poly(triangle, 0.5).len() == 1
+expect radial_poly(triangle, 0.49).len() == 0
+expect linear_poly(triangle).len() == 1
+expect linear_poly(line_ends).len() == 0
+expect ellipse_poly(triangle).len() == 1
+expect ellipse_poly(line_ends).len() == 0
+
+expect
+	Paint.push_beacon({
+		beacon_color: 7,
+		beacon_center: { x: 1.0, y: 2.0 },
+		beacon_radius: 3.0,
+		beacon_alpha: Fraction.of(0.5),
+	}).len()
+		== 1
+
+expect Paint.push_poly(111, triangle) == [
+	Poly({
+		pts: triangle_pts,
+		fill: Flat(Brush.opaque(111)),
+	}),
+]
+
+expect
+	Paint.push_round_poly(triangle, { fill_color: 222, round_strength: Fraction.of(0.75) })
+		== [
+			Poly({
+				pts: triangle_pts,
+				fill: Span({
+					edge: Brush.opaque(155),
+					middle: Brush.opaque(255),
+					x0: 1.0,
+					x1: 5.0,
+				}),
+			}),
+		]
+
+expect
+	Paint.push_beacon({
+		beacon_color: 333,
+		beacon_center: { x: 10.0, y: 20.0 },
+		beacon_radius: 30.0,
+		beacon_alpha: Fraction.of(0.25),
+	})
+		== [
+			Disc({
+				x: 10.0,
+				y: 20.0,
+				r: 30.0,
+				fill: Flat({ ..Brush.opaque(333), a: 0.25 }),
+				clip: Anywhere,
+			}),
+		]
+
+expect
+	Paint.push_grad_poly(
+		triangle,
+		{
+			center_rgba: 444,
+			edge_rgba: 445,
+			gradient_center: { x: 10.0, y: 20.0 },
+			gradient_radius: 30.0,
+		},
+	)
+		== [
+			Poly({
+				pts: triangle_pts,
+				fill: Radial({
+					inner: Brush.with_alpha(444),
+					outer: Brush.with_alpha(445),
+					x: 10.0,
+					y: 20.0,
+					r0: 0.0,
+					r1: 30.0,
+				}),
+			}),
+		]
+
+expect
+	Paint.push_linear_grad_poly(
+		triangle,
+		{
+			color_stops: {
+				start_rgba: 555,
+				end_rgba: 556,
+				start_offset: 0.25,
+				end_offset: 0.75,
+			},
+			start_point: { x: 1.0, y: 2.0 },
+			end_point: { x: 3.0, y: 4.0 },
+		},
+	)
+		== [
+			Poly({
+				pts: triangle_pts,
+				fill: Linear({
+					c0: Brush.with_alpha(555),
+					c1: Brush.with_alpha(556),
+					o0: 0.25,
+					o1: 0.75,
+					ax: 1.0,
+					ay: 2.0,
+					dx: 2.0,
+					dy: 2.0,
+				}),
+			}),
+		]
+
+expect
+	Paint.push_radial_grad_poly(
+		triangle,
+		{
+			color_stops: inner_stops,
+			center_point: { x: 1.0, y: 2.0 },
+			axis_u: { x: 3.0, y: 4.0 },
+			axis_v: { x: 5.0, y: 6.0 },
+		},
+	)
+		== [
+			Poly({
+				pts: triangle_pts,
+				fill: Ellipse({
+					c0: Brush.with_alpha(666),
+					c1: Brush.with_alpha(667),
+					o0: 0.25,
+					o1: 0.75,
+					x: 1.0,
+					y: 2.0,
+					ia: -3.0,
+					ib: 2.5,
+					ic: 2.0,
+					id: -1.5,
+				}),
+			}),
+		]
+
+offset_linear : { start_offset : F64, end_offset : F64 } -> List(Shapes.Shape)
+offset_linear = |{ start_offset, end_offset }|
+	Paint.push_linear_grad_poly(
+		triangle,
+		{
+			color_stops: {
+				..inner_stops,
+				start_offset,
+				end_offset,
+			},
+			start_point: { x: 1.0, y: 2.0 },
+			end_point: { x: 3.0, y: 4.0 },
+		},
+	)
+
+linear_fill : { o0 : F64, o1 : F64 } -> Shapes.Shape
+linear_fill = |{ o0, o1 }|
+	Poly({
+		pts: triangle_pts,
+		fill: Linear({
+			c0: Brush.with_alpha(666),
+			c1: Brush.with_alpha(667),
+			o0,
+			o1,
+			ax: 1.0,
+			ay: 2.0,
+			dx: 2.0,
+			dy: 2.0,
+		}),
+	})
+
+# An offset outside 0 to 1 is held there, and the last is never before the first.
+expect offset_linear({ start_offset: -1.0, end_offset: 2.0 }) == [linear_fill({ o0: 0.0, o1: 1.0 })]
+expect offset_linear({ start_offset: 0.0, end_offset: 1.0 }) == [linear_fill({ o0: 0.0, o1: 1.0 })]
+expect offset_linear({
+	start_offset: 0.75,
+	end_offset: 0.25,
+}) == [linear_fill({ o0: 0.75, o1: 0.75 })]
+
+linear_to : Screen.Point -> List(Shapes.Shape)
+linear_to = |end_point|
+	Paint.push_linear_grad_poly(
+		triangle,
+		{
+			color_stops: inner_stops,
+			start_point: { x: 1.0, y: 2.0 },
+			end_point,
+		},
+	)
+
+# A linear gradient of no length is dropped, however short one with a length is.
+expect linear_to({ x: 1.0, y: 2.0 }).len() == 0
+expect linear_to({ x: 1.0, y: 2.5 }).len() == 1
+
+ellipse_of_height : F64 -> List(Shapes.Shape)
+ellipse_of_height = |height|
+	Paint.push_radial_grad_poly(
+		triangle,
+		{
+			color_stops: inner_stops,
+			center_point: { x: 1.0, y: 2.0 },
+			axis_u: { x: 0.01, y: 0.0 },
+			axis_v: { x: 0.0, y: height },
+		},
+	)
+
+# An ellipse just under the limit is flat, and one just over it is not.
+expect ellipse_of_height(0.009) == [Poly({ pts: triangle_pts, fill: Flat(Brush.with_alpha(666)) })]
+expect ellipse_of_height(0.011) != [Poly({ pts: triangle_pts, fill: Flat(Brush.with_alpha(666)) })]
+
+sample_color : I64
+sample_color = 8405024
+
+expect Paint.red_of(sample_color) == 128
+expect Paint.green_of(sample_color) == 64
+expect Paint.blue_of(sample_color) == 32
+expect Paint.pack_rgb({
+	red: 128,
+	green: 64,
+	blue: 32,
+}) == sample_color
+expect Paint.red_of(16777215) == 255
+expect Paint.green_of(16777215) == 255
+expect Paint.blue_of(16777215) == 255
+expect Paint.red_of(0) == 0
+expect Paint.pack_rgb({
+	red: 0,
+	green: 0,
+	blue: 0,
+}) == 0
+expect Paint.pack_rgb({
+	red: 255,
+	green: 255,
+	blue: 255,
+}) == 16777215
+
+expect Paint.shade_channel(128, 0.6) == 77
+expect Paint.shade_channel(64, 0.6) == 38
+expect Paint.shade_channel(32, 0.6) == 19
+expect Paint.shade_channel(250, 1.25) == 255
+expect Paint.shade_channel(255, 1.0) == 255
+expect Paint.shade_channel(255, 2.0) == 255
+expect Paint.shade_channel(0, 1.25) == 0
+expect Paint.shade_color(sample_color, 0.6) == 5056019
+
+expect Paint.width_shade_edge(sample_color, Fraction.whole) == 5056019
+expect Paint.width_shade_middle(sample_color, Fraction.whole) == 10506280
+expect Paint.width_shade_edge(sample_color, Fraction.of(0.5)) == 6697754
+expect Paint.width_shade_middle(sample_color, Fraction.of(0.5)) == 9455652
+expect Paint.width_shade_edge(sample_color, Fraction.zero) == sample_color
+expect Paint.width_shade_middle(sample_color, Fraction.zero) == sample_color
+
+# A lift past 255 holds at white.
+expect Paint.width_shade_middle(16448250, Fraction.whole) == 16777215
+
+expect Paint.is_too_narrow_to_shade({ min_x: 10.0, max_x: 10.5 })
+expect !Paint.is_too_narrow_to_shade({ min_x: 10.0, max_x: 11.0 })
+expect !Paint.is_too_narrow_to_shade({ min_x: 10.0, max_x: 30.0 })
+
+expect Paint.min_shade_width == 1.0
+expect Paint.shade_edge_darken == 0.4
+expect Paint.shade_middle_lift == 0.25
+
+expect Paint.x_span([10.0, 1.0, 30.0, 2.0, 20.0, 3.0]) == { min_x: 10.0, max_x: 30.0 }
+expect Paint.x_span([5.0, 99.0]) == { min_x: 5.0, max_x: 5.0 }
+
+wide_corners : List(Screen.Point)
+wide_corners = [
+	{ x: 10.0, y: 1.0 },
+	{ x: 30.0, y: 2.0 },
+	{ x: 20.0, y: 3.0 },
+]
+
+narrow_corners : List(Screen.Point)
+narrow_corners = [
+	{ x: 10.0, y: 1.0 },
+	{ x: 10.5, y: 2.0 },
+	{ x: 10.2, y: 3.0 },
+]
+
+expect
+	Paint.push_round_poly(
+		wide_corners,
+		{ fill_color: sample_color, round_strength: Fraction.whole },
+	)
+		== [
+			Poly({
+				pts: [10.0, 1.0, 30.0, 2.0, 20.0, 3.0],
+				fill: Span({
+					edge: Brush.opaque(5056019),
+					middle: Brush.opaque(10506280),
+					x0: 10.0,
+					x1: 30.0,
+				}),
+			}),
+		]
+
+# No strength, or too narrow a polygon, is a solid fill.
+expect
+	Paint.push_round_poly(wide_corners, { fill_color: sample_color, round_strength: Fraction.zero })
+		== [
+			Poly({
+				pts: [
+					10.0,
+					1.0,
+					30.0,
+					2.0,
+					20.0,
+					3.0,
+				],
+				fill: Flat(Brush.opaque(sample_color)),
+			}),
+		]
+
+expect
+	Paint.push_round_poly(
+		narrow_corners,
+		{ fill_color: sample_color, round_strength: Fraction.whole },
+	)
+		== [
+			Poly({
+				pts: [
+					10.0,
+					1.0,
+					10.5,
+					2.0,
+					10.2,
+					3.0,
+				],
+				fill: Flat(Brush.opaque(sample_color)),
+			}),
+		]

@@ -3,8 +3,10 @@
 ## back of the trailer, each with a glow around it. A beam or a glow is a
 ## gradient, whose colours are 0xAARRGGBB, opacity in the top byte; a brake
 ## lamp is a flat 0xRRGGBB, as the body's faces are.
+import Across
 import Camera
 import lib.DeviceMath
+import Distance
 import Geom
 import Paint
 import lib.Trig
@@ -17,10 +19,10 @@ TruckLights :: [].{
 	## The two headlight beams, each a little in from its side.
 	headlight_beams : TruckShape.TruckInView -> List(Shapes.Shape)
 	headlight_beams = |truck|
-		beam(truck, (truck.box.left + headlight_inset)).concat(
+		beam(truck, truck.box.left.plus(headlight_inset)).concat(
 			beam(
 				truck,
-				(truck.box.right - headlight_inset),
+				truck.box.right.minus(headlight_inset),
 			),
 		)
 
@@ -31,15 +33,15 @@ TruckLights :: [].{
 		brake_light(
 			truck,
 			{
-				left: (box.left + brake_lamp_outer_edge),
-				right: (box.left + brake_lamp_inner_edge),
+				left: box.left.plus(brake_lamp_outer_edge),
+				right: box.left.plus(brake_lamp_inner_edge),
 			},
 		).concat(
 			brake_light(
 				truck,
 				{
-					left: (box.right - brake_lamp_inner_edge),
-					right: (box.right - brake_lamp_outer_edge),
+					left: box.right.minus(brake_lamp_inner_edge),
+					right: box.right.minus(brake_lamp_outer_edge),
 				},
 			),
 		)
@@ -109,26 +111,26 @@ TruckLights :: [].{
 }
 
 ## How high the headlights are, and how far in from the truck's sides.
-headlight_height : F64
-headlight_height = 1.0
+headlight_height : Distance
+headlight_height = Distance.metres(1.0)
 
-headlight_inset : F64
-headlight_inset = 0.3
+headlight_inset : Distance
+headlight_inset = Distance.metres(0.3)
 
 ## A beam is a vertical wedge from its lamp: half a metre tall there, and
 ## 1.8 m tall, centred 0.7 m above the road, where it ends `beam_length`
 ## ahead of the cab's nose.
-beam_half_height_at_lamp : F64
-beam_half_height_at_lamp = 0.25
+beam_half_height_at_lamp : Distance
+beam_half_height_at_lamp = Distance.metres(0.25)
 
-beam_length : F64
-beam_length = 20.4
+beam_length : Distance
+beam_length = Distance.metres(20.4)
 
-beam_far_center : F64
-beam_far_center = 0.7
+beam_far_center : Distance
+beam_far_center = Distance.metres(0.7)
 
-beam_far_half_height : F64
-beam_far_half_height = 0.9
+beam_far_half_height : Distance
+beam_far_half_height = Distance.metres(0.9)
 
 ## The beam is one warm white, more opaque at the lamp than at its edge.
 beam_core : I64
@@ -140,20 +142,20 @@ beam_edge = 0x45FFF8D6
 ## A brake lamp spans from a tenth of the truck's width in from its side
 ## to just over a third, and from a fifth of the way up the trailer's back
 ## to half way.
-brake_lamp_outer_edge : F64
-brake_lamp_outer_edge = (0.1 * TruckShape.truck_width)
+brake_lamp_outer_edge : Distance
+brake_lamp_outer_edge = TruckShape.truck_width.times(0.1)
 
-brake_lamp_inner_edge : F64
-brake_lamp_inner_edge = (0.36 * TruckShape.truck_width)
+brake_lamp_inner_edge : Distance
+brake_lamp_inner_edge = TruckShape.truck_width.times(0.36)
 
-trailer_height : F64
-trailer_height = (TruckShape.truck_height - TruckShape.trailer_bottom)
+trailer_height : Distance
+trailer_height = TruckShape.truck_height.minus(TruckShape.trailer_bottom)
 
-brake_lamp_bottom : F64
-brake_lamp_bottom = (TruckShape.trailer_bottom + (0.2 * trailer_height))
+brake_lamp_bottom : Distance
+brake_lamp_bottom = TruckShape.trailer_bottom.plus(trailer_height.times(0.2))
 
-brake_lamp_top : F64
-brake_lamp_top = (TruckShape.trailer_bottom + (0.5 * trailer_height))
+brake_lamp_top : Distance
+brake_lamp_top = TruckShape.trailer_bottom.plus(trailer_height.times(0.5))
 
 brake_color : I64
 brake_color = 0xFF2A18
@@ -172,7 +174,7 @@ glow_reach = 3.2
 
 ## The beam of the headlight at `across`, brightest at the lamp. A beam
 ## with a corner behind the camera is not drawn.
-beam : TruckShape.TruckInView, F64 -> List(Shapes.Shape)
+beam : TruckShape.TruckInView, Across -> List(Shapes.Shape)
 beam = |truck, across| {
 	at_lamp = |height| TruckShape.point(
 		truck,
@@ -185,15 +187,15 @@ beam = |truck, across| {
 	at_far_end = |height| TruckShape.point(
 		truck,
 		{
-			along: (truck.box.nose + beam_length),
+			along: truck.box.nose.plus(beam_length),
 			across,
 			height,
 		},
 	)
-	lamp_bottom = at_lamp((headlight_height - beam_half_height_at_lamp))
-	lamp_top = at_lamp((headlight_height + beam_half_height_at_lamp))
-	far_top = at_far_end((beam_far_center + beam_far_half_height))
-	far_bottom = at_far_end((beam_far_center - beam_far_half_height))
+	lamp_bottom = at_lamp(headlight_height.minus(beam_half_height_at_lamp))
+	lamp_top = at_lamp(headlight_height.plus(beam_half_height_at_lamp))
+	far_top = at_far_end(beam_far_center.plus(beam_far_half_height))
+	far_bottom = at_far_end(beam_far_center.minus(beam_far_half_height))
 	corners = [
 		lamp_bottom,
 		lamp_top,
@@ -225,7 +227,7 @@ beam = |truck, across| {
 
 ## A brake light on the back of the trailer, from `left` to `right` across
 ## it: its glow, then the lamp over the glow.
-brake_light : TruckShape.TruckInView, { left : F64, right : F64 } -> List(Shapes.Shape)
+brake_light : TruckShape.TruckInView, { left : Across, right : Across } -> List(Shapes.Shape)
 brake_light = |truck, { left, right }| {
 	rear = truck.box.rear
 	lamp =
@@ -274,3 +276,74 @@ glow = |truck, lamp|
 			},
 		)
 	}
+
+sample_panel : List(Screen.Point)
+sample_panel = [
+	{ x: 3.0, y: 4.0 },
+	{ x: 6.0, y: 8.0 },
+	{ x: 0.0, y: 0.0 },
+	{ x: 7.0, y: 4.0 },
+]
+
+sample_triangle : List(Screen.Point)
+sample_triangle = [
+	{ x: 0.0, y: 0.0 },
+	{ x: 3.0, y: 0.0 },
+	{ x: 0.0, y: 6.0 },
+]
+
+expect TruckLights.center_of(sample_panel) == { x: 4.0, y: 4.0 }
+expect TruckLights.center_of(sample_triangle) == { x: 1.0, y: 2.0 }
+expect TruckLights.distance({ from: { x: 3.0, y: 4.0 }, to: { x: 0.0, y: 0.0 } }) == 5.0
+expect TruckLights.farthest_from(sample_panel, { x: 0.0, y: 0.0 }) == 10.0
+expect TruckLights.glow_radius(sample_panel, { x: 0.0, y: 0.0 }) == 32.0
+
+expect TruckLights.glow_outline({ center: { x: 0.0, y: 0.0 }, radius: 10.0 }).len() == 16
+expect TruckLights.glow_sides == 16
+
+point_ahead : F64 -> Geom.SpacePoint
+point_ahead = |forward| {
+	right: 0.0,
+	forward,
+	height: 0.0,
+}
+
+expect
+	!TruckLights.has_point_behind_camera([
+		point_ahead(10.0),
+		point_ahead(20.0),
+		point_ahead(30.0),
+	])
+expect
+	TruckLights.has_point_behind_camera([
+		point_ahead(10.0),
+		point_ahead(0.2),
+		point_ahead(30.0),
+	])
+expect
+	TruckLights.has_point_behind_camera([
+		point_ahead(10.0),
+		point_ahead(0.4),
+		point_ahead(30.0),
+	])
+expect !TruckLights.has_point_behind_camera([point_ahead(0.41)])
+expect !TruckLights.has_point_behind_camera([])
+
+expect
+	TruckLights.midpoint({
+		from: {
+			right: 1.0,
+			forward: 2.0,
+			height: 3.0,
+		},
+		to: {
+			right: 5.0,
+			forward: 8.0,
+			height: 11.0,
+		},
+	})
+		== {
+			right: 3.0,
+			forward: 5.0,
+			height: 7.0,
+		}

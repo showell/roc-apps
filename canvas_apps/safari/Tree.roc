@@ -6,6 +6,7 @@ import Camera
 import Fraction
 import Paint
 import lib.Trig
+import lib.Brush
 import Screen
 import lib.Shapes
 
@@ -330,3 +331,134 @@ tier_cone = |tree, { tier, radius }| {
 		{ fill_color: tree.color, round_strength: tree.shade },
 	)
 }
+
+expect Tree.tiers.map(|tier| tier.top) == [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
+expect Tree.tiers.map(|tier| tier.bottom) == [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+expect Tree.tiers.map(|tier| tier.width) == [0.35, 0.44, 0.53, 0.63, 0.72, 0.81, 0.91, 1.0]
+
+expect Tree.tiers.len() == 8
+expect Tree.ring_n == 16
+expect Tree.trunk_color == 5914146
+
+expect Tree.visible_trunk == 0.44
+expect Tree.crown_height == 0.648
+expect Tree.crown_width == 0.288
+expect Tree.min_cone_forward == 0.4
+
+sample_outline : Tree.Outline
+sample_outline = Tree.outline({
+	right: 0.0,
+	forward: 2.0,
+	height: 4.0,
+	cam_focal: 500.0,
+})
+
+expect sample_outline.base_x == 480.0
+expect sample_outline.base_y == 600.0
+expect sample_outline.height_px == 1000.0
+expect sample_outline.foliage_px == 648.0
+expect sample_outline.crown_top_y == -488.0
+expect sample_outline.crown_half_width == 288.0
+
+expect
+	Tree.draw_trunk(sample_outline, SharpCorners)
+		== [
+			Poly({
+				pts: [440.0, 110.0, 520.0, 110.0, 520.0, 600.0, 440.0, 600.0],
+				fill: Flat(Brush.opaque(5914146)),
+			}),
+		]
+
+# A round trunk is the same colour, shaded across its width.
+expect
+	Tree.draw_trunk(sample_outline, RoundCorners)
+		== [
+			Poly({
+				pts: [440.0, 110.0, 520.0, 110.0, 520.0, 600.0, 440.0, 600.0],
+				fill: Span({
+					edge: Brush.opaque(3548436),
+					middle: Brush.opaque(7425579),
+					x0: 440.0,
+					x1: 520.0,
+				}),
+			}),
+		]
+
+expect {
+	corners_of = |tier|
+		match Tree.tier_triangle(sample_outline, { tier, color: 7 }) {
+			[Poly(polygon)] => polygon.pts
+			_ => crash "a tier is one polygon"
+		}
+	top_tier = Tree.tiers.first() ?? crash "a tree has tiers"
+	bottom_tier = Tree.tiers.last() ?? crash "a tree has tiers"
+	[
+		(top_tier, [480.0, -488.0, 580.8, -293.6, 379.2, -293.6]),
+		(bottom_tier, [480.0, -34.4, 768.0, 160.0, 192.0, 160.0]),
+	].all(
+		|(tier, want)| {
+			got = corners_of(tier)
+			got.len() == want.len() and got.map2(
+				want,
+				|x, y| (x - y).abs(),
+			).all(|miss| miss <= 0.000000001)
+		},
+	)
+}
+
+hull_pts : List(Screen.Point) -> List(F64)
+hull_pts = |points| Paint.flatten_screen(Tree.convex_hull(points))
+
+square_with_inside_points : List(Screen.Point)
+square_with_inside_points = [
+	{ x: 0.0, y: 0.0 },
+	{ x: 4.0, y: 0.0 },
+	{ x: 4.0, y: 4.0 },
+	{ x: 0.0, y: 4.0 },
+	{ x: 2.0, y: 2.0 },
+	{ x: 2.0, y: 0.0 },
+]
+
+hull_triangle : List(Screen.Point)
+hull_triangle = [
+	{ x: 0.0, y: 0.0 },
+	{ x: 4.0, y: 0.0 },
+	{ x: 2.0, y: 3.0 },
+]
+
+hull_line : List(Screen.Point)
+hull_line = [
+	{ x: 0.0, y: 0.0 },
+	{ x: 1.0, y: 1.0 },
+	{ x: 2.0, y: 2.0 },
+	{ x: 3.0, y: 3.0 },
+]
+
+hull_pair : List(Screen.Point)
+hull_pair = [{ x: 1.0, y: 2.0 }, { x: 0.0, y: 0.0 }]
+
+hull_with_a_repeat : List(Screen.Point)
+hull_with_a_repeat = [
+	{ x: 0.0, y: 0.0 },
+	{ x: 0.0, y: 0.0 },
+	{ x: 4.0, y: 0.0 },
+	{ x: 4.0, y: 4.0 },
+]
+
+expect hull_pts(square_with_inside_points) == [0.0, 0.0, 4.0, 0.0, 4.0, 4.0, 0.0, 4.0]
+expect hull_pts(hull_triangle) == [0.0, 0.0, 4.0, 0.0, 2.0, 3.0]
+expect hull_pts(hull_line) == [0.0, 0.0, 3.0, 3.0]
+expect hull_pts(hull_pair) == [1.0, 2.0, 0.0, 0.0]
+expect hull_pts([{ x: 9.0, y: 9.0 }]) == [9.0, 9.0]
+expect hull_pts([]) == []
+expect hull_pts(hull_with_a_repeat) == [0.0, 0.0, 4.0, 0.0, 4.0, 4.0]
+
+expect Tree.convex_hull(square_with_inside_points).len() == 4
+expect Tree.convex_hull(hull_triangle).len() == 3
+expect Tree.convex_hull(hull_line).len() == 2
+expect Tree.convex_hull(hull_pair).len() == 2
+expect Tree.convex_hull(hull_with_a_repeat).len() == 3
+
+expect
+	Paint.flatten_screen(Tree.sorted_points(square_with_inside_points))
+		== [0.0, 0.0, 0.0, 4.0, 2.0, 0.0, 2.0, 2.0, 4.0, 0.0, 4.0, 4.0]

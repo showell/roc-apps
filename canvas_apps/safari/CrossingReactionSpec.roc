@@ -8,6 +8,8 @@ app [main!] {
 import Attention
 import Cat
 import CrossingReaction
+import Along
+import Distance
 import Grade
 import Pose
 import Speed
@@ -22,7 +24,7 @@ quiet_segment = World.route_segment(1)
 cat_segment : World.Segment
 cat_segment = World.route_segment(3)
 
-cat_along : F64
+cat_along : Along
 cat_along =
 	match cat_segment.crossing {
 		CatCrosses(crossing) => crossing.along
@@ -30,7 +32,7 @@ cat_along =
 	}
 
 ## A rider `along` their segment at `speed` metres a step.
-rider_at : F64, F64 -> Pose.RiderState
+rider_at : Along, F64 -> Pose.RiderState
 rider_at = |along, speed| {
 	..Pose.initial_rider_state,
 	along,
@@ -39,7 +41,10 @@ rider_at = |along, speed| {
 
 ## The reaction to the cat of a rider `gap` metres short of it.
 to_cat : F64, F64 -> CrossingReaction.Reaction
-to_cat = |gap, speed| CrossingReaction.reaction_to(cat_segment, rider_at(cat_along - gap, speed))
+to_cat = |gap, speed| {
+	along = cat_along.minus(Distance.metres(gap))
+	CrossingReaction.reaction_to(cat_segment, rider_at(along, speed))
+}
 
 ## A reaction's throttle as a number: 1 when the rider may not accelerate.
 held_number : CrossingReaction.Reaction -> I64
@@ -99,7 +104,8 @@ unmoved_got = [bird_segment, quiet_segment].join_map(
 	|segment| [0.0, 60.0, 100.0, 200.0, 400.0].join_map(
 		|along| [0.0, 0.3, 1.0].map(
 			|speed| {
-				reaction = CrossingReaction.reaction_to(segment, rider_at(along, speed))
+				rider = rider_at(Along.metres(along), speed)
+				reaction = CrossingReaction.reaction_to(segment, rider)
 				held_number(reaction) == 0 and reaction.eye_pull == Attention.none
 			},
 		),

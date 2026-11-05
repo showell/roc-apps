@@ -34,3 +34,29 @@ Easing :: [].{
 		Fraction.of(DeviceMath.real_sqrt(t * DeviceMath.real_sqrt(t)))
 	}
 }
+
+expect
+	[
+		(0.25, 3.0),
+		(0.0, 2.0),
+		(1.0, 6.0),
+		(0.75, 5.0),
+	].all(
+		|(ratio, value)| {
+			got = Easing.lerp({
+				from: 2.0,
+				to: 6.0,
+				fraction: Fraction.of(ratio),
+			})
+			got == value
+		},
+	)
+
+expect
+	[
+		(0.0, 0.0),
+		(0.25, 0.15625),
+		(0.5, 0.5),
+		(0.75, 0.84375),
+		(1.0, 1.0),
+	].all(|(ratio, eased)| Easing.smoothstep(Fraction.of(ratio)).to_f64() == eased)

@@ -1,7 +1,8 @@
-# RideMoment -- originally emitted from Codex by rocemit; the Roc is the
+# RideInstant -- originally emitted from Codex by rocemit; the Roc is the
 # program now and this file is edited here (safari/README.md).
 import Clock
 import Frame
+import Ground
 import GroundSighting
 import ItemDraw
 import Mountains
@@ -15,64 +16,64 @@ import ViewYaw
 import World
 import lib.Shapes
 
-## One moment of the ride, and all that is kept from one step to the next: the
+## One instant of the ride, and all that is kept from one step to the next: the
 ## rider and the truck, each moved once a step from where it was, and the
 ## clock, which counts the steps. Everything else that changes is worked out
 ## from these three.
-RideMoment := {
+RideInstant := {
 	rider : Pose.RiderState,
 	truck : Truck.TruckState,
 	clock : Clock,
 }.{
 
-	initial : RideMoment
+	initial : RideInstant
 	initial = {
 		rider: Pose.initial_rider_state,
 		truck: Truck.initial_truck,
 		clock: Clock.start,
 	}
 
-	next : List(World.Segment), RideMoment -> RideMoment
-	next = |w, moment| (
-		if Rider.is_finished(moment.rider, w) {
+	next : List(World.Segment), RideInstant -> RideInstant
+	next = |w, instant| (
+		if Rider.is_finished(instant.rider, w) {
 			initial
 		} else {
-			step(w, moment)
+			step(w, instant)
 		}
 	)
 
-	step : List(World.Segment), RideMoment -> RideMoment
-	step = |w, moment| (
+	step : List(World.Segment), RideInstant -> RideInstant
+	step = |w, instant| (
 		{
-			nx = Rider.advance(moment.rider, w)
+			nx = Rider.advance(instant.rider, w)
 			dist = World.distance_along_route(w, { index: nx.segment, along: nx.along })
 			{
 				rider: nx,
 				truck: Truck.advance(
-					moment.truck,
+					instant.truck,
 					{
 						rider_distance: dist,
 						world: w,
 						route_length: World.route_length(w),
 					},
 				),
-				clock: moment.clock.next(),
+				clock: instant.clock.next(),
 			}
 		}
 	)
 
 	## Which of the truck's lights are on: its headlights once the sun is behind
 	## the mountains, and its brake lights as its last step left them.
-	truck_lights : RideMoment -> Truck.Lights
-	truck_lights = |moment| {
-		headlights: if (Mountains.is_sun_behind_mountains(moment.clock)) On else Off,
-		brake_lights: moment.truck.brake_lights,
+	truck_lights : RideInstant -> Truck.Lights
+	truck_lights = |instant| {
+		headlights: if (Mountains.is_sun_behind_mountains(instant.clock)) On else Off,
+		brake_lights: instant.truck.brake_lights,
 	}
 
-	frame : List(World.Segment), RideMoment -> List(Shapes.Shape)
-	frame = |w, moment| (
+	frame : List(World.Segment), RideInstant -> List(Shapes.Shape)
+	frame = |w, instant| (
 		{
-			s = moment.rider
+			s = instant.rider
 			view = {
 				road: {
 					world: w,
@@ -86,31 +87,32 @@ RideMoment := {
 				{
 					speed: s.speed,
 					truck: {
-						route_position: moment.truck.route_position,
-						lights: truck_lights(moment),
+						route_position: instant.truck.route_position,
+						lights: truck_lights(instant),
 					},
-					clock: moment.clock,
+					clock: instant.clock,
 				},
 			)
+			ground = GroundSighting.in_view(view.road)
 			[
 				Mountains.draw({
 					heading: ViewYaw.heading_for(s),
-					dusk: Sky.dusk_at(moment.clock),
+					dusk: Sky.dusk_at(instant.clock),
 					cam_focal: view.cam_focal,
 				}),
-				GroundSighting.draw(view),
+				ground.join_map(|patch| Ground.draw(patch, view.cam_focal)),
 				ItemDraw.draw(scene, view),
 			].join()
 		}
 	)
 
-	sun : List(World.Segment), RideMoment -> Sky.SunPos
-	sun = |w, moment| (
+	sun : List(World.Segment), RideInstant -> Sky.SunPos
+	sun = |w, instant| (
 		{
-			cf = RideFocal.ride_focal(w, moment.rider)
+			cf = RideFocal.ride_focal(w, instant.rider)
 			Sky.sun_pos({
-				heading: ViewYaw.heading_for(moment.rider),
-				clock: moment.clock,
+				heading: ViewYaw.heading_for(instant.rider),
+				clock: instant.clock,
 				cam_focal: cf,
 			})
 		}
