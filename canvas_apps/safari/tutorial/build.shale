@@ -6,6 +6,24 @@
 --
 --   cd <roc-apps checkout> && shale canvas_apps/safari/tutorial/build.shale
 --
+-- `{{code Cat.crossing_timeline from "looks:" to "finally: Holds(Collapse),"}}`
+-- keeps only the lines from the one holding the first text through the one
+-- holding the second. A `# ...` line stands for each cut, at the indent of
+-- the kept line beside it. Each text must occur exactly once in the
+-- definition, doc comment included, so an edit that removes one stops the
+-- build. An anchor can't hold a `"`.
+--
+-- `{{fails turn_as_bearing}}` becomes two fenced blocks: the program
+-- fails/turn_as_bearing.roc, and what `roc check` says of it, from the
+-- pinned compiler. A program in which `roc check` finds no error stops the
+-- build, because the tutorial's claim is then false. `roc check` runs in
+-- fails/, so it names files relative to that folder, and the checkout's own
+-- path is cut from anything else that holds it.
+--
+-- A program in fails/ writes its header as `app`, then `[main!]` and the
+-- packages on lines of their own. check.shale finds apps by `app [` at the
+-- start of a line, so it formats these files and doesn't check them.
+--
 -- `Module.name` looks in Module.roc, beside safari's other modules: at the
 -- file's top level, and in the block of the type named for the module. The
 -- spans come from Roc's parser through roc_tree, so a local in a function
@@ -21,15 +39,20 @@
 const SAFARI = "canvas_apps/safari"
 const SOURCE = "canvas_apps/safari/tutorial/tutorial.md"
 const OUTPUT = "canvas_apps/safari/tutorial/build/tutorial.md"
-const INCLUDE = "^\\{\\{code ([A-Z][A-Za-z0-9_]*)\\.([A-Za-z_][A-Za-z0-9_]*!?)\\}\\}$"
-const NOT_AN_INCLUDE = "not a line of the form {{code Module.name}}"
+const PIN_FILE = "roc-version"
+const WANT = "roc-pin: roc-apps' pinned nightly, for the tutorial's failing programs"
+const INCLUDE = "^\\{\\{code ([A-Z][A-Za-z0-9_]*)\\.([A-Za-z_][A-Za-z0-9_]*!?)(?: from \"([^\"]+)\" to \"([^\"]+)\")?\\}\\}$"
+const FAILS = "^\\{\\{fails ([a-z][a-z0-9_]*)\\}\\}$"
+const NOT_AN_INCLUDE = "not a line of the form {{code Module.name}}, {{code Module.name from \"text\" to \"text\"}} or {{fails name}}"
+const CUT = "# ..."
 
 function stop(entry, why)
   fail(entry.source .. ":" .. entry.line .. ": " .. entry.text .. ": " .. why)
 end
 
--- The source's lines, in order. An include's entry also has its module, its
--- name and its module's path.
+-- The source's lines, in order. A code include's entry also has its module,
+-- its name and its module's path, and its anchors if it has them. A fails
+-- include's has its program's path.
 function read_entries(source, text, folder)
   local entries = {}
   local number = 0
@@ -37,12 +60,22 @@ function read_entries(source, text, folder)
     number = number + 1
     local entry = {source = source, line = number, text = l}
     if contains(l, "{{") then
-      local m = re_find(l, INCLUDE)
-      if m == nil then stop(entry, NOT_AN_INCLUDE) end
-      entry.module = m.groups[1]
-      entry.name = m.groups[2]
-      entry.path = folder .. "/" .. entry.module .. ".roc"
-      if not exists(entry.path) then stop(entry, "no module file " .. entry.path) end
+      local failing = re_find(l, FAILS)
+      if failing ~= nil then
+        entry.program = dirname(source) .. "/fails/" .. failing.groups[1] .. ".roc"
+        if not exists(entry.program) then stop(entry, "no program " .. entry.program) end
+      else
+        local m = re_find(l, INCLUDE)
+        if m == nil then stop(entry, NOT_AN_INCLUDE) end
+        entry.module = m.groups[1]
+        entry.name = m.groups[2]
+        if m.groups[3] ~= "" then
+          entry.from = m.groups[3]
+          entry.to = m.groups[4]
+        end
+        entry.path = folder .. "/" .. entry.module .. ".roc"
+        if not exists(entry.path) then stop(entry, "no module file " .. entry.path) end
+      end
     end
     push(entries, entry)
   end
@@ -106,7 +139,8 @@ function doc_comment_start(source_lines, line)
   return first
 end
 
-function definition_text(entry, place)
+-- The definition's lines, dedented, each with its line in the module.
+function definition_lines(entry, place)
   local source_lines = split(read(entry.path), "\n")
   local indent = place.col - 1
   local kept = {}
@@ -117,10 +151,70 @@ function definition_text(entry, place)
     if trim(sub(l, 1, indent)) ~= "" then
       stop(entry, entry.path .. ":" .. at .. " is not indented as the definition is")
     end
-    push(kept, sub(l, indent + 1, #l))
+    push(kept, {at = at, text = sub(l, indent + 1, #l)})
     at = at + 1
   end
-  return join(kept, "\n")
+  return kept
+end
+
+-- Where in `kept` the one line holding `anchor` is.
+function anchor_index(entry, kept, anchor)
+  local hits = {}
+  local at = {}
+  local i = 1
+  while i <= #kept do
+    for hit in find_all(kept[i].text, anchor) do
+      push(hits, i)
+      push(at, "" .. kept[i].at)
+    end
+    i = i + 1
+  end
+  local quoted = "\"" .. anchor .. "\""
+  if #hits == 0 then stop(entry, quoted .. " is not in the definition") end
+  if #hits > 1 then
+    stop(entry, quoted .. " found " .. #hits .. " times in " .. entry.path .. ", at lines " .. join(at, ", "))
+  end
+  return hits[1]
+end
+
+-- Roc's formatter indents with tabs.
+function indent_of(l)
+  local n = 0
+  while sub(l, n + 1, n + 1) == "\t" do n = n + 1 end
+  return n
+end
+
+function cut_beside(kept_line, least)
+  return sub(kept_line, least + 1, indent_of(kept_line)) .. CUT
+end
+
+function elided_lines(entry, kept)
+  local first = anchor_index(entry, kept, entry.from)
+  local last = anchor_index(entry, kept, entry.to)
+  if last < first then
+    stop(entry, "\"" .. entry.to .. "\" is above \"" .. entry.from .. "\", at line " .. kept[last].at .. " and line " .. kept[first].at)
+  end
+  local least = indent_of(kept[first].text)
+  local i = first
+  while i <= last do
+    if trim(kept[i].text) ~= "" and indent_of(kept[i].text) < least then least = indent_of(kept[i].text) end
+    i = i + 1
+  end
+  local shown = {}
+  if first > 1 then push(shown, cut_beside(kept[first].text, least)) end
+  i = first
+  while i <= last do
+    push(shown, sub(kept[i].text, least + 1, #kept[i].text))
+    i = i + 1
+  end
+  if last < #kept then push(shown, cut_beside(kept[last].text, least)) end
+  return shown
+end
+
+function whole_lines(kept)
+  local shown = {}
+  for k in kept do push(shown, k.text) end
+  return shown
 end
 
 function fenced_definition(entry, tree)
@@ -132,9 +226,55 @@ function fenced_definition(entry, tree)
     for p in sort(places, "line") do push(at, "" .. p.line) end
     stop(entry, "found " .. #places .. " times in " .. entry.path .. ", at lines " .. join(at, ", "))
   end
-  local text = definition_text(entry, places[1])
+  local kept = definition_lines(entry, places[1])
+  local shown = {}
+  if has_key(entry, "from") then shown = elided_lines(entry, kept) else shown = whole_lines(kept) end
+  local text = join(shown, "\n")
   if contains(text, "```") then stop(entry, "its text holds a Markdown fence") end
   return "```roc\n" .. text .. "\n```"
+end
+
+function check_version(roc, pin, said)
+  if trim(said) ~= "Roc compiler version " .. pin then
+    fail("tutorial: " .. roc .. " is " .. trim(said) .. ", not " .. pin)
+  end
+end
+
+function pinned_roc(pin_file)
+  if not exists(pin_file) then fail("tutorial: no " .. pin_file .. ": run from the roc-apps root") end
+  local pin = trim(read(pin_file))
+  local roc = "tools:roc-" .. pin .. "/roc"
+  if not exists(roc) then fail("tutorial: no " .. roc .. ": install roc-apps' pinned nightly " .. pin .. " at ~/tools/roc-" .. pin .. "/") end
+  check_version(roc, pin, run({real(roc), "version"}, {timeout_ms = 30000, whole = 4000, want = WANT}).out)
+  return real(roc)
+end
+
+-- How many errors `roc check` reports. A clean run says "No errors found", a
+-- run with only warnings reports 0, and a crash reports nothing: all are 0.
+function errors_reported(said)
+  local m = re_find(said, "── ([0-9]+) errors? and ")
+  if m == nil then return 0 end
+  return tonumber(m.groups[1])
+end
+
+function fenced_failure(entry, roc)
+  local checked = run({roc, "check", basename(entry.program)},
+    {cwd = dirname(entry.program), timeout_ms = 120000, whole = 1000000, want = WANT})
+  local said = get(checked, "out", "")
+  if errors_reported(said) == 0 then
+    stop(entry, "roc check finds no error in " .. entry.program)
+  end
+  local program = trim(read(entry.program))
+  local message = trim(join(split(said, real(".") .. "/"), ""))
+  if contains(program .. message, "```") then stop(entry, "its text holds a Markdown fence") end
+  return "```roc\n" .. program .. "\n```\n\n```\n" .. message .. "\n```"
+end
+
+function needs_roc(entries)
+  for e in entries do
+    if has_key(e, "program") then return true end
+  end
+  return false
 end
 
 -- The number of includes expanded.
@@ -142,11 +282,16 @@ function build(source, output, folder)
   if exists(output) then remove(output) end
   local entries = read_entries(source, read(source), folder)
   local trees = parse_modules(entries)
+  local roc = ""
+  if needs_roc(entries) then roc = pinned_roc(PIN_FILE) end
   local kept = {}
   local expanded = 0
   for e in entries do
     if has_key(e, "path") then
       push(kept, fenced_definition(e, trees[e.path]))
+      expanded = expanded + 1
+    elseif has_key(e, "program") then
+      push(kept, fenced_failure(e, roc))
       expanded = expanded + 1
     else
       push(kept, e.text)
@@ -206,6 +351,34 @@ both = 2.0
 
 const TIGHT = "Tight :: [].{ squeezed = 1.0 }\n"
 
+const BAD = [=[app [main!] {}
+
+half : F64 -> F64
+half = |x| x / 2.0
+
+main! = |_args| {
+	echo!(half("one").to_str())
+	Ok({})
+}
+]=]
+
+const BAD_MESSAGE = [=[── ✗ type mismatch ──────────────────────────────────────────────── bad.roc:7:13
+
+This string literal is being used where a non-string type is needed.
+
+echo!(half("one").to_str())
+           ^^^^^
+
+The type was determined to be:
+
+    F64
+
+── 1 error and 0 warnings ────────────────────────────────────────────── bad.roc]=]
+
+const CLEAN = "app [main!] {}\n\nmain! = |_args| Ok({})\n"
+const WARNS = "app [main!] {}\n\nmain! = |_args| {\n\tunused = 1.0\n\tOk({})\n}\n"
+const FENCED_BAD = "app [main!] {}\n\n# A fence: ```\nmain! = |_args| 1\n"
+
 -- The source's include is on its line 3, for the messages to name.
 function attempt_include(folder, include)
   replace(folder .. "/doc.md", "prose\n\n" .. include .. "\n")
@@ -218,6 +391,17 @@ function expect_block(checks, folder, include, block)
   if not r.ok then fail("self_test: " .. include .. " stopped: " .. r.error) end
   local got = read(folder .. "/out/doc.md")
   local want = "prose\n\n```roc\n" .. block .. "\n```\n"
+  if got ~= want then fail("self_test: " .. include .. " gave [" .. got .. "], not [" .. want .. "]") end
+  push(checks, include)
+end
+
+-- A failing program's two blocks, the program as written.
+function expect_failure(checks, folder, name, message)
+  local include = "{{fails " .. name .. "}}"
+  local r = attempt_include(folder, include)
+  if not r.ok then fail("self_test: " .. include .. " stopped: " .. r.error) end
+  local got = read(folder .. "/out/doc.md")
+  local want = "prose\n\n```roc\n" .. trim(read(folder .. "/fails/" .. name .. ".roc")) .. "\n```\n\n```\n" .. message .. "\n```\n"
   if got ~= want then fail("self_test: " .. include .. " gave [" .. got .. "], not [" .. want .. "]") end
   push(checks, include)
 end
@@ -245,6 +429,11 @@ function self_test()
   replace(folder .. "/Zoo.roc", ZOO)
   replace(folder .. "/Tight.roc", TIGHT)
   replace(folder .. "/Broken.roc", "Broken :: [].{\n\tx = = 1\n")
+  mkdir(folder .. "/fails")
+  replace(folder .. "/fails/bad.roc", BAD)
+  replace(folder .. "/fails/clean.roc", CLEAN)
+  replace(folder .. "/fails/warns.roc", WARNS)
+  replace(folder .. "/fails/fenced.roc", FENCED_BAD)
   local zoo = folder .. "/Zoo.roc"
   local checks = {}
 
@@ -264,16 +453,60 @@ function self_test()
   expect_stop(checks, folder, "{{code Zoo.fenced}}", "its text holds a Markdown fence")
   expect_stop(checks, folder, "{{code Tight.squeezed}}", folder .. "/Tight.roc:1 is not indented as the definition is")
 
+  expect_block(checks, folder, "{{code Zoo.feed from \"amount = cage.size\" to \"amount * 2.0\"}}", "# ...\namount = cage.size\n\namount * 2.0\n# ...")
+  expect_block(checks, folder, "{{code Zoo.feed from \"amount * 2.0\" to \"amount * 2.0\"}}", "# ...\namount * 2.0\n# ...")
+  expect_block(checks, folder, "{{code Zoo.feed from \"feed =\" to \"amount = cage.size\"}}", "# ...\nfeed = |cage| {\n\tamount = cage.size\n\t# ...")
+  expect_block(checks, folder, "{{code Zoo.feed from \"amount * 2.0\" to \"}\"}}", "\t# ...\n\tamount * 2.0\n}")
+  expect_block(checks, folder, "{{code Zoo.feed from \"How much\" to \"feed :\"}}", "## How much to feed,\n## over two lines.\nfeed : Cage -> F64\n# ...")
+  expect_block(checks, folder, "{{code Zoo.feed from \"How much\" to \"}\"}}", "## How much to feed,\n## over two lines.\nfeed : Cage -> F64\nfeed = |cage| {\n\tamount = cage.size\n\n\tamount * 2.0\n}")
+  expect_block(checks, folder, "{{code Zoo.fenced from \"fenced =\" to \"fenced =\"}}", "# ...\nfenced = 1.0")
+
+  expect_stop(checks, folder, "{{code Zoo.feed from \"nope\" to \"}\"}}", "\"nope\" is not in the definition")
+  expect_stop(checks, folder, "{{code Zoo.feed from \"feed =\" to \"nope\"}}", "\"nope\" is not in the definition")
+  expect_stop(checks, folder, "{{code Zoo.feed from \"A cage.\" to \"}\"}}", "\"A cage.\" is not in the definition")
+  expect_stop(checks, folder, "{{code Zoo.feed from \"amount\" to \"}\"}}", "\"amount\" found 2 times in " .. zoo .. ", at lines 14, 16")
+  expect_stop(checks, folder, "{{code Zoo.feed from \"feed =\" to \"amount\"}}", "\"amount\" found 2 times in " .. zoo .. ", at lines 14, 16")
+  expect_stop(checks, folder, "{{code Zoo.feed from \"e\" to \"}\"}}", "\"e\" found 12 times in " .. zoo .. ", at lines 10, 10, 11, 11, 12, 12, 12, 13, 13, 13, 14, 14")
+  expect_stop(checks, folder, "{{code Zoo.feed from \"amount * 2.0\" to \"feed =\"}}", "\"feed =\" is above \"amount * 2.0\", at line 13 and line 16")
+  expect_stop(checks, folder, "{{code Zoo.fenced from \"A fence\" to \"fenced =\"}}", "its text holds a Markdown fence")
+  expect_stop(checks, folder, "{{code Zoo.nope from \"a\" to \"b\"}}", "no such name in " .. zoo)
+
+  expect_failure(checks, folder, "bad", BAD_MESSAGE)
+  local root = real(".")
+  replace(folder .. "/fails/pathy.roc", "app [main!] {}\n\nmain! = |_args| \"" .. root .. "/Some.roc\" + 1\n")
+  local pathy = attempt_include(folder, "{{fails pathy}}")
+  if not pathy.ok then fail("self_test: {{fails pathy}} stopped: " .. pathy.error) end
+  local message = split(read(folder .. "/out/doc.md"), "```\n\n```\n")[2]
+  if contains(message, root) or not contains(message, "\"Some.roc\" + 1") then fail("self_test: the checkout's path stayed in [" .. message .. "]") end
+  push(checks, "{{fails pathy}}")
+
+  expect_stop(checks, folder, "{{fails clean}}", "roc check finds no error in " .. folder .. "/fails/clean.roc")
+  expect_stop(checks, folder, "{{fails warns}}", "roc check finds no error in " .. folder .. "/fails/warns.roc")
+  expect_stop(checks, folder, "{{fails gone}}", "no program " .. folder .. "/fails/gone.roc")
+  expect_stop(checks, folder, "{{fails fenced}}", "its text holds a Markdown fence")
+
   local refused = attempt_include(folder, "{{code Broken.x}}")
   if refused.ok or not contains(refused.error, ":3: {{code Broken.x}}: roc-ast refused ") then fail("self_test: Broken.roc gave " .. json_write(refused)) end
   push(checks, "{{code Broken.x}}")
 
-  for bad in {"{{", "{{code}}", "{{code Zoo}}", "{{code Zoo.a.b}}", "{{code zoo.feed}}", "{{cod Zoo.feed}}", "{{ code Zoo.feed }}", " {{code Zoo.feed}}", "{{code Zoo.feed}} ", "see {{code Zoo.feed}}", "{{code Zoo.feed}} and {{code Zoo.bare}}"} do
+  for bad in {"{{", "{{code}}", "{{code Zoo}}", "{{code Zoo.a.b}}", "{{code zoo.feed}}", "{{cod Zoo.feed}}", "{{ code Zoo.feed }}", " {{code Zoo.feed}}", "{{code Zoo.feed}} ", "see {{code Zoo.feed}}", "{{code Zoo.feed}} and {{code Zoo.bare}}", "{{code Zoo.feed from \"a\"}}", "{{code Zoo.feed to \"a\"}}", "{{code Zoo.feed from \"a\" to \"\"}}", "{{code Zoo.feed from a to b}}", "{{code Zoo.feed from \"a\"b\" to \"c\"}}", "{{fails}}", "{{fails Bad}}", "{{fails a b}}", "{{fails a.b}}", "{{fails ../bad}}", "{{fails bad }}"} do
     expect_stop(checks, folder, bad, NOT_AN_INCLUDE)
   end
   for prose in {"plain", "{ {code Zoo.feed}}", "{code Zoo.feed}", "}}"} do
     expect_prose(checks, folder, prose)
   end
+
+  local no_file = attempt(pinned_roc, folder .. "/no-pin")
+  if no_file.ok or no_file.error ~= "tutorial: no " .. folder .. "/no-pin: run from the roc-apps root" then fail("self_test: no pin file gave " .. json_write(no_file)) end
+  push(checks, "no pin file")
+  replace(folder .. "/pin", "nightly-none\n")
+  local no_roc = attempt(pinned_roc, folder .. "/pin")
+  if no_roc.ok or not starts_with(no_roc.error, "tutorial: no tools:roc-nightly-none/roc: ") then fail("self_test: no compiler gave " .. json_write(no_roc)) end
+  push(checks, "no compiler")
+  if not attempt(check_version, "r", "p", "Roc compiler version p\n").ok then fail("self_test: the pin was refused") end
+  local wrong = attempt(check_version, "r", "p", "Roc compiler version q\n")
+  if wrong.ok or wrong.error ~= "tutorial: r is Roc compiler version q, not p" then fail("self_test: the wrong compiler gave " .. json_write(wrong)) end
+  push(checks, "the pinned version, and another")
 
   remove_tree(folder)
   print("tutorial self_test: PASS, " .. #checks .. " checks")
