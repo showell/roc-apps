@@ -178,7 +178,7 @@ main! = |_args| {
 			want: colour_want,
 		}),
 		Grade.reals({
-			name: "gu-forward   ",
+			name: "gu-fwd   ",
 			got: fwd_got,
 			want: fwd_want,
 			tol: 0.0,
