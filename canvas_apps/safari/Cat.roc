@@ -4,12 +4,13 @@
 ## depends only on how far ahead it is and how fast the rider comes: it
 ## starts when the rider is `cross_frames` steps away, and is across when the
 ## rider is `road_buffer` metres from it. The rider's eye is drawn to it while
-## it crosses, and lets it go after.
+## it crosses, and lets it go after. A cat's spots are relative to where it
+## crosses along its segment, so cats the same distance from the road play
+## one timeline.
+import Animation
 import lib.DeviceMath
 import Easing
 import Num_
-import Speed
-import lib.Trig
 
 Cat :: [].{
 
@@ -27,18 +28,6 @@ Cat :: [].{
 	## frozen; then its leap, from the coil through flight and landing to the
 	## collapse after.
 	Pose : [Rest, Stride, Frozen, Coil, Flight, Land, Collapse]
-
-	## The cat at a moment: its pose, where it is across the road, and how
-	## high it is off the ground.
-	CatState : {
-		pose : Cat.Pose,
-		across : F64,
-		lift : F64,
-	}
-
-	## How the rider comes on a cat: the gap from the rider ahead to it, in
-	## metres, and the rider's speed.
-	Approach : { gap : F64, speed : Speed }
 
 	cat_height : F64
 	cat_height = 1.7
@@ -106,35 +95,46 @@ Cat :: [].{
 	cross_frames : F64
 	cross_frames = ((enters_road_steps + frozen_steps) + escapes_steps)
 
+	## The step the cat's escape starts after.
+	escape_at : F64
+	escape_at = (enters_road_steps + frozen_steps)
+
+	## How many steps into its escape the cat leaves the ground, and lands.
+	leaves_ground_steps : F64
+	leaves_ground_steps = 1.0
+
+	touches_down_steps : F64
+	touches_down_steps = 3.0
+
+	## How many steps into its escape the cat stops coiling, flying and
+	## landing. Its body moves ahead of its path, so each falls a little before
+	## the leap itself gets there.
+	coil_ends_steps : F64
+	coil_ends_steps = 0.8
+
+	flight_ends_steps : F64
+	flight_ends_steps = 2.8
+
+	land_ends_steps : F64
+	land_ends_steps = 3.8
+
 	## How far short of the cat the rider is when it is across.
 	road_buffer : F64
 	road_buffer = 3.0
 
-	## A rider this slow is standing still.
-	standstill : Speed
-	standstill = Speed.metres_a_step(0.000001)
+	## Where the crossing has got to. A cat has to finish before the rider
+	## reaches it however fast the rider comes, so it plays over steps.
+	crossing_stage : Animation.Approach -> Animation.Stage
+	crossing_stage = |approach|
+		Animation.over_steps({ steps: cross_frames, buffer: road_buffer }, approach)
 
 	## Whether the cat is crossing in front of the rider now.
-	is_in_danger : Cat.Approach -> Bool
-	is_in_danger = |{ gap, speed }| {
-		gap_left = (gap - road_buffer)
-		gap_left > 0.0 and gap_left <= speed.distance_in(cross_frames)
-	}
-
-	## How far through its crossing the cat is, from 0 to 1. A cat the rider
-	## has reached is across; for a rider standing still, a cat ahead hasn't
-	## started.
-	crossing_progress : Cat.Approach -> F64
-	crossing_progress = |{ gap, speed }| {
-		gap_left = (gap - road_buffer)
-		if gap_left <= 0.0 {
-			1.0
-		} else if speed <= standstill {
-			0.0
-		} else {
-			Easing.clamp01((1.0 - (gap_left / speed.distance_in(cross_frames))))
+	is_in_danger : Animation.Approach -> Bool
+	is_in_danger = |approach|
+		match crossing_stage(approach) {
+			Playing(_) => True
+			Waiting | Past(_) => False
 		}
-	}
 
 	## How hard the cat holds the rider's eye at its strongest.
 	focus_peak : F64
@@ -146,43 +146,32 @@ Cat :: [].{
 
 	## How hard the cat holds the rider's eye: rising as it crosses, then
 	## fading once the rider is past.
-	focus : Cat.Approach -> F64
-	focus = |approach| {
-		gap_left = (approach.gap - road_buffer)
-		if approach.speed <= standstill {
+	focus : Animation.Approach -> F64
+	focus = |approach|
+		if approach.speed <= Animation.standstill {
 			0.0
-		} else if gap_left > 0.0 {
-			(Easing.smoothstep(crossing_progress(approach)) * focus_peak)
 		} else {
-			steps_past = (approach.speed.steps_to_cover(0.0 - gap_left) / focus_ramp_down)
-			((1.0 - Easing.smoothstep(DeviceMath.real_min(steps_past, 1.0))) * focus_peak)
+			match crossing_stage(approach) {
+				Waiting => 0.0
+				Playing(progress) => Easing.smoothstep(progress) * focus_peak
+				Past(metres) => {
+					steps_past = approach.speed.steps_to_cover(metres) / focus_ramp_down
+					(1.0 - Easing.smoothstep(DeviceMath.real_min(steps_past, 1.0))) * focus_peak
+				}
+			}
 		}
-	}
 
 	## A stride is about this many steps.
 	stride_steps : F64
 	stride_steps = 5.0
 
-	## Where in its stride cycle a cat walking for `steps` is, `progress` of
-	## the way through, as an angle: a whole number of strides, at least one.
-	stride_angle : { progress : F64, steps : F64 } -> F64
-	stride_angle = |{ progress, steps }| {
+	## How many strides a cat walking for `steps` takes: a whole number, at
+	## least one.
+	strides_in : F64 -> F64
+	strides_in = |steps| {
 		strides = Num_.round_real((steps / stride_steps))
-		((progress * (if (strides < 1.0) 1.0 else strides)) * Trig.two_pi)
+		if (strides < 1.0) 1.0 else strides
 	}
-
-	## The cat's pose at `progress` through its leap.
-	leap_pose : F64 -> Cat.Pose
-	leap_pose = |progress|
-		if progress < 0.2 {
-			Coil
-		} else if progress < 0.7 {
-			Flight
-		} else if progress < 0.95 {
-			Land
-		} else {
-			Collapse
-		}
 
 	## The number CatStills draws a pose by.
 	pose_index : Cat.Pose -> I64
@@ -201,82 +190,76 @@ Cat :: [].{
 	leap_height : F64
 	leap_height = 0.18
 
-	three_quarter_power : F64 -> F64
-	three_quarter_power = |x| DeviceMath.real_sqrt((x * DeviceMath.real_sqrt(x)))
+	## The whole of a crossing: the cat walks out to the middle of the lane,
+	## freezes there, and leaps clear to the far verge. Each leap pose's cut
+	## sums to a float just under the step it stands for, so that float goes
+	## with the pose before it, which is why those cuts are `Through`.
+	crossing_timeline : Cat.Crossing -> Animation.Timeline(Cat.Pose)
+	crossing_timeline = |cat| {
+		start = spot_across(cat.start_across)
+		middle = spot_across(cat.mid_across)
+		end = spot_across(cat.end_across)
+		Animation.Timeline.(
+			{
+				steps: cross_frames,
+				before: { pose: Rest, spot: start },
+				after: { pose: Collapse, spot: end },
+				looks: {
+					stretches: [
+						{
+							until: Through(enters_road_steps),
+							plays: Alternates({
+								up: Stride,
+								down: Rest,
+								count: strides_in(enters_road_steps),
+								over: enters_road_steps,
+							}),
+						},
+						{ until: Through(escape_at), plays: Holds(Frozen) },
+						{ until: Through(escape_at + coil_ends_steps), plays: Holds(Coil) },
+						{ until: Through(escape_at + flight_ends_steps), plays: Holds(Flight) },
+						{ until: Through(escape_at + land_ends_steps), plays: Holds(Land) },
+					],
+					finally: Holds(Collapse),
+				},
+				path: {
+					stretches: [
+						{
+							until: Through(enters_road_steps),
+							plays: Line({
+								from: start,
+								to: middle,
+								ease: Steady,
+							}),
+						},
+						{ until: Before(escape_at + leaves_ground_steps), plays: StaysAt(middle) },
+						{
+							until: Before(escape_at + touches_down_steps),
+							plays: Arc({
+								line: {
+									from: middle,
+									to: end,
+									ease: ThreeQuarterPower,
+								},
+								rise: leap_height,
+							}),
+						},
+					],
+					finally: StaysAt(end),
+				},
+			},
+		)
+	}
 
 	## The cat as the rider comes on it.
-	state : Cat.Crossing, Cat.Approach -> Cat.CatState
-	state = |cat, approach| {
-		step = (crossing_progress(approach) * cross_frames)
-		escape_at = (enters_road_steps + frozen_steps)
-		if step <= enters_road_steps {
-			entering(cat, step)
-		} else if step <= escape_at {
-			{
-				pose: Frozen,
-				across: cat.mid_across,
-				lift: 0.0,
-			}
-		} else {
-			escaping(cat, (step - escape_at))
-		}
-	}
-
-	## The cat `step` steps into its walk out to the middle of the lane.
-	entering : Cat.Crossing, F64 -> Cat.CatState
-	entering = |cat, step| {
-		progress = (step / enters_road_steps)
-		{
-			pose: if (
-				Trig.r_sin(
-					stride_angle({
-						progress,
-						steps: enters_road_steps,
-					}),
-				) > 0.0
-			) Stride else Rest,
-			across: Easing.lerp({
-				from: cat.start_across,
-				to: cat.mid_across,
-				fraction: progress,
-			}),
-			lift: 0.0,
-		}
-	}
+	state : Cat.Crossing, Animation.Approach -> Animation.Moment(Cat.Pose)
+	state = |cat, approach| crossing_timeline(cat).moment(crossing_stage(approach))
 }
 
-## The cat `step` steps into its escape: a step coiled, two in the air, then
-## landed.
-escaping : Cat.Crossing, F64 -> Cat.CatState
-escaping = |cat, step| {
-	clamped = if (step > Cat.escapes_steps) Cat.escapes_steps else step
-	pose = Cat.leap_pose((clamped / Cat.escapes_steps))
-	if clamped < 1.0 {
-		{
-			pose,
-			across: cat.mid_across,
-			lift: 0.0,
-		}
-	} else if clamped < 3.0 {
-		airborne(cat, { pose, flown: ((clamped - 1.0) / 2.0) })
-	} else {
-		{
-			pose,
-			across: cat.end_across,
-			lift: 0.0,
-		}
-	}
-}
-
-## The cat `flown` of the way through its flight, from 0 to 1: across the
-## road on an arc.
-airborne : Cat.Crossing, { pose : Cat.Pose, flown : F64 } -> Cat.CatState
-airborne = |cat, { pose, flown }| {
-	pose,
-	across: Easing.lerp({
-		from: cat.mid_across,
-		to: cat.end_across,
-		fraction: Cat.three_quarter_power(flown),
-	}),
-	lift: (((Cat.leap_height * 4.0) * flown) * (1.0 - flown)),
+## The spot `across` the road, on the ground where the cat crosses.
+spot_across : F64 -> Animation.Spot
+spot_across = |across| {
+	along: 0.0,
+	across,
+	lift: 0.0,
 }

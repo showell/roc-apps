@@ -5,10 +5,11 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Animation
 import Cat
+import Easing
 import Grade
 import Speed
-import lib.Trig
 
 the_cat : Cat.Crossing
 the_cat = Cat.crossing({
@@ -18,7 +19,7 @@ the_cat = Cat.crossing({
 })
 
 ## A rider `gap` metres short of the cat, at `speed` metres a step.
-coming : F64, F64 -> Cat.Approach
+coming : F64, F64 -> Animation.Approach
 coming = |gap, speed| { gap, speed: Speed.metres_a_step(speed) }
 
 make_got : List(F64)
@@ -85,6 +86,15 @@ danger_got = [
 danger_want : List(Bool)
 danger_want = [True, False, False, False, False, True]
 
+## How far through its crossing a cat is.
+progress_of : Animation.Approach -> F64
+progress_of = |approach|
+	match Cat.crossing_stage(approach) {
+		Waiting => 0.0
+		Playing(progress) => progress
+		Past(_) => 1.0
+	}
+
 t_got : List(F64)
 t_got = [
 	coming(41.0, 1.0),
@@ -93,7 +103,7 @@ t_got = [
 	coming(2.0, 1.0),
 	coming(100.0, 1.0),
 	coming(41.0, 0.0),
-].map(Cat.crossing_progress)
+].map(progress_of)
 
 t_want : List(F64)
 t_want = [0.0, 0.5, 1.0, 1.0, 0.0, 0.0]
@@ -111,16 +121,16 @@ focus_got = List.join([
 	[Cat.focus_peak, Cat.focus_ramp_down],
 ])
 
-## The stride angle `progress` through a walk of `steps`, in whole turns.
+## How many strides of a walk of `steps` are done `progress` through it.
 turns : F64, F64 -> F64
-turns = |progress, steps| (Cat.stride_angle({ progress, steps }) / Trig.two_pi)
+turns = |progress, steps| progress * Cat.strides_in(steps)
 
 focus_want : List(F64)
 focus_want = [0.0, 0.9, 1.8, 0.9, 0.0, 0.0, 1.8, 83.0]
 
 cycles_got : List(F64)
 cycles_got = [
-	Cat.stride_angle({ progress: 0.0, steps: 10.0 }),
+	turns(0.0, 10.0),
 	turns(1.0, 10.0),
 	turns(0.5, 10.0),
 	turns(1.0, 20.0),
@@ -132,16 +142,54 @@ cycles_got = [
 cycles_want : List(F64)
 cycles_want = [0.0, 2.0, 1.0, 4.0, 1.0, 1.0, 5.0]
 
+## The cat `step` steps into its crossing.
+crossing_at : F64 -> Animation.Moment(Cat.Pose)
+crossing_at = |step| Cat.crossing_timeline(the_cat).at_step(step)
+
 pose_got : List(I64)
 pose_got = List.concat(
 	[Rest, Stride, Frozen, Coil, Flight, Land, Collapse],
-	[0.0, 0.19, 0.2, 0.69, 0.7, 0.94, 0.95, 1.0].map(Cat.leap_pose),
+	[
+		34.01,
+		34.79,
+		34.81,
+		36.79,
+		36.81,
+		37.79,
+		37.81,
+		38.0,
+	].map(|step| crossing_at(step).pose),
 ).map(Cat.pose_index)
 
 pose_want : List(I64)
 pose_want = [0, 1, 2, 3, 4, 5, 6, 3, 3, 4, 4, 5, 5, 6, 6]
 
-phase_of : F64 -> Cat.CatState
+## The float after `step`.
+just_past : F64 -> F64
+just_past = |step| F64.from_bits(step.to_bits() + 1)
+
+## Each leap pose lasts through its cut's own float, and no further.
+cut_got : List(I64)
+cut_got = [
+	Cat.escape_at + Cat.coil_ends_steps,
+	just_past(Cat.escape_at + Cat.coil_ends_steps),
+	Cat.escape_at + Cat.flight_ends_steps,
+	just_past(Cat.escape_at + Cat.flight_ends_steps),
+	Cat.escape_at + Cat.land_ends_steps,
+	just_past(Cat.escape_at + Cat.land_ends_steps),
+].map(|step| Cat.pose_index(crossing_at(step).pose))
+
+cut_want : List(I64)
+cut_want = [
+	3,
+	4,
+	4,
+	5,
+	5,
+	6,
+]
+
+phase_of : F64 -> Animation.Moment(Cat.Pose)
 phase_of = |gap| Cat.state(the_cat, coming(gap, 1.0))
 
 which_got : List(I64)
@@ -159,34 +207,31 @@ which_got = [
 which_want : List(I64)
 which_want = [0, 0, 2, 2, 3, 4, 5, 6]
 
-walking : F64 -> Cat.CatState
-walking = |step| Cat.entering(the_cat, step)
-
 entering_got : List(F64)
 entering_got = [
-	walking(0.0).across,
-	walking(1.25).across,
-	walking(3.75).across,
-	walking(6.25).across,
-	walking(8.75).across,
-	walking(0.0).lift,
-	walking(8.75).lift,
+	crossing_at(0.0).spot.across,
+	crossing_at(1.25).spot.across,
+	crossing_at(3.75).spot.across,
+	crossing_at(6.25).spot.across,
+	crossing_at(8.75).spot.across,
+	crossing_at(0.0).spot.lift,
+	crossing_at(8.75).spot.lift,
 ]
 
 entering_want : List(F64)
 entering_want = [4.5, 4.0395, 3.1185, 2.1975, 1.2765, 0.0, 0.0]
 
 stride_got : List(I64)
-stride_got = [0.0, 1.25, 3.75, 6.25, 8.75].map(|step| Cat.pose_index(walking(step).pose))
+stride_got = [0.0, 1.25, 3.75, 6.25, 8.75].map(|step| Cat.pose_index(crossing_at(step).pose))
 
 stride_want : List(I64)
 stride_want = [0, 1, 0, 1, 0]
 
 frozen_got : List(F64)
 frozen_got = [
-	phase_of(30.0).across,
-	phase_of(7.0).across,
-	phase_of(30.0).lift,
+	phase_of(30.0).spot.across,
+	phase_of(7.0).spot.across,
+	phase_of(30.0).spot.lift,
 ]
 
 frozen_want : List(F64)
@@ -194,13 +239,13 @@ frozen_want = [0.816, 0.816, 0.0]
 
 leap_got : List(F64)
 leap_got = [
-	phase_of(6.5).across,
-	phase_of(6.5).lift,
-	phase_of(6.0).across,
-	phase_of(6.0).lift,
-	Cat.three_quarter_power(0.0),
-	Cat.three_quarter_power(1.0),
-	Cat.three_quarter_power(0.0625),
+	phase_of(6.5).spot.across,
+	phase_of(6.5).spot.lift,
+	phase_of(6.0).spot.across,
+	phase_of(6.0).spot.lift,
+	Easing.three_quarter_power(0.0),
+	Easing.three_quarter_power(1.0),
+	Easing.three_quarter_power(0.0625),
 	Cat.leap_height,
 ]
 
@@ -209,9 +254,9 @@ leap_want = [0.816, 0.0, 0.816, 0.0, 0.0, 1.0, 0.125, 0.18]
 
 flight_got : List(F64)
 flight_got = [
-	phase_of(5.875).across,
-	phase_of(5.875).lift,
-	phase_of(4.0).across,
+	phase_of(5.875).spot.across,
+	phase_of(5.875).spot.lift,
+	phase_of(4.0).spot.across,
 ]
 
 flight_want : List(F64)
@@ -270,6 +315,11 @@ main! = |_args| {
 			name: "ct-pose  ",
 			got: pose_got,
 			want: pose_want,
+		}),
+		Grade.ints({
+			name: "ct-cuts  ",
+			got: cut_got,
+			want: cut_want,
 		}),
 		Grade.ints({
 			name: "ct-which ",

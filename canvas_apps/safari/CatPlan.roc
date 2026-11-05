@@ -97,8 +97,8 @@ cat_in_view = |view, { position, crossing }| {
 		},
 		{
 			position: position,
-			along: crossing.along,
-			across: (state.across + (Scenery.lane_width / 2.0)),
+			along: (crossing.along + state.spot.along),
+			across: (state.spot.across + (Scenery.lane_width / 2.0)),
 		},
 	)
 	if seen.forward <= Geom.near_plane {
@@ -112,7 +112,7 @@ cat_in_view = |view, { position, crossing }| {
 				forward: seen.forward,
 				height: crossing.height,
 				pose: state.pose,
-				lift: state.lift,
+				lift: state.spot.lift,
 			},
 		]
 	}

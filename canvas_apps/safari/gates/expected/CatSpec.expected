@@ -6,6 +6,7 @@ ct-clock  ok 6
 ct-focus  ok 8
 ct-gait   ok 7
 ct-pose   ok 15
+ct-cuts   ok 6
 ct-which  ok 8
 ct-enter  ok 7
 ct-stride ok 5
