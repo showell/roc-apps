@@ -42,9 +42,9 @@ Most of Safari Ride's small modules have this shape: a comment saying what the t
 
 It's called like this, once a step:
 
-{{code RideMoment.step from "clock: moment.clock.next()," to "clock: moment.clock.next(),"}}
+{{code RideInstant.step from "clock: instant.clock.next()," to "clock: instant.clock.next(),"}}
 
-`moment.clock.next()` is static dispatch: `next` comes from the type of `moment.clock`, so the call needs no import.
+`instant.clock.next()` is static dispatch: `next` comes from the type of `instant.clock`, so the call needs no import.
 
 ## The modules
 
@@ -67,21 +67,21 @@ digraph system {
     drawing [label="the drawing\nItemDraw, CatDraw, RocBird, Tree, ...", style=dashed];
     sightings [label="the sightings\nRender, CatSighting, BirdSighting, TreeSighting, ...", style=dashed];
   }
-  app -> RideMoment;
-  RideMoment -> Rider;
-  RideMoment -> Truck;
+  app -> RideInstant;
+  RideInstant -> Rider;
+  RideInstant -> Truck;
   Rider -> World;
   Truck -> World;
   World -> critters;
   World -> scenery;
-  RideMoment -> sky;
-  RideMoment -> drawing;
+  RideInstant -> sky;
+  RideInstant -> drawing;
   drawing -> sightings;
   sightings -> World [style=dotted, constraint=false];
 }
 ```
 
-There are two halves. The ride is `Rider`, `Truck` and `World`, with `World` composing the route from its scenery and critters. It knows nothing of drawing. The view is everything that turns the ride into a picture: the sightings find what's in sight, and the drawing paints it. The dotted arrow is the view reading the ride, and no arrow goes the other way. `RideMoment` sits over both, holding one instant of the ride and stepping to the next, and the browser only sees `SafariApp`, which hands it a list of shapes each frame.
+There are two halves. The ride is `Rider`, `Truck` and `World`, with `World` composing the route from its scenery and critters. It knows nothing of drawing. The view is everything that turns the ride into a picture: the sightings find what's in sight, and the drawing paints it. The dotted arrow is the view reading the ride, and no arrow goes the other way. `RideInstant` sits over both, holding one instant of the ride and stepping to the next, and the browser only sees `SafariApp`, which hands it a list of shapes each frame.
 
 ### The part that isn't Roc
 
@@ -99,7 +99,7 @@ A sighting answers one question each frame: which of these can the rider see rig
 
 ## All that's stored
 
-A record is the plainest shape in Roc, and it's nearly all this needs. `RideMoment := { ... }.{ ... }` makes the module's own type out of one. That's a nominal type, which can carry a block of definitions, and unlike an opaque type it leaves its fields readable.
+A record is the plainest shape in Roc, and it's nearly all this needs. `RideInstant := { ... }.{ ... }` makes the module's own type out of one. That's a nominal type, which can carry a block of definitions, and unlike an opaque type it leaves its fields readable.
 
 {{code RideInstant.RideInstant from "One instant of the ride" to "}.{"}}
 
@@ -109,7 +109,7 @@ That gives three kinds of moving thing, and the tour is organized around them:
 
 | Kind | Things | How it works |
 |---|---|---|
-| Stepped | The rider, the truck | Stored in `RideMoment`, and moved once a step from where it was |
+| Stepped | The rider, the truck | Stored in `RideInstant`, and moved once a step from where it was |
 | Rider-driven | The cat, the bird | Worked out from how the rider is approaching, with nothing stored |
 | Clock-driven | The sun, the sky, the beacons, the headlights | Worked out from the clock, with nothing stored |
 
@@ -172,7 +172,7 @@ The sky is the simplest thing that moves, because it depends on one number.
 digraph sky {
   node [shape=box, fontname="Helvetica"];
   Sky [style=bold];
-  RideMoment -> Sky;
+  RideInstant -> Sky;
   Tour -> Sky;
   SafariShapes -> Sky;
   Mountains -> Sky;
@@ -205,9 +205,9 @@ Dusk calls it. Dusk is a curve and then a line, which means two cases. `Sky` kee
 
 {{code Sky.dusk_after_set}}
 
-And here's the walk up the stack: each frame, `RideMoment` hands the answer to the mountains, whose rock and snow go dark with it.
+And here's the walk up the stack: each frame, `RideInstant` hands the answer to the mountains, whose rock and snow go dark with it.
 
-{{code RideMoment.frame from "Mountains.draw({" to "}),"}}
+{{code RideInstant.frame from "Mountains.draw({" to "}),"}}
 
 `Fraction` is a third small opaque type, a ratio from 0 to 1, and only its own block can build one, so a `Fraction` is always in range. It has two ways in. `Fraction.of` takes a ratio that can only be in range and crashes on anything else, because that would be a bug in the sum. `Fraction.clamp` takes a ratio that can rightly fall outside, as a sun sunk far below the horizon does, and holds it at the nearest end.
 
@@ -227,7 +227,7 @@ Opaque types do the most work in this next function. `Angle.Bearing` is a direct
 
 Its caller is short enough to read whole:
 
-{{code RideMoment.sun}}
+{{code RideInstant.sun}}
 
 `turn_from_view.abs() >= visible_turn_limit` compares two `Turn`s. The code never touches radians until `sun_place` has to do trigonometry. Passing a `Turn` where a `Bearing` is wanted is a compile-time error:
 
@@ -259,7 +259,7 @@ digraph cat {
 
 *[The cat widget goes here: drag the rider's gap and watch the crossing play.]*
 
-The slider isn't scrubbing a video. Every position of it is a call to this function. The arrow is `->` again, so the type already says there's no hidden cat being updated somewhere. Method syntax chains the two halves of the job: `.moment(...)` is defined on the `Timeline` that `crossing_timeline` returns.
+The slider isn't scrubbing a video. Every position of it is a call to this function. The arrow is `->` again, so the type already says there's no hidden cat being updated somewhere. Method syntax chains the two halves of the job: `.instant(...)` is defined on the `Timeline` that `crossing_timeline` returns.
 
 {{code Cat.instant_at}}
 
@@ -267,7 +267,7 @@ A crossing and an approach go in, and the cat at that instant comes out. The sam
 
 `CatSighting` calls it, adding the distance to the segment to get the gap:
 
-{{code CatSighting.cat_in_view from "gap =" to "moment ="}}
+{{code CatSighting.cat_in_view from "gap =" to "instant ="}}
 
 ### When it plays
 
@@ -377,7 +377,7 @@ digraph screen {
 
 {{code CatSighting.cat_in_view}}
 
-Notice what isn't in this chapter: a cat in `RideMoment`, an update loop, or a flag saying the cat has already crossed. Roc doesn't force that, but pure functions make the stateless version the easy one to write, and every `->` shows it stayed that way.
+Notice what isn't in this chapter: a cat in `RideInstant`, an update loop, or a flag saying the cat has already crossed. Roc doesn't force that, but pure functions make the stateless version the easy one to write, and every `->` shows it stayed that way.
 
 ## Zooming back out
 
