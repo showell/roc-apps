@@ -3,6 +3,7 @@
 ## road once the pig is behind.
 import Angle
 import lib.DeviceMath
+import Easing
 import Pigs
 import Pose
 import Scenery
@@ -44,11 +45,8 @@ Gaze :: [].{
 	eyes_on_road_yaw : Angle.Turn
 	eyes_on_road_yaw = Angle.Turn.degrees(6.0)
 
-	smoothstep : F64 -> F64
-	smoothstep = |t| ((t * t) * (3.0 - (2.0 * t)))
-
 	gaze_focus : F64 -> F64
-	gaze_focus = |f| smoothstep(f)
+	gaze_focus = |f| Easing.smoothstep(f)
 
 	no_look : Gaze.PigLook
 	no_look = { looking: False, dist: 0.0 }
@@ -122,7 +120,7 @@ Gaze :: [].{
 	## Whether a gaze is exactly the rest position: +0.0, which `desired_gaze`
 	## answers when there is nothing to look at.
 	is_at_rest : Angle.Turn -> Bool
-	is_at_rest = |gaze| F64.to_bits(gaze.to_radians()) == F64.to_bits(0.0)
+	is_at_rest = |gaze| gaze.to_radians().to_bits() == F64.to_bits(0.0)
 
 	## The gaze one step on. It swivels toward `want` at no more than the
 	## swivel rate; with nothing to look at it eases back toward the road,

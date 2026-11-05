@@ -30,14 +30,11 @@ fixed_want = [150.0, 0.0012, 0.2, 25.0, 35.0, 4.0, 0.2, 0.02, 6.0, 0.05]
 
 smooth_got : List(F64)
 smooth_got = [
-	Gaze.smoothstep(0.0),
-	Gaze.smoothstep(0.5),
-	Gaze.smoothstep(1.0),
 	Gaze.gaze_focus(0.5),
 ]
 
 smooth_want : List(F64)
-smooth_want = [0.0, 0.5, 1.0, 0.5]
+smooth_want = [0.5]
 
 plain : World.Segment
 plain = World.route_segment(0)

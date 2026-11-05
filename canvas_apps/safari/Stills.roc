@@ -1,6 +1,6 @@
 ## A still is a small picture made of polygons, each filled with a flat
 ## colour or a gradient. Its points are in units of its height: x across,
-## and y up from its feet. EmojiStills, CatStills and RocBird hold the
+## and y up from its feet. EmojiStills, CatStills and BirdStills hold the
 ## pictures, and Critter and CatDraw put them on screen.
 
 Stills :: [].{

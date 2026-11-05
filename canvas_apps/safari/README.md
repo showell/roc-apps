@@ -35,8 +35,8 @@ Every module that began as an emission says so in its header.
 | `SafariBrush.roc` | a command's paint read once into a `Brush.Fill` |
 | `SafariFrame.roc` | a frame painted into pixels in Roc, for the proof tools below |
 | `Safari.roc` and the chapter modules | the world, the route, the rider, the animals, the scenery, and how each is drawn |
-| `RocBird.roc` | the bird, the first thing here that was never Codex |
-| `*Spec.roc` | the 54 spec apps, each chapter's checks, graded by `gates/` |
+| `RocBird.roc` | the bird, the first thing here that was never Codex, with `BirdFlight.roc`, `BirdPlan.roc` and `BirdStills.roc` |
+| `*Spec.roc` | the spec apps, each chapter's checks, graded by `gates/` |
 | `gates/` | test code the game never runs: the gate, `run.shale`, and its lints; the specs' expected outputs; the proof tools and the modules only they use, which reach the game's modules through the package `game.roc` |
 
 **The rider's lean is a camera.** The whole frame, backdrop and all, turns by

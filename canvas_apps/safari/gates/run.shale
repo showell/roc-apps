@@ -1,5 +1,5 @@
 -- budget: steps=40000000 reads=20000 read_bytes=400000000 output_bytes=200000
--- SAFARI'S GATES: the 54 spec apps against their verdicts, then the native
+-- SAFARI'S GATES: the spec apps against their verdicts, then the native
 -- proof tools.
 --
 --   cd <roc-apps checkout> && nice -n 19 shale canvas_apps/safari/gates/run.shale
@@ -47,7 +47,7 @@
 const SAFARI = "canvas_apps/safari"
 const EXPECTED = "canvas_apps/safari/gates/expected"
 const SELF_PATH = "canvas_apps/safari/gates/run.shale"
-const SPECS = 55
+const SPECS = 59
 const PROOF_EXPECTED = "canvas_apps/safari/gates/proof.expected"
 const WANT = "roc-pin: roc-apps' pinned nightly, and the binaries it builds under scratch:"
 
