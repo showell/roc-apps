@@ -36,7 +36,7 @@ Throttle :: [].{
 		{
 			d = (seg.commit_along - state.along)
 			corner_a = (
-				if d <= F64.from_bits(4517329193108106637) {
+				if d <= VehicleLimits.least_braking_distance {
 					Acceleration.steady
 				} else {
 					state.speed.acceleration_to({ target: v_end, within: d })

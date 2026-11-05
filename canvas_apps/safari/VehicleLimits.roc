@@ -20,6 +20,11 @@ VehicleLimits :: [].{
 	approach_intersection_dist : F64
 	approach_intersection_dist = 60.0
 
+	## The braking for a turn is worked out over the distance left to it, so a
+	## turn closer than this counts as reached, and no division is by zero.
+	least_braking_distance : F64
+	least_braking_distance = 0.000001
+
 	## The speed a turn of this size can be taken at, to the right or the left
 	## alike: a caller passes the turn's `abs`.
 	turn_speed : Angle.Turn -> Speed

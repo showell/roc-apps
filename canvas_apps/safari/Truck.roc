@@ -100,11 +100,6 @@ Truck :: [].{
 	}
 }
 
-## The braking for a turn is worked out over the distance left to it, so a
-## turn closer than this counts as reached, and no division is by zero.
-least_braking_distance : F64
-least_braking_distance = 0.000001
-
 ## The next turn past `route_position` along `segments`, the first of which
 ## starts at `segment_start`. The route's last segment ends in no turn.
 next_turn_on : List(World.Segment),
@@ -138,7 +133,7 @@ advance_braking : Truck.TruckState, Truck.ComingTurn -> Truck.TruckState
 advance_braking = |truck, turn| {
 	target_speed = turn.turn_speed.times(Truck.turn_caution)
 	acceleration =
-		if turn.distance > least_braking_distance {
+		if turn.distance > VehicleLimits.least_braking_distance {
 			truck.speed.acceleration_to({ target: target_speed, within: turn.distance })
 		} else {
 			Acceleration.steady
