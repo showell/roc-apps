@@ -233,7 +233,10 @@ Cat :: [].{
 								ease: Steady,
 							}),
 						},
-						{ until: Before(escape_at.plus(leaves_ground_beats)), plays: StaysAt(middle) },
+						{
+							until: Before(escape_at.plus(leaves_ground_beats)),
+							plays: StaysAt(middle),
+						},
 						{
 							until: Before(escape_at.plus(touches_down_beats)),
 							plays: Arc({

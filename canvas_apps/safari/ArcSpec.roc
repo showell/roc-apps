@@ -182,7 +182,10 @@ left_want : List(Bool)
 left_want = [True, True, True, True, True, True, True]
 
 mirror_got : List(F64)
-mirror_got = [(leaning.frames.to_f64() - other_way.frames.to_f64()), (leaning.end_across + other_way.end_across)]
+mirror_got = [
+	(leaning.frames.to_f64() - other_way.frames.to_f64()),
+	(leaning.end_across + other_way.end_across),
+]
 
 mirror_want : List(F64)
 mirror_want = [0.0, 0.0]

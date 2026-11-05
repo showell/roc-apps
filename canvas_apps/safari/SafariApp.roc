@@ -53,17 +53,14 @@ SafariApp :: [].{
 				zoom: 1.0,
 			}),
 		)
-		List.prepend(
-			SafariShapes.frame(
-				SafariRide.shapes(ride),
-				{
-					sky_top_color: SafariRide.sky_top(ride),
-					sky_horizon_color: SafariRide.sky_horizon(ride),
-					sun_position: SafariRide.sun(ride),
-				},
-			),
-			lean,
-		)
+		SafariShapes.frame(
+			SafariRide.shapes(ride),
+			{
+				sky_top_color: SafariRide.sky_top(ride),
+				sky_horizon_color: SafariRide.sky_horizon(ride),
+				sun_position: SafariRide.sun(ride),
+			},
+		).prepend(lean)
 	}
 
 	degrees : F64

@@ -201,6 +201,10 @@ sun_got = [Safari.ride_sun(segs, Safari.ride_initial) == OutOfView]
 sun_want : List(Bool)
 sun_want = [True]
 
+## A clock with the sun behind the mountains.
+after_sunset : Clock
+after_sunset = Clock.at_step(5700)
+
 ## The truck's lights at `clock`, with its brake lights left as given.
 lights_at : { clock : Clock, brake_lights : [On, Off] } -> Truck.Lights
 lights_at = |{ clock, brake_lights }|
@@ -214,8 +218,8 @@ lights_got : List(Bool)
 lights_got = [
 	lights_at({ clock: Clock.start, brake_lights: Off }) == { headlights: Off, brake_lights: Off },
 	lights_at({ clock: Clock.start, brake_lights: On }) == { headlights: Off, brake_lights: On },
-	lights_at({ clock: Clock.at_step(5700), brake_lights: Off }) == { headlights: On, brake_lights: Off },
-	lights_at({ clock: Clock.at_step(5700), brake_lights: On }) == { headlights: On, brake_lights: On },
+	lights_at({ clock: after_sunset, brake_lights: Off }) == { headlights: On, brake_lights: Off },
+	lights_at({ clock: after_sunset, brake_lights: On }) == { headlights: On, brake_lights: On },
 ]
 
 lights_want : List(Bool)

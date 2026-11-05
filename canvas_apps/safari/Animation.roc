@@ -156,9 +156,10 @@ Animation :: [].{
 		at_beat = |Animation.Timeline.(score), beat| {
 			looks = playing_at(score.looks, { beat, length: score.length })
 			path = playing_at(score.path, { beat, length: score.length })
+			fraction = beat.minus(path.from).ratio_to(path.to.minus(path.from))
 			{
 				pose: pose_of(looks.plays, beat),
-				spot: path_spot(path.plays, beat.minus(path.from).ratio_to(path.to.minus(path.from))),
+				spot: path_spot(path.plays, fraction),
 			}
 		}
 	}

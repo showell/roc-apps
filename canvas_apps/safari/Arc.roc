@@ -142,7 +142,7 @@ Arc :: [].{
 												course,
 												{
 													has_crossed: crossed,
-													frame_count: i.plus(Steps.one),
+													frame_count: i.plus(Steps.one_step),
 													coasting_rider: phys,
 												},
 											)

@@ -54,7 +54,7 @@ since_want = [0.0, 1.0, 9.0, 1.0]
 sums_got : List(F64)
 sums_got = [
 	Steps.zero.to_f64(),
-	Steps.one.to_f64(),
+	Steps.one_step.to_f64(),
 	Steps.of(5).plus(Steps.of(7)).to_f64(),
 	Steps.of(37).times(3).to_f64(),
 	Steps.of(37).times(0).to_f64(),
@@ -65,18 +65,18 @@ sums_want = [0.0, 1.0, 12.0, 111.0, 0.0]
 
 ## A count of steps wrapped to a cycle of 120: at, just under and just over
 ## its ends.
-wrapped : U32 -> F64
-wrapped = |count| Steps.of(count).wrapped_to(Steps.of(120)).to_f64()
+phase_of : U32 -> F64
+phase_of = |count| Steps.of(count).wrapped_to(Steps.of(120)).to_f64()
 
 wrapped_got : List(F64)
 wrapped_got = [
-	wrapped(0),
-	wrapped(1),
-	wrapped(119),
-	wrapped(120),
-	wrapped(121),
-	wrapped(239),
-	wrapped(240),
+	phase_of(0),
+	phase_of(1),
+	phase_of(119),
+	phase_of(120),
+	phase_of(121),
+	phase_of(239),
+	phase_of(240),
 ]
 
 wrapped_want : List(F64)

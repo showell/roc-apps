@@ -11,8 +11,8 @@ Steps :: U32.{
 	zero : Steps
 	zero = Steps.(0)
 
-	one : Steps
-	one = Steps.(1)
+	one_step : Steps
+	one_step = Steps.(1)
 
 	plus : Steps, Steps -> Steps
 	plus = |Steps.(n), Steps.(other)| Steps.(n + other)
