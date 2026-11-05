@@ -11,15 +11,12 @@ import game.Sky
 
 SunPixels :: [].{
 
-	## The sun, if it is in view and big enough to show.
+	## The sun, if it is in view.
 	paint : List(U32), { roll : ScreenRoll, sun : Sky.SunPos } -> List(U32)
 	paint = |pixels, { roll, sun }|
 		match sun {
-			InView(place) if SafariShapes.is_sun_shown(place) => paint_glow_and_disc(
-				pixels,
-				{ roll, sun: place },
-			)
-			InView(_) | OutOfView => pixels
+			InView(place) => paint_glow_and_disc(pixels, { roll, sun: place })
+			OutOfView => pixels
 		}
 }
 

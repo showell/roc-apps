@@ -26,10 +26,6 @@ SafariShapes :: [].{
 		disc_radius : F64,
 	}
 
-	## Whether a frame shows the sun in view at its place.
-	is_sun_shown : Sky.SunPlace -> Bool
-	is_sun_shown = |sun| sun.scale > 0.0
-
 	## The sun's glow and disc where it stands, sized by its scale.
 	sun_fills : Sky.SunPlace -> SafariShapes.SunFills
 	sun_fills = |sun| {
@@ -125,7 +121,7 @@ SafariShapes :: [].{
 		)
 		$out =
 			match sun {
-				InView(place) if is_sun_shown(place) => {
+				InView(place) => {
 					fills = sun_fills(place)
 					List.concat(
 						$out,
@@ -152,7 +148,7 @@ SafariShapes :: [].{
 						],
 					)
 				}
-				InView(_) | OutOfView => $out
+				OutOfView => $out
 			}
 		List.concat($out, ride_shapes)
 	}

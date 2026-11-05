@@ -142,7 +142,8 @@ TowerPlan :: [].{
 }
 
 ## A mast halfway along a segment takes its beacon's blink from a key this
-## far past its segment's, so it blinks out of step with the mast at the
+## far past its segment's. That many staggers come to half a period past a
+## whole number of periods, so it blinks exactly opposite the mast at the
 ## segment's end.
 mid_tower_beacon_step : I64
 mid_tower_beacon_step = 60

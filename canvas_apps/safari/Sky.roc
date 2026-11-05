@@ -172,7 +172,7 @@ Sky :: [].{
 dusk_while_up : F64 -> F64
 dusk_while_up = |height| {
 	set_so_far = ((Sky.sun_start_px - height) / (Sky.sun_start_px - Sky.sun_fully_set_px))
-	DeviceMath.real_max(0.0, ((Sky.dusk_at_set * set_so_far) * set_so_far))
+	(Sky.dusk_at_set * set_so_far) * set_so_far
 }
 
 ## How far toward dusk the sky is once the sun has fully set, darkening on
