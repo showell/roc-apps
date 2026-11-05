@@ -15,7 +15,12 @@ CrossingReaction :: [].{
 	Reaction : { throttle : [MayAccelerate, NoAcceleration], eye_pull : F64 }
 
 	## The reaction to `segment`'s crossing of a rider on that segment.
-	reaction_to : World.Segment, { along : F64, speed : Speed, ..others } -> CrossingReaction.Reaction
+	reaction_to : World.Segment,
+	{
+		along : F64,
+		speed : Speed,
+		..others,
+	} -> CrossingReaction.Reaction
 	reaction_to = |segment, rider|
 		match segment.crossing {
 			CatCrosses(crossing) => {

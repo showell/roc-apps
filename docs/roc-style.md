@@ -701,6 +701,34 @@ is the base; these rules sharpen it.
   `[Written, Strict(StrictName)]` only so strict names could reuse its fold
   had its dependency backwards; the strict name now lowercases with
   `Str.with_ascii_lowercased`, and a test holds both keys equal.
+- **A function that reads part of a higher layer's record takes an open
+  record.** It says exactly which fields the function reads, and the caller
+  passes its whole record, so the lower module never imports the type above
+  it. `roc check` refuses a record that lacks one of the fields. A function
+  that gives the record back keeps the fields it doesn't name, so its body
+  is an ordinary `{ ..parcel, ... }`. Here an `Order` holds a customer and
+  a payment, and `Shipping` sits below it and knows neither. Name the type
+  when several functions share it, and spell it out in the signature when
+  one function reads it. A trailing comma after `..others` keeps the stack.
+
+  ```roc
+  Parcel(others) : {
+  	weight_grams : U64,
+  	postcode : Str,
+  	..others,
+  }
+
+  cost_in_cents : Shipping.Parcel(others) -> U64
+  with_weight : Shipping.Parcel(others), U64 -> Shipping.Parcel(others)
+
+  Shipping.cost_in_cents(order)  # the caller passes the whole order
+  ```
+
+  Don't use one where nothing is gained. A function that reads one field
+  takes that field: `is_local(order.postcode)`. A module whose subject is the
+  record takes it by name: giving each of an order's rules its own slice
+  restates the record a dozen times. And a record from the same layer or a
+  lower one is imported and named as usual.
 
 ## The host boundary
 

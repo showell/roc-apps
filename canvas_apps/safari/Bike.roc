@@ -16,7 +16,15 @@ Bike :: [].{
 
 	## What a physics step reads and writes. It is open so that a caller's
 	## larger record passes through a step with its other fields kept.
-	Motion(others) : { along : F64, across : F64, yaw : Angle.Turn, speed : Speed, tilt : Angle.Lean, heading : Angle.Bearing, ..others }
+	Motion(others) : {
+		along : F64,
+		across : F64,
+		yaw : Angle.Turn,
+		speed : Speed,
+		tilt : Angle.Lean,
+		heading : Angle.Bearing,
+		..others,
+	}
 
 	## The bike one step on, after leaning by `lean_step` and speeding up by
 	## `accel`.
