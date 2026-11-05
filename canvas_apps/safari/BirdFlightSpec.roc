@@ -111,8 +111,8 @@ progress_want = [0.0, 0.0, 0.5, 1.0, 1.0]
 
 ends_got : List(F64)
 ends_got = {
-	before = BirdFlight.state(flight, 100.0)
-	after = BirdFlight.state(flight, 0.0)
+	before = BirdFlight.moment_at(flight, 100.0)
+	after = BirdFlight.moment_at(flight, 0.0)
 	[
 		before.spot.along,
 		before.spot.across,
@@ -128,7 +128,7 @@ ends_want = [100.0, -6.0, 10.0, 140.0, 6.0, 12.0]
 
 middle_got : List(F64)
 middle_got = {
-	middle = BirdFlight.state(flight, (BirdFlight.takeoff_gap + BirdFlight.landing_gap) / 2.0)
+	middle = BirdFlight.moment_at(flight, (BirdFlight.takeoff_gap + BirdFlight.landing_gap) / 2.0)
 	[
 		middle.spot.along,
 		middle.spot.across,
@@ -142,8 +142,8 @@ middle_want = [120.0, 0.0, 16.0]
 pose_got : List(Bool)
 pose_got = List.concat(
 	[
-		BirdFlight.state(flight, 100.0).pose == Perched,
-		BirdFlight.state(flight, 0.0).pose == Perched,
+		BirdFlight.moment_at(flight, 100.0).pose == Perched,
+		BirdFlight.moment_at(flight, 0.0).pose == Perched,
 	],
 	[
 		(0.01, Side(WingsUp)),

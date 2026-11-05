@@ -190,7 +190,7 @@ cut_want = [
 ]
 
 phase_of : F64 -> Animation.Moment(Cat.Pose)
-phase_of = |gap| Cat.state(the_cat, coming(gap, 1.0))
+phase_of = |gap| Cat.moment_at(the_cat, coming(gap, 1.0))
 
 which_got : List(I64)
 which_got = [

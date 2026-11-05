@@ -102,16 +102,16 @@ BirdFlight :: [].{
 	flight_stage = |gap| Animation.over_gap({ starts_at: takeoff_gap, ends_at: landing_gap }, gap)
 
 	## The bird on `route` with the rider `gap` metres from the tree it starts on.
-	state_on : BirdFlight.Route, F64 -> Animation.Moment(BirdFlight.Pose)
-	state_on = |route, gap|
+	route_moment_at : BirdFlight.Route, F64 -> Animation.Moment(BirdFlight.Pose)
+	route_moment_at = |route, gap|
 		match route {
-			Flies(flight) => state(flight, gap)
+			Flies(flight) => moment_at(flight, gap)
 			Sits(tree) => sitting_on(tree)
 		}
 
 	## The bird with the rider `gap` metres from the tree it left.
-	state : BirdFlight.Flight, F64 -> Animation.Moment(BirdFlight.Pose)
-	state = |flight, gap| flight_timeline(flight).moment(flight_stage(gap))
+	moment_at : BirdFlight.Flight, F64 -> Animation.Moment(BirdFlight.Pose)
+	moment_at = |flight, gap| flight_timeline(flight).moment(flight_stage(gap))
 
 	## The bird as it sits on top of `tree`.
 	sitting_on : Scenery.Tree -> Animation.Moment(BirdFlight.Pose)

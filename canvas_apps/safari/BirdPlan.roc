@@ -62,25 +62,25 @@ segment_bird = |view, position|
 				{ position, rider_along: view.rider_along },
 			)
 			gap_to_tree = gap_to_segment + BirdFlight.start_along(route)
-			bird_in_view(view, { position, state: BirdFlight.state_on(route, gap_to_tree) })
+			bird_in_view(view, { position, moment: BirdFlight.route_moment_at(route, gap_to_tree) })
 		}
 		CatCrosses(_) | QuietRoad => []
 	}
 
-## The bird in `state` on the segment at `position` in the chain, if it is in
+## The bird at `moment` on the segment at `position` in the chain, if it is in
 ## view: one item, or none.
 bird_in_view : BirdPlan.View,
 {
 	position : Frame.ChainPosition,
-	state : Animation.Moment(BirdFlight.Pose),
+	moment : Animation.Moment(BirdFlight.Pose),
 } -> List(RocBird.PlacedBird)
-bird_in_view = |view, { position, state }| {
+bird_in_view = |view, { position, moment }| {
 	seen = Frame.rider_point_ahead(
 		road_of(view),
 		{
 			position,
-			along: state.spot.along,
-			across: state.spot.across + Scenery.lane_width / 2.0,
+			along: moment.spot.along,
+			across: moment.spot.across + Scenery.lane_width / 2.0,
 		},
 	)
 	height_px = RocBird.height_px({ forward: seen.forward, cam_focal: view.cam_focal })
@@ -93,8 +93,8 @@ bird_in_view = |view, { position, state }| {
 			{
 				right: seen.right,
 				forward: seen.forward,
-				lift: state.spot.lift,
-				pose: state.pose,
+				lift: moment.spot.lift,
+				pose: moment.pose,
 			},
 		]
 	}

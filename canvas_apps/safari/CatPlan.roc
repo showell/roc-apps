@@ -88,7 +88,7 @@ cat_in_view : CatPlan.View,
 } -> List(CatPlan.CatItem)
 cat_in_view = |view, { position, crossing }| {
 	gap = CatPlan.gap_to_segment(view, position)
-	state = Cat.state(crossing, { gap: (gap + crossing.along), speed: view.speed })
+	moment = Cat.moment_at(crossing, { gap: (gap + crossing.along), speed: view.speed })
 	seen = Frame.rider_point_ahead(
 		{
 			world: view.world,
@@ -97,8 +97,8 @@ cat_in_view = |view, { position, crossing }| {
 		},
 		{
 			position: position,
-			along: (crossing.along + state.spot.along),
-			across: (state.spot.across + (Scenery.lane_width / 2.0)),
+			along: (crossing.along + moment.spot.along),
+			across: (moment.spot.across + (Scenery.lane_width / 2.0)),
 		},
 	)
 	if seen.forward <= Geom.near_plane {
@@ -111,8 +111,8 @@ cat_in_view = |view, { position, crossing }| {
 				right: seen.right,
 				forward: seen.forward,
 				height: crossing.height,
-				pose: state.pose,
-				lift: state.spot.lift,
+				pose: moment.pose,
+				lift: moment.spot.lift,
 			},
 		]
 	}
