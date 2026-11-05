@@ -3,14 +3,13 @@
 #
 # Hand-written, beside the emitted chapters it calls. It holds what the Codex
 # program cannot -- the ride between frames, a history for stepping back --
-# and says what a frame is in the terms a painter needs: the draw commands
-# after blit expansion, the camera roll, the two sky colours and the sun.
+# and says what a frame is in the terms a painter needs: the draw commands,
+# the camera roll, the two sky colours and the sun.
 # SafariApp turns it into a canvas app: the keys, the pause, and the frame
 # leaned by the roll.
 import Angle
 import World
 import Safari
-import Blit
 import Paint
 import Sky
 import Rider
@@ -77,14 +76,14 @@ SafariRide :: [].{
 		}
 	}
 
-	# The frame's commands in paint order, expanded as the blitter reads them.
+	# The frame's commands in paint order.
 	#
 	# **THE BIRD IS NOT PASTED ON THE END ANY MORE.** It used to be: the frame,
 	# then the Roc flair concatenated after it, which put a bird in front of
 	# every tree nearer than its own. It is collected and sorted with the rest
 	# now -- Render.collect gathers it, DepthSort orders it, ItemDraw draws it.
 	commands : SafariRide.Model -> List(Paint.DrawCmd)
-	commands = |m| Blit.blit_expand(Safari.ride_frame(m.world, m.ride))
+	commands = |m| Safari.ride_frame(m.world, m.ride)
 
 	# The camera roll: the whole frame, backdrop and commands, turns
 	# by minus this about the screen's centre.

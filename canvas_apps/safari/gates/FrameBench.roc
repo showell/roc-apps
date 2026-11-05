@@ -11,7 +11,6 @@ app [main!] {
 
 import game.World
 import game.Safari
-import game.Blit
 import game.Rider
 
 ## The ride after `steps` more frames, and the draw commands counted so far.
@@ -22,7 +21,7 @@ ride_frames = |world, { bench_run, steps_left: steps }|
 	if steps <= 0 {
 		bench_run
 	} else {
-		cmds = Blit.blit_expand(Safari.ride_frame(world, bench_run.ride))
+		cmds = Safari.ride_frame(world, bench_run.ride)
 		ride_frames(
 			world,
 			{

@@ -4,3 +4,13 @@ pa-tags   ok 30
 pa-streng ok 6
 pa-geom   ok 20
 pa-pts    ok 12
+pa-chan   ok 10
+pa-shade  ok 8
+pa-ends   ok 6
+pa-glow   ok 2
+pa-narrow ok 3
+pa-limits ok 3
+pa-span   ok 4
+pa-wide   ok 5
+pa-wgeom  ok 9
+pa-solid  ok 10

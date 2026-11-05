@@ -125,13 +125,13 @@ trunk_tag_got = [
 ]
 
 trunk_tag_want : List(I64)
-trunk_tag_want = [0, 1, 5914146, 5914146, 8]
+trunk_tag_want = [0, 2, 5914146, 3548436, 8]
 
 trunk_strength_got : List(F64)
 trunk_strength_got = [only(trunk).strength, only(round_trunk).strength]
 
 trunk_strength_want : List(F64)
-trunk_strength_want = [0.0, 1.0]
+trunk_strength_want = [0.0, 0.0]
 
 tri_got : List(F64)
 tri_got = {

@@ -222,10 +222,10 @@ tags_want = [
 	0,
 	0,
 	6,
-	1,
-	222,
-	0,
-	0,
+	2,
+	155,
+	255,
+	2,
 	6,
 	3,
 	333,
@@ -260,7 +260,7 @@ strength_got = [
 ]
 
 strength_want : List(F64)
-strength_want = [0.0, 0.75, 0.25, 0.0, 0.0, 0.0]
+strength_want = [0.0, 0.0, 0.25, 0.0, 0.0, 0.0]
 
 geom_got : List(F64)
 geom_got = List.join([
@@ -304,6 +304,161 @@ pts_got = List.join([
 pts_want : List(F64)
 pts_want = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
 
+color : I64
+color = 8405024
+
+chan_got : List(I64)
+chan_got = [
+	Paint.red_of(color),
+	Paint.green_of(color),
+	Paint.blue_of(color),
+	Paint.pack_rgb({
+		red: Paint.red_of(color),
+		green: Paint.green_of(color),
+		blue: Paint.blue_of(color),
+	}),
+	Paint.red_of(16777215),
+	Paint.green_of(16777215),
+	Paint.blue_of(16777215),
+	Paint.red_of(0),
+	Paint.pack_rgb({
+		red: 0,
+		green: 0,
+		blue: 0,
+	}),
+	Paint.pack_rgb({
+		red: 255,
+		green: 255,
+		blue: 255,
+	}),
+]
+
+chan_want : List(I64)
+chan_want = [128, 64, 32, 8405024, 255, 255, 255, 0, 0, 16777215]
+
+shade_got : List(I64)
+shade_got = [
+	Paint.shade_channel(128, 0.6),
+	Paint.shade_channel(64, 0.6),
+	Paint.shade_channel(32, 0.6),
+	Paint.shade_channel(250, 1.25),
+	Paint.shade_channel(255, 1.0),
+	Paint.shade_channel(255, 2.0),
+	Paint.shade_channel(0, 1.25),
+	Paint.shade_color(color, 0.6),
+]
+
+shade_want : List(I64)
+shade_want = [77, 38, 19, 255, 255, 255, 0, 5056019]
+
+shade_ends_got : List(I64)
+shade_ends_got = [
+	Paint.width_shade_edge(color, 1.0),
+	Paint.width_shade_middle(color, 1.0),
+	Paint.width_shade_edge(color, 0.5),
+	Paint.width_shade_middle(color, 0.5),
+	Paint.width_shade_edge(color, 0.0),
+	Paint.width_shade_middle(color, 0.0),
+]
+
+shade_ends_want : List(I64)
+shade_ends_want = [5056019, 10506280, 6697754, 9455652, 8405024, 8405024]
+
+glow_got : List(I64)
+glow_got = [Paint.shade_channel(250, 1.25), Paint.width_shade_middle(16448250, 1.0)]
+
+glow_want : List(I64)
+glow_want = [255, 16777215]
+
+visible_got : List(Bool)
+visible_got = [
+	Paint.is_too_narrow_to_shade({ min_x: 10.0, max_x: 10.5 }),
+	Paint.is_too_narrow_to_shade({ min_x: 10.0, max_x: 11.0 }),
+	Paint.is_too_narrow_to_shade({ min_x: 10.0, max_x: 30.0 }),
+]
+
+visible_want : List(Bool)
+visible_want = [True, False, False]
+
+limits_got : List(F64)
+limits_got = [
+	Paint.min_shade_width,
+	Paint.shade_edge_darken,
+	Paint.shade_middle_lift,
+]
+
+limits_want : List(F64)
+limits_want = [1.0, 0.4, 0.25]
+
+# Three points, flat: (10, 1), (30, 2) and (20, 3).
+poly : List(F64)
+poly = [10.0, 1.0, 30.0, 2.0, 20.0, 3.0]
+
+span_got : List(F64)
+span_got = {
+	wide_span = Paint.x_span(poly)
+	one_point = Paint.x_span([5.0, 99.0])
+	[
+		wide_span.min_x,
+		wide_span.max_x,
+		one_point.min_x,
+		one_point.max_x,
+	]
+}
+
+span_want : List(F64)
+span_want = [10.0, 30.0, 5.0, 5.0]
+
+poly_points : List(Screen.Point)
+poly_points = [
+	sp(10.0, 1.0),
+	sp(30.0, 2.0),
+	sp(20.0, 3.0),
+]
+
+narrow_points : List(Screen.Point)
+narrow_points = [
+	sp(10.0, 1.0),
+	sp(10.5, 2.0),
+	sp(10.2, 3.0),
+]
+
+wide : Paint.DrawCmd
+wide =
+	Paint.push_round_poly(poly_points, { fill_color: color, round_strength: 1.0 }).first()
+		?? crash "PaintSpec: a wide polygon is one command"
+
+wide_got : List(I64)
+wide_got = [
+	wide.tag,
+	wide.color,
+	wide.color2,
+	wide.geom.len().to_i64_wrap(),
+	wide.pts.len().to_i64_wrap(),
+]
+
+wide_want : List(I64)
+wide_want = [2, 5056019, 10506280, 2, 6]
+
+wide_geom_got : List(F64)
+wide_geom_got = List.join([
+	wide.geom,
+	wide.pts,
+	[wide.strength],
+])
+
+wide_geom_want : List(F64)
+wide_geom_want = [10.0, 30.0, 10.0, 1.0, 30.0, 2.0, 20.0, 3.0, 0.0]
+
+unshaded_got : List(I64)
+unshaded_got = [
+	Paint.push_round_poly(poly_points, { fill_color: color, round_strength: 0.0 }),
+	Paint.push_round_poly(narrow_points, { fill_color: color, round_strength: 1.0 }),
+].join_map(shape_of)
+
+unshaded_want : List(I64)
+unshaded_want = [0, 8405024, 0, 0, 6, 0, 8405024, 0, 0, 6]
+
 # --- Entry ---
 
 main! = |_args| {
@@ -341,6 +496,59 @@ main! = |_args| {
 			got: pts_got,
 			want: pts_want,
 			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "pa-chan  ",
+			got: chan_got,
+			want: chan_want,
+		}),
+		Grade.ints({
+			name: "pa-shade ",
+			got: shade_got,
+			want: shade_want,
+		}),
+		Grade.ints({
+			name: "pa-ends  ",
+			got: shade_ends_got,
+			want: shade_ends_want,
+		}),
+		Grade.ints({
+			name: "pa-glow  ",
+			got: glow_got,
+			want: glow_want,
+		}),
+		Grade.bools({
+			name: "pa-narrow",
+			got: visible_got,
+			want: visible_want,
+		}),
+		Grade.reals({
+			name: "pa-limits",
+			got: limits_got,
+			want: limits_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "pa-span  ",
+			got: span_got,
+			want: span_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "pa-wide  ",
+			got: wide_got,
+			want: wide_want,
+		}),
+		Grade.reals({
+			name: "pa-wgeom ",
+			got: wide_geom_got,
+			want: wide_geom_want,
+			tol: 0.0,
+		}),
+		Grade.ints({
+			name: "pa-solid ",
+			got: unshaded_got,
+			want: unshaded_want,
 		}),
 	]
 	for verdict in verdicts {
