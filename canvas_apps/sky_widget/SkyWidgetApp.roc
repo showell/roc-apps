@@ -7,8 +7,6 @@
 import game.Clock
 import game.Fraction
 import game.Lens
-import game.SafariShapes
-import game.Screen
 import game.Sky
 import lib.CanvasApp
 import lib.Shapes
@@ -51,41 +49,20 @@ frame_at = |clock|
 		status: status_lines(clock),
 	})
 
-## How much smaller Safari's screen is in the picture.
-picture_zoom : F64
-picture_zoom = 2.0 / 3.0
-
 ## The ride's sky at `clock`, for a rider facing the sun.
 picture : Clock -> List(Shapes.Shape)
-picture = |clock| {
-	corner = { x: 0.0, y: 0.0 }
-	sky = SafariShapes.frame(
+picture = |clock|
+	ScrubWidget.ride_picture(
 		[],
 		{
-			sky_top_color: Sky.sky_color(clock),
-			sky_horizon_color: Sky.horizon_color(clock),
-			sun_position: Sky.sun_pos({
+			clock,
+			sun: Sky.sun_pos({
 				heading: Sky.sun_bearing,
 				clock,
 				cam_focal: Lens.focal,
 			}),
 		},
 	)
-	[
-		[
-			View(
-				World({
-					target: corner,
-					offset: corner,
-					rotation: 0.0,
-					zoom: picture_zoom,
-				}),
-			),
-		],
-		sky,
-		[View(Screen)],
-	].join()
-}
 
 ## The step at which the sun stands `height` pixels up.
 step_at_height : F64 -> F64

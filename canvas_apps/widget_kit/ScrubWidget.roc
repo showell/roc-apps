@@ -4,7 +4,12 @@
 ## the pointer. This module holds what each widget has in common: reading the
 ## pointer into the number, and laying out the picture, the ruler under it and
 ## the lines of text below that. A widget says what the number means.
+import game.Animation
+import game.Clock
+import game.Distance
 import game.Fraction
+import game.SafariShapes
+import game.Sky
 import lib.Brush
 import lib.CanvasApp
 import lib.Font
@@ -82,6 +87,15 @@ ScrubWidget :: [].{
 	share_under : F64 -> Fraction
 	share_under = |x| Fraction.clamp(x / canvas_width)
 
+	## The gap with the pointer `share` of the way along a ruler that runs from
+	## `farthest` at the left down to zero at the right.
+	gap_at : Fraction, { farthest : Distance } -> Distance
+	gap_at = |share, { farthest }| farthest.times(share.complement().to_f64())
+
+	## How far along such a ruler `gap` sits.
+	gap_share : Distance, { farthest : Distance } -> Fraction
+	gap_share = |gap, { farthest }| Fraction.clamp(1.0 - gap.ratio_to(farthest))
+
 	flat : I64 -> Brush.Fill
 	flat = |color| Flat(Brush.opaque(color))
 
@@ -101,6 +115,45 @@ ScrubWidget :: [].{
 			ruler({ dot_at, marked }),
 			status.map_with_index(status_line).join(),
 		].join()
+
+	## The ride's sky and grass with `shapes` over them, at two thirds of
+	## Safari's screen, so a widget's picture is what the ride's frame shows.
+	## The sky is `clock`'s, and `sun` is where the sun stands in it.
+	ride_picture : List(Shapes.Shape), { clock : Clock, sun : Sky.SunPos } -> List(Shapes.Shape)
+	ride_picture = |shapes, { clock, sun }| {
+		corner = { x: 0.0, y: 0.0 }
+		ride = SafariShapes.frame(
+			shapes,
+			{
+				sky_top_color: Sky.sky_color(clock),
+				sky_horizon_color: Sky.horizon_color(clock),
+				sun_position: sun,
+			},
+		)
+		[
+			[
+				View(
+					World({
+						target: corner,
+						offset: corner,
+						rotation: 0.0,
+						zoom: 2.0 / 3.0,
+					}),
+				),
+			],
+			ride,
+			[View(Screen)],
+		].join()
+	}
+
+	## Where an animation has got to, in words.
+	stage_text : Animation.Stage -> Str
+	stage_text = |stage|
+		match stage {
+			Waiting => "Waiting"
+			Playing(progress) => "Playing: ${percent_text(progress)}"
+			Past(_) => "Past"
+		}
 
 	## A number of at least zero, to one decimal place.
 	tenths_text : F64 -> Str
@@ -229,6 +282,43 @@ stepped_from_seven_tenths = |held|
 
 expect stepped_from_seven_tenths(1) == 0.5
 expect stepped_from_seven_tenths(0) == 0.7
+
+## The gap on a ruler 50 metres long.
+gap_on_ruler : Fraction -> Distance
+gap_on_ruler = |share| ScrubWidget.gap_at(share, { farthest: Distance.metres(50.0) })
+
+## How far along a ruler 50 metres long a gap of `metres` sits.
+share_on_ruler : F64 -> Fraction
+share_on_ruler = |metres|
+	ScrubWidget.gap_share(Distance.metres(metres), { farthest: Distance.metres(50.0) })
+
+expect gap_on_ruler(Fraction.zero) == Distance.metres(50.0)
+expect gap_on_ruler(Fraction.whole) == Distance.zero
+expect gap_on_ruler(Fraction.of(0.5)) == Distance.metres(25.0)
+expect share_on_ruler(37.5) == Fraction.of(0.25)
+expect share_on_ruler(60.0) == Fraction.zero
+expect share_on_ruler(0.0 - 1.0) == Fraction.whole
+
+expect ScrubWidget.stage_text(Waiting) == "Waiting"
+expect ScrubWidget.stage_text(Playing(Fraction.of(0.5))) == "Playing: 50%"
+expect ScrubWidget.stage_text(Past(Distance.metres(1.0))) == "Past"
+
+# The first view mark, the sky, the grass, the shapes, and the mark back to the
+# screen.
+expect
+	ScrubWidget.ride_picture(
+		[
+			Rect({
+				x: 0.0,
+				y: 0.0,
+				w: 1.0,
+				h: 1.0,
+				fill: Skip,
+			}),
+		],
+		{ clock: Clock.start, sun: OutOfView },
+	).len()
+		== 5
 
 expect ScrubWidget.tenths_text(0.0) == "0.0"
 expect ScrubWidget.tenths_text(0.04) == "0.0"

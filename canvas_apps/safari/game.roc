@@ -3,8 +3,11 @@
 # say `import game.Tour`.
 package
 	[
+		Along,
 		Angle,
 		Animation,
+		BirdFlight,
+		Camera,
 		Cat,
 		CatDraw,
 		CatStills,
@@ -12,15 +15,19 @@ package
 		CrossingReaction,
 		Distance,
 		Fraction,
+		ItemDraw,
 		Lens,
+		Paint,
 		RideInstant,
 		Rider,
+		RocBird,
 		SafariShapes,
 		Scenery,
 		Screen,
 		Sky,
 		Speed,
 		Tour,
+		Tree,
 		World,
 	]
 	{
