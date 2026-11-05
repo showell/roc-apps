@@ -12,7 +12,7 @@ import Screen
 view : Camera.View
 view = { cam_focal: 800.0, view_w: 960.0 }
 
-at : Geom.SpacePoint -> Camera.ScreenPt
+at : Geom.SpacePoint -> Screen.Point
 at = |point| Camera.project(point, view)
 
 x_got : List(F64)

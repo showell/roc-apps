@@ -4,21 +4,21 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
-import Camera
 import Grade
 import Paint
+import Screen
 
-sp : F64, F64 -> Camera.ScreenPt
+sp : F64, F64 -> Screen.Point
 sp = |x, y| { x: x, y: y }
 
-tri : List(Camera.ScreenPt)
+tri : List(Screen.Point)
 tri = [
 	sp(1.0, 2.0),
 	sp(3.0, 4.0),
 	sp(5.0, 6.0),
 ]
 
-line_ends : List(Camera.ScreenPt)
+line_ends : List(Screen.Point)
 line_ends = [sp(1.0, 2.0), sp(3.0, 4.0)]
 
 flat_got : List(F64)

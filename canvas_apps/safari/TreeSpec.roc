@@ -5,10 +5,10 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
-import Camera
 import Grade
 import Paint
 import Tree
+import Screen
 
 table_got : List(F64)
 table_got = List.join([
@@ -159,13 +159,13 @@ tri_want = [
 	160.0,
 ]
 
-pt : F64, F64 -> Camera.ScreenPt
+pt : F64, F64 -> Screen.Point
 pt = |x, y| { x: x, y: y }
 
-xy : List(Camera.ScreenPt) -> List(F64)
+xy : List(Screen.Point) -> List(F64)
 xy = |ps| Paint.flatten_screen(ps)
 
-square : List(Camera.ScreenPt)
+square : List(Screen.Point)
 square = [
 	pt(0.0, 0.0),
 	pt(4.0, 0.0),

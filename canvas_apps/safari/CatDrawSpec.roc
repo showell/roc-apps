@@ -4,14 +4,14 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
-import Camera
 import Cat
 import CatDraw
 import CatStills
 import Grade
 import Stills
+import Screen
 
-feet : Camera.ScreenPt
+feet : Screen.Point
 feet = { x: 100.0, y: 200.0 }
 
 ## A cat 50 px tall, standing at `feet`.

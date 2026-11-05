@@ -4,13 +4,13 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
-import Camera
 import DepthSort
 import Geom
 import Grade
 import TruckBody
 import TruckLights
 import TruckShape
+import Screen
 
 box_at : { along : F64, across : F64 } -> List(F64)
 box_at = |center| {
@@ -179,10 +179,10 @@ small_got = [
 small_want : List(I64)
 small_want = [0, 1, 7]
 
-sp : F64, F64 -> Camera.ScreenPt
+sp : F64, F64 -> Screen.Point
 sp = |x, y| { x, y }
 
-panel : List(Camera.ScreenPt)
+panel : List(Screen.Point)
 panel = [
 	sp(3.0, 4.0),
 	sp(6.0, 8.0),
@@ -190,7 +190,7 @@ panel = [
 	sp(7.0, 4.0),
 ]
 
-triangle : List(Camera.ScreenPt)
+triangle : List(Screen.Point)
 triangle = [
 	sp(0.0, 0.0),
 	sp(3.0, 0.0),

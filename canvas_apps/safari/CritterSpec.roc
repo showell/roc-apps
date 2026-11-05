@@ -5,13 +5,13 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
-import Camera
 import Critter
 import EmojiStills
 import Grade
 import Stills
+import Screen
 
-feet : Camera.ScreenPt
+feet : Screen.Point
 feet = { x: 100.0, y: 200.0 }
 
 ## A still 50 pixels tall, standing on `feet`, as drawn.

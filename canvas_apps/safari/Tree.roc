@@ -5,6 +5,7 @@
 import Camera
 import Paint
 import lib.Trig
+import Screen
 
 Tree :: [].{
 
@@ -218,7 +219,7 @@ Tree :: [].{
 	## The convex hull of `points`, going round from the leftmost: Andrew's
 	## monotone chain, its lower chain and then its upper. Fewer than three
 	## points are their own hull.
-	convex_hull : List(Camera.ScreenPt) -> List(Camera.ScreenPt)
+	convex_hull : List(Screen.Point) -> List(Screen.Point)
 	convex_hull = |points|
 		if points.len() < 3 {
 			points
@@ -232,7 +233,7 @@ Tree :: [].{
 	## The points left to right, and bottom to top where they share an x. Each
 	## goes in after the ones it doesn't come before, so points that tie keep
 	## their order.
-	sorted_points : List(Camera.ScreenPt) -> List(Camera.ScreenPt)
+	sorted_points : List(Screen.Point) -> List(Screen.Point)
 	sorted_points = |points|
 		points.fold(
 			[],
@@ -249,12 +250,12 @@ Tree :: [].{
 }
 
 ## Whether `a` comes before `b`: left of it, or above it at the same x.
-is_before : Camera.ScreenPt, Camera.ScreenPt -> Bool
+is_before : Screen.Point, Screen.Point -> Bool
 is_before = |a, b| a.x < b.x or (F64.to_bits(a.x) == F64.to_bits(b.x) and a.y < b.y)
 
 ## The hull with its last points taken off while they don't turn left on the
 ## way to `point`.
-trim_hull : List(Camera.ScreenPt), Camera.ScreenPt -> List(Camera.ScreenPt)
+trim_hull : List(Screen.Point), Screen.Point -> List(Screen.Point)
 trim_hull = |hull, point|
 	match hull {
 		[

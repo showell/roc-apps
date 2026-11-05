@@ -10,6 +10,7 @@ import Geom
 import Num_
 import Paint
 import lib.Trig
+import Screen
 
 Tower :: [].{
 
@@ -183,8 +184,8 @@ Tower :: [].{
 
 	## A rod between two points on screen, `width_px` wide.
 	screen_rod : {
-		from : Camera.ScreenPt,
-		to : Camera.ScreenPt,
+		from : Screen.Point,
+		to : Screen.Point,
 		width_px : F64,
 	} -> List(Paint.DrawCmd)
 	screen_rod = |
@@ -209,8 +210,8 @@ Tower :: [].{
 	## The quad of a rod from `from` to `to`, its sides `offset_x` and
 	## `offset_y` either side of the line between them.
 	rod_quad : {
-		from : Camera.ScreenPt,
-		to : Camera.ScreenPt,
+		from : Screen.Point,
+		to : Screen.Point,
 		offset_x : F64,
 		offset_y : F64,
 	} -> List(Paint.DrawCmd)

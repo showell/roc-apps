@@ -2,6 +2,9 @@
 ## the top of the grass cross it before the camera rolls.
 Screen :: [].{
 
+	## A point on the screen, in pixels from its top left corner.
+	Point : { x : F64, y : F64 }
+
 	width_px : I64
 	width_px = 960
 

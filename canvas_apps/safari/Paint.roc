@@ -1,6 +1,6 @@
 # Paint -- originally emitted from Codex by rocemit; the Roc is the program now
 # and this file is edited here (safari/README.md).
-import Camera
+import Screen
 
 Paint :: [].{
 	DrawCmd : {
@@ -13,10 +13,10 @@ Paint :: [].{
 	}
 
 	# An accumulator loop is linear, where appending a recursive call is quadratic.
-	flatten_screen : List(Camera.ScreenPt) -> List(F64)
+	flatten_screen : List(Screen.Point) -> List(F64)
 	flatten_screen = |ps| flatten_screen_onto(ps, { at_index: 0, flat_coords: [] })
 
-	flatten_screen_onto : List(Camera.ScreenPt),
+	flatten_screen_onto : List(Screen.Point),
 	{
 		at_index : I64,
 		flat_coords : List(F64),
@@ -40,7 +40,7 @@ Paint :: [].{
 		}
 	)
 
-	push_poly : I64, List(Camera.ScreenPt) -> List(Paint.DrawCmd)
+	push_poly : I64, List(Screen.Point) -> List(Paint.DrawCmd)
 	push_poly = |color, ps| (
 		if ps.len().to_i64_wrap() < 3 {
 			[]
@@ -58,7 +58,7 @@ Paint :: [].{
 		}
 	)
 
-	push_round_poly : List(Camera.ScreenPt),
+	push_round_poly : List(Screen.Point),
 	{
 		fill_color : I64,
 		round_strength : F64,
@@ -87,7 +87,7 @@ Paint :: [].{
 
 	push_beacon : {
 		beacon_color : I64,
-		beacon_center : Camera.ScreenPt,
+		beacon_center : Screen.Point,
 		beacon_radius : F64,
 		beacon_alpha : F64,
 	} -> List(Paint.DrawCmd)
@@ -121,11 +121,11 @@ Paint :: [].{
 		end_offset : F64,
 	}
 
-	push_grad_poly : List(Camera.ScreenPt),
+	push_grad_poly : List(Screen.Point),
 	{
 		center_rgba : I64,
 		edge_rgba : I64,
-		gradient_center : Camera.ScreenPt,
+		gradient_center : Screen.Point,
 		gradient_radius : F64,
 	} -> List(Paint.DrawCmd)
 	push_grad_poly = |
@@ -157,11 +157,11 @@ Paint :: [].{
 		}
 	)
 
-	push_linear_grad_poly : List(Camera.ScreenPt),
+	push_linear_grad_poly : List(Screen.Point),
 	{
 		color_stops : Paint.ColorStops,
-		start_point : Camera.ScreenPt,
-		end_point : Camera.ScreenPt,
+		start_point : Screen.Point,
+		end_point : Screen.Point,
 	} -> List(Paint.DrawCmd)
 	push_linear_grad_poly = |
 		ps,
@@ -194,12 +194,12 @@ Paint :: [].{
 		}
 	)
 
-	push_radial_grad_poly : List(Camera.ScreenPt),
+	push_radial_grad_poly : List(Screen.Point),
 	{
 		color_stops : Paint.ColorStops,
-		center_point : Camera.ScreenPt,
-		axis_u : Camera.ScreenPt,
-		axis_v : Camera.ScreenPt,
+		center_point : Screen.Point,
+		axis_u : Screen.Point,
+		axis_v : Screen.Point,
 	} -> List(Paint.DrawCmd)
 	push_radial_grad_poly = |
 		ps,

@@ -9,6 +9,7 @@ import Geom
 import Paint
 import lib.Trig
 import TruckShape
+import Screen
 
 TruckLights :: [].{
 
@@ -59,7 +60,7 @@ TruckLights :: [].{
 	}
 
 	## The distance between two points on screen.
-	distance : { from : Camera.ScreenPt, to : Camera.ScreenPt } -> F64
+	distance : { from : Screen.Point, to : Screen.Point } -> F64
 	distance = |{ from, to }| {
 		dx = (from.x - to.x)
 		dy = (from.y - to.y)
@@ -67,7 +68,7 @@ TruckLights :: [].{
 	}
 
 	## How far the farthest of `points` is from `center`.
-	farthest_from : List(Camera.ScreenPt), Camera.ScreenPt -> F64
+	farthest_from : List(Screen.Point), Screen.Point -> F64
 	farthest_from = |points, center|
 		points.fold_rev(
 			0.0,
@@ -80,7 +81,7 @@ TruckLights :: [].{
 	## The center of a polygon on screen: the mean of its corners. Each sum
 	## runs from the last corner to the first; a float sum's rounding depends
 	## on its order, and another order can move a pixel.
-	center_of : List(Camera.ScreenPt) -> Camera.ScreenPt
+	center_of : List(Screen.Point) -> Screen.Point
 	center_of = |corners| {
 		count = corners.len().to_f64()
 		{
@@ -91,11 +92,11 @@ TruckLights :: [].{
 
 	## How far a brake light's glow reaches from `center`, the lamp's
 	## center.
-	glow_radius : List(Camera.ScreenPt), Camera.ScreenPt -> F64
+	glow_radius : List(Screen.Point), Screen.Point -> F64
 	glow_radius = |lamp, center| (TruckLights.farthest_from(lamp, center) * glow_reach)
 
 	## A circle round `center`, as a polygon of `glow_sides` corners.
-	glow_outline : { center : Camera.ScreenPt, radius : F64 } -> List(Camera.ScreenPt)
+	glow_outline : { center : Screen.Point, radius : F64 } -> List(Screen.Point)
 	glow_outline = |{ center, radius }|
 		TruckShape.circle_angles(TruckLights.glow_sides).map(
 			|angle| {

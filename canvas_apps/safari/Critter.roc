@@ -8,6 +8,7 @@ import Camera
 import EmojiStills
 import Paint
 import Stills
+import Screen
 
 Critter :: [].{
 
@@ -18,7 +19,7 @@ Critter :: [].{
 	## Where a still stands on screen: its feet, which way it is drawn, and
 	## its height in pixels.
 	Anchor : {
-		feet : Camera.ScreenPt,
+		feet : Screen.Point,
 		flip : Critter.Flip,
 		height_px : F64,
 	}
@@ -36,20 +37,20 @@ Critter :: [].{
 		}
 
 	## Where a point of the still lands on screen.
-	screen_point : Critter.Anchor, Stills.StillPt -> Camera.ScreenPt
+	screen_point : Critter.Anchor, Stills.StillPt -> Screen.Point
 	screen_point = |anchor, point| {
 		x: (anchor.feet.x + ((x_sign(anchor.flip) * point.x) * anchor.height_px)),
 		y: (anchor.feet.y - (point.y * anchor.height_px)),
 	}
 
 	## How far, and which way, a step in the still goes on screen.
-	screen_vector : Critter.Anchor, Stills.StillPt -> Camera.ScreenPt
+	screen_vector : Critter.Anchor, Stills.StillPt -> Screen.Point
 	screen_vector = |anchor, step| {
 		x: ((x_sign(anchor.flip) * step.x) * anchor.height_px),
 		y: (0.0 - (step.y * anchor.height_px)),
 	}
 
-	screen_points : Critter.Anchor, List(Stills.StillPt) -> List(Camera.ScreenPt)
+	screen_points : Critter.Anchor, List(Stills.StillPt) -> List(Screen.Point)
 	screen_points = |anchor, points| points.map(|point| Critter.screen_point(anchor, point))
 
 	## One polygon of a still, filled with its colour or its gradient.
@@ -119,7 +120,7 @@ stops_of = |gradient| {
 draw_gradient_poly : Critter.Anchor,
 {
 	gradient : Stills.StillGrad,
-	points : List(Camera.ScreenPt),
+	points : List(Screen.Point),
 } -> List(Paint.DrawCmd)
 draw_gradient_poly = |anchor, { gradient, points }|
 	match gradient_shape(gradient) {
