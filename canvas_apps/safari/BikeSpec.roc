@@ -4,6 +4,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Acceleration
 import Angle
 import Bike
 import Grade
@@ -31,13 +32,19 @@ s0 = {
 }
 
 s1 : Pose.RiderState
-s1 = Bike.simulate_rider_step(s0, { lean_step: Angle.Lean.radians(0.05), accel: 0.01 })
+s1 = Bike.simulate_rider_step(
+	s0,
+	{ lean_step: Angle.Lean.radians(0.05), accel: Acceleration.metres_a_step_each_step(0.01) },
+)
 
 s2 : Pose.RiderState
-s2 = Bike.simulate_rider_step(s1, { lean_step: Angle.Lean.radians(0.0 - 0.02), accel: 0.005 })
+s2 = Bike.simulate_rider_step(
+	s1,
+	{ lean_step: Angle.Lean.radians(0.0 - 0.02), accel: Acceleration.metres_a_step_each_step(0.005) },
+)
 
 s3 : Pose.RiderState
-s3 = Bike.simulate_rider_step(s2, { lean_step: Angle.upright, accel: 0.0 })
+s3 = Bike.simulate_rider_step(s2, { lean_step: Angle.upright, accel: Acceleration.steady })
 
 exact_got : List(F64)
 exact_got = [

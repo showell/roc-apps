@@ -38,7 +38,7 @@ edge_want = [1.297, 0.222, 1.297, 0.222, 0.222, 0.222, 0.222, 0.222]
 
 env_got : List(F64)
 env_got = [
-	VehicleLimits.a_accel,
+	VehicleLimits.a_accel.to_metres_a_step_each_step(),
 	VehicleLimits.v_max.to_metres_a_step(),
 	VehicleLimits.approach_intersection_dist,
 ]

@@ -1,5 +1,6 @@
 ## The motorcycle's physics for one step. The lean steers the bike, and it
 ## moves along the middle of the step's turn.
+import Acceleration
 import Angle
 import Pose
 import lib.Trig
@@ -18,7 +19,7 @@ Bike :: [].{
 	simulate_rider_step : Pose.RiderState,
 	{
 		lean_step : Angle.Lean,
-		accel : F64,
+		accel : Acceleration,
 	} -> Pose.RiderState
 	simulate_rider_step = |s, { lean_step, accel }| {
 		tilt = s.tilt.plus(lean_step)

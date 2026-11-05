@@ -1,13 +1,11 @@
 ## Safari's speeds. A speed is how many metres something covers in one step
-## of the ride; the rider and the truck each hold one.
-##
-## Acceleration stays a plain F64, in metres a step for each step. It passes
-## from one of the throttle's gates to the next and ends on a speed, and no
-## speed can be mistaken for it: `accelerated_by` takes one, and
-## `acceleration_to` and `change_from` give one.
+## of the ride; the rider and the truck each hold one. An `Acceleration` is
+## a type of its own, so no speed can be mistaken for one: `accelerated_by`
+## takes one, and `acceleration_to` and `change_from` give one.
 ##
 ## Each operation does the plain float arithmetic its name says, so code
 ## moved onto this type computes exactly what it did before.
+import Acceleration
 import lib.DeviceMath
 
 Speed :: F64.{
@@ -23,17 +21,18 @@ Speed :: F64.{
 	at_rest = Speed.(0.0)
 
 	## This speed after `acceleration`, the change over one step.
-	accelerated_by : Speed, F64 -> Speed
-	accelerated_by = |Speed.(s), acceleration| Speed.(s + acceleration)
+	accelerated_by : Speed, Acceleration -> Speed
+	accelerated_by = |Speed.(s), acceleration| Speed.(s + acceleration.to_metres_a_step_each_step())
 
 	## The acceleration over one step that took `earlier` to this speed.
-	change_from : Speed, Speed -> F64
-	change_from = |Speed.(s), Speed.(earlier)| s - earlier
+	change_from : Speed, Speed -> Acceleration
+	change_from = |Speed.(s), Speed.(earlier)| Acceleration.metres_a_step_each_step(s - earlier)
 
 	## The steady acceleration that brings this speed to `target` over
 	## `within` metres.
-	acceleration_to : Speed, { target : Speed, within : F64 } -> F64
-	acceleration_to = |Speed.(s), { target: Speed.(t), within }| (t * t - s * s) / (2.0 * within)
+	acceleration_to : Speed, { target : Speed, within : F64 } -> Acceleration
+	acceleration_to = |Speed.(s), { target: Speed.(t), within }|
+		Acceleration.metres_a_step_each_step((t * t - s * s) / (2.0 * within))
 
 	times : Speed, F64 -> Speed
 	times = |Speed.(s), factor| Speed.(s * factor)

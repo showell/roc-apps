@@ -4,6 +4,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Acceleration
 import Angle
 import Arc
 import Grade
@@ -91,7 +92,7 @@ corner_got = [
 		{
 			road_segment: seg,
 			exit_speed: Speed.metres_a_step(0.222),
-			offered_accel: 0.01,
+			offered_accel: Acceleration.metres_a_step_each_step(0.01),
 		},
 	),
 	Throttle.corner_brake(
@@ -103,7 +104,7 @@ corner_got = [
 		{
 			road_segment: seg,
 			exit_speed: Speed.metres_a_step(0.222),
-			offered_accel: 0.01,
+			offered_accel: Acceleration.metres_a_step_each_step(0.01),
 		},
 	),
 	Throttle.corner_brake(
@@ -115,10 +116,10 @@ corner_got = [
 		{
 			road_segment: seg,
 			exit_speed: Speed.metres_a_step(0.222),
-			offered_accel: (0.0 - 5.0),
+			offered_accel: Acceleration.metres_a_step_each_step(0.0 - 5.0),
 		},
 	),
-]
+].map(Acceleration.to_metres_a_step_each_step)
 
 corner_want : List(F64)
 corner_want = [
@@ -139,9 +140,9 @@ corner_min_got = [
 			{
 				road_segment: seg,
 				exit_speed: Speed.metres_a_step(0.222),
-				offered_accel: 0.01,
+				offered_accel: Acceleration.metres_a_step_each_step(0.01),
 			},
-		) <= 0.01
+		).to_metres_a_step_each_step() <= 0.01
 	),
 	(
 		Throttle.corner_brake(
@@ -153,9 +154,9 @@ corner_min_got = [
 			{
 				road_segment: seg,
 				exit_speed: Speed.metres_a_step(0.222),
-				offered_accel: (0.0 - 5.0),
+				offered_accel: Acceleration.metres_a_step_each_step(0.0 - 5.0),
 			},
-		) <= (0.0 - 5.0)
+		).to_metres_a_step_each_step() <= (0.0 - 5.0)
 	),
 	(
 		Throttle.corner_brake(
@@ -167,7 +168,7 @@ corner_min_got = [
 			{
 				road_segment: seg,
 				exit_speed: Speed.metres_a_step(0.222),
-				offered_accel: 0.01,
+				offered_accel: Acceleration.metres_a_step_each_step(0.01),
 			},
 		) < Throttle.corner_brake(
 			rider({
@@ -178,7 +179,7 @@ corner_min_got = [
 			{
 				road_segment: seg,
 				exit_speed: Speed.metres_a_step(0.222),
-				offered_accel: 0.01,
+				offered_accel: Acceleration.metres_a_step_each_step(0.01),
 			},
 		)
 	),
@@ -200,7 +201,7 @@ cat_got = [
 		}),
 		{
 			road_segment: seg,
-			offered_accel: 0.01,
+			offered_accel: Acceleration.metres_a_step_each_step(0.01),
 		},
 	),
 	Throttle.cat_gate(
@@ -211,7 +212,7 @@ cat_got = [
 		}),
 		{
 			road_segment: seg,
-			offered_accel: (0.0 - 5.0),
+			offered_accel: Acceleration.metres_a_step_each_step(0.0 - 5.0),
 		},
 	),
 	Throttle.cat_gate(
@@ -222,7 +223,7 @@ cat_got = [
 		}),
 		{
 			road_segment: cat_seg,
-			offered_accel: 0.01,
+			offered_accel: Acceleration.metres_a_step_each_step(0.01),
 		},
 	),
 	Throttle.cat_gate(
@@ -233,7 +234,7 @@ cat_got = [
 		}),
 		{
 			road_segment: cat_seg,
-			offered_accel: (0.0 - 5.0),
+			offered_accel: Acceleration.metres_a_step_each_step(0.0 - 5.0),
 		},
 	),
 	Throttle.cat_gate(
@@ -244,10 +245,10 @@ cat_got = [
 		}),
 		{
 			road_segment: cat_seg,
-			offered_accel: 0.01,
+			offered_accel: Acceleration.metres_a_step_each_step(0.01),
 		},
 	),
-]
+].map(Acceleration.to_metres_a_step_each_step)
 
 cat_want : List(F64)
 cat_want = [
@@ -297,7 +298,7 @@ brake_got = (
 			}),
 			{
 				arc_outcome: outcome(ShoulderLeft),
-				offered_accel: 0.01,
+				offered_accel: Acceleration.metres_a_step_each_step(0.01),
 			},
 		)
 		near_off = Throttle.shoulder_brake_at(
@@ -308,7 +309,7 @@ brake_got = (
 			}),
 			{
 				arc_outcome: soon,
-				offered_accel: 0.01,
+				offered_accel: Acceleration.metres_a_step_each_step(0.01),
 			},
 		)
 		already = Throttle.shoulder_brake_at(
@@ -319,13 +320,13 @@ brake_got = (
 			}),
 			{
 				arc_outcome: outcome(ShoulderLeft),
-				offered_accel: (0.0 - 9.0),
+				offered_accel: Acceleration.metres_a_step_each_step(0.0 - 9.0),
 			},
 		)
 		[
-			(far < 0.0),
+			(far < Acceleration.steady),
 			(far > near_off),
-			(already < (0.0 - 8.999)),
+			(already < Acceleration.metres_a_step_each_step(0.0 - 8.999)),
 		]
 	}
 )
@@ -353,9 +354,9 @@ zero_frames_got = [
 			}),
 			{
 				arc_outcome: instant,
-				offered_accel: 0.01,
+				offered_accel: Acceleration.metres_a_step_each_step(0.01),
 			},
-		) < 0.0
+		) < Acceleration.steady
 	),
 ]
 
@@ -447,7 +448,7 @@ clamp_got = [
 clamp_want : List(F64)
 clamp_want = [1.0, 2.5, 0.0, 0.222, 0.5, 0.1]
 
-decide : CentredRider -> F64
+decide : CentredRider -> Acceleration
 decide = |centred_rider| Throttle.get_forward_accel_decel(rider(centred_rider), seg)
 
 whole_got : List(F64)
@@ -467,12 +468,12 @@ whole_got = [
 		speed: Speed.at_rest,
 		tilt_radians: 0.0,
 	}),
-]
+].map(Acceleration.to_metres_a_step_each_step)
 
 whole_want : List(F64)
 whole_want = [0.01, 0.0, 0.01]
 
-wide : F64 -> F64
+wide : F64 -> Acceleration
 wide = |tilt| Throttle.get_forward_accel_decel(
 	rider_at({
 		across: 100.0,
@@ -488,7 +489,7 @@ tilt_got = [
 	wide((0.0 - 0.001)),
 	wide((0.0 - tilt_hold)),
 	wide(((0.0 - tilt_hold) - 0.5)),
-]
+].map(Acceleration.to_metres_a_step_each_step)
 
 tilt_want : List(F64)
 tilt_want = [0.01, 0.0, 0.0]
@@ -500,21 +501,21 @@ compose_got = [
 			along: 0.0,
 			speed: Speed.metres_a_step(0.3),
 			tilt_radians: (tilt_hold - 0.001),
-		}) < 0.0
+		}) < Acceleration.steady
 	),
 	(
 		decide({
 			along: 0.0,
 			speed: Speed.metres_a_step(0.3),
 			tilt_radians: 0.001,
-		}) > 0.0
+		}) > Acceleration.steady
 	),
 	(
 		decide({
 			along: 0.0,
 			speed: Speed.metres_a_step(0.3),
 			tilt_radians: (0.0 - (tilt_hold - 0.001)),
-		}) < 0.0
+		}) < Acceleration.steady
 	),
 ]
 

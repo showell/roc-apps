@@ -4,6 +4,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Acceleration
 import Angle
 import Arc
 import Bike
@@ -199,7 +200,7 @@ step_got = (
 				tilt_radians: 0.0,
 				speed: Pose.v_base,
 			}),
-			{ lean_step: Angle.upright, accel: 0.0 },
+			{ lean_step: Angle.upright, accel: Acceleration.steady },
 		)
 		b = Bike.simulate_rider_step(
 			rider({
@@ -207,7 +208,7 @@ step_got = (
 				tilt_radians: 0.0,
 				speed: Pose.v_base,
 			}),
-			{ lean_step: Angle.Lean.radians(0.5), accel: 0.25 },
+			{ lean_step: Angle.Lean.radians(0.5), accel: Acceleration.metres_a_step_each_step(0.25) },
 		)
 		[
 			a.across,

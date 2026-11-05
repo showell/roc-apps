@@ -1,6 +1,7 @@
 ## The rider's decisions and one step of the ride: how far to lean and how
 ## hard to accelerate, then the move, the crossing onto the next segment, the
 ## stop at the route's end, and where the rider looks.
+import Acceleration
 import Angle
 import Bike
 import lib.DeviceMath
@@ -15,7 +16,7 @@ import VehicleLimits
 import World
 
 Rider :: [].{
-	Decision : { tilt_step : Angle.Lean, accel : F64 }
+	Decision : { tilt_step : Angle.Lean, accel : Acceleration }
 
 	## A rider this slow near the route's end stops there.
 	stopping_speed : Speed

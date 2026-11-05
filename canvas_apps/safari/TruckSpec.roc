@@ -24,9 +24,9 @@ fixed_want = [500.0, 100.0, 0.8, 60.0, 2.75]
 
 ratio_got : List(F64)
 ratio_got = [
-	Truck.chase_acceleration,
+	Truck.chase_acceleration.to_metres_a_step_each_step(),
 	Truck.top_speed.to_metres_a_step(),
-	(Truck.chase_acceleration / VehicleLimits.a_accel),
+	(Truck.chase_acceleration.to_metres_a_step_each_step() / VehicleLimits.a_accel.to_metres_a_step_each_step()),
 	(Truck.top_speed.to_metres_a_step() / VehicleLimits.v_max.to_metres_a_step()),
 ]
 
@@ -150,7 +150,7 @@ free_got : List(F64)
 free_got = [
 	free.speed.to_metres_a_step(),
 	free.route_position,
-	free.speed.change_from(Speed.metres_a_step(0.3)),
+	free.speed.change_from(Speed.metres_a_step(0.3)).to_metres_a_step_each_step(),
 ]
 
 free_want : List(F64)
@@ -188,7 +188,7 @@ ahead_got : List(F64)
 ahead_got = [
 	ahead.speed.to_metres_a_step(),
 	ahead.route_position,
-	behind.speed.change_from(ahead.speed),
+	behind.speed.change_from(ahead.speed).to_metres_a_step_each_step(),
 ]
 
 ahead_want : List(F64)

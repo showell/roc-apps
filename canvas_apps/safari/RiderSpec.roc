@@ -78,7 +78,7 @@ step_got = (
 		[
 			(d.tilt_step.abs() <= LeanSearch.max_tilt_correction),
 			(held.tilt_step.abs() <= LeanSearch.max_tilt_correction),
-			(d.accel <= (VehicleLimits.a_accel + F64.from_bits(4517329193108106637))),
+			(d.accel.to_metres_a_step_each_step() <= (VehicleLimits.a_accel.to_metres_a_step_each_step() + F64.from_bits(4517329193108106637))),
 		]
 	}
 )
@@ -110,7 +110,7 @@ leaned_got = (
 			),
 			seg,
 		)
-		[(F64.to_bits(d.accel) == F64.to_bits(same))]
+		[(F64.to_bits(d.accel.to_metres_a_step_each_step()) == F64.to_bits(same.to_metres_a_step_each_step()))]
 	}
 )
 
