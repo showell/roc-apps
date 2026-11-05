@@ -386,7 +386,10 @@ planted cases, and let the compiler judge any rewrite.
   reformat is (§5). The message names each recipe and what it changed.
   After it, `roc check` is clean (zero ✗, zero ●) and the gate passes; for
   a rewrite that shouldn't change the program, `same_code.shale` shows the
-  same machine code. What a recipe can't rewrite (a function type's
+  same machine code. `methods.shale` needs roc-types built at the repo's
+  pin: with `types=0` it can change behaviour while `roc check` stays clean
+  (a `U64.to_str(n)` became a call that printed `0.0`), so never run it that
+  way. What a recipe can't rewrite (a function type's
   arguments, which `roc_commas` can't stack) is fixed by hand, here with a
   record.
 - **The recipes.** `name_hunt` (awkward names, tense, container words),

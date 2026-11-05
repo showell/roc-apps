@@ -825,7 +825,8 @@ is the base; these rules sharpen it.
 - **Stack anything with three or more parts, one per line, with a trailing
   comma**: a list, a record, a tuple, a call's arguments, a tag's payload.
   Three things on one line are hard to scan. A line over about 100 columns
-  gets stacked too. A type annotation's arguments can't be stacked (`roc fmt`
+  gets stacked too, unless a string literal is all that makes it long: Roc
+  has no short way to split a string, and frozen text reads better whole. A type annotation's arguments can't be stacked (`roc fmt`
   refuses the trailing comma there), so a signature with three or more
   arguments [takes a record](#name-what-travels-together) instead.
 
@@ -948,7 +949,8 @@ is the base; these rules sharpen it.
   - Shale's `cookbook/roc/nest_depth.shale`: a call nested three deep or
     more, read inside out ([layout](#layout-and-formatting));
   - Shale's `cookbook/roc/stack.shale`: three or more parts on one line,
-    or a line over 100 columns;
+    or a line over 100 columns (`long`; one that only a string literal
+    makes long is reported apart as `wide string`, and no gate holds it);
   - Shale's `cookbook/roc/methods.shale`: an old-style `Module.fn(x, ...)`
     call the compiler accepts as `x.fn(...)`, rewritten by `apply=1`
     ([methods](#make-wrong-values-impossible-to-build)).
