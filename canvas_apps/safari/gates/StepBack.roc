@@ -19,14 +19,14 @@ main! = |_args| {
 	var $out = ""
 	var $bad = 0
 	for steps in [10, 1000, 2047, 2048, 2049, 3000, 5000] {
-		var $tour = Tour.init
+		var $tour = Tour.initial
 		var $k = 0
 		while $k < steps {
 			$tour = Tour.advance($tour)
 			$k = $k + 1
 		}
-		here = $tour.moment.clock
-		there = Tour.back($tour).moment.clock
+		here = $tour.instant.clock
+		there = Tour.back($tour).instant.clock
 		ok = there.next() == here
 		$bad = if ok {
 			$bad

@@ -76,11 +76,7 @@ corners_ahead = |count|
 	)
 
 patch_shapes : List(Geom.RiderPoint) -> List(Shapes.Shape)
-patch_shapes = |corners| Ground.draw({
-	corners,
-	color: 3112588,
-	cam_focal: 685.5110432362151,
-})
+patch_shapes = |corners| Ground.draw({ corners, color: 3112588 }, 685.5110432362151)
 
 count_got : List(I64)
 count_got = [

@@ -8,6 +8,9 @@ app [main!] {
 import Angle
 import CritterSighting
 import Frame
+import Across
+import Along
+import Distance
 import Grade
 import World
 
@@ -19,10 +22,10 @@ reach_want = [3, 5]
 
 origin : Frame.Pose
 origin = {
-	along: 0.0,
-	across: 0.0,
+	along: Along.metres(0.0),
+	across: Across.metres(0.0),
 	yaw: Angle.straight_ahead,
-	half_width: 2.0,
+	half_width: Distance.metres(2.0),
 }
 
 ## The first six segments, chained in order.

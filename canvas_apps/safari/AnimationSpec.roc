@@ -8,6 +8,9 @@ app [main!] {
 import Animation
 import Beats
 import Fraction
+import Distance
+import Across
+import Along
 import Grade
 import Speed
 
@@ -18,11 +21,15 @@ stage_numbers = |stage|
 	match stage {
 		Waiting => [0.0, 0.0]
 		Playing(progress) => [1.0, progress.to_f64()]
-		Past(metres) => [2.0, metres]
+		Past(beyond) => [2.0, beyond.to_metres()]
 	}
 
 gap_stage : F64 -> Animation.Stage
-gap_stage = |gap| Animation.over_gap({ starts_at: 60.0, ends_at: 20.0 }, gap)
+gap_stage = |gap|
+	Animation.over_gap(
+		{ starts_at: Distance.metres(60.0), ends_at: Distance.metres(20.0) },
+		Distance.metres(gap),
+	)
 
 over_gap_got : List(F64)
 over_gap_got = [
@@ -56,8 +63,8 @@ over_gap_want = [
 beat_stage : F64, F64 -> Animation.Stage
 beat_stage = |gap, speed|
 	Animation.over_beats(
-		{ length: Beats.of(10.0), buffer: 3.0 },
-		{ gap, speed: Speed.metres_a_step(speed) },
+		{ length: Beats.of(10.0), buffer: Distance.metres(3.0) },
+		{ gap: Distance.metres(gap), speed: Speed.metres_a_step(speed) },
 	)
 
 over_beats_got : List(F64)
@@ -125,8 +132,8 @@ Note : [First, Second, Third, Fourth, BeforeIt, AfterIt]
 
 at_spot : F64 -> Animation.Spot
 at_spot = |across| {
-	along: 0.0,
-	across,
+	along: Along.metres(0.0),
+	across: Across.metres(across),
 	lift: 0.0,
 }
 
@@ -183,7 +190,7 @@ path_cuts_got = [
 	8.0,
 	8.01,
 	10.0,
-].map(|beat| cut_timeline.at_beat(Beats.of(beat)).spot.across)
+].map(|beat| cut_timeline.at_beat(Beats.of(beat)).spot.across.to_metres())
 
 path_cuts_want : List(F64)
 path_cuts_want = [
@@ -197,25 +204,25 @@ path_cuts_want = [
 	3.0,
 ]
 
-## The moment at each stage: a stage's rest is the timeline's own, and playing
+## The instant at each stage: a stage's rest is the timeline's own, and playing
 ## reaches a beat by `progress` times the timeline's length.
-stage_moment_got : List(Bool)
-stage_moment_got = [
-	cut_timeline.moment(Waiting).pose == BeforeIt,
-	cut_timeline.moment(Past(5.0)).pose == AfterIt,
-	cut_timeline.moment(Playing(Fraction.zero)).pose == First,
-	cut_timeline.moment(Playing(Fraction.of(0.3))).pose == Second,
-	cut_timeline.moment(Playing(Fraction.whole)).pose == Fourth,
+stage_instant_got : List(Bool)
+stage_instant_got = [
+	cut_timeline.instant(Waiting).pose == BeforeIt,
+	cut_timeline.instant(Past(Distance.metres(5.0))).pose == AfterIt,
+	cut_timeline.instant(Playing(Fraction.zero)).pose == First,
+	cut_timeline.instant(Playing(Fraction.of(0.3))).pose == Second,
+	cut_timeline.instant(Playing(Fraction.whole)).pose == Fourth,
 ]
 
-stage_moment_want : List(Bool)
-stage_moment_want = List.repeat(True, 5)
+stage_instant_want : List(Bool)
+stage_instant_want = List.repeat(True, 5)
 
 stage_spot_got : List(F64)
 stage_spot_got = [
-	cut_timeline.moment(Waiting).spot.across,
-	cut_timeline.moment(Past(5.0)).spot.across,
-	cut_timeline.moment(Playing(Fraction.of(0.5))).spot.across,
+	cut_timeline.instant(Waiting).spot.across.to_metres(),
+	cut_timeline.instant(Past(Distance.metres(5.0))).spot.across.to_metres(),
+	cut_timeline.instant(Playing(Fraction.of(0.5))).spot.across.to_metres(),
 ]
 
 stage_spot_want : List(F64)
@@ -280,15 +287,15 @@ path_timeline = |path|
 
 start_spot : Animation.Spot
 start_spot = {
-	along: 10.0,
-	across: 20.0,
+	along: Along.metres(10.0),
+	across: Across.metres(20.0),
 	lift: 30.0,
 }
 
 end_spot : Animation.Spot
 end_spot = {
-	along: 18.0,
-	across: 4.0,
+	along: Along.metres(18.0),
+	across: Across.metres(4.0),
 	lift: 46.0,
 }
 
@@ -297,8 +304,8 @@ spot_numbers : Animation.Path, F64 -> List(F64)
 spot_numbers = |path, beat| {
 	spot = path_timeline(path).at_beat(Beats.of(beat)).spot
 	[
-		spot.along,
-		spot.across,
+		spot.along.to_metres(),
+		spot.across.to_metres(),
 		spot.lift,
 	]
 }
@@ -401,8 +408,8 @@ main! = |_args| {
 		}),
 		Grade.bools({
 			name: "an-stage     ",
-			got: stage_moment_got,
-			want: stage_moment_want,
+			got: stage_instant_got,
+			want: stage_instant_want,
 		}),
 		Grade.reals({
 			name: "an-stage-spot",

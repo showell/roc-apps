@@ -6,27 +6,32 @@ app [main!] {
 
 import DepthSort
 import Geom
+import Across
+import Along
 import Grade
 import TruckBody
 import TruckLights
 import TruckShape
 import Screen
 
-box_at : { along : F64, across : F64 } -> List(F64)
+box_at : { along : Along, across : Across } -> List(F64)
 box_at = |center| {
 	box = TruckShape.truck_box(center)
 	[
-		box.rear,
-		box.trailer_front,
-		box.nose,
-		box.roof_front,
-		box.left,
-		box.right,
+		box.rear.to_metres(),
+		box.trailer_front.to_metres(),
+		box.nose.to_metres(),
+		box.roof_front.to_metres(),
+		box.left.to_metres(),
+		box.right.to_metres(),
 	]
 }
 
 box_got : List(F64)
-box_got = List.concat(box_at({ along: 0.0, across: 0.0 }), box_at({ along: 40.0, across: 2.0 }))
+box_got = List.concat(
+	box_at({ along: Along.metres(0.0), across: Across.metres(0.0) }),
+	box_at({ along: Along.metres(40.0), across: Across.metres(2.0) }),
+)
 
 box_want : List(F64)
 box_want = [
@@ -46,21 +51,24 @@ box_want = [
 
 bottom_got : List(F64)
 bottom_got = [
-	TruckShape.tire_radius,
-	TruckShape.trailer_bottom,
-	TruckShape.cab_bottom,
-	TruckShape.truck_height,
-	TruckShape.truck_width,
-	TruckShape.trailer_length,
+	TruckShape.tire_radius.to_metres(),
+	TruckShape.trailer_bottom.to_metres(),
+	TruckShape.cab_bottom.to_metres(),
+	TruckShape.truck_height.to_metres(),
+	TruckShape.truck_width.to_metres(),
+	TruckShape.trailer_length.to_metres(),
 ]
 
 bottom_want : List(F64)
 bottom_want = [0.5, 1.12, 0.5, 3.6, 2.4, 8.4]
 
+axles_at : { along : Along, across : Across } -> List(F64)
+axles_at = |center| TruckBody.axles(TruckShape.truck_box(center)).map(Along.to_metres)
+
 axles_got : List(F64)
 axles_got = List.concat(
-	TruckBody.axles(TruckShape.truck_box({ along: 0.0, across: 0.0 })),
-	TruckBody.axles(TruckShape.truck_box({ along: 40.0, across: 2.0 })),
+	axles_at({ along: Along.metres(0.0), across: Across.metres(0.0) }),
+	axles_at({ along: Along.metres(40.0), across: Across.metres(2.0) }),
 )
 
 axles_want : List(F64)
@@ -81,8 +89,8 @@ axle_count_got : List(I64)
 axle_count_got = [
 	TruckBody.axles(
 		TruckShape.truck_box({
-			along: 0.0,
-			across: 0.0,
+			along: Along.metres(0.0),
+			across: Across.metres(0.0),
 		}),
 	).len().to_i64_wrap(),
 ]

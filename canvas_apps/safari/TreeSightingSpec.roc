@@ -7,6 +7,9 @@ app [main!] {
 import Angle
 import DepthSort
 import Frame
+import Distance
+import Across
+import Along
 import Grade
 import Scenery
 import TreeSighting
@@ -21,18 +24,18 @@ segs = [
 
 origin : Frame.Pose
 origin = {
-	along: 0.0,
-	across: 0.0,
+	along: Along.metres(0.0),
+	across: Across.metres(0.0),
 	yaw: Angle.straight_ahead,
-	half_width: 2.0,
+	half_width: Distance.metres(2.0),
 }
 
 up_road : Frame.Pose
 up_road = {
-	along: 100.0,
-	across: 0.0,
+	along: Along.metres(100.0),
+	across: Across.metres(0.0),
 	yaw: Angle.straight_ahead,
-	half_width: 2.0,
+	half_width: Distance.metres(2.0),
 }
 
 ## The first three segments, seen from `pose` through a camera of focal
@@ -56,10 +59,10 @@ green_tree_at : F64 -> { position : Frame.ChainPosition, tree : Scenery.Tree }
 green_tree_at = |along| {
 	position: Frame.ChainPosition.first,
 	tree: {
-		along,
-		across: 3.5,
+		along: Along.metres(along),
+		across: Across.metres(3.5),
 		color: 1858082,
-		height: 5.85,
+		height: Distance.metres(5.85),
 	},
 }
 
@@ -82,7 +85,7 @@ one_got : List(F64)
 one_got = [
 	lone_tree.right,
 	lone_tree.forward,
-	lone_tree.height,
+	lone_tree.height.to_metres(),
 ]
 
 one_want : List(F64)
@@ -145,7 +148,7 @@ order_want = [
 ]
 
 height_got : List(F64)
-height_got = [planted_tree(0).height, planted_tree(2).height]
+height_got = [planted_tree(0).height.to_metres(), planted_tree(2).height.to_metres()]
 
 height_want : List(F64)
 height_want = [5.85, 4.5]

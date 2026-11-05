@@ -51,7 +51,7 @@ main! = |args| {
 			Ok(text) => I64.from_str(text) ?? crash "RasterFrame: steps must be a whole number"
 			Err(OutOfBounds) => 0
 		}
-	tour = ride_to(Tour.init, steps)
+	tour = ride_to(Tour.initial, steps)
 	pixels = SafariFrame.paint({
 		shapes: Tour.shapes(tour),
 		roll: Tour.roll(tour),

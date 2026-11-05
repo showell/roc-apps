@@ -4,6 +4,7 @@
 ## A cat in the lane stops the rider opening the throttle, without braking, and
 ## draws their eye. A bird asks nothing. The pigs' gaze is no crossing, and is
 ## Gaze's.
+import Along
 import Attention
 import Cat
 import Speed
@@ -18,14 +19,14 @@ CrossingReaction :: [].{
 	## The reaction to `segment`'s crossing of a rider on that segment.
 	reaction_to : World.Segment,
 	{
-		along : F64,
+		along : Along,
 		speed : Speed,
 		..others,
 	} -> CrossingReaction.Reaction
 	reaction_to = |segment, rider|
 		match segment.crossing {
 			CatCrosses(crossing) => {
-				approach = { gap: crossing.along - rider.along, speed: rider.speed }
+				approach = { gap: crossing.along.distance_from(rider.along), speed: rider.speed }
 				{
 					throttle: if (Cat.is_in_danger(approach)) NoAcceleration else MayAccelerate,
 					eye_pull: Cat.focus(approach),

@@ -6,6 +6,7 @@ import BirdFlight
 import BirdStills
 import Camera
 import Critter
+import Distance
 import lib.Shapes
 
 RocBird :: [].{
@@ -15,17 +16,17 @@ RocBird :: [].{
 	PlacedBird : {
 		right : F64,
 		forward : F64,
-		lift : F64,
+		lift : Distance,
 		pose : BirdFlight.Pose,
 	}
 
-	## How tall a bird stands, in metres.
-	bird_height : F64
-	bird_height = 2.2
+	## How tall a bird stands.
+	bird_height : Distance
+	bird_height = Distance.metres(2.2)
 
 	## How tall a bird `forward` metres ahead is on screen.
 	height_px : { forward : F64, cam_focal : F64 } -> F64
-	height_px = |{ forward, cam_focal }| (bird_height / forward) * cam_focal
+	height_px = |{ forward, cam_focal }| (bird_height.to_metres() / forward) * cam_focal
 
 	## A bird on screen, its feet where it is. Its still is unflipped: a bird
 	## from a left-hand tree crosses the road toward +x, the way its beak points.
@@ -35,7 +36,7 @@ RocBird :: [].{
 			{
 				right: bird.right,
 				forward: bird.forward,
-				height: bird.lift,
+				height: bird.lift.to_metres(),
 			},
 			cam_focal,
 		)

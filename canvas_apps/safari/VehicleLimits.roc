@@ -2,6 +2,7 @@
 # and this file is edited here (safari/README.md).
 import Acceleration
 import Angle
+import Distance
 import Num_
 import Speed
 import lib.Trig
@@ -17,13 +18,13 @@ VehicleLimits :: [].{
 	v_max : Speed
 	v_max = Speed.metres_a_step(2.5)
 
-	approach_intersection_dist : F64
-	approach_intersection_dist = 60.0
+	approach_intersection_dist : Distance
+	approach_intersection_dist = Distance.metres(60.0)
 
 	## The braking for a turn is worked out over the distance left to it, so a
 	## turn closer than this counts as reached, and no division is by zero.
-	least_braking_distance : F64
-	least_braking_distance = 0.000001
+	least_braking_distance : Distance
+	least_braking_distance = Distance.metres(0.000001)
 
 	## The speed a turn of this size can be taken at, to the right or the left
 	## alike: a caller passes the turn's `abs`.
@@ -74,7 +75,7 @@ VehicleLimits :: [].{
 
 expect VehicleLimits.a_accel.to_metres_a_step_each_step() == 0.01
 expect VehicleLimits.v_max.to_metres_a_step() == 2.5
-expect VehicleLimits.approach_intersection_dist == 60.0
+expect VehicleLimits.approach_intersection_dist.to_metres() == 60.0
 
 ## The speed for a turn of this many degrees.
 speed_for_turn : F64 -> F64

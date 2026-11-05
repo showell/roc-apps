@@ -1,6 +1,8 @@
 ## The motorcycle's physics for one step. The lean steers the bike, and it
 ## moves along the middle of the step's turn.
 import Acceleration
+import Across
+import Along
 import Angle
 import Speed
 import lib.Trig
@@ -17,8 +19,8 @@ Bike :: [].{
 	## What a physics step reads and writes. It is open so that a caller's
 	## larger record passes through a step with its other fields kept.
 	Motion(others) : {
-		along : F64,
-		across : F64,
+		along : Along,
+		across : Across,
 		yaw : Angle.Turn,
 		speed : Speed,
 		tilt : Angle.Lean,
@@ -36,13 +38,13 @@ Bike :: [].{
 	simulate_rider_step = |s, { lean_step, accel }| {
 		tilt = s.tilt.plus(lean_step)
 		speed = s.speed.accelerated_by(accel)
-		step_length = speed.to_metres_a_step()
+		step_length = speed.step_length()
 		turn = tilt.steer(yaw_per_tilt)
 		mid = s.yaw.plus(turn.times(0.5)).to_radians()
 		{
 			..s,
-			along: s.along + step_length * Trig.r_cos(mid),
-			across: s.across + step_length * Trig.r_sin(mid),
+			along: s.along.plus(step_length.times(Trig.r_cos(mid))),
+			across: s.across.plus(step_length.times(Trig.r_sin(mid))),
 			yaw: s.yaw.plus(turn),
 			speed,
 			tilt,
@@ -63,8 +65,8 @@ expect Bike.max_lean.to_radians() == 0.3490658503988659
 ## A rider well along a segment, leaning a little to the right.
 riding = {
 	segment: 3,
-	along: 120.5,
-	across: 2.25,
+	along: Along.metres(120.5),
+	across: Across.metres(2.25),
 	yaw: Angle.Turn.radians(0.375),
 	speed: Speed.metres_a_step(0.8),
 	tilt: Angle.Lean.radians(0.125),
@@ -134,18 +136,18 @@ expect third_step.segment == 3
 # Each is within 1e-9 of its want, scaled up by a want past 1.
 expect
 	[
-		(first_step.along, 121.25108639750266),
-		(first_step.across, 2.5532642799382796),
-		(second_step.along, 122.00167174017032),
-		(second_step.across, 2.8708278851774045),
-		(third_step.along, 122.7472448817898),
-		(third_step.across, 3.1999869508214647),
+		(first_step.along.to_metres(), 121.25108639750266),
+		(first_step.across.to_metres(), 2.5532642799382796),
+		(second_step.along.to_metres(), 122.00167174017032),
+		(second_step.across.to_metres(), 2.8708278851774045),
+		(third_step.along.to_metres(), 122.7472448817898),
+		(third_step.across.to_metres(), 3.1999869508214647),
 	].all(|(got, want)| (got - want).abs() <= 0.000000001 * want.abs().max(1.0))
 
 expect {
 	at_start = {
-		along: 0.0,
-		across: 0.0,
+		along: Along.start,
+		across: Across.middle,
 		yaw: Angle.straight_ahead,
 		speed: Speed.metres_a_step(0.3),
 		tilt: Angle.upright,
@@ -160,7 +162,7 @@ expect {
 		},
 	)
 	[
-		a.across,
+		a.across.to_metres(),
 		a.yaw.to_radians(),
 		a.heading.to_radians(),
 		a.tilt.to_radians(),
@@ -187,8 +189,8 @@ expect {
 
 probe = {
 	segment: 7,
-	along: 11.0,
-	across: 2.5,
+	along: Along.metres(11.0),
+	across: Across.metres(2.5),
 	yaw: Angle.Turn.radians(0.75),
 	speed: Speed.metres_a_step(3.25),
 	tilt: Angle.Lean.radians(0.125),
@@ -198,8 +200,8 @@ probe = {
 }
 
 numbers_of = |s| [
-	s.along,
-	s.across,
+	s.along.to_metres(),
+	s.across.to_metres(),
 	s.yaw.to_radians(),
 	s.speed.to_metres_a_step(),
 	s.tilt.to_radians(),

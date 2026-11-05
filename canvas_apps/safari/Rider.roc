@@ -2,6 +2,8 @@
 ## hard to accelerate, then the move, the crossing onto the next segment, the
 ## stop at the route's end, and where the rider looks.
 import Acceleration
+import Across
+import Along
 import Angle
 import Bike
 import lib.DeviceMath
@@ -40,7 +42,7 @@ Rider :: [].{
 	rider_state_for_next_segment = |rs, segs| (
 		{
 			seg = rs.segment.segment_in(segs)
-			hw = (Scenery.lane_width / 2.0)
+			hw = Scenery.lane_half_width.to_metres()
 			next =
 				match seg.ending {
 					Continues({ next: index }) => index
@@ -49,19 +51,19 @@ Rider :: [].{
 			theta = seg.exit_turn.to_radians()
 			c = Trig.r_cos(theta)
 			s = Trig.r_sin(theta)
-			da = (rs.along - (seg.length + (hw * DeviceMath.real_abs(s))))
+			da = (rs.along.to_metres() - (seg.length.to_metres() + (hw * DeviceMath.real_abs(s))))
 			corner_shift = (hw * (1.0 - c))
 			dx =
 				if seg.exit_turn.is_right() {
-					rs.across - corner_shift
+					rs.across.to_metres() - corner_shift
 				} else {
-					rs.across + corner_shift
+					rs.across.to_metres() + corner_shift
 				}
 			{
 				..rs,
 				segment: next,
-				along: ((c * da) + (s * dx)),
-				across: (((0.0 - s) * da) + (c * dx)),
+				along: Along.metres((c * da) + (s * dx)),
+				across: Across.metres(((0.0 - s) * da) + (c * dx)),
 				yaw: rs.yaw.minus(seg.exit_turn),
 				gaze_yaw: Angle.straight_ahead,
 			}
@@ -71,16 +73,17 @@ Rider :: [].{
 	finish_clamp : Pose.RiderState, World.Segment -> Pose.RiderState
 	finish_clamp = |moved, seg| (
 		{
-			in_zone = ((seg.length - moved.along) < VehicleLimits.approach_intersection_dist)
+			end = Along.at(seg.length)
+			in_zone = end.distance_from(moved.along) < VehicleLimits.approach_intersection_dist
 			(
-				if moved.along >= seg.length {
-					stopped_at(moved, seg.length)
+				if moved.along >= end {
+					stopped_at(moved, end)
 				} else {
 					(
 						if in_zone {
 							(
 								if moved.speed < stopping_speed {
-									stopped_at(moved, seg.length)
+									stopped_at(moved, end)
 								} else {
 									moved
 								}
@@ -94,7 +97,7 @@ Rider :: [].{
 		}
 	)
 
-	stopped_at : Pose.RiderState, F64 -> Pose.RiderState
+	stopped_at : Pose.RiderState, Along -> Pose.RiderState
 	stopped_at = |s, at| {
 		..s,
 		along: at,
@@ -106,7 +109,7 @@ Rider :: [].{
 		{
 			on_next = rider_state_for_next_segment(moved, segs)
 			(
-				if DeviceMath.real_abs(on_next.across) < (Scenery.lane_width / 2.0) {
+				if on_next.across.distance_from_middle() < Scenery.lane_half_width {
 					on_next
 				} else {
 					moved
@@ -136,7 +139,7 @@ Rider :: [].{
 			seg = s.segment.segment_in(segs)
 			match seg.ending {
 				Continues(_) => False
-				Terminates => (s.along >= seg.length)
+				Terminates => (s.along >= Along.at(seg.length))
 			}
 		}
 	)
@@ -156,7 +159,7 @@ first_segment = World.route_segment(0)
 rider_at : F64, F64 -> Pose.RiderState
 rider_at = |along, tilt_radians| {
 	..Pose.initial_rider_state,
-	along,
+	along: Along.metres(along),
 	tilt: Angle.Lean.radians(tilt_radians),
 }
 
@@ -190,8 +193,8 @@ focused_rider = {
 at_seam : Pose.RiderState
 at_seam = {
 	..focused_rider,
-	along: 499.0,
-	across: 0.5,
+	along: Along.metres(499.0),
+	across: Across.metres(0.5),
 	yaw: Angle.Turn.radians(0.1),
 	speed: Speed.metres_a_step(1.25),
 	tilt: Angle.Lean.radians(0.05),
@@ -214,7 +217,7 @@ expect first_segment.ending == Continues({ next: World.SegmentIndex.number(1) })
 
 expect {
 	far = Rider.rider_state_for_next_segment(rider_at(100.0, 0.0), first_segments)
-	DeviceMath.real_abs(far.across) >= (Scenery.lane_width / 2.0)
+	far.across.distance_from_middle() >= Scenery.lane_half_width
 }
 
 expect Rider.resolve_cross(rider_at(100.0, 0.0), first_segments).segment.to_i64() == 0
@@ -228,21 +231,21 @@ clamped_at_finish = |along, speed|
 	Rider.finish_clamp(
 		{
 			..Pose.initial_rider_state,
-			along,
+			along: Along.metres(along),
 			speed: Speed.metres_a_step(speed),
 		},
 		last_seg,
 	)
 
-expect clamped_at_finish(300.0, 0.5).along == 300.0
+expect clamped_at_finish(300.0, 0.5).along.to_metres() == 300.0
 expect clamped_at_finish(300.0, 0.5).speed.to_metres_a_step() == 0.0
-expect clamped_at_finish(310.0, 0.5).along == 300.0
+expect clamped_at_finish(310.0, 0.5).along.to_metres() == 300.0
 expect clamped_at_finish(310.0, 0.5).speed.to_metres_a_step() == 0.0
-expect clamped_at_finish(290.0, 0.05).along == 300.0
+expect clamped_at_finish(290.0, 0.05).along.to_metres() == 300.0
 expect clamped_at_finish(290.0, 0.05).speed.to_metres_a_step() == 0.0
-expect clamped_at_finish(290.0, 0.5).along == 290.0
+expect clamped_at_finish(290.0, 0.5).along.to_metres() == 290.0
 expect clamped_at_finish(290.0, 0.5).speed.to_metres_a_step() == 0.5
-expect clamped_at_finish(100.0, 0.05).along == 100.0
+expect clamped_at_finish(100.0, 0.05).along.to_metres() == 100.0
 expect clamped_at_finish(100.0, 0.05).speed.to_metres_a_step() == 0.05
 
 expect Rider.is_finished({ ..rider_at(300.0, 0.0), speed: Speed.at_rest }, [last_seg])
@@ -253,10 +256,10 @@ expect !Rider.is_finished(rider_at(499.0, 0.0), first_segments)
 one_step_on : Pose.RiderState
 one_step_on = Rider.advance(Pose.initial_rider_state, first_segments)
 
-expect one_step_on.along > 0.0
+expect one_step_on.along > Along.start
 expect one_step_on.speed > Speed.at_rest
 expect one_step_on.segment == World.SegmentIndex.first
-expect DeviceMath.real_abs(one_step_on.across) < (Scenery.lane_width / 2.0)
+expect one_step_on.across.distance_from_middle() < Scenery.lane_half_width
 expect one_step_on.speed <= VehicleLimits.v_max
 
 # These are LeanSearch's search. They sit here because LeanSearch imports
@@ -267,7 +270,7 @@ best_lean : F64, F64 -> F64
 best_lean = |across, tilt_radians|
 	LeanSearch.best_tilt_correction({
 		..Pose.initial_rider_state,
-		across,
+		across: Across.metres(across),
 		tilt: Angle.Lean.radians(tilt_radians),
 	}).to_radians()
 

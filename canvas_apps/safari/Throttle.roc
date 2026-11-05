@@ -1,6 +1,7 @@
 # Throttle -- originally emitted from Codex by rocemit; the Roc is the program now
 # and this file is edited here (safari/README.md).
 import Acceleration
+import Along
 import Angle
 import Arc
 import CrossingReaction
@@ -34,7 +35,7 @@ Throttle :: [].{
 		},
 	| (
 		{
-			d = (seg.commit_along - state.along)
+			d = seg.commit_along.distance_from(state.along)
 			corner_a = (
 				if d <= VehicleLimits.least_braking_distance {
 					Acceleration.steady
@@ -214,7 +215,8 @@ Throttle :: [].{
 					Continues(_) => VehicleLimits.turn_speed(seg.exit_turn.abs())
 					Terminates => Speed.at_rest
 				}
-			near = ((seg.length - state.along) <= VehicleLimits.approach_intersection_dist)
+			left = Along.at(seg.length).distance_from(state.along)
+			near = left <= VehicleLimits.approach_intersection_dist
 			a1 = (
 				if near {
 					corner_brake(
@@ -265,7 +267,7 @@ cat_segment = World.route_segment(3)
 centred_rider : F64, F64 -> Pose.RiderState
 centred_rider = |along, speed| {
 	..Pose.initial_rider_state,
-	along,
+	along: Along.metres(along),
 	speed: Speed.metres_a_step(speed),
 }
 
@@ -307,13 +309,17 @@ expect gate_at({ road_segment: cat_segment, along: 120.0 }, 0.01) == 0.0
 expect gate_at({ road_segment: cat_segment, along: 120.0 }, -5.0) == -5.0
 expect gate_at({ road_segment: cat_segment, along: 0.0 }, 0.01) == 0.01
 
+## Throttle doesn't import Distance or Across, so these places and lengths come
+## from what it does see.
+across_at = |metres| Pose.initial_rider_state.across.plus(Speed.metres_a_step(metres).step_length())
+
 ## An arc that ends on `shoulder`.
 outcome : Arc.Shoulder -> Arc.ArcOutcome
 outcome = |shoulder| {
 	shoulder,
-	forward: 10.0,
+	forward: Arc.min_forward_progress,
 	crossed: False,
-	end_across: 0.0,
+	end_across: Pose.initial_rider_state.across,
 	frames: Arc.no_frames,
 }
 
@@ -359,7 +365,7 @@ expect
 expect {
 	at_once = {
 		..outcome(ShoulderLeft),
-		forward: 0.0,
+		forward: Arc.min_forward_progress.times(0.0),
 		frames: Arc.no_frames.times(0),
 	}
 	brake_for_arc(at_once, 0.01) < Acceleration.steady
@@ -404,7 +410,7 @@ wide_of_road = |tilt|
 	Throttle.get_forward_accel_decel(
 		{
 			..centred_rider(0.0, 0.3),
-			across: 100.0,
+			across: across_at(100.0),
 			tilt: Angle.Lean.radians(tilt),
 		},
 		first_segment,
@@ -436,7 +442,7 @@ arc_from : F64, F64 -> Arc.ArcOutcome
 arc_from = |across, tilt_radians|
 	Arc.project_arc({
 		..Pose.initial_rider_state,
-		across,
+		across: across_at(across),
 		tilt: Angle.Lean.radians(tilt_radians),
 	})
 
@@ -455,14 +461,14 @@ leaning = arc_from(0.0, 0.2)
 other_way : Arc.ArcOutcome
 other_way = arc_from(0.0, 0.0 - 0.2)
 
-expect straight.forward == 25.0
-expect straight.end_across == 0.0
+expect straight.forward.to_metres() == 25.0
+expect straight.end_across.to_metres() == 0.0
 expect straight.frames.to_f64() == 1000000000.0
-expect wide.forward == 25.0
-expect wide.end_across == 3.0
+expect wide.forward.to_metres() == 25.0
+expect wide.end_across.to_metres() == 3.0
 expect wide.frames.to_f64() == 1000000000.0
-expect stopped.forward == 0.0
-expect stopped.end_across == 0.0
+expect stopped.forward.to_metres() == 0.0
+expect stopped.end_across.to_metres() == 0.0
 expect stopped.frames.to_f64() == 1000000000.0
 
 expect straight.shoulder == ShoulderNone
@@ -480,11 +486,11 @@ expect leaning.frames < Arc.no_frames
 expect leaning.frames < Arc.turn_danger_steps
 expect leaning.frames.to_f64() > 0.0
 expect leaning.forward <= Arc.min_forward_progress
-expect leaning.end_across > 0.0
-expect other_way.end_across < 0.0
+expect leaning.end_across > Pose.initial_rider_state.across
+expect other_way.end_across < Pose.initial_rider_state.across
 expect other_way.frames < Arc.no_frames
 
 expect leaning.frames.to_f64() - other_way.frames.to_f64() == 0.0
-expect leaning.end_across + other_way.end_across == 0.0
+expect leaning.end_across.to_metres() + other_way.end_across.to_metres() == 0.0
 
-expect (leaning.forward - other_way.forward).abs() <= 0.000001
+expect leaning.forward.minus(other_way.forward).to_metres().abs() <= 0.000001

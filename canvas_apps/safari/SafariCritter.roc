@@ -1,46 +1,49 @@
 ## At a corner where the road turns, a safari animal stands on the outside of
 ## the bend, beyond the guard rail, and its baby stands in the middle of the
 ## road a little past the corner. Both face the way the road turns.
+import Across
+import Along
 import Angle
+import Distance
 import Scenery
 
 SafariCritter :: [].{
 
-	## A safari animal: its emoji, and how tall a grown one stands, in metres.
-	Species : { codepoint : I64, adult_height : F64 }
+	## A safari animal: its emoji, and how tall a grown one stands.
+	Species : { codepoint : I64, adult_height : Distance }
 
 	## How far beyond the guard rail the grown animal stands.
-	adult_rail_buffer : F64
-	adult_rail_buffer = 1.5
+	adult_rail_buffer : Distance
+	adult_rail_buffer = Distance.metres(1.5)
 
 	## A baby's height, as a fraction of its parent's.
 	baby_ratio : F64
 	baby_ratio = 0.5
 
 	## How far past the corner the baby stands.
-	baby_beyond : F64
-	baby_beyond = 14.0
+	baby_beyond : Distance
+	baby_beyond = Distance.metres(14.0)
 
 	## The animal a corner's creature is. A pond's ducks are placed with the
 	## pond, not here.
 	species_of : Scenery.Creature -> [Species(SafariCritter.Species), NoSpecies]
 	species_of = |creature|
 		match creature {
-			Elephant => Species({ codepoint: 128024, adult_height: 2.8 })
-			Giraffe => Species({ codepoint: 129426, adult_height: 4.5 })
-			Zebra => Species({ codepoint: 129427, adult_height: 1.6 })
-			Rhino => Species({ codepoint: 129423, adult_height: 2.2 })
+			Elephant => Species({ codepoint: 128024, adult_height: Distance.metres(2.8) })
+			Giraffe => Species({ codepoint: 129426, adult_height: Distance.metres(4.5) })
+			Zebra => Species({ codepoint: 129427, adult_height: Distance.metres(1.6) })
+			Rhino => Species({ codepoint: 129423, adult_height: Distance.metres(2.2) })
 			DuckPond => NoSpecies
 			NoCreature => NoSpecies
 		}
 
-	## The animal and its baby at a corner `corner_along` metres along its
-	## segment, on a road `lane_half_width` metres either side of its middle.
+	## The animal and its baby at a corner at `corner_along` on its segment, on
+	## a road `lane_half_width` either side of its middle.
 	corner_critters : {
 		creature : Scenery.Creature,
-		corner_along : F64,
+		corner_along : Along,
 		turn : Angle.Turn,
-		lane_half_width : F64,
+		lane_half_width : Distance,
 	} -> List(Scenery.Critter)
 	corner_critters = |
 		{
@@ -59,21 +62,21 @@ SafariCritter :: [].{
 					} else {
 						{ inward: (0.0 - 1.0), face_right: False }
 					}
-				clear_of_rail = (lane_half_width + adult_rail_buffer)
-				out_from_middle = (clear_of_rail + (species.adult_height / 2.0))
+				clear_of_rail = lane_half_width.plus(adult_rail_buffer)
+				out_from_middle = clear_of_rail.plus(species.adult_height.divided_by(2.0))
 				[
 					{
 						along: corner_along,
-						across: ((0.0 - inward) * out_from_middle),
+						across: Across.right_of_middle(out_from_middle.times(0.0 - inward)),
 						codepoint: species.codepoint,
 						height: species.adult_height,
 						face_right,
 					},
 					{
-						along: (corner_along + baby_beyond),
-						across: 0.0,
+						along: corner_along.plus(baby_beyond),
+						across: Across.middle,
 						codepoint: species.codepoint,
-						height: (species.adult_height * baby_ratio),
+						height: species.adult_height.times(baby_ratio),
 						face_right,
 					},
 				]
@@ -81,16 +84,28 @@ SafariCritter :: [].{
 		}
 }
 
-expect SafariCritter.species_of(Elephant) == Species({ codepoint: 128024, adult_height: 2.8 })
-expect SafariCritter.species_of(Giraffe) == Species({ codepoint: 129426, adult_height: 4.5 })
-expect SafariCritter.species_of(Zebra) == Species({ codepoint: 129427, adult_height: 1.6 })
-expect SafariCritter.species_of(Rhino) == Species({ codepoint: 129423, adult_height: 2.2 })
+expect
+	SafariCritter.species_of(Elephant)
+		== Species({ codepoint: 128024, adult_height: Distance.metres(2.8) })
+
+expect
+	SafariCritter.species_of(Giraffe)
+		== Species({ codepoint: 129426, adult_height: Distance.metres(4.5) })
+
+expect
+	SafariCritter.species_of(Zebra)
+		== Species({ codepoint: 129427, adult_height: Distance.metres(1.6) })
+
+expect
+	SafariCritter.species_of(Rhino)
+		== Species({ codepoint: 129423, adult_height: Distance.metres(2.2) })
+
 expect SafariCritter.species_of(DuckPond) == NoSpecies
 expect SafariCritter.species_of(NoCreature) == NoSpecies
 
-expect SafariCritter.adult_rail_buffer == 1.5
+expect SafariCritter.adult_rail_buffer.to_metres() == 1.5
 expect SafariCritter.baby_ratio == 0.5
-expect SafariCritter.baby_beyond == 14.0
+expect SafariCritter.baby_beyond.to_metres() == 14.0
 
 ## An animal and its baby at each of four corners, the first and third turning
 ## right and the second and fourth left.
@@ -98,32 +113,32 @@ all_four : List(Scenery.Critter)
 all_four = List.join([
 	SafariCritter.corner_critters({
 		creature: Elephant,
-		corner_along: 100.0,
+		corner_along: Along.metres(100.0),
 		turn: Angle.Turn.degrees(50.0),
-		lane_half_width: 2.0,
+		lane_half_width: Distance.metres(2.0),
 	}),
 	SafariCritter.corner_critters({
 		creature: Giraffe,
-		corner_along: 50.0,
+		corner_along: Along.metres(50.0),
 		turn: Angle.Turn.degrees(-70.0),
-		lane_half_width: 2.0,
+		lane_half_width: Distance.metres(2.0),
 	}),
 	SafariCritter.corner_critters({
 		creature: Zebra,
-		corner_along: 10.0,
+		corner_along: Along.metres(10.0),
 		turn: Angle.Turn.degrees(50.0),
-		lane_half_width: 2.5,
+		lane_half_width: Distance.metres(2.5),
 	}),
 	SafariCritter.corner_critters({
 		creature: Rhino,
-		corner_along: 0.0,
+		corner_along: Along.metres(0.0),
 		turn: Angle.Turn.degrees(-70.0),
-		lane_half_width: 2.0,
+		lane_half_width: Distance.metres(2.0),
 	}),
 ])
 
 expect
-	all_four.map(|critter| critter.across)
+	all_four.map(|critter| critter.across.to_metres())
 		== [
 			-4.9,
 			0.0,
@@ -136,7 +151,7 @@ expect
 		]
 
 expect
-	all_four.map(|critter| critter.along)
+	all_four.map(|critter| critter.along.to_metres())
 		== [
 			100.0,
 			114.0,
@@ -149,7 +164,7 @@ expect
 		]
 
 expect
-	all_four.map(|critter| critter.height)
+	all_four.map(|critter| critter.height.to_metres())
 		== [
 			2.8,
 			1.4,
@@ -192,9 +207,9 @@ corner_count : Scenery.Creature -> U64
 corner_count = |creature|
 	SafariCritter.corner_critters({
 		creature,
-		corner_along: 100.0,
+		corner_along: Along.metres(100.0),
 		turn: Angle.Turn.degrees(50.0),
-		lane_half_width: 2.0,
+		lane_half_width: Distance.metres(2.0),
 	}).len()
 
 expect corner_count(Elephant) == 2

@@ -6,6 +6,7 @@ app [main!] {
 
 import BirdStills
 import Camera
+import Distance
 import Grade
 import RocBird
 import ShapeRead
@@ -20,7 +21,7 @@ level_bird : RocBird.PlacedBird
 level_bird = {
 	right: 0.0,
 	forward: 110.0,
-	lift: Camera.eye_h,
+	lift: Distance.metres(Camera.eye_h),
 	pose: Perched,
 }
 
@@ -33,7 +34,7 @@ first_corner = |shapes| {
 
 height_got : List(F64)
 height_got = [
-	RocBird.bird_height,
+	RocBird.bird_height.to_metres(),
 	RocBird.height_px({ forward: 110.0, cam_focal: 500.0 }),
 	RocBird.height_px({ forward: 220.0, cam_focal: 500.0 }),
 	RocBird.height_px({ forward: 110.0, cam_focal: 1000.0 }),
@@ -57,7 +58,7 @@ moved_got = first_corner(
 		{
 			..level_bird,
 			right: 11.0,
-			lift: Camera.eye_h + 11.0,
+			lift: Distance.metres(Camera.eye_h + 11.0),
 		},
 		cam_focal,
 	),

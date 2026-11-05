@@ -2,6 +2,7 @@
 ## stands, how tall it is, which emoji it is and which way it faces.
 ## Billboards decides which critters become billboards: one behind the camera,
 ## or too small to see, is left out.
+import Distance
 import Geom
 import Lens
 
@@ -13,7 +14,7 @@ Billboards :: [].{
 	Billboard : {
 		right : F64,
 		forward : F64,
-		height : F64,
+		height : Distance,
 		codepoint : I64,
 		facing : Billboards.Facing,
 	}
@@ -29,10 +30,10 @@ Billboards :: [].{
 	min_critter_px : F64
 	min_critter_px = 2.0
 
-	## A critter of `height` metres at `at` in the rider's view.
+	## A critter of `height` at `at` in the rider's view.
 	sighting : {
 		at : Geom.RiderPoint,
-		height : F64,
+		height : Distance,
 		codepoint : I64,
 		facing : Billboards.Facing,
 	} -> Billboards.Sighting
@@ -46,7 +47,7 @@ Billboards :: [].{
 	|
 		if at.forward <= Geom.near_plane {
 			BehindCamera
-		} else if ((height / at.forward) * Lens.focal) < min_critter_px {
+		} else if ((height.to_metres() / at.forward) * Lens.focal) < min_critter_px {
 			TooSmall
 		} else {
 			InView({

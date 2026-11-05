@@ -9,6 +9,9 @@ import Angle
 import Cat
 import CatSighting
 import Frame
+import Distance
+import Across
+import Along
 import Grade
 import Speed
 import World
@@ -26,10 +29,10 @@ segs = [
 
 origin : Frame.Pose
 origin = {
-	along: 0.0,
-	across: 0.0,
+	along: Along.metres(0.0),
+	across: Across.metres(0.0),
 	yaw: Angle.straight_ahead,
-	half_width: 2.0,
+	half_width: Distance.metres(2.0),
 }
 
 ## The first three segments seen from the origin, at 1 m a step.
@@ -82,9 +85,9 @@ gap_got = [0.0, 120.0].join_map(
 		2,
 	].map(
 		|number| Frame.gap_to_segment(
-			{ ..from_origin.road, pose: { ..origin, along } },
+			{ ..from_origin.road, pose: { ..origin, along: Along.metres(along) } },
 			Frame.ChainPosition.number(number),
-		),
+		).to_metres(),
 	),
 )
 
@@ -101,7 +104,7 @@ gap_want = [
 ## The cats in view for a rider `along` metres into the first segment.
 riding : F64 -> List(CatSighting.CatItem)
 riding = |along| CatSighting.in_view(
-	{ ..from_origin, road: { ..from_origin.road, pose: { ..origin, along } } },
+	{ ..from_origin, road: { ..from_origin.road, pose: { ..origin, along: Along.metres(along) } } },
 	metre_a_step,
 )
 
@@ -125,7 +128,7 @@ count_want : List(I64)
 count_want = [1, 0, 0, 8]
 
 place_got : List(F64)
-place_got = [first_cat(300.0).height, first_cat(300.0).lift]
+place_got = [first_cat(300.0).height.to_metres(), first_cat(300.0).lift]
 
 place_want : List(F64)
 place_want = [1.7, 0.0]

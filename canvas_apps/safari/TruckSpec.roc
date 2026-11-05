@@ -4,6 +4,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Distance
 import Grade
 import Speed
 import Truck
@@ -12,10 +13,10 @@ import World
 
 fixed_got : List(F64)
 fixed_got = [
-	Truck.start_lead,
-	Truck.finish_lead,
+	Truck.start_lead.to_metres(),
+	Truck.finish_lead.to_metres(),
 	Truck.turn_caution,
-	Truck.brake_distance,
+	Truck.brake_distance.to_metres(),
 	Truck.top_speed.to_metres_a_step(),
 ]
 
@@ -37,7 +38,10 @@ ratio_want : List(F64)
 ratio_want = [0.011, 2.75, 1.1, 1.1]
 
 initial_got : List(F64)
-initial_got = [Truck.initial_truck.route_position, Truck.initial_truck.speed.to_metres_a_step()]
+initial_got = [
+	Truck.initial_truck.route_position.to_metres(),
+	Truck.initial_truck.speed.to_metres_a_step(),
+]
 
 initial_want : List(F64)
 initial_want = [500.0, 0.3]
@@ -48,14 +52,23 @@ initial_flag_got = [Truck.initial_truck.brake_lights == On]
 initial_flag_want : List(Bool)
 initial_flag_want = [False]
 
+## Where the schedule puts the truck, with the rider this far along a route
+## 1000 m long.
+schedule : F64 -> F64
+schedule = |rider_distance|
+	Truck.scheduled_position({
+		rider_distance: Distance.metres(rider_distance),
+		route_length: Distance.metres(1000.0),
+	}).to_metres()
+
 sched_got : List(F64)
 sched_got = [
-	Truck.scheduled_position({ rider_distance: 0.0, route_length: 1000.0 }),
-	Truck.scheduled_position({ rider_distance: 250.0, route_length: 1000.0 }),
-	Truck.scheduled_position({ rider_distance: 500.0, route_length: 1000.0 }),
-	Truck.scheduled_position({ rider_distance: 1000.0, route_length: 1000.0 }),
-	(Truck.scheduled_position({ rider_distance: 1000.0, route_length: 1000.0 }) - 1000.0),
-	(Truck.scheduled_position({ rider_distance: 0.0, route_length: 1000.0 }) - 0.0),
+	schedule(0.0),
+	schedule(250.0),
+	schedule(500.0),
+	schedule(1000.0),
+	(schedule(1000.0) - 1000.0),
+	(schedule(0.0) - 0.0),
 ]
 
 sched_want : List(F64)
@@ -66,15 +79,15 @@ one_seg = [World.route_segment(0)]
 
 turn_dist : List(World.Segment), F64 -> F64
 turn_dist = |segs, route_position| (
-	match Truck.next_turn(segs, route_position) {
-		TurnAhead(t) => t.distance
+	match Truck.next_turn(segs, Distance.metres(route_position)) {
+		TurnAhead(t) => t.distance.to_metres()
 		NoTurnAhead => (0.0 - 1.0)
 	}
 )
 
 turn_v : List(World.Segment), F64 -> F64
 turn_v = |segs, route_position| (
-	match Truck.next_turn(segs, route_position) {
+	match Truck.next_turn(segs, Distance.metres(route_position)) {
 		TurnAhead(t) => t.turn_speed.to_metres_a_step()
 		NoTurnAhead => (0.0 - 1.0)
 	}
@@ -138,21 +151,21 @@ chain_want = [
 free : Truck.TruckState
 free = Truck.advance(
 	{
-		route_position: 100.0,
+		route_position: Distance.metres(100.0),
 		speed: Speed.metres_a_step(0.3),
 		brake_lights: Off,
 	},
 	{
-		rider_distance: 0.0,
+		rider_distance: Distance.zero,
 		world: one_seg,
-		route_length: 1000.0,
+		route_length: Distance.metres(1000.0),
 	},
 )
 
 free_got : List(F64)
 free_got = [
 	free.speed.to_metres_a_step(),
-	free.route_position,
+	free.route_position.to_metres(),
 	free.speed.change_from(Speed.metres_a_step(0.3)).to_metres_a_step_each_step(),
 ]
 
@@ -162,35 +175,35 @@ free_want = [0.311, 100.311, 0.011]
 ahead : Truck.TruckState
 ahead = Truck.advance(
 	{
-		route_position: 600.0,
+		route_position: Distance.metres(600.0),
 		speed: Speed.metres_a_step(0.5),
 		brake_lights: Off,
 	},
 	{
-		rider_distance: 0.0,
+		rider_distance: Distance.zero,
 		world: one_seg,
-		route_length: 1000.0,
+		route_length: Distance.metres(1000.0),
 	},
 )
 
 behind : Truck.TruckState
 behind = Truck.advance(
 	{
-		route_position: 400.0,
+		route_position: Distance.metres(400.0),
 		speed: Speed.metres_a_step(0.5),
 		brake_lights: Off,
 	},
 	{
-		rider_distance: 0.0,
+		rider_distance: Distance.zero,
 		world: one_seg,
-		route_length: 1000.0,
+		route_length: Distance.metres(1000.0),
 	},
 )
 
 ahead_got : List(F64)
 ahead_got = [
 	ahead.speed.to_metres_a_step(),
-	ahead.route_position,
+	ahead.route_position.to_metres(),
 	behind.speed.change_from(ahead.speed).to_metres_a_step_each_step(),
 ]
 
@@ -200,14 +213,14 @@ ahead_want = [0.5, 600.5, 0.011]
 capped : Truck.TruckState
 capped = Truck.advance(
 	{
-		route_position: 100.0,
+		route_position: Distance.metres(100.0),
 		speed: Truck.top_speed,
 		brake_lights: Off,
 	},
 	{
-		rider_distance: 0.0,
+		rider_distance: Distance.zero,
 		world: one_seg,
-		route_length: 1000.0,
+		route_length: Distance.metres(1000.0),
 	},
 )
 
@@ -230,19 +243,19 @@ free_flag_want = [False, False, False]
 braking : Truck.TruckState
 braking = Truck.advance(
 	{
-		route_position: 450.0,
+		route_position: Distance.metres(450.0),
 		speed: Speed.metres_a_step(0.3),
 		brake_lights: Off,
 	},
 	{
-		rider_distance: 0.0,
+		rider_distance: Distance.zero,
 		world: one_seg,
-		route_length: 1000.0,
+		route_length: Distance.metres(1000.0),
 	},
 )
 
 brake_got : List(F64)
-brake_got = [braking.speed.to_metres_a_step(), (braking.route_position - 450.0)]
+brake_got = [braking.speed.to_metres_a_step(), (braking.route_position.to_metres() - 450.0)]
 
 brake_want : List(F64)
 brake_want = [0.2994154176, 0.2994154176]
@@ -260,14 +273,14 @@ brake_flag_want = [True, True, True]
 settled : Truck.TruckState
 settled = Truck.advance(
 	{
-		route_position: 450.0,
+		route_position: Distance.metres(450.0),
 		speed: Speed.metres_a_step(0.1776),
 		brake_lights: On,
 	},
 	{
-		rider_distance: 0.0,
+		rider_distance: Distance.zero,
 		world: one_seg,
-		route_length: 1000.0,
+		route_length: Distance.metres(1000.0),
 	},
 )
 
@@ -285,28 +298,28 @@ boundary_got = [
 	(
 		Truck.advance(
 			{
-				route_position: 440.0,
+				route_position: Distance.metres(440.0),
 				speed: Speed.metres_a_step(0.3),
 				brake_lights: Off,
 			},
 			{
-				rider_distance: 0.0,
+				rider_distance: Distance.zero,
 				world: one_seg,
-				route_length: 1000.0,
+				route_length: Distance.metres(1000.0),
 			},
 		).speed < Speed.metres_a_step(0.3)
 	),
 	(
 		Truck.advance(
 			{
-				route_position: 439.0,
+				route_position: Distance.metres(439.0),
 				speed: Speed.metres_a_step(0.3),
 				brake_lights: Off,
 			},
 			{
-				rider_distance: 0.0,
+				rider_distance: Distance.zero,
 				world: one_seg,
-				route_length: 1000.0,
+				route_length: Distance.metres(1000.0),
 			},
 		).speed < Speed.metres_a_step(0.3)
 	),

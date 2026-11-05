@@ -45,13 +45,16 @@ upright : Pose.RiderState
 upright = Pose.initial_rider_state
 
 ## A rider 120 m along a segment: near enough to its cat, if it has one, to
-## notice it.
+## notice it. RideFocal doesn't import Along or Distance, so the place is made
+## from Gaze's distance.
 near_cat_on : U32 -> Pose.RiderState
 near_cat_on = |number| {
 	..upright,
 	segment: World.SegmentIndex.number(number),
-	along: 120.0,
+	along: upright.along.plus(Gaze.gaze_look_dist.times(0.8)),
 }
+
+expect near_cat_on(1).along.to_metres() == 120.0
 
 ## Whether a segment has a cat waiting by the road.
 has_cat : World.Segment -> Bool

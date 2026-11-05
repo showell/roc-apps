@@ -5,8 +5,11 @@
 ## cat's crossing does, so stepping back through a ride shows the same bird.
 ## A bird's spots are places on its segment, as its trees' are, because its
 ## flight is its own and no other bird shares it.
+import Across
+import Along
 import Animation
 import Beats
+import Distance
 import Fraction
 import Scenery
 
@@ -32,21 +35,21 @@ BirdFlight :: [].{
 	]
 
 	## How far the rider is from the bird's tree when it takes off.
-	takeoff_gap : F64
-	takeoff_gap = 60.0
+	takeoff_gap : Distance
+	takeoff_gap = Distance.metres(60.0)
 
 	## How far the rider is from that tree when the bird has landed.
-	landing_gap : F64
-	landing_gap = 15.0
+	landing_gap : Distance
+	landing_gap = Distance.metres(15.0)
 
 	## The bird flies to a tree at least this far along from the one it left,
 	## so that its path runs ahead of the rider as well as across the road.
-	shortest_hop : F64
-	shortest_hop = 25.0
+	shortest_hop : Distance
+	shortest_hop = Distance.metres(25.0)
 
-	## How far above a straight line the top of its path is, in metres.
-	flight_arc : F64
-	flight_arc = 5.0
+	## How far above a straight line the top of its path is.
+	flight_arc : Distance
+	flight_arc = Distance.metres(5.0)
 
 	## How many times the wings flap in a flight.
 	wing_flaps : F64
@@ -65,7 +68,7 @@ BirdFlight :: [].{
 	## there the bird faces the road.
 	fifth_left_tree : List(Scenery.Tree) -> [Found(Scenery.Tree), NoTree]
 	fifth_left_tree = |trees|
-		match trees.keep_if(|tree| tree.across < 0.0).drop_first(4).first() {
+		match trees.keep_if(|tree| tree.across < Across.middle).drop_first(4).first() {
 			Ok(tree) => Found(tree)
 			Err(ListWasEmpty) => NoTree
 		}
@@ -74,8 +77,8 @@ BirdFlight :: [].{
 	## other side of the road far enough along, or none, and it sits.
 	route_from : List(Scenery.Tree), Scenery.Tree -> BirdFlight.Route
 	route_from = |trees, from| {
-		is_far_enough = |tree| tree.along >= from.along + shortest_hop
-		far_side = trees.keep_if(|tree| tree.across > 0.0 and is_far_enough(tree))
+		is_far_enough = |tree| tree.along >= from.along.plus(shortest_hop)
+		far_side = trees.keep_if(|tree| tree.across > Across.middle and is_far_enough(tree))
 		match far_side.first() {
 			Ok(to) => Flies({ from, to })
 			Err(ListWasEmpty) => Sits(from)
@@ -91,32 +94,32 @@ BirdFlight :: [].{
 		}
 
 	## Where the tree the bird starts from is along its segment.
-	start_along : BirdFlight.Route -> F64
+	start_along : BirdFlight.Route -> Along
 	start_along = |route|
 		match route {
 			Flies(flight) => flight.from.along
 			Sits(tree) => tree.along
 		}
 
-	## Where the bird's flight has got to, with the rider `gap` metres from the
-	## tree it left.
-	flight_stage : F64 -> Animation.Stage
+	## Where the bird's flight has got to, with the rider `gap` from the tree it
+	## left.
+	flight_stage : Distance -> Animation.Stage
 	flight_stage = |gap| Animation.over_gap({ starts_at: takeoff_gap, ends_at: landing_gap }, gap)
 
-	## The bird on `route` with the rider `gap` metres from the tree it starts on.
-	route_moment_at : BirdFlight.Route, F64 -> Animation.Moment(BirdFlight.Pose)
-	route_moment_at = |route, gap|
+	## The bird on `route` with the rider `gap` from the tree it starts on.
+	route_instant_at : BirdFlight.Route, Distance -> Animation.Instant(BirdFlight.Pose)
+	route_instant_at = |route, gap|
 		match route {
-			Flies(flight) => moment_at(flight, gap)
+			Flies(flight) => instant_at(flight, gap)
 			Sits(tree) => sitting_on(tree)
 		}
 
-	## The bird with the rider `gap` metres from the tree it left.
-	moment_at : BirdFlight.Flight, F64 -> Animation.Moment(BirdFlight.Pose)
-	moment_at = |flight, gap| flight_timeline(flight).moment(flight_stage(gap))
+	## The bird with the rider `gap` from the tree it left.
+	instant_at : BirdFlight.Flight, Distance -> Animation.Instant(BirdFlight.Pose)
+	instant_at = |flight, gap| flight_timeline(flight).instant(flight_stage(gap))
 
 	## The bird as it sits on top of `tree`.
-	sitting_on : Scenery.Tree -> Animation.Moment(BirdFlight.Pose)
+	sitting_on : Scenery.Tree -> Animation.Instant(BirdFlight.Pose)
 	sitting_on = |tree| { pose: Perched, spot: tree_top(tree) }
 
 	## A flight's timeline is one beat long, so a cut on it is a share of the
@@ -155,19 +158,19 @@ BirdFlight :: [].{
 							to: tree_top(to),
 							ease: Smooth,
 						},
-						rise: flight_arc,
+						rise: flight_arc.to_metres(),
 					}),
 				},
 			},
 		)
 }
 
-## The spot on top of `tree`.
+## The spot on top of `tree`, its lift in metres.
 tree_top : Scenery.Tree -> Animation.Spot
 tree_top = |tree| {
 	along: tree.along,
 	across: tree.across,
-	lift: tree.height,
+	lift: tree.height.to_metres(),
 }
 
 ## A bird that shows `up` and `down` in turn, as its wings beat through the

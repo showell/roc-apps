@@ -2,16 +2,17 @@
 ## that brings it closer as the rider nears the route's end: it speeds up
 ## when it is behind the schedule, and slows for a turn when one is close.
 import Acceleration
+import Distance
 import Speed
 import VehicleLimits
 import World
 
 Truck :: [].{
 
-	## Where the truck is along the route, how fast it is going, and whether
+	## How far along the route the truck is, how fast it is going, and whether
 	## its brake lights are on.
 	TruckState : {
-		route_position : F64,
+		route_position : Distance,
 		speed : Speed,
 		brake_lights : [On, Off],
 	}
@@ -21,25 +22,25 @@ Truck :: [].{
 
 	## A turn ahead of the truck: how far off it is, and how fast it can be
 	## taken.
-	ComingTurn : { distance : F64, turn_speed : Speed }
+	ComingTurn : { distance : Distance, turn_speed : Speed }
 
 	## The next turn of the route past a point, or none: the route ends first.
 	NextTurn : [TurnAhead(Truck.ComingTurn), NoTurnAhead]
 
 	## How far ahead of the rider the truck starts.
-	start_lead : F64
-	start_lead = 500.0
+	start_lead : Distance
+	start_lead = Distance.metres(500.0)
 
 	## How far ahead of the rider the truck's schedule ends.
-	finish_lead : F64
-	finish_lead = 100.0
+	finish_lead : Distance
+	finish_lead = Distance.metres(100.0)
 
 	## The truck takes a turn at this fraction of the speed the turn allows.
 	turn_caution : F64
 	turn_caution = 0.8
 
 	## The truck starts to brake when a turn is this close.
-	brake_distance : F64
+	brake_distance : Distance
 	brake_distance = VehicleLimits.approach_intersection_dist
 
 	chase_acceleration : Acceleration
@@ -56,31 +57,31 @@ Truck :: [].{
 	}
 
 	## The next turn of `world` past `route_position`.
-	next_turn : List(World.Segment), F64 -> Truck.NextTurn
+	next_turn : List(World.Segment), Distance -> Truck.NextTurn
 	next_turn = |world, route_position|
 		next_turn_on(
 			world,
 			{
 				route_position,
-				segment_start: 0.0,
+				segment_start: Distance.zero,
 			},
 		)
 
 	## Where the truck should be along the route, when the rider is
 	## `rider_distance` along it.
-	scheduled_position : { rider_distance : F64, route_length : F64 } -> F64
+	scheduled_position : { rider_distance : Distance, route_length : Distance } -> Distance
 	scheduled_position = |{ rider_distance, route_length }| {
-		fraction_left = 1.0 - rider_distance / route_length
-		rider_distance + finish_lead + (start_lead - finish_lead) * fraction_left
+		fraction_left = 1.0 - rider_distance.ratio_to(route_length)
+		rider_distance.plus(finish_lead).plus(start_lead.minus(finish_lead).times(fraction_left))
 	}
 
 	## The truck a frame on: where the rider is along the route, the world's
 	## segments, and the route's whole length decide its pace.
 	advance : Truck.TruckState,
 	{
-		rider_distance : F64,
+		rider_distance : Distance,
 		world : List(World.Segment),
-		route_length : F64,
+		route_length : Distance,
 	} -> Truck.TruckState
 	advance = |
 		truck,
@@ -107,19 +108,19 @@ Truck :: [].{
 ## starts at `segment_start`. The route's last segment ends in no turn.
 next_turn_on : List(World.Segment),
 {
-	route_position : F64,
-	segment_start : F64,
+	route_position : Distance,
+	segment_start : Distance,
 } -> Truck.NextTurn
 next_turn_on = |segments, { route_position, segment_start }|
 	match segments {
 		[] => NoTurnAhead
 		[segment, .. as later_segments] => {
-			segment_end = segment_start + segment.length
+			segment_end = segment_start.plus(segment.length)
 			if route_position < segment_end {
 				match segment.ending {
 					Continues(_) =>
 						TurnAhead({
-							distance: segment_end - route_position,
+							distance: segment_end.minus(route_position),
 							turn_speed: VehicleLimits.turn_speed(segment.exit_turn.abs()),
 						})
 					Terminates => NoTurnAhead
@@ -143,7 +144,7 @@ advance_braking = |truck, turn| {
 		}
 	speed = target_speed.max(truck.speed.accelerated_by(acceleration))
 	{
-		route_position: truck.route_position + speed.to_metres_a_step(),
+		route_position: truck.route_position.plus(speed.step_length()),
 		speed,
 		brake_lights: if (speed < truck.speed) On else Off,
 	}
@@ -151,7 +152,7 @@ advance_braking = |truck, turn| {
 
 ## The truck a frame on with no turn close: it speeds up while it is short of
 ## `schedule`, and otherwise holds its speed.
-advance_on_schedule : Truck.TruckState, F64 -> Truck.TruckState
+advance_on_schedule : Truck.TruckState, Distance -> Truck.TruckState
 advance_on_schedule = |truck, schedule| {
 	speed =
 		if truck.route_position < schedule {
@@ -160,7 +161,7 @@ advance_on_schedule = |truck, schedule| {
 			truck.speed
 		}
 	{
-		route_position: truck.route_position + speed.to_metres_a_step(),
+		route_position: truck.route_position.plus(speed.step_length()),
 		speed,
 		brake_lights: Off,
 	}

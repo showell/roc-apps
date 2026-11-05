@@ -1,14 +1,14 @@
 ## How far the rider leans. A bisection over leans near the current one
 ## finds the lean whose coasting arc ends nearest the line the rider wants.
+import Across
 import Angle
 import Arc
 import Bike
-import lib.DeviceMath
-import lib.Trig
+import Distance
 
 LeanSearch :: [].{
 
-	want_more_right : Arc.ArcOutcome, F64 -> Bool
+	want_more_right : Arc.ArcOutcome, Across -> Bool
 	want_more_right = |sim, target| (
 		match sim.shoulder {
 			ShoulderLeft => True
@@ -20,21 +20,21 @@ LeanSearch :: [].{
 	asymptote_tuning : F64
 	asymptote_tuning = 0.3
 
-	center_lane_epsilon : F64
-	center_lane_epsilon = 0.04
+	center_lane_epsilon : Distance
+	center_lane_epsilon = Distance.metres(0.04)
 
-	lean_target : F64 -> F64
+	lean_target : Across -> Across
 	lean_target = |across| (
-		if DeviceMath.real_abs(across) < center_lane_epsilon {
+		if across.distance_from_middle() < center_lane_epsilon {
 			(
-				if across >= 0.0 {
-					center_lane_epsilon
+				if across >= Across.middle {
+					Across.right_of_middle(center_lane_epsilon)
 				} else {
-					(0.0 - center_lane_epsilon)
+					Across.left_of_middle(center_lane_epsilon)
 				}
 			)
 		} else {
-			(across * asymptote_tuning)
+			across.times(asymptote_tuning)
 		}
 	)
 
@@ -49,7 +49,7 @@ LeanSearch :: [].{
 	## across the road, after the bisection's remaining steps from `at`.
 	search_lean_from : Bike.Motion(others),
 	{
-		target : F64,
+		target : Across,
 		low : Angle.Lean,
 		high : Angle.Lean,
 		at : I64,
@@ -103,23 +103,27 @@ LeanSearch :: [].{
 		)
 }
 
-expect LeanSearch.lean_target(0.5) == 0.15
-expect LeanSearch.lean_target((0.0 - 0.5)) == -0.15
-expect LeanSearch.lean_target(2.0) == 0.6
-expect LeanSearch.lean_target((0.0 - 2.0)) == -0.6
-expect LeanSearch.lean_target(0.04) == 0.012
-expect LeanSearch.lean_target((0.0 - 0.04)) == -0.012
-expect LeanSearch.lean_target(0.0) == 0.04
-expect LeanSearch.lean_target(0.039) == 0.04
-expect LeanSearch.lean_target((0.0 - 0.039)) == -0.04
-expect LeanSearch.lean_target(2.0) > 0.0
-expect LeanSearch.lean_target(2.0) < 2.0
-expect LeanSearch.lean_target((0.0 - 2.0)) < 0.0
-expect LeanSearch.lean_target((0.0 - 2.0)) > (0.0 - 2.0)
-expect LeanSearch.lean_target(0.0) > 0.0
+## Where the rider aims from `across` metres.
+target_of : F64 -> F64
+target_of = |across| LeanSearch.lean_target(Across.metres(across)).to_metres()
+
+expect target_of(0.5) == 0.15
+expect target_of((0.0 - 0.5)) == -0.15
+expect target_of(2.0) == 0.6
+expect target_of((0.0 - 2.0)) == -0.6
+expect target_of(0.04) == 0.012
+expect target_of((0.0 - 0.04)) == -0.012
+expect target_of(0.0) == 0.04
+expect target_of(0.039) == 0.04
+expect target_of((0.0 - 0.039)) == -0.04
+expect target_of(2.0) > 0.0
+expect target_of(2.0) < 2.0
+expect target_of((0.0 - 2.0)) < 0.0
+expect target_of((0.0 - 2.0)) > (0.0 - 2.0)
+expect target_of(0.0) > 0.0
 
 expect LeanSearch.asymptote_tuning == 0.3
-expect LeanSearch.center_lane_epsilon == 0.04
+expect LeanSearch.center_lane_epsilon.to_metres() == 0.04
 expect LeanSearch.max_tilt_correction.to_radians() == 0.017453292519943295
 expect LeanSearch.lean_search_iters == 12
 
@@ -127,16 +131,16 @@ expect LeanSearch.lean_search_iters == 12
 outcome : Arc.Shoulder, F64 -> Arc.ArcOutcome
 outcome = |shoulder, end_across| {
 	shoulder,
-	forward: 10.0,
+	forward: Distance.metres(10.0),
 	crossed: False,
-	end_across,
+	end_across: Across.metres(end_across),
 	frames: Arc.no_frames,
 }
 
-expect LeanSearch.want_more_right(outcome(ShoulderLeft, 99.0), 0.5)
-expect LeanSearch.want_more_right(outcome(ShoulderLeft, (0.0 - 99.0)), 0.5)
-expect !(LeanSearch.want_more_right(outcome(ShoulderRight, 99.0), 0.5))
-expect !(LeanSearch.want_more_right(outcome(ShoulderRight, (0.0 - 99.0)), 0.5))
-expect LeanSearch.want_more_right(outcome(ShoulderNone, 0.4), 0.5)
-expect !(LeanSearch.want_more_right(outcome(ShoulderNone, 0.6), 0.5))
-expect !(LeanSearch.want_more_right(outcome(ShoulderNone, 0.5), 0.5))
+expect LeanSearch.want_more_right(outcome(ShoulderLeft, 99.0), Across.metres(0.5))
+expect LeanSearch.want_more_right(outcome(ShoulderLeft, (0.0 - 99.0)), Across.metres(0.5))
+expect !(LeanSearch.want_more_right(outcome(ShoulderRight, 99.0), Across.metres(0.5)))
+expect !(LeanSearch.want_more_right(outcome(ShoulderRight, (0.0 - 99.0)), Across.metres(0.5)))
+expect LeanSearch.want_more_right(outcome(ShoulderNone, 0.4), Across.metres(0.5))
+expect !(LeanSearch.want_more_right(outcome(ShoulderNone, 0.6), Across.metres(0.5)))
+expect !(LeanSearch.want_more_right(outcome(ShoulderNone, 0.5), Across.metres(0.5)))

@@ -19,12 +19,13 @@ ViewYaw :: [].{
 	heading_for : Pose.RiderState -> Angle.Bearing
 	heading_for = |s| s.heading.plus(view_yaw_for(s))
 
+	## Where the camera stands on the rider's segment, and which way it faces.
 	pose_for : Pose.RiderState -> Frame.Pose
 	pose_for = |s| {
 		along: s.along,
 		across: s.across,
 		yaw: s.yaw.plus(view_yaw_for(s)),
-		half_width: Scenery.lane_width / 2.0,
+		half_width: Scenery.lane_half_width,
 	}
 }
 

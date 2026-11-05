@@ -1,4 +1,4 @@
-# RideMomentSpec -- originally emitted from Codex by rocemit; the Roc is the
+# RideInstantSpec -- originally emitted from Codex by rocemit; the Roc is the
 # program now and this file is edited here (safari/README.md).
 app [main!] {
 	lib: "../lib/main.roc",
@@ -7,8 +7,11 @@ app [main!] {
 import Angle
 import Clock
 import Fraction
+import Distance
+import Across
+import Along
 import Grade
-import RideMoment
+import RideInstant
 import Rider
 import Speed
 import Truck
@@ -34,37 +37,37 @@ seg_list_onto = |i, acc| (
 
 start_got : List(F64)
 start_got = [
-	RideMoment.initial.clock.to_f64(),
-	RideMoment.initial.rider.along,
-	RideMoment.initial.rider.across,
-	RideMoment.initial.rider.speed.to_metres_a_step(),
-	RideMoment.initial.truck.route_position,
-	RideMoment.initial.truck.speed.to_metres_a_step(),
+	RideInstant.initial.clock.to_f64(),
+	RideInstant.initial.rider.along.to_metres(),
+	RideInstant.initial.rider.across.to_metres(),
+	RideInstant.initial.rider.speed.to_metres_a_step(),
+	RideInstant.initial.truck.route_position.to_metres(),
+	RideInstant.initial.truck.speed.to_metres_a_step(),
 ]
 
 start_want : List(F64)
 start_want = [0.0, 0.0, 0.0, 0.3, 500.0, 0.3]
 
 start_index_got : List(I64)
-start_index_got = [RideMoment.initial.rider.segment.to_i64()]
+start_index_got = [RideInstant.initial.rider.segment.to_i64()]
 
 start_index_want : List(I64)
 start_index_want = [0]
 
 start_flag_got : List(Bool)
 start_flag_got = [
-	RideMoment.initial.truck.brake_lights == On,
-	Rider.is_finished(RideMoment.initial.rider, segs),
+	RideInstant.initial.truck.brake_lights == On,
+	Rider.is_finished(RideInstant.initial.rider, segs),
 ]
 
 start_flag_want : List(Bool)
 start_flag_want = [False, False]
 
-after_one_step : RideMoment
-after_one_step = RideMoment.next(segs, RideMoment.initial)
+after_one_step : RideInstant
+after_one_step = RideInstant.next(segs, RideInstant.initial)
 
-after_two_steps : RideMoment
-after_two_steps = RideMoment.next(segs, after_one_step)
+after_two_steps : RideInstant
+after_two_steps = RideInstant.next(segs, after_one_step)
 
 step_got : List(F64)
 step_got = [
@@ -78,8 +81,8 @@ step_want = [1.0, 2.0, 1.0]
 
 moved_got : List(Bool)
 moved_got = [
-	(after_one_step.rider.along > RideMoment.initial.rider.along),
-	(after_one_step.truck.route_position > RideMoment.initial.truck.route_position),
+	(after_one_step.rider.along > RideInstant.initial.rider.along),
+	(after_one_step.truck.route_position > RideInstant.initial.truck.route_position),
 	(after_two_steps.rider.along > after_one_step.rider.along),
 ]
 
@@ -91,14 +94,14 @@ order_got = (
 	{
 		old_dist = World.distance_along_route(
 			segs,
-			{ index: RideMoment.initial.rider.segment, along: RideMoment.initial.rider.along },
+			{ index: RideInstant.initial.rider.segment, along: RideInstant.initial.rider.along },
 		)
 		new_dist = World.distance_along_route(
 			segs,
 			{ index: after_one_step.rider.segment, along: after_one_step.rider.along },
 		)
 		against_new = Truck.advance(
-			RideMoment.initial.truck,
+			RideInstant.initial.truck,
 			{
 				rider_distance: new_dist,
 				world: segs,
@@ -106,7 +109,7 @@ order_got = (
 			},
 		)
 		against_old = Truck.advance(
-			RideMoment.initial.truck,
+			RideInstant.initial.truck,
 			{
 				rider_distance: old_dist,
 				world: segs,
@@ -116,9 +119,9 @@ order_got = (
 		new_position = against_new.route_position
 		old_position = against_old.route_position
 		[
-			(F64.to_bits(after_one_step.truck.route_position) == F64.to_bits(new_position)),
+			(after_one_step.truck.route_position == new_position),
 			(new_dist > old_dist),
-			((F64.to_bits(new_position) == F64.to_bits(old_position)) == False),
+			(new_position != old_position),
 		]
 	}
 )
@@ -126,12 +129,12 @@ order_got = (
 order_want : List(Bool)
 order_want = [True, True, True]
 
-done : RideMoment
+done : RideInstant
 done = {
 	rider: {
 		segment: World.SegmentIndex.number(18),
-		along: 400.0,
-		across: 0.0,
+		along: Along.metres(400.0),
+		across: Across.metres(0.0),
 		yaw: Angle.Turn.radians(0.0),
 		speed: Speed.at_rest,
 		tilt: Angle.Lean.radians(0.0),
@@ -140,7 +143,7 @@ done = {
 		focus: Fraction.of(0.9),
 	},
 	truck: {
-		route_position: 9000.0,
+		route_position: Distance.metres(9000.0),
 		speed: Speed.metres_a_step(2.0),
 		brake_lights: On,
 	},
@@ -150,13 +153,13 @@ done = {
 restart_got : List(F64)
 restart_got = (
 	{
-		moment = RideMoment.next(segs, done)
+		instant = RideInstant.next(segs, done)
 		[
-			moment.clock.to_f64(),
-			moment.rider.along,
-			moment.rider.speed.to_metres_a_step(),
-			moment.truck.route_position,
-			moment.rider.focus.to_f64(),
+			instant.clock.to_f64(),
+			instant.rider.along.to_metres(),
+			instant.rider.speed.to_metres_a_step(),
+			instant.truck.route_position.to_metres(),
+			instant.rider.focus.to_f64(),
 		]
 	}
 )
@@ -167,7 +170,7 @@ restart_want = [0.0, 0.0, 0.3, 500.0, 0.0]
 restart_flag_got : List(Bool)
 restart_flag_got = [
 	Rider.is_finished(done.rider, segs),
-	RideMoment.next(segs, done).truck.brake_lights == On,
+	RideInstant.next(segs, done).truck.brake_lights == On,
 ]
 
 restart_flag_want : List(Bool)
@@ -183,13 +186,13 @@ not_done_want : List(Bool)
 not_done_want = [True, True]
 
 frame : List(Shapes.Shape)
-frame = RideMoment.frame(segs, RideMoment.initial)
+frame = RideInstant.frame(segs, RideInstant.initial)
 
 frame_got : List(Bool)
 frame_got = [
 	(frame.len().to_i64_wrap() > 0),
-	(RideMoment.frame(segs, after_one_step).len().to_i64_wrap() > 0),
-	(ShapeRead.pts_of(frame.first() ?? crash "RideMomentSpec: a frame draws").len() >= 6),
+	(RideInstant.frame(segs, after_one_step).len().to_i64_wrap() > 0),
+	(ShapeRead.pts_of(frame.first() ?? crash "RideInstantSpec: a frame draws").len() >= 6),
 ]
 
 frame_want : List(Bool)
@@ -197,7 +200,7 @@ frame_want = [True, True, True]
 
 sun_got : List(Bool)
 # The ride starts facing away from the sun.
-sun_got = [RideMoment.sun(segs, RideMoment.initial) == OutOfView]
+sun_got = [RideInstant.sun(segs, RideInstant.initial) == OutOfView]
 
 sun_want : List(Bool)
 sun_want = [True]
@@ -209,9 +212,9 @@ after_sunset = Clock.at_step(5700)
 ## The truck's lights at `clock`, with its brake lights left as given.
 lights_at : { clock : Clock, brake_lights : [On, Off] } -> Truck.Lights
 lights_at = |{ clock, brake_lights }|
-	RideMoment.truck_lights({
-		..RideMoment.initial,
-		truck: { ..RideMoment.initial.truck, brake_lights },
+	RideInstant.truck_lights({
+		..RideInstant.initial,
+		truck: { ..RideInstant.initial.truck, brake_lights },
 		clock,
 	})
 

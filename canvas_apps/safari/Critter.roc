@@ -84,7 +84,7 @@ Critter :: [].{
 			cam_focal,
 		)
 		feet = on_screen(0.0)
-		height_px = (feet.y - on_screen(critter.height).y)
+		height_px = (feet.y - on_screen(critter.height.to_metres()).y)
 		if height_px < 1.0 {
 			[]
 		} else {
