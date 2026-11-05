@@ -579,6 +579,190 @@ Each frame, a sighting reads the route back. `|` in a pattern covers two tags wi
 
 Nothing in this chapter is new machinery, and that's what it shows. The four bird modules come to 421 lines, a quarter of them coordinates for the stills, and `Animation` didn't change to admit a bird. [check: the line count once the expect work lands, and the share that's stills.]
 
+## The stepped things
+
+Everything so far can be asked about any instant, cold. Hand `Cat.moment_at` a gap and it answers. The rider and the truck can't do that. Where each of them is depends on where it was, so their state has to be kept, and it's the only state there is. This chapter is about the two fields of `RideMoment` that aren't a clock.
+
+```dot
+digraph stepped {
+  node [shape=box, fontname="Helvetica"];
+  RideMoment [style=bold];
+  RideMoment -> Rider;
+  RideMoment -> Truck;
+  RideMoment -> Pose;
+  Rider -> Bike;
+  Rider -> Throttle;
+  Rider -> LeanSearch;
+  Rider -> Gaze;
+  Rider -> Pose;
+  Rider -> VehicleLimits;
+  Truck -> VehicleLimits;
+  Throttle -> Gaze;
+  Throttle -> VehicleLimits;
+  LeanSearch -> Bike;
+}
+```
+
+Here's the step again, this time whole. Its body is a block: names, then a record, which is the value of the block. The rider moves first, and the truck reads where the rider has just got to, so the order of those lines is a rule of the game, and `dist` is what carries it.
+
+{{code RideMoment.step}}
+
+`Clock.next`, `Rider.advance` and `Truck.advance` all have the same shape: a value goes in, and the next value comes out. Call that *the step function*. There's no mutable rider being nudged. There's a rider, and another rider one step on, and the old one is still a perfectly good value, which `Tour` keeps in a list.
+
+Stepping has a price, and it's worth stating against the cat:
+
+- A cat can be asked about any gap. A truck at step 4,000 has to be played there, or written down by hand.
+- A wrong critter rule is wrong in the frames it touches. A wrong step moves the rider for the rest of the ride.
+- `RideMoment.step` has an order, and frames don't.
+
+*[The step widget goes here: pause the ride, step back and forward, and watch the three stored fields change.]*
+
+### The rider
+
+A plain record alias holds the rider, and `RideMoment` stores one. Count the opaque types: `SegmentIndex`, `Turn`, `Speed`, `Lean`, `Bearing` and `Fraction`. Four fields of this one record are angles, of three different types, and passing one type where another is wanted is a compile-time error.
+
+{{code Pose.RiderState}}
+
+The step is four things in order, which is close to how it reads. Static dispatch finds `segment_in` on the `SegmentIndex`. The `match` on `seg.ending` has two tags, and `Continues(_)` ignores its payload:
+
+{{code Rider.advance}}
+
+A decision is a record of two opaque values. There's something to notice in the last line of this next function. `Throttle` is asked about a bike that doesn't exist yet: the rider as it would be with the new lean, which `Bike.with_tilt` makes by building a new record. The real rider isn't touched, because nothing can touch it.
+
+{{code Rider.decide}}
+
+That idea gets larger soon. A small version of it decides what happens at the end of a segment. `resolve_cross` works out the rider on the next segment and keeps that only if it lands inside the lane. The rejected rider simply stops being referred to, and nothing has to be undone:
+
+{{code Rider.resolve_cross}}
+
+Record update does most of the writing in this module. Its plainest use is stopping dead, where `..s` keeps everything but the two fields named:
+
+{{code Rider.stopped_at}}
+
+### The bike
+
+```dot
+digraph bike {
+  node [shape=box, fontname="Helvetica"];
+  Bike [style=bold];
+  Rider -> Bike;
+  Rider -> LeanSearch;
+  Arc -> Bike;
+  LeanSearch -> Bike;
+  LeanSearch -> Arc;
+  RideFocal -> Bike;
+  Bike -> Angle;
+  Bike -> Speed;
+  Bike -> Acceleration;
+}
+```
+
+`Bike` is 56 lines, and it's the physics. Its type is the first one in the tour that names the rest of a record. `..others` makes `Motion` open: it's any record with these six fields and whatever else, with `others` standing for the whatever else.
+
+{{code Bike.Motion}}
+
+A structural type like this has to be named when it appears twice. Here it appears in the argument and in the result, and that's the promise: what goes in comes out with the same other fields. A `Pose.RiderState` goes in, with its `segment`, `gaze_yaw` and `focus`, and a `Pose.RiderState` comes out, though `Bike` has never heard of a gaze. Compare `CrossingReaction.reaction_to`, whose open record is only read, and which hands nothing back.
+
+Call this *a narrow view of a wide record*. A module says exactly which fields it cares about, and the compiler takes care of the rest, with no base class and no copying fields across by hand. The smallest example in the program is a function with one job:
+
+{{code Bike.with_tilt}}
+
+`{ ..s, tilt }` is record update with a shorthand: the field and the local have the same name. `Rider.decide` called it above. Here's the step, which `Rider.advance` called:
+
+{{code Bike.simulate_rider_step}}
+
+Reading down, the types do their share of explaining. A `Lean` can't be added to anything but a `Lean`, and it only reaches direction through `tilt.steer(yaw_per_tilt)`, which is the single door from roll to yaw. The bike then moves along the middle of the step's turn, which is what `s.yaw.plus(turn.times(0.5))` means. `to_radians()` appears at the last line that can do without it: `r_cos` wants a float.
+
+### The throttle
+
+```dot
+digraph throttle {
+  node [shape=box, fontname="Helvetica"];
+  Throttle [style=bold];
+  Rider -> Throttle;
+  Throttle -> Arc;
+  Throttle -> CrossingReaction;
+  Throttle -> Gaze;
+  Throttle -> VehicleLimits;
+  Throttle -> Acceleration;
+  Throttle -> Speed;
+  Speed -> Acceleration;
+}
+```
+
+The rider has several reasons to slow down, and they don't know about each other. A turn is coming. A cat is in the lane. There's a pig to look at. The road is about to run out. `Throttle` writes them as a line of gates. An `Acceleration` goes in, a gate lets it through or lowers it, and the next gate gets what's left:
+
+{{code Throttle.get_forward_accel_decel from "a2 = crossing_gate(" to "a4 = shoulder_brake(state, a3)"}}
+
+Call this *the gate chain*. Each gate has the same shape and can be read alone, and adding a reason is one more line. It reads like a list of rules because that's what it is.
+
+Each gate compares two opaque `Acceleration`s with an ordinary `<`, which works because `Acceleration` defines `is_lt`. `crossing_gate` shows two more things about patterns. A guard, `if a > Acceleration.steady`, adds a condition to a branch, and `|` joins two tags in one. When the guard fails, `NoAcceleration` falls through to the last branch. This is where `CrossingReaction`'s tag from the cat chapter lands: the cat stops the rider opening the throttle, and a rider already braking stays braking.
+
+{{code Throttle.crossing_gate}}
+
+`Speed` and `Acceleration` are places and distances again: two speeds make an acceleration, and an acceleration moves a speed. The sum behind braking for a turn is the first line of a physics textbook, `v² = u² + 2as`, solved for `a`. This function is a good example of how far opaque types reach into a parameter list. `target: Speed.(t)` opens the field's `Speed` where it's destructured:
+
+{{code Speed.acceleration_to}}
+
+The first gate calls it, for the distance left to the point where the rider commits to the turn. Three modules use that one line of physics: this one, `Gaze` to slow for a pig, and `Truck`.
+
+{{code Throttle.corner_brake from "corner_a = (" to "state.speed.acceleration_to({ target: v_end, within: d })"}}
+
+After the gates, `clamp_v` holds the speed between rest and the limit, and the function's last move is a small piece of bookkeeping. The chain works in accelerations and the limits are speeds, so the answer is taken back with `.change_from(state.speed)`, the other half of the same pair of types.
+
+The rest of `Throttle` is plainer than this section makes it sound. A good deal of it is still in the shape its emitter left, with brackets round whole bodies. [check: which of these `if (x) a else b` and `( ... )` forms survive the emitter cleanup, then trim the snippets or this sentence.]
+
+### The truck
+
+```dot
+digraph truck {
+  node [shape=box, fontname="Helvetica"];
+  Truck [style=bold];
+  RideMoment -> Truck;
+  Render -> Truck;
+  TruckSighting -> Truck;
+  TruckDraw -> Truck;
+  Truck -> World;
+  Truck -> VehicleLimits;
+  Truck -> Speed;
+  Truck -> Acceleration;
+}
+```
+
+The truck is what the rider chases. It starts 500 metres ahead and keeps to a schedule that brings it to within 100 at the route's end. Its state is three fields:
+
+{{code Truck.TruckState}}
+
+The schedule is a straight line, and a pure function of the rider's progress, destructured from a record so the call site has to name both numbers:
+
+{{code Truck.scheduled_position}}
+
+Its one caller is the truck's step function, the same shape as the rider's. `NextTurn` is a tag union with a payload on one side, so the only way to read a `distance` is to be inside the branch where there is one:
+
+{{code Truck.advance}}
+
+And that's called from `RideMoment.step`, above, with the rider's distance as the only thing the truck knows of the rider. Nothing in `Rider` imports `Truck`, and nothing in `Truck` imports `Rider`. The chase is one record literal in `RideMoment`.
+
+Finding the next turn shows a list pattern. `[]` is the end of the route, and `[segment, .. as later_segments]` takes the first segment and names the rest. Recursion walks the list, carrying where the current segment starts. Only `Truck` and `Paint` use a list pattern. Elsewhere the same walk is a `fold`.
+
+{{code Truck.next_turn_on}}
+
+It's called through a smaller function, which supplies the 0 so nobody else has to:
+
+{{code Truck.next_turn}}
+
+Then the two ways to take a step. Both sit below the block, private, and both are arithmetic on `Speed` by name. `target_speed.max(...)` keeps braking from undershooting, and `speed < truck.speed` is the whole of what turns on the brake lights. They're on while the truck is slowing down, and they go off when it's settled at the speed for the turn, even with the turn still ahead.
+
+{{code Truck.advance_braking}}
+
+{{code Truck.advance_on_schedule}}
+
+`brake_lights` is state because it's a fact about the last step. Headlights aren't, and they stay out of `TruckState`. That's the three kinds of moving thing in one vehicle: the place and speed are stepped, the headlights are clock-driven, and the tyres don't change.
+
+The truck has no `Animation`, and it's worth saying why. A timeline has a known length and can answer for any point along it. The truck has neither. Its next step depends on its last, and its route depends on the rider. `TruckSighting`'s `lead` is the same quantity as an `Approach`'s `gap`, and it has a different name because it's being chased.
+
+The rider's lean has been passed over twice now, with `LeanSearch` doing something the last few sections kept pointing at. That needs the math.
+
 ## Zooming back out
 
 *[This chapter ties the tour together once the stepped things, the proof and the platform are written. It returns to the flipbook and the first diagram: the clock ticks, and everything composes from three stored fields.]*
