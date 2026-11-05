@@ -1,0 +1,16 @@
+ok  after 10 steps: clock 10, one back -> 9
+ok  after 1000 steps: clock 1000, one back -> 999
+ok  after 2047 steps: clock 2047, one back -> 2046
+ok  after 2048 steps: clock 2048, one back -> 2047
+ok  after 2049 steps: clock 2049, one back -> 2048
+ok  after 3000 steps: clock 3000, one back -> 2999
+ok  after 5000 steps: clock 5000, one back -> 4999
+every step back went back one step
+ShapesFrame 0: differ 0 of 576000, triangles 6309, commands 2442
+ShapesFrame 3000: differ 0 of 576000, triangles 16752, commands 2671
+ShapesFrame 5025: differ 0 of 576000, triangles 11989, commands 1865
+ShapesFrame 9000: differ 0 of 576000, triangles 11932, commands 1047
+RasterFrame 0: hash 510999d1
+RasterFrame 3000: hash 6a17eb0c
+RasterFrame 5025: hash 4420098d
+RasterFrame 9000: hash 687f5813

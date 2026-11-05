@@ -24,10 +24,11 @@
 -- safari-codex dcd214c; they are safari's own now (the Roc is the program,
 -- ../README.md) and change here when a spec's output rightly changes.
 --
--- **THE PROOF TOOLS:** StepBack passes on "every step back went back one
--- step"; ShapesFrame on "differ 0" at depths 0, 3000, 5025 and 9000.
--- RasterFrame has no verdict of its own: its hash line at each depth is
--- printed, a fingerprint of the frame to compare before and after a change.
+-- The proof tools: StepBack passes on "every step back went back one step",
+-- and ShapesFrame on "differ 0" at depths 0, 3000, 5025 and 9000. All their
+-- output, and RasterFrame's hash of the frame at each depth, is held exactly
+-- to gates/proof.expected. A change that rightly alters the picture changes
+-- that file with it, and the commit says why.
 -- A depth is there for what its frame shows. At 5025 the truck is close,
 -- braking, with its headlights on: of these frames, only 5025 shows the
 -- truck's lights (beams, brake lights and their glow), and only 5025 and 0
@@ -47,6 +48,7 @@ const SAFARI = "canvas_apps/safari"
 const EXPECTED = "canvas_apps/safari/gates/expected"
 const SELF_PATH = "canvas_apps/safari/gates/run.shale"
 const SPECS = 54
+const PROOF_EXPECTED = "canvas_apps/safari/gates/proof.expected"
 const WANT = "roc-pin: roc-apps' pinned nightly, and the binaries it builds under scratch:"
 
 function roc_path()
@@ -180,10 +182,12 @@ function proof()
   mkdir(bin)
   local bad = 0
   local depths = {"0", "3000", "5025", "9000"}
+  local held = {}
   if proof_build(roc, scratch, "StepBack") then
     local r = run({real(bin .. "/StepBack")}, {timeout_ms = 600000, tail = 20, want = WANT})
     print(trim(r.out))
     print("StepBack: " .. r.ms .. " ms")
+    push(held, trim(r.out))
     if not contains(r.out, "every step back went back one step") then bad = bad + 1 end
   else
     bad = bad + 1
@@ -192,6 +196,7 @@ function proof()
     for d in depths do
       local r = run({real(bin .. "/ShapesFrame"), d}, {timeout_ms = 600000, head = 1, want = WANT})
       print("ShapesFrame " .. d .. ": " .. trim(r.out) .. " (" .. r.ms .. " ms)")
+      push(held, "ShapesFrame " .. d .. ": " .. lines(r.out)[1])
       if not starts_with(r.out, "differ 0 ") then bad = bad + 1 end
     end
   else
@@ -201,9 +206,16 @@ function proof()
     for d in depths do
       local r = run({real(bin .. "/RasterFrame"), d}, {timeout_ms = 600000, head = 1, want = WANT})
       print("RasterFrame " .. d .. ": " .. trim(r.out) .. " (" .. r.ms .. " ms)")
+      push(held, "RasterFrame " .. d .. ": " .. lines(r.out)[1])
       if r.ended ~= "exit" or get(r, "code", -1) ~= 0 then bad = bad + 1 end
     end
   else
+    bad = bad + 1
+  end
+  local got = join(held, "\n") .. "\n"
+  if not exists(PROOF_EXPECTED) or read(PROOF_EXPECTED) ~= got then
+    replace(scratch .. "/proof.got", got)
+    print("FAIL the proof tools' output is not " .. PROOF_EXPECTED .. "; it is in " .. scratch .. "/proof.got")
     bad = bad + 1
   end
   print("proof tools: " .. bad .. " bad")
