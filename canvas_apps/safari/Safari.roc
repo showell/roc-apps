@@ -86,6 +86,7 @@ Safari :: [].{
 				rider_along: s.along,
 				speed: s.speed,
 				truck: { route_position: r.truck.route_position, lights: truck_lights(r) },
+				clock: r.clock,
 			})
 			roadside = ItemDraw.draw(
 				scene,
@@ -96,7 +97,6 @@ Safari :: [].{
 						pose,
 					},
 					cam_focal: cf,
-					clock: r.clock,
 				},
 			)
 			[

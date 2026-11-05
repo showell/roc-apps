@@ -7,7 +7,6 @@ import Angle
 import Camera
 import lib.DeviceMath
 import Geom
-import Num_
 import Paint
 import lib.Trig
 import Screen
@@ -46,15 +45,6 @@ Tower :: [].{
 
 	beacon_color : I64
 	beacon_color = 16723942
-
-	## A beacon blinks once in this many steps of the ride.
-	beacon_period : F64
-	beacon_period = 120.0
-
-	## Each mast's blink starts this many steps past the last one's, a number
-	## that shares no factor with the period, so neighbours blink apart.
-	beacon_stagger : F64
-	beacon_stagger = 37.0
 
 	## A corner of the mast's square footprint, as seen along the route.
 	Corner : [BackLeft, BackRight, FrontRight, FrontLeft]
@@ -116,15 +106,6 @@ Tower :: [].{
 			FrontRight => footprint.front_right
 			FrontLeft => footprint.front_left
 		}
-
-	beacon_offset_for : I64 -> F64
-	beacon_offset_for = |n| Num_.mod_real(n.to_f64() * beacon_stagger, beacon_period)
-
-	beacon_brightness : F64 -> F64
-	beacon_brightness = |phase| {
-		wrapped = Num_.mod_real(phase, beacon_period)
-		((1.0 - Trig.r_cos((((2.0 * Trig.pi) * wrapped) / beacon_period))) / 2.0)
-	}
 
 	## Where a footprint corner stands on the map, for a mast centred at
 	## `along` and `across` and turned by `yaw`.
@@ -470,7 +451,7 @@ Tower :: [].{
 		center : Geom.RiderPoint,
 		cam_focal : F64,
 		view_w : F64,
-		beacon_phase : F64,
+		beacon_brightness : F64,
 	} -> List(Shapes.Shape)
 	draw = |
 		{
@@ -478,7 +459,7 @@ Tower :: [].{
 			center,
 			cam_focal,
 			view_w,
-			beacon_phase,
+			beacon_brightness,
 		},
 	| {
 		sunk = sunk_below_horizon(center)
@@ -509,7 +490,7 @@ Tower :: [].{
 				legs(mast, apex),
 				rings(mast),
 				braces(mast),
-				beacon(mast, { apex, brightness: beacon_brightness(beacon_phase) }),
+				beacon(mast, { apex, brightness: beacon_brightness }),
 			])
 		}
 	}

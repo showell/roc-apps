@@ -81,7 +81,6 @@ context = {
 		},
 	},
 	cam_focal: 500.0,
-	clock: 0.0,
 }
 
 ## A mast `along` metres down the first segment, 22 m across.
@@ -92,7 +91,7 @@ tower_along = |along| {
 	across: 22.0,
 	yaw: Angle.straight_ahead,
 	forward: along,
-	beacon_offset: 0.0,
+	beacon_brightness: 0.0,
 }
 
 corner_got : List(F64)

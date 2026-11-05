@@ -1,4 +1,4 @@
-## These are Tower's checks: its dimensions, the beacon, the footprint's
+## These are Tower's checks: its dimensions, the footprint's
 ## corners, the taper, how far the earth sinks a mast, and rods on screen.
 app [main!] {
 	lib: "../lib/main.roc",
@@ -19,11 +19,10 @@ dims_got = [
 	Tower.rod_w,
 	Tower.earth_radius,
 	Tower.beacon_radius,
-	Tower.beacon_period,
 ]
 
 dims_want : List(F64)
-dims_want = [80.0, 6.0, 20.0, 0.12, 0.24, 20000.0, 3.0, 120.0]
+dims_want = [80.0, 6.0, 20.0, 0.12, 0.24, 20000.0, 3.0]
 
 fixed_got : List(I64)
 fixed_got = [
@@ -34,36 +33,6 @@ fixed_got = [
 
 fixed_want : List(I64)
 fixed_want = [2, 10133672, 16723942]
-
-offsets_got : List(F64)
-offsets_got = [
-	Tower.beacon_offset_for(0),
-	Tower.beacon_offset_for(1),
-	Tower.beacon_offset_for(2),
-	Tower.beacon_offset_for(3),
-	Tower.beacon_offset_for(4),
-	Tower.beacon_offset_for(5),
-	Tower.beacon_offset_for(10),
-	Tower.beacon_offset_for(120),
-]
-
-offsets_want : List(F64)
-offsets_want = [0.0, 37.0, 74.0, 111.0, 28.0, 65.0, 10.0, 0.0]
-
-bright_got : List(F64)
-bright_got = [
-	Tower.beacon_brightness(0.0),
-	Tower.beacon_brightness(60.0),
-	Tower.beacon_brightness(30.0),
-	Tower.beacon_brightness(90.0),
-	Tower.beacon_brightness(120.0),
-	Tower.beacon_brightness(180.0),
-	Tower.beacon_brightness((0.0 - 60.0)),
-	Tower.beacon_brightness((0.0 - 120.0)),
-]
-
-bright_want : List(F64)
-bright_want = [0.0, 1.0, 0.5, 0.5, 0.0, 1.0, 1.0, 0.0]
 
 corner_got : List(F64)
 corner_got = List.concat(
@@ -362,18 +331,6 @@ main! = |_args| {
 			name: "tw-fixed ",
 			got: fixed_got,
 			want: fixed_want,
-		}),
-		Grade.reals({
-			name: "tw-offset",
-			got: offsets_got,
-			want: offsets_want,
-			tol: 0.0,
-		}),
-		Grade.reals({
-			name: "tw-bright",
-			got: bright_got,
-			want: bright_want,
-			tol: F64.from_bits(4502148214488346440),
 		}),
 		Grade.reals({
 			name: "tw-corner",

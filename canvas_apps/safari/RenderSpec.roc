@@ -44,6 +44,7 @@ scene = Render.collect({
 		route_position: 500.0,
 		lights: { headlights: Off, brake_lights: Off },
 	},
+	clock: 0.0,
 })
 
 merge_got : List(I64)

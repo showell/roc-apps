@@ -1,36 +1,40 @@
 ## TowerPlan finds the radio masts in front of the rider in a frame. A mast
 ## stands past the end of every segment, off to the right, and a long
 ## segment has one more halfway along, off to the left. The mast past the
-## end of the segment behind the rider is seen too.
+## end of the segment behind the rider is seen too. Each mast's beacon blinks
+## on the ride's clock, and the plan says how bright it is in the frame.
 import Angle
 import DepthSort
 import Frame
 import Geom
+import Num_
 import Scenery
-import Tower
+import lib.Trig
 import World
 
 TowerPlan :: [].{
 
 	## A mast to draw: how its segment maps to the rider's view, where it
 	## stands in that segment and how it is turned, how far ahead it is, and
-	## where its beacon's blink starts.
+	## how bright its beacon is.
 	TowerItem : {
 		place : Frame.SegmentPlace,
 		along : F64,
 		across : F64,
 		yaw : Angle.Turn,
 		forward : F64,
-		beacon_offset : F64,
+		beacon_brightness : F64,
 	}
 
 	## What the masts are seen from: the world's segments, the chain of them
-	## ahead of the rider, the rider's pose, and the segment the rider is on.
+	## ahead of the rider, the rider's pose, the segment the rider is on, and
+	## the ride's clock.
 	View : {
 		world : List(World.Segment),
 		chain : List(World.SegmentIndex),
 		pose : Frame.Pose,
 		rider_segment : World.SegmentIndex,
+		clock : F64,
 	}
 
 	## How far past the end of its segment a mast stands.
@@ -52,6 +56,27 @@ TowerPlan :: [].{
 	## At most this many masts are drawn in a frame.
 	max_vis_towers : I64
 	max_vis_towers = 16
+
+	## A beacon blinks once in this many steps of the ride.
+	beacon_period : F64
+	beacon_period = 120.0
+
+	## Each mast's blink starts this many steps past the last one's, a number
+	## that shares no factor with the period, so neighbours blink apart.
+	beacon_stagger : F64
+	beacon_stagger = 37.0
+
+	## How far into its blink the mast with key `n` is when the ride's clock
+	## is 0.
+	beacon_offset_for : I64 -> F64
+	beacon_offset_for = |n| Num_.mod_real(n.to_f64() * beacon_stagger, beacon_period)
+
+	## How bright a beacon is `phase` steps into its blink, from 0 to 1.
+	beacon_brightness : F64 -> F64
+	beacon_brightness = |phase| {
+		wrapped = Num_.mod_real(phase, beacon_period)
+		((1.0 - Trig.r_cos((((2.0 * Trig.pi) * wrapped) / beacon_period))) / 2.0)
+	}
 
 	## The masts in view: those along the chain, then the one past the end of
 	## the segment behind the rider.
@@ -190,7 +215,9 @@ tower_if_ahead = |
 				across,
 				yaw,
 				forward: center.forward,
-				beacon_offset: Tower.beacon_offset_for(beacon_key),
+				beacon_brightness: TowerPlan.beacon_brightness(
+					view.clock + TowerPlan.beacon_offset_for(beacon_key),
+				),
 			},
 		]
 	}

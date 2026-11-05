@@ -20,12 +20,11 @@ import lib.Shapes
 
 ItemDraw :: [].{
 
-	## What every thing in a frame is drawn with: the road, the camera's focal
-	## length, and the ride's clock, which sets the masts' beacons.
+	## What every thing in a frame is drawn with: the road and the camera's
+	## focal length.
 	Context : {
 		road : Frame.RoadView,
 		cam_focal : F64,
-		clock : F64,
 	}
 
 	## A tree with fewer than this many trees nearer than it gets a round
@@ -103,7 +102,7 @@ ItemDraw :: [].{
 		}
 	}
 
-	## A mast, its beacon blinking on the ride's clock.
+	## A mast, its beacon as bright as its plan says.
 	draw_tower : ItemDraw.Context, TowerPlan.TowerItem -> List(Shapes.Shape)
 	draw_tower = |context, tower|
 		Tower.draw({
@@ -118,7 +117,7 @@ ItemDraw :: [].{
 			),
 			cam_focal: context.cam_focal,
 			view_w: Screen.width,
-			beacon_phase: (context.clock + tower.beacon_offset),
+			beacon_brightness: tower.beacon_brightness,
 		})
 }
 

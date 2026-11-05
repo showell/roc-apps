@@ -34,8 +34,8 @@ Render :: [].{
 
 	## Where the frame is seen from: the world, the chain of segments ahead
 	## (indexes into `world`, the rider's own first), the rider's pose, the
-	## camera's focal length, where along the route the rider is, and where
-	## the truck is and which of its lights are on.
+	## camera's focal length, where along the route the rider is, where the
+	## truck is and which of its lights are on, and the ride's clock.
 	Viewpoint : {
 		world : List(World.Segment),
 		chain : List(World.SegmentIndex),
@@ -45,6 +45,7 @@ Render :: [].{
 		rider_along : F64,
 		speed : Speed,
 		truck : { route_position : F64, lights : Truck.Lights },
+		clock : F64,
 	}
 
 	## Everything in view from `viewpoint`, each kind cut to its plan's cap.
@@ -59,6 +60,7 @@ Render :: [].{
 			rider_along,
 			speed,
 			truck,
+			clock,
 		},
 	| {
 		road = {
@@ -80,6 +82,7 @@ Render :: [].{
 				chain,
 				pose,
 				rider_segment,
+				clock,
 			})
 				.take_first(TowerPlan.max_vis_towers.to_u64_wrap())
 		critters =
