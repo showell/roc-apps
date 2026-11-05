@@ -1,0 +1,38 @@
+-- budget: steps=40000000 read_bytes=100000000 output_bytes=200000
+-- This is safari's publish tier, for before the site moves. It stops at its
+-- first failure.
+--
+--   cd <roc-apps checkout> && nice -n 19 shale canvas_apps/safari/gates/publish.shale
+--
+-- It runs the merge gate from cold caches, then check.shale from a cold cache,
+-- then builds safari's page and every widget's as release wasm, each from a cold
+-- cache, into the dev channel, where site/publish.sh takes them. Safari's page
+-- must draw the hash the dev page draws. It moves nothing to staging.
+
+const RUN = "canvas_apps/safari/gates/run.shale"
+const PAGE_WANT = "script: canvas_apps/build.sh builds and checks a page, and refuses another Roc"
+
+function say(r, what)
+  for l in lines(trim(r.out)) do
+    if not starts_with(l, "── budgets") then print(l) end
+  end
+  print("publish: " .. what .. ": " .. (r.ms // 1000) .. " s")
+  if r.ended ~= "exit" or get(r, "code", -1) ~= 0 then fail("safari publish: " .. what .. " failed") end
+  return nil
+end
+
+function main()
+  say(run({"shale", "--root", ".", RUN, "cold=1"}, {timeout_ms = 1800000, tail = 200}), "the merge gate, cold")
+  local cache = fresh_dir("scratch:", "safari-check-cache")
+  say(run({"shale", "--root", ".", "check.shale"}, {timeout_ms = 1800000, tail = 40, env = {XDG_CACHE_HOME = real(cache)}}), "check.shale, cold")
+  remove_tree(cache)
+  say(run({"shale", "--root", ".", RUN, "part=page", "release=1"}, {timeout_ms = 600000, tail = 40}), "safari's page, release")
+  for page in glob("canvas_apps/*_widget/page.html") do
+    local app = basename(dirname(page))
+    say(run({"bash", "canvas_apps/build.sh", app, "release"}, {timeout_ms = 600000, tail = 4, want = PAGE_WANT}), app .. ", release")
+  end
+  print("safari publish: every stage passed; site/publish.sh takes each page from the dev channel")
+  return nil
+end
+
+main()
