@@ -1,18 +1,21 @@
 ## How a critter plays out as the rider comes. Animation holds two ideas that
 ## know nothing of each other. A rule, `over_gap` or `over_beats`, turns where
 ## the rider is into a stage: waiting, playing, or past. A timeline turns a
-## stage into a moment: how the critter looks and where it is. A timeline is
+## stage into an instant: how the critter looks and where it is. A timeline is
 ## data, so a critter's whole animation reads in one place, as a score.
 ##
 ## A timeline runs on two tracks, one for how the critter looks and one for
 ## where it goes, because the two change at different points. Each track's
-## cuts are in beats from the start of the timeline. The moments before and
+## cuts are in beats from the start of the timeline. The instants before and
 ## after are the timeline's own, because a critter can rest somewhere no
 ## stretch of a track ever reaches.
 ##
 ## A spot is relative to the critter's home, which only its owner knows, so
 ## critters with different homes can share a timeline.
+import Across
+import Along
 import Beats
+import Distance
 import Easing
 import Fraction
 import Speed
@@ -20,61 +23,62 @@ import lib.Trig
 
 Animation :: [].{
 
-	## How the rider comes on a thing: the gap from the rider ahead to it, in
-	## metres, and the rider's speed.
-	Approach : { gap : F64, speed : Speed }
+	## How the rider comes on a thing: the gap from the rider ahead to it, and
+	## the rider's speed.
+	Approach : { gap : Distance, speed : Speed }
 
 	## Where an animation has got to: not begun, playing and this far through,
-	## or over, with the rider this many metres beyond its end.
+	## or over, with the rider this far beyond its end.
 	Stage : [
 		Waiting,
 		Playing(Fraction),
-		Past(F64),
+		Past(Distance),
 	]
 
 	## A rider this slow is standing still.
 	standstill : Speed
 	standstill = Speed.metres_a_step(0.000001)
 
-	## An animation that plays while the rider closes from `starts_at` metres
+	## An animation that plays while the rider closes from a gap of `starts_at`
 	## to `ends_at`, however fast. It is playing only strictly between the two,
 	## so a critter is at rest at both ends.
-	over_gap : { starts_at : F64, ends_at : F64 }, F64 -> Animation.Stage
+	over_gap : { starts_at : Distance, ends_at : Distance }, Distance -> Animation.Stage
 	over_gap = |{ starts_at, ends_at }, gap| {
-		progress = Fraction.clamp((starts_at - gap) / (starts_at - ends_at))
+		progress = Fraction.clamp(starts_at.minus(gap).ratio_to(starts_at.minus(ends_at)))
 		if progress <= Fraction.zero {
 			Waiting
 		} else if progress >= Fraction.whole {
-			Past(ends_at - gap)
+			Past(ends_at.minus(gap))
 		} else {
 			Playing(progress)
 		}
 	}
 
 	## An animation `length` long, played at a beat a step at the rider's
-	## speed, that ends with the rider `buffer` metres short, however fast the
-	## rider comes. It is playing from the moment the rider is that far away,
+	## speed, that ends with the rider `buffer` short, however fast the rider
+	## comes. It is playing from the moment the rider is that far away,
 	## and a rider standing still inside that stretch holds it at its start.
-	over_beats : { length : Beats, buffer : F64 }, Animation.Approach -> Animation.Stage
+	over_beats : { length : Beats, buffer : Distance }, Animation.Approach -> Animation.Stage
 	over_beats = |{ length, buffer }, { gap, speed }| {
-		gap_left = gap - buffer
+		gap_left = gap.minus(buffer)
 		stretch = speed.distance_in(length)
-		if gap_left <= 0.0 {
-			Past(0.0 - gap_left)
+		if gap_left <= Distance.zero {
+			Past(gap_left.opposite())
 		} else if gap_left > stretch {
 			Waiting
 		} else if speed <= standstill {
 			Playing(Fraction.zero)
 		} else {
-			Playing(Fraction.clamp(1.0 - gap_left / stretch))
+			Playing(Fraction.clamp(1.0 - gap_left.ratio_to(stretch)))
 		}
 	}
 
-	## A place, relative to a critter's home. What `lift` measures is the
-	## critter's own affair.
+	## A place, relative to a critter's home. `lift` is a plain number because
+	## its unit is the critter's own affair: cat heights for a cat, and metres
+	## for a bird. Each owner turns it into what it means at its own edge.
 	Spot : {
-		along : F64,
-		across : F64,
+		along : Along,
+		across : Across,
 		lift : F64,
 	}
 
@@ -128,22 +132,22 @@ Animation :: [].{
 	## has something to play: it runs to the timeline's end.
 	Track(kind) : { stretches : List(Animation.Stretch(kind)), finally : kind }
 
-	## A critter at one moment: how it looks, and where it is.
-	Moment(pose) : { pose : pose, spot : Animation.Spot }
+	## A critter at one instant: how it looks, and where it is.
+	Instant(pose) : { pose : pose, spot : Animation.Spot }
 
 	## A whole animation: how many beats long it is, the critter at rest before
 	## and after, how it looks, and where it goes.
 	Timeline(pose) := {
 		length : Beats,
-		before : Animation.Moment(pose),
-		after : Animation.Moment(pose),
+		before : Animation.Instant(pose),
+		after : Animation.Instant(pose),
 		looks : Animation.Track(Animation.Looks(pose)),
 		path : Animation.Track(Animation.Path),
 	}.{
 
 		## The critter at `stage`.
-		moment : Animation.Timeline(pose), Animation.Stage -> Animation.Moment(pose)
-		moment = |timeline, stage| {
+		instant : Animation.Timeline(pose), Animation.Stage -> Animation.Instant(pose)
+		instant = |timeline, stage| {
 			Animation.Timeline.(score) = timeline
 			match stage {
 				Waiting => score.before
@@ -153,7 +157,7 @@ Animation :: [].{
 		}
 
 		## The critter at `beat` of the animation.
-		at_beat : Animation.Timeline(pose), Beats -> Animation.Moment(pose)
+		at_beat : Animation.Timeline(pose), Beats -> Animation.Instant(pose)
 		at_beat = |Animation.Timeline.(score), beat| {
 			looks = playing_at(score.looks, { beat, length: score.length })
 			path = playing_at(score.path, { beat, length: score.length })
@@ -249,8 +253,8 @@ line_spot = |line, fraction| {
 			fraction: eased,
 		})
 	{
-		along: between(line.from.along, line.to.along),
-		across: between(line.from.across, line.to.across),
+		along: Along.metres(between(line.from.along.to_metres(), line.to.along.to_metres())),
+		across: Across.metres(between(line.from.across.to_metres(), line.to.across.to_metres())),
 		lift: between(line.from.lift, line.to.lift),
 	}
 }

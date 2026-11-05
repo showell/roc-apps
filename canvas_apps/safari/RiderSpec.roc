@@ -8,6 +8,8 @@ import Angle
 import Fraction
 import Bike
 import lib.DeviceMath
+import Across
+import Along
 import Grade
 import LeanSearch
 import Pose
@@ -30,8 +32,8 @@ seg = World.route_segment(0)
 
 ## Where a test rider is on segment 0 and how it moves.
 RiderSpot : {
-	along : F64,
-	across : F64,
+	along : Along,
+	across : Across,
 	speed : Speed,
 	tilt_radians : F64,
 }
@@ -61,8 +63,8 @@ step_got = (
 	{
 		d = Rider.decide(
 			rider({
-				along: 0.0,
-				across: 0.0,
+				along: Along.metres(0.0),
+				across: Across.metres(0.0),
 				speed: VehicleLimits.v_base,
 				tilt_radians: 0.0,
 			}),
@@ -70,8 +72,8 @@ step_got = (
 		)
 		held = Rider.decide(
 			rider({
-				along: 0.0,
-				across: 0.0,
+				along: Along.metres(0.0),
+				across: Across.metres(0.0),
 				speed: VehicleLimits.v_base,
 				tilt_radians: 0.5,
 			}),
@@ -95,8 +97,8 @@ leaned_got = (
 	{
 		d = Rider.decide(
 			rider({
-				along: 0.0,
-				across: 0.0,
+				along: Along.metres(0.0),
+				across: Across.metres(0.0),
 				speed: VehicleLimits.v_base,
 				tilt_radians: 0.0,
 			}),
@@ -105,8 +107,8 @@ leaned_got = (
 		same = Throttle.get_forward_accel_decel(
 			Bike.with_tilt(
 				rider({
-					along: 0.0,
-					across: 0.0,
+					along: Along.metres(0.0),
+					across: Across.metres(0.0),
 					speed: VehicleLimits.v_base,
 					tilt_radians: 0.0,
 				}),
@@ -125,8 +127,8 @@ leaned_want = [True]
 at_seam : Pose.RiderState
 at_seam = {
 	segment: World.SegmentIndex.number(0),
-	along: 499.0,
-	across: 0.5,
+	along: Along.metres(499.0),
+	across: Across.metres(0.5),
 	yaw: Angle.Turn.radians(0.1),
 	speed: Speed.metres_a_step(1.25),
 	tilt: Angle.Lean.radians(0.05),
@@ -177,14 +179,14 @@ early_got = (
 	{
 		far = Rider.rider_state_for_next_segment(
 			rider({
-				along: 100.0,
-				across: 0.0,
+				along: Along.metres(100.0),
+				across: Across.metres(0.0),
 				speed: VehicleLimits.v_base,
 				tilt_radians: 0.0,
 			}),
 			segs,
 		)
-		[(DeviceMath.real_abs(far.across) >= (Scenery.lane_width / 2.0))]
+		[(far.across.distance_from_middle() >= Scenery.lane_half_width)]
 	}
 )
 
@@ -195,8 +197,8 @@ resolve_got : List(I64)
 resolve_got = [
 	Rider.resolve_cross(
 		rider({
-			along: 100.0,
-			across: 0.0,
+			along: Along.metres(100.0),
+			across: Across.metres(0.0),
 			speed: VehicleLimits.v_base,
 			tilt_radians: 0.0,
 		}),
@@ -204,8 +206,8 @@ resolve_got = [
 	).segment.to_i64(),
 	Rider.resolve_cross(
 		rider({
-			along: 499.0,
-			across: 0.0,
+			along: Along.metres(499.0),
+			across: Across.metres(0.0),
 			speed: VehicleLimits.v_base,
 			tilt_radians: 0.0,
 		}),
@@ -231,8 +233,8 @@ clamped_at_finish : F64, F64 -> Pose.RiderState
 clamped_at_finish = |along, v| Rider.finish_clamp(
 	{
 		segment: World.SegmentIndex.number(0),
-		along: along,
-		across: 0.0,
+		along: Along.metres(along),
+		across: Across.metres(0.0),
 		yaw: Angle.Turn.radians(0.0),
 		speed: Speed.metres_a_step(v),
 		tilt: Angle.Lean.radians(0.0),
@@ -245,15 +247,15 @@ clamped_at_finish = |along, v| Rider.finish_clamp(
 
 finish_got : List(F64)
 finish_got = [
-	clamped_at_finish(300.0, 0.5).along,
+	clamped_at_finish(300.0, 0.5).along.to_metres(),
 	clamped_at_finish(300.0, 0.5).speed.to_metres_a_step(),
-	clamped_at_finish(310.0, 0.5).along,
+	clamped_at_finish(310.0, 0.5).along.to_metres(),
 	clamped_at_finish(310.0, 0.5).speed.to_metres_a_step(),
-	clamped_at_finish(290.0, 0.05).along,
+	clamped_at_finish(290.0, 0.05).along.to_metres(),
 	clamped_at_finish(290.0, 0.05).speed.to_metres_a_step(),
-	clamped_at_finish(290.0, 0.5).along,
+	clamped_at_finish(290.0, 0.5).along.to_metres(),
 	clamped_at_finish(290.0, 0.5).speed.to_metres_a_step(),
-	clamped_at_finish(100.0, 0.05).along,
+	clamped_at_finish(100.0, 0.05).along.to_metres(),
 	clamped_at_finish(100.0, 0.05).speed.to_metres_a_step(),
 ]
 
@@ -265,8 +267,8 @@ done_got = (
 	{
 		at_end = {
 			segment: World.SegmentIndex.number(0),
-			along: 300.0,
-			across: 0.0,
+			along: Along.metres(300.0),
+			across: Across.metres(0.0),
 			yaw: Angle.Turn.radians(0.0),
 			speed: Speed.at_rest,
 			tilt: Angle.Lean.radians(0.0),
@@ -276,8 +278,8 @@ done_got = (
 		}
 		short = {
 			segment: World.SegmentIndex.number(0),
-			along: 299.0,
-			across: 0.0,
+			along: Along.metres(299.0),
+			across: Across.metres(0.0),
 			yaw: Angle.Turn.radians(0.0),
 			speed: Speed.at_rest,
 			tilt: Angle.Lean.radians(0.0),
@@ -291,8 +293,8 @@ done_got = (
 			is_route_end(last_seg),
 			Rider.is_finished(
 				rider({
-					along: 499.0,
-					across: 0.0,
+					along: Along.metres(499.0),
+					across: Across.metres(0.0),
 					speed: VehicleLimits.v_base,
 					tilt_radians: 0.0,
 				}),
@@ -308,8 +310,8 @@ done_want = [True, False, True, False]
 next : Pose.RiderState
 next = Rider.advance(
 	rider({
-		along: 0.0,
-		across: 0.0,
+		along: Along.metres(0.0),
+		across: Across.metres(0.0),
 		speed: VehicleLimits.v_base,
 		tilt_radians: 0.0,
 	}),
@@ -318,10 +320,10 @@ next = Rider.advance(
 
 frame_got : List(Bool)
 frame_got = [
-	(next.along > 0.0),
+	(next.along > Along.start),
 	(next.speed > Speed.at_rest),
 	(next.segment == World.SegmentIndex.first),
-	(DeviceMath.real_abs(next.across) < (Scenery.lane_width / 2.0)),
+	(next.across.distance_from_middle() < Scenery.lane_half_width),
 	(next.speed <= VehicleLimits.v_max),
 ]
 

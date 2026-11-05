@@ -6,6 +6,9 @@ app [main!] {
 
 import Angle
 import Frame
+import Distance
+import Across
+import Along
 import Grade
 import Truck
 import TruckSighting
@@ -20,14 +23,14 @@ segs = [
 
 here : Frame.Pose
 here = {
-	along: 0.0,
-	across: 0.0,
+	along: Along.metres(0.0),
+	across: Across.metres(0.0),
 	yaw: Angle.straight_ahead,
-	half_width: 2.0,
+	half_width: Distance.metres(2.0),
 }
 
 lengths_got : List(F64)
-lengths_got = segs.map(|seg| seg.length)
+lengths_got = segs.map(|seg| seg.length.to_metres())
 
 lengths_want : List(F64)
 lengths_want = [500.0, 320.0, 400.0]
@@ -41,7 +44,7 @@ truck_view = |pose, lead| {
 		chain: [0, 1, 2].map(World.SegmentIndex.number),
 		pose,
 	},
-	lead,
+	lead: Distance.metres(lead),
 	lights: { headlights: Off, brake_lights: Off },
 }
 
@@ -62,8 +65,8 @@ is_ahead = |truck|
 ## Where the truck is, for a lead that puts it in view.
 ahead_of : F64 -> {
 	position : Frame.ChainPosition,
-	along : F64,
-	across : F64,
+	along : Along,
+	across : Across,
 	forward : F64,
 	lights : Truck.Lights,
 }
@@ -94,13 +97,13 @@ landed_want : List(I64)
 landed_want = [0, 0, 1, 2]
 
 along_got : List(F64)
-along_got = [100.0, 499.0, 600.0, 900.0].map(|lead| ahead_of(lead).along)
+along_got = [100.0, 499.0, 600.0, 900.0].map(|lead| ahead_of(lead).along.to_metres())
 
 along_want : List(F64)
 along_want = [100.0, 499.0, 100.0, 80.0]
 
 across_got : List(F64)
-across_got = [100.0, 499.0, 600.0, 900.0].map(|lead| ahead_of(lead).across)
+across_got = [100.0, 499.0, 600.0, 900.0].map(|lead| ahead_of(lead).across.to_metres())
 
 across_want : List(F64)
 across_want = [2.0, 2.0, 2.0, 2.0]
@@ -141,10 +144,10 @@ behind_got = [
 	is_ahead(
 		truck_seen_from(
 			{
-				along: 100.0,
-				across: 0.0,
+				along: Along.metres(100.0),
+				across: Across.metres(0.0),
 				yaw: Angle.straight_ahead,
-				half_width: 2.0,
+				half_width: Distance.metres(2.0),
 			},
 			0.25,
 		),
@@ -152,10 +155,10 @@ behind_got = [
 	is_ahead(
 		truck_seen_from(
 			{
-				along: 100.0,
-				across: 0.0,
+				along: Along.metres(100.0),
+				across: Across.metres(0.0),
 				yaw: Angle.straight_ahead,
-				half_width: 2.0,
+				half_width: Distance.metres(2.0),
 			},
 			1.0,
 		),

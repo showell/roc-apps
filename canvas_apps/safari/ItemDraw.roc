@@ -1,7 +1,10 @@
 ## ItemDraw paints the things beside the road in depth order, far to near,
 ## each by its own kind's module.
 import CatDraw
+import Across
+import Along
 import Angle
+import Distance
 import World
 import CatSighting
 import Critter
@@ -55,7 +58,7 @@ ItemDraw :: [].{
 		Tree.draw({
 			right: tree.right,
 			forward: tree.forward,
-			height: tree.height,
+			height: tree.height.to_metres(),
 			color: tree.color,
 			cam_focal,
 			trunk: if (nearer_trees < ItemDraw.round_trunk_limit) RoundCorners else SharpCorners,
@@ -145,7 +148,7 @@ draw_cat = |cat, cam_focal|
 	CatDraw.draw({
 		right: cat.right,
 		forward: cat.forward,
-		height: cat.height,
+		height: cat.height.to_metres(),
 		pose: cat.pose,
 		lift: cat.lift,
 		cam_focal,
@@ -173,7 +176,7 @@ tree_at : F64 -> TreeSighting.TreeItem
 tree_at = |forward| {
 	right: 0.0,
 	forward,
-	height: 5.85,
+	height: Distance.metres(5.85),
 	color: 1858082,
 }
 
@@ -208,10 +211,10 @@ start_view = {
 		world: [0, 1, 2].map(World.route_segment),
 		chain: [0, 1, 2].map(World.SegmentIndex.number),
 		pose: {
-			along: 0.0,
-			across: 0.0,
+			along: Along.metres(0.0),
+			across: Across.metres(0.0),
 			yaw: Angle.straight_ahead,
-			half_width: 2.0,
+			half_width: Distance.metres(2.0),
 		},
 	},
 	cam_focal: 500.0,
@@ -221,8 +224,8 @@ start_view = {
 tower_along : F64 -> TowerSighting.TowerItem
 tower_along = |along| {
 	place: InChain(Frame.ChainPosition.first),
-	along,
-	across: 22.0,
+	along: Along.metres(along),
+	across: Across.metres(22.0),
 	yaw: Angle.straight_ahead,
 	forward: along,
 	beacon_brightness: Fraction.zero,

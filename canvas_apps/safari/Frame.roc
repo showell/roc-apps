@@ -3,6 +3,9 @@
 ## any segment of it, or on the segment just behind the rider, is carried
 ## back round the bends between to the rider's own segment and into the
 ## rider's view.
+import Across
+import Along
+import Distance
 import Geom
 import Scenery
 import World
@@ -88,11 +91,11 @@ Frame :: [].{
 
 	## How far ahead of the rider the segment at `position` in the chain starts.
 	## The segments' lengths are added nearest first.
-	gap_to_segment : Frame.RoadView, Frame.ChainPosition -> F64
+	gap_to_segment : Frame.RoadView, Frame.ChainPosition -> Distance
 	gap_to_segment = |road, position|
 		position.before_in(road.chain).fold(
-			0.0 - road.pose.along,
-			|gap, index| gap + index.segment_in(road.world).length,
+			road.pose.along.from_start().opposite(),
+			|gap, index| gap.plus(index.segment_in(road.world).length),
 		)
 
 	## The chain from the segment at `start`: as far as the rider can see, or
@@ -116,8 +119,8 @@ Frame :: [].{
 	rider_point_ahead : Frame.RoadView,
 	{
 		position : Frame.ChainPosition,
-		along : F64,
-		across : F64,
+		along : Along,
+		across : Across,
 	} -> Geom.RiderPoint
 	rider_point_ahead = |
 		road,
@@ -138,8 +141,8 @@ Frame :: [].{
 	rider_point_at : Frame.RoadView,
 	{
 		place : Frame.SegmentPlace,
-		along : F64,
-		across : F64,
+		along : Along,
+		across : Across,
 	} -> Geom.RiderPoint
 	rider_point_at = |
 		road,

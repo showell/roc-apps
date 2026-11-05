@@ -2,6 +2,9 @@
 ## every 30 m, from just past the segment's start to well short of its end.
 ## The pairs alternate between big green trees and smaller ones in the
 ## segment's accent colour, and a gold tree stands farther from the road.
+import Across
+import Along
+import Distance
 import Scenery
 
 Trees :: [].{
@@ -22,29 +25,29 @@ Trees :: [].{
 	conifer_red : I64
 	conifer_red = 11680298
 
-	## A small green tree's height, in metres.
-	small_height : F64
-	small_height = 4.5
+	## A small green tree's height.
+	small_height : Distance
+	small_height = Distance.metres(4.5)
 
 	## How much taller a tree in a big pair is.
 	big_scale : F64
 	big_scale = 1.3
 
-	tree_spacing : F64
-	tree_spacing = 30.0
+	tree_spacing : Distance
+	tree_spacing = Distance.metres(30.0)
 
 	## How far from the road's edge a tree stands; a gold one, four times
 	## as far.
-	tree_road_offset : F64
-	tree_road_offset = 1.5
+	tree_road_offset : Distance
+	tree_road_offset = Distance.metres(1.5)
 
 	## How far into a segment its first pair stands.
-	tree_start_inset : F64
-	tree_start_inset = 6.0
+	tree_start_inset : Distance
+	tree_start_inset = Distance.metres(6.0)
 
 	## No pair stands closer than this to a segment's end.
-	tree_end_inset : F64
-	tree_end_inset = 85.0
+	tree_end_inset : Distance
+	tree_end_inset = Distance.metres(85.0)
 
 	## At most this many trees stand on a segment.
 	max_trees : I64
@@ -67,38 +70,38 @@ Trees :: [].{
 			Red => conifer_red
 		}
 
-	## A conifer's height, in metres.
-	height : { conifer : Trees.Conifer, size : Trees.PairSize } -> F64
+	## A conifer's height.
+	height : { conifer : Trees.Conifer, size : Trees.PairSize } -> Distance
 	height = |{ conifer, size }| {
 		base =
 			match size {
-				Big => (small_height * big_scale)
+				Big => small_height.times(big_scale)
 				Small => small_height
 			}
 		match conifer {
 			Green => base
-			Red => (base * 2.0)
-			Gold => (base * 3.0)
+			Red => base.times(2.0)
+			Gold => base.times(3.0)
 		}
 	}
 
 	## How far from the middle of the road a conifer stands, either side.
-	across : Trees.Conifer -> F64
-	across = |conifer|
+	distance_from_middle : Trees.Conifer -> Distance
+	distance_from_middle = |conifer|
 		match conifer {
-			Gold => ((Scenery.lane_width / 2.0) + (4.0 * tree_road_offset))
-			Green | Red => ((Scenery.lane_width / 2.0) + tree_road_offset)
+			Gold => Scenery.lane_half_width.plus(tree_road_offset.times(4.0))
+			Green | Red => Scenery.lane_half_width.plus(tree_road_offset)
 		}
 
 	## A segment's trees, in pairs from its start, each pair's left tree
 	## first.
-	plant : { scheme : Scenery.Scheme, length : F64 } -> List(Scenery.Tree)
+	plant : { scheme : Scenery.Scheme, length : Distance } -> List(Scenery.Tree)
 	plant = |{ scheme, length }| plant_onto(
 		[],
 		{
 			scheme,
 			length,
-			along: tree_start_inset,
+			along: Along.at(tree_start_inset),
 			size: Big,
 		},
 	)
@@ -109,8 +112,8 @@ Trees :: [].{
 plant_onto : List(Scenery.Tree),
 {
 	scheme : Scenery.Scheme,
-	length : F64,
-	along : F64,
+	length : Distance,
+	along : Along,
 	size : Trees.PairSize,
 } -> List(Scenery.Tree)
 plant_onto = |
@@ -122,7 +125,7 @@ plant_onto = |
 		size,
 	},
 |
-	if along > (length - Trees.tree_end_inset) {
+	if along > Along.at(length.minus(Trees.tree_end_inset)) {
 		planted
 	} else if (planted.len().to_i64_wrap() + 2) > Trees.max_trees {
 		planted
@@ -134,16 +137,16 @@ plant_onto = |
 			}
 		tree_color = Trees.color(conifer)
 		tree_height = Trees.height({ conifer, size })
-		from_middle = Trees.across(conifer)
+		from_middle = Trees.distance_from_middle(conifer)
 		left = {
 			along,
-			across: (0.0 - from_middle),
+			across: Across.left_of_middle(from_middle),
 			color: tree_color,
 			height: tree_height,
 		}
 		right = {
 			along,
-			across: from_middle,
+			across: Across.right_of_middle(from_middle),
 			color: tree_color,
 			height: tree_height,
 		}
@@ -157,7 +160,7 @@ plant_onto = |
 			{
 				scheme,
 				length,
-				along: (along + Trees.tree_spacing),
+				along: along.plus(Trees.tree_spacing),
 				size: next_size,
 			},
 		)
@@ -168,34 +171,34 @@ expect Trees.conifer_gold == 13605400
 expect Trees.conifer_red == 11680298
 expect Trees.max_trees == 96
 
-expect Trees.small_height == 4.5
+expect Trees.small_height == Distance.metres(4.5)
 expect Trees.big_scale == 1.3
-expect Trees.tree_spacing == 30.0
-expect Trees.tree_road_offset == 1.5
-expect Trees.tree_start_inset == 6.0
-expect Trees.tree_end_inset == 85.0
+expect Trees.tree_spacing == Distance.metres(30.0)
+expect Trees.tree_road_offset == Distance.metres(1.5)
+expect Trees.tree_start_inset == Distance.metres(6.0)
+expect Trees.tree_end_inset == Distance.metres(85.0)
 
 expect Trees.color(Trees.accent(AllGreen)) == 1858082
 expect Trees.color(Trees.accent(YellowGreen)) == 13605400
 expect Trees.color(Trees.accent(RedGreen)) == 11680298
 
-expect Trees.height({ conifer: Green, size: Big }) == 5.8500000000000005
-expect Trees.height({ conifer: Green, size: Small }) == 4.5
-expect Trees.height({ conifer: Red, size: Big }) == 11.700000000000001
-expect Trees.height({ conifer: Red, size: Small }) == 9.0
-expect Trees.height({ conifer: Gold, size: Big }) == 17.55
-expect Trees.height({ conifer: Gold, size: Small }) == 13.5
+expect Trees.height({ conifer: Green, size: Big }).to_metres() == 5.8500000000000005
+expect Trees.height({ conifer: Green, size: Small }).to_metres() == 4.5
+expect Trees.height({ conifer: Red, size: Big }).to_metres() == 11.700000000000001
+expect Trees.height({ conifer: Red, size: Small }).to_metres() == 9.0
+expect Trees.height({ conifer: Gold, size: Big }).to_metres() == 17.55
+expect Trees.height({ conifer: Gold, size: Small }).to_metres() == 13.5
 
-expect Trees.across(Green) == 3.5
-expect Trees.across(Red) == 3.5
-expect Trees.across(Gold) == 8.0
+expect Trees.distance_from_middle(Green).to_metres() == 3.5
+expect Trees.distance_from_middle(Red).to_metres() == 3.5
+expect Trees.distance_from_middle(Gold).to_metres() == 8.0
 
 ## Seven pairs, alternating big green and small gold.
 yellow_green_trees : List(Scenery.Tree)
-yellow_green_trees = Trees.plant({ scheme: YellowGreen, length: 300.0 })
+yellow_green_trees = Trees.plant({ scheme: YellowGreen, length: Distance.metres(300.0) })
 
 expect
-	yellow_green_trees.map(|tree| tree.along)
+	yellow_green_trees.map(|tree| tree.along.to_metres())
 		== [
 			6.0,
 			6.0,
@@ -214,7 +217,7 @@ expect
 		]
 
 expect
-	yellow_green_trees.map(|tree| tree.across)
+	yellow_green_trees.map(|tree| tree.across.to_metres())
 		== [
 			-3.5,
 			3.5,
@@ -252,7 +255,7 @@ expect
 		]
 
 expect
-	yellow_green_trees.map(|tree| tree.height)
+	yellow_green_trees.map(|tree| tree.height.to_metres())
 		== [
 			5.8500000000000005,
 			5.8500000000000005,
@@ -271,6 +274,6 @@ expect
 		]
 
 expect yellow_green_trees.len() == 14
-expect Trees.plant({ scheme: AllGreen, length: 100.0 }).len() == 2
-expect Trees.plant({ scheme: AllGreen, length: 5000.0 }).len() == 96
-expect Trees.plant({ scheme: AllGreen, length: 50.0 }).len() == 0
+expect Trees.plant({ scheme: AllGreen, length: Distance.metres(100.0) }).len() == 2
+expect Trees.plant({ scheme: AllGreen, length: Distance.metres(5000.0) }).len() == 96
+expect Trees.plant({ scheme: AllGreen, length: Distance.metres(50.0) }).len() == 0

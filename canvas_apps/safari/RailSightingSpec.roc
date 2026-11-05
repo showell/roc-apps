@@ -7,6 +7,9 @@ app [main!] {
 import Angle
 import Frame
 import Geom
+import Distance
+import Across
+import Along
 import Grade
 import GuardRail
 import RailSighting
@@ -99,10 +102,10 @@ road = {
 	],
 	chain: [0, 1, 2].map(World.SegmentIndex.number),
 	pose: {
-		along: 0.0,
-		across: 0.0,
+		along: Along.metres(0.0),
+		across: Across.metres(0.0),
 		yaw: Angle.straight_ahead,
-		half_width: 2.0,
+		half_width: Distance.metres(2.0),
 	},
 }
 
@@ -111,8 +114,8 @@ run_up = RailSighting.run_up(
 	road,
 	{
 		place: InChain(Frame.ChainPosition.first),
-		length: 500.0,
-		across: 4.0,
+		length: Distance.metres(500.0),
+		across: Across.metres(4.0),
 	},
 )
 
@@ -121,7 +124,7 @@ runout_got = [
 	GuardRail.rail_runout.to_i64(),
 	RailSighting.run_out(
 		road,
-		{ place: InChain(Frame.ChainPosition.first), across: 4.0 },
+		{ place: InChain(Frame.ChainPosition.first), across: Across.metres(4.0) },
 	).len().to_i64_wrap(),
 	run_up.len().to_i64_wrap(),
 ]

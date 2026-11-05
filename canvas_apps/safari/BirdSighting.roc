@@ -4,6 +4,7 @@
 import Animation
 import BirdFlight
 import DepthSort
+import Distance
 import Frame
 import Geom
 import RocBird
@@ -38,26 +39,27 @@ segment_bird = |view, position|
 	match position.index_in(view.road.chain).segment_in(view.road.world).crossing {
 		BirdFlies(route) => {
 			gap_to_segment = Frame.gap_to_segment(view.road, position)
-			gap_to_tree = gap_to_segment + BirdFlight.start_along(route)
-			bird_in_view(view, { position, moment: BirdFlight.route_moment_at(route, gap_to_tree) })
+			gap_to_tree = gap_to_segment.plus(BirdFlight.start_along(route).from_start())
+			instant = BirdFlight.route_instant_at(route, gap_to_tree)
+			bird_in_view(view, { position, instant })
 		}
 		CatCrosses(_) | QuietRoad => []
 	}
 
-## The bird at `moment` on the segment at `position` in the chain, if it is in
+## The bird at `instant` on the segment at `position` in the chain, if it is in
 ## view: one item, or none.
 bird_in_view : Frame.Viewpoint,
 {
 	position : Frame.ChainPosition,
-	moment : Animation.Moment(BirdFlight.Pose),
+	instant : Animation.Instant(BirdFlight.Pose),
 } -> List(RocBird.PlacedBird)
-bird_in_view = |view, { position, moment }| {
+bird_in_view = |view, { position, instant }| {
 	seen = Frame.rider_point_ahead(
 		view.road,
 		{
 			position,
-			along: moment.spot.along,
-			across: moment.spot.across + Scenery.lane_width / 2.0,
+			along: instant.spot.along,
+			across: Scenery.from_left_edge(instant.spot.across),
 		},
 	)
 	height_px = RocBird.height_px({ forward: seen.forward, cam_focal: view.cam_focal })
@@ -70,8 +72,8 @@ bird_in_view = |view, { position, moment }| {
 			{
 				right: seen.right,
 				forward: seen.forward,
-				lift: moment.spot.lift,
-				pose: moment.pose,
+				lift: Distance.metres(instant.spot.lift),
+				pose: instant.pose,
 			},
 		]
 	}

@@ -8,15 +8,18 @@ app [main!] {
 import Animation
 import Beats
 import BirdFlight
+import Distance
+import Along
+import Across
 import Grade
 import Scenery
 
 tree_at : F64, F64 -> Scenery.Tree
 tree_at = |along, across| {
-	along,
-	across,
+	along: Along.metres(along),
+	across: Across.metres(across),
 	color: 0,
-	height: 10.0,
+	height: Distance.metres(10.0),
 }
 
 left_tree : Scenery.Tree
@@ -35,7 +38,7 @@ trees = [
 flight : BirdFlight.Flight
 flight = {
 	from: left_tree,
-	to: { ..tree_at(140.0, 6.0), height: 12.0 },
+	to: { ..tree_at(140.0, 6.0), height: Distance.metres(12.0) },
 }
 
 ## A left and a right tree at each of `alongs`.
@@ -46,7 +49,7 @@ pairs_at = |alongs| alongs.join_map(|along| [tree_at(along, -6.0), tree_at(along
 fifth_along : List(Scenery.Tree) -> List(F64)
 fifth_along = |choices|
 	match BirdFlight.fifth_left_tree(choices) {
-		Found(tree) => [tree.along]
+		Found(tree) => [tree.along.to_metres()]
 		NoTree => []
 	}
 
@@ -74,7 +77,7 @@ fifth_alongs_want = [50.0, 50.0]
 chosen_along : List(Scenery.Tree) -> List(F64)
 chosen_along = |choices|
 	match BirdFlight.route_from(choices, left_tree) {
-		Flies(found) => [found.to.along, found.to.across]
+		Flies(found) => [found.to.along.to_metres(), found.to.across.to_metres()]
 		Sits(_) => []
 	}
 
@@ -89,8 +92,8 @@ target_got = List.join([
 target_want : List(F64)
 target_want = [140.0, 6.0, 125.0, 6.0]
 
-## How far through its flight a bird with the rider `gap` metres off is.
-progress_at : F64 -> F64
+## How far through its flight a bird with the rider `gap` off is.
+progress_at : Distance -> F64
 progress_at = |gap|
 	match BirdFlight.flight_stage(gap) {
 		Waiting => 0.0
@@ -98,13 +101,17 @@ progress_at = |gap|
 		Past(_) => 1.0
 	}
 
+## The gap halfway through the flight.
+halfway_gap : Distance
+halfway_gap = BirdFlight.takeoff_gap.plus(BirdFlight.landing_gap).divided_by(2.0)
+
 progress_got : List(F64)
 progress_got = [
-	progress_at(BirdFlight.takeoff_gap + 1.0),
+	progress_at(BirdFlight.takeoff_gap.plus(Distance.metres(1.0))),
 	progress_at(BirdFlight.takeoff_gap),
-	progress_at((BirdFlight.takeoff_gap + BirdFlight.landing_gap) / 2.0),
+	progress_at(halfway_gap),
 	progress_at(BirdFlight.landing_gap),
-	progress_at(BirdFlight.landing_gap - 1.0),
+	progress_at(BirdFlight.landing_gap.minus(Distance.metres(1.0))),
 ]
 
 progress_want : List(F64)
@@ -112,14 +119,14 @@ progress_want = [0.0, 0.0, 0.5, 1.0, 1.0]
 
 ends_got : List(F64)
 ends_got = {
-	before = BirdFlight.moment_at(flight, 100.0)
-	after = BirdFlight.moment_at(flight, 0.0)
+	before = BirdFlight.instant_at(flight, Distance.metres(100.0))
+	after = BirdFlight.instant_at(flight, Distance.zero)
 	[
-		before.spot.along,
-		before.spot.across,
+		before.spot.along.to_metres(),
+		before.spot.across.to_metres(),
 		before.spot.lift,
-		after.spot.along,
-		after.spot.across,
+		after.spot.along.to_metres(),
+		after.spot.across.to_metres(),
 		after.spot.lift,
 	]
 }
@@ -129,10 +136,10 @@ ends_want = [100.0, -6.0, 10.0, 140.0, 6.0, 12.0]
 
 middle_got : List(F64)
 middle_got = {
-	middle = BirdFlight.moment_at(flight, (BirdFlight.takeoff_gap + BirdFlight.landing_gap) / 2.0)
+	middle = BirdFlight.instant_at(flight, halfway_gap)
 	[
-		middle.spot.along,
-		middle.spot.across,
+		middle.spot.along.to_metres(),
+		middle.spot.across.to_metres(),
 		middle.spot.lift,
 	]
 }
@@ -143,8 +150,8 @@ middle_want = [120.0, 0.0, 16.0]
 pose_got : List(Bool)
 pose_got = List.concat(
 	[
-		BirdFlight.moment_at(flight, 100.0).pose == Perched,
-		BirdFlight.moment_at(flight, 0.0).pose == Perched,
+		BirdFlight.instant_at(flight, Distance.metres(100.0)).pose == Perched,
+		BirdFlight.instant_at(flight, Distance.zero).pose == Perched,
 	],
 	[
 		(0.01, Side(WingsUp)),

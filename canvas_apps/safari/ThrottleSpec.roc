@@ -8,6 +8,9 @@ import Acceleration
 import Angle
 import Fraction
 import Arc
+import Across
+import Along
+import Distance
 import Grade
 import Pose
 import Speed
@@ -36,8 +39,8 @@ seg = World.route_segment(0)
 
 ## Where a test rider is on segment 0 and how it moves.
 RiderSpot : {
-	across : F64,
-	along : F64,
+	across : Across,
+	along : Along,
 	speed : Speed,
 	tilt_radians : F64,
 }
@@ -64,7 +67,7 @@ rider_at = |
 
 ## A test rider on the centre line.
 CentredRider : {
-	along : F64,
+	along : Along,
 	speed : Speed,
 	tilt_radians : F64,
 }
@@ -77,7 +80,7 @@ rider = |
 		tilt_radians,
 	},
 | rider_at({
-	across: 0.0,
+	across: Across.metres(0.0),
 	along,
 	speed,
 	tilt_radians,
@@ -87,7 +90,7 @@ corner_got : List(F64)
 corner_got = [
 	Throttle.corner_brake(
 		rider({
-			along: 498.4,
+			along: Along.metres(498.4),
 			speed: Speed.metres_a_step(0.3),
 			tilt_radians: 0.0,
 		}),
@@ -99,7 +102,7 @@ corner_got = [
 	),
 	Throttle.corner_brake(
 		rider({
-			along: 600.0,
+			along: Along.metres(600.0),
 			speed: Speed.metres_a_step(0.3),
 			tilt_radians: 0.0,
 		}),
@@ -111,7 +114,7 @@ corner_got = [
 	),
 	Throttle.corner_brake(
 		rider({
-			along: 0.0,
+			along: Along.metres(0.0),
 			speed: Speed.metres_a_step(0.3),
 			tilt_radians: 0.0,
 		}),
@@ -135,7 +138,7 @@ corner_min_got = [
 	(
 		Throttle.corner_brake(
 			rider({
-				along: 0.0,
+				along: Along.metres(0.0),
 				speed: Speed.metres_a_step(0.3),
 				tilt_radians: 0.0,
 			}),
@@ -149,7 +152,7 @@ corner_min_got = [
 	(
 		Throttle.corner_brake(
 			rider({
-				along: 0.0,
+				along: Along.metres(0.0),
 				speed: Speed.metres_a_step(0.3),
 				tilt_radians: 0.0,
 			}),
@@ -163,7 +166,7 @@ corner_min_got = [
 	(
 		Throttle.corner_brake(
 			rider({
-				along: 0.0,
+				along: Along.metres(0.0),
 				speed: Speed.metres_a_step(2.0),
 				tilt_radians: 0.0,
 			}),
@@ -174,7 +177,7 @@ corner_min_got = [
 			},
 		) < Throttle.corner_brake(
 			rider({
-				along: 0.0,
+				along: Along.metres(0.0),
 				speed: Speed.metres_a_step(0.3),
 				tilt_radians: 0.0,
 			}),
@@ -197,7 +200,7 @@ cat_got : List(F64)
 cat_got = [
 	Throttle.crossing_gate(
 		rider({
-			along: 0.0,
+			along: Along.metres(0.0),
 			speed: Speed.metres_a_step(0.3),
 			tilt_radians: 0.0,
 		}),
@@ -208,7 +211,7 @@ cat_got = [
 	),
 	Throttle.crossing_gate(
 		rider({
-			along: 0.0,
+			along: Along.metres(0.0),
 			speed: Speed.metres_a_step(0.3),
 			tilt_radians: 0.0,
 		}),
@@ -219,7 +222,7 @@ cat_got = [
 	),
 	Throttle.crossing_gate(
 		rider({
-			along: 120.0,
+			along: Along.metres(120.0),
 			speed: Speed.metres_a_step(0.3),
 			tilt_radians: 0.0,
 		}),
@@ -230,7 +233,7 @@ cat_got = [
 	),
 	Throttle.crossing_gate(
 		rider({
-			along: 120.0,
+			along: Along.metres(120.0),
 			speed: Speed.metres_a_step(0.3),
 			tilt_radians: 0.0,
 		}),
@@ -241,7 +244,7 @@ cat_got = [
 	),
 	Throttle.crossing_gate(
 		rider({
-			along: 0.0,
+			along: Along.metres(0.0),
 			speed: Speed.metres_a_step(0.3),
 			tilt_radians: 0.0,
 		}),
@@ -264,9 +267,9 @@ cat_want = [
 outcome : Arc.Shoulder -> Arc.ArcOutcome
 outcome = |sh| {
 	shoulder: sh,
-	forward: 10.0,
+	forward: Distance.metres(10.0),
 	crossed: False,
-	end_across: 0.0,
+	end_across: Across.metres(0.0),
 	frames: Steps.of(40),
 }
 
@@ -283,9 +286,9 @@ road_want = [True, False, False]
 soon : Arc.ArcOutcome
 soon = {
 	shoulder: ShoulderLeft,
-	forward: 10.0,
+	forward: Distance.metres(10.0),
 	crossed: False,
-	end_across: 0.0,
+	end_across: Across.metres(0.0),
 	frames: Steps.of(2),
 }
 
@@ -294,7 +297,7 @@ brake_got = (
 	{
 		far = Throttle.shoulder_brake_at(
 			rider({
-				along: 0.0,
+				along: Along.metres(0.0),
 				speed: Speed.metres_a_step(1.0),
 				tilt_radians: 0.0,
 			}),
@@ -305,7 +308,7 @@ brake_got = (
 		)
 		near_off = Throttle.shoulder_brake_at(
 			rider({
-				along: 0.0,
+				along: Along.metres(0.0),
 				speed: Speed.metres_a_step(1.0),
 				tilt_radians: 0.0,
 			}),
@@ -316,7 +319,7 @@ brake_got = (
 		)
 		already = Throttle.shoulder_brake_at(
 			rider({
-				along: 0.0,
+				along: Along.metres(0.0),
 				speed: Speed.metres_a_step(1.0),
 				tilt_radians: 0.0,
 			}),
@@ -339,9 +342,9 @@ brake_want = [True, True, True]
 instant : Arc.ArcOutcome
 instant = {
 	shoulder: ShoulderLeft,
-	forward: 0.0,
+	forward: Distance.zero,
 	crossed: False,
-	end_across: 0.0,
+	end_across: Across.metres(0.0),
 	frames: Steps.zero,
 }
 
@@ -350,7 +353,7 @@ zero_frames_got = [
 	(
 		Throttle.shoulder_brake_at(
 			rider({
-				along: 0.0,
+				along: Along.metres(0.0),
 				speed: Speed.metres_a_step(1.0),
 				tilt_radians: 0.0,
 			}),
@@ -369,7 +372,7 @@ clamp_got : List(F64)
 clamp_got = [
 	Throttle.clamp_v(
 		rider({
-			along: 0.0,
+			along: Along.metres(0.0),
 			speed: Speed.metres_a_step(0.3),
 			tilt_radians: 0.0,
 		}),
@@ -382,7 +385,7 @@ clamp_got = [
 	),
 	Throttle.clamp_v(
 		rider({
-			along: 0.0,
+			along: Along.metres(0.0),
 			speed: Speed.metres_a_step(0.3),
 			tilt_radians: 0.0,
 		}),
@@ -395,7 +398,7 @@ clamp_got = [
 	),
 	Throttle.clamp_v(
 		rider({
-			along: 0.0,
+			along: Along.metres(0.0),
 			speed: Speed.metres_a_step(0.3),
 			tilt_radians: 0.0,
 		}),
@@ -408,7 +411,7 @@ clamp_got = [
 	),
 	Throttle.clamp_v(
 		rider({
-			along: 0.0,
+			along: Along.metres(0.0),
 			speed: Speed.metres_a_step(0.3),
 			tilt_radians: 0.0,
 		}),
@@ -421,7 +424,7 @@ clamp_got = [
 	),
 	Throttle.clamp_v(
 		rider({
-			along: 0.0,
+			along: Along.metres(0.0),
 			speed: Speed.metres_a_step(0.3),
 			tilt_radians: 0.0,
 		}),
@@ -434,7 +437,7 @@ clamp_got = [
 	),
 	Throttle.clamp_v(
 		rider({
-			along: 0.0,
+			along: Along.metres(0.0),
 			speed: Speed.metres_a_step(0.3),
 			tilt_radians: 0.0,
 		}),
@@ -456,17 +459,17 @@ decide = |centred_rider| Throttle.get_forward_accel_decel(rider(centred_rider), 
 whole_got : List(F64)
 whole_got = [
 	decide({
-		along: 0.0,
+		along: Along.metres(0.0),
 		speed: Speed.metres_a_step(0.3),
 		tilt_radians: 0.0,
 	}),
 	decide({
-		along: 0.0,
+		along: Along.metres(0.0),
 		speed: VehicleLimits.v_max,
 		tilt_radians: 0.0,
 	}),
 	decide({
-		along: 0.0,
+		along: Along.metres(0.0),
 		speed: Speed.at_rest,
 		tilt_radians: 0.0,
 	}),
@@ -478,8 +481,8 @@ whole_want = [0.01, 0.0, 0.01]
 wide : F64 -> Acceleration
 wide = |tilt| Throttle.get_forward_accel_decel(
 	rider_at({
-		across: 100.0,
-		along: 0.0,
+		across: Across.metres(100.0),
+		along: Along.metres(0.0),
 		speed: Speed.metres_a_step(0.3),
 		tilt_radians: tilt,
 	}),
@@ -500,21 +503,21 @@ compose_got : List(Bool)
 compose_got = [
 	(
 		decide({
-			along: 0.0,
+			along: Along.metres(0.0),
 			speed: Speed.metres_a_step(0.3),
 			tilt_radians: (tilt_hold - 0.001),
 		}) < Acceleration.steady
 	),
 	(
 		decide({
-			along: 0.0,
+			along: Along.metres(0.0),
 			speed: Speed.metres_a_step(0.3),
 			tilt_radians: 0.001,
 		}) > Acceleration.steady
 	),
 	(
 		decide({
-			along: 0.0,
+			along: Along.metres(0.0),
 			speed: Speed.metres_a_step(0.3),
 			tilt_radians: (0.0 - (tilt_hold - 0.001)),
 		}) < Acceleration.steady

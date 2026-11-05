@@ -1,6 +1,7 @@
 # Throttle -- originally emitted from Codex by rocemit; the Roc is the program now
 # and this file is edited here (safari/README.md).
 import Acceleration
+import Along
 import Angle
 import Arc
 import CrossingReaction
@@ -34,7 +35,7 @@ Throttle :: [].{
 		},
 	| (
 		{
-			d = (seg.commit_along - state.along)
+			d = seg.commit_along.distance_from(state.along)
 			corner_a = (
 				if d <= VehicleLimits.least_braking_distance {
 					Acceleration.steady
@@ -214,7 +215,8 @@ Throttle :: [].{
 					Continues(_) => VehicleLimits.turn_speed(seg.exit_turn.abs())
 					Terminates => Speed.at_rest
 				}
-			near = ((seg.length - state.along) <= VehicleLimits.approach_intersection_dist)
+			left = Along.at(seg.length).distance_from(state.along)
+			near = left <= VehicleLimits.approach_intersection_dist
 			a1 = (
 				if near {
 					corner_brake(

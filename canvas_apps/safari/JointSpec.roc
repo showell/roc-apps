@@ -5,21 +5,24 @@ app [main!] {
 
 import Angle
 import Frame
+import Distance
+import Across
+import Along
 import Grade
 import Joint
 
 outer_got : List(F64)
-outer_got = [Joint.outer_edge(right_turn), Joint.outer_edge(left_turn)]
+outer_got = [Joint.outer_edge(right_turn).to_metres(), Joint.outer_edge(left_turn).to_metres()]
 
 outer_want : List(F64)
 outer_want = [0.0, 4.0]
 
 pose : Frame.Pose
 pose = {
-	along: 100.0,
-	across: 1.0,
+	along: Along.metres(100.0),
+	across: Across.metres(1.0),
 	yaw: Angle.Turn.radians(0.2),
-	half_width: 2.0,
+	half_width: Distance.metres(2.0),
 }
 
 right_turn : Angle.Turn
@@ -30,16 +33,16 @@ left_turn = Angle.Turn.radians(0.0 - 1.2217304763960306)
 
 behind_right : Frame.SegmentPlace
 behind_right = JustBehind({
-	segment_length: 300.0,
+	segment_length: Distance.metres(300.0),
 	turn: right_turn,
-	lane_width: 4.0,
+	lane_width: Distance.metres(4.0),
 })
 
 behind_left : Frame.SegmentPlace
 behind_left = JustBehind({
-	segment_length: 300.0,
+	segment_length: Distance.metres(300.0),
 	turn: left_turn,
-	lane_width: 4.0,
+	lane_width: Distance.metres(4.0),
 })
 
 here : Frame.SegmentPlace
@@ -57,7 +60,7 @@ apex_got = (
 			{
 				before: behind_right,
 				after: here,
-				length_before: 300.0,
+				length_before: Distance.metres(300.0),
 				turn: right_turn,
 			},
 		)
@@ -70,7 +73,7 @@ apex_got = (
 			{
 				before: behind_left,
 				after: here,
-				length_before: 300.0,
+				length_before: Distance.metres(300.0),
 				turn: left_turn,
 			},
 		)

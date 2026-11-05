@@ -4,6 +4,7 @@
 ## and mirrors it when asked. A critter in view is drawn from the emoji still
 ## for its codepoint.
 import Billboards
+import Distance
 import Camera
 import EmojiStills
 import Paint
@@ -85,7 +86,7 @@ Critter :: [].{
 			cam_focal,
 		)
 		feet = on_screen(0.0)
-		height_px = (feet.y - on_screen(critter.height).y)
+		height_px = (feet.y - on_screen(critter.height.to_metres()).y)
 		if height_px < 1.0 {
 			[]
 		} else {
@@ -232,7 +233,7 @@ expect
 # How many shapes draw a critter of `height` metres, `forward` metres ahead.
 shape_count : {
 	forward : F64,
-	height : F64,
+	height : Distance,
 	codepoint : I64,
 } -> U64
 shape_count = |
@@ -260,28 +261,28 @@ elephant = 128024
 expect
 	shape_count({
 		forward: 1000.0,
-		height: 2.0,
+		height: Distance.metres(2.0),
 		codepoint: elephant,
 	})
 		== 6
 expect
 	shape_count({
 		forward: 2000.0,
-		height: 2.0,
+		height: Distance.metres(2.0),
 		codepoint: elephant,
 	})
 		== 0
 expect
 	shape_count({
 		forward: 1000.0,
-		height: 1.9,
+		height: Distance.metres(1.9),
 		codepoint: elephant,
 	})
 		== 0
 expect
 	shape_count({
 		forward: 100.0,
-		height: 2.0,
+		height: Distance.metres(2.0),
 		codepoint: elephant,
 	})
 		== 6
@@ -291,7 +292,7 @@ expect EmojiStills.emoji_polys_for(1).len() == 0
 expect
 	shape_count({
 		forward: 100.0,
-		height: 2.0,
+		height: Distance.metres(2.0),
 		codepoint: 1,
 	})
 		== 0

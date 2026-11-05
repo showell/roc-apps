@@ -5,6 +5,7 @@ app [main!] {
 }
 
 import Beats
+import Distance
 import Fraction
 import Grade
 import Speed
@@ -54,14 +55,21 @@ order_want = [
 
 speed_got : List(F64)
 speed_got = [
-	Speed.metres_a_step(2.0).distance_in(Beats.of(38.0)),
-	Speed.at_rest.distance_in(Beats.of(38.0)),
-	Speed.metres_a_step(2.0).beats_to_cover(5.0).to_f64(),
-	Speed.metres_a_step(0.5).beats_to_cover(5.0).to_f64(),
+	Speed.metres_a_step(2.0).distance_in(Beats.of(38.0)).to_metres(),
+	Speed.at_rest.distance_in(Beats.of(38.0)).to_metres(),
+	Speed.metres_a_step(2.0).beats_to_cover(Distance.metres(5.0)).to_f64(),
+	Speed.metres_a_step(0.5).beats_to_cover(Distance.metres(5.0)).to_f64(),
+	Speed.metres_a_step(0.5).step_length().to_metres(),
 ]
 
 speed_want : List(F64)
-speed_want = [76.0, 0.0, 2.5, 10.0]
+speed_want = [
+	76.0,
+	0.0,
+	2.5,
+	10.0,
+	0.5,
+]
 
 # --- Entry ---
 

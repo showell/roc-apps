@@ -1,11 +1,11 @@
 ## Tour is the whole journey, for any platform that draws it. It keeps the
-## current moment of the ride and the moments behind it for stepping back, and
+## current instant of the ride and the instants behind it for stepping back, and
 ## it says what a frame shows in the terms a painter needs: the shapes, the
 ## camera roll, the two sky colours and the sun. SafariApp turns it into a
 ## canvas app, with the keys, the pause, and the frame leaned by the roll.
 import Angle
 import World
-import RideMoment
+import RideInstant
 import Sky
 import Rider
 import CanvasRoll
@@ -15,54 +15,54 @@ import Frame
 import Lens
 import lib.Shapes
 
-## The route, the moment the ride has reached, and the moments before it.
+## The route, the instant the ride has reached, and the instants before it.
 Tour := {
 	world : List(World.Segment),
-	moment : RideMoment,
-	past_moments : List(RideMoment),
+	instant : RideInstant,
+	past_instants : List(RideInstant),
 }.{
 
-	# How far back a step back can go: 2048 moments, about half the route.
+	# How far back a step back can go: 2048 instants, about half the route.
 	# The newest are the ones kept.
-	past_moments_cap : U64
-	past_moments_cap = 2048
+	past_instants_cap : U64
+	past_instants_cap = 2048
 
-	init : Tour
-	init = {
+	initial : Tour
+	initial = {
 		world: World.segments,
-		moment: RideMoment.initial,
-		past_moments: [],
+		instant: RideInstant.initial,
+		past_instants: [],
 	}
 
 	advance : Tour -> Tour
 	advance = |tour| {
-		finished = Rider.is_finished(tour.moment.rider, tour.world)
-		# Dropping one moment per step would copy the whole list every step, so
+		finished = Rider.is_finished(tour.instant.rider, tour.world)
+		# Dropping one instant per step would copy the whole list every step, so
 		# half of it goes at once and the copy falls on one step in a thousand.
 		# The list is therefore between half a cap and a cap deep, never empty,
-		# and always the most recent moments.
-		past_moments =
+		# and always the most recent instants.
+		past_instants =
 			if finished {
 				[]
-			} else if tour.past_moments.len() < past_moments_cap {
-				tour.past_moments.append(tour.moment)
+			} else if tour.past_instants.len() < past_instants_cap {
+				tour.past_instants.append(tour.instant)
 			} else {
-				tour.past_moments.drop_first(past_moments_cap // 2).append(tour.moment)
+				tour.past_instants.drop_first(past_instants_cap // 2).append(tour.instant)
 			}
 		{
 			world: tour.world,
-			moment: RideMoment.next(tour.world, tour.moment),
-			past_moments,
+			instant: RideInstant.next(tour.world, tour.instant),
+			past_instants,
 		}
 	}
 
 	back : Tour -> Tour
 	back = |tour| {
-		match tour.past_moments.last() {
+		match tour.past_instants.last() {
 			Ok(prev) => {
 				world: tour.world,
-				moment: prev,
-				past_moments: tour.past_moments.drop_last(1),
+				instant: prev,
+				past_instants: tour.past_instants.drop_last(1),
 			}
 			Err(_) => tour
 		}
@@ -71,20 +71,20 @@ Tour := {
 	## The frame's shapes in paint order. A bird is sorted by depth with
 	## everything else, so a nearer tree hides it.
 	shapes : Tour -> List(Shapes.Shape)
-	shapes = |tour| RideMoment.frame(tour.world, tour.moment)
+	shapes = |tour| RideInstant.frame(tour.world, tour.instant)
 
 	# The camera roll: the whole frame, backdrop and shapes, turns
 	# by minus this about the screen's centre.
 	roll : Tour -> Angle.Lean
-	roll = |tour| CanvasRoll.rider_roll(tour.moment.rider.tilt)
+	roll = |tour| CanvasRoll.rider_roll(tour.instant.rider.tilt)
 
 	# The sky at the top of the frame and at the horizon, as 0xRRGGBB.
 	sky_top : Tour -> I64
-	sky_top = |tour| Sky.sky_color(tour.moment.clock)
+	sky_top = |tour| Sky.sky_color(tour.instant.clock)
 
 	sky_horizon : Tour -> I64
-	sky_horizon = |tour| Sky.horizon_color(tour.moment.clock)
+	sky_horizon = |tour| Sky.horizon_color(tour.instant.clock)
 
 	sun : Tour -> Sky.SunPos
-	sun = |tour| RideMoment.sun(tour.world, tour.moment)
+	sun = |tour| RideInstant.sun(tour.world, tour.instant)
 }

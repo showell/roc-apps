@@ -2,6 +2,7 @@
 ## stands, how tall it is, which emoji it is and which way it faces.
 ## Billboards decides which critters become billboards: one behind the camera,
 ## or too small to see, is left out.
+import Distance
 import Geom
 import Lens
 
@@ -13,7 +14,7 @@ Billboards :: [].{
 	Billboard : {
 		right : F64,
 		forward : F64,
-		height : F64,
+		height : Distance,
 		codepoint : I64,
 		facing : Billboards.Facing,
 	}
@@ -29,10 +30,10 @@ Billboards :: [].{
 	min_critter_px : F64
 	min_critter_px = 2.0
 
-	## A critter of `height` metres at `at` in the rider's view.
+	## A critter of `height` at `at` in the rider's view.
 	sighting : {
 		at : Geom.RiderPoint,
-		height : F64,
+		height : Distance,
 		codepoint : I64,
 		facing : Billboards.Facing,
 	} -> Billboards.Sighting
@@ -46,7 +47,7 @@ Billboards :: [].{
 	|
 		if at.forward <= Geom.near_plane {
 			BehindCamera
-		} else if ((height / at.forward) * Lens.focal) < min_critter_px {
+		} else if ((height.to_metres() / at.forward) * Lens.focal) < min_critter_px {
 			TooSmall
 		} else {
 			InView({
@@ -89,7 +90,7 @@ cow_sighting : { forward : F64, height : F64 } -> Billboards.Sighting
 cow_sighting = |{ forward, height }|
 	Billboards.sighting({
 		at: { right: 2.5, forward },
-		height,
+		height: Distance.metres(height),
 		codepoint: 128004,
 		facing: FacesRight,
 	})
@@ -148,7 +149,7 @@ left_bull : Billboards.Billboard
 left_bull = billboard_of(
 	Billboards.sighting({
 		at: { right: -1.5, forward: 50.0 },
-		height: 1.6,
+		height: Distance.metres(1.6),
 		codepoint: 128002,
 		facing: FacesLeft,
 	}),
@@ -156,10 +157,10 @@ left_bull = billboard_of(
 
 expect near_cow.right == 2.5
 expect near_cow.forward == 0.5
-expect near_cow.height == 1.0
+expect near_cow.height.to_metres() == 1.0
 expect left_bull.right == -1.5
 expect left_bull.forward == 50.0
-expect left_bull.height == 1.6
+expect left_bull.height.to_metres() == 1.6
 
 expect near_cow.codepoint == 128004
 expect left_bull.codepoint == 128002

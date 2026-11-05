@@ -1,7 +1,10 @@
 ## TruckBody draws the truck's body: the five faces of its trailer and cab,
 ## and its tyres. They are painted far to near, so a nearer face covers a
 ## farther one.
+import Across
+import Along
 import DepthSort
+import Distance
 import Geom
 import lib.Trig
 import TruckShape
@@ -38,16 +41,17 @@ TruckBody :: [].{
 	## Where the truck's axles are along the road, back to front: a pair
 	## under the back of the trailer, a pair under its front, and one under
 	## the cab.
-	axles : TruckShape.TruckBox -> List(F64)
+	axles : TruckShape.TruckBox -> List(Along)
 	axles = |box| {
-		back_pair = (box.rear + trailer_axle_inset)
-		front_pair = (box.trailer_front - trailer_axle_inset)
+		back_pair = box.rear.plus(trailer_axle_inset)
+		front_pair = box.trailer_front.minus(trailer_axle_inset)
+		half_gap = axle_pair_gap.divided_by(2.0)
 		[
-			(back_pair - (axle_pair_gap / 2.0)),
-			(back_pair + (axle_pair_gap / 2.0)),
-			(front_pair - (axle_pair_gap / 2.0)),
-			(front_pair + (axle_pair_gap / 2.0)),
-			(box.trailer_front + (TruckShape.cab_length * cab_axle_fraction)),
+			back_pair.minus(half_gap),
+			back_pair.plus(half_gap),
+			front_pair.minus(half_gap),
+			front_pair.plus(half_gap),
+			box.trailer_front.plus(TruckShape.cab_length.times(cab_axle_fraction)),
 		]
 	}
 }
@@ -65,12 +69,12 @@ tire_color : I64
 tire_color = 0x15151A
 
 ## How far in from each end of the trailer the middle of its pair of axles is.
-trailer_axle_inset : F64
-trailer_axle_inset = 1.6
+trailer_axle_inset : Distance
+trailer_axle_inset = Distance.metres(1.6)
 
 ## The distance between the two axles of a pair.
-axle_pair_gap : F64
-axle_pair_gap = 1.2
+axle_pair_gap : Distance
+axle_pair_gap = Distance.metres(1.2)
 
 ## How far forward of the trailer the cab's axle is, as a fraction of the
 ## cab's length.
@@ -78,8 +82,8 @@ cab_axle_fraction : F64
 cab_axle_fraction = 0.55
 
 ## Where the windshield meets the nose: half the truck's height.
-hood_height : F64
-hood_height = (TruckShape.truck_height / 2.0)
+hood_height : Distance
+hood_height = TruckShape.truck_height.divided_by(2.0)
 
 ## Summed from the last corner to the first. A float sum's rounding depends
 ## on its order, and another order can move a pixel.
@@ -120,7 +124,7 @@ face_in_view = |truck, { color, corners }| TruckBody.face(
 ## A side of the truck at `across`: up the back of the trailer, along its
 ## roof and the cab's, down the windshield's edge and the nose, back along
 ## the cab's floor, and down to the trailer's floor.
-side : TruckShape.TruckInView, F64 -> TruckBody.TruckFace
+side : TruckShape.TruckInView, Across -> TruckBody.TruckFace
 side = |truck, across| {
 	box = truck.box
 	face_in_view(
@@ -303,29 +307,34 @@ nose = |truck| {
 
 ## The tyre on the axle at `axle` along the road, on the side at `across`:
 ## a circle standing on the road.
-tire : TruckShape.TruckInView, { axle : F64, across : F64 } -> TruckBody.TruckFace
-tire = |truck, { axle, across }|
+tire : TruckShape.TruckInView, { axle : Along, across : Across } -> TruckBody.TruckFace
+tire = |truck, { axle, across }| {
+	radius = TruckShape.tire_radius
 	face_in_view(
 		truck,
 		{
 			color: tire_color,
 			corners: TruckShape.circle_angles(TruckBody.tire_sides).map(
 				|angle| {
-					along: (axle + (TruckShape.tire_radius * Trig.r_cos(angle))),
+					along: axle.plus(radius.times(Trig.r_cos(angle))),
 					across,
-					height: (TruckShape.tire_radius + (TruckShape.tire_radius * Trig.r_sin(angle))),
+					height: radius.plus(radius.times(Trig.r_sin(angle))),
 				},
 			),
 		},
 	)
+}
+
+axles_at : { along : Along, across : Across } -> List(F64)
+axles_at = |center| TruckBody.axles(TruckShape.truck_box(center)).map(Along.to_metres)
 
 expect
-	TruckBody.axles(TruckShape.truck_box({ along: 0.0, across: 0.0 }))
+	axles_at({ along: Along.metres(0.0), across: Across.metres(0.0) })
 		== [-3.2, -2.0, 2.0, 3.2, 6.125]
 expect
-	TruckBody.axles(TruckShape.truck_box({ along: 40.0, across: 2.0 }))
+	axles_at({ along: Along.metres(40.0), across: Across.metres(2.0) })
 		== [36.8, 38.0, 42.0, 43.2, 46.125]
-expect TruckBody.axles(TruckShape.truck_box({ along: 0.0, across: 0.0 })).len() == 5
+expect axles_at({ along: Along.metres(0.0), across: Across.metres(0.0) }).len() == 5
 
 point_ahead : F64 -> Geom.SpacePoint
 point_ahead = |forward| {

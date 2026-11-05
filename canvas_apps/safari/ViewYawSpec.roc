@@ -6,6 +6,8 @@ app [main!] {
 
 import Angle
 import Fraction
+import Across
+import Along
 import Grade
 import Pose
 import Speed
@@ -15,8 +17,8 @@ import ViewYaw
 s0 : Pose.RiderState
 s0 = {
 	segment: World.SegmentIndex.number(0),
-	along: 0.0,
-	across: 0.0,
+	along: Along.metres(0.0),
+	across: Across.metres(0.0),
 	yaw: Angle.Turn.radians(0.0),
 	speed: Speed.metres_a_step(0.3),
 	tilt: Angle.Lean.radians(0.0),
@@ -28,8 +30,8 @@ s0 = {
 s1 : Pose.RiderState
 s1 = {
 	segment: World.SegmentIndex.number(0),
-	along: 0.0,
-	across: 0.0,
+	along: Along.metres(0.0),
+	across: Across.metres(0.0),
 	yaw: Angle.Turn.radians(0.0),
 	speed: Speed.metres_a_step(0.3),
 	tilt: Angle.Lean.radians(0.125),
@@ -41,8 +43,8 @@ s1 = {
 s2 : Pose.RiderState
 s2 = {
 	segment: World.SegmentIndex.number(0),
-	along: 0.0,
-	across: 0.0,
+	along: Along.metres(0.0),
+	across: Across.metres(0.0),
 	yaw: Angle.Turn.radians(0.0),
 	speed: Speed.metres_a_step(0.3),
 	tilt: Angle.Lean.radians(0.5),
@@ -54,8 +56,8 @@ s2 = {
 s3 : Pose.RiderState
 s3 = {
 	segment: World.SegmentIndex.number(0),
-	along: 0.0,
-	across: 0.0,
+	along: Along.metres(0.0),
+	across: Across.metres(0.0),
 	yaw: Angle.Turn.radians(0.0),
 	speed: Speed.metres_a_step(0.3),
 	tilt: Angle.Lean.radians((-0.75)),
@@ -67,8 +69,8 @@ s3 = {
 s4 : Pose.RiderState
 s4 = {
 	segment: World.SegmentIndex.number(0),
-	along: 0.0,
-	across: 0.0,
+	along: Along.metres(0.0),
+	across: Across.metres(0.0),
 	yaw: Angle.Turn.radians(0.0),
 	speed: Speed.metres_a_step(0.3),
 	tilt: Angle.Lean.radians(1.25),

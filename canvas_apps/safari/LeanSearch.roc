@@ -1,14 +1,14 @@
 ## How far the rider leans. A bisection over leans near the current one
 ## finds the lean whose coasting arc ends nearest the line the rider wants.
+import Across
 import Angle
 import Arc
 import Bike
-import lib.DeviceMath
-import lib.Trig
+import Distance
 
 LeanSearch :: [].{
 
-	want_more_right : Arc.ArcOutcome, F64 -> Bool
+	want_more_right : Arc.ArcOutcome, Across -> Bool
 	want_more_right = |sim, target| (
 		match sim.shoulder {
 			ShoulderLeft => True
@@ -20,21 +20,21 @@ LeanSearch :: [].{
 	asymptote_tuning : F64
 	asymptote_tuning = 0.3
 
-	center_lane_epsilon : F64
-	center_lane_epsilon = 0.04
+	center_lane_epsilon : Distance
+	center_lane_epsilon = Distance.metres(0.04)
 
-	lean_target : F64 -> F64
+	lean_target : Across -> Across
 	lean_target = |across| (
-		if DeviceMath.real_abs(across) < center_lane_epsilon {
+		if across.distance_from_middle() < center_lane_epsilon {
 			(
-				if across >= 0.0 {
-					center_lane_epsilon
+				if across >= Across.middle {
+					Across.right_of_middle(center_lane_epsilon)
 				} else {
-					(0.0 - center_lane_epsilon)
+					Across.left_of_middle(center_lane_epsilon)
 				}
 			)
 		} else {
-			(across * asymptote_tuning)
+			across.times(asymptote_tuning)
 		}
 	)
 
@@ -49,7 +49,7 @@ LeanSearch :: [].{
 	## across the road, after the bisection's remaining steps from `at`.
 	search_lean_from : Bike.Motion(others),
 	{
-		target : F64,
+		target : Across,
 		low : Angle.Lean,
 		high : Angle.Lean,
 		at : I64,

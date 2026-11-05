@@ -9,6 +9,8 @@ import Angle
 import Fraction
 import Arc
 import Bike
+import Across
+import Along
 import Grade
 import Pose
 import Speed
@@ -19,8 +21,8 @@ import World
 fixed_got : List(F64)
 fixed_got = [
 	Arc.no_frames.to_f64(),
-	Arc.straighten_margin,
-	Arc.min_forward_progress,
+	Arc.straighten_margin.to_metres(),
+	Arc.min_forward_progress.to_metres(),
 ]
 
 fixed_want : List(F64)
@@ -34,7 +36,7 @@ steps_want = [2000.0]
 
 ## A test rider at the start of segment 0.
 StartingRider : {
-	across : F64,
+	across : Across,
 	tilt_radians : F64,
 	speed : Speed,
 }
@@ -48,7 +50,7 @@ rider = |
 	},
 | {
 	segment: World.SegmentIndex.number(0),
-	along: 0.0,
+	along: Along.metres(0.0),
 	across: across,
 	yaw: Angle.Turn.radians(0.0),
 	speed: v,
@@ -70,7 +72,7 @@ side = |o| (
 straight : Arc.ArcOutcome
 straight = Arc.project_arc(
 	rider({
-		across: 0.0,
+		across: Across.metres(0.0),
 		tilt_radians: 0.0,
 		speed: VehicleLimits.v_base,
 	}),
@@ -78,8 +80,8 @@ straight = Arc.project_arc(
 
 straight_got : List(F64)
 straight_got = [
-	straight.forward,
-	straight.end_across,
+	straight.forward.to_metres(),
+	straight.end_across.to_metres(),
 	straight.frames.to_f64(),
 ]
 
@@ -89,7 +91,7 @@ straight_want = [25.0, 0.0, 1000000000.0]
 wide : Arc.ArcOutcome
 wide = Arc.project_arc(
 	rider({
-		across: 3.0,
+		across: Across.metres(3.0),
 		tilt_radians: 0.0,
 		speed: VehicleLimits.v_base,
 	}),
@@ -97,8 +99,8 @@ wide = Arc.project_arc(
 
 wide_got : List(F64)
 wide_got = [
-	wide.forward,
-	wide.end_across,
+	wide.forward.to_metres(),
+	wide.end_across.to_metres(),
 	wide.frames.to_f64(),
 ]
 
@@ -108,7 +110,7 @@ wide_want = [25.0, 3.0, 1000000000.0]
 stopped : Arc.ArcOutcome
 stopped = Arc.project_arc(
 	rider({
-		across: 0.0,
+		across: Across.metres(0.0),
 		tilt_radians: 0.0,
 		speed: Speed.at_rest,
 	}),
@@ -116,8 +118,8 @@ stopped = Arc.project_arc(
 
 stopped_got : List(F64)
 stopped_got = [
-	stopped.forward,
-	stopped.end_across,
+	stopped.forward.to_metres(),
+	stopped.end_across.to_metres(),
 	stopped.frames.to_f64(),
 ]
 
@@ -147,7 +149,7 @@ crossed_want = [False, False, False]
 leaning : Arc.ArcOutcome
 leaning = Arc.project_arc(
 	rider({
-		across: 0.0,
+		across: Across.metres(0.0),
 		tilt_radians: 0.2,
 		speed: VehicleLimits.v_base,
 	}),
@@ -156,7 +158,7 @@ leaning = Arc.project_arc(
 other_way : Arc.ArcOutcome
 other_way = Arc.project_arc(
 	rider({
-		across: 0.0,
+		across: Across.metres(0.0),
 		tilt_radians: (0.0 - 0.2),
 		speed: VehicleLimits.v_base,
 	}),
@@ -174,8 +176,8 @@ left_got = [
 	(leaning.frames < Arc.turn_danger_steps),
 	(leaning.frames > Steps.zero),
 	(leaning.forward <= Arc.min_forward_progress),
-	(leaning.end_across > 0.0),
-	(other_way.end_across < 0.0),
+	(leaning.end_across > Across.middle),
+	(other_way.end_across < Across.middle),
 	(other_way.frames < Arc.no_frames),
 ]
 
@@ -185,14 +187,14 @@ left_want = [True, True, True, True, True, True, True]
 mirror_got : List(F64)
 mirror_got = [
 	(leaning.frames.to_f64() - other_way.frames.to_f64()),
-	(leaning.end_across + other_way.end_across),
+	(leaning.end_across.to_metres() + other_way.end_across.to_metres()),
 ]
 
 mirror_want : List(F64)
 mirror_want = [0.0, 0.0]
 
 mirror_fwd_got : List(F64)
-mirror_fwd_got = [(leaning.forward - other_way.forward)]
+mirror_fwd_got = [leaning.forward.minus(other_way.forward).to_metres()]
 
 mirror_fwd_want : List(F64)
 mirror_fwd_want = [0.0]
@@ -202,7 +204,7 @@ step_got = (
 	{
 		a = Bike.simulate_rider_step(
 			rider({
-				across: 0.0,
+				across: Across.metres(0.0),
 				tilt_radians: 0.0,
 				speed: VehicleLimits.v_base,
 			}),
@@ -210,7 +212,7 @@ step_got = (
 		)
 		b = Bike.simulate_rider_step(
 			rider({
-				across: 0.0,
+				across: Across.metres(0.0),
 				tilt_radians: 0.0,
 				speed: VehicleLimits.v_base,
 			}),
@@ -220,7 +222,7 @@ step_got = (
 			},
 		)
 		[
-			a.across,
+			a.across.to_metres(),
 			a.yaw.to_radians(),
 			a.heading.to_radians(),
 			a.tilt.to_radians(),
