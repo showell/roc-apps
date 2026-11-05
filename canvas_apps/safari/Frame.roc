@@ -191,3 +191,28 @@ chain_onto = |world, { index, chain }|
 			Terminates => longer_chain
 		}
 	}
+
+expect Frame.look_ahead.to_i64() == 7
+expect Frame.chain_ahead(World.segments, World.SegmentIndex.first).len() == 7
+
+route_facts : List(World.Segment) -> List(U64)
+route_facts = |segments| [
+	segments.len(),
+	Frame.chain_ahead(segments, World.SegmentIndex.first).len(),
+	Frame.chain_ahead(segments, World.SegmentIndex.number(15)).len(),
+	Frame.chain_ahead(segments, World.SegmentIndex.number(18)).len(),
+]
+
+expect route_facts(World.segments) == [19, 7, 4, 1]
+
+expect Frame.ChainPosition.number(3).to_i64() == 3
+expect Frame.ChainPosition.first.next().to_i64() == 1
+
+expect
+	[
+		(Scenery.left_edge, 0.0),
+		(Across.middle, 2.0),
+		(Scenery.right_edge, 4.0),
+	].all(|(across, want)| edge_point({ along: Along.start, across }).from_left.to_metres() == want)
+
+expect edge_point({ along: Along.metres(1.0), across: Across.middle }).along == Along.metres(1.0)

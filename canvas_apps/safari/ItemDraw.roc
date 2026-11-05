@@ -264,3 +264,255 @@ expect clustered_tree(10.0).len() > 0
 expect clustered_tree(14.0).len() > 0
 expect second_shape_points(clustered_tree(10.0)) > second_shape_points(clustered_tree(14.0))
 expect second_shape_points(clustered_tree(14.0)) >= 6
+
+segs : List(World.Segment)
+segs = [
+	World.route_segment(0),
+	World.route_segment(1),
+	World.route_segment(2),
+]
+
+origin : Frame.Pose
+origin = {
+	along: Along.metres(0.0),
+	across: Across.metres(0.0),
+	yaw: Angle.straight_ahead,
+	half_width: Distance.metres(2.0),
+}
+
+up_road : Frame.Pose
+up_road = {
+	along: Along.metres(100.0),
+	across: Across.metres(0.0),
+	yaw: Angle.straight_ahead,
+	half_width: Distance.metres(2.0),
+}
+
+## The first three segments, seen from `pose` through a camera of focal
+## length `cam_focal`.
+view_from : Frame.Pose, F64 -> Frame.Viewpoint
+view_from = |pose, cam_focal| {
+	road: {
+		world: segs,
+		chain: [0, 1, 2].map(World.SegmentIndex.number),
+		pose,
+	},
+	cam_focal,
+}
+
+from_origin : Frame.Viewpoint
+from_origin = view_from(origin, 500.0)
+
+## A green tree `along` metres into the first segment, 3.5 m right of the
+## road's middle.
+green_tree_at = |along| {
+	position: Frame.ChainPosition.first,
+	tree: {
+		along: Along.metres(along),
+		across: Across.metres(3.5),
+		color: 1858082,
+		height: Distance.metres(5.85),
+	},
+}
+
+expect
+	List.concat(
+		segs.map(|seg| seg.trees.len().to_i64_wrap()),
+		[TreeSighting.max_vis_trees],
+	)
+		== [28, 16, 22, 640]
+
+lone_tree : TreeSighting.TreeItem
+lone_tree = TreeSighting.tree_in_view(
+	from_origin,
+	green_tree_at(120.0),
+).first() ?? crash "ItemDraw: a tree 120 m ahead is in view"
+
+expect
+	[
+		(lone_tree.right, 3.5),
+		(lone_tree.forward, 120.0),
+		(lone_tree.height.to_metres(), 5.85),
+	].all(|(got, want)| (got - want).abs() <= 0.0001)
+
+expect TreeSighting.tree_in_view(from_origin, green_tree_at(120.0)).len() == 1
+expect lone_tree.color == 1858082
+expect
+	[
+		(TreeSighting.tree_in_view(from_origin, green_tree_at(0.4)), 0),
+		(TreeSighting.tree_in_view(from_origin, green_tree_at(0.5)), 1),
+		(TreeSighting.tree_in_view(view_from(origin, 1.0), green_tree_at(120.0)), 0),
+		(TreeSighting.tree_in_view(from_origin, green_tree_at(2000.0)), 0),
+	].all(|(seen, want)| seen.len().to_i64_wrap() == want)
+
+expect
+	[
+		(from_origin, 28),
+		(view_from(up_road, 500.0), 20),
+		(view_from(origin, 1.0), 0),
+	].all(
+		|(view, want)| {
+			trees = TreeSighting.segment_trees(view, Frame.ChainPosition.first)
+			trees.len().to_i64_wrap() == want
+		},
+	)
+
+first_segment : List(TreeSighting.TreeItem)
+first_segment = TreeSighting.segment_trees(from_origin, Frame.ChainPosition.first)
+
+## The first segment's tree at `i`, in planting order.
+planted_tree : U64 -> TreeSighting.TreeItem
+planted_tree = |i|
+	first_segment.get(i) ?? crash "ItemDraw: the first segment has 28 trees in view"
+
+expect
+	[
+		(planted_tree(0).forward, 6.0),
+		(planted_tree(1).forward, 6.0),
+		(planted_tree(2).forward, 36.0),
+		(planted_tree(0).right, -3.5),
+		(planted_tree(1).right, 3.5),
+	].all(|(got, want)| (got - want).abs() <= 0.0001)
+
+expect
+	[
+		(planted_tree(0).height.to_metres(), 5.85),
+		(planted_tree(2).height.to_metres(), 4.5),
+	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
+
+keys : List(DepthSort.DepthKey)
+keys = TreeSighting.depth_keys(first_segment)
+
+## The depth key at `i`.
+key_at : U64 -> DepthSort.DepthKey
+key_at = |i| keys.get(i) ?? crash "ItemDraw: the first segment has 28 keys"
+
+## The position in the tree list that the key at `i` names.
+tree_place_at : U64 -> I64
+tree_place_at = |i|
+	match key_at(i).subject {
+		Tree(position) => position.to_i64()
+		Tower(_) | Critter(_) | Cat(_) | Truck | Rail(_) | Bird(_) =>
+			crash "ItemDraw: a tree's key names a tree"
+	}
+
+expect keys.len() == 28
+expect tree_place_at(0) == 0
+expect tree_place_at(27) == 27
+expect TreeSighting.depth_keys([]).len() == 0
+expect
+	[
+		(key_at(0).forward, 6.0),
+		(key_at(2).forward, 36.0),
+	].all(|(got, want)| (got - want).abs() <= 0.0001)
+
+expect
+	segs.map(|seg| seg.length.to_metres())
+		== [500.0, 320.0, 400.0]
+
+## What a truck `lead` metres ahead of a rider at the start of the chain is
+## seen from, from `pose`, with its lights off.
+truck_view : Frame.Pose, F64 -> TruckSighting.View
+truck_view = |pose, lead| {
+	road: {
+		world: segs,
+		chain: [0, 1, 2].map(World.SegmentIndex.number),
+		pose,
+	},
+	lead: Distance.metres(lead),
+	lights: { headlights: Off, brake_lights: Off },
+}
+
+truck_seen_from : Frame.Pose, F64 -> TruckSighting.TruckAt
+truck_seen_from = |pose, lead| TruckSighting.in_view(truck_view(pose, lead))
+
+lead_of : F64 -> TruckSighting.TruckAt
+lead_of = |lead| truck_seen_from(origin, lead)
+
+## Whether the truck is in view.
+is_ahead : TruckSighting.TruckAt -> Bool
+is_ahead = |truck|
+	match truck {
+		Ahead(_) => True
+		NoTruck => False
+	}
+
+## Where the truck is, for a lead that puts it in view.
+ahead_of = |lead|
+	match lead_of(lead) {
+		Ahead(truck) => truck
+		NoTruck => crash "ItemDraw: this lead puts the truck in view"
+	}
+
+expect
+	[
+		(100.0, True),
+		(499.0, True),
+		(600.0, True),
+		(900.0, True),
+		(2000.0, False),
+		(0.0, False),
+		((0.0 - 50.0), False),
+	].all(|(lead, want)| is_ahead(lead_of(lead)) == want)
+
+expect
+	[
+		(100.0, 0),
+		(499.0, 0),
+		(600.0, 1),
+		(900.0, 2),
+	].all(|(lead, want)| ahead_of(lead).position.to_i64() == want)
+
+expect
+	[
+		(100.0, 100.0),
+		(499.0, 499.0),
+		(600.0, 100.0),
+		(900.0, 80.0),
+	].all(|(lead, want)| ahead_of(lead).along.to_metres() == want)
+
+expect
+	[
+		(100.0, 0.0),
+		(499.0, 0.0),
+		(600.0, 0.0),
+		(900.0, 0.0),
+	].all(|(lead, want)| ahead_of(lead).across.to_metres() == want)
+
+## The lights a truck in view shows, when it has `lights` on.
+lights_shown = |lights|
+	match TruckSighting.in_view({ ..truck_view(origin, 100.0), lights }) {
+		Ahead(truck) => truck.lights
+		NoTruck => crash "ItemDraw: this lead puts the truck in view"
+	}
+
+expect
+	[
+		{ headlights: Off, brake_lights: Off },
+		{ headlights: Off, brake_lights: On },
+		{ headlights: On, brake_lights: Off },
+		{ headlights: On, brake_lights: On },
+	].all(|lights| lights_shown(lights) == lights)
+
+expect
+	[
+		(ahead_of(100.0).forward, 100.0),
+		(ahead_of(499.0).forward, 499.0),
+	].all(|(got, want)| (got - want).abs() <= 0.0001)
+
+expect !(is_ahead(NoTruck))
+expect !(is_ahead(lead_of(2000.0)))
+expect !(is_ahead(truck_seen_from({ ..origin, along: Along.metres(100.0) }, 0.25)))
+expect is_ahead(truck_seen_from({ ..origin, along: Along.metres(100.0) }, 1.0))
+
+## The depth key of a truck in view.
+key_of : F64 -> DepthSort.DepthKey
+key_of = |lead|
+	TruckSighting.depth_keys(lead_of(lead)).first()
+		?? crash "ItemDraw: a truck in view has a depth key"
+
+expect TruckSighting.depth_keys(lead_of(100.0)).len() == 1
+expect TruckSighting.depth_keys(lead_of(2000.0)).len() == 0
+expect TruckSighting.depth_keys(NoTruck).len() == 0
+expect TruckSighting.depth_keys(lead_of(100.0)).count_if(|key| key.subject == Truck) == 1
+expect (key_of(499.0).forward - 499.0).abs() <= 0.0001
