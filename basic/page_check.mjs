@@ -28,6 +28,8 @@ process.on("unhandledRejection", (e) => stop(`the page's script threw: ${e?.stac
 // ── a stand-in document ────────────────────────────────────────────────────
 
 let focused = null;
+// What the page's clock says, and so the seed its next Run is given.
+let seedClock = 1000;
 
 class Element {
   constructor(tag) {
@@ -82,7 +84,7 @@ const sandbox = {
     documentElement: new Element("html"),
   },
   TextEncoder, TextDecoder,
-  Date: { now: () => 1000 },
+  Date: { now: () => seedClock },
   setTimeout: (fn, ms) => {
     timers.push({ at: clock + ms, fn });
     timers.sort((a, b) => a.at - b.at);
@@ -288,6 +290,25 @@ await fire(3);
 see("Run starts it over", running(" 0", " 1", " 2", " 3"));
 await runLines('10 PRINT "REPLACED"');
 see("Run replaces a running program", finished("REPLACED"));
+
+await runLines("10 INPUT A", "20 PRINT A");
+const asking = screenRows();
+await click("stop");
+see("Stop during INPUT ends the run", stopped("stopped", ...asking));
+same("timers after Stop during INPUT", timers.length, 0);
+await runLines('10 PRINT "AGAIN"');
+see("Run works after Stop during INPUT", finished("AGAIN"));
+
+async function firstRndAt(time) {
+  seedClock = time;
+  await runLines("10 PRINT RND(1)");
+  return screenRows()[0];
+}
+const drawn = await firstRndAt(1000);
+if (await firstRndAt(2000) === drawn) stop(`RND drew ${drawn} on two seeds`);
+same("RND on the same seed", await firstRndAt(1000), drawn);
+held++;
+lastHeld = "RND follows the page's seed";
 same("timers after a replaced run", timers.length, 0);
 
 $("src").value = "";

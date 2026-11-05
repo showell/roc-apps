@@ -2391,7 +2391,10 @@ Machine :: [].{
 	start : Str, U64 -> Run
 	start = |src, seed| {
 		pg = { ..Parse.load(src, False), live: True, tank: Machine.page_tank }
-		{ pg: pg, m: Machine.machine_state_at_next_effect(pg, { ..Machine.new([], seed), fuel: Machine.page_tank }) }
+		# The page's RND follows the page's seed. A batch run keeps the Twister's
+		# seed of 0, so its transcript can be graded byte for byte.
+		seeded = { ..Machine.new([], seed), fuel: Machine.page_tank, mt: Twister.by_seed(seed.to_u32_wrap()) }
+		{ pg: pg, m: Machine.machine_state_at_next_effect(pg, seeded) }
 	}
 
 	# **THE FUEL IS PER RESUME.** A sleeper wakes; a machine waiting for a
