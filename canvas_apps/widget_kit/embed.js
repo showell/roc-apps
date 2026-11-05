@@ -9,7 +9,7 @@
 // wheel, and neither suits a frame in a column of text. This reaches into each
 // frame, which is on the same origin, and changes four things. The canvas
 // fills the frame. The wheel goes on scrolling the prose, since no widget reads
-// it. A click hands the frame the keyboard, because the runner's mousedown
+// it. A click hands the frame the keyboard, because the runner's pointerdown
 // cancels the browser's own focusing. A frame off the screen stops, because a
 // browser goes on running a same-origin frame it can't see, and a page of
 // these would keep a core busy.
@@ -46,7 +46,7 @@ function fitFrame(frame) {
   style.textContent = FILL_THE_FRAME;
   view.document.head.append(style);
   view.addEventListener('wheel', (event) => event.stopImmediatePropagation(), { capture: true });
-  view.addEventListener('mousedown', () => view.focus());
+  view.addEventListener('pointerdown', () => view.focus());
 }
 
 for (const frame of document.querySelectorAll('iframe.canvas-app')) {

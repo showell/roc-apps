@@ -13,7 +13,7 @@
 // Reading a frame and filling a canvas is shapes_canvas.js, which this loads
 // first and which knows nothing about any of them.
 //
-//   window.SHOW = { wasm: 'snake.wasm', loading: '…' }
+//   window.SHOW = { wasm: 'snake.wasm', loading: '…', readsPointer: true }
 //
 // No hint: every game draws the keys it reads in its own HUD, which is the
 // only place that cannot drift from the keys it actually reads.
@@ -64,16 +64,22 @@ function watchKeyboard(target) {
 }
 
 // ── the pointer ────────────────────────────────────────────────────────────
-// Position is reported in the game's own coordinates, so a game never learns
-// how big the window is or how the page scaled the canvas.
+// A mouse, a finger and a pen all arrive as pointer events, so an app can't
+// tell them apart. Position is reported in the game's own coordinates, so a
+// game never learns how big the window is or how the page scaled the canvas.
+// During a drag it may be off the canvas.
 
-const MOUSE_BIT = { 0: 1, 2: 2, 1: 4 }; // left, right, middle — Mouse.roc's bits
+// `event.buttons` uses Mouse.roc's bits: left, right, middle.
+const MOUSE_BITS = 1 | 2 | 4;
 
 function watchPointer(canvas, width, height) {
-  const held = new Set();
-  let struck = new Set();
+  let held = 0;
+  let struck = 0;
   let at = { x: 0, y: 0 };
   let wheel = 0;
+  // The pointer that pressed on the canvas, until it lets go. A second finger
+  // is ignored until then.
+  let dragger = null;
 
   const place = (event) => {
     const box = canvas.getBoundingClientRect();
@@ -83,25 +89,45 @@ function watchPointer(canvas, width, height) {
     };
   };
 
-  canvas.addEventListener('mousemove', place);
-  canvas.addEventListener('mousedown', (event) => {
+  const readButtons = (event) => {
+    const now = event.buttons & MOUSE_BITS;
+    struck |= now & ~held;
+    held = now;
+  };
+
+  const release = (event) => {
+    if (event.pointerId !== dragger) return;
+    held = 0;
+    dragger = null;
+  };
+
+  canvas.addEventListener('pointerdown', (event) => {
+    if (dragger !== null && event.pointerId !== dragger) return;
+    dragger = event.pointerId;
+    // With capture, a drag that leaves the canvas keeps tracking and ends here.
+    canvas.setPointerCapture(dragger);
     place(event);
-    held.add(event.button);
-    struck.add(event.button);
+    readButtons(event);
     event.preventDefault();
   });
-  // On the window, not the canvas: a drag that ends outside it still ends.
-  window.addEventListener('mouseup', (event) => { held.delete(event.button); });
+  canvas.addEventListener('pointermove', (event) => {
+    if (dragger !== null && event.pointerId !== dragger) return;
+    place(event);
+    // A mouse's other buttons arrive as moves: pointerdown and pointerup come
+    // only with the first button down and the last one up.
+    if (dragger !== null) readButtons(event);
+  });
+  canvas.addEventListener('pointerup', release);
+  canvas.addEventListener('pointercancel', release);
   canvas.addEventListener('contextmenu', (event) => event.preventDefault());
   // Positive is away from the hand, as raylib reports it; a browser's deltaY
   // is the other way round.
   canvas.addEventListener('wheel', (event) => { wheel -= Math.sign(event.deltaY); event.preventDefault(); });
-  window.addEventListener('blur', () => { held.clear(); struck.clear(); });
+  window.addEventListener('blur', () => { held = 0; struck = 0; dragger = null; });
 
-  const bits = (buttons) => [...buttons].reduce((m, b) => m | (MOUSE_BIT[b] ?? 0), 0);
   return () => {
-    const pointer = { held: bits(held), struck: bits(struck), x: at.x, y: at.y, wheel };
-    struck = new Set();
+    const pointer = { held, struck, x: at.x, y: at.y, wheel };
+    struck = 0;
     wheel = 0;
     return pointer;
   };
@@ -111,7 +137,8 @@ function watchPointer(canvas, width, height) {
 // The game says a sound happened and what it sounds like; this plays it and
 // lights a pip. A browser will not start audio until the page has been
 // clicked or typed in, so the context is made on the first key or button and
-// the pips work either way.
+// the pips work either way. A finger counts only when it lifts, so `wake` runs
+// again then and resumes a context its pointerdown left suspended.
 
 const FADE_MS = 420;
 const bitsOf = (word) => [...Array(32).keys()].filter((bit) => word & (1 << bit));
@@ -125,8 +152,9 @@ function makeSpeaker(game) {
   }));
 
   const wake = () => {
-    if (audio || typeof AudioContext === 'undefined') return;
-    audio = new AudioContext();
+    if (typeof AudioContext === 'undefined') return;
+    audio ??= new AudioContext();
+    audio.resume();
   };
 
   const play = (which) => {
@@ -234,13 +262,17 @@ async function main(show) {
   canvas.width = width;
   canvas.height = height;
   canvas.style.cssText = 'background:#06080f;max-width:100%;max-height:88vh';
+  // A finger on a canvas that reads the pointer is a drag. On any other canvas
+  // it is the reader scrolling the page.
+  canvas.style.touchAction = show.readsPointer ? 'none' : 'auto';
   const ctx = canvas.getContext('2d');
 
   const keyboard = watchKeyboard(window);
   const pointer = watchPointer(canvas, width, height);
   const speaker = makeSpeaker(game);
   window.addEventListener('keydown', speaker.wake);
-  window.addEventListener('mousedown', speaker.wake);
+  window.addEventListener('pointerdown', speaker.wake);
+  window.addEventListener('pointerup', speaker.wake);
   const ringing = { at: -Infinity, tones: [] };
 
   const step = (now) => {
