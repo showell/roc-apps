@@ -17,19 +17,19 @@ Gaze :: [].{
 	gaze_look_dist = 150.0
 
 	gaze_release_angle : Angle.Turn
-	gaze_release_angle = Angle.Turn.radians(35.0 * Trig.deg)
+	gaze_release_angle = Angle.Turn.degrees(35.0)
 
 	gaze_swivel_rate : Angle.Turn
-	gaze_swivel_rate = Angle.Turn.radians(4.0 * Trig.deg)
+	gaze_swivel_rate = Angle.Turn.degrees(4.0)
 
 	gaze_return_rate : Angle.Turn
-	gaze_return_rate = Angle.Turn.radians(0.2 * Trig.deg)
+	gaze_return_rate = Angle.Turn.degrees(0.2)
 
 	gaze_return_ease : F64
 	gaze_return_ease = 0.05
 
 	gaze_return_snap : Angle.Turn
-	gaze_return_snap = Angle.Turn.radians(0.02 * Trig.deg)
+	gaze_return_snap = Angle.Turn.degrees(0.02)
 
 	focus_decay : F64
 	focus_decay = 0.0012
@@ -41,7 +41,7 @@ Gaze :: [].{
 	pig_gaze_settle_dist = 25.0
 
 	eyes_on_road_yaw : Angle.Turn
-	eyes_on_road_yaw = Angle.Turn.radians(6.0 * Trig.deg)
+	eyes_on_road_yaw = Angle.Turn.degrees(6.0)
 
 	smoothstep : F64 -> F64
 	smoothstep = |t| ((t * t) * (3.0 - (2.0 * t)))

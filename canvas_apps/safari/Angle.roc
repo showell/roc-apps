@@ -117,6 +117,10 @@ Angle :: [].{
 		radians : F64 -> Angle.Lean
 		radians = |r| Angle.Lean.(r)
 
+		## The lean of this many degrees.
+		degrees : F64 -> Angle.Lean
+		degrees = |d| Angle.Lean.(d * Trig.deg)
+
 		to_radians : Angle.Lean -> F64
 		to_radians = |Angle.Lean.(r)| r
 

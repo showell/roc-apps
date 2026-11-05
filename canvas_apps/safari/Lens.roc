@@ -1,17 +1,18 @@
 ## The camera's lens: a 70° view across the screen at rest. The view
 ## widens as the rider leans into a turn, and as something catches the
 ## rider's attention; the camera takes the wider of the two.
+import Angle
 import Screen
 import lib.Trig
 
 Lens :: [].{
 
-	fov_deg : F64
-	fov_deg = 70.0
+	field_of_view : Angle.Turn
+	field_of_view = Angle.Turn.degrees(70.0)
 
 	## The focal length at rest, in pixels.
 	focal : F64
-	focal = ((Screen.width / 2.0) / Trig.r_tan(((fov_deg / 2.0) * Trig.deg)))
+	focal = ((Screen.width / 2.0) / Trig.r_tan(field_of_view.times(0.5).to_radians()))
 
 	min_focal_factor : F64
 	min_focal_factor = 0.35
