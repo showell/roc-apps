@@ -1,9 +1,7 @@
-app
-	[main!]
-	{
-		game: "../../game.roc",
-		lib: "../../../lib/main.roc",
-	}
+app [main!] {
+	game: "../../game.roc",
+	lib: "../../../lib/main.roc",
+}
 
 import game.Angle
 

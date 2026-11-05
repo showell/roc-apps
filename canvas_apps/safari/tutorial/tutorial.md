@@ -8,45 +8,49 @@ Safari Ride has the important parts of a game's world: terrain, physics, a camer
 
 This tour reads the program from the bottom up. It's about seventy modules of Roc, which is enough to show how Roc holds up in a program with a lot going on. It assumes you can already read Roc. Each chapter points out a few Roc ideas as they come up, and the useful ones come up more than once.
 
-Here's the whole system, simplified. An arrow points from a module to one it imports. The dashed boxes each stand for a family of modules. Roc doesn't allow import cycles, so every diagram in this tour reads downward.
+Here's the whole system, simplified. An arrow points from a module to one it imports, so a module is composed of what it points at. Dashed boxes each stand for a family of modules. Roc doesn't allow import cycles, so nothing here can point back up.
 
 ```dot
 digraph system {
   node [shape=box, fontname="Helvetica"];
+  fontname="Helvetica";
   web [label="web.roc"];
-  plans [label="the plans\nCatPlan, BirdPlan, TreePlan, TruckPlan, ...", style=dashed];
-  drawing [label="the drawing\nCatDraw, RocBird, Tree, Tower, TruckDraw, ...", style=dashed];
-  shapes [label="lib.Shapes"];
   web -> SafariApp;
   SafariApp -> SafariRide;
-  SafariApp -> SafariShapes;
   SafariRide -> Safari;
+  subgraph cluster_ride {
+    label="the ride";
+    Rider; Truck; World; Cat; BirdFlight; Animation;
+    scenery [label="the scenery\nTrees, Herd, Pigs", style=dashed];
+  }
+  subgraph cluster_view {
+    label="the view";
+    Render; ItemDraw; Sky; Mountains;
+    plans [label="the plans\nCatPlan, BirdPlan, TreePlan, TruckPlan, ...", style=dashed];
+    drawing [label="the drawing\nCatDraw, RocBird, Tree, Tower, TruckDraw, ...", style=dashed];
+  }
+  shapes [label="lib.Shapes"];
   Safari -> Rider;
   Safari -> Truck;
-  Safari -> Sky;
-  Safari -> Mountains;
-  Safari -> Render;
-  Safari -> ItemDraw;
-  ItemDraw -> Render;
-  Render -> plans;
-  ItemDraw -> drawing;
-  SafariShapes -> Sky;
-  Mountains -> Sky;
   Rider -> World;
   Truck -> World;
-  plans -> World;
+  World -> scenery;
   World -> Cat;
   World -> BirdFlight;
-  plans -> Cat;
-  plans -> BirdFlight;
   Cat -> Animation;
   BirdFlight -> Animation;
+  Safari -> ItemDraw;
+  Safari -> Mountains;
+  ItemDraw -> Render;
+  ItemDraw -> drawing;
+  Render -> plans;
+  Mountains -> Sky;
   drawing -> shapes;
-  SafariShapes -> shapes;
+  plans -> World [style=dotted, constraint=false];
 }
 ```
 
-`Safari` holds the ride and steps it. `Render` asks the plans what's in view, and `ItemDraw` paints it. `World` holds the route. The browser only sees `SafariApp`, which hands it a list of shapes each frame.
+There are two halves. The ride is `Rider`, `Truck` and `World`, with `World` composing the route from its scenery and critters. It knows nothing of drawing. The view is everything that turns the ride into a picture: the plans find what's in sight, and the drawing paints it. The dotted arrow is the view reading the ride, and no arrow goes the other way. `Safari` sits over both, holding the ride and stepping it, and the browser only sees `SafariApp`, which hands it a list of shapes each frame.
 
 ## All that's stored
 
@@ -125,7 +129,7 @@ digraph sky {
 }
 ```
 
-`Sky` sits near the bottom of the system. Leaving out small maths helpers, it imports only the angle type and the lens and screen geometry, and it knows nothing of the rider, the road or the drawing. Those above it each ask for a colour or a sun at a given clock.
+`Sky` sits near the bottom of the system. Leaving out small math helpers, it imports only the angle type and the lens and screen geometry, and it knows nothing of the rider, the road or the drawing. Those above it each ask for a colour or a sun at a given clock.
 
 *[The sky widget goes here: drag the clock and watch the sun set.]*
 
@@ -135,7 +139,7 @@ Every function in this chapter has a `->` arrow, not `=>`. In Roc that's a promi
 
 {{code Sky.sun_height_px}}
 
-The sun's height is a straight line. It starts at 244 pixels, reaches the horizon around step 3,980, and has fully set around step 4,730.
+`Clock` is another small opaque type: a whole number of steps that only ever goes up by one. `to_f64` is its one door to a float, and this is the only place that uses it. The sun's height is a straight line. It starts at 244 pixels, reaches the horizon around step 3,980, and has fully set around step 4,730.
 
 Dusk is a curve and then a line, which means two cases. `Sky` keeps the two halves below its block. Anything outside `Sky :: [].{ ... }` is private to the module, so a helper stays a helper without any keyword.
 

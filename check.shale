@@ -11,7 +11,7 @@
 -- being found fails the run as surely as one that stops compiling; add or
 -- remove an app, and change the number with it.
 --
--- Two places are left out, each for the reason beside it in EXCEPTIONS.
+-- A few places are left out, each for the reason beside it in EXCEPTIONS.
 -- Each is a debt, named here and nowhere else.
 --
 -- budget: steps=200000000
@@ -22,6 +22,7 @@ const SELF_PATH = "check.shale"
 const WANT = "roc-pin: the repository's pinned nightly"
 
 const EXCEPTIONS = {
+  {prefix = "canvas_apps/safari/tutorial/fails/", why = "programs that fail on purpose: the tutorial's builder checks that they do"},
   {prefix = "tests/", why = "Codex's generated tests, written by rocemit and judged by tests/ladder.sh; Codex is parked"},
   {prefix = "gpu/roc/", why = "Codex's kernels as rocemit emits them, written by gpu/emitted.sh; Codex is parked"},
   {prefix = "games/roc/", why = "Codex's games as rocemit emits them, written by games/emitted.sh; Codex is parked"},
