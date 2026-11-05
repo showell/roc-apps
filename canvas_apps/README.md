@@ -97,6 +97,17 @@ Adding one touches four places — `Keys.Key` and `Keys.bit`, `KEY_BIT` in
 `web/canvas_app_runner.js`, and `watched_keys` plus both match arms in
 `native/CanvasAppRunner.roc` — so a key exists on both ends or on neither.
 
+## In a page of prose
+
+A canvas app goes in a page of prose as an iframe of its own page, sized by an
+`aspect-ratio`, with `loading="lazy"` so it costs nothing until the reader
+comes near. `widget_kit/embed.js` makes the canvas fill the frame, passes the
+wheel on to the prose, gives a clicked frame the keyboard, and stops a frame
+that's off the screen. `canvas_app_runner.js` is unchanged, and each app is
+still a page of its own. `widget_kit/embed_trial.html` tries it with the ride
+and two widgets; copied with `embed.js` to `~/build/roc-apps/next/embed_trial/`
+it shows on the dev channel, beside the apps it frames.
+
 ## What an app is
 
 `lib/CanvasApp.roc` is the type. An app is a record of eight fields over its

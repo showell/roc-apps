@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Safari Ride: an embedding trial</title>
+<style>
+  body { margin: 0; background: #f7f5f0; color: #1d1d1b; font: 17px/1.6 Georgia, serif; }
+  main { max-width: 680px; margin: 0 auto; padding: 32px 16px 200px; }
+  iframe.canvas-app { display: block; width: 100%; border: 0; margin: 24px 0; background: #dcecf5; }
+  .gap { height: 900px; color: #6b6860; }
+</style>
+</head>
+<body>
+<main>
+<h1>Safari Ride</h1>
+<p>A trial of how the tutorial's page holds a live ride and its widgets. Click
+the ride to give it the keyboard: Space pauses, the arrows step.</p>
+<iframe class="canvas-app" id="ride" src="../safari/" title="The live ride" style="aspect-ratio: 960 / 600"></iframe>
+<p class="gap">A long stretch of prose stands here, so the frames below load only as they come near.</p>
+<h2>The clock</h2>
+<p>Drag across the picture, and the sun sets.</p>
+<iframe class="canvas-app" id="sky" src="../sky_widget/" title="The sun going down" loading="lazy" style="aspect-ratio: 640 / 360"></iframe>
+<p class="gap">More prose.</p>
+<h2>The bird</h2>
+<p>Drag across the picture, and the bird flies.</p>
+<iframe class="canvas-app" id="bird" src="../bird_widget/" title="The bird taking off" loading="lazy" style="aspect-ratio: 640 / 360"></iframe>
+</main>
+<script src="embed.js"></script>
+</body>
+</html>
