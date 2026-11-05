@@ -1,6 +1,7 @@
 #!/bin/bash
 # Build BASIC into the DEV channel: the wasm host (zig, against the roc
-# checkout), the app on the nightly compiler, and the page.
+# checkout), the app on the nightly compiler, and the page. The page is
+# replaced only by a build whose page_check.mjs passed.
 #
 #   basic/build.sh
 #
@@ -10,7 +11,11 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/../pinned-roc.sh"
 ZIG="${ZIG:-$HOME/zig-0.16.0/zig}"
 NEXT="$HOME/build/roc-apps/next/basic"
-mkdir -p "$NEXT"
+# Everything is built into a staging directory beside the page, which takes
+# its place at the end, so a failed build leaves the page as it was.
+OUT="$NEXT.staging"
+rm -rf "$OUT"; mkdir -p "$OUT"
+trap 'rm -rf "$OUT"' EXIT
 (cd "$HERE/wasm" && "$ZIG" build --cache-dir "$HOME/build/roc-apps/zig-cache" --global-cache-dir "$HOME/build/zig-global")
 # **THE DEV BACKEND, AS FOR basic-run.** The page sleeps a millisecond a
 # PRINT on purpose, so it has no use for LLVM's speed.
@@ -20,16 +25,12 @@ mkdir -p "$NEXT"
 # The log stays out of the served directory.
 LOG="$HOME/build/roc-apps/gen/basic/build-page.log"
 mkdir -p "$(dirname "$LOG")"
-# Built beside the page and moved in only when it built: a failed build
-# leaves the page's module as it was.
-NEW="$(mktemp -d)"
-trap 'rm -rf "$NEW"' EXIT
-rm -f "$NEXT/build.log"
-(cd "$HERE/roc" && "$ROC" build BasicApp.roc --target=wasm32 --opt=dev --output="$NEW/basic.wasm") > "$LOG" 2>&1 || true
-if grep -q -e "✗" -e "●" "$LOG" || [ ! -s "$NEW/basic.wasm" ]; then
+(cd "$HERE/roc" && "$ROC" build BasicApp.roc --target=wasm32 --opt=dev --output="$OUT/basic.wasm") > "$LOG" 2>&1 || true
+if grep -q -e "✗" -e "●" "$LOG" || [ ! -s "$OUT/basic.wasm" ]; then
     cat "$LOG"; echo "build failed"; exit 1
 fi
-mv "$NEW/basic.wasm" "$NEXT/basic.wasm"
-cp "$HERE/web/index.html" "$HERE/web/basic.html" "$NEXT/"
+cp "$HERE/web/index.html" "$HERE/web/basic.html" "$OUT/"
+node "$HERE/page_check.mjs" "$OUT" || { echo "page check failed"; exit 1; }
+rm -rf "$NEXT.old"; [ -d "$NEXT" ] && mv "$NEXT" "$NEXT.old"; mv "$OUT" "$NEXT"; rm -rf "$NEXT.old"
 ls -la "$NEXT"
 echo "dev: http://143.244.172.148:9210/basic/"

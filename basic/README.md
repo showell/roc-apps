@@ -34,7 +34,8 @@ control ladder (below) is how each one was found.
     basic/wasm/             the page's platform and host
     basic/web/basic.html    the page: the REPL
     basic/web/index.html    the page about it: what it is, what Roc makes hard, what it stands on, where it could go
-    basic/build.sh          the page and its module, into the dev channel
+    basic/build.sh          the page and its module, into the dev channel, if page_check passes
+    basic/page_check.mjs    the REPL held: a typed session run on the built page and wasm, no browser, every screen exact
     basic/build-run.sh      basic-run and basic-check, built once (the dev backend)
     basic/corpus.sh         the corpus as the scripts read it: a program's listing and replies
     basic/run.sh            corpus programs through basic-run, one process each, timed
