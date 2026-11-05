@@ -8,6 +8,8 @@ import Angle
 import DepthSort
 import Frame
 import Distance
+import Across
+import Along
 import Grade
 import Scenery
 import TreeSighting
@@ -22,18 +24,18 @@ segs = [
 
 origin : Frame.Pose
 origin = {
-	along: 0.0,
-	across: 0.0,
+	along: Along.metres(0.0),
+	across: Across.metres(0.0),
 	yaw: Angle.straight_ahead,
-	half_width: 2.0,
+	half_width: Distance.metres(2.0),
 }
 
 up_road : Frame.Pose
 up_road = {
-	along: 100.0,
-	across: 0.0,
+	along: Along.metres(100.0),
+	across: Across.metres(0.0),
 	yaw: Angle.straight_ahead,
-	half_width: 2.0,
+	half_width: Distance.metres(2.0),
 }
 
 ## The first three segments, seen from `pose` through a camera of focal
@@ -57,8 +59,8 @@ green_tree_at : F64 -> { position : Frame.ChainPosition, tree : Scenery.Tree }
 green_tree_at = |along| {
 	position: Frame.ChainPosition.first,
 	tree: {
-		along,
-		across: 3.5,
+		along: Along.metres(along),
+		across: Across.metres(3.5),
 		color: 1858082,
 		height: Distance.metres(5.85),
 	},

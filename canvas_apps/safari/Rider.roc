@@ -2,10 +2,11 @@
 ## hard to accelerate, then the move, the crossing onto the next segment, the
 ## stop at the route's end, and where the rider looks.
 import Acceleration
+import Across
+import Along
 import Angle
 import Bike
 import lib.DeviceMath
-import Distance
 import Gaze
 import LeanSearch
 import Pose
@@ -41,7 +42,7 @@ Rider :: [].{
 	rider_state_for_next_segment = |rs, segs| (
 		{
 			seg = rs.segment.segment_in(segs)
-			hw = (Scenery.lane_width / 2.0)
+			hw = Scenery.lane_half_width.to_metres()
 			next =
 				match seg.ending {
 					Continues({ next: index }) => index
@@ -50,19 +51,19 @@ Rider :: [].{
 			theta = seg.exit_turn.to_radians()
 			c = Trig.r_cos(theta)
 			s = Trig.r_sin(theta)
-			da = (rs.along - (seg.length.to_metres() + (hw * DeviceMath.real_abs(s))))
+			da = (rs.along.to_metres() - (seg.length.to_metres() + (hw * DeviceMath.real_abs(s))))
 			corner_shift = (hw * (1.0 - c))
 			dx =
 				if seg.exit_turn.is_right() {
-					rs.across - corner_shift
+					rs.across.to_metres() - corner_shift
 				} else {
-					rs.across + corner_shift
+					rs.across.to_metres() + corner_shift
 				}
 			{
 				..rs,
 				segment: next,
-				along: ((c * da) + (s * dx)),
-				across: (((0.0 - s) * da) + (c * dx)),
+				along: Along.metres((c * da) + (s * dx)),
+				across: Across.metres(((0.0 - s) * da) + (c * dx)),
 				yaw: rs.yaw.minus(seg.exit_turn),
 				gaze_yaw: Angle.straight_ahead,
 			}
@@ -72,8 +73,8 @@ Rider :: [].{
 	finish_clamp : Pose.RiderState, World.Segment -> Pose.RiderState
 	finish_clamp = |moved, seg| (
 		{
-			end = seg.length.to_metres()
-			in_zone = Distance.metres(end - moved.along) < VehicleLimits.approach_intersection_dist
+			end = Along.at(seg.length)
+			in_zone = end.distance_from(moved.along) < VehicleLimits.approach_intersection_dist
 			(
 				if moved.along >= end {
 					stopped_at(moved, end)
@@ -96,7 +97,7 @@ Rider :: [].{
 		}
 	)
 
-	stopped_at : Pose.RiderState, F64 -> Pose.RiderState
+	stopped_at : Pose.RiderState, Along -> Pose.RiderState
 	stopped_at = |s, at| {
 		..s,
 		along: at,
@@ -108,7 +109,7 @@ Rider :: [].{
 		{
 			on_next = rider_state_for_next_segment(moved, segs)
 			(
-				if DeviceMath.real_abs(on_next.across) < (Scenery.lane_width / 2.0) {
+				if on_next.across.distance_from_middle() < Scenery.lane_half_width {
 					on_next
 				} else {
 					moved
@@ -138,7 +139,7 @@ Rider :: [].{
 			seg = s.segment.segment_in(segs)
 			match seg.ending {
 				Continues(_) => False
-				Terminates => (s.along >= seg.length.to_metres())
+				Terminates => (s.along >= Along.at(seg.length))
 			}
 		}
 	)

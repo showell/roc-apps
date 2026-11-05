@@ -1,29 +1,47 @@
 # Scenery -- originally emitted from Codex by rocemit; the Roc is the program now
 # and this file is edited here (safari/README.md).
+import Across
+import Along
 import Distance
 
 Scenery :: [].{
 	Scheme : [AllGreen, YellowGreen, RedGreen]
 	Creature : [NoCreature, Elephant, Giraffe, Zebra, Rhino, DuckPond]
 	Tree : {
-		along : F64,
-		across : F64,
+		along : Along,
+		across : Across,
 		color : I64,
 		height : Distance,
 	}
 	Critter : {
-		along : F64,
-		across : F64,
+		along : Along,
+		across : Across,
 		codepoint : I64,
 		height : Distance,
 		face_right : Bool,
 	}
 
-	lane_width : F64
-	lane_width = 4.0
+	lane_width : Distance
+	lane_width = Distance.metres(4.0)
 
-	herd_road_offset : F64
-	herd_road_offset = 10.0
+	lane_half_width : Distance
+	lane_half_width = lane_width.divided_by(2.0)
+
+	## The lane's left edge, where `Geom.RoadPoint` measures from.
+	left_edge : Across
+	left_edge = Across.metres(0.0)
+
+	## The lane's right edge, measured from its left edge.
+	right_edge : Across
+	right_edge = left_edge.plus(lane_width)
+
+	## A place measured from the middle of the lane, as `Geom.RoadPoint`
+	## measures it.
+	from_left_edge : Across -> Across
+	from_left_edge = |across| across.plus(lane_half_width)
+
+	herd_road_offset : Distance
+	herd_road_offset = Distance.metres(10.0)
 
 	is_pond : Scenery.Creature -> Bool
 	is_pond = |c| (

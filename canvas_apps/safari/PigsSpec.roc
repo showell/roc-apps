@@ -14,12 +14,12 @@ gaze = Pigs.gaze_pig(Distance.metres(1000.0))
 
 gaze_got : List(F64)
 gaze_got = [
-	gaze.along,
-	gaze.across,
+	gaze.along.to_metres(),
+	gaze.across.to_metres(),
 	gaze.height.to_metres(),
 	Pigs.pig_height.to_metres(),
-	Pigs.pig_dist_before_end,
-	Pigs.gaze_pig_along_offset,
+	Pigs.pig_dist_before_end.to_metres(),
+	Pigs.gaze_pig_along_offset.to_metres(),
 ]
 
 gaze_got_want : List(F64)
@@ -60,7 +60,10 @@ herd_count_want = [49, 49]
 
 ## Where each pig of the herd's row `row` is along the road.
 row_alongs : U64 -> List(F64)
-row_alongs = |row| [0, 1, 2, 3, 4, 5, 6].map(|column| herd_pig_at(((row * 7) + column)).along)
+row_alongs = |row| {
+	columns = List.from_iter(U64.until(0, 7))
+	columns.map(|column| herd_pig_at(((row * 7) + column)).along.to_metres())
+}
 
 herd_along_got : List(F64)
 herd_along_got = [0, 3, 6].join_map(row_alongs)
@@ -91,7 +94,7 @@ herd_along_want = [
 ]
 
 herd_across_got : List(F64)
-herd_across_got = [0, 6, 7, 13, 14, 21, 28, 35, 42, 48].map(|i| herd_pig_at(i).across)
+herd_across_got = [0, 6, 7, 13, 14, 21, 28, 35, 42, 48].map(|i| herd_pig_at(i).across.to_metres())
 
 herd_across_want : List(F64)
 herd_across_want = [12.0, 12.0, 18.0, 18.0, 24.0, 30.0, 36.0, 42.0, 48.0, 48.0]
@@ -116,13 +119,13 @@ row_count_want : List(I64)
 row_count_want = [10, 4, 6]
 
 row_along_got : List(F64)
-row_along_got = row.map(|pig| pig.along)
+row_along_got = row.map(|pig| pig.along.to_metres())
 
 row_along_want : List(F64)
 row_along_want = [934.0, 938.0, 942.0, 946.0, 930.0, 934.0, 938.0, 942.0, 946.0, 950.0]
 
 row_across_got : List(F64)
-row_across_got = row.map(|pig| pig.across)
+row_across_got = row.map(|pig| pig.across.to_metres())
 
 row_across_want : List(F64)
 row_across_want = [12.0, 12.0, 12.0, 12.0, 18.0, 18.0, 18.0, 18.0, 18.0, 18.0]
@@ -139,7 +142,7 @@ offsets_got = List.join([
 		Pigs.pig_jitter_along,
 		Pigs.pig_jitter_across,
 	],
-])
+]).map(Distance.to_metres)
 
 offsets_want : List(F64)
 offsets_want = [

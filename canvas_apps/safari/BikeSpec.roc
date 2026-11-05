@@ -8,6 +8,8 @@ import Acceleration
 import Angle
 import Fraction
 import Bike
+import Across
+import Along
 import Grade
 import World
 import Pose
@@ -22,8 +24,8 @@ limit_want = [0.1, 0.3490658503988659]
 s0 : Pose.RiderState
 s0 = {
 	segment: World.SegmentIndex.number(3),
-	along: 120.5,
-	across: 2.25,
+	along: Along.metres(120.5),
+	across: Across.metres(2.25),
 	yaw: Angle.Turn.radians(0.375),
 	speed: Speed.metres_a_step(0.8),
 	tilt: Angle.Lean.radians(0.125),
@@ -103,12 +105,12 @@ carried_int_want = [3, 3, 3]
 
 pos_got : List(F64)
 pos_got = [
-	s1.along,
-	s1.across,
-	s2.along,
-	s2.across,
-	s3.along,
-	s3.across,
+	s1.along.to_metres(),
+	s1.across.to_metres(),
+	s2.along.to_metres(),
+	s2.across.to_metres(),
+	s3.along.to_metres(),
+	s3.across.to_metres(),
 ]
 
 pos_want : List(F64)

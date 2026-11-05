@@ -9,6 +9,8 @@ import Angle
 import Frame
 import Geom
 import Distance
+import Across
+import Along
 import Grade
 import World
 
@@ -37,10 +39,10 @@ route_want = [19, 7, 4, 1]
 
 pose : Frame.Pose
 pose = {
-	along: 100.0,
-	across: 1.0,
+	along: Along.metres(100.0),
+	across: Across.metres(1.0),
 	yaw: Angle.Turn.radians(0.2),
-	half_width: 2.0,
+	half_width: Distance.metres(2.0),
 }
 
 m_chain : Frame.SegmentPlace
@@ -50,14 +52,14 @@ m_prev_left : Frame.SegmentPlace
 m_prev_left = JustBehind({
 	segment_length: Distance.metres(300.0),
 	turn: Angle.Turn.radians(0.0 - 1.2217304763960306),
-	lane_width: 4.0,
+	lane_width: Distance.metres(4.0),
 })
 
 m_prev_right : Frame.SegmentPlace
 m_prev_right = JustBehind({
 	segment_length: Distance.metres(300.0),
 	turn: Angle.Turn.radians(0.8726646259971648),
-	lane_width: 4.0,
+	lane_width: Distance.metres(4.0),
 })
 
 ## The bend of a place behind the rider.
@@ -87,9 +89,9 @@ map_int_want = [3, 1]
 map_real_got : List(F64)
 map_real_got = [
 	bend_of(m_prev_left).segment_length.to_metres(),
-	bend_of(m_prev_left).lane_width,
+	bend_of(m_prev_left).lane_width.to_metres(),
 	bend_of(m_prev_right).segment_length.to_metres(),
-	bend_of(m_prev_right).lane_width,
+	bend_of(m_prev_right).lane_width.to_metres(),
 	bend_of(Frame.place_behind(World.route_segment(0))).segment_length.to_metres(),
 ]
 
@@ -153,8 +155,8 @@ at_d0 = Frame.rider_point_ahead(
 	},
 	{
 		position: Frame.ChainPosition.first,
-		along: 50.0,
-		across: 3.0,
+		along: Along.metres(50.0),
+		across: Across.metres(3.0),
 	},
 )
 
@@ -167,8 +169,8 @@ at_d1 = |w| Frame.rider_point_ahead(
 	},
 	{
 		position: Frame.ChainPosition.number(1),
-		along: 50.0,
-		across: 3.0,
+		along: Along.metres(50.0),
+		across: Across.metres(3.0),
 	},
 )
 
@@ -204,8 +206,8 @@ behind_got = (
 			},
 			{
 				place: m_prev_left,
-				along: 50.0,
-				across: 3.0,
+				along: Along.metres(50.0),
+				across: Across.metres(3.0),
 			},
 		)
 		r = Frame.rider_point_at(
@@ -216,8 +218,8 @@ behind_got = (
 			},
 			{
 				place: m_prev_right,
-				along: 50.0,
-				across: 3.0,
+				along: Along.metres(50.0),
+				across: Across.metres(3.0),
 			},
 		)
 		[

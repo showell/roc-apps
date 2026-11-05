@@ -8,6 +8,8 @@ import Angle
 import Frame
 import Geom
 import Distance
+import Across
+import Along
 import Grade
 import Ground
 import GroundSighting
@@ -48,10 +50,10 @@ road = {
 	],
 	chain: [0, 1, 2].map(World.SegmentIndex.number),
 	pose: {
-		along: 0.0,
-		across: 0.0,
+		along: Along.metres(0.0),
+		across: Across.metres(0.0),
 		yaw: Angle.straight_ahead,
-		half_width: 2.0,
+		half_width: Distance.metres(2.0),
 	},
 }
 
@@ -127,10 +129,10 @@ strip = patch_shapes(GroundSighting.segment_road(road, Frame.ChainPosition.first
 
 far_ahead : Frame.Pose
 far_ahead = {
-	along: 5000.0,
-	across: 0.0,
+	along: Along.metres(5000.0),
+	across: Across.metres(0.0),
 	yaw: Angle.straight_ahead,
-	half_width: 2.0,
+	half_width: Distance.metres(2.0),
 }
 
 strip_got : List(Bool)

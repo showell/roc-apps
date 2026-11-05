@@ -2,6 +2,8 @@
 ## every 30 m, from just past the segment's start to well short of its end.
 ## The pairs alternate between big green trees and smaller ones in the
 ## segment's accent colour, and a gold tree stands farther from the road.
+import Across
+import Along
 import Distance
 import Scenery
 
@@ -31,21 +33,21 @@ Trees :: [].{
 	big_scale : F64
 	big_scale = 1.3
 
-	tree_spacing : F64
-	tree_spacing = 30.0
+	tree_spacing : Distance
+	tree_spacing = Distance.metres(30.0)
 
 	## How far from the road's edge a tree stands; a gold one, four times
 	## as far.
-	tree_road_offset : F64
-	tree_road_offset = 1.5
+	tree_road_offset : Distance
+	tree_road_offset = Distance.metres(1.5)
 
 	## How far into a segment its first pair stands.
-	tree_start_inset : F64
-	tree_start_inset = 6.0
+	tree_start_inset : Distance
+	tree_start_inset = Distance.metres(6.0)
 
 	## No pair stands closer than this to a segment's end.
-	tree_end_inset : F64
-	tree_end_inset = 85.0
+	tree_end_inset : Distance
+	tree_end_inset = Distance.metres(85.0)
 
 	## At most this many trees stand on a segment.
 	max_trees : I64
@@ -84,11 +86,11 @@ Trees :: [].{
 	}
 
 	## How far from the middle of the road a conifer stands, either side.
-	across : Trees.Conifer -> F64
-	across = |conifer|
+	distance_from_middle : Trees.Conifer -> Distance
+	distance_from_middle = |conifer|
 		match conifer {
-			Gold => ((Scenery.lane_width / 2.0) + (4.0 * tree_road_offset))
-			Green | Red => ((Scenery.lane_width / 2.0) + tree_road_offset)
+			Gold => Scenery.lane_half_width.plus(tree_road_offset.times(4.0))
+			Green | Red => Scenery.lane_half_width.plus(tree_road_offset)
 		}
 
 	## A segment's trees, in pairs from its start, each pair's left tree
@@ -99,7 +101,7 @@ Trees :: [].{
 		{
 			scheme,
 			length,
-			along: tree_start_inset,
+			along: Along.at(tree_start_inset),
 			size: Big,
 		},
 	)
@@ -111,7 +113,7 @@ plant_onto : List(Scenery.Tree),
 {
 	scheme : Scenery.Scheme,
 	length : Distance,
-	along : F64,
+	along : Along,
 	size : Trees.PairSize,
 } -> List(Scenery.Tree)
 plant_onto = |
@@ -123,7 +125,7 @@ plant_onto = |
 		size,
 	},
 |
-	if along > (length.to_metres() - Trees.tree_end_inset) {
+	if along > Along.at(length.minus(Trees.tree_end_inset)) {
 		planted
 	} else if (planted.len().to_i64_wrap() + 2) > Trees.max_trees {
 		planted
@@ -135,16 +137,16 @@ plant_onto = |
 			}
 		tree_color = Trees.color(conifer)
 		tree_height = Trees.height({ conifer, size })
-		from_middle = Trees.across(conifer)
+		from_middle = Trees.distance_from_middle(conifer)
 		left = {
 			along,
-			across: (0.0 - from_middle),
+			across: Across.left_of_middle(from_middle),
 			color: tree_color,
 			height: tree_height,
 		}
 		right = {
 			along,
-			across: from_middle,
+			across: Across.right_of_middle(from_middle),
 			color: tree_color,
 			height: tree_height,
 		}
@@ -158,7 +160,7 @@ plant_onto = |
 			{
 				scheme,
 				length,
-				along: (along + Trees.tree_spacing),
+				along: along.plus(Trees.tree_spacing),
 				size: next_size,
 			},
 		)

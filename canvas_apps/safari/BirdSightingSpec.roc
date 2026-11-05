@@ -13,6 +13,8 @@ import BirdSighting
 import DepthSort
 import Frame
 import Distance
+import Across
+import Along
 import Grade
 import RocBird
 import Scenery
@@ -20,8 +22,8 @@ import World
 
 tree_at : F64, F64 -> Scenery.Tree
 tree_at = |along, across| {
-	along,
-	across,
+	along: Along.metres(along),
+	across: Across.metres(across),
 	color: 0,
 	height: Distance.metres(10.0),
 }
@@ -55,10 +57,10 @@ birds_on_segment = |segment, { rider_along, cam_focal }|
 			world: [segment],
 			chain: [World.SegmentIndex.first],
 			pose: {
-				along: rider_along,
-				across: 0.0,
+				along: Along.metres(rider_along),
+				across: Across.metres(0.0),
 				yaw: Angle.straight_ahead,
-				half_width: 2.0,
+				half_width: Distance.metres(2.0),
 			},
 		},
 		cam_focal,
@@ -162,10 +164,10 @@ two_segments = BirdSighting.in_view({
 		world: [segment_of(left_trees), segment_of(left_trees)],
 		chain: [0, 1].map(World.SegmentIndex.number),
 		pose: {
-			along: 0.0,
-			across: 0.0,
+			along: Along.metres(0.0),
+			across: Across.metres(0.0),
 			yaw: Angle.straight_ahead,
-			half_width: 2.0,
+			half_width: Distance.metres(2.0),
 		},
 	},
 	cam_focal: 500.0,

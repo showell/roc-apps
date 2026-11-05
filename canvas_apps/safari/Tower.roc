@@ -3,9 +3,12 @@
 ## crossed braces in the lowest two stages) with a blinking beacon on top.
 ## The earth curves away under a far mast, so it sinks below the horizon
 ## from the bottom up.
+import Across
+import Along
 import Angle
 import Camera
 import lib.DeviceMath
+import Distance
 import Fraction
 import Geom
 import Paint
@@ -111,8 +114,8 @@ Tower :: [].{
 	## `along` and `across` and turned by `yaw`.
 	base_corner_on_road : Tower.Corner,
 	{
-		along : F64,
-		across : F64,
+		along : Along,
+		across : Across,
 		yaw : Angle.Turn,
 	} -> Geom.RoadPoint
 	base_corner_on_road = |
@@ -128,7 +131,10 @@ Tower :: [].{
 		dv = (offset.along * tower_half)
 		cy = Trig.r_cos(yaw.to_radians())
 		sy = Trig.r_sin(yaw.to_radians())
-		{ along: (along + ((du * sy) + (dv * cy))), across: (across + ((du * cy) - (dv * sy))) }
+		{
+			along: along.plus(Distance.metres((du * sy) + (dv * cy))),
+			across: across.plus(Distance.metres((du * cy) - (dv * sy))),
+		}
 	}
 
 	## How far the earth's curve hides the bottom of a mast standing at `p`.

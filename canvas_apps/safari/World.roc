@@ -2,6 +2,8 @@
 ## its entry in `route`. A segment holds its scenery (trees, cows, pigs, a cat
 ## by a tree), how it turns into the next, where the rider commits to that
 ## turn, and the creature waiting at its end.
+import Across
+import Along
 import Angle
 import BirdFlight
 import Cat
@@ -82,7 +84,7 @@ World :: [].{
 		## The turn into the next segment: positive to the right, negative to
 		## the left.
 		exit_turn : Angle.Turn,
-		commit_along : F64,
+		commit_along : Along,
 		mid_tower : [MidTower, NoMidTower],
 
 		## What crosses the road here, at most one thing, so that the rider has
@@ -324,14 +326,15 @@ World :: [].{
 	route_length : List(World.Segment) -> Distance
 	route_length = |world| world.fold_rev(Distance.zero, |segment, sum| segment.length.plus(sum))
 
-	## How far along the route a point `along` into the segment at `index` is.
+	## How far along the route the point at `along` on the segment at `index`
+	## is.
 	distance_along_route : List(World.Segment),
 	{
 		index : World.SegmentIndex,
-		along : F64,
+		along : Along,
 	} -> Distance
 	distance_along_route = |world, { index, along }|
-		route_length(world.take_first(index.count_before())).plus(Distance.metres(along))
+		route_length(world.take_first(index.count_before())).plus(along.from_start())
 }
 
 ## The segment at `index` of the route, built from its plan.
@@ -356,15 +359,15 @@ built_segment = |plan, index| {
 		commit_along: match plan.ending {
 			Continues => {
 				exit_tan = Trig.r_tan(plan.turn.abs().to_radians())
-				plan.length.to_metres() - Scenery.lane_width / 2.0 / exit_tan
+				Along.at(plan.length.minus(Scenery.lane_half_width.divided_by(exit_tan)))
 			}
-			Terminates => plan.length.to_metres()
+			Terminates => Along.at(plan.length)
 		},
 		mid_tower: if (plan.length > World.mid_tower_min_length) MidTower else NoMidTower,
 		crossing: match plan.crossing {
 			CatCrosses => CatCrosses(
 				Cat.crossing({
-					lane_half_width: (Scenery.lane_width / 2.0),
+					lane_half_width: Scenery.lane_half_width,
 					tree_offset: Trees.tree_road_offset,
 					tree_along: nearest_tree_ahead(trees, Cat.cat_along),
 				}),
@@ -385,12 +388,12 @@ built_segment = |plan, index| {
 
 ## The nearest tree along the road at or past `along`, on the right; `along`
 ## itself when there is none. A segment's cat waits by it.
-nearest_tree_ahead : List(Scenery.Tree), F64 -> F64
+nearest_tree_ahead : List(Scenery.Tree), Along -> Along
 nearest_tree_ahead = |trees, along| {
 	nearest = trees.fold(
 		NoTreeYet,
 		|best, tree|
-			if tree.across > 0.0 and tree.along >= along {
+			if tree.across > Across.middle and tree.along >= along {
 				match best {
 					NearestAlong(nearest_along) =>
 						if (tree.along < nearest_along) NearestAlong(tree.along) else best

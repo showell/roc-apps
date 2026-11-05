@@ -3,6 +3,7 @@
 ## baby at each corner, and the ducks on each pond. The critters of the
 ## segment before the rider's are sighted too, so the corner the rider has
 ## just turned keeps its animals.
+import Along
 import Billboards
 import DepthSort
 import Frame
@@ -125,9 +126,6 @@ CritterSighting :: [].{
 		)
 }
 
-lane_half_width : F64
-lane_half_width = (Scenery.lane_width / 2.0)
-
 segment_at : Frame.RoadView, Frame.ChainPosition -> World.Segment
 segment_at = |road, position| position.index_in(road.chain).segment_in(road.world)
 
@@ -144,7 +142,7 @@ sight_critter = |road, { place, critter }|
 			{
 				place,
 				along: critter.along,
-				across: (critter.across + lane_half_width),
+				across: Scenery.from_left_edge(critter.across),
 			},
 		),
 		height: critter.height,
@@ -160,9 +158,9 @@ corner_sightings : Frame.RoadView,
 corner_sightings = |road, { place, segment }|
 	SafariCritter.corner_critters({
 		creature: segment.exit_creature,
-		corner_along: segment.length.to_metres(),
+		corner_along: Along.at(segment.length),
 		turn: segment.exit_turn,
-		lane_half_width,
+		lane_half_width: Scenery.lane_half_width,
 	})
 		.map(|critter| sight_critter(road, { place, critter }))
 
@@ -182,7 +180,7 @@ pond_sightings = |road, { place, segment }|
 						road,
 						{
 							place,
-							along: (segment.length.to_metres() + duck.at.along),
+							along: Along.at(segment.length).plus(duck.at.along.from_start()),
 							across: duck.at.across,
 						},
 					),

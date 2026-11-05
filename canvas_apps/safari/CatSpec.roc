@@ -11,14 +11,15 @@ import Cat
 import Easing
 import Fraction
 import Distance
+import Along
 import Grade
 import Speed
 
 the_cat : Cat.Crossing
 the_cat = Cat.crossing({
-	lane_half_width: 2.0,
-	tree_offset: 1.0,
-	tree_along: 100.0,
+	lane_half_width: Distance.metres(2.0),
+	tree_offset: Distance.metres(1.0),
+	tree_along: Along.metres(100.0),
 })
 
 ## A rider `gap` metres short of the cat, at `speed` metres a step.
@@ -27,9 +28,9 @@ coming = |gap, speed| { gap: Distance.metres(gap), speed: Speed.metres_a_step(sp
 
 make_got : List(F64)
 make_got = [
-	the_cat.along,
-	the_cat.start_across,
-	the_cat.mid_across,
+	the_cat.along.to_metres(),
+	the_cat.start_across.to_metres(),
+	the_cat.mid_across.to_metres(),
 	the_cat.height.to_metres(),
 ]
 
@@ -37,7 +38,10 @@ make_want : List(F64)
 make_want = [102.0, 4.5, 0.816, 1.7]
 
 make_wide_got : List(F64)
-make_wide_got = [the_cat.end_across, (the_cat.mid_across - the_cat.end_across)]
+make_wide_got = [
+	the_cat.end_across.to_metres(),
+	the_cat.mid_across.distance_from(the_cat.end_across).to_metres(),
+]
 
 make_wide_want : List(F64)
 make_wide_want = [(-3.49), 4.306]
@@ -45,12 +49,12 @@ make_wide_want = [(-3.49), 4.306]
 dims_got : List(F64)
 dims_got = [
 	Cat.cat_height.to_metres(),
-	Cat.cat_along,
-	Cat.cat_road_gap,
-	Cat.cat_beyond_tree,
+	Cat.cat_along.to_metres(),
+	Cat.cat_road_gap.to_metres(),
+	Cat.cat_beyond_tree.to_metres(),
 	Cat.cat_head_x,
-	Cat.land_hind_reach,
-	Cat.grass_toehold,
+	Cat.land_hind_reach.to_metres(),
+	Cat.grass_toehold.to_metres(),
 ]
 
 dims_want : List(F64)
@@ -216,11 +220,11 @@ which_want = [0, 0, 2, 2, 3, 4, 5, 6]
 
 entering_got : List(F64)
 entering_got = [
-	crossing_at(0.0).spot.across,
-	crossing_at(1.25).spot.across,
-	crossing_at(3.75).spot.across,
-	crossing_at(6.25).spot.across,
-	crossing_at(8.75).spot.across,
+	crossing_at(0.0).spot.across.to_metres(),
+	crossing_at(1.25).spot.across.to_metres(),
+	crossing_at(3.75).spot.across.to_metres(),
+	crossing_at(6.25).spot.across.to_metres(),
+	crossing_at(8.75).spot.across.to_metres(),
 	crossing_at(0.0).spot.lift,
 	crossing_at(8.75).spot.lift,
 ]
@@ -236,8 +240,8 @@ stride_want = [0, 1, 0, 1, 0]
 
 frozen_got : List(F64)
 frozen_got = [
-	phase_of(30.0).spot.across,
-	phase_of(7.0).spot.across,
+	phase_of(30.0).spot.across.to_metres(),
+	phase_of(7.0).spot.across.to_metres(),
 	phase_of(30.0).spot.lift,
 ]
 
@@ -246,9 +250,9 @@ frozen_want = [0.816, 0.816, 0.0]
 
 leap_got : List(F64)
 leap_got = [
-	phase_of(6.5).spot.across,
+	phase_of(6.5).spot.across.to_metres(),
 	phase_of(6.5).spot.lift,
-	phase_of(6.0).spot.across,
+	phase_of(6.0).spot.across.to_metres(),
 	phase_of(6.0).spot.lift,
 	Easing.three_quarter_power(Fraction.zero).to_f64(),
 	Easing.three_quarter_power(Fraction.whole).to_f64(),
@@ -261,9 +265,9 @@ leap_want = [0.816, 0.0, 0.816, 0.0, 0.0, 1.0, 0.125, 0.18]
 
 flight_got : List(F64)
 flight_got = [
-	phase_of(5.875).spot.across,
+	phase_of(5.875).spot.across.to_metres(),
 	phase_of(5.875).spot.lift,
-	phase_of(4.0).spot.across,
+	phase_of(4.0).spot.across.to_metres(),
 ]
 
 flight_want : List(F64)

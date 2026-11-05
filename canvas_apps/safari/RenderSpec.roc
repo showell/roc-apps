@@ -13,6 +13,8 @@ import CritterSighting
 import DepthSort
 import Distance
 import Frame
+import Across
+import Along
 import Grade
 import RailSighting
 import Render
@@ -27,10 +29,10 @@ segs = List.from_iter(U32.until(0, World.route.len().to_u32_wrap())).map(World.r
 
 origin : Frame.Pose
 origin = {
-	along: 0.0,
-	across: 0.0,
+	along: Along.metres(0.0),
+	across: Across.metres(0.0),
 	yaw: Angle.straight_ahead,
-	half_width: 2.0,
+	half_width: Distance.metres(2.0),
 }
 
 scene : Render.Scene

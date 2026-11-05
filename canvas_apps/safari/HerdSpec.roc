@@ -4,6 +4,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Along
 import Grade
 import Herd
 import Scenery
@@ -39,10 +40,10 @@ bull_face_want = [False, True]
 
 bull_place_got : List(F64)
 bull_place_got = [
-	the_bull.along,
-	the_bull.across,
-	Herd.bull_dist,
-	Herd.bull_tree_gap,
+	the_bull.along.to_metres(),
+	the_bull.across.to_metres(),
+	Herd.bull_dist.to_metres(),
+	Herd.bull_tree_gap.to_metres(),
 ]
 
 bull_place_want : List(F64)
@@ -66,13 +67,13 @@ bull_height_want : List(F64)
 bull_height_want = [1.61, 1.61]
 
 alongs_got : List(F64)
-alongs_got = Herd.cows.map(|cow| cow.along)
+alongs_got = Herd.cows.map(|cow| cow.along.to_metres())
 
 alongs_want : List(F64)
 alongs_want = [28.0, 30.0, 32.0, 34.0, 36.0, 38.0, 40.0, 42.0, 44.0, 46.0, 48.0, 50.0, 52.0, 54.0]
 
 acrosses_got : List(F64)
-acrosses_got = Herd.cows.map(|cow| cow.across)
+acrosses_got = Herd.cows.map(|cow| cow.across.to_metres())
 
 acrosses_want : List(F64)
 acrosses_want = [
@@ -110,9 +111,9 @@ kind_want = [14, 128004, 128004]
 
 order_got : List(F64)
 order_got = [
-	with_bull_at(0).along,
-	(with_bull_at(1).along - cow_of(0).along),
-	(with_bull_at(14).along - cow_of(13).along),
+	with_bull_at(0).along.to_metres(),
+	with_bull_at(1).along.distance_from(cow_of(0).along).to_metres(),
+	with_bull_at(14).along.distance_from(cow_of(13).along).to_metres(),
 ]
 
 order_want : List(F64)
@@ -120,12 +121,12 @@ order_want = [24.0, 0.0, 0.0]
 
 spacing_got : List(F64)
 spacing_got = [
-	Herd.herd_gap_behind_bull,
-	Herd.herd_col_spacing,
-	Herd.herd_row_stagger,
-	Herd.herd_row_depth,
-	Herd.herd_jitter_along,
-	Herd.herd_jitter_across,
+	Herd.herd_gap_behind_bull.to_metres(),
+	Herd.herd_col_spacing.to_metres(),
+	Herd.herd_row_stagger.to_metres(),
+	Herd.herd_row_depth.to_metres(),
+	Herd.herd_jitter_along.to_metres(),
+	Herd.herd_jitter_across.to_metres(),
 ]
 
 spacing_want : List(F64)

@@ -83,13 +83,13 @@ cat_in_view = |
 	},
 | {
 	gap = Frame.gap_to_segment(view.road, position)
-	instant = Cat.instant_at(crossing, { gap: gap.plus(Distance.metres(crossing.along)), speed })
+	instant = Cat.instant_at(crossing, { gap: gap.plus(crossing.along.from_start()), speed })
 	seen = Frame.rider_point_ahead(
 		view.road,
 		{
 			position: position,
-			along: (crossing.along + instant.spot.along),
-			across: (instant.spot.across + (Scenery.lane_width / 2.0)),
+			along: crossing.along.plus(instant.spot.along.from_start()),
+			across: Scenery.from_left_edge(instant.spot.across),
 		},
 	)
 	height_px = (crossing.height.to_metres() / seen.forward) * view.cam_focal

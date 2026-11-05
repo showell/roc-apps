@@ -7,6 +7,8 @@ app [main!] {
 import Angle
 import Fraction
 import Geom
+import Across
+import Along
 import Grade
 import Tower
 import ShapeRead
@@ -58,12 +60,12 @@ ax_of = |corner| {
 	p = Tower.base_corner_on_road(
 		corner,
 		{
-			along: 100.0,
-			across: 0.0,
+			along: Along.metres(100.0),
+			across: Across.metres(0.0),
 			yaw: Angle.straight_ahead,
 		},
 	)
-	[p.along, p.across]
+	[p.along.to_metres(), p.across.to_metres()]
 }
 
 ax_got : List(F64)

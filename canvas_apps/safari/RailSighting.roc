@@ -2,6 +2,8 @@
 ## the outer edge of the road for the last few metres before the bend,
 ## cuts across the bend's corner to where the two outer edges meet and
 ## back, and follows the next segment's outer edge for as far again.
+import Across
+import Along
 import DepthSort
 import lib.DeviceMath
 import Distance
@@ -92,7 +94,7 @@ RailSighting :: [].{
 	{
 		place : Frame.SegmentPlace,
 		length : Distance,
-		across : F64,
+		across : Across,
 	} -> List(Geom.RiderPoint)
 	run_up = |
 		road,
@@ -104,12 +106,12 @@ RailSighting :: [].{
 	|
 		List.from_iter(U32.to(0, GuardRail.rail_runout)).map(
 			|metres_in| {
-				metres_left = GuardRail.rail_runout - metres_in
+				metres_left = Distance.metres((GuardRail.rail_runout - metres_in).to_f64())
 				Frame.rider_point_at(
 					road,
 					{
 						place,
-						along: length.to_metres() - metres_left.to_f64(),
+						along: Along.at(length.minus(metres_left)),
 						across,
 					},
 				)
@@ -118,14 +120,18 @@ RailSighting :: [].{
 
 	## The rail along the first `rail_runout` metres of a segment at `place`,
 	## `across` from its left edge: a point a metre, the first a metre in.
-	run_out : Frame.RoadView, { place : Frame.SegmentPlace, across : F64 } -> List(Geom.RiderPoint)
+	run_out : Frame.RoadView,
+	{
+		place : Frame.SegmentPlace,
+		across : Across,
+	} -> List(Geom.RiderPoint)
 	run_out = |road, { place, across }|
 		List.from_iter(U32.to(1, GuardRail.rail_runout)).map(
 			|metres_in| Frame.rider_point_at(
 				road,
 				{
 					place,
-					along: metres_in.to_f64(),
+					along: Along.metres(metres_in.to_f64()),
 					across,
 				},
 			),
@@ -162,7 +168,7 @@ rail_path = |road, bend| {
 		road,
 		{
 			place: bend.before,
-			along: bend.length_before.to_metres(),
+			along: Along.at(bend.length_before),
 			across: outer_edge,
 		},
 	)
@@ -170,7 +176,7 @@ rail_path = |road, bend| {
 		road,
 		{
 			place: bend.after,
-			along: 0.0,
+			along: Along.start,
 			across: outer_edge,
 		},
 	)

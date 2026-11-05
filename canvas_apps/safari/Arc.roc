@@ -1,9 +1,11 @@
 # Arc -- originally emitted from Codex by rocemit; the Roc is the program now
 # and this file is edited here (safari/README.md).
 import Acceleration
+import Across
+import Along
 import Angle
 import Bike
-import lib.DeviceMath
+import Distance
 import Scenery
 import Steps
 import lib.Trig
@@ -12,31 +14,31 @@ Arc :: [].{
 	Shoulder : [ShoulderLeft, ShoulderNone, ShoulderRight]
 	ArcOutcome : {
 		shoulder : Arc.Shoulder,
-		forward : F64,
+		forward : Distance,
 		crossed : Bool,
-		end_across : F64,
+		end_across : Across,
 		frames : Steps,
 	}
 
 	no_frames : Steps
 	no_frames = Steps.of(1000000000)
 
-	straighten_margin : F64
-	straighten_margin = 0.05
+	straighten_margin : Distance
+	straighten_margin = Distance.metres(0.05)
 
 	turn_danger_steps : Steps
 	turn_danger_steps = Steps.of(2000)
 
-	min_forward_progress : F64
-	min_forward_progress = 25.0
+	min_forward_progress : Distance
+	min_forward_progress = Distance.metres(25.0)
 
 	## What holds for the whole of one projected arc: the road's edges, and
 	## the side and distance along the road the rider started from.
 	ArcCourse : {
-		left_bound : F64,
-		right_bound : F64,
+		left_bound : Across,
+		right_bound : Across,
 		start_side : F64,
-		start_along : F64,
+		start_along : Along,
 	}
 
 	## Where a projected arc has reached: whether it has crossed the centre
@@ -59,7 +61,7 @@ Arc :: [].{
 		if i >= turn_danger_steps {
 			{
 				shoulder: ShoulderNone,
-				forward: (phys.along - course.start_along),
+				forward: phys.along.distance_from(course.start_along),
 				crossed: crossed,
 				end_across: phys.across,
 				frames: no_frames,
@@ -90,9 +92,9 @@ Arc :: [].{
 	| (
 		{
 			across = phys.across
-			forward = (phys.along - course.start_along)
+			forward = phys.along.distance_from(course.start_along)
 			crossed = (
-				if (across * course.start_side) < 0.0 {
+				if (across.to_metres() * course.start_side) < 0.0 {
 					True
 				} else {
 					crossed0
@@ -102,7 +104,7 @@ Arc :: [].{
 				if across < course.left_bound {
 					{
 						shoulder: ShoulderLeft,
-						forward: DeviceMath.real_min(forward, min_forward_progress),
+						forward: forward.min(min_forward_progress),
 						crossed: crossed,
 						end_across: across,
 						frames: i,
@@ -112,14 +114,14 @@ Arc :: [].{
 						if across > course.right_bound {
 							{
 								shoulder: ShoulderRight,
-								forward: DeviceMath.real_min(forward, min_forward_progress),
+								forward: forward.min(min_forward_progress),
 								crossed: crossed,
 								end_across: across,
 								frames: i,
 							}
 						} else {
 							(
-								if forward < 0.0 {
+								if forward < Distance.zero {
 									{
 										shoulder: ShoulderNone,
 										forward: forward,
@@ -160,14 +162,14 @@ Arc :: [].{
 	project_arc : Bike.Motion(others) -> Arc.ArcOutcome
 	project_arc = |state| (
 		{
-			inset_hw = ((Scenery.lane_width / 2.0) - straighten_margin)
-			right_bound = DeviceMath.real_max(inset_hw, state.across)
-			left_bound = DeviceMath.real_min((0.0 - inset_hw), state.across)
+			inset_hw = Scenery.lane_half_width.minus(straighten_margin)
+			right_bound = Across.right_of_middle(inset_hw).max(state.across)
+			left_bound = Across.left_of_middle(inset_hw).min(state.across)
 			sim_from(
 				{
 					left_bound,
 					right_bound,
-					start_side: Trig.r_sign(state.across),
+					start_side: Trig.r_sign(state.across.to_metres()),
 					start_along: state.along,
 				},
 				{

@@ -2,6 +2,7 @@
 ## for `Ground` to paint: the road, in chunks along each segment in view; the
 ## paved corner where one segment bends into the next; and the pond beside a
 ## segment that ends at one.
+import Along
 import Distance
 import Frame
 import Geom
@@ -86,9 +87,10 @@ GroundSighting :: [].{
 			chunk_number,
 		},
 	| {
-		metres = segment_length.to_metres()
-		near_end = metres * chunk_number.to_f64() / chunk_count.to_f64()
-		far_end = metres * (chunk_number + 1).to_f64() / chunk_count.to_f64()
+		end_of_chunk = |number|
+			Along.at(segment_length.times(number.to_f64()).divided_by(chunk_count.to_f64()))
+		near_end = end_of_chunk(chunk_number)
+		far_end = end_of_chunk(chunk_number + 1)
 		corner = |along, across| Frame.rider_point_ahead(
 			road,
 			{
@@ -98,10 +100,10 @@ GroundSighting :: [].{
 			},
 		)
 		[
-			corner(near_end, 0.0),
-			corner(near_end, Scenery.lane_width),
-			corner(far_end, Scenery.lane_width),
-			corner(far_end, 0.0),
+			corner(near_end, Scenery.left_edge),
+			corner(near_end, Scenery.right_edge),
+			corner(far_end, Scenery.right_edge),
+			corner(far_end, Scenery.left_edge),
 		]
 	}
 }
@@ -169,13 +171,13 @@ approach = |road, bend| {
 			across,
 		},
 	)
-	end = bend.length_before.to_metres()
-	start = bend.length_before.minus(GroundSighting.approach_length).to_metres()
+	end = Along.at(bend.length_before)
+	start = Along.at(bend.length_before.minus(GroundSighting.approach_length))
 	[
-		corner(end, 0.0),
-		corner(end, Scenery.lane_width),
-		corner(start, Scenery.lane_width),
-		corner(start, 0.0),
+		corner(end, Scenery.left_edge),
+		corner(end, Scenery.right_edge),
+		corner(start, Scenery.right_edge),
+		corner(start, Scenery.left_edge),
 	]
 }
 
@@ -184,13 +186,13 @@ approach = |road, bend| {
 ## and back to the outer edge where the segment after starts.
 bend_corner : Frame.RoadView, Joint.PlacedBend -> List(Geom.RiderPoint)
 bend_corner = |road, bend| {
-	inner_edge = if (bend.turn.is_right()) Scenery.lane_width else 0.0
+	inner_edge = if (bend.turn.is_right()) Scenery.right_edge else Scenery.left_edge
 	outer_edge = Joint.outer_edge(bend.turn)
 	end_at = |across| Frame.rider_point_at(
 		road,
 		{
 			place: bend.before,
-			along: bend.length_before.to_metres(),
+			along: Along.at(bend.length_before),
 			across,
 		},
 	)
@@ -202,7 +204,7 @@ bend_corner = |road, bend| {
 			road,
 			{
 				place: bend.after,
-				along: 0.0,
+				along: Along.start,
 				across: outer_edge,
 			},
 		),
@@ -224,7 +226,7 @@ pond_ground = |road, { segment, place }|
 					road,
 					{
 						place,
-						along: segment.length.to_metres() + point.along,
+						along: Along.at(segment.length).plus(point.along.from_start()),
 						across: point.across,
 					},
 				),

@@ -1,6 +1,8 @@
 ## Joint knows where two segments meet: where each lies from the rider, and
 ## the apex where the outer edges of the road meet at the bend. The road's
 ## paving and the guard rail both follow it.
+import Across
+import Along
 import Angle
 import Distance
 import Frame
@@ -35,13 +37,14 @@ Joint :: [].{
 
 	## How far across the road its outer edge at a bend is: the left edge
 	## when the road turns right, the right edge when it turns left.
-	outer_edge : Angle.Turn -> F64
-	outer_edge = |turn| if (turn.is_right()) 0.0 else Scenery.lane_width
+	outer_edge : Angle.Turn -> Across
+	outer_edge = |turn| if (turn.is_right()) Scenery.left_edge else Scenery.right_edge
 
 	## Where the outer edges of the two segments at a bend meet.
 	joint_apex : Frame.RoadView, Joint.PlacedBend -> Geom.RiderPoint
 	joint_apex = |road, bend| {
 		across = outer_edge(bend.turn)
+		end_before = Along.at(bend.length_before)
 		point_before = |along| Frame.rider_point_at(
 			road,
 			{
@@ -60,12 +63,12 @@ Joint :: [].{
 		)
 		Geom.line_crossing({
 			first_line: {
-				start_point: point_before(bend.length_before.to_metres()),
-				end_point: point_before(bend.length_before.to_metres() + 1.0),
+				start_point: point_before(end_before),
+				end_point: point_before(end_before.plus(Distance.metres(1.0))),
 			},
 			second_line: {
-				start_point: point_after(0.0),
-				end_point: point_after(1.0),
+				start_point: point_after(Along.start),
+				end_point: point_after(Along.metres(1.0)),
 			},
 		})
 	}

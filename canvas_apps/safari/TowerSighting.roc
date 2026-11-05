@@ -3,9 +3,12 @@
 ## segment has one more halfway along, off to the left. The mast past the
 ## end of the segment behind the rider is seen too. Each mast's beacon blinks
 ## on the ride's clock, and the sighting says how bright it is in the frame.
+import Across
+import Along
 import Angle
 import Clock
 import DepthSort
+import Distance
 import Fraction
 import Frame
 import Geom
@@ -21,8 +24,8 @@ TowerSighting :: [].{
 	## how bright its beacon is.
 	TowerItem : {
 		place : Frame.SegmentPlace,
-		along : F64,
-		across : F64,
+		along : Along,
+		across : Across,
 		yaw : Angle.Turn,
 		forward : F64,
 		beacon_brightness : Fraction,
@@ -32,16 +35,16 @@ TowerSighting :: [].{
 	View : { road : Frame.RoadView, clock : Clock }
 
 	## How far past the end of its segment a mast stands.
-	tower_beyond : F64
-	tower_beyond = 160.0
+	tower_beyond : Distance
+	tower_beyond = Distance.metres(160.0)
 
 	## How far right of the road's edge a mast past a segment's end stands.
-	tower_right : F64
-	tower_right = 20.0
+	tower_right : Distance
+	tower_right = Distance.metres(20.0)
 
 	## How far left of the road's edge a mast halfway along a segment stands.
-	mid_tower_left : F64
-	mid_tower_left = 100.0
+	mid_tower_left : Distance
+	mid_tower_left = Distance.metres(100.0)
 
 	## How far a mast past a segment's end is turned: 30 degrees.
 	tower_yaw : Angle.Turn
@@ -99,8 +102,8 @@ TowerSighting :: [].{
 			view,
 			{
 				place: InChain(position),
-				along: (segment.length.to_metres() + tower_beyond),
-				across: ((Scenery.lane_width / 2.0) + tower_right),
+				along: Along.at(segment.length.plus(tower_beyond)),
+				across: Scenery.from_left_edge(Across.right_of_middle(tower_right)),
 				yaw: tower_yaw,
 				beacon_key: index.to_u32(),
 			},
@@ -120,8 +123,8 @@ TowerSighting :: [].{
 					view,
 					{
 						place: InChain(position),
-						along: (segment.length.to_metres() / 2.0),
-						across: ((Scenery.lane_width / 2.0) - mid_tower_left),
+						along: Along.at(segment.length.divided_by(2.0)),
+						across: Scenery.from_left_edge(Across.left_of_middle(mid_tower_left)),
 						yaw: Angle.straight_ahead,
 						beacon_key: index.to_u32() + mid_tower_beacon_step,
 					},
@@ -139,8 +142,8 @@ TowerSighting :: [].{
 			view,
 			{
 				place: Frame.place_behind(behind),
-				along: (behind.length.to_metres() + tower_beyond),
-				across: ((Scenery.lane_width / 2.0) + tower_right),
+				along: Along.at(behind.length.plus(tower_beyond)),
+				across: Scenery.from_left_edge(Across.right_of_middle(tower_right)),
 				yaw: tower_yaw,
 				beacon_key: index.to_u32(),
 			},
@@ -170,8 +173,8 @@ mid_tower_beacon_step = 60
 tower_if_ahead : TowerSighting.View,
 {
 	place : Frame.SegmentPlace,
-	along : F64,
-	across : F64,
+	along : Along,
+	across : Across,
 	yaw : Angle.Turn,
 	beacon_key : U32,
 } -> List(TowerSighting.TowerItem)

@@ -7,6 +7,8 @@
 ## matters. This module carries a road point round a bend into the segment
 ## before or after it, turns a road point into the rider's view, and cuts a
 ## polygon at the near plane, the closest thing the camera can see.
+import Across
+import Along
 import Angle
 import Distance
 import lib.Trig
@@ -24,16 +26,16 @@ Geom :: [].{
 	}
 
 	## A point on one segment of the road.
-	RoadPoint : { along : F64, across : F64 }
+	RoadPoint : { along : Along, across : Across }
 
 	## Where the camera stands on the current segment, and which way it faces.
 	## `across` is measured from the middle of the lane, which is `half_width`
 	## from its left edge.
 	Pose : {
-		along : F64,
-		across : F64,
+		along : Along,
+		across : Across,
 		yaw : Angle.Turn,
-		half_width : F64,
+		half_width : Distance,
 	}
 
 	## The bend from one segment into the next: the length of the segment
@@ -42,7 +44,7 @@ Geom :: [].{
 	Bend : {
 		segment_length : Distance,
 		turn : Angle.Turn,
-		lane_width : F64,
+		lane_width : Distance,
 	}
 
 	## A line through two points.
@@ -59,8 +61,8 @@ Geom :: [].{
 	## A point on the current segment, as the camera at `pose` sees it.
 	to_rider_point : Geom.RoadPoint, Geom.Pose -> Geom.RiderPoint
 	to_rider_point = |{ along, across }, pose| {
-		ahead = along - pose.along
-		aside = across - (pose.across + pose.half_width)
+		ahead = along.distance_from(pose.along).to_metres()
+		aside = across.distance_from(pose.across.plus(pose.half_width)).to_metres()
 		cos_yaw = Trig.r_cos(pose.yaw.to_radians())
 		sin_yaw = Trig.r_sin(pose.yaw.to_radians())
 		{
@@ -71,30 +73,33 @@ Geom :: [].{
 
 	## A point on the segment after `bend`, measured on the segment before it.
 	in_segment_before : Geom.RoadPoint, Geom.Bend -> Geom.RoadPoint
-	in_segment_before = |{ along, across }, bend| {
+	in_segment_before = |point, bend| {
+		along = point.along.to_metres()
+		across = point.across.to_metres()
 		length = bend.segment_length.to_metres()
-		width = bend.lane_width
+		width = bend.lane_width.to_metres()
 		turn_size = bend.turn.abs().to_radians()
 		cos_turn = Trig.r_cos(turn_size)
 		sin_turn = Trig.r_sin(turn_size)
 		if bend.turn.is_right() {
-			{
-				along: along * cos_turn - across * sin_turn + width * sin_turn + length,
-				across: across * cos_turn + along * sin_turn + width * (1.0 - cos_turn),
-			}
+			turned_along = along * cos_turn - across * sin_turn + width * sin_turn + length
+			turned_across = across * cos_turn + along * sin_turn + width * (1.0 - cos_turn)
+			{ along: Along.metres(turned_along), across: Across.metres(turned_across) }
 		} else {
 			{
-				along: along * cos_turn + across * sin_turn + length,
-				across: across * cos_turn - along * sin_turn,
+				along: Along.metres(along * cos_turn + across * sin_turn + length),
+				across: Across.metres(across * cos_turn - along * sin_turn),
 			}
 		}
 	}
 
 	## A point on the segment before `bend`, measured on the segment after it.
 	in_segment_after : Geom.RoadPoint, Geom.Bend -> Geom.RoadPoint
-	in_segment_after = |{ along, across }, bend| {
+	in_segment_after = |point, bend| {
+		along = point.along.to_metres()
+		across = point.across.to_metres()
 		length = bend.segment_length.to_metres()
-		width = bend.lane_width
+		width = bend.lane_width.to_metres()
 		turn_size = bend.turn.abs().to_radians()
 		cos_turn = Trig.r_cos(turn_size)
 		sin_turn = Trig.r_sin(turn_size)
@@ -102,14 +107,14 @@ Geom :: [].{
 			past_end = along - length - width * sin_turn
 			past_edge = across - width * (1.0 - cos_turn)
 			{
-				along: past_end * cos_turn + past_edge * sin_turn,
-				across: (0.0 - past_end) * sin_turn + past_edge * cos_turn,
+				along: Along.metres(past_end * cos_turn + past_edge * sin_turn),
+				across: Across.metres((0.0 - past_end) * sin_turn + past_edge * cos_turn),
 			}
 		} else {
 			past_end = along - length
 			{
-				along: past_end * cos_turn - across * sin_turn,
-				across: past_end * sin_turn + across * cos_turn,
+				along: Along.metres(past_end * cos_turn - across * sin_turn),
+				across: Across.metres(past_end * sin_turn + across * cos_turn),
 			}
 		}
 	}

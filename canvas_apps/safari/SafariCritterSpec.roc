@@ -5,6 +5,8 @@ app [main!] {
 }
 
 import Angle
+import Along
+import Distance
 import Grade
 import SafariCritter
 import Scenery
@@ -46,9 +48,9 @@ height_want = [2.8, 4.5, 1.6, 2.2]
 
 dims_got : List(F64)
 dims_got = [
-	SafariCritter.adult_rail_buffer,
+	SafariCritter.adult_rail_buffer.to_metres(),
 	SafariCritter.baby_ratio,
-	SafariCritter.baby_beyond,
+	SafariCritter.baby_beyond.to_metres(),
 ]
 
 dims_want : List(F64)
@@ -58,32 +60,32 @@ all_four : List(Scenery.Critter)
 all_four = List.join([
 	SafariCritter.corner_critters({
 		creature: Elephant,
-		corner_along: 100.0,
+		corner_along: Along.metres(100.0),
 		turn: Angle.Turn.degrees(50.0),
-		lane_half_width: 2.0,
+		lane_half_width: Distance.metres(2.0),
 	}),
 	SafariCritter.corner_critters({
 		creature: Giraffe,
-		corner_along: 50.0,
+		corner_along: Along.metres(50.0),
 		turn: Angle.Turn.degrees(-70.0),
-		lane_half_width: 2.0,
+		lane_half_width: Distance.metres(2.0),
 	}),
 	SafariCritter.corner_critters({
 		creature: Zebra,
-		corner_along: 10.0,
+		corner_along: Along.metres(10.0),
 		turn: Angle.Turn.degrees(50.0),
-		lane_half_width: 2.5,
+		lane_half_width: Distance.metres(2.5),
 	}),
 	SafariCritter.corner_critters({
 		creature: Rhino,
-		corner_along: 0.0,
+		corner_along: Along.metres(0.0),
 		turn: Angle.Turn.degrees(-70.0),
-		lane_half_width: 2.0,
+		lane_half_width: Distance.metres(2.0),
 	}),
 ])
 
 across_got : List(F64)
-across_got = all_four.map(|critter| critter.across)
+across_got = all_four.map(|critter| critter.across.to_metres())
 
 across_want : List(F64)
 across_want = [
@@ -98,7 +100,7 @@ across_want = [
 ]
 
 along_got : List(F64)
-along_got = all_four.map(|critter| critter.along)
+along_got = all_four.map(|critter| critter.along.to_metres())
 
 along_want : List(F64)
 along_want = [100.0, 114.0, 50.0, 64.0, 10.0, 24.0, 0.0, 14.0]
@@ -125,9 +127,9 @@ corner_count : Scenery.Creature -> I64
 corner_count = |creature|
 	SafariCritter.corner_critters({
 		creature,
-		corner_along: 100.0,
+		corner_along: Along.metres(100.0),
 		turn: Angle.Turn.degrees(50.0),
-		lane_half_width: 2.0,
+		lane_half_width: Distance.metres(2.0),
 	}).len().to_i64_wrap()
 
 count_got : List(I64)

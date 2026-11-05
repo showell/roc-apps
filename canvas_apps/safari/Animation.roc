@@ -12,6 +12,8 @@
 ##
 ## A spot is relative to the critter's home, which only its owner knows, so
 ## critters with different homes can share a timeline.
+import Across
+import Along
 import Beats
 import Distance
 import Easing
@@ -75,8 +77,8 @@ Animation :: [].{
 	## its unit is the critter's own affair: cat heights for a cat, and metres
 	## for a bird. Each owner turns it into what it means at its own edge.
 	Spot : {
-		along : F64,
-		across : F64,
+		along : Along,
+		across : Across,
 		lift : F64,
 	}
 
@@ -251,8 +253,8 @@ line_spot = |line, fraction| {
 			fraction: eased,
 		})
 	{
-		along: between(line.from.along, line.to.along),
-		across: between(line.from.across, line.to.across),
+		along: Along.metres(between(line.from.along.to_metres(), line.to.along.to_metres())),
+		across: Across.metres(between(line.from.across.to_metres(), line.to.across.to_metres())),
 		lift: between(line.from.lift, line.to.lift),
 	}
 }

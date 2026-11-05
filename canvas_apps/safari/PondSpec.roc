@@ -4,6 +4,8 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Along
+import Across
 import Grade
 import Pond
 
@@ -26,12 +28,12 @@ spot_got = {
 	water_fifth = Pond.water_outline.get(4) ?? crash "PondSpec: the water has a fifth point"
 	bank_first = Pond.bank.get(0) ?? crash "PondSpec: the bank has a first point"
 	[
-		water_first.across,
-		water_first.along,
-		water_fifth.across,
-		water_fifth.along,
-		bank_first.across,
-		bank_first.along,
+		water_first.across.to_metres(),
+		water_first.along.to_metres(),
+		water_fifth.across.to_metres(),
+		water_fifth.along.to_metres(),
+		bank_first.across.to_metres(),
+		bank_first.along.to_metres(),
 		Pond.duck_height.to_metres(),
 	]
 }
@@ -49,10 +51,10 @@ spot_want = [
 
 inside : Pond.Duck -> Bool
 inside = |duck|
-	duck.at.across <= -1.0
-		and duck.at.across >= -31.0
-		and duck.at.along >= 3.0
-		and duck.at.along <= 32.0
+	duck.at.across <= Across.metres(-1.0)
+		and duck.at.across >= Across.metres(-31.0)
+		and duck.at.along >= Along.metres(3.0)
+		and duck.at.along <= Along.metres(32.0)
 
 inside_got : List(Bool)
 inside_got = Pond.ducks.map(inside)

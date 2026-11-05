@@ -51,7 +51,7 @@ TreeSighting :: [].{
 			{
 				position: position,
 				along: tree.along,
-				across: (tree.across + (Scenery.lane_width / 2.0)),
+				across: Scenery.from_left_edge(tree.across),
 			},
 		)
 		height_px = (tree.height.to_metres() / seen.forward) * view.cam_focal

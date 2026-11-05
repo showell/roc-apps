@@ -8,6 +8,9 @@ import Angle
 import Fraction
 import Arc
 import lib.DeviceMath
+import Along
+import Across
+import Distance
 import Grade
 import LeanSearch
 import World
@@ -15,17 +18,21 @@ import Pose
 import Steps
 import VehicleLimits
 
+## Where the rider aims from `across` metres.
+target_of : F64 -> F64
+target_of = |across| LeanSearch.lean_target(Across.metres(across)).to_metres()
+
 target_got : List(F64)
 target_got = [
-	LeanSearch.lean_target(0.5),
-	LeanSearch.lean_target((0.0 - 0.5)),
-	LeanSearch.lean_target(2.0),
-	LeanSearch.lean_target((0.0 - 2.0)),
-	LeanSearch.lean_target(0.04),
-	LeanSearch.lean_target((0.0 - 0.04)),
-	LeanSearch.lean_target(0.0),
-	LeanSearch.lean_target(0.039),
-	LeanSearch.lean_target((0.0 - 0.039)),
+	target_of(0.5),
+	target_of((0.0 - 0.5)),
+	target_of(2.0),
+	target_of((0.0 - 2.0)),
+	target_of(0.04),
+	target_of((0.0 - 0.04)),
+	target_of(0.0),
+	target_of(0.039),
+	target_of((0.0 - 0.039)),
 ]
 
 target_want : List(F64)
@@ -43,11 +50,11 @@ target_want = [
 
 side_got : List(Bool)
 side_got = [
-	(LeanSearch.lean_target(2.0) > 0.0),
-	(LeanSearch.lean_target(2.0) < 2.0),
-	(LeanSearch.lean_target((0.0 - 2.0)) < 0.0),
-	(LeanSearch.lean_target((0.0 - 2.0)) > (0.0 - 2.0)),
-	(LeanSearch.lean_target(0.0) > 0.0),
+	(target_of(2.0) > 0.0),
+	(target_of(2.0) < 2.0),
+	(target_of((0.0 - 2.0)) < 0.0),
+	(target_of((0.0 - 2.0)) > (0.0 - 2.0)),
+	(target_of(0.0) > 0.0),
 ]
 
 side_want : List(Bool)
@@ -56,7 +63,7 @@ side_want = [True, True, True, True, True]
 tuning_got : List(F64)
 tuning_got = [
 	LeanSearch.asymptote_tuning,
-	LeanSearch.center_lane_epsilon,
+	LeanSearch.center_lane_epsilon.to_metres(),
 	max_correction,
 ]
 
@@ -72,21 +79,21 @@ iters_want = [12]
 outcome : Arc.Shoulder, F64 -> Arc.ArcOutcome
 outcome = |sh, end_across| {
 	shoulder: sh,
-	forward: 10.0,
+	forward: Distance.metres(10.0),
 	crossed: False,
-	end_across: end_across,
+	end_across: Across.metres(end_across),
 	frames: Steps.of(100),
 }
 
 read_got : List(Bool)
 read_got = [
-	LeanSearch.want_more_right(outcome(ShoulderLeft, 99.0), 0.5),
-	LeanSearch.want_more_right(outcome(ShoulderLeft, (0.0 - 99.0)), 0.5),
-	LeanSearch.want_more_right(outcome(ShoulderRight, 99.0), 0.5),
-	LeanSearch.want_more_right(outcome(ShoulderRight, (0.0 - 99.0)), 0.5),
-	LeanSearch.want_more_right(outcome(ShoulderNone, 0.4), 0.5),
-	LeanSearch.want_more_right(outcome(ShoulderNone, 0.6), 0.5),
-	LeanSearch.want_more_right(outcome(ShoulderNone, 0.5), 0.5),
+	LeanSearch.want_more_right(outcome(ShoulderLeft, 99.0), Across.metres(0.5)),
+	LeanSearch.want_more_right(outcome(ShoulderLeft, (0.0 - 99.0)), Across.metres(0.5)),
+	LeanSearch.want_more_right(outcome(ShoulderRight, 99.0), Across.metres(0.5)),
+	LeanSearch.want_more_right(outcome(ShoulderRight, (0.0 - 99.0)), Across.metres(0.5)),
+	LeanSearch.want_more_right(outcome(ShoulderNone, 0.4), Across.metres(0.5)),
+	LeanSearch.want_more_right(outcome(ShoulderNone, 0.6), Across.metres(0.5)),
+	LeanSearch.want_more_right(outcome(ShoulderNone, 0.5), Across.metres(0.5)),
 ]
 
 read_want : List(Bool)
@@ -95,8 +102,8 @@ read_want = [True, True, False, False, True, False, False]
 rider : F64, F64 -> Pose.RiderState
 rider = |across, tilt| {
 	segment: World.SegmentIndex.number(0),
-	along: 0.0,
-	across: across,
+	along: Along.metres(0.0),
+	across: Across.metres(across),
 	yaw: Angle.Turn.radians(0.0),
 	speed: VehicleLimits.v_base,
 	tilt: Angle.Lean.radians(tilt),

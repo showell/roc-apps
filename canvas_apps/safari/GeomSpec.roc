@@ -1,6 +1,6 @@
 ## These are Geom's checks: the ground's drop, a road point in the rider's view,
-## two lines crossing, and a polygon cut at the near plane. The lengths that
-## measure the road are checked here too.
+## two lines crossing, and a polygon cut at the near plane. The lengths and
+## places that measure the road are checked here too.
 app [main!] {
 	lib: "../lib/main.roc",
 }
@@ -8,6 +8,8 @@ app [main!] {
 import Angle
 import Distance
 import Geom
+import Across
+import Along
 import Grade
 
 ## A length's arithmetic. Each smaller and larger is asked both ways round.
@@ -77,6 +79,98 @@ distance_order_want = [
 	True,
 	False,
 ]
+
+## A place along the road: a distance moves it, and two places give a distance.
+along_got : List(F64)
+along_got = [
+	Along.start.to_metres(),
+	Along.at(Distance.metres(7.5)).to_metres(),
+	Along.metres(7.5).from_start().to_metres(),
+	Along.metres(7.5).plus(Distance.metres(2.0)).to_metres(),
+	Along.metres(7.5).minus(Distance.metres(2.0)).to_metres(),
+	Along.metres(7.5).distance_from(Along.metres(2.0)).to_metres(),
+	Along.metres(2.0).distance_from(Along.metres(7.5)).to_metres(),
+]
+
+along_want : List(F64)
+along_want = [
+	0.0,
+	7.5,
+	7.5,
+	9.5,
+	5.5,
+	5.5,
+	-5.5,
+]
+
+## A place across the road, from either side of the middle.
+across_got : List(F64)
+across_got = [
+	Across.middle.to_metres(),
+	Across.right_of_middle(Distance.metres(1.5)).to_metres(),
+	Across.left_of_middle(Distance.metres(1.5)).to_metres(),
+	Across.metres(1.5).distance_from_middle().to_metres(),
+	Across.metres(-1.5).distance_from_middle().to_metres(),
+	Across.metres(1.5).plus(Distance.metres(2.0)).to_metres(),
+	Across.metres(1.5).minus(Distance.metres(2.0)).to_metres(),
+	Across.metres(1.5).distance_from(Across.metres(-2.0)).to_metres(),
+	Across.metres(-2.0).distance_from(Across.metres(1.5)).to_metres(),
+	Across.metres(1.5).times(0.5).to_metres(),
+	Across.metres(1.5).min(Across.metres(-2.0)).to_metres(),
+	Across.metres(-2.0).min(Across.metres(1.5)).to_metres(),
+	Across.metres(1.5).max(Across.metres(-2.0)).to_metres(),
+	Across.metres(-2.0).max(Across.metres(1.5)).to_metres(),
+]
+
+across_want : List(F64)
+across_want = [
+	0.0,
+	1.5,
+	-1.5,
+	1.5,
+	1.5,
+	3.5,
+	-0.5,
+	3.5,
+	-3.5,
+	0.75,
+	-2.0,
+	-2.0,
+	1.5,
+	1.5,
+]
+
+## Each comparison just under, at and just over the place it is held to.
+place_order_got : List(Bool)
+place_order_got = [2.0, 2.5, 3.0].join_map(
+	|metres| {
+		along = Along.metres(metres)
+		along_held_to = Along.metres(2.5)
+		across = Across.metres(metres)
+		across_held_to = Across.metres(2.5)
+		[
+			along < along_held_to,
+			along <= along_held_to,
+			along > along_held_to,
+			along >= along_held_to,
+			along == along_held_to,
+			across < across_held_to,
+			across <= across_held_to,
+			across > across_held_to,
+			across >= across_held_to,
+			across == across_held_to,
+		]
+	},
+)
+
+place_order_want : List(Bool)
+place_order_want = distance_order_want
+	.take_first(5)
+	.concat(distance_order_want.take_first(5))
+	.concat(distance_order_want.drop_first(5).take_first(5))
+	.concat(distance_order_want.drop_first(5).take_first(5))
+	.concat(distance_order_want.drop_first(10))
+	.concat(distance_order_want.drop_first(10))
 
 gd_right : List(F64)
 gd_right = [
@@ -154,29 +248,29 @@ tr_walk_onto = |i, acc| (
 			{
 				p = Geom.to_rider_point(
 					{
-						along: (
+						along: Along.metres(
 							List.get(
 								tr_a,
 								I64.to_u64_wrap(i),
-							) ?? crash ("list-at out of range")
+							) ?? crash ("list-at out of range"),
 						),
-						across: (
+						across: Across.metres(
 							List.get(
 								tr_x,
 								I64.to_u64_wrap(i),
-							) ?? crash ("list-at out of range")
+							) ?? crash ("list-at out of range"),
 						),
 					},
 					{
-						along: 5.0,
-						across: 0.5,
+						along: Along.metres(5.0),
+						across: Across.metres(0.5),
 						yaw: Angle.Turn.radians(
 							List.get(
 								tr_yaw,
 								I64.to_u64_wrap(i),
 							) ?? crash ("list-at out of range"),
 						),
-						half_width: 3.0,
+						half_width: Distance.metres(3.0),
 					},
 				)
 				tr_walk_onto((i + 1), List.append(List.append(acc, p.right), p.forward))
@@ -287,6 +381,23 @@ main! = |_args| {
 			name: "g-dcomp",
 			got: distance_order_got,
 			want: distance_order_want,
+		}),
+		Grade.reals({
+			name: "g-along",
+			got: along_got,
+			want: along_want,
+			tol: 0.0,
+		}),
+		Grade.reals({
+			name: "g-acros",
+			got: across_got,
+			want: across_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "g-pcomp",
+			got: place_order_got,
+			want: place_order_want,
 		}),
 		Grade.reals({
 			name: "g-drop ",

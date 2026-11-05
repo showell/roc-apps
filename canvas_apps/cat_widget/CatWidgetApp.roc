@@ -127,7 +127,7 @@ flat = |color| Flat(Brush.opaque(color))
 ## The sky, the grass, and the lane between the verges.
 road : List(Shapes.Shape)
 road = {
-	lane_width_px = Scenery.lane_width * pixels_a_metre
+	lane_width_px = Scenery.lane_width.to_metres() * pixels_a_metre
 	ground_height = ground_bottom_y - ground_top_y
 	[
 		Rect({
@@ -160,7 +160,7 @@ cat_shapes = |gap| {
 	instant = Cat.instant_at(crossing, { gap, speed: rider_speed })
 	CatDraw.polygons(
 		{
-			feet: { x: lane_middle_x + instant.spot.across * pixels_a_metre, y: feet_y },
+			feet: { x: lane_middle_x + instant.spot.across.to_metres() * pixels_a_metre, y: feet_y },
 			height_px: crossing.height.to_metres() * pixels_a_metre,
 			lift: instant.spot.lift,
 		},
@@ -208,7 +208,7 @@ status_lines = |gap| {
 	instant = Cat.instant_at(crossing, approach)
 	reaction = CrossingReaction.reaction_to(
 		cat_segment,
-		{ along: crossing.along - gap.to_metres(), speed: rider_speed },
+		{ along: crossing.along.minus(gap), speed: rider_speed },
 	)
 	[
 		stage_text(Cat.crossing_stage(approach)),

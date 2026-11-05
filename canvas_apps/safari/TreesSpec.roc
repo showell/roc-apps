@@ -24,10 +24,10 @@ dim_got : List(F64)
 dim_got = [
 	Trees.small_height.to_metres(),
 	Trees.big_scale,
-	Trees.tree_spacing,
-	Trees.tree_road_offset,
-	Trees.tree_start_inset,
-	Trees.tree_end_inset,
+	Trees.tree_spacing.to_metres(),
+	Trees.tree_road_offset.to_metres(),
+	Trees.tree_start_inset.to_metres(),
+	Trees.tree_end_inset.to_metres(),
 ]
 
 dim_want : List(F64)
@@ -51,7 +51,7 @@ hx_got = List.concat(
 			Trees.height({ conifer, size: Small }).to_metres(),
 		],
 	),
-	[Green, Red, Gold].map(Trees.across),
+	[Green, Red, Gold].map(|conifer| Trees.distance_from_middle(conifer).to_metres()),
 )
 
 hx_want : List(F64)
@@ -61,7 +61,7 @@ filled : List(Scenery.Tree)
 filled = Trees.plant({ scheme: YellowGreen, length: Distance.metres(300.0) })
 
 along_got : List(F64)
-along_got = filled.map(|tree| tree.along)
+along_got = filled.map(|tree| tree.along.to_metres())
 
 along_want : List(F64)
 along_want = [
@@ -82,7 +82,7 @@ along_want = [
 ]
 
 across_got : List(F64)
-across_got = filled.map(|tree| tree.across)
+across_got = filled.map(|tree| tree.across.to_metres())
 
 across_want : List(F64)
 across_want = [

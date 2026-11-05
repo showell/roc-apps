@@ -9,6 +9,8 @@ import Angle
 import Fraction
 import Frame
 import Distance
+import Across
+import Along
 import Grade
 import ItemDraw
 import SceneLimits
@@ -79,10 +81,10 @@ view = {
 		world: segs,
 		chain: [0, 1, 2].map(World.SegmentIndex.number),
 		pose: {
-			along: 0.0,
-			across: 0.0,
+			along: Along.metres(0.0),
+			across: Across.metres(0.0),
 			yaw: Angle.straight_ahead,
-			half_width: 2.0,
+			half_width: Distance.metres(2.0),
 		},
 	},
 	cam_focal: 500.0,
@@ -92,8 +94,8 @@ view = {
 tower_along : F64 -> TowerSighting.TowerItem
 tower_along = |along| {
 	place: InChain(Frame.ChainPosition.first),
-	along,
-	across: 22.0,
+	along: Along.metres(along),
+	across: Across.metres(22.0),
 	yaw: Angle.straight_ahead,
 	forward: along,
 	beacon_brightness: Fraction.zero,

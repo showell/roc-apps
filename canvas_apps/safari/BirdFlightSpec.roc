@@ -9,13 +9,15 @@ import Animation
 import Beats
 import BirdFlight
 import Distance
+import Along
+import Across
 import Grade
 import Scenery
 
 tree_at : F64, F64 -> Scenery.Tree
 tree_at = |along, across| {
-	along,
-	across,
+	along: Along.metres(along),
+	across: Across.metres(across),
 	color: 0,
 	height: Distance.metres(10.0),
 }
@@ -47,7 +49,7 @@ pairs_at = |alongs| alongs.join_map(|along| [tree_at(along, -6.0), tree_at(along
 fifth_along : List(Scenery.Tree) -> List(F64)
 fifth_along = |choices|
 	match BirdFlight.fifth_left_tree(choices) {
-		Found(tree) => [tree.along]
+		Found(tree) => [tree.along.to_metres()]
 		NoTree => []
 	}
 
@@ -75,7 +77,7 @@ fifth_alongs_want = [50.0, 50.0]
 chosen_along : List(Scenery.Tree) -> List(F64)
 chosen_along = |choices|
 	match BirdFlight.route_from(choices, left_tree) {
-		Flies(found) => [found.to.along, found.to.across]
+		Flies(found) => [found.to.along.to_metres(), found.to.across.to_metres()]
 		Sits(_) => []
 	}
 
@@ -120,11 +122,11 @@ ends_got = {
 	before = BirdFlight.instant_at(flight, Distance.metres(100.0))
 	after = BirdFlight.instant_at(flight, Distance.zero)
 	[
-		before.spot.along,
-		before.spot.across,
+		before.spot.along.to_metres(),
+		before.spot.across.to_metres(),
 		before.spot.lift,
-		after.spot.along,
-		after.spot.across,
+		after.spot.along.to_metres(),
+		after.spot.across.to_metres(),
 		after.spot.lift,
 	]
 }
@@ -136,8 +138,8 @@ middle_got : List(F64)
 middle_got = {
 	middle = BirdFlight.instant_at(flight, halfway_gap)
 	[
-		middle.spot.along,
-		middle.spot.across,
+		middle.spot.along.to_metres(),
+		middle.spot.across.to_metres(),
 		middle.spot.lift,
 	]
 }

@@ -8,6 +8,8 @@ import Angle
 import Fraction
 import Gaze
 import Distance
+import Across
+import Along
 import Grade
 import Pose
 import lib.Trig
@@ -48,8 +50,8 @@ distracting = World.route_segment(2)
 rider : F64, F64 -> Pose.RiderState
 rider = |along, yaw| {
 	segment: World.SegmentIndex.number(2),
-	along: along,
-	across: 0.0,
+	along: Along.metres(along),
+	across: Across.metres(0.0),
 	yaw: Angle.Turn.radians(yaw),
 	speed: VehicleLimits.v_base,
 	tilt: Angle.Lean.radians(0.0),
@@ -121,8 +123,8 @@ want_want = [True, True, True]
 head : F64, F64 -> Pose.RiderState
 head = |gaze_yaw, along| {
 	segment: World.SegmentIndex.number(2),
-	along: along,
-	across: 0.0,
+	along: Along.metres(along),
+	across: Across.metres(0.0),
 	yaw: Angle.Turn.radians(0.0),
 	speed: VehicleLimits.v_base,
 	tilt: Angle.Lean.radians(0.0),
@@ -186,8 +188,8 @@ snap_want = [0.0, 0.0, 0.0]
 rider_with_focus : F64, F64 -> Pose.RiderState
 rider_with_focus = |focus, gaze_yaw| {
 	segment: World.SegmentIndex.number(2),
-	along: 200.0,
-	across: 0.0,
+	along: Along.metres(200.0),
+	across: Across.metres(0.0),
 	yaw: Angle.Turn.radians(0.0),
 	speed: VehicleLimits.v_base,
 	tilt: Angle.Lean.radians(0.0),

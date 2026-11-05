@@ -5,6 +5,8 @@
 ## cat's crossing does, so stepping back through a ride shows the same bird.
 ## A bird's spots are places on its segment, as its trees' are, because its
 ## flight is its own and no other bird shares it.
+import Across
+import Along
 import Animation
 import Beats
 import Distance
@@ -42,8 +44,8 @@ BirdFlight :: [].{
 
 	## The bird flies to a tree at least this far along from the one it left,
 	## so that its path runs ahead of the rider as well as across the road.
-	shortest_hop : F64
-	shortest_hop = 25.0
+	shortest_hop : Distance
+	shortest_hop = Distance.metres(25.0)
 
 	## How far above a straight line the top of its path is.
 	flight_arc : Distance
@@ -66,7 +68,7 @@ BirdFlight :: [].{
 	## there the bird faces the road.
 	fifth_left_tree : List(Scenery.Tree) -> [Found(Scenery.Tree), NoTree]
 	fifth_left_tree = |trees|
-		match trees.keep_if(|tree| tree.across < 0.0).drop_first(4).first() {
+		match trees.keep_if(|tree| tree.across < Across.middle).drop_first(4).first() {
 			Ok(tree) => Found(tree)
 			Err(ListWasEmpty) => NoTree
 		}
@@ -75,8 +77,8 @@ BirdFlight :: [].{
 	## other side of the road far enough along, or none, and it sits.
 	route_from : List(Scenery.Tree), Scenery.Tree -> BirdFlight.Route
 	route_from = |trees, from| {
-		is_far_enough = |tree| tree.along >= from.along + shortest_hop
-		far_side = trees.keep_if(|tree| tree.across > 0.0 and is_far_enough(tree))
+		is_far_enough = |tree| tree.along >= from.along.plus(shortest_hop)
+		far_side = trees.keep_if(|tree| tree.across > Across.middle and is_far_enough(tree))
 		match far_side.first() {
 			Ok(to) => Flies({ from, to })
 			Err(ListWasEmpty) => Sits(from)
@@ -92,7 +94,7 @@ BirdFlight :: [].{
 		}
 
 	## Where the tree the bird starts from is along its segment.
-	start_along : BirdFlight.Route -> F64
+	start_along : BirdFlight.Route -> Along
 	start_along = |route|
 		match route {
 			Flies(flight) => flight.from.along

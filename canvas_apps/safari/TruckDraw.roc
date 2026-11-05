@@ -1,5 +1,7 @@
 ## TruckDraw draws the truck ahead on the road: its headlight beams first,
 ## then its body, then its brake lights, so each paints over the one before.
+import Across
+import Along
 import Frame
 import Truck
 import TruckBody
@@ -14,7 +16,7 @@ TruckDraw :: [].{
 	draw : {
 		view : Frame.Viewpoint,
 		position : Frame.ChainPosition,
-		center : { along : F64, across : F64 },
+		center : { along : Along, across : Across },
 		lights : Truck.Lights,
 	} -> List(Shapes.Shape)
 	draw = |

@@ -10,6 +10,8 @@ import Bike
 import lib.DeviceMath
 import Fraction
 import Gaze
+import Across
+import Along
 import Grade
 import Lens
 import Pose
@@ -36,8 +38,8 @@ max_lean = Bike.max_lean.to_radians()
 upright : Pose.RiderState
 upright = {
 	segment: World.SegmentIndex.number(0),
-	along: 0.0,
-	across: 0.0,
+	along: Along.metres(0.0),
+	across: Across.metres(0.0),
 	yaw: Angle.Turn.radians(0.0),
 	speed: VehicleLimits.v_base,
 	tilt: Angle.Lean.radians(0.0),
@@ -52,7 +54,7 @@ near_cat_on : U32 -> Pose.RiderState
 near_cat_on = |number| {
 	..upright,
 	segment: World.SegmentIndex.number(number),
-	along: 120.0,
+	along: Along.metres(120.0),
 }
 
 has_cat_got : List(Bool)

@@ -39,7 +39,7 @@ segment_bird = |view, position|
 	match position.index_in(view.road.chain).segment_in(view.road.world).crossing {
 		BirdFlies(route) => {
 			gap_to_segment = Frame.gap_to_segment(view.road, position)
-			gap_to_tree = gap_to_segment.plus(Distance.metres(BirdFlight.start_along(route)))
+			gap_to_tree = gap_to_segment.plus(BirdFlight.start_along(route).from_start())
 			instant = BirdFlight.route_instant_at(route, gap_to_tree)
 			bird_in_view(view, { position, instant })
 		}
@@ -59,7 +59,7 @@ bird_in_view = |view, { position, instant }| {
 		{
 			position,
 			along: instant.spot.along,
-			across: instant.spot.across + Scenery.lane_width / 2.0,
+			across: Scenery.from_left_edge(instant.spot.across),
 		},
 	)
 	height_px = RocBird.height_px({ forward: seen.forward, cam_focal: view.cam_focal })

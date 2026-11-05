@@ -5,14 +5,34 @@ app [main!] {
 }
 
 import Distance
+import Across
+import Along
 import Grade
 import Scenery
 
 road_got : List(F64)
-road_got = [Scenery.lane_width, Scenery.herd_road_offset]
+road_got = [
+	Scenery.lane_width.to_metres(),
+	Scenery.lane_half_width.to_metres(),
+	Scenery.herd_road_offset.to_metres(),
+	Scenery.left_edge.to_metres(),
+	Scenery.right_edge.to_metres(),
+	Scenery.from_left_edge(Across.middle).to_metres(),
+	Scenery.from_left_edge(Across.metres(-2.0)).to_metres(),
+	Scenery.from_left_edge(Across.metres(2.0)).to_metres(),
+]
 
 road_want : List(F64)
-road_want = [4.0, 10.0]
+road_want = [
+	4.0,
+	2.0,
+	10.0,
+	0.0,
+	4.0,
+	2.0,
+	0.0,
+	4.0,
+]
 
 pond_got : List(Bool)
 pond_got = [
@@ -66,16 +86,16 @@ code_want = [0, 1, 2, 0, 1, 2, 3, 4, 5]
 
 a_tree : Scenery.Tree
 a_tree = {
-	along: 120.5,
-	across: 3.25,
+	along: Along.metres(120.5),
+	across: Across.metres(3.25),
 	color: 9066271,
 	height: Distance.metres(7.75),
 }
 
 a_critter : Scenery.Critter
 a_critter = {
-	along: 250.5,
-	across: (-6.5),
+	along: Along.metres(250.5),
+	across: Across.metres(-6.5),
 	codepoint: 128004,
 	height: Distance.metres(1.375),
 	face_right: True,
@@ -83,11 +103,11 @@ a_critter = {
 
 rec_reals_got : List(F64)
 rec_reals_got = [
-	a_tree.along,
-	a_tree.across,
+	a_tree.along.to_metres(),
+	a_tree.across.to_metres(),
 	a_tree.height.to_metres(),
-	a_critter.along,
-	a_critter.across,
+	a_critter.along.to_metres(),
+	a_critter.across.to_metres(),
 	a_critter.height.to_metres(),
 ]
 

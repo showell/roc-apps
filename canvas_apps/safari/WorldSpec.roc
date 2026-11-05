@@ -77,7 +77,7 @@ angle_got = [
 	(seg(1).exit_turn.abs().to_radians() / Trig.deg),
 	(seg(6).exit_turn.abs().to_radians() / Trig.deg),
 	(seg(18).exit_turn.abs().to_radians() / Trig.deg),
-	seg(18).commit_along,
+	seg(18).commit_along.to_metres(),
 ]
 
 angle_want : List(F64)
@@ -85,9 +85,9 @@ angle_want = [50.0, 70.0, 80.0, 0.0, 300.0]
 
 commit_got : List(F64)
 commit_got = [
-	seg(0).commit_along,
-	seg(1).commit_along,
-	seg(6).commit_along,
+	seg(0).commit_along.to_metres(),
+	seg(1).commit_along.to_metres(),
+	seg(6).commit_along.to_metres(),
 ]
 
 commit_want : List(F64)
@@ -136,8 +136,8 @@ trees_want = [28, 16, 74, 14]
 
 cat_got : List(F64)
 cat_got = [
-	crossing_at(3).mid_across,
-	crossing_at(18).mid_across,
+	crossing_at(3).mid_across.to_metres(),
+	crossing_at(18).mid_across.to_metres(),
 	crossing_at(3).height.to_metres(),
 	crossing_at(18).height.to_metres(),
 ]

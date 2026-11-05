@@ -7,6 +7,8 @@ app [main!] {
 import Angle
 import Bike
 import Fraction
+import Across
+import Along
 import Grade
 import Pose
 import Speed
@@ -15,8 +17,8 @@ import World
 probe : Pose.RiderState
 probe = {
 	segment: World.SegmentIndex.number(7),
-	along: 11.0,
-	across: 2.5,
+	along: Along.metres(11.0),
+	across: Across.metres(2.5),
 	yaw: Angle.Turn.radians(0.75),
 	speed: Speed.metres_a_step(3.25),
 	tilt: Angle.Lean.radians(0.125),
@@ -33,8 +35,8 @@ leaned_once = Bike.with_tilt(probe, Angle.Lean.radians(1.5))
 
 reals : Pose.RiderState -> List(F64)
 reals = |s| [
-	s.along,
-	s.across,
+	s.along.to_metres(),
+	s.across.to_metres(),
 	s.yaw.to_radians(),
 	s.speed.to_metres_a_step(),
 	s.tilt.to_radians(),

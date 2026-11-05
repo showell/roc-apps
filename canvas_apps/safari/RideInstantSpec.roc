@@ -8,6 +8,8 @@ import Angle
 import Clock
 import Fraction
 import Distance
+import Across
+import Along
 import Grade
 import RideInstant
 import Rider
@@ -36,8 +38,8 @@ seg_list_onto = |i, acc| (
 start_got : List(F64)
 start_got = [
 	RideInstant.initial.clock.to_f64(),
-	RideInstant.initial.rider.along,
-	RideInstant.initial.rider.across,
+	RideInstant.initial.rider.along.to_metres(),
+	RideInstant.initial.rider.across.to_metres(),
 	RideInstant.initial.rider.speed.to_metres_a_step(),
 	RideInstant.initial.truck.route_position.to_metres(),
 	RideInstant.initial.truck.speed.to_metres_a_step(),
@@ -131,8 +133,8 @@ done : RideInstant
 done = {
 	rider: {
 		segment: World.SegmentIndex.number(18),
-		along: 400.0,
-		across: 0.0,
+		along: Along.metres(400.0),
+		across: Across.metres(0.0),
 		yaw: Angle.Turn.radians(0.0),
 		speed: Speed.at_rest,
 		tilt: Angle.Lean.radians(0.0),
@@ -154,7 +156,7 @@ restart_got = (
 		instant = RideInstant.next(segs, done)
 		[
 			instant.clock.to_f64(),
-			instant.rider.along,
+			instant.rider.along.to_metres(),
 			instant.rider.speed.to_metres_a_step(),
 			instant.truck.route_position.to_metres(),
 			instant.rider.focus.to_f64(),
