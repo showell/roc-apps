@@ -72,7 +72,7 @@ Safari :: [].{
 				cam_focal: cf,
 				rider_segment: s.segment,
 				rider_along: s.along,
-				speed: s.v,
+				speed: s.speed,
 				truck_position: r.truck.route_position,
 			})
 			roadside = ItemDraw.draw(
@@ -88,7 +88,7 @@ Safari :: [].{
 					brake_lights: if (r.truck.is_braking) On else Off,
 				},
 			)
-			List.join([
+			[
 				Mountains.draw({
 					heading: ViewYaw.heading_for(s),
 					dusk: Sky.sun_set_fraction(r.clock),
@@ -103,7 +103,7 @@ Safari :: [].{
 					view_w: Screen.width,
 				}),
 				roadside,
-			])
+			].join()
 		}
 	)
 

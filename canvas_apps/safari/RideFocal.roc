@@ -17,7 +17,10 @@ RideFocal :: [].{
 	cat_attention = |world, rider| {
 		segment = rider.segment.segment_in(world)
 		match segment.cat {
-			Waits(crossing) => Cat.focus({ gap: (crossing.along - rider.along), speed: rider.v })
+			Waits(crossing) => Cat.focus({
+				gap: (crossing.along - rider.along),
+				speed: rider.speed,
+			})
 			NoCat => 0.0
 		}
 	}

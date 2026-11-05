@@ -1,6 +1,7 @@
 ## The rider's decisions and one step of the ride: how far to lean and how
 ## hard to accelerate, then the move, the crossing onto the next segment, the
 ## stop at the route's end, and where the rider looks.
+import Acceleration
 import Angle
 import Bike
 import lib.DeviceMath
@@ -15,7 +16,7 @@ import VehicleLimits
 import World
 
 Rider :: [].{
-	Decision : { tilt_step : Angle.Lean, accel : F64 }
+	Decision : { tilt_step : Angle.Lean, accel : Acceleration }
 
 	## A rider this slow near the route's end stops there.
 	stopping_speed : Speed
@@ -78,7 +79,7 @@ Rider :: [].{
 					(
 						if in_zone {
 							(
-								if moved.v < stopping_speed {
+								if moved.speed < stopping_speed {
 									stopped_at(moved, seg.length)
 								} else {
 									moved
@@ -97,7 +98,7 @@ Rider :: [].{
 	stopped_at = |s, at| {
 		..s,
 		along: at,
-		v: Speed.at_rest,
+		speed: Speed.at_rest,
 	}
 
 	resolve_cross : Pose.RiderState, List(World.Segment) -> Pose.RiderState

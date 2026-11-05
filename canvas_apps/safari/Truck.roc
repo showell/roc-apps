@@ -1,6 +1,7 @@
 ## The truck the rider chases. It starts well ahead and keeps to a schedule
 ## that brings it closer as the rider nears the route's end: it speeds up
 ## when it is behind the schedule, and slows for a turn when one is close.
+import Acceleration
 import Pose
 import Speed
 import VehicleLimits
@@ -39,8 +40,8 @@ Truck :: [].{
 	brake_distance : F64
 	brake_distance = VehicleLimits.approach_intersection_dist
 
-	chase_acceleration : F64
-	chase_acceleration = 1.1 * VehicleLimits.a_accel
+	chase_acceleration : Acceleration
+	chase_acceleration = VehicleLimits.a_accel.times(1.1)
 
 	top_speed : Speed
 	top_speed = VehicleLimits.v_max.times(1.1)
@@ -141,7 +142,7 @@ advance_braking = |truck, turn| {
 		if turn.distance > least_braking_distance {
 			truck.speed.acceleration_to({ target: target_speed, within: turn.distance })
 		} else {
-			0.0
+			Acceleration.steady
 		}
 	speed = target_speed.max(truck.speed.accelerated_by(acceleration))
 	{

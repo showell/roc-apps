@@ -4,6 +4,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Acceleration
 import Angle
 import Arc
 import Bike
@@ -47,7 +48,7 @@ rider = |
 	along: 0.0,
 	across: across,
 	yaw: Angle.Turn.radians(0.0),
-	v: v,
+	speed: v,
 	tilt: Angle.Lean.radians(tilt),
 	heading: Angle.Bearing.radians(0.0),
 	gaze_yaw: Angle.Turn.radians(0.0),
@@ -199,7 +200,7 @@ step_got = (
 				tilt_radians: 0.0,
 				speed: Pose.v_base,
 			}),
-			{ lean_step: Angle.upright, accel: 0.0 },
+			{ lean_step: Angle.upright, accel: Acceleration.steady },
 		)
 		b = Bike.simulate_rider_step(
 			rider({
@@ -207,16 +208,19 @@ step_got = (
 				tilt_radians: 0.0,
 				speed: Pose.v_base,
 			}),
-			{ lean_step: Angle.Lean.radians(0.5), accel: 0.25 },
+			{
+				lean_step: Angle.Lean.radians(0.5),
+				accel: Acceleration.metres_a_step_each_step(0.25),
+			},
 		)
 		[
 			a.across,
 			a.yaw.to_radians(),
 			a.heading.to_radians(),
 			a.tilt.to_radians(),
-			a.v.to_metres_a_step(),
+			a.speed.to_metres_a_step(),
 			b.tilt.to_radians(),
-			b.v.to_metres_a_step(),
+			b.speed.to_metres_a_step(),
 			b.yaw.to_radians(),
 			b.heading.to_radians(),
 			Bike.yaw_per_tilt,

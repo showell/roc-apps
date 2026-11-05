@@ -1,6 +1,7 @@
 ## Where the rider looks. A pig by the road catches the rider's eye: the gaze
 ## swivels toward it, the rider slows to look, and the gaze eases back to the
 ## road once the pig is behind.
+import Acceleration
 import Angle
 import lib.DeviceMath
 import Easing
@@ -13,7 +14,7 @@ import World
 
 Gaze :: [].{
 	PigLook : { looking : Bool, dist : F64 }
-	GazeBrake : { engaged : Bool, accel : F64 }
+	GazeBrake : { engaged : Bool, accel : Acceleration }
 
 	gaze_look_dist : F64
 	gaze_look_dist = 150.0
@@ -173,11 +174,11 @@ Gaze :: [].{
 	pig_gaze_brake : Pose.RiderState, World.Segment -> Gaze.GazeBrake
 	pig_gaze_brake = |state, seg| (
 		if gawk_engaged(state, seg) == False {
-			{ engaged: False, accel: 0.0 }
+			{ engaged: False, accel: Acceleration.steady }
 		} else {
 			(
-				if state.v <= pig_gaze_speed {
-					{ engaged: True, accel: 0.0 }
+				if state.speed <= pig_gaze_speed {
+					{ engaged: True, accel: Acceleration.steady }
 				} else {
 					pig_gaze_brake_easing(state, seg)
 				}
@@ -191,7 +192,7 @@ Gaze :: [].{
 			d = ((Pigs.gaze_pig(seg.length).along - state.along) - pig_gaze_settle_dist)
 			{
 				engaged: True,
-				accel: state.v.acceleration_to({
+				accel: state.speed.acceleration_to({
 					target: pig_gaze_speed,
 					within: DeviceMath.real_max(d, 1.0),
 				}),

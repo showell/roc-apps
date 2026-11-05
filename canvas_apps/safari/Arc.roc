@@ -1,5 +1,6 @@
 # Arc -- originally emitted from Codex by rocemit; the Roc is the program now
 # and this file is edited here (safari/README.md).
+import Acceleration
 import Angle
 import Bike
 import lib.DeviceMath
@@ -71,7 +72,7 @@ Arc :: [].{
 					frame_count: i,
 					coasting_rider: Bike.simulate_rider_step(
 						phys,
-						{ lean_step: Angle.upright, accel: 0.0 },
+						{ lean_step: Angle.upright, accel: Acceleration.steady },
 					),
 				},
 			)
@@ -104,7 +105,7 @@ Arc :: [].{
 						forward: DeviceMath.real_min(forward, min_forward_progress),
 						crossed: crossed,
 						end_across: across,
-						frames: I64.to_f64(i),
+						frames: i.to_f64(),
 					}
 				} else {
 					(
@@ -114,7 +115,7 @@ Arc :: [].{
 								forward: DeviceMath.real_min(forward, min_forward_progress),
 								crossed: crossed,
 								end_across: across,
-								frames: I64.to_f64(i),
+								frames: i.to_f64(),
 							}
 						} else {
 							(
