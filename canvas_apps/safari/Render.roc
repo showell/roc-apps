@@ -2,6 +2,7 @@
 ## critters, cats, guard rails, the truck and the birds in view, each kind
 ## found by its own plan, and the order to paint them in, far to near.
 import Billboards
+import BirdPlan
 import CatPlan
 import CritterPlan
 import DepthSort
@@ -25,7 +26,7 @@ Render :: [].{
 		cats : List(CatPlan.CatItem),
 		rails : List(GuardRail.RailPoly),
 		truck : TruckPlan.TruckAt,
-		birds : List(RocBird.Bird),
+		birds : List(RocBird.PlacedBird),
 		order : List(DepthSort.DepthKey),
 	}
 
@@ -104,7 +105,7 @@ Render :: [].{
 			rider_along,
 			lead: truck_position - rider_distance,
 		})
-		birds = RocBird.perches({
+		birds = BirdPlan.in_view({
 			world,
 			chain,
 			pose,
@@ -115,7 +116,7 @@ Render :: [].{
 		# in, so this order decides which of two tied things is painted over
 		# the other.
 		keys = List.join([
-			RocBird.bird_items(birds),
+			BirdPlan.depth_keys(birds),
 			TreePlan.depth_keys(trees),
 			TowerPlan.depth_keys(towers),
 			CritterPlan.cow_items(critters),

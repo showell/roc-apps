@@ -1,260 +1,51 @@
-# RocBird -- a Roc on the fifth tree on the LEFT of every segment.
-#
-# **IT IS AN ITEM IN THE DEPTH SORT, like a tree or a cow.** It used to be
-# drawn after the whole frame, on the reasoning that "a bird on a treetop is
-# rarely behind anything" -- and rarely is not never: a nearer, taller tree
-# would be painted first and the bird would float in front of it. Its depth is
-# its tree's `forward`, which is exact rather than a cheat, because how high a
-# thing sits does not change how far away it is.
-#
-# Hand-written Roc, the first flair the Roc version of safari has and the
-# Codex version does not. The bird is roc-lang.org's logo, six purple
-# polygons, carried in the same unit frame as the baked stills (feet at y 0,
-# y up, height 1) and drawn through the same still machinery a critter uses:
-# Frame.rider_point_ahead places the tree in the rider's frame, Camera.project puts its top
-# on the screen, and Critter.draw_still maps the polygons onto that anchor
-# at the tree's depth. The app appends the birds after the frame, so they
-# paint on top of everything; a bird on a treetop is rarely behind anything.
+## The Roc bird is roc-lang.org's logo, sitting on treetops beside the road
+## and flying off as the rider comes. BirdFlight says where a bird is and how
+## it looks, BirdPlan finds the birds in view, and BirdStills holds their
+## drawings. This module says how big a bird is, and draws one.
 import BirdFlight
 import BirdStills
-import Stills
-import DepthSort
-import Scenery
-import World
-import Frame
-import Geom
 import Camera
 import Critter
 import Paint
-import SceneLimits
 
 RocBird :: [].{
-	# The logo as a still, beak toward +x. Colours are the site's logo-dark
-	# and logo-light.
-	polys : List(Stills.StillPoly)
-	polys = [
-		{
-			color: 6368222,
-			grad: [],
-			pts: [
-				{ x: -0.0344, y: 0.5715 },
-				{ x: -0.148, y: 0.0 },
-				{ x: 0.0368, y: 0.1469 },
-				{ x: 0.0183, y: 0.2577 },
-			],
-		},
-		{
-			color: 8542181,
-			grad: [],
-			pts: [
-				{ x: 0.2216, y: 0.6413 },
-				{ x: 0.3497, y: 0.5025 },
-				{ x: 0.3679, y: 0.5849 },
-				{ x: 0.3862, y: 0.6862 },
-			],
-		},
-		{
-			color: 8542181,
-			grad: [],
-			pts: [
-				{ x: -0.0305, y: 0.9394 },
-				{ x: -0.4811, y: 1.0 },
-				{ x: -0.0344, y: 0.5715 },
-			],
-		},
-		{
-			color: 8542181,
-			grad: [],
-			pts: [
-				{ x: 0.3497, y: 0.5025 },
-				{ x: -0.0344, y: 0.5715 },
-				{ x: 0.0183, y: 0.2577 },
-			],
-		},
-		{
-			color: 6368222,
-			grad: [],
-			pts: [
-				{ x: 0.4717, y: 0.5849 },
-				{ x: 0.3862, y: 0.6862 },
-				{ x: 0.3679, y: 0.5849 },
-			],
-		},
-		{
-			color: 6368222,
-			grad: [],
-			pts: [
-				{ x: -0.0344, y: 0.5715 },
-				{ x: 0.3497, y: 0.5025 },
-				{ x: 0.2216, y: 0.6413 },
-				{ x: -0.0305, y: 0.9394 },
-			],
-		},
-	]
 
-	# A bird stands this tall, in metres, on its treetop.
-	height : F64
-	height = 2.2
-
-	# The fifth tree on the LEFT: trees are planted in pairs, left then right,
-	# and across < 0 is the left side.
-	#
-	# **IT USED TO BE THE RIGHT, AND THE BIRD LOOKED AWAY FROM THE ROAD.** The
-	# still's beak points toward +x and `AsDrawn` leaves it that way, so
-	# it faces screen-right; on a right-hand tree that is out into the trees.
-	# From a left-hand one, the same unflipped bird faces the road.
-	fifth_left : List(Scenery.Tree),
-	{
-		tree_index : I64,
-		left_trees_seen : I64,
-	} -> [Found(Scenery.Tree), NoTree]
-	fifth_left = |
-		trees,
-		{ tree_index: i, left_trees_seen: seen },
-	| match List.get(trees, I64.to_u64_wrap(i)) {
-		Err(_) => NoTree
-		Ok(t) => if t.across < 0.0 {
-			if seen == 4 {
-				Found(t)
-			} else {
-				fifth_left(trees, { tree_index: i + 1, left_trees_seen: seen + 1 })
-			}
-		} else {
-			fifth_left(trees, { tree_index: i + 1, left_trees_seen: seen })
-		}
-	}
-
-	# One bird, placed: where it is and how far up its tree its feet go. The
-	# same shape every other collected item has -- where, not what.
-	Bird : {
+	## A bird placed in the rider's view: where it is, how high its feet are,
+	## and how it looks.
+	PlacedBird : {
 		right : F64,
 		forward : F64,
 		lift : F64,
 		pose : BirdFlight.Pose,
 	}
 
-	## The road the birds are collected along: the world's segments, the
-	## chain of them ahead of the rider, the rider's pose, and the lens's
-	## focal length in pixels.
-	View : {
-		world : List(World.Segment),
-		chain : List(World.SegmentIndex),
-		pose : Frame.Pose,
-		cam_focal : F64,
-		rider_along : F64,
-	}
+	## How tall a bird stands, in metres.
+	bird_height : F64
+	bird_height = 2.2
 
-	# The bird for `position` in the chain, where its flight has taken it, or
-	# nothing when it is behind the near plane or too small to draw. Culled here,
-	# as every kind is culled where it is collected rather than where it is drawn.
-	perch : RocBird.View, Frame.ChainPosition -> List(RocBird.Bird)
-	perch = |view, position| {
-		seg = position.index_in(view.chain).segment_in(view.world)
-		match fifth_left(seg.trees, { tree_index: 0, left_trees_seen: 0 }) {
-			NoTree => []
-			Found(tree) => {
-				road = {
-					world: view.world,
-					chain: view.chain,
-					pose: view.pose,
-				}
-				segment_gap = Frame.gap_to_segment(
-					road,
-					{
-						position,
-						rider_along: view.rider_along,
-					},
-				)
-				gap = segment_gap + tree.along
-				bird = match BirdFlight.flight_from(seg.trees, tree) {
-					Flies(flight) => BirdFlight.state(flight, gap)
-					Stays => {
-						pose: Perched,
-						along: tree.along,
-						across: tree.across,
-						lift: tree.height,
-					}
-				}
-				seen = Frame.rider_point_ahead(
-					road,
-					{
-						position,
-						along: bird.along,
-						across: bird.across + Scenery.lane_width / 2.0,
-					},
-				)
-				if seen.forward <= Geom.near_plane {
-					[]
-				} else if (height / seen.forward) * view.cam_focal < SceneLimits.min_scenery_px {
-					[]
-				} else {
-					[
-						{
-							right: seen.right,
-							forward: seen.forward,
-							lift: bird.lift,
-							pose: bird.pose,
-						},
-					]
-				}
-			}
-		}
-	}
+	## How tall a bird `forward` metres ahead is on screen.
+	height_px : { forward : F64, cam_focal : F64 } -> F64
+	height_px = |{ forward, cam_focal }| (bird_height / forward) * cam_focal
 
-	## Every bird in the chain, nearest segment first. The sort puts them where
-	## they belong.
-	perches : RocBird.View -> List(RocBird.Bird)
-	perches = |view| Frame.ChainPosition.all_in(view.chain).join_map(
-		|position| perch(
-			view,
-			position,
-		),
-	)
-
-	# **THE DEPTH IS THE TREE'S**, which is the whole point of collecting them:
-	# how high the bird sits does not change how far away it is.
-	bird_items : List(RocBird.Bird) -> List(DepthSort.DepthKey)
-	bird_items = |bs| bs.map_with_index(
-		|bird, i| {
-			forward: bird.forward,
-			subject: Bird(i.to_u32_wrap()),
-		},
-	)
-
-	# One bird, drawn where the sort says. Its feet go at the top of its tree,
-	# and unflipped its beak points toward +x, which from a left-hand tree is
-	# across the road.
-	draw_one : RocBird.Bird, Camera.View -> List(Paint.DrawCmd)
-	draw_one = |b, camera_view| {
-		cf = camera_view.cam_focal
+	## A bird on screen, its feet where it is. Its still is unflipped: a bird
+	## from a left-hand tree crosses the road toward +x, the way its beak points.
+	draw : RocBird.PlacedBird, Camera.View -> List(Paint.DrawCmd)
+	draw = |bird, camera| {
 		feet = Camera.project(
 			{
-				right: b.right,
-				forward: b.forward,
-				height: b.lift,
+				right: bird.right,
+				forward: bird.forward,
+				height: bird.lift,
 			},
-			camera_view,
+			camera,
 		)
 		Critter.draw_still(
 			{
 				feet,
 				flip: AsDrawn,
-				height_px: (height / b.forward) * cf,
+				height_px: height_px({ forward: bird.forward, cam_focal: camera.cam_focal }),
 			},
-			still_of(b.pose),
+			BirdStills.pose_polys(bird.pose),
 		)
 	}
-
-	# The drawing for a pose. From the side the beak points toward +x, which is
-	# the way a bird from a left-hand tree flies across the road.
-	still_of : BirdFlight.Pose -> List(Stills.StillPoly)
-	still_of = |pose|
-		match pose {
-			Perched => polys
-			SideWingsUp => BirdStills.wings_up
-			SideWingsDown => BirdStills.wings_down
-			AwayWingsUp => BirdStills.away_from_us
-			AwayWingsDown => BirdStills.away_wings_down
-			Diving => BirdStills.diving
-		}
 }

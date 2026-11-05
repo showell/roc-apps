@@ -19,7 +19,6 @@ import RideFocal
 import ViewYaw
 import Frame
 import Lens
-import RocBird
 
 SafariRide :: [].{
 	Model : {

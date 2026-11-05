@@ -32,16 +32,8 @@ trees = [
 
 flight : BirdFlight.Flight
 flight = {
-	from: {
-		along: 100.0,
-		across: -6.0,
-		height: 10.0,
-	},
-	to: {
-		along: 140.0,
-		across: 6.0,
-		height: 12.0,
-	},
+	from: left_tree,
+	to: { ..tree_at(140.0, 6.0), height: 12.0 },
 }
 
 chosen_along : List(Scenery.Tree) -> List(F64)
@@ -103,10 +95,10 @@ pose_got : List(Bool)
 pose_got = [
 	BirdFlight.state(flight, 100.0).pose == Perched,
 	BirdFlight.state(flight, 0.0).pose == Perched,
-	BirdFlight.pose_at(0.01) == SideWingsUp,
-	BirdFlight.pose_at(0.08) == SideWingsDown,
-	BirdFlight.pose_at(0.5 + 1.0 / 36.0) == AwayWingsDown,
-	BirdFlight.pose_at(0.5 - 1.0 / 36.0) == AwayWingsUp,
+	BirdFlight.pose_at(0.01) == Side(WingsUp),
+	BirdFlight.pose_at(0.08) == Side(WingsDown),
+	BirdFlight.pose_at(0.5 + 1.0 / 36.0) == Away(WingsDown),
+	BirdFlight.pose_at(0.5 - 1.0 / 36.0) == Away(WingsUp),
 	BirdFlight.pose_at(0.95) == Diving,
 ]
 

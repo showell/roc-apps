@@ -145,7 +145,7 @@ draw_subject = |scene, { context, depth_key }| {
 		Critter(place) => Critter.draw(thing_at(scene.critters, place), camera)
 		Cat(place) => draw_cat(thing_at(scene.cats, place), camera)
 		Truck => draw_truck(context, scene.truck)
-		Bird(place) => RocBird.draw_one(thing_at(scene.birds, place), camera)
+		Bird(place) => RocBird.draw(thing_at(scene.birds, place), camera)
 	}
 }
 

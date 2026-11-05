@@ -6,6 +6,7 @@ app [main!] {
 }
 
 import Angle
+import BirdPlan
 import CatPlan
 import CritterPlan
 import DepthSort
@@ -14,7 +15,6 @@ import Grade
 import Pose
 import RailPlan
 import Render
-import RocBird
 import TowerPlan
 import TreePlan
 import TruckPlan
@@ -53,7 +53,7 @@ merge_got = {
 		CatPlan.depth_keys(scene.cats).len(),
 		TruckPlan.depth_keys(scene.truck).len(),
 		RailPlan.depth_keys(scene.rails).len(),
-		RocBird.bird_items(scene.birds).len(),
+		BirdPlan.depth_keys(scene.birds).len(),
 	]
 	[(n - List.sum(kind_counts).to_i64_wrap())]
 }
