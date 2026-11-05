@@ -195,3 +195,63 @@ rail_path = |road, bend| {
 		RailSighting.run_out(road, { place: bend.after, across: outer_edge }),
 	].join()
 }
+
+expect
+	[
+		(0.0, 1),
+		(0.4, 1),
+		(0.5, 1),
+		(1.0, 1),
+		(1.4, 1),
+		(1.5, 2),
+		(2.5, 3),
+		(10.0, 10),
+		(49.6, 50),
+		(50.0, 50),
+	].all(|(distance, want)| RailSighting.leg_steps(distance).to_i64() == want)
+
+origin_pt : Geom.RiderPoint
+origin_pt = { right: 0.0, forward: 0.0 }
+
+point_at : List(Geom.RiderPoint), U64 -> Geom.RiderPoint
+point_at = |points, i| points.get(i) ?? crash "RailSighting: an index past the leg's end"
+
+straight : List(Geom.RiderPoint)
+straight = RailSighting.rail_leg({ from: origin_pt, to: { right: 0.0, forward: 10.0 } })
+
+expect straight.len() == 10
+expect point_at(straight, 0).forward == 1.0
+expect point_at(straight, 4).forward == 5.0
+expect point_at(straight, 9).forward == 10.0
+expect point_at(straight, 0).right == 0.0
+expect point_at(straight, 9).right == 0.0
+diagonal : List(Geom.RiderPoint)
+diagonal = RailSighting.rail_leg({ from: origin_pt, to: { right: 30.0, forward: 40.0 } })
+
+expect diagonal.len() == 50
+expect point_at(diagonal, 49).right == 30.0
+expect point_at(diagonal, 49).forward == 40.0
+expect point_at(diagonal, 24).right == 15.0
+expect point_at(diagonal, 24).forward == 20.0
+expect {
+	in_place = RailSighting.rail_leg({
+		from: { right: 3.0, forward: 4.0 },
+		to: { right: 3.0, forward: 4.0 },
+	})
+	in_place.len() == 1 and point_at(in_place, 0) == { right: 3.0, forward: 4.0 }
+}
+
+expect {
+	spaced = RailSighting.evenly_spaced({
+		from: origin_pt,
+		to: { right: 0.0, forward: 10.0 },
+		steps: 10,
+	})
+	[
+		spaced.len() == 11,
+		point_at(spaced, 0).forward == 0.0,
+		point_at(spaced, 10).forward == 10.0,
+	].all(|is_right| is_right)
+}
+
+expect GuardRail.rail_runout.to_i64() == 10

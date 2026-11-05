@@ -118,3 +118,85 @@ RideInstant := {
 		}
 	)
 }
+
+expect RideInstant.initial.clock.to_f64() == 0.0
+expect RideInstant.initial.rider.along.to_metres() == 0.0
+expect RideInstant.initial.rider.across.to_metres() == 0.0
+expect RideInstant.initial.rider.speed.to_metres_a_step() == 0.3
+expect RideInstant.initial.truck.route_position.to_metres() == 500.0
+expect RideInstant.initial.truck.speed.to_metres_a_step() == 0.3
+expect RideInstant.initial.rider.segment.to_i64() == 0
+expect RideInstant.initial.truck.brake_lights == Off
+expect !(Rider.is_finished(RideInstant.initial.rider, World.segments))
+after_one_step : RideInstant
+after_one_step = RideInstant.next(World.segments, RideInstant.initial)
+
+after_two_steps : RideInstant
+after_two_steps = RideInstant.next(World.segments, after_one_step)
+
+expect after_one_step.clock.to_f64() == 1.0
+expect after_two_steps.clock.to_f64() == 2.0
+expect after_two_steps.clock.to_f64() - after_one_step.clock.to_f64() == 1.0
+expect after_one_step.rider.along > RideInstant.initial.rider.along
+expect after_one_step.truck.route_position > RideInstant.initial.truck.route_position
+expect after_two_steps.rider.along > after_one_step.rider.along
+expect {
+	old_dist = World.distance_along_route(
+		World.segments,
+		{ index: RideInstant.initial.rider.segment, along: RideInstant.initial.rider.along },
+	)
+	new_dist = World.distance_along_route(
+		World.segments,
+		{ index: after_one_step.rider.segment, along: after_one_step.rider.along },
+	)
+	against_new = Truck.advance(
+		RideInstant.initial.truck,
+		{
+			rider_distance: new_dist,
+			world: World.segments,
+			route_length: World.route_length(World.segments),
+		},
+	)
+	against_old = Truck.advance(
+		RideInstant.initial.truck,
+		{
+			rider_distance: old_dist,
+			world: World.segments,
+			route_length: World.route_length(World.segments),
+		},
+	)
+	new_position = against_new.route_position
+	old_position = against_old.route_position
+	[
+		after_one_step.truck.route_position == new_position,
+		new_dist > old_dist,
+		new_position != old_position,
+	].all(|is_right| is_right)
+}
+
+expect after_one_step.clock != Clock.start
+expect !(Rider.is_finished(after_one_step.rider, World.segments))
+# The ride starts facing away from the sun.
+expect RideInstant.sun(World.segments, RideInstant.initial) == OutOfView
+
+## A clock with the sun behind the mountains.
+after_sunset : Clock
+after_sunset = Clock.at_step(5700)
+
+## The truck's lights at `clock`, with its brake lights left as given.
+lights_at : { clock : Clock, brake_lights : [On, Off] } -> Truck.Lights
+lights_at = |{ clock, brake_lights }|
+	RideInstant.truck_lights({
+		..RideInstant.initial,
+		truck: { ..RideInstant.initial.truck, brake_lights },
+		clock,
+	})
+
+expect
+	lights_at({ clock: Clock.start, brake_lights: Off })
+		== { headlights: Off, brake_lights: Off }
+expect lights_at({ clock: Clock.start, brake_lights: On }) == { headlights: Off, brake_lights: On }
+expect
+	lights_at({ clock: after_sunset, brake_lights: Off })
+		== { headlights: On, brake_lights: Off }
+expect lights_at({ clock: after_sunset, brake_lights: On }) == { headlights: On, brake_lights: On }
