@@ -170,6 +170,8 @@ Here's where it's called, picking the colour for a pair of small trees:
 
 The sky is the simplest thing that moves, because it depends on one number.
 
+🔭 From a distance, the sky is a few questions put to a clock.
+
 ```dot
 digraph sky {
   node [shape=box, fontname="Helvetica"];
@@ -191,49 +193,112 @@ digraph sky {
 
 *[The sky widget goes here: drag the clock and watch the sun set.]*
 
+Every function in this chapter has a `->` arrow, not `=>`. In Roc that's a promise the compiler holds: no effects, so the same clock always gives the same sky. If a function has no `=>` and no `$` in sight, there's nothing behind it to think about.
+
+Here's one of the questions being asked. 🌳 `Tour.sky_top` takes the clock from the current instant and hands it to `Sky`.
+
+{{code Tour.sky_top}}
+
+Here's what happens behind that call. In this diagram a box is a function, not a module, and an arrow is a call. Only `Sky`'s own functions are shown, without the two helpers of `dusk_at`.
+
+```dot
+digraph sky_calls {
+  node [shape=box, fontname="Helvetica"];
+  sky_color -> sky_at;
+  sky_color -> pack;
+  horizon_color -> sky_at;
+  horizon_color -> color_between;
+  horizon_color -> sunset_warmth;
+  horizon_color -> pack;
+  sky_at -> dusk_at;
+  sky_at -> color_between;
+  dusk_at -> sun_height_px;
+  sunset_warmth -> sun_height_px;
+  sun_pos -> sun_place;
+  sun_place -> sun_height_px;
+  sun_height_px [style=bold];
+}
+```
+
+Every curve comes down to the box in bold, which is the only one that turns the clock into a number. The rest is colour on one side and the sun's place on the other.
+
+🐾 The trail starts at the clock, and climbs to the colours.
+
 ### A function of the clock
 
-Every function in this chapter has a `->` arrow, not `=>`. In Roc that's a promise the compiler holds: no effects, so the same clock always gives the same sky. If a function has no `=>` and no `$` in sight, there's nothing behind it to think about.
+The bottom of the tree is back in `Clock`, seen whole above. 🍃 `Clock.to_f64` opens the opaque type. The `to_f64` it calls is `U32`'s, which belongs to Roc, so nothing of Safari Ride's is called.
+
+{{code Clock.to_f64}}
+
+🌳 `sun_height_px` calls it. The sun's height is a straight line. It starts at 244 pixels, reaches the horizon around step 3,980, and has fully set around step 4,730. `to_f64` is the clock's one door to a float, and this is the only place that uses it.
 
 {{code Sky.sun_height_px}}
 
-The sun's height is a straight line. It starts at 244 pixels, reaches the horizon around step 3,980, and has fully set around step 4,730. `to_f64` is the clock's one door to a float, and this is the only place that uses it.
+The next answers are `Fraction`s. `Fraction` is a third small opaque type, a ratio from 0 to 1, and only its own block can build one, so a `Fraction` is always in range. It has two ways in. `Fraction.of` takes a ratio that can only be in range and crashes on anything else, because that would be a bug in the sum. `Fraction.clamp` takes a ratio that can rightly fall outside, as a sun sunk far below the horizon does, and holds it at the nearest end.
 
-Dusk calls it. Dusk is a curve and then a line, which means two cases. `Sky` keeps the two halves below its block. Anything outside `Sky :: [].{ ... }` is private to the module, so a helper stays a helper without any keyword.
-
-{{code Sky.dusk_at}}
+Dusk is a curve and then a line, which means two cases, 🌳 `dusk_while_up` and 🌳 `dusk_after_set`. `Sky` keeps them below its block. Anything outside `Sky :: [].{ ... }` is private to the module, so a helper stays a helper without any keyword.
 
 {{code Sky.dusk_while_up}}
 
 {{code Sky.dusk_after_set}}
 
-And here's the walk up the stack: each frame, `RideInstant` hands the answer to the mountains, whose rock and snow go dark with it.
+🌳 `dusk_at` calls `sun_height_px`, then one of those two:
+
+{{code Sky.dusk_at}}
+
+And here's the walk up the stack: each frame, 🌳 `RideInstant.frame` hands the answer to the mountains, whose rock and snow go dark with it.
 
 {{code RideInstant.frame from "Mountains.draw({" to "}),"}}
 
-`Fraction` is a third small opaque type, a ratio from 0 to 1, and only its own block can build one, so a `Fraction` is always in range. It has two ways in. `Fraction.of` takes a ratio that can only be in range and crashes on anything else, because that would be a bug in the sum. `Fraction.clamp` takes a ratio that can rightly fall outside, as a sun sunk far below the horizon does, and holds it at the nearest end.
-
-The horizon's warmth is a third shape, a tent centred on the instant the sun touches the horizon. Three curves come off one number, and they're plain functions rather than anything more general. Nothing else in the game needs them.
+The horizon's warmth is a third shape, a tent centred on the instant the sun touches the horizon. Three curves come off one number, and they're plain functions rather than anything more general. Nothing else in the game needs them. Here's 🌳 `sunset_warmth`:
 
 {{code Sky.sunset_warmth}}
 
+### From curves to colours
+
+A colour ends up as one integer. 🍃 `pack` gets there with method calls on plain numbers, and static dispatch finds `to_i64_wrap`, `shl_wrap` and `bitwise_or` on Roc's own types, so this is a leaf, the only one on the diagram.
+
+{{code Sky.pack}}
+
+🌳 `color_between` takes one record argument, destructured in its parameter list, so callers name every field. Each channel moves the same share of the way, and `Sky.Rgb` is a plain record alias, three floats with nothing to guard.
+
+{{code Sky.color_between}}
+
+🌳 `sky_at` calls it with the dusk from above. It's private, like the two dusk helpers:
+
+{{code Sky.sky_at}}
+
+The top of the tree is two calls. 🌳 `sky_color` is the one `Tour.sky_top` asked at the start of this chapter, and 🌳 `horizon_color` is the same sky, warmed toward red by `sunset_warmth`.
+
+{{code Sky.sky_color}}
+
+{{code Sky.horizon_color}}
+
 ### Angles that can't be mixed up
+
+🐾 One trail on the diagram is left, the sun's place, and it starts at the bottom again.
 
 The sun is the one thing here that also depends on where the rider is looking. Two tags say the two answers, so there's no `null` and no off-screen sentinel value. A caller has to handle `OutOfView`, because `match` must cover every tag.
 
 {{code Sky.SunPos}}
 
-Opaque types do the most work in this next function. `Angle.Bearing` is a direction in the world and `Angle.Turn` is a change of direction. Both are floats underneath, but only the `Angle` module can build or open one. The function also takes one record argument, destructured in its parameter list, so callers name every field.
+Opaque types do the most work from here on. `Angle.Bearing` is a direction in the world and `Angle.Turn` is a change of direction. Both are floats underneath, but only the `Angle` module can build or open one. 🌳 `sun_place` is the first code to want a plain number, because `r_tan` takes a float, and it's another caller of `sun_height_px`.
+
+{{code Sky.sun_place from "scale =" to "y: (Screen.horizon_y"}}
+
+🌳 `sun_pos` calls it once the sun is known to be in view. It also takes one record argument, destructured in its parameter list.
 
 {{code Sky.sun_pos}}
 
-Its caller is short enough to read whole:
+Its caller, 🌳 `RideInstant.sun`, is short enough to read whole:
 
 {{code RideInstant.sun}}
 
 `turn_from_view.abs() >= visible_turn_limit` compares two `Turn`s. The code never touches radians until `sun_place` has to do trigonometry. Passing a `Turn` where a `Bearing` is wanted is a compile-time error:
 
 {{fails turn_as_bearing}}
+
+🔭 That's every box on the diagram: one number goes in, and colours and a place for the sun come out, with nothing kept from one frame to the next.
 
 ## The cat
 
