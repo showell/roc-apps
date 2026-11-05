@@ -7,6 +7,7 @@ app [main!] {
 
 import Animation
 import Beats
+import Fraction
 import Grade
 import Speed
 
@@ -16,7 +17,7 @@ stage_numbers : Animation.Stage -> List(F64)
 stage_numbers = |stage|
 	match stage {
 		Waiting => [0.0, 0.0]
-		Playing(progress) => [1.0, progress]
+		Playing(progress) => [1.0, progress.to_f64()]
 		Past(metres) => [2.0, metres]
 	}
 
@@ -202,9 +203,9 @@ stage_moment_got : List(Bool)
 stage_moment_got = [
 	cut_timeline.moment(Waiting).pose == BeforeIt,
 	cut_timeline.moment(Past(5.0)).pose == AfterIt,
-	cut_timeline.moment(Playing(0.0)).pose == First,
-	cut_timeline.moment(Playing(0.3)).pose == Second,
-	cut_timeline.moment(Playing(1.0)).pose == Fourth,
+	cut_timeline.moment(Playing(Fraction.zero)).pose == First,
+	cut_timeline.moment(Playing(Fraction.of(0.3))).pose == Second,
+	cut_timeline.moment(Playing(Fraction.whole)).pose == Fourth,
 ]
 
 stage_moment_want : List(Bool)
@@ -214,7 +215,7 @@ stage_spot_got : List(F64)
 stage_spot_got = [
 	cut_timeline.moment(Waiting).spot.across,
 	cut_timeline.moment(Past(5.0)).spot.across,
-	cut_timeline.moment(Playing(0.5)).spot.across,
+	cut_timeline.moment(Playing(Fraction.of(0.5))).spot.across,
 ]
 
 stage_spot_want : List(F64)

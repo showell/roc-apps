@@ -232,7 +232,7 @@ stage_text : Animation.Stage -> Str
 stage_text = |stage|
 	match stage {
 		Waiting => "Waiting"
-		Playing(progress) => "Playing: ${(progress * 100.0).to_i64_wrap().to_str()}%"
+		Playing(progress) => "Playing: ${(progress.to_f64() * 100.0).to_i64_wrap().to_str()}%"
 		Past(_) => "Past"
 	}
 

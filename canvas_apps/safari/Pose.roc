@@ -2,6 +2,7 @@
 ## is, which way it points, how fast it goes, how far it leans, and where the
 ## rider is looking.
 import Angle
+import Fraction
 import Speed
 import VehicleLimits
 import World
@@ -22,7 +23,7 @@ Pose :: [].{
 		tilt : Angle.Lean,
 		heading : Angle.Bearing,
 		gaze_yaw : Angle.Turn,
-		focus : F64,
+		focus : Fraction,
 	}
 
 	initial_rider_state : Pose.RiderState
@@ -35,6 +36,6 @@ Pose :: [].{
 		tilt: Angle.upright,
 		heading: Angle.north,
 		gaze_yaw: Angle.straight_ahead,
-		focus: 0.0,
+		focus: Fraction.zero,
 	}
 }

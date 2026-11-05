@@ -8,9 +8,10 @@
 ## crosses along its segment, so cats the same distance from the road play
 ## one timeline.
 import Animation
+import Attention
 import Beats
-import lib.DeviceMath
 import Easing
+import Fraction
 import Num_
 
 Cat :: [].{
@@ -138,8 +139,8 @@ Cat :: [].{
 		}
 
 	## How hard the cat holds the rider's eye at its strongest.
-	focus_peak : F64
-	focus_peak = 1.8
+	focus_peak : Attention
+	focus_peak = Attention.of(1.8)
 
 	## Over how many beats, after the rider reaches the cat, its hold fades.
 	focus_ramp_down : Beats
@@ -147,17 +148,17 @@ Cat :: [].{
 
 	## How hard the cat holds the rider's eye: rising as it crosses, then
 	## fading once the rider is past.
-	focus : Animation.Approach -> F64
+	focus : Animation.Approach -> Attention
 	focus = |approach|
 		if approach.speed <= Animation.standstill {
-			0.0
+			Attention.none
 		} else {
 			match crossing_stage(approach) {
-				Waiting => 0.0
-				Playing(progress) => Easing.smoothstep(progress) * focus_peak
+				Waiting => Attention.none
+				Playing(progress) => focus_peak.portion(Easing.smoothstep(progress))
 				Past(metres) => {
 					faded = approach.speed.beats_to_cover(metres).ratio_to(focus_ramp_down)
-					(1.0 - Easing.smoothstep(DeviceMath.real_min(faded, 1.0))) * focus_peak
+					focus_peak.portion(Easing.smoothstep(Fraction.clamp(faded)).complement())
 				}
 			}
 		}

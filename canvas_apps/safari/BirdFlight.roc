@@ -7,6 +7,7 @@
 ## flight is its own and no other bird shares it.
 import Animation
 import Beats
+import Fraction
 import Scenery
 
 BirdFlight :: [].{
@@ -52,12 +53,12 @@ BirdFlight :: [].{
 	wing_flaps = 9.0
 
 	## The share of a flight spent side on, taking off.
-	takeoff_share : F64
-	takeoff_share = 0.12
+	takeoff_share : Fraction
+	takeoff_share = Fraction.of(0.12)
 
 	## The share of a flight spent dropping to land.
-	landing_share : F64
-	landing_share = 0.12
+	landing_share : Fraction
+	landing_share = Fraction.of(0.12)
 
 	## The tree a bird starts on, the fifth with a negative `across`. Those are
 	## on the left, and an unflipped still's beak points toward +x, so from
@@ -136,11 +137,11 @@ BirdFlight :: [].{
 				looks: {
 					stretches: [
 						{
-							until: Before(flight_beats.times(takeoff_share)),
+							until: Before(flight_beats.portion(takeoff_share)),
 							plays: wings_beating({ up: Side(WingsUp), down: Side(WingsDown) }),
 						},
 						{
-							until: Through(flight_beats.times(1.0 - landing_share)),
+							until: Through(flight_beats.portion(landing_share.complement())),
 							plays: wings_beating({ up: Away(WingsUp), down: Away(WingsDown) }),
 						},
 					],

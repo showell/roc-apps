@@ -4,6 +4,7 @@ import CatDraw
 import CatPlan
 import Critter
 import DepthSort
+import Fraction
 import Frame
 import GuardRail
 import Render
@@ -36,11 +37,8 @@ ItemDraw :: [].{
 
 	## How much a crown is shaded at distance `forward`: fully at the camera,
 	## falling evenly to none at SceneLimits.crown_shade_dist.
-	crown_shade : F64 -> F64
-	crown_shade = |forward| {
-		raw = (1.0 - (forward / SceneLimits.crown_shade_dist))
-		if (raw < 0.0) 0.0 else if (raw > 1.0) 1.0 else raw
-	}
+	crown_shade : F64 -> Fraction
+	crown_shade = |forward| Fraction.clamp((1.0 - (forward / SceneLimits.crown_shade_dist)))
 
 	## A tree, drawn in more detail the nearer it is: its trunk is round when
 	## few of `trees` are nearer, and its crown is cones when it is nearer

@@ -173,14 +173,14 @@ offsets_want = [0.0, 37.0, 74.0, 111.0, 28.0, 65.0, 10.0, 60.0, 0.0]
 
 bright_got : List(F64)
 bright_got = [
-	TowerPlan.beacon_brightness(Steps.of(0)),
-	TowerPlan.beacon_brightness(Steps.of(60)),
-	TowerPlan.beacon_brightness(Steps.of(30)),
-	TowerPlan.beacon_brightness(Steps.of(90)),
-	TowerPlan.beacon_brightness(Steps.of(120)),
-	TowerPlan.beacon_brightness(Steps.of(180)),
-	TowerPlan.beacon_brightness(Steps.of(300)),
-	TowerPlan.beacon_brightness(Steps.of(240)),
+	TowerPlan.beacon_brightness(Steps.of(0)).to_f64(),
+	TowerPlan.beacon_brightness(Steps.of(60)).to_f64(),
+	TowerPlan.beacon_brightness(Steps.of(30)).to_f64(),
+	TowerPlan.beacon_brightness(Steps.of(90)).to_f64(),
+	TowerPlan.beacon_brightness(Steps.of(120)).to_f64(),
+	TowerPlan.beacon_brightness(Steps.of(180)).to_f64(),
+	TowerPlan.beacon_brightness(Steps.of(300)).to_f64(),
+	TowerPlan.beacon_brightness(Steps.of(240)).to_f64(),
 ]
 
 bright_want : List(F64)
@@ -190,7 +190,7 @@ bright_want = [0.0, 1.0, 0.5, 0.5, 0.0, 1.0, 1.0, 0.0]
 ## then its mid mast.
 long_brightness_at : Clock -> List(F64)
 long_brightness_at = |clock|
-	TowerPlan.along_chain({ ..long_view, clock }).map(|tower| tower.beacon_brightness)
+	TowerPlan.along_chain({ ..long_view, clock }).map(|tower| tower.beacon_brightness.to_f64())
 
 opposite_got : List(F64)
 opposite_got = List.concat(long_brightness_at(Clock.start), long_brightness_at(Clock.at_step(60)))
@@ -201,13 +201,16 @@ opposite_want = [0.0, 1.0, 1.0, 0.0]
 ## How bright the first three segments' masts are at `clock`.
 spread_at : Clock -> List(F64)
 spread_at = |clock|
-	TowerPlan.along_chain({ ..from_origin, clock }).map(|tower| tower.beacon_brightness)
+	TowerPlan.along_chain({ ..from_origin, clock }).map(|tower| tower.beacon_brightness.to_f64())
 
 spread_got : List(F64)
 spread_got = List.concat(spread_at(Clock.start), spread_at(Clock.at_step(30)))
 
+brightness_at : U32 -> F64
+brightness_at = |phase| TowerPlan.beacon_brightness(Steps.of(phase)).to_f64()
+
 spread_want : List(F64)
-spread_want = [0, 37, 74, 30, 67, 104].map(|phase| TowerPlan.beacon_brightness(Steps.of(phase)))
+spread_want = [0, 37, 74, 30, 67, 104].map(brightness_at)
 
 behind_got : List(I64)
 behind_got = [

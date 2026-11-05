@@ -5,6 +5,7 @@ app [main!] {
 }
 
 import Angle
+import Fraction
 import Bike
 import lib.DeviceMath
 import Grade
@@ -52,7 +53,7 @@ rider = |
 	tilt: Angle.Lean.radians(tilt),
 	heading: Angle.Bearing.radians(0.0),
 	gaze_yaw: Angle.Turn.radians(0.0),
-	focus: 0.0,
+	focus: Fraction.zero,
 }
 
 step_got : List(Bool)
@@ -131,7 +132,7 @@ at_seam = {
 	tilt: Angle.Lean.radians(0.05),
 	heading: Angle.Bearing.radians(0.7),
 	gaze_yaw: Angle.Turn.radians(0.3),
-	focus: 0.4,
+	focus: Fraction.of(0.4),
 }
 
 crossed : Pose.RiderState
@@ -141,7 +142,7 @@ carry_got : List(F64)
 carry_got = [
 	crossed.speed.to_metres_a_step(),
 	crossed.tilt.to_radians(),
-	crossed.focus,
+	crossed.focus.to_f64(),
 	crossed.gaze_yaw.to_radians(),
 ]
 
@@ -237,7 +238,7 @@ clamped_at_finish = |along, v| Rider.finish_clamp(
 		tilt: Angle.Lean.radians(0.0),
 		heading: Angle.Bearing.radians(0.0),
 		gaze_yaw: Angle.Turn.radians(0.0),
-		focus: 0.0,
+		focus: Fraction.zero,
 	},
 	last_seg,
 )
@@ -271,7 +272,7 @@ done_got = (
 			tilt: Angle.Lean.radians(0.0),
 			heading: Angle.Bearing.radians(0.0),
 			gaze_yaw: Angle.Turn.radians(0.0),
-			focus: 0.0,
+			focus: Fraction.zero,
 		}
 		short = {
 			segment: World.SegmentIndex.number(0),
@@ -282,7 +283,7 @@ done_got = (
 			tilt: Angle.Lean.radians(0.0),
 			heading: Angle.Bearing.radians(0.0),
 			gaze_yaw: Angle.Turn.radians(0.0),
-			focus: 0.0,
+			focus: Fraction.zero,
 		}
 		[
 			Rider.is_finished(at_end, [World.route_segment(18)]),

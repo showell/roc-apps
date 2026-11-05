@@ -6,6 +6,7 @@ app [main!] {
 
 import Angle
 import Clock
+import Fraction
 import Grade
 import Rider
 import Safari
@@ -136,7 +137,7 @@ done = {
 		tilt: Angle.Lean.radians(0.0),
 		heading: Angle.Bearing.radians(0.0),
 		gaze_yaw: Angle.Turn.radians(0.0),
-		focus: 0.9,
+		focus: Fraction.of(0.9),
 	},
 	truck: {
 		route_position: 9000.0,
@@ -155,7 +156,7 @@ restart_got = (
 			r.rider.along,
 			r.rider.speed.to_metres_a_step(),
 			r.truck.route_position,
-			r.rider.focus,
+			r.rider.focus.to_f64(),
 		]
 	}
 )

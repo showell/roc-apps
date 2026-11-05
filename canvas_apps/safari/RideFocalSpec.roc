@@ -5,8 +5,10 @@ app [main!] {
 }
 
 import Angle
+import Attention
 import Bike
 import lib.DeviceMath
+import Fraction
 import Gaze
 import Grade
 import Lens
@@ -41,7 +43,7 @@ upright = {
 	tilt: Angle.Lean.radians(0.0),
 	heading: Angle.Bearing.radians(0.0),
 	gaze_yaw: Angle.Turn.radians(0.0),
-	focus: 0.0,
+	focus: Fraction.zero,
 }
 
 # A rider 120 m along a segment: near enough to its cat, if it has one, to
@@ -70,9 +72,9 @@ has_cat_want = [False, True]
 idle_got : List(F64)
 idle_got = [
 	(RideFocal.ride_focal(segs, upright) - Lens.focal),
-	RideFocal.crossing_attention(segs, upright),
-	Gaze.gaze_focus(0.0),
-	(Lens.cam_focal({ lean_frac: 0.0, attention: 0.0 }) - Lens.focal),
+	RideFocal.crossing_attention(segs, upright).to_f64(),
+	Gaze.gaze_focus(Fraction.zero).to_f64(),
+	(Lens.cam_focal({ lean_frac: Fraction.zero, attention: Attention.none }) - Lens.focal),
 ]
 
 idle_want : List(F64)
@@ -104,14 +106,14 @@ clamp_want = [0.0, 0.0, 0.0]
 
 cat_got : List(Bool)
 cat_got = [
-	(RideFocal.crossing_attention(segs, near_cat_on(1)) > 0.0),
+	(RideFocal.crossing_attention(segs, near_cat_on(1)).to_f64() > 0.0),
 	(
 		RideFocal.crossing_attention(
 			segs,
 			{ ..upright, segment: World.SegmentIndex.number(1) },
-		) > 0.0
+		).to_f64() > 0.0
 	),
-	(RideFocal.crossing_attention(segs, near_cat_on(0)) > 0.0),
+	(RideFocal.crossing_attention(segs, near_cat_on(0)).to_f64() > 0.0),
 	(RideFocal.ride_focal(segs, near_cat_on(1)) < RideFocal.ride_focal(segs, near_cat_on(0))),
 ]
 
@@ -120,14 +122,19 @@ cat_want = [True, False, False, True]
 
 gaze_got : List(Bool)
 gaze_got = [
-	(RideFocal.ride_focal(segs, { ..upright, focus: 1.0 }) < RideFocal.ride_focal(segs, upright)),
 	(
 		RideFocal.ride_focal(
 			segs,
-			{ ..upright, focus: 1.0 },
-		) < RideFocal.ride_focal(segs, { ..upright, focus: 0.5 })
+			{ ..upright, focus: Fraction.whole },
+		) < RideFocal.ride_focal(segs, upright)
 	),
-	(Gaze.gaze_focus(1.0) > Gaze.gaze_focus(0.0)),
+	(
+		RideFocal.ride_focal(
+			segs,
+			{ ..upright, focus: Fraction.whole },
+		) < RideFocal.ride_focal(segs, { ..upright, focus: Fraction.of(0.5) })
+	),
+	(Gaze.gaze_focus(Fraction.whole).to_f64() > Gaze.gaze_focus(Fraction.zero).to_f64()),
 ]
 
 gaze_want : List(Bool)
@@ -139,7 +146,7 @@ both = RideFocal.ride_focal(
 	{
 		..upright,
 		tilt: Bike.max_lean,
-		focus: 1.0,
+		focus: Fraction.whole,
 	},
 )
 
@@ -147,7 +154,7 @@ lean_only : F64
 lean_only = RideFocal.ride_focal(segs, { ..upright, tilt: Bike.max_lean })
 
 gaze_only : F64
-gaze_only = RideFocal.ride_focal(segs, { ..upright, focus: 1.0 })
+gaze_only = RideFocal.ride_focal(segs, { ..upright, focus: Fraction.whole })
 
 min_got : List(Bool)
 min_got = [
@@ -163,7 +170,7 @@ min_want = [True, True, True, True]
 is_one_got : List(F64)
 is_one_got = [
 	(both - DeviceMath.real_min(lean_only, gaze_only)),
-	(Lens.cam_focal({ lean_frac: 1.0, attention: 0.0 }) - lean_only),
+	(Lens.cam_focal({ lean_frac: Fraction.whole, attention: Attention.none }) - lean_only),
 ]
 
 is_one_want : List(F64)

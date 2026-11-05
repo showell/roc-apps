@@ -5,6 +5,7 @@ app [main!] {
 }
 
 import Angle
+import Fraction
 import Gaze
 import Grade
 import Pose
@@ -31,7 +32,7 @@ fixed_want = [150.0, 0.0012, 0.2, 25.0, 35.0, 4.0, 0.2, 0.02, 6.0, 0.05]
 
 smooth_got : List(F64)
 smooth_got = [
-	Gaze.gaze_focus(0.5),
+	Gaze.gaze_focus(Fraction.of(0.5)).to_f64(),
 ]
 
 smooth_want : List(F64)
@@ -53,7 +54,7 @@ rider = |along, yaw| {
 	tilt: Angle.Lean.radians(0.0),
 	heading: Angle.Bearing.radians(0.0),
 	gaze_yaw: Angle.Turn.radians(0.0),
-	focus: 0.0,
+	focus: Fraction.zero,
 }
 
 legs_got : List(Bool)
@@ -126,7 +127,7 @@ head = |gaze_yaw, along| {
 	tilt: Angle.Lean.radians(0.0),
 	heading: Angle.Bearing.radians(0.0),
 	gaze_yaw: Angle.Turn.radians(gaze_yaw),
-	focus: 0.0,
+	focus: Fraction.zero,
 }
 
 ## The gaze one step after `state`, wanting `want` radians.
@@ -135,7 +136,7 @@ gaze_after = |state, want| Gaze.next_gaze_yaw(state, Angle.Turn.radians(want)).t
 
 ## The focus after the gaze moves to `gaze` radians.
 focus_after : Pose.RiderState, F64 -> F64
-focus_after = |state, gaze| Gaze.next_focus(state, Angle.Turn.radians(gaze))
+focus_after = |state, gaze| Gaze.next_focus(state, Angle.Turn.radians(gaze)).to_f64()
 
 swivel_rate : F64
 swivel_rate = Gaze.gaze_swivel_rate.to_radians()
@@ -191,7 +192,7 @@ rider_with_focus = |focus, gaze_yaw| {
 	tilt: Angle.Lean.radians(0.0),
 	heading: Angle.Bearing.radians(0.0),
 	gaze_yaw: Angle.Turn.radians(gaze_yaw),
-	focus: focus,
+	focus: Fraction.of(focus),
 }
 
 focus_got : List(Bool)

@@ -2,6 +2,7 @@
 ## colour is 0xRRGGBB for a flat polygon, a shaded polygon and a beacon, and
 ## 0xAARRGGBB for a gradient. Each builder answers a list, empty when there is
 ## nothing to draw, so a drawing module can join what it builds.
+import Fraction
 import Num_
 import Screen
 import lib.Brush
@@ -61,14 +62,15 @@ Paint :: [].{
 	shade_middle_lift = 0.25
 
 	## A shaded polygon's colour at its edges.
-	width_shade_edge : I64, F64 -> I64
-	width_shade_edge = |color, strength| shade_color(color, (1.0 - (shade_edge_darken * strength)))
+	width_shade_edge : I64, Fraction -> I64
+	width_shade_edge = |color, strength|
+		shade_color(color, (1.0 - (shade_edge_darken * strength.to_f64())))
 
 	## A shaded polygon's colour in its middle.
-	width_shade_middle : I64, F64 -> I64
+	width_shade_middle : I64, Fraction -> I64
 	width_shade_middle = |color, strength| shade_color(
 		color,
-		(1.0 + (shade_middle_lift * strength)),
+		(1.0 + (shade_middle_lift * strength.to_f64())),
 	)
 
 	min_shade_width : F64
@@ -106,7 +108,7 @@ Paint :: [].{
 	push_round_poly : List(Screen.Point),
 	{
 		fill_color : I64,
-		round_strength : F64,
+		round_strength : Fraction,
 	} -> List(Shapes.Shape)
 	push_round_poly = |ps, { fill_color, round_strength }|
 		if ps.len() < 3 {
@@ -120,7 +122,7 @@ Paint :: [].{
 		beacon_color : I64,
 		beacon_center : Screen.Point,
 		beacon_radius : F64,
-		beacon_alpha : F64,
+		beacon_alpha : Fraction,
 	} -> List(Shapes.Shape)
 	push_beacon = |
 		{
@@ -136,7 +138,7 @@ Paint :: [].{
 				x: beacon_center.x,
 				y: beacon_center.y,
 				r: beacon_radius,
-				fill: Flat({ ..opaque, a: beacon_alpha }),
+				fill: Flat({ ..opaque, a: beacon_alpha.to_f64() }),
 				clip: Anywhere,
 			}),
 		]
@@ -277,10 +279,10 @@ offsets_of = |stops| {
 }
 
 ## The fill of a polygon shaded across its width.
-width_shade : List(F64), { color : I64, strength : F64 } -> Brush.Fill
+width_shade : List(F64), { color : I64, strength : Fraction } -> Brush.Fill
 width_shade = |pts, { color, strength }| {
 	span = Paint.x_span(pts)
-	if strength <= 0.0 or Paint.is_too_narrow_to_shade(span) {
+	if strength <= Fraction.zero or Paint.is_too_narrow_to_shade(span) {
 		Flat(Brush.opaque(color))
 	} else {
 		Span({

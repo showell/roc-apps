@@ -8,6 +8,7 @@ app [main!] {
 import Angle
 import Grade
 import Clock
+import Fraction
 import Mountains
 import Sky
 
@@ -43,13 +44,13 @@ chan_want = [91.0, 106.0, 143.0, 255.0, 0.0]
 
 dim_got : List(I64)
 dim_got = [
-	Mountains.color_at_dusk(Mountains.rock, 0.0),
-	Mountains.color_at_dusk(Mountains.rock_west, 0.0),
-	Mountains.color_at_dusk(Mountains.land, 0.0),
-	Mountains.color_at_dusk(Mountains.rock, 1.0),
-	Mountains.color_at_dusk(Mountains.rock_west, 1.0),
-	Mountains.color_at_dusk(Mountains.land, 1.0),
-	Mountains.color_at_dusk(Mountains.rock, 0.5),
+	Mountains.color_at_dusk(Mountains.rock, Fraction.zero),
+	Mountains.color_at_dusk(Mountains.rock_west, Fraction.zero),
+	Mountains.color_at_dusk(Mountains.land, Fraction.zero),
+	Mountains.color_at_dusk(Mountains.rock, Fraction.whole),
+	Mountains.color_at_dusk(Mountains.rock_west, Fraction.whole),
+	Mountains.color_at_dusk(Mountains.land, Fraction.whole),
+	Mountains.color_at_dusk(Mountains.rock, Fraction.of(0.5)),
 ]
 
 dim_want : List(I64)
@@ -57,9 +58,9 @@ dim_want = [5991055, 3752799, 4886339, 3028296, 1909296, 2443298, 4477035]
 
 snow_got : List(I64)
 snow_got = [
-	Mountains.snow_color(0.0),
-	Mountains.snow_color(1.0),
-	Mountains.snow_color(0.5),
+	Mountains.snow_color(Fraction.zero),
+	Mountains.snow_color(Fraction.whole),
+	Mountains.snow_color(Fraction.of(0.5)),
 	Sky.pack(Mountains.snow_day),
 	Sky.pack(Mountains.snow_night),
 ]
@@ -69,8 +70,13 @@ snow_want = [15660024, 4609128, 10134704, 15660024, 4609128]
 
 night_order_got : List(Bool)
 night_order_got = [
-	(Mountains.snow_color(1.0) > Mountains.color_at_dusk(Mountains.rock, 1.0)),
-	(Mountains.snow_color(0.0) > Mountains.color_at_dusk(Mountains.rock, 0.0)),
+	(
+		Mountains.snow_color(Fraction.whole) > Mountains.color_at_dusk(
+			Mountains.rock,
+			Fraction.whole,
+		)
+	),
+	(Mountains.snow_color(Fraction.zero) > Mountains.color_at_dusk(Mountains.rock, Fraction.zero)),
 ]
 
 night_order_want : List(Bool)
@@ -118,7 +124,7 @@ shape_got = [
 	Mountains.snow_dip,
 	Mountains.col_step,
 	Mountains.roll_margin,
-	Mountains.rock_night_dim,
+	Mountains.rock_night_dim.to_f64(),
 ]
 
 shape_want : List(F64)

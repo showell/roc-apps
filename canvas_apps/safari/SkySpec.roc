@@ -8,6 +8,7 @@ app [main!] {
 import Angle
 import Grade
 import Clock
+import Fraction
 import Lens
 import Sky
 
@@ -33,11 +34,11 @@ height_want = [
 
 ends_got : List(F64)
 ends_got = [
-	Sky.dusk_at(Clock.at_step(0)),
-	Sky.sunset_warmth(Clock.at_step(0)),
-	Sky.dusk_at(Clock.at_step(6000)),
-	Sky.sunset_warmth(Clock.at_step(6000)),
-	Sky.sunset_glow,
+	Sky.dusk_at(Clock.at_step(0)).to_f64(),
+	Sky.sunset_warmth(Clock.at_step(0)).to_f64(),
+	Sky.dusk_at(Clock.at_step(6000)).to_f64(),
+	Sky.sunset_warmth(Clock.at_step(6000)).to_f64(),
+	Sky.sunset_glow.to_f64(),
 ]
 
 ends_want : List(F64)
@@ -87,17 +88,17 @@ mix_got = (
 		a = Sky.color_between({
 			from: Sky.day_sky,
 			to: Sky.dusk_sky,
-			fraction: 0.0,
+			fraction: Fraction.zero,
 		})
 		b = Sky.color_between({
 			from: Sky.day_sky,
 			to: Sky.dusk_sky,
-			fraction: 1.0,
+			fraction: Fraction.whole,
 		})
 		m = Sky.color_between({
 			from: Sky.day_sky,
 			to: Sky.dusk_sky,
-			fraction: 0.5,
+			fraction: Fraction.of(0.5),
 		})
 		[
 			a.r,

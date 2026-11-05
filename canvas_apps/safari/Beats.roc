@@ -5,6 +5,8 @@
 ##
 ## Each operation does the plain float arithmetic its name says, so code
 ## moved onto this type computes exactly what it did before.
+import Fraction
+
 Beats :: F64.{
 
 	of : F64 -> Beats
@@ -24,6 +26,10 @@ Beats :: F64.{
 
 	times : Beats, F64 -> Beats
 	times = |Beats.(b), factor| Beats.(b * factor)
+
+	## This fraction of these beats.
+	portion : Beats, Fraction -> Beats
+	portion = |Beats.(b), fraction| Beats.(b * fraction.to_f64())
 
 	## How many of `whole` this is, which can pass 1.
 	ratio_to : Beats, Beats -> F64

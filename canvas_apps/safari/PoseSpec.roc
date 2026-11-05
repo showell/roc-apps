@@ -6,6 +6,7 @@ app [main!] {
 
 import Angle
 import Bike
+import Fraction
 import Grade
 import Pose
 import Speed
@@ -21,7 +22,7 @@ probe = {
 	tilt: Angle.Lean.radians(0.125),
 	heading: Angle.Bearing.radians(4.5),
 	gaze_yaw: Angle.Turn.radians(0.375),
-	focus: 6.75,
+	focus: Fraction.of(0.75),
 }
 
 new_tilt : Angle.Lean
@@ -39,7 +40,7 @@ reals = |s| [
 	s.tilt.to_radians(),
 	s.heading.to_radians(),
 	s.gaze_yaw.to_radians(),
-	s.focus,
+	s.focus.to_f64(),
 ]
 
 seg : Pose.RiderState -> List(I64)
@@ -52,13 +53,13 @@ init_seg_want : List(I64)
 init_seg_want = [0]
 
 tilt_want : List(F64)
-tilt_want = [11.0, 2.5, 0.75, 3.25, 9.5, 4.5, 0.375, 6.75]
+tilt_want = [11.0, 2.5, 0.75, 3.25, 9.5, 4.5, 0.375, 0.75]
 
 tilt_seg_want : List(I64)
 tilt_seg_want = [7]
 
 twice_want : List(F64)
-twice_want = [11.0, 2.5, 0.75, 3.25, 9.5, 4.5, 0.375, 6.75]
+twice_want = [11.0, 2.5, 0.75, 3.25, 9.5, 4.5, 0.375, 0.75]
 
 # --- Entry ---
 

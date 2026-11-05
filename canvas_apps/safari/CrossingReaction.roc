@@ -4,6 +4,7 @@
 ## A cat in the lane stops the rider opening the throttle, without braking, and
 ## draws their eye. A bird asks nothing. The pigs' gaze is no crossing, and is
 ## Gaze's.
+import Attention
 import Cat
 import Speed
 import World
@@ -12,7 +13,7 @@ CrossingReaction :: [].{
 
 	## What a crossing does to the rider now: whether they may open the
 	## throttle, and how hard it holds their eye.
-	Reaction : { throttle : [MayAccelerate, NoAcceleration], eye_pull : F64 }
+	Reaction : { throttle : [MayAccelerate, NoAcceleration], eye_pull : Attention }
 
 	## The reaction to `segment`'s crossing of a rider on that segment.
 	reaction_to : World.Segment,
@@ -30,6 +31,6 @@ CrossingReaction :: [].{
 					eye_pull: Cat.focus(approach),
 				}
 			}
-			BirdFlies(_) | QuietRoad => { throttle: MayAccelerate, eye_pull: 0.0 }
+			BirdFlies(_) | QuietRoad => { throttle: MayAccelerate, eye_pull: Attention.none }
 		}
 }

@@ -6,6 +6,7 @@
 import Angle
 import Clock
 import DepthSort
+import Fraction
 import Frame
 import Geom
 import Scenery
@@ -24,7 +25,7 @@ TowerPlan :: [].{
 		across : F64,
 		yaw : Angle.Turn,
 		forward : F64,
-		beacon_brightness : F64,
+		beacon_brightness : Fraction,
 	}
 
 	## What the masts are seen from: the road in view, and the ride's clock.
@@ -64,11 +65,12 @@ TowerPlan :: [].{
 	beacon_offset_for : U32 -> Steps
 	beacon_offset_for = |n| beacon_stagger.times(n).wrapped_to(beacon_period)
 
-	## How bright a beacon is `phase` steps into its blink, from 0 to 1.
-	beacon_brightness : Steps -> F64
+	## How bright a beacon is `phase` steps into its blink.
+	beacon_brightness : Steps -> Fraction
 	beacon_brightness = |phase| {
 		wrapped = phase.wrapped_to(beacon_period).to_f64()
-		((1.0 - Trig.r_cos((((2.0 * Trig.pi) * wrapped) / beacon_period.to_f64()))) / 2.0)
+		angle = (((2.0 * Trig.pi) * wrapped) / beacon_period.to_f64())
+		Fraction.of(((1.0 - Trig.r_cos(angle)) / 2.0))
 	}
 
 	## The masts in view: those along the chain, then the one past the end of

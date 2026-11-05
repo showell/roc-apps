@@ -6,6 +6,7 @@ app [main!] {
 
 import Acceleration
 import Angle
+import Fraction
 import Arc
 import Bike
 import Grade
@@ -54,7 +55,7 @@ rider = |
 	tilt: Angle.Lean.radians(tilt),
 	heading: Angle.Bearing.radians(0.0),
 	gaze_yaw: Angle.Turn.radians(0.0),
-	focus: 0.0,
+	focus: Fraction.zero,
 }
 
 side : Arc.ArcOutcome -> I64

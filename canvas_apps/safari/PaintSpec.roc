@@ -4,6 +4,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Fraction
 import Grade
 import Paint
 import Screen
@@ -35,8 +36,14 @@ count_got = [
 	Paint.push_poly(7, tri).len().to_i64_wrap(),
 	Paint.push_poly(7, line_ends).len().to_i64_wrap(),
 	Paint.push_poly(7, []).len().to_i64_wrap(),
-	Paint.push_round_poly(tri, { fill_color: 7, round_strength: 0.5 }).len().to_i64_wrap(),
-	Paint.push_round_poly(line_ends, { fill_color: 7, round_strength: 0.5 }).len().to_i64_wrap(),
+	Paint.push_round_poly(
+		tri,
+		{ fill_color: 7, round_strength: Fraction.of(0.5) },
+	).len().to_i64_wrap(),
+	Paint.push_round_poly(
+		line_ends,
+		{ fill_color: 7, round_strength: Fraction.of(0.5) },
+	).len().to_i64_wrap(),
 	Paint.push_grad_poly(
 		tri,
 		{
@@ -131,7 +138,7 @@ count_got = [
 		beacon_color: 7,
 		beacon_center: sp(1.0, 2.0),
 		beacon_radius: 3.0,
-		beacon_alpha: 0.5,
+		beacon_alpha: Fraction.of(0.5),
 	}).len().to_i64_wrap(),
 ]
 
@@ -142,14 +149,14 @@ solid : List(Shapes.Shape)
 solid = Paint.push_poly(111, tri)
 
 round : List(Shapes.Shape)
-round = Paint.push_round_poly(tri, { fill_color: 222, round_strength: 0.75 })
+round = Paint.push_round_poly(tri, { fill_color: 222, round_strength: Fraction.of(0.75) })
 
 beacon : List(Shapes.Shape)
 beacon = Paint.push_beacon({
 	beacon_color: 333,
 	beacon_center: sp(10.0, 20.0),
 	beacon_radius: 30.0,
-	beacon_alpha: 0.25,
+	beacon_alpha: Fraction.of(0.25),
 })
 
 radial4 : List(Shapes.Shape)
@@ -417,19 +424,19 @@ shade_want = [77, 38, 19, 255, 255, 255, 0, 5056019]
 
 shade_ends_got : List(I64)
 shade_ends_got = [
-	Paint.width_shade_edge(color, 1.0),
-	Paint.width_shade_middle(color, 1.0),
-	Paint.width_shade_edge(color, 0.5),
-	Paint.width_shade_middle(color, 0.5),
-	Paint.width_shade_edge(color, 0.0),
-	Paint.width_shade_middle(color, 0.0),
+	Paint.width_shade_edge(color, Fraction.whole),
+	Paint.width_shade_middle(color, Fraction.whole),
+	Paint.width_shade_edge(color, Fraction.of(0.5)),
+	Paint.width_shade_middle(color, Fraction.of(0.5)),
+	Paint.width_shade_edge(color, Fraction.zero),
+	Paint.width_shade_middle(color, Fraction.zero),
 ]
 
 shade_ends_want : List(I64)
 shade_ends_want = [5056019, 10506280, 6697754, 9455652, 8405024, 8405024]
 
 glow_got : List(I64)
-glow_got = [Paint.shade_channel(250, 1.25), Paint.width_shade_middle(16448250, 1.0)]
+glow_got = [Paint.shade_channel(250, 1.25), Paint.width_shade_middle(16448250, Fraction.whole)]
 
 glow_want : List(I64)
 glow_want = [255, 16777215]
@@ -489,7 +496,7 @@ narrow_points = [
 
 wide_got : List(Bool)
 wide_got = [
-	Paint.push_round_poly(poly_points, { fill_color: color, round_strength: 1.0 })
+	Paint.push_round_poly(poly_points, { fill_color: color, round_strength: Fraction.whole })
 		== [
 			Poly({
 				pts: [10.0, 1.0, 30.0, 2.0, 20.0, 3.0],
@@ -508,8 +515,8 @@ wide_want = [True]
 
 unshaded_got : List(I64)
 unshaded_got = [
-	Paint.push_round_poly(poly_points, { fill_color: color, round_strength: 0.0 }),
-	Paint.push_round_poly(narrow_points, { fill_color: color, round_strength: 1.0 }),
+	Paint.push_round_poly(poly_points, { fill_color: color, round_strength: Fraction.zero }),
+	Paint.push_round_poly(narrow_points, { fill_color: color, round_strength: Fraction.whole }),
 ].map(
 	|shapes| ShapeRead.flat_color_of(shapes.first() ?? crash "PaintSpec: three points are one polygon"),
 )
