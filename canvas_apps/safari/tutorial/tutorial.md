@@ -958,9 +958,130 @@ The floor of this layer is lower than it needs to be. `lib/DeviceMath.roc` compu
 
 Top to bottom, then: a rider chooses a lean by simulating physics, and the physics is plain arithmetic on opaque numbers, from the frame down to the polynomial. There's no effect anywhere in that sentence, and that's the reason for the next chapter.
 
+## Proving it
+
+There are no animals in this chapter. It's about what happens to a program of this size when something has to change, which is the question a reader who cares whether Roc scales should ask.
+
+The answer rests on one fact, which the tour has been repeating since the first table. Three fields decide a frame, and a frame is a value. So a frame can be compared, exactly, with the same frame from an hour ago.
+
+```dot
+digraph proving {
+  node [shape=box, fontname="Helvetica"];
+  gates [label="the proof tools\nRasterFrame, ShapesFrame, StepBack", style=dashed];
+  Tour [style=bold];
+  gates -> Tour;
+  gates -> SafariFrame;
+  gates -> ShapesPixels;
+  SafariFrame -> ShapesPixels;
+  SafariFrame -> backdrop;
+  ShapesPixels -> ScanlineFill;
+  backdrop [label="the backdrop\nBackdropPixels, SunPixels", style=dashed];
+}
+```
+
+Everything here lives in `gates/`, and the game never runs any of it. The gate programs reach the game through `game.roc`, a package whose only job is to list the modules they read. [check: the builder's includes can't reach `gates/`, `lib/` or `web.roc`, which is why these chapters describe those and don't quote them. Decide whether the builder should.]
+
+*[The proof widget goes here: ride to a step, ride there again, and see the same shapes both times.]*
+
+### A fixture is a value
+
+Getting a test to step 1,570 of a game normally takes some doing. Here it takes a loop. `Tour.init` is a value, and `Tour.advance` is a step function, the one at the very top, wrapped around `RideMoment.next`. The `if` chain is the only management a history needs, and its comment says why half of the list goes at once:
+
+{{code Tour.advance}}
+
+There's nothing to mock, because nothing was injected. No clock has to be faked, because the clock is a field. There's no browser to start, no window to open and no delay to wait out, and two runs can't disagree. A step of the ride takes nothing from outside it.
+
+`RideMoment.next` is one `if`, and it's worth seeing because it puts the end of the ride in one place. A ride that's finished starts again, so `Tour` needs no notion of game over:
+
+{{code RideMoment.next}}
+
+### The frame hash
+
+`RasterFrame` rides to a step, paints the frame into 576,000 exact pixels, and prints an FNV-1a hash of them. The painter is `SafariFrame`, in pure Roc, and its `ShapesPixels` is the twin of `shapes_canvas.js`. The gate holds each hash to a line of `gates/proof.expected`, exactly. No tolerance. One different pixel in one frame fails it.
+
+A frame is only evidence for what's in it, so the steps aren't arbitrary:
+
+| Step | What the frame shows |
+|---|---|
+| 0 | The start of the ride |
+| 100 | A bird in flight |
+| 1,570 | A cat frozen in the lane |
+| 1,586 | The same cat in mid-leap |
+| 3,000 | The ride under way |
+| 3,742 | A distant truck, its glow too small to draw |
+| 5,700 | The truck at dusk, lights on |
+| 6,520 | The truck braking in plain view |
+| 9,000 | Past the end, on the second lap |
+
+[check: what 3,000 and 9,000 are there for; the gate's header doesn't say, and 9,000 being a second lap is read from `RideMoment.next`.]
+
+The list grows by a rule: if a thing can be wrong without any listed frame changing, the gate is blind to it. A brake light wired to `Off` would pass every hash until 6,520 was added. A green hash means nothing for what no frame shows.
+
+Exact hashes have a consequence that reaches into the code. Float addition isn't associative, so a sum's order is part of its meaning here. `World.route_length` says so in its doc comment, and it's one of the few places in Safari Ride where the direction of a fold is a decision:
+
+{{code World.route_length}}
+
+That's also what the sentence in the headers of `Speed`, `Beats`, `Fraction`, `Angle` and the rest is for. "Each operation does the plain float arithmetic its name says, so code moved onto this type computes exactly what it did before." An opaque type adds names and takes nothing away. A retyping that adds `Speed` to a module changes the types throughout, and if it leaves the arithmetic alone, every hash stays where it is. If a hash moves, the retyping changed the program, and the gate says so.
+
+This is how the code in this tour got its shape. About fifty modules were renamed, retyped and reorganized, many of them in parallel, and each merge had to leave the frames alone. Roc's types caught what they catch, the hashes caught the rest, and the picture didn't change. [check: the number, and whether "many" should say how many at once.] A language with no hidden state doesn't make a refactor safe by itself. It makes it possible to write a test strict enough to be trusted.
+
+The limit, stated flatly: the hash proves `ShapesPixels`'s pixels, and the page's pixels come from the browser's canvas, with anti-aliasing. What the two share is the list of shapes. `web/page_check.mjs` runs each built page against a stand-in canvas, and past that the JS has only its own checks.
+
+### Two more proofs
+
+`ShapesFrame` paints each frame twice: once with its polygons whole, as the browser gets them, and once cut into triangles, as the native runner gets them. It counts the pixels that differ, and the gate requires zero of 576,000, at every step in the table.
+
+`StepBack` checks that one step back goes back exactly one step, at depths either side of the history's cap. It's in the gate because the answer was once no, and its header says how: the list stopped recording when full, so a step back from frame 3,000 landed on 2,047. Holding the first 2,048 instants was a perfectly consistent thing for a list to do. The test works by asking `Tour.back` and comparing clocks, and since `Tour.back` is this small, there isn't much else to ask:
+
+{{code Tour.back}}
+
+### `expect`
+
+Below the frames, the proving is plain. An `expect` sits at the top level of a module, under the code it checks, and `roc test` runs it. A pure function needs nothing else: literal arguments, literal answer. `Geom.ground_drop` from the last chapter is followed by lines like `expect Geom.ground_drop({ right: 3.0, forward: 10.0 }) == 0.000545`, and `Num_.round_real` by a run of its boundaries, from `-0.5000000000000001` up through `0.49999999999999994`, on both sides of each. [check: quoted by hand, since an `expect` has no name for an include to find. It wants an include form of its own.]
+
+The gate makes `expect` honest in one further way. The source is the count: every line that starts `expect`, in a module any root reaches, has to print `PASS` exactly once. An `expect` that nothing compiles fails, and so does one that's indented out of reach. [check: this section is thin on purpose until the specs have moved from the 56 spec apps into `expect`s. Say what the move found, if anything.]
+
+Even a truck can be checked this way, though it can't be asked about step 4,000 cold. A `TruckState` is a record, so a test writes one down and calls `Truck.advance` once.
+
+### Crashes that help
+
+Every `Fraction.of` in the game is an assertion, and the gate runs a lot of them. A ratio outside 0 to 1 stops the program, with a sentence saying the sum behind it is wrong. `Try` is the right answer when a value can honestly be absent. This isn't that case. A wrong ratio is a bug, and the sooner it's a crash the better:
+
+{{code Fraction.of}}
+
+Here's one of the many places it's used, with `smoothstep` trusting its own algebra. A proof run rides through it thousands of times, so if the algebra were wrong, the gate would be first to know.
+
+{{code Easing.smoothstep}}
+
+The same holds for the code's other `crash`es: `?? crash` on a list lookup that can't miss. Each one states a belief about the program, and every gate run tests it. [check: how many, once the retyping lands.]
+
+### The page itself
+
+This tutorial is built from the code. Every fenced snippet here came through Roc's own parser, by name, and the failing program in the sky chapter is run through the compiler, which is quoted. The gate builds the page. So renaming a function quoted here fails the gate until the prose catches up, and the compiler message under `turn_as_bearing` is the compiler's.
+
+Lints round it out: shale's Roc lints run first, with each count held exactly, and every count is at zero. A name that's vague or a boolean parameter that should be a tag fails before a single hash is computed.
+
 ## Zooming back out
 
 *[This chapter ties the tour together once the stepped things, the proof and the platform are written. It returns to the flipbook and the first diagram: the clock ticks, and everything composes from three stored fields.]*
+
+## Appendix: the patterns
+
+The tour named these in passing. They're patterns in the loose sense: shapes that kept turning up, and that Roc makes easy to write and hard to break.
+
+| Name | What it is | Where to see it |
+|---|---|---|
+| Worked out, not stored | Keep the few things that must persist, and derive the rest each frame | `RideMoment`, `Cat`, `Sky` |
+| A sighting decides, drawing paints | A pure function answers with plain data, and something else draws it | `CatSighting`, `TowerSighting` |
+| Places and distances | One opaque type for where, a second for how far apart, and only the sums that make sense | `Clock` and `Steps`, `Bearing` and `Turn`, `Speed` and `Acceleration` |
+| Rule and score | One function says how far along, and one piece of data says what that looks like | `over_gap` and `flight_timeline` |
+| The step function | A value goes in, and the next value comes out | `Rider.advance`, `Truck.advance`, `Tour.advance` |
+| A narrow view of a wide record | An open record names the fields it uses and carries the rest through | `Bike.Motion(others)` |
+| The gate chain | One value passes through independent rules, each of which can only lower it | `Throttle.get_forward_accel_decel` |
+| One record per space | Field names say which coordinate system a point is in | `RoadPoint`, `RiderPoint`, `SpacePoint`, `Screen.Point` |
+| Rehearsal | Run the real rules on a pretend copy, read the result, and throw it away | `Arc`, `LeanSearch`, `Rider.resolve_cross` |
+
+Code that reads like configuration deserves a line of its own, because the tour kept stopping to admire it: `Pond`, `World.route`, the timelines, and `SafariApp.canvas_app`. None of them is a config format. They're ordinary Roc values, so the compiler checks them, and a tag that's misspelled is a compile-time error.
 
 ## Credits
 
