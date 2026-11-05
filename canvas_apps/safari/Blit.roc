@@ -1,8 +1,7 @@
 ## The last pass over a frame's draw commands before they are painted. A
 ## polygon shaded across its width becomes a span shade between its leftmost
-## and rightmost x, darker at the edges and lighter in the middle; a disc or
-## a radial gradient too small or too faint to see is dropped; every other
-## command passes as it is.
+## and rightmost x, darker at the edges and lighter in the middle; every
+## other command passes as it is.
 import Num_
 import Paint
 
@@ -78,28 +77,8 @@ Blit :: [].{
 		width_shade_edge(color, strength),
 	]
 
-	min_disc_radius : F64
-	min_disc_radius = 0.5
-
-	min_disc_alpha : F64
-	min_disc_alpha = 0.02
-
-	min_gradient_radius : F64
-	min_gradient_radius = 0.5
-
 	min_shade_width : F64
 	min_shade_width = 1.0
-
-	is_disc_visible : { radius : F64, alpha : F64 } -> Bool
-	is_disc_visible = |
-		{
-			radius,
-			alpha,
-		},
-	| ((radius >= min_disc_radius) and (alpha >= min_disc_alpha))
-
-	is_radial_visible : F64 -> Bool
-	is_radial_visible = |radius| (radius >= min_gradient_radius)
 
 	is_too_narrow_to_shade : Blit.Span -> Bool
 	is_too_narrow_to_shade = |span| ((span.max_x - span.min_x) < min_shade_width)
@@ -127,49 +106,11 @@ Blit :: [].{
 			if (is_too_narrow_to_shade(span)) as_solid(cmd) else as_span_shade(cmd, span)
 		}
 
-	## What the blitter paints for one command: none, it, or its expansion.
-	expand_cmd : Paint.DrawCmd -> List(Paint.DrawCmd)
-	expand_cmd = |cmd|
-		match kind_of(cmd) {
-			ShadedAcross => [expand_shade(cmd)]
-			Disc => if (
-				is_disc_visible({
-					radius: radius_of(cmd),
-					alpha: cmd.strength,
-				})
-			) [cmd] else []
-			RadialGradient => if (is_radial_visible(radius_of(cmd))) [cmd] else []
-			Unchanged => [cmd]
-		}
-
+	## A round polygon, tag 1, is shaded across its width, and every other
+	## command goes through.
 	blit_expand : List(Paint.DrawCmd) -> List(Paint.DrawCmd)
-	blit_expand = |cmds| cmds.join_map(expand_cmd)
+	blit_expand = |cmds| cmds.map(|cmd| if (cmd.tag == 1) expand_shade(cmd) else cmd)
 }
-
-## What the blitter does with a command, by Paint's tag for it: a round
-## polygon (1) is shaded across its width, a beacon (3) and a radial
-## gradient (4) are checked for size, and the rest go through.
-kind_of : Paint.DrawCmd -> [ShadedAcross, Disc, RadialGradient, Unchanged]
-kind_of = |cmd|
-	match cmd.tag {
-		1 => ShadedAcross
-		3 => Disc
-		4 => RadialGradient
-		_ => Unchanged
-	}
-
-## A disc's or a radial gradient's radius, the third of its x, y and radius.
-radius_of : Paint.DrawCmd -> F64
-radius_of = |cmd|
-	match cmd.geom {
-		[
-			_,
-			_,
-			radius,
-			..,
-		] => radius
-		_ => crash "Blit.radius_of: a disc's geometry is its x, y and radius"
-	}
 
 ## The x of each point in a flat list of x, y pairs.
 xs_of : List(F64) -> List(F64)

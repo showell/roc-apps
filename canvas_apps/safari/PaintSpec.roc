@@ -52,6 +52,24 @@ count_got = [
 			gradient_radius: 1.0,
 		},
 	).len().to_i64_wrap(),
+	Paint.push_grad_poly(
+		tri,
+		{
+			center_rgba: 7,
+			edge_rgba: 8,
+			gradient_center: sp(0.0, 0.0),
+			gradient_radius: 0.5,
+		},
+	).len().to_i64_wrap(),
+	Paint.push_grad_poly(
+		tri,
+		{
+			center_rgba: 7,
+			edge_rgba: 8,
+			gradient_center: sp(0.0, 0.0),
+			gradient_radius: 0.49,
+		},
+	).len().to_i64_wrap(),
 	Paint.push_linear_grad_poly(
 		tri,
 		{
@@ -115,7 +133,7 @@ count_got = [
 ]
 
 count_want : List(I64)
-count_want = [1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
+count_want = [1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
 
 shape_of : List(Paint.DrawCmd) -> List(I64)
 shape_of = |cs| (

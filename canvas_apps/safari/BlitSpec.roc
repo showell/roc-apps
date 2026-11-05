@@ -1,5 +1,5 @@
-## These are Blit's checks: colour channels and shading, what is too small
-## or too narrow to draw, the span of a polygon, and a frame expanded.
+## These are Blit's checks: colour channels and shading, what is too narrow
+## to shade, the span of a polygon, and a frame expanded.
 app [main!] {
 	lib: "../lib/main.roc",
 }
@@ -79,32 +79,23 @@ glow_want = [255, 16777215]
 
 visible_got : List(Bool)
 visible_got = [
-	Blit.is_disc_visible({ radius: 0.5, alpha: 0.02 }),
-	Blit.is_disc_visible({ radius: 0.49, alpha: 0.02 }),
-	Blit.is_disc_visible({ radius: 0.5, alpha: 0.019 }),
-	Blit.is_disc_visible({ radius: 10.0, alpha: 1.0 }),
-	Blit.is_radial_visible(0.5),
-	Blit.is_radial_visible(0.49),
 	Blit.is_too_narrow_to_shade({ min_x: 10.0, max_x: 10.5 }),
 	Blit.is_too_narrow_to_shade({ min_x: 10.0, max_x: 11.0 }),
 	Blit.is_too_narrow_to_shade({ min_x: 10.0, max_x: 30.0 }),
 ]
 
 visible_want : List(Bool)
-visible_want = [True, False, False, True, True, False, True, False, False]
+visible_want = [True, False, False]
 
 limits_got : List(F64)
 limits_got = [
-	Blit.min_disc_radius,
-	Blit.min_disc_alpha,
-	Blit.min_gradient_radius,
 	Blit.min_shade_width,
 	Blit.shade_edge_darken,
 	Blit.shade_middle_lift,
 ]
 
 limits_want : List(F64)
-limits_want = [0.5, 0.02, 0.5, 1.0, 0.4, 0.25]
+limits_want = [1.0, 0.4, 0.25]
 
 # Three points, flat: (10, 1), (30, 2) and (20, 3).
 poly : List(F64)
@@ -231,30 +222,9 @@ frame = [
 	},
 	{
 		..blank,
-		tag: 3,
-		color: 333,
-		strength: 0.019,
-		geom: [1.0, 2.0, 0.5],
-	},
-	{
-		..blank,
-		tag: 3,
-		color: 444,
-		strength: 1.0,
-		geom: [1.0, 2.0, 0.49],
-	},
-	{
-		..blank,
 		tag: 4,
 		color: 555,
 		geom: [1.0, 2.0, 0.5],
-		pts: poly,
-	},
-	{
-		..blank,
-		tag: 4,
-		color: 666,
-		geom: [1.0, 2.0, 0.49],
 		pts: poly,
 	},
 	{
@@ -275,19 +245,10 @@ frame_want : List(I64)
 frame_want = [5, 0, 111, 2, 5056019, 3, 222, 4, 555, 5, 777]
 
 empty_got : List(I64)
-empty_got = [
-	Blit.blit_expand([]).len().to_i64_wrap(),
-	Blit.expand_cmd({
-		..blank,
-		tag: 3,
-		color: 1,
-		strength: 0.5,
-		geom: [0.0, 0.0, 0.1],
-	}).len().to_i64_wrap(),
-]
+empty_got = [Blit.blit_expand([]).len().to_i64_wrap()]
 
 empty_want : List(I64)
-empty_want = [0, 0]
+empty_want = [0]
 
 # --- Entry ---
 

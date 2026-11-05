@@ -121,6 +121,10 @@ Paint :: [].{
 		end_offset : F64,
 	}
 
+	## A radial gradient smaller than this is not drawn.
+	min_gradient_radius : F64
+	min_gradient_radius = 0.5
+
 	push_grad_poly : List(Screen.Point),
 	{
 		center_rgba : I64,
@@ -137,7 +141,7 @@ Paint :: [].{
 			gradient_radius,
 		},
 	| (
-		if ps.len().to_i64_wrap() < 3 {
+		if ps.len().to_i64_wrap() < 3 or gradient_radius < min_gradient_radius {
 			[]
 		} else {
 			[
