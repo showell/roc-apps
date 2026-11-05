@@ -54,8 +54,8 @@ generic modules it builds on.
 
 Four programs check the frame without a screen: `RasterFrame.roc` prints one
 frame's pixels as hex with a hash (`pixels_png.mjs` turns that into a PNG),
-`ShapesFrame.roc` paints the frame from its shapes and from its commands and
-counts the pixels that differ, `StepBack.roc` checks that one step back goes back exactly one step at
+`ShapesFrame.roc` paints the frame with its polygons whole and again with them
+cut into triangles, and counts the pixels that differ, `StepBack.roc` checks that one step back goes back exactly one step at
 depths either side of the history's cap, and `FrameBench.roc` is a loop over
 the frame for `perf`. RasterFrame and ShapesFrame write their hex through
 `Hex.roc`.
@@ -68,7 +68,7 @@ builds and judges them, from the roc-apps root:
 It builds each spec app on roc-apps' pinned nightly (`roc-version`,
 installed at `~/tools/roc-<pin>/roc`) and compares its output with
 `gates/expected/<Spec>.expected`, then runs StepBack, ShapesFrame and
-RasterFrame at steps 0, 3000, 5025 and 9000. `part=1`, `part=2` or `part=proof` runs one piece. The
+RasterFrame at the depths its script lists. `part=1`, `part=2` or `part=proof` runs one piece. The
 expected files began as the Codex verdicts (safari-codex's `units/`) and are
 safari's own now: when a spec's output rightly changes, its expected file
 changes with it. The script's header has the rest.

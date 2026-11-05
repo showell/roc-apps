@@ -1,9 +1,8 @@
 ## ShapesPixels paints a frame's shapes into exact pixels with ScanlineFill.
 ## (See SafariFrame for more context.) Its twin is web/shapes_canvas.js, which
-## paints the same shapes onto the browser's canvas in the game. ShapesFrame
-## paints a frame from its draw commands, paints it again from the shapes the
-## browser is given using this module, and the gate requires the two to agree
-## pixel for pixel.
+## paints the same shapes onto the browser's canvas in the game. SafariFrame
+## paints every proof frame through this module, and ShapesFrame paints each
+## one a second time with its polygons cut into triangles.
 ##
 ## It paints only what Safari's draw commands become: polygons, triangle
 ## pieces and unclipped flat discs, each laid over what is there. Any other

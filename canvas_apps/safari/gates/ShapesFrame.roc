@@ -1,10 +1,11 @@
-## ShapesFrame checks that the shapes the browser is given cover exactly what
-## Safari's draw commands cover. Safari's gate runs it (see SafariFrame for
-## more context). It paints a frame twice: once as
-## SafariFrame paints it, and once with the commands replaced by the shapes
-## they become for the browser, painted by ShapesPixels, the Roc twin of
-## web/shapes_canvas.js. Gradients included, the two agree pixel for pixel
-## when the shapes cover exactly what their commands do.
+## ShapesFrame checks that cutting a frame changes nothing on screen. The
+## browser fills a concave polygon itself, but roc-ray fills only convex ones,
+## so the native runner draws what Shapes.cut makes of a frame: each concave
+## polygon as triangles. Safari's gate runs this check (see SafariFrame for
+## more context). It paints a frame twice with ShapesPixels: once as
+## SafariFrame paints it, with its polygons whole, and once with them cut.
+## Gradients included, the two agree pixel for pixel when the triangles cover
+## exactly what their polygons do.
 ##
 ## It prints how many pixels differ, how many triangles cutting the shapes
 ## made and how many commands there were, then the shapes' frame in
