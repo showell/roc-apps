@@ -763,6 +763,201 @@ The truck has no `Animation`, and it's worth saying why. A timeline has a known 
 
 The rider's lean has been passed over twice now, with `LeanSearch` doing something the last few sections kept pointing at. That needs the math.
 
+## The math layer
+
+A lot of Safari Ride is math and physics, and this is the chapter that goes through the floor of the tour and looks at what's holding it up. Most of it is geometry a reader could do on paper. It's here because this kind of code suits a compiled functional language unusually well, for a short list of reasons that each get a section:
+
+- A formula is an expression, and a function with no effects is the same thing with a name.
+- Units can be types, for no runtime cost. [check: confirm a `::` wrapper around `F64` costs nothing at runtime, in the dev and wasm builds.]
+- A coordinate system can be a record, so the fields say which one a point is in.
+- Physics that's a pure function can be run for pretend, which is the best thing in this chapter.
+- It's compiled, so running it for pretend hundreds of times per frame is affordable.
+
+### The workhorses
+
+Safari Ride has about eighty modules. [check: the opening says "about seventy"; there are 79 `.roc` files that aren't specs, counting `web.roc`, `main.roc` and `game.roc`.] The import graph is lopsided in a good way. Counting who imports what, leaving out the specs and the gates, a handful stand out:
+
+| Module | Imported by | Lines | What it is |
+|---|---|---|---|
+| `Angle` | 20 | 176 | Three opaque types for rotation |
+| `Scenery` | 19 | 105 | The record types of what stands by the road, and the lane's width |
+| `Fraction` | 17 | 76 | A ratio from 0 to 1 |
+| `Geom` | 17 | 279 | Road points, rider points, and how to turn one into the other |
+| `Frame` | 16 | 185 | Where the road lies from where the rider is |
+| `World` | 16 | 403 | The route |
+
+After those six the count drops to 12, for `Screen`, 11 for `Speed` and 10 for `DepthSort`. Most modules are imported by one, two or three others. `lib`'s `Shapes`, `Trig` and `DeviceMath` are imported about as widely, and they're shared with the other canvas apps. [check: line counts include the expects that moved in; `Geom`'s are about 90 of its lines. Recount at the end.]
+
+These are the workhorses, and there being so few says something about the program. Everything else is a small module that takes one of these and adds a single idea. Two of the six are nothing but numbers with rules. Composable is the right word for this, and it isn't a slogan: a cat, a mast and a truck are all found on the road through `Frame`, and all reach the screen through `Camera`.
+
+```dot
+digraph math {
+  node [shape=box, fontname="Helvetica"];
+  LeanSearch -> Arc;
+  LeanSearch -> Bike;
+  Arc -> Bike;
+  Arc -> Angle;
+  Bike -> Angle;
+  Frame -> Geom;
+  Camera -> Geom;
+  Camera -> Screen;
+  Lens -> Angle;
+  Lens -> Screen;
+  Geom -> Angle;
+}
+```
+
+Two families share `Angle` and don't otherwise meet: `Geom`, `Frame`, `Camera` and `Lens` say how the world looks from the bike, and `Bike`, `Arc` and `LeanSearch` say where it's going.
+
+### Numbers with units
+
+Twelve small opaque types run through Safari Ride, and the tour has met most of them one at a time. Set side by side, they're a system:
+
+| Type | Under it | What it measures |
+|---|---|---|
+| `Clock` | `U32` | A place in the ride |
+| `Steps` | `U32` | A length of time |
+| `Beats` | `F64` | A place in an animation, or a length of one |
+| `Angle.Bearing` | `F64` | A place on the compass |
+| `Angle.Turn` | `F64` | The angle between two bearings |
+| `Angle.Lean` | `F64` | Roll, which only reaches direction through a rate |
+| `Speed` | `F64` | Metres a step |
+| `Acceleration` | `F64` | Metres a step, each step |
+| `Fraction` | `F64` | A ratio from 0 to 1 |
+| `Attention` | `F64` | How strongly something holds the eye, from 0 up |
+| `World.SegmentIndex` | `U32` | A place in the route |
+| `Frame.ChainPosition` | `U32` | A place in the view ahead |
+
+This is the opaque type doing the job of a unit. The block after each type is a small statement of dimensional analysis. `Speed.distance_in` takes `Beats` and gives metres. `Lean.steer` takes a rate and gives a `Turn`. There's no `Bearing.plus(Bearing)`, because that sum has no meaning, and the omission is a feature with a compiler behind it.
+
+The bug these prevent is the most common one in this kind of code: a correct formula with the wrong number in it. Most physics bugs type-check in a language where everything's a float.
+
+The price is a long list of short methods, and a certain amount of `.to_radians()`. The headers of the float ones all say the same thing: "Each operation does the plain float arithmetic its name says." That sentence is there for a reason that belongs to the proving chapter.
+
+Distance isn't on the list yet. Plenty of `F64`s here are metres, and nothing stops a metre being passed as a pixel. [check: the units work on the `distance` branch; update this paragraph and the table when it lands.]
+
+### One record per space
+
+A point in Safari Ride is in one of four spaces, and the record's fields say which. They aren't opaque types. They don't need to be, since a record's type is its fields.
+
+{{code Geom.RoadPoint}}
+
+{{code Geom.RiderPoint}}
+
+{{code Geom.SpacePoint}}
+
+{{code Screen.Point}}
+
+Passing a `RoadPoint` where a `RiderPoint` is wanted is a compile-time error, and the message names the fields. [check: a `fails/` program would prove this, and show the message.] Structural records give *one record per space* for nothing: `along` and `across` are on the road, `right` and `forward` are from the rider, and `x` and `y` are pixels. Reading any function, the field names say where it is.
+
+Going from the road to the rider is a translation and a rotation, written the way it would be on paper:
+
+{{code Geom.to_rider_point}}
+
+From there to the screen is a pinhole camera, which is similar triangles. Dividing by `forward` is all of perspective. Nearly everything on screen passes through this function, and it's two lines:
+
+{{code Camera.project}}
+
+`RocBird.draw` calls it with a record built on the spot for the bird's feet:
+
+{{code RocBird.draw from "feet = Camera.project(" to "cam_focal,"}}
+
+The focal length comes from a lens. `focal` is a value computed from other values, with no function in sight, and `field_of_view` is a `Turn`, so taking half of it needs no comment about radians. [check: whether a value like this inside a `.{ }` block is evaluated at compile time, as top-level values are.]
+
+{{code Lens.focal}}
+
+The view widens as the rider leans. One `Fraction` goes in, and a focal length comes out. `RideFocal.ride_focal` from the cat chapter calls this through `cam_focal`, taking the wider of what the lean and the rider's attention ask for:
+
+{{code Lens.focal_for_lean}}
+
+{{code Lens.cam_focal}}
+
+### Round the bends
+
+The road has no map. A point on it is measured within one segment, `along` and `across`, and nothing in the game holds a world coordinate for it. Each segment knows only its length and the turn at its end.
+
+So to see something three segments ahead, a point has to be carried back round each bend between it and the rider, one at a time. That's one rotation per bend, and `fold_rev` is the shape of it. The accumulator is a `RoadPoint`, it starts on the far segment, and each step moves it onto the segment before. `before_in` gives the segments between, and the closure is the only thing the loop does. The last line does the one translation and rotation from above:
+
+{{code Frame.rider_point_ahead from "on_rider_segment =" to "Geom.to_rider_point(on_rider_segment, road.pose)"}}
+
+The rotation itself is plain, with two cases, because a right-hand bend pivots on the far side of the lane:
+
+{{code Geom.in_segment_before}}
+
+This is what lets `CatSighting`, `BirdSighting`, `TowerSighting`, `TreeSighting` and the rest not care where a segment is. They name a position in the chain and a point on that segment, and they get back a `RiderPoint`. That's a workhorse doing its job, and it's why `Frame` has sixteen importers.
+
+The ground also curves away. That's one line, the small-angle formula for the drop of a sphere, with a record destructured in the parameter list and `right` and `forward` squared where they stand. [check: `Geom.ground_radius` is 100,000 and `Tower.earth_radius` is 20,000; say why there are two, or fix it.]
+
+{{code Geom.ground_drop}}
+
+### Cutting a polygon
+
+Anything that crosses the camera's plane has to be cut, or dividing by `forward` flips it across the screen. The textbook algorithm walks a polygon's edges, keeping corners in view and adding a new corner wherever an edge crosses the plane. In Roc, that's a pairing and a `fold`. `map2` zips each corner with the next one, which is the list rotated by one, and `fold` builds the new polygon. `List.with_capacity` is the one line about performance, and `clip_edge_onto` is passed by name:
+
+{{code Geom.clip_near}}
+
+A fold's step is a plain function of the list so far and one edge:
+
+{{code Geom.clip_edge_onto}}
+
+`Ground`, `GuardRail` and `TruckShape` call it the same way. `corners.map(...)` makes the `SpacePoint`s, and what comes back is a shorter or longer list of the same type:
+
+{{code Ground.draw from "in_front = Geom.clip_near(" to "Paint.push_poly(color, Camera.project_all(in_front, cam_focal))"}}
+
+### Rehearsal
+
+The rider has no steering wheel. Nothing tells it where to go. Each step, it has to choose a lean, and it does that by working out what would happen.
+
+*[The rehearsal widget goes here: pause, and draw the coasting arcs the search tried on this step.]*
+
+`Arc` answers one question. If the rider stopped changing anything now, and coasted, what would happen? It takes the rider, and it runs the physics. The call is the same `Bike.simulate_rider_step` that moves the real rider, with no lean change and steady speed. That's the whole trick, and it's why `Bike` has to be a function and not a method that writes to a bike.
+
+{{code Arc.sim_from}}
+
+`Arc.ArcProgress(others)` carries a `Bike.Motion(others)`: a narrow view of a wide record again, so `Arc` can take the whole rider without knowing what's in it. `sim_from` and its partner `sim_step` call each other until the arc reaches the shoulder, makes 25 metres of progress, or runs for 2,000 steps. The answer is a record saying which of those happened:
+
+{{code Arc.ArcOutcome}}
+
+`project_arc` sets it going, with the road's edges as bounds:
+
+{{code Arc.project_arc}}
+
+`LeanSearch` asks `Arc` that question at a dozen different leans. The rider wants the arc to end somewhere near the middle of the lane, and more lean to the right moves the end of an arc to the right, so this is a bisection. It's a recursive function with its whole state in one record argument, `low` and `high` closing in on each other. `Bike.with_tilt(state, mid)` is a rider who doesn't exist, handed to `Arc`, who gets a future that didn't happen:
+
+{{code LeanSearch.search_lean_from}}
+
+The decision about which way to go is a `match` on what the rehearsal found. Running off the left means more right, running off the right means less, and staying on the road compares the end of the arc with the target:
+
+{{code LeanSearch.want_more_right}}
+
+Its caller gives the search its bounds, at most a degree either side of the current lean. That's what stops the bike flicking from one lean to another:
+
+{{code LeanSearch.best_tilt_correction}}
+
+And `Rider.decide` calls that, on its first line. The walk up the stack ends there.
+
+Call this *rehearsal*: run the real rules on a pretend copy, read the result, and throw it away. The numbers are worth stating. Twelve arcs for the lean and one more in `Throttle`, which uses `Arc` to ask whether the road is about to run out. Over the whole ride, an arc averages about 44 simulated steps. So each real step of the ride runs about 570 steps of bike physics that never happen, and the 7,040 steps of the ride come to about four million. With no drawing, on the dev backend, the whole ride takes about three seconds: under half a millisecond a step, against a budget of 33. [check: the 44 is `forward / speed` from one arc per step, measured at 9aa3814, not a counter inside `sim_from`; the three seconds is one native run, and the page runs wasm.]
+
+In a language with mutable objects, this function has a problem to solve before it starts. It needs to copy the rider, or save it and restore it, and it needs to be sure the copy really is one, all the way down. It needs to know that the physics doesn't quietly update something global, like a scoreboard or a random number generator. Here, those worries have nowhere to live. `Bike.simulate_rider_step` has a `->`, so it can't reach anything but its arguments. The old rider is intact because every rider is. Being wrong about a future costs nothing, and `LeanSearch` is 105 lines.
+
+The last gate of the throttle is the same idea with one rehearsal in it. It runs the arc, and brakes only if the arc leaves the road:
+
+{{code Throttle.shoulder_brake}}
+
+A note on where this could improve: `ArcOutcome` has a `frames` field holding `Arc.no_frames`, a billion, for an arc that doesn't leave the road. That's a sentinel, in a program that's been pointing at tag unions as the alternative to sentinels for several chapters. [check: a tag on `shoulder` carrying the `Steps` would remove it; drop this paragraph if that lands.]
+
+### Arithmetic all the way down
+
+The floor of this layer is lower than it needs to be. `lib/DeviceMath.roc` computes `sin`, `cos`, `sqrt` and `atan` in Roc, with no call to a math library. `Num_` does the same for `exp`, which is a Taylor series after a range reduction. It's nothing but names and multiplications, and it's the kind of code that looks exactly as it does in a textbook:
+
+{{code Num_.exp_poly}}
+
+{{code Num_.exp_real}}
+
+`Throttle.shoulder_brake_at` is the caller, so a rehearsed arc's length decays into a braking force through this. [check: why these are hand-written rather than builtins. They came with the Codex port, and the reason is probably that the same bits come out on every target. Ask Steve before saying so.]
+
+Top to bottom, then: a rider chooses a lean by simulating physics, and the physics is plain arithmetic on opaque numbers, from the frame down to the polynomial. There's no effect anywhere in that sentence, and that's the reason for the next chapter.
+
 ## Zooming back out
 
 *[This chapter ties the tour together once the stepped things, the proof and the platform are written. It returns to the flipbook and the first diagram: the clock ticks, and everything composes from three stored fields.]*
