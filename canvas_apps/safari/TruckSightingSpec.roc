@@ -106,7 +106,7 @@ across_got : List(F64)
 across_got = [100.0, 499.0, 600.0, 900.0].map(|lead| ahead_of(lead).across.to_metres())
 
 across_want : List(F64)
-across_want = [2.0, 2.0, 2.0, 2.0]
+across_want = [0.0, 0.0, 0.0, 0.0]
 
 ## The lights a truck in view shows, when it has `lights` on.
 lights_shown : Truck.Lights -> Truck.Lights

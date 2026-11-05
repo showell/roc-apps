@@ -220,12 +220,12 @@ start_view = {
 	cam_focal: 500.0,
 }
 
-# A mast `along` metres down the first segment, 22 m across.
+# A mast `along` metres down the first segment, 20 m right of the lane's middle.
 tower_along : F64 -> TowerSighting.TowerItem
 tower_along = |along| {
 	place: InChain(Frame.ChainPosition.first),
 	along: Along.metres(along),
-	across: Across.metres(22.0),
+	across: Across.metres(20.0),
 	yaw: Angle.straight_ahead,
 	forward: along,
 	beacon_brightness: Fraction.zero,

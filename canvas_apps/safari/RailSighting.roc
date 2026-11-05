@@ -88,7 +88,7 @@ RailSighting :: [].{
 	}
 
 	## The rail along the last `rail_runout` metres of a segment `length`
-	## long, which lies at `place`, `across` from its left edge: a point a
+	## long, which lies at `place`, at `across`: a point a
 	## metre, ending at the segment's end.
 	run_up : Frame.RoadView,
 	{
@@ -119,7 +119,7 @@ RailSighting :: [].{
 		)
 
 	## The rail along the first `rail_runout` metres of a segment at `place`,
-	## `across` from its left edge: a point a metre, the first a metre in.
+	## at `across`: a point a metre, the first a metre in.
 	run_out : Frame.RoadView,
 	{
 		place : Frame.SegmentPlace,

@@ -80,8 +80,8 @@ right_turn = Angle.Turn.radians(0.8726646259971648)
 left_turn : Angle.Turn
 left_turn = Angle.Turn.radians(0.0 - 1.2217304763960306)
 
-expect Joint.outer_edge(right_turn).to_metres() == 0.0
-expect Joint.outer_edge(left_turn).to_metres() == 4.0
+expect Joint.outer_edge(right_turn) == Scenery.left_edge
+expect Joint.outer_edge(left_turn) == Scenery.right_edge
 
 ## The apex of a bend from a segment 300 m long, just behind the rider's.
 apex_after_turn : Angle.Turn -> Geom.RiderPoint

@@ -131,7 +131,7 @@ Frame :: [].{
 		},
 	| {
 		on_rider_segment = position.before_in(road.chain).fold_rev(
-			{ along, across },
+			edge_point({ along, across }),
 			|index, point| Geom.in_segment_before(point, bend_out_of(index.segment_in(road.world))),
 		)
 		Geom.to_rider_point(on_rider_segment, road.pose)
@@ -162,10 +162,16 @@ Frame :: [].{
 						across,
 					},
 				)
-			JustBehind(bend) =>
-				Geom.to_rider_point(Geom.in_segment_after({ along, across }, bend), road.pose)
+			JustBehind(bend) => {
+				on_segment_behind = edge_point({ along, across })
+				Geom.to_rider_point(Geom.in_segment_after(on_segment_behind, bend), road.pose)
+			}
 		}
 }
+
+## A road point, measured from the lane's left edge.
+edge_point : Geom.RoadPoint -> Geom.EdgePoint
+edge_point = |{ along, across }| { along, from_left: across.distance_from(Scenery.left_edge) }
 
 ## `chain` with the segment at `index` and those after it added, up to the
 ## limit. An accumulator is linear, where appending a recursive call's answer

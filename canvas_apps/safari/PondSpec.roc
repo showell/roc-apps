@@ -40,19 +40,19 @@ spot_got = {
 
 spot_want : List(F64)
 spot_want = [
-	(-2.0),
+	(-4.0),
 	3.0,
-	(-15.0),
+	(-17.0),
 	32.0,
-	(-5.0),
+	(-7.0),
 	29.0,
 	0.9,
 ]
 
 inside : Pond.Duck -> Bool
 inside = |duck|
-	duck.at.across <= Across.metres(-1.0)
-		and duck.at.across >= Across.metres(-31.0)
+	duck.at.across <= Across.metres(-3.0)
+		and duck.at.across >= Across.metres(-33.0)
 		and duck.at.along >= Along.metres(3.0)
 		and duck.at.along <= Along.metres(32.0)
 

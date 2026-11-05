@@ -115,7 +115,7 @@ run_up = RailSighting.run_up(
 	{
 		place: InChain(Frame.ChainPosition.first),
 		length: Distance.metres(500.0),
-		across: Across.metres(4.0),
+		across: Across.metres(2.0),
 	},
 )
 
@@ -124,7 +124,7 @@ runout_got = [
 	GuardRail.rail_runout.to_i64(),
 	RailSighting.run_out(
 		road,
-		{ place: InChain(Frame.ChainPosition.first), across: Across.metres(4.0) },
+		{ place: InChain(Frame.ChainPosition.first), across: Across.metres(2.0) },
 	).len().to_i64_wrap(),
 	run_up.len().to_i64_wrap(),
 ]

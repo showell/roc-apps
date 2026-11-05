@@ -27,18 +27,11 @@ Scenery :: [].{
 	lane_half_width : Distance
 	lane_half_width = lane_width.divided_by(2.0)
 
-	## The lane's left edge, where `Geom.RoadPoint` measures from.
 	left_edge : Across
-	left_edge = Across.metres(0.0)
+	left_edge = Across.left_of_middle(lane_half_width)
 
-	## The lane's right edge, measured from its left edge.
 	right_edge : Across
-	right_edge = left_edge.plus(lane_width)
-
-	## A place measured from the middle of the lane, as `Geom.RoadPoint`
-	## measures it.
-	from_left_edge : Across -> Across
-	from_left_edge = |across| across.plus(lane_half_width)
+	right_edge = Across.right_of_middle(lane_half_width)
 
 	herd_road_offset : Distance
 	herd_road_offset = Distance.metres(10.0)

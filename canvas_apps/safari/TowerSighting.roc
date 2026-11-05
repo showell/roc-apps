@@ -12,7 +12,6 @@ import Distance
 import Fraction
 import Frame
 import Geom
-import Scenery
 import Steps
 import lib.Trig
 import World
@@ -38,11 +37,11 @@ TowerSighting :: [].{
 	tower_beyond : Distance
 	tower_beyond = Distance.metres(160.0)
 
-	## How far right of the road's edge a mast past a segment's end stands.
+	## How far right of the lane's middle a mast past a segment's end stands.
 	tower_right : Distance
 	tower_right = Distance.metres(20.0)
 
-	## How far left of the road's edge a mast halfway along a segment stands.
+	## How far left of the lane's middle a mast halfway along a segment stands.
 	mid_tower_left : Distance
 	mid_tower_left = Distance.metres(100.0)
 
@@ -103,7 +102,7 @@ TowerSighting :: [].{
 			{
 				place: InChain(position),
 				along: Along.at(segment.length.plus(tower_beyond)),
-				across: Scenery.from_left_edge(Across.right_of_middle(tower_right)),
+				across: Across.right_of_middle(tower_right),
 				yaw: tower_yaw,
 				beacon_key: index.to_u32(),
 			},
@@ -124,7 +123,7 @@ TowerSighting :: [].{
 					{
 						place: InChain(position),
 						along: Along.at(segment.length.divided_by(2.0)),
-						across: Scenery.from_left_edge(Across.left_of_middle(mid_tower_left)),
+						across: Across.left_of_middle(mid_tower_left),
 						yaw: Angle.straight_ahead,
 						beacon_key: index.to_u32() + mid_tower_beacon_step,
 					},
@@ -143,7 +142,7 @@ TowerSighting :: [].{
 			{
 				place: Frame.place_behind(behind),
 				along: Along.at(behind.length.plus(tower_beyond)),
-				across: Scenery.from_left_edge(Across.right_of_middle(tower_right)),
+				across: Across.right_of_middle(tower_right),
 				yaw: tower_yaw,
 				beacon_key: index.to_u32(),
 			},

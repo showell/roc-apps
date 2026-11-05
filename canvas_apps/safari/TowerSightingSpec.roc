@@ -109,7 +109,7 @@ where_got = [
 ]
 
 where_want : List(F64)
-where_want = [660.0, 22.0, 480.0, 22.0]
+where_want = [660.0, 20.0, 480.0, 20.0]
 
 ## The 1200 m segment alone, seen from the origin.
 long_view : TowerSighting.View
@@ -151,9 +151,9 @@ long_where_got = [
 long_where_want : List(F64)
 long_where_want = [
 	1360.0,
-	22.0,
+	20.0,
 	600.0,
-	(-98.0),
+	(-100.0),
 	0.5235987750000001,
 	0.0,
 ]

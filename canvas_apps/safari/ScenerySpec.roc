@@ -17,9 +17,9 @@ road_got = [
 	Scenery.herd_road_offset.to_metres(),
 	Scenery.left_edge.to_metres(),
 	Scenery.right_edge.to_metres(),
-	Scenery.from_left_edge(Across.middle).to_metres(),
-	Scenery.from_left_edge(Across.metres(-2.0)).to_metres(),
-	Scenery.from_left_edge(Across.metres(2.0)).to_metres(),
+	Across.middle.distance_from(Scenery.left_edge).to_metres(),
+	Across.metres(-2.0).distance_from(Scenery.left_edge).to_metres(),
+	Across.metres(2.0).distance_from(Scenery.left_edge).to_metres(),
 ]
 
 road_want : List(F64)
@@ -27,8 +27,8 @@ road_want = [
 	4.0,
 	2.0,
 	10.0,
-	0.0,
-	4.0,
+	-2.0,
+	2.0,
 	2.0,
 	0.0,
 	4.0,

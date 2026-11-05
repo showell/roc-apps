@@ -7,7 +7,6 @@ import Distance
 import Frame
 import Geom
 import SceneLimits
-import Scenery
 import Speed
 
 CatSighting :: [].{
@@ -89,7 +88,7 @@ cat_in_view = |
 		{
 			position: position,
 			along: crossing.along.plus(instant.spot.along.from_start()),
-			across: Scenery.from_left_edge(instant.spot.across),
+			across: instant.spot.across,
 		},
 	)
 	height_px = (crossing.height.to_metres() / seen.forward) * view.cam_focal

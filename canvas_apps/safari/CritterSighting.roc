@@ -142,7 +142,7 @@ sight_critter = |road, { place, critter }|
 			{
 				place,
 				along: critter.along,
-				across: Scenery.from_left_edge(critter.across),
+				across: critter.across,
 			},
 		),
 		height: critter.height,

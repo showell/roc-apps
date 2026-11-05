@@ -156,7 +156,7 @@ at_d0 = Frame.rider_point_ahead(
 	{
 		position: Frame.ChainPosition.first,
 		along: Along.metres(50.0),
-		across: Across.metres(3.0),
+		across: Across.metres(1.0),
 	},
 )
 
@@ -170,7 +170,7 @@ at_d1 = |w| Frame.rider_point_ahead(
 	{
 		position: Frame.ChainPosition.number(1),
 		along: Along.metres(50.0),
-		across: Across.metres(3.0),
+		across: Across.metres(1.0),
 	},
 )
 
@@ -207,7 +207,7 @@ behind_got = (
 			{
 				place: m_prev_left,
 				along: Along.metres(50.0),
-				across: Across.metres(3.0),
+				across: Across.metres(1.0),
 			},
 		)
 		r = Frame.rider_point_at(
@@ -219,7 +219,7 @@ behind_got = (
 			{
 				place: m_prev_right,
 				along: Along.metres(50.0),
-				across: Across.metres(3.0),
+				across: Across.metres(1.0),
 			},
 		)
 		[
