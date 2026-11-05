@@ -12,6 +12,10 @@ BirdFlight :: [].{
 	## The tree a bird leaves, and the one it flies to.
 	Flight : { from : Scenery.Tree, to : Scenery.Tree }
 
+	## What a segment's bird does: flies from one tree to another, or sits,
+	## when there's no tree to fly to.
+	Route : [Flies(BirdFlight.Flight), Sits(Scenery.Tree)]
+
 	## Where the wings are in a beat.
 	WingBeat : [WingsUp, WingsDown]
 
@@ -72,22 +76,46 @@ BirdFlight :: [].{
 			Err(ListWasEmpty) => NoTree
 		}
 
-	## The flight of a bird on the tree at `from`: to the first tree on the
-	## other side of the road far enough along, or none, and it stays put.
-	flight_from : List(Scenery.Tree), Scenery.Tree -> [Flies(BirdFlight.Flight), Stays]
-	flight_from = |trees, from| {
+	## The route of a bird on the tree at `from`: to the first tree on the
+	## other side of the road far enough along, or none, and it sits.
+	route_from : List(Scenery.Tree), Scenery.Tree -> BirdFlight.Route
+	route_from = |trees, from| {
 		is_far_enough = |tree| tree.along >= from.along + shortest_hop
 		far_side = trees.keep_if(|tree| tree.across > 0.0 and is_far_enough(tree))
 		match far_side.first() {
 			Ok(to) => Flies({ from, to })
-			Err(ListWasEmpty) => Stays
+			Err(ListWasEmpty) => Sits(from)
 		}
 	}
+
+	## The bird of a segment with `trees`, if one has a tree to start on.
+	crossing_among : List(Scenery.Tree) -> [BirdFlies(BirdFlight.Route), QuietRoad]
+	crossing_among = |trees|
+		match fifth_left_tree(trees) {
+			Found(tree) => BirdFlies(route_from(trees, tree))
+			NoTree => QuietRoad
+		}
+
+	## Where the tree the bird starts from is along its segment.
+	start_along : BirdFlight.Route -> F64
+	start_along = |route|
+		match route {
+			Flies(flight) => flight.from.along
+			Sits(tree) => tree.along
+		}
 
 	## How far through its flight the bird is, from 0 to 1, with the rider
 	## `gap` metres from the tree it left.
 	flight_progress : F64 -> F64
 	flight_progress = |gap| Easing.clamp01((takeoff_gap - gap) / (takeoff_gap - landing_gap))
+
+	## The bird on `route` with the rider `gap` metres from the tree it starts on.
+	state_on : BirdFlight.Route, F64 -> BirdFlight.BirdState
+	state_on = |route, gap|
+		match route {
+			Flies(flight) => state(flight, gap)
+			Sits(tree) => sitting_on(tree)
+		}
 
 	## The bird with the rider `gap` metres from the tree it left.
 	state : BirdFlight.Flight, F64 -> BirdFlight.BirdState

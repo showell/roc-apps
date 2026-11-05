@@ -49,9 +49,9 @@ CatPlan :: [].{
 	## and it is in view.
 	segment_cat : CatPlan.View, Frame.ChainPosition -> List(CatPlan.CatItem)
 	segment_cat = |view, position|
-		match position.index_in(view.chain).segment_in(view.world).cat {
-			Waits(crossing) => cat_in_view(view, { position, crossing })
-			NoCat => []
+		match position.index_in(view.chain).segment_in(view.world).crossing {
+			CatCrosses(crossing) => cat_in_view(view, { position, crossing })
+			BirdFlies(_) | QuietRoad => []
 		}
 
 	## How far ahead of the rider the segment at `position` in the chain starts.

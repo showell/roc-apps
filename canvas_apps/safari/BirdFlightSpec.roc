@@ -71,9 +71,9 @@ fifth_alongs_want = [50.0, 50.0]
 
 chosen_along : List(Scenery.Tree) -> List(F64)
 chosen_along = |choices|
-	match BirdFlight.flight_from(choices, left_tree) {
+	match BirdFlight.route_from(choices, left_tree) {
 		Flies(found) => [found.to.along, found.to.across]
-		Stays => []
+		Sits(_) => []
 	}
 
 target_got : List(F64)

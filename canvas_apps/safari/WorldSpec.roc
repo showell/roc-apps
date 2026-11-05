@@ -50,11 +50,26 @@ flags_got = List.join([
 	[0, 18].map(|index| is_route_end(seg(index))),
 	[0, 1, 6, 18].map(|index| turns_right(seg(index))),
 	[0, 6, 9].map(|index| has_mid_tower(seg(index))),
-	[0, 1, 12, 18].map(|index| has_cat(seg(index))),
+	[0, 3, 9, 12, 18].map(|index| has_cat(seg(index))),
 ])
 
 flags_want : List(Bool)
-flags_want = [False, True, True, False, True, True, False, True, False, False, True, True, True]
+flags_want = [
+	False,
+	True,
+	True,
+	False,
+	True,
+	True,
+	False,
+	True,
+	False,
+	False,
+	True,
+	True,
+	False,
+	True,
+]
 
 angle_got : List(F64)
 angle_got = [
@@ -121,9 +136,9 @@ trees_want = [28, 16, 74, 14]
 
 cat_got : List(F64)
 cat_got = [
-	crossing_at(1).mid_across,
+	crossing_at(3).mid_across,
 	crossing_at(18).mid_across,
-	crossing_at(1).height,
+	crossing_at(3).height,
 	crossing_at(18).height,
 ]
 
@@ -161,9 +176,9 @@ has_mid_tower = |segment|
 ## Whether a segment has a cat waiting by the road.
 has_cat : World.Segment -> Bool
 has_cat = |segment|
-	match segment.cat {
-		Waits(_) => True
-		NoCat => False
+	match segment.crossing {
+		CatCrosses(_) => True
+		BirdFlies(_) | QuietRoad => False
 	}
 
 ## Whether a segment's pigs draw the rider's eye.
@@ -177,9 +192,9 @@ is_distracting = |segment|
 ## The cat crossing at a segment that has one.
 crossing_at : U32 -> Cat.Crossing
 crossing_at = |index|
-	match seg(index).cat {
-		Waits(crossing) => crossing
-		NoCat => crash "WorldSpec.crossing_at: segments 1 and 18 have a cat"
+	match seg(index).crossing {
+		CatCrosses(crossing) => crossing
+		BirdFlies(_) | QuietRoad => crash "WorldSpec.crossing_at: segments 3, 9 and 18 have a cat"
 	}
 
 # --- Entry ---

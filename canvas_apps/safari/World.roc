@@ -3,6 +3,7 @@
 ## by a tree), how it turns into the next, where the rider commits to that
 ## turn, and the creature waiting at its end.
 import Angle
+import BirdFlight
 import Cat
 import Herd
 import Pigs
@@ -59,7 +60,7 @@ World :: [].{
 		length : F64,
 		scheme : Scenery.Scheme,
 		turn : Angle.Turn,
-		cat : [WithCat, NoCat],
+		crossing : [CatCrosses, BirdCrosses, QuietRoad],
 		pigs : Pigs.PigPresence,
 		bull : [WithBull, NoBull],
 		ending : [Continues, Terminates],
@@ -79,7 +80,15 @@ World :: [].{
 		exit_turn : Angle.Turn,
 		commit_along : F64,
 		mid_tower : [MidTower, NoMidTower],
-		cat : [Waits(Cat.Crossing), NoCat],
+
+		## What crosses the road here, at most one thing, so that the rider has
+		## one experience at a time. Most of the road is quiet, so that a crossing
+		## stands out.
+		crossing : [
+			CatCrosses(Cat.Crossing),
+			BirdFlies(BirdFlight.Route),
+			QuietRoad,
+		],
 		ending : [Continues({ next : World.SegmentIndex }), Terminates],
 		exit_creature : Scenery.Creature,
 	}
@@ -94,7 +103,7 @@ World :: [].{
 			length: 500.0,
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(50.0),
-			cat: NoCat,
+			crossing: BirdCrosses,
 			pigs: NoPigs,
 			bull: NoBull,
 			ending: Continues,
@@ -104,7 +113,7 @@ World :: [].{
 			length: 320.0,
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(-70.0),
-			cat: WithCat,
+			crossing: QuietRoad,
 			pigs: NoPigs,
 			bull: NoBull,
 			ending: Continues,
@@ -114,7 +123,7 @@ World :: [].{
 			length: 400.0,
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(20.0),
-			cat: NoCat,
+			crossing: QuietRoad,
 			pigs: WithPigs,
 			bull: NoBull,
 			ending: Continues,
@@ -124,7 +133,7 @@ World :: [].{
 			length: 300.0,
 			scheme: YellowGreen,
 			turn: Angle.Turn.degrees(20.0),
-			cat: NoCat,
+			crossing: CatCrosses,
 			pigs: NoPigs,
 			bull: NoBull,
 			ending: Continues,
@@ -134,7 +143,7 @@ World :: [].{
 			length: 300.0,
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(-70.0),
-			cat: NoCat,
+			crossing: QuietRoad,
 			pigs: NoPigs,
 			bull: WithBull,
 			ending: Continues,
@@ -144,7 +153,7 @@ World :: [].{
 			length: 300.0,
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(-70.0),
-			cat: NoCat,
+			crossing: BirdCrosses,
 			pigs: NoPigs,
 			bull: WithBull,
 			ending: Continues,
@@ -154,7 +163,7 @@ World :: [].{
 			length: 1200.0,
 			scheme: RedGreen,
 			turn: Angle.Turn.degrees(80.0),
-			cat: NoCat,
+			crossing: QuietRoad,
 			pigs: NoPigs,
 			bull: WithBull,
 			ending: Continues,
@@ -164,7 +173,7 @@ World :: [].{
 			length: 300.0,
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(15.0),
-			cat: NoCat,
+			crossing: QuietRoad,
 			pigs: NoPigs,
 			bull: WithBull,
 			ending: Continues,
@@ -174,7 +183,7 @@ World :: [].{
 			length: 300.0,
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(-70.0),
-			cat: NoCat,
+			crossing: QuietRoad,
 			pigs: NoPigs,
 			bull: WithBull,
 			ending: Continues,
@@ -184,7 +193,7 @@ World :: [].{
 			length: 800.0,
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(15.0),
-			cat: NoCat,
+			crossing: CatCrosses,
 			pigs: NoPigs,
 			bull: WithBull,
 			ending: Continues,
@@ -194,7 +203,7 @@ World :: [].{
 			length: 300.0,
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(15.0),
-			cat: NoCat,
+			crossing: QuietRoad,
 			pigs: WithPigs,
 			bull: WithBull,
 			ending: Continues,
@@ -204,7 +213,7 @@ World :: [].{
 			length: 300.0,
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(15.0),
-			cat: NoCat,
+			crossing: QuietRoad,
 			pigs: WithPigs,
 			bull: WithBull,
 			ending: Continues,
@@ -214,7 +223,7 @@ World :: [].{
 			length: 300.0,
 			scheme: RedGreen,
 			turn: Angle.Turn.degrees(15.0),
-			cat: WithCat,
+			crossing: QuietRoad,
 			pigs: WithPigs,
 			bull: WithBull,
 			ending: Continues,
@@ -224,7 +233,7 @@ World :: [].{
 			length: 400.0,
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(-50.0),
-			cat: NoCat,
+			crossing: QuietRoad,
 			pigs: WithPigs,
 			bull: WithBull,
 			ending: Continues,
@@ -234,7 +243,7 @@ World :: [].{
 			length: 300.0,
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(50.0),
-			cat: NoCat,
+			crossing: BirdCrosses,
 			pigs: WithPigs,
 			bull: WithBull,
 			ending: Continues,
@@ -244,7 +253,7 @@ World :: [].{
 			length: 300.0,
 			scheme: RedGreen,
 			turn: Angle.Turn.degrees(-50.0),
-			cat: NoCat,
+			crossing: QuietRoad,
 			pigs: NoPigs,
 			bull: WithBull,
 			ending: Continues,
@@ -254,7 +263,7 @@ World :: [].{
 			length: 300.0,
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(50.0),
-			cat: NoCat,
+			crossing: QuietRoad,
 			pigs: WithPigs,
 			bull: WithBull,
 			ending: Continues,
@@ -264,7 +273,7 @@ World :: [].{
 			length: 300.0,
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(-50.0),
-			cat: NoCat,
+			crossing: QuietRoad,
 			pigs: WithPigs,
 			bull: WithBull,
 			ending: Continues,
@@ -274,7 +283,7 @@ World :: [].{
 			length: 300.0,
 			scheme: RedGreen,
 			turn: Angle.Turn.degrees(0.0),
-			cat: WithCat,
+			crossing: CatCrosses,
 			pigs: WithPigs,
 			bull: WithBull,
 			ending: Terminates,
@@ -344,15 +353,16 @@ built_segment = |plan, index| {
 			Terminates => plan.length
 		},
 		mid_tower: if (plan.length > World.mid_tower_min_length) MidTower else NoMidTower,
-		cat: match plan.cat {
-			WithCat => Waits(
+		crossing: match plan.crossing {
+			CatCrosses => CatCrosses(
 				Cat.crossing({
 					lane_half_width: (Scenery.lane_width / 2.0),
 					tree_offset: Trees.tree_road_offset,
 					tree_along: nearest_tree_ahead(trees, Cat.cat_along),
 				}),
 			)
-			NoCat => NoCat
+			BirdCrosses => BirdFlight.crossing_among(trees)
+			QuietRoad => QuietRoad
 		},
 		ending: match plan.ending {
 			Continues => Continues({ next: index.next() })

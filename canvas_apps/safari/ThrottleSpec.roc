@@ -189,7 +189,7 @@ corner_min_want : List(Bool)
 corner_min_want = [True, True, True]
 
 cat_seg : World.Segment
-cat_seg = World.route_segment(1)
+cat_seg = World.route_segment(3)
 
 cat_got : List(F64)
 cat_got = [

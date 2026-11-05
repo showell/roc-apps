@@ -8,6 +8,7 @@ app [main!] {
 }
 
 import Angle
+import BirdFlight
 import BirdPlan
 import DepthSort
 import Frame
@@ -37,14 +38,19 @@ segment_of = |trees| {
 	length: 200.0,
 	trees,
 	exit_turn: Angle.straight_ahead,
+	crossing: BirdFlight.crossing_among(trees),
 }
 
 ## The birds on one segment of `trees`, for a rider `rider_along` metres into
 ## it, seen through a focal length of `cam_focal`.
 birds_on : List(Scenery.Tree), { rider_along : F64, cam_focal : F64 } -> List(RocBird.PlacedBird)
-birds_on = |trees, { rider_along, cam_focal }|
+birds_on = |trees, seen_from| birds_on_segment(segment_of(trees), seen_from)
+
+## The birds on `segment`, for a rider `rider_along` metres into it.
+birds_on_segment : World.Segment, { rider_along : F64, cam_focal : F64 } -> List(RocBird.PlacedBird)
+birds_on_segment = |segment, { rider_along, cam_focal }|
 	BirdPlan.in_view({
-		world: [segment_of(trees)],
+		world: [segment],
 		chain: [World.SegmentIndex.first],
 		pose: {
 			along: rider_along,
@@ -119,6 +125,10 @@ stays_want = [-6.0, 37.5, 10.0]
 count_on : List(Scenery.Tree), { rider_along : F64, cam_focal : F64 } -> I64
 count_on = |trees, seen_from| birds_on(trees, seen_from).len().to_i64_wrap()
 
+## A segment where a cat crosses, with the same trees: it has no bird.
+cat_segment : World.Segment
+cat_segment = { ..segment_of(left_trees), crossing: World.route_segment(3).crossing }
+
 count_got : List(I64)
 count_got = [
 	count_on(left_trees, { rider_along: 0.0, cam_focal: 500.0 }),
@@ -128,6 +138,7 @@ count_got = [
 	count_on(left_trees, { rider_along: 120.0, cam_focal: 500.0 }),
 	count_on(left_trees, { rider_along: 0.0, cam_focal: 91.0 }),
 	count_on(left_trees, { rider_along: 0.0, cam_focal: 90.0 }),
+	birds_on_segment(cat_segment, { rider_along: 0.0, cam_focal: 500.0 }).len().to_i64_wrap(),
 ]
 
 count_want : List(I64)
@@ -138,6 +149,7 @@ count_want = [
 	0,
 	0,
 	1,
+	0,
 	0,
 ]
 

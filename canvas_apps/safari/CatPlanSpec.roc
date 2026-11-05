@@ -13,10 +13,14 @@ import Grade
 import Speed
 import World
 
+## The second segment, with a cat crossing it.
+cat_segment : World.Segment
+cat_segment = { ..World.route_segment(1), crossing: World.route_segment(3).crossing }
+
 segs : List(World.Segment)
 segs = [
 	World.route_segment(0),
-	World.route_segment(1),
+	cat_segment,
 	World.route_segment(2),
 ]
 
@@ -45,9 +49,9 @@ has_got = segs.map(has_cat)
 ## Whether a segment has a cat waiting by the road.
 has_cat : World.Segment -> Bool
 has_cat = |seg|
-	match seg.cat {
-		Waits(_) => True
-		NoCat => False
+	match seg.crossing {
+		CatCrosses(_) => True
+		BirdFlies(_) | QuietRoad => False
 	}
 
 has_want : List(Bool)

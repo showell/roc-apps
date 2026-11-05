@@ -29,12 +29,9 @@
 -- output, and RasterFrame's hash of the frame at each depth, is held exactly
 -- to gates/proof.expected. A change that rightly alters the picture changes
 -- that file with it, and the commit says why.
--- A depth is there for what its frame shows. At 100 a Roc bird is in flight,
--- at 500 a cat is frozen in the lane, and at 518 it is in mid-leap.
--- At 5025 the truck is close,
--- braking, with its headlights on: of these frames, only 5025 shows the
--- truck's lights (beams, brake lights and their glow), and only 5025 and 0
--- show its body.
+-- A depth is there for what its frame shows: at 100 a Roc bird is in flight,
+-- at 1570 a cat is frozen in the lane, at 1586 it is in mid-leap, and at 5700
+-- the truck is ahead at dusk with its lights on.
 --
 -- **THE ROC IS roc-apps' PIN**, the nightly named in `roc-version`, installed
 -- at `tools:roc-<pin>/roc` (`~/tools/` on the box).
@@ -183,7 +180,7 @@ function proof()
   local bin = scratch .. "/bin"
   mkdir(bin)
   local bad = 0
-  local depths = {"0", "100", "500", "518", "3000", "5025", "9000"}
+  local depths = {"0", "100", "1570", "1586", "3000", "5700", "9000"}
   local held = {}
   if proof_build(roc, scratch, "StepBack") then
     local r = run({real(bin .. "/StepBack")}, {timeout_ms = 600000, tail = 20, want = WANT})

@@ -50,28 +50,21 @@ road_of = |view| {
 	pose: view.pose,
 }
 
-## The bird of the segment at `position` in the chain, if the segment has a
-## tree for one and the bird is in view: one item, or none.
+## The bird of the segment at `position` in the chain, if that segment has one
+## and it is in view: one item, or none.
 segment_bird : BirdPlan.View, Frame.ChainPosition -> List(RocBird.PlacedBird)
-segment_bird = |view, position| {
-	trees = position.index_in(view.chain).segment_in(view.world).trees
-	match BirdFlight.fifth_left_tree(trees) {
-		Found(tree) => {
+segment_bird = |view, position|
+	match position.index_in(view.chain).segment_in(view.world).crossing {
+		BirdFlies(route) => {
 			gap_to_segment = Frame.gap_to_segment(
 				road_of(view),
 				{ position, rider_along: view.rider_along },
 			)
-			gap_to_tree = gap_to_segment + tree.along
-			state =
-				match BirdFlight.flight_from(trees, tree) {
-					Flies(flight) => BirdFlight.state(flight, gap_to_tree)
-					Stays => BirdFlight.sitting_on(tree)
-				}
-			bird_in_view(view, { position, state })
+			gap_to_tree = gap_to_segment + BirdFlight.start_along(route)
+			bird_in_view(view, { position, state: BirdFlight.state_on(route, gap_to_tree) })
 		}
-		NoTree => []
+		CatCrosses(_) | QuietRoad => []
 	}
-}
 
 ## The bird in `state` on the segment at `position` in the chain, if it is in
 ## view: one item, or none.

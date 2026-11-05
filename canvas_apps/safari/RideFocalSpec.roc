@@ -15,7 +15,15 @@ import RideFocal
 import World
 
 segs : List(World.Segment)
-segs = [0, 1, 2].map(World.route_segment)
+segs = [
+	World.route_segment(0),
+	cat_segment,
+	World.route_segment(2),
+]
+
+## The second segment, with a cat crossing it.
+cat_segment : World.Segment
+cat_segment = { ..World.route_segment(1), crossing: World.route_segment(3).crossing }
 
 ## The bike's greatest lean, in radians.
 max_lean : F64
@@ -50,9 +58,9 @@ has_cat_got = segs.take_first(2).map(has_cat)
 ## Whether a segment has a cat waiting by the road.
 has_cat : World.Segment -> Bool
 has_cat = |seg|
-	match seg.cat {
-		Waits(_) => True
-		NoCat => False
+	match seg.crossing {
+		CatCrosses(_) => True
+		BirdFlies(_) | QuietRoad => False
 	}
 
 has_cat_want : List(Bool)

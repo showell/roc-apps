@@ -58,8 +58,8 @@ Throttle :: [].{
 		offered_accel : Acceleration,
 	} -> Acceleration
 	cat_gate = |state, { road_segment: seg, offered_accel: a }|
-		match seg.cat {
-			Waits(crossing) =>
+		match seg.crossing {
+			CatCrosses(crossing) =>
 				if a > Acceleration.steady {
 					(
 						if Cat.is_in_danger({
@@ -74,7 +74,7 @@ Throttle :: [].{
 				} else {
 					a
 				}
-			NoCat => a
+			BirdFlies(_) | QuietRoad => a
 		}
 
 	pig_gate : Pose.RiderState,
