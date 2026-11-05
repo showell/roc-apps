@@ -6,6 +6,7 @@
 import Angle
 import Clock
 import lib.DeviceMath
+import Fraction
 import Lens
 import Num_
 import Paint
@@ -32,8 +33,8 @@ Mountains :: [].{
 	land = 0x4A8F43
 
 	## How much of its light the rock loses at full dusk.
-	rock_night_dim : F64
-	rock_night_dim = 0.5
+	rock_night_dim : Fraction
+	rock_night_dim = Fraction.of(0.5)
 
 	snow_day : Sky.Rgb
 	snow_day = {
@@ -54,9 +55,9 @@ Mountains :: [].{
 	channel = |color, shift| color.shr_wrap(shift).bitwise_and(255).to_f64()
 
 	## A rock colour at `dusk`, from 0 (day) to 1 (night).
-	color_at_dusk : I64, F64 -> I64
+	color_at_dusk : I64, Fraction -> I64
 	color_at_dusk = |color, dusk| {
-		light = (1.0 - (rock_night_dim * dusk))
+		light = rock_night_dim.times(dusk).complement().to_f64()
 		Sky.pack({
 			r: Num_.round_real((channel(color, 16) * light)),
 			g: Num_.round_real((channel(color, 8) * light)),
@@ -64,7 +65,7 @@ Mountains :: [].{
 		})
 	}
 
-	snow_color : F64 -> I64
+	snow_color : Fraction -> I64
 	snow_color = |dusk| Sky.pack(
 		Sky.color_between({
 			from: snow_day,
@@ -116,11 +117,8 @@ Mountains :: [].{
 	snowline : Angle.Bearing -> F64
 	snowline = |bearing| {
 		above_threshold = (north_range(bearing) - snow_threshold)
-		above_fraction = DeviceMath.real_max(
-			0.0,
-			DeviceMath.real_min(1.0, (above_threshold / (snow_peak_height - snow_threshold))),
-		)
-		(snow_threshold - (snow_dip * above_fraction))
+		above_fraction = Fraction.clamp((above_threshold / (snow_peak_height - snow_threshold)))
+		(snow_threshold - (snow_dip * above_fraction.to_f64()))
 	}
 
 	## The bearing seen at `x` across the screen.
@@ -149,7 +147,7 @@ Mountains :: [].{
 	## north's snow, then the land.
 	draw : {
 		heading : Angle.Bearing,
-		dusk : F64,
+		dusk : Fraction,
 		cam_focal : F64,
 	} -> List(Shapes.Shape)
 	draw = |

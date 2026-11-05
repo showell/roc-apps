@@ -2,6 +2,7 @@
 ## colour is 0xRRGGBB for a flat polygon, a shaded polygon and a beacon, and
 ## 0xAARRGGBB for a gradient. Each builder answers a list, empty when there is
 ## nothing to draw, so a drawing module can join what it builds.
+import Fraction
 import Num_
 import Screen
 import lib.Brush
@@ -13,13 +14,13 @@ Paint :: [].{
 	Span : { min_x : F64, max_x : F64 }
 
 	red_of : I64 -> I64
-	red_of = |color| I64.bitwise_and(I64.shr_wrap(color, I64.to_u8_wrap(16)), 255)
+	red_of = |color| color.shr_wrap(I64.to_u8_wrap(16)).bitwise_and(255)
 
 	green_of : I64 -> I64
-	green_of = |color| I64.bitwise_and(I64.shr_wrap(color, I64.to_u8_wrap(8)), 255)
+	green_of = |color| color.shr_wrap(I64.to_u8_wrap(8)).bitwise_and(255)
 
 	blue_of : I64 -> I64
-	blue_of = |color| I64.bitwise_and(color, 255)
+	blue_of = |color| color.bitwise_and(255)
 
 	## A colour as 0xRRGGBB from its three channels.
 	pack_rgb : {
@@ -34,15 +35,15 @@ Paint :: [].{
 			blue,
 		},
 	| {
-		red_bits = I64.shl_wrap(red, 16)
-		green_bits = I64.shl_wrap(green, 8)
-		I64.bitwise_or(I64.bitwise_or(red_bits, green_bits), blue)
+		red_bits = red.shl_wrap(16)
+		green_bits = green.shl_wrap(8)
+		red_bits.bitwise_or(green_bits).bitwise_or(blue)
 	}
 
 	## One channel scaled by `factor`, rounded, and held at 255 at most.
 	shade_channel : I64, F64 -> I64
 	shade_channel = |channel, factor| {
-		scaled = F64.to_i64_wrap(Num_.round_real((I64.to_f64(channel) * factor)))
+		scaled = Num_.round_real((channel.to_f64() * factor)).to_i64_wrap()
 		if (scaled > 255) 255 else scaled
 	}
 
@@ -61,14 +62,15 @@ Paint :: [].{
 	shade_middle_lift = 0.25
 
 	## A shaded polygon's colour at its edges.
-	width_shade_edge : I64, F64 -> I64
-	width_shade_edge = |color, strength| shade_color(color, (1.0 - (shade_edge_darken * strength)))
+	width_shade_edge : I64, Fraction -> I64
+	width_shade_edge = |color, strength|
+		shade_color(color, (1.0 - (shade_edge_darken * strength.to_f64())))
 
 	## A shaded polygon's colour in its middle.
-	width_shade_middle : I64, F64 -> I64
+	width_shade_middle : I64, Fraction -> I64
 	width_shade_middle = |color, strength| shade_color(
 		color,
-		(1.0 + (shade_middle_lift * strength)),
+		(1.0 + (shade_middle_lift * strength.to_f64())),
 	)
 
 	min_shade_width : F64
@@ -106,7 +108,7 @@ Paint :: [].{
 	push_round_poly : List(Screen.Point),
 	{
 		fill_color : I64,
-		round_strength : F64,
+		round_strength : Fraction,
 	} -> List(Shapes.Shape)
 	push_round_poly = |ps, { fill_color, round_strength }|
 		if ps.len() < 3 {
@@ -120,7 +122,7 @@ Paint :: [].{
 		beacon_color : I64,
 		beacon_center : Screen.Point,
 		beacon_radius : F64,
-		beacon_alpha : F64,
+		beacon_alpha : Fraction,
 	} -> List(Shapes.Shape)
 	push_beacon = |
 		{
@@ -136,7 +138,7 @@ Paint :: [].{
 				x: beacon_center.x,
 				y: beacon_center.y,
 				r: beacon_radius,
-				fill: Flat({ ..opaque, a: beacon_alpha }),
+				fill: Flat({ ..opaque, a: beacon_alpha.to_f64() }),
 				clip: Anywhere,
 			}),
 		]
@@ -245,7 +247,7 @@ Paint :: [].{
 		det = axis_u.x * axis_v.y - axis_u.y * axis_v.x
 		first_color = Brush.with_alpha(color_stops.start_rgba)
 		fill =
-			if F64.abs(det) < min_ellipse_determinant {
+			if det.abs() < min_ellipse_determinant {
 				Flat(first_color)
 			} else {
 				offsets = offsets_of(color_stops)
@@ -273,14 +275,14 @@ min_ellipse_determinant = 0.0001
 offsets_of : Paint.ColorStops -> { first : F64, last : F64 }
 offsets_of = |stops| {
 	first = Brush.clamp01(stops.start_offset)
-	{ first, last: F64.max(first, F64.min(1.0, stops.end_offset)) }
+	{ first, last: first.max(F64.min(1.0, stops.end_offset)) }
 }
 
 ## The fill of a polygon shaded across its width.
-width_shade : List(F64), { color : I64, strength : F64 } -> Brush.Fill
+width_shade : List(F64), { color : I64, strength : Fraction } -> Brush.Fill
 width_shade = |pts, { color, strength }| {
 	span = Paint.x_span(pts)
-	if strength <= 0.0 or Paint.is_too_narrow_to_shade(span) {
+	if strength <= Fraction.zero or Paint.is_too_narrow_to_shade(span) {
 		Flat(Brush.opaque(color))
 	} else {
 		Span({

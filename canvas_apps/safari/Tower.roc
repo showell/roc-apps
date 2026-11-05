@@ -6,6 +6,7 @@
 import Angle
 import Camera
 import lib.DeviceMath
+import Fraction
 import Geom
 import Paint
 import lib.Trig
@@ -139,7 +140,7 @@ Tower :: [].{
 	point_between : {
 		from : Geom.SpacePoint,
 		to : Geom.SpacePoint,
-		fraction : F64,
+		fraction : Fraction,
 	} -> Geom.SpacePoint
 	point_between = |
 		{
@@ -148,9 +149,12 @@ Tower :: [].{
 			fraction,
 		},
 	| {
-		right: (from.right + ((to.right - from.right) * fraction)),
-		forward: (from.forward + ((to.forward - from.forward) * fraction)),
-		height: (from.height + ((to.height - from.height) * fraction)),
+		share = fraction.to_f64()
+		{
+			right: (from.right + ((to.right - from.right) * share)),
+			forward: (from.forward + ((to.forward - from.forward) * share)),
+			height: (from.height + ((to.height - from.height) * share)),
+		}
 	}
 
 	## A corner of the mast at `height_on_mast`: drawn in toward the centre
@@ -236,7 +240,7 @@ Tower :: [].{
 	cut_at_near = |{ from, to }| point_between({
 		from,
 		to,
-		fraction: ((Geom.near_plane - from.forward) / (to.forward - from.forward)),
+		fraction: Fraction.of(((Geom.near_plane - from.forward) / (to.forward - from.forward))),
 	})
 
 	rod_on_screen : Tower.RodView,
@@ -333,14 +337,8 @@ Tower :: [].{
 		if stage_top <= mast.sunk {
 			[]
 		} else {
-			hidden_fraction = (
-				(
-					DeviceMath.real_max(
-						stage_bottom,
-						mast.sunk,
-					) - stage_bottom
-				) / stage_height
-			)
+			hidden_height = DeviceMath.real_max(stage_bottom, mast.sunk) - stage_bottom
+			hidden_fraction = Fraction.of(hidden_height / stage_height)
 			corners.join_map(
 				|corner| brace_pair(
 					mast,
@@ -362,7 +360,7 @@ Tower :: [].{
 		corner : Tower.Corner,
 		stage_bottom : F64,
 		stage_top : F64,
-		hidden_fraction : F64,
+		hidden_fraction : Fraction,
 	} -> List(Shapes.Shape)
 	brace_pair = |
 		mast,
@@ -401,13 +399,13 @@ Tower :: [].{
 
 	## The beacon on the apex, at its brightness; too dim or too small, it
 	## isn't drawn.
-	beacon : Tower.Mast, { apex : Geom.SpacePoint, brightness : F64 } -> List(Shapes.Shape)
+	beacon : Tower.Mast, { apex : Geom.SpacePoint, brightness : Fraction } -> List(Shapes.Shape)
 	beacon = |mast, { apex, brightness }| {
 		apex_on_screen = Camera.project(
 			apex,
 			mast.view.cam_focal,
 		)
-		if brightness < 0.02 {
+		if brightness < Fraction.of(0.02) {
 			[]
 		} else {
 			one_metre_px = metre_px({
@@ -430,7 +428,7 @@ Tower :: [].{
 		footprint : Tower.Footprint,
 		center : Geom.RiderPoint,
 		cam_focal : F64,
-		beacon_brightness : F64,
+		beacon_brightness : Fraction,
 	} -> List(Shapes.Shape)
 	draw = |
 		{

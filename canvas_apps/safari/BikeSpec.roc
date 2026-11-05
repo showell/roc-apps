@@ -6,6 +6,7 @@ app [main!] {
 
 import Acceleration
 import Angle
+import Fraction
 import Bike
 import Grade
 import World
@@ -28,7 +29,7 @@ s0 = {
 	tilt: Angle.Lean.radians(0.125),
 	heading: Angle.Bearing.radians(4.5),
 	gaze_yaw: Angle.Turn.radians(0.625),
-	focus: 0.25,
+	focus: Fraction.of(0.25),
 }
 
 s1 : Pose.RiderState
@@ -82,9 +83,9 @@ exact_want = [
 carried_real_got : List(F64)
 carried_real_got = [
 	s1.gaze_yaw.to_radians(),
-	s1.focus,
+	s1.focus.to_f64(),
 	s3.gaze_yaw.to_radians(),
-	s3.focus,
+	s3.focus.to_f64(),
 ]
 
 carried_real_want : List(F64)

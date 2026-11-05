@@ -6,6 +6,7 @@ app [main!] {
 }
 
 import Angle
+import Fraction
 import Frame
 import Grade
 import ItemDraw
@@ -58,8 +59,11 @@ tie_got = [20.0, 20.1, 19.9].map(|forward| nearer_count(tied, forward))
 tie_want : List(I64)
 tie_want = [0, 4, 0]
 
+shade_at : F64 -> F64
+shade_at = |forward| ItemDraw.crown_shade(forward).to_f64()
+
 shade_got : List(F64)
-shade_got = [0.0, 20.0, 40.0, 80.0, 200.0, -50.0].map(ItemDraw.crown_shade)
+shade_got = [0.0, 20.0, 40.0, 80.0, 200.0, -50.0].map(shade_at)
 
 shade_want : List(F64)
 shade_want = [1.0, 0.75, 0.5, 0.0, 0.0, 1.0]
@@ -91,7 +95,7 @@ tower_along = |along| {
 	across: 22.0,
 	yaw: Angle.straight_ahead,
 	forward: along,
-	beacon_brightness: 0.0,
+	beacon_brightness: Fraction.zero,
 }
 
 corner_got : List(F64)

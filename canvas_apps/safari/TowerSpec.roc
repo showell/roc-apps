@@ -5,6 +5,7 @@ app [main!] {
 }
 
 import Angle
+import Fraction
 import Geom
 import Grade
 import Tower
@@ -165,7 +166,7 @@ lerp_got = (
 		m = Tower.point_between({
 			from: a,
 			to: b,
-			fraction: 0.25,
+			fraction: Fraction.of(0.25),
 		})
 		[
 			m.right,

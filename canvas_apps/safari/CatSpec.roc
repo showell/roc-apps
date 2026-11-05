@@ -9,6 +9,7 @@ import Animation
 import Beats
 import Cat
 import Easing
+import Fraction
 import Grade
 import Speed
 
@@ -92,7 +93,7 @@ progress_of : Animation.Approach -> F64
 progress_of = |approach|
 	match Cat.crossing_stage(approach) {
 		Waiting => 0.0
-		Playing(progress) => progress
+		Playing(progress) => progress.to_f64()
 		Past(_) => 1.0
 	}
 
@@ -118,8 +119,8 @@ focus_got = List.join([
 		coming((0.0 - 38.5), 1.0),
 		coming((0.0 - 80.0), 1.0),
 		coming(22.0, 0.0),
-	].map(Cat.focus),
-	[Cat.focus_peak, Cat.focus_ramp_down.to_f64()],
+	].map(|approach| Cat.focus(approach).to_f64()),
+	[Cat.focus_peak.to_f64(), Cat.focus_ramp_down.to_f64()],
 ])
 
 ## How many strides of a walk `length` beats long are done `progress` through it.
@@ -248,9 +249,9 @@ leap_got = [
 	phase_of(6.5).spot.lift,
 	phase_of(6.0).spot.across,
 	phase_of(6.0).spot.lift,
-	Easing.three_quarter_power(0.0),
-	Easing.three_quarter_power(1.0),
-	Easing.three_quarter_power(0.0625),
+	Easing.three_quarter_power(Fraction.zero).to_f64(),
+	Easing.three_quarter_power(Fraction.whole).to_f64(),
+	Easing.three_quarter_power(Fraction.of(0.0625)).to_f64(),
 	Cat.leap_height,
 ]
 

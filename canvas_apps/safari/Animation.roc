@@ -14,6 +14,7 @@
 ## critters with different homes can share a timeline.
 import Beats
 import Easing
+import Fraction
 import Speed
 import lib.Trig
 
@@ -24,10 +25,10 @@ Animation :: [].{
 	Approach : { gap : F64, speed : Speed }
 
 	## Where an animation has got to: not begun, playing and this far through,
-	## from 0 to 1, or over, with the rider this many metres beyond its end.
+	## or over, with the rider this many metres beyond its end.
 	Stage : [
 		Waiting,
-		Playing(F64),
+		Playing(Fraction),
 		Past(F64),
 	]
 
@@ -40,10 +41,10 @@ Animation :: [].{
 	## so a critter is at rest at both ends.
 	over_gap : { starts_at : F64, ends_at : F64 }, F64 -> Animation.Stage
 	over_gap = |{ starts_at, ends_at }, gap| {
-		progress = Easing.clamp01((starts_at - gap) / (starts_at - ends_at))
-		if progress <= 0.0 {
+		progress = Fraction.clamp((starts_at - gap) / (starts_at - ends_at))
+		if progress <= Fraction.zero {
 			Waiting
-		} else if progress >= 1.0 {
+		} else if progress >= Fraction.whole {
 			Past(ends_at - gap)
 		} else {
 			Playing(progress)
@@ -63,9 +64,9 @@ Animation :: [].{
 		} else if gap_left > stretch {
 			Waiting
 		} else if speed <= standstill {
-			Playing(0.0)
+			Playing(Fraction.zero)
 		} else {
-			Playing(Easing.clamp01(1.0 - gap_left / stretch))
+			Playing(Fraction.clamp(1.0 - gap_left / stretch))
 		}
 	}
 
@@ -146,7 +147,7 @@ Animation :: [].{
 			Animation.Timeline.(score) = timeline
 			match stage {
 				Waiting => score.before
-				Playing(progress) => timeline.at_beat(score.length.times(progress))
+				Playing(progress) => timeline.at_beat(score.length.portion(progress))
 				Past(_) => score.after
 			}
 		}
@@ -156,7 +157,7 @@ Animation :: [].{
 		at_beat = |Animation.Timeline.(score), beat| {
 			looks = playing_at(score.looks, { beat, length: score.length })
 			path = playing_at(score.path, { beat, length: score.length })
-			fraction = beat.minus(path.from).ratio_to(path.to.minus(path.from))
+			fraction = Fraction.of(beat.minus(path.from).ratio_to(path.to.minus(path.from)))
 			{
 				pose: pose_of(looks.plays, beat),
 				spot: path_spot(path.plays, fraction),
@@ -225,19 +226,20 @@ pose_of = |looks, beat|
 	}
 
 ## The spot `fraction` of the way through a stretch of `path`.
-path_spot : Animation.Path, F64 -> Animation.Spot
+path_spot : Animation.Path, Fraction -> Animation.Spot
 path_spot = |path, fraction|
 	match path {
 		StaysAt(spot) => spot
 		Line(line) => line_spot(line, fraction)
 		Arc({ line, rise }) => {
 			on_line = line_spot(line, fraction)
-			{ ..on_line, lift: on_line.lift + rise * 4.0 * fraction * (1.0 - fraction) }
+			through = fraction.to_f64()
+			{ ..on_line, lift: on_line.lift + rise * 4.0 * through * (1.0 - through) }
 		}
 	}
 
 ## The spot `fraction` of the way along `line`.
-line_spot : Animation.Line, F64 -> Animation.Spot
+line_spot : Animation.Line, Fraction -> Animation.Spot
 line_spot = |line, fraction| {
 	eased = eased_fraction(line.ease, fraction)
 	between = |start, end|
@@ -253,7 +255,7 @@ line_spot = |line, fraction| {
 	}
 }
 
-eased_fraction : Animation.Ease, F64 -> F64
+eased_fraction : Animation.Ease, Fraction -> Fraction
 eased_fraction = |ease, fraction|
 	match ease {
 		Steady => fraction

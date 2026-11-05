@@ -5,6 +5,7 @@ app [main!] {
 }
 
 import Angle
+import Fraction
 import Grade
 import Pose
 import Speed
@@ -21,7 +22,7 @@ s0 = {
 	tilt: Angle.Lean.radians(0.0),
 	heading: Angle.Bearing.radians(0.0),
 	gaze_yaw: Angle.Turn.radians(0.0),
-	focus: 0.0,
+	focus: Fraction.zero,
 }
 
 s1 : Pose.RiderState
@@ -34,7 +35,7 @@ s1 = {
 	tilt: Angle.Lean.radians(0.125),
 	heading: Angle.Bearing.radians(4.5),
 	gaze_yaw: Angle.Turn.radians(0.375),
-	focus: 0.0,
+	focus: Fraction.zero,
 }
 
 s2 : Pose.RiderState
@@ -47,7 +48,7 @@ s2 = {
 	tilt: Angle.Lean.radians(0.5),
 	heading: Angle.Bearing.radians(1.0),
 	gaze_yaw: Angle.Turn.radians((-0.25)),
-	focus: 0.0,
+	focus: Fraction.zero,
 }
 
 s3 : Pose.RiderState
@@ -60,7 +61,7 @@ s3 = {
 	tilt: Angle.Lean.radians((-0.75)),
 	heading: Angle.Bearing.radians((-2.0)),
 	gaze_yaw: Angle.Turn.radians(0.125),
-	focus: 0.0,
+	focus: Fraction.zero,
 }
 
 s4 : Pose.RiderState
@@ -73,7 +74,7 @@ s4 = {
 	tilt: Angle.Lean.radians(1.25),
 	heading: Angle.Bearing.radians(0.5),
 	gaze_yaw: Angle.Turn.radians(0.0),
-	focus: 0.0,
+	focus: Fraction.zero,
 }
 
 frac_got : List(F64)

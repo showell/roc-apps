@@ -1,9 +1,11 @@
 ## These are Lens's checks: the focal length at rest, for a lean, for the
-## rider's attention, and the two together.
+## rider's attention, and the two together, and what attention itself does.
 app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Attention
+import Fraction
 import Grade
 import Lens
 import Screen
@@ -19,8 +21,8 @@ base_got = [
 base_want : List(F64)
 base_want = [960.0, 70.0, 685.5110432362151]
 
-lean_in : List(F64)
-lean_in = [0.0, 0.25, 0.5, 0.75, 1.0]
+lean_in : List(Fraction)
+lean_in = [0.0, 0.25, 0.5, 0.75, 1.0].map(Fraction.of)
 
 lean_want : List(F64)
 lean_want = [
@@ -31,21 +33,21 @@ lean_want = [
 	239.92886513267527,
 ]
 
-gaze_in : List(F64)
-gaze_in = [0.0, 0.5, 1.0, 1.5]
+gaze_in : List(Attention)
+gaze_in = [0.0, 0.5, 1.0, 1.5].map(Attention.of)
 
 gaze_want : List(F64)
 gaze_want = [685.5110432362151, 551.8363898051531, 418.16173637409116, 284.4870829430293]
 
-cam_in : List({ lean_frac : F64, attention : F64 })
+cam_in : List({ lean_frac : Fraction, attention : Attention })
 cam_in = [
-	{ lean_frac: 0.0, attention: 0.0 },
-	{ lean_frac: 1.0, attention: 0.0 },
-	{ lean_frac: 0.0, attention: 1.0 },
-	{ lean_frac: 0.5, attention: 0.3 },
-	{ lean_frac: 0.9, attention: 1.4 },
-	{ lean_frac: 0.6, attention: 0.5 },
-]
+	(0.0, 0.0),
+	(1.0, 0.0),
+	(0.0, 1.0),
+	(0.5, 0.3),
+	(0.9, 1.4),
+	(0.6, 0.5),
+].map(|(lean, look)| { lean_frac: Fraction.of(lean), attention: Attention.of(look) })
 
 cam_want : List(F64)
 cam_want = [
@@ -56,6 +58,19 @@ cam_want = [
 	311.2220136292417,
 	525.1014591189407,
 ]
+
+attention_got : List(F64)
+attention_got = [
+	Attention.none.to_f64(),
+	Attention.of(1.8).to_f64(),
+	Attention.from_fraction(Fraction.of(0.5)).to_f64(),
+	Attention.of(1.8).portion(Fraction.of(0.5)).to_f64(),
+	Attention.of(0.3).max(Attention.of(1.4)).to_f64(),
+	Attention.of(1.4).max(Attention.of(0.3)).to_f64(),
+]
+
+attention_want : List(F64)
+attention_want = [0.0, 1.8, 0.5, 0.9, 1.4, 1.4]
 
 # --- Entry ---
 
@@ -84,6 +99,12 @@ main! = |_args| {
 			got: cam_in.map(Lens.cam_focal),
 			want: cam_want,
 			tol: F64.from_bits(4472406533629990549),
+		}),
+		Grade.reals({
+			name: "l-attn ",
+			got: attention_got,
+			want: attention_want,
+			tol: 0.0,
 		}),
 	]
 	for verdict in verdicts {

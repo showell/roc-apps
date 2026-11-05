@@ -94,7 +94,7 @@ progress_at : F64 -> F64
 progress_at = |gap|
 	match BirdFlight.flight_stage(gap) {
 		Waiting => 0.0
-		Playing(progress) => progress
+		Playing(progress) => progress.to_f64()
 		Past(_) => 1.0
 	}
 

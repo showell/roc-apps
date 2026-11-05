@@ -3,8 +3,10 @@
 ## road once the pig is behind.
 import Acceleration
 import Angle
+import Attention
 import lib.DeviceMath
 import Easing
+import Fraction
 import Pigs
 import Pose
 import Scenery
@@ -46,8 +48,8 @@ Gaze :: [].{
 	eyes_on_road_yaw : Angle.Turn
 	eyes_on_road_yaw = Angle.Turn.degrees(6.0)
 
-	gaze_focus : F64 -> F64
-	gaze_focus = |f| Easing.smoothstep(f)
+	gaze_focus : Fraction -> Attention
+	gaze_focus = |focus| Attention.from_fraction(Easing.smoothstep(focus))
 
 	no_look : Gaze.PigLook
 	no_look = { looking: False, dist: 0.0 }
@@ -142,15 +144,12 @@ Gaze :: [].{
 
 	## The rider's focus after the gaze moves to `gaze_yaw`: it fades while
 	## the gaze rests, and rises with how far the gaze has turned.
-	next_focus : Pose.RiderState, Angle.Turn -> F64
+	next_focus : Pose.RiderState, Angle.Turn -> Fraction
 	next_focus = |state, gaze_yaw|
 		if is_at_rest(gaze_yaw) {
-			DeviceMath.real_max(0.0, state.focus - focus_decay)
+			Fraction.clamp(state.focus.to_f64() - focus_decay)
 		} else {
-			DeviceMath.real_max(
-				state.focus,
-				DeviceMath.real_min(gaze_yaw.abs().fraction_of(gaze_release_angle), 1.0),
-			)
+			state.focus.max(Fraction.clamp(gaze_yaw.abs().fraction_of(gaze_release_angle)))
 		}
 
 	next_rider_gaze : Pose.RiderState, List(World.Segment) -> Pose.RiderState

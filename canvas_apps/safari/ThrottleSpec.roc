@@ -6,6 +6,7 @@ app [main!] {
 
 import Acceleration
 import Angle
+import Fraction
 import Arc
 import Grade
 import Pose
@@ -58,7 +59,7 @@ rider_at = |
 	tilt: Angle.Lean.radians(tilt),
 	heading: Angle.Bearing.radians(0.0),
 	gaze_yaw: Angle.Turn.radians(0.0),
-	focus: 0.0,
+	focus: Fraction.zero,
 }
 
 ## A test rider on the centre line.

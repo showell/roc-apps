@@ -5,6 +5,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Attention
 import Cat
 import CrossingReaction
 import Grade
@@ -72,13 +73,13 @@ cat_throttle_want = [
 
 cat_eye_got : List(F64)
 cat_eye_got = [
-	to_cat(42.0, 1.0).eye_pull,
-	to_cat(41.0, 1.0).eye_pull,
-	to_cat(22.0, 1.0).eye_pull,
-	to_cat(3.0, 1.0).eye_pull,
-	to_cat(-38.5, 1.0).eye_pull,
-	to_cat(-80.0, 1.0).eye_pull,
-	to_cat(22.0, 0.0).eye_pull,
+	to_cat(42.0, 1.0).eye_pull.to_f64(),
+	to_cat(41.0, 1.0).eye_pull.to_f64(),
+	to_cat(22.0, 1.0).eye_pull.to_f64(),
+	to_cat(3.0, 1.0).eye_pull.to_f64(),
+	to_cat(-38.5, 1.0).eye_pull.to_f64(),
+	to_cat(-80.0, 1.0).eye_pull.to_f64(),
+	to_cat(22.0, 0.0).eye_pull.to_f64(),
 ]
 
 cat_eye_want : List(F64)
@@ -99,7 +100,7 @@ unmoved_got = [bird_segment, quiet_segment].join_map(
 		|along| [0.0, 0.3, 1.0].map(
 			|speed| {
 				reaction = CrossingReaction.reaction_to(segment, rider_at(along, speed))
-				held_number(reaction) == 0 and reaction.eye_pull == 0.0
+				held_number(reaction) == 0 and reaction.eye_pull == Attention.none
 			},
 		),
 	),

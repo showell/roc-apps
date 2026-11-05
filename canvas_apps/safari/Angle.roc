@@ -27,7 +27,7 @@ import lib.Trig
 
 Angle :: [].{
 
-	Bearing := F64.{
+	Bearing :: F64.{
 
 		radians : F64 -> Angle.Bearing
 		radians = |r| Angle.Bearing.(r)
@@ -56,7 +56,7 @@ Angle :: [].{
 		is_eq : _
 	}
 
-	Turn := F64.{
+	Turn :: F64.{
 
 		radians : F64 -> Angle.Turn
 		radians = |r| Angle.Turn.(r)
@@ -118,7 +118,7 @@ Angle :: [].{
 		is_eq : _
 	}
 
-	Lean := F64.{
+	Lean :: F64.{
 
 		radians : F64 -> Angle.Lean
 		radians = |r| Angle.Lean.(r)

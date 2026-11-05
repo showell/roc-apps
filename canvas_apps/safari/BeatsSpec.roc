@@ -1,10 +1,11 @@
-## These are Beats' checks: how beats add, scale and divide, how they compare,
+## These are Beats' checks: how beats add, scale, divide and share, how they compare,
 ## and how a speed turns them into metres and back, at a beat a step.
 app [main!] {
 	lib: "../lib/main.roc",
 }
 
 import Beats
+import Fraction
 import Grade
 import Speed
 
@@ -14,10 +15,11 @@ sums_got = [
 	Beats.of(1.5).plus(Beats.of(2.25)).to_f64(),
 	Beats.of(1.5).minus(Beats.of(2.25)).to_f64(),
 	Beats.of(38.0).times(0.5).to_f64(),
+	Beats.of(38.0).portion(Fraction.of(0.25)).to_f64(),
 ]
 
 sums_want : List(F64)
-sums_want = [0.0, 3.75, -0.75, 19.0]
+sums_want = [0.0, 3.75, -0.75, 19.0, 9.5]
 
 ## A ratio can be under 1, 1 itself, or past it.
 ratios_got : List(F64)

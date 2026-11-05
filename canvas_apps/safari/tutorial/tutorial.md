@@ -149,6 +149,7 @@ digraph sky {
   SafariShapes -> Sky;
   Mountains -> Sky;
   Sky -> Angle;
+  Sky -> Fraction;
   Sky -> Lens;
   Sky -> Screen;
   Lens -> Angle;
@@ -156,7 +157,7 @@ digraph sky {
 }
 ```
 
-`Sky` sits near the bottom of the system. Leaving out small math helpers, it imports only the angle type and the lens and screen geometry, and it knows nothing of the rider, the road or the drawing. Those above it each ask for a colour or a sun at a given clock.
+`Sky` sits near the bottom of the system. Leaving out small math helpers, it imports only the angle and fraction types and the lens and screen geometry, and it knows nothing of the rider, the road or the drawing. Those above it each ask for a colour or a sun at a given clock.
 
 *[The sky widget goes here: drag the clock and watch the sun set.]*
 
@@ -175,6 +176,8 @@ Dusk is a curve and then a line, which means two cases. `Sky` keeps the two halv
 {{code Sky.dusk_while_up}}
 
 {{code Sky.dusk_after_set}}
+
+`Fraction` is a third small opaque type, a ratio from 0 to 1, and only its own block can build one, so a `Fraction` is always in range. It has two ways in. `Fraction.of` takes a ratio that can only be in range and crashes on anything else, because that would be a bug in the sum. `Fraction.clamp` takes a ratio that can rightly fall outside, as a sun sunk far below the horizon does, and holds it at the nearest end.
 
 The horizon's warmth is a third shape, a tent centred on the moment the sun touches the horizon. Three curves come off one number, and they're plain functions rather than anything more general. Nothing else in the game needs them.
 

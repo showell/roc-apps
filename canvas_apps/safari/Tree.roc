@@ -3,6 +3,7 @@
 ## the rider: the outline of a ring of points round each tier's base and its
 ## apex, so the tiers fatten as the rider passes under them.
 import Camera
+import Fraction
 import Paint
 import lib.Trig
 import Screen
@@ -21,7 +22,7 @@ Tree :: [].{
 		cam_focal : F64,
 		trunk : [RoundCorners, SharpCorners],
 		crown : [Cones, Triangles],
-		shade : F64,
+		shade : Fraction,
 	}
 
 	## Where a tree stands on the screen, and how big it looks there.
@@ -196,7 +197,7 @@ Tree :: [].{
 		match corners {
 			RoundCorners => Paint.push_round_poly(
 				points,
-				{ fill_color: trunk_color, round_strength: 1.0 },
+				{ fill_color: trunk_color, round_strength: Fraction.whole },
 			)
 			SharpCorners => Paint.push_poly(trunk_color, points)
 		}

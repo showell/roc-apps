@@ -3,6 +3,7 @@
 ## sun is near it. The sun is drawn only while the rider faces it.
 import Angle
 import Clock
+import Fraction
 import lib.DeviceMath
 import Lens
 import Num_
@@ -55,11 +56,11 @@ Sky :: [].{
 	sun_height_px = |clock| (sun_start_px - (sun_drop_px_per_step * clock.to_f64()))
 
 	## How far toward dusk the sky is when the sun has just set.
-	dusk_at_set : F64
-	dusk_at_set = ((0.5 * (sun_start_px - sun_fully_set_px)) / sun_start_px)
+	dusk_at_set : Fraction
+	dusk_at_set = Fraction.of(((0.5 * (sun_start_px - sun_fully_set_px)) / sun_start_px))
 
 	## How far toward dusk the sky is at `clock`, from 0 (day) to 1 (dusk).
-	dusk_at : Clock -> F64
+	dusk_at : Clock -> Fraction
 	dusk_at = |clock| {
 		height = sun_height_px(clock)
 		if (height >= sun_fully_set_px) dusk_while_up(height) else dusk_after_set(height)
@@ -67,9 +68,8 @@ Sky :: [].{
 
 	## How warm the horizon is at `clock`: most while the sun touches it, none
 	## once the sun is `warmth_falloff_px` above or below.
-	sunset_warmth : Clock -> F64
-	sunset_warmth = |clock| DeviceMath.real_max(
-		0.0,
+	sunset_warmth : Clock -> Fraction
+	sunset_warmth = |clock| Fraction.clamp(
 		(1.0 - (DeviceMath.real_abs(sun_height_px(clock)) / warmth_falloff_px)),
 	)
 
@@ -94,15 +94,15 @@ Sky :: [].{
 		b: 52.0,
 	}
 
-	sunset_glow : F64
-	sunset_glow = 0.85
+	sunset_glow : Fraction
+	sunset_glow = Fraction.of(0.85)
 
 	## The colour `fraction` of the way from `from` to `to`, each channel
 	## rounded to a whole value.
 	color_between : {
 		from : Sky.Rgb,
 		to : Sky.Rgb,
-		fraction : F64,
+		fraction : Fraction,
 	} -> Sky.Rgb
 	color_between = |
 		{
@@ -111,9 +111,12 @@ Sky :: [].{
 			fraction,
 		},
 	| {
-		r: Num_.round_real((from.r + ((to.r - from.r) * fraction))),
-		g: Num_.round_real((from.g + ((to.g - from.g) * fraction))),
-		b: Num_.round_real((from.b + ((to.b - from.b) * fraction))),
+		share = fraction.to_f64()
+		{
+			r: Num_.round_real((from.r + ((to.r - from.r) * share))),
+			g: Num_.round_real((from.g + ((to.g - from.g) * share))),
+			b: Num_.round_real((from.b + ((to.b - from.b) * share))),
+		}
 	}
 
 	## A colour as 0xRRGGBB.
@@ -135,7 +138,7 @@ Sky :: [].{
 		color_between({
 			from: sky_at(clock),
 			to: sunset_red,
-			fraction: (sunset_warmth(clock) * sunset_glow),
+			fraction: sunset_warmth(clock).times(sunset_glow),
 		}),
 	)
 
@@ -169,18 +172,21 @@ Sky :: [].{
 
 ## How far toward dusk the sky is while the sun, `height` pixels up, is
 ## still above the line where it has fully set.
-dusk_while_up : F64 -> F64
+dusk_while_up : F64 -> Fraction
 dusk_while_up = |height| {
-	set_so_far = ((Sky.sun_start_px - height) / (Sky.sun_start_px - Sky.sun_fully_set_px))
-	(Sky.dusk_at_set * set_so_far) * set_so_far
+	whole_fall = (Sky.sun_start_px - Sky.sun_fully_set_px)
+	set_so_far = Fraction.of(((Sky.sun_start_px - height) / whole_fall))
+	Sky.dusk_at_set.times(set_so_far).times(set_so_far)
 }
 
 ## How far toward dusk the sky is once the sun has fully set, darkening on
 ## to full dusk as it sinks a further radius.
-dusk_after_set : F64 -> F64
+dusk_after_set : F64 -> Fraction
 dusk_after_set = |height| {
 	sunk_past_set = ((Sky.sun_fully_set_px - height) / Sky.sun_radius_px)
-	DeviceMath.real_min(1.0, (Sky.dusk_at_set + (sunk_past_set * (1.0 - Sky.dusk_at_set))))
+	Fraction.clamp(
+		(Sky.dusk_at_set.to_f64() + (sunk_past_set * Sky.dusk_at_set.complement().to_f64())),
+	)
 }
 
 sky_at : Clock -> Sky.Rgb
