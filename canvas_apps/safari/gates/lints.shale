@@ -1,8 +1,5 @@
--- This script runs shale's Roc lints over safari and holds each count to the
--- exact number below. Safari came from an emitter and had never been linted,
--- so most counts start above zero. When a change lowers a count, lower its
--- number here in the same commit; a count that rises, or falls without its
--- number following, fails the run. Each count comes down to zero over time.
+-- This script runs shale's Roc lints over safari and holds each count at the
+-- number below, zero, so a finding fails the run.
 --
 --   cd <roc-apps checkout> && shale canvas_apps/safari/gates/lints.shale
 --
@@ -67,6 +64,6 @@ for lint in LINTS do
 end
 if #wrong > 0 then
   for w in wrong do print("WRONG " .. w) end
-  fail("safari lints: " .. #wrong .. " count(s) moved; fix the code, or set the new number here if it fell")
+  fail("safari lints: " .. #wrong .. " count(s) moved; fix the code")
 end
 print("safari lints: every count as held")

@@ -1,11 +1,9 @@
 # The canvas_apps platform: what a page needs from any game, over one boxed model
 # the host keeps (host.zig).
 #
-# Eight functions, against the movie platform's fourteen. A game is not
-# scrubbed, so there is no back, no skip and no scene; it does not bank a
-# camera, so there is no roll. What it has instead is input -- `advance` takes
-# one Input.Snapshot, flattened into numbers because the wasm edge has no
-# records -- and a speaker, which `sounds` reports as a bit per tone.
+# Eleven functions. `advance` takes one Input.Snapshot, flattened into numbers
+# because the wasm edge has no records, and `sounds` reports a bit per tone for
+# the speaker.
 platform ""
 	requires {
 		[Model : model] for program : {

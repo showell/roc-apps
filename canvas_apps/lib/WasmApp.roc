@@ -1,10 +1,10 @@
 # WasmApp -- a game on canvas_apps wasm platform, which is the same file every
 # time.
 #
-# Hand-written. The platform asks for eight functions over a boxed model and
+# Hand-written. The platform asks for eleven functions over a boxed model and
 # every one of them is the same for any game: box it, step it with the tick's
 # keys, answer its shapes, and say which tones went off. `program` takes a
-# CanvasApp and names none, so an app's wasm file is five lines.
+# CanvasApp and names none, so an app's wasm file only names its app.
 import CanvasApp
 import Input
 import Mouse

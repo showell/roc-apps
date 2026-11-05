@@ -1,12 +1,12 @@
-//! The canvas_apps wasm host: the eight exports web/canvas_app_runner.js binds, over a Roc
+//! The canvas_apps wasm host: the nine exports web/canvas_app_runner.js binds, over a Roc
 //! model the host holds as one boxed pointer.
 //!
 //! Where poc/drive_shim.zig in safari-codex had to keep the rider, the truck,
 //! the clock and a history ring as flat zig statics -- a Codex record is a
 //! pointer into an arena the shim rewinds every frame -- here the whole model
 //! is a Roc value. Roc's reference counting keeps it alive between calls and
-//! the app's `advance` and `back` return the next model; this file stores the
-//! pointer it is handed and hands it back.
+//! the app's `advance` returns the next model; this file stores the pointer it
+//! is handed and hands it back.
 //!
 //! OWNERSHIP AT THE BOUNDARY. A Roc function that takes a `Box` takes it by
 //! value and owns that reference. `advance` and `back` return the model, so

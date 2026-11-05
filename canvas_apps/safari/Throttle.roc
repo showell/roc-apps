@@ -297,7 +297,8 @@ expect gate_at({ road_segment: cat_segment, along: 120.0 }, 0.01) == 0.0
 expect gate_at({ road_segment: cat_segment, along: 120.0 }, -5.0) == -5.0
 expect gate_at({ road_segment: cat_segment, along: 0.0 }, 0.01) == 0.01
 
-## Throttle doesn't import Across, so these places come from what it does see.
+## Throttle doesn't import Distance or Across, so these places and lengths come
+## from what it does see.
 across_at = |metres| Pose.initial_rider_state.across.plus(Speed.metres_a_step(metres).step_length())
 
 ## A rider steering hard left at `speed`.

@@ -23,7 +23,8 @@ chapter. **The Roc is the program now**, edited here like any other Roc. The
 Codex program is still the Codex program in `safari-codex`, which emits the
 zig, the wasm and the C#; it does not emit this.
 
-Every module that began as an emission says so in its header.
+A module whose header says it was emitted still reads much as it was emitted.
+The rest have been rewritten by hand.
 
 ## The map
 

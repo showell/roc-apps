@@ -14,7 +14,7 @@
 -- of this run's each. A child runs alone the same way (`... run.shale part=2`).
 --
 -- **THE LINTS** (gates/lints.shale) run first: shale's Roc lints, each count
--- held exactly, lowered as the code is fixed.
+-- held at zero.
 --
 -- `part=tutorial` runs tutorial/build.shale's self-test, then builds the
 -- tutorial, so a name it quotes that is gone from the code fails the gates.
