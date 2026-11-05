@@ -1,6 +1,6 @@
 -- budget: steps=100000000 arena_bytes=1000000000
 -- This builds the safari tutorial. It reads tutorial.md, prose with lines
--- like `{{code Cat.moment_at}}`, and writes build/tutorial.md, where each
+-- like `{{code Cat.instant_at}}`, and writes build/tutorial.md, where each
 -- such line is a fenced roc block holding that definition as the source has
 -- it, with its `##` doc comment and its annotation, dedented.
 --
@@ -20,9 +20,7 @@
 -- fails/, so it names files relative to that folder, and the checkout's own
 -- path is cut from anything else that holds it.
 --
--- A program in fails/ writes its header as `app`, then `[main!]` and the
--- packages on lines of their own. check.shale finds apps by `app [` at the
--- start of a line, so it formats these files and doesn't check them.
+-- `{{module Clock}}` becomes one fenced block holding all of Clock.roc.
 --
 -- `Module.name` looks in Module.roc, beside safari's other modules: at the
 -- file's top level, and in the block of the type named for the module. The
@@ -43,7 +41,8 @@ const PIN_FILE = "roc-version"
 const WANT = "roc-pin: roc-apps' pinned nightly, for the tutorial's failing programs"
 const INCLUDE = "^\\{\\{code ([A-Z][A-Za-z0-9_]*)\\.([A-Za-z_][A-Za-z0-9_]*!?)(?: from \"([^\"]+)\" to \"([^\"]+)\")?\\}\\}$"
 const FAILS = "^\\{\\{fails ([a-z][a-z0-9_]*)\\}\\}$"
-const NOT_AN_INCLUDE = "not a line of the form {{code Module.name}}, {{code Module.name from \"text\" to \"text\"}} or {{fails name}}"
+const WHOLE_MODULE = "^\\{\\{module ([A-Z][A-Za-z0-9_]*)\\}\\}$"
+const NOT_AN_INCLUDE = "not a line of the form {{code Module.name}}, {{code Module.name from \"text\" to \"text\"}}, {{module Name}} or {{fails name}}"
 const CUT = "# ..."
 
 function stop(entry, why)
@@ -61,9 +60,13 @@ function read_entries(source, text, folder)
     local entry = {source = source, line = number, text = l}
     if contains(l, "{{") then
       local failing = re_find(l, FAILS)
+      local whole = re_find(l, WHOLE_MODULE)
       if failing ~= nil then
         entry.program = dirname(source) .. "/fails/" .. failing.groups[1] .. ".roc"
         if not exists(entry.program) then stop(entry, "no program " .. entry.program) end
+      elseif whole ~= nil then
+        entry.whole_module = folder .. "/" .. whole.groups[1] .. ".roc"
+        if not exists(entry.whole_module) then stop(entry, "no module file " .. entry.whole_module) end
       else
         local m = re_find(l, INCLUDE)
         if m == nil then stop(entry, NOT_AN_INCLUDE) end
@@ -234,6 +237,12 @@ function fenced_definition(entry, tree)
   return "```roc\n" .. text .. "\n```"
 end
 
+function fenced_module(entry)
+  local text = trim(read(entry.whole_module))
+  if contains(text, "```") then stop(entry, "its text holds a Markdown fence") end
+  return "```roc\n" .. text .. "\n```"
+end
+
 function check_version(roc, pin, said)
   if trim(said) ~= "Roc compiler version " .. pin then
     fail("tutorial: " .. roc .. " is " .. trim(said) .. ", not " .. pin)
@@ -292,6 +301,9 @@ function build(source, output, folder)
       expanded = expanded + 1
     elseif has_key(e, "program") then
       push(kept, fenced_failure(e, roc))
+      expanded = expanded + 1
+    elseif has_key(e, "whole_module") then
+      push(kept, fenced_module(e))
       expanded = expanded + 1
     else
       push(kept, e.text)
@@ -450,6 +462,8 @@ function self_test()
   expect_stop(checks, folder, "{{code Zoo.in_wild}}", "no such name in " .. zoo)
   expect_stop(checks, folder, "{{code Zoo.both}}", "found 2 times in " .. zoo .. ", at lines 25, 45")
   expect_stop(checks, folder, "{{code Gone.feed}}", "no module file " .. folder .. "/Gone.roc")
+  expect_stop(checks, folder, "{{module Gone}}", "no module file " .. folder .. "/Gone.roc")
+  expect_block(checks, folder, "{{module Tight}}", trim(TIGHT))
   expect_stop(checks, folder, "{{code Zoo.fenced}}", "its text holds a Markdown fence")
   expect_stop(checks, folder, "{{code Tight.squeezed}}", folder .. "/Tight.roc:1 is not indented as the definition is")
 

@@ -181,3 +181,195 @@ near_plane_crossing = |{ from, to }| {
 		height: from.height + fraction * (to.height - from.height),
 	}
 }
+
+# The lengths and places that measure the road.
+expect Distance.zero.to_metres() == 0.0
+expect Distance.metres(1.5).plus(Distance.metres(2.25)).to_metres() == 3.75
+expect Distance.metres(1.5).minus(Distance.metres(2.25)).to_metres() == -0.75
+expect Distance.metres(4.0).times(0.5).to_metres() == 2.0
+expect Distance.metres(5.0).divided_by(2.0).to_metres() == 2.5
+expect Distance.metres(1.5).opposite().to_metres() == -1.5
+expect Distance.metres(2.0).ratio_to(Distance.metres(8.0)) == 0.25
+expect Distance.metres(12.0).ratio_to(Distance.metres(8.0)) == 1.5
+expect Distance.metres(2.0).min(Distance.metres(3.0)).to_metres() == 2.0
+expect Distance.metres(3.0).min(Distance.metres(2.0)).to_metres() == 2.0
+expect Distance.metres(2.0).max(Distance.metres(3.0)).to_metres() == 3.0
+expect Distance.metres(3.0).max(Distance.metres(2.0)).to_metres() == 3.0
+
+expect Along.start.to_metres() == 0.0
+expect Along.at(Distance.metres(7.5)).to_metres() == 7.5
+expect Along.metres(7.5).from_start().to_metres() == 7.5
+expect Along.metres(7.5).plus(Distance.metres(2.0)).to_metres() == 9.5
+expect Along.metres(7.5).minus(Distance.metres(2.0)).to_metres() == 5.5
+expect Along.metres(7.5).distance_from(Along.metres(2.0)).to_metres() == 5.5
+expect Along.metres(2.0).distance_from(Along.metres(7.5)).to_metres() == -5.5
+
+expect Across.middle.to_metres() == 0.0
+expect Across.right_of_middle(Distance.metres(1.5)).to_metres() == 1.5
+expect Across.left_of_middle(Distance.metres(1.5)).to_metres() == -1.5
+expect Across.metres(1.5).distance_from_middle().to_metres() == 1.5
+expect Across.metres(-1.5).distance_from_middle().to_metres() == 1.5
+expect Across.metres(1.5).plus(Distance.metres(2.0)).to_metres() == 3.5
+expect Across.metres(1.5).minus(Distance.metres(2.0)).to_metres() == -0.5
+expect Across.metres(1.5).distance_from(Across.metres(-2.0)).to_metres() == 3.5
+expect Across.metres(-2.0).distance_from(Across.metres(1.5)).to_metres() == -3.5
+expect Across.metres(1.5).times(0.5).to_metres() == 0.75
+expect Across.metres(1.5).min(Across.metres(-2.0)).to_metres() == -2.0
+expect Across.metres(-2.0).min(Across.metres(1.5)).to_metres() == -2.0
+expect Across.metres(1.5).max(Across.metres(-2.0)).to_metres() == 1.5
+expect Across.metres(-2.0).max(Across.metres(1.5)).to_metres() == 1.5
+
+## Just under, at and just over 2.5 m, and how `<`, `<=`, `>`, `>=` and `==`
+## answer against 2.5 m there.
+comparisons_with_held : List((F64, List(Bool)))
+comparisons_with_held = [
+	(2.0, [True, True, False, False, False]),
+	(2.5, [False, True, False, True, True]),
+	(3.0, [False, False, True, True, False]),
+]
+
+expect
+	comparisons_with_held.all(
+		|(metres, want)| {
+			length = Distance.metres(metres)
+			held = Distance.metres(2.5)
+			[
+				length < held,
+				length <= held,
+				length > held,
+				length >= held,
+				length == held,
+			] == want
+		},
+	)
+
+expect
+	comparisons_with_held.all(
+		|(metres, want)| {
+			along = Along.metres(metres)
+			held = Along.metres(2.5)
+			[
+				along < held,
+				along <= held,
+				along > held,
+				along >= held,
+				along == held,
+			] == want
+		},
+	)
+
+expect
+	comparisons_with_held.all(
+		|(metres, want)| {
+			across = Across.metres(metres)
+			held = Across.metres(2.5)
+			[
+				across < held,
+				across <= held,
+				across > held,
+				across >= held,
+				across == held,
+			] == want
+		},
+	)
+
+expect Geom.ground_drop({ right: 0.0, forward: 0.0 }) == 0.0
+expect Geom.ground_drop({ right: 3.0, forward: 10.0 }) == 0.000545
+expect Geom.ground_drop({ right: -5.0, forward: 40.0 }) == 0.008125
+expect Geom.ground_drop({ right: 12.5, forward: 100.0 }) == 0.05078125
+
+expect {
+	seen_from = |road_point, yaw|
+		Geom.to_rider_point(
+			road_point,
+			{
+				along: Along.metres(5.0),
+				across: Across.metres(0.5),
+				yaw: Angle.Turn.radians(yaw),
+				half_width: Distance.metres(3.0),
+			},
+		)
+	[
+		(
+			seen_from({ along: Along.metres(0.0), across: Across.metres(0.0) }, 0.0),
+			{ right: -3.5, forward: -5.0 },
+		),
+		(
+			seen_from({ along: Along.metres(12.0), across: Across.metres(3.0) }, 0.35),
+			{ right: -2.869971008611849, forward: 6.404160086203927 },
+		),
+		(
+			seen_from({ along: Along.metres(40.0), across: Across.metres(-2.0) }, -0.6),
+			{ right: 15.223140686823006, forward: 31.992280125511435 },
+		),
+		(
+			seen_from({ along: Along.metres(7.5), across: Across.metres(6.25) }, 1.2),
+			{ right: -1.333613890107213, forward: 3.4690018726015563 },
+		),
+	].all(
+		|(got, want)| {
+			right_miss = (got.right - want.right).abs()
+			forward_miss = (got.forward - want.forward).abs()
+			right_miss <= 0.000001 and forward_miss <= 0.000001
+		},
+	)
+}
+
+expect
+	Geom.line_crossing({
+		first_line: {
+			start_point: { right: 0.0, forward: 0.0 },
+			end_point: { right: 0.0, forward: 1.0 },
+		},
+		second_line: {
+			start_point: { right: -2.0, forward: 4.0 },
+			end_point: { right: 3.0, forward: 4.0 },
+		},
+	})
+		== { right: 0.0, forward: 4.0 }
+
+expect
+	Geom.clip_near([
+		{
+			right: -1.0,
+			forward: 2.0,
+			height: 0.0,
+		},
+		{
+			right: 1.0,
+			forward: 2.0,
+			height: 0.5,
+		},
+		{
+			right: 1.0,
+			forward: -1.0,
+			height: 1.0,
+		},
+		{
+			right: -1.0,
+			forward: -1.0,
+			height: 1.5,
+		},
+	])
+		== [
+			{
+				right: -1.0,
+				forward: 2.0,
+				height: 0.0,
+			},
+			{
+				right: 1.0,
+				forward: 2.0,
+				height: 0.5,
+			},
+			{
+				right: 1.0,
+				forward: 0.4,
+				height: 0.7666666666666666,
+			},
+			{
+				right: -1.0,
+				forward: 0.4,
+				height: 0.8,
+			},
+		]

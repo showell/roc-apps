@@ -124,3 +124,48 @@ merge_onto = |
 		(Err(OutOfBounds), Ok(_)) => merged.concat(second.drop_first(at_second))
 		(Err(OutOfBounds), Err(OutOfBounds)) => merged
 	}
+
+# Ten keys, each with its own place, so the order they come out in shows
+# whether ties kept theirs.
+expect
+	DepthSort.sort_by(
+		[
+			{ forward: 30.0, subject: Tree(0) },
+			{ forward: 10.0, subject: Critter(1) },
+			{ forward: 30.0, subject: Rail(2) },
+			{ forward: 50.0, subject: Tower(3) },
+			{ forward: 10.0, subject: Cat(4) },
+			{ forward: 20.0, subject: Bird(5) },
+			{ forward: 30.0, subject: Tree(6) },
+			{ forward: 40.0, subject: Rail(7) },
+			{ forward: 10.0, subject: Critter(8) },
+			{ forward: 5.0, subject: Cat(9) },
+		],
+		|key| key.forward,
+	)
+		== [
+			{ forward: 50.0, subject: Tower(3) },
+			{ forward: 40.0, subject: Rail(7) },
+			{ forward: 30.0, subject: Tree(0) },
+			{ forward: 30.0, subject: Rail(2) },
+			{ forward: 30.0, subject: Tree(6) },
+			{ forward: 20.0, subject: Bird(5) },
+			{ forward: 10.0, subject: Critter(1) },
+			{ forward: 10.0, subject: Cat(4) },
+			{ forward: 10.0, subject: Critter(8) },
+			{ forward: 5.0, subject: Cat(9) },
+		]
+
+## A pair of trees at these depths, as the sort orders them.
+sorted_pair : { first : F64, second : F64 } -> List(DepthSort.Subject)
+sorted_pair = |{ first, second }| {
+	keys = [{ forward: first, subject: Tree(0) }, { forward: second, subject: Tree(1) }]
+	DepthSort.sort_by(keys, |key| key.forward).map(|key| key.subject)
+}
+
+# At each depth the first pair is within the tie's slack and keeps its order;
+# the second is not, and its farther tree goes first.
+expect sorted_pair({ first: 100.0, second: 100.000004 }) == [Tree(0), Tree(1)]
+expect sorted_pair({ first: 100.0, second: 100.00001 }) == [Tree(1), Tree(0)]
+expect sorted_pair({ first: 0.5, second: 0.50000004 }) == [Tree(0), Tree(1)]
+expect sorted_pair({ first: 0.5, second: 0.5000001 }) == [Tree(1), Tree(0)]

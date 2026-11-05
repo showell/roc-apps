@@ -165,3 +165,115 @@ plant_onto = |
 			},
 		)
 	}
+
+expect Trees.conifer_green == 1858082
+expect Trees.conifer_gold == 13605400
+expect Trees.conifer_red == 11680298
+expect Trees.max_trees == 96
+
+expect Trees.small_height == Distance.metres(4.5)
+expect Trees.big_scale == 1.3
+expect Trees.tree_spacing == Distance.metres(30.0)
+expect Trees.tree_road_offset == Distance.metres(1.5)
+expect Trees.tree_start_inset == Distance.metres(6.0)
+expect Trees.tree_end_inset == Distance.metres(85.0)
+
+expect Trees.color(Trees.accent(AllGreen)) == 1858082
+expect Trees.color(Trees.accent(YellowGreen)) == 13605400
+expect Trees.color(Trees.accent(RedGreen)) == 11680298
+
+expect Trees.height({ conifer: Green, size: Big }).to_metres() == 5.8500000000000005
+expect Trees.height({ conifer: Green, size: Small }).to_metres() == 4.5
+expect Trees.height({ conifer: Red, size: Big }).to_metres() == 11.700000000000001
+expect Trees.height({ conifer: Red, size: Small }).to_metres() == 9.0
+expect Trees.height({ conifer: Gold, size: Big }).to_metres() == 17.55
+expect Trees.height({ conifer: Gold, size: Small }).to_metres() == 13.5
+
+expect Trees.distance_from_middle(Green).to_metres() == 3.5
+expect Trees.distance_from_middle(Red).to_metres() == 3.5
+expect Trees.distance_from_middle(Gold).to_metres() == 8.0
+
+## Seven pairs, alternating big green and small gold.
+yellow_green_trees : List(Scenery.Tree)
+yellow_green_trees = Trees.plant({ scheme: YellowGreen, length: Distance.metres(300.0) })
+
+expect
+	yellow_green_trees.map(|tree| tree.along.to_metres())
+		== [
+			6.0,
+			6.0,
+			36.0,
+			36.0,
+			66.0,
+			66.0,
+			96.0,
+			96.0,
+			126.0,
+			126.0,
+			156.0,
+			156.0,
+			186.0,
+			186.0,
+		]
+
+expect
+	yellow_green_trees.map(|tree| tree.across.to_metres())
+		== [
+			-3.5,
+			3.5,
+			-8.0,
+			8.0,
+			-3.5,
+			3.5,
+			-8.0,
+			8.0,
+			-3.5,
+			3.5,
+			-8.0,
+			8.0,
+			-3.5,
+			3.5,
+		]
+
+expect
+	yellow_green_trees.map(|tree| tree.color)
+		== [
+			1858082,
+			1858082,
+			13605400,
+			13605400,
+			1858082,
+			1858082,
+			13605400,
+			13605400,
+			1858082,
+			1858082,
+			13605400,
+			13605400,
+			1858082,
+			1858082,
+		]
+
+expect
+	yellow_green_trees.map(|tree| tree.height.to_metres())
+		== [
+			5.8500000000000005,
+			5.8500000000000005,
+			13.5,
+			13.5,
+			5.8500000000000005,
+			5.8500000000000005,
+			13.5,
+			13.5,
+			5.8500000000000005,
+			5.8500000000000005,
+			13.5,
+			13.5,
+			5.8500000000000005,
+			5.8500000000000005,
+		]
+
+expect yellow_green_trees.len() == 14
+expect Trees.plant({ scheme: AllGreen, length: Distance.metres(100.0) }).len() == 2
+expect Trees.plant({ scheme: AllGreen, length: Distance.metres(5000.0) }).len() == 96
+expect Trees.plant({ scheme: AllGreen, length: Distance.metres(50.0) }).len() == 0

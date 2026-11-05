@@ -1,23 +1,34 @@
 -- budget: steps=40000000 reads=20000 read_bytes=400000000 output_bytes=200000
--- SAFARI'S GATES: the spec apps against their verdicts, then the native
--- proof tools.
+-- SAFARI'S GATES: every module's expects, the spec apps against their
+-- verdicts, then the native proof tools.
 --
 --   cd <roc-apps checkout> && nice -n 19 shale canvas_apps/safari/gates/run.shale
 --
 -- Run from the roc-apps root: every path is the checkout's, so a worktree
--- gates its own tree. About two and a half minutes on the box (the specs ~75 s in
--- two parts, the proof tools ~65 s).
+-- gates its own tree. About two minutes on the box (the specs ~30 s in two
+-- parts, the proof tools ~65 s, the expects a few seconds).
 --
 -- A run holds 64 programs and a spec takes two (its build and its binary),
--- so the gates run as child runs of this script, `part=1` and `part=2` (half
--- the specs each), `part=proof` and `part=tutorial`, one program of this
--- run's each. A child runs alone the same way (`... run.shale part=2`).
+-- so the gates run as child runs of this script, `part=expects`, `part=1` and
+-- `part=2` (half the specs each), `part=proof` and `part=tutorial`, one program
+-- of this run's each. A child runs alone the same way (`... run.shale part=2`).
 --
 -- **THE LINTS** (gates/lints.shale) run first: shale's Roc lints, each count
 -- held exactly, lowered as the code is fixed.
 --
 -- `part=tutorial` runs tutorial/build.shale's self-test, then builds the
 -- tutorial, so a name it quotes that is gone from the code fails the gates.
+--
+-- `part=expects` runs `roc test --verbose` from each of EXPECT_ROOTS, whose
+-- reach together is every module: web.roc reaches the game, gates/ShapesFrame.roc
+-- the modules only the proof tools use, and lib's package root all of lib, where
+-- Trig lives. The source is the count, so no number needs keeping: every line
+-- of a `.roc` file in safari, gates/ or lib that starts `expect` must print
+-- `PASS` once in a run that reaches it, and a `PASS` must name such a line. An
+-- expect sits at the top level of its file. One indented into a block or a
+-- function fails here, and so does one in a module no root reaches. The roots
+-- overlap, and share a fresh cache, so a line that two roots reach runs once
+-- and counts once.
 --
 -- **THE SPECS:** each `<Spec>.roc` is built on the dev backend (what `roc
 -- run` runs) where it is written (its app header names lib/ as a package)
@@ -42,8 +53,8 @@
 -- at `tools:roc-<pin>/roc` (`~/tools/` on the box).
 --
 -- **EACH BUILD GETS A FRESH CACHE** (`XDG_CACHE_HOME`): nightly 09-22 can
--- SIGSEGV on a build that reuses the cache of earlier ones (seen on
--- TrigSpec), leaving no binary.
+-- SIGSEGV on a build that reuses the cache of earlier ones, leaving no
+-- binary.
 --
 -- Each child's binaries, outputs and caches go in a folder of its own under
 -- `scratch:` (`fresh_dir`), removed when the child passes and kept, named,
@@ -52,7 +63,8 @@ const SAFARI = "canvas_apps/safari"
 const EXPECTED = "canvas_apps/safari/gates/expected"
 const SELF_PATH = "canvas_apps/safari/gates/run.shale"
 const TUTORIAL = "canvas_apps/safari/tutorial/build.shale"
-const SPECS = 62
+const SPECS = 56
+const EXPECT_ROOTS = {"web.roc", "gates/ShapesFrame.roc", "../lib/main.roc"}
 const PROOF_EXPECTED = "canvas_apps/safari/gates/proof.expected"
 const WANT = "roc-pin: roc-apps' pinned nightly, and the binaries it builds under scratch:"
 
@@ -173,6 +185,92 @@ function grade_part(part)
   return nil
 end
 
+-- Where `roc test`, run in safari's folder, says a source line is.
+function printed_at(path, line)
+  if starts_with(path, SAFARI .. "/") then return sub(path, #SAFARI + 2) .. ":" .. line end
+  return "../" .. sub(path, #"canvas_apps/" + 1) .. ":" .. line
+end
+
+-- The set of `expect` lines in the source, each as `roc test` prints it. An
+-- indented one is printed and fails the count.
+function written_expects()
+  local r = run({"git", "grep", "-n", "--untracked", "-E", "^[[:space:]]*expect( |$)", "--",
+    ":(glob)" .. SAFARI .. "/*.roc", ":(glob)" .. SAFARI .. "/gates/*.roc", ":(glob)canvas_apps/lib/*.roc"},
+    {timeout_ms = 30000, whole = 4000000})
+  local written = {}
+  local indented = 0
+  for l in lines(trim(r.out)) do
+    local parts = split(l, ":")
+    local text = join(drop(parts, 2), ":")
+    if starts_with(text, "expect") then
+      written[printed_at(parts[1], parts[2])] = true
+    else
+      indented = indented + 1
+      print("FAIL an expect not at the top level of its file: " .. parts[1] .. ":" .. parts[2])
+    end
+  end
+  return {written = written, indented = indented}
+end
+
+-- One root's run: what it passed goes in `passed`, and the answer is how many
+-- things went wrong.
+function test_root(roc, cache, root, passed)
+  local r = run({roc, "test", "--verbose", root},
+    {timeout_ms = 300000, cwd = SAFARI, whole = 4000000, want = WANT, env = {XDG_CACHE_HOME = real(cache)}})
+  local here = {}
+  local wrong = 0
+  local printed = 0
+  for l in lines(r.out) do
+    if starts_with(l, "PASS: ") then
+      local at = trim(sub(l, 7))
+      printed = printed + 1
+      if has_key(here, at) then
+        wrong = wrong + 1
+        print("FAIL passed twice from " .. root .. ": " .. at)
+      end
+      here[at] = true
+      passed[at] = true
+    elseif contains(l, "✗") or contains(l, "●") or contains(l, "TEST FAILURE") then
+      wrong = wrong + 1
+      print("FAIL " .. root .. ": " .. trim(l))
+    end
+  end
+  local summary = re_find(r.out, "All \\(([0-9]+)\\) tests passed")
+  if r.ended ~= "exit" or get(r, "code", -1) ~= 0 or summary == nil or tonumber(summary.group) ~= printed then
+    wrong = wrong + 1
+    print("FAIL roc test " .. root .. " ended " .. r.ended .. " " .. get(r, "code", -1) .. " with " .. printed .. " PASS lines: " .. trim(sub(r.out, #r.out - 300)))
+  end
+  print("roc test " .. root .. ": " .. printed .. " passed, " .. r.ms .. " ms")
+  return wrong
+end
+
+function expects()
+  local roc = roc_path()
+  local cache = fresh_dir("scratch:", "safari-expects")
+  local passed = {}
+  local wrong = 0
+  for root in EXPECT_ROOTS do wrong = wrong + test_root(roc, cache, root, passed) end
+  remove_tree(cache)
+  local source = written_expects()
+  wrong = wrong + source.indented
+  for at in keys(source.written) do
+    if not has_key(passed, at) then
+      wrong = wrong + 1
+      print("FAIL not passed from any root: " .. at)
+    end
+  end
+  for at in keys(passed) do
+    if not has_key(source.written, at) then
+      wrong = wrong + 1
+      print("FAIL passed, but no top-level expect in the source: " .. at)
+    end
+  end
+  print("expects: " .. #keys(source.written) .. " in the source, " .. #keys(passed) .. " passed, " .. wrong .. " wrong")
+  if #keys(source.written) == 0 then fail("safari gates: no expects found") end
+  if wrong > 0 then fail("safari gates: the expects failed") end
+  return nil
+end
+
 function proof_build(roc, scratch, n)
   local b = build(roc, scratch, SAFARI .. "/gates", n, "✗|●")
   print("build " .. n .. ": " .. b.ms .. " ms, " .. b.matched_lines .. " errors or warnings")
@@ -249,7 +347,7 @@ function all()
   end
   push(times, "lints " .. (lints.ms // 1000) .. " s")
   if lints.ended ~= "exit" or lints.code ~= 0 then push(bad, "lints") end
-  for part in {"tutorial", "1", "2", "proof"} do
+  for part in {"expects", "tutorial", "1", "2", "proof"} do
     -- A child, and every roc under it, inherits this run's niceness.
     local r = run({"shale","--root", ".", SELF_PATH, "part=" .. part}, {timeout_ms = 1800000, tail = 200})
     for l in lines(r.out) do
@@ -260,7 +358,7 @@ function all()
   end
   print("safari gates: " .. join(times, ", "))
   if #bad > 0 then fail("safari gates: " .. #bad .. " failed: " .. join(bad, ", ")) end
-  print("safari gates: " .. SPECS .. "/" .. SPECS .. " specs pass, proof tools ok, tutorial built")
+  print("safari gates: expects held, " .. SPECS .. "/" .. SPECS .. " specs pass, proof tools ok, tutorial built")
 end
 
 const PART = arg("part", "")
@@ -268,10 +366,12 @@ if PART == "" then
   all()
 elseif PART == "1" or PART == "2" then
   grade_part(PART)
+elseif PART == "expects" then
+  expects()
 elseif PART == "proof" then
   proof()
 elseif PART == "tutorial" then
   tutorial()
 else
-  fail("safari gates: part= is 1, 2, proof or tutorial (none runs them all)")
+  fail("safari gates: part= is expects, 1, 2, proof or tutorial (none runs them all)")
 end
