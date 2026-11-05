@@ -26,7 +26,10 @@ package
 		Screen,
 		Sky,
 		Speed,
+		Steps,
 		Tour,
+		Tower,
+		TowerSighting,
 		Tree,
 		World,
 	]

@@ -29,6 +29,9 @@ ScrubWidget :: [].{
 	picture_bottom_y : F64
 	picture_bottom_y = 216.0
 
+	## The steps of the ride that a ruler shows, from its left end to its right.
+	ClockRange : { first_step : F64, last_step : F64 }
+
 	## A stretch of the ruler, as shares of its length.
 	Stretch : { from : Fraction, to : Fraction }
 
@@ -95,6 +98,18 @@ ScrubWidget :: [].{
 	## How far along such a ruler `gap` sits.
 	gap_share : Distance, { farthest : Distance } -> Fraction
 	gap_share = |gap, { farthest }| Fraction.clamp(1.0 - gap.ratio_to(farthest))
+
+	## The clock with the pointer `share` of the way along a ruler.
+	clock_at : Fraction, ScrubWidget.ClockRange -> Clock
+	clock_at = |share, { first_step, last_step }| {
+		step = first_step + (last_step - first_step) * share.to_f64()
+		Clock.at_step(step.to_u32_wrap())
+	}
+
+	## How far along a ruler `step` sits, which need not be a whole step.
+	step_share : F64, ScrubWidget.ClockRange -> Fraction
+	step_share = |step, { first_step, last_step }|
+		Fraction.clamp((step - first_step) / (last_step - first_step))
 
 	flat : I64 -> Brush.Fill
 	flat = |color| Flat(Brush.opaque(color))
@@ -298,6 +313,17 @@ expect gap_on_ruler(Fraction.of(0.5)) == Distance.metres(25.0)
 expect share_on_ruler(37.5) == Fraction.of(0.25)
 expect share_on_ruler(60.0) == Fraction.zero
 expect share_on_ruler(0.0 - 1.0) == Fraction.whole
+
+## A ruler over steps 100 to 300.
+sample_range : ScrubWidget.ClockRange
+sample_range = { first_step: 100.0, last_step: 300.0 }
+
+expect ScrubWidget.clock_at(Fraction.zero, sample_range) == Clock.at_step(100)
+expect ScrubWidget.clock_at(Fraction.whole, sample_range) == Clock.at_step(300)
+expect ScrubWidget.clock_at(Fraction.of(0.5), sample_range) == Clock.at_step(200)
+expect ScrubWidget.step_share(150.0, sample_range) == Fraction.of(0.25)
+expect ScrubWidget.step_share(99.0, sample_range) == Fraction.zero
+expect ScrubWidget.step_share(301.0, sample_range) == Fraction.whole
 
 expect ScrubWidget.stage_text(Waiting) == "Waiting"
 expect ScrubWidget.stage_text(Playing(Fraction.of(0.5))) == "Playing: 50%"

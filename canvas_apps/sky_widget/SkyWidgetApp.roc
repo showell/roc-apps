@@ -5,7 +5,6 @@
 ## size. Below it, a ruler shows the clock, and four lines of text read out
 ## what Sky makes of it.
 import game.Clock
-import game.Fraction
 import game.Lens
 import game.Sky
 import lib.CanvasApp
@@ -21,30 +20,24 @@ SkyWidgetApp :: [].{
 	canvas_app = ScrubWidget.canvas_app({
 		title: "The sun going down",
 		init: { clock: Clock.start },
-		model_at: |share| { clock: clock_at(share) },
+		model_at: |share| { clock: ScrubWidget.clock_at(share, clock_range) },
 		frame: |model| frame_at(model.clock),
 	})
 }
 
-## The clock at the canvas's right edge, after full dusk. At its left edge the
-## ride starts.
-last_step : F64
-last_step = 6000.0
-
-## The clock with the pointer `share` of the way across the canvas.
-clock_at : Fraction -> Clock
-clock_at = |share| Clock.at_step((last_step * share.to_f64()).to_u32_wrap())
-
-## How far along the ruler step `step` sits.
-share_at : F64 -> Fraction
-share_at = |step| Fraction.clamp(step / last_step)
+## The ruler runs from the ride's start to a little after full dusk.
+clock_range : ScrubWidget.ClockRange
+clock_range = {
+	first_step: 0.0,
+	last_step: 6000.0,
+}
 
 ## Everything on the canvas at `clock`.
 frame_at : Clock -> List(Shapes.Shape)
 frame_at = |clock|
 	ScrubWidget.frame_shapes({
 		picture: picture(clock),
-		dot_at: share_at(clock.to_f64()),
+		dot_at: ScrubWidget.step_share(clock.to_f64(), clock_range),
 		marked: [warmth_stretch],
 		status: status_lines(clock),
 	})
@@ -71,8 +64,8 @@ step_at_height = |height| (Sky.sun_start_px - height) / Sky.sun_drop_px_per_step
 ## The stretch of the ruler with any warmth in the sunset.
 warmth_stretch : ScrubWidget.Stretch
 warmth_stretch = {
-	from: share_at(step_at_height(Sky.warmth_falloff_px)),
-	to: share_at(step_at_height(0.0 - Sky.warmth_falloff_px)),
+	from: ScrubWidget.step_share(step_at_height(Sky.warmth_falloff_px), clock_range),
+	to: ScrubWidget.step_share(step_at_height(0.0 - Sky.warmth_falloff_px), clock_range),
 }
 
 ## What Sky says at `clock`, a line each.
@@ -94,11 +87,6 @@ sun_text = |height|
 		"Sun: ${ScrubWidget.tenths_text(height)} px above the horizon"
 	}
 
-expect clock_at(Fraction.zero) == Clock.start
-expect clock_at(Fraction.whole) == Clock.at_step(6000)
-expect clock_at(Fraction.of(0.5)) == Clock.at_step(3000)
-expect share_at(1500.0) == Fraction.of(0.25)
-expect share_at(7000.0) == Fraction.whole
 expect warmth_stretch.from.to_f64() < warmth_stretch.to.to_f64()
 
 expect step_at_height(Sky.sun_start_px) == 0.0
