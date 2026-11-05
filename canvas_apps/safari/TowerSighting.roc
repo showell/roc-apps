@@ -48,7 +48,7 @@ TowerSighting :: [].{
 
 	## How far a mast past a segment's end is turned: 30 degrees.
 	tower_yaw : Angle.Turn
-	tower_yaw = Angle.Turn.radians((30.0 * 3.14159265) / 180.0)
+	tower_yaw = Angle.Turn.degrees(30.0)
 
 	## At most this many masts are drawn in a frame.
 	max_vis_towers : I64
