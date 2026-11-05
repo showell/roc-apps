@@ -29,11 +29,7 @@ SafariApp :: [].{
 		# thirty is the speed it is meant to look like.
 		fps: 30,
 		init: { ride: SafariRide.init, paused: Bool.False },
-		advance: |
-			m,
-			input,
-			_dt,
-		| step(m, input),
+		advance: CanvasApp.untimed_advance(step),
 		frame: |m| frame(m.ride),
 		sounds: |_m| 0,
 		tones: [],
