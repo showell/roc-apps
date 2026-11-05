@@ -4,6 +4,7 @@ app [Model, program] {
 	game: "../safari/game.roc",
 	lib: "../lib/main.roc",
 	pf: platform "../web/platform/main.roc",
+	widget: "../widget_kit/main.roc",
 }
 
 import lib.WasmApp

@@ -5,6 +5,7 @@ app [Model, program] {
 	lib: "../lib/main.roc",
 	native: "../native/main.roc",
 	rr: platform "../../../roc-ray/platform/main.roc",
+	widget: "../widget_kit/main.roc",
 }
 
 import native.CanvasAppRunner
