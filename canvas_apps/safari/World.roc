@@ -60,7 +60,7 @@ World :: [].{
 		scheme : Scenery.Scheme,
 		turn_degrees : F64,
 		cat : [WithCat, NoCat],
-		pigs : [WithPigs, NoPigs],
+		pigs : Pigs.PigPresence,
 		bull : [WithBull, NoBull],
 		ending : [Continues, Terminates],
 		creature : Scenery.Creature,
@@ -72,7 +72,7 @@ World :: [].{
 		trees : List(Scenery.Tree),
 		cows : List(Scenery.Critter),
 		pigs : List(Scenery.Critter),
-		pig_attention : [Distracting, Unnoticed],
+		pig_attention : Pigs.PigAttention,
 		exit_angle : F64,
 		exit_side : Geom.TurnSide,
 		commit_along : F64,
@@ -283,7 +283,10 @@ World :: [].{
 	## How many of the segments up to and including `index` have pigs.
 	pig_segments_through : World.SegmentIndex -> U32
 	pig_segments_through = |index|
-		route.take_first(index.count_before() + 1).count_if(has_pigs).to_u32_wrap()
+		route
+			.take_first(index.count_before() + 1)
+			.count_if(|plan| Pigs.has_pigs(plan.pigs))
+			.to_u32_wrap()
 
 	## Segment `number` of the route, counting from 0.
 	segment_at : U32 -> World.Segment
@@ -312,36 +315,24 @@ World :: [].{
 		route_length(world.take_first(index.count_before())) + along
 }
 
-## Whether a segment's plan has pigs along it.
-has_pigs : World.SegmentPlan -> Bool
-has_pigs = |plan|
-	match plan.pigs {
-		WithPigs => True
-		NoPigs => False
-	}
-
 ## The segment at `index` of the route, built from its plan.
 built_segment : World.SegmentPlan, World.SegmentIndex -> World.Segment
 built_segment = |plan, index| {
 	exit_angle = DeviceMath.real_abs(plan.turn_degrees) * Trig.deg
 	trees = Trees.plant({ scheme: plan.scheme, length: plan.length })
-	# The first few segments with pigs show them as a herd, which draws the
-	# rider's eye; after that they are a row.
-	pig_attention =
-		if has_pigs(plan) and (World.pig_segments_through(index) <= Pigs.pig_novelty_count) {
-			Distracting
-		} else {
-			Unnoticed
-		}
+	pig_attention = Pigs.attention_of({
+		presence: plan.pigs,
+		pig_segments_so_far: World.pig_segments_through(index),
+	})
 	{
 		length: plan.length,
 		trees,
 		cows: Herd.fill_cows(plan.bull),
-		pigs: match (plan.pigs, pig_attention) {
-			(WithPigs, Distracting) => Pigs.fill_pig_herd(plan.length)
-			(WithPigs, Unnoticed) => Pigs.fill_pig_row(plan.length)
-			(NoPigs, Distracting) | (NoPigs, Unnoticed) => []
-		},
+		pigs: Pigs.pigs_along({
+			presence: plan.pigs,
+			attention: pig_attention,
+			length: plan.length,
+		}),
 		pig_attention,
 		exit_angle,
 		exit_side: if (plan.turn_degrees >= 0.0) TurnsRight else TurnsLeft,
