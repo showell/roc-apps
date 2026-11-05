@@ -2,7 +2,23 @@
 # package. The gate programs in gates/ reach this as `game: "../game.roc"` and
 # say `import game.SafariRide`.
 package
-	[Angle, Animation, Cat, CatDraw, CatStills, CrossingReaction, Rider, Safari, SafariRide, SafariShapes, Scenery, Screen, Sky, Speed, World]
+	[
+		Angle,
+		Animation,
+		Cat,
+		CatDraw,
+		CatStills,
+		CrossingReaction,
+		Rider,
+		Safari,
+		SafariRide,
+		SafariShapes,
+		Scenery,
+		Screen,
+		Sky,
+		Speed,
+		World,
+	]
 	{
 		lib: "../lib/main.roc",
 	}
