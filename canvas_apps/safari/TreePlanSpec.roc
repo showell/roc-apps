@@ -39,7 +39,7 @@ up_road = {
 view_from : Frame.Pose, F64 -> TreePlan.View
 view_from = |pose, cam_focal| {
 	world: segs,
-	chain: [0, 1, 2],
+	chain: [0, 1, 2].map(World.SegmentIndex.number),
 	pose,
 	cam_focal,
 }
@@ -49,9 +49,9 @@ from_origin = view_from(origin, 500.0)
 
 ## A green tree `along` metres into the first segment, 3.5 m right of the
 ## road's middle.
-green_tree_at : F64 -> { place : I64, tree : Scenery.Tree }
+green_tree_at : F64 -> { position : Frame.ChainPosition, tree : Scenery.Tree }
 green_tree_at = |along| {
-	place: 0,
+	position: Frame.ChainPosition.first,
 	tree: {
 		along,
 		across: 3.5,
@@ -107,13 +107,13 @@ seg0_got = [
 	from_origin,
 	view_from(up_road, 500.0),
 	view_from(origin, 1.0),
-].map(|view| TreePlan.segment_trees(view, 0).len().to_i64_wrap())
+].map(|view| TreePlan.segment_trees(view, Frame.ChainPosition.first).len().to_i64_wrap())
 
 seg0_want : List(I64)
 seg0_want = [28, 20, 0]
 
 first_segment : List(TreePlan.TreeItem)
-first_segment = TreePlan.segment_trees(from_origin, 0)
+first_segment = TreePlan.segment_trees(from_origin, Frame.ChainPosition.first)
 
 ## The first segment's tree at `i`, in planting order.
 planted_tree : U64 -> TreePlan.TreeItem
@@ -151,11 +151,11 @@ keys = TreePlan.depth_keys(first_segment)
 key_at : U64 -> DepthSort.DepthKey
 key_at = |i| keys.get(i) ?? crash "TreePlanSpec: the first segment has 28 keys"
 
-## The place in the tree list that the key at `i` names.
+## The position in the tree list that the key at `i` names.
 tree_place_at : U64 -> I64
 tree_place_at = |i|
 	match key_at(i).subject {
-		Tree(place) => place.to_i64_wrap()
+		Tree(position) => position.to_i64_wrap()
 		Tower(_) | Critter(_) | Cat(_) | Truck | Rail(_) | Bird(_) =>
 			crash "TreePlanSpec: a tree's key names a tree"
 	}

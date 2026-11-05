@@ -13,7 +13,7 @@ Pigs :: [].{
 	pig_height = 1.1
 
 	## How many segments with pigs have the big herd.
-	pig_novelty_count : I64
+	pig_novelty_count : U32
 	pig_novelty_count = 2
 
 	## How far before the end of its segment the pigs are.

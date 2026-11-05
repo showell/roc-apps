@@ -34,7 +34,7 @@ GuardRail :: [].{
 
 	## How many metres the rail runs on, a post a metre, past each end of
 	## a bend.
-	rail_runout : I64
+	rail_runout : U32
 	rail_runout = 10
 
 	## The most quads one rail draws.

@@ -9,6 +9,7 @@ import Arc
 import lib.DeviceMath
 import Grade
 import LeanSearch
+import World
 import Pose
 
 target_got : List(F64)
@@ -90,7 +91,7 @@ read_want = [True, True, False, False, True, False, False]
 
 rider : F64, F64 -> Pose.RiderState
 rider = |across, tilt| {
-	segment: 0,
+	segment: World.SegmentIndex.number(0),
 	along: 0.0,
 	across: across,
 	yaw: Angle.Turn.radians(0.0),

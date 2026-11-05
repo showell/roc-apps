@@ -26,7 +26,7 @@ CatPlan :: [].{
 	## far along its segment the rider is, and the rider's speed.
 	View : {
 		world : List(World.Segment),
-		chain : List(I64),
+		chain : List(World.SegmentIndex),
 		pose : Frame.Pose,
 		cam_focal : F64,
 		rider_along : F64,
@@ -40,53 +40,53 @@ CatPlan :: [].{
 	## The cats in view, the nearest segment's first.
 	in_view : CatPlan.View -> List(CatPlan.CatItem)
 	in_view = |view| {
-		places = List.from_iter(U64.until(0, view.chain.len()))
-		places.join_map(|place| segment_cat(view, U64.to_i64_wrap(place)))
+		positions = Frame.ChainPosition.all_in(view.chain)
+		positions.join_map(|position| segment_cat(view, position))
 	}
 
-	## The cat waiting on the segment at `place` in the chain, if it has one
+	## The cat waiting on the segment at `position` in the chain, if it has one
 	## and it is in view.
-	segment_cat : CatPlan.View, I64 -> List(CatPlan.CatItem)
-	segment_cat = |view, place| {
-		seg_index = view.chain.get(I64.to_u64_wrap(place))
-			?? crash "CatPlan.segment_cat: no such place in the chain"
-		segment = world_segment(view, seg_index)
-		match segment.cat {
-			Waits(crossing) => cat_in_view(view, { place, crossing })
+	segment_cat : CatPlan.View, Frame.ChainPosition -> List(CatPlan.CatItem)
+	segment_cat = |view, position|
+		match position.index_in(view.chain).segment_in(view.world).cat {
+			Waits(crossing) => cat_in_view(view, { position, crossing })
 			NoCat => []
 		}
-	}
 
-	## How far ahead of the rider the segment at `place` in the chain starts.
+	## How far ahead of the rider the segment at `position` in the chain starts.
 	## The segments' lengths are added nearest first.
-	gap_to_segment : CatPlan.View, I64 -> F64
-	gap_to_segment = |view, place|
-		view.chain.take_first(I64.to_u64_wrap(place)).fold(
+	gap_to_segment : CatPlan.View, Frame.ChainPosition -> F64
+	gap_to_segment = |view, position|
+		position.before_in(view.chain).fold(
 			(0.0 - view.rider_along),
-			|gap, seg_index| (gap + world_segment(view, seg_index).length),
+			|gap, index| gap + index.segment_in(view.world).length,
 		)
 
 	## The cats as the depth sort sees them: each one's distance ahead, and
-	## its place in `cats`.
+	## its position in `cats`.
 	depth_keys : List(CatPlan.CatItem) -> List(DepthSort.DepthKey)
 	depth_keys = |cats| cats.map_with_index(|cat, i| { forward: cat.forward, subject: Cat(i) })
 }
 
-## The cat crossing the segment at `place` in the chain, as far through its
+## The cat crossing the segment at `position` in the chain, as far through its
 ## crossing as the rider's approach has brought it, if it is in view: one
 ## item, or none.
-cat_in_view : CatPlan.View, { place : I64, crossing : Cat.Crossing } -> List(CatPlan.CatItem)
-cat_in_view = |view, { place, crossing }| {
-	gap = CatPlan.gap_to_segment(view, place)
+cat_in_view : CatPlan.View,
+{
+	position : Frame.ChainPosition,
+	crossing : Cat.Crossing,
+} -> List(CatPlan.CatItem)
+cat_in_view = |view, { position, crossing }| {
+	gap = CatPlan.gap_to_segment(view, position)
 	state = Cat.state(crossing, { gap: (gap + crossing.along), speed: view.speed })
-	seen = Frame.at(
+	seen = Frame.rider_point_ahead(
 		{
 			world: view.world,
 			chain: view.chain,
 			pose: view.pose,
 		},
 		{
-			segments_ahead: place,
+			position: position,
 			along: crossing.along,
 			across: (state.across + (Scenery.lane_width / 2.0)),
 		},
@@ -107,9 +107,3 @@ cat_in_view = |view, { place, crossing }| {
 		]
 	}
 }
-
-world_segment : CatPlan.View, I64 -> World.Segment
-world_segment = |
-	view,
-	seg_index,
-| view.world.get(I64.to_u64_wrap(seg_index)) ?? crash "CatPlan: no such segment"

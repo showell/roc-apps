@@ -42,7 +42,7 @@ Safari :: [].{
 	ride_step = |w, r| (
 		{
 			nx = Rider.get_next_rider_state(r.rider, w)
-			dist = World.route_distance(w, { index: nx.segment, along: nx.along })
+			dist = World.distance_along_route(w, { index: nx.segment, along: nx.along })
 			{
 				rider: nx,
 				truck: Truck.truck_next(
@@ -50,7 +50,7 @@ Safari :: [].{
 					{
 						rider_distance: dist,
 						world: w,
-						route_length: World.course_length(w),
+						route_length: World.route_length(w),
 					},
 				),
 				clock: (r.clock + 1.0),
@@ -64,7 +64,7 @@ Safari :: [].{
 			s = r.rider
 			cf = RideFocal.ride_focal(w, s)
 			pose = ViewYaw.pose_for(s)
-			chain = Frame.build_chain(w, s.segment)
+			chain = Frame.chain_ahead(w, s.segment)
 			scene = Render.collect({
 				world: w,
 				chain,
@@ -95,7 +95,7 @@ Safari :: [].{
 				}),
 				GroundPlan.draw({
 					world: w,
-					segment: s.segment,
+					rider_segment: s.segment,
 					pose,
 					cam_focal: cf,
 					view_w: Screen.width,

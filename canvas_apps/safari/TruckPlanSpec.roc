@@ -35,7 +35,7 @@ lengths_want = [500.0, 320.0, 400.0]
 truck_seen_from : Frame.Pose, F64 -> TruckPlan.TruckAt
 truck_seen_from = |pose, lead| TruckPlan.in_view({
 	world: segs,
-	chain: [0, 1, 2],
+	chain: [0, 1, 2].map(World.SegmentIndex.number),
 	pose,
 	rider_along: 0.0,
 	lead,
@@ -54,7 +54,7 @@ is_ahead = |truck|
 
 ## Where the truck is, for a lead that puts it in view.
 ahead_of : F64 -> {
-	place : I64,
+	position : Frame.ChainPosition,
 	along : F64,
 	forward : F64,
 }
@@ -79,7 +79,7 @@ present_want : List(Bool)
 present_want = [True, True, True, True, False, False, False]
 
 landed_got : List(I64)
-landed_got = [100.0, 499.0, 600.0, 900.0].map(|lead| ahead_of(lead).place)
+landed_got = [100.0, 499.0, 600.0, 900.0].map(|lead| ahead_of(lead).position.to_i64())
 
 landed_want : List(I64)
 landed_want = [0, 0, 1, 2]
@@ -183,7 +183,7 @@ main! = |_args| {
 			tol: 0.0,
 		}),
 		Grade.reals({
-			name: "tp-forward   ",
+			name: "tp-fwd   ",
 			got: fwd_got,
 			want: fwd_want,
 			tol: 0.0001,

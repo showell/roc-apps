@@ -7,6 +7,7 @@ app [main!] {
 import Angle
 import Bike
 import Grade
+import World
 import Pose
 
 limit_got : List(F64)
@@ -17,7 +18,7 @@ limit_want = [0.1, 0.3490658503988659]
 
 s0 : Pose.RiderState
 s0 = {
-	segment: 3,
+	segment: World.SegmentIndex.number(3),
 	along: 120.5,
 	across: 2.25,
 	yaw: Angle.Turn.radians(0.375),
@@ -80,9 +81,9 @@ carried_real_want = [0.625, 0.25, 0.625, 0.25]
 
 carried_int_got : List(I64)
 carried_int_got = [
-	s1.segment,
-	s2.segment,
-	s3.segment,
+	s1.segment.to_i64(),
+	s2.segment.to_i64(),
+	s3.segment.to_i64(),
 ]
 
 carried_int_want : List(I64)

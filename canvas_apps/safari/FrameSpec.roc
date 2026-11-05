@@ -1,5 +1,5 @@
-# FrameSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## These are Frame's checks: the chain's bounds, a segment's place, and where
+## a point lands in the rider's view.
 app [main!] {
 	lib: "../lib/main.roc",
 }
@@ -10,17 +10,20 @@ import Grade
 import World
 
 bound_got : List(I64)
-bound_got = [Frame.look_ahead, Frame.max_chain]
+bound_got = [
+	Frame.look_ahead.to_i64(),
+	Frame.chain_ahead(World.segments, World.SegmentIndex.first).len().to_i64_wrap(),
+]
 
 bound_want : List(I64)
-bound_want = [7, 8]
+bound_want = [7, 7]
 
 route_facts : List(World.Segment) -> List(I64)
 route_facts = |w| [
 	w.len().to_i64_wrap(),
-	Frame.build_chain(w, 0).len().to_i64_wrap(),
-	Frame.build_chain(w, 15).len().to_i64_wrap(),
-	Frame.build_chain(w, 18).len().to_i64_wrap(),
+	Frame.chain_ahead(w, World.SegmentIndex.first).len().to_i64_wrap(),
+	Frame.chain_ahead(w, World.SegmentIndex.number(15)).len().to_i64_wrap(),
+	Frame.chain_ahead(w, World.SegmentIndex.number(18)).len().to_i64_wrap(),
 ]
 
 route_got : List(I64)
@@ -37,82 +40,96 @@ pose = {
 	half_width: 2.0,
 }
 
-m_chain : Frame.Mapper
-m_chain = Frame.chain_map(3)
+m_chain : Frame.SegmentPlace
+m_chain = InChain(Frame.ChainPosition.number(3))
 
-m_prev_left : Frame.Mapper
-m_prev_left = {
-	is_chain: False,
-	d: 0,
-	prev_len: 300.0,
-	prev_angle: 1.2217304763960306,
-	prev_side: TurnsLeft,
-	prev_w: 4.0,
-}
+m_prev_left : Frame.SegmentPlace
+m_prev_left = JustBehind({
+	segment_length: 300.0,
+	turn_angle: 1.2217304763960306,
+	turn_side: TurnsLeft,
+	lane_width: 4.0,
+})
 
-m_prev_right : Frame.Mapper
-m_prev_right = {
-	is_chain: False,
-	d: 0,
-	prev_len: 300.0,
-	prev_angle: 0.8726646259971648,
-	prev_side: TurnsRight,
-	prev_w: 4.0,
-}
+m_prev_right : Frame.SegmentPlace
+m_prev_right = JustBehind({
+	segment_length: 300.0,
+	turn_angle: 0.8726646259971648,
+	turn_side: TurnsRight,
+	lane_width: 4.0,
+})
+
+## The bend of a place behind the rider.
+bend_of : Frame.SegmentPlace -> Geom.Bend
+bend_of = |place|
+	match place {
+		JustBehind(bend) => bend
+		InChain(_) => crash "FrameSpec.bend_of: only a place behind the rider has a bend"
+	}
+
+is_in_chain : Frame.SegmentPlace -> Bool
+is_in_chain = |place|
+	match place {
+		InChain(_) => True
+		JustBehind(_) => False
+	}
+
+turns_right : Frame.SegmentPlace -> Bool
+turns_right = |place| bend_of(place).turn_side == TurnsRight
 
 map_int_got : List(I64)
-map_int_got = [m_chain.d, m_prev_left.d]
+map_int_got = [Frame.ChainPosition.number(3).to_i64(), Frame.ChainPosition.first.next().to_i64()]
 
 map_int_want : List(I64)
-map_int_want = [3, 0]
+map_int_want = [3, 1]
 
 map_real_got : List(F64)
 map_real_got = [
-	m_chain.prev_len,
-	m_chain.prev_angle,
-	m_chain.prev_w,
-	m_prev_left.prev_len,
-	m_prev_left.prev_w,
+	bend_of(m_prev_left).segment_length,
+	bend_of(m_prev_left).lane_width,
+	bend_of(m_prev_right).segment_length,
+	bend_of(m_prev_right).lane_width,
+	bend_of(Frame.place_behind(World.segment_at(0))).segment_length,
 ]
 
 map_real_want : List(F64)
-map_real_want = [0.0, 0.0, 0.0, 300.0, 4.0]
+map_real_want = [300.0, 4.0, 300.0, 4.0, 500.0]
 
 map_bool_got : List(Bool)
 map_bool_got = [
-	m_chain.is_chain,
-	m_chain.prev_side == TurnsRight,
-	m_prev_left.is_chain,
-	m_prev_left.prev_side == TurnsRight,
-	m_prev_right.prev_side == TurnsRight,
+	is_in_chain(m_chain),
+	is_in_chain(m_prev_left),
+	is_in_chain(m_prev_right),
+	turns_right(m_prev_left),
+	turns_right(m_prev_right),
 ]
 
 map_bool_want : List(Bool)
 map_bool_want = [True, False, False, False, True]
 
 at_d0 : Geom.RiderPoint
-at_d0 = Frame.at(
+at_d0 = Frame.rider_point_ahead(
 	{
 		world: [],
 		chain: [],
 		pose,
 	},
 	{
-		segments_ahead: 0,
+		position: Frame.ChainPosition.first,
 		along: 50.0,
 		across: 3.0,
 	},
 )
 
 at_d1 : List(World.Segment) -> Geom.RiderPoint
-at_d1 = |w| Frame.at(
+at_d1 = |w| Frame.rider_point_ahead(
 	{
 		world: w,
-		chain: Frame.build_chain(w, 0),
+		chain: Frame.chain_ahead(w, World.SegmentIndex.first),
 		pose,
 	},
 	{
-		segments_ahead: 1,
+		position: Frame.ChainPosition.number(1),
 		along: 50.0,
 		across: 3.0,
 	},
@@ -142,26 +159,26 @@ at_want = [
 behind_got : List(F64)
 behind_got = (
 	{
-		l = Frame.map_pt(
+		l = Frame.rider_point_at(
 			{
 				world: [],
 				chain: [],
 				pose,
 			},
 			{
-				mapper: m_prev_left,
+				place: m_prev_left,
 				along: 50.0,
 				across: 3.0,
 			},
 		)
-		r = Frame.map_pt(
+		r = Frame.rider_point_at(
 			{
 				world: [],
 				chain: [],
 				pose,
 			},
 			{
-				mapper: m_prev_right,
+				place: m_prev_right,
 				along: 50.0,
 				across: 3.0,
 			},

@@ -30,7 +30,7 @@ ItemDraw :: [].{
 	## lights.
 	Context : {
 		world : List(World.Segment),
-		chain : List(I64),
+		chain : List(World.SegmentIndex),
 		pose : Frame.Pose,
 		cam_focal : F64,
 		clock : F64,
@@ -93,14 +93,14 @@ ItemDraw :: [].{
 					yaw: tower.yaw,
 				},
 			)
-			Frame.map_pt(
+			Frame.rider_point_at(
 				{
 					world: context.world,
 					chain: context.chain,
 					pose: context.pose,
 				},
 				{
-					mapper: tower.map,
+					place: tower.place,
 					along: on_map.along,
 					across: on_map.across,
 				},
@@ -119,14 +119,14 @@ ItemDraw :: [].{
 	draw_tower = |context, tower|
 		Tower.draw({
 			footprint: ItemDraw.tower_footprint(context, tower),
-			center: Frame.map_pt(
+			center: Frame.rider_point_at(
 				{
 					world: context.world,
 					chain: context.chain,
 					pose: context.pose,
 				},
 				{
-					mapper: tower.map,
+					place: tower.place,
 					along: tower.along,
 					across: tower.across,
 				},
@@ -192,7 +192,7 @@ draw_truck = |context, truck_at|
 					world: context.world,
 					chain: context.chain,
 					pose: context.pose,
-					segment: truck.place,
+					position: truck.position,
 				},
 				center: {
 					along: truck.along,

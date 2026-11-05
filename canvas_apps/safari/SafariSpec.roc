@@ -16,12 +16,12 @@ segs : List(World.Segment)
 segs = seg_list(0)
 
 # An accumulator loop is linear, where appending a recursive call is quadratic.
-seg_list : I64 -> List(World.Segment)
+seg_list : U32 -> List(World.Segment)
 seg_list = |i| seg_list_onto(i, [])
 
-seg_list_onto : I64, List(World.Segment) -> List(World.Segment)
+seg_list_onto : U32, List(World.Segment) -> List(World.Segment)
 seg_list_onto = |i, acc| (
-	if i >= World.route.len().to_i64_wrap() {
+	if i >= World.route.len().to_u32_wrap() {
 		acc
 	} else {
 		seg_list_onto((i + 1), List.append(acc, World.segment_at(i)))
@@ -42,7 +42,7 @@ start_want : List(F64)
 start_want = [0.0, 0.0, 0.0, 0.3, 500.0, 0.3]
 
 start_index_got : List(I64)
-start_index_got = [Safari.ride_initial.rider.segment]
+start_index_got = [Safari.ride_initial.rider.segment.to_i64()]
 
 start_index_want : List(I64)
 start_index_want = [0]
@@ -85,11 +85,11 @@ moved_want = [True, True, True]
 order_got : List(Bool)
 order_got = (
 	{
-		old_dist = World.route_distance(
+		old_dist = World.distance_along_route(
 			segs,
 			{ index: Safari.ride_initial.rider.segment, along: Safari.ride_initial.rider.along },
 		)
-		new_dist = World.route_distance(
+		new_dist = World.distance_along_route(
 			segs,
 			{ index: after_one_step.rider.segment, along: after_one_step.rider.along },
 		)
@@ -98,7 +98,7 @@ order_got = (
 			{
 				rider_distance: new_dist,
 				world: segs,
-				route_length: World.course_length(segs),
+				route_length: World.route_length(segs),
 			},
 		)
 		against_old = Truck.truck_next(
@@ -106,7 +106,7 @@ order_got = (
 			{
 				rider_distance: old_dist,
 				world: segs,
-				route_length: World.course_length(segs),
+				route_length: World.route_length(segs),
 			},
 		)
 		[
@@ -123,7 +123,7 @@ order_want = [True, True, True]
 done : Safari.Ride
 done = {
 	rider: {
-		segment: 18,
+		segment: World.SegmentIndex.number(18),
 		along: 400.0,
 		across: 0.0,
 		yaw: Angle.Turn.radians(0.0),

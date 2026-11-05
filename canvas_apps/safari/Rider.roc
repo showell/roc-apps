@@ -33,7 +33,7 @@ Rider :: [].{
 	rider_state_for_next_segment : Pose.RiderState, List(World.Segment) -> Pose.RiderState
 	rider_state_for_next_segment = |rs, segs| (
 		{
-			seg = (List.get(segs, I64.to_u64_wrap(rs.segment)) ?? crash ("list-at out of range"))
+			seg = rs.segment.segment_in(segs)
 			hw = (Scenery.lane_width / 2.0)
 			next =
 				match seg.ending {
@@ -111,7 +111,7 @@ Rider :: [].{
 	get_next_rider_state : Pose.RiderState, List(World.Segment) -> Pose.RiderState
 	get_next_rider_state = |state, segs| (
 		{
-			seg = (List.get(segs, I64.to_u64_wrap(state.segment)) ?? crash ("list-at out of range"))
+			seg = state.segment.segment_in(segs)
 			dec = decide(state, seg)
 			moved = Bike.simulate_rider_step(state, { lean_step: dec.tilt_step, accel: dec.accel })
 			resolved =
@@ -126,7 +126,7 @@ Rider :: [].{
 	is_finished : Pose.RiderState, List(World.Segment) -> Bool
 	is_finished = |s, segs| (
 		{
-			seg = (List.get(segs, I64.to_u64_wrap(s.segment)) ?? crash ("list-at out of range"))
+			seg = s.segment.segment_in(segs)
 			match seg.ending {
 				Continues(_) => False
 				Terminates => (s.along >= seg.length)

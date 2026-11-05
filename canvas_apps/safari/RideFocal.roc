@@ -15,8 +15,7 @@ RideFocal :: [].{
 	## attention; none where no cat waits.
 	cat_attention : List(World.Segment), Pose.RiderState -> F64
 	cat_attention = |world, rider| {
-		segment = world.get(rider.segment.to_u64_wrap())
-			?? crash "RideFocal.cat_attention: the rider is on a segment of the world"
+		segment = rider.segment.segment_in(world)
 		match segment.cat {
 			Waits(crossing) => Cat.focus({ gap: (crossing.along - rider.along), speed: rider.v })
 			NoCat => 0.0

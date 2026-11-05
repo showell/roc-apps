@@ -47,7 +47,7 @@ rider_at = |
 		tilt_radians: tilt,
 	},
 | {
-	segment: 0,
+	segment: World.SegmentIndex.number(0),
 	along: along,
 	across: across,
 	yaw: Angle.Turn.radians(0.0),

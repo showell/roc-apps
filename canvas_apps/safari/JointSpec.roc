@@ -22,28 +22,24 @@ pose = {
 	half_width: 2.0,
 }
 
-behind_right : Frame.Mapper
-behind_right = {
-	is_chain: False,
-	d: 0,
-	prev_len: 300.0,
-	prev_angle: 0.8726646259971648,
-	prev_side: TurnsRight,
-	prev_w: 4.0,
-}
+behind_right : Frame.SegmentPlace
+behind_right = JustBehind({
+	segment_length: 300.0,
+	turn_angle: 0.8726646259971648,
+	turn_side: TurnsRight,
+	lane_width: 4.0,
+})
 
-behind_left : Frame.Mapper
-behind_left = {
-	is_chain: False,
-	d: 0,
-	prev_len: 300.0,
-	prev_angle: 1.2217304763960306,
-	prev_side: TurnsLeft,
-	prev_w: 4.0,
-}
+behind_left : Frame.SegmentPlace
+behind_left = JustBehind({
+	segment_length: 300.0,
+	turn_angle: 1.2217304763960306,
+	turn_side: TurnsLeft,
+	lane_width: 4.0,
+})
 
-here : Frame.Mapper
-here = Frame.chain_map(0)
+here : Frame.SegmentPlace
+here = InChain(Frame.ChainPosition.first)
 
 apex_got : List(F64)
 apex_got = (

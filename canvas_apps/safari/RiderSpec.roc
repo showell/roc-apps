@@ -42,7 +42,7 @@ rider = |
 		tilt_radians: tilt,
 	},
 | {
-	segment: 0,
+	segment: World.SegmentIndex.number(0),
 	along: along,
 	across: across,
 	yaw: Angle.Turn.radians(0.0),
@@ -118,7 +118,7 @@ leaned_want = [True]
 
 at_seam : Pose.RiderState
 at_seam = {
-	segment: 0,
+	segment: World.SegmentIndex.number(0),
 	along: 499.0,
 	across: 0.5,
 	yaw: Angle.Turn.radians(0.1),
@@ -153,13 +153,13 @@ turn_want : List(F64)
 turn_want = [0.0, 0.0]
 
 index_got : List(I64)
-index_got = [crossed.segment, next_of(seg)]
+index_got = [crossed.segment.to_i64(), next_of(seg)]
 
 ## The segment after one that continues.
 next_of : World.Segment -> I64
 next_of = |segment|
 	match segment.ending {
-		Continues({ next }) => next
+		Continues({ next }) => next.to_i64()
 		Terminates => crash "RiderSpec.next_of: segment 0 continues"
 	}
 
@@ -195,7 +195,7 @@ resolve_got = [
 			tilt_radians: 0.0,
 		}),
 		segs,
-	).segment,
+	).segment.to_i64(),
 	Rider.resolve_cross(
 		rider({
 			along: 499.0,
@@ -204,7 +204,7 @@ resolve_got = [
 			tilt_radians: 0.0,
 		}),
 		segs,
-	).segment,
+	).segment.to_i64(),
 ]
 
 resolve_want : List(I64)
@@ -224,7 +224,7 @@ is_route_end = |segment|
 clamped_at_finish : F64, F64 -> Pose.RiderState
 clamped_at_finish = |along, v| Rider.finish_clamp(
 	{
-		segment: 0,
+		segment: World.SegmentIndex.number(0),
 		along: along,
 		across: 0.0,
 		yaw: Angle.Turn.radians(0.0),
@@ -258,7 +258,7 @@ done_got : List(Bool)
 done_got = (
 	{
 		at_end = {
-			segment: 0,
+			segment: World.SegmentIndex.number(0),
 			along: 300.0,
 			across: 0.0,
 			yaw: Angle.Turn.radians(0.0),
@@ -269,7 +269,7 @@ done_got = (
 			focus: 0.0,
 		}
 		short = {
-			segment: 0,
+			segment: World.SegmentIndex.number(0),
 			along: 299.0,
 			across: 0.0,
 			yaw: Angle.Turn.radians(0.0),
@@ -314,7 +314,7 @@ frame_got : List(Bool)
 frame_got = [
 	(next.along > 0.0),
 	(next.v > 0.0),
-	(next.segment == 0),
+	(next.segment == World.SegmentIndex.first),
 	(DeviceMath.real_abs(next.across) < (Scenery.lane_width / 2.0)),
 	(next.v <= VehicleLimits.v_max),
 ]

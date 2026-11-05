@@ -7,6 +7,7 @@ app [main!] {
 import Angle
 import CanvasRoll
 import Grade
+import World
 import Pose
 
 band_got : List(F64)
@@ -47,7 +48,7 @@ roll_want = [
 
 as_rider : F64 -> Pose.RiderState
 as_rider = |tilt| {
-	segment: 0,
+	segment: World.SegmentIndex.number(0),
 	along: 0.0,
 	across: 0.0,
 	yaw: Angle.Turn.radians(0.0),

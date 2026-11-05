@@ -7,10 +7,11 @@ app [main!] {
 import Angle
 import Grade
 import Pose
+import World
 
 probe : Pose.RiderState
 probe = {
-	segment: 7,
+	segment: World.SegmentIndex.number(7),
 	along: 11.0,
 	across: 2.5,
 	yaw: Angle.Turn.radians(0.75),
@@ -40,7 +41,7 @@ reals = |s| [
 ]
 
 seg : Pose.RiderState -> List(I64)
-seg = |s| [s.segment]
+seg = |s| [s.segment.to_i64()]
 
 init_want : List(F64)
 init_want = [0.0, 0.0, 0.0, 0.3, 0.0, 0.0, 0.0, 0.0]

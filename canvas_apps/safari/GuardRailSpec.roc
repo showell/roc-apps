@@ -26,7 +26,7 @@ fixed_got : List(I64)
 fixed_got = [
 	GuardRail.rail_metal,
 	GuardRail.rail_post_metal,
-	GuardRail.rail_runout,
+	GuardRail.rail_runout.to_i64(),
 	GuardRail.max_rail_polys.to_i64_wrap(),
 ]
 

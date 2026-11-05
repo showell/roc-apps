@@ -12,7 +12,7 @@ import Paint
 import World
 
 fixed_got : List(F64)
-fixed_got = [GroundPlan.road_chunk, GroundPlan.approach_length]
+fixed_got = [GroundPlan.road_chunk_length, GroundPlan.approach_length]
 
 fixed_want : List(F64)
 fixed_want = [25.0, 40.0]
@@ -24,7 +24,9 @@ colour_want : List(I64)
 colour_want = [3421500]
 
 chunks_got : List(I64)
-chunks_got = [25.0, 25.1, 50.0, 49.9, 1.0, 0.0, 500.0, 320.0, 1200.0].map(GroundPlan.chunk_count)
+chunks_got = [25.0, 25.1, 50.0, 49.9, 1.0, 0.0, 500.0, 320.0, 1200.0].map(
+	|length| GroundPlan.chunks_along(length).to_i64(),
+)
 
 chunks_want : List(I64)
 chunks_want = [1, 2, 2, 2, 1, 1, 20, 13, 48]
@@ -33,31 +35,33 @@ chunks_want = [1, 2, 2, 2, 1, 1, 20, 13, 48]
 # camera only the drawing checks read.
 view : GroundPlan.View
 view = {
-	world: [
-		World.segment_at(0),
-		World.segment_at(1),
-		World.segment_at(2),
-	],
-	chain: [0, 1, 2],
-	pose: {
-		along: 0.0,
-		across: 0.0,
-		yaw: 0.0,
-		half_width: 2.0,
+	road: {
+		world: [
+			World.segment_at(0),
+			World.segment_at(1),
+			World.segment_at(2),
+		],
+		chain: [0, 1, 2].map(World.SegmentIndex.number),
+		pose: {
+			along: 0.0,
+			across: 0.0,
+			yaw: 0.0,
+			half_width: 2.0,
+		},
 	},
 	cam_focal: 500.0,
 	view_w: 960.0,
 }
 
-## Chunk `chunk` of the first segment's 20, which is 500 m long.
-chunk_of_first : I64 -> List(Geom.RiderPoint)
-chunk_of_first = |chunk| GroundPlan.chunk_corners(
+## Chunk `chunk_number` of the first segment's 20, which is 500 m long.
+chunk_of_first : U32 -> List(Geom.RiderPoint)
+chunk_of_first = |chunk_number| GroundPlan.chunk_corners(
 	view,
 	{
-		position: 0,
-		length: 500.0,
-		chunks: 20,
-		chunk,
+		position: Frame.ChainPosition.first,
+		segment_length: 500.0,
+		chunk_count: 20,
+		chunk_number,
 	},
 )
 
@@ -113,7 +117,7 @@ seam_want : List(F64)
 seam_want = [0.0, 0.0, 0.0]
 
 strip : List(Paint.DrawCmd)
-strip = GroundPlan.segment_road(view, 0)
+strip = GroundPlan.segment_road(view, Frame.ChainPosition.first)
 
 far_ahead : Frame.Pose
 far_ahead = {
@@ -126,8 +130,8 @@ far_ahead = {
 strip_got : List(Bool)
 strip_got = [
 	(strip.len() > 0),
-	(strip.len().to_i64_wrap() <= GroundPlan.chunk_count(500.0)),
-	(GroundPlan.segment_road({ ..view, pose: far_ahead }, 0).len() == 0),
+	(strip.len().to_u32_wrap() <= GroundPlan.chunks_along(500.0)),
+	(GroundPlan.segment_road({ ..view, road: { ..view.road, pose: far_ahead } }, Frame.ChainPosition.first).len() == 0),
 ]
 
 strip_want : List(Bool)

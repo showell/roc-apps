@@ -24,13 +24,12 @@ TruckShape :: [].{
 	}
 
 	## Where the truck is: the world's road segments, the chain of them the
-	## rider is on, the rider's pose, and the truck's segment, as its place
-	## in the chain.
+	## rider is on, the rider's pose, and the truck's position in the chain.
 	Road : {
 		world : List(World.Segment),
-		chain : List(I64),
+		chain : List(World.SegmentIndex),
 		pose : Frame.Pose,
-		segment : I64,
+		position : Frame.ChainPosition,
 	}
 
 	## A truck ready to draw: where it is, the box it fills, and the camera.
@@ -100,14 +99,14 @@ TruckShape :: [].{
 		},
 	| {
 		road = truck.road
-		on_ground = Frame.at(
+		on_ground = Frame.rider_point_ahead(
 			{
 				world: road.world,
 				chain: road.chain,
 				pose: road.pose,
 			},
 			{
-				segments_ahead: road.segment,
+				position: road.position,
 				along,
 				across,
 			},

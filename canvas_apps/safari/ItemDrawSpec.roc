@@ -69,7 +69,7 @@ segs = [0, 1, 2].map(World.segment_at)
 context : ItemDraw.Context
 context = {
 	world: segs,
-	chain: [0, 1, 2],
+	chain: [0, 1, 2].map(World.SegmentIndex.number),
 	pose: {
 		along: 0.0,
 		across: 0.0,
@@ -84,7 +84,7 @@ context = {
 ## A mast `along` metres down the first segment, 22 m across.
 tower_along : F64 -> TowerPlan.TowerItem
 tower_along = |along| {
-	map: Frame.chain_map(0),
+	place: InChain(Frame.ChainPosition.first),
 	along,
 	across: 22.0,
 	yaw: 0.0,

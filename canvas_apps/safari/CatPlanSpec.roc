@@ -30,7 +30,7 @@ origin = {
 from_origin : CatPlan.View
 from_origin = {
 	world: segs,
-	chain: [0, 1, 2],
+	chain: [0, 1, 2].map(World.SegmentIndex.number),
 	pose: origin,
 	cam_focal: 500.0,
 	rider_along: 0.0,
@@ -57,7 +57,12 @@ gap_got = [0.0, 120.0].join_map(
 		0,
 		1,
 		2,
-	].map(|place| CatPlan.gap_to_segment({ ..from_origin, rider_along }, place)),
+	].map(
+		|number| CatPlan.gap_to_segment(
+			{ ..from_origin, rider_along },
+			Frame.ChainPosition.number(number),
+		),
+	),
 )
 
 gap_want : List(F64)
@@ -94,8 +99,8 @@ first_cat = |along|
 count_got : List(I64)
 count_got = [
 	seen.len().to_i64_wrap(),
-	CatPlan.segment_cat(from_origin, 0).len().to_i64_wrap(),
-	CatPlan.segment_cat(from_origin, 2).len().to_i64_wrap(),
+	CatPlan.segment_cat(from_origin, Frame.ChainPosition.first).len().to_i64_wrap(),
+	CatPlan.segment_cat(from_origin, Frame.ChainPosition.number(2)).len().to_i64_wrap(),
 	CatPlan.max_vis_cats,
 ]
 
@@ -135,7 +140,7 @@ cull_got = [
 	riding(500.0).len().to_i64_wrap(),
 	riding(600.0).len().to_i64_wrap(),
 	CatPlan.in_view({ ..from_origin, chain: [] }).len().to_i64_wrap(),
-	CatPlan.in_view({ ..from_origin, chain: [0] }).len().to_i64_wrap(),
+	CatPlan.in_view({ ..from_origin, chain: [0].map(World.SegmentIndex.number) }).len().to_i64_wrap(),
 ]
 
 cull_want : List(I64)

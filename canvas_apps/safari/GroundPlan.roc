@@ -13,34 +13,40 @@ import World
 
 GroundPlan :: [].{
 
-	## The ground in view: the world's segments, the chain of them ahead of
-	## the rider, the rider's pose, and the camera.
+	## The ground in view: the road, and the camera.
 	View : {
-		world : List(World.Segment),
-		chain : List(I64),
-		pose : Frame.Pose,
+		road : Frame.RoadView,
 		cam_focal : F64,
 		view_w : F64,
+	}
+
+	## One chunk of the road along the segment at `position` in the chain,
+	## which is `segment_length` long and painted in `chunk_count` chunks.
+	RoadChunk : {
+		position : Frame.ChainPosition,
+		segment_length : F64,
+		chunk_count : U32,
+		chunk_number : U32,
 	}
 
 	road_color : I64
 	road_color = 0x34353C
 
 	## The road is painted in chunks no longer than this.
-	road_chunk : F64
-	road_chunk = 25.0
+	road_chunk_length : F64
+	road_chunk_length = 25.0
 
 	## A bend's paving starts this far before the end of the segment that
 	## bends.
 	approach_length : F64
 	approach_length = 40.0
 
-	## The ground in a frame, for a rider on segment `segment` of the world:
+	## The ground in a frame, for a rider on the segment at `rider_segment`:
 	## each segment of the chain ahead in turn, then the bend from the
 	## segment behind.
 	draw : {
 		world : List(World.Segment),
-		segment : I64,
+		rider_segment : World.SegmentIndex,
 		pose : Frame.Pose,
 		cam_focal : F64,
 		view_w : F64,
@@ -48,64 +54,57 @@ GroundPlan :: [].{
 	draw = |
 		{
 			world,
-			segment,
+			rider_segment,
 			pose,
 			cam_focal,
 			view_w,
 		},
 	| {
-		view = {
+		road = {
 			world,
-			chain: Frame.build_chain(world, segment),
+			chain: Frame.chain_ahead(world, rider_segment),
 			pose,
+		}
+		view = {
+			road,
 			cam_focal,
 			view_w,
 		}
-		positions = List.from_iter(I64.until(0, view.chain.len().to_i64_wrap()))
+		positions = Frame.ChainPosition.all_in(road.chain)
 		ahead = positions.join_map(|position| segment_ground(view, position))
-		if segment > 0 {
-			ahead.concat(ground_behind(view, (segment - 1)))
-		} else {
-			ahead
+		match rider_segment.previous() {
+			Previous(segment_behind) => ahead.concat(ground_behind(view, segment_behind))
+			AtRouteStart => ahead
 		}
 	}
 
 	## How many chunks the road along a segment `length` long is painted in:
 	## at least one.
-	chunk_count : F64 -> I64
-	chunk_count = |length| {
-		chunks = Num_.ceil_real((length / GroundPlan.road_chunk))
-		F64.to_i64_wrap(if (chunks < 1.0) 1.0 else chunks)
+	chunks_along : F64 -> U32
+	chunks_along = |length| {
+		chunks = Num_.ceil_real(length / GroundPlan.road_chunk_length)
+		F64.to_u32_wrap(if (chunks < 1.0) 1.0 else chunks)
 	}
 
 	## The road along the segment at `position` in the chain, chunk by chunk.
-	segment_road : GroundPlan.View, I64 -> List(Paint.DrawCmd)
+	segment_road : GroundPlan.View, Frame.ChainPosition -> List(Paint.DrawCmd)
 	segment_road = |view, position| {
-		length = segment_in_chain(view, position).length
-		chunks = GroundPlan.chunk_count(length)
-		List.from_iter(I64.until(0, chunks)).join_map(
-			|chunk| {
+		segment_length = segment_in_chain(view, position).length
+		chunk_count = GroundPlan.chunks_along(segment_length)
+		List.from_iter(U32.until(0, chunk_count)).join_map(
+			|chunk_number| {
 				corners = GroundPlan.chunk_corners(
 					view,
 					{
 						position,
-						length,
-						chunks,
-						chunk,
+						segment_length,
+						chunk_count,
+						chunk_number,
 					},
 				)
 				paint(view, { corners, color: GroundPlan.road_color })
 			},
 		)
-	}
-
-	## Chunk `chunk` of the road along the segment at `position` in the
-	## chain, which is `length` long and painted in `chunks` chunks.
-	RoadChunk : {
-		position : I64,
-		length : F64,
-		chunks : I64,
-		chunk : I64,
 	}
 
 	## A chunk's corners: across its near end, then back across its far end.
@@ -114,41 +113,28 @@ GroundPlan :: [].{
 		view,
 		{
 			position,
-			length,
-			chunks,
-			chunk,
+			segment_length,
+			chunk_count,
+			chunk_number,
 		},
 	| {
-		near_end = ((length * chunk.to_f64()) / chunks.to_f64())
-		far_end = ((length * (chunk + 1).to_f64()) / chunks.to_f64())
-		at = |along, across| Frame.at(
+		near_end = segment_length * chunk_number.to_f64() / chunk_count.to_f64()
+		far_end = segment_length * (chunk_number + 1).to_f64() / chunk_count.to_f64()
+		corner = |along, across| Frame.rider_point_ahead(
+			view.road,
 			{
-				world: view.world,
-				chain: view.chain,
-				pose: view.pose,
-			},
-			{
-				segments_ahead: position,
+				position,
 				along,
 				across,
 			},
 		)
 		[
-			at(near_end, 0.0),
-			at(near_end, Scenery.lane_width),
-			at(far_end, Scenery.lane_width),
-			at(far_end, 0.0),
+			corner(near_end, 0.0),
+			corner(near_end, Scenery.lane_width),
+			corner(far_end, Scenery.lane_width),
+			corner(far_end, 0.0),
 		]
 	}
-}
-
-## A turn from one segment into the next: where each segment is on the
-## map, how long the one before is, and which way the road turns.
-Bend : {
-	before : Frame.Mapper,
-	after : Frame.Mapper,
-	length_before : F64,
-	exit_side : Geom.TurnSide,
 }
 
 ## A patch of ground in `color`, as the view's camera sees it.
@@ -161,63 +147,48 @@ paint = |view, { corners, color }| Ground.draw({
 })
 
 ## The segment at `position` in the chain.
-segment_in_chain : GroundPlan.View, I64 -> World.Segment
-segment_in_chain = |view, position| {
-	index = view.chain.get(position.to_u64_wrap())
-		?? crash "GroundPlan: a position past the chain's end"
-	view.world.get(index.to_u64_wrap())
-		?? crash "GroundPlan: a chain names a segment the world lacks"
-}
+segment_in_chain : GroundPlan.View, Frame.ChainPosition -> World.Segment
+segment_in_chain = |view, position|
+	position.index_in(view.road.chain).segment_in(view.road.world)
 
 ## The ground along the segment at `position` in the chain: its road, the
 ## bend into the next segment if the chain goes on, and its pond if it
 ## ends at one.
-segment_ground : GroundPlan.View, I64 -> List(Paint.DrawCmd)
+segment_ground : GroundPlan.View, Frame.ChainPosition -> List(Paint.DrawCmd)
 segment_ground = |view, position| {
 	segment = segment_in_chain(view, position)
+	place = InChain(position)
 	bend =
-		if (position + 1) >= view.chain.len().to_i64_wrap() {
+		if position.is_last_in(view.road.chain) {
 			[]
 		} else {
 			bend_ground(
 				view,
-				bend_out_of(
-					segment,
-					{ before: Frame.chain_map(position), after: Frame.chain_map((position + 1)) },
-				),
+				Joint.bend_out_of(segment, { before: place, after: InChain(position.next()) }),
 			)
 		}
 	List.join([
 		GroundPlan.segment_road(view, position),
 		bend,
-		pond_ground(view, { segment, place: Frame.chain_map(position) }),
+		pond_ground(view, { segment, place }),
 	])
 }
 
-## The bend into the rider's segment from world segment `index`, and the
+## The bend into the rider's segment from the segment at `index`, and the
 ## pond that segment ends at, if it has one.
-ground_behind : GroundPlan.View, I64 -> List(Paint.DrawCmd)
+ground_behind : GroundPlan.View, World.SegmentIndex -> List(Paint.DrawCmd)
 ground_behind = |view, index| {
-	segment = view.world.get(index.to_u64_wrap())
-		?? crash "GroundPlan: the segment behind the rider is past the world's end"
-	before = Frame.prev_map(segment)
+	segment = index.segment_in(view.road.world)
+	before = Frame.place_behind(segment)
+	after = InChain(Frame.ChainPosition.first)
 	List.concat(
-		bend_ground(view, bend_out_of(segment, { before, after: Frame.chain_map(0) })),
+		bend_ground(view, Joint.bend_out_of(segment, { before, after })),
 		pond_ground(view, { segment, place: before }),
 	)
 }
 
-## The bend at the end of `segment`, which is on the map as `before`.
-bend_out_of : World.Segment, { before : Frame.Mapper, after : Frame.Mapper } -> Bend
-bend_out_of = |segment, { before, after }| {
-	before,
-	after,
-	length_before: segment.length,
-	exit_side: segment.exit_side,
-}
-
 ## A bend's paving: the road just before it, then the corner it cuts.
-bend_ground : GroundPlan.View, Bend -> List(Paint.DrawCmd)
+bend_ground : GroundPlan.View, Joint.PlacedBend -> List(Paint.DrawCmd)
 bend_ground = |view, bend|
 	List.concat(
 		paint(view, { corners: approach(view, bend), color: GroundPlan.road_color }),
@@ -225,100 +196,75 @@ bend_ground = |view, bend|
 	)
 
 ## The last `approach_length` of the road before a bend.
-approach : GroundPlan.View, Bend -> List(Geom.RiderPoint)
+approach : GroundPlan.View, Joint.PlacedBend -> List(Geom.RiderPoint)
 approach = |view, bend| {
-	before = |along, across| Frame.map_pt(
+	corner = |along, across| Frame.rider_point_at(
+		view.road,
 		{
-			world: view.world,
-			chain: view.chain,
-			pose: view.pose,
-		},
-		{
-			mapper: bend.before,
+			place: bend.before,
 			along,
 			across,
 		},
 	)
-	start = (bend.length_before - GroundPlan.approach_length)
+	start = bend.length_before - GroundPlan.approach_length
 	[
-		before(bend.length_before, 0.0),
-		before(bend.length_before, Scenery.lane_width),
-		before(start, Scenery.lane_width),
-		before(start, 0.0),
+		corner(bend.length_before, 0.0),
+		corner(bend.length_before, Scenery.lane_width),
+		corner(start, Scenery.lane_width),
+		corner(start, 0.0),
 	]
 }
 
 ## The corner a bend cuts: from the inner edge where the segment before
 ## ends, to its outer edge there, out to where the two outer edges meet,
 ## and back to the outer edge where the segment after starts.
-bend_corner : GroundPlan.View, Bend -> List(Geom.RiderPoint)
+bend_corner : GroundPlan.View, Joint.PlacedBend -> List(Geom.RiderPoint)
 bend_corner = |view, bend| {
-	before = |along, across| Frame.map_pt(
-		{
-			world: view.world,
-			chain: view.chain,
-			pose: view.pose,
-		},
-		{
-			mapper: bend.before,
-			along,
-			across,
-		},
-	)
-	after = |along, across| Frame.map_pt(
-		{
-			world: view.world,
-			chain: view.chain,
-			pose: view.pose,
-		},
-		{
-			mapper: bend.after,
-			along,
-			across,
-		},
-	)
 	inner_edge =
 		match bend.exit_side {
 			TurnsRight => Scenery.lane_width
 			TurnsLeft => 0.0
 		}
 	outer_edge = Joint.outer_edge(bend.exit_side)
-	apex = Joint.joint_apex(
+	end_at = |across| Frame.rider_point_at(
+		view.road,
 		{
-			world: view.world,
-			chain: view.chain,
-			pose: view.pose,
+			place: bend.before,
+			along: bend.length_before,
+			across,
 		},
-		bend,
 	)
 	[
-		before(bend.length_before, inner_edge),
-		before(bend.length_before, outer_edge),
-		apex,
-		after(0.0, outer_edge),
+		end_at(inner_edge),
+		end_at(outer_edge),
+		Joint.joint_apex(view.road, bend),
+		Frame.rider_point_at(
+			view.road,
+			{
+				place: bend.after,
+				along: 0.0,
+				across: outer_edge,
+			},
+		),
 	]
 }
 
-## The pond past the end of `segment`, which is on the map at `place`:
-## its water, then its bank. A segment that ends at no pond has none.
+## The pond past the end of `segment`, which lies at `place`: its water, then
+## its bank. A segment that ends at no pond has none.
 pond_ground : GroundPlan.View,
 {
 	segment : World.Segment,
-	place : Frame.Mapper,
+	place : Frame.SegmentPlace,
 } -> List(Paint.DrawCmd)
 pond_ground = |view, { segment, place }|
 	if Scenery.is_pond(segment.exit_creature) {
 		on_map = |outline|
 			outline.map(
-				|point| Frame.map_pt(
+				|point| Frame.rider_point_at(
+					view.road,
 					{
-						world: view.world,
-						chain: view.chain,
-						pose: view.pose,
-					},
-					{
-						mapper: place,
-						along: (segment.length + point.along),
+						place,
+						along: segment.length + point.along,
 						across: point.across,
 					},
 				),

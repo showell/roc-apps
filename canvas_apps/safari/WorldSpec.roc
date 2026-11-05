@@ -18,13 +18,13 @@ route_shape_got = List.concat(
 		10,
 		11,
 		18,
-	].map(World.pig_segments_through),
+	].map(|number| World.pig_segments_through(World.SegmentIndex.number(number)).to_i64()),
 )
 
 route_shape_want : List(I64)
 route_shape_want = [19, 0, 1, 2, 3, 9]
 
-seg : I64 -> World.Segment
+seg : U32 -> World.Segment
 seg = |i| World.segment_at(i)
 
 length_got : List(F64)
@@ -142,7 +142,7 @@ is_route_end = |segment|
 next_of : World.Segment -> I64
 next_of = |segment|
 	match segment.ending {
-		Continues({ next }) => next
+		Continues({ next }) => next.to_i64()
 		Terminates => crash "WorldSpec.next_of: segments 0, 1 and 17 continue"
 	}
 
@@ -179,7 +179,7 @@ is_distracting = |segment|
 	}
 
 ## The cat crossing at a segment that has one.
-crossing_at : I64 -> Cat.Crossing
+crossing_at : U32 -> Cat.Crossing
 crossing_at = |index|
 	match seg(index).cat {
 		Waits(crossing) => crossing

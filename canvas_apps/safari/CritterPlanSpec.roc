@@ -11,7 +11,7 @@ import Grade
 import World
 
 reach_got : List(I64)
-reach_got = [CritterPlan.farm_reach, CritterPlan.safari_reach]
+reach_got = [CritterPlan.farm_reach.to_i64(), CritterPlan.safari_reach.to_i64()]
 
 reach_want : List(I64)
 reach_want = [3, 5]
@@ -28,23 +28,24 @@ origin = {
 scene : CritterPlan.Scene
 scene = {
 	world: [0, 1, 2, 3, 4, 5].map(World.segment_at),
-	chain: [0, 1, 2, 3, 4, 5],
+	chain: [0, 1, 2, 3, 4, 5].map(World.SegmentIndex.number),
 	pose: origin,
 }
 
 ## The world's segment `index` alone.
-lone : I64 -> CritterPlan.Scene
+lone : U32 -> CritterPlan.Scene
 lone = |index| {
 	world: [World.segment_at(index)],
-	chain: [0],
+	chain: [0].map(World.SegmentIndex.number),
 	pose: origin,
 }
 
-farm_at : I64 -> I64
-farm_at = |position| CritterPlan.farm_sightings(scene, position).len().to_i64_wrap()
+farm_at : U32 -> I64
+farm_at = |number| CritterPlan.farm_sightings(scene, Frame.ChainPosition.number(number)).len().to_i64_wrap()
 
-safari_at : I64 -> I64
-safari_at = |position| CritterPlan.safari_sightings(scene, position).len().to_i64_wrap()
+safari_at : U32 -> I64
+safari_at = |number|
+	CritterPlan.safari_sightings(scene, Frame.ChainPosition.number(number)).len().to_i64_wrap()
 
 cutoff_got : List(Bool)
 cutoff_got = [
@@ -62,19 +63,20 @@ cutoff_want : List(Bool)
 cutoff_want = [True, True, True, True, True, True, True, True]
 
 term_got : List(I64)
-term_got = [CritterPlan.safari_sightings(lone(18), 0).len().to_i64_wrap()]
+term_got = [CritterPlan.safari_sightings(lone(18), Frame.ChainPosition.first).len().to_i64_wrap()]
 
 term_want : List(I64)
 term_want = [0]
 
 term_flag_got : List(Bool)
-term_flag_got = [(CritterPlan.safari_sightings(lone(0), 0).len() > 0)]
+term_flag_got = [(CritterPlan.safari_sightings(lone(0), Frame.ChainPosition.first).len() > 0)]
 
 term_flag_want : List(Bool)
 term_flag_want = [True]
 
-duck_count : I64 -> I64
-duck_count = |index| CritterPlan.duck_sightings(lone(index), 0).len().to_i64_wrap()
+duck_count : U32 -> I64
+duck_count = |index|
+	CritterPlan.duck_sightings(lone(index), Frame.ChainPosition.first).len().to_i64_wrap()
 
 duck_got : List(Bool)
 duck_got = [
@@ -88,15 +90,18 @@ duck_want : List(Bool)
 duck_want = [True, True, True, True]
 
 duck_reach_got : List(I64)
-duck_reach_got = [CritterPlan.duck_sightings(scene, 5).len().to_i64_wrap(), duck_count(12)]
+duck_reach_got = [
+	CritterPlan.duck_sightings(scene, Frame.ChainPosition.number(5)).len().to_i64_wrap(),
+	duck_count(12),
+]
 
 duck_reach_want : List(I64)
 duck_reach_want = [0, 6]
 
 order_got : List(I64)
 order_got = {
-	whole = CritterPlan.sightings_at(scene, 0).len().to_i64_wrap()
-	ducks = CritterPlan.duck_sightings(scene, 0).len().to_i64_wrap()
+	whole = CritterPlan.sightings_at(scene, Frame.ChainPosition.first).len().to_i64_wrap()
+	ducks = CritterPlan.duck_sightings(scene, Frame.ChainPosition.first).len().to_i64_wrap()
 	[(whole - ((farm_at(0) + safari_at(0)) + ducks))]
 }
 
@@ -104,10 +109,14 @@ order_want : List(I64)
 order_want = [0]
 
 ## How many critters the segments from `position` to the chain's end hold.
-count_from : I64 -> I64
+count_from : U32 -> I64
 count_from = |position|
-	List.from_iter(I64.until(position, 6))
-		.map(|at| CritterPlan.sightings_at(scene, at).len().to_i64_wrap())
+	List.from_iter(U32.until(position, 6))
+		.map(
+			|number| CritterPlan.sightings_at(scene, Frame.ChainPosition.number(number))
+				.len()
+				.to_i64_wrap(),
+		)
 		.sum()
 
 walk_got : List(I64)
@@ -116,7 +125,7 @@ walk_got = [
 	(
 		CritterPlan.sightings_ahead(lone(0)).len().to_i64_wrap() - CritterPlan.sightings_at(
 			lone(0),
-			0,
+			Frame.ChainPosition.first,
 		).len().to_i64_wrap()
 	),
 	(CritterPlan.sightings_ahead(scene).len().to_i64_wrap() - count_from(0)),
@@ -133,7 +142,7 @@ grow_want = [True, True]
 
 behind_got : List(Bool)
 behind_got = [
-	(CritterPlan.sightings_behind(scene, 4).len() > 0),
+	(CritterPlan.sightings_behind(scene, World.SegmentIndex.number(4)).len() > 0),
 	(CritterPlan.ducks_behind(scene, World.segment_at(12)).len() > 0),
 	(CritterPlan.ducks_behind(scene, World.segment_at(0)).len() == 0),
 ]

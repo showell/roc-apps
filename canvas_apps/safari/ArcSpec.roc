@@ -9,6 +9,7 @@ import Arc
 import Bike
 import Grade
 import Pose
+import World
 
 fixed_got : List(F64)
 fixed_got = [
@@ -41,7 +42,7 @@ rider = |
 		speed: v,
 	},
 | {
-	segment: 0,
+	segment: World.SegmentIndex.number(0),
 	along: 0.0,
 	across: across,
 	yaw: Angle.Turn.radians(0.0),

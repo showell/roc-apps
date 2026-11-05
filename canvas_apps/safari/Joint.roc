@@ -1,11 +1,34 @@
-# Joint -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## Joint knows where two segments meet: where each lies from the rider, and
+## the apex where the outer edges of the road meet at the bend. The road's
+## paving and the guard rail both follow it.
 import Frame
 import Geom
 import Scenery
 import World
 
 Joint :: [].{
+
+	## A bend as the rider sees it: where the segments before and after it lie,
+	## the length of the one before, and which way the road turns.
+	PlacedBend : {
+		before : Frame.SegmentPlace,
+		after : Frame.SegmentPlace,
+		length_before : F64,
+		exit_side : Geom.TurnSide,
+	}
+
+	## The bend at the end of `segment`, which lies at `before`.
+	bend_out_of : World.Segment,
+	{
+		before : Frame.SegmentPlace,
+		after : Frame.SegmentPlace,
+	} -> Joint.PlacedBend
+	bend_out_of = |segment, { before, after }| {
+		before,
+		after,
+		length_before: segment.length,
+		exit_side: segment.exit_side,
+	}
 
 	## How far across the road its outer edge at a bend is: the left edge
 	## when the road turns right, the right edge when it turns left.
@@ -16,84 +39,35 @@ Joint :: [].{
 			TurnsLeft => Scenery.lane_width
 		}
 
-	## The road as the rider sees it: the world's segments, the chain of
-	## them ahead of the rider, and the rider's pose.
-	RoadAhead : {
-		world : List(World.Segment),
-		chain : List(I64),
-		pose : Frame.Pose,
-	}
-
-	## Where one segment meets the next: the maps of the segment before
-	## the bend and the one after it, the length of the one before, and
-	## whether the road turns right.
-	Bend : {
-		before : Frame.Mapper,
-		after : Frame.Mapper,
-		length_before : F64,
-		exit_side : Geom.TurnSide,
-	}
-
 	## Where the outer edges of the two segments at a bend meet.
-	joint_apex : Joint.RoadAhead, Joint.Bend -> Geom.RiderPoint
-	joint_apex = |
-		{
-			world: segs,
-			chain: ch,
-			pose,
-		},
-		{
-			before: from_map,
-			after: to_map,
-			length_before: from_len,
-			exit_side,
-		},
-	| (
-		{
-			edge = outer_edge(exit_side)
-			road = {
-				world: segs,
-				chain: ch,
-				pose,
-			}
-			Geom.line_crossing({
-				first_line: {
-					start_point: Frame.map_pt(
-						road,
-						{
-							mapper: from_map,
-							along: from_len,
-							across: edge,
-						},
-					),
-					end_point: Frame.map_pt(
-						road,
-						{
-							mapper: from_map,
-							along: (from_len + 1.0),
-							across: edge,
-						},
-					),
-				},
-				second_line: {
-					start_point: Frame.map_pt(
-						road,
-						{
-							mapper: to_map,
-							along: 0.0,
-							across: edge,
-						},
-					),
-					end_point: Frame.map_pt(
-						road,
-						{
-							mapper: to_map,
-							along: 1.0,
-							across: edge,
-						},
-					),
-				},
-			})
-		}
-	)
+	joint_apex : Frame.RoadView, Joint.PlacedBend -> Geom.RiderPoint
+	joint_apex = |road, bend| {
+		across = outer_edge(bend.exit_side)
+		point_before = |along| Frame.rider_point_at(
+			road,
+			{
+				place: bend.before,
+				along,
+				across,
+			},
+		)
+		point_after = |along| Frame.rider_point_at(
+			road,
+			{
+				place: bend.after,
+				along,
+				across,
+			},
+		)
+		Geom.line_crossing({
+			first_line: {
+				start_point: point_before(bend.length_before),
+				end_point: point_before(bend.length_before + 1.0),
+			},
+			second_line: {
+				start_point: point_after(0.0),
+				end_point: point_after(1.0),
+			},
+		})
+	}
 }

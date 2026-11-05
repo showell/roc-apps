@@ -135,15 +135,15 @@ RocBird :: [].{
 	## focal length in pixels.
 	View : {
 		world : List(World.Segment),
-		chain : List(I64),
+		chain : List(World.SegmentIndex),
 		pose : Frame.Pose,
 		cam_focal : F64,
 	}
 
-	# The bird for chain position d, or nothing when its tree is behind the
+	# The bird for `position` in the chain, or nothing when its tree is behind the
 	# near plane or too small to draw. Culled here, as every kind is culled
 	# where it is collected rather than where it is drawn.
-	perch : RocBird.View, I64 -> List(RocBird.Bird)
+	perch : RocBird.View, Frame.ChainPosition -> List(RocBird.Bird)
 	perch = |
 		{
 			world: segs,
@@ -151,21 +151,20 @@ RocBird :: [].{
 			pose,
 			cam_focal: cf,
 		},
-		d,
+		position,
 	| {
-		seg_idx = List.get(ch, I64.to_u64_wrap(d)) ?? crash ("chain index")
-		seg = List.get(segs, I64.to_u64_wrap(seg_idx)) ?? crash ("segment")
+		seg = position.index_in(ch).segment_in(segs)
 		match fifth_left(seg.trees, { tree_index: 0, left_trees_seen: 0 }) {
 			NoTree => []
 			Found(t) => {
-				rp = Frame.at(
+				rp = Frame.rider_point_ahead(
 					{
 						world: segs,
 						chain: ch,
 						pose: pose,
 					},
 					{
-						segments_ahead: d,
+						position,
 						along: t.along,
 						across: t.across + Scenery.lane_width / 2.0,
 					},
@@ -190,25 +189,7 @@ RocBird :: [].{
 	# Every bird in the chain, nearest segment first. The sort puts them where
 	# they belong.
 	perches : RocBird.View -> List(RocBird.Bird)
-	perches = |view| perches_from(view, { place: 0, birds_found: [] })
-
-	perches_from : RocBird.View,
-	{
-		place : I64,
-		birds_found : List(RocBird.Bird),
-	} -> List(RocBird.Bird)
-	perches_from = |view, { place: d, birds_found: acc }|
-		if d >= view.chain.len().to_i64_wrap() {
-			acc
-		} else {
-			perches_from(
-				view,
-				{
-					place: d + 1,
-					birds_found: List.concat(acc, perch(view, d)),
-				},
-			)
-		}
+	perches = |view| Frame.ChainPosition.all_in(view.chain).join_map(|position| perch(view, position))
 
 	# **THE DEPTH IS THE TREE'S**, which is the whole point of collecting them:
 	# how high the bird sits does not change how far away it is.
