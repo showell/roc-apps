@@ -53,10 +53,10 @@ SafariRide :: [].{
 		hist =
 			if finished {
 				[]
-			} else if List.len(m.hist) < hist_cap {
-				List.append(m.hist, m.ride)
+			} else if m.hist.len() < hist_cap {
+				m.hist.append(m.ride)
 			} else {
-				List.append(List.drop_first(m.hist, hist_cap // 2), m.ride)
+				m.hist.drop_first(hist_cap // 2).append(m.ride)
 			}
 		{
 			world: m.world,
@@ -67,11 +67,11 @@ SafariRide :: [].{
 
 	back : SafariRide.Model -> SafariRide.Model
 	back = |m| {
-		match List.last(m.hist) {
+		match m.hist.last() {
 			Ok(prev) => {
 				world: m.world,
 				ride: prev,
-				hist: List.drop_last(m.hist, 1),
+				hist: m.hist.drop_last(1),
 			}
 			Err(_) => m
 		}

@@ -115,7 +115,7 @@ Render :: [].{
 		# Keys about as far away as each other keep the order they are joined
 		# in, so this order decides which of two tied things is painted over
 		# the other.
-		keys = List.join([
+		keys = [
 			BirdPlan.depth_keys(birds),
 			TreePlan.depth_keys(trees),
 			TowerPlan.depth_keys(towers),
@@ -123,7 +123,7 @@ Render :: [].{
 			CatPlan.depth_keys(cats),
 			TruckPlan.depth_keys(truck),
 			RailPlan.depth_keys(rails),
-		])
+		].join()
 		{
 			trees,
 			towers,

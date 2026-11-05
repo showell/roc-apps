@@ -119,7 +119,7 @@ Gaze :: [].{
 	## Whether a gaze is exactly the rest position: +0.0, which `desired_gaze`
 	## answers when there is nothing to look at.
 	is_at_rest : Angle.Turn -> Bool
-	is_at_rest = |gaze| F64.to_bits(gaze.to_radians()) == F64.to_bits(0.0)
+	is_at_rest = |gaze| gaze.to_radians().to_bits() == F64.to_bits(0.0)
 
 	## The gaze one step on. It swivels toward `want` at no more than the
 	## swivel rate; with nothing to look at it eases back toward the road,
