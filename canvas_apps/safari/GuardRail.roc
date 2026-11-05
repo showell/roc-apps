@@ -64,11 +64,7 @@ GuardRail :: [].{
 
 	## A stretch of bar between each two neighbouring points of `path`.
 	bars : List(Geom.RiderPoint) -> List(GuardRail.RailPoly)
-	bars = |path| List.map2(
-		path,
-		path.drop_first(1),
-		|from, to| bar({ from, to }),
-	)
+	bars = |path| path.map2(path.drop_first(1), |from, to| bar({ from, to }))
 
 	## A post at each point of `path`, turned to face along the path from
 	## the point before it to the point after it. A post at an end of the
@@ -77,8 +73,7 @@ GuardRail :: [].{
 	posts = |path| {
 		before = path.take_first(1).concat(path.drop_last(1))
 		after = path.drop_first(1).concat(path.take_last(1))
-		List.map3(
-			before,
+		before.map3(
 			path,
 			after,
 			|previous, at, next| post(at, { previous, next }),
@@ -87,13 +82,13 @@ GuardRail :: [].{
 
 	## A quad on screen, cut at the camera's near plane; a quad with fewer
 	## than three corners left in front of the camera draws nothing.
-	draw : GuardRail.RailPoly, { cam_focal : F64, view_w : F64 } -> List(Shapes.Shape)
-	draw = |quad, { cam_focal, view_w }| {
+	draw : GuardRail.RailPoly, F64 -> List(Shapes.Shape)
+	draw = |quad, cam_focal| {
 		in_front = Geom.clip_near(quad.corners)
 		if in_front.len() < 3 {
 			[]
 		} else {
-			Paint.push_poly(quad.color, Camera.project_all(in_front, { cam_focal, view_w }))
+			Paint.push_poly(quad.color, Camera.project_all(in_front, cam_focal))
 		}
 	}
 }

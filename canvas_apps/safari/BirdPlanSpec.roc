@@ -50,16 +50,17 @@ birds_on = |trees, seen_from| birds_on_segment(segment_of(trees), seen_from)
 birds_on_segment : World.Segment, { rider_along : F64, cam_focal : F64 } -> List(RocBird.PlacedBird)
 birds_on_segment = |segment, { rider_along, cam_focal }|
 	BirdPlan.in_view({
-		world: [segment],
-		chain: [World.SegmentIndex.first],
-		pose: {
-			along: rider_along,
-			across: 0.0,
-			yaw: Angle.straight_ahead,
-			half_width: 2.0,
+		road: {
+			world: [segment],
+			chain: [World.SegmentIndex.first],
+			pose: {
+				along: rider_along,
+				across: 0.0,
+				yaw: Angle.straight_ahead,
+				half_width: 2.0,
+			},
 		},
 		cam_focal,
-		rider_along,
 	})
 
 ## The one bird that a rider `rider_along` metres in sees on the segment with
@@ -156,16 +157,17 @@ count_want = [
 ## Two segments in the chain, the rider at the start of the first.
 two_segments : List(RocBird.PlacedBird)
 two_segments = BirdPlan.in_view({
-	world: [segment_of(left_trees), segment_of(left_trees)],
-	chain: [0, 1].map(World.SegmentIndex.number),
-	pose: {
-		along: 0.0,
-		across: 0.0,
-		yaw: Angle.straight_ahead,
-		half_width: 2.0,
+	road: {
+		world: [segment_of(left_trees), segment_of(left_trees)],
+		chain: [0, 1].map(World.SegmentIndex.number),
+		pose: {
+			along: 0.0,
+			across: 0.0,
+			yaw: Angle.straight_ahead,
+			half_width: 2.0,
+		},
 	},
 	cam_focal: 500.0,
-	rider_along: 0.0,
 })
 
 ## A key's place in the birds' list.

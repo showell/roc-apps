@@ -19,7 +19,6 @@ Mountains :: [].{
 	Sight : {
 		heading : Angle.Bearing,
 		cam_focal : F64,
-		view_w : F64,
 	}
 
 	rock : I64
@@ -126,7 +125,7 @@ Mountains :: [].{
 	## The bearing seen at `x` across the screen.
 	bearing_at : Mountains.Sight, F64 -> Angle.Bearing
 	bearing_at = |sight, x| {
-		off_center = Angle.Turn.radians(Trig.r_atan((x - sight.view_w / 2.0) / sight.cam_focal))
+		off_center = Angle.Turn.radians(Trig.r_atan((x - Screen.center_x) / sight.cam_focal))
 		sight.heading.plus(off_center)
 	}
 
@@ -151,27 +150,24 @@ Mountains :: [].{
 		heading : Angle.Bearing,
 		dusk : F64,
 		cam_focal : F64,
-		view_w : F64,
 	} -> List(Shapes.Shape)
 	draw = |
 		{
 			heading,
 			dusk,
 			cam_focal,
-			view_w,
 		},
 	| {
 		sight = {
 			heading,
 			cam_focal,
-			view_w,
 		}
-		List.join([
+		[
 			silhouette(sight, { height_at: west_range, color: color_at_dusk(rock_west, dusk) }),
 			silhouette(sight, { height_at: north_range, color: color_at_dusk(rock, dusk) }),
 			snow(sight, snow_color(dusk)),
 			silhouette(sight, { height_at: ground_base, color: land }),
-		])
+		].join()
 	}
 }
 
@@ -269,7 +265,7 @@ silhouette : Mountains.Sight,
 } -> List(Shapes.Shape)
 silhouette = |sight, { height_at, color }| {
 	left = (0.0 - Mountains.roll_margin)
-	right = (sight.view_w + Mountains.roll_margin)
+	right = (Screen.width + Mountains.roll_margin)
 	crest = columns({ from: left, to: right }).map(
 		|x| {
 			x,
@@ -283,7 +279,7 @@ silhouette = |sight, { height_at, color }| {
 ## snowline, then back along the snowline.
 snow : Mountains.Sight, I64 -> List(Shapes.Shape)
 snow = |sight, color| {
-	snowy = columns({ from: 0.0, to: sight.view_w }).keep_if(
+	snowy = columns({ from: 0.0, to: Screen.width }).keep_if(
 		|x| {
 			bearing = Mountains.bearing_at(sight, x)
 			Mountains.north_range(bearing) > (Mountains.snowline(bearing) + 0.01)

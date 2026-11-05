@@ -1,5 +1,6 @@
 ## TruckDraw draws the truck ahead on the road: its headlight beams first,
 ## then its body, then its brake lights, so each paints over the one before.
+import Frame
 import Truck
 import TruckBody
 import TruckLights
@@ -8,28 +9,26 @@ import lib.Shapes
 
 TruckDraw :: [].{
 
-	## The truck whose trailer is centred at `center` on `road`.
+	## The truck on the segment at `position` in the chain, seen from `view`,
+	## with its trailer centred at `center` on that segment.
 	draw : {
-		road : TruckShape.Road,
+		view : Frame.Viewpoint,
+		position : Frame.ChainPosition,
 		center : { along : F64, across : F64 },
 		lights : Truck.Lights,
-		cam_focal : F64,
-		view_w : F64,
 	} -> List(Shapes.Shape)
 	draw = |
 		{
-			road,
+			view,
+			position,
 			center,
 			lights,
-			cam_focal,
-			view_w,
 		},
 	| {
 		truck = {
-			road,
+			view,
+			position,
 			box: TruckShape.truck_box(center),
-			cam_focal,
-			view_w,
 		}
 		beams =
 			match lights.headlights {
@@ -41,10 +40,10 @@ TruckDraw :: [].{
 				On => TruckLights.brake_lights(truck)
 				Off => []
 			}
-		List.join([
+		[
 			beams,
 			TruckBody.draw(truck),
 			brake_lights,
-		])
+		].join()
 	}
 }

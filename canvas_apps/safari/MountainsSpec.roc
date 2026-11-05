@@ -172,7 +172,6 @@ bearing = |
 	{
 		heading: at(heading),
 		cam_focal,
-		view_w: 960.0,
 	},
 	x,
 ).to_radians()

@@ -154,7 +154,6 @@ cat_shapes = |
 	pose,
 	lift,
 	cam_focal: 500.0,
-	view_w: 960.0,
 }).len().to_i64_wrap()
 
 ## How many shapes a resting cat makes `forward` metres ahead.

@@ -166,7 +166,7 @@ shape_count = |
 			codepoint,
 			facing: FacesLeft,
 		},
-		{ cam_focal: 500.0, view_w: 960.0 },
+		500.0,
 	).len().to_i64_wrap()
 
 elephant : I64

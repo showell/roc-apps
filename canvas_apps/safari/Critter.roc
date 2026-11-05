@@ -73,15 +73,15 @@ Critter :: [].{
 
 	## A critter in view. An emoji faces left, so a critter facing right is
 	## its still mirrored. A critter less than a pixel tall isn't drawn.
-	draw : Billboards.Billboard, { cam_focal : F64, view_w : F64 } -> List(Shapes.Shape)
-	draw = |critter, { cam_focal, view_w }| {
+	draw : Billboards.Billboard, F64 -> List(Shapes.Shape)
+	draw = |critter, cam_focal| {
 		on_screen = |height| Camera.project(
 			{
 				right: critter.right,
 				forward: critter.forward,
 				height,
 			},
-			{ cam_focal, view_w },
+			cam_focal,
 		)
 		feet = on_screen(0.0)
 		height_px = (feet.y - on_screen(critter.height).y)

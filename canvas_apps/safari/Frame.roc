@@ -19,6 +19,10 @@ Frame :: [].{
 		pose : Frame.Pose,
 	}
 
+	## What a frame is seen from: the road in view, and the camera's focal
+	## length in pixels.
+	Viewpoint : { road : Frame.RoadView, cam_focal : F64 }
+
 	## A segment's place in the chain, counted from the rider's own at 0. It
 	## says how many segments ahead of the rider that segment is, where a
 	## World.SegmentIndex says where it is in the route.
@@ -74,12 +78,20 @@ Frame :: [].{
 	look_ahead : U32
 	look_ahead = 7
 
-	## How far ahead of the rider the segment at `position` in the chain starts,
-	## for a rider `rider_along` metres into the chain's first segment.
-	gap_to_segment : Frame.RoadView, { position : Frame.ChainPosition, rider_along : F64 } -> F64
-	gap_to_segment = |road, { position, rider_along }|
+	## The segment the rider is on, which is the chain's first.
+	rider_segment : Frame.RoadView -> World.SegmentIndex
+	rider_segment = |road| Frame.ChainPosition.first.index_in(road.chain)
+
+	## The segment behind the rider's, unless the rider's is the route's first.
+	segment_behind : Frame.RoadView -> [Previous(World.SegmentIndex), AtRouteStart]
+	segment_behind = |road| rider_segment(road).previous()
+
+	## How far ahead of the rider the segment at `position` in the chain starts.
+	## The segments' lengths are added nearest first.
+	gap_to_segment : Frame.RoadView, Frame.ChainPosition -> F64
+	gap_to_segment = |road, position|
 		position.before_in(road.chain).fold(
-			0.0 - rider_along,
+			0.0 - road.pose.along,
 			|gap, index| gap + index.segment_in(road.world).length,
 		)
 

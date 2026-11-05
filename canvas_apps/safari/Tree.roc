@@ -19,7 +19,6 @@ Tree :: [].{
 		height : F64,
 		color : I64,
 		cam_focal : F64,
-		view_w : F64,
 		trunk : [RoundCorners, SharpCorners],
 		crown : [Cones, Triangles],
 		shade : F64,
@@ -122,14 +121,17 @@ Tree :: [].{
 			forward: tree.forward,
 			height: tree.height,
 			cam_focal: tree.cam_focal,
-			view_w: tree.view_w,
 		})
 		if seen.height_px < 1.0 {
 			[]
 		} else {
-			List.concat(
-				draw_trunk(seen, tree.trunk),
-				tiers.join_map(|tier| draw_tier(tree, { seen, tier })),
+			draw_trunk(seen, tree.trunk).concat(
+				tiers.join_map(
+					|tier| draw_tier(
+						tree,
+						{ seen, tier },
+					),
+				),
 			)
 		}
 	}
@@ -141,7 +143,6 @@ Tree :: [].{
 		forward : F64,
 		height : F64,
 		cam_focal : F64,
-		view_w : F64,
 	} -> Tree.Outline
 	outline = |
 		{
@@ -149,7 +150,6 @@ Tree :: [].{
 			forward,
 			height,
 			cam_focal,
-			view_w,
 		},
 	| {
 		base = Camera.project(
@@ -158,7 +158,7 @@ Tree :: [].{
 				forward,
 				height: 0.0,
 			},
-			{ cam_focal, view_w },
+			cam_focal,
 		)
 		top = Camera.project(
 			{
@@ -166,7 +166,7 @@ Tree :: [].{
 				forward,
 				height,
 			},
-			{ cam_focal, view_w },
+			cam_focal,
 		)
 		height_px = (base.y - top.y)
 		foliage_px = (height_px * crown_height)
@@ -240,11 +240,11 @@ Tree :: [].{
 			[],
 			|sorted, point|
 				match sorted.find_first_index(|placed| is_before(point, placed)) {
-					Ok(at) => List.join([
+					Ok(at) => [
 						sorted.take_first(at),
 						[point],
 						sorted.drop_first(at),
-					])
+					].join()
 					Err(NotFound) => sorted.append(point)
 				},
 		)
@@ -252,7 +252,7 @@ Tree :: [].{
 
 ## Whether `a` comes before `b`: left of it, or above it at the same x.
 is_before : Screen.Point, Screen.Point -> Bool
-is_before = |a, b| a.x < b.x or (F64.to_bits(a.x) == F64.to_bits(b.x) and a.y < b.y)
+is_before = |a, b| a.x < b.x or (a.x.to_bits() == b.x.to_bits() and a.y < b.y)
 
 ## The hull with its last points taken off while they don't turn left on the
 ## way to `point`.
@@ -274,8 +274,8 @@ trim_hull = |hull, point|
 ## before plus a step, not a multiple of the step: the two round differently.
 ring_angles : List(F64)
 ring_angles = {
-	step = (Trig.two_pi / I64.to_f64(Tree.ring_n))
-	walked = List.repeat(step, I64.to_u64_wrap((Tree.ring_n - 1))).fold(
+	step = (Trig.two_pi / Tree.ring_n.to_f64())
+	walked = List.repeat(step, (Tree.ring_n - 1).to_u64_wrap()).fold(
 		{ angle: 0.0, angles: [0.0] },
 		|so_far, turn| {
 			angle = (so_far.angle + turn)
@@ -311,7 +311,7 @@ tier_cone = |tree, { tier, radius }| {
 			forward: tree.forward,
 			height: apex_height,
 		},
-		{ cam_focal: tree.cam_focal, view_w: tree.view_w },
+		tree.cam_focal,
 	)
 	ring = ring_angles.map(
 		|angle| {
@@ -320,7 +320,7 @@ tier_cone = |tree, { tier, radius }| {
 				forward: (tree.forward + (radius * Trig.r_sin(angle))),
 				height: base_height,
 			}
-			Camera.project(on_ring, { cam_focal: tree.cam_focal, view_w: tree.view_w })
+			Camera.project(on_ring, tree.cam_focal)
 		},
 	)
 	hull = Tree.convex_hull(ring.append(apex))

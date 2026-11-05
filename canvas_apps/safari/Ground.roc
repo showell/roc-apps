@@ -23,14 +23,12 @@ Ground :: [].{
 		corners : List(Geom.RiderPoint),
 		color : I64,
 		cam_focal : F64,
-		view_w : F64,
 	} -> List(Shapes.Shape)
 	draw = |
 		{
 			corners,
 			color,
 			cam_focal,
-			view_w,
 		},
 	|
 		if corners.len() > 8 {
@@ -40,7 +38,7 @@ Ground :: [].{
 			if in_front.len() < 3 {
 				[]
 			} else {
-				Paint.push_poly(color, Camera.project_all(in_front, { cam_focal, view_w }))
+				Paint.push_poly(color, Camera.project_all(in_front, cam_focal))
 			}
 		}
 }

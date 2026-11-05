@@ -36,10 +36,11 @@ lengths_want = [500.0, 320.0, 400.0]
 ## seen from, from `pose`, with its lights off.
 truck_view : Frame.Pose, F64 -> TruckPlan.View
 truck_view = |pose, lead| {
-	world: segs,
-	chain: [0, 1, 2].map(World.SegmentIndex.number),
-	pose,
-	rider_along: 0.0,
+	road: {
+		world: segs,
+		chain: [0, 1, 2].map(World.SegmentIndex.number),
+		pose,
+	},
 	lead,
 	lights: { headlights: Off, brake_lights: Off },
 }
@@ -145,18 +146,18 @@ behind_got = [
 				yaw: Angle.straight_ahead,
 				half_width: 2.0,
 			},
-			100.0,
+			0.25,
 		),
 	),
 	is_ahead(
 		truck_seen_from(
 			{
-				along: 99.0,
+				along: 100.0,
 				across: 0.0,
 				yaw: Angle.straight_ahead,
 				half_width: 2.0,
 			},
-			100.0,
+			1.0,
 		),
 	),
 ]

@@ -32,92 +32,44 @@ Render :: [].{
 		order : List(DepthSort.DepthKey),
 	}
 
-	## Where the frame is seen from: the world, the chain of segments ahead
-	## (indexes into `world`, the rider's own first), the rider's pose, the
-	## camera's focal length, where along the route the rider is, where the
-	## truck is and which of its lights are on, and the ride's clock.
-	Viewpoint : {
-		world : List(World.Segment),
-		chain : List(World.SegmentIndex),
-		pose : Frame.Pose,
-		cam_focal : F64,
-		rider_segment : World.SegmentIndex,
-		rider_along : F64,
+	## The ride at the frame's instant: the rider's speed, where the truck is
+	## and which of its lights are on, and the clock.
+	RideInstant : {
 		speed : Speed,
 		truck : { route_position : F64, lights : Truck.Lights },
 		clock : F64,
 	}
 
-	## Everything in view from `viewpoint`, each kind cut to its plan's cap.
-	collect : Render.Viewpoint -> Render.Scene
+	## Everything in view from `view`, each kind cut to its plan's cap.
+	collect : Frame.Viewpoint, Render.RideInstant -> Render.Scene
 	collect = |
+		view,
 		{
-			world,
-			chain,
-			pose,
-			cam_focal,
-			rider_segment,
-			rider_along,
 			speed,
 			truck,
 			clock,
 		},
 	| {
-		road = {
-			world,
-			chain,
-			pose,
-		}
-		trees =
-			TreePlan.in_view({
-				world,
-				chain,
-				pose,
-				cam_focal,
-			})
-				.take_first(TreePlan.max_vis_trees.to_u64_wrap())
+		road = view.road
+		trees = TreePlan.in_view(view).take_first(TreePlan.max_vis_trees.to_u64_wrap())
 		towers =
-			TowerPlan.in_view({
-				world,
-				chain,
-				pose,
-				rider_segment,
-				clock,
-			})
+			TowerPlan.in_view({ road, clock })
 				.take_first(TowerPlan.max_vis_towers.to_u64_wrap())
 		critters =
-			Billboards.billboards_in_view(CritterPlan.sightings(road, rider_segment))
+			Billboards.billboards_in_view(CritterPlan.sightings(road))
 				.take_first(CritterPlan.max_vis_critters.to_u64_wrap())
-		cats =
-			CatPlan.in_view({
-				world,
-				chain,
-				pose,
-				cam_focal,
-				rider_along,
-				speed,
-			})
-				.take_first(CatPlan.max_vis_cats.to_u64_wrap())
-		rails = RailPlan.all_rails(road, rider_segment)
+		cats = CatPlan.in_view(view, speed).take_first(CatPlan.max_vis_cats.to_u64_wrap())
+		rails = RailPlan.all_rails(road)
 		rider_distance = World.distance_along_route(
-			world,
-			{ index: rider_segment, along: rider_along },
+			road.world,
+			{ index: Frame.rider_segment(road), along: road.pose.along },
 		)
 		truck_at = TruckPlan.in_view({
-			world,
-			chain,
-			pose,
-			rider_along,
+			road,
 			lead: truck.route_position - rider_distance,
 			lights: truck.lights,
 		})
-		birds = BirdPlan.in_view({
-			world,
-			chain,
-			pose,
-			cam_focal,
-			rider_along,
-		})
+		birds = BirdPlan.in_view(view)
 		# Keys about as far away as each other keep the order they are joined
 		# in, so this order decides which of two tied things is painted over
 		# the other.

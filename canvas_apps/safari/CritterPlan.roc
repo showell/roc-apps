@@ -13,15 +13,6 @@ import World
 
 CritterPlan :: [].{
 
-	## The road as the rider sees it: every segment of the world, the chain of
-	## segments ahead (indexes into `world`, the rider's own first), and where
-	## the rider is.
-	Scene : {
-		world : List(World.Segment),
-		chain : List(World.SegmentIndex),
-		pose : Frame.Pose,
-	}
-
 	## Farm animals are sighted on this many segments of the chain.
 	farm_reach : U32
 	farm_reach = 3
@@ -35,54 +26,56 @@ CritterPlan :: [].{
 	max_vis_critters = 320
 
 	## Every critter ahead, nearest segment first, then those of the segment
-	## before `rider_segment`, when there is one.
-	sightings : CritterPlan.Scene, World.SegmentIndex -> List(Billboards.Sighting)
-	sightings = |scene, rider_segment|
-		match rider_segment.previous() {
+	## before the rider's, when there is one.
+	sightings : Frame.RoadView -> List(Billboards.Sighting)
+	sightings = |road|
+		match Frame.segment_behind(road) {
 			Previous(segment_behind) =>
-				List.concat(
-					CritterPlan.sightings_ahead(scene),
-					CritterPlan.sightings_behind(scene, segment_behind),
+				CritterPlan.sightings_ahead(road).concat(
+					CritterPlan.sightings_behind(
+						road,
+						segment_behind,
+					),
 				)
-			AtRouteStart => CritterPlan.sightings_ahead(scene)
+			AtRouteStart => CritterPlan.sightings_ahead(road)
 		}
 
 	## The critters of every segment in the chain, nearest first.
-	sightings_ahead : CritterPlan.Scene -> List(Billboards.Sighting)
-	sightings_ahead = |scene|
-		Frame.ChainPosition.all_in(scene.chain)
-			.join_map(|position| CritterPlan.sightings_at(scene, position))
+	sightings_ahead : Frame.RoadView -> List(Billboards.Sighting)
+	sightings_ahead = |road|
+		Frame.ChainPosition.all_in(road.chain)
+			.join_map(|position| CritterPlan.sightings_at(road, position))
 
 	## The critters of the segment at `position` in the chain: its farm
 	## animals, its corner's animals, then its pond's ducks.
-	sightings_at : CritterPlan.Scene, Frame.ChainPosition -> List(Billboards.Sighting)
-	sightings_at = |scene, position|
-		List.join([
-			CritterPlan.farm_sightings(scene, position),
-			CritterPlan.safari_sightings(scene, position),
-			CritterPlan.duck_sightings(scene, position),
-		])
+	sightings_at : Frame.RoadView, Frame.ChainPosition -> List(Billboards.Sighting)
+	sightings_at = |road, position|
+		[
+			CritterPlan.farm_sightings(road, position),
+			CritterPlan.safari_sightings(road, position),
+			CritterPlan.duck_sightings(road, position),
+		].join()
 
 	## The cows, then the pigs, of the segment at `position` in the chain.
-	farm_sightings : CritterPlan.Scene, Frame.ChainPosition -> List(Billboards.Sighting)
-	farm_sightings = |scene, position|
+	farm_sightings : Frame.RoadView, Frame.ChainPosition -> List(Billboards.Sighting)
+	farm_sightings = |road, position|
 		if position.is_within_first(farm_reach) {
-			segment = segment_at(scene, position)
-			List.concat(segment.cows, segment.pigs)
-				.map(|critter| sight_critter(scene, { place: InChain(position), critter }))
+			segment = segment_at(road, position)
+			segment.cows.concat(segment.pigs)
+				.map(|critter| sight_critter(road, { place: InChain(position), critter }))
 		} else {
 			[]
 		}
 
 	## The animals at the corner that ends the segment at `position` in the
 	## chain. The road's last segment ends with no corner.
-	safari_sightings : CritterPlan.Scene, Frame.ChainPosition -> List(Billboards.Sighting)
-	safari_sightings = |scene, position| {
-		segment = segment_at(scene, position)
+	safari_sightings : Frame.RoadView, Frame.ChainPosition -> List(Billboards.Sighting)
+	safari_sightings = |road, position| {
+		segment = segment_at(road, position)
 		match segment.ending {
 			Continues(_) =>
 				if position.is_within_first(safari_reach) {
-					corner_sightings(scene, { place: InChain(position), segment })
+					corner_sightings(road, { place: InChain(position), segment })
 				} else {
 					[]
 				}
@@ -91,12 +84,12 @@ CritterPlan :: [].{
 	}
 
 	## The ducks of the segment at `position` in the chain, if it has a pond.
-	duck_sightings : CritterPlan.Scene, Frame.ChainPosition -> List(Billboards.Sighting)
-	duck_sightings = |scene, position|
+	duck_sightings : Frame.RoadView, Frame.ChainPosition -> List(Billboards.Sighting)
+	duck_sightings = |road, position|
 		if position.is_within_first(safari_reach) {
 			pond_sightings(
-				scene,
-				{ place: InChain(position), segment: segment_at(scene, position) },
+				road,
+				{ place: InChain(position), segment: segment_at(road, position) },
 			)
 		} else {
 			[]
@@ -104,19 +97,19 @@ CritterPlan :: [].{
 
 	## The corner's animals and the pond's ducks of the world's segment at
 	## `index`, the one before the rider's.
-	sightings_behind : CritterPlan.Scene, World.SegmentIndex -> List(Billboards.Sighting)
-	sightings_behind = |scene, index| {
-		segment = index.segment_in(scene.world)
-		List.concat(
-			corner_sightings(scene, { place: Frame.place_behind(segment), segment }),
-			CritterPlan.ducks_behind(scene, segment),
-		)
+	sightings_behind : Frame.RoadView, World.SegmentIndex -> List(Billboards.Sighting)
+	sightings_behind = |road, index| {
+		segment = index.segment_in(road.world)
+		corner_sightings(
+			road,
+			{ place: Frame.place_behind(segment), segment },
+		).concat(CritterPlan.ducks_behind(road, segment))
 	}
 
 	## The ducks of `segment`, the one before the rider's, if it has a pond.
-	ducks_behind : CritterPlan.Scene, World.Segment -> List(Billboards.Sighting)
-	ducks_behind = |scene, segment| pond_sightings(
-		scene,
+	ducks_behind : Frame.RoadView, World.Segment -> List(Billboards.Sighting)
+	ducks_behind = |road, segment| pond_sightings(
+		road,
 		{ place: Frame.place_behind(segment), segment },
 	)
 
@@ -135,23 +128,19 @@ CritterPlan :: [].{
 lane_half_width : F64
 lane_half_width = (Scenery.lane_width / 2.0)
 
-segment_at : CritterPlan.Scene, Frame.ChainPosition -> World.Segment
-segment_at = |scene, position| position.index_in(scene.chain).segment_in(scene.world)
+segment_at : Frame.RoadView, Frame.ChainPosition -> World.Segment
+segment_at = |road, position| position.index_in(road.chain).segment_in(road.world)
 
 ## A critter, placed through `place` on the road's map, as the rider sees it.
-sight_critter : CritterPlan.Scene,
+sight_critter : Frame.RoadView,
 {
 	place : Frame.SegmentPlace,
 	critter : Scenery.Critter,
 } -> Billboards.Sighting
-sight_critter = |scene, { place, critter }|
+sight_critter = |road, { place, critter }|
 	Billboards.sighting({
 		at: Frame.rider_point_at(
-			{
-				world: scene.world,
-				chain: scene.chain,
-				pose: scene.pose,
-			},
+			road,
 			{
 				place,
 				along: critter.along,
@@ -163,38 +152,34 @@ sight_critter = |scene, { place, critter }|
 		facing: if (critter.face_right) FacesRight else FacesLeft,
 	})
 
-corner_sightings : CritterPlan.Scene,
+corner_sightings : Frame.RoadView,
 {
 	place : Frame.SegmentPlace,
 	segment : World.Segment,
 } -> List(Billboards.Sighting)
-corner_sightings = |scene, { place, segment }|
+corner_sightings = |road, { place, segment }|
 	SafariCritter.corner_critters({
 		creature: segment.exit_creature,
 		corner_along: segment.length,
 		turn: segment.exit_turn,
 		lane_half_width,
 	})
-		.map(|critter| sight_critter(scene, { place, critter }))
+		.map(|critter| sight_critter(road, { place, critter }))
 
 ## The ducks on `segment`'s pond, if it has one. A duck's place is measured
 ## from the corner at the segment's end.
-pond_sightings : CritterPlan.Scene,
+pond_sightings : Frame.RoadView,
 {
 	place : Frame.SegmentPlace,
 	segment : World.Segment,
 } -> List(Billboards.Sighting)
-pond_sightings = |scene, { place, segment }|
+pond_sightings = |road, { place, segment }|
 	if Scenery.is_pond(segment.exit_creature) {
 		Pond.ducks.map(
 			|duck|
 				Billboards.sighting({
 					at: Frame.rider_point_at(
-						{
-							world: scene.world,
-							chain: scene.chain,
-							pose: scene.pose,
-						},
+						road,
 						{
 							place,
 							along: (segment.length + duck.at.along),

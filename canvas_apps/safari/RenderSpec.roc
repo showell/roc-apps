@@ -32,20 +32,24 @@ origin = {
 }
 
 scene : Render.Scene
-scene = Render.collect({
-	world: segs,
-	chain: Frame.chain_ahead(segs, World.SegmentIndex.first),
-	pose: origin,
-	cam_focal: 500.0,
-	rider_segment: World.SegmentIndex.first,
-	rider_along: 0.0,
-	speed: VehicleLimits.v_base,
-	truck: {
-		route_position: 500.0,
-		lights: { headlights: Off, brake_lights: Off },
+scene = Render.collect(
+	{
+		road: {
+			world: segs,
+			chain: Frame.chain_ahead(segs, World.SegmentIndex.first),
+			pose: origin,
+		},
+		cam_focal: 500.0,
 	},
-	clock: 0.0,
-})
+	{
+		speed: VehicleLimits.v_base,
+		truck: {
+			route_position: 500.0,
+			lights: { headlights: Off, brake_lights: Off },
+		},
+		clock: 0.0,
+	},
+)
 
 merge_got : List(I64)
 merge_got = {

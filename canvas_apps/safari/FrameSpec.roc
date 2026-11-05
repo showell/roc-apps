@@ -1,5 +1,6 @@
-## These are Frame's checks: the chain's bounds, a segment's place, and where
-## a point lands in the rider's view.
+## These are Frame's checks: the chain's bounds, a segment's place, the
+## rider's segment and the one behind it, and where a point lands in the
+## rider's view.
 app [main!] {
 	lib: "../lib/main.roc",
 }
@@ -105,6 +106,42 @@ map_bool_got = [
 
 map_bool_want : List(Bool)
 map_bool_want = [True, False, False, False, True]
+
+## A road along `chain`, the route's segments by number.
+road_along : List(U32) -> Frame.RoadView
+road_along = |chain| {
+	world: World.segments,
+	chain: chain.map(World.SegmentIndex.number),
+	pose,
+}
+
+rider_got : List(I64)
+rider_got = [
+	[0, 1],
+	[3, 4],
+].map(|chain| Frame.rider_segment(road_along(chain)).to_i64())
+
+rider_want : List(I64)
+rider_want = [0, 3]
+
+## The route's number of the segment behind the rider's, or -1 at the route's
+## start.
+number_behind : List(U32) -> I64
+number_behind = |chain|
+	match Frame.segment_behind(road_along(chain)) {
+		Previous(index) => index.to_i64()
+		AtRouteStart => -1
+	}
+
+behind_rider_got : List(I64)
+behind_rider_got = [
+	[0, 1],
+	[1, 2],
+	[3, 4],
+].map(number_behind)
+
+behind_rider_want : List(I64)
+behind_rider_want = [-1, 0, 2]
 
 at_d0 : Geom.RiderPoint
 at_d0 = Frame.rider_point_ahead(
@@ -228,6 +265,16 @@ main! = |_args| {
 			name: "fr-mapb ",
 			got: map_bool_got,
 			want: map_bool_want,
+		}),
+		Grade.ints({
+			name: "fr-rider",
+			got: rider_got,
+			want: rider_want,
+		}),
+		Grade.ints({
+			name: "fr-back ",
+			got: behind_rider_got,
+			want: behind_rider_want,
 		}),
 		Grade.rel({
 			name: "fr-at   ",

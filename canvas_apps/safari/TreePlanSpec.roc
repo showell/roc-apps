@@ -37,15 +37,17 @@ up_road = {
 
 ## The first three segments, seen from `pose` through a camera of focal
 ## length `cam_focal`.
-view_from : Frame.Pose, F64 -> TreePlan.View
+view_from : Frame.Pose, F64 -> Frame.Viewpoint
 view_from = |pose, cam_focal| {
-	world: segs,
-	chain: [0, 1, 2].map(World.SegmentIndex.number),
-	pose,
+	road: {
+		world: segs,
+		chain: [0, 1, 2].map(World.SegmentIndex.number),
+		pose,
+	},
 	cam_focal,
 }
 
-from_origin : TreePlan.View
+from_origin : Frame.Viewpoint
 from_origin = view_from(origin, 500.0)
 
 ## A green tree `along` metres into the first segment, 3.5 m right of the

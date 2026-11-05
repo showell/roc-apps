@@ -13,14 +13,13 @@ import World
 
 RailPlan :: [].{
 
-	## The rails at every bend in view, for a rider on the segment at
-	## `rider_segment`: the bends along the chain ahead, then the bend from
-	## the segment behind.
-	all_rails : Frame.RoadView, World.SegmentIndex -> List(GuardRail.RailPoly)
-	all_rails = |road, rider_segment| {
+	## The rails at every bend in view: the bends along the chain ahead, then
+	## the bend from the segment behind.
+	all_rails : Frame.RoadView -> List(GuardRail.RailPoly)
+	all_rails = |road| {
 		bends_ahead = Frame.ChainPosition.all_in(road.chain).drop_last(1)
 		ahead = bends_ahead.join_map(|position| rails_at(road, bend_after(road, position)))
-		match rider_segment.previous() {
+		match Frame.segment_behind(road) {
 			Previous(segment_behind) => ahead.concat(rails_behind(road, segment_behind))
 			AtRouteStart => ahead
 		}
@@ -41,7 +40,7 @@ RailPlan :: [].{
 	leg_steps : F64 -> U32
 	leg_steps = |distance| {
 		steps = Num_.round_real(distance)
-		F64.to_u32_wrap(if (steps < 1.0) 1.0 else steps)
+		(if (steps < 1.0) 1.0 else steps).to_u32_wrap()
 	}
 
 	## `steps` + 1 points evenly spaced from `from` to `to`, both included.
@@ -174,7 +173,7 @@ rail_path = |road, bend| {
 		},
 	)
 	apex = Joint.joint_apex(road, bend)
-	List.join([
+	[
 		RailPlan.run_up(
 			road,
 			{
@@ -186,5 +185,5 @@ rail_path = |road, bend| {
 		RailPlan.rail_leg({ from: end_before, to: apex }),
 		RailPlan.rail_leg({ from: apex, to: start_after }),
 		RailPlan.run_out(road, { place: bend.after, across: outer_edge }),
-	])
+	].join()
 }

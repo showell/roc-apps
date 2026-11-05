@@ -29,21 +29,21 @@ RocBird :: [].{
 
 	## A bird on screen, its feet where it is. Its still is unflipped: a bird
 	## from a left-hand tree crosses the road toward +x, the way its beak points.
-	draw : RocBird.PlacedBird, Camera.View -> List(Shapes.Shape)
-	draw = |bird, camera| {
+	draw : RocBird.PlacedBird, F64 -> List(Shapes.Shape)
+	draw = |bird, cam_focal| {
 		feet = Camera.project(
 			{
 				right: bird.right,
 				forward: bird.forward,
 				height: bird.lift,
 			},
-			camera,
+			cam_focal,
 		)
 		Critter.draw_still(
 			{
 				feet,
 				flip: AsDrawn,
-				height_px: height_px({ forward: bird.forward, cam_focal: camera.cam_focal }),
+				height_px: height_px({ forward: bird.forward, cam_focal }),
 			},
 			BirdStills.pose_polys(bird.pose),
 		)

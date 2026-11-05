@@ -17,23 +17,24 @@ TruckLights :: [].{
 	## The two headlight beams, each a little in from its side.
 	headlight_beams : TruckShape.TruckInView -> List(Shapes.Shape)
 	headlight_beams = |truck|
-		List.concat(
-			beam(truck, (truck.box.left + headlight_inset)),
-			beam(truck, (truck.box.right - headlight_inset)),
+		beam(truck, (truck.box.left + headlight_inset)).concat(
+			beam(
+				truck,
+				(truck.box.right - headlight_inset),
+			),
 		)
 
 	## The two brake lights, one in from each side of the trailer's back.
 	brake_lights : TruckShape.TruckInView -> List(Shapes.Shape)
 	brake_lights = |truck| {
 		box = truck.box
-		List.concat(
-			brake_light(
-				truck,
-				{
-					left: (box.left + brake_lamp_outer_edge),
-					right: (box.left + brake_lamp_inner_edge),
-				},
-			),
+		brake_light(
+			truck,
+			{
+				left: (box.left + brake_lamp_outer_edge),
+				right: (box.left + brake_lamp_inner_edge),
+			},
+		).concat(
 			brake_light(
 				truck,
 				{
@@ -204,11 +205,11 @@ beam = |truck, across| {
 	} else {
 		on_screen = Camera.project_all(
 			corners,
-			{ cam_focal: truck.cam_focal, view_w: truck.view_w },
+			truck.view.cam_focal,
 		)
 		lamp = Camera.project(
 			TruckLights.midpoint({ from: lamp_bottom, to: lamp_top }),
-			{ cam_focal: truck.cam_focal, view_w: truck.view_w },
+			truck.view.cam_focal,
 		)
 		Paint.push_grad_poly(
 			on_screen,
@@ -250,7 +251,7 @@ brake_light = |truck, { left, right }| {
 				height: brake_lamp_top,
 			},
 		].map(|corner| TruckShape.point(truck, corner))
-	List.concat(glow(truck, lamp), TruckShape.fill(truck, { color: brake_color, corners: lamp }))
+	glow(truck, lamp).concat(TruckShape.fill(truck, { color: brake_color, corners: lamp }))
 }
 
 ## The glow round a brake lamp. A lamp with a corner behind the camera has
@@ -260,7 +261,7 @@ glow = |truck, lamp|
 	if TruckLights.has_point_behind_camera(lamp) {
 		[]
 	} else {
-		on_screen = Camera.project_all(lamp, { cam_focal: truck.cam_focal, view_w: truck.view_w })
+		on_screen = Camera.project_all(lamp, truck.view.cam_focal)
 		center = TruckLights.center_of(on_screen)
 		radius = TruckLights.glow_radius(on_screen, center)
 		Paint.push_grad_poly(

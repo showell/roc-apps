@@ -33,15 +33,32 @@ origin = {
 }
 
 ## The first three segments seen from the origin, at 1 m a step.
-from_origin : CatPlan.View
+from_origin : Frame.Viewpoint
 from_origin = {
-	world: segs,
-	chain: [0, 1, 2].map(World.SegmentIndex.number),
-	pose: origin,
+	road: {
+		world: segs,
+		chain: [0, 1, 2].map(World.SegmentIndex.number),
+		pose: origin,
+	},
 	cam_focal: 500.0,
-	rider_along: 0.0,
-	speed: Speed.metres_a_step(1.0),
 }
+
+metre_a_step : Speed
+metre_a_step = Speed.metres_a_step(1.0)
+
+## The cats seen from the origin on a road of only `chain`.
+cats_on_chain : List(World.SegmentIndex) -> List(CatPlan.CatItem)
+cats_on_chain = |chain| CatPlan.in_view(
+	{ ..from_origin, road: { ..from_origin.road, chain } },
+	metre_a_step,
+)
+
+## The cat on the segment at `number` in the chain, if it is in view.
+cat_at : U32 -> List(CatPlan.CatItem)
+cat_at = |number| CatPlan.segment_cat(
+	from_origin,
+	{ position: Frame.ChainPosition.number(number), speed: metre_a_step },
+)
 
 has_got : List(Bool)
 has_got = segs.map(has_cat)
@@ -59,13 +76,13 @@ has_want = [False, True, False]
 
 gap_got : List(F64)
 gap_got = [0.0, 120.0].join_map(
-	|rider_along| [
+	|along| [
 		0,
 		1,
 		2,
 	].map(
-		|number| CatPlan.gap_to_segment(
-			{ ..from_origin, rider_along },
+		|number| Frame.gap_to_segment(
+			{ ..from_origin.road, pose: { ..origin, along } },
 			Frame.ChainPosition.number(number),
 		),
 	),
@@ -83,16 +100,10 @@ gap_want = [
 
 ## The cats in view for a rider `along` metres into the first segment.
 riding : F64 -> List(CatPlan.CatItem)
-riding = |along| CatPlan.in_view({
-	..from_origin,
-	pose: {
-		along,
-		across: 0.0,
-		yaw: Angle.straight_ahead,
-		half_width: 2.0,
-	},
-	rider_along: along,
-})
+riding = |along| CatPlan.in_view(
+	{ ..from_origin, road: { ..from_origin.road, pose: { ..origin, along } } },
+	metre_a_step,
+)
 
 seen : List(CatPlan.CatItem)
 seen = riding(300.0)
@@ -105,8 +116,8 @@ first_cat = |along|
 count_got : List(I64)
 count_got = [
 	seen.len().to_i64_wrap(),
-	CatPlan.segment_cat(from_origin, Frame.ChainPosition.first).len().to_i64_wrap(),
-	CatPlan.segment_cat(from_origin, Frame.ChainPosition.number(2)).len().to_i64_wrap(),
+	cat_at(0).len().to_i64_wrap(),
+	cat_at(2).len().to_i64_wrap(),
 	CatPlan.max_vis_cats,
 ]
 
@@ -145,11 +156,8 @@ cull_got = [
 	riding(200.0).len().to_i64_wrap(),
 	riding(500.0).len().to_i64_wrap(),
 	riding(600.0).len().to_i64_wrap(),
-	CatPlan.in_view({ ..from_origin, chain: [] }).len().to_i64_wrap(),
-	CatPlan.in_view({
-		..from_origin,
-		chain: [0].map(World.SegmentIndex.number),
-	}).len().to_i64_wrap(),
+	cats_on_chain([]).len().to_i64_wrap(),
+	cats_on_chain([World.SegmentIndex.first]).len().to_i64_wrap(),
 ]
 
 cull_want : List(I64)

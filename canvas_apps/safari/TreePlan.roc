@@ -6,7 +6,6 @@ import Frame
 import Geom
 import SceneLimits
 import Scenery
-import World
 
 TreePlan :: [].{
 
@@ -19,48 +18,35 @@ TreePlan :: [].{
 		color : I64,
 	}
 
-	## What the trees are seen from: the world's segments, the chain of them
-	## ahead of the rider, the rider's pose, and the camera's focal length.
-	View : {
-		world : List(World.Segment),
-		chain : List(World.SegmentIndex),
-		pose : Frame.Pose,
-		cam_focal : F64,
-	}
-
 	## At most this many trees are drawn in a frame.
 	max_vis_trees : I64
 	max_vis_trees = 640
 
 	## The trees in view, the nearest segment's first, and each segment's in
 	## the order it plants them.
-	in_view : TreePlan.View -> List(TreePlan.TreeItem)
+	in_view : Frame.Viewpoint -> List(TreePlan.TreeItem)
 	in_view = |view| {
-		positions = Frame.ChainPosition.all_in(view.chain)
+		positions = Frame.ChainPosition.all_in(view.road.chain)
 		positions.join_map(|position| segment_trees(view, position))
 	}
 
 	## The trees in view on the segment at `position` in the chain.
-	segment_trees : TreePlan.View, Frame.ChainPosition -> List(TreePlan.TreeItem)
+	segment_trees : Frame.Viewpoint, Frame.ChainPosition -> List(TreePlan.TreeItem)
 	segment_trees = |view, position| {
-		segment = position.index_in(view.chain).segment_in(view.world)
+		segment = position.index_in(view.road.chain).segment_in(view.road.world)
 		segment.trees.join_map(|tree| tree_in_view(view, { position, tree }))
 	}
 
 	## A tree on the segment at `position` in the chain, if it is in view: one
 	## item, or none.
-	tree_in_view : TreePlan.View,
+	tree_in_view : Frame.Viewpoint,
 	{
 		position : Frame.ChainPosition,
 		tree : Scenery.Tree,
 	} -> List(TreePlan.TreeItem)
 	tree_in_view = |view, { position, tree }| {
 		seen = Frame.rider_point_ahead(
-			{
-				world: view.world,
-				chain: view.chain,
-				pose: view.pose,
-			},
+			view.road,
 			{
 				position: position,
 				along: tree.along,

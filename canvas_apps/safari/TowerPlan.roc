@@ -26,16 +26,8 @@ TowerPlan :: [].{
 		beacon_brightness : F64,
 	}
 
-	## What the masts are seen from: the world's segments, the chain of them
-	## ahead of the rider, the rider's pose, the segment the rider is on, and
-	## the ride's clock.
-	View : {
-		world : List(World.Segment),
-		chain : List(World.SegmentIndex),
-		pose : Frame.Pose,
-		rider_segment : World.SegmentIndex,
-		clock : F64,
-	}
+	## What the masts are seen from: the road in view, and the ride's clock.
+	View : { road : Frame.RoadView, clock : F64 }
 
 	## How far past the end of its segment a mast stands.
 	tower_beyond : F64
@@ -82,18 +74,15 @@ TowerPlan :: [].{
 	## the segment behind the rider.
 	in_view : TowerPlan.View -> List(TowerPlan.TowerItem)
 	in_view = |view|
-		match view.rider_segment.previous() {
-			Previous(segment_behind) => List.concat(
-				along_chain(view),
-				tower_behind(view, segment_behind),
-			)
+		match Frame.segment_behind(view.road) {
+			Previous(segment_behind) => along_chain(view).concat(tower_behind(view, segment_behind))
 			AtRouteStart => along_chain(view)
 		}
 
 	## The masts in view along the chain, the nearest segment's first.
 	along_chain : TowerPlan.View -> List(TowerPlan.TowerItem)
 	along_chain = |view| {
-		positions = Frame.ChainPosition.all_in(view.chain)
+		positions = Frame.ChainPosition.all_in(view.road.chain)
 		positions.join_map(|position| segment_towers(view, position))
 	}
 
@@ -101,8 +90,8 @@ TowerPlan :: [].{
 	## its end, then the one halfway along.
 	segment_towers : TowerPlan.View, Frame.ChainPosition -> List(TowerPlan.TowerItem)
 	segment_towers = |view, position| {
-		index = position.index_in(view.chain)
-		segment = index.segment_in(view.world)
+		index = position.index_in(view.road.chain)
+		segment = index.segment_in(view.road.world)
 		end_tower = tower_if_ahead(
 			view,
 			{
@@ -113,15 +102,15 @@ TowerPlan :: [].{
 				beacon_key: index.to_i64(),
 			},
 		)
-		List.concat(end_tower, mid_tower(view, position))
+		end_tower.concat(mid_tower(view, position))
 	}
 
 	## The mast halfway along the segment at `position` in the chain, if it has
 	## one and it is in view.
 	mid_tower : TowerPlan.View, Frame.ChainPosition -> List(TowerPlan.TowerItem)
 	mid_tower = |view, position| {
-		index = position.index_in(view.chain)
-		segment = index.segment_in(view.world)
+		index = position.index_in(view.road.chain)
+		segment = index.segment_in(view.road.world)
 		match segment.mid_tower {
 			MidTower =>
 				tower_if_ahead(
@@ -142,7 +131,7 @@ TowerPlan :: [].{
 	## rider, if it is in view.
 	tower_behind : TowerPlan.View, World.SegmentIndex -> List(TowerPlan.TowerItem)
 	tower_behind = |view, index| {
-		behind = index.segment_in(view.world)
+		behind = index.segment_in(view.road.world)
 		tower_if_ahead(
 			view,
 			{
@@ -194,11 +183,7 @@ tower_if_ahead = |
 	},
 | {
 	center = Frame.rider_point_at(
-		{
-			world: view.world,
-			chain: view.chain,
-			pose: view.pose,
-		},
+		view.road,
 		{
 			place: place,
 			along,

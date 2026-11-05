@@ -68,8 +68,8 @@ segs : List(World.Segment)
 segs = [0, 1, 2].map(World.route_segment)
 
 # The rider at the start of the route, at the ride's first step.
-context : ItemDraw.Context
-context = {
+view : Frame.Viewpoint
+view = {
 	road: {
 		world: segs,
 		chain: [0, 1, 2].map(World.SegmentIndex.number),
@@ -96,7 +96,7 @@ tower_along = |along| {
 
 corner_got : List(F64)
 corner_got = {
-	footprint = ItemDraw.tower_footprint(context, tower_along(200.0))
+	footprint = ItemDraw.tower_footprint(view, tower_along(200.0))
 	[
 		footprint.back_left.forward,
 		footprint.front_right.forward,
@@ -109,7 +109,7 @@ corner_want : List(F64)
 corner_want = [194.0, 206.0, 14.0, 26.0]
 
 tower_shape_count : F64 -> U64
-tower_shape_count = |along| ItemDraw.draw_tower(context, tower_along(along)).len()
+tower_shape_count = |along| ItemDraw.draw_tower(view, tower_along(along)).len()
 
 tower_got : List(Bool)
 tower_got = [
