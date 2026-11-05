@@ -570,7 +570,7 @@ The cat walked out of its place in the order. Two clock-driven things were left 
 
 ### A blink
 
-🔭 The modules behind a beacon
+The modules behind a beacon
 ```dot
 digraph beacon {
   node [shape=box, fontname="Helvetica"];
