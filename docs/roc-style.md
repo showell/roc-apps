@@ -709,7 +709,9 @@ is the base; these rules sharpen it.
   is an ordinary `{ ..parcel, ... }`. Here an `Order` holds a customer and
   a payment, and `Shipping` sits below it and knows neither. Name the type
   when several functions share it, and spell it out in the signature when
-  one function reads it. A trailing comma after `..others` keeps the stack.
+  one function reads it. A signature that never names the rest writes a plain
+  `..`: `{ weight_grams : U64, .. } -> U64`. A trailing comma after `..others`
+  or `..` keeps the stack.
 
   ```roc
   Parcel(others) : {

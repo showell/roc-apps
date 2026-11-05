@@ -21,7 +21,7 @@ CrossingReaction :: [].{
 	{
 		along : Along,
 		speed : Speed,
-		..others,
+		..,
 	} -> CrossingReaction.Reaction
 	reaction_to = |segment, rider|
 		match segment.crossing {
