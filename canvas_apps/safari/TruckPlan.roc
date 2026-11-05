@@ -17,7 +17,7 @@ TruckPlan :: [].{
 			{
 				place : I64,
 				along : F64,
-				fwd : F64,
+				forward : F64,
 			},
 		),
 		NoTruck,
@@ -49,7 +49,7 @@ TruckPlan :: [].{
 	depth_keys : TruckPlan.TruckAt -> List(DepthSort.DepthKey)
 	depth_keys = |truck|
 		match truck {
-			Ahead(truck_ahead) => [{ forward: truck_ahead.fwd, subject: Truck }]
+			Ahead(truck_ahead) => [{ forward: truck_ahead.forward, subject: Truck }]
 			NoTruck => []
 		}
 }
@@ -86,11 +86,11 @@ truck_on_segment = |view, { along, place }| {
 			across: (Scenery.lane_width / 2.0),
 		},
 	)
-	if center.forward > Geom.near {
+	if center.forward > Geom.near_plane {
 		Ahead({
 			place,
 			along,
-			fwd: center.forward,
+			forward: center.forward,
 		})
 	} else {
 		NoTruck

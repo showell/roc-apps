@@ -90,7 +90,7 @@ TruckShape :: [].{
 	## Where a point on the truck lands in the rider's view. The ground
 	## curves away from the rider, so the point is lowered by how far the
 	## ground has dropped beneath it.
-	point : TruckShape.TruckInView, TruckShape.RoadPoint -> Geom.Vec3
+	point : TruckShape.TruckInView, TruckShape.RoadPoint -> Geom.SpacePoint
 	point = |
 		truck,
 		{
@@ -115,7 +115,7 @@ TruckShape :: [].{
 		{
 			right: on_ground.right,
 			forward: on_ground.forward,
-			height: (height - Geom.ground_drop(on_ground.right, on_ground.forward)),
+			height: (height - Geom.ground_drop(on_ground)),
 		}
 	}
 
@@ -131,7 +131,7 @@ TruckShape :: [].{
 
 	## A flat-coloured polygon on the truck, cut at the near plane and
 	## projected.
-	fill : TruckShape.TruckInView, { color : I64, corners : List(Geom.Vec3) } -> List(Paint.DrawCmd)
+	fill : TruckShape.TruckInView, { color : I64, corners : List(Geom.SpacePoint) } -> List(Paint.DrawCmd)
 	fill = |truck, { color, corners }| Paint.push_poly(
 		color,
 		Camera.project_all(

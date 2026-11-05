@@ -23,7 +23,7 @@ origin = {
 	along: 0.0,
 	across: 0.0,
 	yaw: 0.0,
-	hw: 2.0,
+	half_width: 2.0,
 }
 
 up_road : Frame.Pose
@@ -31,7 +31,7 @@ up_road = {
 	along: 100.0,
 	across: 0.0,
 	yaw: 0.0,
-	hw: 2.0,
+	half_width: 2.0,
 }
 
 ## The first three segments, seen from `pose` through a camera of focal
@@ -75,7 +75,7 @@ lone_tree = TreePlan.tree_in_view(
 one_got : List(F64)
 one_got = [
 	lone_tree.right,
-	lone_tree.fwd,
+	lone_tree.forward,
 	lone_tree.height,
 ]
 
@@ -122,9 +122,9 @@ planted_tree = |i|
 
 order_got : List(F64)
 order_got = [
-	planted_tree(0).fwd,
-	planted_tree(1).fwd,
-	planted_tree(2).fwd,
+	planted_tree(0).forward,
+	planted_tree(1).forward,
+	planted_tree(2).forward,
 	planted_tree(0).right,
 	planted_tree(1).right,
 ]

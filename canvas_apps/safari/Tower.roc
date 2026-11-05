@@ -52,10 +52,10 @@ Tower :: [].{
 
 	## Where the footprint's four corners stand in the rider's view.
 	Footprint : {
-		back_left : Geom.RiderPt,
-		back_right : Geom.RiderPt,
-		front_right : Geom.RiderPt,
-		front_left : Geom.RiderPt,
+		back_left : Geom.RiderPoint,
+		back_right : Geom.RiderPoint,
+		front_right : Geom.RiderPoint,
+		front_left : Geom.RiderPoint,
 	}
 
 	## How a rod is drawn: its width on screen, and the camera.
@@ -69,7 +69,7 @@ Tower :: [].{
 	## has sunk it, and how its rods are drawn.
 	Mast : {
 		footprint : Tower.Footprint,
-		center : Geom.RiderPt,
+		center : Geom.RiderPoint,
 		sunk : F64,
 		view : Tower.RodView,
 	}
@@ -99,7 +99,7 @@ Tower :: [].{
 			FrontLeft => { across: -1.0, along: 1.0 }
 		}
 
-	footprint_corner : Tower.Footprint, Tower.Corner -> Geom.RiderPt
+	footprint_corner : Tower.Footprint, Tower.Corner -> Geom.RiderPoint
 	footprint_corner = |footprint, corner|
 		match corner {
 			BackLeft => footprint.back_left
@@ -122,13 +122,13 @@ Tower :: [].{
 
 	## Where a footprint corner stands on the map, for a mast centred at
 	## `along` and `across` and turned by `yaw`.
-	base_corner_ax : Tower.Corner,
+	base_corner_on_road : Tower.Corner,
 	{
 		along : F64,
 		across : F64,
 		yaw : F64,
-	} -> Geom.AX
-	base_corner_ax = |
+	} -> Geom.RoadPoint
+	base_corner_on_road = |
 		corner,
 		{
 			along,
@@ -141,20 +141,20 @@ Tower :: [].{
 		dv = (offset.along * tower_half)
 		cy = Trig.r_cos(yaw)
 		sy = Trig.r_sin(yaw)
-		{ a: (along + ((du * sy) + (dv * cy))), x: (across + ((du * cy) - (dv * sy))) }
+		{ along: (along + ((du * sy) + (dv * cy))), across: (across + ((du * cy) - (dv * sy))) }
 	}
 
 	## How far the earth's curve hides the bottom of a mast standing at `p`.
-	sunk_below_horizon : Geom.RiderPt -> F64
+	sunk_below_horizon : Geom.RiderPoint -> F64
 	sunk_below_horizon = |p|
 		(((p.right * p.right) + (p.forward * p.forward)) / (2.0 * earth_radius))
 
 	## The point `fraction` of the way from `from` to `to`.
 	point_between : {
-		from : Geom.Vec3,
-		to : Geom.Vec3,
+		from : Geom.SpacePoint,
+		to : Geom.SpacePoint,
 		fraction : F64,
-	} -> Geom.Vec3
+	} -> Geom.SpacePoint
 	point_between = |
 		{
 			from,
@@ -169,7 +169,7 @@ Tower :: [].{
 
 	## A corner of the mast at `height_on_mast`: drawn in toward the centre
 	## as the mast tapers, and lowered by how far the mast has sunk.
-	corner_at : Tower.Mast, { corner : Tower.Corner, height_on_mast : F64 } -> Geom.Vec3
+	corner_at : Tower.Mast, { corner : Tower.Corner, height_on_mast : F64 } -> Geom.SpacePoint
 	corner_at = |mast, { corner, height_on_mast: h }| {
 		t = (h / tower_height)
 		bottom = footprint_corner(mast.footprint, corner)
@@ -233,7 +233,7 @@ Tower :: [].{
 	## A rod between two points in the rider's view. A rod with one end
 	## behind the near plane is cut there; one with both ends behind it is
 	## not drawn.
-	rod : Tower.RodView, { from : Geom.Vec3, to : Geom.Vec3 } -> List(Paint.DrawCmd)
+	rod : Tower.RodView, { from : Geom.SpacePoint, to : Geom.SpacePoint } -> List(Paint.DrawCmd)
 	rod = |view, { from, to }|
 		match (sight_of(from), sight_of(to)) {
 			(InView, InView) => rod_on_screen(view, { from, to })
@@ -242,18 +242,18 @@ Tower :: [].{
 			(BehindCamera, BehindCamera) => []
 		}
 
-	sight_of : Geom.Vec3 -> [InView, BehindCamera]
-	sight_of = |point| if (point.forward >= Geom.near) InView else BehindCamera
+	sight_of : Geom.SpacePoint -> [InView, BehindCamera]
+	sight_of = |point| if (point.forward >= Geom.near_plane) InView else BehindCamera
 
 	## Where the line from `from` to `to` crosses the near plane.
-	cut_at_near : { from : Geom.Vec3, to : Geom.Vec3 } -> Geom.Vec3
+	cut_at_near : { from : Geom.SpacePoint, to : Geom.SpacePoint } -> Geom.SpacePoint
 	cut_at_near = |{ from, to }| point_between({
 		from,
 		to,
-		fraction: ((Geom.near - from.forward) / (to.forward - from.forward)),
+		fraction: ((Geom.near_plane - from.forward) / (to.forward - from.forward)),
 	})
 
-	rod_on_screen : Tower.RodView, { from : Geom.Vec3, to : Geom.Vec3 } -> List(Paint.DrawCmd)
+	rod_on_screen : Tower.RodView, { from : Geom.SpacePoint, to : Geom.SpacePoint } -> List(Paint.DrawCmd)
 	rod_on_screen = |view, { from, to }|
 		screen_rod({
 			from: Camera.project(from, { cam_focal: view.cam_focal, view_w: view.view_w }),
@@ -302,7 +302,7 @@ Tower :: [].{
 	rod_width_at = |camera| (rod_w * metre_px(camera))
 
 	## The four legs, from the footprint's corners up to the apex.
-	legs : Tower.Mast, Geom.Vec3 -> List(Paint.DrawCmd)
+	legs : Tower.Mast, Geom.SpacePoint -> List(Paint.DrawCmd)
 	legs = |mast, apex| List.join_map(
 		corners,
 		|corner| rod(
@@ -428,7 +428,7 @@ Tower :: [].{
 
 	## The beacon on the apex, at its brightness; too dim or too small, it
 	## isn't drawn.
-	beacon : Tower.Mast, { apex : Geom.Vec3, brightness : F64 } -> List(Paint.DrawCmd)
+	beacon : Tower.Mast, { apex : Geom.SpacePoint, brightness : F64 } -> List(Paint.DrawCmd)
 	beacon = |mast, { apex, brightness }| {
 		apex_on_screen = Camera.project(
 			apex,
@@ -457,7 +457,7 @@ Tower :: [].{
 	## behind the camera, or sunk wholly below the horizon, draws nothing.
 	draw : {
 		footprint : Tower.Footprint,
-		center : Geom.RiderPt,
+		center : Geom.RiderPoint,
 		cam_focal : F64,
 		view_w : F64,
 		beacon_phase : F64,
@@ -472,7 +472,7 @@ Tower :: [].{
 		},
 	| {
 		sunk = sunk_below_horizon(center)
-		if center.forward < Geom.near or sunk >= tower_height {
+		if center.forward < Geom.near_plane or sunk >= tower_height {
 			[]
 		} else {
 			view = {

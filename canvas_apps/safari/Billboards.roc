@@ -31,7 +31,7 @@ Billboards :: [].{
 
 	## A critter of `height` metres at `at` in the rider's view.
 	sighting : {
-		at : Geom.RiderPt,
+		at : Geom.RiderPoint,
 		height : F64,
 		codepoint : I64,
 		facing : Billboards.Facing,
@@ -44,7 +44,7 @@ Billboards :: [].{
 			facing,
 		},
 	|
-		if at.forward <= Geom.near {
+		if at.forward <= Geom.near_plane {
 			BehindCamera
 		} else if ((height / at.forward) * Lens.focal) < min_critter_px {
 			TooSmall

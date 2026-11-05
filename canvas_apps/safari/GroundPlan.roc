@@ -109,7 +109,7 @@ GroundPlan :: [].{
 	}
 
 	## A chunk's corners: across its near end, then back across its far end.
-	chunk_corners : GroundPlan.View, GroundPlan.RoadChunk -> List(Geom.RiderPt)
+	chunk_corners : GroundPlan.View, GroundPlan.RoadChunk -> List(Geom.RiderPoint)
 	chunk_corners = |
 		view,
 		{
@@ -148,11 +148,11 @@ Bend : {
 	before : Frame.Mapper,
 	after : Frame.Mapper,
 	length_before : F64,
-	exit_right : Bool,
+	exit_side : Geom.TurnSide,
 }
 
 ## A patch of ground in `color`, as the view's camera sees it.
-paint : GroundPlan.View, { corners : List(Geom.RiderPt), color : I64 } -> List(Paint.DrawCmd)
+paint : GroundPlan.View, { corners : List(Geom.RiderPoint), color : I64 } -> List(Paint.DrawCmd)
 paint = |view, { corners, color }| Ground.draw({
 	corners,
 	color,
@@ -213,7 +213,7 @@ bend_out_of = |segment, { before, after }| {
 	before,
 	after,
 	length_before: segment.length,
-	exit_right: segment.exit_right,
+	exit_side: segment.exit_side,
 }
 
 ## A bend's paving: the road just before it, then the corner it cuts.
@@ -225,7 +225,7 @@ bend_ground = |view, bend|
 	)
 
 ## The last `approach_length` of the road before a bend.
-approach : GroundPlan.View, Bend -> List(Geom.RiderPt)
+approach : GroundPlan.View, Bend -> List(Geom.RiderPoint)
 approach = |view, bend| {
 	before = |along, across| Frame.map_pt(
 		{
@@ -251,7 +251,7 @@ approach = |view, bend| {
 ## The corner a bend cuts: from the inner edge where the segment before
 ## ends, to its outer edge there, out to where the two outer edges meet,
 ## and back to the outer edge where the segment after starts.
-bend_corner : GroundPlan.View, Bend -> List(Geom.RiderPt)
+bend_corner : GroundPlan.View, Bend -> List(Geom.RiderPoint)
 bend_corner = |view, bend| {
 	before = |along, across| Frame.map_pt(
 		{
@@ -277,8 +277,12 @@ bend_corner = |view, bend| {
 			across,
 		},
 	)
-	inner_edge = if (bend.exit_right) Scenery.lane_width else 0.0
-	outer_edge = Joint.outer_cu(bend.exit_right)
+	inner_edge =
+		match bend.exit_side {
+			TurnsRight => Scenery.lane_width
+			TurnsLeft => 0.0
+		}
+	outer_edge = Joint.outer_edge(bend.exit_side)
 	apex = Joint.joint_apex(
 		{
 			world: view.world,

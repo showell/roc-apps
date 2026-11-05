@@ -33,16 +33,16 @@ fixed_got = [
 fixed_want : List(I64)
 fixed_want = [12765135, 10133672, 10, 3072]
 
-pt : F64, F64 -> Geom.RiderPt
+pt : F64, F64 -> Geom.RiderPoint
 pt = |right, forward| { right, forward }
 
 quad_at : List(GuardRail.RailPoly), U64 -> GuardRail.RailPoly
 quad_at = |quads, i| quads.get(i) ?? crash "GuardRailSpec: an index past the rail's end"
 
-corner_at : GuardRail.RailPoly, U64 -> Geom.Vec3
+corner_at : GuardRail.RailPoly, U64 -> Geom.SpacePoint
 corner_at = |quad, i| quad.corners.get(i) ?? crash "GuardRailSpec: a quad has four corners"
 
-straight : List(Geom.RiderPt)
+straight : List(Geom.RiderPoint)
 straight = [
 	pt(0.0, 10.0),
 	pt(0.0, 20.0),
@@ -102,7 +102,7 @@ post_got = {
 post_want : List(F64)
 post_want = [9.99, 10.01, 10.01, 9.99, 0.0, 0.55, 0.0, 0.0]
 
-diagonal : List(Geom.RiderPt)
+diagonal : List(Geom.RiderPoint)
 diagonal = [pt(0.0, 10.0), pt(30.0, 50.0)]
 
 diag_got : List(F64)
@@ -124,7 +124,7 @@ diag_want = [
 	10.008,
 ]
 
-doubled : List(Geom.RiderPt)
+doubled : List(Geom.RiderPoint)
 doubled = [pt(0.0, 10.0), pt(0.0, 10.0)]
 
 doubled_got : List(F64)
@@ -178,7 +178,7 @@ main! = |_args| {
 			want: colour_want,
 		}),
 		Grade.reals({
-			name: "gu-fwd   ",
+			name: "gu-forward   ",
 			got: fwd_got,
 			want: fwd_want,
 			tol: 0.0,

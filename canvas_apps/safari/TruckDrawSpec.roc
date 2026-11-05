@@ -90,7 +90,7 @@ axle_count_got = [
 axle_count_want : List(I64)
 axle_count_want = [5]
 
-v3 : F64 -> Geom.Vec3
+v3 : F64 -> Geom.SpacePoint
 v3 = |f| {
 	right: 0.0,
 	forward: f,

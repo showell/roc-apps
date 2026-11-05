@@ -9,14 +9,12 @@ Joint :: [].{
 
 	## How far across the road its outer edge at a bend is: the left edge
 	## when the road turns right, the right edge when it turns left.
-	outer_cu : Bool -> F64
-	outer_cu = |exit_right| (
-		if exit_right {
-			0.0
-		} else {
-			Scenery.lane_width
+	outer_edge : Geom.TurnSide -> F64
+	outer_edge = |exit_side|
+		match exit_side {
+			TurnsRight => 0.0
+			TurnsLeft => Scenery.lane_width
 		}
-	)
 
 	## The road as the rider sees it: the world's segments, the chain of
 	## them ahead of the rider, and the rider's pose.
@@ -33,11 +31,11 @@ Joint :: [].{
 		before : Frame.Mapper,
 		after : Frame.Mapper,
 		length_before : F64,
-		exit_right : Bool,
+		exit_side : Geom.TurnSide,
 	}
 
 	## Where the outer edges of the two segments at a bend meet.
-	joint_apex : Joint.RoadAhead, Joint.Bend -> Geom.RiderPt
+	joint_apex : Joint.RoadAhead, Joint.Bend -> Geom.RiderPoint
 	joint_apex = |
 		{
 			world: segs,
@@ -48,25 +46,24 @@ Joint :: [].{
 			before: from_map,
 			after: to_map,
 			length_before: from_len,
-			exit_right,
+			exit_side,
 		},
 	| (
 		{
-			fcu = outer_cu(exit_right)
-			tx = outer_cu(exit_right)
+			edge = outer_edge(exit_side)
 			road = {
 				world: segs,
 				chain: ch,
 				pose,
 			}
-			Geom.line_meet({
+			Geom.line_crossing({
 				first_line: {
 					start_point: Frame.map_pt(
 						road,
 						{
 							mapper: from_map,
 							along: from_len,
-							across: fcu,
+							across: edge,
 						},
 					),
 					end_point: Frame.map_pt(
@@ -74,7 +71,7 @@ Joint :: [].{
 						{
 							mapper: from_map,
 							along: (from_len + 1.0),
-							across: fcu,
+							across: edge,
 						},
 					),
 				},
@@ -84,7 +81,7 @@ Joint :: [].{
 						{
 							mapper: to_map,
 							along: 0.0,
-							across: tx,
+							across: edge,
 						},
 					),
 					end_point: Frame.map_pt(
@@ -92,7 +89,7 @@ Joint :: [].{
 						{
 							mapper: to_map,
 							along: 1.0,
-							across: tx,
+							across: edge,
 						},
 					),
 				},

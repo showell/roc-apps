@@ -48,7 +48,7 @@ ItemDraw :: [].{
 
 	## How many of `trees` are nearer than `forward`.
 	nearer_count : List(TreePlan.TreeItem), F64 -> U64
-	nearer_count = |trees, forward| trees.count_if(|tree| tree.fwd < forward)
+	nearer_count = |trees, forward| trees.count_if(|tree| tree.forward < forward)
 
 	## How much a crown is shaded at distance `forward`: fully at the camera,
 	## falling evenly to none at SceneLimits.crown_shade_dist.
@@ -67,17 +67,17 @@ ItemDraw :: [].{
 		cam_focal : F64,
 	} -> List(Paint.DrawCmd)
 	draw_tree = |tree, { trees, cam_focal }| {
-		nearer = ItemDraw.nearer_count(trees, tree.fwd)
+		nearer = ItemDraw.nearer_count(trees, tree.forward)
 		Tree.draw({
 			right: tree.right,
-			forward: tree.fwd,
+			forward: tree.forward,
 			height: tree.height,
 			color: tree.color,
 			cam_focal,
 			view_w: Screen.width,
 			trunk: if (nearer < ItemDraw.round_trunks) RoundCorners else SharpCorners,
-			crown: if (tree.fwd < SceneLimits.detail_dist) Cones else Triangles,
-			shade: ItemDraw.crown_shade(tree.fwd),
+			crown: if (tree.forward < SceneLimits.detail_dist) Cones else Triangles,
+			shade: ItemDraw.crown_shade(tree.forward),
 		})
 	}
 
@@ -85,7 +85,7 @@ ItemDraw :: [].{
 	tower_footprint : ItemDraw.Context, TowerPlan.TowerItem -> Tower.Footprint
 	tower_footprint = |context, tower| {
 		corner_point = |corner| {
-			on_map = Tower.base_corner_ax(
+			on_map = Tower.base_corner_on_road(
 				corner,
 				{
 					along: tower.along,
@@ -101,8 +101,8 @@ ItemDraw :: [].{
 				},
 				{
 					mapper: tower.map,
-					along: on_map.a,
-					across: on_map.x,
+					along: on_map.along,
+					across: on_map.across,
 				},
 			)
 		}
@@ -173,7 +173,7 @@ draw_cat : CatPlan.CatItem, { cam_focal : F64, view_w : F64 } -> List(Paint.Draw
 draw_cat = |cat, { cam_focal, view_w }|
 	CatDraw.draw({
 		right: cat.right,
-		forward: cat.fwd,
+		forward: cat.forward,
 		height: cat.height,
 		pose: cat.pose,
 		lift: cat.lift,

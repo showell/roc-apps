@@ -9,7 +9,7 @@ import Grade
 import Joint
 
 outer_got : List(F64)
-outer_got = [Joint.outer_cu(True), Joint.outer_cu(False)]
+outer_got = [Joint.outer_edge(TurnsRight), Joint.outer_edge(TurnsLeft)]
 
 outer_want : List(F64)
 outer_want = [0.0, 4.0]
@@ -19,7 +19,7 @@ pose = {
 	along: 100.0,
 	across: 1.0,
 	yaw: 0.2,
-	hw: 2.0,
+	half_width: 2.0,
 }
 
 behind_right : Frame.Mapper
@@ -28,7 +28,7 @@ behind_right = {
 	d: 0,
 	prev_len: 300.0,
 	prev_angle: 0.8726646259971648,
-	prev_right: True,
+	prev_side: TurnsRight,
 	prev_w: 4.0,
 }
 
@@ -38,7 +38,7 @@ behind_left = {
 	d: 0,
 	prev_len: 300.0,
 	prev_angle: 1.2217304763960306,
-	prev_right: False,
+	prev_side: TurnsLeft,
 	prev_w: 4.0,
 }
 
@@ -58,7 +58,7 @@ apex_got = (
 				before: behind_right,
 				after: here,
 				length_before: 300.0,
-				exit_right: True,
+				exit_side: TurnsRight,
 			},
 		)
 		l = Joint.joint_apex(
@@ -71,7 +71,7 @@ apex_got = (
 				before: behind_left,
 				after: here,
 				length_before: 300.0,
-				exit_right: False,
+				exit_side: TurnsLeft,
 			},
 		)
 		[

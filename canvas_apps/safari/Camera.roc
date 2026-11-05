@@ -15,12 +15,12 @@ Camera :: [].{
 	eye_h = 1.2
 
 	## Where a point in front of the camera lands on the screen.
-	project : Geom.Vec3, Camera.View -> Camera.ScreenPt
+	project : Geom.SpacePoint, Camera.View -> Camera.ScreenPt
 	project = |p, { cam_focal, view_w }| {
 		x: ((view_w / 2.0) + ((p.right / p.forward) * cam_focal)),
 		y: (Screen.horizon_y - (((p.height - eye_h) / p.forward) * cam_focal)),
 	}
 
-	project_all : List(Geom.Vec3), Camera.View -> List(Camera.ScreenPt)
+	project_all : List(Geom.SpacePoint), Camera.View -> List(Camera.ScreenPt)
 	project_all = |points, view| points.map(|p| project(p, view))
 }

@@ -14,7 +14,7 @@ TreePlan :: [].{
 	## its colour.
 	TreeItem : {
 		right : F64,
-		fwd : F64,
+		forward : F64,
 		height : F64,
 		color : I64,
 	}
@@ -66,7 +66,7 @@ TreePlan :: [].{
 				across: (tree.across + (Scenery.lane_width / 2.0)),
 			},
 		)
-		if seen.forward <= Geom.near {
+		if seen.forward <= Geom.near_plane {
 			[]
 		} else if ((tree.height / seen.forward) * view.cam_focal) < SceneLimits.min_scenery_px {
 			[]
@@ -74,7 +74,7 @@ TreePlan :: [].{
 			[
 				{
 					right: seen.right,
-					fwd: seen.forward,
+					forward: seen.forward,
 					height: tree.height,
 					color: tree.color,
 				},
@@ -85,5 +85,5 @@ TreePlan :: [].{
 	## The trees as the depth sort sees them: each one's distance ahead, and
 	## its place in `trees`.
 	depth_keys : List(TreePlan.TreeItem) -> List(DepthSort.DepthKey)
-	depth_keys = |trees| trees.map_with_index(|tree, i| { forward: tree.fwd, subject: Tree(i) })
+	depth_keys = |trees| trees.map_with_index(|tree, i| { forward: tree.forward, subject: Tree(i) })
 }

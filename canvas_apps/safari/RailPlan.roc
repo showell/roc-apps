@@ -51,10 +51,10 @@ RailPlan :: [].{
 
 	## `steps` + 1 points evenly spaced from `from` to `to`, both included.
 	evenly_spaced : {
-		from : Geom.RiderPt,
-		to : Geom.RiderPt,
+		from : Geom.RiderPoint,
+		to : Geom.RiderPoint,
 		steps : I64,
-	} -> List(Geom.RiderPt)
+	} -> List(Geom.RiderPoint)
 	evenly_spaced = |
 		{
 			from,
@@ -74,7 +74,7 @@ RailPlan :: [].{
 
 	## A leg of rail from `from` to `to`: a point about every metre, the
 	## last at `to`, and none at `from`, which ends the leg before it.
-	leg : { from : Geom.RiderPt, to : Geom.RiderPt } -> List(Geom.RiderPt)
+	leg : { from : Geom.RiderPoint, to : Geom.RiderPoint } -> List(Geom.RiderPoint)
 	leg = |{ from, to }| {
 		dr = (to.right - from.right)
 		df = (to.forward - from.forward)
@@ -94,7 +94,7 @@ RailPlan :: [].{
 		place : Frame.Mapper,
 		length : F64,
 		across : F64,
-	} -> List(Geom.RiderPt)
+	} -> List(Geom.RiderPoint)
 	run_up = |
 		road,
 		{
@@ -120,7 +120,7 @@ RailPlan :: [].{
 	## The rail along the first `rail_runout` metres of a segment on the map
 	## at `place`, `across` from its left edge: a point a metre, the first a
 	## metre in.
-	run_out : RailPlan.Road, { place : Frame.Mapper, across : F64 } -> List(Geom.RiderPt)
+	run_out : RailPlan.Road, { place : Frame.Mapper, across : F64 } -> List(Geom.RiderPoint)
 	run_out = |road, { place, across }|
 		List.from_iter(I64.to(1, GuardRail.rail_runout))
 			.map(
@@ -141,7 +141,7 @@ Bend : {
 	before : Frame.Mapper,
 	after : Frame.Mapper,
 	length_before : F64,
-	exit_right : Bool,
+	exit_side : Geom.TurnSide,
 }
 
 ## A point `along` a segment on the map at `place`, `across` from its left
@@ -151,7 +151,7 @@ on_map : RailPlan.Road,
 	place : Frame.Mapper,
 	along : F64,
 	across : F64,
-} -> Geom.RiderPt
+} -> Geom.RiderPoint
 on_map = |
 	road,
 	{
@@ -183,7 +183,7 @@ bend_after = |road, position| {
 		before: Frame.chain_map(position),
 		after: Frame.chain_map((position + 1)),
 		length_before: segment.length,
-		exit_right: segment.exit_right,
+		exit_side: segment.exit_side,
 	}
 }
 
@@ -199,7 +199,7 @@ rails_behind = |road, index| {
 			before: Frame.prev_map(segment),
 			after: Frame.chain_map(0),
 			length_before: segment.length,
-			exit_right: segment.exit_right,
+			exit_side: segment.exit_side,
 		},
 	)
 }
@@ -210,9 +210,9 @@ rails_at = |road, bend| GuardRail.quads_along(rail_path(road, bend))
 ## The path of the rail at a bend, along the road's outer edge: up to the
 ## bend, out to where the two outer edges meet, back to the next segment,
 ## and along it.
-rail_path : RailPlan.Road, Bend -> List(Geom.RiderPt)
+rail_path : RailPlan.Road, Bend -> List(Geom.RiderPoint)
 rail_path = |road, bend| {
-	outer_edge = Joint.outer_cu(bend.exit_right)
+	outer_edge = Joint.outer_edge(bend.exit_side)
 	end_before = on_map(
 		road,
 		{

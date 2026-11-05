@@ -17,13 +17,13 @@ steps_got = [0.0, 0.4, 0.5, 1.0, 1.4, 1.5, 2.5, 10.0, 49.6, 50.0].map(RailPlan.l
 steps_want : List(I64)
 steps_want = [1, 1, 1, 1, 1, 2, 3, 10, 50, 50]
 
-origin_pt : Geom.RiderPt
+origin_pt : Geom.RiderPoint
 origin_pt = { right: 0.0, forward: 0.0 }
 
-point_at : List(Geom.RiderPt), U64 -> Geom.RiderPt
+point_at : List(Geom.RiderPoint), U64 -> Geom.RiderPoint
 point_at = |points, i| points.get(i) ?? crash "RailPlanSpec: an index past the leg's end"
 
-straight : List(Geom.RiderPt)
+straight : List(Geom.RiderPoint)
 straight = RailPlan.leg({ from: origin_pt, to: { right: 0.0, forward: 10.0 } })
 
 straight_got : List(F64)
@@ -39,7 +39,7 @@ straight_got = [
 straight_want : List(F64)
 straight_want = [10.0, 1.0, 5.0, 10.0, 0.0, 0.0]
 
-diagonal : List(Geom.RiderPt)
+diagonal : List(Geom.RiderPoint)
 diagonal = RailPlan.leg({ from: origin_pt, to: { right: 30.0, forward: 40.0 } })
 
 diagonal_got : List(F64)
@@ -99,11 +99,11 @@ road = {
 		along: 0.0,
 		across: 0.0,
 		yaw: 0.0,
-		hw: 2.0,
+		half_width: 2.0,
 	},
 }
 
-run_up : List(Geom.RiderPt)
+run_up : List(Geom.RiderPoint)
 run_up = RailPlan.run_up(
 	road,
 	{

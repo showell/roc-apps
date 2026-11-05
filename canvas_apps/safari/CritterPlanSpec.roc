@@ -21,7 +21,7 @@ origin = {
 	along: 0.0,
 	across: 0.0,
 	yaw: 0.0,
-	hw: 2.0,
+	half_width: 2.0,
 }
 
 ## The first six segments, chained in order.

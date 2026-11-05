@@ -126,7 +126,7 @@ RocBird :: [].{
 	# same shape every other collected item has -- where, not what.
 	Bird : {
 		right : F64,
-		fwd : F64,
+		forward : F64,
 		lift : F64,
 	}
 
@@ -170,7 +170,7 @@ RocBird :: [].{
 						across: t.across + Scenery.lane_width / 2.0,
 					},
 				)
-				if rp.forward <= Geom.near {
+				if rp.forward <= Geom.near_plane {
 					[]
 				} else if (height / rp.forward) * cf < SceneLimits.min_scenery_px {
 					[]
@@ -178,7 +178,7 @@ RocBird :: [].{
 					[
 						{
 							right: rp.right,
-							fwd: rp.forward,
+							forward: rp.forward,
 							lift: t.height,
 						},
 					]
@@ -213,7 +213,7 @@ RocBird :: [].{
 	# **THE DEPTH IS THE TREE'S**, which is the whole point of collecting them:
 	# how high the bird sits does not change how far away it is.
 	bird_items : List(RocBird.Bird) -> List(DepthSort.DepthKey)
-	bird_items = |bs| bs.map_with_index(|bird, i| { forward: bird.fwd, subject: Bird(i) })
+	bird_items = |bs| bs.map_with_index(|bird, i| { forward: bird.forward, subject: Bird(i) })
 
 	# One bird, drawn where the sort says. Its feet go at the top of its tree,
 	# and unflipped its beak points toward +x, which from a left-hand tree is
@@ -224,7 +224,7 @@ RocBird :: [].{
 		feet = Camera.project(
 			{
 				right: b.right,
-				forward: b.fwd,
+				forward: b.forward,
 				height: b.lift,
 			},
 			camera_view,
@@ -233,7 +233,7 @@ RocBird :: [].{
 			{
 				feet,
 				flip: AsDrawn,
-				height_px: (height / b.fwd) * cf,
+				height_px: (height / b.forward) * cf,
 			},
 			polys,
 		)

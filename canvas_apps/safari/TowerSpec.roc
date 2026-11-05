@@ -83,7 +83,7 @@ corner_want = [
 
 ax_of : Tower.Corner -> List(F64)
 ax_of = |corner| {
-	p = Tower.base_corner_ax(
+	p = Tower.base_corner_on_road(
 		corner,
 		{
 			along: 100.0,
@@ -91,7 +91,7 @@ ax_of = |corner| {
 			yaw: 0.0,
 		},
 	)
-	[p.a, p.x]
+	[p.along, p.across]
 }
 
 ax_got : List(F64)

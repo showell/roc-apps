@@ -21,9 +21,9 @@ fixed_want : List(F64)
 fixed_want = [80.0, 200.0]
 
 tree_at : F64 -> TreePlan.TreeItem
-tree_at = |fwd| {
+tree_at = |forward| {
 	right: 0.0,
-	fwd: fwd,
+	forward: forward,
 	height: 5.85,
 	color: 1858082,
 }
@@ -74,7 +74,7 @@ context = {
 		along: 0.0,
 		across: 0.0,
 		yaw: 0.0,
-		hw: 2.0,
+		half_width: 2.0,
 	},
 	cam_focal: 500.0,
 	clock: 0.0,
@@ -88,7 +88,7 @@ tower_along = |along| {
 	along,
 	across: 22.0,
 	yaw: 0.0,
-	fwd: along,
+	forward: along,
 	beacon_offset: 0.0,
 }
 

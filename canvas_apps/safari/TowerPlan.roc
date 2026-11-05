@@ -19,7 +19,7 @@ TowerPlan :: [].{
 		along : F64,
 		across : F64,
 		yaw : F64,
-		fwd : F64,
+		forward : F64,
 		beacon_offset : F64,
 	}
 
@@ -133,7 +133,7 @@ TowerPlan :: [].{
 	depth_keys : List(TowerPlan.TowerItem) -> List(DepthSort.DepthKey)
 	depth_keys = |towers| towers.map_with_index(
 		|tower, i| {
-			forward: tower.fwd,
+			forward: tower.forward,
 			subject: Tower(i),
 		},
 	)
@@ -177,7 +177,7 @@ tower_if_ahead = |
 			across,
 		},
 	)
-	if center.forward <= Geom.near {
+	if center.forward <= Geom.near_plane {
 		[]
 	} else {
 		[
@@ -186,7 +186,7 @@ tower_if_ahead = |
 				along,
 				across,
 				yaw,
-				fwd: center.forward,
+				forward: center.forward,
 				beacon_offset: Tower.beacon_offset_for(beacon_key),
 			},
 		]

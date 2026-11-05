@@ -35,7 +35,7 @@ gd_walk_onto = |i, acc| (
 			gd_forward,
 			I64.to_u64_wrap(i),
 		) ?? crash "GeomSpec: a forward for every case"
-		gd_walk_onto((i + 1), acc.append(Geom.ground_drop(right, forward)))
+		gd_walk_onto((i + 1), acc.append(Geom.ground_drop({ right, forward })))
 	}
 )
 
@@ -81,10 +81,10 @@ tr_walk_onto = |i, acc| (
 	} else {
 		(
 			{
-				p = Geom.to_rider(
+				p = Geom.to_rider_point(
 					{
-						a: (List.get(tr_a, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")),
-						x: (List.get(tr_x, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")),
+						along: (List.get(tr_a, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")),
+						across: (List.get(tr_x, I64.to_u64_wrap(i)) ?? crash ("list-at out of range")),
 					},
 					{
 						along: 5.0,
@@ -95,7 +95,7 @@ tr_walk_onto = |i, acc| (
 								I64.to_u64_wrap(i),
 							) ?? crash ("list-at out of range")
 						),
-						hw: 3.0,
+						half_width: 3.0,
 					},
 				)
 				tr_walk_onto((i + 1), List.append(List.append(acc, p.right), p.forward))
@@ -110,7 +110,7 @@ lm_want = [0.0, 4.0]
 lm_got : List(F64)
 lm_got = (
 	{
-		q = Geom.line_meet({
+		q = Geom.line_crossing({
 			first_line: {
 				start_point: { right: 0.0, forward: 0.0 },
 				end_point: { right: 0.0, forward: 1.0 },
@@ -124,7 +124,7 @@ lm_got = (
 	}
 )
 
-poly : List(Geom.Vec3)
+poly : List(Geom.SpacePoint)
 poly = [
 	{
 		right: (-1.0),
@@ -165,10 +165,10 @@ cn_want = [
 ]
 
 # An accumulator loop is linear, where appending a recursive call is quadratic.
-cn_walk : List(Geom.Vec3) -> List(F64)
+cn_walk : List(Geom.SpacePoint) -> List(F64)
 cn_walk = |vs| cn_walk_onto(vs, { at_index: 0, flat_coords: [] })
 
-cn_walk_onto : List(Geom.Vec3), { at_index : I64, flat_coords : List(F64) } -> List(F64)
+cn_walk_onto : List(Geom.SpacePoint), { at_index : I64, flat_coords : List(F64) } -> List(F64)
 cn_walk_onto = |vs, { at_index: i, flat_coords: acc }| (
 	if i >= vs.len().to_i64_wrap() {
 		acc

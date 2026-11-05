@@ -41,13 +41,11 @@ Rider :: [].{
 					Terminates => crash "Rider.rider_state_for_next_segment: past the route's end"
 				}
 			theta = seg.exit_angle
-			sgn = (
-				if seg.exit_right {
-					1.0
-				} else {
-					(0.0 - 1.0)
+			sgn =
+				match seg.exit_side {
+					TurnsRight => 1.0
+					TurnsLeft => 0.0 - 1.0
 				}
-			)
 			c = Trig.r_cos(theta)
 			s = Trig.r_sin(theta)
 			da = (rs.along - (seg.length + (hw * s)))

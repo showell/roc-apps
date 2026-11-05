@@ -23,7 +23,7 @@ origin = {
 	along: 0.0,
 	across: 0.0,
 	yaw: 0.0,
-	hw: 2.0,
+	half_width: 2.0,
 }
 
 ## The first three segments seen from the origin, at 1 m a step.
@@ -78,7 +78,7 @@ riding = |along| CatPlan.in_view({
 		along,
 		across: 0.0,
 		yaw: 0.0,
-		hw: 2.0,
+		half_width: 2.0,
 	},
 	rider_along: along,
 })
@@ -116,8 +116,8 @@ pose_want = [0]
 
 closing_got : List(F64)
 closing_got = [
-	(first_cat(300.0).fwd - first_cat(200.0).fwd),
-	(first_cat(400.0).fwd - first_cat(300.0).fwd),
+	(first_cat(300.0).forward - first_cat(200.0).forward),
+	(first_cat(400.0).forward - first_cat(300.0).forward),
 	(first_cat(300.0).right - first_cat(200.0).right),
 ]
 

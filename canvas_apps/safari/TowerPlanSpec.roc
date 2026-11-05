@@ -39,7 +39,7 @@ origin = {
 	along: 0.0,
 	across: 0.0,
 	yaw: 0.0,
-	hw: 2.0,
+	half_width: 2.0,
 }
 
 ## The first three segments seen from the origin, the rider on segment
@@ -179,7 +179,7 @@ cull_got = [
 			along: 5000.0,
 			across: 0.0,
 			yaw: 0.0,
-			hw: 2.0,
+			half_width: 2.0,
 		},
 	}).len().to_i64_wrap(),
 	TowerPlan.along_chain({ ..from_origin, chain: [] }).len().to_i64_wrap(),

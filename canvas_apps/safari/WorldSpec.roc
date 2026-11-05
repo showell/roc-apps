@@ -48,7 +48,7 @@ exit_want = [1, 2, 18]
 flags_got : List(Bool)
 flags_got = List.join([
 	[0, 18].map(|index| is_route_end(seg(index))),
-	[0, 1, 6, 18].map(|index| seg(index).exit_right),
+	[0, 1, 6, 18].map(|index| turns_right(seg(index))),
 	[0, 6, 9].map(|index| has_mid_tower(seg(index))),
 	[0, 1, 12, 18].map(|index| has_cat(seg(index))),
 ])
@@ -144,6 +144,14 @@ next_of = |segment|
 	match segment.ending {
 		Continues({ next }) => next
 		Terminates => crash "WorldSpec.next_of: segments 0, 1 and 17 continue"
+	}
+
+## Whether a segment ends by turning right.
+turns_right : World.Segment -> Bool
+turns_right = |segment|
+	match segment.exit_side {
+		TurnsRight => True
+		TurnsLeft => False
 	}
 
 ## Whether a segment has a mast halfway along.

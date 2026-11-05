@@ -21,7 +21,7 @@ here = {
 	along: 0.0,
 	across: 0.0,
 	yaw: 0.0,
-	hw: 2.0,
+	half_width: 2.0,
 }
 
 lengths_got : List(F64)
@@ -56,7 +56,7 @@ is_ahead = |truck|
 ahead_of : F64 -> {
 	place : I64,
 	along : F64,
-	fwd : F64,
+	forward : F64,
 }
 ahead_of = |lead|
 	match lead_of(lead) {
@@ -91,7 +91,7 @@ along_want : List(F64)
 along_want = [100.0, 499.0, 100.0, 80.0]
 
 fwd_got : List(F64)
-fwd_got = [ahead_of(100.0).fwd, ahead_of(499.0).fwd]
+fwd_got = [ahead_of(100.0).forward, ahead_of(499.0).forward]
 
 fwd_want : List(F64)
 fwd_want = [100.0, 499.0]
@@ -110,7 +110,7 @@ behind_got = [
 				along: 100.0,
 				across: 0.0,
 				yaw: 0.0,
-				hw: 2.0,
+				half_width: 2.0,
 			},
 			100.0,
 		),
@@ -121,7 +121,7 @@ behind_got = [
 				along: 99.0,
 				across: 0.0,
 				yaw: 0.0,
-				hw: 2.0,
+				half_width: 2.0,
 			},
 			100.0,
 		),
@@ -183,7 +183,7 @@ main! = |_args| {
 			tol: 0.0,
 		}),
 		Grade.reals({
-			name: "tp-fwd   ",
+			name: "tp-forward   ",
 			got: fwd_got,
 			want: fwd_want,
 			tol: 0.0001,

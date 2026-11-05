@@ -20,7 +20,7 @@ Frame :: [].{
 		d : I64,
 		prev_len : F64,
 		prev_angle : F64,
-		prev_right : Bool,
+		prev_side : Geom.TurnSide,
 		prev_w : F64,
 	}
 
@@ -83,12 +83,12 @@ Frame :: [].{
 		}
 	)
 
-	compose_down : Geom.AX,
+	compose_down : Geom.RoadPoint,
 	{
 		world : List(World.Segment),
 		chain : List(I64),
 		segments_ahead : I64,
-	} -> Geom.AX
+	} -> Geom.RoadPoint
 	compose_down = |
 		point,
 		{
@@ -110,12 +110,12 @@ Frame :: [].{
 						segs,
 						I64.to_u64_wrap(chosen),
 					) ?? crash "Frame.compose_down: the chain names a segment of the world"
-					p = Geom.next_to_cur(
+					p = Geom.in_segment_before(
 						point,
 						{
 							segment_length: seg.length,
 							turn_angle: seg.exit_angle,
-							turns_right: seg.exit_right,
+							turn_side: seg.exit_side,
 							lane_width: Scenery.lane_width,
 						},
 					)
@@ -137,7 +137,7 @@ Frame :: [].{
 		segments_ahead : I64,
 		along : F64,
 		across : F64,
-	} -> Geom.RiderPt
+	} -> Geom.RiderPoint
 	at = |
 		road,
 		{
@@ -146,9 +146,9 @@ Frame :: [].{
 			across,
 		},
 	|
-		Geom.to_rider(
+		Geom.to_rider_point(
 			compose_down(
-				{ a: along, x: across },
+				{ along, across },
 				{
 					world: road.world,
 					chain: road.chain,
@@ -164,7 +164,7 @@ Frame :: [].{
 		d: d,
 		prev_len: 0.0,
 		prev_angle: 0.0,
-		prev_right: False,
+		prev_side: TurnsLeft,
 		prev_w: 0.0,
 	}
 
@@ -174,7 +174,7 @@ Frame :: [].{
 		d: 0,
 		prev_len: s.length,
 		prev_angle: s.exit_angle,
-		prev_right: s.exit_right,
+		prev_side: s.exit_side,
 		prev_w: Scenery.lane_width,
 	}
 
@@ -183,7 +183,7 @@ Frame :: [].{
 		mapper : Frame.Mapper,
 		along : F64,
 		across : F64,
-	} -> Geom.RiderPt
+	} -> Geom.RiderPoint
 	map_pt = |
 		road,
 		{
@@ -202,13 +202,13 @@ Frame :: [].{
 				},
 			)
 		} else {
-			Geom.to_rider(
-				Geom.cur_to_next(
-					{ a: along, x: across },
+			Geom.to_rider_point(
+				Geom.in_segment_after(
+					{ along, across },
 					{
 						segment_length: m.prev_len,
 						turn_angle: m.prev_angle,
-						turns_right: m.prev_right,
+						turn_side: m.prev_side,
 						lane_width: m.prev_w,
 					},
 				),

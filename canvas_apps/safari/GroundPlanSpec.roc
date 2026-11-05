@@ -43,14 +43,14 @@ view = {
 		along: 0.0,
 		across: 0.0,
 		yaw: 0.0,
-		hw: 2.0,
+		half_width: 2.0,
 	},
 	cam_focal: 500.0,
 	view_w: 960.0,
 }
 
 ## Chunk `chunk` of the first segment's 20, which is 500 m long.
-chunk_of_first : I64 -> List(Geom.RiderPt)
+chunk_of_first : I64 -> List(Geom.RiderPoint)
 chunk_of_first = |chunk| GroundPlan.chunk_corners(
 	view,
 	{
@@ -61,13 +61,13 @@ chunk_of_first = |chunk| GroundPlan.chunk_corners(
 	},
 )
 
-corner : List(Geom.RiderPt), U64 -> Geom.RiderPt
+corner : List(Geom.RiderPoint), U64 -> Geom.RiderPoint
 corner = |corners, i| corners.get(i) ?? crash "GroundPlanSpec: a chunk has four corners"
 
-first_chunk : List(Geom.RiderPt)
+first_chunk : List(Geom.RiderPoint)
 first_chunk = chunk_of_first(0)
 
-last_chunk : List(Geom.RiderPt)
+last_chunk : List(Geom.RiderPoint)
 last_chunk = chunk_of_first(19)
 
 quad_shape_got : List(I64)
@@ -120,7 +120,7 @@ far_ahead = {
 	along: 5000.0,
 	across: 0.0,
 	yaw: 0.0,
-	hw: 2.0,
+	half_width: 2.0,
 }
 
 strip_got : List(Bool)

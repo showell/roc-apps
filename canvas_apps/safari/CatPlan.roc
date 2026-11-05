@@ -15,7 +15,7 @@ CatPlan :: [].{
 	## pose, and how high its leap has raised it.
 	CatItem : {
 		right : F64,
-		fwd : F64,
+		forward : F64,
 		height : F64,
 		pose : Cat.Pose,
 		lift : F64,
@@ -69,7 +69,7 @@ CatPlan :: [].{
 	## The cats as the depth sort sees them: each one's distance ahead, and
 	## its place in `cats`.
 	depth_keys : List(CatPlan.CatItem) -> List(DepthSort.DepthKey)
-	depth_keys = |cats| cats.map_with_index(|cat, i| { forward: cat.fwd, subject: Cat(i) })
+	depth_keys = |cats| cats.map_with_index(|cat, i| { forward: cat.forward, subject: Cat(i) })
 }
 
 ## The cat crossing the segment at `place` in the chain, as far through its
@@ -91,7 +91,7 @@ cat_in_view = |view, { place, crossing }| {
 			across: (state.across + (Scenery.lane_width / 2.0)),
 		},
 	)
-	if seen.forward <= Geom.near {
+	if seen.forward <= Geom.near_plane {
 		[]
 	} else if ((crossing.height / seen.forward) * view.cam_focal) < SceneLimits.min_scenery_px {
 		[]
@@ -99,7 +99,7 @@ cat_in_view = |view, { place, crossing }| {
 		[
 			{
 				right: seen.right,
-				fwd: seen.forward,
+				forward: seen.forward,
 				height: crossing.height,
 				pose: state.pose,
 				lift: state.lift,

@@ -4,6 +4,7 @@
 ## that turn, and the creature waiting at its end.
 import Cat
 import lib.DeviceMath
+import Geom
 import Herd
 import Pigs
 import Scenery
@@ -34,7 +35,7 @@ World :: [].{
 		pigs : List(Scenery.Critter),
 		pig_attention : [Distracting, Unnoticed],
 		exit_angle : F64,
-		exit_right : Bool,
+		exit_side : Geom.TurnSide,
 		commit_along : F64,
 		mid_tower : [MidTower, NoMidTower],
 		cat : [Waits(Cat.Crossing), NoCat],
@@ -312,7 +313,7 @@ segment = |plan, index| {
 		},
 		pig_attention,
 		exit_angle: angle,
-		exit_right: (plan.turn_deg >= 0.0),
+		exit_side: if (plan.turn_deg >= 0.0) TurnsRight else TurnsLeft,
 		commit_along: match plan.ending {
 			Continues => (plan.length - ((Scenery.lane_width / 2.0) / Trig.r_tan(angle)))
 			Terminates => plan.length

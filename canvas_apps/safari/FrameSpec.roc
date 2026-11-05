@@ -34,7 +34,7 @@ pose = {
 	along: 100.0,
 	across: 1.0,
 	yaw: 0.2,
-	hw: 2.0,
+	half_width: 2.0,
 }
 
 m_chain : Frame.Mapper
@@ -46,7 +46,7 @@ m_prev_left = {
 	d: 0,
 	prev_len: 300.0,
 	prev_angle: 1.2217304763960306,
-	prev_right: False,
+	prev_side: TurnsLeft,
 	prev_w: 4.0,
 }
 
@@ -56,7 +56,7 @@ m_prev_right = {
 	d: 0,
 	prev_len: 300.0,
 	prev_angle: 0.8726646259971648,
-	prev_right: True,
+	prev_side: TurnsRight,
 	prev_w: 4.0,
 }
 
@@ -81,16 +81,16 @@ map_real_want = [0.0, 0.0, 0.0, 300.0, 4.0]
 map_bool_got : List(Bool)
 map_bool_got = [
 	m_chain.is_chain,
-	m_chain.prev_right,
+	m_chain.prev_side == TurnsRight,
 	m_prev_left.is_chain,
-	m_prev_left.prev_right,
-	m_prev_right.prev_right,
+	m_prev_left.prev_side == TurnsRight,
+	m_prev_right.prev_side == TurnsRight,
 ]
 
 map_bool_want : List(Bool)
 map_bool_want = [True, False, False, False, True]
 
-at_d0 : Geom.RiderPt
+at_d0 : Geom.RiderPoint
 at_d0 = Frame.at(
 	{
 		world: [],
@@ -104,7 +104,7 @@ at_d0 = Frame.at(
 	},
 )
 
-at_d1 : List(World.Segment) -> Geom.RiderPt
+at_d1 : List(World.Segment) -> Geom.RiderPoint
 at_d1 = |w| Frame.at(
 	{
 		world: w,
