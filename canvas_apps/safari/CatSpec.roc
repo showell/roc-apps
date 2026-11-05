@@ -6,6 +6,7 @@ app [main!] {
 }
 
 import Animation
+import Beats
 import Cat
 import Easing
 import Grade
@@ -63,10 +64,10 @@ dims_want = [
 
 window_got : List(F64)
 window_got = [
-	Cat.enters_road_steps,
-	Cat.frozen_steps,
-	Cat.escapes_steps,
-	Cat.cross_frames,
+	Cat.enters_road_beats.to_f64(),
+	Cat.frozen_beats.to_f64(),
+	Cat.escapes_beats.to_f64(),
+	Cat.crossing_beats.to_f64(),
 	Cat.road_buffer,
 ]
 
@@ -118,12 +119,12 @@ focus_got = List.join([
 		coming((0.0 - 80.0), 1.0),
 		coming(22.0, 0.0),
 	].map(Cat.focus),
-	[Cat.focus_peak, Cat.focus_ramp_down],
+	[Cat.focus_peak, Cat.focus_ramp_down.to_f64()],
 ])
 
-## How many strides of a walk of `steps` are done `progress` through it.
+## How many strides of a walk `length` beats long are done `progress` through it.
 turns : F64, F64 -> F64
-turns = |progress, steps| progress * Cat.strides_in(steps)
+turns = |progress, length| progress * Cat.strides_in(Beats.of(length))
 
 focus_want : List(F64)
 focus_want = [0.0, 0.9, 1.8, 0.9, 0.0, 0.0, 1.8, 83.0]
@@ -136,15 +137,15 @@ cycles_got = [
 	turns(1.0, 20.0),
 	turns(1.0, 3.0),
 	turns(1.0, 0.0),
-	Cat.stride_steps,
+	Cat.stride_beats.to_f64(),
 ]
 
 cycles_want : List(F64)
 cycles_want = [0.0, 2.0, 1.0, 4.0, 1.0, 1.0, 5.0]
 
-## The cat `step` steps into its crossing.
+## The cat at `beat` of its crossing.
 crossing_at : F64 -> Animation.Moment(Cat.Pose)
-crossing_at = |step| Cat.crossing_timeline(the_cat).at_step(step)
+crossing_at = |beat| Cat.crossing_timeline(the_cat).at_beat(Beats.of(beat))
 
 pose_got : List(I64)
 pose_got = List.concat(
@@ -158,26 +159,30 @@ pose_got = List.concat(
 		37.79,
 		37.81,
 		38.0,
-	].map(|step| crossing_at(step).pose),
+	].map(|beat| crossing_at(beat).pose),
 ).map(Cat.pose_index)
 
 pose_want : List(I64)
 pose_want = [0, 1, 2, 3, 4, 5, 6, 3, 3, 4, 4, 5, 5, 6, 6]
 
-## The float after `step`.
+## The float after `beat`.
 just_past : F64 -> F64
-just_past = |step| F64.from_bits(step.to_bits() + 1)
+just_past = |beat| F64.from_bits(beat.to_bits() + 1)
+
+## Where a cut `into_escape` beats into the escape falls.
+cut_after_escape : Beats -> F64
+cut_after_escape = |into_escape| Cat.escape_at.plus(into_escape).to_f64()
 
 ## Each leap pose lasts through its cut's own float, and no further.
 cut_got : List(I64)
 cut_got = [
-	Cat.escape_at + Cat.coil_ends_steps,
-	just_past(Cat.escape_at + Cat.coil_ends_steps),
-	Cat.escape_at + Cat.flight_ends_steps,
-	just_past(Cat.escape_at + Cat.flight_ends_steps),
-	Cat.escape_at + Cat.land_ends_steps,
-	just_past(Cat.escape_at + Cat.land_ends_steps),
-].map(|step| Cat.pose_index(crossing_at(step).pose))
+	cut_after_escape(Cat.coil_ends_beats),
+	just_past(cut_after_escape(Cat.coil_ends_beats)),
+	cut_after_escape(Cat.flight_ends_beats),
+	just_past(cut_after_escape(Cat.flight_ends_beats)),
+	cut_after_escape(Cat.land_ends_beats),
+	just_past(cut_after_escape(Cat.land_ends_beats)),
+].map(|beat| Cat.pose_index(crossing_at(beat).pose))
 
 cut_want : List(I64)
 cut_want = [
@@ -222,7 +227,7 @@ entering_want : List(F64)
 entering_want = [4.5, 4.0395, 3.1185, 2.1975, 1.2765, 0.0, 0.0]
 
 stride_got : List(I64)
-stride_got = [0.0, 1.25, 3.75, 6.25, 8.75].map(|step| Cat.pose_index(crossing_at(step).pose))
+stride_got = [0.0, 1.25, 3.75, 6.25, 8.75].map(|beat| Cat.pose_index(crossing_at(beat).pose))
 
 stride_want : List(I64)
 stride_want = [0, 1, 0, 1, 0]

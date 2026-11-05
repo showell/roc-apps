@@ -84,7 +84,7 @@ A crossing and an approach go in, and a moment comes out. The same crossing at t
 
 {{code Animation.Approach}}
 
-`Speed` wraps an `F64`, and its methods live in a block after the type. `Speed.(s)` in a parameter list is how the module opens one. Outside this module, nothing can, so a distance can't be passed as a speed.
+`Speed` wraps an `F64`, and its methods live in a block after the type. `Speed.(s)` in a parameter list is how the module opens one. Outside this module, nothing can, so a distance can't be passed as a speed. An animation's beats are an opaque type too, `Beats`: fractional, and tied to no clock, so a place in an animation can't be passed as a step of the ride.
 
 {{code Speed.distance_in}}
 
@@ -98,9 +98,9 @@ The stage is a tag union where two of the tags carry a payload. `Waiting` and `P
 
 The rule lives in `Animation`. Its first argument is destructured in place, and so is the `Approach` after it, so the body reads in plain names.
 
-{{code Animation.over_steps}}
+{{code Animation.over_beats}}
 
-The cat plays over steps rather than over a stretch of road because it has to finish before the rider reaches it, however fast the rider comes. A faster rider makes it start earlier. The bird uses `over_gap`, because a bird simply reacts to how close the rider is. Each critter picks the rule that suits it.
+The cat plays over beats rather than over a stretch of road because it has to finish before the rider reaches it, however fast the rider comes. A faster rider makes it start earlier. The bird uses `over_gap`, because a bird simply reacts to how close the rider is. Each critter picks the rule that suits it.
 
 ### What it looks like
 
@@ -108,13 +108,13 @@ A timeline is data, so the cat's whole performance reads in one place, like a sc
 
 {{code Cat.crossing_timeline}}
 
-There are two tracks because a cat's looks and its movement change at different moments. Its body moves just ahead of its path, so the `looks` track cuts at 0.8, 2.8 and 3.8 steps into the escape while the `path` track cuts at 1 and 3. One list of phases tying them together wouldn't fit the cat or the bird.
+There are two tracks because a cat's looks and its movement change at different moments. Its body moves just ahead of its path, so the `looks` track cuts at 0.8, 2.8 and 3.8 beats into the escape while the `path` track cuts at 1 and 3. One list of phases tying them together wouldn't fit the cat or the bird.
 
 `Timeline(pose)` takes a type parameter, which is how a cat and a bird share it. A cat's pose is a closed tag union, and nothing outside `Cat` needs to know its tags. Because it's closed, a `match` on it that misses a pose won't compile.
 
 {{code Cat.Pose}}
 
-A cut has to say which side of it its own step falls on, and two tags say that better than a boolean would. `crossing_timeline`'s comment says why it matters: those leap steps sum to a float just under the step they stand for.
+A cut has to say which side of it its own beat falls on, and two tags say that better than a boolean would. `crossing_timeline`'s comment says why it matters: those leap beats sum to a float just under the beat they stand for.
 
 {{code Animation.Cut}}
 
@@ -130,7 +130,7 @@ So far the cat hasn't touched the rider. That's a separate question, answered in
 
 A cat in the lane stops the rider opening the throttle, without braking, and widens the view as it pulls the rider's eye. Two tags, `MayAccelerate` and `NoAcceleration`, stand where a boolean might have gone, so the call site reads as a sentence.
 
-This is the only loop in the design. The rider's speed decides where the cat has got to, and the cat holds the rider's speed down. It settles, and it's also why `over_steps` has to stay the cat's rule. A bird asks nothing of the rider, so it falls through to the same answer as an empty road.
+This is the only loop in the design. The rider's speed decides where the cat has got to, and the cat holds the rider's speed down. It settles, and it's also why `over_beats` has to stay the cat's rule. A bird asks nothing of the rider, so it falls through to the same answer as an empty road.
 
 Each stretch of road has exactly one `crossing`: `CatCrosses`, `BirdFlies` or `QuietRoad`. A cat and a bird in the same place can't be written down.
 

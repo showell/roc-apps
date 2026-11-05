@@ -1,17 +1,18 @@
 ## How a critter plays out as the rider comes. Animation holds two ideas that
-## know nothing of each other. A rule, `over_gap` or `over_steps`, turns where
+## know nothing of each other. A rule, `over_gap` or `over_beats`, turns where
 ## the rider is into a stage: waiting, playing, or past. A timeline turns a
 ## stage into a moment: how the critter looks and where it is. A timeline is
 ## data, so a critter's whole animation reads in one place, as a score.
 ##
 ## A timeline runs on two tracks, one for how the critter looks and one for
 ## where it goes, because the two change at different points. Each track's
-## cuts are in steps from the start of the timeline. The moments before and
+## cuts are in beats from the start of the timeline. The moments before and
 ## after are the timeline's own, because a critter can rest somewhere no
 ## stretch of a track ever reaches.
 ##
 ## A spot is relative to the critter's home, which only its owner knows, so
 ## critters with different homes can share a timeline.
+import Beats
 import Easing
 import Speed
 import lib.Trig
@@ -49,14 +50,14 @@ Animation :: [].{
 		}
 	}
 
-	## An animation that takes `steps` steps at the rider's speed, and ends
-	## with the rider `buffer` metres short, however fast the rider comes. It
-	## is playing from the moment the rider is that many steps away, and a
-	## rider standing still inside that stretch holds it at its start.
-	over_steps : { steps : F64, buffer : F64 }, Animation.Approach -> Animation.Stage
-	over_steps = |{ steps, buffer }, { gap, speed }| {
+	## An animation `length` long, played at a beat a step at the rider's
+	## speed, that ends with the rider `buffer` metres short, however fast the
+	## rider comes. It is playing from the moment the rider is that far away,
+	## and a rider standing still inside that stretch holds it at its start.
+	over_beats : { length : Beats, buffer : F64 }, Animation.Approach -> Animation.Stage
+	over_beats = |{ length, buffer }, { gap, speed }| {
 		gap_left = gap - buffer
-		stretch = speed.distance_in(steps)
+		stretch = speed.distance_in(length)
 		if gap_left <= 0.0 {
 			Past(0.0 - gap_left)
 		} else if gap_left > stretch {
@@ -99,7 +100,7 @@ Animation :: [].{
 	## one foot in front of the other. Two poses take turns by following a sine
 	## wave, which swings smoothly above and below zero: the critter shows `up`
 	## while the wave is above zero, and `down` while it isn't. It goes through
-	## `count` whole cycles in `over` steps counted from the timeline's start, so
+	## `count` whole cycles in `over` beats counted from the timeline's start, so
 	## a bird's wing beat runs on across a cut without restarting.
 	Looks(pose) : [
 		Holds(pose),
@@ -108,15 +109,15 @@ Animation :: [].{
 				up : pose,
 				down : pose,
 				count : F64,
-				over : F64,
+				over : Beats,
 			},
 		),
 	]
 
-	## Where a stretch ends, in steps from the timeline's start: the cut's own
-	## step belongs to the stretch that ends `Through` it, and to the next one
+	## Where a stretch ends, in beats from the timeline's start: the cut's own
+	## beat belongs to the stretch that ends `Through` it, and to the next one
 	## after a stretch that ends `Before` it.
-	Cut : [Through(F64), Before(F64)]
+	Cut : [Through(Beats), Before(Beats)]
 
 	## One stretch of a track, and what plays over it. It begins where the
 	## stretch before it ended, or at the timeline's start.
@@ -129,10 +130,10 @@ Animation :: [].{
 	## A critter at one moment: how it looks, and where it is.
 	Moment(pose) : { pose : pose, spot : Animation.Spot }
 
-	## A whole animation: how many steps long it is, the critter at rest before
+	## A whole animation: how many beats long it is, the critter at rest before
 	## and after, how it looks, and where it goes.
 	Timeline(pose) := {
-		steps : F64,
+		length : Beats,
 		before : Animation.Moment(pose),
 		after : Animation.Moment(pose),
 		looks : Animation.Track(Animation.Looks(pose)),
@@ -145,41 +146,41 @@ Animation :: [].{
 			Animation.Timeline.(score) = timeline
 			match stage {
 				Waiting => score.before
-				Playing(progress) => timeline.at_step(progress * score.steps)
+				Playing(progress) => timeline.at_beat(score.length.times(progress))
 				Past(_) => score.after
 			}
 		}
 
-		## The critter `step` steps into the animation.
-		at_step : Animation.Timeline(pose), F64 -> Animation.Moment(pose)
-		at_step = |Animation.Timeline.(score), step| {
-			looks = playing_at(score.looks, { step, steps: score.steps })
-			path = playing_at(score.path, { step, steps: score.steps })
+		## The critter at `beat` of the animation.
+		at_beat : Animation.Timeline(pose), Beats -> Animation.Moment(pose)
+		at_beat = |Animation.Timeline.(score), beat| {
+			looks = playing_at(score.looks, { beat, length: score.length })
+			path = playing_at(score.path, { beat, length: score.length })
 			{
-				pose: pose_of(looks.plays, step),
-				spot: path_spot(path.plays, (step - path.from) / (path.to - path.from)),
+				pose: pose_of(looks.plays, beat),
+				spot: path_spot(path.plays, beat.minus(path.from).ratio_to(path.to.minus(path.from))),
 			}
 		}
 	}
 }
 
-## What a track plays over one stretch, and the steps it begins and ends at.
+## What a track plays over one stretch, and the beats it begins and ends at.
 StretchPlaying(kind) : {
 	plays : kind,
-	from : F64,
-	to : F64,
+	from : Beats,
+	to : Beats,
 }
 
-## What a track plays at `step`, of `steps` in all.
-playing_at : Animation.Track(kind), { step : F64, steps : F64 } -> StretchPlaying(kind)
-playing_at = |track, { step, steps }| {
-	var $from = 0.0
+## What a track plays at `beat`, of a timeline `length` long.
+playing_at : Animation.Track(kind), { beat : Beats, length : Beats } -> StretchPlaying(kind)
+playing_at = |track, { beat, length }| {
+	var $from = Beats.zero
 	for stretch in track.stretches {
 		to =
 			match stretch.until {
 				Through(cut) | Before(cut) => cut
 			}
-		if is_short_of(step, stretch.until) {
+		if is_short_of(beat, stretch.until) {
 			return {
 				plays: stretch.plays,
 				from: $from,
@@ -191,20 +192,20 @@ playing_at = |track, { step, steps }| {
 	{
 		plays: track.finally,
 		from: $from,
-		to: steps,
+		to: length,
 	}
 }
 
-is_short_of : F64, Animation.Cut -> Bool
-is_short_of = |step, cut|
+is_short_of : Beats, Animation.Cut -> Bool
+is_short_of = |beat, cut|
 	match cut {
-		Through(last) => step <= last
-		Before(first_past) => step < first_past
+		Through(last) => beat <= last
+		Before(first_past) => beat < first_past
 	}
 
-## The pose `looks` shows `step` steps into the timeline.
-pose_of : Animation.Looks(pose), F64 -> pose
-pose_of = |looks, step|
+## The pose `looks` shows at `beat` of the timeline.
+pose_of : Animation.Looks(pose), Beats -> pose
+pose_of = |looks, beat|
 	match looks {
 		Holds(pose) => pose
 		Alternates(
@@ -215,7 +216,7 @@ pose_of = |looks, step|
 				over,
 			},
 		) =>
-			if Trig.r_sin((step / over) * count * Trig.two_pi) > 0.0 {
+			if Trig.r_sin(beat.ratio_to(over) * count * Trig.two_pi) > 0.0 {
 				up
 			} else {
 				down

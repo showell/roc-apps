@@ -6,6 +6,7 @@ app [main!] {
 }
 
 import Animation
+import Beats
 import BirdFlight
 import Grade
 import Scenery
@@ -155,7 +156,7 @@ pose_got = List.concat(
 		(0.87, Away(WingsDown)),
 		(0.89, Diving),
 		(0.95, Diving),
-	].map(|(progress, pose)| BirdFlight.flight_timeline(flight).at_step(progress).pose == pose),
+	].map(|(progress, pose)| BirdFlight.flight_timeline(flight).at_beat(Beats.of(progress)).pose == pose),
 )
 
 pose_want : List(Bool)

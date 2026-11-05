@@ -2,12 +2,13 @@
 ## tree, then, as the rider comes, walks out into the lane, freezes there,
 ## and leaps clear to the far verge. How far through its crossing it is
 ## depends only on how far ahead it is and how fast the rider comes: it
-## starts when the rider is `cross_frames` steps away, and is across when the
-## rider is `road_buffer` metres from it. The rider's eye is drawn to it while
+## starts when the rider is `crossing_beats` away, at a beat a step, and is
+## across when the rider is `road_buffer` metres from it. The rider's eye is drawn to it while
 ## it crosses, and lets it go after. A cat's spots are relative to where it
 ## crosses along its segment, so cats the same distance from the road play
 ## one timeline.
 import Animation
+import Beats
 import lib.DeviceMath
 import Easing
 import Num_
@@ -82,51 +83,51 @@ Cat :: [].{
 		}
 	}
 
-	## The crossing's three stages, in steps.
-	enters_road_steps : F64
-	enters_road_steps = 10.0
+	## The crossing's three stages, in beats.
+	enters_road_beats : Beats
+	enters_road_beats = Beats.of(10.0)
 
-	frozen_steps : F64
-	frozen_steps = 24.0
+	frozen_beats : Beats
+	frozen_beats = Beats.of(24.0)
 
-	escapes_steps : F64
-	escapes_steps = 4.0
+	escapes_beats : Beats
+	escapes_beats = Beats.of(4.0)
 
-	cross_frames : F64
-	cross_frames = ((enters_road_steps + frozen_steps) + escapes_steps)
+	crossing_beats : Beats
+	crossing_beats = enters_road_beats.plus(frozen_beats).plus(escapes_beats)
 
-	## The step the cat's escape starts after.
-	escape_at : F64
-	escape_at = (enters_road_steps + frozen_steps)
+	## The beat the cat's escape starts after.
+	escape_at : Beats
+	escape_at = enters_road_beats.plus(frozen_beats)
 
-	## How many steps into its escape the cat leaves the ground, and lands.
-	leaves_ground_steps : F64
-	leaves_ground_steps = 1.0
+	## How many beats into its escape the cat leaves the ground, and lands.
+	leaves_ground_beats : Beats
+	leaves_ground_beats = Beats.of(1.0)
 
-	touches_down_steps : F64
-	touches_down_steps = 3.0
+	touches_down_beats : Beats
+	touches_down_beats = Beats.of(3.0)
 
-	## How many steps into its escape the cat stops coiling, flying and
+	## How many beats into its escape the cat stops coiling, flying and
 	## landing. Its body moves ahead of its path, so each falls a little before
 	## the leap itself gets there.
-	coil_ends_steps : F64
-	coil_ends_steps = 0.8
+	coil_ends_beats : Beats
+	coil_ends_beats = Beats.of(0.8)
 
-	flight_ends_steps : F64
-	flight_ends_steps = 2.8
+	flight_ends_beats : Beats
+	flight_ends_beats = Beats.of(2.8)
 
-	land_ends_steps : F64
-	land_ends_steps = 3.8
+	land_ends_beats : Beats
+	land_ends_beats = Beats.of(3.8)
 
 	## How far short of the cat the rider is when it is across.
 	road_buffer : F64
 	road_buffer = 3.0
 
 	## Where the crossing has got to. A cat has to finish before the rider
-	## reaches it however fast the rider comes, so it plays over steps.
+	## reaches it however fast the rider comes, so it plays over beats.
 	crossing_stage : Animation.Approach -> Animation.Stage
 	crossing_stage = |approach|
-		Animation.over_steps({ steps: cross_frames, buffer: road_buffer }, approach)
+		Animation.over_beats({ length: crossing_beats, buffer: road_buffer }, approach)
 
 	## Whether the cat is crossing in front of the rider now.
 	is_in_danger : Animation.Approach -> Bool
@@ -140,9 +141,9 @@ Cat :: [].{
 	focus_peak : F64
 	focus_peak = 1.8
 
-	## Over how many steps, after the rider reaches the cat, its hold fades.
-	focus_ramp_down : F64
-	focus_ramp_down = 83.0
+	## Over how many beats, after the rider reaches the cat, its hold fades.
+	focus_ramp_down : Beats
+	focus_ramp_down = Beats.of(83.0)
 
 	## How hard the cat holds the rider's eye: rising as it crosses, then
 	## fading once the rider is past.
@@ -155,21 +156,21 @@ Cat :: [].{
 				Waiting => 0.0
 				Playing(progress) => Easing.smoothstep(progress) * focus_peak
 				Past(metres) => {
-					steps_past = approach.speed.steps_to_cover(metres) / focus_ramp_down
-					(1.0 - Easing.smoothstep(DeviceMath.real_min(steps_past, 1.0))) * focus_peak
+					faded = approach.speed.beats_to_cover(metres).ratio_to(focus_ramp_down)
+					(1.0 - Easing.smoothstep(DeviceMath.real_min(faded, 1.0))) * focus_peak
 				}
 			}
 		}
 
-	## A stride is about this many steps.
-	stride_steps : F64
-	stride_steps = 5.0
+	## A stride is about this many beats.
+	stride_beats : Beats
+	stride_beats = Beats.of(5.0)
 
-	## How many strides a cat walking for `steps` takes: a whole number, at
+	## How many strides a cat walking for `length` takes: a whole number, at
 	## least one.
-	strides_in : F64 -> F64
-	strides_in = |steps| {
-		strides = Num_.round_real((steps / stride_steps))
+	strides_in : Beats -> F64
+	strides_in = |length| {
+		strides = Num_.round_real(length.ratio_to(stride_beats))
 		if (strides < 1.0) 1.0 else strides
 	}
 
@@ -192,7 +193,7 @@ Cat :: [].{
 
 	## The whole of a crossing: the cat walks out to the middle of the lane,
 	## freezes there, and leaps clear to the far verge. Each leap pose's cut
-	## sums to a float just under the step it stands for, so that float goes
+	## sums to a float just under the beat it stands for, so that float goes
 	## with the pose before it, which is why those cuts are `Through`.
 	crossing_timeline : Cat.Crossing -> Animation.Timeline(Cat.Pose)
 	crossing_timeline = |cat| {
@@ -201,40 +202,40 @@ Cat :: [].{
 		end = spot_across(cat.end_across)
 		Animation.Timeline.(
 			{
-				steps: cross_frames,
+				length: crossing_beats,
 				before: { pose: Rest, spot: start },
 				after: { pose: Collapse, spot: end },
 				looks: {
 					stretches: [
 						{
-							until: Through(enters_road_steps),
+							until: Through(enters_road_beats),
 							plays: Alternates({
 								up: Stride,
 								down: Rest,
-								count: strides_in(enters_road_steps),
-								over: enters_road_steps,
+								count: strides_in(enters_road_beats),
+								over: enters_road_beats,
 							}),
 						},
 						{ until: Through(escape_at), plays: Holds(Frozen) },
-						{ until: Through(escape_at + coil_ends_steps), plays: Holds(Coil) },
-						{ until: Through(escape_at + flight_ends_steps), plays: Holds(Flight) },
-						{ until: Through(escape_at + land_ends_steps), plays: Holds(Land) },
+						{ until: Through(escape_at.plus(coil_ends_beats)), plays: Holds(Coil) },
+						{ until: Through(escape_at.plus(flight_ends_beats)), plays: Holds(Flight) },
+						{ until: Through(escape_at.plus(land_ends_beats)), plays: Holds(Land) },
 					],
 					finally: Holds(Collapse),
 				},
 				path: {
 					stretches: [
 						{
-							until: Through(enters_road_steps),
+							until: Through(enters_road_beats),
 							plays: Line({
 								from: start,
 								to: middle,
 								ease: Steady,
 							}),
 						},
-						{ until: Before(escape_at + leaves_ground_steps), plays: StaysAt(middle) },
+						{ until: Before(escape_at.plus(leaves_ground_beats)), plays: StaysAt(middle) },
 						{
-							until: Before(escape_at + touches_down_steps),
+							until: Before(escape_at.plus(touches_down_beats)),
 							plays: Arc({
 								line: {
 									from: middle,

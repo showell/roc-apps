@@ -6,6 +6,7 @@
 ## A bird's spots are places on its segment, as its trees' are, because its
 ## flight is its own and no other bird shares it.
 import Animation
+import Beats
 import Scenery
 
 BirdFlight :: [].{
@@ -46,9 +47,9 @@ BirdFlight :: [].{
 	flight_arc : F64
 	flight_arc = 5.0
 
-	## How many times the wings beat in a flight.
-	wing_beats : F64
-	wing_beats = 9.0
+	## How many times the wings flap in a flight.
+	wing_flaps : F64
+	wing_flaps = 9.0
 
 	## The share of a flight spent side on, taking off.
 	takeoff_share : F64
@@ -117,10 +118,10 @@ BirdFlight :: [].{
 	sitting_on : Scenery.Tree -> Animation.Moment(BirdFlight.Pose)
 	sitting_on = |tree| { pose: Perched, spot: tree_top(tree) }
 
-	## A flight's timeline is one step long, so a cut on it is a share of the
+	## A flight's timeline is one beat long, so a cut on it is a share of the
 	## flight.
-	whole_flight : F64
-	whole_flight = 1.0
+	flight_beats : Beats
+	flight_beats = Beats.of(1.0)
 
 	## The whole of a flight: side on as it takes off, then seen from behind,
 	## beating its wings all the way until it dives, on one smooth path that
@@ -129,17 +130,17 @@ BirdFlight :: [].{
 	flight_timeline = |{ from, to }|
 		Animation.Timeline.(
 			{
-				steps: whole_flight,
+				length: flight_beats,
 				before: sitting_on(from),
 				after: sitting_on(to),
 				looks: {
 					stretches: [
 						{
-							until: Before(takeoff_share),
+							until: Before(flight_beats.times(takeoff_share)),
 							plays: wings_beating({ up: Side(WingsUp), down: Side(WingsDown) }),
 						},
 						{
-							until: Through(1.0 - landing_share),
+							until: Through(flight_beats.times(1.0 - landing_share)),
 							plays: wings_beating({ up: Away(WingsUp), down: Away(WingsDown) }),
 						},
 					],
@@ -175,6 +176,6 @@ wings_beating = |{ up, down }|
 	Alternates({
 		up,
 		down,
-		count: BirdFlight.wing_beats,
-		over: BirdFlight.whole_flight,
+		count: BirdFlight.wing_flaps,
+		over: BirdFlight.flight_beats,
 	})
