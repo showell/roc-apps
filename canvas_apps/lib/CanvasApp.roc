@@ -45,4 +45,10 @@ CanvasApp :: [].{
 
 		title : Str,
 	}
+
+	# An `advance` for an app that needs no seconds: a runner passes them as
+	# ever, and `step` never sees them. A game whose rules count steps uses it,
+	# so real time has no way in.
+	untimed_advance : (model, Input.Snapshot -> model) -> (model, Input.Snapshot, F32 -> model)
+	untimed_advance = |step| |model, input, _seconds| step(model, input)
 }

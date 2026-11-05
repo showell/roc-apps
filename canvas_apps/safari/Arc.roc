@@ -5,6 +5,7 @@ import Angle
 import Bike
 import lib.DeviceMath
 import Scenery
+import Steps
 import lib.Trig
 
 Arc :: [].{
@@ -14,17 +15,17 @@ Arc :: [].{
 		forward : F64,
 		crossed : Bool,
 		end_across : F64,
-		frames : F64,
+		frames : Steps,
 	}
 
-	no_frames : F64
-	no_frames = 1000000000.0
+	no_frames : Steps
+	no_frames = Steps.of(1000000000)
 
 	straighten_margin : F64
 	straighten_margin = 0.05
 
-	turn_danger_steps : I64
-	turn_danger_steps = 2000
+	turn_danger_steps : Steps
+	turn_danger_steps = Steps.of(2000)
 
 	min_forward_progress : F64
 	min_forward_progress = 25.0
@@ -42,7 +43,7 @@ Arc :: [].{
 	## line, how many frames it has run, and the coasting rider.
 	ArcProgress(others) : {
 		has_crossed : Bool,
-		frame_count : I64,
+		frame_count : Steps,
 		coasting_rider : Bike.Motion(others),
 	}
 
@@ -104,7 +105,7 @@ Arc :: [].{
 						forward: DeviceMath.real_min(forward, min_forward_progress),
 						crossed: crossed,
 						end_across: across,
-						frames: i.to_f64(),
+						frames: i,
 					}
 				} else {
 					(
@@ -114,7 +115,7 @@ Arc :: [].{
 								forward: DeviceMath.real_min(forward, min_forward_progress),
 								crossed: crossed,
 								end_across: across,
-								frames: i.to_f64(),
+								frames: i,
 							}
 						} else {
 							(
@@ -141,7 +142,7 @@ Arc :: [].{
 												course,
 												{
 													has_crossed: crossed,
-													frame_count: i + 1,
+													frame_count: i.plus(Steps.one_step),
 													coasting_rider: phys,
 												},
 											)
@@ -171,7 +172,7 @@ Arc :: [].{
 				},
 				{
 					has_crossed: False,
-					frame_count: 0,
+					frame_count: Steps.zero,
 					coasting_rider: state,
 				},
 			)

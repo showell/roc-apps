@@ -11,6 +11,7 @@ import Grade
 import LeanSearch
 import World
 import Pose
+import Steps
 import VehicleLimits
 
 target_got : List(F64)
@@ -73,7 +74,7 @@ outcome = |sh, end_across| {
 	forward: 10.0,
 	crossed: False,
 	end_across: end_across,
-	frames: 100.0,
+	frames: Steps.of(100),
 }
 
 read_got : List(Bool)

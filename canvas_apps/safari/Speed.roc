@@ -6,6 +6,7 @@
 ## Each operation does the plain float arithmetic its name says, so code
 ## moved onto this type computes exactly what it did before.
 import Acceleration
+import Beats
 import lib.DeviceMath
 
 Speed :: F64.{
@@ -37,13 +38,13 @@ Speed :: F64.{
 	times : Speed, F64 -> Speed
 	times = |Speed.(s), factor| Speed.(s * factor)
 
-	## How many metres this speed covers in `steps` steps.
-	distance_in : Speed, F64 -> F64
-	distance_in = |Speed.(s), steps| s * steps
+	## How many metres this speed covers in `length`, at a beat a step.
+	distance_in : Speed, Beats -> F64
+	distance_in = |Speed.(s), length| s * length.to_f64()
 
-	## How many steps this speed takes to cover `metres`.
-	steps_to_cover : Speed, F64 -> F64
-	steps_to_cover = |Speed.(s), metres| metres / s
+	## How many beats this speed takes to cover `metres`, at a beat a step.
+	beats_to_cover : Speed, F64 -> Beats
+	beats_to_cover = |Speed.(s), metres| Beats.of(metres / s)
 
 	## The smaller of this speed and `other`.
 	min : Speed, Speed -> Speed

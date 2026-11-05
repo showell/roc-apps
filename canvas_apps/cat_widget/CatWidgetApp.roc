@@ -52,7 +52,7 @@ canvas_height = 360.0
 farthest_gap : F64
 farthest_gap = 50.0
 
-## A typical speed on the ride. At one metre a step, the crossing's steps read
+## A typical speed on the ride. At one metre a step, the crossing's beats read
 ## as metres on the ruler.
 rider_speed : Speed
 rider_speed = Speed.metres_a_step(1.0)
@@ -175,7 +175,7 @@ ruler_y = 232.0
 ## the rider.
 ruler : F64 -> List(Shapes.Shape)
 ruler = |gap| {
-	crossing_starts_x = ruler_x(Cat.road_buffer + rider_speed.distance_in(Cat.cross_frames))
+	crossing_starts_x = ruler_x(Cat.road_buffer + rider_speed.distance_in(Cat.crossing_beats))
 	[
 		Rect({
 			x: 0.0,

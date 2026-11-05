@@ -6,6 +6,7 @@ app [main!] {
 }
 
 import Animation
+import Beats
 import Grade
 import Speed
 
@@ -51,28 +52,28 @@ over_gap_want = [
 	1.0,
 ]
 
-step_stage : F64, F64 -> Animation.Stage
-step_stage = |gap, speed|
-	Animation.over_steps(
-		{ steps: 10.0, buffer: 3.0 },
+beat_stage : F64, F64 -> Animation.Stage
+beat_stage = |gap, speed|
+	Animation.over_beats(
+		{ length: Beats.of(10.0), buffer: 3.0 },
 		{ gap, speed: Speed.metres_a_step(speed) },
 	)
 
-over_steps_got : List(F64)
-over_steps_got = [
-	step_stage(14.0, 1.0),
-	step_stage(13.0, 1.0),
-	step_stage(12.0, 1.0),
-	step_stage(8.0, 1.0),
-	step_stage(4.0, 1.0),
-	step_stage(3.0, 1.0),
-	step_stage(1.0, 1.0),
-	step_stage(23.0, 2.0),
-	step_stage(13.0, 2.0),
+over_beats_got : List(F64)
+over_beats_got = [
+	beat_stage(14.0, 1.0),
+	beat_stage(13.0, 1.0),
+	beat_stage(12.0, 1.0),
+	beat_stage(8.0, 1.0),
+	beat_stage(4.0, 1.0),
+	beat_stage(3.0, 1.0),
+	beat_stage(1.0, 1.0),
+	beat_stage(23.0, 2.0),
+	beat_stage(13.0, 2.0),
 ].join_map(stage_numbers)
 
-over_steps_want : List(F64)
-over_steps_want = [
+over_beats_want : List(F64)
+over_beats_want = [
 	0.0,
 	0.0,
 	1.0,
@@ -98,11 +99,11 @@ over_steps_want = [
 ## beyond the end is past.
 still_got : List(F64)
 still_got = [
-	step_stage(3.5, 0.0),
-	step_stage(3.0, 0.0),
-	step_stage(3.000001, 0.000001),
-	step_stage(3.000001, 0.000002),
-	step_stage(2.0, 0.000001),
+	beat_stage(3.5, 0.0),
+	beat_stage(3.0, 0.0),
+	beat_stage(3.000001, 0.000001),
+	beat_stage(3.000001, 0.000002),
+	beat_stage(2.0, 0.000001),
 ].join_map(stage_numbers)
 
 still_want : List(F64)
@@ -128,25 +129,25 @@ at_spot = |across| {
 	lift: 0.0,
 }
 
-## A timeline ten steps long with both kinds of cut on each track.
+## A timeline ten beats long with both kinds of cut on each track.
 cut_timeline : Animation.Timeline(Note)
 cut_timeline = Animation.Timeline.(
 	{
-		steps: 10.0,
+		length: Beats.of(10.0),
 		before: { pose: BeforeIt, spot: at_spot(-1.0) },
 		after: { pose: AfterIt, spot: at_spot(99.0) },
 		looks: {
 			stretches: [
-				{ until: Through(2.0), plays: Holds(First) },
-				{ until: Before(5.0), plays: Holds(Second) },
-				{ until: Through(7.0), plays: Holds(Third) },
+				{ until: Through(Beats.of(2.0)), plays: Holds(First) },
+				{ until: Before(Beats.of(5.0)), plays: Holds(Second) },
+				{ until: Through(Beats.of(7.0)), plays: Holds(Third) },
 			],
 			finally: Holds(Fourth),
 		},
 		path: {
 			stretches: [
-				{ until: Before(4.0), plays: StaysAt(at_spot(1.0)) },
-				{ until: Through(8.0), plays: StaysAt(at_spot(2.0)) },
+				{ until: Before(Beats.of(4.0)), plays: StaysAt(at_spot(1.0)) },
+				{ until: Through(Beats.of(8.0)), plays: StaysAt(at_spot(2.0)) },
 			],
 			finally: StaysAt(at_spot(3.0)),
 		},
@@ -166,7 +167,7 @@ looks_got = [
 	(7.0, Third),
 	(7.01, Fourth),
 	(10.0, Fourth),
-].map(|(step, note)| cut_timeline.at_step(step).pose == note)
+].map(|(beat, note)| cut_timeline.at_beat(Beats.of(beat)).pose == note)
 
 looks_want : List(Bool)
 looks_want = List.repeat(True, 11)
@@ -181,7 +182,7 @@ path_cuts_got = [
 	8.0,
 	8.01,
 	10.0,
-].map(|step| cut_timeline.at_step(step).spot.across)
+].map(|beat| cut_timeline.at_beat(Beats.of(beat)).spot.across)
 
 path_cuts_want : List(F64)
 path_cuts_want = [
@@ -196,7 +197,7 @@ path_cuts_want = [
 ]
 
 ## The moment at each stage: a stage's rest is the timeline's own, and playing
-## reaches a step by `progress` times the timeline's length.
+## reaches a beat by `progress` times the timeline's length.
 stage_moment_got : List(Bool)
 stage_moment_got = [
 	cut_timeline.moment(Waiting).pose == BeforeIt,
@@ -219,33 +220,34 @@ stage_spot_got = [
 stage_spot_want : List(F64)
 stage_spot_want = [-1.0, 99.0, 2.0]
 
-## A beat of two cycles over eight steps that crosses a cut at step 3, on a
-## timeline twelve steps long. Past its eight steps it goes on beating.
-beat_timeline : Animation.Timeline(Note)
-beat_timeline = {
-	beat = |up, down|
+## Looks that alternate through two cycles over eight beats and cross a cut at
+## beat 3, on a timeline twelve beats long. Past its eight beats they go on
+## alternating.
+alternating_timeline : Animation.Timeline(Note)
+alternating_timeline = {
+	alternating = |up, down|
 		Alternates({
 			up,
 			down,
 			count: 2.0,
-			over: 8.0,
+			over: Beats.of(8.0),
 		})
 	Animation.Timeline.(
 		{
-			steps: 12.0,
+			length: Beats.of(12.0),
 			before: { pose: BeforeIt, spot: at_spot(0.0) },
 			after: { pose: AfterIt, spot: at_spot(0.0) },
 			looks: {
-				stretches: [{ until: Before(3.0), plays: beat(First, Second) }],
-				finally: beat(Third, Fourth),
+				stretches: [{ until: Before(Beats.of(3.0)), plays: alternating(First, Second) }],
+				finally: alternating(Third, Fourth),
 			},
 			path: { stretches: [], finally: StaysAt(at_spot(0.0)) },
 		},
 	)
 }
 
-beat_got : List(Bool)
-beat_got = [
+alternating_got : List(Bool)
+alternating_got = [
 	(0.0, Second),
 	(1.0, First),
 	(2.5, Second),
@@ -254,22 +256,22 @@ beat_got = [
 	(7.0, Fourth),
 	(9.0, Third),
 	(11.0, Fourth),
-].map(|(step, note)| beat_timeline.at_step(step).pose == note)
+].map(|(beat, note)| alternating_timeline.at_beat(Beats.of(beat)).pose == note)
 
-beat_want : List(Bool)
-beat_want = List.repeat(True, 8)
+alternating_want : List(Bool)
+alternating_want = List.repeat(True, 8)
 
-## A timeline four steps long that plays `path` between steps 2 and 4.
+## A timeline four beats long that plays `path` between beats 2 and 4.
 path_timeline : Animation.Path -> Animation.Timeline(Note)
 path_timeline = |path|
 	Animation.Timeline.(
 		{
-			steps: 4.0,
+			length: Beats.of(4.0),
 			before: { pose: BeforeIt, spot: at_spot(0.0) },
 			after: { pose: AfterIt, spot: at_spot(0.0) },
 			looks: { stretches: [], finally: Holds(First) },
 			path: {
-				stretches: [{ until: Before(2.0), plays: StaysAt(at_spot(0.0)) }],
+				stretches: [{ until: Before(Beats.of(2.0)), plays: StaysAt(at_spot(0.0)) }],
 				finally: path,
 			},
 		},
@@ -289,10 +291,10 @@ end_spot = {
 	lift: 46.0,
 }
 
-## The spot's three parts, `step` into `path`'s timeline.
+## The spot's three parts, at `beat` of `path`'s timeline.
 spot_numbers : Animation.Path, F64 -> List(F64)
-spot_numbers = |path, step| {
-	spot = path_timeline(path).at_step(step).spot
+spot_numbers = |path, beat| {
+	spot = path_timeline(path).at_beat(Beats.of(beat)).spot
 	[
 		spot.along,
 		spot.across,
@@ -374,9 +376,9 @@ main! = |_args| {
 			tol: 0.000000001,
 		}),
 		Grade.reals({
-			name: "an-over-steps",
-			got: over_steps_got,
-			want: over_steps_want,
+			name: "an-over-beats",
+			got: over_beats_got,
+			want: over_beats_want,
 			tol: 0.000000001,
 		}),
 		Grade.reals({
@@ -408,9 +410,9 @@ main! = |_args| {
 			tol: 0.0,
 		}),
 		Grade.bools({
-			name: "an-beat      ",
-			got: beat_got,
-			want: beat_want,
+			name: "an-alternates",
+			got: alternating_got,
+			want: alternating_want,
 		}),
 		Grade.reals({
 			name: "an-line      ",

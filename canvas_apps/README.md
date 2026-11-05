@@ -112,9 +112,11 @@ CanvasApp(model) : {
 
 `advance` takes one step, given what the keyboard and pointer look like now and
 how many seconds the step covers — always `1 / fps`, since each runner paces to
-the app's own rate. `frame` answers what to draw. `sounds` answers a bit per
-tone the last step set off, and `tones` says what each one sounds like, so a
-runner never has to guess how many there are.
+the app's own rate. An app whose rules count steps writes
+`advance: CanvasApp.untimed_advance(step)`, and its `step` takes no seconds at
+all. `frame` answers what to draw. `sounds` answers a bit per tone the last
+step set off, and `tones` says what each one sounds like, so a runner never has
+to guess how many there are.
 
 An app imports no platform, so the same value goes to either runner. Each app
 names its value out loud:

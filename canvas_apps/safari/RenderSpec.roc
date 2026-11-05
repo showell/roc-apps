@@ -8,6 +8,7 @@ app [main!] {
 import Angle
 import BirdPlan
 import CatPlan
+import Clock
 import CritterPlan
 import DepthSort
 import Frame
@@ -47,7 +48,7 @@ scene = Render.collect(
 			route_position: 500.0,
 			lights: { headlights: Off, brake_lights: Off },
 		},
-		clock: 0.0,
+		clock: Clock.start,
 	},
 )
 

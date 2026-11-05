@@ -125,7 +125,7 @@ Throttle :: [].{
 	} -> Acceleration
 	shoulder_brake_at = |state, { arc_outcome: sim, offered_accel: a }| (
 		{
-			n = sim.frames
+			n = sim.frames.to_f64()
 			sa = Acceleration.metres_a_step_each_step(
 				(
 					(0.0 - state.speed.to_metres_a_step()) / (

@@ -21,6 +21,9 @@ World :: [].{
 		number : U32 -> World.SegmentIndex
 		number = |n| World.SegmentIndex.(n)
 
+		to_u32 : World.SegmentIndex -> U32
+		to_u32 = |World.SegmentIndex.(n)| n
+
 		to_i64 : World.SegmentIndex -> I64
 		to_i64 = |World.SegmentIndex.(n)| n.to_i64()
 

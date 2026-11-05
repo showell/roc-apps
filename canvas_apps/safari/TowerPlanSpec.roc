@@ -5,9 +5,11 @@ app [main!] {
 }
 
 import Angle
+import Clock
 import DepthSort
 import Frame
 import Grade
+import Steps
 import TowerPlan
 import World
 
@@ -16,8 +18,8 @@ fixed_got = [
 	TowerPlan.tower_beyond,
 	TowerPlan.tower_right,
 	TowerPlan.mid_tower_left,
-	TowerPlan.beacon_period,
-	TowerPlan.beacon_stagger,
+	TowerPlan.beacon_period.to_f64(),
+	TowerPlan.beacon_stagger.to_f64(),
 ]
 
 fixed_want : List(F64)
@@ -57,7 +59,7 @@ short_view = |rider_number| {
 		].map(World.SegmentIndex.number),
 		pose: origin,
 	},
-	clock: 0.0,
+	clock: Clock.start,
 }
 
 from_origin : TowerPlan.View
@@ -114,7 +116,7 @@ long_view = {
 		chain: [0].map(World.SegmentIndex.number),
 		pose: origin,
 	},
-	clock: 0.0,
+	clock: Clock.start,
 }
 
 long_got : List(I64)
@@ -155,15 +157,15 @@ long_where_want = [
 
 offsets_got : List(F64)
 offsets_got = [
-	TowerPlan.beacon_offset_for(0),
-	TowerPlan.beacon_offset_for(1),
-	TowerPlan.beacon_offset_for(2),
-	TowerPlan.beacon_offset_for(3),
-	TowerPlan.beacon_offset_for(4),
-	TowerPlan.beacon_offset_for(5),
-	TowerPlan.beacon_offset_for(10),
-	TowerPlan.beacon_offset_for(60),
-	TowerPlan.beacon_offset_for(120),
+	TowerPlan.beacon_offset_for(0).to_f64(),
+	TowerPlan.beacon_offset_for(1).to_f64(),
+	TowerPlan.beacon_offset_for(2).to_f64(),
+	TowerPlan.beacon_offset_for(3).to_f64(),
+	TowerPlan.beacon_offset_for(4).to_f64(),
+	TowerPlan.beacon_offset_for(5).to_f64(),
+	TowerPlan.beacon_offset_for(10).to_f64(),
+	TowerPlan.beacon_offset_for(60).to_f64(),
+	TowerPlan.beacon_offset_for(120).to_f64(),
 ]
 
 offsets_want : List(F64)
@@ -171,14 +173,14 @@ offsets_want = [0.0, 37.0, 74.0, 111.0, 28.0, 65.0, 10.0, 60.0, 0.0]
 
 bright_got : List(F64)
 bright_got = [
-	TowerPlan.beacon_brightness(0.0),
-	TowerPlan.beacon_brightness(60.0),
-	TowerPlan.beacon_brightness(30.0),
-	TowerPlan.beacon_brightness(90.0),
-	TowerPlan.beacon_brightness(120.0),
-	TowerPlan.beacon_brightness(180.0),
-	TowerPlan.beacon_brightness((0.0 - 60.0)),
-	TowerPlan.beacon_brightness((0.0 - 120.0)),
+	TowerPlan.beacon_brightness(Steps.of(0)),
+	TowerPlan.beacon_brightness(Steps.of(60)),
+	TowerPlan.beacon_brightness(Steps.of(30)),
+	TowerPlan.beacon_brightness(Steps.of(90)),
+	TowerPlan.beacon_brightness(Steps.of(120)),
+	TowerPlan.beacon_brightness(Steps.of(180)),
+	TowerPlan.beacon_brightness(Steps.of(300)),
+	TowerPlan.beacon_brightness(Steps.of(240)),
 ]
 
 bright_want : List(F64)
@@ -186,26 +188,26 @@ bright_want = [0.0, 1.0, 0.5, 0.5, 0.0, 1.0, 1.0, 0.0]
 
 ## How bright the masts on the long segment are at `clock`: its end mast,
 ## then its mid mast.
-long_brightness_at : F64 -> List(F64)
+long_brightness_at : Clock -> List(F64)
 long_brightness_at = |clock|
 	TowerPlan.along_chain({ ..long_view, clock }).map(|tower| tower.beacon_brightness)
 
 opposite_got : List(F64)
-opposite_got = List.concat(long_brightness_at(0.0), long_brightness_at(60.0))
+opposite_got = List.concat(long_brightness_at(Clock.start), long_brightness_at(Clock.at_step(60)))
 
 opposite_want : List(F64)
 opposite_want = [0.0, 1.0, 1.0, 0.0]
 
 ## How bright the first three segments' masts are at `clock`.
-spread_at : F64 -> List(F64)
+spread_at : Clock -> List(F64)
 spread_at = |clock|
 	TowerPlan.along_chain({ ..from_origin, clock }).map(|tower| tower.beacon_brightness)
 
 spread_got : List(F64)
-spread_got = List.concat(spread_at(0.0), spread_at(30.0))
+spread_got = List.concat(spread_at(Clock.start), spread_at(Clock.at_step(30)))
 
 spread_want : List(F64)
-spread_want = [0.0, 37.0, 74.0, 30.0, 67.0, 104.0].map(TowerPlan.beacon_brightness)
+spread_want = [0, 37, 74, 30, 67, 104].map(|phase| TowerPlan.beacon_brightness(Steps.of(phase)))
 
 behind_got : List(I64)
 behind_got = [

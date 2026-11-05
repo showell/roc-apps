@@ -2,6 +2,7 @@
 ## sky darkens toward dusk as it goes, and the horizon warms red while the
 ## sun is near it. The sun is drawn only while the rider faces it.
 import Angle
+import Clock
 import lib.DeviceMath
 import Lens
 import Num_
@@ -50,15 +51,15 @@ Sky :: [].{
 
 	## How high the sun stands above the horizon at `clock`, in pixels at
 	## rest; below it once negative.
-	sun_height_px : F64 -> F64
-	sun_height_px = |clock| (sun_start_px - (sun_drop_px_per_step * clock))
+	sun_height_px : Clock -> F64
+	sun_height_px = |clock| (sun_start_px - (sun_drop_px_per_step * clock.to_f64()))
 
 	## How far toward dusk the sky is when the sun has just set.
 	dusk_at_set : F64
 	dusk_at_set = ((0.5 * (sun_start_px - sun_fully_set_px)) / sun_start_px)
 
 	## How far toward dusk the sky is at `clock`, from 0 (day) to 1 (dusk).
-	dusk_at : F64 -> F64
+	dusk_at : Clock -> F64
 	dusk_at = |clock| {
 		height = sun_height_px(clock)
 		if (height >= sun_fully_set_px) dusk_while_up(height) else dusk_after_set(height)
@@ -66,7 +67,7 @@ Sky :: [].{
 
 	## How warm the horizon is at `clock`: most while the sun touches it, none
 	## once the sun is `warmth_falloff_px` above or below.
-	sunset_warmth : F64 -> F64
+	sunset_warmth : Clock -> F64
 	sunset_warmth = |clock| DeviceMath.real_max(
 		0.0,
 		(1.0 - (DeviceMath.real_abs(sun_height_px(clock)) / warmth_falloff_px)),
@@ -124,12 +125,12 @@ Sky :: [].{
 	}
 
 	## The sky's colour at the top of the frame, as 0xRRGGBB.
-	sky_color : F64 -> I64
+	sky_color : Clock -> I64
 	sky_color = |clock| pack(sky_at(clock))
 
 	## The sky's colour at the horizon, as 0xRRGGBB: the sky warmed toward
 	## sunset red.
-	horizon_color : F64 -> I64
+	horizon_color : Clock -> I64
 	horizon_color = |clock| pack(
 		color_between({
 			from: sky_at(clock),
@@ -141,7 +142,7 @@ Sky :: [].{
 	## The sun in a frame, for a rider facing `heading`.
 	sun_pos : {
 		heading : Angle.Bearing,
-		clock : F64,
+		clock : Clock,
 		cam_focal : F64,
 	} -> Sky.SunPos
 	sun_pos = |
@@ -182,7 +183,7 @@ dusk_after_set = |height| {
 	DeviceMath.real_min(1.0, (Sky.dusk_at_set + (sunk_past_set * (1.0 - Sky.dusk_at_set))))
 }
 
-sky_at : F64 -> Sky.Rgb
+sky_at : Clock -> Sky.Rgb
 sky_at = |clock| Sky.color_between({
 	from: Sky.day_sky,
 	to: Sky.dusk_sky,
@@ -191,7 +192,7 @@ sky_at = |clock| Sky.color_between({
 
 sun_place : {
 	turn_from_view : Angle.Turn,
-	clock : F64,
+	clock : Clock,
 	cam_focal : F64,
 } -> Sky.SunPlace
 sun_place = |

@@ -27,14 +27,14 @@ main! = |_args| {
 		}
 		here = $m.ride.clock
 		there = SafariRide.back($m).ride.clock
-		ok = there == here - 1.0
+		ok = there.next() == here
 		$bad = if ok {
 			$bad
 		} else {
 			$bad + 1
 		}
 		verdict = if (ok) "ok  " else "BAD "
-		clocks = "clock ${F64.to_str(here)}, one back -> ${F64.to_str(there)}"
+		clocks = "clock ${here.to_str()}, one back -> ${there.to_str()}"
 		$out = Str.concat($out, "${verdict}after ${I64.to_str(steps)} steps: ${clocks}\n")
 	}
 	echo!(

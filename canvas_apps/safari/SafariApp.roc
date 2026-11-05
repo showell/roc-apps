@@ -29,11 +29,7 @@ SafariApp :: [].{
 		# thirty is the speed it is meant to look like.
 		fps: 30,
 		init: { ride: SafariRide.init, paused: Bool.False },
-		advance: |
-			m,
-			input,
-			_dt,
-		| step(m, input),
+		advance: CanvasApp.untimed_advance(step),
 		frame: |m| frame(m.ride),
 		sounds: |_m| 0,
 		tones: [],
@@ -57,17 +53,14 @@ SafariApp :: [].{
 				zoom: 1.0,
 			}),
 		)
-		List.prepend(
-			SafariShapes.frame(
-				SafariRide.shapes(ride),
-				{
-					sky_top_color: SafariRide.sky_top(ride),
-					sky_horizon_color: SafariRide.sky_horizon(ride),
-					sun_position: SafariRide.sun(ride),
-				},
-			),
-			lean,
-		)
+		SafariShapes.frame(
+			SafariRide.shapes(ride),
+			{
+				sky_top_color: SafariRide.sky_top(ride),
+				sky_horizon_color: SafariRide.sky_horizon(ride),
+				sun_position: SafariRide.sun(ride),
+			},
+		).prepend(lean)
 	}
 
 	degrees : F64
