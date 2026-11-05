@@ -77,8 +77,8 @@ compare = |tour| {
 held_line : I64, Tour -> Str
 held_line = |depth, tour| "ShapesFrame ${depth.to_str()}: ${compare(tour).counts}"
 
-picture! : I64 => {}
-picture! = |steps| {
+print_picture! : I64 => {}
+print_picture! = |steps| {
 	comparison = compare(ProofRide.ride_on(Tour.initial, steps))
 	pixels = comparison.pixels
 	n = List.len(pixels)
@@ -96,9 +96,9 @@ picture! = |steps| {
 main! = |args| {
 	match args {
 		["held", .. as depths] => echo!(ProofRide.held_lines(depths, held_line))
-		[steps] => picture!(ProofRide.depth_of(steps))
+		[steps] => print_picture!(ProofRide.depth_of(steps))
 		# With no argument, the run takes its usual number of steps.
-		_ => picture!(0)
+		_ => print_picture!(0)
 	}
 	Ok({})
 }

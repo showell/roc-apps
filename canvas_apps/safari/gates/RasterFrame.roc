@@ -51,10 +51,7 @@ paint = |tour| SafariFrame.paint({
 
 ## The bytes `hash 1234abcd`.
 hash_line : List(U32) -> List(U8)
-hash_line = |pixels| Hex.append_digits(
-	Str.to_utf8("hash "),
-	{ number: hash(pixels), digits: 8 },
-)
+hash_line = |pixels| Hex.append_digits(Str.to_utf8("hash "), { number: hash(pixels), digits: 8 })
 
 held_line : I64, Tour -> Str
 held_line = |depth, tour| {
@@ -62,8 +59,8 @@ held_line = |depth, tour| {
 	"RasterFrame ${depth.to_str()}: ${line}"
 }
 
-picture! : I64 => {}
-picture! = |steps| {
+print_picture! : I64 => {}
+print_picture! = |steps| {
 	pixels = paint(ProofRide.ride_on(Tour.initial, steps))
 	var $out = List.with_capacity(List.len(pixels) * 6 + 32)
 	$out = List.concat($out, hash_line(pixels))
@@ -83,9 +80,9 @@ picture! = |steps| {
 main! = |args| {
 	match args {
 		["held", .. as depths] => echo!(ProofRide.held_lines(depths, held_line))
-		[steps] => picture!(ProofRide.depth_of(steps))
+		[steps] => print_picture!(ProofRide.depth_of(steps))
 		# With no argument, the run takes its usual number of steps.
-		_ => picture!(0)
+		_ => print_picture!(0)
 	}
 	Ok({})
 }
