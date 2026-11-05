@@ -61,8 +61,8 @@ Throttle :: [].{
 	} -> Acceleration
 	crossing_gate = |state, { road_segment: seg, offered_accel: a }|
 		match CrossingReaction.reaction_to(seg, state).throttle {
-			Held if a > Acceleration.steady => Acceleration.steady
-			Held | Free => a
+			NoAcceleration if a > Acceleration.steady => Acceleration.steady
+			NoAcceleration | MayAccelerate => a
 		}
 
 	pig_gate : Pose.RiderState,

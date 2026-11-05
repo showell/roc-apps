@@ -44,8 +44,8 @@ to_cat = |gap, speed| CrossingReaction.reaction_to(cat_segment, rider_at(cat_alo
 held_number : CrossingReaction.Reaction -> I64
 held_number = |reaction|
 	match reaction.throttle {
-		Free => 0
-		Held => 1
+		MayAccelerate => 0
+		NoAcceleration => 1
 	}
 
 cat_throttle_got : List(I64)

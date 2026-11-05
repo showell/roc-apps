@@ -94,10 +94,13 @@ Animation :: [].{
 		Arc({ line : Animation.Line, rise : F64 }),
 	]
 
-	## How a critter looks over one stretch of a timeline. One that alternates
-	## shows `up` while the sine of its cycle is positive, and `down` otherwise.
-	## It goes through `count` cycles in `over` steps counted from the
-	## timeline's start, so a beat runs on across a cut without restarting.
+	## How a critter looks over one stretch of a timeline: one pose held still,
+	## or two taking turns, as a bird flaps its wings up and down or a cat puts
+	## one foot in front of the other. Two poses take turns by following a sine
+	## wave, which swings smoothly above and below zero: the critter shows `up`
+	## while the wave is above zero, and `down` while it isn't. It goes through
+	## `count` whole cycles in `over` steps counted from the timeline's start, so
+	## a bird's wing beat runs on across a cut without restarting.
 	Looks(pose) : [
 		Holds(pose),
 		Alternates(

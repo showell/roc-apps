@@ -12,7 +12,7 @@ CrossingReaction :: [].{
 
 	## What a crossing does to the rider now: whether they may open the
 	## throttle, and how hard it holds their eye.
-	Reaction : { throttle : [Free, Held], eye_pull : F64 }
+	Reaction : { throttle : [MayAccelerate, NoAcceleration], eye_pull : F64 }
 
 	## The reaction to `segment`'s crossing of a rider on that segment.
 	reaction_to : World.Segment, Pose.RiderState -> CrossingReaction.Reaction
@@ -21,10 +21,10 @@ CrossingReaction :: [].{
 			CatCrosses(crossing) => {
 				approach = { gap: crossing.along - rider.along, speed: rider.speed }
 				{
-					throttle: if (Cat.is_in_danger(approach)) Held else Free,
+					throttle: if (Cat.is_in_danger(approach)) NoAcceleration else MayAccelerate,
 					eye_pull: Cat.focus(approach),
 				}
 			}
-			BirdFlies(_) | QuietRoad => { throttle: Free, eye_pull: 0.0 }
+			BirdFlies(_) | QuietRoad => { throttle: MayAccelerate, eye_pull: 0.0 }
 		}
 }
