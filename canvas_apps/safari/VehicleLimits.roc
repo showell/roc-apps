@@ -26,51 +26,29 @@ VehicleLimits :: [].{
 	least_braking_distance : Distance
 	least_braking_distance = Distance.metres(0.000001)
 
+	## The turns a route can make, in whole degrees, and the speed each is
+	## taken at.
+	turn_speeds : List({ degrees : F64, speed : Speed })
+	turn_speeds = [
+		{ degrees: 15.0, speed: Speed.metres_a_step(1.297) },
+		{ degrees: 20.0, speed: Speed.metres_a_step(0.84) },
+		{ degrees: 30.0, speed: Speed.metres_a_step(0.461) },
+		{ degrees: 50.0, speed: Speed.metres_a_step(0.222) },
+		{ degrees: 70.0, speed: Speed.metres_a_step(0.139) },
+		{ degrees: 80.0, speed: Speed.metres_a_step(0.117) },
+	]
+
 	## The speed a turn of this size can be taken at, to the right or the left
-	## alike: a caller passes the turn's `abs`.
+	## alike: a caller passes the turn's `abs`. A turn counts as the whole
+	## degree it rounds to, and that must be one in `turn_speeds`.
 	turn_speed : Angle.Turn -> Speed
-	turn_speed = |turn| (
-		{
-			d = Num_.round_real(((turn.to_radians() * 180.0) / Trig.pi))
-			Speed.metres_a_step(
-				if d.to_bits() == F64.to_bits(15.0) {
-					1.297
-				} else {
-					(
-						if d.to_bits() == F64.to_bits(20.0) {
-							0.84
-						} else {
-							(
-								if d.to_bits() == F64.to_bits(30.0) {
-									0.461
-								} else {
-									(
-										if d.to_bits() == F64.to_bits(50.0) {
-											0.222
-										} else {
-											(
-												if d.to_bits() == F64.to_bits(70.0) {
-													0.139
-												} else {
-													(
-														if d.to_bits() == F64.to_bits(80.0) {
-															0.117
-														} else {
-															0.222
-														}
-													)
-												}
-											)
-										}
-									)
-								}
-							)
-						}
-					)
-				},
-			)
+	turn_speed = |turn| {
+		degrees = Num_.round_real(((turn.to_radians() * 180.0) / Trig.pi))
+		match turn_speeds.find_first(|row| row.degrees == degrees) {
+			Ok(row) => row.speed
+			Err(NotFound) => crash "VehicleLimits.turn_speed: no speed for a turn of ${degrees.to_str()} degrees"
 		}
-	)
+	}
 }
 
 expect VehicleLimits.a_accel.to_metres_a_step_each_step() == 0.01
@@ -91,16 +69,11 @@ expect
 		(80.0, 0.117),
 	].all(|(degrees, speed)| speed_for_turn(degrees) == speed)
 
-# A turn counts as the whole degree it rounds to, and takes its speed the same
-# either way. Any turn not in the table takes the 50 degree speed.
+# A turn counts as the whole degree it rounds to, either side of the table's.
 expect
 	[
 		(14.5, 1.297),
-		(14.4, 0.222),
 		(15.4, 1.297),
-		(15.5, 0.222),
-		(30.5, 0.222),
-		(0.0, 0.222),
-		(-15.0, 0.222),
-		(-50.0, 0.222),
+		(49.5, 0.222),
+		(50.4, 0.222),
 	].all(|(degrees, speed)| speed_for_turn(degrees) == speed)
