@@ -1,4 +1,4 @@
-## These are BirdPlan's checks, on a straight segment with its fifth left tree
+## These are BirdSighting's checks, on a straight segment with its fifth left tree
 ## 100 m along: a bird sits, flies and lands as the rider comes, stays where no
 ## tree is far enough to fly to, and is left out with no tree for it, behind
 ## the near plane or too small to draw. The depth keys name each bird by its
@@ -9,7 +9,7 @@ app [main!] {
 
 import Angle
 import BirdFlight
-import BirdPlan
+import BirdSighting
 import DepthSort
 import Frame
 import Grade
@@ -49,7 +49,7 @@ birds_on = |trees, seen_from| birds_on_segment(segment_of(trees), seen_from)
 ## The birds on `segment`, for a rider `rider_along` metres into it.
 birds_on_segment : World.Segment, { rider_along : F64, cam_focal : F64 } -> List(RocBird.PlacedBird)
 birds_on_segment = |segment, { rider_along, cam_focal }|
-	BirdPlan.in_view({
+	BirdSighting.in_view({
 		road: {
 			world: [segment],
 			chain: [World.SegmentIndex.first],
@@ -68,7 +68,7 @@ birds_on_segment = |segment, { rider_along, cam_focal }|
 bird_at : F64 -> RocBird.PlacedBird
 bird_at = |rider_along|
 	birds_on(left_trees.append(far_tree), { rider_along, cam_focal: 500.0 }).first()
-		?? crash "BirdPlanSpec: this rider sees a bird"
+		?? crash "BirdSightingSpec: this rider sees a bird"
 
 ## How far off a bird is, across the road and up.
 place_of : RocBird.PlacedBird -> List(F64)
@@ -156,7 +156,7 @@ count_want = [
 
 ## Two segments in the chain, the rider at the start of the first.
 two_segments : List(RocBird.PlacedBird)
-two_segments = BirdPlan.in_view({
+two_segments = BirdSighting.in_view({
 	road: {
 		world: [segment_of(left_trees), segment_of(left_trees)],
 		chain: [0, 1].map(World.SegmentIndex.number),
@@ -176,20 +176,20 @@ bird_place = |key|
 	match key.subject {
 		Bird(place) => place.to_i64()
 		Tree(_) | Tower(_) | Critter(_) | Cat(_) | Truck | Rail(_) =>
-			crash "BirdPlanSpec: a bird's key names a bird"
+			crash "BirdSightingSpec: a bird's key names a bird"
 	}
 
 keys_got : List(I64)
-keys_got = BirdPlan.depth_keys(two_segments).map(bird_place)
+keys_got = BirdSighting.depth_keys(two_segments).map(bird_place)
 
 keys_want : List(I64)
 keys_want = [0, 1]
 
 nearest_first_got : List(Bool)
 nearest_first_got =
-	match BirdPlan.depth_keys(two_segments).map(|key| key.forward) {
+	match BirdSighting.depth_keys(two_segments).map(|key| key.forward) {
 		[near, far] => [near == 100.0, near < far]
-		_ => crash "BirdPlanSpec: each of two segments has a bird in view"
+		_ => crash "BirdSightingSpec: each of two segments has a bird in view"
 	}
 
 nearest_first_want : List(Bool)

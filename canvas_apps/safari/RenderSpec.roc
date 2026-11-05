@@ -6,18 +6,18 @@ app [main!] {
 }
 
 import Angle
-import BirdPlan
-import CatPlan
+import BirdSighting
+import CatSighting
 import Clock
-import CritterPlan
+import CritterSighting
 import DepthSort
 import Frame
 import Grade
-import RailPlan
+import RailSighting
 import Render
-import TowerPlan
-import TreePlan
-import TruckPlan
+import TowerSighting
+import TreeSighting
+import TruckSighting
 import VehicleLimits
 import World
 
@@ -56,13 +56,13 @@ merge_got : List(I64)
 merge_got = {
 	n = scene.order.len().to_i64_wrap()
 	kind_counts = [
-		TreePlan.depth_keys(scene.trees).len(),
-		TowerPlan.depth_keys(scene.towers).len(),
-		CritterPlan.cow_items(scene.critters).len(),
-		CatPlan.depth_keys(scene.cats).len(),
-		TruckPlan.depth_keys(scene.truck).len(),
-		RailPlan.depth_keys(scene.rails).len(),
-		BirdPlan.depth_keys(scene.birds).len(),
+		TreeSighting.depth_keys(scene.trees).len(),
+		TowerSighting.depth_keys(scene.towers).len(),
+		CritterSighting.cow_items(scene.critters).len(),
+		CatSighting.depth_keys(scene.cats).len(),
+		TruckSighting.depth_keys(scene.truck).len(),
+		RailSighting.depth_keys(scene.rails).len(),
+		BirdSighting.depth_keys(scene.birds).len(),
 	]
 	[(n - List.sum(kind_counts).to_i64_wrap())]
 }
@@ -84,10 +84,10 @@ present_want = [True, True, True, True, True]
 
 cap_got : List(Bool)
 cap_got = [
-	(scene.trees.len().to_i64_wrap() <= TreePlan.max_vis_trees),
-	(scene.towers.len().to_i64_wrap() <= TowerPlan.max_vis_towers),
-	(scene.critters.len().to_i64_wrap() <= CritterPlan.max_vis_critters),
-	(scene.cats.len().to_i64_wrap() <= CatPlan.max_vis_cats),
+	(scene.trees.len().to_i64_wrap() <= TreeSighting.max_vis_trees),
+	(scene.towers.len().to_i64_wrap() <= TowerSighting.max_vis_towers),
+	(scene.critters.len().to_i64_wrap() <= CritterSighting.max_vis_critters),
+	(scene.cats.len().to_i64_wrap() <= CatSighting.max_vis_cats),
 ]
 
 cap_want : List(Bool)
@@ -95,9 +95,9 @@ cap_want = [True, True, True, True]
 
 cap_values_got : List(I64)
 cap_values_got = [
-	TreePlan.max_vis_trees,
-	TowerPlan.max_vis_towers,
-	CatPlan.max_vis_cats,
+	TreeSighting.max_vis_trees,
+	TowerSighting.max_vis_towers,
+	CatSighting.max_vis_cats,
 ]
 
 cap_values_want : List(I64)

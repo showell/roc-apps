@@ -1,8 +1,8 @@
-## TowerPlan finds the radio masts in front of the rider in a frame. A mast
+## TowerSighting finds the radio masts in front of the rider in a frame. A mast
 ## stands past the end of every segment, off to the right, and a long
 ## segment has one more halfway along, off to the left. The mast past the
 ## end of the segment behind the rider is seen too. Each mast's beacon blinks
-## on the ride's clock, and the plan says how bright it is in the frame.
+## on the ride's clock, and the sighting says how bright it is in the frame.
 import Angle
 import Clock
 import DepthSort
@@ -14,7 +14,7 @@ import Steps
 import lib.Trig
 import World
 
-TowerPlan :: [].{
+TowerSighting :: [].{
 
 	## A mast to draw: how its segment maps to the rider's view, where it
 	## stands in that segment and how it is turned, how far ahead it is, and
@@ -75,7 +75,7 @@ TowerPlan :: [].{
 
 	## The masts in view: those along the chain, then the one past the end of
 	## the segment behind the rider.
-	in_view : TowerPlan.View -> List(TowerPlan.TowerItem)
+	in_view : TowerSighting.View -> List(TowerSighting.TowerItem)
 	in_view = |view|
 		match Frame.segment_behind(view.road) {
 			Previous(segment_behind) => along_chain(view).concat(tower_behind(view, segment_behind))
@@ -83,7 +83,7 @@ TowerPlan :: [].{
 		}
 
 	## The masts in view along the chain, the nearest segment's first.
-	along_chain : TowerPlan.View -> List(TowerPlan.TowerItem)
+	along_chain : TowerSighting.View -> List(TowerSighting.TowerItem)
 	along_chain = |view| {
 		positions = Frame.ChainPosition.all_in(view.road.chain)
 		positions.join_map(|position| segment_towers(view, position))
@@ -91,7 +91,7 @@ TowerPlan :: [].{
 
 	## The masts in view on the segment at `position` in the chain: the one past
 	## its end, then the one halfway along.
-	segment_towers : TowerPlan.View, Frame.ChainPosition -> List(TowerPlan.TowerItem)
+	segment_towers : TowerSighting.View, Frame.ChainPosition -> List(TowerSighting.TowerItem)
 	segment_towers = |view, position| {
 		index = position.index_in(view.road.chain)
 		segment = index.segment_in(view.road.world)
@@ -110,7 +110,7 @@ TowerPlan :: [].{
 
 	## The mast halfway along the segment at `position` in the chain, if it has
 	## one and it is in view.
-	mid_tower : TowerPlan.View, Frame.ChainPosition -> List(TowerPlan.TowerItem)
+	mid_tower : TowerSighting.View, Frame.ChainPosition -> List(TowerSighting.TowerItem)
 	mid_tower = |view, position| {
 		index = position.index_in(view.road.chain)
 		segment = index.segment_in(view.road.world)
@@ -132,7 +132,7 @@ TowerPlan :: [].{
 
 	## The mast past the end of the segment at `index`, the one behind the
 	## rider, if it is in view.
-	tower_behind : TowerPlan.View, World.SegmentIndex -> List(TowerPlan.TowerItem)
+	tower_behind : TowerSighting.View, World.SegmentIndex -> List(TowerSighting.TowerItem)
 	tower_behind = |view, index| {
 		behind = index.segment_in(view.road.world)
 		tower_if_ahead(
@@ -149,7 +149,7 @@ TowerPlan :: [].{
 
 	## The masts as the depth sort sees them: each one's distance ahead, and
 	## its position in `towers`.
-	depth_keys : List(TowerPlan.TowerItem) -> List(DepthSort.DepthKey)
+	depth_keys : List(TowerSighting.TowerItem) -> List(DepthSort.DepthKey)
 	depth_keys = |towers| towers.map_with_index(
 		|tower, i| {
 			forward: tower.forward,
@@ -167,14 +167,14 @@ mid_tower_beacon_step = 60
 
 ## A mast standing at `along` and `across` in the segment that `place` maps,
 ## if it is in front of the camera: one item, or none.
-tower_if_ahead : TowerPlan.View,
+tower_if_ahead : TowerSighting.View,
 {
 	place : Frame.SegmentPlace,
 	along : F64,
 	across : F64,
 	yaw : Angle.Turn,
 	beacon_key : U32,
-} -> List(TowerPlan.TowerItem)
+} -> List(TowerSighting.TowerItem)
 tower_if_ahead = |
 	view,
 	{
@@ -203,8 +203,8 @@ tower_if_ahead = |
 				across,
 				yaw,
 				forward: center.forward,
-				beacon_brightness: TowerPlan.beacon_brightness(
-					view.clock.minus(Clock.start).plus(TowerPlan.beacon_offset_for(beacon_key)),
+				beacon_brightness: TowerSighting.beacon_brightness(
+					view.clock.minus(Clock.start).plus(TowerSighting.beacon_offset_for(beacon_key)),
 				),
 			},
 		]

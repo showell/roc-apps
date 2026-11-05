@@ -1,4 +1,4 @@
-## These are GroundPlan's checks: how the road along a segment is cut into
+## These are GroundSighting's checks: how the road along a segment is cut into
 ## chunks, where a chunk's corners are, and what the road draws.
 app [main!] {
 	lib: "../lib/main.roc",
@@ -8,26 +8,26 @@ import Angle
 import Frame
 import Geom
 import Grade
-import GroundPlan
+import GroundSighting
 import World
 import ShapeRead
 import lib.Shapes
 
 fixed_got : List(F64)
-fixed_got = [GroundPlan.road_chunk_length, GroundPlan.approach_length]
+fixed_got = [GroundSighting.road_chunk_length, GroundSighting.approach_length]
 
 fixed_want : List(F64)
 fixed_want = [25.0, 40.0]
 
 colour_got : List(I64)
-colour_got = [GroundPlan.road_color]
+colour_got = [GroundSighting.road_color]
 
 colour_want : List(I64)
 colour_want = [3421500]
 
 chunks_got : List(I64)
 chunks_got = [25.0, 25.1, 50.0, 49.9, 1.0, 0.0, 500.0, 320.0, 1200.0].map(
-	|length| GroundPlan.chunks_along(length).to_i64(),
+	|length| GroundSighting.chunks_along(length).to_i64(),
 )
 
 chunks_want : List(I64)
@@ -56,7 +56,7 @@ view = {
 
 ## Chunk `chunk_number` of the first segment's 20, which is 500 m long.
 chunk_of_first : U32 -> List(Geom.RiderPoint)
-chunk_of_first = |chunk_number| GroundPlan.chunk_corners(
+chunk_of_first = |chunk_number| GroundSighting.chunk_corners(
 	view,
 	{
 		position: Frame.ChainPosition.first,
@@ -67,7 +67,7 @@ chunk_of_first = |chunk_number| GroundPlan.chunk_corners(
 )
 
 corner : List(Geom.RiderPoint), U64 -> Geom.RiderPoint
-corner = |corners, i| corners.get(i) ?? crash "GroundPlanSpec: a chunk has four corners"
+corner = |corners, i| corners.get(i) ?? crash "GroundSightingSpec: a chunk has four corners"
 
 first_chunk : List(Geom.RiderPoint)
 first_chunk = chunk_of_first(0)
@@ -118,7 +118,7 @@ seam_want : List(F64)
 seam_want = [0.0, 0.0, 0.0]
 
 strip : List(Shapes.Shape)
-strip = GroundPlan.segment_road(view, Frame.ChainPosition.first)
+strip = GroundSighting.segment_road(view, Frame.ChainPosition.first)
 
 far_ahead : Frame.Pose
 far_ahead = {
@@ -131,9 +131,9 @@ far_ahead = {
 strip_got : List(Bool)
 strip_got = [
 	(strip.len() > 0),
-	(strip.len().to_u32_wrap() <= GroundPlan.chunks_along(500.0)),
+	(strip.len().to_u32_wrap() <= GroundSighting.chunks_along(500.0)),
 	(
-		GroundPlan.segment_road(
+		GroundSighting.segment_road(
 			{ ..view, road: { ..view.road, pose: far_ahead } },
 			Frame.ChainPosition.first,
 		).len() == 0
@@ -144,7 +144,7 @@ strip_want : List(Bool)
 strip_want = [True, True, True]
 
 last_shape : Shapes.Shape
-last_shape = strip.last() ?? crash "GroundPlanSpec: the road draws"
+last_shape = strip.last() ?? crash "GroundSightingSpec: the road draws"
 
 shape_got : List(I64)
 shape_got = [ShapeRead.flat_color_of(last_shape)]

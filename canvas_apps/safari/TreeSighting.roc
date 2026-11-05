@@ -1,4 +1,4 @@
-## TreePlan finds the roadside trees the rider can see in a frame: those
+## TreeSighting finds the roadside trees the rider can see in a frame: those
 ## planted along the chain of segments ahead that stand in front of the
 ## camera and are tall enough on screen to draw.
 import DepthSort
@@ -7,7 +7,7 @@ import Geom
 import SceneLimits
 import Scenery
 
-TreePlan :: [].{
+TreeSighting :: [].{
 
 	## A tree to draw: where it stands in the rider's view, its height and
 	## its colour.
@@ -24,14 +24,14 @@ TreePlan :: [].{
 
 	## The trees in view, the nearest segment's first, and each segment's in
 	## the order it plants them.
-	in_view : Frame.Viewpoint -> List(TreePlan.TreeItem)
+	in_view : Frame.Viewpoint -> List(TreeSighting.TreeItem)
 	in_view = |view| {
 		positions = Frame.ChainPosition.all_in(view.road.chain)
 		positions.join_map(|position| segment_trees(view, position))
 	}
 
 	## The trees in view on the segment at `position` in the chain.
-	segment_trees : Frame.Viewpoint, Frame.ChainPosition -> List(TreePlan.TreeItem)
+	segment_trees : Frame.Viewpoint, Frame.ChainPosition -> List(TreeSighting.TreeItem)
 	segment_trees = |view, position| {
 		segment = position.index_in(view.road.chain).segment_in(view.road.world)
 		segment.trees.join_map(|tree| tree_in_view(view, { position, tree }))
@@ -43,7 +43,7 @@ TreePlan :: [].{
 	{
 		position : Frame.ChainPosition,
 		tree : Scenery.Tree,
-	} -> List(TreePlan.TreeItem)
+	} -> List(TreeSighting.TreeItem)
 	tree_in_view = |view, { position, tree }| {
 		seen = Frame.rider_point_ahead(
 			view.road,
@@ -71,7 +71,7 @@ TreePlan :: [].{
 
 	## The trees as the depth sort sees them: each one's distance ahead, and
 	## its position in `trees`.
-	depth_keys : List(TreePlan.TreeItem) -> List(DepthSort.DepthKey)
+	depth_keys : List(TreeSighting.TreeItem) -> List(DepthSort.DepthKey)
 	depth_keys = |trees| trees.map_with_index(
 		|tree, i| {
 			forward: tree.forward,

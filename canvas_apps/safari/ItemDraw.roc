@@ -1,7 +1,7 @@
 ## ItemDraw paints the things beside the road in depth order, far to near,
 ## each by its own kind's module.
 import CatDraw
-import CatPlan
+import CatSighting
 import Critter
 import DepthSort
 import Fraction
@@ -10,11 +10,11 @@ import GuardRail
 import Render
 import SceneLimits
 import Tower
-import TowerPlan
+import TowerSighting
 import Tree
-import TreePlan
+import TreeSighting
 import TruckDraw
-import TruckPlan
+import TruckSighting
 import RocBird
 import lib.Shapes
 
@@ -31,7 +31,7 @@ ItemDraw :: [].{
 		scene.order.join_map(|depth_key| draw_subject(scene, { view, depth_key }))
 
 	## How many of `trees` are nearer than `forward`.
-	nearer_tree_count : List(TreePlan.TreeItem), F64 -> U32
+	nearer_tree_count : List(TreeSighting.TreeItem), F64 -> U32
 	nearer_tree_count = |trees, forward|
 		trees.count_if(|tree| tree.forward < forward).to_u32_wrap()
 
@@ -43,9 +43,9 @@ ItemDraw :: [].{
 	## A tree, drawn in more detail the nearer it is: its trunk is round when
 	## few of `trees` are nearer, and its crown is cones when it is nearer
 	## than SceneLimits.detail_dist.
-	draw_tree : TreePlan.TreeItem,
+	draw_tree : TreeSighting.TreeItem,
 	{
-		trees : List(TreePlan.TreeItem),
+		trees : List(TreeSighting.TreeItem),
 		cam_focal : F64,
 	} -> List(Shapes.Shape)
 	draw_tree = |tree, { trees, cam_focal }| {
@@ -63,7 +63,7 @@ ItemDraw :: [].{
 	}
 
 	## Where a mast's four footprint corners stand in the rider's view.
-	tower_footprint : Frame.Viewpoint, TowerPlan.TowerItem -> Tower.Footprint
+	tower_footprint : Frame.Viewpoint, TowerSighting.TowerItem -> Tower.Footprint
 	tower_footprint = |view, tower| {
 		corner_point = |corner| {
 			on_road = Tower.base_corner_on_road(
@@ -91,8 +91,8 @@ ItemDraw :: [].{
 		}
 	}
 
-	## A mast, its beacon as bright as its plan says.
-	draw_tower : Frame.Viewpoint, TowerPlan.TowerItem -> List(Shapes.Shape)
+	## A mast, its beacon as bright as its sighting says.
+	draw_tower : Frame.Viewpoint, TowerSighting.TowerItem -> List(Shapes.Shape)
 	draw_tower = |view, tower|
 		Tower.draw({
 			footprint: ItemDraw.tower_footprint(view, tower),
@@ -138,7 +138,7 @@ thing_at = |things, place|
 	things.get(place.to_u64())
 		?? crash "ItemDraw.thing_at: the depth order names only places in its lists"
 
-draw_cat : CatPlan.CatItem, F64 -> List(Shapes.Shape)
+draw_cat : CatSighting.CatItem, F64 -> List(Shapes.Shape)
 draw_cat = |cat, cam_focal|
 	CatDraw.draw({
 		right: cat.right,
@@ -149,8 +149,9 @@ draw_cat = |cat, cam_focal|
 		cam_focal,
 	})
 
-## The truck, where its plan found it and with the lights its plan gives it.
-draw_truck : Frame.Viewpoint, TruckPlan.TruckAt -> List(Shapes.Shape)
+## The truck, where its sighting found it and with the lights its sighting
+## gives it.
+draw_truck : Frame.Viewpoint, TruckSighting.TruckAt -> List(Shapes.Shape)
 draw_truck = |view, truck_at|
 	match truck_at {
 		Ahead(truck) =>

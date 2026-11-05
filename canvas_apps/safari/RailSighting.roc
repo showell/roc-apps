@@ -1,4 +1,4 @@
-## RailPlan lays out the guard rail at each bend in view. The rail follows
+## RailSighting lays out the guard rail at each bend in view. The rail follows
 ## the outer edge of the road for the last few metres before the bend,
 ## cuts across the bend's corner to where the two outer edges meet and
 ## back, and follows the next segment's outer edge for as far again.
@@ -11,7 +11,7 @@ import Joint
 import Num_
 import World
 
-RailPlan :: [].{
+RailSighting :: [].{
 
 	## The rails at every bend in view: the bends along the chain ahead, then
 	## the bend from the segment behind.
@@ -75,8 +75,9 @@ RailPlan :: [].{
 	rail_leg = |{ from, to }| {
 		rightward = to.right - from.right
 		forward = to.forward - from.forward
-		steps = RailPlan.leg_steps(DeviceMath.real_sqrt(rightward * rightward + forward * forward))
-		RailPlan.evenly_spaced({
+		distance = DeviceMath.real_sqrt(rightward * rightward + forward * forward)
+		steps = RailSighting.leg_steps(distance)
+		RailSighting.evenly_spaced({
 			from,
 			to,
 			steps,
@@ -174,7 +175,7 @@ rail_path = |road, bend| {
 	)
 	apex = Joint.joint_apex(road, bend)
 	[
-		RailPlan.run_up(
+		RailSighting.run_up(
 			road,
 			{
 				place: bend.before,
@@ -182,8 +183,8 @@ rail_path = |road, bend| {
 				across: outer_edge,
 			},
 		),
-		RailPlan.rail_leg({ from: end_before, to: apex }),
-		RailPlan.rail_leg({ from: apex, to: start_after }),
-		RailPlan.run_out(road, { place: bend.after, across: outer_edge }),
+		RailSighting.rail_leg({ from: end_before, to: apex }),
+		RailSighting.rail_leg({ from: apex, to: start_after }),
+		RailSighting.run_out(road, { place: bend.after, across: outer_edge }),
 	].join()
 }

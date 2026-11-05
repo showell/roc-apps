@@ -1,4 +1,4 @@
-## TruckPlan finds the truck ahead of the rider in a frame: how far along
+## TruckSighting finds the truck ahead of the rider in a frame: how far along
 ## the chain of segments ahead it is, whether it is in front of the camera,
 ## and which of its lights the drawing shows.
 import DepthSort
@@ -7,7 +7,7 @@ import Geom
 import Scenery
 import Truck
 
-TruckPlan :: [].{
+TruckSighting :: [].{
 
 	## The truck, if it is in view: the position in the chain of the segment it
 	## is on, how far along and across that segment it is, how far ahead of the
@@ -35,7 +35,7 @@ TruckPlan :: [].{
 
 	## The truck, if it is ahead of the rider, on the chain, and in front of
 	## the camera.
-	in_view : TruckPlan.View -> TruckPlan.TruckAt
+	in_view : TruckSighting.View -> TruckSighting.TruckAt
 	in_view = |view|
 		if view.lead > 0.0 {
 			truck_from(
@@ -51,7 +51,7 @@ TruckPlan :: [].{
 
 	## The truck as the depth sort sees it: its distance ahead, if it is in
 	## view.
-	depth_keys : TruckPlan.TruckAt -> List(DepthSort.DepthKey)
+	depth_keys : TruckSighting.TruckAt -> List(DepthSort.DepthKey)
 	depth_keys = |truck|
 		match truck {
 			Ahead(truck_ahead) => [{ forward: truck_ahead.forward, subject: Truck }]
@@ -61,11 +61,11 @@ TruckPlan :: [].{
 
 ## The truck `remaining` metres past the start of the segment at `position` in
 ## the chain, found by walking on through the segments it is past.
-truck_from : TruckPlan.View,
+truck_from : TruckSighting.View,
 {
 	remaining : F64,
 	position : Frame.ChainPosition,
-} -> TruckPlan.TruckAt
+} -> TruckSighting.TruckAt
 truck_from = |view, { remaining, position }|
 	if position.is_past_end_of(view.road.chain) {
 		NoTruck
@@ -80,11 +80,11 @@ truck_from = |view, { remaining, position }|
 
 ## The truck `along` metres into the segment at `position` in the chain, in
 ## the middle of the lane, if it is in front of the camera.
-truck_on_segment : TruckPlan.View,
+truck_on_segment : TruckSighting.View,
 {
 	along : F64,
 	position : Frame.ChainPosition,
-} -> TruckPlan.TruckAt
+} -> TruckSighting.TruckAt
 truck_on_segment = |view, { along, position }| {
 	across = Scenery.lane_width / 2.0
 	center = Frame.rider_point_ahead(

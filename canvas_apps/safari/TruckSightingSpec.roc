@@ -1,4 +1,4 @@
-## These are TruckPlan's checks: where on the chain the truck is found,
+## These are TruckSighting's checks: where on the chain the truck is found,
 ## whether it is in view, and the key the depth sort reads.
 app [main!] {
 	lib: "../lib/main.roc",
@@ -8,7 +8,7 @@ import Angle
 import Frame
 import Grade
 import Truck
-import TruckPlan
+import TruckSighting
 import World
 
 segs : List(World.Segment)
@@ -34,7 +34,7 @@ lengths_want = [500.0, 320.0, 400.0]
 
 ## What a truck `lead` metres ahead of a rider at the start of the chain is
 ## seen from, from `pose`, with its lights off.
-truck_view : Frame.Pose, F64 -> TruckPlan.View
+truck_view : Frame.Pose, F64 -> TruckSighting.View
 truck_view = |pose, lead| {
 	road: {
 		world: segs,
@@ -45,14 +45,14 @@ truck_view = |pose, lead| {
 	lights: { headlights: Off, brake_lights: Off },
 }
 
-truck_seen_from : Frame.Pose, F64 -> TruckPlan.TruckAt
-truck_seen_from = |pose, lead| TruckPlan.in_view(truck_view(pose, lead))
+truck_seen_from : Frame.Pose, F64 -> TruckSighting.TruckAt
+truck_seen_from = |pose, lead| TruckSighting.in_view(truck_view(pose, lead))
 
-lead_of : F64 -> TruckPlan.TruckAt
+lead_of : F64 -> TruckSighting.TruckAt
 lead_of = |lead| truck_seen_from(here, lead)
 
 ## Whether the truck is in view.
-is_ahead : TruckPlan.TruckAt -> Bool
+is_ahead : TruckSighting.TruckAt -> Bool
 is_ahead = |truck|
 	match truck {
 		Ahead(_) => True
@@ -70,7 +70,7 @@ ahead_of : F64 -> {
 ahead_of = |lead|
 	match lead_of(lead) {
 		Ahead(truck) => truck
-		NoTruck => crash "TruckPlanSpec: this lead puts the truck in view"
+		NoTruck => crash "TruckSightingSpec: this lead puts the truck in view"
 	}
 
 present_got : List(Bool)
@@ -108,9 +108,9 @@ across_want = [2.0, 2.0, 2.0, 2.0]
 ## The lights a truck in view shows, when it has `lights` on.
 lights_shown : Truck.Lights -> Truck.Lights
 lights_shown = |lights|
-	match TruckPlan.in_view({ ..truck_view(here, 100.0), lights }) {
+	match TruckSighting.in_view({ ..truck_view(here, 100.0), lights }) {
 		Ahead(truck) => truck.lights
-		NoTruck => crash "TruckPlanSpec: this lead puts the truck in view"
+		NoTruck => crash "TruckSightingSpec: this lead puts the truck in view"
 	}
 
 lights_got : List(Bool)
@@ -168,17 +168,17 @@ behind_want = [False, True]
 ## The depth key of a truck in view.
 key_of : F64 -> { forward : F64 }
 key_of = |lead| {
-	key = TruckPlan.depth_keys(lead_of(lead)).first()
-		?? crash "TruckPlanSpec: a truck in view has a depth key"
+	key = TruckSighting.depth_keys(lead_of(lead)).first()
+		?? crash "TruckSightingSpec: a truck in view has a depth key"
 	{ forward: key.forward }
 }
 
 items_got : List(I64)
 items_got = [
-	TruckPlan.depth_keys(lead_of(100.0)).len().to_i64_wrap(),
-	TruckPlan.depth_keys(lead_of(2000.0)).len().to_i64_wrap(),
-	TruckPlan.depth_keys(NoTruck).len().to_i64_wrap(),
-	TruckPlan.depth_keys(lead_of(100.0)).count_if(|key| key.subject == Truck).to_i64_wrap(),
+	TruckSighting.depth_keys(lead_of(100.0)).len().to_i64_wrap(),
+	TruckSighting.depth_keys(lead_of(2000.0)).len().to_i64_wrap(),
+	TruckSighting.depth_keys(NoTruck).len().to_i64_wrap(),
+	TruckSighting.depth_keys(lead_of(100.0)).count_if(|key| key.subject == Truck).to_i64_wrap(),
 ]
 
 items_want : List(I64)

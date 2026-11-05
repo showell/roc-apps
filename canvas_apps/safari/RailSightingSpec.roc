@@ -1,4 +1,4 @@
-## These are RailPlan's checks: how many steps a leg of rail takes, the
+## These are RailSighting's checks: how many steps a leg of rail takes, the
 ## points along a leg, and the rail's run up to a bend and out of it.
 app [main!] {
 	lib: "../lib/main.roc",
@@ -9,12 +9,12 @@ import Frame
 import Geom
 import Grade
 import GuardRail
-import RailPlan
+import RailSighting
 import World
 
 steps_got : List(I64)
 steps_got = [0.0, 0.4, 0.5, 1.0, 1.4, 1.5, 2.5, 10.0, 49.6, 50.0].map(
-	|distance| RailPlan.leg_steps(distance).to_i64(),
+	|distance| RailSighting.leg_steps(distance).to_i64(),
 )
 
 steps_want : List(I64)
@@ -24,10 +24,10 @@ origin_pt : Geom.RiderPoint
 origin_pt = { right: 0.0, forward: 0.0 }
 
 point_at : List(Geom.RiderPoint), U64 -> Geom.RiderPoint
-point_at = |points, i| points.get(i) ?? crash "RailPlanSpec: an index past the leg's end"
+point_at = |points, i| points.get(i) ?? crash "RailSightingSpec: an index past the leg's end"
 
 straight : List(Geom.RiderPoint)
-straight = RailPlan.rail_leg({ from: origin_pt, to: { right: 0.0, forward: 10.0 } })
+straight = RailSighting.rail_leg({ from: origin_pt, to: { right: 0.0, forward: 10.0 } })
 
 straight_got : List(F64)
 straight_got = [
@@ -43,7 +43,7 @@ straight_want : List(F64)
 straight_want = [10.0, 1.0, 5.0, 10.0, 0.0, 0.0]
 
 diagonal : List(Geom.RiderPoint)
-diagonal = RailPlan.rail_leg({ from: origin_pt, to: { right: 30.0, forward: 40.0 } })
+diagonal = RailSighting.rail_leg({ from: origin_pt, to: { right: 30.0, forward: 40.0 } })
 
 diagonal_got : List(F64)
 diagonal_got = [
@@ -59,7 +59,7 @@ diagonal_want = [50.0, 30.0, 40.0, 15.0, 20.0]
 
 degenerate_got : List(F64)
 degenerate_got = {
-	in_place = RailPlan.rail_leg({
+	in_place = RailSighting.rail_leg({
 		from: { right: 3.0, forward: 4.0 },
 		to: { right: 3.0, forward: 4.0 },
 	})
@@ -75,7 +75,7 @@ degenerate_want = [1.0, 3.0, 4.0]
 
 from_zero_got : List(F64)
 from_zero_got = {
-	spaced = RailPlan.evenly_spaced({
+	spaced = RailSighting.evenly_spaced({
 		from: origin_pt,
 		to: { right: 0.0, forward: 10.0 },
 		steps: 10,
@@ -107,7 +107,7 @@ road = {
 }
 
 run_up : List(Geom.RiderPoint)
-run_up = RailPlan.run_up(
+run_up = RailSighting.run_up(
 	road,
 	{
 		place: InChain(Frame.ChainPosition.first),
@@ -119,7 +119,7 @@ run_up = RailPlan.run_up(
 runout_got : List(I64)
 runout_got = [
 	GuardRail.rail_runout.to_i64(),
-	RailPlan.run_out(
+	RailSighting.run_out(
 		road,
 		{ place: InChain(Frame.ChainPosition.first), across: 4.0 },
 	).len().to_i64_wrap(),

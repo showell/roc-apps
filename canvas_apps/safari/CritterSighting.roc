@@ -1,4 +1,4 @@
-## CritterPlan sights every critter on the road ahead from where the rider
+## CritterSighting sights every critter on the road ahead from where the rider
 ## is: the farm animals of the nearest segments, the safari animal and its
 ## baby at each corner, and the ducks on each pond. The critters of the
 ## segment before the rider's are sighted too, so the corner the rider has
@@ -11,7 +11,7 @@ import SafariCritter
 import Scenery
 import World
 
-CritterPlan :: [].{
+CritterSighting :: [].{
 
 	## Farm animals are sighted on this many segments of the chain.
 	farm_reach : U32
@@ -31,29 +31,29 @@ CritterPlan :: [].{
 	sightings = |road|
 		match Frame.segment_behind(road) {
 			Previous(segment_behind) =>
-				CritterPlan.sightings_ahead(road).concat(
-					CritterPlan.sightings_behind(
+				CritterSighting.sightings_ahead(road).concat(
+					CritterSighting.sightings_behind(
 						road,
 						segment_behind,
 					),
 				)
-			AtRouteStart => CritterPlan.sightings_ahead(road)
+			AtRouteStart => CritterSighting.sightings_ahead(road)
 		}
 
 	## The critters of every segment in the chain, nearest first.
 	sightings_ahead : Frame.RoadView -> List(Billboards.Sighting)
 	sightings_ahead = |road|
 		Frame.ChainPosition.all_in(road.chain)
-			.join_map(|position| CritterPlan.sightings_at(road, position))
+			.join_map(|position| CritterSighting.sightings_at(road, position))
 
 	## The critters of the segment at `position` in the chain: its farm
 	## animals, its corner's animals, then its pond's ducks.
 	sightings_at : Frame.RoadView, Frame.ChainPosition -> List(Billboards.Sighting)
 	sightings_at = |road, position|
 		[
-			CritterPlan.farm_sightings(road, position),
-			CritterPlan.safari_sightings(road, position),
-			CritterPlan.duck_sightings(road, position),
+			CritterSighting.farm_sightings(road, position),
+			CritterSighting.safari_sightings(road, position),
+			CritterSighting.duck_sightings(road, position),
 		].join()
 
 	## The cows, then the pigs, of the segment at `position` in the chain.
@@ -103,7 +103,7 @@ CritterPlan :: [].{
 		corner_sightings(
 			road,
 			{ place: Frame.place_behind(segment), segment },
-		).concat(CritterPlan.ducks_behind(road, segment))
+		).concat(CritterSighting.ducks_behind(road, segment))
 	}
 
 	## The ducks of `segment`, the one before the rider's, if it has a pond.

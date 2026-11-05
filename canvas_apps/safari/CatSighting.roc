@@ -1,4 +1,4 @@
-## CatPlan finds the cats the rider can see in a frame: each one waiting
+## CatSighting finds the cats the rider can see in a frame: each one waiting
 ## on a segment of the chain ahead, placed where its crossing has got to,
 ## if it is in front of the camera and tall enough on screen to draw.
 import Cat
@@ -9,7 +9,7 @@ import SceneLimits
 import Scenery
 import Speed
 
-CatPlan :: [].{
+CatSighting :: [].{
 
 	## A cat to draw: where it stands in the rider's view, its height, its
 	## pose, and how high its leap has raised it.
@@ -26,7 +26,7 @@ CatPlan :: [].{
 	max_vis_cats = 8
 
 	## The cats in view of a rider at `speed`, the nearest segment's first.
-	in_view : Frame.Viewpoint, Speed -> List(CatPlan.CatItem)
+	in_view : Frame.Viewpoint, Speed -> List(CatSighting.CatItem)
 	in_view = |view, speed| {
 		positions = Frame.ChainPosition.all_in(view.road.chain)
 		positions.join_map(|position| segment_cat(view, { position, speed }))
@@ -38,7 +38,7 @@ CatPlan :: [].{
 	{
 		position : Frame.ChainPosition,
 		speed : Speed,
-	} -> List(CatPlan.CatItem)
+	} -> List(CatSighting.CatItem)
 	segment_cat = |view, { position, speed }|
 		match position.index_in(view.road.chain).segment_in(view.road.world).crossing {
 			CatCrosses(crossing) =>
@@ -55,7 +55,7 @@ CatPlan :: [].{
 
 	## The cats as the depth sort sees them: each one's distance ahead, and
 	## its position in `cats`.
-	depth_keys : List(CatPlan.CatItem) -> List(DepthSort.DepthKey)
+	depth_keys : List(CatSighting.CatItem) -> List(DepthSort.DepthKey)
 	depth_keys = |cats| cats.map_with_index(
 		|cat, i| {
 			forward: cat.forward,
@@ -72,7 +72,7 @@ cat_in_view : Frame.Viewpoint,
 	position : Frame.ChainPosition,
 	crossing : Cat.Crossing,
 	speed : Speed,
-} -> List(CatPlan.CatItem)
+} -> List(CatSighting.CatItem)
 cat_in_view = |
 	view,
 	{

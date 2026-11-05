@@ -1,4 +1,4 @@
-## BirdPlan finds the Roc birds the rider can see in a frame: each one on a
+## BirdSighting finds the Roc birds the rider can see in a frame: each one on a
 ## segment of the chain ahead, placed where its flight has got to, if it is in
 ## front of the camera and tall enough on screen to draw.
 import Animation
@@ -10,7 +10,7 @@ import RocBird
 import SceneLimits
 import Scenery
 
-BirdPlan :: [].{
+BirdSighting :: [].{
 
 	## The birds in view, the nearest segment's first.
 	in_view : Frame.Viewpoint -> List(RocBird.PlacedBird)

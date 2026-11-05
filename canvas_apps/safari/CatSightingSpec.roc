@@ -1,4 +1,4 @@
-## These are CatPlan's checks: how far ahead each segment starts, which
+## These are CatSighting's checks: how far ahead each segment starts, which
 ## cats are in view as the rider comes on them, and the keys the depth sort
 ## reads.
 app [main!] {
@@ -7,7 +7,7 @@ app [main!] {
 
 import Angle
 import Cat
-import CatPlan
+import CatSighting
 import Frame
 import Grade
 import Speed
@@ -47,15 +47,15 @@ metre_a_step : Speed
 metre_a_step = Speed.metres_a_step(1.0)
 
 ## The cats seen from the origin on a road of only `chain`.
-cats_on_chain : List(World.SegmentIndex) -> List(CatPlan.CatItem)
-cats_on_chain = |chain| CatPlan.in_view(
+cats_on_chain : List(World.SegmentIndex) -> List(CatSighting.CatItem)
+cats_on_chain = |chain| CatSighting.in_view(
 	{ ..from_origin, road: { ..from_origin.road, chain } },
 	metre_a_step,
 )
 
 ## The cat on the segment at `number` in the chain, if it is in view.
-cat_at : U32 -> List(CatPlan.CatItem)
-cat_at = |number| CatPlan.segment_cat(
+cat_at : U32 -> List(CatSighting.CatItem)
+cat_at = |number| CatSighting.segment_cat(
 	from_origin,
 	{ position: Frame.ChainPosition.number(number), speed: metre_a_step },
 )
@@ -99,26 +99,26 @@ gap_want = [
 ]
 
 ## The cats in view for a rider `along` metres into the first segment.
-riding : F64 -> List(CatPlan.CatItem)
-riding = |along| CatPlan.in_view(
+riding : F64 -> List(CatSighting.CatItem)
+riding = |along| CatSighting.in_view(
 	{ ..from_origin, road: { ..from_origin.road, pose: { ..origin, along } } },
 	metre_a_step,
 )
 
-seen : List(CatPlan.CatItem)
+seen : List(CatSighting.CatItem)
 seen = riding(300.0)
 
 ## The first cat in view for a rider `along` metres in.
-first_cat : F64 -> CatPlan.CatItem
+first_cat : F64 -> CatSighting.CatItem
 first_cat = |along|
-	riding(along).first() ?? crash "CatPlanSpec: the second segment's cat is in view"
+	riding(along).first() ?? crash "CatSightingSpec: the second segment's cat is in view"
 
 count_got : List(I64)
 count_got = [
 	seen.len().to_i64_wrap(),
 	cat_at(0).len().to_i64_wrap(),
 	cat_at(2).len().to_i64_wrap(),
-	CatPlan.max_vis_cats,
+	CatSighting.max_vis_cats,
 ]
 
 count_want : List(I64)
@@ -166,10 +166,10 @@ cull_want = [0, 1, 1, 0, 0, 0]
 ## One cat in view gives one key, which names the first cat; none gives none.
 items_got : List(Bool)
 items_got = {
-	key = CatPlan.depth_keys(seen).first() ?? crash "CatPlanSpec: one cat is in view"
+	key = CatSighting.depth_keys(seen).first() ?? crash "CatSightingSpec: one cat is in view"
 	[
-		CatPlan.depth_keys(seen).len() == 1,
-		CatPlan.depth_keys([]).len() == 0,
+		CatSighting.depth_keys(seen).len() == 1,
+		CatSighting.depth_keys([]).len() == 0,
 		key.subject == Cat(0),
 	]
 }

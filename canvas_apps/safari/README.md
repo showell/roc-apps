@@ -35,7 +35,7 @@ Every module that began as an emission says so in its header.
 | `Paint.roc` | builders that turn screen points and colours into `Shapes.Shape`s, for the drawing modules |
 | `SafariFrame.roc` | a frame painted into pixels in Roc, for the proof tools below |
 | `Safari.roc` and the chapter modules | the world, the route, the rider, the animals, the scenery, and how each is drawn |
-| `RocBird.roc` | the bird, the first thing here that was never Codex, with `BirdFlight.roc`, `BirdPlan.roc` and `BirdStills.roc` |
+| `RocBird.roc` | the bird, the first thing here that was never Codex, with `BirdFlight.roc`, `BirdSighting.roc` and `BirdStills.roc` |
 | `Animation.roc` | what the cat and the bird share: a rule that turns where the rider is into a stage, and a timeline that turns a stage into a moment |
 | `CrossingReaction.roc` | what a segment's crossing does to the rider, the one place that matches on it for `Throttle` and `RideFocal` |
 | `*Spec.roc` | the spec apps, each chapter's checks, graded by `gates/` |

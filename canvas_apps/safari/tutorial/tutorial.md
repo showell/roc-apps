@@ -51,7 +51,7 @@ digraph system {
     label="the view";
     sky [label="the sky\nSky, Mountains", style=dashed];
     drawing [label="the drawing\nItemDraw, CatDraw, RocBird, Tree, ...", style=dashed];
-    plans [label="the plans\nRender, CatPlan, BirdPlan, TreePlan, ...", style=dashed];
+    sightings [label="the sightings\nRender, CatSighting, BirdSighting, TreeSighting, ...", style=dashed];
   }
   app -> Safari;
   Safari -> Rider;
@@ -62,22 +62,22 @@ digraph system {
   World -> scenery;
   Safari -> sky;
   Safari -> drawing;
-  drawing -> plans;
-  plans -> World [style=dotted, constraint=false];
+  drawing -> sightings;
+  sightings -> World [style=dotted, constraint=false];
 }
 ```
 
-There are two halves. The ride is `Rider`, `Truck` and `World`, with `World` composing the route from its scenery and critters. It knows nothing of drawing. The view is everything that turns the ride into a picture: the plans find what's in sight, and the drawing paints it. The dotted arrow is the view reading the ride, and no arrow goes the other way. `Safari` sits over both, holding the ride and stepping it, and the browser only sees `SafariApp`, which hands it a list of shapes each frame.
+There are two halves. The ride is `Rider`, `Truck` and `World`, with `World` composing the route from its scenery and critters. It knows nothing of drawing. The view is everything that turns the ride into a picture: the sightings find what's in sight, and the drawing paints it. The dotted arrow is the view reading the ride, and no arrow goes the other way. `Safari` sits over both, holding the ride and stepping it, and the browser only sees `SafariApp`, which hands it a list of shapes each frame.
 
-### What's a plan?
+### What's a sighting?
 
-Most things in the view come in pairs, and the names say which half is which: `CatPlan` and `CatDraw`, `TreePlan` and `Tree`, `TowerPlan` and `Tower`, `TruckPlan` and `TruckDraw`.
+Most things in the view come in pairs, and the names say which half is which: `CatSighting` and `CatDraw`, `TreeSighting` and `Tree`, `TowerSighting` and `Tower`, `TruckSighting` and `TruckDraw`.
 
-A plan answers one question each frame: which of these can the rider see right now, and how should each one look? `CatPlan` goes through the segments ahead, asks `Cat` for its moment, works out where that lands in the rider's view, and drops any cat behind the camera or too small to matter. What it hands back is a plain record with no drawing in it:
+A sighting answers one question each frame: which of these can the rider see right now, and how should each one look? `CatSighting` goes through the segments ahead, asks `Cat` for its moment, works out where that lands in the rider's view, and drops any cat behind the camera or too small to matter. What it hands back is a plain record with no drawing in it:
 
-{{code CatPlan.CatItem}}
+{{code CatSighting.CatItem}}
 
-`Render` gathers every plan's items, a depth sort puts them in order, and `ItemDraw` hands each one to the module that paints it. Because a plan's answer is plain data, it can be checked with numbers, without drawing anything. The rule is simple: a plan decides, and drawing paints.
+`Render` gathers every sighting's items, a depth sort puts them in order, and `ItemDraw` hands each one to the module that paints it. Because a sighting's answer is plain data, it can be checked with numbers, without drawing anything. The rule is simple: a sighting decides, and drawing paints.
 
 ## All that's stored
 
@@ -208,7 +208,7 @@ digraph cat {
   World -> Cat;
   CrossingReaction -> Cat;
   CrossingReaction -> World;
-  CatPlan -> Cat;
+  CatSighting -> Cat;
   CatDraw -> Cat;
   CatDraw -> CatStills;
   CatStills -> Cat;
@@ -310,28 +310,28 @@ The last step is finding the cat in the rider's view.
 ```dot
 digraph screen {
   node [shape=box, fontname="Helvetica"];
-  CatPlan [style=bold];
+  CatSighting [style=bold];
   CatDraw [style=bold];
   ItemDraw -> Render;
   ItemDraw -> CatDraw;
-  ItemDraw -> CatPlan;
-  Render -> CatPlan;
-  CatPlan -> Cat;
-  CatPlan -> Frame;
-  CatPlan -> DepthSort;
+  ItemDraw -> CatSighting;
+  Render -> CatSighting;
+  CatSighting -> Cat;
+  CatSighting -> Frame;
+  CatSighting -> DepthSort;
   CatDraw -> Cat;
   CatDraw -> CatStills;
   CatStills -> Cat;
 }
 ```
 
-`CatPlan` and `CatDraw` never import each other. `ItemDraw` is what carries a plan's answer to the drawing.
+`CatSighting` and `CatDraw` never import each other. `ItemDraw` is what carries a sighting's answer to the drawing.
 
-`CatPlan` asks for the moment, places it, and decides whether it's big enough to draw. An empty list or a list of one is how it says "maybe", because the caller flattens them with `join_map`.
+`CatSighting` asks for the moment, places it, and decides whether it's big enough to draw. An empty list or a list of one is how it says "maybe", because the caller flattens them with `join_map`.
 
-{{code CatPlan.cat_in_view}}
+{{code CatSighting.cat_in_view}}
 
-A plan decides how a thing looks, and drawing only paints it. That rule runs through all of Safari Ride.
+A sighting decides how a thing looks, and drawing only paints it. That rule runs through all of Safari Ride.
 
 Notice what isn't in this chapter: a cat in `Ride`, an update loop, or a flag saying the cat has already crossed. Roc doesn't force that, but pure functions make the stateless version the easy one to write, and every `->` shows it stayed that way.
 

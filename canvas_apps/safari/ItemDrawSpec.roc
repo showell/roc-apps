@@ -11,8 +11,8 @@ import Frame
 import Grade
 import ItemDraw
 import SceneLimits
-import TowerPlan
-import TreePlan
+import TowerSighting
+import TreeSighting
 import World
 import ShapeRead
 import lib.Shapes
@@ -23,7 +23,7 @@ fixed_got = [SceneLimits.crown_shade_dist, SceneLimits.detail_dist]
 fixed_want : List(F64)
 fixed_want = [80.0, 200.0]
 
-tree_at : F64 -> TreePlan.TreeItem
+tree_at : F64 -> TreeSighting.TreeItem
 tree_at = |forward| {
 	right: 0.0,
 	forward: forward,
@@ -31,10 +31,10 @@ tree_at = |forward| {
 	color: 1858082,
 }
 
-spread : List(TreePlan.TreeItem)
+spread : List(TreeSighting.TreeItem)
 spread = [10.0, 20.0, 30.0, 40.0, 50.0].map(tree_at)
 
-nearer_count : List(TreePlan.TreeItem), F64 -> I64
+nearer_count : List(TreeSighting.TreeItem), F64 -> I64
 nearer_count = |trees, forward| ItemDraw.nearer_tree_count(trees, forward).to_i64()
 
 count_got : List(I64)
@@ -50,7 +50,7 @@ count_got = [
 count_want : List(I64)
 count_want = [0, 2, 4, 5, 0, 0]
 
-tied : List(TreePlan.TreeItem)
+tied : List(TreeSighting.TreeItem)
 tied = List.repeat(tree_at(20.0), 4)
 
 tie_got : List(I64)
@@ -88,7 +88,7 @@ view = {
 }
 
 ## A mast `along` metres down the first segment, 22 m across.
-tower_along : F64 -> TowerPlan.TowerItem
+tower_along : F64 -> TowerSighting.TowerItem
 tower_along = |along| {
 	place: InChain(Frame.ChainPosition.first),
 	along,
@@ -125,7 +125,7 @@ tower_got = [
 tower_want : List(Bool)
 tower_want = [True, True, True]
 
-cluster : List(TreePlan.TreeItem)
+cluster : List(TreeSighting.TreeItem)
 cluster = [10.0, 11.0, 12.0, 13.0, 14.0].map(tree_at)
 
 second_shape_points : List(Shapes.Shape) -> U64

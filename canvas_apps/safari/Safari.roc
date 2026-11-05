@@ -2,7 +2,7 @@
 # and this file is edited here (safari/README.md).
 import Clock
 import Frame
-import GroundPlan
+import GroundSighting
 import ItemDraw
 import Mountains
 import Pose
@@ -96,7 +96,7 @@ Safari :: [].{
 					dusk: Sky.dusk_at(r.clock),
 					cam_focal: view.cam_focal,
 				}),
-				GroundPlan.draw(view),
+				GroundSighting.draw(view),
 				ItemDraw.draw(scene, view),
 			].join()
 		}

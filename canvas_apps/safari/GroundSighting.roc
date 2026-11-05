@@ -1,4 +1,4 @@
-## GroundPlan paints the ground under everything else in a frame: the road,
+## GroundSighting paints the ground under everything else in a frame: the road,
 ## in chunks along each segment in view; the paved corner where one segment
 ## bends into the next; and the pond beside a segment that ends at one.
 import Frame
@@ -11,7 +11,7 @@ import Scenery
 import World
 import lib.Shapes
 
-GroundPlan :: [].{
+GroundSighting :: [].{
 
 	## One chunk of the road along the segment at `position` in the chain,
 	## which is `segment_length` long and painted in `chunk_count` chunks.
@@ -50,7 +50,7 @@ GroundPlan :: [].{
 	## at least one.
 	chunks_along : F64 -> U32
 	chunks_along = |length| {
-		chunks = Num_.ceil_real(length / GroundPlan.road_chunk_length)
+		chunks = Num_.ceil_real(length / GroundSighting.road_chunk_length)
 		(if (chunks < 1.0) 1.0 else chunks).to_u32_wrap()
 	}
 
@@ -58,10 +58,10 @@ GroundPlan :: [].{
 	segment_road : Frame.Viewpoint, Frame.ChainPosition -> List(Shapes.Shape)
 	segment_road = |view, position| {
 		segment_length = segment_in_chain(view, position).length
-		chunk_count = GroundPlan.chunks_along(segment_length)
+		chunk_count = GroundSighting.chunks_along(segment_length)
 		List.from_iter(U32.until(0, chunk_count)).join_map(
 			|chunk_number| {
-				corners = GroundPlan.chunk_corners(
+				corners = GroundSighting.chunk_corners(
 					view,
 					{
 						position,
@@ -70,13 +70,13 @@ GroundPlan :: [].{
 						chunk_number,
 					},
 				)
-				paint(view, { corners, color: GroundPlan.road_color })
+				paint(view, { corners, color: GroundSighting.road_color })
 			},
 		)
 	}
 
 	## A chunk's corners: across its near end, then back across its far end.
-	chunk_corners : Frame.Viewpoint, GroundPlan.RoadChunk -> List(Geom.RiderPoint)
+	chunk_corners : Frame.Viewpoint, GroundSighting.RoadChunk -> List(Geom.RiderPoint)
 	chunk_corners = |
 		view,
 		{
@@ -135,7 +135,7 @@ segment_ground = |view, position| {
 			)
 		}
 	[
-		GroundPlan.segment_road(view, position),
+		GroundSighting.segment_road(view, position),
 		bend,
 		pond_ground(view, { segment, place }),
 	].join()
@@ -157,10 +157,10 @@ ground_behind = |view, index| {
 ## A bend's paving: the road just before it, then the corner it cuts.
 bend_ground : Frame.Viewpoint, Joint.PlacedBend -> List(Shapes.Shape)
 bend_ground = |view, bend|
-	paint(view, { corners: approach(view, bend), color: GroundPlan.road_color }).concat(
+	paint(view, { corners: approach(view, bend), color: GroundSighting.road_color }).concat(
 		paint(
 			view,
-			{ corners: bend_corner(view, bend), color: GroundPlan.road_color },
+			{ corners: bend_corner(view, bend), color: GroundSighting.road_color },
 		),
 	)
 
@@ -175,7 +175,7 @@ approach = |view, bend| {
 			across,
 		},
 	)
-	start = bend.length_before - GroundPlan.approach_length
+	start = bend.length_before - GroundSighting.approach_length
 	[
 		corner(bend.length_before, 0.0),
 		corner(bend.length_before, Scenery.lane_width),

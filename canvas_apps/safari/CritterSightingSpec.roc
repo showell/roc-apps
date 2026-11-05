@@ -1,4 +1,4 @@
-## These are CritterPlan's checks: how far along the chain each kind of
+## These are CritterSighting's checks: how far along the chain each kind of
 ## critter is sighted, the road's last segment, ponds, and the critters
 ## of the whole chain and of the segment behind the rider.
 app [main!] {
@@ -6,13 +6,13 @@ app [main!] {
 }
 
 import Angle
-import CritterPlan
+import CritterSighting
 import Frame
 import Grade
 import World
 
 reach_got : List(I64)
-reach_got = [CritterPlan.farm_reach.to_i64(), CritterPlan.safari_reach.to_i64()]
+reach_got = [CritterSighting.farm_reach.to_i64(), CritterSighting.safari_reach.to_i64()]
 
 reach_want : List(I64)
 reach_want = [3, 5]
@@ -42,14 +42,14 @@ lone = |index| {
 }
 
 farm_at : U32 -> I64
-farm_at = |number| CritterPlan.farm_sightings(
+farm_at = |number| CritterSighting.farm_sightings(
 	road,
 	Frame.ChainPosition.number(number),
 ).len().to_i64_wrap()
 
 safari_at : U32 -> I64
 safari_at = |number|
-	CritterPlan.safari_sightings(road, Frame.ChainPosition.number(number)).len().to_i64_wrap()
+	CritterSighting.safari_sightings(road, Frame.ChainPosition.number(number)).len().to_i64_wrap()
 
 cutoff_got : List(Bool)
 cutoff_got = [
@@ -67,20 +67,22 @@ cutoff_want : List(Bool)
 cutoff_want = [True, True, True, True, True, True, True, True]
 
 term_got : List(I64)
-term_got = [CritterPlan.safari_sightings(lone(18), Frame.ChainPosition.first).len().to_i64_wrap()]
+term_got = [
+	CritterSighting.safari_sightings(lone(18), Frame.ChainPosition.first).len().to_i64_wrap(),
+]
 
 term_want : List(I64)
 term_want = [0]
 
 term_flag_got : List(Bool)
-term_flag_got = [(CritterPlan.safari_sightings(lone(0), Frame.ChainPosition.first).len() > 0)]
+term_flag_got = [(CritterSighting.safari_sightings(lone(0), Frame.ChainPosition.first).len() > 0)]
 
 term_flag_want : List(Bool)
 term_flag_want = [True]
 
 duck_count : U32 -> I64
 duck_count = |index|
-	CritterPlan.duck_sightings(lone(index), Frame.ChainPosition.first).len().to_i64_wrap()
+	CritterSighting.duck_sightings(lone(index), Frame.ChainPosition.first).len().to_i64_wrap()
 
 duck_got : List(Bool)
 duck_got = [
@@ -95,7 +97,7 @@ duck_want = [True, True, True, True]
 
 duck_reach_got : List(I64)
 duck_reach_got = [
-	CritterPlan.duck_sightings(road, Frame.ChainPosition.number(5)).len().to_i64_wrap(),
+	CritterSighting.duck_sightings(road, Frame.ChainPosition.number(5)).len().to_i64_wrap(),
 	duck_count(12),
 ]
 
@@ -104,8 +106,8 @@ duck_reach_want = [0, 6]
 
 order_got : List(I64)
 order_got = {
-	whole = CritterPlan.sightings_at(road, Frame.ChainPosition.first).len().to_i64_wrap()
-	ducks = CritterPlan.duck_sightings(road, Frame.ChainPosition.first).len().to_i64_wrap()
+	whole = CritterSighting.sightings_at(road, Frame.ChainPosition.first).len().to_i64_wrap()
+	ducks = CritterSighting.duck_sightings(road, Frame.ChainPosition.first).len().to_i64_wrap()
 	[(whole - ((farm_at(0) + safari_at(0)) + ducks))]
 }
 
@@ -117,7 +119,7 @@ count_from : U32 -> I64
 count_from = |position|
 	List.from_iter(U32.until(position, 6))
 		.map(
-			|number| CritterPlan.sightings_at(road, Frame.ChainPosition.number(number))
+			|number| CritterSighting.sightings_at(road, Frame.ChainPosition.number(number))
 				.len()
 				.to_i64_wrap(),
 		)
@@ -125,14 +127,14 @@ count_from = |position|
 
 walk_got : List(I64)
 walk_got = [
-	CritterPlan.sightings_ahead({ ..road, chain: [] }).len().to_i64_wrap(),
+	CritterSighting.sightings_ahead({ ..road, chain: [] }).len().to_i64_wrap(),
 	(
-		CritterPlan.sightings_ahead(lone(0)).len().to_i64_wrap() - CritterPlan.sightings_at(
+		CritterSighting.sightings_ahead(lone(0)).len().to_i64_wrap() - CritterSighting.sightings_at(
 			lone(0),
 			Frame.ChainPosition.first,
 		).len().to_i64_wrap()
 	),
-	(CritterPlan.sightings_ahead(road).len().to_i64_wrap() - count_from(0)),
+	(CritterSighting.sightings_ahead(road).len().to_i64_wrap() - count_from(0)),
 ]
 
 walk_want : List(I64)
@@ -146,9 +148,9 @@ grow_want = [True, True]
 
 behind_got : List(Bool)
 behind_got = [
-	(CritterPlan.sightings_behind(road, World.SegmentIndex.number(4)).len() > 0),
-	(CritterPlan.ducks_behind(road, World.route_segment(12)).len() > 0),
-	(CritterPlan.ducks_behind(road, World.route_segment(0)).len() == 0),
+	(CritterSighting.sightings_behind(road, World.SegmentIndex.number(4)).len() > 0),
+	(CritterSighting.ducks_behind(road, World.route_segment(12)).len() > 0),
+	(CritterSighting.ducks_behind(road, World.route_segment(0)).len() == 0),
 ]
 
 behind_want : List(Bool)

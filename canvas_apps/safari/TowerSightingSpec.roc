@@ -1,4 +1,4 @@
-## These are TowerPlan's checks: where the masts stand, which are in
+## These are TowerSighting's checks: where the masts stand, which are in
 ## view, how their beacons blink, and the keys the depth sort reads.
 app [main!] {
 	lib: "../lib/main.roc",
@@ -10,23 +10,23 @@ import DepthSort
 import Frame
 import Grade
 import Steps
-import TowerPlan
+import TowerSighting
 import World
 
 fixed_got : List(F64)
 fixed_got = [
-	TowerPlan.tower_beyond,
-	TowerPlan.tower_right,
-	TowerPlan.mid_tower_left,
-	TowerPlan.beacon_period.to_f64(),
-	TowerPlan.beacon_stagger.to_f64(),
+	TowerSighting.tower_beyond,
+	TowerSighting.tower_right,
+	TowerSighting.mid_tower_left,
+	TowerSighting.beacon_period.to_f64(),
+	TowerSighting.beacon_stagger.to_f64(),
 ]
 
 fixed_want : List(F64)
 fixed_want = [160.0, 20.0, 100.0, 120.0, 37.0]
 
 cap_got : List(I64)
-cap_got = [TowerPlan.max_vis_towers]
+cap_got = [TowerSighting.max_vis_towers]
 
 cap_want : List(I64)
 cap_want = [16]
@@ -48,7 +48,7 @@ origin = {
 
 ## Three segments seen from the origin, the rider on the first of them, the
 ## route's segment `rider_number`.
-short_view : U32 -> TowerPlan.View
+short_view : U32 -> TowerSighting.View
 short_view = |rider_number| {
 	road: {
 		world: [0, 1, 2, 3, 4].map(World.route_segment),
@@ -62,15 +62,15 @@ short_view = |rider_number| {
 	clock: Clock.start,
 }
 
-from_origin : TowerPlan.View
+from_origin : TowerSighting.View
 from_origin = short_view(0)
 
 short_got : List(I64)
 short_got = [
-	TowerPlan.along_chain(from_origin).len().to_i64_wrap(),
-	TowerPlan.segment_towers(from_origin, Frame.ChainPosition.first).len().to_i64_wrap(),
-	TowerPlan.mid_tower(from_origin, Frame.ChainPosition.first).len().to_i64_wrap(),
-	TowerPlan.in_view(from_origin).len().to_i64_wrap(),
+	TowerSighting.along_chain(from_origin).len().to_i64_wrap(),
+	TowerSighting.segment_towers(from_origin, Frame.ChainPosition.first).len().to_i64_wrap(),
+	TowerSighting.mid_tower(from_origin, Frame.ChainPosition.first).len().to_i64_wrap(),
+	TowerSighting.in_view(from_origin).len().to_i64_wrap(),
 ]
 
 short_want : List(I64)
@@ -91,11 +91,11 @@ mid_flags_want : List(Bool)
 mid_flags_want = [False, False, False]
 
 ## The first mast in view on the segment at `position` in the chain.
-first_tower_on : U32 -> TowerPlan.TowerItem
-first_tower_on = |number| TowerPlan.segment_towers(
+first_tower_on : U32 -> TowerSighting.TowerItem
+first_tower_on = |number| TowerSighting.segment_towers(
 	from_origin,
 	Frame.ChainPosition.number(number),
-).first() ?? crash "TowerPlanSpec: the first two segments' masts are in view"
+).first() ?? crash "TowerSightingSpec: the first two segments' masts are in view"
 
 where_got : List(F64)
 where_got = [
@@ -109,7 +109,7 @@ where_want : List(F64)
 where_want = [660.0, 22.0, 480.0, 22.0]
 
 ## The 1200 m segment alone, seen from the origin.
-long_view : TowerPlan.View
+long_view : TowerSighting.View
 long_view = {
 	road: {
 		world: [World.route_segment(6)],
@@ -121,19 +121,19 @@ long_view = {
 
 long_got : List(I64)
 long_got = [
-	TowerPlan.along_chain(long_view).len().to_i64_wrap(),
-	TowerPlan.mid_tower(long_view, Frame.ChainPosition.first).len().to_i64_wrap(),
+	TowerSighting.along_chain(long_view).len().to_i64_wrap(),
+	TowerSighting.mid_tower(long_view, Frame.ChainPosition.first).len().to_i64_wrap(),
 ]
 
 long_want : List(I64)
 long_want = [2, 1]
 
-long_towers : List(TowerPlan.TowerItem)
-long_towers = TowerPlan.along_chain(long_view)
+long_towers : List(TowerSighting.TowerItem)
+long_towers = TowerSighting.along_chain(long_view)
 
 ## The long segment's mast at `i`: its end mast, then its mid mast.
-long_tower : U64 -> TowerPlan.TowerItem
-long_tower = |i| long_towers.get(i) ?? crash "TowerPlanSpec: the long segment has two masts in view"
+long_tower : U64 -> TowerSighting.TowerItem
+long_tower = |i| long_towers.get(i) ?? crash "TowerSightingSpec: the long segment has two masts in view"
 
 long_where_got : List(F64)
 long_where_got = [
@@ -157,15 +157,15 @@ long_where_want = [
 
 offsets_got : List(F64)
 offsets_got = [
-	TowerPlan.beacon_offset_for(0).to_f64(),
-	TowerPlan.beacon_offset_for(1).to_f64(),
-	TowerPlan.beacon_offset_for(2).to_f64(),
-	TowerPlan.beacon_offset_for(3).to_f64(),
-	TowerPlan.beacon_offset_for(4).to_f64(),
-	TowerPlan.beacon_offset_for(5).to_f64(),
-	TowerPlan.beacon_offset_for(10).to_f64(),
-	TowerPlan.beacon_offset_for(60).to_f64(),
-	TowerPlan.beacon_offset_for(120).to_f64(),
+	TowerSighting.beacon_offset_for(0).to_f64(),
+	TowerSighting.beacon_offset_for(1).to_f64(),
+	TowerSighting.beacon_offset_for(2).to_f64(),
+	TowerSighting.beacon_offset_for(3).to_f64(),
+	TowerSighting.beacon_offset_for(4).to_f64(),
+	TowerSighting.beacon_offset_for(5).to_f64(),
+	TowerSighting.beacon_offset_for(10).to_f64(),
+	TowerSighting.beacon_offset_for(60).to_f64(),
+	TowerSighting.beacon_offset_for(120).to_f64(),
 ]
 
 offsets_want : List(F64)
@@ -173,14 +173,14 @@ offsets_want = [0.0, 37.0, 74.0, 111.0, 28.0, 65.0, 10.0, 60.0, 0.0]
 
 bright_got : List(F64)
 bright_got = [
-	TowerPlan.beacon_brightness(Steps.of(0)).to_f64(),
-	TowerPlan.beacon_brightness(Steps.of(60)).to_f64(),
-	TowerPlan.beacon_brightness(Steps.of(30)).to_f64(),
-	TowerPlan.beacon_brightness(Steps.of(90)).to_f64(),
-	TowerPlan.beacon_brightness(Steps.of(120)).to_f64(),
-	TowerPlan.beacon_brightness(Steps.of(180)).to_f64(),
-	TowerPlan.beacon_brightness(Steps.of(300)).to_f64(),
-	TowerPlan.beacon_brightness(Steps.of(240)).to_f64(),
+	TowerSighting.beacon_brightness(Steps.of(0)).to_f64(),
+	TowerSighting.beacon_brightness(Steps.of(60)).to_f64(),
+	TowerSighting.beacon_brightness(Steps.of(30)).to_f64(),
+	TowerSighting.beacon_brightness(Steps.of(90)).to_f64(),
+	TowerSighting.beacon_brightness(Steps.of(120)).to_f64(),
+	TowerSighting.beacon_brightness(Steps.of(180)).to_f64(),
+	TowerSighting.beacon_brightness(Steps.of(300)).to_f64(),
+	TowerSighting.beacon_brightness(Steps.of(240)).to_f64(),
 ]
 
 bright_want : List(F64)
@@ -190,7 +190,7 @@ bright_want = [0.0, 1.0, 0.5, 0.5, 0.0, 1.0, 1.0, 0.0]
 ## then its mid mast.
 long_brightness_at : Clock -> List(F64)
 long_brightness_at = |clock|
-	TowerPlan.along_chain({ ..long_view, clock }).map(|tower| tower.beacon_brightness.to_f64())
+	TowerSighting.along_chain({ ..long_view, clock }).map(|tower| tower.beacon_brightness.to_f64())
 
 opposite_got : List(F64)
 opposite_got = List.concat(long_brightness_at(Clock.start), long_brightness_at(Clock.at_step(60)))
@@ -200,24 +200,26 @@ opposite_want = [0.0, 1.0, 1.0, 0.0]
 
 ## How bright the first three segments' masts are at `clock`.
 spread_at : Clock -> List(F64)
-spread_at = |clock|
-	TowerPlan.along_chain({ ..from_origin, clock }).map(|tower| tower.beacon_brightness.to_f64())
+spread_at = |clock| {
+	towers = TowerSighting.along_chain({ ..from_origin, clock })
+	towers.map(|tower| tower.beacon_brightness.to_f64())
+}
 
 spread_got : List(F64)
 spread_got = List.concat(spread_at(Clock.start), spread_at(Clock.at_step(30)))
 
 brightness_at : U32 -> F64
-brightness_at = |phase| TowerPlan.beacon_brightness(Steps.of(phase)).to_f64()
+brightness_at = |phase| TowerSighting.beacon_brightness(Steps.of(phase)).to_f64()
 
 spread_want : List(F64)
 spread_want = [0, 37, 74, 30, 67, 104].map(brightness_at)
 
 behind_got : List(I64)
 behind_got = [
-	TowerPlan.in_view(short_view(0)).len().to_i64_wrap(),
-	TowerPlan.in_view(short_view(1)).len().to_i64_wrap(),
-	TowerPlan.in_view(short_view(2)).len().to_i64_wrap(),
-	TowerPlan.tower_behind(short_view(1), World.SegmentIndex.first).len().to_i64_wrap(),
+	TowerSighting.in_view(short_view(0)).len().to_i64_wrap(),
+	TowerSighting.in_view(short_view(1)).len().to_i64_wrap(),
+	TowerSighting.in_view(short_view(2)).len().to_i64_wrap(),
+	TowerSighting.tower_behind(short_view(1), World.SegmentIndex.first).len().to_i64_wrap(),
 ]
 
 behind_want : List(I64)
@@ -225,11 +227,11 @@ behind_want = [3, 4, 4, 1]
 
 cull_got : List(I64)
 cull_got = [
-	TowerPlan.along_chain({
+	TowerSighting.along_chain({
 		..from_origin,
 		road: { ..from_origin.road, pose: { ..origin, along: 5000.0 } },
 	}).len().to_i64_wrap(),
-	TowerPlan.along_chain({
+	TowerSighting.along_chain({
 		..from_origin,
 		road: { ..from_origin.road, chain: [] },
 	}).len().to_i64_wrap(),
@@ -239,11 +241,11 @@ cull_want : List(I64)
 cull_want = [0, 0]
 
 keys : List(DepthSort.DepthKey)
-keys = TowerPlan.depth_keys(TowerPlan.along_chain(from_origin))
+keys = TowerSighting.depth_keys(TowerSighting.along_chain(from_origin))
 
 ## The depth key at `i`.
 key_at : U64 -> DepthSort.DepthKey
-key_at = |i| keys.get(i) ?? crash "TowerPlanSpec: three masts are in view"
+key_at = |i| keys.get(i) ?? crash "TowerSightingSpec: three masts are in view"
 
 ## The position in the mast list that the key at `i` names.
 tower_place_at : U64 -> I64
@@ -251,7 +253,7 @@ tower_place_at = |i|
 	match key_at(i).subject {
 		Tower(position) => position.to_i64()
 		Tree(_) | Critter(_) | Cat(_) | Truck | Rail(_) | Bird(_) =>
-			crash "TowerPlanSpec: a mast's key names a mast"
+			crash "TowerSightingSpec: a mast's key names a mast"
 	}
 
 items_got : List(I64)
@@ -259,7 +261,7 @@ items_got = [
 	keys.len().to_i64_wrap(),
 	tower_place_at(0),
 	tower_place_at(2),
-	TowerPlan.depth_keys([]).len().to_i64_wrap(),
+	TowerSighting.depth_keys([]).len().to_i64_wrap(),
 ]
 
 items_want : List(I64)

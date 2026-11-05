@@ -1,6 +1,6 @@
 ## The Roc bird is roc-lang.org's logo, sitting on treetops beside the road
 ## and flying off as the rider comes. BirdFlight says where a bird is and how
-## it looks, BirdPlan finds the birds in view, and BirdStills holds their
+## it looks, BirdSighting finds the birds in view, and BirdStills holds their
 ## drawings. This module says how big a bird is, and draws one.
 import BirdFlight
 import BirdStills
