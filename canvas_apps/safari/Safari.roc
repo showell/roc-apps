@@ -1,5 +1,6 @@
 # Safari -- originally emitted from Codex by rocemit; the Roc is the program now
 # and this file is edited here (safari/README.md).
+import Clock
 import Frame
 import GroundPlan
 import ItemDraw
@@ -22,14 +23,14 @@ Safari :: [].{
 	Ride : {
 		rider : Pose.RiderState,
 		truck : Truck.TruckState,
-		clock : F64,
+		clock : Clock,
 	}
 
 	ride_initial : Safari.Ride
 	ride_initial = {
 		rider: Pose.initial_rider_state,
 		truck: Truck.initial_truck,
-		clock: 0.0,
+		clock: Clock.start,
 	}
 
 	ride_next : List(World.Segment), Safari.Ride -> Safari.Ride
@@ -56,7 +57,7 @@ Safari :: [].{
 						route_length: World.route_length(w),
 					},
 				),
-				clock: (r.clock + 1.0),
+				clock: r.clock.next(),
 			}
 		}
 	)

@@ -4,6 +4,7 @@
 ## end of the segment behind the rider is seen too. Each mast's beacon blinks
 ## on the ride's clock, and the plan says how bright it is in the frame.
 import Angle
+import Clock
 import DepthSort
 import Frame
 import Geom
@@ -27,7 +28,7 @@ TowerPlan :: [].{
 	}
 
 	## What the masts are seen from: the road in view, and the ride's clock.
-	View : { road : Frame.RoadView, clock : F64 }
+	View : { road : Frame.RoadView, clock : Clock }
 
 	## How far past the end of its segment a mast stands.
 	tower_beyond : F64
@@ -201,7 +202,7 @@ tower_if_ahead = |
 				yaw,
 				forward: center.forward,
 				beacon_brightness: TowerPlan.beacon_brightness(
-					view.clock + TowerPlan.beacon_offset_for(beacon_key),
+					view.clock.to_f64() + TowerPlan.beacon_offset_for(beacon_key),
 				),
 			},
 		]

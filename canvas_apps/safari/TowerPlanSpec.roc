@@ -5,6 +5,7 @@ app [main!] {
 }
 
 import Angle
+import Clock
 import DepthSort
 import Frame
 import Grade
@@ -57,7 +58,7 @@ short_view = |rider_number| {
 		].map(World.SegmentIndex.number),
 		pose: origin,
 	},
-	clock: 0.0,
+	clock: Clock.start,
 }
 
 from_origin : TowerPlan.View
@@ -114,7 +115,7 @@ long_view = {
 		chain: [0].map(World.SegmentIndex.number),
 		pose: origin,
 	},
-	clock: 0.0,
+	clock: Clock.start,
 }
 
 long_got : List(I64)
@@ -186,23 +187,23 @@ bright_want = [0.0, 1.0, 0.5, 0.5, 0.0, 1.0, 1.0, 0.0]
 
 ## How bright the masts on the long segment are at `clock`: its end mast,
 ## then its mid mast.
-long_brightness_at : F64 -> List(F64)
+long_brightness_at : Clock -> List(F64)
 long_brightness_at = |clock|
 	TowerPlan.along_chain({ ..long_view, clock }).map(|tower| tower.beacon_brightness)
 
 opposite_got : List(F64)
-opposite_got = List.concat(long_brightness_at(0.0), long_brightness_at(60.0))
+opposite_got = List.concat(long_brightness_at(Clock.start), long_brightness_at(Clock.at_step(60)))
 
 opposite_want : List(F64)
 opposite_want = [0.0, 1.0, 1.0, 0.0]
 
 ## How bright the first three segments' masts are at `clock`.
-spread_at : F64 -> List(F64)
+spread_at : Clock -> List(F64)
 spread_at = |clock|
 	TowerPlan.along_chain({ ..from_origin, clock }).map(|tower| tower.beacon_brightness)
 
 spread_got : List(F64)
-spread_got = List.concat(spread_at(0.0), spread_at(30.0))
+spread_got = List.concat(spread_at(Clock.start), spread_at(Clock.at_step(30)))
 
 spread_want : List(F64)
 spread_want = [0.0, 37.0, 74.0, 30.0, 67.0, 104.0].map(TowerPlan.beacon_brightness)

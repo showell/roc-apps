@@ -5,6 +5,7 @@ app [main!] {
 }
 
 import Angle
+import Clock
 import Grade
 import Rider
 import Safari
@@ -32,7 +33,7 @@ seg_list_onto = |i, acc| (
 
 start_got : List(F64)
 start_got = [
-	Safari.ride_initial.clock,
+	Safari.ride_initial.clock.to_f64(),
 	Safari.ride_initial.rider.along,
 	Safari.ride_initial.rider.across,
 	Safari.ride_initial.rider.speed.to_metres_a_step(),
@@ -66,9 +67,9 @@ after_two_steps = Safari.ride_next(segs, after_one_step)
 
 step_got : List(F64)
 step_got = [
-	after_one_step.clock,
-	after_two_steps.clock,
-	(after_two_steps.clock - after_one_step.clock),
+	after_one_step.clock.to_f64(),
+	after_two_steps.clock.to_f64(),
+	(after_two_steps.clock.to_f64() - after_one_step.clock.to_f64()),
 ]
 
 step_want : List(F64)
@@ -142,7 +143,7 @@ done = {
 		speed: Speed.metres_a_step(2.0),
 		brake_lights: On,
 	},
-	clock: 12345.0,
+	clock: Clock.at_step(12345),
 }
 
 restart_got : List(F64)
@@ -150,7 +151,7 @@ restart_got = (
 	{
 		r = Safari.ride_next(segs, done)
 		[
-			r.clock,
+			r.clock.to_f64(),
 			r.rider.along,
 			r.rider.speed.to_metres_a_step(),
 			r.truck.route_position,
@@ -173,7 +174,7 @@ restart_flag_want = [True, False]
 
 not_done_got : List(Bool)
 not_done_got = [
-	(after_one_step.clock > 0.0),
+	(after_one_step.clock != Clock.start),
 	(Rider.is_finished(after_one_step.rider, segs) == False),
 ]
 
@@ -201,7 +202,7 @@ sun_want : List(Bool)
 sun_want = [True]
 
 ## The truck's lights at `clock`, with its brake lights left as given.
-lights_at : { clock : F64, brake_lights : [On, Off] } -> Truck.Lights
+lights_at : { clock : Clock, brake_lights : [On, Off] } -> Truck.Lights
 lights_at = |{ clock, brake_lights }|
 	Safari.truck_lights({
 		..Safari.ride_initial,
@@ -211,10 +212,10 @@ lights_at = |{ clock, brake_lights }|
 
 lights_got : List(Bool)
 lights_got = [
-	lights_at({ clock: 0.0, brake_lights: Off }) == { headlights: Off, brake_lights: Off },
-	lights_at({ clock: 0.0, brake_lights: On }) == { headlights: Off, brake_lights: On },
-	lights_at({ clock: 5700.0, brake_lights: Off }) == { headlights: On, brake_lights: Off },
-	lights_at({ clock: 5700.0, brake_lights: On }) == { headlights: On, brake_lights: On },
+	lights_at({ clock: Clock.start, brake_lights: Off }) == { headlights: Off, brake_lights: Off },
+	lights_at({ clock: Clock.start, brake_lights: On }) == { headlights: Off, brake_lights: On },
+	lights_at({ clock: Clock.at_step(5700), brake_lights: Off }) == { headlights: On, brake_lights: Off },
+	lights_at({ clock: Clock.at_step(5700), brake_lights: On }) == { headlights: On, brake_lights: On },
 ]
 
 lights_want : List(Bool)

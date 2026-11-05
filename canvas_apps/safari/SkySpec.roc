@@ -7,12 +7,13 @@ app [main!] {
 
 import Angle
 import Grade
+import Clock
 import Lens
 import Sky
 
 height_got : List(F64)
 height_got = [
-	Sky.sun_height_px(0.0),
+	Sky.sun_height_px(Clock.at_step(0)),
 	Sky.sun_start_px,
 	Sky.sun_radius_px,
 	Sky.sun_fully_set_px,
@@ -32,10 +33,10 @@ height_want = [
 
 ends_got : List(F64)
 ends_got = [
-	Sky.dusk_at(0.0),
-	Sky.sunset_warmth(0.0),
-	Sky.dusk_at(6000.0),
-	Sky.sunset_warmth(6000.0),
+	Sky.dusk_at(Clock.at_step(0)),
+	Sky.sunset_warmth(Clock.at_step(0)),
+	Sky.dusk_at(Clock.at_step(6000)),
+	Sky.sunset_warmth(Clock.at_step(6000)),
 	Sky.sunset_glow,
 ]
 
@@ -44,13 +45,13 @@ ends_want = [0.0, 0.0, 1.0, 0.0, 0.85]
 
 sky_got : List(I64)
 sky_got = [
-	Sky.sky_color(0.0),
-	Sky.sky_color(1000.0),
-	Sky.sky_color(2000.0),
-	Sky.sky_color(3000.0),
-	Sky.sky_color(4000.0),
-	Sky.sky_color(5000.0),
-	Sky.sky_color(6000.0),
+	Sky.sky_color(Clock.at_step(0)),
+	Sky.sky_color(Clock.at_step(1000)),
+	Sky.sky_color(Clock.at_step(2000)),
+	Sky.sky_color(Clock.at_step(3000)),
+	Sky.sky_color(Clock.at_step(4000)),
+	Sky.sky_color(Clock.at_step(5000)),
+	Sky.sky_color(Clock.at_step(6000)),
 ]
 
 sky_want : List(I64)
@@ -58,13 +59,13 @@ sky_want = [9358054, 9160418, 8633304, 7710918, 6393260, 4219010, 2374238]
 
 horizon_got : List(I64)
 horizon_got = [
-	Sky.horizon_color(0.0),
-	Sky.horizon_color(1000.0),
-	Sky.horizon_color(2000.0),
-	Sky.horizon_color(3000.0),
-	Sky.horizon_color(4000.0),
-	Sky.horizon_color(5000.0),
-	Sky.horizon_color(6000.0),
+	Sky.horizon_color(Clock.at_step(0)),
+	Sky.horizon_color(Clock.at_step(1000)),
+	Sky.horizon_color(Clock.at_step(2000)),
+	Sky.horizon_color(Clock.at_step(3000)),
+	Sky.horizon_color(Clock.at_step(4000)),
+	Sky.horizon_color(Clock.at_step(5000)),
+	Sky.horizon_color(Clock.at_step(6000)),
 ]
 
 horizon_want : List(I64)
@@ -118,14 +119,14 @@ mix_want = [142.0, 202.0, 230.0, 36.0, 58.0, 94.0, 89.0, 130.0, 162.0]
 facing : Sky.SunPos
 facing = Sky.sun_pos({
 	heading: Angle.Bearing.radians(0.0 - 2.2176),
-	clock: 0.0,
+	clock: Clock.start,
 	cam_focal: Lens.focal,
 })
 
 away : Sky.SunPos
 away = Sky.sun_pos({
 	heading: Angle.north,
-	clock: 0.0,
+	clock: Clock.start,
 	cam_focal: Lens.focal,
 })
 

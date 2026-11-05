@@ -7,6 +7,7 @@ app [main!] {
 
 import Angle
 import Grade
+import Clock
 import Mountains
 import Sky
 
@@ -237,8 +238,8 @@ crest_got = [
 	(Mountains.horizon_crest_px(at(0.0)) >= Mountains.ground_base(at(0.0))),
 	(Mountains.horizon_crest_px(at(2.0)) >= Mountains.ground_base(at(2.0))),
 	(Mountains.horizon_crest_px(at(0.0)) >= Mountains.north_range(at(0.0))),
-	Mountains.is_sun_behind_mountains(0.0),
-	Mountains.is_sun_behind_mountains(6000.0),
+	Mountains.is_sun_behind_mountains(Clock.at_step(0)),
+	Mountains.is_sun_behind_mountains(Clock.at_step(6000)),
 ]
 
 crest_want : List(Bool)

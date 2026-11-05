@@ -4,6 +4,7 @@
 import Billboards
 import BirdPlan
 import CatPlan
+import Clock
 import CritterPlan
 import DepthSort
 import Frame
@@ -37,7 +38,7 @@ Render :: [].{
 	RideInstant : {
 		speed : Speed,
 		truck : { route_position : F64, lights : Truck.Lights },
-		clock : F64,
+		clock : Clock,
 	}
 
 	## Everything in view from `view`, each kind cut to its plan's cap.

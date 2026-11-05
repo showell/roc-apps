@@ -4,6 +4,7 @@
 ## the bearing it is seen at, so the skyline turns with the rider but never
 ## comes nearer. The rock darkens at dusk, and the snow goes blue.
 import Angle
+import Clock
 import lib.DeviceMath
 import Lens
 import Num_
@@ -138,7 +139,7 @@ Mountains :: [].{
 	)
 
 	## Whether the sun, at `clock`, has sunk behind the skyline.
-	is_sun_behind_mountains : F64 -> Bool
+	is_sun_behind_mountains : Clock -> Bool
 	is_sun_behind_mountains = |clock| {
 		sun_top_px = (Sky.sun_height_px(clock) + Sky.sun_radius_px)
 		sun_top_px < horizon_crest_px(Sky.sun_bearing)
