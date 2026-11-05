@@ -7,7 +7,6 @@ import DepthSort
 import Distance
 import Frame
 import Geom
-import Scenery
 import Truck
 
 TruckSighting :: [].{
@@ -93,7 +92,7 @@ truck_on_segment : TruckSighting.View,
 	position : Frame.ChainPosition,
 } -> TruckSighting.TruckAt
 truck_on_segment = |view, { along, position }| {
-	across = Scenery.from_left_edge(Across.middle)
+	across = Across.middle
 	center = Frame.rider_point_ahead(
 		view.road,
 		{

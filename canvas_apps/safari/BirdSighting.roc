@@ -9,7 +9,6 @@ import Frame
 import Geom
 import RocBird
 import SceneLimits
-import Scenery
 
 BirdSighting :: [].{
 
@@ -59,7 +58,7 @@ bird_in_view = |view, { position, instant }| {
 		{
 			position,
 			along: instant.spot.along,
-			across: Scenery.from_left_edge(instant.spot.across),
+			across: instant.spot.across,
 		},
 	)
 	height_px = RocBird.height_px({ forward: seen.forward, cam_focal: view.cam_focal })

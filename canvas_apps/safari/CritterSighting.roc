@@ -142,7 +142,7 @@ sight_critter = |road, { place, critter }|
 			{
 				place,
 				along: critter.along,
-				across: Scenery.from_left_edge(critter.across),
+				across: critter.across,
 			},
 		),
 		height: critter.height,
@@ -192,3 +192,6 @@ pond_sightings = |road, { place, segment }|
 	} else {
 		[]
 	}
+
+expect CritterSighting.farm_reach.to_i64() == 3
+expect CritterSighting.safari_reach.to_i64() == 5

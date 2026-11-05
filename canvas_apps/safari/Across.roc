@@ -1,12 +1,7 @@
-## A place across the road, in metres, growing to the right. A distance added to
-## a place gives a place, and two places give the distance between them, but two
-## places can't be added. A place across the road can't be passed as a place
-## along it.
-##
-## A place on the road is measured from one of two origins. The rider and the
-## things beside the road are measured from the middle of the lane, and
-## `Geom.RoadPoint` from the lane's left edge. `Scenery.from_left_edge` carries a
-## place from the first to the second.
+## A place across the road, in metres from the middle of the lane, growing to the
+## right. A distance added to a place gives a place, and two places give the
+## distance between them, but two places can't be added. A place across the road
+## can't be passed as a place along it.
 ##
 ## Each operation does the plain float arithmetic its name says, so code
 ## moved onto this type computes exactly what it did before.
@@ -50,7 +45,7 @@ Across :: F64.{
 	distance_from : Across, Across -> Distance
 	distance_from = |Across.(a), Across.(other)| Distance.metres(a - other)
 
-	## This place, its distance from the origin scaled by `factor`.
+	## This place, its distance from the middle of the lane scaled by `factor`.
 	times : Across, F64 -> Across
 	times = |Across.(a), factor| Across.(a * factor)
 
