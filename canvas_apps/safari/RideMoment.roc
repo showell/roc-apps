@@ -2,6 +2,7 @@
 # program now and this file is edited here (safari/README.md).
 import Clock
 import Frame
+import Ground
 import GroundSighting
 import ItemDraw
 import Mountains
@@ -92,13 +93,14 @@ RideMoment := {
 					clock: moment.clock,
 				},
 			)
+			ground = GroundSighting.in_view(view.road)
 			[
 				Mountains.draw({
 					heading: ViewYaw.heading_for(s),
 					dusk: Sky.dusk_at(moment.clock),
 					cam_focal: view.cam_focal,
 				}),
-				GroundSighting.draw(view),
+				ground.join_map(|patch| Ground.draw(patch, view.cam_focal)),
 				ItemDraw.draw(scene, view),
 			].join()
 		}

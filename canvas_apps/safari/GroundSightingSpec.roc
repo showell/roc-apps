@@ -1,5 +1,5 @@
 ## These are GroundSighting's checks: how the road along a segment is cut into
-## chunks, where a chunk's corners are, and what the road draws.
+## chunks, where a chunk's corners are, and what `Ground` paints of the road.
 app [main!] {
 	lib: "../lib/main.roc",
 }
@@ -8,6 +8,7 @@ import Angle
 import Frame
 import Geom
 import Grade
+import Ground
 import GroundSighting
 import World
 import ShapeRead
@@ -33,31 +34,31 @@ chunks_got = [25.0, 25.1, 50.0, 49.9, 1.0, 0.0, 500.0, 320.0, 1200.0].map(
 chunks_want : List(I64)
 chunks_want = [1, 2, 2, 2, 1, 1, 20, 13, 48]
 
-# The first three segments, the rider at the start of the first, and a
-# camera only the drawing checks read.
-view : Frame.Viewpoint
-view = {
-	road: {
-		world: [
-			World.route_segment(0),
-			World.route_segment(1),
-			World.route_segment(2),
-		],
-		chain: [0, 1, 2].map(World.SegmentIndex.number),
-		pose: {
-			along: 0.0,
-			across: 0.0,
-			yaw: Angle.straight_ahead,
-			half_width: 2.0,
-		},
+# The first three segments, the rider at the start of the first.
+road : Frame.RoadView
+road = {
+	world: [
+		World.route_segment(0),
+		World.route_segment(1),
+		World.route_segment(2),
+	],
+	chain: [0, 1, 2].map(World.SegmentIndex.number),
+	pose: {
+		along: 0.0,
+		across: 0.0,
+		yaw: Angle.straight_ahead,
+		half_width: 2.0,
 	},
-	cam_focal: 500.0,
 }
+
+## A list of patches as a camera the drawing checks read paints them.
+patch_shapes : List(Ground.Patch) -> List(Shapes.Shape)
+patch_shapes = |patches| patches.join_map(|patch| Ground.draw(patch, 500.0))
 
 ## Chunk `chunk_number` of the first segment's 20, which is 500 m long.
 chunk_of_first : U32 -> List(Geom.RiderPoint)
 chunk_of_first = |chunk_number| GroundSighting.chunk_corners(
-	view,
+	road,
 	{
 		position: Frame.ChainPosition.first,
 		segment_length: 500.0,
@@ -118,7 +119,7 @@ seam_want : List(F64)
 seam_want = [0.0, 0.0, 0.0]
 
 strip : List(Shapes.Shape)
-strip = GroundSighting.segment_road(view, Frame.ChainPosition.first)
+strip = patch_shapes(GroundSighting.segment_road(road, Frame.ChainPosition.first))
 
 far_ahead : Frame.Pose
 far_ahead = {
@@ -133,9 +134,8 @@ strip_got = [
 	(strip.len() > 0),
 	(strip.len().to_u32_wrap() <= GroundSighting.chunks_along(500.0)),
 	(
-		GroundSighting.segment_road(
-			{ ..view, road: { ..view.road, pose: far_ahead } },
-			Frame.ChainPosition.first,
+		patch_shapes(
+			GroundSighting.segment_road({ ..road, pose: far_ahead }, Frame.ChainPosition.first),
 		).len() == 0
 	),
 ]
