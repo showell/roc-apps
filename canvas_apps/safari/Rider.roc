@@ -8,6 +8,7 @@ import Gaze
 import LeanSearch
 import Pose
 import Scenery
+import Speed
 import Throttle
 import lib.Trig
 import VehicleLimits
@@ -15,6 +16,10 @@ import World
 
 Rider :: [].{
 	Decision : { tilt_step : Angle.Lean, accel : F64 }
+
+	## A rider this slow near the route's end stops there.
+	stopping_speed : Speed
+	stopping_speed = Speed.metres_a_step(0.1)
 
 	## The lean toward the best line, and the throttle for the bike once
 	## it leans so.
@@ -73,7 +78,7 @@ Rider :: [].{
 					(
 						if in_zone {
 							(
-								if moved.v < 0.1 {
+								if moved.v < stopping_speed {
 									stopped_at(moved, seg.length)
 								} else {
 									moved
@@ -92,7 +97,7 @@ Rider :: [].{
 	stopped_at = |s, at| {
 		..s,
 		along: at,
-		v: 0.0,
+		v: Speed.at_rest,
 	}
 
 	resolve_cross : Pose.RiderState, List(World.Segment) -> Pose.RiderState

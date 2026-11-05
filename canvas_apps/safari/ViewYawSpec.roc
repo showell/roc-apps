@@ -7,6 +7,7 @@ app [main!] {
 import Angle
 import Grade
 import Pose
+import Speed
 import World
 import ViewYaw
 
@@ -16,7 +17,7 @@ s0 = {
 	along: 0.0,
 	across: 0.0,
 	yaw: Angle.Turn.radians(0.0),
-	v: 0.3,
+	v: Speed.metres_a_step(0.3),
 	tilt: Angle.Lean.radians(0.0),
 	heading: Angle.Bearing.radians(0.0),
 	gaze_yaw: Angle.Turn.radians(0.0),
@@ -29,7 +30,7 @@ s1 = {
 	along: 0.0,
 	across: 0.0,
 	yaw: Angle.Turn.radians(0.0),
-	v: 0.3,
+	v: Speed.metres_a_step(0.3),
 	tilt: Angle.Lean.radians(0.125),
 	heading: Angle.Bearing.radians(4.5),
 	gaze_yaw: Angle.Turn.radians(0.375),
@@ -42,7 +43,7 @@ s2 = {
 	along: 0.0,
 	across: 0.0,
 	yaw: Angle.Turn.radians(0.0),
-	v: 0.3,
+	v: Speed.metres_a_step(0.3),
 	tilt: Angle.Lean.radians(0.5),
 	heading: Angle.Bearing.radians(1.0),
 	gaze_yaw: Angle.Turn.radians((-0.25)),
@@ -55,7 +56,7 @@ s3 = {
 	along: 0.0,
 	across: 0.0,
 	yaw: Angle.Turn.radians(0.0),
-	v: 0.3,
+	v: Speed.metres_a_step(0.3),
 	tilt: Angle.Lean.radians((-0.75)),
 	heading: Angle.Bearing.radians((-2.0)),
 	gaze_yaw: Angle.Turn.radians(0.125),
@@ -68,7 +69,7 @@ s4 = {
 	along: 0.0,
 	across: 0.0,
 	yaw: Angle.Turn.radians(0.0),
-	v: 0.3,
+	v: Speed.metres_a_step(0.3),
 	tilt: Angle.Lean.radians(1.25),
 	heading: Angle.Bearing.radians(0.5),
 	gaze_yaw: Angle.Turn.radians(0.0),

@@ -12,6 +12,7 @@ import TowerPlan
 import TreePlan
 import TruckPlan
 import RocBird
+import Speed
 import World
 
 Render :: [].{
@@ -40,7 +41,7 @@ Render :: [].{
 		cam_focal : F64,
 		rider_segment : World.SegmentIndex,
 		rider_along : F64,
-		speed : F64,
+		speed : Speed,
 		truck_position : F64,
 	}
 

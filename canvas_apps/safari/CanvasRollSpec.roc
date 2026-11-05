@@ -9,6 +9,7 @@ import CanvasRoll
 import Grade
 import World
 import Pose
+import Speed
 
 band_got : List(F64)
 band_got = [CanvasRoll.roll_deadband.to_radians()]
@@ -52,7 +53,7 @@ as_rider = |tilt| {
 	along: 0.0,
 	across: 0.0,
 	yaw: Angle.Turn.radians(0.0),
-	v: 0.3,
+	v: Speed.metres_a_step(0.3),
 	tilt: Angle.Lean.radians(tilt),
 	heading: Angle.Bearing.radians(0.0),
 	gaze_yaw: Angle.Turn.radians(0.0),

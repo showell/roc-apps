@@ -9,6 +9,7 @@ import Grade
 import Paint
 import Rider
 import Safari
+import Speed
 import Truck
 import World
 
@@ -33,9 +34,9 @@ start_got = [
 	Safari.ride_initial.clock,
 	Safari.ride_initial.rider.along,
 	Safari.ride_initial.rider.across,
-	Safari.ride_initial.rider.v,
+	Safari.ride_initial.rider.v.to_metres_a_step(),
 	Safari.ride_initial.truck.route_position,
-	Safari.ride_initial.truck.speed,
+	Safari.ride_initial.truck.speed.to_metres_a_step(),
 ]
 
 start_want : List(F64)
@@ -129,7 +130,7 @@ done = {
 		along: 400.0,
 		across: 0.0,
 		yaw: Angle.Turn.radians(0.0),
-		v: 0.0,
+		v: Speed.at_rest,
 		tilt: Angle.Lean.radians(0.0),
 		heading: Angle.Bearing.radians(0.0),
 		gaze_yaw: Angle.Turn.radians(0.0),
@@ -137,7 +138,7 @@ done = {
 	},
 	truck: {
 		route_position: 9000.0,
-		speed: 2.0,
+		speed: Speed.metres_a_step(2.0),
 		is_braking: True,
 	},
 	clock: 12345.0,
@@ -150,7 +151,7 @@ restart_got = (
 		[
 			r.clock,
 			r.rider.along,
-			r.rider.v,
+			r.rider.v.to_metres_a_step(),
 			r.truck.route_position,
 			r.rider.focus,
 		]

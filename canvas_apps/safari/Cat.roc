@@ -7,6 +7,7 @@
 ## it crosses, and lets it go after.
 import lib.DeviceMath
 import Num_
+import Speed
 import lib.Trig
 
 Cat :: [].{
@@ -35,8 +36,8 @@ Cat :: [].{
 	}
 
 	## How the rider comes on a cat: the gap from the rider ahead to it, in
-	## metres, and the rider's speed, in metres a step.
-	Approach : { gap : F64, speed : F64 }
+	## metres, and the rider's speed.
+	Approach : { gap : F64, speed : Speed }
 
 	cat_height : F64
 	cat_height = 1.7
@@ -108,15 +109,15 @@ Cat :: [].{
 	road_buffer : F64
 	road_buffer = 3.0
 
-	## A rider this slow, in metres a step, is standing still.
-	standstill : F64
-	standstill = 0.000001
+	## A rider this slow is standing still.
+	standstill : Speed
+	standstill = Speed.metres_a_step(0.000001)
 
 	## Whether the cat is crossing in front of the rider now.
 	is_in_danger : Cat.Approach -> Bool
 	is_in_danger = |{ gap, speed }| {
 		gap_left = (gap - road_buffer)
-		gap_left > 0.0 and gap_left <= (cross_frames * speed)
+		gap_left > 0.0 and gap_left <= speed.distance_in(cross_frames)
 	}
 
 	clamp01 : F64 -> F64
@@ -153,7 +154,7 @@ Cat :: [].{
 		} else if speed <= standstill {
 			0.0
 		} else {
-			clamp01((1.0 - (gap_left / (cross_frames * speed))))
+			clamp01((1.0 - (gap_left / speed.distance_in(cross_frames))))
 		}
 	}
 
@@ -178,7 +179,7 @@ Cat :: [].{
 		} else if gap_left > 0.0 {
 			(smoothstep(crossing_progress(approach)) * focus_peak)
 		} else {
-			steps_past = (((0.0 - gap_left) / approach.speed) / focus_ramp_down)
+			steps_past = (approach.speed.steps_to_cover(0.0 - gap_left) / focus_ramp_down)
 			((1.0 - smoothstep(DeviceMath.real_min(steps_past, 1.0))) * focus_peak)
 		}
 	}

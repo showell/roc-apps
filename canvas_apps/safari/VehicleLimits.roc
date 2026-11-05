@@ -2,6 +2,7 @@
 # and this file is edited here (safari/README.md).
 import Angle
 import Num_
+import Speed
 import lib.Trig
 
 VehicleLimits :: [].{
@@ -9,19 +10,19 @@ VehicleLimits :: [].{
 	a_accel : F64
 	a_accel = 0.01
 
-	v_max : F64
-	v_max = 2.5
+	v_max : Speed
+	v_max = Speed.metres_a_step(2.5)
 
 	approach_intersection_dist : F64
 	approach_intersection_dist = 60.0
 
 	## The speed a turn of this size can be taken at, to the right or the left
 	## alike: a caller passes the turn's `abs`.
-	turn_speed : Angle.Turn -> F64
+	turn_speed : Angle.Turn -> Speed
 	turn_speed = |turn| (
 		{
 			d = Num_.round_real(((turn.to_radians() * 180.0) / Trig.pi))
-			(
+			Speed.metres_a_step(
 				if F64.to_bits(d) == F64.to_bits(15.0) {
 					1.297
 				} else {
@@ -56,7 +57,7 @@ VehicleLimits :: [].{
 							)
 						}
 					)
-				}
+				},
 			)
 		}
 	)

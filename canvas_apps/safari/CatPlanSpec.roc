@@ -10,6 +10,7 @@ import Cat
 import CatPlan
 import Frame
 import Grade
+import Speed
 import World
 
 segs : List(World.Segment)
@@ -35,7 +36,7 @@ from_origin = {
 	pose: origin,
 	cam_focal: 500.0,
 	rider_along: 0.0,
-	speed: 1.0,
+	speed: Speed.metres_a_step(1.0),
 }
 
 has_got : List(Bool)

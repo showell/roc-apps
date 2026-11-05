@@ -5,6 +5,7 @@ app [main!] {
 }
 
 import Grade
+import Speed
 import Truck
 import VehicleLimits
 import World
@@ -15,7 +16,7 @@ fixed_got = [
 	Truck.finish_lead,
 	Truck.turn_caution,
 	Truck.brake_distance,
-	Truck.top_speed,
+	Truck.top_speed.to_metres_a_step(),
 ]
 
 fixed_want : List(F64)
@@ -24,16 +25,16 @@ fixed_want = [500.0, 100.0, 0.8, 60.0, 2.75]
 ratio_got : List(F64)
 ratio_got = [
 	Truck.chase_acceleration,
-	Truck.top_speed,
+	Truck.top_speed.to_metres_a_step(),
 	(Truck.chase_acceleration / VehicleLimits.a_accel),
-	(Truck.top_speed / VehicleLimits.v_max),
+	(Truck.top_speed.to_metres_a_step() / VehicleLimits.v_max.to_metres_a_step()),
 ]
 
 ratio_want : List(F64)
 ratio_want = [0.011, 2.75, 1.1, 1.1]
 
 initial_got : List(F64)
-initial_got = [Truck.initial_truck.route_position, Truck.initial_truck.speed]
+initial_got = [Truck.initial_truck.route_position, Truck.initial_truck.speed.to_metres_a_step()]
 
 initial_want : List(F64)
 initial_want = [500.0, 0.3]
@@ -71,7 +72,7 @@ turn_dist = |segs, route_position| (
 turn_v : List(World.Segment), F64 -> F64
 turn_v = |segs, route_position| (
 	match Truck.next_turn(segs, route_position) {
-		TurnAhead(t) => t.turn_speed
+		TurnAhead(t) => t.turn_speed.to_metres_a_step()
 		NoTurnAhead => (0.0 - 1.0)
 	}
 )
@@ -90,7 +91,7 @@ turn_got = [
 				I64.to_u64_wrap(0),
 			) ?? crash ("list-at out of range")
 		).exit_turn.abs(),
-	),
+	).to_metres_a_step(),
 ]
 
 turn_want : List(F64)
@@ -135,7 +136,7 @@ free : Truck.TruckState
 free = Truck.advance(
 	{
 		route_position: 100.0,
-		speed: 0.3,
+		speed: Speed.metres_a_step(0.3),
 		is_braking: False,
 	},
 	{
@@ -147,9 +148,9 @@ free = Truck.advance(
 
 free_got : List(F64)
 free_got = [
-	free.speed,
+	free.speed.to_metres_a_step(),
 	free.route_position,
-	(free.speed - 0.3),
+	free.speed.change_from(Speed.metres_a_step(0.3)),
 ]
 
 free_want : List(F64)
@@ -159,7 +160,7 @@ ahead : Truck.TruckState
 ahead = Truck.advance(
 	{
 		route_position: 600.0,
-		speed: 0.5,
+		speed: Speed.metres_a_step(0.5),
 		is_braking: False,
 	},
 	{
@@ -173,7 +174,7 @@ behind : Truck.TruckState
 behind = Truck.advance(
 	{
 		route_position: 400.0,
-		speed: 0.5,
+		speed: Speed.metres_a_step(0.5),
 		is_braking: False,
 	},
 	{
@@ -185,9 +186,9 @@ behind = Truck.advance(
 
 ahead_got : List(F64)
 ahead_got = [
-	ahead.speed,
+	ahead.speed.to_metres_a_step(),
 	ahead.route_position,
-	(behind.speed - ahead.speed),
+	behind.speed.change_from(ahead.speed),
 ]
 
 ahead_want : List(F64)
@@ -208,7 +209,7 @@ capped = Truck.advance(
 )
 
 capped_got : List(F64)
-capped_got = [capped.speed]
+capped_got = [capped.speed.to_metres_a_step()]
 
 capped_want : List(F64)
 capped_want = [2.75]
@@ -227,7 +228,7 @@ braking : Truck.TruckState
 braking = Truck.advance(
 	{
 		route_position: 450.0,
-		speed: 0.3,
+		speed: Speed.metres_a_step(0.3),
 		is_braking: False,
 	},
 	{
@@ -238,7 +239,7 @@ braking = Truck.advance(
 )
 
 brake_got : List(F64)
-brake_got = [braking.speed, (braking.route_position - 450.0)]
+brake_got = [braking.speed.to_metres_a_step(), (braking.route_position - 450.0)]
 
 brake_want : List(F64)
 brake_want = [0.2994154176, 0.2994154176]
@@ -246,8 +247,8 @@ brake_want = [0.2994154176, 0.2994154176]
 brake_flag_got : List(Bool)
 brake_flag_got = [
 	braking.is_braking,
-	(braking.speed < 0.3),
-	(braking.speed > 0.1776),
+	(braking.speed < Speed.metres_a_step(0.3)),
+	(braking.speed > Speed.metres_a_step(0.1776)),
 ]
 
 brake_flag_want : List(Bool)
@@ -257,7 +258,7 @@ settled : Truck.TruckState
 settled = Truck.advance(
 	{
 		route_position: 450.0,
-		speed: 0.1776,
+		speed: Speed.metres_a_step(0.1776),
 		is_braking: True,
 	},
 	{
@@ -268,7 +269,10 @@ settled = Truck.advance(
 )
 
 settled_got : List(Bool)
-settled_got = [settled.is_braking, (F64.to_bits(settled.speed) == F64.to_bits(0.1776))]
+settled_got = [
+	settled.is_braking,
+	(F64.to_bits(settled.speed.to_metres_a_step()) == F64.to_bits(0.1776)),
+]
 
 settled_want : List(Bool)
 settled_want = [False, True]
@@ -279,7 +283,7 @@ boundary_got = [
 		Truck.advance(
 			{
 				route_position: 440.0,
-				speed: 0.3,
+				speed: Speed.metres_a_step(0.3),
 				is_braking: False,
 			},
 			{
@@ -287,13 +291,13 @@ boundary_got = [
 				world: one_seg,
 				route_length: 1000.0,
 			},
-		).speed < 0.3
+		).speed < Speed.metres_a_step(0.3)
 	),
 	(
 		Truck.advance(
 			{
 				route_position: 439.0,
-				speed: 0.3,
+				speed: Speed.metres_a_step(0.3),
 				is_braking: False,
 			},
 			{
@@ -301,7 +305,7 @@ boundary_got = [
 				world: one_seg,
 				route_length: 1000.0,
 			},
-		).speed < 0.3
+		).speed < Speed.metres_a_step(0.3)
 	),
 ]
 

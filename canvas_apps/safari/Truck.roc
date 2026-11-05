@@ -1,9 +1,8 @@
 ## The truck the rider chases. It starts well ahead and keeps to a schedule
 ## that brings it closer as the rider nears the route's end: it speeds up
 ## when it is behind the schedule, and slows for a turn when one is close.
-## Speeds are in metres a frame.
-import lib.DeviceMath
 import Pose
+import Speed
 import VehicleLimits
 import World
 
@@ -13,13 +12,13 @@ Truck :: [].{
 	## it is braking.
 	TruckState : {
 		route_position : F64,
-		speed : F64,
+		speed : Speed,
 		is_braking : Bool,
 	}
 
 	## A turn ahead of the truck: how far off it is, and how fast it can be
 	## taken.
-	ComingTurn : { distance : F64, turn_speed : F64 }
+	ComingTurn : { distance : F64, turn_speed : Speed }
 
 	## The next turn of the route past a point, or none: the route ends first.
 	NextTurn : [TurnAhead(Truck.ComingTurn), NoTurnAhead]
@@ -43,8 +42,8 @@ Truck :: [].{
 	chase_acceleration : F64
 	chase_acceleration = 1.1 * VehicleLimits.a_accel
 
-	top_speed : F64
-	top_speed = 1.1 * VehicleLimits.v_max
+	top_speed : Speed
+	top_speed = VehicleLimits.v_max.times(1.1)
 
 	initial_truck : Truck.TruckState
 	initial_truck = {
@@ -137,16 +136,16 @@ next_turn_on = |segments, { route_position, segment_start }|
 ## cautious speed.
 advance_braking : Truck.TruckState, Truck.ComingTurn -> Truck.TruckState
 advance_braking = |truck, turn| {
-	target_speed = turn.turn_speed * Truck.turn_caution
+	target_speed = turn.turn_speed.times(Truck.turn_caution)
 	acceleration =
 		if turn.distance > least_braking_distance {
-			(target_speed * target_speed - truck.speed * truck.speed) / (2.0 * turn.distance)
+			truck.speed.acceleration_to({ target: target_speed, within: turn.distance })
 		} else {
 			0.0
 		}
-	speed = DeviceMath.real_max(target_speed, truck.speed + acceleration)
+	speed = target_speed.max(truck.speed.accelerated_by(acceleration))
 	{
-		route_position: truck.route_position + speed,
+		route_position: truck.route_position + speed.to_metres_a_step(),
 		speed,
 		is_braking: speed < truck.speed,
 	}
@@ -158,12 +157,12 @@ advance_on_schedule : Truck.TruckState, F64 -> Truck.TruckState
 advance_on_schedule = |truck, schedule| {
 	speed =
 		if truck.route_position < schedule {
-			DeviceMath.real_min(Truck.top_speed, truck.speed + Truck.chase_acceleration)
+			Truck.top_speed.min(truck.speed.accelerated_by(Truck.chase_acceleration))
 		} else {
 			truck.speed
 		}
 	{
-		route_position: truck.route_position + speed,
+		route_position: truck.route_position + speed.to_metres_a_step(),
 		speed,
 		is_braking: False,
 	}

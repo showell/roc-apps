@@ -2,6 +2,7 @@
 ## is, which way it points, how fast it goes, how far it leans, and where the
 ## rider is looking.
 import Angle
+import Speed
 import World
 
 Pose :: [].{
@@ -16,15 +17,15 @@ Pose :: [].{
 		along : F64,
 		across : F64,
 		yaw : Angle.Turn,
-		v : F64,
+		v : Speed,
 		tilt : Angle.Lean,
 		heading : Angle.Bearing,
 		gaze_yaw : Angle.Turn,
 		focus : F64,
 	}
 
-	v_base : F64
-	v_base = 0.3
+	v_base : Speed
+	v_base = Speed.metres_a_step(0.3)
 
 	initial_rider_state : Pose.RiderState
 	initial_rider_state = {

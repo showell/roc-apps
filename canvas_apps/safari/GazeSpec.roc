@@ -15,7 +15,7 @@ fixed_got : List(F64)
 fixed_got = [
 	Gaze.gaze_look_dist,
 	Gaze.focus_decay,
-	Gaze.pig_gaze_speed,
+	Gaze.pig_gaze_speed.to_metres_a_step(),
 	Gaze.pig_gaze_settle_dist,
 	(Gaze.gaze_release_angle.to_radians() / Trig.deg),
 	(Gaze.gaze_swivel_rate.to_radians() / Trig.deg),

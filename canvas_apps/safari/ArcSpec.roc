@@ -9,6 +9,7 @@ import Arc
 import Bike
 import Grade
 import Pose
+import Speed
 import World
 
 fixed_got : List(F64)
@@ -31,7 +32,7 @@ steps_want = [2000]
 StartingRider : {
 	across : F64,
 	tilt_radians : F64,
-	speed : F64,
+	speed : Speed,
 }
 
 rider : StartingRider -> Pose.RiderState
@@ -105,7 +106,7 @@ stopped = Arc.project_arc(
 	rider({
 		across: 0.0,
 		tilt_radians: 0.0,
-		speed: 0.0,
+		speed: Speed.at_rest,
 	}),
 )
 
@@ -213,9 +214,9 @@ step_got = (
 			a.yaw.to_radians(),
 			a.heading.to_radians(),
 			a.tilt.to_radians(),
-			a.v,
+			a.v.to_metres_a_step(),
 			b.tilt.to_radians(),
-			b.v,
+			b.v.to_metres_a_step(),
 			b.yaw.to_radians(),
 			b.heading.to_radians(),
 			Bike.yaw_per_tilt,

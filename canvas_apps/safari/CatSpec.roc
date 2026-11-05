@@ -7,6 +7,7 @@ app [main!] {
 
 import Cat
 import Grade
+import Speed
 import lib.Trig
 
 the_cat : Cat.Crossing
@@ -18,7 +19,7 @@ the_cat = Cat.crossing({
 
 ## A rider `gap` metres short of the cat, at `speed` metres a step.
 coming : F64, F64 -> Cat.Approach
-coming = |gap, speed| { gap, speed }
+coming = |gap, speed| { gap, speed: Speed.metres_a_step(speed) }
 
 make_got : List(F64)
 make_got = [

@@ -9,6 +9,7 @@ import Bike
 import Grade
 import World
 import Pose
+import Speed
 
 limit_got : List(F64)
 limit_got = [Bike.yaw_per_tilt, Bike.max_lean.to_radians()]
@@ -22,7 +23,7 @@ s0 = {
 	along: 120.5,
 	across: 2.25,
 	yaw: Angle.Turn.radians(0.375),
-	v: 0.8,
+	v: Speed.metres_a_step(0.8),
 	tilt: Angle.Lean.radians(0.125),
 	heading: Angle.Bearing.radians(4.5),
 	gaze_yaw: Angle.Turn.radians(0.625),
@@ -46,7 +47,7 @@ exact_got = [
 ].join_map(
 	|s| [
 		s.yaw.to_radians(),
-		s.v,
+		s.v.to_metres_a_step(),
 		s.tilt.to_radians(),
 		s.heading.to_radians(),
 	],

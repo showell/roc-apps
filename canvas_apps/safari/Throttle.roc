@@ -7,6 +7,7 @@ import lib.DeviceMath
 import Gaze
 import Num_
 import Pose
+import Speed
 import lib.Trig
 import VehicleLimits
 import World
@@ -20,7 +21,7 @@ Throttle :: [].{
 	corner_brake : Pose.RiderState,
 	{
 		road_segment : World.Segment,
-		exit_speed : F64,
+		exit_speed : Speed,
 		offered_accel : F64,
 	} -> F64
 	corner_brake = |
@@ -37,7 +38,7 @@ Throttle :: [].{
 				if d <= F64.from_bits(4517329193108106637) {
 					0.0
 				} else {
-					(((v_end * v_end) - (state.v * state.v)) / (2.0 * d))
+					state.v.acceleration_to({ target: v_end, within: d })
 				}
 			)
 			(
@@ -130,7 +131,7 @@ Throttle :: [].{
 			n = sim.frames
 			sa = (
 				(
-					(0.0 - state.v) / (
+					(0.0 - state.v.to_metres_a_step()) / (
 						2.0 * DeviceMath.real_max(
 							n,
 							1.0,
@@ -151,10 +152,10 @@ Throttle :: [].{
 	clamp_v : Pose.RiderState,
 	{
 		road_segment : World.Segment,
-		exit_speed : F64,
-		next_speed : F64,
+		exit_speed : Speed,
+		next_speed : Speed,
 		is_near_end : Bool,
-	} -> F64
+	} -> Speed
 	clamp_v = |
 		state,
 		{
@@ -173,8 +174,8 @@ Throttle :: [].{
 				}
 			)
 			v2 = (
-				if v1 < 0.0 {
-					0.0
+				if v1 < Speed.at_rest {
+					Speed.at_rest
 				} else {
 					v1
 				}
@@ -214,7 +215,7 @@ Throttle :: [].{
 			v_end =
 				match seg.ending {
 					Continues(_) => VehicleLimits.turn_speed(seg.exit_turn.abs())
-					Terminates => 0.0
+					Terminates => Speed.at_rest
 				}
 			near = ((seg.length - state.along) <= VehicleLimits.approach_intersection_dist)
 			a1 = (
@@ -240,10 +241,10 @@ Throttle :: [].{
 					{
 						road_segment: seg,
 						exit_speed: v_end,
-						next_speed: state.v + a4,
+						next_speed: state.v.accelerated_by(a4),
 						is_near_end: near,
 					},
-				) - state.v
+				).change_from(state.v)
 			)
 		}
 	)

@@ -6,7 +6,14 @@ app [main!] {
 
 import Angle
 import Grade
+import Speed
 import VehicleLimits
+
+## The speed each of these turns can be taken at, the turns in degrees.
+turn_speeds : List(F64) -> List(F64)
+turn_speeds = |degrees| degrees.map(
+	|d| VehicleLimits.turn_speed(Angle.Turn.degrees(d)).to_metres_a_step(),
+)
 
 table_deg : List(F64)
 table_deg = [15.0, 20.0, 30.0, 50.0, 70.0, 80.0]
@@ -32,7 +39,7 @@ edge_want = [1.297, 0.222, 1.297, 0.222, 0.222, 0.222, 0.222, 0.222]
 env_got : List(F64)
 env_got = [
 	VehicleLimits.a_accel,
-	VehicleLimits.v_max,
+	VehicleLimits.v_max.to_metres_a_step(),
 	VehicleLimits.approach_intersection_dist,
 ]
 
@@ -45,13 +52,13 @@ main! = |_args| {
 	verdicts = [
 		Grade.reals({
 			name: "v-table",
-			got: table_deg.map(Angle.Turn.degrees).map(VehicleLimits.turn_speed),
+			got: turn_speeds(table_deg),
 			want: table_want,
 			tol: 0.0,
 		}),
 		Grade.reals({
 			name: "v-edge ",
-			got: edge_deg.map(Angle.Turn.degrees).map(VehicleLimits.turn_speed),
+			got: turn_speeds(edge_deg),
 			want: edge_want,
 			tol: 0.0,
 		}),

@@ -6,6 +6,7 @@ import lib.DeviceMath
 import Pigs
 import Pose
 import Scenery
+import Speed
 import lib.Trig
 import World
 
@@ -34,8 +35,8 @@ Gaze :: [].{
 	focus_decay : F64
 	focus_decay = 0.0012
 
-	pig_gaze_speed : F64
-	pig_gaze_speed = 0.2
+	pig_gaze_speed : Speed
+	pig_gaze_speed = Speed.metres_a_step(0.2)
 
 	pig_gaze_settle_dist : F64
 	pig_gaze_settle_dist = 25.0
@@ -192,14 +193,10 @@ Gaze :: [].{
 			d = ((Pigs.gaze_pig(seg.length).along - state.along) - pig_gaze_settle_dist)
 			{
 				engaged: True,
-				accel: (
-					((pig_gaze_speed * pig_gaze_speed) - (state.v * state.v)) / (
-						2.0 * DeviceMath.real_max(
-							d,
-							1.0,
-						)
-					)
-				),
+				accel: state.v.acceleration_to({
+					target: pig_gaze_speed,
+					within: DeviceMath.real_max(d, 1.0),
+				}),
 			}
 		}
 	)

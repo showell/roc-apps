@@ -7,6 +7,7 @@ import Frame
 import Geom
 import SceneLimits
 import Scenery
+import Speed
 import World
 
 CatPlan :: [].{
@@ -30,7 +31,7 @@ CatPlan :: [].{
 		pose : Frame.Pose,
 		cam_focal : F64,
 		rider_along : F64,
-		speed : F64,
+		speed : Speed,
 	}
 
 	## At most this many cats are drawn in a frame.
