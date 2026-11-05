@@ -29,7 +29,7 @@ RailPlan :: [].{
 	## The depth sort's key for each rail quad: how far ahead it is, and its
 	## place in the list.
 	depth_keys : List(GuardRail.RailPoly) -> List(DepthSort.DepthKey)
-	depth_keys = |quads| quads.map_with_index(|quad, i| { forward: quad.forward, subject: Rail(i) })
+	depth_keys = |quads| quads.map_with_index(|quad, i| { forward: quad.forward, subject: Rail(i.to_u32_wrap()) })
 
 	## How many steps a leg `distance` long is cut into: one a metre, and at
 	## least one.

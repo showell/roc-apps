@@ -155,7 +155,7 @@ key_at = |i| keys.get(i) ?? crash "TreePlanSpec: the first segment has 28 keys"
 tree_place_at : U64 -> I64
 tree_place_at = |i|
 	match key_at(i).subject {
-		Tree(position) => position.to_i64_wrap()
+		Tree(position) => position.to_i64()
 		Tower(_) | Critter(_) | Cat(_) | Truck | Rail(_) | Bird(_) =>
 			crash "TreePlanSpec: a tree's key names a tree"
 	}

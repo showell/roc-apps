@@ -86,5 +86,5 @@ TreePlan :: [].{
 	## The trees as the depth sort sees them: each one's distance ahead, and
 	## its position in `trees`.
 	depth_keys : List(TreePlan.TreeItem) -> List(DepthSort.DepthKey)
-	depth_keys = |trees| trees.map_with_index(|tree, i| { forward: tree.forward, subject: Tree(i) })
+	depth_keys = |trees| trees.map_with_index(|tree, i| { forward: tree.forward, subject: Tree(i.to_u32_wrap()) })
 }

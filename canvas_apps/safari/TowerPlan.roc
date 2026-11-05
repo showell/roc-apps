@@ -132,7 +132,7 @@ TowerPlan :: [].{
 	depth_keys = |towers| towers.map_with_index(
 		|tower, i| {
 			forward: tower.forward,
-			subject: Tower(i),
+			subject: Tower(i.to_u32_wrap()),
 		},
 	)
 }

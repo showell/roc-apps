@@ -19,19 +19,14 @@ import TruckDraw
 import TruckPlan
 import RocBird
 import Scenery
-import World
 
 ItemDraw :: [].{
 
-	## What every thing in a frame is drawn with: the world, the chain of
-	## segments ahead (indexes into `world`, the rider's own first), the
-	## rider's pose, the camera's focal length, the ride's clock, which sets
-	## the masts' beacons and the truck's headlights, and the truck's brake
-	## lights.
+	## What every thing in a frame is drawn with: the road, the camera's focal
+	## length, the ride's clock, which sets the masts' beacons and the truck's
+	## headlights, and the truck's brake lights.
 	Context : {
-		world : List(World.Segment),
-		chain : List(World.SegmentIndex),
-		pose : Frame.Pose,
+		road : Frame.RoadView,
 		cam_focal : F64,
 		clock : F64,
 		brake_lights : [On, Off],
@@ -39,16 +34,18 @@ ItemDraw :: [].{
 
 	## A tree with fewer than this many trees nearer than it gets a round
 	## trunk.
-	round_trunks : U64
-	round_trunks = 4
+	round_trunk_limit : U32
+	round_trunk_limit = 4
 
 	## The scene's things, painted far to near.
 	draw : Render.Scene, ItemDraw.Context -> List(Paint.DrawCmd)
-	draw = |scene, context| scene.order.join_map(|key| draw_one(scene, { context, key }))
+	draw = |scene, context|
+		scene.order.join_map(|depth_key| draw_subject(scene, { context, depth_key }))
 
 	## How many of `trees` are nearer than `forward`.
-	nearer_count : List(TreePlan.TreeItem), F64 -> U64
-	nearer_count = |trees, forward| trees.count_if(|tree| tree.forward < forward)
+	nearer_tree_count : List(TreePlan.TreeItem), F64 -> U32
+	nearer_tree_count = |trees, forward|
+		trees.count_if(|tree| tree.forward < forward).to_u32_wrap()
 
 	## How much a crown is shaded at distance `forward`: fully at the camera,
 	## falling evenly to none at SceneLimits.crown_shade_dist.
@@ -67,7 +64,7 @@ ItemDraw :: [].{
 		cam_focal : F64,
 	} -> List(Paint.DrawCmd)
 	draw_tree = |tree, { trees, cam_focal }| {
-		nearer = ItemDraw.nearer_count(trees, tree.forward)
+		nearer_trees = ItemDraw.nearer_tree_count(trees, tree.forward)
 		Tree.draw({
 			right: tree.right,
 			forward: tree.forward,
@@ -75,7 +72,7 @@ ItemDraw :: [].{
 			color: tree.color,
 			cam_focal,
 			view_w: Screen.width,
-			trunk: if (nearer < ItemDraw.round_trunks) RoundCorners else SharpCorners,
+			trunk: if (nearer_trees < ItemDraw.round_trunk_limit) RoundCorners else SharpCorners,
 			crown: if (tree.forward < SceneLimits.detail_dist) Cones else Triangles,
 			shade: ItemDraw.crown_shade(tree.forward),
 		})
@@ -85,7 +82,7 @@ ItemDraw :: [].{
 	tower_footprint : ItemDraw.Context, TowerPlan.TowerItem -> Tower.Footprint
 	tower_footprint = |context, tower| {
 		corner_point = |corner| {
-			on_map = Tower.base_corner_on_road(
+			on_road = Tower.base_corner_on_road(
 				corner,
 				{
 					along: tower.along,
@@ -94,15 +91,11 @@ ItemDraw :: [].{
 				},
 			)
 			Frame.rider_point_at(
-				{
-					world: context.world,
-					chain: context.chain,
-					pose: context.pose,
-				},
+				context.road,
 				{
 					place: tower.place,
-					along: on_map.along,
-					across: on_map.across,
+					along: on_road.along,
+					across: on_road.across,
 				},
 			)
 		}
@@ -120,11 +113,7 @@ ItemDraw :: [].{
 		Tower.draw({
 			footprint: ItemDraw.tower_footprint(context, tower),
 			center: Frame.rider_point_at(
-				{
-					world: context.world,
-					chain: context.chain,
-					pose: context.pose,
-				},
+				context.road,
 				{
 					place: tower.place,
 					along: tower.along,
@@ -138,36 +127,33 @@ ItemDraw :: [].{
 }
 
 ## One thing in the depth order, looked up in its kind's list and drawn.
-draw_one : Render.Scene,
+draw_subject : Render.Scene,
 {
 	context : ItemDraw.Context,
-	key : DepthSort.DepthKey,
+	depth_key : DepthSort.DepthKey,
 } -> List(Paint.DrawCmd)
-draw_one = |scene, { context, key }| {
+draw_subject = |scene, { context, depth_key }| {
 	camera = { cam_focal: context.cam_focal, view_w: Screen.width }
-	match key.subject {
+	match depth_key.subject {
 		Tree(place) =>
 			ItemDraw.draw_tree(
-				at_place(scene.trees, place),
+				thing_at(scene.trees, place),
 				{ trees: scene.trees, cam_focal: context.cam_focal },
 			)
-		Tower(place) => ItemDraw.draw_tower(context, at_place(scene.towers, place))
-		Rail(place) => GuardRail.draw(at_place(scene.rails, place), camera)
-		Critter(place) => Critter.draw(at_place(scene.critters, place), camera)
-		Cat(place) => draw_cat(at_place(scene.cats, place), camera)
+		Tower(place) => ItemDraw.draw_tower(context, thing_at(scene.towers, place))
+		Rail(place) => GuardRail.draw(thing_at(scene.rails, place), camera)
+		Critter(place) => Critter.draw(thing_at(scene.critters, place), camera)
+		Cat(place) => draw_cat(thing_at(scene.cats, place), camera)
 		Truck => draw_truck(context, scene.truck)
-		Bird(place) =>
-			RocBird.draw_one(
-				at_place(scene.birds, place),
-				{ cam_focal: context.cam_focal, view_w: Screen.width },
-			)
+		Bird(place) => RocBird.draw_one(thing_at(scene.birds, place), camera)
 	}
 }
 
 ## The thing at `place` in its kind's list.
-at_place : List(thing), U64 -> thing
-at_place = |things, place|
-	things.get(place) ?? crash "ItemDraw.at_place: the depth order names only places in its lists"
+thing_at : List(thing), U32 -> thing
+thing_at = |things, place|
+	things.get(place.to_u64())
+		?? crash "ItemDraw.thing_at: the depth order names only places in its lists"
 
 draw_cat : CatPlan.CatItem, { cam_focal : F64, view_w : F64 } -> List(Paint.DrawCmd)
 draw_cat = |cat, { cam_focal, view_w }|
@@ -189,9 +175,9 @@ draw_truck = |context, truck_at|
 		Ahead(truck) =>
 			TruckDraw.draw({
 				road: {
-					world: context.world,
-					chain: context.chain,
-					pose: context.pose,
+					world: context.road.world,
+					chain: context.road.chain,
+					pose: context.road.pose,
 					position: truck.position,
 				},
 				center: {

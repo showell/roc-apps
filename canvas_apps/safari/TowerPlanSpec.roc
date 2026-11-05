@@ -201,7 +201,7 @@ key_at = |i| keys.get(i) ?? crash "TowerPlanSpec: three masts are in view"
 tower_place_at : U64 -> I64
 tower_place_at = |i|
 	match key_at(i).subject {
-		Tower(position) => position.to_i64_wrap()
+		Tower(position) => position.to_i64()
 		Tree(_) | Critter(_) | Cat(_) | Truck | Rail(_) | Bird(_) =>
 			crash "TowerPlanSpec: a mast's key names a mast"
 	}

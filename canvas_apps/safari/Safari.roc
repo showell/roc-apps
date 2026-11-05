@@ -78,9 +78,11 @@ Safari :: [].{
 			roadside = ItemDraw.draw(
 				scene,
 				{
-					world: w,
-					chain,
-					pose,
+					road: {
+						world: w,
+						chain,
+						pose,
+					},
 					cam_focal: cf,
 					clock: r.clock,
 					brake_lights: if (r.truck.is_braking) On else Off,

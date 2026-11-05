@@ -32,7 +32,7 @@ spread : List(TreePlan.TreeItem)
 spread = [10.0, 20.0, 30.0, 40.0, 50.0].map(tree_at)
 
 nearer_count : List(TreePlan.TreeItem), F64 -> I64
-nearer_count = |trees, forward| ItemDraw.nearer_count(trees, forward).to_i64_wrap()
+nearer_count = |trees, forward| ItemDraw.nearer_tree_count(trees, forward).to_i64()
 
 count_got : List(I64)
 count_got = [
@@ -68,13 +68,15 @@ segs = [0, 1, 2].map(World.segment_at)
 # The rider at the start of the route, at the ride's first step.
 context : ItemDraw.Context
 context = {
-	world: segs,
-	chain: [0, 1, 2].map(World.SegmentIndex.number),
-	pose: {
-		along: 0.0,
-		across: 0.0,
-		yaw: 0.0,
-		half_width: 2.0,
+	road: {
+		world: segs,
+		chain: [0, 1, 2].map(World.SegmentIndex.number),
+		pose: {
+			along: 0.0,
+			across: 0.0,
+			yaw: 0.0,
+			half_width: 2.0,
+		},
 	},
 	cam_focal: 500.0,
 	clock: 0.0,

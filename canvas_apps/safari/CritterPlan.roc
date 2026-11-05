@@ -127,7 +127,7 @@ CritterPlan :: [].{
 		billboards.map_with_index(
 			|billboard, i| {
 				forward: billboard.forward,
-				subject: Critter(i),
+				subject: Critter(i.to_u32_wrap()),
 			},
 		)
 }

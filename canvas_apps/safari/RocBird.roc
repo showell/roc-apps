@@ -194,7 +194,7 @@ RocBird :: [].{
 	# **THE DEPTH IS THE TREE'S**, which is the whole point of collecting them:
 	# how high the bird sits does not change how far away it is.
 	bird_items : List(RocBird.Bird) -> List(DepthSort.DepthKey)
-	bird_items = |bs| bs.map_with_index(|bird, i| { forward: bird.forward, subject: Bird(i) })
+	bird_items = |bs| bs.map_with_index(|bird, i| { forward: bird.forward, subject: Bird(i.to_u32_wrap()) })
 
 	# One bird, drawn where the sort says. Its feet go at the top of its tree,
 	# and unflipped its beak points toward +x, which from a left-hand tree is
