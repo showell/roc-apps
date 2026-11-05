@@ -50,7 +50,7 @@ digraph system {
 
 ## All that's stored
 
-A record alias is the plainest way to name a shape in Roc, and it's all this needs. `Safari` itself is a module written as a type: `Safari :: [].{ ... }` holds the definitions other modules can reach.
+A record alias is the plainest way to name a shape in Roc, and it's all this needs. `Safari` itself is a void module: `Safari :: [].{ ... }` is a type with no values, and its block holds the definitions other modules can reach.
 
 {{code Safari.Ride}}
 
@@ -67,6 +67,43 @@ That gives three kinds of moving thing, and the tour is organized around them:
 Trees and cows are a fourth kind, the easiest of all: they never change.
 
 Purity makes some things free. Safari Ride can pause and step backward, because a step back only needs an older `Ride`. The cat follows along, since it was never anywhere but where the rider's position puts it, and the sun rises again.
+
+The game itself has no effectful functions at all. It has no `!` names, no `=>` arrows, no `?` and no `where`. Effects live in the platform, which is the last chapter.
+
+## What never changes
+
+Trees, cows, the pond and the road are built once and only read after that, so they're the place to start.
+
+```dot
+digraph world {
+  node [shape=box, fontname="Helvetica"];
+  World [style=bold];
+  World -> Trees;
+  World -> Herd;
+  World -> Pigs;
+  World -> Scenery;
+  World -> Cat;
+  World -> BirdFlight;
+  Herd -> Trees;
+  Herd -> Scenery;
+  Trees -> Scenery;
+  Pigs -> Scenery;
+}
+```
+
+`World` turns a route, a plain list of records, into segments of road. A plan shows how much tag unions can do with no declaration. `[WithBull, NoBull]` is written right in the field's type, and it says more than a boolean would at every place a segment is written down.
+
+{{code World.SegmentPlan}}
+
+A `match` on a closed union has to cover it: leaving out a tag is a compile-time error.
+
+{{code Trees.accent}}
+
+The first opaque type in the tour is a small one. `SegmentIndex :: U32.{ ... }` is a `U32` that only its own block can open, and the block is also where its methods live. A segment's place in the route can't be confused with a count of trees, because nothing outside can do arithmetic on it. Opaque types come back in every chapter.
+
+`crash` appears here too. It isn't for error handling: an index that isn't in the world is a bug in Safari Ride, not a case to handle, and `??` says what to do with the missing value.
+
+{{code World.SegmentIndex from "## The segment of `world`" to "?? crash"}}
 
 ## The sky
 
@@ -94,7 +131,7 @@ digraph sky {
 
 ### A function of the clock
 
-Every function in this chapter has a `->` arrow, not `=>`. In Roc that's a promise the compiler holds: no effects, so the same clock always gives the same sky.
+Every function in this chapter has a `->` arrow, not `=>`. In Roc that's a promise the compiler holds: no effects, so the same clock always gives the same sky. If a function has no `=>` and no `$` in sight, there's nothing behind it to think about.
 
 {{code Sky.sun_height_px}}
 
@@ -170,7 +207,7 @@ A crossing and an approach go in, and a moment comes out. The same crossing at t
 
 `Speed` also defines `is_lte`, which is what lets `speed <= standstill` work in the next snippet with an ordinary operator.
 
-The stage is a tag union where two of the tags carry a payload. `Waiting` and `Past` aren't progress of 0 and 1, because a critter can rest somewhere no part of its animation reaches.
+The stage is a tag union where two of the tags carry a payload. `Waiting` and `Past` aren't progress of 0 and 1, because a critter can rest somewhere no part of its animation reaches. If `Waiting` were just 0, a perched bird would show the first frame of its flight.
 
 {{code Animation.Stage}}
 
@@ -186,13 +223,13 @@ The cat plays over steps rather than over a stretch of road because it has to fi
 
 A timeline is data, so the cat's whole performance reads in one place, like a score. Tags with payloads do almost everything here: `Through` and `Before` say where a stretch ends, `Holds` and `Alternates` say how the cat looks, and `Line`, `StaysAt` and `Arc` say where it goes. `Animation.Timeline.( ... )` wraps a record in the nominal type `Timeline`. Nominal (`:=`) is the middle ground: unlike an alias it can carry methods, and unlike an opaque type anyone can build one, which is right for data that needs no guarding.
 
-{{code Cat.crossing_timeline}}
-
-There are two tracks because a cat's looks and its movement change at different moments. Its body moves just ahead of its path, so the `looks` track cuts at 0.8, 2.8 and 3.8 steps into the escape while the `path` track cuts at 1 and 3. One list of phases tying them together wouldn't fit the cat or the bird.
-
 {{code Cat.crossing_timeline from "looks:" to "finally: Holds(Collapse),"}}
 
-`Timeline(pose)` takes a type parameter, which is how a cat and a bird share it. A cat's pose is a closed tag union, and nothing outside `Cat` needs to know its tags. Because it's closed, a `match` on it that misses a pose won't compile.
+There are two tracks because a cat's looks and its movement change at different moments. Its body moves just ahead of its path, so the `looks` track above cuts at 0.8, 2.8 and 3.8 steps into the escape, while the `path` track below cuts at 1 and 3. One list of phases tying them together wouldn't fit the cat or the bird.
+
+{{code Cat.crossing_timeline from "path:" to "finally: StaysAt(end),"}}
+
+`Timeline(pose)` takes a type parameter, which is how a cat and a bird share it. A cat's pose is a closed tag union, and nothing outside `Cat` needs to know its tags. Because it's closed, a `match` on it that misses a pose is a compile-time error.
 
 {{code Cat.Pose}}
 
