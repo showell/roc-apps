@@ -7,6 +7,7 @@
 # after blit expansion, the camera roll, the two sky colours and the sun.
 # SafariApp turns it into a canvas app: the keys, the pause, and the frame
 # leaned by the roll.
+import Angle
 import World
 import Safari
 import Blit
@@ -86,9 +87,9 @@ SafariRide :: [].{
 	commands : SafariRide.Model -> List(Paint.DrawCmd)
 	commands = |m| Blit.blit_expand(Safari.ride_frame(m.world, m.ride))
 
-	# The camera roll in radians: the whole frame, backdrop and commands, turns
+	# The camera roll: the whole frame, backdrop and commands, turns
 	# by minus this about the screen's centre.
-	roll : SafariRide.Model -> F64
+	roll : SafariRide.Model -> Angle.Lean
 	roll = |m| CanvasRoll.rider_roll(m.ride.rider)
 
 	# The sky at the top of the frame and at the horizon, as 0xRRGGBB.

@@ -11,7 +11,7 @@ import World
 import Pose
 
 band_got : List(F64)
-band_got = [CanvasRoll.roll_deadband]
+band_got = [CanvasRoll.roll_deadband.to_radians()]
 
 band_want : List(F64)
 band_want = [0.001]
@@ -71,7 +71,7 @@ main! = |_args| {
 		}),
 		Grade.reals({
 			name: "cr-roll",
-			got: tilt_in.map(|tilt| CanvasRoll.rider_roll(as_rider(tilt))),
+			got: tilt_in.map(|tilt| CanvasRoll.rider_roll(as_rider(tilt)).to_radians()),
 			want: roll_want,
 			tol: 0.0,
 		}),
