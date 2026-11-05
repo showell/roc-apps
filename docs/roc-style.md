@@ -925,6 +925,11 @@ is the base; these rules sharpen it.
   `expect`, so the source is the count, and each must pass exactly once
   (safari's `gates/run.shale`, gopher-roc's `tools/verify.shale`). Below the
   block it names members as a caller does (`Herd.cows`) and helpers bare.
+- **An `expect` that no one module can write goes in a gates-only app.** A
+  check may need two modules that don't import each other, and a production
+  import added only for a test is the wrong fix. Safari's
+  `gates/CrossModuleExpects.roc` holds those; it is the exception, and an
+  `expect` that fits beside its code goes there.
 - **A float compared with a tolerance states the tolerance once, over a
   table.** `(got - want).abs() <= tolerance` is false for a NaN and an
   infinity, so it needs no finite check. A float with no tolerance is
