@@ -47,7 +47,7 @@ rider = |
 	along: along,
 	across: across,
 	yaw: Angle.Turn.radians(0.0),
-	v: v,
+	speed: v,
 	tilt: Angle.Lean.radians(tilt),
 	heading: Angle.Bearing.radians(0.0),
 	gaze_yaw: Angle.Turn.radians(0.0),
@@ -123,7 +123,7 @@ at_seam = {
 	along: 499.0,
 	across: 0.5,
 	yaw: Angle.Turn.radians(0.1),
-	v: Speed.metres_a_step(1.25),
+	speed: Speed.metres_a_step(1.25),
 	tilt: Angle.Lean.radians(0.05),
 	heading: Angle.Bearing.radians(0.7),
 	gaze_yaw: Angle.Turn.radians(0.3),
@@ -135,7 +135,7 @@ crossed = Rider.rider_state_for_next_segment(at_seam, segs)
 
 carry_got : List(F64)
 carry_got = [
-	crossed.v.to_metres_a_step(),
+	crossed.speed.to_metres_a_step(),
 	crossed.tilt.to_radians(),
 	crossed.focus,
 	crossed.gaze_yaw.to_radians(),
@@ -229,7 +229,7 @@ clamped_at_finish = |along, v| Rider.finish_clamp(
 		along: along,
 		across: 0.0,
 		yaw: Angle.Turn.radians(0.0),
-		v: Speed.metres_a_step(v),
+		speed: Speed.metres_a_step(v),
 		tilt: Angle.Lean.radians(0.0),
 		heading: Angle.Bearing.radians(0.0),
 		gaze_yaw: Angle.Turn.radians(0.0),
@@ -241,15 +241,15 @@ clamped_at_finish = |along, v| Rider.finish_clamp(
 finish_got : List(F64)
 finish_got = [
 	clamped_at_finish(300.0, 0.5).along,
-	clamped_at_finish(300.0, 0.5).v.to_metres_a_step(),
+	clamped_at_finish(300.0, 0.5).speed.to_metres_a_step(),
 	clamped_at_finish(310.0, 0.5).along,
-	clamped_at_finish(310.0, 0.5).v.to_metres_a_step(),
+	clamped_at_finish(310.0, 0.5).speed.to_metres_a_step(),
 	clamped_at_finish(290.0, 0.05).along,
-	clamped_at_finish(290.0, 0.05).v.to_metres_a_step(),
+	clamped_at_finish(290.0, 0.05).speed.to_metres_a_step(),
 	clamped_at_finish(290.0, 0.5).along,
-	clamped_at_finish(290.0, 0.5).v.to_metres_a_step(),
+	clamped_at_finish(290.0, 0.5).speed.to_metres_a_step(),
 	clamped_at_finish(100.0, 0.05).along,
-	clamped_at_finish(100.0, 0.05).v.to_metres_a_step(),
+	clamped_at_finish(100.0, 0.05).speed.to_metres_a_step(),
 ]
 
 finish_want : List(F64)
@@ -263,7 +263,7 @@ done_got = (
 			along: 300.0,
 			across: 0.0,
 			yaw: Angle.Turn.radians(0.0),
-			v: Speed.at_rest,
+			speed: Speed.at_rest,
 			tilt: Angle.Lean.radians(0.0),
 			heading: Angle.Bearing.radians(0.0),
 			gaze_yaw: Angle.Turn.radians(0.0),
@@ -274,7 +274,7 @@ done_got = (
 			along: 299.0,
 			across: 0.0,
 			yaw: Angle.Turn.radians(0.0),
-			v: Speed.at_rest,
+			speed: Speed.at_rest,
 			tilt: Angle.Lean.radians(0.0),
 			heading: Angle.Bearing.radians(0.0),
 			gaze_yaw: Angle.Turn.radians(0.0),
@@ -314,10 +314,10 @@ next = Rider.get_next_rider_state(
 frame_got : List(Bool)
 frame_got = [
 	(next.along > 0.0),
-	(next.v > Speed.at_rest),
+	(next.speed > Speed.at_rest),
 	(next.segment == World.SegmentIndex.first),
 	(DeviceMath.real_abs(next.across) < (Scenery.lane_width / 2.0)),
-	(next.v <= VehicleLimits.v_max),
+	(next.speed <= VehicleLimits.v_max),
 ]
 
 frame_want : List(Bool)

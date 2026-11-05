@@ -28,7 +28,7 @@ upright = {
 	along: 0.0,
 	across: 0.0,
 	yaw: Angle.Turn.radians(0.0),
-	v: Pose.v_base,
+	speed: Pose.v_base,
 	tilt: Angle.Lean.radians(0.0),
 	heading: Angle.Bearing.radians(0.0),
 	gaze_yaw: Angle.Turn.radians(0.0),

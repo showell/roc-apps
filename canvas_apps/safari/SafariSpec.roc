@@ -34,7 +34,7 @@ start_got = [
 	Safari.ride_initial.clock,
 	Safari.ride_initial.rider.along,
 	Safari.ride_initial.rider.across,
-	Safari.ride_initial.rider.v.to_metres_a_step(),
+	Safari.ride_initial.rider.speed.to_metres_a_step(),
 	Safari.ride_initial.truck.route_position,
 	Safari.ride_initial.truck.speed.to_metres_a_step(),
 ]
@@ -130,7 +130,7 @@ done = {
 		along: 400.0,
 		across: 0.0,
 		yaw: Angle.Turn.radians(0.0),
-		v: Speed.at_rest,
+		speed: Speed.at_rest,
 		tilt: Angle.Lean.radians(0.0),
 		heading: Angle.Bearing.radians(0.0),
 		gaze_yaw: Angle.Turn.radians(0.0),
@@ -151,7 +151,7 @@ restart_got = (
 		[
 			r.clock,
 			r.rider.along,
-			r.rider.v.to_metres_a_step(),
+			r.rider.speed.to_metres_a_step(),
 			r.truck.route_position,
 			r.rider.focus,
 		]

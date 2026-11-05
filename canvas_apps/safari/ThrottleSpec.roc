@@ -52,7 +52,7 @@ rider_at = |
 	along: along,
 	across: across,
 	yaw: Angle.Turn.radians(0.0),
-	v: v,
+	speed: v,
 	tilt: Angle.Lean.radians(tilt),
 	heading: Angle.Bearing.radians(0.0),
 	gaze_yaw: Angle.Turn.radians(0.0),

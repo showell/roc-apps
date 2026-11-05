@@ -22,8 +22,8 @@ Bike :: [].{
 	} -> Pose.RiderState
 	simulate_rider_step = |s, { lean_step, accel }| {
 		tilt = s.tilt.plus(lean_step)
-		v = s.v.accelerated_by(accel)
-		step_length = v.to_metres_a_step()
+		speed = s.speed.accelerated_by(accel)
+		step_length = speed.to_metres_a_step()
 		turn = tilt.steer(yaw_per_tilt)
 		mid = s.yaw.plus(turn.times(0.5)).to_radians()
 		{
@@ -31,7 +31,7 @@ Bike :: [].{
 			along: s.along + step_length * Trig.r_cos(mid),
 			across: s.across + step_length * Trig.r_sin(mid),
 			yaw: s.yaw.plus(turn),
-			v,
+			speed,
 			tilt,
 			heading: s.heading.plus(turn),
 		}

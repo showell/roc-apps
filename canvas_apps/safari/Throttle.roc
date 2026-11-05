@@ -38,7 +38,7 @@ Throttle :: [].{
 				if d <= F64.from_bits(4517329193108106637) {
 					0.0
 				} else {
-					state.v.acceleration_to({ target: v_end, within: d })
+					state.speed.acceleration_to({ target: v_end, within: d })
 				}
 			)
 			(
@@ -59,7 +59,7 @@ Throttle :: [].{
 					(
 						if Cat.is_in_danger({
 							gap: (crossing.along - state.along),
-							speed: state.v,
+							speed: state.speed,
 						}) {
 							0.0
 						} else {
@@ -131,7 +131,7 @@ Throttle :: [].{
 			n = sim.frames
 			sa = (
 				(
-					(0.0 - state.v.to_metres_a_step()) / (
+					(0.0 - state.speed.to_metres_a_step()) / (
 						2.0 * DeviceMath.real_max(
 							n,
 							1.0,
@@ -241,10 +241,10 @@ Throttle :: [].{
 					{
 						road_segment: seg,
 						exit_speed: v_end,
-						next_speed: state.v.accelerated_by(a4),
+						next_speed: state.speed.accelerated_by(a4),
 						is_near_end: near,
 					},
-				).change_from(state.v)
+				).change_from(state.speed)
 			)
 		}
 	)

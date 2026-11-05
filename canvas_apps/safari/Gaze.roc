@@ -178,7 +178,7 @@ Gaze :: [].{
 			{ engaged: False, accel: 0.0 }
 		} else {
 			(
-				if state.v <= pig_gaze_speed {
+				if state.speed <= pig_gaze_speed {
 					{ engaged: True, accel: 0.0 }
 				} else {
 					pig_gaze_brake_easing(state, seg)
@@ -193,7 +193,7 @@ Gaze :: [].{
 			d = ((Pigs.gaze_pig(seg.length).along - state.along) - pig_gaze_settle_dist)
 			{
 				engaged: True,
-				accel: state.v.acceleration_to({
+				accel: state.speed.acceleration_to({
 					target: pig_gaze_speed,
 					within: DeviceMath.real_max(d, 1.0),
 				}),

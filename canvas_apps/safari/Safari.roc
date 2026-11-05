@@ -72,7 +72,7 @@ Safari :: [].{
 				cam_focal: cf,
 				rider_segment: s.segment,
 				rider_along: s.along,
-				speed: s.v,
+				speed: s.speed,
 				truck_position: r.truck.route_position,
 			})
 			roadside = ItemDraw.draw(

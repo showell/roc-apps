@@ -78,7 +78,7 @@ Rider :: [].{
 					(
 						if in_zone {
 							(
-								if moved.v < stopping_speed {
+								if moved.speed < stopping_speed {
 									stopped_at(moved, seg.length)
 								} else {
 									moved
@@ -97,7 +97,7 @@ Rider :: [].{
 	stopped_at = |s, at| {
 		..s,
 		along: at,
-		v: Speed.at_rest,
+		speed: Speed.at_rest,
 	}
 
 	resolve_cross : Pose.RiderState, List(World.Segment) -> Pose.RiderState
