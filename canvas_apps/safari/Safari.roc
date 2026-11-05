@@ -25,7 +25,7 @@ Safari :: [].{
 	ride_initial : Safari.Ride
 	ride_initial = {
 		rider: Pose.initial_rider_state,
-		truck: Truck.truck_initial,
+		truck: Truck.initial_truck,
 		clock: 0.0,
 	}
 
@@ -45,7 +45,7 @@ Safari :: [].{
 			dist = World.distance_along_route(w, { index: nx.segment, along: nx.along })
 			{
 				rider: nx,
-				truck: Truck.truck_next(
+				truck: Truck.advance(
 					r.truck,
 					{
 						rider_distance: dist,
@@ -73,7 +73,7 @@ Safari :: [].{
 				rider_segment: s.segment,
 				rider_along: s.along,
 				speed: s.v,
-				truck_position: r.truck.pos,
+				truck_position: r.truck.route_position,
 			})
 			roadside = ItemDraw.draw(
 				scene,
@@ -83,7 +83,7 @@ Safari :: [].{
 					pose,
 					cam_focal: cf,
 					clock: r.clock,
-					brake_lights: if (r.truck.braking) On else Off,
+					brake_lights: if (r.truck.is_braking) On else Off,
 				},
 			)
 			List.join([

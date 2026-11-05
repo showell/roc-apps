@@ -34,8 +34,8 @@ start_got = [
 	Safari.ride_initial.rider.along,
 	Safari.ride_initial.rider.across,
 	Safari.ride_initial.rider.v,
-	Safari.ride_initial.truck.pos,
-	Safari.ride_initial.truck.v,
+	Safari.ride_initial.truck.route_position,
+	Safari.ride_initial.truck.speed,
 ]
 
 start_want : List(F64)
@@ -49,7 +49,7 @@ start_index_want = [0]
 
 start_flag_got : List(Bool)
 start_flag_got = [
-	Safari.ride_initial.truck.braking,
+	Safari.ride_initial.truck.is_braking,
 	Rider.is_finished(Safari.ride_initial.rider, segs),
 ]
 
@@ -75,7 +75,7 @@ step_want = [1.0, 2.0, 1.0]
 moved_got : List(Bool)
 moved_got = [
 	(after_one_step.rider.along > Safari.ride_initial.rider.along),
-	(after_one_step.truck.pos > Safari.ride_initial.truck.pos),
+	(after_one_step.truck.route_position > Safari.ride_initial.truck.route_position),
 	(after_two_steps.rider.along > after_one_step.rider.along),
 ]
 
@@ -93,7 +93,7 @@ order_got = (
 			segs,
 			{ index: after_one_step.rider.segment, along: after_one_step.rider.along },
 		)
-		against_new = Truck.truck_next(
+		against_new = Truck.advance(
 			Safari.ride_initial.truck,
 			{
 				rider_distance: new_dist,
@@ -101,7 +101,7 @@ order_got = (
 				route_length: World.route_length(segs),
 			},
 		)
-		against_old = Truck.truck_next(
+		against_old = Truck.advance(
 			Safari.ride_initial.truck,
 			{
 				rider_distance: old_dist,
@@ -110,9 +110,9 @@ order_got = (
 			},
 		)
 		[
-			(F64.to_bits(after_one_step.truck.pos) == F64.to_bits(against_new.pos)),
+			(F64.to_bits(after_one_step.truck.route_position) == F64.to_bits(against_new.route_position)),
 			(new_dist > old_dist),
-			((F64.to_bits(against_new.pos) == F64.to_bits(against_old.pos)) == False),
+			((F64.to_bits(against_new.route_position) == F64.to_bits(against_old.route_position)) == False),
 		]
 	}
 )
@@ -134,9 +134,9 @@ done = {
 		focus: 0.9,
 	},
 	truck: {
-		pos: 9000.0,
-		v: 2.0,
-		braking: True,
+		route_position: 9000.0,
+		speed: 2.0,
+		is_braking: True,
 	},
 	clock: 12345.0,
 }
@@ -149,7 +149,7 @@ restart_got = (
 			r.clock,
 			r.rider.along,
 			r.rider.v,
-			r.truck.pos,
+			r.truck.route_position,
 			r.rider.focus,
 		]
 	}
@@ -159,7 +159,7 @@ restart_want : List(F64)
 restart_want = [0.0, 0.0, 0.3, 500.0, 0.0]
 
 restart_flag_got : List(Bool)
-restart_flag_got = [Rider.is_finished(done.rider, segs), Safari.ride_next(segs, done).truck.braking]
+restart_flag_got = [Rider.is_finished(done.rider, segs), Safari.ride_next(segs, done).truck.is_braking]
 
 restart_flag_want : List(Bool)
 restart_flag_want = [True, False]

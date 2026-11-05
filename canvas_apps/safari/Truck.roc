@@ -1,209 +1,170 @@
-# Truck -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## The truck the rider chases. It starts well ahead and keeps to a schedule
+## that brings it closer as the rider nears the route's end: it speeds up
+## when it is behind the schedule, and slows for a turn when one is close.
+## Speeds are in metres a frame.
 import lib.DeviceMath
 import Pose
 import VehicleLimits
 import World
 
 Truck :: [].{
+
+	## Where the truck is along the route, how fast it is going, and whether
+	## it is braking.
 	TruckState : {
-		pos : F64,
-		v : F64,
-		braking : Bool,
+		route_position : F64,
+		speed : F64,
+		is_braking : Bool,
 	}
-	Turn : { dist : F64, v_turn : F64 }
+
+	## A turn ahead of the truck: how far off it is, and how fast it can be
+	## taken.
+	ComingTurn : { distance : F64, turn_speed : F64 }
 
 	## The next turn of the route past a point, or none: the route ends first.
-	NextTurn : [TurnAhead(Truck.Turn), NoTurnAhead]
+	NextTurn : [TurnAhead(Truck.ComingTurn), NoTurnAhead]
 
-	start_ahead : F64
-	start_ahead = 500.0
+	## How far ahead of the rider the truck starts.
+	start_lead : F64
+	start_lead = 500.0
 
+	## How far ahead of the rider the truck's schedule ends.
 	finish_lead : F64
 	finish_lead = 100.0
 
-	truck_turn_caution : F64
-	truck_turn_caution = 0.8
+	## The truck takes a turn at this fraction of the speed the turn allows.
+	turn_caution : F64
+	turn_caution = 0.8
 
-	truck_brake_distance : F64
-	truck_brake_distance = VehicleLimits.approach_intersection_dist
+	## The truck starts to brake when a turn is this close.
+	brake_distance : F64
+	brake_distance = VehicleLimits.approach_intersection_dist
 
-	truck_chase_accel : F64
-	truck_chase_accel = (1.1 * VehicleLimits.a_accel)
+	chase_acceleration : F64
+	chase_acceleration = 1.1 * VehicleLimits.a_accel
 
-	truck_max_v : F64
-	truck_max_v = (1.1 * VehicleLimits.v_max)
+	top_speed : F64
+	top_speed = 1.1 * VehicleLimits.v_max
 
-	truck_initial : Truck.TruckState
-	truck_initial = {
-		pos: start_ahead,
-		v: Pose.v_base,
-		braking: False,
+	initial_truck : Truck.TruckState
+	initial_truck = {
+		route_position: start_lead,
+		speed: Pose.v_base,
+		is_braking: False,
 	}
 
-	## The next turn at or after segment `segment_index`, which starts
-	## `segment_start` along the route.
-	next_turn_from : List(World.Segment),
-	{
-		truck_position : F64,
-		segment_index : I64,
-		segment_start : F64,
-	} -> Truck.NextTurn
-	next_turn_from = |
-		segs,
-		{
-			truck_position: pos,
-			segment_index: i,
-			segment_start: cum0,
-		},
-	| (
-		if i >= segs.len().to_i64_wrap() {
-			NoTurnAhead
-		} else {
-			next_turn_step(
-				segs,
-				{
-					truck_position: pos,
-					segment_index: i,
-					segment_end: (
-						cum0 + (
-							List.get(
-								segs,
-								I64.to_u64_wrap(i),
-							) ?? crash ("list-at out of range")
-						).length
-					),
-				},
-			)
-		}
-	)
-
-	## The turn at the end of segment `segment_index`, which ends
-	## `segment_end` along the route, if the truck is short of it; else the
-	## next turn after it.
-	next_turn_step : List(World.Segment),
-	{
-		truck_position : F64,
-		segment_index : I64,
-		segment_end : F64,
-	} -> Truck.NextTurn
-	next_turn_step = |
-		segs,
-		{
-			truck_position: pos,
-			segment_index: i,
-			segment_end: cum,
-		},
-	| (
-		{
-			s = (List.get(segs, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))
-			(
-				if pos < cum {
-					match s.ending {
-						Continues(_) => TurnAhead({
-							dist: (cum - pos),
-							v_turn: VehicleLimits.turn_speed(s.exit_angle),
-						})
-						Terminates => NoTurnAhead
-					}
-				} else {
-					next_turn_from(
-						segs,
-						{
-							truck_position: pos,
-							segment_index: i + 1,
-							segment_start: cum,
-						},
-					)
-				}
-			)
-		}
-	)
-
+	## The next turn of `world` past `route_position`.
 	next_turn : List(World.Segment), F64 -> Truck.NextTurn
-	next_turn = |segs, pos| next_turn_from(
-		segs,
-		{
-			truck_position: pos,
-			segment_index: 0,
-			segment_start: 0.0,
-		},
-	)
+	next_turn = |world, route_position|
+		next_turn_on(
+			world,
+			{
+				route_position,
+				segment_start: 0.0,
+			},
+		)
 
-	truck_schedule : F64, F64 -> F64
-	truck_schedule = |
-		rider_dist,
-		l,
-	| ((rider_dist + finish_lead) + ((start_ahead - finish_lead) * (1.0 - (rider_dist / l))))
+	## Where the truck should be along the route, when the rider is
+	## `rider_distance` along it.
+	scheduled_position : { rider_distance : F64, route_length : F64 } -> F64
+	scheduled_position = |{ rider_distance, route_length }| {
+		fraction_left = 1.0 - rider_distance / route_length
+		rider_distance + finish_lead + (start_lead - finish_lead) * fraction_left
+	}
 
-	## The truck a frame on: where the rider is along the route, the
-	## world's segments, and the route's whole length decide its pace.
-	truck_next : Truck.TruckState,
+	## The truck a frame on: where the rider is along the route, the world's
+	## segments, and the route's whole length decide its pace.
+	advance : Truck.TruckState,
 	{
 		rider_distance : F64,
 		world : List(World.Segment),
 		route_length : F64,
 	} -> Truck.TruckState
-	truck_next = |
+	advance = |
 		truck,
 		{
-			rider_distance: rider_dist,
-			world: segs,
-			route_length: l,
+			rider_distance,
+			world,
+			route_length,
 		},
-	| (
-		{
-			scheduled = truck_schedule(rider_dist, l)
-			(
-				match next_turn(segs, truck.pos) {
-					TurnAhead(turn) => (
-						if turn.dist <= truck_brake_distance {
-							truck_braking(truck, turn)
-						} else {
-							truck_free(truck, scheduled)
-						}
-					)
-					NoTurnAhead => truck_free(truck, scheduled)
-				}
-			)
-		}
-	)
-
-	truck_braking : Truck.TruckState, Truck.Turn -> Truck.TruckState
-	truck_braking = |truck, turn| (
-		{
-			target = (turn.v_turn * truck_turn_caution)
-			a = (
-				if turn.dist > F64.from_bits(4517329193108106637) {
-					(((target * target) - (truck.v * truck.v)) / (2.0 * turn.dist))
+	| {
+		schedule = scheduled_position({ rider_distance, route_length })
+		match next_turn(world, truck.route_position) {
+			TurnAhead(turn) =>
+				if turn.distance <= brake_distance {
+					advance_braking(truck, turn)
 				} else {
-					0.0
+					advance_on_schedule(truck, schedule)
 				}
-			)
-			v = DeviceMath.real_max(target, (truck.v + a))
-			{
-				pos: (truck.pos + v),
-				v: v,
-				braking: (v < truck.v),
+			NoTurnAhead => advance_on_schedule(truck, schedule)
+		}
+	}
+}
+
+## The braking for a turn is worked out over the distance left to it, so a
+## turn closer than this counts as reached, and no division is by zero.
+least_braking_distance : F64
+least_braking_distance = 0.000001
+
+## The next turn past `route_position` along `segments`, the first of which
+## starts at `segment_start`. The route's last segment ends in no turn.
+next_turn_on : List(World.Segment),
+{
+	route_position : F64,
+	segment_start : F64,
+} -> Truck.NextTurn
+next_turn_on = |segments, { route_position, segment_start }|
+	match segments {
+		[] => NoTurnAhead
+		[segment, .. as later_segments] => {
+			segment_end = segment_start + segment.length
+			if route_position < segment_end {
+				match segment.ending {
+					Continues(_) =>
+						TurnAhead({
+							distance: segment_end - route_position,
+							turn_speed: VehicleLimits.turn_speed(segment.exit_angle),
+						})
+					Terminates => NoTurnAhead
+				}
+			} else {
+				next_turn_on(later_segments, { route_position, segment_start: segment_end })
 			}
 		}
-	)
+	}
 
-	truck_free : Truck.TruckState, F64 -> Truck.TruckState
-	truck_free = |truck, scheduled| (
-		{
-			v = (
-				if truck.pos < scheduled {
-					DeviceMath.real_min(truck_max_v, (truck.v + truck_chase_accel))
-				} else {
-					truck.v
-				}
-			)
-			{
-				pos: (truck.pos + v),
-				v: v,
-				braking: False,
-			}
+## The truck a frame on, slowing for `turn`, so that it reaches the turn at a
+## cautious speed.
+advance_braking : Truck.TruckState, Truck.ComingTurn -> Truck.TruckState
+advance_braking = |truck, turn| {
+	target_speed = turn.turn_speed * Truck.turn_caution
+	acceleration =
+		if turn.distance > least_braking_distance {
+			(target_speed * target_speed - truck.speed * truck.speed) / (2.0 * turn.distance)
+		} else {
+			0.0
 		}
-	)
+	speed = DeviceMath.real_max(target_speed, truck.speed + acceleration)
+	{
+		route_position: truck.route_position + speed,
+		speed,
+		is_braking: speed < truck.speed,
+	}
+}
+
+## The truck a frame on with no turn close: it speeds up while it is short of
+## `schedule`, and otherwise holds its speed.
+advance_on_schedule : Truck.TruckState, F64 -> Truck.TruckState
+advance_on_schedule = |truck, schedule| {
+	speed =
+		if truck.route_position < schedule {
+			DeviceMath.real_min(Truck.top_speed, truck.speed + Truck.chase_acceleration)
+		} else {
+			truck.speed
+		}
+	{
+		route_position: truck.route_position + speed,
+		speed,
+		is_braking: False,
+	}
 }
