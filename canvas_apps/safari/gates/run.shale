@@ -5,8 +5,8 @@
 --   cd <roc-apps checkout> && nice -n 19 shale canvas_apps/safari/gates/run.shale
 --
 -- Run from the roc-apps root: every path is the checkout's, so a worktree
--- gates its own tree. About two and a half minutes on the box (the specs ~70 s in
--- two parts, the proof tools ~65 s, the expects a few seconds).
+-- gates its own tree. About two minutes on the box (the specs ~30 s in two
+-- parts, the proof tools ~65 s, the expects a few seconds).
 --
 -- A run holds 64 programs and a spec takes two (its build and its binary),
 -- so the gates run as child runs of this script, `part=expects`, `part=1` and
