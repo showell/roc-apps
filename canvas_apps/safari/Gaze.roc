@@ -18,6 +18,10 @@ Gaze :: [].{
 	PigLook : { looking : Bool, dist : Distance }
 	GazeBrake : { engaged : Bool, accel : Acceleration }
 
+	## Where the rider wants to look: at the pig in sight, this far from the
+	## way the bike points, or at the road.
+	GazeTarget : [OnPig(Angle.Turn), OnRoad]
+
 	gaze_look_dist : Distance
 	gaze_look_dist = Distance.metres(150.0)
 
@@ -102,14 +106,13 @@ Gaze :: [].{
 		}
 	}
 
-	## The turn the rider wants to look: toward the pig in sight, or
-	## straight ahead.
-	desired_gaze : Pose.RiderState, World.Segment -> Angle.Turn
+	## Where the rider wants to look: the pig in sight, or else the road.
+	desired_gaze : Pose.RiderState, World.Segment -> Gaze.GazeTarget
 	desired_gaze = |state, seg|
 		if pig_ahead(state, seg).looking {
-			desired_gaze_at(state, Pigs.gaze_pig(seg.length))
+			OnPig(desired_gaze_at(state, Pigs.gaze_pig(seg.length)))
 		} else {
-			Angle.straight_ahead
+			OnRoad
 		}
 
 	desired_gaze_at : Pose.RiderState, Scenery.Critter -> Angle.Turn
@@ -120,25 +123,22 @@ Gaze :: [].{
 		),
 	).minus(state.yaw)
 
-	## Whether a gaze is exactly the rest position: +0.0, which `desired_gaze`
-	## answers when there is nothing to look at.
-	is_at_rest : Angle.Turn -> Bool
-	is_at_rest = |gaze| gaze.to_radians().to_bits() == F64.to_bits(0.0)
-
-	## The gaze one step on. It swivels toward `want` at no more than the
-	## swivel rate; with nothing to look at it eases back toward the road,
-	## and snaps there once it is close.
-	next_gaze_yaw : Pose.RiderState, Angle.Turn -> Angle.Turn
-	next_gaze_yaw = |state, want| {
+	## The gaze one step on. It swivels toward a pig at no more than the
+	## swivel rate; with only the road to look at it eases back, and snaps
+	## there once it is close.
+	next_gaze_yaw : Pose.RiderState, Gaze.GazeTarget -> Angle.Turn
+	next_gaze_yaw = |state, target| {
 		gaze = state.gaze_yaw
-		if !is_at_rest(want) {
-			gaze.plus(want.minus(gaze).within(gaze_swivel_rate))
-		} else if gaze.abs() <= gaze_return_snap {
-			Angle.straight_ahead
-		} else {
-			easing = gaze_return_rate.min(gaze.abs().times(gaze_return_ease))
-			direction = Trig.r_sign(gaze.to_radians())
-			gaze.minus(easing.times(direction))
+		match target {
+			OnPig(want) => gaze.plus(want.minus(gaze).within(gaze_swivel_rate))
+			OnRoad =>
+				if gaze.abs() <= gaze_return_snap {
+					Angle.straight_ahead
+				} else {
+					easing = gaze_return_rate.min(gaze.abs().times(gaze_return_ease))
+					direction = Trig.r_sign(gaze.to_radians())
+					gaze.minus(easing.times(direction))
+				}
 		}
 	}
 
@@ -146,7 +146,7 @@ Gaze :: [].{
 	## the gaze rests, and rises with how far the gaze has turned.
 	next_focus : Pose.RiderState, Angle.Turn -> Fraction
 	next_focus = |state, gaze_yaw|
-		if is_at_rest(gaze_yaw) {
+		if gaze_yaw == Angle.straight_ahead {
 			Fraction.clamp(state.focus.to_f64() - focus_decay)
 		} else {
 			state.focus.max(Fraction.clamp(gaze_yaw.abs().fraction_of(gaze_release_angle)))
@@ -247,13 +247,22 @@ expect Gaze.pig_ahead(rider(200.0, 0.0), distracting).dist.to_metres() == 142.0
 expect Gaze.pig_ahead(rider(100.0, 0.0), distracting).dist.to_metres() == 0.0
 expect Gaze.no_look.dist.to_metres() == 0.0
 
+## How far this rider on the distracting segment wants to turn to the pig.
+turn_to_pig : Pose.RiderState -> F64
+turn_to_pig = |state|
+	match Gaze.desired_gaze(state, distracting) {
+		OnPig(turn) => turn.to_radians()
+		OnRoad => crash "Gaze's expects: no pig in sight"
+	}
+
 expect {
-	far = Gaze.desired_gaze(rider(200.0, 0.0), distracting).to_radians()
-	near = Gaze.desired_gaze(rider(320.0, 0.0), distracting).to_radians()
+	far = turn_to_pig(rider(200.0, 0.0))
+	near = turn_to_pig(rider(320.0, 0.0))
 	far > 0.0 and near > far
 }
 
-expect Gaze.desired_gaze(rider(200.0, 0.0), plain).to_radians().to_bits() == F64.to_bits(0.0)
+expect Gaze.desired_gaze(rider(200.0, 0.0), plain) == OnRoad
+expect Gaze.desired_gaze(rider(100.0, 0.0), distracting) == OnRoad
 
 ## A rider looking `gaze_yaw` from straight ahead.
 head : F64, F64 -> Pose.RiderState
@@ -262,9 +271,13 @@ head = |gaze_yaw, along| {
 	gaze_yaw: Angle.Turn.radians(gaze_yaw),
 }
 
-## The gaze one step after `state`, wanting `want` radians.
+## The gaze one step after `state`, wanting a pig `want` radians off.
 gaze_after : Pose.RiderState, F64 -> F64
-gaze_after = |state, want| Gaze.next_gaze_yaw(state, Angle.Turn.radians(want)).to_radians()
+gaze_after = |state, want| Gaze.next_gaze_yaw(state, OnPig(Angle.Turn.radians(want))).to_radians()
+
+## The gaze one step after `state`, with only the road to look at.
+gaze_returning : Pose.RiderState -> F64
+gaze_returning = |state| Gaze.next_gaze_yaw(state, OnRoad).to_radians()
 
 ## The focus after the gaze moves to `gaze` radians.
 focus_after : Pose.RiderState, F64 -> F64
@@ -281,8 +294,8 @@ expect gaze_after(head(0.0, 200.0), (0.0 - 1.0)) + swivel_rate == 0.0
 expect gaze_after(head(0.0, 200.0), (swivel_rate / 2.0)) - (swivel_rate / 2.0) == 0.0
 
 expect {
-	big = gaze_after(head((30.0 * Trig.deg), 200.0), 0.0)
-	small = gaze_after(head((2.0 * Trig.deg), 200.0), 0.0)
+	big = gaze_returning(head((30.0 * Trig.deg), 200.0))
+	small = gaze_returning(head((2.0 * Trig.deg), 200.0))
 	big < (30.0 * Trig.deg)
 		and big > 0.0
 		and small < (2.0 * Trig.deg)
@@ -290,9 +303,12 @@ expect {
 		and ((30.0 * Trig.deg) - big) > ((2.0 * Trig.deg) - small)
 }
 
-expect gaze_after(head(return_snap, 200.0), 0.0) == 0.0
-expect gaze_after(head((0.0 - return_snap), 200.0), 0.0) == 0.0
-expect gaze_after(head(0.0, 200.0), 0.0) == 0.0
+expect gaze_returning(head(return_snap, 200.0)) == 0.0
+expect gaze_returning(head((0.0 - return_snap), 200.0)) == 0.0
+expect gaze_returning(head(0.0, 200.0)) == 0.0
+
+# A pig dead ahead is still a pig: the gaze swivels to it, and doesn't ease.
+expect gaze_after(head((2.0 * Trig.deg), 200.0), 0.0) == 0.0
 
 ## A rider with this focus, looking `gaze_yaw` from straight ahead.
 rider_with_focus : F64, F64 -> Pose.RiderState
