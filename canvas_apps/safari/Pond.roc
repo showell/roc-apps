@@ -53,3 +53,28 @@ Pond :: [].{
 		{ at: { along: Along.metres(8.0), across: Across.metres(-22.0) }, facing: FacesRight },
 	]
 }
+
+expect Pond.water_outline.len() == 7
+expect Pond.bank.len() == 6
+expect Pond.ducks.len() == 6
+expect Pond.water_color == 3112588
+expect Pond.bank_color == 12759680
+expect Pond.duck_codepoint == 129414
+expect Pond.duck_height.to_metres() == 0.9
+
+expect Pond.water_outline.get(0) == Ok({ along: Along.metres(3.0), across: Across.metres(-4.0) })
+expect Pond.water_outline.get(4) == Ok({ along: Along.metres(32.0), across: Across.metres(-17.0) })
+expect Pond.bank.get(0) == Ok({ along: Along.metres(29.0), across: Across.metres(-7.0) })
+
+is_on_water : Pond.Duck -> Bool
+is_on_water = |duck|
+	duck.at.across <= Across.metres(-3.0)
+		and duck.at.across >= Across.metres(-33.0)
+		and duck.at.along >= Along.metres(3.0)
+		and duck.at.along <= Along.metres(32.0)
+
+expect Pond.ducks.all(is_on_water)
+
+expect
+	Pond.ducks.map(|duck| duck.facing == FacesRight)
+		== [True, False, True, True, False, True]
