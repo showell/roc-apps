@@ -96,3 +96,7 @@ Render :: [].{
 		}
 	}
 }
+
+expect TreeSighting.max_vis_trees == 640
+expect TowerSighting.max_vis_towers == 16
+expect CatSighting.max_vis_cats == 8

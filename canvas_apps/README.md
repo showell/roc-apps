@@ -3,16 +3,18 @@
 Small interactive Roc programs that run two ways from one set of files: as a
 native program on roc-ray, and as a page in a browser.
 
-Nine of them, covering a few different kinds of program. `safari` is a
+Twelve of them, covering a few different kinds of program. `safari` is a
 driving screensaver. `snake`, `pong` and `breakout` are arcade games.
 `particles` is a fountain of four thousand sprites that follows the pointer.
 `camera` is a world larger than the window, with a camera over it and a HUD
 that stays put. `workshop` is a pixel paint program you drag on.
 `trick_or_treat` is a movie you can scrub. `cat_widget` is a small page for
 the Safari tutorial: drag across it and the cat's crossing plays under the
-pointer, from Safari's own modules.
+pointer, from Safari's own modules. `sky_widget`, `bird_widget` and `beacon_widget`
+are three more: drag the clock and the sun sets, drag the gap and the bird
+flies, drag the clock and two masts blink opposite each other.
 
-Six of the nine — all but `safari`, `trick_or_treat` and `cat_widget` — are
+Six of the twelve — all but `safari`, `trick_or_treat` and the widgets — are
 roc-ray's own examples, by Luke Boswell, taken with only small changes to fit this scheme.
 
 **The native side runs on roc-ray 0.12.0** (`23eec6e`), with the
@@ -42,6 +44,7 @@ which builds every app and runs it headless.
 | `lib/` | a package every app shares: `CanvasApp` `WasmApp` `Shapes` `Brush` `Input` `Keys` `Mouse` `Math` `Color` `Camera` `Font` `Random` `Trig` `DeviceMath` `BrushGlsl` `View` |
 | `web/` | the page's end: the wasm platform and host, `build.zig` and `options.zig` (the host object, rebuilt by every page build), `canvas_app_runner.js`, `shapes_canvas.js`, `page_check.mjs`, `mini_canvas.mjs`, `camera_check.mjs` |
 | `native/` | roc-ray's end, as a package: `CanvasAppRunner.roc` |
+| `widget_kit/` | what the tutorial's widgets share, as a package: `ScrubWidget` turns a dragged pointer into one number and lays out the picture, the ruler and the text. It sits above `lib/` and Safari's `game` package, because it speaks in `Fraction`s and no other app wants it |
 
 An app's own directory holds a `<Name>App.roc` with the `CanvasApp` value in
 it, a `page.html`, and whatever rules and drawing it needs.
@@ -73,6 +76,10 @@ the shot is missing:
 
 Copy an existing app's `main.roc` and `web.roc`; they differ from each other
 only in their platform, the runner they hand the value to, and one comment.
+A tutorial widget lives only on a page, so it has no `main.roc`: `build.sh`
+never reads one, `web.roc` is its one app root, and `native.sh` says there is
+no app. Roc finds a module's packages by walking up to a `main.roc`, so checking
+one of its modules alone takes `roc check --main=web.roc <Module>.roc`.
 
 The page's own part is one object, before the script tags:
 
@@ -93,6 +100,17 @@ four arrows, `W` `A` `S` `D` `Q` `E` `C` `J` `P` `R`, Space, Enter, and `1`–`4
 Adding one touches four places — `Keys.Key` and `Keys.bit`, `KEY_BIT` in
 `web/canvas_app_runner.js`, and `watched_keys` plus both match arms in
 `native/CanvasAppRunner.roc` — so a key exists on both ends or on neither.
+
+## In a page of prose
+
+A canvas app goes in a page of prose as an iframe of its own page, sized by an
+`aspect-ratio`, with `loading="lazy"` so it costs nothing until the reader
+comes near. `widget_kit/embed.js` makes the canvas fill the frame, passes the
+wheel on to the prose, gives a clicked frame the keyboard, and stops a frame
+that's off the screen. `canvas_app_runner.js` is unchanged, and each app is
+still a page of its own. `widget_kit/embed_trial.html` tries it with the ride
+and two widgets; copied with `embed.js` to `~/build/roc-apps/next/embed_trial/`
+it shows on the dev channel, beside the apps it frames.
 
 ## What an app is
 
@@ -315,7 +333,7 @@ long movie wants: `FRAMES=1500`.
 | `snake`, `pong`, `breakout`, `camera`, `particles` | roc-ray's examples of the same names |
 | `workshop` | roc-ray's `generated_assets`, the Pixel Workshop |
 | `safari` | this repository's own screensaver, which began as a Codex program; `safari/README.md` |
-| `trick_or_treat`, `cat_widget` | this repository's own |
+| `trick_or_treat`, `cat_widget`, `sky_widget`, `bird_widget`, `beacon_widget` | this repository's own |
 
 The roc-ray examples were taken at commit `e100c95`. Each ported file says in its own docstring what changed in it and why,
 which is the copy to trust. The shape of the change is the same throughout: the

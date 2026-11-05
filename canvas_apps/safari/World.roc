@@ -416,3 +416,156 @@ nearest_tree_ahead = |trees, along| {
 		NoTreeYet => along
 	}
 }
+
+expect World.route.len() == 19
+
+expect
+	[
+		(0, 0),
+		(2, 1),
+		(10, 2),
+		(11, 3),
+		(18, 9),
+	].all(
+		|(number, want)| {
+			index = World.SegmentIndex.number(number)
+			World.pig_segments_through(index).to_i64() == want
+		},
+	)
+
+seg : U32 -> World.Segment
+seg = |i| World.route_segment(i)
+
+expect seg(0).length.to_metres() == 500.0
+expect seg(1).length.to_metres() == 320.0
+expect seg(6).length.to_metres() == 1200.0
+expect seg(9).length.to_metres() == 800.0
+expect seg(18).length.to_metres() == 300.0
+expect
+	[
+		(0, 1),
+		(1, 2),
+		(17, 18),
+	].all(|(index, want)| next_of(seg(index)) == want)
+
+expect [(0, False), (18, True)].all(|(index, want)| is_route_end(seg(index)) == want)
+
+expect
+	[
+		(0, True),
+		(1, False),
+		(6, True),
+		(18, True),
+	].all(|(index, want)| turns_right(seg(index)) == want)
+
+expect
+	[
+		(0, False),
+		(6, True),
+		(9, False),
+	].all(|(index, want)| has_mid_tower(seg(index)) == want)
+
+expect
+	[
+		(0, False),
+		(3, True),
+		(9, True),
+		(12, False),
+		(18, True),
+	].all(|(index, want)| has_cat(seg(index)) == want)
+
+expect
+	[
+		((seg(0).exit_turn.abs().to_radians() / Trig.deg), 50.0),
+		((seg(1).exit_turn.abs().to_radians() / Trig.deg), 70.0),
+		((seg(6).exit_turn.abs().to_radians() / Trig.deg), 80.0),
+		((seg(18).exit_turn.abs().to_radians() / Trig.deg), 0.0),
+		(seg(18).commit_along.to_metres(), 300.0),
+	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
+
+expect
+	[
+		(seg(0).commit_along.to_metres(), 498.32180073764545),
+		(seg(1).commit_along.to_metres(), 319.2720595314676),
+		(seg(6).commit_along.to_metres(), 1199.647346038583),
+	].all(|(got, want)| (got - want).abs() <= 0.00000001)
+
+expect seg(0).pigs.len() == 0
+expect seg(2).pigs.len() == 49
+expect seg(10).pigs.len() == 49
+expect seg(11).pigs.len() == 10
+expect seg(13).pigs.len() == 10
+expect seg(18).pigs.len() == 10
+expect
+	[
+		(0, False),
+		(2, True),
+		(10, True),
+		(11, False),
+		(18, False),
+	].all(|(index, want)| is_distracting(seg(index)) == want)
+
+expect seg(0).cows.len() == 14
+expect seg(3).cows.len() == 14
+expect seg(4).cows.len() == 15
+expect seg(18).cows.len() == 15
+expect seg(0).trees.len() == 28
+expect seg(1).trees.len() == 16
+expect seg(6).trees.len() == 74
+expect seg(18).trees.len() == 14
+expect crossing_at(3).mid_across.to_metres() == 0.816
+expect crossing_at(18).mid_across.to_metres() == 0.816
+expect crossing_at(3).height.to_metres() == 1.7
+expect crossing_at(18).height.to_metres() == 1.7
+
+## Whether the route ends with a segment.
+is_route_end : World.Segment -> Bool
+is_route_end = |segment|
+	match segment.ending {
+		Continues(_) => False
+		Terminates => True
+	}
+
+## The segment after one that continues.
+next_of : World.Segment -> I64
+next_of = |segment|
+	match segment.ending {
+		Continues({ next }) => next.to_i64()
+		Terminates => crash "World.next_of: segments 0, 1 and 17 continue"
+	}
+
+## Whether a segment ends by turning right.
+turns_right : World.Segment -> Bool
+turns_right = |segment| segment.exit_turn.is_right()
+
+## Whether a segment has a mast halfway along.
+has_mid_tower : World.Segment -> Bool
+has_mid_tower = |segment|
+	match segment.mid_tower {
+		MidTower => True
+		NoMidTower => False
+	}
+
+## Whether a segment has a cat waiting by the road.
+has_cat : World.Segment -> Bool
+has_cat = |segment|
+	match segment.crossing {
+		CatCrosses(_) => True
+		BirdFlies(_) | QuietRoad => False
+	}
+
+## Whether a segment's pigs draw the rider's eye.
+is_distracting : World.Segment -> Bool
+is_distracting = |segment|
+	match segment.pig_attention {
+		Distracting => True
+		Unnoticed => False
+	}
+
+## The cat crossing at a segment that has one.
+crossing_at : U32 -> Cat.Crossing
+crossing_at = |index|
+	match seg(index).crossing {
+		CatCrosses(crossing) => crossing
+		BirdFlies(_) | QuietRoad => crash "World.crossing_at: segments 3, 9 and 18 have a cat"
+	}

@@ -170,3 +170,198 @@ advance_on_schedule = |truck, schedule| {
 		brake_lights: Off,
 	}
 }
+
+expect Truck.start_lead.to_metres() == 500.0
+expect Truck.finish_lead.to_metres() == 100.0
+expect Truck.turn_caution == 0.8
+expect Truck.brake_distance.to_metres() == 60.0
+expect Truck.top_speed.to_metres_a_step() == 2.75
+
+chase_metres : F64
+chase_metres = Truck.chase_acceleration.to_metres_a_step_each_step()
+
+expect
+	[
+		(chase_metres, 0.011),
+		(Truck.top_speed.to_metres_a_step(), 2.75),
+		((chase_metres / VehicleLimits.a_accel.to_metres_a_step_each_step()), 1.1),
+		((Truck.top_speed.to_metres_a_step() / VehicleLimits.v_max.to_metres_a_step()), 1.1),
+	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
+
+expect Truck.initial_truck.route_position.to_metres() == 500.0
+expect Truck.initial_truck.speed.to_metres_a_step() == 0.3
+expect !(Truck.initial_truck.brake_lights == On)
+
+## Where the schedule puts the truck, with the rider this far along a route
+## 1000 m long.
+schedule : F64 -> F64
+schedule = |rider_distance|
+	Truck.scheduled_position({
+		rider_distance: Distance.metres(rider_distance),
+		route_length: Distance.metres(1000.0),
+	}).to_metres()
+
+expect schedule(0.0) == 500.0
+expect schedule(250.0) == 650.0
+expect schedule(500.0) == 800.0
+expect schedule(1000.0) == 1100.0
+expect schedule(1000.0) - 1000.0 == 100.0
+expect schedule(0.0) - 0.0 == 500.0
+
+one_seg : List(World.Segment)
+one_seg = [World.route_segment(0)]
+
+turn_dist : List(World.Segment), F64 -> F64
+turn_dist = |segs, route_position|
+	match Truck.next_turn(segs, Distance.metres(route_position)) {
+		TurnAhead(t) => t.distance.to_metres()
+		NoTurnAhead => 0.0 - 1.0
+	}
+
+turn_v : List(World.Segment), F64 -> F64
+turn_v = |segs, route_position|
+	match Truck.next_turn(segs, Distance.metres(route_position)) {
+		TurnAhead(t) => t.turn_speed.to_metres_a_step()
+		NoTurnAhead => 0.0 - 1.0
+	}
+
+expect turn_dist(one_seg, 0.0) == 500.0
+expect turn_dist(one_seg, 450.0) == 50.0
+expect turn_dist(one_seg, 499.0) == 1.0
+expect turn_v(one_seg, 0.0) == 0.222
+expect turn_v(one_seg, 450.0) == 0.222
+expect VehicleLimits.turn_speed(World.route_segment(0).exit_turn.abs()).to_metres_a_step() == 0.222
+expect turn_dist(one_seg, 500.0) == -1.0
+expect turn_dist(one_seg, 900.0) == -1.0
+expect turn_dist([World.route_segment(18)], 0.0) == -1.0
+expect turn_dist([], 0.0) == -1.0
+
+two_seg : List(World.Segment)
+two_seg = [World.route_segment(0), World.route_segment(1)]
+
+expect turn_dist(two_seg, 0.0) == 500.0
+expect turn_dist(two_seg, 500.0) == 320.0
+expect turn_dist(two_seg, 800.0) == 20.0
+expect turn_dist(two_seg, 820.0) == -1.0
+
+## A rider at the start of a route 1000 m long, on the route's first segment.
+on_one_seg : {
+	rider_distance : Distance,
+	world : List(World.Segment),
+	route_length : Distance,
+}
+on_one_seg = {
+	rider_distance: Distance.zero,
+	world: one_seg,
+	route_length: Distance.metres(1000.0),
+}
+
+free : Truck.TruckState
+free = Truck.advance(
+	{
+		route_position: Distance.metres(100.0),
+		speed: Speed.metres_a_step(0.3),
+		brake_lights: Off,
+	},
+	on_one_seg,
+)
+
+expect
+	[
+		(free.speed.to_metres_a_step(), 0.311),
+		(free.route_position.to_metres(), 100.311),
+		(free.speed.change_from(Speed.metres_a_step(0.3)).to_metres_a_step_each_step(), 0.011),
+	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
+
+ahead : Truck.TruckState
+ahead = Truck.advance(
+	{
+		route_position: Distance.metres(600.0),
+		speed: Speed.metres_a_step(0.5),
+		brake_lights: Off,
+	},
+	on_one_seg,
+)
+
+behind : Truck.TruckState
+behind = Truck.advance(
+	{
+		route_position: Distance.metres(400.0),
+		speed: Speed.metres_a_step(0.5),
+		brake_lights: Off,
+	},
+	on_one_seg,
+)
+
+expect
+	[
+		(ahead.speed.to_metres_a_step(), 0.5),
+		(ahead.route_position.to_metres(), 600.5),
+		(behind.speed.change_from(ahead.speed).to_metres_a_step_each_step(), 0.011),
+	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
+
+capped : Truck.TruckState
+capped = Truck.advance(
+	{
+		route_position: Distance.metres(100.0),
+		speed: Truck.top_speed,
+		brake_lights: Off,
+	},
+	on_one_seg,
+)
+
+expect capped.speed.to_metres_a_step() == 2.75
+expect free.brake_lights == Off
+expect ahead.brake_lights == Off
+expect capped.brake_lights == Off
+
+braking : Truck.TruckState
+braking = Truck.advance(
+	{
+		route_position: Distance.metres(450.0),
+		speed: Speed.metres_a_step(0.3),
+		brake_lights: Off,
+	},
+	on_one_seg,
+)
+
+expect
+	[
+		(braking.speed.to_metres_a_step(), 0.2994154176),
+		((braking.route_position.to_metres() - 450.0), 0.2994154176),
+	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
+
+expect braking.brake_lights == On
+expect braking.speed < Speed.metres_a_step(0.3)
+expect braking.speed > Speed.metres_a_step(0.1776)
+
+settled : Truck.TruckState
+settled = Truck.advance(
+	{
+		route_position: Distance.metres(450.0),
+		speed: Speed.metres_a_step(0.1776),
+		brake_lights: On,
+	},
+	on_one_seg,
+)
+
+expect settled.brake_lights == Off
+expect F64.to_bits(settled.speed.to_metres_a_step()) == F64.to_bits(0.1776)
+expect Truck.advance(
+	{
+		route_position: Distance.metres(440.0),
+		speed: Speed.metres_a_step(0.3),
+		brake_lights: Off,
+	},
+	on_one_seg,
+).speed < Speed.metres_a_step(0.3)
+expect !(
+	Truck.advance(
+		{
+			route_position: Distance.metres(439.0),
+			speed: Speed.metres_a_step(0.3),
+			brake_lights: Off,
+		},
+		on_one_seg,
+	).speed < Speed.metres_a_step(0.3)
+)

@@ -266,3 +266,252 @@ eased_fraction = |ease, fraction|
 		Smooth => Easing.smoothstep(fraction)
 		ThreeQuarterPower => Easing.three_quarter_power(fraction)
 	}
+
+## Whether each of `got` is within a billionth of its `want`.
+is_near : List(F64), List(F64) -> Bool
+is_near = |got, want| {
+	closeness = got.map2(want, |one, wanted| (one - wanted).abs() <= 0.000000001)
+	got.len() == want.len() and closeness.all(|is_close| is_close)
+}
+
+## A stage as numbers, so a table can hold each tag beside its payload: 0 for
+## waiting, 1 and its progress for playing, 2 and its metres for past.
+stage_numbers : Animation.Stage -> List(F64)
+stage_numbers = |stage|
+	match stage {
+		Waiting => [0.0, 0.0]
+		Playing(progress) => [1.0, progress.to_f64()]
+		Past(beyond) => [2.0, beyond.to_metres()]
+	}
+
+gap_stage : F64 -> Animation.Stage
+gap_stage = |gap|
+	Animation.over_gap(
+		{ starts_at: Distance.metres(60.0), ends_at: Distance.metres(20.0) },
+		Distance.metres(gap),
+	)
+
+expect
+	[
+		(61.0, [0.0, 0.0]),
+		(60.0, [0.0, 0.0]),
+		(59.0, [1.0, 0.025]),
+		(40.0, [1.0, 0.5]),
+		(21.0, [1.0, 0.975]),
+		(20.0, [2.0, 0.0]),
+		(19.0, [2.0, 1.0]),
+	].all(|(gap, want)| is_near(stage_numbers(gap_stage(gap)), want))
+
+beat_stage : F64, F64 -> Animation.Stage
+beat_stage = |gap, speed|
+	Animation.over_beats(
+		{ length: Beats.of(10.0), buffer: Distance.metres(3.0) },
+		{ gap: Distance.metres(gap), speed: Speed.metres_a_step(speed) },
+	)
+
+expect
+	[
+		(beat_stage(14.0, 1.0), [0.0, 0.0]),
+		(beat_stage(13.0, 1.0), [1.0, 0.0]),
+		(beat_stage(12.0, 1.0), [1.0, 0.1]),
+		(beat_stage(8.0, 1.0), [1.0, 0.5]),
+		(beat_stage(4.0, 1.0), [1.0, 0.9]),
+		(beat_stage(3.0, 1.0), [2.0, 0.0]),
+		(beat_stage(1.0, 1.0), [2.0, 2.0]),
+		(beat_stage(23.0, 2.0), [1.0, 0.0]),
+		(beat_stage(13.0, 2.0), [1.0, 0.5]),
+	].all(|(stage, want)| is_near(stage_numbers(stage), want))
+
+# A rider at rest in the stretch is waiting, because no stretch is covered.
+# One creeping inside it holds the animation at its start, and one creeping
+# beyond the end is past.
+expect
+	[
+		(beat_stage(3.5, 0.0), [0.0, 0.0]),
+		(beat_stage(3.0, 0.0), [2.0, 0.0]),
+		(beat_stage(3.000001, 0.000001), [1.0, 0.0]),
+		(beat_stage(3.000001, 0.000002), [1.0, 0.95]),
+		(beat_stage(2.0, 0.000001), [2.0, 1.0]),
+	].all(|(stage, want)| is_near(stage_numbers(stage), want))
+
+Note : [First, Second, Third, Fourth, BeforeIt, AfterIt]
+
+at_spot : F64 -> Animation.Spot
+at_spot = |across| {
+	along: Along.metres(0.0),
+	across: Across.metres(across),
+	lift: 0.0,
+}
+
+## A timeline ten beats long with both kinds of cut on each track.
+cut_timeline : Animation.Timeline(Note)
+cut_timeline = Animation.Timeline.(
+	{
+		length: Beats.of(10.0),
+		before: { pose: BeforeIt, spot: at_spot(-1.0) },
+		after: { pose: AfterIt, spot: at_spot(99.0) },
+		looks: {
+			stretches: [
+				{ until: Through(Beats.of(2.0)), plays: Holds(First) },
+				{ until: Before(Beats.of(5.0)), plays: Holds(Second) },
+				{ until: Through(Beats.of(7.0)), plays: Holds(Third) },
+			],
+			finally: Holds(Fourth),
+		},
+		path: {
+			stretches: [
+				{ until: Before(Beats.of(4.0)), plays: StaysAt(at_spot(1.0)) },
+				{ until: Through(Beats.of(8.0)), plays: StaysAt(at_spot(2.0)) },
+			],
+			finally: StaysAt(at_spot(3.0)),
+		},
+	},
+)
+
+expect
+	[
+		(0.0, First),
+		(1.99, First),
+		(2.0, First),
+		(2.01, Second),
+		(4.99, Second),
+		(5.0, Third),
+		(5.01, Third),
+		(6.99, Third),
+		(7.0, Third),
+		(7.01, Fourth),
+		(10.0, Fourth),
+	].all(|(beat, note)| cut_timeline.at_beat(Beats.of(beat)).pose == note)
+
+expect
+	[
+		(0.0, 1.0),
+		(3.99, 1.0),
+		(4.0, 2.0),
+		(4.01, 2.0),
+		(7.99, 2.0),
+		(8.0, 2.0),
+		(8.01, 3.0),
+		(10.0, 3.0),
+	].all(|(beat, want)| cut_timeline.at_beat(Beats.of(beat)).spot.across.to_metres() == want)
+
+# The instant at each stage: a stage's rest is the timeline's own, and playing
+# reaches a beat by `progress` times the timeline's length.
+expect cut_timeline.instant(Waiting).pose == BeforeIt
+expect cut_timeline.instant(Past(Distance.metres(5.0))).pose == AfterIt
+expect cut_timeline.instant(Playing(Fraction.zero)).pose == First
+expect cut_timeline.instant(Playing(Fraction.of(0.3))).pose == Second
+expect cut_timeline.instant(Playing(Fraction.whole)).pose == Fourth
+
+expect cut_timeline.instant(Waiting).spot.across.to_metres() == -1.0
+expect cut_timeline.instant(Past(Distance.metres(5.0))).spot.across.to_metres() == 99.0
+expect cut_timeline.instant(Playing(Fraction.of(0.5))).spot.across.to_metres() == 2.0
+
+## Looks that alternate through two cycles over eight beats and cross a cut at
+## beat 3, on a timeline twelve beats long. Past its eight beats they go on
+## alternating.
+alternating_timeline : Animation.Timeline(Note)
+alternating_timeline = {
+	alternating = |up, down|
+		Alternates({
+			up,
+			down,
+			count: 2.0,
+			over: Beats.of(8.0),
+		})
+	Animation.Timeline.(
+		{
+			length: Beats.of(12.0),
+			before: { pose: BeforeIt, spot: at_spot(0.0) },
+			after: { pose: AfterIt, spot: at_spot(0.0) },
+			looks: {
+				stretches: [{ until: Before(Beats.of(3.0)), plays: alternating(First, Second) }],
+				finally: alternating(Third, Fourth),
+			},
+			path: { stretches: [], finally: StaysAt(at_spot(0.0)) },
+		},
+	)
+}
+
+expect
+	[
+		(0.0, Second),
+		(1.0, First),
+		(2.5, Second),
+		(3.0, Fourth),
+		(5.0, Third),
+		(7.0, Fourth),
+		(9.0, Third),
+		(11.0, Fourth),
+	].all(|(beat, note)| alternating_timeline.at_beat(Beats.of(beat)).pose == note)
+
+## A timeline four beats long that plays `path` between beats 2 and 4.
+path_timeline : Animation.Path -> Animation.Timeline(Note)
+path_timeline = |path|
+	Animation.Timeline.(
+		{
+			length: Beats.of(4.0),
+			before: { pose: BeforeIt, spot: at_spot(0.0) },
+			after: { pose: AfterIt, spot: at_spot(0.0) },
+			looks: { stretches: [], finally: Holds(First) },
+			path: {
+				stretches: [{ until: Before(Beats.of(2.0)), plays: StaysAt(at_spot(0.0)) }],
+				finally: path,
+			},
+		},
+	)
+
+start_spot : Animation.Spot
+start_spot = {
+	along: Along.metres(10.0),
+	across: Across.metres(20.0),
+	lift: 30.0,
+}
+
+end_spot : Animation.Spot
+end_spot = {
+	along: Along.metres(18.0),
+	across: Across.metres(4.0),
+	lift: 46.0,
+}
+
+steady_arc : Animation.Path
+steady_arc = Arc({ line: line(Steady), rise: 5.0 })
+
+smooth_arc : Animation.Path
+smooth_arc = Arc({ line: line(Smooth), rise: 5.0 })
+
+## The spot's three parts, at `beat` of `path`'s timeline.
+spot_numbers : Animation.Path, F64 -> List(F64)
+spot_numbers = |path, beat| {
+	spot = path_timeline(path).at_beat(Beats.of(beat)).spot
+	[
+		spot.along.to_metres(),
+		spot.across.to_metres(),
+		spot.lift,
+	]
+}
+
+line : Animation.Ease -> Animation.Line
+line = |ease| {
+	from: start_spot,
+	to: end_spot,
+	ease,
+}
+
+expect
+	[
+		(spot_numbers(Line(line(Steady)), 2.0), [10.0, 20.0, 30.0]),
+		(spot_numbers(Line(line(Steady)), 2.5), [12.0, 16.0, 34.0]),
+		(spot_numbers(Line(line(Steady)), 4.0), [18.0, 4.0, 46.0]),
+		(spot_numbers(Line(line(Smooth)), 2.5), [11.25, 17.5, 32.5]),
+		(spot_numbers(Line(line(ThreeQuarterPower)), 2.125), [11.0, 18.0, 32.0]),
+	].all(|(spot, want)| is_near(spot, want))
+
+expect
+	[
+		(spot_numbers(steady_arc, 2.0), [10.0, 20.0, 30.0]),
+		(spot_numbers(steady_arc, 3.0), [14.0, 12.0, 43.0]),
+		(spot_numbers(steady_arc, 4.0), [18.0, 4.0, 46.0]),
+		(spot_numbers(smooth_arc, 2.5), [11.25, 17.5, 36.25]),
+	].all(|(spot, want)| is_near(spot, want))

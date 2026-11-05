@@ -183,3 +183,120 @@ wings_beating = |{ up, down }|
 		count: BirdFlight.wing_flaps,
 		over: BirdFlight.flight_beats,
 	})
+
+tree_at : F64, F64 -> Scenery.Tree
+tree_at = |along, across| {
+	along: Along.metres(along),
+	across: Across.metres(across),
+	color: 0,
+	height: Distance.metres(10.0),
+}
+
+left_tree : Scenery.Tree
+left_tree = tree_at(100.0, -6.0)
+
+## A tree on the far side too near to fly to, and two far enough.
+trees : List(Scenery.Tree)
+trees = [
+	left_tree,
+	tree_at(100.0, 6.0),
+	tree_at(140.0, -6.0),
+	tree_at(140.0, 6.0),
+	tree_at(180.0, 6.0),
+]
+
+flight : BirdFlight.Flight
+flight = {
+	from: left_tree,
+	to: { ..tree_at(140.0, 6.0), height: Distance.metres(12.0) },
+}
+
+## A left and a right tree at each of `alongs`.
+pairs_at : List(F64) -> List(Scenery.Tree)
+pairs_at = |alongs| alongs.join_map(|along| [tree_at(along, -6.0), tree_at(along, 6.0)])
+
+## How far along the fifth left tree of `choices` is: one number, or none.
+fifth_along : List(Scenery.Tree) -> List(F64)
+fifth_along = |choices|
+	match BirdFlight.fifth_left_tree(choices) {
+		Found(tree) => [tree.along.to_metres()]
+		NoTree => []
+	}
+
+expect fifth_along([]) == []
+expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0])) == []
+expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0])) == [50.0]
+expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0, 60.0])) == [50.0]
+expect fifth_along([50.0, 60.0, 70.0, 80.0, 90.0].map(|along| tree_at(along, 6.0))) == []
+
+chosen_along : List(Scenery.Tree) -> List(F64)
+chosen_along = |choices|
+	match BirdFlight.route_from(choices, left_tree) {
+		Flies(found) => [found.to.along.to_metres(), found.to.across.to_metres()]
+		Sits(_) => []
+	}
+
+expect chosen_along(trees) == [140.0, 6.0]
+expect chosen_along([left_tree, tree_at(124.0, 6.0)]) == []
+expect chosen_along([left_tree, tree_at(125.0, 6.0)]) == [125.0, 6.0]
+expect chosen_along([left_tree, tree_at(140.0, -6.0)]) == []
+
+## How far through its flight a bird with the rider `gap` off is.
+progress_at : Distance -> F64
+progress_at = |gap|
+	match BirdFlight.flight_stage(gap) {
+		Waiting => 0.0
+		Playing(progress) => progress.to_f64()
+		Past(_) => 1.0
+	}
+
+## The gap halfway through the flight.
+halfway_gap : Distance
+halfway_gap = BirdFlight.takeoff_gap.plus(BirdFlight.landing_gap).divided_by(2.0)
+
+expect
+	[
+		(progress_at(BirdFlight.takeoff_gap.plus(Distance.metres(1.0))), 0.0),
+		(progress_at(BirdFlight.takeoff_gap), 0.0),
+		(progress_at(halfway_gap), 0.5),
+		(progress_at(BirdFlight.landing_gap), 1.0),
+		(progress_at(BirdFlight.landing_gap.minus(Distance.metres(1.0))), 1.0),
+	].all(|(got, want)| (got - want).abs() <= 0.000000001)
+
+expect {
+	spot = BirdFlight.instant_at(flight, Distance.metres(100.0)).spot
+	spot.along.to_metres() == 100.0 and spot.across.to_metres() == -6.0 and spot.lift == 10.0
+}
+
+expect {
+	spot = BirdFlight.instant_at(flight, Distance.zero).spot
+	spot.along.to_metres() == 140.0 and spot.across.to_metres() == 6.0 and spot.lift == 12.0
+}
+
+expect {
+	spot = BirdFlight.instant_at(flight, halfway_gap).spot
+	[
+		(spot.along.to_metres(), 120.0),
+		(spot.across.to_metres(), 0.0),
+		(spot.lift, 16.0),
+	].all(|(got, want)| (got - want).abs() <= 0.000000001)
+}
+
+expect BirdFlight.instant_at(flight, Distance.metres(100.0)).pose == Perched
+expect BirdFlight.instant_at(flight, Distance.zero).pose == Perched
+
+expect
+	[
+		(0.01, Side(WingsUp)),
+		(0.08, Side(WingsDown)),
+		(0.1199, Side(WingsUp)),
+		(0.12, Away(WingsUp)),
+		(0.5 - 1.0 / 36.0, Away(WingsUp)),
+		(0.5 + 1.0 / 36.0, Away(WingsDown)),
+		(0.87, Away(WingsDown)),
+		(0.89, Diving),
+		(0.95, Diving),
+	].all(
+		|(progress, pose)|
+			BirdFlight.flight_timeline(flight).at_beat(Beats.of(progress)).pose == pose,
+	)

@@ -2,11 +2,11 @@
 ##
 ## The road is a line of straight segments, and a point on it is measured
 ## within one segment: metres along it from its start, and metres across it
-## from its left edge. A point in the rider's view is measured from the
-## rider: metres to the right, metres forward, and metres up where height
-## matters. This module carries a road point round a bend into the segment
-## before or after it, turns a road point into the rider's view, and cuts a
-## polygon at the near plane, the closest thing the camera can see.
+## from the middle of the lane. A point in the rider's view is measured from
+## the rider: metres to the right, metres forward, and metres up where height
+## matters. This module carries a point round a bend into the segment before
+## or after it, turns it into the rider's view, and cuts a polygon at the near
+## plane, the closest thing the camera can see.
 import Across
 import Along
 import Angle
@@ -29,9 +29,13 @@ Geom :: [].{
 	## A point on one segment of the road.
 	RoadPoint : { along : Along, across : Across }
 
+	## A point on one segment of the road, measured from the lane's left edge.
+	## A bend turns about a corner of the lane, so its arithmetic works from
+	## that edge.
+	EdgePoint : { along : Along, from_left : Distance }
+
 	## Where the camera stands on the current segment, and which way it faces.
-	## `across` is measured from the middle of the lane, which is `half_width`
-	## from its left edge.
+	## The middle of the lane is `half_width` from its left edge.
 	Pose : {
 		along : Along,
 		across : Across,
@@ -62,10 +66,11 @@ Geom :: [].{
 		(right * right + forward * forward) / (2.0 * ground_curve_radius)
 
 	## A point on the current segment, as the camera at `pose` sees it.
-	to_rider_point : Geom.RoadPoint, Geom.Pose -> Geom.RiderPoint
-	to_rider_point = |{ along, across }, pose| {
+	to_rider_point : Geom.EdgePoint, Geom.Pose -> Geom.RiderPoint
+	to_rider_point = |{ along, from_left }, pose| {
 		ahead = along.distance_from(pose.along).to_metres()
-		aside = across.distance_from(pose.across.plus(pose.half_width)).to_metres()
+		rider_from_left = pose.across.distance_from(Across.left_of_middle(pose.half_width))
+		aside = from_left.minus(rider_from_left).to_metres()
 		cos_yaw = Trig.r_cos(pose.yaw.to_radians())
 		sin_yaw = Trig.r_sin(pose.yaw.to_radians())
 		{
@@ -75,40 +80,40 @@ Geom :: [].{
 	}
 
 	## A point on the segment after `bend`, measured on the segment before it.
-	in_segment_before : Geom.RoadPoint, Geom.Bend -> Geom.RoadPoint
+	in_segment_before : Geom.EdgePoint, Geom.Bend -> Geom.EdgePoint
 	in_segment_before = |point, bend| {
 		along = point.along.to_metres()
-		across = point.across.to_metres()
+		from_left = point.from_left.to_metres()
 		length = bend.segment_length.to_metres()
 		width = bend.lane_width.to_metres()
 		turn_size = bend.turn.abs().to_radians()
 		cos_turn = Trig.r_cos(turn_size)
 		sin_turn = Trig.r_sin(turn_size)
 		if bend.turn.is_right() {
-			turned_along = along * cos_turn - across * sin_turn + width * sin_turn + length
-			turned_across = across * cos_turn + along * sin_turn + width * (1.0 - cos_turn)
-			{ along: Along.metres(turned_along), across: Across.metres(turned_across) }
+			turned_along = along * cos_turn - from_left * sin_turn + width * sin_turn + length
+			turned_from_left = from_left * cos_turn + along * sin_turn + width * (1.0 - cos_turn)
+			{ along: Along.metres(turned_along), from_left: Distance.metres(turned_from_left) }
 		} else {
 			{
-				along: Along.metres(along * cos_turn + across * sin_turn + length),
-				across: Across.metres(across * cos_turn - along * sin_turn),
+				along: Along.metres(along * cos_turn + from_left * sin_turn + length),
+				from_left: Distance.metres(from_left * cos_turn - along * sin_turn),
 			}
 		}
 	}
 
 	## A point on the segment before `bend`, measured on the segment after it.
-	in_segment_after : Geom.RoadPoint, Geom.Bend -> Geom.RoadPoint
+	in_segment_after : Geom.EdgePoint, Geom.Bend -> Geom.EdgePoint
 	in_segment_after = |point, bend| {
-		half_width = bend.lane_width.divided_by(2.0)
+		left_edge = Across.left_of_middle(bend.lane_width.divided_by(2.0))
 		centred = centred_point_after(
-			{ along: point.along, across: point.across.minus(half_width) },
+			{ along: point.along, across: left_edge.plus(point.from_left) },
 			bend,
 		)
-		{ along: centred.along, across: centred.across.plus(half_width) }
+		{ along: centred.along, from_left: centred.across.distance_from(left_edge) }
 	}
 
-	## `in_segment_after` for a point whose `across` is measured from the
-	## middle of the lane, as the rider's is.
+	## `in_segment_after` for a point measured from the middle of the lane, as
+	## the rider is.
 	centred_point_after : Geom.RoadPoint, Geom.Bend -> Geom.RoadPoint
 	centred_point_after = |point, bend| {
 		across = point.across.to_metres()
@@ -293,9 +298,9 @@ expect Geom.ground_drop({ right: -5.0, forward: 40.0 }) == 0.008125
 expect Geom.ground_drop({ right: 12.5, forward: 100.0 }) == 0.05078125
 
 expect {
-	seen_from = |road_point, yaw|
+	seen_from = |edge_point, yaw|
 		Geom.to_rider_point(
-			road_point,
+			edge_point,
 			{
 				along: Along.metres(5.0),
 				across: Across.metres(0.5),
@@ -305,19 +310,19 @@ expect {
 		)
 	[
 		(
-			seen_from({ along: Along.metres(0.0), across: Across.metres(0.0) }, 0.0),
+			seen_from({ along: Along.metres(0.0), from_left: Distance.metres(0.0) }, 0.0),
 			{ right: -3.5, forward: -5.0 },
 		),
 		(
-			seen_from({ along: Along.metres(12.0), across: Across.metres(3.0) }, 0.35),
+			seen_from({ along: Along.metres(12.0), from_left: Distance.metres(3.0) }, 0.35),
 			{ right: -2.869971008611849, forward: 6.404160086203927 },
 		),
 		(
-			seen_from({ along: Along.metres(40.0), across: Across.metres(-2.0) }, -0.6),
+			seen_from({ along: Along.metres(40.0), from_left: Distance.metres(-2.0) }, -0.6),
 			{ right: 15.223140686823006, forward: 31.992280125511435 },
 		),
 		(
-			seen_from({ along: Along.metres(7.5), across: Across.metres(6.25) }, 1.2),
+			seen_from({ along: Along.metres(7.5), from_left: Distance.metres(6.25) }, 1.2),
 			{ right: -1.333613890107213, forward: 3.4690018726015563 },
 		),
 	].all(
@@ -341,11 +346,11 @@ bend_of = |degrees| {
 expect
 	[50.0, -70.0, 15.0, -15.0].all(
 		|degrees| {
-			start = { along: Along.metres(12.0), across: Across.metres(3.0) }
+			start = { along: Along.metres(12.0), from_left: Distance.metres(3.0) }
 			bend = bend_of(degrees)
 			back = Geom.in_segment_before(Geom.in_segment_after(start, bend), bend)
 			along_miss = back.along.distance_from(start.along).to_metres().abs()
-			across_miss = back.across.distance_from(start.across).to_metres().abs()
+			across_miss = back.from_left.minus(start.from_left).to_metres().abs()
 			along_miss <= 0.000000001 and across_miss <= 0.000000001
 		},
 	)
@@ -356,10 +361,10 @@ expect
 		|degrees| {
 			along = Along.metres(12.0)
 			bend = bend_of(degrees)
-			from_edge = Geom.in_segment_after({ along, across: Across.metres(3.0) }, bend)
+			from_edge = Geom.in_segment_after({ along, from_left: Distance.metres(3.0) }, bend)
 			from_middle = Geom.centred_point_after({ along, across: Across.metres(1.0) }, bend)
 			along_miss = from_edge.along.distance_from(from_middle.along).to_metres().abs()
-			across_on_edge = from_edge.across.minus(Distance.metres(2.0))
+			across_on_edge = Across.metres(from_edge.from_left.to_metres() - 2.0)
 			across_miss = across_on_edge.distance_from(from_middle.across).to_metres().abs()
 			along_miss <= 0.000000001 and across_miss <= 0.000000001
 		},

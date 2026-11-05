@@ -39,8 +39,7 @@ The rest have been rewritten by hand.
 | `RocBird.roc` | the bird, the first thing here that was never Codex, with `BirdFlight.roc`, `BirdSighting.roc` and `BirdStills.roc` |
 | `Animation.roc` | what the cat and the bird share: a rule that turns where the rider is into a stage, and a timeline that turns a stage into an instant |
 | `CrossingReaction.roc` | what a segment's crossing does to the rider, the one place that matches on it for `Throttle` and `RideFocal` |
-| `*Spec.roc` | the spec apps, each chapter's checks not yet moved into its module as `expect`s, graded by `gates/` |
-| `gates/` | test code the game never runs: the gate, `run.shale`, and its lints; the specs' expected outputs; the proof tools and the modules only they use, which reach the game's modules through the package `game.roc` |
+| `gates/` | test code the game never runs: the gate, `run.shale`, and its lints; `CrossModuleExpects.roc`, the expects that need more than the module they check imports; the proof tools and the modules only they use. They reach the game's modules through the package `game.roc` |
 
 **The rider's lean is a camera.** The whole frame, backdrop and all, turns by
 minus the roll about the middle of the screen, so the world banks into a turn.
@@ -61,20 +60,21 @@ depths either side of the history's cap, and `FrameBench.roc` is a loop over
 the frame for `perf`. RasterFrame and ShapesFrame write their hex through
 `Hex.roc`.
 
-They, and the spec apps, are not built by `build.sh` or `native.sh`; the gate
-builds and judges them, from the roc-apps root:
+They are not built by `build.sh` or `native.sh`; the gate builds and judges
+them, from the roc-apps root:
 
     nice -n 19 shale canvas_apps/safari/gates/run.shale
 
 On roc-apps' pinned nightly (`roc-version`, installed at
 `~/tools/roc-<pin>/roc`), it runs `roc test` so that every `expect` in the
-modules, and in `lib/`, passes exactly once. Then it builds each spec app and
-compares its output with `gates/expected/<Spec>.expected`, and runs StepBack,
-ShapesFrame and RasterFrame at the depths its script lists. `part=expects`,
-`part=1`, `part=2` or `part=proof` runs one piece. The
-expected files began as the Codex verdicts (safari-codex's `units/`) and are
-safari's own now: when a spec's output rightly changes, its expected file
-changes with it. The script's header has the rest.
+modules, and in `lib/`, passes exactly once. Then it builds the tutorial, and
+runs StepBack, ShapesFrame and RasterFrame at the depths its script lists.
+`part=expects`, `part=tutorial` or `part=proof` runs one piece. The script's
+header has the rest.
 
-`emitted.sh` and `retest.sh`, which emitted and graded the spec apps, refuse to
-run: the modules they would rewrite are source now.
+An `expect` sits below the block of the module it checks. Where it needs a
+module that one doesn't import, it sits in a module that sees both, such as
+`Joint.roc` or `ItemDraw.roc`, or else in `gates/CrossModuleExpects.roc`.
+
+`emitted.sh` and `retest.sh`, which emitted the Roc from Codex, refuse to run:
+the modules they would rewrite are source now.

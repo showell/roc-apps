@@ -276,3 +276,180 @@ spot_across = |across| {
 	across,
 	lift: 0.0,
 }
+
+the_cat : Cat.Crossing
+the_cat = Cat.crossing({
+	lane_half_width: Distance.metres(2.0),
+	tree_offset: Distance.metres(1.0),
+	tree_along: Along.metres(100.0),
+})
+
+## A rider `gap` metres short of the cat, at `speed` metres a step. Cat doesn't
+## import Speed, so a speed comes from `standstill`, a millionth of a metre a step.
+coming : F64, F64 -> Animation.Approach
+coming = |gap, speed| {
+	gap: Distance.metres(gap),
+	speed: Animation.standstill.times(speed * 1000000.0),
+}
+
+expect coming(0.0, 1.0).speed.to_metres_a_step() == 1.0
+
+expect the_cat.along.to_metres() == 102.0
+expect the_cat.start_across.to_metres() == 4.5
+expect the_cat.mid_across.to_metres() == 0.816
+expect the_cat.height.to_metres() == 1.7
+expect
+	[
+		(the_cat.end_across.to_metres(), -3.49),
+		(the_cat.mid_across.distance_from(the_cat.end_across).to_metres(), 4.306),
+	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
+
+expect Cat.cat_height.to_metres() == 1.7
+expect Cat.cat_along.to_metres() == 105.0
+expect Cat.cat_road_gap.to_metres() == 1.5
+expect Cat.cat_beyond_tree.to_metres() == 2.0
+expect Cat.cat_head_x == -0.48
+expect Cat.land_hind_reach.to_metres() == 1.19
+expect Cat.grass_toehold.to_metres() == 0.3
+expect Cat.enters_road_beats.to_f64() == 10.0
+expect Cat.frozen_beats.to_f64() == 24.0
+expect Cat.escapes_beats.to_f64() == 4.0
+expect Cat.crossing_beats.to_f64() == 38.0
+expect Cat.road_buffer.to_metres() == 3.0
+expect
+	[
+		(coming(41.0, 1.0), True),
+		(coming(42.0, 1.0), False),
+		(coming(3.0, 1.0), False),
+		(coming(2.0, 1.0), False),
+		(coming(41.0, 0.0), False),
+		(coming(22.0, 1.0), True),
+	].all(|(input, want)| Cat.is_in_danger(input) == want)
+
+## How far through its crossing a cat is.
+progress_of : Animation.Approach -> F64
+progress_of = |approach|
+	match Cat.crossing_stage(approach) {
+		Waiting => 0.0
+		Playing(progress) => progress.to_f64()
+		Past(_) => 1.0
+	}
+
+expect
+	[
+		(coming(41.0, 1.0), 0.0),
+		(coming(22.0, 1.0), 0.5),
+		(coming(3.0, 1.0), 1.0),
+		(coming(2.0, 1.0), 1.0),
+		(coming(100.0, 1.0), 0.0),
+		(coming(41.0, 0.0), 0.0),
+	].all(|(input, want)| progress_of(input) == want)
+
+expect Cat.focus(coming(41.0, 1.0)).to_f64() == 0.0
+expect Cat.focus(coming(22.0, 1.0)).to_f64() == 0.9
+expect Cat.focus(coming(3.0, 1.0)).to_f64() == 1.8
+expect Cat.focus(coming(0.0 - 38.5, 1.0)).to_f64() == 0.9
+expect Cat.focus(coming(0.0 - 80.0, 1.0)).to_f64() == 0.0
+expect Cat.focus(coming(22.0, 0.0)).to_f64() == 0.0
+expect Cat.focus_peak.to_f64() == 1.8
+expect Cat.focus_ramp_down.to_f64() == 83.0
+
+## How many strides of a walk `length` beats long are done `progress` through it.
+turns : F64, F64 -> F64
+turns = |progress, length| progress * Cat.strides_in(Beats.of(length))
+
+expect turns(0.0, 10.0) == 0.0
+expect turns(1.0, 10.0) == 2.0
+expect turns(0.5, 10.0) == 1.0
+expect turns(1.0, 20.0) == 4.0
+expect turns(1.0, 3.0) == 1.0
+expect turns(1.0, 0.0) == 1.0
+expect Cat.stride_beats.to_f64() == 5.0
+
+## The cat at `beat` of its crossing.
+crossing_at : F64 -> Animation.Instant(Cat.Pose)
+crossing_at = |beat| Cat.crossing_timeline(the_cat).at_beat(Beats.of(beat))
+
+expect
+	[Rest, Stride, Frozen, Coil, Flight, Land, Collapse].map(Cat.pose_index)
+		== [0, 1, 2, 3, 4, 5, 6]
+
+expect
+	[
+		(34.01, 3),
+		(34.79, 3),
+		(34.81, 4),
+		(36.79, 4),
+		(36.81, 5),
+		(37.79, 5),
+		(37.81, 6),
+		(38.0, 6),
+	].all(|(beat, want)| Cat.pose_index(crossing_at(beat).pose) == want)
+
+## The float after `beat`.
+just_past : F64 -> F64
+just_past = |beat| F64.from_bits(beat.to_bits() + 1)
+
+## Where a cut `into_escape` beats into the escape falls.
+cut_after_escape : Beats -> F64
+cut_after_escape = |into_escape| Cat.escape_at.plus(into_escape).to_f64()
+
+# Each leap pose lasts through its cut's own float, and no further.
+expect
+	[
+		(cut_after_escape(Cat.coil_ends_beats), 3),
+		(just_past(cut_after_escape(Cat.coil_ends_beats)), 4),
+		(cut_after_escape(Cat.flight_ends_beats), 4),
+		(just_past(cut_after_escape(Cat.flight_ends_beats)), 5),
+		(cut_after_escape(Cat.land_ends_beats), 5),
+		(just_past(cut_after_escape(Cat.land_ends_beats)), 6),
+	].all(|(beat, want)| Cat.pose_index(crossing_at(beat).pose) == want)
+
+phase_of : F64 -> Animation.Instant(Cat.Pose)
+phase_of = |gap| Cat.instant_at(the_cat, coming(gap, 1.0))
+
+expect
+	[
+		(41.0, 0),
+		(31.5, 0),
+		(30.0, 2),
+		(7.0, 2),
+		(6.5, 3),
+		(6.0, 4),
+		(4.0, 5),
+		(3.0, 6),
+	].all(|(gap, want)| Cat.pose_index(phase_of(gap).pose) == want)
+
+expect crossing_at(0.0).spot.across.to_metres() == 4.5
+expect crossing_at(1.25).spot.across.to_metres() == 4.0395
+expect crossing_at(3.75).spot.across.to_metres() == 3.1185
+expect crossing_at(6.25).spot.across.to_metres() == 2.1975
+expect crossing_at(8.75).spot.across.to_metres() == 1.2765
+expect crossing_at(0.0).spot.lift == 0.0
+expect crossing_at(8.75).spot.lift == 0.0
+expect
+	[
+		(0.0, 0),
+		(1.25, 1),
+		(3.75, 0),
+		(6.25, 1),
+		(8.75, 0),
+	].all(|(beat, want)| Cat.pose_index(crossing_at(beat).pose) == want)
+
+expect phase_of(30.0).spot.across.to_metres() == 0.816
+expect phase_of(7.0).spot.across.to_metres() == 0.816
+expect phase_of(30.0).spot.lift == 0.0
+expect phase_of(6.5).spot.across.to_metres() == 0.816
+expect phase_of(6.5).spot.lift == 0.0
+expect phase_of(6.0).spot.across.to_metres() == 0.816
+expect phase_of(6.0).spot.lift == 0.0
+expect Easing.three_quarter_power(Fraction.zero).to_f64() == 0.0
+expect Easing.three_quarter_power(Fraction.whole).to_f64() == 1.0
+expect Easing.three_quarter_power(Fraction.of(0.0625)).to_f64() == 0.125
+expect Cat.leap_height == 0.18
+expect
+	[
+		(phase_of(5.875).spot.across.to_metres(), 0.27775),
+		(phase_of(5.875).spot.lift, 0.0421875),
+		(phase_of(4.0).spot.across.to_metres(), -3.49),
+	].all(|(got, want)| (got - want).abs() <= 0.000000000001)

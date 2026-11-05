@@ -248,3 +248,19 @@ pond_ground = |road, { segment, place }|
 	} else {
 		[]
 	}
+
+expect GroundSighting.road_chunk_length.to_metres() == 25.0
+expect GroundSighting.approach_length.to_metres() == 40.0
+expect GroundSighting.road_color == 3421500
+expect
+	[
+		(25.0, 1),
+		(25.1, 2),
+		(50.0, 2),
+		(49.9, 2),
+		(1.0, 1),
+		(0.0, 1),
+		(500.0, 20),
+		(320.0, 13),
+		(1200.0, 48),
+	].all(|(length, want)| GroundSighting.chunks_along(Distance.metres(length)).to_i64() == want)
