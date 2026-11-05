@@ -14,7 +14,6 @@ TruckDraw :: [].{
 		center : { along : F64, across : F64 },
 		lights : Truck.Lights,
 		cam_focal : F64,
-		view_w : F64,
 	} -> List(Shapes.Shape)
 	draw = |
 		{
@@ -22,14 +21,12 @@ TruckDraw :: [].{
 			center,
 			lights,
 			cam_focal,
-			view_w,
 		},
 	| {
 		truck = {
 			road,
 			box: TruckShape.truck_box(center),
 			cam_focal,
-			view_w,
 		}
 		beams =
 			match lights.headlights {

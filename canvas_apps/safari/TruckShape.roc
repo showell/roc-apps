@@ -38,7 +38,6 @@ TruckShape :: [].{
 		road : TruckShape.Road,
 		box : TruckShape.TruckBox,
 		cam_focal : F64,
-		view_w : F64,
 	}
 
 	## A point on the truck: how far along the road, how far across it, and
@@ -140,7 +139,7 @@ TruckShape :: [].{
 		color,
 		Camera.project_all(
 			Geom.clip_near(corners),
-			{ cam_focal: truck.cam_focal, view_w: truck.view_w },
+			truck.cam_focal,
 		),
 	)
 }

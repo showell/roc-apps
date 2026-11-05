@@ -52,7 +52,6 @@ CatDraw :: [].{
 		pose : Cat.Pose,
 		lift : F64,
 		cam_focal : F64,
-		view_w : F64,
 	} -> List(Shapes.Shape)
 	draw = |
 		{
@@ -62,7 +61,6 @@ CatDraw :: [].{
 			pose,
 			lift,
 			cam_focal,
-			view_w,
 		},
 	| {
 		feet = Camera.project(
@@ -71,7 +69,7 @@ CatDraw :: [].{
 				forward,
 				height: 0.0,
 			},
-			{ cam_focal, view_w },
+			cam_focal,
 		)
 		top = Camera.project(
 			{
@@ -79,7 +77,7 @@ CatDraw :: [].{
 				forward,
 				height,
 			},
-			{ cam_focal, view_w },
+			cam_focal,
 		)
 		height_px = (feet.y - top.y)
 		if height_px < 1.0 {

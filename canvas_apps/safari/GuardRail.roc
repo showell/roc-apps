@@ -87,13 +87,13 @@ GuardRail :: [].{
 
 	## A quad on screen, cut at the camera's near plane; a quad with fewer
 	## than three corners left in front of the camera draws nothing.
-	draw : GuardRail.RailPoly, { cam_focal : F64, view_w : F64 } -> List(Shapes.Shape)
-	draw = |quad, { cam_focal, view_w }| {
+	draw : GuardRail.RailPoly, F64 -> List(Shapes.Shape)
+	draw = |quad, cam_focal| {
 		in_front = Geom.clip_near(quad.corners)
 		if in_front.len() < 3 {
 			[]
 		} else {
-			Paint.push_poly(quad.color, Camera.project_all(in_front, { cam_focal, view_w }))
+			Paint.push_poly(quad.color, Camera.project_all(in_front, cam_focal))
 		}
 	}
 }

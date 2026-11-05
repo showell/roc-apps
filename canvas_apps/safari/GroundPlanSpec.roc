@@ -52,7 +52,6 @@ view = {
 		},
 	},
 	cam_focal: 500.0,
-	view_w: 960.0,
 }
 
 ## Chunk `chunk_number` of the first segment's 20, which is 500 m long.

@@ -2,7 +2,6 @@
 ## sky darkens toward dusk as it goes, and the horizon warms red while the
 ## sun is near it. The sun is drawn only while the rider faces it.
 import Angle
-import Camera
 import lib.DeviceMath
 import Lens
 import Num_
@@ -143,13 +142,13 @@ Sky :: [].{
 	sun_pos : {
 		heading : Angle.Bearing,
 		clock : F64,
-		view : Camera.View,
+		cam_focal : F64,
 	} -> Sky.SunPos
 	sun_pos = |
 		{
 			heading,
 			clock,
-			view,
+			cam_focal,
 		},
 	| {
 		turn_from_view = sun_bearing.turn_from(heading)
@@ -160,7 +159,7 @@ Sky :: [].{
 				sun_place({
 					turn_from_view,
 					clock,
-					view,
+					cam_focal,
 				}),
 			)
 		}
@@ -193,18 +192,18 @@ sky_at = |clock| Sky.color_between({
 sun_place : {
 	turn_from_view : Angle.Turn,
 	clock : F64,
-	view : Camera.View,
+	cam_focal : F64,
 } -> Sky.SunPlace
 sun_place = |
 	{
 		turn_from_view,
 		clock,
-		view,
+		cam_focal,
 	},
 | {
-	scale = (view.cam_focal / Lens.focal)
+	scale = (cam_focal / Lens.focal)
 	{
-		x: ((view.view_w / 2.0) + (Trig.r_tan(turn_from_view.to_radians()) * view.cam_focal)),
+		x: (Screen.center_x + (Trig.r_tan(turn_from_view.to_radians()) * cam_focal)),
 		y: (Screen.horizon_y - (Sky.sun_height_px(clock) * scale)),
 		scale,
 	}

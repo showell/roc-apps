@@ -8,7 +8,6 @@ import Frame
 import GuardRail
 import Render
 import SceneLimits
-import Screen
 import Tower
 import TowerPlan
 import Tree
@@ -66,7 +65,6 @@ ItemDraw :: [].{
 			height: tree.height,
 			color: tree.color,
 			cam_focal,
-			view_w: Screen.width,
 			trunk: if (nearer_trees < ItemDraw.round_trunk_limit) RoundCorners else SharpCorners,
 			crown: if (tree.forward < SceneLimits.detail_dist) Cones else Triangles,
 			shade: ItemDraw.crown_shade(tree.forward),
@@ -116,7 +114,6 @@ ItemDraw :: [].{
 				},
 			),
 			cam_focal: context.cam_focal,
-			view_w: Screen.width,
 			beacon_brightness: tower.beacon_brightness,
 		})
 }
@@ -128,19 +125,19 @@ draw_subject : Render.Scene,
 	depth_key : DepthSort.DepthKey,
 } -> List(Shapes.Shape)
 draw_subject = |scene, { context, depth_key }| {
-	camera = { cam_focal: context.cam_focal, view_w: Screen.width }
+	cam_focal = context.cam_focal
 	match depth_key.subject {
 		Tree(place) =>
 			ItemDraw.draw_tree(
 				thing_at(scene.trees, place),
-				{ trees: scene.trees, cam_focal: context.cam_focal },
+				{ trees: scene.trees, cam_focal },
 			)
 		Tower(place) => ItemDraw.draw_tower(context, thing_at(scene.towers, place))
-		Rail(place) => GuardRail.draw(thing_at(scene.rails, place), camera)
-		Critter(place) => Critter.draw(thing_at(scene.critters, place), camera)
-		Cat(place) => draw_cat(thing_at(scene.cats, place), camera)
+		Rail(place) => GuardRail.draw(thing_at(scene.rails, place), cam_focal)
+		Critter(place) => Critter.draw(thing_at(scene.critters, place), cam_focal)
+		Cat(place) => draw_cat(thing_at(scene.cats, place), cam_focal)
 		Truck => draw_truck(context, scene.truck)
-		Bird(place) => RocBird.draw(thing_at(scene.birds, place), camera)
+		Bird(place) => RocBird.draw(thing_at(scene.birds, place), cam_focal)
 	}
 }
 
@@ -150,8 +147,8 @@ thing_at = |things, place|
 	things.get(place.to_u64())
 		?? crash "ItemDraw.thing_at: the depth order names only places in its lists"
 
-draw_cat : CatPlan.CatItem, { cam_focal : F64, view_w : F64 } -> List(Shapes.Shape)
-draw_cat = |cat, { cam_focal, view_w }|
+draw_cat : CatPlan.CatItem, F64 -> List(Shapes.Shape)
+draw_cat = |cat, cam_focal|
 	CatDraw.draw({
 		right: cat.right,
 		forward: cat.forward,
@@ -159,7 +156,6 @@ draw_cat = |cat, { cam_focal, view_w }|
 		pose: cat.pose,
 		lift: cat.lift,
 		cam_focal,
-		view_w,
 	})
 
 ## The truck, where its plan found it and with the lights its plan gives it.
@@ -177,7 +173,6 @@ draw_truck = |context, truck_at|
 				center: { along: truck.along, across: truck.across },
 				lights: truck.lights,
 				cam_focal: context.cam_focal,
-				view_w: Screen.width,
 			})
 		NoTruck => crash "ItemDraw.draw_truck: the truck is in the depth order only in view"
 	}

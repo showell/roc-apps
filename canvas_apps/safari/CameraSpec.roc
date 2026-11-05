@@ -9,11 +9,11 @@ import Geom
 import Grade
 import Screen
 
-view : Camera.View
-view = { cam_focal: 800.0, view_w: 960.0 }
+cam_focal : F64
+cam_focal = 800.0
 
 at : Geom.SpacePoint -> Screen.Point
-at = |point| Camera.project(point, view)
+at = |point| Camera.project(point, cam_focal)
 
 x_got : List(F64)
 x_got = [
@@ -151,7 +151,7 @@ ahead_right_above = [
 
 all_got : List(F64)
 all_got = {
-	projected = Camera.project_all(ahead_right_above, view)
+	projected = Camera.project_all(ahead_right_above, cam_focal)
 	ahead = projected.get(0) ?? crash "CameraSpec: three points project to three"
 	right = projected.get(1) ?? crash "CameraSpec: three points project to three"
 	above = projected.get(2) ?? crash "CameraSpec: three points project to three"
@@ -160,7 +160,7 @@ all_got = {
 		ahead.x,
 		right.x,
 		above.y,
-		I64.to_f64(Camera.project_all([], view).len().to_i64_wrap()),
+		I64.to_f64(Camera.project_all([], cam_focal).len().to_i64_wrap()),
 	]
 }
 

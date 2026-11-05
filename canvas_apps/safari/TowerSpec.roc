@@ -85,7 +85,6 @@ view : Tower.RodView
 view = {
 	rod_width_px: 4.0,
 	cam_focal: 500.0,
-	view_w: 960.0,
 }
 
 # A mast 12 m square, centred 100 m ahead, sunk 1 m.
@@ -226,11 +225,7 @@ width_got = [
 	25.0,
 	50.0,
 ].map(
-	|forward| Tower.rod_width_at({
-		forward,
-		cam_focal: 500.0,
-		view_w: 960.0,
-	}),
+	|forward| Tower.rod_width_at({ forward, cam_focal: 500.0 }),
 )
 
 width_want : List(F64)

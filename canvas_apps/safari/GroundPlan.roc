@@ -17,7 +17,6 @@ GroundPlan :: [].{
 	View : {
 		road : Frame.RoadView,
 		cam_focal : F64,
-		view_w : F64,
 	}
 
 	## One chunk of the road along the segment at `position` in the chain,
@@ -49,7 +48,6 @@ GroundPlan :: [].{
 		rider_segment : World.SegmentIndex,
 		pose : Frame.Pose,
 		cam_focal : F64,
-		view_w : F64,
 	} -> List(Shapes.Shape)
 	draw = |
 		{
@@ -57,7 +55,6 @@ GroundPlan :: [].{
 			rider_segment,
 			pose,
 			cam_focal,
-			view_w,
 		},
 	| {
 		road = {
@@ -68,7 +65,6 @@ GroundPlan :: [].{
 		view = {
 			road,
 			cam_focal,
-			view_w,
 		}
 		positions = Frame.ChainPosition.all_in(road.chain)
 		ahead = positions.join_map(|position| segment_ground(view, position))
@@ -143,7 +139,6 @@ paint = |view, { corners, color }| Ground.draw({
 	corners,
 	color,
 	cam_focal: view.cam_focal,
-	view_w: view.view_w,
 })
 
 ## The segment at `position` in the chain.

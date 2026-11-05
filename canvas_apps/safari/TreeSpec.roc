@@ -75,7 +75,6 @@ outline = Tree.outline({
 	forward: 2.0,
 	height: 4.0,
 	cam_focal: 500.0,
-	view_w: 960.0,
 })
 
 metric_got : List(F64)

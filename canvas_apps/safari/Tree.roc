@@ -19,7 +19,6 @@ Tree :: [].{
 		height : F64,
 		color : I64,
 		cam_focal : F64,
-		view_w : F64,
 		trunk : [RoundCorners, SharpCorners],
 		crown : [Cones, Triangles],
 		shade : F64,
@@ -122,7 +121,6 @@ Tree :: [].{
 			forward: tree.forward,
 			height: tree.height,
 			cam_focal: tree.cam_focal,
-			view_w: tree.view_w,
 		})
 		if seen.height_px < 1.0 {
 			[]
@@ -141,7 +139,6 @@ Tree :: [].{
 		forward : F64,
 		height : F64,
 		cam_focal : F64,
-		view_w : F64,
 	} -> Tree.Outline
 	outline = |
 		{
@@ -149,7 +146,6 @@ Tree :: [].{
 			forward,
 			height,
 			cam_focal,
-			view_w,
 		},
 	| {
 		base = Camera.project(
@@ -158,7 +154,7 @@ Tree :: [].{
 				forward,
 				height: 0.0,
 			},
-			{ cam_focal, view_w },
+			cam_focal,
 		)
 		top = Camera.project(
 			{
@@ -166,7 +162,7 @@ Tree :: [].{
 				forward,
 				height,
 			},
-			{ cam_focal, view_w },
+			cam_focal,
 		)
 		height_px = (base.y - top.y)
 		foliage_px = (height_px * crown_height)
@@ -311,7 +307,7 @@ tier_cone = |tree, { tier, radius }| {
 			forward: tree.forward,
 			height: apex_height,
 		},
-		{ cam_focal: tree.cam_focal, view_w: tree.view_w },
+		tree.cam_focal,
 	)
 	ring = ring_angles.map(
 		|angle| {
@@ -320,7 +316,7 @@ tier_cone = |tree, { tier, radius }| {
 				forward: (tree.forward + (radius * Trig.r_sin(angle))),
 				height: base_height,
 			}
-			Camera.project(on_ring, { cam_focal: tree.cam_focal, view_w: tree.view_w })
+			Camera.project(on_ring, tree.cam_focal)
 		},
 	)
 	hull = Tree.convex_hull(ring.append(apex))

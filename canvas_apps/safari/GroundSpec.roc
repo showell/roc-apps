@@ -80,7 +80,6 @@ patch_shapes = |corners| Ground.draw({
 	corners,
 	color: 3112588,
 	cam_focal: 685.5110432362151,
-	view_w: 960.0,
 })
 
 count_got : List(I64)

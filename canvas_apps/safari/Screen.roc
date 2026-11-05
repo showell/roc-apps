@@ -18,6 +18,10 @@ Screen :: [].{
 	height : F64
 	height = I64.to_f64(height_px)
 
+	## The camera looks at the middle of the screen, across its width.
+	center_x : F64
+	center_x = width / 2.0
+
 	## The horizon crosses the middle of the screen.
 	horizon_y : F64
 	horizon_y = height / 2.0

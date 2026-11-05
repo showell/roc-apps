@@ -6,7 +6,6 @@ app [main!] {
 }
 
 import Angle
-import Camera
 import Grade
 import Lens
 import Sky
@@ -116,21 +115,18 @@ mix_got = (
 mix_want : List(F64)
 mix_want = [142.0, 202.0, 230.0, 36.0, 58.0, 94.0, 89.0, 130.0, 162.0]
 
-view : Camera.View
-view = { cam_focal: Lens.focal, view_w: 960.0 }
-
 facing : Sky.SunPos
 facing = Sky.sun_pos({
 	heading: Angle.Bearing.radians(0.0 - 2.2176),
 	clock: 0.0,
-	view,
+	cam_focal: Lens.focal,
 })
 
 away : Sky.SunPos
 away = Sky.sun_pos({
 	heading: Angle.north,
 	clock: 0.0,
-	view,
+	cam_focal: Lens.focal,
 })
 
 is_in_view : Sky.SunPos -> Bool

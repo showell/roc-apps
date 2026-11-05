@@ -8,7 +8,6 @@ import Pose
 import Render
 import RideFocal
 import Rider
-import Screen
 import Sky
 import Truck
 import ViewYaw
@@ -104,14 +103,12 @@ Safari :: [].{
 					heading: ViewYaw.heading_for(s),
 					dusk: Sky.dusk_at(r.clock),
 					cam_focal: cf,
-					view_w: Screen.width,
 				}),
 				GroundPlan.draw({
 					world: w,
 					rider_segment: s.segment,
 					pose,
 					cam_focal: cf,
-					view_w: Screen.width,
 				}),
 				roadside,
 			].join()
@@ -125,7 +122,7 @@ Safari :: [].{
 			Sky.sun_pos({
 				heading: ViewYaw.heading_for(r.rider),
 				clock: r.clock,
-				view: { cam_focal: cf, view_w: Screen.width },
+				cam_focal: cf,
 			})
 		}
 	)

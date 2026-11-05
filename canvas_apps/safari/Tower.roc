@@ -61,7 +61,6 @@ Tower :: [].{
 	RodView : {
 		rod_width_px : F64,
 		cam_focal : F64,
-		view_w : F64,
 	}
 
 	## One mast, ready to draw: where it stands, how far the earth's curve
@@ -247,31 +246,21 @@ Tower :: [].{
 	} -> List(Shapes.Shape)
 	rod_on_screen = |view, { from, to }|
 		screen_rod({
-			from: Camera.project(from, { cam_focal: view.cam_focal, view_w: view.view_w }),
-			to: Camera.project(to, { cam_focal: view.cam_focal, view_w: view.view_w }),
+			from: Camera.project(from, view.cam_focal),
+			to: Camera.project(to, view.cam_focal),
 			width_px: view.rod_width_px,
 		})
 
 	## How many pixels one metre across spans at distance `forward`.
-	metre_px : {
-		forward : F64,
-		cam_focal : F64,
-		view_w : F64,
-	} -> F64
-	metre_px = |
-		{
-			forward,
-			cam_focal,
-			view_w,
-		},
-	| {
+	metre_px : { forward : F64, cam_focal : F64 } -> F64
+	metre_px = |{ forward, cam_focal }| {
 		p1 = Camera.project(
 			{
 				right: 1.0,
 				forward: forward,
 				height: 0.0,
 			},
-			{ cam_focal, view_w },
+			cam_focal,
 		)
 		p0 = Camera.project(
 			{
@@ -279,17 +268,13 @@ Tower :: [].{
 				forward: forward,
 				height: 0.0,
 			},
-			{ cam_focal, view_w },
+			cam_focal,
 		)
 		(p1.x - p0.x)
 	}
 
 	## A rod's width on screen at distance `forward`.
-	rod_width_at : {
-		forward : F64,
-		cam_focal : F64,
-		view_w : F64,
-	} -> F64
+	rod_width_at : { forward : F64, cam_focal : F64 } -> F64
 	rod_width_at = |camera| (rod_w * metre_px(camera))
 
 	## The four legs, from the footprint's corners up to the apex.
@@ -423,18 +408,12 @@ Tower :: [].{
 	beacon = |mast, { apex, brightness }| {
 		apex_on_screen = Camera.project(
 			apex,
-			{ cam_focal: mast.view.cam_focal, view_w: mast.view.view_w },
+			mast.view.cam_focal,
 		)
 		if brightness < 0.02 {
 			[]
 		} else {
-			radius = (
-				beacon_radius * metre_px({
-					forward: mast.center.forward,
-					cam_focal: mast.view.cam_focal,
-					view_w: mast.view.view_w,
-				})
-			)
+			radius = (beacon_radius * metre_px({ forward: mast.center.forward, cam_focal: mast.view.cam_focal }))
 			if (radius < 0.5) [] else Paint.push_beacon({
 				beacon_color,
 				beacon_center: apex_on_screen,
@@ -450,7 +429,6 @@ Tower :: [].{
 		footprint : Tower.Footprint,
 		center : Geom.RiderPoint,
 		cam_focal : F64,
-		view_w : F64,
 		beacon_brightness : F64,
 	} -> List(Shapes.Shape)
 	draw = |
@@ -458,7 +436,6 @@ Tower :: [].{
 			footprint,
 			center,
 			cam_focal,
-			view_w,
 			beacon_brightness,
 		},
 	| {
@@ -467,13 +444,8 @@ Tower :: [].{
 			[]
 		} else {
 			view = {
-				rod_width_px: rod_width_at({
-					forward: center.forward,
-					cam_focal,
-					view_w,
-				}),
+				rod_width_px: rod_width_at({ forward: center.forward, cam_focal }),
 				cam_focal,
-				view_w,
 			}
 			mast = {
 				footprint,

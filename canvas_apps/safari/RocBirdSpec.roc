@@ -11,8 +11,8 @@ import RocBird
 import ShapeRead
 import lib.Shapes
 
-camera : Camera.View
-camera = { cam_focal: 500.0, view_w: 960.0 }
+cam_focal : F64
+cam_focal = 500.0
 
 ## A perched bird straight ahead, its feet at the camera's height, so they
 ## land on the horizon in the middle of the screen.
@@ -45,7 +45,7 @@ height_want = [2.2, 10.0, 5.0, 20.0]
 ## The perched still's first corner is (-0.0344, 0.5715), at a height of 10 px
 ## from feet at (480, 300).
 perched_got : List(F64)
-perched_got = first_corner(RocBird.draw(level_bird, camera))
+perched_got = first_corner(RocBird.draw(level_bird, cam_focal))
 
 perched_want : List(F64)
 perched_want = [479.656, 294.285]
@@ -59,7 +59,7 @@ moved_got = first_corner(
 			right: 11.0,
 			lift: Camera.eye_h + 11.0,
 		},
-		camera,
+		cam_focal,
 	),
 )
 
@@ -71,7 +71,7 @@ colours_got : List(I64)
 colours_got = [
 	Side(WingsDown),
 	Diving,
-].join_map(|pose| RocBird.draw({ ..level_bird, pose }, camera).map(ShapeRead.flat_color_of))
+].join_map(|pose| RocBird.draw({ ..level_bird, pose }, cam_focal).map(ShapeRead.flat_color_of))
 
 colours_want : List(I64)
 colours_want = List.concat(BirdStills.side_wings_down, BirdStills.diving).map(|poly| poly.color)
