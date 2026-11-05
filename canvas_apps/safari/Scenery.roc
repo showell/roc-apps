@@ -129,6 +129,7 @@ expect !(Scenery.is_pond(Elephant))
 expect !(Scenery.is_pond(Giraffe))
 expect !(Scenery.is_pond(Zebra))
 expect !(Scenery.is_pond(Rhino))
+
 scheme_code : Scenery.Scheme -> I64
 scheme_code = |s| (
 	match s {
@@ -159,6 +160,7 @@ expect creature_code(Giraffe) == 2
 expect creature_code(Zebra) == 3
 expect creature_code(Rhino) == 4
 expect creature_code(DuckPond) == 5
+
 a_tree : Scenery.Tree
 a_tree = {
 	along: Along.metres(120.5),

@@ -219,6 +219,7 @@ expect TowerSighting.mid_tower_left.to_metres() == 100.0
 expect TowerSighting.beacon_period.to_f64() == 120.0
 expect TowerSighting.beacon_stagger.to_f64() == 37.0
 expect TowerSighting.max_vis_towers == 16
+
 segs : List(World.Segment)
 segs = [
 	World.route_segment(0),
@@ -292,6 +293,7 @@ long_view = {
 
 expect TowerSighting.along_chain(long_view).len() == 2
 expect TowerSighting.mid_tower(long_view, Frame.ChainPosition.first).len() == 1
+
 long_towers : List(TowerSighting.TowerItem)
 long_towers = TowerSighting.along_chain(long_view)
 

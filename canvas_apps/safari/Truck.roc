@@ -172,6 +172,7 @@ expect Truck.finish_lead.to_metres() == 100.0
 expect Truck.turn_caution == 0.8
 expect Truck.brake_distance.to_metres() == 60.0
 expect Truck.top_speed.to_metres_a_step() == 2.75
+
 chase_metres : F64
 chase_metres = Truck.chase_acceleration.to_metres_a_step_each_step()
 
@@ -202,6 +203,7 @@ expect schedule(500.0) == 800.0
 expect schedule(1000.0) == 1100.0
 expect schedule(1000.0) - 1000.0 == 100.0
 expect schedule(0.0) - 0.0 == 500.0
+
 one_seg : List(World.Segment)
 one_seg = [World.route_segment(0)]
 
@@ -231,6 +233,7 @@ expect turn_dist(one_seg, 500.0) == -1.0
 expect turn_dist(one_seg, 900.0) == -1.0
 expect turn_dist([World.route_segment(18)], 0.0) == -1.0
 expect turn_dist([], 0.0) == -1.0
+
 two_seg : List(World.Segment)
 two_seg = [World.route_segment(0), World.route_segment(1)]
 
@@ -309,6 +312,7 @@ expect capped.speed.to_metres_a_step() == 2.75
 expect free.brake_lights == Off
 expect ahead.brake_lights == Off
 expect capped.brake_lights == Off
+
 braking : Truck.TruckState
 braking = Truck.advance(
 	{
@@ -328,6 +332,7 @@ expect
 expect braking.brake_lights == On
 expect braking.speed < Speed.metres_a_step(0.3)
 expect braking.speed > Speed.metres_a_step(0.1776)
+
 settled : Truck.TruckState
 settled = Truck.advance(
 	{

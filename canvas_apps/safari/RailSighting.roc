@@ -225,6 +225,7 @@ expect point_at(straight, 4).forward == 5.0
 expect point_at(straight, 9).forward == 10.0
 expect point_at(straight, 0).right == 0.0
 expect point_at(straight, 9).right == 0.0
+
 diagonal : List(Geom.RiderPoint)
 diagonal = RailSighting.rail_leg({ from: origin_pt, to: { right: 30.0, forward: 40.0 } })
 
@@ -247,11 +248,9 @@ expect {
 		to: { right: 0.0, forward: 10.0 },
 		steps: 10,
 	})
-	[
-		spaced.len() == 11,
-		point_at(spaced, 0).forward == 0.0,
-		point_at(spaced, 10).forward == 10.0,
-	].all(|is_right| is_right)
+	spaced.len() == 11
+		and point_at(spaced, 0).forward == 0.0
+		and point_at(spaced, 10).forward == 10.0
 }
 
 expect GuardRail.rail_runout.to_i64() == 10

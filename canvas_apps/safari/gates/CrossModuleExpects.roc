@@ -131,12 +131,7 @@ birds_on_segment = |segment, { rider_along, cam_focal }|
 		road: {
 			world: [segment],
 			chain: [World.SegmentIndex.first],
-			pose: {
-				along: Along.metres(rider_along),
-				across: Across.metres(0.0),
-				yaw: Angle.straight_ahead,
-				half_width: Distance.metres(2.0),
-			},
+			pose: { ..origin, along: Along.metres(rider_along) },
 		},
 		cam_focal,
 	})
@@ -160,22 +155,20 @@ expect place_of(bird_at(0.0)) == [-6.0, 100.0, 10.0]
 expect place_of(bird_at(40.0)) == [-6.0, 60.0, 10.0]
 
 # Halfway through its flight, with the rider 37.5 m from the tree it left.
-expect
+expect {
+	bird = bird_at(62.5)
 	[
-		(0, 0.0),
-		(1, 52.5),
-		(2, 17.0),
-	].all(
-		|(i, want)| {
-			got = place_of(bird_at(62.5)).get(i) ?? crash "CrossModuleExpects: a place has three parts"
-			(got - want).abs() <= 0.000000001
-		},
-	)
+		(bird.right, 0.0),
+		(bird.forward, 52.5),
+		(bird.lift.to_metres(), 17.0),
+	].all(|(got, want)| (got - want).abs() <= 0.000000001)
+}
 
 expect place_of(bird_at(85.0)) == [6.0, 45.0, 14.0]
 expect bird_at(40.0).pose == Perched
 expect bird_at(62.5).pose != Perched
 expect bird_at(85.0).pose == Perched
+
 # With no tree far enough to fly to, the bird stays on its own however near
 # the rider is.
 expect {
@@ -296,11 +289,13 @@ expect
 		(120.0, 1, 380.0),
 		(120.0, 2, 700.0),
 	].all(
-		|(
-			along,
-			number,
-			want,
-		)| {
+		|
+			(
+				along,
+				number,
+				want,
+			),
+		| {
 			gap = Frame.gap_to_segment(
 				{ ..cats_from_origin.road, pose: { ..origin, along: Along.metres(along) } },
 				Frame.ChainPosition.number(number),
@@ -347,6 +342,7 @@ expect riding(500.0).len() == 1
 expect riding(600.0).len() == 0
 expect cats_on_chain([]).len() == 0
 expect cats_on_chain([World.SegmentIndex.first]).len() == 0
+
 # One cat in view gives one key, which names the first cat; none gives none.
 expect CatSighting.depth_keys(seen).map(|key| key.subject) == [Cat(0)]
 expect CatSighting.depth_keys([]).len() == 0
@@ -391,6 +387,7 @@ expect safari_at(4) > 0
 expect safari_at(5) == 0
 expect CritterSighting.safari_sightings(lone(18), Frame.ChainPosition.first).len() == 0
 expect CritterSighting.safari_sightings(lone(0), Frame.ChainPosition.first).len() > 0
+
 duck_count : U32 -> I64
 duck_count = |index|
 	CritterSighting.duck_sightings(lone(index), Frame.ChainPosition.first).len().to_i64_wrap()
@@ -560,11 +557,9 @@ expect
 expect {
 	before = chunk_of_first(3)
 	after = chunk_of_first(4)
-	[
-		corner(before, 3).forward == corner(after, 0).forward,
-		corner(before, 2).forward == corner(after, 1).forward,
-		corner(before, 3).right == corner(after, 0).right,
-	].all(|is_right| is_right)
+	corner(before, 3).forward == corner(after, 0).forward
+		and corner(before, 2).forward == corner(after, 1).forward
+		and corner(before, 3).right == corner(after, 0).right
 }
 
 strip : List(Shapes.Shape)
@@ -611,13 +606,11 @@ done = {
 
 expect {
 	instant = RideInstant.next(World.segments, done)
-	[
-		instant.clock.to_f64() == 0.0,
-		instant.rider.along.to_metres() == 0.0,
-		instant.rider.speed.to_metres_a_step() == 0.3,
-		instant.truck.route_position.to_metres() == 500.0,
-		instant.rider.focus.to_f64() == 0.0,
-	].all(|is_right| is_right)
+	instant.clock.to_f64() == 0.0
+		and instant.rider.along.to_metres() == 0.0
+		and instant.rider.speed.to_metres_a_step() == 0.3
+		and instant.truck.route_position.to_metres() == 500.0
+		and instant.rider.focus.to_f64() == 0.0
 }
 
 expect Rider.is_finished(done.rider, World.segments)

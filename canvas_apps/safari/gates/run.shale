@@ -1,17 +1,16 @@
 -- budget: steps=40000000 reads=20000 read_bytes=400000000 output_bytes=200000
--- SAFARI'S GATES: every module's expects, the spec apps against their
--- verdicts, then the native proof tools.
+-- SAFARI'S GATES: the lints, every module's expects, the tutorial, then the
+-- native proof tools.
 --
 --   cd <roc-apps checkout> && nice -n 19 shale canvas_apps/safari/gates/run.shale
 --
 -- Run from the roc-apps root: every path is the checkout's, so a worktree
--- gates its own tree. About two minutes on the box (the specs ~30 s in two
--- parts, the proof tools ~65 s, the expects a few seconds).
+-- gates its own tree. About two minutes on the box (the proof tools ~65 s, the
+-- expects ~35 s).
 --
--- A run holds 64 programs and a spec takes two (its build and its binary),
--- so the gates run as child runs of this script, `part=expects`, `part=1` and
--- `part=2` (half the specs each), `part=proof` and `part=tutorial`, one program
--- of this run's each. A child runs alone the same way (`... run.shale part=2`).
+-- The gates run as child runs of this script, `part=expects`, `part=proof` and
+-- `part=tutorial`, one program of this run's each. A child runs alone the same
+-- way (`... run.shale part=proof`).
 --
 -- **THE LINTS** (gates/lints.shale) run first: shale's Roc lints, each count
 -- held exactly, lowered as the code is fixed.
@@ -21,7 +20,8 @@
 --
 -- `part=expects` runs `roc test --verbose` from each of EXPECT_ROOTS, whose
 -- reach together is every module: web.roc reaches the game, gates/ShapesFrame.roc
--- the modules only the proof tools use, and lib's package root all of lib, where
+-- the modules only the proof tools use, gates/CrossModuleExpects.roc the expects
+-- that can't sit beside their code, and lib's package root all of lib, where
 -- Trig lives. The source is the count, so no number needs keeping: every line
 -- of a `.roc` file in safari, gates/ or lib that starts `expect` must print
 -- `PASS` once in a run that reaches it, and a `PASS` must name such a line. An
@@ -29,14 +29,6 @@
 -- function fails here, and so does one in a module no root reaches. The roots
 -- overlap, and share a fresh cache, so a line that two roots reach runs once
 -- and counts once.
---
--- **THE SPECS:** each `<Spec>.roc` is built on the dev backend (what `roc
--- run` runs) where it is written (its app header names lib/ as a package)
--- and its binary run; its output must equal `expected/<Spec>.expected` byte
--- for byte, and its build must hold no ✗. The expected files are copies of
--- safari-codex's `units/*.expected`, the Codex program's verdicts, taken at
--- safari-codex dcd214c; they are safari's own now (the Roc is the program,
--- ../README.md) and change here when a spec's output rightly changes.
 --
 -- The proof tools: StepBack passes on "every step back went back one step",
 -- and ShapesFrame on "differ 0" at every depth. All their
@@ -60,10 +52,8 @@
 -- `scratch:` (`fresh_dir`), removed when the child passes and kept, named,
 -- when it fails.
 const SAFARI = "canvas_apps/safari"
-const EXPECTED = "canvas_apps/safari/gates/expected"
 const SELF_PATH = "canvas_apps/safari/gates/run.shale"
 const TUTORIAL = "canvas_apps/safari/tutorial/build.shale"
-const SPECS = 7
 const EXPECT_ROOTS = {"web.roc", "gates/ShapesFrame.roc", "gates/CrossModuleExpects.roc", "../lib/main.roc"}
 const PROOF_EXPECTED = "canvas_apps/safari/gates/proof.expected"
 const WANT = "roc-pin: roc-apps' pinned nightly, and the binaries it builds under scratch:"
@@ -87,102 +77,6 @@ function build(roc, scratch, dir, n, re)
     {timeout_ms = 600000, cwd = dir, re = re, head = 4, want = WANT, env = {XDG_CACHE_HOME = real(cache)}})
   remove_tree(cache)
   return b
-end
-
-function first_difference(got, want)
-  local got_lines = split(got, "\n")
-  local want_lines = split(want, "\n")
-  local i = 1
-  while i <= #want_lines or i <= #got_lines do
-    local g = "<none>"
-    local w = "<none>"
-    if i <= #got_lines then g = got_lines[i] end
-    if i <= #want_lines then w = want_lines[i] end
-    if g ~= w then return "line " .. i .. ": got [" .. g .. "] want [" .. w .. "]" end
-    i = i + 1
-  end
-  return "the same lines"
-end
-
-function grade(roc, scratch, n)
-  local out = scratch .. "/bin/" .. n
-  local b = build(roc, scratch, SAFARI, n, "✗|●|SIGSEGV")
-  local row = {spec = n, build_ms = b.ms, run_ms = 0, verdict = "PASS", why = ""}
-  if b.matched_lines > 0 then
-    row.verdict = "FAIL"
-    row.why = " " .. b.matched_lines .. " errors or warnings (✗ or ●) in the build: " .. trim(get(b, "out", ""))
-  end
-  if not exists(out) then
-    row.verdict = "FAIL"
-    row.why = row.why .. " no binary"
-    return row
-  end
-  local r = run({real(out)}, {timeout_ms = 600000, whole = 4000000, want = WANT})
-  row.run_ms = r.ms
-  replace(out .. ".out", r.out)
-  if r.ended ~= "exit" or get(r, "code", -1) ~= 0 then
-    row.verdict = "FAIL"
-    row.why = row.why .. " ended " .. r.ended .. " " .. get(r, "code", -1)
-  end
-  local want = read(EXPECTED .. "/" .. n .. ".expected")
-  if r.out ~= want then
-    row.verdict = "FAIL"
-    row.why = row.why .. " output differs from expected/" .. n .. ".expected, " .. first_difference(r.out, want)
-  end
-  return row
-end
-
--- The spec apps, sorted, each with its expected file, and no expected file
--- without its spec.
-function spec_names()
-  local specs = {}
-  for p in glob(SAFARI .. "/*Spec.roc") do
-    local b = basename(p)
-    push(specs, sub(b, 1, #b - 4))
-  end
-  sort(specs)
-  if #specs ~= SPECS then fail("safari gates: expected " .. SPECS .. " spec apps, found " .. #specs) end
-  local have = set_of(specs)
-  for p in glob(EXPECTED .. "/*.expected") do
-    local b = basename(p)
-    if not has_key(have, sub(b, 1, #b - 9)) then fail("safari gates: " .. p .. " has no spec app") end
-  end
-  for n in specs do
-    if not exists(EXPECTED .. "/" .. n .. ".expected") then fail("safari gates: no " .. EXPECTED .. "/" .. n .. ".expected for " .. n) end
-  end
-  return specs
-end
-
-function grade_part(part)
-  local roc = roc_path()
-  local specs = spec_names()
-  local half = #specs // 2
-  local from = 1
-  local to = half
-  if part == "2" then
-    from = half + 1
-    to = #specs
-  end
-  local scratch = fresh_dir("scratch:", "safari-specs")
-  mkdir(scratch .. "/bin")
-  local pass = 0
-  local failed = {}
-  local build_ms = 0
-  local run_ms = 0
-  local i = from
-  while i <= to do
-    local row = grade(roc, scratch, specs[i])
-    build_ms = build_ms + row.build_ms
-    run_ms = run_ms + row.run_ms
-    if row.verdict == "PASS" then pass = pass + 1 else push(failed, row.spec) end
-    print(row.verdict .. " " .. row.spec .. "  build " .. row.build_ms .. " ms, run " .. row.run_ms .. " ms" .. row.why)
-    i = i + 1
-    yield()
-  end
-  print("specs part " .. part .. ": " .. pass .. " pass, " .. #failed .. " fail; build " .. build_ms .. " ms, run " .. run_ms .. " ms")
-  if #failed > 0 then fail("safari gates: spec(s) failed: " .. join(failed, ", ") .. "; binaries and outputs kept in " .. scratch) end
-  remove_tree(scratch)
-  return nil
 end
 
 -- Where `roc test`, run in safari's folder, says a source line is.
@@ -338,7 +232,6 @@ end
 -- still run.
 function all()
   roc_path()
-  spec_names()
   local bad = {}
   local times = {}
   local lints = run({"shale", "--root", ".", SAFARI .. "/gates/lints.shale"}, {timeout_ms = 1800000, tail = 40})
@@ -347,7 +240,7 @@ function all()
   end
   push(times, "lints " .. (lints.ms // 1000) .. " s")
   if lints.ended ~= "exit" or lints.code ~= 0 then push(bad, "lints") end
-  for part in {"expects", "tutorial", "1", "2", "proof"} do
+  for part in {"expects", "tutorial", "proof"} do
     -- A child, and every roc under it, inherits this run's niceness.
     local r = run({"shale","--root", ".", SELF_PATH, "part=" .. part}, {timeout_ms = 1800000, tail = 200})
     for l in lines(r.out) do
@@ -358,14 +251,12 @@ function all()
   end
   print("safari gates: " .. join(times, ", "))
   if #bad > 0 then fail("safari gates: " .. #bad .. " failed: " .. join(bad, ", ")) end
-  print("safari gates: expects held, " .. SPECS .. "/" .. SPECS .. " specs pass, proof tools ok, tutorial built")
+  print("safari gates: expects held, proof tools ok, tutorial built")
 end
 
 const PART = arg("part", "")
 if PART == "" then
   all()
-elseif PART == "1" or PART == "2" then
-  grade_part(PART)
 elseif PART == "expects" then
   expects()
 elseif PART == "proof" then
@@ -373,5 +264,5 @@ elseif PART == "proof" then
 elseif PART == "tutorial" then
   tutorial()
 else
-  fail("safari gates: part= is expects, 1, 2, proof or tutorial (none runs them all)")
+  fail("safari gates: part= is expects, proof or tutorial (none runs them all)")
 end

@@ -192,3 +192,6 @@ pond_sightings = |road, { place, segment }|
 	} else {
 		[]
 	}
+
+expect CritterSighting.farm_reach.to_i64() == 3
+expect CritterSighting.safari_reach.to_i64() == 5
