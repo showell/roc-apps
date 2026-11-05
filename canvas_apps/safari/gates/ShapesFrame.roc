@@ -17,18 +17,18 @@ app [main!] {
 	lib: "../../lib/main.roc",
 }
 
-import game.SafariRide
+import game.Tour
 import SafariFrame
 import ShapesPixels
 import lib.Shapes
 import game.Screen
 import Hex
 
-ride_to : SafariRide.Model, I64 -> SafariRide.Model
-ride_to = |m, n| if n <= 0 {
-	m
+ride_to : Tour, I64 -> Tour
+ride_to = |tour, n| if n <= 0 {
+	tour
 } else {
-	ride_to(SafariRide.advance(m), n - 1)
+	ride_to(Tour.advance(tour), n - 1)
 }
 
 triangles : List(Shapes.Shape) -> U64
@@ -49,17 +49,17 @@ main! = |args| {
 			Ok(text) => I64.from_str(text) ?? crash "ShapesFrame: steps must be a whole number"
 			Err(OutOfBounds) => 0
 		}
-	m = ride_to(SafariRide.init, steps)
-	ride_shapes = SafariRide.shapes(m)
-	roll = SafariRide.roll(m)
+	tour = ride_to(Tour.init, steps)
+	moment_shapes = Tour.shapes(tour)
+	roll = Tour.roll(tour)
 	scene = {
-		shapes: ride_shapes,
+		shapes: moment_shapes,
 		roll,
-		sky_top: SafariRide.sky_top(m),
-		sky_horizon: SafariRide.sky_horizon(m),
-		sun: SafariRide.sun(m),
+		sky_top: Tour.sky_top(tour),
+		sky_horizon: Tour.sky_horizon(tour),
+		sun: Tour.sun(tour),
 	}
-	cut_shapes = Shapes.cut(ride_shapes)
+	cut_shapes = Shapes.cut(moment_shapes)
 	a = SafariFrame.paint(scene)
 	backdrop = SafariFrame.paint({ ..scene, shapes: [] })
 	b = ShapesPixels.paint(backdrop, { roll: SafariFrame.screen_roll(roll), shapes: cut_shapes })
@@ -76,7 +76,7 @@ main! = |args| {
 	}
 	var $out = List.with_capacity(n * 6 + 64)
 	differing = "differ ${U64.to_str($differ)} of ${U64.to_str(n)}"
-	totals = "triangles ${triangles(cut_shapes).to_str()}, shapes ${ride_shapes.len().to_str()}"
+	totals = "triangles ${triangles(cut_shapes).to_str()}, shapes ${moment_shapes.len().to_str()}"
 	size = "${Screen.width_px.to_str()} ${Screen.height_px.to_str()}"
 	$out = List.concat($out, Str.to_utf8("${differing}, ${totals}\nhash 00000000\n${size}\n"))
 	$k = 0

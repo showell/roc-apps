@@ -40,7 +40,7 @@ Here's the whole system, simplified. An arrow points from a module to one it imp
 digraph system {
   node [shape=box, fontname="Helvetica"];
   fontname="Helvetica";
-  app [label="the app\nweb.roc, SafariApp, SafariRide", style=dashed];
+  app [label="the app\nweb.roc, SafariApp, Tour", style=dashed];
   subgraph cluster_ride {
     label="the ride";
     Rider; Truck; World;
@@ -145,7 +145,7 @@ digraph sky {
   node [shape=box, fontname="Helvetica"];
   Sky [style=bold];
   RideMoment -> Sky;
-  SafariRide -> Sky;
+  Tour -> Sky;
   SafariShapes -> Sky;
   Mountains -> Sky;
   Sky -> Angle;

@@ -30,7 +30,7 @@ Every module that began as an emission says so in its header.
 | | |
 |---|---|
 | `SafariApp.roc` | the `CanvasApp` value: the keys, the pause, and the frame leaned by the rider's roll |
-| `SafariRide.roc` | the drive for any platform: the ride between frames, the history for stepping back, and what a frame shows — the shapes, the roll, the sky colours, the sun |
+| `Tour.roc` | the whole journey for any platform: the current moment, the moments behind it for stepping back, and what a frame shows — the shapes, the roll, the sky colours, the sun |
 | `SafariShapes.roc` | a frame as shapes: the sky's gradient, the grass, the sun and its glow, and the ride's shapes |
 | `Paint.roc` | builders that turn screen points and colours into `Shapes.Shape`s, for the drawing modules |
 | `SafariFrame.roc` | a frame painted into pixels in Roc, for the proof tools below |

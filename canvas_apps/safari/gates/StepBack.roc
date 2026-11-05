@@ -13,20 +13,20 @@ app [main!] {
 	lib: "../../lib/main.roc",
 }
 
-import game.SafariRide
+import game.Tour
 
 main! = |_args| {
 	var $out = ""
 	var $bad = 0
 	for steps in [10, 1000, 2047, 2048, 2049, 3000, 5000] {
-		var $m = SafariRide.init
+		var $tour = Tour.init
 		var $k = 0
 		while $k < steps {
-			$m = SafariRide.advance($m)
+			$tour = Tour.advance($tour)
 			$k = $k + 1
 		}
-		here = $m.ride.clock
-		there = SafariRide.back($m).ride.clock
+		here = $tour.moment.clock
+		there = Tour.back($tour).moment.clock
 		ok = there.next() == here
 		$bad = if ok {
 			$bad

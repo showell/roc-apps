@@ -1,7 +1,7 @@
 # SafariApp -- the drive, as a value the canvas apps can run.
 #
 # Hand-written: the shim between the ride Safari actually is and the value a
-# runner wants. SafariRide holds the ride and its history; SafariShapes says
+# runner wants. Tour holds the journey and its history; SafariShapes says
 # what a frame looks like. This says which keys move it and how the camera
 # leans.
 #
@@ -15,12 +15,12 @@
 import lib.CanvasApp
 import lib.Input
 import lib.Shapes
-import SafariRide
 import SafariShapes
 import Screen
+import Tour
 
 SafariApp :: [].{
-	Model : { ride : SafariRide.Model, paused : Bool }
+	Model : { tour : Tour, paused : Bool }
 
 	canvas_app : CanvasApp.CanvasApp(SafariApp.Model)
 	canvas_app = {
@@ -28,9 +28,9 @@ SafariApp :: [].{
 		# **THIRTY, BY EYE.** The drive's motion is written per tick, and
 		# thirty is the speed it is meant to look like.
 		fps: 30,
-		init: { ride: SafariRide.init, paused: Bool.False },
+		init: { tour: Tour.init, paused: Bool.False },
 		advance: CanvasApp.untimed_advance(step),
-		frame: |m| frame(m.ride),
+		frame: |m| frame(m.tour),
 		sounds: |_m| 0,
 		tones: [],
 		title: "Safari",
@@ -42,23 +42,23 @@ SafariApp :: [].{
 	## turn. That is a camera whose target and offset are both the middle of
 	## the screen and whose rotation is the roll, the other way round: a
 	## `View` mark in front of everything else.
-	frame : SafariRide.Model -> List(Shapes.Shape)
-	frame = |ride| {
+	frame : Tour -> List(Shapes.Shape)
+	frame = |tour| {
 		centre = { x: Screen.width / 2.0, y: Screen.height / 2.0 }
 		lean = View(
 			World({
 				target: centre,
 				offset: centre,
-				rotation: 0.0 - SafariRide.roll(ride).to_radians() * degrees,
+				rotation: 0.0 - Tour.roll(tour).to_radians() * degrees,
 				zoom: 1.0,
 			}),
 		)
 		SafariShapes.frame(
-			SafariRide.shapes(ride),
+			Tour.shapes(tour),
 			{
-				sky_top_color: SafariRide.sky_top(ride),
-				sky_horizon_color: SafariRide.sky_horizon(ride),
-				sun_position: SafariRide.sun(ride),
+				sky_top_color: Tour.sky_top(tour),
+				sky_horizon_color: Tour.sky_horizon(tour),
+				sun_position: Tour.sun(tour),
 			},
 		).prepend(lean)
 	}
@@ -69,7 +69,7 @@ SafariApp :: [].{
 	step : SafariApp.Model, Input.Snapshot -> SafariApp.Model
 	step = |m, input|
 		if input.key_pressed(KeyR) {
-			{ ride: SafariRide.init, paused: Bool.False }
+			{ tour: Tour.init, paused: Bool.False }
 		} else {
 			paused = if input.key_pressed(KeySpace) {
 				!m.paused
@@ -79,69 +79,69 @@ SafariApp :: [].{
 			moved =
 				if input.key_down(KeyRight) {
 					repeat(
-						m.ride,
+						m.tour,
 						{
 							step_count: if paused {
 								1
 							} else {
 								4
 							},
-							step_once: SafariRide.advance,
+							step_once: Tour.advance,
 						},
 					)
 				} else if input.key_down(KeyLeft) {
 					repeat(
-						m.ride,
+						m.tour,
 						{
 							step_count: if paused {
 								1
 							} else {
 								4
 							},
-							step_once: SafariRide.back,
+							step_once: Tour.back,
 						},
 					)
 				} else if paused {
-					m.ride
+					m.tour
 				} else {
-					SafariRide.advance(m.ride)
+					Tour.advance(m.tour)
 				}
-			ride = if input.key_pressed(KeyJ) {
+			tour = if input.key_pressed(KeyJ) {
 				next_segment(moved)
 			} else {
 				moved
 			}
-			{ ride, paused }
+			{ tour, paused }
 		}
 
-	## The ride after `step_once` has moved it `step_count` times.
-	repeat : SafariRide.Model,
+	## The tour after `step_once` has moved it `step_count` times.
+	repeat : Tour,
 	{
 		step_count : I64,
-		step_once : SafariRide.Model -> SafariRide.Model,
-	} -> SafariRide.Model
-	repeat = |ride, { step_count: n, step_once: move }| {
-		var $ride = ride
+		step_once : Tour -> Tour,
+	} -> Tour
+	repeat = |tour, { step_count: n, step_once: move }| {
+		var $tour = tour
 		var $i = 0
 		while $i < n {
-			$ride = move($ride)
+			$tour = move($tour)
 			$i = $i + 1
 		}
-		$ride
+		$tour
 	}
 
 	# The route's segments are its scenes, and reaching the next one means
 	# stepping until the segment changes.
-	next_segment : SafariRide.Model -> SafariRide.Model
-	next_segment = |ride| {
-		from = ride.ride.rider.segment
-		var $ride = SafariRide.advance(ride)
+	next_segment : Tour -> Tour
+	next_segment = |tour| {
+		from = tour.moment.rider.segment
+		var $tour = Tour.advance(tour)
 		var $guard = 0
-		while $ride.ride.rider.segment == from and $guard < step_guard {
-			$ride = SafariRide.advance($ride)
+		while $tour.moment.rider.segment == from and $guard < step_guard {
+			$tour = Tour.advance($tour)
 			$guard = $guard + 1
 		}
-		$ride
+		$tour
 	}
 
 	# A segment is long, but not unbounded.

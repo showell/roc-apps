@@ -38,7 +38,7 @@ import lib.Shapes
 
 SafariFrame :: [].{
 
-	## What a frame shows, in SafariRide's terms.
+	## What a frame shows, in Tour's terms.
 	Scene : {
 		shapes : List(Shapes.Shape),
 		roll : Angle.Lean,

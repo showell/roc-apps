@@ -9,16 +9,16 @@ app [main!] {
 	lib: "../../lib/main.roc",
 }
 
-import game.SafariRide
+import game.Tour
 import SafariFrame
 import game.Screen
 import Hex
 
-ride_to : SafariRide.Model, I64 -> SafariRide.Model
-ride_to = |m, n| if n <= 0 {
-	m
+ride_to : Tour, I64 -> Tour
+ride_to = |tour, n| if n <= 0 {
+	tour
 } else {
-	ride_to(SafariRide.advance(m), n - 1)
+	ride_to(Tour.advance(tour), n - 1)
 }
 
 # FNV-1a over each pixel's four little-endian bytes. The product stays under
@@ -51,13 +51,13 @@ main! = |args| {
 			Ok(text) => I64.from_str(text) ?? crash "RasterFrame: steps must be a whole number"
 			Err(OutOfBounds) => 0
 		}
-	m = ride_to(SafariRide.init, steps)
+	tour = ride_to(Tour.init, steps)
 	pixels = SafariFrame.paint({
-		shapes: SafariRide.shapes(m),
-		roll: SafariRide.roll(m),
-		sky_top: SafariRide.sky_top(m),
-		sky_horizon: SafariRide.sky_horizon(m),
-		sun: SafariRide.sun(m),
+		shapes: Tour.shapes(tour),
+		roll: Tour.roll(tour),
+		sky_top: Tour.sky_top(tour),
+		sky_horizon: Tour.sky_horizon(tour),
+		sun: Tour.sun(tour),
 	})
 	var $out = List.with_capacity(List.len(pixels) * 6 + 32)
 	$out = List.concat($out, Str.to_utf8("hash "))
