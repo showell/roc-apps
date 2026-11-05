@@ -1,6 +1,7 @@
 ## The sky through the ride: the sun sinks a little with every step, the
 ## sky darkens toward dusk as it goes, and the horizon warms red while the
 ## sun is near it. The sun is drawn only while the rider faces it.
+import Angle
 import Camera
 import lib.DeviceMath
 import Lens
@@ -27,8 +28,8 @@ Sky :: [].{
 	## the side of where the rider faces.
 	SunPos : [InView(Sky.SunPlace), OutOfView]
 
-	sun_bearing : F64
-	sun_bearing = (0.0 - 2.2176)
+	sun_bearing : Angle.Bearing
+	sun_bearing = Angle.Bearing.radians(0.0 - 2.2176)
 
 	sun_radius_px : F64
 	sun_radius_px = 46.0
@@ -45,8 +46,8 @@ Sky :: [].{
 	warmth_falloff_px : F64
 	warmth_falloff_px = 110.0
 
-	visible_bearing_limit : F64
-	visible_bearing_limit = 1.4
+	visible_turn_limit : Angle.Turn
+	visible_turn_limit = Angle.Turn.radians(1.4)
 
 	## How high the sun stands above the horizon at a step, in pixels at
 	## rest; below it once negative.
@@ -140,7 +141,7 @@ Sky :: [].{
 
 	## The sun in a frame, for a rider facing `heading`.
 	sun_pos : {
-		heading : F64,
+		heading : Angle.Bearing,
 		step : F64,
 		view : Camera.View,
 	} -> Sky.SunPos
@@ -151,13 +152,13 @@ Sky :: [].{
 			view,
 		},
 	| {
-		bearing_from_view = Trig.wrap((sun_bearing - heading), 64)
-		if DeviceMath.real_abs(bearing_from_view) >= visible_bearing_limit {
+		turn_from_view = sun_bearing.turn_from(heading)
+		if turn_from_view.abs() >= visible_turn_limit {
 			OutOfView
 		} else {
 			InView(
 				sun_place({
-					bearing_from_view,
+					turn_from_view,
 					step,
 					view,
 				}),
@@ -190,20 +191,20 @@ sky_at = |step| Sky.color_between({
 })
 
 sun_place : {
-	bearing_from_view : F64,
+	turn_from_view : Angle.Turn,
 	step : F64,
 	view : Camera.View,
 } -> Sky.SunPlace
 sun_place = |
 	{
-		bearing_from_view,
+		turn_from_view,
 		step,
 		view,
 	},
 | {
 	scale = (view.cam_focal / Lens.focal)
 	{
-		x: ((view.view_w / 2.0) + (Trig.r_tan(bearing_from_view) * view.cam_focal)),
+		x: ((view.view_w / 2.0) + (Trig.r_tan(turn_from_view.to_radians()) * view.cam_focal)),
 		y: (Screen.horizon_y - (Sky.sun_height_px(step) * scale)),
 		scale,
 	}

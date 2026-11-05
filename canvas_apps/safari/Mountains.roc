@@ -141,7 +141,7 @@ Mountains :: [].{
 	is_sun_behind_mountains : F64 -> Bool
 	is_sun_behind_mountains = |step| {
 		sun_top_px = (Sky.sun_height_px(step) + Sky.sun_radius_px)
-		sun_top_px < horizon_crest_px(Angle.Bearing.radians(Sky.sun_bearing))
+		sun_top_px < horizon_crest_px(Sky.sun_bearing)
 	}
 
 	## The skyline, back to front: the west range, the north range, the
