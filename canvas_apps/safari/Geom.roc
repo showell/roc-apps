@@ -51,13 +51,15 @@ Geom :: [].{
 	## A line through two points.
 	Line : { start_point : Geom.RiderPoint, end_point : Geom.RiderPoint }
 
-	## The radius of the earth the ground curves over.
-	ground_radius : F64
-	ground_radius = 100000.0
+	## The radius the ground, and the truck on it, curve away over. From the
+	## rider's eye it puts the horizon 490 metres out.
+	ground_curve_radius : F64
+	ground_curve_radius = 100000.0
 
 	## How far the ground has curved away below level at `point`.
 	ground_drop : Geom.RiderPoint -> F64
-	ground_drop = |{ right, forward }| (right * right + forward * forward) / (2.0 * ground_radius)
+	ground_drop = |{ right, forward }|
+		(right * right + forward * forward) / (2.0 * ground_curve_radius)
 
 	## A point on the current segment, as the camera at `pose` sees it.
 	to_rider_point : Geom.RoadPoint, Geom.Pose -> Geom.RiderPoint

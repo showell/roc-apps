@@ -40,10 +40,11 @@ Tower :: [].{
 	tower_metal : I64
 	tower_metal = 10133672
 
-	## The earth's radius for sinking masts. It is far smaller than the real
-	## one, so a mast sinks visibly as it recedes.
-	earth_radius : F64
-	earth_radius = 20000.0
+	## The radius a far mast sinks over, which hides it wholly at 1.8 km. It
+	## is tighter than `Geom.ground_curve_radius`, so a mast sinks visibly as
+	## it recedes: on the ground's curve it would stay in view to 4 km.
+	mast_sink_radius : F64
+	mast_sink_radius = 20000.0
 
 	beacon_radius : F64
 	beacon_radius = 3.0
@@ -141,7 +142,7 @@ Tower :: [].{
 	## How far the earth's curve hides the bottom of a mast standing at `p`.
 	sunk_below_horizon : Geom.RiderPoint -> F64
 	sunk_below_horizon = |p|
-		(((p.right * p.right) + (p.forward * p.forward)) / (2.0 * earth_radius))
+		(((p.right * p.right) + (p.forward * p.forward)) / (2.0 * mast_sink_radius))
 
 	## The point `fraction` of the way from `from` to `to`.
 	point_between : {
@@ -479,7 +480,7 @@ expect Tower.tower_half == 6.0
 expect Tower.stage_height == 20.0
 expect Tower.rod_half == 0.12
 expect Tower.rod_w == 0.24
-expect Tower.earth_radius == 20000.0
+expect Tower.mast_sink_radius == 20000.0
 expect Tower.beacon_radius == 3.0
 
 expect Tower.brace_stages == 2

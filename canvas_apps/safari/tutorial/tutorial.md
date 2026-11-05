@@ -894,7 +894,7 @@ The rotation itself is plain, with two cases, because a right-hand bend pivots o
 
 This is what lets `CatSighting`, `BirdSighting`, `TowerSighting`, `TreeSighting` and the rest not care where a segment is. They name a position in the chain and a point on that segment, and they get back a `RiderPoint`. That's a workhorse doing its job, and it's why `Frame` has sixteen importers.
 
-The ground also curves away. That's one line, the small-angle formula for the drop of a sphere, with a record destructured in the parameter list and `right` and `forward` squared where they stand. [check: `Geom.ground_radius` is 100,000 and `Tower.earth_radius` is 20,000; say why there are two, or fix it.]
+The ground also curves away. That's one line, the small-angle formula for the drop of a sphere, with a record destructured in the parameter list and `right` and `forward` squared where they stand. There are two radii in the program, and neither is the earth's. `Geom.ground_curve_radius`, 100 km, is the surface the road and the truck stand on, and it puts the horizon 490 metres out. `Tower.mast_sink_radius`, 20 km, only sets how soon a far mast goes: a mast is gone at 1.8 km, where the ground's curve would leave it in view to 4 km.
 
 {{code Geom.ground_drop}}
 
