@@ -16,6 +16,10 @@ import World
 import lib.Shapes
 
 Safari :: [].{
+
+	## All that is kept from one step to the next: the rider and the truck, each
+	## moved once a step from where it was, and the clock, which counts the steps.
+	## Everything else that changes is worked out from these three.
 	Ride : {
 		rider : Pose.RiderState,
 		truck : Truck.TruckState,
@@ -41,7 +45,7 @@ Safari :: [].{
 	ride_step : List(World.Segment), Safari.Ride -> Safari.Ride
 	ride_step = |w, r| (
 		{
-			nx = Rider.get_next_rider_state(r.rider, w)
+			nx = Rider.advance(r.rider, w)
 			dist = World.distance_along_route(w, { index: nx.segment, along: nx.along })
 			{
 				rider: nx,

@@ -305,7 +305,7 @@ done_want : List(Bool)
 done_want = [True, False, True, False]
 
 next : Pose.RiderState
-next = Rider.get_next_rider_state(
+next = Rider.advance(
 	rider({
 		along: 0.0,
 		across: 0.0,

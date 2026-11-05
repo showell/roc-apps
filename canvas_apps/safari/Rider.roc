@@ -115,8 +115,8 @@ Rider :: [].{
 		}
 	)
 
-	get_next_rider_state : Pose.RiderState, List(World.Segment) -> Pose.RiderState
-	get_next_rider_state = |state, segs| (
+	advance : Pose.RiderState, List(World.Segment) -> Pose.RiderState
+	advance = |state, segs| (
 		{
 			seg = state.segment.segment_in(segs)
 			dec = decide(state, seg)
