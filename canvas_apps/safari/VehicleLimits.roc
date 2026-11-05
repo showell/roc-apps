@@ -11,6 +11,9 @@ VehicleLimits :: [].{
 	a_accel : Acceleration
 	a_accel = Acceleration.metres_a_step_each_step(0.01)
 
+	v_base : Speed
+	v_base = Speed.metres_a_step(0.3)
+
 	v_max : Speed
 	v_max = Speed.metres_a_step(2.5)
 

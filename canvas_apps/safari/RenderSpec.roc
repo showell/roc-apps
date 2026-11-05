@@ -12,12 +12,12 @@ import CritterPlan
 import DepthSort
 import Frame
 import Grade
-import Pose
 import RailPlan
 import Render
 import TowerPlan
 import TreePlan
 import TruckPlan
+import VehicleLimits
 import World
 
 segs : List(World.Segment)
@@ -39,7 +39,7 @@ scene = Render.collect({
 	cam_focal: 500.0,
 	rider_segment: World.SegmentIndex.first,
 	rider_along: 0.0,
-	speed: Pose.v_base,
+	speed: VehicleLimits.v_base,
 	truck_position: 500.0,
 })
 

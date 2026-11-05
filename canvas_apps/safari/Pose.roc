@@ -3,6 +3,7 @@
 ## rider is looking.
 import Angle
 import Speed
+import VehicleLimits
 import World
 
 Pose :: [].{
@@ -24,16 +25,13 @@ Pose :: [].{
 		focus : F64,
 	}
 
-	v_base : Speed
-	v_base = Speed.metres_a_step(0.3)
-
 	initial_rider_state : Pose.RiderState
 	initial_rider_state = {
 		segment: World.SegmentIndex.first,
 		along: 0.0,
 		across: 0.0,
 		yaw: Angle.straight_ahead,
-		speed: v_base,
+		speed: VehicleLimits.v_base,
 		tilt: Angle.upright,
 		heading: Angle.north,
 		gaze_yaw: Angle.straight_ahead,

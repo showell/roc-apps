@@ -2,7 +2,6 @@
 ## that brings it closer as the rider nears the route's end: it speeds up
 ## when it is behind the schedule, and slows for a turn when one is close.
 import Acceleration
-import Pose
 import Speed
 import VehicleLimits
 import World
@@ -49,7 +48,7 @@ Truck :: [].{
 	initial_truck : Truck.TruckState
 	initial_truck = {
 		route_position: start_lead,
-		speed: Pose.v_base,
+		speed: VehicleLimits.v_base,
 		is_braking: False,
 	}
 

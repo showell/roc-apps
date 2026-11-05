@@ -11,6 +11,7 @@ import Bike
 import Grade
 import Pose
 import Speed
+import VehicleLimits
 import World
 
 fixed_got : List(F64)
@@ -69,7 +70,7 @@ straight = Arc.project_arc(
 	rider({
 		across: 0.0,
 		tilt_radians: 0.0,
-		speed: Pose.v_base,
+		speed: VehicleLimits.v_base,
 	}),
 )
 
@@ -88,7 +89,7 @@ wide = Arc.project_arc(
 	rider({
 		across: 3.0,
 		tilt_radians: 0.0,
-		speed: Pose.v_base,
+		speed: VehicleLimits.v_base,
 	}),
 )
 
@@ -146,7 +147,7 @@ leaning = Arc.project_arc(
 	rider({
 		across: 0.0,
 		tilt_radians: 0.2,
-		speed: Pose.v_base,
+		speed: VehicleLimits.v_base,
 	}),
 )
 
@@ -155,7 +156,7 @@ other_way = Arc.project_arc(
 	rider({
 		across: 0.0,
 		tilt_radians: (0.0 - 0.2),
-		speed: Pose.v_base,
+		speed: VehicleLimits.v_base,
 	}),
 )
 
@@ -198,7 +199,7 @@ step_got = (
 			rider({
 				across: 0.0,
 				tilt_radians: 0.0,
-				speed: Pose.v_base,
+				speed: VehicleLimits.v_base,
 			}),
 			{ lean_step: Angle.upright, accel: Acceleration.steady },
 		)
@@ -206,7 +207,7 @@ step_got = (
 			rider({
 				across: 0.0,
 				tilt_radians: 0.0,
-				speed: Pose.v_base,
+				speed: VehicleLimits.v_base,
 			}),
 			{
 				lean_step: Angle.Lean.radians(0.5),

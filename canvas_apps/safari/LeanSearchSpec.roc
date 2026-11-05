@@ -11,6 +11,7 @@ import Grade
 import LeanSearch
 import World
 import Pose
+import VehicleLimits
 
 target_got : List(F64)
 target_got = [
@@ -95,7 +96,7 @@ rider = |across, tilt| {
 	along: 0.0,
 	across: across,
 	yaw: Angle.Turn.radians(0.0),
-	speed: Pose.v_base,
+	speed: VehicleLimits.v_base,
 	tilt: Angle.Lean.radians(tilt),
 	heading: Angle.Bearing.radians(0.0),
 	gaze_yaw: Angle.Turn.radians(0.0),

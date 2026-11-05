@@ -12,6 +12,7 @@ import Grade
 import Lens
 import Pose
 import RideFocal
+import VehicleLimits
 import World
 
 segs : List(World.Segment)
@@ -36,7 +37,7 @@ upright = {
 	along: 0.0,
 	across: 0.0,
 	yaw: Angle.Turn.radians(0.0),
-	speed: Pose.v_base,
+	speed: VehicleLimits.v_base,
 	tilt: Angle.Lean.radians(0.0),
 	heading: Angle.Bearing.radians(0.0),
 	gaze_yaw: Angle.Turn.radians(0.0),

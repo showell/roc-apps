@@ -61,7 +61,7 @@ step_got = (
 			rider({
 				along: 0.0,
 				across: 0.0,
-				speed: Pose.v_base,
+				speed: VehicleLimits.v_base,
 				tilt_radians: 0.0,
 			}),
 			seg,
@@ -70,7 +70,7 @@ step_got = (
 			rider({
 				along: 0.0,
 				across: 0.0,
-				speed: Pose.v_base,
+				speed: VehicleLimits.v_base,
 				tilt_radians: 0.5,
 			}),
 			seg,
@@ -95,7 +95,7 @@ leaned_got = (
 			rider({
 				along: 0.0,
 				across: 0.0,
-				speed: Pose.v_base,
+				speed: VehicleLimits.v_base,
 				tilt_radians: 0.0,
 			}),
 			seg,
@@ -105,7 +105,7 @@ leaned_got = (
 				rider({
 					along: 0.0,
 					across: 0.0,
-					speed: Pose.v_base,
+					speed: VehicleLimits.v_base,
 					tilt_radians: 0.0,
 				}),
 				Angle.upright.plus(d.tilt_step),
@@ -177,7 +177,7 @@ early_got = (
 			rider({
 				along: 100.0,
 				across: 0.0,
-				speed: Pose.v_base,
+				speed: VehicleLimits.v_base,
 				tilt_radians: 0.0,
 			}),
 			segs,
@@ -195,7 +195,7 @@ resolve_got = [
 		rider({
 			along: 100.0,
 			across: 0.0,
-			speed: Pose.v_base,
+			speed: VehicleLimits.v_base,
 			tilt_radians: 0.0,
 		}),
 		segs,
@@ -204,7 +204,7 @@ resolve_got = [
 		rider({
 			along: 499.0,
 			across: 0.0,
-			speed: Pose.v_base,
+			speed: VehicleLimits.v_base,
 			tilt_radians: 0.0,
 		}),
 		segs,
@@ -291,7 +291,7 @@ done_got = (
 				rider({
 					along: 499.0,
 					across: 0.0,
-					speed: Pose.v_base,
+					speed: VehicleLimits.v_base,
 					tilt_radians: 0.0,
 				}),
 				segs,
@@ -308,7 +308,7 @@ next = Rider.get_next_rider_state(
 	rider({
 		along: 0.0,
 		across: 0.0,
-		speed: Pose.v_base,
+		speed: VehicleLimits.v_base,
 		tilt_radians: 0.0,
 	}),
 	segs,

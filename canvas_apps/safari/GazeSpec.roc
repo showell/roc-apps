@@ -9,6 +9,7 @@ import Gaze
 import Grade
 import Pose
 import lib.Trig
+import VehicleLimits
 import World
 
 fixed_got : List(F64)
@@ -48,7 +49,7 @@ rider = |along, yaw| {
 	along: along,
 	across: 0.0,
 	yaw: Angle.Turn.radians(yaw),
-	speed: Pose.v_base,
+	speed: VehicleLimits.v_base,
 	tilt: Angle.Lean.radians(0.0),
 	heading: Angle.Bearing.radians(0.0),
 	gaze_yaw: Angle.Turn.radians(0.0),
@@ -121,7 +122,7 @@ head = |gaze_yaw, along| {
 	along: along,
 	across: 0.0,
 	yaw: Angle.Turn.radians(0.0),
-	speed: Pose.v_base,
+	speed: VehicleLimits.v_base,
 	tilt: Angle.Lean.radians(0.0),
 	heading: Angle.Bearing.radians(0.0),
 	gaze_yaw: Angle.Turn.radians(gaze_yaw),
@@ -186,7 +187,7 @@ rider_with_focus = |focus, gaze_yaw| {
 	along: 200.0,
 	across: 0.0,
 	yaw: Angle.Turn.radians(0.0),
-	speed: Pose.v_base,
+	speed: VehicleLimits.v_base,
 	tilt: Angle.Lean.radians(0.0),
 	heading: Angle.Bearing.radians(0.0),
 	gaze_yaw: Angle.Turn.radians(gaze_yaw),
