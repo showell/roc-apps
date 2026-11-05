@@ -74,6 +74,15 @@ Frame :: [].{
 	look_ahead : U32
 	look_ahead = 7
 
+	## How far ahead of the rider the segment at `position` in the chain starts,
+	## for a rider `rider_along` metres into the chain's first segment.
+	gap_to_segment : Frame.RoadView, { position : Frame.ChainPosition, rider_along : F64 } -> F64
+	gap_to_segment = |road, { position, rider_along }|
+		position.before_in(road.chain).fold(
+			0.0 - rider_along,
+			|gap, index| gap + index.segment_in(road.world).length,
+		)
+
 	## The chain from the segment at `start`: as far as the rider can see, or
 	## to the route's end.
 	chain_ahead : List(World.Segment), World.SegmentIndex -> List(World.SegmentIndex)

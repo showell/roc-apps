@@ -109,6 +109,7 @@ Render :: [].{
 			chain,
 			pose,
 			cam_focal,
+			rider_along,
 		})
 		# Keys about as far away as each other keep the order they are joined
 		# in, so this order decides which of two tied things is painted over

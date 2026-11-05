@@ -15,6 +15,8 @@
 # on the screen, and Critter.draw_still maps the polygons onto that anchor
 # at the tree's depth. The app appends the birds after the frame, so they
 # paint on top of everything; a bird on a treetop is rarely behind anything.
+import BirdFlight
+import BirdStills
 import Stills
 import DepthSort
 import Scenery
@@ -128,6 +130,7 @@ RocBird :: [].{
 		right : F64,
 		forward : F64,
 		lift : F64,
+		pose : BirdFlight.Pose,
 	}
 
 	## The road the birds are collected along: the world's segments, the
@@ -138,47 +141,59 @@ RocBird :: [].{
 		chain : List(World.SegmentIndex),
 		pose : Frame.Pose,
 		cam_focal : F64,
+		rider_along : F64,
 	}
 
-	# The bird for `position` in the chain, or nothing when its tree is behind the
-	# near plane or too small to draw. Culled here, as every kind is culled
-	# where it is collected rather than where it is drawn.
+	# The bird for `position` in the chain, where its flight has taken it, or
+	# nothing when it is behind the near plane or too small to draw. Culled here,
+	# as every kind is culled where it is collected rather than where it is drawn.
 	perch : RocBird.View, Frame.ChainPosition -> List(RocBird.Bird)
-	perch = |
-		{
-			world: segs,
-			chain: ch,
-			pose,
-			cam_focal: cf,
-		},
-		position,
-	| {
-		seg = position.index_in(ch).segment_in(segs)
+	perch = |view, position| {
+		seg = position.index_in(view.chain).segment_in(view.world)
 		match fifth_left(seg.trees, { tree_index: 0, left_trees_seen: 0 }) {
 			NoTree => []
-			Found(t) => {
-				rp = Frame.rider_point_ahead(
-					{
-						world: segs,
-						chain: ch,
-						pose: pose,
-					},
+			Found(tree) => {
+				road = {
+					world: view.world,
+					chain: view.chain,
+					pose: view.pose,
+				}
+				segment_gap = Frame.gap_to_segment(
+					road,
 					{
 						position,
-						along: t.along,
-						across: t.across + Scenery.lane_width / 2.0,
+						rider_along: view.rider_along,
 					},
 				)
-				if rp.forward <= Geom.near_plane {
+				gap = segment_gap + tree.along
+				bird = match BirdFlight.flight_from(seg.trees, tree) {
+					Flies(flight) => BirdFlight.state(flight, gap)
+					Stays => {
+						pose: Perched,
+						along: tree.along,
+						across: tree.across,
+						lift: tree.height,
+					}
+				}
+				seen = Frame.rider_point_ahead(
+					road,
+					{
+						position,
+						along: bird.along,
+						across: bird.across + Scenery.lane_width / 2.0,
+					},
+				)
+				if seen.forward <= Geom.near_plane {
 					[]
-				} else if (height / rp.forward) * cf < SceneLimits.min_scenery_px {
+				} else if (height / seen.forward) * view.cam_focal < SceneLimits.min_scenery_px {
 					[]
 				} else {
 					[
 						{
-							right: rp.right,
-							forward: rp.forward,
-							lift: t.height,
+							right: seen.right,
+							forward: seen.forward,
+							lift: bird.lift,
+							pose: bird.pose,
 						},
 					]
 				}
@@ -226,7 +241,20 @@ RocBird :: [].{
 				flip: AsDrawn,
 				height_px: (height / b.forward) * cf,
 			},
-			polys,
+			still_of(b.pose),
 		)
 	}
+
+	# The drawing for a pose. From the side the beak points toward +x, which is
+	# the way a bird from a left-hand tree flies across the road.
+	still_of : BirdFlight.Pose -> List(Stills.StillPoly)
+	still_of = |pose|
+		match pose {
+			Perched => polys
+			SideWingsUp => BirdStills.wings_up
+			SideWingsDown => BirdStills.wings_down
+			AwayWingsUp => BirdStills.away_from_us
+			AwayWingsDown => BirdStills.away_wings_down
+			Diving => BirdStills.diving
+		}
 }

@@ -57,9 +57,13 @@ CatPlan :: [].{
 	## The segments' lengths are added nearest first.
 	gap_to_segment : CatPlan.View, Frame.ChainPosition -> F64
 	gap_to_segment = |view, position|
-		position.before_in(view.chain).fold(
-			(0.0 - view.rider_along),
-			|gap, index| gap + index.segment_in(view.world).length,
+		Frame.gap_to_segment(
+			{
+				world: view.world,
+				chain: view.chain,
+				pose: view.pose,
+			},
+			{ position, rider_along: view.rider_along },
 		)
 
 	## The cats as the depth sort sees them: each one's distance ahead, and

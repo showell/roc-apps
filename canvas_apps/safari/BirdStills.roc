@@ -52,6 +52,15 @@ BirdStills :: [].{
 		{ color: dark, grad: [], pts: [{ x: -0.08, y: 0.32 }, { x: 0.08, y: 0.32 }, { x: 0.22, y: 0.08 }, { x: 0.0, y: 0.0 }, { x: -0.22, y: 0.08 }] },
 	]
 
+	## Flying away from us with the wings at the bottom of their beat.
+	away_wings_down : List(Stills.StillPoly)
+	away_wings_down = [
+		{ color: dark, grad: [], pts: [{ x: -0.06, y: 0.56 }, { x: -0.94, y: 0.36 }, { x: -0.86, y: 0.2 }, { x: -0.06, y: 0.4 }] },
+		{ color: light, grad: [], pts: [{ x: 0.06, y: 0.56 }, { x: 0.94, y: 0.36 }, { x: 0.86, y: 0.2 }, { x: 0.06, y: 0.4 }] },
+		{ color: light, grad: [], pts: [{ x: -0.1, y: 0.62 }, { x: 0.1, y: 0.62 }, { x: 0.08, y: 0.3 }, { x: -0.08, y: 0.3 }] },
+		{ color: dark, grad: [], pts: [{ x: -0.08, y: 0.32 }, { x: 0.08, y: 0.32 }, { x: 0.22, y: 0.08 }, { x: 0.0, y: 0.0 }, { x: -0.22, y: 0.08 }] },
+	]
+
 	## Diving: seen from the side, beak down and wings swept back.
 	diving : List(Stills.StillPoly)
 	diving = [
