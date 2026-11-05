@@ -11,17 +11,21 @@ import Steps
 import lib.Trig
 
 Arc :: [].{
-	Shoulder : [ShoulderLeft, ShoulderNone, ShoulderRight]
+
+	## Where an arc ends up: off a shoulder after this many frames, or still
+	## on the road.
+	Shoulder : [
+		ShoulderLeft(Steps),
+		ShoulderNone,
+		ShoulderRight(Steps),
+	]
+
 	ArcOutcome : {
 		shoulder : Arc.Shoulder,
 		forward : Distance,
 		crossed : Bool,
 		end_across : Across,
-		frames : Steps,
 	}
-
-	no_frames : Steps
-	no_frames = Steps.of(1000000000)
 
 	straighten_margin : Distance
 	straighten_margin = Distance.metres(0.05)
@@ -64,7 +68,6 @@ Arc :: [].{
 				forward: phys.along.distance_from(course.start_along),
 				crossed: crossed,
 				end_across: phys.across,
-				frames: no_frames,
 			}
 		} else {
 			sim_step(
@@ -103,21 +106,19 @@ Arc :: [].{
 			(
 				if across < course.left_bound {
 					{
-						shoulder: ShoulderLeft,
+						shoulder: ShoulderLeft(i),
 						forward: forward.min(min_forward_progress),
 						crossed: crossed,
 						end_across: across,
-						frames: i,
 					}
 				} else {
 					(
 						if across > course.right_bound {
 							{
-								shoulder: ShoulderRight,
+								shoulder: ShoulderRight(i),
 								forward: forward.min(min_forward_progress),
 								crossed: crossed,
 								end_across: across,
-								frames: i,
 							}
 						} else {
 							(
@@ -127,7 +128,6 @@ Arc :: [].{
 										forward: forward,
 										crossed: crossed,
 										end_across: across,
-										frames: no_frames,
 									}
 								} else {
 									(
@@ -137,7 +137,6 @@ Arc :: [].{
 												forward: min_forward_progress,
 												crossed: crossed,
 												end_across: across,
-												frames: no_frames,
 											}
 										} else {
 											sim_from(
@@ -180,33 +179,8 @@ Arc :: [].{
 			)
 		}
 	)
-
-	eq_Shoulder : Arc.Shoulder, Arc.Shoulder -> Bool
-	eq_Shoulder = |ex, ey| (
-		match ex {
-			ShoulderLeft => (
-				match ey {
-					ShoulderLeft => True
-					_ => False
-				}
-			)
-			ShoulderNone => (
-				match ey {
-					ShoulderNone => True
-					_ => False
-				}
-			)
-			ShoulderRight => (
-				match ey {
-					ShoulderRight => True
-					_ => False
-				}
-			)
-		}
-	)
 }
 
-expect Arc.no_frames.to_f64() == 1000000000.0
 expect Arc.straighten_margin.to_metres() == 0.05
 expect Arc.min_forward_progress.to_metres() == 25.0
 expect Arc.turn_danger_steps.to_f64() == 2000.0

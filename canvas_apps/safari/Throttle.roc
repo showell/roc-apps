@@ -10,6 +10,7 @@ import Gaze
 import Num_
 import Pose
 import Speed
+import Steps
 import lib.Trig
 import VehicleLimits
 import World
@@ -97,36 +98,23 @@ Throttle :: [].{
 	## brake for the shoulder it reaches. One of the gates `get_forward_accel_decel`
 	## passes the acceleration through in turn.
 	shoulder_brake : Pose.RiderState, Acceleration -> Acceleration
-	shoulder_brake = |state, a| (
-		{
-			sim = Arc.project_arc(state)
-			(
-				if has_stayed_on_road(sim) {
-					a
-				} else {
-					shoulder_brake_at(state, { arc_outcome: sim, offered_accel: a })
-				}
-			)
+	shoulder_brake = |state, a|
+		match Arc.project_arc(state).shoulder {
+			ShoulderNone => a
+			ShoulderLeft(frames) | ShoulderRight(frames) =>
+				shoulder_brake_at(state, { frames, offered_accel: a })
 		}
-	)
 
-	has_stayed_on_road : Arc.ArcOutcome -> Bool
-	has_stayed_on_road = |sim| (
-		match sim.shoulder {
-			ShoulderNone => True
-			ShoulderLeft => False
-			ShoulderRight => False
-		}
-	)
-
+	## The acceleration `a`, or the brake for an arc that leaves the road in
+	## `frames`, whichever is harder.
 	shoulder_brake_at : Pose.RiderState,
 	{
-		arc_outcome : Arc.ArcOutcome,
+		frames : Steps,
 		offered_accel : Acceleration,
 	} -> Acceleration
-	shoulder_brake_at = |state, { arc_outcome: sim, offered_accel: a }| (
+	shoulder_brake_at = |state, { frames, offered_accel: a }| (
 		{
-			n = sim.frames.to_f64()
+			n = frames.to_f64()
 			sa = Acceleration.metres_a_step_each_step(
 				(
 					(0.0 - state.speed.to_metres_a_step()) / (
@@ -309,67 +297,46 @@ expect gate_at({ road_segment: cat_segment, along: 120.0 }, 0.01) == 0.0
 expect gate_at({ road_segment: cat_segment, along: 120.0 }, -5.0) == -5.0
 expect gate_at({ road_segment: cat_segment, along: 0.0 }, 0.01) == 0.01
 
-## Throttle doesn't import Distance or Across, so these places and lengths come
-## from what it does see.
+## Throttle doesn't import Across, so these places come from what it does see.
 across_at = |metres| Pose.initial_rider_state.across.plus(Speed.metres_a_step(metres).step_length())
 
-## An arc that ends on `shoulder`.
-outcome : Arc.Shoulder -> Arc.ArcOutcome
-outcome = |shoulder| {
-	shoulder,
-	forward: Arc.min_forward_progress,
-	crossed: False,
-	end_across: Pose.initial_rider_state.across,
-	frames: Arc.no_frames,
+## A rider steering hard left at `speed`.
+rider_off_left : F64 -> Pose.RiderState
+rider_off_left = |speed| {
+	..centred_rider(0.0, speed),
+	yaw: Angle.Turn.radians(-1.5),
 }
 
-expect Throttle.has_stayed_on_road(outcome(ShoulderNone))
-expect !Throttle.has_stayed_on_road(outcome(ShoulderLeft))
-expect !Throttle.has_stayed_on_road(outcome(ShoulderRight))
+expect Arc.project_arc(rider_off_left(0.048)).shoulder == ShoulderLeft(Steps.of(40))
+expect Arc.project_arc(rider_off_left(0.7)).shoulder == ShoulderLeft(Steps.of(2))
 
-## The arc of a rider steering hard left at `speed`. Throttle doesn't import
-## Steps, so an arc's frames come from a real projection.
-arc_off_left : F64 -> Arc.ArcOutcome
-arc_off_left = |speed|
-	Arc.project_arc({
-		..centred_rider(0.0, speed),
-		yaw: Angle.Turn.radians(-1.5),
-	})
-
-in_40_frames : Arc.ArcOutcome
-in_40_frames = arc_off_left(0.048)
-
-in_2_frames : Arc.ArcOutcome
-in_2_frames = arc_off_left(0.7)
-
-expect in_40_frames.shoulder == ShoulderLeft
-expect in_40_frames.frames.to_f64() == 40.0
-expect in_2_frames.shoulder == ShoulderLeft
-expect in_2_frames.frames.to_f64() == 2.0
+# An arc that stays on the road takes what is offered, and one that leaves it
+# brakes.
+expect {
+	offered = VehicleLimits.a_accel
+	Throttle.shoulder_brake(centred_rider(0.0, 0.3), offered) == offered
+		and Throttle.shoulder_brake(rider_off_left(0.7), offered) < Acceleration.steady
+}
 
 ## The shoulder brake for a rider going 1 metre a step, offered `offered`.
-brake_for_arc : Arc.ArcOutcome, F64 -> Acceleration
-brake_for_arc = |arc_outcome, offered|
+brake_in_frames : U32, F64 -> Acceleration
+brake_in_frames = |frames, offered|
 	Throttle.shoulder_brake_at(
 		centred_rider(0.0, 1.0),
-		{ arc_outcome, offered_accel: Acceleration.metres_a_step_each_step(offered) },
+		{
+			frames: Steps.of(frames),
+			offered_accel: Acceleration.metres_a_step_each_step(offered),
+		},
 	)
 
-expect brake_for_arc(in_40_frames, 0.01) < Acceleration.steady
-expect brake_for_arc(in_40_frames, 0.01) > brake_for_arc(in_2_frames, 0.01)
+expect brake_in_frames(40, 0.01) < Acceleration.steady
+expect brake_in_frames(40, 0.01) > brake_in_frames(2, 0.01)
 expect
-	brake_for_arc(in_40_frames, 0.0 - 9.0)
+	brake_in_frames(40, 0.0 - 9.0)
 		< Acceleration.metres_a_step_each_step(0.0 - 8.999)
 
 # An arc that leaves the road at once still brakes.
-expect {
-	at_once = {
-		..outcome(ShoulderLeft),
-		forward: Arc.min_forward_progress.times(0.0),
-		frames: Arc.no_frames.times(0),
-	}
-	brake_for_arc(at_once, 0.01) < Acceleration.steady
-}
+expect brake_in_frames(0, 0.01) < Acceleration.steady
 
 ## The speed the clamp allows.
 clamped_speed : { next_speed : F64, is_near_end : Bool } -> F64
@@ -463,13 +430,10 @@ other_way = arc_from(0.0, 0.0 - 0.2)
 
 expect straight.forward.to_metres() == 25.0
 expect straight.end_across.to_metres() == 0.0
-expect straight.frames.to_f64() == 1000000000.0
 expect wide.forward.to_metres() == 25.0
 expect wide.end_across.to_metres() == 3.0
-expect wide.frames.to_f64() == 1000000000.0
 expect stopped.forward.to_metres() == 0.0
 expect stopped.end_across.to_metres() == 0.0
-expect stopped.frames.to_f64() == 1000000000.0
 
 expect straight.shoulder == ShoulderNone
 expect wide.shoulder == ShoulderNone
@@ -479,18 +443,23 @@ expect !straight.crossed
 expect !wide.crossed
 expect !stopped.crossed
 
-expect leaning.shoulder == ShoulderRight
-expect other_way.shoulder == ShoulderLeft
+## How many frames an arc runs before it leaves the road.
+frames_off_road : Arc.ArcOutcome -> Steps
+frames_off_road = |arc|
+	match arc.shoulder {
+		ShoulderLeft(frames) | ShoulderRight(frames) => frames
+		ShoulderNone => crash "Throttle's expects: this arc stays on the road"
+	}
 
-expect leaning.frames < Arc.no_frames
-expect leaning.frames < Arc.turn_danger_steps
-expect leaning.frames.to_f64() > 0.0
+expect leaning.shoulder == ShoulderRight(frames_off_road(leaning))
+expect other_way.shoulder == ShoulderLeft(frames_off_road(other_way))
+
+expect frames_off_road(leaning) < Arc.turn_danger_steps
+expect frames_off_road(leaning) > Steps.zero
 expect leaning.forward <= Arc.min_forward_progress
 expect leaning.end_across > Pose.initial_rider_state.across
 expect other_way.end_across < Pose.initial_rider_state.across
-expect other_way.frames < Arc.no_frames
-
-expect leaning.frames.to_f64() - other_way.frames.to_f64() == 0.0
+expect frames_off_road(leaning) == frames_off_road(other_way)
 expect leaning.end_across.to_metres() + other_way.end_across.to_metres() == 0.0
 
 expect leaning.forward.minus(other_way.forward).to_metres().abs() <= 0.000001

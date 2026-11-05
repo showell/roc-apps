@@ -952,8 +952,6 @@ The last gate of the throttle is the same idea with one rehearsal in it. It runs
 
 {{code Throttle.shoulder_brake}}
 
-A note on where this could improve: `ArcOutcome` has a `frames` field holding `Arc.no_frames`, a billion, for an arc that doesn't leave the road. That's a sentinel, in a program that's been pointing at tag unions as the alternative to sentinels for several chapters. [check: a tag on `shoulder` carrying the `Steps` would remove it; drop this paragraph if that lands.]
-
 ### Arithmetic all the way down
 
 The floor of this layer is lower than it needs to be. `lib/DeviceMath.roc` computes `sin`, `cos`, `sqrt` and `atan` in Roc, with no call to a math library. `Num_` does the same for `exp`, which is a Taylor series after a range reduction. It's nothing but names and multiplications, and it's the kind of code that looks exactly as it does in a textbook:

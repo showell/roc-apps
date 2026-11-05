@@ -5,14 +5,15 @@ import Angle
 import Arc
 import Bike
 import Distance
+import Steps
 
 LeanSearch :: [].{
 
 	want_more_right : Arc.ArcOutcome, Across -> Bool
 	want_more_right = |sim, target| (
 		match sim.shoulder {
-			ShoulderLeft => True
-			ShoulderRight => False
+			ShoulderLeft(_) => True
+			ShoulderRight(_) => False
 			ShoulderNone => (sim.end_across < target)
 		}
 	)
@@ -134,13 +135,18 @@ outcome = |shoulder, end_across| {
 	forward: Distance.metres(10.0),
 	crossed: False,
 	end_across: Across.metres(end_across),
-	frames: Arc.no_frames,
 }
 
-expect LeanSearch.want_more_right(outcome(ShoulderLeft, 99.0), Across.metres(0.5))
-expect LeanSearch.want_more_right(outcome(ShoulderLeft, (0.0 - 99.0)), Across.metres(0.5))
-expect !(LeanSearch.want_more_right(outcome(ShoulderRight, 99.0), Across.metres(0.5)))
-expect !(LeanSearch.want_more_right(outcome(ShoulderRight, (0.0 - 99.0)), Across.metres(0.5)))
+off_left : Arc.Shoulder
+off_left = ShoulderLeft(Steps.one_step)
+
+off_right : Arc.Shoulder
+off_right = ShoulderRight(Steps.one_step)
+
+expect LeanSearch.want_more_right(outcome(off_left, 99.0), Across.metres(0.5))
+expect LeanSearch.want_more_right(outcome(off_left, (0.0 - 99.0)), Across.metres(0.5))
+expect !(LeanSearch.want_more_right(outcome(off_right, 99.0), Across.metres(0.5)))
+expect !(LeanSearch.want_more_right(outcome(off_right, (0.0 - 99.0)), Across.metres(0.5)))
 expect LeanSearch.want_more_right(outcome(ShoulderNone, 0.4), Across.metres(0.5))
 expect !(LeanSearch.want_more_right(outcome(ShoulderNone, 0.6), Across.metres(0.5)))
 expect !(LeanSearch.want_more_right(outcome(ShoulderNone, 0.5), Across.metres(0.5)))
