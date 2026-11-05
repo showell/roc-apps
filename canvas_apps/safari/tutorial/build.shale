@@ -1,0 +1,287 @@
+-- budget: steps=100000000 arena_bytes=1000000000
+-- This builds the safari tutorial. It reads tutorial.md, prose with lines
+-- like `{{code Cat.moment_at}}`, and writes build/tutorial.md, where each
+-- such line is a fenced roc block holding that definition as the source has
+-- it, with its `##` doc comment and its annotation, dedented.
+--
+--   cd <roc-apps checkout> && shale canvas_apps/safari/tutorial/build.shale
+--
+-- `Module.name` looks in Module.roc, beside safari's other modules: at the
+-- file's top level, and in the block of the type named for the module. The
+-- spans come from Roc's parser through roc_tree, so a local in a function
+-- body or a member of another type is not found. The tree holds no comments,
+-- so the doc comment is the run of `##` lines directly above the definition.
+--
+-- An include that can't be expanded stops the build, naming the source's
+-- line, and no output is left behind. Any line holding `{{` must be an
+-- include, alone on its line, so a mistyped one can't reach the page.
+--
+-- `self_test=1` proves both sides of each failure on a module written here,
+-- and safari's gate runs it.
+const SAFARI = "canvas_apps/safari"
+const SOURCE = "canvas_apps/safari/tutorial/tutorial.md"
+const OUTPUT = "canvas_apps/safari/tutorial/build/tutorial.md"
+const INCLUDE = "^\\{\\{code ([A-Z][A-Za-z0-9_]*)\\.([A-Za-z_][A-Za-z0-9_]*!?)\\}\\}$"
+const NOT_AN_INCLUDE = "not a line of the form {{code Module.name}}"
+
+function stop(entry, why)
+  fail(entry.source .. ":" .. entry.line .. ": " .. entry.text .. ": " .. why)
+end
+
+-- The source's lines, in order. An include's entry also has its module, its
+-- name and its module's path.
+function read_entries(source, text, folder)
+  local entries = {}
+  local number = 0
+  for l in split(text, "\n") do
+    number = number + 1
+    local entry = {source = source, line = number, text = l}
+    if contains(l, "{{") then
+      local m = re_find(l, INCLUDE)
+      if m == nil then stop(entry, NOT_AN_INCLUDE) end
+      entry.module = m.groups[1]
+      entry.name = m.groups[2]
+      entry.path = folder .. "/" .. entry.module .. ".roc"
+      if not exists(entry.path) then stop(entry, "no module file " .. entry.path) end
+    end
+    push(entries, entry)
+  end
+  return entries
+end
+
+-- One roc-ast run for every module, because a run holds 64 programs and a
+-- long tutorial quotes more includes than that.
+function parse_modules(entries)
+  local paths = {}
+  for e in entries do
+    if has_key(e, "path") then push(paths, e.path) end
+  end
+  local trees = {}
+  if #paths == 0 then return trees end
+  for tree in roc_tree(unique(paths)) do trees[tree.path] = tree end
+  return trees
+end
+
+function searched_blocks(nodes, module)
+  local blocks = {}
+  for n in nodes do
+    if n.kind == "statements" and n.depth == 1 then push(blocks, n) end
+    if n.kind == "associated" and nodes[nodes[n.parent].kids[1]].name == module then push(blocks, n) end
+  end
+  return blocks
+end
+
+function defined_name(nodes, statement)
+  if statement.kind == "s-type-anno" then return statement.name end
+  if statement.kind == "s-type-decl" then return nodes[statement.kids[1]].name end
+  if statement.kind == "s-decl" then return get(nodes[statement.kids[1]], "raw", "") end
+  return ""
+end
+
+-- Each place `name` is defined. An annotation and the definition under it
+-- are one place.
+function places_of(nodes, module, name)
+  local places = {}
+  for block in searched_blocks(nodes, module) do
+    local annotated = false
+    for k in block.kids do
+      local s = nodes[k]
+      local here = defined_name(nodes, s) == name
+      if here and annotated then
+        local place = places[#places]
+        place.end_line = s.end_line
+        place.end_col = s.end_col
+      elseif here then
+        push(places, {line = s.line, col = s.col, end_line = s.end_line, end_col = s.end_col})
+      end
+      annotated = here and s.kind == "s-type-anno"
+    end
+  end
+  return places
+end
+
+function doc_comment_start(source_lines, line)
+  local first = line
+  while first > 1 and starts_with(trim(source_lines[first - 1]), "##") do first = first - 1 end
+  return first
+end
+
+function definition_text(entry, place)
+  local source_lines = split(read(entry.path), "\n")
+  local indent = place.col - 1
+  local kept = {}
+  local at = doc_comment_start(source_lines, place.line)
+  while at <= place.end_line do
+    local l = source_lines[at]
+    if at == place.end_line then l = sub(l, 1, place.end_col - 1) end
+    if trim(sub(l, 1, indent)) ~= "" then
+      stop(entry, entry.path .. ":" .. at .. " is not indented as the definition is")
+    end
+    push(kept, sub(l, indent + 1, #l))
+    at = at + 1
+  end
+  return join(kept, "\n")
+end
+
+function fenced_definition(entry, tree)
+  if tree.err ~= "" then stop(entry, "roc-ast refused " .. entry.path .. ": " .. tree.err) end
+  local places = places_of(tree.nodes, entry.module, entry.name)
+  if #places == 0 then stop(entry, "no such name in " .. entry.path) end
+  if #places > 1 then
+    local at = {}
+    for p in sort(places, "line") do push(at, "" .. p.line) end
+    stop(entry, "found " .. #places .. " times in " .. entry.path .. ", at lines " .. join(at, ", "))
+  end
+  local text = definition_text(entry, places[1])
+  if contains(text, "```") then stop(entry, "its text holds a Markdown fence") end
+  return "```roc\n" .. text .. "\n```"
+end
+
+-- The number of includes expanded.
+function build(source, output, folder)
+  if exists(output) then remove(output) end
+  local entries = read_entries(source, read(source), folder)
+  local trees = parse_modules(entries)
+  local kept = {}
+  local expanded = 0
+  for e in entries do
+    if has_key(e, "path") then
+      push(kept, fenced_definition(e, trees[e.path]))
+      expanded = expanded + 1
+    else
+      push(kept, e.text)
+    end
+  end
+  mkdir(dirname(output))
+  replace(output, join(kept, "\n"))
+  return expanded
+end
+
+const ZOO = [=[## The module's doc, which belongs to no definition.
+import Other
+
+Zoo :: [].{
+	## A cage.
+	Cage : {
+		size : F64,
+	}
+
+	## How much to feed,
+	## over two lines.
+	feed : Cage -> F64
+	feed = |cage| {
+		amount = cage.size
+
+		amount * 2.0
+	}
+
+	bare = 1.0 # A trailing comment, outside the definition.
+
+	Pen := F64.{
+		inside_pen = 1.0
+	}
+
+	both = 1.0
+
+	## A fence: ```
+	fenced = 1.0
+}
+
+Wild :: [].{
+	in_wild = 1.0
+}
+
+# A plain comment, which isn't a doc comment.
+top_function : F64 -> F64
+top_function = |x| x
+
+## A constant.
+top_constant = 2.0
+
+## A type.
+TopType : { a : F64 }
+
+both = 2.0
+]=]
+
+const TIGHT = "Tight :: [].{ squeezed = 1.0 }\n"
+
+-- The source's include is on its line 3, for the messages to name.
+function attempt_include(folder, include)
+  replace(folder .. "/doc.md", "prose\n\n" .. include .. "\n")
+  replace(folder .. "/out/doc.md", "stale")
+  return attempt(build, folder .. "/doc.md", folder .. "/out/doc.md", folder)
+end
+
+function expect_block(checks, folder, include, block)
+  local r = attempt_include(folder, include)
+  if not r.ok then fail("self_test: " .. include .. " stopped: " .. r.error) end
+  local got = read(folder .. "/out/doc.md")
+  local want = "prose\n\n```roc\n" .. block .. "\n```\n"
+  if got ~= want then fail("self_test: " .. include .. " gave [" .. got .. "], not [" .. want .. "]") end
+  push(checks, include)
+end
+
+function expect_stop(checks, folder, include, why)
+  local r = attempt_include(folder, include)
+  if r.ok then fail("self_test: " .. include .. " built") end
+  local want = folder .. "/doc.md:3: " .. include .. ": " .. why
+  if r.class ~= "fail" or r.error ~= want then fail("self_test: " .. include .. " stopped with [" .. r.error .. "], not [" .. want .. "]") end
+  if exists(folder .. "/out/doc.md") then fail("self_test: " .. include .. " left an output behind") end
+  push(checks, include)
+end
+
+function expect_prose(checks, folder, line)
+  local r = attempt_include(folder, line)
+  if not r.ok then fail("self_test: [" .. line .. "] stopped: " .. r.error) end
+  if r.value ~= 0 then fail("self_test: [" .. line .. "] counted as an include") end
+  if read(folder .. "/out/doc.md") ~= "prose\n\n" .. line .. "\n" then fail("self_test: [" .. line .. "] changed") end
+  push(checks, line)
+end
+
+function self_test()
+  local folder = fresh_dir("scratch:", "safari-tutorial")
+  mkdir(folder .. "/out")
+  replace(folder .. "/Zoo.roc", ZOO)
+  replace(folder .. "/Tight.roc", TIGHT)
+  replace(folder .. "/Broken.roc", "Broken :: [].{\n\tx = = 1\n")
+  local zoo = folder .. "/Zoo.roc"
+  local checks = {}
+
+  expect_block(checks, folder, "{{code Zoo.feed}}", "## How much to feed,\n## over two lines.\nfeed : Cage -> F64\nfeed = |cage| {\n\tamount = cage.size\n\n\tamount * 2.0\n}")
+  expect_block(checks, folder, "{{code Zoo.Cage}}", "## A cage.\nCage : {\n\tsize : F64,\n}")
+  expect_block(checks, folder, "{{code Zoo.bare}}", "bare = 1.0")
+  expect_block(checks, folder, "{{code Zoo.top_function}}", "top_function : F64 -> F64\ntop_function = |x| x")
+  expect_block(checks, folder, "{{code Zoo.top_constant}}", "## A constant.\ntop_constant = 2.0")
+  expect_block(checks, folder, "{{code Zoo.TopType}}", "## A type.\nTopType : { a : F64 }")
+
+  expect_stop(checks, folder, "{{code Zoo.nope}}", "no such name in " .. zoo)
+  expect_stop(checks, folder, "{{code Zoo.amount}}", "no such name in " .. zoo)
+  expect_stop(checks, folder, "{{code Zoo.inside_pen}}", "no such name in " .. zoo)
+  expect_stop(checks, folder, "{{code Zoo.in_wild}}", "no such name in " .. zoo)
+  expect_stop(checks, folder, "{{code Zoo.both}}", "found 2 times in " .. zoo .. ", at lines 25, 45")
+  expect_stop(checks, folder, "{{code Gone.feed}}", "no module file " .. folder .. "/Gone.roc")
+  expect_stop(checks, folder, "{{code Zoo.fenced}}", "its text holds a Markdown fence")
+  expect_stop(checks, folder, "{{code Tight.squeezed}}", folder .. "/Tight.roc:1 is not indented as the definition is")
+
+  local refused = attempt_include(folder, "{{code Broken.x}}")
+  if refused.ok or not contains(refused.error, ":3: {{code Broken.x}}: roc-ast refused ") then fail("self_test: Broken.roc gave " .. json_write(refused)) end
+  push(checks, "{{code Broken.x}}")
+
+  for bad in {"{{", "{{code}}", "{{code Zoo}}", "{{code Zoo.a.b}}", "{{code zoo.feed}}", "{{cod Zoo.feed}}", "{{ code Zoo.feed }}", " {{code Zoo.feed}}", "{{code Zoo.feed}} ", "see {{code Zoo.feed}}", "{{code Zoo.feed}} and {{code Zoo.bare}}"} do
+    expect_stop(checks, folder, bad, NOT_AN_INCLUDE)
+  end
+  for prose in {"plain", "{ {code Zoo.feed}}", "{code Zoo.feed}", "}}"} do
+    expect_prose(checks, folder, prose)
+  end
+
+  remove_tree(folder)
+  print("tutorial self_test: PASS, " .. #checks .. " checks")
+end
+
+if arg("self_test", "") == "1" then
+  self_test()
+else
+  local expanded = build(SOURCE, OUTPUT, SAFARI)
+  print("tutorial: " .. expanded .. " includes expanded into " .. OUTPUT)
+end

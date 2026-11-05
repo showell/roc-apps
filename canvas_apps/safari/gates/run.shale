@@ -10,11 +10,14 @@
 --
 -- A run holds 64 programs and a spec takes two (its build and its binary),
 -- so the gates run as child runs of this script, `part=1` and `part=2` (half
--- the specs each) and `part=proof`, one program of this run's each. A child
--- runs alone the same way (`... run.shale part=2`).
+-- the specs each), `part=proof` and `part=tutorial`, one program of this
+-- run's each. A child runs alone the same way (`... run.shale part=2`).
 --
 -- **THE LINTS** (gates/lints.shale) run first: shale's Roc lints, each count
 -- held exactly, lowered as the code is fixed.
+--
+-- `part=tutorial` runs tutorial/build.shale's self-test, then builds the
+-- tutorial, so a name it quotes that is gone from the code fails the gates.
 --
 -- **THE SPECS:** each `<Spec>.roc` is built on the dev backend (what `roc
 -- run` runs) where it is written (its app header names lib/ as a package)
@@ -47,6 +50,7 @@
 const SAFARI = "canvas_apps/safari"
 const EXPECTED = "canvas_apps/safari/gates/expected"
 const SELF_PATH = "canvas_apps/safari/gates/run.shale"
+const TUTORIAL = "canvas_apps/safari/tutorial/build.shale"
 const SPECS = 60
 const PROOF_EXPECTED = "canvas_apps/safari/gates/proof.expected"
 const WANT = "roc-pin: roc-apps' pinned nightly, and the binaries it builds under scratch:"
@@ -224,6 +228,13 @@ function proof()
   return nil
 end
 
+function tutorial()
+  for argv in {{"shale", "--root", ".", TUTORIAL, "self_test=1"}, {"shale", "--root", ".", TUTORIAL}} do
+    print(trim(must(run(argv, {timeout_ms = 60000, tail = 20})).out))
+  end
+  return nil
+end
+
 -- Every gate, each a child run; a child that fails is named, and the rest
 -- still run.
 function all()
@@ -237,7 +248,7 @@ function all()
   end
   push(times, "lints " .. (lints.ms // 1000) .. " s")
   if lints.ended ~= "exit" or lints.code ~= 0 then push(bad, "lints") end
-  for part in {"1", "2", "proof"} do
+  for part in {"tutorial", "1", "2", "proof"} do
     -- A child, and every roc under it, inherits this run's niceness.
     local r = run({"shale","--root", ".", SELF_PATH, "part=" .. part}, {timeout_ms = 1800000, tail = 200})
     for l in lines(r.out) do
@@ -248,7 +259,7 @@ function all()
   end
   print("safari gates: " .. join(times, ", "))
   if #bad > 0 then fail("safari gates: " .. #bad .. " failed: " .. join(bad, ", ")) end
-  print("safari gates: " .. SPECS .. "/" .. SPECS .. " specs pass, proof tools ok")
+  print("safari gates: " .. SPECS .. "/" .. SPECS .. " specs pass, proof tools ok, tutorial built")
 end
 
 const PART = arg("part", "")
@@ -258,6 +269,8 @@ elseif PART == "1" or PART == "2" then
   grade_part(PART)
 elseif PART == "proof" then
   proof()
+elseif PART == "tutorial" then
+  tutorial()
 else
-  fail("safari gates: part= is 1, 2 or proof (none runs them all)")
+  fail("safari gates: part= is 1, 2, proof or tutorial (none runs them all)")
 end
