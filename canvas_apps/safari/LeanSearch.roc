@@ -10,13 +10,12 @@ import Steps
 LeanSearch :: [].{
 
 	want_more_right : Arc.ArcOutcome, Across -> Bool
-	want_more_right = |sim, target| (
+	want_more_right = |sim, target|
 		match sim.shoulder {
 			ShoulderLeft(_) => True
 			ShoulderRight(_) => False
-			ShoulderNone => (sim.end_across < target)
+			ShoulderNone => sim.end_across < target
 		}
-	)
 
 	asymptote_tuning : F64
 	asymptote_tuning = 0.3
@@ -25,19 +24,16 @@ LeanSearch :: [].{
 	center_lane_epsilon = Distance.metres(0.04)
 
 	lean_target : Across -> Across
-	lean_target = |across| (
+	lean_target = |across|
 		if across.distance_from_middle() < center_lane_epsilon {
-			(
-				if across >= Across.middle {
-					Across.right_of_middle(center_lane_epsilon)
-				} else {
-					Across.left_of_middle(center_lane_epsilon)
-				}
-			)
+			if across >= Across.middle {
+				Across.right_of_middle(center_lane_epsilon)
+			} else {
+				Across.left_of_middle(center_lane_epsilon)
+			}
 		} else {
 			across.times(asymptote_tuning)
 		}
-	)
 
 	## The most the lean changes in one step.
 	max_tilt_correction : Angle.Lean

@@ -43,7 +43,13 @@ RailSighting :: [].{
 	leg_steps : F64 -> U32
 	leg_steps = |distance| {
 		steps = Num_.round_real(distance)
-		(if (steps < 1.0) 1.0 else steps).to_u32_wrap()
+		(
+			if steps < 1.0 {
+				1.0
+			} else {
+				steps
+			}
+		).to_u32_wrap()
 	}
 
 	## `steps` + 1 points evenly spaced from `from` to `to`, both included.

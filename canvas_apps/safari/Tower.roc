@@ -142,7 +142,7 @@ Tower :: [].{
 	## How far the earth's curve hides the bottom of a mast standing at `p`.
 	sunk_below_horizon : Geom.RiderPoint -> F64
 	sunk_below_horizon = |p|
-		(((p.right * p.right) + (p.forward * p.forward)) / (2.0 * mast_sink_radius))
+		((p.right * p.right) + (p.forward * p.forward)) / (2.0 * mast_sink_radius)
 
 	## The point `fraction` of the way from `from` to `to`.
 	point_between : {
@@ -194,7 +194,11 @@ Tower :: [].{
 		dx = (to.x - from.x)
 		dy = (to.y - from.y)
 		raw = DeviceMath.real_sqrt(((dx * dx) + (dy * dy)))
-		len = if (raw < 0.0001) 1.0 else raw
+		len = if raw < 0.0001 {
+			1.0
+		} else {
+			raw
+		}
 		rod_quad({
 			from,
 			to,
@@ -241,7 +245,11 @@ Tower :: [].{
 		}
 
 	sight_of : Geom.SpacePoint -> [InView, BehindCamera]
-	sight_of = |point| if (point.forward >= Geom.near_plane) InView else BehindCamera
+	sight_of = |point| if point.forward >= Geom.near_plane {
+		InView
+	} else {
+		BehindCamera
+	}
 
 	## Where the line from `from` to `to` crosses the near plane.
 	cut_at_near : { from : Geom.SpacePoint, to : Geom.SpacePoint } -> Geom.SpacePoint
@@ -282,12 +290,12 @@ Tower :: [].{
 			},
 			cam_focal,
 		)
-		(p1.x - p0.x)
+		p1.x - p0.x
 	}
 
 	## A rod's width on screen at distance `forward`.
 	rod_width_at : { forward : F64, cam_focal : F64 } -> F64
-	rod_width_at = |camera| (rod_w * metre_px(camera))
+	rod_width_at = |camera| rod_w * metre_px(camera)
 
 	## The four legs, from the footprint's corners up to the apex.
 	legs : Tower.Mast, Geom.SpacePoint -> List(Shapes.Shape)
@@ -317,16 +325,24 @@ Tower :: [].{
 	## the earth has hidden.
 	rings : Tower.Mast -> List(Shapes.Shape)
 	rings = |mast| ring_heights_from(stage_height).join_map(
-		|h| if (h <= mast.sunk) [] else ring(
-			mast,
-			h,
-		),
+		|h| if h <= mast.sunk {
+			[]
+		} else {
+			ring(
+				mast,
+				h,
+			)
+		},
 	)
 
 	ring_heights_from : F64 -> List(F64)
-	ring_heights_from = |h| if (h >= tower_height) [] else [h].concat(
-		ring_heights_from((h + stage_height)),
-	)
+	ring_heights_from = |h| if h >= tower_height {
+		[]
+	} else {
+		[h].concat(
+			ring_heights_from((h + stage_height)),
+		)
+	}
 
 	## The crossed braces of the lowest stages, bottom first. A stage the
 	## earth has partly hidden starts its braces at the horizon.
@@ -334,9 +350,13 @@ Tower :: [].{
 	braces = |mast| brace_stages_from(0).join_map(|stage| brace_stage(mast, stage))
 
 	brace_stages_from : I64 -> List(I64)
-	brace_stages_from = |stage| if (stage >= brace_stages) [] else [stage].concat(
-		brace_stages_from((stage + 1)),
-	)
+	brace_stages_from = |stage| if stage >= brace_stages {
+		[]
+	} else {
+		[stage].concat(
+			brace_stages_from((stage + 1)),
+		)
+	}
 
 	brace_stage : Tower.Mast, I64 -> List(Shapes.Shape)
 	brace_stage = |mast, stage| {
@@ -421,12 +441,16 @@ Tower :: [].{
 				cam_focal: mast.view.cam_focal,
 			})
 			radius = beacon_radius * one_metre_px
-			if (radius < 0.5) [] else Paint.push_beacon({
-				beacon_color,
-				beacon_center: apex_on_screen,
-				beacon_radius: radius,
-				beacon_alpha: brightness,
-			})
+			if radius < 0.5 {
+				[]
+			} else {
+				Paint.push_beacon({
+					beacon_color,
+					beacon_center: apex_on_screen,
+					beacon_radius: radius,
+					beacon_alpha: brightness,
+				})
+			}
 		}
 	}
 

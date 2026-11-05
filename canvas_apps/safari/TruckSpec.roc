@@ -78,20 +78,18 @@ one_seg : List(World.Segment)
 one_seg = [World.route_segment(0)]
 
 turn_dist : List(World.Segment), F64 -> F64
-turn_dist = |segs, route_position| (
+turn_dist = |segs, route_position|
 	match Truck.next_turn(segs, Distance.metres(route_position)) {
 		TurnAhead(t) => t.distance.to_metres()
-		NoTurnAhead => (0.0 - 1.0)
+		NoTurnAhead => 0.0 - 1.0
 	}
-)
 
 turn_v : List(World.Segment), F64 -> F64
-turn_v = |segs, route_position| (
+turn_v = |segs, route_position|
 	match Truck.next_turn(segs, Distance.metres(route_position)) {
 		TurnAhead(t) => t.turn_speed.to_metres_a_step()
-		NoTurnAhead => (0.0 - 1.0)
+		NoTurnAhead => 0.0 - 1.0
 	}
-)
 
 turn_got : List(F64)
 turn_got = [

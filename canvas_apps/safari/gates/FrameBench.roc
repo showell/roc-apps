@@ -49,7 +49,11 @@ main! = |args| {
 			steps_left: steps,
 		},
 	)
-	finished = if (Rider.is_finished(done.instant.rider, world)) "yes" else "no"
+	finished = if Rider.is_finished(done.instant.rider, world) {
+		"yes"
+	} else {
+		"no"
+	}
 	echo!("${done.shapes.to_str()} shapes over the frames; finished ${finished}\n")
 	Ok({})
 }

@@ -173,7 +173,11 @@ clip_edge_onto : List(Geom.SpacePoint),
 clip_edge_onto = |clipped, { from, to }| {
 	is_from_in_view = from.forward >= Geom.near_plane
 	is_to_in_view = to.forward >= Geom.near_plane
-	with_corner = if (is_from_in_view) clipped.append(from) else clipped
+	with_corner = if is_from_in_view {
+		clipped.append(from)
+	} else {
+		clipped
+	}
 	if is_from_in_view == is_to_in_view {
 		with_corner
 	} else {

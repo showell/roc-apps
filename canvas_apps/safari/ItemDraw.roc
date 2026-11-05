@@ -61,8 +61,16 @@ ItemDraw :: [].{
 			height: tree.height.to_metres(),
 			color: tree.color,
 			cam_focal,
-			trunk: if (nearer_trees < ItemDraw.round_trunk_limit) RoundCorners else SharpCorners,
-			crown: if (tree.forward < SceneLimits.detail_dist) Cones else Triangles,
+			trunk: if nearer_trees < ItemDraw.round_trunk_limit {
+				RoundCorners
+			} else {
+				SharpCorners
+			},
+			crown: if tree.forward < SceneLimits.detail_dist {
+				Cones
+			} else {
+				Triangles
+			},
 			shade: ItemDraw.crown_shade(tree.forward),
 		})
 	}

@@ -38,7 +38,11 @@ Joint :: [].{
 	## How far across the road its outer edge at a bend is: the left edge
 	## when the road turns right, the right edge when it turns left.
 	outer_edge : Angle.Turn -> Across
-	outer_edge = |turn| if (turn.is_right()) Scenery.left_edge else Scenery.right_edge
+	outer_edge = |turn| if turn.is_right() {
+		Scenery.left_edge
+	} else {
+		Scenery.right_edge
+	}
 
 	## Where the outer edges of the two segments at a bend meet.
 	joint_apex : Frame.RoadView, Joint.PlacedBend -> Geom.RiderPoint

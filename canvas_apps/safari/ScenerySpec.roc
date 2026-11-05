@@ -48,16 +48,15 @@ pond_want : List(Bool)
 pond_want = [True, False, False, False, False, False]
 
 scheme_code : Scenery.Scheme -> I64
-scheme_code = |s| (
+scheme_code = |s|
 	match s {
 		AllGreen => 0
 		YellowGreen => 1
 		RedGreen => 2
 	}
-)
 
 creature_code : Scenery.Creature -> I64
-creature_code = |c| (
+creature_code = |c|
 	match c {
 		NoCreature => 0
 		Elephant => 1
@@ -66,7 +65,6 @@ creature_code = |c| (
 		Rhino => 4
 		DuckPond => 5
 	}
-)
 
 code_got : List(I64)
 code_got = [

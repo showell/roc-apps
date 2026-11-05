@@ -363,7 +363,11 @@ built_segment = |plan, index| {
 			}
 			Terminates => Along.at(plan.length)
 		},
-		mid_tower: if (plan.length > World.mid_tower_min_length) MidTower else NoMidTower,
+		mid_tower: if plan.length > World.mid_tower_min_length {
+			MidTower
+		} else {
+			NoMidTower
+		},
 		crossing: match plan.crossing {
 			CatCrosses => CatCrosses(
 				Cat.crossing({
@@ -396,7 +400,11 @@ nearest_tree_ahead = |trees, along| {
 			if tree.across > Across.middle and tree.along >= along {
 				match best {
 					NearestAlong(nearest_along) =>
-						if (tree.along < nearest_along) NearestAlong(tree.along) else best
+						if tree.along < nearest_along {
+							NearestAlong(tree.along)
+						} else {
+							best
+						}
 					NoTreeYet => NearestAlong(tree.along)
 				}
 			} else {

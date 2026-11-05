@@ -326,7 +326,12 @@ Roc's own rules are in the langref's
   ```roc
   UserId :: Str.{
   	from_str : Str -> Try(UserId, [NotAUserId])
-  	from_str = |text| if (is_all_digits(text)) Ok(UserId.(text)) else Err(NotAUserId)
+  	from_str = |text|
+  		if is_all_digits(text) {
+  			Ok(UserId.(text))
+  		} else {
+  			Err(NotAUserId)
+  		}
 
   	to_str : UserId -> Str
   	to_str = |UserId.(s)| s
@@ -870,6 +875,24 @@ is the base; these rules sharpen it.
 
   That's `roc fmt`'s own shape: a call whose one argument is a stacked list
   keeps the bracket on the call's line.
+- **An `if` takes braces, and a body takes no parentheses.** `roc fmt` keeps
+  both of an emitter's habits, and adds the parentheses to a braceless `if`
+  itself, so `if (x) a else b` is the layout it gives a form we don't write.
+  Parentheses that group an operand stay: a float's order rests on them.
+  Safari holds this at zero; older trees still carry the braceless form.
+
+  ```roc
+  # Not this:
+  shipping = |order| (if (order.is_rush) 900 else 400)
+
+  # This:
+  shipping = |order|
+  	if order.is_rush {
+  		900
+  	} else {
+  		400
+  	}
+  ```
 - **A call nested three deep is read inside out; write it left to right.**
   A method chain first, where the values carry methods (the builtins' do:
   `s.split_on("\n").map(Str.trim).drop_if(|l| l.is_empty())`); a
@@ -995,6 +1018,9 @@ is the base; these rules sharpen it.
     `optional_tag` (a tag named as an optional, `None` or `Some`);
   - Shale's `cookbook/roc/nest_depth.shale`: a call nested three deep or
     more, read inside out ([layout](#layout-and-formatting));
+  - Shale's `cookbook/roc/parens.shale`: `paren_if` (`if (x) a else b`),
+    `wrapped_body` (`|x| (...)`) and `else_block` (`else { if ... }`), each
+    rewritten by `write=1` ([layout](#layout-and-formatting));
   - Shale's `cookbook/roc/stack.shale`: three or more parts on one line,
     or a line over 100 columns (`long`; one that only a string literal
     makes long is reported apart as `wide string`, and no gate holds it);

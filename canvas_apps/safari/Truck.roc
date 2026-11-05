@@ -146,7 +146,11 @@ advance_braking = |truck, turn| {
 	{
 		route_position: truck.route_position.plus(speed.step_length()),
 		speed,
-		brake_lights: if (speed < truck.speed) On else Off,
+		brake_lights: if speed < truck.speed {
+			On
+		} else {
+			Off
+		},
 	}
 }
 

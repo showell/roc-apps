@@ -44,7 +44,11 @@ Paint :: [].{
 	shade_channel : I64, F64 -> I64
 	shade_channel = |channel, factor| {
 		scaled = Num_.round_real((channel.to_f64() * factor)).to_i64_wrap()
-		if (scaled > 255) 255 else scaled
+		if scaled > 255 {
+			255
+		} else {
+			scaled
+		}
 	}
 
 	shade_color : I64, F64 -> I64
@@ -77,7 +81,7 @@ Paint :: [].{
 	min_shade_width = 1.0
 
 	is_too_narrow_to_shade : Paint.Span -> Bool
-	is_too_narrow_to_shade = |span| ((span.max_x - span.min_x) < min_shade_width)
+	is_too_narrow_to_shade = |span| (span.max_x - span.min_x) < min_shade_width
 
 	## The span of x over a polygon's points, given flat as x0, y0, x1, y1, ...
 	## It has at least one point.
@@ -85,8 +89,22 @@ Paint :: [].{
 	x_span = |pts|
 		match xs_of(pts) {
 			[first, .. as rest] => {
-				min_x: rest.fold(first, |least, x| if (x < least) x else least),
-				max_x: rest.fold(first, |most, x| if (x > most) x else most),
+				min_x: rest.fold(
+					first,
+					|least, x| if x < least {
+						x
+					} else {
+						least
+					},
+				),
+				max_x: rest.fold(
+					first,
+					|most, x| if x > most {
+						x
+					} else {
+						most
+					},
+				),
 			}
 			[] => crash "Paint.x_span: a polygon has a point"
 		}

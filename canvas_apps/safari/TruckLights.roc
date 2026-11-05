@@ -97,7 +97,7 @@ TruckLights :: [].{
 	## How far a brake light's glow reaches from `center`, the lamp's
 	## center.
 	glow_radius : List(Screen.Point), Screen.Point -> F64
-	glow_radius = |lamp, center| (TruckLights.farthest_from(lamp, center) * glow_reach)
+	glow_radius = |lamp, center| TruckLights.farthest_from(lamp, center) * glow_reach
 
 	## A circle round `center`, as a polygon of `glow_sides` corners.
 	glow_outline : { center : Screen.Point, radius : F64 } -> List(Screen.Point)

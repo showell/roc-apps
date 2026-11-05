@@ -8,7 +8,11 @@ CanvasRoll :: [].{
 	roll_deadband = Angle.Lean.radians(0.001)
 
 	rider_roll : Angle.Lean -> Angle.Lean
-	rider_roll = |tilt| if (tilt.abs() < roll_deadband) Angle.upright else tilt
+	rider_roll = |tilt| if tilt.abs() < roll_deadband {
+		Angle.upright
+	} else {
+		tilt
+	}
 }
 
 expect CanvasRoll.roll_deadband.to_radians() == 0.001

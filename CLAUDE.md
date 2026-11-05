@@ -394,8 +394,9 @@ planted cases, and let the compiler judge any rewrite.
   record.
 - **The recipes.** `name_hunt` (awkward names, tense, container words),
   `errors` (an error alias, an optional tag), `boundaries` (a one-caller
-  wrapper, a fixed parameter), `nest_depth`, `stack` (three or more on a
-  line, or past 100 columns), `roc_commas` (trailing commas so `roc fmt`
+  wrapper, a fixed parameter), `nest_depth`, `parens` (an emitter's
+  braceless `if`s and wrapped bodies), `stack` (three or more on a line, or
+  past 100 columns), `roc_commas` (trailing commas so `roc fmt`
   stacks long lines), `methods`, `same_code` (two builds the same machine
   code, the judge of a pure reformat) and `tree_patch`. Each is a recipe,
   not a builtin: copy one and change it for the job.

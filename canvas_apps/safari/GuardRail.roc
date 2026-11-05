@@ -139,7 +139,11 @@ post = |at, { previous, next }| {
 	dr = (next.right - previous.right)
 	df = (next.forward - previous.forward)
 	length = DeviceMath.real_sqrt(((dr * dr) + (df * df)))
-	run = if (length.to_bits() == 0) 1.0 else length
+	run = if length.to_bits() == 0 {
+		1.0
+	} else {
+		length
+	}
 	half_right = ((dr / run) * GuardRail.half_post)
 	half_forward = ((df / run) * GuardRail.half_post)
 	back = { right: (at.right - half_right), forward: (at.forward - half_forward) }

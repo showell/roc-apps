@@ -147,7 +147,11 @@ sight_critter = |road, { place, critter }|
 		),
 		height: critter.height,
 		codepoint: critter.codepoint,
-		facing: if (critter.face_right) FacesRight else FacesLeft,
+		facing: if critter.face_right {
+			FacesRight
+		} else {
+			FacesLeft
+		},
 	})
 
 corner_sightings : Frame.RoadView,

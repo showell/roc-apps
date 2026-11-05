@@ -706,11 +706,11 @@ Each gate compares two opaque `Acceleration`s with an ordinary `<`, which works 
 
 The first gate calls it, for the distance left to the point where the rider commits to the turn. Three modules use that one line of physics: this one, `Gaze` to slow for a pig, and `Truck`.
 
-{{code Throttle.corner_brake from "corner_a = (" to "state.speed.acceleration_to({ target: v_end, within: d })"}}
+{{code Throttle.corner_brake from "corner_a =" to "state.speed.acceleration_to({ target: v_end, within: d })"}}
 
 After the gates, `clamp_v` holds the speed between rest and the limit, and the function's last move is a small piece of bookkeeping. The chain works in accelerations and the limits are speeds, so the answer is taken back with `.change_from(state.speed)`, the other half of the same pair of types.
 
-The rest of `Throttle` is plainer than this section makes it sound. A good deal of it is still in the shape its emitter left, with brackets round whole bodies. [check: which of these `if (x) a else b` and `( ... )` forms survive the emitter cleanup, then trim the snippets or this sentence.]
+The rest of `Throttle` is plainer than this section makes it sound.
 
 ### The truck
 

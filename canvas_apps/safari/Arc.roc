@@ -56,7 +56,7 @@ Arc :: [].{
 			frame_count: i,
 			coasting_rider: phys,
 		},
-	| (
+	|
 		if i >= turn_danger_steps {
 			{
 				shoulder: ShoulderNone,
@@ -75,7 +75,6 @@ Arc :: [].{
 				},
 			)
 		}
-	)
 
 	sim_step : Arc.ArcCourse, Arc.ArcProgress(others) -> Arc.ArcOutcome
 	sim_step = |
@@ -84,79 +83,61 @@ Arc :: [].{
 			frame_count: i,
 			coasting_rider: phys,
 		},
-	| (
-		{
-			across = phys.across
-			forward = phys.along.distance_from(course.start_along)
-			(
-				if across < course.left_bound {
-					{
-						shoulder: ShoulderLeft(i),
-						forward: forward.min(min_forward_progress),
-						end_across: across,
-					}
-				} else {
-					(
-						if across > course.right_bound {
-							{
-								shoulder: ShoulderRight(i),
-								forward: forward.min(min_forward_progress),
-								end_across: across,
-							}
-						} else {
-							(
-								if forward < Distance.zero {
-									{
-										shoulder: ShoulderNone,
-										forward: forward,
-										end_across: across,
-									}
-								} else {
-									(
-										if forward >= min_forward_progress {
-											{
-												shoulder: ShoulderNone,
-												forward: min_forward_progress,
-												end_across: across,
-											}
-										} else {
-											sim_from(
-												course,
-												{
-													frame_count: i.plus(Steps.one_step),
-													coasting_rider: phys,
-												},
-											)
-										}
-									)
-								}
-							)
-						}
-					)
-				}
+	| {
+		across = phys.across
+		forward = phys.along.distance_from(course.start_along)
+		if across < course.left_bound {
+			{
+				shoulder: ShoulderLeft(i),
+				forward: forward.min(min_forward_progress),
+				end_across: across,
+			}
+		} else if across > course.right_bound {
+			{
+				shoulder: ShoulderRight(i),
+				forward: forward.min(min_forward_progress),
+				end_across: across,
+			}
+		} else if forward < Distance.zero {
+			{
+				shoulder: ShoulderNone,
+				forward: forward,
+				end_across: across,
+			}
+		} else if forward >= min_forward_progress {
+			{
+				shoulder: ShoulderNone,
+				forward: min_forward_progress,
+				end_across: across,
+			}
+		} else {
+			sim_from(
+				course,
+				{
+					frame_count: i.plus(Steps.one_step),
+					coasting_rider: phys,
+				},
 			)
 		}
-	)
+	}
 
 	project_arc : Bike.Motion(others) -> Arc.ArcOutcome
-	project_arc = |state| (
-		{
-			inset_hw = Scenery.lane_half_width.minus(straighten_margin)
-			right_bound = Across.right_of_middle(inset_hw).max(state.across)
-			left_bound = Across.left_of_middle(inset_hw).min(state.across)
-			sim_from(
-				{
-					left_bound,
-					right_bound,
-					start_along: state.along,
-				},
-				{
-					frame_count: Steps.zero,
-					coasting_rider: state,
-				},
-			)
-		}
-	)
+	project_arc = |state| {
+		inset_hw = Scenery.lane_half_width.minus(straighten_margin)
+		right_bound = Across.right_of_middle(inset_hw).max(state.across)
+		left_bound = Across.left_of_middle(inset_hw).min(state.across)
+		sim_from(
+			{
+				left_bound,
+				right_bound,
+				start_along: state.along,
+			},
+			{
+				frame_count: Steps.zero,
+				coasting_rider: state,
+			},
+		)
+	}
 }
 
 expect Arc.straighten_margin.to_metres() == 0.05

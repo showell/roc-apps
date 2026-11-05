@@ -36,7 +36,7 @@ Critter :: [].{
 	x_sign = |flip|
 		match flip {
 			AsDrawn => 1.0
-			Mirrored => (0.0 - 1.0)
+			Mirrored => 0.0 - 1.0
 		}
 
 	## Where a point of the still lands on screen.
@@ -109,7 +109,11 @@ Critter :: [].{
 
 ## A still's gradient is linear when its kind is 1, and radial otherwise.
 gradient_shape : Stills.StillGrad -> [Linear, Radial]
-gradient_shape = |gradient| if (gradient.kind == 1) Linear else Radial
+gradient_shape = |gradient| if gradient.kind == 1 {
+	Linear
+} else {
+	Radial
+}
 
 ## A still's gradient colours and their offsets, as Paint takes them.
 stops_of : Stills.StillGrad -> Paint.ColorStops

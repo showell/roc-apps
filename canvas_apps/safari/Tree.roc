@@ -185,7 +185,11 @@ Tree :: [].{
 
 	draw_trunk : Tree.Outline, [RoundCorners, SharpCorners] -> List(Shapes.Shape)
 	draw_trunk = |seen, corners| {
-		width = if ((seen.height_px * 0.08) > 1.0) (seen.height_px * 0.08) else 1.0
+		width = if (seen.height_px * 0.08) > 1.0 {
+			seen.height_px * 0.08
+		} else {
+			1.0
+		}
 		height = ((seen.height_px * visible_trunk) + (seen.height_px * 0.05))
 		left = (seen.base_x - (width / 2.0))
 		top = (seen.base_y - height)
@@ -267,7 +271,11 @@ trim_hull = |hull, point|
 			b,
 		] => {
 			turn = (((b.x - a.x) * (point.y - a.y)) - ((b.y - a.y) * (point.x - a.x)))
-			if (turn <= 0.0) trim_hull(hull.drop_last(1), point) else hull
+			if turn <= 0.0 {
+				trim_hull(hull.drop_last(1), point)
+			} else {
+				hull
+			}
 		}
 		_ => hull
 	}
@@ -326,10 +334,14 @@ tier_cone = |tree, { tier, radius }| {
 		},
 	)
 	hull = Tree.convex_hull(ring.append(apex))
-	if (hull.len() < 3) [] else Paint.push_round_poly(
-		hull,
-		{ fill_color: tree.color, round_strength: tree.shade },
-	)
+	if hull.len() < 3 {
+		[]
+	} else {
+		Paint.push_round_poly(
+			hull,
+			{ fill_color: tree.color, round_strength: tree.shade },
+		)
+	}
 }
 
 expect Tree.tiers.map(|tier| tier.top) == [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]

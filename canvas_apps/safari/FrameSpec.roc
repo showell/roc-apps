@@ -175,17 +175,15 @@ at_d1 = |w| Frame.rider_point_ahead(
 )
 
 at_got : List(F64)
-at_got = (
-	{
-		p = at_d1(World.segments)
-		[
-			at_d0.right,
-			at_d0.forward,
-			p.right,
-			p.forward,
-		]
-	}
-)
+at_got = {
+	p = at_d1(World.segments)
+	[
+		at_d0.right,
+		at_d0.forward,
+		p.right,
+		p.forward,
+	]
+}
 
 at_want : List(F64)
 at_want = [
@@ -196,40 +194,38 @@ at_want = [
 ]
 
 behind_got : List(F64)
-behind_got = (
-	{
-		l = Frame.rider_point_at(
-			{
-				world: [],
-				chain: [],
-				pose,
-			},
-			{
-				place: m_prev_left,
-				along: Along.metres(50.0),
-				across: Across.metres(3.0),
-			},
-		)
-		r = Frame.rider_point_at(
-			{
-				world: [],
-				chain: [],
-				pose,
-			},
-			{
-				place: m_prev_right,
-				along: Along.metres(50.0),
-				across: Across.metres(3.0),
-			},
-		)
-		[
-			l.right,
-			l.forward,
-			r.right,
-			r.forward,
-		]
-	}
-)
+behind_got = {
+	l = Frame.rider_point_at(
+		{
+			world: [],
+			chain: [],
+			pose,
+		},
+		{
+			place: m_prev_left,
+			along: Along.metres(50.0),
+			across: Across.metres(3.0),
+		},
+	)
+	r = Frame.rider_point_at(
+		{
+			world: [],
+			chain: [],
+			pose,
+		},
+		{
+			place: m_prev_right,
+			along: Along.metres(50.0),
+			across: Across.metres(3.0),
+		},
+	)
+	[
+		l.right,
+		l.forward,
+		r.right,
+		r.forward,
+	]
+}
 
 behind_want : List(F64)
 behind_want = [

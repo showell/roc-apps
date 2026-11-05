@@ -118,7 +118,7 @@ Mountains :: [].{
 	snowline = |bearing| {
 		above_threshold = (north_range(bearing) - snow_threshold)
 		above_fraction = Fraction.clamp((above_threshold / (snow_peak_height - snow_threshold)))
-		(snow_threshold - (snow_dip * above_fraction.to_f64()))
+		snow_threshold - (snow_dip * above_fraction.to_f64())
 	}
 
 	## The bearing seen at `x` across the screen.
@@ -241,7 +241,7 @@ horizon_y = Screen.horizon_y
 
 ## The screen's y for a height on the skyline.
 height_y : Mountains.Sight, F64 -> F64
-height_y = |sight, height| (horizon_y - (height * (sight.cam_focal / Lens.focal)))
+height_y = |sight, height| horizon_y - (height * (sight.cam_focal / Lens.focal))
 
 ## The columns sampled, every `col_step` pixels from `from` up to `to`.
 columns : { from : F64, to : F64 } -> List(F64)

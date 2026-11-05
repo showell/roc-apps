@@ -27,13 +27,12 @@ seg_list : U32 -> List(World.Segment)
 seg_list = |i| seg_list_onto(i, [])
 
 seg_list_onto : U32, List(World.Segment) -> List(World.Segment)
-seg_list_onto = |i, acc| (
+seg_list_onto = |i, acc|
 	if i >= World.route.len().to_u32_wrap() {
 		acc
 	} else {
 		seg_list_onto((i + 1), List.append(acc, World.route_segment(i)))
 	}
-)
 
 start_got : List(F64)
 start_got = [
@@ -90,41 +89,39 @@ moved_want : List(Bool)
 moved_want = [True, True, True]
 
 order_got : List(Bool)
-order_got = (
-	{
-		old_dist = World.distance_along_route(
-			segs,
-			{ index: RideInstant.initial.rider.segment, along: RideInstant.initial.rider.along },
-		)
-		new_dist = World.distance_along_route(
-			segs,
-			{ index: after_one_step.rider.segment, along: after_one_step.rider.along },
-		)
-		against_new = Truck.advance(
-			RideInstant.initial.truck,
-			{
-				rider_distance: new_dist,
-				world: segs,
-				route_length: World.route_length(segs),
-			},
-		)
-		against_old = Truck.advance(
-			RideInstant.initial.truck,
-			{
-				rider_distance: old_dist,
-				world: segs,
-				route_length: World.route_length(segs),
-			},
-		)
-		new_position = against_new.route_position
-		old_position = against_old.route_position
-		[
-			(after_one_step.truck.route_position == new_position),
-			(new_dist > old_dist),
-			(new_position != old_position),
-		]
-	}
-)
+order_got = {
+	old_dist = World.distance_along_route(
+		segs,
+		{ index: RideInstant.initial.rider.segment, along: RideInstant.initial.rider.along },
+	)
+	new_dist = World.distance_along_route(
+		segs,
+		{ index: after_one_step.rider.segment, along: after_one_step.rider.along },
+	)
+	against_new = Truck.advance(
+		RideInstant.initial.truck,
+		{
+			rider_distance: new_dist,
+			world: segs,
+			route_length: World.route_length(segs),
+		},
+	)
+	against_old = Truck.advance(
+		RideInstant.initial.truck,
+		{
+			rider_distance: old_dist,
+			world: segs,
+			route_length: World.route_length(segs),
+		},
+	)
+	new_position = against_new.route_position
+	old_position = against_old.route_position
+	[
+		(after_one_step.truck.route_position == new_position),
+		(new_dist > old_dist),
+		(new_position != old_position),
+	]
+}
 
 order_want : List(Bool)
 order_want = [True, True, True]
@@ -151,18 +148,16 @@ done = {
 }
 
 restart_got : List(F64)
-restart_got = (
-	{
-		instant = RideInstant.next(segs, done)
-		[
-			instant.clock.to_f64(),
-			instant.rider.along.to_metres(),
-			instant.rider.speed.to_metres_a_step(),
-			instant.truck.route_position.to_metres(),
-			instant.rider.focus.to_f64(),
-		]
-	}
-)
+restart_got = {
+	instant = RideInstant.next(segs, done)
+	[
+		instant.clock.to_f64(),
+		instant.rider.along.to_metres(),
+		instant.rider.speed.to_metres_a_step(),
+		instant.truck.route_position.to_metres(),
+		instant.rider.focus.to_f64(),
+	]
+}
 
 restart_want : List(F64)
 restart_want = [0.0, 0.0, 0.3, 500.0, 0.0]

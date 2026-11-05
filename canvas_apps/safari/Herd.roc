@@ -104,7 +104,11 @@ cow_at = |i| {
 		along: in_line.plus(Herd.herd_jitter_along.times(Trig.r_sin((fi * 2.7)))),
 		across: Across.left_of_middle(out_from_road),
 		codepoint: Herd.cow_codepoint,
-		height: if (i.rem_by(4) == 1) Herd.calf_height else Herd.cow_height,
+		height: if i.rem_by(4) == 1 {
+			Herd.calf_height
+		} else {
+			Herd.cow_height
+		},
 		face_right: True,
 	}
 }

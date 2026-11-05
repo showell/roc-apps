@@ -53,7 +53,13 @@ GroundSighting :: [].{
 	chunks_along : Distance -> U32
 	chunks_along = |length| {
 		chunks = Num_.ceil_real(length.ratio_to(GroundSighting.road_chunk_length))
-		(if (chunks < 1.0) 1.0 else chunks).to_u32_wrap()
+		(
+			if chunks < 1.0 {
+				1.0
+			} else {
+				chunks
+			}
+		).to_u32_wrap()
 	}
 
 	## The road along the segment at `position` in the chain, chunk by chunk.
@@ -186,7 +192,11 @@ approach = |road, bend| {
 ## and back to the outer edge where the segment after starts.
 bend_corner : Frame.RoadView, Joint.PlacedBend -> List(Geom.RiderPoint)
 bend_corner = |road, bend| {
-	inner_edge = if (bend.turn.is_right()) Scenery.right_edge else Scenery.left_edge
+	inner_edge = if bend.turn.is_right() {
+		Scenery.right_edge
+	} else {
+		Scenery.left_edge
+	}
 	outer_edge = Joint.outer_edge(bend.turn)
 	end_at = |across| Frame.rider_point_at(
 		road,

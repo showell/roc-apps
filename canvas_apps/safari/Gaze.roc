@@ -71,19 +71,15 @@ Gaze :: [].{
 		}
 
 	pig_ahead_near : Pose.RiderState, World.Segment -> Gaze.PigLook
-	pig_ahead_near = |state, seg| (
-		{
-			pig = Pigs.gaze_pig(seg.length)
-			dist = pig.along.distance_from(state.along)
-			(
-				if dist > gaze_look_dist {
-					no_look
-				} else {
-					pig_in_sight(state, { gaze_pig: pig, distance_ahead: dist })
-				}
-			)
+	pig_ahead_near = |state, seg| {
+		pig = Pigs.gaze_pig(seg.length)
+		dist = pig.along.distance_from(state.along)
+		if dist > gaze_look_dist {
+			no_look
+		} else {
+			pig_in_sight(state, { gaze_pig: pig, distance_ahead: dist })
 		}
-	)
+	}
 
 	## The pig `distance_ahead` up the road is in sight while it is less
 	## than the release angle from the way the bike points.
@@ -166,39 +162,32 @@ Gaze :: [].{
 	gawk_engaged : Pose.RiderState, World.Segment -> Bool
 	gawk_engaged = |state, seg|
 		match seg.pig_attention {
-			Distracting => (state.along >= Pigs.gaze_pig(seg.length).along.minus(gaze_look_dist))
+			Distracting => state.along >= Pigs.gaze_pig(seg.length).along.minus(gaze_look_dist)
 			Unnoticed => False
 		}
 
 	pig_gaze_brake : Pose.RiderState, World.Segment -> Gaze.GazeBrake
-	pig_gaze_brake = |state, seg| (
+	pig_gaze_brake = |state, seg|
 		if gawk_engaged(state, seg) == False {
 			{ engaged: False, accel: Acceleration.steady }
+		} else if state.speed <= pig_gaze_speed {
+			{ engaged: True, accel: Acceleration.steady }
 		} else {
-			(
-				if state.speed <= pig_gaze_speed {
-					{ engaged: True, accel: Acceleration.steady }
-				} else {
-					pig_gaze_brake_easing(state, seg)
-				}
-			)
+			pig_gaze_brake_easing(state, seg)
 		}
-	)
 
 	pig_gaze_brake_easing : Pose.RiderState, World.Segment -> Gaze.GazeBrake
-	pig_gaze_brake_easing = |state, seg| (
+	pig_gaze_brake_easing = |state, seg| {
+		pig = Pigs.gaze_pig(seg.length)
+		d = pig.along.distance_from(state.along).minus(pig_gaze_settle_dist)
 		{
-			pig = Pigs.gaze_pig(seg.length)
-			d = pig.along.distance_from(state.along).minus(pig_gaze_settle_dist)
-			{
-				engaged: True,
-				accel: state.speed.acceleration_to({
-					target: pig_gaze_speed,
-					within: d.max(Distance.metres(1.0)),
-				}),
-			}
+			engaged: True,
+			accel: state.speed.acceleration_to({
+				target: pig_gaze_speed,
+				within: d.max(Distance.metres(1.0)),
+			}),
 		}
-	)
+	}
 }
 
 # Each is within 1e-12 of its want.

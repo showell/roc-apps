@@ -26,13 +26,13 @@ Lens :: [].{
 	focal_for_lean : Fraction -> F64
 	focal_for_lean = |lean_frac| {
 		lean = lean_frac.to_f64()
-		(focal * (1.0 - (((1.0 - min_focal_factor) * lean) * lean)))
+		focal * (1.0 - (((1.0 - min_focal_factor) * lean) * lean))
 	}
 
 	## The focal length for the rider's attention.
 	focal_for_gaze : Attention -> F64
 	focal_for_gaze = |attention|
-		(focal * (1.0 - ((1.0 - min_gaze_focal_factor) * attention.to_f64())))
+		focal * (1.0 - ((1.0 - min_gaze_focal_factor) * attention.to_f64()))
 
 	## The focal length the camera uses: the shorter of the two, which
 	## gives the wider view.
@@ -40,7 +40,11 @@ Lens :: [].{
 	cam_focal = |{ lean_frac, attention }| {
 		for_lean = focal_for_lean(lean_frac)
 		for_gaze = focal_for_gaze(attention)
-		if (for_lean < for_gaze) for_lean else for_gaze
+		if for_lean < for_gaze {
+			for_lean
+		} else {
+			for_gaze
+		}
 	}
 }
 

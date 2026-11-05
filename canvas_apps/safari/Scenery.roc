@@ -44,7 +44,7 @@ Scenery :: [].{
 	herd_road_offset = Distance.metres(10.0)
 
 	is_pond : Scenery.Creature -> Bool
-	is_pond = |c| (
+	is_pond = |c|
 		match c {
 			DuckPond => True
 			NoCreature => False
@@ -53,71 +53,59 @@ Scenery :: [].{
 			Zebra => False
 			Rhino => False
 		}
-	)
 
 	eq_Scheme : Scenery.Scheme, Scenery.Scheme -> Bool
-	eq_Scheme = |ex, ey| (
+	eq_Scheme = |ex, ey|
 		match ex {
-			AllGreen => (
+			AllGreen =>
 				match ey {
 					AllGreen => True
 					_ => False
 				}
-			)
-			YellowGreen => (
+			YellowGreen =>
 				match ey {
 					YellowGreen => True
 					_ => False
 				}
-			)
-			RedGreen => (
+			RedGreen =>
 				match ey {
 					RedGreen => True
 					_ => False
 				}
-			)
 		}
-	)
 
 	eq_Creature : Scenery.Creature, Scenery.Creature -> Bool
-	eq_Creature = |ex, ey| (
+	eq_Creature = |ex, ey|
 		match ex {
-			NoCreature => (
+			NoCreature =>
 				match ey {
 					NoCreature => True
 					_ => False
 				}
-			)
-			Elephant => (
+			Elephant =>
 				match ey {
 					Elephant => True
 					_ => False
 				}
-			)
-			Giraffe => (
+			Giraffe =>
 				match ey {
 					Giraffe => True
 					_ => False
 				}
-			)
-			Zebra => (
+			Zebra =>
 				match ey {
 					Zebra => True
 					_ => False
 				}
-			)
-			Rhino => (
+			Rhino =>
 				match ey {
 					Rhino => True
 					_ => False
 				}
-			)
-			DuckPond => (
+			DuckPond =>
 				match ey {
 					DuckPond => True
 					_ => False
 				}
-			)
 		}
-	)
 }

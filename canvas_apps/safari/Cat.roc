@@ -176,7 +176,11 @@ Cat :: [].{
 	strides_in : Beats -> F64
 	strides_in = |length| {
 		strides = Num_.round_real(length.ratio_to(stride_beats))
-		if (strides < 1.0) 1.0 else strides
+		if strides < 1.0 {
+			1.0
+		} else {
+			strides
+		}
 	}
 
 	## The number CatStills draws a pose by.

@@ -33,7 +33,11 @@ main! = |_args| {
 		} else {
 			$bad + 1
 		}
-		verdict = if (ok) "ok  " else "BAD "
+		verdict = if ok {
+			"ok  "
+		} else {
+			"BAD "
+		}
 		clocks = "clock ${here.to_str()}, one back -> ${there.to_str()}"
 		$out = Str.concat($out, "${verdict}after ${I64.to_str(steps)} steps: ${clocks}\n")
 	}

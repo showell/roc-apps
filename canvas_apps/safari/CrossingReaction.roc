@@ -28,7 +28,11 @@ CrossingReaction :: [].{
 			CatCrosses(crossing) => {
 				approach = { gap: crossing.along.distance_from(rider.along), speed: rider.speed }
 				{
-					throttle: if (Cat.is_in_danger(approach)) NoAcceleration else MayAccelerate,
+					throttle: if Cat.is_in_danger(approach) {
+						NoAcceleration
+					} else {
+						MayAccelerate
+					},
 					eye_pull: Cat.focus(approach),
 				}
 			}

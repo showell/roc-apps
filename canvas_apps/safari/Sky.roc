@@ -53,7 +53,7 @@ Sky :: [].{
 	## How high the sun stands above the horizon at `clock`, in pixels at
 	## rest; below it once negative.
 	sun_height_px : Clock -> F64
-	sun_height_px = |clock| (sun_start_px - (sun_drop_px_per_step * clock.to_f64()))
+	sun_height_px = |clock| sun_start_px - (sun_drop_px_per_step * clock.to_f64())
 
 	## How far toward dusk the sky is when the sun has just set.
 	dusk_at_set : Fraction
@@ -63,7 +63,11 @@ Sky :: [].{
 	dusk_at : Clock -> Fraction
 	dusk_at = |clock| {
 		height = sun_height_px(clock)
-		if (height >= sun_fully_set_px) dusk_while_up(height) else dusk_after_set(height)
+		if height >= sun_fully_set_px {
+			dusk_while_up(height)
+		} else {
+			dusk_after_set(height)
+		}
 	}
 
 	## How warm the horizon is at `clock`: most while the sun touches it, none
