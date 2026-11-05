@@ -133,7 +133,6 @@ outcome : Arc.Shoulder, F64 -> Arc.ArcOutcome
 outcome = |shoulder, end_across| {
 	shoulder,
 	forward: Distance.metres(10.0),
-	crossed: False,
 	end_across: Across.metres(end_across),
 }
 

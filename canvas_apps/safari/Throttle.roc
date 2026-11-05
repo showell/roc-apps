@@ -439,10 +439,6 @@ expect straight.shoulder == ShoulderNone
 expect wide.shoulder == ShoulderNone
 expect stopped.shoulder == ShoulderNone
 
-expect !straight.crossed
-expect !wide.crossed
-expect !stopped.crossed
-
 ## How many frames an arc runs before it leaves the road.
 frames_off_road : Arc.ArcOutcome -> Steps
 frames_off_road = |arc|

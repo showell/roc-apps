@@ -8,7 +8,6 @@ import Bike
 import Distance
 import Scenery
 import Steps
-import lib.Trig
 
 Arc :: [].{
 
@@ -23,7 +22,6 @@ Arc :: [].{
 	ArcOutcome : {
 		shoulder : Arc.Shoulder,
 		forward : Distance,
-		crossed : Bool,
 		end_across : Across,
 	}
 
@@ -37,18 +35,16 @@ Arc :: [].{
 	min_forward_progress = Distance.metres(25.0)
 
 	## What holds for the whole of one projected arc: the road's edges, and
-	## the side and distance along the road the rider started from.
+	## the distance along the road the rider started from.
 	ArcCourse : {
 		left_bound : Across,
 		right_bound : Across,
-		start_side : F64,
 		start_along : Along,
 	}
 
-	## Where a projected arc has reached: whether it has crossed the centre
-	## line, how many frames it has run, and the coasting rider.
+	## Where a projected arc has reached: how many frames it has run, and the
+	## coasting rider.
 	ArcProgress(others) : {
-		has_crossed : Bool,
 		frame_count : Steps,
 		coasting_rider : Bike.Motion(others),
 	}
@@ -57,7 +53,6 @@ Arc :: [].{
 	sim_from = |
 		course,
 		{
-			has_crossed: crossed,
 			frame_count: i,
 			coasting_rider: phys,
 		},
@@ -66,14 +61,12 @@ Arc :: [].{
 			{
 				shoulder: ShoulderNone,
 				forward: phys.along.distance_from(course.start_along),
-				crossed: crossed,
 				end_across: phys.across,
 			}
 		} else {
 			sim_step(
 				course,
 				{
-					has_crossed: crossed,
 					frame_count: i,
 					coasting_rider: Bike.simulate_rider_step(
 						phys,
@@ -88,7 +81,6 @@ Arc :: [].{
 	sim_step = |
 		course,
 		{
-			has_crossed: crossed0,
 			frame_count: i,
 			coasting_rider: phys,
 		},
@@ -96,19 +88,11 @@ Arc :: [].{
 		{
 			across = phys.across
 			forward = phys.along.distance_from(course.start_along)
-			crossed = (
-				if (across.to_metres() * course.start_side) < 0.0 {
-					True
-				} else {
-					crossed0
-				}
-			)
 			(
 				if across < course.left_bound {
 					{
 						shoulder: ShoulderLeft(i),
 						forward: forward.min(min_forward_progress),
-						crossed: crossed,
 						end_across: across,
 					}
 				} else {
@@ -117,7 +101,6 @@ Arc :: [].{
 							{
 								shoulder: ShoulderRight(i),
 								forward: forward.min(min_forward_progress),
-								crossed: crossed,
 								end_across: across,
 							}
 						} else {
@@ -126,7 +109,6 @@ Arc :: [].{
 									{
 										shoulder: ShoulderNone,
 										forward: forward,
-										crossed: crossed,
 										end_across: across,
 									}
 								} else {
@@ -135,14 +117,12 @@ Arc :: [].{
 											{
 												shoulder: ShoulderNone,
 												forward: min_forward_progress,
-												crossed: crossed,
 												end_across: across,
 											}
 										} else {
 											sim_from(
 												course,
 												{
-													has_crossed: crossed,
 													frame_count: i.plus(Steps.one_step),
 													coasting_rider: phys,
 												},
@@ -168,11 +148,9 @@ Arc :: [].{
 				{
 					left_bound,
 					right_bound,
-					start_side: Trig.r_sign(state.across.to_metres()),
 					start_along: state.along,
 				},
 				{
-					has_crossed: False,
 					frame_count: Steps.zero,
 					coasting_rider: state,
 				},
