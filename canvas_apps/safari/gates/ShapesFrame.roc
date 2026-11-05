@@ -9,9 +9,12 @@
 ##
 ## It prints how many pixels differ, how many triangles cutting the shapes
 ## made and how many shapes there were, then the shapes' frame in
-## RasterFrame's format, which pixels_png.mjs turns into a PNG.
+## RasterFrame's format, which pixels_png.mjs turns into a PNG. Given `held`
+## and rising depths, it prints only each depth's counts, from one pass through
+## the ride.
 ##
 ##   roc build --opt=dev ShapesFrame.roc --output=<bin>; <bin> [steps] | node pixels_png.mjs <png>
+##   <bin> held 0 100 3000
 app [main!] {
 	game: "../game.roc",
 	lib: "../../lib/main.roc",
@@ -23,13 +26,7 @@ import ShapesPixels
 import lib.Shapes
 import game.Screen
 import Hex
-
-ride_to : Tour, I64 -> Tour
-ride_to = |tour, n| if n <= 0 {
-	tour
-} else {
-	ride_to(Tour.advance(tour), n - 1)
-}
+import ProofRide
 
 triangles : List(Shapes.Shape) -> U64
 triangles = |shapes| List.fold(
@@ -42,14 +39,12 @@ triangles = |shapes| List.fold(
 		},
 )
 
-main! = |args| {
-	# With no argument, the run takes its usual number of steps.
-	steps =
-		match args.get(0) {
-			Ok(text) => I64.from_str(text) ?? crash "ShapesFrame: steps must be a whole number"
-			Err(OutOfBounds) => 0
-		}
-	tour = ride_to(Tour.initial, steps)
+## One frame painted both ways: `pixels` as cut, and the counts that say how
+## they went.
+Comparison : { pixels : List(U32), counts : Str }
+
+compare : Tour -> Comparison
+compare = |tour| {
 	instant_shapes = Tour.shapes(tour)
 	roll = Tour.roll(tour)
 	scene = {
@@ -74,16 +69,36 @@ main! = |args| {
 		}
 		$k = $k + 1
 	}
-	var $out = List.with_capacity(n * 6 + 64)
 	differing = "differ ${U64.to_str($differ)} of ${U64.to_str(n)}"
 	totals = "triangles ${triangles(cut_shapes).to_str()}, shapes ${instant_shapes.len().to_str()}"
+	{ pixels: b, counts: "${differing}, ${totals}" }
+}
+
+held_line : I64, Tour -> Str
+held_line = |depth, tour| "ShapesFrame ${depth.to_str()}: ${compare(tour).counts}"
+
+picture! : I64 => {}
+picture! = |steps| {
+	comparison = compare(ProofRide.ride_on(Tour.initial, steps))
+	pixels = comparison.pixels
+	n = List.len(pixels)
+	var $out = List.with_capacity(n * 6 + 64)
 	size = "${Screen.width_px.to_str()} ${Screen.height_px.to_str()}"
-	$out = List.concat($out, Str.to_utf8("${differing}, ${totals}\nhash 00000000\n${size}\n"))
-	$k = 0
+	$out = List.concat($out, Str.to_utf8("${comparison.counts}\nhash 00000000\n${size}\n"))
+	var $k = 0
 	while $k < n {
-		$out = Hex.append_digits($out, { number: U32.to_i64(List.get(b, $k) ?? 0), digits: 6 })
+		$out = Hex.append_digits($out, { number: U32.to_i64(List.get(pixels, $k) ?? 0), digits: 6 })
 		$k = $k + 1
 	}
 	echo!(Str.from_utf8_lossy(List.append($out, 10)))
+}
+
+main! = |args| {
+	match args {
+		["held", .. as depths] => echo!(ProofRide.held_lines(depths, held_line))
+		[steps] => picture!(ProofRide.depth_of(steps))
+		# With no argument, the run takes its usual number of steps.
+		_ => picture!(0)
+	}
 	Ok({})
 }

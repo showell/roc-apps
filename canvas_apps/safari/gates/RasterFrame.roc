@@ -1,9 +1,11 @@
 ## RasterFrame paints one Safari frame with SafariFrame and prints it: a hash
 ## line, the size, then every pixel as six hex digits, which pixels_png.mjs
-## turns into a PNG. Safari's gate runs it (see SafariFrame for more
-## context).
+## turns into a PNG. Given `held` and rising depths, it prints only each depth's
+## hash, from one pass through the ride, as Safari's gate holds them (see
+## SafariFrame for more context).
 ##
 ##   roc build --opt=dev RasterFrame.roc --output=<bin>; <bin> [steps] | node pixels_png.mjs <png>
+##   <bin> held 0 100 3000
 app [main!] {
 	game: "../game.roc",
 	lib: "../../lib/main.roc",
@@ -13,13 +15,7 @@ import game.Tour
 import SafariFrame
 import game.Screen
 import Hex
-
-ride_to : Tour, I64 -> Tour
-ride_to = |tour, n| if n <= 0 {
-	tour
-} else {
-	ride_to(Tour.advance(tour), n - 1)
-}
+import ProofRide
 
 # FNV-1a over each pixel's four little-endian bytes. The product stays under
 # 2^57, so it needs no wrapping arithmetic.
@@ -44,24 +40,33 @@ hash = |pixels| List.fold(
 	},
 )
 
-main! = |args| {
-	# With no argument, the run takes its usual number of steps.
-	steps =
-		match args.get(0) {
-			Ok(text) => I64.from_str(text) ?? crash "RasterFrame: steps must be a whole number"
-			Err(OutOfBounds) => 0
-		}
-	tour = ride_to(Tour.initial, steps)
-	pixels = SafariFrame.paint({
-		shapes: Tour.shapes(tour),
-		roll: Tour.roll(tour),
-		sky_top: Tour.sky_top(tour),
-		sky_horizon: Tour.sky_horizon(tour),
-		sun: Tour.sun(tour),
-	})
+paint : Tour -> List(U32)
+paint = |tour| SafariFrame.paint({
+	shapes: Tour.shapes(tour),
+	roll: Tour.roll(tour),
+	sky_top: Tour.sky_top(tour),
+	sky_horizon: Tour.sky_horizon(tour),
+	sun: Tour.sun(tour),
+})
+
+## The bytes `hash 1234abcd`.
+hash_line : List(U32) -> List(U8)
+hash_line = |pixels| Hex.append_digits(
+	Str.to_utf8("hash "),
+	{ number: hash(pixels), digits: 8 },
+)
+
+held_line : I64, Tour -> Str
+held_line = |depth, tour| {
+	line = Str.from_utf8_lossy(hash_line(paint(tour)))
+	"RasterFrame ${depth.to_str()}: ${line}"
+}
+
+picture! : I64 => {}
+picture! = |steps| {
+	pixels = paint(ProofRide.ride_on(Tour.initial, steps))
 	var $out = List.with_capacity(List.len(pixels) * 6 + 32)
-	$out = List.concat($out, Str.to_utf8("hash "))
-	$out = Hex.append_digits($out, { number: hash(pixels), digits: 8 })
+	$out = List.concat($out, hash_line(pixels))
 	$out = List.concat(
 		$out,
 		Str.to_utf8("\n${Screen.width_px.to_str()} ${Screen.height_px.to_str()}\n"),
@@ -73,5 +78,14 @@ main! = |args| {
 		$k = $k + 1
 	}
 	echo!(Str.from_utf8_lossy(List.append($out, 10)))
+}
+
+main! = |args| {
+	match args {
+		["held", .. as depths] => echo!(ProofRide.held_lines(depths, held_line))
+		[steps] => picture!(ProofRide.depth_of(steps))
+		# With no argument, the run takes its usual number of steps.
+		_ => picture!(0)
+	}
 	Ok({})
 }
