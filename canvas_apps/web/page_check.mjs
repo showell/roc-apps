@@ -24,6 +24,11 @@
 //
 // Thirty frames is half a second, which is enough to say the page runs. A game
 // that waits on a key needs a key: without KEYS this checks the attract screen.
+//
+// After the run, and after its hash, the page goes through checkPointer: drags
+// by mouse and by finger, each ended by pointerup and by pointercancel. What
+// the runner tells `advance` is judged on every page. With
+// STILL_BETWEEN_DRAGS=1 in an app's shot.env the picture is judged too.
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import vm from "node:vm";
 
@@ -126,6 +131,10 @@ const recorder = (real) => new Proxy({}, {
   },
 });
 
+// The page's canvas, and the pointer it has captured.
+let pageCanvas = null;
+let captured = null;
+
 // An element that can be listened to and asked where it is: the pointer
 // registers on the CANVAS rather than the window, and `place` converts a page
 // coordinate through `getBoundingClientRect`.
@@ -135,6 +144,7 @@ const el = (tag) => {
   const real = mini && tag === "canvas" ? mini.createCanvas(1, 1) : null;
   if (real && !mainCanvas) mainCanvas = real;
   let width = 0, height = 0, context = null;
+  const heard = {};
   const node = {
     style: {}, textContent: "", appendChild() {}, remove() {},
     get width() { return width; },
@@ -144,9 +154,12 @@ const el = (tag) => {
     getContext: () => (context ??= recorder(real ? real.getContext("2d") : null)),
     // What drawImage reads out of a scratch canvas.
     pixel: (x, y) => real.pixel(x, y),
-    addEventListener: (kind, fn) => { (listeners[kind] ??= []).push(fn); },
+    addEventListener: (kind, fn) => { (heard[kind] ??= []).push(fn); },
+    fire: (kind, event) => (heard[kind] ?? []).forEach((fn) => fn(event)),
+    setPointerCapture: (id) => { captured = id; },
     getBoundingClientRect: () => ({ left: 0, top: 0, width, height }),
   };
+  if (tag === "canvas") pageCanvas ??= node;
   return node;
 };
 const document_ = {
@@ -177,11 +190,13 @@ let frames = 0;
 // movie. One animation frame here is one frame of the movie's own time.
 const STEP_MS = 1000 / 60;
 let virtualNow = 0;
+// The callback the page left waiting when the run ended, for checkPointer.
+let parked = null;
 const sandbox = {
   console, performance: { now: () => virtualNow }, WebAssembly, fetch: async () => ({}), TextDecoder,
   document: document_, window: {},
   requestAnimationFrame: (fn) => {
-    if (frames++ >= limit) return;
+    if (frames++ >= limit) { parked = fn; return; }
     setImmediate(() => {
       for (const { at, code } of script) {
         if (at === frames) press('keydown', code);
@@ -203,22 +218,37 @@ const listeners = {};
 sandbox.addEventListener = (kind, fn) => { (listeners[kind] ??= []).push(fn); };
 const press = (kind, code) =>
   (listeners[kind] ?? []).forEach((fn) => fn({ code, repeat: false, preventDefault() {} }));
-const point = (kind, event) =>
-  (listeners[kind] ?? []).forEach((fn) => fn({ ...event, preventDefault() {} }));
+// As a browser does it: the canvas hears a pointer that is over it or captured
+// by it, and the window hears every one.
+const point = (kind, fields) => {
+  const event = { pointerId: 1, pointerType: "mouse", button: -1, buttons: 0, ...fields, preventDefault() {} };
+  const over = event.clientX >= 0 && event.clientX < pageCanvas.width
+    && event.clientY >= 0 && event.clientY < pageCanvas.height;
+  if (over || captured === event.pointerId) pageCanvas.fire(kind, event);
+  (listeners[kind] ?? []).forEach((fn) => fn(event));
+  if (kind !== "pointerdown" && kind !== "pointermove" && captured === event.pointerId) captured = null;
+};
 const dragTo = (frame) => {
   const span = Math.max(1, limit - 4);
   const t = Math.min(1, Math.max(0, (frame - 2) / span));
   const at = {
     clientX: drag[0] + (drag[2] - drag[0]) * t,
     clientY: drag[1] + (drag[3] - drag[1]) * t,
-    button: 0,
   };
-  if (frame === 2) point('mousedown', at);
-  else if (frame >= limit - 1) point('mouseup', at);
-  else if (frame > 2) point('mousemove', at);
+  if (frame === 2) point('pointerdown', { ...at, button: 0, buttons: 1 });
+  else if (frame === limit - 1) point('pointerup', { ...at, button: 0 });
+  else if (frame > 2 && frame < limit - 1) point('pointermove', { ...at, buttons: 1 });
 };
 sandbox.window = sandbox;
 sandbox.globalThis = sandbox;
+
+// What the runner last told the app, with the strikes since checkPointer asked.
+const told = { steps: 0, held: 0, struck: 0, x: 0, y: 0 };
+const tellingAdvance = (advance) => (keysHeld, keysStruck, held, struck, x, y, wheel) => {
+  told.steps++;
+  Object.assign(told, { held, x, y, struck: told.struck | struck });
+  return advance(keysHeld, keysStruck, held, struck, x, y, wheel);
+};
 
 // The one thing a page cannot do here: stream a module over fetch.
 const bytes = readFileSync(`${dir}/${name}.wasm`);
@@ -227,7 +257,8 @@ sandbox.WebAssembly.instantiateStreaming = async () => {
   // **THE SAME IMPORTS THE BROWSER GIVES IT**, which is none. Stubbing every
   // declared import would pass a module the page itself could not link.
   const mod = new WebAssembly.Module(bytes);
-  return { instance: new WebAssembly.Instance(mod, { env: {} }) };
+  const { exports } = new WebAssembly.Instance(mod, { env: {} });
+  return { instance: { exports: { ...exports, advance: tellingAdvance(exports.advance) } } };
 };
 
 vm.createContext(sandbox);
@@ -272,3 +303,132 @@ if (SHOT) {
   writeFileSync(SHOT, mainCanvas.toPNG());
 }
 console.log(`${name}: ran ${frames} frames, ${moved} distinct, ${calls} canvas calls, ${fills} fills${pressed}${dragged}, drawn ${drawn >>> 0}`);
+
+const refuse = (why) => {
+  console.error(`${name}: ${why}`);
+  process.exit(1);
+};
+const expect = (holds, why) => { if (!holds) refuse(why); };
+
+// The last frame an app answers after a run of steps from a fresh start, each
+// taking the five pointer numbers `pointerAt` says.
+const WATCHED_STEPS = 20;
+const frameAfterSteps = (pointerAt) => {
+  const { exports } = new WebAssembly.Instance(new WebAssembly.Module(bytes), { env: {} });
+  for (let i = 0; i < WATCHED_STEPS; i++) exports.advance(0, 0, ...pointerAt(i));
+  const at = exports.computeFrame();
+  const frame = vm.runInContext("RocGlue", sandbox).frame(new DataView(exports.memory.buffer), at);
+  return JSON.stringify(frame, (_key, value) => (typeof value === "bigint" ? String(value) : value));
+};
+
+// A page says whether its app reads the pointer, because the wasm can't, and the
+// runner sets touch-action from that. So what it says is measured here.
+const checkTouchAction = () => {
+  const said = Boolean(sandbox.SHOW.readsPointer);
+  const untouched = frameAfterSteps(() => [0, 0, 0, 0, 0]);
+  const dragged = frameAfterSteps((i) => [7, i === 0 ? 7 : 0, pageCanvas.width * (0.2 + i / 50), pageCanvas.height * 0.4, 1]);
+  const reads = untouched !== dragged;
+  expect(said === reads, `the page says readsPointer ${said}, but the pointer ${reads ? "changes" : "never changes"} what the app draws`);
+  const wanted = said ? "none" : "auto";
+  expect(pageCanvas.style.touchAction === wanted, `touch-action is ${pageCanvas.style.touchAction}, not ${wanted}`);
+};
+
+// One step of the app, however many animation frames that takes: what it was
+// told, and the picture it drew.
+const step = () => {
+  const before = told.steps;
+  told.struck = 0;
+  for (let tries = 0; told.steps === before; tries++) {
+    if (tries === 60) refuse("the page stopped stepping");
+    const callback = parked;
+    virtualNow += STEP_MS;
+    picture = 2166136261;
+    callback(virtualNow);
+  }
+  return { ...told, picture };
+};
+
+const checkPointer = () => {
+  const still = process.env.STILL_BETWEEN_DRAGS === "1";
+  const { width, height } = pageCanvas;
+  const near = (a, b) => Math.abs(a - b) < 0.01;
+  const spot = (x, y) => ({ clientX: x, clientY: y, x, y });
+  const from = spot(width * 0.25, height * 0.5);
+  const to = spot(width * 0.75, height * 0.5);
+  const off = spot(width + 50, -50);
+  const down = { button: 0, buttons: 1 };
+  const secondFinger = { pointerId: 9, pointerType: "touch" };
+
+  if (still) expect(step().picture === step().picture, "the picture does not hold still");
+
+  // Both ways of ending, by both devices. `device` is what every event in the
+  // drag carries.
+  const drag = (device, ending) => {
+    const says = `${device.pointerType} drag ended by ${ending}`;
+    point("pointerdown", { ...device, ...from, ...down });
+    const pressed = step();
+    expect(pressed.held === 1 && pressed.struck === 1, `${says}: the press reached the app as held ${pressed.held}, struck ${pressed.struck}`);
+    expect(near(pressed.x, from.x), `${says}: the press is at ${pressed.x}, not ${from.x}`);
+    expect(step().struck === 0, `${says}: the press struck twice`);
+
+    point("pointermove", { ...device, ...to, buttons: 1 });
+    const moved = step();
+    expect(moved.held === 1 && near(moved.x, to.x), `${says}: the move reached the app as held ${moved.held} at ${moved.x}`);
+    if (still) expect(moved.picture !== pressed.picture, `${says}: the drag did not move the widget`);
+
+    point("pointermove", { ...device, ...off, buttons: 1 });
+    const outside = step();
+    expect(near(outside.x, off.x) && near(outside.y, off.y), `${says}: a drag off the canvas stopped tracking at ${outside.x}, ${outside.y}`);
+
+    point("pointerdown", { ...secondFinger, ...from, ...down });
+    point("pointermove", { ...secondFinger, ...from, buttons: 1 });
+    point("pointerup", { ...secondFinger, ...from, button: 0 });
+    const ignored = step();
+    expect(ignored.held === 1 && near(ignored.x, off.x), `${says}: a second finger took over the drag`);
+
+    point("pointermove", { ...device, ...to, buttons: 1 });
+    const back = step();
+    point(ending, { ...device, ...to, button: ending === "pointerup" ? 0 : -1 });
+    const left = step();
+    expect(left.held === 0, `${says}: the button is still held after it`);
+
+    // A button pressed somewhere else still shows on a move, and isn't a drag.
+    point("pointermove", { ...device, ...from, buttons: 1 });
+    const after = step();
+    expect(after.held === 0 && after.struck === 0, `${says}: a move after it reached the app as held ${after.held}`);
+    if (still) expect(after.picture === left.picture && left.picture === back.picture, `${says}: a move after it moved the widget`);
+    point("pointermove", { ...device, ...to });
+    step();
+  };
+  for (const device of [{ pointerId: 1, pointerType: "mouse" }, { pointerId: 7, pointerType: "touch" }]) {
+    drag(device, "pointerup");
+    drag(device, "pointercancel");
+  }
+
+  // pointerdown and pointerup come only with the first button down and the
+  // last one up. The buttons between them arrive as moves.
+  point("pointerdown", { ...from, ...down });
+  expect(step().held === 1, "left alone is not held");
+  point("pointermove", { ...from, button: 2, buttons: 3 });
+  const both = step();
+  expect(both.held === 3 && both.struck === 2, `a second button reached the app as held ${both.held}, struck ${both.struck}`);
+  point("pointermove", { ...from, button: 0, buttons: 2 });
+  expect(step().held === 2, "right is not left held alone");
+  point("pointerup", { ...from, button: 2 });
+  expect(step().held === 0, "the last button up left something held");
+
+  // A window that loses focus ends a drag, and the moves that follow don't
+  // start it again.
+  point("pointerdown", { ...from, ...down });
+  step();
+  (listeners.blur ?? []).forEach((fn) => fn());
+  point("pointermove", { ...to, buttons: 1 });
+  expect(step().held === 0, "a drag survived the window losing focus");
+  point("pointerup", { ...to, button: 0 });
+  step();
+
+  console.log(`${name}: pointer checked by mouse and finger, ending by pointerup and pointercancel, touch-action ${pageCanvas.style.touchAction}, ${still ? "picture and " : ""}advance judged`);
+};
+
+checkTouchAction();
+checkPointer();
