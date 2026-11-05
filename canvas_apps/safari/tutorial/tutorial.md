@@ -8,12 +8,20 @@ Safari Ride has the important parts of a game's world: terrain, physics, a camer
 
 A safari is a guided tour, so this is a tour of a tour. It starts with the big picture, zooms in on a few parts of the program, and zooms back out at the end. Safari Ride is about eighty modules of Roc, which is enough to show how Roc holds up in a program with a lot going on. The tour assumes you can already read Roc. Each chapter points out a few Roc ideas as they come up, and the useful ones come up more than once.
 
-Each chapter zooms too, on a smaller scale, and a marker calls out each change of direction: 🔭 looks out over the whole, and 🐾 follows the trail down to the details. A quoted function is marked 🌳 if it's a branch, which calls others of Safari Ride's own, and 🍃 if it's a leaf, which calls none of them.
+Each chapter zooms too, on a smaller scale. A title line sits above each block of code and each diagram, and it can carry a marker. Two markers call out a change of direction, and two say what a quoted function calls.
+
+| Marker | What it says |
+|---|---|
+| 🔭 | Looking out over the whole |
+| 🐾 | Following the trail down to the details |
+| 🌳 | A branch, which calls others of Safari Ride's own |
+| 🍃 | A leaf, which calls none of them |
 
 ## The problem
 
 The problem is simple to state. Design a world once. Then, each time the clock ticks, move what moves, find everything near enough to see, and draw it against the backdrop.
 
+The problem, as a loop
 ```dot
 digraph problem {
   node [shape=box, fontname="Helvetica"];
@@ -52,6 +60,7 @@ It's called like this, once a step:
 
 Here's the whole system, simplified. An arrow points from a module to one it imports, so a module is composed of what it points at. Dashed boxes each stand for a family of modules. Roc doesn't allow import cycles, so nothing here can point back up.
 
+The whole system, simplified
 ```dot
 digraph system {
   node [shape=box, fontname="Helvetica"];
@@ -125,6 +134,7 @@ The game itself has no effectful functions at all. It has no `!` names, no `=>` 
 
 Trees, cows, the pond and the road are built once and only read after that.
 
+The modules around `World`
 ```dot
 digraph world {
   node [shape=box, fontname="Helvetica"];
@@ -170,8 +180,9 @@ Here's where it's called, picking the colour for a pair of small trees:
 
 The sky is the simplest thing that moves, because it depends on one number.
 
-🔭 From a distance, the sky is a few questions put to a clock.
+From a distance, the sky is a few questions put to a clock.
 
+🔭 The modules around `Sky`
 ```dot
 digraph sky {
   node [shape=box, fontname="Helvetica"];
@@ -195,12 +206,13 @@ digraph sky {
 
 Every function in this chapter has a `->` arrow, not `=>`. In Roc that's a promise the compiler holds: no effects, so the same clock always gives the same sky. If a function has no `=>` and no `$` in sight, there's nothing behind it to think about.
 
-Here's one of the questions being asked. 🌳 `Tour.sky_top` takes the clock from the current instant and hands it to `Sky`.
+Here's one of the questions being asked. `Tour.sky_top` takes the clock from the current instant and hands it to `Sky`.
 
-{{code Tour.sky_top}}
+🌳 {{code Tour.sky_top}}
 
 Here's what happens behind that call. In this diagram a box is a function, not a module, and an arrow is a call. Only `Sky`'s own functions are shown, without the two helpers of `dusk_at`.
 
+The calls inside `Sky`
 ```dot
 digraph sky_calls {
   node [shape=box, fontname="Helvetica"];
@@ -222,90 +234,91 @@ digraph sky_calls {
 
 Every curve comes down to the box in bold, which is the only one that turns the clock into a number. The rest is colour on one side and the sun's place on the other.
 
-🐾 The trail starts at the clock, and climbs to the colours.
+The trail starts at the clock, and climbs to the colours.
 
 ### A function of the clock
 
-The bottom of the tree is back in `Clock`, seen whole above. 🍃 `Clock.to_f64` opens the opaque type. The `to_f64` it calls is `U32`'s, which belongs to Roc, so nothing of Safari Ride's is called.
+The bottom of the tree is back in `Clock`, seen whole above. `Clock.to_f64` opens the opaque type. The `to_f64` it calls is `U32`'s, which belongs to Roc, so nothing of Safari Ride's is called.
 
-{{code Clock.to_f64}}
+🐾 🍃 {{code Clock.to_f64}}
 
-🌳 `sun_height_px` calls it. The sun's height is a straight line. It starts at 244 pixels, reaches the horizon around step 3,980, and has fully set around step 4,730. `to_f64` is the clock's one door to a float, and this is the only place that uses it.
+`sun_height_px` calls it. The sun's height is a straight line. It starts at 244 pixels, reaches the horizon around step 3,980, and has fully set around step 4,730. `to_f64` is the clock's one door to a float, and this is the only place that uses it.
 
-{{code Sky.sun_height_px}}
+🌳 {{code Sky.sun_height_px}}
 
 The next answers are `Fraction`s. `Fraction` is a third small opaque type, a ratio from 0 to 1, and only its own block can build one, so a `Fraction` is always in range. It has two ways in. `Fraction.of` takes a ratio that can only be in range and crashes on anything else, because that would be a bug in the sum. `Fraction.clamp` takes a ratio that can rightly fall outside, as a sun sunk far below the horizon does, and holds it at the nearest end.
 
-Dusk is a curve and then a line, which means two cases, 🌳 `dusk_while_up` and 🌳 `dusk_after_set`. `Sky` keeps them below its block. Anything outside `Sky :: [].{ ... }` is private to the module, so a helper stays a helper without any keyword.
+Dusk is a curve and then a line, which means two cases, `dusk_while_up` and `dusk_after_set`. `Sky` keeps them below its block. Anything outside `Sky :: [].{ ... }` is private to the module, so a helper stays a helper without any keyword.
 
-{{code Sky.dusk_while_up}}
+🌳 {{code Sky.dusk_while_up}}
 
-{{code Sky.dusk_after_set}}
+🌳 {{code Sky.dusk_after_set}}
 
-🌳 `dusk_at` calls `sun_height_px`, then one of those two:
+`dusk_at` calls `sun_height_px`, then one of those two:
 
-{{code Sky.dusk_at}}
+🌳 {{code Sky.dusk_at}}
 
-And here's the walk up the stack: each frame, 🌳 `RideInstant.frame` hands the answer to the mountains, whose rock and snow go dark with it.
+And here's the walk up the stack: each frame, `RideInstant.frame` hands the answer to the mountains, whose rock and snow go dark with it.
 
-{{code RideInstant.frame from "Mountains.draw({" to "}),"}}
+🌳 {{code RideInstant.frame from "Mountains.draw({" to "}),"}}
 
-The horizon's warmth is a third shape, a tent centred on the instant the sun touches the horizon. Three curves come off one number, and they're plain functions rather than anything more general. Nothing else in the game needs them. Here's 🌳 `sunset_warmth`:
+The horizon's warmth is a third shape, a tent centred on the instant the sun touches the horizon. Three curves come off one number, and they're plain functions rather than anything more general. Nothing else in the game needs them. Here's `sunset_warmth`:
 
-{{code Sky.sunset_warmth}}
+🌳 {{code Sky.sunset_warmth}}
 
 ### From curves to colours
 
-A colour ends up as one integer. 🍃 `pack` gets there with method calls on plain numbers, and static dispatch finds `to_i64_wrap`, `shl_wrap` and `bitwise_or` on Roc's own types, so this is a leaf, the only one on the diagram.
+A colour ends up as one integer. `pack` gets there with method calls on plain numbers, and static dispatch finds `to_i64_wrap`, `shl_wrap` and `bitwise_or` on Roc's own types, so this is a leaf, the only one on the diagram.
 
-{{code Sky.pack}}
+🍃 {{code Sky.pack}}
 
-🌳 `color_between` takes one record argument, destructured in its parameter list, so callers name every field. Each channel moves the same share of the way, and `Sky.Rgb` is a plain record alias, three floats with nothing to guard.
+`color_between` takes one record argument, destructured in its parameter list, so callers name every field. Each channel moves the same share of the way, and `Sky.Rgb` is a plain record alias, three floats with nothing to guard.
 
-{{code Sky.color_between}}
+🌳 {{code Sky.color_between}}
 
-🌳 `sky_at` calls it with the dusk from above. It's private, like the two dusk helpers:
+`sky_at` calls it with the dusk from above. It's private, like the two dusk helpers:
 
-{{code Sky.sky_at}}
+🌳 {{code Sky.sky_at}}
 
-The top of the tree is two calls. 🌳 `sky_color` is the one `Tour.sky_top` asked at the start of this chapter, and 🌳 `horizon_color` is the same sky, warmed toward red by `sunset_warmth`.
+The top of the tree is two calls. `sky_color` is the one `Tour.sky_top` asked at the start of this chapter, and `horizon_color` is the same sky, warmed toward red by `sunset_warmth`.
 
-{{code Sky.sky_color}}
+🌳 {{code Sky.sky_color}}
 
-{{code Sky.horizon_color}}
+🌳 {{code Sky.horizon_color}}
 
 ### Angles that can't be mixed up
 
-🐾 One trail on the diagram is left, the sun's place, and it starts at the bottom again.
+One trail on the diagram is left, the sun's place, and it starts at the bottom again.
 
 The sun is the one thing here that also depends on where the rider is looking. Two tags say the two answers, so there's no `null` and no off-screen sentinel value. A caller has to handle `OutOfView`, because `match` must cover every tag.
 
-{{code Sky.SunPos}}
+🐾 {{code Sky.SunPos}}
 
-Opaque types do the most work from here on. `Angle.Bearing` is a direction in the world and `Angle.Turn` is a change of direction. Both are floats underneath, but only the `Angle` module can build or open one. 🌳 `sun_place` is the first code to want a plain number, because `r_tan` takes a float, and it's another caller of `sun_height_px`.
+Opaque types do the most work from here on. `Angle.Bearing` is a direction in the world and `Angle.Turn` is a change of direction. Both are floats underneath, but only the `Angle` module can build or open one. `sun_place` is the first code to want a plain number, because `r_tan` takes a float, and it's another caller of `sun_height_px`.
 
-{{code Sky.sun_place from "scale =" to "y: (Screen.horizon_y"}}
+🌳 {{code Sky.sun_place from "scale =" to "y: (Screen.horizon_y"}}
 
-🌳 `sun_pos` calls it once the sun is known to be in view. It also takes one record argument, destructured in its parameter list.
+`sun_pos` calls it once the sun is known to be in view. It also takes one record argument, destructured in its parameter list.
 
-{{code Sky.sun_pos}}
+🌳 {{code Sky.sun_pos}}
 
-Its caller, 🌳 `RideInstant.sun`, is short enough to read whole:
+Its caller, `RideInstant.sun`, is short enough to read whole:
 
-{{code RideInstant.sun}}
+🌳 {{code RideInstant.sun}}
 
 `turn_from_view.abs() >= visible_turn_limit` compares two `Turn`s. The code never touches radians until `sun_place` has to do trigonometry. Passing a `Turn` where a `Bearing` is wanted is a compile-time error:
 
 {{fails turn_as_bearing}}
 
-🔭 That's every box on the diagram: one number goes in, and colours and a place for the sun come out, with nothing kept from one frame to the next.
+That's every box on the diagram: one number goes in, and colours and a place for the sun come out, with nothing kept from one frame to the next.
 
 ## The cat
 
 The cat is the best scene in Safari Ride. It walks out, freezes in the lane as the rider bears down on it, and leaps clear at the last possible instant.
 
-🔭 From a distance, the cat is one function in two halves, with a shared module underneath.
+From a distance, the cat is one function in two halves, with a shared module underneath.
 
+🔭 The modules around `Cat`
 ```dot
 digraph cat {
   node [shape=box, fontname="Helvetica"];
@@ -328,15 +341,15 @@ digraph cat {
 
 *[The cat widget goes here: drag the rider's gap and watch the crossing play.]*
 
-The slider isn't scrubbing a video. Every position of it is a call to 🌳 `Cat.instant_at`. The arrow is `->` again, so the type already says there's no hidden cat being updated somewhere. Method syntax chains the two halves of the job: `.instant(...)` is defined on the `Timeline` that `crossing_timeline` returns.
+The slider isn't scrubbing a video. Every position of it is a call to `Cat.instant_at`. The arrow is `->` again, so the type already says there's no hidden cat being updated somewhere. Method syntax chains the two halves of the job: `.instant(...)` is defined on the `Timeline` that `crossing_timeline` returns.
 
-{{code Cat.instant_at}}
+🌳 {{code Cat.instant_at}}
 
 A crossing and an approach go in, and the cat at that instant comes out. The same crossing at the same approach gives the same cat, a thousand frames apart.
 
-🌳 `CatSighting.cat_in_view` calls it, adding the distance to the segment to get the gap:
+`CatSighting.cat_in_view` calls it, adding the distance to the segment to get the gap:
 
-{{code CatSighting.cat_in_view from "gap =" to "instant ="}}
+🌳 {{code CatSighting.cat_in_view from "gap =" to "instant ="}}
 
 What `Cat` gets from `Animation` comes down to three types. The first and last are plain record aliases, and `Instant(pose)` takes a type parameter, which a cat fills with its own poses.
 
@@ -352,6 +365,7 @@ The two halves meet at that type. A rule turns an `Approach` into a `Stage`, and
 
 Here are the calls. In this diagram a box is a function, not a module, and an arrow is a call.
 
+The calls from `Cat` into `Animation`
 ```dot
 digraph cat_calls {
   node [shape=box, fontname="Helvetica"];
@@ -384,31 +398,31 @@ digraph cat_calls {
 
 `Cat` reaches into `Animation` twice, once for each half. `crossing_timeline` calls nothing there, because all it does is write a score down.
 
-🐾 The trail now goes down to the leaves, and climbs back to `instant_at` one call at a time, starting with the rule.
+The trail now goes down to the leaves, and climbs back to `instant_at` one call at a time, starting with the rule.
 
 ### When it plays
 
 The bottom of this half is arithmetic on opaque types. Neither field of an `Approach` is a plain number: like `Clock` and `Angle`, `Distance` and `Speed` are opaque types. An animation's beats are an opaque type too, `Beats`: fractional, and tied to no clock, so a place in an animation can't be passed as a step of the ride.
 
-The leaves are the doors in and out of these types. 🍃 `Beats.to_f64` unwraps in its parameter list, and 🍃 `Distance.metres` wraps in its body.
+The leaves are the doors in and out of these types. `Beats.to_f64` unwraps in its parameter list, and `Distance.metres` wraps in its body.
 
-{{code Beats.to_f64}}
+🐾 🍃 {{code Beats.to_f64}}
 
-{{code Distance.metres}}
+🍃 {{code Distance.metres}}
 
-🌳 `Speed.distance_in` calls both. `Speed.(s)` in a parameter list is how its module opens one. Outside this module, nothing can, so a distance can't be passed as a speed.
+`Speed.distance_in` calls both. `Speed.(s)` in a parameter list is how its module opens one. Outside this module, nothing can, so a distance can't be passed as a speed.
 
-{{code Speed.distance_in}}
+🌳 {{code Speed.distance_in}}
 
 `Speed` also defines `is_lte`, which is what lets `speed <= standstill` work in the next snippet with an ordinary operator.
 
-The rule lives in `Animation`. 🌳 `over_beats` destructures its first argument in place, and the `Approach` after it, so the body reads in plain names. Here's where `distance_in` gets called, on the second line:
+The rule lives in `Animation`. `over_beats` destructures its first argument in place, and the `Approach` after it, so the body reads in plain names. Here's where `distance_in` gets called, on the second line:
 
-{{code Animation.over_beats}}
+🌳 {{code Animation.over_beats}}
 
-And 🌳 `Cat.crossing_stage` calls the rule with the cat's own numbers. `crossing_beats` comes to 38: 10 to walk out, 24 frozen, and 4 for the escape.
+And `Cat.crossing_stage` calls the rule with the cat's own numbers. `crossing_beats` comes to 38: 10 to walk out, 24 frozen, and 4 for the escape.
 
-{{code Cat.crossing_stage}}
+🌳 {{code Cat.crossing_stage}}
 
 The cat plays over beats rather than over a stretch of road because it has to finish before the rider reaches it, however fast the rider comes. A faster rider makes it start earlier. The bird uses `over_gap`, because a bird simply reacts to how close the rider is. Each critter picks the rule that suits it.
 
@@ -416,13 +430,13 @@ The cat plays over beats rather than over a stretch of road because it has to fi
 
 A timeline is data, so the cat's whole performance reads in one place, like a score. This half has two strands: the score, which is `Cat`'s, and the code that plays it, which is `Animation`'s. The score comes first, from its smallest function up.
 
-🍃 `spot_across` sits below `Cat`'s block, so it's private, and it's a single record. `Along.start` is a value rather than a call, which leaves nothing of Safari Ride's being called.
+`spot_across` sits below `Cat`'s block, so it's private, and it's a single record. `Along.start` is a value rather than a call, which leaves nothing of Safari Ride's being called.
 
-{{code Cat.spot_across}}
+🍃 {{code Cat.spot_across}}
 
-🌳 `crossing_timeline` calls it three times before the score starts:
+`crossing_timeline` calls it three times before the score starts:
 
-{{code Cat.crossing_timeline from "## The whole of a crossing" to "end = spot_across"}}
+🌳 {{code Cat.crossing_timeline from "## The whole of a crossing" to "end = spot_across"}}
 
 The score's words are tags. A cat's pose is a closed tag union, and nothing outside `Cat` needs to know its tags. Because it's closed, a `match` on it that misses a pose is a compile-time error.
 
@@ -432,41 +446,41 @@ A cut has to say which side of it its own beat falls on, and two tags say that b
 
 {{code Animation.Cut}}
 
-Tags with payloads do almost everything in the score: `Through` and `Before` say where a stretch ends, and `Holds` and `Alternates` say how the cat looks. Here's the first track of 🌳 `crossing_timeline`:
+Tags with payloads do almost everything in the score: `Through` and `Before` say where a stretch ends, and `Holds` and `Alternates` say how the cat looks. Here's the first track of `crossing_timeline`:
 
-{{code Cat.crossing_timeline from "looks:" to "finally: Holds(Collapse),"}}
+🌳 {{code Cat.crossing_timeline from "looks:" to "finally: Holds(Collapse),"}}
 
-There are two tracks because a cat's looks and its movement change at different instants. Its body moves just ahead of its path, so the `looks` track above cuts at 0.8, 2.8 and 3.8 beats into the escape, while the `path` track in the rest of 🌳 `crossing_timeline` cuts at 1 and 3. One list of phases tying them together wouldn't fit the cat or the bird.
+There are two tracks because a cat's looks and its movement change at different instants. Its body moves just ahead of its path, so the `looks` track above cuts at 0.8, 2.8 and 3.8 beats into the escape, while the `path` track in the rest of `crossing_timeline` cuts at 1 and 3. One list of phases tying them together wouldn't fit the cat or the bird.
 
-{{code Cat.crossing_timeline from "path:" to "finally: StaysAt(end),"}}
+🌳 {{code Cat.crossing_timeline from "path:" to "finally: StaysAt(end),"}}
 
 `Timeline` is nominal, the middle ground: unlike an alias it can carry methods, and unlike an opaque type anyone can build one, which is right for data that needs no guarding. `Timeline(pose)` takes a type parameter, which is how a cat and a bird share it.
 
 {{code Animation.Timeline from "## A whole animation" to "}.{"}}
 
-That's the score. The other strand is `Animation` playing it, and its trail starts at an operator. 🍃 `Beats.is_lte` opens two `Beats` and compares the floats inside.
+That's the score. The other strand is `Animation` playing it, and its trail starts at an operator. `Beats.is_lte` opens two `Beats` and compares the floats inside.
 
-{{code Beats.is_lte}}
+🍃 {{code Beats.is_lte}}
 
-🌳 `is_short_of` is one `match`, and it looks like a leaf. It's a branch, because `<=` on two `Beats` is a call to `is_lte`, and `<` is a call to `is_lt`. An operator on an opaque type runs code of Safari Ride's own.
+`is_short_of` is one `match`, and it looks like a leaf. It's a branch, because `<=` on two `Beats` is a call to `is_lte`, and `<` is a call to `is_lt`. An operator on an opaque type runs code of Safari Ride's own.
 
-{{code Animation.is_short_of}}
+🌳 {{code Animation.is_short_of}}
 
-Finding the stretch that's playing shows one more Roc idea. In 🌳 `playing_at`, `var $from` is a local variable that a `for` loop reassigns, inside a pure function. Roc allows that because nothing outside can see it: `playing_at` still has a `->` arrow, and the `$` marks what changes. An early `return` ends the loop.
+Finding the stretch that's playing shows one more Roc idea. In `playing_at`, `var $from` is a local variable that a `for` loop reassigns, inside a pure function. Roc allows that because nothing outside can see it: `playing_at` still has a `->` arrow, and the `$` marks what changes. An early `return` ends the loop.
 
-{{code Animation.playing_at}}
+🌳 {{code Animation.playing_at}}
 
-🌳 `Timeline.at_beat` calls it once for each track, which is what lets the two tracks cut wherever they like. `Animation.Timeline.(score)` in a parameter list opens the nominal type, the way `Speed.(s)` opens an opaque one. `pose_of` and `path_spot` turn what's playing into a pose and a spot, and the bird chapter reads `path_spot`.
+`Timeline.at_beat` calls it once for each track, which is what lets the two tracks cut wherever they like. `Animation.Timeline.(score)` in a parameter list opens the nominal type, the way `Speed.(s)` opens an opaque one. `pose_of` and `path_spot` turn what's playing into a pose and a spot, and the bird chapter reads `path_spot`.
 
-{{code Animation.Timeline from "## The critter at `beat`" to "spot: path_spot(path.plays, fraction),"}}
+🌳 {{code Animation.Timeline from "## The critter at `beat`" to "spot: path_spot(path.plays, fraction),"}}
 
-🌳 `Timeline.instant` is the one place in this half that knows about stages. Its `match` covers all three tags, and `portion` turns a `Fraction` of the way through into a beat.
+`Timeline.instant` is the one place in this half that knows about stages. Its `match` covers all three tags, and `portion` turns a `Fraction` of the way through into a beat.
 
-{{code Animation.Timeline from "## The critter at `stage`." to "Past(_) => score.after"}}
+🌳 {{code Animation.Timeline from "## The critter at `stage`." to "Past(_) => score.after"}}
 
-🔭 Back at the top, nothing in 🌳 `instant_at` is unknown any more.
+Back at the top, nothing in `instant_at` is unknown any more.
 
-{{code Cat.instant_at}}
+🔭 🌳 {{code Cat.instant_at}}
 
 `crossing_stage(approach)` is the rule with the cat's numbers, `crossing_timeline(cat)` is the score, and `.instant` plays the one at the other. A `Stage` is all that passes between them.
 
@@ -474,6 +488,7 @@ Finding the stretch that's playing shows one more Roc idea. In 🌳 `playing_at`
 
 So far the cat hasn't touched the rider. That's a separate question, answered in one place.
 
+The modules around `CrossingReaction`
 ```dot
 digraph reaction {
   node [shape=box, fontname="Helvetica"];
@@ -488,25 +503,25 @@ digraph reaction {
 
 `Throttle` and `RideFocal` know nothing of cats. They ask `CrossingReaction`, which is the only part of the rider's code that does.
 
-🐾 This trail starts back in `Cat`, at two small questions about the same `Stage`.
+This trail starts back in `Cat`, at two small questions about the same `Stage`.
 
-🌳 `is_in_danger` asks whether the crossing is playing. `|` in a pattern covers two tags with one branch, and `_` ignores a payload.
+`is_in_danger` asks whether the crossing is playing. `|` in a pattern covers two tags with one branch, and `_` ignores a payload.
 
-{{code Cat.is_in_danger}}
+🐾 🌳 {{code Cat.is_in_danger}}
 
-🌳 `focus` is where `Past`'s payload is used. `beyond` is how far past the end of the crossing the rider has come, and the cat's hold on the rider's eye fades over that distance, counted in beats. `beats_to_cover` divides by the speed, so a rider at a standstill gets an answer first. `Attention` is another opaque type.
+`focus` is where `Past`'s payload is used. `beyond` is how far past the end of the crossing the rider has come, and the cat's hold on the rider's eye fades over that distance, counted in beats. `beats_to_cover` divides by the speed, so a rider at a standstill gets an answer first. `Attention` is another opaque type.
 
-{{code Cat.focus}}
+🌳 {{code Cat.focus}}
 
-🌳 `CrossingReaction.reaction_to` calls both. `..others` in the argument's type makes it an open record: this function needs `along` and `speed`, and accepts any record that has them, so it doesn't depend on `Pose.RiderState`. `speed` here is the opaque `Speed` again, and `match` on `segment.crossing` has to name every tag.
+`CrossingReaction.reaction_to` calls both. `..others` in the argument's type makes it an open record: this function needs `along` and `speed`, and accepts any record that has them, so it doesn't depend on `Pose.RiderState`. `speed` here is the opaque `Speed` again, and `match` on `segment.crossing` has to name every tag.
 
-{{code CrossingReaction.reaction_to}}
+🌳 {{code CrossingReaction.reaction_to}}
 
-A cat in the lane stops the rider opening the throttle, without braking, and widens the view as it pulls the rider's eye. Two tags, `MayAccelerate` and `NoAcceleration`, stand where a boolean might have gone. The next call up, 🌳 `crossing_attention`, is one line, and its caller, 🌳 `ride_focal`, is the lens:
+A cat in the lane stops the rider opening the throttle, without braking, and widens the view as it pulls the rider's eye. Two tags, `MayAccelerate` and `NoAcceleration`, stand where a boolean might have gone. The next call up, `crossing_attention`, is one line, and its caller, `ride_focal`, is the lens:
 
-{{code RideFocal.crossing_attention}}
+🌳 {{code RideFocal.crossing_attention}}
 
-{{code RideFocal.ride_focal}}
+🌳 {{code RideFocal.ride_focal}}
 
 This is the only loop in the design. The rider's speed decides where the cat has got to, and the cat holds the rider's speed down. It settles, and it's also why `over_beats` has to stay the cat's rule. A bird asks nothing of the rider, so it falls through to the same answer as an empty road.
 
@@ -516,6 +531,7 @@ Each stretch of road has exactly one `crossing`: `CatCrosses`, `BirdFlies` or `Q
 
 The last step is finding the cat in the rider's view.
 
+The modules that put a cat on screen
 ```dot
 digraph screen {
   node [shape=box, fontname="Helvetica"];
@@ -536,15 +552,15 @@ digraph screen {
 
 `CatSighting` and `CatDraw` never import each other. `ItemDraw` is what carries a sighting's answer to the drawing.
 
-🌳 `cat_in_view` places the cat and decides whether it's big enough to draw. An empty list or a list of one is how it says "maybe".
+`cat_in_view` places the cat and decides whether it's big enough to draw. An empty list or a list of one is how it says "maybe".
 
-{{code CatSighting.cat_in_view}}
+🌳 {{code CatSighting.cat_in_view}}
 
-`segment_cat` calls it for a segment with a cat, and 🌳 `in_view` flattens the answers with `join_map`, so a "no" simply disappears:
+`segment_cat` calls it for a segment with a cat, and `in_view` flattens the answers with `join_map`, so a "no" simply disappears:
 
-{{code CatSighting.in_view}}
+🌳 {{code CatSighting.in_view}}
 
-🔭 Looking back over the chapter, notice what isn't in it: a cat in `RideInstant`, an update loop, or a flag saying the cat has already crossed.
+Looking back over the chapter, notice what isn't in it: a cat in `RideInstant`, an update loop, or a flag saying the cat has already crossed.
 
 Roc doesn't force that, but pure functions make the stateless version the easy one to write, and every `->` shows it stayed that way.
 
@@ -554,6 +570,7 @@ The cat walked out of its place in the order. Two clock-driven things were left 
 
 ### A blink
 
+The modules behind a beacon
 ```dot
 digraph beacon {
   node [shape=box, fontname="Helvetica"];
@@ -602,6 +619,7 @@ The clock counts steps, not seconds, so pausing the ride freezes the beacons, an
 
 ### One switch
 
+The modules behind the headlights
 ```dot
 digraph headlights {
   node [shape=box, fontname="Helvetica"];
@@ -640,6 +658,7 @@ That's the clock-driven things. Each is a function with a `Clock` in its argumen
 
 The bird is Roc's logo, sitting on a treetop. As the rider comes near it takes off, flies across the road and ahead, and drops onto a tree on the far side. It's a rider-driven thing like the cat, and it cost much less, which is the point of this chapter.
 
+The modules around `BirdFlight`
 ```dot
 digraph bird {
   node [shape=box, fontname="Helvetica"];
@@ -752,6 +771,7 @@ Nothing in this chapter is new machinery, and that's what it shows. Above their 
 
 Everything so far can be asked about any instant, cold. Hand `Cat.instant_at` a gap and it answers. The rider and the truck can't do that. Where each of them is depends on where it was, so their state has to be kept, and it's the only state there is. This chapter is about the two fields of `RideInstant` that aren't a clock.
 
+The modules that do the stepping
 ```dot
 digraph stepped {
   node [shape=box, fontname="Helvetica"];
@@ -810,6 +830,7 @@ Record update does most of the writing in this module. Its plainest use is stopp
 
 ### The bike
 
+The modules around `Bike`
 ```dot
 digraph bike {
   node [shape=box, fontname="Helvetica"];
@@ -844,6 +865,7 @@ Reading down, the types do their share of explaining. A `Lean` can't be added to
 
 ### The throttle
 
+The modules around `Throttle`
 ```dot
 digraph throttle {
   node [shape=box, fontname="Helvetica"];
@@ -883,6 +905,7 @@ The rest of `Throttle` is plainer than this section makes it sound. A good deal 
 
 ### The truck
 
+The modules around `Truck`
 ```dot
 digraph truck {
   node [shape=box, fontname="Helvetica"];
@@ -962,6 +985,7 @@ After those nine the count drops to 12, for `Screen`, 11 for `Speed` and 10 for 
 
 These are the workhorses, and there being so few says something about the program. Everything else is a small module that takes one of these and adds a single idea. Five of the nine are nothing but numbers with rules, and the top three are under 80 lines each. Composable is the right word for this, and it isn't a slogan: a cat, a mast and a truck are all found on the road through `Frame`, and all reach the screen through `Camera`.
 
+The modules of the math layer
 ```dot
 digraph math {
   node [shape=box, fontname="Helvetica"];
@@ -1141,6 +1165,7 @@ There are no animals in this chapter. It's about what happens to a program of th
 
 The answer rests on one fact, which the tour has been repeating since the first table. Three fields decide a frame, and a frame is a value. So a frame can be compared, exactly, with the same frame from an hour ago.
 
+The proof tools and what they read
 ```dot
 digraph proving {
   node [shape=box, fontname="Helvetica"];
@@ -1250,6 +1275,7 @@ Lints round it out: shale's Roc lints run first, with each count held exactly, a
 
 The rest of the program is what puts this on a screen, and Safari Ride has very little to say about that, on purpose. The tour touched this early on. Here it is with the code.
 
+The modules around `SafariApp`
 ```dot
 digraph platform {
   node [shape=box, fontname="Helvetica"];
