@@ -11,6 +11,7 @@ import Grade
 import GroundPlan
 import Paint
 import World
+import ShapeRead
 
 fixed_got : List(F64)
 fixed_got = [GroundPlan.road_chunk_length, GroundPlan.approach_length]
@@ -147,18 +148,16 @@ last_cmd : Paint.DrawCmd
 last_cmd = strip.last() ?? crash "GroundPlanSpec: the road draws"
 
 cmd_got : List(I64)
-cmd_got = [
-	last_cmd.tag,
-	last_cmd.color,
-	last_cmd.color2,
-	last_cmd.geom.len().to_i64_wrap(),
-]
+cmd_got = [ShapeRead.flat_color_of(last_cmd)]
 
 cmd_want : List(I64)
-cmd_want = [0, 3421500, 0, 0]
+cmd_want = [3421500]
 
 points_got : List(Bool)
-points_got = [(last_cmd.pts.len() >= 6), (last_cmd.pts.len() <= 10)]
+points_got = {
+	point_count = ShapeRead.pts_of(last_cmd).len()
+	[point_count >= 6, point_count <= 10]
+}
 
 points_want : List(Bool)
 points_want = [True, True]

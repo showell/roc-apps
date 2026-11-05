@@ -12,6 +12,7 @@ import Safari
 import Speed
 import Truck
 import World
+import ShapeRead
 
 segs : List(World.Segment)
 segs = seg_list(0)
@@ -186,12 +187,11 @@ frame_got : List(Bool)
 frame_got = [
 	(frame.len().to_i64_wrap() > 0),
 	(Safari.ride_frame(segs, after_one_step).len().to_i64_wrap() > 0),
-	((List.get(frame, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).tag >= 0),
-	((List.get(frame, I64.to_u64_wrap(0)) ?? crash ("list-at out of range")).tag <= 6),
+	(ShapeRead.pts_of(frame.first() ?? crash "SafariSpec: a frame draws").len() >= 6),
 ]
 
 frame_want : List(Bool)
-frame_want = [True, True, True, True]
+frame_want = [True, True, True]
 
 sun_got : List(Bool)
 # The ride starts facing away from the sun.

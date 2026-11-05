@@ -9,6 +9,8 @@ import Grade
 import Paint
 import Tree
 import Screen
+import ShapeRead
+import lib.Brush
 
 table_got : List(F64)
 table_got = List.join([
@@ -110,37 +112,45 @@ only = |commands|
 	}
 
 trunk_got : List(F64)
-trunk_got = only(trunk).pts
+trunk_got = ShapeRead.pts_of(only(trunk))
 
 trunk_want : List(F64)
 trunk_want = [440.0, 110.0, 520.0, 110.0, 520.0, 600.0, 440.0, 600.0]
 
 trunk_tag_got : List(I64)
 trunk_tag_got = [
-	only(trunk).tag,
-	only(round_trunk).tag,
-	only(trunk).color,
-	only(round_trunk).color,
-	only(round_trunk).pts.len().to_i64_wrap(),
+	ShapeRead.flat_color_of(only(trunk)),
+	ShapeRead.pts_of(only(round_trunk)).len().to_i64_wrap(),
 ]
 
 trunk_tag_want : List(I64)
-trunk_tag_want = [0, 2, 5914146, 3548436, 8]
+trunk_tag_want = [5914146, 8]
 
-trunk_strength_got : List(F64)
-trunk_strength_got = [only(trunk).strength, only(round_trunk).strength]
+## A round trunk is the same colour, shaded across its width.
+round_trunk_got : List(Bool)
+round_trunk_got = [
+	only(round_trunk)
+		== Poly({
+			pts: ShapeRead.pts_of(only(round_trunk)),
+			fill: Span({
+				edge: Brush.opaque(3548436),
+				middle: Brush.opaque(7425579),
+				x0: 440.0,
+				x1: 520.0,
+			}),
+		}),
+]
 
-trunk_strength_want : List(F64)
-trunk_strength_want = [0.0, 0.0]
+round_trunk_want : List(Bool)
+round_trunk_want = [True]
 
 tri_got : List(F64)
 tri_got = {
 	top_tier = Tree.tiers.first() ?? crash "TreeSpec: a tree has tiers"
 	bottom_tier = Tree.tiers.last() ?? crash "TreeSpec: a tree has tiers"
-	List.concat(
-		only(Tree.tier_triangle(outline, { tier: top_tier, color: 7 })).pts,
-		only(Tree.tier_triangle(outline, { tier: bottom_tier, color: 7 })).pts,
-	)
+	top_triangle = only(Tree.tier_triangle(outline, { tier: top_tier, color: 7 }))
+	bottom_triangle = only(Tree.tier_triangle(outline, { tier: bottom_tier, color: 7 }))
+	List.concat(ShapeRead.pts_of(top_triangle), ShapeRead.pts_of(bottom_triangle))
 }
 
 tri_want : List(F64)
@@ -299,11 +309,10 @@ main! = |_args| {
 			got: trunk_tag_got,
 			want: trunk_tag_want,
 		}),
-		Grade.reals({
-			name: "tr-tstr  ",
-			got: trunk_strength_got,
-			want: trunk_strength_want,
-			tol: 0.0,
+		Grade.bools({
+			name: "tr-round ",
+			got: round_trunk_got,
+			want: round_trunk_want,
 		}),
 		Grade.reals({
 			name: "tr-tri   ",

@@ -21,7 +21,6 @@ import game.SafariRide
 import SafariFrame
 import ShapesPixels
 import lib.Shapes
-import game.SafariShapes
 import game.Screen
 import Hex
 
@@ -60,7 +59,7 @@ main! = |args| {
 		sky_horizon: SafariRide.sky_horizon(m),
 		sun: SafariRide.sun(m),
 	}
-	shapes = Shapes.cut(List.join_map(commands, SafariShapes.of_command))
+	shapes = Shapes.cut(commands)
 	a = SafariFrame.paint(scene)
 	backdrop = SafariFrame.paint({ ..scene, commands: [] })
 	b = ShapesPixels.paint(backdrop, { roll: SafariFrame.screen_roll(roll), shapes })

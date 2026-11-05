@@ -10,6 +10,7 @@ import CatStills
 import Grade
 import Stills
 import Screen
+import ShapeRead
 
 feet : Screen.Point
 feet = { x: 100.0, y: 200.0 }
@@ -102,16 +103,13 @@ solid_got = {
 		poly_of(3),
 	).first() ?? crash "CatDrawSpec: a triangle is one command"
 	[
-		c.tag,
-		c.color,
-		c.color2,
-		c.geom.len().to_i64_wrap(),
-		c.pts.len().to_i64_wrap(),
+		ShapeRead.flat_color_of(c),
+		ShapeRead.pts_of(c).len().to_i64_wrap(),
 	]
 }
 
 solid_want : List(I64)
-solid_want = [0, 9, 0, 0, 6]
+solid_want = [9, 6]
 
 polys_got : List(I64)
 polys_got = {
@@ -127,7 +125,7 @@ polys_got = {
 			],
 		).len().to_i64_wrap(),
 		CatDraw.polygons(standing, []).len().to_i64_wrap(),
-		second.pts.len().to_i64_wrap(),
+		ShapeRead.pts_of(second).len().to_i64_wrap(),
 	]
 }
 

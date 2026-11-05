@@ -8,6 +8,7 @@ import Geom
 import Grade
 import Ground
 import Paint
+import ShapeRead
 
 points : List(Geom.RiderPoint)
 points = [
@@ -98,16 +99,13 @@ cmd_got : List(I64)
 cmd_got = {
 	cmd = patch_commands(quad).first() ?? crash "GroundSpec: the quad draws one command"
 	[
-		cmd.tag,
-		cmd.color,
-		cmd.color2,
-		cmd.pts.len().to_i64_wrap(),
-		cmd.geom.len().to_i64_wrap(),
+		ShapeRead.flat_color_of(cmd),
+		ShapeRead.pts_of(cmd).len().to_i64_wrap(),
 	]
 }
 
 cmd_want : List(I64)
-cmd_want = [0, 3112588, 0, 8, 0]
+cmd_want = [3112588, 8]
 
 main! = |_args| {
 	verdicts = [

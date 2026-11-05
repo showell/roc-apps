@@ -30,7 +30,6 @@ import game.Angle
 import BackdropPixels
 import game.Paint
 import game.Sky
-import game.SafariShapes
 import game.Screen
 import PixelGrid
 import ScreenRoll
@@ -57,7 +56,7 @@ SafariFrame :: [].{
 			{ sky_top: scene.sky_top, sky_horizon: scene.sky_horizon },
 		)
 		$px = SunPixels.paint($px, { roll, sun: scene.sun })
-		ShapesPixels.paint($px, { roll, shapes: scene.commands.join_map(SafariShapes.of_command) })
+		ShapesPixels.paint($px, { roll, shapes: scene.commands })
 	}
 
 	## Safari's screen, seen through the camera's roll.

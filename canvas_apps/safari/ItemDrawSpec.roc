@@ -14,6 +14,7 @@ import SceneLimits
 import TowerPlan
 import TreePlan
 import World
+import ShapeRead
 
 fixed_got : List(F64)
 fixed_got = [SceneLimits.crown_shade_dist, SceneLimits.detail_dist]
@@ -128,7 +129,7 @@ cluster = [10.0, 11.0, 12.0, 13.0, 14.0].map(tree_at)
 second_command_points : List(Paint.DrawCmd) -> U64
 second_command_points = |commands| {
 	second = commands.get(1) ?? crash "ItemDrawSpec: a tree in view draws a trunk and tiers"
-	second.pts.len()
+	ShapeRead.pts_of(second).len()
 }
 
 tree_got : List(Bool)

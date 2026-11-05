@@ -10,6 +10,7 @@ import EmojiStills
 import Grade
 import Stills
 import Screen
+import ShapeRead
 
 feet : Screen.Point
 feet = { x: 100.0, y: 200.0 }
@@ -135,14 +136,13 @@ solid_got = {
 		flat_poly(3),
 	).first() ?? crash "CritterSpec: a solid polygon is one command"
 	[
-		command.tag,
-		command.color,
-		command.pts.len().to_i64_wrap(),
+		ShapeRead.flat_color_of(command),
+		ShapeRead.pts_of(command).len().to_i64_wrap(),
 	]
 }
 
 solid_want : List(I64)
-solid_want = [0, 7, 6]
+solid_want = [7, 6]
 
 ## How many commands draw an elephant of `height` metres, `forward` metres
 ## ahead.

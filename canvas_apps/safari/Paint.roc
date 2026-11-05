@@ -1,45 +1,14 @@
-# Paint -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## Paint turns Safari's screen points and whole-number colours into shapes. A
+## colour is 0xRRGGBB for a flat polygon, a shaded polygon and a beacon, and
+## 0xAARRGGBB for a gradient. Each builder answers a list, empty when there is
+## nothing to draw, so a drawing module can join what it builds.
 import Num_
 import Screen
+import lib.Brush
+import lib.Shapes
 
 Paint :: [].{
-	DrawCmd : {
-		tag : I64,
-		color : I64,
-		color2 : I64,
-		strength : F64,
-		geom : List(F64),
-		pts : List(F64),
-	}
-
-	# An accumulator loop is linear, where appending a recursive call is quadratic.
-	flatten_screen : List(Screen.Point) -> List(F64)
-	flatten_screen = |ps| flatten_screen_onto(ps, { at_index: 0, flat_coords: [] })
-
-	flatten_screen_onto : List(Screen.Point),
-	{
-		at_index : I64,
-		flat_coords : List(F64),
-	} -> List(F64)
-	flatten_screen_onto = |ps, { at_index: i, flat_coords: acc }| (
-		if i >= ps.len().to_i64_wrap() {
-			acc
-		} else {
-			(
-				{
-					p = (List.get(ps, I64.to_u64_wrap(i)) ?? crash ("list-at out of range"))
-					flatten_screen_onto(
-						ps,
-						{
-							at_index: (i + 1),
-							flat_coords: List.append(List.append(acc, p.x), p.y),
-						},
-					)
-				}
-			)
-		}
-	)
+	DrawCmd : Shapes.Shape
 
 	## The span of x a polygon covers.
 	Span : { min_x : F64, max_x : F64 }
@@ -121,23 +90,17 @@ Paint :: [].{
 			[] => crash "Paint.x_span: a polygon has a point"
 		}
 
-	push_poly : I64, List(Screen.Point) -> List(Paint.DrawCmd)
-	push_poly = |color, ps| (
-		if ps.len().to_i64_wrap() < 3 {
-			[]
-		} else {
-			[
-				{
-					tag: 0,
-					color: color,
-					color2: 0,
-					strength: 0.0,
-					geom: [],
-					pts: flatten_screen(ps),
-				},
-			]
+	flatten_screen : List(Screen.Point) -> List(F64)
+	flatten_screen = |ps| {
+		var $flat = List.with_capacity(2 * ps.len())
+		for p in ps {
+			$flat = $flat.append(p.x).append(p.y)
 		}
-	)
+		$flat
+	}
+
+	push_poly : I64, List(Screen.Point) -> List(Shapes.Shape)
+	push_poly = |color, ps| Shapes.polygon(flatten_screen(ps), Flat(Brush.opaque(color)))
 
 	## A polygon shaded across its width, darker at its edges and lighter in
 	## its middle, or a solid one where it has no strength or is too narrow.
@@ -145,41 +108,21 @@ Paint :: [].{
 	{
 		fill_color : I64,
 		round_strength : F64,
-	} -> List(Paint.DrawCmd)
-	push_round_poly = |ps, { fill_color, round_strength }| (
-		if ps.len().to_i64_wrap() < 3 {
+	} -> List(Shapes.Shape)
+	push_round_poly = |ps, { fill_color, round_strength }|
+		if ps.len() < 3 {
 			[]
 		} else {
 			pts = flatten_screen(ps)
-			span = x_span(pts)
-			if round_strength <= 0.0 or is_too_narrow_to_shade(span) {
-				push_poly(fill_color, ps)
-			} else {
-				[
-					{
-						tag: 2,
-						color: width_shade_edge(fill_color, round_strength),
-						color2: width_shade_middle(fill_color, round_strength),
-						strength: 0.0,
-						geom: [span.min_x, span.max_x],
-						pts,
-					},
-				]
-			}
+			[Poly({ pts, fill: width_shade(pts, { color: fill_color, strength: round_strength }) })]
 		}
-	)
-
-	## The tag of a beacon: a disc whose geometry is its x, y and radius, and
-	## whose strength is its alpha.
-	beacon_tag : I64
-	beacon_tag = 3
 
 	push_beacon : {
 		beacon_color : I64,
 		beacon_center : Screen.Point,
 		beacon_radius : F64,
 		beacon_alpha : F64,
-	} -> List(Paint.DrawCmd)
+	} -> List(Shapes.Shape)
 	push_beacon = |
 		{
 			beacon_color,
@@ -187,20 +130,18 @@ Paint :: [].{
 			beacon_radius,
 			beacon_alpha,
 		},
-	| [
-		{
-			tag: beacon_tag,
-			color: beacon_color,
-			color2: 0,
-			strength: beacon_alpha,
-			geom: [
-				beacon_center.x,
-				beacon_center.y,
-				beacon_radius,
-			],
-			pts: [],
-		},
-	]
+	| {
+		opaque = Brush.opaque(beacon_color)
+		[
+			Disc({
+				x: beacon_center.x,
+				y: beacon_center.y,
+				r: beacon_radius,
+				fill: Flat({ ..opaque, a: beacon_alpha }),
+				clip: Anywhere,
+			}),
+		]
+	}
 
 	## A gradient's two colours, and where each sits along it.
 	ColorStops : {
@@ -220,7 +161,7 @@ Paint :: [].{
 		edge_rgba : I64,
 		gradient_center : Screen.Point,
 		gradient_radius : F64,
-	} -> List(Paint.DrawCmd)
+	} -> List(Shapes.Shape)
 	push_grad_poly = |
 		ps,
 		{
@@ -229,33 +170,30 @@ Paint :: [].{
 			gradient_center,
 			gradient_radius,
 		},
-	| (
-		if ps.len().to_i64_wrap() < 3 or gradient_radius < min_gradient_radius {
+	|
+		if gradient_radius < min_gradient_radius {
 			[]
 		} else {
-			[
-				{
-					tag: 4,
-					color: center_rgba,
-					color2: edge_rgba,
-					strength: 0.0,
-					geom: [
-						gradient_center.x,
-						gradient_center.y,
-						gradient_radius,
-					],
-					pts: flatten_screen(ps),
-				},
-			]
+			Shapes.polygon(
+				flatten_screen(ps),
+				Radial({
+					inner: Brush.with_alpha(center_rgba),
+					outer: Brush.with_alpha(edge_rgba),
+					x: gradient_center.x,
+					y: gradient_center.y,
+					r0: 0.0,
+					r1: gradient_radius,
+				}),
+			)
 		}
-	)
 
+	## A linear gradient with no length has no direction, so it is not drawn.
 	push_linear_grad_poly : List(Screen.Point),
 	{
 		color_stops : Paint.ColorStops,
 		start_point : Screen.Point,
 		end_point : Screen.Point,
-	} -> List(Paint.DrawCmd)
+	} -> List(Shapes.Shape)
 	push_linear_grad_poly = |
 		ps,
 		{
@@ -263,37 +201,39 @@ Paint :: [].{
 			start_point,
 			end_point,
 		},
-	| (
-		if ps.len().to_i64_wrap() < 3 {
+	| {
+		dx = end_point.x - start_point.x
+		dy = end_point.y - start_point.y
+		if dx * dx + dy * dy == 0.0 {
 			[]
 		} else {
-			[
-				{
-					tag: 5,
-					color: color_stops.start_rgba,
-					color2: color_stops.end_rgba,
-					strength: 0.0,
-					geom: [
-						color_stops.start_offset,
-						color_stops.end_offset,
-						start_point.x,
-						start_point.y,
-						end_point.x,
-						end_point.y,
-					],
-					pts: flatten_screen(ps),
-				},
-			]
+			offsets = offsets_of(color_stops)
+			Shapes.polygon(
+				flatten_screen(ps),
+				Linear({
+					c0: Brush.with_alpha(color_stops.start_rgba),
+					c1: Brush.with_alpha(color_stops.end_rgba),
+					o0: offsets.first,
+					o1: offsets.last,
+					ax: start_point.x,
+					ay: start_point.y,
+					dx,
+					dy,
+				}),
+			)
 		}
-	)
+	}
 
+	## A gradient on an ellipse, which is `axis_u` and `axis_v` about
+	## `center_point`. An ellipse too thin to invert is filled with its first
+	## colour.
 	push_radial_grad_poly : List(Screen.Point),
 	{
 		color_stops : Paint.ColorStops,
 		center_point : Screen.Point,
 		axis_u : Screen.Point,
 		axis_v : Screen.Point,
-	} -> List(Paint.DrawCmd)
+	} -> List(Shapes.Shape)
 	push_radial_grad_poly = |
 		ps,
 		{
@@ -302,31 +242,55 @@ Paint :: [].{
 			axis_u,
 			axis_v,
 		},
-	| (
-		if ps.len().to_i64_wrap() < 3 {
-			[]
-		} else {
-			[
-				{
-					tag: 6,
-					color: color_stops.start_rgba,
-					color2: color_stops.end_rgba,
-					strength: 0.0,
-					geom: [
-						color_stops.start_offset,
-						color_stops.end_offset,
-						center_point.x,
-						center_point.y,
-						axis_u.x,
-						axis_u.y,
-						axis_v.x,
-						axis_v.y,
-					],
-					pts: flatten_screen(ps),
-				},
-			]
-		}
-	)
+	| {
+		det = axis_u.x * axis_v.y - axis_u.y * axis_v.x
+		first_color = Brush.with_alpha(color_stops.start_rgba)
+		fill =
+			if F64.abs(det) < min_ellipse_determinant {
+				Flat(first_color)
+			} else {
+				offsets = offsets_of(color_stops)
+				Ellipse({
+					c0: first_color,
+					c1: Brush.with_alpha(color_stops.end_rgba),
+					o0: offsets.first,
+					o1: offsets.last,
+					x: center_point.x,
+					y: center_point.y,
+					ia: axis_v.y / det,
+					ib: (0.0 - axis_v.x) / det,
+					ic: (0.0 - axis_u.y) / det,
+					id: axis_u.x / det,
+				})
+			}
+		Shapes.polygon(flatten_screen(ps), fill)
+	}
+}
+
+min_ellipse_determinant : F64
+min_ellipse_determinant = 0.0001
+
+## A gradient's offsets held to 0 to 1, the last never before the first.
+offsets_of : Paint.ColorStops -> { first : F64, last : F64 }
+offsets_of = |stops| {
+	first = Brush.clamp01(stops.start_offset)
+	{ first, last: F64.max(first, F64.min(1.0, stops.end_offset)) }
+}
+
+## The fill of a polygon shaded across its width.
+width_shade : List(F64), { color : I64, strength : F64 } -> Brush.Fill
+width_shade = |pts, { color, strength }| {
+	span = Paint.x_span(pts)
+	if strength <= 0.0 or Paint.is_too_narrow_to_shade(span) {
+		Flat(Brush.opaque(color))
+	} else {
+		Span({
+			edge: Brush.opaque(Paint.width_shade_edge(color, strength)),
+			middle: Brush.opaque(Paint.width_shade_middle(color, strength)),
+			x0: span.min_x,
+			x1: span.max_x,
+		})
+	}
 }
 
 ## The x of each point in a flat list of x, y pairs.

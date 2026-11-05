@@ -1,13 +1,9 @@
-# SafariShapes -- Safari's frame, as shapes.
-#
-# Hand-written. The vocabulary is in lib/Shapes.roc, every canvas app's; this
-# is the part that knows what Safari looks like -- the sky's gradient, the
-# grass, the sun's glow and disc, and how a Codex draw command becomes a
-# polygon.
+## SafariShapes builds Safari's whole frame as shapes. The vocabulary is in
+## lib/Shapes.roc, which every canvas app shares. This module knows what is
+## behind the ride: the sky's gradient, the grass, and the sun's glow and disc.
 import Paint
 import Sky
 import lib.Brush
-import SafariBrush
 import Screen
 import lib.Shapes
 
@@ -78,7 +74,8 @@ SafariShapes :: [].{
 		}
 	}
 
-	# The frame in paint order: the sky, the grass, the sun, then every command.
+	## The frame in paint order: the sky, the grass, the sun, then the ride's
+	## shapes.
 	frame : List(Paint.DrawCmd),
 	{
 		sky_top_color : I64,
@@ -86,17 +83,17 @@ SafariShapes :: [].{
 		sun_position : Sky.SunPos,
 	} -> List(Shapes.Shape)
 	frame = |
-		commands,
+		ride_shapes,
 		{
 			sky_top_color: sky_top,
 			sky_horizon_color: sky_horizon,
 			sun_position: sun,
 		},
 	| {
-		var $out = List.with_capacity(2 * List.len(commands) + 8)
-		# Oversized, as the blitter draws them, so the rolled frame's corners stay
-		# filled: the top colour to a fifth of the way down to the horizon at y
-		# 300, then the fade; the grass from a pixel above the horizon.
+		var $out = List.with_capacity(List.len(ride_shapes) + 8)
+		# Oversized, so the rolled frame's corners stay filled: the top colour to
+		# a fifth of the way down to the horizon at y 300, then the fade; the
+		# grass from a pixel above the horizon.
 		sky = Linear({
 			c0: Brush.opaque(sky_top),
 			c1: Brush.opaque(sky_horizon),
@@ -158,47 +155,6 @@ SafariShapes :: [].{
 				}
 				InView(_) | OutOfView => $out
 			}
-		n = List.len(commands)
-		var $k = 0
-		while $k < n {
-			$out = List.concat(
-				$out,
-				of_command(List.get(commands, $k) ?? crash ("command out of range")),
-			)
-			$k = $k + 1
-		}
-		$out
-	}
-
-	# One command's shapes: a disc, or its polygon with its brush.
-	of_command : Paint.DrawCmd -> List(Shapes.Shape)
-	of_command = |c|
-		if c.tag == Paint.beacon_tag {
-			col = Brush.opaque(c.color)
-			[
-				Disc({
-					x: SafariBrush.geom(c, 0),
-					y: SafariBrush.geom(c, 1),
-					r: SafariBrush.geom(c, 2),
-					fill: Flat({ ..col, a: c.strength }),
-					clip: Anywhere,
-				}),
-			]
-		} else {
-			fill = SafariBrush.of_command(c)
-			match fill {
-				Skip => []
-				_ => polygon(c.pts, fill)
-			}
-		}
-
-	polygon : List(F64), Brush.Fill -> List(Shapes.Shape)
-	polygon = |pts, fill| {
-		n = List.len(pts) // 2
-		if n < 3 {
-			[]
-		} else {
-			[Poly({ pts, fill })]
-		}
+		List.concat($out, ride_shapes)
 	}
 }

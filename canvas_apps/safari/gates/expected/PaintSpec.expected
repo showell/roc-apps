@@ -1,9 +1,9 @@
 pa-flat   ok 6
 pa-guard  ok 14
-pa-tags   ok 30
-pa-streng ok 6
-pa-geom   ok 20
-pa-pts    ok 12
+pa-built  ok 6
+pa-offset ok 3
+pa-nolen  ok 2
+pa-thin   ok 2
 pa-chan   ok 10
 pa-shade  ok 8
 pa-ends   ok 6
@@ -11,6 +11,5 @@ pa-glow   ok 2
 pa-narrow ok 3
 pa-limits ok 3
 pa-span   ok 4
-pa-wide   ok 5
-pa-wgeom  ok 9
-pa-solid  ok 10
+pa-wide   ok 1
+pa-solid  ok 2

@@ -9,6 +9,7 @@ import Camera
 import Grade
 import Paint
 import RocBird
+import ShapeRead
 
 camera : Camera.View
 camera = { cam_focal: 500.0, view_w: 960.0 }
@@ -27,7 +28,7 @@ level_bird = {
 first_corner : List(Paint.DrawCmd) -> List(F64)
 first_corner = |commands| {
 	first_command = commands.first() ?? crash "RocBirdSpec: a bird draws commands"
-	first_command.pts.take_first(2)
+	ShapeRead.pts_of(first_command).take_first(2)
 }
 
 height_got : List(F64)
@@ -70,7 +71,7 @@ colours_got : List(I64)
 colours_got = [
 	Side(WingsDown),
 	Diving,
-].join_map(|pose| RocBird.draw({ ..level_bird, pose }, camera).map(|command| command.color))
+].join_map(|pose| RocBird.draw({ ..level_bird, pose }, camera).map(ShapeRead.flat_color_of))
 
 colours_want : List(I64)
 colours_want = List.concat(BirdStills.side_wings_down, BirdStills.diving).map(|poly| poly.color)
