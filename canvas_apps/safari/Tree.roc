@@ -6,6 +6,7 @@ import Camera
 import Paint
 import lib.Trig
 import Screen
+import lib.Shapes
 
 Tree :: [].{
 
@@ -114,7 +115,7 @@ Tree :: [].{
 
 	## The tree on the screen: its trunk, then its tiers top to bottom. A tree
 	## less than a pixel tall isn't drawn.
-	draw : Tree.TreeInView -> List(Paint.DrawCmd)
+	draw : Tree.TreeInView -> List(Shapes.Shape)
 	draw = |tree| {
 		seen = outline({
 			right: tree.right,
@@ -180,7 +181,7 @@ Tree :: [].{
 		}
 	}
 
-	draw_trunk : Tree.Outline, [RoundCorners, SharpCorners] -> List(Paint.DrawCmd)
+	draw_trunk : Tree.Outline, [RoundCorners, SharpCorners] -> List(Shapes.Shape)
 	draw_trunk = |seen, corners| {
 		width = if ((seen.height_px * 0.08) > 1.0) (seen.height_px * 0.08) else 1.0
 		height = ((seen.height_px * visible_trunk) + (seen.height_px * 0.05))
@@ -203,7 +204,7 @@ Tree :: [].{
 
 	## A tier as a flat triangle: its apex at the tier's top, its base across
 	## its bottom.
-	tier_triangle : Tree.Outline, { tier : Tree.Tier, color : I64 } -> List(Paint.DrawCmd)
+	tier_triangle : Tree.Outline, { tier : Tree.Tier, color : I64 } -> List(Shapes.Shape)
 	tier_triangle = |seen, { tier, color }| {
 		bottom_y = (seen.crown_top_y + (seen.foliage_px * tier.bottom))
 		Paint.push_poly(
@@ -286,7 +287,7 @@ ring_angles = {
 
 ## A tier, as a cone when the tree is near and the cone is in front of the
 ## camera, else as a triangle.
-draw_tier : Tree.TreeInView, { seen : Tree.Outline, tier : Tree.Tier } -> List(Paint.DrawCmd)
+draw_tier : Tree.TreeInView, { seen : Tree.Outline, tier : Tree.Tier } -> List(Shapes.Shape)
 draw_tier = |tree, { seen, tier }| {
 	radius = ((Tree.crown_width * tier.width) * tree.height)
 	match tree.crown {
@@ -300,7 +301,7 @@ draw_tier = |tree, { seen, tier }| {
 }
 
 ## A tier as a cone: the outline of the ring round its base and its apex.
-tier_cone : Tree.TreeInView, { tier : Tree.Tier, radius : F64 } -> List(Paint.DrawCmd)
+tier_cone : Tree.TreeInView, { tier : Tree.Tier, radius : F64 } -> List(Shapes.Shape)
 tier_cone = |tree, { tier, radius }| {
 	base_height = ((Tree.visible_trunk + (Tree.crown_height * (1.0 - tier.bottom))) * tree.height)
 	apex_height = ((Tree.visible_trunk + (Tree.crown_height * (1.0 - tier.top))) * tree.height)

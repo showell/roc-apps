@@ -9,9 +9,9 @@ import Frame
 import Geom
 import Grade
 import GroundPlan
-import Paint
 import World
 import ShapeRead
+import lib.Shapes
 
 fixed_got : List(F64)
 fixed_got = [GroundPlan.road_chunk_length, GroundPlan.approach_length]
@@ -118,7 +118,7 @@ seam_got = {
 seam_want : List(F64)
 seam_want = [0.0, 0.0, 0.0]
 
-strip : List(Paint.DrawCmd)
+strip : List(Shapes.Shape)
 strip = GroundPlan.segment_road(view, Frame.ChainPosition.first)
 
 far_ahead : Frame.Pose
@@ -144,18 +144,18 @@ strip_got = [
 strip_want : List(Bool)
 strip_want = [True, True, True]
 
-last_cmd : Paint.DrawCmd
-last_cmd = strip.last() ?? crash "GroundPlanSpec: the road draws"
+last_shape : Shapes.Shape
+last_shape = strip.last() ?? crash "GroundPlanSpec: the road draws"
 
-cmd_got : List(I64)
-cmd_got = [ShapeRead.flat_color_of(last_cmd)]
+shape_got : List(I64)
+shape_got = [ShapeRead.flat_color_of(last_shape)]
 
-cmd_want : List(I64)
-cmd_want = [3421500]
+shape_want : List(I64)
+shape_want = [3421500]
 
 points_got : List(Bool)
 points_got = {
-	point_count = ShapeRead.pts_of(last_cmd).len()
+	point_count = ShapeRead.pts_of(last_shape).len()
 	[point_count >= 6, point_count <= 10]
 }
 
@@ -209,9 +209,9 @@ main! = |_args| {
 			want: strip_want,
 		}),
 		Grade.ints({
-			name: "gp-cmd   ",
-			got: cmd_got,
-			want: cmd_want,
+			name: "gp-shape ",
+			got: shape_got,
+			want: shape_want,
 		}),
 		Grade.bools({
 			name: "gp-points",

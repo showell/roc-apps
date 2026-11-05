@@ -138,13 +138,13 @@ count_got = [
 count_want : List(I64)
 count_want = [1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
 
-solid : List(Paint.DrawCmd)
+solid : List(Shapes.Shape)
 solid = Paint.push_poly(111, tri)
 
-round : List(Paint.DrawCmd)
+round : List(Shapes.Shape)
 round = Paint.push_round_poly(tri, { fill_color: 222, round_strength: 0.75 })
 
-beacon : List(Paint.DrawCmd)
+beacon : List(Shapes.Shape)
 beacon = Paint.push_beacon({
 	beacon_color: 333,
 	beacon_center: sp(10.0, 20.0),
@@ -152,7 +152,7 @@ beacon = Paint.push_beacon({
 	beacon_alpha: 0.25,
 })
 
-radial4 : List(Paint.DrawCmd)
+radial4 : List(Shapes.Shape)
 radial4 = Paint.push_grad_poly(
 	tri,
 	{
@@ -163,7 +163,7 @@ radial4 = Paint.push_grad_poly(
 	},
 )
 
-linear5 : List(Paint.DrawCmd)
+linear5 : List(Shapes.Shape)
 linear5 = Paint.push_linear_grad_poly(
 	tri,
 	{
@@ -178,7 +178,7 @@ linear5 = Paint.push_linear_grad_poly(
 	},
 )
 
-radial6 : List(Paint.DrawCmd)
+radial6 : List(Shapes.Shape)
 radial6 = Paint.push_radial_grad_poly(
 	tri,
 	{

@@ -9,12 +9,12 @@ import Angle
 import Frame
 import Grade
 import ItemDraw
-import Paint
 import SceneLimits
 import TowerPlan
 import TreePlan
 import World
 import ShapeRead
+import lib.Shapes
 
 fixed_got : List(F64)
 fixed_got = [SceneLimits.crown_shade_dist, SceneLimits.detail_dist]
@@ -110,14 +110,14 @@ corner_got = {
 corner_want : List(F64)
 corner_want = [194.0, 206.0, 14.0, 26.0]
 
-tower_command_count : F64 -> U64
-tower_command_count = |along| ItemDraw.draw_tower(context, tower_along(along)).len()
+tower_shape_count : F64 -> U64
+tower_shape_count = |along| ItemDraw.draw_tower(context, tower_along(along)).len()
 
 tower_got : List(Bool)
 tower_got = [
-	(tower_command_count(200.0) > 0),
-	(tower_command_count(1000.0) > 0),
-	(tower_command_count(-100.0) == 0),
+	(tower_shape_count(200.0) > 0),
+	(tower_shape_count(1000.0) > 0),
+	(tower_shape_count(-100.0) == 0),
 ]
 
 tower_want : List(Bool)
@@ -126,9 +126,9 @@ tower_want = [True, True, True]
 cluster : List(TreePlan.TreeItem)
 cluster = [10.0, 11.0, 12.0, 13.0, 14.0].map(tree_at)
 
-second_command_points : List(Paint.DrawCmd) -> U64
-second_command_points = |commands| {
-	second = commands.get(1) ?? crash "ItemDrawSpec: a tree in view draws a trunk and tiers"
+second_shape_points : List(Shapes.Shape) -> U64
+second_shape_points = |shapes| {
+	second = shapes.get(1) ?? crash "ItemDrawSpec: a tree in view draws a trunk and tiers"
 	ShapeRead.pts_of(second).len()
 }
 
@@ -139,8 +139,8 @@ tree_got = {
 	[
 		(near.len() > 0),
 		(far.len() > 0),
-		(second_command_points(near) > second_command_points(far)),
-		(second_command_points(far) >= 6),
+		(second_shape_points(near) > second_shape_points(far)),
+		(second_shape_points(far) >= 6),
 	]
 }
 

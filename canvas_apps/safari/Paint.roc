@@ -8,7 +8,6 @@ import lib.Brush
 import lib.Shapes
 
 Paint :: [].{
-	DrawCmd : Shapes.Shape
 
 	## The span of x a polygon covers.
 	Span : { min_x : F64, max_x : F64 }

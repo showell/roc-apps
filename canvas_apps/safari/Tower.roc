@@ -11,6 +11,7 @@ import Num_
 import Paint
 import lib.Trig
 import Screen
+import lib.Shapes
 
 Tower :: [].{
 
@@ -187,7 +188,7 @@ Tower :: [].{
 		from : Screen.Point,
 		to : Screen.Point,
 		width_px : F64,
-	} -> List(Paint.DrawCmd)
+	} -> List(Shapes.Shape)
 	screen_rod = |
 		{
 			from,
@@ -214,7 +215,7 @@ Tower :: [].{
 		to : Screen.Point,
 		offset_x : F64,
 		offset_y : F64,
-	} -> List(Paint.DrawCmd)
+	} -> List(Shapes.Shape)
 	rod_quad = |
 		{
 			from: a,
@@ -235,7 +236,7 @@ Tower :: [].{
 	## A rod between two points in the rider's view. A rod with one end
 	## behind the near plane is cut there; one with both ends behind it is
 	## not drawn.
-	rod : Tower.RodView, { from : Geom.SpacePoint, to : Geom.SpacePoint } -> List(Paint.DrawCmd)
+	rod : Tower.RodView, { from : Geom.SpacePoint, to : Geom.SpacePoint } -> List(Shapes.Shape)
 	rod = |view, { from, to }|
 		match (sight_of(from), sight_of(to)) {
 			(InView, InView) => rod_on_screen(view, { from, to })
@@ -259,7 +260,7 @@ Tower :: [].{
 	{
 		from : Geom.SpacePoint,
 		to : Geom.SpacePoint,
-	} -> List(Paint.DrawCmd)
+	} -> List(Shapes.Shape)
 	rod_on_screen = |view, { from, to }|
 		screen_rod({
 			from: Camera.project(from, { cam_focal: view.cam_focal, view_w: view.view_w }),
@@ -308,7 +309,7 @@ Tower :: [].{
 	rod_width_at = |camera| (rod_w * metre_px(camera))
 
 	## The four legs, from the footprint's corners up to the apex.
-	legs : Tower.Mast, Geom.SpacePoint -> List(Paint.DrawCmd)
+	legs : Tower.Mast, Geom.SpacePoint -> List(Shapes.Shape)
 	legs = |mast, apex| List.join_map(
 		corners,
 		|corner| rod(
@@ -321,7 +322,7 @@ Tower :: [].{
 	)
 
 	## The ring of rods round the mast at height `h`.
-	ring : Tower.Mast, F64 -> List(Paint.DrawCmd)
+	ring : Tower.Mast, F64 -> List(Shapes.Shape)
 	ring = |mast, h| List.join_map(
 		corners,
 		|corner| rod(
@@ -335,7 +336,7 @@ Tower :: [].{
 
 	## A ring at every stage below the top, bottom first, leaving out those
 	## the earth has hidden.
-	rings : Tower.Mast -> List(Paint.DrawCmd)
+	rings : Tower.Mast -> List(Shapes.Shape)
 	rings = |mast| List.join_map(
 		ring_heights_from(stage_height),
 		|h| if (h <= mast.sunk) [] else ring(mast, h),
@@ -349,7 +350,7 @@ Tower :: [].{
 
 	## The crossed braces of the lowest stages, bottom first. A stage the
 	## earth has partly hidden starts its braces at the horizon.
-	braces : Tower.Mast -> List(Paint.DrawCmd)
+	braces : Tower.Mast -> List(Shapes.Shape)
 	braces = |mast| List.join_map(brace_stages_from(0), |stage| brace_stage(mast, stage))
 
 	brace_stages_from : I64 -> List(I64)
@@ -358,7 +359,7 @@ Tower :: [].{
 		brace_stages_from((stage + 1)),
 	)
 
-	brace_stage : Tower.Mast, I64 -> List(Paint.DrawCmd)
+	brace_stage : Tower.Mast, I64 -> List(Shapes.Shape)
 	brace_stage = |mast, stage| {
 		stage_bottom = (I64.to_f64(stage) * stage_height)
 		stage_top = (stage_bottom + stage_height)
@@ -396,7 +397,7 @@ Tower :: [].{
 		stage_bottom : F64,
 		stage_top : F64,
 		hidden_fraction : F64,
-	} -> List(Paint.DrawCmd)
+	} -> List(Shapes.Shape)
 	brace_pair = |
 		mast,
 		{
@@ -434,7 +435,7 @@ Tower :: [].{
 
 	## The beacon on the apex, at its brightness; too dim or too small, it
 	## isn't drawn.
-	beacon : Tower.Mast, { apex : Geom.SpacePoint, brightness : F64 } -> List(Paint.DrawCmd)
+	beacon : Tower.Mast, { apex : Geom.SpacePoint, brightness : F64 } -> List(Shapes.Shape)
 	beacon = |mast, { apex, brightness }| {
 		apex_on_screen = Camera.project(
 			apex,
@@ -467,7 +468,7 @@ Tower :: [].{
 		cam_focal : F64,
 		view_w : F64,
 		beacon_phase : F64,
-	} -> List(Paint.DrawCmd)
+	} -> List(Shapes.Shape)
 	draw = |
 		{
 			footprint,

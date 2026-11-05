@@ -6,6 +6,7 @@ import CatStills
 import Paint
 import Stills
 import Screen
+import lib.Shapes
 
 CatDraw :: [].{
 
@@ -30,7 +31,7 @@ CatDraw :: [].{
 	}
 
 	## One polygon of the still, on screen.
-	polygon : CatDraw.Anchor, Stills.StillPoly -> List(Paint.DrawCmd)
+	polygon : CatDraw.Anchor, Stills.StillPoly -> List(Shapes.Shape)
 	polygon = |anchor, poly|
 		if poly.pts.len().to_i64_wrap() > max_cat_pts {
 			[]
@@ -39,7 +40,7 @@ CatDraw :: [].{
 		}
 
 	## A still's polygons on screen, in order.
-	polygons : CatDraw.Anchor, List(Stills.StillPoly) -> List(Paint.DrawCmd)
+	polygons : CatDraw.Anchor, List(Stills.StillPoly) -> List(Shapes.Shape)
 	polygons = |anchor, polys| polys.join_map(|poly| polygon(anchor, poly))
 
 	## The cat standing `right` and `forward` of the camera, `height` tall,
@@ -52,7 +53,7 @@ CatDraw :: [].{
 		lift : F64,
 		cam_focal : F64,
 		view_w : F64,
-	} -> List(Paint.DrawCmd)
+	} -> List(Shapes.Shape)
 	draw = |
 		{
 			right,

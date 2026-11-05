@@ -1,7 +1,6 @@
 ## SafariShapes builds Safari's whole frame as shapes. The vocabulary is in
 ## lib/Shapes.roc, which every canvas app shares. This module knows what is
 ## behind the ride: the sky's gradient, the grass, and the sun's glow and disc.
-import Paint
 import Sky
 import lib.Brush
 import Screen
@@ -76,7 +75,7 @@ SafariShapes :: [].{
 
 	## The frame in paint order: the sky, the grass, the sun, then the ride's
 	## shapes.
-	frame : List(Paint.DrawCmd),
+	frame : List(Shapes.Shape),
 	{
 		sky_top_color : I64,
 		sky_horizon_color : I64,

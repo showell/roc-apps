@@ -101,7 +101,7 @@ solid_got = {
 	c = CatDraw.polygon(
 		standing,
 		poly_of(3),
-	).first() ?? crash "CatDrawSpec: a triangle is one command"
+	).first() ?? crash "CatDrawSpec: a triangle is one shape"
 	[
 		ShapeRead.flat_color_of(c),
 		ShapeRead.pts_of(c).len().to_i64_wrap(),
@@ -114,7 +114,7 @@ solid_want = [9, 6]
 polys_got : List(I64)
 polys_got = {
 	two = CatDraw.polygons(standing, [poly_of(3), poly_of(4)])
-	second = two.get(1) ?? crash "CatDrawSpec: two polygons are two commands"
+	second = two.get(1) ?? crash "CatDrawSpec: two polygons are two shapes"
 	[
 		CatDraw.polygons(
 			standing,
@@ -134,13 +134,13 @@ polys_want = [2, 0, 8]
 
 ## The cat `forward` metres ahead, `height` tall, in `pose` and raised by
 ## `lift`, through a 500 px focal length on a 960 px view.
-cat_commands : {
+cat_shapes : {
 	forward : F64,
 	height : F64,
 	pose : Cat.Pose,
 	lift : F64,
 } -> I64
-cat_commands = |
+cat_shapes = |
 	{
 		forward,
 		height,
@@ -157,9 +157,9 @@ cat_commands = |
 	view_w: 960.0,
 }).len().to_i64_wrap()
 
-## How many commands a resting cat makes `forward` metres ahead.
-command_count : F64, F64 -> I64
-command_count = |forward, height| cat_commands({
+## How many shapes a resting cat makes `forward` metres ahead.
+shape_count : F64, F64 -> I64
+shape_count = |forward, height| cat_shapes({
 	forward,
 	height,
 	pose: Rest,
@@ -168,9 +168,9 @@ command_count = |forward, height| cat_commands({
 
 size_got : List(I64)
 size_got = [
-	command_count(850.0, 1.7),
-	command_count(851.0, 1.7),
-	command_count(2000.0, 1.7),
+	shape_count(850.0, 1.7),
+	shape_count(851.0, 1.7),
+	shape_count(2000.0, 1.7),
 ]
 
 size_want : List(I64)
@@ -200,7 +200,7 @@ count_got = [
 		pose: Frozen,
 		lift: 0.0,
 	},
-].map(cat_commands)
+].map(cat_shapes)
 
 count_want : List(I64)
 count_want = [Rest, Rest, Frozen].map(|pose| CatStills.pose_polys(pose).len().to_i64_wrap())

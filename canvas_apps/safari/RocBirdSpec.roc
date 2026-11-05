@@ -7,9 +7,9 @@ app [main!] {
 import BirdStills
 import Camera
 import Grade
-import Paint
 import RocBird
 import ShapeRead
+import lib.Shapes
 
 camera : Camera.View
 camera = { cam_focal: 500.0, view_w: 960.0 }
@@ -24,11 +24,11 @@ level_bird = {
 	pose: Perched,
 }
 
-## The first corner of the first command, on screen.
-first_corner : List(Paint.DrawCmd) -> List(F64)
-first_corner = |commands| {
-	first_command = commands.first() ?? crash "RocBirdSpec: a bird draws commands"
-	ShapeRead.pts_of(first_command).take_first(2)
+## The first corner of the first shape, on screen.
+first_corner : List(Shapes.Shape) -> List(F64)
+first_corner = |shapes| {
+	first_shape = shapes.first() ?? crash "RocBirdSpec: a bird draws shapes"
+	ShapeRead.pts_of(first_shape).take_first(2)
 }
 
 height_got : List(F64)

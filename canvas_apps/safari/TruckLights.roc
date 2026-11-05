@@ -10,11 +10,12 @@ import Paint
 import lib.Trig
 import TruckShape
 import Screen
+import lib.Shapes
 
 TruckLights :: [].{
 
 	## The two headlight beams, each a little in from its side.
-	headlight_beams : TruckShape.TruckInView -> List(Paint.DrawCmd)
+	headlight_beams : TruckShape.TruckInView -> List(Shapes.Shape)
 	headlight_beams = |truck|
 		List.concat(
 			beam(truck, (truck.box.left + headlight_inset)),
@@ -22,7 +23,7 @@ TruckLights :: [].{
 		)
 
 	## The two brake lights, one in from each side of the trailer's back.
-	brake_lights : TruckShape.TruckInView -> List(Paint.DrawCmd)
+	brake_lights : TruckShape.TruckInView -> List(Shapes.Shape)
 	brake_lights = |truck| {
 		box = truck.box
 		List.concat(
@@ -170,7 +171,7 @@ glow_reach = 3.2
 
 ## The beam of the headlight at `across`, brightest at the lamp. A beam
 ## with a corner behind the camera is not drawn.
-beam : TruckShape.TruckInView, F64 -> List(Paint.DrawCmd)
+beam : TruckShape.TruckInView, F64 -> List(Shapes.Shape)
 beam = |truck, across| {
 	at_lamp = |height| TruckShape.point(
 		truck,
@@ -223,7 +224,7 @@ beam = |truck, across| {
 
 ## A brake light on the back of the trailer, from `left` to `right` across
 ## it: its glow, then the lamp over the glow.
-brake_light : TruckShape.TruckInView, { left : F64, right : F64 } -> List(Paint.DrawCmd)
+brake_light : TruckShape.TruckInView, { left : F64, right : F64 } -> List(Shapes.Shape)
 brake_light = |truck, { left, right }| {
 	rear = truck.box.rear
 	lamp =
@@ -254,7 +255,7 @@ brake_light = |truck, { left, right }| {
 
 ## The glow round a brake lamp. A lamp with a corner behind the camera has
 ## no glow; the lamp itself is cut at the near plane like the body's faces.
-glow : TruckShape.TruckInView, List(Geom.SpacePoint) -> List(Paint.DrawCmd)
+glow : TruckShape.TruckInView, List(Geom.SpacePoint) -> List(Shapes.Shape)
 glow = |truck, lamp|
 	if TruckLights.has_point_behind_camera(lamp) {
 		[]

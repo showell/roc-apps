@@ -4,8 +4,6 @@
 # what is here.
 #
 # **EVERY APP'S**, which is why it sits in lib/ rather than in safari/.
-# Reading a brush out of a Codex draw command is Safari's business and is in
-# SafariBrush.roc.
 #
 # Hand-written. The tags are shapes_canvas.js's, and so is what they mean: gradients
 # mix unpremultiplied, as the canvas specification says, and an offset outside

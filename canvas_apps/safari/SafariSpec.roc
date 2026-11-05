@@ -6,13 +6,13 @@ app [main!] {
 
 import Angle
 import Grade
-import Paint
 import Rider
 import Safari
 import Speed
 import Truck
 import World
 import ShapeRead
+import lib.Shapes
 
 segs : List(World.Segment)
 segs = seg_list(0)
@@ -180,7 +180,7 @@ not_done_got = [
 not_done_want : List(Bool)
 not_done_want = [True, True]
 
-frame : List(Paint.DrawCmd)
+frame : List(Shapes.Shape)
 frame = Safari.ride_frame(segs, Safari.ride_initial)
 
 frame_got : List(Bool)

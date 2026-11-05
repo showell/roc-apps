@@ -9,6 +9,7 @@ import EmojiStills
 import Paint
 import Stills
 import Screen
+import lib.Shapes
 
 Critter :: [].{
 
@@ -54,7 +55,7 @@ Critter :: [].{
 	screen_points = |anchor, points| points.map(|point| Critter.screen_point(anchor, point))
 
 	## One polygon of a still, filled with its colour or its gradient.
-	draw_poly : Critter.Anchor, Stills.StillPoly -> List(Paint.DrawCmd)
+	draw_poly : Critter.Anchor, Stills.StillPoly -> List(Shapes.Shape)
 	draw_poly = |anchor, poly|
 		if poly.pts.len() > max_still_points {
 			[]
@@ -67,12 +68,12 @@ Critter :: [].{
 		}
 
 	## A whole still, its polygons in order.
-	draw_still : Critter.Anchor, List(Stills.StillPoly) -> List(Paint.DrawCmd)
+	draw_still : Critter.Anchor, List(Stills.StillPoly) -> List(Shapes.Shape)
 	draw_still = |anchor, polys| polys.join_map(|poly| Critter.draw_poly(anchor, poly))
 
 	## A critter in view. An emoji faces left, so a critter facing right is
 	## its still mirrored. A critter less than a pixel tall isn't drawn.
-	draw : Billboards.Billboard, { cam_focal : F64, view_w : F64 } -> List(Paint.DrawCmd)
+	draw : Billboards.Billboard, { cam_focal : F64, view_w : F64 } -> List(Shapes.Shape)
 	draw = |critter, { cam_focal, view_w }| {
 		on_screen = |height| Camera.project(
 			{
@@ -121,7 +122,7 @@ draw_gradient_poly : Critter.Anchor,
 {
 	gradient : Stills.StillGrad,
 	points : List(Screen.Point),
-} -> List(Paint.DrawCmd)
+} -> List(Shapes.Shape)
 draw_gradient_poly = |anchor, { gradient, points }|
 	match gradient_shape(gradient) {
 		Linear => {

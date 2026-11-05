@@ -7,6 +7,7 @@ import Geom
 import Paint
 import lib.Trig
 import World
+import lib.Shapes
 
 TruckShape :: [].{
 
@@ -134,7 +135,7 @@ TruckShape :: [].{
 	{
 		color : I64,
 		corners : List(Geom.SpacePoint),
-	} -> List(Paint.DrawCmd)
+	} -> List(Shapes.Shape)
 	fill = |truck, { color, corners }| Paint.push_poly(
 		color,
 		Camera.project_all(

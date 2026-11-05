@@ -59,7 +59,7 @@ SafariApp :: [].{
 		)
 		List.prepend(
 			SafariShapes.frame(
-				SafariRide.commands(ride),
+				SafariRide.shapes(ride),
 				{
 					sky_top_color: SafariRide.sky_top(ride),
 					sky_horizon_color: SafariRide.sky_horizon(ride),

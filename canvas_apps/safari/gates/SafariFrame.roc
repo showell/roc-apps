@@ -28,26 +28,26 @@
 ## shapes_canvas.js, paints shapes with it.
 import game.Angle
 import BackdropPixels
-import game.Paint
 import game.Sky
 import game.Screen
 import PixelGrid
 import ScreenRoll
 import ShapesPixels
 import SunPixels
+import lib.Shapes
 
 SafariFrame :: [].{
 
 	## What a frame shows, in SafariRide's terms.
 	Scene : {
-		commands : List(Paint.DrawCmd),
+		shapes : List(Shapes.Shape),
 		roll : Angle.Lean,
 		sky_top : I64,
 		sky_horizon : I64,
 		sun : Sky.SunPos,
 	}
 
-	## The frame: the sky and the grass, the sun, then every command.
+	## The frame: the sky and the grass, the sun, then every shape.
 	paint : SafariFrame.Scene -> List(U32)
 	paint = |scene| {
 		roll = SafariFrame.screen_roll(scene.roll)
@@ -56,7 +56,7 @@ SafariFrame :: [].{
 			{ sky_top: scene.sky_top, sky_horizon: scene.sky_horizon },
 		)
 		$px = SunPixels.paint($px, { roll, sun: scene.sun })
-		ShapesPixels.paint($px, { roll, shapes: scene.commands })
+		ShapesPixels.paint($px, { roll, shapes: scene.shapes })
 	}
 
 	## Safari's screen, seen through the camera's roll.

@@ -6,6 +6,7 @@ import Camera
 import lib.DeviceMath
 import Geom
 import Paint
+import lib.Shapes
 
 GuardRail :: [].{
 
@@ -86,7 +87,7 @@ GuardRail :: [].{
 
 	## A quad on screen, cut at the camera's near plane; a quad with fewer
 	## than three corners left in front of the camera draws nothing.
-	draw : GuardRail.RailPoly, { cam_focal : F64, view_w : F64 } -> List(Paint.DrawCmd)
+	draw : GuardRail.RailPoly, { cam_focal : F64, view_w : F64 } -> List(Shapes.Shape)
 	draw = |quad, { cam_focal, view_w }| {
 		in_front = Geom.clip_near(quad.corners)
 		if in_front.len() < 3 {

@@ -6,7 +6,7 @@ import BirdFlight
 import BirdStills
 import Camera
 import Critter
-import Paint
+import lib.Shapes
 
 RocBird :: [].{
 
@@ -29,7 +29,7 @@ RocBird :: [].{
 
 	## A bird on screen, its feet where it is. Its still is unflipped: a bird
 	## from a left-hand tree crosses the road toward +x, the way its beak points.
-	draw : RocBird.PlacedBird, Camera.View -> List(Paint.DrawCmd)
+	draw : RocBird.PlacedBird, Camera.View -> List(Shapes.Shape)
 	draw = |bird, camera| {
 		feet = Camera.project(
 			{

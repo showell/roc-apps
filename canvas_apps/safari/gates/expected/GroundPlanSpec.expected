@@ -6,5 +6,5 @@ gp-across ok 4
 gp-along  ok 4
 gp-seam   ok 3
 gp-strip  ok 3
-gp-cmd    ok 1
+gp-shape  ok 1
 gp-points ok 2

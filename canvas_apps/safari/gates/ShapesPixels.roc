@@ -4,9 +4,9 @@
 ## paints every proof frame through this module, and ShapesFrame paints each
 ## one a second time with its polygons cut into triangles.
 ##
-## It paints only what Safari's draw commands become: polygons, triangle
-## pieces and unclipped flat discs, each laid over what is there. Any other
-## shape crashes, naming what it got.
+## It paints only what Safari's ride draws: polygons, triangle pieces and
+## unclipped flat discs, each laid over what is there. Any other shape
+## crashes, naming what it got.
 import lib.Brush
 import lib.Shapes
 import ScanlineFill
@@ -48,7 +48,7 @@ paint_shape = |pixels, { roll, shape }|
 			color = match d.fill {
 				Flat(flat) => flat
 				Skip | Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) =>
-					crash "ShapesPixels: a command's disc with a gradient"
+					crash "ShapesPixels: a disc with a gradient"
 			}
 			match d.clip {
 				Anywhere =>
@@ -61,17 +61,17 @@ paint_shape = |pixels, { roll, shape }|
 							color,
 						},
 					)
-				Within(_) => crash "ShapesPixels: a command's disc clipped to a rectangle"
+				Within(_) => crash "ShapesPixels: a disc clipped to a rectangle"
 			}
 		}
-		Rect(_) => crash "ShapesPixels: a command cut into a rectangle"
+		Rect(_) => crash "ShapesPixels: a rectangle among the ride's shapes"
 		# ScanlineFill lays every pixel over what is there, so Over is the mode
 		# it is always in, and Add is light it can't paint.
 		Blend(Over) => pixels
-		Blend(Add) => crash "ShapesPixels: a command lit in Add mode"
-		Image(_) => crash "ShapesPixels: a command cut into an image"
-		# The roll is the caller's; the game's lean mark is not a command.
-		View(_) => crash "ShapesPixels: a command cut into a view mark"
+		Blend(Add) => crash "ShapesPixels: a shape lit in Add mode"
+		Image(_) => crash "ShapesPixels: an image among the ride's shapes"
+		# The roll is the caller's, so the game's lean mark never reaches here.
+		View(_) => crash "ShapesPixels: a view mark among the ride's shapes"
 	}
 
 ## The triangles, six numbers each, all filled with one brush.

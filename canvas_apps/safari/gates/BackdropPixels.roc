@@ -1,7 +1,7 @@
 ## BackdropPixels paints the sky and the grass, the first layer of a frame's
 ## pixels for SafariFrame (see SafariFrame for more context). The mountains
-## are not part of it: they are draw commands, which the game and SafariFrame
-## both paint on top.
+## are not part of it: they are shapes, which the game and SafariFrame both
+## paint on top.
 import lib.Brush
 import PixelColor
 import PixelGrid

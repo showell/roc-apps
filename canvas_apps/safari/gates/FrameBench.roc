@@ -1,5 +1,5 @@
 ## FrameBench is a native bench for the frame: it builds the world, rides N
-## steps, renders each frame, and prints the total number of draw commands
+## steps, renders each frame, and prints the total number of shapes
 ## and whether the ride finished. It is for `perf` on a native --opt=speed
 ## build, where the wasm module has no names; the gate doesn't run it.
 ##
@@ -13,21 +13,21 @@ import game.World
 import game.Safari
 import game.Rider
 
-## The ride after `steps` more frames, and the draw commands counted so far.
-BenchRun : { ride : Safari.Ride, commands : U64 }
+## The ride after `steps` more frames, and the shapes counted so far.
+BenchRun : { ride : Safari.Ride, shapes : U64 }
 
 ride_frames : List(World.Segment), { bench_run : BenchRun, steps_left : I64 } -> BenchRun
 ride_frames = |world, { bench_run, steps_left: steps }|
 	if steps <= 0 {
 		bench_run
 	} else {
-		cmds = Safari.ride_frame(world, bench_run.ride)
+		frame_shapes = Safari.ride_frame(world, bench_run.ride)
 		ride_frames(
 			world,
 			{
 				bench_run: {
 					ride: Safari.ride_next(world, bench_run.ride),
-					commands: bench_run.commands + List.len(cmds),
+					shapes: bench_run.shapes + List.len(frame_shapes),
 				},
 				steps_left: steps - 1,
 			},
@@ -45,11 +45,11 @@ main! = |args| {
 	done = ride_frames(
 		world,
 		{
-			bench_run: { ride: Safari.ride_initial, commands: 0 },
+			bench_run: { ride: Safari.ride_initial, shapes: 0 },
 			steps_left: steps,
 		},
 	)
 	finished = if (Rider.is_finished(done.ride.rider, world)) "yes" else "no"
-	echo!("${done.commands.to_str()} commands over the frames; finished ${finished}\n")
+	echo!("${done.shapes.to_str()} shapes over the frames; finished ${finished}\n")
 	Ok({})
 }

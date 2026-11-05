@@ -11,6 +11,7 @@ import Tree
 import Screen
 import ShapeRead
 import lib.Brush
+import lib.Shapes
 
 table_got : List(F64)
 table_got = List.join([
@@ -97,18 +98,18 @@ metric_want = [
 	288.0,
 ]
 
-trunk : List(Paint.DrawCmd)
+trunk : List(Shapes.Shape)
 trunk = Tree.draw_trunk(outline, SharpCorners)
 
-round_trunk : List(Paint.DrawCmd)
+round_trunk : List(Shapes.Shape)
 round_trunk = Tree.draw_trunk(outline, RoundCorners)
 
-## The one command a list holds.
-only : List(Paint.DrawCmd) -> Paint.DrawCmd
-only = |commands|
-	match commands {
-		[command] => command
-		_ => crash "TreeSpec: a trunk or a tier is one command"
+## The one shape a list holds.
+only : List(Shapes.Shape) -> Shapes.Shape
+only = |shapes|
+	match shapes {
+		[shape] => shape
+		_ => crash "TreeSpec: a trunk or a tier is one shape"
 	}
 
 trunk_got : List(F64)

@@ -6,10 +6,10 @@ import Geom
 import Ground
 import Joint
 import Num_
-import Paint
 import Pond
 import Scenery
 import World
+import lib.Shapes
 
 GroundPlan :: [].{
 
@@ -50,7 +50,7 @@ GroundPlan :: [].{
 		pose : Frame.Pose,
 		cam_focal : F64,
 		view_w : F64,
-	} -> List(Paint.DrawCmd)
+	} -> List(Shapes.Shape)
 	draw = |
 		{
 			world,
@@ -87,7 +87,7 @@ GroundPlan :: [].{
 	}
 
 	## The road along the segment at `position` in the chain, chunk by chunk.
-	segment_road : GroundPlan.View, Frame.ChainPosition -> List(Paint.DrawCmd)
+	segment_road : GroundPlan.View, Frame.ChainPosition -> List(Shapes.Shape)
 	segment_road = |view, position| {
 		segment_length = segment_in_chain(view, position).length
 		chunk_count = GroundPlan.chunks_along(segment_length)
@@ -138,7 +138,7 @@ GroundPlan :: [].{
 }
 
 ## A patch of ground in `color`, as the view's camera sees it.
-paint : GroundPlan.View, { corners : List(Geom.RiderPoint), color : I64 } -> List(Paint.DrawCmd)
+paint : GroundPlan.View, { corners : List(Geom.RiderPoint), color : I64 } -> List(Shapes.Shape)
 paint = |view, { corners, color }| Ground.draw({
 	corners,
 	color,
@@ -154,7 +154,7 @@ segment_in_chain = |view, position|
 ## The ground along the segment at `position` in the chain: its road, the
 ## bend into the next segment if the chain goes on, and its pond if it
 ## ends at one.
-segment_ground : GroundPlan.View, Frame.ChainPosition -> List(Paint.DrawCmd)
+segment_ground : GroundPlan.View, Frame.ChainPosition -> List(Shapes.Shape)
 segment_ground = |view, position| {
 	segment = segment_in_chain(view, position)
 	place = InChain(position)
@@ -176,7 +176,7 @@ segment_ground = |view, position| {
 
 ## The bend into the rider's segment from the segment at `index`, and the
 ## pond that segment ends at, if it has one.
-ground_behind : GroundPlan.View, World.SegmentIndex -> List(Paint.DrawCmd)
+ground_behind : GroundPlan.View, World.SegmentIndex -> List(Shapes.Shape)
 ground_behind = |view, index| {
 	segment = index.segment_in(view.road.world)
 	before = Frame.place_behind(segment)
@@ -188,7 +188,7 @@ ground_behind = |view, index| {
 }
 
 ## A bend's paving: the road just before it, then the corner it cuts.
-bend_ground : GroundPlan.View, Joint.PlacedBend -> List(Paint.DrawCmd)
+bend_ground : GroundPlan.View, Joint.PlacedBend -> List(Shapes.Shape)
 bend_ground = |view, bend|
 	List.concat(
 		paint(view, { corners: approach(view, bend), color: GroundPlan.road_color }),
@@ -251,7 +251,7 @@ pond_ground : GroundPlan.View,
 {
 	segment : World.Segment,
 	place : Frame.SegmentPlace,
-} -> List(Paint.DrawCmd)
+} -> List(Shapes.Shape)
 pond_ground = |view, { segment, place }|
 	if Scenery.is_pond(segment.exit_creature) {
 		on_map = |outline|

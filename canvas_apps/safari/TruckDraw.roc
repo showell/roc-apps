@@ -1,9 +1,9 @@
 ## TruckDraw draws the truck ahead on the road: its headlight beams first,
 ## then its body, then its brake lights, so each paints over the one before.
-import Paint
 import TruckBody
 import TruckLights
 import TruckShape
+import lib.Shapes
 
 TruckDraw :: [].{
 
@@ -17,7 +17,7 @@ TruckDraw :: [].{
 		lights : TruckDraw.Lights,
 		cam_focal : F64,
 		view_w : F64,
-	} -> List(Paint.DrawCmd)
+	} -> List(Shapes.Shape)
 	draw = |
 		{
 			road,
