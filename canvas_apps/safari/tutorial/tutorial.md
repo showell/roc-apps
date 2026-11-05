@@ -467,6 +467,118 @@ Lamps are to the truck what a pose is to a cat. The sighting carries them, and t
 
 That's the clock-driven things. Each is a function with a `Clock` in its arguments, and nothing about them outlives the frame.
 
+## The bird
+
+The bird is Roc's logo, sitting on a treetop. As the rider comes near it takes off, flies across the road and ahead, and drops onto a tree on the far side. It's a rider-driven thing like the cat, and it cost much less, which is the point of this chapter.
+
+```dot
+digraph bird {
+  node [shape=box, fontname="Helvetica"];
+  BirdFlight [style=bold];
+  World -> BirdFlight;
+  BirdSighting -> BirdFlight;
+  BirdSighting -> RocBird;
+  BirdSighting -> Animation;
+  RocBird -> BirdFlight;
+  RocBird -> BirdStills;
+  RocBird -> Critter;
+  BirdStills -> BirdFlight;
+  BirdStills -> Stills;
+  Critter -> Stills;
+  BirdFlight -> Animation;
+}
+```
+
+The family has the cat's shape. `BirdFlight` says what a bird does and imports nothing that draws it. `BirdSighting` finds it, `RocBird` draws it, and `BirdStills` holds its pictures. `Animation` is underneath, and most of what the bird does is ask `Animation` for something.
+
+The only `+` in `BirdFlight` is a tree's distance plus the shortest hop. The rest is constants, tags and one timeline.
+
+*[The bird widget goes here: drag the rider's gap and watch the bird fly.]*
+
+### Two rules
+
+A rule turns where the rider is into a `Stage`. The cat's rule was `over_beats`, and the bird's is `over_gap`. The first argument of each is destructured in place, and both answer the same tag union. `over_gap` has a shorter job, so here it is first. `Fraction.clamp` is the right door because a rider far off gives a ratio well outside 0 to 1, and `<=` works on a `Fraction` because `Fraction` defines `is_lte`:
+
+{{code Animation.over_gap}}
+
+The bird calls it with two constants, and passes no speed, since this rule doesn't take one:
+
+{{code BirdFlight.flight_stage}}
+
+Beside it, again, is the cat's rule. Its second argument is the whole `Approach`:
+
+{{code Animation.over_beats}}
+
+The two say different things about the same road:
+
+| | `over_gap` | `over_beats` |
+|---|---|---|
+| It reads | The gap | The gap and the speed |
+| It starts | 60 metres off, always | Earlier for a faster rider |
+| It ends | 15 metres off, always | `buffer` metres short, always |
+| It's for | Something that reacts to how close the rider is | Something that has to finish in time |
+| A stopped rider | Leaves the bird hanging where the gap puts it | Holds the cat at the start of its crossing |
+
+The extra case in `over_beats` is there because its ratio divides by a stretch that a stopped rider makes zero. `over_gap` divides only by constants, so it has no such case. That hanging bird is real: nothing in `over_gap` knows a bird can't hover. The rider doesn't stop near one on this route, so it doesn't come up. [check: confirm the rider never stops inside a bird's 45 metres, including the pigs on the third segment.]
+
+Now the one-liners, side by side. A bird's and a cat's `moment_at` have the same shape:
+
+{{code BirdFlight.moment_at}}
+
+{{code Cat.moment_at}}
+
+Each is a rule's `Stage` handed to a timeline's `moment`. Neither half knows which other half it's been paired with. Call this *rule and score*: one function says how far along things are, and one piece of data says what that looks like. It's composable in the plain sense, because a third critter can take either rule with a timeline of its own, and a new rule would work with both timelines already written.
+
+### A score one beat long
+
+`BirdFlight` sets the length of a flight to one beat, so that a cut on the timeline is simply a share of the flight:
+
+{{code BirdFlight.flight_beats}}
+
+The bird needs one small helper. It sits below the block, so it's private, and it builds an `Alternates` from two poses. `Animation.Looks(BirdFlight.Pose)` is `Looks(pose)` with the type parameter filled in, which is how the cat's timeline type came to fit a bird:
+
+{{code BirdFlight.wings_beating}}
+
+Then the score. `Animation.Timeline.( ... )` wraps a record in the nominal type, and `Side(WingsUp)` is a tag whose payload is another tag. `flight_beats.portion(takeoff_share)` is a method on the opaque `Beats`, and `landing_share.complement()` is one on the opaque `Fraction`. It reads almost like configuration, and most of it is:
+
+{{code BirdFlight.flight_timeline from "length: flight_beats," to "finally: Holds(Diving),"}}
+
+Wings beat all the way through the first two stretches. `count` runs from the start of the timeline, so the wing beat carries on across the cut from side-on to from-behind without restarting.
+
+The path track shows why a `Track` has `finally`. A flight is one unbroken curve, so it has no cuts at all:
+
+{{code BirdFlight.flight_timeline from "path: {" to "rise: flight_arc,"}}
+
+That `Arc` is a tag, and has nothing to do with the `Arc` module that comes later. `path_spot` is where it's played. `{ ..on_line, lift: ... }` is record update: the spot on the straight line, with one field replaced. The curve is `4t(1 - t)`, a parabola that's 0 at both ends and 1 at the middle, so `rise` means what its comment says. This is the polite end of the math chapter.
+
+{{code Animation.path_spot}}
+
+The stills are data too. Nested tags get checked all the way down, so a `match` that forgets `Away(WingsDown)` is a compile-time error. The function reads as a table, and there's nothing else in it:
+
+{{code BirdStills.pose_polys}}
+
+`RocBird.draw` hands that to `Critter.draw_still`, which is what a cow uses, and a bird's feet go through the same `Camera.project` as a tree's top. That's the drawing.
+
+### Finding a tree
+
+Where a bird flies is decided once, when the world is built. `route_from` shows the plain end of Roc's list functions. `keep_if` takes a closure, and `is_far_enough` is one, closing over `from`. `first()` answers a `Try`, which is one of the few that Safari Ride opens by hand. A route is a tag union with two tags: a bird with no tree to fly to `Sits`, which beats a flight of length zero.
+
+{{code BirdFlight.route_from}}
+
+The caller's return type is written in place, a tag union that exists for this one function and fits straight into the `crossing` field of a segment:
+
+{{code BirdFlight.crossing_among}}
+
+And that's called from a `match` in the middle of a record, which is a reminder that `match` is an expression. The plan's plain `BirdCrosses` tag comes in, and `BirdFlies(route)` goes out:
+
+{{code World.built_segment from "crossing: match plan.crossing {" to "QuietRoad => QuietRoad"}}
+
+Each frame, a sighting reads the route back. `|` in a pattern covers two tags with one branch. The crossing is matched in full, so a third kind of crossing would stop here until someone says what a bird sighting should do about it:
+
+{{code BirdSighting.segment_bird}}
+
+Nothing in this chapter is new machinery, and that's what it shows. The four bird modules come to 421 lines, a quarter of them coordinates for the stills, and `Animation` didn't change to admit a bird. [check: the line count once the expect work lands, and the share that's stills.]
+
 ## Zooming back out
 
 *[This chapter ties the tour together once the stepped things, the proof and the platform are written. It returns to the flipbook and the first diagram: the clock ticks, and everything composes from three stored fields.]*
