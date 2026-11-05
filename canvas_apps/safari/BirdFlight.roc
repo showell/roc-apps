@@ -3,8 +3,9 @@
 ## across the road, to the next tree on the far side, and perches there. Where
 ## it is depends only on how far the rider is from the tree it left, as the
 ## cat's crossing does, so stepping back through a ride shows the same bird.
-import Easing
-import lib.Trig
+## A bird's spots are places on its segment, as its trees' are, because its
+## flight is its own and no other bird shares it.
+import Animation
 import Scenery
 
 BirdFlight :: [].{
@@ -27,15 +28,6 @@ BirdFlight :: [].{
 		Away(BirdFlight.WingBeat),
 		Diving,
 	]
-
-	## The bird at a moment: how it looks, how far along its segment it is, its
-	## place across the road, and how high its feet are.
-	BirdState : {
-		pose : BirdFlight.Pose,
-		along : F64,
-		across : F64,
-		lift : F64,
-	}
 
 	## How far the rider is from the bird's tree when it takes off.
 	takeoff_gap : F64
@@ -104,13 +96,13 @@ BirdFlight :: [].{
 			Sits(tree) => tree.along
 		}
 
-	## How far through its flight the bird is, from 0 to 1, with the rider
-	## `gap` metres from the tree it left.
-	flight_progress : F64 -> F64
-	flight_progress = |gap| Easing.clamp01((takeoff_gap - gap) / (takeoff_gap - landing_gap))
+	## Where the bird's flight has got to, with the rider `gap` metres from the
+	## tree it left.
+	flight_stage : F64 -> Animation.Stage
+	flight_stage = |gap| Animation.over_gap({ starts_at: takeoff_gap, ends_at: landing_gap }, gap)
 
 	## The bird on `route` with the rider `gap` metres from the tree it starts on.
-	state_on : BirdFlight.Route, F64 -> BirdFlight.BirdState
+	state_on : BirdFlight.Route, F64 -> Animation.Moment(BirdFlight.Pose)
 	state_on = |route, gap|
 		match route {
 			Flies(flight) => state(flight, gap)
@@ -118,63 +110,71 @@ BirdFlight :: [].{
 		}
 
 	## The bird with the rider `gap` metres from the tree it left.
-	state : BirdFlight.Flight, F64 -> BirdFlight.BirdState
-	state = |flight, gap| {
-		progress = flight_progress(gap)
-		if progress <= 0.0 {
-			sitting_on(flight.from)
-		} else if progress >= 1.0 {
-			sitting_on(flight.to)
-		} else {
-			flying(flight, progress)
-		}
-	}
+	state : BirdFlight.Flight, F64 -> Animation.Moment(BirdFlight.Pose)
+	state = |flight, gap| flight_timeline(flight).moment(flight_stage(gap))
 
 	## The bird as it sits on top of `tree`.
-	sitting_on : Scenery.Tree -> BirdFlight.BirdState
-	sitting_on = |tree| {
-		pose: Perched,
-		along: tree.along,
-		across: tree.across,
-		lift: tree.height,
-	}
+	sitting_on : Scenery.Tree -> Animation.Moment(BirdFlight.Pose)
+	sitting_on = |tree| { pose: Perched, spot: tree_top(tree) }
 
-	## How the bird looks `progress` of the way through its flight.
-	pose_at : F64 -> BirdFlight.Pose
-	pose_at = |progress|
-		if progress > 1.0 - landing_share {
-			Diving
-		} else if progress < takeoff_share {
-			Side(wing_beat_at(progress))
-		} else {
-			Away(wing_beat_at(progress))
-		}
+	## A flight's timeline is one step long, so a cut on it is a share of the
+	## flight.
+	whole_flight : F64
+	whole_flight = 1.0
+
+	## The whole of a flight: side on as it takes off, then seen from behind,
+	## beating its wings all the way until it dives, on one smooth path that
+	## rises in the middle.
+	flight_timeline : BirdFlight.Flight -> Animation.Timeline(BirdFlight.Pose)
+	flight_timeline = |{ from, to }|
+		Animation.Timeline.(
+			{
+				steps: whole_flight,
+				before: sitting_on(from),
+				after: sitting_on(to),
+				looks: {
+					stretches: [
+						{
+							until: Before(takeoff_share),
+							plays: wings_beating({ up: Side(WingsUp), down: Side(WingsDown) }),
+						},
+						{
+							until: Through(1.0 - landing_share),
+							plays: wings_beating({ up: Away(WingsUp), down: Away(WingsDown) }),
+						},
+					],
+					finally: Holds(Diving),
+				},
+				path: {
+					stretches: [],
+					finally: Arc({
+						line: {
+							from: tree_top(from),
+							to: tree_top(to),
+							ease: Smooth,
+						},
+						rise: flight_arc,
+					}),
+				},
+			},
+		)
 }
 
-## Where the wings are `progress` of the way through a flight.
-wing_beat_at : F64 -> BirdFlight.WingBeat
-wing_beat_at = |progress|
-	if Trig.r_sin(progress * BirdFlight.wing_beats * Trig.two_pi) > 0.0 {
-		WingsUp
-	} else {
-		WingsDown
-	}
-
-## The bird `progress` of the way along a smooth path that rises in the middle.
-flying : BirdFlight.Flight, F64 -> BirdFlight.BirdState
-flying = |{ from, to }, progress| {
-	eased = Easing.smoothstep(progress)
-	between = |start, end|
-		Easing.lerp({
-			from: start,
-			to: end,
-			fraction: eased,
-		})
-	arc = BirdFlight.flight_arc * 4.0 * progress * (1.0 - progress)
-	{
-		pose: BirdFlight.pose_at(progress),
-		along: between(from.along, to.along),
-		across: between(from.across, to.across),
-		lift: between(from.height, to.height) + arc,
-	}
+## The spot on top of `tree`.
+tree_top : Scenery.Tree -> Animation.Spot
+tree_top = |tree| {
+	along: tree.along,
+	across: tree.across,
+	lift: tree.height,
 }
+
+## A bird that shows `up` and `down` in turn, as its wings beat through the
+## flight.
+wings_beating : { up : BirdFlight.Pose, down : BirdFlight.Pose } -> Animation.Looks(BirdFlight.Pose)
+wings_beating = |{ up, down }|
+	Alternates({
+		up,
+		down,
+		count: BirdFlight.wing_beats,
+		over: BirdFlight.whole_flight,
+	})

@@ -1,6 +1,7 @@
 ## BirdPlan finds the Roc birds the rider can see in a frame: each one on a
 ## segment of the chain ahead, placed where its flight has got to, if it is in
 ## front of the camera and tall enough on screen to draw.
+import Animation
 import BirdFlight
 import DepthSort
 import Frame
@@ -71,15 +72,15 @@ segment_bird = |view, position|
 bird_in_view : BirdPlan.View,
 {
 	position : Frame.ChainPosition,
-	state : BirdFlight.BirdState,
+	state : Animation.Moment(BirdFlight.Pose),
 } -> List(RocBird.PlacedBird)
 bird_in_view = |view, { position, state }| {
 	seen = Frame.rider_point_ahead(
 		road_of(view),
 		{
 			position,
-			along: state.along,
-			across: state.across + Scenery.lane_width / 2.0,
+			along: state.spot.along,
+			across: state.spot.across + Scenery.lane_width / 2.0,
 		},
 	)
 	height_px = RocBird.height_px({ forward: seen.forward, cam_focal: view.cam_focal })
@@ -92,7 +93,7 @@ bird_in_view = |view, { position, state }| {
 			{
 				right: seen.right,
 				forward: seen.forward,
-				lift: state.lift,
+				lift: state.spot.lift,
 				pose: state.pose,
 			},
 		]

@@ -5,6 +5,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Animation
 import BirdFlight
 import Grade
 import Scenery
@@ -87,13 +88,22 @@ target_got = List.join([
 target_want : List(F64)
 target_want = [140.0, 6.0, 125.0, 6.0]
 
+## How far through its flight a bird with the rider `gap` metres off is.
+progress_at : F64 -> F64
+progress_at = |gap|
+	match BirdFlight.flight_stage(gap) {
+		Waiting => 0.0
+		Playing(progress) => progress
+		Past(_) => 1.0
+	}
+
 progress_got : List(F64)
 progress_got = [
-	BirdFlight.flight_progress(BirdFlight.takeoff_gap + 1.0),
-	BirdFlight.flight_progress(BirdFlight.takeoff_gap),
-	BirdFlight.flight_progress((BirdFlight.takeoff_gap + BirdFlight.landing_gap) / 2.0),
-	BirdFlight.flight_progress(BirdFlight.landing_gap),
-	BirdFlight.flight_progress(BirdFlight.landing_gap - 1.0),
+	progress_at(BirdFlight.takeoff_gap + 1.0),
+	progress_at(BirdFlight.takeoff_gap),
+	progress_at((BirdFlight.takeoff_gap + BirdFlight.landing_gap) / 2.0),
+	progress_at(BirdFlight.landing_gap),
+	progress_at(BirdFlight.landing_gap - 1.0),
 ]
 
 progress_want : List(F64)
@@ -104,12 +114,12 @@ ends_got = {
 	before = BirdFlight.state(flight, 100.0)
 	after = BirdFlight.state(flight, 0.0)
 	[
-		before.along,
-		before.across,
-		before.lift,
-		after.along,
-		after.across,
-		after.lift,
+		before.spot.along,
+		before.spot.across,
+		before.spot.lift,
+		after.spot.along,
+		after.spot.across,
+		after.spot.lift,
 	]
 }
 
@@ -120,9 +130,9 @@ middle_got : List(F64)
 middle_got = {
 	middle = BirdFlight.state(flight, (BirdFlight.takeoff_gap + BirdFlight.landing_gap) / 2.0)
 	[
-		middle.along,
-		middle.across,
-		middle.lift,
+		middle.spot.along,
+		middle.spot.across,
+		middle.spot.lift,
 	]
 }
 
@@ -145,7 +155,7 @@ pose_got = List.concat(
 		(0.87, Away(WingsDown)),
 		(0.89, Diving),
 		(0.95, Diving),
-	].map(|(progress, pose)| BirdFlight.pose_at(progress) == pose),
+	].map(|(progress, pose)| BirdFlight.flight_timeline(flight).at_step(progress).pose == pose),
 )
 
 pose_want : List(Bool)
