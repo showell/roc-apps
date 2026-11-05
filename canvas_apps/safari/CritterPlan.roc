@@ -31,9 +31,11 @@ CritterPlan :: [].{
 	sightings = |road|
 		match Frame.segment_behind(road) {
 			Previous(segment_behind) =>
-				List.concat(
-					CritterPlan.sightings_ahead(road),
-					CritterPlan.sightings_behind(road, segment_behind),
+				CritterPlan.sightings_ahead(road).concat(
+					CritterPlan.sightings_behind(
+						road,
+						segment_behind,
+					),
 				)
 			AtRouteStart => CritterPlan.sightings_ahead(road)
 		}
@@ -48,18 +50,18 @@ CritterPlan :: [].{
 	## animals, its corner's animals, then its pond's ducks.
 	sightings_at : Frame.RoadView, Frame.ChainPosition -> List(Billboards.Sighting)
 	sightings_at = |road, position|
-		List.join([
+		[
 			CritterPlan.farm_sightings(road, position),
 			CritterPlan.safari_sightings(road, position),
 			CritterPlan.duck_sightings(road, position),
-		])
+		].join()
 
 	## The cows, then the pigs, of the segment at `position` in the chain.
 	farm_sightings : Frame.RoadView, Frame.ChainPosition -> List(Billboards.Sighting)
 	farm_sightings = |road, position|
 		if position.is_within_first(farm_reach) {
 			segment = segment_at(road, position)
-			List.concat(segment.cows, segment.pigs)
+			segment.cows.concat(segment.pigs)
 				.map(|critter| sight_critter(road, { place: InChain(position), critter }))
 		} else {
 			[]
@@ -98,10 +100,10 @@ CritterPlan :: [].{
 	sightings_behind : Frame.RoadView, World.SegmentIndex -> List(Billboards.Sighting)
 	sightings_behind = |road, index| {
 		segment = index.segment_in(road.world)
-		List.concat(
-			corner_sightings(road, { place: Frame.place_behind(segment), segment }),
-			CritterPlan.ducks_behind(road, segment),
-		)
+		corner_sightings(
+			road,
+			{ place: Frame.place_behind(segment), segment },
+		).concat(CritterPlan.ducks_behind(road, segment))
 	}
 
 	## The ducks of `segment`, the one before the rider's, if it has a pond.

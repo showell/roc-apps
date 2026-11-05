@@ -162,12 +162,12 @@ Mountains :: [].{
 			heading,
 			cam_focal,
 		}
-		List.join([
+		[
 			silhouette(sight, { height_at: west_range, color: color_at_dusk(rock_west, dusk) }),
 			silhouette(sight, { height_at: north_range, color: color_at_dusk(rock, dusk) }),
 			snow(sight, snow_color(dusk)),
 			silhouette(sight, { height_at: ground_base, color: land }),
-		])
+		].join()
 	}
 }
 

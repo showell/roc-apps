@@ -40,10 +40,10 @@ TruckDraw :: [].{
 				On => TruckLights.brake_lights(truck)
 				Off => []
 			}
-		List.join([
+		[
 			beams,
 			TruckBody.draw(truck),
 			brake_lights,
-		])
+		].join()
 	}
 }

@@ -279,8 +279,7 @@ Tower :: [].{
 
 	## The four legs, from the footprint's corners up to the apex.
 	legs : Tower.Mast, Geom.SpacePoint -> List(Shapes.Shape)
-	legs = |mast, apex| List.join_map(
-		corners,
+	legs = |mast, apex| corners.join_map(
 		|corner| rod(
 			mast.view,
 			{
@@ -292,8 +291,7 @@ Tower :: [].{
 
 	## The ring of rods round the mast at height `h`.
 	ring : Tower.Mast, F64 -> List(Shapes.Shape)
-	ring = |mast, h| List.join_map(
-		corners,
+	ring = |mast, h| corners.join_map(
 		|corner| rod(
 			mast.view,
 			{
@@ -306,31 +304,31 @@ Tower :: [].{
 	## A ring at every stage below the top, bottom first, leaving out those
 	## the earth has hidden.
 	rings : Tower.Mast -> List(Shapes.Shape)
-	rings = |mast| List.join_map(
-		ring_heights_from(stage_height),
-		|h| if (h <= mast.sunk) [] else ring(mast, h),
+	rings = |mast| ring_heights_from(stage_height).join_map(
+		|h| if (h <= mast.sunk) [] else ring(
+			mast,
+			h,
+		),
 	)
 
 	ring_heights_from : F64 -> List(F64)
-	ring_heights_from = |h| if (h >= tower_height) [] else List.concat(
-		[h],
+	ring_heights_from = |h| if (h >= tower_height) [] else [h].concat(
 		ring_heights_from((h + stage_height)),
 	)
 
 	## The crossed braces of the lowest stages, bottom first. A stage the
 	## earth has partly hidden starts its braces at the horizon.
 	braces : Tower.Mast -> List(Shapes.Shape)
-	braces = |mast| List.join_map(brace_stages_from(0), |stage| brace_stage(mast, stage))
+	braces = |mast| brace_stages_from(0).join_map(|stage| brace_stage(mast, stage))
 
 	brace_stages_from : I64 -> List(I64)
-	brace_stages_from = |stage| if (stage >= brace_stages) [] else List.concat(
-		[stage],
+	brace_stages_from = |stage| if (stage >= brace_stages) [] else [stage].concat(
 		brace_stages_from((stage + 1)),
 	)
 
 	brace_stage : Tower.Mast, I64 -> List(Shapes.Shape)
 	brace_stage = |mast, stage| {
-		stage_bottom = (I64.to_f64(stage) * stage_height)
+		stage_bottom = (stage.to_f64() * stage_height)
 		stage_top = (stage_bottom + stage_height)
 		if stage_top <= mast.sunk {
 			[]
@@ -343,8 +341,7 @@ Tower :: [].{
 					) - stage_bottom
 				) / stage_height
 			)
-			List.join_map(
-				corners,
+			corners.join_map(
 				|corner| brace_pair(
 					mast,
 					{
@@ -399,7 +396,7 @@ Tower :: [].{
 				to: corner_at(mast, { corner, height_on_mast: stage_top }),
 			},
 		)
-		List.concat(brace_up, brace_down)
+		brace_up.concat(brace_down)
 	}
 
 	## The beacon on the apex, at its brightness; too dim or too small, it
@@ -462,12 +459,12 @@ Tower :: [].{
 				forward: center.forward,
 				height: (tower_height - sunk),
 			}
-			List.join([
+			[
 				legs(mast, apex),
 				rings(mast),
 				braces(mast),
 				beacon(mast, { apex, brightness: beacon_brightness }),
-			])
+			].join()
 		}
 	}
 }

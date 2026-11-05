@@ -112,7 +112,7 @@ TruckShape :: [].{
 			0,
 			sides,
 		),
-	).map(|corner| ((I64.to_f64(corner) / I64.to_f64(sides)) * Trig.two_pi))
+	).map(|corner| ((corner.to_f64() / sides.to_f64()) * Trig.two_pi))
 
 	## A flat-coloured polygon on the truck, cut at the near plane and
 	## projected.

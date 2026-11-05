@@ -40,7 +40,7 @@ RailPlan :: [].{
 	leg_steps : F64 -> U32
 	leg_steps = |distance| {
 		steps = Num_.round_real(distance)
-		F64.to_u32_wrap(if (steps < 1.0) 1.0 else steps)
+		(if (steps < 1.0) 1.0 else steps).to_u32_wrap()
 	}
 
 	## `steps` + 1 points evenly spaced from `from` to `to`, both included.
@@ -173,7 +173,7 @@ rail_path = |road, bend| {
 		},
 	)
 	apex = Joint.joint_apex(road, bend)
-	List.join([
+	[
 		RailPlan.run_up(
 			road,
 			{
@@ -185,5 +185,5 @@ rail_path = |road, bend| {
 		RailPlan.rail_leg({ from: end_before, to: apex }),
 		RailPlan.rail_leg({ from: apex, to: start_after }),
 		RailPlan.run_out(road, { place: bend.after, across: outer_edge }),
-	])
+	].join()
 }

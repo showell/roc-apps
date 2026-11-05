@@ -118,9 +118,9 @@ Sky :: [].{
 	## A colour as 0xRRGGBB.
 	pack : Sky.Rgb -> I64
 	pack = |c| {
-		red_bits = I64.shl_wrap(F64.to_i64_wrap(c.r), 16)
-		green_bits = I64.shl_wrap(F64.to_i64_wrap(c.g), 8)
-		I64.bitwise_or(I64.bitwise_or(red_bits, green_bits), F64.to_i64_wrap(c.b))
+		red_bits = c.r.to_i64_wrap().shl_wrap(16)
+		green_bits = c.g.to_i64_wrap().shl_wrap(8)
+		red_bits.bitwise_or(green_bits).bitwise_or(c.b.to_i64_wrap())
 	}
 
 	## The sky's colour at the top of the frame, as 0xRRGGBB.

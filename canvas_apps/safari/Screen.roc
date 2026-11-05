@@ -13,10 +13,10 @@ Screen :: [].{
 
 	## The size again as floats, for the geometry.
 	width : F64
-	width = I64.to_f64(width_px)
+	width = width_px.to_f64()
 
 	height : F64
-	height = I64.to_f64(height_px)
+	height = height_px.to_f64()
 
 	## The camera looks at the middle of the screen, across its width.
 	center_x : F64

@@ -75,10 +75,7 @@ TowerPlan :: [].{
 	in_view : TowerPlan.View -> List(TowerPlan.TowerItem)
 	in_view = |view|
 		match Frame.segment_behind(view.road) {
-			Previous(segment_behind) => List.concat(
-				along_chain(view),
-				tower_behind(view, segment_behind),
-			)
+			Previous(segment_behind) => along_chain(view).concat(tower_behind(view, segment_behind))
 			AtRouteStart => along_chain(view)
 		}
 
@@ -105,7 +102,7 @@ TowerPlan :: [].{
 				beacon_key: index.to_i64(),
 			},
 		)
-		List.concat(end_tower, mid_tower(view, position))
+		end_tower.concat(mid_tower(view, position))
 	}
 
 	## The mast halfway along the segment at `position` in the chain, if it has

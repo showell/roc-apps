@@ -125,9 +125,13 @@ Tree :: [].{
 		if seen.height_px < 1.0 {
 			[]
 		} else {
-			List.concat(
-				draw_trunk(seen, tree.trunk),
-				tiers.join_map(|tier| draw_tier(tree, { seen, tier })),
+			draw_trunk(seen, tree.trunk).concat(
+				tiers.join_map(
+					|tier| draw_tier(
+						tree,
+						{ seen, tier },
+					),
+				),
 			)
 		}
 	}
@@ -236,11 +240,11 @@ Tree :: [].{
 			[],
 			|sorted, point|
 				match sorted.find_first_index(|placed| is_before(point, placed)) {
-					Ok(at) => List.join([
+					Ok(at) => [
 						sorted.take_first(at),
 						[point],
 						sorted.drop_first(at),
-					])
+					].join()
 					Err(NotFound) => sorted.append(point)
 				},
 		)
@@ -248,7 +252,7 @@ Tree :: [].{
 
 ## Whether `a` comes before `b`: left of it, or above it at the same x.
 is_before : Screen.Point, Screen.Point -> Bool
-is_before = |a, b| a.x < b.x or (F64.to_bits(a.x) == F64.to_bits(b.x) and a.y < b.y)
+is_before = |a, b| a.x < b.x or (a.x.to_bits() == b.x.to_bits() and a.y < b.y)
 
 ## The hull with its last points taken off while they don't turn left on the
 ## way to `point`.
@@ -270,8 +274,8 @@ trim_hull = |hull, point|
 ## before plus a step, not a multiple of the step: the two round differently.
 ring_angles : List(F64)
 ring_angles = {
-	step = (Trig.two_pi / I64.to_f64(Tree.ring_n))
-	walked = List.repeat(step, I64.to_u64_wrap((Tree.ring_n - 1))).fold(
+	step = (Trig.two_pi / Tree.ring_n.to_f64())
+	walked = List.repeat(step, (Tree.ring_n - 1).to_u64_wrap()).fold(
 		{ angle: 0.0, angles: [0.0] },
 		|so_far, turn| {
 			angle = (so_far.angle + turn)

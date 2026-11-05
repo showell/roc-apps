@@ -51,7 +51,7 @@ GroundPlan :: [].{
 	chunks_along : F64 -> U32
 	chunks_along = |length| {
 		chunks = Num_.ceil_real(length / GroundPlan.road_chunk_length)
-		F64.to_u32_wrap(if (chunks < 1.0) 1.0 else chunks)
+		(if (chunks < 1.0) 1.0 else chunks).to_u32_wrap()
 	}
 
 	## The road along the segment at `position` in the chain, chunk by chunk.
@@ -134,11 +134,11 @@ segment_ground = |view, position| {
 				Joint.bend_out_of(segment, { before: place, after: InChain(position.next()) }),
 			)
 		}
-	List.join([
+	[
 		GroundPlan.segment_road(view, position),
 		bend,
 		pond_ground(view, { segment, place }),
-	])
+	].join()
 }
 
 ## The bend into the rider's segment from the segment at `index`, and the
@@ -148,18 +148,20 @@ ground_behind = |view, index| {
 	segment = index.segment_in(view.road.world)
 	before = Frame.place_behind(segment)
 	after = InChain(Frame.ChainPosition.first)
-	List.concat(
-		bend_ground(view, Joint.bend_out_of(segment, { before, after })),
-		pond_ground(view, { segment, place: before }),
-	)
+	bend_ground(
+		view,
+		Joint.bend_out_of(segment, { before, after }),
+	).concat(pond_ground(view, { segment, place: before }))
 }
 
 ## A bend's paving: the road just before it, then the corner it cuts.
 bend_ground : Frame.Viewpoint, Joint.PlacedBend -> List(Shapes.Shape)
 bend_ground = |view, bend|
-	List.concat(
-		paint(view, { corners: approach(view, bend), color: GroundPlan.road_color }),
-		paint(view, { corners: bend_corner(view, bend), color: GroundPlan.road_color }),
+	paint(view, { corners: approach(view, bend), color: GroundPlan.road_color }).concat(
+		paint(
+			view,
+			{ corners: bend_corner(view, bend), color: GroundPlan.road_color },
+		),
 	)
 
 ## The last `approach_length` of the road before a bend.
@@ -232,10 +234,10 @@ pond_ground = |view, { segment, place }|
 					},
 				),
 			)
-		List.concat(
-			paint(view, { corners: on_map(Pond.water_outline), color: Pond.water_color }),
-			paint(view, { corners: on_map(Pond.bank), color: Pond.bank_color }),
-		)
+		paint(
+			view,
+			{ corners: on_map(Pond.water_outline), color: Pond.water_color },
+		).concat(paint(view, { corners: on_map(Pond.bank), color: Pond.bank_color }))
 	} else {
 		[]
 	}
