@@ -203,3 +203,8 @@ Arc :: [].{
 		}
 	)
 }
+
+expect Arc.no_frames.to_f64() == 1000000000.0
+expect Arc.straighten_margin == 0.05
+expect Arc.min_forward_progress == 25.0
+expect Arc.turn_danger_steps.to_f64() == 2000.0

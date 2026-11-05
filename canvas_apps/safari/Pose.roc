@@ -39,3 +39,13 @@ Pose :: [].{
 		focus: Fraction.zero,
 	}
 }
+
+expect Pose.initial_rider_state.segment.to_i64() == 0
+expect Pose.initial_rider_state.along == 0.0
+expect Pose.initial_rider_state.across == 0.0
+expect Pose.initial_rider_state.yaw.to_radians() == 0.0
+expect Pose.initial_rider_state.speed.to_metres_a_step() == 0.3
+expect Pose.initial_rider_state.tilt.to_radians() == 0.0
+expect Pose.initial_rider_state.heading.to_radians() == 0.0
+expect Pose.initial_rider_state.gaze_yaw.to_radians() == 0.0
+expect Pose.initial_rider_state.focus.to_f64() == 0.0

@@ -102,3 +102,41 @@ LeanSearch :: [].{
 			},
 		)
 }
+
+expect LeanSearch.lean_target(0.5) == 0.15
+expect LeanSearch.lean_target((0.0 - 0.5)) == -0.15
+expect LeanSearch.lean_target(2.0) == 0.6
+expect LeanSearch.lean_target((0.0 - 2.0)) == -0.6
+expect LeanSearch.lean_target(0.04) == 0.012
+expect LeanSearch.lean_target((0.0 - 0.04)) == -0.012
+expect LeanSearch.lean_target(0.0) == 0.04
+expect LeanSearch.lean_target(0.039) == 0.04
+expect LeanSearch.lean_target((0.0 - 0.039)) == -0.04
+expect LeanSearch.lean_target(2.0) > 0.0
+expect LeanSearch.lean_target(2.0) < 2.0
+expect LeanSearch.lean_target((0.0 - 2.0)) < 0.0
+expect LeanSearch.lean_target((0.0 - 2.0)) > (0.0 - 2.0)
+expect LeanSearch.lean_target(0.0) > 0.0
+
+expect LeanSearch.asymptote_tuning == 0.3
+expect LeanSearch.center_lane_epsilon == 0.04
+expect LeanSearch.max_tilt_correction.to_radians() == 0.017453292519943295
+expect LeanSearch.lean_search_iters == 12
+
+## An arc ending at `end_across`, on `shoulder` or not.
+outcome : Arc.Shoulder, F64 -> Arc.ArcOutcome
+outcome = |shoulder, end_across| {
+	shoulder,
+	forward: 10.0,
+	crossed: False,
+	end_across,
+	frames: Arc.no_frames,
+}
+
+expect LeanSearch.want_more_right(outcome(ShoulderLeft, 99.0), 0.5)
+expect LeanSearch.want_more_right(outcome(ShoulderLeft, (0.0 - 99.0)), 0.5)
+expect !(LeanSearch.want_more_right(outcome(ShoulderRight, 99.0), 0.5))
+expect !(LeanSearch.want_more_right(outcome(ShoulderRight, (0.0 - 99.0)), 0.5))
+expect LeanSearch.want_more_right(outcome(ShoulderNone, 0.4), 0.5)
+expect !(LeanSearch.want_more_right(outcome(ShoulderNone, 0.6), 0.5))
+expect !(LeanSearch.want_more_right(outcome(ShoulderNone, 0.5), 0.5))
