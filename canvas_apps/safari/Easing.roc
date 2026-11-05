@@ -1,5 +1,6 @@
 ## The sums for moving smoothly between two values. A fraction runs from 0 at
 ## the start of a move to 1 at its end.
+import lib.DeviceMath
 
 Easing :: [].{
 
@@ -32,4 +33,8 @@ Easing :: [].{
 	## and slower than `t` near either end.
 	smoothstep : F64 -> F64
 	smoothstep = |t| t * t * (3.0 - 2.0 * t)
+
+	## A fraction that starts fast and slows: `t` to the power of three quarters.
+	three_quarter_power : F64 -> F64
+	three_quarter_power = |t| DeviceMath.real_sqrt(t * DeviceMath.real_sqrt(t))
 }

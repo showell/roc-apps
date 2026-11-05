@@ -36,6 +36,7 @@ Every module that began as an emission says so in its header.
 | `SafariFrame.roc` | a frame painted into pixels in Roc, for the proof tools below |
 | `Safari.roc` and the chapter modules | the world, the route, the rider, the animals, the scenery, and how each is drawn |
 | `RocBird.roc` | the bird, the first thing here that was never Codex, with `BirdFlight.roc`, `BirdPlan.roc` and `BirdStills.roc` |
+| `Animation.roc` | what the cat and the bird share: a rule that turns where the rider is into a stage, and a timeline that turns a stage into a moment |
 | `*Spec.roc` | the spec apps, each chapter's checks, graded by `gates/` |
 | `gates/` | test code the game never runs: the gate, `run.shale`, and its lints; the specs' expected outputs; the proof tools and the modules only they use, which reach the game's modules through the package `game.roc` |
 
