@@ -144,21 +144,26 @@ Geom :: [].{
 	clip_near = |polygon| {
 		next_corners = polygon.drop_first(1).concat(polygon.take_first(1))
 		edges = polygon.map2(next_corners, |from, to| { from, to })
-		edges.join_map(clipped_edge)
+		edges.fold(List.with_capacity(2 * polygon.len()), clip_edge_onto)
 	}
 }
 
-## What one edge of a polygon adds to the clipped polygon: its first corner if
-## that is in view, then the point where it crosses the near plane if it does.
-clipped_edge : { from : Geom.SpacePoint, to : Geom.SpacePoint } -> List(Geom.SpacePoint)
-clipped_edge = |{ from, to }| {
+## `clipped` with what one edge of a polygon adds to it: the edge's first
+## corner if that is in view, then the point where the edge crosses the near
+## plane if it does.
+clip_edge_onto : List(Geom.SpacePoint),
+{
+	from : Geom.SpacePoint,
+	to : Geom.SpacePoint,
+} -> List(Geom.SpacePoint)
+clip_edge_onto = |clipped, { from, to }| {
 	is_from_in_view = from.forward >= Geom.near_plane
 	is_to_in_view = to.forward >= Geom.near_plane
-	kept = if (is_from_in_view) [from] else []
+	with_corner = if (is_from_in_view) clipped.append(from) else clipped
 	if is_from_in_view == is_to_in_view {
-		kept
+		with_corner
 	} else {
-		kept.append(near_plane_crossing({ from, to }))
+		with_corner.append(near_plane_crossing({ from, to }))
 	}
 }
 
