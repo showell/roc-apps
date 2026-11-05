@@ -5,7 +5,7 @@
 ## keys, the pause, and the frame leaned by the roll.
 import Angle
 import World
-import Safari
+import RideMoment
 import Sky
 import Rider
 import CanvasRoll
@@ -18,8 +18,8 @@ import lib.Shapes
 SafariRide :: [].{
 	Model : {
 		world : List(World.Segment),
-		ride : Safari.Ride,
-		hist : List(Safari.Ride),
+		ride : RideMoment,
+		hist : List(RideMoment),
 	}
 
 	# How far back a step back can go: 2048 frames, about half the route.
@@ -34,7 +34,7 @@ SafariRide :: [].{
 	init : SafariRide.Model
 	init = {
 		world: World.segments,
-		ride: Safari.ride_initial,
+		ride: RideMoment.initial,
 		hist: [],
 	}
 
@@ -55,7 +55,7 @@ SafariRide :: [].{
 			}
 		{
 			world: m.world,
-			ride: Safari.ride_next(m.world, m.ride),
+			ride: RideMoment.next(m.world, m.ride),
 			hist: hist,
 		}
 	}
@@ -75,7 +75,7 @@ SafariRide :: [].{
 	## The frame's shapes in paint order. A bird is sorted by depth with
 	## everything else, so a nearer tree hides it.
 	shapes : SafariRide.Model -> List(Shapes.Shape)
-	shapes = |m| Safari.ride_frame(m.world, m.ride)
+	shapes = |m| RideMoment.frame(m.world, m.ride)
 
 	# The camera roll: the whole frame, backdrop and shapes, turns
 	# by minus this about the screen's centre.
@@ -90,5 +90,5 @@ SafariRide :: [].{
 	sky_horizon = |m| Sky.horizon_color(m.ride.clock)
 
 	sun : SafariRide.Model -> Sky.SunPos
-	sun = |m| Safari.ride_sun(m.world, m.ride)
+	sun = |m| RideMoment.sun(m.world, m.ride)
 }

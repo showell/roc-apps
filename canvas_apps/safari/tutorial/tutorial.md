@@ -53,21 +53,21 @@ digraph system {
     drawing [label="the drawing\nItemDraw, CatDraw, RocBird, Tree, ...", style=dashed];
     sightings [label="the sightings\nRender, CatSighting, BirdSighting, TreeSighting, ...", style=dashed];
   }
-  app -> Safari;
-  Safari -> Rider;
-  Safari -> Truck;
+  app -> RideMoment;
+  RideMoment -> Rider;
+  RideMoment -> Truck;
   Rider -> World;
   Truck -> World;
   World -> critters;
   World -> scenery;
-  Safari -> sky;
-  Safari -> drawing;
+  RideMoment -> sky;
+  RideMoment -> drawing;
   drawing -> sightings;
   sightings -> World [style=dotted, constraint=false];
 }
 ```
 
-There are two halves. The ride is `Rider`, `Truck` and `World`, with `World` composing the route from its scenery and critters. It knows nothing of drawing. The view is everything that turns the ride into a picture: the sightings find what's in sight, and the drawing paints it. The dotted arrow is the view reading the ride, and no arrow goes the other way. `Safari` sits over both, holding the ride and stepping it, and the browser only sees `SafariApp`, which hands it a list of shapes each frame.
+There are two halves. The ride is `Rider`, `Truck` and `World`, with `World` composing the route from its scenery and critters. It knows nothing of drawing. The view is everything that turns the ride into a picture: the sightings find what's in sight, and the drawing paints it. The dotted arrow is the view reading the ride, and no arrow goes the other way. `RideMoment` sits over both, holding one moment of the ride and stepping to the next, and the browser only sees `SafariApp`, which hands it a list of shapes each frame.
 
 ### What's a sighting?
 
@@ -81,9 +81,9 @@ A sighting answers one question each frame: which of these can the rider see rig
 
 ## All that's stored
 
-A record alias is the plainest way to name a shape in Roc, and it's all this needs. `Safari` itself is a void module: `Safari :: [].{ ... }` is a type with no values, and its block holds the definitions other modules can reach.
+A record is the plainest shape in Roc, and it's all this needs. `RideMoment := { ... }.{ ... }` makes the module's own type out of one: a nominal type, which can carry a block, and the block holds the definitions other modules can reach.
 
-{{code Safari.Ride}}
+{{code RideMoment.RideMoment from "One moment of the ride" to "}.{"}}
 
 Those three fields are the whole of what Safari Ride keeps from one step to the next. The cat has no state, and neither does the bird, the sun or the beacons. Each frame works them all out again from the rider, the truck and the clock.
 
@@ -91,13 +91,13 @@ That gives three kinds of moving thing, and the tour is organized around them:
 
 | Kind | Things | How it works |
 |---|---|---|
-| Stepped | The rider, the truck | Stored in `Ride`, and moved once a step from where it was |
+| Stepped | The rider, the truck | Stored in `RideMoment`, and moved once a step from where it was |
 | Rider-driven | The cat, the bird | Worked out from how the rider is approaching, with nothing stored |
 | Clock-driven | The sun, the sky, the beacons, the headlights | Worked out from the clock, with nothing stored |
 
 Trees and cows are a fourth kind, the easiest of all: they never change.
 
-Purity makes some things free. Safari Ride can pause and step backward, because a step back only needs an older `Ride`. The cat follows along, since it was never anywhere but where the rider's position puts it, and the sun rises again.
+Purity makes some things free. Safari Ride can pause and step backward, because a step back only needs an older moment. The cat follows along, since it was never anywhere but where the rider's position puts it, and the sun rises again.
 
 The game itself has no effectful functions at all. It has no `!` names, no `=>` arrows, no `?` and no `where`. Effects live in the platform, which is the last chapter.
 
@@ -144,7 +144,7 @@ The sky is the simplest thing that moves, because it depends on one number.
 digraph sky {
   node [shape=box, fontname="Helvetica"];
   Sky [style=bold];
-  Safari -> Sky;
+  RideMoment -> Sky;
   SafariRide -> Sky;
   SafariShapes -> Sky;
   Mountains -> Sky;
@@ -333,7 +333,7 @@ digraph screen {
 
 A sighting decides how a thing looks, and drawing only paints it. That rule runs through all of Safari Ride.
 
-Notice what isn't in this chapter: a cat in `Ride`, an update loop, or a flag saying the cat has already crossed. Roc doesn't force that, but pure functions make the stateless version the easy one to write, and every `->` shows it stayed that way.
+Notice what isn't in this chapter: a cat in `RideMoment`, an update loop, or a flag saying the cat has already crossed. Roc doesn't force that, but pure functions make the stateless version the easy one to write, and every `->` shows it stayed that way.
 
 ## Credits
 

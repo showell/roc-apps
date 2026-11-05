@@ -1,5 +1,5 @@
-# SafariSpec -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+# RideMomentSpec -- originally emitted from Codex by rocemit; the Roc is the
+# program now and this file is edited here (safari/README.md).
 app [main!] {
 	lib: "../lib/main.roc",
 }
@@ -8,8 +8,8 @@ import Angle
 import Clock
 import Fraction
 import Grade
+import RideMoment
 import Rider
-import Safari
 import Speed
 import Truck
 import World
@@ -34,37 +34,37 @@ seg_list_onto = |i, acc| (
 
 start_got : List(F64)
 start_got = [
-	Safari.ride_initial.clock.to_f64(),
-	Safari.ride_initial.rider.along,
-	Safari.ride_initial.rider.across,
-	Safari.ride_initial.rider.speed.to_metres_a_step(),
-	Safari.ride_initial.truck.route_position,
-	Safari.ride_initial.truck.speed.to_metres_a_step(),
+	RideMoment.initial.clock.to_f64(),
+	RideMoment.initial.rider.along,
+	RideMoment.initial.rider.across,
+	RideMoment.initial.rider.speed.to_metres_a_step(),
+	RideMoment.initial.truck.route_position,
+	RideMoment.initial.truck.speed.to_metres_a_step(),
 ]
 
 start_want : List(F64)
 start_want = [0.0, 0.0, 0.0, 0.3, 500.0, 0.3]
 
 start_index_got : List(I64)
-start_index_got = [Safari.ride_initial.rider.segment.to_i64()]
+start_index_got = [RideMoment.initial.rider.segment.to_i64()]
 
 start_index_want : List(I64)
 start_index_want = [0]
 
 start_flag_got : List(Bool)
 start_flag_got = [
-	Safari.ride_initial.truck.brake_lights == On,
-	Rider.is_finished(Safari.ride_initial.rider, segs),
+	RideMoment.initial.truck.brake_lights == On,
+	Rider.is_finished(RideMoment.initial.rider, segs),
 ]
 
 start_flag_want : List(Bool)
 start_flag_want = [False, False]
 
-after_one_step : Safari.Ride
-after_one_step = Safari.ride_next(segs, Safari.ride_initial)
+after_one_step : RideMoment
+after_one_step = RideMoment.next(segs, RideMoment.initial)
 
-after_two_steps : Safari.Ride
-after_two_steps = Safari.ride_next(segs, after_one_step)
+after_two_steps : RideMoment
+after_two_steps = RideMoment.next(segs, after_one_step)
 
 step_got : List(F64)
 step_got = [
@@ -78,8 +78,8 @@ step_want = [1.0, 2.0, 1.0]
 
 moved_got : List(Bool)
 moved_got = [
-	(after_one_step.rider.along > Safari.ride_initial.rider.along),
-	(after_one_step.truck.route_position > Safari.ride_initial.truck.route_position),
+	(after_one_step.rider.along > RideMoment.initial.rider.along),
+	(after_one_step.truck.route_position > RideMoment.initial.truck.route_position),
 	(after_two_steps.rider.along > after_one_step.rider.along),
 ]
 
@@ -91,14 +91,14 @@ order_got = (
 	{
 		old_dist = World.distance_along_route(
 			segs,
-			{ index: Safari.ride_initial.rider.segment, along: Safari.ride_initial.rider.along },
+			{ index: RideMoment.initial.rider.segment, along: RideMoment.initial.rider.along },
 		)
 		new_dist = World.distance_along_route(
 			segs,
 			{ index: after_one_step.rider.segment, along: after_one_step.rider.along },
 		)
 		against_new = Truck.advance(
-			Safari.ride_initial.truck,
+			RideMoment.initial.truck,
 			{
 				rider_distance: new_dist,
 				world: segs,
@@ -106,7 +106,7 @@ order_got = (
 			},
 		)
 		against_old = Truck.advance(
-			Safari.ride_initial.truck,
+			RideMoment.initial.truck,
 			{
 				rider_distance: old_dist,
 				world: segs,
@@ -126,7 +126,7 @@ order_got = (
 order_want : List(Bool)
 order_want = [True, True, True]
 
-done : Safari.Ride
+done : RideMoment
 done = {
 	rider: {
 		segment: World.SegmentIndex.number(18),
@@ -150,13 +150,13 @@ done = {
 restart_got : List(F64)
 restart_got = (
 	{
-		r = Safari.ride_next(segs, done)
+		moment = RideMoment.next(segs, done)
 		[
-			r.clock.to_f64(),
-			r.rider.along,
-			r.rider.speed.to_metres_a_step(),
-			r.truck.route_position,
-			r.rider.focus.to_f64(),
+			moment.clock.to_f64(),
+			moment.rider.along,
+			moment.rider.speed.to_metres_a_step(),
+			moment.truck.route_position,
+			moment.rider.focus.to_f64(),
 		]
 	}
 )
@@ -167,7 +167,7 @@ restart_want = [0.0, 0.0, 0.3, 500.0, 0.0]
 restart_flag_got : List(Bool)
 restart_flag_got = [
 	Rider.is_finished(done.rider, segs),
-	Safari.ride_next(segs, done).truck.brake_lights == On,
+	RideMoment.next(segs, done).truck.brake_lights == On,
 ]
 
 restart_flag_want : List(Bool)
@@ -183,13 +183,13 @@ not_done_want : List(Bool)
 not_done_want = [True, True]
 
 frame : List(Shapes.Shape)
-frame = Safari.ride_frame(segs, Safari.ride_initial)
+frame = RideMoment.frame(segs, RideMoment.initial)
 
 frame_got : List(Bool)
 frame_got = [
 	(frame.len().to_i64_wrap() > 0),
-	(Safari.ride_frame(segs, after_one_step).len().to_i64_wrap() > 0),
-	(ShapeRead.pts_of(frame.first() ?? crash "SafariSpec: a frame draws").len() >= 6),
+	(RideMoment.frame(segs, after_one_step).len().to_i64_wrap() > 0),
+	(ShapeRead.pts_of(frame.first() ?? crash "RideMomentSpec: a frame draws").len() >= 6),
 ]
 
 frame_want : List(Bool)
@@ -197,7 +197,7 @@ frame_want = [True, True, True]
 
 sun_got : List(Bool)
 # The ride starts facing away from the sun.
-sun_got = [Safari.ride_sun(segs, Safari.ride_initial) == OutOfView]
+sun_got = [RideMoment.sun(segs, RideMoment.initial) == OutOfView]
 
 sun_want : List(Bool)
 sun_want = [True]
@@ -209,9 +209,9 @@ after_sunset = Clock.at_step(5700)
 ## The truck's lights at `clock`, with its brake lights left as given.
 lights_at : { clock : Clock, brake_lights : [On, Off] } -> Truck.Lights
 lights_at = |{ clock, brake_lights }|
-	Safari.truck_lights({
-		..Safari.ride_initial,
-		truck: { ..Safari.ride_initial.truck, brake_lights },
+	RideMoment.truck_lights({
+		..RideMoment.initial,
+		truck: { ..RideMoment.initial.truck, brake_lights },
 		clock,
 	})
 
