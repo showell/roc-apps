@@ -9,6 +9,7 @@ import Clock
 import DepthSort
 import Frame
 import Grade
+import Steps
 import TowerPlan
 import World
 
@@ -17,8 +18,8 @@ fixed_got = [
 	TowerPlan.tower_beyond,
 	TowerPlan.tower_right,
 	TowerPlan.mid_tower_left,
-	TowerPlan.beacon_period,
-	TowerPlan.beacon_stagger,
+	TowerPlan.beacon_period.to_f64(),
+	TowerPlan.beacon_stagger.to_f64(),
 ]
 
 fixed_want : List(F64)
@@ -156,15 +157,15 @@ long_where_want = [
 
 offsets_got : List(F64)
 offsets_got = [
-	TowerPlan.beacon_offset_for(0),
-	TowerPlan.beacon_offset_for(1),
-	TowerPlan.beacon_offset_for(2),
-	TowerPlan.beacon_offset_for(3),
-	TowerPlan.beacon_offset_for(4),
-	TowerPlan.beacon_offset_for(5),
-	TowerPlan.beacon_offset_for(10),
-	TowerPlan.beacon_offset_for(60),
-	TowerPlan.beacon_offset_for(120),
+	TowerPlan.beacon_offset_for(0).to_f64(),
+	TowerPlan.beacon_offset_for(1).to_f64(),
+	TowerPlan.beacon_offset_for(2).to_f64(),
+	TowerPlan.beacon_offset_for(3).to_f64(),
+	TowerPlan.beacon_offset_for(4).to_f64(),
+	TowerPlan.beacon_offset_for(5).to_f64(),
+	TowerPlan.beacon_offset_for(10).to_f64(),
+	TowerPlan.beacon_offset_for(60).to_f64(),
+	TowerPlan.beacon_offset_for(120).to_f64(),
 ]
 
 offsets_want : List(F64)
@@ -172,14 +173,14 @@ offsets_want = [0.0, 37.0, 74.0, 111.0, 28.0, 65.0, 10.0, 60.0, 0.0]
 
 bright_got : List(F64)
 bright_got = [
-	TowerPlan.beacon_brightness(0.0),
-	TowerPlan.beacon_brightness(60.0),
-	TowerPlan.beacon_brightness(30.0),
-	TowerPlan.beacon_brightness(90.0),
-	TowerPlan.beacon_brightness(120.0),
-	TowerPlan.beacon_brightness(180.0),
-	TowerPlan.beacon_brightness((0.0 - 60.0)),
-	TowerPlan.beacon_brightness((0.0 - 120.0)),
+	TowerPlan.beacon_brightness(Steps.of(0)),
+	TowerPlan.beacon_brightness(Steps.of(60)),
+	TowerPlan.beacon_brightness(Steps.of(30)),
+	TowerPlan.beacon_brightness(Steps.of(90)),
+	TowerPlan.beacon_brightness(Steps.of(120)),
+	TowerPlan.beacon_brightness(Steps.of(180)),
+	TowerPlan.beacon_brightness(Steps.of(300)),
+	TowerPlan.beacon_brightness(Steps.of(240)),
 ]
 
 bright_want : List(F64)
@@ -206,7 +207,7 @@ spread_got : List(F64)
 spread_got = List.concat(spread_at(Clock.start), spread_at(Clock.at_step(30)))
 
 spread_want : List(F64)
-spread_want = [0.0, 37.0, 74.0, 30.0, 67.0, 104.0].map(TowerPlan.beacon_brightness)
+spread_want = [0, 37, 74, 30, 67, 104].map(|phase| TowerPlan.beacon_brightness(Steps.of(phase)))
 
 behind_got : List(I64)
 behind_got = [

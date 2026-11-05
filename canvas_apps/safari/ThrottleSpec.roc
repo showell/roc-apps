@@ -10,6 +10,7 @@ import Arc
 import Grade
 import Pose
 import Speed
+import Steps
 import Throttle
 import lib.Trig
 import VehicleLimits
@@ -265,7 +266,7 @@ outcome = |sh| {
 	forward: 10.0,
 	crossed: False,
 	end_across: 0.0,
-	frames: 40.0,
+	frames: Steps.of(40),
 }
 
 road_got : List(Bool)
@@ -284,7 +285,7 @@ soon = {
 	forward: 10.0,
 	crossed: False,
 	end_across: 0.0,
-	frames: 2.0,
+	frames: Steps.of(2),
 }
 
 brake_got : List(Bool)
@@ -340,7 +341,7 @@ instant = {
 	forward: 0.0,
 	crossed: False,
 	end_across: 0.0,
-	frames: 0.0,
+	frames: Steps.zero,
 }
 
 zero_frames_got : List(Bool)

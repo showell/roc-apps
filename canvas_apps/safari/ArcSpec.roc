@@ -11,12 +11,13 @@ import Bike
 import Grade
 import Pose
 import Speed
+import Steps
 import VehicleLimits
 import World
 
 fixed_got : List(F64)
 fixed_got = [
-	Arc.no_frames,
+	Arc.no_frames.to_f64(),
 	Arc.straighten_margin,
 	Arc.min_forward_progress,
 ]
@@ -24,11 +25,11 @@ fixed_got = [
 fixed_want : List(F64)
 fixed_want = [1000000000.0, 0.05, 25.0]
 
-steps_got : List(I64)
-steps_got = [Arc.turn_danger_steps]
+steps_got : List(F64)
+steps_got = [Arc.turn_danger_steps.to_f64()]
 
-steps_want : List(I64)
-steps_want = [2000]
+steps_want : List(F64)
+steps_want = [2000.0]
 
 ## A test rider at the start of segment 0.
 StartingRider : {
@@ -78,7 +79,7 @@ straight_got : List(F64)
 straight_got = [
 	straight.forward,
 	straight.end_across,
-	straight.frames,
+	straight.frames.to_f64(),
 ]
 
 straight_want : List(F64)
@@ -97,7 +98,7 @@ wide_got : List(F64)
 wide_got = [
 	wide.forward,
 	wide.end_across,
-	wide.frames,
+	wide.frames.to_f64(),
 ]
 
 wide_want : List(F64)
@@ -116,7 +117,7 @@ stopped_got : List(F64)
 stopped_got = [
 	stopped.forward,
 	stopped.end_across,
-	stopped.frames,
+	stopped.frames.to_f64(),
 ]
 
 stopped_want : List(F64)
@@ -169,8 +170,8 @@ leaving_want = [1, (-1)]
 left_got : List(Bool)
 left_got = [
 	(leaning.frames < Arc.no_frames),
-	(leaning.frames < I64.to_f64(Arc.turn_danger_steps)),
-	(leaning.frames > 0.0),
+	(leaning.frames < Arc.turn_danger_steps),
+	(leaning.frames > Steps.zero),
 	(leaning.forward <= Arc.min_forward_progress),
 	(leaning.end_across > 0.0),
 	(other_way.end_across < 0.0),
@@ -181,7 +182,7 @@ left_want : List(Bool)
 left_want = [True, True, True, True, True, True, True]
 
 mirror_got : List(F64)
-mirror_got = [(leaning.frames - other_way.frames), (leaning.end_across + other_way.end_across)]
+mirror_got = [(leaning.frames.to_f64() - other_way.frames.to_f64()), (leaning.end_across + other_way.end_across)]
 
 mirror_want : List(F64)
 mirror_want = [0.0, 0.0]
@@ -242,10 +243,11 @@ main! = |_args| {
 			want: fixed_want,
 			tol: 0.0,
 		}),
-		Grade.ints({
+		Grade.reals({
 			name: "ar-steps ",
 			got: steps_got,
 			want: steps_want,
+			tol: 0.0,
 		}),
 		Grade.reals({
 			name: "ar-straig",

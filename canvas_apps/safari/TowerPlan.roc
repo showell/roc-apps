@@ -8,8 +8,8 @@ import Clock
 import DepthSort
 import Frame
 import Geom
-import Num_
 import Scenery
+import Steps
 import lib.Trig
 import World
 
@@ -51,24 +51,24 @@ TowerPlan :: [].{
 	max_vis_towers = 16
 
 	## A beacon blinks once in this many steps of the ride.
-	beacon_period : F64
-	beacon_period = 120.0
+	beacon_period : Steps
+	beacon_period = Steps.of(120)
 
 	## Each mast's blink starts this many steps past the last one's, a number
 	## that shares no factor with the period, so neighbours blink apart.
-	beacon_stagger : F64
-	beacon_stagger = 37.0
+	beacon_stagger : Steps
+	beacon_stagger = Steps.of(37)
 
 	## How far into its blink the mast with key `n` is when the ride's clock
 	## is 0.
-	beacon_offset_for : I64 -> F64
-	beacon_offset_for = |n| Num_.mod_real(n.to_f64() * beacon_stagger, beacon_period)
+	beacon_offset_for : U32 -> Steps
+	beacon_offset_for = |n| beacon_stagger.times(n).wrapped_to(beacon_period)
 
 	## How bright a beacon is `phase` steps into its blink, from 0 to 1.
-	beacon_brightness : F64 -> F64
+	beacon_brightness : Steps -> F64
 	beacon_brightness = |phase| {
-		wrapped = Num_.mod_real(phase, beacon_period)
-		((1.0 - Trig.r_cos((((2.0 * Trig.pi) * wrapped) / beacon_period))) / 2.0)
+		wrapped = phase.wrapped_to(beacon_period).to_f64()
+		((1.0 - Trig.r_cos((((2.0 * Trig.pi) * wrapped) / beacon_period.to_f64()))) / 2.0)
 	}
 
 	## The masts in view: those along the chain, then the one past the end of
@@ -100,7 +100,7 @@ TowerPlan :: [].{
 				along: (segment.length + tower_beyond),
 				across: ((Scenery.lane_width / 2.0) + tower_right),
 				yaw: tower_yaw,
-				beacon_key: index.to_i64(),
+				beacon_key: index.to_u32(),
 			},
 		)
 		end_tower.concat(mid_tower(view, position))
@@ -121,7 +121,7 @@ TowerPlan :: [].{
 						along: (segment.length / 2.0),
 						across: ((Scenery.lane_width / 2.0) - mid_tower_left),
 						yaw: Angle.straight_ahead,
-						beacon_key: index.to_i64() + mid_tower_beacon_step,
+						beacon_key: index.to_u32() + mid_tower_beacon_step,
 					},
 				)
 			NoMidTower => []
@@ -140,7 +140,7 @@ TowerPlan :: [].{
 				along: (behind.length + tower_beyond),
 				across: ((Scenery.lane_width / 2.0) + tower_right),
 				yaw: tower_yaw,
-				beacon_key: index.to_i64(),
+				beacon_key: index.to_u32(),
 			},
 		)
 	}
@@ -160,7 +160,7 @@ TowerPlan :: [].{
 ## far past its segment's. That many staggers come to half a period past a
 ## whole number of periods, so it blinks exactly opposite the mast at the
 ## segment's end.
-mid_tower_beacon_step : I64
+mid_tower_beacon_step : U32
 mid_tower_beacon_step = 60
 
 ## A mast standing at `along` and `across` in the segment that `place` maps,
@@ -171,7 +171,7 @@ tower_if_ahead : TowerPlan.View,
 	along : F64,
 	across : F64,
 	yaw : Angle.Turn,
-	beacon_key : I64,
+	beacon_key : U32,
 } -> List(TowerPlan.TowerItem)
 tower_if_ahead = |
 	view,
@@ -202,7 +202,7 @@ tower_if_ahead = |
 				yaw,
 				forward: center.forward,
 				beacon_brightness: TowerPlan.beacon_brightness(
-					view.clock.to_f64() + TowerPlan.beacon_offset_for(beacon_key),
+					view.clock.minus(Clock.start).plus(TowerPlan.beacon_offset_for(beacon_key)),
 				),
 			},
 		]
