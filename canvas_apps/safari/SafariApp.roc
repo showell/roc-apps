@@ -28,7 +28,7 @@ SafariApp :: [].{
 		# **THIRTY, BY EYE.** The drive's motion is written per tick, and
 		# thirty is the speed it is meant to look like.
 		fps: 30,
-		init: { tour: Tour.init, paused: Bool.False },
+		init: { tour: Tour.initial, paused: Bool.False },
 		advance: CanvasApp.untimed_advance(step),
 		frame: |m| frame(m.tour),
 		sounds: |_m| 0,
@@ -69,7 +69,7 @@ SafariApp :: [].{
 	step : SafariApp.Model, Input.Snapshot -> SafariApp.Model
 	step = |m, input|
 		if input.key_pressed(KeyR) {
-			{ tour: Tour.init, paused: Bool.False }
+			{ tour: Tour.initial, paused: Bool.False }
 		} else {
 			paused = if input.key_pressed(KeySpace) {
 				!m.paused

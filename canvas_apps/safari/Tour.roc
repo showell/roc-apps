@@ -27,8 +27,8 @@ Tour := {
 	past_moments_cap : U64
 	past_moments_cap = 2048
 
-	init : Tour
-	init = {
+	initial : Tour
+	initial = {
 		world: World.segments,
 		moment: RideMoment.initial,
 		past_moments: [],

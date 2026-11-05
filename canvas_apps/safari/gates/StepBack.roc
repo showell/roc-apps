@@ -19,7 +19,7 @@ main! = |_args| {
 	var $out = ""
 	var $bad = 0
 	for steps in [10, 1000, 2047, 2048, 2049, 3000, 5000] {
-		var $tour = Tour.init
+		var $tour = Tour.initial
 		var $k = 0
 		while $k < steps {
 			$tour = Tour.advance($tour)
