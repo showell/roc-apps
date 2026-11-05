@@ -8,6 +8,7 @@ import Angle
 import Bike
 import lib.DeviceMath
 import Gaze
+import Geom
 import LeanSearch
 import Pose
 import Scenery
@@ -39,36 +40,30 @@ Rider :: [].{
 	}
 
 	rider_state_for_next_segment : Pose.RiderState, List(World.Segment) -> Pose.RiderState
-	rider_state_for_next_segment = |rs, segs| (
-		{
-			seg = rs.segment.segment_in(segs)
-			hw = Scenery.lane_half_width.to_metres()
-			next =
-				match seg.ending {
-					Continues({ next: index }) => index
-					Terminates => crash "Rider.rider_state_for_next_segment: past the route's end"
-				}
-			theta = seg.exit_turn.to_radians()
-			c = Trig.r_cos(theta)
-			s = Trig.r_sin(theta)
-			da = (rs.along.to_metres() - (seg.length.to_metres() + (hw * DeviceMath.real_abs(s))))
-			corner_shift = (hw * (1.0 - c))
-			dx =
-				if seg.exit_turn.is_right() {
-					rs.across.to_metres() - corner_shift
-				} else {
-					rs.across.to_metres() + corner_shift
-				}
-			{
-				..rs,
-				segment: next,
-				along: Along.metres((c * da) + (s * dx)),
-				across: Across.metres(((0.0 - s) * da) + (c * dx)),
-				yaw: rs.yaw.minus(seg.exit_turn),
-				gaze_yaw: Angle.straight_ahead,
+	rider_state_for_next_segment = |rs, segs| {
+		seg = rs.segment.segment_in(segs)
+		next =
+			match seg.ending {
+				Continues({ next: index }) => index
+				Terminates => crash "Rider.rider_state_for_next_segment: past the route's end"
 			}
+		on_next = Geom.centred_point_after(
+			{ along: rs.along, across: rs.across },
+			{
+				segment_length: seg.length,
+				turn: seg.exit_turn,
+				lane_width: Scenery.lane_width,
+			},
+		)
+		{
+			..rs,
+			segment: next,
+			along: on_next.along,
+			across: on_next.across,
+			yaw: rs.yaw.minus(seg.exit_turn),
+			gaze_yaw: Angle.straight_ahead,
 		}
-	)
+	}
 
 	finish_clamp : Pose.RiderState, World.Segment -> Pose.RiderState
 	finish_clamp = |moved, seg| (

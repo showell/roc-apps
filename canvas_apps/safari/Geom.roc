@@ -10,6 +10,7 @@
 import Across
 import Along
 import Angle
+import lib.DeviceMath
 import Distance
 import lib.Trig
 
@@ -96,26 +97,33 @@ Geom :: [].{
 	## A point on the segment before `bend`, measured on the segment after it.
 	in_segment_after : Geom.RoadPoint, Geom.Bend -> Geom.RoadPoint
 	in_segment_after = |point, bend| {
-		along = point.along.to_metres()
+		half_width = bend.lane_width.divided_by(2.0)
+		centred = centred_point_after(
+			{ along: point.along, across: point.across.minus(half_width) },
+			bend,
+		)
+		{ along: centred.along, across: centred.across.plus(half_width) }
+	}
+
+	## `in_segment_after` for a point whose `across` is measured from the
+	## middle of the lane, as the rider's is.
+	centred_point_after : Geom.RoadPoint, Geom.Bend -> Geom.RoadPoint
+	centred_point_after = |point, bend| {
 		across = point.across.to_metres()
-		length = bend.segment_length.to_metres()
-		width = bend.lane_width.to_metres()
-		turn_size = bend.turn.abs().to_radians()
-		cos_turn = Trig.r_cos(turn_size)
-		sin_turn = Trig.r_sin(turn_size)
-		if bend.turn.is_right() {
-			past_end = along - length - width * sin_turn
-			past_edge = across - width * (1.0 - cos_turn)
-			{
-				along: Along.metres(past_end * cos_turn + past_edge * sin_turn),
-				across: Across.metres((0.0 - past_end) * sin_turn + past_edge * cos_turn),
-			}
+		half_width = bend.lane_width.to_metres() / 2.0
+		cos_turn = Trig.r_cos(bend.turn.to_radians())
+		sin_turn = Trig.r_sin(bend.turn.to_radians())
+		corner_shift = half_width * (1.0 - cos_turn)
+		corner_along = bend.segment_length.to_metres() + half_width * DeviceMath.real_abs(sin_turn)
+		past_corner = point.along.to_metres() - corner_along
+		past_middle = if bend.turn.is_right() {
+			across - corner_shift
 		} else {
-			past_end = along - length
-			{
-				along: Along.metres(past_end * cos_turn - across * sin_turn),
-				across: Across.metres(past_end * sin_turn + across * cos_turn),
-			}
+			across + corner_shift
+		}
+		{
+			along: Along.metres(cos_turn * past_corner + sin_turn * past_middle),
+			across: Across.metres((0.0 - sin_turn) * past_corner + cos_turn * past_middle),
 		}
 	}
 
@@ -314,6 +322,42 @@ expect {
 		},
 	)
 }
+
+## A bend of `degrees` out of a 300 metre segment of a 4 metre lane.
+bend_of : F64 -> Geom.Bend
+bend_of = |degrees| {
+	segment_length: Distance.metres(300.0),
+	turn: Angle.Turn.degrees(degrees),
+	lane_width: Distance.metres(4.0),
+}
+
+# A point carried round a bend one way and back lands where it started.
+expect
+	[50.0, -70.0, 15.0, -15.0].all(
+		|degrees| {
+			start = { along: Along.metres(12.0), across: Across.metres(3.0) }
+			bend = bend_of(degrees)
+			back = Geom.in_segment_before(Geom.in_segment_after(start, bend), bend)
+			along_miss = back.along.distance_from(start.along).to_metres().abs()
+			across_miss = back.across.distance_from(start.across).to_metres().abs()
+			along_miss <= 0.000000001 and across_miss <= 0.000000001
+		},
+	)
+
+# Measured from the lane's middle, the same point lands the same place.
+expect
+	[50.0, -70.0].all(
+		|degrees| {
+			along = Along.metres(12.0)
+			bend = bend_of(degrees)
+			from_edge = Geom.in_segment_after({ along, across: Across.metres(3.0) }, bend)
+			from_middle = Geom.centred_point_after({ along, across: Across.metres(1.0) }, bend)
+			along_miss = from_edge.along.distance_from(from_middle.along).to_metres().abs()
+			across_on_edge = from_edge.across.minus(Distance.metres(2.0))
+			across_miss = across_on_edge.distance_from(from_middle.across).to_metres().abs()
+			along_miss <= 0.000000001 and across_miss <= 0.000000001
+		},
+	)
 
 expect
 	Geom.line_crossing({
