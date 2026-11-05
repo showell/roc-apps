@@ -13,8 +13,9 @@ import lib.Trig
 
 World :: [].{
 
-	## A segment's place in the route, counted from 0. It is only ever a place
-	## the route has, so looking one up can't miss.
+	## A segment's place in the route, counted from 0. It says where a segment
+	## is in the route, where a Frame.ChainPosition says how far ahead of the
+	## rider it is.
 	SegmentIndex :: U32.{
 
 		number : U32 -> World.SegmentIndex
