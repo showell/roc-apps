@@ -177,10 +177,10 @@ dusk_while_up = |height| {
 ## How far toward dusk the sky is once the sun has fully set, darkening on
 ## to full dusk as it sinks a further radius.
 dusk_after_set : F64 -> F64
-dusk_after_set = |height| DeviceMath.real_min(
-	1.0,
-	(Sky.dusk_at_set + (((Sky.sun_fully_set_px - height) / Sky.sun_radius_px) * (1.0 - Sky.dusk_at_set))),
-)
+dusk_after_set = |height| {
+	sunk_past_set = ((Sky.sun_fully_set_px - height) / Sky.sun_radius_px)
+	DeviceMath.real_min(1.0, (Sky.dusk_at_set + (sunk_past_set * (1.0 - Sky.dusk_at_set))))
+}
 
 sky_at : F64 -> Sky.Rgb
 sky_at = |step| Sky.color_between({

@@ -94,7 +94,8 @@ Mountains :: [].{
 
 	## The rolling land: low, and all the way round.
 	ground_base : Angle.Bearing -> F64
-	ground_base = |bearing| 18.0 + 12.0 * Trig.r_sin(bearing.turn_from_north().to_radians() * 0.9 + 1.9)
+	ground_base = |bearing|
+		18.0 + 12.0 * Trig.r_sin(bearing.turn_from_north().to_radians() * 0.9 + 1.9)
 
 	north_range : Angle.Bearing -> F64
 	north_range = |bearing| range_height(north, bearing)
@@ -138,7 +139,10 @@ Mountains :: [].{
 
 	## Whether the sun, at `step`, has sunk behind the skyline.
 	is_sun_behind_mountains : F64 -> Bool
-	is_sun_behind_mountains = |step| ((Sky.sun_height_px(step) + Sky.sun_radius_px) < horizon_crest_px(Angle.Bearing.radians(Sky.sun_bearing)))
+	is_sun_behind_mountains = |step| {
+		sun_top_px = (Sky.sun_height_px(step) + Sky.sun_radius_px)
+		sun_top_px < horizon_crest_px(Angle.Bearing.radians(Sky.sun_bearing))
+	}
 
 	## The skyline, back to front: the west range, the north range, the
 	## north's snow, then the land.
@@ -210,7 +214,9 @@ range_height = |range, bearing| {
 	} else {
 		envelope = Trig.r_cos(fraction * Trig.pi / 2.0)
 		radians = from_center.to_radians()
-		ridge = 0.6 + 0.24 * Trig.r_cos(radians * range.ridge_a) + 0.16 * Trig.r_cos(radians * range.ridge_b + 1.0)
+		first_wave = 0.24 * Trig.r_cos(radians * range.ridge_a)
+		second_wave = 0.16 * Trig.r_cos(radians * range.ridge_b + 1.0)
+		ridge = 0.6 + first_wave + second_wave
 		range.peak * envelope * ridge
 	}
 }

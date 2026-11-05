@@ -163,8 +163,10 @@ paint = |view, { corners, color }| Ground.draw({
 ## The segment at `position` in the chain.
 segment_in_chain : GroundPlan.View, I64 -> World.Segment
 segment_in_chain = |view, position| {
-	index = view.chain.get(position.to_u64_wrap()) ?? crash "GroundPlan: a position past the chain's end"
-	view.world.get(index.to_u64_wrap()) ?? crash "GroundPlan: a chain names a segment the world lacks"
+	index = view.chain.get(position.to_u64_wrap())
+		?? crash "GroundPlan: a position past the chain's end"
+	view.world.get(index.to_u64_wrap())
+		?? crash "GroundPlan: a chain names a segment the world lacks"
 }
 
 ## The ground along the segment at `position` in the chain: its road, the
@@ -196,7 +198,8 @@ segment_ground = |view, position| {
 ## pond that segment ends at, if it has one.
 ground_behind : GroundPlan.View, I64 -> List(Paint.DrawCmd)
 ground_behind = |view, index| {
-	segment = view.world.get(index.to_u64_wrap()) ?? crash "GroundPlan: the segment behind the rider is past the world's end"
+	segment = view.world.get(index.to_u64_wrap())
+		?? crash "GroundPlan: the segment behind the rider is past the world's end"
 	before = Frame.prev_map(segment)
 	List.concat(
 		bend_ground(view, bend_out_of(segment, { before, after: Frame.chain_map(0) })),

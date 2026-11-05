@@ -106,7 +106,8 @@ CritterPlan :: [].{
 	## `index`, the one before the rider's.
 	sightings_behind : CritterPlan.Scene, I64 -> List(Billboards.Sighting)
 	sightings_behind = |scene, index| {
-		segment = scene.world.get(index.to_u64_wrap()) ?? crash "CritterPlan.sightings_behind: no segment before the rider's"
+		segment = scene.world.get(index.to_u64_wrap())
+			?? crash "CritterPlan.sightings_behind: no segment before the rider's"
 		List.concat(
 			corner_sightings(scene, { mapper: Frame.prev_map(segment), segment }),
 			CritterPlan.ducks_behind(scene, segment),
@@ -137,8 +138,10 @@ lane_half_width = (Scenery.lane_width / 2.0)
 
 segment_at : CritterPlan.Scene, I64 -> World.Segment
 segment_at = |scene, position| {
-	index = scene.chain.get(position.to_u64_wrap()) ?? crash "CritterPlan.segment_at: no such chain position"
-	scene.world.get(index.to_u64_wrap()) ?? crash "CritterPlan.segment_at: the chain names a missing segment"
+	index = scene.chain.get(position.to_u64_wrap())
+		?? crash "CritterPlan.segment_at: no such chain position"
+	scene.world.get(index.to_u64_wrap())
+		?? crash "CritterPlan.segment_at: the chain names a missing segment"
 }
 
 ## A critter, placed through `mapper` on the road's map, as the rider sees it.

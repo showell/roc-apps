@@ -146,7 +146,8 @@ Tower :: [].{
 
 	## How far the earth's curve hides the bottom of a mast standing at `p`.
 	sunk_below_horizon : Geom.RiderPt -> F64
-	sunk_below_horizon = |p| (((p.right * p.right) + (p.forward * p.forward)) / (2.0 * earth_radius))
+	sunk_below_horizon = |p|
+		(((p.right * p.right) + (p.forward * p.forward)) / (2.0 * earth_radius))
 
 	## The point `fraction` of the way from `from` to `to`.
 	point_between : {

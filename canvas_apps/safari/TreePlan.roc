@@ -43,8 +43,10 @@ TreePlan :: [].{
 	## The trees in view on the segment at `place` in the chain.
 	segment_trees : TreePlan.View, I64 -> List(TreePlan.TreeItem)
 	segment_trees = |view, place| {
-		seg_index = view.chain.get(I64.to_u64_wrap(place)) ?? crash "TreePlan.segment_trees: no such place in the chain"
-		segment = view.world.get(I64.to_u64_wrap(seg_index)) ?? crash "TreePlan.segment_trees: no such segment"
+		seg_index = view.chain.get(I64.to_u64_wrap(place))
+			?? crash "TreePlan.segment_trees: no such place in the chain"
+		segment = view.world.get(I64.to_u64_wrap(seg_index))
+			?? crash "TreePlan.segment_trees: no such segment"
 		segment.trees.join_map(|tree| tree_in_view(view, { place, tree }))
 	}
 

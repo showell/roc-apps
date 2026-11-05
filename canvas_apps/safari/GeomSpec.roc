@@ -21,7 +21,7 @@ gd_forward = [0.0, 10.0, 40.0, 100.0]
 gd_want : List(F64)
 gd_want = [0.0, 0.000545, 0.008125, 0.05078125]
 
-# gd_walk builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
+# An accumulator loop is linear, where appending a recursive call is quadratic.
 gd_walk : I64 -> List(F64)
 gd_walk = |i| gd_walk_onto(i, [])
 
@@ -70,7 +70,7 @@ tr_want = [
 	3.4690018726015563,
 ]
 
-# tr_walk builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
+# An accumulator loop is linear, where appending a recursive call is quadratic.
 tr_walk : I64 -> List(F64)
 tr_walk = |i| tr_walk_onto(i, [])
 
@@ -164,7 +164,7 @@ cn_want = [
 	0.8,
 ]
 
-# cn_walk builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
+# An accumulator loop is linear, where appending a recursive call is quadratic.
 cn_walk : List(Geom.Vec3) -> List(F64)
 cn_walk = |vs| cn_walk_onto(vs, { at_index: 0, flat_coords: [] })
 

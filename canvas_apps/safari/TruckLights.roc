@@ -143,11 +143,14 @@ brake_lamp_outer_edge = (0.1 * TruckShape.truck_width)
 brake_lamp_inner_edge : F64
 brake_lamp_inner_edge = (0.36 * TruckShape.truck_width)
 
+trailer_height : F64
+trailer_height = (TruckShape.truck_height - TruckShape.trailer_bottom)
+
 brake_lamp_bottom : F64
-brake_lamp_bottom = (TruckShape.trailer_bottom + (0.2 * (TruckShape.truck_height - TruckShape.trailer_bottom)))
+brake_lamp_bottom = (TruckShape.trailer_bottom + (0.2 * trailer_height))
 
 brake_lamp_top : F64
-brake_lamp_top = (TruckShape.trailer_bottom + (0.5 * (TruckShape.truck_height - TruckShape.trailer_bottom)))
+brake_lamp_top = (TruckShape.trailer_bottom + (0.5 * trailer_height))
 
 brake_color : I64
 brake_color = 0xFF2A18

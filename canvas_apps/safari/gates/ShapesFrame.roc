@@ -46,7 +46,7 @@ main! = |args| {
 	# With no argument, the run takes its usual number of steps.
 	steps =
 		match args.get(0) {
-			Ok(text) => I64.from_str(text) ?? crash "ShapesFrame: the steps argument is a whole number"
+			Ok(text) => I64.from_str(text) ?? crash "ShapesFrame: steps must be a whole number"
 			Err(OutOfBounds) => 0
 		}
 	m = ride_to(SafariRide.init, steps)
@@ -75,10 +75,10 @@ main! = |args| {
 		$k = $k + 1
 	}
 	var $out = List.with_capacity(n * 6 + 64)
-	$out = List.concat(
-		$out,
-		Str.to_utf8("differ ${U64.to_str($differ)} of ${U64.to_str(n)}, triangles ${U64.to_str(triangles(shapes))}, commands ${U64.to_str(List.len(commands))}\nhash 00000000\n${Screen.width_px.to_str()} ${Screen.height_px.to_str()}\n"),
-	)
+	differing = "differ ${U64.to_str($differ)} of ${U64.to_str(n)}"
+	totals = "triangles ${triangles(shapes).to_str()}, commands ${commands.len().to_str()}"
+	size = "${Screen.width_px.to_str()} ${Screen.height_px.to_str()}"
+	$out = List.concat($out, Str.to_utf8("${differing}, ${totals}\nhash 00000000\n${size}\n"))
 	$k = 0
 	while $k < n {
 		$out = Hex.append_digits($out, { number: U32.to_i64(List.get(b, $k) ?? 0), digits: 6 })

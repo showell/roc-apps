@@ -155,7 +155,8 @@ Gaze :: [].{
 
 	next_rider_gaze : Pose.RiderState, List(World.Segment) -> Pose.RiderState
 	next_rider_gaze = |state, segs| {
-		seg = segs.get(state.segment.to_u64_wrap()) ?? crash "Gaze.next_rider_gaze: the rider's segment is on the route"
+		seg = segs.get(state.segment.to_u64_wrap())
+			?? crash "Gaze.next_rider_gaze: the rider's segment is on the route"
 		gaze_yaw = next_gaze_yaw(state, desired_gaze(state, seg))
 		{
 			..state,

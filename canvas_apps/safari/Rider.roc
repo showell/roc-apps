@@ -38,7 +38,7 @@ Rider :: [].{
 			next =
 				match seg.ending {
 					Continues({ next: index }) => index
-					Terminates => crash "Rider.rider_state_for_next_segment: the route's last segment has none after it"
+					Terminates => crash "Rider.rider_state_for_next_segment: past the route's end"
 				}
 			theta = seg.exit_angle
 			sgn = (

@@ -33,16 +33,9 @@ main! = |_args| {
 		} else {
 			$bad + 1
 		}
-		$out = Str.concat(
-			$out,
-			"${
-				if ok {
-					"ok  "
-				} else {
-					"BAD "
-				}
-			}after ${I64.to_str(steps)} steps: clock ${F64.to_str(here)}, one back -> ${F64.to_str(there)}\n",
-		)
+		verdict = if (ok) "ok  " else "BAD "
+		clocks = "clock ${F64.to_str(here)}, one back -> ${F64.to_str(there)}"
+		$out = Str.concat($out, "${verdict}after ${I64.to_str(steps)} steps: ${clocks}\n")
 	}
 	echo!(
 		Str.concat(

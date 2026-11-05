@@ -25,8 +25,11 @@ PixelGrid :: [].{
 		## A place worked out in a wider type, once it is on the grid. A
 		## negative one, or one past 65535, would wrap, so it crashes.
 		from_i64 : I64 -> PixelGrid.Coordinate
-		from_i64 = |place|
-			PixelGrid.Coordinate.(place.to_u16_try() ?? crash "PixelGrid.Coordinate.from_i64: a place off any grid")
+		from_i64 = |place| {
+			coordinate = place.to_u16_try()
+				?? crash "PixelGrid.Coordinate.from_i64: a place off any grid"
+			PixelGrid.Coordinate.(coordinate)
+		}
 
 		## The places from `start` up to but not including `end`; none when
 		## `end` is not past `start`.

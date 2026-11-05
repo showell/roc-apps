@@ -175,8 +175,10 @@ on_map = |
 ## The bend at the end of the segment at `position` in the chain.
 bend_after : RailPlan.Road, I64 -> Bend
 bend_after = |road, position| {
-	index = road.chain.get(position.to_u64_wrap()) ?? crash "RailPlan: a position past the chain's end"
-	segment = road.world.get(index.to_u64_wrap()) ?? crash "RailPlan: a chain names a segment the world lacks"
+	index = road.chain.get(position.to_u64_wrap())
+		?? crash "RailPlan: a position past the chain's end"
+	segment = road.world.get(index.to_u64_wrap())
+		?? crash "RailPlan: a chain names a segment the world lacks"
 	{
 		before: Frame.chain_map(position),
 		after: Frame.chain_map((position + 1)),
@@ -189,7 +191,8 @@ bend_after = |road, position| {
 ## `index`.
 rails_behind : RailPlan.Road, I64 -> List(GuardRail.RailPoly)
 rails_behind = |road, index| {
-	segment = road.world.get(index.to_u64_wrap()) ?? crash "RailPlan: the segment behind the rider is past the world's end"
+	segment = road.world.get(index.to_u64_wrap())
+		?? crash "RailPlan: the segment behind the rider is past the world's end"
 	rails_at(
 		road,
 		{

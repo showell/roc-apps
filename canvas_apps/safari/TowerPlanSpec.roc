@@ -200,7 +200,8 @@ tower_place_at : U64 -> I64
 tower_place_at = |i|
 	match key_at(i).subject {
 		Tower(place) => place.to_i64_wrap()
-		Tree(_) | Critter(_) | Cat(_) | Truck | Rail(_) | Bird(_) => crash "TowerPlanSpec: a mast's key names a mast"
+		Tree(_) | Critter(_) | Cat(_) | Truck | Rail(_) | Bird(_) =>
+			crash "TowerPlanSpec: a mast's key names a mast"
 	}
 
 items_got : List(I64)

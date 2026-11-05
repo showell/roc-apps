@@ -12,7 +12,7 @@ Paint :: [].{
 		pts : List(F64),
 	}
 
-	# flatten_screen builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
+	# An accumulator loop is linear, where appending a recursive call is quadratic.
 	flatten_screen : List(Camera.ScreenPt) -> List(F64)
 	flatten_screen = |ps| flatten_screen_onto(ps, { at_index: 0, flat_coords: [] })
 

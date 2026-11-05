@@ -48,7 +48,8 @@ CatPlan :: [].{
 	## and it is in view.
 	segment_cat : CatPlan.View, I64 -> List(CatPlan.CatItem)
 	segment_cat = |view, place| {
-		seg_index = view.chain.get(I64.to_u64_wrap(place)) ?? crash "CatPlan.segment_cat: no such place in the chain"
+		seg_index = view.chain.get(I64.to_u64_wrap(place))
+			?? crash "CatPlan.segment_cat: no such place in the chain"
 		segment = world_segment(view, seg_index)
 		match segment.cat {
 			Waits(crossing) => cat_in_view(view, { place, crossing })

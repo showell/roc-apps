@@ -61,7 +61,7 @@ truck_from = |view, { remaining, place }|
 	match view.chain.get(I64.to_u64_wrap(place)) {
 		Err(OutOfBounds) => NoTruck
 		Ok(seg_index) => {
-			segment = view.world.get(I64.to_u64_wrap(seg_index)) ?? crash "TruckPlan: no such segment"
+			segment = view.world.get(seg_index.to_u64_wrap()) ?? crash "TruckPlan: no such segment"
 			if remaining > segment.length {
 				truck_from(view, { remaining: (remaining - segment.length), place: (place + 1) })
 			} else {

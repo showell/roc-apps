@@ -15,7 +15,7 @@ import World
 segs : List(World.Segment)
 segs = seg_list(0)
 
-# seg_list builds its list by appending a recursive call; emitted as an accumulator loop, which is linear where the direct shape is quadratic.
+# An accumulator loop is linear, where appending a recursive call is quadratic.
 seg_list : I64 -> List(World.Segment)
 seg_list = |i| seg_list_onto(i, [])
 
