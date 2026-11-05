@@ -40,7 +40,10 @@ s1 = Bike.simulate_rider_step(
 s2 : Pose.RiderState
 s2 = Bike.simulate_rider_step(
 	s1,
-	{ lean_step: Angle.Lean.radians(0.0 - 0.02), accel: Acceleration.metres_a_step_each_step(0.005) },
+	{
+		lean_step: Angle.Lean.radians(0.0 - 0.02),
+		accel: Acceleration.metres_a_step_each_step(0.005),
+	},
 )
 
 s3 : Pose.RiderState

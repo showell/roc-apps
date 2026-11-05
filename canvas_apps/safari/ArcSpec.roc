@@ -208,7 +208,10 @@ step_got = (
 				tilt_radians: 0.0,
 				speed: Pose.v_base,
 			}),
-			{ lean_step: Angle.Lean.radians(0.5), accel: Acceleration.metres_a_step_each_step(0.25) },
+			{
+				lean_step: Angle.Lean.radians(0.5),
+				accel: Acceleration.metres_a_step_each_step(0.25),
+			},
 		)
 		[
 			a.across,

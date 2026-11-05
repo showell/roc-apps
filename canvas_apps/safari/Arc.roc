@@ -105,7 +105,7 @@ Arc :: [].{
 						forward: DeviceMath.real_min(forward, min_forward_progress),
 						crossed: crossed,
 						end_across: across,
-						frames: I64.to_f64(i),
+						frames: i.to_f64(),
 					}
 				} else {
 					(
@@ -115,7 +115,7 @@ Arc :: [].{
 								forward: DeviceMath.real_min(forward, min_forward_progress),
 								crossed: crossed,
 								end_across: across,
-								frames: I64.to_f64(i),
+								frames: i.to_f64(),
 							}
 						} else {
 							(

@@ -52,7 +52,11 @@ Throttle :: [].{
 		}
 	)
 
-	cat_gate : Pose.RiderState, { road_segment : World.Segment, offered_accel : Acceleration } -> Acceleration
+	cat_gate : Pose.RiderState,
+	{
+		road_segment : World.Segment,
+		offered_accel : Acceleration,
+	} -> Acceleration
 	cat_gate = |state, { road_segment: seg, offered_accel: a }|
 		match seg.cat {
 			Waits(crossing) =>
@@ -73,7 +77,11 @@ Throttle :: [].{
 			NoCat => a
 		}
 
-	pig_gate : Pose.RiderState, { road_segment : World.Segment, offered_accel : Acceleration } -> Acceleration
+	pig_gate : Pose.RiderState,
+	{
+		road_segment : World.Segment,
+		offered_accel : Acceleration,
+	} -> Acceleration
 	pig_gate = |state, { road_segment: seg, offered_accel: a }| (
 		{
 			b = Gaze.pig_gaze_brake(state, seg)

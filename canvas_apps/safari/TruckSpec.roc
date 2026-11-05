@@ -22,11 +22,14 @@ fixed_got = [
 fixed_want : List(F64)
 fixed_want = [500.0, 100.0, 0.8, 60.0, 2.75]
 
+chase_metres : F64
+chase_metres = Truck.chase_acceleration.to_metres_a_step_each_step()
+
 ratio_got : List(F64)
 ratio_got = [
-	Truck.chase_acceleration.to_metres_a_step_each_step(),
+	chase_metres,
 	Truck.top_speed.to_metres_a_step(),
-	(Truck.chase_acceleration.to_metres_a_step_each_step() / VehicleLimits.a_accel.to_metres_a_step_each_step()),
+	(chase_metres / VehicleLimits.a_accel.to_metres_a_step_each_step()),
 	(Truck.top_speed.to_metres_a_step() / VehicleLimits.v_max.to_metres_a_step()),
 ]
 
