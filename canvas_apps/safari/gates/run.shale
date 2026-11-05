@@ -47,7 +47,7 @@
 const SAFARI = "canvas_apps/safari"
 const EXPECTED = "canvas_apps/safari/gates/expected"
 const SELF_PATH = "canvas_apps/safari/gates/run.shale"
-const SPECS = 56
+const SPECS = 59
 const PROOF_EXPECTED = "canvas_apps/safari/gates/proof.expected"
 const WANT = "roc-pin: roc-apps' pinned nightly, and the binaries it builds under scratch:"
 
