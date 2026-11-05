@@ -739,13 +739,13 @@ The schedule is a straight line, and a pure function of the rider's progress, de
 
 Its one caller is the truck's step function, the same shape as the rider's. `NextTurn` is a tag union with a payload on one side, so the only way to read a `distance` is to be inside the branch where there is one:
 
-{{code Truck.advance}}
+{{code Truck.advance from "schedule = scheduled_position(" to "NoTurnAhead => advance_on_schedule(truck, schedule)"}}
 
 And that's called from `RideMoment.step`, above, with the rider's distance as the only thing the truck knows of the rider. Nothing in `Rider` imports `Truck`, and nothing in `Truck` imports `Rider`. The chase is one record literal in `RideMoment`.
 
 Finding the next turn shows a list pattern. `[]` is the end of the route, and `[segment, .. as later_segments]` takes the first segment and names the rest. Recursion walks the list, carrying where the current segment starts. Only `Truck` and `Paint` use a list pattern. Elsewhere the same walk is a `fold`.
 
-{{code Truck.next_turn_on}}
+{{code Truck.next_turn_on from "match segments {" to "next_turn_on(later_segments, { route_position, segment_start: segment_end })"}}
 
 It's called through a smaller function, which supplies the 0 so nobody else has to:
 
@@ -874,7 +874,9 @@ The view widens as the rider leans. One `Fraction` goes in, and a focal length c
 
 ### Round the bends
 
-The road has no map. A point on it is measured within one segment, `along` and `across`, and nothing in the game holds a world coordinate for it. Each segment knows only its length and the turn at its end.
+The road has no map. A point on it is measured within one segment, `along` and `across`, and nothing in the game holds a world coordinate for it. Each segment knows only its length and the turn at its end. `World.route` is nineteen records like this one, and it reads like configuration: a list of plain values, with the tags declared by `SegmentPlan` and an opaque `Turn` built from degrees. It's checked like any other Roc, so a misspelled tag is a compile-time error.
+
+{{code World.route from "length: 1200.0," to "creature: Rhino,"}}
 
 So to see something three segments ahead, a point has to be carried back round each bend between it and the rider, one at a time. That's one rotation per bend, and `fold_rev` is the shape of it. The accumulator is a `RoadPoint`, it starts on the far segment, and each step moves it onto the segment before. `before_in` gives the segments between, and the closure is the only thing the loop does. The last line does the one translation and rotation from above:
 
@@ -912,7 +914,7 @@ The rider has no steering wheel. Nothing tells it where to go. Each step, it has
 
 `Arc` answers one question. If the rider stopped changing anything now, and coasted, what would happen? It takes the rider, and it runs the physics. The call is the same `Bike.simulate_rider_step` that moves the real rider, with no lean change and steady speed. That's the whole trick, and it's why `Bike` has to be a function and not a method that writes to a bike.
 
-{{code Arc.sim_from}}
+{{code Arc.sim_from from "sim_step(" to "{ lean_step: Angle.upright, accel: Acceleration.steady },"}}
 
 `Arc.ArcProgress(others)` carries a `Bike.Motion(others)`: a narrow view of a wide record again, so `Arc` can take the whole rider without knowing what's in it. `sim_from` and its partner `sim_step` call each other until the arc reaches the shoulder, makes 25 metres of progress, or runs for 2,000 steps. The answer is a record saying which of those happened:
 
@@ -924,7 +926,7 @@ The rider has no steering wheel. Nothing tells it where to go. Each step, it has
 
 `LeanSearch` asks `Arc` that question at a dozen different leans. The rider wants the arc to end somewhere near the middle of the lane, and more lean to the right moves the end of an arc to the right, so this is a bisection. It's a recursive function with its whole state in one record argument, `low` and `high` closing in on each other. `Bike.with_tilt(state, mid)` is a rider who doesn't exist, handed to `Arc`, who gets a future that didn't happen:
 
-{{code LeanSearch.search_lean_from}}
+{{code LeanSearch.search_lean_from from "mid = low.halfway_to(high)" to "low: mid,"}}
 
 The decision about which way to go is a `match` on what the rehearsal found. Running off the left means more right, running off the right means less, and staying on the road compares the end of the arc with the target:
 
@@ -1116,7 +1118,7 @@ The answer to all of this is a `List(Shapes.Shape)`. A shape is a tag: `Poly`, `
 
 The rider's lean is one of those marks. The whole picture banks into a turn, backdrop included, so `SafariApp.frame` builds a camera out of nested tags and puts it at the front. The rest is `Tour` answering questions, each a one-liner:
 
-{{code SafariApp.frame}}
+{{code SafariApp.frame from "centre = {" to ").prepend(lean)"}}
 
 ### Where the effects went
 
