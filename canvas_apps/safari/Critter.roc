@@ -7,6 +7,7 @@ import Billboards
 import Camera
 import EmojiStills
 import Paint
+import lib.Brush
 import Stills
 import Screen
 import lib.Shapes
@@ -152,3 +153,146 @@ draw_gradient_poly = |anchor, { gradient, points }|
 			)
 		}
 	}
+
+sample_feet : Screen.Point
+sample_feet = { x: 100.0, y: 200.0 }
+
+# A still 50 pixels tall, standing on the feet, as drawn.
+upright : Critter.Anchor
+upright = {
+	feet: sample_feet,
+	flip: AsDrawn,
+	height_px: 50.0,
+}
+
+# The same still, mirrored.
+mirrored : Critter.Anchor
+mirrored = {
+	feet: sample_feet,
+	flip: Mirrored,
+	height_px: 50.0,
+}
+
+expect Critter.x_sign(Mirrored) == -1.0
+expect Critter.x_sign(AsDrawn) == 1.0
+
+expect Critter.screen_point(upright, { x: 0.5, y: 0.4 }) == { x: 125.0, y: 180.0 }
+expect Critter.screen_point(mirrored, { x: 0.5, y: 0.4 }) == { x: 75.0, y: 180.0 }
+expect Critter.screen_point(upright, { x: 0.0, y: 0.0 }) == { x: 100.0, y: 200.0 }
+
+expect Critter.screen_vector(upright, { x: 0.5, y: 0.4 }) == { x: 25.0, y: -20.0 }
+expect Critter.screen_vector(mirrored, { x: 0.5, y: 0.4 }) == { x: -25.0, y: -20.0 }
+expect Critter.screen_vector(upright, { x: 0.0, y: 0.0 }) == { x: 0.0, y: 0.0 }
+
+# A point is the feet plus its vector.
+expect {
+	point = Critter.screen_point(upright, { x: 0.5, y: 0.4 })
+	vector = Critter.screen_vector(upright, { x: 0.5, y: 0.4 })
+	point.x - vector.x == 100.0 and point.y - vector.y == 200.0
+}
+
+expect
+	Critter.screen_points(
+		upright,
+		[
+			{ x: 0.0, y: 0.0 },
+			{ x: 0.5, y: 0.4 },
+			{ x: 1.0, y: 1.0 },
+		],
+	)
+		== [
+			{ x: 100.0, y: 200.0 },
+			{ x: 125.0, y: 180.0 },
+			{ x: 150.0, y: 150.0 },
+		]
+
+# A solid polygon of colour 7 with `count` points, all at the feet.
+flat_poly : U64 -> Stills.StillPoly
+flat_poly = |count| {
+	color: 7,
+	grad: [],
+	pts: List.repeat({ x: 0.0, y: 0.0 }, count),
+}
+
+expect Critter.max_still_points == 512
+expect Critter.draw_poly(upright, flat_poly(3)).len() == 1
+expect Critter.draw_poly(upright, flat_poly(512)).len() == 1
+expect Critter.draw_poly(upright, flat_poly(513)).len() == 0
+expect Critter.draw_poly(upright, flat_poly(2)).len() == 0
+
+expect
+	Critter.draw_poly(upright, flat_poly(3))
+		== [
+			Poly({
+				pts: [100.0, 200.0, 100.0, 200.0, 100.0, 200.0],
+				fill: Flat(Brush.opaque(7)),
+			}),
+		]
+
+# How many shapes draw a critter of `height` metres, `forward` metres ahead.
+shape_count : {
+	forward : F64,
+	height : F64,
+	codepoint : I64,
+} -> U64
+shape_count = |
+	{
+		forward,
+		height,
+		codepoint,
+	},
+|
+	Critter.draw(
+		{
+			right: 0.0,
+			forward,
+			height,
+			codepoint,
+			facing: FacesLeft,
+		},
+		500.0,
+	).len()
+
+elephant : I64
+elephant = 128024
+
+# A critter is drawn while it stands a pixel tall.
+expect
+	shape_count({
+		forward: 1000.0,
+		height: 2.0,
+		codepoint: elephant,
+	})
+		== 6
+expect
+	shape_count({
+		forward: 2000.0,
+		height: 2.0,
+		codepoint: elephant,
+	})
+		== 0
+expect
+	shape_count({
+		forward: 1000.0,
+		height: 1.9,
+		codepoint: elephant,
+	})
+		== 0
+expect
+	shape_count({
+		forward: 100.0,
+		height: 2.0,
+		codepoint: elephant,
+	})
+		== 6
+
+# A code point with no still draws nothing.
+expect EmojiStills.emoji_polys_for(1).len() == 0
+expect
+	shape_count({
+		forward: 100.0,
+		height: 2.0,
+		codepoint: 1,
+	})
+		== 0
+expect EmojiStills.emoji_polys_for(elephant).len() == 6

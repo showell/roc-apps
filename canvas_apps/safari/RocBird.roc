@@ -6,6 +6,7 @@ import BirdFlight
 import BirdStills
 import Camera
 import Critter
+import lib.Brush
 import lib.Shapes
 
 RocBird :: [].{
@@ -48,4 +49,61 @@ RocBird :: [].{
 			BirdStills.pose_polys(bird.pose),
 		)
 	}
+}
+
+# A perched bird straight ahead, its feet at the camera's height, so they land
+# on the horizon in the middle of the screen.
+level_bird : RocBird.PlacedBird
+level_bird = {
+	right: 0.0,
+	forward: 110.0,
+	lift: Camera.eye_h,
+	pose: Perched,
+}
+
+expect
+	[
+		(RocBird.bird_height, 2.2),
+		(RocBird.height_px({ forward: 110.0, cam_focal: 500.0 }), 10.0),
+		(RocBird.height_px({ forward: 220.0, cam_focal: 500.0 }), 5.0),
+		(RocBird.height_px({ forward: 110.0, cam_focal: 1000.0 }), 20.0),
+	].all(|(got, want)| (got - want).abs() <= 0.000000001)
+
+# The perched still's first corner is (-0.0344, 0.5715), at a height of 10 px
+# from feet at (480, 300). 11 m to the right and 11 m above the camera, at
+# 110 m, is 50 px each way.
+expect {
+	first_corner = |bird|
+		match RocBird.draw(bird, 500.0) {
+			[Poly(polygon), ..] => polygon.pts.take_first(2)
+			_ => crash "a bird draws polygons"
+		}
+	moved_bird = {
+		..level_bird,
+		right: 11.0,
+		lift: Camera.eye_h + 11.0,
+	}
+	[
+		(level_bird, [479.656, 294.285]),
+		(moved_bird, [529.656, 244.285]),
+	].all(
+		|(bird, want)| {
+			got = first_corner(bird)
+			got.len() == 2 and got.map2(want, |x, y| (x - y).abs()).all(|miss| miss <= 0.000000001)
+		},
+	)
+}
+
+# Each still's polygons, in their colours, as a bird in each pose draws them.
+expect {
+	fill_of = |shape|
+		match shape {
+			Poly(polygon) => polygon.fill
+			_ => crash "a bird's still is polygons"
+		}
+	drawn = [Side(WingsDown), Diving].join_map(
+		|pose| RocBird.draw({ ..level_bird, pose }, 500.0).map(fill_of),
+	)
+	stills = List.concat(BirdStills.side_wings_down, BirdStills.diving)
+	drawn == stills.map(|poly| Flat(Brush.opaque(poly.color)))
 }

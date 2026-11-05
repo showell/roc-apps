@@ -274,3 +274,74 @@ glow = |truck, lamp|
 			},
 		)
 	}
+
+sample_panel : List(Screen.Point)
+sample_panel = [
+	{ x: 3.0, y: 4.0 },
+	{ x: 6.0, y: 8.0 },
+	{ x: 0.0, y: 0.0 },
+	{ x: 7.0, y: 4.0 },
+]
+
+sample_triangle : List(Screen.Point)
+sample_triangle = [
+	{ x: 0.0, y: 0.0 },
+	{ x: 3.0, y: 0.0 },
+	{ x: 0.0, y: 6.0 },
+]
+
+expect TruckLights.center_of(sample_panel) == { x: 4.0, y: 4.0 }
+expect TruckLights.center_of(sample_triangle) == { x: 1.0, y: 2.0 }
+expect TruckLights.distance({ from: { x: 3.0, y: 4.0 }, to: { x: 0.0, y: 0.0 } }) == 5.0
+expect TruckLights.farthest_from(sample_panel, { x: 0.0, y: 0.0 }) == 10.0
+expect TruckLights.glow_radius(sample_panel, { x: 0.0, y: 0.0 }) == 32.0
+
+expect TruckLights.glow_outline({ center: { x: 0.0, y: 0.0 }, radius: 10.0 }).len() == 16
+expect TruckLights.glow_sides == 16
+
+point_ahead : F64 -> Geom.SpacePoint
+point_ahead = |forward| {
+	right: 0.0,
+	forward,
+	height: 0.0,
+}
+
+expect
+	!TruckLights.has_point_behind_camera([
+		point_ahead(10.0),
+		point_ahead(20.0),
+		point_ahead(30.0),
+	])
+expect
+	TruckLights.has_point_behind_camera([
+		point_ahead(10.0),
+		point_ahead(0.2),
+		point_ahead(30.0),
+	])
+expect
+	TruckLights.has_point_behind_camera([
+		point_ahead(10.0),
+		point_ahead(0.4),
+		point_ahead(30.0),
+	])
+expect !TruckLights.has_point_behind_camera([point_ahead(0.41)])
+expect !TruckLights.has_point_behind_camera([])
+
+expect
+	TruckLights.midpoint({
+		from: {
+			right: 1.0,
+			forward: 2.0,
+			height: 3.0,
+		},
+		to: {
+			right: 5.0,
+			forward: 8.0,
+			height: 11.0,
+		},
+	})
+		== {
+			right: 3.0,
+			forward: 5.0,
+			height: 7.0,
+		}

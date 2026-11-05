@@ -1,6 +1,8 @@
 ## ItemDraw paints the things beside the road in depth order, far to near,
 ## each by its own kind's module.
 import CatDraw
+import Angle
+import World
 import CatSighting
 import Critter
 import DepthSort
@@ -163,3 +165,99 @@ draw_truck = |view, truck_at|
 			})
 		NoTruck => crash "ItemDraw.draw_truck: the truck is in the depth order only in view"
 	}
+
+expect SceneLimits.crown_shade_dist == 80.0
+expect SceneLimits.detail_dist == 200.0
+
+tree_at : F64 -> TreeSighting.TreeItem
+tree_at = |forward| {
+	right: 0.0,
+	forward,
+	height: 5.85,
+	color: 1858082,
+}
+
+spread_trees : List(TreeSighting.TreeItem)
+spread_trees = [10.0, 20.0, 30.0, 40.0, 50.0].map(tree_at)
+
+expect ItemDraw.nearer_tree_count(spread_trees, 10.0) == 0
+expect ItemDraw.nearer_tree_count(spread_trees, 30.0) == 2
+expect ItemDraw.nearer_tree_count(spread_trees, 50.0) == 4
+expect ItemDraw.nearer_tree_count(spread_trees, 60.0) == 5
+expect ItemDraw.nearer_tree_count(spread_trees, 5.0) == 0
+expect ItemDraw.nearer_tree_count([], 10.0) == 0
+
+tied_trees : List(TreeSighting.TreeItem)
+tied_trees = List.repeat(tree_at(20.0), 4)
+
+expect ItemDraw.nearer_tree_count(tied_trees, 20.0) == 0
+expect ItemDraw.nearer_tree_count(tied_trees, 20.1) == 4
+expect ItemDraw.nearer_tree_count(tied_trees, 19.9) == 0
+
+expect ItemDraw.crown_shade(0.0).to_f64() == 1.0
+expect ItemDraw.crown_shade(20.0).to_f64() == 0.75
+expect ItemDraw.crown_shade(40.0).to_f64() == 0.5
+expect ItemDraw.crown_shade(80.0).to_f64() == 0.0
+expect ItemDraw.crown_shade(200.0).to_f64() == 0.0
+expect ItemDraw.crown_shade(-50.0).to_f64() == 1.0
+
+# The rider at the start of the route, at the ride's first step.
+start_view : Frame.Viewpoint
+start_view = {
+	road: {
+		world: [0, 1, 2].map(World.route_segment),
+		chain: [0, 1, 2].map(World.SegmentIndex.number),
+		pose: {
+			along: 0.0,
+			across: 0.0,
+			yaw: Angle.straight_ahead,
+			half_width: 2.0,
+		},
+	},
+	cam_focal: 500.0,
+}
+
+# A mast `along` metres down the first segment, 22 m across.
+tower_along : F64 -> TowerSighting.TowerItem
+tower_along = |along| {
+	place: InChain(Frame.ChainPosition.first),
+	along,
+	across: 22.0,
+	yaw: Angle.straight_ahead,
+	forward: along,
+	beacon_brightness: Fraction.zero,
+}
+
+expect {
+	footprint = ItemDraw.tower_footprint(start_view, tower_along(200.0))
+	[
+		(footprint.back_left.forward, 194.0),
+		(footprint.front_right.forward, 206.0),
+		(footprint.back_left.right, 14.0),
+		(footprint.back_right.right, 26.0),
+	].all(|(got, want)| (got - want).abs() <= 0.0001)
+}
+
+expect ItemDraw.draw_tower(start_view, tower_along(200.0)).len() > 0
+expect ItemDraw.draw_tower(start_view, tower_along(1000.0)).len() > 0
+expect ItemDraw.draw_tower(start_view, tower_along(-100.0)).len() == 0
+
+tree_cluster : List(TreeSighting.TreeItem)
+tree_cluster = [10.0, 11.0, 12.0, 13.0, 14.0].map(tree_at)
+
+clustered_tree : F64 -> List(Shapes.Shape)
+clustered_tree = |forward|
+	ItemDraw.draw_tree(tree_at(forward), { trees: tree_cluster, cam_focal: 500.0 })
+
+second_shape_points : List(Shapes.Shape) -> U64
+second_shape_points = |shapes|
+	match shapes {
+		[_, Poly(polygon), ..] => polygon.pts.len()
+		_ => crash "a tree in view draws a trunk and tiers"
+	}
+
+# A near tree's tiers are cones, in more detail than a far tree's triangles.
+expect clustered_tree(10.0).len() > 0
+expect clustered_tree(14.0).len() > 0
+expect second_shape_points(clustered_tree(10.0)) > second_shape_points(clustered_tree(14.0))
+expect second_shape_points(clustered_tree(14.0)) >= 6

@@ -134,3 +134,30 @@ TruckShape :: [].{
 ## of the cab's length.
 cab_roof_fraction : F64
 cab_roof_fraction = 0.3
+
+centered_box : TruckShape.TruckBox
+centered_box = TruckShape.truck_box({ along: 0.0, across: 0.0 })
+
+offset_box : TruckShape.TruckBox
+offset_box = TruckShape.truck_box({ along: 40.0, across: 2.0 })
+
+expect centered_box.rear == -4.2
+expect centered_box.trailer_front == 4.2
+expect centered_box.nose == 7.7
+expect centered_box.roof_front == 5.25
+expect centered_box.left == -1.2
+expect centered_box.right == 1.2
+
+expect offset_box.rear == 35.8
+expect offset_box.trailer_front == 44.2
+expect offset_box.nose == 47.7
+expect offset_box.roof_front == 45.25
+expect offset_box.left == 0.8
+expect offset_box.right == 3.2
+
+expect TruckShape.tire_radius == 0.5
+expect TruckShape.trailer_bottom == 1.12
+expect TruckShape.cab_bottom == 0.5
+expect TruckShape.truck_height == 3.6
+expect TruckShape.truck_width == 2.4
+expect TruckShape.trailer_length == 8.4

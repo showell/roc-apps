@@ -318,3 +318,82 @@ tire = |truck, { axle, across }|
 			),
 		},
 	)
+
+expect
+	TruckBody.axles(TruckShape.truck_box({ along: 0.0, across: 0.0 }))
+		== [-3.2, -2.0, 2.0, 3.2, 6.125]
+expect
+	TruckBody.axles(TruckShape.truck_box({ along: 40.0, across: 2.0 }))
+		== [36.8, 38.0, 42.0, 43.2, 46.125]
+expect TruckBody.axles(TruckShape.truck_box({ along: 0.0, across: 0.0 })).len() == 5
+
+point_ahead : F64 -> Geom.SpacePoint
+point_ahead = |forward| {
+	right: 0.0,
+	forward,
+	height: 0.0,
+}
+
+quad_face : TruckBody.TruckFace
+quad_face = TruckBody.face(
+	1846886,
+	[
+		point_ahead(10.0),
+		point_ahead(20.0),
+		point_ahead(30.0),
+		point_ahead(40.0),
+	],
+)
+
+triangle_face : TruckBody.TruckFace
+triangle_face = TruckBody.face(
+	1381658,
+	[
+		point_ahead(1.0),
+		point_ahead(2.0),
+		point_ahead(6.0),
+	],
+)
+
+expect quad_face.depth == 25.0
+expect triangle_face.depth == 3.0
+expect quad_face.color == 1846886
+expect quad_face.corners.len() == 4
+expect triangle_face.color == 1381658
+expect triangle_face.corners.len() == 3
+
+# A face that is only a colour and a depth, for the sort.
+marked_face : { color : I64, depth : F64 } -> TruckBody.TruckFace
+marked_face = |{ color, depth }| {
+	color,
+	depth,
+	corners: [],
+}
+
+colors_by_depth : List({ color : I64, depth : F64 }) -> List(I64)
+colors_by_depth = |marks|
+	DepthSort.sort_by(marks.map(marked_face), |face| face.depth).map(|face| face.color)
+
+expect
+	colors_by_depth([
+		{ color: 1, depth: 30.0 },
+		{ color: 2, depth: 10.0 },
+		{ color: 3, depth: 30.0 },
+		{ color: 4, depth: 20.0 },
+		{ color: 5, depth: 30.0 },
+	])
+		== [1, 3, 5, 4, 2]
+
+expect
+	colors_by_depth([
+		{ color: 1, depth: 20.0 },
+		{ color: 2, depth: 20.000001 },
+		{ color: 3, depth: 20.01 },
+		{ color: 4, depth: 19.0 },
+	])
+		== [3, 1, 2, 4]
+
+expect colors_by_depth([]).len() == 0
+expect colors_by_depth([{ color: 7, depth: 1.0 }]) == [7]
+
+expect TruckBody.tire_sides == 16

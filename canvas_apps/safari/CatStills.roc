@@ -39,3 +39,35 @@ CatStills :: [].{
 			Collapse => pose_collapse_polys
 		}
 }
+
+# A still's polygon count, corner count and gradient stop count.
+still_counts : List(Stills.StillPoly) -> List(I64)
+still_counts = |polys| [
+	polys.len().to_i64_wrap(),
+	polys.fold(0, |sum, poly| sum + poly.pts.len().to_i64_wrap()),
+	polys.fold(0, |sum, poly| sum + poly.grad.len().to_i64_wrap()),
+]
+
+expect
+	[
+		(Rest, [46, 2198, 0]),
+		(Stride, [46, 2198, 0]),
+		(Frozen, [47, 2197, 0]),
+		(Coil, [34, 1715, 0]),
+		(Flight, [34, 1715, 0]),
+		(Land, [34, 1715, 0]),
+		(Collapse, [34, 1715, 0]),
+	].all(|(pose, want)| still_counts(CatStills.pose_polys(pose)) == want)
+
+# The x of the first corner of a pose's first polygon.
+first_x : Cat.Pose -> F64
+first_x = |pose| {
+	first_poly = CatStills.pose_polys(pose).first() ?? crash "every pose has polygons"
+	first_pt = first_poly.pts.first() ?? crash "every polygon has corners"
+	first_pt.x
+}
+
+expect first_x(Coil) == 0.5062
+expect first_x(Flight) == 0.6873
+expect first_x(Land) == 0.6467
+expect first_x(Collapse) == 0.6377

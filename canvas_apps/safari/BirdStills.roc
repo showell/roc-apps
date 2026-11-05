@@ -104,3 +104,83 @@ logo_dark = 6368222
 
 logo_light : I64
 logo_light = 8542181
+
+# A still's polygon count, corner count and gradient count.
+still_counts : List(Stills.StillPoly) -> List(I64)
+still_counts = |polys| [
+	polys.len().to_i64_wrap(),
+	polys.fold(0, |sum, poly| sum + poly.pts.len().to_i64_wrap()),
+	polys.fold(0, |sum, poly| sum + poly.grad.len().to_i64_wrap()),
+]
+
+expect
+	[
+		(BirdStills.pose_polys(Perched), [6, 21, 0]),
+		(BirdStills.pose_polys(Side(WingsUp)), [6, 21, 0]),
+		(BirdStills.pose_polys(Side(WingsDown)), [6, 21, 0]),
+		(BirdStills.pose_polys(Away(WingsUp)), [4, 17, 0]),
+		(BirdStills.pose_polys(Away(WingsDown)), [4, 17, 0]),
+		(BirdStills.pose_polys(Diving), [6, 22, 0]),
+		(BirdStills.toward_us, [6, 21, 0]),
+	].all(|(polys, want)| still_counts(polys) == want)
+
+# The first corner of a still's first polygon, which tells the drawings apart.
+first_corner : List(Stills.StillPoly) -> List(F64)
+first_corner = |polys| {
+	first_poly = polys.first() ?? crash "every still has polygons"
+	first_pt = first_poly.pts.first() ?? crash "every polygon has corners"
+	[first_pt.x, first_pt.y]
+}
+
+expect
+	[
+		(BirdStills.pose_polys(Perched), [-0.0344, 0.5715]),
+		(BirdStills.pose_polys(Side(WingsUp)), [-0.45, 0.42]),
+		(BirdStills.pose_polys(Side(WingsDown)), [-0.45, 0.52]),
+		(BirdStills.pose_polys(Away(WingsUp)), [-0.06, 0.58]),
+		(BirdStills.pose_polys(Away(WingsDown)), [-0.06, 0.56]),
+		(BirdStills.pose_polys(Diving), [-0.2, 0.9]),
+		(BirdStills.toward_us, [-0.08, 0.54]),
+	].all(|(polys, want)| first_corner(polys) == want)
+
+every_still : List(List(Stills.StillPoly))
+every_still = [
+	BirdStills.pose_polys(Perched),
+	BirdStills.pose_polys(Side(WingsUp)),
+	BirdStills.pose_polys(Side(WingsDown)),
+	BirdStills.pose_polys(Away(WingsUp)),
+	BirdStills.pose_polys(Away(WingsDown)),
+	BirdStills.pose_polys(Diving),
+	BirdStills.toward_us,
+]
+
+# Whether every corner of a still is in the unit frame.
+is_in_frame : List(Stills.StillPoly) -> Bool
+is_in_frame = |polys|
+	polys.all(
+		|poly| poly.pts.all(|pt| pt.x >= -1.0 and pt.x <= 1.0 and pt.y >= 0.0 and pt.y <= 1.0),
+	)
+
+# Whether every polygon of a still is one of the logo's two purples.
+is_logo_coloured : List(Stills.StillPoly) -> Bool
+is_logo_coloured = |polys| polys.all(|poly| poly.color == 6368222 or poly.color == 8542181)
+
+expect every_still.all(is_in_frame)
+expect
+	!is_in_frame([
+		{
+			color: 6368222,
+			grad: [],
+			pts: [{ x: 1.1, y: 0.5 }],
+		},
+	])
+
+expect every_still.all(is_logo_coloured)
+expect
+	!is_logo_coloured([
+		{
+			color: 0,
+			grad: [],
+			pts: [],
+		},
+	])

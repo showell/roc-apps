@@ -43,3 +43,40 @@ EmojiStills :: [].{
 			_ => []
 		}
 }
+
+# A still's polygons, its points and its gradients, counted, and its first
+# polygon's colour; all four 0 for no still.
+still_facts : List(Stills.StillPoly) -> List(I64)
+still_facts = |polys|
+	match polys {
+		[] => [0, 0, 0, 0]
+		[first, ..] => [
+			polys.len().to_i64_wrap(),
+			polys.fold(0, |points, poly| points + poly.pts.len().to_i64_wrap()),
+			polys.fold(0, |gradients, poly| gradients + poly.grad.len().to_i64_wrap()),
+			first.color,
+		]
+	}
+
+# The duck, elephant, giraffe, zebra, rhino, bull, cow and pig, then the squid,
+# which has no still, and 0.
+expect
+	[
+		(129414, [6, 189, 0, 4493595]),
+		(128024, [6, 257, 0, 6513507]),
+		(129426, [24, 850, 0, 16745005]),
+		(129427, [22, 713, 0, 10197915]),
+		(129423, [6, 237, 0, 13882323]),
+		(128002, [43, 2309, 40, 4989733]),
+		(128004, [16, 469, 0, 10197915]),
+		(128022, [6, 243, 0, 16735833]),
+		(129425, [0, 0, 0, 0]),
+		(0, [0, 0, 0, 0]),
+	].all(|(codepoint, want)| still_facts(EmojiStills.emoji_polys_for(codepoint)) == want)
+
+bull_gradients : List(Stills.StillGrad)
+bull_gradients = EmojiStills.bull_polys.take_first(1).join_map(|poly| poly.grad).take_first(1)
+
+expect bull_gradients.map(|gradient| gradient.kind) == [1]
+expect bull_gradients.map(|gradient| gradient.off0) == [0.0]
+expect bull_gradients.map(|gradient| gradient.off1) == [1.0]
