@@ -59,8 +59,8 @@ Sky :: [].{
 	dusk_at_set = ((0.5 * (sun_start_px - sun_fully_set_px)) / sun_start_px)
 
 	## How far toward dusk the sky is at `clock`, from 0 (day) to 1 (dusk).
-	sun_set_fraction : F64 -> F64
-	sun_set_fraction = |clock| {
+	dusk_at : F64 -> F64
+	dusk_at = |clock| {
 		height = sun_height_px(clock)
 		if (height >= sun_fully_set_px) dusk_while_up(height) else dusk_after_set(height)
 	}
@@ -187,7 +187,7 @@ sky_at : F64 -> Sky.Rgb
 sky_at = |clock| Sky.color_between({
 	from: Sky.day_sky,
 	to: Sky.dusk_sky,
-	fraction: Sky.sun_set_fraction(clock),
+	fraction: Sky.dusk_at(clock),
 })
 
 sun_place : {

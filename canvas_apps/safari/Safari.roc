@@ -91,7 +91,7 @@ Safari :: [].{
 			[
 				Mountains.draw({
 					heading: ViewYaw.heading_for(s),
-					dusk: Sky.sun_set_fraction(r.clock),
+					dusk: Sky.dusk_at(r.clock),
 					cam_focal: cf,
 					view_w: Screen.width,
 				}),

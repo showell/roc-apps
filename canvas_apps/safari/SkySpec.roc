@@ -33,9 +33,9 @@ height_want = [
 
 ends_got : List(F64)
 ends_got = [
-	Sky.sun_set_fraction(0.0),
+	Sky.dusk_at(0.0),
 	Sky.sunset_warmth(0.0),
-	Sky.sun_set_fraction(6000.0),
+	Sky.dusk_at(6000.0),
 	Sky.sunset_warmth(6000.0),
 	Sky.sunset_glow,
 ]
