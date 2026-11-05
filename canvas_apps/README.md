@@ -95,6 +95,12 @@ window.SHOW = { wasm: '<name>.wasm', loading: 'Loading…' };
 Copy an existing `page.html`; `canvas_app_runner.js` throws if `window.SHOW` is
 not set.
 
+**A page says whether its app reads the pointer**, with `readsPointer: true` in
+`window.SHOW`. The wasm can't tell the runner, and the runner needs to know what
+a finger means: on such a canvas it's a drag (`touch-action: none`), and on any
+other canvas it scrolls the page. `web/page_check.mjs` measures whether the
+pointer changes what the app draws, and fails the build if the page says otherwise.
+
 **The keys an app may read are a closed set of twenty** (`lib/Keys.roc`): the
 four arrows, `W` `A` `S` `D` `Q` `E` `C` `J` `P` `R`, Space, Enter, and `1`–`4`.
 Adding one touches four places — `Keys.Key` and `Keys.bit`, `KEY_BIT` in
@@ -106,8 +112,8 @@ Adding one touches four places — `Keys.Key` and `Keys.bit`, `KEY_BIT` in
 A canvas app goes in a page of prose as an iframe of its own page, sized by an
 `aspect-ratio`, with `loading="lazy"` so it costs nothing until the reader
 comes near. `widget_kit/embed.js` makes the canvas fill the frame, passes the
-wheel on to the prose, gives a clicked frame the keyboard, and stops a frame
-that's off the screen. `canvas_app_runner.js` is unchanged, and each app is
+wheel on to the prose, gives a clicked or tapped frame the keyboard, and stops a
+frame that's off the screen. `canvas_app_runner.js` is unchanged, and each app is
 still a page of its own. `widget_kit/embed_trial.html` tries it with the ride
 and two widgets; copied with `embed.js` to `~/build/roc-apps/next/embed_trial/`
 it shows on the dev channel, beside the apps it frames.
@@ -184,7 +190,9 @@ out of the same quads.
 last tick, and the pointer's position, buttons and wheel. Each runner builds
 one — `CanvasAppRunner` from roc-ray's `Devices.Snapshot`, and on the page
 `canvas_app_runner.js` packs seven numbers from the browser's events which
-`lib/WasmApp.roc` turns into a snapshot. A test writes one down:
+`lib/WasmApp.roc` turns into a snapshot. The pointer is read through pointer
+events, so a finger or a pen is a mouse with its left button down, and during a
+drag the position may be off the canvas. A test writes one down:
 
 ```roc
 Input.none.with_key_down(KeyW)
