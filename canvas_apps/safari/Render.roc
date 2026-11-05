@@ -34,15 +34,14 @@ Render :: [].{
 
 	## Where the frame is seen from: the world, the chain of segments ahead
 	## (indexes into `world`, the rider's own first), the rider's pose, the
-	## camera's focal length, where along the route the rider is, where the
-	## truck is and which of its lights are on, and the ride's clock.
+	## camera's focal length, the segment the rider is on, the rider's speed,
+	## where the truck is and which of its lights are on, and the ride's clock.
 	Viewpoint : {
 		world : List(World.Segment),
 		chain : List(World.SegmentIndex),
 		pose : Frame.Pose,
 		cam_focal : F64,
 		rider_segment : World.SegmentIndex,
-		rider_along : F64,
 		speed : Speed,
 		truck : { route_position : F64, lights : Truck.Lights },
 		clock : F64,
@@ -57,7 +56,6 @@ Render :: [].{
 			pose,
 			cam_focal,
 			rider_segment,
-			rider_along,
 			speed,
 			truck,
 			clock,
@@ -94,20 +92,18 @@ Render :: [].{
 				chain,
 				pose,
 				cam_focal,
-				rider_along,
 				speed,
 			})
 				.take_first(CatPlan.max_vis_cats.to_u64_wrap())
 		rails = RailPlan.all_rails(road, rider_segment)
 		rider_distance = World.distance_along_route(
 			world,
-			{ index: rider_segment, along: rider_along },
+			{ index: rider_segment, along: pose.along },
 		)
 		truck_at = TruckPlan.in_view({
 			world,
 			chain,
 			pose,
-			rider_along,
 			lead: truck.route_position - rider_distance,
 			lights: truck.lights,
 		})
@@ -116,7 +112,6 @@ Render :: [].{
 			chain,
 			pose,
 			cam_focal,
-			rider_along,
 		})
 		# Keys about as far away as each other keep the order they are joined
 		# in, so this order decides which of two tied things is painted over

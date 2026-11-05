@@ -38,7 +38,6 @@ scene = Render.collect({
 	pose: origin,
 	cam_focal: 500.0,
 	rider_segment: World.SegmentIndex.first,
-	rider_along: 0.0,
 	speed: VehicleLimits.v_base,
 	truck: {
 		route_position: 500.0,

@@ -59,7 +59,6 @@ birds_on_segment = |segment, { rider_along, cam_focal }|
 			half_width: 2.0,
 		},
 		cam_focal,
-		rider_along,
 	})
 
 ## The one bird that a rider `rider_along` metres in sees on the segment with
@@ -165,7 +164,6 @@ two_segments = BirdPlan.in_view({
 		half_width: 2.0,
 	},
 	cam_focal: 500.0,
-	rider_along: 0.0,
 })
 
 ## A key's place in the birds' list.

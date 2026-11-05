@@ -413,7 +413,11 @@ Tower :: [].{
 		if brightness < 0.02 {
 			[]
 		} else {
-			radius = (beacon_radius * metre_px({ forward: mast.center.forward, cam_focal: mast.view.cam_focal }))
+			one_metre_px = metre_px({
+				forward: mast.center.forward,
+				cam_focal: mast.view.cam_focal,
+			})
+			radius = beacon_radius * one_metre_px
 			if (radius < 0.5) [] else Paint.push_beacon({
 				beacon_color,
 				beacon_center: apex_on_screen,

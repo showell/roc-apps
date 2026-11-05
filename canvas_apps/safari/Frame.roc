@@ -74,12 +74,12 @@ Frame :: [].{
 	look_ahead : U32
 	look_ahead = 7
 
-	## How far ahead of the rider the segment at `position` in the chain starts,
-	## for a rider `rider_along` metres into the chain's first segment.
-	gap_to_segment : Frame.RoadView, { position : Frame.ChainPosition, rider_along : F64 } -> F64
-	gap_to_segment = |road, { position, rider_along }|
+	## How far ahead of the rider the segment at `position` in the chain starts.
+	## The segments' lengths are added nearest first.
+	gap_to_segment : Frame.RoadView, Frame.ChainPosition -> F64
+	gap_to_segment = |road, position|
 		position.before_in(road.chain).fold(
-			0.0 - rider_along,
+			0.0 - road.pose.along,
 			|gap, index| gap + index.segment_in(road.world).length,
 		)
 

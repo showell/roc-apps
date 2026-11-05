@@ -82,7 +82,6 @@ Safari :: [].{
 				pose,
 				cam_focal: cf,
 				rider_segment: s.segment,
-				rider_along: s.along,
 				speed: s.speed,
 				truck: { route_position: r.truck.route_position, lights: truck_lights(r) },
 				clock: r.clock,

@@ -27,14 +27,12 @@ TruckPlan :: [].{
 	]
 
 	## What the truck is seen from: the world's segments, the chain of them
-	## ahead of the rider, the rider's pose, how far along its segment the
-	## rider is, how far ahead of the rider the truck is, and which of its
-	## lights are on.
+	## ahead of the rider, the rider's pose, how far ahead of the rider the
+	## truck is, and which of its lights are on.
 	View : {
 		world : List(World.Segment),
 		chain : List(World.SegmentIndex),
 		pose : Frame.Pose,
-		rider_along : F64,
 		lead : F64,
 		lights : Truck.Lights,
 	}
@@ -46,7 +44,7 @@ TruckPlan :: [].{
 		if view.lead > 0.0 {
 			truck_from(
 				view,
-				{ remaining: (view.rider_along + view.lead), position: Frame.ChainPosition.first },
+				{ remaining: (view.pose.along + view.lead), position: Frame.ChainPosition.first },
 			)
 		} else {
 			NoTruck

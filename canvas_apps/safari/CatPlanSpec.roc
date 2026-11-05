@@ -39,7 +39,6 @@ from_origin = {
 	chain: [0, 1, 2].map(World.SegmentIndex.number),
 	pose: origin,
 	cam_focal: 500.0,
-	rider_along: 0.0,
 	speed: Speed.metres_a_step(1.0),
 }
 
@@ -59,13 +58,17 @@ has_want = [False, True, False]
 
 gap_got : List(F64)
 gap_got = [0.0, 120.0].join_map(
-	|rider_along| [
+	|along| [
 		0,
 		1,
 		2,
 	].map(
-		|number| CatPlan.gap_to_segment(
-			{ ..from_origin, rider_along },
+		|number| Frame.gap_to_segment(
+			{
+				world: segs,
+				chain: from_origin.chain,
+				pose: { ..origin, along },
+			},
 			Frame.ChainPosition.number(number),
 		),
 	),
@@ -91,7 +94,6 @@ riding = |along| CatPlan.in_view({
 		yaw: Angle.straight_ahead,
 		half_width: 2.0,
 	},
-	rider_along: along,
 })
 
 seen : List(CatPlan.CatItem)

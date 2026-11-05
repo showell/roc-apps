@@ -23,14 +23,13 @@ CatPlan :: [].{
 	}
 
 	## What the cats are seen from: the world's segments, the chain of them
-	## ahead of the rider, the rider's pose, the camera's focal length, how
-	## far along its segment the rider is, and the rider's speed.
+	## ahead of the rider, the rider's pose, the camera's focal length, and
+	## the rider's speed.
 	View : {
 		world : List(World.Segment),
 		chain : List(World.SegmentIndex),
 		pose : Frame.Pose,
 		cam_focal : F64,
-		rider_along : F64,
 		speed : Speed,
 	}
 
@@ -54,19 +53,6 @@ CatPlan :: [].{
 			BirdFlies(_) | QuietRoad => []
 		}
 
-	## How far ahead of the rider the segment at `position` in the chain starts.
-	## The segments' lengths are added nearest first.
-	gap_to_segment : CatPlan.View, Frame.ChainPosition -> F64
-	gap_to_segment = |view, position|
-		Frame.gap_to_segment(
-			{
-				world: view.world,
-				chain: view.chain,
-				pose: view.pose,
-			},
-			{ position, rider_along: view.rider_along },
-		)
-
 	## The cats as the depth sort sees them: each one's distance ahead, and
 	## its position in `cats`.
 	depth_keys : List(CatPlan.CatItem) -> List(DepthSort.DepthKey)
@@ -87,14 +73,15 @@ cat_in_view : CatPlan.View,
 	crossing : Cat.Crossing,
 } -> List(CatPlan.CatItem)
 cat_in_view = |view, { position, crossing }| {
-	gap = CatPlan.gap_to_segment(view, position)
+	road = {
+		world: view.world,
+		chain: view.chain,
+		pose: view.pose,
+	}
+	gap = Frame.gap_to_segment(road, position)
 	moment = Cat.moment_at(crossing, { gap: (gap + crossing.along), speed: view.speed })
 	seen = Frame.rider_point_ahead(
-		{
-			world: view.world,
-			chain: view.chain,
-			pose: view.pose,
-		},
+		road,
 		{
 			position: position,
 			along: (crossing.along + moment.spot.along),

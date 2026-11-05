@@ -14,14 +14,12 @@ import World
 BirdPlan :: [].{
 
 	## What the birds are seen from: the world's segments, the chain of them
-	## ahead of the rider, the rider's pose, the camera's focal length, and
-	## how far along its segment the rider is.
+	## ahead of the rider, the rider's pose, and the camera's focal length.
 	View : {
 		world : List(World.Segment),
 		chain : List(World.SegmentIndex),
 		pose : Frame.Pose,
 		cam_focal : F64,
-		rider_along : F64,
 	}
 
 	## The birds in view, the nearest segment's first.
@@ -57,10 +55,7 @@ segment_bird : BirdPlan.View, Frame.ChainPosition -> List(RocBird.PlacedBird)
 segment_bird = |view, position|
 	match position.index_in(view.chain).segment_in(view.world).crossing {
 		BirdFlies(route) => {
-			gap_to_segment = Frame.gap_to_segment(
-				road_of(view),
-				{ position, rider_along: view.rider_along },
-			)
+			gap_to_segment = Frame.gap_to_segment(road_of(view), position)
 			gap_to_tree = gap_to_segment + BirdFlight.start_along(route)
 			bird_in_view(view, { position, moment: BirdFlight.route_moment_at(route, gap_to_tree) })
 		}
