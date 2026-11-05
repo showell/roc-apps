@@ -104,3 +104,99 @@ cow_at = |i| {
 		face_right: True,
 	}
 }
+
+expect Herd.bull_codepoint == 128002
+expect Herd.cow_codepoint == 128004
+
+expect Herd.bull_of(WithBull).map(|bull| bull.codepoint) == [128002]
+expect Herd.bull_of(NoBull).len() == 0
+expect Herd.fill_cows(WithBull).len() == 15
+expect Herd.fill_cows(NoBull).len() == 14
+
+# The bull faces left and the cows right.
+expect Herd.fill_cows(WithBull).take_first(2).map(|critter| critter.face_right) == [False, True]
+
+expect Herd.bull_of(WithBull).map(|bull| bull.along) == [24.0]
+expect Herd.bull_of(WithBull).map(|bull| bull.across) == [-4.805]
+expect Herd.bull_dist == 24.0
+expect Herd.bull_tree_gap == 0.5
+
+expect Herd.cow_height == 1.4
+expect Herd.calf_height == 0.7
+
+expect (Herd.bull_height - 1.61).abs() <= 0.000000000001
+expect Herd.bull_of(WithBull).all(|bull| (bull.height - 1.61).abs() <= 0.000000000001)
+
+expect
+	Herd.cows.map(|cow| cow.height)
+		== [
+			1.4,
+			0.7,
+			1.4,
+			1.4,
+			1.4,
+			0.7,
+			1.4,
+			1.4,
+			1.4,
+			0.7,
+			1.4,
+			1.4,
+			1.4,
+			0.7,
+		]
+
+expect Herd.cows.len() == 14
+expect Herd.cows.all(|cow| cow.codepoint == 128004)
+
+# The bull leads, and the cows follow him in their own order.
+expect Herd.fill_cows(WithBull).take_first(1).map(|bull| bull.along) == [24.0]
+expect Herd.fill_cows(WithBull).drop_first(1) == Herd.cows
+
+expect Herd.herd_gap_behind_bull == 6.0
+expect Herd.herd_col_spacing == 6.0
+expect Herd.herd_row_stagger == 2.0
+expect Herd.herd_row_depth == 5.0
+expect Herd.herd_jitter_along == 1.5
+expect Herd.herd_jitter_across == 1.2
+
+# Each cow strays from its place by no more than the jitter.
+expect {
+	places = [
+		28.0,
+		30.0,
+		32.0,
+		34.0,
+		36.0,
+		38.0,
+		40.0,
+		42.0,
+		44.0,
+		46.0,
+		48.0,
+		50.0,
+		52.0,
+		54.0,
+	]
+	Herd.cows.map2(places, |cow, place| (cow.along - place).abs()).all(|miss| miss <= 1.5)
+}
+
+expect {
+	places = [
+		-12.0,
+		-17.0,
+		-22.0,
+		-12.0,
+		-17.0,
+		-22.0,
+		-12.0,
+		-17.0,
+		-22.0,
+		-12.0,
+		-17.0,
+		-22.0,
+		-12.0,
+		-17.0,
+	]
+	Herd.cows.map2(places, |cow, place| (cow.across - place).abs()).all(|miss| miss <= 1.2)
+}

@@ -175,3 +175,104 @@ near_plane_crossing = |{ from, to }| {
 		height: from.height + fraction * (to.height - from.height),
 	}
 }
+
+expect Geom.ground_drop({ right: 0.0, forward: 0.0 }) == 0.0
+expect Geom.ground_drop({ right: 3.0, forward: 10.0 }) == 0.000545
+expect Geom.ground_drop({ right: -5.0, forward: 40.0 }) == 0.008125
+expect Geom.ground_drop({ right: 12.5, forward: 100.0 }) == 0.05078125
+
+expect {
+	seen_from = |road_point, yaw|
+		Geom.to_rider_point(
+			road_point,
+			{
+				along: 5.0,
+				across: 0.5,
+				yaw: Angle.Turn.radians(yaw),
+				half_width: 3.0,
+			},
+		)
+	[
+		(
+			seen_from({ along: 0.0, across: 0.0 }, 0.0),
+			{ right: -3.5, forward: -5.0 },
+		),
+		(
+			seen_from({ along: 12.0, across: 3.0 }, 0.35),
+			{ right: -2.869971008611849, forward: 6.404160086203927 },
+		),
+		(
+			seen_from({ along: 40.0, across: -2.0 }, -0.6),
+			{ right: 15.223140686823006, forward: 31.992280125511435 },
+		),
+		(
+			seen_from({ along: 7.5, across: 6.25 }, 1.2),
+			{ right: -1.333613890107213, forward: 3.4690018726015563 },
+		),
+	].all(
+		|(got, want)| {
+			right_miss = (got.right - want.right).abs()
+			forward_miss = (got.forward - want.forward).abs()
+			right_miss <= 0.000001 and forward_miss <= 0.000001
+		},
+	)
+}
+
+expect
+	Geom.line_crossing({
+		first_line: {
+			start_point: { right: 0.0, forward: 0.0 },
+			end_point: { right: 0.0, forward: 1.0 },
+		},
+		second_line: {
+			start_point: { right: -2.0, forward: 4.0 },
+			end_point: { right: 3.0, forward: 4.0 },
+		},
+	})
+		== { right: 0.0, forward: 4.0 }
+
+expect
+	Geom.clip_near([
+		{
+			right: -1.0,
+			forward: 2.0,
+			height: 0.0,
+		},
+		{
+			right: 1.0,
+			forward: 2.0,
+			height: 0.5,
+		},
+		{
+			right: 1.0,
+			forward: -1.0,
+			height: 1.0,
+		},
+		{
+			right: -1.0,
+			forward: -1.0,
+			height: 1.5,
+		},
+	])
+		== [
+			{
+				right: -1.0,
+				forward: 2.0,
+				height: 0.0,
+			},
+			{
+				right: 1.0,
+				forward: 2.0,
+				height: 0.5,
+			},
+			{
+				right: 1.0,
+				forward: 0.4,
+				height: 0.7666666666666666,
+			},
+			{
+				right: -1.0,
+				forward: 0.4,
+				height: 0.8,
+			},
+		]

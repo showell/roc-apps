@@ -900,6 +900,23 @@ is the base; these rules sharpen it.
 - **Test each pure mapping, and the exact bytes each builder makes,** with
   `expect`s beside the code. `roc test <app>.roc` runs every imported
   module's `expect`s (`roc test app/main.roc` for roc-chat).
+- **An `expect` sits at the top level of its file, below the block.** Roc
+  also runs one inside the block, but a gate counts the lines that start
+  `expect`, so the source is the count, and each must pass exactly once
+  (safari's `gates/run.shale`, gopher-roc's `tools/verify.shale`). Below the
+  block it names members as a caller does (`Herd.cows`) and helpers bare.
+- **A float compared with a tolerance states the tolerance once, over a
+  table.** `(got - want).abs() <= tolerance` is false for a NaN and an
+  infinity, so it needs no finite check. A float with no tolerance is
+  compared with `==`.
+
+  ```roc
+  expect
+  	[
+  		(0.5, 0.479425538604203),
+  		(1.0, 0.8414709848078965),
+  	].all(|(angle, sine)| (Trig.r_sin(angle) - sine).abs() <= 0.0000001)
+  ```
 - **An `expect` keeps each input beside its expected answer.** A list of
   inputs mapped and compared to a separate list of answers makes the
   reader count positions to pair them:
