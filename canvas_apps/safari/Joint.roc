@@ -2,6 +2,7 @@
 ## the apex where the outer edges of the road meet at the bend. The road's
 ## paving and the guard rail both follow it.
 import Angle
+import Distance
 import Frame
 import Geom
 import Scenery
@@ -15,7 +16,7 @@ Joint :: [].{
 	PlacedBend : {
 		before : Frame.SegmentPlace,
 		after : Frame.SegmentPlace,
-		length_before : F64,
+		length_before : Distance,
 		turn : Angle.Turn,
 	}
 
@@ -59,8 +60,8 @@ Joint :: [].{
 		)
 		Geom.line_crossing({
 			first_line: {
-				start_point: point_before(bend.length_before),
-				end_point: point_before(bend.length_before + 1.0),
+				start_point: point_before(bend.length_before.to_metres()),
+				end_point: point_before(bend.length_before.to_metres() + 1.0),
 			},
 			second_line: {
 				start_point: point_after(0.0),

@@ -1,6 +1,7 @@
 ## Pigs graze on the right of the road near the end of a segment. On the
 ## first few segments with pigs they are a big herd, and one of them catches
 ## the rider's eye; after that, they stand in two short rows.
+import Distance
 import Scenery
 import lib.Trig
 
@@ -15,8 +16,8 @@ Pigs :: [].{
 	pig_codepoint : I64
 	pig_codepoint = 128022
 
-	pig_height : F64
-	pig_height = 1.1
+	pig_height : Distance
+	pig_height = Distance.metres(1.1)
 
 	## How many segments with pigs have the big herd.
 	pig_novelty_count : U32
@@ -99,12 +100,12 @@ Pigs :: [].{
 			Unnoticed
 		}
 
-	## The pigs on a segment `length` metres long: a big herd where they catch
-	## the rider's eye, and two rows elsewhere.
+	## The pigs on a segment `length` long: a big herd where they catch the
+	## rider's eye, and two rows elsewhere.
 	pigs_along : {
 		presence : Pigs.PigPresence,
 		attention : Pigs.PigAttention,
-		length : F64,
+		length : Distance,
 	} -> List(Scenery.Critter)
 	pigs_along = |
 		{
@@ -119,29 +120,27 @@ Pigs :: [].{
 			(NoPigs, Distracting) | (NoPigs, Unnoticed) => []
 		}
 
-	## The pig that catches the rider's eye, on a segment `length` metres
-	## long.
-	gaze_pig : F64 -> Scenery.Critter
+	## The pig that catches the rider's eye, on a segment `length` long.
+	gaze_pig : Distance -> Scenery.Critter
 	gaze_pig = |length|
 		pig({
-			along: ((length - pig_dist_before_end) + gaze_pig_along_offset),
+			along: ((length.to_metres() - pig_dist_before_end) + gaze_pig_along_offset),
 			across: (road_edge + Scenery.herd_road_offset),
 		})
 
-	## The big herd on a segment `length` metres long, row by row from the
-	## road.
-	fill_pig_herd : F64 -> List(Scenery.Critter)
+	## The big herd on a segment `length` long, row by row from the road.
+	fill_pig_herd : Distance -> List(Scenery.Critter)
 	fill_pig_herd = |length| {
-		herd_along = (length - pig_dist_before_end)
+		herd_along = (length.to_metres() - pig_dist_before_end)
 		columns = List.from_iter(I64.until(0, big_herd_cols))
 		List.from_iter(I64.until(0, big_herd_rows))
 			.join_map(|row| columns.map(|column| herd_pig(herd_along, { row, column })))
 	}
 
-	## The two rows of pigs on a segment `length` metres long, front row first.
-	fill_pig_row : F64 -> List(Scenery.Critter)
+	## The two rows of pigs on a segment `length` long, front row first.
+	fill_pig_row : Distance -> List(Scenery.Critter)
 	fill_pig_row = |length| {
-		herd_along = (length - pig_dist_before_end)
+		herd_along = (length.to_metres() - pig_dist_before_end)
 		edge = (road_edge + Scenery.herd_road_offset)
 		List.concat(
 			pig_row(herd_along, { across: edge, offsets: pig_row_front }),

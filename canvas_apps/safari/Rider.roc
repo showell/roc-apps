@@ -5,6 +5,7 @@ import Acceleration
 import Angle
 import Bike
 import lib.DeviceMath
+import Distance
 import Gaze
 import LeanSearch
 import Pose
@@ -49,7 +50,7 @@ Rider :: [].{
 			theta = seg.exit_turn.to_radians()
 			c = Trig.r_cos(theta)
 			s = Trig.r_sin(theta)
-			da = (rs.along - (seg.length + (hw * DeviceMath.real_abs(s))))
+			da = (rs.along - (seg.length.to_metres() + (hw * DeviceMath.real_abs(s))))
 			corner_shift = (hw * (1.0 - c))
 			dx =
 				if seg.exit_turn.is_right() {
@@ -71,16 +72,17 @@ Rider :: [].{
 	finish_clamp : Pose.RiderState, World.Segment -> Pose.RiderState
 	finish_clamp = |moved, seg| (
 		{
-			in_zone = ((seg.length - moved.along) < VehicleLimits.approach_intersection_dist)
+			end = seg.length.to_metres()
+			in_zone = Distance.metres(end - moved.along) < VehicleLimits.approach_intersection_dist
 			(
-				if moved.along >= seg.length {
-					stopped_at(moved, seg.length)
+				if moved.along >= end {
+					stopped_at(moved, end)
 				} else {
 					(
 						if in_zone {
 							(
 								if moved.speed < stopping_speed {
-									stopped_at(moved, seg.length)
+									stopped_at(moved, end)
 								} else {
 									moved
 								}
@@ -136,7 +138,7 @@ Rider :: [].{
 			seg = s.segment.segment_in(segs)
 			match seg.ending {
 				Continues(_) => False
-				Terminates => (s.along >= seg.length)
+				Terminates => (s.along >= seg.length.to_metres())
 			}
 		}
 	)

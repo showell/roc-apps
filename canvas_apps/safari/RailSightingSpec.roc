@@ -7,6 +7,7 @@ app [main!] {
 import Angle
 import Frame
 import Geom
+import Distance
 import Grade
 import GuardRail
 import RailSighting
@@ -111,7 +112,7 @@ run_up = RailSighting.run_up(
 	road,
 	{
 		place: InChain(Frame.ChainPosition.first),
-		length: 500.0,
+		length: Distance.metres(500.0),
 		across: 4.0,
 	},
 )

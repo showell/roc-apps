@@ -5,6 +5,7 @@ app [main!] {
 }
 
 import Billboards
+import Distance
 import Grade
 
 ## A cow 2.5 m to the right, at each distance and height.
@@ -25,7 +26,7 @@ sightings =
 		|{ forward, height }|
 			Billboards.sighting({
 				at: { right: 2.5, forward },
-				height,
+				height: Distance.metres(height),
 				codepoint: 128004,
 				facing: FacesRight,
 			}),
@@ -62,7 +63,7 @@ left_bull : Billboards.Billboard
 left_bull = billboard_of(
 	Billboards.sighting({
 		at: { right: (-1.5), forward: 50.0 },
-		height: 1.6,
+		height: Distance.metres(1.6),
 		codepoint: 128002,
 		facing: FacesLeft,
 	}),
@@ -84,10 +85,10 @@ carried_real_got : List(F64)
 carried_real_got = [
 	near_cow.right,
 	near_cow.forward,
-	near_cow.height,
+	near_cow.height.to_metres(),
 	left_bull.right,
 	left_bull.forward,
-	left_bull.height,
+	left_bull.height.to_metres(),
 ]
 
 carried_real_want : List(F64)

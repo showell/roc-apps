@@ -5,6 +5,7 @@
 import Angle
 import BirdFlight
 import Cat
+import Distance
 import Herd
 import Pigs
 import Scenery
@@ -60,7 +61,7 @@ World :: [].{
 	## into the next (right is positive), what lives along it, and
 	## the creature at its end.
 	SegmentPlan : {
-		length : F64,
+		length : Distance,
 		scheme : Scenery.Scheme,
 		turn : Angle.Turn,
 		crossing : [CatCrosses, BirdCrosses, QuietRoad],
@@ -72,7 +73,7 @@ World :: [].{
 
 	## One segment of road, built from its plan.
 	Segment : {
-		length : F64,
+		length : Distance,
 		trees : List(Scenery.Tree),
 		cows : List(Scenery.Critter),
 		pigs : List(Scenery.Critter),
@@ -97,13 +98,13 @@ World :: [].{
 	}
 
 	## A segment longer than this has a mast halfway along.
-	mid_tower_min_length : F64
-	mid_tower_min_length = 1000.0
+	mid_tower_min_length : Distance
+	mid_tower_min_length = Distance.metres(1000.0)
 
 	route : List(World.SegmentPlan)
 	route = [
 		{
-			length: 500.0,
+			length: Distance.metres(500.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(50.0),
 			crossing: BirdCrosses,
@@ -113,7 +114,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 320.0,
+			length: Distance.metres(320.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(-70.0),
 			crossing: QuietRoad,
@@ -123,7 +124,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 400.0,
+			length: Distance.metres(400.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(20.0),
 			crossing: QuietRoad,
@@ -133,7 +134,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 300.0,
+			length: Distance.metres(300.0),
 			scheme: YellowGreen,
 			turn: Angle.Turn.degrees(20.0),
 			crossing: CatCrosses,
@@ -143,7 +144,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 300.0,
+			length: Distance.metres(300.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(-70.0),
 			crossing: QuietRoad,
@@ -153,7 +154,7 @@ World :: [].{
 			creature: Giraffe,
 		},
 		{
-			length: 300.0,
+			length: Distance.metres(300.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(-70.0),
 			crossing: BirdCrosses,
@@ -163,7 +164,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 1200.0,
+			length: Distance.metres(1200.0),
 			scheme: RedGreen,
 			turn: Angle.Turn.degrees(80.0),
 			crossing: QuietRoad,
@@ -173,7 +174,7 @@ World :: [].{
 			creature: Rhino,
 		},
 		{
-			length: 300.0,
+			length: Distance.metres(300.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(15.0),
 			crossing: QuietRoad,
@@ -183,7 +184,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 300.0,
+			length: Distance.metres(300.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(-70.0),
 			crossing: QuietRoad,
@@ -193,7 +194,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 800.0,
+			length: Distance.metres(800.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(15.0),
 			crossing: CatCrosses,
@@ -203,7 +204,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 300.0,
+			length: Distance.metres(300.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(15.0),
 			crossing: QuietRoad,
@@ -213,7 +214,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 300.0,
+			length: Distance.metres(300.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(15.0),
 			crossing: QuietRoad,
@@ -223,7 +224,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 300.0,
+			length: Distance.metres(300.0),
 			scheme: RedGreen,
 			turn: Angle.Turn.degrees(15.0),
 			crossing: QuietRoad,
@@ -233,7 +234,7 @@ World :: [].{
 			creature: DuckPond,
 		},
 		{
-			length: 400.0,
+			length: Distance.metres(400.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(-50.0),
 			crossing: QuietRoad,
@@ -243,7 +244,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 300.0,
+			length: Distance.metres(300.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(50.0),
 			crossing: BirdCrosses,
@@ -253,7 +254,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 300.0,
+			length: Distance.metres(300.0),
 			scheme: RedGreen,
 			turn: Angle.Turn.degrees(-50.0),
 			crossing: QuietRoad,
@@ -263,7 +264,7 @@ World :: [].{
 			creature: Zebra,
 		},
 		{
-			length: 300.0,
+			length: Distance.metres(300.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(50.0),
 			crossing: QuietRoad,
@@ -273,7 +274,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 300.0,
+			length: Distance.metres(300.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(-50.0),
 			crossing: QuietRoad,
@@ -283,7 +284,7 @@ World :: [].{
 			creature: Elephant,
 		},
 		{
-			length: 300.0,
+			length: Distance.metres(300.0),
 			scheme: RedGreen,
 			turn: Angle.Turn.degrees(0.0),
 			crossing: CatCrosses,
@@ -320,13 +321,17 @@ World :: [].{
 	## The segments' length, end to end. It is summed from the last segment to
 	## the first: a float sum's rounding depends on its order, and another
 	## order can move a pixel.
-	route_length : List(World.Segment) -> F64
-	route_length = |world| world.fold_rev(0.0, |segment, sum| segment.length + sum)
+	route_length : List(World.Segment) -> Distance
+	route_length = |world| world.fold_rev(Distance.zero, |segment, sum| segment.length.plus(sum))
 
 	## How far along the route a point `along` into the segment at `index` is.
-	distance_along_route : List(World.Segment), { index : World.SegmentIndex, along : F64 } -> F64
+	distance_along_route : List(World.Segment),
+	{
+		index : World.SegmentIndex,
+		along : F64,
+	} -> Distance
 	distance_along_route = |world, { index, along }|
-		route_length(world.take_first(index.count_before())) + along
+		route_length(world.take_first(index.count_before())).plus(Distance.metres(along))
 }
 
 ## The segment at `index` of the route, built from its plan.
@@ -351,9 +356,9 @@ built_segment = |plan, index| {
 		commit_along: match plan.ending {
 			Continues => {
 				exit_tan = Trig.r_tan(plan.turn.abs().to_radians())
-				plan.length - Scenery.lane_width / 2.0 / exit_tan
+				plan.length.to_metres() - Scenery.lane_width / 2.0 / exit_tan
 			}
-			Terminates => plan.length
+			Terminates => plan.length.to_metres()
 		},
 		mid_tower: if (plan.length > World.mid_tower_min_length) MidTower else NoMidTower,
 		crossing: match plan.crossing {

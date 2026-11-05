@@ -1,5 +1,6 @@
 # Scenery -- originally emitted from Codex by rocemit; the Roc is the program now
 # and this file is edited here (safari/README.md).
+import Distance
 
 Scenery :: [].{
 	Scheme : [AllGreen, YellowGreen, RedGreen]
@@ -8,13 +9,13 @@ Scenery :: [].{
 		along : F64,
 		across : F64,
 		color : I64,
-		height : F64,
+		height : Distance,
 	}
 	Critter : {
 		along : F64,
 		across : F64,
 		codepoint : I64,
-		height : F64,
+		height : Distance,
 		face_right : Bool,
 	}
 

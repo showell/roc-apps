@@ -29,11 +29,11 @@ seg = |i| World.route_segment(i)
 
 length_got : List(F64)
 length_got = [
-	seg(0).length,
-	seg(1).length,
-	seg(6).length,
-	seg(9).length,
-	seg(18).length,
+	seg(0).length.to_metres(),
+	seg(1).length.to_metres(),
+	seg(6).length.to_metres(),
+	seg(9).length.to_metres(),
+	seg(18).length.to_metres(),
 ]
 
 length_want : List(F64)
@@ -138,8 +138,8 @@ cat_got : List(F64)
 cat_got = [
 	crossing_at(3).mid_across,
 	crossing_at(18).mid_across,
-	crossing_at(3).height,
-	crossing_at(18).height,
+	crossing_at(3).height.to_metres(),
+	crossing_at(18).height.to_metres(),
 ]
 
 cat_want : List(F64)

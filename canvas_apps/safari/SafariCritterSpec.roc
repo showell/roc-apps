@@ -39,7 +39,7 @@ cp_want : List(I64)
 cp_want = [128024, 129426, 129427, 129423]
 
 height_got : List(F64)
-height_got = animals.map(|creature| species(creature).adult_height)
+height_got = animals.map(|creature| species(creature).adult_height.to_metres())
 
 height_want : List(F64)
 height_want = [2.8, 4.5, 1.6, 2.2]
@@ -104,7 +104,7 @@ along_want : List(F64)
 along_want = [100.0, 114.0, 50.0, 64.0, 10.0, 24.0, 0.0, 14.0]
 
 ch_got : List(F64)
-ch_got = all_four.map(|critter| critter.height)
+ch_got = all_four.map(|critter| critter.height.to_metres())
 
 ch_want : List(F64)
 ch_want = [2.8, 1.4, 4.5, 2.25, 1.6, 0.8, 2.2, 1.1]

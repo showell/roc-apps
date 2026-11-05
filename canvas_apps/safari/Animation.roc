@@ -13,6 +13,7 @@
 ## A spot is relative to the critter's home, which only its owner knows, so
 ## critters with different homes can share a timeline.
 import Beats
+import Distance
 import Easing
 import Fraction
 import Speed
@@ -20,58 +21,59 @@ import lib.Trig
 
 Animation :: [].{
 
-	## How the rider comes on a thing: the gap from the rider ahead to it, in
-	## metres, and the rider's speed.
-	Approach : { gap : F64, speed : Speed }
+	## How the rider comes on a thing: the gap from the rider ahead to it, and
+	## the rider's speed.
+	Approach : { gap : Distance, speed : Speed }
 
 	## Where an animation has got to: not begun, playing and this far through,
-	## or over, with the rider this many metres beyond its end.
+	## or over, with the rider this far beyond its end.
 	Stage : [
 		Waiting,
 		Playing(Fraction),
-		Past(F64),
+		Past(Distance),
 	]
 
 	## A rider this slow is standing still.
 	standstill : Speed
 	standstill = Speed.metres_a_step(0.000001)
 
-	## An animation that plays while the rider closes from `starts_at` metres
+	## An animation that plays while the rider closes from a gap of `starts_at`
 	## to `ends_at`, however fast. It is playing only strictly between the two,
 	## so a critter is at rest at both ends.
-	over_gap : { starts_at : F64, ends_at : F64 }, F64 -> Animation.Stage
+	over_gap : { starts_at : Distance, ends_at : Distance }, Distance -> Animation.Stage
 	over_gap = |{ starts_at, ends_at }, gap| {
-		progress = Fraction.clamp((starts_at - gap) / (starts_at - ends_at))
+		progress = Fraction.clamp(starts_at.minus(gap).ratio_to(starts_at.minus(ends_at)))
 		if progress <= Fraction.zero {
 			Waiting
 		} else if progress >= Fraction.whole {
-			Past(ends_at - gap)
+			Past(ends_at.minus(gap))
 		} else {
 			Playing(progress)
 		}
 	}
 
 	## An animation `length` long, played at a beat a step at the rider's
-	## speed, that ends with the rider `buffer` metres short, however fast the
-	## rider comes. It is playing from the moment the rider is that far away,
+	## speed, that ends with the rider `buffer` short, however fast the rider
+	## comes. It is playing from the moment the rider is that far away,
 	## and a rider standing still inside that stretch holds it at its start.
-	over_beats : { length : Beats, buffer : F64 }, Animation.Approach -> Animation.Stage
+	over_beats : { length : Beats, buffer : Distance }, Animation.Approach -> Animation.Stage
 	over_beats = |{ length, buffer }, { gap, speed }| {
-		gap_left = gap - buffer
+		gap_left = gap.minus(buffer)
 		stretch = speed.distance_in(length)
-		if gap_left <= 0.0 {
-			Past(0.0 - gap_left)
+		if gap_left <= Distance.zero {
+			Past(gap_left.opposite())
 		} else if gap_left > stretch {
 			Waiting
 		} else if speed <= standstill {
 			Playing(Fraction.zero)
 		} else {
-			Playing(Fraction.clamp(1.0 - gap_left / stretch))
+			Playing(Fraction.clamp(1.0 - gap_left.ratio_to(stretch)))
 		}
 	}
 
-	## A place, relative to a critter's home. What `lift` measures is the
-	## critter's own affair.
+	## A place, relative to a critter's home. `lift` is a plain number because
+	## its unit is the critter's own affair: cat heights for a cat, and metres
+	## for a bird. Each owner turns it into what it means at its own edge.
 	Spot : {
 		along : F64,
 		across : F64,

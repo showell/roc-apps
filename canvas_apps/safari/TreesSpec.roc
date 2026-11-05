@@ -4,6 +4,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Distance
 import Grade
 import Scenery
 import Trees
@@ -21,7 +22,7 @@ colour_want = [1858082, 13605400, 11680298, 96]
 
 dim_got : List(F64)
 dim_got = [
-	Trees.small_height,
+	Trees.small_height.to_metres(),
 	Trees.big_scale,
 	Trees.tree_spacing,
 	Trees.tree_road_offset,
@@ -46,8 +47,8 @@ hx_got = List.concat(
 		Gold,
 	].join_map(
 		|conifer| [
-			Trees.height({ conifer, size: Big }),
-			Trees.height({ conifer, size: Small }),
+			Trees.height({ conifer, size: Big }).to_metres(),
+			Trees.height({ conifer, size: Small }).to_metres(),
 		],
 	),
 	[Green, Red, Gold].map(Trees.across),
@@ -57,7 +58,7 @@ hx_want : List(F64)
 hx_want = [5.8500000000000005, 4.5, 11.700000000000001, 9.0, 17.55, 13.5, 3.5, 3.5, 8.0]
 
 filled : List(Scenery.Tree)
-filled = Trees.plant({ scheme: YellowGreen, length: 300.0 })
+filled = Trees.plant({ scheme: YellowGreen, length: Distance.metres(300.0) })
 
 along_got : List(F64)
 along_got = filled.map(|tree| tree.along)
@@ -123,7 +124,7 @@ colours_want = [
 ]
 
 heights_got : List(F64)
-heights_got = filled.map(|tree| tree.height)
+heights_got = filled.map(|tree| tree.height.to_metres())
 
 heights_want : List(F64)
 heights_want = [
@@ -150,7 +151,12 @@ stops_got = List.concat(
 		100.0,
 		5000.0,
 		50.0,
-	].map(|length| Trees.plant({ scheme: AllGreen, length }).len().to_i64_wrap()),
+	].map(
+		|metres| {
+			length = Distance.metres(metres)
+			Trees.plant({ scheme: AllGreen, length }).len().to_i64_wrap()
+		},
+	),
 )
 
 stops_want : List(I64)

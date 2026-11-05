@@ -53,7 +53,7 @@ ItemDraw :: [].{
 		Tree.draw({
 			right: tree.right,
 			forward: tree.forward,
-			height: tree.height,
+			height: tree.height.to_metres(),
 			color: tree.color,
 			cam_focal,
 			trunk: if (nearer_trees < ItemDraw.round_trunk_limit) RoundCorners else SharpCorners,
@@ -143,7 +143,7 @@ draw_cat = |cat, cam_focal|
 	CatDraw.draw({
 		right: cat.right,
 		forward: cat.forward,
-		height: cat.height,
+		height: cat.height.to_metres(),
 		pose: cat.pose,
 		lift: cat.lift,
 		cam_focal,

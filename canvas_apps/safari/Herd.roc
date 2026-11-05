@@ -1,6 +1,7 @@
 ## A herd of cows grazes on the left of the road, in columns of three that
 ## run back from it, each cow a little out of line. A bull may stand in
 ## front of the herd, by the trees.
+import Distance
 import Scenery
 import Trees
 import lib.Trig
@@ -13,14 +14,14 @@ Herd :: [].{
 	cow_codepoint : I64
 	cow_codepoint = 128004
 
-	cow_height : F64
-	cow_height = 1.4
+	cow_height : Distance
+	cow_height = Distance.metres(1.4)
 
-	calf_height : F64
-	calf_height = (cow_height / 2.0)
+	calf_height : Distance
+	calf_height = cow_height.divided_by(2.0)
 
-	bull_height : F64
-	bull_height = (cow_height * 1.15)
+	bull_height : Distance
+	bull_height = cow_height.times(1.15)
 
 	## How far along its segment the bull stands.
 	bull_dist : F64
@@ -62,10 +63,11 @@ Herd :: [].{
 		match bull {
 			WithBull => {
 				tree_line = ((Scenery.lane_width / 2.0) + Trees.tree_road_offset)
+				bull_middle = (tree_line + (bull_height.to_metres() / 2.0))
 				[
 					{
 						along: bull_dist,
-						across: (0.0 - ((tree_line + (bull_height / 2.0)) + bull_tree_gap)),
+						across: (0.0 - (bull_middle + bull_tree_gap)),
 						codepoint: bull_codepoint,
 						height: bull_height,
 						face_right: False,

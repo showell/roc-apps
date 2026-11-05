@@ -99,7 +99,7 @@ TowerSighting :: [].{
 			view,
 			{
 				place: InChain(position),
-				along: (segment.length + tower_beyond),
+				along: (segment.length.to_metres() + tower_beyond),
 				across: ((Scenery.lane_width / 2.0) + tower_right),
 				yaw: tower_yaw,
 				beacon_key: index.to_u32(),
@@ -120,7 +120,7 @@ TowerSighting :: [].{
 					view,
 					{
 						place: InChain(position),
-						along: (segment.length / 2.0),
+						along: (segment.length.to_metres() / 2.0),
 						across: ((Scenery.lane_width / 2.0) - mid_tower_left),
 						yaw: Angle.straight_ahead,
 						beacon_key: index.to_u32() + mid_tower_beacon_step,
@@ -139,7 +139,7 @@ TowerSighting :: [].{
 			view,
 			{
 				place: Frame.place_behind(behind),
-				along: (behind.length + tower_beyond),
+				along: (behind.length.to_metres() + tower_beyond),
 				across: ((Scenery.lane_width / 2.0) + tower_right),
 				yaw: tower_yaw,
 				beacon_key: index.to_u32(),

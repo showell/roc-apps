@@ -11,6 +11,7 @@ import CatSighting
 import Clock
 import CritterSighting
 import DepthSort
+import Distance
 import Frame
 import Grade
 import RailSighting
@@ -45,7 +46,7 @@ scene = Render.collect(
 	{
 		speed: VehicleLimits.v_base,
 		truck: {
-			route_position: 500.0,
+			route_position: Distance.metres(500.0),
 			lights: { headlights: Off, brake_lights: Off },
 		},
 		clock: Clock.start,

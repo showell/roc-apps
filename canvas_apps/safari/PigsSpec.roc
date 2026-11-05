@@ -4,19 +4,20 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Distance
 import Grade
 import Pigs
 import Scenery
 
 gaze : Scenery.Critter
-gaze = Pigs.gaze_pig(1000.0)
+gaze = Pigs.gaze_pig(Distance.metres(1000.0))
 
 gaze_got : List(F64)
 gaze_got = [
 	gaze.along,
 	gaze.across,
-	gaze.height,
-	Pigs.pig_height,
+	gaze.height.to_metres(),
+	Pigs.pig_height.to_metres(),
 	Pigs.pig_dist_before_end,
 	Pigs.gaze_pig_along_offset,
 ]
@@ -43,13 +44,16 @@ gaze_face_want : List(Bool)
 gaze_face_want = [False]
 
 herd : List(Scenery.Critter)
-herd = Pigs.fill_pig_herd(1000.0)
+herd = Pigs.fill_pig_herd(Distance.metres(1000.0))
 
 herd_pig_at : U64 -> Scenery.Critter
 herd_pig_at = |i| herd.get(i) ?? crash "PigsSpec: the big herd has 49 pigs"
 
 herd_count_got : List(I64)
-herd_count_got = [herd.len().to_i64_wrap(), Pigs.fill_pig_herd(500.0).len().to_i64_wrap()]
+herd_count_got = [
+	herd.len().to_i64_wrap(),
+	Pigs.fill_pig_herd(Distance.metres(500.0)).len().to_i64_wrap(),
+]
 
 herd_count_want : List(I64)
 herd_count_want = [49, 49]
@@ -99,7 +103,7 @@ herd_kind_want : List(I64)
 herd_kind_want = [128022, 128022]
 
 row : List(Scenery.Critter)
-row = Pigs.fill_pig_row(1000.0)
+row = Pigs.fill_pig_row(Distance.metres(1000.0))
 
 row_count_got : List(I64)
 row_count_got = [

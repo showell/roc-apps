@@ -5,6 +5,7 @@ import Angle
 import Arc
 import CrossingReaction
 import lib.DeviceMath
+import Distance
 import Gaze
 import Num_
 import Pose
@@ -34,7 +35,7 @@ Throttle :: [].{
 		},
 	| (
 		{
-			d = (seg.commit_along - state.along)
+			d = Distance.metres(seg.commit_along - state.along)
 			corner_a = (
 				if d <= VehicleLimits.least_braking_distance {
 					Acceleration.steady
@@ -214,7 +215,8 @@ Throttle :: [].{
 					Continues(_) => VehicleLimits.turn_speed(seg.exit_turn.abs())
 					Terminates => Speed.at_rest
 				}
-			near = ((seg.length - state.along) <= VehicleLimits.approach_intersection_dist)
+			left = Distance.metres(seg.length.to_metres() - state.along)
+			near = left <= VehicleLimits.approach_intersection_dist
 			a1 = (
 				if near {
 					corner_brake(

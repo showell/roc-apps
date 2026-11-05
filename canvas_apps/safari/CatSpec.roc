@@ -10,6 +10,7 @@ import Beats
 import Cat
 import Easing
 import Fraction
+import Distance
 import Grade
 import Speed
 
@@ -22,14 +23,14 @@ the_cat = Cat.crossing({
 
 ## A rider `gap` metres short of the cat, at `speed` metres a step.
 coming : F64, F64 -> Animation.Approach
-coming = |gap, speed| { gap, speed: Speed.metres_a_step(speed) }
+coming = |gap, speed| { gap: Distance.metres(gap), speed: Speed.metres_a_step(speed) }
 
 make_got : List(F64)
 make_got = [
 	the_cat.along,
 	the_cat.start_across,
 	the_cat.mid_across,
-	the_cat.height,
+	the_cat.height.to_metres(),
 ]
 
 make_want : List(F64)
@@ -43,7 +44,7 @@ make_wide_want = [(-3.49), 4.306]
 
 dims_got : List(F64)
 dims_got = [
-	Cat.cat_height,
+	Cat.cat_height.to_metres(),
 	Cat.cat_along,
 	Cat.cat_road_gap,
 	Cat.cat_beyond_tree,
@@ -69,7 +70,7 @@ window_got = [
 	Cat.frozen_beats.to_f64(),
 	Cat.escapes_beats.to_f64(),
 	Cat.crossing_beats.to_f64(),
-	Cat.road_buffer,
+	Cat.road_buffer.to_metres(),
 ]
 
 window_want : List(F64)

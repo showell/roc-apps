@@ -4,6 +4,7 @@
 import Animation
 import BirdFlight
 import DepthSort
+import Distance
 import Frame
 import Geom
 import RocBird
@@ -38,7 +39,7 @@ segment_bird = |view, position|
 	match position.index_in(view.road.chain).segment_in(view.road.world).crossing {
 		BirdFlies(route) => {
 			gap_to_segment = Frame.gap_to_segment(view.road, position)
-			gap_to_tree = gap_to_segment + BirdFlight.start_along(route)
+			gap_to_tree = gap_to_segment.plus(Distance.metres(BirdFlight.start_along(route)))
 			instant = BirdFlight.route_instant_at(route, gap_to_tree)
 			bird_in_view(view, { position, instant })
 		}
@@ -71,7 +72,7 @@ bird_in_view = |view, { position, instant }| {
 			{
 				right: seen.right,
 				forward: seen.forward,
-				lift: instant.spot.lift,
+				lift: Distance.metres(instant.spot.lift),
 				pose: instant.pose,
 			},
 		]

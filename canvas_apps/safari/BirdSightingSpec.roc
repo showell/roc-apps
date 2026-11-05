@@ -12,6 +12,7 @@ import BirdFlight
 import BirdSighting
 import DepthSort
 import Frame
+import Distance
 import Grade
 import RocBird
 import Scenery
@@ -22,20 +23,20 @@ tree_at = |along, across| {
 	along,
 	across,
 	color: 0,
-	height: 10.0,
+	height: Distance.metres(10.0),
 }
 
 left_trees : List(Scenery.Tree)
 left_trees = [20.0, 40.0, 60.0, 80.0, 100.0].map(|along| tree_at(along, -6.0))
 
 far_tree : Scenery.Tree
-far_tree = { ..tree_at(130.0, 6.0), height: 14.0 }
+far_tree = { ..tree_at(130.0, 6.0), height: Distance.metres(14.0) }
 
 ## A straight segment 200 m long holding only `trees`.
 segment_of : List(Scenery.Tree) -> World.Segment
 segment_of = |trees| {
 	..World.route_segment(0),
-	length: 200.0,
+	length: Distance.metres(200.0),
 	trees,
 	exit_turn: Angle.straight_ahead,
 	crossing: BirdFlight.crossing_among(trees),
@@ -75,7 +76,7 @@ place_of : RocBird.PlacedBird -> List(F64)
 place_of = |bird| [
 	bird.right,
 	bird.forward,
-	bird.lift,
+	bird.lift.to_metres(),
 ]
 
 sitting_got : List(F64)

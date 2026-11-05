@@ -32,7 +32,7 @@ spot_got = {
 		water_fifth.along,
 		bank_first.across,
 		bank_first.along,
-		Pond.duck_height,
+		Pond.duck_height.to_metres(),
 	]
 }
 

@@ -8,6 +8,7 @@ app [main!] {
 import Angle
 import Fraction
 import Frame
+import Distance
 import Grade
 import ItemDraw
 import SceneLimits
@@ -27,7 +28,7 @@ tree_at : F64 -> TreeSighting.TreeItem
 tree_at = |forward| {
 	right: 0.0,
 	forward: forward,
-	height: 5.85,
+	height: Distance.metres(5.85),
 	color: 1858082,
 }
 

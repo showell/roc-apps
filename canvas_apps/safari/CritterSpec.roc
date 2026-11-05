@@ -7,6 +7,7 @@ app [main!] {
 
 import Critter
 import EmojiStills
+import Distance
 import Grade
 import Stills
 import Screen
@@ -148,7 +149,7 @@ solid_want = [7, 6]
 ## ahead.
 shape_count : {
 	forward : F64,
-	height : F64,
+	height : Distance,
 	codepoint : I64,
 } -> I64
 shape_count = |
@@ -176,22 +177,22 @@ size_got : List(I64)
 size_got = [
 	shape_count({
 		forward: 1000.0,
-		height: 2.0,
+		height: Distance.metres(2.0),
 		codepoint: elephant,
 	}),
 	shape_count({
 		forward: 2000.0,
-		height: 2.0,
+		height: Distance.metres(2.0),
 		codepoint: elephant,
 	}),
 	shape_count({
 		forward: 1000.0,
-		height: 1.9,
+		height: Distance.metres(1.9),
 		codepoint: elephant,
 	}),
 	shape_count({
 		forward: 100.0,
-		height: 2.0,
+		height: Distance.metres(2.0),
 		codepoint: elephant,
 	}),
 ]
@@ -204,7 +205,7 @@ unknown_got = [
 	EmojiStills.emoji_polys_for(1).len().to_i64_wrap(),
 	shape_count({
 		forward: 100.0,
-		height: 2.0,
+		height: Distance.metres(2.0),
 		codepoint: 1,
 	}),
 	EmojiStills.emoji_polys_for(elephant).len().to_i64_wrap(),

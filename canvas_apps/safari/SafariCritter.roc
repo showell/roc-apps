@@ -2,12 +2,13 @@
 ## the bend, beyond the guard rail, and its baby stands in the middle of the
 ## road a little past the corner. Both face the way the road turns.
 import Angle
+import Distance
 import Scenery
 
 SafariCritter :: [].{
 
-	## A safari animal: its emoji, and how tall a grown one stands, in metres.
-	Species : { codepoint : I64, adult_height : F64 }
+	## A safari animal: its emoji, and how tall a grown one stands.
+	Species : { codepoint : I64, adult_height : Distance }
 
 	## How far beyond the guard rail the grown animal stands.
 	adult_rail_buffer : F64
@@ -26,10 +27,10 @@ SafariCritter :: [].{
 	species_of : Scenery.Creature -> [Species(SafariCritter.Species), NoSpecies]
 	species_of = |creature|
 		match creature {
-			Elephant => Species({ codepoint: 128024, adult_height: 2.8 })
-			Giraffe => Species({ codepoint: 129426, adult_height: 4.5 })
-			Zebra => Species({ codepoint: 129427, adult_height: 1.6 })
-			Rhino => Species({ codepoint: 129423, adult_height: 2.2 })
+			Elephant => Species({ codepoint: 128024, adult_height: Distance.metres(2.8) })
+			Giraffe => Species({ codepoint: 129426, adult_height: Distance.metres(4.5) })
+			Zebra => Species({ codepoint: 129427, adult_height: Distance.metres(1.6) })
+			Rhino => Species({ codepoint: 129423, adult_height: Distance.metres(2.2) })
 			DuckPond => NoSpecies
 			NoCreature => NoSpecies
 		}
@@ -60,7 +61,7 @@ SafariCritter :: [].{
 						{ inward: (0.0 - 1.0), face_right: False }
 					}
 				clear_of_rail = (lane_half_width + adult_rail_buffer)
-				out_from_middle = (clear_of_rail + (species.adult_height / 2.0))
+				out_from_middle = (clear_of_rail + (species.adult_height.to_metres() / 2.0))
 				[
 					{
 						along: corner_along,
@@ -73,7 +74,7 @@ SafariCritter :: [].{
 						along: (corner_along + baby_beyond),
 						across: 0.0,
 						codepoint: species.codepoint,
-						height: (species.adult_height * baby_ratio),
+						height: species.adult_height.times(baby_ratio),
 						face_right,
 					},
 				]

@@ -2,6 +2,7 @@
 ## for `Ground` to paint: the road, in chunks along each segment in view; the
 ## paved corner where one segment bends into the next; and the pond beside a
 ## segment that ends at one.
+import Distance
 import Frame
 import Geom
 import Ground
@@ -17,7 +18,7 @@ GroundSighting :: [].{
 	## which is `segment_length` long and laid in `chunk_count` chunks.
 	RoadChunk : {
 		position : Frame.ChainPosition,
-		segment_length : F64,
+		segment_length : Distance,
 		chunk_count : U32,
 		chunk_number : U32,
 	}
@@ -26,13 +27,13 @@ GroundSighting :: [].{
 	road_color = 0x34353C
 
 	## The road is laid in chunks no longer than this.
-	road_chunk_length : F64
-	road_chunk_length = 25.0
+	road_chunk_length : Distance
+	road_chunk_length = Distance.metres(25.0)
 
 	## A bend's paving starts this far before the end of the segment that
 	## bends.
-	approach_length : F64
-	approach_length = 40.0
+	approach_length : Distance
+	approach_length = Distance.metres(40.0)
 
 	## The ground in view, in paint order: each segment of the chain ahead in
 	## turn, then the bend from the segment behind.
@@ -48,9 +49,9 @@ GroundSighting :: [].{
 
 	## How many chunks the road along a segment `length` long is laid in:
 	## at least one.
-	chunks_along : F64 -> U32
+	chunks_along : Distance -> U32
 	chunks_along = |length| {
-		chunks = Num_.ceil_real(length / GroundSighting.road_chunk_length)
+		chunks = Num_.ceil_real(length.ratio_to(GroundSighting.road_chunk_length))
 		(if (chunks < 1.0) 1.0 else chunks).to_u32_wrap()
 	}
 
@@ -85,8 +86,9 @@ GroundSighting :: [].{
 			chunk_number,
 		},
 	| {
-		near_end = segment_length * chunk_number.to_f64() / chunk_count.to_f64()
-		far_end = segment_length * (chunk_number + 1).to_f64() / chunk_count.to_f64()
+		metres = segment_length.to_metres()
+		near_end = metres * chunk_number.to_f64() / chunk_count.to_f64()
+		far_end = metres * (chunk_number + 1).to_f64() / chunk_count.to_f64()
 		corner = |along, across| Frame.rider_point_ahead(
 			road,
 			{
@@ -167,10 +169,11 @@ approach = |road, bend| {
 			across,
 		},
 	)
-	start = bend.length_before - GroundSighting.approach_length
+	end = bend.length_before.to_metres()
+	start = bend.length_before.minus(GroundSighting.approach_length).to_metres()
 	[
-		corner(bend.length_before, 0.0),
-		corner(bend.length_before, Scenery.lane_width),
+		corner(end, 0.0),
+		corner(end, Scenery.lane_width),
 		corner(start, Scenery.lane_width),
 		corner(start, 0.0),
 	]
@@ -187,7 +190,7 @@ bend_corner = |road, bend| {
 		road,
 		{
 			place: bend.before,
-			along: bend.length_before,
+			along: bend.length_before.to_metres(),
 			across,
 		},
 	)
@@ -221,7 +224,7 @@ pond_ground = |road, { segment, place }|
 					road,
 					{
 						place,
-						along: segment.length + point.along,
+						along: segment.length.to_metres() + point.along,
 						across: point.across,
 					},
 				),

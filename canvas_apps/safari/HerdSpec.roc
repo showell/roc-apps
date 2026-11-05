@@ -54,13 +54,13 @@ bull_place_want = [
 ]
 
 height_got : List(F64)
-height_got = [Herd.cow_height, Herd.calf_height]
+height_got = [Herd.cow_height.to_metres(), Herd.calf_height.to_metres()]
 
 height_want : List(F64)
 height_want = [1.4, 0.7]
 
 bull_height_got : List(F64)
-bull_height_got = [Herd.bull_height, the_bull.height]
+bull_height_got = [Herd.bull_height.to_metres(), the_bull.height.to_metres()]
 
 bull_height_want : List(F64)
 bull_height_want = [1.61, 1.61]
@@ -93,7 +93,7 @@ acrosses_want = [
 ]
 
 calves_got : List(F64)
-calves_got = Herd.cows.map(|cow| cow.height)
+calves_got = Herd.cows.map(|cow| cow.height.to_metres())
 
 calves_want : List(F64)
 calves_want = [1.4, 0.7, 1.4, 1.4, 1.4, 0.7, 1.4, 1.4, 1.4, 0.7, 1.4, 1.4, 1.4, 0.7]

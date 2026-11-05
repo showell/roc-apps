@@ -10,6 +10,7 @@
 import Animation
 import Attention
 import Beats
+import Distance
 import Easing
 import Fraction
 import Num_
@@ -23,7 +24,7 @@ Cat :: [].{
 		start_across : F64,
 		mid_across : F64,
 		end_across : F64,
-		height : F64,
+		height : Distance,
 	}
 
 	## How the cat holds itself: walking, it is at rest or mid-stride; then
@@ -31,8 +32,8 @@ Cat :: [].{
 	## collapse after.
 	Pose : [Rest, Stride, Frozen, Coil, Flight, Land, Collapse]
 
-	cat_height : F64
-	cat_height = 1.7
+	cat_height : Distance
+	cat_height = Distance.metres(1.7)
 
 	## How far along its segment the cat waits, before it is moved to just
 	## past the nearest tree.
@@ -54,7 +55,7 @@ Cat :: [].{
 
 	## How far the cat's hind feet land past the grass's edge.
 	land_hind_reach : F64
-	land_hind_reach = (0.7 * cat_height)
+	land_hind_reach = (0.7 * cat_height.to_metres())
 
 	## How far onto the far verge's grass the cat's landing reaches.
 	grass_toehold : F64
@@ -78,7 +79,7 @@ Cat :: [].{
 		{
 			along: (tree_along + cat_beyond_tree),
 			start_across: (tree_across + cat_road_gap),
-			mid_across: ((0.0 - cat_head_x) * cat_height),
+			mid_across: ((0.0 - cat_head_x) * cat_height.to_metres()),
 			end_across: ((0.0 - (lane_half_width + grass_toehold)) - land_hind_reach),
 			height: cat_height,
 		}
@@ -121,8 +122,8 @@ Cat :: [].{
 	land_ends_beats = Beats.of(3.8)
 
 	## How far short of the cat the rider is when it is across.
-	road_buffer : F64
-	road_buffer = 3.0
+	road_buffer : Distance
+	road_buffer = Distance.metres(3.0)
 
 	## Where the crossing has got to. A cat has to finish before the rider
 	## reaches it however fast the rider comes, so it plays over beats.
@@ -156,8 +157,8 @@ Cat :: [].{
 			match crossing_stage(approach) {
 				Waiting => Attention.none
 				Playing(progress) => focus_peak.portion(Easing.smoothstep(progress))
-				Past(metres) => {
-					faded = approach.speed.beats_to_cover(metres).ratio_to(focus_ramp_down)
+				Past(beyond) => {
+					faded = approach.speed.beats_to_cover(beyond).ratio_to(focus_ramp_down)
 					focus_peak.portion(Easing.smoothstep(Fraction.clamp(faded)).complement())
 				}
 			}
@@ -188,7 +189,7 @@ Cat :: [].{
 			Collapse => 6
 		}
 
-	## The top of the leap, in metres.
+	## The top of the leap, in cat heights.
 	leap_height : F64
 	leap_height = 0.18
 

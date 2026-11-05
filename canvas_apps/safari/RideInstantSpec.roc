@@ -7,6 +7,7 @@ app [main!] {
 import Angle
 import Clock
 import Fraction
+import Distance
 import Grade
 import RideInstant
 import Rider
@@ -38,7 +39,7 @@ start_got = [
 	RideInstant.initial.rider.along,
 	RideInstant.initial.rider.across,
 	RideInstant.initial.rider.speed.to_metres_a_step(),
-	RideInstant.initial.truck.route_position,
+	RideInstant.initial.truck.route_position.to_metres(),
 	RideInstant.initial.truck.speed.to_metres_a_step(),
 ]
 
@@ -116,9 +117,9 @@ order_got = (
 		new_position = against_new.route_position
 		old_position = against_old.route_position
 		[
-			(F64.to_bits(after_one_step.truck.route_position) == F64.to_bits(new_position)),
+			(after_one_step.truck.route_position == new_position),
 			(new_dist > old_dist),
-			((F64.to_bits(new_position) == F64.to_bits(old_position)) == False),
+			(new_position != old_position),
 		]
 	}
 )
@@ -140,7 +141,7 @@ done = {
 		focus: Fraction.of(0.9),
 	},
 	truck: {
-		route_position: 9000.0,
+		route_position: Distance.metres(9000.0),
 		speed: Speed.metres_a_step(2.0),
 		brake_lights: On,
 	},
@@ -155,7 +156,7 @@ restart_got = (
 			instant.clock.to_f64(),
 			instant.rider.along,
 			instant.rider.speed.to_metres_a_step(),
-			instant.truck.route_position,
+			instant.truck.route_position.to_metres(),
 			instant.rider.focus.to_f64(),
 		]
 	}

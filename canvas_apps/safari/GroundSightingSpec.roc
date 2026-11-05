@@ -7,6 +7,7 @@ app [main!] {
 import Angle
 import Frame
 import Geom
+import Distance
 import Grade
 import Ground
 import GroundSighting
@@ -15,7 +16,10 @@ import ShapeRead
 import lib.Shapes
 
 fixed_got : List(F64)
-fixed_got = [GroundSighting.road_chunk_length, GroundSighting.approach_length]
+fixed_got = [
+	GroundSighting.road_chunk_length.to_metres(),
+	GroundSighting.approach_length.to_metres(),
+]
 
 fixed_want : List(F64)
 fixed_want = [25.0, 40.0]
@@ -28,7 +32,7 @@ colour_want = [3421500]
 
 chunks_got : List(I64)
 chunks_got = [25.0, 25.1, 50.0, 49.9, 1.0, 0.0, 500.0, 320.0, 1200.0].map(
-	|length| GroundSighting.chunks_along(length).to_i64(),
+	|length| GroundSighting.chunks_along(Distance.metres(length)).to_i64(),
 )
 
 chunks_want : List(I64)
@@ -61,7 +65,7 @@ chunk_of_first = |chunk_number| GroundSighting.chunk_corners(
 	road,
 	{
 		position: Frame.ChainPosition.first,
-		segment_length: 500.0,
+		segment_length: Distance.metres(500.0),
 		chunk_count: 20,
 		chunk_number,
 	},
@@ -132,7 +136,7 @@ far_ahead = {
 strip_got : List(Bool)
 strip_got = [
 	(strip.len() > 0),
-	(strip.len().to_u32_wrap() <= GroundSighting.chunks_along(500.0)),
+	(strip.len().to_u32_wrap() <= GroundSighting.chunks_along(Distance.metres(500.0))),
 	(
 		patch_shapes(
 			GroundSighting.segment_road({ ..road, pose: far_ahead }, Frame.ChainPosition.first),

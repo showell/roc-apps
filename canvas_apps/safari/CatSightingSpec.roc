@@ -9,6 +9,7 @@ import Angle
 import Cat
 import CatSighting
 import Frame
+import Distance
 import Grade
 import Speed
 import World
@@ -84,7 +85,7 @@ gap_got = [0.0, 120.0].join_map(
 		|number| Frame.gap_to_segment(
 			{ ..from_origin.road, pose: { ..origin, along } },
 			Frame.ChainPosition.number(number),
-		),
+		).to_metres(),
 	),
 )
 
@@ -125,7 +126,7 @@ count_want : List(I64)
 count_want = [1, 0, 0, 8]
 
 place_got : List(F64)
-place_got = [first_cat(300.0).height, first_cat(300.0).lift]
+place_got = [first_cat(300.0).height.to_metres(), first_cat(300.0).lift]
 
 place_want : List(F64)
 place_want = [1.7, 0.0]

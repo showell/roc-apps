@@ -8,6 +8,7 @@
 ## before or after it, turns a road point into the rider's view, and cuts a
 ## polygon at the near plane, the closest thing the camera can see.
 import Angle
+import Distance
 import lib.Trig
 
 Geom :: [].{
@@ -39,7 +40,7 @@ Geom :: [].{
 	## before it, the turn it makes, positive to the right, and the lane's
 	## width.
 	Bend : {
-		segment_length : F64,
+		segment_length : Distance,
 		turn : Angle.Turn,
 		lane_width : F64,
 	}
@@ -71,7 +72,7 @@ Geom :: [].{
 	## A point on the segment after `bend`, measured on the segment before it.
 	in_segment_before : Geom.RoadPoint, Geom.Bend -> Geom.RoadPoint
 	in_segment_before = |{ along, across }, bend| {
-		length = bend.segment_length
+		length = bend.segment_length.to_metres()
 		width = bend.lane_width
 		turn_size = bend.turn.abs().to_radians()
 		cos_turn = Trig.r_cos(turn_size)
@@ -92,7 +93,7 @@ Geom :: [].{
 	## A point on the segment before `bend`, measured on the segment after it.
 	in_segment_after : Geom.RoadPoint, Geom.Bend -> Geom.RoadPoint
 	in_segment_after = |{ along, across }, bend| {
-		length = bend.segment_length
+		length = bend.segment_length.to_metres()
 		width = bend.lane_width
 		turn_size = bend.turn.abs().to_radians()
 		cos_turn = Trig.r_cos(turn_size)

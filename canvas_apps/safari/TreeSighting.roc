@@ -2,6 +2,7 @@
 ## planted along the chain of segments ahead that stand in front of the
 ## camera and are tall enough on screen to draw.
 import DepthSort
+import Distance
 import Frame
 import Geom
 import SceneLimits
@@ -14,7 +15,7 @@ TreeSighting :: [].{
 	TreeItem : {
 		right : F64,
 		forward : F64,
-		height : F64,
+		height : Distance,
 		color : I64,
 	}
 
@@ -53,9 +54,10 @@ TreeSighting :: [].{
 				across: (tree.across + (Scenery.lane_width / 2.0)),
 			},
 		)
+		height_px = (tree.height.to_metres() / seen.forward) * view.cam_focal
 		if seen.forward <= Geom.near_plane {
 			[]
-		} else if ((tree.height / seen.forward) * view.cam_focal) < SceneLimits.min_scenery_px {
+		} else if height_px < SceneLimits.min_scenery_px {
 			[]
 		} else {
 			[

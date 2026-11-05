@@ -2,6 +2,7 @@
 ## the chain of segments ahead it is, whether it is in front of the camera,
 ## and which of its lights the drawing shows.
 import DepthSort
+import Distance
 import Frame
 import Geom
 import Scenery
@@ -29,7 +30,7 @@ TruckSighting :: [].{
 	## rider the truck is, and which of its lights are on.
 	View : {
 		road : Frame.RoadView,
-		lead : F64,
+		lead : Distance,
 		lights : Truck.Lights,
 	}
 
@@ -37,11 +38,11 @@ TruckSighting :: [].{
 	## the camera.
 	in_view : TruckSighting.View -> TruckSighting.TruckAt
 	in_view = |view|
-		if view.lead > 0.0 {
+		if view.lead > Distance.zero {
 			truck_from(
 				view,
 				{
-					remaining: (view.road.pose.along + view.lead),
+					remaining: (view.road.pose.along + view.lead.to_metres()),
 					position: Frame.ChainPosition.first,
 				},
 			)
@@ -71,8 +72,9 @@ truck_from = |view, { remaining, position }|
 		NoTruck
 	} else {
 		segment = position.index_in(view.road.chain).segment_in(view.road.world)
-		if remaining > segment.length {
-			truck_from(view, { remaining: (remaining - segment.length), position: position.next() })
+		length = segment.length.to_metres()
+		if remaining > length {
+			truck_from(view, { remaining: (remaining - length), position: position.next() })
 		} else {
 			truck_on_segment(view, { along: remaining, position })
 		}

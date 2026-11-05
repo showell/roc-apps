@@ -2,6 +2,7 @@
 ## the ducks on it. A point on the pond is measured from that corner, along
 ## the road and across it, in metres.
 import Billboards
+import Distance
 
 Pond :: [].{
 	PondPt : { along : F64, across : F64 }
@@ -37,8 +38,8 @@ Pond :: [].{
 	duck_codepoint : I64
 	duck_codepoint = 129414
 
-	duck_height : F64
-	duck_height = 0.9
+	duck_height : Distance
+	duck_height = Distance.metres(0.9)
 
 	ducks : List(Pond.Duck)
 	ducks = [

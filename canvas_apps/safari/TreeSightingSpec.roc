@@ -7,6 +7,7 @@ app [main!] {
 import Angle
 import DepthSort
 import Frame
+import Distance
 import Grade
 import Scenery
 import TreeSighting
@@ -59,7 +60,7 @@ green_tree_at = |along| {
 		along,
 		across: 3.5,
 		color: 1858082,
-		height: 5.85,
+		height: Distance.metres(5.85),
 	},
 }
 
@@ -82,7 +83,7 @@ one_got : List(F64)
 one_got = [
 	lone_tree.right,
 	lone_tree.forward,
-	lone_tree.height,
+	lone_tree.height.to_metres(),
 ]
 
 one_want : List(F64)
@@ -145,7 +146,7 @@ order_want = [
 ]
 
 height_got : List(F64)
-height_got = [planted_tree(0).height, planted_tree(2).height]
+height_got = [planted_tree(0).height.to_metres(), planted_tree(2).height.to_metres()]
 
 height_want : List(F64)
 height_want = [5.85, 4.5]

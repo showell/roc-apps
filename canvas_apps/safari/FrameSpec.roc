@@ -8,6 +8,7 @@ app [main!] {
 import Angle
 import Frame
 import Geom
+import Distance
 import Grade
 import World
 
@@ -47,14 +48,14 @@ m_chain = InChain(Frame.ChainPosition.number(3))
 
 m_prev_left : Frame.SegmentPlace
 m_prev_left = JustBehind({
-	segment_length: 300.0,
+	segment_length: Distance.metres(300.0),
 	turn: Angle.Turn.radians(0.0 - 1.2217304763960306),
 	lane_width: 4.0,
 })
 
 m_prev_right : Frame.SegmentPlace
 m_prev_right = JustBehind({
-	segment_length: 300.0,
+	segment_length: Distance.metres(300.0),
 	turn: Angle.Turn.radians(0.8726646259971648),
 	lane_width: 4.0,
 })
@@ -85,11 +86,11 @@ map_int_want = [3, 1]
 
 map_real_got : List(F64)
 map_real_got = [
-	bend_of(m_prev_left).segment_length,
+	bend_of(m_prev_left).segment_length.to_metres(),
 	bend_of(m_prev_left).lane_width,
-	bend_of(m_prev_right).segment_length,
+	bend_of(m_prev_right).segment_length.to_metres(),
 	bend_of(m_prev_right).lane_width,
-	bend_of(Frame.place_behind(World.route_segment(0))).segment_length,
+	bend_of(Frame.place_behind(World.route_segment(0))).segment_length.to_metres(),
 ]
 
 map_real_want : List(F64)

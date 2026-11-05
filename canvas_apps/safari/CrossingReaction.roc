@@ -6,6 +6,7 @@
 ## Gaze's.
 import Attention
 import Cat
+import Distance
 import Speed
 import World
 
@@ -25,7 +26,8 @@ CrossingReaction :: [].{
 	reaction_to = |segment, rider|
 		match segment.crossing {
 			CatCrosses(crossing) => {
-				approach = { gap: crossing.along - rider.along, speed: rider.speed }
+				gap = Distance.metres(crossing.along - rider.along)
+				approach = { gap, speed: rider.speed }
 				{
 					throttle: if (Cat.is_in_danger(approach)) NoAcceleration else MayAccelerate,
 					eye_pull: Cat.focus(approach),

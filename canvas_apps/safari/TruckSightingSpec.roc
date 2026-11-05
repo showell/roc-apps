@@ -6,6 +6,7 @@ app [main!] {
 
 import Angle
 import Frame
+import Distance
 import Grade
 import Truck
 import TruckSighting
@@ -27,7 +28,7 @@ here = {
 }
 
 lengths_got : List(F64)
-lengths_got = segs.map(|seg| seg.length)
+lengths_got = segs.map(|seg| seg.length.to_metres())
 
 lengths_want : List(F64)
 lengths_want = [500.0, 320.0, 400.0]
@@ -41,7 +42,7 @@ truck_view = |pose, lead| {
 		chain: [0, 1, 2].map(World.SegmentIndex.number),
 		pose,
 	},
-	lead,
+	lead: Distance.metres(lead),
 	lights: { headlights: Off, brake_lights: Off },
 }
 

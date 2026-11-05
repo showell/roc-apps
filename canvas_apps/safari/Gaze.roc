@@ -4,7 +4,7 @@
 import Acceleration
 import Angle
 import Attention
-import lib.DeviceMath
+import Distance
 import Easing
 import Fraction
 import Pigs
@@ -15,11 +15,11 @@ import lib.Trig
 import World
 
 Gaze :: [].{
-	PigLook : { looking : Bool, dist : F64 }
+	PigLook : { looking : Bool, dist : Distance }
 	GazeBrake : { engaged : Bool, accel : Acceleration }
 
-	gaze_look_dist : F64
-	gaze_look_dist = 150.0
+	gaze_look_dist : Distance
+	gaze_look_dist = Distance.metres(150.0)
 
 	gaze_release_angle : Angle.Turn
 	gaze_release_angle = Angle.Turn.degrees(35.0)
@@ -42,8 +42,8 @@ Gaze :: [].{
 	pig_gaze_speed : Speed
 	pig_gaze_speed = Speed.metres_a_step(0.2)
 
-	pig_gaze_settle_dist : F64
-	pig_gaze_settle_dist = 25.0
+	pig_gaze_settle_dist : Distance
+	pig_gaze_settle_dist = Distance.metres(25.0)
 
 	eyes_on_road_yaw : Angle.Turn
 	eyes_on_road_yaw = Angle.Turn.degrees(6.0)
@@ -52,7 +52,7 @@ Gaze :: [].{
 	gaze_focus = |focus| Attention.from_fraction(Easing.smoothstep(focus))
 
 	no_look : Gaze.PigLook
-	no_look = { looking: False, dist: 0.0 }
+	no_look = { looking: False, dist: Distance.zero }
 
 	pig_ahead : Pose.RiderState, World.Segment -> Gaze.PigLook
 	pig_ahead = |state, seg|
@@ -70,7 +70,7 @@ Gaze :: [].{
 	pig_ahead_near = |state, seg| (
 		{
 			pig = Pigs.gaze_pig(seg.length)
-			dist = (pig.along - state.along)
+			dist = Distance.metres(pig.along - state.along)
 			(
 				if dist > gaze_look_dist {
 					no_look
@@ -86,13 +86,13 @@ Gaze :: [].{
 	pig_in_sight : Pose.RiderState,
 	{
 		gaze_pig : Scenery.Critter,
-		distance_ahead : F64,
+		distance_ahead : Distance,
 	} -> Gaze.PigLook
 	pig_in_sight = |state, { gaze_pig: pig, distance_ahead: dist }| {
 		toward_pig = Angle.Turn.radians(
 			Trig.r_atan2(
 				pig.across - state.across,
-				dist,
+				dist.to_metres(),
 			),
 		).minus(state.yaw)
 		if toward_pig.abs() >= gaze_release_angle {
@@ -166,7 +166,10 @@ Gaze :: [].{
 	gawk_engaged : Pose.RiderState, World.Segment -> Bool
 	gawk_engaged = |state, seg|
 		match seg.pig_attention {
-			Distracting => (state.along >= (Pigs.gaze_pig(seg.length).along - gaze_look_dist))
+			Distracting => {
+				pig = Pigs.gaze_pig(seg.length)
+				state.along >= (pig.along - gaze_look_dist.to_metres())
+			}
 			Unnoticed => False
 		}
 
@@ -188,12 +191,13 @@ Gaze :: [].{
 	pig_gaze_brake_easing : Pose.RiderState, World.Segment -> Gaze.GazeBrake
 	pig_gaze_brake_easing = |state, seg| (
 		{
-			d = ((Pigs.gaze_pig(seg.length).along - state.along) - pig_gaze_settle_dist)
+			gap = Distance.metres(Pigs.gaze_pig(seg.length).along - state.along)
+			d = gap.minus(pig_gaze_settle_dist)
 			{
 				engaged: True,
 				accel: state.speed.acceleration_to({
 					target: pig_gaze_speed,
-					within: DeviceMath.real_max(d, 1.0),
+					within: d.max(Distance.metres(1.0)),
 				}),
 			}
 		}

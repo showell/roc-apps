@@ -2,6 +2,7 @@
 ## every 30 m, from just past the segment's start to well short of its end.
 ## The pairs alternate between big green trees and smaller ones in the
 ## segment's accent colour, and a gold tree stands farther from the road.
+import Distance
 import Scenery
 
 Trees :: [].{
@@ -22,9 +23,9 @@ Trees :: [].{
 	conifer_red : I64
 	conifer_red = 11680298
 
-	## A small green tree's height, in metres.
-	small_height : F64
-	small_height = 4.5
+	## A small green tree's height.
+	small_height : Distance
+	small_height = Distance.metres(4.5)
 
 	## How much taller a tree in a big pair is.
 	big_scale : F64
@@ -67,18 +68,18 @@ Trees :: [].{
 			Red => conifer_red
 		}
 
-	## A conifer's height, in metres.
-	height : { conifer : Trees.Conifer, size : Trees.PairSize } -> F64
+	## A conifer's height.
+	height : { conifer : Trees.Conifer, size : Trees.PairSize } -> Distance
 	height = |{ conifer, size }| {
 		base =
 			match size {
-				Big => (small_height * big_scale)
+				Big => small_height.times(big_scale)
 				Small => small_height
 			}
 		match conifer {
 			Green => base
-			Red => (base * 2.0)
-			Gold => (base * 3.0)
+			Red => base.times(2.0)
+			Gold => base.times(3.0)
 		}
 	}
 
@@ -92,7 +93,7 @@ Trees :: [].{
 
 	## A segment's trees, in pairs from its start, each pair's left tree
 	## first.
-	plant : { scheme : Scenery.Scheme, length : F64 } -> List(Scenery.Tree)
+	plant : { scheme : Scenery.Scheme, length : Distance } -> List(Scenery.Tree)
 	plant = |{ scheme, length }| plant_onto(
 		[],
 		{
@@ -109,7 +110,7 @@ Trees :: [].{
 plant_onto : List(Scenery.Tree),
 {
 	scheme : Scenery.Scheme,
-	length : F64,
+	length : Distance,
 	along : F64,
 	size : Trees.PairSize,
 } -> List(Scenery.Tree)
@@ -122,7 +123,7 @@ plant_onto = |
 		size,
 	},
 |
-	if along > (length - Trees.tree_end_inset) {
+	if along > (length.to_metres() - Trees.tree_end_inset) {
 		planted
 	} else if (planted.len().to_i64_wrap() + 2) > Trees.max_trees {
 		planted

@@ -1,12 +1,82 @@
 ## These are Geom's checks: the ground's drop, a road point in the rider's view,
-## two lines crossing, and a polygon cut at the near plane.
+## two lines crossing, and a polygon cut at the near plane. The lengths that
+## measure the road are checked here too.
 app [main!] {
 	lib: "../lib/main.roc",
 }
 
 import Angle
+import Distance
 import Geom
 import Grade
+
+## A length's arithmetic. Each smaller and larger is asked both ways round.
+distance_got : List(F64)
+distance_got = [
+	Distance.zero.to_metres(),
+	Distance.metres(1.5).plus(Distance.metres(2.25)).to_metres(),
+	Distance.metres(1.5).minus(Distance.metres(2.25)).to_metres(),
+	Distance.metres(4.0).times(0.5).to_metres(),
+	Distance.metres(5.0).divided_by(2.0).to_metres(),
+	Distance.metres(1.5).opposite().to_metres(),
+	Distance.metres(2.0).ratio_to(Distance.metres(8.0)),
+	Distance.metres(12.0).ratio_to(Distance.metres(8.0)),
+	Distance.metres(2.0).min(Distance.metres(3.0)).to_metres(),
+	Distance.metres(3.0).min(Distance.metres(2.0)).to_metres(),
+	Distance.metres(2.0).max(Distance.metres(3.0)).to_metres(),
+	Distance.metres(3.0).max(Distance.metres(2.0)).to_metres(),
+]
+
+distance_want : List(F64)
+distance_want = [
+	0.0,
+	3.75,
+	-0.75,
+	2.0,
+	2.5,
+	-1.5,
+	0.25,
+	1.5,
+	2.0,
+	2.0,
+	3.0,
+	3.0,
+]
+
+## Each comparison just under, at and just over the length it is held to.
+distance_order_got : List(Bool)
+distance_order_got = [2.0, 2.5, 3.0].join_map(
+	|metres| {
+		length = Distance.metres(metres)
+		held_to = Distance.metres(2.5)
+		[
+			length < held_to,
+			length <= held_to,
+			length > held_to,
+			length >= held_to,
+			length == held_to,
+		]
+	},
+)
+
+distance_order_want : List(Bool)
+distance_order_want = [
+	True,
+	True,
+	False,
+	False,
+	False,
+	False,
+	True,
+	False,
+	True,
+	True,
+	False,
+	False,
+	True,
+	True,
+	False,
+]
 
 gd_right : List(F64)
 gd_right = [
@@ -207,6 +277,17 @@ cn_walk_onto = |vs, { at_index: i, flat_coords: acc }| (
 
 main! = |_args| {
 	verdicts = [
+		Grade.reals({
+			name: "g-dist ",
+			got: distance_got,
+			want: distance_want,
+			tol: 0.0,
+		}),
+		Grade.bools({
+			name: "g-dcomp",
+			got: distance_order_got,
+			want: distance_order_want,
+		}),
 		Grade.reals({
 			name: "g-drop ",
 			got: gd_walk(0),

@@ -7,6 +7,7 @@ import CatSighting
 import Clock
 import CritterSighting
 import DepthSort
+import Distance
 import Frame
 import GuardRail
 import RailSighting
@@ -37,7 +38,7 @@ Render :: [].{
 	## truck is and which of its lights are on, and the clock.
 	MovingParts : {
 		speed : Speed,
-		truck : { route_position : F64, lights : Truck.Lights },
+		truck : { route_position : Distance, lights : Truck.Lights },
 		clock : Clock,
 	}
 
@@ -67,7 +68,7 @@ Render :: [].{
 		)
 		truck_at = TruckSighting.in_view({
 			road,
-			lead: truck.route_position - rider_distance,
+			lead: truck.route_position.minus(rider_distance),
 			lights: truck.lights,
 		})
 		birds = BirdSighting.in_view(view)

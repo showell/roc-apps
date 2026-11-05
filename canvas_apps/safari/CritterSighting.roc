@@ -160,7 +160,7 @@ corner_sightings : Frame.RoadView,
 corner_sightings = |road, { place, segment }|
 	SafariCritter.corner_critters({
 		creature: segment.exit_creature,
-		corner_along: segment.length,
+		corner_along: segment.length.to_metres(),
 		turn: segment.exit_turn,
 		lane_half_width,
 	})
@@ -182,7 +182,7 @@ pond_sightings = |road, { place, segment }|
 						road,
 						{
 							place,
-							along: (segment.length + duck.at.along),
+							along: (segment.length.to_metres() + duck.at.along),
 							across: duck.at.across,
 						},
 					),

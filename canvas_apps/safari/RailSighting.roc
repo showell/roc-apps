@@ -4,6 +4,7 @@
 ## back, and follows the next segment's outer edge for as far again.
 import DepthSort
 import lib.DeviceMath
+import Distance
 import Frame
 import Geom
 import GuardRail
@@ -90,7 +91,7 @@ RailSighting :: [].{
 	run_up : Frame.RoadView,
 	{
 		place : Frame.SegmentPlace,
-		length : F64,
+		length : Distance,
 		across : F64,
 	} -> List(Geom.RiderPoint)
 	run_up = |
@@ -108,7 +109,7 @@ RailSighting :: [].{
 					road,
 					{
 						place,
-						along: length - metres_left.to_f64(),
+						along: length.to_metres() - metres_left.to_f64(),
 						across,
 					},
 				)
@@ -161,7 +162,7 @@ rail_path = |road, bend| {
 		road,
 		{
 			place: bend.before,
-			along: bend.length_before,
+			along: bend.length_before.to_metres(),
 			across: outer_edge,
 		},
 	)

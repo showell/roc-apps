@@ -7,6 +7,7 @@ app [main!] {
 import Angle
 import Fraction
 import Gaze
+import Distance
 import Grade
 import Pose
 import lib.Trig
@@ -15,10 +16,10 @@ import World
 
 fixed_got : List(F64)
 fixed_got = [
-	Gaze.gaze_look_dist,
+	Gaze.gaze_look_dist.to_metres(),
 	Gaze.focus_decay,
 	Gaze.pig_gaze_speed.to_metres_a_step(),
-	Gaze.pig_gaze_settle_dist,
+	Gaze.pig_gaze_settle_dist.to_metres(),
 	(Gaze.gaze_release_angle.to_radians() / Trig.deg),
 	(Gaze.gaze_swivel_rate.to_radians() / Trig.deg),
 	(Gaze.gaze_return_rate.to_radians() / Trig.deg),
@@ -86,9 +87,9 @@ looking_want = [False, False, False, False, True, False]
 
 dist_got : List(F64)
 dist_got = [
-	Gaze.pig_ahead(rider(200.0, 0.0), distracting).dist,
-	Gaze.pig_ahead(rider(100.0, 0.0), distracting).dist,
-	Gaze.no_look.dist,
+	Gaze.pig_ahead(rider(200.0, 0.0), distracting).dist.to_metres(),
+	Gaze.pig_ahead(rider(100.0, 0.0), distracting).dist.to_metres(),
+	Gaze.no_look.dist.to_metres(),
 ]
 
 dist_want : List(F64)

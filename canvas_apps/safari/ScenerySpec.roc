@@ -4,6 +4,7 @@ app [main!] {
 	lib: "../lib/main.roc",
 }
 
+import Distance
 import Grade
 import Scenery
 
@@ -68,7 +69,7 @@ a_tree = {
 	along: 120.5,
 	across: 3.25,
 	color: 9066271,
-	height: 7.75,
+	height: Distance.metres(7.75),
 }
 
 a_critter : Scenery.Critter
@@ -76,7 +77,7 @@ a_critter = {
 	along: 250.5,
 	across: (-6.5),
 	codepoint: 128004,
-	height: 1.375,
+	height: Distance.metres(1.375),
 	face_right: True,
 }
 
@@ -84,10 +85,10 @@ rec_reals_got : List(F64)
 rec_reals_got = [
 	a_tree.along,
 	a_tree.across,
-	a_tree.height,
+	a_tree.height.to_metres(),
 	a_critter.along,
 	a_critter.across,
-	a_critter.height,
+	a_critter.height.to_metres(),
 ]
 
 rec_reals_want : List(F64)

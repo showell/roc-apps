@@ -5,6 +5,7 @@ app [main!] {
 
 import Angle
 import Frame
+import Distance
 import Grade
 import Joint
 
@@ -30,14 +31,14 @@ left_turn = Angle.Turn.radians(0.0 - 1.2217304763960306)
 
 behind_right : Frame.SegmentPlace
 behind_right = JustBehind({
-	segment_length: 300.0,
+	segment_length: Distance.metres(300.0),
 	turn: right_turn,
 	lane_width: 4.0,
 })
 
 behind_left : Frame.SegmentPlace
 behind_left = JustBehind({
-	segment_length: 300.0,
+	segment_length: Distance.metres(300.0),
 	turn: left_turn,
 	lane_width: 4.0,
 })
@@ -57,7 +58,7 @@ apex_got = (
 			{
 				before: behind_right,
 				after: here,
-				length_before: 300.0,
+				length_before: Distance.metres(300.0),
 				turn: right_turn,
 			},
 		)
@@ -70,7 +71,7 @@ apex_got = (
 			{
 				before: behind_left,
 				after: here,
-				length_before: 300.0,
+				length_before: Distance.metres(300.0),
 				turn: left_turn,
 			},
 		)
