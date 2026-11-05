@@ -30,7 +30,7 @@ Rider :: [].{
 		{
 			tilt_step,
 			accel: Throttle.get_forward_accel_decel(
-				Pose.with_tilt(state, state.tilt.plus(tilt_step)),
+				Bike.with_tilt(state, state.tilt.plus(tilt_step)),
 				seg,
 			),
 		}

@@ -5,6 +5,7 @@ app [main!] {
 }
 
 import Angle
+import Bike
 import lib.DeviceMath
 import Grade
 import LeanSearch
@@ -101,7 +102,7 @@ leaned_got = (
 			seg,
 		)
 		same = Throttle.get_forward_accel_decel(
-			Pose.with_tilt(
+			Bike.with_tilt(
 				rider({
 					along: 0.0,
 					across: 0.0,

@@ -5,6 +5,7 @@ app [main!] {
 }
 
 import Angle
+import Bike
 import Grade
 import Pose
 import Speed
@@ -27,7 +28,7 @@ new_tilt : Angle.Lean
 new_tilt = Angle.Lean.radians(9.5)
 
 leaned_once : Pose.RiderState
-leaned_once = Pose.with_tilt(probe, Angle.Lean.radians(1.5))
+leaned_once = Bike.with_tilt(probe, Angle.Lean.radians(1.5))
 
 reals : Pose.RiderState -> List(F64)
 reals = |s| [
@@ -76,18 +77,18 @@ main! = |_args| {
 		}),
 		Grade.reals({
 			name: "p-tilt  ",
-			got: reals(Pose.with_tilt(probe, new_tilt)),
+			got: reals(Bike.with_tilt(probe, new_tilt)),
 			want: tilt_want,
 			tol: 0.0,
 		}),
 		Grade.ints({
 			name: "p-tiltsg",
-			got: seg(Pose.with_tilt(probe, new_tilt)),
+			got: seg(Bike.with_tilt(probe, new_tilt)),
 			want: tilt_seg_want,
 		}),
 		Grade.reals({
 			name: "p-twice ",
-			got: reals(Pose.with_tilt(leaned_once, new_tilt)),
+			got: reals(Bike.with_tilt(leaned_once, new_tilt)),
 			want: twice_want,
 			tol: 0.0,
 		}),

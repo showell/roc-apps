@@ -2,7 +2,7 @@
 ## moves along the middle of the step's turn.
 import Acceleration
 import Angle
-import Pose
+import Speed
 import lib.Trig
 
 Bike :: [].{
@@ -14,13 +14,17 @@ Bike :: [].{
 	max_lean : Angle.Lean
 	max_lean = Angle.Lean.degrees(20.0)
 
-	## The rider one step on, after leaning by `lean_step` and speeding up by
+	## What a physics step reads and writes. It is open so that a caller's
+	## larger record passes through a step with its other fields kept.
+	Motion(others) : { along : F64, across : F64, yaw : Angle.Turn, speed : Speed, tilt : Angle.Lean, heading : Angle.Bearing, ..others }
+
+	## The bike one step on, after leaning by `lean_step` and speeding up by
 	## `accel`.
-	simulate_rider_step : Pose.RiderState,
+	simulate_rider_step : Bike.Motion(others),
 	{
 		lean_step : Angle.Lean,
 		accel : Acceleration,
-	} -> Pose.RiderState
+	} -> Bike.Motion(others)
 	simulate_rider_step = |s, { lean_step, accel }| {
 		tilt = s.tilt.plus(lean_step)
 		speed = s.speed.accelerated_by(accel)
@@ -37,4 +41,7 @@ Bike :: [].{
 			heading: s.heading.plus(turn),
 		}
 	}
+
+	with_tilt : Bike.Motion(others), Angle.Lean -> Bike.Motion(others)
+	with_tilt = |s, tilt| { ..s, tilt }
 }

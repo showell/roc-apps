@@ -4,7 +4,6 @@ import Acceleration
 import Angle
 import Bike
 import lib.DeviceMath
-import Pose
 import Scenery
 import lib.Trig
 
@@ -41,13 +40,13 @@ Arc :: [].{
 
 	## Where a projected arc has reached: whether it has crossed the centre
 	## line, how many frames it has run, and the coasting rider.
-	ArcProgress : {
+	ArcProgress(others) : {
 		has_crossed : Bool,
 		frame_count : I64,
-		coasting_rider : Pose.RiderState,
+		coasting_rider : Bike.Motion(others),
 	}
 
-	sim_from : Arc.ArcCourse, Arc.ArcProgress -> Arc.ArcOutcome
+	sim_from : Arc.ArcCourse, Arc.ArcProgress(others) -> Arc.ArcOutcome
 	sim_from = |
 		course,
 		{
@@ -79,7 +78,7 @@ Arc :: [].{
 		}
 	)
 
-	sim_step : Arc.ArcCourse, Arc.ArcProgress -> Arc.ArcOutcome
+	sim_step : Arc.ArcCourse, Arc.ArcProgress(others) -> Arc.ArcOutcome
 	sim_step = |
 		course,
 		{
@@ -157,7 +156,7 @@ Arc :: [].{
 		}
 	)
 
-	project_arc : Pose.RiderState -> Arc.ArcOutcome
+	project_arc : Bike.Motion(others) -> Arc.ArcOutcome
 	project_arc = |state| (
 		{
 			inset_hw = ((Scenery.lane_width / 2.0) - straighten_margin)

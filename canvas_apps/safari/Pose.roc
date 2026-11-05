@@ -37,7 +37,4 @@ Pose :: [].{
 		gaze_yaw: Angle.straight_ahead,
 		focus: 0.0,
 	}
-
-	with_tilt : Pose.RiderState, Angle.Lean -> Pose.RiderState
-	with_tilt = |s, tilt| { ..s, tilt }
 }

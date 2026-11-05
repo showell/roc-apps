@@ -2,8 +2,8 @@
 ## finds the lean whose coasting arc ends nearest the line the rider wants.
 import Angle
 import Arc
+import Bike
 import lib.DeviceMath
-import Pose
 import lib.Trig
 
 LeanSearch :: [].{
@@ -47,7 +47,7 @@ LeanSearch :: [].{
 
 	## The lean between `low` and `high` whose arc ends nearest `target`
 	## across the road, after the bisection's remaining steps from `at`.
-	search_lean_from : Pose.RiderState,
+	search_lean_from : Bike.Motion(others),
 	{
 		target : F64,
 		low : Angle.Lean,
@@ -66,7 +66,7 @@ LeanSearch :: [].{
 		mid = low.halfway_to(high)
 		if at >= lean_search_iters {
 			mid
-		} else if want_more_right(Arc.project_arc(Pose.with_tilt(state, mid)), target) {
+		} else if want_more_right(Arc.project_arc(Bike.with_tilt(state, mid)), target) {
 			search_lean_from(
 				state,
 				{
@@ -90,7 +90,7 @@ LeanSearch :: [].{
 	}
 
 	## The lean for the next step: within the most one step can change it.
-	best_tilt_correction : Pose.RiderState -> Angle.Lean
+	best_tilt_correction : Bike.Motion(others) -> Angle.Lean
 	best_tilt_correction = |state|
 		search_lean_from(
 			state,
