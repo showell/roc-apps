@@ -8,7 +8,6 @@ import Geom
 import SceneLimits
 import Scenery
 import Speed
-import World
 
 CatPlan :: [].{
 
@@ -22,34 +21,35 @@ CatPlan :: [].{
 		lift : F64,
 	}
 
-	## What the cats are seen from: the world's segments, the chain of them
-	## ahead of the rider, the rider's pose, the camera's focal length, and
-	## the rider's speed.
-	View : {
-		world : List(World.Segment),
-		chain : List(World.SegmentIndex),
-		pose : Frame.Pose,
-		cam_focal : F64,
-		speed : Speed,
-	}
-
 	## At most this many cats are drawn in a frame.
 	max_vis_cats : I64
 	max_vis_cats = 8
 
-	## The cats in view, the nearest segment's first.
-	in_view : CatPlan.View -> List(CatPlan.CatItem)
-	in_view = |view| {
-		positions = Frame.ChainPosition.all_in(view.chain)
-		positions.join_map(|position| segment_cat(view, position))
+	## The cats in view of a rider at `speed`, the nearest segment's first.
+	in_view : Frame.Viewpoint, Speed -> List(CatPlan.CatItem)
+	in_view = |view, speed| {
+		positions = Frame.ChainPosition.all_in(view.road.chain)
+		positions.join_map(|position| segment_cat(view, { position, speed }))
 	}
 
 	## The cat waiting on the segment at `position` in the chain, if it has one
 	## and it is in view.
-	segment_cat : CatPlan.View, Frame.ChainPosition -> List(CatPlan.CatItem)
-	segment_cat = |view, position|
-		match position.index_in(view.chain).segment_in(view.world).crossing {
-			CatCrosses(crossing) => cat_in_view(view, { position, crossing })
+	segment_cat : Frame.Viewpoint,
+	{
+		position : Frame.ChainPosition,
+		speed : Speed,
+	} -> List(CatPlan.CatItem)
+	segment_cat = |view, { position, speed }|
+		match position.index_in(view.road.chain).segment_in(view.road.world).crossing {
+			CatCrosses(crossing) =>
+				cat_in_view(
+					view,
+					{
+						position,
+						crossing,
+						speed,
+					},
+				)
 			BirdFlies(_) | QuietRoad => []
 		}
 
@@ -67,21 +67,24 @@ CatPlan :: [].{
 ## The cat crossing the segment at `position` in the chain, as far through its
 ## crossing as the rider's approach has brought it, if it is in view: one
 ## item, or none.
-cat_in_view : CatPlan.View,
+cat_in_view : Frame.Viewpoint,
 {
 	position : Frame.ChainPosition,
 	crossing : Cat.Crossing,
+	speed : Speed,
 } -> List(CatPlan.CatItem)
-cat_in_view = |view, { position, crossing }| {
-	road = {
-		world: view.world,
-		chain: view.chain,
-		pose: view.pose,
-	}
-	gap = Frame.gap_to_segment(road, position)
-	moment = Cat.moment_at(crossing, { gap: (gap + crossing.along), speed: view.speed })
+cat_in_view = |
+	view,
+	{
+		position,
+		crossing,
+		speed,
+	},
+| {
+	gap = Frame.gap_to_segment(view.road, position)
+	moment = Cat.moment_at(crossing, { gap: (gap + crossing.along), speed })
 	seen = Frame.rider_point_ahead(
-		road,
+		view.road,
 		{
 			position: position,
 			along: (crossing.along + moment.spot.along),

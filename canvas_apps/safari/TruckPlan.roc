@@ -6,7 +6,6 @@ import Frame
 import Geom
 import Scenery
 import Truck
-import World
 
 TruckPlan :: [].{
 
@@ -26,13 +25,10 @@ TruckPlan :: [].{
 		NoTruck,
 	]
 
-	## What the truck is seen from: the world's segments, the chain of them
-	## ahead of the rider, the rider's pose, how far ahead of the rider the
-	## truck is, and which of its lights are on.
+	## What the truck is seen from: the road in view, how far ahead of the
+	## rider the truck is, and which of its lights are on.
 	View : {
-		world : List(World.Segment),
-		chain : List(World.SegmentIndex),
-		pose : Frame.Pose,
+		road : Frame.RoadView,
 		lead : F64,
 		lights : Truck.Lights,
 	}
@@ -44,7 +40,10 @@ TruckPlan :: [].{
 		if view.lead > 0.0 {
 			truck_from(
 				view,
-				{ remaining: (view.pose.along + view.lead), position: Frame.ChainPosition.first },
+				{
+					remaining: (view.road.pose.along + view.lead),
+					position: Frame.ChainPosition.first,
+				},
 			)
 		} else {
 			NoTruck
@@ -68,10 +67,10 @@ truck_from : TruckPlan.View,
 	position : Frame.ChainPosition,
 } -> TruckPlan.TruckAt
 truck_from = |view, { remaining, position }|
-	if position.is_past_end_of(view.chain) {
+	if position.is_past_end_of(view.road.chain) {
 		NoTruck
 	} else {
-		segment = position.index_in(view.chain).segment_in(view.world)
+		segment = position.index_in(view.road.chain).segment_in(view.road.world)
 		if remaining > segment.length {
 			truck_from(view, { remaining: (remaining - segment.length), position: position.next() })
 		} else {
@@ -89,11 +88,7 @@ truck_on_segment : TruckPlan.View,
 truck_on_segment = |view, { along, position }| {
 	across = Scenery.lane_width / 2.0
 	center = Frame.rider_point_ahead(
-		{
-			world: view.world,
-			chain: view.chain,
-			pose: view.pose,
-		},
+		view.road,
 		{
 			position: position,
 			along: along,

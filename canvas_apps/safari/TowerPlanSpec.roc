@@ -44,19 +44,24 @@ origin = {
 	half_width: 2.0,
 }
 
-## The first three segments seen from the origin, the rider on segment
-## `rider_segment`.
-short_view : World.SegmentIndex -> TowerPlan.View
-short_view = |rider_segment| {
-	world: segs,
-	chain: [0, 1, 2].map(World.SegmentIndex.number),
-	pose: origin,
-	rider_segment,
+## Three segments seen from the origin, the rider on the first of them, the
+## route's segment `rider_number`.
+short_view : U32 -> TowerPlan.View
+short_view = |rider_number| {
+	road: {
+		world: [0, 1, 2, 3, 4].map(World.route_segment),
+		chain: [
+			rider_number,
+			rider_number + 1,
+			rider_number + 2,
+		].map(World.SegmentIndex.number),
+		pose: origin,
+	},
 	clock: 0.0,
 }
 
 from_origin : TowerPlan.View
-from_origin = short_view(World.SegmentIndex.first)
+from_origin = short_view(0)
 
 short_got : List(I64)
 short_got = [
@@ -104,10 +109,11 @@ where_want = [660.0, 22.0, 480.0, 22.0]
 ## The 1200 m segment alone, seen from the origin.
 long_view : TowerPlan.View
 long_view = {
-	world: [World.route_segment(6)],
-	chain: [0].map(World.SegmentIndex.number),
-	pose: origin,
-	rider_segment: World.SegmentIndex.first,
+	road: {
+		world: [World.route_segment(6)],
+		chain: [0].map(World.SegmentIndex.number),
+		pose: origin,
+	},
 	clock: 0.0,
 }
 
@@ -203,12 +209,10 @@ spread_want = [0.0, 37.0, 74.0, 30.0, 67.0, 104.0].map(TowerPlan.beacon_brightne
 
 behind_got : List(I64)
 behind_got = [
-	TowerPlan.in_view(short_view(World.SegmentIndex.first)).len().to_i64_wrap(),
-	TowerPlan.in_view(short_view(World.SegmentIndex.number(1))).len().to_i64_wrap(),
-	TowerPlan.in_view(short_view(World.SegmentIndex.number(2))).len().to_i64_wrap(),
-	TowerPlan.tower_behind(short_view(World.SegmentIndex.number(1)), World.SegmentIndex.first)
-		.len()
-		.to_i64_wrap(),
+	TowerPlan.in_view(short_view(0)).len().to_i64_wrap(),
+	TowerPlan.in_view(short_view(1)).len().to_i64_wrap(),
+	TowerPlan.in_view(short_view(2)).len().to_i64_wrap(),
+	TowerPlan.tower_behind(short_view(1), World.SegmentIndex.first).len().to_i64_wrap(),
 ]
 
 behind_want : List(I64)
@@ -218,14 +222,12 @@ cull_got : List(I64)
 cull_got = [
 	TowerPlan.along_chain({
 		..from_origin,
-		pose: {
-			along: 5000.0,
-			across: 0.0,
-			yaw: Angle.straight_ahead,
-			half_width: 2.0,
-		},
+		road: { ..from_origin.road, pose: { ..origin, along: 5000.0 } },
 	}).len().to_i64_wrap(),
-	TowerPlan.along_chain({ ..from_origin, chain: [] }).len().to_i64_wrap(),
+	TowerPlan.along_chain({
+		..from_origin,
+		road: { ..from_origin.road, chain: [] },
+	}).len().to_i64_wrap(),
 ]
 
 cull_want : List(I64)

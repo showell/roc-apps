@@ -6,7 +6,6 @@ import Frame
 import Geom
 import Paint
 import lib.Trig
-import World
 import lib.Shapes
 
 TruckShape :: [].{
@@ -24,20 +23,12 @@ TruckShape :: [].{
 		right : F64,
 	}
 
-	## Where the truck is: the world's road segments, the chain of them the
-	## rider is on, the rider's pose, and the truck's position in the chain.
-	Road : {
-		world : List(World.Segment),
-		chain : List(World.SegmentIndex),
-		pose : Frame.Pose,
-		position : Frame.ChainPosition,
-	}
-
-	## A truck ready to draw: where it is, the box it fills, and the camera.
+	## A truck ready to draw: what it is seen from, its segment's position in
+	## the chain, and the box it fills.
 	TruckInView : {
-		road : TruckShape.Road,
+		view : Frame.Viewpoint,
+		position : Frame.ChainPosition,
 		box : TruckShape.TruckBox,
-		cam_focal : F64,
 	}
 
 	## A point on the truck: how far along the road, how far across it, and
@@ -98,15 +89,10 @@ TruckShape :: [].{
 			height,
 		},
 	| {
-		road = truck.road
 		on_ground = Frame.rider_point_ahead(
+			truck.view.road,
 			{
-				world: road.world,
-				chain: road.chain,
-				pose: road.pose,
-			},
-			{
-				position: road.position,
+				position: truck.position,
 				along,
 				across,
 			},
@@ -139,7 +125,7 @@ TruckShape :: [].{
 		color,
 		Camera.project_all(
 			Geom.clip_near(corners),
-			truck.cam_focal,
+			truck.view.cam_focal,
 		),
 	)
 }

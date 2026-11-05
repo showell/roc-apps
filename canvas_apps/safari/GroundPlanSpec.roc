@@ -35,7 +35,7 @@ chunks_want = [1, 2, 2, 2, 1, 1, 20, 13, 48]
 
 # The first three segments, the rider at the start of the first, and a
 # camera only the drawing checks read.
-view : GroundPlan.View
+view : Frame.Viewpoint
 view = {
 	road: {
 		world: [

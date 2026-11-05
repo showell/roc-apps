@@ -13,14 +13,13 @@ import World
 
 RailPlan :: [].{
 
-	## The rails at every bend in view, for a rider on the segment at
-	## `rider_segment`: the bends along the chain ahead, then the bend from
-	## the segment behind.
-	all_rails : Frame.RoadView, World.SegmentIndex -> List(GuardRail.RailPoly)
-	all_rails = |road, rider_segment| {
+	## The rails at every bend in view: the bends along the chain ahead, then
+	## the bend from the segment behind.
+	all_rails : Frame.RoadView -> List(GuardRail.RailPoly)
+	all_rails = |road| {
 		bends_ahead = Frame.ChainPosition.all_in(road.chain).drop_last(1)
 		ahead = bends_ahead.join_map(|position| rails_at(road, bend_after(road, position)))
-		match rider_segment.previous() {
+		match Frame.segment_behind(road) {
 			Previous(segment_behind) => ahead.concat(rails_behind(road, segment_behind))
 			AtRouteStart => ahead
 		}

@@ -9,23 +9,13 @@ import Geom
 import RocBird
 import SceneLimits
 import Scenery
-import World
 
 BirdPlan :: [].{
 
-	## What the birds are seen from: the world's segments, the chain of them
-	## ahead of the rider, the rider's pose, and the camera's focal length.
-	View : {
-		world : List(World.Segment),
-		chain : List(World.SegmentIndex),
-		pose : Frame.Pose,
-		cam_focal : F64,
-	}
-
 	## The birds in view, the nearest segment's first.
-	in_view : BirdPlan.View -> List(RocBird.PlacedBird)
+	in_view : Frame.Viewpoint -> List(RocBird.PlacedBird)
 	in_view = |view| {
-		positions = Frame.ChainPosition.all_in(view.chain)
+		positions = Frame.ChainPosition.all_in(view.road.chain)
 		positions.join_map(|position| segment_bird(view, position))
 	}
 
@@ -41,21 +31,13 @@ BirdPlan :: [].{
 	)
 }
 
-## The road under `view`.
-road_of : BirdPlan.View -> Frame.RoadView
-road_of = |view| {
-	world: view.world,
-	chain: view.chain,
-	pose: view.pose,
-}
-
 ## The bird of the segment at `position` in the chain, if that segment has one
 ## and it is in view: one item, or none.
-segment_bird : BirdPlan.View, Frame.ChainPosition -> List(RocBird.PlacedBird)
+segment_bird : Frame.Viewpoint, Frame.ChainPosition -> List(RocBird.PlacedBird)
 segment_bird = |view, position|
-	match position.index_in(view.chain).segment_in(view.world).crossing {
+	match position.index_in(view.road.chain).segment_in(view.road.world).crossing {
 		BirdFlies(route) => {
-			gap_to_segment = Frame.gap_to_segment(road_of(view), position)
+			gap_to_segment = Frame.gap_to_segment(view.road, position)
 			gap_to_tree = gap_to_segment + BirdFlight.start_along(route)
 			bird_in_view(view, { position, moment: BirdFlight.route_moment_at(route, gap_to_tree) })
 		}
@@ -64,14 +46,14 @@ segment_bird = |view, position|
 
 ## The bird at `moment` on the segment at `position` in the chain, if it is in
 ## view: one item, or none.
-bird_in_view : BirdPlan.View,
+bird_in_view : Frame.Viewpoint,
 {
 	position : Frame.ChainPosition,
 	moment : Animation.Moment(BirdFlight.Pose),
 } -> List(RocBird.PlacedBird)
 bird_in_view = |view, { position, moment }| {
 	seen = Frame.rider_point_ahead(
-		road_of(view),
+		view.road,
 		{
 			position,
 			along: moment.spot.along,

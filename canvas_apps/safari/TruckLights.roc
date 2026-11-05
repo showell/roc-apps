@@ -204,11 +204,11 @@ beam = |truck, across| {
 	} else {
 		on_screen = Camera.project_all(
 			corners,
-			truck.cam_focal,
+			truck.view.cam_focal,
 		)
 		lamp = Camera.project(
 			TruckLights.midpoint({ from: lamp_bottom, to: lamp_top }),
-			truck.cam_focal,
+			truck.view.cam_focal,
 		)
 		Paint.push_grad_poly(
 			on_screen,
@@ -260,7 +260,7 @@ glow = |truck, lamp|
 	if TruckLights.has_point_behind_camera(lamp) {
 		[]
 	} else {
-		on_screen = Camera.project_all(lamp, truck.cam_focal)
+		on_screen = Camera.project_all(lamp, truck.view.cam_focal)
 		center = TruckLights.center_of(on_screen)
 		radius = TruckLights.glow_radius(on_screen, center)
 		Paint.push_grad_poly(
