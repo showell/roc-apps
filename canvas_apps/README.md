@@ -25,6 +25,7 @@ native side is checked by `roc check` here and by the Windows workflow,
 which builds every app and runs it headless.
 
     canvas_apps/build.sh snake       the page,   http://<box>:9210/snake/
+    canvas_apps/build.sh snake release   the page as `--opt=speed` wasm, which site/publish.sh requires
     canvas_apps/native.sh snake      the native program
     TARGET=x64win canvas_apps/native.sh snake     for Windows
 

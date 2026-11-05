@@ -34,7 +34,7 @@ from one channel to the next unchanged. The design is
 | channel | where | serves | written by |
 |---|---|---|---|
 | dev | `http://<box>:9210/` | `~/build/roc-apps/next/` | each app's `build.sh`; `site/build.sh` for the root |
-| staging | `http://<box>:9200/` | `site/live/`, tracked | `site/publish.sh`, after an eye test on dev |
+| staging | `http://<box>:9200/` | `site/live/`, tracked | `site/publish.sh`, after an eye test on dev, which takes only a canvas app's release build |
 | prod | `https://roc.lynrummy.com/` | `/srv/roc-site/` on the prod droplet, staging's files verbatim | `site/deploy.sh`, on Steve's sign-off of staging |
 
 The ports announced before the site redirect: :9201 to prod's `safari/`;
@@ -53,6 +53,7 @@ The ports announced before the site redirect: :9201 to prod's `safari/`;
 | `ops/roc.lynrummy.com.caddy` | prod's site block, imported by the droplet's Caddyfile (angry-gopher's `deploy/Caddyfile`) from `/etc/caddy/sites/` | hand |
 
     site/build.sh                  # the root into dev, http://<box>:9210/
+    canvas_apps/build.sh safari release   # or safari's gates/publish.shale: release wasm into dev
     site/publish.sh safari         # when dev looks right: staging, http://<box>:9200/safari/
     site/deploy.sh                 # when staging looks right: prod, https://roc.lynrummy.com/
 

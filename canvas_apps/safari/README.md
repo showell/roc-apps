@@ -8,6 +8,7 @@ native program is the canvas apps' roc-ray spike, which proved the concept and
 is not kept current.
 
     canvas_apps/build.sh safari       the page, http://<box>:9210/safari/
+    canvas_apps/build.sh safari release   the same page as release wasm, which is what publishes
     canvas_apps/native.sh safari      the native program (the spike, not kept current)
 
 Space pauses. Left and Right step back and forward through the ride's history —
@@ -39,7 +40,7 @@ The rest have been rewritten by hand.
 | `RocBird.roc` | the bird, the first thing here that was never Codex, with `BirdFlight.roc`, `BirdSighting.roc` and `BirdStills.roc` |
 | `Animation.roc` | what the cat and the bird share: a rule that turns where the rider is into a stage, and a timeline that turns a stage into an instant |
 | `CrossingReaction.roc` | what a segment's crossing does to the rider, the one place that matches on it for `Throttle` and `RideFocal` |
-| `gates/` | test code the game never runs: the gate, `run.shale`, and its lints; `CrossModuleExpects.roc`, the expects that need more than the module they check imports; the proof tools and the modules only they use. They reach the game's modules through the package `game.roc` |
+| `gates/` | test code the game never runs: the tiers `fast.shale`, `run.shale` and `publish.shale`, and the lints; `CrossModuleExpects.roc`, the expects that need more than the module they check imports; the proof tools and the modules only they use. They reach the game's modules through the package `game.roc` |
 
 **The rider's lean is a camera.** The whole frame, backdrop and all, turns by
 minus the roll about the middle of the screen, so the world banks into a turn.
@@ -60,17 +61,29 @@ depths either side of the history's cap, and `FrameBench.roc` is a loop over
 the frame for `perf`. RasterFrame and ShapesFrame write their hex through
 `Hex.roc`.
 
-They are not built by `build.sh` or `native.sh`; the gate builds and judges
-them, from the roc-apps root:
+They are not built by `build.sh` or `native.sh`; the gates build and judge
+them, in three tiers, each run from the roc-apps root:
 
-    nice -n 19 shale canvas_apps/safari/gates/run.shale
+    nice -n 19 shale canvas_apps/safari/gates/fast.shale       each edit
+    nice -n 19 shale canvas_apps/safari/gates/run.shale        before a push
+    nice -n 19 shale canvas_apps/safari/gates/publish.shale    before the site moves
+
+An agent runs the fast tier, and one merge gate runs at a time, because the box
+has two cores. Each tier ends by naming what it didn't run.
+
+The fast tier lints only the `.roc` files changed since the checkout's last
+green, by the checks one file can answer. `lints.shale` names the ones that need
+the whole tree. A count held above zero is reported there and doesn't fail.
 
 On roc-apps' pinned nightly (`roc-version`, installed at
-`~/tools/roc-<pin>/roc`), it runs `roc test` so that every `expect` in the
-modules, and in `lib/`, passes exactly once. Then it builds the tutorial, and
-runs StepBack, ShapesFrame and RasterFrame at the depths its script lists.
-`part=expects`, `part=tutorial` or `part=proof` runs one piece. The script's
-header has the rest.
+`~/tools/roc-<pin>/roc`), the merge gate runs the lints, then `roc test` so that
+every `expect` in the modules, and in `lib/`, passes exactly once. Then it builds
+the tutorial, runs StepBack, ShapesFrame and RasterFrame at the depths its script
+lists, and builds the page. `part=expects`, `part=tutorial`, `part=proof` or
+`part=page` runs one piece. The script's header has the rest.
+
+The fast and merge tiers keep their Roc caches under
+`~/build/roc-apps/safari-gate-caches/`, and `publish.shale` runs on empty ones.
 
 An `expect` sits below the block of the module it checks. Where it needs a
 module that one doesn't import, it sits in a module that sees both, such as
