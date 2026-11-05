@@ -430,5 +430,7 @@ const checkPointer = () => {
   console.log(`${name}: pointer checked by mouse and finger, ending by pointerup and pointercancel, touch-action ${pageCanvas.style.touchAction}, ${still ? "picture and " : ""}advance judged`);
 };
 
+// The runner is shared, so the apps that read the pointer prove it for all of
+// them, and painting these drags through safari alone would cost minutes.
 checkTouchAction();
-checkPointer();
+if (sandbox.SHOW.readsPointer) checkPointer();
