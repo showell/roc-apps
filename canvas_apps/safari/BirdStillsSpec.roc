@@ -112,7 +112,15 @@ is_logo_coloured = |polys| polys.all(|poly| poly.color == 6368222 or poly.color 
 frame_got : List(Bool)
 frame_got = List.concat(
 	stills.map(is_in_frame),
-	[is_in_frame([{ color: 0, grad: [], pts: [{ x: 1.1, y: 0.5 }] }])],
+	[
+		is_in_frame([
+			{
+				color: 6368222,
+				grad: [],
+				pts: [{ x: 1.1, y: 0.5 }],
+			},
+		]),
+	],
 )
 
 frame_want : List(Bool)
@@ -130,7 +138,15 @@ frame_want = [
 colours_got : List(Bool)
 colours_got = List.concat(
 	stills.map(is_logo_coloured),
-	[is_logo_coloured([{ color: 0, grad: [], pts: [] }])],
+	[
+		is_logo_coloured([
+			{
+				color: 0,
+				grad: [],
+				pts: [],
+			},
+		]),
+	],
 )
 
 colours_want : List(Bool)

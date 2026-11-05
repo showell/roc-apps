@@ -89,9 +89,10 @@ bird_in_view = |view, { position, state }| {
 			across: state.across + Scenery.lane_width / 2.0,
 		},
 	)
+	height_px = RocBird.height_px({ forward: seen.forward, cam_focal: view.cam_focal })
 	if seen.forward <= Geom.near_plane {
 		[]
-	} else if RocBird.height_px({ forward: seen.forward, cam_focal: view.cam_focal }) < SceneLimits.min_scenery_px {
+	} else if height_px < SceneLimits.min_scenery_px {
 		[]
 	} else {
 		[

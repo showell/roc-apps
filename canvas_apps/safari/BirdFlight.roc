@@ -17,7 +17,12 @@ BirdFlight :: [].{
 
 	## How the bird looks: sitting; side on as it takes off; seen from behind
 	## as it flies off; and dropping onto its tree.
-	Pose : [Perched, Side(BirdFlight.WingBeat), Away(BirdFlight.WingBeat), Diving]
+	Pose : [
+		Perched,
+		Side(BirdFlight.WingBeat),
+		Away(BirdFlight.WingBeat),
+		Diving,
+	]
 
 	## The bird at a moment: how it looks, how far along its segment it is, its
 	## place across the road, and how high its feet are.
