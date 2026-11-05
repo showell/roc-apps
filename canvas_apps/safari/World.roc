@@ -338,7 +338,10 @@ built_segment = |plan, index| {
 		exit_angle,
 		exit_side: if (plan.turn >= Angle.straight_ahead) TurnsRight else TurnsLeft,
 		commit_along: match plan.ending {
-			Continues => plan.length - Scenery.lane_width / 2.0 / Trig.r_tan(exit_angle.to_radians())
+			Continues => {
+				exit_tan = Trig.r_tan(exit_angle.to_radians())
+				plan.length - Scenery.lane_width / 2.0 / exit_tan
+			}
 			Terminates => plan.length
 		},
 		mid_tower: if (plan.length > World.mid_tower_min_length) MidTower else NoMidTower,
