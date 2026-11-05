@@ -11,6 +11,7 @@ ShapesFrame 100: differ 0 of 576000, triangles 4135, commands 2287
 ShapesFrame 1570: differ 0 of 576000, triangles 10524, commands 2712
 ShapesFrame 1586: differ 0 of 576000, triangles 7308, commands 2290
 ShapesFrame 3000: differ 0 of 576000, triangles 18136, commands 2481
+ShapesFrame 3742: differ 0 of 576000, triangles 2401, commands 840
 ShapesFrame 5700: differ 0 of 576000, triangles 12502, commands 1506
 ShapesFrame 9000: differ 0 of 576000, triangles 11935, commands 1027
 RasterFrame 0: hash 2335ee33
@@ -18,5 +19,6 @@ RasterFrame 100: hash 7f9bdbc4
 RasterFrame 1570: hash 9d5d7f8e
 RasterFrame 1586: hash f8d3fa2c
 RasterFrame 3000: hash 2e3d39d1
+RasterFrame 3742: hash ed7bb924
 RasterFrame 5700: hash 293301db
 RasterFrame 9000: hash fe33ebf5
