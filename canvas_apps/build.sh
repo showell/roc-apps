@@ -2,7 +2,8 @@
 # **AN APP'S PAGE.** Builds <app>/web.roc into the dev channel, beside the
 # canvas_apps's game runner and the game's page.
 #
-#   canvas_apps/build.sh snake
+#   canvas_apps/build.sh snake            the dev build: --opt=dev wasm
+#   canvas_apps/build.sh snake release    what publishes: --opt=speed wasm
 #
 # **NOTHING IS STAGED AND NOTHING IS REWRITTEN.** Every file compiles where it
 # is written. A game's whole self is its own directory, app files included;
@@ -15,7 +16,12 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # by one.
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../pinned-roc.sh"
 ZIG="${ZIG:-$HOME/zig-0.16.0/zig}"
-name="${1:?usage: canvas_apps/build.sh <app>}"
+name="${1:?usage: canvas_apps/build.sh <app> [release]}"
+case "${2:-}" in
+    "") opt=dev ;;
+    release) opt=speed ;;
+    *) echo "usage: canvas_apps/build.sh <app> [release]"; exit 2 ;;
+esac
 app="$HERE/$name/web.roc"
 [ -f "$app" ] || { echo "no app at $app"; exit 2; }
 [ -f "$HERE/$name/page.html" ] || { echo "no page at $HERE/$name/page.html"; exit 2; }
@@ -27,10 +33,15 @@ app="$HERE/$name/web.roc"
 DEST="${OUT:-$HOME/build/roc-apps/next/$name}"
 OUT="$DEST.staging"
 rm -rf "$OUT"; mkdir -p "$OUT"
-# **A FRESH CACHE FOR THE WASM BUILD**: on nightly 09-22 a wasm build that
-# reuses the cache of an earlier one crashes the compiler (SIGSEGV).
-CACHE="$(mktemp -d)"
-trap 'rm -rf "$OUT" "$CACHE"' EXIT
+# A release build always starts from an empty cache. A dev build uses the
+# caller's, as the merge gate gives it, or else an empty one, and never the
+# user's default cache.
+MADE_CACHE=""
+if [ "$opt" = speed ] || [ -z "${XDG_CACHE_HOME:-}" ]; then
+    MADE_CACHE="$(mktemp -d)"
+    export XDG_CACHE_HOME="$MADE_CACHE"
+fi
+trap 'rm -rf "$OUT" $MADE_CACHE' EXIT
 (cd "$HERE/web" && "$ZIG" build --cache-dir "$HOME/build/roc-apps/zig-cache" --global-cache-dir "$HOME/build/zig-global")
 
 LOG="$HOME/build/roc-apps/gen/canvas_apps/$name-web.log"
@@ -38,7 +49,7 @@ mkdir -p "$(dirname "$LOG")"
 rm -f "$OUT/$name.wasm"
 # **ROC EXITS NON-ZERO FOR A WARNING**, so the verdict is an error mark or a
 # missing module, not the exit code.
-(cd "$HERE/$name" && XDG_CACHE_HOME="$CACHE" "$ROC" build web.roc --target=wasm32 --opt=speed --output="$OUT/$name.wasm") > "$LOG" 2>&1 || true
+(cd "$HERE/$name" && "$ROC" build web.roc --target=wasm32 --opt="$opt" --output="$OUT/$name.wasm") > "$LOG" 2>&1 || true
 if grep -q -e "✗" -e "●" "$LOG" || [ ! -s "$OUT/$name.wasm" ]; then cat "$LOG"; echo "build failed"; exit 1; fi
 
 # **THE FRAME READER IS GENERATED**, from the platform's own type table, by
@@ -50,6 +61,7 @@ cp "$HERE/web/shapes_canvas.js" "$HERE/web/canvas_app_runner.js" "$OUT/"
 # guessed later: these pin the nightly roc-ray pins, and the `roc` symlink
 # points at a different one.
 "$ROC" version | sed 's/Roc compiler version /roc /' > "$OUT/BUILT"
+echo "opt $opt" >> "$OUT/BUILT"
 cp "$HERE/$name/page.html" "$OUT/index.html"
 
 # **EVERY BUILD IS CHECKED AND PHOTOGRAPHED.** page_check runs the page as a

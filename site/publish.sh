@@ -8,7 +8,8 @@
 #
 # An app: copies ~/build/roc-apps/next/<app>/ (what <app>'s build.sh last wrote,
 # and what :9210/<app>/ shows) over site/live/<app>/ whole, writes a PROVENANCE
-# beside it, and commits and pushes that directory alone. `home` does the same
+# beside it, and commits and pushes that directory alone. A canvas app must be a
+# release build (`canvas_apps/build.sh <app> release`). `home` does the same
 # for the landing page and shared/; dev's `channel` file stays behind, so
 # staging holds exactly what prod will. Staging on :9200 serves site/live/ per
 # request with no-store, so it is live at once. Nothing else writes site/live/.
@@ -41,6 +42,9 @@ else
     [ -d "$REPO/$src" ] || src="canvas_apps/$app"
     [ -d "$REPO/$src" ] || { echo "$app is neither an app nor a canvas app in $REPO"; exit 2; }
     [ -d "$NEXT/$app" ] || { echo "no dev build at $NEXT/$app; run $app's build.sh first"; exit 2; }
+    if [ "$src" = "canvas_apps/$app" ] && ! grep -qxF "opt speed" "$NEXT/$app/BUILT"; then
+        echo "$NEXT/$app is not a release build; run canvas_apps/build.sh $app release first"; exit 2
+    fi
     rm -rf "$LIVE/$app"
     cp -r "$NEXT/$app" "$LIVE/$app"
     {
