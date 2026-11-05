@@ -260,9 +260,9 @@ to bring its own format-only changes.
   nightly may format differently.
 - **Use a trailing comma to get a stack.** `roc fmt` keeps a list, record,
   tuple or call's arguments one per line when the last item has a trailing
-  comma, as `zig fmt` does. We stack anything with three or more parts, and
-  any line over about 100 columns (`docs/roc-style.md`, "Layout and
-  formatting").
+  comma, as `zig fmt` does, and joins it onto one line when the comma goes.
+  We stack a group of three or more items and six or more tokens, and any
+  line over about 100 columns (`docs/roc-style.md`, "Layout and formatting").
 - **Run `roc fmt` until `--check` passes, then read its diff.** At 09-22
   one pass isn't always stable (FastTrack's Page.roc took two), and the
   formatter can copy a comment into a neighbouring record. Fix such a slip
@@ -378,8 +378,9 @@ planted cases, and let the compiler judge any rewrite.
   a change to a Roc file, run the recipes that rewrite code over it, from
   the repo's root and at the repo's pin, with `--undo-on-stop`: first
   `methods.shale apply=1` (an old-style `Module.fn(x, ...)` call becomes
-  `x.fn(...)`), then `roc_commas.shale` (long lines stacked with a
-  trailing comma), then `roc fmt`. Then run the hunts over the same files
+  `x.fn(...)`), then `roc_commas.shale tokens=6` (groups stacked or joined
+  by the rule, long lines stacked), then `roc fmt`. Then run the hunts over
+  the same files
   and fix what they find, so a file you touched leaves clean. A repo-wide
   sweep is a task of its own, done when Steve asks for it.
 - **A rewrite is its own commit,** apart from any change in behaviour, as a
@@ -394,9 +395,10 @@ planted cases, and let the compiler judge any rewrite.
   record.
 - **The recipes.** `name_hunt` (awkward names, tense, container words),
   `errors` (an error alias, an optional tag), `boundaries` (a one-caller
-  wrapper, a fixed parameter), `nest_depth`, `stack` (three or more on a
-  line, or past 100 columns), `roc_commas` (trailing commas so `roc fmt`
-  stacks long lines), `methods`, `same_code` (two builds the same machine
+  wrapper, a fixed parameter), `nest_depth`, `stack` (a group that should
+  stack or unstack, or a line past 100 columns), `roc_commas` (trailing
+  commas so `roc fmt` stacks or joins groups), `methods`, `same_code` (two
+  builds the same machine
   code, the judge of a pure reformat) and `tree_patch`. Each is a recipe,
   not a builtin: copy one and change it for the job.
 - **A finding is a question for a reader.** Each prints

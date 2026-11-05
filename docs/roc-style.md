@@ -709,14 +709,10 @@ is the base; these rules sharpen it.
   is an ordinary `{ ..parcel, ... }`. Here an `Order` holds a customer and
   a payment, and `Shipping` sits below it and knows neither. Name the type
   when several functions share it, and spell it out in the signature when
-  one function reads it. A trailing comma after `..others` keeps the stack.
+  one function reads it.
 
   ```roc
-  Parcel(others) : {
-  	weight_grams : U64,
-  	postcode : Str,
-  	..others,
-  }
+  Parcel(others) : { weight_grams : U64, postcode : Str, ..others }
 
   cost_in_cents : Shipping.Parcel(others) -> U64
   with_weight : Shipping.Parcel(others), U64 -> Shipping.Parcel(others)
@@ -850,13 +846,37 @@ is the base; these rules sharpen it.
 
 - **`roc fmt` decides layout.** Ask for a vertical stack with a trailing
   comma: it keeps it, as `zig fmt` does.
-- **Stack anything with three or more parts, one per line, with a trailing
-  comma**: a list, a record, a tuple, a call's arguments, a tag's payload.
-  Three things on one line are hard to scan. A line over about 100 columns
-  gets stacked too, unless a string literal is all that makes it long: Roc
-  has no short way to split a string, and frozen text reads better whole. A type annotation's arguments can't be stacked (`roc fmt`
-  refuses the trailing comma there), so a signature with three or more
-  arguments [takes a record](#name-what-travels-together) instead.
+- **Stack a group of three or more items and six or more tokens, one item
+  per line, with a trailing comma**: a list, a record, a tuple, a call's
+  arguments, a tag's payload, a lambda's arguments. Every other group sits on
+  one line, without the comma. A token is what's left when the punctuation
+  goes: a name (a dotted path like `Angle.Bearing` is one), a number, a
+  string. So a record of three typed fields stacks, because someone reads
+  it to learn the shape, and the arguments that only name those fields sit
+  on one line, because nobody needs to read them:
+
+  ```roc
+  sun_pos : {
+  	heading : Angle.Bearing,
+  	clock : Clock,
+  	cam_focal : F64,
+  } -> Sky.SunPos
+  sun_pos = |{ heading, clock, cam_focal }| {
+  ```
+
+  Two items stay side by side, whatever they hold: a pair reads as a pair,
+  like `{ along: Along.metres(33.0), across: Across.metres(-15.0) }` or a
+  table's `(agent_added(full, { name: "Bot", owner: zed }), Err(NoSuchOwner))`.
+  A row of literals stays side by side too, like
+  `[1.0, 2.0, 3.0, 4.0, 5.0, 6.0]`, and may stand stacked. A group with a
+  comment in it stays stacked, because `roc fmt` won't join it.
+
+  A line over about 100 columns gets stacked whatever its tokens, unless a
+  string literal is all that makes it long: Roc has no short way to split a
+  string, and frozen text reads better whole. A type annotation's arguments
+  can't be stacked (`roc fmt` refuses the trailing comma there), so a
+  signature with three or more arguments
+  [takes a record](#name-what-travels-together) instead.
 
   ```roc
   JsonOut.object([
@@ -923,14 +943,8 @@ is the base; these rules sharpen it.
 
   ```roc
   expect
-  	[
-  		{ held: 90, adding: 9 },
-  		{ held: 90, adding: 11 },
-  	].map(room)
-  		== [
-  			Fits,
-  			Overflows,
-  		]
+  	[{ held: 90, adding: 9 }, { held: 90, adding: 11 }].map(room)
+  		== [Fits, Overflows]
   ```
 
   Write one `expect` per case; where many cases share an answer, check
@@ -993,7 +1007,8 @@ is the base; these rules sharpen it.
     `optional_tag` (a tag named as an optional, `None` or `Some`);
   - Shale's `cookbook/roc/nest_depth.shale`: a call nested three deep or
     more, read inside out ([layout](#layout-and-formatting));
-  - Shale's `cookbook/roc/stack.shale`: three or more parts on one line,
+  - Shale's `cookbook/roc/stack.shale`: a group on one line that should
+    stack, a stacked group that should sit on one line (`unstack`),
     or a line over 100 columns (`long`; one that only a string literal
     makes long is reported apart as `wide string`, and no gate holds it);
   - Shale's `cookbook/roc/methods.shale`: an old-style `Module.fn(x, ...)`
