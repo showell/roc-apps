@@ -53,9 +53,9 @@ SceneDraw :: [].{
 	draw_tree = |tree, { trees, cam_focal }| {
 		nearer_trees = SceneDraw.nearer_tree_count(trees, tree.forward)
 		TreeDraw.draw({
-			right: tree.right,
-			forward: tree.forward,
-			height: tree.height.to_metres(),
+			right: Distance.metres(tree.right),
+			forward: Distance.metres(tree.forward),
+			height: tree.height,
 			color: tree.color,
 			cam_focal,
 			trunk: if nearer_trees < SceneDraw.round_trunk_limit {
@@ -148,9 +148,9 @@ thing_at = |things, place|
 draw_cat : CatSighting, F64 -> List(Shapes.Shape)
 draw_cat = |cat, cam_focal|
 	CatDraw.draw({
-		right: cat.right,
-		forward: cat.forward,
-		height: cat.height.to_metres(),
+		right: Distance.metres(cat.right),
+		forward: Distance.metres(cat.forward),
+		height: cat.height,
 		pose: cat.pose,
 		lift: cat.lift,
 		cam_focal,

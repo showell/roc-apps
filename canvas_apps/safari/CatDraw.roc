@@ -46,11 +46,13 @@ CatDraw :: [].{
 	polygons = |anchor, polys| polys.join_map(|poly| polygon(anchor, poly))
 
 	## The cat standing `right` and `forward` of the camera, `height` tall,
-	## in `pose` and raised by `lift`. A cat under a pixel tall is not drawn.
+	## in `pose` and raised by `lift`, which is in cat heights, not metres. A
+	## cat is drawn ahead of the rider, so of its lengths only `right` can be
+	## negative. A cat under a pixel tall is not drawn.
 	draw : {
-		right : F64,
-		forward : F64,
-		height : F64,
+		right : Distance,
+		forward : Distance,
+		height : Distance,
 		pose : Cat.Pose,
 		lift : F64,
 		cam_focal : F64,
@@ -65,13 +67,8 @@ CatDraw :: [].{
 			cam_focal,
 		},
 	| {
-		at_height = |metres| {
-			right: Distance.metres(right),
-			forward: Distance.metres(forward),
-			height: Distance.metres(metres),
-		}
-		feet = Camera.project(at_height(0.0), cam_focal)
-		top = Camera.project(at_height(height), cam_focal)
+		feet = Camera.project({ right, forward, height: Distance.zero }, cam_focal)
+		top = Camera.project({ right, forward, height }, cam_focal)
 		height_px = (feet.y - top.y)
 		if height_px < 1.0 {
 			[]
@@ -175,15 +172,15 @@ expect
 # How many shapes a 1.7 m cat makes `forward` metres ahead, in `pose` and raised
 # by `lift`, through a 500 px focal length on a 960 px view.
 cat_shapes : {
-	forward : F64,
+	forward : Distance,
 	pose : Cat.Pose,
 	lift : F64,
 } -> U64
 cat_shapes = |{ forward, pose, lift }|
 	CatDraw.draw({
-		right: 0.0,
+		right: Distance.metres(0.0),
 		forward,
-		height: 1.7,
+		height: Distance.metres(1.7),
 		pose,
 		lift,
 		cam_focal: 500.0,
@@ -191,21 +188,21 @@ cat_shapes = |{ forward, pose, lift }|
 
 expect
 	cat_shapes({
-		forward: 850.0,
+		forward: Distance.metres(850.0),
 		pose: Rest,
 		lift: 0.0,
 	})
 		== CatStills.pose_polygons(Rest).len()
 expect
 	cat_shapes({
-		forward: 851.0,
+		forward: Distance.metres(851.0),
 		pose: Rest,
 		lift: 0.0,
 	})
 		== 0
 expect
 	cat_shapes({
-		forward: 2000.0,
+		forward: Distance.metres(2000.0),
 		pose: Rest,
 		lift: 0.0,
 	})
@@ -213,21 +210,21 @@ expect
 
 expect
 	cat_shapes({
-		forward: 100.0,
+		forward: Distance.metres(100.0),
 		pose: Rest,
 		lift: 0.0,
 	})
 		== CatStills.pose_polygons(Rest).len()
 expect
 	cat_shapes({
-		forward: 100.0,
+		forward: Distance.metres(100.0),
 		pose: Rest,
 		lift: 0.3,
 	})
 		== CatStills.pose_polygons(Rest).len()
 expect
 	cat_shapes({
-		forward: 100.0,
+		forward: Distance.metres(100.0),
 		pose: Frozen,
 		lift: 0.0,
 	})

@@ -15,11 +15,12 @@ TreeDraw :: [].{
 
 	## A tree to draw, where it stands in the rider's view and how. Of the
 	## nearest trees, the trunk's corners are rounded; the crown is cones
-	## within the detail distance, and triangles beyond it.
+	## within the detail distance, and triangles beyond it. A tree in view is
+	## ahead of the rider, so of its lengths only `right` can be negative.
 	TreeInView : {
-		right : F64,
-		forward : F64,
-		height : F64,
+		right : Distance,
+		forward : Distance,
+		height : Distance,
 		color : I64,
 		cam_focal : F64,
 		trunk : [RoundCorners, SharpCorners],
@@ -106,10 +107,10 @@ TreeDraw :: [].{
 	crown_width : F64
 	crown_width = 0.288
 
-	## A cone whose near edge is closer than this, in metres, is drawn as a
-	## triangle: the camera would see it from inside.
-	min_cone_forward : F64
-	min_cone_forward = 0.4
+	## A cone whose near edge is closer than this is drawn as a triangle: the
+	## camera would see it from inside.
+	min_cone_forward : Distance
+	min_cone_forward = Distance.metres(0.4)
 
 	## A cone's base is a ring of this many points.
 	ring_n : I64
@@ -134,22 +135,17 @@ TreeDraw :: [].{
 		}
 	}
 
-	## Where a tree of `height` metres, standing `right` and `forward` of the
+	## Where a tree `height` tall, standing `right` and `forward` of the
 	## rider, is on the screen.
 	on_screen : {
-		right : F64,
-		forward : F64,
-		height : F64,
+		right : Distance,
+		forward : Distance,
+		height : Distance,
 		cam_focal : F64,
 	} -> TreeDraw.TreeOnScreen
 	on_screen = |{ right, forward, height, cam_focal }| {
-		at_height = |metres| {
-			right: Distance.metres(right),
-			forward: Distance.metres(forward),
-			height: Distance.metres(metres),
-		}
-		base = Camera.project(at_height(0.0), cam_focal)
-		top = Camera.project(at_height(height), cam_focal)
+		base = Camera.project({ right, forward, height: Distance.zero }, cam_focal)
+		top = Camera.project({ right, forward, height }, cam_focal)
 		height_px = (base.y - top.y)
 		foliage_px = (height_px * crown_height)
 		crown_bottom_y = (base.y - (height_px * visible_trunk))
@@ -279,38 +275,40 @@ draw_tier : TreeDraw.TreeInView,
 	tier : TreeDraw.Tier,
 } -> List(Shapes.Shape)
 draw_tier = |tree, { seen, tier }| {
-	radius = ((TreeDraw.crown_width * tier.width) * tree.height)
+	cone_radius = tree.height.times(TreeDraw.crown_width * tier.width)
 	match tree.crown {
-		Cones if (tree.forward - radius) < TreeDraw.min_cone_forward => TreeDraw.tier_triangle(
-			seen,
-			{ tier, color: tree.color },
-		)
-		Cones => tier_cone(tree, { tier, radius })
+		Cones if tree.forward.minus(cone_radius) < TreeDraw.min_cone_forward =>
+			TreeDraw.tier_triangle(seen, { tier, color: tree.color })
+		Cones => tier_cone(tree, { tier, cone_radius })
 		Triangles => TreeDraw.tier_triangle(seen, { tier, color: tree.color })
 	}
 }
 
 ## A tier as a cone: the outline of the ring round its base and its apex.
-tier_cone : TreeDraw.TreeInView, { tier : TreeDraw.Tier, radius : F64 } -> List(Shapes.Shape)
-tier_cone = |tree, { tier, radius }| {
+tier_cone : TreeDraw.TreeInView,
+{
+	tier : TreeDraw.Tier,
+	cone_radius : Distance,
+} -> List(Shapes.Shape)
+tier_cone = |tree, { tier, cone_radius }| {
 	trunk = TreeDraw.visible_trunk
 	crown = TreeDraw.crown_height
-	base_height = ((trunk + (crown * (1.0 - tier.bottom))) * tree.height)
-	apex_height = ((trunk + (crown * (1.0 - tier.top))) * tree.height)
+	base_height = tree.height.times(trunk + (crown * (1.0 - tier.bottom)))
+	apex_height = tree.height.times(trunk + (crown * (1.0 - tier.top)))
 	apex = Camera.project(
 		{
-			right: Distance.metres(tree.right),
-			forward: Distance.metres(tree.forward),
-			height: Distance.metres(apex_height),
+			right: tree.right,
+			forward: tree.forward,
+			height: apex_height,
 		},
 		tree.cam_focal,
 	)
 	ring = ring_angles.map(
 		|angle| {
 			on_ring = {
-				right: Distance.metres(tree.right + (radius * Trig.r_cos(angle))),
-				forward: Distance.metres(tree.forward + (radius * Trig.r_sin(angle))),
-				height: Distance.metres(base_height),
+				right: tree.right.plus(cone_radius.times(Trig.r_cos(angle))),
+				forward: tree.forward.plus(cone_radius.times(Trig.r_sin(angle))),
+				height: base_height,
 			}
 			Camera.project(on_ring, tree.cam_focal)
 		},
@@ -334,13 +332,13 @@ expect TreeDraw.trunk_color == 5914146
 expect TreeDraw.visible_trunk == 0.44
 expect TreeDraw.crown_height == 0.648
 expect TreeDraw.crown_width == 0.288
-expect TreeDraw.min_cone_forward == 0.4
+expect TreeDraw.min_cone_forward.to_metres() == 0.4
 
 sample_on_screen : TreeDraw.TreeOnScreen
 sample_on_screen = TreeDraw.on_screen({
-	right: 0.0,
-	forward: 2.0,
-	height: 4.0,
+	right: Distance.metres(0.0),
+	forward: Distance.metres(2.0),
+	height: Distance.metres(4.0),
 	cam_focal: 500.0,
 })
 
