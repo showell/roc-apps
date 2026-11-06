@@ -20,8 +20,7 @@
 ## upright. A lean is never added to a direction. It turns the bike only
 ## through a rate (`steer`), the way a leaning bike follows a curve.
 ##
-## Each operation does the plain float arithmetic its name says, so code
-## moved onto these types computes exactly what it did before.
+## Each operation does the plain float arithmetic its name says.
 import lib.Trig
 
 Angle :: [].{

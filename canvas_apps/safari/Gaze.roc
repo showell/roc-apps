@@ -1,6 +1,6 @@
 ## Where the rider looks. A pig by the road catches the rider's eye: the gaze
-## swivels toward it, the rider slows to look, and the gaze eases back to the
-## road once the pig is behind.
+## swivels toward it and the rider slows. The pig passes out of sight to the
+## side while it is still ahead, and the gaze eases back to the road.
 import Acceleration
 import Angle
 import Attention

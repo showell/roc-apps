@@ -1,7 +1,6 @@
 ## Where the camera looks. It turns with the rider's gaze, and a little with
 ## the bike's lean, as a rider's head turns into a bend.
 import Angle
-import Chain
 import Geom
 import RiderState
 import Scenery

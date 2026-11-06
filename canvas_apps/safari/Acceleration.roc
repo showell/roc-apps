@@ -3,8 +3,7 @@
 ## slows the speed down. The throttle hands one from limit to limit, and `Speed`
 ## applies one to a speed and works one out from two.
 ##
-## Each operation does the plain float arithmetic its name says, so code
-## moved onto this type computes exactly what it did before.
+## Each operation does the plain float arithmetic its name says.
 Acceleration :: F64.{
 
 	metres_a_step_each_step : F64 -> Acceleration
