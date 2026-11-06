@@ -36,13 +36,13 @@ Rider :: [].{
 		}
 	}
 
-	rider_state_for_next_segment : RiderState, List(World.Segment) -> RiderState
-	rider_state_for_next_segment = |rs, route| {
+	on_next_segment : RiderState, List(World.Segment) -> RiderState
+	on_next_segment = |rs, route| {
 		seg = rs.segment_index.segment_in(route)
 		next =
 			match seg.ending {
 				Continues({ next: index }) => index
-				Terminates => crash "Rider.rider_state_for_next_segment: past the route's end"
+				Terminates => crash "Rider.on_next_segment: past the route's end"
 			}
 		on_next = Geom.centred_point_after(
 			{ along: rs.along, across: rs.across },
@@ -62,8 +62,8 @@ Rider :: [].{
 		}
 	}
 
-	finish_clamp : RiderState, World.Segment -> RiderState
-	finish_clamp = |moved, seg| {
+	stop_at_route_end : RiderState, World.Segment -> RiderState
+	stop_at_route_end = |moved, seg| {
 		end = Along.at(seg.length)
 		in_zone = end.distance_from(moved.along) < VehicleLimits.bend_approach
 		if moved.along >= end {
@@ -82,9 +82,9 @@ Rider :: [].{
 	stopped_at : RiderState, Along -> RiderState
 	stopped_at = |s, at| { ..s, along: at, speed: Speed.at_rest }
 
-	resolve_cross : RiderState, List(World.Segment) -> RiderState
-	resolve_cross = |moved, route| {
-		on_next = rider_state_for_next_segment(moved, route)
+	cross_if_on_road : RiderState, List(World.Segment) -> RiderState
+	cross_if_on_road = |moved, route| {
+		on_next = on_next_segment(moved, route)
 		if on_next.across.distance_from_middle() < Scenery.road_half_width {
 			on_next
 		} else {
@@ -99,8 +99,8 @@ Rider :: [].{
 		moved = Bike.advance(state, { lean_step: dec.lean_step, accel: dec.accel })
 		resolved =
 			match seg.ending {
-				Continues(_) => resolve_cross(moved, route)
-				Terminates => finish_clamp(moved, seg)
+				Continues(_) => cross_if_on_road(moved, route)
+				Terminates => stop_at_route_end(moved, seg)
 			}
 		Gaze.next_rider_gaze(resolved, route)
 	}
@@ -173,7 +173,7 @@ at_seam = {
 }
 
 crossed : RiderState
-crossed = Rider.rider_state_for_next_segment(at_seam, first_segments)
+crossed = Rider.on_next_segment(at_seam, first_segments)
 
 expect crossed.speed.to_metres_a_step() == 1.25
 expect crossed.lean.to_radians() == 0.05
@@ -186,19 +186,19 @@ expect crossed.segment_index.to_i64() == 1
 expect first_segment.ending == Continues({ next: World.SegmentIndex.number(1) })
 
 expect {
-	far = Rider.rider_state_for_next_segment(rider_at(100.0, 0.0), first_segments)
+	far = Rider.on_next_segment(rider_at(100.0, 0.0), first_segments)
 	far.across.distance_from_middle() >= Scenery.road_half_width
 }
 
-expect Rider.resolve_cross(rider_at(100.0, 0.0), first_segments).segment_index.to_i64() == 0
-expect Rider.resolve_cross(rider_at(499.0, 0.0), first_segments).segment_index.to_i64() == 1
+expect Rider.cross_if_on_road(rider_at(100.0, 0.0), first_segments).segment_index.to_i64() == 0
+expect Rider.cross_if_on_road(rider_at(499.0, 0.0), first_segments).segment_index.to_i64() == 1
 
 last_seg : World.Segment
 last_seg = World.route_segment(18)
 
 clamped_at_finish : F64, F64 -> RiderState
 clamped_at_finish = |along, speed|
-	Rider.finish_clamp(
+	Rider.stop_at_route_end(
 		{
 			..RiderState.initial,
 			along: Along.metres(along),

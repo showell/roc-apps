@@ -905,9 +905,9 @@ A decision is a record of two opaque values. There's something to notice in the 
 
 {{code Rider.decide}}
 
-That idea gets larger soon. A small version of it decides what happens at the end of a segment. `resolve_cross` works out the rider on the next segment and keeps that only if it lands inside the lane. The rejected rider simply stops being referred to, and nothing has to be undone:
+That idea gets larger soon. A small version of it decides what happens at the end of a segment. `cross_if_on_road` works out the rider on the next segment and keeps that only if it lands inside the lane. The rejected rider simply stops being referred to, and nothing has to be undone:
 
-{{code Rider.resolve_cross}}
+{{code Rider.cross_if_on_road}}
 
 Record update does most of the writing in this module. Its plainest use is stopping dead, where `..s` keeps everything but the two fields named:
 
@@ -1465,7 +1465,7 @@ The tour named these in passing. They're patterns in the loose sense: shapes tha
 | A narrow view of a wide record | An open record names the fields it uses and carries the rest through | `Bike.Motion(others)` |
 | The gate chain | One value passes through independent rules, each of which can only lower it | `Throttle.acceleration` |
 | One record per space | Field names say which coordinate system a point is in | `RoadPoint`, `RiderPoint`, `RaisedPoint`, `Screen.Point` |
-| Rehearsal | Run the real rules on a pretend copy, read the result, and throw it away | `Coast`, `LeanSearch`, `Rider.resolve_cross` |
+| Rehearsal | Run the real rules on a pretend copy, read the result, and throw it away | `Coast`, `LeanSearch`, `Rider.cross_if_on_road` |
 
 Code that reads like configuration deserves a line of its own, because the tour kept stopping to admire it: `Pond`, `World.plans`, the timelines, and `SafariApp.canvas_app`. None of them is a config format. They're ordinary Roc values, so the compiler checks them, and a tag that's misspelled is a compile-time error.
 
