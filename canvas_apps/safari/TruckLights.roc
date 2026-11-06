@@ -8,7 +8,7 @@ import Across
 import Camera
 import Distance
 import Geom
-import Paint
+import Polygon
 import TruckShape
 import Screen
 import lib.Shapes
@@ -187,7 +187,7 @@ beam = |truck, across| {
 			TruckLights.midpoint({ from: lamp_bottom, to: lamp_top }),
 			truck.view.cam_focal,
 		)
-		Paint.gradient_polygon(
+		Polygon.gradient_polygon(
 			on_screen,
 			{
 				center_rgba: beam_core,
@@ -240,7 +240,7 @@ glow = |truck, lamp|
 		on_screen = Camera.project_all(lamp, truck.view.cam_focal)
 		center = TruckLights.center_of(on_screen)
 		radius = TruckLights.glow_radius(on_screen, center)
-		Paint.gradient_polygon(
+		Polygon.gradient_polygon(
 			TruckLights.glow_outline({ center, outline_radius: radius }),
 			{
 				center_rgba: glow_core,
