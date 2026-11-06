@@ -27,7 +27,7 @@ Render :: [].{
 		trees : List(TreeSighting.TreeItem),
 		towers : List(TowerSighting.TowerItem),
 		critters : List(Billboards.Billboard),
-		cats : List(CatSighting.CatItem),
+		cats : List(CatSighting),
 		rails : List(GuardRail.RailPoly),
 		truck : TruckSighting.TruckAt,
 		birds : List(RocBird.PlacedBird),

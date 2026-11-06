@@ -149,7 +149,7 @@ thing_at = |things, place|
 	things.get(place.to_u64())
 		?? crash "ItemDraw.thing_at: the depth order names only places in its lists"
 
-draw_cat : CatSighting.CatItem, F64 -> List(Shapes.Shape)
+draw_cat : CatSighting, F64 -> List(Shapes.Shape)
 draw_cat = |cat, cam_focal|
 	CatDraw.draw({
 		right: cat.right,

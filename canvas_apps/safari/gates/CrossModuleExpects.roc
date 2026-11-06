@@ -242,14 +242,14 @@ metre_a_step : Speed
 metre_a_step = Speed.metres_a_step(1.0)
 
 ## The cats seen from the origin on a road of only `chain`.
-cats_on_chain : List(World.SegmentIndex) -> List(CatSighting.CatItem)
+cats_on_chain : List(World.SegmentIndex) -> List(CatSighting)
 cats_on_chain = |chain| CatSighting.in_view(
 	{ ..cats_from_origin, road: { ..cats_from_origin.road, chain } },
 	metre_a_step,
 )
 
 ## The cat on the segment at `number` in the chain, if it is in view.
-cat_at : U32 -> List(CatSighting.CatItem)
+cat_at : U32 -> List(CatSighting)
 cat_at = |number| CatSighting.segment_cat(
 	cats_from_origin,
 	{ position: Chain.Position.number(number), speed: metre_a_step },
@@ -286,7 +286,7 @@ expect
 	)
 
 ## The cats in view for a rider `along` metres into the first segment.
-riding : F64 -> List(CatSighting.CatItem)
+riding : F64 -> List(CatSighting)
 riding = |along| CatSighting.in_view(
 	{
 		..cats_from_origin,
@@ -295,11 +295,11 @@ riding = |along| CatSighting.in_view(
 	metre_a_step,
 )
 
-seen : List(CatSighting.CatItem)
+seen : List(CatSighting)
 seen = riding(300.0)
 
 ## The first cat in view for a rider `along` metres in.
-first_cat : F64 -> CatSighting.CatItem
+first_cat : F64 -> CatSighting
 first_cat = |along|
 	riding(along).first() ?? crash "CrossModuleExpects: the second segment's cat is in view"
 
