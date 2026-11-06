@@ -58,7 +58,7 @@ SafariApp :: [].{
 			{
 				sky_top_color: Tour.sky_top(tour),
 				sky_horizon_color: Tour.sky_horizon(tour),
-				sun_position: Tour.sun(tour),
+				sun_sighting: Tour.sun(tour),
 			},
 		).prepend(lean)
 	}

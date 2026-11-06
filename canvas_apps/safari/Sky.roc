@@ -27,7 +27,7 @@ Sky :: [].{
 
 	## The sun in a frame: in view at its place, or out of view, too far to
 	## the side of where the rider faces.
-	SunPos : [InView(Sky.SunPlace), OutOfView]
+	SunSighting : [InView(Sky.SunPlace), OutOfView]
 
 	sun_bearing : Angle.Bearing
 	sun_bearing = Angle.Bearing.radians(0.0 - 2.2176)
@@ -141,12 +141,12 @@ Sky :: [].{
 	)
 
 	## The sun in a frame, for a rider facing `heading`.
-	sun_pos : {
+	sun_sighting : {
 		heading : Angle.Bearing,
 		clock : Clock,
 		cam_focal : F64,
-	} -> Sky.SunPos
-	sun_pos = |{ heading, clock, cam_focal }| {
+	} -> Sky.SunSighting
+	sun_sighting = |{ heading, clock, cam_focal }| {
 		turn_from_view = sun_bearing.turn_from(heading)
 		if turn_from_view.abs() >= visible_turn_limit {
 			OutOfView
@@ -265,7 +265,7 @@ expect
 
 # The rider faces the sun, then away from it.
 expect
-	Sky.sun_pos({
+	Sky.sun_sighting({
 		heading: Angle.Bearing.radians(0.0 - 2.2176),
 		clock: Clock.start,
 		cam_focal: Lens.focal,
@@ -277,7 +277,7 @@ expect
 		})
 
 expect
-	Sky.sun_pos({
+	Sky.sun_sighting({
 		heading: Angle.north,
 		clock: Clock.start,
 		cam_focal: Lens.focal,

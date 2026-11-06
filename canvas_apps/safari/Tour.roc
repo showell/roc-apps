@@ -81,6 +81,6 @@ Tour := {
 	sky_horizon : Tour -> I64
 	sky_horizon = |tour| Sky.horizon_color(tour.instant.clock)
 
-	sun : Tour -> Sky.SunPos
+	sun : Tour -> Sky.SunSighting
 	sun = |tour| RideInstant.sun(tour.world, tour.instant)
 }

@@ -49,7 +49,7 @@ picture = |clock|
 		[],
 		{
 			clock,
-			sun: Sky.sun_pos({
+			sun: Sky.sun_sighting({
 				heading: Sky.sun_bearing,
 				clock,
 				cam_focal: Lens.focal,

@@ -75,14 +75,14 @@ SafariShapes :: [].{
 	{
 		sky_top_color : I64,
 		sky_horizon_color : I64,
-		sun_position : Sky.SunPos,
+		sun_sighting : Sky.SunSighting,
 	} -> List(Shapes.Shape)
 	frame = |
 		ride_shapes,
 		{
 			sky_top_color: sky_top,
 			sky_horizon_color: sky_horizon,
-			sun_position: sun,
+			sun_sighting: sun,
 		},
 	| {
 		var $out = List.with_capacity(List.len(ride_shapes) + 8)

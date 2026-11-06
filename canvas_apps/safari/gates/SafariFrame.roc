@@ -44,7 +44,7 @@ SafariFrame :: [].{
 		roll : Angle.Lean,
 		sky_top : I64,
 		sky_horizon : I64,
-		sun : Sky.SunPos,
+		sun : Sky.SunSighting,
 	}
 
 	## The frame: the sky and the grass, the sun, then every shape.

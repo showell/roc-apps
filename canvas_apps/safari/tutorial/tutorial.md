@@ -277,7 +277,7 @@ digraph sky_calls {
   sky_at -> color_between;
   dusk_at -> sun_height_px;
   sunset_warmth -> sun_height_px;
-  sun_pos -> sun_place;
+  sun_sighting -> sun_place;
   sun_place -> sun_height_px;
   sun_height_px [style=bold];
 }
@@ -343,15 +343,15 @@ One trail on the diagram is left, the sun's place, and it starts at the bottom a
 
 The sun is the one thing here that also depends on where the rider is looking. Two tags say the two answers, so there's no `null` and no off-screen sentinel value. A caller has to handle `OutOfView`, because `match` must cover every tag.
 
-🐾 {{code Sky.SunPos}}
+🐾 {{code Sky.SunSighting}}
 
 Opaque types do the most work from here on. `Angle.Bearing` is a direction in the world and `Angle.Turn` is a change of direction. Both are floats underneath, but only the `Angle` module can build or open one. `sun_place` is the first code to want a plain number, because `r_tan` takes a float, and it's another caller of `sun_height_px`.
 
 🌳 {{code Sky.sun_place from "scale =" to "y: (Screen.horizon_y"}}
 
-`sun_pos` calls it once the sun is known to be in view. It also takes one record argument, destructured in its parameter list.
+`sun_sighting` calls it once the sun is known to be in view. It also takes one record argument, destructured in its parameter list.
 
-🌳 {{code Sky.sun_pos}}
+🌳 {{code Sky.sun_sighting}}
 
 Its caller, `RideInstant.sun`, is short enough to read whole:
 
