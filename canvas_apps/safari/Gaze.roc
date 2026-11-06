@@ -15,7 +15,10 @@ import lib.Trig
 import World
 
 Gaze :: [].{
-	GazeBrake : { is_gawking : Bool, acceleration : Acceleration }
+
+	## What a pig asks of the throttle: nothing, or to go no faster than this
+	## acceleration.
+	GazeBrake : [NoLimit, AtMost(Acceleration)]
 
 	## Where the rider wants to look: at the pig in sight, this far from the
 	## way the bike points, or at the road.
@@ -47,6 +50,15 @@ Gaze :: [].{
 
 	pig_gaze_settle_distance : Distance
 	pig_gaze_settle_distance = Distance.metres(25.0)
+
+	## The shortest distance the brake for a pig is worked out over. Past the
+	## settle distance the rider is still coming down to `pig_gaze_speed`, so the
+	## brake keeps working at this distance's strength. `Throttle.bend_brake`
+	## has a different guard, which lets go at its commit point: a rider who
+	## reaches a bend has no more road to brake on, and a rider who reaches
+	## the pig has the rest of the segment.
+	pig_gaze_least_distance : Distance
+	pig_gaze_least_distance = Distance.metres(1.0)
 
 	gaze_attention : Fraction -> Attention
 	gaze_attention = |attention| Attention.from_fraction(Easing.smoothstep(attention))
@@ -117,28 +129,22 @@ Gaze :: [].{
 			Unnoticed => False
 		}
 
+	## The brake for a gawking rider, who aims to be down to `pig_gaze_speed` by
+	## the settle distance before the pig.
 	pig_gaze_brake : RiderState, World.Segment -> Gaze.GazeBrake
 	pig_gaze_brake = |state, seg|
-		if !is_gawking(state, seg) {
-			{ is_gawking: False, acceleration: Acceleration.steady }
-		} else if state.speed <= pig_gaze_speed {
-			{ is_gawking: True, acceleration: Acceleration.steady }
+		if is_gawking(state, seg) {
+			pig = Pigs.gaze_pig(seg.length)
+			room = pig.along.distance_from(state.along).minus(pig_gaze_settle_distance)
+			AtMost(
+				state.speed.acceleration_to({
+					target: pig_gaze_speed,
+					within: room.max(pig_gaze_least_distance),
+				}),
+			)
 		} else {
-			pig_gaze_brake_easing(state, seg)
+			NoLimit
 		}
-
-	pig_gaze_brake_easing : RiderState, World.Segment -> Gaze.GazeBrake
-	pig_gaze_brake_easing = |state, seg| {
-		pig = Pigs.gaze_pig(seg.length)
-		d = pig.along.distance_from(state.along).minus(pig_gaze_settle_distance)
-		{
-			is_gawking: True,
-			acceleration: state.speed.acceleration_to({
-				target: pig_gaze_speed,
-				within: d.max(Distance.metres(1.0)),
-			}),
-		}
-	}
 }
 
 ## How far `pig` stands from the way the bike points.
@@ -157,6 +163,7 @@ expect
 		(Gaze.attention_decay.to_f64(), 0.0012),
 		(Gaze.pig_gaze_speed.to_metres_a_step(), 0.2),
 		(Gaze.pig_gaze_settle_distance.to_metres(), 25.0),
+		(Gaze.pig_gaze_least_distance.to_metres(), 1.0),
 		(Gaze.gaze_release_angle.to_radians() / Trig.deg, 35.0),
 		(Gaze.gaze_swivel_rate.to_radians() / Trig.deg, 4.0),
 		(Gaze.gaze_return_rate.to_radians() / Trig.deg, 0.2),
@@ -305,6 +312,38 @@ expect !Gaze.is_gawking(rider(200.0, 0.0), plain)
 expect !Gaze.is_gawking(rider(100.0, 0.0), distracting)
 expect Gaze.is_gawking(rider(200.0, 0.0), distracting)
 expect Gaze.is_gawking(rider(341.0, 0.0), distracting)
+
+expect Gaze.pig_gaze_brake(rider(200.0, 0.0), plain) == NoLimit
+expect Gaze.pig_gaze_brake(rider(100.0, 0.0), distracting) == NoLimit
+
+## The brake for a rider `metres` short of the pig, going `speed` metres a step.
+brake_short_of_pig : F64, F64 -> F64
+brake_short_of_pig = |metres, speed| {
+	state = { ..short_of_pig(metres), speed: Speed.metres_a_step(speed) }
+	match Gaze.pig_gaze_brake(state, distracting) {
+		AtMost(brake) => brake.to_metres_a_step_each_step()
+		NoLimit => crash "Gaze's expects: this rider is gawking"
+	}
+}
+
+# Each is within 1e-12 of its want. The brake works out the road left to the
+# settle distance, until there's less than the least distance left.
+expect
+	[
+		((125.0, 0.3), -0.00025),
+		((75.0, 0.3), -0.0005),
+		((27.0, 0.3), -0.0125),
+		((26.0, 0.3), -0.025),
+		((25.5, 0.3), -0.025),
+		((0.0, 0.3), -0.025),
+		((-10.0, 0.3), -0.025),
+		((125.0, 0.2), 0.0),
+		((125.0, 0.1), 0.00015),
+	].all(
+		|
+			((metres, speed), want),
+		| (brake_short_of_pig(metres, speed) - want).abs() <= 0.000000000001,
+	)
 
 # The gawking outlasts the look.
 expect !is_looking(rider(341.0, 0.0))

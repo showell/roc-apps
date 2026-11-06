@@ -19,6 +19,11 @@ Acceleration :: F64.{
 	times : Acceleration, F64 -> Acceleration
 	times = |Acceleration.(a), factor| Acceleration.(a * factor)
 
+	## The smaller of this acceleration and `other`: the harder brake, or the
+	## gentler push.
+	min : Acceleration, Acceleration -> Acceleration
+	min = |Acceleration.(a), Acceleration.(other)| Acceleration.(a.min(other))
+
 	is_gt : Acceleration, Acceleration -> Bool
 	is_gt = |Acceleration.(a), Acceleration.(other)| a > other
 
@@ -27,3 +32,14 @@ Acceleration :: F64.{
 
 	is_eq : _
 }
+
+harder : Acceleration
+harder = Acceleration.metres_a_step_each_step(-0.5)
+
+gentler : Acceleration
+gentler = Acceleration.metres_a_step_each_step(-0.25)
+
+expect harder.min(gentler) == harder
+expect gentler.min(harder) == harder
+expect gentler.min(Acceleration.steady) == gentler
+expect Acceleration.steady.min(Acceleration.metres_a_step_each_step(0.25)) == Acceleration.steady

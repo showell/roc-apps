@@ -40,11 +40,7 @@ Throttle :: [].{
 			} else {
 				state.speed.acceleration_to({ target: v_end, within: d })
 			}
-		if bend_a < a {
-			bend_a
-		} else {
-			a
-		}
+		a.min(bend_a)
 	}
 
 	## The acceleration `a`, or none while the segment's crossing says the rider
@@ -56,27 +52,22 @@ Throttle :: [].{
 	} -> Acceleration
 	crossing_limit = |state, { segment: seg, offered_acceleration: a }|
 		match CrossingReaction.reaction_to(seg, state).throttle {
-			NoAcceleration if a > Acceleration.steady => Acceleration.steady
-			NoAcceleration | MayAccelerate => a
+			NoAcceleration => a.min(Acceleration.steady)
+			MayAccelerate => a
 		}
 
+	## The acceleration `a`, or the brake for the segment's pig, whichever is
+	## harder.
 	pig_limit : RiderState,
 	{
 		segment : World.Segment,
 		offered_acceleration : Acceleration,
 	} -> Acceleration
-	pig_limit = |state, { segment: seg, offered_acceleration: a }| {
-		b = Gaze.pig_gaze_brake(state, seg)
-		if b.is_gawking {
-			if b.acceleration < a {
-				b.acceleration
-			} else {
-				a
-			}
-		} else {
-			a
+	pig_limit = |state, { segment: seg, offered_acceleration: a }|
+		match Gaze.pig_gaze_brake(state, seg) {
+			AtMost(brake) => a.min(brake)
+			NoLimit => a
 		}
-	}
 
 	brake_decay : Steps
 	brake_decay = Steps.of(20)
@@ -105,11 +96,7 @@ Throttle :: [].{
 		sa = Acceleration.metres_a_step_each_step(
 			even_braking * F64.e.pow((0.0 - n) / brake_decay.to_f64()),
 		)
-		if sa < a {
-			sa
-		} else {
-			a
-		}
+		a.min(sa)
 	}
 
 	allowed_speed : RiderState,
@@ -257,6 +244,34 @@ expect limit_at({ segment: first_segment, along: 0.0 }, -5.0) == -5.0
 expect limit_at({ segment: cat_segment, along: 120.0 }, 0.01) == 0.0
 expect limit_at({ segment: cat_segment, along: 120.0 }, -5.0) == -5.0
 expect limit_at({ segment: cat_segment, along: 0.0 }, 0.01) == 0.01
+
+## What the pig limit lets through for a rider at `along`, going 0.3 metres a
+## step, on the route's first segment with a pig that catches the eye.
+pig_limit_at : F64, F64 -> F64
+pig_limit_at = |along, offered|
+	Throttle.pig_limit(
+		centred_rider(along, 0.3),
+		{
+			segment: World.route_segment(2),
+			offered_acceleration: Acceleration.metres_a_step_each_step(offered),
+		},
+	).to_metres_a_step_each_step()
+
+# Short of the pig's stretch, anything offered goes through.
+expect pig_limit_at(100.0, 0.01) == 0.01
+expect pig_limit_at(100.0, -5.0) == -5.0
+
+# On it, the brake replaces a push, and a harder brake stands.
+expect pig_limit_at(300.0, 0.01) < 0.0
+expect pig_limit_at(300.0, 0.01) > -5.0
+expect pig_limit_at(300.0, -5.0) == -5.0
+
+# A segment with no pig to look at doesn't limit the throttle.
+expect
+	Throttle.pig_limit(
+		centred_rider(300.0, 0.3),
+		{ segment: first_segment, offered_acceleration: VehicleLimits.cruise_acceleration },
+	) == VehicleLimits.cruise_acceleration
 
 ## Throttle doesn't import Distance or Across, so these places and lengths come
 ## from what it does see.

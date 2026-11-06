@@ -1305,8 +1305,6 @@ While the gaze is off the road, attention rises with how far it has turned, and 
 
 {{code Gaze.pig_gaze_brake}}
 
-{{code Gaze.pig_gaze_brake_easing}}
-
 The sum is the one the throttle uses for a bend, with a pig for a bend. The rider aims to be down to 0.2 metres a step by 25 metres before the pig. `d.max(...)` keeps the distance positive once the rider gets there.
 
 Whether the rider is gawking is a plainer question than whether it's looking:
