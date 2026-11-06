@@ -52,7 +52,7 @@ segment_bird = |view, position|
 		BirdHere(habit) => {
 			gap_to_segment = Chain.gap_to_segment(view.road, position)
 			gap_to_tree = gap_to_segment.plus(BirdFlight.start_along(habit).from_start())
-			instant = BirdFlight.habit_instant_at(habit, gap_to_tree)
+			instant = BirdFlight.habit_instant_at(habit, { gap: gap_to_tree })
 			bird_in_view(view, { position, instant })
 		}
 		CatCrosses(_) | QuietRoad => []

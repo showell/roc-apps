@@ -139,7 +139,7 @@ tree_shapes = |tree|
 ## The bird as `gap` finds it, drawn by Safari's own stills.
 bird_shapes : Distance -> List(Shapes.Shape)
 bird_shapes = |gap| {
-	instant = BirdFlight.instant_at(flight, gap)
+	instant = BirdFlight.instant_at(flight, { gap: gap })
 	BirdDraw.draw(
 		{
 			right: Distance.metres(instant.spot.across.to_metres()),
@@ -154,9 +154,9 @@ bird_shapes = |gap| {
 ## What BirdFlight says at `gap`, a line each.
 status_lines : Distance -> List(Str)
 status_lines = |gap| {
-	instant = BirdFlight.instant_at(flight, gap)
+	instant = BirdFlight.instant_at(flight, { gap: gap })
 	[
-		ScrubWidget.stage_text(BirdFlight.flight_stage(gap)),
+		ScrubWidget.stage_text(BirdFlight.flight_stage({ gap: gap })),
 		"Pose: ${pose_name(instant.pose)}",
 		"Gap: ${ScrubWidget.tenths_text(gap.to_metres())} m",
 		"Height: ${ScrubWidget.tenths_text(instant.spot.lift.to_metres())} m",
@@ -226,7 +226,7 @@ expect pose_name(Side(WingsDown)) == "Side on, wings down"
 expect pose_name(Away(WingsUp)) == "Flying away, wings up"
 expect pose_name(Diving) == "Diving"
 
-expect BirdFlight.instant_at(flight, Distance.metres(16.0)).pose == Diving
+expect BirdFlight.instant_at(flight, { gap: Distance.metres(16.0) }).pose == Diving
 
 # The picture depends on the gap, and it doesn't change once the bird is down.
 expect picture(Distance.metres(30.0)) != picture(Distance.metres(31.0))

@@ -17,6 +17,7 @@ import CatHeights
 import Distance
 import Easing
 import Fraction
+import Speed
 
 Cat :: [].{
 
@@ -125,7 +126,7 @@ Cat :: [].{
 	## reaches it however fast the rider comes, so it plays over beats.
 	crossing_stage : Animation.Approach -> Animation.Stage
 	crossing_stage = |approach|
-		Animation.over_beats({ length: crossing_beats, buffer: road_buffer }, approach)
+		Animation.over_beats({ length: crossing_beats, ends_at: road_buffer }, approach)
 
 	## Whether the cat is crossing in front of the rider now.
 	is_in_danger : Animation.Approach -> Bool
@@ -147,7 +148,7 @@ Cat :: [].{
 	## fading once the rider is past.
 	attention : Animation.Approach -> Attention
 	attention = |approach|
-		if approach.speed <= Animation.standstill {
+		if approach.speed <= Speed.standstill {
 			Attention.none
 		} else {
 			match crossing_stage(approach) {
@@ -281,15 +282,9 @@ the_cat_by_a_far_tree = Cat.crossing({
 	tree: { along: Along.metres(100.0), across: Across.metres(8.0) },
 })
 
-## A rider `gap` metres short of the cat, at `speed` metres a step. Cat doesn't
-## import Speed, so a speed comes from `standstill`, a millionth of a metre a step.
+## A rider `gap` metres short of the cat, at `speed` metres a step.
 coming : F64, F64 -> Animation.Approach
-coming = |gap, speed| {
-	gap: Distance.metres(gap),
-	speed: Animation.standstill.times(speed * 1000000.0),
-}
-
-expect coming(0.0, 1.0).speed.to_metres_a_step() == 1.0
+coming = |gap, speed| { gap: Distance.metres(gap), speed: Speed.metres_a_step(speed) }
 
 expect the_cat.along.to_metres() == 102.0
 expect the_cat.start_across.to_metres() == 4.5
@@ -318,7 +313,8 @@ expect Cat.crossing_beats.to_f64() == 38.0
 expect Cat.road_buffer.to_metres() == 3.0
 expect
 	[
-		(coming(41.0, 1.0), True),
+		(coming(40.5, 1.0), True),
+		(coming(41.0, 1.0), False),
 		(coming(42.0, 1.0), False),
 		(coming(3.0, 1.0), False),
 		(coming(2.0, 1.0), False),

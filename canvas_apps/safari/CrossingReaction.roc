@@ -63,7 +63,8 @@ to_cat = |gap, speed| {
 }
 
 expect to_cat(42.0, 1.0).throttle == MayAccelerate
-expect to_cat(41.0, 1.0).throttle == NoAcceleration
+expect to_cat(41.0, 1.0).throttle == MayAccelerate
+expect to_cat(40.5, 1.0).throttle == NoAcceleration
 expect to_cat(22.0, 1.0).throttle == NoAcceleration
 expect to_cat(3.5, 1.0).throttle == NoAcceleration
 expect to_cat(3.0, 1.0).throttle == MayAccelerate

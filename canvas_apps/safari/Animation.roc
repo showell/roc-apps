@@ -31,42 +31,34 @@ Animation :: [].{
 	## or over, with the rider this far beyond its end.
 	Stage : [Waiting, Playing(Fraction), Past(Distance)]
 
-	## A rider this slow is standing still.
-	standstill : Speed
-	standstill = Speed.metres_a_step(0.000001)
+	## The gaps an animation plays between.
+	GapSpan : { starts_at : Distance, ends_at : Distance }
 
 	## An animation that plays while the rider closes from a gap of `starts_at`
 	## to `ends_at`, however fast. It is playing only strictly between the two,
 	## so a critter is at rest at both ends.
-	over_gap : { starts_at : Distance, ends_at : Distance }, Distance -> Animation.Stage
-	over_gap = |{ starts_at, ends_at }, gap| {
-		progress = Fraction.clamp(starts_at.minus(gap).ratio_to(starts_at.minus(ends_at)))
-		if progress <= Fraction.zero {
-			Waiting
-		} else if progress >= Fraction.whole {
+	over_gap : Animation.GapSpan, { gap : Distance, .. } -> Animation.Stage
+	over_gap = |{ starts_at, ends_at }, { gap, .. }|
+		if gap <= ends_at {
 			Past(ends_at.minus(gap))
-		} else {
-			Playing(progress)
-		}
-	}
-
-	## An animation `length` long, played at a beat a step at the rider's
-	## speed, that ends with the rider `buffer` short, however fast the rider
-	## comes. It is playing from the instant the rider is that far away,
-	## and a rider standing still inside that stretch holds it at its start.
-	over_beats : { length : Beats, buffer : Distance }, Animation.Approach -> Animation.Stage
-	over_beats = |{ length, buffer }, { gap, speed }| {
-		gap_left = gap.minus(buffer)
-		stretch = speed.distance_in(length)
-		if gap_left <= Distance.zero {
-			Past(gap_left.opposite())
-		} else if gap_left > stretch {
+		} else if gap >= starts_at {
 			Waiting
-		} else if speed <= standstill {
-			Playing(Fraction.zero)
 		} else {
-			Playing(Fraction.clamp(1.0 - gap_left.ratio_to(stretch)))
+			Playing(Fraction.of(starts_at.minus(gap).ratio_to(starts_at.minus(ends_at))))
 		}
+
+	## An animation that plays a beat a step and ends with the rider `ends_at`
+	## short: `over_gap`, starting however far off the rider's speed covers
+	## `length` from there. A faster rider starts it sooner, so it finishes in
+	## time however fast the rider comes.
+	##
+	## It takes the speed to be steady. A rider who slows mid-animation shortens
+	## what is left to cover, so the animation falls back a little, and one who
+	## stands still has set nothing going: they are `Waiting`.
+	over_beats : { length : Beats, ends_at : Distance }, Animation.Approach -> Animation.Stage
+	over_beats = |{ length, ends_at }, approach| {
+		starts_at = ends_at.plus(approach.speed.distance_in(length))
+		over_gap({ starts_at, ends_at }, approach)
 	}
 
 	## A place, relative to a critter's home. How high it is, its `lift`, is in
@@ -293,7 +285,7 @@ gap_stage : F64 -> Animation.Stage
 gap_stage = |gap|
 	Animation.over_gap(
 		{ starts_at: Distance.metres(60.0), ends_at: Distance.metres(20.0) },
-		Distance.metres(gap),
+		{ gap: Distance.metres(gap) },
 	)
 
 expect
@@ -310,34 +302,51 @@ expect
 beat_stage : F64, F64 -> Animation.Stage
 beat_stage = |gap, speed|
 	Animation.over_beats(
-		{ length: Beats.of(10.0), buffer: Distance.metres(3.0) },
+		{ length: Beats.of(10.0), ends_at: Distance.metres(3.0) },
 		{ gap: Distance.metres(gap), speed: Speed.metres_a_step(speed) },
 	)
 
 expect
 	[
 		(beat_stage(14.0, 1.0), [0.0, 0.0]),
-		(beat_stage(13.0, 1.0), [1.0, 0.0]),
+		(beat_stage(13.0, 1.0), [0.0, 0.0]),
 		(beat_stage(12.0, 1.0), [1.0, 0.1]),
 		(beat_stage(8.0, 1.0), [1.0, 0.5]),
 		(beat_stage(4.0, 1.0), [1.0, 0.9]),
 		(beat_stage(3.0, 1.0), [2.0, 0.0]),
 		(beat_stage(1.0, 1.0), [2.0, 2.0]),
-		(beat_stage(23.0, 2.0), [1.0, 0.0]),
+		(beat_stage(23.0, 2.0), [0.0, 0.0]),
+		(beat_stage(21.0, 2.0), [1.0, 0.1]),
 		(beat_stage(13.0, 2.0), [1.0, 0.5]),
 	].all(|(stage, want)| is_near(stage_numbers(stage), want))
 
-# A rider at rest in the stretch is waiting, because no stretch is covered.
-# One creeping inside it holds the animation at its start, and one creeping
-# beyond the end is past.
+# A rider at rest is waiting short of the end and past it from there on, and
+# one creeping is on the same rule as any other.
 expect
 	[
 		(beat_stage(3.5, 0.0), [0.0, 0.0]),
 		(beat_stage(3.0, 0.0), [2.0, 0.0]),
-		(beat_stage(3.000001, 0.000001), [1.0, 0.0]),
+		(beat_stage(2.0, 0.0), [2.0, 1.0]),
+		(beat_stage(3.000011, 0.000001), [0.0, 0.0]),
 		(beat_stage(3.000001, 0.000002), [1.0, 0.95]),
 		(beat_stage(2.0, 0.000001), [2.0, 1.0]),
 	].all(|(stage, want)| is_near(stage_numbers(stage), want))
+
+# The two rules answer alike at their ends: the same stage, whichever rule the
+# same start and end come from.
+expect
+	[8.0, 7.0, 6.5, 5.0, 3.5, 3.0, 1.0].all(
+		|gap| {
+			start_and_end = { starts_at: Distance.metres(7.0), ends_at: Distance.metres(3.0) }
+			approach = { gap: Distance.metres(gap), speed: Speed.metres_a_step(0.4) }
+			rule_by_gap = Animation.over_gap(start_and_end, approach)
+			rule_by_beats = Animation.over_beats(
+				{ length: Beats.of(10.0), ends_at: Distance.metres(3.0) },
+				approach,
+			)
+			is_near(stage_numbers(rule_by_gap), stage_numbers(rule_by_beats))
+		},
+	)
 
 Note : [First, Second, Third, Fourth, BeforeIt, AfterIt]
 
