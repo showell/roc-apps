@@ -585,7 +585,7 @@ A cat in the lane stops the rider opening the throttle, without braking, and wid
 
 This is the only loop in the design. The rider's speed decides where the cat has got to, and the cat holds the rider's speed down. It settles, and it's also why `over_beats` has to stay the cat's rule. A bird asks nothing of the rider, so it falls through to the same answer as an empty road.
 
-Each stretch of road has exactly one `crossing`: `CatCrosses`, `BirdFlies` or `QuietRoad`. A cat and a bird in the same place can't be written down.
+Each stretch of road has exactly one `crossing`: `CatCrosses`, `BirdHere` or `QuietRoad`. A cat and a bird in the same place can't be written down.
 
 ### Getting it on screen
 
@@ -827,15 +827,15 @@ The stills are data too. Nested tags get checked all the way down, so a `match` 
 
 ### Finding a tree
 
-Where a bird flies is decided once, when the world is built. `route_from` shows the plain end of Roc's list functions. `keep_if` takes a closure, and `is_far_enough` is one, closing over `from`. `first()` answers a `Try`, which is one of the few that Safari Ride opens by hand. A route is a tag union with two tags: a bird with no tree to fly to `Sits`, which beats a flight of length zero.
+Where a bird flies is decided once, when the world is built. `habit_from` shows the plain end of Roc's list functions. `keep_if` takes a closure, and `is_far_enough` is one, closing over `from`. `first()` answers a `Try`, which is one of the few that Safari Ride opens by hand. A route is a tag union with two tags: a bird with no tree to fly to `Sits`, which beats a flight of length zero.
 
-{{code BirdFlight.route_from}}
+{{code BirdFlight.habit_from}}
 
 The caller's return type is written in place, a tag union that exists for this one function and fits straight into the `crossing` field of a segment:
 
 {{code BirdFlight.crossing_among}}
 
-And that's called from a `match` in the middle of a record, which is a reminder that `match` is an expression. The plan's plain `BirdCrosses` tag comes in, and `BirdFlies(route)` goes out:
+And that's called from a `match` in the middle of a record, which is a reminder that `match` is an expression. The plan's plain `BirdHere` tag comes in, and `BirdHere(route)` goes out:
 
 {{code World.built_segment from "crossing: match plan.crossing {" to "QuietRoad => QuietRoad"}}
 

@@ -66,7 +66,7 @@ World :: [].{
 		length : Distance,
 		scheme : Scenery.Scheme,
 		turn : Angle.Turn,
-		crossing : [CatCrosses, BirdCrosses, QuietRoad],
+		crossing : [CatCrosses, BirdHere, QuietRoad],
 		pigs : Pigs.PigPresence,
 		bull : [WithBull, NoBull],
 		ending : [Continues, Terminates],
@@ -90,7 +90,7 @@ World :: [].{
 		## What crosses the road here, at most one thing, so that the rider has
 		## one experience at a time. Most of the road is quiet, so that a crossing
 		## stands out.
-		crossing : [CatCrosses(Cat.Crossing), BirdFlies(BirdFlight.Route), QuietRoad],
+		crossing : [CatCrosses(Cat.Crossing), BirdHere(BirdFlight.Habit), QuietRoad],
 		ending : [Continues({ next : World.SegmentIndex }), Terminates],
 		bend_life : Scenery.BendLife,
 	}
@@ -105,7 +105,7 @@ World :: [].{
 			length: Distance.metres(500.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(50.0),
-			crossing: BirdCrosses,
+			crossing: BirdHere,
 			pigs: NoPigs,
 			bull: NoBull,
 			ending: Continues,
@@ -155,7 +155,7 @@ World :: [].{
 			length: Distance.metres(300.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(-70.0),
-			crossing: BirdCrosses,
+			crossing: BirdHere,
 			pigs: NoPigs,
 			bull: WithBull,
 			ending: Continues,
@@ -245,7 +245,7 @@ World :: [].{
 			length: Distance.metres(300.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(50.0),
-			crossing: BirdCrosses,
+			crossing: BirdHere,
 			pigs: WithPigs,
 			bull: WithBull,
 			ending: Continues,
@@ -372,7 +372,7 @@ built_segment = |plan, index| {
 					tree_along: nearest_tree_ahead(trees, Cat.cat_along),
 				}),
 			)
-			BirdCrosses => BirdFlight.crossing_among(trees)
+			BirdHere => BirdFlight.crossing_among(trees)
 			QuietRoad => QuietRoad
 		},
 		ending: match plan.ending {
@@ -547,7 +547,7 @@ has_cat : World.Segment -> Bool
 has_cat = |segment|
 	match segment.crossing {
 		CatCrosses(_) => True
-		BirdFlies(_) | QuietRoad => False
+		BirdHere(_) | QuietRoad => False
 	}
 
 ## Whether a segment's pigs draw the rider's eye.
@@ -563,5 +563,5 @@ crossing_at : U32 -> Cat.Crossing
 crossing_at = |index|
 	match seg(index).crossing {
 		CatCrosses(crossing) => crossing
-		BirdFlies(_) | QuietRoad => crash "World.crossing_at: segments 3, 9 and 18 have a cat"
+		BirdHere(_) | QuietRoad => crash "World.crossing_at: segments 3, 9 and 18 have a cat"
 	}

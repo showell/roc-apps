@@ -48,8 +48,8 @@ farthest_gap = Distance.metres(75.0)
 segment_flight : World.Segment -> Try(BirdFlight.Flight, [NoFlight])
 segment_flight = |segment|
 	match segment.crossing {
-		BirdFlies(Flies(flight)) => Ok(flight)
-		BirdFlies(Sits(_)) | CatCrosses(_) | QuietRoad => Err(NoFlight)
+		BirdHere(Flies(flight)) => Ok(flight)
+		BirdHere(Sits(_)) | CatCrosses(_) | QuietRoad => Err(NoFlight)
 	}
 
 ## The first flight on the route.

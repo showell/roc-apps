@@ -37,7 +37,7 @@ CatSighting := {
 		match position.index_in(view.road.chain).segment_in(view.road.world).crossing {
 			CatCrosses(crossing) =>
 				cat_in_view(view, { position, crossing, speed })
-			BirdFlies(_) | QuietRoad => []
+			BirdHere(_) | QuietRoad => []
 		}
 
 	## The cats as the depth sort sees them: each one's distance ahead, and

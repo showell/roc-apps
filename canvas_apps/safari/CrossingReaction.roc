@@ -31,7 +31,7 @@ CrossingReaction :: [].{
 					eye_pull: Cat.focus(approach),
 				}
 			}
-			BirdFlies(_) | QuietRoad => { throttle: MayAccelerate, eye_pull: Attention.none }
+			BirdHere(_) | QuietRoad => { throttle: MayAccelerate, eye_pull: Attention.none }
 		}
 }
 
@@ -48,7 +48,7 @@ cat_along : Along
 cat_along =
 	match cat_segment.crossing {
 		CatCrosses(crossing) => crossing.along
-		BirdFlies(_) | QuietRoad => crash "CrossingReaction: segment 3 has a cat"
+		BirdHere(_) | QuietRoad => crash "CrossingReaction: segment 3 has a cat"
 	}
 
 ## A rider `along` their segment at `speed` metres a step.

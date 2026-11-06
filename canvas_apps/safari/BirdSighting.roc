@@ -47,10 +47,10 @@ BirdSighting := {
 segment_bird : Chain.Viewpoint, Chain.Position -> List(BirdSighting)
 segment_bird = |view, position|
 	match position.index_in(view.road.chain).segment_in(view.road.world).crossing {
-		BirdFlies(route) => {
+		BirdHere(habit) => {
 			gap_to_segment = Chain.gap_to_segment(view.road, position)
-			gap_to_tree = gap_to_segment.plus(BirdFlight.start_along(route).from_start())
-			instant = BirdFlight.route_instant_at(route, gap_to_tree)
+			gap_to_tree = gap_to_segment.plus(BirdFlight.start_along(habit).from_start())
+			instant = BirdFlight.habit_instant_at(habit, gap_to_tree)
 			bird_in_view(view, { position, instant })
 		}
 		CatCrosses(_) | QuietRoad => []

@@ -49,7 +49,7 @@ cat_crossing : World.Segment -> Try(Cat.Crossing, [NoCat])
 cat_crossing = |segment|
 	match segment.crossing {
 		CatCrosses(crossing) => Ok(crossing)
-		BirdFlies(_) | QuietRoad => Err(NoCat)
+		BirdHere(_) | QuietRoad => Err(NoCat)
 	}
 
 ## The first segment of the route with a cat.

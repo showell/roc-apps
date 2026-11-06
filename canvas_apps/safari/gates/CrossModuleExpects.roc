@@ -262,7 +262,7 @@ has_cat : World.Segment -> Bool
 has_cat = |seg|
 	match seg.crossing {
 		CatCrosses(_) => True
-		BirdFlies(_) | QuietRoad => False
+		BirdHere(_) | QuietRoad => False
 	}
 
 expect
