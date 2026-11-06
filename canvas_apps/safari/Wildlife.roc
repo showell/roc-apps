@@ -7,7 +7,7 @@ import Angle
 import Distance
 import Scenery
 
-SafariCritter :: [].{
+Wildlife :: [].{
 
 	## A safari animal: its emoji, and how tall a grown one stands.
 	Species : { codepoint : I64, adult_height : Distance }
@@ -25,7 +25,7 @@ SafariCritter :: [].{
 	baby_beyond = Distance.metres(14.0)
 
 	## The species of a bend's animal.
-	species_of : Scenery.Animal -> SafariCritter.Species
+	species_of : Scenery.Animal -> Wildlife.Species
 	species_of = |animal|
 		match animal {
 			Elephant => { codepoint: 128024, adult_height: Distance.metres(2.8) }
@@ -76,48 +76,48 @@ SafariCritter :: [].{
 }
 
 expect
-	SafariCritter.species_of(Elephant)
+	Wildlife.species_of(Elephant)
 		== { codepoint: 128024, adult_height: Distance.metres(2.8) }
 
 expect
-	SafariCritter.species_of(Giraffe)
+	Wildlife.species_of(Giraffe)
 		== { codepoint: 129426, adult_height: Distance.metres(4.5) }
 
 expect
-	SafariCritter.species_of(Zebra)
+	Wildlife.species_of(Zebra)
 		== { codepoint: 129427, adult_height: Distance.metres(1.6) }
 
 expect
-	SafariCritter.species_of(Rhino)
+	Wildlife.species_of(Rhino)
 		== { codepoint: 129423, adult_height: Distance.metres(2.2) }
 
-expect SafariCritter.adult_rail_buffer.to_metres() == 1.5
-expect SafariCritter.baby_ratio == 0.5
-expect SafariCritter.baby_beyond.to_metres() == 14.0
+expect Wildlife.adult_rail_buffer.to_metres() == 1.5
+expect Wildlife.baby_ratio == 0.5
+expect Wildlife.baby_beyond.to_metres() == 14.0
 
 ## An animal and its baby at each of four bends, the first and third turning
 ## right and the second and fourth left.
 all_four : List(Scenery.Critter)
 all_four = List.join([
-	SafariCritter.bend_critters({
+	Wildlife.bend_critters({
 		bend_life: Animal(Elephant),
 		bend_along: Along.metres(100.0),
 		turn: Angle.Turn.degrees(50.0),
 		lane_half_width: Distance.metres(2.0),
 	}),
-	SafariCritter.bend_critters({
+	Wildlife.bend_critters({
 		bend_life: Animal(Giraffe),
 		bend_along: Along.metres(50.0),
 		turn: Angle.Turn.degrees(-70.0),
 		lane_half_width: Distance.metres(2.0),
 	}),
-	SafariCritter.bend_critters({
+	Wildlife.bend_critters({
 		bend_life: Animal(Zebra),
 		bend_along: Along.metres(10.0),
 		turn: Angle.Turn.degrees(50.0),
 		lane_half_width: Distance.metres(2.5),
 	}),
-	SafariCritter.bend_critters({
+	Wildlife.bend_critters({
 		bend_life: Animal(Rhino),
 		bend_along: Along.metres(0.0),
 		turn: Angle.Turn.degrees(-70.0),
@@ -193,7 +193,7 @@ expect
 ## How many critters a right bend has for this life.
 bend_count : Scenery.BendLife -> U64
 bend_count = |bend_life|
-	SafariCritter.bend_critters({
+	Wildlife.bend_critters({
 		bend_life,
 		bend_along: Along.metres(100.0),
 		turn: Angle.Turn.degrees(50.0),

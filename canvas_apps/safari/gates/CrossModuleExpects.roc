@@ -353,7 +353,10 @@ farm_at = |number| CutoutSighting.farm_sightings(
 
 safari_at : U32 -> I64
 safari_at = |number|
-	CutoutSighting.safari_sightings(six_segments, Chain.Position.number(number)).len().to_i64_wrap()
+	CutoutSighting.wildlife_sightings(
+		six_segments,
+		Chain.Position.number(number),
+	).len().to_i64_wrap()
 
 expect farm_at(0) > 0
 expect farm_at(2) > 0
@@ -363,8 +366,8 @@ expect farm_at(5) == 0
 expect safari_at(3) > 0
 expect safari_at(4) > 0
 expect safari_at(5) == 0
-expect CutoutSighting.safari_sightings(lone(18), Chain.Position.first).len() == 0
-expect CutoutSighting.safari_sightings(lone(0), Chain.Position.first).len() > 0
+expect CutoutSighting.wildlife_sightings(lone(18), Chain.Position.first).len() == 0
+expect CutoutSighting.wildlife_sightings(lone(0), Chain.Position.first).len() > 0
 
 duck_count : U32 -> I64
 duck_count = |index|

@@ -8,7 +8,7 @@ import Cutouts
 import DepthSort
 import Chain
 import Pond
-import SafariCritter
+import Wildlife
 import Scenery
 import World
 
@@ -19,8 +19,8 @@ CutoutSighting :: [].{
 	farm_reach = 3
 
 	## Safari animals and ducks are sighted on this many.
-	safari_reach : U32
-	safari_reach = 5
+	wildlife_reach : U32
+	wildlife_reach = 5
 
 	## No more critters than this are drawn in a frame.
 	max_vis_critters : I64
@@ -50,7 +50,7 @@ CutoutSighting :: [].{
 	sightings_at = |road, position|
 		[
 			CutoutSighting.farm_sightings(road, position),
-			CutoutSighting.safari_sightings(road, position),
+			CutoutSighting.wildlife_sightings(road, position),
 			CutoutSighting.duck_sightings(road, position),
 		].join()
 
@@ -67,12 +67,12 @@ CutoutSighting :: [].{
 
 	## The animals at the bend that ends the segment at `position` in the
 	## chain. The road's last segment ends with no bend.
-	safari_sightings : Chain.RoadView, Chain.Position -> List(Cutouts.Placement)
-	safari_sightings = |road, position| {
+	wildlife_sightings : Chain.RoadView, Chain.Position -> List(Cutouts.Placement)
+	wildlife_sightings = |road, position| {
 		segment = segment_at(road, position)
 		match segment.ending {
 			Continues(_) =>
-				if position.is_within_first(safari_reach) {
+				if position.is_within_first(wildlife_reach) {
 					bend_sightings(road, { place: InChain(position), segment })
 				} else {
 					[]
@@ -84,7 +84,7 @@ CutoutSighting :: [].{
 	## The ducks of the segment at `position` in the chain, if it has a pond.
 	duck_sightings : Chain.RoadView, Chain.Position -> List(Cutouts.Placement)
 	duck_sightings = |road, position|
-		if position.is_within_first(safari_reach) {
+		if position.is_within_first(wildlife_reach) {
 			pond_sightings(road, { place: InChain(position), segment: segment_at(road, position) })
 		} else {
 			[]
@@ -144,7 +144,7 @@ bend_sightings : Chain.RoadView,
 	segment : World.Segment,
 } -> List(Cutouts.Placement)
 bend_sightings = |road, { place, segment }|
-	SafariCritter.bend_critters({
+	Wildlife.bend_critters({
 		bend_life: segment.bend_life,
 		bend_along: Along.at(segment.length),
 		turn: segment.exit_turn,
@@ -182,4 +182,4 @@ pond_sightings = |road, { place, segment }|
 	}
 
 expect CutoutSighting.farm_reach.to_i64() == 3
-expect CutoutSighting.safari_reach.to_i64() == 5
+expect CutoutSighting.wildlife_reach.to_i64() == 5
