@@ -25,7 +25,7 @@ Render :: [].{
 	## that names each by its place in its list.
 	Scene : {
 		trees : List(TreeSighting),
-		towers : List(TowerSighting.TowerItem),
+		towers : List(TowerSighting),
 		critters : List(Billboards.Billboard),
 		cats : List(CatSighting),
 		rails : List(GuardRail.RailPoly),

@@ -73,7 +73,7 @@ ItemDraw :: [].{
 	}
 
 	## Where a mast's four footprint corners stand in the rider's view.
-	tower_footprint : Chain.Viewpoint, TowerSighting.TowerItem -> Tower.Footprint
+	tower_footprint : Chain.Viewpoint, TowerSighting -> Tower.Footprint
 	tower_footprint = |view, tower| {
 		corner_point = |corner| {
 			on_road = Tower.base_corner_on_road(
@@ -102,7 +102,7 @@ ItemDraw :: [].{
 	}
 
 	## A mast, its beacon as bright as its sighting says.
-	draw_tower : Chain.Viewpoint, TowerSighting.TowerItem -> List(Shapes.Shape)
+	draw_tower : Chain.Viewpoint, TowerSighting -> List(Shapes.Shape)
 	draw_tower = |view, tower|
 		Tower.draw({
 			footprint: ItemDraw.tower_footprint(view, tower),
@@ -223,7 +223,7 @@ start_view = {
 }
 
 # A mast `along` metres down the first segment, 20 m right of the lane's middle.
-tower_along : F64 -> TowerSighting.TowerItem
+tower_along : F64 -> TowerSighting
 tower_along = |along| {
 	place: InChain(Chain.Position.first),
 	along: Along.metres(along),
