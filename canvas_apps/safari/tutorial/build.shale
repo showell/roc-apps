@@ -117,6 +117,14 @@ end
 -- The source's lines, in order. An include's entry has the icons that lead
 -- it. A code include's also has its module, its name and its module's path,
 -- and its anchors if it has them. A fails include's has its program's path.
+-- A module of the game, or else of a widget: the book explains its widgets too.
+function module_path(folder, module)
+  local path = folder .. "/" .. module .. ".roc"
+  if exists(path) then return path end
+  for widget in glob("canvas_apps/*/" .. module .. ".roc") do return widget end
+  return path
+end
+
 function read_entries(source, text, folder)
   local entries = {}
   local number = 0
@@ -147,7 +155,7 @@ function read_entries(source, text, folder)
           entry.from = m.groups[3]
           entry.to = m.groups[4]
         end
-        entry.path = folder .. "/" .. entry.module .. ".roc"
+        entry.path = module_path(folder, entry.module)
         if not exists(entry.path) then stop(entry, "no module file " .. entry.path) end
       end
     end

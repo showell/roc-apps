@@ -911,20 +911,74 @@ A beacon repeats. The sun only goes one way, and a lot more hangs on it.
 
 ## The setting sun
 
-The sky's colors, the mountains and the truck's headlights all take their orders from one number: how high the sun is. It's the simplest thing that moves, because it depends only on the clock.
+The sun sets once a ride, and it takes about 4,700 steps. Nothing in the game keeps track of that. The whole sunset comes from one number, the clock.
 
 ```widget sky
-Drag the clock and watch the sun set.
+Drag anywhere to set the clock. Drag back to raise the sun.
 ```
 
-Drag across it from left to right, and the clock runs from step 0 to step 6,000. The sun sinks steadily, and near step 3,980 its center meets the horizon: the sun line reads 0.0 px, and the warmth line tops out at 99%, since it rounds down. The marked stretch of the ruler is where the horizon has any warmth at all. The disc is gone near step 4,730, and the dusk line reaches 100% near step 5,490, before the marked stretch ends. Dragging back raises the sun along the same path.
+Drag slowly from left to right, and watch the three curves on the chart. The gold line is the sun's height, which falls steadily and crosses the horizon near step 3,980. The blue line is dusk, which starts slowly and then speeds up. The red line is the horizon's warmth, a tent that peaks just as the sun touches down.
 
 New in this chapter:
 
-- Roc: nothing new, just a lot of small pure functions working together
+- Roc: nothing new. We're coming back to one idea from The sky: a `->` function answers from its arguments alone.
 - Modules: none new
 
-Here's what happens behind the sky's colors. In this diagram a box is a function, not a module, and an arrow is a call. Only `Sky`'s own functions are shown, and two small helpers are left out.
+### How the widget works
+
+This widget isn't playing a video, and it isn't running a sunset. Its whole state is one clock:
+
+{{code SkyWidgetApp.Model}}
+
+A drag sets that clock, and nothing else changes it. Each frame, the widget makes the calls you can read under the picture:
+
+{{code SkyWidgetApp.status_lines}}
+
+The picture takes three more: `Sky.sky_top_color(clock)`, `Sky.sky_horizon_color(clock)` and `Sky.sun_sighting(...)`. You've met those in The sun and The sky. The game makes the same calls.
+
+Now drag back. Nothing in the widget says how to raise a sun, and `Sky` has no code for going backwards. It doesn't know it was going forwards. Each `->` function takes the clock it's handed, and answers. That's the one idea in this chapter, and the rest shows it at work.
+
+Let's see how those answers get made, from the bottom up.
+
+### One straight line
+
+We start in `Clock`. `to_f64` unwraps the opaque type and hands over a plain number:
+
+{{code Clock.to_f64}}
+
+`sun_height_px` calls it. The sun starts 244 pixels up, and drops by the same amount every step:
+
+{{code Sky.sun_height_px}}
+
+That's the gold line. It's also the whole sunset: one multiplication and one subtraction!
+
+### Dusk
+
+Dusk is a `Fraction`, and it comes from the sun's height, not the clock. It has two shapes.
+
+While the sun is up, dusk grows with the square of how far the sun has fallen. That's the slow start:
+
+{{code Sky.dusk_while_up}}
+
+Once the sun has set, dusk runs on in a straight line, and it's full dark when the sun has sunk one more radius. That ratio goes well past 1 by the end of the ride, so it needs `Fraction.clamp`:
+
+{{code Sky.dusk_after_set}}
+
+`dusk_at` picks between them. Both of those helpers take a height, so this is the only one of the three that sees the clock:
+
+{{code Sky.dusk_at}}
+
+### Warmth
+
+The red line is the last curve. Guess what it asks for first.
+
+{{code Sky.sunset_warmth}}
+
+The horizon is warmest when the sun's height is zero, and the warmth has gone by the time the sun is 110 pixels away, on either side. `abs` makes the two sides match, which is what gives the tent its shape.
+
+### Back up to the sky
+
+Here are all those calls together. In this diagram a box is a function, not a module, and an arrow is a call. Only `Sky`'s own functions are shown, and two small helpers are left out.
 
 The calls inside `Sky`
 ```dot
@@ -946,53 +1000,13 @@ digraph sky_calls {
 }
 ```
 
-Everything on this diagram that changes with the clock comes down to the box in bold, which is the only one that turns the clock into a number. The rest is color on one side and the sun's place on the other.
+Everything that changes with the clock comes down to the box in bold. The top of the diagram is what we read in The sky. `sky_at` blends day into dusk, and `sky_horizon_color` warms the result toward red.
 
-We've read the top of this diagram already. This chapter reads the bottom, from where the clock becomes a number.
-
-### A function of the clock
-
-These are the three numbers that come off the clock, at seven steps:
-
-| Step | Sun's height | Dusk | Warmth |
-|---|---|---|---|
-| 0 | 244.0 px | 0% | 0% |
-| 2,000 | 121.5 px | 10% | 0% |
-| 3,000 | 60.2 px | 23% | 45% |
-| 3,980 | 0.2 px | 42% | 99% |
-| 4,730 | -45.8 px | 59% | 58% |
-| 5,490 | -92.3 px | 100% | 16% |
-| 6,000 | -123.6 px | 100% | 0% |
-
-The sun's column falls in a straight line, the dusk column is a curve and then a line, and the warmth column is a tent.
-
-We start just below the diagram, which shows only `Sky`. The clock becomes a number back in `Clock`. `Clock.to_f64` opens the opaque type and calls `U32`'s own `to_f64`, which comes with Roc. It calls nothing else in Safari Ride, so it's a leaf.
-
-{{code Clock.to_f64}}
-
-`sun_height_px` calls it. The sun's height is a straight line. It starts at 244 pixels, reaches the horizon around step 3,980, and has fully set around step 4,730. `to_f64` is the clock's one door to a float, and this is the only place that uses it.
-
-{{code Sky.sun_height_px}}
-
-The next answers are `Fraction`s. Dusk is a curve and then a line, which means two cases, `dusk_while_up` and `dusk_after_set`. Both sit below `Sky`'s block, so they're private.
-
-{{code Sky.dusk_while_up}}
-
-{{code Sky.dusk_after_set}}
-
-`dusk_at` calls `sun_height_px`, then one of those two:
-
-{{code Sky.dusk_at}}
-
-And here's the walk up the stack: each frame, `RideInstant.shapes` hands the answer to the mountains, whose rock and snow go dark with it.
+The same dusk reaches past the sky. Each frame, `RideInstant.shapes` hands it to the mountains:
 
 {{code RideInstant.shapes from "Mountains.draw({" to "}),"}}
 
-The horizon's warmth is a third shape, a tent centered on the instant the sun touches the horizon. A sun far below the horizon gives a ratio well outside 0 to 1, so this one uses `Fraction.clamp`. That makes three curves from one number. They're plain functions, because nothing else in the game needs them. Here's `sunset_warmth`:
-
-{{code Sky.sunset_warmth}}
-
-That's every box on the diagram: one number goes in, and colors and a place for the sun come out, with nothing kept from one frame to the next.
+And the truck's headlights wait for the sun to go behind those mountains.
 
 The sun and the beacons can be asked about any step, cold. Hand `Sky.dusk_at` a clock and it answers. The rider and the truck can't do that.
 
