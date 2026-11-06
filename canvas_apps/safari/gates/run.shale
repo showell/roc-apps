@@ -7,16 +7,16 @@
 --
 -- Run from the roc-apps root: every path is the checkout's, so a worktree
 -- gates its own tree. One merge gate runs at a time, on the one cache folder.
--- It takes about a minute, half of that the proof tools.
+-- It takes about 70 seconds, half of that the proof tools.
 --
 -- Each stage has a CPU budget, about twice its warm time, in CPU_BUDGET_MS. A
 -- stage over it stops the run, since a slow gate is a fault to find, and a cold
 -- run has no budgets. Stage times go in `build:times/safari.tsv`, and a large
 -- change from the recent ones prints a line (cookbook/times.shale).
 --
--- The gates run as child runs of this script, `part=expects`, `part=tutorial`,
--- `part=proof` and `part=page`, one program of this run's each. A child runs
--- alone the same way (`... run.shale part=proof`).
+-- The gates run as child runs of this script, `part=expects`, `part=widgets`,
+-- `part=tutorial`, `part=proof` and `part=page`, one program of this run's each.
+-- A child runs alone the same way (`... run.shale part=proof`).
 --
 -- The lints (gates/lints.shale) run first: shale's Roc lints, each count held
 -- to the table there.
@@ -33,7 +33,16 @@
 -- must name such a line. An expect sits at the top level of its file. One
 -- indented into a block or a function fails here, and so does one in a module
 -- no root reaches. The roots overlap, so a line that two roots reach counts
--- once.
+-- once. It also runs `part=format`, `roc fmt --check` over safari, lib,
+-- widget_kit and the widgets, the check fast.shale runs too.
+--
+-- `part=widgets` runs `roc check` and `roc test --verbose` on each widget's
+-- web.roc, because the widgets import the game through game.roc and a change to
+-- a type they use breaks them. The widgets are the `*_widget` folders of
+-- canvas_apps, found by listing it, and finding none fails. Every expect in a
+-- widget or in widget_kit must pass, counted as in `part=expects`. `roc test` has
+-- no way to run one module's expects, so each widget runs the game's again: that
+-- is most of this part's time.
 --
 -- The proof tools: StepBack passes on "every step back went back one step",
 -- and ShapesFrame on "differ 0" at every depth. All their
@@ -110,10 +119,10 @@ end
 
 -- The set of `expect` lines in the source, each as `roc test` prints it. An
 -- indented one is printed and fails the count.
-function written_expects()
-  local r = run({"git", "grep", "-n", "--untracked", "-E", "^[[:space:]]*expect( |$)", "--",
-    ":(glob)" .. SAFARI .. "/*.roc", ":(glob)" .. SAFARI .. "/gates/*.roc", ":(glob)canvas_apps/lib/*.roc"},
-    {timeout_ms = 30000, whole = 4000000})
+function written_expects(sources)
+  local argv = {"git", "grep", "-n", "--untracked", "-E", "^[[:space:]]*expect( |$)", "--"}
+  for s in sources do push(argv, s) end
+  local r = run(argv, {timeout_ms = 30000, whole = 4000000})
   local written = {}
   local indented = 0
   for l in lines(trim(r.out)) do
@@ -142,9 +151,11 @@ end
 const SELF_PATH = "canvas_apps/safari/gates/run.shale"
 const TUTORIAL = "canvas_apps/safari/tutorial/build.shale"
 const EXPECT_ROOTS = {"gates/CrossModuleExpects.roc", "web.roc", "../lib/main.roc"}
+const SAFARI_SOURCES = {":(glob)canvas_apps/safari/*.roc", ":(glob)canvas_apps/safari/gates/*.roc", ":(glob)canvas_apps/lib/*.roc"}
+const WIDGET_SOURCES = {":(glob)canvas_apps/*_widget/*.roc", ":(glob)canvas_apps/widget_kit/*.roc"}
 const DEPTHS = {"0", "100", "1570", "1586", "3000", "3742", "5700", "6520", "9000"}
 const CACHE_CEILING_MB = 4000
-const CPU_BUDGET_MS = {lints = 25000, expects = 20000, tutorial = 5000, proof = 60000, page = 25000}
+const CPU_BUDGET_MS = {lints = 25000, expects = 20000, widgets = 32000, tutorial = 5000, proof = 60000, page = 25000}
 const COLD = arg("cold", "") == "1"
 const RELEASE = arg("release", "") == "1"
 
@@ -210,21 +221,9 @@ function test_root(roc, env, root, passed)
   return wrong
 end
 
-function expects()
-  local roc = roc_path()
-  local cache = child_cache("expects")
-  local env = cache_env(cache)
-  local passed = {}
-  local wrong = 0
-  local fmt = run({roc, "fmt", "--check", "."}, {timeout_ms = 60000, cwd = SAFARI, tail = 40, want = WANT, env = env})
-  if fmt.ended ~= "exit" or get(fmt, "code", -1) ~= 0 then
-    wrong = wrong + 1
-    print("FAIL roc fmt would change a file: " .. trim(fmt.out))
-  end
-  for root in EXPECT_ROOTS do wrong = wrong + test_root(roc, env, root, passed) end
-  drop_child_cache(cache)
-  local source = written_expects()
-  wrong = wrong + source.indented
+-- How far the expects in `source` and the ones that `passed` disagree.
+function expects_unheld(source, passed)
+  local wrong = source.indented
   for at in keys(source.written) do
     if not has_key(passed, at) then
       wrong = wrong + 1
@@ -237,9 +236,89 @@ function expects()
       print("FAIL passed, but no top-level expect in the source: " .. at)
     end
   end
+  return wrong
+end
+
+-- The widget folders of canvas_apps, by listing it, so a new one can't be
+-- missed.
+function widget_folders()
+  local folders = {}
+  for name in ls("canvas_apps") do
+    if ends_with(name, "_widget") and is_dir("canvas_apps/" .. name) then push(folders, name) end
+  end
+  if #folders == 0 then fail("safari gates: no *_widget folders in canvas_apps") end
+  return folders
+end
+
+-- How many things are wrong with the formatting. `roc fmt` keeps no cache.
+function format_wrong(roc)
+  local argv = {roc, "fmt", "--check", ".", "../lib", "../widget_kit"}
+  for folder in widget_folders() do push(argv, "../" .. folder) end
+  local fmt = run(argv, {timeout_ms = 60000, cwd = SAFARI, tail = 40, want = WANT})
+  if fmt.ended == "exit" and get(fmt, "code", -1) == 0 then return 0 end
+  print("FAIL roc fmt would change a file: " .. trim(fmt.out))
+  return 1
+end
+
+function format()
+  if format_wrong(roc_path()) > 0 then fail("safari gates: roc fmt would change a file") end
+  return nil
+end
+
+function expects()
+  local roc = roc_path()
+  local cache = child_cache("expects")
+  local env = cache_env(cache)
+  local passed = {}
+  local wrong = format_wrong(roc)
+  for root in EXPECT_ROOTS do wrong = wrong + test_root(roc, env, root, passed) end
+  drop_child_cache(cache)
+  local source = written_expects(SAFARI_SOURCES)
+  wrong = wrong + expects_unheld(source, passed)
   print("expects: " .. #keys(source.written) .. " in the source, " .. #keys(passed) .. " passed, " .. wrong .. " wrong")
   if #keys(source.written) == 0 then fail("safari gates: no expects found") end
   if wrong > 0 then fail("safari gates: the expects failed") end
+  return nil
+end
+
+-- One widget's `roc check`: how many things went wrong.
+function check_widget(roc, env, folder)
+  local r = run({roc, "check", "web.roc"}, {timeout_ms = 120000, cwd = "canvas_apps/" .. folder, head = 40, want = WANT, env = env})
+  print("roc check " .. folder .. ": " .. r.ms .. " ms")
+  if r.ended == "exit" and get(r, "code", -1) == 0 and contains(r.out, "No errors found") then return 0 end
+  print("FAIL roc check " .. folder .. ": " .. trim(r.out))
+  return 1
+end
+
+-- The lines of `passed` that a widget or widget_kit holds. The rest are the
+-- game's and lib's, which `part=expects` counts.
+function widget_lines(passed)
+  local kept = {}
+  for at in keys(passed) do
+    if contains(at, "_widget/") or starts_with(at, "../widget_kit/") then kept[at] = true end
+  end
+  return kept
+end
+
+-- A widget that doesn't check isn't tested, so the count waits for them all.
+function widgets()
+  local roc = roc_path()
+  local cache = child_cache("widgets")
+  local env = cache_env(cache)
+  local passed = {}
+  local wrong = 0
+  local folders = widget_folders()
+  for folder in folders do
+    local broken = check_widget(roc, env, folder)
+    wrong = wrong + broken
+    if broken == 0 then wrong = wrong + test_root(roc, env, "../" .. folder .. "/web.roc", passed) end
+  end
+  drop_child_cache(cache)
+  local source = written_expects(WIDGET_SOURCES)
+  if #keys(source.written) == 0 then fail("safari gates: no expects found in the widgets") end
+  if wrong == 0 then wrong = expects_unheld(source, widget_lines(passed)) end
+  print("widgets: " .. #folders .. " checked, " .. #keys(source.written) .. " expects in the source, " .. wrong .. " wrong")
+  if wrong > 0 then fail("safari gates: the widgets failed") end
   return nil
 end
 
@@ -346,7 +425,7 @@ function all()
   end
   push(times, "lints " .. (lints.ms // 1000) .. " s")
   if lints.ended ~= "exit" or lints.code ~= 0 then push(bad, "lints") end
-  for part in {"expects", "tutorial", "proof", "page"} do
+  for part in {"expects", "widgets", "tutorial", "proof", "page"} do
     -- A child, and every roc under it, inherits this run's niceness.
     local argv = {"shale", "--root", ".", SELF_PATH, "part=" .. part}
     if COLD then push(argv, "cold=1") end
@@ -359,8 +438,8 @@ function all()
   end
   print("safari gates: " .. join(times, ", "))
   if #bad > 0 then fail("safari gates: " .. #bad .. " failed: " .. join(bad, ", ")) end
-  print("safari gates: expects held, proof tools ok, tutorial built, page drawn")
-  if not COLD then print("NOT RUN, left to publish: check.shale, cold caches, release wasm, the widget pages") end
+  print("safari gates: expects held, widgets checked, proof tools ok, tutorial built, page drawn")
+  if not COLD then print("NOT RUN, left to publish: check.shale, cold caches, release wasm, the widgets' page builds") end
 end
 
 const PART = arg("part", "")
@@ -368,6 +447,10 @@ if PART == "" then
   all()
 elseif PART == "expects" then
   expects()
+elseif PART == "widgets" then
+  widgets()
+elseif PART == "format" then
+  format()
 elseif PART == "proof" then
   proof()
 elseif PART == "tutorial" then
@@ -375,5 +458,5 @@ elseif PART == "tutorial" then
 elseif PART == "page" then
   page()
 else
-  fail("safari gates: part= is expects, proof, tutorial or page (none runs them all)")
+  fail("safari gates: part= is expects, widgets, format, proof, tutorial or page (none runs them all)")
 end

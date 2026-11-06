@@ -3,10 +3,11 @@
 --
 --   cd <roc-apps checkout> && nice -n 19 shale canvas_apps/safari/gates/fast.shale
 --
--- It runs `roc check`, then `roc fmt --check`, then `roc test` from gates/CrossModuleExpects.roc, then
--- the one-file lints (lints.shale) on the .roc files changed since this
--- checkout's last green, then builds RasterFrame and holds one frame to its
--- line in gates/proof.expected. Every run names what it left to the merge gate.
+-- It runs `roc check`, then the merge gate's `part=format`, then `roc test` from
+-- gates/CrossModuleExpects.roc, then the one-file lints (lints.shale) on the
+-- .roc files changed since this checkout's last green, then builds RasterFrame
+-- and holds one frame to its line in gates/proof.expected. Every run names what
+-- it left to the merge gate.
 -- It takes about ten seconds once its cache is warm and a green is on record.
 --
 -- A frame stands in for the other depths because an arithmetic slip no expect
@@ -24,6 +25,7 @@ use("cookbook:roc/pinned.shale")
 const SAFARI = "canvas_apps/safari"
 const PROOF_EXPECTED = "canvas_apps/safari/gates/proof.expected"
 const LINTS = "canvas_apps/safari/gates/lints.shale"
+const MERGE_GATE = "canvas_apps/safari/gates/run.shale"
 const WANT = "roc-pin: roc-apps' pinned nightly, and the binary it builds"
 const FRAME_DEPTH = "5700"
 
@@ -106,8 +108,9 @@ function check(roc, env)
   return nil
 end
 
-function formatted(roc, env)
-  local r = run({roc, "fmt", "--check", "."}, {timeout_ms = 60000, cwd = SAFARI, tail = 40, want = WANT, env = env})
+-- The merge gate holds the list of what's formatted, so the tiers can't differ.
+function formatted()
+  local r = run({"shale", "--root", ".", MERGE_GATE, "part=format"}, {timeout_ms = 60000, tail = 40})
   if r.ended ~= "exit" or get(r, "code", -1) ~= 0 then
     print(trim(r.out))
     fail("safari fast: roc fmt would change a file")
@@ -179,13 +182,13 @@ function main()
   for f in rule_files() do push(judged, f) end
   local hashes = hashes_of(judged)
   check(roc, env)
-  formatted(roc, env)
+  formatted()
   test(roc, env)
   lint(changed_files(read_record(record), hashes, sources))
   frame(roc, folder, env)
   replace(record, record_of(hashes))
   print("safari fast: green")
-  print("NOT RUN, left to the merge gate: the roots web.roc and lib, the whole-tree lints and held counts, the tutorial, StepBack, ShapesFrame, the other held depths, the page")
+  print("NOT RUN, left to the merge gate: the roots web.roc and lib, the widgets, the whole-tree lints and held counts, the tutorial, StepBack, ShapesFrame, the other held depths, the page")
   return nil
 end
 
