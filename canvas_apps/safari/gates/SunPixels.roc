@@ -27,12 +27,12 @@ paint_glow_and_disc = |pixels, { roll, sun }| {
 	rows = PixelGrid.pixels_between({
 		from: on_screen.y - fills.glow_radius,
 		to: on_screen.y + fills.glow_radius,
-		count: roll.height_px(),
+		extent: roll.height_px(),
 	})
 	columns = PixelGrid.pixels_between({
 		from: on_screen.x - fills.glow_radius,
 		to: on_screen.x + fills.glow_radius,
-		count: roll.width_px(),
+		extent: roll.width_px(),
 	})
 	var $px = pixels
 	for row in rows.start.until(rows.end) {

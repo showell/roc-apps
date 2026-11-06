@@ -13,13 +13,13 @@ import game.Rider
 ## The instant after `steps` more frames, and the shapes counted so far.
 BenchRun : { instant : RideInstant, shapes : U64 }
 
-ride_frames : List(World.Segment), { bench_run : BenchRun, steps_left : I64 } -> BenchRun
-ride_frames = |route, { bench_run, steps_left: steps }|
+ride_on : List(World.Segment), { bench_run : BenchRun, steps_left : I64 } -> BenchRun
+ride_on = |route, { bench_run, steps_left: steps }|
 	if steps <= 0 {
 		bench_run
 	} else {
 		frame_shapes = RideInstant.shapes(route, bench_run.instant)
-		ride_frames(
+		ride_on(
 			route,
 			{
 				bench_run: {
@@ -39,7 +39,7 @@ main! = |args| {
 			Err(OutOfBounds) => 60
 		}
 	route = World.segments
-	done = ride_frames(
+	done = ride_on(
 		route,
 		{ bench_run: { instant: RideInstant.initial, shapes: 0 }, steps_left: steps },
 	)
