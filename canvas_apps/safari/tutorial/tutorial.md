@@ -14,9 +14,11 @@ This is Safari Ride. A rider cycles down a long road through open country, past 
 
 Safari Ride has the important parts of a game's world: terrain, physics, a camera, things that react to the player, and a day that ends. It doesn't have game mechanics yet. Nothing keeps score.
 
-A safari is a guided tour, so this is a tour of a tour. It starts with the big picture, zooms in on a few parts of the program, and zooms back out at the end. Safari Ride is about eighty modules of Roc, which is enough to show how Roc holds up in a program with a lot going on. The tour assumes you can already read Roc. Each chapter points out a few Roc ideas as they come up, and the useful ones come up more than once.
+A safari is a guided tour, so this is a tour of a tour. We'll start with the big picture, zoom in on a few parts, and zoom back out at the end. Safari Ride has about eighty modules of Roc, so you'll get to see how Roc holds up in a program with a lot going on.
 
-Each chapter zooms too, on a smaller scale. A title line sits above each block of code and each diagram, and it can carry a marker. Two markers call out a change of direction, and two say what a quoted function calls.
+We assume you can already read Roc. If you can't yet, the official tutorial is the place to start. We'll point out a few Roc ideas in each chapter as they come up.
+
+Each block of code and each diagram has a title line above it. A title line can carry one of these markers:
 
 | Marker | What it says |
 |---|---|
@@ -27,7 +29,7 @@ Each chapter zooms too, on a smaller scale. A title line sits above each block o
 
 ## The problem
 
-The problem is simple to state. Design a world once. Then, each time the clock steps, move what moves, find everything near enough to see, and draw it against the backdrop.
+Here's the problem Safari Ride has to solve. We design a world once. Then, each time the clock steps, we move what moves, find everything near enough to see, and draw it against the backdrop.
 
 The problem, as a loop
 ```dot
@@ -48,9 +50,9 @@ digraph problem {
 
 It works like a flipbook, the little stack of drawings that seems to move when you riffle the pages with your thumb. Each page is drawn whole. Safari Ride draws a page about thirty times a second. The code calls a page a frame, and a turn of the loop a step.
 
-The middle box is the heart of it. On a real safari, a guide scans the land and calls out what's there: a cat by the third tree, a bird on the far side. Each of those is a sighting, true for that instant and gone the next. Safari Ride takes its sightings the same way, fresh on every page.
+The most interesting box is the middle one: looking around. On a real safari, a guide scans the land and calls out what's there: a cat by the third tree, a bird on the far side. We'll call each of those a sighting. A sighting is only true for the moment it's made, so Safari Ride throws them all away and makes new ones for every page.
 
-So far that's all boxes and arrows. What a box looks like in Roc is still missing.
+Next, let's look at what one of those boxes looks like in Roc.
 
 ## One whole module
 
@@ -67,23 +69,29 @@ This is the module that stops that line, all of it.
 
 {{module Clock}}
 
-Most of Safari Ride's small modules have this shape: a comment saying what the thing is, its imports, and one type named after the module. `Clock :: U32.{ ... }` is an opaque type: a `U32` underneath, with its methods in the block after it. `Clock.(n)` wraps a number, and in a parameter list it unwraps one, and only this module can do either. Nothing else can add 7 to a clock or pass a tree count as one. `is_eq : _` asks Roc to derive equality. Below the type, each `expect` is a check that `roc test` runs.
+Most of Safari Ride's small modules look like this: a comment saying what the thing is, some imports, and one type named after the module.
 
-It's called like this, once a step:
+`Clock :: U32.{ ... }` defines an opaque type. Underneath, a `Clock` is a `U32`, and the block after it holds its methods.
+
+`Clock.(n)` wraps a number into a `Clock`. In a parameter list, it does the opposite and unwraps one. Only this module can do either, which means no other module can add 7 to a clock, or pass a count of trees where a clock is expected.
+
+`is_eq : _` asks Roc to derive equality for us. Below the type, each `expect` is a test, and `roc test` runs them all.
+
+Safari Ride calls it once a step, like this:
 
 {{code RideInstant.next from "clock: instant.clock.next()," to "clock: instant.clock.next(),"}}
 
 `instant.clock.next()` is static dispatch: `next` comes from the type of `instant.clock`, so the call needs no import.
 
-A test of a clock is one line, because a clock is a value. The `expect` that starts at step 5,699 gets there with `Clock.at_step`, and nothing has to ride that far.
+Because a clock is an ordinary value, a test about one fits on a single line. The `expect` above that starts at step 5,699 uses `Clock.at_step` to get there directly, so the test doesn't have to run the ride for 5,699 steps first.
 
-That's one module of about eighty, and nothing yet says how the rest fit together.
+That's one module out of about eighty. In the next chapter, we'll see how the rest fit together.
 
 ## The modules
 
 Safari Ride is about eighty modules of Roc. This chapter shows how they fit together, starting with the whole system, simplified.
 
-An arrow points from a module to one it imports, so a module is composed of what it points at. Dashed boxes each stand for a family of modules. Roc doesn't allow import cycles, so nothing here can point back up.
+Each arrow points from a module to a module it imports. A dashed box stands for a family of modules. Roc doesn't allow import cycles, so no arrow can point back up the diagram.
 
 The whole system, simplified
 ```dot
@@ -122,7 +130,11 @@ New in this chapter:
 - Roc: imports that can't form a cycle
 - Modules: `SafariApp`, `Scene`, `SceneDraw`, `CatSighting`
 
-There are two halves. The ride is `Rider`, `Truck` and `World`, with `World` composing the route from its scenery and critters. It knows nothing of drawing. The view is everything that turns the ride into a picture: the sightings find what's in sight, and the drawing paints it. The dotted arrow is the view reading the ride, and no arrow goes the other way. `RideInstant` sits over both, holding one instant of the ride and stepping to the next, and the browser only sees `SafariApp`, which hands it a list of shapes each frame.
+There are two halves. The ride is `Rider`, `Truck` and `World`. `World` puts the route together from its scenery and critters. Nothing in the ride knows anything about drawing.
+
+The view is everything that turns the ride into a picture. The sightings work out what's visible, and the drawing code paints it. The dotted arrow shows the view reading the ride. No arrow goes the other way.
+
+`RideInstant` sits above both halves. It holds one instant of the ride and steps to the next. The browser only ever sees `SafariApp`, which gives it a list of shapes each frame.
 
 ### The part that isn't Roc
 
@@ -169,11 +181,11 @@ A sighting answers one question each frame: which of these can the rider see rig
 
 {{code CatSighting.CatSighting}}
 
-`Scene` gathers every sighting's answer, a depth sort puts them in order, and `SceneDraw` hands each one to the module that paints it. Because a sighting's answer is plain data, it can be checked with numbers, without drawing anything. The rule is simple: a sighting decides, and drawing paints.
+`Scene` gathers every sighting's answer, a depth sort puts them in order, and `SceneDraw` hands each one to the module that paints it. Because a sighting's answer is plain data, it can be checked with numbers, without drawing anything. So a sighting decides what's visible, and the drawing code only paints what it's told.
 
 Cows, pigs and the other animals by the road are all sighted the same way, by `CutoutSighting`, and `Cutouts` decides which of them get drawn. `Detail` holds the thresholds behind that kind of decision: how near a tree shows its full detail, and how few pixels tall something may be and still be drawn.
 
-All of that is about one frame, and a frame is gone by the next one. What the program keeps between frames hasn't come up yet.
+Everything in this chapter happens within a single frame, and none of it survives to the next one. So what does carry over from step to step? That's the next chapter.
 
 ## The ride instant
 
@@ -245,7 +257,7 @@ digraph world {
 }
 ```
 
-A piece of the world can be just a value. Here's the second whole module, and it's charming in a way code rarely is. `Pond` is a void module, a type with no values whose block holds definitions, and it has two record aliases and six ducks.
+A piece of the world can be just a value. Here's the second whole module. `Pond` is a void module: a type with no values, whose block holds definitions. This one has two record aliases and six ducks.
 
 {{module Pond}}
 
@@ -287,7 +299,7 @@ Each animal is a tag, and each answers with its emoji and how tall it stands. Th
 
 `Quiet` and `DuckPond` have no animals, so they answer with an empty list. An `Animal` answers with a list of two. `inward` is 1 or -1, so one line of arithmetic places the grown animal on either side of the road.
 
-Nothing in this chapter moves, and the ride does.
+Nothing in this chapter moves, but the ride does. Next, we'll look at the simplest thing that moves: the sky.
 
 ## The road
 
@@ -435,7 +447,7 @@ digraph sky {
 
 `Sky` sits near the bottom of the system. Leaving out small math helpers, it imports only the angle and fraction types and the lens and screen geometry, and it knows nothing of the rider, the road or the drawing. Those above it each ask for a colour or a sun at a given clock.
 
-Every function in this chapter has a `->` arrow, not `=>`. In Roc that's a promise the compiler holds: no effects, so the same clock always gives the same sky. If a function has no `=>` in sight, there's nothing behind it to think about.
+Every function in this chapter has a `->` arrow, not `=>`. That tells you the function has no effects, and the compiler holds it to that. So the same clock always gives the same sky. If you don't see a `=>`, you only have to think about what the function is given.
 
 Here's one of the questions being asked. `Tour.sky_top_color` takes the clock from the current instant and hands it to `Sky`.
 
@@ -483,7 +495,7 @@ These are the three numbers that come off the clock, at seven steps:
 
 The sun's column falls in a straight line, the dusk column is a curve and then a line, and the warmth column is a tent.
 
-The bottom of the tree isn't on the diagram, which shows only `Sky`. It's back in `Clock`, seen whole above. `Clock.to_f64` opens the opaque type. The `to_f64` it calls is `U32`'s, which belongs to Roc, so nothing of Safari Ride's is called.
+We start at the bottom of the tree, which isn't on the diagram, because the diagram shows only `Sky`. It's back in `Clock`. `Clock.to_f64` opens the opaque type and calls `U32`'s own `to_f64`, which comes with Roc. It calls nothing else in Safari Ride, so it's a leaf.
 
 🐾 🍃 {{code Clock.to_f64}}
 
@@ -625,7 +637,7 @@ What `Cat` gets from `Animation` comes down to three types. The first and last a
 
 {{code Animation.Instant}}
 
-`Stage` is the type where the function's two jobs meet. It's a tag union where two of the tags carry a payload, and `Waiting` and `Past` aren't progress of 0 and 1, because a critter can rest somewhere no part of its animation reaches. If `Waiting` were just 0, a perched bird would show the first frame of its flight.
+`Stage` is the type where the function's two jobs meet. It's a tag union, and two of its tags carry a payload. You might expect `Waiting` and `Past` to be the same as progress of 0 and 1, but a critter can rest somewhere its animation never goes. If `Waiting` were just 0, a perched bird would show the first frame of its flight.
 
 The two halves meet at that type. A rule turns an `Approach` into a `Stage`, and a timeline turns a `Stage` into an `Instant`. `crossing_stage` decides how far along things are, and `crossing_timeline` decides what that looks like. They know nothing of each other.
 
@@ -977,7 +989,7 @@ The rider-driven kind still has only one member, and one cat can't say whether `
 
 ## The bird
 
-The cat is built on a shared module, `Animation`, and one critter can't show whether that module was written for critters in general or just for cats. The bird is the second critter. It's Roc's logo, sitting on a treetop. As the rider comes near it takes off, flies across the road and ahead, and drops onto a tree on the far side. It's a rider-driven thing like the cat, and it cost much less, which is the point of this chapter.
+The cat is built on a shared module, `Animation`, and one critter can't show whether that module was written for critters in general or just for cats. The bird is the second critter. It's Roc's logo, sitting on a treetop. As the rider comes near it takes off, flies across the road and ahead, and drops onto a tree on the far side. It's a rider-driven thing like the cat, and it cost much less.
 
 ```widget bird
 Drag the rider's gap and watch the bird fly.
@@ -1105,7 +1117,7 @@ Each frame, a sighting reads the route back. `|` in a pattern covers two tags wi
 
 {{code BirdSighting.segment_bird}}
 
-Nothing in this chapter is new machinery, and that's what it shows. Above their `expect`s, the four bird modules come to about 450 lines, a quarter of them coordinates for the stills, and `Animation` has nothing in it about birds.
+We didn't need any new machinery for the bird. Above their `expect`s, the four bird modules come to about 450 lines, a quarter of them coordinates for the stills. `Animation` has nothing in it about birds.
 
 Everything so far can be asked about any instant, cold. Hand `Cat.instant_at` a gap and it answers. The rider and the truck can't do that.
 
@@ -1151,11 +1163,11 @@ Here's the step again, this time whole. Its body is a block: names, then a recor
 
 `Clock.next`, `Rider.advance` and `Truck.advance` all have the same shape: a value goes in, and the next value comes out. Call that *the step function*. There's no mutable rider being nudged. There's a rider, and another rider one step on, and the old one is still a perfectly good value, which `Tour` keeps in a list.
 
-Stepping has a price, and it's worth stating against the cat:
+Stepping has a cost, which shows up when we compare it with the cat:
 
-- A cat can be asked about any gap. A truck at step 4,000 has to be played there, or written down by hand.
-- A wrong critter rule is wrong in the frames it touches. A wrong step moves the rider for the rest of the ride.
-- `RideInstant.next` has an order, and frames don't.
+- We can ask about a cat at any gap. To find a truck at step 4,000, we have to play the ride that far, or write the answer down by hand.
+- A wrong critter rule only affects the frames it touches. A wrong step moves the rider for the rest of the ride.
+- The lines of `RideInstant.next` have to run in order. Frames can be worked out in any order.
 
 ### The rider
 

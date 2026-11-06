@@ -216,6 +216,11 @@ function expects()
   local env = cache_env(cache)
   local passed = {}
   local wrong = 0
+  local fmt = run({roc, "fmt", "--check", "."}, {timeout_ms = 60000, cwd = SAFARI, tail = 40, want = WANT, env = env})
+  if fmt.ended ~= "exit" or get(fmt, "code", -1) ~= 0 then
+    wrong = wrong + 1
+    print("FAIL roc fmt would change a file: " .. trim(fmt.out))
+  end
   for root in EXPECT_ROOTS do wrong = wrong + test_root(roc, env, root, passed) end
   drop_child_cache(cache)
   local source = written_expects()

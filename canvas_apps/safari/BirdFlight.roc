@@ -268,15 +268,15 @@ expect
 expect {
 	spot = BirdFlight.instant_at(sample_flight, Distance.metres(100.0)).spot
 	spot.along.to_metres() == 100.0
-	and spot.across.to_metres() == -6.0
-	and spot.lift.to_metres() == 10.0
+		and spot.across.to_metres() == -6.0
+		and spot.lift.to_metres() == 10.0
 }
 
 expect {
 	spot = BirdFlight.instant_at(sample_flight, Distance.zero).spot
 	spot.along.to_metres() == 140.0
-	and spot.across.to_metres() == 6.0
-	and spot.lift.to_metres() == 12.0
+		and spot.across.to_metres() == 6.0
+		and spot.lift.to_metres() == 12.0
 }
 
 expect {

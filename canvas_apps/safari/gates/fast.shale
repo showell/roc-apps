@@ -3,7 +3,7 @@
 --
 --   cd <roc-apps checkout> && nice -n 19 shale canvas_apps/safari/gates/fast.shale
 --
--- It runs `roc check`, then `roc test` from gates/CrossModuleExpects.roc, then
+-- It runs `roc check`, then `roc fmt --check`, then `roc test` from gates/CrossModuleExpects.roc, then
 -- the one-file lints (lints.shale) on the .roc files changed since this
 -- checkout's last green, then builds RasterFrame and holds one frame to its
 -- line in gates/proof.expected. Every run names what it left to the merge gate.
@@ -106,6 +106,16 @@ function check(roc, env)
   return nil
 end
 
+function formatted(roc, env)
+  local r = run({roc, "fmt", "--check", "."}, {timeout_ms = 60000, cwd = SAFARI, tail = 40, want = WANT, env = env})
+  if r.ended ~= "exit" or get(r, "code", -1) ~= 0 then
+    print(trim(r.out))
+    fail("safari fast: roc fmt would change a file")
+  end
+  print("roc fmt --check: clean, " .. r.ms .. " ms")
+  return nil
+end
+
 function test(roc, env)
   local r = run({roc, "test", "gates/CrossModuleExpects.roc"}, {timeout_ms = 120000, cwd = SAFARI, whole = 4000000, want = WANT, env = env})
   local summary = re_find(r.out, "All \\(([0-9]+)\\) tests passed")
@@ -169,6 +179,7 @@ function main()
   for f in rule_files() do push(judged, f) end
   local hashes = hashes_of(judged)
   check(roc, env)
+  formatted(roc, env)
   test(roc, env)
   lint(changed_files(read_record(record), hashes, sources))
   frame(roc, folder, env)
