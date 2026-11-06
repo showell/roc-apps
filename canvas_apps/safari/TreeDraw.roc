@@ -51,16 +51,21 @@ TreeDraw :: [].{
 	## they are, within Detail.cone_reach, and triangles beyond it.
 	draw : { tree : TreeDraw.TreeAhead(others), nearer_trees : U64 }, Pixels -> List(Shapes.Shape)
 	draw = |scene, cam_focal|
-		draw_crowned(scene, { cam_focal, crown: crown_at(scene.tree.forward) })
+		draw_crowned(scene, { cam_focal, crown: crown_of(scene.tree.forward) })
 
 	## How a crown is drawn: cones, shaded by how near they are, or flat triangles.
 	Crown : [Cones({ shade : Fraction }), Triangles]
 
-	## The crown `draw` gives a tree at distance `forward`.
-	crown_at : Distance -> TreeDraw.Crown
-	crown_at = |forward| crown_of(forward)
+	## How a tree's crown is drawn at distance `forward`.
+	crown_of : Distance -> TreeDraw.Crown
+	crown_of = |forward|
+		if forward < Detail.cone_reach {
+			Cones({ shade: crown_shade(forward) })
+		} else {
+			Triangles
+		}
 
-	## `draw`, with the crown the caller chooses in place of `crown_at`'s.
+	## `draw`, with the crown the caller chooses in place of `crown_of`'s.
 	draw_crowned : { tree : TreeDraw.TreeAhead(others), nearer_trees : U64 },
 	{
 		cam_focal : Pixels,
@@ -218,15 +223,6 @@ ring_points = 16
 ## falling evenly to none at Detail.crown_shade_reach.
 crown_shade : Distance -> Fraction
 crown_shade = |forward| Fraction.clamp(1.0 - forward.ratio_to(Detail.crown_shade_reach))
-
-## How a tree's crown is drawn at distance `forward`.
-crown_of : Distance -> [Cones({ shade : Fraction }), Triangles]
-crown_of = |forward|
-	if forward < Detail.cone_reach {
-		Cones({ shade: crown_shade(forward) })
-	} else {
-		Triangles
-	}
 
 draw_trunk : TreeDraw.TreeOnScreen, [Shaded, Flat] -> List(Shapes.Shape)
 draw_trunk = |screen_tree, finish| {
@@ -407,9 +403,9 @@ expect crown_shade(Distance.metres(80.0)).to_f64() == 0.0
 expect crown_shade(Distance.metres(200.0)).to_f64() == 0.0
 expect crown_shade(Distance.metres(-50.0)).to_f64() == 1.0
 
-expect crown_of(Distance.metres(40.0)) == Cones({ shade: Fraction.of(0.5) })
-expect crown_of(Distance.metres(199.0)) == Cones({ shade: Fraction.zero })
-expect crown_of(Distance.metres(200.0)) == Triangles
+expect TreeDraw.crown_of(Distance.metres(40.0)) == Cones({ shade: Fraction.of(0.5) })
+expect TreeDraw.crown_of(Distance.metres(199.0)) == Cones({ shade: Fraction.zero })
+expect TreeDraw.crown_of(Distance.metres(200.0)) == Triangles
 
 sample_on_screen : TreeDraw.TreeOnScreen
 sample_on_screen = TreeDraw.on_screen(

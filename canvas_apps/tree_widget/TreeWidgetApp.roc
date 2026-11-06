@@ -185,7 +185,7 @@ crown_drawn : TreeWidgetApp.Crown, Distance -> TreeDraw.Crown
 crown_drawn = |crown, forward|
 	match crown {
 		Triangles => Triangles
-		Cones => TreeDraw.crown_at(forward.min(Detail.crown_shade_reach))
+		Cones => TreeDraw.crown_of(forward.min(Detail.crown_shade_reach))
 	}
 
 ## The tree at `forward`, the nearest in the ride, so with a shaded trunk.
@@ -203,7 +203,7 @@ picture = |forward, crown|
 ## What the ride would do at `forward`, in a word.
 ride_crown_name : Distance -> Str
 ride_crown_name = |forward|
-	match TreeDraw.crown_at(forward) {
+	match TreeDraw.crown_of(forward) {
 		Cones(_) => "Cones"
 		Triangles => "Triangles"
 	}
@@ -213,7 +213,7 @@ status_lines : Distance, TreeWidgetApp.Crown -> List(Str)
 status_lines = |forward, crown|
 	[
 		"forward = ${ScrubWidget.tenths_text(forward.to_metres())} m",
-		"TreeDraw.crown_at(forward) = ${ride_crown_name(forward)}",
+		"TreeDraw.crown_of(forward) = ${ride_crown_name(forward)}",
 		"TreeDraw.draw_crowned(tree, ${crown_name(crown)})",
 	]
 
@@ -305,7 +305,7 @@ expect
 	status_lines(Distance.metres(199.0), Triangles)
 		== [
 			"forward = 199.0 m",
-			"TreeDraw.crown_at(forward) = Cones",
+			"TreeDraw.crown_of(forward) = Cones",
 			"TreeDraw.draw_crowned(tree, Triangles)",
 		]
 
@@ -313,7 +313,7 @@ expect
 	status_lines(Distance.metres(200.0), Cones)
 		== [
 			"forward = 200.0 m",
-			"TreeDraw.crown_at(forward) = Triangles",
+			"TreeDraw.crown_of(forward) = Triangles",
 			"TreeDraw.draw_crowned(tree, Cones)",
 		]
 

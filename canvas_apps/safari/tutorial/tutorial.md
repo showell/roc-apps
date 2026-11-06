@@ -161,7 +161,6 @@ At step 1,570 of the ride, a cat is frozen in the lane. This is what `CatSightin
 |---|---|
 | `right` | 0.75 metres |
 | `forward` | 25.39 metres |
-| `height` | 1.7 metres |
 | `pose` | `Frozen` |
 | `lift` | 0 |
 
@@ -248,7 +247,7 @@ Nothing in this chapter moves, and that's true of the next few chapters too, as 
 
 Let's draw a tree. Forget the road for now, and the rider, and the ride.
 
-Drawing a tree and lining trees up along a road are two nearly unrelated problems, so they get separate chapters. This one and the next take a kind of tree and a place in front of a camera, and paint it. Roadside trees doesn't care what a tree looks like.
+Drawing a tree and placing trees along a road are two nearly unrelated problems. In this chapter and the next, we learn how to draw a tree. In the chapter after that, we learn how to orient trees in the world, relative to the road and the rider.
 
 The concept is small. A tree is a trunk under eight tiers of foliage, and a tier is a flat triangle. Safari Ride's first trees were cruder than that, and every tree a long way off is still drawn this way.
 
@@ -283,9 +282,11 @@ So the job is a short chain of signatures:
 
 ### The functions
 
-The top of it is `draw`, and it reads like the concept: find the tree on the screen, then paint a trunk and eight tiers.
+The top of it is `draw`. It picks a crown, and hands the rest to `draw_crowned`, which reads like the concept: find the tree on the screen, then paint a trunk and eight tiers.
 
 {{code TreeDraw.draw}}
+
+{{code TreeDraw.draw_crowned}}
 
 `nearer_trees` and `crown` are for near trees, and they can wait. For now, every tier is a triangle.
 
@@ -324,11 +325,19 @@ New in this chapter:
 
 ### Get the types right
 
-The whole decision is one type, and this function answers with it:
+The whole decision is one type:
+
+{{code TreeDraw.Crown}}
+
+A cone carries a `shade`, and a triangle doesn't. Triangles are never shaded, so a triangle has nowhere to put a shade by mistake. This function answers with that type:
 
 {{code TreeDraw.crown_of}}
 
-A cone carries a `shade`, and a triangle doesn't. Triangles are never shaded, so a triangle has nowhere to put a shade by mistake. `Detail` holds the distances that decide how much of a thing gets drawn, and `cone_reach` is 200 metres.
+`Detail` holds the distances that decide how much of a thing gets drawn, and `cone_reach` is 200 metres.
+
+```widget tree
+Bring one tree up to the camera, and switch its crown between flat triangles and cones to see where the difference starts to show.
+```
 
 ### The functions
 
@@ -356,7 +365,7 @@ That's one tree. There are 392 more to go.
 
 ## Roadside trees
 
-Here's the other tree problem. Safari Ride plants 392 trees along its road, and most of them are out of sight at any moment. Nothing in this chapter knows what a tree looks like.
+Here's the other tree problem. Safari Ride plants 392 trees along its road, and most of them are out of sight at any moment. How a tree looks plays no part in this chapter.
 
 ```widget frame trees
 Step 1,570 of the ride, with only the trees on. Next adds the layers that come after.
@@ -2101,8 +2110,6 @@ Eighteen small opaque types run through Safari Ride, and the tour has met most o
 |---|---|---|
 | `Clock` | `U32` | A place in the ride |
 | `Steps` | `U32` | A length of time |
-| `Beat` | `F64` | A place in an animation |
-| `Beats` | `F64` | A length of an animation |
 | `Angle.Bearing` | `F64` | A place on the compass |
 | `Angle.Turn` | `F64` | The angle between two bearings |
 | `Angle.Lean` | `F64` | Roll, which only reaches direction through a rate |
@@ -2110,7 +2117,6 @@ Eighteen small opaque types run through Safari Ride, and the tour has met most o
 | `Along` | `F64` | A place along a segment |
 | `Across` | `F64` | A place across the road |
 | `Pixels` | `F64` | A length on screen |
-| `CatHeights` | `F64` | A length measured in the cat's own height |
 | `Speed` | `F64` | Metres a step |
 | `Acceleration` | `F64` | Metres a step, each step |
 | `Fraction` | `F64` | A ratio from 0 to 1 |
@@ -2118,7 +2124,7 @@ Eighteen small opaque types run through Safari Ride, and the tour has met most o
 | `World.SegmentIndex` | `U32` | A place in the route |
 | `Chain.Position` | `U32` | A place in the view ahead |
 
-This is the opaque type doing the job of a unit. The block after each type is a small statement of dimensional analysis. `Speed.distance_in` takes `Beats` and gives a `Distance`. `Along.plus` takes a `Distance`, and two `Along`s give one back. `Lean.steer` takes a rate and gives a `Turn`. There's no `Bearing.plus(Bearing)`, because that sum has no meaning. If you try to write one, the compiler stops you.
+This is the opaque type doing the job of a unit. The block after each type is a small statement of dimensional analysis. `Speed.distance_in` takes `Steps` and gives a `Distance`. `Along.plus` takes a `Distance`, and two `Along`s give one back. `Lean.steer` takes a rate and gives a `Turn`. There's no `Bearing.plus(Bearing)`, because that sum has no meaning. If you try to write one, the compiler stops you.
 
 The bug these prevent is the most common one in this kind of code: a correct formula with the wrong number in it. Most physics bugs type-check in a language where everything's a float.
 
@@ -2286,7 +2292,7 @@ Exact hashes have a consequence that reaches into the code. Float addition isn't
 
 {{code World.route_length}}
 
-That's also what the sentence in the headers of `Speed`, `Beats`, `Fraction`, `Angle` and the rest is for. "Each operation does the plain float arithmetic its name says, so code moved onto this type computes exactly what it did before." An opaque type adds names and takes nothing away. A retyping that adds `Speed` to a module changes the types throughout, and if it leaves the arithmetic alone, every hash stays where it is. If a hash moves, the retyping changed the program, and the gate says so.
+That's also why each operation on `Speed`, `Fraction`, `Angle` and the rest does the plain float arithmetic its name says. An opaque type adds names and takes nothing away. A retyping that adds `Speed` to a module changes the types throughout, and if it leaves the arithmetic alone, every hash stays where it is. If a hash moves, the retyping changed the program, and the gate says so.
 
 This is how the code in this tour got its shape. About fifty modules were renamed, retyped and reorganized, many of them in parallel, and each merge had to leave the frames alone. Roc's types caught what they catch, the hashes caught the rest, and the picture didn't change. [check: the number, and whether "many" should say how many at once.] A language with no hidden state doesn't make a refactor safe by itself. It makes it possible to write a test strict enough to be trusted.
 
