@@ -85,8 +85,8 @@ Cows :: [].{
 	cows = List.from_iter(I64.until(0, herd_size)).map(cow_at)
 
 	## The bull, if there is one, then the cows.
-	fill_cows : [WithBull, NoBull] -> List(Scenery.Critter)
-	fill_cows = |bull| List.concat(Cows.bull_of(bull), Cows.cows)
+	herd : [WithBull, NoBull] -> List(Scenery.Critter)
+	herd = |bull| List.concat(Cows.bull_of(bull), Cows.cows)
 }
 
 cow_at : I64 -> Scenery.Critter
@@ -118,14 +118,11 @@ expect Cows.cow_codepoint == 128004
 
 expect Cows.bull_of(WithBull).map(|bull| bull.codepoint) == [128002]
 expect Cows.bull_of(NoBull).len() == 0
-expect Cows.fill_cows(WithBull).len() == 15
-expect Cows.fill_cows(NoBull).len() == 14
+expect Cows.herd(WithBull).len() == 15
+expect Cows.herd(NoBull).len() == 14
 
 # The bull faces left and the cows right.
-expect Cows.fill_cows(WithBull).take_first(2).map(|critter| critter.facing) == [
-	FacesLeft,
-	FacesRight,
-]
+expect Cows.herd(WithBull).take_first(2).map(|critter| critter.facing) == [FacesLeft, FacesRight]
 
 expect Cows.bull_of(WithBull).map(|bull| bull.along) == [Along.metres(24.0)]
 expect Cows.bull_of(WithBull).map(|bull| bull.across) == [Across.metres(-4.805)]
@@ -161,8 +158,8 @@ expect Cows.cows.len() == 14
 expect Cows.cows.all(|cow| cow.codepoint == 128004)
 
 # The bull leads, and the cows follow him in their own order.
-expect Cows.fill_cows(WithBull).take_first(1).map(|bull| bull.along) == [Along.metres(24.0)]
-expect Cows.fill_cows(WithBull).drop_first(1) == Cows.cows
+expect Cows.herd(WithBull).take_first(1).map(|bull| bull.along) == [Along.metres(24.0)]
+expect Cows.herd(WithBull).drop_first(1) == Cows.cows
 
 expect Cows.herd_gap_behind_bull == Distance.metres(6.0)
 expect Cows.herd_column_spacing == Distance.metres(6.0)

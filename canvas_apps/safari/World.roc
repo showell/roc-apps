@@ -344,7 +344,7 @@ built_segment = |plan, index| {
 	{
 		length: plan.length,
 		trees,
-		cows: Cows.fill_cows(plan.bull),
+		cows: Cows.herd(plan.bull),
 		pigs: Pigs.pigs_along({
 			presence: plan.pigs,
 			interest: pig_attention,
