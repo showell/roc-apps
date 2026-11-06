@@ -250,8 +250,8 @@ one_section = {
 	sections: [{ id: "s", title: "S" }],
 }
 
-no_widgets : Manuscript.Contents
-no_widgets = {
+plain_book : Manuscript.Contents
+plain_book = {
 	pages: ["# Front\n", "# One\n\n## Part\n", "# Appendix: more\n"],
 	diagrams: [],
 	widget_folders: [],
@@ -262,8 +262,8 @@ expect nav_entry(one_section, { ..one_section, file: "b.html" }) == "<li><a href
 expect with_number(one_section, 2).number == Numbered(3)
 expect with_number({ ..one_section, title: "Appendix: x" }, 2).number == Unnumbered
 expect with_number({ ..one_section, title: "Credits" }, 2).number == Unnumbered
-expect Book.pages(no_widgets).map(|page| page.file) == ["index.html", "one.html", "appendix-more.html"]
-expect Book.pages(no_widgets).all(|page| !page.html.contains("embed.js"))
+expect Book.pages(plain_book).map(|page| page.file) == ["index.html", "one.html", "appendix-more.html"]
+expect Book.pages(plain_book).all(|page| !page.html.contains("embed.js"))
 expect turn_link(Err(OutOfBounds), { rel: "next", word: "Next" }) == "<span></span>"
 expect turn_link(Ok(one_section), { rel: "next", word: "Next" }) == "<a rel=\"next\" href=\"a.html\"><small>Next</small>A</a>"
 expect turn_link(Ok({ ..one_section, file: "index.html" }), { rel: "prev", word: "Previous" }) == "<a rel=\"prev\" href=\"index.html\"><small>Previous</small>Contents</a>"
