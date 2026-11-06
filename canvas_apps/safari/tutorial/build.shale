@@ -141,7 +141,17 @@ function read_entries(source, text, folder)
       local failing = re_find(l, FAILS)
       local whole = re_find(l, WHOLE_MODULE)
       local proof_row = re_find(l, PROOF_ROW)
-      if proof_row ~= nil then
+      local signatures = re_find(l, SIGNATURES)
+      local types_row = re_find(l, TYPES_ROW)
+      if signatures ~= nil then
+        entry.signatures = signature_names(entry, signatures.groups[1])
+        entry.path = module_path(entry, folder, entry.module)
+      elseif types_row ~= nil then
+        entry.module = types_row.groups[1]
+        entry.types_name = types_row.groups[2]
+        entry.types_words = types_row.groups[3]
+        entry.path = module_path(entry, folder, entry.module)
+      elseif proof_row ~= nil then
         entry.proof_step = proof_row.groups[1]
         entry.proof_words = proof_row.groups[2]
       elseif failing ~= nil then
@@ -242,18 +252,24 @@ function places_of(nodes, module, name)
   return places
 end
 
+function whole_lines(kept)
+  local shown = {}
+  for k in kept do push(shown, k.text) end
+  return shown
+end
+
 function doc_comment_start(source_lines, line)
   local first = line
   while first > 1 and starts_with(trim(source_lines[first - 1]), "##") do first = first - 1 end
   return first
 end
 
--- The definition's lines, dedented, each with its line in the module.
-function definition_lines(entry, place)
-  local source_lines = split(read(entry.path), "\n")
+-- The lines from `first` to the end of `place`, dedented, each with its line in
+-- the module.
+function span_lines(entry, source_lines, first, place)
   local indent = place.col - 1
   local kept = {}
-  local at = doc_comment_start(source_lines, place.line)
+  local at = first
   while at <= place.end_line do
     local l = source_lines[at]
     if at == place.end_line then l = sub(l, 1, place.end_col - 1) end
@@ -264,6 +280,26 @@ function definition_lines(entry, place)
     at = at + 1
   end
   return kept
+end
+
+function definition_lines(entry, place)
+  local source_lines = split(read(entry.path), "\n")
+  return span_lines(entry, source_lines, doc_comment_start(source_lines, place.line), place)
+end
+
+-- The lines of the annotation of `name`, dedented.
+function annotation_lines(entry, tree, name)
+  if tree.err ~= "" then stop(entry, "roc-ast refused " .. entry.path .. ": " .. tree.err) end
+  local found = {}
+  for block in searched_blocks(tree.nodes, entry.module) do
+    for k in block.kids do
+      local s = tree.nodes[k]
+      if s.kind == "s-type-anno" and s.name == name then push(found, s) end
+    end
+  end
+  if #found == 0 then stop(entry, "no annotation of " .. name .. " in " .. entry.path) end
+  if #found > 1 then stop(entry, name .. " has " .. #found .. " annotations in " .. entry.path) end
+  return whole_lines(span_lines(entry, split(read(entry.path), "\n"), found[1].line, found[1]))
 end
 
 -- Where in `kept` the one line holding `anchor` is.
@@ -317,12 +353,6 @@ function elided_lines(entry, kept)
     i = i + 1
   end
   if last < #kept then push(shown, cut_beside(kept[last].text, least)) end
-  return shown
-end
-
-function whole_lines(kept)
-  local shown = {}
-  for k in kept do push(shown, k.text) end
   return shown
 end
 
@@ -407,7 +437,24 @@ function needs_roc(entries)
   return false
 end
 
--- The number of includes expanded.
+function fenced_signatures(entry, tree, folder)
+  local shown = {}
+  for name in entry.signatures do
+    for l in annotation_lines(entry, tree, name) do push(shown, l) end
+  end
+  local text = join(shown, "\n")
+  check_quoted(entry, text)
+  return titled_block(shown_path(folder, entry.path), "roc", text)
+end
+
+function types_table_row(entry, tree)
+  local name = entry.types_name
+  local pieces = {}
+  for l in annotation_lines(entry, tree, name) do push(pieces, trim(l)) end
+  local annotation = join(pieces, " ")
+  return "| " .. entry.types_words .. " | `" .. name .. "` | `" .. sub(annotation, #name + 4, #annotation) .. "` |"
+end
+
 -- A step as the book writes a number, with a comma past the thousands.
 function step_text(step)
   if #step <= 3 then return step end
@@ -457,6 +504,7 @@ function needs_proof(entries)
   return false
 end
 
+-- The number of includes expanded.
 function build(source, output, folder)
   if exists(output) then remove(output) end
   local entries = read_entries(source, read(source), folder)
@@ -474,6 +522,12 @@ function build(source, output, folder)
   for e in entries do
     if has_key(e, "proof_step") then
       push(kept, proof_table_row(e, numbers))
+      expanded = expanded + 1
+    elseif has_key(e, "signatures") then
+      push(kept, fenced_signatures(e, trees[e.path], folder))
+      expanded = expanded + 1
+    elseif has_key(e, "types_name") then
+      push(kept, types_table_row(e, trees[e.path]))
       expanded = expanded + 1
     elseif has_key(e, "path") then
       push(kept, fenced_definition(e, trees[e.path], folder))
@@ -538,6 +592,15 @@ top_constant = 2.0
 TopType : { a : F64 }
 
 both = 2.0
+
+## A long one.
+wide_type :
+	F64,
+	{ size : F64 } -> F64
+wide_type = |a, b| a + b.size
+
+twice : F64
+twice : F64
 
 ]=]
 
@@ -695,6 +758,68 @@ function check_proof_rule(checks, folder)
   return nil
 end
 
+function expect_row(checks, folder, include, row)
+  local r = attempt_include(folder, include)
+  if not r.ok then fail("self_test: " .. include .. " stopped: " .. r.error) end
+  local got = read(folder .. "/out/doc.md")
+  if got ~= "prose\n\n" .. row .. "\n" then fail("self_test: " .. include .. " gave [" .. got .. "], not [" .. row .. "]") end
+  push(checks, include)
+end
+
+-- Both sides of the block of signatures and the table's types.
+function check_annotation_rules(checks, folder)
+  local zoo = folder .. "/Zoo.roc"
+  expect_block(checks, folder, "{{signatures Zoo.feed}}", "Zoo.roc", "feed : Cage -> F64")
+  expect_block(checks, folder, "{{signatures Zoo.feed Zoo.top_function}}", "Zoo.roc", "feed : Cage -> F64\ntop_function : F64 -> F64")
+  expect_block(checks, folder, "{{signatures Zoo.top_function Zoo.feed}}", "Zoo.roc", "top_function : F64 -> F64\nfeed : Cage -> F64")
+  expect_block(checks, folder, "{{signatures Zoo.wide_type Zoo.feed}}", "Zoo.roc", "wide_type :\n\tF64,\n\t{ size : F64 } -> F64\nfeed : Cage -> F64")
+  expect_stop(checks, folder, "{{signatures Zoo.bare}}", "no annotation of bare in " .. zoo)
+  expect_stop(checks, folder, "{{signatures Zoo.feed Zoo.nope}}", "no annotation of nope in " .. zoo)
+  expect_stop(checks, folder, "{{signatures Zoo.twice}}", "twice has 2 annotations in " .. zoo)
+  expect_stop(checks, folder, "{{signatures Gone.x}}", "no module file " .. folder .. "/Gone.roc")
+  expect_stop(checks, folder, "{{signatures Zoo.feed Wild.x}}", "a block of signatures comes from one module, and this has Zoo and Wild")
+  for bad in {"{{signatures}}", "{{signatures Zoo}}", "{{signatures Zoo.Cage}}", "{{signatures zoo.feed}}", "{{signatures Zoo.feed feed}}", "{{signatures Zoo.feed  Zoo.bare}}", "{{signatures Zoo.feed,Zoo.bare}}"} do
+    expect_stop(checks, folder, bad, NOT_AN_INCLUDE)
+  end
+
+  expect_row(checks, folder, "{{types row Zoo.feed Feed them}}", "| Feed them | `feed` | `Cage -> F64` |")
+  expect_row(checks, folder, "{{types row Zoo.feed}}", "|  | `feed` | `Cage -> F64` |")
+  expect_row(checks, folder, "{{types row Zoo.wide_type Two lines}}", "| Two lines | `wide_type` | `F64, { size : F64 } -> F64` |")
+  expect_stop(checks, folder, "{{types row Zoo.bare Words}}", "no annotation of bare in " .. zoo)
+  expect_stop(checks, folder, "{{types row Zoo.nope}}", "no annotation of nope in " .. zoo)
+  expect_stop(checks, folder, "{{types row Gone.x}}", "no module file " .. folder .. "/Gone.roc")
+  for bad in {"{{types row}}", "{{types row Zoo}}", "{{types row zoo.feed}}", "{{types row Zoo.Cage}}", "{{types  row Zoo.feed}}"} do
+    expect_stop(checks, folder, bad, NOT_AN_INCLUDE)
+  end
+  return nil
+end
+
+-- Both sides of where an include finds its module, and how its title says so.
+function check_reach_rule(checks, top, folder)
+  mkdir(folder .. "/gates")
+  for dir in {"lib", "one", "two"} do mkdir(top .. "/" .. dir) end
+  replace(folder .. "/gates/Gate.roc", "Gate :: [].{\n\tshut = 1.0\n}\n")
+  replace(top .. "/lib/Libbed.roc", "Libbed :: [].{\n\tkept = 1.0\n}\n")
+  replace(top .. "/lib/Near.roc", "Near :: [].{\n\tspot = 1.0\n}\n")
+  replace(folder .. "/Near.roc", "Near :: [].{\n\tspot = 2.0\n}\n")
+  replace(folder .. "/gates/Both.roc", "Both :: [].{\n\tspot = 3.0\n}\n")
+  replace(top .. "/one/Both.roc", "Both :: [].{\n\tspot = 4.0\n}\n")
+  replace(top .. "/one/Twin.roc", "Twin :: [].{\n\tx = 1.0\n}\n")
+  replace(top .. "/two/Twin.roc", "Twin :: [].{\n\tx = 1.0\n}\n")
+  replace(folder .. "/web.roc", "app [main!] {}\n\nmain! = |_args| Ok({})\n")
+  expect_block(checks, folder, "{{code Gate.shut}}", "gates/Gate.roc", "shut = 1.0")
+  expect_block(checks, folder, "{{code Libbed.kept}}", "lib/Libbed.roc", "kept = 1.0")
+  expect_block(checks, folder, "{{code Near.spot}}", "Near.roc", "spot = 2.0")
+  expect_block(checks, folder, "{{code Both.spot}}", "gates/Both.roc", "spot = 3.0")
+  expect_block(checks, folder, "{{code web.main!}}", "web.roc", "main! = |_args| Ok({})")
+  expect_block(checks, folder, "{{module Libbed}}", "lib/Libbed.roc, the whole file", "Libbed :: [].{\n\tkept = 1.0\n}")
+  expect_block(checks, folder, "{{module web}}", "web.roc, the whole file", "app [main!] {}\n\nmain! = |_args| Ok({})")
+  expect_stop(checks, folder, "{{code Twin.x}}", "two modules of that name: " .. top .. "/one/Twin.roc, " .. top .. "/two/Twin.roc")
+  expect_stop(checks, folder, "{{module Twin}}", "two modules of that name: " .. top .. "/one/Twin.roc, " .. top .. "/two/Twin.roc")
+  remove_tree(folder .. "/gates")
+  return nil
+end
+
 -- Both sides of the rule that the book names every module.
 function check_named_rule(checks, folder)
   local modules = folder .. "/modules"
@@ -797,6 +922,8 @@ function self_test()
   check_title_rule(checks, folder)
   check_named_rule(checks, folder)
   check_proof_rule(checks, folder)
+  check_annotation_rules(checks, folder)
+  check_reach_rule(checks, top, folder)
 
   local no_file = attempt(pinned_roc, folder .. "/no-pin")
   if no_file.ok or no_file.error ~= "tutorial: no " .. folder .. "/no-pin: run from the roc-apps root" then fail("self_test: no pin file gave " .. json_write(no_file)) end
