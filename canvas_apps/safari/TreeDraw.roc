@@ -50,7 +50,22 @@ TreeDraw :: [].{
 	## nearest trees have a shaded trunk. The crown is cones, shaded by how near
 	## they are, within Detail.cone_reach, and triangles beyond it.
 	draw : { tree : TreeDraw.TreeAhead(others), nearer_trees : U64 }, Pixels -> List(Shapes.Shape)
-	draw = |{ tree, nearer_trees }, cam_focal| {
+	draw = |scene, cam_focal| draw_crowned(scene, { cam_focal, crown: crown_of(scene.tree.forward) })
+
+	## How a crown is drawn: cones, shaded by how near they are, or flat triangles.
+	Crown : [Cones({ shade : Fraction }), Triangles]
+
+	## The crown `draw` gives a tree at distance `forward`.
+	crown_at : Distance -> TreeDraw.Crown
+	crown_at = |forward| crown_of(forward)
+
+	## `draw`, with the crown the caller chooses in place of `crown_at`'s.
+	draw_crowned : { tree : TreeDraw.TreeAhead(others), nearer_trees : U64 },
+	{
+		cam_focal : Pixels,
+		crown : TreeDraw.Crown,
+	} -> List(Shapes.Shape)
+	draw_crowned = |{ tree, nearer_trees }, { cam_focal, crown }| {
 		point = {
 			right: tree.right,
 			forward: tree.forward,
@@ -67,7 +82,7 @@ TreeDraw :: [].{
 			cam_focal,
 			screen_tree,
 			color: conifer_color(tree.conifer),
-			crown: crown_of(tree.forward),
+			crown,
 		}
 		draw_trunk(screen_tree, trunk).concat(tiers.join_map(|tier| draw_tier(tier, look)))
 	}

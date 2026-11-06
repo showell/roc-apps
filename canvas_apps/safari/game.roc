@@ -28,6 +28,7 @@ package
 		CrossingReaction,
 		CutoutSighting,
 		DepthSort,
+		Detail,
 		Distance,
 		Fraction,
 		Gaze,
