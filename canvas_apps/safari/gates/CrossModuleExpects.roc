@@ -572,7 +572,7 @@ done = {
 		across: Across.metres(0.0),
 		yaw: Angle.Turn.radians(0.0),
 		speed: Speed.at_rest,
-		tilt: Angle.Lean.radians(0.0),
+		lean: Angle.Lean.radians(0.0),
 		heading: Angle.Bearing.radians(0.0),
 		gaze_yaw: Angle.Turn.radians(0.0),
 		focus: Fraction.of(0.9),

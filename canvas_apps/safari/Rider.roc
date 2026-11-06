@@ -19,7 +19,7 @@ import VehicleLimits
 import World
 
 Rider :: [].{
-	Decision : { tilt_step : Angle.Lean, accel : Acceleration }
+	Decision : { lean_step : Angle.Lean, accel : Acceleration }
 
 	## A rider this slow near the route's end stops there.
 	stopping_speed : Speed
@@ -29,11 +29,11 @@ Rider :: [].{
 	## it leans so.
 	decide : RiderState, World.Segment -> Rider.Decision
 	decide = |state, seg| {
-		tilt_step = LeanSearch.best_tilt_correction(state).minus(state.tilt)
+		lean_step = LeanSearch.best_tilt_correction(state).minus(state.lean)
 		{
-			tilt_step,
+			lean_step,
 			accel: Throttle.get_forward_accel_decel(
-				Bike.with_tilt(state, state.tilt.plus(tilt_step)),
+				Bike.with_lean(state, state.lean.plus(lean_step)),
 				seg,
 			),
 		}
@@ -99,7 +99,7 @@ Rider :: [].{
 	advance = |state, segs| {
 		seg = state.segment.segment_in(segs)
 		dec = decide(state, seg)
-		moved = Bike.simulate_rider_step(state, { lean_step: dec.tilt_step, accel: dec.accel })
+		moved = Bike.simulate_rider_step(state, { lean_step: dec.lean_step, accel: dec.accel })
 		resolved =
 			match seg.ending {
 				Continues(_) => resolve_cross(moved, segs)
@@ -130,18 +130,18 @@ first_segment = World.route_segment(0)
 
 ## A rider on the centre line of the first segment, going the base speed.
 rider_at : F64, F64 -> RiderState
-rider_at = |along, tilt_radians| {
+rider_at = |along, lean_radians| {
 	..RiderState.initial,
 	along: Along.metres(along),
-	tilt: Angle.Lean.radians(tilt_radians),
+	lean: Angle.Lean.radians(lean_radians),
 }
 
 expect {
 	upright = Rider.decide(rider_at(0.0, 0.0), first_segment)
 	leaning = Rider.decide(rider_at(0.0, 0.5), first_segment)
 	most_accel = VehicleLimits.a_accel.to_metres_a_step_each_step() + 0.000001
-	upright.tilt_step.abs() <= LeanSearch.max_tilt_correction
-		and leaning.tilt_step.abs() <= LeanSearch.max_tilt_correction
+	upright.lean_step.abs() <= LeanSearch.max_tilt_correction
+		and leaning.lean_step.abs() <= LeanSearch.max_tilt_correction
 		and upright.accel.to_metres_a_step_each_step() <= most_accel
 }
 
@@ -149,7 +149,7 @@ expect {
 expect {
 	decision = Rider.decide(rider_at(0.0, 0.0), first_segment)
 	same = Throttle.get_forward_accel_decel(
-		Bike.with_tilt(rider_at(0.0, 0.0), Angle.upright.plus(decision.tilt_step)),
+		Bike.with_lean(rider_at(0.0, 0.0), Angle.upright.plus(decision.lean_step)),
 		first_segment,
 	)
 	chosen = decision.accel.to_metres_a_step_each_step()
@@ -170,7 +170,7 @@ at_seam = {
 	across: Across.metres(0.5),
 	yaw: Angle.Turn.radians(0.1),
 	speed: Speed.metres_a_step(1.25),
-	tilt: Angle.Lean.radians(0.05),
+	lean: Angle.Lean.radians(0.05),
 	heading: Angle.Bearing.radians(0.7),
 	gaze_yaw: Angle.Turn.radians(0.3),
 }
@@ -179,7 +179,7 @@ crossed : RiderState
 crossed = Rider.rider_state_for_next_segment(at_seam, first_segments)
 
 expect crossed.speed.to_metres_a_step() == 1.25
-expect crossed.tilt.to_radians() == 0.05
+expect crossed.lean.to_radians() == 0.05
 expect crossed.focus.to_f64() == 0.4
 expect crossed.gaze_yaw.to_radians() == 0.0
 expect crossed.heading.to_radians() - 0.7 == 0.0
@@ -239,25 +239,25 @@ expect one_step_on.speed <= VehicleLimits.v_max
 # neither Pose nor Speed, and Rider sees both.
 
 ## The lean the search picks for a rider at the start of the segment, in radians.
-best_lean : F64, F64 -> F64
-best_lean = |across, tilt_radians|
+searched_lean : F64, F64 -> F64
+searched_lean = |across, lean_radians|
 	LeanSearch.best_tilt_correction({
 		..RiderState.initial,
 		across: Across.metres(across),
-		tilt: Angle.Lean.radians(tilt_radians),
+		lean: Angle.Lean.radians(lean_radians),
 	}).to_radians()
 
 max_correction : F64
 max_correction = LeanSearch.max_tilt_correction.to_radians()
 
 centred : F64
-centred = best_lean(0.0, 0.0)
+centred = searched_lean(0.0, 0.0)
 
 offset : F64
-offset = best_lean(1.0, 0.0)
+offset = searched_lean(1.0, 0.0)
 
 held : F64
-held = best_lean(0.0, 0.5)
+held = searched_lean(0.0, 0.5)
 
 expect centred >= (0.0 - max_correction)
 expect centred <= max_correction
@@ -270,5 +270,5 @@ expect DeviceMath.real_abs(centred) <= max_correction
 expect held > centred
 
 # The search gives the same lean every time.
-expect best_lean(1.0, 0.0) - offset == 0.0
-expect best_lean(0.0, 0.5) - held == 0.0
+expect searched_lean(1.0, 0.0) - offset == 0.0
+expect searched_lean(0.0, 0.5) - held == 0.0

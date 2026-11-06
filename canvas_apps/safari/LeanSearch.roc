@@ -55,7 +55,7 @@ LeanSearch :: [].{
 		mid = low.halfway_to(high)
 		if at >= lean_search_iters {
 			mid
-		} else if want_more_right(Coast.project(Bike.with_tilt(state, mid)), target) {
+		} else if want_more_right(Coast.project(Bike.with_lean(state, mid)), target) {
 			search_lean_from(
 				state,
 				{
@@ -85,8 +85,8 @@ LeanSearch :: [].{
 			state,
 			{
 				target: lean_target(state.across),
-				low: state.tilt.minus(max_tilt_correction),
-				high: state.tilt.plus(max_tilt_correction),
+				low: state.lean.minus(max_tilt_correction),
+				high: state.lean.plus(max_tilt_correction),
 				at: 0,
 			},
 		)

@@ -23,7 +23,7 @@ Bike :: [].{
 		across : Across,
 		yaw : Angle.Turn,
 		speed : Speed,
-		tilt : Angle.Lean,
+		lean : Angle.Lean,
 		heading : Angle.Bearing,
 		..others,
 	}
@@ -36,10 +36,10 @@ Bike :: [].{
 		accel : Acceleration,
 	} -> Bike.Motion(others)
 	simulate_rider_step = |s, { lean_step, accel }| {
-		tilt = s.tilt.plus(lean_step)
+		lean = s.lean.plus(lean_step)
 		speed = s.speed.accelerated_by(accel)
 		step_length = speed.step_length()
-		turn = tilt.steer(yaw_per_tilt)
+		turn = lean.steer(yaw_per_tilt)
 		mid = s.yaw.plus(turn.times(0.5)).to_radians()
 		{
 			..s,
@@ -47,13 +47,13 @@ Bike :: [].{
 			across: s.across.plus(step_length.times(Trig.r_sin(mid))),
 			yaw: s.yaw.plus(turn),
 			speed,
-			tilt,
+			lean,
 			heading: s.heading.plus(turn),
 		}
 	}
 
-	with_tilt : Bike.Motion(others), Angle.Lean -> Bike.Motion(others)
-	with_tilt = |s, tilt| { ..s, tilt }
+	with_lean : Bike.Motion(others), Angle.Lean -> Bike.Motion(others)
+	with_lean = |s, lean| { ..s, lean }
 }
 
 expect Bike.yaw_per_tilt == 0.1
@@ -69,7 +69,7 @@ riding = {
 	across: Across.metres(2.25),
 	yaw: Angle.Turn.radians(0.375),
 	speed: Speed.metres_a_step(0.8),
-	tilt: Angle.Lean.radians(0.125),
+	lean: Angle.Lean.radians(0.125),
 	heading: Angle.Bearing.radians(4.5),
 	gaze_yaw: Angle.Turn.radians(0.625),
 	focus: 0.25,
@@ -98,7 +98,7 @@ expect
 		|s| [
 			s.yaw.to_radians(),
 			s.speed.to_metres_a_step(),
-			s.tilt.to_radians(),
+			s.lean.to_radians(),
 			s.heading.to_radians(),
 		],
 	)
@@ -143,7 +143,7 @@ expect {
 		across: Across.middle,
 		yaw: Angle.straight_ahead,
 		speed: Speed.metres_a_step(0.3),
-		tilt: Angle.upright,
+		lean: Angle.upright,
 		heading: Angle.north,
 	}
 	a = Bike.simulate_rider_step(at_start, { lean_step: Angle.upright, accel: Acceleration.steady })
@@ -155,9 +155,9 @@ expect {
 		a.across.to_metres(),
 		a.yaw.to_radians(),
 		a.heading.to_radians(),
-		a.tilt.to_radians(),
+		a.lean.to_radians(),
 		a.speed.to_metres_a_step(),
-		b.tilt.to_radians(),
+		b.lean.to_radians(),
 		b.speed.to_metres_a_step(),
 		b.yaw.to_radians(),
 		b.heading.to_radians(),
@@ -183,7 +183,7 @@ probe = {
 	across: Across.metres(2.5),
 	yaw: Angle.Turn.radians(0.75),
 	speed: Speed.metres_a_step(3.25),
-	tilt: Angle.Lean.radians(0.125),
+	lean: Angle.Lean.radians(0.125),
 	heading: Angle.Bearing.radians(4.5),
 	gaze_yaw: Angle.Turn.radians(0.375),
 	focus: 0.75,
@@ -194,17 +194,17 @@ numbers_of = |s| [
 	s.across.to_metres(),
 	s.yaw.to_radians(),
 	s.speed.to_metres_a_step(),
-	s.tilt.to_radians(),
+	s.lean.to_radians(),
 	s.heading.to_radians(),
 	s.gaze_yaw.to_radians(),
 	s.focus,
 ]
 
-leaned_once = Bike.with_tilt(probe, Angle.Lean.radians(1.5))
+leaned_once = Bike.with_lean(probe, Angle.Lean.radians(1.5))
 
-# `with_tilt` changes the tilt and nothing else, and the last one holds.
+# `with_lean` changes the lean and nothing else, and the last one holds.
 expect
-	numbers_of(Bike.with_tilt(probe, Angle.Lean.radians(9.5)))
+	numbers_of(Bike.with_lean(probe, Angle.Lean.radians(9.5)))
 		== [
 			11.0,
 			2.5,
@@ -216,10 +216,10 @@ expect
 			0.75,
 		]
 
-expect Bike.with_tilt(probe, Angle.Lean.radians(9.5)).segment == 7
+expect Bike.with_lean(probe, Angle.Lean.radians(9.5)).segment == 7
 
 expect
-	numbers_of(Bike.with_tilt(leaned_once, Angle.Lean.radians(9.5)))
+	numbers_of(Bike.with_lean(leaned_once, Angle.Lean.radians(9.5)))
 		== [
 			11.0,
 			2.5,

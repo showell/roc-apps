@@ -18,8 +18,8 @@ import World
 Throttle :: [].{
 
 	## The rider holds the throttle off while leaning this far or further.
-	tilt_hold : Angle.Lean
-	tilt_hold = Angle.Lean.degrees(2.0)
+	lean_hold : Angle.Lean
+	lean_hold = Angle.Lean.degrees(2.0)
 
 	bend_brake : RiderState,
 	{
@@ -166,7 +166,7 @@ Throttle :: [].{
 	get_forward_accel_decel : RiderState, World.Segment -> Acceleration
 	get_forward_accel_decel = |state, seg| {
 		a0 =
-			if state.tilt.abs() >= tilt_hold {
+			if state.lean.abs() >= lean_hold {
 				Acceleration.steady
 			} else {
 				VehicleLimits.a_accel
@@ -209,9 +209,9 @@ Throttle :: [].{
 # Each is within 1e-12 of its want.
 expect
 	[
-		(Throttle.tilt_hold.to_radians(), 0.03490658503988659),
+		(Throttle.lean_hold.to_radians(), 0.03490658503988659),
 		(Throttle.brake_decay, 20.0),
-		(Throttle.tilt_hold.to_radians() / Trig.deg, 2.0),
+		(Throttle.lean_hold.to_radians() / Trig.deg, 2.0),
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
 
 first_segment : World.Segment
@@ -328,26 +328,26 @@ expect clamped_speed({ next_speed: 0.1, is_near_end: False }) == 0.1
 ## The whole decision for a rider at the start of the segment, on the centre
 ## line.
 decide : Speed, F64 -> Acceleration
-decide = |speed, tilt|
+decide = |speed, lean|
 	Throttle.get_forward_accel_decel(
-		{ ..RiderState.initial, speed, tilt: Angle.Lean.radians(tilt) },
+		{ ..RiderState.initial, speed, lean: Angle.Lean.radians(lean) },
 		first_segment,
 	)
 
 ## The whole decision for a rider far off to the right.
 wide_of_road : F64 -> Acceleration
-wide_of_road = |tilt|
+wide_of_road = |lean|
 	Throttle.get_forward_accel_decel(
 		{
 			..centred_rider(0.0, 0.3),
 			across: across_at(100.0),
-			tilt: Angle.Lean.radians(tilt),
+			lean: Angle.Lean.radians(lean),
 		},
 		first_segment,
 	)
 
 hold_radians : F64
-hold_radians = Throttle.tilt_hold.to_radians()
+hold_radians = Throttle.lean_hold.to_radians()
 
 # Each is within 1e-12 of its want.
 expect
@@ -369,11 +369,11 @@ expect decide(Speed.metres_a_step(0.3), 0.0 - (hold_radians - 0.001)) < Accelera
 
 ## The coast of a rider at the start of the segment, going the base speed.
 coast_of : F64, F64 -> Coast.Outcome
-coast_of = |across, tilt_radians|
+coast_of = |across, lean_radians|
 	Coast.project({
 		..RiderState.initial,
 		across: across_at(across),
-		tilt: Angle.Lean.radians(tilt_radians),
+		lean: Angle.Lean.radians(lean_radians),
 	})
 
 straight : Coast.Outcome

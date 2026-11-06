@@ -32,4 +32,4 @@ expect
 		(-0.002, -0.002),
 		(0.35, 0.35),
 		(-0.42, -0.42),
-	].all(|(tilt, roll)| CanvasRoll.rider_roll(Angle.Lean.radians(tilt)).to_radians() == roll)
+	].all(|(lean, roll)| CanvasRoll.rider_roll(Angle.Lean.radians(lean)).to_radians() == roll)

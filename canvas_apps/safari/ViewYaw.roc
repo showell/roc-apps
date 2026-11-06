@@ -14,7 +14,7 @@ ViewYaw :: [].{
 
 	## The camera's turn from the way the bike points.
 	view_yaw_for : RiderState -> Angle.Turn
-	view_yaw_for = |s| s.gaze_yaw.plus(s.tilt.steer(head_yaw_frac))
+	view_yaw_for = |s| s.gaze_yaw.plus(s.lean.steer(head_yaw_frac))
 
 	## The camera's bearing in the world.
 	heading_for : RiderState -> Angle.Bearing
@@ -38,7 +38,7 @@ level = RiderState.initial
 looking_right : RiderState
 looking_right = {
 	..level,
-	tilt: Angle.Lean.radians(0.125),
+	lean: Angle.Lean.radians(0.125),
 	heading: Angle.Bearing.radians(4.5),
 	gaze_yaw: Angle.Turn.radians(0.375),
 }
@@ -46,7 +46,7 @@ looking_right = {
 looking_left : RiderState
 looking_left = {
 	..level,
-	tilt: Angle.Lean.radians(0.5),
+	lean: Angle.Lean.radians(0.5),
 	heading: Angle.Bearing.radians(1.0),
 	gaze_yaw: Angle.Turn.radians(-0.25),
 }
@@ -54,7 +54,7 @@ looking_left = {
 leaning_left : RiderState
 leaning_left = {
 	..level,
-	tilt: Angle.Lean.radians(-0.75),
+	lean: Angle.Lean.radians(-0.75),
 	heading: Angle.Bearing.radians(-2.0),
 	gaze_yaw: Angle.Turn.radians(0.125),
 }
@@ -62,7 +62,7 @@ leaning_left = {
 leaning_hard : RiderState
 leaning_hard = {
 	..level,
-	tilt: Angle.Lean.radians(1.25),
+	lean: Angle.Lean.radians(1.25),
 	heading: Angle.Bearing.radians(0.5),
 }
 
