@@ -18,8 +18,8 @@ VehicleLimits :: [].{
 	v_max : Speed
 	v_max = Speed.metres_a_step(2.5)
 
-	approach_intersection_dist : Distance
-	approach_intersection_dist = Distance.metres(60.0)
+	bend_approach : Distance
+	bend_approach = Distance.metres(60.0)
 
 	## The braking for a turn is worked out over the distance left to it, so a
 	## turn closer than this counts as reached, and no division is by zero.
@@ -53,7 +53,7 @@ VehicleLimits :: [].{
 
 expect VehicleLimits.a_accel.to_metres_a_step_each_step() == 0.01
 expect VehicleLimits.v_max.to_metres_a_step() == 2.5
-expect VehicleLimits.approach_intersection_dist.to_metres() == 60.0
+expect VehicleLimits.bend_approach.to_metres() == 60.0
 
 ## The speed for a turn of this many degrees.
 speed_for_turn : F64 -> F64

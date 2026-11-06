@@ -13,7 +13,7 @@ is not kept current.
 
 Space pauses. Left and Right step back and forward through the ride's history —
 a frame at a time while paused, faster while it runs. J jumps to the next
-intersection. R starts the ride again.
+bend. R starts the ride again.
 
 ## Where it came from
 

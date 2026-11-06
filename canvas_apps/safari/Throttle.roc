@@ -177,7 +177,7 @@ Throttle :: [].{
 				Terminates => Speed.at_rest
 			}
 		left = Along.at(seg.length).distance_from(state.along)
-		near = left <= VehicleLimits.approach_intersection_dist
+		near = left <= VehicleLimits.bend_approach
 		a1 =
 			if near {
 				bend_brake(

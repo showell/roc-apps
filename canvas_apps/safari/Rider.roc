@@ -68,7 +68,7 @@ Rider :: [].{
 	finish_clamp : RiderState, World.Segment -> RiderState
 	finish_clamp = |moved, seg| {
 		end = Along.at(seg.length)
-		in_zone = end.distance_from(moved.along) < VehicleLimits.approach_intersection_dist
+		in_zone = end.distance_from(moved.along) < VehicleLimits.bend_approach
 		if moved.along >= end {
 			stopped_at(moved, end)
 		} else if in_zone {

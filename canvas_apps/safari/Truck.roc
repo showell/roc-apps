@@ -41,7 +41,7 @@ Truck :: [].{
 
 	## The truck starts to brake when a turn is this close.
 	brake_distance : Distance
-	brake_distance = VehicleLimits.approach_intersection_dist
+	brake_distance = VehicleLimits.bend_approach
 
 	chase_acceleration : Acceleration
 	chase_acceleration = VehicleLimits.a_accel.times(1.1)
