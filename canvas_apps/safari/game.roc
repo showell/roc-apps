@@ -41,7 +41,7 @@ package
 		Tour,
 		Tower,
 		TowerSighting,
-		Tree,
+		TreeDraw,
 		TreeSighting,
 		Truck,
 		TruckSighting,

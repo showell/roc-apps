@@ -17,7 +17,7 @@ import Scene
 import Detail
 import Tower
 import TowerSighting
-import Tree
+import TreeDraw
 import TreeSighting
 import TruckDraw
 import TruckSighting
@@ -52,7 +52,7 @@ SceneDraw :: [].{
 	draw_tree : TreeSighting, { trees : List(TreeSighting), cam_focal : F64 } -> List(Shapes.Shape)
 	draw_tree = |tree, { trees, cam_focal }| {
 		nearer_trees = SceneDraw.nearer_tree_count(trees, tree.forward)
-		Tree.draw({
+		TreeDraw.draw({
 			right: tree.right,
 			forward: tree.forward,
 			height: tree.height.to_metres(),

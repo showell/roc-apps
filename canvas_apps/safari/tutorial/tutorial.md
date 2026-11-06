@@ -95,7 +95,7 @@ digraph system {
   subgraph cluster_view {
     label="the view";
     sky [label="the sky\nSky, Mountains", style=dashed];
-    drawing [label="the drawing\nItemDraw, CatDraw, RocBird, Tree, ...", style=dashed];
+    drawing [label="the drawing\nItemDraw, CatDraw, RocBird, TreeDraw, ...", style=dashed];
     sightings [label="the sightings\nScene, CatSighting, BirdSighting, TreeSighting, ...", style=dashed];
   }
   app -> RideInstant;

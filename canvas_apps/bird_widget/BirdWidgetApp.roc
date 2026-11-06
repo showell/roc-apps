@@ -18,7 +18,7 @@ import game.Paint
 import game.RocBird
 import game.Scenery
 import game.Screen
-import game.Tree
+import game.TreeDraw
 import game.World
 import lib.CanvasApp
 import lib.Shapes
@@ -126,7 +126,7 @@ lane = {
 tree_shapes : Scenery.Tree -> List(Shapes.Shape)
 tree_shapes = |tree| {
 	forward = forward_of(tree.along)
-	Tree.draw({
+	TreeDraw.draw({
 		right: tree.across.to_metres(),
 		forward,
 		height: tree.height.to_metres(),
