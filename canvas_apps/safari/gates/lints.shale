@@ -42,7 +42,7 @@ const LINTS = {
   {recipe = "vocabulary", args = {"words=vocabulary.txt"}, budget = {}, counts = {{"retired_name", 0}, {"retired_comment", 1}}},
   {recipe = "name_types", args = {"table=name_types.txt"}, budget = {}, counts = {{"name_type", 9}, {"bare_beside_unit", 55}, {"no_value", 1}},
     whole_tree = {"bare_beside_unit"}},
-  {recipe = "families", args = {}, budget = {}, counts = {{"family", 2}, {"twin_name", 5}}, whole_tree = {"family", "twin_name"}},
+  {recipe = "families", args = {}, budget = {}, counts = {{"family", 2}, {"twin_name", 4}}, whole_tree = {"family", "twin_name"}},
   {recipe = "plain_names", args = {}, budget = {}, counts = {{"pure_mutator", 11}, {"abbreviation", 47}, {"module_doc", 10}}},
 }
 

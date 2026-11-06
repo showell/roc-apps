@@ -36,7 +36,7 @@ TruckShape :: [].{
 
 	## A point on the truck: how far along the road, how far across it, and
 	## how high above it.
-	RoadPoint : {
+	TruckPoint : {
 		along : Along,
 		across : Across,
 		height : Distance,
@@ -83,7 +83,7 @@ TruckShape :: [].{
 	## Where a point on the truck lands in the rider's view. The ground
 	## curves away from the rider, so the point is lowered by how far the
 	## ground has dropped beneath it.
-	point : TruckShape.TruckInView, TruckShape.RoadPoint -> Geom.SpacePoint
+	point : TruckShape.TruckInView, TruckShape.TruckPoint -> Geom.SpacePoint
 	point = |truck, { along, across, height }| {
 		on_ground = Chain.rider_point_ahead(
 			truck.view.road,

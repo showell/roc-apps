@@ -114,7 +114,7 @@ faces = |truck| {
 face_in_view : TruckShape.TruckInView,
 {
 	color : I64,
-	corners : List(TruckShape.RoadPoint),
+	corners : List(TruckShape.TruckPoint),
 } -> TruckBody.TruckFace
 face_in_view = |truck, { color, corners }| TruckBody.face(
 	color,
