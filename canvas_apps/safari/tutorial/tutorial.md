@@ -248,14 +248,13 @@ Nothing in this chapter moves, and that's true of the next few chapters too, as 
 
 Let's draw a tree. Forget the road for now, and the rider, and the ride.
 
-Drawing one tree and lining trees up along a road are two nearly unrelated problems, so they get a chapter each. This one takes a kind of tree and a place in front of a camera, and paints it. The next one doesn't care what a tree looks like.
+Drawing a tree and lining trees up along a road are two nearly unrelated problems, so they get separate chapters. This one and the next take a kind of tree and a place in front of a camera, and paint it. Roadside trees doesn't care what a tree looks like.
 
-The concept is small. A conifer is a trunk under eight tiers of foliage. From far off, a tier is a flat triangle. Up close, a triangle looks like cardboard, so a near tier is a cone.
+The concept is small. A tree is a trunk under eight tiers of foliage, and a tier is a flat triangle. Safari Ride's first trees were cruder than that, and every tree a long way off is still drawn this way.
 
 New in this chapter:
 
-- Roc: a payload that exists only where it means something, a list pattern that takes from the end
-- Modules: `Conifer`, `TreeDraw`, `Detail`, `Distance`
+- Modules: `Conifer`, `TreeDraw`, `Distance`
 
 ### Get the types right
 
@@ -287,7 +286,7 @@ The top of it is `draw`, and it reads like the concept: find the tree on the scr
 
 {{code TreeDraw.draw}}
 
-`nearer_trees` is the one thing here that comes from outside, and the next chapter explains it.
+`nearer_trees` and `crown` are for near trees, and they can wait. For now, every tier is a triangle.
 
 `on_screen` makes two calls to `Camera.project`, one for the tree's foot and one for its tip. The difference between them is how tall the tree looks.
 
@@ -307,13 +306,24 @@ Each tier is a line in a table:
 
 {{code TreeDraw.Tier}}
 
-`tiers` is a list of eight of these, and each overlaps the next. A far tier is one triangle, worked out in pixels:
+`tiers` is a list of eight of these, and each overlaps the next. A tier is one triangle, worked out in pixels:
 
 {{code TreeDraw.tier_triangle}}
 
+That's a tree, and from a distance nobody can tell it's flat. Ride close to one, though, and it looks like cardboard.
+
+## A conifer
+
+A near tree needs to look round, and it has to fatten as you ride past it. So Safari Ride draws two kinds of tree: flat triangles far off, and real 3-D cones up close.
+
+New in this chapter:
+
+- Roc: a payload that exists only where it means something, a list pattern that takes from the end
+- Modules: `Detail`
+
 ### Cones
 
-Safari Ride has no 3-D models. A near tier still has to look round, and it has to fatten as you ride past it. So we work in metres for a moment. We take a ring of 16 points around the tier's base and one point at its tip, and we project them all onto the screen:
+Safari Ride has no 3-D models, so a cone is something we work out. We leave pixels behind for a moment and work in metres. We take a ring of 16 points around the tier's base and one point at its tip, and we project them all onto the screen:
 
 {{code TreeDraw.tier_cone}}
 
@@ -333,7 +343,7 @@ Which one a tree gets depends on how far away it is:
 
 Look at that return type. A cone carries a `shade`, and a triangle doesn't. Triangles are never shaded, so a triangle has nowhere to put a shade by mistake.
 
-There's one more case. A camera can't see a cone from inside, so a tier that's too close falls back to a triangle. The `if` after the pattern is a guard, and it adds a condition to a branch:
+There's one more case. A camera can't see a cone from inside, so a tier that's too close falls back to the flat triangle. The `if` after the pattern is a guard, and it adds a condition to a branch:
 
 {{code TreeDraw.draw_tier}}
 
@@ -365,7 +375,7 @@ A tree has two records, and each says where it stands in a different way:
 
 `Along` is a place along a segment, and `Across` is a place across the road. Both are opaque, so one can't be passed as the other. Reading any function, the field names tell you which world you're in.
 
-A `TreeSighting` also fits what `TreeDraw.draw` asks for, which is any record with a `right`, a `forward` and a `conifer`. So `TreeDraw` doesn't import it. The two chapters really are separate.
+A `TreeSighting` also fits what `TreeDraw.draw` asks for, which is any record with a `right`, a `forward` and a `conifer`. So `TreeDraw` doesn't import it. The problems really are separate.
 
 | Job | Function | Its type |
 |---|---|---|
@@ -390,7 +400,7 @@ From here on, things are measured from the rider. We don't need to know much abo
 
 Most of that 1,656 is far off, and far trees are cheap. They get eight triangles and a plain trunk. A cone costs a ring of 16 points and a hull, so only trees within 200 metres get cones, and only the nearest few get a shaded trunk.
 
-"The nearest few" is the one thing a tree can't work out by itself, because it depends on the other trees. So `SceneDraw` counts them, and that's the `nearer_trees` from the last chapter:
+"The nearest few" is the one thing a tree can't work out by itself, because it depends on the other trees. So `SceneDraw` counts them, and that's the `nearer_trees` from A simple tree:
 
 {{code SceneDraw.draw_tree}}
 
