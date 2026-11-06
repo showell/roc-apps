@@ -94,12 +94,12 @@ TruckLights :: [].{
 	glow_radius = |lamp, center| TruckLights.farthest_from(lamp, center).times(glow_reach)
 
 	## A circle round `center`, as a polygon of `glow_sides` corners.
-	glow_outline : { center : Screen.Point, radius : Pixels } -> List(Screen.Point)
-	glow_outline = |{ center, radius }|
+	glow_outline : { center : Screen.Point, outline_radius : Pixels } -> List(Screen.Point)
+	glow_outline = |{ center, outline_radius }|
 		TruckShape.circle_angles(TruckLights.glow_sides).map(
 			|angle| {
-				x: center.x.plus(radius.times(Trig.r_cos(angle))),
-				y: center.y.plus(radius.times(Trig.r_sin(angle))),
+				x: center.x.plus(outline_radius.times(Trig.r_cos(angle))),
+				y: center.y.plus(outline_radius.times(Trig.r_sin(angle))),
 			},
 		)
 }
@@ -242,7 +242,7 @@ glow = |truck, lamp|
 		center = TruckLights.center_of(on_screen)
 		radius = TruckLights.glow_radius(on_screen, center)
 		Paint.gradient_polygon(
-			TruckLights.glow_outline({ center, radius }),
+			TruckLights.glow_outline({ center, outline_radius: radius }),
 			{
 				center_rgba: glow_core,
 				edge_rgba: glow_edge,
@@ -276,7 +276,10 @@ expect TruckLights.farthest_from(sample_panel, Screen.point(0.0, 0.0)).to_f64() 
 expect TruckLights.glow_radius(sample_panel, Screen.point(0.0, 0.0)).to_f64() == 32.0
 
 expect
-	TruckLights.glow_outline({ center: Screen.point(0.0, 0.0), radius: Pixels.of(10.0) }).len()
+	TruckLights.glow_outline({
+		center: Screen.point(0.0, 0.0),
+		outline_radius: Pixels.of(10.0),
+	}).len()
 		== 16
 expect TruckLights.glow_sides == 16
 

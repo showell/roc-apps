@@ -1,8 +1,7 @@
 ## A length on screen, in pixels, whole or not: how tall a cat stands, where a
-## point lands, how long the camera's lens is. A place on screen is a length
-## from the corner, so anything a little off screen is negative, and so is a
-## sun below the horizon. A value of this type can be negative wherever a sum
-## makes it so; a length that must not be says so where it is checked.
+## point lands, how long the camera's lens is. It is signed. A place on screen
+## is measured from the corner, so a point off the left of the screen is
+## negative, and so is the height of a sun below the horizon.
 ##
 ## Pixels stop at the edge of `lib.Shapes`, which takes plain numbers, and at
 ## trigonometry.
