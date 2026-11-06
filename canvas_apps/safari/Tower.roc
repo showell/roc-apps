@@ -1,6 +1,6 @@
 ## A radio tower: a square lattice that tapers from a 12 m footprint to a
 ## point 80 m up. It is drawn as rods (four legs, a ring every 20 m, and
-## crossed braces in the lowest two stages) with a blinking beacon on top.
+## crossed braces in the lowest two storeys) with a blinking beacon on top.
 ## The earth curves away under a far tower, so it sinks below the horizon
 ## from the bottom up.
 import Across
@@ -25,11 +25,11 @@ Tower :: [].{
 	tower_half : F64
 	tower_half = 6.0
 
-	stage_height : F64
-	stage_height = 20.0
+	storey_height : F64
+	storey_height = 20.0
 
-	brace_stages : I64
-	brace_stages = 2
+	brace_storeys : I64
+	brace_storeys = 2
 
 	rod_half : F64
 	rod_half = 0.12
@@ -300,10 +300,10 @@ Tower :: [].{
 		),
 	)
 
-	## A ring at every stage below the top, bottom first, leaving out those
+	## A ring at every storey below the top, bottom first, leaving out those
 	## the earth has hidden.
 	rings : Tower.TowerInView -> List(Shapes.Shape)
-	rings = |tower| ring_heights_from(stage_height).join_map(
+	rings = |tower| ring_heights_from(storey_height).join_map(
 		|h| if h <= tower.sunk {
 			[]
 		} else {
@@ -315,32 +315,32 @@ Tower :: [].{
 	ring_heights_from = |h| if h >= tower_height {
 		[]
 	} else {
-		[h].concat(ring_heights_from((h + stage_height)))
+		[h].concat(ring_heights_from((h + storey_height)))
 	}
 
-	## The crossed braces of the lowest stages, bottom first. A stage the
+	## The crossed braces of the lowest storeys, bottom first. A storey the
 	## earth has partly hidden starts its braces at the horizon.
 	braces : Tower.TowerInView -> List(Shapes.Shape)
-	braces = |tower| brace_stages_from(0).join_map(|stage| brace_stage(tower, stage))
+	braces = |tower| brace_storeys_from(0).join_map(|storey| brace_storey(tower, storey))
 
-	brace_stages_from : I64 -> List(I64)
-	brace_stages_from = |stage| if stage >= brace_stages {
+	brace_storeys_from : I64 -> List(I64)
+	brace_storeys_from = |storey| if storey >= brace_storeys {
 		[]
 	} else {
-		[stage].concat(brace_stages_from((stage + 1)))
+		[storey].concat(brace_storeys_from((storey + 1)))
 	}
 
-	brace_stage : Tower.TowerInView, I64 -> List(Shapes.Shape)
-	brace_stage = |tower, stage| {
-		stage_bottom = (stage.to_f64() * stage_height)
-		stage_top = (stage_bottom + stage_height)
-		if stage_top <= tower.sunk {
+	brace_storey : Tower.TowerInView, I64 -> List(Shapes.Shape)
+	brace_storey = |tower, storey| {
+		storey_bottom = (storey.to_f64() * storey_height)
+		storey_top = (storey_bottom + storey_height)
+		if storey_top <= tower.sunk {
 			[]
 		} else {
-			hidden_height = DeviceMath.real_max(stage_bottom, tower.sunk) - stage_bottom
-			hidden_fraction = Fraction.of(hidden_height / stage_height)
+			hidden_height = DeviceMath.real_max(storey_bottom, tower.sunk) - storey_bottom
+			hidden_fraction = Fraction.of(hidden_height / storey_height)
 			corners.join_map(
-				|corner| brace_pair(tower, { corner, stage_bottom, stage_top, hidden_fraction }),
+				|corner| brace_pair(tower, { corner, storey_bottom, storey_top, hidden_fraction }),
 			)
 		}
 	}
@@ -350,32 +350,32 @@ Tower :: [].{
 	brace_pair : Tower.TowerInView,
 	{
 		corner : Tower.Corner,
-		stage_bottom : F64,
-		stage_top : F64,
+		storey_bottom : F64,
+		storey_top : F64,
 		hidden_fraction : Fraction,
 	} -> List(Shapes.Shape)
-	brace_pair = |tower, { corner, stage_bottom, stage_top, hidden_fraction }| {
+	brace_pair = |tower, { corner, storey_bottom, storey_top, hidden_fraction }| {
 		next = next_corner(corner)
 		brace_up = rod(
 			tower.view,
 			{
 				from: point_between({
-					from: corner_at(tower, { corner, height_on_tower: stage_bottom }),
-					to: corner_at(tower, { corner: next, height_on_tower: stage_top }),
+					from: corner_at(tower, { corner, height_on_tower: storey_bottom }),
+					to: corner_at(tower, { corner: next, height_on_tower: storey_top }),
 					fraction: hidden_fraction,
 				}),
-				to: corner_at(tower, { corner: next, height_on_tower: stage_top }),
+				to: corner_at(tower, { corner: next, height_on_tower: storey_top }),
 			},
 		)
 		brace_down = rod(
 			tower.view,
 			{
 				from: point_between({
-					from: corner_at(tower, { corner: next, height_on_tower: stage_bottom }),
-					to: corner_at(tower, { corner, height_on_tower: stage_top }),
+					from: corner_at(tower, { corner: next, height_on_tower: storey_bottom }),
+					to: corner_at(tower, { corner, height_on_tower: storey_top }),
 					fraction: hidden_fraction,
 				}),
-				to: corner_at(tower, { corner, height_on_tower: stage_top }),
+				to: corner_at(tower, { corner, height_on_tower: storey_top }),
 			},
 		)
 		brace_up.concat(brace_down)
@@ -443,13 +443,13 @@ Tower :: [].{
 
 expect Tower.tower_height == 80.0
 expect Tower.tower_half == 6.0
-expect Tower.stage_height == 20.0
+expect Tower.storey_height == 20.0
 expect Tower.rod_half == 0.12
 expect Tower.rod_w == 0.24
 expect Tower.sink_radius == 20000.0
 expect Tower.beacon_radius == 3.0
 
-expect Tower.brace_stages == 2
+expect Tower.brace_storeys == 2
 expect Tower.tower_metal == 10133672
 expect Tower.beacon_color == 16723942
 

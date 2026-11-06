@@ -82,7 +82,7 @@ Cat :: [].{
 		}
 	}
 
-	## The crossing's three stages, in beats.
+	## The crossing's three parts, in beats.
 	enters_road_beats : Beats
 	enters_road_beats = Beats.of(10.0)
 
