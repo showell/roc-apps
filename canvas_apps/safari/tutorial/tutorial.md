@@ -218,9 +218,23 @@ That gives three kinds of moving thing, and the tour is organized around them:
 
 Trees and cows are a fourth kind, the easiest of all: they never change.
 
-Keeping so little makes some things cheap. `Tour`, the whole ride, is little more than a list of past instants, so stepping back only needs an older one. The cat follows along, since it was never anywhere but where the rider's position puts it, and the sun rises again.
+The game itself has no effectful functions at all. It has no `!` names, no `=>` arrows and no `?`. Effects live in the platform.
 
-The game itself has no effectful functions at all. It has no `!` names, no `=>` arrows, no `?` and no `where`. Effects live in the platform.
+### Pausing and stepping
+
+Mostly, Safari Ride is a screensaver: you sit back and watch it. You can also take the controls. Click the ride to give it the keyboard, and Space pauses it. While it's paused, Right moves one step forward and Left moves one step back. While it's running, each moves four steps at a time. J jumps to the next segment of the road, and R starts over.
+
+`SafariApp.step` handles all of that. It takes the model and a snapshot of the input, and it returns the next model:
+
+{{code SafariApp.step from "paused = if input.key_pressed(KeySpace)" to "Tour.step_forward(m.tour)"}}
+
+There's no event handler here. Each frame, the runner hands `step` a snapshot, and `step` reads it. `key_pressed` says a key went down since the last frame, so one tap of Space pauses the ride once. `key_down` says a key is being held, so holding Right keeps the ride moving.
+
+Stepping forward is the ordinary step. Stepping back is more interesting, because it's where keeping so little pays off. `Tour` holds the current instant and a list of the instants before it, so going back just means taking the last one off the list:
+
+{{code Tour.step_back}}
+
+Nothing has to be undone. An old `RideInstant` is still a perfectly good value. The cat ends up in the right place because its position was only ever worked out from the rider's, and the sun ends up in the right place because it was only ever worked out from the clock. Neither one needs any code for going backwards.
 
 Four kinds of thing have been named, and so far none has been shown.
 
