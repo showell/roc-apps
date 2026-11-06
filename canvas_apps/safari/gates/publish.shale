@@ -7,7 +7,8 @@
 -- It runs the merge gate from cold caches, then check.shale from a cold cache,
 -- then builds safari's page and every widget's as release wasm, each from a cold
 -- cache, into the dev channel, where site/publish.sh takes them. Safari's page
--- must draw the hash the dev page draws. It moves nothing to staging.
+-- must draw the hash the dev page draws. It moves nothing to staging. It takes
+-- about six minutes.
 
 const RUN = "canvas_apps/safari/gates/run.shale"
 const PAGE_WANT = "script: canvas_apps/build.sh builds and checks a page, and refuses another Roc"

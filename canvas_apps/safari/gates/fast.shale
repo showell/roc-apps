@@ -7,6 +7,7 @@
 -- the one-file lints (lints.shale) on the .roc files changed since this
 -- checkout's last green, then builds RasterFrame and holds one frame to its
 -- line in gates/proof.expected. Every run names what it left to the merge gate.
+-- It takes about ten seconds once its cache is warm and a green is on record.
 --
 -- A frame stands in for the other depths because an arithmetic slip no expect
 -- covers moves the picture. FRAME_DEPTH is 5700, the truck ahead at dusk with

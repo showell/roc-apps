@@ -7,6 +7,7 @@
 --
 -- Run from the roc-apps root: every path is the checkout's, so a worktree
 -- gates its own tree. One merge gate runs at a time, on the one cache folder.
+-- It takes about two minutes, half of that the lints.
 --
 -- The gates run as child runs of this script, `part=expects`, `part=tutorial`,
 -- `part=proof` and `part=page`, one program of this run's each. A child runs
