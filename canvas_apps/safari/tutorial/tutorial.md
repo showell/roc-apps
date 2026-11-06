@@ -2070,7 +2070,7 @@ The widget at the top of this chapter is this section at work.
 
 `LeanSearch` asks `Coast` that question at a dozen different leans. The rider wants the coast to end somewhere near the middle of the lane, and more lean to the right moves the end of a coast to the right, so this is a bisection. It's a recursive function with its whole state in one record argument, `low` and `high` closing in on each other. `Bike.with_lean(state, mid)` is a rider who doesn't exist, handed to `Coast`, who gets a future that didn't happen:
 
-{{code LeanSearch.search_lean_from from "mid = low.halfway_to(high)" to "low: mid,"}}
+{{code LeanSearch.search_lean from "mid = $low.halfway_to($high)" to "$low = mid"}}
 
 The decision about which way to go is a `match` on what the rehearsal found. Running off the left means more right, running off the right means less, and staying on the road compares the end of the coast with the target:
 

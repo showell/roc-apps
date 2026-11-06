@@ -103,7 +103,13 @@ Mountains :: [].{
 	snow_peak_height : Pixels
 	snow_peak_height = {
 		first = Angle.Bearing.radians(-0.5)
-		north_peak_height_from({ at: first.plus(peak_sample_step), highest: north_range(first) })
+		var $highest = north_range(first)
+		var $at = first.plus(peak_sample_step)
+		while $at <= Angle.Bearing.radians(0.5) {
+			$highest = $highest.max(north_range($at))
+			$at = $at.plus(peak_sample_step)
+		}
+		$highest
 	}
 
 	## The snowline's height at `bearing`: at the threshold, dipping lower
@@ -208,20 +214,6 @@ range_height = |range, bearing| {
 peak_sample_step : Angle.Turn
 peak_sample_step = Angle.Turn.radians(0.01)
 
-## The north range's peak height between `at` and half a radian, or
-## `highest` where that is higher. Each sample's bearing is the last's plus
-## the step.
-north_peak_height_from : { at : Angle.Bearing, highest : Pixels } -> Pixels
-north_peak_height_from = |{ at, highest }|
-	if at > Angle.Bearing.radians(0.5) {
-		highest
-	} else {
-		north_peak_height_from({
-			at: at.plus(peak_sample_step),
-			highest: highest.max(Mountains.north_range(at)),
-		})
-	}
-
 ## The screen's horizon, where a height of zero is drawn.
 horizon_y : Pixels
 horizon_y = Screen.horizon_y
@@ -235,15 +227,15 @@ height_y = |sight, height| {
 
 ## The columns sampled, every `column_step` pixels from `from` up to `to`.
 columns : { from : Pixels, to : Pixels } -> List(Pixels)
-columns = |{ from, to }| columns_onto([], { at: from, to })
-
-columns_onto : List(Pixels), { at : Pixels, to : Pixels } -> List(Pixels)
-columns_onto = |sampled, { at, to }|
-	if at > to {
-		sampled
-	} else {
-		columns_onto(sampled.append(at), { at: at.plus(Mountains.column_step), to })
+columns = |{ from, to }| {
+	var $sampled = []
+	var $at = from
+	while $at <= to {
+		$sampled = $sampled.append($at)
+		$at = $at.plus(Mountains.column_step)
 	}
+	$sampled
+}
 
 ## A silhouette across the screen, its top at `height_at` each bearing, closed
 ## along the horizon.

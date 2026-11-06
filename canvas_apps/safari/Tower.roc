@@ -304,7 +304,7 @@ Tower :: [].{
 	## A ring at every storey below the top, bottom first, leaving out those
 	## the earth has hidden.
 	rings : Tower.TowerInView -> List(Shapes.Shape)
-	rings = |tower| ring_heights_from(storey_height).join_map(
+	rings = |tower| ring_heights.join_map(
 		|h|
 			if h <= tower.sunk {
 				[]
@@ -313,26 +313,23 @@ Tower :: [].{
 			},
 	)
 
-	ring_heights_from : Distance -> List(Distance)
-	ring_heights_from = |h|
-		if h >= tower_height {
-			[]
-		} else {
-			[h].concat(ring_heights_from(h.plus(storey_height)))
+	## The height of each ring: a storey up, and a storey more, to the top.
+	ring_heights : List(Distance)
+	ring_heights = {
+		var $heights = []
+		var $height = storey_height
+		while $height < tower_height {
+			$heights = $heights.append($height)
+			$height = $height.plus(storey_height)
 		}
+		$heights
+	}
 
 	## The crossed braces of the lowest storeys, bottom first. A storey the
 	## earth has partly hidden starts its braces at the horizon.
 	braces : Tower.TowerInView -> List(Shapes.Shape)
-	braces = |tower| brace_storeys_from(0).join_map(|storey| brace_storey(tower, storey))
-
-	brace_storeys_from : I64 -> List(I64)
-	brace_storeys_from = |storey|
-		if storey >= brace_storeys {
-			[]
-		} else {
-			[storey].concat(brace_storeys_from(storey + 1))
-		}
+	braces = |tower|
+		List.from_iter(I64.until(0, brace_storeys)).join_map(|storey| brace_storey(tower, storey))
 
 	brace_storey : Tower.TowerInView, I64 -> List(Shapes.Shape)
 	brace_storey = |tower, storey| {

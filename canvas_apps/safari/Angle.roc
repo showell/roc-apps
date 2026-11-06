@@ -48,10 +48,10 @@ Angle :: [].{
 		turn_from_north : Angle.Bearing -> Angle.Turn
 		turn_from_north = |Angle.Bearing.(b)| Angle.Turn.(Trig.wrap(b, 64))
 
-		## Whether this bearing is further right than `other`, read without
+		## Whether this bearing is no further right than `other`, read without
 		## going round: for a sweep across a stretch of bearings.
-		is_gt : Angle.Bearing, Angle.Bearing -> Bool
-		is_gt = |Angle.Bearing.(b), Angle.Bearing.(other)| b > other
+		is_lte : Angle.Bearing, Angle.Bearing -> Bool
+		is_lte = |Angle.Bearing.(b), Angle.Bearing.(other)| b <= other
 
 		is_eq : _
 	}

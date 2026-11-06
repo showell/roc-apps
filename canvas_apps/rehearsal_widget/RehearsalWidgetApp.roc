@@ -114,7 +114,7 @@ path_of = |lean| {
 }
 
 ## The tries from `at` on, between `low` and `high`: the bisection in
-## `LeanSearch.search_lean_from`, keeping what that throws away.
+## `LeanSearch.search_lean`, keeping what that throws away.
 rehearsals_from : { low : Angle.Lean, high : Angle.Lean, at : I64 } -> List(Rehearsal)
 rehearsals_from = |{ low, high, at }|
 	if at >= LeanSearch.lean_search_rounds {
@@ -279,12 +279,12 @@ road = {
 		ground,
 		Rect({
 			x: 0.0,
-			y: on_canvas({ forward: 0.0, across: 0.0 - half_lane }).y,
+			y: on_canvas({ forward: 0.0, across: -half_lane }).y,
 			w: ScrubWidget.canvas_width,
 			h: 2.0 * half_lane * pixels_a_metre_across,
 			fill: ScrubWidget.flat(road_color),
 		}),
-		road_line({ across: 0.0 - half_lane, color: line_color, width: 2.0 }),
+		road_line({ across: -half_lane, color: line_color, width: 2.0 }),
 		road_line({ across: half_lane, color: line_color, width: 2.0 }),
 		road_line({ across: target.to_metres(), color: target_color, width: 1.0 }),
 	]
