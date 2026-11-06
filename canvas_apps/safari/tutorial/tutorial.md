@@ -1535,7 +1535,7 @@ Going from the road to the rider is a translation and a rotation, and this is th
 
 {{code Geom.to_rider_point}}
 
-From there to the screen is a pinhole camera, which is similar triangles. Dividing by `forward` is all of perspective. Nearly everything on screen passes through this function, and it's two lines:
+From there to the screen is a pinhole camera, which is similar triangles. Dividing by `forward` is all of perspective. Nearly everything on screen passes through this function, and it's short:
 
 {{code Camera.project}}
 
