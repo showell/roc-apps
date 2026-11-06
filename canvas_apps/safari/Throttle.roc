@@ -413,9 +413,9 @@ steps_off_road = |coast|
 expect leaning.exit == Leaves({ side: Right, after: steps_off_road(leaning) })
 expect other_way.exit == Leaves({ side: Left, after: steps_off_road(other_way) })
 
-expect steps_off_road(leaning) < Coast.turn_danger_steps
+expect steps_off_road(leaning) < Coast.longest_coast
 expect steps_off_road(leaning) > Steps.zero
-expect leaning.forward <= Coast.min_forward_progress
+expect leaning.forward <= Coast.clear_distance
 expect leaning.end_across > RiderState.initial.across
 expect other_way.end_across < RiderState.initial.across
 expect steps_off_road(leaning) == steps_off_road(other_way)

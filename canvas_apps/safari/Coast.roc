@@ -24,11 +24,11 @@ Coast :: [].{
 	straighten_margin : Distance
 	straighten_margin = Distance.metres(0.05)
 
-	turn_danger_steps : Steps
-	turn_danger_steps = Steps.of(2000)
+	longest_coast : Steps
+	longest_coast = Steps.of(2000)
 
-	min_forward_progress : Distance
-	min_forward_progress = Distance.metres(25.0)
+	clear_distance : Distance
+	clear_distance = Distance.metres(25.0)
 
 	## What holds for the whole of one coast: the road's edges, and
 	## the distance along the road the rider started from.
@@ -44,7 +44,7 @@ Coast :: [].{
 
 	coast_from : Coast.Bounds, Coast.Progress(others) -> Coast.Outcome
 	coast_from = |course, { steps_run: i, coasting_rider: phys }|
-		if i >= turn_danger_steps {
+		if i >= longest_coast {
 			{
 				exit: StaysOn,
 				forward: phys.along.distance_from(course.start_along),
@@ -70,13 +70,13 @@ Coast :: [].{
 		if across < course.left_bound {
 			{
 				exit: Leaves({ side: Left, after: i }),
-				forward: forward.min(min_forward_progress),
+				forward: forward.min(clear_distance),
 				end_across: across,
 			}
 		} else if across > course.right_bound {
 			{
 				exit: Leaves({ side: Right, after: i }),
-				forward: forward.min(min_forward_progress),
+				forward: forward.min(clear_distance),
 				end_across: across,
 			}
 		} else if forward < Distance.zero {
@@ -85,10 +85,10 @@ Coast :: [].{
 				forward: forward,
 				end_across: across,
 			}
-		} else if forward >= min_forward_progress {
+		} else if forward >= clear_distance {
 			{
 				exit: StaysOn,
-				forward: min_forward_progress,
+				forward: clear_distance,
 				end_across: across,
 			}
 		} else {
@@ -109,5 +109,5 @@ Coast :: [].{
 }
 
 expect Coast.straighten_margin.to_metres() == 0.05
-expect Coast.min_forward_progress.to_metres() == 25.0
-expect Coast.turn_danger_steps.to_f64() == 2000.0
+expect Coast.clear_distance.to_metres() == 25.0
+expect Coast.longest_coast.to_f64() == 2000.0
