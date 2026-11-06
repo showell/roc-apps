@@ -37,7 +37,7 @@ CatDraw :: [].{
 		if poly.points.len().to_i64_wrap() > max_cat_points {
 			[]
 		} else {
-			Paint.push_poly(poly.color, poly.points.map(|pt| screen_point(anchor, pt)))
+			Paint.polygon(poly.color, poly.points.map(|pt| screen_point(anchor, pt)))
 		}
 
 	## A still's polygons on screen, in order.

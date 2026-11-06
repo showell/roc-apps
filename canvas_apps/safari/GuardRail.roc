@@ -88,7 +88,7 @@ GuardRail :: [].{
 		if in_front.len() < 3 {
 			[]
 		} else {
-			Paint.push_poly(quad.color, Camera.project_all(in_front, cam_focal))
+			Paint.polygon(quad.color, Camera.project_all(in_front, cam_focal))
 		}
 	}
 }

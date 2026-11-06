@@ -174,11 +174,11 @@ TreeDraw :: [].{
 			{ x: left, y: seen.base_y },
 		]
 		match corners {
-			RoundCorners => Paint.push_round_poly(
+			RoundCorners => Paint.round_polygon(
 				points,
 				{ fill_color: trunk_color, round_strength: Fraction.whole },
 			)
-			SharpCorners => Paint.push_poly(trunk_color, points)
+			SharpCorners => Paint.polygon(trunk_color, points)
 		}
 	}
 
@@ -191,7 +191,7 @@ TreeDraw :: [].{
 	} -> List(Shapes.Shape)
 	tier_triangle = |seen, { tier, color }| {
 		bottom_y = (seen.crown_top_y + (seen.foliage_px * tier.bottom))
-		Paint.push_poly(
+		Paint.polygon(
 			color,
 			[
 				{ x: seen.base_x, y: (seen.crown_top_y + (seen.foliage_px * tier.top)) },
@@ -313,7 +313,7 @@ tier_cone = |tree, { tier, radius }| {
 	if hull.len() < 3 {
 		[]
 	} else {
-		Paint.push_round_poly(hull, { fill_color: tree.color, round_strength: tree.shade })
+		Paint.round_polygon(hull, { fill_color: tree.color, round_strength: tree.shade })
 	}
 }
 

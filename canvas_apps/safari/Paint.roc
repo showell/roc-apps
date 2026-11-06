@@ -112,17 +112,17 @@ Paint :: [].{
 		$flat
 	}
 
-	push_poly : I64, List(Screen.Point) -> List(Shapes.Shape)
-	push_poly = |color, ps| Shapes.polygon(flatten_screen(ps), Flat(Brush.opaque(color)))
+	polygon : I64, List(Screen.Point) -> List(Shapes.Shape)
+	polygon = |color, ps| Shapes.polygon(flatten_screen(ps), Flat(Brush.opaque(color)))
 
 	## A polygon shaded across its width, darker at its edges and lighter in
 	## its middle, or a solid one where it has no strength or is too narrow.
-	push_round_poly : List(Screen.Point),
+	round_polygon : List(Screen.Point),
 	{
 		fill_color : I64,
 		round_strength : Fraction,
 	} -> List(Shapes.Shape)
-	push_round_poly = |ps, { fill_color, round_strength }|
+	round_polygon = |ps, { fill_color, round_strength }|
 		if ps.len() < 3 {
 			[]
 		} else {
@@ -130,13 +130,13 @@ Paint :: [].{
 			[Poly({ pts, fill: width_shade(pts, { color: fill_color, strength: round_strength }) })]
 		}
 
-	push_beacon : {
+	beacon : {
 		beacon_color : I64,
 		beacon_center : Screen.Point,
 		beacon_radius : F64,
 		beacon_alpha : Fraction,
 	} -> List(Shapes.Shape)
-	push_beacon = |{ beacon_color, beacon_center, beacon_radius, beacon_alpha }| {
+	beacon = |{ beacon_color, beacon_center, beacon_radius, beacon_alpha }| {
 		opaque = Brush.opaque(beacon_color)
 		[
 			Disc({
@@ -161,14 +161,14 @@ Paint :: [].{
 	min_gradient_radius : F64
 	min_gradient_radius = 0.5
 
-	push_grad_poly : List(Screen.Point),
+	gradient_polygon : List(Screen.Point),
 	{
 		center_rgba : I64,
 		edge_rgba : I64,
 		gradient_center : Screen.Point,
 		gradient_radius : F64,
 	} -> List(Shapes.Shape)
-	push_grad_poly = |ps, { center_rgba, edge_rgba, gradient_center, gradient_radius }|
+	gradient_polygon = |ps, { center_rgba, edge_rgba, gradient_center, gradient_radius }|
 		if gradient_radius < min_gradient_radius {
 			[]
 		} else {
@@ -186,13 +186,13 @@ Paint :: [].{
 		}
 
 	## A linear gradient with no length has no direction, so it is not drawn.
-	push_linear_grad_poly : List(Screen.Point),
+	linear_gradient_polygon : List(Screen.Point),
 	{
 		color_stops : Paint.ColorStops,
 		start_point : Screen.Point,
 		end_point : Screen.Point,
 	} -> List(Shapes.Shape)
-	push_linear_grad_poly = |ps, { color_stops, start_point, end_point }| {
+	linear_gradient_polygon = |ps, { color_stops, start_point, end_point }| {
 		dx = end_point.x - start_point.x
 		dy = end_point.y - start_point.y
 		if dx * dx + dy * dy == 0.0 {
@@ -218,14 +218,14 @@ Paint :: [].{
 	## A gradient on an ellipse, which is `axis_u` and `axis_v` about
 	## `center_point`. An ellipse too thin to invert is filled with its first
 	## colour.
-	push_radial_grad_poly : List(Screen.Point),
+	radial_gradient_polygon : List(Screen.Point),
 	{
 		color_stops : Paint.ColorStops,
 		center_point : Screen.Point,
 		axis_u : Screen.Point,
 		axis_v : Screen.Point,
 	} -> List(Shapes.Shape)
-	push_radial_grad_poly = |ps, { color_stops, center_point, axis_u, axis_v }| {
+	radial_gradient_polygon = |ps, { color_stops, center_point, axis_u, axis_v }| {
 		det = axis_u.x * axis_v.y - axis_u.y * axis_v.x
 		first_color = Brush.with_alpha(color_stops.start_rgba)
 		fill =
@@ -321,7 +321,7 @@ inner_stops = {
 
 radial_polygon : List(Screen.Point), F64 -> List(Shapes.Shape)
 radial_polygon = |corners, gradient_radius|
-	Paint.push_grad_poly(
+	Paint.gradient_polygon(
 		corners,
 		{
 			center_rgba: 7,
@@ -333,7 +333,7 @@ radial_polygon = |corners, gradient_radius|
 
 linear_polygon : List(Screen.Point) -> List(Shapes.Shape)
 linear_polygon = |corners|
-	Paint.push_linear_grad_poly(
+	Paint.linear_gradient_polygon(
 		corners,
 		{
 			color_stops: plain_stops,
@@ -344,7 +344,7 @@ linear_polygon = |corners|
 
 ellipse_polygon : List(Screen.Point) -> List(Shapes.Shape)
 ellipse_polygon = |corners|
-	Paint.push_radial_grad_poly(
+	Paint.radial_gradient_polygon(
 		corners,
 		{
 			color_stops: plain_stops,
@@ -358,14 +358,11 @@ expect Paint.flatten_screen(triangle) == triangle_points
 expect Paint.flatten_screen([]) == []
 
 # A builder given too few points, or too small a gradient, draws nothing.
-expect Paint.push_poly(7, triangle).len() == 1
-expect Paint.push_poly(7, line_ends).len() == 0
-expect Paint.push_poly(7, []).len() == 0
-expect Paint.push_round_poly(
-	triangle,
-	{ fill_color: 7, round_strength: Fraction.of(0.5) },
-).len() == 1
-expect Paint.push_round_poly(
+expect Paint.polygon(7, triangle).len() == 1
+expect Paint.polygon(7, line_ends).len() == 0
+expect Paint.polygon(7, []).len() == 0
+expect Paint.round_polygon(triangle, { fill_color: 7, round_strength: Fraction.of(0.5) }).len() == 1
+expect Paint.round_polygon(
 	line_ends,
 	{ fill_color: 7, round_strength: Fraction.of(0.5) },
 ).len() == 0
@@ -379,7 +376,7 @@ expect ellipse_polygon(triangle).len() == 1
 expect ellipse_polygon(line_ends).len() == 0
 
 expect
-	Paint.push_beacon({
+	Paint.beacon({
 		beacon_color: 7,
 		beacon_center: { x: 1.0, y: 2.0 },
 		beacon_radius: 3.0,
@@ -387,12 +384,12 @@ expect
 	}).len()
 		== 1
 
-expect Paint.push_poly(111, triangle) == [
+expect Paint.polygon(111, triangle) == [
 	Poly({ pts: triangle_points, fill: Flat(Brush.opaque(111)) }),
 ]
 
 expect
-	Paint.push_round_poly(triangle, { fill_color: 222, round_strength: Fraction.of(0.75) })
+	Paint.round_polygon(triangle, { fill_color: 222, round_strength: Fraction.of(0.75) })
 		== [
 			Poly({
 				pts: triangle_points,
@@ -406,7 +403,7 @@ expect
 		]
 
 expect
-	Paint.push_beacon({
+	Paint.beacon({
 		beacon_color: 333,
 		beacon_center: { x: 10.0, y: 20.0 },
 		beacon_radius: 30.0,
@@ -423,7 +420,7 @@ expect
 		]
 
 expect
-	Paint.push_grad_poly(
+	Paint.gradient_polygon(
 		triangle,
 		{
 			center_rgba: 444,
@@ -447,7 +444,7 @@ expect
 		]
 
 expect
-	Paint.push_linear_grad_poly(
+	Paint.linear_gradient_polygon(
 		triangle,
 		{
 			color_stops: {
@@ -477,7 +474,7 @@ expect
 		]
 
 expect
-	Paint.push_radial_grad_poly(
+	Paint.radial_gradient_polygon(
 		triangle,
 		{
 			color_stops: inner_stops,
@@ -506,7 +503,7 @@ expect
 
 offset_linear : { start_offset : F64, end_offset : F64 } -> List(Shapes.Shape)
 offset_linear = |{ start_offset, end_offset }|
-	Paint.push_linear_grad_poly(
+	Paint.linear_gradient_polygon(
 		triangle,
 		{
 			color_stops: { ..inner_stops, start_offset, end_offset },
@@ -541,7 +538,7 @@ expect offset_linear({
 
 linear_to : Screen.Point -> List(Shapes.Shape)
 linear_to = |end_point|
-	Paint.push_linear_grad_poly(
+	Paint.linear_gradient_polygon(
 		triangle,
 		{
 			color_stops: inner_stops,
@@ -556,7 +553,7 @@ expect linear_to({ x: 1.0, y: 2.5 }).len() == 1
 
 ellipse_of_height : F64 -> List(Shapes.Shape)
 ellipse_of_height = |height|
-	Paint.push_radial_grad_poly(
+	Paint.radial_gradient_polygon(
 		triangle,
 		{
 			color_stops: inner_stops,
@@ -645,10 +642,7 @@ narrow_corners = [
 ]
 
 expect
-	Paint.push_round_poly(
-		wide_corners,
-		{ fill_color: sample_color, round_strength: Fraction.whole },
-	)
+	Paint.round_polygon(wide_corners, { fill_color: sample_color, round_strength: Fraction.whole })
 		== [
 			Poly({
 				pts: [10.0, 1.0, 30.0, 2.0, 20.0, 3.0],
@@ -663,7 +657,7 @@ expect
 
 # No strength, or too narrow a polygon, is a solid fill.
 expect
-	Paint.push_round_poly(wide_corners, { fill_color: sample_color, round_strength: Fraction.zero })
+	Paint.round_polygon(wide_corners, { fill_color: sample_color, round_strength: Fraction.zero })
 		== [
 			Poly({
 				pts: [
@@ -679,7 +673,7 @@ expect
 		]
 
 expect
-	Paint.push_round_poly(
+	Paint.round_polygon(
 		narrow_corners,
 		{ fill_color: sample_color, round_strength: Fraction.whole },
 	)

@@ -191,7 +191,7 @@ beam = |truck, across| {
 			TruckLights.midpoint({ from: lamp_bottom, to: lamp_top }),
 			truck.view.cam_focal,
 		)
-		Paint.push_grad_poly(
+		Paint.gradient_polygon(
 			on_screen,
 			{
 				center_rgba: beam_core,
@@ -244,7 +244,7 @@ glow = |truck, lamp|
 		on_screen = Camera.project_all(lamp, truck.view.cam_focal)
 		center = TruckLights.center_of(on_screen)
 		radius = TruckLights.glow_radius(on_screen, center)
-		Paint.push_grad_poly(
+		Paint.gradient_polygon(
 			TruckLights.glow_outline({ center, radius }),
 			{
 				center_rgba: glow_core,

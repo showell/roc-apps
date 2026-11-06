@@ -256,7 +256,7 @@ silhouette = |sight, { height_at, color }| {
 	crest = columns({ from: left, to: right }).map(
 		|x| { x, y: height_y(sight, height_at(Mountains.bearing_at(sight, x))) },
 	)
-	Paint.push_poly(color, crest.concat([{ x: right, y: horizon_y }, { x: left, y: horizon_y }]))
+	Paint.polygon(color, crest.concat([{ x: right, y: horizon_y }, { x: left, y: horizon_y }]))
 }
 
 ## The north range's snow: along its crest where the range is above the
@@ -282,7 +282,7 @@ snow = |sight, color| {
 				y: height_y(sight, Mountains.snowline(Mountains.bearing_at(sight, x))),
 			}),
 		)
-		Paint.push_poly(color, crest.concat(snowline))
+		Paint.polygon(color, crest.concat(snowline))
 	}
 }
 

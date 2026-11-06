@@ -65,7 +65,7 @@ StillDraw :: [].{
 			points = StillDraw.screen_points(anchor, poly.points)
 			match poly.gradient.first() {
 				Ok(gradient) => draw_gradient_polygon(anchor, { gradient, points })
-				Err(ListWasEmpty) => Paint.push_poly(poly.color, points)
+				Err(ListWasEmpty) => Paint.polygon(poly.color, points)
 			}
 		}
 
@@ -126,7 +126,7 @@ draw_gradient_polygon = |anchor, { gradient, points }|
 		Linear => {
 			start = StillDraw.screen_point(anchor, { x: gradient.ax, y: gradient.ay })
 			stop = StillDraw.screen_point(anchor, { x: gradient.bx, y: gradient.by })
-			Paint.push_linear_grad_poly(
+			Paint.linear_gradient_polygon(
 				points,
 				{
 					color_stops: stops_of(gradient),
@@ -139,7 +139,7 @@ draw_gradient_polygon = |anchor, { gradient, points }|
 			center = StillDraw.screen_point(anchor, { x: gradient.cx, y: gradient.cy })
 			u = StillDraw.screen_vector(anchor, { x: gradient.ux, y: gradient.uy })
 			v = StillDraw.screen_vector(anchor, { x: gradient.vx, y: gradient.vy })
-			Paint.push_radial_grad_poly(
+			Paint.radial_gradient_polygon(
 				points,
 				{
 					color_stops: stops_of(gradient),

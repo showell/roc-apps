@@ -32,7 +32,7 @@ Ground :: [].{
 			if in_front.len() < 3 {
 				[]
 			} else {
-				Paint.push_poly(patch.color, Camera.project_all(in_front, cam_focal))
+				Paint.polygon(patch.color, Camera.project_all(in_front, cam_focal))
 			}
 		}
 }

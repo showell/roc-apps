@@ -111,7 +111,7 @@ TruckShape :: [].{
 		color : I64,
 		corners : List(Geom.RaisedPoint),
 	} -> List(Shapes.Shape)
-	fill = |truck, { color, corners }| Paint.push_poly(
+	fill = |truck, { color, corners }| Paint.polygon(
 		color,
 		Camera.project_all(Geom.clip_near(corners), truck.view.cam_focal),
 	)

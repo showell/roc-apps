@@ -204,7 +204,7 @@ Tower :: [].{
 			offset_x: ox,
 			offset_y: oy,
 		},
-	| Paint.push_poly(
+	| Paint.polygon(
 		tower_metal,
 		[
 			{ x: (a.x + ox), y: (a.y + oy) },
@@ -401,7 +401,7 @@ Tower :: [].{
 			if radius < 0.5 {
 				[]
 			} else {
-				Paint.push_beacon({
+				Paint.beacon({
 					beacon_color,
 					beacon_center: apex_on_screen,
 					beacon_radius: radius,

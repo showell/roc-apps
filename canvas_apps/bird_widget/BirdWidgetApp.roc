@@ -112,7 +112,7 @@ lane = {
 			},
 			Lens.focal,
 		)
-	Paint.push_poly(
+	Paint.polygon(
 		0x8a8a8a,
 		[
 			on_ground(0.0 - half, 1.0),
