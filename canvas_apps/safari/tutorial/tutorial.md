@@ -1212,7 +1212,7 @@ Everything so far can be asked about any instant, cold. Hand `Cat.instant_at` a 
 
 ## The stepped things
 
-Where the rider and the truck are depends on where they were, so their state has to be kept, and it's the only state there is. This chapter is about the two fields of `RideInstant` that aren't a clock.
+Where the rider and the truck are depends on where they were, so their state has to be kept, and it's the only state there is. This chapter and the next few are about the two fields of `RideInstant` that aren't a clock.
 
 ```widget step
 Click far to the right of the dot, then far to the left.
@@ -1222,8 +1222,8 @@ Going forward, the ride has to be played, because each step starts from the one 
 
 New in this chapter:
 
-- Roc: a named open record, guards, list patterns, recursion
-- Modules: `Rider`, `RiderState`, `CanvasRoll`, `Bike`, `Throttle`, `CrossingReaction`, `Truck`, `Acceleration`
+- Roc: a block that ends in a record
+- Modules: none yet. This chapter shows what calls the modules below, and the next few open them.
 
 The modules that do the stepping
 ```dot
@@ -1258,7 +1258,9 @@ Stepping has a cost, which shows up when we compare it with the cat:
 - A wrong critter rule only affects the frames it touches. A wrong step moves the rider for the rest of the ride.
 - The lines of `RideInstant.next` have to run in order. Frames can be worked out in any order.
 
-### The rider
+The rider's step is the bigger of the two, and it takes up the next five chapters. The truck gets the chapter after those.
+
+## The rider
 
 This is the rider at step 1,570, with the cat ahead:
 
@@ -1274,7 +1276,12 @@ This is the rider at step 1,570, with the cat ahead:
 | `gaze_yaw` | `Angle.Turn` | 0 radians |
 | `attention` | `Fraction` | 0.68 |
 
-A nominal record holds the rider, and `RideInstant` stores one. Count the opaque types: `SegmentIndex`, `Along`, `Across`, `Turn`, `Speed`, `Lean`, `Bearing` and `Fraction`. Nothing in it is a bare float. Four fields of this one record are angles, of three different types, and passing one type where another is wanted is a compile-time error.
+New in this chapter:
+
+- Roc: a nominal record with no bare floats, a value for a bike that doesn't exist
+- Modules: `RiderState`, `Rider`, `CanvasRoll`
+
+A nominal record holds the rider, and `RideInstant` stores one. Count the opaque types: `SegmentIndex`, `Along`, `Across`, `Turn`, `Speed`, `Lean`, `Bearing` and `Fraction`. Nothing in it is a bare float. Four fields of this one record are angles, of three different types, and passing one type where another is wanted is a compile-time error. The last two fields say where the rider is looking, and they get a chapter of their own.
 
 {{code RiderState.RiderState}}
 
@@ -1306,9 +1313,16 @@ A lean inside the deadband leaves the canvas level, and any other lean passes st
 
 The camera turns as well. `ViewYaw` follows the rider's gaze, and turns a little with the lean, as a rider's head turns into a bend.
 
-### The bike
+So a decision is a lean and an acceleration. `Bike` is what turns them into movement.
+
+## The bike
 
 A lean of 1 degree turns the bike by a tenth of a degree each step, so at a metre a step it goes round a circle 573 metres in radius. That's nearly all the physics.
+
+New in this chapter:
+
+- Roc: a named open record
+- Modules: `Bike`
 
 The modules around `Bike`
 ```dot
@@ -1337,13 +1351,22 @@ Call this *a narrow view of a wide record*. A module says exactly which fields i
 
 {{code Bike.with_lean}}
 
-`{ ..s, lean }` is record update with a shorthand: the field and the local have the same name. `Rider.decide` called it above. Here's the step, which `Rider.advance` called:
+`{ ..s, lean }` is record update with a shorthand: the field and the local have the same name. `Rider.decide` called it in the last chapter. Here's the step, which `Rider.advance` called:
 
 {{code Bike.advance}}
 
 Reading down, the types do their share of explaining. A `Lean` can't be added to anything but a `Lean`, and it only reaches direction through `lean.steer(turn_per_lean)`, which is the single door from roll to yaw. The bike then moves along the middle of the step's turn, which is what `s.yaw.plus(turn.times(0.5))` means. `speed.step_length()` is a `Distance`, and `Along.plus` takes one, so the move itself is places and distances. `to_radians()` appears at the last line that can do without it: `r_cos` wants a float.
 
-### The throttle
+A bike does what it's told. Choosing the lean has to wait for the math layer chapter. Choosing the acceleration is the throttle's job.
+
+## The throttle
+
+The rider is always deciding whether to accelerate, brake or hold steady. `Throttle` makes that decision, once a step.
+
+New in this chapter:
+
+- Roc: guards
+- Modules: `Throttle`, `Acceleration`
 
 The modules around `Throttle`
 ```dot
@@ -1393,7 +1416,9 @@ After the limits, `Throttle.acceleration` hands its result to `allowed_speed`, n
 
 The last limit, `shoulder_brake`, has to wait for the math layer chapter, because it simulates the bike ahead of itself.
 
-### What a cat does to the rider
+The two limits in the middle come from what the rider sees. `crossing_limit` is the cat's, and `pig_limit` is the pig's. We'll take the cat first.
+
+## What a cat does to the rider
 
 The loop between the cat and the rider
 ```dot
@@ -1407,7 +1432,12 @@ digraph reaction_loop {
 }
 ```
 
-The cat chapter promised this. The rider is always deciding whether to accelerate, brake or hold steady, and a cat in the lane has a say in that. `CrossingReaction` is where it speaks.
+The cat chapter promised this. A cat in the lane has a say in what the throttle does, and `CrossingReaction` is where it speaks.
+
+New in this chapter:
+
+- Roc: an open record that's only read
+- Modules: `CrossingReaction`, `RideFocal`
 
 The modules around `CrossingReaction`
 ```dot
@@ -1448,7 +1478,84 @@ This is the only feedback loop in the design. The rider's speed decides where th
 
 Each stretch of road has exactly one `crossing`: `CatCrosses`, `BirdHere` or `QuietRoad`. A cat and a bird in the same place can't be written down.
 
-### The truck
+A cat catches the rider's eye from the lane. A pig does it from the side of the road, and the rider turns to look.
+
+## The rider's gaze
+
+The herds chapter left one pig waiting. On the first two segments with pigs, a pig in the big herd catches the rider's eye. The rider turns to look and slows down, and the picture turns too.
+
+New in this chapter:
+
+- Roc: comparing a tag with `==`
+- Modules: `Gaze`, `ViewYaw`
+
+### Where the rider looks
+
+The rider's record has two fields we skipped. `gaze_yaw` is the angle between where the bike points and where the rider looks. `attention` says how much a look still holds the rider, from 0 to 1. They're stepped like everything else in that record, and the last line of `Rider.advance` does it, after the bike has moved:
+
+{{code Gaze.next_rider_gaze}}
+
+The rider looks either at a pig or at the road. An angle only means something for a pig, so only `OnPig` carries one:
+
+{{code Gaze.GazeTarget}}
+
+{{code Gaze.desired_gaze}}
+
+`pig_ahead` answers with `Looking` or `NotLooking`. There's only one thing to ask of that, so `==` does the job of a `match`.
+
+{{code Gaze.pig_ahead}}
+
+`Distracting` is the tag from the herds chapter. `yaw` is the bike's angle to the road, so a rider who's steering hard keeps its eyes where it's going. Then there are two more conditions. The pig has to be within 150 metres:
+
+{{code Gaze.pig_ahead_near}}
+
+And it has to be less than 35 degrees from the way the bike points. The pig stands beside the road, so the angle to it grows as the rider comes closer. At 35 degrees the rider lets it go.
+
+{{code Gaze.pig_in_sight}}
+
+`Pigs.gaze_pig` is the third pig of the front row, at the place it would stand if it didn't stray.
+
+### Turning the head
+
+{{code Gaze.next_gaze_yaw}}
+
+Toward a pig, the gaze turns by at most 4 degrees a step, and `within` holds the change to that limit on either side. On the way back it moves a twentieth of the way each step, and never more than 0.2 degrees. Once it's within 0.02 degrees it snaps to straight ahead, so a look comes to a real end. If the segment ends first, `Rider.on_next_segment` puts the gaze straight ahead.
+
+Nothing here turns the bike. The gaze goes to the camera, and to nothing else that moves:
+
+{{code ViewYaw.view_yaw_for}}
+
+So when the rider looks right, the road slides left on the page, and the bike keeps going where it was going.
+
+### Attention
+
+{{code Gaze.next_attention}}
+
+While the gaze is off the road, attention rises with how far it has turned, and it doesn't drop. Once the gaze is straight ahead, attention fades by 0.0012 a step, so it takes hundreds of steps to go. That's why the table in the rider chapter has an `attention` of 0.68 at step 1,570, with no pig in sight.
+
+`RideFocal.ride_focal` takes the stronger of the cat's attention and this one. So a pig widens the view the way a cat does, and it stays wide for a while after.
+
+### Slowing down
+
+`pig_limit` is the third link in the throttle's chain. It asks `Gaze` for a brake, and takes it if that's harder than what it was offered:
+
+{{code Throttle.pig_limit}}
+
+{{code Gaze.pig_gaze_brake}}
+
+{{code Gaze.pig_gaze_brake_easing}}
+
+The sum is the one the throttle uses for a bend, with a pig for a bend. The rider aims to be down to 0.2 metres a step by 25 metres before the pig. `d.max(...)` keeps the distance positive once the rider gets there.
+
+Whether the rider is gawking is a plainer question than whether it's looking:
+
+{{code Gaze.is_gawking}}
+
+It starts 150 metres before the pig, and only asks where the rider is. So it outlasts the look. The rider crawls past the pig and on to the end of the segment, long after its eyes have moved on.
+
+That's the rider's step, apart from the lean. The other stepped thing is up ahead.
+
+## The truck
 
 The truck stays ahead of the rider all the way:
 
@@ -1458,6 +1565,11 @@ The truck stays ahead of the rider all the way:
 | 2,000 | 1,819 metres | 2,186 metres | 366 metres |
 | 4,000 | 4,607 metres | 4,968 metres | 362 metres |
 | 6,000 | 6,481 metres | 6,632 metres | 151 metres |
+
+New in this chapter:
+
+- Roc: list patterns, recursion
+- Modules: `Truck`
 
 The modules around `Truck`
 ```dot
@@ -1487,7 +1599,7 @@ Its one caller is the truck's step function, the same shape as the rider's. `Nex
 
 {{code Truck.advance from "schedule = scheduled_position(" to "NoBendAhead => advance_on_schedule(truck, schedule)"}}
 
-And that's called from `RideInstant.next`, above, with the rider's distance as the only thing the truck knows of the rider. Nothing in `Rider` imports `Truck`, and nothing in `Truck` imports `Rider`. The chase is one record literal in `RideInstant`.
+And that's called from `RideInstant.next`, in the stepped things chapter, with the rider's distance as the only thing the truck knows of the rider. Nothing in `Rider` imports `Truck`, and nothing in `Truck` imports `Rider`. The chase is one record literal in `RideInstant`.
 
 Finding the next turn shows a list pattern. `[]` is the end of the route, and `[segment, .. as later_segments]` takes the first segment and names the rest. Recursion walks the list, carrying where the current segment starts. Only `Truck` and `Paint` use a list pattern. Elsewhere the same walk is a `fold`.
 
@@ -1644,7 +1756,7 @@ The focal length comes from a lens. `focal` is a value computed from other value
 
 {{code Lens.focal}}
 
-The view widens as the rider leans. One `Fraction` goes in, and a focal length comes out. `RideFocal.ride_focal` from the rider's chapter calls this through `cam_focal`, taking the wider of what the lean and the rider's attention ask for:
+The view widens as the rider leans. One `Fraction` goes in, and a focal length comes out. `RideFocal.ride_focal`, from the chapter on what a cat does to the rider, calls this through `cam_focal`, taking the wider of what the lean and the rider's attention ask for:
 
 {{code Lens.focal_for_lean}}
 
@@ -2019,7 +2131,7 @@ digraph opened {
   node [shape=box, fontname="Helvetica"];
   world [label="design the world (once)\nThe world, The road"];
   tick [label="the clock ticks\nOne whole module"];
-  move [label="move the rider and the truck\nThe stepped things, The math layer"];
+  move [label="move the rider and the truck\nThe stepped things to The truck, The math layer"];
   look [label="look around\nThe modules, The cat, The bird"];
   draw [label="draw it against the backdrop\nThe sky, The platform"];
   world -> tick;
@@ -2068,7 +2180,7 @@ This page lists what catches a reader of Roc out in Safari Ride, sorted by what 
 
 | What you see | What's going on | Chapter |
 |---|---|---|
-| An open record that has to be named | `..others` needs a name when it appears twice, because the name promises that the same fields come out as went in | The stepped things |
+| An open record that has to be named | `..others` needs a name when it appears twice, because the name promises that the same fields come out as went in | The bike |
 | An `expect` that can't see a type | It can only name what its module imports, so `Coast`'s projections are checked in `Throttle` | Proving it |
 
 ### Running it
