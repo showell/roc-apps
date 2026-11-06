@@ -24,8 +24,8 @@ Lens :: [].{
 
 	## The focal length for a lean, from 0 (upright) to 1 (the deepest lean).
 	focal_for_lean : Fraction -> F64
-	focal_for_lean = |lean_frac| {
-		lean = lean_frac.to_f64()
+	focal_for_lean = |lean_fraction| {
+		lean = lean_fraction.to_f64()
 		focal * (1.0 - (((1.0 - min_focal_factor) * lean) * lean))
 	}
 
@@ -36,9 +36,9 @@ Lens :: [].{
 
 	## The focal length the camera uses: the shorter of the two, which
 	## gives the wider view.
-	cam_focal : { lean_frac : Fraction, attention : Attention } -> F64
-	cam_focal = |{ lean_frac, attention }| {
-		for_lean = focal_for_lean(lean_frac)
+	cam_focal : { lean_fraction : Fraction, attention : Attention } -> F64
+	cam_focal = |{ lean_fraction, attention }| {
+		for_lean = focal_for_lean(lean_fraction)
 		for_gaze = focal_for_gaze(attention)
 		if for_lean < for_gaze {
 			for_lean
@@ -86,7 +86,10 @@ expect
 		((0.6, 0.5), 525.1014591189407),
 	].all(
 		|((lean, look), want)| {
-			got = Lens.cam_focal({ lean_frac: Fraction.of(lean), attention: Attention.of(look) })
+			got = Lens.cam_focal({
+				lean_fraction: Fraction.of(lean),
+				attention: Attention.of(look),
+			})
 			is_close(got, want)
 		},
 	)
