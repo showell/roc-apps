@@ -3,11 +3,14 @@
 # say `import game.Tour`.
 package
 	[
+		Acceleration,
 		Across,
 		Along,
 		Angle,
 		Animation,
 		Backdrop,
+		BendView,
+		Bike,
 		BirdDraw,
 		BirdFlight,
 		BirdSighting,
@@ -19,6 +22,7 @@ package
 		CatStills,
 		Chain,
 		Clock,
+		Coast,
 		CrossingReaction,
 		CutoutSighting,
 		DepthSort,
@@ -27,6 +31,7 @@ package
 		Geom,
 		Ground,
 		GroundSighting,
+		LeanSearch,
 		Lens,
 		Paint,
 		Pixels,

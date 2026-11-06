@@ -51,6 +51,17 @@
 -- line, and no output is left behind. Any line holding `{{` must be an
 -- include, alone on its line, so a mistyped one can't reach the page.
 --
+-- `{{proof row 1570 A cat frozen in the lane}}` becomes a row of a table: the
+-- step, the words, and that frame's hash and shape count from
+-- gates/proof.expected. A step the file doesn't have stops the build, and so
+-- does a step it has that no row shows, once there are any rows.
+--
+-- Every module beside safari's others has to be named somewhere in the source,
+-- as a whole word, in prose, a diagram or an include. A module the book never
+-- names stops the build. NOT_NAMED and NOT_NAMED_ENDINGS are the exceptions:
+-- the app roots and the package say nothing about the game, and a picture's
+-- data or an app's shim is named by what it serves.
+--
 -- `self_test=1` proves both sides of each failure on a module written here,
 -- and safari's gate runs it.
 const SAFARI = "canvas_apps/safari"
@@ -61,13 +72,19 @@ const WANT = "roc-pin: roc-apps' pinned nightly, for the tutorial's failing prog
 const INCLUDE = "^\\{\\{code ([A-Z][A-Za-z0-9_]*)\\.([A-Za-z_][A-Za-z0-9_]*!?)(?: from \"([^\"]+)\" to \"([^\"]+)\")?\\}\\}$"
 const FAILS = "^\\{\\{fails ([a-z][a-z0-9_]*)\\}\\}$"
 const WHOLE_MODULE = "^\\{\\{module ([A-Z][A-Za-z0-9_]*)\\}\\}$"
-const NOT_AN_INCLUDE = "not a line of the form {{code Module.name}}, {{code Module.name from \"text\" to \"text\"}}, {{module Name}} or {{fails name}}, after at most a direction icon and a call icon"
+const PROOF_ROW = "^\\{\\{proof row ([0-9]+) ([^}]+)\\}\\}$"
+const PROOF_HASH = "^RasterFrame ([0-9]+): hash ([0-9a-f]+)$"
+const PROOF_SHAPES = "^ShapesFrame ([0-9]+): differ 0 of [0-9]+, triangles [0-9]+, shapes ([0-9]+)$"
+const NOT_AN_INCLUDE = "not a line of the form {{code Module.name}}, {{code Module.name from \"text\" to \"text\"}}, {{module Name}}, {{proof row N words}} or {{fails name}}, after at most a direction icon and a call icon"
 const DIRECTION_ICONS = {"🔭", "🐾"}
 const CALL_ICONS = {"🌳", "🍃"}
 const KEY_HEADER = "| Marker | What it says |"
 const NO_TITLE = "a diagram needs a title line directly above it"
 const STRAY_ICON = "an icon belongs only at the start of a title line or an include, or in a row of the key table"
 const CUT = "# ..."
+const PROOF_FILE = "/gates/proof.expected"
+const NOT_NAMED = {"web", "main", "game"}
+const NOT_NAMED_ENDINGS = {"Stills", "App"}
 
 function stop(entry, why)
   fail(entry.source .. ":" .. entry.line .. ": " .. entry.text .. ": " .. why)
@@ -111,7 +128,11 @@ function read_entries(source, text, folder)
       local include = sub(l, #entry.icons + 1, #l)
       local failing = re_find(include, FAILS)
       local whole = re_find(include, WHOLE_MODULE)
-      if failing ~= nil then
+      local proof_row = re_find(include, PROOF_ROW)
+      if proof_row ~= nil then
+        entry.proof_step = proof_row.groups[1]
+        entry.proof_words = proof_row.groups[2]
+      elseif failing ~= nil then
         entry.program = dirname(source) .. "/fails/" .. failing.groups[1] .. ".roc"
         if not exists(entry.program) then stop(entry, "no program " .. entry.program) end
       elseif whole ~= nil then
@@ -396,6 +417,55 @@ function needs_roc(entries)
 end
 
 -- The number of includes expanded.
+-- A step as the book writes a number, with a comma past the thousands.
+function step_text(step)
+  if #step <= 3 then return step end
+  return sub(step, 1, #step - 3) .. "," .. sub(step, #step - 2, #step)
+end
+
+-- Each step's hash and shape count from a proof file, by step.
+function proof_numbers(path)
+  local numbers = {}
+  for l in lines(read(path)) do
+    local hash = re_find(l, PROOF_HASH)
+    local shapes = re_find(l, PROOF_SHAPES)
+    if hash ~= nil then
+      if not has_key(numbers, hash.groups[1]) then numbers[hash.groups[1]] = {} end
+      numbers[hash.groups[1]].hash = hash.groups[2]
+    elseif shapes ~= nil then
+      if not has_key(numbers, shapes.groups[1]) then numbers[shapes.groups[1]] = {} end
+      numbers[shapes.groups[1]].shapes = shapes.groups[2]
+    end
+  end
+  return numbers
+end
+
+function proof_table_row(entry, numbers)
+  if not has_key(numbers, entry.proof_step) then stop(entry, "no step " .. entry.proof_step .. " in the proof file") end
+  local step = numbers[entry.proof_step]
+  if not has_key(step, "hash") or not has_key(step, "shapes") then stop(entry, "the proof file has only half of step " .. entry.proof_step) end
+  return "| " .. step_text(entry.proof_step) .. " | " .. entry.proof_words .. " | `" .. step.hash .. "` | " .. step_text(step.shapes) .. " |"
+end
+
+-- Stops the build on a step of the proof file that no row of `entries` shows.
+function check_proof_rows(entries, numbers)
+  local shown = {}
+  for e in entries do
+    if has_key(e, "proof_step") then shown[e.proof_step] = true end
+  end
+  for step in sort(keys(numbers)) do
+    if not has_key(shown, step) then fail("tutorial: no row shows step " .. step .. " of the proof file") end
+  end
+  return nil
+end
+
+function needs_proof(entries)
+  for e in entries do
+    if has_key(e, "proof_step") then return true end
+  end
+  return false
+end
+
 function build(source, output, folder)
   if exists(output) then remove(output) end
   local entries = read_entries(source, read(source), folder)
@@ -403,10 +473,18 @@ function build(source, output, folder)
   local trees = parse_modules(entries)
   local roc = ""
   if needs_roc(entries) then roc = pinned_roc(PIN_FILE) end
+  local numbers = {}
+  if needs_proof(entries) then
+    numbers = proof_numbers(folder .. PROOF_FILE)
+    check_proof_rows(entries, numbers)
+  end
   local kept = {}
   local expanded = 0
   for e in entries do
-    if has_key(e, "path") then
+    if has_key(e, "proof_step") then
+      push(kept, proof_table_row(e, numbers))
+      expanded = expanded + 1
+    elseif has_key(e, "path") then
       push(kept, fenced_definition(e, trees[e.path]))
       expanded = expanded + 1
     elseif has_key(e, "program") then
@@ -506,6 +584,29 @@ const FENCED_BAD = "app [main!] {}\n\n# A fence: ```\nmain! = |_args| 1\n"
 const MARKED_BAD = "app [main!] {}\n\n# A marker: 🍃\nmain! = |_args| 1\n"
 const DIAGRAM = "```dot\ndigraph x {}\n```"
 const KEY_TOP = "| Marker | What it says |\n|---|---|\n"
+
+-- Whether a module needn't be named in the book.
+function excused(module)
+  for name in NOT_NAMED do
+    if module == name then return true end
+  end
+  for ending in NOT_NAMED_ENDINGS do
+    if ends_with(module, ending) then return true end
+  end
+  return false
+end
+
+-- Stops the build on any module beside the others in `folder` that `text`
+-- doesn't name as a whole word.
+function check_modules_named(folder, text)
+  local unnamed = {}
+  for path in glob(folder .. "/*.roc") do
+    local module = sub(basename(path), 1, #basename(path) - 4)
+    if not excused(module) and re_find(text, "\\b" .. module .. "\\b") == nil then push(unnamed, module) end
+  end
+  if #unnamed > 0 then fail("tutorial: the book never names " .. join(sort(unnamed), ", ")) end
+  return nil
+end
 
 -- The source's include is on its line 3, for the messages to name.
 function attempt_include(folder, include)
@@ -615,6 +716,53 @@ function check_icon_rule(checks, folder)
   expect_stop(checks, folder, "{{fails marked}}", "its text holds an icon")
 end
 
+-- Both sides of the proof table's rows.
+function check_proof_rule(checks, folder)
+  mkdir(folder .. "/gates")
+  replace(folder .. "/gates/proof.expected", "ok  after 10 steps\nShapesFrame 7: differ 0 of 576000, triangles 40, shapes 2712\nShapesFrame 1570: differ 0 of 576000, triangles 40, shapes 12\nRasterFrame 7: hash 2335ee33\nRasterFrame 1570: hash 9d5d7f8e\n")
+  local rows = "{{proof row 7 A start}}\n{{proof row 1570 A cat}}"
+  local both = attempt_include(folder, rows)
+  if not both.ok then fail("self_test: the proof rows stopped: " .. both.error) end
+  local got = read(folder .. "/out/doc.md")
+  local want = "prose\n\n| 7 | A start | `2335ee33` | 2,712 |\n| 1,570 | A cat | `9d5d7f8e` | 12 |\n"
+  if got ~= want then fail("self_test: the proof rows gave [" .. got .. "], not [" .. want .. "]") end
+  push(checks, "the proof rows, from the proof file")
+
+  expect_stop_at(checks, folder, "{{proof row 7 A start}}\n{{proof row 1570 A cat}}\n{{proof row 8 Not there}}", 5, "{{proof row 8 Not there}}", "no step 8 in the proof file")
+
+  local left_out = attempt_include(folder, "{{proof row 7 A start}}")
+  if left_out.ok or left_out.error ~= "tutorial: no row shows step 1570 of the proof file" then fail("self_test: a left-out step gave " .. json_write(left_out)) end
+  push(checks, "a step no row shows")
+
+  replace(folder .. "/gates/proof.expected", "RasterFrame 7: hash 2335ee33\n")
+  expect_stop(checks, folder, "{{proof row 7 A start}}", "the proof file has only half of step 7")
+  remove_tree(folder .. "/gates")
+  return nil
+end
+
+-- Both sides of the rule that the book names every module.
+function check_named_rule(checks, folder)
+  local modules = folder .. "/modules"
+  mkdir(modules)
+  for file in {"Named", "Other", "web", "main", "game", "CatStills", "SafariApp"} do
+    replace(modules .. "/" .. file .. ".roc", "")
+  end
+  if not attempt(check_modules_named, modules, "`Named` beside `Other.go`").ok then fail("self_test: every module named still stopped") end
+  push(checks, "every module named, and the exceptions unnamed")
+  if not attempt(check_modules_named, modules, "```dot\nNamed -> Other;\n```").ok then fail("self_test: a diagram didn't count as naming") end
+  push(checks, "a module named in a diagram")
+  local one_missing = attempt(check_modules_named, modules, "`Named` alone")
+  if one_missing.ok or one_missing.error ~= "tutorial: the book never names Other" then fail("self_test: a missing module gave " .. json_write(one_missing)) end
+  push(checks, "a module the book never names")
+  local inside_a_word = attempt(check_modules_named, modules, "`Named` beside Otherwise and NotOther")
+  if inside_a_word.ok or inside_a_word.error ~= "tutorial: the book never names Other" then fail("self_test: a name inside a word gave " .. json_write(inside_a_word)) end
+  push(checks, "a name only inside a longer word")
+  local two_missing = attempt(check_modules_named, modules, "nothing")
+  if two_missing.ok or two_missing.error ~= "tutorial: the book never names Named, Other" then fail("self_test: two missing modules gave " .. json_write(two_missing)) end
+  push(checks, "two modules the book never names")
+  return nil
+end
+
 function self_test()
   local folder = fresh_dir("scratch:", "safari-tutorial")
   mkdir(folder .. "/out")
@@ -705,6 +853,8 @@ function self_test()
 
   check_title_rule(checks, folder)
   check_icon_rule(checks, folder)
+  check_named_rule(checks, folder)
+  check_proof_rule(checks, folder)
 
   local no_file = attempt(pinned_roc, folder .. "/no-pin")
   if no_file.ok or no_file.error ~= "tutorial: no " .. folder .. "/no-pin: run from the roc-apps root" then fail("self_test: no pin file gave " .. json_write(no_file)) end
@@ -726,5 +876,6 @@ if arg("self_test", "") == "1" then
   self_test()
 else
   local expanded = build(SOURCE, OUTPUT, SAFARI)
+  check_modules_named(SAFARI, read(SOURCE))
   print("tutorial: " .. expanded .. " includes expanded into " .. OUTPUT)
 end

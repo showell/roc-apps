@@ -151,19 +151,26 @@ async function pictureChanges(page, i, before) {
   return false;
 }
 
-// A widget proves it runs by changing its picture: a drag moves a widget, and
-// the ride moves by itself. A widget reads a held pointer once a frame, so the
+// Where a widget that's clicked and not dragged wants its click, as shares of
+// the frame. This is rehearsal's third mark.
+const CLICKED_AT = { "../rehearsal_widget/": { x: 0.12, y: 0.644 } };
+
+// A widget proves it runs by changing its picture: a drag moves a widget, a
+// click moves one that's clicked, and the ride moves by itself. A widget reads a held pointer once a frame, so the
 // drag stays held until the picture answers, however slow the box is.
 async function checkFrame(page, file, i) {
   const frame = await evaluate(page, SEE_FRAME(i));
   if (frame.missing) { fail(file, `the widget ${frame.src} drew nothing`); return frame.src; }
   if (Math.abs(frame.canvasWidth - frame.width) > 2) fail(file, `the widget ${frame.src} is ${frame.canvasWidth} wide in a frame ${frame.width} wide`);
   const before = await evaluate(page, PICTURE_OF_FRAME(i));
-  const y = frame.top + frame.height / 2;
+  const clicked = CLICKED_AT[frame.src];
+  const y = frame.top + frame.height * (clicked?.y ?? 0.5);
   const mouse = (type, share, buttons) => page.send("Input.dispatchMouseEvent",
     { type, x: frame.left + frame.width * share, y, button: "left", buttons, clickCount: 1 }, page.session);
   const isRide = frame.src === "../safari/";
-  if (!isRide) {
+  if (clicked) {
+    await mouse("mousePressed", clicked.x, 1);
+  } else if (!isRide) {
     await mouse("mousePressed", 0.2, 1);
     await mouse("mouseMoved", 0.5, 1);
     await mouse("mouseMoved", 0.8, 1);
