@@ -199,7 +199,7 @@ pond_ground : Chain.RoadView,
 	place : Chain.SegmentPlace,
 } -> List(Ground.Patch)
 pond_ground = |road, { segment, place }|
-	if Scenery.is_pond(segment.exit_creature) {
+	if Scenery.is_pond(segment.bend_life) {
 		on_map = |outline|
 			outline.map(
 				|point| Chain.rider_point_at(

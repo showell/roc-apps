@@ -6,7 +6,8 @@ import Distance
 
 Scenery :: [].{
 	Scheme : [AllGreen, YellowGreen, RedGreen]
-	Creature : [NoCreature, Elephant, Giraffe, Zebra, Rhino, DuckPond]
+	Animal : [Elephant, Giraffe, Zebra, Rhino]
+	BendLife : [Quiet, Animal(Scenery.Animal), DuckPond]
 	Tree : {
 		along : Along,
 		across : Across,
@@ -36,15 +37,11 @@ Scenery :: [].{
 	herd_road_offset : Distance
 	herd_road_offset = Distance.metres(10.0)
 
-	is_pond : Scenery.Creature -> Bool
+	is_pond : Scenery.BendLife -> Bool
 	is_pond = |c|
 		match c {
 			DuckPond => True
-			NoCreature => False
-			Elephant => False
-			Giraffe => False
-			Zebra => False
-			Rhino => False
+			Quiet | Animal(_) => False
 		}
 }
 
@@ -57,11 +54,11 @@ expect Across.middle.distance_from(Scenery.left_edge).to_metres() == 2.0
 expect Across.metres(-2.0).distance_from(Scenery.left_edge).to_metres() == 0.0
 expect Across.metres(2.0).distance_from(Scenery.left_edge).to_metres() == 4.0
 expect Scenery.is_pond(DuckPond)
-expect !(Scenery.is_pond(NoCreature))
-expect !(Scenery.is_pond(Elephant))
-expect !(Scenery.is_pond(Giraffe))
-expect !(Scenery.is_pond(Zebra))
-expect !(Scenery.is_pond(Rhino))
+expect !(Scenery.is_pond(Quiet))
+expect !(Scenery.is_pond(Animal(Zebra)))
+expect !(Scenery.is_pond(Animal(Elephant)))
+expect !(Scenery.is_pond(Animal(Giraffe)))
+expect !(Scenery.is_pond(Animal(Rhino)))
 
 scheme_code : Scenery.Scheme -> I64
 scheme_code = |s|
@@ -71,26 +68,26 @@ scheme_code = |s|
 		RedGreen => 2
 	}
 
-creature_code : Scenery.Creature -> I64
-creature_code = |c|
+life_code : Scenery.BendLife -> I64
+life_code = |c|
 	match c {
-		NoCreature => 0
-		Elephant => 1
-		Giraffe => 2
-		Zebra => 3
-		Rhino => 4
+		Quiet => 0
+		Animal(Elephant) => 1
+		Animal(Giraffe) => 2
+		Animal(Zebra) => 3
+		Animal(Rhino) => 4
 		DuckPond => 5
 	}
 
 expect scheme_code(AllGreen) == 0
 expect scheme_code(YellowGreen) == 1
 expect scheme_code(RedGreen) == 2
-expect creature_code(NoCreature) == 0
-expect creature_code(Elephant) == 1
-expect creature_code(Giraffe) == 2
-expect creature_code(Zebra) == 3
-expect creature_code(Rhino) == 4
-expect creature_code(DuckPond) == 5
+expect life_code(Quiet) == 0
+expect life_code(Animal(Elephant)) == 1
+expect life_code(Animal(Giraffe)) == 2
+expect life_code(Animal(Zebra)) == 3
+expect life_code(Animal(Rhino)) == 4
+expect life_code(DuckPond) == 5
 
 a_tree : Scenery.Tree
 a_tree = {

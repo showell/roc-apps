@@ -1167,7 +1167,7 @@ The view widens as the rider leans. One `Fraction` goes in, and a focal length c
 
 The road has no map. A point on it is measured within one segment, `along` and `across`, and nothing in the game holds a world coordinate for it. Each segment knows only its length and the turn at its end. `World.route` is nineteen records like this one, and it reads like configuration: a list of plain values, with the tags declared by `SegmentPlan` and an opaque `Distance` and `Turn` built from their units. It's checked like any other Roc, so a misspelled tag is a compile-time error.
 
-{{code World.route from "length: Distance.metres(1200.0)," to "creature: Rhino,"}}
+{{code World.route from "length: Distance.metres(1200.0)," to "bend_life: Animal(Rhino),"}}
 
 So to see something three segments ahead, a point has to be carried back round each bend between it and the rider, one at a time. That's one rotation per bend, and `fold_rev` is the shape of it. The accumulator is a `RoadPoint`, it starts on the far segment, and each step moves it onto the segment before. `before_in` gives the segments between, and the closure is the only thing the loop does. The last line does the one translation and rotation from above:
 

@@ -145,7 +145,7 @@ bend_sightings : Chain.RoadView,
 } -> List(Cutouts.Placement)
 bend_sightings = |road, { place, segment }|
 	SafariCritter.bend_critters({
-		creature: segment.exit_creature,
+		bend_life: segment.bend_life,
 		bend_along: Along.at(segment.length),
 		turn: segment.exit_turn,
 		lane_half_width: Scenery.lane_half_width,
@@ -160,7 +160,7 @@ pond_sightings : Chain.RoadView,
 	segment : World.Segment,
 } -> List(Cutouts.Placement)
 pond_sightings = |road, { place, segment }|
-	if Scenery.is_pond(segment.exit_creature) {
+	if Scenery.is_pond(segment.bend_life) {
 		Pond.ducks.map(
 			|duck|
 				Cutouts.placement({

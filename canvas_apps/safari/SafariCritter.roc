@@ -24,31 +24,29 @@ SafariCritter :: [].{
 	baby_beyond : Distance
 	baby_beyond = Distance.metres(14.0)
 
-	## The animal a bend's creature is. A pond's ducks are placed with the
-	## pond, not here.
-	species_of : Scenery.Creature -> [Species(SafariCritter.Species), NoSpecies]
-	species_of = |creature|
-		match creature {
-			Elephant => Species({ codepoint: 128024, adult_height: Distance.metres(2.8) })
-			Giraffe => Species({ codepoint: 129426, adult_height: Distance.metres(4.5) })
-			Zebra => Species({ codepoint: 129427, adult_height: Distance.metres(1.6) })
-			Rhino => Species({ codepoint: 129423, adult_height: Distance.metres(2.2) })
-			DuckPond => NoSpecies
-			NoCreature => NoSpecies
+	## The species of a bend's animal.
+	species_of : Scenery.Animal -> SafariCritter.Species
+	species_of = |animal|
+		match animal {
+			Elephant => { codepoint: 128024, adult_height: Distance.metres(2.8) }
+			Giraffe => { codepoint: 129426, adult_height: Distance.metres(4.5) }
+			Zebra => { codepoint: 129427, adult_height: Distance.metres(1.6) }
+			Rhino => { codepoint: 129423, adult_height: Distance.metres(2.2) }
 		}
 
 	## The animal and its baby at a bend at `bend_along` on its segment, on
 	## a road `lane_half_width` either side of its middle.
 	bend_critters : {
-		creature : Scenery.Creature,
+		bend_life : Scenery.BendLife,
 		bend_along : Along,
 		turn : Angle.Turn,
 		lane_half_width : Distance,
 	} -> List(Scenery.Critter)
-	bend_critters = |{ creature, bend_along, turn, lane_half_width }|
-		match species_of(creature) {
-			NoSpecies => []
-			Species(species) => {
+	bend_critters = |{ bend_life, bend_along, turn, lane_half_width }|
+		match bend_life {
+			Quiet | DuckPond => []
+			Animal(animal) => {
+				species = species_of(animal)
 				{ inward, face_right } =
 					if turn.is_right() {
 						{ inward: 1.0, face_right: True }
@@ -79,22 +77,19 @@ SafariCritter :: [].{
 
 expect
 	SafariCritter.species_of(Elephant)
-		== Species({ codepoint: 128024, adult_height: Distance.metres(2.8) })
+		== { codepoint: 128024, adult_height: Distance.metres(2.8) }
 
 expect
 	SafariCritter.species_of(Giraffe)
-		== Species({ codepoint: 129426, adult_height: Distance.metres(4.5) })
+		== { codepoint: 129426, adult_height: Distance.metres(4.5) }
 
 expect
 	SafariCritter.species_of(Zebra)
-		== Species({ codepoint: 129427, adult_height: Distance.metres(1.6) })
+		== { codepoint: 129427, adult_height: Distance.metres(1.6) }
 
 expect
 	SafariCritter.species_of(Rhino)
-		== Species({ codepoint: 129423, adult_height: Distance.metres(2.2) })
-
-expect SafariCritter.species_of(DuckPond) == NoSpecies
-expect SafariCritter.species_of(NoCreature) == NoSpecies
+		== { codepoint: 129423, adult_height: Distance.metres(2.2) }
 
 expect SafariCritter.adult_rail_buffer.to_metres() == 1.5
 expect SafariCritter.baby_ratio == 0.5
@@ -105,25 +100,25 @@ expect SafariCritter.baby_beyond.to_metres() == 14.0
 all_four : List(Scenery.Critter)
 all_four = List.join([
 	SafariCritter.bend_critters({
-		creature: Elephant,
+		bend_life: Animal(Elephant),
 		bend_along: Along.metres(100.0),
 		turn: Angle.Turn.degrees(50.0),
 		lane_half_width: Distance.metres(2.0),
 	}),
 	SafariCritter.bend_critters({
-		creature: Giraffe,
+		bend_life: Animal(Giraffe),
 		bend_along: Along.metres(50.0),
 		turn: Angle.Turn.degrees(-70.0),
 		lane_half_width: Distance.metres(2.0),
 	}),
 	SafariCritter.bend_critters({
-		creature: Zebra,
+		bend_life: Animal(Zebra),
 		bend_along: Along.metres(10.0),
 		turn: Angle.Turn.degrees(50.0),
 		lane_half_width: Distance.metres(2.5),
 	}),
 	SafariCritter.bend_critters({
-		creature: Rhino,
+		bend_life: Animal(Rhino),
 		bend_along: Along.metres(0.0),
 		turn: Angle.Turn.degrees(-70.0),
 		lane_half_width: Distance.metres(2.0),
@@ -195,16 +190,16 @@ expect
 			False,
 		]
 
-## How many critters a right bend has for this creature.
-bend_count : Scenery.Creature -> U64
-bend_count = |creature|
+## How many critters a right bend has for this life.
+bend_count : Scenery.BendLife -> U64
+bend_count = |bend_life|
 	SafariCritter.bend_critters({
-		creature,
+		bend_life,
 		bend_along: Along.metres(100.0),
 		turn: Angle.Turn.degrees(50.0),
 		lane_half_width: Distance.metres(2.0),
 	}).len()
 
-expect bend_count(Elephant) == 2
+expect bend_count(Animal(Elephant)) == 2
 expect bend_count(DuckPond) == 0
-expect bend_count(NoCreature) == 0
+expect bend_count(Quiet) == 0

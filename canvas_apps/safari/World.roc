@@ -1,7 +1,7 @@
 ## The ride's world: the route, a line of road segments, each built once from
 ## its entry in `route`. A segment holds its scenery (trees, cows, pigs, a cat
 ## by a tree), how it turns into the next, where the rider commits to that
-## turn, and the creature waiting at its end.
+## turn, and what lives at its end.
 import Across
 import Along
 import Angle
@@ -61,7 +61,7 @@ World :: [].{
 
 	## One segment of the route as planned: its length and scenery, its turn
 	## into the next (right is positive), what lives along it, and
-	## the creature at its end.
+	## what lives at its end.
 	SegmentPlan : {
 		length : Distance,
 		scheme : Scenery.Scheme,
@@ -70,7 +70,7 @@ World :: [].{
 		pigs : Pigs.PigPresence,
 		bull : [WithBull, NoBull],
 		ending : [Continues, Terminates],
-		creature : Scenery.Creature,
+		bend_life : Scenery.BendLife,
 	}
 
 	## One segment of road, built from its plan.
@@ -92,7 +92,7 @@ World :: [].{
 		## stands out.
 		crossing : [CatCrosses(Cat.Crossing), BirdFlies(BirdFlight.Route), QuietRoad],
 		ending : [Continues({ next : World.SegmentIndex }), Terminates],
-		exit_creature : Scenery.Creature,
+		bend_life : Scenery.BendLife,
 	}
 
 	## A segment longer than this has a mast halfway along.
@@ -109,7 +109,7 @@ World :: [].{
 			pigs: NoPigs,
 			bull: NoBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(320.0),
@@ -119,7 +119,7 @@ World :: [].{
 			pigs: NoPigs,
 			bull: NoBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(400.0),
@@ -129,7 +129,7 @@ World :: [].{
 			pigs: WithPigs,
 			bull: NoBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(300.0),
@@ -139,7 +139,7 @@ World :: [].{
 			pigs: NoPigs,
 			bull: NoBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(300.0),
@@ -149,7 +149,7 @@ World :: [].{
 			pigs: NoPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: Giraffe,
+			bend_life: Animal(Giraffe),
 		},
 		{
 			length: Distance.metres(300.0),
@@ -159,7 +159,7 @@ World :: [].{
 			pigs: NoPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(1200.0),
@@ -169,7 +169,7 @@ World :: [].{
 			pigs: NoPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: Rhino,
+			bend_life: Animal(Rhino),
 		},
 		{
 			length: Distance.metres(300.0),
@@ -179,7 +179,7 @@ World :: [].{
 			pigs: NoPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(300.0),
@@ -189,7 +189,7 @@ World :: [].{
 			pigs: NoPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(800.0),
@@ -199,7 +199,7 @@ World :: [].{
 			pigs: NoPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(300.0),
@@ -209,7 +209,7 @@ World :: [].{
 			pigs: WithPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(300.0),
@@ -219,7 +219,7 @@ World :: [].{
 			pigs: WithPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(300.0),
@@ -229,7 +229,7 @@ World :: [].{
 			pigs: WithPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: DuckPond,
+			bend_life: DuckPond,
 		},
 		{
 			length: Distance.metres(400.0),
@@ -239,7 +239,7 @@ World :: [].{
 			pigs: WithPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(300.0),
@@ -249,7 +249,7 @@ World :: [].{
 			pigs: WithPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(300.0),
@@ -259,7 +259,7 @@ World :: [].{
 			pigs: NoPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: Zebra,
+			bend_life: Animal(Zebra),
 		},
 		{
 			length: Distance.metres(300.0),
@@ -269,7 +269,7 @@ World :: [].{
 			pigs: WithPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(300.0),
@@ -279,7 +279,7 @@ World :: [].{
 			pigs: WithPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(300.0),
@@ -289,7 +289,7 @@ World :: [].{
 			pigs: WithPigs,
 			bull: WithBull,
 			ending: Terminates,
-			creature: NoCreature,
+			bend_life: Quiet,
 		},
 	]
 
@@ -379,9 +379,9 @@ built_segment = |plan, index| {
 			Continues => Continues({ next: index.next() })
 			Terminates => Terminates
 		},
-		exit_creature: match plan.ending {
-			Continues => plan.creature
-			Terminates => NoCreature
+		bend_life: match plan.ending {
+			Continues => plan.bend_life
+			Terminates => Quiet
 		},
 	}
 }
