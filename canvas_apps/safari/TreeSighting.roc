@@ -20,8 +20,8 @@ TreeSighting := {
 
 	## The trees in view, the nearest segment's first, and each segment's in
 	## the order it plants them.
-	in_view : Chain.Viewpoint -> List(TreeSighting)
-	in_view = |view| {
+	trees_in_view : Chain.Viewpoint -> List(TreeSighting)
+	trees_in_view = |view| {
 		positions = Chain.Position.all_in(view.road.chain)
 		positions.join_map(|position| segment_sightings(view, position))
 	}

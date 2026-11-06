@@ -127,7 +127,7 @@ ScrubWidget :: [].{
 	} -> List(Shapes.Shape)
 	ride_picture_in = |shapes, sky| {
 		corner = { x: 0.0, y: 0.0 }
-		ride = Backdrop.behind(shapes, sky)
+		ride = Backdrop.frame_shapes(shapes, sky)
 		[
 			[
 				View(

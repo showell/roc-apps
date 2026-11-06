@@ -109,11 +109,11 @@ subject_layer = |subject|
 		Cat(_) | Truck | Bird(_) => MovingThings
 	}
 
-## What `Backdrop.behind` paints under the ride's shapes: the sky, the grass, and
+## What `Backdrop.frame_shapes` paints under the ride's shapes: the sky, the grass, and
 ## what the sun adds when it's in view.
 backdrop_pieces : Tour -> List(Piece)
 backdrop_pieces = |tour| {
-	backdrop = Backdrop.behind(
+	backdrop = Backdrop.frame_shapes(
 		[],
 		{
 			sky_top_color: Tour.sky_top_color(tour),
@@ -143,7 +143,7 @@ ride_pieces = |tour| {
 		},
 		cam_focal: RideFocal.ride_focal(tour.route, rider),
 	}
-	scene = Scene.in_view(
+	scene = Scene.scene_in_view(
 		view,
 		{
 			speed: rider.speed,
@@ -159,7 +159,7 @@ ride_pieces = |tour| {
 		dusk: Sky.dusk_at(instant.clock),
 		cam_focal: view.cam_focal,
 	})
-	ground = GroundSighting.in_view(view.road).join_map(|patch| Ground.draw(patch, view.cam_focal))
+	ground = GroundSighting.patches_in_view(view.road).join_map(|patch| Ground.draw(patch, view.cam_focal))
 	[
 		[{ layer: Mountains, shapes: skyline }, { layer: Road, shapes: ground }],
 		scene.order.map(
@@ -297,8 +297,8 @@ one_layer_off = |{ layers_on }|
 	}
 
 ## `model` after a click at `spot`, which does nothing off the buttons.
-after_click : FrameWidgetApp.Model, { x : F64, y : F64 } -> FrameWidgetApp.Model
-after_click = |model, spot|
+model_after_click : FrameWidgetApp.Model, { x : F64, y : F64 } -> FrameWidgetApp.Model
+model_after_click = |model, spot|
 	if is_inside(next_area, spot) {
 		one_layer_on(model)
 	} else if is_inside(back_area, spot) {
@@ -315,7 +315,7 @@ next_model = |model, input|
 		one_layer_off(model)
 	} else if input.mouse.button_pressed(Left) {
 		position = input.mouse.position()
-		after_click(model, { x: position.x.to_f64(), y: position.y.to_f64() })
+		model_after_click(model, { x: position.x.to_f64(), y: position.y.to_f64() })
 	} else {
 		model
 	}

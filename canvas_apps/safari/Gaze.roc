@@ -107,12 +107,13 @@ Gaze :: [].{
 	next_gaze_yaw = |state, target| {
 		gaze = state.gaze_yaw
 		match target {
-			OnPig(turn) => gaze.plus(turn.minus(gaze).within(look_swivel_rate))
+			OnPig(turn) => gaze.plus(turn.minus(gaze).clamped_within(look_swivel_rate))
 			OnRoad =>
 				if gaze.abs() <= look_return_snap {
 					Angle.straight_ahead
 				} else {
-					gaze.minus(gaze.times(look_return_ease.to_f64()).within(look_return_rate))
+					eased_back = gaze.times(look_return_ease.to_f64())
+					gaze.minus(eased_back.clamped_within(look_return_rate))
 				}
 		}
 	}
@@ -248,17 +249,20 @@ watched_pig =
 expect distracting.pigs.count_if(|pig| pig == watched_pig) == 1
 
 ## A rider on the distracting segment, `metres` short of the pig.
-short_of_pig : F64 -> RiderState
-short_of_pig = |metres| { ..rider(0.0), along: watched_pig.along.minus(Distance.metres(metres)) }
+rider_short_of_pig : F64 -> RiderState
+rider_short_of_pig = |metres| {
+	..rider(0.0),
+	along: watched_pig.along.minus(Distance.metres(metres)),
+}
 
 # The look starts where the pig is noticed, and not a centimetre sooner.
-expect turn_to_pig(short_of_pig(Gaze.notice_distance.to_metres())) > 0.0
-expect Gaze.desired_gaze(short_of_pig(150.01), distracting) == OnRoad
+expect turn_to_pig(rider_short_of_pig(Gaze.notice_distance.to_metres())) > 0.0
+expect Gaze.desired_gaze(rider_short_of_pig(150.01), distracting) == OnRoad
 
 ## A rider 100 m short of the pig, turned so the pig is `degrees` off.
-with_pig_off : F64 -> RiderState
-with_pig_off = |degrees| {
-	straight = short_of_pig(100.0)
+rider_with_pig_off : F64 -> RiderState
+rider_with_pig_off = |degrees| {
+	straight = rider_short_of_pig(100.0)
 	{ ..straight, yaw: turn_to(straight, watched_pig).minus(Angle.Turn.degrees(degrees)) }
 }
 
@@ -269,7 +273,7 @@ expect
 		(-34.99, True),
 		(35.01, False),
 		(-35.01, False),
-	].all(|(degrees, is_in_sight)| is_looking(with_pig_off(degrees)) == is_in_sight)
+	].all(|(degrees, is_in_sight)| is_looking(rider_with_pig_off(degrees)) == is_in_sight)
 
 ## Whether this rider on the distracting segment wants to look at the pig.
 is_looking : RiderState -> Bool
@@ -368,7 +372,7 @@ expect Gaze.gawk_brake(rider(100.0), distracting) == NoLimit
 ## The brake for a rider `metres` short of the pig, going `speed` metres a step.
 brake_short_of_pig : F64, F64 -> F64
 brake_short_of_pig = |metres, speed| {
-	state = { ..short_of_pig(metres), speed: Speed.metres_a_step(speed) }
+	state = { ..rider_short_of_pig(metres), speed: Speed.metres_a_step(speed) }
 	match Gaze.gawk_brake(state, distracting) {
 		AtMost(brake) => brake.to_metres_a_step_each_step()
 		NoLimit => crash "Gaze's expects: this rider is gawking"

@@ -28,8 +28,8 @@ CutoutSighting :: [].{
 
 	## Every critter ahead, nearest segment first, then those of the segment
 	## before the rider's, when there is one.
-	in_view : Chain.RoadView -> List(Cutouts.Placement)
-	in_view = |road|
+	critter_placements : Chain.RoadView -> List(Cutouts.Placement)
+	critter_placements = |road|
 		match Chain.segment_behind(road) {
 			Previous(segment_behind) =>
 				CutoutSighting.sightings_ahead(road).concat(

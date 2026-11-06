@@ -134,7 +134,7 @@ birds_on = |trees, seen_from| birds_on_segment(segment_of(trees), seen_from)
 ## The birds on `segment_index`, for a rider `rider_along` metres into it.
 birds_on_segment : World.Segment, { rider_along : F64, cam_focal : Pixels } -> List(BirdSighting)
 birds_on_segment = |segment, { rider_along, cam_focal }|
-	BirdSighting.in_view({
+	BirdSighting.birds_in_view({
 		road: {
 			route: [segment],
 			chain: [World.SegmentIndex.first],
@@ -200,7 +200,7 @@ expect
 
 ## Two segments in the chain, the rider at the start of the first.
 two_segments : List(BirdSighting)
-two_segments = BirdSighting.in_view({
+two_segments = BirdSighting.birds_in_view({
 	road: {
 		route: [segment_of(left_trees), segment_of(left_trees)],
 		chain: [0, 1].map(World.SegmentIndex.number),
@@ -255,7 +255,7 @@ metre_a_step = Speed.metres_a_step(1.0)
 
 ## The cats seen from the origin on a road of only `chain`.
 cats_on_chain : List(World.SegmentIndex) -> List(CatSighting)
-cats_on_chain = |chain| CatSighting.in_view(
+cats_on_chain = |chain| CatSighting.cats_in_view(
 	{ ..cats_from_origin, road: { ..cats_from_origin.road, chain } },
 	metre_a_step,
 )
@@ -299,7 +299,7 @@ expect
 
 ## The cats in view for a rider `along` metres into the first segment.
 riding : F64 -> List(CatSighting)
-riding = |along| CatSighting.in_view(
+riding = |along| CatSighting.cats_in_view(
 	{
 		..cats_from_origin,
 		road: { ..cats_from_origin.road, vantage: { ..origin, along: Along.metres(along) } },
@@ -487,7 +487,7 @@ expect
 
 # Scene, on the scene from the start of the route.
 scene : Scene
-scene = Scene.in_view(
+scene = Scene.scene_in_view(
 	{
 		road: {
 			route: World.segments,

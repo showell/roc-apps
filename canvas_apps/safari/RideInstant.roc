@@ -81,7 +81,7 @@ RideInstant := {
 			},
 			cam_focal: RideFocal.ride_focal(route, s),
 		}
-		scene = Scene.in_view(
+		scene = Scene.scene_in_view(
 			view,
 			{
 				speed: s.speed,
@@ -92,7 +92,7 @@ RideInstant := {
 				clock: instant.clock,
 			},
 		)
-		ground = GroundSighting.in_view(view.road)
+		ground = GroundSighting.patches_in_view(view.road)
 		[
 			Mountains.draw({
 				heading: ViewYaw.heading_for(s),

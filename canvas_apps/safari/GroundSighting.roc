@@ -38,8 +38,8 @@ GroundSighting :: [].{
 
 	## The ground in view, in paint order: each segment of the chain ahead in
 	## turn, then the bend from the segment behind.
-	in_view : Chain.RoadView -> List(Ground.Patch)
-	in_view = |road| {
+	patches_in_view : Chain.RoadView -> List(Ground.Patch)
+	patches_in_view = |road| {
 		positions = Chain.Position.all_in(road.chain)
 		ahead = positions.join_map(|position| segment_ground(road, position))
 		match Chain.segment_behind(road) {

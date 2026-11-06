@@ -16,8 +16,8 @@ RailSighting :: [].{
 
 	## The rails at every bend in view: the bends along the chain ahead, then
 	## the bend from the segment behind.
-	in_view : Chain.RoadView -> List(GuardRail.RailQuad)
-	in_view = |road| {
+	rails_in_view : Chain.RoadView -> List(GuardRail.RailQuad)
+	rails_in_view = |road| {
 		bends_ahead = Chain.Position.all_in(road.chain).drop_last(1)
 		ahead = bends_ahead.join_map(|position| rails_at(road, bend_after(road, position)))
 		match Chain.segment_behind(road) {

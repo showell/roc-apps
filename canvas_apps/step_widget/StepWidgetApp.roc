@@ -228,8 +228,8 @@ lean_shown_at : F64
 lean_shown_at = 3.0
 
 ## The road from behind, with the rider at `across`, leaning by `lean` radians.
-from_behind : { across : Across, lean : F64 } -> List(Shapes.Shape)
-from_behind = |{ across, lean }| {
+view_from_behind_rider : { across : Across, lean : F64 } -> List(Shapes.Shape)
+view_from_behind_rider = |{ across, lean }| {
 	road = Scenery.road_half_width.to_metres() * pixels_a_metre
 	middle = ScrubWidget.canvas_width / 2.0
 	foot = middle + across.to_metres() * pixels_a_metre
@@ -290,7 +290,7 @@ picture = |tour| {
 			name: "rider",
 			name_y: route_y + 16.0,
 		}),
-		from_behind({ across: rider.across, lean: rider.lean.to_radians() }),
+		view_from_behind_rider({ across: rider.across, lean: rider.lean.to_radians() }),
 	].join()
 }
 

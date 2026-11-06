@@ -54,8 +54,8 @@ Chain :: [].{
 			chain.get(n.to_u64()) ?? crash "Chain.Position.index_in: past the chain's end"
 
 		## The segments of `chain` before this position, the rider's own first.
-		before_in : Chain.Position, List(World.SegmentIndex) -> List(World.SegmentIndex)
-		before_in = |Chain.Position.(n), chain| chain.take_first(n.to_u64())
+		segments_before : Chain.Position, List(World.SegmentIndex) -> List(World.SegmentIndex)
+		segments_before = |Chain.Position.(n), chain| chain.take_first(n.to_u64())
 
 		## Whether this position is the last one in `chain`.
 		is_last_in : Chain.Position, List(World.SegmentIndex) -> Bool
@@ -92,7 +92,7 @@ Chain :: [].{
 	## The segments' lengths are added nearest first.
 	gap_to_segment : Chain.RoadView, Chain.Position -> Distance
 	gap_to_segment = |road, position|
-		position.before_in(road.chain).fold(
+		position.segments_before(road.chain).fold(
 			road.vantage.along.from_start().opposite(),
 			|gap, index| gap.plus(index.segment_in(road.route).length),
 		)
@@ -122,9 +122,12 @@ Chain :: [].{
 		across : Across,
 	} -> Geom.RiderPoint
 	rider_point_ahead = |road, { position, along, across }| {
-		on_rider_segment = position.before_in(road.chain).fold_rev(
+		on_rider_segment = position.segments_before(road.chain).fold_rev(
 			edge_point({ along, across }),
-			|index, point| Geom.in_segment_before(point, bend_out_of(index.segment_in(road.route))),
+			|index, point| Geom.point_in_segment_before(
+				point,
+				bend_out_of(index.segment_in(road.route)),
+			),
 		)
 		Geom.to_rider_point(on_rider_segment, road.vantage)
 	}
@@ -142,7 +145,10 @@ Chain :: [].{
 				rider_point_ahead(road, { position, along, across })
 			JustBehind(bend) => {
 				on_segment_behind = edge_point({ along, across })
-				Geom.to_rider_point(Geom.in_segment_after(on_segment_behind, bend), road.vantage)
+				Geom.to_rider_point(
+					Geom.point_in_segment_after(on_segment_behind, bend),
+					road.vantage,
+				)
 			}
 		}
 }
