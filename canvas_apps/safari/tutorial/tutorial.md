@@ -132,7 +132,7 @@ A sighting answers one question each frame: which of these can the rider see rig
 
 All of that is about one frame, and a frame is gone by the next one. What lasts from one step to the next hasn't come up yet.
 
-## All that's stored
+## The ride instant
 
 What lasts from step to step fits in one record.
 
@@ -163,7 +163,7 @@ The game itself has no effectful functions at all. It has no `!` names, no `=>` 
 
 Four kinds of thing have been named, and so far none has been shown.
 
-## What never changes
+## The world
 
 The fourth kind is the easiest, so it goes first. Trees, cows, the pond and the road are built once and only read after that.
 
@@ -1491,7 +1491,7 @@ The patterns say what works. This page says what bites, sorted by what shows up 
 | A helper with no keyword to say it's private | Anything outside the module's block is private | The sky |
 | A `match` that looks like a leaf and isn't | `<=` on an opaque type is a call to its `is_lte`, so an operator can run code of the program's own | The cat |
 | `var` and `for` under a `->` | A local that nothing outside can see, with `$` marking what changes. The function is still pure | The cat |
-| `?? crash` on a lookup | It isn't error handling. It states a belief about the program, and every gate run tests it | What never changes, Proving it |
+| `?? crash` on a lookup | It isn't error handling. It states a belief about the program, and every gate run tests it | The world, Proving it |
 | `Arc` meaning two things | A tag on a timeline's path, and a module in the math layer | The bird |
 
 ### Getting it to compile
