@@ -1,6 +1,6 @@
 ## The widget for the Safari tutorial's chapter on what never changes. Dragging
 ## across the canvas walks along the route, and the lines of text read out the
-## record in `World.route` for the segment under the pointer. The picture is a
+## record in `World.plans` for the segment under the pointer. The picture is a
 ## map of the road. The ride has no such map: a segment knows only its length
 ## and its turn, so this widget lays the map out itself by adding up the turns.
 import game.Angle
@@ -84,7 +84,7 @@ laid_onto = |{ laid, reached, at, heading }, plan| {
 
 segments : List(LaidSegment)
 segments =
-	World.route.fold(
+	World.plans.fold(
 		{
 			laid: [],
 			reached: Distance.zero,
@@ -221,7 +221,7 @@ crossing_color : World.SegmentPlan -> Try(I64, [NothingCrosses])
 crossing_color = |plan|
 	match plan.crossing {
 		CatCrosses => Ok(cat_color)
-		BirdCrosses => Ok(bird_color)
+		BirdHere => Ok(bird_color)
 		QuietRoad => Err(NothingCrosses)
 	}
 
@@ -314,7 +314,7 @@ crossing_text : World.SegmentPlan -> Str
 crossing_text = |plan|
 	match plan.crossing {
 		CatCrosses => "CatCrosses"
-		BirdCrosses => "BirdCrosses"
+		BirdHere => "BirdHere"
 		QuietRoad => "QuietRoad"
 	}
 
@@ -340,14 +340,14 @@ scheme_text = |scheme|
 		RedGreen => "RedGreen"
 	}
 
-creature_text : Scenery.Creature -> Str
-creature_text = |creature|
-	match creature {
-		NoCreature => "NoCreature"
-		Elephant => "Elephant"
-		Giraffe => "Giraffe"
-		Zebra => "Zebra"
-		Rhino => "Rhino"
+bend_life_text : Scenery.BendLife -> Str
+bend_life_text = |bend_life|
+	match bend_life {
+		Quiet => "Quiet"
+		Animal(Elephant) => "Elephant"
+		Animal(Giraffe) => "Giraffe"
+		Animal(Zebra) => "Zebra"
+		Animal(Rhino) => "Rhino"
 		DuckPond => "DuckPond"
 	}
 
@@ -358,10 +358,10 @@ status_lines = |{ plan, number, .. }|
 		"Segment ${number.to_str()} of ${segments.len().to_str()}: ${metres_text(plan.length)} m, ${turn_text(plan.turn)}",
 		"crossing: ${crossing_text(plan)}, pigs: ${pigs_text(plan)}",
 		"bull: ${bull_text(plan)}, scheme: ${scheme_text(plan.scheme)}",
-		"creature: ${creature_text(plan.creature)}",
+		"bend_life: ${bend_life_text(plan.bend_life)}",
 	]
 
-expect segments.len() == World.route.len()
+expect segments.len() == World.plans.len()
 
 # The segments end to end make up the route, with no gap between any two.
 expect segment_at(Distance.zero).number == 1
@@ -399,9 +399,9 @@ expect
 	status_lines(segment_at(Distance.zero))
 		== [
 			"Segment 1 of 19: 500 m, 50 deg right",
-			"crossing: BirdCrosses, pigs: NoPigs",
+			"crossing: BirdHere, pigs: NoPigs",
 			"bull: NoBull, scheme: AllGreen",
-			"creature: Elephant",
+			"bend_life: Elephant",
 		]
 
 # The map doesn't change along the road, and the picked-out part does.

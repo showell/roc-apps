@@ -9,7 +9,7 @@ import game.Acceleration
 import game.Across
 import game.Along
 import game.Angle
-import game.Arc
+import game.Coast
 import game.Bike
 import game.Clock
 import game.Distance
@@ -56,7 +56,7 @@ rider = {
 	across: Across.metres(-1.9308976324243619),
 	yaw: Angle.Turn.radians(0.04392681817843164),
 	speed: Speed.metres_a_step(0.08377159378729097),
-	tilt: Angle.Lean.radians(0.006118878920566433),
+	lean: Angle.Lean.radians(0.006118878920566433),
 	heading: Angle.Bearing.radians(0.9165914441755961),
 }
 
@@ -72,17 +72,17 @@ Rehearsal : {
 	lean : Angle.Lean,
 	low : Angle.Lean,
 	high : Angle.Lean,
-	outcome : Arc.ArcOutcome,
+	outcome : Coast.Outcome,
 	wants_more_right : Bool,
 	path : List(ArcPoint),
 }
 
 ## The road's edge that stops an arc, on the right. The left's is its mirror.
 arc_edge : Distance
-arc_edge = Scenery.lane_half_width.minus(Arc.straighten_margin)
+arc_edge = Scenery.road_half_width.minus(Coast.straighten_margin)
 
 ## Whether an arc that has reached `motion` runs on. These are the tests in
-## `Arc.sim_step`, which answers with only where an arc ends. An `expect` below
+## `Coast.judge_place`, which answers with only where an arc ends. An `expect` below
 ## holds the two to the same end.
 runs_on : Bike.Motion({}) -> Bool
 runs_on = |motion| {
@@ -90,19 +90,19 @@ runs_on = |motion| {
 	on_road =
 		motion.across >= Across.left_of_middle(arc_edge)
 			and motion.across <= Across.right_of_middle(arc_edge)
-	on_road and forward >= Distance.zero and forward < Arc.min_forward_progress
+	on_road and forward >= Distance.zero and forward < Coast.clear_distance
 }
 
-## The way a rider coasts with `lean`: the call `Arc.sim_from` makes.
+## The way a rider coasts with `lean`: the call `Coast.coast_from` makes.
 path_of : Angle.Lean -> List(ArcPoint)
 path_of = |lean| {
-	var $motion = Bike.with_tilt(rider, lean)
+	var $motion = Bike.with_lean(rider, lean)
 	var $points = []
 	var $going = True
 	while $going {
-		$motion = Bike.simulate_rider_step(
+		$motion = Bike.advance(
 			$motion,
-			{ lean_step: Angle.upright, accel: Acceleration.steady },
+			{ lean_step: Angle.upright, acceleration: Acceleration.steady },
 		)
 		$points = $points.append({
 			forward: $motion.along.distance_from(rider.along).to_metres(),
@@ -117,11 +117,11 @@ path_of = |lean| {
 ## `LeanSearch.search_lean_from`, keeping what that throws away.
 rehearsals_from : { low : Angle.Lean, high : Angle.Lean, at : I64 } -> List(Rehearsal)
 rehearsals_from = |{ low, high, at }|
-	if at >= LeanSearch.lean_search_iters {
+	if at >= LeanSearch.lean_search_rounds {
 		[]
 	} else {
 		lean = low.halfway_to(high)
-		outcome = Arc.project_arc(Bike.with_tilt(rider, lean))
+		outcome = Coast.project(Bike.with_lean(rider, lean))
 		wants_more_right = LeanSearch.want_more_right(outcome, target)
 		next =
 			if wants_more_right {
@@ -142,8 +142,8 @@ rehearsals_from = |{ low, high, at }|
 rehearsals : List(Rehearsal)
 rehearsals =
 	rehearsals_from({
-		low: rider.tilt.minus(LeanSearch.max_tilt_correction),
-		high: rider.tilt.plus(LeanSearch.max_tilt_correction),
+		low: rider.lean.minus(LeanSearch.max_lean_change),
+		high: rider.lean.plus(LeanSearch.max_lean_change),
 		at: 0,
 	})
 
@@ -274,7 +274,7 @@ road_line = |{ across, color, width }| {
 ## The road from above, with the line the rider is aiming for.
 road : List(Shapes.Shape)
 road = {
-	half_lane = Scenery.lane_half_width.to_metres()
+	half_lane = Scenery.road_half_width.to_metres()
 	[
 		ground,
 		Rect({
@@ -327,12 +327,12 @@ arc_shapes = |path, { color, width }| {
 }
 
 ## The colour that says where an arc ended.
-color_of : Arc.ArcOutcome -> I64
+color_of : Coast.Outcome -> I64
 color_of = |outcome|
-	match outcome.shoulder {
-		ShoulderLeft(_) => off_left_color
-		ShoulderRight(_) => off_right_color
-		ShoulderNone => kept_color
+	match outcome.exit {
+		Leaves({ side: Left, .. }) => off_left_color
+		Leaves({ side: Right, .. }) => off_right_color
+		StaysOn => kept_color
 	}
 
 ## The arcs for a list of tries.
@@ -426,10 +426,10 @@ across_text = |across| {
 outcome_text : Rehearsal -> Str
 outcome_text = |{ outcome, path, .. }| {
 	steps = path.len().to_str()
-	match outcome.shoulder {
-		ShoulderLeft(_) => "Off the left edge in ${steps} steps"
-		ShoulderRight(_) => "Off the right edge in ${steps} steps"
-		ShoulderNone => "Stays on, ends ${across_text(outcome.end_across)}"
+	match outcome.exit {
+		Leaves({ side: Left, .. }) => "Off the left edge in ${steps} steps"
+		Leaves({ side: Right, .. }) => "Off the right edge in ${steps} steps"
+		StaysOn => "Stays on, ends ${across_text(outcome.end_across)}"
 	}
 }
 
@@ -452,7 +452,7 @@ status_lines = |tries_shown|
 	if tries_shown == 0 {
 		[
 			"Step ${step_shown.to_str()}, just after a bend",
-			"Leaning ${lean_text(rider.tilt)}",
+			"Leaning ${lean_text(rider.lean)}",
 			"Aiming for ${across_text(target)}",
 			"Each mark is one try at a lean",
 		]
@@ -582,7 +582,7 @@ ridden_to : U32 -> Tour
 ridden_to = |step| {
 	var $tour = Tour.initial
 	while $tour.instant.clock != Clock.at_step(step) {
-		$tour = Tour.advance($tour)
+		$tour = Tour.step_forward($tour)
 	}
 	$tour
 }
@@ -594,13 +594,13 @@ expect {
 		and real.across == rider.across
 		and real.yaw == rider.yaw
 		and real.speed == rider.speed
-		and real.tilt == rider.tilt
+		and real.lean == rider.lean
 		and real.heading == rider.heading
 }
 
 # The tries come to the lean the game's own search comes to.
 expect rehearsals.len() == 12
-expect chosen_lean.to_radians() == LeanSearch.best_tilt_correction(rider).to_radians()
+expect chosen_lean.to_radians() == LeanSearch.best_lean(rider).to_radians()
 
 # Each path ends where the game's own arc says that arc ends.
 expect

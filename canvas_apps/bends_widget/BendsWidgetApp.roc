@@ -8,10 +8,10 @@ import game.Along
 import game.Angle
 import game.Distance
 import game.Fraction
-import game.Frame
+import game.Chain
 import game.Geom
 import game.GroundSighting
-import game.Joint
+import game.BendView
 import game.RailSighting
 import game.Scenery
 import game.World
@@ -84,26 +84,26 @@ two_segments = |degrees|
 	)
 
 ## The road as seen from the first segment, looking along it.
-road_with : F64 -> Frame.RoadView
+road_with : F64 -> Chain.RoadView
 road_with = |degrees| {
-	world: two_segments(degrees),
+	route: two_segments(degrees),
 	chain: [World.SegmentIndex.number(0), World.SegmentIndex.number(1)],
-	pose: {
+	vantage: {
 		along: Along.at(segment_length.minus(rider_before_bend)),
 		across: Across.middle,
 		yaw: Angle.straight_ahead,
-		half_width: Scenery.lane_half_width,
+		half_width: Scenery.road_half_width,
 	},
 }
 
 ## The one bend on that road.
-bend_of : Frame.RoadView -> Joint.PlacedBend
+bend_of : Chain.RoadView -> BendView
 bend_of = |road|
-	Joint.bend_out_of(
-		Frame.ChainPosition.first.index_in(road.chain).segment_in(road.world),
+	BendView.of_segment(
+		Chain.Position.first.index_in(road.chain).segment_in(road.route),
 		{
-			before: InChain(Frame.ChainPosition.first),
-			after: InChain(Frame.ChainPosition.first.next()),
+			before: InChain(Chain.Position.first),
+			after: InChain(Chain.Position.first.next()),
 		},
 	)
 
@@ -116,11 +116,11 @@ rider_x : F64
 rider_x = 40.0
 
 ## The road runs left to right from above, so the rider's right is down.
-canvas_x : { right : F64, forward : F64 } -> F64
-canvas_x = |{ forward, .. }| rider_x + forward * pixels_a_metre
+canvas_x : Geom.RiderPoint -> F64
+canvas_x = |{ forward, .. }| rider_x + forward.to_metres() * pixels_a_metre
 
-canvas_y : { right : F64, forward : F64 } -> F64
-canvas_y = |{ right, .. }| ScrubWidget.picture_bottom_y / 2.0 + right * pixels_a_metre
+canvas_y : Geom.RiderPoint -> F64
+canvas_y = |{ right, .. }| ScrubWidget.picture_bottom_y / 2.0 + right.to_metres() * pixels_a_metre
 
 ground_color : I64
 ground_color = 0x6f9a55
@@ -155,7 +155,7 @@ patch_shape = |corners|
 	})
 
 ## The first two corners of a rail's quad, which lie along the ground.
-rail_foot : List(Geom.SpacePoint) -> List(Shapes.Shape)
+rail_foot : List(Geom.RaisedPoint) -> List(Shapes.Shape)
 rail_foot = |corners|
 	match corners {
 		[a, b, ..] => {
@@ -187,17 +187,17 @@ spot = |point, { r, color }|
 	})
 
 ## The bend from above: what GroundSighting and RailSighting say of it, the apex
-## Joint finds, and where the view is from.
+## BendView finds, and where the view is from.
 picture : F64 -> List(Shapes.Shape)
 picture = |degrees| {
 	road = road_with(degrees)
 	[
 		[ground],
 		GroundSighting.in_view(road).map(|patch| patch_shape(patch.corners)),
-		RailSighting.all_rails(road).join_map(|rail| rail_foot(rail.corners)),
+		RailSighting.in_view(road).join_map(|rail| rail_foot(rail.corners)),
 		[
-			spot(Joint.joint_apex(road, bend_of(road)), { r: 5.0, color: apex_color }),
-			spot({ right: 0.0, forward: 0.0 }, { r: 6.0, color: rider_color }),
+			spot(BendView.apex(road, bend_of(road)), { r: 5.0, color: apex_color }),
+			spot({ right: Distance.zero, forward: Distance.zero }, { r: 6.0, color: rider_color }),
 		],
 	].join()
 }
@@ -214,7 +214,7 @@ turn_text = |degrees|
 ## Which edge a bend's outer edge is, in words.
 edge_text : Angle.Turn -> Str
 edge_text = |turn|
-	if Joint.outer_edge(turn) == Scenery.left_edge {
+	if BendView.outer_edge(turn) == Scenery.left_edge {
 		"left"
 	} else {
 		"right"
@@ -222,7 +222,7 @@ edge_text = |turn|
 
 ## How far past the end of the first segment the apex lies.
 apex_past_end : Geom.RiderPoint -> F64
-apex_past_end = |apex| apex.forward - rider_before_bend.to_metres()
+apex_past_end = |apex| apex.forward.minus(rider_before_bend).to_metres()
 
 ## Where the apex lies, in words.
 apex_text : Geom.RiderPoint -> Str
@@ -236,15 +236,15 @@ status_lines = |degrees| {
 	[
 		"Turn: ${turn_text(degrees)}",
 		"Rail on the outer edge: ${edge_text(bend.turn)}",
-		apex_text(Joint.joint_apex(road, bend)),
-		"${GroundSighting.in_view(road).len().to_str()} patches, ${RailSighting.all_rails(road).len().to_str()} pieces of rail",
+		apex_text(BendView.apex(road, bend)),
+		"${GroundSighting.in_view(road).len().to_str()} patches, ${RailSighting.in_view(road).len().to_str()} pieces of rail",
 	]
 }
 
 ## Where the route's own bends sit on the ruler.
 route_marks : List(ScrubWidget.Stretch)
 route_marks =
-	World.route.keep_if(|plan| plan.turn.to_radians().abs() > 0.0).map(
+	World.plans.keep_if(|plan| plan.turn.to_radians().abs() > 0.0).map(
 		|plan| {
 			centre = share_of(plan.turn.to_radians() / Trig.deg).to_f64()
 			{
@@ -282,12 +282,12 @@ expect edge_text(Angle.Turn.degrees(-50.0)) == "right"
 apex_of : F64 -> Geom.RiderPoint
 apex_of = |degrees| {
 	road = road_with(degrees)
-	Joint.joint_apex(road, bend_of(road))
+	BendView.apex(road, bend_of(road))
 }
 
 # The apex lies on the outer edge carried straight on, on either side.
-expect (apex_of(50.0).right - Scenery.left_edge.to_metres()).abs() < 0.000001
-expect (apex_of(-50.0).right - Scenery.right_edge.to_metres()).abs() < 0.000001
+expect (apex_of(50.0).right.to_metres() - Scenery.left_edge.to_metres()).abs() < 0.000001
+expect (apex_of(-50.0).right.to_metres() - Scenery.right_edge.to_metres()).abs() < 0.000001
 
 # A sharper bend pushes the apex further past the segment's end.
 expect apex_past_end(apex_of(20.0)) > 0.0
@@ -297,16 +297,16 @@ expect apex_past_end(apex_of(-70.0)) > apex_past_end(apex_of(-20.0))
 # The bend's paving and its rail are both there, at both ends of the ruler.
 expect GroundSighting.in_view(road_with(widest_turn)).len() > 2
 expect GroundSighting.in_view(road_with(0.0 - widest_turn)).len() > 2
-expect RailSighting.all_rails(road_with(widest_turn)).len() > 0
-expect RailSighting.all_rails(road_with(0.0 - widest_turn)).len() > 0
+expect RailSighting.in_view(road_with(widest_turn)).len() > 0
+expect RailSighting.in_view(road_with(0.0 - widest_turn)).len() > 0
 
 expect turn_text(50.0) == "50 deg right"
 expect turn_text(-50.0) == "50 deg left"
 
-expect apex_text({ right: -2.0, forward: 27.5 }) == "Apex: 2.5 m past the segment end"
+expect apex_text({ right: Distance.metres(-2.0), forward: Distance.metres(27.5) }) == "Apex: 2.5 m past the segment end"
 
 # Each of the route's bends gets a mark.
-expect route_marks.len() == World.route.len() - 1
+expect route_marks.len() == World.plans.len() - 1
 
 expect picture(50.0) == picture(50.0)
 expect picture(50.0) != picture(51.0)

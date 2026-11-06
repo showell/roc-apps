@@ -88,14 +88,14 @@ moved = |model| {
 		count = F64.min(played_a_frame, wanted - now)
 		{
 			..model,
-			tour: repeated(model.tour, { count, step_once: Tour.advance }),
+			tour: repeated(model.tour, { count, step_once: Tour.step_forward }),
 			last_move: Played,
 		}
 	} else if now > wanted {
 		count = F64.min(read_back_a_frame, now - wanted)
 		{
 			..model,
-			tour: repeated(model.tour, { count, step_once: Tour.back }),
+			tour: repeated(model.tour, { count, step_once: Tour.step_back }),
 			last_move: ReadBack,
 		}
 	} else {
@@ -163,7 +163,7 @@ route_x = |distance| route_left_x + route_width * distance.ratio_to(route_length
 rider_distance : Tour -> Distance
 rider_distance = |tour| {
 	rider = tour.instant.rider
-	World.distance_along_route(tour.world, { index: rider.segment, along: rider.along })
+	World.distance_along_route(tour.route, { index: rider.segment_index, along: rider.along })
 }
 
 ground : Shapes.Shape
@@ -246,7 +246,7 @@ lean_shown_at = 3.0
 ## The road from behind, with the rider at `across`, leaning by `lean` radians.
 from_behind : { across : Across, lean : F64 } -> List(Shapes.Shape)
 from_behind = |{ across, lean }| {
-	lane = Scenery.lane_half_width.to_metres() * pixels_a_metre
+	lane = Scenery.road_half_width.to_metres() * pixels_a_metre
 	middle = ScrubWidget.canvas_width / 2.0
 	foot = middle + across.to_metres() * pixels_a_metre
 	head_x = foot + rider_height * Trig.r_sin(lean * lean_shown_at)
@@ -289,7 +289,8 @@ from_behind = |{ across, lean }| {
 ## Where the rider and the truck are on the route, and the rider from behind.
 picture : Tour -> List(Shapes.Shape)
 picture = |tour| {
-	{ rider, truck, .. } = tour.instant
+	rider = tour.instant.rider
+	truck = tour.instant.truck
 	[
 		[ground],
 		route_bar,
@@ -305,7 +306,7 @@ picture = |tour| {
 			name: "rider",
 			name_y: route_y + 16.0,
 		}),
-		from_behind({ across: rider.across, lean: rider.tilt.to_radians() }),
+		from_behind({ across: rider.across, lean: rider.lean.to_radians() }),
 	].join()
 }
 
@@ -329,10 +330,12 @@ move_text = |model|
 ## The three stored fields, and how they got there.
 status_lines : StepWidgetApp.Model -> List(Str)
 status_lines = |model| {
-	{ rider, truck, clock } = model.tour.instant
+	rider = model.tour.instant.rider
+	truck = model.tour.instant.truck
+	clock = model.tour.instant.clock
 	[
 		"clock: step ${clock.to_str()}",
-		"rider: segment ${(rider.segment.to_u32() + 1).to_str()}, ${ScrubWidget.tenths_text(rider.along.to_metres())} m, speed ${ScrubWidget.tenths_text(rider.speed.to_metres_a_step())}",
+		"rider: segment ${(rider.segment_index.to_u32() + 1).to_str()}, ${ScrubWidget.tenths_text(rider.along.to_metres())} m, speed ${ScrubWidget.tenths_text(rider.speed.to_metres_a_step())}",
 		"truck: ${ScrubWidget.tenths_text(truck.route_position.to_metres())} m, speed ${ScrubWidget.tenths_text(truck.speed.to_metres_a_step())}, brake ${brakes_text(truck.brake_lights)}",
 		move_text(model),
 	]
@@ -382,7 +385,8 @@ expect {
 	on_the_way = left_alone(heading_for_step(16), 2)
 	past_it = left_alone({ ..on_the_way, heading_for: Clock.at_step(40) }, 3)
 	back = moved({ ..past_it, heading_for: Clock.at_step(16) })
-	back.tour.instant.rider == on_the_way.tour.instant.rider
+	back.tour.instant.rider.along == on_the_way.tour.instant.rider.along
+		and back.tour.instant.rider.speed == on_the_way.tour.instant.rider.speed
 }
 
 # Only the stretch ahead of the ride is marked.
