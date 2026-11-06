@@ -300,7 +300,7 @@ The trunk and the crown split the tree's height between them:
 
 {{code TreeDraw.crown_height_share}}
 
-The crown's share is the trunk's `complement`, so the two add up to 1 by construction. They used to be two separate numbers, and they added up to 1.088. Nothing failed. A bird just perched a metre below the tip of a gold tree, inside the foliage, and nobody noticed until this book had to say how tall a tree is.
+The crown's share is the trunk's `complement`, so the two add up to 1 by construction.
 
 ### Triangles
 
