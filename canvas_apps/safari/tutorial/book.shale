@@ -1,4 +1,4 @@
--- budget: steps=100000000 arena_bytes=1000000000 read_bytes=200000000 output_bytes=200000 call_bytes=20000000 runs=200
+-- budget: steps=100000000 arena_bytes=1000000000 read_bytes=200000000 output_bytes=200000 call_bytes=20000000
 -- This builds the Safari Ride book into the dev channel, one page a chapter.
 --
 --   cd <roc-apps checkout> && nice -n 19 shale canvas_apps/safari/tutorial/book.shale
@@ -35,6 +35,9 @@ const EXPANDED = "canvas_apps/safari/tutorial/build/tutorial.md"
 const NEXT = "build:roc-apps/next"
 const STAGE = arg("stage", "")
 const LOOKS = arg("looks", "") == "1"
+-- A Shale run holds 64 programs, and diagrams and pages use most of them, so the
+-- widgets' release builds run as a run of their own.
+const WIDGETS_ONLY = arg("widgets", "") == "1"
 const STAGED_NAME = STAGE == "" and "tutorial.staging" or STAGE
 const STAGING = "build:roc-apps/next/" .. STAGED_NAME
 const DEST = "build:roc-apps/next/tutorial"
@@ -299,7 +302,9 @@ function main()
   print(trim(must(run({"shale", "--root", ".", COLOR, "pages=" .. STAGING}, {timeout_ms = 30000, tail = 300}), "color_roc").out))
   local sizes = page_sizes(files)
 
-  if STAGE == "" then build_widgets(folders) end
+  if STAGE == "" then
+    print(trim(must(run({"shale", "--root", ".", TUTORIAL .. "/book.shale", "widgets=1"}, {timeout_ms = 1800000, tail = 20, want = PAGE_WANT}), "the widgets' release builds").out))
+  end
   local check = {"nice", "-n", "19", "node", TUTORIAL .. "/book_check.mjs", CHANNEL_URL, real(WORK) .. "/shots"}
   if LOOKS then push(check, "looks") end
   print(trim(must(run(check, {timeout_ms = 600000, tail = 60, want = CHECK_WANT}), "book_check").out))
@@ -310,4 +315,8 @@ function main()
   return nil
 end
 
-main()
+if WIDGETS_ONLY then
+  build_widgets(widget_folders())
+else
+  main()
+end
