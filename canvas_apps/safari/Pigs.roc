@@ -116,7 +116,7 @@ Pigs :: [].{
 	gaze_pig = |length|
 		pig({
 			along: pigs_place(length).plus(gaze_pig_along_offset),
-			across: Across.right_of_middle(road_edge.plus(Scenery.herd_road_offset)),
+			across: Across.right_of_middle(Scenery.road_half_width.plus(Scenery.herd_road_offset)),
 		})
 
 	## The big herd on a segment `length` long, row by row from the road.
@@ -132,7 +132,7 @@ Pigs :: [].{
 	fill_pig_row : Distance -> List(Scenery.Critter)
 	fill_pig_row = |length| {
 		herd_along = pigs_place(length)
-		edge = road_edge.plus(Scenery.herd_road_offset)
+		edge = Scenery.road_half_width.plus(Scenery.herd_road_offset)
 		front_across = Across.right_of_middle(edge)
 		back_across = Across.right_of_middle(edge.plus(pig_back_row_offset))
 		List.concat(
@@ -141,9 +141,6 @@ Pigs :: [].{
 		)
 	}
 }
-
-road_edge : Distance
-road_edge = Scenery.lane_half_width
 
 ## Where the pigs are on a segment `length` long.
 pigs_place : Distance -> Along
@@ -165,7 +162,8 @@ herd_pig = |herd_along, { row, column }| {
 	fc = column.to_f64()
 	first_column = herd_along.plus(Pigs.pig_herd_first_col)
 	in_line = first_column.plus(Pigs.pig_col_spacing.times(fc)).plus(Pigs.pig_row_depth.times(fr))
-	in_row = road_edge.plus(Scenery.herd_road_offset).plus(Pigs.pig_row_depth.times(fr))
+	edge = Scenery.road_half_width.plus(Scenery.herd_road_offset)
+	in_row = edge.plus(Pigs.pig_row_depth.times(fr))
 	out_from_middle = in_row.plus(Pigs.pig_jitter_across.times(Trig.r_cos((i * 1.7))))
 	pig({
 		along: in_line.plus(Pigs.pig_jitter_along.times(Trig.r_sin((i * 2.3)))),

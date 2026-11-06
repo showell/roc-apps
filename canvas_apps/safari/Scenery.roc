@@ -23,17 +23,17 @@ Scenery :: [].{
 		facing : Cutouts.Facing,
 	}
 
-	lane_width : Distance
-	lane_width = Distance.metres(4.0)
+	road_width : Distance
+	road_width = Distance.metres(4.0)
 
-	lane_half_width : Distance
-	lane_half_width = lane_width.divided_by(2.0)
+	road_half_width : Distance
+	road_half_width = road_width.divided_by(2.0)
 
 	left_edge : Across
-	left_edge = Across.left_of_middle(lane_half_width)
+	left_edge = Across.left_of_middle(road_half_width)
 
 	right_edge : Across
-	right_edge = Across.right_of_middle(lane_half_width)
+	right_edge = Across.right_of_middle(road_half_width)
 
 	herd_road_offset : Distance
 	herd_road_offset = Distance.metres(10.0)
@@ -46,8 +46,8 @@ Scenery :: [].{
 		}
 }
 
-expect Scenery.lane_width.to_metres() == 4.0
-expect Scenery.lane_half_width.to_metres() == 2.0
+expect Scenery.road_width.to_metres() == 4.0
+expect Scenery.road_half_width.to_metres() == 2.0
 expect Scenery.herd_road_offset.to_metres() == 10.0
 expect Scenery.left_edge.to_metres() == -2.0
 expect Scenery.right_edge.to_metres() == 2.0

@@ -66,13 +66,13 @@ Cat :: [].{
 	## The crossing of a cat by the tree `tree_offset` out from the lane's
 	## edge and at `tree_along` on the segment.
 	crossing : {
-		lane_half_width : Distance,
+		road_half_width : Distance,
 		tree_offset : Distance,
 		tree_along : Along,
 	} -> Cat.Crossing
-	crossing = |{ lane_half_width, tree_offset, tree_along }| {
-		tree_across = lane_half_width.plus(tree_offset)
-		far_verge = Across.left_of_middle(lane_half_width.plus(grass_toehold))
+	crossing = |{ road_half_width, tree_offset, tree_along }| {
+		tree_across = road_half_width.plus(tree_offset)
+		far_verge = Across.left_of_middle(road_half_width.plus(grass_toehold))
 		{
 			along: tree_along.plus(cat_beyond_tree),
 			start_across: Across.right_of_middle(tree_across.plus(cat_road_gap)),
@@ -269,7 +269,7 @@ spot_across = |across| { along: Along.start, across, lift: 0.0 }
 
 the_cat : Cat.Crossing
 the_cat = Cat.crossing({
-	lane_half_width: Distance.metres(2.0),
+	road_half_width: Distance.metres(2.0),
 	tree_offset: Distance.metres(1.0),
 	tree_along: Along.metres(100.0),
 })

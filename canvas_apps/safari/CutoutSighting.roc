@@ -144,7 +144,7 @@ bend_sightings = |road, { place, segment }|
 		bend_life: segment.bend_life,
 		bend_along: Along.at(segment.length),
 		turn: segment.exit_turn,
-		lane_half_width: Scenery.lane_half_width,
+		road_half_width: Scenery.road_half_width,
 	})
 		.map(|critter| sight_critter(road, { place, critter }))
 

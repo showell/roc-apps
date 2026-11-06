@@ -64,7 +64,7 @@ Cows :: [].{
 	bull_of = |bull|
 		match bull {
 			WithBull => {
-				tree_line = Scenery.lane_half_width.plus(Trees.tree_road_offset)
+				tree_line = Scenery.road_half_width.plus(Trees.tree_road_offset)
 				bull_middle = tree_line.plus(bull_height.divided_by(2.0))
 				[
 					{
@@ -97,7 +97,7 @@ cow_at = |i| {
 	herd_front = Cows.bull_dist.plus(Cows.herd_gap_behind_bull)
 	column_place = herd_front.plus(Cows.herd_col_spacing.times(column))
 	in_line = column_place.plus(Cows.herd_row_stagger.times(row - 1.0))
-	road_edge = Scenery.lane_half_width.plus(Scenery.herd_road_offset)
+	road_edge = Scenery.road_half_width.plus(Scenery.herd_road_offset)
 	row_place = road_edge.plus(Cows.herd_row_depth.times(row))
 	out_from_road = row_place.plus(Cows.herd_jitter_across.times(Trig.r_cos((fi * 1.9))))
 	{

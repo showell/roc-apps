@@ -102,7 +102,7 @@ picture = |gap|
 ## The lane, running up the picture from under the eye.
 lane : List(Shapes.Shape)
 lane = {
-	half = Scenery.lane_width.to_metres() / 2.0
+	half = Scenery.road_width.to_metres() / 2.0
 	on_ground = |right, forward|
 		Camera.project(
 			{

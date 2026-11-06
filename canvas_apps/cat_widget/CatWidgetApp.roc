@@ -92,7 +92,7 @@ feet_y = 190.0
 ## The sky, the grass, and the lane between the verges.
 road : List(Shapes.Shape)
 road = {
-	lane_width_px = Scenery.lane_width.to_metres() * pixels_a_metre
+	lane_width_px = Scenery.road_width.to_metres() * pixels_a_metre
 	ground_height = ground_bottom_y - ground_top_y
 	[
 		Rect({

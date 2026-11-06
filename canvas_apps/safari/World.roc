@@ -355,7 +355,7 @@ built_segment = |plan, index| {
 		commit_along: match plan.ending {
 			Continues => {
 				exit_tan = Trig.r_tan(plan.turn.abs().to_radians())
-				Along.at(plan.length.minus(Scenery.lane_half_width.divided_by(exit_tan)))
+				Along.at(plan.length.minus(Scenery.road_half_width.divided_by(exit_tan)))
 			}
 			Terminates => Along.at(plan.length)
 		},
@@ -367,7 +367,7 @@ built_segment = |plan, index| {
 		crossing: match plan.crossing {
 			CatCrosses => CatCrosses(
 				Cat.crossing({
-					lane_half_width: Scenery.lane_half_width,
+					road_half_width: Scenery.road_half_width,
 					tree_offset: Trees.tree_road_offset,
 					tree_along: nearest_tree_ahead(trees, Cat.cat_along),
 				}),

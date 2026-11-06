@@ -106,7 +106,7 @@ Chain :: [].{
 	bend_out_of = |segment| {
 		segment_length: segment.length,
 		turn: segment.exit_turn,
-		lane_width: Scenery.lane_width,
+		road_width: Scenery.road_width,
 	}
 
 	## The place of `segment`, which is just behind the rider.

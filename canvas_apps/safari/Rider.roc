@@ -52,7 +52,7 @@ Rider :: [].{
 			{
 				segment_length: seg.length,
 				turn: seg.exit_turn,
-				lane_width: Scenery.lane_width,
+				road_width: Scenery.road_width,
 			},
 		)
 		{
@@ -88,7 +88,7 @@ Rider :: [].{
 	resolve_cross : RiderState, List(World.Segment) -> RiderState
 	resolve_cross = |moved, route| {
 		on_next = rider_state_for_next_segment(moved, route)
-		if on_next.across.distance_from_middle() < Scenery.lane_half_width {
+		if on_next.across.distance_from_middle() < Scenery.road_half_width {
 			on_next
 		} else {
 			moved
@@ -190,7 +190,7 @@ expect first_segment.ending == Continues({ next: World.SegmentIndex.number(1) })
 
 expect {
 	far = Rider.rider_state_for_next_segment(rider_at(100.0, 0.0), first_segments)
-	far.across.distance_from_middle() >= Scenery.lane_half_width
+	far.across.distance_from_middle() >= Scenery.road_half_width
 }
 
 expect Rider.resolve_cross(rider_at(100.0, 0.0), first_segments).segment.to_i64() == 0
@@ -232,7 +232,7 @@ one_step_on = Rider.advance(RiderState.initial, first_segments)
 expect one_step_on.along > Along.start
 expect one_step_on.speed > Speed.at_rest
 expect one_step_on.segment == World.SegmentIndex.first
-expect one_step_on.across.distance_from_middle() < Scenery.lane_half_width
+expect one_step_on.across.distance_from_middle() < Scenery.road_half_width
 expect one_step_on.speed <= VehicleLimits.v_max
 
 # These are LeanSearch's search. They sit here because LeanSearch imports

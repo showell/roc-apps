@@ -35,14 +35,14 @@ Wildlife :: [].{
 		}
 
 	## The animal and its baby at a bend at `bend_along` on its segment, on
-	## a road `lane_half_width` either side of its middle.
+	## a road `road_half_width` either side of its middle.
 	bend_critters : {
 		bend_life : Scenery.BendLife,
 		bend_along : Along,
 		turn : Angle.Turn,
-		lane_half_width : Distance,
+		road_half_width : Distance,
 	} -> List(Scenery.Critter)
-	bend_critters = |{ bend_life, bend_along, turn, lane_half_width }|
+	bend_critters = |{ bend_life, bend_along, turn, road_half_width }|
 		match bend_life {
 			Quiet | DuckPond => []
 			Animal(animal) => {
@@ -53,7 +53,7 @@ Wildlife :: [].{
 					} else {
 						{ inward: (0.0 - 1.0), facing: FacesLeft }
 					}
-				clear_of_rail = lane_half_width.plus(adult_rail_buffer)
+				clear_of_rail = road_half_width.plus(adult_rail_buffer)
 				out_from_middle = clear_of_rail.plus(species.adult_height.divided_by(2.0))
 				[
 					{
@@ -103,25 +103,25 @@ all_four = List.join([
 		bend_life: Animal(Elephant),
 		bend_along: Along.metres(100.0),
 		turn: Angle.Turn.degrees(50.0),
-		lane_half_width: Distance.metres(2.0),
+		road_half_width: Distance.metres(2.0),
 	}),
 	Wildlife.bend_critters({
 		bend_life: Animal(Giraffe),
 		bend_along: Along.metres(50.0),
 		turn: Angle.Turn.degrees(-70.0),
-		lane_half_width: Distance.metres(2.0),
+		road_half_width: Distance.metres(2.0),
 	}),
 	Wildlife.bend_critters({
 		bend_life: Animal(Zebra),
 		bend_along: Along.metres(10.0),
 		turn: Angle.Turn.degrees(50.0),
-		lane_half_width: Distance.metres(2.5),
+		road_half_width: Distance.metres(2.5),
 	}),
 	Wildlife.bend_critters({
 		bend_life: Animal(Rhino),
 		bend_along: Along.metres(0.0),
 		turn: Angle.Turn.degrees(-70.0),
-		lane_half_width: Distance.metres(2.0),
+		road_half_width: Distance.metres(2.0),
 	}),
 ])
 
@@ -197,7 +197,7 @@ bend_count = |bend_life|
 		bend_life,
 		bend_along: Along.metres(100.0),
 		turn: Angle.Turn.degrees(50.0),
-		lane_half_width: Distance.metres(2.0),
+		road_half_width: Distance.metres(2.0),
 	}).len()
 
 expect bend_count(Animal(Elephant)) == 2

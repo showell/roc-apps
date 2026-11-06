@@ -49,7 +49,7 @@ Geom :: [].{
 	Bend : {
 		segment_length : Distance,
 		turn : Angle.Turn,
-		lane_width : Distance,
+		road_width : Distance,
 	}
 
 	## A line through two points.
@@ -85,7 +85,7 @@ Geom :: [].{
 		along = point.along.to_metres()
 		from_left = point.from_left.to_metres()
 		length = bend.segment_length.to_metres()
-		width = bend.lane_width.to_metres()
+		width = bend.road_width.to_metres()
 		turn_size = bend.turn.abs().to_radians()
 		cos_turn = Trig.r_cos(turn_size)
 		sin_turn = Trig.r_sin(turn_size)
@@ -104,7 +104,7 @@ Geom :: [].{
 	## A point on the segment before `bend`, measured on the segment after it.
 	in_segment_after : Geom.EdgePoint, Geom.Bend -> Geom.EdgePoint
 	in_segment_after = |point, bend| {
-		left_edge = Across.left_of_middle(bend.lane_width.divided_by(2.0))
+		left_edge = Across.left_of_middle(bend.road_width.divided_by(2.0))
 		centred = centred_point_after(
 			{ along: point.along, across: left_edge.plus(point.from_left) },
 			bend,
@@ -117,7 +117,7 @@ Geom :: [].{
 	centred_point_after : Geom.RoadPoint, Geom.Bend -> Geom.RoadPoint
 	centred_point_after = |point, bend| {
 		across = point.across.to_metres()
-		half_width = bend.lane_width.to_metres() / 2.0
+		half_width = bend.road_width.to_metres() / 2.0
 		cos_turn = Trig.r_cos(bend.turn.to_radians())
 		sin_turn = Trig.r_sin(bend.turn.to_radians())
 		corner_shift = half_width * (1.0 - cos_turn)
@@ -339,7 +339,7 @@ bend_of : F64 -> Geom.Bend
 bend_of = |degrees| {
 	segment_length: Distance.metres(300.0),
 	turn: Angle.Turn.degrees(degrees),
-	lane_width: Distance.metres(4.0),
+	road_width: Distance.metres(4.0),
 }
 
 # A point carried round a bend one way and back lands where it started.

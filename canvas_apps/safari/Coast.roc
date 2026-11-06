@@ -98,7 +98,7 @@ Coast :: [].{
 
 	project : Bike.Motion(others) -> Coast.Outcome
 	project = |state| {
-		inset_hw = Scenery.lane_half_width.minus(straighten_margin)
+		inset_hw = Scenery.road_half_width.minus(straighten_margin)
 		right_bound = Across.right_of_middle(inset_hw).max(state.across)
 		left_bound = Across.left_of_middle(inset_hw).min(state.across)
 		coast_from(

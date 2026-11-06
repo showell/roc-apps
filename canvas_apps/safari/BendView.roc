@@ -89,7 +89,7 @@ apex_after_turn = |turn|
 			before: JustBehind({
 				segment_length: Distance.metres(300.0),
 				turn,
-				lane_width: Distance.metres(4.0),
+				road_width: Distance.metres(4.0),
 			}),
 			after: InChain(Chain.Position.first),
 			length_before: Distance.metres(300.0),
@@ -121,14 +121,14 @@ m_prev_left : Chain.SegmentPlace
 m_prev_left = JustBehind({
 	segment_length: Distance.metres(300.0),
 	turn: Angle.Turn.radians(0.0 - 1.2217304763960306),
-	lane_width: Distance.metres(4.0),
+	road_width: Distance.metres(4.0),
 })
 
 m_prev_right : Chain.SegmentPlace
 m_prev_right = JustBehind({
 	segment_length: Distance.metres(300.0),
 	turn: Angle.Turn.radians(0.8726646259971648),
-	lane_width: Distance.metres(4.0),
+	road_width: Distance.metres(4.0),
 })
 
 ## The bend of a place behind the rider.
@@ -150,9 +150,9 @@ turns_right : Chain.SegmentPlace -> Bool
 turns_right = |place| bend_of(place).turn.is_right()
 
 expect bend_of(m_prev_left).segment_length.to_metres() == 300.0
-expect bend_of(m_prev_left).lane_width.to_metres() == 4.0
+expect bend_of(m_prev_left).road_width.to_metres() == 4.0
 expect bend_of(m_prev_right).segment_length.to_metres() == 300.0
-expect bend_of(m_prev_right).lane_width.to_metres() == 4.0
+expect bend_of(m_prev_right).road_width.to_metres() == 4.0
 expect bend_of(Chain.place_behind(World.route_segment(0))).segment_length.to_metres() == 500.0
 expect is_in_chain(m_chain)
 expect !(is_in_chain(m_prev_left))
