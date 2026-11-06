@@ -3,6 +3,7 @@
 ## any segment of it, or on the segment just behind the rider, is carried
 ## back round the bends between to the rider's own segment and into the
 ## rider's view.
+import Pixels
 import Across
 import Along
 import Distance
@@ -22,7 +23,7 @@ Chain :: [].{
 
 	## What a frame is seen from: the road in view, and the camera's focal
 	## length in pixels.
-	Viewpoint : { road : Chain.RoadView, cam_focal : F64 }
+	Viewpoint : { road : Chain.RoadView, cam_focal : Pixels }
 
 	## A segment's place in the chain, counted from the rider's own at 0. It
 	## says how many segments ahead of the rider that segment is, where a

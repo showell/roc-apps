@@ -3,3 +3,6 @@ steps: Steps
 fraction: Fraction
 frames: none
 count: U8, U16, U32, U64, I32, I64
+# An axis fits any plane: a still's x is in heights, and the raster gates' are past lib.Shapes.
+x: any
+y: any

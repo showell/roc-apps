@@ -1,6 +1,7 @@
 ## Ground paints a flat patch of ground, such as a stretch of road or a
 ## pond, as one polygon. The patch follows the earth's curve down as it
 ## goes away from the rider.
+import Pixels
 import Camera
 import Geom
 import Paint
@@ -23,7 +24,7 @@ Ground :: [].{
 	## A patch on screen, cut at the camera's near plane. A patch with more
 	## than eight corners, or with fewer than three left in front of the
 	## camera, draws nothing.
-	draw : Ground.Patch, F64 -> List(Shapes.Shape)
+	draw : Ground.Patch, Pixels -> List(Shapes.Shape)
 	draw = |patch, cam_focal|
 		if patch.corners.len() > 8 {
 			[]
@@ -55,7 +56,7 @@ expect
 		}
 
 patch_shapes : List(Geom.RiderPoint) -> List(Shapes.Shape)
-patch_shapes = |corners| Ground.draw({ corners, color: 3112588 }, 685.5110432362151)
+patch_shapes = |corners| Ground.draw({ corners, color: 3112588 }, Pixels.of(685.5110432362151))
 
 patch_ahead : List(Geom.RiderPoint)
 patch_ahead = [

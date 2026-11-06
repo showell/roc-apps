@@ -2,6 +2,7 @@
 ## colour is 0xRRGGBB for a flat polygon, a shaded polygon and a beacon, and
 ## 0xAARRGGBB for a gradient. Each builder answers a list, empty when there is
 ## nothing to draw, so a drawing module can join what it builds.
+import Pixels
 import Fraction
 import Float
 import Screen
@@ -109,7 +110,7 @@ Paint :: [].{
 	flatten_screen = |ps| {
 		var $flat = List.with_capacity(2 * ps.len())
 		for p in ps {
-			$flat = $flat.append(p.x).append(p.y)
+			$flat = $flat.append(p.x.to_f64()).append(p.y.to_f64())
 		}
 		$flat
 	}
@@ -135,16 +136,16 @@ Paint :: [].{
 	beacon : {
 		beacon_color : I64,
 		beacon_center : Screen.Point,
-		beacon_radius : F64,
+		beacon_radius : Pixels,
 		beacon_alpha : Fraction,
 	} -> List(Shapes.Shape)
 	beacon = |{ beacon_color, beacon_center, beacon_radius, beacon_alpha }| {
 		opaque = Brush.opaque(beacon_color)
 		[
 			Disc({
-				x: beacon_center.x,
-				y: beacon_center.y,
-				r: beacon_radius,
+				x: beacon_center.x.to_f64(),
+				y: beacon_center.y.to_f64(),
+				r: beacon_radius.to_f64(),
 				fill: Flat({ ..opaque, a: beacon_alpha.to_f64() }),
 				clip: Anywhere,
 			}),
@@ -160,15 +161,15 @@ Paint :: [].{
 	}
 
 	## A radial gradient smaller than this is not drawn.
-	min_gradient_radius : F64
-	min_gradient_radius = 0.5
+	min_gradient_radius : Pixels
+	min_gradient_radius = Pixels.of(0.5)
 
 	gradient_polygon : List(Screen.Point),
 	{
 		center_rgba : I64,
 		edge_rgba : I64,
 		gradient_center : Screen.Point,
-		gradient_radius : F64,
+		gradient_radius : Pixels,
 	} -> List(Shapes.Shape)
 	gradient_polygon = |ps, { center_rgba, edge_rgba, gradient_center, gradient_radius }|
 		if gradient_radius < min_gradient_radius {
@@ -179,10 +180,10 @@ Paint :: [].{
 				Radial({
 					inner: Brush.with_alpha(center_rgba),
 					outer: Brush.with_alpha(edge_rgba),
-					x: gradient_center.x,
-					y: gradient_center.y,
+					x: gradient_center.x.to_f64(),
+					y: gradient_center.y.to_f64(),
 					r0: 0.0,
-					r1: gradient_radius,
+					r1: gradient_radius.to_f64(),
 				}),
 			)
 		}
@@ -195,9 +196,9 @@ Paint :: [].{
 		end_point : Screen.Point,
 	} -> List(Shapes.Shape)
 	linear_gradient_polygon = |ps, { color_stops, start_point, end_point }| {
-		dx = end_point.x - start_point.x
-		dy = end_point.y - start_point.y
-		if dx * dx + dy * dy == 0.0 {
+		dx = end_point.x.minus(start_point.x)
+		dy = end_point.y.minus(start_point.y)
+		if dx.area_with(dx) + dy.area_with(dy) == 0.0 {
 			[]
 		} else {
 			offsets = offsets_of(color_stops)
@@ -208,10 +209,10 @@ Paint :: [].{
 					c1: Brush.with_alpha(color_stops.end_rgba),
 					o0: offsets.first,
 					o1: offsets.last,
-					ax: start_point.x,
-					ay: start_point.y,
-					dx,
-					dy,
+					ax: start_point.x.to_f64(),
+					ay: start_point.y.to_f64(),
+					dx: dx.to_f64(),
+					dy: dy.to_f64(),
 				}),
 			)
 		}
@@ -228,7 +229,7 @@ Paint :: [].{
 		axis_v : Screen.Point,
 	} -> List(Shapes.Shape)
 	radial_gradient_polygon = |ps, { color_stops, center_point, axis_u, axis_v }| {
-		det = axis_u.x * axis_v.y - axis_u.y * axis_v.x
+		det = axis_u.x.area_with(axis_v.y) - axis_u.y.area_with(axis_v.x)
 		first_color = Brush.with_alpha(color_stops.start_rgba)
 		fill =
 			if det.abs() < min_ellipse_determinant {
@@ -240,12 +241,12 @@ Paint :: [].{
 					c1: Brush.with_alpha(color_stops.end_rgba),
 					o0: offsets.first,
 					o1: offsets.last,
-					x: center_point.x,
-					y: center_point.y,
-					ia: axis_v.y / det,
-					ib: (0.0 - axis_v.x) / det,
-					ic: (0.0 - axis_u.y) / det,
-					id: axis_u.x / det,
+					x: center_point.x.to_f64(),
+					y: center_point.y.to_f64(),
+					ia: axis_v.y.to_f64() / det,
+					ib: axis_v.x.opposite().to_f64() / det,
+					ic: axis_u.y.opposite().to_f64() / det,
+					id: axis_u.x.to_f64() / det,
 				})
 			}
 		Shapes.polygon(flatten_screen(ps), fill)
@@ -291,19 +292,19 @@ xs_of = |pts|
 
 triangle : List(Screen.Point)
 triangle = [
-	{ x: 1.0, y: 2.0 },
-	{ x: 3.0, y: 4.0 },
-	{ x: 5.0, y: 6.0 },
+	Screen.point(1.0, 2.0),
+	Screen.point(3.0, 4.0),
+	Screen.point(5.0, 6.0),
 ]
 
 triangle_points : List(F64)
 triangle_points = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
 
 line_ends : List(Screen.Point)
-line_ends = [{ x: 1.0, y: 2.0 }, { x: 3.0, y: 4.0 }]
+line_ends = [Screen.point(1.0, 2.0), Screen.point(3.0, 4.0)]
 
 origin : Screen.Point
-origin = { x: 0.0, y: 0.0 }
+origin = Screen.point(0.0, 0.0)
 
 plain_stops : Paint.ColorStops
 plain_stops = {
@@ -321,7 +322,7 @@ inner_stops = {
 	end_offset: 0.75,
 }
 
-radial_polygon : List(Screen.Point), F64 -> List(Shapes.Shape)
+radial_polygon : List(Screen.Point), Pixels -> List(Shapes.Shape)
 radial_polygon = |corners, gradient_radius|
 	Paint.gradient_polygon(
 		corners,
@@ -340,7 +341,7 @@ linear_polygon = |corners|
 		{
 			color_stops: plain_stops,
 			start_point: origin,
-			end_point: { x: 1.0, y: 1.0 },
+			end_point: Screen.point(1.0, 1.0),
 		},
 	)
 
@@ -351,8 +352,8 @@ ellipse_polygon = |corners|
 		{
 			color_stops: plain_stops,
 			center_point: origin,
-			axis_u: { x: 1.0, y: 0.0 },
-			axis_v: { x: 0.0, y: 1.0 },
+			axis_u: Screen.point(1.0, 0.0),
+			axis_v: Screen.point(0.0, 1.0),
 		},
 	)
 
@@ -368,10 +369,10 @@ expect Paint.round_polygon(
 	line_ends,
 	{ fill_color: 7, round_strength: Fraction.of(0.5) },
 ).len() == 0
-expect radial_polygon(triangle, 1.0).len() == 1
-expect radial_polygon(line_ends, 1.0).len() == 0
-expect radial_polygon(triangle, 0.5).len() == 1
-expect radial_polygon(triangle, 0.49).len() == 0
+expect radial_polygon(triangle, Pixels.of(1.0)).len() == 1
+expect radial_polygon(line_ends, Pixels.of(1.0)).len() == 0
+expect radial_polygon(triangle, Pixels.of(0.5)).len() == 1
+expect radial_polygon(triangle, Pixels.of(0.49)).len() == 0
 expect linear_polygon(triangle).len() == 1
 expect linear_polygon(line_ends).len() == 0
 expect ellipse_polygon(triangle).len() == 1
@@ -380,8 +381,8 @@ expect ellipse_polygon(line_ends).len() == 0
 expect
 	Paint.beacon({
 		beacon_color: 7,
-		beacon_center: { x: 1.0, y: 2.0 },
-		beacon_radius: 3.0,
+		beacon_center: Screen.point(1.0, 2.0),
+		beacon_radius: Pixels.of(3.0),
 		beacon_alpha: Fraction.of(0.5),
 	}).len()
 		== 1
@@ -407,8 +408,8 @@ expect
 expect
 	Paint.beacon({
 		beacon_color: 333,
-		beacon_center: { x: 10.0, y: 20.0 },
-		beacon_radius: 30.0,
+		beacon_center: Screen.point(10.0, 20.0),
+		beacon_radius: Pixels.of(30.0),
 		beacon_alpha: Fraction.of(0.25),
 	})
 		== [
@@ -427,8 +428,8 @@ expect
 		{
 			center_rgba: 444,
 			edge_rgba: 445,
-			gradient_center: { x: 10.0, y: 20.0 },
-			gradient_radius: 30.0,
+			gradient_center: Screen.point(10.0, 20.0),
+			gradient_radius: Pixels.of(30.0),
 		},
 	)
 		== [
@@ -455,8 +456,8 @@ expect
 				start_offset: 0.25,
 				end_offset: 0.75,
 			},
-			start_point: { x: 1.0, y: 2.0 },
-			end_point: { x: 3.0, y: 4.0 },
+			start_point: Screen.point(1.0, 2.0),
+			end_point: Screen.point(3.0, 4.0),
 		},
 	)
 		== [
@@ -480,9 +481,9 @@ expect
 		triangle,
 		{
 			color_stops: inner_stops,
-			center_point: { x: 1.0, y: 2.0 },
-			axis_u: { x: 3.0, y: 4.0 },
-			axis_v: { x: 5.0, y: 6.0 },
+			center_point: Screen.point(1.0, 2.0),
+			axis_u: Screen.point(3.0, 4.0),
+			axis_v: Screen.point(5.0, 6.0),
 		},
 	)
 		== [
@@ -509,8 +510,8 @@ offset_linear = |{ start_offset, end_offset }|
 		triangle,
 		{
 			color_stops: { ..inner_stops, start_offset, end_offset },
-			start_point: { x: 1.0, y: 2.0 },
-			end_point: { x: 3.0, y: 4.0 },
+			start_point: Screen.point(1.0, 2.0),
+			end_point: Screen.point(3.0, 4.0),
 		},
 	)
 
@@ -544,14 +545,14 @@ linear_to = |end_point|
 		triangle,
 		{
 			color_stops: inner_stops,
-			start_point: { x: 1.0, y: 2.0 },
+			start_point: Screen.point(1.0, 2.0),
 			end_point,
 		},
 	)
 
 # A linear gradient of no length is dropped, however short one with a length is.
-expect linear_to({ x: 1.0, y: 2.0 }).len() == 0
-expect linear_to({ x: 1.0, y: 2.5 }).len() == 1
+expect linear_to(Screen.point(1.0, 2.0)).len() == 0
+expect linear_to(Screen.point(1.0, 2.5)).len() == 1
 
 ellipse_of_height : F64 -> List(Shapes.Shape)
 ellipse_of_height = |height|
@@ -559,9 +560,9 @@ ellipse_of_height = |height|
 		triangle,
 		{
 			color_stops: inner_stops,
-			center_point: { x: 1.0, y: 2.0 },
-			axis_u: { x: 0.01, y: 0.0 },
-			axis_v: { x: 0.0, y: height },
+			center_point: Screen.point(1.0, 2.0),
+			axis_u: Screen.point(0.01, 0.0),
+			axis_v: { x: Pixels.zero, y: Pixels.of(height) },
 		},
 	)
 
@@ -631,16 +632,16 @@ expect Paint.x_span([5.0, 99.0]) == { min_x: 5.0, max_x: 5.0 }
 
 wide_corners : List(Screen.Point)
 wide_corners = [
-	{ x: 10.0, y: 1.0 },
-	{ x: 30.0, y: 2.0 },
-	{ x: 20.0, y: 3.0 },
+	Screen.point(10.0, 1.0),
+	Screen.point(30.0, 2.0),
+	Screen.point(20.0, 3.0),
 ]
 
 narrow_corners : List(Screen.Point)
 narrow_corners = [
-	{ x: 10.0, y: 1.0 },
-	{ x: 10.5, y: 2.0 },
-	{ x: 10.2, y: 3.0 },
+	Screen.point(10.0, 1.0),
+	Screen.point(10.5, 2.0),
+	Screen.point(10.2, 3.0),
 ]
 
 expect

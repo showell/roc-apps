@@ -1,6 +1,7 @@
 ## Backdrop builds what is behind the ride, as shapes. The vocabulary is in
 ## lib/Shapes.roc, which every canvas app shares. This module knows what is
 ## behind the ride: the sky's gradient, the grass, and the sun's glow and disc.
+import Pixels
 import Sky
 import lib.Brush
 import Screen
@@ -21,16 +22,16 @@ Backdrop :: [].{
 	## `disc_radius`.
 	SunFills : {
 		glow : Brush.Fill,
-		glow_radius : F64,
+		glow_radius : Pixels,
 		disc : Brush.Fill,
-		disc_radius : F64,
+		disc_radius : Pixels,
 	}
 
 	## The sun's glow and disc where it stands, sized by its scale.
 	sun_fills : Sky.SunPlace -> Backdrop.SunFills
 	sun_fills = |sun| {
-		glow_radius = 340.0 * sun.scale
-		disc_radius = Sky.sun_radius_px * sun.scale
+		glow_radius = Pixels.of(340.0).times(sun.scale)
+		disc_radius = Sky.sun_radius_px.times(sun.scale)
 		{
 			glow: Glow({
 				c0: {
@@ -51,19 +52,19 @@ Backdrop :: [].{
 					b: 92.0,
 					a: 0.0,
 				},
-				x: sun.x,
-				y: sun.y,
+				x: sun.x.to_f64(),
+				y: sun.y.to_f64(),
 				r0: 8.0 * sun.scale,
-				r1: glow_radius,
+				r1: glow_radius.to_f64(),
 			}),
 			glow_radius,
 			disc: Radial({
 				inner: Brush.opaque(0xffe6a3),
 				outer: Brush.opaque(0xff9d5c),
-				x: sun.x,
-				y: sun.y,
+				x: sun.x.to_f64(),
+				y: sun.y.to_f64(),
 				r0: 4.0 * sun.scale,
-				r1: disc_radius,
+				r1: disc_radius.to_f64(),
 			}),
 			disc_radius,
 		}
@@ -90,7 +91,7 @@ Backdrop :: [].{
 			ax: 0.0,
 			ay: 0.0,
 			dx: 0.0,
-			dy: Screen.horizon_y,
+			dy: Screen.horizon_y.to_f64(),
 		})
 		$out = List.append(
 			$out,
@@ -106,7 +107,7 @@ Backdrop :: [].{
 			$out,
 			Rect({
 				x: -1080.0,
-				y: Screen.grass_top_y,
+				y: Screen.grass_top_y.to_f64(),
 				w: 3120.0,
 				h: 1561.0,
 				fill: Flat(Brush.opaque(grass_color)),
@@ -122,20 +123,20 @@ Backdrop :: [].{
 							Rect({
 								x: 0.0,
 								y: 0.0,
-								w: Screen.width,
-								h: Screen.horizon_y,
+								w: Screen.width.to_f64(),
+								h: Screen.horizon_y.to_f64(),
 								fill: fills.glow,
 							}),
 							Disc({
-								x: place.x,
-								y: place.y,
-								r: fills.disc_radius,
+								x: place.x.to_f64(),
+								y: place.y.to_f64(),
+								r: fills.disc_radius.to_f64(),
 								fill: fills.disc,
 								clip: Within({
 									x: 0.0,
 									y: 0.0,
-									w: Screen.width,
-									h: Screen.horizon_y,
+									w: Screen.width.to_f64(),
+									h: Screen.horizon_y.to_f64(),
 								}),
 							}),
 						],

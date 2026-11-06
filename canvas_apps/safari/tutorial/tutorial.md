@@ -351,7 +351,7 @@ The sun is the one thing here that also depends on where the rider is looking. T
 
 Opaque types do the most work from here on. `Angle.Bearing` is a direction in the world and `Angle.Turn` is a change of direction. Both are floats underneath, but only the `Angle` module can build or open one. `sun_place` is the first code to want a plain number, because `r_tan` takes a float, and it's another caller of `sun_height_px`.
 
-🌳 {{code Sky.sun_place from "scale =" to "y: (Screen.horizon_y"}}
+🌳 {{code Sky.sun_place from "scale =" to "y: Screen.horizon_y"}}
 
 `sun_sighting` calls it once the sun is known to be in view. It also takes one record argument, destructured in its parameter list.
 
