@@ -37,7 +37,7 @@ ItemDraw :: [].{
 		scene.order.join_map(|depth_key| draw_subject(scene, { view, depth_key }))
 
 	## How many of `trees` are nearer than `forward`.
-	nearer_tree_count : List(TreeSighting.TreeItem), F64 -> U32
+	nearer_tree_count : List(TreeSighting), F64 -> U32
 	nearer_tree_count = |trees, forward|
 		trees.count_if(|tree| tree.forward < forward).to_u32_wrap()
 
@@ -49,11 +49,7 @@ ItemDraw :: [].{
 	## A tree, drawn in more detail the nearer it is: its trunk is round when
 	## few of `trees` are nearer, and its crown is cones when it is nearer
 	## than SceneLimits.detail_dist.
-	draw_tree : TreeSighting.TreeItem,
-	{
-		trees : List(TreeSighting.TreeItem),
-		cam_focal : F64,
-	} -> List(Shapes.Shape)
+	draw_tree : TreeSighting, { trees : List(TreeSighting), cam_focal : F64 } -> List(Shapes.Shape)
 	draw_tree = |tree, { trees, cam_focal }| {
 		nearer_trees = ItemDraw.nearer_tree_count(trees, tree.forward)
 		Tree.draw({
@@ -178,7 +174,7 @@ draw_truck = |view, truck_at|
 expect SceneLimits.crown_shade_dist == 80.0
 expect SceneLimits.detail_dist == 200.0
 
-tree_at : F64 -> TreeSighting.TreeItem
+tree_at : F64 -> TreeSighting
 tree_at = |forward| {
 	right: 0.0,
 	forward,
@@ -186,7 +182,7 @@ tree_at = |forward| {
 	color: 1858082,
 }
 
-spread_trees : List(TreeSighting.TreeItem)
+spread_trees : List(TreeSighting)
 spread_trees = [10.0, 20.0, 30.0, 40.0, 50.0].map(tree_at)
 
 expect ItemDraw.nearer_tree_count(spread_trees, 10.0) == 0
@@ -196,7 +192,7 @@ expect ItemDraw.nearer_tree_count(spread_trees, 60.0) == 5
 expect ItemDraw.nearer_tree_count(spread_trees, 5.0) == 0
 expect ItemDraw.nearer_tree_count([], 10.0) == 0
 
-tied_trees : List(TreeSighting.TreeItem)
+tied_trees : List(TreeSighting)
 tied_trees = List.repeat(tree_at(20.0), 4)
 
 expect ItemDraw.nearer_tree_count(tied_trees, 20.0) == 0
@@ -251,7 +247,7 @@ expect ItemDraw.draw_tower(start_view, tower_along(200.0)).len() > 0
 expect ItemDraw.draw_tower(start_view, tower_along(1000.0)).len() > 0
 expect ItemDraw.draw_tower(start_view, tower_along(-100.0)).len() == 0
 
-tree_cluster : List(TreeSighting.TreeItem)
+tree_cluster : List(TreeSighting)
 tree_cluster = [10.0, 11.0, 12.0, 13.0, 14.0].map(tree_at)
 
 clustered_tree : F64 -> List(Shapes.Shape)
@@ -325,7 +321,7 @@ expect
 	List.concat(segs.map(|seg| seg.trees.len().to_i64_wrap()), [TreeSighting.max_vis_trees])
 		== [28, 16, 22, 640]
 
-lone_tree : TreeSighting.TreeItem
+lone_tree : TreeSighting
 lone_tree = TreeSighting.tree_in_view(
 	from_origin,
 	green_tree_at(120.0),
@@ -360,11 +356,11 @@ expect
 		},
 	)
 
-first_segment : List(TreeSighting.TreeItem)
+first_segment : List(TreeSighting)
 first_segment = TreeSighting.segment_trees(from_origin, Chain.Position.first)
 
 ## The first segment's tree at `i`, in planting order.
-planted_tree : U64 -> TreeSighting.TreeItem
+planted_tree : U64 -> TreeSighting
 planted_tree = |i|
 	first_segment.get(i) ?? crash "ItemDraw: the first segment has 28 trees in view"
 

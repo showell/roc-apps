@@ -24,7 +24,7 @@ Render :: [].{
 	## The things in view, each kind in its own list, and the depth order
 	## that names each by its place in its list.
 	Scene : {
-		trees : List(TreeSighting.TreeItem),
+		trees : List(TreeSighting),
 		towers : List(TowerSighting.TowerItem),
 		critters : List(Billboards.Billboard),
 		cats : List(CatSighting),
