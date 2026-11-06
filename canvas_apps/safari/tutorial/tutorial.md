@@ -14,7 +14,7 @@ This is Safari Ride. A rider cycles down a long road through open country, past 
 
 Safari Ride has the important parts of a game's world: terrain, physics, a camera, things that react to the player, and a day that ends. It doesn't have game mechanics yet. Nothing keeps score.
 
-A safari is a guided tour, so this is a tour of a tour. We'll start with the big picture, zoom in on a few parts, and zoom back out at the end. Safari Ride has about eighty modules of Roc, so you'll get to see how Roc holds up in a program with a lot going on.
+A safari is a guided tour, so this is a tour of a tour. We'll start with the big picture, hold one frame still to see what's in it, let it move, and zoom back out at the end. Safari Ride has about eighty modules of Roc, so you'll get to see how Roc holds up in a program with a lot going on.
 
 We assume you can already read Roc. If you can't yet, the official tutorial is the place to start. We'll point out a few Roc ideas in each chapter as they come up.
 
@@ -185,58 +185,7 @@ A sighting answers one question each frame: which of these can the rider see rig
 
 Cows, pigs and the other animals by the road are all sighted the same way, by `CutoutSighting`, and `Cutouts` decides which of them get drawn. `Detail` holds the thresholds behind that kind of decision: how near a tree shows its full detail, and how few pixels tall something may be and still be drawn.
 
-Everything in this chapter happens within a single frame, and none of it survives to the next one. So what does carry over from step to step? That's the next chapter.
-
-## The ride instant
-
-Each time the clock ticks, Safari Ride moves the rider and the truck and draws everything again. `RideInstant` is the one record it keeps from one tick to the next, and it holds the rider, the truck and the clock. One tick is a step.
-
-```widget step
-Click the ruler to play the ride to that step, or to go back to it.
-```
-
-The first three lines under the ruler are that record's three fields, read from a real ride. Click to the right of the dot, and the ride plays up to that step, eight steps a frame, with what's left to play marked on the ruler. Click to the left, and it's there almost at once, because the steps it has been through are kept in a list.
-
-New in this chapter:
-
-- Roc: nominal types, code with no effects in it
-- Modules: `RideInstant`, `Tour`
-
-A record is the plainest shape in Roc, and it's nearly all this needs. `RideInstant := { ... }.{ ... }` makes the module's own type out of one. That's a nominal type, which can carry a block of definitions, and unlike an opaque type it leaves its fields readable.
-
-{{code RideInstant.RideInstant from "One instant of the ride" to "}.{"}}
-
-Those three fields are the whole of what Safari Ride keeps from one step to the next. The cat has no state, and neither does the bird, the sun or the beacons, the blinking lights on the radio towers. Each frame works them all out again from the rider, the truck and the clock.
-
-That gives three kinds of moving thing, and the tour is organized around them:
-
-| Kind | Things | How it works |
-|---|---|---|
-| Stepped | The rider, the truck | Stored in `RideInstant`, and moved once a step from where it was |
-| Rider-driven | The cat, the bird | Worked out from how the rider is approaching, with nothing stored |
-| Clock-driven | The sun, the sky, the beacons, the headlights | Worked out from the clock, with nothing stored |
-
-Trees and cows are a fourth kind, the easiest of all: they never change.
-
-The game itself has no effectful functions at all. It has no `!` names, no `=>` arrows and no `?`. Effects live in the platform.
-
-### Pausing and stepping
-
-Mostly, Safari Ride is a screensaver: you sit back and watch it. You can also take the controls. Click the ride to give it the keyboard, and Space pauses it. While it's paused, Right moves one step forward and Left moves one step back. While it's running, each moves four steps at a time. J jumps to the next segment of the road, and R starts over.
-
-`SafariApp.step` handles all of that. It takes the model and a snapshot of the input, and it returns the next model:
-
-{{code SafariApp.step from "paused = if input.key_pressed(KeySpace)" to "Tour.step_forward(m.tour)"}}
-
-There's no event handler here. Each frame, the runner hands `step` a snapshot, and `step` reads it. `key_pressed` says a key went down since the last frame, so one tap of Space pauses the ride once. `key_down` says a key is being held, so holding Right keeps the ride moving.
-
-Stepping forward is the ordinary step. Stepping back is more interesting, because it's where keeping so little pays off. `Tour` holds the current instant and a list of the instants before it, so going back just means taking the last one off the list:
-
-{{code Tour.step_back}}
-
-Nothing has to be undone. An old `RideInstant` is still a perfectly good value. The cat ends up in the right place because its position was only ever worked out from the rider's, and the sun ends up in the right place because it was only ever worked out from the clock. Neither one needs any code for going backwards.
-
-Four kinds of thing have been named, and so far none has been shown.
+Everything in this chapter happens within a single frame, and none of it survives to the next one. Very little carries over from step to step, and we'll come to that. First, let's hold one frame still and see what's in it.
 
 ## The world
 
@@ -301,120 +250,97 @@ A value that never changes can be checked once, whole. `Pond`'s one function is 
 
 The `expect` under it, in the module above, runs that over all six ducks. One line covers the whole pond.
 
-Nothing in this chapter moves, but the ride does. Next, we'll look at the simplest thing that moves: the sky.
+Nothing in this chapter moves, and that's true of the next few chapters too, as we go through what's on one page of the flipbook. Nature comes first, starting with the trees.
 
-## The road
+## Trees
 
-A road of straight segments still has to get round its bends. Where two segments meet, something has to pave the corner and put up a rail.
-
-```widget bends
-Drag to turn the bend, and watch the rail change sides.
-```
-
-The road here is two segments, seen from above, and the white dot is where the view is from. The rail runs along the outer edge of the bend, and the yellow dot is the apex, where the outer edges of the two segments meet. The marks on the ruler are the route's own bends. Dragging past the middle swaps the outer edge from one side to the other. A road with no turn has no apex, so the ruler skips the last five degrees either side of straight.
+Trees are the easiest thing to put in a frame, so we'll use them to see how anything gets there. It takes three stages. The world plants a tree once. Each frame, a sighting asks whether the rider can see it. Then the drawing paints it.
 
 New in this chapter:
 
-- Roc: a closure that gives a repeated call a short name
-- Modules: `BendView`, `GroundSighting`, `RailSighting`
+- Roc: a function that calls itself, `|` in a `match` branch
+- Modules: `Scenery`, `Distance`, `Along`, `Across`, `TreeSighting`, `TreeDraw`
 
-`BendView` knows where two segments meet. `GroundSighting` and `RailSighting` each ask it about a bend, and each answers with plain data for another module to draw.
+### Planting a tree
 
-🔭 The modules around `BendView`
-```dot
-digraph road {
-  node [shape=box, fontname="Helvetica"];
-  BendView [style=bold];
-  GroundSighting -> BendView;
-  RailSighting -> BendView;
-  GroundSighting -> Ground;
-  RailSighting -> GuardRail;
-  GroundSighting -> Chain;
-  RailSighting -> Chain;
-  BendView -> Chain;
-  BendView -> Geom;
-  BendView -> World;
-}
-```
+A tree is a plain record:
 
-Everything in this chapter is measured from the rider, as a `Geom.RiderPoint`: so many metres to the right, and so many ahead. `Chain` finds where a point on the road lies from the rider, and the math layer chapter shows how. On the road itself, `Along` is a place along a segment and `Across` is a place across the road, and both are opaque types.
+{{code Scenery.Tree}}
 
-### Where two segments meet
+`along` says how far along its segment a tree stands, and `across` says how far it is from the middle of the road. `height` is a `Distance`, a length in metres. All three are opaque types, like `Clock`. A place along the road can't be passed as a place across it, and neither can be passed as a plain length.
 
-A bend is a small record.
+Trees stand in pairs, one each side of the road, every 30 metres. The pairs take turns, big and small. A big pair is green, and a small pair takes the accent color we saw in the last chapter. Gold and red trees are much taller than green ones:
 
-🐾 {{code BendView.BendView from "A bend as the rider sees it" to "}.{"}}
+{{code Trees.height}}
 
-`before` and `after` say where the two segments lie from the rider. The turn is positive to the right.
+A gold tree also stands further from the road. `Green | Red` is one branch for two tags:
 
-🌳 {{code BendView.outer_edge}}
+{{code Trees.distance_from_middle}}
 
-A bend to the right has its outer edge on the left. That's the swap at the middle of the ruler.
+Planting a segment starts at the first place a tree can go:
 
-🌳 {{code BendView.apex}}
+{{code Trees.plant}}
 
-`point_before` and `point_after` are closures. Each gives a call with four arguments a short name, so the two lines below them read alike. Each line runs along the outer edge of one segment, and `Geom.line_crossing` finds where the two cross. That's the yellow dot.
+From there, a function calls itself. Each call plants one pair, then calls `plant_onto` again with the next place and the other size. It stops 85 metres short of the segment's end, or at 96 trees.
 
-The road is 4 metres wide, so at a turn of 45 degrees the apex lies 4 × tan(22.5°) past the end of the first segment, which is the 1.7 metres the widget shows. Two parallel lines never cross, so a road with no turn has no apex, and nothing asks for one.
+{{code Trees.plant_onto}}
 
-### Paving a corner
+That all happens once, when the world is built. No frame ever plants a tree.
 
-A piece of ground is a list of corners and a color.
+### Seeing a tree
 
-🐾 🍃 {{code GroundSighting.road_patch}}
+From here on, things are measured from the rider. We don't need to know much about the rider yet. It's just where we're standing. A `Geom.RiderPoint` says how far right something is and how far ahead.
 
-That's what `Ground` paints. It's plain data, so it can be checked with numbers.
+{{code TreeSighting.tree_in_view}}
 
-🌳 {{code GroundSighting.bend_corner}}
+`Chain.rider_point_ahead` finds where a point on the road lies from the rider, and the math layer chapter shows how. After that, there are two ways to lose a tree. It can be behind the camera, or it can be so far off that it's too short to bother with. The line for `height_px` is perspective: a tree twice as far away looks half as tall.
 
-Four points cut the corner: the two ends of the first segment, the apex, and the place where the second segment's outer edge starts.
+The answer is a list of one, or an empty list. `TreeSighting.in_view` asks that about every tree on the road ahead, and joins the answers.
 
-🌳 {{code GroundSighting.lead_in}}
+### Drawing a tree
 
-The last 40 metres before a bend get a patch of their own, laid after the road's chunks and before the corner.
+A conifer is a trunk under eight tiers of foliage. Each tier is one record. Its numbers are `Fraction`s, ratios from 0 to 1, and the sky chapter has more to say about those.
 
-🌳 {{code GroundSighting.bend_ground}}
+{{code TreeDraw.Tier}}
 
-The road along a segment is laid in chunks of up to 25 metres. The widget's two segments are 60 metres each, which makes three chunks each, and `bend_ground` adds two patches. That's the widget's count of 8.
+Drawing a tree means working out where it lands on screen, then painting the trunk and each tier:
 
-🌳 {{code GroundSighting.pond_ground}}
+{{code TreeDraw.draw}}
 
-A pond is ground too. A segment that ends at a pond gets two more patches, the water and its bank, and their outlines come from `Pond`. `on_map` is another closure, and it moves an outline from the pond's own record onto the road.
+A far tree's tiers are flat triangles. A near tree's are cones, so a tree fattens as the rider passes under it. No one sees the difference, which is why the far ones get the cheap version.
 
-### The rail at a bend
+That's the shape of most things in a frame: a plain record, a sighting and a drawing. The next thing in nature needs none of that.
 
-The rail is a path along the outer edge, out to the apex, and back.
+## Grass
 
-The path of a guard rail
-```dot
-digraph rail {
-  rankdir=LR;
-  node [shape=box, fontname="Helvetica"];
-  up [label="run_up:\n10 metres along\nthe first segment"];
-  out [label="rail_leg:\nout to the apex"];
-  back [label="rail_leg:\nback to the\nsecond segment"];
-  on [label="run_out:\n10 metres along\nthe second segment"];
-  up -> out -> back -> on;
-}
-```
+The grass is one rectangle.
 
-🌳 {{code RailSighting.rail_path}}
+New in this chapter:
 
-The four parts of the list are the four boxes.
+- Roc: nothing new
+- Modules: `Backdrop`, `Screen`
 
-🌳 {{code RailSighting.rail_leg}}
+`Backdrop` paints what's behind the ride. It has one color for grass:
 
-A leg gets a point about every metre. It leaves out its first point, which is the last point of the leg before it.
+{{code Backdrop.grass_color}}
 
-🌳 {{code RailSighting.rails_at}}
+Its list of shapes starts with the sky and the grass, and this is the grass:
 
-`GuardRail.quads_along` turns the path into rails and posts for the depth sort. At a turn of 45 degrees, that's the widget's 49 pieces.
+{{code Backdrop.behind from "y: Screen.grass_top_y.to_f64()," to "fill: Flat(Brush.opaque(grass_color)),"}}
 
-All of this is worked out again on every frame, from the route and the rider. A bend is kept nowhere.
+It starts a pixel above the horizon, so no seam shows between the grass and the sky:
+
+{{code Screen.grass_top_y}}
+
+It's much wider than the screen because the whole picture tilts when the rider leans, and the corners have to stay filled.
+
+Nothing else in the program knows about grass. A segment doesn't have any, and there's no sighting for it. The grass is whatever hasn't been painted over.
+
+The other big thing in `Backdrop` is more interesting.
 
 ## The sky
 
-The sky is the simplest thing that moves, because it depends only on the clock.
+The sky changes all through the ride, but a frame only has to ask one question: what color is it right now? The answer depends only on the clock.
 
 ```widget sky
 Drag the clock and watch the sun set.
@@ -581,11 +507,203 @@ Its caller, `RideInstant.sun`, is short enough to read whole:
 
 That's every box on the diagram: one number goes in, and colors and a place for the sun come out, with nothing kept from one frame to the next.
 
-With the sunset, we compute a value based on the clock alone. The cat has a more nuanced rule: the timing of its crossing depends on the rider's position. Before we get to that, we need to be able to draw a cat.
+One more thing in the frame goes dark with the sky: the mountains.
 
-## Birds and cats: drawing the stills
+## Mountains
 
-Before a cat can cross the road, we have to be able to draw a cat. Every critter in Safari Ride is a *still*: a small picture made of filled polygons, stored as data. A cat has seven stills, one for each pose, and a bird has six. Animating a critter comes down to choosing which still to show, and where.
+However far the rider goes, the mountains never get any closer. They only turn as the rider turns. That makes them much simpler than they look.
+
+New in this chapter:
+
+- Roc: a function in a record field
+- Modules: `Mountains`
+
+There are two ranges, one to the north with snow on its peaks, and a lower one to the west. A range is a record:
+
+{{code Mountains.MountainRange}}
+
+It's measured in bearings and pixels, not metres. There's no terrain behind it. All a mountain has is a height at a bearing:
+
+{{code Mountains.range_height}}
+
+A range is highest in its middle and falls to nothing at its ends. Two waves on top of that make the ridges. The rolling land in front of the ranges is a single wave of its own, in the same green as the grass.
+
+To draw a range, we go across the screen a couple of pixels at a time and ask how high the skyline is at each bearing. The caller passes in `height_at`, a function in a record field, so one `silhouette` draws all three:
+
+{{code Mountains.silhouette}}
+
+`Mountains.draw` paints them back to front:
+
+{{code Mountains.draw}}
+
+The rock darkens with `dusk`, and the snow goes blue. `snow_color` uses the sky's own `color_between`:
+
+{{code Mountains.snow_color}}
+
+That's nature. Everything from here on was put there by somebody.
+
+## The road
+
+A road of straight segments still has to get round its bends. Where two segments meet, something has to pave the corner and put up a rail.
+
+```widget bends
+Drag to turn the bend, and watch the rail change sides.
+```
+
+The road here is two segments, seen from above, and the white dot is where the view is from. The rail runs along the outer edge of the bend, and the yellow dot is the apex, where the outer edges of the two segments meet. The marks on the ruler are the route's own bends. Dragging past the middle swaps the outer edge from one side to the other. A road with no turn has no apex, so the ruler skips the last five degrees either side of straight.
+
+New in this chapter:
+
+- Roc: a closure that gives a repeated call a short name
+- Modules: `BendView`, `GroundSighting`
+
+`BendView` knows where two segments meet. `GroundSighting` and `RailSighting` each ask it about a bend, and each answers with plain data for another module to draw.
+
+🔭 The modules around `BendView`
+```dot
+digraph road {
+  node [shape=box, fontname="Helvetica"];
+  BendView [style=bold];
+  GroundSighting -> BendView;
+  RailSighting -> BendView;
+  GroundSighting -> Ground;
+  RailSighting -> GuardRail;
+  GroundSighting -> Chain;
+  RailSighting -> Chain;
+  BendView -> Chain;
+  BendView -> Geom;
+  BendView -> World;
+}
+```
+
+Everything in this chapter is measured from the rider, as the trees were.
+
+### Where two segments meet
+
+A bend is a small record.
+
+🐾 {{code BendView.BendView from "A bend as the rider sees it" to "}.{"}}
+
+`before` and `after` say where the two segments lie from the rider. The turn is positive to the right.
+
+🌳 {{code BendView.outer_edge}}
+
+A bend to the right has its outer edge on the left. That's the swap at the middle of the ruler.
+
+🌳 {{code BendView.apex}}
+
+`point_before` and `point_after` are closures. Each gives a call with four arguments a short name, so the two lines below them read alike. Each line runs along the outer edge of one segment, and `Geom.line_crossing` finds where the two cross. That's the yellow dot.
+
+The road is 4 metres wide, so at a turn of 45 degrees the apex lies 4 × tan(22.5°) past the end of the first segment, which is the 1.7 metres the widget shows. Two parallel lines never cross, so a road with no turn has no apex, and nothing asks for one.
+
+### Paving a corner
+
+A piece of ground is a list of corners and a color.
+
+🐾 🍃 {{code GroundSighting.road_patch}}
+
+That's what `Ground` paints. It's plain data, so it can be checked with numbers.
+
+🌳 {{code GroundSighting.bend_corner}}
+
+Four points cut the corner: the two ends of the first segment, the apex, and the place where the second segment's outer edge starts.
+
+🌳 {{code GroundSighting.lead_in}}
+
+The last 40 metres before a bend get a patch of their own, laid after the road's chunks and before the corner.
+
+🌳 {{code GroundSighting.bend_ground}}
+
+The road along a segment is laid in chunks of up to 25 metres. The widget's two segments are 60 metres each, which makes three chunks each, and `bend_ground` adds two patches. That's the widget's count of 8.
+
+🌳 {{code GroundSighting.pond_ground}}
+
+A pond is ground too. A segment that ends at a pond gets two more patches, the water and its bank, and their outlines come from `Pond`. `on_map` is another closure, and it moves an outline from the pond's own record onto the road.
+
+The corner has its paving. Next, it needs a rail.
+
+## Rails
+
+The rail is a path along the outer edge, out to the apex, and back.
+
+New in this chapter:
+
+- Roc: nothing new
+- Modules: `RailSighting`, `GuardRail`
+
+The path of a guard rail
+```dot
+digraph rail {
+  rankdir=LR;
+  node [shape=box, fontname="Helvetica"];
+  up [label="run_up:\n10 metres along\nthe first segment"];
+  out [label="rail_leg:\nout to the apex"];
+  back [label="rail_leg:\nback to the\nsecond segment"];
+  on [label="run_out:\n10 metres along\nthe second segment"];
+  up -> out -> back -> on;
+}
+```
+
+🌳 {{code RailSighting.rail_path}}
+
+The four parts of the list are the four boxes.
+
+🌳 {{code RailSighting.rail_leg}}
+
+A leg gets a point about every metre. It leaves out its first point, which is the last point of the leg before it.
+
+🌳 {{code RailSighting.rails_at}}
+
+`GuardRail.quads_along` turns the path into rails and posts for the depth sort. At a turn of 45 degrees, that's the 49 pieces in the last chapter's widget.
+
+All of this is worked out again on every frame, from the route and the rider. A bend is kept nowhere.
+
+## Radio towers
+
+The rail stays close to the road. The radio towers stand well back from it. One stands past the end of every segment, off to the right, and a long segment has one more halfway along, off to the left. Each is a lattice of thin rods, 80 metres tall.
+
+New in this chapter:
+
+- Roc: `match` on a pair
+- Modules: `TowerSighting`, `Tower`
+
+A tower isn't planted anywhere. Its sighting works out where it stands from the segment. This one is for the tower halfway along:
+
+{{code TowerSighting.mid_tower}}
+
+`MidTower` is a tag on the segment, and that's all the world knows about towers.
+
+### Rods
+
+A tower's footprint is a square, and four tags name its corners. Going round the square is a `match`:
+
+{{code Tower.next_corner}}
+
+Everything above the footprint is rods. Four legs run from the corners up to a point:
+
+{{code Tower.legs}}
+
+A ring of rods goes round the tower every 20 metres, and crossed braces fill the lowest two storeys. Each rod is a line between two points in the rider's view, and it needs some care, because a tower can be tall and close enough to stand partly behind the camera:
+
+{{code Tower.rod}}
+
+The `match` is on a pair, so it has to cover all four combinations. A rod with one end behind the camera is cut where it crosses the camera's plane, and a rod with both ends behind isn't drawn.
+
+### Over the horizon
+
+As a tower gets further away, it sinks below the horizon from the bottom up:
+
+{{code Tower.sunk_below_horizon}}
+
+A real tower wouldn't go so soon. `sink_radius` is 20 km, a much smaller earth than ours, so a tower is gone at 1.8 km. That looks better.
+
+Each tower has a beacon on top, and `beacon_brightness` is a field of its sighting. Beacons blink, so we'll leave them until things start to move.
+
+The truck is man-made too, and it waits for the same reason. That leaves the animals.
+
+## Stills: how we draw a critter
+
+Before we can stand an elephant by the road, we have to be able to draw one. Every critter in Safari Ride is a *still*: a small picture made of filled polygons, stored as data. An elephant has one still. A cat has seven, one for each pose, and a bird has six. Those two have to wait until things start moving, but we can look at them now. Animating a critter comes down to choosing which still to show, and where.
 
 ```widget stills
 Every pose of the cat and the bird. Click one to see it large, and click it again for its polygons.
@@ -626,7 +744,7 @@ That's all there is to drawing a critter. Each set of stills has a `pose_polygon
 
 ### How the stills got made
 
-That's all the Roc in this chapter. If you came for the Roc, you can skip ahead to [The cat](the-cat.html). The rest of this chapter is the story of where the pictures came from.
+That's all the Roc in this chapter. If you came for the Roc, you can skip ahead to [The elephant](the-elephant.html). The rest of this chapter is the story of where the pictures came from.
 
 At a larger company, a picture like these would pass through three people. An artist would draw it. A software developer would build the tools that get it into the game. A project manager would look at the result and decide whether it's good enough. On Safari Ride, Claude played the first two roles, and Steve played the third.
 
@@ -644,7 +762,207 @@ The project manager's tool was a contact sheet: every still, side by side, in on
 
 The bakers belong to the older versions of Safari Ride, in TypeScript and Zig. The polygons they made have been carried along ever since, which is why these files look like generated data. They are.
 
-Now that we can draw a cat in any pose, we can work out which pose to show.
+Now that we can draw a critter, we can stand one by the road.
+
+## The elephant
+
+The critters in this stretch of the book are billboards: flat pictures that stand in one place and never change. The code calls them cutouts. We'll start with the elephant. It stands at 14 of the route's 19 bends, so it's the animal you'll see most. A grown elephant waits beyond the guard rail on the outside of the bend, and its baby stands in the middle of the road a little further on.
+
+New in this chapter:
+
+- Roc: a `match` that answers with a list
+- Modules: `Wildlife`
+
+A segment's `bend_life` field says what's at its bend. `Wildlife.bend_critters` turns that into critters:
+
+{{code Wildlife.bend_critters}}
+
+`Quiet` and `DuckPond` have no animals, so they answer with an empty list. An `Animal` answers with a list of two. `inward` is 1 or -1, so one line of arithmetic places the grown animal on either side of the road.
+
+An elephant has no state. It's a plain record, with a place, an emoji, a height and a way to face. `StillDraw` looks up the emoji's still and draws it at that height. The baby is the same still at half the height.
+
+Nothing in that function says "elephant". That's what makes the next chapter short.
+
+## Rhinos, giraffes and the other corner critters
+
+An elephant stands at 14 of the route's 19 bends. A giraffe, a rhino and a zebra have one bend each. They all use the same code as the elephant, and they differ by one row:
+
+{{code Wildlife.species_of}}
+
+Each animal is a tag, and each answers with its emoji and how tall it stands. The `match` has to cover all four.
+
+To add a lion, we'd add a tag, a row here and a still in `EmojiStills`. The compiler would point at every `match` that needs the new tag.
+
+These animals each stand alone at a bend. Most of the others come in crowds, and a crowd starts with a single pig.
+
+## A pig
+
+A pig is the simplest critter in Safari Ride. It isn't tied to a bend. Here's how we build one:
+
+{{code Pigs.pig}}
+
+New in this chapter:
+
+- Roc: a `match` on numbers, with a default branch
+- Modules: `Pigs`, `Scenery`
+
+That's the record that the elephant and its baby came out as: two places, an emoji, a height and a way to face. A critter's `codepoint` is what finds its still, and that's one `match`, from a number to some polygons:
+
+{{code EmojiStills.emoji_polys_for}}
+
+That's a pig. One pig doesn't look like much of a farm, though.
+
+## Herds: cows and pigs
+
+Safari Ride's farms are crowds of animals, and a crowd is just a list of critters. Both herds are worked out once, when the world is built.
+
+New in this chapter:
+
+- Roc: `List.from_iter` over a range
+- Modules: `Cows`
+
+### Cows
+
+A herd of 14 cows grazes on the left of the road, in columns of three. Every fourth cow is a calf, at half the height.
+
+{{code Cows.cows}}
+
+A herd in a perfect grid would look like a parking lot, so each cow strays a little from its place:
+
+{{code Cows.cow_at}}
+
+The stray comes from `r_sin` and `r_cos` of the cow's number. It looks random, but it's the same on every run, so the frames stay exact.
+
+A bull may stand in front of the herd, by the trees. It's the same record again, a bit taller than a cow:
+
+{{code Cows.bull_of}}
+
+### Pigs
+
+Pigs graze on the right of the road, near the end of a segment. The first two segments with pigs get a big herd, 7 rows of 7. After that, it's two short rows.
+
+{{code Pigs.pigs_along}}
+
+The `match` is on a pair, so it has to cover all four combinations. The last line joins the two with no pigs.
+
+`Distracting` is the one thing here that a cow doesn't have. One pig in a big herd catches the rider's eye, and the rider slows down to look. That's about the rider more than the pig, so it waits for the rider's chapters.
+
+That's every critter that stands still, and the end of what we can say about one frame.
+
+## The ride instant
+
+We've held one frame still for a long time. Now it's time to turn the page. Each time the clock ticks, Safari Ride moves the rider and the truck and draws everything again. `RideInstant` is the one record it keeps from one tick to the next, and it holds the rider, the truck and the clock. One tick is a step.
+
+```widget step
+Click the ruler to play the ride to that step, or to go back to it.
+```
+
+The first three lines under the ruler are that record's three fields, read from a real ride. Click to the right of the dot, and the ride plays up to that step, eight steps a frame, with what's left to play marked on the ruler. Click to the left, and it's there almost at once, because the steps it has been through are kept in a list.
+
+New in this chapter:
+
+- Roc: nominal types, code with no effects in it
+- Modules: `RideInstant`, `Tour`
+
+A record is the plainest shape in Roc, and it's nearly all this needs. `RideInstant := { ... }.{ ... }` makes the module's own type out of one. That's a nominal type, which can carry a block of definitions, and unlike an opaque type it leaves its fields readable.
+
+{{code RideInstant.RideInstant from "One instant of the ride" to "}.{"}}
+
+Those three fields are the whole of what Safari Ride keeps from one step to the next. The cat has no state, and neither does the bird, the sun or the beacons, the blinking lights on the radio towers. Each frame works them all out again from the rider, the truck and the clock.
+
+That gives three kinds of moving thing, and the rest of the tour is organized around them:
+
+| Kind | Things | How it works |
+|---|---|---|
+| Clock-driven | The sun, the sky, the beacons, the headlights | Worked out from the clock, with nothing stored |
+| Rider-driven | The cat, the bird | Worked out from how the rider is approaching, with nothing stored |
+| Stepped | The rider, the truck | Stored in `RideInstant`, and moved once a step from where it was |
+
+Trees and cows are a fourth kind, the easiest of all: they never change.
+
+The game itself has no effectful functions at all. It has no `!` names, no `=>` arrows and no `?`. Effects live in the platform.
+
+### Pausing and stepping
+
+Mostly, Safari Ride is a screensaver: you sit back and watch it. You can also take the controls. Click the ride to give it the keyboard, and Space pauses it. While it's paused, Right moves one step forward and Left moves one step back. While it's running, each moves four steps at a time. J jumps to the next segment of the road, and R starts over.
+
+`SafariApp.step` handles all of that. It takes the model and a snapshot of the input, and it returns the next model:
+
+{{code SafariApp.step from "paused = if input.key_pressed(KeySpace)" to "Tour.step_forward(m.tour)"}}
+
+There's no event handler here. Each frame, the runner hands `step` a snapshot, and `step` reads it. `key_pressed` says a key went down since the last frame, so one tap of Space pauses the ride once. `key_down` says a key is being held, so holding Right keeps the ride moving.
+
+Stepping forward is the ordinary step. Stepping back is more interesting, because it's where keeping so little pays off. `Tour` holds the current instant and a list of the instants before it, so going back just means taking the last one off the list:
+
+{{code Tour.step_back}}
+
+Nothing has to be undone. An old `RideInstant` is still a perfectly good value. The cat ends up in the right place because its position was only ever worked out from the rider's, and the sun ends up in the right place because it was only ever worked out from the clock. Neither one needs any code for going backwards.
+
+We've seen the things that never change, and the sky. The beacons are next, because they follow the clock alone.
+
+## The beacons
+
+Some things in Safari Ride are worked out from the clock alone, with nothing stored. The sky is the largest of them. The beacons on the radio towers are the next, and they blink over and over.
+
+```widget beacon
+Drag the clock and watch the towers blink out of step.
+```
+
+Drag across it from left to right, and the clock runs through two whole blinks, from step 5,400 to step 5,640. The left tower starts dark and the right one at full brightness. At step 5,430, where the first marked stretch starts, both read 49%, and by step 5,460 they've changed places. Each marked stretch is where the left tower is more than half bright. At the far end of the ruler the towers are back where they began.
+
+New in this chapter:
+
+- Roc: a pair of opaque types with only the sums that make sense
+- Modules: `Steps`
+
+### A blink
+
+The modules behind a beacon
+```dot
+digraph beacon {
+  node [shape=box, fontname="Helvetica"];
+  TowerSighting [style=bold];
+  SceneDraw -> Scene;
+  SceneDraw -> TowerSighting;
+  SceneDraw -> Tower;
+  Scene -> TowerSighting;
+  TowerSighting -> Clock;
+  TowerSighting -> Steps;
+  TowerSighting -> Fraction;
+  Clock -> Steps;
+  Tower -> Fraction;
+}
+```
+
+A beacon is the only thing in Safari Ride that repeats on the clock, so it's the first thing that needs to ask how far into a cycle it is. That question isn't about an instant of the ride. It's about a length of time, and Safari Ride keeps those two apart.
+
+`Clock` says which step it is. `Steps` says how long something lasts. Both are opaque `U32`s, and `Clock.minus` turns two clocks into `Steps`, the same way two `Angle.Bearing`s make an `Angle.Turn`. Adding two clocks means nothing, so `Clock` has no `plus`, and no other code can add one. Call this *places and distances*: one opaque type for where something is, a second for how far apart two of them are, and only the sums that make sense.
+
+Here, `wrapped_to` is `Steps`'s one way to reach `%`. The result is a `Fraction` built with `of`, because `(1 - cos) / 2` can only be in range:
+
+{{code TowerSighting.beacon_brightness}}
+
+Each tower starts somewhere else in the cycle, so the towers along a road don't blink together. This function is one line of method calls, and every call in it is on a `Steps`:
+
+{{code TowerSighting.beacon_offset_for}}
+
+The sighting calls both, adding the two `Steps`. `view.clock.minus(Clock.start)` is how a place becomes a distance, and it says which distance: the one from the start of the ride.
+
+{{code TowerSighting.tower_if_ahead from "if center.forward <= Geom.near_plane" to "view.clock.minus(Clock.start)"}}
+
+Its caller gives each tower its key, the segment's index. Records with named fields stand in for what would otherwise be five arguments in a row, and `InChain(position)` is a tag carrying a payload, saying where the segment lies from the rider:
+
+{{code TowerSighting.segment_towers from "end_tower = tower_if_ahead(" to "end_tower.concat(mid_tower(view, position))"}}
+
+A tower halfway along a segment takes the key plus 60. That's a small piece of number theory hiding in a constant: 60 staggers of 37 steps come to 2,220, which is 18 periods of 120 and 60 left over, so the mid-tower blinks exactly opposite the end tower.
+
+Notice where the clock stops. `beacon_brightness` on a `TowerSighting` is a `Fraction`, and neither `Tower` nor `SceneDraw` imports `Clock`. A beacon's blink is decided in the same place as whether the tower is in view at all.
+
+There's no blink abstraction. `Animation.Alternates` also follows a wave, and the resemblance ends there: it picks a pose, and this picks a brightness. Nothing else in the game blinks.
+
+The clock counts steps, not seconds, so pausing the ride freezes the beacons, and stepping back runs them backwards.
+
+With the sunset and the beacons, we compute a value based on the clock alone. The cat has a more nuanced rule: the timing of its crossing depends on the rider's position.
 
 ## The cat
 
@@ -659,7 +977,7 @@ Drag across it from left to right, and the gap falls from 50 metres to 0, with t
 New in this chapter:
 
 - Roc: type parameters, operators on opaque types, `var`, `for` and `return` in a pure function
-- Modules: `Cat`, `Animation`, `Beat`, `Beats`, `CatHeights`, `Distance`, `Speed`
+- Modules: `Cat`, `Animation`, `Beat`, `Beats`, `CatHeights`, `Speed`
 
 The cat is one function, `Cat.instant_at`, with two jobs: work out how far along the crossing is, and look up what the cat does at that point. The module `Animation` sits under both.
 
@@ -1014,201 +1332,7 @@ Each frame, a sighting reads the route back. `|` in a pattern covers two tags wi
 
 We didn't need any new machinery for the bird. Above their `expect`s, the four bird modules come to about 450 lines, a quarter of them coordinates for the stills. `Animation` has nothing in it about birds.
 
-## The elephant
-
-The cat and the bird both move. The elephant doesn't. It stands at 14 of the route's 19 bends, so it's the animal you'll see most, and what's new about it is where it stands. A grown elephant waits beyond the guard rail on the outside of the bend, and its baby stands in the middle of the road a little further on.
-
-New in this chapter:
-
-- Roc: a `match` that answers with a list
-- Modules: `Wildlife`
-
-A segment's `bend_life` field says what's at its bend. `Wildlife.bend_critters` turns that into critters:
-
-{{code Wildlife.bend_critters}}
-
-`Quiet` and `DuckPond` have no animals, so they answer with an empty list. An `Animal` answers with a list of two. `inward` is 1 or -1, so one line of arithmetic places the grown animal on either side of the road.
-
-An elephant has no timeline and no state. It's a plain record, with a place, an emoji, a height and a way to face. `StillDraw` looks up the emoji's still and draws it at that height. The baby is the same still at half the height.
-
-Nothing in that function says "elephant". That's what makes the next chapter short.
-
-## Rhinos, giraffes and the other corner critters
-
-An elephant stands at 14 of the route's 19 bends. A giraffe, a rhino and a zebra have one bend each. They all use the same code as the elephant, and they differ by one row:
-
-{{code Wildlife.species_of}}
-
-Each animal is a tag, and each answers with its emoji and how tall it stands. The `match` has to cover all four.
-
-To add a lion, we'd add a tag, a row here and a still in `EmojiStills`. The compiler would point at every `match` that needs the new tag.
-
-These animals each stand alone at a bend. Most of the others come in crowds, and a crowd starts with a single pig.
-
-## A pig
-
-A pig is the simplest critter in Safari Ride. It has no timeline, and it isn't tied to a bend. Here's how we build one:
-
-{{code Pigs.pig}}
-
-New in this chapter:
-
-- Roc: a `match` on numbers, with a default branch
-- Modules: `Pigs`, `Scenery`
-
-That's the record that the elephant and its baby came out as: two places, an emoji, a height and a way to face. A critter's `codepoint` is what finds its still, and that's one `match`, from a number to some polygons:
-
-{{code EmojiStills.emoji_polys_for}}
-
-That's a pig. One pig doesn't look like much of a farm, though.
-
-## Herds: cows and pigs
-
-Safari Ride's farms are crowds of animals, and a crowd is just a list of critters. Both herds are worked out once, when the world is built.
-
-New in this chapter:
-
-- Roc: `List.from_iter` over a range, `match` on a pair
-- Modules: `Cows`
-
-### Cows
-
-A herd of 14 cows grazes on the left of the road, in columns of three. Every fourth cow is a calf, at half the height.
-
-{{code Cows.cows}}
-
-A herd in a perfect grid would look like a parking lot, so each cow strays a little from its place:
-
-{{code Cows.cow_at}}
-
-The stray comes from `r_sin` and `r_cos` of the cow's number. It looks random, but it's the same on every run, so the frames stay exact.
-
-A bull may stand in front of the herd, by the trees. It's the same record again, a bit taller than a cow:
-
-{{code Cows.bull_of}}
-
-### Pigs
-
-Pigs graze on the right of the road, near the end of a segment. The first two segments with pigs get a big herd, 7 rows of 7. After that, it's two short rows.
-
-{{code Pigs.pigs_along}}
-
-The `match` is on a pair, so it has to cover all four combinations. The last line joins the two with no pigs.
-
-`Distracting` is the one thing here that a cow doesn't have. One pig in a big herd catches the rider's eye, and the rider slows down to look. That's about the rider more than the pig, so it waits for the rider's chapters.
-
-The critters so far either react to the rider or stand still. The sun only goes one way, and nothing so far repeats on the clock. The beacons do.
-
-## The beacons and the headlights
-
-Some things in Safari Ride are worked out from the clock alone, with nothing stored. The sky is the largest of them. This chapter covers the other two: the beacons on the radio towers, which blink over and over, and the truck's headlights, which switch on once.
-
-```widget beacon
-Drag the clock and watch the towers blink out of step.
-```
-
-Drag across it from left to right, and the clock runs through two whole blinks, from step 5,400 to step 5,640. The left tower starts dark and the right one at full brightness. At step 5,430, where the first marked stretch starts, both read 49%, and by step 5,460 they've changed places. Each marked stretch is where the left tower is more than half bright. At the far end of the ruler the towers are back where they began.
-
-New in this chapter:
-
-- Roc: a pair of opaque types with only the sums that make sense, records of tag unions written in place
-- Modules: `Steps`, `TowerSighting`, `Tower`, `Mountains`, `TruckDraw`
-
-### A blink
-
-The modules behind a beacon
-```dot
-digraph beacon {
-  node [shape=box, fontname="Helvetica"];
-  TowerSighting [style=bold];
-  SceneDraw -> Scene;
-  SceneDraw -> TowerSighting;
-  SceneDraw -> Tower;
-  Scene -> TowerSighting;
-  TowerSighting -> Clock;
-  TowerSighting -> Steps;
-  TowerSighting -> Fraction;
-  Clock -> Steps;
-  Tower -> Fraction;
-}
-```
-
-A beacon is the only thing in Safari Ride that repeats on the clock, so it's the first thing that needs to ask how far into a cycle it is. That question isn't about an instant of the ride. It's about a length of time, and Safari Ride keeps those two apart.
-
-`Clock` says which step it is. `Steps` says how long something lasts. Both are opaque `U32`s, and `Clock.minus` turns two clocks into `Steps`, the same way two `Angle.Bearing`s make an `Angle.Turn`. Adding two clocks means nothing, so `Clock` has no `plus`, and no other code can add one. Call this *places and distances*: one opaque type for where something is, a second for how far apart two of them are, and only the sums that make sense.
-
-Here, `wrapped_to` is `Steps`'s one way to reach `%`. The result is a `Fraction` built with `of`, because `(1 - cos) / 2` can only be in range:
-
-{{code TowerSighting.beacon_brightness}}
-
-Each tower starts somewhere else in the cycle, so the towers along a road don't blink together. This function is one line of method calls, and every call in it is on a `Steps`:
-
-{{code TowerSighting.beacon_offset_for}}
-
-The sighting calls both, adding the two `Steps`. `view.clock.minus(Clock.start)` is how a place becomes a distance, and it says which distance: the one from the start of the ride.
-
-{{code TowerSighting.tower_if_ahead from "if center.forward <= Geom.near_plane" to "view.clock.minus(Clock.start)"}}
-
-Its caller gives each tower its key, the segment's index. Records with named fields stand in for what would otherwise be five arguments in a row, and `InChain(position)` is a tag carrying a payload, saying where the segment lies from the rider:
-
-{{code TowerSighting.segment_towers from "end_tower = tower_if_ahead(" to "end_tower.concat(mid_tower(view, position))"}}
-
-A tower halfway along a segment takes the key plus 60. That's a small piece of number theory hiding in a constant: 60 staggers of 37 steps come to 2,220, which is 18 periods of 120 and 60 left over, so the mid-tower blinks exactly opposite the end tower.
-
-Notice where the clock stops. `beacon_brightness` on a `TowerSighting` is a `Fraction`, and neither `Tower` nor `SceneDraw` imports `Clock`. A beacon's blink is decided in the same place as whether the tower is in view at all.
-
-There's no blink abstraction. `Animation.Alternates` also follows a wave, and the resemblance ends there: it picks a pose, and this picks a brightness. Nothing else in the game blinks.
-
-The clock counts steps, not seconds, so pausing the ride freezes the beacons, and stepping back runs them backwards.
-
-### One switch
-
-Here are the truck's lights at three frames of the ride:
-
-| Step | Headlights | Brake lights |
-|---|---|---|
-| 3,742 | `Off` | `On` |
-| 5,700 | `On` | `Off` |
-| 6,520 | `On` | `On` |
-
-The modules behind the headlights
-```dot
-digraph headlights {
-  node [shape=box, fontname="Helvetica"];
-  RideInstant [style=bold];
-  RideInstant -> Mountains;
-  RideInstant -> Sky;
-  RideInstant -> Truck;
-  RideInstant -> SceneDraw;
-  Mountains -> Sky;
-  Mountains -> Clock;
-  Sky -> Clock;
-  SceneDraw -> TruckDraw;
-  TruckDraw -> Truck;
-}
-```
-
-The truck's headlights come on once the sun has gone behind the mountains, at step 4,039 of a ride that lasts 7,040. `Mountains` knows the skyline and already imports `Sky`, so the question is asked there. The argument is an opaque `Clock`, and the answer is a plain `Bool`, which is about to be turned into something better:
-
-{{code Mountains.is_sun_behind_mountains}}
-
-`Truck.Lights` is a record of two tag unions, written in place. `[On, Off]` needs no declaration, and two independent lamps aren't one state with four values, so they're two fields:
-
-{{code Truck.Lights}}
-
-`RideInstant` puts it together. It's the only place that can. `Truck` is in the ride half of the system and `Mountains` is in the view, and no arrow goes from the first to the second. `RideInstant` imports both.
-
-{{code RideInstant.truck_lights}}
-
-Lamps are to the truck what a pose is to a cat. The sighting carries them, and the drawing does what they say, with each `match` covering both tags:
-
-{{code TruckDraw.draw from "beams =" to "].join()"}}
-
-`TruckDraw` leaves the painting to two modules. `TruckBody` paints the trailer, the cab and the tires, far to near, and `TruckLights` paints the beams and the brake lights, each with its glow.
-
-That covers the clock-driven things. Each is a function with a `Clock` in its arguments, and nothing about them outlives the frame.
-
-Everything so far can be asked about any instant, cold. Hand `Cat.instant_at` a gap and it answers. The rider and the truck can't do that.
+The sun, the beacons, the cat and the bird can all be asked about any instant, cold. Hand `Cat.instant_at` a gap and it answers. The rider and the truck can't do that.
 
 ## The stepped things
 
@@ -1484,6 +1608,21 @@ A cat catches the rider's eye from the lane. A pig does it from the side of the 
 
 The herds chapter left one pig waiting. On the first two segments with pigs, a pig in the big herd catches the rider's eye. The rider turns to look and slows down, and the picture turns too.
 
+```widget gaze
+Drag along the stretch around the first distracting pig: the sight line follows the pig until it's 35 degrees off, then eases back to the road.
+```
+
+Here's that first pig, on the third segment of the route:
+
+| Step | What happens | Speed | `gaze_yaw` | `attention` |
+|---|---|---|---|---|
+| 889 | The rider looks, with the pig 150 metres off | 1.94 metres a step | 4.0 degrees | 0.114 |
+| 1,045 | The gaze is at its widest | 0.2 metres a step | 34.9 degrees | 0.998 |
+| 1,046 | The rider lets the pig go | 0.2 metres a step | 34.7 degrees | 0.998 |
+| 1,304 | The gaze is back on the road | 0.2 metres a step | 0 degrees | 0.997 |
+
+The look takes 157 steps, and getting the eyes back takes 258. The rider is still crawling when the segment ends, at step 1,394.
+
 New in this chapter:
 
 - Roc: comparing a tag with `==`
@@ -1568,8 +1707,8 @@ The truck stays ahead of the rider all the way:
 
 New in this chapter:
 
-- Roc: list patterns, recursion
-- Modules: `Truck`
+- Roc: list patterns, records of tag unions written in place
+- Modules: `Truck`, `TruckDraw`
 
 The modules around `Truck`
 ```dot
@@ -1618,6 +1757,51 @@ Then the two ways to take a step. Both sit below the block, private, and both ar
 `brake_lights` is state because it's a fact about the last step. Headlights aren't, and they stay out of `TruckState`. That's three of the four kinds in one vehicle: the place and speed are stepped, the headlights are clock-driven, and the tires don't change.
 
 The truck has no `Animation`. A timeline has a known length and can answer for any point along it. The truck has neither. Its next step depends on its last, and its route depends on the rider. `TruckSighting` calls the distance to the truck `lead`, the same quantity as an `Approach`'s `gap`, because the truck is being chased.
+
+### One switch
+
+Here are the truck's lights at three frames of the ride:
+
+| Step | Headlights | Brake lights |
+|---|---|---|
+| 3,742 | `Off` | `On` |
+| 5,700 | `On` | `Off` |
+| 6,520 | `On` | `On` |
+
+The modules behind the headlights
+```dot
+digraph headlights {
+  node [shape=box, fontname="Helvetica"];
+  RideInstant [style=bold];
+  RideInstant -> Mountains;
+  RideInstant -> Sky;
+  RideInstant -> Truck;
+  RideInstant -> SceneDraw;
+  Mountains -> Sky;
+  Mountains -> Clock;
+  Sky -> Clock;
+  SceneDraw -> TruckDraw;
+  TruckDraw -> Truck;
+}
+```
+
+The truck's headlights come on once the sun has gone behind the mountains, at step 4,039 of a ride that lasts 7,040. `Mountains` knows the skyline and already imports `Sky`, so the question is asked there. The argument is an opaque `Clock`, and the answer is a plain `Bool`, which is about to be turned into something better:
+
+{{code Mountains.is_sun_behind_mountains}}
+
+`Truck.Lights` is a record of two tag unions, written in place. `[On, Off]` needs no declaration, and two independent lamps aren't one state with four values, so they're two fields:
+
+{{code Truck.Lights}}
+
+`RideInstant` puts it together. It's the only place that can. `Truck` is in the ride half of the system and `Mountains` is in the view, and no arrow goes from the first to the second. `RideInstant` imports both.
+
+{{code RideInstant.truck_lights}}
+
+Lamps are to the truck what a pose is to a cat. The sighting carries them, and the drawing does what they say, with each `match` covering both tags:
+
+{{code TruckDraw.draw from "beams =" to "].join()"}}
+
+`TruckDraw` leaves the painting to two modules. `TruckBody` paints the trailer, the cab and the tires, far to near, and `TruckLights` paints the beams and the brake lights, each with its glow.
 
 One question about the rider is still open: how `Rider.decide` picks a lean. The module that answers it is `LeanSearch`, and it rests on the geometry and physics in the next chapter.
 
@@ -2191,7 +2375,7 @@ This page lists what catches a reader of Roc out in Safari Ride, sorted by what 
 | A pose cut on the wrong side of its beat | The leap's beats sum to a float just under the beat they stand for, so a cut says `Through` or `Before` | The cat |
 | The first frame of an animation shown too soon | `Waiting` and `Past` aren't progress of 0 and 1, because a critter can rest where no part of its animation reaches | The cat |
 | A bird hanging in the air | `over_gap` doesn't know a bird can't hover. A stopped rider would leave one there, and on this route the rider doesn't stop inside a bird's 45 metres | The bird |
-| Beacons that stop, or run backwards | The clock counts steps, not seconds, so pausing freezes them and stepping back reverses them | The beacons and the headlights |
+| Beacons that stop, or run backwards | The clock counts steps, not seconds, so pausing freezes them and stepping back reverses them | The beacons |
 | A frame hash that moves after a sum was reordered | Float addition isn't associative, so a sum's order is part of its meaning | Proving it |
 | A green gate over a wrong brake light | The gate is blind to whatever no listed frame shows | Proving it |
 | A page that differs from the hashed frame | The hash proves `ShapesPixels`'s pixels. The page's come from the browser's canvas, with anti-aliasing | Proving it |
