@@ -54,7 +54,7 @@ Render :: [].{
 			Billboards.billboards_in_view(CritterSighting.sightings(road))
 				.take_first(CritterSighting.max_vis_critters.to_u64_wrap())
 		cats = CatSighting.in_view(view, speed).take_first(CatSighting.max_vis_cats.to_u64_wrap())
-		rails = RailSighting.all_rails(road)
+		rails = RailSighting.in_view(road)
 		rider_distance = World.distance_along_route(
 			road.world,
 			{ index: Chain.rider_segment(road), along: road.vantage.along },
