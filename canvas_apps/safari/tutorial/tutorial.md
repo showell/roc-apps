@@ -281,7 +281,7 @@ Planting a segment starts at the first place a tree can go:
 
 {{code Trees.plant}}
 
-From there, a function calls itself. Each call plants one pair, then calls `plant_onto` again with the next place and the other size. It stops 85 metres short of the segment's end, or at 96 trees.
+From there, `plant_onto` calls itself. Each call plants one pair, then calls itself again with the next place and the other size. It stops 85 metres short of the segment's end, or at 96 trees.
 
 {{code Trees.plant_onto}}
 
@@ -307,7 +307,7 @@ Drawing a tree means working out where it lands on screen, then painting the tru
 
 {{code TreeDraw.draw}}
 
-A far tree's tiers are flat triangles. A near tree's are cones, so a tree fattens as the rider passes under it. No one sees the difference, which is why the far ones get the cheap version.
+A far tree's tiers are flat triangles. A near tree's are cones, so a tree fattens as the rider passes under it. From far off, a triangle looks just like a cone, and it's cheaper.
 
 That's the shape of most things in a frame: a plain record, a sighting and a drawing. The next thing in nature needs none of that.
 
@@ -334,7 +334,7 @@ It starts a pixel above the horizon, so no seam shows between the grass and the 
 
 It's much wider than the screen because the whole picture tilts when the rider leans, and the corners have to stay filled.
 
-Nothing else in the program knows about grass. A segment doesn't have any, and there's no sighting for it. The grass is whatever hasn't been painted over.
+Nothing else in the program draws grass. A segment doesn't have any, and there's no sighting for it. The grass is whatever hasn't been painted over.
 
 The other big thing in `Backdrop` is more interesting.
 
@@ -528,7 +528,7 @@ It's measured in bearings and pixels, not metres. There's no terrain behind it. 
 
 A range is highest in its middle and falls to nothing at its ends. Two waves on top of that make the ridges. The rolling land in front of the ranges is a single wave of its own, in the same green as the grass.
 
-To draw a range, we go across the screen a couple of pixels at a time and ask how high the skyline is at each bearing. The caller passes in `height_at`, a function in a record field, so one `silhouette` draws all three:
+To draw a range, we go across the screen two pixels at a time and ask how high the skyline is at each bearing. The caller passes in `height_at`, a function in a record field, so one `silhouette` draws all three:
 
 {{code Mountains.silhouette}}
 
@@ -683,7 +683,7 @@ Everything above the footprint is rods. Four legs run from the corners up to a p
 
 {{code Tower.legs}}
 
-A ring of rods goes round the tower every 20 metres, and crossed braces fill the lowest two storeys. Each rod is a line between two points in the rider's view, and it needs some care, because a tower can be tall and close enough to stand partly behind the camera:
+A ring of rods goes round the tower every 20 metres, and crossed braces fill the lowest two storeys. Each rod is a line between two points in the rider's view, and it needs some care, because a near tower can stand partly behind the camera:
 
 {{code Tower.rod}}
 
@@ -695,7 +695,7 @@ As a tower gets further away, it sinks below the horizon from the bottom up:
 
 {{code Tower.sunk_below_horizon}}
 
-A real tower wouldn't go so soon. `sink_radius` is 20 km, a much smaller earth than ours, so a tower is gone at 1.8 km. That looks better.
+A real tower wouldn't go so soon. `sink_radius` is 20 km, a much smaller earth than ours, so a tower is gone at 1.8 km. That way, you can see it sink.
 
 Each tower has a beacon on top, and `beacon_brightness` is a field of its sighting. Beacons blink, so we'll leave them until things start to move.
 
@@ -785,7 +785,7 @@ Nothing in that function says "elephant". That's what makes the next chapter sho
 
 ## Rhinos, giraffes and the other corner critters
 
-An elephant stands at 14 of the route's 19 bends. A giraffe, a rhino and a zebra have one bend each. They all use the same code as the elephant, and they differ by one row:
+A giraffe, a rhino and a zebra have one bend each. They all use the same code as the elephant, and they differ by one row:
 
 {{code Wildlife.species_of}}
 
@@ -793,7 +793,7 @@ Each animal is a tag, and each answers with its emoji and how tall it stands. Th
 
 To add a lion, we'd add a tag, a row here and a still in `EmojiStills`. The compiler would point at every `match` that needs the new tag.
 
-These animals each stand alone at a bend. Most of the others come in crowds, and a crowd starts with a single pig.
+These animals stand at the bends. Most of the others come in crowds, and a crowd starts with a single pig.
 
 ## A pig
 
@@ -868,7 +868,7 @@ A record is the plainest shape in Roc, and it's nearly all this needs. `RideInst
 
 {{code RideInstant.RideInstant from "One instant of the ride" to "}.{"}}
 
-Those three fields are the whole of what Safari Ride keeps from one step to the next. The cat has no state, and neither does the bird, the sun or the beacons, the blinking lights on the radio towers. Each frame works them all out again from the rider, the truck and the clock.
+Those three fields are the whole of what Safari Ride keeps from one step to the next. The cat has no state, and neither does the bird, the sun or the beacons. Each frame works them all out again from the rider, the truck and the clock.
 
 That gives three kinds of moving thing, and the rest of the tour is organized around them:
 
@@ -902,7 +902,7 @@ We've seen the things that never change, and the sky. The beacons are next, beca
 
 ## The beacons
 
-Some things in Safari Ride are worked out from the clock alone, with nothing stored. The sky is the largest of them. The beacons on the radio towers are the next, and they blink over and over.
+Some things in Safari Ride are worked out from the clock alone, with nothing stored. The sky is the largest of them. The beacons on the radio towers are another, and they blink over and over.
 
 ```widget beacon
 Drag the clock and watch the towers blink out of step.
