@@ -65,7 +65,7 @@ Throttle :: [].{
 	pig_gate : RiderState, { segment : World.Segment, offered_accel : Acceleration } -> Acceleration
 	pig_gate = |state, { segment: seg, offered_accel: a }| {
 		b = Gaze.pig_gaze_brake(state, seg)
-		if b.engaged {
+		if b.is_gawking {
 			if b.accel < a {
 				b.accel
 			} else {
@@ -146,7 +146,7 @@ Throttle :: [].{
 			}
 		if near {
 			if v2 < v_end {
-				if Gaze.gawk_engaged(state, seg) {
+				if Gaze.is_gawking(state, seg) {
 					v2
 				} else {
 					v_end

@@ -16,7 +16,7 @@ import World
 
 Gaze :: [].{
 	PigLook : { looking : Bool, dist : Distance }
-	GazeBrake : { engaged : Bool, accel : Acceleration }
+	GazeBrake : { is_gawking : Bool, accel : Acceleration }
 
 	## Where the rider wants to look: at the pig in sight, this far from the
 	## way the bike points, or at the road.
@@ -156,8 +156,8 @@ Gaze :: [].{
 		}
 	}
 
-	gawk_engaged : RiderState, World.Segment -> Bool
-	gawk_engaged = |state, seg|
+	is_gawking : RiderState, World.Segment -> Bool
+	is_gawking = |state, seg|
 		match seg.pig_attention {
 			Distracting => state.along >= Pigs.gaze_pig(seg.length).along.minus(gaze_look_dist)
 			Unnoticed => False
@@ -165,10 +165,10 @@ Gaze :: [].{
 
 	pig_gaze_brake : RiderState, World.Segment -> Gaze.GazeBrake
 	pig_gaze_brake = |state, seg|
-		if gawk_engaged(state, seg) == False {
-			{ engaged: False, accel: Acceleration.steady }
+		if is_gawking(state, seg) == False {
+			{ is_gawking: False, accel: Acceleration.steady }
 		} else if state.speed <= pig_gaze_speed {
-			{ engaged: True, accel: Acceleration.steady }
+			{ is_gawking: True, accel: Acceleration.steady }
 		} else {
 			pig_gaze_brake_easing(state, seg)
 		}
@@ -178,7 +178,7 @@ Gaze :: [].{
 		pig = Pigs.gaze_pig(seg.length)
 		d = pig.along.distance_from(state.along).minus(pig_gaze_settle_dist)
 		{
-			engaged: True,
+			is_gawking: True,
 			accel: state.speed.acceleration_to({
 				target: pig_gaze_speed,
 				within: d.max(Distance.metres(1.0)),
@@ -309,11 +309,11 @@ expect {
 
 expect attention_after(rider_with_attention(0.0, 0.0), 0.0) == 0.0
 expect attention_after(rider_with_attention(0.0, (90.0 * Trig.deg)), (90.0 * Trig.deg)) == 1.0
-expect !(Gaze.gawk_engaged(rider(200.0, 0.0), plain))
-expect !(Gaze.gawk_engaged(rider(100.0, 0.0), distracting))
-expect Gaze.gawk_engaged(rider(200.0, 0.0), distracting)
-expect Gaze.gawk_engaged(rider(341.0, 0.0), distracting)
+expect !(Gaze.is_gawking(rider(200.0, 0.0), plain))
+expect !(Gaze.is_gawking(rider(100.0, 0.0), distracting))
+expect Gaze.is_gawking(rider(200.0, 0.0), distracting)
+expect Gaze.is_gawking(rider(341.0, 0.0), distracting)
 
 # The gawking outlasts the look.
 expect !Gaze.pig_ahead(rider(341.0, 0.0), distracting).looking
-expect Gaze.gawk_engaged(rider(341.0, 0.0), distracting)
+expect Gaze.is_gawking(rider(341.0, 0.0), distracting)
