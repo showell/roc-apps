@@ -1215,14 +1215,14 @@ This is the rider at step 1,570, with the cat ahead:
 | Field | Type | Value |
 |---|---|---|
 | `segment_index` | `World.SegmentIndex` | 3 |
-| `along` | `Along` | 102.62 metres |
-| `across` | `Across` | -0.08 metres |
-| `yaw` | `Angle.Turn` | 0.0064 radians |
+| `along` | `Along` | 97.58 metres |
+| `across` | `Across` | -0.12 metres |
+| `yaw` | `Angle.Turn` | 0.0081 radians |
 | `speed` | `Speed` | 1.22 metres a step |
-| `lean` | `Angle.Lean` | -0.0041 radians |
-| `heading` | `Angle.Bearing` | 0.0064 radians |
+| `lean` | `Angle.Lean` | -0.0048 radians |
+| `heading` | `Angle.Bearing` | 0.0081 radians |
 | `gaze_yaw` | `Angle.Turn` | 0 radians |
-| `attention` | `Fraction` | 0.68 |
+| `look_depth` | `Fraction` | 0.67 |
 
 New in this chapter:
 
@@ -1426,7 +1426,7 @@ So when the rider looks right, the road slides left on the page, and the bike ke
 
 {{code Gaze.next_look_depth}}
 
-While the gaze is off the road, attention rises with how far it has turned, and it doesn't drop. Once the gaze is straight ahead, attention fades by 0.0012 a step, so it takes hundreds of steps to go. That's why the table in the rider chapter has an `attention` of 0.68 at step 1,570, with no pig in sight.
+While the gaze is off the road, attention rises with how far it has turned, and it doesn't drop. Once the gaze is straight ahead, attention fades by 0.0012 a step, so it takes hundreds of steps to go. That's why the table in the rider chapter has a `look_depth` of 0.67 at step 1,570, with no pig in sight.
 
 `RideFocal.ride_focal`, which sets how wide the view is, takes the stronger of the cat's attention and this one. So a pig widens the view the way a cat does, and it stays wide for a while after.
 
