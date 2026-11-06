@@ -198,9 +198,9 @@ CanvasAppRunner :: [].{
 
 	update! : CanvasApp.CanvasApp(model), CanvasAppRunner.Model(model), App.Input(CanvasAppRunner.Msg), App.Io => Try(CanvasAppRunner.Model(model), [Exit(I64)])
 	update! = |game, model, input, _io| {
-		# Roc reads `game.advance(m, k)` as a method call, so the field is
+		# Roc reads `game.model_at_next_step(m, k)` as a method call, so the field is
 		# bound first. See CanvasApp.roc.
-		advance = game.advance
+		model_at_next_step = game.model_at_next_step
 		keys = input_of(input.devices)
 		# Escape and F are the RUNNER's, read straight off roc-ray's own
 		# snapshot: they never enter a game's Input.Snapshot, so no game can
@@ -217,7 +217,7 @@ CanvasAppRunner :: [].{
 			} else {
 				model.fps
 			}
-			Ok({ ..model, state: advance(model.state, keys, dt), fps })
+			Ok({ ..model, state: model_at_next_step(model.state, keys, dt), fps })
 		}
 	}
 

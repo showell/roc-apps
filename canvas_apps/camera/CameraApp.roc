@@ -19,7 +19,7 @@ CameraApp :: [].{
 		size: { width: 800.0, height: 600.0 },
 		fps: 60,
 		init: Rules.start,
-		advance: |m, input, dt| Rules.step(m, input, dt),
+		model_at_next_step: |m, input, dt| Rules.step(m, input, dt),
 		frame_shapes: |m| CameraDraw.frame(m),
 		sounds: |_m| 0,
 		tones: [],

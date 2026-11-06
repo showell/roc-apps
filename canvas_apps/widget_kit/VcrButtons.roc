@@ -78,7 +78,7 @@ VcrButtons :: [].{
 		ScrubWidget.canvas_app({
 			title,
 			init: VcrButtons.transport_at(opens_at),
-			advance: |transport, input| VcrButtons.next_transport(transport, { input, range }),
+			model_at_next_step: |transport, input| VcrButtons.next_transport(transport, { input, range }),
 			frame_shapes,
 		})
 

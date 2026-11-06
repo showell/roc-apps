@@ -150,19 +150,19 @@ CanvasApp(model) : {
     size : { width : F64, height : F64 },
     fps : I32,
     init : model,
-    advance : model, Input.Snapshot, F32 -> model,
-    frame : model -> List(Shapes.Shape),
+    model_at_next_step : model, Input.Snapshot, F32 -> model,
+    frame_shapes : model -> List(Shapes.Shape),
     sounds : model -> U32,
     tones : List({ freq : I32, ms : I32 }),
     title : Str,
 }
 ```
 
-`advance` takes one step, given what the keyboard and pointer look like now and
+`model_at_next_step` takes one step, given what the keyboard and pointer look like now and
 how many seconds the step covers — always `1 / fps`, since each runner paces to
 the app's own rate. An app whose rules count steps writes
-`advance: CanvasApp.untimed_advance(step)`, and its `step` takes no seconds at
-all. `frame` answers what to draw. `sounds` answers a bit per tone the last
+`model_at_next_step: CanvasApp.untimed_model_at_next_step(step)`, and its `step` takes no seconds at
+all. `frame_shapes` answers what to draw. `sounds` answers a bit per tone the last
 step set off, and `tones` says what each one sounds like, so a runner never has
 to guess how many there are.
 

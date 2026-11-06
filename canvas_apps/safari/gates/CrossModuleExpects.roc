@@ -651,7 +651,7 @@ expect {
 	var $is_home_at_each = True
 	var $has_looked = False
 	while !Rider.is_finished($rider, World.segments) {
-		next = Rider.advance($rider, World.segments)
+		next = Rider.rider_state_at_next_step($rider, World.segments)
 		if next.segment_index != $rider.segment_index {
 			$crossings = $crossings + 1
 			$is_home_at_each = $is_home_at_each and $rider.gaze_yaw == Angle.straight_ahead

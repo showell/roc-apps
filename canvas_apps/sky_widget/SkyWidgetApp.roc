@@ -29,7 +29,7 @@ SkyWidgetApp :: [].{
 	canvas_app = ScrubWidget.canvas_app({
 		title: "The sun going down",
 		init: at_start,
-		advance: next_model,
+		model_at_next_step: next_model,
 		frame_shapes: shapes_at,
 	})
 }

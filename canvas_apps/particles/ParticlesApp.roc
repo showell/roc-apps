@@ -15,7 +15,7 @@ ParticlesApp :: [].{
 		size: { width: Particles.width, height: Particles.height },
 		fps: 60,
 		init: Particles.start,
-		advance: |m, input, _dt| step(m, input),
+		model_at_next_step: |m, input, _dt| step(m, input),
 		frame_shapes: |m| Particles.shapes(m),
 		sounds: |_m| 0,
 		tones: [],

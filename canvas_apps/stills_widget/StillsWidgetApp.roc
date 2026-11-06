@@ -33,7 +33,7 @@ StillsWidgetApp :: [].{
 		size: { width: ScrubWidget.canvas_width, height: ScrubWidget.canvas_height },
 		fps: frames_a_second,
 		init: { large_still: cat_still(Rest), outlines: Hidden },
-		advance: |model, input, _seconds| next_model(model, input),
+		model_at_next_step: |model, input, _seconds| next_model(model, input),
 		frame_shapes: shapes_at,
 		sounds: |_model| 0,
 		tones: [],

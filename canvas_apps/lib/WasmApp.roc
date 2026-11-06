@@ -18,7 +18,7 @@ WasmApp :: [].{
 	# wasm edge has no records, so the runner packs and this unpacks.
 	program : CanvasApp.CanvasApp(model) -> {
 		init : {} -> Box(model),
-		advance : Box(model), U32, U32, U32, U32, F32, F32, F32 -> Box(model),
+		model_at_next_step : Box(model), U32, U32, U32, U32, F32, F32, F32 -> Box(model),
 		frame_shapes : Box(model) -> List(Shapes.Shape),
 		release : List(Shapes.Shape) -> {},
 		sounds : Box(model) -> U32,
@@ -32,13 +32,13 @@ WasmApp :: [].{
 	program = |game| {
 		# The step a tick covers, which is the rate the game asked to be run at.
 		dt = 1.0 / game.fps.to_f32()
-		advance = game.advance
+		model_at_next_step = game.model_at_next_step
 		frame_of = game.frame_shapes
 		sounds = game.sounds
 		{
 			init: |{}| Box.box(game.init),
-			advance: |b, held, struck, buttons, clicks, x, y, wheel|
-				Box.box(advance(Box.unbox(b), Input.of(held, struck, Mouse.of(buttons, clicks, x, y, wheel)), dt)),
+			model_at_next_step: |b, held, struck, buttons, clicks, x, y, wheel|
+				Box.box(model_at_next_step(Box.unbox(b), Input.of(held, struck, Mouse.of(buttons, clicks, x, y, wheel)), dt)),
 			frame_shapes: |b| frame_of(Box.unbox(b)),
 			# **THE HOST HANDS THE FRAME BACK AND ROC DROPS IT.** Releasing a
 			# List(Shape) means decrementing each element's inner lists, which

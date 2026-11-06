@@ -21,7 +21,7 @@ BreakoutApp :: [].{
 		size: { width: BreakoutDraw.w, height: BreakoutDraw.h },
 		fps: 60,
 		init: { world: Rules.new_world(), elapsed: 0.0, sounds: 0 },
-		advance: |m, keys, dt| step(m, keys, dt),
+		model_at_next_step: |m, keys, dt| step(m, keys, dt),
 		frame_shapes: |m| BreakoutDraw.frame(m.world, m.elapsed),
 		sounds: |m| m.sounds,
 		# Start, wall, paddle, brick, lost -- the five tones upstream generates.

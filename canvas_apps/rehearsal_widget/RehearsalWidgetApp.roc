@@ -34,7 +34,7 @@ RehearsalWidgetApp :: [].{
 		size: { width: ScrubWidget.canvas_width, height: ScrubWidget.canvas_height },
 		fps: 60,
 		init: { tries_shown: 0 },
-		advance: |model, input, _seconds| { tries_shown: stepped(model.tries_shown, input) },
+		model_at_next_step: |model, input, _seconds| { tries_shown: stepped(model.tries_shown, input) },
 		frame_shapes: |model| shapes_at(model.tries_shown),
 		sounds: |_model| 0,
 		tones: [],
@@ -98,7 +98,7 @@ points_of = |lean| {
 	var $points = []
 	var $going = True
 	while $going {
-		$motion = Bike.advance(
+		$motion = Bike.bike_motion_at_next_step(
 			$motion,
 			{ lean_step: Angle.upright, acceleration: Acceleration.steady },
 		)

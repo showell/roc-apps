@@ -24,7 +24,7 @@ SnakeApp :: [].{
 		size: { width: SnakeDraw.w, height: SnakeDraw.h },
 		fps: 60,
 		init: { world: Rules.new_world(Random.seed(1)), elapsed: 0.0, sounds: 0 },
-		advance: |m, keys, dt| step(m, keys, dt),
+		model_at_next_step: |m, keys, dt| step(m, keys, dt),
 		frame_shapes: |m| SnakeDraw.frame(m.world, m.elapsed),
 		sounds: |m| m.sounds,
 		# Eaten, crashed, started -- the three tones upstream generates.

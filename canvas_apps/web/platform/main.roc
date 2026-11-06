@@ -1,14 +1,14 @@
 # The canvas_apps platform: what a page needs from any game, over one boxed model
 # the host keeps (host.zig).
 #
-# Eleven functions. `advance` takes one Input.Snapshot, flattened into numbers
+# Eleven functions. `model_at_next_step` takes one Input.Snapshot, flattened into numbers
 # because the wasm edge has no records, and `sounds` reports a bit per tone for
 # the speaker.
 platform ""
 	requires {
 		[Model : model] for program : {
 			init : {} -> Box(model),
-			advance : Box(model), U32, U32, U32, U32, F32, F32, F32 -> Box(model),
+			model_at_next_step : Box(model), U32, U32, U32, U32, F32, F32, F32 -> Box(model),
 			frame_shapes : Box(model) -> List(Frame.Shape),
 			release : List(Frame.Shape) -> {},
 			sounds : Box(model) -> U32,
@@ -47,7 +47,7 @@ import Frame
 
 init_for_host = program.init
 
-advance_for_host = program.advance
+advance_for_host = program.model_at_next_step
 
 frame_for_host = program.frame_shapes
 

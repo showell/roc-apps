@@ -40,14 +40,14 @@ ScrubWidget :: [].{
 	canvas_app : {
 		title : Str,
 		init : model,
-		advance : model, Input.Snapshot -> model,
+		model_at_next_step : model, Input.Snapshot -> model,
 		frame_shapes : model -> List(Shapes.Shape),
 	} -> CanvasApp.CanvasApp(model)
-	canvas_app = |{ title, init, advance, frame_shapes }| {
+	canvas_app = |{ title, init, model_at_next_step, frame_shapes }| {
 		size: { width: canvas_width, height: canvas_height },
 		fps: 60,
 		init,
-		advance: |model, input, _seconds| advance(model, input),
+		model_at_next_step: |model, input, _seconds| model_at_next_step(model, input),
 		frame_shapes,
 		sounds: |_model| 0,
 		tones: [],

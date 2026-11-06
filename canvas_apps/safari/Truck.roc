@@ -73,22 +73,22 @@ Truck :: [].{
 
 	## The truck one step on: where the rider is along the route, the world's
 	## segments, and the route's whole length decide its pace.
-	advance : Truck.TruckState,
+	truck_state_at_next_step : Truck.TruckState,
 	{
 		rider_distance : Distance,
 		route_segments : List(World.Segment),
 		route_length : Distance,
 	} -> Truck.TruckState
-	advance = |truck, { rider_distance, route_segments, route_length }| {
+	truck_state_at_next_step = |truck, { rider_distance, route_segments, route_length }| {
 		schedule = scheduled_position({ rider_distance, route_length })
 		match next_bend(route_segments, truck.route_position) {
 			BendAhead(bend) =>
 				if bend.distance <= brake_distance {
-					advance_braking(truck, bend)
+					braking_state_at_next_step(truck, bend)
 				} else {
-					advance_on_schedule(truck, schedule)
+					scheduled_state_at_next_step(truck, schedule)
 				}
-			NoBendAhead => advance_on_schedule(truck, schedule)
+			NoBendAhead => scheduled_state_at_next_step(truck, schedule)
 		}
 	}
 }
@@ -122,8 +122,8 @@ next_bend_on = |segments, { route_position, segment_start }|
 
 ## The truck one step on, slowing for `turn`, so that it reaches the turn at a
 ## cautious speed.
-advance_braking : Truck.TruckState, Truck.ComingBend -> Truck.TruckState
-advance_braking = |truck, turn| {
+braking_state_at_next_step : Truck.TruckState, Truck.ComingBend -> Truck.TruckState
+braking_state_at_next_step = |truck, turn| {
 	target_speed = turn.turn_speed.times(Truck.turn_caution.to_f64())
 	acceleration =
 		if turn.distance > VehicleLimits.least_braking_distance {
@@ -145,8 +145,8 @@ advance_braking = |truck, turn| {
 
 ## The truck one step on with no turn close: it speeds up while it is short of
 ## `schedule`, and otherwise holds its speed.
-advance_on_schedule : Truck.TruckState, Distance -> Truck.TruckState
-advance_on_schedule = |truck, schedule| {
+scheduled_state_at_next_step : Truck.TruckState, Distance -> Truck.TruckState
+scheduled_state_at_next_step = |truck, schedule| {
 	speed =
 		if truck.route_position < schedule {
 			Truck.top_speed.min(truck.speed.accelerated_by(Truck.chase_acceleration))
@@ -246,7 +246,7 @@ rider_on_one_segment = {
 }
 
 free : Truck.TruckState
-free = Truck.advance(
+free = Truck.truck_state_at_next_step(
 	{
 		route_position: Distance.metres(100.0),
 		speed: Speed.metres_a_step(0.3),
@@ -263,7 +263,7 @@ expect
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
 
 ahead : Truck.TruckState
-ahead = Truck.advance(
+ahead = Truck.truck_state_at_next_step(
 	{
 		route_position: Distance.metres(600.0),
 		speed: Speed.metres_a_step(0.5),
@@ -273,7 +273,7 @@ ahead = Truck.advance(
 )
 
 behind : Truck.TruckState
-behind = Truck.advance(
+behind = Truck.truck_state_at_next_step(
 	{
 		route_position: Distance.metres(400.0),
 		speed: Speed.metres_a_step(0.5),
@@ -290,7 +290,7 @@ expect
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
 
 capped : Truck.TruckState
-capped = Truck.advance(
+capped = Truck.truck_state_at_next_step(
 	{
 		route_position: Distance.metres(100.0),
 		speed: Truck.top_speed,
@@ -305,7 +305,7 @@ expect ahead.brake_lights == Off
 expect capped.brake_lights == Off
 
 braking : Truck.TruckState
-braking = Truck.advance(
+braking = Truck.truck_state_at_next_step(
 	{
 		route_position: Distance.metres(450.0),
 		speed: Speed.metres_a_step(0.3),
@@ -325,7 +325,7 @@ expect braking.speed < Speed.metres_a_step(0.3)
 expect braking.speed > Speed.metres_a_step(0.1776)
 
 settled : Truck.TruckState
-settled = Truck.advance(
+settled = Truck.truck_state_at_next_step(
 	{
 		route_position: Distance.metres(450.0),
 		speed: Speed.metres_a_step(0.1776),
@@ -336,7 +336,7 @@ settled = Truck.advance(
 
 expect settled.brake_lights == Off
 expect F64.to_bits(settled.speed.to_metres_a_step()) == F64.to_bits(0.1776)
-expect Truck.advance(
+expect Truck.truck_state_at_next_step(
 	{
 		route_position: Distance.metres(440.0),
 		speed: Speed.metres_a_step(0.3),
@@ -345,7 +345,7 @@ expect Truck.advance(
 	rider_on_one_segment,
 ).speed < Speed.metres_a_step(0.3)
 expect !(
-	Truck.advance(
+	Truck.truck_state_at_next_step(
 		{
 			route_position: Distance.metres(439.0),
 			speed: Speed.metres_a_step(0.3),

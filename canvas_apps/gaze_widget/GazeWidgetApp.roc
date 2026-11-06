@@ -34,7 +34,7 @@ GazeWidgetApp :: [].{
 	canvas_app = ScrubWidget.canvas_app({
 		title: "The rider's gaze",
 		init: starting_model,
-		advance: |model, input| played_on(with_buttons(model, input)),
+		model_at_next_step: |model, input| played_on(with_buttons(model, input)),
 		frame_shapes: shapes_at,
 	})
 }
@@ -127,7 +127,7 @@ played_on = |model| {
 	var $played = model.played
 	while $played.len() < reach {
 		latest = $played.last() ?? crash "GazeWidgetApp.played_on: the stretch starts with a state"
-		$played = $played.append(Rider.advance(latest, World.segments))
+		$played = $played.append(Rider.rider_state_at_next_step(latest, World.segments))
 	}
 	{ ..model, played: $played }
 }

@@ -27,7 +27,7 @@ CanvasApp :: [].{
 		# can make one and a test can write one down. The seconds are always
 		# `1 / fps`: a runner paces to that and passes it, rather than each
 		# game writing the same sixtieth twice and hoping it matches `fps`.
-		advance : model, Input.Snapshot, F32 -> model,
+		model_at_next_step : model, Input.Snapshot, F32 -> model,
 
 		# What to draw.
 		frame_shapes : model -> List(Shapes.Shape),
@@ -46,9 +46,9 @@ CanvasApp :: [].{
 		title : Str,
 	}
 
-	# An `advance` for an app that needs no seconds: a runner passes them as
+	# An `model_at_next_step` for an app that needs no seconds: a runner passes them as
 	# ever, and `step` never sees them. A game whose rules count steps uses it,
 	# so real time has no way in.
-	untimed_advance : (model, Input.Snapshot -> model) -> (model, Input.Snapshot, F32 -> model)
-	untimed_advance = |step| |model, input, _seconds| step(model, input)
+	untimed_model_at_next_step : (model, Input.Snapshot -> model) -> (model, Input.Snapshot, F32 -> model)
+	untimed_model_at_next_step = |step| |model, input, _seconds| step(model, input)
 }

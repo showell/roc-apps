@@ -40,7 +40,7 @@ FrameWidgetApp :: [].{
 		size: { width: canvas_width, height: canvas_height },
 		fps: frames_a_second,
 		init: { layers_on: 1, opening: Opening },
-		advance: |model, input, _seconds| next_model(model, input),
+		model_at_next_step: |model, input, _seconds| next_model(model, input),
 		frame_shapes: shapes_at,
 		sounds: |_model| 0,
 		tones: [],

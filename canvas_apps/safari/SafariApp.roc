@@ -24,7 +24,7 @@ SafariApp :: [].{
 		# speed it is meant to look like, chosen by eye.
 		fps: 30,
 		init: { tour: Tour.initial, paused: False },
-		advance: CanvasApp.untimed_advance(step),
+		model_at_next_step: CanvasApp.untimed_model_at_next_step(model_at_next_step),
 		frame_shapes: |m| frame_shapes(m.tour),
 		sounds: |_m| 0,
 		tones: [],
@@ -58,8 +58,8 @@ SafariApp :: [].{
 		).prepend(lean)
 	}
 
-	step : SafariApp.Model, Input.Snapshot -> SafariApp.Model
-	step = |m, input|
+	model_at_next_step : SafariApp.Model, Input.Snapshot -> SafariApp.Model
+	model_at_next_step = |m, input|
 		if input.key_pressed(KeyR) {
 			{ tour: Tour.initial, paused: False }
 		} else {

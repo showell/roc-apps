@@ -24,7 +24,7 @@ TreeWidgetApp :: [].{
 	canvas_app = ScrubWidget.canvas_app({
 		title: "Three conifers",
 		init: {},
-		advance: |model, _input| model,
+		model_at_next_step: |model, _input| model,
 		frame_shapes: |_model| still_shapes,
 	})
 }

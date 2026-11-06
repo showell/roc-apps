@@ -93,11 +93,14 @@ Rider :: [].{
 		}
 	}
 
-	advance : RiderState, List(World.Segment) -> RiderState
-	advance = |state, route_segments| {
+	rider_state_at_next_step : RiderState, List(World.Segment) -> RiderState
+	rider_state_at_next_step = |state, route_segments| {
 		seg = state.segment_index.segment_in(route_segments)
 		dec = decide(state, seg)
-		moved = Bike.advance(state, { lean_step: dec.lean_step, acceleration: dec.acceleration })
+		moved = Bike.bike_motion_at_next_step(
+			state,
+			{ lean_step: dec.lean_step, acceleration: dec.acceleration },
+		)
 		resolved =
 			match seg.ending {
 				Continues(_) => cross_if_on_road(moved, route_segments)
@@ -217,7 +220,7 @@ expect last_seg.ending == Terminates
 expect !Rider.is_finished(rider_at(499.0, 0.0), first_segments)
 
 one_step_on : RiderState
-one_step_on = Rider.advance(RiderState.initial, first_segments)
+one_step_on = Rider.rider_state_at_next_step(RiderState.initial, first_segments)
 
 expect one_step_on.along > Along.start
 expect one_step_on.speed > Speed.at_rest

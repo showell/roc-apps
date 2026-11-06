@@ -24,7 +24,7 @@ PongApp :: [].{
 		size: { width: 800.0, height: 600.0 },
 		fps: 60,
 		init: { world: Rules.new_match(Rules.opening(Random.seed(7))), sounds: 0 },
-		advance: |m, keys, dt| step(m, keys, dt),
+		model_at_next_step: |m, keys, dt| step(m, keys, dt),
 		frame_shapes: |m| PongDraw.frame(m.world),
 		sounds: |m| m.sounds,
 		# Paddle, wall, point -- the three tones upstream generates.
