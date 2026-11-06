@@ -129,7 +129,7 @@ Gaze :: [].{
 					Angle.straight_ahead
 				} else {
 					easing = gaze_return_rate.min(gaze.abs().times(gaze_return_ease.to_f64()))
-					direction = Trig.r_sign(gaze.to_radians())
+					direction = Trig.sign(gaze.to_radians())
 					gaze.minus(easing.times(direction))
 				}
 		}
