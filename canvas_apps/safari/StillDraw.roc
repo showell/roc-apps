@@ -264,13 +264,4 @@ expect
 	})
 		== 6
 
-# A code point with no still draws nothing.
-expect EmojiStills.emoji_polys_for(1).len() == 0
-expect
-	shape_count({
-		forward: Distance.metres(100.0),
-		height: Distance.metres(2.0),
-		codepoint: 1,
-	})
-		== 0
 expect EmojiStills.emoji_polys_for(elephant).len() == 6

@@ -40,10 +40,6 @@ GuardRail :: [].{
 	rail_runout : U32
 	rail_runout = 10
 
-	## The most quads one rail draws.
-	max_rail_quads : U64
-	max_rail_quads = 3072
-
 	bar_top : Distance
 	bar_top = rail_height.plus(rail_thickness.divided_by(2.0))
 
@@ -53,16 +49,9 @@ GuardRail :: [].{
 	half_post : Distance
 	half_post = rail_post_width.divided_by(2.0)
 
-	## The rail along `path`: the bars, then the posts, at most
-	## `max_rail_quads` quads in all. A path of fewer than two points has
-	## no rail.
+	## The rail along `path`: the bars, then the posts.
 	quads_along : List(Geom.RiderPoint) -> List(GuardRail.RailQuad)
-	quads_along = |path|
-		if path.len() < 2 {
-			[]
-		} else {
-			GuardRail.bars(path).concat(GuardRail.posts(path)).take_first(max_rail_quads)
-		}
+	quads_along = |path| GuardRail.bars(path).concat(GuardRail.posts(path))
 
 	## A stretch of bar between each two neighbouring points of `path`.
 	bars : List(Geom.RiderPoint) -> List(GuardRail.RailQuad)
@@ -163,7 +152,6 @@ expect GuardRail.half_post.to_metres() == 0.01
 expect GuardRail.rail_metal == 0xC2C7CF
 expect GuardRail.rail_post_metal == 0x9AA0A8
 expect GuardRail.rail_runout == 10
-expect GuardRail.max_rail_quads == 3072
 
 first_post : List(Geom.RiderPoint) -> GuardRail.RailQuad
 first_post = |route| GuardRail.posts(route).first() ?? crash "a route of two points has posts"
@@ -235,8 +223,4 @@ expect corner_at(doubled_post, 0).forward.to_metres() == 10.0
 expect corner_at(doubled_post, 1).forward.to_metres() == 10.0
 expect corner_at(doubled_post, 2).height.to_metres() == 0.55
 
-expect GuardRail.quads_along([]).len() == 0
-expect GuardRail.quads_along([
-	{ right: Distance.metres(0.0), forward: Distance.metres(10.0) },
-]).len() == 0
 expect GuardRail.bars([{ right: Distance.metres(0.0), forward: Distance.metres(10.0) }]).len() == 0

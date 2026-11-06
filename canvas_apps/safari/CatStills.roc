@@ -59,6 +59,11 @@ expect
 		(Collapse, [34, 1715, 0]),
 	].all(|(pose, want)| still_counts(CatStills.pose_polygons(pose)) == want)
 
+expect
+	[Rest, Stride, Frozen, Coil, Flight, Land, Collapse].all(
+		|pose| CatStills.pose_polygons(pose).all(Stills.is_drawable),
+	)
+
 # The x of the first corner of a pose's first polygon.
 first_x : Cat.Pose -> F64
 first_x = |pose| {

@@ -3,7 +3,9 @@
 ## the page to paint. A color is 0xRRGGBB for a flat or a shaded polygon, and
 ## 0xAARRGGBB for a gradient. Each maker gives one shape. A polygon of fewer than
 ## three corners is a bug in the code that asked for it, so a maker crashes on one.
-## A drawing module with nothing to draw says so itself, in the list it answers.
+## A circular gradient can shrink out of sight as it goes away, so that maker
+## answers a `Try`. A drawing module with nothing to draw says so itself, in the
+## list it answers.
 import Pixels
 import Fraction
 import HexColor
@@ -20,11 +22,6 @@ Polygon :: [].{
 		start_offset : F64,
 		end_offset : F64,
 	}
-
-	## A radial gradient smaller than this is too small to see. A caller tests for
-	## that before it asks for one.
-	min_gradient_radius : Pixels
-	min_gradient_radius = Pixels.of(0.5)
 
 	## Makes a polygon of one flat color. Nothing is painted here: this makes a value.
 	flat_polygon : I64, List(Screen.Point) -> Shapes.Shape
@@ -70,29 +67,31 @@ Polygon :: [].{
 	}
 
 	## Makes a polygon filled by a gradient that spreads in a circle from
-	## `gradient_center`. A radius under `min_gradient_radius` crashes.
+	## `gradient_center`, or `TooSmall` when the radius is too small to see.
 	gradient_polygon : List(Screen.Point),
 	{
 		center_rgba : I64,
 		edge_rgba : I64,
 		gradient_center : Screen.Point,
 		gradient_radius : Pixels,
-	} -> Shapes.Shape
+	} -> Try(Shapes.Shape, [TooSmall])
 	gradient_polygon = |corners, { center_rgba, edge_rgba, gradient_center, gradient_radius }|
-		if gradient_radius < Polygon.min_gradient_radius {
-			crash "Polygon.gradient_polygon: the caller tests for too small a radius"
+		if gradient_radius < min_gradient_radius {
+			Err(TooSmall)
 		} else {
-			Poly({
-				pts: polygon_points("Polygon.gradient_polygon", corners),
-				fill: Radial({
-					inner: Brush.with_alpha(center_rgba),
-					outer: Brush.with_alpha(edge_rgba),
-					x: gradient_center.x.to_f64(),
-					y: gradient_center.y.to_f64(),
-					r0: 0.0,
-					r1: gradient_radius.to_f64(),
+			Ok(
+				Poly({
+					pts: polygon_points("Polygon.gradient_polygon", corners),
+					fill: Radial({
+						inner: Brush.with_alpha(center_rgba),
+						outer: Brush.with_alpha(edge_rgba),
+						x: gradient_center.x.to_f64(),
+						y: gradient_center.y.to_f64(),
+						r0: 0.0,
+						r1: gradient_radius.to_f64(),
+					}),
 				}),
-			})
+			)
 		}
 
 	## Makes a polygon filled by a gradient along a line. A gradient with no length
@@ -184,6 +183,10 @@ polygon_points = |maker, corners|
 	} else {
 		Polygon.flatten_screen(corners)
 	}
+
+## A radial gradient smaller than this is too small to see.
+min_gradient_radius : Pixels
+min_gradient_radius = Pixels.of(0.5)
 
 ## The span of x a polygon covers. Either end is negative for a polygon off the
 ## left of the screen.
@@ -295,7 +298,7 @@ inner_stops = {
 	end_offset: 0.75,
 }
 
-radial_polygon : List(Screen.Point), Pixels -> Shapes.Shape
+radial_polygon : List(Screen.Point), Pixels -> Try(Shapes.Shape, [TooSmall])
 radial_polygon = |corners, gradient_radius|
 	Polygon.gradient_polygon(
 		corners,
@@ -345,18 +348,21 @@ expect
 	)
 		== Poly({ pts: [1.0, 2.0, 1.0, 2.0, 1.0, 2.0, 1.0, 2.0], fill: Flat(Brush.opaque(111)) })
 
-# The smallest gradient a maker takes is exactly at the limit.
-expect radial_polygon(three_corners, Polygon.min_gradient_radius) == Poly({
-	pts: triangle_points,
-	fill: Radial({
-		inner: Brush.with_alpha(7),
-		outer: Brush.with_alpha(8),
-		x: 0.0,
-		y: 0.0,
-		r0: 0.0,
-		r1: 0.5,
+# A gradient is too small just under the limit, and not at it.
+expect radial_polygon(three_corners, Pixels.of(0.49)) == Err(TooSmall)
+expect radial_polygon(three_corners, Pixels.of(0.5)) == Ok(
+	Poly({
+		pts: triangle_points,
+		fill: Radial({
+			inner: Brush.with_alpha(7),
+			outer: Brush.with_alpha(8),
+			x: 0.0,
+			y: 0.0,
+			r0: 0.0,
+			r1: 0.5,
+		}),
 	}),
-})
+)
 
 expect Polygon.flat_polygon(111, three_corners) == Poly({
 	pts: triangle_points,
@@ -385,17 +391,19 @@ expect
 			gradient_radius: Pixels.of(30.0),
 		},
 	)
-		== Poly({
-			pts: triangle_points,
-			fill: Radial({
-				inner: Brush.with_alpha(444),
-				outer: Brush.with_alpha(445),
-				x: 10.0,
-				y: 20.0,
-				r0: 0.0,
-				r1: 30.0,
+		== Ok(
+			Poly({
+				pts: triangle_points,
+				fill: Radial({
+					inner: Brush.with_alpha(444),
+					outer: Brush.with_alpha(445),
+					x: 10.0,
+					y: 20.0,
+					r0: 0.0,
+					r1: 30.0,
+				}),
 			}),
-		})
+		)
 
 expect
 	Polygon.linear_gradient_polygon(

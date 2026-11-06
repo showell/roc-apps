@@ -34,7 +34,23 @@ Stills :: [].{
 		gradient : List(Stills.StillGradient),
 		points : List(Stills.StillPt),
 	}
+
+	## Whether a polygon can be drawn: it has three corners, and a linear
+	## gradient of its has a length. StillDraw crashes on anything less.
+	is_drawable : Stills.StillPolygon -> Bool
+	is_drawable = |polygon| polygon.points.len() >= 3 and !polygon.gradient.any(has_no_length)
 }
+
+## Whether a gradient is a linear one that starts where it ends.
+has_no_length : Stills.StillGradient -> Bool
+has_no_length = |gradient|
+	gradient.kind == 1 and gradient.ax == gradient.bx and gradient.ay == gradient.by
+
+corners : U64 -> List(Stills.StillPt)
+corners = |count| List.repeat({ x: 0.0, y: 0.0 }, count)
+
+expect Stills.is_drawable({ color: 7, gradient: [], points: corners(3) })
+expect !Stills.is_drawable({ color: 7, gradient: [], points: corners(2) })
 
 sample_point : Stills.StillPt
 sample_point = { x: 0.5, y: 1.5 }
@@ -57,6 +73,17 @@ sample_gradient = {
 	vx: 10.5,
 	vy: 11.5,
 }
+
+# A linear gradient needs a length, and only a linear one has `a` and `b`.
+expect !has_no_length({ ..sample_gradient, kind: 1 })
+expect has_no_length({ ..sample_gradient, kind: 1, bx: 2.5, by: 3.5 })
+expect !has_no_length({ ..sample_gradient, kind: 1, bx: 2.5 })
+expect !has_no_length({ ..sample_gradient, kind: 2, bx: 2.5, by: 3.5 })
+expect !Stills.is_drawable({
+	color: 7,
+	gradient: [{ ..sample_gradient, kind: 1, bx: 2.5, by: 3.5 }],
+	points: corners(3),
+})
 
 solid_polygon : Stills.StillPolygon
 solid_polygon = {

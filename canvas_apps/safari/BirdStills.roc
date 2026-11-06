@@ -165,6 +165,7 @@ is_within_bounds = |polys|
 is_logo_coloured : List(Stills.StillPolygon) -> Bool
 is_logo_coloured = |polys| polys.all(|poly| poly.color == 6368222 or poly.color == 8542181)
 
+expect every_still.all(|polys| polys.all(Stills.is_drawable))
 expect every_still.all(is_within_bounds)
 expect
 	!is_within_bounds([
