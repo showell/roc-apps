@@ -40,10 +40,10 @@ const LINTS = {
   {recipe = "stack", args = {}, budget = {"--budget", "steps=4000000000"}, counts = {{"to stack", 0}, {"to unstack", 0}, {"long", 0}},
     skip = {"BirdStills.roc", "CatStills.roc", "EmojiStills.roc"}},
   {recipe = "vocabulary", args = {"words=vocabulary.txt"}, budget = {}, counts = {{"retired_name", 0}, {"retired_comment", 1}}},
-  {recipe = "name_types", args = {"table=name_types.txt"}, budget = {}, counts = {{"name_type", 7}, {"bare_beside_unit", 55}, {"no_value", 1}},
+  {recipe = "name_types", args = {"table=name_types.txt"}, budget = {}, counts = {{"name_type", 6}, {"bare_beside_unit", 55}, {"no_value", 1}},
     whole_tree = {"bare_beside_unit"}},
   {recipe = "families", args = {}, budget = {}, counts = {{"family", 2}, {"twin_name", 4}}, whole_tree = {"family", "twin_name"}},
-  {recipe = "plain_names", args = {}, budget = {}, counts = {{"pure_mutator", 11}, {"abbreviation", 47}, {"module_doc", 10}}},
+  {recipe = "plain_names", args = {}, budget = {}, counts = {{"pure_mutator", 11}, {"abbreviation", 46}, {"module_doc", 10}}},
 }
 
 -- The command that runs `lint` over `glob`, in safari's folder.

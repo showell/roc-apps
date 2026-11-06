@@ -26,8 +26,8 @@ Cows :: [].{
 	bull_height = cow_height.times(1.15)
 
 	## How far along its segment the bull stands.
-	bull_dist : Along
-	bull_dist = Along.metres(24.0)
+	bull_along : Along
+	bull_along = Along.metres(24.0)
 
 	## The gap between the bull's side and the trees.
 	bull_tree_gap : Distance
@@ -68,7 +68,7 @@ Cows :: [].{
 				bull_middle = tree_line.plus(bull_height.divided_by(2.0))
 				[
 					{
-						along: bull_dist,
+						along: bull_along,
 						across: Across.left_of_middle(bull_middle.plus(bull_tree_gap)),
 						codepoint: bull_codepoint,
 						height: bull_height,
@@ -94,7 +94,7 @@ cow_at = |i| {
 	fi = i.to_f64()
 	column = i.div_trunc_by(3).to_f64()
 	row = i.rem_by(3).to_f64()
-	herd_front = Cows.bull_dist.plus(Cows.herd_gap_behind_bull)
+	herd_front = Cows.bull_along.plus(Cows.herd_gap_behind_bull)
 	column_place = herd_front.plus(Cows.herd_col_spacing.times(column))
 	in_line = column_place.plus(Cows.herd_row_stagger.times(row - 1.0))
 	road_edge = Scenery.road_half_width.plus(Scenery.herd_road_offset)
@@ -129,7 +129,7 @@ expect Cows.fill_cows(WithBull).take_first(2).map(|critter| critter.facing) == [
 
 expect Cows.bull_of(WithBull).map(|bull| bull.along) == [Along.metres(24.0)]
 expect Cows.bull_of(WithBull).map(|bull| bull.across) == [Across.metres(-4.805)]
-expect Cows.bull_dist == Along.metres(24.0)
+expect Cows.bull_along == Along.metres(24.0)
 expect Cows.bull_tree_gap == Distance.metres(0.5)
 
 expect Cows.cow_height == Distance.metres(1.4)
