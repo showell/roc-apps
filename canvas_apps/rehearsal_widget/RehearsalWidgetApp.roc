@@ -1,9 +1,10 @@
 ## The widget for the Safari tutorial's section on rehearsal. It takes one real
 ## step of the ride, just after the first bend, and walks through the search
-## that step ran. Dragging across the canvas goes through the twelve tries, and
-## each draws its coasting arc on the road, seen from above. Each arc is the
-## bike's own physics run on a rider who doesn't exist. Past the twelfth, the
-## picture shows the lean the real rider took.
+## that step ran. The tries are separate things and not a motion, so a click
+## or the right arrow shows the next one, and the left arrow goes back. Each
+## try draws its coasting arc on the road, seen from above: the bike's own
+## physics run on a rider who doesn't exist. After the twelfth, the picture
+## shows the lean the real rider took.
 import game.Acceleration
 import game.Across
 import game.Along
@@ -12,7 +13,6 @@ import game.Arc
 import game.Bike
 import game.Clock
 import game.Distance
-import game.Fraction
 import game.LeanSearch
 import game.Scenery
 import game.Speed
@@ -20,6 +20,8 @@ import game.Tour
 import lib.Brush
 import lib.CanvasApp
 import lib.Font
+import lib.Input
+import lib.Mouse
 import lib.Shapes
 import lib.Trig
 import widget.ScrubWidget
@@ -30,12 +32,16 @@ RehearsalWidgetApp :: [].{
 	Model : { tries_shown : U64 }
 
 	canvas_app : CanvasApp.CanvasApp(RehearsalWidgetApp.Model)
-	canvas_app = ScrubWidget.canvas_app({
-		title: "Twelve rehearsals",
+	canvas_app = {
+		size: { width: ScrubWidget.canvas_width, height: ScrubWidget.canvas_height },
+		fps: 60,
 		init: { tries_shown: 0 },
-		model_at: |share| { tries_shown: tries_at(share) },
+		advance: |model, input, _seconds| { tries_shown: stepped(model.tries_shown, input) },
 		frame: |model| frame_at(model.tries_shown),
-	})
+		sounds: |_model| 0,
+		tones: [],
+		title: "Twelve rehearsals",
+	}
 }
 
 ## The step of the ride this widget looks inside.
@@ -157,18 +163,38 @@ chosen_lean =
 chosen_path : List(ArcPoint)
 chosen_path = path_of(chosen_lean)
 
-## The tries with the pointer `share` of the way across: none at the left, one
-## more every so often, and all of them and the choice at the right.
-tries_at : Fraction -> U64
-tries_at = |share| {
-	stops = rehearsals.len() + 2
-	tries = (share.to_f64() * stops.to_f64()).to_i64_wrap().to_u64_wrap()
-	if tries >= stops {
-		stops - 1
+## How many tries are on show at the last stop, which is the choice.
+last_stop : U64
+last_stop = rehearsals.len() + 1
+
+## The stop after `tries_shown`, going round to the start after the last.
+next_stop : U64 -> U64
+next_stop = |tries_shown|
+	if tries_shown >= last_stop {
+		0
 	} else {
-		tries
+		tries_shown + 1
 	}
-}
+
+## The stop before `tries_shown`, staying at the start.
+previous_stop : U64 -> U64
+previous_stop = |tries_shown|
+	if tries_shown == 0 {
+		0
+	} else {
+		tries_shown - 1
+	}
+
+## The stop after this step's clicks and keys.
+stepped : U64, Input.Snapshot -> U64
+stepped = |tries_shown, input|
+	if input.mouse.button_pressed(Left) or input.key_pressed(KeyRight) {
+		next_stop(tries_shown)
+	} else if input.key_pressed(KeyLeft) {
+		previous_stop(tries_shown)
+	} else {
+		tries_shown
+	}
 
 ## Whether `tries_shown` has got past the last try, to the choice.
 is_past_the_tries : U64 -> Bool
@@ -260,11 +286,27 @@ road = {
 	]
 }
 
-## One arc as a run of short lines from the rider.
+## An arc runs for hundreds of steps, each too short to see, so every this
+## many is enough to draw it by.
+steps_a_line : U64
+steps_a_line = 8
+
+## The points to draw an arc through: every so many, and the last.
+drawn_points : List(ArcPoint) -> List(ArcPoint)
+drawn_points = |path| {
+	numbered = path.map_with_index(|point, index| { point, index })
+	spaced = numbered.keep_if(|{ index, .. }| index % steps_a_line == 0).map(|{ point, .. }| point)
+	match path.last() {
+		Ok(end) => spaced.append(end)
+		Err(_) => spaced
+	}
+}
+
+## One arc as a run of lines from the rider.
 arc_shapes : List(ArcPoint), { color : I64, width : F64 } -> List(Shapes.Shape)
 arc_shapes = |path, { color, width }| {
 	start = { forward: 0.0, across: rider.across.to_metres() }
-	points = path.prepend(start).map(on_canvas)
+	points = drawn_points(path).prepend(start).map(on_canvas)
 	List.map2(
 		points,
 		points.drop_first(1),
@@ -408,14 +450,14 @@ status_lines = |tries_shown|
 			"Step ${step_shown.to_str()}, just after a bend",
 			"Leaning ${lean_text(rider.tilt)}",
 			"Aiming for ${across_text(target)}",
-			"It may change by 1 degree. Which way?",
+			"Click to try a lean",
 		]
 	} else if is_past_the_tries(tries_shown) {
 		[
 			"Chosen: ${lean_text(chosen_lean)}",
 			"${rehearsals.len().to_str()} rehearsals, ${steps_rehearsed.to_str()} steps of physics",
 			"None of them happened",
-			"The real rider takes one step",
+			"Click to start again",
 		]
 	} else {
 		match rehearsals.get(tries_shown - 1) {
@@ -430,17 +472,37 @@ status_lines = |tries_shown|
 		}
 	}
 
+## How far apart the marks for the tries are.
+mark_spacing : F64
+mark_spacing = 20.0
+
+## A mark for each try, filled in once it has been made.
+try_marks : U64 -> List(Shapes.Shape)
+try_marks = |tries_shown|
+	rehearsals.map_with_index(
+		|_rehearsal, index|
+			Disc({
+				x: ScrubWidget.side_margin + 6.0 + index.to_f64() * mark_spacing,
+				y: 232.0,
+				r: 6.0,
+				fill: ScrubWidget.flat(
+					if index < tries_shown {
+						0x303030
+					} else {
+						0xb8b8b8
+					},
+				),
+				clip: Anywhere,
+			}),
+	)
+
 ## Everything on the canvas with `tries_shown` tries on show.
 frame_at : U64 -> List(Shapes.Shape)
-frame_at = |tries_shown| {
-	last_stop = rehearsals.len() + 1
-	ScrubWidget.frame_shapes({
+frame_at = |tries_shown|
+	ScrubWidget.still_frame_shapes({
 		picture: picture(tries_shown),
-		dot_at: Fraction.clamp(tries_shown.to_f64() / last_stop.to_f64()),
-		marked: [],
 		status: status_lines(tries_shown),
-	})
-}
+	}).concat(try_marks(tries_shown))
 
 ## The ride at `step`, played from its start.
 ridden_to : U32 -> Tour
@@ -482,12 +544,48 @@ expect rehearsals.all(|{ outcome, .. }| color_of(outcome) == kept_color)
 expect rehearsals.any(|{ wants_more_right, .. }| wants_more_right)
 expect rehearsals.any(|{ wants_more_right, .. }| !wants_more_right)
 
-# The stops on the ruler, at both ends and on the far side of the tries.
-expect tries_at(Fraction.zero) == 0
-expect tries_at(Fraction.whole) == 13
-expect tries_at(Fraction.of(0.5)) == 7
+# Going forward runs through every stop and round to the start.
+expect next_stop(0) == 1
+expect next_stop(12) == 13
+expect next_stop(13) == 0
+
+# Going back stops at the start.
+expect previous_stop(13) == 12
+expect previous_stop(1) == 0
+expect previous_stop(0) == 0
+
+## A snapshot with the left button just pressed, or held from before.
+pointer_with : U32 -> Input.Snapshot
+pointer_with = |struck| Input.none.with_mouse(
+	Mouse.of(
+		1,
+		struck,
+		320.0,
+		0.0,
+		0.0,
+	),
+)
+
+# A click moves on once, and holding the button doesn't.
+expect stepped(3, pointer_with(1)) == 4
+expect stepped(3, pointer_with(0)) == 3
+expect stepped(3, Input.none) == 3
+
 expect !is_past_the_tries(12)
 expect is_past_the_tries(13)
+
+# An arc is drawn by fewer points than it has, and it still ends at its end.
+expect
+	rehearsals.all(
+		|{ path, .. }| {
+			drawn = drawn_points(path)
+			drawn.len() < path.len() and drawn.last() == path.last()
+		},
+	)
+
+# Each try's mark fills in as it's made.
+expect try_marks(0).len() == 12
+expect try_marks(0) != try_marks(1)
 
 expect lean_text(Angle.Lean.degrees(12.0)) == "12.00 right"
 expect lean_text(Angle.Lean.degrees(12.05)) == "12.05 right"

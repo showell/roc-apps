@@ -139,6 +139,15 @@ ScrubWidget :: [].{
 			status.map_with_index(status_line).join(),
 		].join()
 
+	## A page with no ruler, for a widget that isn't dragged.
+	still_frame_shapes : { picture : List(Shapes.Shape), status : List(Str) } -> List(Shapes.Shape)
+	still_frame_shapes = |{ picture, status }|
+		[
+			picture,
+			[panel],
+			status.map_with_index(status_line).join(),
+		].join()
+
 	## The ride's sky and grass with `shapes` over them, at two thirds of
 	## Safari's screen, so a widget's picture is what the ride's frame shows.
 	## The sky is `clock`'s, and `sun` is where the sun stands in it.
@@ -388,6 +397,10 @@ page_of = |{ lines, stretches }|
 		marked: stretches,
 		status: lines,
 	})
+
+# With no ruler a page is the panel and its text.
+expect ScrubWidget.still_frame_shapes({ picture: [], status: [] }).len() == 1
+expect ScrubWidget.still_frame_shapes({ picture: [], status: ["I"] }).len() > 1
 
 # The panel, the bar, the dot; then a shape for each stretch, and more for text.
 expect page_of({ lines: [], stretches: [] }).len() == 3
