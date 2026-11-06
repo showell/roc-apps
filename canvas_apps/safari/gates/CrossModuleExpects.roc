@@ -306,7 +306,7 @@ first_cat = |along|
 expect seen.len() == 1
 expect cat_at(0).len() == 0
 expect cat_at(2).len() == 0
-expect CatSighting.max_vis_cats == 8
+expect CatSighting.max_visible_cats == 8
 expect first_cat(300.0).height.to_metres() == 1.7
 expect first_cat(300.0).lift == 0.0
 expect Cat.pose_index(first_cat(300.0).pose) == 0
@@ -473,10 +473,10 @@ expect scene.towers.len() > 0
 expect scene.cutouts.len() > 0
 expect scene.rails.len() > 0
 expect scene.order.len() > 0
-expect scene.trees.len().to_i64_wrap() <= TreeSighting.max_vis_trees
-expect scene.towers.len().to_i64_wrap() <= TowerSighting.max_vis_towers
-expect scene.cutouts.len().to_i64_wrap() <= CutoutSighting.max_vis_critters
-expect scene.cats.len().to_i64_wrap() <= CatSighting.max_vis_cats
+expect scene.trees.len().to_i64_wrap() <= TreeSighting.max_visible_trees
+expect scene.towers.len().to_i64_wrap() <= TowerSighting.max_visible_towers
+expect scene.cutouts.len().to_i64_wrap() <= CutoutSighting.max_visible_cutouts
+expect scene.cats.len().to_i64_wrap() <= CatSighting.max_visible_cats
 
 ## Whether no key in `keys` is farther than the one before it.
 is_far_to_near : List(DepthSort.DepthKey) -> Bool

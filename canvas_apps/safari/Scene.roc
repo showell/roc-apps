@@ -44,14 +44,17 @@ Scene := {
 	in_view : Chain.Viewpoint, Scene.RideFacts -> Scene
 	in_view = |view, { speed, truck, clock }| {
 		road = view.road
-		trees = TreeSighting.in_view(view).take_first(TreeSighting.max_vis_trees.to_u64_wrap())
+		trees = TreeSighting.in_view(view).take_first(TreeSighting.max_visible_trees.to_u64_wrap())
 		towers =
 			TowerSighting.in_view({ road, clock })
-				.take_first(TowerSighting.max_vis_towers.to_u64_wrap())
+				.take_first(TowerSighting.max_visible_towers.to_u64_wrap())
 		cutouts =
 			Cutouts.cutouts_in_view(CutoutSighting.in_view(road))
-				.take_first(CutoutSighting.max_vis_critters.to_u64_wrap())
-		cats = CatSighting.in_view(view, speed).take_first(CatSighting.max_vis_cats.to_u64_wrap())
+				.take_first(CutoutSighting.max_visible_cutouts.to_u64_wrap())
+		cats = CatSighting.in_view(
+			view,
+			speed,
+		).take_first(CatSighting.max_visible_cats.to_u64_wrap())
 		rails = RailSighting.in_view(road)
 		rider_distance = World.distance_along_route(
 			road.route,
@@ -88,6 +91,6 @@ Scene := {
 	}
 }
 
-expect TreeSighting.max_vis_trees == 640
-expect TowerSighting.max_vis_towers == 16
-expect CatSighting.max_vis_cats == 8
+expect TreeSighting.max_visible_trees == 640
+expect TowerSighting.max_visible_towers == 16
+expect CatSighting.max_visible_cats == 8

@@ -18,8 +18,8 @@ TreeSighting := {
 }.{
 
 	## At most this many trees are drawn in a frame.
-	max_vis_trees : I64
-	max_vis_trees = 640
+	max_visible_trees : I64
+	max_visible_trees = 640
 
 	## The trees in view, the nearest segment's first, and each segment's in
 	## the order it plants them.

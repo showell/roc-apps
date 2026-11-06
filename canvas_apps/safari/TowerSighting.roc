@@ -48,8 +48,8 @@ TowerSighting := {
 	tower_yaw = Angle.Turn.degrees(30.0)
 
 	## At most this many towers are drawn in a frame.
-	max_vis_towers : I64
-	max_vis_towers = 16
+	max_visible_towers : I64
+	max_visible_towers = 16
 
 	## A beacon blinks once in this many steps of the ride.
 	beacon_period : Steps
@@ -197,7 +197,7 @@ expect TowerSighting.tower_right.to_metres() == 20.0
 expect TowerSighting.mid_tower_left.to_metres() == 100.0
 expect TowerSighting.beacon_period.to_f64() == 120.0
 expect TowerSighting.beacon_stagger.to_f64() == 37.0
-expect TowerSighting.max_vis_towers == 16
+expect TowerSighting.max_visible_towers == 16
 
 route : List(World.Segment)
 route = [

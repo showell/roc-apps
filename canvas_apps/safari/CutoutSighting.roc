@@ -23,8 +23,8 @@ CutoutSighting :: [].{
 	wildlife_reach = 5
 
 	## No more critters than this are drawn in a frame.
-	max_vis_critters : I64
-	max_vis_critters = 320
+	max_visible_cutouts : I64
+	max_visible_cutouts = 320
 
 	## Every critter ahead, nearest segment first, then those of the segment
 	## before the rider's, when there is one.

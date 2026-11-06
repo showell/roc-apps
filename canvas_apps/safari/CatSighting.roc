@@ -20,8 +20,8 @@ CatSighting := {
 }.{
 
 	## At most this many cats are drawn in a frame.
-	max_vis_cats : I64
-	max_vis_cats = 8
+	max_visible_cats : I64
+	max_visible_cats = 8
 
 	## The cats in view of a rider at `speed`, the nearest segment's first.
 	in_view : Chain.Viewpoint, Speed -> List(CatSighting)
