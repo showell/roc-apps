@@ -23,8 +23,10 @@ Lens :: [].{
 	min_focal_factor : Fraction
 	min_focal_factor = Fraction.of(0.35)
 
-	min_gaze_focal_factor : Fraction
-	min_gaze_focal_factor = Fraction.of(0.61)
+	## How much of the resting focal length is left at an attention of 1. It is
+	## no minimum, because a cat in the lane holds the eye harder than that.
+	focal_factor_at_full_attention : Fraction
+	focal_factor_at_full_attention = Fraction.of(0.61)
 
 	## The focal length for a lean, from 0 (upright) to 1 (the deepest lean).
 	focal_for_lean : Fraction -> Pixels
@@ -34,20 +36,20 @@ Lens :: [].{
 	}
 
 	## The focal length for the rider's attention.
-	focal_for_gaze : Attention -> Pixels
-	focal_for_gaze = |attention|
-		focal.times(1.0 - (1.0 - min_gaze_focal_factor.to_f64()) * attention.to_f64())
+	focal_for_attention : Attention -> Pixels
+	focal_for_attention = |attention|
+		focal.times(1.0 - (1.0 - focal_factor_at_full_attention.to_f64()) * attention.to_f64())
 
 	## The focal length the camera uses: the shorter of the two, which
 	## gives the wider view.
 	cam_focal : { lean_fraction : Fraction, attention : Attention } -> Pixels
 	cam_focal = |{ lean_fraction, attention }| {
 		for_lean = focal_for_lean(lean_fraction)
-		for_gaze = focal_for_gaze(attention)
-		if for_lean < for_gaze {
+		for_attention = focal_for_attention(attention)
+		if for_lean < for_attention {
 			for_lean
 		} else {
-			for_gaze
+			for_attention
 		}
 	}
 }
@@ -78,7 +80,12 @@ expect
 		(0.5, 551.8363898051531),
 		(1.0, 418.16173637409116),
 		(1.5, 284.4870829430293),
-	].all(|(look, want)| is_close(Lens.focal_for_gaze(Attention.of(look)).to_f64(), want))
+	].all(
+		|(strength, want)| is_close(
+			Lens.focal_for_attention(Attention.of(strength)).to_f64(),
+			want,
+		),
+	)
 
 expect
 	[
@@ -89,10 +96,10 @@ expect
 		((0.9, 1.4), 311.2220136292417),
 		((0.6, 0.5), 525.1014591189407),
 	].all(
-		|((lean, look), want)| {
+		|((lean, strength), want)| {
 			got = Lens.cam_focal({
 				lean_fraction: Fraction.of(lean),
-				attention: Attention.of(look),
+				attention: Attention.of(strength),
 			})
 			is_close(got.to_f64(), want)
 		},
