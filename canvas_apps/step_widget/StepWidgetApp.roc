@@ -254,8 +254,8 @@ from_behind = |{ across, lean }| {
 	[
 		Font.text(
 			"from behind, lean x3",
-			middle + lane + 12.0,
-			surface_y - 4.0,
+			20.0,
+			surface_y - 22.0,
 			10.0,
 			Brush.opaque(0x202020),
 		),
