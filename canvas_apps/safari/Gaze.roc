@@ -162,7 +162,7 @@ Gaze :: [].{
 
 	pig_gaze_brake : RiderState, World.Segment -> Gaze.GazeBrake
 	pig_gaze_brake = |state, seg|
-		if is_gawking(state, seg) == False {
+		if !is_gawking(state, seg) {
 			{ is_gawking: False, acceleration: Acceleration.steady }
 		} else if state.speed <= pig_gaze_speed {
 			{ is_gawking: True, acceleration: Acceleration.steady }

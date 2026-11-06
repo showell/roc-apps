@@ -204,7 +204,7 @@ at_d0 = Chain.rider_point_ahead(
 at_d1 : List(World.Segment) -> Geom.RiderPoint
 at_d1 = |route| Chain.rider_point_ahead(
 	{
-		route: route,
+		route,
 		chain: Chain.chain_ahead(route, World.SegmentIndex.first),
 		vantage,
 	},

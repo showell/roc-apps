@@ -267,19 +267,12 @@ Tower :: [].{
 		p1 = Camera.project(
 			{
 				right: Distance.metres(1.0),
-				forward: forward,
+				forward,
 				height: Distance.zero,
 			},
 			cam_focal,
 		)
-		p0 = Camera.project(
-			{
-				right: Distance.zero,
-				forward: forward,
-				height: Distance.zero,
-			},
-			cam_focal,
-		)
+		p0 = Camera.project({ right: Distance.zero, forward, height: Distance.zero }, cam_focal)
 		p1.x.minus(p0.x)
 	}
 

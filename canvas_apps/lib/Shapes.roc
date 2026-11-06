@@ -165,7 +165,7 @@ Shapes :: [].{
 		while $i < n {
 			$out = List.append(
 				$out,
-				match List.get(shapes, $i) ?? crash ("shape out of range") {
+				match List.get(shapes, $i) ?? crash "shape out of range" {
 					Poly(p) => Poly({ pts: pulled(p.pts, axis, k), fill: p.fill })
 					Pieces(p) => Pieces({ tris: pulled(p.tris, axis, k), fill: p.fill })
 					Disc(d) => Disc({ x: axis + (d.x - axis) * k, y: d.y, r: d.r, fill: d.fill, clip: d.clip })
@@ -307,7 +307,7 @@ Shapes :: [].{
 		while $k < n {
 			$out = List.concat(
 				$out,
-				match List.get(shapes, $k) ?? crash ("shape out of range") {
+				match List.get(shapes, $k) ?? crash "shape out of range" {
 					Poly(p) =>
 						if is_convex(p.pts) {
 							[Poly(p)]
@@ -385,7 +385,7 @@ Shapes :: [].{
 	is_convex = |pts| {
 		n = List.len(pts) // 2
 		var $sign = 0.0
-		var $bad = Bool.False
+		var $bad = False
 		var $xflips = 0
 		var $yflips = 0
 		var $xdir = 0.0
@@ -472,9 +472,9 @@ Shapes :: [].{
 			} else {
 				$i + 1
 			}
-			a = List.get($idx, ip) ?? crash ("vertex out of range")
-			b = List.get($idx, $i) ?? crash ("vertex out of range")
-			c = List.get($idx, inx) ?? crash ("vertex out of range")
+			a = List.get($idx, ip) ?? crash "vertex out of range"
+			b = List.get($idx, $i) ?? crash "vertex out of range"
+			c = List.get($idx, inx) ?? crash "vertex out of range"
 			ax = at(pts, 2 * a)
 			ay = at(pts, 2 * a + 1)
 			bx = at(pts, 2 * b)
@@ -499,13 +499,11 @@ Shapes :: [].{
 				$misses + 1
 			}
 			$i = if ear {
-				(
-					if $i >= List.len($idx) {
-						0
-					} else {
-						$i
-					}
-				)
+				if $i >= List.len($idx) {
+					0
+				} else {
+					$i
+				}
 			} else {
 				inx
 			}
@@ -524,10 +522,10 @@ Shapes :: [].{
 		cx = at(pts, 2 * c)
 		cy = at(pts, 2 * c + 1)
 		m = List.len(idx)
-		var $found = Bool.False
+		var $found = False
 		var $k = 0
 		while $k < m and !$found {
-			p = List.get(idx, $k) ?? crash ("vertex out of range")
+			p = List.get(idx, $k) ?? crash "vertex out of range"
 			px = at(pts, 2 * p)
 			py = at(pts, 2 * p + 1)
 			$found = p != a and p != b and p != c and cross3(ax, ay, bx, by, px, py) * orient > 0.0 and cross3(bx, by, cx, cy, px, py) * orient > 0.0 and cross3(cx, cy, ax, ay, px, py) * orient > 0.0
@@ -544,8 +542,8 @@ Shapes :: [].{
 		var $out = out
 		var $k = 1
 		while $k + 1 < m {
-			p = List.get(idx, $k) ?? crash ("vertex out of range")
-			q = List.get(idx, $k + 1) ?? crash ("vertex out of range")
+			p = List.get(idx, $k) ?? crash "vertex out of range"
+			q = List.get(idx, $k + 1) ?? crash "vertex out of range"
 			$out = List.concat($out, [at(pts, 2 * first), at(pts, 2 * first + 1), at(pts, 2 * p), at(pts, 2 * p + 1), at(pts, 2 * q), at(pts, 2 * q + 1)])
 			$k = $k + 1
 		}

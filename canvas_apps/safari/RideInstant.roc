@@ -49,7 +49,7 @@ RideInstant := {
 				instant.truck,
 				{
 					rider_distance: dist,
-					route: route,
+					route,
 					route_length: World.route_length(route),
 				},
 			),
@@ -74,7 +74,7 @@ RideInstant := {
 		s = instant.rider
 		view = {
 			road: {
-				route: route,
+				route,
 				chain: Chain.chain_ahead(route, s.segment_index),
 				vantage: ViewYaw.vantage_for(s),
 			},

@@ -300,7 +300,7 @@ up_road = {
 view_from : Geom.Vantage, Pixels -> Chain.Viewpoint
 view_from = |vantage, cam_focal| {
 	road: {
-		route: route,
+		route,
 		chain: [0, 1, 2].map(World.SegmentIndex.number),
 		vantage,
 	},
@@ -419,7 +419,7 @@ expect
 truck_view : Geom.Vantage, F64 -> TruckSighting.Viewpoint
 truck_view = |vantage, lead| {
 	road: {
-		route: route,
+		route,
 		chain: [0, 1, 2].map(World.SegmentIndex.number),
 		vantage,
 	},

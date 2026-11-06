@@ -173,7 +173,7 @@ tower_if_ahead : TowerSighting.Viewpoint,
 	beacon_key : U32,
 } -> List(TowerSighting)
 tower_if_ahead = |view, { place, along, across, yaw, beacon_key }| {
-	center = Chain.rider_point_at(view.road, { place: place, along, across })
+	center = Chain.rider_point_at(view.road, { place, along, across })
 	if center.forward <= Geom.near_plane {
 		[]
 	} else {

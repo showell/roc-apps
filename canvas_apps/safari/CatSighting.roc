@@ -65,7 +65,7 @@ cat_in_view = |view, { position, crossing, speed }| {
 	seen = Chain.rider_point_ahead(
 		view.road,
 		{
-			position: position,
+			position,
 			along: crossing.along.plus(instant.spot.along.from_start()),
 			across: instant.spot.across,
 		},
