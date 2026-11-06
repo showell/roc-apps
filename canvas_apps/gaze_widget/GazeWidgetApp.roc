@@ -1,0 +1,559 @@
+## The widget for the Safari tutorial's chapter on the rider's gaze. It rides the
+## stretch around the first pig that catches the rider's eye, with the real
+## Rider, a few steps a frame, and keeps every state it reaches. Dragging across
+## the canvas picks one of those states, so the look plays forward and backward
+## under the pointer. The picture looks down on the road, with both directions to
+## one scale, so the sight line's angle is the real one. Below it, the ruler marks
+## the steps of the look, and the text reads out that step's state.
+import game.Across
+import game.Along
+import game.Angle
+import game.Clock
+import game.Distance
+import game.Gaze
+import game.Pigs
+import game.Rider
+import game.RiderState
+import game.Scenery
+import game.Speed
+import game.Tour
+import game.World
+import lib.Brush
+import lib.CanvasApp
+import lib.Font
+import lib.Input
+import lib.Mouse
+import lib.Shapes
+import lib.Trig
+import widget.ScrubWidget
+
+GazeWidgetApp :: [].{
+
+	## The whole state of the widget: the states of the stretch played so far,
+	## first step first, and the step the pointer last asked for.
+	Model : { played : List(RiderState), heading_for : Clock }
+
+	canvas_app : CanvasApp.CanvasApp(GazeWidgetApp.Model)
+	canvas_app = {
+		size: { width: ScrubWidget.canvas_width, height: ScrubWidget.canvas_height },
+		fps: 60,
+		init: starting_model,
+		advance: |model, input, _seconds| played_on(with_pointer(model, input)),
+		frame: frame_at,
+		sounds: |_model| 0,
+		tones: [],
+		title: "The rider's gaze",
+	}
+}
+
+## What the rider is doing about the pig at one step.
+GazePhase : [EyesOnRoad, LookingAtPig, EasingBack, EyesBack]
+
+## The first step on the ruler, with the pig still too far off to notice.
+first_step : U32
+first_step = 860
+
+## The last step on the ruler, a little after the gaze is back on the road.
+last_step : U32
+last_step = 1320
+
+## The steps of the look, from its first to the first without it. An `expect`
+## below holds them to the ride.
+look_first_step : U32
+look_first_step = 889
+
+look_end_step : U32
+look_end_step = 1046
+
+clock_range : ScrubWidget.ClockRange
+clock_range = { first_step: first_step.to_f64(), last_step: last_step.to_f64() }
+
+## How many states the whole stretch holds.
+stretch_length : U64
+stretch_length = (last_step - first_step + 1).to_u64()
+
+## How many steps of the ride are worked out in one frame of the widget, which
+## plays the whole stretch in about a second.
+played_a_frame : U64
+played_a_frame = 8
+
+## The rider at `first_step`, a record like any other, so the widget needn't ride
+## there. An `expect` below rides there and compares.
+first_rider : RiderState
+first_rider = {
+	segment_index: World.SegmentIndex.number(2),
+	along: Along.metres(140.3590433880225),
+	across: Across.metres(-0.027010758256703522),
+	yaw: Angle.Turn.radians(-0.00037326865836414446),
+	speed: Speed.metres_a_step(1.6528903626175844),
+	lean: Angle.Lean.radians(-0.00020453077171767937),
+	heading: Angle.Bearing.radians(-0.3494391190572302),
+	gaze_yaw: Angle.straight_ahead,
+	attention: RiderState.initial.attention,
+}
+
+starting_model : GazeWidgetApp.Model
+starting_model = { played: [first_rider], heading_for: Clock.at_step(first_step) }
+
+## The first segment of the route whose pigs catch the rider's eye.
+pig_segment : World.Segment
+pig_segment =
+	World.segments.find_first(|segment| segment.pig_attention == Distracting)
+		?? crash "GazeWidgetApp.pig_segment: the route has a distracting pig"
+
+## The pig that catches the rider's eye.
+gaze_pig : Scenery.Critter
+gaze_pig = Pigs.gaze_pig(pig_segment.length)
+
+## `model` with a pointer held down setting the step it's heading for.
+with_pointer : GazeWidgetApp.Model, Input.Snapshot -> GazeWidgetApp.Model
+with_pointer = |model, input|
+	if input.mouse.button_down(Left) {
+		share = ScrubWidget.share_under(input.mouse.position().x.to_f64())
+		{ ..model, heading_for: ScrubWidget.clock_at(share, clock_range) }
+	} else {
+		model
+	}
+
+## `model` a frame on, with a few more steps played until the stretch is.
+played_on : GazeWidgetApp.Model -> GazeWidgetApp.Model
+played_on = |model| {
+	reach = stretch_length.min(model.played.len() + played_a_frame)
+	var $played = model.played
+	while $played.len() < reach {
+		latest = $played.last() ?? crash "GazeWidgetApp.played_on: the stretch starts with a state"
+		$played = $played.append(Rider.advance(latest, World.segments))
+	}
+	{ ..model, played: $played }
+}
+
+## How far into the stretch the state on show is: where the pointer asked for, or
+## the last step played if the ride hasn't got there yet.
+shown_offset : GazeWidgetApp.Model -> U64
+shown_offset = |model| {
+	asked_for = (model.heading_for.to_f64() - first_step.to_f64()).to_u64_wrap()
+	asked_for.min(model.played.len() - 1)
+}
+
+state_at : List(RiderState), U64 -> RiderState
+state_at = |played, offset|
+	played.get(offset) ?? crash "GazeWidgetApp.state_at: offsets stay within what's played"
+
+## What the rider is doing about the pig in `rider`'s state.
+phase_of : RiderState -> GazePhase
+phase_of = |rider|
+	if !Gaze.is_gawking(rider, pig_segment) {
+		EyesOnRoad
+	} else if Gaze.pig_ahead(rider, pig_segment) == Looking {
+		LookingAtPig
+	} else if rider.gaze_yaw == Angle.straight_ahead {
+		EyesBack
+	} else {
+		EasingBack
+	}
+
+## The stretch of the ruler where the rider looks at the pig.
+look_stretch : ScrubWidget.Stretch
+look_stretch = {
+	from: ScrubWidget.step_share(look_first_step.to_f64(), clock_range),
+	to: ScrubWidget.step_share(look_end_step.to_f64(), clock_range),
+}
+
+## Everything on the canvas.
+frame_at : GazeWidgetApp.Model -> List(Shapes.Shape)
+frame_at = |model| {
+	offset = shown_offset(model)
+	rider = state_at(model.played, offset)
+	step = first_step.to_f64() + offset.to_f64()
+	ScrubWidget.frame_shapes({
+		picture: picture(rider),
+		dot_at: ScrubWidget.step_share(step, clock_range),
+		marked: [look_stretch],
+		status: status_lines(rider, step),
+	})
+}
+
+ground_color : I64
+ground_color = 0x6f9a55
+
+road_color : I64
+road_color = 0x8a8a8a
+
+rider_color : I64
+rider_color = 0xf2efe4
+
+herd_color : I64
+herd_color = 0xe9b7b0
+
+gaze_pig_color : I64
+gaze_pig_color = 0xd0603a
+
+sight_color : I64
+sight_color = 0xf6d743
+
+## How many pixels a metre takes up, along the road and across it.
+pixels_a_metre : F64
+pixels_a_metre = 2.4
+
+## Where the canvas's left edge is along the segment, in metres.
+left_edge_metres : F64
+left_edge_metres = 130.0
+
+## Where the middle of the road is, on the canvas.
+road_middle_y : F64
+road_middle_y = 52.0
+
+## Where a point on the segment falls on the canvas. The road runs left to right,
+## so the rider's right is down the canvas.
+screen_x : Along -> F64
+screen_x = |along| (along.to_metres() - left_edge_metres) * pixels_a_metre
+
+screen_y : Across -> F64
+screen_y = |across| road_middle_y + across.to_metres() * pixels_a_metre
+
+ground : Shapes.Shape
+ground = Rect({
+	x: 0.0,
+	y: 0.0,
+	w: ScrubWidget.canvas_width,
+	h: ScrubWidget.picture_bottom_y,
+	fill: ScrubWidget.flat(ground_color),
+})
+
+road : Shapes.Shape
+road = {
+	half_width = Scenery.road_half_width.to_metres() * pixels_a_metre
+	Rect({
+		x: 0.0,
+		y: road_middle_y - half_width,
+		w: ScrubWidget.canvas_width,
+		h: 2.0 * half_width,
+		fill: ScrubWidget.flat(road_color),
+	})
+}
+
+## A disc on the road's plan, of radius `radius` and in `color`.
+plan_disc : {
+	along : Along,
+	across : Across,
+	radius : F64,
+	color : I64,
+} -> Shapes.Shape
+plan_disc = |{ along, across, radius, color }|
+	Disc({
+		x: screen_x(along),
+		y: screen_y(across),
+		r: radius,
+		fill: ScrubWidget.flat(color),
+		clip: Anywhere,
+	})
+
+## The segment's whole herd, the pig that catches the eye, and its name.
+pigs : List(Shapes.Shape)
+pigs =
+	[
+		pig_segment.pigs.map(
+			|pig| plan_disc({
+				along: pig.along,
+				across: pig.across,
+				radius: 3.0,
+				color: herd_color,
+			}),
+		),
+		[
+			plan_disc({
+				along: gaze_pig.along,
+				across: gaze_pig.across,
+				radius: 6.0,
+				color: gaze_pig_color,
+			}),
+		],
+		Font.text(
+			"the pig",
+			screen_x(gaze_pig.along) - 78.0,
+			screen_y(gaze_pig.across) + 8.0,
+			12.0,
+			Brush.opaque(0x202020),
+		),
+	].join()
+
+## The way the rider looks: as far as a pig can catch the eye, turned from the
+## road by the bike's yaw and the rider's gaze.
+sight_line : RiderState -> Shapes.Shape
+sight_line = |rider| {
+	x = screen_x(rider.along)
+	y = screen_y(rider.across)
+	turn = rider.yaw.plus(rider.gaze_yaw).to_radians()
+	reach = Gaze.gaze_look_distance.to_metres() * pixels_a_metre
+	Shapes.line(
+		x,
+		y,
+		x + reach * Trig.r_cos(turn),
+		y + reach * Trig.r_sin(turn),
+		2.0,
+		ScrubWidget.flat(sight_color),
+	)
+}
+
+## The road from above, with the pigs, the rider and the rider's sight line.
+picture : RiderState -> List(Shapes.Shape)
+picture = |rider|
+	[
+		[ground, road],
+		pigs,
+		[
+			sight_line(rider),
+			plan_disc({
+				along: rider.along,
+				across: rider.across,
+				radius: 5.0,
+				color: rider_color,
+			}),
+		],
+	].join()
+
+## What the rider is doing, in words.
+phase_text : GazePhase -> Str
+phase_text = |phase|
+	match phase {
+		EyesOnRoad => "Eyes on the road"
+		LookingAtPig => "Looking at the pig, and slowing"
+		EasingBack => "Too far round: the gaze eases back"
+		EyesBack => "Eyes back on the road, still slow"
+	}
+
+## How far the rider looks from the way the bike points, in degrees. A pig on the
+## right turns the gaze right, so on this stretch it's never negative.
+gaze_degrees : RiderState -> F64
+gaze_degrees = |rider| rider.gaze_yaw.to_radians() / Trig.deg
+
+## The state at `step`, a line each.
+status_lines : RiderState, F64 -> List(Str)
+status_lines = |rider, step|
+	[
+		phase_text(phase_of(rider)),
+		"Step ${step.to_u64_wrap().to_str()}: speed ${ScrubWidget.tenths_text(rider.speed.to_metres_a_step())} m a step",
+		"Gaze yaw: ${ScrubWidget.tenths_text(gaze_degrees(rider))} degrees",
+		"Attention: ${ScrubWidget.percent_text(rider.attention)}",
+	]
+
+## The whole stretch, played. It's a function because a constant is worked out at
+## compile time, and this rides hundreds of steps.
+whole_stretch : {} -> List(RiderState)
+whole_stretch = |{}| {
+	var $model = starting_model
+	while $model.played.len() < stretch_length {
+		$model = played_on($model)
+	}
+	$model.played
+}
+
+## The state at `step` of a played stretch.
+state_at_step : List(RiderState), U32 -> RiderState
+state_at_step = |played, step| state_at(played, (step - first_step).to_u64())
+
+## The ride at `step`, played from its start.
+ridden_to : U32 -> Tour
+ridden_to = |step| {
+	var $tour = Tour.initial
+	while $tour.instant.clock != Clock.at_step(step) {
+		$tour = Tour.step_forward($tour)
+	}
+	$tour
+}
+
+# The record above is the real rider at that step, field by field.
+expect {
+	real = ridden_to(first_step).instant.rider
+	real.segment_index == first_rider.segment_index
+		and real.along == first_rider.along
+		and real.across == first_rider.across
+		and real.yaw == first_rider.yaw
+		and real.speed == first_rider.speed
+		and real.lean == first_rider.lean
+		and real.heading == first_rider.heading
+		and real.gaze_yaw == first_rider.gaze_yaw
+		and real.attention == first_rider.attention
+}
+
+# This stretch is on the route's first distracting segment.
+expect first_rider.segment_index.segment_in(World.segments).pig_attention == Distracting
+expect World.segments.take_first(2).all(|segment| segment.pig_attention == Unnoticed)
+expect pig_segment.length == Distance.metres(400.0)
+
+# The steps the book's table quotes, each with its speed in metres a step, its
+# gaze_yaw in degrees and its attention, to the table's precision.
+expect {
+	played = whole_stretch({})
+	[
+		{
+			step: 889,
+			speed: 1.9429,
+			gaze: 4.0,
+			attention: 0.1143,
+		},
+		{
+			step: 1045,
+			speed: 0.2000,
+			gaze: 34.9397,
+			attention: 0.9983,
+		},
+		{
+			step: 1046,
+			speed: 0.2000,
+			gaze: 34.7397,
+			attention: 0.9983,
+		},
+		{
+			step: 1304,
+			speed: 0.2000,
+			gaze: 0.0,
+			attention: 0.9971,
+		},
+	].all(
+		|{ step, speed, gaze, attention }| {
+			rider = state_at_step(played, step)
+			(rider.speed.to_metres_a_step() - speed).abs() <= 0.00005
+				and (gaze_degrees(rider) - gaze).abs() <= 0.00005
+				and (rider.attention.to_f64() - attention).abs() <= 0.00005
+		},
+	)
+}
+
+# Each phase starts at the step the book says, and not one step before it.
+expect {
+	played = whole_stretch({})
+	[
+		(first_step, EyesOnRoad),
+		(look_first_step - 1, EyesOnRoad),
+		(look_first_step, LookingAtPig),
+		(look_end_step - 1, LookingAtPig),
+		(look_end_step, EasingBack),
+		(1303, EasingBack),
+		(1304, EyesBack),
+		(last_step, EyesBack),
+	].all(|(step, phase)| phase_of(state_at_step(played, step)) == phase)
+}
+
+# The gawking and the look start on one step, because both start the same
+# distance from the pig. The brake bites a step later.
+expect {
+	played = whole_stretch({})
+	before = state_at_step(played, 888)
+	first = state_at_step(played, 889)
+	next = state_at_step(played, 890)
+	!Gaze.is_gawking(before, pig_segment)
+		and Gaze.is_gawking(first, pig_segment)
+		and first.speed > before.speed
+		and next.speed < first.speed
+}
+
+# The gaze is at its widest on the look's last step, and the look ends short of
+# the release angle, because the next step would pass it.
+expect {
+	played = whole_stretch({})
+	widest = gaze_degrees(state_at_step(played, look_end_step - 1))
+	played.all(|rider| gaze_degrees(rider) <= widest)
+		and gaze_degrees(state_at_step(played, look_end_step)) < widest
+		and gaze_degrees(state_at_step(played, look_end_step - 2)) < widest
+		and widest < Gaze.gaze_release_angle.to_radians() / Trig.deg
+}
+
+# The gaze never turns left on this stretch, as `gaze_degrees` says.
+expect whole_stretch({}).all(|rider| gaze_degrees(rider) >= 0.0)
+
+# The whole stretch stays on the canvas, and on the one segment.
+expect
+	whole_stretch({}).all(
+		|rider|
+			rider.segment_index == first_rider.segment_index
+				and screen_x(rider.along) > 0.0
+				and screen_x(rider.along) < ScrubWidget.canvas_width,
+	)
+
+## A snapshot with the left button held or not, the pointer at `x`.
+pointer_at : { x : F32, held : U32 } -> Input.Snapshot
+pointer_at = |{ x, held }| Input.none.with_mouse(Mouse.of(held, 0, x, 0.0, 0.0))
+
+## The step the widget heads for after that snapshot, from its start.
+heading_after : { x : F32, held : U32 } -> Clock
+heading_after = |pointer| with_pointer(starting_model, pointer_at(pointer)).heading_for
+
+## `model` after `frames` frames with nobody touching it.
+left_alone : GazeWidgetApp.Model, U64 -> GazeWidgetApp.Model
+left_alone = |model, frames| {
+	var $model = model
+	var $left = frames
+	while $left > 0 {
+		$model = played_on($model)
+		$left = $left - 1
+	}
+	$model
+}
+
+# A frame plays a few steps, and playing stops at the end of the stretch.
+expect played_on(starting_model).played.len() == 1 + played_a_frame
+expect left_alone(starting_model, 2).played.len() == 1 + 2 * played_a_frame
+expect left_alone(starting_model, 57).played.len() == 457
+expect left_alone(starting_model, 58).played.len() == stretch_length
+expect left_alone(starting_model, 59).played.len() == stretch_length
+
+# A pointer held down sets the step, past either end of the ruler it holds there,
+# and a pointer let go leaves it alone.
+expect heading_after({ x: 616.0, held: 1 }) == Clock.at_step(last_step)
+expect heading_after({ x: 640.0, held: 1 }) == Clock.at_step(last_step)
+expect heading_after({ x: 24.0, held: 1 }) == Clock.at_step(first_step)
+expect heading_after({ x: 0.0, held: 1 }) == Clock.at_step(first_step)
+expect heading_after({ x: 320.0, held: 1 }) == Clock.at_step(1090)
+expect heading_after({ x: 320.0, held: 0 }) == Clock.at_step(first_step)
+
+# The state on show waits for the ride, then matches the pointer.
+expect shown_offset(starting_model) == 0
+expect shown_offset({ ..starting_model, heading_for: Clock.at_step(last_step) }) == 0
+expect
+	shown_offset(left_alone({ ..starting_model, heading_for: Clock.at_step(last_step) }, 2))
+		== 2 * played_a_frame
+expect shown_offset(left_alone({ ..starting_model, heading_for: Clock.at_step(870) }, 2)) == 10
+expect shown_offset(left_alone({ ..starting_model, heading_for: Clock.at_step(870) }, 1)) == 8
+
+expect look_stretch.from.to_f64() < look_stretch.to.to_f64()
+
+# Where the road's plan falls on the canvas.
+expect screen_x(Along.metres(left_edge_metres)) == 0.0
+expect screen_x(Along.metres(left_edge_metres + 100.0)) == 100.0 * pixels_a_metre
+expect screen_y(Across.middle) == road_middle_y
+expect screen_y(Across.metres(10.0)) == road_middle_y + 10.0 * pixels_a_metre
+expect screen_y(Across.metres(-10.0)) == road_middle_y - 10.0 * pixels_a_metre
+expect screen_x(gaze_pig.along) < ScrubWidget.canvas_width
+expect screen_y(gaze_pig.across) < ScrubWidget.picture_bottom_y
+
+expect pig_segment.pigs.len() == 49
+
+expect phase_text(EyesOnRoad) == "Eyes on the road"
+expect phase_text(LookingAtPig) == "Looking at the pig, and slowing"
+expect phase_text(EasingBack) == "Too far round: the gaze eases back"
+expect phase_text(EyesBack) == "Eyes back on the road, still slow"
+
+expect
+	status_lines(first_rider, 860.0)
+		== [
+			"Eyes on the road",
+			"Step 860: speed 1.7 m a step",
+			"Gaze yaw: 0.0 degrees",
+			"Attention: 0%",
+		]
+
+expect {
+	widest_gaze = state_at_step(whole_stretch({}), 1045)
+	status_lines(widest_gaze, 1045.0)
+		== [
+			"Looking at the pig, and slowing",
+			"Step 1045: speed 0.2 m a step",
+			"Gaze yaw: 34.9 degrees",
+			"Attention: 99%",
+		]
+}
+
+# The sight line moves with the gaze, and the picture with the rider.
+expect picture(first_rider) != picture({ ..first_rider, gaze_yaw: Angle.Turn.degrees(20.0) })
+expect picture(first_rider) != picture({ ..first_rider, along: Along.metres(200.0) })
