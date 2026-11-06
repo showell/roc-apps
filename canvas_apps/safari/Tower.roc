@@ -19,23 +19,23 @@ import lib.Shapes
 
 Tower :: [].{
 
-	tower_height : F64
-	tower_height = 80.0
+	tower_height : Distance
+	tower_height = Distance.metres(80.0)
 
-	tower_half : F64
-	tower_half = 6.0
+	tower_half : Distance
+	tower_half = Distance.metres(6.0)
 
-	storey_height : F64
-	storey_height = 20.0
+	storey_height : Distance
+	storey_height = Distance.metres(20.0)
 
 	brace_storeys : I64
 	brace_storeys = 2
 
-	rod_half : F64
-	rod_half = 0.12
+	rod_half : Distance
+	rod_half = Distance.metres(0.12)
 
-	rod_w : F64
-	rod_w = (rod_half * 2.0)
+	rod_w : Distance
+	rod_w = rod_half.times(2.0)
 
 	tower_metal : I64
 	tower_metal = 10133672
@@ -43,11 +43,11 @@ Tower :: [].{
 	## The radius a far tower sinks over, which hides it wholly at 1.8 km. It
 	## is tighter than `Geom.ground_curve_radius`, so a tower sinks visibly as
 	## it recedes: on the ground's curve it would stay in view to 4 km.
-	sink_radius : F64
-	sink_radius = 20000.0
+	sink_radius : Distance
+	sink_radius = Distance.metres(20000.0)
 
-	beacon_radius : F64
-	beacon_radius = 3.0
+	beacon_radius : Distance
+	beacon_radius = Distance.metres(3.0)
 
 	beacon_color : I64
 	beacon_color = 16723942
@@ -67,11 +67,11 @@ Tower :: [].{
 	RodView : { rod_width_px : F64, cam_focal : F64 }
 
 	## One tower, ready to draw: where it stands, how far the earth's curve
-	## has sunk it, and how its rods are drawn.
+	## has sunk it, which is never negative, and how its rods are drawn.
 	TowerInView : {
 		footprint : Tower.Footprint,
 		center : Geom.RiderPoint,
-		sunk : F64,
+		sunk : Distance,
 		view : Tower.RodView,
 	}
 
@@ -119,8 +119,9 @@ Tower :: [].{
 	} -> Geom.RoadPoint
 	base_corner_on_road = |corner, { along, across, yaw }| {
 		offset = corner_offset(corner)
-		du = (offset.across * tower_half)
-		dv = (offset.along * tower_half)
+		half = tower_half.to_metres()
+		du = (offset.across * half)
+		dv = (offset.along * half)
 		cy = Trig.r_cos(yaw.to_radians())
 		sy = Trig.r_sin(yaw.to_radians())
 		{
@@ -130,9 +131,11 @@ Tower :: [].{
 	}
 
 	## How far the earth's curve hides the bottom of a tower standing at `p`.
-	sunk_below_horizon : Geom.RiderPoint -> F64
-	sunk_below_horizon = |p|
-		((p.right * p.right) + (p.forward * p.forward)) / (2.0 * sink_radius)
+	sunk_below_horizon : Geom.RiderPoint -> Distance
+	sunk_below_horizon = |p| {
+		squared = (p.right * p.right) + (p.forward * p.forward)
+		Distance.metres(squared / (2.0 * sink_radius.to_metres()))
+	}
 
 	## The point `fraction` of the way from `from` to `to`.
 	point_between : {
@@ -154,15 +157,15 @@ Tower :: [].{
 	corner_at : Tower.TowerInView,
 	{
 		corner : Tower.Corner,
-		height_on_tower : F64,
+		height_on_tower : Distance,
 	} -> Geom.RaisedPoint
-	corner_at = |tower, { corner, height_on_tower: h }| {
-		t = (h / tower_height)
+	corner_at = |tower, { corner, height_on_tower }| {
+		t = height_on_tower.ratio_to(tower_height)
 		bottom = footprint_corner(tower.footprint, corner)
 		{
 			right: (bottom.right + ((tower.center.right - bottom.right) * t)),
 			forward: (bottom.forward + ((tower.center.forward - bottom.forward) * t)),
-			height: (h - tower.sunk),
+			height: height_on_tower.minus(tower.sunk).to_metres(),
 		}
 	}
 
@@ -278,7 +281,7 @@ Tower :: [].{
 
 	## A rod's width on screen at distance `forward`.
 	rod_width_at : { forward : F64, cam_focal : F64 } -> F64
-	rod_width_at = |camera| rod_w * metre_px(camera)
+	rod_width_at = |camera| rod_w.to_metres() * metre_px(camera)
 
 	## The four legs, from the footprint's corners up to the apex.
 	legs : Tower.TowerInView, Geom.RaisedPoint -> List(Shapes.Shape)
@@ -290,7 +293,7 @@ Tower :: [].{
 	)
 
 	## The ring of rods round the tower at height `h`.
-	ring : Tower.TowerInView, F64 -> List(Shapes.Shape)
+	ring : Tower.TowerInView, Distance -> List(Shapes.Shape)
 	ring = |tower, h| corners.join_map(
 		|corner| rod(
 			tower.view,
@@ -313,12 +316,12 @@ Tower :: [].{
 			},
 	)
 
-	ring_heights_from : F64 -> List(F64)
+	ring_heights_from : Distance -> List(Distance)
 	ring_heights_from = |h|
 		if h >= tower_height {
 			[]
 		} else {
-			[h].concat(ring_heights_from((h + storey_height)))
+			[h].concat(ring_heights_from(h.plus(storey_height)))
 		}
 
 	## The crossed braces of the lowest storeys, bottom first. A storey the
@@ -336,13 +339,13 @@ Tower :: [].{
 
 	brace_storey : Tower.TowerInView, I64 -> List(Shapes.Shape)
 	brace_storey = |tower, storey| {
-		storey_bottom = (storey.to_f64() * storey_height)
-		storey_top = (storey_bottom + storey_height)
+		storey_bottom = storey_height.times(storey.to_f64())
+		storey_top = storey_bottom.plus(storey_height)
 		if storey_top <= tower.sunk {
 			[]
 		} else {
-			hidden_height = DeviceMath.real_max(storey_bottom, tower.sunk) - storey_bottom
-			hidden_fraction = Fraction.of(hidden_height / storey_height)
+			hidden_height = storey_bottom.max(tower.sunk).minus(storey_bottom)
+			hidden_fraction = Fraction.of(hidden_height.ratio_to(storey_height))
 			corners.join_map(
 				|corner| brace_pair(tower, { corner, storey_bottom, storey_top, hidden_fraction }),
 			)
@@ -354,8 +357,8 @@ Tower :: [].{
 	brace_pair : Tower.TowerInView,
 	{
 		corner : Tower.Corner,
-		storey_bottom : F64,
-		storey_top : F64,
+		storey_bottom : Distance,
+		storey_top : Distance,
 		hidden_fraction : Fraction,
 	} -> List(Shapes.Shape)
 	brace_pair = |tower, { corner, storey_bottom, storey_top, hidden_fraction }| {
@@ -401,7 +404,7 @@ Tower :: [].{
 				forward: tower.center.forward,
 				cam_focal: tower.view.cam_focal,
 			})
-			radius = beacon_radius * one_metre_px
+			radius = beacon_radius.to_metres() * one_metre_px
 			if radius < 0.5 {
 				[]
 			} else {
@@ -433,7 +436,7 @@ Tower :: [].{
 			apex = {
 				right: center.right,
 				forward: center.forward,
-				height: (tower_height - sunk),
+				height: tower_height.minus(sunk).to_metres(),
 			}
 			[
 				legs(tower, apex),
@@ -445,13 +448,13 @@ Tower :: [].{
 	}
 }
 
-expect Tower.tower_height == 80.0
-expect Tower.tower_half == 6.0
-expect Tower.storey_height == 20.0
-expect Tower.rod_half == 0.12
-expect Tower.rod_w == 0.24
-expect Tower.sink_radius == 20000.0
-expect Tower.beacon_radius == 3.0
+expect Tower.tower_height.to_metres() == 80.0
+expect Tower.tower_half.to_metres() == 6.0
+expect Tower.storey_height.to_metres() == 20.0
+expect Tower.rod_half.to_metres() == 0.12
+expect Tower.rod_w.to_metres() == 0.24
+expect Tower.sink_radius.to_metres() == 20000.0
+expect Tower.beacon_radius.to_metres() == 3.0
 
 expect Tower.brace_storeys == 2
 expect Tower.tower_metal == 10133672
@@ -496,49 +499,49 @@ sample_tower = {
 		front_left: { right: -6.0, forward: 106.0 },
 	},
 	center: { right: 0.0, forward: 100.0 },
-	sunk: 1.0,
+	sunk: Distance.metres(1.0),
 	view: sample_rod_view,
 }
 
 expect
-	Tower.corner_at(sample_tower, { corner: BackLeft, height_on_tower: 0.0 })
+	Tower.corner_at(sample_tower, { corner: BackLeft, height_on_tower: Distance.metres(0.0) })
 		== {
 			right: -6.0,
 			forward: 94.0,
 			height: -1.0,
 		}
 expect
-	Tower.corner_at(sample_tower, { corner: BackLeft, height_on_tower: 40.0 })
+	Tower.corner_at(sample_tower, { corner: BackLeft, height_on_tower: Distance.metres(40.0) })
 		== {
 			right: -3.0,
 			forward: 97.0,
 			height: 39.0,
 		}
 expect
-	Tower.corner_at(sample_tower, { corner: BackLeft, height_on_tower: 80.0 })
+	Tower.corner_at(sample_tower, { corner: BackLeft, height_on_tower: Distance.metres(80.0) })
 		== {
 			right: 0.0,
 			forward: 100.0,
 			height: 79.0,
 		}
 expect
-	Tower.corner_at(sample_tower, { corner: FrontRight, height_on_tower: 40.0 })
+	Tower.corner_at(sample_tower, { corner: FrontRight, height_on_tower: Distance.metres(40.0) })
 		== {
 			right: 3.0,
 			forward: 103.0,
 			height: 39.0,
 		}
 expect
-	Tower.corner_at(sample_tower, { corner: FrontRight, height_on_tower: 80.0 })
+	Tower.corner_at(sample_tower, { corner: FrontRight, height_on_tower: Distance.metres(80.0) })
 		== {
 			right: 0.0,
 			forward: 100.0,
 			height: 79.0,
 		}
 
-expect Tower.sunk_below_horizon({ right: 0.0, forward: 200.0 }) == 1.0
-expect Tower.sunk_below_horizon({ right: 100.0, forward: 100.0 }) == 0.5
-expect Tower.sunk_below_horizon({ right: 0.0, forward: 0.0 }) == 0.0
+expect Tower.sunk_below_horizon({ right: 0.0, forward: 200.0 }).to_metres() == 1.0
+expect Tower.sunk_below_horizon({ right: 100.0, forward: 100.0 }).to_metres() == 0.5
+expect Tower.sunk_below_horizon({ right: 0.0, forward: 0.0 }).to_metres() == 0.0
 
 expect
 	Tower.point_between({
