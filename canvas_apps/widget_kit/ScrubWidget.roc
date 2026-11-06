@@ -71,6 +71,25 @@ ScrubWidget :: [].{
 		title,
 	}
 
+	## A canvas app from a widget's model, what a frame does to it and what it
+	## draws.
+	app_with_advance : {
+		title : Str,
+		init : model,
+		advance : model, Input.Snapshot -> model,
+		frame : model -> List(Shapes.Shape),
+	} -> CanvasApp.CanvasApp(model)
+	app_with_advance = |{ title, init, advance, frame }| {
+		size: { width: canvas_width, height: canvas_height },
+		fps: 60,
+		init,
+		advance: |model, input, _seconds| advance(model, input),
+		frame,
+		sounds: |_model| 0,
+		tones: [],
+		title,
+	}
+
 	## The model after one step: a pointer held down sets it, and it stays
 	## where it is left.
 	followed_pointer : model, { input : Input.Snapshot, model_at : Fraction -> model } -> model
