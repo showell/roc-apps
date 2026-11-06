@@ -54,49 +54,30 @@ Trees :: [].{
 	## A segment's trees, in pairs from its start, each pair's left tree
 	## first.
 	plant : { scheme : Scenery.Scheme, length : Distance } -> List(Trees.Tree)
-	plant = |{ scheme, length }| plant_onto(
-		[],
-		{
-			scheme,
-			length,
-			along: Along.at(tree_start_inset),
-			conifer: Conifer.BigGreen,
-		},
-	)
-}
-
-## The trees planted so far, and the pairs from `along` on: `conifer`, then
-## each pair the scheme's accent after a big green one and a big green one
-## after the accent.
-plant_onto : List(Trees.Tree),
-{
-	scheme : Scenery.Scheme,
-	length : Distance,
-	along : Along,
-	conifer : Conifer,
-} -> List(Trees.Tree)
-plant_onto = |planted, { scheme, length, along, conifer }|
-	if along > Along.at(length.minus(Trees.tree_end_inset)) {
-		planted
-	} else {
-		from_middle = Trees.distance_from_middle(conifer)
-		left = { along, across: Across.left_of_middle(from_middle), conifer }
-		right = { along, across: Across.right_of_middle(from_middle), conifer }
-		next_conifer =
-			match conifer {
-				BigGreen => Trees.accent(scheme)
-				SmallGreen | Red | Gold => Conifer.BigGreen
+	plant = |{ scheme, length }| {
+		last_along = Along.at(length.minus(tree_end_inset))
+		var $along = Along.at(tree_start_inset)
+		var $conifer = Conifer.BigGreen
+		var $planted = []
+		while $along <= last_along {
+			from_middle = distance_from_middle($conifer)
+			left = {
+				along: $along,
+				across: Across.left_of_middle(from_middle),
+				conifer: $conifer,
 			}
-		plant_onto(
-			planted.append(left).append(right),
-			{
-				scheme,
-				length,
-				along: along.plus(Trees.tree_spacing),
-				conifer: next_conifer,
-			},
-		)
+			right = { ..left, across: Across.right_of_middle(from_middle) }
+			$planted = $planted.append(left).append(right)
+			$along = $along.plus(tree_spacing)
+			$conifer =
+				match $conifer {
+					BigGreen => accent(scheme)
+					SmallGreen | Red | Gold => Conifer.BigGreen
+				}
+		}
+		$planted
 	}
+}
 
 expect Trees.tree_spacing == Distance.metres(30.0)
 expect Trees.tree_road_offset == Distance.metres(1.5)

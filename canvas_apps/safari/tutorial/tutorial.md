@@ -230,7 +230,7 @@ A `match` on a closed union has to cover it: leaving out a tag is a compile-time
 
 Here's where it's called, picking the color for a pair of small trees:
 
-{{code Trees.plant_onto from "next_conifer =" to "BigGreen => Trees.accent(scheme)"}}
+{{code Trees.plant from "$conifer =" to "BigGreen => accent(scheme)"}}
 
 `SegmentIndex` is another small opaque type, a `U32` for a segment's place in the route. A place in the route can't be confused with a count of trees, because nothing outside can do arithmetic on it. `crash` appears here too. It isn't for error handling: an index that isn't in the world is a bug in Safari Ride, not a case to handle.
 
@@ -273,9 +273,7 @@ Planting a segment starts at the first place a tree can go:
 
 {{code Trees.plant}}
 
-From there, `plant_onto` calls itself. Each call plants one pair, then calls itself again with the next place and the other size. It stops 85 metres short of the segment's end.
-
-{{code Trees.plant_onto}}
+Each turn of the loop plants one pair, then moves on to the next place and the next kind. It stops 85 metres short of the segment's end.
 
 That all happens once, when the world is built. No frame ever plants a tree.
 
