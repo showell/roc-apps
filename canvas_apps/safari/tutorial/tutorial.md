@@ -587,6 +587,10 @@ With the sunset, we compute a value based on the clock alone. The cat has a more
 
 Before a cat can cross the road, we have to be able to draw a cat. Every critter in Safari Ride is a *still*: a small picture made of filled polygons, stored as data. A cat has seven stills, one for each pose, and a bird has six. Animating a critter comes down to choosing which still to show, and where.
 
+```widget stills
+Every pose of the cat and the bird. Click one to see it large, and click it again for its polygons.
+```
+
 New in this chapter:
 
 - Roc: a large table of plain data
@@ -594,11 +598,13 @@ New in this chapter:
 
 The stills are the least readable code in Safari Ride, and nobody is meant to read them. They're generated data, encoded as Roc, and this chapter ends with how they got made. Here's how much data each set holds:
 
-| Stills | Pictures | Polygons | Points |
-|---|---|---|---|
-| `BirdStills` | 6 poses | 40 | 141 |
-| `CatStills` | 7 poses | 275 | 13,453 |
-| `EmojiStills` | one for each animal by the road | 129 | 5,267 |
+| Stills | Kind | Pictures | Polygons | Points |
+|---|---|---|---|---|
+| `BirdStills` | Hand-drawn | 6 poses | 32 | 119 |
+| `CatStills` | Hand-drawn | 7 poses | 275 | 13,453 |
+| `EmojiStills` | Emoji-based | one for each animal by the road | 129 | 5,267 |
+
+The distinction matters. The cat and the bird were drawn for this game, and they have poses. The animals by the road started as emoji, and each has one picture.
 
 A polygon is one record. It has a color, an optional gradient and a list of points:
 
@@ -606,7 +612,7 @@ A polygon is one record. It has a color, an optional gradient and a list of poin
 
 The bird is the smallest set, because the perched bird is Roc's logo, and the logo is made of a few straight-edged shapes. The cat has far more points, because its curves are made of many short straight lines. Its seven stills fit in a 73-line file, and those lines are very long.
 
-Every point is measured in units of the still's height. Its feet are at `y` 0, and the top of it is at `y` 1. That's why no pixels or metres appear here. The same numbers draw a cat in the distance and a cat in the lane.
+Every point is measured in units of the still's height. Its feet are at `y` 0, and a standing critter is about 1 tall. That's why no pixels or metres appear here. The same numbers draw a cat in the distance and a cat in the lane.
 
 `StillDraw` does the rest. An `Anchor` says where a still stands on screen, which way it faces and how tall it is:
 
@@ -628,7 +634,9 @@ The artist's cat was a program. An early version of Safari Ride drew the cat in 
 
 So the developer wrote a baker, a small program that ran the real drawing code once for each pose. A recorder stood in for the canvas. It kept every filled shape as a polygon and turned every stroke into a thin filled quad, and the result was a flat table of polygons. The drawing code stayed behind, and the table moved on.
 
-The animals by the road took a different route. They come from Microsoft's Fluent Emoji, in its Flat style. That set draws every animal whole and from the side, where another set draws a rhino as a face, which looks like a bug beside a road. A second baker read each SVG file, walked its shapes in painting order, and cut each curve into short straight lines.
+The emoji-based animals took a different route. They come from Microsoft's Fluent Emoji, in its Flat style. That set draws every animal whole and from the side, where another set draws a rhino as a face, which looks like a bug beside a road. A second baker read each SVG file, walked its shapes in painting order, and cut each curve into short straight lines.
+
+The bull is a hybrid. It comes from the same emoji set, but in its Color style, which is shaded. It's the only still with gradients, on 40 of its 43 polygons, which is why a `StillPolygon` has a place for one. Its 2,309 points are nearly half of `EmojiStills`.
 
 The Roc bird came last. Its perched pose is the logo, and Claude drew the five flight poses to match, directly as polygons, in the logo's two purples.
 
@@ -1035,7 +1043,61 @@ Each animal is a tag, and each answers with its emoji and how tall it stands. Th
 
 To add a lion, we'd add a tag, a row here and a still in `EmojiStills`. The compiler would point at every `match` that needs the new tag.
 
-All of these critters either react to the rider or stand still. The sun only goes one way, and nothing so far repeats on the clock. The beacons do.
+These animals each stand alone at a bend. Most of the others come in crowds, and a crowd starts with a single pig.
+
+## A pig
+
+A pig is the simplest critter in Safari Ride. It has no timeline, and it isn't tied to a bend. Here's how we build one:
+
+{{code Pigs.pig}}
+
+New in this chapter:
+
+- Roc: a `match` on numbers, with a default branch
+- Modules: `Pigs`, `Scenery`
+
+That's the record that the elephant and its baby came out as: two places, an emoji, a height and a way to face. A critter's `codepoint` is what finds its still, and that's one `match`, from a number to some polygons:
+
+{{code EmojiStills.emoji_polys_for}}
+
+That's a pig. One pig doesn't look like much of a farm, though.
+
+## Herds: cows and pigs
+
+Safari Ride's farms are crowds of animals, and a crowd is just a list of critters. Both herds are worked out once, when the world is built.
+
+New in this chapter:
+
+- Roc: `List.from_iter` over a range, `match` on a pair
+- Modules: `Cows`
+
+### Cows
+
+A herd of 14 cows grazes on the left of the road, in columns of three. Every fourth cow is a calf, at half the height.
+
+{{code Cows.cows}}
+
+A herd in a perfect grid would look like a parking lot, so each cow strays a little from its place:
+
+{{code Cows.cow_at}}
+
+The stray comes from `r_sin` and `r_cos` of the cow's number. It looks random, but it's the same on every run, so the frames stay exact.
+
+A bull may stand in front of the herd, by the trees. It's the same record again, a bit taller than a cow:
+
+{{code Cows.bull_of}}
+
+### Pigs
+
+Pigs graze on the right of the road, near the end of a segment. The first two segments with pigs get a big herd, 7 rows of 7. After that, it's two short rows.
+
+{{code Pigs.pigs_along}}
+
+The `match` is on a pair, so it has to cover all four combinations. The last line joins the two with no pigs.
+
+`Distracting` is the one thing here that a cow doesn't have. One pig in a big herd catches the rider's eye, and the rider slows down to look. That's about the rider more than the pig, so it waits for the rider's chapters.
+
+The critters so far either react to the rider or stand still. The sun only goes one way, and nothing so far repeats on the clock. The beacons do.
 
 ## The beacons and the headlights
 
