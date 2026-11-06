@@ -271,13 +271,15 @@ Every frame is a list of this:
 
 This one type serves every canvas app in the repository, so some tags are there for the others: `Image` is for a pixel paint program. A frame of Safari Ride has a couple of thousand shapes, and nearly all of them are `Poly`.
 
-Safari Ride's own `Polygon` takes a color and screen points. `triangle` and `rectangle` are handy forms of this one, which takes any number of corners:
+Safari Ride's own `Polygon` takes a color and screen points. `triangle` and `rectangle` are handy forms of this one, which takes three or more corners:
 
 {{code Polygon.flat_polygon}}
 
-### Lists all the way down
+### One shape, and lists of them
 
-Everything in `Polygon` gives back a list, even a triangle, which only ever makes one shape. That's how a drawing function can say "nothing to draw", with an empty list. Lists join without any fuss, so nobody has to check. A tree joins its trunk and tiers, a frame joins its trees and everything else, and the empty ones disappear.
+A function in `Polygon` gives back one shape. A polygon with fewer than three corners is a bug in Safari Ride, so `flat_polygon` crashes rather than quietly draw nothing.
+
+A whole thing in the picture is a list. A tree is a trunk and eight tiers, and a frame is its trees and everything else. An empty list is an honest answer here, but only from code that knows why: a patch of ground behind the camera has nothing to draw, and `Ground.draw` says so.
 
 The list is also the order of painting. A shape goes over whatever came before it, so the rectangle is on top of the triangle because it comes later. A frame paints far things first and near things last.
 
@@ -2324,7 +2326,7 @@ The answer rests on one fact from the ride instant chapter. Three fields decide 
 {{proof row 1570 A cat frozen in the lane}}
 {{proof row 1590 The same cat in mid-leap}}
 {{proof row 3000 The ride under way}}
-{{proof row 3742 A distant truck, its glow too small to draw}}
+{{proof row 3742 A distant truck, its glow barely a pixel}}
 {{proof row 5700 The truck at dusk, lights on}}
 {{proof row 6553 The truck braking in plain view}}
 {{proof row 9000 Past the end, on the second lap}}
