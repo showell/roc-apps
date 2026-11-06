@@ -1,5 +1,6 @@
 ## The animals by the road, each a still traced from its emoji, looked up
-## by the emoji's code point.
+## by the emoji's code point. It has no `pose_polygons`: an animal here has one
+## drawing, and no poses.
 import Stills
 
 EmojiStills :: [].{
