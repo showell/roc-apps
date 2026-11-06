@@ -1,4 +1,4 @@
--- budget: steps=100000000 arena_bytes=1000000000 read_bytes=200000000 output_bytes=200000 call_bytes=20000000
+-- budget: steps=100000000 arena_bytes=1000000000 read_bytes=200000000 output_bytes=200000 call_bytes=20000000 runs=200
 -- This builds the Safari Ride book into the dev channel, one page a chapter.
 --
 --   cd <roc-apps checkout> && nice -n 19 shale canvas_apps/safari/tutorial/book.shale
