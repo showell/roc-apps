@@ -116,14 +116,14 @@ Throttle :: [].{
 		}
 	}
 
-	clamp_v : RiderState,
+	allowed_speed : RiderState,
 	{
 		segment : World.Segment,
 		exit_speed : Speed,
 		next_speed : Speed,
 		is_near_end : Bool,
 	} -> Speed
-	clamp_v = |
+	allowed_speed = |
 		state,
 		{
 			segment: seg,
@@ -190,7 +190,7 @@ Throttle :: [].{
 		a2 = crossing_gate(state, { segment: seg, offered_accel: a1 })
 		a3 = pig_gate(state, { segment: seg, offered_accel: a2 })
 		a4 = shoulder_brake(state, a3)
-		clamp_v(
+		allowed_speed(
 			state,
 			{
 				segment: seg,
@@ -304,7 +304,7 @@ expect brake_after(0, 0.01) < Acceleration.steady
 ## The speed the clamp allows.
 clamped_speed : { next_speed : F64, is_near_end : Bool } -> F64
 clamped_speed = |{ next_speed, is_near_end }|
-	Throttle.clamp_v(
+	Throttle.allowed_speed(
 		centred_rider(0.0, 0.3),
 		{
 			segment: first_segment,
