@@ -83,7 +83,10 @@ chapter_of = |text, fence| {
 }
 
 section_of : MdDocument.Heading -> Section
-section_of = |heading| { id: BookText.from_bytes(heading.id), title: BookText.from_bytes(heading.text) }
+section_of = |heading| {
+	title = BookText.from_bytes(heading.text)
+	{ id: BookText.from_bytes(heading.id), title }
+}
 
 ## The chapters count from one. An appendix and the credits have no number.
 with_number : Chapter, U64 -> Chapter
