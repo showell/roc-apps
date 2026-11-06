@@ -14,22 +14,70 @@ Book := [].{
 	Page : { file : Str, html : Str }
 
 	## A line in the book's lists of chapters, above the chapter titled `before`.
-	Divider : { before : Str, level : [Part, Category], title : Str }
+	Divider : {
+		before : Str,
+		level : [Part, Category],
+		title : Str,
+	}
 
 	## The book's parts, and the categories inside them.
 	dividers : List(Book.Divider)
 	dividers = [
-		{ before: "Introduction", level: Part, title: "The big picture" },
-		{ before: "The world", level: Part, title: "One frame" },
-		{ before: "Trees", level: Category, title: "Nature" },
-		{ before: "The road", level: Category, title: "Man-made" },
-		{ before: "Stills: how we draw a critter", level: Category, title: "Critters that stand still" },
-		{ before: "The ride instant", level: Part, title: "Motion" },
-		{ before: "The beacons", level: Category, title: "The passage of time" },
-		{ before: "Stepping through the ride: RideInstant", level: Category, title: "Vehicles" },
-		{ before: "The cat", level: Category, title: "Critter motion" },
-		{ before: "The math layer", level: Part, title: "Under the hood" },
-		{ before: "Appendix: the patterns", level: Part, title: "Appendices" },
+		{
+			before: "Introduction",
+			level: Part,
+			title: "The big picture",
+		},
+		{
+			before: "The world",
+			level: Part,
+			title: "One frame",
+		},
+		{
+			before: "Trees",
+			level: Category,
+			title: "Nature",
+		},
+		{
+			before: "The road",
+			level: Category,
+			title: "Man-made",
+		},
+		{
+			before: "Stills: how we draw a critter",
+			level: Category,
+			title: "Critters that stand still",
+		},
+		{
+			before: "The ride instant",
+			level: Part,
+			title: "Motion",
+		},
+		{
+			before: "The beacons",
+			level: Category,
+			title: "The passage of time",
+		},
+		{
+			before: "Stepping through the ride: RideInstant",
+			level: Category,
+			title: "Vehicles",
+		},
+		{
+			before: "The cat",
+			level: Category,
+			title: "Critter motion",
+		},
+		{
+			before: "The math layer",
+			level: Part,
+			title: "Under the hood",
+		},
+		{
+			before: "Appendix: the patterns",
+			level: Part,
+			title: "Appendices",
+		},
 	]
 
 	## The source's first page is the front of the book and the rest are its
@@ -42,7 +90,8 @@ Book := [].{
 			[] => crash "book: no pages"
 			[front, .. as unnumbered] => {
 				numbered = unnumbered.map_with_index(with_number)
-				if !dividers_wanted.all(|divider| numbered.any(|chapter| chapter.title == divider.before)) {
+				has_its_chapter = |divider| numbered.any(|chapter| chapter.title == divider.before)
+				if !dividers_wanted.all(has_its_chapter) {
 					crash "book: a divider stands above a chapter that isn't in the book"
 				}
 				chapters = numbered.map(|chapter| with_opening(chapter, dividers_wanted))
@@ -294,13 +343,25 @@ one_section = {
 }
 
 a_part : Book.Divider
-a_part = { before: "A", level: Part, title: "P & Q" }
+a_part = {
+	before: "A",
+	level: Part,
+	title: "P & Q",
+}
 
 a_category : Book.Divider
-a_category = { before: "A", level: Category, title: "C" }
+a_category = {
+	before: "A",
+	level: Category,
+	title: "C",
+}
 
 elsewhere : Book.Divider
-elsewhere = { before: "B", level: Part, title: "R" }
+elsewhere = {
+	before: "B",
+	level: Part,
+	title: "R",
+}
 
 plain_book : Manuscript.Contents
 plain_book = {
@@ -309,19 +370,47 @@ plain_book = {
 	widget_folders: [],
 }
 
-expect nav_entry(one_section, one_section) == "<li class=\"here\"><a href=\"a.html\">A</a><ol class=\"sections\"><li><a href=\"a.html#s\">S</a></li></ol></li>"
-expect nav_entry(one_section, { ..one_section, file: "b.html" }) == "<li><a href=\"a.html\">A</a></li>"
+expect nav_entry(
+	one_section,
+	one_section,
+) == "<li class=\"here\"><a href=\"a.html\">A</a><ol class=\"sections\"><li><a href=\"a.html#s\">S</a></li></ol></li>"
+expect nav_entry(
+	one_section,
+	{ ..one_section, file: "b.html" },
+) == "<li><a href=\"a.html\">A</a></li>"
 expect with_number(one_section, 2).number == Numbered(3)
 expect with_number({ ..one_section, title: "Appendix: x" }, 2).number == Unnumbered
 expect with_number({ ..one_section, title: "Credits" }, 2).number == Unnumbered
-expect Book.pages(plain_book, []).map(|page| page.file) == ["index.html", "one.html", "appendix-more.html"]
+expect Book.pages(plain_book, []).map(|page| page.file) == [
+	"index.html",
+	"one.html",
+	"appendix-more.html",
+]
 expect Book.pages(plain_book, []).all(|page| !page.html.contains("embed.js"))
-expect Book.pages(plain_book, [{ ..a_part, before: "One" }]).all(|page| page.html.contains("<li class=\"part\">P &amp; Q</li>"))
+expect Book.pages(
+	plain_book,
+	[{ ..a_part, before: "One" }],
+).all(|page| page.html.contains("<li class=\"part\">P &amp; Q</li>"))
 expect with_opening(one_section, [elsewhere]).opening == ""
-expect with_opening(one_section, [a_part, a_category, elsewhere]).opening == "<li class=\"part\">P &amp; Q</li>\n<li class=\"category\">C</li>"
+expect with_opening(
+	one_section,
+	[a_part, a_category, elsewhere],
+).opening == "<li class=\"part\">P &amp; Q</li>\n<li class=\"category\">C</li>"
 expect contents_entry({ ..one_section, opening: "<li>o</li>" }).starts_with("<li>o</li><li><a ")
-expect nav_entry({ ..one_section, opening: "<li>o</li>" }, one_section).starts_with("<li>o</li><li class=\"here\">")
-expect nav_entry({ ..one_section, opening: "<li>o</li>" }, { ..one_section, file: "b.html" }).starts_with("<li>o</li><li><a ")
+expect nav_entry(
+	{ ..one_section, opening: "<li>o</li>" },
+	one_section,
+).starts_with("<li>o</li><li class=\"here\">")
+expect nav_entry(
+	{ ..one_section, opening: "<li>o</li>" },
+	{ ..one_section, file: "b.html" },
+).starts_with("<li>o</li><li><a ")
 expect turn_link(Err(OutOfBounds), { rel: "next", word: "Next" }) == "<span></span>"
-expect turn_link(Ok(one_section), { rel: "next", word: "Next" }) == "<a rel=\"next\" href=\"a.html\"><small>Next</small>A</a>"
-expect turn_link(Ok({ ..one_section, file: "index.html" }), { rel: "prev", word: "Previous" }) == "<a rel=\"prev\" href=\"index.html\"><small>Previous</small>Contents</a>"
+expect turn_link(
+	Ok(one_section),
+	{ rel: "next", word: "Next" },
+) == "<a rel=\"next\" href=\"a.html\"><small>Next</small>A</a>"
+expect turn_link(
+	Ok({ ..one_section, file: "index.html" }),
+	{ rel: "prev", word: "Previous" },
+) == "<a rel=\"prev\" href=\"index.html\"><small>Previous</small>Contents</a>"
