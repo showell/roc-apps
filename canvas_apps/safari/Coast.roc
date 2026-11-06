@@ -42,8 +42,8 @@ Coast :: [].{
 	## rider.
 	Progress(others) : { steps_run : Steps, coasting_rider : Bike.Motion(others) }
 
-	sim_from : Coast.Bounds, Coast.Progress(others) -> Coast.Outcome
-	sim_from = |course, { steps_run: i, coasting_rider: phys }|
+	coast_from : Coast.Bounds, Coast.Progress(others) -> Coast.Outcome
+	coast_from = |course, { steps_run: i, coasting_rider: phys }|
 		if i >= turn_danger_steps {
 			{
 				exit: StaysOn,
@@ -51,7 +51,7 @@ Coast :: [].{
 				end_across: phys.across,
 			}
 		} else {
-			sim_step(
+			judge_place(
 				course,
 				{
 					steps_run: i,
@@ -63,8 +63,8 @@ Coast :: [].{
 			)
 		}
 
-	sim_step : Coast.Bounds, Coast.Progress(others) -> Coast.Outcome
-	sim_step = |course, { steps_run: i, coasting_rider: phys }| {
+	judge_place : Coast.Bounds, Coast.Progress(others) -> Coast.Outcome
+	judge_place = |course, { steps_run: i, coasting_rider: phys }| {
 		across = phys.across
 		forward = phys.along.distance_from(course.start_along)
 		if across < course.left_bound {
@@ -92,7 +92,7 @@ Coast :: [].{
 				end_across: across,
 			}
 		} else {
-			sim_from(course, { steps_run: i.plus(Steps.one_step), coasting_rider: phys })
+			coast_from(course, { steps_run: i.plus(Steps.one_step), coasting_rider: phys })
 		}
 	}
 
@@ -101,7 +101,7 @@ Coast :: [].{
 		inset_hw = Scenery.lane_half_width.minus(straighten_margin)
 		right_bound = Across.right_of_middle(inset_hw).max(state.across)
 		left_bound = Across.left_of_middle(inset_hw).min(state.across)
-		sim_from(
+		coast_from(
 			{ left_bound, right_bound, start_along: state.along },
 			{ steps_run: Steps.zero, coasting_rider: state },
 		)
