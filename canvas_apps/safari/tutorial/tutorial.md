@@ -184,7 +184,7 @@ Everything in this chapter happens within a single frame, and none of it survive
 Some of Safari Ride never changes. Trees, cows, the pond and the road are built once and only read after that, which makes them the easiest part of the program to read, so the tour starts there.
 
 ```widget route
-Drag along the route and read each segment's record.
+Step along the route and read each segment's record.
 ```
 
 Each stretch of this map is one record of a list called `World.plans`, and the lines under the ruler read it out. The marks on the ruler are the six segments with a cat or a bird. We drew the map for this page: the ride itself never has one.
@@ -486,10 +486,10 @@ That's nature. Next come the things people built.
 A road of straight segments still has to get round its bends. Where two segments meet, something has to pave the corner and put up a rail.
 
 ```widget bends
-Drag to turn the bend, and watch the rail change sides.
+Press play to turn the bend, and watch the rail change sides.
 ```
 
-The road here is two segments, seen from above, and the white dot is where the view is from. The rail runs along the outer edge of the bend, and the yellow dot is the apex, where the outer edges of the two segments meet. The marks on the ruler are the route's own bends. Dragging past the middle swaps the outer edge from one side to the other. A road with no turn has no apex, so the ruler skips the last five degrees either side of straight.
+The road here is two segments, seen from above, and the white dot is where the view is from. The rail runs along the outer edge of the bend, and the yellow dot is the apex, where the outer edges of the two segments meet. The marks on the ruler are the route's own bends. Playing past straight swaps the outer edge from one side to the other. A road with no turn has no apex, so the ruler skips the last five degrees either side of straight.
 
 New in this chapter:
 
@@ -793,10 +793,10 @@ That's every critter that stands still, and the end of what we can say about one
 We've held one frame still for a long time. Now it's time to turn the page. Each time the clock ticks, Safari Ride moves the rider and the truck and draws everything again. `RideInstant` is the one record it keeps from one tick to the next, and it holds the rider, the truck and the clock. One tick is a step.
 
 ```widget step
-Click the ruler to play the ride to that step, or to go back to it.
+Press play to run the ride, and the outer buttons to go to either end.
 ```
 
-The first three lines under the ruler are that record's three fields, read from a real ride. Click to the right of the dot, and the ride plays up to that step, eight steps a frame, with what's left to play marked on the ruler. Click to the left, and it's there almost at once, because the steps it has been through are kept in a list.
+The first three lines under the ruler are that record's three fields, read from a real ride. Press the last button, and the ride plays up to step 2,000, eight steps a frame. Press the first, and it's back at the start almost at once, because the steps it has been through are kept in a list.
 
 New in this chapter:
 
@@ -844,10 +844,10 @@ We've seen the things that never change. The beacons are next, because they foll
 Some things in Safari Ride are worked out from the clock alone, with nothing stored. The beacons on the radio towers are the simplest of them, and they blink over and over.
 
 ```widget beacon
-Drag the clock and watch the towers blink out of step.
+Press play and watch the towers blink out of step.
 ```
 
-Drag across it from left to right, and the clock runs through two whole blinks, from step 5,400 to step 5,640. The left tower starts dark and the right one at full brightness. At step 5,430, where the first marked stretch starts, both read 49%, and by step 5,460 they've changed places. Each marked stretch is where the left tower is more than half bright. At the far end of the ruler the towers are back where they began.
+Play it, and the clock runs through two whole blinks, from step 5,400 to step 5,640. The left tower starts dark and the right one at full brightness. At step 5,430, where the first marked stretch starts, both read 49%, and by step 5,460 they've changed places. Each marked stretch is where the left tower is more than half bright. At the far end of the ruler the towers are back where they began.
 
 New in this chapter:
 
@@ -1032,7 +1032,7 @@ The sun and the beacons can be asked about any step, cold. Hand `Sky.dusk_at` a 
 Where the rider and the truck are depends on where they were, so their state has to be kept, and it's the only state there is. This chapter and the next few are about the two fields of `RideInstant` that aren't a clock.
 
 ```widget step
-Click far to the right of the dot, then far to the left.
+Press the last button, then the first.
 ```
 
 Going forward, the ride has to be played, because each step starts from the one before. Going back, it only reads a list. The rider and the truck are the reason for that difference.
@@ -1240,7 +1240,7 @@ The two limits in the middle come from what the rider sees. `crossing_limit` is 
 The herds chapter left one pig waiting. On the first two segments with pigs, a pig in the big herd catches the rider's eye. The rider turns to look and slows down, and the picture turns too.
 
 ```widget gaze
-Drag along the stretch around the first distracting pig: the sight line follows the pig until it's 35 degrees off, then eases back to the road.
+Press play to ride the stretch around the first distracting pig: the sight line follows the pig until it's 35 degrees off, then eases back to the road.
 ```
 
 Here's that first pig, on the third segment of the route:
@@ -1441,10 +1441,10 @@ The sun and the beacons follow the clock alone. The cat has a more nuanced rule:
 A cat walks out into the lane, freezes as the rider bears down on it, and leaps clear at the last possible instant. It's one of the most elaborate effects in Safari Ride, so this chapter takes some concentration. Unlike the sun, which follows the clock alone, the cat reacts to the rider.
 
 ```widget cat
-Drag the rider's gap and watch the crossing play.
+Press play and watch the crossing.
 ```
 
-Drag across it from left to right, and the gap falls from 50 metres to 0, with the rider held at a metre a step. The cat rests on the right verge until 41 metres, where the marked stretch of the ruler starts and the last line changes to "The rider may not accelerate". It walks out, and at 31 metres it freezes in the lane. It stays frozen down to 7 metres, coils, and is in the air from 6 metres to 4. At 3 metres, where the marked stretch ends, it has collapsed on the far verge and the rider may accelerate again. Below that, nothing changes.
+Play it, and the gap falls from 50 metres to 0, with the rider held at a metre a step. The cat rests on the right verge until 41 metres, where the marked stretch of the ruler starts and the last line changes to "The rider may not accelerate". It walks out, and at 31 metres it freezes in the lane. It stays frozen down to 7 metres, coils, and is in the air from 6 metres to 4. At 3 metres, where the marked stretch ends, it has collapsed on the far verge and the rider may accelerate again. Below that, nothing changes.
 
 New in this chapter:
 
@@ -1679,10 +1679,10 @@ The cat also has an effect on the rider. A cat in the lane stops the rider speed
 The cat is built on a shared module, `Animation`, and one critter can't show whether that module was written for critters in general or just for cats. The bird is the second critter to use it. It's Roc's logo, sitting on a treetop. As the rider comes near it takes off, flies across the road and ahead, and drops onto a tree on the far side. It's a rider-driven thing like the cat, and it cost much less.
 
 ```widget bird
-Drag the rider's gap and watch the bird fly.
+Press play and watch the bird fly.
 ```
 
-Drag across it from left to right, and the gap falls from 75 metres to 0. The bird sits on the left tree, 5.9 metres up, until 60 metres, where the marked stretch of the ruler starts. It takes off side on, turns away at about 55 metres, and reaches 10.2 metres near the middle of the stretch, shrinking as it goes. It dives from 20 metres, and at 15, where the marked stretch ends, it's perched on the far tree, 4.5 metres up. Below that, the picture stays as it is.
+Play it, and the gap falls from 75 metres to 0. The bird sits on the left tree, 5.9 metres up, until 60 metres, where the marked stretch of the ruler starts. It takes off side on, turns away at about 55 metres, and reaches 10.2 metres near the middle of the stretch, shrinking as it goes. It dives from 20 metres, and at 15, where the marked stretch ends, it's perched on the far tree, 4.5 metres up. Below that, the picture stays as it is.
 
 New in this chapter:
 
