@@ -15,8 +15,12 @@ Camera :: [].{
 	## lens of focal length `cam_focal` in pixels.
 	project : Geom.RaisedPoint, Pixels -> Screen.Point
 	project = |p, cam_focal| {
-		x: Screen.center_x.plus(cam_focal.times(p.right.ratio_to(p.forward))),
-		y: Screen.horizon_y.minus(cam_focal.times(p.height.minus(eye_h).ratio_to(p.forward))),
+		slope_right = p.right.ratio_to(p.forward)
+		slope_up = p.height.minus(eye_h).ratio_to(p.forward)
+		{
+			x: Screen.center_x.plus(cam_focal.times(slope_right)),
+			y: Screen.horizon_y.minus(cam_focal.times(slope_up)),
+		}
 	}
 
 	project_all : List(Geom.RaisedPoint), Pixels -> List(Screen.Point)

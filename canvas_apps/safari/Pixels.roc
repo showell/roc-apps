@@ -46,17 +46,6 @@ Pixels :: F64.{
 	ratio_to : Pixels, Pixels -> F64
 	ratio_to = |Pixels.(p), Pixels.(whole)| p / whole
 
-	## The area of a rectangle this long and `other` wide, in square pixels.
-	area_with : Pixels, Pixels -> F64
-	area_with = |Pixels.(p), Pixels.(other)| p * other
-
-	## The long side of a right triangle whose short sides are this and `other`.
-	hypotenuse : Pixels, Pixels -> Pixels
-	hypotenuse = |Pixels.(p), Pixels.(other)| {
-		squares = (p * p) + (other * other)
-		Pixels.(DeviceMath.real_sqrt(squares))
-	}
-
 	## The larger of this length and `other`.
 	max : Pixels, Pixels -> Pixels
 	max = |Pixels.(p), Pixels.(other)| Pixels.(DeviceMath.real_max(p, other))
@@ -73,16 +62,8 @@ Pixels :: F64.{
 	is_lte : Pixels, Pixels -> Bool
 	is_lte = |Pixels.(p), Pixels.(other)| p <= other
 
-	## Whether the two are the same number to the bit, which tells 0 from -0
-	## where `==` doesn't.
-	is_same_bits : Pixels, Pixels -> Bool
-	is_same_bits = |Pixels.(p), Pixels.(other)| p.to_bits() == other.to_bits()
-
 	is_eq : _
 }
-
-negative_zero : F64
-negative_zero = F64.from_bits(9223372036854775808)
 
 expect Pixels.of(2.5).to_f64() == 2.5
 expect Pixels.of(-2.5).to_f64() == -2.5
@@ -110,13 +91,6 @@ expect Pixels.of(8.0).ratio_to(Pixels.of(8.0)) == 1.0
 expect Pixels.of(12.0).ratio_to(Pixels.of(8.0)) == 1.5
 expect Pixels.of(-2.0).ratio_to(Pixels.of(8.0)) == -0.25
 
-expect Pixels.of(3.0).area_with(Pixels.of(4.0)) == 12.0
-expect Pixels.of(-3.0).area_with(Pixels.of(4.0)) == -12.0
-
-expect Pixels.of(3.0).hypotenuse(Pixels.of(4.0)).to_f64() == 5.0
-expect Pixels.of(-3.0).hypotenuse(Pixels.of(-4.0)).to_f64() == 5.0
-expect Pixels.zero.hypotenuse(Pixels.zero).to_f64() == 0.0
-
 expect Pixels.of(2.0).max(Pixels.of(3.0)).to_f64() == 3.0
 expect Pixels.of(3.0).max(Pixels.of(2.0)).to_f64() == 3.0
 expect Pixels.of(-3.0).max(Pixels.of(-2.0)).to_f64() == -2.0
@@ -141,7 +115,3 @@ expect greater >= greater
 expect !(lesser >= greater)
 expect greater == greater
 expect !(lesser == greater)
-
-expect greater.is_same_bits(greater)
-expect !greater.is_same_bits(lesser)
-expect !Pixels.zero.is_same_bits(Pixels.of(negative_zero))

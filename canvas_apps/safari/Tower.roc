@@ -180,19 +180,20 @@ Tower :: [].{
 		width_px : Pixels,
 	} -> List(Shapes.Shape)
 	screen_rod = |{ from, to, width_px }| {
-		dx = to.x.minus(from.x)
-		dy = to.y.minus(from.y)
-		raw = dx.hypotenuse(dy)
-		len = if raw < Pixels.of(0.0001) {
-			Pixels.of(1.0)
+		dx = to.x.minus(from.x).to_f64()
+		dy = to.y.minus(from.y).to_f64()
+		width = width_px.to_f64()
+		raw = DeviceMath.real_sqrt((dx * dx) + (dy * dy))
+		len = if raw < 0.0001 {
+			1.0
 		} else {
 			raw
 		}
 		rod_quad({
 			from,
 			to,
-			offset_x: width_px.times(dy.opposite().ratio_to(len)).divided_by(2.0),
-			offset_y: width_px.times(dx.ratio_to(len)).divided_by(2.0),
+			offset_x: Pixels.of(width * ((0.0 - dy) / len) / 2.0),
+			offset_y: Pixels.of(width * (dx / len) / 2.0),
 		})
 	}
 

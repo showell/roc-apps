@@ -6,6 +6,7 @@
 import Pixels
 import Across
 import Camera
+import lib.DeviceMath
 import Distance
 import Geom
 import Paint
@@ -63,9 +64,9 @@ TruckLights :: [].{
 	## The distance between two points on screen.
 	distance : { from : Screen.Point, to : Screen.Point } -> Pixels
 	distance = |{ from, to }| {
-		dx = from.x.minus(to.x)
-		dy = from.y.minus(to.y)
-		dx.hypotenuse(dy)
+		dx = from.x.minus(to.x).to_f64()
+		dy = from.y.minus(to.y).to_f64()
+		Pixels.of(DeviceMath.real_sqrt((dx * dx) + (dy * dy)))
 	}
 
 	## How far the farthest of `points` is from `center`.
@@ -267,11 +268,18 @@ sample_triangle = [
 	Screen.point(0.0, 6.0),
 ]
 
+origin : Screen.Point
+origin = Screen.point(0.0, 0.0)
+
 expect TruckLights.center_of(sample_panel) == Screen.point(4.0, 4.0)
 expect TruckLights.center_of(sample_triangle) == Screen.point(1.0, 2.0)
 expect
 	TruckLights.distance({ from: Screen.point(3.0, 4.0), to: Screen.point(0.0, 0.0) }).to_f64()
 		== 5.0
+expect TruckLights.distance({ from: origin, to: Screen.point(3.0, 4.0) }).to_f64() == 5.0
+expect TruckLights.distance({ from: Screen.point(3.0, 4.0), to: origin }).to_f64() == 5.0
+expect TruckLights.distance({ from: origin, to: origin }).to_f64() == 0.0
+
 expect TruckLights.farthest_from(sample_panel, Screen.point(0.0, 0.0)).to_f64() == 10.0
 expect TruckLights.glow_radius(sample_panel, Screen.point(0.0, 0.0)).to_f64() == 32.0
 

@@ -319,6 +319,21 @@ Roc's own rules are in the langref's
   bare `F64` in a signature or a type is named with its reason in a table,
   safari's `bare_floats.txt`, which `cookbook:roc/bare_floats.shale` holds at
   zero: a real ratio has no unit, so it goes there.
+- **A dense formula unwraps once, does its math in plain floats, and wraps
+  once.** A unit's methods name one step well, but a chain of them buries a
+  sum a reader knows from paper. A chain of one or two steps stays. So does
+  a step from one unit to another, where a named middle step reads as well
+  as floats would and the types still check the crossing.
+
+  ```roc
+  # Not this:
+  diagonal = width.squared().plus(height.squared()).square_root()
+
+  # This:
+  w = width.to_metres()
+  h = height.to_metres()
+  Distance.metres(Float.sqrt(w * w + h * h))
+  ```
 - **A closed set that needs no checking is nominal, not opaque.** Every
   value of `Script := [Palette, Chrome, Compose, Feed]` is valid, so there
   is nothing to guard, and callers write `Script.Chrome`. Opaque is for

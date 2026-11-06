@@ -167,7 +167,8 @@ TreeDraw :: [].{
 		} else {
 			Pixels.of(1.0)
 		}
-		height = seen.height_px.times(visible_trunk.to_f64()).plus(seen.height_px.times(0.05))
+		below_crown = seen.height_px.times(visible_trunk.to_f64())
+		height = below_crown.plus(seen.height_px.times(0.05))
 		left = seen.base_x.minus(width.divided_by(2.0))
 		top = seen.base_y.minus(height)
 		points = [
@@ -220,7 +221,7 @@ TreeDraw :: [].{
 			lower.drop_last(1).concat(upper.drop_last(1))
 		}
 
-	## The points left to right, and bottom to top where they share an x. Each
+	## The points left to right, and top to bottom where they share an x. Each
 	## goes in after the ones it doesn't come before, so points that tie keep
 	## their order.
 	sorted_points : List(Screen.Point) -> List(Screen.Point)
@@ -237,7 +238,7 @@ TreeDraw :: [].{
 
 ## Whether `a` comes before `b`: left of it, or above it at the same x.
 is_before : Screen.Point, Screen.Point -> Bool
-is_before = |a, b| a.x < b.x or (a.x.is_same_bits(b.x) and a.y < b.y)
+is_before = |a, b| a.x < b.x or (a.x == b.x and a.y < b.y)
 
 ## The hull with its last points taken off while they don't turn left on the
 ## way to `point`.
@@ -245,9 +246,11 @@ trim_hull : List(Screen.Point), Screen.Point -> List(Screen.Point)
 trim_hull = |hull, point|
 	match hull {
 		[.., a, b] => {
-			across_then_up = b.x.minus(a.x).area_with(point.y.minus(a.y))
-			up_then_across = b.y.minus(a.y).area_with(point.x.minus(a.x))
-			turn = across_then_up - up_then_across
+			edge_x = b.x.minus(a.x).to_f64()
+			edge_y = b.y.minus(a.y).to_f64()
+			reach_x = point.x.minus(a.x).to_f64()
+			reach_y = point.y.minus(a.y).to_f64()
+			turn = edge_x * reach_y - edge_y * reach_x
 			if turn <= 0.0 {
 				trim_hull(hull.drop_last(1), point)
 			} else {
@@ -410,6 +413,13 @@ expect {
 		},
 	)
 }
+
+# Of two points at one x the higher comes first, and of two equal points neither does.
+expect is_before(Screen.point(1.0, 9.0), Screen.point(2.0, 0.0))
+expect !is_before(Screen.point(2.0, 0.0), Screen.point(1.0, 9.0))
+expect is_before(Screen.point(1.0, 2.0), Screen.point(1.0, 3.0))
+expect !is_before(Screen.point(1.0, 3.0), Screen.point(1.0, 2.0))
+expect !is_before(Screen.point(1.0, 2.0), Screen.point(1.0, 2.0))
 
 hull_points : List(Screen.Point) -> List(F64)
 hull_points = |points| Paint.flatten_screen(TreeDraw.convex_hull(points))
