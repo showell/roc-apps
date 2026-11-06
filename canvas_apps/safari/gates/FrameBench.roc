@@ -23,7 +23,7 @@ ride_frames = |world, { bench_run, steps_left: steps }|
 			world,
 			{
 				bench_run: {
-					instant: RideInstant.next(world, bench_run.instant),
+					instant: RideInstant.next_or_restart(world, bench_run.instant),
 					shapes: bench_run.shapes + List.len(frame_shapes),
 				},
 				steps_left: steps - 1,

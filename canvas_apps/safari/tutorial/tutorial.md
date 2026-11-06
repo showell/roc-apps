@@ -61,7 +61,7 @@ Most of Safari Ride's small modules have this shape: a comment saying what the t
 
 It's called like this, once a step:
 
-{{code RideInstant.step from "clock: instant.clock.next()," to "clock: instant.clock.next(),"}}
+{{code RideInstant.next from "clock: instant.clock.next()," to "clock: instant.clock.next(),"}}
 
 `instant.clock.next()` is static dispatch: `next` comes from the type of `instant.clock`, so the call needs no import.
 
@@ -879,7 +879,7 @@ digraph stepped {
 
 Here's the step again, this time whole. Its body is a block: names, then a record, which is the value of the block. The rider moves first, and the truck reads where the rider has just got to, so the order of those lines is a rule of the game, and `dist` is what carries it.
 
-{{code RideInstant.step}}
+{{code RideInstant.next}}
 
 `Clock.next`, `Rider.advance` and `Truck.advance` all have the same shape: a value goes in, and the next value comes out. Call that *the step function*. There's no mutable rider being nudged. There's a rider, and another rider one step on, and the old one is still a perfectly good value, which `Tour` keeps in a list.
 
@@ -887,7 +887,7 @@ Stepping has a price, and it's worth stating against the cat:
 
 - A cat can be asked about any gap. A truck at step 4,000 has to be played there, or written down by hand.
 - A wrong critter rule is wrong in the frames it touches. A wrong step moves the rider for the rest of the ride.
-- `RideInstant.step` has an order, and frames don't.
+- `RideInstant.next` has an order, and frames don't.
 
 *[The step widget goes here: pause the ride, step back and forward, and watch the three stored fields change.]*
 
@@ -1018,7 +1018,7 @@ Its one caller is the truck's step function, the same shape as the rider's. `Nex
 
 {{code Truck.advance from "schedule = scheduled_position(" to "NoTurnAhead => advance_on_schedule(truck, schedule)"}}
 
-And that's called from `RideInstant.step`, above, with the rider's distance as the only thing the truck knows of the rider. Nothing in `Rider` imports `Truck`, and nothing in `Truck` imports `Rider`. The chase is one record literal in `RideInstant`.
+And that's called from `RideInstant.next`, above, with the rider's distance as the only thing the truck knows of the rider. Nothing in `Rider` imports `Truck`, and nothing in `Truck` imports `Rider`. The chase is one record literal in `RideInstant`.
 
 Finding the next turn shows a list pattern. `[]` is the end of the route, and `[segment, .. as later_segments]` takes the first segment and names the rest. Recursion walks the list, carrying where the current segment starts. Only `Truck` and `Paint` use a list pattern. Elsewhere the same walk is a `fold`.
 
@@ -1282,15 +1282,15 @@ Everything here lives in `gates/`, and the game never runs any of it. The gate p
 
 ### A fixture is a value
 
-Getting a test to step 1,570 of a game normally takes some doing. Here it takes a loop. `Tour.initial` is a value, and `Tour.advance` is a step function, the one at the very top, wrapped around `RideInstant.next`. The `if` chain is the only management a history needs, and its comment says why half of the list goes at once:
+Getting a test to step 1,570 of a game normally takes some doing. Here it takes a loop. `Tour.initial` is a value, and `Tour.advance` is a step function, the one at the very top, wrapped around `RideInstant.next_or_restart`. The `if` chain is the only management a history needs, and its comment says why half of the list goes at once:
 
 {{code Tour.advance}}
 
 There's nothing to mock, because nothing was injected. No clock has to be faked, because the clock is a field. There's no browser to start, no window to open and no delay to wait out, and two runs can't disagree. A step of the ride takes nothing from outside it.
 
-`RideInstant.next` is one `if`, and it's worth seeing because it puts the end of the ride in one place. A ride that's finished starts again, so `Tour` needs no notion of game over:
+`RideInstant.next_or_restart` is one `if`, and it's worth seeing because it puts the end of the ride in one place. A ride that's finished starts again, so `Tour` needs no notion of game over:
 
-{{code RideInstant.next}}
+{{code RideInstant.next_or_restart}}
 
 ### The frame hash
 

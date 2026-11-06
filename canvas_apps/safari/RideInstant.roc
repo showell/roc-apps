@@ -33,16 +33,16 @@ RideInstant := {
 		clock: Clock.start,
 	}
 
-	next : List(World.Segment), RideInstant -> RideInstant
-	next = |w, instant|
+	next_or_restart : List(World.Segment), RideInstant -> RideInstant
+	next_or_restart = |w, instant|
 		if Rider.is_finished(instant.rider, w) {
 			initial
 		} else {
-			step(w, instant)
+			next(w, instant)
 		}
 
-	step : List(World.Segment), RideInstant -> RideInstant
-	step = |w, instant| {
+	next : List(World.Segment), RideInstant -> RideInstant
+	next = |w, instant| {
 		nx = Rider.advance(instant.rider, w)
 		dist = World.distance_along_route(w, { index: nx.segment, along: nx.along })
 		{
@@ -127,10 +127,10 @@ expect RideInstant.initial.truck.brake_lights == Off
 expect !(Rider.is_finished(RideInstant.initial.rider, World.segments))
 
 after_one_step : RideInstant
-after_one_step = RideInstant.next(World.segments, RideInstant.initial)
+after_one_step = RideInstant.next_or_restart(World.segments, RideInstant.initial)
 
 after_two_steps : RideInstant
-after_two_steps = RideInstant.next(World.segments, after_one_step)
+after_two_steps = RideInstant.next_or_restart(World.segments, after_one_step)
 
 expect after_one_step.clock.to_f64() == 1.0
 expect after_two_steps.clock.to_f64() == 2.0

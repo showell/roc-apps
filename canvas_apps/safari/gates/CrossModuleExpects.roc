@@ -586,7 +586,7 @@ done = {
 }
 
 expect {
-	instant = RideInstant.next(World.segments, done)
+	instant = RideInstant.next_or_restart(World.segments, done)
 	instant.clock.to_f64() == 0.0
 		and instant.rider.along.to_metres() == 0.0
 		and instant.rider.speed.to_metres_a_step() == 0.3
@@ -595,7 +595,7 @@ expect {
 }
 
 expect Rider.is_finished(done.rider, World.segments)
-expect RideInstant.next(World.segments, done).truck.brake_lights == Off
+expect RideInstant.next_or_restart(World.segments, done).truck.brake_lights == Off
 
 # A frame of the ride draws.
 expect {
@@ -605,6 +605,6 @@ expect {
 }
 
 expect {
-	after_one_step = RideInstant.next(World.segments, RideInstant.initial)
+	after_one_step = RideInstant.next_or_restart(World.segments, RideInstant.initial)
 	RideInstant.frame(World.segments, after_one_step).len() > 0
 }

@@ -47,7 +47,7 @@ Tour := {
 			}
 		{
 			world: tour.world,
-			instant: RideInstant.next(tour.world, tour.instant),
+			instant: RideInstant.next_or_restart(tour.world, tour.instant),
 			past_instants,
 		}
 	}
