@@ -593,11 +593,46 @@ Its caller, `RideInstant.sun`, is short enough to read whole:
 
 That's every box on the diagram: one number goes in, and colors and a place for the sun come out, with nothing kept from one frame to the next.
 
-With the sunset, we compute a value based on the clock alone. In the next chapter we will explore a more nuanced rule: the timing of a cat's crossing depends on the rider's position.
+With the sunset, we compute a value based on the clock alone. The cat has a more nuanced rule: the timing of its crossing depends on the rider's position. Before we get to that, we need to be able to draw a cat.
+
+## Birds and cats: drawing the stills
+
+Before a cat can cross the road, we have to be able to draw a cat. Every critter in Safari Ride is a *still*: a small picture made of filled polygons, stored as data. A cat has seven stills, one for each pose, and a bird has six. Animating a critter comes down to choosing which still to show, and where.
+
+New in this chapter:
+
+- Roc: a large table of plain data
+- Modules: `Stills`, `StillDraw`, `CatStills`, `BirdStills`, `EmojiStills`
+
+The stills are the least readable code in Safari Ride, and nobody is meant to read them. An agent built them once and encoded them as Roc. Here's what each one comes to:
+
+| Stills | Pictures | Polygons | Points |
+|---|---|---|---|
+| `BirdStills` | 6 poses | 40 | 141 |
+| `CatStills` | 7 poses | 275 | 13,453 |
+| `EmojiStills` | one for each animal by the road | 129 | 5,267 |
+
+A polygon is one record. It has a color, an optional gradient and a list of points:
+
+{{code Stills.StillPolygon}}
+
+The bird is the smallest set, because the perched bird is Roc's logo, and the logo is made of a few straight-edged shapes. The cat has far more points because its outline is curved. Its seven stills fit in a 73-line file, and those lines are very long.
+
+Every point is measured in units of the still's height. Its feet are at `y` 0, and the top of it is at `y` 1. That's why no pixels or metres appear here. The same numbers draw a cat in the distance and a cat in the lane.
+
+`StillDraw` does the rest. An `Anchor` says where a still stands on screen, which way it faces and how tall it is:
+
+{{code StillDraw.Anchor}}
+
+Drawing a still is then one sum for each point. The height in pixels scales the point, and the feet place it:
+
+{{code StillDraw.screen_point}}
+
+That's all there is to drawing a critter. Each set of stills has a `pose_polygons` function that turns a pose into its polygons, and `StillDraw.draw_still` puts them on screen. What's left is deciding which pose to show. For the cat, that's the next chapter.
 
 ## The cat
 
-A cat walks out into the lane, freezes as the rider bears down on it, and leaps clear at the last possible instant. It's one of the most elaborate effects in Safari Ride, and this is the book's longest chapter. Unlike the sun, which follows the clock alone, the cat reacts to the rider.
+A cat walks out into the lane, freezes as the rider bears down on it, and leaps clear at the last possible instant. It's one of the most elaborate effects in Safari Ride, so this chapter takes some concentration. Unlike the sun, which follows the clock alone, the cat reacts to the rider.
 
 ```widget cat
 Drag the rider's gap and watch the crossing play.
@@ -607,8 +642,8 @@ Drag across it from left to right, and the gap falls from 50 metres to 0, with t
 
 New in this chapter:
 
-- Roc: type parameters, operators on opaque types, `var`, `for` and `return` in a pure function, `|` and `_` in patterns, open records
-- Modules: `Cat`, `Animation`, `Beat`, `Beats`, `CatHeights`, `Distance`, `Speed`, `CrossingReaction`
+- Roc: type parameters, operators on opaque types, `var`, `for` and `return` in a pure function
+- Modules: `Cat`, `Animation`, `Beat`, `Beats`, `CatHeights`, `Distance`, `Speed`
 
 The cat is one function, `Cat.instant_at`, with two jobs: work out how far along the crossing is, and look up what the cat does at that point. The module `Animation` sits under both.
 
@@ -643,13 +678,9 @@ A crossing and an approach go in, and the cat at that instant comes out. The sam
 
 🌳 {{code CatSighting.cat_in_view from "gap =" to "instant ="}}
 
-What `Cat` gets from `Animation` comes down to three types. The first and last are plain record aliases, and `Instant(pose, lift)` takes two type parameters. A cat fills the first with its own poses and the second with `CatHeights`, because a cat's lift off the ground is measured in its own height, whatever size it stands on screen.
-
-{{code Animation.Approach}}
+What `Cat` gets from `Animation` comes down to one type, `Stage`:
 
 {{code Animation.Stage}}
-
-{{code Animation.Instant}}
 
 `Stage` is the type where the function's two jobs meet. It's a tag union, and two of its tags carry a payload. You might expect `Waiting` and `Past` to be the same as progress of 0 and 1, but a critter can rest somewhere its animation never goes. If `Waiting` were just 0, a perched bird would show the first frame of its flight.
 
@@ -688,9 +719,9 @@ digraph cat_calls {
 }
 ```
 
-`Cat` reaches into `Animation` twice, once for each half. `crossing_timeline` calls nothing there, because all it does is build a record of what the cat does at each point in the crossing.
+`Cat` reaches into `Animation` twice, once for each job. `crossing_timeline` calls nothing there, because all it does is build a record of what the cat does at each point in the crossing.
 
-The trail now goes down to the leaves, and climbs back to `instant_at` one call at a time, starting with the rule.
+The rest of this chapter has three parts. First, we'll see when a crossing plays. Then we'll read the timeline, which says what the cat does at each point. Last, we'll see how it gets on screen.
 
 ### When it plays
 
@@ -704,27 +735,20 @@ How far off the crossing starts depends on the rider's speed:
 
 A faster rider sets the cat off sooner, so it's clear of the lane in time.
 
-The bottom of this half is arithmetic on opaque types. Neither field of an `Approach` is a plain number: like `Clock` and `Angle`, `Distance` and `Speed` are opaque types. An animation is measured in beats, its own unit of progress, and `Beats` is an opaque type too: fractional, and tied to no clock, so a place in an animation can't be passed as a step of the ride.
+`Cat.crossing_stage` calls the rule with the cat's own numbers. A crossing takes 38 beats: 10 to walk out, 24 frozen, and 4 for the escape. A beat is the animation's own unit of progress, and it's tied to no clock.
 
-The leaves wrap and unwrap these types. `Beats.to_f64` unwraps in its parameter list, and `Distance.metres` wraps in its body.
+🐾 🌳 {{code Cat.crossing_stage}}
 
-🐾 🍃 {{code Beats.to_f64}}
+The rule lives in `Animation`. It takes the cat's numbers and an `Approach`, which says how the rider is coming:
 
-🍃 {{code Distance.metres}}
+{{code Animation.Approach}}
 
-`Speed.distance_in` calls both. `Speed.(s)` in a parameter list is how its module opens one. Outside this module, nothing can, so a distance can't be passed as a speed.
-
-🌳 {{code Speed.distance_in}}
-
-`Speed` also defines `is_lte`, which is what lets `speed <= standstill` work in the next snippet with an ordinary operator.
-
-The rule lives in `Animation`. `over_beats` destructures its first argument in place, and the `Approach` after it, so the body reads in plain names. Here's where `distance_in` gets called, on the second line:
+`over_beats` destructures its first argument in place, and the `Approach` after it, so the body reads in plain names:
 
 🌳 {{code Animation.over_beats}}
 
-And `Cat.crossing_stage` calls the rule with the cat's own numbers. `crossing_beats` comes to 38: 10 to walk out, 24 frozen, and 4 for the escape.
+Neither field of an `Approach` is a plain number. `Distance`, `Speed` and `Beats` are opaque types, like `Clock` and `Angle`. A distance can't be passed as a speed, and a place in an animation can't be passed as a step of the ride. `distance_in`, on the second line, multiplies a speed by some beats and gives a `Distance`. `Speed` also defines `is_lte`, which is what lets `speed <= standstill` work with an ordinary operator.
 
-🌳 {{code Cat.crossing_stage}}
 
 The cat plays over beats rather than over a stretch of road because it has to finish before the rider reaches it, however fast the rider comes. A faster rider makes it start earlier. The bird uses `over_gap`, because a bird simply reacts to how close the rider is. Each critter picks the rule that suits it.
 
@@ -732,7 +756,7 @@ The cat plays over beats rather than over a stretch of road because it has to fi
 
 The two tracks of a crossing, in beats
 ```dot
-digraph score {
+digraph tracks {
   node [shape=record, fontname="Helvetica"];
   looks [label="looks|Stride and Rest\nto 10|Frozen\nto 34|Coil\nto 34.8|Flight\nto 36.8|Land\nto 37.8|Collapse"];
   path [label="path|Line across\nto 10|StaysAt\nto 35|Arc\nto 37|StaysAt"];
@@ -740,17 +764,11 @@ digraph score {
 }
 ```
 
-A timeline is data, so the cat's whole performance reads in one place, like a score. This half has two strands: the score, which is `Cat`'s, and the code that plays it, which is `Animation`'s. The score comes first, from its smallest function up.
+A timeline is data, so the cat's whole performance reads in one place. This is the part of `crossing_timeline` that says how the cat looks:
 
-`spot_across` sits below `Cat`'s block, so it's private, and it's a single record. `Along.start`, the first place on a segment, is a value and not a call, so this function calls nothing of Safari Ride's.
+🌳 {{code Cat.crossing_timeline from "looks:" to "finally: Holds(Collapse),"}}
 
-🍃 {{code Cat.spot_across}}
-
-`crossing_timeline` calls it three times before the score starts:
-
-🌳 {{code Cat.crossing_timeline from "## The whole of a crossing" to "end = spot_across"}}
-
-The score's words are tags. A cat's pose is a closed tag union, and nothing outside `Cat` needs to know its tags. Because it's closed, a `match` on it that misses a pose is a compile-time error.
+The words are tags. `Through` and `Before` say where a stretch ends, and `Holds` and `Alternates` say how the cat looks. The poses are a closed tag union, so a `match` that misses one is a compile-time error.
 
 {{code Cat.Pose}}
 
@@ -758,19 +776,30 @@ A timeline is divided into stretches, and a cut is where one stretch ends and th
 
 {{code Animation.Cut}}
 
-Tags with payloads do almost everything in the score: `Through` and `Before` say where a stretch ends, and `Holds` and `Alternates` say how the cat looks. Here's the first track of `crossing_timeline`:
+There are two tracks because a cat's looks and its movement change at different instants. Its body moves just ahead of its path, so the `looks` track above cuts at 0.8, 2.8 and 3.8 beats into the escape, while the `path` track cuts at 1 and 3. One list of phases tying them together wouldn't fit the cat or the bird.
 
-🌳 {{code Cat.crossing_timeline from "looks:" to "finally: Holds(Collapse),"}}
+The `path` track needs three places on the road. `spot_across` makes one, as a single record. It sits below `Cat`'s block, so it's private. `Along.start`, the first place on a segment, is a value and not a call, so this function calls nothing of Safari Ride's.
 
-There are two tracks because a cat's looks and its movement change at different instants. Its body moves just ahead of its path, so the `looks` track above cuts at 0.8, 2.8 and 3.8 beats into the escape, while the `path` track in the rest of `crossing_timeline` cuts at 1 and 3. One list of phases tying them together wouldn't fit the cat or the bird.
+🍃 {{code Cat.spot_across}}
+
+`crossing_timeline` calls it three times before the timeline starts:
+
+🌳 {{code Cat.crossing_timeline from "## The whole of a crossing" to "end = spot_across"}}
+
+Here's the `path` track:
 
 🌳 {{code Cat.crossing_timeline from "path:" to "finally: StaysAt(end),"}}
 
-`Timeline` is nominal, the middle ground: unlike an alias it can carry methods, and unlike an opaque type anyone can build one, which is right for data that needs no guarding. `Timeline(pose, lift)` takes the same two type parameters, which is how a cat and a bird share it.
+`Timeline` is nominal, the middle ground: unlike an alias it can carry methods, and unlike an opaque type anyone can build one, which is right for data that needs no guarding. `Timeline(pose, lift)` takes two type parameters, which is how a cat and a bird share it. A cat fills the first with its own poses and the second with `CatHeights`, because a cat's lift off the ground is measured in its own height.
 
 {{code Animation.Timeline from "## A whole animation" to "}.{"}}
 
-That's the score. The other strand is `Animation` playing it, and its trail starts at an operator. `Beat.is_lte` opens two `Beat`s and compares the floats inside.
+### How a timeline plays
+
+A timeline is data, so something has to play it. This section shows how, and it's where Roc's `var` and `for` appear inside a pure function. If you'd rather get back to the cat, you can skip to "Getting it on screen".
+
+The code that plays a timeline is in `Animation`, and its trail starts at an operator. `Beat.is_lte` opens two `Beat`s and compares the floats inside.
+
 
 🍃 {{code Beat.is_lte}}
 
@@ -782,11 +811,13 @@ Finding the stretch that's playing shows one more Roc idea. In `playing_at`, `va
 
 🌳 {{code Animation.playing_at}}
 
-`Timeline.at_beat` calls it once for each track, which is what lets the two tracks cut wherever they like. `Animation.Timeline.(score)` in a parameter list opens the nominal type, the way `Speed.(s)` opens an opaque one. `pose_of` and `path_spot` turn what's playing into a pose and a spot, and the bird chapter reads `path_spot`.
+`Timeline.at_beat` calls it once for each track, which is what lets the two tracks cut wherever they like. `Animation.Timeline.(score)` in a parameter list opens the nominal type, the way `Clock.(n)` opens an opaque one. `pose_of` and `path_spot` turn what's playing into a pose and a spot, and the bird chapter reads `path_spot`.
 
 🌳 {{code Animation.Timeline from "## The critter at `beat`" to "path_spot(path.plays, fraction)"}}
 
-`Timeline.instant` is the one place in this half that knows about stages. Its `match` covers all three tags, and `portion` turns a `Fraction` of the way through into a beat.
+`Timeline.instant` is the one place that knows about stages. Its `match` covers all three tags, and `portion` turns a `Fraction` of the way through into a beat. It answers with an `Instant`, the cat at that point:
+
+{{code Animation.Instant}}
 
 🌳 {{code Animation.Timeline from "## The critter at `stage`." to "Past(_) => score.after"}}
 
@@ -794,62 +825,7 @@ Back at the top, nothing in `instant_at` is unknown any more.
 
 🔭 🌳 {{code Cat.instant_at}}
 
-`crossing_stage(approach)` is the rule with the cat's numbers, `crossing_timeline(cat)` is the score, and `.instant` plays the one at the other. A `Stage` is all that passes between them.
-
-### What it does to the rider
-
-The loop between the cat and the rider
-```dot
-digraph reaction_loop {
-  rankdir=LR;
-  node [shape=box, fontname="Helvetica"];
-  speed [label="the rider's speed"];
-  cat [label="where the cat\nhas got to"];
-  speed -> cat [label="  Cat.crossing_stage  "];
-  cat -> speed [label="  CrossingReaction  "];
-}
-```
-
-So far the cat only moves itself. What it does to the rider's speed and view is a separate question, and `CrossingReaction` answers it.
-
-The modules around `CrossingReaction`
-```dot
-digraph reaction {
-  node [shape=box, fontname="Helvetica"];
-  CrossingReaction [style=bold];
-  Throttle -> CrossingReaction;
-  RideFocal -> CrossingReaction;
-  CrossingReaction -> Cat;
-  CrossingReaction -> World;
-  World -> Cat;
-}
-```
-
-`Throttle` sets the rider's acceleration, and `RideFocal` sets how wide the rider's view is. Neither knows anything of cats. They ask `CrossingReaction`, which is the only part of the rider's code that does.
-
-This trail starts back in `Cat`, at two small questions about the same `Stage`.
-
-`is_in_danger` asks whether the crossing is playing. `|` in a pattern covers two tags with one branch, and `_` ignores a payload.
-
-🐾 🌳 {{code Cat.is_in_danger}}
-
-`attention` is where `Past`'s payload is used. A cat in the lane also draws the rider's attention, which widens the view. `beyond` is how far past the end of the crossing the rider has come, and that attention fades over that distance, counted in beats. `beats_to_cover` divides by the speed, so a rider at a standstill gets an answer first. `Attention` is another opaque type.
-
-🌳 {{code Cat.attention}}
-
-`CrossingReaction.reaction_to` calls both. `..` in the argument's type makes it an open record: this function needs `along` and `speed`, and accepts any record that has them, so it doesn't depend on `RiderState`, the rider's record. `speed` here is the opaque `Speed` again, and `match` on `segment.crossing` has to name every tag.
-
-🌳 {{code CrossingReaction.reaction_to}}
-
-A cat in the lane stops the rider opening the throttle, without braking, and widens the view as it pulls the rider's eye. Two tags, `MayAccelerate` and `NoAcceleration`, stand where a boolean might have gone. The next call up, `crossing_attention`, is one line, and its caller, `ride_focal`, works out the view's focal length:
-
-🌳 {{code RideFocal.crossing_attention}}
-
-🌳 {{code RideFocal.ride_focal}}
-
-This is the only feedback loop in the design. The rider's speed decides where the cat has got to, and the cat holds the rider's speed down. The loop settles, and it's why `over_beats` has to stay the cat's rule. A bird asks nothing of the rider, so it falls through to the same answer as an empty road.
-
-Each stretch of road has exactly one `crossing`: `CatCrosses`, `BirdHere` or `QuietRoad`. A cat and a bird in the same place can't be written down.
+`crossing_stage(approach)` is the rule with the cat's numbers, `crossing_timeline(cat)` is the timeline, and `.instant` plays the one at the other. A `Stage` is all that passes between them.
 
 ### Getting it on screen
 
@@ -887,6 +863,8 @@ digraph screen {
 Looking back over the chapter, notice what isn't in it: a cat in `RideInstant`, an update loop, or a flag saying the cat has already crossed.
 
 Roc doesn't force that, but pure functions make the stateless version the easy one to write, and every `->` shows it stayed that way.
+
+The cat also has an effect on the rider. A cat in the lane stops the rider speeding up, and that holds the rider back while the crossing plays. It makes more sense once we've seen how the rider is always deciding whether to accelerate, brake or hold steady, so it waits for that chapter.
 
 One thing about time is still missing. The sun only goes one way, and nothing so far repeats on the clock.
 
@@ -1014,7 +992,7 @@ Drag across it from left to right, and the gap falls from 75 metres to 0. The bi
 New in this chapter:
 
 - Roc: record update, tags inside tags, closures, opening a `Try` by hand, `match` as an expression
-- Modules: `BirdFlight`, `BirdSighting`, `BirdDraw`, `BirdStills`
+- Modules: `BirdFlight`, `BirdSighting`, `BirdDraw`
 
 The modules around `BirdFlight`
 ```dot
@@ -1071,9 +1049,9 @@ Now the one-liners, side by side. A bird's and a cat's `instant_at` have the sam
 
 {{code Cat.instant_at}}
 
-Each is a rule's `Stage` handed to a timeline's `instant`. Neither half knows which other half it's been paired with. Call this *rule and score*: one function says how far along things are, and one piece of data says what that looks like. A third critter can take either rule with a timeline of its own, and a new rule would work with both timelines already written.
+Each is a rule's `Stage` handed to a timeline's `instant`. Neither half knows which other half it's been paired with. Call this *rule and timeline*: one function says how far along things are, and one piece of data says what that looks like. A third critter can take either rule with a timeline of its own, and a new rule would work with both timelines already written.
 
-### A score one beat long
+### A timeline one beat long
 
 The two tracks of a flight, in shares of one beat
 ```dot
@@ -1093,7 +1071,7 @@ The bird needs one small helper. It sits below the block, so it's private, and i
 
 {{code BirdFlight.wings_beating}}
 
-Then the score. `Animation.Timeline.( ... )` wraps a record in the nominal type, and `Side(WingsUp)` is a tag whose payload is another tag. `flight_beats.portion(takeoff_share)` is a method on the opaque `Beats`, and `Beat.at` makes a place of the length it gives. It reads almost like configuration, and most of it is:
+Then the timeline. `Animation.Timeline.( ... )` wraps a record in the nominal type, and `Side(WingsUp)` is a tag whose payload is another tag. `flight_beats.portion(takeoff_share)` is a method on the opaque `Beats`, and `Beat.at` makes a place of the length it gives. It reads almost like configuration, and most of it is:
 
 {{code BirdFlight.flight_timeline from "length: flight_beats," to "finally: Holds(Diving),"}}
 
@@ -1148,7 +1126,7 @@ Going forward, the ride has to be played, because each step starts from the one 
 New in this chapter:
 
 - Roc: a named open record, guards, list patterns, recursion
-- Modules: `Rider`, `RiderState`, `CanvasRoll`, `Bike`, `Throttle`, `Truck`, `Acceleration`
+- Modules: `Rider`, `RiderState`, `CanvasRoll`, `Bike`, `Throttle`, `CrossingReaction`, `Truck`, `Acceleration`
 
 The modules that do the stepping
 ```dot
@@ -1252,11 +1230,11 @@ digraph bike {
 }
 ```
 
-`Bike` holds the physics. It's under 60 lines, not counting its `expect`s. Its type is the first one in the tour that names the rest of a record. `..others` makes `Motion` open, like the `..` in `reaction_to`: it's any record with these six fields and whatever else, with `others` standing for the whatever else.
+`Bike` holds the physics. It's under 60 lines, not counting its `expect`s. Its type is the first one in the tour that names the rest of a record. `..others` makes `Motion` open: it's any record with these six fields and whatever else, with `others` standing for the whatever else.
 
 {{code Bike.Motion}}
 
-A structural type like this has to be named when it appears twice. Here it appears in the argument and in the result, and that's the promise: what goes in comes out with the same other fields. A `RiderState` goes in, with its `segment`, `gaze_yaw` and `attention`, and a `RiderState` comes out, though `Bike` has never heard of a gaze. Compare `CrossingReaction.reaction_to`, whose open record is only read, and which hands nothing back.
+A structural type like this has to be named when it appears twice. Here it appears in the argument and in the result, and that's the promise: what goes in comes out with the same other fields. A `RiderState` goes in, with its `segment`, `gaze_yaw` and `attention`, and a `RiderState` comes out, though `Bike` has never heard of a gaze.
 
 Call this *a narrow view of a wide record*. A module says exactly which fields it cares about, and the compiler takes care of the rest, with no base class and no copying fields across by hand. The smallest example in the program is a function with one job:
 
@@ -1302,7 +1280,7 @@ The rider has several reasons to slow down, and they don't know about each other
 
 Call this *the chain of limits*. Each limit has the same shape and can be read alone, and adding a reason is one more line. It reads like a list of rules because that's what it is.
 
-Each limit compares two opaque `Acceleration`s with an ordinary `<`, which works because `Acceleration` defines `is_lt`. `crossing_limit` shows two more things about patterns. A guard, `if a > Acceleration.steady`, adds a condition to a branch, and `|` joins two tags in one. When the guard fails, `NoAcceleration` falls through to the last branch. This is where `CrossingReaction`'s tag from the cat chapter lands: the cat stops the rider opening the throttle, and a rider already braking stays braking.
+Each limit compares two opaque `Acceleration`s with an ordinary `<`, which works because `Acceleration` defines `is_lt`. `crossing_limit` shows two more things about patterns. A guard, `if a > Acceleration.steady`, adds a condition to a branch, and `|` joins two tags in one. When the guard fails, `NoAcceleration` falls through to the last branch. `NoAcceleration` comes from the cat: it stops the rider opening the throttle, and a rider already braking stays braking. We'll see how next.
 
 {{code Throttle.crossing_limit}}
 
@@ -1317,6 +1295,61 @@ The first limit, `bend_brake`, makes the `a1` that the chain above starts from. 
 After the limits, `Throttle.acceleration` hands its result to `allowed_speed`, not quoted here, which holds the speed between rest and the top speed. The chain works in accelerations and that step works in speeds, so the answer is taken back with `.change_from(state.speed)`, the other half of the same pair of types.
 
 The last limit, `shoulder_brake`, has to wait for the math layer chapter, because it simulates the bike ahead of itself.
+
+### What a cat does to the rider
+
+The loop between the cat and the rider
+```dot
+digraph reaction_loop {
+  rankdir=LR;
+  node [shape=box, fontname="Helvetica"];
+  speed [label="the rider's speed"];
+  cat [label="where the cat\nhas got to"];
+  speed -> cat [label="  Cat.crossing_stage  "];
+  cat -> speed [label="  CrossingReaction  "];
+}
+```
+
+The cat chapter promised this. The rider is always deciding whether to accelerate, brake or hold steady, and a cat in the lane has a say in that. `CrossingReaction` is where it speaks.
+
+The modules around `CrossingReaction`
+```dot
+digraph reaction {
+  node [shape=box, fontname="Helvetica"];
+  CrossingReaction [style=bold];
+  Throttle -> CrossingReaction;
+  RideFocal -> CrossingReaction;
+  CrossingReaction -> Cat;
+  CrossingReaction -> World;
+  World -> Cat;
+}
+```
+
+`Throttle` sets the rider's acceleration, and `RideFocal` sets how wide the rider's view is. Neither knows anything of cats. They ask `CrossingReaction`, which is the only part of the rider's code that does.
+
+This trail starts back in `Cat`, at two small questions about the same `Stage`.
+
+`is_in_danger` asks whether the crossing is playing. `_` ignores a payload.
+
+🐾 🌳 {{code Cat.is_in_danger}}
+
+`attention` is where `Past`'s payload is used. A cat in the lane also draws the rider's attention, which widens the view. `beyond` is how far past the end of the crossing the rider has come, and that attention fades over that distance, counted in beats. `beats_to_cover` divides by the speed, so a rider at a standstill gets an answer first. `Attention` is another opaque type.
+
+🌳 {{code Cat.attention}}
+
+`CrossingReaction.reaction_to` calls both. `..` in the argument's type makes it an open record, like `Bike.Motion`, though this one is only read and nothing comes back. This function needs `along` and `speed`, and accepts any record that has them, so it doesn't depend on `RiderState`, the rider's record. `speed` here is the opaque `Speed` again, and `match` on `segment.crossing` has to name every tag.
+
+🌳 {{code CrossingReaction.reaction_to}}
+
+A cat in the lane stops the rider opening the throttle, without braking, and widens the view as it pulls the rider's eye. Two tags, `MayAccelerate` and `NoAcceleration`, stand where a boolean might have gone. The next call up, `crossing_attention`, is one line, and its caller, `ride_focal`, works out the view's focal length:
+
+🌳 {{code RideFocal.crossing_attention}}
+
+🌳 {{code RideFocal.ride_focal}}
+
+This is the only feedback loop in the design. The rider's speed decides where the cat has got to, and the cat holds the rider's speed down. The loop settles, and it's why `over_beats` has to stay the cat's rule. A bird asks nothing of the rider, so it falls through to the same answer as an empty road.
+
+Each stretch of road has exactly one `crossing`: `CatCrosses`, `BirdHere` or `QuietRoad`. A cat and a bird in the same place can't be written down.
 
 ### The truck
 
@@ -1514,7 +1547,7 @@ The focal length comes from a lens. `focal` is a value computed from other value
 
 {{code Lens.focal}}
 
-The view widens as the rider leans. One `Fraction` goes in, and a focal length comes out. `RideFocal.ride_focal` from the cat chapter calls this through `cam_focal`, taking the wider of what the lean and the rider's attention ask for:
+The view widens as the rider leans. One `Fraction` goes in, and a focal length comes out. `RideFocal.ride_focal` from the rider's chapter calls this through `cam_focal`, taking the wider of what the lean and the rider's attention ask for:
 
 {{code Lens.focal_for_lean}}
 
@@ -1911,7 +1944,7 @@ The tour named nine patterns in passing. They're patterns in the loose sense: sh
 | Worked out, not stored | Keep the few things that must persist, and derive the rest each frame | `RideInstant`, `Cat`, `Sky` |
 | A sighting decides, drawing paints | A pure function answers with plain data, and something else draws it | `CatSighting`, `TowerSighting` |
 | Places and distances | One opaque type for where, a second for how far apart, and only the sums that make sense | `Clock` and `Steps`, `Bearing` and `Turn`, `Along` and `Distance`, `Speed` and `Acceleration` |
-| Rule and score | One function says how far along, and one piece of data says what that looks like | `over_gap` and `flight_timeline` |
+| Rule and timeline | One function says how far along, and one piece of data says what that looks like | `over_gap` and `flight_timeline` |
 | The step function | A value goes in, and the next value comes out | `Rider.advance`, `Truck.advance`, `Tour.step_forward` |
 | A narrow view of a wide record | An open record names the fields it uses and carries the rest through | `Bike.Motion(others)` |
 | The chain of limits | One value passes through independent rules, each of which can only lower it | `Throttle.acceleration` |
