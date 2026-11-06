@@ -16,14 +16,19 @@ import lib.Trig
 
 Geom :: [].{
 
-	## A point on the ground in the rider's view.
-	RiderPoint : { right : F64, forward : F64 }
+	## A point on the ground in the rider's view. Both parts are signed: a
+	## negative `right` is to the rider's left, and a negative `forward` is
+	## behind the rider.
+	RiderPoint : { right : Distance, forward : Distance }
 
 	## A point in the rider's view, at a height above the level of the rider.
-	SpacePoint : {
-		right : F64,
-		forward : F64,
-		height : F64,
+	## All three parts are signed: `right` and `forward` as on a `RiderPoint`,
+	## and a negative `height` is below that level, where the ground curves
+	## away.
+	RaisedPoint : {
+		right : Distance,
+		forward : Distance,
+		height : Distance,
 	}
 
 	## A point on one segment of the road.
@@ -36,7 +41,7 @@ Geom :: [].{
 
 	## Where the camera stands on the current segment, and which way it faces.
 	## The middle of the lane is `half_width` from its left edge.
-	Pose : {
+	Vantage : {
 		along : Along,
 		across : Across,
 		yaw : Angle.Turn,
@@ -49,7 +54,7 @@ Geom :: [].{
 	Bend : {
 		segment_length : Distance,
 		turn : Angle.Turn,
-		lane_width : Distance,
+		road_width : Distance,
 	}
 
 	## A line through two points.
@@ -57,25 +62,29 @@ Geom :: [].{
 
 	## The radius the ground, and the truck on it, curve away over. From the
 	## rider's eye it puts the horizon 490 metres out.
-	ground_curve_radius : F64
-	ground_curve_radius = 100000.0
+	ground_curve_radius : Distance
+	ground_curve_radius = Distance.metres(100000.0)
 
-	## How far the ground has curved away below level at `point`.
-	ground_drop : Geom.RiderPoint -> F64
-	ground_drop = |{ right, forward }|
-		(right * right + forward * forward) / (2.0 * ground_curve_radius)
+	## How far the ground has curved away below level at `point`, which is
+	## never negative.
+	ground_drop : Geom.RiderPoint -> Distance
+	ground_drop = |{ right, forward }| {
+		r = right.to_metres()
+		f = forward.to_metres()
+		Distance.metres((r * r + f * f) / (2.0 * ground_curve_radius.to_metres()))
+	}
 
-	## A point on the current segment, as the camera at `pose` sees it.
-	to_rider_point : Geom.EdgePoint, Geom.Pose -> Geom.RiderPoint
-	to_rider_point = |{ along, from_left }, pose| {
-		ahead = along.distance_from(pose.along).to_metres()
-		rider_from_left = pose.across.distance_from(Across.left_of_middle(pose.half_width))
+	## A point on the current segment, as the camera at `vantage` sees it.
+	to_rider_point : Geom.EdgePoint, Geom.Vantage -> Geom.RiderPoint
+	to_rider_point = |{ along, from_left }, vantage| {
+		ahead = along.distance_from(vantage.along).to_metres()
+		rider_from_left = vantage.across.distance_from(Across.left_of_middle(vantage.half_width))
 		aside = from_left.minus(rider_from_left).to_metres()
-		cos_yaw = Trig.r_cos(pose.yaw.to_radians())
-		sin_yaw = Trig.r_sin(pose.yaw.to_radians())
+		cos_yaw = Trig.r_cos(vantage.yaw.to_radians())
+		sin_yaw = Trig.r_sin(vantage.yaw.to_radians())
 		{
-			forward: ahead * cos_yaw + aside * sin_yaw,
-			right: (0.0 - ahead) * sin_yaw + aside * cos_yaw,
+			forward: Distance.metres(ahead * cos_yaw + aside * sin_yaw),
+			right: Distance.metres((0.0 - ahead) * sin_yaw + aside * cos_yaw),
 		}
 	}
 
@@ -85,7 +94,7 @@ Geom :: [].{
 		along = point.along.to_metres()
 		from_left = point.from_left.to_metres()
 		length = bend.segment_length.to_metres()
-		width = bend.lane_width.to_metres()
+		width = bend.road_width.to_metres()
 		turn_size = bend.turn.abs().to_radians()
 		cos_turn = Trig.r_cos(turn_size)
 		sin_turn = Trig.r_sin(turn_size)
@@ -104,7 +113,7 @@ Geom :: [].{
 	## A point on the segment before `bend`, measured on the segment after it.
 	in_segment_after : Geom.EdgePoint, Geom.Bend -> Geom.EdgePoint
 	in_segment_after = |point, bend| {
-		left_edge = Across.left_of_middle(bend.lane_width.divided_by(2.0))
+		left_edge = Across.left_of_middle(bend.road_width.divided_by(2.0))
 		centred = centred_point_after(
 			{ along: point.along, across: left_edge.plus(point.from_left) },
 			bend,
@@ -117,7 +126,7 @@ Geom :: [].{
 	centred_point_after : Geom.RoadPoint, Geom.Bend -> Geom.RoadPoint
 	centred_point_after = |point, bend| {
 		across = point.across.to_metres()
-		half_width = bend.lane_width.to_metres() / 2.0
+		half_width = bend.road_width.to_metres() / 2.0
 		cos_turn = Trig.r_cos(bend.turn.to_radians())
 		sin_turn = Trig.r_sin(bend.turn.to_radians())
 		corner_shift = half_width * (1.0 - cos_turn)
@@ -139,27 +148,27 @@ Geom :: [].{
 	line_crossing = |{ first_line, second_line }| {
 		first_start = first_line.start_point
 		second_start = second_line.start_point
-		first_rightward = first_line.end_point.right - first_start.right
-		first_forward = first_line.end_point.forward - first_start.forward
-		second_rightward = second_line.end_point.right - second_start.right
-		second_forward = second_line.end_point.forward - second_start.forward
-		gap_rightward = second_start.right - first_start.right
-		gap_forward = second_start.forward - first_start.forward
+		first_rightward = first_line.end_point.right.minus(first_start.right).to_metres()
+		first_forward = first_line.end_point.forward.minus(first_start.forward).to_metres()
+		second_rightward = second_line.end_point.right.minus(second_start.right).to_metres()
+		second_forward = second_line.end_point.forward.minus(second_start.forward).to_metres()
+		gap_rightward = second_start.right.minus(first_start.right).to_metres()
+		gap_forward = second_start.forward.minus(first_start.forward).to_metres()
 		offset_cross = gap_rightward * second_forward - gap_forward * second_rightward
 		direction_cross = first_rightward * second_forward - first_forward * second_rightward
 		fraction = offset_cross / direction_cross
 		{
-			right: first_start.right + fraction * first_rightward,
-			forward: first_start.forward + fraction * first_forward,
+			right: first_start.right.plus(Distance.metres(fraction * first_rightward)),
+			forward: first_start.forward.plus(Distance.metres(fraction * first_forward)),
 		}
 	}
 
 	## The closest distance ahead that the camera can see.
-	near_plane : F64
-	near_plane = 0.4
+	near_plane : Distance
+	near_plane = Distance.metres(0.4)
 
 	## The polygon cut to what lies at or past the near plane.
-	clip_near : List(Geom.SpacePoint) -> List(Geom.SpacePoint)
+	clip_near : List(Geom.RaisedPoint) -> List(Geom.RaisedPoint)
 	clip_near = |polygon| {
 		next_corners = polygon.drop_first(1).concat(polygon.take_first(1))
 		edges = polygon.map2(next_corners, |from, to| { from, to })
@@ -170,11 +179,11 @@ Geom :: [].{
 ## `clipped` with what one edge of a polygon adds to it: the edge's first
 ## corner if that is in view, then the point where the edge crosses the near
 ## plane if it does.
-clip_edge_onto : List(Geom.SpacePoint),
+clip_edge_onto : List(Geom.RaisedPoint),
 {
-	from : Geom.SpacePoint,
-	to : Geom.SpacePoint,
-} -> List(Geom.SpacePoint)
+	from : Geom.RaisedPoint,
+	to : Geom.RaisedPoint,
+} -> List(Geom.RaisedPoint)
 clip_edge_onto = |clipped, { from, to }| {
 	is_from_in_view = from.forward >= Geom.near_plane
 	is_to_in_view = to.forward >= Geom.near_plane
@@ -191,13 +200,13 @@ clip_edge_onto = |clipped, { from, to }| {
 }
 
 ## Where an edge that has one end on each side crosses the near plane.
-near_plane_crossing : { from : Geom.SpacePoint, to : Geom.SpacePoint } -> Geom.SpacePoint
+near_plane_crossing : { from : Geom.RaisedPoint, to : Geom.RaisedPoint } -> Geom.RaisedPoint
 near_plane_crossing = |{ from, to }| {
-	fraction = (Geom.near_plane - from.forward) / (to.forward - from.forward)
+	fraction = Geom.near_plane.minus(from.forward).ratio_to(to.forward.minus(from.forward))
 	{
-		right: from.right + fraction * (to.right - from.right),
+		right: from.right.plus(to.right.minus(from.right).times(fraction)),
 		forward: Geom.near_plane,
-		height: from.height + fraction * (to.height - from.height),
+		height: from.height.plus(to.height.minus(from.height).times(fraction)),
 	}
 }
 
@@ -292,10 +301,22 @@ expect
 		},
 	)
 
-expect Geom.ground_drop({ right: 0.0, forward: 0.0 }) == 0.0
-expect Geom.ground_drop({ right: 3.0, forward: 10.0 }) == 0.000545
-expect Geom.ground_drop({ right: -5.0, forward: 40.0 }) == 0.008125
-expect Geom.ground_drop({ right: 12.5, forward: 100.0 }) == 0.05078125
+expect Geom.ground_drop({
+	right: Distance.metres(0.0),
+	forward: Distance.metres(0.0),
+}).to_metres() == 0.0
+expect Geom.ground_drop({
+	right: Distance.metres(3.0),
+	forward: Distance.metres(10.0),
+}).to_metres() == 0.000545
+expect Geom.ground_drop({
+	right: Distance.metres(-5.0),
+	forward: Distance.metres(40.0),
+}).to_metres() == 0.008125
+expect Geom.ground_drop({
+	right: Distance.metres(12.5),
+	forward: Distance.metres(100.0),
+}).to_metres() == 0.05078125
 
 expect {
 	seen_from = |edge_point, yaw|
@@ -311,24 +332,33 @@ expect {
 	[
 		(
 			seen_from({ along: Along.metres(0.0), from_left: Distance.metres(0.0) }, 0.0),
-			{ right: -3.5, forward: -5.0 },
+			{ right: Distance.metres(-3.5), forward: Distance.metres(-5.0) },
 		),
 		(
 			seen_from({ along: Along.metres(12.0), from_left: Distance.metres(3.0) }, 0.35),
-			{ right: -2.869971008611849, forward: 6.404160086203927 },
+			{
+				right: Distance.metres(-2.869971008611849),
+				forward: Distance.metres(6.404160086203927),
+			},
 		),
 		(
 			seen_from({ along: Along.metres(40.0), from_left: Distance.metres(-2.0) }, -0.6),
-			{ right: 15.223140686823006, forward: 31.992280125511435 },
+			{
+				right: Distance.metres(15.223140686823006),
+				forward: Distance.metres(31.992280125511435),
+			},
 		),
 		(
 			seen_from({ along: Along.metres(7.5), from_left: Distance.metres(6.25) }, 1.2),
-			{ right: -1.333613890107213, forward: 3.4690018726015563 },
+			{
+				right: Distance.metres(-1.333613890107213),
+				forward: Distance.metres(3.4690018726015563),
+			},
 		),
 	].all(
 		|(got, want)| {
-			right_miss = (got.right - want.right).abs()
-			forward_miss = (got.forward - want.forward).abs()
+			right_miss = got.right.minus(want.right).to_metres().abs()
+			forward_miss = got.forward.minus(want.forward).to_metres().abs()
 			right_miss <= 0.000001 and forward_miss <= 0.000001
 		},
 	)
@@ -339,7 +369,7 @@ bend_of : F64 -> Geom.Bend
 bend_of = |degrees| {
 	segment_length: Distance.metres(300.0),
 	turn: Angle.Turn.degrees(degrees),
-	lane_width: Distance.metres(4.0),
+	road_width: Distance.metres(4.0),
 }
 
 # A point carried round a bend one way and back lands where it started.
@@ -373,58 +403,58 @@ expect
 expect
 	Geom.line_crossing({
 		first_line: {
-			start_point: { right: 0.0, forward: 0.0 },
-			end_point: { right: 0.0, forward: 1.0 },
+			start_point: { right: Distance.metres(0.0), forward: Distance.metres(0.0) },
+			end_point: { right: Distance.metres(0.0), forward: Distance.metres(1.0) },
 		},
 		second_line: {
-			start_point: { right: -2.0, forward: 4.0 },
-			end_point: { right: 3.0, forward: 4.0 },
+			start_point: { right: Distance.metres(-2.0), forward: Distance.metres(4.0) },
+			end_point: { right: Distance.metres(3.0), forward: Distance.metres(4.0) },
 		},
 	})
-		== { right: 0.0, forward: 4.0 }
+		== { right: Distance.metres(0.0), forward: Distance.metres(4.0) }
 
 expect
 	Geom.clip_near([
 		{
-			right: -1.0,
-			forward: 2.0,
-			height: 0.0,
+			right: Distance.metres(-1.0),
+			forward: Distance.metres(2.0),
+			height: Distance.metres(0.0),
 		},
 		{
-			right: 1.0,
-			forward: 2.0,
-			height: 0.5,
+			right: Distance.metres(1.0),
+			forward: Distance.metres(2.0),
+			height: Distance.metres(0.5),
 		},
 		{
-			right: 1.0,
-			forward: -1.0,
-			height: 1.0,
+			right: Distance.metres(1.0),
+			forward: Distance.metres(-1.0),
+			height: Distance.metres(1.0),
 		},
 		{
-			right: -1.0,
-			forward: -1.0,
-			height: 1.5,
+			right: Distance.metres(-1.0),
+			forward: Distance.metres(-1.0),
+			height: Distance.metres(1.5),
 		},
 	])
 		== [
 			{
-				right: -1.0,
-				forward: 2.0,
-				height: 0.0,
+				right: Distance.metres(-1.0),
+				forward: Distance.metres(2.0),
+				height: Distance.metres(0.0),
 			},
 			{
-				right: 1.0,
-				forward: 2.0,
-				height: 0.5,
+				right: Distance.metres(1.0),
+				forward: Distance.metres(2.0),
+				height: Distance.metres(0.5),
 			},
 			{
-				right: 1.0,
-				forward: 0.4,
-				height: 0.7666666666666666,
+				right: Distance.metres(1.0),
+				forward: Distance.metres(0.4),
+				height: Distance.metres(0.7666666666666666),
 			},
 			{
-				right: -1.0,
-				forward: 0.4,
-				height: 0.8,
+				right: Distance.metres(-1.0),
+				forward: Distance.metres(0.4),
+				height: Distance.metres(0.8),
 			},
 		]

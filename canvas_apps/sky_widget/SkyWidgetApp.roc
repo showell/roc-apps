@@ -1,11 +1,12 @@
 ## The widget for the Safari tutorial's sky. Dragging across the canvas sets
 ## the ride's clock, and each frame is worked out from that clock alone, so the
 ## sun sets and rises again under the pointer. The picture is the ride's own
-## sky, looking straight at the sun, drawn by SafariShapes at two thirds of its
+## sky, looking straight at the sun, drawn by Backdrop at two thirds of its
 ## size. Below it, a ruler shows the clock, and four lines of text read out
 ## what Sky makes of it.
 import game.Clock
 import game.Lens
+import game.Pixels
 import game.Sky
 import lib.CanvasApp
 import lib.Shapes
@@ -49,7 +50,7 @@ picture = |clock|
 		[],
 		{
 			clock,
-			sun: Sky.sun_pos({
+			sun: Sky.sun_sighting({
 				heading: Sky.sun_bearing,
 				clock,
 				cam_focal: Lens.focal,
@@ -58,14 +59,14 @@ picture = |clock|
 	)
 
 ## The step at which the sun stands `height` pixels up.
-step_at_height : F64 -> F64
-step_at_height = |height| (Sky.sun_start_px - height) / Sky.sun_drop_px_per_step
+step_at_height : Pixels -> F64
+step_at_height = |height| Sky.sun_start_px.minus(height).ratio_to(Sky.sun_drop_px_per_step)
 
 ## The stretch of the ruler with any warmth in the sunset.
 warmth_stretch : ScrubWidget.Stretch
 warmth_stretch = {
 	from: ScrubWidget.step_share(step_at_height(Sky.warmth_falloff_px), clock_range),
-	to: ScrubWidget.step_share(step_at_height(0.0 - Sky.warmth_falloff_px), clock_range),
+	to: ScrubWidget.step_share(step_at_height(Sky.warmth_falloff_px.opposite()), clock_range),
 }
 
 ## What Sky says at `clock`, a line each.
@@ -79,20 +80,20 @@ status_lines = |clock|
 	]
 
 ## How high the sun stands, in words.
-sun_text : F64 -> Str
+sun_text : Pixels -> Str
 sun_text = |height|
-	if height < 0.0 {
-		"Sun: ${ScrubWidget.tenths_text(0.0 - height)} px below the horizon"
+	if height < Pixels.zero {
+		"Sun: ${ScrubWidget.tenths_text(height.opposite().to_f64())} px below the horizon"
 	} else {
-		"Sun: ${ScrubWidget.tenths_text(height)} px above the horizon"
+		"Sun: ${ScrubWidget.tenths_text(height.to_f64())} px above the horizon"
 	}
 
 expect warmth_stretch.from.to_f64() < warmth_stretch.to.to_f64()
 
 expect step_at_height(Sky.sun_start_px) == 0.0
 expect {
-	at_horizon = Clock.at_step(step_at_height(0.0).to_u32_wrap())
-	Sky.sun_height_px(at_horizon).abs() < 0.1
+	at_horizon = Clock.at_step(step_at_height(Pixels.zero).to_u32_wrap())
+	Sky.sun_height_px(at_horizon).abs() < Pixels.of(0.1)
 }
 
 expect

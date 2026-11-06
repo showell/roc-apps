@@ -1,13 +1,11 @@
-# RideInstant -- originally emitted from Codex by rocemit; the Roc is the
-# program now and this file is edited here (safari/README.md).
 import Clock
-import Frame
+import Chain
 import Ground
 import GroundSighting
-import ItemDraw
+import SceneDraw
 import Mountains
-import Pose
-import Render
+import RiderState
+import Scene
 import RideFocal
 import Rider
 import Sky
@@ -21,38 +19,38 @@ import lib.Shapes
 ## clock, which counts the steps. Everything else that changes is worked out
 ## from these three.
 RideInstant := {
-	rider : Pose.RiderState,
+	rider : RiderState,
 	truck : Truck.TruckState,
 	clock : Clock,
 }.{
 
 	initial : RideInstant
 	initial = {
-		rider: Pose.initial_rider_state,
+		rider: RiderState.initial,
 		truck: Truck.initial_truck,
 		clock: Clock.start,
 	}
 
-	next : List(World.Segment), RideInstant -> RideInstant
-	next = |w, instant|
-		if Rider.is_finished(instant.rider, w) {
+	next_or_restart : List(World.Segment), RideInstant -> RideInstant
+	next_or_restart = |route, instant|
+		if Rider.is_finished(instant.rider, route) {
 			initial
 		} else {
-			step(w, instant)
+			next(route, instant)
 		}
 
-	step : List(World.Segment), RideInstant -> RideInstant
-	step = |w, instant| {
-		nx = Rider.advance(instant.rider, w)
-		dist = World.distance_along_route(w, { index: nx.segment, along: nx.along })
+	next : List(World.Segment), RideInstant -> RideInstant
+	next = |route, instant| {
+		nx = Rider.advance(instant.rider, route)
+		dist = World.distance_along_route(route, { index: nx.segment_index, along: nx.along })
 		{
 			rider: nx,
 			truck: Truck.advance(
 				instant.truck,
 				{
 					rider_distance: dist,
-					world: w,
-					route_length: World.route_length(w),
+					route: route,
+					route_length: World.route_length(route),
 				},
 			),
 			clock: instant.clock.next(),
@@ -71,18 +69,18 @@ RideInstant := {
 		brake_lights: instant.truck.brake_lights,
 	}
 
-	frame : List(World.Segment), RideInstant -> List(Shapes.Shape)
-	frame = |w, instant| {
+	shapes : List(World.Segment), RideInstant -> List(Shapes.Shape)
+	shapes = |route, instant| {
 		s = instant.rider
 		view = {
 			road: {
-				world: w,
-				chain: Frame.chain_ahead(w, s.segment),
-				pose: ViewYaw.pose_for(s),
+				route: route,
+				chain: Chain.chain_ahead(route, s.segment_index),
+				vantage: ViewYaw.vantage_for(s),
 			},
-			cam_focal: RideFocal.ride_focal(w, s),
+			cam_focal: RideFocal.ride_focal(route, s),
 		}
-		scene = Render.collect(
+		scene = Scene.in_view(
 			view,
 			{
 				speed: s.speed,
@@ -101,14 +99,14 @@ RideInstant := {
 				cam_focal: view.cam_focal,
 			}),
 			ground.join_map(|patch| Ground.draw(patch, view.cam_focal)),
-			ItemDraw.draw(scene, view),
+			SceneDraw.draw(scene, view),
 		].join()
 	}
 
-	sun : List(World.Segment), RideInstant -> Sky.SunPos
-	sun = |w, instant| {
-		cf = RideFocal.ride_focal(w, instant.rider)
-		Sky.sun_pos({
+	sun : List(World.Segment), RideInstant -> Sky.SunSighting
+	sun = |route, instant| {
+		cf = RideFocal.ride_focal(route, instant.rider)
+		Sky.sun_sighting({
 			heading: ViewYaw.heading_for(instant.rider),
 			clock: instant.clock,
 			cam_focal: cf,
@@ -122,15 +120,15 @@ expect RideInstant.initial.rider.across.to_metres() == 0.0
 expect RideInstant.initial.rider.speed.to_metres_a_step() == 0.3
 expect RideInstant.initial.truck.route_position.to_metres() == 500.0
 expect RideInstant.initial.truck.speed.to_metres_a_step() == 0.3
-expect RideInstant.initial.rider.segment.to_i64() == 0
+expect RideInstant.initial.rider.segment_index.to_i64() == 0
 expect RideInstant.initial.truck.brake_lights == Off
 expect !(Rider.is_finished(RideInstant.initial.rider, World.segments))
 
 after_one_step : RideInstant
-after_one_step = RideInstant.next(World.segments, RideInstant.initial)
+after_one_step = RideInstant.next_or_restart(World.segments, RideInstant.initial)
 
 after_two_steps : RideInstant
-after_two_steps = RideInstant.next(World.segments, after_one_step)
+after_two_steps = RideInstant.next_or_restart(World.segments, after_one_step)
 
 expect after_one_step.clock.to_f64() == 1.0
 expect after_two_steps.clock.to_f64() == 2.0
@@ -141,17 +139,17 @@ expect after_two_steps.rider.along > after_one_step.rider.along
 expect {
 	old_dist = World.distance_along_route(
 		World.segments,
-		{ index: RideInstant.initial.rider.segment, along: RideInstant.initial.rider.along },
+		{ index: RideInstant.initial.rider.segment_index, along: RideInstant.initial.rider.along },
 	)
 	new_dist = World.distance_along_route(
 		World.segments,
-		{ index: after_one_step.rider.segment, along: after_one_step.rider.along },
+		{ index: after_one_step.rider.segment_index, along: after_one_step.rider.along },
 	)
 	against_new = Truck.advance(
 		RideInstant.initial.truck,
 		{
 			rider_distance: new_dist,
-			world: World.segments,
+			route: World.segments,
 			route_length: World.route_length(World.segments),
 		},
 	)
@@ -159,7 +157,7 @@ expect {
 		RideInstant.initial.truck,
 		{
 			rider_distance: old_dist,
-			world: World.segments,
+			route: World.segments,
 			route_length: World.route_length(World.segments),
 		},
 	)

@@ -1,10 +1,11 @@
 ## The widget for the Safari tutorial's beacons. Dragging across the canvas sets
 ## the ride's clock, and each frame is worked out from that clock alone, so two
-## masts blink opposite each other under the pointer, at dusk, where a beacon
-## shows up. The masts are drawn by Safari's own Tower, and how bright each is
+## towers blink opposite each other under the pointer, at dusk, where a beacon
+## shows up. The towers are drawn by Safari's own Tower, and how bright each is
 ## comes from TowerSighting. Below them, a ruler shows the clock, with the first
-## mast's bright stretches marked, and four lines of text read it out.
+## tower's bright stretches marked, and four lines of text read it out.
 import game.Clock
+import game.Distance
 import game.Fraction
 import game.Lens
 import game.Steps
@@ -36,13 +37,13 @@ clock_range = {
 	last_step: 5640.0,
 }
 
-## The beacon keys of a mast past a segment's end, and of the mast halfway along
+## The beacon keys of a tower past a segment's end, and of the tower halfway along
 ## the same segment, which blinks opposite it.
-first_mast_key : U32
-first_mast_key = 0
+first_tower_key : U32
+first_tower_key = 0
 
-second_mast_key : U32
-second_mast_key = 60
+second_tower_key : U32
+second_tower_key = 60
 
 ## How bright the beacon with `key` is at `clock`, as TowerSighting works it out.
 brightness_at : Clock, U32 -> Fraction
@@ -51,13 +52,13 @@ brightness_at = |clock, key| {
 	TowerSighting.beacon_brightness(clock.minus(Clock.start).plus(offset))
 }
 
-## How far ahead of the picture's eye the masts stand, so that their tops fit.
-mast_forward : F64
-mast_forward = 200.0
+## How far ahead of the picture's eye the towers stand, so that their tops fit.
+tower_forward : Distance
+tower_forward = Distance.metres(200.0)
 
-## How far to each side of the road a mast stands.
-mast_right : F64
-mast_right = 70.0
+## How far to each side of the road a tower stands.
+tower_right : Distance
+tower_right = Distance.metres(70.0)
 
 ## Everything on the canvas at `clock`.
 frame_at : Clock -> List(Shapes.Shape)
@@ -69,26 +70,26 @@ frame_at = |clock|
 		status: status_lines(clock),
 	})
 
-## The two masts in the ride's sky at `clock`.
+## The two towers in the ride's sky at `clock`.
 picture : Clock -> List(Shapes.Shape)
 picture = |clock|
 	ScrubWidget.ride_picture(
 		[
-			mast(0.0 - mast_right, brightness_at(clock, first_mast_key)),
-			mast(mast_right, brightness_at(clock, second_mast_key)),
+			tower(tower_right.opposite(), brightness_at(clock, first_tower_key)),
+			tower(tower_right, brightness_at(clock, second_tower_key)),
 		].join(),
 		{ clock, sun: OutOfView },
 	)
 
-## A mast standing `right` of the road, its beacon at `brightness`.
-mast : F64, Fraction -> List(Shapes.Shape)
-mast = |right, brightness| {
-	center = { right, forward: mast_forward }
+## A tower standing `right` of the road, its beacon at `brightness`.
+tower : Distance, Fraction -> List(Shapes.Shape)
+tower = |right, brightness| {
+	center = { right, forward: tower_forward }
 	corner_point = |corner| {
 		offset = Tower.corner_offset(corner)
 		{
-			right: right + offset.across * Tower.tower_half,
-			forward: mast_forward + offset.along * Tower.tower_half,
+			right: right.plus(Tower.tower_half.times(offset.across)),
+			forward: tower_forward.plus(Tower.tower_half.times(offset.along)),
 		}
 	}
 	Tower.draw({
@@ -104,7 +105,7 @@ mast = |right, brightness| {
 	})
 }
 
-## The steps of a blink that the first mast is more than half bright, one
+## The steps of a blink that the first tower is more than half bright, one
 ## stretch each: the middle half of the blink.
 bright_stretches : List(ScrubWidget.Stretch)
 bright_stretches = {
@@ -125,13 +126,13 @@ status_lines : Clock -> List(Str)
 status_lines = |clock| {
 	period = TowerSighting.beacon_period
 	into_blink = clock.minus(Clock.start).wrapped_to(period)
-	first_mast = ScrubWidget.percent_text(brightness_at(clock, first_mast_key))
-	second_mast = ScrubWidget.percent_text(brightness_at(clock, second_mast_key))
+	first_tower = ScrubWidget.percent_text(brightness_at(clock, first_tower_key))
+	second_tower = ScrubWidget.percent_text(brightness_at(clock, second_tower_key))
 	[
 		"Clock: step ${clock.to_str()}",
 		"Blink: ${step_count_text(into_blink)} of ${step_count_text(period)} steps",
-		"First mast: ${first_mast}",
-		"Second mast: ${second_mast}",
+		"First tower: ${first_tower}",
+		"Second tower: ${second_tower}",
 	]
 }
 
@@ -139,18 +140,18 @@ status_lines = |clock| {
 step_count_text : Steps -> Str
 step_count_text = |steps| steps.to_f64().to_i64_wrap().to_str()
 
-# The real masts' key step: half a period past a whole number of periods.
-expect TowerSighting.beacon_offset_for(first_mast_key) == Steps.zero
-expect TowerSighting.beacon_offset_for(second_mast_key) == Steps.of(60)
+# The real towers' key step: half a period past a whole number of periods.
+expect TowerSighting.beacon_offset_for(first_tower_key) == Steps.zero
+expect TowerSighting.beacon_offset_for(second_tower_key) == Steps.of(60)
 
 # Whatever the clock says, what one beacon lacks the other has.
 expect
 	[5400, 5430, 5447, 5459, 5460, 5461, 5519, 5520, 5640].all(
 		|step| {
 			clock = Clock.at_step(step)
-			first_mast = brightness_at(clock, first_mast_key)
-			second_mast = brightness_at(clock, second_mast_key)
-			is_near(first_mast, second_mast.complement().to_f64())
+			first_tower = brightness_at(clock, first_tower_key)
+			second_tower = brightness_at(clock, second_tower_key)
+			is_near(first_tower, second_tower.complement().to_f64())
 		},
 	)
 
@@ -159,8 +160,8 @@ expect
 		== [
 			"Clock: step 5400",
 			"Blink: 0 of 120 steps",
-			"First mast: 0%",
-			"Second mast: 100%",
+			"First tower: 0%",
+			"Second tower: 100%",
 		]
 
 expect
@@ -168,8 +169,8 @@ expect
 		== [
 			"Clock: step 5415",
 			"Blink: 15 of 120 steps",
-			"First mast: 14%",
-			"Second mast: 85%",
+			"First tower: 14%",
+			"Second tower: 85%",
 		]
 
 expect
@@ -177,8 +178,8 @@ expect
 		== [
 			"Clock: step 5520",
 			"Blink: 0 of 120 steps",
-			"First mast: 0%",
-			"Second mast: 100%",
+			"First tower: 0%",
+			"Second tower: 100%",
 		]
 
 expect ScrubWidget.clock_at(Fraction.zero, clock_range) == Clock.at_step(5400)

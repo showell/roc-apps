@@ -10,6 +10,7 @@ import game.CatStills
 import game.CrossingReaction
 import game.Distance
 import game.Fraction
+import game.Pixels
 import game.Scenery
 import game.Speed
 import game.World
@@ -49,7 +50,7 @@ cat_crossing : World.Segment -> Try(Cat.Crossing, [NoCat])
 cat_crossing = |segment|
 	match segment.crossing {
 		CatCrosses(crossing) => Ok(crossing)
-		BirdFlies(_) | QuietRoad => Err(NoCat)
+		BirdHere(_) | QuietRoad => Err(NoCat)
 	}
 
 ## The first segment of the route with a cat.
@@ -92,7 +93,7 @@ feet_y = 190.0
 ## The sky, the grass, and the lane between the verges.
 road : List(Shapes.Shape)
 road = {
-	lane_width_px = Scenery.lane_width.to_metres() * pixels_a_metre
+	lane_width_px = Scenery.road_width.to_metres() * pixels_a_metre
 	ground_height = ground_bottom_y - ground_top_y
 	[
 		Rect({
@@ -126,13 +127,13 @@ cat_shapes = |gap| {
 	CatDraw.polygons(
 		{
 			feet: {
-				x: lane_middle_x + instant.spot.across.to_metres() * pixels_a_metre,
-				y: feet_y,
+				x: Pixels.of(lane_middle_x + instant.spot.across.to_metres() * pixels_a_metre),
+				y: Pixels.of(feet_y),
 			},
-			height_px: crossing.height.to_metres() * pixels_a_metre,
+			height_px: Pixels.of(crossing.height.to_metres() * pixels_a_metre),
 			lift: instant.spot.lift,
 		},
-		CatStills.pose_polys(instant.pose),
+		CatStills.pose_polygons(instant.pose),
 	)
 }
 

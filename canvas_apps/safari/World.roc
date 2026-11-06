@@ -1,14 +1,14 @@
 ## The ride's world: the route, a line of road segments, each built once from
 ## its entry in `route`. A segment holds its scenery (trees, cows, pigs, a cat
 ## by a tree), how it turns into the next, where the rider commits to that
-## turn, and the creature waiting at its end.
+## turn, and what lives at its end.
 import Across
 import Along
 import Angle
 import BirdFlight
 import Cat
 import Distance
-import Herd
+import Cows
 import Pigs
 import Scenery
 import Trees
@@ -17,7 +17,7 @@ import lib.Trig
 World :: [].{
 
 	## A segment's place in the route, counted from 0. It says where a segment
-	## is in the route, where a Frame.ChainPosition says how far ahead of the
+	## is in the route, where a Chain.Position says how far ahead of the
 	## rider it is.
 	SegmentIndex :: U32.{
 
@@ -50,27 +50,27 @@ World :: [].{
 		count_before : World.SegmentIndex -> U64
 		count_before = |World.SegmentIndex.(n)| n.to_u64()
 
-		## The segment of `world` at this index.
+		## The segment of `route` at this index.
 		segment_in : World.SegmentIndex, List(World.Segment) -> World.Segment
-		segment_in = |index, world|
-			world.get(index.count_before())
-				?? crash "World.SegmentIndex.segment_in: the world has no segment there"
+		segment_in = |index, route|
+			route.get(index.count_before())
+				?? crash "World.SegmentIndex.segment_in: the route has no segment there"
 
 		is_eq : _
 	}
 
 	## One segment of the route as planned: its length and scenery, its turn
 	## into the next (right is positive), what lives along it, and
-	## the creature at its end.
+	## what lives at its end.
 	SegmentPlan : {
 		length : Distance,
 		scheme : Scenery.Scheme,
 		turn : Angle.Turn,
-		crossing : [CatCrosses, BirdCrosses, QuietRoad],
+		crossing : [CatCrosses, BirdHere, QuietRoad],
 		pigs : Pigs.PigPresence,
 		bull : [WithBull, NoBull],
 		ending : [Continues, Terminates],
-		creature : Scenery.Creature,
+		bend_life : Scenery.BendLife,
 	}
 
 	## One segment of road, built from its plan.
@@ -79,7 +79,7 @@ World :: [].{
 		trees : List(Scenery.Tree),
 		cows : List(Scenery.Critter),
 		pigs : List(Scenery.Critter),
-		pig_attention : Pigs.PigAttention,
+		pig_attention : Pigs.PigInterest,
 
 		## The turn into the next segment: positive to the right, negative to
 		## the left.
@@ -90,26 +90,26 @@ World :: [].{
 		## What crosses the road here, at most one thing, so that the rider has
 		## one experience at a time. Most of the road is quiet, so that a crossing
 		## stands out.
-		crossing : [CatCrosses(Cat.Crossing), BirdFlies(BirdFlight.Route), QuietRoad],
+		crossing : [CatCrosses(Cat.Crossing), BirdHere(BirdFlight.Habit), QuietRoad],
 		ending : [Continues({ next : World.SegmentIndex }), Terminates],
-		exit_creature : Scenery.Creature,
+		bend_life : Scenery.BendLife,
 	}
 
-	## A segment longer than this has a mast halfway along.
+	## A segment longer than this has a tower halfway along.
 	mid_tower_min_length : Distance
 	mid_tower_min_length = Distance.metres(1000.0)
 
-	route : List(World.SegmentPlan)
-	route = [
+	plans : List(World.SegmentPlan)
+	plans = [
 		{
 			length: Distance.metres(500.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(50.0),
-			crossing: BirdCrosses,
+			crossing: BirdHere,
 			pigs: NoPigs,
 			bull: NoBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(320.0),
@@ -119,7 +119,7 @@ World :: [].{
 			pigs: NoPigs,
 			bull: NoBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(400.0),
@@ -129,7 +129,7 @@ World :: [].{
 			pigs: WithPigs,
 			bull: NoBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(300.0),
@@ -139,7 +139,7 @@ World :: [].{
 			pigs: NoPigs,
 			bull: NoBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(300.0),
@@ -149,17 +149,17 @@ World :: [].{
 			pigs: NoPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: Giraffe,
+			bend_life: Animal(Giraffe),
 		},
 		{
 			length: Distance.metres(300.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(-70.0),
-			crossing: BirdCrosses,
+			crossing: BirdHere,
 			pigs: NoPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(1200.0),
@@ -169,7 +169,7 @@ World :: [].{
 			pigs: NoPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: Rhino,
+			bend_life: Animal(Rhino),
 		},
 		{
 			length: Distance.metres(300.0),
@@ -179,7 +179,7 @@ World :: [].{
 			pigs: NoPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(300.0),
@@ -189,7 +189,7 @@ World :: [].{
 			pigs: NoPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(800.0),
@@ -199,7 +199,7 @@ World :: [].{
 			pigs: NoPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(300.0),
@@ -209,7 +209,7 @@ World :: [].{
 			pigs: WithPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(300.0),
@@ -219,7 +219,7 @@ World :: [].{
 			pigs: WithPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(300.0),
@@ -229,7 +229,7 @@ World :: [].{
 			pigs: WithPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: DuckPond,
+			bend_life: DuckPond,
 		},
 		{
 			length: Distance.metres(400.0),
@@ -239,17 +239,17 @@ World :: [].{
 			pigs: WithPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(300.0),
 			scheme: AllGreen,
 			turn: Angle.Turn.degrees(50.0),
-			crossing: BirdCrosses,
+			crossing: BirdHere,
 			pigs: WithPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(300.0),
@@ -259,7 +259,7 @@ World :: [].{
 			pigs: NoPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: Zebra,
+			bend_life: Animal(Zebra),
 		},
 		{
 			length: Distance.metres(300.0),
@@ -269,7 +269,7 @@ World :: [].{
 			pigs: WithPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(300.0),
@@ -279,7 +279,7 @@ World :: [].{
 			pigs: WithPigs,
 			bull: WithBull,
 			ending: Continues,
-			creature: Elephant,
+			bend_life: Animal(Elephant),
 		},
 		{
 			length: Distance.metres(300.0),
@@ -289,14 +289,14 @@ World :: [].{
 			pigs: WithPigs,
 			bull: WithBull,
 			ending: Terminates,
-			creature: NoCreature,
+			bend_life: Quiet,
 		},
 	]
 
 	## How many of the segments up to and including `index` have pigs.
 	pig_segments_through : World.SegmentIndex -> U32
 	pig_segments_through = |index|
-		route
+		plans
 			.take_first(index.count_before() + 1)
 			.count_if(|plan| Pigs.has_pigs(plan.pigs))
 			.to_u32_wrap()
@@ -305,14 +305,14 @@ World :: [].{
 	route_segment : U32 -> World.Segment
 	route_segment = |number| {
 		index = World.SegmentIndex.number(number)
-		plan = route.get(index.count_before())
+		plan = plans.get(index.count_before())
 			?? crash "World.route_segment: the route has no segment there"
 		built_segment(plan, index)
 	}
 
 	## Every segment of the route, in order.
 	segments : List(World.Segment)
-	segments = route.map_with_index(
+	segments = plans.map_with_index(
 		|plan, at| built_segment(plan, World.SegmentIndex.number(at.to_u32_wrap())),
 	)
 
@@ -320,7 +320,7 @@ World :: [].{
 	## the first: a float sum's rounding depends on its order, and another
 	## order can move a pixel.
 	route_length : List(World.Segment) -> Distance
-	route_length = |world| world.fold_rev(Distance.zero, |segment, sum| segment.length.plus(sum))
+	route_length = |route| route.fold_rev(Distance.zero, |segment, sum| segment.length.plus(sum))
 
 	## How far along the route the point at `along` on the segment at `index`
 	## is.
@@ -329,25 +329,25 @@ World :: [].{
 		index : World.SegmentIndex,
 		along : Along,
 	} -> Distance
-	distance_along_route = |world, { index, along }|
-		route_length(world.take_first(index.count_before())).plus(along.from_start())
+	distance_along_route = |route, { index, along }|
+		route_length(route.take_first(index.count_before())).plus(along.from_start())
 }
 
 ## The segment at `index` of the route, built from its plan.
 built_segment : World.SegmentPlan, World.SegmentIndex -> World.Segment
 built_segment = |plan, index| {
 	trees = Trees.plant({ scheme: plan.scheme, length: plan.length })
-	pig_attention = Pigs.attention_of({
+	pig_attention = Pigs.interest_of({
 		presence: plan.pigs,
 		pig_segments_so_far: World.pig_segments_through(index),
 	})
 	{
 		length: plan.length,
 		trees,
-		cows: Herd.fill_cows(plan.bull),
+		cows: Cows.herd(plan.bull),
 		pigs: Pigs.pigs_along({
 			presence: plan.pigs,
-			attention: pig_attention,
+			interest: pig_attention,
 			length: plan.length,
 		}),
 		pig_attention,
@@ -355,7 +355,7 @@ built_segment = |plan, index| {
 		commit_along: match plan.ending {
 			Continues => {
 				exit_tan = Trig.r_tan(plan.turn.abs().to_radians())
-				Along.at(plan.length.minus(Scenery.lane_half_width.divided_by(exit_tan)))
+				Along.at(plan.length.minus(Scenery.road_half_width.divided_by(exit_tan)))
 			}
 			Terminates => Along.at(plan.length)
 		},
@@ -367,21 +367,21 @@ built_segment = |plan, index| {
 		crossing: match plan.crossing {
 			CatCrosses => CatCrosses(
 				Cat.crossing({
-					lane_half_width: Scenery.lane_half_width,
+					road_half_width: Scenery.road_half_width,
 					tree_offset: Trees.tree_road_offset,
 					tree_along: nearest_tree_ahead(trees, Cat.cat_along),
 				}),
 			)
-			BirdCrosses => BirdFlight.crossing_among(trees)
+			BirdHere => BirdFlight.crossing_among(trees)
 			QuietRoad => QuietRoad
 		},
 		ending: match plan.ending {
 			Continues => Continues({ next: index.next() })
 			Terminates => Terminates
 		},
-		exit_creature: match plan.ending {
-			Continues => plan.creature
-			Terminates => NoCreature
+		bend_life: match plan.ending {
+			Continues => plan.bend_life
+			Terminates => Quiet
 		},
 	}
 }
@@ -413,7 +413,7 @@ nearest_tree_ahead = |trees, along| {
 	}
 }
 
-expect World.route.len() == 19
+expect World.plans.len() == 19
 
 expect
 	[
@@ -534,7 +534,7 @@ next_of = |segment|
 turns_right : World.Segment -> Bool
 turns_right = |segment| segment.exit_turn.is_right()
 
-## Whether a segment has a mast halfway along.
+## Whether a segment has a tower halfway along.
 has_mid_tower : World.Segment -> Bool
 has_mid_tower = |segment|
 	match segment.mid_tower {
@@ -547,7 +547,7 @@ has_cat : World.Segment -> Bool
 has_cat = |segment|
 	match segment.crossing {
 		CatCrosses(_) => True
-		BirdFlies(_) | QuietRoad => False
+		BirdHere(_) | QuietRoad => False
 	}
 
 ## Whether a segment's pigs draw the rider's eye.
@@ -563,5 +563,5 @@ crossing_at : U32 -> Cat.Crossing
 crossing_at = |index|
 	match seg(index).crossing {
 		CatCrosses(crossing) => crossing
-		BirdFlies(_) | QuietRoad => crash "World.crossing_at: segments 3, 9 and 18 have a cat"
+		BirdHere(_) | QuietRoad => crash "World.crossing_at: segments 3, 9 and 18 have a cat"
 	}

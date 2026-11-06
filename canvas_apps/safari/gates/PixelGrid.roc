@@ -58,10 +58,10 @@ PixelGrid :: [].{
 	pixels_between : {
 		from : F64,
 		to : F64,
-		count : PixelGrid.Coordinate,
+		extent : PixelGrid.Coordinate,
 	} -> PixelGrid.CoordinateRange
-	pixels_between = |{ from, to, count: PixelGrid.Coordinate.(count) }| {
-		length = U16.to_i64(count)
+	pixels_between = |{ from, to, extent: PixelGrid.Coordinate.(extent) }| {
+		length = U16.to_i64(extent)
 		{
 			start: nearest_coordinate({ place: first_pixel_past(from), length }),
 			end: nearest_coordinate({ place: first_pixel_past(to), length }),

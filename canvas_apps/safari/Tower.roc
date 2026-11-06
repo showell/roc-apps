@@ -1,8 +1,9 @@
-## A radio mast: a square lattice that tapers from a 12 m footprint to a
+## A radio tower: a square lattice that tapers from a 12 m footprint to a
 ## point 80 m up. It is drawn as rods (four legs, a ring every 20 m, and
-## crossed braces in the lowest two stages) with a blinking beacon on top.
-## The earth curves away under a far mast, so it sinks below the horizon
+## crossed braces in the lowest two storeys) with a blinking beacon on top.
+## The earth curves away under a far tower, so it sinks below the horizon
 ## from the bottom up.
+import Pixels
 import Across
 import Along
 import Angle
@@ -19,23 +20,23 @@ import lib.Shapes
 
 Tower :: [].{
 
-	tower_height : F64
-	tower_height = 80.0
+	tower_height : Distance
+	tower_height = Distance.metres(80.0)
 
-	tower_half : F64
-	tower_half = 6.0
+	tower_half : Distance
+	tower_half = Distance.metres(6.0)
 
-	stage_height : F64
-	stage_height = 20.0
+	storey_height : Distance
+	storey_height = Distance.metres(20.0)
 
-	brace_stages : I64
-	brace_stages = 2
+	brace_storeys : I64
+	brace_storeys = 2
 
-	rod_half : F64
-	rod_half = 0.12
+	rod_half : Distance
+	rod_half = Distance.metres(0.12)
 
-	rod_w : F64
-	rod_w = (rod_half * 2.0)
+	rod_w : Distance
+	rod_w = rod_half.times(2.0)
 
 	tower_metal : I64
 	tower_metal = 10133672
@@ -43,16 +44,16 @@ Tower :: [].{
 	## The radius a far tower sinks over, which hides it wholly at 1.8 km. It
 	## is tighter than `Geom.ground_curve_radius`, so a tower sinks visibly as
 	## it recedes: on the ground's curve it would stay in view to 4 km.
-	sink_radius : F64
-	sink_radius = 20000.0
+	sink_radius : Distance
+	sink_radius = Distance.metres(20000.0)
 
-	beacon_radius : F64
-	beacon_radius = 3.0
+	beacon_radius : Distance
+	beacon_radius = Distance.metres(3.0)
 
 	beacon_color : I64
 	beacon_color = 16723942
 
-	## A corner of the mast's square footprint, as seen along the route.
+	## A corner of the tower's square footprint, as seen along the route.
 	Corner : [BackLeft, BackRight, FrontRight, FrontLeft]
 
 	## Where the footprint's four corners stand in the rider's view.
@@ -64,14 +65,14 @@ Tower :: [].{
 	}
 
 	## How a rod is drawn: its width on screen, and the camera.
-	RodView : { rod_width_px : F64, cam_focal : F64 }
+	RodView : { rod_width_px : Pixels, cam_focal : Pixels }
 
-	## One mast, ready to draw: where it stands, how far the earth's curve
-	## has sunk it, and how its rods are drawn.
-	Mast : {
+	## One tower, ready to draw: where it stands, how far the earth's curve
+	## has sunk it, which is never negative, and how its rods are drawn.
+	TowerInView : {
 		footprint : Tower.Footprint,
 		center : Geom.RiderPoint,
-		sunk : F64,
+		sunk : Distance,
 		view : Tower.RodView,
 	}
 
@@ -109,7 +110,7 @@ Tower :: [].{
 			FrontLeft => footprint.front_left
 		}
 
-	## Where a footprint corner stands on the map, for a mast centred at
+	## Where a footprint corner stands on the map, for a tower centred at
 	## `along` and `across` and turned by `yaw`.
 	base_corner_on_road : Tower.Corner,
 	{
@@ -119,8 +120,9 @@ Tower :: [].{
 	} -> Geom.RoadPoint
 	base_corner_on_road = |corner, { along, across, yaw }| {
 		offset = corner_offset(corner)
-		du = (offset.across * tower_half)
-		dv = (offset.along * tower_half)
+		half = tower_half.to_metres()
+		du = (offset.across * half)
+		dv = (offset.along * half)
 		cy = Trig.r_cos(yaw.to_radians())
 		sy = Trig.r_sin(yaw.to_radians())
 		{
@@ -129,36 +131,45 @@ Tower :: [].{
 		}
 	}
 
-	## How far the earth's curve hides the bottom of a mast standing at `p`.
-	sunk_below_horizon : Geom.RiderPoint -> F64
-	sunk_below_horizon = |p|
-		((p.right * p.right) + (p.forward * p.forward)) / (2.0 * sink_radius)
+	## How far the earth's curve hides the bottom of a tower standing at `p`.
+	sunk_below_horizon : Geom.RiderPoint -> Distance
+	sunk_below_horizon = |p| {
+		r = p.right.to_metres()
+		f = p.forward.to_metres()
+		Distance.metres(((r * r) + (f * f)) / (2.0 * sink_radius.to_metres()))
+	}
 
 	## The point `fraction` of the way from `from` to `to`.
 	point_between : {
-		from : Geom.SpacePoint,
-		to : Geom.SpacePoint,
+		from : Geom.RaisedPoint,
+		to : Geom.RaisedPoint,
 		fraction : Fraction,
-	} -> Geom.SpacePoint
+	} -> Geom.RaisedPoint
 	point_between = |{ from, to, fraction }| {
 		share = fraction.to_f64()
+		part_way = |start, end| start.plus(end.minus(start).times(share))
 		{
-			right: (from.right + ((to.right - from.right) * share)),
-			forward: (from.forward + ((to.forward - from.forward) * share)),
-			height: (from.height + ((to.height - from.height) * share)),
+			right: part_way(from.right, to.right),
+			forward: part_way(from.forward, to.forward),
+			height: part_way(from.height, to.height),
 		}
 	}
 
-	## A corner of the mast at `height_on_mast`: drawn in toward the centre
-	## as the mast tapers, and lowered by how far the mast has sunk.
-	corner_at : Tower.Mast, { corner : Tower.Corner, height_on_mast : F64 } -> Geom.SpacePoint
-	corner_at = |mast, { corner, height_on_mast: h }| {
-		t = (h / tower_height)
-		bottom = footprint_corner(mast.footprint, corner)
+	## A corner of the tower at `height_on_tower`: drawn in toward the centre
+	## as the tower tapers, and lowered by how far the tower has sunk.
+	corner_at : Tower.TowerInView,
+	{
+		corner : Tower.Corner,
+		height_on_tower : Distance,
+	} -> Geom.RaisedPoint
+	corner_at = |tower, { corner, height_on_tower }| {
+		t = height_on_tower.ratio_to(tower_height)
+		bottom = footprint_corner(tower.footprint, corner)
+		tapered = |start, end| start.plus(end.minus(start).times(t))
 		{
-			right: (bottom.right + ((mast.center.right - bottom.right) * t)),
-			forward: (bottom.forward + ((mast.center.forward - bottom.forward) * t)),
-			height: (h - mast.sunk),
+			right: tapered(bottom.right, tower.center.right),
+			forward: tapered(bottom.forward, tower.center.forward),
+			height: height_on_tower.minus(tower.sunk),
 		}
 	}
 
@@ -166,22 +177,22 @@ Tower :: [].{
 	screen_rod : {
 		from : Screen.Point,
 		to : Screen.Point,
-		width_px : F64,
+		width_px : Pixels,
 	} -> List(Shapes.Shape)
 	screen_rod = |{ from, to, width_px }| {
-		dx = (to.x - from.x)
-		dy = (to.y - from.y)
-		raw = DeviceMath.real_sqrt(((dx * dx) + (dy * dy)))
-		len = if raw < 0.0001 {
-			1.0
+		dx = to.x.minus(from.x)
+		dy = to.y.minus(from.y)
+		raw = dx.hypotenuse(dy)
+		len = if raw < Pixels.of(0.0001) {
+			Pixels.of(1.0)
 		} else {
 			raw
 		}
 		rod_quad({
 			from,
 			to,
-			offset_x: ((((0.0 - dy) / len) * width_px) / 2.0),
-			offset_y: (((dx / len) * width_px) / 2.0),
+			offset_x: width_px.times(dy.opposite().ratio_to(len)).divided_by(2.0),
+			offset_y: width_px.times(dx.ratio_to(len)).divided_by(2.0),
 		})
 	}
 
@@ -190,8 +201,8 @@ Tower :: [].{
 	rod_quad : {
 		from : Screen.Point,
 		to : Screen.Point,
-		offset_x : F64,
-		offset_y : F64,
+		offset_x : Pixels,
+		offset_y : Pixels,
 	} -> List(Shapes.Shape)
 	rod_quad = |
 		{
@@ -200,20 +211,20 @@ Tower :: [].{
 			offset_x: ox,
 			offset_y: oy,
 		},
-	| Paint.push_poly(
+	| Paint.polygon(
 		tower_metal,
 		[
-			{ x: (a.x + ox), y: (a.y + oy) },
-			{ x: (b.x + ox), y: (b.y + oy) },
-			{ x: (b.x - ox), y: (b.y - oy) },
-			{ x: (a.x - ox), y: (a.y - oy) },
+			{ x: a.x.plus(ox), y: a.y.plus(oy) },
+			{ x: b.x.plus(ox), y: b.y.plus(oy) },
+			{ x: b.x.minus(ox), y: b.y.minus(oy) },
+			{ x: a.x.minus(ox), y: a.y.minus(oy) },
 		],
 	)
 
 	## A rod between two points in the rider's view. A rod with one end
 	## behind the near plane is cut there; one with both ends behind it is
 	## not drawn.
-	rod : Tower.RodView, { from : Geom.SpacePoint, to : Geom.SpacePoint } -> List(Shapes.Shape)
+	rod : Tower.RodView, { from : Geom.RaisedPoint, to : Geom.RaisedPoint } -> List(Shapes.Shape)
 	rod = |view, { from, to }|
 		match (sight_of(from), sight_of(to)) {
 			(InView, InView) => rod_on_screen(view, { from, to })
@@ -222,25 +233,25 @@ Tower :: [].{
 			(BehindCamera, BehindCamera) => []
 		}
 
-	sight_of : Geom.SpacePoint -> [InView, BehindCamera]
-	sight_of = |point| if point.forward >= Geom.near_plane {
-		InView
-	} else {
-		BehindCamera
-	}
+	sight_of : Geom.RaisedPoint -> [InView, BehindCamera]
+	sight_of = |point|
+		if point.forward >= Geom.near_plane {
+			InView
+		} else {
+			BehindCamera
+		}
 
 	## Where the line from `from` to `to` crosses the near plane.
-	cut_at_near : { from : Geom.SpacePoint, to : Geom.SpacePoint } -> Geom.SpacePoint
-	cut_at_near = |{ from, to }| point_between({
-		from,
-		to,
-		fraction: Fraction.of(((Geom.near_plane - from.forward) / (to.forward - from.forward))),
-	})
+	cut_at_near : { from : Geom.RaisedPoint, to : Geom.RaisedPoint } -> Geom.RaisedPoint
+	cut_at_near = |{ from, to }| {
+		share = Geom.near_plane.minus(from.forward).ratio_to(to.forward.minus(from.forward))
+		point_between({ from, to, fraction: Fraction.of(share) })
+	}
 
 	rod_on_screen : Tower.RodView,
 	{
-		from : Geom.SpacePoint,
-		to : Geom.SpacePoint,
+		from : Geom.RaisedPoint,
+		to : Geom.RaisedPoint,
 	} -> List(Shapes.Shape)
 	rod_on_screen = |view, { from, to }|
 		screen_rod({
@@ -250,128 +261,131 @@ Tower :: [].{
 		})
 
 	## How many pixels one metre across spans at distance `forward`.
-	metre_px : { forward : F64, cam_focal : F64 } -> F64
+	metre_px : { forward : Distance, cam_focal : Pixels } -> Pixels
 	metre_px = |{ forward, cam_focal }| {
 		p1 = Camera.project(
 			{
-				right: 1.0,
+				right: Distance.metres(1.0),
 				forward: forward,
-				height: 0.0,
+				height: Distance.zero,
 			},
 			cam_focal,
 		)
 		p0 = Camera.project(
 			{
-				right: 0.0,
+				right: Distance.zero,
 				forward: forward,
-				height: 0.0,
+				height: Distance.zero,
 			},
 			cam_focal,
 		)
-		p1.x - p0.x
+		p1.x.minus(p0.x)
 	}
 
 	## A rod's width on screen at distance `forward`.
-	rod_width_at : { forward : F64, cam_focal : F64 } -> F64
-	rod_width_at = |camera| rod_w * metre_px(camera)
+	rod_width_at : { forward : Distance, cam_focal : Pixels } -> Pixels
+	rod_width_at = |camera| metre_px(camera).times(rod_w.to_metres())
 
 	## The four legs, from the footprint's corners up to the apex.
-	legs : Tower.Mast, Geom.SpacePoint -> List(Shapes.Shape)
-	legs = |mast, apex| corners.join_map(
+	legs : Tower.TowerInView, Geom.RaisedPoint -> List(Shapes.Shape)
+	legs = |tower, apex| corners.join_map(
 		|corner| rod(
-			mast.view,
-			{ from: corner_at(mast, { corner, height_on_mast: mast.sunk }), to: apex },
+			tower.view,
+			{ from: corner_at(tower, { corner, height_on_tower: tower.sunk }), to: apex },
 		),
 	)
 
-	## The ring of rods round the mast at height `h`.
-	ring : Tower.Mast, F64 -> List(Shapes.Shape)
-	ring = |mast, h| corners.join_map(
+	## The ring of rods round the tower at height `h`.
+	ring : Tower.TowerInView, Distance -> List(Shapes.Shape)
+	ring = |tower, h| corners.join_map(
 		|corner| rod(
-			mast.view,
+			tower.view,
 			{
-				from: corner_at(mast, { corner, height_on_mast: h }),
-				to: corner_at(mast, { corner: next_corner(corner), height_on_mast: h }),
+				from: corner_at(tower, { corner, height_on_tower: h }),
+				to: corner_at(tower, { corner: next_corner(corner), height_on_tower: h }),
 			},
 		),
 	)
 
-	## A ring at every stage below the top, bottom first, leaving out those
+	## A ring at every storey below the top, bottom first, leaving out those
 	## the earth has hidden.
-	rings : Tower.Mast -> List(Shapes.Shape)
-	rings = |mast| ring_heights_from(stage_height).join_map(
-		|h| if h <= mast.sunk {
-			[]
-		} else {
-			ring(mast, h)
-		},
+	rings : Tower.TowerInView -> List(Shapes.Shape)
+	rings = |tower| ring_heights_from(storey_height).join_map(
+		|h|
+			if h <= tower.sunk {
+				[]
+			} else {
+				ring(tower, h)
+			},
 	)
 
-	ring_heights_from : F64 -> List(F64)
-	ring_heights_from = |h| if h >= tower_height {
-		[]
-	} else {
-		[h].concat(ring_heights_from((h + stage_height)))
-	}
-
-	## The crossed braces of the lowest stages, bottom first. A stage the
-	## earth has partly hidden starts its braces at the horizon.
-	braces : Tower.Mast -> List(Shapes.Shape)
-	braces = |mast| brace_stages_from(0).join_map(|stage| brace_stage(mast, stage))
-
-	brace_stages_from : I64 -> List(I64)
-	brace_stages_from = |stage| if stage >= brace_stages {
-		[]
-	} else {
-		[stage].concat(brace_stages_from((stage + 1)))
-	}
-
-	brace_stage : Tower.Mast, I64 -> List(Shapes.Shape)
-	brace_stage = |mast, stage| {
-		stage_bottom = (stage.to_f64() * stage_height)
-		stage_top = (stage_bottom + stage_height)
-		if stage_top <= mast.sunk {
+	ring_heights_from : Distance -> List(Distance)
+	ring_heights_from = |h|
+		if h >= tower_height {
 			[]
 		} else {
-			hidden_height = DeviceMath.real_max(stage_bottom, mast.sunk) - stage_bottom
-			hidden_fraction = Fraction.of(hidden_height / stage_height)
+			[h].concat(ring_heights_from(h.plus(storey_height)))
+		}
+
+	## The crossed braces of the lowest storeys, bottom first. A storey the
+	## earth has partly hidden starts its braces at the horizon.
+	braces : Tower.TowerInView -> List(Shapes.Shape)
+	braces = |tower| brace_storeys_from(0).join_map(|storey| brace_storey(tower, storey))
+
+	brace_storeys_from : I64 -> List(I64)
+	brace_storeys_from = |storey|
+		if storey >= brace_storeys {
+			[]
+		} else {
+			[storey].concat(brace_storeys_from((storey + 1)))
+		}
+
+	brace_storey : Tower.TowerInView, I64 -> List(Shapes.Shape)
+	brace_storey = |tower, storey| {
+		storey_bottom = storey_height.times(storey.to_f64())
+		storey_top = storey_bottom.plus(storey_height)
+		if storey_top <= tower.sunk {
+			[]
+		} else {
+			hidden_height = storey_bottom.max(tower.sunk).minus(storey_bottom)
+			hidden_fraction = Fraction.of(hidden_height.ratio_to(storey_height))
 			corners.join_map(
-				|corner| brace_pair(mast, { corner, stage_bottom, stage_top, hidden_fraction }),
+				|corner| brace_pair(tower, { corner, storey_bottom, storey_top, hidden_fraction }),
 			)
 		}
 	}
 
 	## The two braces crossing the face from `corner` to the next corner: one
 	## rising each way.
-	brace_pair : Tower.Mast,
+	brace_pair : Tower.TowerInView,
 	{
 		corner : Tower.Corner,
-		stage_bottom : F64,
-		stage_top : F64,
+		storey_bottom : Distance,
+		storey_top : Distance,
 		hidden_fraction : Fraction,
 	} -> List(Shapes.Shape)
-	brace_pair = |mast, { corner, stage_bottom, stage_top, hidden_fraction }| {
+	brace_pair = |tower, { corner, storey_bottom, storey_top, hidden_fraction }| {
 		next = next_corner(corner)
 		brace_up = rod(
-			mast.view,
+			tower.view,
 			{
 				from: point_between({
-					from: corner_at(mast, { corner, height_on_mast: stage_bottom }),
-					to: corner_at(mast, { corner: next, height_on_mast: stage_top }),
+					from: corner_at(tower, { corner, height_on_tower: storey_bottom }),
+					to: corner_at(tower, { corner: next, height_on_tower: storey_top }),
 					fraction: hidden_fraction,
 				}),
-				to: corner_at(mast, { corner: next, height_on_mast: stage_top }),
+				to: corner_at(tower, { corner: next, height_on_tower: storey_top }),
 			},
 		)
 		brace_down = rod(
-			mast.view,
+			tower.view,
 			{
 				from: point_between({
-					from: corner_at(mast, { corner: next, height_on_mast: stage_bottom }),
-					to: corner_at(mast, { corner, height_on_mast: stage_top }),
+					from: corner_at(tower, { corner: next, height_on_tower: storey_bottom }),
+					to: corner_at(tower, { corner, height_on_tower: storey_top }),
 					fraction: hidden_fraction,
 				}),
-				to: corner_at(mast, { corner, height_on_mast: stage_top }),
+				to: corner_at(tower, { corner, height_on_tower: storey_top }),
 			},
 		)
 		brace_up.concat(brace_down)
@@ -379,21 +393,25 @@ Tower :: [].{
 
 	## The beacon on the apex, at its brightness; too dim or too small, it
 	## isn't drawn.
-	beacon : Tower.Mast, { apex : Geom.SpacePoint, brightness : Fraction } -> List(Shapes.Shape)
-	beacon = |mast, { apex, brightness }| {
-		apex_on_screen = Camera.project(apex, mast.view.cam_focal)
+	beacon : Tower.TowerInView,
+	{
+		apex : Geom.RaisedPoint,
+		brightness : Fraction,
+	} -> List(Shapes.Shape)
+	beacon = |tower, { apex, brightness }| {
+		apex_on_screen = Camera.project(apex, tower.view.cam_focal)
 		if brightness < Fraction.of(0.02) {
 			[]
 		} else {
 			one_metre_px = metre_px({
-				forward: mast.center.forward,
-				cam_focal: mast.view.cam_focal,
+				forward: tower.center.forward,
+				cam_focal: tower.view.cam_focal,
 			})
-			radius = beacon_radius * one_metre_px
-			if radius < 0.5 {
+			radius = one_metre_px.times(beacon_radius.to_metres())
+			if radius < Pixels.of(0.5) {
 				[]
 			} else {
-				Paint.push_beacon({
+				Paint.beacon({
 					beacon_color,
 					beacon_center: apex_on_screen,
 					beacon_radius: radius,
@@ -403,12 +421,12 @@ Tower :: [].{
 		}
 	}
 
-	## The whole mast: legs, rings, braces and beacon, in that order. A mast
+	## The whole tower: legs, rings, braces and beacon, in that order. A tower
 	## behind the camera, or sunk wholly below the horizon, draws nothing.
 	draw : {
 		footprint : Tower.Footprint,
 		center : Geom.RiderPoint,
-		cam_focal : F64,
+		cam_focal : Pixels,
 		beacon_brightness : Fraction,
 	} -> List(Shapes.Shape)
 	draw = |{ footprint, center, cam_focal, beacon_brightness }| {
@@ -417,31 +435,31 @@ Tower :: [].{
 			[]
 		} else {
 			view = { rod_width_px: rod_width_at({ forward: center.forward, cam_focal }), cam_focal }
-			mast = { footprint, center, sunk, view }
+			tower = { footprint, center, sunk, view }
 			apex = {
 				right: center.right,
 				forward: center.forward,
-				height: (tower_height - sunk),
+				height: tower_height.minus(sunk),
 			}
 			[
-				legs(mast, apex),
-				rings(mast),
-				braces(mast),
-				beacon(mast, { apex, brightness: beacon_brightness }),
+				legs(tower, apex),
+				rings(tower),
+				braces(tower),
+				beacon(tower, { apex, brightness: beacon_brightness }),
 			].join()
 		}
 	}
 }
 
-expect Tower.tower_height == 80.0
-expect Tower.tower_half == 6.0
-expect Tower.stage_height == 20.0
-expect Tower.rod_half == 0.12
-expect Tower.rod_w == 0.24
-expect Tower.sink_radius == 20000.0
-expect Tower.beacon_radius == 3.0
+expect Tower.tower_height.to_metres() == 80.0
+expect Tower.tower_half.to_metres() == 6.0
+expect Tower.storey_height.to_metres() == 20.0
+expect Tower.rod_half.to_metres() == 0.12
+expect Tower.rod_w.to_metres() == 0.24
+expect Tower.sink_radius.to_metres() == 20000.0
+expect Tower.beacon_radius.to_metres() == 3.0
 
-expect Tower.brace_stages == 2
+expect Tower.brace_storeys == 2
 expect Tower.tower_metal == 10133672
 expect Tower.beacon_color == 16723942
 
@@ -472,87 +490,96 @@ expect {
 }
 
 sample_rod_view : Tower.RodView
-sample_rod_view = { rod_width_px: 4.0, cam_focal: 500.0 }
+sample_rod_view = { rod_width_px: Pixels.of(4.0), cam_focal: Pixels.of(500.0) }
 
-# A mast 12 m square, centred 100 m ahead, sunk 1 m.
-sample_mast : Tower.Mast
-sample_mast = {
+# A tower 12 m square, centred 100 m ahead, sunk 1 m.
+sample_tower : Tower.TowerInView
+sample_tower = {
 	footprint: {
-		back_left: { right: -6.0, forward: 94.0 },
-		back_right: { right: 6.0, forward: 94.0 },
-		front_right: { right: 6.0, forward: 106.0 },
-		front_left: { right: -6.0, forward: 106.0 },
+		back_left: { right: Distance.metres(-6.0), forward: Distance.metres(94.0) },
+		back_right: { right: Distance.metres(6.0), forward: Distance.metres(94.0) },
+		front_right: { right: Distance.metres(6.0), forward: Distance.metres(106.0) },
+		front_left: { right: Distance.metres(-6.0), forward: Distance.metres(106.0) },
 	},
-	center: { right: 0.0, forward: 100.0 },
-	sunk: 1.0,
+	center: { right: Distance.metres(0.0), forward: Distance.metres(100.0) },
+	sunk: Distance.metres(1.0),
 	view: sample_rod_view,
 }
 
 expect
-	Tower.corner_at(sample_mast, { corner: BackLeft, height_on_mast: 0.0 })
+	Tower.corner_at(sample_tower, { corner: BackLeft, height_on_tower: Distance.metres(0.0) })
 		== {
-			right: -6.0,
-			forward: 94.0,
-			height: -1.0,
+			right: Distance.metres(-6.0),
+			forward: Distance.metres(94.0),
+			height: Distance.metres(-1.0),
 		}
 expect
-	Tower.corner_at(sample_mast, { corner: BackLeft, height_on_mast: 40.0 })
+	Tower.corner_at(sample_tower, { corner: BackLeft, height_on_tower: Distance.metres(40.0) })
 		== {
-			right: -3.0,
-			forward: 97.0,
-			height: 39.0,
+			right: Distance.metres(-3.0),
+			forward: Distance.metres(97.0),
+			height: Distance.metres(39.0),
 		}
 expect
-	Tower.corner_at(sample_mast, { corner: BackLeft, height_on_mast: 80.0 })
+	Tower.corner_at(sample_tower, { corner: BackLeft, height_on_tower: Distance.metres(80.0) })
 		== {
-			right: 0.0,
-			forward: 100.0,
-			height: 79.0,
+			right: Distance.metres(0.0),
+			forward: Distance.metres(100.0),
+			height: Distance.metres(79.0),
 		}
 expect
-	Tower.corner_at(sample_mast, { corner: FrontRight, height_on_mast: 40.0 })
+	Tower.corner_at(sample_tower, { corner: FrontRight, height_on_tower: Distance.metres(40.0) })
 		== {
-			right: 3.0,
-			forward: 103.0,
-			height: 39.0,
+			right: Distance.metres(3.0),
+			forward: Distance.metres(103.0),
+			height: Distance.metres(39.0),
 		}
 expect
-	Tower.corner_at(sample_mast, { corner: FrontRight, height_on_mast: 80.0 })
+	Tower.corner_at(sample_tower, { corner: FrontRight, height_on_tower: Distance.metres(80.0) })
 		== {
-			right: 0.0,
-			forward: 100.0,
-			height: 79.0,
+			right: Distance.metres(0.0),
+			forward: Distance.metres(100.0),
+			height: Distance.metres(79.0),
 		}
 
-expect Tower.sunk_below_horizon({ right: 0.0, forward: 200.0 }) == 1.0
-expect Tower.sunk_below_horizon({ right: 100.0, forward: 100.0 }) == 0.5
-expect Tower.sunk_below_horizon({ right: 0.0, forward: 0.0 }) == 0.0
+expect Tower.sunk_below_horizon({
+	right: Distance.metres(0.0),
+	forward: Distance.metres(200.0),
+}).to_metres() == 1.0
+expect Tower.sunk_below_horizon({
+	right: Distance.metres(100.0),
+	forward: Distance.metres(100.0),
+}).to_metres() == 0.5
+expect Tower.sunk_below_horizon({
+	right: Distance.metres(0.0),
+	forward: Distance.metres(0.0),
+}).to_metres() == 0.0
 
 expect
 	Tower.point_between({
 		from: {
-			right: 0.0,
-			forward: 10.0,
-			height: 20.0,
+			right: Distance.metres(0.0),
+			forward: Distance.metres(10.0),
+			height: Distance.metres(20.0),
 		},
 		to: {
-			right: 8.0,
-			forward: 30.0,
-			height: 0.0,
+			right: Distance.metres(8.0),
+			forward: Distance.metres(30.0),
+			height: Distance.metres(0.0),
 		},
 		fraction: Fraction.of(0.25),
 	})
 		== {
-			right: 2.0,
-			forward: 15.0,
-			height: 15.0,
+			right: Distance.metres(2.0),
+			forward: Distance.metres(15.0),
+			height: Distance.metres(15.0),
 		}
 
 expect
 	Tower.screen_rod({
-		from: { x: 0.0, y: 0.0 },
-		to: { x: 30.0, y: 40.0 },
-		width_px: 10.0,
+		from: Screen.point(0.0, 0.0),
+		to: Screen.point(30.0, 40.0),
+		width_px: Pixels.of(10.0),
 	})
 		== [
 			Poly({
@@ -564,9 +591,9 @@ expect
 # A rod of no length is still one quad, all at its one point.
 expect
 	Tower.screen_rod({
-		from: { x: 5.0, y: 6.0 },
-		to: { x: 5.0, y: 6.0 },
-		width_px: 10.0,
+		from: Screen.point(5.0, 6.0),
+		to: Screen.point(5.0, 6.0),
+		width_px: Pixels.of(10.0),
 	})
 		== [
 			Poly({
@@ -575,9 +602,15 @@ expect
 			}),
 		]
 
-expect Tower.rod_width_at({ forward: 10.0, cam_focal: 500.0 }) == 12.0
-expect Tower.rod_width_at({ forward: 25.0, cam_focal: 500.0 }) == 4.8
-expect Tower.rod_width_at({ forward: 50.0, cam_focal: 500.0 }) == 2.4
+expect
+	Tower.rod_width_at({ forward: Distance.metres(10.0), cam_focal: Pixels.of(500.0) }).to_f64()
+		== 12.0
+expect
+	Tower.rod_width_at({ forward: Distance.metres(25.0), cam_focal: Pixels.of(500.0) }).to_f64()
+		== 4.8
+expect
+	Tower.rod_width_at({ forward: Distance.metres(50.0), cam_focal: Pixels.of(500.0) }).to_f64()
+		== 2.4
 
 rod_along_road : F64, F64 -> List(Shapes.Shape)
 rod_along_road = |start, end|
@@ -585,14 +618,14 @@ rod_along_road = |start, end|
 		sample_rod_view,
 		{
 			from: {
-				right: 0.0,
-				forward: start,
-				height: 0.0,
+				right: Distance.metres(0.0),
+				forward: Distance.metres(start),
+				height: Distance.metres(0.0),
 			},
 			to: {
-				right: 0.0,
-				forward: end,
-				height: 0.0,
+				right: Distance.metres(0.0),
+				forward: Distance.metres(end),
+				height: Distance.metres(0.0),
 			},
 		},
 	)
@@ -603,14 +636,14 @@ expect
 		sample_rod_view,
 		{
 			from: {
-				right: 0.0,
-				forward: 10.0,
-				height: 0.0,
+				right: Distance.metres(0.0),
+				forward: Distance.metres(10.0),
+				height: Distance.metres(0.0),
 			},
 			to: {
-				right: 1.0,
-				forward: 20.0,
-				height: 0.0,
+				right: Distance.metres(1.0),
+				forward: Distance.metres(20.0),
+				height: Distance.metres(0.0),
 			},
 		},
 	).len()
@@ -622,18 +655,18 @@ expect rod_along_road(0.0, 0.2).len() == 0
 expect
 	Tower.cut_at_near({
 		from: {
-			right: 0.0,
-			forward: 0.0,
-			height: 10.0,
+			right: Distance.metres(0.0),
+			forward: Distance.metres(0.0),
+			height: Distance.metres(10.0),
 		},
 		to: {
-			right: 8.0,
-			forward: 0.8,
-			height: 30.0,
+			right: Distance.metres(8.0),
+			forward: Distance.metres(0.8),
+			height: Distance.metres(30.0),
 		},
 	})
 		== {
-			right: 4.0,
-			forward: 0.4,
-			height: 20.0,
+			right: Distance.metres(4.0),
+			forward: Distance.metres(0.4),
+			height: Distance.metres(20.0),
 		}

@@ -1,7 +1,9 @@
 ## Ground paints a flat patch of ground, such as a stretch of road or a
 ## pond, as one polygon. The patch follows the earth's curve down as it
 ## goes away from the rider.
+import Pixels
 import Camera
+import Distance
 import Geom
 import Paint
 import lib.Brush
@@ -13,17 +15,17 @@ Ground :: [].{
 	Patch : { corners : List(Geom.RiderPoint), color : I64 }
 
 	## A point on the ground, lowered by the earth's curve.
-	ground_point : Geom.RiderPoint -> Geom.SpacePoint
+	ground_point : Geom.RiderPoint -> Geom.RaisedPoint
 	ground_point = |point| {
 		right: point.right,
 		forward: point.forward,
-		height: (0.0 - Geom.ground_drop(point)),
+		height: Geom.ground_drop(point).opposite(),
 	}
 
 	## A patch on screen, cut at the camera's near plane. A patch with more
 	## than eight corners, or with fewer than three left in front of the
 	## camera, draws nothing.
-	draw : Ground.Patch, F64 -> List(Shapes.Shape)
+	draw : Ground.Patch, Pixels -> List(Shapes.Shape)
 	draw = |patch, cam_focal|
 		if patch.corners.len() > 8 {
 			[]
@@ -32,37 +34,43 @@ Ground :: [].{
 			if in_front.len() < 3 {
 				[]
 			} else {
-				Paint.push_poly(patch.color, Camera.project_all(in_front, cam_focal))
+				Paint.polygon(patch.color, Camera.project_all(in_front, cam_focal))
 			}
 		}
 }
 
-expect Ground.ground_point({ right: 0.0, forward: 0.0 }).height == 0.0
+expect Ground.ground_point({
+	right: Distance.metres(0.0),
+	forward: Distance.metres(0.0),
+}).height.to_metres() == 0.0
 expect
-	Ground.ground_point({ right: 3.0, forward: 10.0 })
+	Ground.ground_point({ right: Distance.metres(3.0), forward: Distance.metres(10.0) })
 		== {
-			right: 3.0,
-			forward: 10.0,
-			height: -0.000545,
+			right: Distance.metres(3.0),
+			forward: Distance.metres(10.0),
+			height: Distance.metres(-0.000545),
 		}
-expect Ground.ground_point({ right: -5.0, forward: 40.0 }).height == -0.008125
+expect Ground.ground_point({
+	right: Distance.metres(-5.0),
+	forward: Distance.metres(40.0),
+}).height.to_metres() == -0.008125
 expect
-	Ground.ground_point({ right: 12.5, forward: 100.0 })
+	Ground.ground_point({ right: Distance.metres(12.5), forward: Distance.metres(100.0) })
 		== {
-			right: 12.5,
-			forward: 100.0,
-			height: -0.05078125,
+			right: Distance.metres(12.5),
+			forward: Distance.metres(100.0),
+			height: Distance.metres(-0.05078125),
 		}
 
 patch_shapes : List(Geom.RiderPoint) -> List(Shapes.Shape)
-patch_shapes = |corners| Ground.draw({ corners, color: 3112588 }, 685.5110432362151)
+patch_shapes = |corners| Ground.draw({ corners, color: 3112588 }, Pixels.of(685.5110432362151))
 
 patch_ahead : List(Geom.RiderPoint)
 patch_ahead = [
-	{ right: -5.0, forward: 10.0 },
-	{ right: 5.0, forward: 10.0 },
-	{ right: 5.0, forward: 20.0 },
-	{ right: -5.0, forward: 20.0 },
+	{ right: Distance.metres(-5.0), forward: Distance.metres(10.0) },
+	{ right: Distance.metres(5.0), forward: Distance.metres(10.0) },
+	{ right: Distance.metres(5.0), forward: Distance.metres(20.0) },
+	{ right: Distance.metres(-5.0), forward: Distance.metres(20.0) },
 ]
 
 # A patch of `count` corners, all ahead of the camera.
@@ -71,7 +79,7 @@ corners_ahead = |count|
 	List.from_iter(I64.until(0, count)).map(
 		|k| {
 			offset = (count - k).to_f64()
-			{ right: offset, forward: 10.0 + offset }
+			{ right: Distance.metres(offset), forward: Distance.metres(10.0 + offset) }
 		},
 	)
 
@@ -81,14 +89,17 @@ expect patch_shapes(corners_ahead(9)).len() == 0
 
 expect
 	patch_shapes([
-		{ right: -5.0, forward: -10.0 },
-		{ right: 5.0, forward: -10.0 },
-		{ right: 5.0, forward: -20.0 },
-		{ right: -5.0, forward: -20.0 },
+		{ right: Distance.metres(-5.0), forward: Distance.metres(-10.0) },
+		{ right: Distance.metres(5.0), forward: Distance.metres(-10.0) },
+		{ right: Distance.metres(5.0), forward: Distance.metres(-20.0) },
+		{ right: Distance.metres(-5.0), forward: Distance.metres(-20.0) },
 	]).len()
 		== 0
 
-expect patch_shapes([{ right: -5.0, forward: 10.0 }, { right: 5.0, forward: 10.0 }]).len() == 0
+expect patch_shapes([
+	{ right: Distance.metres(-5.0), forward: Distance.metres(10.0) },
+	{ right: Distance.metres(5.0), forward: Distance.metres(10.0) },
+]).len() == 0
 
 expect {
 	match patch_shapes(patch_ahead) {

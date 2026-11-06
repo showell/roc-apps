@@ -8,11 +8,12 @@ ProofRide :: [].{
 
 	## The tour `steps` steps past `tour`.
 	ride_on : Tour, I64 -> Tour
-	ride_on = |tour, steps| if steps <= 0 {
-		tour
-	} else {
-		ride_on(Tour.advance(tour), steps - 1)
-	}
+	ride_on = |tour, steps|
+		if steps <= 0 {
+			tour
+		} else {
+			ride_on(Tour.step_forward(tour), steps - 1)
+		}
 
 	## The number a tool was given on its command line.
 	depth_of : Str -> I64

@@ -8,6 +8,7 @@
 import Across
 import Along
 import Animation
+import Beat
 import Beats
 import Distance
 import Fraction
@@ -20,7 +21,7 @@ BirdFlight :: [].{
 
 	## What a segment's bird does: flies from one tree to another, or sits,
 	## when there's no tree to fly to.
-	Route : [Flies(BirdFlight.Flight), Sits(Scenery.Tree)]
+	Habit : [Flies(BirdFlight.Flight), Sits(Scenery.Tree)]
 
 	## Where the wings are in a beat.
 	WingBeat : [WingsUp, WingsDown]
@@ -52,8 +53,8 @@ BirdFlight :: [].{
 	flight_arc = Distance.metres(5.0)
 
 	## How many times the wings flap in a flight.
-	wing_flaps : F64
-	wing_flaps = 9.0
+	wing_flaps : U32
+	wing_flaps = 9
 
 	## The share of a flight spent side on, taking off.
 	takeoff_share : Fraction
@@ -62,6 +63,10 @@ BirdFlight :: [].{
 	## The share of a flight spent dropping to land.
 	landing_share : Fraction
 	landing_share = Fraction.of(0.12)
+
+	## How far through the flight its landing starts.
+	landing_start : Fraction
+	landing_start = landing_share.complement()
 
 	## The tree a bird starts on, the fifth with a negative `across`. Those are
 	## on the left, and an unflipped still's beak points toward +x, so from
@@ -73,10 +78,10 @@ BirdFlight :: [].{
 			Err(ListWasEmpty) => NoTree
 		}
 
-	## The route of a bird on the tree at `from`: to the first tree on the
+	## The habit of a bird on the tree at `from`: to the first tree on the
 	## other side of the road far enough along, or none, and it sits.
-	route_from : List(Scenery.Tree), Scenery.Tree -> BirdFlight.Route
-	route_from = |trees, from| {
+	habit_from : List(Scenery.Tree), Scenery.Tree -> BirdFlight.Habit
+	habit_from = |trees, from| {
 		is_far_enough = |tree| tree.along >= from.along.plus(shortest_hop)
 		far_side = trees.keep_if(|tree| tree.across > Across.middle and is_far_enough(tree))
 		match far_side.first() {
@@ -86,17 +91,17 @@ BirdFlight :: [].{
 	}
 
 	## The bird of a segment with `trees`, if one has a tree to start on.
-	crossing_among : List(Scenery.Tree) -> [BirdFlies(BirdFlight.Route), QuietRoad]
+	crossing_among : List(Scenery.Tree) -> [BirdHere(BirdFlight.Habit), QuietRoad]
 	crossing_among = |trees|
 		match fifth_left_tree(trees) {
-			Found(tree) => BirdFlies(route_from(trees, tree))
+			Found(tree) => BirdHere(habit_from(trees, tree))
 			NoTree => QuietRoad
 		}
 
 	## Where the tree the bird starts from is along its segment.
-	start_along : BirdFlight.Route -> Along
-	start_along = |route|
-		match route {
+	start_along : BirdFlight.Habit -> Along
+	start_along = |habit|
+		match habit {
 			Flies(flight) => flight.from.along
 			Sits(tree) => tree.along
 		}
@@ -106,10 +111,10 @@ BirdFlight :: [].{
 	flight_stage : Distance -> Animation.Stage
 	flight_stage = |gap| Animation.over_gap({ starts_at: takeoff_gap, ends_at: landing_gap }, gap)
 
-	## The bird on `route` with the rider `gap` from the tree it starts on.
-	route_instant_at : BirdFlight.Route, Distance -> Animation.Instant(BirdFlight.Pose)
-	route_instant_at = |route, gap|
-		match route {
+	## The bird with `habit`, with the rider `gap` from the tree it starts on.
+	habit_instant_at : BirdFlight.Habit, Distance -> Animation.Instant(BirdFlight.Pose)
+	habit_instant_at = |habit, gap|
+		match habit {
 			Flies(flight) => instant_at(flight, gap)
 			Sits(tree) => sitting_on(tree)
 		}
@@ -140,11 +145,11 @@ BirdFlight :: [].{
 				looks: {
 					stretches: [
 						{
-							until: Before(flight_beats.portion(takeoff_share)),
+							until: Before(Beat.at(flight_beats.portion(takeoff_share))),
 							plays: wings_beating({ up: Side(WingsUp), down: Side(WingsDown) }),
 						},
 						{
-							until: Through(flight_beats.portion(landing_share.complement())),
+							until: Through(Beat.at(flight_beats.portion(landing_start))),
 							plays: wings_beating({ up: Away(WingsUp), down: Away(WingsDown) }),
 						},
 					],
@@ -228,7 +233,7 @@ expect fifth_along([50.0, 60.0, 70.0, 80.0, 90.0].map(|along| tree_at(along, 6.0
 
 chosen_along : List(Scenery.Tree) -> List(F64)
 chosen_along = |choices|
-	match BirdFlight.route_from(choices, left_tree) {
+	match BirdFlight.habit_from(choices, left_tree) {
 		Flies(found) => [found.to.along.to_metres(), found.to.across.to_metres()]
 		Sits(_) => []
 	}
@@ -295,5 +300,5 @@ expect
 		(0.95, Diving),
 	].all(
 		|(progress, pose)|
-			BirdFlight.flight_timeline(flight).at_beat(Beats.of(progress)).pose == pose,
+			BirdFlight.flight_timeline(flight).at_beat(Beat.of(progress)).pose == pose,
 	)

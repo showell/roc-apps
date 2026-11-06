@@ -121,6 +121,14 @@ const PICTURE_OF_FRAME = (i) => `(() => {
   return hash;
 })()`;
 
+// Where the frame stands now against where the drag aimed, for a failure's line.
+const WHERE_THE_DRAG_WENT = (i, frame, y) => `(() => {
+  const box = document.querySelectorAll('iframe.canvas-app')[${i}].getBoundingClientRect();
+  const under = document.elementFromPoint(${frame.left + frame.width / 2}, ${y});
+  return 'aimed at y ' + ${Math.round(y)} + ' for a frame measured at top ' + ${Math.round(frame.top)} + ', now at top ' + Math.round(box.top)
+    + ', height ' + Math.round(box.height) + ', window height ' + innerHeight + ', and that point holds ' + (under ? under.tagName : 'nothing');
+})()`;
+
 async function evaluate(page, expression) {
   const { result, exceptionDetails } = await page.send("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true }, page.session);
   if (exceptionDetails) throw new Error(exceptionDetails.exception?.description ?? exceptionDetails.text);
@@ -153,7 +161,7 @@ async function checkFrame(page, file, i) {
     await mouse("mouseMoved", 0.5, 1);
     await mouse("mouseMoved", 0.8, 1);
   }
-  if (!(await pictureChanges(page, i, before))) fail(file, `the widget ${frame.src} didn't move`);
+  if (!(await pictureChanges(page, i, before))) fail(file, `the widget ${frame.src} didn't move: ${await evaluate(page, WHERE_THE_DRAG_WENT(i, frame, y))}`);
   if (!isRide) await mouse("mouseReleased", 0.8, 0);
   return frame.src;
 }

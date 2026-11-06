@@ -1,8 +1,9 @@
-## Frame finds where the road lies from where the rider is. The chain is the
+## Chain finds where the road lies from where the rider is. The chain is the
 ## line of segments the rider can see, the rider's own first, and a point on
 ## any segment of it, or on the segment just behind the rider, is carried
 ## back round the bends between to the rider's own segment and into the
 ## rider's view.
+import Pixels
 import Across
 import Along
 import Distance
@@ -10,130 +11,128 @@ import Geom
 import Scenery
 import World
 
-Frame :: [].{
+Chain :: [].{
 
-	Pose : Geom.Pose
-
-	## The road in view: the world's segments, the chain of them ahead of
-	## the rider, and the rider's pose.
+	## The road in view: the route's segments, the chain of them ahead of
+	## the rider, and the rider's vantage.
 	RoadView : {
-		world : List(World.Segment),
+		route : List(World.Segment),
 		chain : List(World.SegmentIndex),
-		pose : Frame.Pose,
+		vantage : Geom.Vantage,
 	}
 
 	## What a frame is seen from: the road in view, and the camera's focal
 	## length in pixels.
-	Viewpoint : { road : Frame.RoadView, cam_focal : F64 }
+	Viewpoint : { road : Chain.RoadView, cam_focal : Pixels }
 
 	## A segment's place in the chain, counted from the rider's own at 0. It
 	## says how many segments ahead of the rider that segment is, where a
 	## World.SegmentIndex says where it is in the route.
-	ChainPosition :: U32.{
+	Position :: U32.{
 
-		number : U32 -> Frame.ChainPosition
-		number = |n| Frame.ChainPosition.(n)
+		number : U32 -> Chain.Position
+		number = |n| Chain.Position.(n)
 
-		to_i64 : Frame.ChainPosition -> I64
-		to_i64 = |Frame.ChainPosition.(n)| n.to_i64()
+		to_i64 : Chain.Position -> I64
+		to_i64 = |Chain.Position.(n)| n.to_i64()
 
 		## The rider's own segment.
-		first : Frame.ChainPosition
-		first = Frame.ChainPosition.(0)
+		first : Chain.Position
+		first = Chain.Position.(0)
 
-		next : Frame.ChainPosition -> Frame.ChainPosition
-		next = |Frame.ChainPosition.(n)| Frame.ChainPosition.(n + 1)
+		next : Chain.Position -> Chain.Position
+		next = |Chain.Position.(n)| Chain.Position.(n + 1)
 
 		## Every position in `chain`, the rider's own first.
-		all_in : List(World.SegmentIndex) -> List(Frame.ChainPosition)
+		all_in : List(World.SegmentIndex) -> List(Chain.Position)
 		all_in = |chain|
-			List.from_iter(U32.until(0, chain.len().to_u32_wrap())).map(Frame.ChainPosition.number)
+			List.from_iter(U32.until(0, chain.len().to_u32_wrap())).map(Chain.Position.number)
 
 		## The segment at this position in `chain`.
-		index_in : Frame.ChainPosition, List(World.SegmentIndex) -> World.SegmentIndex
-		index_in = |Frame.ChainPosition.(n), chain|
-			chain.get(n.to_u64()) ?? crash "Frame.ChainPosition.index_in: past the chain's end"
+		index_in : Chain.Position, List(World.SegmentIndex) -> World.SegmentIndex
+		index_in = |Chain.Position.(n), chain|
+			chain.get(n.to_u64()) ?? crash "Chain.Position.index_in: past the chain's end"
 
 		## The segments of `chain` before this position, the rider's own first.
-		before_in : Frame.ChainPosition, List(World.SegmentIndex) -> List(World.SegmentIndex)
-		before_in = |Frame.ChainPosition.(n), chain| chain.take_first(n.to_u64())
+		before_in : Chain.Position, List(World.SegmentIndex) -> List(World.SegmentIndex)
+		before_in = |Chain.Position.(n), chain| chain.take_first(n.to_u64())
 
 		## Whether this position is the last one in `chain`.
-		is_last_in : Frame.ChainPosition, List(World.SegmentIndex) -> Bool
-		is_last_in = |Frame.ChainPosition.(n), chain| n.to_u64() + 1 >= chain.len()
+		is_last_in : Chain.Position, List(World.SegmentIndex) -> Bool
+		is_last_in = |Chain.Position.(n), chain| n.to_u64() + 1 >= chain.len()
 
 		## Whether `chain` stops before this position.
-		is_past_end_of : Frame.ChainPosition, List(World.SegmentIndex) -> Bool
-		is_past_end_of = |Frame.ChainPosition.(n), chain| n.to_u64() >= chain.len()
+		is_past_end_of : Chain.Position, List(World.SegmentIndex) -> Bool
+		is_past_end_of = |Chain.Position.(n), chain| n.to_u64() >= chain.len()
 
 		## Whether this position is among the first `count` of a chain.
-		is_within_first : Frame.ChainPosition, U32 -> Bool
-		is_within_first = |Frame.ChainPosition.(n), count| n < count
+		is_within_first : Chain.Position, U32 -> Bool
+		is_within_first = |Chain.Position.(n), count| n < count
 
 		is_eq : _
 	}
 
 	## Where a segment lies from the rider: at a position in the chain, or
 	## just behind the rider, round the bend into the rider's segment.
-	SegmentPlace : [InChain(Frame.ChainPosition), JustBehind(Geom.Bend)]
+	SegmentPlace : [InChain(Chain.Position), JustBehind(Geom.Bend)]
 
 	## The most segments a chain holds.
-	look_ahead : U32
-	look_ahead = 7
+	max_length : U32
+	max_length = 7
 
 	## The segment the rider is on, which is the chain's first.
-	rider_segment : Frame.RoadView -> World.SegmentIndex
-	rider_segment = |road| Frame.ChainPosition.first.index_in(road.chain)
+	rider_segment : Chain.RoadView -> World.SegmentIndex
+	rider_segment = |road| Chain.Position.first.index_in(road.chain)
 
 	## The segment behind the rider's, unless the rider's is the route's first.
-	segment_behind : Frame.RoadView -> [Previous(World.SegmentIndex), AtRouteStart]
+	segment_behind : Chain.RoadView -> [Previous(World.SegmentIndex), AtRouteStart]
 	segment_behind = |road| rider_segment(road).previous()
 
 	## How far ahead of the rider the segment at `position` in the chain starts.
 	## The segments' lengths are added nearest first.
-	gap_to_segment : Frame.RoadView, Frame.ChainPosition -> Distance
+	gap_to_segment : Chain.RoadView, Chain.Position -> Distance
 	gap_to_segment = |road, position|
 		position.before_in(road.chain).fold(
-			road.pose.along.from_start().opposite(),
-			|gap, index| gap.plus(index.segment_in(road.world).length),
+			road.vantage.along.from_start().opposite(),
+			|gap, index| gap.plus(index.segment_in(road.route).length),
 		)
 
 	## The chain from the segment at `start`: as far as the rider can see, or
 	## to the route's end.
 	chain_ahead : List(World.Segment), World.SegmentIndex -> List(World.SegmentIndex)
-	chain_ahead = |world, start| chain_onto(world, { index: start, chain: [] })
+	chain_ahead = |route, start| chain_onto(route, { index: start, chain: [] })
 
 	## The bend at the end of `segment`.
 	bend_out_of : World.Segment -> Geom.Bend
 	bend_out_of = |segment| {
 		segment_length: segment.length,
 		turn: segment.exit_turn,
-		lane_width: Scenery.lane_width,
+		road_width: Scenery.road_width,
 	}
 
 	## The place of `segment`, which is just behind the rider.
-	place_behind : World.Segment -> Frame.SegmentPlace
+	place_behind : World.Segment -> Chain.SegmentPlace
 	place_behind = |segment| JustBehind(bend_out_of(segment))
 
 	## A point on the segment at `position` in the chain, in the rider's view.
-	rider_point_ahead : Frame.RoadView,
+	rider_point_ahead : Chain.RoadView,
 	{
-		position : Frame.ChainPosition,
+		position : Chain.Position,
 		along : Along,
 		across : Across,
 	} -> Geom.RiderPoint
 	rider_point_ahead = |road, { position, along, across }| {
 		on_rider_segment = position.before_in(road.chain).fold_rev(
 			edge_point({ along, across }),
-			|index, point| Geom.in_segment_before(point, bend_out_of(index.segment_in(road.world))),
+			|index, point| Geom.in_segment_before(point, bend_out_of(index.segment_in(road.route))),
 		)
-		Geom.to_rider_point(on_rider_segment, road.pose)
+		Geom.to_rider_point(on_rider_segment, road.vantage)
 	}
 
 	## A point on the segment at `place`, in the rider's view.
-	rider_point_at : Frame.RoadView,
+	rider_point_at : Chain.RoadView,
 	{
-		place : Frame.SegmentPlace,
+		place : Chain.SegmentPlace,
 		along : Along,
 		across : Across,
 	} -> Geom.RiderPoint
@@ -143,7 +142,7 @@ Frame :: [].{
 				rider_point_ahead(road, { position, along, across })
 			JustBehind(bend) => {
 				on_segment_behind = edge_point({ along, across })
-				Geom.to_rider_point(Geom.in_segment_after(on_segment_behind, bend), road.pose)
+				Geom.to_rider_point(Geom.in_segment_after(on_segment_behind, bend), road.vantage)
 			}
 		}
 }
@@ -160,32 +159,32 @@ chain_onto : List(World.Segment),
 	index : World.SegmentIndex,
 	chain : List(World.SegmentIndex),
 } -> List(World.SegmentIndex)
-chain_onto = |world, { index, chain }|
-	if chain.len() >= Frame.look_ahead.to_u64() {
+chain_onto = |route, { index, chain }|
+	if chain.len() >= Chain.max_length.to_u64() {
 		chain
 	} else {
 		longer_chain = chain.append(index)
-		match index.segment_in(world).ending {
-			Continues({ next }) => chain_onto(world, { index: next, chain: longer_chain })
+		match index.segment_in(route).ending {
+			Continues({ next }) => chain_onto(route, { index: next, chain: longer_chain })
 			Terminates => longer_chain
 		}
 	}
 
-expect Frame.look_ahead.to_i64() == 7
-expect Frame.chain_ahead(World.segments, World.SegmentIndex.first).len() == 7
+expect Chain.max_length.to_i64() == 7
+expect Chain.chain_ahead(World.segments, World.SegmentIndex.first).len() == 7
 
 route_facts : List(World.Segment) -> List(U64)
 route_facts = |segments| [
 	segments.len(),
-	Frame.chain_ahead(segments, World.SegmentIndex.first).len(),
-	Frame.chain_ahead(segments, World.SegmentIndex.number(15)).len(),
-	Frame.chain_ahead(segments, World.SegmentIndex.number(18)).len(),
+	Chain.chain_ahead(segments, World.SegmentIndex.first).len(),
+	Chain.chain_ahead(segments, World.SegmentIndex.number(15)).len(),
+	Chain.chain_ahead(segments, World.SegmentIndex.number(18)).len(),
 ]
 
 expect route_facts(World.segments) == [19, 7, 4, 1]
 
-expect Frame.ChainPosition.number(3).to_i64() == 3
-expect Frame.ChainPosition.first.next().to_i64() == 1
+expect Chain.Position.number(3).to_i64() == 3
+expect Chain.Position.first.next().to_i64() == 1
 
 expect
 	[

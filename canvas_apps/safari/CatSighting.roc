@@ -4,51 +4,46 @@
 import Cat
 import DepthSort
 import Distance
-import Frame
+import Chain
 import Geom
-import SceneLimits
+import Detail
 import Speed
 
-CatSighting :: [].{
-
-	## A cat to draw: where it stands in the rider's view, its height, its
-	## pose, and how high its leap has raised it.
-	CatItem : {
-		right : F64,
-		forward : F64,
-		height : Distance,
-		pose : Cat.Pose,
-		lift : F64,
-	}
+## A cat to draw: where it stands in the rider's view, its height, its
+## pose, and how high its leap has raised it, in cat heights. A cat in view
+## is ahead of the rider, so of its lengths only `right` can be negative.
+CatSighting := {
+	right : Distance,
+	forward : Distance,
+	height : Distance,
+	pose : Cat.Pose,
+	lift : F64,
+}.{
 
 	## At most this many cats are drawn in a frame.
-	max_vis_cats : I64
-	max_vis_cats = 8
+	max_visible_cats : I64
+	max_visible_cats = 8
 
 	## The cats in view of a rider at `speed`, the nearest segment's first.
-	in_view : Frame.Viewpoint, Speed -> List(CatSighting.CatItem)
+	in_view : Chain.Viewpoint, Speed -> List(CatSighting)
 	in_view = |view, speed| {
-		positions = Frame.ChainPosition.all_in(view.road.chain)
+		positions = Chain.Position.all_in(view.road.chain)
 		positions.join_map(|position| segment_cat(view, { position, speed }))
 	}
 
 	## The cat waiting on the segment at `position` in the chain, if it has one
 	## and it is in view.
-	segment_cat : Frame.Viewpoint,
-	{
-		position : Frame.ChainPosition,
-		speed : Speed,
-	} -> List(CatSighting.CatItem)
+	segment_cat : Chain.Viewpoint, { position : Chain.Position, speed : Speed } -> List(CatSighting)
 	segment_cat = |view, { position, speed }|
-		match position.index_in(view.road.chain).segment_in(view.road.world).crossing {
+		match position.index_in(view.road.chain).segment_in(view.road.route).crossing {
 			CatCrosses(crossing) =>
 				cat_in_view(view, { position, crossing, speed })
-			BirdFlies(_) | QuietRoad => []
+			BirdHere(_) | QuietRoad => []
 		}
 
 	## The cats as the depth sort sees them: each one's distance ahead, and
 	## its position in `cats`.
-	depth_keys : List(CatSighting.CatItem) -> List(DepthSort.DepthKey)
+	depth_keys : List(CatSighting) -> List(DepthSort.DepthKey)
 	depth_keys = |cats| cats.map_with_index(
 		|cat, i| { forward: cat.forward, subject: Cat(i.to_u32_wrap()) },
 	)
@@ -57,16 +52,16 @@ CatSighting :: [].{
 ## The cat crossing the segment at `position` in the chain, as far through its
 ## crossing as the rider's approach has brought it, if it is in view: one
 ## item, or none.
-cat_in_view : Frame.Viewpoint,
+cat_in_view : Chain.Viewpoint,
 {
-	position : Frame.ChainPosition,
+	position : Chain.Position,
 	crossing : Cat.Crossing,
 	speed : Speed,
-} -> List(CatSighting.CatItem)
+} -> List(CatSighting)
 cat_in_view = |view, { position, crossing, speed }| {
-	gap = Frame.gap_to_segment(view.road, position)
+	gap = Chain.gap_to_segment(view.road, position)
 	instant = Cat.instant_at(crossing, { gap: gap.plus(crossing.along.from_start()), speed })
-	seen = Frame.rider_point_ahead(
+	seen = Chain.rider_point_ahead(
 		view.road,
 		{
 			position: position,
@@ -74,10 +69,10 @@ cat_in_view = |view, { position, crossing, speed }| {
 			across: instant.spot.across,
 		},
 	)
-	height_px = (crossing.height.to_metres() / seen.forward) * view.cam_focal
+	height_px = view.cam_focal.times(crossing.height.ratio_to(seen.forward))
 	if seen.forward <= Geom.near_plane {
 		[]
-	} else if height_px < SceneLimits.min_scenery_px {
+	} else if height_px < Detail.min_scenery_px {
 		[]
 	} else {
 		[

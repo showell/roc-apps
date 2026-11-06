@@ -10,7 +10,7 @@ Stills :: [].{
 	## `b`; a radial one (any other kind) is centred at `c`, with `u` and `v`
 	## its two axes. Each runs from `rgba0` at offset `off0` to `rgba1` at
 	## `off1`.
-	StillGrad : {
+	StillGradient : {
 		kind : I64,
 		rgba0 : I64,
 		rgba1 : I64,
@@ -29,17 +29,17 @@ Stills :: [].{
 	}
 
 	## One polygon of a still: its colour, and its gradient if it has one.
-	StillPoly : {
+	StillPolygon : {
 		color : I64,
-		grad : List(Stills.StillGrad),
-		pts : List(Stills.StillPt),
+		gradient : List(Stills.StillGradient),
+		points : List(Stills.StillPt),
 	}
 }
 
 sample_point : Stills.StillPt
 sample_point = { x: 0.5, y: 1.5 }
 
-sample_gradient : Stills.StillGrad
+sample_gradient : Stills.StillGradient
 sample_gradient = {
 	kind: 2,
 	rgba0: 16711680,
@@ -58,18 +58,18 @@ sample_gradient = {
 	vy: 11.5,
 }
 
-solid_poly : Stills.StillPoly
-solid_poly = {
+solid_polygon : Stills.StillPolygon
+solid_polygon = {
 	color: 9066271,
-	grad: [],
-	pts: [sample_point, { x: 12.5, y: 13.5 }],
+	gradient: [],
+	points: [sample_point, { x: 12.5, y: 13.5 }],
 }
 
-shaded_poly : Stills.StillPoly
-shaded_poly = {
+shaded_polygon : Stills.StillPolygon
+shaded_polygon = {
 	color: 4989733,
-	grad: [sample_gradient],
-	pts: [sample_point],
+	gradient: [sample_gradient],
+	points: [sample_point],
 }
 
 expect sample_gradient.off0 == 0.25
@@ -89,13 +89,13 @@ expect sample_gradient.kind == 2
 expect sample_gradient.rgba0 == 16711680
 expect sample_gradient.rgba1 == 255
 
-expect solid_poly.color == 9066271
-expect shaded_poly.color == 4989733
-expect solid_poly.grad.len() == 0
-expect shaded_poly.grad.len() == 1
-expect solid_poly.pts.len() == 2
-expect shaded_poly.pts.len() == 1
+expect solid_polygon.color == 9066271
+expect shaded_polygon.color == 4989733
+expect solid_polygon.gradient.len() == 0
+expect shaded_polygon.gradient.len() == 1
+expect solid_polygon.points.len() == 2
+expect shaded_polygon.points.len() == 1
 
-expect shaded_poly.grad.map(|gradient| gradient.ax) == [2.5]
-expect shaded_poly.pts.map(|point| point.x) == [0.5]
-expect solid_poly.pts.map(|point| point.y) == [1.5, 13.5]
+expect shaded_polygon.gradient.map(|gradient| gradient.ax) == [2.5]
+expect shaded_polygon.points.map(|point| point.x) == [0.5]
+expect solid_polygon.points.map(|point| point.y) == [1.5, 13.5]

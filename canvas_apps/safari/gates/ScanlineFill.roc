@@ -36,7 +36,7 @@ ScanlineFill :: [].{
 				rows = PixelGrid.pixels_between({
 					from: corners.fold(first.y, |top, corner| F64.min(top, corner.y)),
 					to: corners.fold(first.y, |bottom, corner| F64.max(bottom, corner.y)),
-					count: roll.height_px(),
+					extent: roll.height_px(),
 				})
 				var $px = pixels
 				for row in rows.start.until(rows.end) {
@@ -63,7 +63,7 @@ ScanlineFill :: [].{
 		rows = PixelGrid.pixels_between({
 			from: on_screen.y - radius,
 			to: on_screen.y + radius,
-			count: roll.height_px(),
+			extent: roll.height_px(),
 		})
 		var $px = pixels
 		for row in rows.start.until(rows.end) {
@@ -108,13 +108,14 @@ WindingWalk : { winding : I64, spans : List(RowSpan) }
 row_edge_crossings : List(Edge), F64 -> List(EdgeCrossing)
 row_edge_crossings = |edges, y|
 	edges.join_map(|edge| edge_crossing(edge, y)).sort_with(
-		|a, b| if a.x < b.x {
-			Before
-		} else if a.x > b.x {
-			After
-		} else {
-			Same
-		},
+		|a, b|
+			if a.x < b.x {
+				Before
+			} else if a.x > b.x {
+				After
+			} else {
+				Same
+			},
 	)
 
 ## Where the row at `y` crosses this one edge, if it does.
@@ -195,7 +196,7 @@ paint_span : List(U32),
 	to : F64,
 } -> List(U32)
 paint_span = |pixels, { roll, fill, row, from, to }| {
-	columns = PixelGrid.pixels_between({ from, to, count: roll.width_px() })
+	columns = PixelGrid.pixels_between({ from, to, extent: roll.width_px() })
 	width = roll.width_px()
 	var $px = pixels
 	for column in columns.start.until(columns.end) {

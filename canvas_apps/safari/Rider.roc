@@ -10,7 +10,7 @@ import lib.DeviceMath
 import Gaze
 import Geom
 import LeanSearch
-import Pose
+import RiderState
 import Scenery
 import Speed
 import Throttle
@@ -19,7 +19,7 @@ import VehicleLimits
 import World
 
 Rider :: [].{
-	Decision : { tilt_step : Angle.Lean, accel : Acceleration }
+	Decision : { lean_step : Angle.Lean, acceleration : Acceleration }
 
 	## A rider this slow near the route's end stops there.
 	stopping_speed : Speed
@@ -27,37 +27,37 @@ Rider :: [].{
 
 	## The lean toward the best line, and the throttle for the bike once
 	## it leans so.
-	decide : Pose.RiderState, World.Segment -> Rider.Decision
+	decide : RiderState, World.Segment -> Rider.Decision
 	decide = |state, seg| {
-		tilt_step = LeanSearch.best_tilt_correction(state).minus(state.tilt)
+		lean_step = LeanSearch.best_lean(state).minus(state.lean)
 		{
-			tilt_step,
-			accel: Throttle.get_forward_accel_decel(
-				Bike.with_tilt(state, state.tilt.plus(tilt_step)),
+			lean_step,
+			acceleration: Throttle.acceleration(
+				Bike.with_lean(state, state.lean.plus(lean_step)),
 				seg,
 			),
 		}
 	}
 
-	rider_state_for_next_segment : Pose.RiderState, List(World.Segment) -> Pose.RiderState
-	rider_state_for_next_segment = |rs, segs| {
-		seg = rs.segment.segment_in(segs)
+	on_next_segment : RiderState, List(World.Segment) -> RiderState
+	on_next_segment = |rs, route| {
+		seg = rs.segment_index.segment_in(route)
 		next =
 			match seg.ending {
 				Continues({ next: index }) => index
-				Terminates => crash "Rider.rider_state_for_next_segment: past the route's end"
+				Terminates => crash "Rider.on_next_segment: past the route's end"
 			}
 		on_next = Geom.centred_point_after(
 			{ along: rs.along, across: rs.across },
 			{
 				segment_length: seg.length,
 				turn: seg.exit_turn,
-				lane_width: Scenery.lane_width,
+				road_width: Scenery.road_width,
 			},
 		)
 		{
 			..rs,
-			segment: next,
+			segment_index: next,
 			along: on_next.along,
 			across: on_next.across,
 			yaw: rs.yaw.minus(seg.exit_turn),
@@ -65,10 +65,10 @@ Rider :: [].{
 		}
 	}
 
-	finish_clamp : Pose.RiderState, World.Segment -> Pose.RiderState
-	finish_clamp = |moved, seg| {
+	stop_at_route_end : RiderState, World.Segment -> RiderState
+	stop_at_route_end = |moved, seg| {
 		end = Along.at(seg.length)
-		in_zone = end.distance_from(moved.along) < VehicleLimits.approach_intersection_dist
+		in_zone = end.distance_from(moved.along) < VehicleLimits.bend_approach
 		if moved.along >= end {
 			stopped_at(moved, end)
 		} else if in_zone {
@@ -82,35 +82,35 @@ Rider :: [].{
 		}
 	}
 
-	stopped_at : Pose.RiderState, Along -> Pose.RiderState
+	stopped_at : RiderState, Along -> RiderState
 	stopped_at = |s, at| { ..s, along: at, speed: Speed.at_rest }
 
-	resolve_cross : Pose.RiderState, List(World.Segment) -> Pose.RiderState
-	resolve_cross = |moved, segs| {
-		on_next = rider_state_for_next_segment(moved, segs)
-		if on_next.across.distance_from_middle() < Scenery.lane_half_width {
+	cross_if_on_road : RiderState, List(World.Segment) -> RiderState
+	cross_if_on_road = |moved, route| {
+		on_next = on_next_segment(moved, route)
+		if on_next.across.distance_from_middle() < Scenery.road_half_width {
 			on_next
 		} else {
 			moved
 		}
 	}
 
-	advance : Pose.RiderState, List(World.Segment) -> Pose.RiderState
-	advance = |state, segs| {
-		seg = state.segment.segment_in(segs)
+	advance : RiderState, List(World.Segment) -> RiderState
+	advance = |state, route| {
+		seg = state.segment_index.segment_in(route)
 		dec = decide(state, seg)
-		moved = Bike.simulate_rider_step(state, { lean_step: dec.tilt_step, accel: dec.accel })
+		moved = Bike.advance(state, { lean_step: dec.lean_step, acceleration: dec.acceleration })
 		resolved =
 			match seg.ending {
-				Continues(_) => resolve_cross(moved, segs)
-				Terminates => finish_clamp(moved, seg)
+				Continues(_) => cross_if_on_road(moved, route)
+				Terminates => stop_at_route_end(moved, seg)
 			}
-		Gaze.next_rider_gaze(resolved, segs)
+		Gaze.next_rider_gaze(resolved, route)
 	}
 
-	is_finished : Pose.RiderState, List(World.Segment) -> Bool
-	is_finished = |s, segs| {
-		seg = s.segment.segment_in(segs)
+	is_finished : RiderState, List(World.Segment) -> Bool
+	is_finished = |s, route| {
+		seg = s.segment_index.segment_in(route)
 		match seg.ending {
 			Continues(_) => False
 			Terminates => s.along >= Along.at(seg.length)
@@ -129,81 +129,81 @@ first_segment : World.Segment
 first_segment = World.route_segment(0)
 
 ## A rider on the centre line of the first segment, going the base speed.
-rider_at : F64, F64 -> Pose.RiderState
-rider_at = |along, tilt_radians| {
-	..Pose.initial_rider_state,
+rider_at : F64, F64 -> RiderState
+rider_at = |along, lean_radians| {
+	..RiderState.initial,
 	along: Along.metres(along),
-	tilt: Angle.Lean.radians(tilt_radians),
+	lean: Angle.Lean.radians(lean_radians),
 }
 
 expect {
 	upright = Rider.decide(rider_at(0.0, 0.0), first_segment)
 	leaning = Rider.decide(rider_at(0.0, 0.5), first_segment)
-	most_accel = VehicleLimits.a_accel.to_metres_a_step_each_step() + 0.000001
-	upright.tilt_step.abs() <= LeanSearch.max_tilt_correction
-		and leaning.tilt_step.abs() <= LeanSearch.max_tilt_correction
-		and upright.accel.to_metres_a_step_each_step() <= most_accel
+	most_accel = VehicleLimits.cruise_acceleration.to_metres_a_step_each_step() + 0.000001
+	upright.lean_step.abs() <= LeanSearch.max_lean_change
+		and leaning.lean_step.abs() <= LeanSearch.max_lean_change
+		and upright.acceleration.to_metres_a_step_each_step() <= most_accel
 }
 
 # The throttle is decided for the bike as it will lean.
 expect {
 	decision = Rider.decide(rider_at(0.0, 0.0), first_segment)
-	same = Throttle.get_forward_accel_decel(
-		Bike.with_tilt(rider_at(0.0, 0.0), Angle.upright.plus(decision.tilt_step)),
+	same = Throttle.acceleration(
+		Bike.with_lean(rider_at(0.0, 0.0), Angle.upright.plus(decision.lean_step)),
 		first_segment,
 	)
-	chosen = decision.accel.to_metres_a_step_each_step()
+	chosen = decision.acceleration.to_metres_a_step_each_step()
 	chosen.to_bits() == same.to_metres_a_step_each_step().to_bits()
 }
 
-## Rider doesn't import Fraction, so this focus comes from Gaze.
-focused_rider : Pose.RiderState
-focused_rider = {
-	..Pose.initial_rider_state,
-	focus: Gaze.next_focus(Pose.initial_rider_state, Gaze.gaze_release_angle.times(0.4)),
+## Rider doesn't import Fraction, so this attention comes from Gaze.
+attentive_rider : RiderState
+attentive_rider = {
+	..RiderState.initial,
+	attention: Gaze.next_attention(RiderState.initial, Gaze.gaze_release_angle.times(0.4)),
 }
 
-at_seam : Pose.RiderState
+at_seam : RiderState
 at_seam = {
-	..focused_rider,
+	..attentive_rider,
 	along: Along.metres(499.0),
 	across: Across.metres(0.5),
 	yaw: Angle.Turn.radians(0.1),
 	speed: Speed.metres_a_step(1.25),
-	tilt: Angle.Lean.radians(0.05),
+	lean: Angle.Lean.radians(0.05),
 	heading: Angle.Bearing.radians(0.7),
 	gaze_yaw: Angle.Turn.radians(0.3),
 }
 
-crossed : Pose.RiderState
-crossed = Rider.rider_state_for_next_segment(at_seam, first_segments)
+crossed : RiderState
+crossed = Rider.on_next_segment(at_seam, first_segments)
 
 expect crossed.speed.to_metres_a_step() == 1.25
-expect crossed.tilt.to_radians() == 0.05
-expect crossed.focus.to_f64() == 0.4
+expect crossed.lean.to_radians() == 0.05
+expect crossed.attention.to_f64() == 0.4
 expect crossed.gaze_yaw.to_radians() == 0.0
 expect crossed.heading.to_radians() - 0.7 == 0.0
 expect crossed.yaw.to_radians() - (0.1 - first_segment.exit_turn.to_radians()) == 0.0
 
-expect crossed.segment.to_i64() == 1
+expect crossed.segment_index.to_i64() == 1
 expect first_segment.ending == Continues({ next: World.SegmentIndex.number(1) })
 
 expect {
-	far = Rider.rider_state_for_next_segment(rider_at(100.0, 0.0), first_segments)
-	far.across.distance_from_middle() >= Scenery.lane_half_width
+	far = Rider.on_next_segment(rider_at(100.0, 0.0), first_segments)
+	far.across.distance_from_middle() >= Scenery.road_half_width
 }
 
-expect Rider.resolve_cross(rider_at(100.0, 0.0), first_segments).segment.to_i64() == 0
-expect Rider.resolve_cross(rider_at(499.0, 0.0), first_segments).segment.to_i64() == 1
+expect Rider.cross_if_on_road(rider_at(100.0, 0.0), first_segments).segment_index.to_i64() == 0
+expect Rider.cross_if_on_road(rider_at(499.0, 0.0), first_segments).segment_index.to_i64() == 1
 
 last_seg : World.Segment
 last_seg = World.route_segment(18)
 
-clamped_at_finish : F64, F64 -> Pose.RiderState
+clamped_at_finish : F64, F64 -> RiderState
 clamped_at_finish = |along, speed|
-	Rider.finish_clamp(
+	Rider.stop_at_route_end(
 		{
-			..Pose.initial_rider_state,
+			..RiderState.initial,
 			along: Along.metres(along),
 			speed: Speed.metres_a_step(speed),
 		},
@@ -226,38 +226,38 @@ expect !Rider.is_finished({ ..rider_at(299.0, 0.0), speed: Speed.at_rest }, [las
 expect last_seg.ending == Terminates
 expect !Rider.is_finished(rider_at(499.0, 0.0), first_segments)
 
-one_step_on : Pose.RiderState
-one_step_on = Rider.advance(Pose.initial_rider_state, first_segments)
+one_step_on : RiderState
+one_step_on = Rider.advance(RiderState.initial, first_segments)
 
 expect one_step_on.along > Along.start
 expect one_step_on.speed > Speed.at_rest
-expect one_step_on.segment == World.SegmentIndex.first
-expect one_step_on.across.distance_from_middle() < Scenery.lane_half_width
-expect one_step_on.speed <= VehicleLimits.v_max
+expect one_step_on.segment_index == World.SegmentIndex.first
+expect one_step_on.across.distance_from_middle() < Scenery.road_half_width
+expect one_step_on.speed <= VehicleLimits.top_speed
 
 # These are LeanSearch's search. They sit here because LeanSearch imports
 # neither Pose nor Speed, and Rider sees both.
 
 ## The lean the search picks for a rider at the start of the segment, in radians.
-best_lean : F64, F64 -> F64
-best_lean = |across, tilt_radians|
-	LeanSearch.best_tilt_correction({
-		..Pose.initial_rider_state,
+searched_lean : F64, F64 -> F64
+searched_lean = |across, lean_radians|
+	LeanSearch.best_lean({
+		..RiderState.initial,
 		across: Across.metres(across),
-		tilt: Angle.Lean.radians(tilt_radians),
+		lean: Angle.Lean.radians(lean_radians),
 	}).to_radians()
 
 max_correction : F64
-max_correction = LeanSearch.max_tilt_correction.to_radians()
+max_correction = LeanSearch.max_lean_change.to_radians()
 
 centred : F64
-centred = best_lean(0.0, 0.0)
+centred = searched_lean(0.0, 0.0)
 
 offset : F64
-offset = best_lean(1.0, 0.0)
+offset = searched_lean(1.0, 0.0)
 
 held : F64
-held = best_lean(0.0, 0.5)
+held = searched_lean(0.0, 0.5)
 
 expect centred >= (0.0 - max_correction)
 expect centred <= max_correction
@@ -270,5 +270,5 @@ expect DeviceMath.real_abs(centred) <= max_correction
 expect held > centred
 
 # The search gives the same lean every time.
-expect best_lean(1.0, 0.0) - offset == 0.0
-expect best_lean(0.0, 0.5) - held == 0.0
+expect searched_lean(1.0, 0.0) - offset == 0.0
+expect searched_lean(0.0, 0.5) - held == 0.0

@@ -11,11 +11,12 @@ import Across
 import Along
 import Animation
 import Attention
+import Beat
 import Beats
 import Distance
 import Easing
 import Fraction
-import Num_
+import Float
 
 Cat :: [].{
 
@@ -66,13 +67,13 @@ Cat :: [].{
 	## The crossing of a cat by the tree `tree_offset` out from the lane's
 	## edge and at `tree_along` on the segment.
 	crossing : {
-		lane_half_width : Distance,
+		road_half_width : Distance,
 		tree_offset : Distance,
 		tree_along : Along,
 	} -> Cat.Crossing
-	crossing = |{ lane_half_width, tree_offset, tree_along }| {
-		tree_across = lane_half_width.plus(tree_offset)
-		far_verge = Across.left_of_middle(lane_half_width.plus(grass_toehold))
+	crossing = |{ road_half_width, tree_offset, tree_along }| {
+		tree_across = road_half_width.plus(tree_offset)
+		far_verge = Across.left_of_middle(road_half_width.plus(grass_toehold))
 		{
 			along: tree_along.plus(cat_beyond_tree),
 			start_across: Across.right_of_middle(tree_across.plus(cat_road_gap)),
@@ -82,7 +83,7 @@ Cat :: [].{
 		}
 	}
 
-	## The crossing's three stages, in beats.
+	## The crossing's three parts, in beats.
 	enters_road_beats : Beats
 	enters_road_beats = Beats.of(10.0)
 
@@ -96,8 +97,8 @@ Cat :: [].{
 	crossing_beats = enters_road_beats.plus(frozen_beats).plus(escapes_beats)
 
 	## The beat the cat's escape starts after.
-	escape_at : Beats
-	escape_at = enters_road_beats.plus(frozen_beats)
+	escape_at : Beat
+	escape_at = Beat.at(enters_road_beats.plus(frozen_beats))
 
 	## How many beats into its escape the cat leaves the ground, and lands.
 	leaves_ground_beats : Beats
@@ -137,26 +138,26 @@ Cat :: [].{
 		}
 
 	## How hard the cat holds the rider's eye at its strongest.
-	focus_peak : Attention
-	focus_peak = Attention.of(1.8)
+	peak_attention : Attention
+	peak_attention = Attention.of(1.8)
 
 	## Over how many beats, after the rider reaches the cat, its hold fades.
-	focus_ramp_down : Beats
-	focus_ramp_down = Beats.of(83.0)
+	attention_fade : Beats
+	attention_fade = Beats.of(83.0)
 
 	## How hard the cat holds the rider's eye: rising as it crosses, then
 	## fading once the rider is past.
-	focus : Animation.Approach -> Attention
-	focus = |approach|
+	attention : Animation.Approach -> Attention
+	attention = |approach|
 		if approach.speed <= Animation.standstill {
 			Attention.none
 		} else {
 			match crossing_stage(approach) {
 				Waiting => Attention.none
-				Playing(progress) => focus_peak.portion(Easing.smoothstep(progress))
+				Playing(progress) => peak_attention.portion(Easing.smoothstep(progress))
 				Past(beyond) => {
-					faded = approach.speed.beats_to_cover(beyond).ratio_to(focus_ramp_down)
-					focus_peak.portion(Easing.smoothstep(Fraction.clamp(faded)).complement())
+					faded = approach.speed.beats_to_cover(beyond).ratio_to(attention_fade)
+					peak_attention.portion(Easing.smoothstep(Fraction.clamp(faded)).complement())
 				}
 			}
 		}
@@ -167,13 +168,13 @@ Cat :: [].{
 
 	## How many strides a cat walking for `length` takes: a whole number, at
 	## least one.
-	strides_in : Beats -> F64
+	strides_in : Beats -> U32
 	strides_in = |length| {
-		strides = Num_.round_real(length.ratio_to(stride_beats))
+		strides = Float.round(length.ratio_to(stride_beats))
 		if strides < 1.0 {
-			1.0
+			1
 		} else {
-			strides
+			strides.to_u32_wrap()
 		}
 	}
 
@@ -211,7 +212,7 @@ Cat :: [].{
 				looks: {
 					stretches: [
 						{
-							until: Through(enters_road_beats),
+							until: Through(Beat.at(enters_road_beats)),
 							plays: Alternates({
 								up: Stride,
 								down: Rest,
@@ -229,7 +230,7 @@ Cat :: [].{
 				path: {
 					stretches: [
 						{
-							until: Through(enters_road_beats),
+							until: Through(Beat.at(enters_road_beats)),
 							plays: Line({
 								from: start,
 								to: middle,
@@ -269,7 +270,7 @@ spot_across = |across| { along: Along.start, across, lift: 0.0 }
 
 the_cat : Cat.Crossing
 the_cat = Cat.crossing({
-	lane_half_width: Distance.metres(2.0),
+	road_half_width: Distance.metres(2.0),
 	tree_offset: Distance.metres(1.0),
 	tree_along: Along.metres(100.0),
 })
@@ -335,18 +336,18 @@ expect
 		(coming(41.0, 0.0), 0.0),
 	].all(|(input, want)| progress_of(input) == want)
 
-expect Cat.focus(coming(41.0, 1.0)).to_f64() == 0.0
-expect Cat.focus(coming(22.0, 1.0)).to_f64() == 0.9
-expect Cat.focus(coming(3.0, 1.0)).to_f64() == 1.8
-expect Cat.focus(coming(0.0 - 38.5, 1.0)).to_f64() == 0.9
-expect Cat.focus(coming(0.0 - 80.0, 1.0)).to_f64() == 0.0
-expect Cat.focus(coming(22.0, 0.0)).to_f64() == 0.0
-expect Cat.focus_peak.to_f64() == 1.8
-expect Cat.focus_ramp_down.to_f64() == 83.0
+expect Cat.attention(coming(41.0, 1.0)).to_f64() == 0.0
+expect Cat.attention(coming(22.0, 1.0)).to_f64() == 0.9
+expect Cat.attention(coming(3.0, 1.0)).to_f64() == 1.8
+expect Cat.attention(coming(0.0 - 38.5, 1.0)).to_f64() == 0.9
+expect Cat.attention(coming(0.0 - 80.0, 1.0)).to_f64() == 0.0
+expect Cat.attention(coming(22.0, 0.0)).to_f64() == 0.0
+expect Cat.peak_attention.to_f64() == 1.8
+expect Cat.attention_fade.to_f64() == 83.0
 
 ## How many strides of a walk `length` beats long are done `progress` through it.
 turns : F64, F64 -> F64
-turns = |progress, length| progress * Cat.strides_in(Beats.of(length))
+turns = |progress, length| progress * Cat.strides_in(Beats.of(length)).to_f64()
 
 expect turns(0.0, 10.0) == 0.0
 expect turns(1.0, 10.0) == 2.0
@@ -358,7 +359,7 @@ expect Cat.stride_beats.to_f64() == 5.0
 
 ## The cat at `beat` of its crossing.
 crossing_at : F64 -> Animation.Instant(Cat.Pose)
-crossing_at = |beat| Cat.crossing_timeline(the_cat).at_beat(Beats.of(beat))
+crossing_at = |beat| Cat.crossing_timeline(the_cat).at_beat(Beat.of(beat))
 
 expect
 	[Rest, Stride, Frozen, Coil, Flight, Land, Collapse].map(Cat.pose_index)

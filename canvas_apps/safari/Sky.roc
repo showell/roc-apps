@@ -1,12 +1,12 @@
 ## The sky through the ride: the sun sinks a little with every step, the
 ## sky darkens toward dusk as it goes, and the horizon warms red while the
 ## sun is near it. The sun is drawn only while the rider faces it.
+import Pixels
 import Angle
 import Clock
 import Fraction
-import lib.DeviceMath
 import Lens
-import Num_
+import Float
 import Screen
 import lib.Trig
 
@@ -20,44 +20,46 @@ Sky :: [].{
 	## Where the sun stands on the screen, and how large it is drawn beside
 	## its size at rest.
 	SunPlace : {
-		x : F64,
-		y : F64,
+		x : Pixels,
+		y : Pixels,
 		scale : F64,
 	}
 
 	## The sun in a frame: in view at its place, or out of view, too far to
 	## the side of where the rider faces.
-	SunPos : [InView(Sky.SunPlace), OutOfView]
+	SunSighting : [InView(Sky.SunPlace), OutOfView]
 
 	sun_bearing : Angle.Bearing
 	sun_bearing = Angle.Bearing.radians(0.0 - 2.2176)
 
-	sun_radius_px : F64
-	sun_radius_px = 46.0
+	sun_radius_px : Pixels
+	sun_radius_px = Pixels.of(46.0)
 
-	sun_start_px : F64
-	sun_start_px = 244.0
+	sun_start_px : Pixels
+	sun_start_px = Pixels.of(244.0)
 
-	sun_drop_px_per_step : F64
-	sun_drop_px_per_step = ((0.41616 * (2.0 * sun_radius_px)) / 625.0)
+	sun_drop_px_per_step : Pixels
+	sun_drop_px_per_step = sun_radius_px.times(2.0).times(0.41616).divided_by(625.0)
 
-	sun_fully_set_px : F64
-	sun_fully_set_px = (0.0 - sun_radius_px)
+	sun_fully_set_px : Pixels
+	sun_fully_set_px = sun_radius_px.opposite()
 
-	warmth_falloff_px : F64
-	warmth_falloff_px = 110.0
+	warmth_falloff_px : Pixels
+	warmth_falloff_px = Pixels.of(110.0)
 
 	visible_turn_limit : Angle.Turn
 	visible_turn_limit = Angle.Turn.radians(1.4)
 
 	## How high the sun stands above the horizon at `clock`, in pixels at
 	## rest; below it once negative.
-	sun_height_px : Clock -> F64
-	sun_height_px = |clock| sun_start_px - (sun_drop_px_per_step * clock.to_f64())
+	sun_height_px : Clock -> Pixels
+	sun_height_px = |clock| sun_start_px.minus(sun_drop_px_per_step.times(clock.to_f64()))
 
 	## How far toward dusk the sky is when the sun has just set.
 	dusk_at_set : Fraction
-	dusk_at_set = Fraction.of(((0.5 * (sun_start_px - sun_fully_set_px)) / sun_start_px))
+	dusk_at_set = Fraction.of(
+		sun_start_px.minus(sun_fully_set_px).times(0.5).ratio_to(sun_start_px),
+	)
 
 	## How far toward dusk the sky is at `clock`, from 0 (day) to 1 (dusk).
 	dusk_at : Clock -> Fraction
@@ -74,7 +76,7 @@ Sky :: [].{
 	## once the sun is `warmth_falloff_px` above or below.
 	sunset_warmth : Clock -> Fraction
 	sunset_warmth = |clock| Fraction.clamp(
-		(1.0 - (DeviceMath.real_abs(sun_height_px(clock)) / warmth_falloff_px)),
+		(1.0 - sun_height_px(clock).abs().ratio_to(warmth_falloff_px)),
 	)
 
 	day_sky : Sky.Rgb
@@ -111,9 +113,9 @@ Sky :: [].{
 	color_between = |{ from, to, fraction }| {
 		share = fraction.to_f64()
 		{
-			r: Num_.round_real((from.r + ((to.r - from.r) * share))),
-			g: Num_.round_real((from.g + ((to.g - from.g) * share))),
-			b: Num_.round_real((from.b + ((to.b - from.b) * share))),
+			r: Float.round((from.r + ((to.r - from.r) * share))),
+			g: Float.round((from.g + ((to.g - from.g) * share))),
+			b: Float.round((from.b + ((to.b - from.b) * share))),
 		}
 	}
 
@@ -126,13 +128,13 @@ Sky :: [].{
 	}
 
 	## The sky's colour at the top of the frame, as 0xRRGGBB.
-	sky_color : Clock -> I64
-	sky_color = |clock| pack(sky_at(clock))
+	sky_top_color : Clock -> I64
+	sky_top_color = |clock| pack(sky_at(clock))
 
 	## The sky's colour at the horizon, as 0xRRGGBB: the sky warmed toward
 	## sunset red.
-	horizon_color : Clock -> I64
-	horizon_color = |clock| pack(
+	sky_horizon_color : Clock -> I64
+	sky_horizon_color = |clock| pack(
 		color_between({
 			from: sky_at(clock),
 			to: sunset_red,
@@ -141,12 +143,12 @@ Sky :: [].{
 	)
 
 	## The sun in a frame, for a rider facing `heading`.
-	sun_pos : {
+	sun_sighting : {
 		heading : Angle.Bearing,
 		clock : Clock,
-		cam_focal : F64,
-	} -> Sky.SunPos
-	sun_pos = |{ heading, clock, cam_focal }| {
+		cam_focal : Pixels,
+	} -> Sky.SunSighting
+	sun_sighting = |{ heading, clock, cam_focal }| {
 		turn_from_view = sun_bearing.turn_from(heading)
 		if turn_from_view.abs() >= visible_turn_limit {
 			OutOfView
@@ -158,18 +160,18 @@ Sky :: [].{
 
 ## How far toward dusk the sky is while the sun, `height` pixels up, is
 ## still above the line where it has fully set.
-dusk_while_up : F64 -> Fraction
+dusk_while_up : Pixels -> Fraction
 dusk_while_up = |height| {
-	whole_fall = (Sky.sun_start_px - Sky.sun_fully_set_px)
-	set_so_far = Fraction.of(((Sky.sun_start_px - height) / whole_fall))
+	whole_fall = Sky.sun_start_px.minus(Sky.sun_fully_set_px)
+	set_so_far = Fraction.of(Sky.sun_start_px.minus(height).ratio_to(whole_fall))
 	Sky.dusk_at_set.times(set_so_far).times(set_so_far)
 }
 
 ## How far toward dusk the sky is once the sun has fully set, darkening on
 ## to full dusk as it sinks a further radius.
-dusk_after_set : F64 -> Fraction
+dusk_after_set : Pixels -> Fraction
 dusk_after_set = |height| {
-	sunk_past_set = ((Sky.sun_fully_set_px - height) / Sky.sun_radius_px)
+	sunk_past_set = Sky.sun_fully_set_px.minus(height).ratio_to(Sky.sun_radius_px)
 	Fraction.clamp(
 		(Sky.dusk_at_set.to_f64() + (sunk_past_set * Sky.dusk_at_set.complement().to_f64())),
 	)
@@ -185,22 +187,23 @@ sky_at = |clock| Sky.color_between({
 sun_place : {
 	turn_from_view : Angle.Turn,
 	clock : Clock,
-	cam_focal : F64,
+	cam_focal : Pixels,
 } -> Sky.SunPlace
 sun_place = |{ turn_from_view, clock, cam_focal }| {
-	scale = (cam_focal / Lens.focal)
+	scale = cam_focal.ratio_to(Lens.focal)
+	slope = Trig.r_tan(turn_from_view.to_radians())
 	{
-		x: (Screen.center_x + (Trig.r_tan(turn_from_view.to_radians()) * cam_focal)),
-		y: (Screen.horizon_y - (Sky.sun_height_px(clock) * scale)),
+		x: Screen.center_x.plus(cam_focal.times(slope)),
+		y: Screen.horizon_y.minus(Sky.sun_height_px(clock).times(scale)),
 		scale,
 	}
 }
 
-expect Sky.sun_height_px(Clock.at_step(0)) == 244.0
-expect Sky.sun_start_px == 244.0
-expect Sky.sun_radius_px == 46.0
-expect Sky.sun_fully_set_px == -46.0
-expect Sky.warmth_falloff_px == 110.0
+expect Sky.sun_height_px(Clock.at_step(0)).to_f64() == 244.0
+expect Sky.sun_start_px.to_f64() == 244.0
+expect Sky.sun_radius_px.to_f64() == 46.0
+expect Sky.sun_fully_set_px.to_f64() == -46.0
+expect Sky.warmth_falloff_px.to_f64() == 110.0
 expect Sky.visible_turn_limit.to_radians() == 1.4
 expect Sky.dusk_at(Clock.at_step(0)).to_f64() == 0.0
 expect Sky.sunset_warmth(Clock.at_step(0)).to_f64() == 0.0
@@ -209,20 +212,20 @@ expect Sky.sunset_warmth(Clock.at_step(6000)).to_f64() == 0.0
 expect Sky.sunset_glow.to_f64() == 0.85
 
 # The sky and the horizon at each thousandth step of the ride.
-expect Sky.sky_color(Clock.at_step(0)) == 9358054
-expect Sky.sky_color(Clock.at_step(1000)) == 9160418
-expect Sky.sky_color(Clock.at_step(2000)) == 8633304
-expect Sky.sky_color(Clock.at_step(3000)) == 7710918
-expect Sky.sky_color(Clock.at_step(4000)) == 6393260
-expect Sky.sky_color(Clock.at_step(5000)) == 4219010
-expect Sky.sky_color(Clock.at_step(6000)) == 2374238
-expect Sky.horizon_color(Clock.at_step(0)) == 9358054
-expect Sky.horizon_color(Clock.at_step(1000)) == 9160418
-expect Sky.horizon_color(Clock.at_step(2000)) == 8633304
-expect Sky.horizon_color(Clock.at_step(3000)) == 10324366
-expect Sky.horizon_color(Clock.at_step(4000)) == 13262919
-expect Sky.horizon_color(Clock.at_step(5000)) == 8019301
-expect Sky.horizon_color(Clock.at_step(6000)) == 2374238
+expect Sky.sky_top_color(Clock.at_step(0)) == 9358054
+expect Sky.sky_top_color(Clock.at_step(1000)) == 9160418
+expect Sky.sky_top_color(Clock.at_step(2000)) == 8633304
+expect Sky.sky_top_color(Clock.at_step(3000)) == 7710918
+expect Sky.sky_top_color(Clock.at_step(4000)) == 6393260
+expect Sky.sky_top_color(Clock.at_step(5000)) == 4219010
+expect Sky.sky_top_color(Clock.at_step(6000)) == 2374238
+expect Sky.sky_horizon_color(Clock.at_step(0)) == 9358054
+expect Sky.sky_horizon_color(Clock.at_step(1000)) == 9160418
+expect Sky.sky_horizon_color(Clock.at_step(2000)) == 8633304
+expect Sky.sky_horizon_color(Clock.at_step(3000)) == 10324366
+expect Sky.sky_horizon_color(Clock.at_step(4000)) == 13262919
+expect Sky.sky_horizon_color(Clock.at_step(5000)) == 8019301
+expect Sky.sky_horizon_color(Clock.at_step(6000)) == 2374238
 expect Sky.pack(Sky.day_sky) == 9358054
 expect Sky.pack(Sky.dusk_sky) == 2374238
 expect Sky.pack(Sky.sunset_red) == 14571572
@@ -265,19 +268,19 @@ expect
 
 # The rider faces the sun, then away from it.
 expect
-	Sky.sun_pos({
+	Sky.sun_sighting({
 		heading: Angle.Bearing.radians(0.0 - 2.2176),
 		clock: Clock.start,
 		cam_focal: Lens.focal,
 	})
 		== InView({
-			x: 480.0,
-			y: 56.0,
+			x: Pixels.of(480.0),
+			y: Pixels.of(56.0),
 			scale: 1.0,
 		})
 
 expect
-	Sky.sun_pos({
+	Sky.sun_sighting({
 		heading: Angle.north,
 		clock: Clock.start,
 		cam_focal: Lens.focal,

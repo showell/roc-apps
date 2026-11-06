@@ -1,6 +1,6 @@
 ## Safari's accelerations. An acceleration is how much a speed changes over
 ## one step of the ride, in metres a step for each step, and a negative one
-## slows the speed down. The throttle hands one from gate to gate, and `Speed`
+## slows the speed down. The throttle hands one from limit to limit, and `Speed`
 ## applies one to a speed and works one out from two.
 ##
 ## Each operation does the plain float arithmetic its name says, so code

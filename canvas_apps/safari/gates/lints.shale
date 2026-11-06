@@ -33,17 +33,17 @@ const LINTS = {
     {"error_alias", 0}, {"optional_tag", 0}, {"set_fallback", 0}, {"placeholder", 0},
   }, whole_tree = {"error_alias"}},
   {recipe = "nest_depth", args = {"min=4"}, budget = {}, counts = {{"nested", 0}}},
-  {recipe = "parens", args = {}, budget = {}, counts = {{"paren_if", 0}, {"wrapped_body", 0}, {"else_block", 0}}},
+  {recipe = "parens", args = {}, budget = {}, counts = {{"paren_if", 0}, {"wrapped_body", 0}, {"else_block", 0}, {"lambda_if", 0}}},
   {recipe = "boundaries", args = {}, budget = {}, counts = {
-    {"single", 0}, {"fixed", 0}, {"entry", 0}, {"constant", 0}, {"bool_param", 0},
-  }, whole_tree = {"single", "fixed", "entry", "constant", "bool_param"}},
+    {"single", 0}, {"fixed", 0}, {"entry", 0}, {"constant", 0}, {"bool_param", 0}, {"dead", 0},
+  }, whole_tree = {"single", "fixed", "entry", "constant", "bool_param", "dead"}},
   {recipe = "stack", args = {}, budget = {"--budget", "steps=4000000000"}, counts = {{"to stack", 0}, {"to unstack", 0}, {"long", 0}},
     skip = {"BirdStills.roc", "CatStills.roc", "EmojiStills.roc"}},
-  {recipe = "vocabulary", args = {"words=vocabulary.txt"}, budget = {}, counts = {{"retired_name", 172}, {"retired_comment", 46}}},
-  {recipe = "name_types", args = {"table=name_types.txt"}, budget = {}, counts = {{"name_type", 12}, {"bare_beside_unit", 55}, {"no_value", 1}},
+  {recipe = "vocabulary", args = {"words=vocabulary.txt"}, budget = {}, counts = {{"retired_name", 0}, {"retired_comment", 0}}},
+  {recipe = "name_types", args = {"table=name_types.txt"}, budget = {}, counts = {{"name_type", 0}, {"bare_beside_unit", 15}, {"no_value", 0}},
     whole_tree = {"bare_beside_unit"}},
-  {recipe = "families", args = {}, budget = {}, counts = {{"family", 5}, {"twin_name", 6}}, whole_tree = {"family", "twin_name"}},
-  {recipe = "plain_names", args = {}, budget = {}, counts = {{"pure_mutator", 11}, {"abbreviation", 55}, {"module_doc", 14}}},
+  {recipe = "families", args = {}, budget = {}, counts = {{"family", 0}, {"twin_name", 4}}, whole_tree = {"family", "twin_name"}},
+  {recipe = "plain_names", args = {}, budget = {}, counts = {{"pure_mutator", 0}, {"abbreviation", 2}, {"module_doc", 0}}},
 }
 
 -- The command that runs `lint` over `glob`, in safari's folder.
