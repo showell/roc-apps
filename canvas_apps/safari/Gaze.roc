@@ -142,7 +142,7 @@ Gaze :: [].{
 		if gaze_yaw == Angle.straight_ahead {
 			Fraction.clamp(state.attention.to_f64() - attention_decay)
 		} else {
-			state.attention.max(Fraction.clamp(gaze_yaw.abs().fraction_of(gaze_release_angle)))
+			state.attention.max(Fraction.clamp(gaze_yaw.abs().ratio_to(gaze_release_angle)))
 		}
 
 	next_rider_gaze : RiderState, List(World.Segment) -> RiderState

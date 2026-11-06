@@ -192,7 +192,7 @@ west = {
 range_height : MountainRange, Angle.Bearing -> F64
 range_height = |range, bearing| {
 	from_center = bearing.turn_from(range.center)
-	fraction = from_center.fraction_of(range.half_width)
+	fraction = from_center.ratio_to(range.half_width)
 	if DeviceMath.real_abs(fraction) >= 1.0 {
 		0.0
 	} else {
