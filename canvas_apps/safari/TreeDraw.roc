@@ -27,7 +27,7 @@ TreeDraw :: [].{
 	}
 
 	## Where a tree stands on the screen, and how big it looks there.
-	Outline : {
+	TreeOnScreen : {
 		base_x : F64,
 		base_y : F64,
 		height_px : F64,
@@ -118,7 +118,7 @@ TreeDraw :: [].{
 	## less than a pixel tall isn't drawn.
 	draw : TreeDraw.TreeInView -> List(Shapes.Shape)
 	draw = |tree| {
-		seen = outline({
+		seen = on_screen({
 			right: tree.right,
 			forward: tree.forward,
 			height: tree.height,
@@ -135,13 +135,13 @@ TreeDraw :: [].{
 
 	## Where a tree of `height` metres, standing `right` and `forward` of the
 	## rider, is on the screen.
-	outline : {
+	on_screen : {
 		right : F64,
 		forward : F64,
 		height : F64,
 		cam_focal : F64,
-	} -> TreeDraw.Outline
-	outline = |{ right, forward, height, cam_focal }| {
+	} -> TreeDraw.TreeOnScreen
+	on_screen = |{ right, forward, height, cam_focal }| {
 		base = Camera.project({ right, forward, height: 0.0 }, cam_focal)
 		top = Camera.project({ right, forward, height }, cam_focal)
 		height_px = (base.y - top.y)
@@ -157,7 +157,7 @@ TreeDraw :: [].{
 		}
 	}
 
-	draw_trunk : TreeDraw.Outline, [RoundCorners, SharpCorners] -> List(Shapes.Shape)
+	draw_trunk : TreeDraw.TreeOnScreen, [RoundCorners, SharpCorners] -> List(Shapes.Shape)
 	draw_trunk = |seen, corners| {
 		width = if (seen.height_px * 0.08) > 1.0 {
 			seen.height_px * 0.08
@@ -184,7 +184,11 @@ TreeDraw :: [].{
 
 	## A tier as a flat triangle: its apex at the tier's top, its base across
 	## its bottom.
-	tier_triangle : TreeDraw.Outline, { tier : TreeDraw.Tier, color : I64 } -> List(Shapes.Shape)
+	tier_triangle : TreeDraw.TreeOnScreen,
+	{
+		tier : TreeDraw.Tier,
+		color : I64,
+	} -> List(Shapes.Shape)
 	tier_triangle = |seen, { tier, color }| {
 		bottom_y = (seen.crown_top_y + (seen.foliage_px * tier.bottom))
 		Paint.push_poly(
@@ -265,7 +269,7 @@ ring_angles = {
 ## camera, else as a triangle.
 draw_tier : TreeDraw.TreeInView,
 {
-	seen : TreeDraw.Outline,
+	seen : TreeDraw.TreeOnScreen,
 	tier : TreeDraw.Tier,
 } -> List(Shapes.Shape)
 draw_tier = |tree, { seen, tier }| {
@@ -326,23 +330,23 @@ expect TreeDraw.crown_height == 0.648
 expect TreeDraw.crown_width == 0.288
 expect TreeDraw.min_cone_forward == 0.4
 
-sample_outline : TreeDraw.Outline
-sample_outline = TreeDraw.outline({
+sample_on_screen : TreeDraw.TreeOnScreen
+sample_on_screen = TreeDraw.on_screen({
 	right: 0.0,
 	forward: 2.0,
 	height: 4.0,
 	cam_focal: 500.0,
 })
 
-expect sample_outline.base_x == 480.0
-expect sample_outline.base_y == 600.0
-expect sample_outline.height_px == 1000.0
-expect sample_outline.foliage_px == 648.0
-expect sample_outline.crown_top_y == -488.0
-expect sample_outline.crown_half_width == 288.0
+expect sample_on_screen.base_x == 480.0
+expect sample_on_screen.base_y == 600.0
+expect sample_on_screen.height_px == 1000.0
+expect sample_on_screen.foliage_px == 648.0
+expect sample_on_screen.crown_top_y == -488.0
+expect sample_on_screen.crown_half_width == 288.0
 
 expect
-	TreeDraw.draw_trunk(sample_outline, SharpCorners)
+	TreeDraw.draw_trunk(sample_on_screen, SharpCorners)
 		== [
 			Poly({
 				pts: [440.0, 110.0, 520.0, 110.0, 520.0, 600.0, 440.0, 600.0],
@@ -352,7 +356,7 @@ expect
 
 # A round trunk is the same colour, shaded across its width.
 expect
-	TreeDraw.draw_trunk(sample_outline, RoundCorners)
+	TreeDraw.draw_trunk(sample_on_screen, RoundCorners)
 		== [
 			Poly({
 				pts: [440.0, 110.0, 520.0, 110.0, 520.0, 600.0, 440.0, 600.0],
@@ -367,7 +371,7 @@ expect
 
 expect {
 	corners_of = |tier|
-		match TreeDraw.tier_triangle(sample_outline, { tier, color: 7 }) {
+		match TreeDraw.tier_triangle(sample_on_screen, { tier, color: 7 }) {
 			[Poly(polygon)] => polygon.pts
 			_ => crash "a tier is one polygon"
 		}
