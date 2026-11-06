@@ -1,10 +1,10 @@
 ## The widget for the Safari tutorial's chapter on the rider's gaze. It rides the
 ## stretch around the first pig that catches the rider's eye, with the real
-## Rider, a few steps a frame, and keeps every state it reaches. Dragging across
-## the canvas picks one of those states, so the look plays forward and backward
-## under the pointer. The picture looks down on the road, with both directions to
-## one scale, so the sight line's angle is the real one. Below it, the ruler marks
-## the steps of the look, and the text reads out that step's state.
+## Rider, a few steps a frame, and keeps every state it reaches. Video recorder
+## buttons pick one of those states, so the look plays forward and backward. The
+## picture looks down on the road, with both directions to one scale, so the sight
+## line's angle is the real one. Below it, the buttons and the text that reads out
+## that step's state.
 import game.Across
 import game.Along
 import game.Angle
@@ -20,38 +20,34 @@ import game.Tour
 import game.World
 import lib.CanvasApp
 import lib.Input
-import lib.Mouse
 import lib.Shapes
 import lib.Trig
 import widget.ScrubWidget
+import widget.VcrButtons
 
 GazeWidgetApp :: [].{
 
 	## The whole state of the widget: the states of the stretch played so far,
-	## first step first, and the step the pointer last asked for.
-	Model : { played : List(RiderState), heading_for : Clock }
+	## first step first, and the buttons, which hold the step asked for.
+	Model : { played : List(RiderState), transport : VcrButtons.Transport(Clock) }
 
 	canvas_app : CanvasApp.CanvasApp(GazeWidgetApp.Model)
-	canvas_app = {
-		size: { width: ScrubWidget.canvas_width, height: ScrubWidget.canvas_height },
-		fps: 60,
-		init: starting_model,
-		advance: |model, input, _seconds| played_on(with_pointer(model, input)),
-		frame: frame_at,
-		sounds: |_model| 0,
-		tones: [],
+	canvas_app = ScrubWidget.app_with_advance({
 		title: "The rider's gaze",
-	}
+		init: starting_model,
+		advance: |model, input| played_on(with_buttons(model, input)),
+		frame: frame_at,
+	})
 }
 
 ## What the rider is doing about the pig at one step.
 GazePhase : [EyesOnRoad, LookingAtPig, EasingBack, EyesBack]
 
-## The first step on the ruler, with the pig still too far off to notice.
+## The first step on show, with the pig still too far off to notice.
 first_step : U32
 first_step = 860
 
-## The last step on the ruler, a little after the gaze is back on the road.
+## The last step on show, a little after the gaze is back on the road.
 last_step : U32
 last_step = 1320
 
@@ -63,8 +59,9 @@ look_first_step = 889
 look_end_step : U32
 look_end_step = 1046
 
-clock_range : ScrubWidget.ClockRange
-clock_range = { first_step: first_step.to_f64(), last_step: last_step.to_f64() }
+## The whole stretch, in about eight seconds.
+stretch : VcrButtons.Run(Clock)
+stretch = VcrButtons.clock_run({ first_step, last_step, steps_a_frame: 1.0 })
 
 ## How many states the whole stretch holds.
 stretch_length : U64
@@ -91,7 +88,7 @@ first_rider = {
 }
 
 starting_model : GazeWidgetApp.Model
-starting_model = { played: [first_rider], heading_for: Clock.at_step(first_step) }
+starting_model = { played: [first_rider], transport: VcrButtons.transport_at(stretch.first) }
 
 ## The first segment of the route whose pigs catch the rider's eye.
 pig_segment : World.Segment
@@ -103,15 +100,14 @@ pig_segment =
 gaze_pig : Scenery.Critter
 gaze_pig = Pigs.gaze_pig(pig_segment.length)
 
-## `model` with a pointer held down setting the step it's heading for.
-with_pointer : GazeWidgetApp.Model, Input.Snapshot -> GazeWidgetApp.Model
-with_pointer = |model, input|
-	if input.mouse.button_down(Left) {
-		share = ScrubWidget.share_under(input.mouse.position().x.to_f64())
-		{ ..model, heading_for: ScrubWidget.clock_at(share, clock_range) }
-	} else {
-		model
-	}
+## `model` after a frame of its buttons. A press counts from the step on show,
+## which the ride may not have reached the one asked for.
+with_buttons : GazeWidgetApp.Model, Input.Snapshot -> GazeWidgetApp.Model
+with_buttons = |model, input| {
+	shown = Clock.at_step(first_step + shown_offset(model).to_u32_wrap())
+	caught_up = VcrButtons.catch_up(model.transport, { input, run: stretch, shown })
+	{ ..model, transport: VcrButtons.next_transport(caught_up, { input, run: stretch }) }
+}
 
 ## `model` a frame on, with a few more steps played until the stretch is.
 played_on : GazeWidgetApp.Model -> GazeWidgetApp.Model
@@ -125,11 +121,11 @@ played_on = |model| {
 	{ ..model, played: $played }
 }
 
-## How far into the stretch the state on show is: where the pointer asked for, or
+## How far into the stretch the state on show is: where the buttons asked for, or
 ## the last step played if the ride hasn't got there yet.
 shown_offset : GazeWidgetApp.Model -> U64
 shown_offset = |model| {
-	asked_for = (model.heading_for.to_f64() - first_step.to_f64()).to_u64_wrap()
+	asked_for = (model.transport.at.to_f64() - first_step.to_f64()).to_u64_wrap()
 	asked_for.min(model.played.len() - 1)
 }
 
@@ -150,25 +146,16 @@ phase_of = |rider|
 		EasingBack
 	}
 
-## The stretch of the ruler where the rider looks at the pig.
-look_stretch : ScrubWidget.Stretch
-look_stretch = {
-	from: ScrubWidget.step_share(look_first_step.to_f64(), clock_range),
-	to: ScrubWidget.step_share(look_end_step.to_f64(), clock_range),
-}
-
 ## Everything on the canvas.
 frame_at : GazeWidgetApp.Model -> List(Shapes.Shape)
 frame_at = |model| {
 	offset = shown_offset(model)
 	rider = state_at(model.played, offset)
 	step = first_step.to_f64() + offset.to_f64()
-	ScrubWidget.frame_shapes({
-		picture: picture(rider),
-		dot_at: ScrubWidget.step_share(step, clock_range),
-		marked: [look_stretch],
-		status: status_lines(rider, step),
-	})
+	VcrButtons.frame_shapes(
+		model.transport,
+		{ run: stretch, picture: picture(rider), status: status_lines(rider, step) },
+	)
 }
 
 ground_color : I64
@@ -469,13 +456,13 @@ expect
 				and screen_x(rider.along) < ScrubWidget.canvas_width,
 	)
 
-## A snapshot with the left button held or not, the pointer at `x`.
-pointer_at : { x : F32, held : U32 } -> Input.Snapshot
-pointer_at = |{ x, held }| Input.none.with_mouse(Mouse.of(held, 0, x, 0.0, 0.0))
+## A model at its start, asking for `step`.
+asking_for : U32 -> GazeWidgetApp.Model
+asking_for = |step| { ..starting_model, transport: VcrButtons.transport_at(Clock.at_step(step)) }
 
-## The step the widget heads for after that snapshot, from its start.
-heading_after : { x : F32, held : U32 } -> Clock
-heading_after = |pointer| with_pointer(starting_model, pointer_at(pointer)).heading_for
+## A click on `control`.
+click_on : VcrButtons.Control -> Input.Snapshot
+click_on = |control| VcrButtons.click_on(control, stretch.playing)
 
 ## `model` after `frames` frames with nobody touching it.
 left_alone : GazeWidgetApp.Model, U64 -> GazeWidgetApp.Model
@@ -496,25 +483,29 @@ expect left_alone(starting_model, 57).played.len() == 457
 expect left_alone(starting_model, 58).played.len() == stretch_length
 expect left_alone(starting_model, 59).played.len() == stretch_length
 
-# A pointer held down sets the step, past either end of the ruler it holds there,
-# and a pointer let go leaves it alone.
-expect heading_after({ x: 616.0, held: 1 }) == Clock.at_step(last_step)
-expect heading_after({ x: 640.0, held: 1 }) == Clock.at_step(last_step)
-expect heading_after({ x: 24.0, held: 1 }) == Clock.at_step(first_step)
-expect heading_after({ x: 0.0, held: 1 }) == Clock.at_step(first_step)
-expect heading_after({ x: 320.0, held: 1 }) == Clock.at_step(1090)
-expect heading_after({ x: 320.0, held: 0 }) == Clock.at_step(first_step)
+# The buttons ask for a step, at either end of the stretch or one on, and a frame
+# with nothing pressed leaves it alone.
+expect with_buttons(starting_model, click_on(ToEnd)).transport.at == Clock.at_step(last_step)
+expect with_buttons(asking_for(1000), click_on(ToStart)).transport.at == Clock.at_step(first_step)
+expect with_buttons(starting_model, click_on(StepForward)).transport.at == Clock.at_step(861)
+expect with_buttons(starting_model, click_on(Play)).transport.at == Clock.at_step(861)
+expect with_buttons(starting_model, Input.none).transport.at == Clock.at_step(first_step)
 
-# The state on show waits for the ride, then matches the pointer.
+# The state on show waits for the ride, then matches the buttons.
 expect shown_offset(starting_model) == 0
-expect shown_offset({ ..starting_model, heading_for: Clock.at_step(last_step) }) == 0
-expect
-	shown_offset(left_alone({ ..starting_model, heading_for: Clock.at_step(last_step) }, 2))
-		== 2 * played_a_frame
-expect shown_offset(left_alone({ ..starting_model, heading_for: Clock.at_step(870) }, 2)) == 10
-expect shown_offset(left_alone({ ..starting_model, heading_for: Clock.at_step(870) }, 1)) == 8
+expect shown_offset(asking_for(last_step)) == 0
+expect shown_offset(left_alone(asking_for(last_step), 2)) == 2 * played_a_frame
+expect shown_offset(left_alone(asking_for(870), 2)) == 10
+expect shown_offset(left_alone(asking_for(870), 1)) == 8
 
-expect look_stretch.from.to_f64() < look_stretch.to.to_f64()
+# A step while the ride is catching up counts from the step on show.
+expect {
+	catching_up = left_alone(asking_for(last_step), 2)
+	stepped = with_buttons(catching_up, click_on(StepForward))
+	stepped.transport == { at: Clock.at_step(first_step + 2 * 8 + 1), motion: Stopped }
+}
+
+expect look_first_step < look_end_step
 
 # Where the road's plan falls on the canvas.
 expect screen_x(Along.metres(left_edge_metres)) == 0.0
