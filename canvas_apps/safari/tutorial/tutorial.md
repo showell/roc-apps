@@ -338,20 +338,61 @@ Nothing else in the program draws grass. A segment doesn't have any, and there's
 
 The other big thing in `Backdrop` is more interesting.
 
+## The sun
+
+The sun is a circle. That's the easy part, so it's the part we'll do here.
+
+New in this chapter:
+
+- Roc: tags in place of `null`
+- Modules: `Sky`, `Angle`
+
+### A circle
+
+A frame is a list of shapes, and a circle is one of them. `Disc` is a tag from `lib.Shapes`. This is the sun's, from the same list as the grass:
+
+{{code Backdrop.behind from "Disc({" to "clip: Within({"}}
+
+A `Disc` has a center, a radius and a fill. `clip` cuts off whatever falls below the horizon, so the sun can sink behind the land with no more code.
+
+The fill makes it look like a sun. `sun_fills` builds two, a disc and a glow behind it:
+
+{{code Backdrop.sun_fills}}
+
+`Radial` runs from pale yellow in the middle to orange at the edge. `Glow` is a wide haze that fades to nothing. Both are tags with records inside, so a fill is plain data, and the browser does the painting. `scale` is how large the sun is drawn, because a wider view makes it look smaller.
+
+### Angles that can't be mixed up
+
+The sun stands in one direction, and the rider may not be facing it. That needs angles. `Angle.Bearing` is a direction in the world and `Angle.Turn` is a change of direction. Here we pass a `Turn` where a `Bearing` is wanted:
+
+{{fails turn_as_bearing}}
+
+Two tags say whether the sun is in view, so there's no `null` and no off-screen sentinel value. A caller has to handle `OutOfView`, because `match` must cover every tag.
+
+🐾 {{code Sky.SunSighting}}
+
+Opaque types do the most work from here on. A `Bearing` and a `Turn` are both floats underneath, but only the `Angle` module can build or open one. `sun_sighting` also takes one record argument, destructured in its parameter list.
+
+🌳 {{code Sky.sun_sighting}}
+
+`turn_from_view.abs() >= visible_turn_limit` compares two `Turn`s. The code never touches radians until `sun_place` has to do trigonometry, because `r_tan` takes a float.
+
+🌳 {{code Sky.sun_place from "scale =" to "y: Screen.horizon_y"}}
+
+Its caller, `RideInstant.sun`, is short enough to read whole:
+
+🌳 {{code RideInstant.sun}}
+
+Those functions all take a `clock`, and that's the hard part. The sun sinks a little with every step, and the sky's colors, the mountains and the truck's headlights all follow it. That's a lot of heavy lifting for a circle. It gets a chapter of its own, The setting sun, once things start to move.
+
 ## The sky
 
 The sky changes all through the ride, but a frame only has to ask one question: what color is it right now? The answer depends only on the clock.
 
-```widget sky
-Drag the clock and watch the sun set.
-```
-
-Drag across it from left to right, and the clock runs from step 0 to step 6,000. The sun sinks steadily, and near step 3,980 its center meets the horizon: the sun line reads 0.0 px, and the warmth line tops out at 99%, since it rounds down. The marked stretch of the ruler is where the horizon has any warmth at all. The disc is gone near step 4,730, and the dusk line reaches 100% near step 5,490, before the marked stretch ends. Dragging back raises the sun along the same path.
-
 New in this chapter:
 
-- Roc: `->` as a promise, privacy without a keyword, records destructured in a parameter list, tags in place of `null`
-- Modules: `Sky`, `Fraction`, `Angle`
+- Roc: `->` as a promise, privacy without a keyword, records destructured in a parameter list
+- Modules: `Fraction`
 
 `Sky` is a set of functions that each take a clock and answer with a color or the sun's place.
 
@@ -381,79 +422,9 @@ Here's one of the questions being asked. `Tour` holds the ride, and we'll come b
 
 🌳 {{code Tour.sky_top_color}}
 
-Here's what happens behind that call. In this diagram a box is a function, not a module, and an arrow is a call. Only `Sky`'s own functions are shown, and two small helpers are left out.
+### Two colors
 
-The calls inside `Sky`
-```dot
-digraph sky_calls {
-  node [shape=box, fontname="Helvetica"];
-  sky_top_color -> sky_at;
-  sky_top_color -> pack;
-  sky_horizon_color -> sky_at;
-  sky_horizon_color -> color_between;
-  sky_horizon_color -> sunset_warmth;
-  sky_horizon_color -> pack;
-  sky_at -> dusk_at;
-  sky_at -> color_between;
-  dusk_at -> sun_height_px;
-  sunset_warmth -> sun_height_px;
-  sun_sighting -> sun_place;
-  sun_place -> sun_height_px;
-  sun_height_px [style=bold];
-}
-```
-
-Everything on this diagram that changes with the clock comes down to the box in bold, which is the only one that turns the clock into a number. The rest is color on one side and the sun's place on the other.
-
-The rest of this chapter reads those calls from the bottom up, from where the clock becomes a number to the colors at the top. Together the calls form a tree. A function that calls none of Safari Ride's own is a leaf, and a walk through the tree is a trail.
-
-### A function of the clock
-
-These are the three numbers that come off the clock, at seven steps:
-
-| Step | Sun's height | Dusk | Warmth |
-|---|---|---|---|
-| 0 | 244.0 px | 0% | 0% |
-| 2,000 | 121.5 px | 10% | 0% |
-| 3,000 | 60.2 px | 23% | 45% |
-| 3,980 | 0.2 px | 42% | 99% |
-| 4,730 | -45.8 px | 59% | 58% |
-| 5,490 | -92.3 px | 100% | 16% |
-| 6,000 | -123.6 px | 100% | 0% |
-
-The sun's column falls in a straight line, the dusk column is a curve and then a line, and the warmth column is a tent.
-
-We start at the bottom of the tree, which isn't on the diagram, because the diagram shows only `Sky`. It's back in `Clock`. `Clock.to_f64` opens the opaque type and calls `U32`'s own `to_f64`, which comes with Roc. It calls nothing else in Safari Ride, so it's a leaf.
-
-🐾 🍃 {{code Clock.to_f64}}
-
-`sun_height_px` calls it. The sun's height is a straight line. It starts at 244 pixels, reaches the horizon around step 3,980, and has fully set around step 4,730. `to_f64` is the clock's one door to a float, and this is the only place that uses it.
-
-🌳 {{code Sky.sun_height_px}}
-
-The next answers are `Fraction`s. `Fraction` is another small opaque type, a ratio from 0 to 1, and only its own block can build one, so a `Fraction` is always in range. It has two ways in. `Fraction.of` takes a ratio that can only be in range and crashes on anything else, because that would be a bug in the sum. `Fraction.clamp` takes a ratio that can rightly fall outside, as a sun sunk far below the horizon does, and holds it at the nearest end.
-
-Dusk is a curve and then a line, which means two cases, `dusk_while_up` and `dusk_after_set`. `Sky` keeps them below its block. Anything outside `Sky :: [].{ ... }` is private to the module, so a helper stays a helper without any keyword.
-
-🌳 {{code Sky.dusk_while_up}}
-
-🌳 {{code Sky.dusk_after_set}}
-
-`dusk_at` calls `sun_height_px`, then one of those two:
-
-🌳 {{code Sky.dusk_at}}
-
-And here's the walk up the stack: each frame, `RideInstant.shapes` hands the answer to the mountains, whose rock and snow go dark with it.
-
-🌳 {{code RideInstant.shapes from "Mountains.draw({" to "}),"}}
-
-The horizon's warmth is a third shape, a tent centerd on the instant the sun touches the horizon. That makes three curves from one number. They're plain functions, because nothing else in the game needs them. Here's `sunset_warmth`:
-
-🌳 {{code Sky.sunset_warmth}}
-
-### From curves to colors
-
-The numbers above become two colors, the top of the sky and the horizon:
+The sky is two colors, the top of the sky and the horizon. Here they are at five steps of the ride:
 
 | Step | Top of the sky | Horizon |
 |---|---|---|
@@ -463,49 +434,31 @@ The numbers above become two colors, the top of the sky and the horizon:
 | 4,730 | `0x4f7595` | `0x966765` |
 | 6,000 | `0x243a5e` | `0x243a5e` |
 
-A color ends up as one integer. `pack` gets there with method calls on plain numbers. Static dispatch finds `to_i64_wrap`, `shl_wrap` and `bitwise_or` on Roc's own types. That makes `pack` a leaf, the only one on the diagram.
+A color ends up as one integer. `pack` gets there with method calls on plain numbers. Static dispatch finds `to_i64_wrap`, `shl_wrap` and `bitwise_or` on Roc's own types. That makes `pack` a leaf.
 
 🍃 {{code Sky.pack}}
+
+Every color in the sky is a blend of two others, and a blend needs a ratio. `Fraction` is another small opaque type, a ratio from 0 to 1, and only its own block can build one, so a `Fraction` is always in range. It has two ways in. `Fraction.of` takes a ratio that can only be in range and crashes on anything else, because that would be a bug in the sum. `Fraction.clamp` takes a ratio that can rightly fall outside, and holds it at the nearest end.
 
 `color_between` takes one record argument, destructured in its parameter list, so callers name every field. Each channel moves the same share of the way. `Sky.Rgb` is a plain record alias: three floats with nothing to guard.
 
 🌳 {{code Sky.color_between}}
 
-`sky_at` calls it with the dusk from above. It's private, like the two dusk helpers:
+`sky_at` calls it to blend day into dusk. It sits below the block. Anything outside `Sky :: [].{ ... }` is private to the module, so a helper stays a helper without any keyword.
 
 🌳 {{code Sky.sky_at}}
 
-The top of the tree is two calls. `sky_top_color` is the one `Tour.sky_top_color` asked at the start of this chapter, and `sky_horizon_color` is the same sky, warmed toward red by `sunset_warmth`.
+`dusk_at` says how far the day has gone. That's a `Fraction` too, and The setting sun works it out.
+
+The two questions at the top are short. `sky_top_color` is the one `Tour.sky_top_color` asked at the start of this chapter, and `sky_horizon_color` is the same sky, warmed toward red near sunset.
 
 🌳 {{code Sky.sky_top_color}}
 
 🌳 {{code Sky.sky_horizon_color}}
 
-### Angles that can't be mixed up
+`Backdrop` paints the two as a gradient, down to the horizon. It stays on the top color for the first fifth of the way, then fades:
 
-One trail on the diagram is left: the sun's place. It needs angles. `Angle.Bearing` is a direction in the world and `Angle.Turn` is a change of direction. Here we pass a `Turn` where a `Bearing` is wanted:
-
-{{fails turn_as_bearing}}
-
-The sun is the one thing here that also depends on where the rider is looking. Two tags say the two answers, so there's no `null` and no off-screen sentinel value. A caller has to handle `OutOfView`, because `match` must cover every tag.
-
-🐾 {{code Sky.SunSighting}}
-
-Opaque types do the most work from here on. A `Bearing` and a `Turn` are both floats underneath, but only the `Angle` module can build or open one. `sun_place` also calls `sun_height_px`. It's the first code to want a plain number, because `r_tan` takes a float.
-
-🌳 {{code Sky.sun_place from "scale =" to "y: Screen.horizon_y"}}
-
-`sun_sighting` calls it once the sun is known to be in view. It also takes one record argument, destructured in its parameter list.
-
-🌳 {{code Sky.sun_sighting}}
-
-Its caller, `RideInstant.sun`, is short enough to read whole:
-
-🌳 {{code RideInstant.sun}}
-
-`turn_from_view.abs() >= visible_turn_limit` compares two `Turn`s. The code never touches radians until `sun_place` has to do trigonometry.
-
-That's every box on the diagram: one number goes in, and colors and a place for the sun come out, with nothing kept from one frame to the next.
+{{code Backdrop.behind from "sky = Linear({" to "dy: Screen.horizon_y.to_f64(),"}}
 
 One more thing in the frame goes dark with the sky: the mountains.
 
@@ -536,7 +489,7 @@ To draw a range, we go across the screen two pixels at a time and ask how high t
 
 {{code Mountains.draw}}
 
-The rock darkens with `dusk`, and the snow goes blue. `snow_color` uses the sky's own `color_between`:
+The rock darkens with `dusk`, the same `Fraction` that darkens the sky, and the snow goes blue. `snow_color` uses the sky's own `color_between`:
 
 {{code Mountains.snow_color}}
 
@@ -818,7 +771,7 @@ Safari Ride's farms are crowds of animals, and a crowd is just a list of critter
 
 New in this chapter:
 
-- Roc: `List.from_iter` over a range
+- Roc: `List.from_iter` with `I64.until`
 - Modules: `Cows`
 
 ### Cows
@@ -875,8 +828,8 @@ That gives three kinds of moving thing, and the rest of the tour is organized ar
 | Kind | Things | How it works |
 |---|---|---|
 | Clock-driven | The sun, the sky, the beacons, the headlights | Worked out from the clock, with nothing stored |
-| Rider-driven | The cat, the bird | Worked out from how the rider is approaching, with nothing stored |
 | Stepped | The rider, the truck | Stored in `RideInstant`, and moved once a step from where it was |
+| Rider-driven | The cat, the bird | Worked out from how the rider is approaching, with nothing stored |
 
 Trees and cows are a fourth kind, the easiest of all: they never change.
 
@@ -898,11 +851,11 @@ Stepping forward is the ordinary step. Stepping back is more interesting, becaus
 
 Nothing has to be undone. An old `RideInstant` is still a perfectly good value. The cat ends up in the right place because its position was only ever worked out from the rider's, and the sun ends up in the right place because it was only ever worked out from the clock. Neither one needs any code for going backwards.
 
-We've seen the things that never change, and the sky. The beacons are next, because they follow the clock alone.
+We've seen the things that never change. The beacons are next, because they follow the clock alone.
 
 ## The beacons
 
-Some things in Safari Ride are worked out from the clock alone, with nothing stored. The sky is the largest of them. The beacons on the radio towers are another, and they blink over and over.
+Some things in Safari Ride are worked out from the clock alone, with nothing stored. The beacons on the radio towers are the simplest of them, and they blink over and over.
 
 ```widget beacon
 Drag the clock and watch the towers blink out of step.
@@ -962,7 +915,503 @@ There's no blink abstraction, because nothing else in the game blinks.
 
 The clock counts steps, not seconds, so pausing the ride freezes the beacons, and stepping back runs them backwards.
 
-With the sunset and the beacons, we compute a value based on the clock alone. The cat has a more nuanced rule: the timing of its crossing depends on the rider's position.
+A beacon repeats. The sun only goes one way, and a lot more hangs on it.
+
+## The setting sun
+
+The sky's colors, the mountains and the truck's headlights all take their orders from one number: how high the sun is. It's the simplest thing that moves, because it depends only on the clock.
+
+```widget sky
+Drag the clock and watch the sun set.
+```
+
+Drag across it from left to right, and the clock runs from step 0 to step 6,000. The sun sinks steadily, and near step 3,980 its center meets the horizon: the sun line reads 0.0 px, and the warmth line tops out at 99%, since it rounds down. The marked stretch of the ruler is where the horizon has any warmth at all. The disc is gone near step 4,730, and the dusk line reaches 100% near step 5,490, before the marked stretch ends. Dragging back raises the sun along the same path.
+
+New in this chapter:
+
+- Roc: nothing new, just a lot of small pure functions working together
+- Modules: none new
+
+Here's what happens behind the sky's colors. In this diagram a box is a function, not a module, and an arrow is a call. Only `Sky`'s own functions are shown, and two small helpers are left out.
+
+The calls inside `Sky`
+```dot
+digraph sky_calls {
+  node [shape=box, fontname="Helvetica"];
+  sky_top_color -> sky_at;
+  sky_top_color -> pack;
+  sky_horizon_color -> sky_at;
+  sky_horizon_color -> color_between;
+  sky_horizon_color -> sunset_warmth;
+  sky_horizon_color -> pack;
+  sky_at -> dusk_at;
+  sky_at -> color_between;
+  dusk_at -> sun_height_px;
+  sunset_warmth -> sun_height_px;
+  sun_sighting -> sun_place;
+  sun_place -> sun_height_px;
+  sun_height_px [style=bold];
+}
+```
+
+Everything on this diagram that changes with the clock comes down to the box in bold, which is the only one that turns the clock into a number. The rest is color on one side and the sun's place on the other.
+
+We've read the top of this diagram already. This chapter reads the bottom, from where the clock becomes a number. Together the calls form a tree. A function that calls none of Safari Ride's own is a leaf, and a walk through the tree is a trail.
+
+### A function of the clock
+
+These are the three numbers that come off the clock, at seven steps:
+
+| Step | Sun's height | Dusk | Warmth |
+|---|---|---|---|
+| 0 | 244.0 px | 0% | 0% |
+| 2,000 | 121.5 px | 10% | 0% |
+| 3,000 | 60.2 px | 23% | 45% |
+| 3,980 | 0.2 px | 42% | 99% |
+| 4,730 | -45.8 px | 59% | 58% |
+| 5,490 | -92.3 px | 100% | 16% |
+| 6,000 | -123.6 px | 100% | 0% |
+
+The sun's column falls in a straight line, the dusk column is a curve and then a line, and the warmth column is a tent.
+
+We start at the bottom of the tree, which isn't on the diagram, because the diagram shows only `Sky`. It's back in `Clock`. `Clock.to_f64` opens the opaque type and calls `U32`'s own `to_f64`, which comes with Roc. It calls nothing else in Safari Ride, so it's a leaf.
+
+🐾 🍃 {{code Clock.to_f64}}
+
+`sun_height_px` calls it. The sun's height is a straight line. It starts at 244 pixels, reaches the horizon around step 3,980, and has fully set around step 4,730. `to_f64` is the clock's one door to a float, and this is the only place that uses it.
+
+🌳 {{code Sky.sun_height_px}}
+
+The next answers are `Fraction`s. Dusk is a curve and then a line, which means two cases, `dusk_while_up` and `dusk_after_set`. Both sit below `Sky`'s block, so they're private.
+
+🌳 {{code Sky.dusk_while_up}}
+
+🌳 {{code Sky.dusk_after_set}}
+
+`dusk_at` calls `sun_height_px`, then one of those two:
+
+🌳 {{code Sky.dusk_at}}
+
+And here's the walk up the stack: each frame, `RideInstant.shapes` hands the answer to the mountains, whose rock and snow go dark with it.
+
+🌳 {{code RideInstant.shapes from "Mountains.draw({" to "}),"}}
+
+The horizon's warmth is a third shape, a tent centered on the instant the sun touches the horizon. A sun far below the horizon gives a ratio well outside 0 to 1, so this one uses `Fraction.clamp`. That makes three curves from one number. They're plain functions, because nothing else in the game needs them. Here's `sunset_warmth`:
+
+🌳 {{code Sky.sunset_warmth}}
+
+That's every box on the diagram: one number goes in, and colors and a place for the sun come out, with nothing kept from one frame to the next.
+
+The sun and the beacons can be asked about any step, cold. Hand `Sky.dusk_at` a clock and it answers. The rider and the truck can't do that.
+
+## Stepping through the ride: RideInstant
+
+Where the rider and the truck are depends on where they were, so their state has to be kept, and it's the only state there is. This chapter and the next few are about the two fields of `RideInstant` that aren't a clock.
+
+```widget step
+Click far to the right of the dot, then far to the left.
+```
+
+Going forward, the ride has to be played, because each step starts from the one before. Going back, it only reads a list. The rider and the truck are the reason for that difference.
+
+New in this chapter:
+
+- Roc: a block that ends in a record
+- Modules: none yet. This chapter shows what calls the modules below, and the next few open them.
+
+The modules that do the stepping
+```dot
+digraph stepped {
+  node [shape=box, fontname="Helvetica"];
+  RideInstant [style=bold];
+  RideInstant -> Rider;
+  RideInstant -> Truck;
+  RideInstant -> RiderState;
+  Rider -> Bike;
+  Rider -> Throttle;
+  Rider -> LeanSearch;
+  Rider -> Gaze;
+  Rider -> RiderState;
+  Rider -> VehicleLimits;
+  Truck -> VehicleLimits;
+  Throttle -> Gaze;
+  Throttle -> VehicleLimits;
+  LeanSearch -> Bike;
+}
+```
+
+Here's the step again, this time whole. Its body is a block: names, then a record, which is the value of the block. The rider moves first, and the truck reads where the rider has just got to, so the order of those lines is a rule of the game, and `dist` is what carries it.
+
+{{code RideInstant.next}}
+
+`Clock.next`, `Rider.advance` and `Truck.advance` all have the same shape: a value goes in, and the next value comes out. Call that *the step function*. There's no mutable rider being nudged. There's a rider, and another rider one step on.
+
+Stepping has a cost, which shows up when we compare it with the sun:
+
+- We can ask about the sun at any step. To find a truck at step 4,000, we have to play the ride that far, or write the answer down by hand.
+- A wrong sky only affects the frames it touches. A wrong step moves the rider for the rest of the ride.
+- The lines of `RideInstant.next` have to run in order. Frames can be worked out in any order.
+
+The rider's step is the bigger of the two, and it takes up the next four chapters. The truck gets the chapter after those.
+
+## The rider
+
+This is the rider at step 1,570, with the cat ahead:
+
+| Field | Type | Value |
+|---|---|---|
+| `segment_index` | `World.SegmentIndex` | 3 |
+| `along` | `Along` | 102.62 metres |
+| `across` | `Across` | -0.08 metres |
+| `yaw` | `Angle.Turn` | 0.0064 radians |
+| `speed` | `Speed` | 1.22 metres a step |
+| `lean` | `Angle.Lean` | -0.0041 radians |
+| `heading` | `Angle.Bearing` | 0.0064 radians |
+| `gaze_yaw` | `Angle.Turn` | 0 radians |
+| `attention` | `Fraction` | 0.68 |
+
+New in this chapter:
+
+- Roc: a nominal record with no bare floats, a value for a bike that doesn't exist
+- Modules: `RiderState`, `Rider`, `CanvasRoll`, `Speed`
+
+A nominal record holds the rider, and `RideInstant` stores one. Count the opaque types: `SegmentIndex`, `Along`, `Across`, `Turn`, `Speed`, `Lean`, `Bearing` and `Fraction`. Nothing in it is a bare float. Four fields of this one record are angles, of three different types, and passing one type where another is wanted is a compile-time error. The last two fields say where the rider is looking, and they get a chapter of their own.
+
+{{code RiderState.RiderState}}
+
+The step does four things in order, and the code reads that way. Static dispatch finds `segment_in` on the `SegmentIndex`. The `match` on `seg.ending` has two tags, and `Continues(_)` ignores its payload:
+
+{{code Rider.advance}}
+
+The rider steers by leaning, so a decision is a record of two opaque values: a change of lean and an acceleration. There's something to notice in the last line of this next function. `Throttle`, which picks the acceleration, is asked about a bike that doesn't exist yet: the rider as it would be with the new lean, which `Bike.with_lean` makes by building a new record. The real rider isn't touched, because nothing can touch it.
+
+{{code Rider.decide}}
+
+The math layer chapter takes that idea much further. A small version of it decides what happens at the end of a segment. `cross_if_on_road` works out the rider on the next segment and keeps that only if it lands inside the lane. The rejected rider simply stops being referred to, and nothing has to be undone:
+
+{{code Rider.cross_if_on_road}}
+
+Record update does most of the writing in this module. Its plainest use is stopping dead, where `..s` keeps everything but the two fields named:
+
+{{code Rider.stopped_at}}
+
+### The picture leans too
+
+When the rider leans, the whole picture leans with it. This is all of that:
+
+{{module CanvasRoll}}
+
+A lean inside the deadband leaves the canvas level, and any other lean passes straight through. The last `expect` is a table of pairs, on both sides of the deadband and at its edge. It's called once a frame:
+
+🌳 {{code Tour.roll}}
+
+The camera turns as well. `ViewYaw` follows the rider's gaze, and turns a little with the lean, as a rider's head turns into a bend.
+
+So a decision is a lean and an acceleration. `Bike` is what turns them into movement.
+
+## The bike
+
+A lean of 1 degree turns the bike by a tenth of a degree each step, so at a metre a step it goes round a circle 573 metres in radius. That's nearly all the physics.
+
+New in this chapter:
+
+- Roc: a named open record
+- Modules: `Bike`
+
+The modules around `Bike`
+```dot
+digraph bike {
+  node [shape=box, fontname="Helvetica"];
+  Bike [style=bold];
+  Rider -> Bike;
+  Rider -> LeanSearch;
+  Coast -> Bike;
+  LeanSearch -> Bike;
+  LeanSearch -> Coast;
+  RideFocal -> Bike;
+  Bike -> Angle;
+  Bike -> Speed;
+  Bike -> Acceleration;
+}
+```
+
+`Bike` holds the physics. It's under 60 lines, not counting its `expect`s. Its type is the first one in the tour that names the rest of a record. `..others` makes `Motion` open: it's any record with these six fields and whatever else, with `others` standing for the whatever else.
+
+{{code Bike.Motion}}
+
+A structural type like this has to be named when it appears twice. Here it appears in the argument and in the result, and that's the promise: what goes in comes out with the same other fields. A `RiderState` goes in, with its `segment`, `gaze_yaw` and `attention`, and a `RiderState` comes out, though `Bike` has never heard of a gaze.
+
+Call this *a narrow view of a wide record*. A module says exactly which fields it cares about, and the compiler takes care of the rest, with no base class and no copying fields across by hand. The smallest example in the program is a function with one job:
+
+{{code Bike.with_lean}}
+
+`{ ..s, lean }` is record update with a shorthand: the field and the local have the same name. `Rider.decide` called it in the last chapter. Here's the step, which `Rider.advance` called:
+
+{{code Bike.advance}}
+
+Reading down, the types do their share of explaining. A `Lean` can't be added to anything but a `Lean`, and it only reaches direction through `lean.steer(turn_per_lean)`, which is the single door from roll to yaw. The bike then moves along the middle of the step's turn, which is what `s.yaw.plus(turn.times(0.5))` means. `speed.step_length()` is a `Distance`, and `Along.plus` takes one, so the move itself is places and distances. `to_radians()` appears at the last line that can do without it: `r_cos` wants a float.
+
+A bike does what it's told. Choosing the lean has to wait for the math layer chapter. Choosing the acceleration is the throttle's job.
+
+## The throttle
+
+The rider is always deciding whether to accelerate, brake or hold steady. `Throttle` makes that decision, once a step.
+
+New in this chapter:
+
+- Roc: guards
+- Modules: `Throttle`, `Acceleration`
+
+The modules around `Throttle`
+```dot
+digraph throttle {
+  node [shape=box, fontname="Helvetica"];
+  Throttle [style=bold];
+  Rider -> Throttle;
+  Throttle -> Coast;
+  Throttle -> CrossingReaction;
+  Throttle -> Gaze;
+  Throttle -> VehicleLimits;
+  Throttle -> Acceleration;
+  Throttle -> Speed;
+  Speed -> Acceleration;
+}
+```
+
+The chain of limits
+```dot
+digraph limits {
+  rankdir=LR;
+  node [shape=box, fontname="Helvetica"];
+  bend_brake -> crossing_limit -> pig_limit -> shoulder_brake;
+  shoulder_brake -> allowed_speed;
+}
+```
+
+The rider has several reasons to slow down, and they don't know about each other. A turn is coming. A cat is in the lane. There's a pig to look at. The road is about to run out. `Throttle` writes them as a line of limits. An `Acceleration` goes in, a limit lets it through or lowers it, and the next limit gets what's left:
+
+{{code Throttle.acceleration from "a2 = crossing_limit(" to "a4 = shoulder_brake(state, a3)"}}
+
+Call this *the chain of limits*. Each limit has the same shape and can be read alone, and adding a reason is one more line. It reads like a list of rules because that's what it is.
+
+Each limit compares two opaque `Acceleration`s with an ordinary `<`, which works because `Acceleration` defines `is_lt`. `crossing_limit` shows one more thing about patterns. A guard, `if a > Acceleration.steady`, adds a condition to a branch. When the guard fails, `NoAcceleration` falls through to the last branch. `NoAcceleration` comes from the cat: it stops the rider opening the throttle, and a rider already braking stays braking. We'll see how once we've met the cat.
+
+{{code Throttle.crossing_limit}}
+
+`Speed` and `Acceleration` are places and distances again: two speeds make an acceleration, and an acceleration moves a speed. The sum behind braking for a turn is the first line of a physics textbook, `v² = u² + 2as`, solved for `a`. This function is a good example of how far opaque types reach into a parameter list. `target: Speed.(t)` opens the field's `Speed` where it's destructured:
+
+{{code Speed.acceleration_to}}
+
+The first limit, `bend_brake`, makes the `a1` that the chain above starts from. It calls this for the distance left to the point where the rider commits to the turn. Three modules use that one line of physics: this one, `Gaze` to slow for a pig, and `Truck`.
+
+{{code Throttle.bend_brake from "bend_a =" to "state.speed.acceleration_to({ target: v_end, within: d })"}}
+
+After the limits, `Throttle.acceleration` hands its result to `allowed_speed`, not quoted here, which holds the speed between rest and the top speed. The chain works in accelerations and that step works in speeds, so the answer is taken back with `.change_from(state.speed)`, the other half of the same pair of types.
+
+The last limit, `shoulder_brake`, has to wait for the math layer chapter, because it simulates the bike ahead of itself.
+
+The two limits in the middle come from what the rider sees. `crossing_limit` is the cat's, and `pig_limit` is the pig's. The cat's has to wait until we've met the cat, so we'll take the pig first.
+
+## The rider's gaze
+
+The herds chapter left one pig waiting. On the first two segments with pigs, a pig in the big herd catches the rider's eye. The rider turns to look and slows down, and the picture turns too.
+
+```widget gaze
+Drag along the stretch around the first distracting pig: the sight line follows the pig until it's 35 degrees off, then eases back to the road.
+```
+
+Here's that first pig, on the third segment of the route:
+
+| Step | What happens | Speed | `gaze_yaw` | `attention` |
+|---|---|---|---|---|
+| 889 | The rider looks, with the pig 150 metres off | 1.94 metres a step | 4.0 degrees | 0.114 |
+| 1,045 | The gaze is at its widest | 0.2 metres a step | 34.9 degrees | 0.998 |
+| 1,046 | The rider lets the pig go | 0.2 metres a step | 34.7 degrees | 0.998 |
+| 1,304 | The gaze is back on the road | 0.2 metres a step | 0 degrees | 0.997 |
+
+The look takes 157 steps, and getting the eyes back takes 258. The rider is still crawling when the segment ends, at step 1,394.
+
+New in this chapter:
+
+- Roc: comparing a tag with `==`
+- Modules: `Gaze`, `ViewYaw`
+
+### Where the rider looks
+
+The rider's record has two fields we skipped. `gaze_yaw` is the angle between where the bike points and where the rider looks. `attention` says how much a look still holds the rider, from 0 to 1. They're stepped like everything else in that record, and the last line of `Rider.advance` does it, after the bike has moved:
+
+{{code Gaze.next_rider_gaze}}
+
+The rider looks either at a pig or at the road. An angle only means something for a pig, so only `OnPig` carries one:
+
+{{code Gaze.GazeTarget}}
+
+{{code Gaze.desired_gaze}}
+
+`pig_ahead` answers with `Looking` or `NotLooking`. There's only one thing to ask of that, so `==` does the job of a `match`.
+
+{{code Gaze.pig_ahead}}
+
+`Distracting` is the tag from the herds chapter. `yaw` is the bike's angle to the road, so a rider who's steering hard keeps its eyes where it's going. Then there are two more conditions. The pig has to be within 150 metres:
+
+{{code Gaze.pig_ahead_near}}
+
+And it has to be less than 35 degrees from the way the bike points. The pig stands beside the road, so the angle to it grows as the rider comes closer. At 35 degrees the rider lets it go.
+
+{{code Gaze.pig_in_sight}}
+
+`Pigs.gaze_pig` is the third pig of the front row, at the place it would stand if it didn't stray.
+
+### Turning the head
+
+{{code Gaze.next_gaze_yaw}}
+
+Toward a pig, the gaze turns by at most 4 degrees a step, and `within` holds the change to that limit on either side. On the way back it moves a twentieth of the way each step, and never more than 0.2 degrees. Once it's within 0.02 degrees it snaps to straight ahead, so a look comes to a real end. If the segment ends first, `Rider.on_next_segment` puts the gaze straight ahead.
+
+Nothing here turns the bike. The gaze goes to the camera, and to nothing else that moves:
+
+{{code ViewYaw.view_yaw_for}}
+
+So when the rider looks right, the road slides left on the page, and the bike keeps going where it was going.
+
+### Attention
+
+{{code Gaze.next_attention}}
+
+While the gaze is off the road, attention rises with how far it has turned, and it doesn't drop. Once the gaze is straight ahead, attention fades by 0.0012 a step, so it takes hundreds of steps to go. That's why the table in the rider chapter has an `attention` of 0.68 at step 1,570, with no pig in sight.
+
+`RideFocal.ride_focal`, which sets how wide the view is, takes the stronger of the cat's attention and this one. So a pig widens the view the way a cat does, and it stays wide for a while after.
+
+### Slowing down
+
+`pig_limit` is the third link in the throttle's chain. It asks `Gaze` for a brake, and takes it if that's harder than what it was offered:
+
+{{code Throttle.pig_limit}}
+
+{{code Gaze.pig_gaze_brake}}
+
+{{code Gaze.pig_gaze_brake_easing}}
+
+The sum is the one the throttle uses for a bend, with a pig for a bend. The rider aims to be down to 0.2 metres a step by 25 metres before the pig. `d.max(...)` keeps the distance positive once the rider gets there.
+
+Whether the rider is gawking is a plainer question than whether it's looking:
+
+{{code Gaze.is_gawking}}
+
+It starts 150 metres before the pig, and only asks where the rider is. So it outlasts the look. The rider crawls past the pig and on to the end of the segment, long after its eyes have moved on.
+
+That's the rider's step, apart from the lean. The other stepped thing is up ahead.
+
+## The truck
+
+The truck stays ahead of the rider all the way:
+
+| Step | Rider, along the route | Truck, along the route | Lead |
+|---|---|---|---|
+| 0 | 0 metres | 500 metres | 500 metres |
+| 2,000 | 1,819 metres | 2,186 metres | 366 metres |
+| 4,000 | 4,607 metres | 4,968 metres | 362 metres |
+| 6,000 | 6,481 metres | 6,632 metres | 151 metres |
+
+New in this chapter:
+
+- Roc: list patterns
+- Modules: `Truck`, `TruckDraw`
+
+The modules around `Truck`
+```dot
+digraph truck {
+  node [shape=box, fontname="Helvetica"];
+  Truck [style=bold];
+  RideInstant -> Truck;
+  Scene -> Truck;
+  TruckSighting -> Truck;
+  TruckDraw -> Truck;
+  Truck -> World;
+  Truck -> VehicleLimits;
+  Truck -> Speed;
+  Truck -> Acceleration;
+}
+```
+
+The truck is what the rider chases. It starts 500 metres ahead and keeps to a schedule that brings it to within 100 at the route's end. Its state is three fields:
+
+{{code Truck.TruckState}}
+
+The schedule is a straight line, and a pure function of the rider's progress, destructured from a record so the call site has to name both `Distance`s:
+
+{{code Truck.scheduled_position}}
+
+Its one caller is the truck's step function, the same shape as the rider's. `NextBend` is a tag union with a payload on one side, so the only way to read a `distance` is to be inside the branch where there is one:
+
+{{code Truck.advance from "schedule = scheduled_position(" to "NoBendAhead => advance_on_schedule(truck, schedule)"}}
+
+And that's called from `RideInstant.next`, in the chapter on stepping, with the rider's distance as the only thing the truck knows of the rider. Nothing in `Rider` imports `Truck`, and nothing in `Truck` imports `Rider`. The chase is one record literal in `RideInstant`.
+
+Finding the next turn shows a list pattern. `[]` is the end of the route, and `[segment, .. as later_segments]` takes the first segment and names the rest. Recursion walks the list, carrying where the current segment starts. Elsewhere, the same walk is usually a `fold`.
+
+{{code Truck.next_bend_on from "match segments {" to "next_bend_on(later_segments, { route_position, segment_start: segment_end })"}}
+
+It's called through a smaller function, which supplies the 0 so nobody else has to:
+
+{{code Truck.next_bend}}
+
+Then the two ways to take a step. Both sit below the block, private, and both are arithmetic on `Speed` by name. `target_speed.max(...)` keeps braking from undershooting, and `speed < truck.speed` is the whole of what turns on the brake lights. They're on while the truck is slowing down, and they go off when it's settled at the speed for the turn, even with the turn still ahead.
+
+{{code Truck.advance_braking}}
+
+{{code Truck.advance_on_schedule}}
+
+`brake_lights` is state because it's a fact about the last step. Headlights aren't, and they stay out of `TruckState`. That's three of the four kinds in one vehicle: the place and speed are stepped, the headlights are clock-driven, and the tires don't change.
+
+`TruckSighting` calls the distance to the truck `lead`, because the truck is being chased.
+
+### One switch
+
+Here are the truck's lights at three frames of the ride:
+
+| Step | Headlights | Brake lights |
+|---|---|---|
+| 3,742 | `Off` | `On` |
+| 5,700 | `On` | `Off` |
+| 6,520 | `On` | `On` |
+
+The modules behind the headlights
+```dot
+digraph headlights {
+  node [shape=box, fontname="Helvetica"];
+  RideInstant [style=bold];
+  RideInstant -> Mountains;
+  RideInstant -> Sky;
+  RideInstant -> Truck;
+  RideInstant -> SceneDraw;
+  Mountains -> Sky;
+  Mountains -> Clock;
+  Sky -> Clock;
+  SceneDraw -> TruckDraw;
+  TruckDraw -> Truck;
+}
+```
+
+The truck's headlights come on once the sun has gone behind the mountains, at step 4,039 of a ride that lasts 7,040. `Mountains` knows the skyline and already imports `Sky`, so the question is asked there. The argument is an opaque `Clock`, and the answer is a plain `Bool`, which is about to be turned into something better:
+
+{{code Mountains.is_sun_behind_mountains}}
+
+`Truck.Lights` is a record of two tag unions. Two independent lamps aren't one state with four values, so they're two fields:
+
+{{code Truck.Lights}}
+
+`RideInstant` puts it together. It's the only place that can. `Truck` is in the ride half of the system and `Mountains` is in the view, and no arrow goes from the first to the second. `RideInstant` imports both.
+
+{{code RideInstant.truck_lights}}
+
+Lamps are plain data. The sighting carries them, and the drawing does what they say, with each `match` covering both tags:
+
+{{code TruckDraw.draw from "beams =" to "].join()"}}
+
+`TruckDraw` leaves the painting to two modules. `TruckBody` paints the trailer, the cab and the tires, far to near, and `TruckLights` paints the beams and the brake lights, each with its glow.
+
+The sun and the beacons follow the clock alone. The cat has a more nuanced rule: the timing of its crossing depends on the rider's position.
 
 ## The cat
 
@@ -977,7 +1426,7 @@ Drag across it from left to right, and the gap falls from 50 metres to 0, with t
 New in this chapter:
 
 - Roc: type parameters, operators on opaque types, `var`, `for` and `return` in a pure function
-- Modules: `Cat`, `Animation`, `Beat`, `Beats`, `CatHeights`, `Speed`
+- Modules: `Cat`, `Animation`, `Beat`, `Beats`, `CatHeights`
 
 The cat is one function, `Cat.instant_at`, with two jobs: work out how far along the crossing is, and look up what the cat does at that point. The module `Animation` sits under both.
 
@@ -1200,7 +1649,7 @@ Looking back over the chapter, notice what isn't in it: a cat in `RideInstant`, 
 
 Roc doesn't force that, but pure functions make the stateless version the easy one to write, and every `->` shows it stayed that way.
 
-The cat also has an effect on the rider. A cat in the lane stops the rider speeding up, and that holds the rider back while the crossing plays. It makes more sense once we've seen how the rider is always deciding whether to accelerate, brake or hold steady, so it waits for that chapter.
+The cat also has an effect on the rider. A cat in the lane stops the rider speeding up, and that holds the rider back while the crossing plays. We'll come to that after the bird.
 
 ## The bird
 
@@ -1334,215 +1783,7 @@ Each frame, a sighting reads the route back. The crossing is matched in full, so
 
 We didn't need any new machinery for the bird. Above their `expect`s, the four bird modules come to about 450 lines, a quarter of them coordinates for the stills. `Animation` has nothing in it about birds.
 
-The sun, the beacons, the cat and the bird can all be asked about any instant, cold. Hand `Cat.instant_at` a gap and it answers. The rider and the truck can't do that.
-
-## The stepped things
-
-Where the rider and the truck are depends on where they were, so their state has to be kept, and it's the only state there is. This chapter and the next few are about the two fields of `RideInstant` that aren't a clock.
-
-```widget step
-Click far to the right of the dot, then far to the left.
-```
-
-Going forward, the ride has to be played, because each step starts from the one before. Going back, it only reads a list. The rider and the truck are the reason for that difference.
-
-New in this chapter:
-
-- Roc: a block that ends in a record
-- Modules: none yet. This chapter shows what calls the modules below, and the next few open them.
-
-The modules that do the stepping
-```dot
-digraph stepped {
-  node [shape=box, fontname="Helvetica"];
-  RideInstant [style=bold];
-  RideInstant -> Rider;
-  RideInstant -> Truck;
-  RideInstant -> RiderState;
-  Rider -> Bike;
-  Rider -> Throttle;
-  Rider -> LeanSearch;
-  Rider -> Gaze;
-  Rider -> RiderState;
-  Rider -> VehicleLimits;
-  Truck -> VehicleLimits;
-  Throttle -> Gaze;
-  Throttle -> VehicleLimits;
-  LeanSearch -> Bike;
-}
-```
-
-Here's the step again, this time whole. Its body is a block: names, then a record, which is the value of the block. The rider moves first, and the truck reads where the rider has just got to, so the order of those lines is a rule of the game, and `dist` is what carries it.
-
-{{code RideInstant.next}}
-
-`Clock.next`, `Rider.advance` and `Truck.advance` all have the same shape: a value goes in, and the next value comes out. Call that *the step function*. There's no mutable rider being nudged. There's a rider, and another rider one step on.
-
-Stepping has a cost, which shows up when we compare it with the cat:
-
-- We can ask about a cat at any gap. To find a truck at step 4,000, we have to play the ride that far, or write the answer down by hand.
-- A wrong critter rule only affects the frames it touches. A wrong step moves the rider for the rest of the ride.
-- The lines of `RideInstant.next` have to run in order. Frames can be worked out in any order.
-
-The rider's step is the bigger of the two, and it takes up the next five chapters. The truck gets the chapter after those.
-
-## The rider
-
-This is the rider at step 1,570, with the cat ahead:
-
-| Field | Type | Value |
-|---|---|---|
-| `segment_index` | `World.SegmentIndex` | 3 |
-| `along` | `Along` | 102.62 metres |
-| `across` | `Across` | -0.08 metres |
-| `yaw` | `Angle.Turn` | 0.0064 radians |
-| `speed` | `Speed` | 1.22 metres a step |
-| `lean` | `Angle.Lean` | -0.0041 radians |
-| `heading` | `Angle.Bearing` | 0.0064 radians |
-| `gaze_yaw` | `Angle.Turn` | 0 radians |
-| `attention` | `Fraction` | 0.68 |
-
-New in this chapter:
-
-- Roc: a nominal record with no bare floats, a value for a bike that doesn't exist
-- Modules: `RiderState`, `Rider`, `CanvasRoll`
-
-A nominal record holds the rider, and `RideInstant` stores one. Count the opaque types: `SegmentIndex`, `Along`, `Across`, `Turn`, `Speed`, `Lean`, `Bearing` and `Fraction`. Nothing in it is a bare float. Four fields of this one record are angles, of three different types, and passing one type where another is wanted is a compile-time error. The last two fields say where the rider is looking, and they get a chapter of their own.
-
-{{code RiderState.RiderState}}
-
-The step does four things in order, and the code reads that way. Static dispatch finds `segment_in` on the `SegmentIndex`. The `match` on `seg.ending` has two tags, and `Continues(_)` ignores its payload:
-
-{{code Rider.advance}}
-
-The rider steers by leaning, so a decision is a record of two opaque values: a change of lean and an acceleration. There's something to notice in the last line of this next function. `Throttle`, which picks the acceleration, is asked about a bike that doesn't exist yet: the rider as it would be with the new lean, which `Bike.with_lean` makes by building a new record. The real rider isn't touched, because nothing can touch it.
-
-{{code Rider.decide}}
-
-The math layer chapter takes that idea much further. A small version of it decides what happens at the end of a segment. `cross_if_on_road` works out the rider on the next segment and keeps that only if it lands inside the lane. The rejected rider simply stops being referred to, and nothing has to be undone:
-
-{{code Rider.cross_if_on_road}}
-
-Record update does most of the writing in this module. Its plainest use is stopping dead, where `..s` keeps everything but the two fields named:
-
-{{code Rider.stopped_at}}
-
-### The picture leans too
-
-When the rider leans, the whole picture leans with it. This is all of that:
-
-{{module CanvasRoll}}
-
-A lean inside the deadband leaves the canvas level, and any other lean passes straight through. The last `expect` is a table of pairs, on both sides of the deadband and at its edge. It's called once a frame:
-
-🌳 {{code Tour.roll}}
-
-The camera turns as well. `ViewYaw` follows the rider's gaze, and turns a little with the lean, as a rider's head turns into a bend.
-
-So a decision is a lean and an acceleration. `Bike` is what turns them into movement.
-
-## The bike
-
-A lean of 1 degree turns the bike by a tenth of a degree each step, so at a metre a step it goes round a circle 573 metres in radius. That's nearly all the physics.
-
-New in this chapter:
-
-- Roc: a named open record
-- Modules: `Bike`
-
-The modules around `Bike`
-```dot
-digraph bike {
-  node [shape=box, fontname="Helvetica"];
-  Bike [style=bold];
-  Rider -> Bike;
-  Rider -> LeanSearch;
-  Coast -> Bike;
-  LeanSearch -> Bike;
-  LeanSearch -> Coast;
-  RideFocal -> Bike;
-  Bike -> Angle;
-  Bike -> Speed;
-  Bike -> Acceleration;
-}
-```
-
-`Bike` holds the physics. It's under 60 lines, not counting its `expect`s. Its type is the first one in the tour that names the rest of a record. `..others` makes `Motion` open: it's any record with these six fields and whatever else, with `others` standing for the whatever else.
-
-{{code Bike.Motion}}
-
-A structural type like this has to be named when it appears twice. Here it appears in the argument and in the result, and that's the promise: what goes in comes out with the same other fields. A `RiderState` goes in, with its `segment`, `gaze_yaw` and `attention`, and a `RiderState` comes out, though `Bike` has never heard of a gaze.
-
-Call this *a narrow view of a wide record*. A module says exactly which fields it cares about, and the compiler takes care of the rest, with no base class and no copying fields across by hand. The smallest example in the program is a function with one job:
-
-{{code Bike.with_lean}}
-
-`{ ..s, lean }` is record update with a shorthand: the field and the local have the same name. `Rider.decide` called it in the last chapter. Here's the step, which `Rider.advance` called:
-
-{{code Bike.advance}}
-
-Reading down, the types do their share of explaining. A `Lean` can't be added to anything but a `Lean`, and it only reaches direction through `lean.steer(turn_per_lean)`, which is the single door from roll to yaw. The bike then moves along the middle of the step's turn, which is what `s.yaw.plus(turn.times(0.5))` means. `speed.step_length()` is a `Distance`, and `Along.plus` takes one, so the move itself is places and distances. `to_radians()` appears at the last line that can do without it: `r_cos` wants a float.
-
-A bike does what it's told. Choosing the lean has to wait for the math layer chapter. Choosing the acceleration is the throttle's job.
-
-## The throttle
-
-The rider is always deciding whether to accelerate, brake or hold steady. `Throttle` makes that decision, once a step.
-
-New in this chapter:
-
-- Roc: guards
-- Modules: `Throttle`, `Acceleration`
-
-The modules around `Throttle`
-```dot
-digraph throttle {
-  node [shape=box, fontname="Helvetica"];
-  Throttle [style=bold];
-  Rider -> Throttle;
-  Throttle -> Coast;
-  Throttle -> CrossingReaction;
-  Throttle -> Gaze;
-  Throttle -> VehicleLimits;
-  Throttle -> Acceleration;
-  Throttle -> Speed;
-  Speed -> Acceleration;
-}
-```
-
-The chain of limits
-```dot
-digraph limits {
-  rankdir=LR;
-  node [shape=box, fontname="Helvetica"];
-  bend_brake -> crossing_limit -> pig_limit -> shoulder_brake;
-  shoulder_brake -> allowed_speed;
-}
-```
-
-The rider has several reasons to slow down, and they don't know about each other. A turn is coming. A cat is in the lane. There's a pig to look at. The road is about to run out. `Throttle` writes them as a line of limits. An `Acceleration` goes in, a limit lets it through or lowers it, and the next limit gets what's left:
-
-{{code Throttle.acceleration from "a2 = crossing_limit(" to "a4 = shoulder_brake(state, a3)"}}
-
-Call this *the chain of limits*. Each limit has the same shape and can be read alone, and adding a reason is one more line. It reads like a list of rules because that's what it is.
-
-Each limit compares two opaque `Acceleration`s with an ordinary `<`, which works because `Acceleration` defines `is_lt`. `crossing_limit` shows one more thing about patterns. A guard, `if a > Acceleration.steady`, adds a condition to a branch. When the guard fails, `NoAcceleration` falls through to the last branch. `NoAcceleration` comes from the cat: it stops the rider opening the throttle, and a rider already braking stays braking. We'll see how next.
-
-{{code Throttle.crossing_limit}}
-
-`Speed` and `Acceleration` are places and distances again: two speeds make an acceleration, and an acceleration moves a speed. The sum behind braking for a turn is the first line of a physics textbook, `v² = u² + 2as`, solved for `a`. This function is a good example of how far opaque types reach into a parameter list. `target: Speed.(t)` opens the field's `Speed` where it's destructured:
-
-{{code Speed.acceleration_to}}
-
-The first limit, `bend_brake`, makes the `a1` that the chain above starts from. It calls this for the distance left to the point where the rider commits to the turn. Three modules use that one line of physics: this one, `Gaze` to slow for a pig, and `Truck`.
-
-{{code Throttle.bend_brake from "bend_a =" to "state.speed.acceleration_to({ target: v_end, within: d })"}}
-
-After the limits, `Throttle.acceleration` hands its result to `allowed_speed`, not quoted here, which holds the speed between rest and the top speed. The chain works in accelerations and that step works in speeds, so the answer is taken back with `.change_from(state.speed)`, the other half of the same pair of types.
-
-The last limit, `shoulder_brake`, has to wait for the math layer chapter, because it simulates the bike ahead of itself.
-
-The two limits in the middle come from what the rider sees. `crossing_limit` is the cat's, and `pig_limit` is the pig's. We'll take the cat first.
+The bird asks nothing of the rider. The cat does.
 
 ## What a cat does to the rider
 
@@ -1603,207 +1844,6 @@ A cat in the lane stops the rider opening the throttle, without braking, and wid
 This is the only feedback loop in the design. The rider's speed decides where the cat has got to, and the cat holds the rider's speed down. The loop settles, and it's why `over_beats` has to stay the cat's rule. A bird asks nothing of the rider, so it falls through to the same answer as an empty road.
 
 Each stretch of road has exactly one `crossing`: `CatCrosses`, `BirdHere` or `QuietRoad`. A cat and a bird in the same place can't be written down.
-
-A cat catches the rider's eye from the lane. A pig does it from the side of the road, and the rider turns to look.
-
-## The rider's gaze
-
-The herds chapter left one pig waiting. On the first two segments with pigs, a pig in the big herd catches the rider's eye. The rider turns to look and slows down, and the picture turns too.
-
-```widget gaze
-Drag along the stretch around the first distracting pig: the sight line follows the pig until it's 35 degrees off, then eases back to the road.
-```
-
-Here's that first pig, on the third segment of the route:
-
-| Step | What happens | Speed | `gaze_yaw` | `attention` |
-|---|---|---|---|---|
-| 889 | The rider looks, with the pig 150 metres off | 1.94 metres a step | 4.0 degrees | 0.114 |
-| 1,045 | The gaze is at its widest | 0.2 metres a step | 34.9 degrees | 0.998 |
-| 1,046 | The rider lets the pig go | 0.2 metres a step | 34.7 degrees | 0.998 |
-| 1,304 | The gaze is back on the road | 0.2 metres a step | 0 degrees | 0.997 |
-
-The look takes 157 steps, and getting the eyes back takes 258. The rider is still crawling when the segment ends, at step 1,394.
-
-New in this chapter:
-
-- Roc: comparing a tag with `==`
-- Modules: `Gaze`, `ViewYaw`
-
-### Where the rider looks
-
-The rider's record has two fields we skipped. `gaze_yaw` is the angle between where the bike points and where the rider looks. `attention` says how much a look still holds the rider, from 0 to 1. They're stepped like everything else in that record, and the last line of `Rider.advance` does it, after the bike has moved:
-
-{{code Gaze.next_rider_gaze}}
-
-The rider looks either at a pig or at the road. An angle only means something for a pig, so only `OnPig` carries one:
-
-{{code Gaze.GazeTarget}}
-
-{{code Gaze.desired_gaze}}
-
-`pig_ahead` answers with `Looking` or `NotLooking`. There's only one thing to ask of that, so `==` does the job of a `match`.
-
-{{code Gaze.pig_ahead}}
-
-`Distracting` is the tag from the herds chapter. `yaw` is the bike's angle to the road, so a rider who's steering hard keeps its eyes where it's going. Then there are two more conditions. The pig has to be within 150 metres:
-
-{{code Gaze.pig_ahead_near}}
-
-And it has to be less than 35 degrees from the way the bike points. The pig stands beside the road, so the angle to it grows as the rider comes closer. At 35 degrees the rider lets it go.
-
-{{code Gaze.pig_in_sight}}
-
-`Pigs.gaze_pig` is the third pig of the front row, at the place it would stand if it didn't stray.
-
-### Turning the head
-
-{{code Gaze.next_gaze_yaw}}
-
-Toward a pig, the gaze turns by at most 4 degrees a step, and `within` holds the change to that limit on either side. On the way back it moves a twentieth of the way each step, and never more than 0.2 degrees. Once it's within 0.02 degrees it snaps to straight ahead, so a look comes to a real end. If the segment ends first, `Rider.on_next_segment` puts the gaze straight ahead.
-
-Nothing here turns the bike. The gaze goes to the camera, and to nothing else that moves:
-
-{{code ViewYaw.view_yaw_for}}
-
-So when the rider looks right, the road slides left on the page, and the bike keeps going where it was going.
-
-### Attention
-
-{{code Gaze.next_attention}}
-
-While the gaze is off the road, attention rises with how far it has turned, and it doesn't drop. Once the gaze is straight ahead, attention fades by 0.0012 a step, so it takes hundreds of steps to go. That's why the table in the rider chapter has an `attention` of 0.68 at step 1,570, with no pig in sight.
-
-`RideFocal.ride_focal` takes the stronger of the cat's attention and this one. So a pig widens the view the way a cat does, and it stays wide for a while after.
-
-### Slowing down
-
-`pig_limit` is the third link in the throttle's chain. It asks `Gaze` for a brake, and takes it if that's harder than what it was offered:
-
-{{code Throttle.pig_limit}}
-
-{{code Gaze.pig_gaze_brake}}
-
-{{code Gaze.pig_gaze_brake_easing}}
-
-The sum is the one the throttle uses for a bend, with a pig for a bend. The rider aims to be down to 0.2 metres a step by 25 metres before the pig. `d.max(...)` keeps the distance positive once the rider gets there.
-
-Whether the rider is gawking is a plainer question than whether it's looking:
-
-{{code Gaze.is_gawking}}
-
-It starts 150 metres before the pig, and only asks where the rider is. So it outlasts the look. The rider crawls past the pig and on to the end of the segment, long after its eyes have moved on.
-
-That's the rider's step, apart from the lean. The other stepped thing is up ahead.
-
-## The truck
-
-The truck stays ahead of the rider all the way:
-
-| Step | Rider, along the route | Truck, along the route | Lead |
-|---|---|---|---|
-| 0 | 0 metres | 500 metres | 500 metres |
-| 2,000 | 1,819 metres | 2,186 metres | 366 metres |
-| 4,000 | 4,607 metres | 4,968 metres | 362 metres |
-| 6,000 | 6,481 metres | 6,632 metres | 151 metres |
-
-New in this chapter:
-
-- Roc: list patterns
-- Modules: `Truck`, `TruckDraw`
-
-The modules around `Truck`
-```dot
-digraph truck {
-  node [shape=box, fontname="Helvetica"];
-  Truck [style=bold];
-  RideInstant -> Truck;
-  Scene -> Truck;
-  TruckSighting -> Truck;
-  TruckDraw -> Truck;
-  Truck -> World;
-  Truck -> VehicleLimits;
-  Truck -> Speed;
-  Truck -> Acceleration;
-}
-```
-
-The truck is what the rider chases. It starts 500 metres ahead and keeps to a schedule that brings it to within 100 at the route's end. Its state is three fields:
-
-{{code Truck.TruckState}}
-
-The schedule is a straight line, and a pure function of the rider's progress, destructured from a record so the call site has to name both `Distance`s:
-
-{{code Truck.scheduled_position}}
-
-Its one caller is the truck's step function, the same shape as the rider's. `NextBend` is a tag union with a payload on one side, so the only way to read a `distance` is to be inside the branch where there is one:
-
-{{code Truck.advance from "schedule = scheduled_position(" to "NoBendAhead => advance_on_schedule(truck, schedule)"}}
-
-And that's called from `RideInstant.next`, in the stepped things chapter, with the rider's distance as the only thing the truck knows of the rider. Nothing in `Rider` imports `Truck`, and nothing in `Truck` imports `Rider`. The chase is one record literal in `RideInstant`.
-
-Finding the next turn shows a list pattern. `[]` is the end of the route, and `[segment, .. as later_segments]` takes the first segment and names the rest. Recursion walks the list, carrying where the current segment starts. Only `Truck` and `Paint` use a list pattern. Elsewhere the same walk is a `fold`.
-
-{{code Truck.next_bend_on from "match segments {" to "next_bend_on(later_segments, { route_position, segment_start: segment_end })"}}
-
-It's called through a smaller function, which supplies the 0 so nobody else has to:
-
-{{code Truck.next_bend}}
-
-Then the two ways to take a step. Both sit below the block, private, and both are arithmetic on `Speed` by name. `target_speed.max(...)` keeps braking from undershooting, and `speed < truck.speed` is the whole of what turns on the brake lights. They're on while the truck is slowing down, and they go off when it's settled at the speed for the turn, even with the turn still ahead.
-
-{{code Truck.advance_braking}}
-
-{{code Truck.advance_on_schedule}}
-
-`brake_lights` is state because it's a fact about the last step. Headlights aren't, and they stay out of `TruckState`. That's three of the four kinds in one vehicle: the place and speed are stepped, the headlights are clock-driven, and the tires don't change.
-
-The truck has no `Animation`. A timeline has a known length and can answer for any point along it. The truck has neither. Its next step depends on its last, and its route depends on the rider. `TruckSighting` calls the distance to the truck `lead`, the same quantity as an `Approach`'s `gap`, because the truck is being chased.
-
-### One switch
-
-Here are the truck's lights at three frames of the ride:
-
-| Step | Headlights | Brake lights |
-|---|---|---|
-| 3,742 | `Off` | `On` |
-| 5,700 | `On` | `Off` |
-| 6,520 | `On` | `On` |
-
-The modules behind the headlights
-```dot
-digraph headlights {
-  node [shape=box, fontname="Helvetica"];
-  RideInstant [style=bold];
-  RideInstant -> Mountains;
-  RideInstant -> Sky;
-  RideInstant -> Truck;
-  RideInstant -> SceneDraw;
-  Mountains -> Sky;
-  Mountains -> Clock;
-  Sky -> Clock;
-  SceneDraw -> TruckDraw;
-  TruckDraw -> Truck;
-}
-```
-
-The truck's headlights come on once the sun has gone behind the mountains, at step 4,039 of a ride that lasts 7,040. `Mountains` knows the skyline and already imports `Sky`, so the question is asked there. The argument is an opaque `Clock`, and the answer is a plain `Bool`, which is about to be turned into something better:
-
-{{code Mountains.is_sun_behind_mountains}}
-
-`Truck.Lights` is a record of two tag unions. Two independent lamps aren't one state with four values, so they're two fields:
-
-{{code Truck.Lights}}
-
-`RideInstant` puts it together. It's the only place that can. `Truck` is in the ride half of the system and `Mountains` is in the view, and no arrow goes from the first to the second. `RideInstant` imports both.
-
-{{code RideInstant.truck_lights}}
-
-Lamps are to the truck what a pose is to a cat. The sighting carries them, and the drawing does what they say, with each `match` covering both tags:
-
-{{code TruckDraw.draw from "beams =" to "].join()"}}
-
-`TruckDraw` leaves the painting to two modules. `TruckBody` paints the trailer, the cab and the tires, far to near, and `TruckLights` paints the beams and the brake lights, each with its glow.
 
 One question about the rider is still open: how `Rider.decide` picks a lean. The module that answers it is `LeanSearch`, and it rests on the geometry and physics in the next chapter.
 
@@ -2307,7 +2347,7 @@ digraph opened {
   node [shape=box, fontname="Helvetica"];
   world [label="design the world (once)\nThe world, The road"];
   tick [label="the clock ticks\nOne whole module"];
-  move [label="move the rider and the truck\nThe stepped things to The truck, The math layer"];
+  move [label="move the rider and the truck\nStepping through the ride to The truck,\nThe math layer"];
   look [label="look around\nThe modules, The cat, The bird"];
   draw [label="draw it against the backdrop\nThe sky, The platform"];
   world -> tick;

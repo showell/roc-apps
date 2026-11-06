@@ -25,8 +25,9 @@ Book := [].{
 		{ before: "The road", level: Category, title: "Man-made" },
 		{ before: "Stills: how we draw a critter", level: Category, title: "Critters that stand still" },
 		{ before: "The ride instant", level: Part, title: "Motion" },
-		{ before: "The cat", level: Category, title: "Critters that move" },
-		{ before: "The stepped things", level: Category, title: "The rider and the truck" },
+		{ before: "The beacons", level: Category, title: "The passage of time" },
+		{ before: "Stepping through the ride: RideInstant", level: Category, title: "Vehicles" },
+		{ before: "The cat", level: Category, title: "Critter motion" },
 		{ before: "The math layer", level: Part, title: "Under the hood" },
 		{ before: "Appendix: the patterns", level: Part, title: "Appendices" },
 	]
