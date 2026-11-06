@@ -76,7 +76,7 @@ Here's how they fit: the whole system, simplified.
 New in this chapter:
 
 - Roc: imports that can't form a cycle
-- Modules: `SafariApp`, `Render`, `ItemDraw`, `CatSighting`
+- Modules: `SafariApp`, `Scene`, `ItemDraw`, `CatSighting`
 
 An arrow points from a module to one it imports, so a module is composed of what it points at. Dashed boxes each stand for a family of modules. Roc doesn't allow import cycles, so nothing here can point back up.
 
@@ -96,7 +96,7 @@ digraph system {
     label="the view";
     sky [label="the sky\nSky, Mountains", style=dashed];
     drawing [label="the drawing\nItemDraw, CatDraw, RocBird, Tree, ...", style=dashed];
-    sightings [label="the sightings\nRender, CatSighting, BirdSighting, TreeSighting, ...", style=dashed];
+    sightings [label="the sightings\nScene, CatSighting, BirdSighting, TreeSighting, ...", style=dashed];
   }
   app -> RideInstant;
   RideInstant -> Rider;
@@ -126,7 +126,7 @@ A sighting answers one question each frame: which of these can the rider see rig
 
 {{code CatSighting.CatSighting}}
 
-`Render` gathers every sighting's items, a depth sort puts them in order, and `ItemDraw` hands each one to the module that paints it. Because a sighting's answer is plain data, it can be checked with numbers, without drawing anything. The rule is simple: a sighting decides, and drawing paints.
+`Scene` gathers every sighting's items, a depth sort puts them in order, and `ItemDraw` hands each one to the module that paints it. Because a sighting's answer is plain data, it can be checked with numbers, without drawing anything. The rule is simple: a sighting decides, and drawing paints.
 
 All of that is about one frame, and a frame is gone by the next one. What lasts from one step to the next hasn't come up yet.
 
@@ -597,10 +597,10 @@ digraph screen {
   node [shape=box, fontname="Helvetica"];
   CatSighting [style=bold];
   CatDraw [style=bold];
-  ItemDraw -> Render;
+  ItemDraw -> Scene;
   ItemDraw -> CatDraw;
   ItemDraw -> CatSighting;
-  Render -> CatSighting;
+  Scene -> CatSighting;
   CatSighting -> Cat;
   CatSighting -> Chain;
   CatSighting -> DepthSort;
@@ -642,10 +642,10 @@ The modules behind a beacon
 digraph beacon {
   node [shape=box, fontname="Helvetica"];
   TowerSighting [style=bold];
-  ItemDraw -> Render;
+  ItemDraw -> Scene;
   ItemDraw -> TowerSighting;
   ItemDraw -> Tower;
-  Render -> TowerSighting;
+  Scene -> TowerSighting;
   TowerSighting -> Clock;
   TowerSighting -> Steps;
   TowerSighting -> Fraction;
@@ -996,7 +996,7 @@ digraph truck {
   node [shape=box, fontname="Helvetica"];
   Truck [style=bold];
   RideInstant -> Truck;
-  Render -> Truck;
+  Scene -> Truck;
   TruckSighting -> Truck;
   TruckDraw -> Truck;
   Truck -> World;

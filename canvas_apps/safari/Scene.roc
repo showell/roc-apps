@@ -1,4 +1,4 @@
-## Render gathers what one frame shows beside the road: the trees, masts,
+## Scene gathers what one frame shows beside the road: the trees, masts,
 ## critters, cats, guard rails, the truck and the birds in view, each kind
 ## found by its own sighting, and the order to paint them in, far to near.
 import Billboards
@@ -19,32 +19,30 @@ import RocBird
 import Speed
 import World
 
-Render :: [].{
-
-	## The things in view, each kind in its own list, and the depth order
-	## that names each by its place in its list.
-	Scene : {
-		trees : List(TreeSighting),
-		towers : List(TowerSighting),
-		critters : List(Billboards.Billboard),
-		cats : List(CatSighting),
-		rails : List(GuardRail.RailPoly),
-		truck : TruckSighting,
-		birds : List(BirdSighting),
-		order : List(DepthSort.DepthKey),
-	}
+## The things in view, each kind in its own list, and the depth order
+## that names each by its place in its list.
+Scene := {
+	trees : List(TreeSighting),
+	towers : List(TowerSighting),
+	critters : List(Billboards.Billboard),
+	cats : List(CatSighting),
+	rails : List(GuardRail.RailPoly),
+	truck : TruckSighting,
+	birds : List(BirdSighting),
+	order : List(DepthSort.DepthKey),
+}.{
 
 	## What the sightings read beyond the road: the rider's speed, where the
 	## truck is and which of its lights are on, and the clock.
-	MovingParts : {
+	RideFacts : {
 		speed : Speed,
 		truck : { route_position : Distance, lights : Truck.Lights },
 		clock : Clock,
 	}
 
 	## Everything in view from `view`, each kind cut to its sighting's cap.
-	collect : Chain.Viewpoint, Render.MovingParts -> Render.Scene
-	collect = |view, { speed, truck, clock }| {
+	in_view : Chain.Viewpoint, Scene.RideFacts -> Scene
+	in_view = |view, { speed, truck, clock }| {
 		road = view.road
 		trees = TreeSighting.in_view(view).take_first(TreeSighting.max_vis_trees.to_u64_wrap())
 		towers =

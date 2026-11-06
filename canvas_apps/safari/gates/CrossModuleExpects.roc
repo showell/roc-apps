@@ -23,7 +23,7 @@ import game.Geom
 import game.Ground
 import game.GroundSighting
 import game.RailSighting
-import game.Render
+import game.Scene
 import game.RideInstant
 import game.Rider
 import game.RocBird
@@ -434,9 +434,9 @@ expect
 		(rail_point_at(run_up_to_bend, 10).forward, 500.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
-# Render, on the scene from the start of the route.
-scene : Render.Scene
-scene = Render.collect(
+# Scene, on the scene from the start of the route.
+scene : Scene
+scene = Scene.in_view(
 	{
 		road: {
 			world: World.segments,

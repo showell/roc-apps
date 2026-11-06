@@ -7,7 +7,7 @@ import GroundSighting
 import ItemDraw
 import Mountains
 import RiderState
-import Render
+import Scene
 import RideFocal
 import Rider
 import Sky
@@ -82,7 +82,7 @@ RideInstant := {
 			},
 			cam_focal: RideFocal.ride_focal(w, s),
 		}
-		scene = Render.collect(
+		scene = Scene.in_view(
 			view,
 			{
 				speed: s.speed,

@@ -13,7 +13,7 @@ import DepthSort
 import Fraction
 import Chain
 import GuardRail
-import Render
+import Scene
 import SceneLimits
 import Tower
 import TowerSighting
@@ -32,7 +32,7 @@ ItemDraw :: [].{
 	round_trunk_limit = 4
 
 	## The scene's things, painted far to near.
-	draw : Render.Scene, Chain.Viewpoint -> List(Shapes.Shape)
+	draw : Scene, Chain.Viewpoint -> List(Shapes.Shape)
 	draw = |scene, view|
 		scene.order.join_map(|depth_key| draw_subject(scene, { view, depth_key }))
 
@@ -120,7 +120,7 @@ ItemDraw :: [].{
 }
 
 ## One thing in the depth order, looked up in its kind's list and drawn.
-draw_subject : Render.Scene,
+draw_subject : Scene,
 {
 	view : Chain.Viewpoint,
 	depth_key : DepthSort.DepthKey,
