@@ -16,10 +16,10 @@ Paint :: [].{
 	Span : { min_x : Pixels, max_x : Pixels }
 
 	red_of : I64 -> I64
-	red_of = |color| color.shr_wrap(I64.to_u8_wrap(16)).bitwise_and(255)
+	red_of = |color| color.shr_wrap(16).bitwise_and(255)
 
 	green_of : I64 -> I64
-	green_of = |color| color.shr_wrap(I64.to_u8_wrap(8)).bitwise_and(255)
+	green_of = |color| color.shr_wrap(8).bitwise_and(255)
 
 	blue_of : I64 -> I64
 	blue_of = |color| color.bitwise_and(255)

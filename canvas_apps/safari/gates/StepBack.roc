@@ -25,10 +25,8 @@ main! = |_args| {
 		here = $tour.instant.clock
 		there = Tour.step_back($tour).instant.clock
 		ok = there.next() == here
-		$bad = if ok {
-			$bad
-		} else {
-			$bad + 1
+		if !ok {
+			$bad = $bad + 1
 		}
 		verdict = if ok {
 			"ok  "
@@ -36,11 +34,10 @@ main! = |_args| {
 			"BAD "
 		}
 		clocks = "clock ${here.to_str()}, one back -> ${there.to_str()}"
-		$out = Str.concat($out, "${verdict}after ${I64.to_str(steps)} steps: ${clocks}\n")
+		$out = $out.concat("${verdict}after ${I64.to_str(steps)} steps: ${clocks}\n")
 	}
 	echo!(
-		Str.concat(
-			$out,
+		$out.concat(
 			if $bad == 0 {
 				"every step back went back one step\n"
 			} else {

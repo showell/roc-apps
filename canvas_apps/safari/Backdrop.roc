@@ -81,7 +81,7 @@ Backdrop :: [].{
 		sun_sighting : Sky.SunSighting,
 	} -> List(Shapes.Shape)
 	behind = |ride_shapes, { sky_top_color, sky_horizon_color, sun_sighting: sun }| {
-		var $out = List.with_capacity(List.len(ride_shapes) + 8)
+		var $out = List.with_capacity(ride_shapes.len() + 8)
 		# Oversized, so the rolled frame's corners stay filled: the top colour to
 		# a fifth of the way down to the horizon at y 300, then the fade; the
 		# grass from a pixel above the horizon.
@@ -95,8 +95,7 @@ Backdrop :: [].{
 			dx: 0.0,
 			dy: Screen.horizon_y.to_f64(),
 		})
-		$out = List.append(
-			$out,
+		$out = $out.append(
 			Rect({
 				x: -1080.0,
 				y: -1260.0,
@@ -105,8 +104,7 @@ Backdrop :: [].{
 				fill: sky,
 			}),
 		)
-		$out = List.append(
-			$out,
+		$out = $out.append(
 			Rect({
 				x: -1080.0,
 				y: Screen.grass_top_y.to_f64(),
@@ -119,33 +117,30 @@ Backdrop :: [].{
 			match sun {
 				InView(place) => {
 					fills = sun_fills(place)
-					List.concat(
-						$out,
-						[
-							Rect({
+					$out.concat([
+						Rect({
+							x: 0.0,
+							y: 0.0,
+							w: Screen.width.to_f64(),
+							h: Screen.horizon_y.to_f64(),
+							fill: fills.glow,
+						}),
+						Disc({
+							x: place.x.to_f64(),
+							y: place.y.to_f64(),
+							r: fills.disc_radius.to_f64(),
+							fill: fills.disc,
+							clip: Within({
 								x: 0.0,
 								y: 0.0,
 								w: Screen.width.to_f64(),
 								h: Screen.horizon_y.to_f64(),
-								fill: fills.glow,
 							}),
-							Disc({
-								x: place.x.to_f64(),
-								y: place.y.to_f64(),
-								r: fills.disc_radius.to_f64(),
-								fill: fills.disc,
-								clip: Within({
-									x: 0.0,
-									y: 0.0,
-									w: Screen.width.to_f64(),
-									h: Screen.horizon_y.to_f64(),
-								}),
-							}),
-						],
-					)
+						}),
+					])
 				}
 				OutOfView => $out
 			}
-		List.concat($out, ride_shapes)
+		$out.concat(ride_shapes)
 	}
 }

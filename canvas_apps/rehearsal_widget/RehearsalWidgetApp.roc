@@ -311,8 +311,7 @@ arc_shapes : List(ArcPoint), { color : I64, width : F64 } -> List(Shapes.Shape)
 arc_shapes = |path, { color, width }| {
 	start = { forward: 0.0, across: rider.across.to_metres() }
 	points = drawn_points(path).prepend(start).map(on_canvas)
-	List.map2(
-		points,
+	points.map2(
 		points.drop_first(1),
 		|a, b|
 			Shapes.line(

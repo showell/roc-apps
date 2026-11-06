@@ -99,7 +99,7 @@ expect Wildlife.baby_beyond.to_metres() == 14.0
 ## An animal and its baby at each of four bends, the first and third turning
 ## right and the second and fourth left.
 all_four : List(Scenery.Critter)
-all_four = List.join([
+all_four = [
 	Wildlife.bend_critters({
 		bend_life: Animal(Elephant),
 		bend_along: Along.metres(100.0),
@@ -124,7 +124,7 @@ all_four = List.join([
 		turn: Angle.Turn.degrees(-70.0),
 		road_half_width: Distance.metres(2.0),
 	}),
-])
+].join()
 
 expect
 	all_four.map(|critter| critter.across.to_metres())

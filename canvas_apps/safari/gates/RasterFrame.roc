@@ -18,18 +18,17 @@ import ProofRide
 # 2^57, so it needs no wrapping arithmetic.
 ## One byte folded into an FNV-1a hash.
 fnv_step : I64, I64 -> I64
-fnv_step = |h, byte| I64.bitwise_and(I64.bitwise_xor(h, byte) * 16777619, 4294967295)
+fnv_step = |h, byte| (h.bitwise_xor(byte) * 16777619).bitwise_and(4294967295)
 
 ## The byte of `v` that starts `shift` bits up.
 byte_of : I64, U8 -> I64
-byte_of = |v, shift| I64.bitwise_and(I64.shr_wrap(v, shift), 255)
+byte_of = |v, shift| v.shr_wrap(shift).bitwise_and(255)
 
 hash : List(U32) -> I64
-hash = |pixels| List.fold(
-	pixels,
+hash = |pixels| pixels.fold(
 	2166136261,
 	|h, p| {
-		v = U32.to_i64(p)
+		v = p.to_i64()
 		b0 = fnv_step(h, byte_of(v, 0))
 		b1 = fnv_step(b0, byte_of(v, 8))
 		b2 = fnv_step(b1, byte_of(v, 16))
@@ -48,7 +47,7 @@ paint = |tour| SafariFrame.paint({
 
 ## The bytes `hash 1234abcd`.
 hash_line : List(U32) -> List(U8)
-hash_line = |pixels| Hex.append_digits(Str.to_utf8("hash "), { number: hash(pixels), digits: 8 })
+hash_line = |pixels| Hex.append_digits("hash ".to_utf8(), { number: hash(pixels), digits: 8 })
 
 held_line : I64, Tour -> Str
 held_line = |depth, tour| {
@@ -59,19 +58,13 @@ held_line = |depth, tour| {
 print_picture! : I64 => {}
 print_picture! = |steps| {
 	pixels = paint(ProofRide.ride_on(Tour.initial, steps))
-	var $out = List.with_capacity(List.len(pixels) * 6 + 32)
-	$out = List.concat($out, hash_line(pixels))
-	$out = List.concat(
-		$out,
-		Str.to_utf8("\n${Screen.width_px.to_str()} ${Screen.height_px.to_str()}\n"),
-	)
-	n = List.len(pixels)
-	var $k = 0
-	while $k < n {
-		$out = Hex.append_digits($out, { number: U32.to_i64(List.get(pixels, $k) ?? 0), digits: 6 })
-		$k = $k + 1
+	var $out = List.with_capacity(pixels.len() * 6 + 32)
+	$out = $out.concat(hash_line(pixels))
+	$out = $out.concat("\n${Screen.width_px.to_str()} ${Screen.height_px.to_str()}\n".to_utf8())
+	for pixel in pixels {
+		$out = Hex.append_digits($out, { number: pixel.to_i64(), digits: 6 })
 	}
-	echo!(Str.from_utf8_lossy(List.append($out, 10)))
+	echo!(Str.from_utf8_lossy($out.append(10)))
 }
 
 main! = |args| {

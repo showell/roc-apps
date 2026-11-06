@@ -315,7 +315,7 @@ long_brightness_at = |clock|
 	TowerSighting.along_chain({ ..long_view, clock }).map(|tower| tower.beacon_brightness.to_f64())
 
 expect {
-	got = List.concat(long_brightness_at(Clock.start), long_brightness_at(Clock.at_step(60)))
+	got = long_brightness_at(Clock.start).concat(long_brightness_at(Clock.at_step(60)))
 	wanted_list = [0.0, 1.0, 1.0, 0.0]
 	closeness = got.map2(wanted_list, |one, wanted| (one - wanted).abs() <= 0.0000001)
 	got.len() == wanted_list.len() and closeness.all(|is_close| is_close)
@@ -329,7 +329,7 @@ spread_at = |clock| {
 }
 
 expect
-	List.concat(spread_at(Clock.start), spread_at(Clock.at_step(30)))
+	spread_at(Clock.start).concat(spread_at(Clock.at_step(30)))
 		== [0, 37, 74, 30, 67, 104].map(brightness_at)
 
 brightness_at : U32 -> F64

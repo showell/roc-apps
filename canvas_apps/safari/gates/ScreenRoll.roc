@@ -32,8 +32,8 @@ ScreenRoll :: {
 	of = |{ roll, width, height }|
 		ScreenRoll.(
 			{
-				cos: F64.cos(roll),
-				sin: F64.sin(roll),
+				cos: roll.cos(),
+				sin: roll.sin(),
 				center: { x: width.to_f64() / 2.0, y: height.to_f64() / 2.0 },
 				width_px: width,
 				height_px: height,

@@ -111,10 +111,10 @@ extent =
 			north: 0.0,
 		},
 		|{ west, east, south, north }, corner| {
-			west: F64.min(west, corner.east),
-			east: F64.max(east, corner.east),
-			south: F64.min(south, corner.north),
-			north: F64.max(north, corner.north),
+			west: west.min(corner.east),
+			east: east.max(corner.east),
+			south: south.min(corner.north),
+			north: north.max(corner.north),
 		},
 	)
 
@@ -375,7 +375,7 @@ expect place_at(Distance.zero).east.abs() < 0.001
 expect place_at(Distance.zero).north.abs() < 0.001
 expect {
 	{ east, north } = place_at(Distance.metres(100.0))
-	(F64.sqrt(east * east + north * north) - 100.0).abs() < 0.001
+	((east * east + north * north).sqrt() - 100.0).abs() < 0.001
 }
 expect {
 	{ east, north } = place_at(Distance.metres(500.0))

@@ -323,7 +323,7 @@ green_tree_at = |along| {
 }
 
 expect
-	List.concat(route.map(|seg| seg.trees.len().to_i64_wrap()), [TreeSighting.max_visible_trees])
+	route.map(|seg| seg.trees.len().to_i64_wrap()).append(TreeSighting.max_visible_trees)
 		== [28, 16, 22, 640]
 
 lone_tree : TreeSighting

@@ -56,4 +56,4 @@ BackdropPixels :: [].{
 }
 
 grass_pixel : U32
-grass_pixel = I64.to_u32_wrap(Backdrop.grass_color)
+grass_pixel = Backdrop.grass_color.to_u32_wrap()

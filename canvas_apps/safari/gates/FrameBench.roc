@@ -24,7 +24,7 @@ ride_on = |route, { bench_run, steps_left: steps }|
 			{
 				bench_run: {
 					instant: RideInstant.next_or_restart(route, bench_run.instant),
-					shapes: bench_run.shapes + List.len(frame_shapes),
+					shapes: bench_run.shapes + frame_shapes.len(),
 				},
 				steps_left: steps - 1,
 			},

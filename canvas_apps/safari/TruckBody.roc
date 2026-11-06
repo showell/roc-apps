@@ -101,7 +101,7 @@ faces : TruckShape.TruckInView -> List(TruckBody.TruckFace)
 faces = |truck| {
 	box = truck.box
 	axles = TruckBody.axles(box)
-	List.join([
+	[
 		[
 			side(truck, box.left),
 			side(truck, box.right),
@@ -112,7 +112,7 @@ faces = |truck| {
 		],
 		axles.map(|axle| tire(truck, { axle, across: box.left })),
 		axles.map(|axle| tire(truck, { axle, across: box.right })),
-	])
+	].join()
 }
 
 ## A face of `color` whose corners are the truck's points `corners`.

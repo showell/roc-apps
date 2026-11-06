@@ -135,10 +135,8 @@ Pigs :: [].{
 		edge = Scenery.road_half_width.plus(Scenery.herd_road_offset)
 		front_across = Across.right_of_middle(edge)
 		back_across = Across.right_of_middle(edge.plus(pig_back_row_offset))
-		List.concat(
-			pig_row(herd_along, { across: front_across, offsets: pig_row_front }),
-			pig_row(herd_along, { across: back_across, offsets: pig_row_back }),
-		)
+		pig_row(herd_along, { across: front_across, offsets: pig_row_front })
+			.concat(pig_row(herd_along, { across: back_across, offsets: pig_row_back }))
 	}
 }
 

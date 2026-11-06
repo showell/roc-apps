@@ -50,9 +50,9 @@ degrees_at : Fraction -> F64
 degrees_at = |share| {
 	degrees = (share.to_f64() - 0.5) * 2.0 * widest_turn
 	if degrees >= 0.0 {
-		F64.max(degrees, gentlest_turn)
+		degrees.max(gentlest_turn)
 	} else {
-		F64.min(degrees, 0.0 - gentlest_turn)
+		degrees.min(0.0 - gentlest_turn)
 	}
 }
 

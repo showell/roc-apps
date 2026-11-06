@@ -85,14 +85,14 @@ moved = |model| {
 	now = model.tour.instant.clock.to_f64()
 	wanted = model.heading_for.to_f64()
 	if now < wanted {
-		count = F64.min(played_a_frame, wanted - now)
+		count = played_a_frame.min(wanted - now)
 		{
 			..model,
 			tour: repeated(model.tour, { count, step_once: Tour.step_forward }),
 			last_move: Played,
 		}
 	} else if now > wanted {
-		count = F64.min(read_back_a_frame, now - wanted)
+		count = read_back_a_frame.min(now - wanted)
 		{
 			..model,
 			tour: repeated(model.tour, { count, step_once: Tour.step_back }),

@@ -110,10 +110,8 @@ SafariApp :: [].{
 	repeat : Tour, { step_count : I64, step_once : Tour -> Tour } -> Tour
 	repeat = |tour, { step_count: n, step_once: move }| {
 		var $tour = tour
-		var $i = 0
-		while $i < n {
+		for _ in 0..<n {
 			$tour = move($tour)
-			$i = $i + 1
 		}
 		$tour
 	}
