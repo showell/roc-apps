@@ -2100,10 +2100,6 @@ The last limit of the throttle is the same idea with one rehearsal in it. It run
 
 Safari Ride computes even its basic math functions itself. `lib/DeviceMath.roc` computes `sin`, `cos`, `sqrt` and `atan` in Roc, with no call to a math library. `Float` does the same for `exp`, which is a Taylor series after a range reduction. It's nothing but names and multiplications, and it's the kind of code that looks exactly as it does in a textbook:
 
-{{code Float.exp_series}}
-
-{{code Float.exp}}
-
 `Throttle.shoulder_brake_at` is the caller, so a rehearsed coast's length decays into a braking force through this. [check: why these are hand-written rather than builtins. They came with the Codex port, and the reason is probably that the same bits come out on every target. Ask Steve before saying so.]
 
 So from top to bottom, a rider chooses a lean by simulating physics, and the physics is plain arithmetic on opaque numbers. None of it has any effects. In the next chapter, we'll see what that's worth when the program has to change.

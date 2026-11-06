@@ -6,7 +6,6 @@ import Angle
 import Coast
 import CrossingReaction
 import Gaze
-import Float
 import RiderState
 import Speed
 import Steps
@@ -103,7 +102,7 @@ Throttle :: [].{
 	shoulder_brake_at = |state, { steps_to_shoulder, offered_acceleration: a }| {
 		n = steps_to_shoulder.to_f64()
 		brake = (0.0 - state.speed.to_metres_a_step()) / (2.0 * n.max(1.0))
-		decay = Float.exp((0.0 - n) / brake_decay.to_f64())
+		decay = F64.e.pow((0.0 - n) / brake_decay.to_f64())
 		sa = Acceleration.metres_a_step_each_step(brake * decay)
 		if sa < a {
 			sa
