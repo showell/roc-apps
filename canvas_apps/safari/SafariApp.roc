@@ -86,7 +86,7 @@ SafariApp :: [].{
 							} else {
 								4
 							},
-							step_once: Tour.advance,
+							step_once: Tour.step_forward,
 						},
 					)
 				} else if input.key_down(KeyLeft) {
@@ -98,13 +98,13 @@ SafariApp :: [].{
 							} else {
 								4
 							},
-							step_once: Tour.back,
+							step_once: Tour.step_back,
 						},
 					)
 				} else if paused {
 					m.tour
 				} else {
-					Tour.advance(m.tour)
+					Tour.step_forward(m.tour)
 				}
 			tour = if input.key_pressed(KeyJ) {
 				next_segment(moved)
@@ -131,10 +131,10 @@ SafariApp :: [].{
 	next_segment : Tour -> Tour
 	next_segment = |tour| {
 		from = tour.instant.rider.segment
-		var $tour = Tour.advance(tour)
+		var $tour = Tour.step_forward(tour)
 		var $guard = 0
 		while $tour.instant.rider.segment == from and $guard < step_guard {
-			$tour = Tour.advance($tour)
+			$tour = Tour.step_forward($tour)
 			$guard = $guard + 1
 		}
 		$tour

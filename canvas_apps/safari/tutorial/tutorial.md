@@ -1282,9 +1282,9 @@ Everything here lives in `gates/`, and the game never runs any of it. The gate p
 
 ### A fixture is a value
 
-Getting a test to step 1,570 of a game normally takes some doing. Here it takes a loop. `Tour.initial` is a value, and `Tour.advance` is a step function, the one at the very top, wrapped around `RideInstant.next_or_restart`. The `if` chain is the only management a history needs, and its comment says why half of the list goes at once:
+Getting a test to step 1,570 of a game normally takes some doing. Here it takes a loop. `Tour.initial` is a value, and `Tour.step_forward` is a step function, the one at the very top, wrapped around `RideInstant.next_or_restart`. The `if` chain is the only management a history needs, and its comment says why half of the list goes at once:
 
-{{code Tour.advance}}
+{{code Tour.step_forward}}
 
 There's nothing to mock, because nothing was injected. No clock has to be faked, because the clock is a field. There's no browser to start, no window to open and no delay to wait out, and two runs can't disagree. A step of the ride takes nothing from outside it.
 
@@ -1328,9 +1328,9 @@ The limit, stated flatly: the hash proves `ShapesPixels`'s pixels, and the page'
 
 `ShapesFrame` paints each frame twice: once with its polygons whole, as the browser gets them, and once cut into triangles, as the native runner gets them. It counts the pixels that differ, and the gate requires zero of 576,000, at every step in the table.
 
-`StepBack` checks that one step back goes back exactly one step, at depths either side of the history's cap. It's in the gate because the answer was once no, and its header says how: the list stopped recording when full, so a step back from frame 3,000 landed on 2,047. Holding the first 2,048 instants was a perfectly consistent thing for a list to do. The test works by asking `Tour.back` and comparing clocks, and since `Tour.back` is this small, there isn't much else to ask:
+`StepBack` checks that one step back goes back exactly one step, at depths either side of the history's cap. It's in the gate because the answer was once no, and its header says how: the list stopped recording when full, so a step back from frame 3,000 landed on 2,047. Holding the first 2,048 instants was a perfectly consistent thing for a list to do. The test works by asking `Tour.step_back` and comparing clocks, and since `Tour.step_back` is this small, there isn't much else to ask:
 
-{{code Tour.back}}
+{{code Tour.step_back}}
 
 ### `expect`
 
@@ -1417,11 +1417,11 @@ Input comes as a value too. `Input.Snapshot` says which keys are down and which 
 
 {{code SafariApp.repeat}}
 
-`Tour.advance` and `Tour.back` are plain values to pass here:
+`Tour.step_forward` and `Tour.step_back` are plain values to pass here:
 
-{{code SafariApp.step from "if input.key_down(KeyRight) {" to "step_once: Tour.advance,"}}
+{{code SafariApp.step from "if input.key_down(KeyRight) {" to "step_once: Tour.step_forward,"}}
 
-Stepping back through the ride is a keypress because `Tour.back` is a list lookup, and nothing else in the game knows it happens.
+Stepping back through the ride is a keypress because `Tour.step_back` is a list lookup, and nothing else in the game knows it happens.
 
 ### A frame is a list
 
@@ -1461,7 +1461,7 @@ The tour named these in passing. They're patterns in the loose sense: shapes tha
 | A sighting decides, drawing paints | A pure function answers with plain data, and something else draws it | `CatSighting`, `TowerSighting` |
 | Places and distances | One opaque type for where, a second for how far apart, and only the sums that make sense | `Clock` and `Steps`, `Bearing` and `Turn`, `Along` and `Distance`, `Speed` and `Acceleration` |
 | Rule and score | One function says how far along, and one piece of data says what that looks like | `over_gap` and `flight_timeline` |
-| The step function | A value goes in, and the next value comes out | `Rider.advance`, `Truck.advance`, `Tour.advance` |
+| The step function | A value goes in, and the next value comes out | `Rider.advance`, `Truck.advance`, `Tour.step_forward` |
 | A narrow view of a wide record | An open record names the fields it uses and carries the rest through | `Bike.Motion(others)` |
 | The gate chain | One value passes through independent rules, each of which can only lower it | `Throttle.get_forward_accel_decel` |
 | One record per space | Field names say which coordinate system a point is in | `RoadPoint`, `RiderPoint`, `SpacePoint`, `Screen.Point` |

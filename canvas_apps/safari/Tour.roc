@@ -30,8 +30,8 @@ Tour := {
 	initial : Tour
 	initial = { world: World.segments, instant: RideInstant.initial, past_instants: [] }
 
-	advance : Tour -> Tour
-	advance = |tour| {
+	step_forward : Tour -> Tour
+	step_forward = |tour| {
 		finished = Rider.is_finished(tour.instant.rider, tour.world)
 		# Dropping one instant per step would copy the whole list every step, so
 		# half of it goes at once and the copy falls on one step in a thousand.
@@ -52,8 +52,8 @@ Tour := {
 		}
 	}
 
-	back : Tour -> Tour
-	back = |tour| {
+	step_back : Tour -> Tour
+	step_back = |tour| {
 		match tour.past_instants.last() {
 			Ok(prev) => {
 				world: tour.world,

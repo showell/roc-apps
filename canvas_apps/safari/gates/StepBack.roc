@@ -19,11 +19,11 @@ main! = |_args| {
 	var $k = 0
 	for steps in [10, 1000, 2047, 2048, 2049, 3000, 5000] {
 		while $k < steps {
-			$tour = Tour.advance($tour)
+			$tour = Tour.step_forward($tour)
 			$k = $k + 1
 		}
 		here = $tour.instant.clock
-		there = Tour.back($tour).instant.clock
+		there = Tour.step_back($tour).instant.clock
 		ok = there.next() == here
 		$bad = if ok {
 			$bad
