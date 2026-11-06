@@ -968,7 +968,7 @@ digraph throttle {
 
 The rider has several reasons to slow down, and they don't know about each other. A turn is coming. A cat is in the lane. There's a pig to look at. The road is about to run out. `Throttle` writes them as a line of gates. An `Acceleration` goes in, a gate lets it through or lowers it, and the next gate gets what's left:
 
-{{code Throttle.get_forward_accel_decel from "a2 = crossing_gate(" to "a4 = shoulder_brake(state, a3)"}}
+{{code Throttle.acceleration from "a2 = crossing_gate(" to "a4 = shoulder_brake(state, a3)"}}
 
 Call this *the gate chain*. Each gate has the same shape and can be read alone, and adding a reason is one more line. It reads like a list of rules because that's what it is.
 
@@ -1463,7 +1463,7 @@ The tour named these in passing. They're patterns in the loose sense: shapes tha
 | Rule and score | One function says how far along, and one piece of data says what that looks like | `over_gap` and `flight_timeline` |
 | The step function | A value goes in, and the next value comes out | `Rider.advance`, `Truck.advance`, `Tour.step_forward` |
 | A narrow view of a wide record | An open record names the fields it uses and carries the rest through | `Bike.Motion(others)` |
-| The gate chain | One value passes through independent rules, each of which can only lower it | `Throttle.get_forward_accel_decel` |
+| The gate chain | One value passes through independent rules, each of which can only lower it | `Throttle.acceleration` |
 | One record per space | Field names say which coordinate system a point is in | `RoadPoint`, `RiderPoint`, `RaisedPoint`, `Screen.Point` |
 | Rehearsal | Run the real rules on a pretend copy, read the result, and throw it away | `Coast`, `LeanSearch`, `Rider.resolve_cross` |
 

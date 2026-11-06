@@ -80,7 +80,7 @@ Throttle :: [].{
 	brake_decay = 20.0
 
 	## The acceleration `a`, unless a coast from here leaves the road; then the
-	## brake for the shoulder it reaches. One of the gates `get_forward_accel_decel`
+	## brake for the shoulder it reaches. One of the gates `acceleration`
 	## passes the acceleration through in turn.
 	shoulder_brake : RiderState, Acceleration -> Acceleration
 	shoulder_brake = |state, a|
@@ -159,8 +159,8 @@ Throttle :: [].{
 		}
 	}
 
-	get_forward_accel_decel : RiderState, World.Segment -> Acceleration
-	get_forward_accel_decel = |state, seg| {
+	acceleration : RiderState, World.Segment -> Acceleration
+	acceleration = |state, seg| {
 		a0 =
 			if state.lean.abs() >= lean_hold {
 				Acceleration.steady
@@ -325,7 +325,7 @@ expect clamped_speed({ next_speed: 0.1, is_near_end: False }) == 0.1
 ## line.
 decide : Speed, F64 -> Acceleration
 decide = |speed, lean|
-	Throttle.get_forward_accel_decel(
+	Throttle.acceleration(
 		{ ..RiderState.initial, speed, lean: Angle.Lean.radians(lean) },
 		first_segment,
 	)
@@ -333,7 +333,7 @@ decide = |speed, lean|
 ## The whole decision for a rider far off to the right.
 wide_of_road : F64 -> Acceleration
 wide_of_road = |lean|
-	Throttle.get_forward_accel_decel(
+	Throttle.acceleration(
 		{
 			..centred_rider(0.0, 0.3),
 			across: across_at(100.0),

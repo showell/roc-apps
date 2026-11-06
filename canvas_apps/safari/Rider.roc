@@ -32,10 +32,7 @@ Rider :: [].{
 		lean_step = LeanSearch.best_lean(state).minus(state.lean)
 		{
 			lean_step,
-			accel: Throttle.get_forward_accel_decel(
-				Bike.with_lean(state, state.lean.plus(lean_step)),
-				seg,
-			),
+			accel: Throttle.acceleration(Bike.with_lean(state, state.lean.plus(lean_step)), seg),
 		}
 	}
 
@@ -148,7 +145,7 @@ expect {
 # The throttle is decided for the bike as it will lean.
 expect {
 	decision = Rider.decide(rider_at(0.0, 0.0), first_segment)
-	same = Throttle.get_forward_accel_decel(
+	same = Throttle.acceleration(
 		Bike.with_lean(rider_at(0.0, 0.0), Angle.upright.plus(decision.lean_step)),
 		first_segment,
 	)
