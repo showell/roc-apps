@@ -25,14 +25,14 @@ Throttle :: [].{
 	{
 		segment : World.Segment,
 		exit_speed : Speed,
-		offered_accel : Acceleration,
+		offered_acceleration : Acceleration,
 	} -> Acceleration
 	bend_brake = |
 		state,
 		{
 			segment: seg,
 			exit_speed: v_end,
-			offered_accel: a,
+			offered_acceleration: a,
 		},
 	| {
 		d = seg.commit_along.distance_from(state.along)
@@ -54,20 +54,24 @@ Throttle :: [].{
 	crossing_gate : RiderState,
 	{
 		segment : World.Segment,
-		offered_accel : Acceleration,
+		offered_acceleration : Acceleration,
 	} -> Acceleration
-	crossing_gate = |state, { segment: seg, offered_accel: a }|
+	crossing_gate = |state, { segment: seg, offered_acceleration: a }|
 		match CrossingReaction.reaction_to(seg, state).throttle {
 			NoAcceleration if a > Acceleration.steady => Acceleration.steady
 			NoAcceleration | MayAccelerate => a
 		}
 
-	pig_gate : RiderState, { segment : World.Segment, offered_accel : Acceleration } -> Acceleration
-	pig_gate = |state, { segment: seg, offered_accel: a }| {
+	pig_gate : RiderState,
+	{
+		segment : World.Segment,
+		offered_acceleration : Acceleration,
+	} -> Acceleration
+	pig_gate = |state, { segment: seg, offered_acceleration: a }| {
 		b = Gaze.pig_gaze_brake(state, seg)
 		if b.is_gawking {
-			if b.accel < a {
-				b.accel
+			if b.acceleration < a {
+				b.acceleration
 			} else {
 				a
 			}
@@ -87,7 +91,7 @@ Throttle :: [].{
 		match Coast.project(state).exit {
 			StaysOn => a
 			Leaves({ after: steps_to_shoulder, .. }) =>
-				shoulder_brake_at(state, { steps_to_shoulder, offered_accel: a })
+				shoulder_brake_at(state, { steps_to_shoulder, offered_acceleration: a })
 		}
 
 	## The acceleration `a`, or the brake for a coast that leaves the road in
@@ -95,9 +99,9 @@ Throttle :: [].{
 	shoulder_brake_at : RiderState,
 	{
 		steps_to_shoulder : Steps,
-		offered_accel : Acceleration,
+		offered_acceleration : Acceleration,
 	} -> Acceleration
-	shoulder_brake_at = |state, { steps_to_shoulder, offered_accel: a }| {
+	shoulder_brake_at = |state, { steps_to_shoulder, offered_acceleration: a }| {
 		n = steps_to_shoulder.to_f64()
 		sa = Acceleration.metres_a_step_each_step(
 			(
@@ -181,14 +185,14 @@ Throttle :: [].{
 					{
 						segment: seg,
 						exit_speed: v_end,
-						offered_accel: a0,
+						offered_acceleration: a0,
 					},
 				)
 			} else {
 				a0
 			}
-		a2 = crossing_gate(state, { segment: seg, offered_accel: a1 })
-		a3 = pig_gate(state, { segment: seg, offered_accel: a2 })
+		a2 = crossing_gate(state, { segment: seg, offered_acceleration: a1 })
+		a3 = pig_gate(state, { segment: seg, offered_acceleration: a2 })
 		a4 = shoulder_brake(state, a3)
 		allowed_speed(
 			state,
@@ -232,7 +236,7 @@ bend_brake_at = |rider, offered|
 		{
 			segment: first_segment,
 			exit_speed: Speed.metres_a_step(0.222),
-			offered_accel: Acceleration.metres_a_step_each_step(offered),
+			offered_acceleration: Acceleration.metres_a_step_each_step(offered),
 		},
 	).to_metres_a_step_each_step()
 
@@ -253,7 +257,7 @@ gate_at : { segment : World.Segment, along : F64 }, F64 -> F64
 gate_at = |{ segment, along }, offered|
 	Throttle.crossing_gate(
 		centred_rider(along, 0.3),
-		{ segment, offered_accel: Acceleration.metres_a_step_each_step(offered) },
+		{ segment, offered_acceleration: Acceleration.metres_a_step_each_step(offered) },
 	).to_metres_a_step_each_step()
 
 expect gate_at({ segment: first_segment, along: 0.0 }, 0.01) == 0.01
@@ -288,7 +292,7 @@ brake_after = |steps_to_shoulder, offered|
 		centred_rider(0.0, 1.0),
 		{
 			steps_to_shoulder: Steps.of(steps_to_shoulder),
-			offered_accel: Acceleration.metres_a_step_each_step(offered),
+			offered_acceleration: Acceleration.metres_a_step_each_step(offered),
 		},
 	)
 

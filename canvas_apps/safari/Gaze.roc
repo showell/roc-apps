@@ -16,7 +16,7 @@ import World
 
 Gaze :: [].{
 	PigLook : [Looking, NotLooking]
-	GazeBrake : { is_gawking : Bool, accel : Acceleration }
+	GazeBrake : { is_gawking : Bool, acceleration : Acceleration }
 
 	## Where the rider wants to look: at the pig in sight, this far from the
 	## way the bike points, or at the road.
@@ -163,9 +163,9 @@ Gaze :: [].{
 	pig_gaze_brake : RiderState, World.Segment -> Gaze.GazeBrake
 	pig_gaze_brake = |state, seg|
 		if is_gawking(state, seg) == False {
-			{ is_gawking: False, accel: Acceleration.steady }
+			{ is_gawking: False, acceleration: Acceleration.steady }
 		} else if state.speed <= pig_gaze_speed {
-			{ is_gawking: True, accel: Acceleration.steady }
+			{ is_gawking: True, acceleration: Acceleration.steady }
 		} else {
 			pig_gaze_brake_easing(state, seg)
 		}
@@ -176,7 +176,7 @@ Gaze :: [].{
 		d = pig.along.distance_from(state.along).minus(pig_gaze_settle_dist)
 		{
 			is_gawking: True,
-			accel: state.speed.acceleration_to({
+			acceleration: state.speed.acceleration_to({
 				target: pig_gaze_speed,
 				within: d.max(Distance.metres(1.0)),
 			}),

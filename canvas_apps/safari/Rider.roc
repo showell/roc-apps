@@ -19,7 +19,7 @@ import VehicleLimits
 import World
 
 Rider :: [].{
-	Decision : { lean_step : Angle.Lean, accel : Acceleration }
+	Decision : { lean_step : Angle.Lean, acceleration : Acceleration }
 
 	## A rider this slow near the route's end stops there.
 	stopping_speed : Speed
@@ -32,7 +32,10 @@ Rider :: [].{
 		lean_step = LeanSearch.best_lean(state).minus(state.lean)
 		{
 			lean_step,
-			accel: Throttle.acceleration(Bike.with_lean(state, state.lean.plus(lean_step)), seg),
+			acceleration: Throttle.acceleration(
+				Bike.with_lean(state, state.lean.plus(lean_step)),
+				seg,
+			),
 		}
 	}
 
@@ -96,7 +99,7 @@ Rider :: [].{
 	advance = |state, route| {
 		seg = state.segment_index.segment_in(route)
 		dec = decide(state, seg)
-		moved = Bike.advance(state, { lean_step: dec.lean_step, accel: dec.accel })
+		moved = Bike.advance(state, { lean_step: dec.lean_step, acceleration: dec.acceleration })
 		resolved =
 			match seg.ending {
 				Continues(_) => cross_if_on_road(moved, route)
@@ -139,7 +142,7 @@ expect {
 	most_accel = VehicleLimits.cruise_acceleration.to_metres_a_step_each_step() + 0.000001
 	upright.lean_step.abs() <= LeanSearch.max_lean_change
 		and leaning.lean_step.abs() <= LeanSearch.max_lean_change
-		and upright.accel.to_metres_a_step_each_step() <= most_accel
+		and upright.acceleration.to_metres_a_step_each_step() <= most_accel
 }
 
 # The throttle is decided for the bike as it will lean.
@@ -149,7 +152,7 @@ expect {
 		Bike.with_lean(rider_at(0.0, 0.0), Angle.upright.plus(decision.lean_step)),
 		first_segment,
 	)
-	chosen = decision.accel.to_metres_a_step_each_step()
+	chosen = decision.acceleration.to_metres_a_step_each_step()
 	chosen.to_bits() == same.to_metres_a_step_each_step().to_bits()
 }
 

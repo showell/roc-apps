@@ -29,15 +29,15 @@ Bike :: [].{
 	}
 
 	## The bike one step on, after leaning by `lean_step` and speeding up by
-	## `accel`.
+	## `acceleration`.
 	advance : Bike.Motion(others),
 	{
 		lean_step : Angle.Lean,
-		accel : Acceleration,
+		acceleration : Acceleration,
 	} -> Bike.Motion(others)
-	advance = |s, { lean_step, accel }| {
+	advance = |s, { lean_step, acceleration }| {
 		lean = s.lean.plus(lean_step)
-		speed = s.speed.accelerated_by(accel)
+		speed = s.speed.accelerated_by(acceleration)
 		step_length = speed.step_length()
 		turn = lean.steer(turn_per_lean)
 		mid = s.yaw.plus(turn.times(0.5)).to_radians()
@@ -77,18 +77,24 @@ riding = {
 
 first_step = Bike.advance(
 	riding,
-	{ lean_step: Angle.Lean.radians(0.05), accel: Acceleration.metres_a_step_each_step(0.01) },
+	{
+		lean_step: Angle.Lean.radians(0.05),
+		acceleration: Acceleration.metres_a_step_each_step(0.01),
+	},
 )
 
 second_step = Bike.advance(
 	first_step,
 	{
 		lean_step: Angle.Lean.radians(0.0 - 0.02),
-		accel: Acceleration.metres_a_step_each_step(0.005),
+		acceleration: Acceleration.metres_a_step_each_step(0.005),
 	},
 )
 
-third_step = Bike.advance(second_step, { lean_step: Angle.upright, accel: Acceleration.steady })
+third_step = Bike.advance(
+	second_step,
+	{ lean_step: Angle.upright, acceleration: Acceleration.steady },
+)
 
 expect
 	[first_step, second_step, third_step].join_map(
@@ -143,10 +149,13 @@ expect {
 		lean: Angle.upright,
 		heading: Angle.north,
 	}
-	a = Bike.advance(at_start, { lean_step: Angle.upright, accel: Acceleration.steady })
+	a = Bike.advance(at_start, { lean_step: Angle.upright, acceleration: Acceleration.steady })
 	b = Bike.advance(
 		at_start,
-		{ lean_step: Angle.Lean.radians(0.5), accel: Acceleration.metres_a_step_each_step(0.25) },
+		{
+			lean_step: Angle.Lean.radians(0.5),
+			acceleration: Acceleration.metres_a_step_each_step(0.25),
+		},
 	)
 	[
 		a.across.to_metres(),
