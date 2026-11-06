@@ -121,7 +121,9 @@ Cat :: [].{
 	clear_gap = Distance.metres(3.0)
 
 	## Where the crossing has got to. A cat has to finish before the rider
-	## reaches it however fast the rider comes, so it plays over beats.
+	## reaches it however fast the rider comes, so it plays over beats. The rider
+	## may not speed up while it plays, so a step moves it on by one frame at
+	## most, and every pose in `leap` has a frame of its own: none can be skipped.
 	crossing_stage : Animation.Approach -> Animation.Stage
 	crossing_stage = |approach|
 		Animation.over_beats({ length: crossing_steps, ends_at: clear_gap }, approach)
