@@ -391,8 +391,8 @@ expect {
 	)
 }
 
-hull_pts : List(Screen.Point) -> List(F64)
-hull_pts = |points| Paint.flatten_screen(TreeDraw.convex_hull(points))
+hull_points : List(Screen.Point) -> List(F64)
+hull_points = |points| Paint.flatten_screen(TreeDraw.convex_hull(points))
 
 square_with_inside_points : List(Screen.Point)
 square_with_inside_points = [
@@ -430,13 +430,13 @@ hull_with_a_repeat = [
 	{ x: 4.0, y: 4.0 },
 ]
 
-expect hull_pts(square_with_inside_points) == [0.0, 0.0, 4.0, 0.0, 4.0, 4.0, 0.0, 4.0]
-expect hull_pts(hull_triangle) == [0.0, 0.0, 4.0, 0.0, 2.0, 3.0]
-expect hull_pts(hull_line) == [0.0, 0.0, 3.0, 3.0]
-expect hull_pts(hull_pair) == [1.0, 2.0, 0.0, 0.0]
-expect hull_pts([{ x: 9.0, y: 9.0 }]) == [9.0, 9.0]
-expect hull_pts([]) == []
-expect hull_pts(hull_with_a_repeat) == [0.0, 0.0, 4.0, 0.0, 4.0, 4.0]
+expect hull_points(square_with_inside_points) == [0.0, 0.0, 4.0, 0.0, 4.0, 4.0, 0.0, 4.0]
+expect hull_points(hull_triangle) == [0.0, 0.0, 4.0, 0.0, 2.0, 3.0]
+expect hull_points(hull_line) == [0.0, 0.0, 3.0, 3.0]
+expect hull_points(hull_pair) == [1.0, 2.0, 0.0, 0.0]
+expect hull_points([{ x: 9.0, y: 9.0 }]) == [9.0, 9.0]
+expect hull_points([]) == []
+expect hull_points(hull_with_a_repeat) == [0.0, 0.0, 4.0, 0.0, 4.0, 4.0]
 
 expect TreeDraw.convex_hull(square_with_inside_points).len() == 4
 expect TreeDraw.convex_hull(hull_triangle).len() == 3

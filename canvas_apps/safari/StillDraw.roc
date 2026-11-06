@@ -57,21 +57,21 @@ StillDraw :: [].{
 	screen_points = |anchor, points| points.map(|point| StillDraw.screen_point(anchor, point))
 
 	## One polygon of a still, filled with its colour or its gradient.
-	draw_poly : StillDraw.Anchor, Stills.StillPolygon -> List(Shapes.Shape)
-	draw_poly = |anchor, poly|
+	draw_polygon : StillDraw.Anchor, Stills.StillPolygon -> List(Shapes.Shape)
+	draw_polygon = |anchor, poly|
 		if poly.points.len() > max_still_points {
 			[]
 		} else {
 			points = StillDraw.screen_points(anchor, poly.points)
 			match poly.gradient.first() {
-				Ok(gradient) => draw_gradient_poly(anchor, { gradient, points })
+				Ok(gradient) => draw_gradient_polygon(anchor, { gradient, points })
 				Err(ListWasEmpty) => Paint.push_poly(poly.color, points)
 			}
 		}
 
 	## A whole still, its polygons in order.
 	draw_still : StillDraw.Anchor, List(Stills.StillPolygon) -> List(Shapes.Shape)
-	draw_still = |anchor, polys| polys.join_map(|poly| StillDraw.draw_poly(anchor, poly))
+	draw_still = |anchor, polys| polys.join_map(|poly| StillDraw.draw_polygon(anchor, poly))
 
 	## A critter in view. An emoji faces left, so a critter facing right is
 	## its still mirrored. A critter less than a pixel tall isn't drawn.
@@ -116,12 +116,12 @@ stops_of = |gradient| {
 	end_offset: gradient.off1,
 }
 
-draw_gradient_poly : StillDraw.Anchor,
+draw_gradient_polygon : StillDraw.Anchor,
 {
 	gradient : Stills.StillGradient,
 	points : List(Screen.Point),
 } -> List(Shapes.Shape)
-draw_gradient_poly = |anchor, { gradient, points }|
+draw_gradient_polygon = |anchor, { gradient, points }|
 	match gradient_shape(gradient) {
 		Linear => {
 			start = StillDraw.screen_point(anchor, { x: gradient.ax, y: gradient.ay })
@@ -204,21 +204,21 @@ expect
 		]
 
 # A solid polygon of colour 7 with `count` points, all at the feet.
-flat_poly : U64 -> Stills.StillPolygon
-flat_poly = |count| {
+flat_polygon : U64 -> Stills.StillPolygon
+flat_polygon = |count| {
 	color: 7,
 	gradient: [],
 	points: List.repeat({ x: 0.0, y: 0.0 }, count),
 }
 
 expect StillDraw.max_still_points == 512
-expect StillDraw.draw_poly(upright, flat_poly(3)).len() == 1
-expect StillDraw.draw_poly(upright, flat_poly(512)).len() == 1
-expect StillDraw.draw_poly(upright, flat_poly(513)).len() == 0
-expect StillDraw.draw_poly(upright, flat_poly(2)).len() == 0
+expect StillDraw.draw_polygon(upright, flat_polygon(3)).len() == 1
+expect StillDraw.draw_polygon(upright, flat_polygon(512)).len() == 1
+expect StillDraw.draw_polygon(upright, flat_polygon(513)).len() == 0
+expect StillDraw.draw_polygon(upright, flat_polygon(2)).len() == 0
 
 expect
-	StillDraw.draw_poly(upright, flat_poly(3))
+	StillDraw.draw_polygon(upright, flat_polygon(3))
 		== [
 			Poly({
 				pts: [

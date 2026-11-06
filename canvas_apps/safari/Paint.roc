@@ -294,8 +294,8 @@ triangle = [
 	{ x: 5.0, y: 6.0 },
 ]
 
-triangle_pts : List(F64)
-triangle_pts = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+triangle_points : List(F64)
+triangle_points = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
 
 line_ends : List(Screen.Point)
 line_ends = [{ x: 1.0, y: 2.0 }, { x: 3.0, y: 4.0 }]
@@ -319,8 +319,8 @@ inner_stops = {
 	end_offset: 0.75,
 }
 
-radial_poly : List(Screen.Point), F64 -> List(Shapes.Shape)
-radial_poly = |corners, gradient_radius|
+radial_polygon : List(Screen.Point), F64 -> List(Shapes.Shape)
+radial_polygon = |corners, gradient_radius|
 	Paint.push_grad_poly(
 		corners,
 		{
@@ -331,8 +331,8 @@ radial_poly = |corners, gradient_radius|
 		},
 	)
 
-linear_poly : List(Screen.Point) -> List(Shapes.Shape)
-linear_poly = |corners|
+linear_polygon : List(Screen.Point) -> List(Shapes.Shape)
+linear_polygon = |corners|
 	Paint.push_linear_grad_poly(
 		corners,
 		{
@@ -342,8 +342,8 @@ linear_poly = |corners|
 		},
 	)
 
-ellipse_poly : List(Screen.Point) -> List(Shapes.Shape)
-ellipse_poly = |corners|
+ellipse_polygon : List(Screen.Point) -> List(Shapes.Shape)
+ellipse_polygon = |corners|
 	Paint.push_radial_grad_poly(
 		corners,
 		{
@@ -354,7 +354,7 @@ ellipse_poly = |corners|
 		},
 	)
 
-expect Paint.flatten_screen(triangle) == triangle_pts
+expect Paint.flatten_screen(triangle) == triangle_points
 expect Paint.flatten_screen([]) == []
 
 # A builder given too few points, or too small a gradient, draws nothing.
@@ -369,14 +369,14 @@ expect Paint.push_round_poly(
 	line_ends,
 	{ fill_color: 7, round_strength: Fraction.of(0.5) },
 ).len() == 0
-expect radial_poly(triangle, 1.0).len() == 1
-expect radial_poly(line_ends, 1.0).len() == 0
-expect radial_poly(triangle, 0.5).len() == 1
-expect radial_poly(triangle, 0.49).len() == 0
-expect linear_poly(triangle).len() == 1
-expect linear_poly(line_ends).len() == 0
-expect ellipse_poly(triangle).len() == 1
-expect ellipse_poly(line_ends).len() == 0
+expect radial_polygon(triangle, 1.0).len() == 1
+expect radial_polygon(line_ends, 1.0).len() == 0
+expect radial_polygon(triangle, 0.5).len() == 1
+expect radial_polygon(triangle, 0.49).len() == 0
+expect linear_polygon(triangle).len() == 1
+expect linear_polygon(line_ends).len() == 0
+expect ellipse_polygon(triangle).len() == 1
+expect ellipse_polygon(line_ends).len() == 0
 
 expect
 	Paint.push_beacon({
@@ -388,14 +388,14 @@ expect
 		== 1
 
 expect Paint.push_poly(111, triangle) == [
-	Poly({ pts: triangle_pts, fill: Flat(Brush.opaque(111)) }),
+	Poly({ pts: triangle_points, fill: Flat(Brush.opaque(111)) }),
 ]
 
 expect
 	Paint.push_round_poly(triangle, { fill_color: 222, round_strength: Fraction.of(0.75) })
 		== [
 			Poly({
-				pts: triangle_pts,
+				pts: triangle_points,
 				fill: Span({
 					edge: Brush.opaque(155),
 					middle: Brush.opaque(255),
@@ -434,7 +434,7 @@ expect
 	)
 		== [
 			Poly({
-				pts: triangle_pts,
+				pts: triangle_points,
 				fill: Radial({
 					inner: Brush.with_alpha(444),
 					outer: Brush.with_alpha(445),
@@ -462,7 +462,7 @@ expect
 	)
 		== [
 			Poly({
-				pts: triangle_pts,
+				pts: triangle_points,
 				fill: Linear({
 					c0: Brush.with_alpha(555),
 					c1: Brush.with_alpha(556),
@@ -488,7 +488,7 @@ expect
 	)
 		== [
 			Poly({
-				pts: triangle_pts,
+				pts: triangle_points,
 				fill: Ellipse({
 					c0: Brush.with_alpha(666),
 					c1: Brush.with_alpha(667),
@@ -518,7 +518,7 @@ offset_linear = |{ start_offset, end_offset }|
 linear_fill : { o0 : F64, o1 : F64 } -> Shapes.Shape
 linear_fill = |{ o0, o1 }|
 	Poly({
-		pts: triangle_pts,
+		pts: triangle_points,
 		fill: Linear({
 			c0: Brush.with_alpha(666),
 			c1: Brush.with_alpha(667),
@@ -567,8 +567,12 @@ ellipse_of_height = |height|
 	)
 
 # An ellipse just under the limit is flat, and one just over it is not.
-expect ellipse_of_height(0.009) == [Poly({ pts: triangle_pts, fill: Flat(Brush.with_alpha(666)) })]
-expect ellipse_of_height(0.011) != [Poly({ pts: triangle_pts, fill: Flat(Brush.with_alpha(666)) })]
+expect ellipse_of_height(0.009) == [
+	Poly({ pts: triangle_points, fill: Flat(Brush.with_alpha(666)) }),
+]
+expect ellipse_of_height(0.011) != [
+	Poly({ pts: triangle_points, fill: Flat(Brush.with_alpha(666)) }),
+]
 
 sample_color : I64
 sample_color = 8405024

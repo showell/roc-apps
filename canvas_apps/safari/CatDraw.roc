@@ -21,8 +21,8 @@ CatDraw :: [].{
 	}
 
 	## A polygon with more corners than this is not drawn.
-	max_cat_pts : I64
-	max_cat_pts = 256
+	max_cat_points : I64
+	max_cat_points = 256
 
 	## A corner of the still, on screen.
 	screen_point : CatDraw.Anchor, Stills.StillPt -> Screen.Point
@@ -34,7 +34,7 @@ CatDraw :: [].{
 	## One polygon of the still, on screen.
 	polygon : CatDraw.Anchor, Stills.StillPolygon -> List(Shapes.Shape)
 	polygon = |anchor, poly|
-		if poly.points.len().to_i64_wrap() > max_cat_pts {
+		if poly.points.len().to_i64_wrap() > max_cat_points {
 			[]
 		} else {
 			Paint.push_poly(poly.color, poly.points.map(|pt| screen_point(anchor, pt)))
@@ -117,21 +117,21 @@ expect
 		== [{ x: 100.0, y: 200.0 }, { x: 125.0, y: 180.0 }]
 
 # A polygon of colour 9 with `count` corners, all at the feet.
-poly_of : U64 -> Stills.StillPolygon
-poly_of = |count| {
+polygon_of : U64 -> Stills.StillPolygon
+polygon_of = |count| {
 	color: 9,
 	gradient: [],
 	points: List.repeat({ x: 0.0, y: 0.0 }, count),
 }
 
-expect CatDraw.max_cat_pts == 256
-expect CatDraw.polygon(standing, poly_of(3)).len() == 1
-expect CatDraw.polygon(standing, poly_of(256)).len() == 1
-expect CatDraw.polygon(standing, poly_of(257)).len() == 0
-expect CatDraw.polygon(standing, poly_of(2)).len() == 0
+expect CatDraw.max_cat_points == 256
+expect CatDraw.polygon(standing, polygon_of(3)).len() == 1
+expect CatDraw.polygon(standing, polygon_of(256)).len() == 1
+expect CatDraw.polygon(standing, polygon_of(257)).len() == 0
+expect CatDraw.polygon(standing, polygon_of(2)).len() == 0
 
 expect
-	CatDraw.polygon(standing, poly_of(3))
+	CatDraw.polygon(standing, polygon_of(3))
 		== [
 			Poly({
 				pts: [
@@ -150,15 +150,15 @@ expect
 	CatDraw.polygons(
 		standing,
 		[
-			poly_of(3),
-			poly_of(4),
-			poly_of(300),
+			polygon_of(3),
+			polygon_of(4),
+			polygon_of(300),
 		],
 	).len()
 		== 2
 expect CatDraw.polygons(standing, []).len() == 0
 expect
-	CatDraw.polygons(standing, [poly_of(3), poly_of(4)]).drop_first(1)
+	CatDraw.polygons(standing, [polygon_of(3), polygon_of(4)]).drop_first(1)
 		== [
 			Poly({
 				pts: [100.0, 200.0, 100.0, 200.0, 100.0, 200.0, 100.0, 200.0],
