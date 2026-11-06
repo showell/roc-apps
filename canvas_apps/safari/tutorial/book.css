@@ -161,10 +161,15 @@ p.draft-note { padding: 0.5rem 0.8rem; border-radius: 3px; }
 .number { display: inline-block; width: 1.7em; color: var(--quiet); font-variant-numeric: tabular-nums; font-weight: 400; text-indent: 0; }
 a:has(> .number) { padding-left: 1.7em; text-indent: -1.7em; }
 
+.book-nav li.part { margin-top: 0.9rem; color: var(--accent); font-weight: 700; }
+.book-nav li.category { margin-top: 0.4rem; color: var(--quiet); font-style: italic; }
+
 /* The table of contents */
 
 ol.contents { max-width: none; columns: 2; column-gap: 2.5rem; margin: 0; padding: 0; list-style: none; font: 0.82rem/1.35 var(--plain); }
 ol.contents > li { break-inside: avoid; margin: 0 0 0.9rem; }
+ol.contents > li.part { margin: 1.2rem 0 0.5rem; color: var(--accent); font-weight: 700; break-after: avoid; }
+ol.contents > li.category { margin: 0.5rem 0; color: var(--quiet); font-style: italic; break-after: avoid; }
 ol.contents > li > a { display: block; color: var(--ink); font-weight: 600; text-decoration: none; }
 ol.contents a:hover { color: var(--accent); }
 ol.contents .sections { margin: 0.15rem 0 0; padding-left: 1.7em; list-style: none; }

@@ -8,7 +8,7 @@ import Book
 import Manuscript
 
 main! = |args| {
-	for page in Book.pages(Manuscript.read(args)) {
+	for page in Book.pages(Manuscript.read(args), Book.dividers) {
 		echo!("<!-- book page: ${page.file} -->\n${page.html}")
 	}
 	Ok({})

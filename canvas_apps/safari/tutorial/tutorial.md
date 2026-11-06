@@ -350,7 +350,7 @@ Drag across it from left to right, and the clock runs from step 0 to step 6,000.
 
 New in this chapter:
 
-- Roc: `->` as a promise, privacy without a keyword, records destructured in a parameter list, tags in place of `null`, code that doesn't compile
+- Roc: `->` as a promise, privacy without a keyword, records destructured in a parameter list, tags in place of `null`
 - Modules: `Sky`, `Fraction`, `Angle`
 
 `Sky` is a set of functions that each take a clock and answer with a color or the sun's place.
@@ -377,7 +377,7 @@ digraph sky {
 
 Every function in this chapter has a `->` arrow, not `=>`. That tells you the function has no effects, and the compiler holds it to that. So the same clock always gives the same sky. If you don't see a `=>`, you only have to think about what the function is given.
 
-Here's one of the questions being asked. `Tour.sky_top_color` takes the clock from the current instant and hands it to `Sky`.
+Here's one of the questions being asked. `Tour` holds the ride, and we'll come back to it. `Tour.sky_top_color` takes the clock from the current instant and hands it to `Sky`.
 
 🌳 {{code Tour.sky_top_color}}
 
@@ -431,7 +431,7 @@ We start at the bottom of the tree, which isn't on the diagram, because the diag
 
 🌳 {{code Sky.sun_height_px}}
 
-The next answers are `Fraction`s. `Fraction` is a third small opaque type, a ratio from 0 to 1, and only its own block can build one, so a `Fraction` is always in range. It has two ways in. `Fraction.of` takes a ratio that can only be in range and crashes on anything else, because that would be a bug in the sum. `Fraction.clamp` takes a ratio that can rightly fall outside, as a sun sunk far below the horizon does, and holds it at the nearest end.
+The next answers are `Fraction`s. `Fraction` is another small opaque type, a ratio from 0 to 1, and only its own block can build one, so a `Fraction` is always in range. It has two ways in. `Fraction.of` takes a ratio that can only be in range and crashes on anything else, because that would be a bug in the sum. `Fraction.clamp` takes a ratio that can rightly fall outside, as a sun sunk far below the horizon does, and holds it at the nearest end.
 
 Dusk is a curve and then a line, which means two cases, `dusk_while_up` and `dusk_after_set`. `Sky` keeps them below its block. Anything outside `Sky :: [].{ ... }` is private to the module, so a helper stays a helper without any keyword.
 
@@ -540,7 +540,7 @@ The rock darkens with `dusk`, and the snow goes blue. `snow_color` uses the sky'
 
 {{code Mountains.snow_color}}
 
-That's nature. Everything from here on was put there by somebody.
+That's nature. Next come the things people built.
 
 ## The road
 
@@ -804,7 +804,7 @@ A pig is the simplest critter in Safari Ride. It isn't tied to a bend. Here's ho
 New in this chapter:
 
 - Roc: a `match` on numbers, with a default branch
-- Modules: `Pigs`, `Scenery`
+- Modules: `Pigs`
 
 That's the record that the elephant and its baby came out as: two places, an emoji, a height and a way to face. A critter's `codepoint` is what finds its still, and that's one `match`, from a number to some polygons:
 
@@ -843,7 +843,7 @@ Pigs graze on the right of the road, near the end of a segment. The first two se
 
 {{code Pigs.pigs_along}}
 
-The `match` is on a pair, so it has to cover all four combinations. The last line joins the two with no pigs.
+As with the tower's rods, the `match` is on a pair. The last line joins the two with no pigs.
 
 `Distracting` is the one thing here that a cow doesn't have. One pig in a big herd catches the rider's eye, and the rider slows down to look. That's about the rider more than the pig, so it waits for the rider's chapters.
 
@@ -861,7 +861,7 @@ The first three lines under the ruler are that record's three fields, read from 
 
 New in this chapter:
 
-- Roc: nominal types, code with no effects in it
+- Roc: nominal types
 - Modules: `RideInstant`, `Tour`
 
 A record is the plainest shape in Roc, and it's nearly all this needs. `RideInstant := { ... }.{ ... }` makes the module's own type out of one. That's a nominal type, which can carry a block of definitions, and unlike an opaque type it leaves its fields readable.
@@ -886,11 +886,11 @@ The game itself has no effectful functions at all. It has no `!` names, no `=>` 
 
 Mostly, Safari Ride is a screensaver: you sit back and watch it. You can also take the controls. Click the ride to give it the keyboard, and Space pauses it. While it's paused, Right moves one step forward and Left moves one step back. While it's running, each moves four steps at a time. J jumps to the next segment of the road, and R starts over.
 
-`SafariApp.step` handles all of that. It takes the model and a snapshot of the input, and it returns the next model:
+`SafariApp.step` handles all of that. It takes the model, which is the `Tour` and a pause flag, and a snapshot of the input. It returns the next model:
 
 {{code SafariApp.step from "paused = if input.key_pressed(KeySpace)" to "Tour.step_forward(m.tour)"}}
 
-There's no event handler here. Each frame, the runner hands `step` a snapshot, and `step` reads it. `key_pressed` says a key went down since the last frame, so one tap of Space pauses the ride once. `key_down` says a key is being held, so holding Right keeps the ride moving.
+There's no event handler here. Each frame, the platform hands `step` a snapshot, and `step` reads it. `key_pressed` says a key went down since the last frame, so one tap of Space pauses the ride once. `key_down` says a key is being held, so holding Right keeps the ride moving.
 
 Stepping forward is the ordinary step. Stepping back is more interesting, because it's where keeping so little pays off. `Tour` holds the current instant and a list of the instants before it, so going back just means taking the last one off the list:
 
@@ -958,7 +958,7 @@ A tower halfway along a segment takes the key plus 60. That's a small piece of n
 
 Notice where the clock stops. `beacon_brightness` on a `TowerSighting` is a `Fraction`, and neither `Tower` nor `SceneDraw` imports `Clock`. A beacon's blink is decided in the same place as whether the tower is in view at all.
 
-There's no blink abstraction. `Animation.Alternates` also follows a wave, and the resemblance ends there: it picks a pose, and this picks a brightness. Nothing else in the game blinks.
+There's no blink abstraction, because nothing else in the game blinks.
 
 The clock counts steps, not seconds, so pausing the ride freezes the beacons, and stepping back runs them backwards.
 
@@ -1002,7 +1002,7 @@ digraph cat {
 
 `Cat` says what a cat does, and `Animation` holds what a cat shares with a bird. Everything that uses a cat imports it, and `Cat` imports none of them: it doesn't know it's drawn, sighted or reacted to.
 
-The slider isn't scrubbing a video. Every position of it is a call to `Cat.instant_at`. The arrow is `->` again, so the type already says there's no hidden cat being updated somewhere. Method syntax chains the two jobs: `.instant(...)` is defined on the `Timeline` that `crossing_timeline` returns.
+The slider isn't scrubbing a video. Every position of it is a call to `Cat.instant_at`. The arrow is `->` again, so the type already says there's no hidden cat being updated somewhere. A timeline is a record of what the cat does at each point. Method syntax chains the two jobs: `.instant(...)` is defined on the `Timeline` that `crossing_timeline` returns.
 
 🌳 {{code Cat.instant_at}}
 
@@ -1017,6 +1017,8 @@ What `Cat` gets from `Animation` comes down to one type, `Stage`:
 {{code Animation.Stage}}
 
 `Stage` is the type where the function's two jobs meet. It's a tag union, and two of its tags carry a payload. You might expect `Waiting` and `Past` to be the same as progress of 0 and 1, but a critter can rest somewhere its animation never goes. If `Waiting` were just 0, a perched bird would show the first frame of its flight.
+
+An `Approach` says how the rider is coming, and an `Instant` is the cat at one point in the crossing.
 
 A rule turns an `Approach` into a `Stage`, and a timeline turns a `Stage` into an `Instant`. `crossing_stage` decides how far along things are, and `crossing_timeline` decides what that looks like. They know nothing of each other.
 
@@ -1202,7 +1204,7 @@ The cat also has an effect on the rider. A cat in the lane stops the rider speed
 
 ## The bird
 
-The cat is built on a shared module, `Animation`, and one critter can't show whether that module was written for critters in general or just for cats. The bird is the second critter. It's Roc's logo, sitting on a treetop. As the rider comes near it takes off, flies across the road and ahead, and drops onto a tree on the far side. It's a rider-driven thing like the cat, and it cost much less.
+The cat is built on a shared module, `Animation`, and one critter can't show whether that module was written for critters in general or just for cats. The bird is the second critter to use it. It's Roc's logo, sitting on a treetop. As the rider comes near it takes off, flies across the road and ahead, and drops onto a tree on the far side. It's a rider-driven thing like the cat, and it cost much less.
 
 ```widget bird
 Drag the rider's gap and watch the bird fly.
@@ -1212,7 +1214,7 @@ Drag across it from left to right, and the gap falls from 75 metres to 0. The bi
 
 New in this chapter:
 
-- Roc: record update, tags inside tags, closures, opening a `Try` by hand, `match` as an expression
+- Roc: record update, tags inside tags, opening a `Try` by hand, `match` as an expression
 - Modules: `BirdFlight`, `BirdSighting`, `BirdDraw`
 
 The modules around `BirdFlight`
@@ -1326,7 +1328,7 @@ And that's called from a `match` in the middle of a record, which is a reminder 
 
 {{code World.built_segment from "crossing: match plan.crossing {" to "QuietRoad => QuietRoad"}}
 
-Each frame, a sighting reads the route back. `|` in a pattern covers two tags with one branch. The crossing is matched in full, so a third kind of crossing would stop here until someone says what a bird sighting should do about it:
+Each frame, a sighting reads the route back. The crossing is matched in full, so a third kind of crossing would stop here until someone says what a bird sighting should do about it:
 
 {{code BirdSighting.segment_bird}}
 
@@ -1374,7 +1376,7 @@ Here's the step again, this time whole. Its body is a block: names, then a recor
 
 {{code RideInstant.next}}
 
-`Clock.next`, `Rider.advance` and `Truck.advance` all have the same shape: a value goes in, and the next value comes out. Call that *the step function*. There's no mutable rider being nudged. There's a rider, and another rider one step on, and the old one is still a perfectly good value, which `Tour` keeps in a list.
+`Clock.next`, `Rider.advance` and `Truck.advance` all have the same shape: a value goes in, and the next value comes out. Call that *the step function*. There's no mutable rider being nudged. There's a rider, and another rider one step on.
 
 Stepping has a cost, which shows up when we compare it with the cat:
 
@@ -1524,7 +1526,7 @@ The rider has several reasons to slow down, and they don't know about each other
 
 Call this *the chain of limits*. Each limit has the same shape and can be read alone, and adding a reason is one more line. It reads like a list of rules because that's what it is.
 
-Each limit compares two opaque `Acceleration`s with an ordinary `<`, which works because `Acceleration` defines `is_lt`. `crossing_limit` shows two more things about patterns. A guard, `if a > Acceleration.steady`, adds a condition to a branch, and `|` joins two tags in one. When the guard fails, `NoAcceleration` falls through to the last branch. `NoAcceleration` comes from the cat: it stops the rider opening the throttle, and a rider already braking stays braking. We'll see how next.
+Each limit compares two opaque `Acceleration`s with an ordinary `<`, which works because `Acceleration` defines `is_lt`. `crossing_limit` shows one more thing about patterns. A guard, `if a > Acceleration.steady`, adds a condition to a branch. When the guard fails, `NoAcceleration` falls through to the last branch. `NoAcceleration` comes from the cat: it stops the rider opening the throttle, and a rider already braking stays braking. We'll see how next.
 
 {{code Throttle.crossing_limit}}
 
@@ -1707,7 +1709,7 @@ The truck stays ahead of the rider all the way:
 
 New in this chapter:
 
-- Roc: list patterns, records of tag unions written in place
+- Roc: list patterns
 - Modules: `Truck`, `TruckDraw`
 
 The modules around `Truck`
@@ -1789,7 +1791,7 @@ The truck's headlights come on once the sun has gone behind the mountains, at st
 
 {{code Mountains.is_sun_behind_mountains}}
 
-`Truck.Lights` is a record of two tag unions, written in place. `[On, Off]` needs no declaration, and two independent lamps aren't one state with four values, so they're two fields:
+`Truck.Lights` is a record of two tag unions. Two independent lamps aren't one state with four values, so they're two fields:
 
 {{code Truck.Lights}}
 
@@ -2218,7 +2220,7 @@ digraph platform {
 
 New in this chapter:
 
-- Roc: an app as a record, functions in record fields, `var` and `while`, `roc glue`
+- Roc: an app as a record, `var` and `while`, `roc glue`
 - Modules: `WasmApp`, `CanvasApp`, `Input`, `Shapes`
 
 `WasmApp`, `CanvasApp`, `Input` and `Shapes` are in `lib/`, and they're the same for every canvas app.
@@ -2241,23 +2243,13 @@ An app here is a record, handed to a runner. `CanvasApp(model)` has a type param
 
 ### Keys
 
-| Key | What it does |
-|---|---|
-| Space | Pauses or resumes the ride |
-| Right | `Tour.step_forward`, four times, or once while paused |
-| Left | `Tour.step_back`, four times, or once while paused |
-| J | Jumps to the next segment |
-| R | Starts again from `Tour.initial` |
-
-Input comes as a value too. `Input.Snapshot` says which keys are down and which were just struck, so a test could write one down, and `key_pressed(KeyR)` takes a tag. Everything the keys do is a function from `Tour` to `Tour`, so moving four steps or one, forward or back, is one helper with a function in a record field. `var` is back, this time with `while`, in a function that's still pure. `$tour` and `$i` can't be seen from outside.
+The ride instant chapter showed `SafariApp.step` reading a snapshot of the keys. A snapshot is a value, so a test could write one down. Everything the keys do is a function from `Tour` to `Tour`, so moving four steps or one, forward or back, is one helper with a function in a record field. `var` is back, this time with `while`, in a function that's still pure. `$tour` and `$i` can't be seen from outside.
 
 {{code SafariApp.repeat}}
 
 `Tour.step_forward` and `Tour.step_back` are plain values to pass here:
 
 {{code SafariApp.step from "if input.key_down(KeyRight) {" to "step_once: Tour.step_forward,"}}
-
-Stepping back through the ride is a keypress because `Tour.step_back` is a list lookup, and nothing else in the game knows it happens.
 
 ### A frame is a list
 
