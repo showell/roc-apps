@@ -79,7 +79,7 @@ World :: [].{
 		trees : List(Trees.Tree),
 		cows : List(Scenery.Critter),
 		pigs : List(Scenery.Critter),
-		pig_attention : Pigs.PigInterest,
+		pig_interest : Pigs.PigInterest,
 
 		## The turn into the next segment: positive to the right, negative to
 		## the left.
@@ -337,7 +337,7 @@ World :: [].{
 built_segment : World.SegmentPlan, World.SegmentIndex -> World.Segment
 built_segment = |plan, index| {
 	trees = Trees.plant({ scheme: plan.scheme, length: plan.length })
-	pig_attention = Pigs.interest_of({
+	pig_interest = Pigs.interest_of({
 		presence: plan.pigs,
 		pig_segments_so_far: World.pig_segments_through(index),
 	})
@@ -345,12 +345,8 @@ built_segment = |plan, index| {
 		length: plan.length,
 		trees,
 		cows: Cows.herd(plan.bull),
-		pigs: Pigs.pigs_along({
-			presence: plan.pigs,
-			interest: pig_attention,
-			length: plan.length,
-		}),
-		pig_attention,
+		pigs: Pigs.pigs_along({ interest: pig_interest, length: plan.length }),
+		pig_interest,
 		exit_turn: plan.turn,
 		commit_along: match plan.ending {
 			Continues => {
@@ -553,9 +549,9 @@ has_cat = |segment|
 ## Whether a segment's pigs draw the rider's eye.
 is_distracting : World.Segment -> Bool
 is_distracting = |segment|
-	match segment.pig_attention {
+	match segment.pig_interest {
 		Distracting => True
-		Unnoticed => False
+		Unnoticed | NoPigs => False
 	}
 
 ## The cat crossing at a segment that has one.

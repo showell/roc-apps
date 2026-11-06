@@ -68,7 +68,7 @@ Gaze :: [].{
 	## or else at the road.
 	desired_gaze : RiderState, World.Segment -> Gaze.GazeTarget
 	desired_gaze = |state, seg|
-		match seg.pig_attention {
+		match seg.pig_interest {
 			Distracting => {
 				pig = Pigs.gaze_pig(seg.length)
 				turn = turn_to(state, pig)
@@ -79,7 +79,7 @@ Gaze :: [].{
 					OnRoad
 				}
 			}
-			Unnoticed => OnRoad
+			Unnoticed | NoPigs => OnRoad
 		}
 
 	## The gaze one step on. It swivels toward a pig at no more than the
@@ -124,9 +124,9 @@ Gaze :: [].{
 
 	is_gawking : RiderState, World.Segment -> Bool
 	is_gawking = |state, seg|
-		match seg.pig_attention {
+		match seg.pig_interest {
 			Distracting => state.along >= Pigs.gaze_pig(seg.length).along.minus(gaze_look_distance)
-			Unnoticed => False
+			Unnoticed | NoPigs => False
 		}
 
 	## The brake for a gawking rider, who aims to be down to `pig_gaze_speed` by
@@ -179,8 +179,8 @@ plain = World.route_segment(0)
 distracting : World.Segment
 distracting = World.route_segment(2)
 
-expect plain.pig_attention == Unnoticed
-expect distracting.pig_attention == Distracting
+expect plain.pig_interest == NoPigs
+expect distracting.pig_interest == Distracting
 
 ## A rider on the distracting segment, at rest in every other way. Gaze doesn't
 ## import Along, so `along` is a distance from the segment's start.

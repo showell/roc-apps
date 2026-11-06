@@ -93,7 +93,7 @@ starting_model = { played: [first_rider], transport: VcrButtons.transport_at(str
 ## The first segment of the route whose pigs catch the rider's eye.
 pig_segment : World.Segment
 pig_segment =
-	World.segments.find_first(|segment| segment.pig_attention == Distracting)
+	World.segments.find_first(|segment| segment.pig_interest == Distracting)
 		?? crash "GazeWidgetApp.pig_segment: the route has a distracting pig"
 
 ## The pig that catches the rider's eye.
@@ -366,8 +366,8 @@ expect {
 }
 
 # This stretch is on the route's first distracting segment.
-expect first_rider.segment_index.segment_in(World.segments).pig_attention == Distracting
-expect World.segments.take_first(2).all(|segment| segment.pig_attention == Unnoticed)
+expect first_rider.segment_index.segment_in(World.segments).pig_interest == Distracting
+expect World.segments.take_first(2).all(|segment| segment.pig_interest == NoPigs)
 expect pig_segment.length == Distance.metres(400.0)
 
 # The steps the book's table quotes, each with its speed in metres a step, its

@@ -11,8 +11,9 @@ Pigs :: [].{
 	## Whether the route plans pigs along a segment.
 	PigPresence : [WithPigs, NoPigs]
 
-	## Whether a segment's pigs catch the rider's eye.
-	PigInterest : [Distracting, Unnoticed]
+	## What a built segment's pigs are to the rider: there are none, the rider
+	## passes them by, or one of them catches the eye.
+	PigInterest : [NoPigs, Unnoticed, Distracting]
 
 	pig_codepoint : I64
 	pig_codepoint = 128022
@@ -90,24 +91,20 @@ Pigs :: [].{
 	## the route's segments, this one included, have pigs.
 	interest_of : { presence : Pigs.PigPresence, pig_segments_so_far : U32 } -> Pigs.PigInterest
 	interest_of = |{ presence, pig_segments_so_far }|
-		if has_pigs(presence) and pig_segments_so_far <= pig_novelty_count {
-			Distracting
-		} else {
-			Unnoticed
+		match presence {
+			NoPigs => NoPigs
+			WithPigs if pig_segments_so_far <= pig_novelty_count => Distracting
+			WithPigs => Unnoticed
 		}
 
 	## The pigs on a segment `length` long: a big herd where they catch the
-	## rider's eye, and two rows elsewhere.
-	pigs_along : {
-		presence : Pigs.PigPresence,
-		interest : Pigs.PigInterest,
-		length : Distance,
-	} -> List(Scenery.Critter)
-	pigs_along = |{ presence, interest, length }|
-		match (presence, interest) {
-			(WithPigs, Distracting) => big_herd(length)
-			(WithPigs, Unnoticed) => two_rows(length)
-			(NoPigs, Distracting) | (NoPigs, Unnoticed) => []
+	## rider's eye, and two rows where they don't.
+	pigs_along : { interest : Pigs.PigInterest, length : Distance } -> List(Scenery.Critter)
+	pigs_along = |{ interest, length }|
+		match interest {
+			Distracting => big_herd(length)
+			Unnoticed => two_rows(length)
+			NoPigs => []
 		}
 
 	## The pig that catches the rider's eye, on a segment `length` long.
@@ -172,6 +169,26 @@ herd_pig = |herd_along, { row, column }| {
 pig_row : Along, { across : Across, offsets : List(Distance) } -> List(Scenery.Critter)
 pig_row = |herd_along, { across, offsets }|
 	offsets.map(|offset| pig({ along: herd_along.plus(offset), across }))
+
+expect
+	[
+		({ presence: NoPigs, pig_segments_so_far: 1 }, NoPigs),
+		({ presence: WithPigs, pig_segments_so_far: 1 }, Distracting),
+		({ presence: WithPigs, pig_segments_so_far: 2 }, Distracting),
+		({ presence: WithPigs, pig_segments_so_far: 3 }, Unnoticed),
+	].all(|(segment, interest)| Pigs.interest_of(segment) == interest)
+
+expect
+	[
+		(NoPigs, 0),
+		(Unnoticed, 10),
+		(Distracting, 49),
+	].all(
+		|(interest, count)| Pigs.pigs_along({
+			interest,
+			length: Distance.metres(1000.0),
+		}).len() == count,
+	)
 
 eye_catcher : Scenery.Critter
 eye_catcher = Pigs.gaze_pig(Distance.metres(1000.0))
