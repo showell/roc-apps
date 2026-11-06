@@ -5,6 +5,7 @@ import Across
 import Along
 import Angle
 import Distance
+import Geom
 import World
 import CatSighting
 import Critter
@@ -215,7 +216,7 @@ start_view = {
 	road: {
 		world: [0, 1, 2].map(World.route_segment),
 		chain: [0, 1, 2].map(World.SegmentIndex.number),
-		pose: {
+		vantage: {
 			along: Along.metres(0.0),
 			across: Across.metres(0.0),
 			yaw: Angle.straight_ahead,
@@ -277,7 +278,7 @@ segs = [
 	World.route_segment(2),
 ]
 
-origin : Chain.Pose
+origin : Geom.Vantage
 origin = {
 	along: Along.metres(0.0),
 	across: Across.metres(0.0),
@@ -285,7 +286,7 @@ origin = {
 	half_width: Distance.metres(2.0),
 }
 
-up_road : Chain.Pose
+up_road : Geom.Vantage
 up_road = {
 	along: Along.metres(100.0),
 	across: Across.metres(0.0),
@@ -293,14 +294,14 @@ up_road = {
 	half_width: Distance.metres(2.0),
 }
 
-## The first three segments, seen from `pose` through a camera of focal
+## The first three segments, seen from `vantage` through a camera of focal
 ## length `cam_focal`.
-view_from : Chain.Pose, F64 -> Chain.Viewpoint
-view_from = |pose, cam_focal| {
+view_from : Geom.Vantage, F64 -> Chain.Viewpoint
+view_from = |vantage, cam_focal| {
 	road: {
 		world: segs,
 		chain: [0, 1, 2].map(World.SegmentIndex.number),
-		pose,
+		vantage,
 	},
 	cam_focal,
 }
@@ -413,20 +414,20 @@ expect
 		== [500.0, 320.0, 400.0]
 
 ## What a truck `lead` metres ahead of a rider at the start of the chain is
-## seen from, from `pose`, with its lights off.
-truck_view : Chain.Pose, F64 -> TruckSighting.View
-truck_view = |pose, lead| {
+## seen from, from `vantage`, with its lights off.
+truck_view : Geom.Vantage, F64 -> TruckSighting.View
+truck_view = |vantage, lead| {
 	road: {
 		world: segs,
 		chain: [0, 1, 2].map(World.SegmentIndex.number),
-		pose,
+		vantage,
 	},
 	lead: Distance.metres(lead),
 	lights: { headlights: Off, brake_lights: Off },
 }
 
-truck_seen_from : Chain.Pose, F64 -> TruckSighting.TruckAt
-truck_seen_from = |pose, lead| TruckSighting.in_view(truck_view(pose, lead))
+truck_seen_from : Geom.Vantage, F64 -> TruckSighting.TruckAt
+truck_seen_from = |vantage, lead| TruckSighting.in_view(truck_view(vantage, lead))
 
 lead_of : F64 -> TruckSighting.TruckAt
 lead_of = |lead| truck_seen_from(origin, lead)

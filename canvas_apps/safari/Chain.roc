@@ -12,14 +12,12 @@ import World
 
 Chain :: [].{
 
-	Pose : Geom.Pose
-
 	## The road in view: the world's segments, the chain of them ahead of
-	## the rider, and the rider's pose.
+	## the rider, and the rider's vantage.
 	RoadView : {
 		world : List(World.Segment),
 		chain : List(World.SegmentIndex),
-		pose : Chain.Pose,
+		vantage : Geom.Vantage,
 	}
 
 	## What a frame is seen from: the road in view, and the camera's focal
@@ -94,7 +92,7 @@ Chain :: [].{
 	gap_to_segment : Chain.RoadView, Chain.Position -> Distance
 	gap_to_segment = |road, position|
 		position.before_in(road.chain).fold(
-			road.pose.along.from_start().opposite(),
+			road.vantage.along.from_start().opposite(),
 			|gap, index| gap.plus(index.segment_in(road.world).length),
 		)
 
@@ -127,7 +125,7 @@ Chain :: [].{
 			edge_point({ along, across }),
 			|index, point| Geom.in_segment_before(point, bend_out_of(index.segment_in(road.world))),
 		)
-		Geom.to_rider_point(on_rider_segment, road.pose)
+		Geom.to_rider_point(on_rider_segment, road.vantage)
 	}
 
 	## A point on the segment at `place`, in the rider's view.
@@ -143,7 +141,7 @@ Chain :: [].{
 				rider_point_ahead(road, { position, along, across })
 			JustBehind(bend) => {
 				on_segment_behind = edge_point({ along, across })
-				Geom.to_rider_point(Geom.in_segment_after(on_segment_behind, bend), road.pose)
+				Geom.to_rider_point(Geom.in_segment_after(on_segment_behind, bend), road.vantage)
 			}
 		}
 }

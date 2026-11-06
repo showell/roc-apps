@@ -2,6 +2,7 @@
 ## the bike's lean, as a rider's head turns into a bend.
 import Angle
 import Chain
+import Geom
 import RiderState
 import Scenery
 
@@ -20,8 +21,8 @@ ViewYaw :: [].{
 	heading_for = |s| s.heading.plus(view_yaw_for(s))
 
 	## Where the camera stands on the rider's segment, and which way it faces.
-	pose_for : RiderState -> Chain.Pose
-	pose_for = |s| {
+	vantage_for : RiderState -> Geom.Vantage
+	vantage_for = |s| {
 		along: s.along,
 		across: s.across,
 		yaw: s.yaw.plus(view_yaw_for(s)),

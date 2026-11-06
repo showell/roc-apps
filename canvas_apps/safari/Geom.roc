@@ -36,7 +36,7 @@ Geom :: [].{
 
 	## Where the camera stands on the current segment, and which way it faces.
 	## The middle of the lane is `half_width` from its left edge.
-	Pose : {
+	Vantage : {
 		along : Along,
 		across : Across,
 		yaw : Angle.Turn,
@@ -65,14 +65,14 @@ Geom :: [].{
 	ground_drop = |{ right, forward }|
 		(right * right + forward * forward) / (2.0 * ground_curve_radius)
 
-	## A point on the current segment, as the camera at `pose` sees it.
-	to_rider_point : Geom.EdgePoint, Geom.Pose -> Geom.RiderPoint
-	to_rider_point = |{ along, from_left }, pose| {
-		ahead = along.distance_from(pose.along).to_metres()
-		rider_from_left = pose.across.distance_from(Across.left_of_middle(pose.half_width))
+	## A point on the current segment, as the camera at `vantage` sees it.
+	to_rider_point : Geom.EdgePoint, Geom.Vantage -> Geom.RiderPoint
+	to_rider_point = |{ along, from_left }, vantage| {
+		ahead = along.distance_from(vantage.along).to_metres()
+		rider_from_left = vantage.across.distance_from(Across.left_of_middle(vantage.half_width))
 		aside = from_left.minus(rider_from_left).to_metres()
-		cos_yaw = Trig.r_cos(pose.yaw.to_radians())
-		sin_yaw = Trig.r_sin(pose.yaw.to_radians())
+		cos_yaw = Trig.r_cos(vantage.yaw.to_radians())
+		sin_yaw = Trig.r_sin(vantage.yaw.to_radians())
 		{
 			forward: ahead * cos_yaw + aside * sin_yaw,
 			right: (0.0 - ahead) * sin_yaw + aside * cos_yaw,

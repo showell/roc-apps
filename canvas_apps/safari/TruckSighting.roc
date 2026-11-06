@@ -42,7 +42,10 @@ TruckSighting :: [].{
 		if view.lead > Distance.zero {
 			truck_from(
 				view,
-				{ remaining: view.road.pose.along.plus(view.lead), position: Chain.Position.first },
+				{
+					remaining: view.road.vantage.along.plus(view.lead),
+					position: Chain.Position.first,
+				},
 			)
 		} else {
 			NoTruck

@@ -42,7 +42,7 @@ main! = |_args| Ok({})
 
 ## The rider at the start of a segment, in the middle of the lane, looking
 ## straight down it.
-origin : Chain.Pose
+origin : Geom.Vantage
 origin = {
 	along: Along.metres(0.0),
 	across: Across.metres(0.0),
@@ -59,7 +59,7 @@ road = {
 		World.route_segment(2),
 	],
 	chain: [0, 1, 2].map(World.SegmentIndex.number),
-	pose: origin,
+	vantage: origin,
 }
 
 polygon_of : Shapes.Shape -> { pts : List(F64), fill : Brush.Fill }
@@ -128,7 +128,7 @@ birds_on_segment = |segment, { rider_along, cam_focal }|
 		road: {
 			world: [segment],
 			chain: [World.SegmentIndex.first],
-			pose: { ..origin, along: Along.metres(rider_along) },
+			vantage: { ..origin, along: Along.metres(rider_along) },
 		},
 		cam_focal,
 	})
@@ -192,7 +192,7 @@ two_segments = BirdSighting.in_view({
 	road: {
 		world: [segment_of(left_trees), segment_of(left_trees)],
 		chain: [0, 1].map(World.SegmentIndex.number),
-		pose: {
+		vantage: {
 			along: Along.metres(0.0),
 			across: Across.metres(0.0),
 			yaw: Angle.straight_ahead,
@@ -233,7 +233,7 @@ cats_from_origin = {
 	road: {
 		world: cat_segments,
 		chain: [0, 1, 2].map(World.SegmentIndex.number),
-		pose: origin,
+		vantage: origin,
 	},
 	cam_focal: 500.0,
 }
@@ -278,7 +278,7 @@ expect
 			(along, number, want),
 		| {
 			gap = Chain.gap_to_segment(
-				{ ..cats_from_origin.road, pose: { ..origin, along: Along.metres(along) } },
+				{ ..cats_from_origin.road, vantage: { ..origin, along: Along.metres(along) } },
 				Chain.Position.number(number),
 			)
 			gap.to_metres() == want
@@ -290,7 +290,7 @@ riding : F64 -> List(CatSighting.CatItem)
 riding = |along| CatSighting.in_view(
 	{
 		..cats_from_origin,
-		road: { ..cats_from_origin.road, pose: { ..origin, along: Along.metres(along) } },
+		road: { ..cats_from_origin.road, vantage: { ..origin, along: Along.metres(along) } },
 	},
 	metre_a_step,
 )
@@ -334,7 +334,7 @@ six_segments : Chain.RoadView
 six_segments = {
 	world: [0, 1, 2, 3, 4, 5].map(World.route_segment),
 	chain: [0, 1, 2, 3, 4, 5].map(World.SegmentIndex.number),
-	pose: origin,
+	vantage: origin,
 }
 
 ## The world's segment `index` alone.
@@ -342,7 +342,7 @@ lone : U32 -> Chain.RoadView
 lone = |index| {
 	world: [World.route_segment(index)],
 	chain: [0].map(World.SegmentIndex.number),
-	pose: origin,
+	vantage: origin,
 }
 
 farm_at : U32 -> I64
@@ -441,7 +441,7 @@ scene = Render.collect(
 		road: {
 			world: World.segments,
 			chain: Chain.chain_ahead(World.segments, World.SegmentIndex.first),
-			pose: origin,
+			vantage: origin,
 		},
 		cam_focal: 500.0,
 	},
@@ -550,7 +550,7 @@ expect strip.len() > 0
 expect strip.len().to_u32_wrap() <= GroundSighting.chunks_along(Distance.metres(500.0))
 expect patch_shapes(
 	GroundSighting.segment_road(
-		{ ..road, pose: { ..origin, along: Along.metres(5000.0) } },
+		{ ..road, vantage: { ..origin, along: Along.metres(5000.0) } },
 		Chain.Position.first,
 	),
 ).len() == 0

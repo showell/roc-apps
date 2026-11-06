@@ -208,7 +208,7 @@ segs = [
 	World.route_segment(2),
 ]
 
-origin : Chain.Pose
+origin : Geom.Vantage
 origin = {
 	along: Along.metres(0.0),
 	across: Across.metres(0.0),
@@ -223,7 +223,7 @@ short_view = |rider_number| {
 	road: {
 		world: [0, 1, 2, 3, 4].map(World.route_segment),
 		chain: [rider_number, rider_number + 1, rider_number + 2].map(World.SegmentIndex.number),
-		pose: origin,
+		vantage: origin,
 	},
 	clock: Clock.start,
 }
@@ -263,7 +263,7 @@ long_view = {
 	road: {
 		world: [World.route_segment(6)],
 		chain: [0].map(World.SegmentIndex.number),
-		pose: origin,
+		vantage: origin,
 	},
 	clock: Clock.start,
 }
@@ -343,7 +343,7 @@ expect TowerSighting.in_view(short_view(2)).len() == 4
 expect TowerSighting.tower_behind(short_view(1), World.SegmentIndex.first).len() == 1
 expect TowerSighting.along_chain({
 	..from_origin,
-	road: { ..from_origin.road, pose: { ..origin, along: Along.metres(5000.0) } },
+	road: { ..from_origin.road, vantage: { ..origin, along: Along.metres(5000.0) } },
 }).len() == 0
 expect TowerSighting.along_chain({
 	..from_origin,

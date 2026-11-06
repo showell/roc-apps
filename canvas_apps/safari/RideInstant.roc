@@ -78,7 +78,7 @@ RideInstant := {
 			road: {
 				world: w,
 				chain: Chain.chain_ahead(w, s.segment),
-				pose: ViewYaw.pose_for(s),
+				vantage: ViewYaw.vantage_for(s),
 			},
 			cam_focal: RideFocal.ride_focal(w, s),
 		}

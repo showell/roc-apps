@@ -57,7 +57,7 @@ Render :: [].{
 		rails = RailSighting.all_rails(road)
 		rider_distance = World.distance_along_route(
 			road.world,
-			{ index: Chain.rider_segment(road), along: road.pose.along },
+			{ index: Chain.rider_segment(road), along: road.vantage.along },
 		)
 		truck_at = TruckSighting.in_view({
 			road,

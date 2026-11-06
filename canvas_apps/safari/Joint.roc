@@ -80,7 +80,7 @@ apex_after_turn = |turn|
 		{
 			world: [],
 			chain: [],
-			pose: {
+			vantage: {
 				along: Along.metres(100.0),
 				across: Across.metres(1.0),
 				yaw: Angle.Turn.radians(0.2),
@@ -108,8 +108,8 @@ expect
 		(apex_after_turn(left_turn).forward, -100.55298847633645),
 	].all(|(got, want)| (got - want).abs() <= 0.0000001 * want.abs().max(1.0))
 
-pose : Chain.Pose
-pose = {
+vantage : Geom.Vantage
+vantage = {
 	along: Along.metres(100.0),
 	across: Across.metres(1.0),
 	yaw: Angle.Turn.radians(0.2),
@@ -167,7 +167,7 @@ road_along : List(U32) -> Chain.RoadView
 road_along = |chain| {
 	world: World.segments,
 	chain: chain.map(World.SegmentIndex.number),
-	pose,
+	vantage,
 }
 
 expect
@@ -194,7 +194,7 @@ expect
 
 at_d0 : Geom.RiderPoint
 at_d0 = Chain.rider_point_ahead(
-	{ world: [], chain: [], pose },
+	{ world: [], chain: [], vantage },
 	{
 		position: Chain.Position.first,
 		along: Along.metres(50.0),
@@ -207,7 +207,7 @@ at_d1 = |w| Chain.rider_point_ahead(
 	{
 		world: w,
 		chain: Chain.chain_ahead(w, World.SegmentIndex.first),
-		pose,
+		vantage,
 	},
 	{
 		position: Chain.Position.number(1),
@@ -229,7 +229,7 @@ expect {
 ## The point 50 m along the segment at `place`, which is behind the rider.
 behind_at : Chain.SegmentPlace -> Geom.RiderPoint
 behind_at = |place| Chain.rider_point_at(
-	{ world: [], chain: [], pose },
+	{ world: [], chain: [], vantage },
 	{
 		place,
 		along: Along.metres(50.0),
