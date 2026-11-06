@@ -54,6 +54,7 @@ package
 		Steps,
 		StillDraw,
 		Stills,
+		Sun,
 		Tour,
 		Tower,
 		TowerSighting,

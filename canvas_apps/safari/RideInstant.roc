@@ -9,6 +9,7 @@ import Scene
 import RideFocal
 import Rider
 import Sky
+import Sun
 import Truck
 import ViewYaw
 import World
@@ -103,10 +104,10 @@ RideInstant := {
 		].join()
 	}
 
-	sun : List(World.Segment), RideInstant -> Sky.SunSighting
+	sun : List(World.Segment), RideInstant -> Sun.Sighting
 	sun = |route, instant| {
 		cf = RideFocal.ride_focal(route, instant.rider)
-		Sky.sun_sighting({
+		Sun.sighting({
 			heading: ViewYaw.heading_for(instant.rider),
 			clock: instant.clock,
 			cam_focal: cf,

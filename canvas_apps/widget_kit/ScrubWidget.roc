@@ -10,6 +10,7 @@ import game.Distance
 import game.Fraction
 import game.Backdrop
 import game.Sky
+import game.Sun
 import lib.Brush
 import lib.CanvasApp
 import lib.Font
@@ -132,7 +133,7 @@ ScrubWidget :: [].{
 	ride_picture : List(Shapes.Shape),
 	{
 		clock : Clock,
-		sun : Sky.SunSighting,
+		sun : Sun.Sighting,
 	} -> List(Shapes.Shape)
 	ride_picture = |shapes, { clock, sun }|
 		ride_picture_in(
@@ -149,7 +150,7 @@ ScrubWidget :: [].{
 	{
 		sky_top_color : Sky.Rgb,
 		sky_horizon_color : Sky.Rgb,
-		sun_sighting : Sky.SunSighting,
+		sun_sighting : Sun.Sighting,
 	} -> List(Shapes.Shape)
 	ride_picture_in = |shapes, sky| {
 		corner = { x: 0.0, y: 0.0 }

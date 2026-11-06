@@ -6,6 +6,7 @@ import Pixels
 import Sky
 import lib.Brush
 import Screen
+import Sun
 import lib.Shapes
 
 Backdrop :: [].{
@@ -29,11 +30,11 @@ Backdrop :: [].{
 	}
 
 	## The sun's glow and disc where it stands, sized by its scale.
-	sun_fills : Sky.SunPlace -> Backdrop.SunFills
+	sun_fills : Sun.Place -> Backdrop.SunFills
 	sun_fills = |sun| {
 		scale = sun.scale.to_f64()
 		glow_radius = Pixels.of(340.0).times(scale)
-		disc_radius = Sky.sun_radius_px.times(scale)
+		disc_radius = Sun.radius_px.times(scale)
 		{
 			glow: Glow({
 				c0: {
@@ -78,7 +79,7 @@ Backdrop :: [].{
 	{
 		sky_top_color : Sky.Rgb,
 		sky_horizon_color : Sky.Rgb,
-		sun_sighting : Sky.SunSighting,
+		sun_sighting : Sun.Sighting,
 	} -> List(Shapes.Shape)
 	behind = |ride_shapes, { sky_top_color, sky_horizon_color, sun_sighting: sun }| {
 		var $out = List.with_capacity(ride_shapes.len() + 8)

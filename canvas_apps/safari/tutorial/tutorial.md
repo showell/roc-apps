@@ -337,7 +337,7 @@ The sun is a circle. That's the easy part, so it's the part we'll do here.
 New in this chapter:
 
 - Roc: tags in place of `null`
-- Modules: `Sky`, `Angle`
+- Modules: `Sun`, `Angle`
 
 ### A circle
 
@@ -361,15 +361,15 @@ The sun stands in one direction, and the rider may not be facing it. That needs 
 
 Two tags say whether the sun is in view, so there's no `null` and no off-screen sentinel value. A caller has to handle `OutOfView`, because `match` must cover every tag.
 
-{{code Sky.SunSighting}}
+{{code Sun.Sighting}}
 
-Opaque types do the most work from here on. A `Bearing` and a `Turn` are both floats underneath, but only the `Angle` module can build or open one. `sun_sighting` also takes one record argument, destructured in its parameter list.
+Opaque types do the most work from here on. A `Bearing` and a `Turn` are both floats underneath, but only the `Angle` module can build or open one. `Sun.sighting` also takes one record argument, destructured in its parameter list.
 
-{{code Sky.sun_sighting}}
+{{code Sun.sighting}}
 
-`turn_from_view.abs() >= visible_turn_limit` compares two `Turn`s. The code never touches radians until `sun_place` has to do trigonometry, because `.tan()` works on a float.
+`turn_from_view.abs() >= visible_turn_limit` compares two `Turn`s. The code never touches radians until `Sun.place` has to do trigonometry, because `.tan()` works on a float.
 
-{{code Sky.sun_place from "scale =" to "y: Screen.horizon_y"}}
+{{code Sun.place from "scale =" to "y: Screen.horizon_y"}}
 
 Its caller, `RideInstant.sun`, is short enough to read whole:
 
@@ -384,9 +384,9 @@ The sky changes all through the ride, but a frame only has to ask one question: 
 New in this chapter:
 
 - Roc: `->` as a promise, records destructured in a parameter list
-- Modules: `Fraction`
+- Modules: `Sky`, `Fraction`
 
-`Sky` is a set of functions that each take a clock and answer with a color or the sun's place.
+`Sky` is a set of functions that each take a clock and answer with a color.
 
 The modules around `Sky`
 ```dot
@@ -397,16 +397,14 @@ digraph sky {
   Tour -> Sky;
   Backdrop -> Sky;
   Mountains -> Sky;
-  Sky -> Angle;
+  Sky -> Sun;
   Sky -> Fraction;
-  Sky -> Lens;
-  Sky -> Screen;
-  Lens -> Angle;
-  Lens -> Screen;
+  Sun -> Fraction;
+  Sun -> Angle;
 }
 ```
 
-`Sky` sits near the bottom of the system. Leaving out small math helpers, it imports only the angle and fraction types and the lens and screen geometry, and it knows nothing of the rider, the road or the drawing. Those above it each ask for a color or a sun at a given clock.
+`Sky` sits near the bottom of the system. It imports `Sun` and a few small types, and it knows nothing of the rider, the road or the drawing. Those above it each ask for a color at a given clock.
 
 Every function in this chapter has a `->` arrow, not `=>`. That tells you the function has no effects, and the compiler holds it to that. So the same clock always gives the same sky. If you don't see a `=>`, you only have to think about what the function is given.
 
@@ -932,7 +930,7 @@ The first three are opaque. Each is still a number, and the type gives it a name
 
 | Job | Function | Its type |
 |---|---|---|
-| Move the sun | `sun_height_px` | `Clock -> Pixels` |
+| Move the sun | `Sun.height_px` | `Clock -> Pixels` |
 | Darken the sky | `dusk_at` | `Clock -> Fraction` |
 | | `sky_top_color` | `Clock -> Sky.Rgb` |
 | Warm the horizon | `sunset_warmth` | `Clock -> Fraction` |
@@ -947,29 +945,29 @@ The sunset, from the top
 digraph sunset {
   node [shape=box, fontname="Helvetica"];
   frame [label="each frame"];
-  frame -> sun_sighting;
-  frame -> sky_top_color;
-  frame -> sky_horizon_color;
-  sun_sighting -> sun_place;
-  sky_top_color -> dusk_at;
-  sky_horizon_color -> sky_top_color;
-  sky_horizon_color -> sunset_warmth;
-  sun_place -> sun_height_px;
-  dusk_at -> sun_height_px;
-  sunset_warmth -> sun_height_px;
-  sun_height_px [style=bold];
+  frame -> "Sun.sighting";
+  frame -> "Sky.sky_top_color";
+  frame -> "Sky.sky_horizon_color";
+  "Sun.sighting" -> "Sun.place";
+  "Sky.sky_top_color" -> "Sky.dusk_at";
+  "Sky.sky_horizon_color" -> "Sky.sky_top_color";
+  "Sky.sky_horizon_color" -> "Sky.sunset_warmth";
+  "Sun.place" -> "Sun.height_px";
+  "Sky.dusk_at" -> "Sun.height_px";
+  "Sky.sunset_warmth" -> "Sun.height_px";
+  "Sun.height_px" [style=bold];
   clock [label="the clock"];
-  sun_height_px -> clock;
+  "Sun.height_px" -> clock;
 }
 ```
 
-A box is a function, and an arrow is a call. The three boxes under the frame are the three jobs: the sun, the top of the sky and the horizon. They all end at `sun_height_px`, because everything in a sunset comes down to how high the sun is.
+A box is a function, and an arrow is a call. The three boxes under the frame are the three jobs: the sun, the top of the sky and the horizon. They all end at `Sun.height_px`, because everything in a sunset comes down to how high the sun is.
 
 Here's the top of that diagram in code. Each frame, the game asks for three things and hands them to `Backdrop`:
 
 {{code SafariApp.frame from "Backdrop.behind(" to "sun_sighting: Tour.sun(tour),"}}
 
-`Tour` holds the clock and hands it straight to `Sky`, so everything from here on is in `Sky`. Let's take the three jobs in order.
+`Tour` holds the clock and hands it straight to `Sun` and `Sky`, so everything from here on is in those two. Let's take the three jobs in order.
 
 ### Job one: the sun goes down
 
@@ -977,11 +975,11 @@ Here's the top of that diagram in code. Each frame, the game asks for three thin
 Press play.
 ```
 
-This widget does only the first job, so the sky stays blue. Each frame it calls `Sky.sun_height_px`, reads out the answer, and marks it on the chart's gold line.
+This widget does only the first job, so the sky stays blue. Each frame it calls `Sun.height_px`, reads out the answer, and marks it on the chart's gold line.
 
-The sun chapter showed how `sun_sighting` places a sun. All it needs from the clock is a height:
+The sun chapter showed how `Sun.sighting` places a sun. All it needs from the clock is a height:
 
-{{code Sky.sun_height_px}}
+{{code Sun.height_px}}
 
 That's the gold line on the chart: one multiplication and one subtraction! It says `.minus` and `.times` because `Pixels` is opaque, which is the same reason you can't add 7 to a clock. Under that, the clock unwraps itself:
 
@@ -1031,7 +1029,7 @@ The horizon is warmest when the sun's height is zero. `ratio_to` says how far aw
 
 ### Going backwards
 
-Play any of those widgets backward, and the sun rises. Look for the code that did it. There isn't any. `Sky` has no code for going backwards. It doesn't know it was going forwards.
+Play any of those widgets backward, and the sun rises. Look for the code that did it. There isn't any. `Sun` has no code for going backwards. It doesn't know it was going forwards.
 
 A `->` promises one thing: same arguments, same answer. Which arguments is up to us, and we picked the clock. A game could nudge the sun down a little each frame instead, with `->` functions too. They'd take the last frame's sun as an argument, and going back would need more code.
 

@@ -9,6 +9,7 @@ import game.Clock
 import game.Lens
 import game.Pixels
 import game.Sky
+import game.Sun
 import lib.Brush
 import lib.CanvasApp
 import lib.Font
@@ -277,8 +278,8 @@ picture = |job, clock| {
 		{
 			sky_top_color: colors.top,
 			sky_horizon_color: colors.horizon,
-			sun_sighting: Sky.sun_sighting({
-				heading: Sky.sun_bearing,
+			sun_sighting: Sun.sighting({
+				heading: Sun.bearing,
 				clock,
 				cam_focal: Lens.focal,
 			}),
@@ -291,7 +292,7 @@ status_lines : SkyWidgetApp.Job, Clock -> List(Str)
 status_lines = |job, clock|
 	[
 		"clock = step ${clock.to_str()}",
-		"Sky.sun_height_px(clock) = ${height_text(Sky.sun_height_px(clock))}",
+		"Sun.height_px(clock) = ${height_text(Sun.height_px(clock))}",
 		"Sky.dusk_at(clock) = ${ScrubWidget.percent_text(Sky.dusk_at(clock))}",
 		"Sky.sunset_warmth(clock) = ${ScrubWidget.percent_text(Sky.sunset_warmth(clock))}",
 	].take_first(curves_of(job) + 1)
@@ -368,8 +369,8 @@ chart_y = |level| chart_bottom - (chart_bottom - chart_top) * level
 ## The sun's height as a level on the chart, from its lowest to its highest.
 sun_level : Clock -> F64
 sun_level = |clock| {
-	lowest = Sky.sun_height_px(Clock.at_step(6000))
-	Sky.sun_height_px(clock).minus(lowest).ratio_to(Sky.sun_start_px.minus(lowest))
+	lowest = Sun.height_px(Clock.at_step(6000))
+	Sun.height_px(clock).minus(lowest).ratio_to(Sun.start_px.minus(lowest))
 }
 
 dusk_level : Clock -> F64
@@ -471,7 +472,7 @@ expect
 	status_lines(HorizonWarms, Clock.start)
 		== [
 			"clock = step 0",
-			"Sky.sun_height_px(clock) = 244.0 px",
+			"Sun.height_px(clock) = 244.0 px",
 			"Sky.dusk_at(clock) = 0%",
 			"Sky.sunset_warmth(clock) = 0%",
 		]
@@ -480,7 +481,7 @@ expect
 	status_lines(HorizonWarms, Clock.at_step(3000))
 		== [
 			"clock = step 3000",
-			"Sky.sun_height_px(clock) = 60.2 px",
+			"Sun.height_px(clock) = 60.2 px",
 			"Sky.dusk_at(clock) = 23%",
 			"Sky.sunset_warmth(clock) = 45%",
 		]
@@ -489,7 +490,7 @@ expect
 	status_lines(HorizonWarms, Clock.at_step(6000))
 		== [
 			"clock = step 6000",
-			"Sky.sun_height_px(clock) = -123.6 px",
+			"Sun.height_px(clock) = -123.6 px",
 			"Sky.dusk_at(clock) = 100%",
 			"Sky.sunset_warmth(clock) = 0%",
 		]

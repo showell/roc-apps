@@ -11,6 +11,7 @@ import Lens
 import Paint
 import Screen
 import Sky
+import Sun
 import lib.Shapes
 
 Mountains :: [].{
@@ -138,8 +139,8 @@ Mountains :: [].{
 	## Whether the sun, at `clock`, has sunk behind the skyline.
 	is_sun_behind_mountains : Clock -> Bool
 	is_sun_behind_mountains = |clock| {
-		sun_top_px = Sky.sun_height_px(clock).plus(Sky.sun_radius_px)
-		sun_top_px < horizon_crest_px(Sky.sun_bearing)
+		sun_top_px = Sun.height_px(clock).plus(Sun.radius_px)
+		sun_top_px < horizon_crest_px(Sun.bearing)
 	}
 
 	## The skyline, back to front: the west range, the north range, the

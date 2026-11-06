@@ -1,12 +1,9 @@
-## The sky through the ride: the sun sinks a little with every step, the
-## sky darkens toward dusk as it goes, and the horizon warms red while the
-## sun is near it. The sun is drawn only while the rider faces it.
+## The sky through the ride: it darkens toward dusk as the sun sinks, and the
+## horizon warms red while the sun is near it.
 import Pixels
-import Angle
 import Clock
 import Fraction
-import Lens
-import Screen
+import Sun
 
 Sky :: [].{
 	Rgb : {
@@ -15,55 +12,20 @@ Sky :: [].{
 		b : F64,
 	}
 
-	## Where the sun stands on the screen, and how large it is drawn beside
-	## its size at rest. The lens only ever widens, so that is never larger.
-	SunPlace : {
-		x : Pixels,
-		y : Pixels,
-		scale : Fraction,
-	}
-
-	## The sun in a frame: in view at its place, or out of view, too far to
-	## the side of where the rider faces.
-	SunSighting : [InView(Sky.SunPlace), OutOfView]
-
-	sun_bearing : Angle.Bearing
-	sun_bearing = Angle.Bearing.radians(-2.2176)
-
-	sun_radius_px : Pixels
-	sun_radius_px = Pixels.of(46.0)
-
-	sun_start_px : Pixels
-	sun_start_px = Pixels.of(244.0)
-
-	sun_drop_px_per_step : Pixels
-	sun_drop_px_per_step = sun_radius_px.times(2.0).times(0.41616).divided_by(625.0)
-
-	sun_fully_set_px : Pixels
-	sun_fully_set_px = sun_radius_px.opposite()
-
 	warmth_falloff_px : Pixels
 	warmth_falloff_px = Pixels.of(110.0)
-
-	visible_turn_limit : Angle.Turn
-	visible_turn_limit = Angle.Turn.radians(1.4)
-
-	## How high the sun stands above the horizon at `clock`, in pixels at
-	## rest; below it once negative.
-	sun_height_px : Clock -> Pixels
-	sun_height_px = |clock| sun_start_px.minus(sun_drop_px_per_step.times(clock.to_f64()))
 
 	## How far toward dusk the sky is when the sun has just set.
 	dusk_at_set : Fraction
 	dusk_at_set = Fraction.of(
-		sun_start_px.minus(sun_fully_set_px).times(0.5).ratio_to(sun_start_px),
+		Sun.start_px.minus(Sun.fully_set_px).times(0.5).ratio_to(Sun.start_px),
 	)
 
 	## How far toward dusk the sky is at `clock`, from 0 (day) to 1 (dusk).
 	dusk_at : Clock -> Fraction
 	dusk_at = |clock| {
-		height = sun_height_px(clock)
-		if height >= sun_fully_set_px {
+		height = Sun.height_px(clock)
+		if height >= Sun.fully_set_px {
 			dusk_while_up(height)
 		} else {
 			dusk_after_set(height)
@@ -74,7 +36,7 @@ Sky :: [].{
 	## once the sun is `warmth_falloff_px` above or below.
 	sunset_warmth : Clock -> Fraction
 	sunset_warmth = |clock| Fraction.clamp(
-		1.0 - sun_height_px(clock).abs().ratio_to(warmth_falloff_px),
+		1.0 - Sun.height_px(clock).abs().ratio_to(warmth_falloff_px),
 	)
 
 	day_sky : Sky.Rgb
@@ -150,28 +112,14 @@ Sky :: [].{
 		fraction: sunset_warmth(clock).times(sunset_glow),
 	})
 
-	## The sun in a frame, for a rider facing `heading`.
-	sun_sighting : {
-		heading : Angle.Bearing,
-		clock : Clock,
-		cam_focal : Pixels,
-	} -> Sky.SunSighting
-	sun_sighting = |{ heading, clock, cam_focal }| {
-		turn_from_view = sun_bearing.turn_from(heading)
-		if turn_from_view.abs() >= visible_turn_limit {
-			OutOfView
-		} else {
-			InView(sun_place({ turn_from_view, clock, cam_focal }))
-		}
-	}
 }
 
 ## How far toward dusk the sky is while the sun, `height` pixels up, is
 ## still above the line where it has fully set.
 dusk_while_up : Pixels -> Fraction
 dusk_while_up = |height| {
-	whole_fall = Sky.sun_start_px.minus(Sky.sun_fully_set_px)
-	set_so_far = Fraction.of(Sky.sun_start_px.minus(height).ratio_to(whole_fall))
+	whole_fall = Sun.start_px.minus(Sun.fully_set_px)
+	set_so_far = Fraction.of(Sun.start_px.minus(height).ratio_to(whole_fall))
 	Sky.dusk_at_set.times(set_so_far).times(set_so_far)
 }
 
@@ -179,23 +127,8 @@ dusk_while_up = |height| {
 ## to full dusk as it sinks a further radius.
 dusk_after_set : Pixels -> Fraction
 dusk_after_set = |height| {
-	sunk_past_set = Sky.sun_fully_set_px.minus(height).ratio_to(Sky.sun_radius_px)
+	sunk_past_set = Sun.fully_set_px.minus(height).ratio_to(Sun.radius_px)
 	Fraction.clamp(Sky.dusk_at_set.to_f64() + sunk_past_set * Sky.dusk_at_set.complement().to_f64())
-}
-
-sun_place : {
-	turn_from_view : Angle.Turn,
-	clock : Clock,
-	cam_focal : Pixels,
-} -> Sky.SunPlace
-sun_place = |{ turn_from_view, clock, cam_focal }| {
-	scale = Fraction.of(cam_focal.ratio_to(Lens.focal))
-	slope = turn_from_view.to_radians().tan()
-	{
-		x: Screen.center_x.plus(cam_focal.times(slope)),
-		y: Screen.horizon_y.minus(Sky.sun_height_px(clock).times(scale.to_f64())),
-		scale,
-	}
 }
 
 expect
@@ -211,12 +144,7 @@ expect
 		(255.0, 255.0),
 	].all(|(channel, want)| Sky.whole_channel(channel) == want)
 
-expect Sky.sun_height_px(Clock.at_step(0)).to_f64() == 244.0
-expect Sky.sun_start_px.to_f64() == 244.0
-expect Sky.sun_radius_px.to_f64() == 46.0
-expect Sky.sun_fully_set_px.to_f64() == -46.0
 expect Sky.warmth_falloff_px.to_f64() == 110.0
-expect Sky.visible_turn_limit.to_radians() == 1.4
 expect Sky.dusk_at(Clock.at_step(0)).to_f64() == 0.0
 expect Sky.sunset_warmth(Clock.at_step(0)).to_f64() == 0.0
 expect Sky.dusk_at(Clock.at_step(6000)).to_f64() == 1.0
@@ -277,37 +205,3 @@ expect
 			g: 130.0,
 			b: 162.0,
 		}
-
-# The rider faces the sun, then away from it.
-expect
-	Sky.sun_sighting({
-		heading: Angle.Bearing.radians(-2.2176),
-		clock: Clock.start,
-		cam_focal: Lens.focal,
-	})
-		== InView({
-			x: Pixels.of(480.0),
-			y: Pixels.of(56.0),
-			scale: Fraction.whole,
-		})
-
-# A lens at half its focal length draws the sun at half its size.
-expect
-	Sky.sun_sighting({
-		heading: Angle.Bearing.radians(-2.2176),
-		clock: Clock.start,
-		cam_focal: Lens.focal.times(0.5),
-	})
-		== InView({
-			x: Pixels.of(480.0),
-			y: Pixels.of(178.0),
-			scale: Fraction.of(0.5),
-		})
-
-expect
-	Sky.sun_sighting({
-		heading: Angle.north,
-		clock: Clock.start,
-		cam_focal: Lens.focal,
-	})
-		== OutOfView

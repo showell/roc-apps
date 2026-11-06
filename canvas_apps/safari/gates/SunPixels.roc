@@ -7,12 +7,12 @@ import PixelGrid
 import game.Backdrop
 import game.Screen
 import ScreenRoll
-import game.Sky
+import game.Sun
 
 SunPixels :: [].{
 
 	## The sun, if it is in view.
-	paint : List(U32), { roll : ScreenRoll, sun : Sky.SunSighting } -> List(U32)
+	paint : List(U32), { roll : ScreenRoll, sun : Sun.Sighting } -> List(U32)
 	paint = |pixels, { roll, sun }|
 		match sun {
 			InView(place) => paint_glow_and_disc(pixels, { roll, sun: place })
@@ -20,7 +20,7 @@ SunPixels :: [].{
 		}
 }
 
-paint_glow_and_disc : List(U32), { roll : ScreenRoll, sun : Sky.SunPlace } -> List(U32)
+paint_glow_and_disc : List(U32), { roll : ScreenRoll, sun : Sun.Place } -> List(U32)
 paint_glow_and_disc = |pixels, { roll, sun }| {
 	fills = Backdrop.sun_fills(sun)
 	sun_x = sun.x.to_f64()

@@ -7,6 +7,7 @@ import Angle
 import World
 import RideInstant
 import Sky
+import Sun
 import Rider
 import CanvasRoll
 import RideFocal
@@ -81,6 +82,6 @@ Tour := {
 	sky_horizon_color : Tour -> Sky.Rgb
 	sky_horizon_color = |tour| Sky.sky_horizon_color(tour.instant.clock)
 
-	sun : Tour -> Sky.SunSighting
+	sun : Tour -> Sun.Sighting
 	sun = |tour| RideInstant.sun(tour.route, tour.instant)
 }

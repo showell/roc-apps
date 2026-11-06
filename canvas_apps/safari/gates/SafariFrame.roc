@@ -29,6 +29,7 @@
 import game.Angle
 import BackdropPixels
 import game.Sky
+import game.Sun
 import game.Screen
 import PixelGrid
 import ScreenRoll
@@ -44,7 +45,7 @@ SafariFrame :: [].{
 		roll : Angle.Lean,
 		sky_top_color : Sky.Rgb,
 		sky_horizon_color : Sky.Rgb,
-		sun : Sky.SunSighting,
+		sun : Sun.Sighting,
 	}
 
 	## The frame: the sky and the grass, the sun, then every shape.
