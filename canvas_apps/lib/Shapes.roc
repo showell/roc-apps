@@ -110,7 +110,7 @@ Shapes :: [].{
 	line = |x0, y0, x1, y1, w, fill| {
 		dx = x1 - x0
 		dy = y1 - y0
-		len = sqrt(dx * dx + dy * dy)
+		len = (dx * dx + dy * dy).sqrt()
 		if len == 0.0 {
 			Poly({ pts: [], fill })
 		} else {
@@ -270,13 +270,6 @@ Shapes :: [].{
 			$k = $k + 1
 		}
 		$out
-	}
-
-	sqrt : F64 -> F64
-	sqrt = |v| if v <= 0.0 {
-		0.0
-	} else {
-		F64.sqrt(v)
 	}
 
 	# Where a shape is allowed to paint, when it is not allowed everywhere.

@@ -6,7 +6,6 @@
 import Pixels
 import Across
 import Camera
-import lib.DeviceMath
 import Distance
 import Geom
 import Paint
@@ -65,7 +64,7 @@ TruckLights :: [].{
 	distance = |{ from, to }| {
 		dx = from.x.minus(to.x).to_f64()
 		dy = from.y.minus(to.y).to_f64()
-		Pixels.of(DeviceMath.real_sqrt((dx * dx) + (dy * dy)))
+		Pixels.of(((dx * dx) + (dy * dy)).sqrt())
 	}
 
 	## How far the farthest of `points` is from `center`.

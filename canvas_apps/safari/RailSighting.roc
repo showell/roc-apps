@@ -5,7 +5,6 @@
 import Across
 import Along
 import DepthSort
-import lib.DeviceMath
 import Distance
 import Chain
 import Geom
@@ -75,7 +74,7 @@ RailSighting :: [].{
 	rail_leg = |{ from, to }| {
 		rightward = to.right.minus(from.right).to_metres()
 		forward = to.forward.minus(from.forward).to_metres()
-		distance = DeviceMath.real_sqrt(rightward * rightward + forward * forward)
+		distance = (rightward * rightward + forward * forward).sqrt()
 		pieces = RailSighting.leg_pieces(Distance.metres(distance))
 		RailSighting.evenly_spaced({ from, to, pieces }).drop_first(1)
 	}

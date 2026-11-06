@@ -48,7 +48,7 @@ which builds every app and runs it headless.
 | `snake/` | everything about one app: its two app roots, its `page.html`, and its rules and drawing, which cannot tell which runner is running them |
 | `snake/main.roc` | the app on roc-ray, reaching the runner as `native.CanvasAppRunner` |
 | `snake/web.roc` | the app as a page, on `web/platform/`, through `lib.WasmApp` |
-| `lib/` | a package every app shares: `CanvasApp` `WasmApp` `Shapes` `Brush` `Input` `Keys` `Mouse` `Math` `Color` `Camera` `Font` `Random` `Trig` `DeviceMath` `BrushGlsl` `View` |
+| `lib/` | a package every app shares: `CanvasApp` `WasmApp` `Shapes` `Brush` `Input` `Keys` `Mouse` `Math` `Color` `Camera` `Font` `Random` `Trig` `BrushGlsl` `View` |
 | `web/` | the page's end: the wasm platform and host, `build.zig` and `options.zig` (the host object, rebuilt by every page build), `canvas_app_runner.js`, `shapes_canvas.js`, `page_check.mjs`, `mini_canvas.mjs`, `camera_check.mjs` |
 | `native/` | roc-ray's end, as a package: `CanvasAppRunner.roc` |
 | `widget_kit/` | what the tutorial's widgets share, as a package: `ScrubWidget` turns a dragged pointer into one number and lays out the picture, the ruler and the text. It sits above `lib/` and Safari's `game` package, because it speaks in `Fraction`s and no other app wants it |

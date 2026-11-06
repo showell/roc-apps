@@ -8,7 +8,6 @@ import Across
 import Along
 import Angle
 import Camera
-import lib.DeviceMath
 import Distance
 import Fraction
 import Geom
@@ -182,7 +181,7 @@ Tower :: [].{
 		dx = to.x.minus(from.x).to_f64()
 		dy = to.y.minus(from.y).to_f64()
 		width = width_px.to_f64()
-		raw = DeviceMath.real_sqrt((dx * dx) + (dy * dy))
+		raw = ((dx * dx) + (dy * dy)).sqrt()
 		len = if raw < 0.0001 {
 			1.0
 		} else {

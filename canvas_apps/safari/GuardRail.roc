@@ -4,7 +4,6 @@
 ## other things.
 import Pixels
 import Camera
-import lib.DeviceMath
 import Distance
 import Geom
 import Paint
@@ -133,7 +132,7 @@ post : Geom.RiderPoint, { previous : Geom.RiderPoint, next : Geom.RiderPoint } -
 post = |at, { previous, next }| {
 	dr = next.right.minus(previous.right).to_metres()
 	df = next.forward.minus(previous.forward).to_metres()
-	length = DeviceMath.real_sqrt(((dr * dr) + (df * df)))
+	length = ((dr * dr) + (df * df)).sqrt()
 	run = if length.to_bits() == 0 {
 		1.0
 	} else {
