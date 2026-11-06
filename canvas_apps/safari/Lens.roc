@@ -15,7 +15,10 @@ Lens :: [].{
 
 	## The focal length at rest, in pixels.
 	focal : Pixels
-	focal = Pixels.of((Screen.width / 2.0) / Trig.r_tan(field_of_view.times(0.5).to_radians()))
+	focal = {
+		half_view = field_of_view.times(0.5)
+		Screen.width.divided_by(2.0).divided_by(Trig.r_tan(half_view.to_radians()))
+	}
 
 	min_focal_factor : F64
 	min_focal_factor = 0.35
@@ -55,7 +58,7 @@ is_close = |got, want| (got - want).abs() <= 0.000000001 * want.abs().max(1.0)
 
 expect
 	[
-		(Screen.width, 960.0),
+		(Screen.width.to_f64(), 960.0),
 		(Lens.field_of_view.to_radians() / Trig.deg, 70.0),
 		(Lens.focal.to_f64(), 685.5110432362151),
 	].all(|(got, want)| is_close(got, want))

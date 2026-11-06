@@ -29,12 +29,12 @@ TreeDraw :: [].{
 
 	## Where a tree stands on the screen, and how big it looks there.
 	TreeOnScreen : {
-		base_x : F64,
-		base_y : F64,
-		height_px : F64,
-		crown_top_y : F64,
-		foliage_px : F64,
-		crown_half_width : F64,
+		base_x : Pixels,
+		base_y : Pixels,
+		height_px : Pixels,
+		crown_top_y : Pixels,
+		foliage_px : Pixels,
+		crown_half_width : Pixels,
 	}
 
 	## One tier of the crown: where its top and its bottom are, as fractions of
@@ -125,7 +125,7 @@ TreeDraw :: [].{
 			height: tree.height,
 			cam_focal: tree.cam_focal,
 		})
-		if seen.height_px < 1.0 {
+		if seen.height_px < Pixels.of(1.0) {
 			[]
 		} else {
 			draw_trunk(seen, tree.trunk).concat(
@@ -145,33 +145,33 @@ TreeDraw :: [].{
 	on_screen = |{ right, forward, height, cam_focal }| {
 		base = Camera.project({ right, forward, height: 0.0 }, cam_focal)
 		top = Camera.project({ right, forward, height }, cam_focal)
-		height_px = (base.y - top.y)
-		foliage_px = (height_px * crown_height)
-		crown_bottom_y = (base.y - (height_px * visible_trunk))
+		height_px = base.y.minus(top.y)
+		foliage_px = height_px.times(crown_height)
+		crown_bottom_y = base.y.minus(height_px.times(visible_trunk))
 		{
 			base_x: base.x,
 			base_y: base.y,
 			height_px,
-			crown_top_y: (crown_bottom_y - foliage_px),
+			crown_top_y: crown_bottom_y.minus(foliage_px),
 			foliage_px,
-			crown_half_width: (height_px * crown_width),
+			crown_half_width: height_px.times(crown_width),
 		}
 	}
 
 	draw_trunk : TreeDraw.TreeOnScreen, [RoundCorners, SharpCorners] -> List(Shapes.Shape)
 	draw_trunk = |seen, corners| {
-		width = if (seen.height_px * 0.08) > 1.0 {
-			seen.height_px * 0.08
+		width = if seen.height_px.times(0.08) > Pixels.of(1.0) {
+			seen.height_px.times(0.08)
 		} else {
-			1.0
+			Pixels.of(1.0)
 		}
-		height = ((seen.height_px * visible_trunk) + (seen.height_px * 0.05))
-		left = (seen.base_x - (width / 2.0))
-		top = (seen.base_y - height)
+		height = seen.height_px.times(visible_trunk).plus(seen.height_px.times(0.05))
+		left = seen.base_x.minus(width.divided_by(2.0))
+		top = seen.base_y.minus(height)
 		points = [
 			{ x: left, y: top },
-			{ x: (left + width), y: top },
-			{ x: (left + width), y: seen.base_y },
+			{ x: left.plus(width), y: top },
+			{ x: left.plus(width), y: seen.base_y },
 			{ x: left, y: seen.base_y },
 		]
 		match corners {
@@ -191,13 +191,13 @@ TreeDraw :: [].{
 		color : I64,
 	} -> List(Shapes.Shape)
 	tier_triangle = |seen, { tier, color }| {
-		bottom_y = (seen.crown_top_y + (seen.foliage_px * tier.bottom))
+		bottom_y = seen.crown_top_y.plus(seen.foliage_px.times(tier.bottom))
 		Paint.polygon(
 			color,
 			[
-				{ x: seen.base_x, y: (seen.crown_top_y + (seen.foliage_px * tier.top)) },
-				{ x: (seen.base_x + (seen.crown_half_width * tier.width)), y: bottom_y },
-				{ x: (seen.base_x - (seen.crown_half_width * tier.width)), y: bottom_y },
+				{ x: seen.base_x, y: seen.crown_top_y.plus(seen.foliage_px.times(tier.top)) },
+				{ x: seen.base_x.plus(seen.crown_half_width.times(tier.width)), y: bottom_y },
+				{ x: seen.base_x.minus(seen.crown_half_width.times(tier.width)), y: bottom_y },
 			],
 		)
 	}
@@ -233,7 +233,7 @@ TreeDraw :: [].{
 
 ## Whether `a` comes before `b`: left of it, or above it at the same x.
 is_before : Screen.Point, Screen.Point -> Bool
-is_before = |a, b| a.x < b.x or (a.x.to_bits() == b.x.to_bits() and a.y < b.y)
+is_before = |a, b| a.x < b.x or (a.x.is_same_bits(b.x) and a.y < b.y)
 
 ## The hull with its last points taken off while they don't turn left on the
 ## way to `point`.
@@ -241,7 +241,9 @@ trim_hull : List(Screen.Point), Screen.Point -> List(Screen.Point)
 trim_hull = |hull, point|
 	match hull {
 		[.., a, b] => {
-			turn = (((b.x - a.x) * (point.y - a.y)) - ((b.y - a.y) * (point.x - a.x)))
+			across_then_up = b.x.minus(a.x).area_with(point.y.minus(a.y))
+			up_then_across = b.y.minus(a.y).area_with(point.x.minus(a.x))
+			turn = across_then_up - up_then_across
 			if turn <= 0.0 {
 				trim_hull(hull.drop_last(1), point)
 			} else {
@@ -339,12 +341,12 @@ sample_on_screen = TreeDraw.on_screen({
 	cam_focal: Pixels.of(500.0),
 })
 
-expect sample_on_screen.base_x == 480.0
-expect sample_on_screen.base_y == 600.0
-expect sample_on_screen.height_px == 1000.0
-expect sample_on_screen.foliage_px == 648.0
-expect sample_on_screen.crown_top_y == -488.0
-expect sample_on_screen.crown_half_width == 288.0
+expect sample_on_screen.base_x.to_f64() == 480.0
+expect sample_on_screen.base_y.to_f64() == 600.0
+expect sample_on_screen.height_px.to_f64() == 1000.0
+expect sample_on_screen.foliage_px.to_f64() == 648.0
+expect sample_on_screen.crown_top_y.to_f64() == -488.0
+expect sample_on_screen.crown_half_width.to_f64() == 288.0
 
 expect
 	TreeDraw.draw_trunk(sample_on_screen, SharpCorners)
@@ -397,45 +399,45 @@ hull_points = |points| Paint.flatten_screen(TreeDraw.convex_hull(points))
 
 square_with_inside_points : List(Screen.Point)
 square_with_inside_points = [
-	{ x: 0.0, y: 0.0 },
-	{ x: 4.0, y: 0.0 },
-	{ x: 4.0, y: 4.0 },
-	{ x: 0.0, y: 4.0 },
-	{ x: 2.0, y: 2.0 },
-	{ x: 2.0, y: 0.0 },
+	Screen.point(0.0, 0.0),
+	Screen.point(4.0, 0.0),
+	Screen.point(4.0, 4.0),
+	Screen.point(0.0, 4.0),
+	Screen.point(2.0, 2.0),
+	Screen.point(2.0, 0.0),
 ]
 
 hull_triangle : List(Screen.Point)
 hull_triangle = [
-	{ x: 0.0, y: 0.0 },
-	{ x: 4.0, y: 0.0 },
-	{ x: 2.0, y: 3.0 },
+	Screen.point(0.0, 0.0),
+	Screen.point(4.0, 0.0),
+	Screen.point(2.0, 3.0),
 ]
 
 hull_line : List(Screen.Point)
 hull_line = [
-	{ x: 0.0, y: 0.0 },
-	{ x: 1.0, y: 1.0 },
-	{ x: 2.0, y: 2.0 },
-	{ x: 3.0, y: 3.0 },
+	Screen.point(0.0, 0.0),
+	Screen.point(1.0, 1.0),
+	Screen.point(2.0, 2.0),
+	Screen.point(3.0, 3.0),
 ]
 
 hull_pair : List(Screen.Point)
-hull_pair = [{ x: 1.0, y: 2.0 }, { x: 0.0, y: 0.0 }]
+hull_pair = [Screen.point(1.0, 2.0), Screen.point(0.0, 0.0)]
 
 hull_with_a_repeat : List(Screen.Point)
 hull_with_a_repeat = [
-	{ x: 0.0, y: 0.0 },
-	{ x: 0.0, y: 0.0 },
-	{ x: 4.0, y: 0.0 },
-	{ x: 4.0, y: 4.0 },
+	Screen.point(0.0, 0.0),
+	Screen.point(0.0, 0.0),
+	Screen.point(4.0, 0.0),
+	Screen.point(4.0, 4.0),
 ]
 
 expect hull_points(square_with_inside_points) == [0.0, 0.0, 4.0, 0.0, 4.0, 4.0, 0.0, 4.0]
 expect hull_points(hull_triangle) == [0.0, 0.0, 4.0, 0.0, 2.0, 3.0]
 expect hull_points(hull_line) == [0.0, 0.0, 3.0, 3.0]
 expect hull_points(hull_pair) == [1.0, 2.0, 0.0, 0.0]
-expect hull_points([{ x: 9.0, y: 9.0 }]) == [9.0, 9.0]
+expect hull_points([Screen.point(9.0, 9.0)]) == [9.0, 9.0]
 expect hull_points([]) == []
 expect hull_points(hull_with_a_repeat) == [0.0, 0.0, 4.0, 0.0, 4.0, 4.0]
 

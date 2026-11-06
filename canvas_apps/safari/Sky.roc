@@ -20,8 +20,8 @@ Sky :: [].{
 	## Where the sun stands on the screen, and how large it is drawn beside
 	## its size at rest.
 	SunPlace : {
-		x : F64,
-		y : F64,
+		x : Pixels,
+		y : Pixels,
 		scale : F64,
 	}
 
@@ -191,9 +191,10 @@ sun_place : {
 } -> Sky.SunPlace
 sun_place = |{ turn_from_view, clock, cam_focal }| {
 	scale = cam_focal.ratio_to(Lens.focal)
+	slope = Trig.r_tan(turn_from_view.to_radians())
 	{
-		x: (Screen.center_x + (Trig.r_tan(turn_from_view.to_radians()) * cam_focal.to_f64())),
-		y: (Screen.horizon_y - Sky.sun_height_px(clock).times(scale).to_f64()),
+		x: Screen.center_x.plus(cam_focal.times(slope)),
+		y: Screen.horizon_y.minus(Sky.sun_height_px(clock).times(scale)),
 		scale,
 	}
 }
@@ -273,8 +274,8 @@ expect
 		cam_focal: Lens.focal,
 	})
 		== InView({
-			x: 480.0,
-			y: 56.0,
+			x: Pixels.of(480.0),
+			y: Pixels.of(56.0),
 			scale: 1.0,
 		})
 

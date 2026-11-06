@@ -19,7 +19,7 @@ SafariApp :: [].{
 
 	canvas_app : CanvasApp.CanvasApp(SafariApp.Model)
 	canvas_app = {
-		size: { width: Screen.width, height: Screen.height },
+		size: { width: Screen.width.to_f64(), height: Screen.height.to_f64() },
 		# The ride's motion is written per step, and thirty steps a second is the
 		# speed it is meant to look like, chosen by eye.
 		fps: 30,
@@ -39,7 +39,7 @@ SafariApp :: [].{
 	## `View` mark in front of everything else.
 	frame : Tour -> List(Shapes.Shape)
 	frame = |tour| {
-		centre = { x: Screen.width / 2.0, y: Screen.height / 2.0 }
+		centre = { x: Screen.width.to_f64() / 2.0, y: Screen.height.to_f64() / 2.0 }
 		lean = View(
 			World({
 				target: centre,

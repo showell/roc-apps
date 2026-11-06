@@ -3,9 +3,9 @@
 ## back of the trailer, each with a glow around it. A beam or a glow is a
 ## gradient, whose colours are 0xAARRGGBB, opacity in the top byte; a brake
 ## lamp is a flat 0xRRGGBB, as the body's faces are.
+import Pixels
 import Across
 import Camera
-import lib.DeviceMath
 import Distance
 import Geom
 import Paint
@@ -61,22 +61,19 @@ TruckLights :: [].{
 	}
 
 	## The distance between two points on screen.
-	distance : { from : Screen.Point, to : Screen.Point } -> F64
+	distance : { from : Screen.Point, to : Screen.Point } -> Pixels
 	distance = |{ from, to }| {
-		dx = (from.x - to.x)
-		dy = (from.y - to.y)
-		DeviceMath.real_sqrt(((dx * dx) + (dy * dy)))
+		dx = from.x.minus(to.x)
+		dy = from.y.minus(to.y)
+		dx.hypotenuse(dy)
 	}
 
 	## How far the farthest of `points` is from `center`.
-	farthest_from : List(Screen.Point), Screen.Point -> F64
+	farthest_from : List(Screen.Point), Screen.Point -> Pixels
 	farthest_from = |points, center|
 		points.fold_rev(
-			0.0,
-			|point, farthest| DeviceMath.real_max(
-				TruckLights.distance({ from: point, to: center }),
-				farthest,
-			),
+			Pixels.zero,
+			|point, farthest| TruckLights.distance({ from: point, to: center }).max(farthest),
 		)
 
 	## The center of a polygon on screen: the mean of its corners. Each sum
@@ -86,23 +83,23 @@ TruckLights :: [].{
 	center_of = |corners| {
 		count = corners.len().to_f64()
 		{
-			x: (corners.fold_rev(0.0, |corner, sum| corner.x + sum) / count),
-			y: (corners.fold_rev(0.0, |corner, sum| corner.y + sum) / count),
+			x: corners.fold_rev(Pixels.zero, |corner, sum| corner.x.plus(sum)).divided_by(count),
+			y: corners.fold_rev(Pixels.zero, |corner, sum| corner.y.plus(sum)).divided_by(count),
 		}
 	}
 
 	## How far a brake light's glow reaches from `center`, the lamp's
 	## center.
-	glow_radius : List(Screen.Point), Screen.Point -> F64
-	glow_radius = |lamp, center| TruckLights.farthest_from(lamp, center) * glow_reach
+	glow_radius : List(Screen.Point), Screen.Point -> Pixels
+	glow_radius = |lamp, center| TruckLights.farthest_from(lamp, center).times(glow_reach)
 
 	## A circle round `center`, as a polygon of `glow_sides` corners.
-	glow_outline : { center : Screen.Point, radius : F64 } -> List(Screen.Point)
+	glow_outline : { center : Screen.Point, radius : Pixels } -> List(Screen.Point)
 	glow_outline = |{ center, radius }|
 		TruckShape.circle_angles(TruckLights.glow_sides).map(
 			|angle| {
-				x: (center.x + (radius * Trig.r_cos(angle))),
-				y: (center.y + (radius * Trig.r_sin(angle))),
+				x: center.x.plus(radius.times(Trig.r_cos(angle))),
+				y: center.y.plus(radius.times(Trig.r_sin(angle))),
 			},
 		)
 }
@@ -257,26 +254,30 @@ glow = |truck, lamp|
 
 sample_panel : List(Screen.Point)
 sample_panel = [
-	{ x: 3.0, y: 4.0 },
-	{ x: 6.0, y: 8.0 },
-	{ x: 0.0, y: 0.0 },
-	{ x: 7.0, y: 4.0 },
+	Screen.point(3.0, 4.0),
+	Screen.point(6.0, 8.0),
+	Screen.point(0.0, 0.0),
+	Screen.point(7.0, 4.0),
 ]
 
 sample_triangle : List(Screen.Point)
 sample_triangle = [
-	{ x: 0.0, y: 0.0 },
-	{ x: 3.0, y: 0.0 },
-	{ x: 0.0, y: 6.0 },
+	Screen.point(0.0, 0.0),
+	Screen.point(3.0, 0.0),
+	Screen.point(0.0, 6.0),
 ]
 
-expect TruckLights.center_of(sample_panel) == { x: 4.0, y: 4.0 }
-expect TruckLights.center_of(sample_triangle) == { x: 1.0, y: 2.0 }
-expect TruckLights.distance({ from: { x: 3.0, y: 4.0 }, to: { x: 0.0, y: 0.0 } }) == 5.0
-expect TruckLights.farthest_from(sample_panel, { x: 0.0, y: 0.0 }) == 10.0
-expect TruckLights.glow_radius(sample_panel, { x: 0.0, y: 0.0 }) == 32.0
+expect TruckLights.center_of(sample_panel) == Screen.point(4.0, 4.0)
+expect TruckLights.center_of(sample_triangle) == Screen.point(1.0, 2.0)
+expect
+	TruckLights.distance({ from: Screen.point(3.0, 4.0), to: Screen.point(0.0, 0.0) }).to_f64()
+		== 5.0
+expect TruckLights.farthest_from(sample_panel, Screen.point(0.0, 0.0)).to_f64() == 10.0
+expect TruckLights.glow_radius(sample_panel, Screen.point(0.0, 0.0)).to_f64() == 32.0
 
-expect TruckLights.glow_outline({ center: { x: 0.0, y: 0.0 }, radius: 10.0 }).len() == 16
+expect
+	TruckLights.glow_outline({ center: Screen.point(0.0, 0.0), radius: Pixels.of(10.0) }).len()
+		== 16
 expect TruckLights.glow_sides == 16
 
 point_ahead : F64 -> Geom.RaisedPoint

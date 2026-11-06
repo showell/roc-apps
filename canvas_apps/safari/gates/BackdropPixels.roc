@@ -28,10 +28,10 @@ BackdropPixels :: [].{
 		for row in PixelGrid.Coordinate.first.until(height) {
 			for column in PixelGrid.Coordinate.first.until(width) {
 				y = roll.to_scene(ScreenRoll.pixel_point({ row, column })).y
-				pixel = if y >= Screen.grass_top_y {
+				pixel = if y >= Screen.grass_top_y.to_f64() {
 					grass_pixel
 				} else {
-					t = Brush.clamp01(y / Screen.horizon_y)
+					t = Brush.clamp01(y / Screen.horizon_y.to_f64())
 					stop = Backdrop.sky_top_stop
 					color = if t <= stop {
 						top_color

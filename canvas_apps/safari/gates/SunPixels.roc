@@ -23,7 +23,11 @@ SunPixels :: [].{
 paint_glow_and_disc : List(U32), { roll : ScreenRoll, sun : Sky.SunPlace } -> List(U32)
 paint_glow_and_disc = |pixels, { roll, sun }| {
 	fills = Backdrop.sun_fills(sun)
-	on_screen = roll.to_screen(ScreenRoll.ScenePoint.({ x: sun.x, y: sun.y }))
+	sun_x = sun.x.to_f64()
+	sun_y = sun.y.to_f64()
+	screen_width = Screen.width.to_f64()
+	horizon_y = Screen.horizon_y.to_f64()
+	on_screen = roll.to_screen(ScreenRoll.ScenePoint.({ x: sun_x, y: sun_y }))
 	rows = PixelGrid.pixels_between({
 		from: on_screen.y - fills.glow_radius.to_f64(),
 		to: on_screen.y + fills.glow_radius.to_f64(),
@@ -38,10 +42,10 @@ paint_glow_and_disc = |pixels, { roll, sun }| {
 	for row in rows.start.until(rows.end) {
 		for column in columns.start.until(columns.end) {
 			p = roll.to_scene(ScreenRoll.pixel_point({ row, column }))
-			$px = if p.x >= 0.0 and p.x < Screen.width and p.y >= 0.0 and p.y < Screen.horizon_y {
+			$px = if p.x >= 0.0 and p.x < screen_width and p.y >= 0.0 and p.y < horizon_y {
 				at = PixelGrid.pixel_index({ row, column, width: roll.width_px() })
 				lit = PixelGrid.blend($px, { at, color: Brush.shade(fills.glow, p.x, p.y) })
-				distance = F64.sqrt((p.x - sun.x) * (p.x - sun.x) + (p.y - sun.y) * (p.y - sun.y))
+				distance = F64.sqrt((p.x - sun_x) * (p.x - sun_x) + (p.y - sun_y) * (p.y - sun_y))
 				if distance < fills.disc_radius.to_f64() {
 					PixelGrid.blend(lit, { at, color: Brush.shade(fills.disc, p.x, p.y) })
 				} else {

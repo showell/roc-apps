@@ -25,7 +25,7 @@ StillDraw :: [].{
 	Anchor : {
 		feet : Screen.Point,
 		flip : StillDraw.Flip,
-		height_px : F64,
+		height_px : Pixels,
 	}
 
 	## A polygon with more points than this is not drawn.
@@ -43,15 +43,15 @@ StillDraw :: [].{
 	## Where a point of the still lands on screen.
 	screen_point : StillDraw.Anchor, Stills.StillPt -> Screen.Point
 	screen_point = |anchor, point| {
-		x: (anchor.feet.x + ((x_sign(anchor.flip) * point.x) * anchor.height_px)),
-		y: (anchor.feet.y - (point.y * anchor.height_px)),
+		x: anchor.feet.x.plus(anchor.height_px.times(x_sign(anchor.flip) * point.x)),
+		y: anchor.feet.y.minus(anchor.height_px.times(point.y)),
 	}
 
 	## How far, and which way, a step in the still goes on screen.
 	screen_vector : StillDraw.Anchor, Stills.StillPt -> Screen.Point
 	screen_vector = |anchor, step| {
-		x: ((x_sign(anchor.flip) * step.x) * anchor.height_px),
-		y: (0.0 - (step.y * anchor.height_px)),
+		x: anchor.height_px.times(x_sign(anchor.flip) * step.x),
+		y: anchor.height_px.times(step.y).opposite(),
 	}
 
 	screen_points : StillDraw.Anchor, List(Stills.StillPt) -> List(Screen.Point)
@@ -83,8 +83,8 @@ StillDraw :: [].{
 			cam_focal,
 		)
 		feet = on_screen(0.0)
-		height_px = (feet.y - on_screen(critter.height.to_metres()).y)
-		if height_px < 1.0 {
+		height_px = feet.y.minus(on_screen(critter.height.to_metres()).y)
+		if height_px < Pixels.of(1.0) {
 			[]
 		} else {
 			flip =
@@ -154,14 +154,14 @@ draw_gradient_polygon = |anchor, { gradient, points }|
 	}
 
 sample_feet : Screen.Point
-sample_feet = { x: 100.0, y: 200.0 }
+sample_feet = Screen.point(100.0, 200.0)
 
 # A still 50 pixels tall, standing on the feet, as drawn.
 upright : StillDraw.Anchor
 upright = {
 	feet: sample_feet,
 	flip: AsDrawn,
-	height_px: 50.0,
+	height_px: Pixels.of(50.0),
 }
 
 # The same still, mirrored.
@@ -169,25 +169,25 @@ mirrored : StillDraw.Anchor
 mirrored = {
 	feet: sample_feet,
 	flip: Mirrored,
-	height_px: 50.0,
+	height_px: Pixels.of(50.0),
 }
 
 expect StillDraw.x_sign(Mirrored) == -1.0
 expect StillDraw.x_sign(AsDrawn) == 1.0
 
-expect StillDraw.screen_point(upright, { x: 0.5, y: 0.4 }) == { x: 125.0, y: 180.0 }
-expect StillDraw.screen_point(mirrored, { x: 0.5, y: 0.4 }) == { x: 75.0, y: 180.0 }
-expect StillDraw.screen_point(upright, { x: 0.0, y: 0.0 }) == { x: 100.0, y: 200.0 }
+expect StillDraw.screen_point(upright, { x: 0.5, y: 0.4 }) == Screen.point(125.0, 180.0)
+expect StillDraw.screen_point(mirrored, { x: 0.5, y: 0.4 }) == Screen.point(75.0, 180.0)
+expect StillDraw.screen_point(upright, { x: 0.0, y: 0.0 }) == Screen.point(100.0, 200.0)
 
-expect StillDraw.screen_vector(upright, { x: 0.5, y: 0.4 }) == { x: 25.0, y: -20.0 }
-expect StillDraw.screen_vector(mirrored, { x: 0.5, y: 0.4 }) == { x: -25.0, y: -20.0 }
-expect StillDraw.screen_vector(upright, { x: 0.0, y: 0.0 }) == { x: 0.0, y: 0.0 }
+expect StillDraw.screen_vector(upright, { x: 0.5, y: 0.4 }) == Screen.point(25.0, -20.0)
+expect StillDraw.screen_vector(mirrored, { x: 0.5, y: 0.4 }) == Screen.point(-25.0, -20.0)
+expect StillDraw.screen_vector(upright, { x: 0.0, y: 0.0 }) == Screen.point(0.0, 0.0)
 
 # A point is the feet plus its vector.
 expect {
 	point = StillDraw.screen_point(upright, { x: 0.5, y: 0.4 })
 	vector = StillDraw.screen_vector(upright, { x: 0.5, y: 0.4 })
-	point.x - vector.x == 100.0 and point.y - vector.y == 200.0
+	point.x.minus(vector.x).to_f64() == 100.0 and point.y.minus(vector.y).to_f64() == 200.0
 }
 
 expect
@@ -200,9 +200,9 @@ expect
 		],
 	)
 		== [
-			{ x: 100.0, y: 200.0 },
-			{ x: 125.0, y: 180.0 },
-			{ x: 150.0, y: 150.0 },
+			Screen.point(100.0, 200.0),
+			Screen.point(125.0, 180.0),
+			Screen.point(150.0, 150.0),
 		]
 
 # A solid polygon of colour 7 with `count` points, all at the feet.
