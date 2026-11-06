@@ -99,8 +99,8 @@ World :: [].{
 	mid_tower_min_length : Distance
 	mid_tower_min_length = Distance.metres(1000.0)
 
-	route : List(World.SegmentPlan)
-	route = [
+	plans : List(World.SegmentPlan)
+	plans = [
 		{
 			length: Distance.metres(500.0),
 			scheme: AllGreen,
@@ -296,7 +296,7 @@ World :: [].{
 	## How many of the segments up to and including `index` have pigs.
 	pig_segments_through : World.SegmentIndex -> U32
 	pig_segments_through = |index|
-		route
+		plans
 			.take_first(index.count_before() + 1)
 			.count_if(|plan| Pigs.has_pigs(plan.pigs))
 			.to_u32_wrap()
@@ -305,14 +305,14 @@ World :: [].{
 	route_segment : U32 -> World.Segment
 	route_segment = |number| {
 		index = World.SegmentIndex.number(number)
-		plan = route.get(index.count_before())
+		plan = plans.get(index.count_before())
 			?? crash "World.route_segment: the route has no segment there"
 		built_segment(plan, index)
 	}
 
 	## Every segment of the route, in order.
 	segments : List(World.Segment)
-	segments = route.map_with_index(
+	segments = plans.map_with_index(
 		|plan, at| built_segment(plan, World.SegmentIndex.number(at.to_u32_wrap())),
 	)
 
@@ -413,7 +413,7 @@ nearest_tree_ahead = |trees, along| {
 	}
 }
 
-expect World.route.len() == 19
+expect World.plans.len() == 19
 
 expect
 	[
