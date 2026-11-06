@@ -1,15 +1,13 @@
-## The widget for the Safari tutorial's chapter on the cat. Dragging across the
-## canvas sets how far the rider is from the cat, and each frame is worked out
-## from that gap alone, so the crossing plays forward and backward under the
-## pointer. The picture looks down the road at the cat, with the road's width
-## to scale. Below it, a ruler shows the gap, and four lines of text say what
-## Cat and CrossingReaction make of it.
+## The widget for the Safari tutorial's chapter on the cat. Video recorder buttons
+## run how far the rider is from the cat, and each frame is worked out from that
+## gap alone, so the crossing plays forward and backward. The picture looks down
+## the road at the cat, with the road's width to scale. Below it, the buttons and
+## four lines of text that say what Cat and CrossingReaction make of the gap.
 import game.Cat
 import game.CatDraw
 import game.CatStills
 import game.CrossingReaction
 import game.Distance
-import game.Fraction
 import game.Pixels
 import game.Scenery
 import game.Speed
@@ -17,31 +15,29 @@ import game.World
 import lib.CanvasApp
 import lib.Shapes
 import widget.ScrubWidget
+import widget.VcrButtons
 
 CatWidgetApp :: [].{
 
-	## The whole state of the widget: the gap from the rider to the cat.
-	Model : { gap : Distance }
+	## The whole state of the widget: the buttons, which hold the gap from the
+	## rider to the cat.
+	Model : VcrButtons.Transport(Distance)
 
 	canvas_app : CanvasApp.CanvasApp(CatWidgetApp.Model)
-	canvas_app = ScrubWidget.canvas_app({
+	canvas_app = VcrButtons.canvas_app({
 		title: "The cat crossing",
-		init: { gap: farthest_gap },
-		model_at: |share| { gap: ScrubWidget.gap_at(share, { farthest: farthest_gap }) },
-		frame: |model| frame_at(model.gap),
+		run: closing_gap,
+		opens_at: closing_gap.first,
+		frame: frame_at,
 	})
 }
 
-## The gap at the canvas's left edge. At its right edge the gap is zero.
-farthest_gap : Distance
-farthest_gap = Distance.metres(50.0)
+## The rider's approach, in about seven seconds.
+closing_gap : VcrButtons.Run(Distance)
+closing_gap = VcrButtons.gap_run({ farthest: Distance.metres(50.0), metres_a_frame: 0.125 })
 
-## How far along the ruler `gap` sits.
-gap_share : Distance -> Fraction
-gap_share = |gap| ScrubWidget.gap_share(gap, { farthest: farthest_gap })
-
-## A typical speed on the ride. At one metre a step, the crossing's beats read
-## as metres on the ruler.
+## A typical speed on the ride. At one metre a step, a step of the buttons is a
+## step of the ride, and the crossing's beats read as metres.
 rider_speed : Speed
 rider_speed = Speed.metres_a_step(1.0)
 
@@ -62,15 +58,17 @@ cat_segment =
 crossing : Cat.Crossing
 crossing = cat_crossing(cat_segment) ?? crash "CatWidgetApp.crossing: this segment has a cat"
 
-## Everything on the canvas at `gap`.
-frame_at : Distance -> List(Shapes.Shape)
-frame_at = |gap|
-	ScrubWidget.frame_shapes({
-		picture: road.concat(cat_shapes(gap)),
-		dot_at: gap_share(gap),
-		marked: [crossing_stretch],
-		status: status_lines(gap),
-	})
+## Everything on the canvas.
+frame_at : CatWidgetApp.Model -> List(Shapes.Shape)
+frame_at = |transport|
+	VcrButtons.frame_shapes(
+		transport,
+		{
+			run: closing_gap,
+			picture: road.concat(cat_shapes(transport.at)),
+			status: status_lines(transport.at),
+		},
+	)
 
 ## How many pixels a metre across the road takes up.
 pixels_a_metre : F64
@@ -137,16 +135,6 @@ cat_shapes = |gap| {
 	)
 }
 
-## The stretch of the ruler where the cat crosses.
-crossing_stretch : ScrubWidget.Stretch
-crossing_stretch = {
-	crossing_length = rider_speed.distance_in(Cat.crossing_beats)
-	{
-		from: gap_share(Cat.road_buffer.plus(crossing_length)),
-		to: gap_share(Cat.road_buffer),
-	}
-}
-
 ## What the crossing and the rider's reaction to it are at `gap`, a line each.
 status_lines : Distance -> List(Str)
 status_lines = |gap| {
@@ -184,7 +172,9 @@ throttle_text = |throttle|
 		NoAcceleration => "The rider may not accelerate"
 	}
 
-expect crossing_stretch.from.to_f64() < crossing_stretch.to.to_f64()
+# The whole crossing is on the run, with some road to spare at the far end.
+expect Cat.road_buffer.plus(rider_speed.distance_in(Cat.crossing_beats)) < closing_gap.first
+expect Cat.road_buffer > closing_gap.last
 
 expect
 	status_lines(Distance.metres(50.0))
