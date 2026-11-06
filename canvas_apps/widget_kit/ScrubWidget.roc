@@ -13,7 +13,6 @@ import game.Sky
 import game.Sun
 import lib.Brush
 import lib.CanvasApp
-import lib.Font
 import lib.Input
 import lib.Mouse
 import lib.Shapes
@@ -112,6 +111,40 @@ ScrubWidget :: [].{
 	flat : I64 -> Brush.Fill
 	flat = |color| Flat(Brush.opaque(color))
 
+	## The size of the lines under the picture, and of the words in it, on a
+	## canvas of the usual width.
+	readout_size : F64
+	readout_size = 15.0
+
+	label_size : F64
+	label_size = 14.0
+
+	## A line of what the widget reads out, on row `row` of the panel.
+	readout : { text : Str, color : I64, row : U64 } -> Shapes.Shape
+	readout = |{ text, color, row }|
+		Text({
+			text,
+			x: side_margin,
+			y: 266.0 + row.to_f64() * 26.0,
+			size: readout_size,
+			face: Code,
+			align: Left,
+			color: Brush.opaque(color),
+		})
+
+	## A few words beside what they name, with their baseline at `y`.
+	label : { text : Str, x : F64, y : F64 } -> Shapes.Shape
+	label = |{ text, x, y }|
+		Text({
+			text,
+			x,
+			y,
+			size: label_size,
+			face: Prose,
+			align: Left,
+			color: Brush.opaque(ink_color),
+		})
+
 	## Everything on the canvas.
 	frame_shapes : ScrubWidget.Page -> List(Shapes.Shape)
 	frame_shapes = |{ picture, dot_at, marked, status }|
@@ -119,13 +152,13 @@ ScrubWidget :: [].{
 			picture,
 			[panel],
 			ruler({ dot_at, marked }),
-			status.map_with_index(status_line).join(),
+			status.map_with_index(status_line),
 		].join()
 
 	## A page with no ruler, for a widget that isn't dragged.
 	still_frame_shapes : { picture : List(Shapes.Shape), status : List(Str) } -> List(Shapes.Shape)
 	still_frame_shapes = |{ picture, status }|
-		[picture, [panel], status.map_with_index(status_line).join()].join()
+		[picture, [panel], status.map_with_index(status_line)].join()
 
 	## The ride's sky and grass with `shapes` over them, at two thirds of
 	## Safari's screen, so a widget's picture is what the ride's frame shows.
@@ -211,6 +244,9 @@ ScrubWidget :: [].{
 panel_color : I64
 panel_color = 0xdcecf5
 
+ink_color : I64
+ink_color = 0x202020
+
 ## The ruler and the text sit on this.
 panel : Shapes.Shape
 panel = Rect({
@@ -275,15 +311,8 @@ ruler = |{ dot_at, marked }|
 		],
 	].join()
 
-status_line : Str, U64 -> List(Shapes.Shape)
-status_line = |text, row|
-	Font.text(
-		text,
-		ScrubWidget.side_margin,
-		252.0 + row.to_f64() * 26.0,
-		16.0,
-		Brush.opaque(0x202020),
-	)
+status_line : Str, U64 -> Shapes.Shape
+status_line = |text, row| ScrubWidget.readout({ text, color: ink_color, row })
 
 ## Where the ruler's right end is on the canvas.
 ruler_right_x : F64
@@ -400,11 +429,37 @@ page_of = |{ lines, stretches }|
 
 # With no ruler a page is the panel and its text.
 expect ScrubWidget.still_frame_shapes({ picture: [], status: [] }).len() == 1
-expect ScrubWidget.still_frame_shapes({ picture: [], status: ["I"] }).len() > 1
+expect ScrubWidget.still_frame_shapes({ picture: [], status: ["I"] }).len() == 2
 
-# The panel, the bar, the dot; then a shape for each stretch, and more for text.
+# Each row of the readout sits under the last, in monospace.
+expect
+	ScrubWidget.readout({ text: "I", color: 0x202020, row: 1 })
+		== Text({
+			text: "I",
+			x: ScrubWidget.side_margin,
+			y: 292.0,
+			size: ScrubWidget.readout_size,
+			face: Code,
+			align: Left,
+			color: Brush.opaque(0x202020),
+		})
+
+# A label is words, set where it is asked.
+expect
+	ScrubWidget.label({ text: "I", x: 3.0, y: 4.0 })
+		== Text({
+			text: "I",
+			x: 3.0,
+			y: 4.0,
+			size: ScrubWidget.label_size,
+			face: Prose,
+			align: Left,
+			color: Brush.opaque(0x202020),
+		})
+
+# The panel, the bar, the dot; then a shape for each stretch and each line.
 expect page_of({ lines: [], stretches: [] }).len() == 3
 expect
 	page_of({ lines: [], stretches: [{ from: Fraction.zero, to: Fraction.whole }] }).len()
 		== 4
-expect page_of({ lines: ["I"], stretches: [] }).len() > 3
+expect page_of({ lines: ["I"], stretches: [] }).len() == 4

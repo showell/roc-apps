@@ -56,6 +56,7 @@ paint_shape = |pixels, { roll, shape }|
 		Blend(Over) => pixels
 		Blend(Add) => crash "ShapesPixels: a shape lit in Add mode"
 		Image(_) => crash "ShapesPixels: an image among the ride's shapes"
+		Text(_) => crash "ShapesPixels: a line of type among the ride's shapes"
 		# The roll is the caller's, so the game's lean mark never reaches here.
 		View(_) => crash "ShapesPixels: a view mark among the ride's shapes"
 	}

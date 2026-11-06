@@ -33,6 +33,7 @@ import rr.Shader
 import lib.Brush
 import lib.BrushGlsl
 import lib.CanvasApp
+import lib.Font
 import lib.Input
 import lib.Keys
 import lib.Mouse
@@ -377,6 +378,8 @@ CanvasAppRunner :: [].{
 			# a GPU resource created and dropped every frame, since `render!`
 			# cannot keep one.
 			Image(i) => draw_pixels!(frame, i)
+			# roc-ray is handed no typeface, so a line of type arrives as strokes.
+			Text(line) => draw_all!(shader, frame, Font.plotted(line))
 			# Runs are split before this, so a mark never reaches here.
 			Blend(_) => {}
 			View(_) => {}

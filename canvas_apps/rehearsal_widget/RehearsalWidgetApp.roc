@@ -17,9 +17,7 @@ import game.LeanSearch
 import game.Scenery
 import game.Speed
 import game.Tour
-import lib.Brush
 import lib.CanvasApp
-import lib.Font
 import lib.Input
 import lib.Mouse
 import lib.Shapes
@@ -353,14 +351,7 @@ rider_mark = {
 
 ## A line of words on the grass along the picture's bottom edge.
 caption : List(Shapes.Shape)
-caption =
-	Font.text(
-		"from above, stretched x2 across the road",
-		10.0,
-		203.0,
-		10.0,
-		Brush.opaque(0x202020),
-	)
+caption = [ScrubWidget.label({ text: "from above, stretched x2 across the road", x: 10.0, y: 213.0 })]
 
 ## The road and the arcs so far. The newest try is drawn bold, and once the
 ## tries are over the arc that was chosen is.
@@ -551,22 +542,20 @@ choice_mark = |tries_shown| {
 }
 
 ## What to do, beside the marks.
-hint : List(Shapes.Shape)
+hint : Shapes.Shape
 hint =
-	Font.text(
-		"Click a mark to see that try",
-		mark_x(last_stop) + 24.0,
-		marks_y - 5.0,
-		10.0,
-		Brush.opaque(0x202020),
-	)
+	ScrubWidget.label({
+		text: "Click a mark to see that try",
+		x: mark_x(last_stop) + 24.0,
+		y: marks_y + 5.0,
+	})
 
 ## The row of marks and what to do with them.
 marks : U64 -> List(Shapes.Shape)
 marks = |tries_shown|
 	rehearsals.map_with_index(|_rehearsal, index| try_mark(index + 1, tries_shown))
 		.append(choice_mark(tries_shown))
-		.concat(hint)
+		.append(hint)
 
 ## Everything on the canvas with `tries_shown` tries on show.
 frame_at : U64 -> List(Shapes.Shape)

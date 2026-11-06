@@ -10,9 +10,7 @@ import game.Lens
 import game.Pixels
 import game.Sky
 import game.Sun
-import lib.Brush
 import lib.CanvasApp
-import lib.Font
 import lib.Input
 import lib.Mouse
 import lib.Shapes
@@ -347,17 +345,7 @@ call_lines = |job, clock|
 		status_lines(job, clock),
 		[clock_color, sun_color, dusk_color, warmth_color],
 		|text, color| { text, color },
-	).map_with_index(call_line).join()
-
-call_line : { text : Str, color : I64 }, U64 -> List(Shapes.Shape)
-call_line = |{ text, color }, row|
-	Font.text(
-		text,
-		ScrubWidget.side_margin,
-		252.0 + row.to_f64() * 26.0,
-		10.5,
-		Brush.opaque(color),
-	)
+	).map_with_index(|{ text, color }, row| ScrubWidget.readout({ text, color, row }))
 
 chart_left : F64
 chart_left = 372.0
@@ -470,13 +458,7 @@ curve_dot = |{ x, y }, color|
 hint : Clock, SkyWidgetApp.Motion -> List(Shapes.Shape)
 hint = |clock, motion|
 	if clock == Clock.start and motion == Stopped {
-		Font.text(
-			"Press play",
-			332.0,
-			227.0,
-			13.0,
-			Brush.opaque(0x202020),
-		)
+		[ScrubWidget.label({ text: "Press play", x: 332.0, y: 239.0 })]
 	} else {
 		[]
 	}

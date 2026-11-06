@@ -27,6 +27,10 @@ Frame :: [].{
 		World({ target : { x : F64, y : F64 }, offset : { x : F64, y : F64 }, rotation : F64, zoom : F64 }),
 	]
 
+	Face : [Prose, Code]
+
+	Align : [Left, Center]
+
 	Shape : [
 		Poly({ pts : List(F64), fill : Frame.Fill }),
 		Pieces({ tris : List(F64), fill : Frame.Fill }),
@@ -35,5 +39,6 @@ Frame :: [].{
 		Blend(Frame.Mode),
 		View(Frame.Space),
 		Image({ x : F64, y : F64, w : F64, h : F64, cols : U64, rows : U64, pixels : List(Frame.Rgba) }),
+		Text({ text : Str, x : F64, y : F64, size : F64, face : Frame.Face, align : Frame.Align, color : Frame.Rgba }),
 	]
 }

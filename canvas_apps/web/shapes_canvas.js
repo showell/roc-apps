@@ -8,7 +8,8 @@
 // exact pixels, with no anti-aliasing, for Safari's gate. The gate checks the
 // twin, not this file, since Roc can't run a canvas. This file is checked by
 // page_check.mjs, which runs every built page against a stand-in canvas, and
-// by camera_check.mjs, which checks where a view mark puts points.
+// by camera_check.mjs, which checks where a view mark puts points, and by
+// text_check.mjs, which checks how a line of type is set.
 
 const stopAt = (offset, floor = 0) => Math.max(floor, Math.min(1, offset));
 const channel = (v) => Math.max(0, Math.min(255, Math.round(v)));
@@ -80,15 +81,32 @@ function tracePoly(ctx, pts) {
 
 // Where the shapes after a view mark are: the camera written as the matrix a
 // canvas takes. Camera.world_to_screen does this in Roc, BeginMode2D in raylib.
-function setSpace(ctx, space) {
-  if (space.tag === "Screen") { ctx.setTransform(1, 0, 0, 1, 0, 0); return; }
+// `scale` is how many canvas pixels the app's own pixel takes.
+function setSpace(ctx, space, scale) {
+  if (space.tag === "Screen") { ctx.setTransform(scale, 0, 0, scale, 0, 0); return; }
   const c = space.value;
   const radians = (c.rotation * Math.PI) / 180;
   const cos = Math.cos(radians) * c.zoom;
   const sin = Math.sin(radians) * c.zoom;
-  ctx.setTransform(cos, sin, -sin, cos,
-    c.offset.x - (c.target.x * cos - c.target.y * sin),
-    c.offset.y - (c.target.x * sin + c.target.y * cos));
+  ctx.setTransform(scale * cos, scale * sin, -scale * sin, scale * cos,
+    scale * (c.offset.x - (c.target.x * cos - c.target.y * sin)),
+    scale * (c.offset.y - (c.target.x * sin + c.target.y * cos)));
+}
+
+// The viewer's own typefaces. A stack names the best face on each common system
+// and ends in the generic family, so a page loads no font and always finds one.
+const TYPEFACES = {
+  Prose: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  Code: 'ui-monospace, SFMono-Regular, Menlo, Consolas, "DejaVu Sans Mono", "Liberation Mono", monospace',
+};
+const TEXT_ALIGN = { Left: 'left', Center: 'center' };
+
+function paintText(ctx, p) {
+  ctx.font = `${p.size}px ${TYPEFACES[p.face.tag]}`;
+  ctx.textAlign = TEXT_ALIGN[p.align.tag];
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = cssColor(p.color);
+  ctx.fillText(p.text, p.x, p.y);
 }
 
 const scratch = { canvas: null, ctx: null };
@@ -119,7 +137,7 @@ function paintImage(ctx, p) {
   ctx.imageSmoothingEnabled = smoothing;
 }
 
-function paintFrame(ctx, shapes) {
+function paintFrame(ctx, shapes, scale = 1) {
   for (const shape of shapes) {
     const p = shape.value;
     switch (shape.tag) {
@@ -129,10 +147,13 @@ function paintFrame(ctx, shapes) {
         ctx.globalCompositeOperation = p.tag === "Add" ? 'lighter' : 'source-over';
         break;
       case "View":
-        setSpace(ctx, p);
+        setSpace(ctx, p, scale);
         break;
       case "Image":
         paintImage(ctx, p);
+        break;
+      case "Text":
+        paintText(ctx, p);
         break;
       case "Poly":
         tracePoly(ctx, p.pts);
@@ -163,7 +184,7 @@ function paintFrame(ctx, shapes) {
     }
   }
   ctx.globalCompositeOperation = 'source-over';
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
 }
 
 const ShapesCanvas = { paint: paintFrame };

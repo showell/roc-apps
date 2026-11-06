@@ -10,9 +10,7 @@ import game.Fraction
 import game.Scenery
 import game.Tour
 import game.World
-import lib.Brush
 import lib.CanvasApp
-import lib.Font
 import lib.Input
 import lib.Shapes
 import widget.ScrubWidget
@@ -209,13 +207,7 @@ route_bar = {
 ## A disc on the bar with its name above or below it.
 marker : { at : Distance, color : I64, name : Str, name_y : F64 } -> List(Shapes.Shape)
 marker = |{ at, color, name, name_y }|
-	Font.text(
-		name,
-		route_x(at) - 16.0,
-		name_y,
-		12.0,
-		Brush.opaque(0x202020),
-	).prepend(
+	[
 		Disc({
 			x: route_x(at),
 			y: route_y,
@@ -223,7 +215,8 @@ marker = |{ at, color, name, name_y }|
 			fill: ScrubWidget.flat(color),
 			clip: Anywhere,
 		}),
-	)
+		ScrubWidget.label({ text: name, x: route_x(at) - 16.0, y: name_y + 12.0 }),
+	]
 
 ## The road's surface in the view from behind the rider.
 surface_y : F64
@@ -251,13 +244,7 @@ from_behind = |{ across, lean }| {
 	head_x = foot + rider_height * (lean * lean_shown_at).sin()
 	head_y = surface_y - rider_height * (lean * lean_shown_at).cos()
 	[
-		Font.text(
-			"from behind, lean x3",
-			20.0,
-			surface_y - 22.0,
-			10.0,
-			Brush.opaque(0x202020),
-		),
+		[ScrubWidget.label({ text: "from behind, lean x3", x: 20.0, y: surface_y - 12.0 })],
 		[
 			Rect({
 				x: middle - lane,
