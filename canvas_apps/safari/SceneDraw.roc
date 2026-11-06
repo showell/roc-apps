@@ -184,7 +184,7 @@ tree_at = |forward| {
 	right: Distance.metres(0.0),
 	forward: Distance.metres(forward),
 	height: Distance.metres(5.85),
-	color: 1858082,
+	color: 0x1C5A22,
 }
 
 spread_trees : List(TreeSighting)
@@ -317,7 +317,7 @@ green_tree_at = |along| {
 	tree: {
 		along: Along.metres(along),
 		across: Across.metres(3.5),
-		color: 1858082,
+		color: 0x1C5A22,
 		height: Distance.metres(5.85),
 	},
 }
@@ -340,7 +340,7 @@ expect
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 expect TreeSighting.tree_in_view(from_origin, green_tree_at(120.0)).len() == 1
-expect lone_tree.color == 1858082
+expect lone_tree.color == 0x1C5A22
 expect
 	[
 		(TreeSighting.tree_in_view(from_origin, green_tree_at(0.4)), 0),

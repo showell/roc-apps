@@ -39,7 +39,7 @@ Tower :: [].{
 	rod_w = rod_half.times(2.0)
 
 	tower_metal : I64
-	tower_metal = 10133672
+	tower_metal = 0x9AA0A8
 
 	## The radius a far tower sinks over, which hides it wholly at 1.8 km. It
 	## is tighter than `Geom.ground_curve_radius`, so a tower sinks visibly as
@@ -51,7 +51,7 @@ Tower :: [].{
 	beacon_radius = Distance.metres(3.0)
 
 	beacon_color : I64
-	beacon_color = 16723942
+	beacon_color = 0xFF2FE6
 
 	## A corner of the tower's square footprint, as seen along the route.
 	Corner : [BackLeft, BackRight, FrontRight, FrontLeft]
@@ -461,8 +461,8 @@ expect Tower.sink_radius.to_metres() == 20000.0
 expect Tower.beacon_radius.to_metres() == 3.0
 
 expect Tower.brace_storeys == 2
-expect Tower.tower_metal == 10133672
-expect Tower.beacon_color == 16723942
+expect Tower.tower_metal == 0x9AA0A8
+expect Tower.beacon_color == 0xFF2FE6
 
 expect Tower.corners.map(|corner| Tower.corner_offset(corner).across) == [-1.0, 1.0, 1.0, -1.0]
 expect Tower.corners.map(|corner| Tower.corner_offset(corner).along) == [-1.0, -1.0, 1.0, 1.0]

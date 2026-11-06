@@ -560,7 +560,7 @@ expect patch_shapes(
 last_shape : Shapes.Shape
 last_shape = strip.last() ?? crash "CrossModuleExpects: the road draws"
 
-expect flat_color_of(last_shape) == 3421500
+expect flat_color_of(last_shape) == 0x34353C
 expect {
 	point_count = points_of(last_shape).len()
 	point_count >= 6 and point_count <= 10

@@ -210,23 +210,23 @@ expect Sky.sunset_warmth(Clock.at_step(6000)).to_f64() == 0.0
 expect Sky.sunset_glow.to_f64() == 0.85
 
 # The sky and the horizon at each thousandth step of the ride.
-expect Sky.sky_top_color(Clock.at_step(0)) == 9358054
-expect Sky.sky_top_color(Clock.at_step(1000)) == 9160418
-expect Sky.sky_top_color(Clock.at_step(2000)) == 8633304
-expect Sky.sky_top_color(Clock.at_step(3000)) == 7710918
-expect Sky.sky_top_color(Clock.at_step(4000)) == 6393260
-expect Sky.sky_top_color(Clock.at_step(5000)) == 4219010
-expect Sky.sky_top_color(Clock.at_step(6000)) == 2374238
-expect Sky.sky_horizon_color(Clock.at_step(0)) == 9358054
-expect Sky.sky_horizon_color(Clock.at_step(1000)) == 9160418
-expect Sky.sky_horizon_color(Clock.at_step(2000)) == 8633304
-expect Sky.sky_horizon_color(Clock.at_step(3000)) == 10324366
-expect Sky.sky_horizon_color(Clock.at_step(4000)) == 13262919
-expect Sky.sky_horizon_color(Clock.at_step(5000)) == 8019301
-expect Sky.sky_horizon_color(Clock.at_step(6000)) == 2374238
-expect Sky.pack(Sky.day_sky) == 9358054
-expect Sky.pack(Sky.dusk_sky) == 2374238
-expect Sky.pack(Sky.sunset_red) == 14571572
+expect Sky.sky_top_color(Clock.at_step(0)) == 0x8ECAE6
+expect Sky.sky_top_color(Clock.at_step(1000)) == 0x8BC6E2
+expect Sky.sky_top_color(Clock.at_step(2000)) == 0x83BBD8
+expect Sky.sky_top_color(Clock.at_step(3000)) == 0x75A8C6
+expect Sky.sky_top_color(Clock.at_step(4000)) == 0x618DAC
+expect Sky.sky_top_color(Clock.at_step(5000)) == 0x406082
+expect Sky.sky_top_color(Clock.at_step(6000)) == 0x243A5E
+expect Sky.sky_horizon_color(Clock.at_step(0)) == 0x8ECAE6
+expect Sky.sky_horizon_color(Clock.at_step(1000)) == 0x8BC6E2
+expect Sky.sky_horizon_color(Clock.at_step(2000)) == 0x83BBD8
+expect Sky.sky_horizon_color(Clock.at_step(3000)) == 0x9D898E
+expect Sky.sky_horizon_color(Clock.at_step(4000)) == 0xCA6047
+expect Sky.sky_horizon_color(Clock.at_step(5000)) == 0x7A5D65
+expect Sky.sky_horizon_color(Clock.at_step(6000)) == 0x243A5E
+expect Sky.pack(Sky.day_sky) == 0x8ECAE6
+expect Sky.pack(Sky.dusk_sky) == 0x243A5E
+expect Sky.pack(Sky.sunset_red) == 0xDE5834
 
 expect
 	Sky.color_between({

@@ -22,7 +22,7 @@ Pond :: [].{
 	]
 
 	water_color : I64
-	water_color = 3112588
+	water_color = 0x2F7E8C
 
 	bank : List(Pond.PondPt)
 	bank = [
@@ -35,7 +35,7 @@ Pond :: [].{
 	]
 
 	bank_color : I64
-	bank_color = 12759680
+	bank_color = 0xC2B280
 
 	duck_codepoint : I64
 	duck_codepoint = 129414
@@ -57,8 +57,8 @@ Pond :: [].{
 expect Pond.water_outline.len() == 7
 expect Pond.bank.len() == 6
 expect Pond.ducks.len() == 6
-expect Pond.water_color == 3112588
-expect Pond.bank_color == 12759680
+expect Pond.water_color == 0x2F7E8C
+expect Pond.bank_color == 0xC2B280
 expect Pond.duck_codepoint == 129414
 expect Pond.duck_height.to_metres() == 0.9
 

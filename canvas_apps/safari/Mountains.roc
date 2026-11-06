@@ -296,9 +296,9 @@ north_by = |radians| Angle.Bearing.radians(radians)
 west_by : F64 -> Angle.Bearing
 west_by = |radians| Mountains.west_range_bearing.plus(Angle.Turn.radians(radians))
 
-expect Mountains.rock == 5991055
-expect Mountains.rock_west == 3752799
-expect Mountains.land == 4886339
+expect Mountains.rock == 0x5B6A8F
+expect Mountains.rock_west == 0x39435F
+expect Mountains.land == 0x4A8F43
 
 sight_at_rest : Mountains.Sight
 sight_at_rest = { heading: Angle.north, cam_focal: Lens.focal }
@@ -310,19 +310,19 @@ expect
 	height_y({ ..sight_at_rest, cam_focal: Lens.focal.times(0.5) }, Pixels.of(100.0))
 		== Pixels.of(250.0)
 
-expect Mountains.color_at_dusk(Mountains.rock, Fraction.zero) == 5991055
-expect Mountains.color_at_dusk(Mountains.rock_west, Fraction.zero) == 3752799
-expect Mountains.color_at_dusk(Mountains.land, Fraction.zero) == 4886339
-expect Mountains.color_at_dusk(Mountains.rock, Fraction.whole) == 3028296
-expect Mountains.color_at_dusk(Mountains.rock_west, Fraction.whole) == 1909296
-expect Mountains.color_at_dusk(Mountains.land, Fraction.whole) == 2443298
-expect Mountains.color_at_dusk(Mountains.rock, Fraction.of(0.5)) == 4477035
+expect Mountains.color_at_dusk(Mountains.rock, Fraction.zero) == 0x5B6A8F
+expect Mountains.color_at_dusk(Mountains.rock_west, Fraction.zero) == 0x39435F
+expect Mountains.color_at_dusk(Mountains.land, Fraction.zero) == 0x4A8F43
+expect Mountains.color_at_dusk(Mountains.rock, Fraction.whole) == 0x2E3548
+expect Mountains.color_at_dusk(Mountains.rock_west, Fraction.whole) == 0x1D2230
+expect Mountains.color_at_dusk(Mountains.land, Fraction.whole) == 0x254822
+expect Mountains.color_at_dusk(Mountains.rock, Fraction.of(0.5)) == 0x44506B
 
-expect Mountains.snow_color(Fraction.zero) == 15660024
-expect Mountains.snow_color(Fraction.whole) == 4609128
-expect Mountains.snow_color(Fraction.of(0.5)) == 10134704
-expect Sky.pack(Mountains.snow_day) == 15660024
-expect Sky.pack(Mountains.snow_night) == 4609128
+expect Mountains.snow_color(Fraction.zero) == 0xEEF3F8
+expect Mountains.snow_color(Fraction.whole) == 0x465468
+expect Mountains.snow_color(Fraction.of(0.5)) == 0x9AA4B0
+expect Sky.pack(Mountains.snow_day) == 0xEEF3F8
+expect Sky.pack(Mountains.snow_night) == 0x465468
 
 expect Mountains.snow_color(Fraction.whole) > Mountains.color_at_dusk(
 	Mountains.rock,

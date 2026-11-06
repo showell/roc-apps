@@ -94,7 +94,7 @@ a_tree : Scenery.Tree
 a_tree = {
 	along: Along.metres(120.5),
 	across: Across.metres(3.25),
-	color: 9066271,
+	color: 0x8A571F,
 	height: Distance.metres(7.75),
 }
 
@@ -113,6 +113,6 @@ expect a_tree.height.to_metres() == 7.75
 expect a_critter.along.to_metres() == 250.5
 expect a_critter.across.to_metres() == -6.5
 expect a_critter.height.to_metres() == 1.375
-expect a_tree.color == 9066271
+expect a_tree.color == 0x8A571F
 expect a_critter.codepoint == 128004
 expect a_critter.facing == FacesRight

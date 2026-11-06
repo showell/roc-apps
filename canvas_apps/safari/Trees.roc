@@ -17,13 +17,13 @@ Trees :: [].{
 	PairSize : [Big, Small]
 
 	conifer_green : I64
-	conifer_green = 1858082
+	conifer_green = 0x1C5A22
 
 	conifer_gold : I64
-	conifer_gold = 13605400
+	conifer_gold = 0xCF9A18
 
 	conifer_red : I64
-	conifer_red = 11680298
+	conifer_red = 0xB23A2A
 
 	## A small green tree's height.
 	small_height : Distance
@@ -158,9 +158,9 @@ plant_onto = |planted, { scheme, length, along, size }|
 		)
 	}
 
-expect Trees.conifer_green == 1858082
-expect Trees.conifer_gold == 13605400
-expect Trees.conifer_red == 11680298
+expect Trees.conifer_green == 0x1C5A22
+expect Trees.conifer_gold == 0xCF9A18
+expect Trees.conifer_red == 0xB23A2A
 expect Trees.max_trees == 96
 
 expect Trees.small_height == Distance.metres(4.5)
@@ -170,9 +170,9 @@ expect Trees.tree_road_offset == Distance.metres(1.5)
 expect Trees.tree_start_inset == Distance.metres(6.0)
 expect Trees.tree_end_inset == Distance.metres(85.0)
 
-expect Trees.color(Trees.accent(AllGreen)) == 1858082
-expect Trees.color(Trees.accent(YellowGreen)) == 13605400
-expect Trees.color(Trees.accent(RedGreen)) == 11680298
+expect Trees.color(Trees.accent(AllGreen)) == 0x1C5A22
+expect Trees.color(Trees.accent(YellowGreen)) == 0xCF9A18
+expect Trees.color(Trees.accent(RedGreen)) == 0xB23A2A
 
 expect Trees.height({ conifer: Green, size: Big }).to_metres() == 5.8500000000000005
 expect Trees.height({ conifer: Green, size: Small }).to_metres() == 4.5
@@ -230,20 +230,20 @@ expect
 expect
 	yellow_green_trees.map(|tree| tree.color)
 		== [
-			1858082,
-			1858082,
-			13605400,
-			13605400,
-			1858082,
-			1858082,
-			13605400,
-			13605400,
-			1858082,
-			1858082,
-			13605400,
-			13605400,
-			1858082,
-			1858082,
+			0x1C5A22,
+			0x1C5A22,
+			0xCF9A18,
+			0xCF9A18,
+			0x1C5A22,
+			0x1C5A22,
+			0xCF9A18,
+			0xCF9A18,
+			0x1C5A22,
+			0x1C5A22,
+			0xCF9A18,
+			0xCF9A18,
+			0x1C5A22,
+			0x1C5A22,
 		]
 
 expect
