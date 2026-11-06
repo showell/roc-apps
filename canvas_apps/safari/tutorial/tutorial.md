@@ -1469,6 +1469,41 @@ The tour named these in passing. They're patterns in the loose sense: shapes tha
 
 Code that reads like configuration deserves a line of its own, because the tour kept stopping to admire it: `Pond`, `World.route`, the timelines, and `SafariApp.canvas_app`. None of them is a config format. They're ordinary Roc values, so the compiler checks them, and a tag that's misspelled is a compile-time error.
 
+## Appendix: what catches you out
+
+The patterns say what works. This page says what bites, sorted by what shows up first. Everything on it comes from a chapter, and the last column says which.
+
+### Reading the code
+
+| What you see | What's going on | Chapter |
+|---|---|---|
+| A method call with no import | Static dispatch finds `next` from the type of the value | One whole module |
+| A helper with no keyword to say it's private | Anything outside the module's block is private | The sky |
+| A `match` that looks like a leaf and isn't | `<=` on an opaque type is a call to its `is_lte`, so an operator can run code of the program's own | The cat |
+| `var` and `for` under a `->` | A local that nothing outside can see, with `$` marking what changes. The function is still pure | The cat |
+| `?? crash` on a lookup | It isn't error handling. It states a belief about the program, and every gate run tests it | What never changes, Proving it |
+| `Arc` meaning two things | A tag on a timeline's path, and a module in the math layer | The bird |
+
+### Getting it to compile
+
+| What you see | What's going on | Chapter |
+|---|---|---|
+| An open record that has to be named | `..others` needs a name when it appears twice, because the name promises that the same fields come out as went in | The stepped things |
+| An `expect` that can't see a type | It can only name what its module imports, so `Arc`'s projections are checked in `Throttle` | Proving it |
+
+### Running it
+
+| What you see | What's going on | Chapter |
+|---|---|---|
+| A crash with a sentence about a sum | `Fraction.of` takes a ratio that can only be in range. A ratio that can rightly fall outside wants `Fraction.clamp` | The sky, Proving it |
+| A pose cut on the wrong side of its beat | The leap's beats sum to a float just under the beat they stand for, so a cut says `Through` or `Before` | The cat |
+| The first frame of an animation shown too soon | `Waiting` and `Past` aren't progress of 0 and 1, because a critter can rest where no part of its animation reaches | The cat |
+| A bird hanging in the air | `over_gap` doesn't know a bird can't hover. A stopped rider would leave one there, and on this route the rider doesn't stop inside a bird's 45 metres | The bird |
+| Beacons that stop, or run backwards | The clock counts steps, not seconds, so pausing freezes them and stepping back reverses them | The beacons and the headlights |
+| A frame hash that moves after a sum was reordered | Float addition isn't associative, so a sum's order is part of its meaning | Proving it |
+| A green gate over a wrong brake light | The gate is blind to whatever no listed frame shows | Proving it |
+| A page that differs from the hashed frame | The hash proves `ShapesPixels`'s pixels. The page's come from the browser's canvas, with anti-aliasing | Proving it |
+
 ## Credits
 
 Safari Ride was designed by Steve Howell. Claude wrote most of the code and this tutorial under his direction.
