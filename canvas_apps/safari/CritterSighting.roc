@@ -4,7 +4,7 @@
 ## segment before the rider's are sighted too, so the bend the rider has
 ## just turned keeps its animals.
 import Along
-import Billboards
+import Cutouts
 import DepthSort
 import Chain
 import Pond
@@ -28,7 +28,7 @@ CritterSighting :: [].{
 
 	## Every critter ahead, nearest segment first, then those of the segment
 	## before the rider's, when there is one.
-	in_view : Chain.RoadView -> List(Billboards.Sighting)
+	in_view : Chain.RoadView -> List(Cutouts.Placement)
 	in_view = |road|
 		match Chain.segment_behind(road) {
 			Previous(segment_behind) =>
@@ -39,14 +39,14 @@ CritterSighting :: [].{
 		}
 
 	## The critters of every segment in the chain, nearest first.
-	sightings_ahead : Chain.RoadView -> List(Billboards.Sighting)
+	sightings_ahead : Chain.RoadView -> List(Cutouts.Placement)
 	sightings_ahead = |road|
 		Chain.Position.all_in(road.chain)
 			.join_map(|position| CritterSighting.sightings_at(road, position))
 
 	## The critters of the segment at `position` in the chain: its farm
 	## animals, its bend's animals, then its pond's ducks.
-	sightings_at : Chain.RoadView, Chain.Position -> List(Billboards.Sighting)
+	sightings_at : Chain.RoadView, Chain.Position -> List(Cutouts.Placement)
 	sightings_at = |road, position|
 		[
 			CritterSighting.farm_sightings(road, position),
@@ -55,7 +55,7 @@ CritterSighting :: [].{
 		].join()
 
 	## The cows, then the pigs, of the segment at `position` in the chain.
-	farm_sightings : Chain.RoadView, Chain.Position -> List(Billboards.Sighting)
+	farm_sightings : Chain.RoadView, Chain.Position -> List(Cutouts.Placement)
 	farm_sightings = |road, position|
 		if position.is_within_first(farm_reach) {
 			segment = segment_at(road, position)
@@ -67,7 +67,7 @@ CritterSighting :: [].{
 
 	## The animals at the bend that ends the segment at `position` in the
 	## chain. The road's last segment ends with no bend.
-	safari_sightings : Chain.RoadView, Chain.Position -> List(Billboards.Sighting)
+	safari_sightings : Chain.RoadView, Chain.Position -> List(Cutouts.Placement)
 	safari_sightings = |road, position| {
 		segment = segment_at(road, position)
 		match segment.ending {
@@ -82,7 +82,7 @@ CritterSighting :: [].{
 	}
 
 	## The ducks of the segment at `position` in the chain, if it has a pond.
-	duck_sightings : Chain.RoadView, Chain.Position -> List(Billboards.Sighting)
+	duck_sightings : Chain.RoadView, Chain.Position -> List(Cutouts.Placement)
 	duck_sightings = |road, position|
 		if position.is_within_first(safari_reach) {
 			pond_sightings(road, { place: InChain(position), segment: segment_at(road, position) })
@@ -92,7 +92,7 @@ CritterSighting :: [].{
 
 	## The bend's animals and the pond's ducks of the world's segment at
 	## `index`, the one before the rider's.
-	sightings_behind : Chain.RoadView, World.SegmentIndex -> List(Billboards.Sighting)
+	sightings_behind : Chain.RoadView, World.SegmentIndex -> List(Cutouts.Placement)
 	sightings_behind = |road, index| {
 		segment = index.segment_in(road.world)
 		bend_sightings(
@@ -102,18 +102,18 @@ CritterSighting :: [].{
 	}
 
 	## The ducks of `segment`, the one before the rider's, if it has a pond.
-	ducks_behind : Chain.RoadView, World.Segment -> List(Billboards.Sighting)
+	ducks_behind : Chain.RoadView, World.Segment -> List(Cutouts.Placement)
 	ducks_behind = |road, segment| pond_sightings(
 		road,
 		{ place: Chain.place_behind(segment), segment },
 	)
 
-	## The depth-sort keys of the critters to draw, each naming its billboard
-	## by its place in `billboards`.
-	depth_keys : List(Billboards.Billboard) -> List(DepthSort.DepthKey)
-	depth_keys = |billboards|
-		billboards.map_with_index(
-			|billboard, i| { forward: billboard.forward, subject: Critter(i.to_u32_wrap()) },
+	## The depth-sort keys of the critters to draw, each naming its cutout
+	## by its place in `cutouts`.
+	depth_keys : List(Cutouts.Cutout) -> List(DepthSort.DepthKey)
+	depth_keys = |cutouts|
+		cutouts.map_with_index(
+			|cutout, i| { forward: cutout.forward, subject: Critter(i.to_u32_wrap()) },
 		)
 }
 
@@ -125,9 +125,9 @@ sight_critter : Chain.RoadView,
 {
 	place : Chain.SegmentPlace,
 	critter : Scenery.Critter,
-} -> Billboards.Sighting
+} -> Cutouts.Placement
 sight_critter = |road, { place, critter }|
-	Billboards.sighting({
+	Cutouts.placement({
 		at: Chain.rider_point_at(road, { place, along: critter.along, across: critter.across }),
 		height: critter.height,
 		codepoint: critter.codepoint,
@@ -142,7 +142,7 @@ bend_sightings : Chain.RoadView,
 {
 	place : Chain.SegmentPlace,
 	segment : World.Segment,
-} -> List(Billboards.Sighting)
+} -> List(Cutouts.Placement)
 bend_sightings = |road, { place, segment }|
 	SafariCritter.bend_critters({
 		creature: segment.exit_creature,
@@ -158,12 +158,12 @@ pond_sightings : Chain.RoadView,
 {
 	place : Chain.SegmentPlace,
 	segment : World.Segment,
-} -> List(Billboards.Sighting)
+} -> List(Cutouts.Placement)
 pond_sightings = |road, { place, segment }|
 	if Scenery.is_pond(segment.exit_creature) {
 		Pond.ducks.map(
 			|duck|
-				Billboards.sighting({
+				Cutouts.placement({
 					at: Chain.rider_point_at(
 						road,
 						{

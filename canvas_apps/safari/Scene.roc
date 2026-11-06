@@ -1,7 +1,7 @@
 ## Scene gathers what one frame shows beside the road: the trees, masts,
 ## critters, cats, guard rails, the truck and the birds in view, each kind
 ## found by its own sighting, and the order to paint them in, far to near.
-import Billboards
+import Cutouts
 import BirdSighting
 import CatSighting
 import Clock
@@ -24,7 +24,7 @@ import World
 Scene := {
 	trees : List(TreeSighting),
 	towers : List(TowerSighting),
-	critters : List(Billboards.Billboard),
+	critters : List(Cutouts.Cutout),
 	cats : List(CatSighting),
 	rails : List(GuardRail.RailPoly),
 	truck : TruckSighting,
@@ -49,7 +49,7 @@ Scene := {
 			TowerSighting.in_view({ road, clock })
 				.take_first(TowerSighting.max_vis_towers.to_u64_wrap())
 		critters =
-			Billboards.billboards_in_view(CritterSighting.in_view(road))
+			Cutouts.cutouts_in_view(CritterSighting.in_view(road))
 				.take_first(CritterSighting.max_vis_critters.to_u64_wrap())
 		cats = CatSighting.in_view(view, speed).take_first(CatSighting.max_vis_cats.to_u64_wrap())
 		rails = RailSighting.in_view(road)

@@ -3,7 +3,7 @@
 ## its height 1. StillDraw scales it to its height in pixels, stands it on its feet,
 ## and mirrors it when asked. A critter in view is drawn from the emoji still
 ## for its codepoint.
-import Billboards
+import Cutouts
 import Distance
 import Camera
 import EmojiStills
@@ -75,7 +75,7 @@ StillDraw :: [].{
 
 	## A critter in view. An emoji faces left, so a critter facing right is
 	## its still mirrored. A critter less than a pixel tall isn't drawn.
-	draw : Billboards.Billboard, F64 -> List(Shapes.Shape)
+	draw : Cutouts.Cutout, F64 -> List(Shapes.Shape)
 	draw = |critter, cam_focal| {
 		on_screen = |height| Camera.project(
 			{ right: critter.right, forward: critter.forward, height },

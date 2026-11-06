@@ -1,39 +1,39 @@
-## A billboard is a critter in the rider's view, ready to draw: where it
+## A cutout is a critter in the rider's view, ready to draw: where it
 ## stands, how tall it is, which emoji it is and which way it faces.
-## Billboards decides which critters become billboards: one behind the camera,
+## Cutouts decides which critters become cutouts: one behind the camera,
 ## or too small to see, is left out.
 import Distance
 import Geom
 import Lens
 
-Billboards :: [].{
+Cutouts :: [].{
 
 	## Which way a critter faces on screen.
 	Facing : [FacesLeft, FacesRight]
 
-	Billboard : {
+	Cutout : {
 		right : F64,
 		forward : F64,
 		height : Distance,
 		codepoint : I64,
-		facing : Billboards.Facing,
+		facing : Cutouts.Facing,
 	}
 
 	## What became of a critter placed in the rider's view.
-	Sighting : [InView(Billboards.Billboard), BehindCamera, TooSmall]
+	Placement : [InView(Cutouts.Cutout), BehindCamera, TooSmall]
 
 	## A critter shorter than this many pixels is too small to draw.
 	min_critter_px : F64
 	min_critter_px = 2.0
 
 	## A critter of `height` at `at` in the rider's view.
-	sighting : {
+	placement : {
 		at : Geom.RiderPoint,
 		height : Distance,
 		codepoint : I64,
-		facing : Billboards.Facing,
-	} -> Billboards.Sighting
-	sighting = |{ at, height, codepoint, facing }|
+		facing : Cutouts.Facing,
+	} -> Cutouts.Placement
+	placement = |{ at, height, codepoint, facing }|
 		if at.forward <= Geom.near_plane {
 			BehindCamera
 		} else if ((height.to_metres() / at.forward) * Lens.focal) < min_critter_px {
@@ -48,22 +48,22 @@ Billboards :: [].{
 			})
 		}
 
-	## The billboards of the critters in view, in order.
-	billboards_in_view : List(Billboards.Sighting) -> List(Billboards.Billboard)
-	billboards_in_view = |sightings|
-		sightings.join_map(
+	## The cutouts of the critters in view, in order.
+	cutouts_in_view : List(Cutouts.Placement) -> List(Cutouts.Cutout)
+	cutouts_in_view = |placements|
+		placements.join_map(
 			|critter|
 				match critter {
-					InView(billboard) => [billboard]
+					InView(cutout) => [cutout]
 					BehindCamera => []
 					TooSmall => []
 				},
 		)
 
 	## How many critters were too small to draw.
-	too_small_count : List(Billboards.Sighting) -> I64
-	too_small_count = |sightings|
-		sightings
+	too_small_count : List(Cutouts.Placement) -> I64
+	too_small_count = |placements|
+		placements
 			.count_if(
 				|critter|
 					match critter {
@@ -75,9 +75,9 @@ Billboards :: [].{
 			.to_i64_wrap()
 }
 
-cow_sighting : { forward : F64, height : F64 } -> Billboards.Sighting
-cow_sighting = |{ forward, height }|
-	Billboards.sighting({
+cow_placement : { forward : F64, height : F64 } -> Cutouts.Placement
+cow_placement = |{ forward, height }|
+	Cutouts.placement({
 		at: { right: 2.5, forward },
 		height: Distance.metres(height),
 		codepoint: 128004,
@@ -85,9 +85,9 @@ cow_sighting = |{ forward, height }|
 	})
 
 # Which way a sighting went, whatever it carries.
-fate_of : Billboards.Sighting -> [Seen, BehindCamera, TooSmall]
-fate_of = |sighting|
-	match sighting {
+fate_of : Cutouts.Placement -> [Seen, BehindCamera, TooSmall]
+fate_of = |placement|
+	match placement {
 		InView(_) => Seen
 		BehindCamera => BehindCamera
 		TooSmall => TooSmall
@@ -109,7 +109,7 @@ cow_places = [
 ]
 
 expect
-	cow_places.map(|place| fate_of(cow_sighting(place)))
+	cow_places.map(|place| fate_of(cow_placement(place)))
 		== [
 			BehindCamera,
 			BehindCamera,
@@ -123,20 +123,20 @@ expect
 			Seen,
 		]
 
-billboard_of : Billboards.Sighting -> Billboards.Billboard
-billboard_of = |sighting|
-	match sighting {
-		InView(billboard) => billboard
+cutout_of : Cutouts.Placement -> Cutouts.Cutout
+cutout_of = |placement|
+	match placement {
+		InView(cutout) => cutout
 		BehindCamera => crash "this critter is in view"
 		TooSmall => crash "this critter is in view"
 	}
 
-near_cow : Billboards.Billboard
-near_cow = billboard_of(cow_sighting({ forward: 0.5, height: 1.0 }))
+near_cow : Cutouts.Cutout
+near_cow = cutout_of(cow_placement({ forward: 0.5, height: 1.0 }))
 
-left_bull : Billboards.Billboard
-left_bull = billboard_of(
-	Billboards.sighting({
+left_bull : Cutouts.Cutout
+left_bull = cutout_of(
+	Cutouts.placement({
 		at: { right: -1.5, forward: 50.0 },
 		height: Distance.metres(1.6),
 		codepoint: 128002,
@@ -156,8 +156,8 @@ expect left_bull.codepoint == 128002
 expect near_cow.facing == FacesRight
 expect left_bull.facing == FacesLeft
 
-expect Billboards.billboards_in_view(cow_places.map(cow_sighting)).len() == 4
-expect Billboards.too_small_count(cow_places.map(cow_sighting)) == 3
-expect cow_places.map(cow_sighting).len() == 10
+expect Cutouts.cutouts_in_view(cow_places.map(cow_placement)).len() == 4
+expect Cutouts.too_small_count(cow_places.map(cow_placement)) == 3
+expect cow_places.map(cow_placement).len() == 10
 
-expect Billboards.min_critter_px == 2.0
+expect Cutouts.min_critter_px == 2.0

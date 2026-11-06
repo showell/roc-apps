@@ -3,12 +3,12 @@
 ## end of the segment, and across it from the middle of the lane, in metres.
 import Across
 import Along
-import Billboards
+import Cutouts
 import Distance
 
 Pond :: [].{
 	PondPt : { along : Along, across : Across }
-	Duck : { at : Pond.PondPt, facing : Billboards.Facing }
+	Duck : { at : Pond.PondPt, facing : Cutouts.Facing }
 
 	water_outline : List(Pond.PondPt)
 	water_outline = [
