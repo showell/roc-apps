@@ -489,8 +489,8 @@ expect seg(0).trees.len() == 28
 expect seg(1).trees.len() == 16
 expect seg(6).trees.len() == 74
 expect seg(18).trees.len() == 14
-expect crossing_at(3).mid_across.to_metres() == 0.816
-expect crossing_at(18).mid_across.to_metres() == 0.816
+expect crossing_at(3).mid_across.to_metres() == 0.425
+expect crossing_at(18).mid_across.to_metres() == 0.425
 # Each cat starts behind a tree that is really there, and just past it.
 expect
 	[3, 9, 18].all(

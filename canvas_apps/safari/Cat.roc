@@ -47,16 +47,18 @@ Cat :: [].{
 	cat_beyond_tree : Distance
 	cat_beyond_tree = Distance.metres(2.0)
 
-	## Where the cat's head is across its body; it freezes with its head in the
-	## middle of the lane.
-	head_reach : Distance
-	head_reach = cat_height.times(0.48)
+	## How far ahead of its feet the frozen cat's head is. Its still's head runs
+	## from 0.02 to 0.49 of its height ahead of them, so this is the head's
+	## centre, and the cat freezes with its head over the middle of the road.
+	frozen_head_reach : Distance
+	frozen_head_reach = cat_height.times(0.25)
 
-	## How far the cat's hind feet land past the grass's edge.
-	land_hind_reach : Distance
-	land_hind_reach = cat_height.times(0.7)
+	## How far behind its feet the collapsed cat's hips lie: about 0.7 of its
+	## height in its still, with the hind feet themselves nearer 0.6.
+	collapsed_hip_reach : Distance
+	collapsed_hip_reach = cat_height.times(0.7)
 
-	## How far onto the far verge's grass the cat's landing reaches.
+	## How far onto the far verge's grass the collapsed cat's hips lie.
 	grass_toehold : Distance
 	grass_toehold = Distance.metres(0.3)
 
@@ -71,8 +73,8 @@ Cat :: [].{
 		{
 			along: tree.along.plus(cat_beyond_tree),
 			start_across: tree.across.plus(cat_behind_tree),
-			mid_across: Across.right_of_middle(head_reach),
-			end_across: far_verge.minus(land_hind_reach),
+			mid_across: Across.right_of_middle(frozen_head_reach),
+			end_across: far_verge.minus(collapsed_hip_reach),
 		}
 	}
 
@@ -96,8 +98,9 @@ Cat :: [].{
 	frozen_frames = 24
 
 	## The leap, frame by frame: how the cat looks, how much of the way from the
-	## middle of the lane to the far verge it has come, and how high it is. A rider
-	## at a steady speed sees every one of these frames.
+	## middle of the road to the far verge it has come, and how high its feet are.
+	## These are set by eye, not measured off the stills. A rider at a steady
+	## speed sees every one of these frames.
 	leap : List({ pose : Cat.Pose, place : { share : Fraction, lift : Distance } })
 	leap = [
 		{ pose: Coil, place: { share: Fraction.zero, lift: Distance.zero } },
@@ -217,19 +220,19 @@ expect the_cat.start_across.to_metres() == 4.5
 expect the_cat_by_a_far_tree.start_across.to_metres() == 9.5
 expect the_cat_by_a_far_tree.mid_across == the_cat.mid_across
 expect the_cat_by_a_far_tree.end_across == the_cat.end_across
-expect the_cat.mid_across.to_metres() == 0.816
+expect the_cat.mid_across.to_metres() == 0.425
 expect
 	[
 		(the_cat.end_across.to_metres(), -3.49),
-		(the_cat.mid_across.distance_from(the_cat.end_across).to_metres(), 4.306),
+		(the_cat.mid_across.distance_from(the_cat.end_across).to_metres(), 3.915),
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
 
 expect Cat.cat_height.to_metres() == 1.7
 expect Cat.cat_along.to_metres() == 105.0
 expect Cat.cat_behind_tree.to_metres() == 1.5
 expect Cat.cat_beyond_tree.to_metres() == 2.0
-expect Cat.head_reach.to_metres() == 0.816
-expect Cat.land_hind_reach.to_metres() == 1.19
+expect Cat.frozen_head_reach.to_metres() == 0.425
+expect Cat.collapsed_hip_reach.to_metres() == 1.19
 expect Cat.grass_toehold.to_metres() == 0.3
 expect Cat.crossing_steps == Steps.of(38)
 expect Cat.road_buffer.to_metres() == 3.0
@@ -308,17 +311,17 @@ lift_at = |steps_left| phase_of(steps_left).spot.lift.to_metres()
 expect
 	[
 		(37.5, 4.5),
-		(36.5, 4.1316),
-		(28.5, 1.1844),
-		(27.5, 0.816),
-		(4.5, 0.816),
-		(3.5, 0.816),
+		(36.5, 4.0925),
+		(28.5, 0.8325),
+		(27.5, 0.425),
+		(4.5, 0.425),
+		(3.5, 0.425),
 	].all(|(steps_left, want)| (across_at(steps_left) - want).abs() <= 0.000000000001)
 expect [37.5, 28.5, 27.5, 4.5, 3.5, 0.5].all(|steps_left| lift_at(steps_left) == 0.0)
 
 # In the air, it is on its way and off the ground.
 expect
-	[(2.5, -0.9064, 0.27), (1.5, -2.8441, 0.17)].all(
+	[(2.5, -1.141, 0.27), (1.5, -2.90275, 0.17)].all(
 		|(steps_left, across, lift)|
 			(across_at(steps_left) - across).abs() <= 0.000000000001
 				and (lift_at(steps_left) - lift).abs() <= 0.000000000001,
