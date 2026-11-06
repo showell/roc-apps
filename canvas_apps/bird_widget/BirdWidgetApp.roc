@@ -3,7 +3,7 @@
 ## each frame is worked out from that gap alone, so the flight plays forward and
 ## backward under the pointer. The picture stays still, looking up the road from
 ## a place short of the first tree, so the bird shrinks as it flies off. It is
-## drawn by Safari's own Tree and RocBird. Below it, a ruler shows the gap, and
+## drawn by Safari's own Tree and BirdDraw. Below it, a ruler shows the gap, and
 ## four lines of text say what BirdFlight makes of it.
 import game.Along
 import game.Animation
@@ -15,7 +15,7 @@ import game.Fraction
 import game.SceneDraw
 import game.Lens
 import game.Paint
-import game.RocBird
+import game.BirdDraw
 import game.Scenery
 import game.Screen
 import game.TreeDraw
@@ -142,7 +142,7 @@ tree_shapes = |tree| {
 bird_shapes : Distance -> List(Shapes.Shape)
 bird_shapes = |gap| {
 	instant = BirdFlight.instant_at(flight, gap)
-	RocBird.draw(
+	BirdDraw.draw(
 		{
 			right: instant.spot.across.to_metres(),
 			forward: forward_of(instant.spot.along),

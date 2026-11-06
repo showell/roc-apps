@@ -95,7 +95,7 @@ digraph system {
   subgraph cluster_view {
     label="the view";
     sky [label="the sky\nSky, Mountains", style=dashed];
-    drawing [label="the drawing\nItemDraw, CatDraw, RocBird, TreeDraw, ...", style=dashed];
+    drawing [label="the drawing\nItemDraw, CatDraw, BirdDraw, TreeDraw, ...", style=dashed];
     sightings [label="the sightings\nScene, CatSighting, BirdSighting, TreeSighting, ...", style=dashed];
   }
   app -> RideInstant;
@@ -732,7 +732,7 @@ A second critter settles that. The bird is Roc's logo, sitting on a treetop. As 
 New in this chapter:
 
 - Roc: record update, tags inside tags, closures, opening a `Try` by hand, `match` as an expression
-- Modules: `BirdFlight`, `BirdSighting`, `RocBird`, `BirdStills`
+- Modules: `BirdFlight`, `BirdSighting`, `BirdDraw`, `BirdStills`
 
 The modules around `BirdFlight`
 ```dot
@@ -741,11 +741,11 @@ digraph bird {
   BirdFlight [style=bold];
   World -> BirdFlight;
   BirdSighting -> BirdFlight;
-  BirdSighting -> RocBird;
+  BirdSighting -> BirdDraw;
   BirdSighting -> Animation;
-  RocBird -> BirdFlight;
-  RocBird -> BirdStills;
-  RocBird -> StillDraw;
+  BirdDraw -> BirdFlight;
+  BirdDraw -> BirdStills;
+  BirdDraw -> StillDraw;
   BirdStills -> BirdFlight;
   BirdStills -> Stills;
   StillDraw -> Stills;
@@ -753,7 +753,7 @@ digraph bird {
 }
 ```
 
-The family has the cat's shape. `BirdFlight` says what a bird does and imports nothing that draws it. `BirdSighting` finds it, `RocBird` draws it, and `BirdStills` holds its pictures. `Animation` is underneath, and most of what the bird does is ask `Animation` for something.
+The family has the cat's shape. `BirdFlight` says what a bird does and imports nothing that draws it. `BirdSighting` finds it, `BirdDraw` draws it, and `BirdStills` holds its pictures. `Animation` is underneath, and most of what the bird does is ask `Animation` for something.
 
 The only sum in `BirdFlight` is a tree's place plus the shortest hop. The rest is constants, tags and one timeline.
 
@@ -823,7 +823,7 @@ The stills are data too. Nested tags get checked all the way down, so a `match` 
 
 {{code BirdStills.pose_polys}}
 
-`RocBird.draw` hands that to `StillDraw.draw_still`, which is what a cow uses, and a bird's feet go through the same `Camera.project` as a tree's top. That's the drawing.
+`BirdDraw.draw` hands that to `StillDraw.draw_still`, which is what a cow uses, and a bird's feet go through the same `Camera.project` as a tree's top. That's the drawing.
 
 ### Finding a tree
 
@@ -1149,9 +1149,9 @@ From there to the screen is a pinhole camera, which is similar triangles. Dividi
 
 {{code Camera.project}}
 
-`RocBird.draw` calls it with a record built on the spot for the bird's feet:
+`BirdDraw.draw` calls it with a record built on the spot for the bird's feet:
 
-{{code RocBird.draw from "feet = Camera.project(" to "cam_focal,"}}
+{{code BirdDraw.draw from "feet = Camera.project(" to "cam_focal,"}}
 
 The focal length comes from a lens. `focal` is a value computed from other values, with no function in sight, and `field_of_view` is a `Turn`, so taking half of it needs no comment about radians. [check: whether a value like this inside a `.{ }` block is evaluated at compile time, as top-level values are.]
 

@@ -10,7 +10,7 @@ import Distance
 import lib.Brush
 import lib.Shapes
 
-RocBird :: [].{
+BirdDraw :: [].{
 
 	## A bird on screen, its feet where it is. Its still is unflipped: a bird
 	## from a left-hand tree crosses the road toward +x, the way its beak points.
@@ -58,7 +58,7 @@ expect
 # 110 m, is 50 px each way.
 expect {
 	first_corner = |bird|
-		match RocBird.draw(bird, 500.0) {
+		match BirdDraw.draw(bird, 500.0) {
 			[Poly(polygon), ..] => polygon.pts.take_first(2)
 			_ => crash "a bird draws polygons"
 		}
@@ -83,7 +83,7 @@ expect {
 			_ => crash "a bird's still is polygons"
 		}
 	drawn = [Side(WingsDown), Diving].join_map(
-		|pose| RocBird.draw({ ..level_bird, pose }, 500.0).map(fill_of),
+		|pose| BirdDraw.draw({ ..level_bird, pose }, 500.0).map(fill_of),
 	)
 	stills = List.concat(BirdStills.side_wings_down, BirdStills.diving)
 	drawn == stills.map(|poly| Flat(Brush.opaque(poly.color)))

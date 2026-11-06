@@ -37,7 +37,7 @@ The rest have been rewritten by hand.
 | `Paint.roc` | builders that turn screen points and colours into `Shapes.Shape`s, for the drawing modules |
 | `SafariFrame.roc` | a frame painted into pixels in Roc, for the proof tools below |
 | `RideInstant.roc` and the chapter modules | one instant of the ride, the world, the route, the rider, the animals, the scenery, and how each is drawn |
-| `RocBird.roc` | the bird, the first thing here that was never Codex, with `BirdFlight.roc`, `BirdSighting.roc` and `BirdStills.roc` |
+| `BirdDraw.roc` | the bird, the first thing here that was never Codex, with `BirdFlight.roc`, `BirdSighting.roc` and `BirdStills.roc` |
 | `Animation.roc` | what the cat and the bird share: a rule that turns where the rider is into a stage, and a timeline that turns a stage into an instant |
 | `CrossingReaction.roc` | what a segment's crossing does to the rider, the one place that matches on it for `Throttle` and `RideFocal` |
 | `gates/` | test code the game never runs: the tiers `fast.shale`, `run.shale` and `publish.shale`, and the lints; `CrossModuleExpects.roc`, the expects that need more than the module they check imports; the proof tools and the modules only they use. They reach the game's modules through the package `game.roc` |

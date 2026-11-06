@@ -21,7 +21,7 @@ import TreeDraw
 import TreeSighting
 import TruckDraw
 import TruckSighting
-import RocBird
+import BirdDraw
 import lib.Shapes
 
 SceneDraw :: [].{
@@ -135,7 +135,7 @@ draw_subject = |scene, { view, depth_key }| {
 		Cutout(place) => StillDraw.draw(thing_at(scene.cutouts, place), cam_focal)
 		Cat(place) => draw_cat(thing_at(scene.cats, place), cam_focal)
 		Truck => draw_truck(view, scene.truck)
-		Bird(place) => RocBird.draw(thing_at(scene.birds, place), cam_focal)
+		Bird(place) => BirdDraw.draw(thing_at(scene.birds, place), cam_focal)
 	}
 }
 

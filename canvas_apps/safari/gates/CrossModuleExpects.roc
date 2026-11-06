@@ -26,7 +26,7 @@ import game.RailSighting
 import game.Scene
 import game.RideInstant
 import game.Rider
-import game.RocBird
+import game.BirdDraw
 import game.Scenery
 import game.Speed
 import game.TowerSighting
