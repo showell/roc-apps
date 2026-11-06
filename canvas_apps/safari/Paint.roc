@@ -116,8 +116,10 @@ Paint :: [].{
 		$flat
 	}
 
+	## A polygon of one flat color, as a list of one shape, or an empty list with
+	## fewer than three corners. Nothing is painted here: this makes a value.
 	polygon : I64, List(Screen.Point) -> List(Shapes.Shape)
-	polygon = |color, ps| Shapes.polygon(flatten_screen(ps), Flat(Brush.opaque(color)))
+	polygon = |color, corners| Shapes.polygon(flatten_screen(corners), Flat(Brush.opaque(color)))
 
 	## A polygon shaded across its width, darker at its edges and lighter in
 	## its middle, or a solid one where it has no strength or is too narrow.
