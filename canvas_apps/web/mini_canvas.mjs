@@ -5,7 +5,8 @@
 // Ported from angry-gopher's games/driving/mini_canvas.ts, which does the same
 // for the driving game's cat, and extended to what the canvas apps paint with:
 // linear and concentric radial gradients, clip, the additive `lighter`
-// composite, global alpha, and images put through a scratch canvas. The real
+// composite, global alpha, images put through a scratch canvas, and lines of
+// type, whose letters come from fonts on this machine. The real
 // painter runs unchanged against it; this is a canvas, not a re-implementation
 // of any app.
 //
@@ -23,6 +24,7 @@
 //   const ctx = canvas.getContext('2d');   // ... paint ...
 //   writeFileSync('frame.png', canvas.toPNG());
 import zlib from 'node:zlib';
+import { faceOf } from './mini_font.mjs';
 
 const SS = 4;
 
@@ -118,12 +120,27 @@ class Context {
       globalCompositeOperation: 'source-over',
       imageSmoothingEnabled: true,
       clip: null,
+      font: '10px sans-serif',
+      textAlign: 'left',
+      textBaseline: 'alphabetic',
     };
     this.stack = [];
     this.subs = [];
     this.sub = null;
   }
 
+  get font() { return this.st.font; }
+  set font(v) { this.st.font = v; }
+  get textAlign() { return this.st.textAlign; }
+  set textAlign(v) {
+    if (v !== 'left' && v !== 'center') throw new Error(`mini_canvas: no text align ${v}`);
+    this.st.textAlign = v;
+  }
+  get textBaseline() { return this.st.textBaseline; }
+  set textBaseline(v) {
+    if (v !== 'alphabetic') throw new Error(`mini_canvas: no text baseline ${v}`);
+    this.st.textBaseline = v;
+  }
   get fillStyle() { return this.st.fillStyle; }
   set fillStyle(v) { this.st.fillStyle = v; }
   get globalAlpha() { return this.st.globalAlpha; }
@@ -175,6 +192,13 @@ class Context {
   fillRect(x, y, w, h) {
     this.paint([[this.apply(x, y), this.apply(x + w, y), this.apply(x + w, y + h), this.apply(x, y + h)]],
       this.paintOf(this.st.fillStyle));
+  }
+  // A line of type, as its letters' outlines. See mini_font.mjs for the face.
+  fillText(text, x, y) {
+    const { contours, width } = faceOf(this.st.font).outline(text);
+    const left = this.st.textAlign === 'center' ? x - width / 2 : x;
+    const polys = contours.map((contour) => contour.map(([gx, gy]) => this.apply(left + gx, y + gy)));
+    this.paint(polys, this.paintOf(this.st.fillStyle));
   }
   clip() {
     const mask = this.canvas.coverage(this.subs);

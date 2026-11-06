@@ -5,6 +5,11 @@
 # `capture_plot` draws a title, a status line and a frame count, and that was
 # the first thing a second movie asked for that could not be said at all.
 #
+# The games draw with this alphabet, on every painter. Words that should read
+# well, such as a tutorial widget's, are a `Text` shape in the viewer's own
+# typeface; `plotted` here is that shape for a painter that has no typefaces,
+# and `room_for` is the room such a line wants.
+#
 # **A LETTER IS A FEW STROKES, AND A STROKE IS A POLYGON** -- the same quad
 # `Shapes.line` builds -- so text needs no new shape, no new brush, and nothing
 # new on any wire. It draws identically on the GPU, on the canvas and in
@@ -46,6 +51,31 @@ Font :: [].{
 	## all want and each game was working out for itself.
 	centered : Str, F64, F64, F64, Brush.Rgba -> List(Shapes.Shape)
 	centered = |str, mid, y, size, colour| text(str, mid - width_of(str, size) / 2.0, y, size, colour)
+
+	## A line of type as strokes. The strokes' capitals stand as tall as a real
+	## typeface's do at the line's size.
+	plotted : Shapes.Line -> List(Shapes.Shape)
+	plotted = |{ text: words, x, y, size, align, color, .. }| {
+		cap_height = size * cap_height_share
+		top = y - cap_height
+		match align {
+			Left => text(words, x, top, cap_height, color)
+			Center => centered(words, x, top, cap_height, color)
+		}
+	}
+
+	## The width to leave for a line of `size`. A monospace letter is close to
+	## 0.6 of the size in every face a viewer's machine might pick, and a line of
+	## words in a sans serif comes out narrower.
+	room_for : Str, F64 -> F64
+	room_for = |words, size| words.to_utf8().len().to_f64() * size * widest_letter_share
+
+	widest_letter_share : F64
+	widest_letter_share = 0.62
+
+	# A capital's height as a share of the size, in the common sans serifs.
+	cap_height_share : F64
+	cap_height_share = 0.72
 
 	# One glyph's strokes, placed and thickened.
 	glyph : U8, F64, F64, F64, F64, Brush.Rgba -> List(Shapes.Shape)
@@ -306,3 +336,29 @@ Font :: [].{
 			[]
 		}
 }
+
+## A line of type at 50 px, whose capitals stand 36 px tall.
+sample_line : Shapes.Line
+sample_line = {
+	text: "Hi",
+	x: 100.0,
+	y: 200.0,
+	size: 50.0,
+	face: Prose,
+	align: Left,
+	color: Brush.opaque(0x202020),
+}
+
+expect
+	Font.plotted(sample_line)
+		== Font.text("Hi", 100.0, 164.0, 36.0, Brush.opaque(0x202020))
+expect
+	Font.plotted({ ..sample_line, align: Center })
+		== Font.centered("Hi", 100.0, 164.0, 36.0, Brush.opaque(0x202020))
+
+# A line's face is for a real typeface, and the strokes have only one.
+expect Font.plotted({ ..sample_line, face: Code }) == Font.plotted(sample_line)
+
+expect Font.room_for("", 50.0) == 0.0
+expect Font.room_for("Hi", 50.0) == 62.0
+expect Font.room_for("Hi", 100.0) == 124.0

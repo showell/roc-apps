@@ -39,6 +39,7 @@ which builds every app and runs it headless.
     node canvas_apps/web/page_check.mjs snake
     KEYS=3:Space DRAG=200,100,200,500 node canvas_apps/web/page_check.mjs pong
     node canvas_apps/web/camera_check.mjs
+    node canvas_apps/web/text_check.mjs raster
 
 `ARCHITECTURE.md` says how an app runs, and what isn't Roc.
 
@@ -50,7 +51,7 @@ which builds every app and runs it headless.
 | `snake/main.roc` | the app on roc-ray, reaching the runner as `native.CanvasAppRunner` |
 | `snake/web.roc` | the app as a page, on `web/platform/`, through `lib.WasmApp` |
 | `lib/` | a package every app shares: `CanvasApp` `WasmApp` `Shapes` `Brush` `Input` `Keys` `Mouse` `Math` `Color` `Camera` `Font` `Random` `Trig` `BrushGlsl` `View` |
-| `web/` | the page's end: the wasm platform and host, `build.zig` and `options.zig` (the host object, rebuilt by every page build), `canvas_app_runner.js`, `shapes_canvas.js`, `page_check.mjs`, `mini_canvas.mjs`, `camera_check.mjs` |
+| `web/` | the page's end: the wasm platform and host, `build.zig` and `options.zig` (the host object, rebuilt by every page build), `canvas_app_runner.js`, `shapes_canvas.js`, `page_check.mjs`, `mini_canvas.mjs`, `mini_font.mjs`, `camera_check.mjs`, `text_check.mjs` |
 | `native/` | roc-ray's end, as a package: `CanvasAppRunner.roc` |
 | `widget_kit/` | what the tutorial's widgets share, as a package: `ScrubWidget` turns a dragged pointer into one number and lays out the picture, the ruler and the text. It sits above `lib/` and Safari's `game` package, because it speaks in `Fraction`s and no other app wants it |
 
@@ -109,6 +110,13 @@ a finger means: on such a canvas it's a drag (`touch-action: none`), and on any
 other canvas it scrolls the page. `web/page_check.mjs` measures whether the
 pointer changes what the app draws, and fails the build if the page says otherwise.
 
+**A page with words to read sets `sharp: true`** in `window.SHOW`, as every widget
+does. Its canvas then keeps one pixel for each pixel of the screen, whatever the
+page's scale and the screen's density, and the runner hands `shapes_canvas.js`
+the scale. The other pages keep a canvas of the app's own size, which spares a
+game four times the fill on a high-density screen. `DENSITY=2` gives
+`page_check.mjs` such a screen.
+
 **The keys an app may read are a closed set of twenty** (`lib/Keys.roc`): the
 four arrows, `W` `A` `S` `D` `Q` `E` `C` `J` `P` `R`, Space, Enter, and `1`–`4`.
 Adding one touches four places — `Keys.Key` and `Keys.bit`, `KEY_BIT` in
@@ -166,7 +174,7 @@ program = WasmApp.program(SnakeApp.canvas_app)          # snake/web.roc
 
 ## What a frame is
 
-A list of `Shapes.Shape` in the app's own coordinates. Five shapes and two
+A list of `Shapes.Shape` in the app's own coordinates. Six shapes and two
 marks:
 
 | | |
@@ -176,6 +184,7 @@ marks:
 | `Rect` | a box and a fill |
 | `Pieces` | the triangles of one concave polygon, and a fill |
 | `Image` | `cols × rows` of `Brush.Rgba`, stretched over a box without smoothing |
+| `Text` | a line of words, its baseline, a size, `Prose` or `Code`, `Left` or `Center`, and a colour |
 | `Blend` | `Over` or `Add` |
 | `View` | `Screen`, or `World` with a camera's four settings |
 
@@ -194,7 +203,15 @@ coordinates, which is what lets every painter shade it the same way.
 
 A thick line, a rounded rectangle and a ring are polygons, and `lib/Shapes.roc`
 builds them, so no painter has to learn a stroke. `lib/Font.roc` draws a string
-out of the same quads.
+out of the same quads, which is how the games write.
+
+`Text` is for words that should read well, and the widgets use it. The canvas
+sets it with `fillText` in the viewer's own fonts, a sans serif for `Prose` and a
+monospace for `Code`, so a page loads no font. The viewer's machine measures the
+line, so Roc can't know its width: `Font.room_for` is the room to leave, and a
+line that must sit in the middle says `Center`. The native runner draws
+`Font.plotted`, the same line as strokes. `ShapesPixels`, which paints only what
+the ride draws, refuses one.
 
 ## Input
 
@@ -314,8 +331,8 @@ if the picture never changed.
 With `SHOT=<file>.png`, every canvas is also a real one: `mini_canvas.mjs`, a
 dependency-free software rasterizer for exactly the canvas calls `shapes_canvas.js`
 and `canvas_app_runner.js` make — paths, nonzero fill, linear and concentric
-radial gradients, clip, the additive composite, images — supersampled for
-anti-aliasing, with PNGs through node's own zlib. The real painter runs
+radial gradients, clip, the additive composite, images, lines of type —
+supersampled for anti-aliasing, with PNGs through node's own zlib. The real painter runs
 unchanged against it, and it throws on anything outside that list rather than
 painting something plausible. Painting is slow next to recording, so only the
 last four callbacks paint; each of the runner's draws clears first, so the last
@@ -329,6 +346,14 @@ every run of the same build, so a changed picture is a changed program.
 matrix it builds against the same map written the geometric way,
 `screen = zoom · R(rotation) · (world − target) + offset`, at four cameras and
 four points.
+
+`text_check.mjs` runs on every page build. It checks what `shapes_canvas.js` asks
+a canvas for a line of type, and how a scale reaches the canvas's matrix. For a
+widget it also sets type on `mini_canvas.mjs` and looks at the ink. A shot's type
+comes from `mini_font.mjs`, which reads a sans serif and a monospace from
+`/usr/share/fonts` to stand in for the viewer's, so a widget's page build needs
+`fonts-liberation` and `fonts-dejavu-core` installed, and stops without them. Its
+letters are close to a browser's in size and color, not the same letters.
 
 An app's `expect`s are the third check, and the compiler runs them:
 

@@ -18,9 +18,7 @@ import game.Scenery
 import game.Speed
 import game.Tour
 import game.World
-import lib.Brush
 import lib.CanvasApp
-import lib.Font
 import lib.Input
 import lib.Mouse
 import lib.Shapes
@@ -268,13 +266,13 @@ pigs =
 				color: gaze_pig_color,
 			}),
 		],
-		Font.text(
-			"the pig",
-			screen_x(gaze_pig.along) - 78.0,
-			screen_y(gaze_pig.across) + 8.0,
-			12.0,
-			Brush.opaque(0x202020),
-		),
+		[
+			ScrubWidget.label({
+				text: "the pig",
+				x: screen_x(gaze_pig.along) - 62.0,
+				y: screen_y(gaze_pig.across) + 20.0,
+			}),
+		],
 	].join()
 
 ## The way the rider looks: as far as a pig can catch the eye, turned from the

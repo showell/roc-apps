@@ -15,6 +15,9 @@
 //
 //   window.SHOW = { wasm: 'snake.wasm', loading: '…', readsPointer: true }
 //
+// A page that sets `sharp: true` keeps one canvas pixel for each pixel of the
+// screen, however the page has scaled the canvas, so its type stays crisp.
+//
 // A page that opens partway lists the words its address may name, as
 // `opensAt: ['trees', 'grass']`, and `?start=grass` opens it at the second.
 //
@@ -275,7 +278,11 @@ async function main(show) {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
-  canvas.style.cssText = 'background:#06080f;max-width:100%;max-height:88vh';
+  // A sharp canvas's own size follows the screen, so its place on the page is
+  // said outright: the same one the other canvases get from their own size.
+  canvas.style.cssText = 'background:#06080f;' + (show.sharp
+    ? `width:min(${width}px,100%,${(88 * width) / height}vh);height:auto;aspect-ratio:${width}/${height}`
+    : 'max-width:100%;max-height:88vh');
   // A finger on a canvas that reads the pointer is a drag. On any other canvas
   // it is the reader scrolling the page.
   canvas.style.touchAction = show.readsPointer ? 'none' : 'auto';
@@ -301,13 +308,27 @@ async function main(show) {
     }
   };
 
+  // How many canvas pixels the app's pixel takes this frame. Setting a canvas's
+  // size clears it and its transform, so only a change of size sets it.
+  const matchScreen = () => {
+    const across = Math.round(canvas.getBoundingClientRect().width * (window.devicePixelRatio ?? 1));
+    if (across > 0 && across !== canvas.width) {
+      canvas.width = across;
+      canvas.height = Math.round((across * height) / width);
+    }
+    const scale = canvas.width / width;
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    return scale;
+  };
+
   const draw = (now) => {
+    const scale = show.sharp ? matchScreen() : 1;
     // The canvas keeps what was drawn, so a frame starts from nothing —
     // as the native runner's clear does.
     ctx.globalCompositeOperation = 'source-over';
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, width, height);
-    ShapesCanvas.paint(ctx, game.frame());
+    ShapesCanvas.paint(ctx, game.frame(), scale);
     drawSpeaker(ctx, width, height, toneCount, ringing, now);
   };
 

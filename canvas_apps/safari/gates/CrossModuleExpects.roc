@@ -67,7 +67,7 @@ polygon_of : Shapes.Shape -> { pts : List(F64), fill : Brush.Fill }
 polygon_of = |shape|
 	match shape {
 		Poly(polygon) => polygon
-		Pieces(_) | Disc(_) | Rect(_) | Blend(_) | View(_) | Image(_) =>
+		Pieces(_) | Disc(_) | Rect(_) | Blend(_) | View(_) | Image(_) | Text(_) =>
 			crash "CrossModuleExpects.polygon_of: this shape is not a polygon"
 	}
 

@@ -162,7 +162,11 @@ cell_padding : F64
 cell_padding = 2.0
 
 name_size : F64
-name_size = 10.0
+name_size = 13.0
+
+## From the top of a still's name to its baseline.
+name_rise : F64
+name_rise = 10.0
 
 ## The height that lets every still of a row fit a cell `cell_width` wide. A row
 ## shares one height, so a pose keeps its true size beside the others.
@@ -315,30 +319,30 @@ read_out = |still| [
 ]
 
 read_out_size : F64
-read_out_size = 16.0
+read_out_size = 18.0
 
-read_out_line : Str, U64 -> List(Shapes.Shape)
+read_out_line : Str, U64 -> Shapes.Shape
 read_out_line = |text, row|
-	Font.text(
+	Text({
 		text,
-		ScrubWidget.side_margin,
-		28.0 + row.to_f64() * 26.0,
-		read_out_size,
-		ink,
-	)
+		x: ScrubWidget.side_margin,
+		y: 42.0 + row.to_f64() * 26.0,
+		size: read_out_size,
+		face: Code,
+		align: Left,
+		color: ink,
+	})
 
 hint_lines : List(Str)
 hint_lines = ["Click a still below.", "Click the large one", "to outline its polygons."]
 
-hint_line : Str, U64 -> List(Shapes.Shape)
+hint_line : Str, U64 -> Shapes.Shape
 hint_line = |text, row|
-	Font.text(
+	ScrubWidget.label({
 		text,
-		ScrubWidget.side_margin,
-		128.0 + row.to_f64() * 18.0,
-		name_size,
-		ink,
-	)
+		x: ScrubWidget.side_margin,
+		y: 138.0 + row.to_f64() * 18.0,
+	})
 
 ## The lines round one polygon. A still repeats a point here and there, and the
 ## line between two such points is empty.
@@ -386,22 +390,24 @@ picture = |model|
 				fill: ScrubWidget.flat(picture_color),
 			}),
 		],
-		read_out(model.large_still).map_with_index(read_out_line).join(),
-		hint_lines.map_with_index(hint_line).join(),
+		read_out(model.large_still).map_with_index(read_out_line),
+		hint_lines.map_with_index(hint_line),
 		large_shapes(model),
 	].join()
 
 ## One small still with its pose's name under it.
 cell_shapes : StillCell -> List(Shapes.Shape)
 cell_shapes = |{ still, area, anchor }|
-	StillDraw.draw_still(anchor, still.polygons).concat(
-		Font.centered(
-			still.name,
-			area.left + area.width / 2.0,
-			area.top + cell_name_top,
-			name_size,
-			ink,
-		),
+	StillDraw.draw_still(anchor, still.polygons).append(
+		Text({
+			text: still.name,
+			x: area.left + area.width / 2.0,
+			y: area.top + cell_name_top + name_rise,
+			size: name_size,
+			face: Prose,
+			align: Center,
+			color: ink,
+		}),
 	)
 
 ## The grid never changes, so it's worked out once, when the widget is built.
@@ -547,9 +553,9 @@ expect cells.take_first(7).any(is_full_width)
 expect cells.drop_first(7).any(is_full_width)
 expect !is_full_width(first_cell)
 
-# Each name fits its cell, and the longest one fits with little to spare.
-expect cells.all(|{ still, area, .. }| Font.width_of(still.name, name_size) <= area.width)
-expect Font.width_of("Collapse", name_size) > 592.0 / 7.0 - name_size
+# Each name fits its cell, and one much longer would not.
+expect cells.all(|{ still, area, .. }| Font.room_for(still.name, name_size) <= area.width)
+expect Font.room_for("Collapse, and then some", name_size) > first_cell.area.width
 
 # The words all fit left of the large still.
 expect
@@ -557,14 +563,14 @@ expect
 		|{ still, .. }|
 			read_out(still).all(
 				|line| {
-					line_end = ScrubWidget.side_margin + Font.width_of(line, read_out_size)
+					line_end = ScrubWidget.side_margin + Font.room_for(line, read_out_size)
 					line_end <= large_area.left
 				},
 			),
 	)
 expect
 	hint_lines.all(
-		|line| ScrubWidget.side_margin + Font.width_of(line, name_size) <= large_area.left,
+		|line| ScrubWidget.side_margin + Font.room_for(line, ScrubWidget.label_size) <= large_area.left,
 	)
 
 ## The large area with its far edges inside it, which a still may touch.

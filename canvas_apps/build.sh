@@ -64,6 +64,13 @@ cp "$HERE/web/shapes_canvas.js" "$HERE/web/canvas_app_runner.js" "$OUT/"
 echo "opt $opt" >> "$OUT/BUILT"
 cp "$HERE/$name/page.html" "$OUT/index.html"
 
+# A widget's words are real type, so its shot needs the fonts mini_font.mjs
+# names, and its check looks at the ink. Other pages paint no type.
+case "$name" in
+    *_widget) node "$HERE/web/text_check.mjs" raster ;;
+    *) node "$HERE/web/text_check.mjs" ;;
+esac
+
 # **EVERY BUILD IS CHECKED AND PHOTOGRAPHED.** page_check runs the page as a
 # browser would, with the keys and pointer <app>/shot.env scripts, and saves
 # its last frame beside the page as shot.png -- the picture the landing page

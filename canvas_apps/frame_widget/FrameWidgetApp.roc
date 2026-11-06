@@ -24,7 +24,6 @@ import game.Tour
 import game.ViewYaw
 import lib.Brush
 import lib.CanvasApp
-import lib.Font
 import lib.Input
 import lib.Mouse
 import lib.Shapes
@@ -268,15 +267,16 @@ button = |area, label|
 			h: area.height,
 			fill: ScrubWidget.flat(0x303030),
 		}),
-	].concat(
-		Font.centered(
-			label,
-			area.left + area.width / 2.0,
-			area.top + 21.0,
-			22.0,
-			Brush.opaque(0xf7f5f0),
-		),
-	)
+		Text({
+			text: label,
+			x: area.left + area.width / 2.0,
+			y: area.top + area.height / 2.0 + 8.0,
+			size: 24.0,
+			face: Prose,
+			align: Center,
+			color: Brush.opaque(0xf7f5f0),
+		}),
+	]
 
 ## One layer on from `model`, round to the first after the last.
 one_layer_on : FrameWidgetApp.Model -> FrameWidgetApp.Model
@@ -363,15 +363,17 @@ status_lines = |{ layers_on }| {
 	["Shapes so far: ${so_far} of ${total}", "Added: ${layer_name(added)}"]
 }
 
-status_line : Str, U64 -> List(Shapes.Shape)
+status_line : Str, U64 -> Shapes.Shape
 status_line = |text, row|
-	Font.text(
+	Text({
 		text,
-		24.0,
-		620.0 + row.to_f64() * 36.0,
-		20.0,
-		Brush.opaque(0x202020),
-	)
+		x: 24.0,
+		y: 640.0 + row.to_f64() * 36.0,
+		size: 22.0,
+		face: Code,
+		align: Left,
+		color: Brush.opaque(0x202020),
+	})
 
 ## The layers on, in the game's paint order.
 picture : List(Layer) -> List(Shapes.Shape)
@@ -386,7 +388,7 @@ frame_at = |model|
 		[View(Screen), panel],
 		button(back_area, "Back"),
 		button(next_area, "Next"),
-		status_lines(model).map_with_index(status_line).join(),
+		status_lines(model).map_with_index(status_line),
 	].join()
 
 # The step is the one the book holds, and the ride's own record of it.

@@ -8,9 +8,7 @@ import game.Distance
 import game.Fraction
 import game.Scenery
 import game.World
-import lib.Brush
 import lib.CanvasApp
-import lib.Font
 import lib.Shapes
 import lib.Trig
 import widget.ScrubWidget
@@ -236,13 +234,7 @@ crossing_mark = |segment|
 ## A coloured spot and the word for it, in the picture's empty corner.
 legend_row : { y : F64, color : I64, word : Str } -> List(Shapes.Shape)
 legend_row = |{ y, color, word }|
-	Font.text(
-		word,
-		482.0,
-		y - 6.0,
-		12.0,
-		Brush.opaque(0x202020),
-	).prepend(
+	[
 		Disc({
 			x: 470.0,
 			y,
@@ -250,7 +242,8 @@ legend_row = |{ y, color, word }|
 			fill: ScrubWidget.flat(color),
 			clip: Anywhere,
 		}),
-	)
+		ScrubWidget.label({ text: word, x: 482.0, y: y + 5.0 }),
+	]
 
 legend : List(Shapes.Shape)
 legend =

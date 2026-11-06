@@ -14,6 +14,7 @@
 //   DRAG=80,80,500,500 …                               hold and drag the pointer
 //   SHOT=snake.png …                                   and save the last frame
 //   SEARCH='?start=trees' …                            open at this address
+//   DENSITY=2 …                                        on a screen of this density
 //
 // **A CHECK THAT CANNOT PRESS A KEY CHECKS THE ATTRACT SCREEN.** Breakout
 // waits in Ready until SPACE, so without KEYS this ran 31 frames of a game
@@ -121,7 +122,7 @@ const recorder = (real) => new Proxy({}, {
       };
     return (...a) => {
       calls++; mark(k, a);
-      if (k === "fill" || k === "fillRect") { fills++; if (live) liveFills++; }
+      if (k === "fill" || k === "fillRect" || k === "fillText") { fills++; if (live) liveFills++; }
       return real && live ? real[k](...a) : undefined;
     };
   },
@@ -145,20 +146,23 @@ const el = (tag) => {
   const real = mini && tag === "canvas" ? mini.createCanvas(1, 1) : null;
   if (real && !mainCanvas) mainCanvas = real;
   let width = 0, height = 0, context = null;
+  // The page's layout keeps the size the canvas was first given, whatever a
+  // sharp page later sets its pixels to.
+  const box = { left: 0, top: 0, width: 0, height: 0 };
   const heard = {};
   const node = {
     style: {}, textContent: "", appendChild() {}, remove() {},
     get width() { return width; },
-    set width(v) { width = v; if (real) real.width = v; },
+    set width(v) { width = v; box.width ||= v; if (real) real.width = v; },
     get height() { return height; },
-    set height(v) { height = v; if (real) real.height = v; },
+    set height(v) { height = v; box.height ||= v; if (real) real.height = v; },
     getContext: () => (context ??= recorder(real ? real.getContext("2d") : null)),
     // What drawImage reads out of a scratch canvas.
     pixel: (x, y) => real.pixel(x, y),
     addEventListener: (kind, fn) => { (heard[kind] ??= []).push(fn); },
     fire: (kind, event) => (heard[kind] ?? []).forEach((fn) => fn(event)),
     setPointerCapture: (id) => { captured = id; },
-    getBoundingClientRect: () => ({ left: 0, top: 0, width, height }),
+    getBoundingClientRect: () => box,
   };
   if (tag === "canvas") pageCanvas ??= node;
   return node;
@@ -197,6 +201,7 @@ const sandbox = {
   console, performance: { now: () => virtualNow }, WebAssembly, fetch: async () => ({}), TextDecoder,
   document: document_, window: {},
   location: { search: process.env.SEARCH ?? "" }, URLSearchParams,
+  devicePixelRatio: Number(process.env.DENSITY ?? 1),
   requestAnimationFrame: (fn) => {
     if (frames++ >= limit) { parked = fn; return; }
     setImmediate(() => {
@@ -224,8 +229,9 @@ const press = (kind, code) =>
 // by it, and the window hears every one.
 const point = (kind, fields) => {
   const event = { pointerId: 1, pointerType: "mouse", button: -1, buttons: 0, ...fields, preventDefault() {} };
-  const over = event.clientX >= 0 && event.clientX < pageCanvas.width
-    && event.clientY >= 0 && event.clientY < pageCanvas.height;
+  const box = pageCanvas.getBoundingClientRect();
+  const over = event.clientX >= 0 && event.clientX < box.width
+    && event.clientY >= 0 && event.clientY < box.height;
   if (over || captured === event.pointerId) pageCanvas.fire(kind, event);
   (listeners[kind] ?? []).forEach((fn) => fn(event));
   if (kind !== "pointerdown" && kind !== "pointermove" && captured === event.pointerId) captured = null;

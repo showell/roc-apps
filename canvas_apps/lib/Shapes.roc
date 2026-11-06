@@ -69,7 +69,31 @@ Shapes :: [].{
 		# THING** -- a tileset is not re-sent sixty times a second -- and it
 		# still wants a handle, and a way to load one, which is the wall.
 		Image({ x : F64, y : F64, w : F64, h : F64, cols : U64, rows : U64, pixels : List(Brush.Rgba) }),
+		# A line of words set in a real typeface, for a painter that has one.
+		# Font.plotted gives the strokes of the same line to one that hasn't.
+		Text(Shapes.Line),
 	]
+
+	# A line of type. `y` is its baseline, `x` its left end or its middle as
+	# `align` says, and `size` the height of its em square, as in CSS. The
+	# viewer's machine chooses the typeface and measures the words, so nothing
+	# in Roc knows how wide the line came out: Font.room_for is the room to
+	# leave for it.
+	Line : {
+		text : Str,
+		x : F64,
+		y : F64,
+		size : F64,
+		face : Shapes.Face,
+		align : Shapes.Align,
+		color : Brush.Rgba,
+	}
+
+	# `Prose` is the viewer's own sans serif, for words. `Code` is a monospace,
+	# for what a program says.
+	Face : [Prose, Code]
+
+	Align : [Left, Center]
 
 	# `Over` paints; `Add` lights.
 	Mode : [Over, Add]
@@ -192,6 +216,8 @@ Shapes :: [].{
 						},
 					})
 				}
+				# Type keeps its letterforms, so only its place moves.
+				Text(t) => Text({ ..t, x: axis + (t.x - axis) * k })
 			},
 	)
 
@@ -503,3 +529,19 @@ Shapes :: [].{
 		$out
 	}
 }
+
+## A line of type 100 px from the axis at 0.
+line_of_type : Shapes.Line
+line_of_type = {
+	text: "Hi",
+	x: 100.0,
+	y: 20.0,
+	size: 16.0,
+	face: Code,
+	align: Center,
+	color: Brush.opaque(0x202020),
+}
+
+expect Shapes.squash_x([Text(line_of_type)], 0.0, 0.5) == [Text({ ..line_of_type, x: 50.0 })]
+expect Shapes.squash_x([Text(line_of_type)], 0.0, -1.0) == [Text({ ..line_of_type, x: -100.0 })]
+expect Shapes.squash_x([Text(line_of_type)], 100.0, 0.5) == [Text(line_of_type)]
