@@ -1014,19 +1014,19 @@ The schedule is a straight line, and a pure function of the rider's progress, de
 
 {{code Truck.scheduled_position}}
 
-Its one caller is the truck's step function, the same shape as the rider's. `NextTurn` is a tag union with a payload on one side, so the only way to read a `distance` is to be inside the branch where there is one:
+Its one caller is the truck's step function, the same shape as the rider's. `NextBend` is a tag union with a payload on one side, so the only way to read a `distance` is to be inside the branch where there is one:
 
-{{code Truck.advance from "schedule = scheduled_position(" to "NoTurnAhead => advance_on_schedule(truck, schedule)"}}
+{{code Truck.advance from "schedule = scheduled_position(" to "NoBendAhead => advance_on_schedule(truck, schedule)"}}
 
 And that's called from `RideInstant.next`, above, with the rider's distance as the only thing the truck knows of the rider. Nothing in `Rider` imports `Truck`, and nothing in `Truck` imports `Rider`. The chase is one record literal in `RideInstant`.
 
 Finding the next turn shows a list pattern. `[]` is the end of the route, and `[segment, .. as later_segments]` takes the first segment and names the rest. Recursion walks the list, carrying where the current segment starts. Only `Truck` and `Paint` use a list pattern. Elsewhere the same walk is a `fold`.
 
-{{code Truck.next_turn_on from "match segments {" to "next_turn_on(later_segments, { route_position, segment_start: segment_end })"}}
+{{code Truck.next_bend_on from "match segments {" to "next_bend_on(later_segments, { route_position, segment_start: segment_end })"}}
 
 It's called through a smaller function, which supplies the 0 so nobody else has to:
 
-{{code Truck.next_turn}}
+{{code Truck.next_bend}}
 
 Then the two ways to take a step. Both sit below the block, private, and both are arithmetic on `Speed` by name. `target_speed.max(...)` keeps braking from undershooting, and `speed < truck.speed` is the whole of what turns on the brake lights. They're on while the truck is slowing down, and they go off when it's settled at the speed for the turn, even with the turn still ahead.
 
