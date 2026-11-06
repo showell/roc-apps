@@ -201,8 +201,8 @@ left_tree : Scenery.Tree
 left_tree = tree_at(100.0, -6.0)
 
 ## A tree on the far side too near to fly to, and two far enough.
-trees : List(Scenery.Tree)
-trees = [
+sample_trees : List(Scenery.Tree)
+sample_trees = [
 	left_tree,
 	tree_at(100.0, 6.0),
 	tree_at(140.0, -6.0),
@@ -210,8 +210,8 @@ trees = [
 	tree_at(180.0, 6.0),
 ]
 
-flight : BirdFlight.Flight
-flight = { from: left_tree, to: { ..tree_at(140.0, 6.0), height: Distance.metres(12.0) } }
+sample_flight : BirdFlight.Flight
+sample_flight = { from: left_tree, to: { ..tree_at(140.0, 6.0), height: Distance.metres(12.0) } }
 
 ## A left and a right tree at each of `alongs`.
 pairs_at : List(F64) -> List(Scenery.Tree)
@@ -238,7 +238,7 @@ chosen_along = |choices|
 		Sits(_) => []
 	}
 
-expect chosen_along(trees) == [140.0, 6.0]
+expect chosen_along(sample_trees) == [140.0, 6.0]
 expect chosen_along([left_tree, tree_at(124.0, 6.0)]) == []
 expect chosen_along([left_tree, tree_at(125.0, 6.0)]) == [125.0, 6.0]
 expect chosen_along([left_tree, tree_at(140.0, -6.0)]) == []
@@ -266,17 +266,17 @@ expect
 	].all(|(got, want)| (got - want).abs() <= 0.000000001)
 
 expect {
-	spot = BirdFlight.instant_at(flight, Distance.metres(100.0)).spot
+	spot = BirdFlight.instant_at(sample_flight, Distance.metres(100.0)).spot
 	spot.along.to_metres() == 100.0 and spot.across.to_metres() == -6.0 and spot.lift == 10.0
 }
 
 expect {
-	spot = BirdFlight.instant_at(flight, Distance.zero).spot
+	spot = BirdFlight.instant_at(sample_flight, Distance.zero).spot
 	spot.along.to_metres() == 140.0 and spot.across.to_metres() == 6.0 and spot.lift == 12.0
 }
 
 expect {
-	spot = BirdFlight.instant_at(flight, halfway_gap).spot
+	spot = BirdFlight.instant_at(sample_flight, halfway_gap).spot
 	[
 		(spot.along.to_metres(), 120.0),
 		(spot.across.to_metres(), 0.0),
@@ -284,8 +284,8 @@ expect {
 	].all(|(got, want)| (got - want).abs() <= 0.000000001)
 }
 
-expect BirdFlight.instant_at(flight, Distance.metres(100.0)).pose == Perched
-expect BirdFlight.instant_at(flight, Distance.zero).pose == Perched
+expect BirdFlight.instant_at(sample_flight, Distance.metres(100.0)).pose == Perched
+expect BirdFlight.instant_at(sample_flight, Distance.zero).pose == Perched
 
 expect
 	[
@@ -300,5 +300,5 @@ expect
 		(0.95, Diving),
 	].all(
 		|(progress, pose)|
-			BirdFlight.flight_timeline(flight).at_beat(Beat.of(progress)).pose == pose,
+			BirdFlight.flight_timeline(sample_flight).at_beat(Beat.of(progress)).pose == pose,
 	)

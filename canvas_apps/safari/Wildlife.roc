@@ -5,6 +5,7 @@ import Across
 import Along
 import Angle
 import Distance
+import Fraction
 import Scenery
 
 Wildlife :: [].{
@@ -17,8 +18,8 @@ Wildlife :: [].{
 	adult_rail_buffer = Distance.metres(1.5)
 
 	## A baby's height, as a fraction of its parent's.
-	baby_ratio : F64
-	baby_ratio = 0.5
+	baby_ratio : Fraction
+	baby_ratio = Fraction.of(0.5)
 
 	## How far past the bend the baby stands.
 	baby_beyond : Distance
@@ -67,7 +68,7 @@ Wildlife :: [].{
 						along: bend_along.plus(baby_beyond),
 						across: Across.middle,
 						codepoint: species.codepoint,
-						height: species.adult_height.times(baby_ratio),
+						height: species.adult_height.times(baby_ratio.to_f64()),
 						facing,
 					},
 				]
@@ -92,7 +93,7 @@ expect
 		== { codepoint: 129423, adult_height: Distance.metres(2.2) }
 
 expect Wildlife.adult_rail_buffer.to_metres() == 1.5
-expect Wildlife.baby_ratio == 0.5
+expect Wildlife.baby_ratio.to_f64() == 0.5
 expect Wildlife.baby_beyond.to_metres() == 14.0
 
 ## An animal and its baby at each of four bends, the first and third turning

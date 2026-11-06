@@ -32,7 +32,7 @@ BackdropPixels :: [].{
 					grass_pixel
 				} else {
 					t = Brush.clamp01(y / Screen.horizon_y.to_f64())
-					stop = Backdrop.sky_top_stop
+					stop = Backdrop.sky_top_stop.to_f64()
 					color = if t <= stop {
 						top_color
 					} else {

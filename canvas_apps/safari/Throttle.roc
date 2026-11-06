@@ -80,8 +80,8 @@ Throttle :: [].{
 		}
 	}
 
-	brake_decay : F64
-	brake_decay = 20.0
+	brake_decay : Steps
+	brake_decay = Steps.of(20)
 
 	## The acceleration `a`, unless a coast from here leaves the road; then the
 	## brake for the shoulder it reaches. One of the limits `acceleration`
@@ -111,7 +111,7 @@ Throttle :: [].{
 						1.0,
 					)
 				)
-			) * Float.exp(((0.0 - n) / brake_decay)),
+			) * Float.exp(((0.0 - n) / brake_decay.to_f64())),
 		)
 		if sa < a {
 			sa
@@ -210,7 +210,7 @@ Throttle :: [].{
 expect
 	[
 		(Throttle.lean_hold.to_radians(), 0.03490658503988659),
-		(Throttle.brake_decay, 20.0),
+		(Throttle.brake_decay.to_f64(), 20.0),
 		(Throttle.lean_hold.to_radians() / Trig.deg, 2.0),
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
 

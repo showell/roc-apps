@@ -1,6 +1,7 @@
 ## Backdrop builds what is behind the ride, as shapes. The vocabulary is in
 ## lib/Shapes.roc, which every canvas app shares. This module knows what is
 ## behind the ride: the sky's gradient, the grass, and the sun's glow and disc.
+import Fraction
 import Pixels
 import Sky
 import lib.Brush
@@ -15,8 +16,8 @@ Backdrop :: [].{
 
 	## How far down to the horizon the sky holds its top colour before it
 	## fades to the horizon's.
-	sky_top_stop : F64
-	sky_top_stop = 0.2
+	sky_top_stop : Fraction
+	sky_top_stop = Fraction.of(0.2)
 
 	## The sun's paint: a glow out to `glow_radius`, and over it a disc of
 	## `disc_radius`.
@@ -86,7 +87,7 @@ Backdrop :: [].{
 		sky = Linear({
 			c0: Brush.opaque(sky_top_color),
 			c1: Brush.opaque(sky_horizon_color),
-			o0: sky_top_stop,
+			o0: sky_top_stop.to_f64(),
 			o1: 1.0,
 			ax: 0.0,
 			ay: 0.0,
