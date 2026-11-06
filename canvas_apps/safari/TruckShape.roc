@@ -57,7 +57,7 @@ TruckShape :: [].{
 	tire_radius : Distance
 	tire_radius = Distance.metres(0.5)
 
-	## The trailer's floor clears the top of its tyres by 12 cm.
+	## The trailer's floor clears the top of its tires by 12 cm.
 	trailer_bottom : Distance
 	trailer_bottom = tire_radius.times(2.0).plus(Distance.metres(0.12))
 

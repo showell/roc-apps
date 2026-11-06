@@ -1,5 +1,5 @@
 ## TruckBody draws the truck's body: the five faces of its trailer and cab,
-## and its tyres. They are painted far to near, so a nearer face covers a
+## and its tires. They are painted far to near, so a nearer face covers a
 ## farther one.
 import Across
 import Along
@@ -20,7 +20,7 @@ TruckBody :: [].{
 		corners : List(Geom.SpacePoint),
 	}
 
-	## A tyre is drawn as a polygon with this many corners.
+	## A tire is drawn as a polygon with this many corners.
 	tire_sides : I64
 	tire_sides = 16
 
@@ -91,7 +91,7 @@ sum_of_forward : List(Geom.SpacePoint) -> F64
 sum_of_forward = |corners| corners.fold_rev(0.0, |corner, sum| corner.forward + sum)
 
 ## The truck's faces: its two sides, its back, its roof, its windshield, its
-## nose, then its tyres, the left side's and then the right's.
+## nose, then its tires, the left side's and then the right's.
 faces : TruckShape.TruckInView -> List(TruckBody.TruckFace)
 faces = |truck| {
 	box = truck.box
@@ -277,7 +277,7 @@ nose = |truck| {
 	)
 }
 
-## The tyre on the axle at `axle` along the road, on the side at `across`:
+## The tire on the axle at `axle` along the road, on the side at `across`:
 ## a circle standing on the road.
 tire : TruckShape.TruckInView, { axle : Along, across : Across } -> TruckBody.TruckFace
 tire = |truck, { axle, across }| {
