@@ -168,21 +168,22 @@ conifer_color = |conifer|
 		Red => red_color
 	}
 
-## How much of the tree's height is trunk below the crown.
+## A tree is 136 parts tall, and the shares below are parts of that. Of those
+## parts, 55 are trunk below the crown.
 trunk_height_share : Fraction
-trunk_height_share = Fraction.of(0.44)
+trunk_height_share = Fraction.of(55.0 / 136.0)
 
-## The crown's height, and its widest half-width, as fractions of the tree's
-## height.
+## The crown is the rest of the tree, so its tip is the tree's height.
 crown_height_share : Fraction
-crown_height_share = Fraction.of(0.648)
+crown_height_share = trunk_height_share.complement()
 
+## The crown's widest half-width, as a fraction of the tree's height.
 crown_half_width_share : Fraction
-crown_half_width_share = Fraction.of(0.288)
+crown_half_width_share = Fraction.of(36.0 / 136.0)
 
 ## The trunk's width, as a fraction of the tree's height.
 trunk_width_share : Fraction
-trunk_width_share = Fraction.of(0.08)
+trunk_width_share = Fraction.of(10.0 / 136.0)
 
 ## However far off a tree is, its trunk is this wide.
 min_trunk_width : Pixels
@@ -191,7 +192,7 @@ min_trunk_width = Pixels.of(1.0)
 ## How far the trunk runs up inside the crown, as a fraction of the tree's
 ## height, so that no sky shows between them.
 trunk_overlap_share : Fraction
-trunk_overlap_share = Fraction.of(0.05)
+trunk_overlap_share = Fraction.of(6.25 / 136.0)
 
 ## A cone's base is a ring of this many points.
 ring_points : U64
@@ -381,9 +382,7 @@ expect conifer_color(Conifer.SmallGreen) == 0x1C5A22
 expect conifer_color(Conifer.Gold) == 0xCF9A18
 expect conifer_color(Conifer.Red) == 0xB23A2A
 
-expect trunk_height_share.to_f64() == 0.44
-expect crown_height_share.to_f64() == 0.648
-expect crown_half_width_share.to_f64() == 0.288
+expect trunk_height_share.to_f64() + crown_height_share.to_f64() == 1.0
 
 expect crown_shade(Distance.metres(0.0)).to_f64() == 1.0
 expect crown_shade(Distance.metres(20.0)).to_f64() == 0.75
@@ -401,41 +400,53 @@ sample_on_screen = TreeDraw.on_screen(
 	{
 		right: Distance.metres(0.0),
 		forward: Distance.metres(2.0),
-		height: Distance.metres(4.0),
+		height: Distance.metres(4.352),
 	},
 	Pixels.of(500.0),
 )
 
-expect sample_on_screen.base_x.to_f64() == 480.0
-expect sample_on_screen.base_y.to_f64() == 600.0
-expect sample_on_screen.height_px.to_f64() == 1000.0
-expect sample_on_screen.crown_height_px.to_f64() == 648.0
-expect sample_on_screen.crown_top_y.to_f64() == -488.0
-expect sample_on_screen.crown_half_width.to_f64() == 288.0
+## Whether two lists of coordinates agree, past rounding.
+is_near : List(F64), List(F64) -> Bool
+is_near = |got, want|
+	got.len() == want.len() and got.map2(want, |x, y| (x - y).abs()).all(|miss| miss <= 0.000000001)
 
 expect
-	draw_trunk(sample_on_screen, Flat)
-		== [
-			Poly({
-				pts: [440.0, 110.0, 520.0, 110.0, 520.0, 600.0, 440.0, 600.0],
-				fill: Flat(Brush.opaque(0x5A3E22)),
-			}),
-		]
+	is_near(
+		[
+			sample_on_screen.base_x.to_f64(),
+			sample_on_screen.base_y.to_f64(),
+			sample_on_screen.height_px.to_f64(),
+			sample_on_screen.crown_height_px.to_f64(),
+			sample_on_screen.crown_half_width.to_f64(),
+		],
+		[480.0, 600.0, 1088.0, 648.0, 288.0],
+	)
+
+# The crown's tip is the tree's height.
+expect
+	is_near(
+		[sample_on_screen.crown_top_y.to_f64()],
+		[sample_on_screen.base_y.minus(sample_on_screen.height_px).to_f64()],
+	)
+
+expect
+	match draw_trunk(sample_on_screen, Flat) {
+		[Poly(polygon)] =>
+			polygon.fill == Flat(Brush.opaque(0x5A3E22))
+				and is_near(polygon.pts, [440.0, 110.0, 520.0, 110.0, 520.0, 600.0, 440.0, 600.0])
+		_ => False
+	}
 
 # A shaded trunk is the same colour, lighter in the middle of its width.
 expect
-	draw_trunk(sample_on_screen, Shaded)
-		== [
-			Poly({
-				pts: [440.0, 110.0, 520.0, 110.0, 520.0, 600.0, 440.0, 600.0],
-				fill: Span({
-					edge: Brush.opaque(0x362514),
-					middle: Brush.opaque(0x714E2B),
-					x0: 440.0,
-					x1: 520.0,
-				}),
-			}),
-		]
+	match draw_trunk(sample_on_screen, Shaded) {
+		[Poly({ pts, fill: Span({ edge, middle, x0, x1 }) })] =>
+			edge == Brush.opaque(0x362514)
+				and middle == Brush.opaque(0x714E2B)
+				and is_near([x0, x1], [440.0, 520.0])
+				and is_near(pts, [440.0, 110.0, 520.0, 110.0, 520.0, 600.0, 440.0, 600.0])
+		_ => False
+	}
 
 expect {
 	corners_of = |tier|
@@ -448,15 +459,7 @@ expect {
 	[
 		(top_tier, [480.0, -488.0, 580.8, -293.6, 379.2, -293.6]),
 		(bottom_tier, [480.0, -34.4, 768.0, 160.0, 192.0, 160.0]),
-	].all(
-		|(tier, want)| {
-			got = corners_of(tier)
-			got.len() == want.len() and got.map2(
-				want,
-				|x, y| (x - y).abs(),
-			).all(|miss| miss <= 0.000000001)
-		},
-	)
+	].all(|(tier, want)| is_near(corners_of(tier), want))
 }
 
 # Of two points at one x the higher comes first, and of two equal points neither does.

@@ -21,9 +21,14 @@ Detail :: [].{
 
 	min_scenery_px : Pixels
 	min_scenery_px = Pixels.of(2.0)
+
+	## A tree shorter than this on the screen isn't drawn.
+	min_tree_px : Pixels
+	min_tree_px = Pixels.of(2.176)
 }
 
 expect Detail.cone_reach.to_metres() == 200.0
 expect Detail.crown_shade_reach.to_metres() == 80.0
 expect Detail.round_trunk_limit == 4
 expect Detail.min_scenery_px.to_f64() == 2.0
+expect Detail.min_tree_px.to_f64() == 2.176

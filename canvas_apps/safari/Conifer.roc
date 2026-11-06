@@ -1,12 +1,13 @@
-## A conifer's kind, which sets its height. Its colour is the drawing's, and
-## where it stands beside a road is planting's.
+## A conifer's kind, which sets its height: from the ground to the tip of its
+## crown, where a bird perches. Its colour is the drawing's, and where it stands
+## beside a road is planting's.
 import Distance
 
 Conifer := [BigGreen, SmallGreen, Red, Gold].{
 
 	## A small green tree's height.
 	small_height : Distance
-	small_height = Distance.metres(4.5)
+	small_height = Distance.metres(4.896)
 
 	## A big green tree's height.
 	big_height : Distance
@@ -24,10 +25,10 @@ Conifer := [BigGreen, SmallGreen, Red, Gold].{
 	is_eq : _
 }
 
-expect Conifer.small_height == Distance.metres(4.5)
-expect Conifer.big_height == Distance.metres(5.8500000000000005)
-
-expect Conifer.BigGreen.height().to_metres() == 5.8500000000000005
-expect Conifer.SmallGreen.height().to_metres() == 4.5
-expect Conifer.Red.height().to_metres() == 9.0
-expect Conifer.Gold.height().to_metres() == 13.5
+expect
+	[
+		(Conifer.BigGreen, 6.3648),
+		(Conifer.SmallGreen, 4.896),
+		(Conifer.Red, 9.792),
+		(Conifer.Gold, 14.688),
+	].all(|(conifer, want)| (conifer.height().to_metres() - want).abs() <= 0.000000001)

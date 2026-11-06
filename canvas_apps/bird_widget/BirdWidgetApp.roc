@@ -203,7 +203,7 @@ expect
 			"Waiting",
 			"Pose: Perched",
 			"Gap: 61.0 m",
-			"Height: 5.9 m",
+			"Height: 6.4 m",
 		]
 
 expect
@@ -212,7 +212,7 @@ expect
 			"Playing: 4%",
 			"Pose: Side on, wings up",
 			"Gap: 58.0 m",
-			"Height: 6.7 m",
+			"Height: 7.2 m",
 		]
 
 expect
@@ -221,7 +221,7 @@ expect
 			"Playing: 66%",
 			"Pose: Flying away, wings down",
 			"Gap: 30.0 m",
-			"Height: 9.3 m",
+			"Height: 9.7 m",
 		]
 
 expect
@@ -230,7 +230,7 @@ expect
 			"Past",
 			"Pose: Perched",
 			"Gap: 4.7 m",
-			"Height: 4.5 m",
+			"Height: 4.9 m",
 		]
 
 expect pose_name(Side(WingsDown)) == "Side on, wings down"

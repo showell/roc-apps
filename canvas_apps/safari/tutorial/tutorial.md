@@ -1680,7 +1680,7 @@ The cat is built on a shared module, `Animation`, and one critter can't show whe
 Drag the rider's gap and watch the bird fly.
 ```
 
-Drag across it from left to right, and the gap falls from 75 metres to 0. The bird sits on the left tree, 5.9 metres up, until 60 metres, where the marked stretch of the ruler starts. It takes off side on, turns away at about 55 metres, and reaches 10.2 metres near the middle of the stretch, shrinking as it goes. It dives from 20 metres, and at 15, where the marked stretch ends, it's perched on the far tree, 4.5 metres up. Below that, the picture stays as it is.
+Drag across it from left to right, and the gap falls from 75 metres to 0. The bird sits on the tip of the left tree, 6.4 metres up, until 60 metres, where the marked stretch of the ruler starts. It takes off side on, turns away at about 55 metres, and reaches 10.7 metres near the middle of the stretch, shrinking as it goes. It dives from 20 metres, and at 15, where the marked stretch ends, it's perched on the tip of the far tree, 4.9 metres up. Below that, the picture stays as it is.
 
 New in this chapter:
 
