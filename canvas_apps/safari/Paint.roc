@@ -11,8 +11,9 @@ import lib.Shapes
 
 Paint :: [].{
 
-	## The span of x a polygon covers.
-	Span : { min_x : F64, max_x : F64 }
+	## The span of x a polygon covers. Either end is negative for a polygon off
+	## the left of the screen.
+	Span : { min_x : Pixels, max_x : Pixels }
 
 	red_of : I64 -> I64
 	red_of = |color| color.shr_wrap(I64.to_u8_wrap(16)).bitwise_and(255)
@@ -54,35 +55,34 @@ Paint :: [].{
 			blue: shade_channel(blue_of(color), factor),
 		})
 
-	shade_edge_darken : F64
-	shade_edge_darken = 0.4
+	shade_edge_darken : Fraction
+	shade_edge_darken = Fraction.of(0.4)
 
-	shade_middle_lift : F64
-	shade_middle_lift = 0.25
+	shade_middle_lift : Fraction
+	shade_middle_lift = Fraction.of(0.25)
 
 	## A shaded polygon's colour at its edges.
 	width_shade_edge : I64, Fraction -> I64
 	width_shade_edge = |color, strength|
-		shade_color(color, (1.0 - (shade_edge_darken * strength.to_f64())))
+		shade_color(color, (1.0 - (shade_edge_darken.to_f64() * strength.to_f64())))
 
 	## A shaded polygon's colour in its middle.
 	width_shade_middle : I64, Fraction -> I64
 	width_shade_middle = |color, strength| shade_color(
 		color,
-		(1.0 + (shade_middle_lift * strength.to_f64())),
+		(1.0 + (shade_middle_lift.to_f64() * strength.to_f64())),
 	)
 
-	min_shade_width : F64
-	min_shade_width = 1.0
+	min_shade_width : Pixels
+	min_shade_width = Pixels.of(1.0)
 
 	is_too_narrow_to_shade : Paint.Span -> Bool
-	is_too_narrow_to_shade = |span| (span.max_x - span.min_x) < min_shade_width
+	is_too_narrow_to_shade = |span| span.max_x.minus(span.min_x) < min_shade_width
 
-	## The span of x over a polygon's points, given flat as x0, y0, x1, y1, ...
-	## It has at least one point.
-	x_span : List(F64) -> Paint.Span
-	x_span = |pts|
-		match xs_of(pts) {
+	## The span of x over a polygon's points. It has at least one point.
+	x_span : List(Screen.Point) -> Paint.Span
+	x_span = |ps|
+		match ps.map(|p| p.x) {
 			[first, .. as rest] => {
 				min_x: rest.fold(
 					first,
@@ -130,7 +130,7 @@ Paint :: [].{
 			[]
 		} else {
 			pts = flatten_screen(ps)
-			[Poly({ pts, fill: width_shade(pts, { color: fill_color, strength: round_strength }) })]
+			[Poly({ pts, fill: width_shade(ps, { color: fill_color, strength: round_strength }) })]
 		}
 
 	beacon : {
@@ -264,31 +264,20 @@ offsets_of = |stops| {
 }
 
 ## The fill of a polygon shaded across its width.
-width_shade : List(F64), { color : I64, strength : Fraction } -> Brush.Fill
-width_shade = |pts, { color, strength }| {
-	span = Paint.x_span(pts)
+width_shade : List(Screen.Point), { color : I64, strength : Fraction } -> Brush.Fill
+width_shade = |ps, { color, strength }| {
+	span = Paint.x_span(ps)
 	if strength <= Fraction.zero or Paint.is_too_narrow_to_shade(span) {
 		Flat(Brush.opaque(color))
 	} else {
 		Span({
 			edge: Brush.opaque(Paint.width_shade_edge(color, strength)),
 			middle: Brush.opaque(Paint.width_shade_middle(color, strength)),
-			x0: span.min_x,
-			x1: span.max_x,
+			x0: span.min_x.to_f64(),
+			x1: span.max_x.to_f64(),
 		})
 	}
 }
-
-## The x of each point in a flat list of x, y pairs.
-xs_of : List(F64) -> List(F64)
-xs_of = |pts|
-	pts.chunks_of(2).map(
-		|point|
-			match point {
-				[x, ..] => x
-				[] => crash "Paint.xs_of: a chunk of points holds an x"
-			},
-	)
 
 triangle : List(Screen.Point)
 triangle = [
@@ -619,16 +608,16 @@ expect Paint.width_shade_middle(sample_color, Fraction.zero) == sample_color
 # A lift past 255 holds at white.
 expect Paint.width_shade_middle(16448250, Fraction.whole) == 16777215
 
-expect Paint.is_too_narrow_to_shade({ min_x: 10.0, max_x: 10.5 })
-expect !Paint.is_too_narrow_to_shade({ min_x: 10.0, max_x: 11.0 })
-expect !Paint.is_too_narrow_to_shade({ min_x: 10.0, max_x: 30.0 })
+expect Paint.is_too_narrow_to_shade({ min_x: Pixels.of(10.0), max_x: Pixels.of(10.5) })
+expect !Paint.is_too_narrow_to_shade({ min_x: Pixels.of(10.0), max_x: Pixels.of(11.0) })
+expect !Paint.is_too_narrow_to_shade({ min_x: Pixels.of(10.0), max_x: Pixels.of(30.0) })
 
-expect Paint.min_shade_width == 1.0
-expect Paint.shade_edge_darken == 0.4
-expect Paint.shade_middle_lift == 0.25
+expect Paint.min_shade_width.to_f64() == 1.0
+expect Paint.shade_edge_darken.to_f64() == 0.4
+expect Paint.shade_middle_lift.to_f64() == 0.25
 
-expect Paint.x_span([10.0, 1.0, 30.0, 2.0, 20.0, 3.0]) == { min_x: 10.0, max_x: 30.0 }
-expect Paint.x_span([5.0, 99.0]) == { min_x: 5.0, max_x: 5.0 }
+expect Paint.x_span(wide_corners) == { min_x: Pixels.of(10.0), max_x: Pixels.of(30.0) }
+expect Paint.x_span([Screen.point(5.0, 99.0)]) == { min_x: Pixels.of(5.0), max_x: Pixels.of(5.0) }
 
 wide_corners : List(Screen.Point)
 wide_corners = [

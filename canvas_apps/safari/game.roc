@@ -17,6 +17,7 @@ package
 		Camera,
 		Cat,
 		CatDraw,
+		CatHeights,
 		CatSighting,
 		CatStills,
 		Chain,

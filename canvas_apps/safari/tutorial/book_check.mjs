@@ -94,12 +94,16 @@ const READ_PAGE = `(() => ({
 const SEE_FRAME = (i) => `(async () => {
   const frame = document.querySelectorAll('iframe.canvas-app')[${i}];
   frame.scrollIntoView({ block: 'center' });
+  // Input reaches a frame by where the last painted picture put it, so a press
+  // right after a scroll can go astray.
+  for (let painted = 0; painted < 2; painted++) await new Promise(requestAnimationFrame);
   const started = Date.now();
   const canvasOf = () => { try { return frame.contentDocument?.querySelector('canvas'); } catch { return null; } };
   while (Date.now() - started < 20000) {
     const canvas = canvasOf();
     if (canvas && canvas.width > 0) {
       const box = frame.getBoundingClientRect();
+      canvas.addEventListener('pointerdown', () => { canvas.dataset.pressed = 'yes'; });
       const { data } = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
       const colours = new Set();
       for (let at = 0; at < data.length; at += 4 * 97) colours.add((data[at] << 16) | (data[at + 1] << 8) | data[at + 2]);
@@ -123,10 +127,13 @@ const PICTURE_OF_FRAME = (i) => `(() => {
 
 // Where the frame stands now against where the drag aimed, for a failure's line.
 const WHERE_THE_DRAG_WENT = (i, frame, y) => `(() => {
-  const box = document.querySelectorAll('iframe.canvas-app')[${i}].getBoundingClientRect();
+  const element = document.querySelectorAll('iframe.canvas-app')[${i}];
+  const box = element.getBoundingClientRect();
   const under = document.elementFromPoint(${frame.left + frame.width / 2}, ${y});
+  const pressed = element.contentDocument.querySelector('canvas').dataset.pressed === 'yes';
   return 'aimed at y ' + ${Math.round(y)} + ' for a frame measured at top ' + ${Math.round(frame.top)} + ', now at top ' + Math.round(box.top)
-    + ', height ' + Math.round(box.height) + ', window height ' + innerHeight + ', and that point holds ' + (under ? under.tagName : 'nothing');
+    + ', height ' + Math.round(box.height) + ', window height ' + innerHeight + ', that point holds ' + (under ? under.tagName : 'nothing')
+    + ', and the canvas ' + (pressed ? 'felt' : 'never felt') + ' the press';
 })()`;
 
 async function evaluate(page, expression) {

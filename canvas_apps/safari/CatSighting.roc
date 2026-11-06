@@ -2,6 +2,7 @@
 ## on a segment of the chain ahead, placed where its crossing has got to,
 ## if it is in front of the camera and tall enough on screen to draw.
 import Cat
+import CatHeights
 import DepthSort
 import Distance
 import Chain
@@ -17,7 +18,7 @@ CatSighting := {
 	forward : Distance,
 	height : Distance,
 	pose : Cat.Pose,
-	lift : F64,
+	lift : CatHeights,
 }.{
 
 	## At most this many cats are drawn in a frame.

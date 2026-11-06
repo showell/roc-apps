@@ -147,7 +147,7 @@ bird_shapes = |gap| {
 		{
 			right: Distance.metres(instant.spot.across.to_metres()),
 			forward: forward_of(instant.spot.along),
-			lift: Distance.metres(instant.spot.lift),
+			lift: instant.spot.lift,
 			pose: instant.pose,
 		},
 		Lens.focal,
@@ -169,7 +169,7 @@ status_lines = |gap| {
 		ScrubWidget.stage_text(BirdFlight.flight_stage(gap)),
 		"Pose: ${pose_name(instant.pose)}",
 		"Gap: ${ScrubWidget.tenths_text(gap.to_metres())} m",
-		"Height: ${ScrubWidget.tenths_text(instant.spot.lift)} m",
+		"Height: ${ScrubWidget.tenths_text(instant.spot.lift.to_metres())} m",
 	]
 }
 

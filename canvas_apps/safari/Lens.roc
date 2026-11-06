@@ -20,23 +20,23 @@ Lens :: [].{
 		Screen.width.divided_by(2.0).divided_by(Trig.r_tan(half_view.to_radians()))
 	}
 
-	min_focal_factor : F64
-	min_focal_factor = 0.35
+	min_focal_factor : Fraction
+	min_focal_factor = Fraction.of(0.35)
 
-	min_gaze_focal_factor : F64
-	min_gaze_focal_factor = 0.61
+	min_gaze_focal_factor : Fraction
+	min_gaze_focal_factor = Fraction.of(0.61)
 
 	## The focal length for a lean, from 0 (upright) to 1 (the deepest lean).
 	focal_for_lean : Fraction -> Pixels
 	focal_for_lean = |lean_fraction| {
 		lean = lean_fraction.to_f64()
-		focal.times(1.0 - (((1.0 - min_focal_factor) * lean) * lean))
+		focal.times(1.0 - (((1.0 - min_focal_factor.to_f64()) * lean) * lean))
 	}
 
 	## The focal length for the rider's attention.
 	focal_for_gaze : Attention -> Pixels
 	focal_for_gaze = |attention|
-		focal.times(1.0 - ((1.0 - min_gaze_focal_factor) * attention.to_f64()))
+		focal.times(1.0 - ((1.0 - min_gaze_focal_factor.to_f64()) * attention.to_f64()))
 
 	## The focal length the camera uses: the shorter of the two, which
 	## gives the wider view.
