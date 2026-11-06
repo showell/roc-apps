@@ -63,7 +63,7 @@ segment_bird = |view, position|
 bird_in_view : Chain.Viewpoint,
 {
 	position : Chain.Position,
-	instant : Animation.Instant(BirdFlight.Pose),
+	instant : Animation.Instant(BirdFlight.Pose, Distance),
 } -> List(BirdSighting)
 bird_in_view = |view, { position, instant }| {
 	seen = Chain.rider_point_ahead(
@@ -80,7 +80,7 @@ bird_in_view = |view, { position, instant }| {
 			{
 				right: seen.right,
 				forward: seen.forward,
-				lift: Distance.metres(instant.spot.lift),
+				lift: instant.spot.lift,
 				pose: instant.pose,
 			},
 		]

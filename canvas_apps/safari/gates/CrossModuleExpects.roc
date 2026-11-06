@@ -311,7 +311,7 @@ expect cat_at(0).len() == 0
 expect cat_at(2).len() == 0
 expect CatSighting.max_visible_cats == 8
 expect first_cat(300.0).height.to_metres() == 1.7
-expect first_cat(300.0).lift == 0.0
+expect first_cat(300.0).lift.to_f64() == 0.0
 expect Cat.pose_index(first_cat(300.0).pose) == 0
 expect
 	[
