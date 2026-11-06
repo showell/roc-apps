@@ -367,7 +367,7 @@ Opaque types do the most work from here on. A `Bearing` and a `Turn` are both fl
 
 {{code Sky.sun_sighting}}
 
-`turn_from_view.abs() >= visible_turn_limit` compares two `Turn`s. The code never touches radians until `sun_place` has to do trigonometry, because `r_tan` takes a float.
+`turn_from_view.abs() >= visible_turn_limit` compares two `Turn`s. The code never touches radians until `sun_place` has to do trigonometry, because `.tan()` works on a float.
 
 {{code Sky.sun_place from "scale =" to "y: Screen.horizon_y"}}
 
@@ -776,7 +776,7 @@ A herd in a perfect grid would look like a parking lot, so each cow strays a lit
 
 {{code Cows.cow_at}}
 
-The stray comes from `r_sin` and `r_cos` of the cow's number. It looks random, but it's the same on every run, so the frames stay exact.
+The stray comes from the sine and cosine of the cow's number. It looks random, but it's the same on every run, so the frames stay exact.
 
 A bull may stand in front of the herd, by the trees. It's the same record again, a bit taller than a cow:
 
@@ -1165,7 +1165,7 @@ Call this *a narrow view of a wide record*. A module says exactly which fields i
 
 {{code Bike.advance}}
 
-Reading down, the types do their share of explaining. A `Lean` can't be added to anything but a `Lean`, and it only reaches direction through `lean.steer(turn_per_lean)`, which is the single door from roll to yaw. The bike then moves along the middle of the step's turn, which is what `s.yaw.plus(turn.times(0.5))` means. `speed.step_length()` is a `Distance`, and `Along.plus` takes one, so the move itself is places and distances. `to_radians()` appears at the last line that can do without it: `r_cos` wants a float.
+Reading down, the types do their share of explaining. A `Lean` can't be added to anything but a `Lean`, and it only reaches direction through `lean.steer(turn_per_lean)`, which is the single door from roll to yaw. The bike then moves along the middle of the step's turn, which is what `s.yaw.plus(turn.times(0.5))` means. `speed.step_length()` is a `Distance`, and `Along.plus` takes one, so the move itself is places and distances. `to_radians()` waits until the last line, where `.cos()` needs a float.
 
 A bike does what it's told. Choosing the lean has to wait for the Rehearsal chapter. Choosing the acceleration is the throttle's job.
 
@@ -1921,7 +1921,7 @@ Its caller gives the search its bounds, at most a degree either side of the curr
 
 And `Rider.decide` calls that, on its first line. The walk up the stack ends there.
 
-Call this *rehearsal*: run the real rules on a pretend copy, read the result, and throw it away. The numbers are worth stating. Twelve coasts for the lean and one more in `Throttle`, which uses `Coast` to ask whether the road is about to run out. Over the whole ride, a coast averages about 44 simulated steps. So each real step of the ride runs about 570 steps of bike physics that never happen, and the 7,040 steps of the ride come to about four million. With no drawing, on the dev backend, the whole ride takes about three seconds: under half a millisecond a step, against a budget of 33. [check: the 44 is `forward / speed` from one coast per step, measured at 9aa3814, not a counter inside `coast_from`; the three seconds is one native run, and the page runs wasm.]
+Call this *rehearsal*: run the real rules on a pretend copy, read the result, and throw it away. The numbers are worth stating. Twelve coasts for the lean and one more in `Throttle`, which uses `Coast` to ask whether the road is about to run out. Over the whole ride, a coast averages about 44 simulated steps. So each real step of the ride runs about 570 steps of bike physics that never happen, and the 7,040 steps of the ride come to about four million. With no drawing, on the dev backend, the whole ride takes about 1.6 seconds: about a quarter of a millisecond a step, against a budget of 33. [check: the 44 is `forward / speed` from one coast per step, measured at 9aa3814, not a counter inside `coast_from`; the 1.6 seconds is one native run, and the page runs wasm.]
 
 In a language with mutable objects, a rehearsal has a problem to solve before it starts. It needs to copy the rider, or save it and restore it, and it needs to be sure the copy really is one, all the way down. It needs to know that the physics doesn't quietly update something global, like a scoreboard or a random number generator. In Roc, none of that comes up. `Bike.advance` has a `->`, so it can't reach anything but its arguments. The old rider stays intact because every rider does. A rehearsal that goes wrong costs nothing, and all of `LeanSearch` is 105 lines.
 
@@ -1938,7 +1938,7 @@ All this time, a layer of math has been doing the measuring. This chapter works 
 New in this chapter:
 
 - Roc: records as coordinate systems, `fold`, `fold_rev` and `map2`
-- Modules: `Geom`, `Chain`, `Camera`, `Lens`, `Float`
+- Modules: `Geom`, `Chain`, `Camera`, `Lens`
 
 A lot of Safari Ride is math and physics, and most of it is geometry a reader could do on paper. It's here because this kind of code suits a compiled functional language unusually well, for a short list of reasons:
 
@@ -1964,7 +1964,7 @@ Safari Ride has 79 modules, not counting `web.roc`, `main.roc` and `game.roc`. T
 | `Chain` | 16 | 172 | Where the road lies from where the rider is |
 | `Scenery` | 15 | 48 | The words the world is built from, and the road's width |
 
-After those ten the count drops to 12, for `Screen`, 11 for `Speed` and 10 for `DepthSort`. Most modules are imported by one, two or three others. `Shapes`, `Trig` and `DeviceMath` are imported about as widely. They're in `lib/`, a folder of modules shared with the repository's other canvas apps.
+After those ten the count drops to 12, for `Screen`, 11 for `Speed` and 10 for `DepthSort`. Most modules are imported by one, two or three others. `Shapes` is imported about as widely. It's in `lib/`, a folder of modules shared with the repository's other canvas apps.
 
 These are the core utility modules. There are only ten, and nearly everything else is a small module that takes one of these and adds a single idea. Six of the ten are nothing but numbers with rules, and the top three are under 80 lines each. A cat, a tower and a truck are all found on the road through `Chain`, and all reach the screen through `Camera`.
 
@@ -2114,15 +2114,7 @@ A fold's step is a plain function of the list so far and one edge:
 
 ### Arithmetic all the way down
 
-| `x` | `Float.exp(x)` | `exp(x)` from a C math library |
-|---|---|---|
-| 0.5 | 1.648721270700128 | 1.6487212707001282 |
-| 1 | 2.7182818284590446 | 2.718281828459045 |
-| 2 | 7.389056098930651 | 7.38905609893065 |
-
-Safari Ride computes even its basic math functions itself. `lib/DeviceMath.roc` computes `sin`, `cos`, `sqrt` and `atan` in Roc, with no call to a math library. `Float` does the same for `exp`, which is a Taylor series after a range reduction. It's nothing but names and multiplications, and it's the kind of code that looks exactly as it does in a textbook:
-
-`Throttle.shoulder_brake_at` is the caller, so a rehearsed coast's length decays into a braking force through this. [check: why these are hand-written rather than builtins. They came with the Codex port, and the reason is probably that the same bits come out on every target. Ask Steve before saying so.]
+At the very bottom are Roc's own builtins: `.sin()`, `.cos()`, `.sqrt()` and the rest. `Throttle.shoulder_brake_at` uses `F64.e.pow(x)` to turn a rehearsed coast's length into a braking force.
 
 So from top to bottom, a rider chooses a lean by simulating physics, and the physics is plain arithmetic on opaque numbers. None of it has any effects. In the next chapter, we'll see what that's worth when the program has to change.
 
@@ -2216,7 +2208,7 @@ The second of these two proofs is here because of a real bug:
 
 ### `expect`
 
-The rest of the testing is ordinary `expect`s. An `expect` sits at the top level of a module, under the code it checks, and `roc test` runs it. There are over a thousand, and they're Safari Ride's only other tests. The tour has already shown twenty-six of them, in the whole of `Clock` and `Pond`. A pure function needs nothing else: literal arguments, literal answer. Each `expect` asserts one thing, and they cover both sides. `Clock`'s check that a clock equals itself one step on is false, so it's written with `!`. `Float.round` has a run of its boundaries, from `-0.5000000000000001` up through `0.49999999999999994`, on both sides of each. [check: those two numbers are quoted by hand, since an `expect` has no name for an include to find. It wants an include form of its own.]
+The rest of the testing is ordinary `expect`s. An `expect` sits at the top level of a module, under the code it checks, and `roc test` runs it. There are over a thousand, and they're Safari Ride's only other tests. The tour has already shown twenty-six of them, in the whole of `Clock` and `Pond`. A pure function needs nothing else: literal arguments, literal answer. Each `expect` asserts one thing, and they cover both sides. `Clock`'s check that a clock equals itself one step on is false, so it's written with `!`.
 
 A test's data can sit beside it as a plain definition. `Bike` doesn't import `RiderState`, and `Motion` is open, so its fixture is a record that has the six fields and makes up the rest. `segment` and `attention` are bare numbers here, because `Bike` carries them through and never looks. A narrow view of a wide record pays off twice: the test needs nothing the module doesn't.
 
