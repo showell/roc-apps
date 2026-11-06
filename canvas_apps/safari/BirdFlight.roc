@@ -10,18 +10,19 @@ import Along
 import Animation
 import Beat
 import Beats
+import Conifer
 import Distance
 import Fraction
-import Scenery
+import Trees
 
 BirdFlight :: [].{
 
 	## The tree a bird leaves, and the one it flies to.
-	Flight : { from : Scenery.Tree, to : Scenery.Tree }
+	Flight : { from : Trees.Tree, to : Trees.Tree }
 
 	## What a segment's bird does: flies from one tree to another, or sits,
 	## when there's no tree to fly to.
-	Habit : [Flies(BirdFlight.Flight), Sits(Scenery.Tree)]
+	Habit : [Flies(BirdFlight.Flight), Sits(Trees.Tree)]
 
 	## Where the wings are in a beat.
 	WingBeat : [WingsUp, WingsDown]
@@ -71,7 +72,7 @@ BirdFlight :: [].{
 	## The tree a bird starts on, the fifth with a negative `across`. Those are
 	## on the left, and an unflipped still's beak points toward +x, so from
 	## there the bird faces the road.
-	fifth_left_tree : List(Scenery.Tree) -> [Found(Scenery.Tree), NoTree]
+	fifth_left_tree : List(Trees.Tree) -> [Found(Trees.Tree), NoTree]
 	fifth_left_tree = |trees|
 		match trees.keep_if(|tree| tree.across < Across.middle).drop_first(4).first() {
 			Ok(tree) => Found(tree)
@@ -80,7 +81,7 @@ BirdFlight :: [].{
 
 	## The habit of a bird on the tree at `from`: to the first tree on the
 	## other side of the road far enough along, or none, and it sits.
-	habit_from : List(Scenery.Tree), Scenery.Tree -> BirdFlight.Habit
+	habit_from : List(Trees.Tree), Trees.Tree -> BirdFlight.Habit
 	habit_from = |trees, from| {
 		is_far_enough = |tree| tree.along >= from.along.plus(shortest_hop)
 		far_side = trees.keep_if(|tree| tree.across > Across.middle and is_far_enough(tree))
@@ -91,7 +92,7 @@ BirdFlight :: [].{
 	}
 
 	## The bird of a segment with `trees`, if one has a tree to start on.
-	crossing_among : List(Scenery.Tree) -> [BirdHere(BirdFlight.Habit), QuietRoad]
+	crossing_among : List(Trees.Tree) -> [BirdHere(BirdFlight.Habit), QuietRoad]
 	crossing_among = |trees|
 		match fifth_left_tree(trees) {
 			Found(tree) => BirdHere(habit_from(trees, tree))
@@ -124,7 +125,7 @@ BirdFlight :: [].{
 	instant_at = |flight, gap| flight_timeline(flight).instant(flight_stage(gap))
 
 	## The bird as it sits on top of `tree`.
-	sitting_on : Scenery.Tree -> Animation.Instant(BirdFlight.Pose, Distance)
+	sitting_on : Trees.Tree -> Animation.Instant(BirdFlight.Pose, Distance)
 	sitting_on = |tree| { pose: Perched, spot: tree_top(tree) }
 
 	## A flight's timeline is one beat long, so a cut on it is a share of the
@@ -171,11 +172,11 @@ BirdFlight :: [].{
 }
 
 ## The spot on top of `tree`.
-tree_top : Scenery.Tree -> Animation.Spot(Distance)
+tree_top : Trees.Tree -> Animation.Spot(Distance)
 tree_top = |tree| {
 	along: tree.along,
 	across: tree.across,
-	lift: tree.height,
+	lift: tree.conifer.height(),
 }
 
 ## A bird that shows `up` and `down` in turn, as its wings beat through the
@@ -189,19 +190,18 @@ wings_beating = |{ up, down }|
 		over: BirdFlight.flight_beats,
 	})
 
-tree_at : F64, F64 -> Scenery.Tree
+tree_at : F64, F64 -> Trees.Tree
 tree_at = |along, across| {
 	along: Along.metres(along),
 	across: Across.metres(across),
-	color: 0,
-	height: Distance.metres(10.0),
+	conifer: Conifer.Red,
 }
 
-left_tree : Scenery.Tree
+left_tree : Trees.Tree
 left_tree = tree_at(100.0, -6.0)
 
 ## A tree on the far side too near to fly to, and two far enough.
-sample_trees : List(Scenery.Tree)
+sample_trees : List(Trees.Tree)
 sample_trees = [
 	left_tree,
 	tree_at(100.0, 6.0),
@@ -211,14 +211,21 @@ sample_trees = [
 ]
 
 sample_flight : BirdFlight.Flight
-sample_flight = { from: left_tree, to: { ..tree_at(140.0, 6.0), height: Distance.metres(12.0) } }
+sample_flight = { from: left_tree, to: { ..tree_at(140.0, 6.0), conifer: Conifer.Gold } }
+
+## How high a bird perches on a red tree, and on a gold one.
+red_top : F64
+red_top = Conifer.Red.height().to_metres()
+
+gold_top : F64
+gold_top = Conifer.Gold.height().to_metres()
 
 ## A left and a right tree at each of `alongs`.
-pairs_at : List(F64) -> List(Scenery.Tree)
+pairs_at : List(F64) -> List(Trees.Tree)
 pairs_at = |alongs| alongs.join_map(|along| [tree_at(along, -6.0), tree_at(along, 6.0)])
 
 ## How far along the fifth left tree of `choices` is: one number, or none.
-fifth_along : List(Scenery.Tree) -> List(F64)
+fifth_along : List(Trees.Tree) -> List(F64)
 fifth_along = |choices|
 	match BirdFlight.fifth_left_tree(choices) {
 		Found(tree) => [tree.along.to_metres()]
@@ -231,7 +238,7 @@ expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0])) == [50.0]
 expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0, 60.0])) == [50.0]
 expect fifth_along([50.0, 60.0, 70.0, 80.0, 90.0].map(|along| tree_at(along, 6.0))) == []
 
-chosen_along : List(Scenery.Tree) -> List(F64)
+chosen_along : List(Trees.Tree) -> List(F64)
 chosen_along = |choices|
 	match BirdFlight.habit_from(choices, left_tree) {
 		Flies(found) => [found.to.along.to_metres(), found.to.across.to_metres()]
@@ -269,14 +276,14 @@ expect {
 	spot = BirdFlight.instant_at(sample_flight, Distance.metres(100.0)).spot
 	spot.along.to_metres() == 100.0
 		and spot.across.to_metres() == -6.0
-		and spot.lift.to_metres() == 10.0
+		and spot.lift.to_metres() == red_top
 }
 
 expect {
 	spot = BirdFlight.instant_at(sample_flight, Distance.zero).spot
 	spot.along.to_metres() == 140.0
 		and spot.across.to_metres() == 6.0
-		and spot.lift.to_metres() == 12.0
+		and spot.lift.to_metres() == gold_top
 }
 
 expect {
@@ -284,7 +291,7 @@ expect {
 	[
 		(spot.along.to_metres(), 120.0),
 		(spot.across.to_metres(), 0.0),
-		(spot.lift.to_metres(), 16.0),
+		(spot.lift.to_metres(), (red_top + gold_top) / 2.0 + BirdFlight.flight_arc.to_metres()),
 	].all(|(got, want)| (got - want).abs() <= 0.000000001)
 }
 

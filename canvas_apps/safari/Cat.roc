@@ -38,14 +38,14 @@ Cat :: [].{
 	cat_height : Distance
 	cat_height = Distance.metres(1.7)
 
-	## How far along its segment the cat waits, before it is moved to just
-	## past the nearest tree.
+	## Where a segment's cat starts looking for its tree: it waits by the first
+	## tree on the right from here on.
 	cat_along : Along
 	cat_along = Along.metres(105.0)
 
-	## How far out from its tree, towards the road, the cat starts.
-	cat_road_gap : Distance
-	cat_road_gap = Distance.metres(1.5)
+	## How far behind its tree, away from the road, the cat starts.
+	cat_behind_tree : Distance
+	cat_behind_tree = Distance.metres(1.5)
 
 	## How far past its tree, along the road, the cat crosses.
 	cat_beyond_tree : Distance
@@ -64,19 +64,17 @@ Cat :: [].{
 	grass_toehold : Distance
 	grass_toehold = Distance.metres(0.3)
 
-	## The crossing of a cat by the tree `tree_offset` out from the lane's
-	## edge and at `tree_along` on the segment.
+	## The crossing of a cat by `tree`, on the right of the road: wherever that
+	## tree stands, the cat starts behind it and just past it.
 	crossing : {
 		road_half_width : Distance,
-		tree_offset : Distance,
-		tree_along : Along,
+		tree : { along : Along, across : Across, .. },
 	} -> Cat.Crossing
-	crossing = |{ road_half_width, tree_offset, tree_along }| {
-		tree_across = road_half_width.plus(tree_offset)
+	crossing = |{ road_half_width, tree }| {
 		far_verge = Across.left_of_middle(road_half_width.plus(grass_toehold))
 		{
-			along: tree_along.plus(cat_beyond_tree),
-			start_across: Across.right_of_middle(tree_across.plus(cat_road_gap)),
+			along: tree.along.plus(cat_beyond_tree),
+			start_across: tree.across.plus(cat_behind_tree),
 			mid_across: Across.right_of_middle(cat_height.times(-cat_head_x.to_f64())),
 			end_across: far_verge.minus(land_hind_reach),
 			height: cat_height,
@@ -273,8 +271,14 @@ spot_across = |across| { along: Along.start, across, lift: CatHeights.zero }
 the_cat : Cat.Crossing
 the_cat = Cat.crossing({
 	road_half_width: Distance.metres(2.0),
-	tree_offset: Distance.metres(1.0),
-	tree_along: Along.metres(100.0),
+	tree: { along: Along.metres(100.0), across: Across.metres(3.0) },
+})
+
+## The same cat by a tree farther from the road.
+the_cat_by_a_far_tree : Cat.Crossing
+the_cat_by_a_far_tree = Cat.crossing({
+	road_half_width: Distance.metres(2.0),
+	tree: { along: Along.metres(100.0), across: Across.metres(8.0) },
 })
 
 ## A rider `gap` metres short of the cat, at `speed` metres a step. Cat doesn't
@@ -289,6 +293,9 @@ expect coming(0.0, 1.0).speed.to_metres_a_step() == 1.0
 
 expect the_cat.along.to_metres() == 102.0
 expect the_cat.start_across.to_metres() == 4.5
+expect the_cat_by_a_far_tree.start_across.to_metres() == 9.5
+expect the_cat_by_a_far_tree.mid_across == the_cat.mid_across
+expect the_cat_by_a_far_tree.end_across == the_cat.end_across
 expect the_cat.mid_across.to_metres() == 0.816
 expect the_cat.height.to_metres() == 1.7
 expect
@@ -299,7 +306,7 @@ expect
 
 expect Cat.cat_height.to_metres() == 1.7
 expect Cat.cat_along.to_metres() == 105.0
-expect Cat.cat_road_gap.to_metres() == 1.5
+expect Cat.cat_behind_tree.to_metres() == 1.5
 expect Cat.cat_beyond_tree.to_metres() == 2.0
 expect Cat.cat_head_x.to_f64() == -0.48
 expect Cat.land_hind_reach.to_metres() == 1.19

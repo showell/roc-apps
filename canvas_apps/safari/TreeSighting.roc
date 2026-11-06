@@ -1,66 +1,61 @@
 ## TreeSighting finds the roadside trees the rider can see in a frame: those
 ## planted along the chain of segments ahead that stand in front of the
 ## camera and are tall enough on screen to draw.
+import Conifer
 import DepthSort
 import Distance
 import Chain
 import Geom
 import Detail
-import Scenery
+import Trees
 
-## A tree to draw: where it stands in the rider's view, its height and
-## its colour. A tree in view is ahead of the rider, so of its lengths only
-## `right` can be negative.
+## A tree to draw: where it stands in the rider's view, and its kind. A tree
+## in view is ahead of the rider, so of its lengths only `right` can be
+## negative.
 TreeSighting := {
 	right : Distance,
 	forward : Distance,
-	height : Distance,
-	color : I64,
+	conifer : Conifer,
 }.{
-
-	## At most this many trees are drawn in a frame.
-	max_visible_trees : I64
-	max_visible_trees = 640
 
 	## The trees in view, the nearest segment's first, and each segment's in
 	## the order it plants them.
 	in_view : Chain.Viewpoint -> List(TreeSighting)
 	in_view = |view| {
 		positions = Chain.Position.all_in(view.road.chain)
-		positions.join_map(|position| segment_trees(view, position))
+		positions.join_map(|position| segment_sightings(view, position))
 	}
 
 	## The trees in view on the segment at `position` in the chain.
-	segment_trees : Chain.Viewpoint, Chain.Position -> List(TreeSighting)
-	segment_trees = |view, position| {
+	segment_sightings : Chain.Viewpoint, Chain.Position -> List(TreeSighting)
+	segment_sightings = |view, position| {
 		segment = position.index_in(view.road.chain).segment_in(view.road.route)
-		segment.trees.join_map(|tree| tree_in_view(view, { position, tree }))
+		segment.trees.join_map(|tree| sighting_of(view, { position, tree }))
 	}
 
 	## A tree on the segment at `position` in the chain, if it is in view: one
 	## item, or none.
-	tree_in_view : Chain.Viewpoint,
+	sighting_of : Chain.Viewpoint,
 	{
 		position : Chain.Position,
-		tree : Scenery.Tree,
+		tree : Trees.Tree,
 	} -> List(TreeSighting)
-	tree_in_view = |view, { position, tree }| {
-		seen = Chain.rider_point_ahead(
+	sighting_of = |view, { position, tree }| {
+		rider_point = Chain.rider_point_ahead(
 			view.road,
 			{ position, along: tree.along, across: tree.across },
 		)
-		height_px = view.cam_focal.times(tree.height.ratio_to(seen.forward))
-		if seen.forward <= Geom.near_plane {
+		height_px = view.cam_focal.times(tree.conifer.height().ratio_to(rider_point.forward))
+		if rider_point.forward <= Geom.near_plane {
 			[]
-		} else if height_px < Detail.min_scenery_px {
+		} else if height_px < Detail.min_tree_px {
 			[]
 		} else {
 			[
 				{
-					right: seen.right,
-					forward: seen.forward,
-					height: tree.height,
-					color: tree.color,
+					right: rider_point.right,
+					forward: rider_point.forward,
+					conifer: tree.conifer,
 				},
 			]
 		}

@@ -328,7 +328,7 @@ scheme_text : Scenery.Scheme -> Str
 scheme_text = |scheme|
 	match scheme {
 		AllGreen => "AllGreen"
-		YellowGreen => "YellowGreen"
+		GoldGreen => "GoldGreen"
 		RedGreen => "RedGreen"
 	}
 

@@ -40,11 +40,11 @@ Scene := {
 		clock : Clock,
 	}
 
-	## Everything in view from `view`, each kind cut to its sighting's cap.
+	## Everything in view from `view`, each kind that has a cap cut to it.
 	in_view : Chain.Viewpoint, Scene.RideFacts -> Scene
 	in_view = |view, { speed, truck, clock }| {
 		road = view.road
-		trees = TreeSighting.in_view(view).take_first(TreeSighting.max_visible_trees.to_u64_wrap())
+		trees = TreeSighting.in_view(view)
 		towers =
 			TowerSighting.in_view({ road, clock })
 				.take_first(TowerSighting.max_visible_towers.to_u64_wrap())
@@ -91,6 +91,5 @@ Scene := {
 	}
 }
 
-expect TreeSighting.max_visible_trees == 640
 expect TowerSighting.max_visible_towers == 16
 expect CatSighting.max_visible_cats == 8

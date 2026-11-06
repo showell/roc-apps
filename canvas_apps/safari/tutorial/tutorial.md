@@ -230,7 +230,7 @@ A `match` on a closed union has to cover it: leaving out a tag is a compile-time
 
 Here's where it's called, picking the color for a pair of small trees:
 
-{{code Trees.plant_onto from "conifer =" to "Small => Trees.accent(scheme)"}}
+{{code Trees.plant from "match $conifer {" to "BigGreen => accent(scheme)"}}
 
 `SegmentIndex` is another small opaque type, a `U32` for a segment's place in the route. A place in the route can't be confused with a count of trees, because nothing outside can do arithmetic on it. `crash` appears here too. It isn't for error handling: an index that isn't in the world is a bug in Safari Ride, not a case to handle.
 
@@ -251,19 +251,19 @@ Trees are the easiest thing to put in a frame, so we'll use them to see how anyt
 New in this chapter:
 
 - Roc: a function that calls itself, `|` in a `match` branch
-- Modules: `Scenery`, `Distance`, `Along`, `Across`, `TreeSighting`, `TreeDraw`
+- Modules: `Scenery`, `Conifer`, `Distance`, `Along`, `Across`, `TreeSighting`, `TreeDraw`
 
 ### Planting a tree
 
 A tree is a plain record:
 
-{{code Scenery.Tree}}
+{{code Trees.Tree}}
 
 `along` says how far along its segment a tree stands, and `across` says how far it is from the middle of the road. `height` is a `Distance`, a length in metres. All three are opaque types, like `Clock`. A place along the road can't be passed as a place across it, and neither can be passed as a plain length.
 
 Trees stand in pairs, one each side of the road, every 30 metres. The pairs take turns, big and small. A big pair is green, and a small pair takes the accent color we saw in the last chapter. Gold and red trees are much taller than green ones:
 
-{{code Trees.height}}
+{{code Conifer.height}}
 
 A gold tree also stands further from the road. `Green | Red` is one branch for two tags:
 
@@ -273,9 +273,7 @@ Planting a segment starts at the first place a tree can go:
 
 {{code Trees.plant}}
 
-From there, `plant_onto` calls itself. Each call plants one pair, then calls itself again with the next place and the other size. It stops 85 metres short of the segment's end, or at 96 trees.
-
-{{code Trees.plant_onto}}
+Each turn of the loop plants one pair, then moves on to the next place and the next kind. It stops 85 metres short of the segment's end.
 
 That all happens once, when the world is built. No frame ever plants a tree.
 
@@ -283,7 +281,7 @@ That all happens once, when the world is built. No frame ever plants a tree.
 
 From here on, things are measured from the rider. We don't need to know much about the rider yet. It's just where we're standing. A `Geom.RiderPoint` says how far right something is and how far ahead.
 
-{{code TreeSighting.tree_in_view}}
+{{code TreeSighting.sighting_of}}
 
 `Chain.rider_point_ahead` finds where a point on the road lies from the rider, and the math layer chapter shows how. After that, there are two ways to lose a tree. It can be behind the camera, or it can be so far off that it's too short to bother with. The line for `height_px` is perspective: a tree twice as far away looks half as tall.
 
@@ -1682,7 +1680,7 @@ The cat is built on a shared module, `Animation`, and one critter can't show whe
 Press play and watch the bird fly.
 ```
 
-Play it, and the gap falls from 75 metres to 0. The bird sits on the left tree, 5.9 metres up, until 60 metres. It takes off side on, turns away at about 55 metres, and reaches 10.2 metres near the middle of its flight, shrinking as it goes. It dives from 20 metres, and at 15 it's perched on the far tree, 4.5 metres up. Below that, the picture stays as it is.
+Play it, and the gap falls from 75 metres to 0. The bird sits on the tip of the left tree, 6.4 metres up, until 60 metres. It takes off side on, turns away at about 55 metres, and reaches 10.7 metres near the middle of its flight, shrinking as it goes. It dives from 20 metres, and at 15 it's perched on the tip of the far tree, 4.9 metres up. Below that, the picture stays as it is.
 
 New in this chapter:
 

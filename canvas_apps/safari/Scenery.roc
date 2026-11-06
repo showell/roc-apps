@@ -1,20 +1,14 @@
-## Scenery holds the words the world is built from: the kinds of trees and
-## animals, a critter's place by the road, and how wide the road is.
+## Scenery holds the words the world is built from: a segment's colour scheme,
+## the animals, a critter's place by the road, and how wide the road is.
 import Across
 import Along
 import Cutouts
 import Distance
 
 Scenery :: [].{
-	Scheme : [AllGreen, YellowGreen, RedGreen]
+	Scheme : [AllGreen, GoldGreen, RedGreen]
 	Animal : [Elephant, Giraffe, Zebra, Rhino]
 	BendLife : [Quiet, Animal(Scenery.Animal), DuckPond]
-	Tree : {
-		along : Along,
-		across : Across,
-		color : I64,
-		height : Distance,
-	}
 	Critter : {
 		along : Along,
 		across : Across,
@@ -60,59 +54,3 @@ expect !Scenery.is_pond(Animal(Zebra))
 expect !Scenery.is_pond(Animal(Elephant))
 expect !Scenery.is_pond(Animal(Giraffe))
 expect !Scenery.is_pond(Animal(Rhino))
-
-scheme_code : Scenery.Scheme -> I64
-scheme_code = |s|
-	match s {
-		AllGreen => 0
-		YellowGreen => 1
-		RedGreen => 2
-	}
-
-life_code : Scenery.BendLife -> I64
-life_code = |c|
-	match c {
-		Quiet => 0
-		Animal(Elephant) => 1
-		Animal(Giraffe) => 2
-		Animal(Zebra) => 3
-		Animal(Rhino) => 4
-		DuckPond => 5
-	}
-
-expect scheme_code(AllGreen) == 0
-expect scheme_code(YellowGreen) == 1
-expect scheme_code(RedGreen) == 2
-expect life_code(Quiet) == 0
-expect life_code(Animal(Elephant)) == 1
-expect life_code(Animal(Giraffe)) == 2
-expect life_code(Animal(Zebra)) == 3
-expect life_code(Animal(Rhino)) == 4
-expect life_code(DuckPond) == 5
-
-a_tree : Scenery.Tree
-a_tree = {
-	along: Along.metres(120.5),
-	across: Across.metres(3.25),
-	color: 0x8A571F,
-	height: Distance.metres(7.75),
-}
-
-a_critter : Scenery.Critter
-a_critter = {
-	along: Along.metres(250.5),
-	across: Across.metres(-6.5),
-	codepoint: 128004,
-	height: Distance.metres(1.375),
-	facing: FacesRight,
-}
-
-expect a_tree.along.to_metres() == 120.5
-expect a_tree.across.to_metres() == 3.25
-expect a_tree.height.to_metres() == 7.75
-expect a_critter.along.to_metres() == 250.5
-expect a_critter.across.to_metres() == -6.5
-expect a_critter.height.to_metres() == 1.375
-expect a_tree.color == 0x8A571F
-expect a_critter.codepoint == 128004
-expect a_critter.facing == FacesRight

@@ -13,9 +13,9 @@ import StillDraw
 import DepthSort
 import Fraction
 import Chain
+import Conifer
 import GuardRail
 import Scene
-import Detail
 import Tower
 import TowerSighting
 import TreeDraw
@@ -27,55 +27,27 @@ import lib.Shapes
 
 SceneDraw :: [].{
 
-	## A tree with fewer than this many trees nearer than it gets a round
-	## trunk.
-	round_trunk_limit : U32
-	round_trunk_limit = 4
-
 	## The scene's things, painted far to near.
 	draw : Scene, Chain.Viewpoint -> List(Shapes.Shape)
 	draw = |scene, view|
 		scene.order.join_map(|depth_key| draw_subject(scene, { view, depth_key }))
 
 	## How many of `trees` are nearer than `forward`.
-	nearer_tree_count : List(TreeSighting), Distance -> U32
-	nearer_tree_count = |trees, forward|
-		trees.count_if(|tree| tree.forward < forward).to_u32_wrap()
+	nearer_tree_count : List(TreeSighting), Distance -> U64
+	nearer_tree_count = |trees, forward| trees.count_if(|tree| tree.forward < forward)
 
-	## How much a crown is shaded at distance `forward`: fully at the camera,
-	## falling evenly to none at Detail.crown_shade_reach.
-	crown_shade : Distance -> Fraction
-	crown_shade = |forward| Fraction.clamp(1.0 - forward.ratio_to(Detail.crown_shade_reach))
-
-	## A tree, drawn in more detail the nearer it is: its trunk is round when
-	## few of `trees` are nearer, and its crown is cones when it is nearer
-	## than Detail.full_detail_reach.
+	## A tree, told how many of `trees` are nearer, which is all it needs of
+	## the others.
 	draw_tree : TreeSighting,
 	{
 		trees : List(TreeSighting),
 		cam_focal : Pixels,
 	} -> List(Shapes.Shape)
-	draw_tree = |tree, { trees, cam_focal }| {
-		nearer_trees = SceneDraw.nearer_tree_count(trees, tree.forward)
-		TreeDraw.draw({
-			right: tree.right,
-			forward: tree.forward,
-			height: tree.height,
-			color: tree.color,
+	draw_tree = |tree, { trees, cam_focal }|
+		TreeDraw.draw(
+			{ tree, nearer_trees: SceneDraw.nearer_tree_count(trees, tree.forward) },
 			cam_focal,
-			trunk: if nearer_trees < SceneDraw.round_trunk_limit {
-				RoundCorners
-			} else {
-				SharpCorners
-			},
-			crown: if tree.forward < Detail.full_detail_reach {
-				Cones
-			} else {
-				Triangles
-			},
-			shade: SceneDraw.crown_shade(tree.forward),
-		})
-	}
+		)
 
 	## Where a tower's four footprint corners stand in the rider's view.
 	tower_footprint : Chain.Viewpoint, TowerSighting -> Tower.Footprint
@@ -176,15 +148,11 @@ draw_truck = |view, truck_at|
 		NoTruck => crash "SceneDraw.draw_truck: the truck is in the depth order only in view"
 	}
 
-expect Detail.crown_shade_reach.to_metres() == 80.0
-expect Detail.full_detail_reach.to_metres() == 200.0
-
 tree_at : F64 -> TreeSighting
 tree_at = |forward| {
 	right: Distance.metres(0.0),
 	forward: Distance.metres(forward),
-	height: Distance.metres(5.85),
-	color: 0x1C5A22,
+	conifer: Conifer.BigGreen,
 }
 
 spread_trees : List(TreeSighting)
@@ -203,13 +171,6 @@ tied_trees = List.repeat(tree_at(20.0), 4)
 expect SceneDraw.nearer_tree_count(tied_trees, Distance.metres(20.0)) == 0
 expect SceneDraw.nearer_tree_count(tied_trees, Distance.metres(20.1)) == 4
 expect SceneDraw.nearer_tree_count(tied_trees, Distance.metres(19.9)) == 0
-
-expect SceneDraw.crown_shade(Distance.metres(0.0)).to_f64() == 1.0
-expect SceneDraw.crown_shade(Distance.metres(20.0)).to_f64() == 0.75
-expect SceneDraw.crown_shade(Distance.metres(40.0)).to_f64() == 0.5
-expect SceneDraw.crown_shade(Distance.metres(80.0)).to_f64() == 0.0
-expect SceneDraw.crown_shade(Distance.metres(200.0)).to_f64() == 0.0
-expect SceneDraw.crown_shade(Distance.metres(-50.0)).to_f64() == 1.0
 
 # The rider at the start of the route, at the ride's first step.
 start_view : Chain.Viewpoint
@@ -317,17 +278,12 @@ green_tree_at = |along| {
 	tree: {
 		along: Along.metres(along),
 		across: Across.metres(3.5),
-		color: 0x1C5A22,
-		height: Distance.metres(5.85),
+		conifer: Conifer.BigGreen,
 	},
 }
 
-expect
-	route.map(|seg| seg.trees.len().to_i64_wrap()).append(TreeSighting.max_visible_trees)
-		== [28, 16, 22, 640]
-
 lone_tree : TreeSighting
-lone_tree = TreeSighting.tree_in_view(
+lone_tree = TreeSighting.sighting_of(
 	from_origin,
 	green_tree_at(120.0),
 ).first() ?? crash "SceneDraw: a tree 120 m ahead is in view"
@@ -336,17 +292,16 @@ expect
 	[
 		(lone_tree.right.to_metres(), 3.5),
 		(lone_tree.forward.to_metres(), 120.0),
-		(lone_tree.height.to_metres(), 5.85),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
-expect TreeSighting.tree_in_view(from_origin, green_tree_at(120.0)).len() == 1
-expect lone_tree.color == 0x1C5A22
+expect TreeSighting.sighting_of(from_origin, green_tree_at(120.0)).len() == 1
+expect lone_tree.conifer == Conifer.BigGreen
 expect
 	[
-		(TreeSighting.tree_in_view(from_origin, green_tree_at(0.4)), 0),
-		(TreeSighting.tree_in_view(from_origin, green_tree_at(0.5)), 1),
-		(TreeSighting.tree_in_view(view_from(origin, Pixels.of(1.0)), green_tree_at(120.0)), 0),
-		(TreeSighting.tree_in_view(from_origin, green_tree_at(2000.0)), 0),
+		(TreeSighting.sighting_of(from_origin, green_tree_at(0.4)), 0),
+		(TreeSighting.sighting_of(from_origin, green_tree_at(0.5)), 1),
+		(TreeSighting.sighting_of(view_from(origin, Pixels.of(1.0)), green_tree_at(120.0)), 0),
+		(TreeSighting.sighting_of(from_origin, green_tree_at(2000.0)), 0),
 	].all(|(seen, want)| seen.len().to_i64_wrap() == want)
 
 expect
@@ -356,13 +311,13 @@ expect
 		(view_from(origin, Pixels.of(1.0)), 0),
 	].all(
 		|(view, want)| {
-			trees = TreeSighting.segment_trees(view, Chain.Position.first)
+			trees = TreeSighting.segment_sightings(view, Chain.Position.first)
 			trees.len().to_i64_wrap() == want
 		},
 	)
 
 first_segment : List(TreeSighting)
-first_segment = TreeSighting.segment_trees(from_origin, Chain.Position.first)
+first_segment = TreeSighting.segment_sightings(from_origin, Chain.Position.first)
 
 ## The first segment's tree at `i`, in planting order.
 planted_tree : U64 -> TreeSighting
@@ -378,11 +333,8 @@ expect
 		(planted_tree(1).right.to_metres(), 3.5),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
-expect
-	[
-		(planted_tree(0).height.to_metres(), 5.85),
-		(planted_tree(2).height.to_metres(), 4.5),
-	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
+expect planted_tree(0).conifer == Conifer.BigGreen
+expect planted_tree(2).conifer == Conifer.SmallGreen
 
 keys : List(DepthSort.DepthKey)
 keys = TreeSighting.depth_keys(first_segment)

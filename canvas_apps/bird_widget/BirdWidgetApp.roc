@@ -11,11 +11,11 @@ import game.BirdFlight
 import game.Camera
 import game.Clock
 import game.Distance
-import game.SceneDraw
 import game.Lens
 import game.Paint
 import game.BirdDraw
 import game.Scenery
+import game.Trees
 import game.Screen
 import game.TreeDraw
 import game.World
@@ -122,20 +122,19 @@ lane = {
 	)
 }
 
-tree_shapes : Scenery.Tree -> List(Shapes.Shape)
-tree_shapes = |tree| {
-	forward = forward_of(tree.along)
-	TreeDraw.draw({
-		right: Distance.metres(tree.across.to_metres()),
-		forward,
-		height: tree.height,
-		color: tree.color,
-		cam_focal: Lens.focal,
-		trunk: RoundCorners,
-		crown: Cones,
-		shade: SceneDraw.crown_shade(forward),
-	})
-}
+tree_shapes : Trees.Tree -> List(Shapes.Shape)
+tree_shapes = |tree|
+	TreeDraw.draw(
+		{
+			tree: {
+				right: Distance.metres(tree.across.to_metres()),
+				forward: forward_of(tree.along),
+				conifer: tree.conifer,
+			},
+			nearer_trees: 0,
+		},
+		Lens.focal,
+	)
 
 ## The bird as `gap` finds it, drawn by Safari's own stills.
 bird_shapes : Distance -> List(Shapes.Shape)
@@ -193,7 +192,7 @@ expect
 			"Waiting",
 			"Pose: Perched",
 			"Gap: 61.0 m",
-			"Height: 5.9 m",
+			"Height: 6.4 m",
 		]
 
 expect
@@ -202,7 +201,7 @@ expect
 			"Playing: 4%",
 			"Pose: Side on, wings up",
 			"Gap: 58.0 m",
-			"Height: 6.7 m",
+			"Height: 7.2 m",
 		]
 
 expect
@@ -211,7 +210,7 @@ expect
 			"Playing: 66%",
 			"Pose: Flying away, wings down",
 			"Gap: 30.0 m",
-			"Height: 9.3 m",
+			"Height: 9.7 m",
 		]
 
 expect
@@ -220,7 +219,7 @@ expect
 			"Past",
 			"Pose: Perched",
 			"Gap: 4.7 m",
-			"Height: 4.5 m",
+			"Height: 4.9 m",
 		]
 
 expect pose_name(Side(WingsDown)) == "Side on, wings down"
