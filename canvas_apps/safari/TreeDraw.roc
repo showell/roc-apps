@@ -50,7 +50,8 @@ TreeDraw :: [].{
 	## nearest trees have a shaded trunk. The crown is cones, shaded by how near
 	## they are, within Detail.cone_reach, and triangles beyond it.
 	draw : { tree : TreeDraw.TreeAhead(others), nearer_trees : U64 }, Pixels -> List(Shapes.Shape)
-	draw = |scene, cam_focal| draw_crowned(scene, { cam_focal, crown: crown_of(scene.tree.forward) })
+	draw = |scene, cam_focal|
+		draw_crowned(scene, { cam_focal, crown: crown_at(scene.tree.forward) })
 
 	## How a crown is drawn: cones, shaded by how near they are, or flat triangles.
 	Crown : [Cones({ shade : Fraction }), Triangles]
