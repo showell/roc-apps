@@ -1,0 +1,190 @@
+/* The Safari Ride book, set for a desktop screen. The prose keeps a reading
+   measure, and code, tables and diagrams may run wider into the right margin. */
+:root {
+  color-scheme: light dark;
+  --paper: #fbfaf6;
+  --ink: #23221f;
+  --quiet: #736e64;
+  --rule: #e3e0d7;
+  --accent: #8a4a1c;
+  --shade: #f3f1ea;
+  --draft: #fbefc6;
+  --draft-ink: #5e4706;
+  --prose: 'Iowan Old Style', Charter, 'Bitstream Charter', 'Sitka Text', Cambria, Georgia, serif;
+  --plain: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+  --measure: 39rem;
+  --wide: 52rem;
+  font-size: 18px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #1b1a18;
+    --ink: #e4e1d8;
+    --quiet: #9c978b;
+    --rule: #38352f;
+    --accent: #dba56d;
+    --shade: #26241f;
+    --draft: #443612;
+    --draft-ink: #f0d98f;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--prose);
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+}
+
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 0.15em; }
+
+/* The page */
+
+body.chapter { display: grid; grid-template-columns: 15rem minmax(0, 1fr); }
+body.chapter main { padding: 3rem 3rem 4rem 4rem; }
+body.front main { max-width: calc(var(--measure) + 4rem); margin: 0 auto; padding: 4rem 2rem; }
+
+article > * { max-width: var(--measure); }
+article > pre, article > table, article > svg { max-width: var(--wide); }
+
+/* Headings */
+
+h1, h2, h3 { line-height: 1.2; font-weight: 600; scroll-margin-top: 1.5rem; }
+h1 { font-size: 2.1rem; letter-spacing: -0.01em; margin: 0 0 1.5rem; }
+h2 { font-size: 1.4rem; margin: 2.8rem 0 0.8rem; }
+h3 { font-size: 1.1rem; margin: 2rem 0 0.6rem; }
+
+.chapter-number {
+  margin: 0 0 0.3rem;
+  color: var(--quiet);
+  font: 0.75rem/1.4 var(--plain);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+p { margin: 0 0 1rem; }
+ul, ol { padding-left: 1.4rem; }
+li { margin: 0.25rem 0; }
+
+/* Code */
+
+code { font-family: var(--mono); font-size: 0.82em; }
+:not(pre) > code { background: var(--shade); border-radius: 3px; padding: 0.08em 0.28em; }
+
+pre {
+  margin: 0 0 1.6rem;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  background: var(--shade);
+  border-radius: 4px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  tab-size: 4;
+}
+pre code { font-size: inherit; }
+
+/* The title line above a block belongs to the block, so it sits close to it,
+   small and quiet. */
+
+p:has(+ pre), p:has(+ svg) {
+  margin: 1.6rem 0 0.3rem;
+  color: var(--quiet);
+  font: 0.72rem/1.4 var(--plain);
+}
+
+/* Diagrams come from Graphviz. Its colours are attributes, so these rules win,
+   and a diagram follows the page into dark mode. */
+
+svg.diagram { display: block; height: auto; margin: 0 0 1.6rem; }
+svg.diagram text { fill: var(--ink); }
+svg.diagram .graph > polygon { fill: none; stroke: none; }
+svg.diagram .node polygon, svg.diagram .node ellipse { fill: none; stroke: var(--ink); }
+svg.diagram .edge path { stroke: var(--quiet); }
+svg.diagram .edge polygon { fill: var(--quiet); stroke: var(--quiet); }
+
+/* Widgets */
+
+figure.widget { margin: 1.6rem 0; }
+iframe.canvas-app { display: block; width: 100%; border: 0; border-radius: 4px; background: #dcecf5; }
+figcaption { margin-top: 0.4rem; color: var(--quiet); font: 0.72rem/1.4 var(--plain); }
+
+/* Tables */
+
+table {
+  display: block;
+  overflow-x: auto;
+  margin: 0 0 1.6rem;
+  border-collapse: collapse;
+  font: 0.8rem/1.45 var(--plain);
+}
+th { text-align: left; border-bottom: 1px solid var(--quiet); }
+td { border-bottom: 1px solid var(--rule); }
+th, td { padding: 0.35rem 1rem 0.35rem 0; vertical-align: top; }
+
+/* Draft notes stay in sight, and they look like notes rather than the book. */
+
+.draft-note { background: var(--draft); color: var(--draft-ink); font: 0.74rem/1.5 var(--plain); }
+span.draft-note { padding: 0.1em 0.3em; border-radius: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+p.draft-note { padding: 0.5rem 0.8rem; border-radius: 3px; }
+.draft-note::before { content: 'Draft note: '; font-weight: 600; }
+
+/* The chapters beside the page */
+
+.book-nav {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 3rem 1rem 2rem 1.5rem;
+  border-right: 1px solid var(--rule);
+  font: 0.74rem/1.35 var(--plain);
+}
+.book-nav a { display: block; padding: 0.22rem 0; color: var(--quiet); text-decoration: none; }
+.book-nav a:hover { color: var(--accent); }
+.book-nav .book-name { margin-bottom: 1rem; color: var(--ink); font: 600 1rem/1.3 var(--prose); }
+.book-nav ol { list-style: none; margin: 0; padding: 0; }
+.book-nav li { margin: 0; }
+.book-nav .here > a { color: var(--ink); font-weight: 600; }
+.book-nav .sections { margin: 0.1rem 0 0.5rem; padding-left: 1.3em; border: 0; }
+.number { display: inline-block; min-width: 1.3em; color: var(--quiet); font-variant-numeric: tabular-nums; font-weight: 400; }
+
+/* The table of contents */
+
+ol.contents { max-width: none; columns: 2; column-gap: 2.5rem; margin: 0; padding: 0; list-style: none; font: 0.82rem/1.35 var(--plain); }
+ol.contents > li { break-inside: avoid; margin: 0 0 0.9rem; }
+ol.contents > li > a { color: var(--ink); font-weight: 600; text-decoration: none; }
+ol.contents a:hover { color: var(--accent); }
+ol.contents .sections { margin: 0.15rem 0 0; padding-left: 1.45em; list-style: none; }
+ol.contents .sections li { margin: 0.1rem 0; }
+ol.contents .sections a { color: var(--quiet); text-decoration: none; }
+
+/* Previous and next */
+
+.turn-page {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  max-width: var(--measure);
+  margin-top: 3.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+  font: 0.85rem/1.3 var(--plain);
+}
+.turn-page a { text-decoration: none; }
+.turn-page a[rel='next'] { text-align: right; }
+.turn-page small { display: block; color: var(--quiet); font-size: 0.72rem; }
+
+/* A narrow window keeps the book readable, with the chapters above the page. */
+
+@media (max-width: 60rem) {
+  body.chapter { display: block; }
+  body.chapter main { padding: 2rem 1rem; }
+  body.front main { padding: 2rem 1rem; }
+  .book-nav { position: static; height: auto; padding: 1rem; border-right: 0; border-bottom: 1px solid var(--rule); }
+}
