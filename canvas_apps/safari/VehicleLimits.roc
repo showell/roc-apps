@@ -5,7 +5,6 @@ import Angle
 import Distance
 import Float
 import Speed
-import lib.Trig
 
 VehicleLimits :: [].{
 

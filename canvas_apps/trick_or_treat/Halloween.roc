@@ -26,7 +26,6 @@ import Streetlight
 import House
 import Witch
 import Guards
-import lib.Trig
 
 Halloween :: [].{
 	width : F64

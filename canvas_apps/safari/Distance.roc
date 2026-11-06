@@ -4,7 +4,6 @@
 ##
 ## Each operation does the plain float arithmetic its name says, so code
 ## moved onto this type computes exactly what it did before.
-import lib.DeviceMath
 
 Distance :: F64.{
 
@@ -40,11 +39,11 @@ Distance :: F64.{
 
 	## The smaller of this length and `other`.
 	min : Distance, Distance -> Distance
-	min = |Distance.(d), Distance.(other)| Distance.(DeviceMath.real_min(d, other))
+	min = |Distance.(d), Distance.(other)| Distance.(d.min(other))
 
 	## The larger of this length and `other`.
 	max : Distance, Distance -> Distance
-	max = |Distance.(d), Distance.(other)| Distance.(DeviceMath.real_max(d, other))
+	max = |Distance.(d), Distance.(other)| Distance.(d.max(other))
 
 	is_gt : Distance, Distance -> Bool
 	is_gt = |Distance.(d), Distance.(other)| d > other

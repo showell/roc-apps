@@ -10,7 +10,6 @@
 import Across
 import Along
 import Angle
-import lib.DeviceMath
 import Distance
 import lib.Trig
 
@@ -130,7 +129,7 @@ Geom :: [].{
 		cos_turn = Trig.r_cos(bend.turn.to_radians())
 		sin_turn = Trig.r_sin(bend.turn.to_radians())
 		corner_shift = half_width * (1.0 - cos_turn)
-		corner_along = bend.segment_length.to_metres() + half_width * DeviceMath.real_abs(sin_turn)
+		corner_along = bend.segment_length.to_metres() + half_width * sin_turn.abs()
 		past_corner = point.along.to_metres() - corner_along
 		past_middle = if bend.turn.is_right() {
 			across - corner_shift

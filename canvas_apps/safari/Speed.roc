@@ -8,7 +8,6 @@
 import Acceleration
 import Beats
 import Distance
-import lib.DeviceMath
 
 Speed :: F64.{
 
@@ -53,11 +52,11 @@ Speed :: F64.{
 
 	## The smaller of this speed and `other`.
 	min : Speed, Speed -> Speed
-	min = |Speed.(s), Speed.(other)| Speed.(DeviceMath.real_min(s, other))
+	min = |Speed.(s), Speed.(other)| Speed.(s.min(other))
 
 	## The larger of this speed and `other`.
 	max : Speed, Speed -> Speed
-	max = |Speed.(s), Speed.(other)| Speed.(DeviceMath.real_max(s, other))
+	max = |Speed.(s), Speed.(other)| Speed.(s.max(other))
 
 	is_gt : Speed, Speed -> Bool
 	is_gt = |Speed.(s), Speed.(other)| s > other

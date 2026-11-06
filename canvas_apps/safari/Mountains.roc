@@ -6,7 +6,6 @@
 import Pixels
 import Angle
 import Clock
-import lib.DeviceMath
 import Fraction
 import Lens
 import Float
@@ -192,7 +191,7 @@ range_height : MountainRange, Angle.Bearing -> Pixels
 range_height = |range, bearing| {
 	from_center = bearing.turn_from(range.center)
 	fraction = from_center.ratio_to(range.half_width)
-	if DeviceMath.real_abs(fraction) >= 1.0 {
+	if fraction.abs() >= 1.0 {
 		Pixels.zero
 	} else {
 		envelope = Trig.r_cos(fraction * F64.pi / 2.0)

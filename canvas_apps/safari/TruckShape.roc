@@ -9,7 +9,6 @@ import Chain
 import Fraction
 import Geom
 import Paint
-import lib.Trig
 import lib.Shapes
 
 TruckShape :: [].{

@@ -8,7 +8,6 @@
 ##
 ## Each operation does the plain float arithmetic its name says, so code
 ## moved onto this type computes exactly what it did before.
-import lib.DeviceMath
 
 Pixels :: F64.{
 
@@ -40,7 +39,7 @@ Pixels :: F64.{
 
 	## This length, whichever way it is measured.
 	abs : Pixels -> Pixels
-	abs = |Pixels.(p)| Pixels.(DeviceMath.real_abs(p))
+	abs = |Pixels.(p)| Pixels.(p.abs())
 
 	## How many of `whole` this is, which can pass 1 or go negative.
 	ratio_to : Pixels, Pixels -> F64
@@ -48,7 +47,7 @@ Pixels :: F64.{
 
 	## The larger of this length and `other`.
 	max : Pixels, Pixels -> Pixels
-	max = |Pixels.(p), Pixels.(other)| Pixels.(DeviceMath.real_max(p, other))
+	max = |Pixels.(p), Pixels.(other)| Pixels.(p.max(other))
 
 	is_gt : Pixels, Pixels -> Bool
 	is_gt = |Pixels.(p), Pixels.(other)| p > other

@@ -3,33 +3,6 @@
 
 DeviceMath :: [].{
 
-	real_min : F64, F64 -> F64
-	real_min = |a, b| (
-		if a < b {
-			a
-		} else {
-			b
-		}
-	)
-
-	real_max : F64, F64 -> F64
-	real_max = |a, b| (
-		if a > b {
-			a
-		} else {
-			b
-		}
-	)
-
-	real_abs : F64 -> F64
-	real_abs = |x| (
-		if x < 0.0 {
-			(0.0 - x)
-		} else {
-			x
-		}
-	)
-
 	real_sqrt : F64 -> F64
 	real_sqrt = |x| (
 		if x <= 0.0 {
@@ -183,7 +156,7 @@ DeviceMath :: [].{
 	)
 
 	real_cos : F64 -> F64
-	real_cos = |x| dm_cos_octant(real_abs(dm_reduce(x)))
+	real_cos = |x| dm_cos_octant(dm_reduce(x).abs())
 
 	dm_atan_half_step : F64 -> F64
 	dm_atan_half_step = |t| (t / (1.0 + real_sqrt((1.0 + (t * t)))))
