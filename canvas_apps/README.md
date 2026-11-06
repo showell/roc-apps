@@ -3,7 +3,7 @@
 Small interactive Roc programs that run two ways from one set of files: as a
 native program on roc-ray, and as a page in a browser.
 
-Twelve of them, covering a few different kinds of program. `safari` is a
+Seventeen of them, covering a few different kinds of program. `safari` is a
 driving screensaver. `snake`, `pong` and `breakout` are arcade games.
 `particles` is a fountain of four thousand sprites that follows the pointer.
 `camera` is a world larger than the window, with a camera over it and a HUD
@@ -12,9 +12,13 @@ that stays put. `workshop` is a pixel paint program you drag on.
 the Safari tutorial: drag across it and the cat's crossing plays under the
 pointer, from Safari's own modules. `sky_widget`, `bird_widget` and `beacon_widget`
 are three more: drag the clock and the sun sets, drag the gap and the bird
-flies, drag the clock and two masts blink opposite each other.
+flies, drag the clock and two masts blink opposite each other. `route_widget`
+walks the route's records on a map, `bends_widget` turns one bend,
+`step_widget` plays the ride forward and reads it back, `rehearsal_widget`
+goes through one step's twelve tries at a lean, and `proof_widget` rides to a
+step twice and compares the frames.
 
-Six of the twelve — all but `safari`, `trick_or_treat` and the widgets — are
+Six of the seventeen — all but `safari`, `trick_or_treat` and the widgets — are
 roc-ray's own examples, by Luke Boswell, taken with only small changes to fit this scheme.
 
 **The native side runs on roc-ray 0.12.0** (`23eec6e`), with the
@@ -342,7 +346,7 @@ long movie wants: `FRAMES=1500`.
 | `snake`, `pong`, `breakout`, `camera`, `particles` | roc-ray's examples of the same names |
 | `workshop` | roc-ray's `generated_assets`, the Pixel Workshop |
 | `safari` | this repository's own screensaver, which began as a Codex program; `safari/README.md` |
-| `trick_or_treat`, `cat_widget`, `sky_widget`, `bird_widget`, `beacon_widget` | this repository's own |
+| `trick_or_treat`, and every `*_widget` | this repository's own |
 
 The roc-ray examples were taken at commit `e100c95`. Each ported file says in its own docstring what changed in it and why,
 which is the copy to trust. The shape of the change is the same throughout: the
