@@ -9,7 +9,7 @@ platform ""
 		[Model : model] for program : {
 			init : {} -> Box(model),
 			advance : Box(model), U32, U32, U32, U32, F32, F32, F32 -> Box(model),
-			frame : Box(model) -> List(Frame.Shape),
+			frame_shapes : Box(model) -> List(Frame.Shape),
 			release : List(Frame.Shape) -> {},
 			sounds : Box(model) -> U32,
 			tone_count : Box(model) -> U32,
@@ -49,7 +49,7 @@ init_for_host = program.init
 
 advance_for_host = program.advance
 
-frame_for_host = program.frame
+frame_for_host = program.frame_shapes
 
 release_for_host = program.release
 

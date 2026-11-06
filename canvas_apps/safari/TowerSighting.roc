@@ -221,7 +221,11 @@ short_view : U32 -> TowerSighting.Viewpoint
 short_view = |rider_number| {
 	road: {
 		route_segments: [0, 1, 2, 3, 4].map(World.route_segment),
-		chain_indices: [rider_number, rider_number + 1, rider_number + 2].map(World.SegmentIndex.number),
+		chain_indices: [
+			rider_number,
+			rider_number + 1,
+			rider_number + 2,
+		].map(World.SegmentIndex.number),
 		vantage: origin,
 	},
 	clock: Clock.start,

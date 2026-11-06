@@ -182,7 +182,7 @@ Everything in this chapter happens within a single frame, and none of it survive
 
 Some of Safari Ride never changes. Trees, cows, the pond and the road are built once and only read after that, which makes them the easiest part of the program to read, so the tour starts there.
 
-```widget route
+```widget route_segments
 The whole route in one picture. The white stretch is segment 7, and the lines under the map read out its record.
 ```
 
@@ -229,11 +229,11 @@ A `match` on a closed union has to cover it: leaving out a tag is a compile-time
 
 Here's where it's called, picking the color for a pair of small trees:
 
-{{code Trees.plant from "match $conifer {" to "BigGreen => accent(scheme)"}}
+{{code Trees.plant_trees from "match $conifer {" to "BigGreen => accent(scheme)"}}
 
 `SegmentIndex` is another small opaque type, a `U32` for a segment's place in the route. A place in the route can't be confused with a count of trees, because nothing outside can do arithmetic on it. `crash` appears here too. It isn't for error handling: an index that isn't in the world is a bug in Safari Ride, not a case to handle.
 
-{{code World.SegmentIndex from "## The segment of `route`" to "?? crash"}}
+{{code World.SegmentIndex from "## The segment of `route_segments`" to "?? crash"}}
 
 A value that never changes can be checked once, whole. `Pond`'s one function is below its block, and it's there for a test:
 
@@ -404,7 +404,7 @@ What goes to the screen is still a flat polygon, so a cone is something we work 
 
 What's left is a handful of dots on the screen, and a cone's outline is whatever wraps around them. That's a convex hull:
 
-{{code TreeDraw.convex_hull}}
+{{code TreeDraw.convex_hull_points}}
 
 This is Andrew's monotone chain. Sort the points from left to right, walk along the top, and walk back along the bottom. One step does both walks: add a point, and first drop any recent point that would make a dent. `[.., a, b]` is a list pattern that takes the last two items.
 
@@ -446,14 +446,14 @@ A `TreeSighting` also fits `TreeDraw.TreeAhead`, so `TreeDraw` doesn't import it
 
 | Job | Function | Its type |
 |---|---|---|
-{{types row Trees.plant Plant a segment, once}}
+{{types row Trees.plant_trees Plant a segment, once}}
 {{types row TreeSighting.trees_in_view Find the trees in view, each frame}}
 
 ### Planting
 
 Planting walks along a segment and keeps a list, and a loop says that best. `$` marks the names that change. The function still has a `->`, because nothing outside it can see them change.
 
-{{code Trees.plant}}
+{{code Trees.plant_trees}}
 
 Trees stand in pairs, one each side of the road, every 30 metres. The pairs take turns: a big green pair, then the segment's accent, then big green again. A gold pair stands further from the road, because it's so much taller:
 
@@ -479,7 +479,7 @@ Most of that 1,656 is far off, and far trees are cheap. They get eight triangles
 
 "The nearest few" is the one thing a tree can't work out by itself, because it depends on the other trees. So `SceneDraw` counts them, and that's the `nearer_trees` from A simple tree:
 
-{{code SceneDraw.draw_tree}}
+{{code SceneDraw.tree_shapes}}
 
 So the world remembers where it planted each tree, and no frame remembers anything. Every sighting is thrown away, and the next frame makes them all again.
 
@@ -725,19 +725,19 @@ A piece of ground is a list of corners and a color.
 
 That's what `Ground` paints. It's plain data, so it can be checked with numbers.
 
-{{code GroundSighting.bend_corner}}
+{{code GroundSighting.bend_corners}}
 
 Four points cut the corner: the two ends of the first segment, the apex, and the place where the second segment's outer edge starts.
 
-{{code GroundSighting.lead_in}}
+{{code GroundSighting.lead_points}}
 
 The last 40 metres before a bend get a patch of their own, laid after the road's chunks and before the corner.
 
-{{code GroundSighting.bend_ground}}
+{{code GroundSighting.bend_patches}}
 
-The road along a segment is laid in chunks of up to 25 metres. The widget's two segments are 60 metres each, which makes three chunks each, and `bend_ground` adds two patches. That's the widget's count of 8.
+The road along a segment is laid in chunks of up to 25 metres. The widget's two segments are 60 metres each, which makes three chunks each, and `bend_patches` adds two patches. That's the widget's count of 8.
 
-{{code GroundSighting.pond_ground}}
+{{code GroundSighting.pond_patches}}
 
 A pond is ground too. A segment that ends at a pond gets two more patches, the water and its bank, and their outlines come from `Pond`. `on_map` is another closure, and it moves an outline from the pond's own record onto the road.
 
@@ -765,11 +765,11 @@ digraph rail {
 }
 ```
 
-{{code RailSighting.rail_path}}
+{{code RailSighting.rail_points}}
 
 The four parts of the list are the four boxes.
 
-{{code RailSighting.rail_leg}}
+{{code RailSighting.leg_points}}
 
 A leg gets a point about every metre. It leaves out its first point, which is the last point of the leg before it.
 
@@ -806,7 +806,7 @@ Everything above the footprint is rods. Four legs run from the corners up to a p
 
 A ring of rods goes round the tower every 20 metres, and crossed braces fill the lowest two storeys. Each rod is a line between two points in the rider's view, and it needs some care, because a near tower can stand partly behind the camera:
 
-{{code Tower.rod}}
+{{code Tower.rod_shapes}}
 
 The `match` is on a pair, so it has to cover all four combinations. A rod with one end behind the camera is cut where it crosses the camera's plane, and a rod with both ends behind isn't drawn.
 
@@ -861,7 +861,7 @@ Drawing a still is then one sum for each point. The height in pixels scales the 
 
 {{code StillDraw.screen_point}}
 
-That's all there is to drawing a critter. Each set of stills has a `pose_polygons` function that turns a pose into its polygons, and `StillDraw.draw_still` puts them on screen.
+That's all there is to drawing a critter. Each set of stills has a `pose_polygons` function that turns a pose into its polygons, and `StillDraw.still_shapes` puts them on screen.
 
 ### How the stills got made
 
@@ -1145,7 +1145,7 @@ A box is a function, and an arrow is a call. The three boxes under the frame are
 
 Here's the top of that diagram in code. Each frame, the game asks for three things and hands them to `Backdrop`:
 
-{{code SafariApp.frame from "Backdrop.frame_shapes(" to "sun_sighting: Tour.sun(tour),"}}
+{{code SafariApp.frame_shapes from "Backdrop.frame_shapes(" to "sun_sighting: Tour.sun(tour),"}}
 
 `Tour` holds the clock and hands it straight to `Sun` and `Sky`, so everything from here on is in those two. Let's take the three jobs in order.
 
@@ -1975,7 +1975,7 @@ The stills are data too. Nested tags get checked all the way down, so a `match` 
 
 {{code BirdStills.pose_polygons}}
 
-`BirdDraw.draw` hands that to `StillDraw.draw_still`, the function that also draws a cow. A bird's feet reach the screen through `Camera.project`, as a tree's top does, and the math layer chapter shows how. That's the drawing.
+`BirdDraw.draw` hands that to `StillDraw.still_shapes`, the function that also draws a cow. A bird's feet reach the screen through `Camera.project`, as a tree's top does, and the math layer chapter shows how. That's the drawing.
 
 ### Finding a tree
 
@@ -1987,7 +1987,7 @@ The caller's return type is written in place, a tag union that exists for this o
 
 {{code BirdFlight.crossing_among}}
 
-And that's called from a `match` in the middle of a record, which is a reminder that `match` is an expression. The plan's plain `BirdHere` tag comes in, and `BirdHere(route)` goes out:
+And that's called from a `match` in the middle of a record, which is a reminder that `match` is an expression. The plan's plain `BirdHere` tag comes in, and `BirdHere(route_segments)` goes out:
 
 {{code World.built_segment from "crossing: match plan.crossing {" to "QuietRoad => QuietRoad"}}
 
@@ -2262,7 +2262,7 @@ The view widens as the rider leans. One `Fraction` goes in, and a focal length c
 
 ### Round the bends
 
-```widget route
+```widget route_segments
 The route again. This map comes from adding up the turns, which the ride itself never does. The white stretch is the record quoted below.
 ```
 
@@ -2295,17 +2295,17 @@ Here's a triangle with one corner behind the rider, before and after cutting:
 
 The corner behind the camera has gone, and two new ones stand on the camera's plane, 0.4 metres ahead.
 
-Anything that crosses the camera's plane has to be cut, or dividing by `forward` flips it across the screen. The textbook algorithm walks a polygon's edges, keeping corners in view and adding a new corner wherever an edge crosses the plane. In Roc, that's a pairing and a `fold`. `map2` zips each corner with the next one, which is the list rotated by one, and `fold` builds the new polygon. `List.with_capacity` is the one line about performance, and `clip_edge_onto` is passed by name:
+Anything that crosses the camera's plane has to be cut, or dividing by `forward` flips it across the screen. The textbook algorithm walks a polygon's edges, keeping corners in view and adding a new corner wherever an edge crosses the plane. In Roc, that's a pairing and a `fold`. `map2` zips each corner with the next one, which is the list rotated by one, and `fold` builds the new polygon. `List.with_capacity` is the one line about performance, and `edge_points_onto` is passed by name:
 
-{{code Geom.clip_near}}
+{{code Geom.near_points}}
 
 A fold's step is a plain function of the list so far and one edge:
 
-{{code Geom.clip_edge_onto}}
+{{code Geom.edge_points_onto}}
 
 `Ground`, `GuardRail` and `TruckShape` call it the same way. `patch.corners.map(...)` makes the `RaisedPoint`s, and what comes back is a shorter or longer list of the same type:
 
-{{code Ground.draw from "in_front = Geom.clip_near(" to "Polygon.flat_polygon(patch.color, Camera.project_all(in_front, cam_focal))"}}
+{{code Ground.draw from "in_front = Geom.near_points(" to "Polygon.flat_polygon(patch.color, Camera.projected_points(in_front, cam_focal))"}}
 
 ### Arithmetic all the way down
 
@@ -2507,7 +2507,7 @@ What the game hands back each frame is a `List(Shapes.Shape)`. A shape is a tag:
 
 The rider's lean is one of those marks. The whole picture banks into a turn, backdrop included, so `SafariApp.frame` builds a camera out of nested tags and puts it at the front. The rest is `Tour` answering questions, each a one-liner:
 
-{{code SafariApp.frame from "centre = {" to ").prepend(lean)"}}
+{{code SafariApp.frame_shapes from "centre = {" to ").prepend(lean)"}}
 
 ### Where the effects went
 

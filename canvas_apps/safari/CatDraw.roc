@@ -47,14 +47,14 @@ cat_shapes = |cat| CatDraw.draw(cat, Pixels.of(500.0))
 first_corner_coordinates : CatSighting -> List(F64)
 first_corner_coordinates = |cat|
 	match cat_shapes(cat) {
-		[Poly(polygon), ..] => polygon.pts.take_first(2)
+		[Poly(polygon), ..] => polygon.points.take_first(2)
 		_ => crash "a cat draws polygons"
 	}
 
 is_near : List(F64), List(F64) -> Bool
-is_near = |got, want| {
-	misses = got.map2(want, |one, wanted| (one - wanted).abs())
-	got.len() == want.len() and misses.all(|miss| miss <= 0.000000001)
+is_near = |got, expected| {
+	misses = got.map2(expected, |one, wanted| (one - wanted).abs())
+	got.len() == expected.len() and misses.all(|miss| miss <= 0.000000001)
 }
 
 # The resting still's first corner is (0.0092, 0.4513), and 1 m of lift at 100 m

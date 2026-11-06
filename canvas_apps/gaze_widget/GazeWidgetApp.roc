@@ -35,7 +35,7 @@ GazeWidgetApp :: [].{
 		title: "The rider's gaze",
 		init: starting_model,
 		advance: |model, input| played_on(with_buttons(model, input)),
-		frame: frame_at,
+		frame_shapes: shapes_at,
 	})
 }
 
@@ -158,8 +158,8 @@ phase_of = |rider|
 	}
 
 ## Everything on the canvas.
-frame_at : GazeWidgetApp.Model -> List(Shapes.Shape)
-frame_at = |model| {
+shapes_at : GazeWidgetApp.Model -> List(Shapes.Shape)
+shapes_at = |model| {
 	offset = shown_offset(model)
 	rider = state_at(model.played, offset)
 	step = first_step.to_f64() + offset.to_f64()
@@ -167,8 +167,8 @@ frame_at = |model| {
 		model.transport,
 		{
 			range: stretch,
-			picture: picture(rider),
-			status: status_lines(rider, step),
+			picture_shapes: picture_shapes(rider),
+			status_lines: status_lines(rider, step),
 		},
 	)
 }
@@ -299,8 +299,8 @@ sight_line = |rider| {
 }
 
 ## The road from above, with the pigs, the rider and the rider's sight line.
-picture : RiderState -> List(Shapes.Shape)
-picture = |rider|
+picture_shapes : RiderState -> List(Shapes.Shape)
+picture_shapes = |rider|
 	[
 		[ground, road],
 		pigs,
@@ -342,8 +342,8 @@ status_lines = |rider, step|
 
 ## The whole stretch, played, for the expects. As a constant it's ridden once, at
 ## compile time, which adds under half a second to a check.
-whole_stretch : List(RiderState)
-whole_stretch = {
+stretch_states : List(RiderState)
+stretch_states = {
 	var $model = starting_model
 	while $model.played.len() < stretch_length {
 		$model = played_on($model)
@@ -387,7 +387,7 @@ expect pig_segment.length == Distance.metres(400.0)
 # The steps the book's table quotes, each with its speed in metres a step, its
 # gaze_yaw in degrees and its look depth, to the table's precision.
 expect {
-	played = whole_stretch
+	played = stretch_states
 	[
 		{
 			step: 889,
@@ -425,7 +425,7 @@ expect {
 
 # Each phase starts at the step the book says, and not one step before it.
 expect {
-	played = whole_stretch
+	played = stretch_states
 	[
 		(first_step, EyesOnRoad),
 		(look_first_step - 1, EyesOnRoad),
@@ -441,7 +441,7 @@ expect {
 # The gawking and the look start on one step, because both start the same
 # distance from the pig. The brake bites a step later.
 expect {
-	played = whole_stretch
+	played = stretch_states
 	before = state_at_step(played, 888)
 	first = state_at_step(played, 889)
 	next = state_at_step(played, 890)
@@ -454,7 +454,7 @@ expect {
 # The gaze is at its widest on the look's last step, and the look ends short of
 # the release angle, because the next step would pass it.
 expect {
-	played = whole_stretch
+	played = stretch_states
 	widest = gaze_degrees(state_at_step(played, look_end_step - 1))
 	played.all(|rider| gaze_degrees(rider) <= widest)
 		and gaze_degrees(state_at_step(played, look_end_step)) < widest
@@ -463,11 +463,11 @@ expect {
 }
 
 # The gaze never turns left on this stretch, as `gaze_degrees` says.
-expect whole_stretch.all(|rider| gaze_degrees(rider) >= 0.0)
+expect stretch_states.all(|rider| gaze_degrees(rider) >= 0.0)
 
 # The whole stretch stays on the canvas, and on the one segment.
 expect
-	whole_stretch.all(
+	stretch_states.all(
 		|rider|
 			rider.segment_index == first_rider.segment_index
 				and screen_x(rider.along) > 0.0
@@ -560,7 +560,7 @@ expect
 		]
 
 expect {
-	widest_gaze = state_at_step(whole_stretch, 1050)
+	widest_gaze = state_at_step(stretch_states, 1050)
 	status_lines(widest_gaze, 1050.0)
 		== [
 			"Looking at the pig, and slowing",
@@ -571,5 +571,5 @@ expect {
 }
 
 # The sight line moves with the gaze, and the picture with the rider.
-expect picture(first_rider) != picture({ ..first_rider, gaze_yaw: Angle.Turn.degrees(20.0) })
-expect picture(first_rider) != picture({ ..first_rider, along: Along.metres(200.0) })
+expect picture_shapes(first_rider) != picture_shapes({ ..first_rider, gaze_yaw: Angle.Turn.degrees(20.0) })
+expect picture_shapes(first_rider) != picture_shapes({ ..first_rider, along: Along.metres(200.0) })

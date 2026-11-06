@@ -33,12 +33,14 @@ CatSighting := {
 		position : Chain.Position,
 		speed : Speed,
 	} -> Try(CatSighting, [NoCat, OutOfView])
-	segment_cat = |view, { position, speed }|
-		match position.index_in(view.road.chain_indices).segment_in(view.road.route_segments).crossing {
+	segment_cat = |view, { position, speed }| {
+		segment = position.index_in(view.road.chain_indices).segment_in(view.road.route_segments)
+		match segment.crossing {
 			CatCrosses(crossing) =>
 				cat_in_view(view, { position, crossing, speed })
 			BirdHere(_) | QuietRoad => Err(NoCat)
 		}
+	}
 
 	## The cats as the depth sort sees them: each one's distance ahead, and
 	## its position in `cats`.

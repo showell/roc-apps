@@ -25,7 +25,7 @@ SafariApp :: [].{
 		fps: 30,
 		init: { tour: Tour.initial, paused: False },
 		advance: CanvasApp.untimed_advance(step),
-		frame: |m| frame(m.tour),
+		frame_shapes: |m| frame_shapes(m.tour),
 		sounds: |_m| 0,
 		tones: [],
 		title: "Safari",
@@ -37,8 +37,8 @@ SafariApp :: [].{
 	## turn. That is a camera whose target and offset are both the middle of
 	## the screen and whose rotation is the roll, the other way round: a
 	## `View` mark in front of everything else.
-	frame : Tour -> List(Shapes.Shape)
-	frame = |tour| {
+	frame_shapes : Tour -> List(Shapes.Shape)
+	frame_shapes = |tour| {
 		centre = { x: Screen.width.to_f64() / 2.0, y: Screen.height.to_f64() / 2.0 }
 		lean = View(
 			World({

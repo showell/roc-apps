@@ -60,8 +60,8 @@ View :: [].{
 	# A polygon of world points as screen coordinates: turned, cut to what is
 	# in front of the eye, and projected. Empty when none of it is.
 	seen : View.View, List(View.At) -> List(F64)
-	seen = |v, pts| {
-		kept = clipped(turned(v, pts))
+	seen = |v, points| {
+		kept = clipped(turned(v, points))
 		var $out = List.with_capacity(2 * kept.len())
 		for point in kept {
 			p = flat(v, point)
@@ -71,17 +71,17 @@ View :: [].{
 	}
 
 	turned : View.View, List(View.At) -> List(View.At)
-	turned = |v, pts| pts.map(|p| turn(v, p))
+	turned = |v, points| points.map(|p| turn(v, p))
 
 	# **A POLYGON IS CUT, NOT DROPPED.** Dropping one the moment a corner goes
 	# behind the eye pops a whole house off the screen while most of it is
 	# still in the frame; this walks the boundary and puts a new corner on the
 	# near plane wherever an edge crosses it.
 	clipped : List(View.At) -> List(View.At)
-	clipped = |pts| {
-		neighbours = pts.drop_first(1).concat(pts.take_first(1))
-		var $out = List.with_capacity(pts.len() + 2)
-		for (a, b) in pts.map2(neighbours, |a, b| (a, b)) {
+	clipped = |points| {
+		neighbours = points.drop_first(1).concat(points.take_first(1))
+		var $out = List.with_capacity(points.len() + 2)
+		for (a, b) in points.map2(neighbours, |a, b| (a, b)) {
 			a_in = a.forward > near
 			b_in = b.forward > near
 			if a_in {

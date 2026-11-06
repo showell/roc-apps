@@ -30,7 +30,7 @@ SceneDraw :: [].{
 	## The scene's things, painted far to near.
 	draw : Scene, Chain.Viewpoint -> List(Shapes.Shape)
 	draw = |scene, view|
-		scene.order.join_map(|depth_key| subject_shapes(scene, { view, depth_key }))
+		scene.order_keys.join_map(|depth_key| subject_shapes(scene, { view, depth_key }))
 
 	## How many of `trees` are nearer than `forward`.
 	nearer_tree_count : List(TreeSighting), Distance -> U64
@@ -207,12 +207,15 @@ cluster_sightings = [10.0, 11.0, 12.0, 13.0, 14.0].map(tree_at)
 
 cluster_shapes : F64 -> List(Shapes.Shape)
 cluster_shapes = |forward|
-	SceneDraw.tree_shapes(tree_at(forward), { trees: cluster_sightings, cam_focal: Pixels.of(500.0) })
+	SceneDraw.tree_shapes(
+		tree_at(forward),
+		{ trees: cluster_sightings, cam_focal: Pixels.of(500.0) },
+	)
 
 second_shape_points : List(Shapes.Shape) -> U64
 second_shape_points = |shapes|
 	match shapes {
-		[_, Poly(polygon), ..] => polygon.pts.len()
+		[_, Poly(polygon), ..] => polygon.points.len()
 		_ => crash "a tree in view draws a trunk and tiers"
 	}
 

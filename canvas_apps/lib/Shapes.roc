@@ -7,11 +7,11 @@ Shapes :: [].{
 
 	## One thing in a frame. A later shape in the list paints over an earlier one.
 	Shape : [
-		## A polygon, as x0, y0, x1, y1 and so on. It can be any polygon, until `cut`
+		## A polygon, as x0, y0, x1, y1 and so on. It can be any polygon, until `cut_shapes`
 		## leaves only convex ones for a painter that fills nothing else.
-		Poly({ pts : List(F64), fill : Brush.Fill }),
+		Poly({ points : List(F64), fill : Brush.Fill }),
 
-		## The triangles of one concave polygon, six numbers each. Only `cut` makes these.
+		## The triangles of one concave polygon, six numbers each. Only `cut_shapes` makes these.
 		Pieces({ tris : List(F64), fill : Brush.Fill }),
 
 		## A disc, kept inside `clip`. A clip is a rectangle, not a named place, so no
@@ -80,19 +80,19 @@ Shapes :: [].{
 		dy = y1 - y0
 		len = (dx * dx + dy * dy).sqrt()
 		if len == 0.0 {
-			Poly({ pts: [], fill })
+			Poly({ points: [], fill })
 		} else {
 			# The unit normal, half a width each way.
 			nx = 0.0 - dy / len * (w / 2.0)
 			ny = dx / len * (w / 2.0)
-			Poly({ pts: [x0 + nx, y0 + ny, x1 + nx, y1 + ny, x1 - nx, y1 - ny, x0 - nx, y0 - ny], fill })
+			Poly({ points: [x0 + nx, y0 + ny, x1 + nx, y1 + ny, x1 - nx, y1 - ny, x0 - nx, y0 - ny], fill })
 		}
 	}
 
 	## A circle's outline, as `sides` quads around the rim. A disc under a smaller
 	## disc makes a ring too, but only on a background of a known flat color.
-	ring : F64, F64, F64, F64, U64, Brush.Fill -> List(Shapes.Shape)
-	ring = |x, y, r, w, sides, fill| {
+	ring_shapes : F64, F64, F64, F64, U64, Brush.Fill -> List(Shapes.Shape)
+	ring_shapes = |x, y, r, w, sides, fill| {
 		n = if sides < 3 {
 			3
 		} else {
@@ -113,11 +113,11 @@ Shapes :: [].{
 	## turned away by the angle whose cosine is `k`. A negative `k` mirrors it as
 	## well, so a pair beside a path can face each other. A disc keeps its radius,
 	## because no shape here is an ellipse.
-	squash_x : List(Shapes.Shape), F64, F64 -> List(Shapes.Shape)
-	squash_x = |shapes, axis, k| shapes.map(
+	squashed_shapes : List(Shapes.Shape), F64, F64 -> List(Shapes.Shape)
+	squashed_shapes = |shapes, axis, k| shapes.map(
 		|shape|
 			match shape {
-				Poly(p) => Poly({ pts: pulled(p.pts, axis, k), fill: p.fill })
+				Poly(p) => Poly({ points: pulled(p.points, axis, k), fill: p.fill })
 				Pieces(p) => Pieces({ tris: pulled(p.tris, axis, k), fill: p.fill })
 				Disc(d) => Disc({ x: axis + (d.x - axis) * k, y: d.y, r: d.r, fill: d.fill, clip: d.clip })
 				# A mirror sends a rectangle's left edge to its right, and a width is never
@@ -189,15 +189,15 @@ Shapes :: [].{
 	rounded_rect = |x, y, w, h, r, segments, fill| {
 		rr = r.min((w / 2.0).min(h / 2.0))
 		if rr <= 0.0 or segments < 1 {
-			Poly({ pts: [x, y, x + w, y, x + w, y + h, x, y + h], fill })
+			Poly({ points: [x, y, x + w, y, x + w, y + h, x, y + h], fill })
 		} else {
-			var $pts = List.with_capacity((8 * (segments + 1)).to_u64_wrap())
+			var $points = List.with_capacity((8 * (segments + 1)).to_u64_wrap())
 			# Clockwise from the top-left corner, each swept from its own start angle.
-			$pts = corner($pts, x + rr, y + rr, rr, half_pi * 2.0, segments)
-			$pts = corner($pts, x + w - rr, y + rr, rr, -half_pi, segments)
-			$pts = corner($pts, x + w - rr, y + h - rr, rr, 0.0, segments)
-			$pts = corner($pts, x + rr, y + h - rr, rr, half_pi, segments)
-			Poly({ pts: $pts, fill })
+			$points = corner_points($points, x + rr, y + rr, rr, half_pi * 2.0, segments)
+			$points = corner_points($points, x + w - rr, y + rr, rr, -half_pi, segments)
+			$points = corner_points($points, x + w - rr, y + h - rr, rr, 0.0, segments)
+			$points = corner_points($points, x + rr, y + h - rr, rr, half_pi, segments)
+			Poly({ points: $points, fill })
 		}
 	}
 
@@ -205,9 +205,9 @@ Shapes :: [].{
 	half_pi = F64.pi / 2.0
 
 	## The points of a quarter turn about (cx, cy), starting at the angle `from`.
-	corner : List(F64), F64, F64, F64, F64, I64 -> List(F64)
-	corner = |pts, cx, cy, r, from, segments| {
-		var $out = pts
+	corner_points : List(F64), F64, F64, F64, F64, I64 -> List(F64)
+	corner_points = |points, cx, cy, r, from, segments| {
+		var $out = points
 		for k in 0..=segments {
 			a = from + half_pi * k.to_f64() / segments.to_f64()
 			$out = $out.concat([cx + r * a.cos(), cy + r * a.sin()])
@@ -220,13 +220,13 @@ Shapes :: [].{
 
 	## A polygon from its flat list of points. Fewer than three points enclose
 	## nothing, so the answer is an empty list, which joins with the rest of a frame.
-	polygon : List(F64), Brush.Fill -> List(Shapes.Shape)
-	polygon = |pts, fill| {
-		n = pts.len() // 2
+	polygon_shapes : List(F64), Brush.Fill -> List(Shapes.Shape)
+	polygon_shapes = |points, fill| {
+		n = points.len() // 2
 		if n < 3 {
 			[]
 		} else {
-			[Poly({ pts, fill })]
+			[Poly({ points, fill })]
 		}
 	}
 
@@ -234,15 +234,15 @@ Shapes :: [].{
 	## fills only convex polygons, as roc-ray does. A canvas fills a concave polygon
 	## itself and doesn't ask for this. A frame paints the same either way, which the
 	## gates' ShapesFrame checks.
-	cut : List(Shapes.Shape) -> List(Shapes.Shape)
-	cut = |shapes| shapes.join_map(
+	cut_shapes : List(Shapes.Shape) -> List(Shapes.Shape)
+	cut_shapes = |shapes| shapes.join_map(
 		|shape|
 			match shape {
 				Poly(p) =>
-					if is_convex(p.pts) {
+					if is_convex(p.points) {
 						[Poly(p)]
 					} else {
-						[Pieces({ tris: wound(triangulate(p.pts)), fill: p.fill })]
+						[Pieces({ tris: wound_triangles(triangles(p.points)), fill: p.fill })]
 					}
 				other => [other]
 			},
@@ -250,8 +250,8 @@ Shapes :: [].{
 
 	## Each triangle wound as roc-ray's convex fill winds one: its second and third
 	## corners swapped when its signed area is positive.
-	wound : List(F64) -> List(F64)
-	wound = |tris| {
+	wound_triangles : List(F64) -> List(F64)
+	wound_triangles = |tris| {
 		m = tris.len() // 6
 		var $out = List.with_capacity(6 * m)
 		for k in 0..<m {
@@ -279,8 +279,8 @@ Shapes :: [].{
 
 	## Twice the signed area, summed as roc-ray's host sums it.
 	twice_area : List(F64) -> F64
-	twice_area = |pts| {
-		n = pts.len() // 2
+	twice_area = |points| {
+		n = points.len() // 2
 		var $sum = 0.0
 		for k in 0..<n {
 			k1 = if k + 1 == n {
@@ -288,7 +288,7 @@ Shapes :: [].{
 			} else {
 				k + 1
 			}
-			$sum = $sum + at(pts, 2 * k) * at(pts, 2 * k1 + 1) - at(pts, 2 * k1) * at(pts, 2 * k + 1)
+			$sum = $sum + at(points, 2 * k) * at(points, 2 * k1 + 1) - at(points, 2 * k1) * at(points, 2 * k + 1)
 		}
 		$sum
 	}
@@ -301,8 +301,8 @@ Shapes :: [].{
 	## Convex when every corner turns the same way and the boundary stays within
 	## `flip_limit`, which rules out a star whose corners all turn one way.
 	is_convex : List(F64) -> Bool
-	is_convex = |pts| {
-		n = pts.len() // 2
+	is_convex = |points| {
+		n = points.len() // 2
 		var $sign = 0.0
 		var $bad = False
 		var $xflips = 0
@@ -321,11 +321,11 @@ Shapes :: [].{
 			} else {
 				$k + 2
 			}
-			x0 = at(pts, 2 * $k)
-			y0 = at(pts, 2 * $k + 1)
-			x1 = at(pts, 2 * k1)
-			y1 = at(pts, 2 * k1 + 1)
-			turn = cross3(x0, y0, x1, y1, at(pts, 2 * k2), at(pts, 2 * k2 + 1))
+			x0 = at(points, 2 * $k)
+			y0 = at(points, 2 * $k + 1)
+			x1 = at(points, 2 * k1)
+			y1 = at(points, 2 * k1 + 1)
+			turn = cross3(x0, y0, x1, y1, at(points, 2 * k2), at(points, 2 * k2 + 1))
 			$bad = turn * $sign < 0.0
 			$sign = if $sign == 0.0 {
 				turn
@@ -362,20 +362,20 @@ Shapes :: [].{
 	## The polygon cut into triangles by ear clipping, six numbers a triangle. A
 	## corner in line with its neighbors is dropped without a triangle. A polygon
 	## that crosses itself can run out of ears, and what is left is fanned.
-	triangulate : List(F64) -> List(F64)
-	triangulate = |pts| {
-		n = pts.len() // 2
-		orient = if twice_area(pts) >= 0.0 {
+	triangles : List(F64) -> List(F64)
+	triangles = |points| {
+		n = points.len() // 2
+		orient = if twice_area(points) >= 0.0 {
 			1.0
 		} else {
 			-1.0
 		}
-		var $idx = List.from_iter(U64.until(0, n))
+		var $indices = List.from_iter(U64.until(0, n))
 		var $out = List.with_capacity(6 * n)
 		var $i = 0
 		var $misses = 0
-		while $idx.len() > 3 and $misses < $idx.len() {
-			m = $idx.len()
+		while $indices.len() > 3 and $misses < $indices.len() {
+			m = $indices.len()
 			ip = if $i == 0 {
 				m - 1
 			} else {
@@ -386,26 +386,26 @@ Shapes :: [].{
 			} else {
 				$i + 1
 			}
-			a = $idx.get(ip) ?? crash "vertex out of range"
-			b = $idx.get($i) ?? crash "vertex out of range"
-			c = $idx.get(inx) ?? crash "vertex out of range"
-			ax = at(pts, 2 * a)
-			ay = at(pts, 2 * a + 1)
-			bx = at(pts, 2 * b)
-			by = at(pts, 2 * b + 1)
-			cx = at(pts, 2 * c)
-			cy = at(pts, 2 * c + 1)
+			a = $indices.get(ip) ?? crash "vertex out of range"
+			b = $indices.get($i) ?? crash "vertex out of range"
+			c = $indices.get(inx) ?? crash "vertex out of range"
+			ax = at(points, 2 * a)
+			ay = at(points, 2 * a + 1)
+			bx = at(points, 2 * b)
+			by = at(points, 2 * b + 1)
+			cx = at(points, 2 * c)
+			cy = at(points, 2 * c + 1)
 			turn = cross3(ax, ay, bx, by, cx, cy) * orient
-			ear = turn >= 0.0 and !any_inside(pts, $idx, a, b, c, orient)
+			ear = turn >= 0.0 and !any_inside(points, $indices, a, b, c, orient)
 			$out = if ear and turn > 0.0 {
 				$out.concat([ax, ay, bx, by, cx, cy])
 			} else {
 				$out
 			}
-			$idx = if ear {
-				$idx.drop_at($i)
+			$indices = if ear {
+				$indices.drop_at($i)
 			} else {
-				$idx
+				$indices
 			}
 			$misses = if ear {
 				0
@@ -413,7 +413,7 @@ Shapes :: [].{
 				$misses + 1
 			}
 			$i = if ear {
-				if $i >= $idx.len() {
+				if $i >= $indices.len() {
 					0
 				} else {
 					$i
@@ -422,23 +422,23 @@ Shapes :: [].{
 				inx
 			}
 		}
-		fan(pts, $idx, $out)
+		fan(points, $indices, $out)
 	}
 
 	## Whether a remaining corner other than a, b and c lies strictly inside the
 	## triangle a b c.
 	any_inside : List(F64), List(U64), U64, U64, U64, F64 -> Bool
-	any_inside = |pts, idx, a, b, c, orient| {
-		ax = at(pts, 2 * a)
-		ay = at(pts, 2 * a + 1)
-		bx = at(pts, 2 * b)
-		by = at(pts, 2 * b + 1)
-		cx = at(pts, 2 * c)
-		cy = at(pts, 2 * c + 1)
-		idx.any(
+	any_inside = |points, indices, a, b, c, orient| {
+		ax = at(points, 2 * a)
+		ay = at(points, 2 * a + 1)
+		bx = at(points, 2 * b)
+		by = at(points, 2 * b + 1)
+		cx = at(points, 2 * c)
+		cy = at(points, 2 * c + 1)
+		indices.any(
 			|p| {
-				px = at(pts, 2 * p)
-				py = at(pts, 2 * p + 1)
+				px = at(points, 2 * p)
+				py = at(points, 2 * p + 1)
 				p != a and p != b and p != c and cross3(ax, ay, bx, by, px, py) * orient > 0.0 and cross3(bx, by, cx, cy, px, py) * orient > 0.0 and cross3(cx, cy, ax, ay, px, py) * orient > 0.0
 			},
 		)
@@ -446,15 +446,15 @@ Shapes :: [].{
 
 	## The remaining corners as a fan from the first, onto `out`.
 	fan : List(F64), List(U64), List(F64) -> List(F64)
-	fan = |pts, idx, out| {
-		m = idx.len()
-		first = idx.get(0) ?? 0
+	fan = |points, indices, out| {
+		m = indices.len()
+		first = indices.get(0) ?? 0
 		var $out = out
 		var $k = 1
 		while $k + 1 < m {
-			p = idx.get($k) ?? crash "vertex out of range"
-			q = idx.get($k + 1) ?? crash "vertex out of range"
-			$out = $out.concat([at(pts, 2 * first), at(pts, 2 * first + 1), at(pts, 2 * p), at(pts, 2 * p + 1), at(pts, 2 * q), at(pts, 2 * q + 1)])
+			p = indices.get($k) ?? crash "vertex out of range"
+			q = indices.get($k + 1) ?? crash "vertex out of range"
+			$out = $out.concat([at(points, 2 * first), at(points, 2 * first + 1), at(points, 2 * p), at(points, 2 * p + 1), at(points, 2 * q), at(points, 2 * q + 1)])
 			$k = $k + 1
 		}
 		$out
@@ -473,6 +473,6 @@ line_of_type = {
 	color: Brush.opaque(0x202020),
 }
 
-expect Shapes.squash_x([Text(line_of_type)], 0.0, 0.5) == [Text({ ..line_of_type, x: 50.0 })]
-expect Shapes.squash_x([Text(line_of_type)], 0.0, -1.0) == [Text({ ..line_of_type, x: -100.0 })]
-expect Shapes.squash_x([Text(line_of_type)], 100.0, 0.5) == [Text(line_of_type)]
+expect Shapes.squashed_shapes([Text(line_of_type)], 0.0, 0.5) == [Text({ ..line_of_type, x: 50.0 })]
+expect Shapes.squashed_shapes([Text(line_of_type)], 0.0, -1.0) == [Text({ ..line_of_type, x: -100.0 })]
+expect Shapes.squashed_shapes([Text(line_of_type)], 100.0, 0.5) == [Text(line_of_type)]

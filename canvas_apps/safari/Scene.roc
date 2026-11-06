@@ -29,7 +29,7 @@ Scene := {
 	rails : List(GuardRail.RailQuad),
 	truck : TruckSighting,
 	birds : List(BirdSighting),
-	order : List(DepthSort.DepthKey),
+	order_keys : List(DepthSort.DepthKey),
 }.{
 
 	## What the sightings read beyond the road: the rider's speed, where the
@@ -83,7 +83,7 @@ Scene := {
 			rails,
 			truck: truck_at,
 			birds,
-			order: DepthSort.sort_by(keys, |key| key.forward),
+			order_keys: DepthSort.sort_by(keys, |key| key.forward),
 		}
 	}
 }

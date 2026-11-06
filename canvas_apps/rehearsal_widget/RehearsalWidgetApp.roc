@@ -35,7 +35,7 @@ RehearsalWidgetApp :: [].{
 		fps: 60,
 		init: { tries_shown: 0 },
 		advance: |model, input, _seconds| { tries_shown: stepped(model.tries_shown, input) },
-		frame: |model| frame_at(model.tries_shown),
+		frame_shapes: |model| shapes_at(model.tries_shown),
 		sounds: |_model| 0,
 		tones: [],
 		title: "Twelve rehearsals",
@@ -72,7 +72,7 @@ Rehearsal : {
 	high : Angle.Lean,
 	outcome : Coast.Outcome,
 	wants_more_right : Bool,
-	path : List(ArcPoint),
+	path_points : List(ArcPoint),
 }
 
 ## The road's edge that stops an arc, on the right. The left's is its mirror.
@@ -92,8 +92,8 @@ runs_on = |motion| {
 }
 
 ## The way a rider coasts with `lean`: the call `Coast.coast_from` makes.
-path_of : Angle.Lean -> List(ArcPoint)
-path_of = |lean| {
+points_of : Angle.Lean -> List(ArcPoint)
+points_of = |lean| {
 	var $motion = Bike.with_lean(rider, lean)
 	var $points = []
 	var $going = True
@@ -133,7 +133,7 @@ rehearsals_from = |{ low, high, at }|
 			high,
 			outcome,
 			wants_more_right,
-			path: path_of(lean),
+			path_points: points_of(lean),
 		})
 	}
 
@@ -158,8 +158,8 @@ chosen_lean =
 		Err(_) => crash "RehearsalWidgetApp.chosen_lean: the search has tries"
 	}
 
-chosen_path : List(ArcPoint)
-chosen_path = path_of(chosen_lean)
+chosen_points : List(ArcPoint)
+chosen_points = points_of(chosen_lean)
 
 ## How many tries are on show at the last stop, which is the choice.
 last_stop : U64
@@ -270,8 +270,8 @@ road_line = |{ across, color, width }| {
 }
 
 ## The road from above, with the line the rider is aiming for.
-road : List(Shapes.Shape)
-road = {
+road_shapes : List(Shapes.Shape)
+road_shapes = {
 	half_lane = Scenery.road_half_width.to_metres()
 	[
 		ground,
@@ -295,10 +295,10 @@ steps_a_line = 8
 
 ## The points to draw an arc through: every so many, and the last.
 drawn_points : List(ArcPoint) -> List(ArcPoint)
-drawn_points = |path| {
-	numbered = path.map_with_index(|point, index| { point, index })
+drawn_points = |path_points| {
+	numbered = path_points.map_with_index(|point, index| { point, index })
 	spaced = numbered.keep_if(|{ index, .. }| index % steps_a_line == 0).map(|{ point, .. }| point)
-	match path.last() {
+	match path_points.last() {
 		Ok(end) => spaced.append(end)
 		Err(_) => spaced
 	}
@@ -306,9 +306,9 @@ drawn_points = |path| {
 
 ## One arc as a run of lines from the rider.
 arc_shapes : List(ArcPoint), { color : I64, width : F64 } -> List(Shapes.Shape)
-arc_shapes = |path, { color, width }| {
+arc_shapes = |path_points, { color, width }| {
 	start = { forward: 0.0, across: rider.across.to_metres() }
-	points = drawn_points(path).prepend(start).map(canvas_point)
+	points = drawn_points(path_points).prepend(start).map(canvas_point)
 	points.map2(
 		points.drop_first(1),
 		|a, b|
@@ -335,7 +335,7 @@ color_of = |outcome|
 ## The arcs for a list of tries.
 tries_shapes : List(Rehearsal), F64 -> List(Shapes.Shape)
 tries_shapes = |tries, width|
-	tries.join_map(|{ path, outcome, .. }| arc_shapes(path, { color: color_of(outcome), width }))
+	tries.join_map(|{ path_points, outcome, .. }| arc_shapes(path_points, { color: color_of(outcome), width }))
 
 rider_mark : Shapes.Shape
 rider_mark = {
@@ -350,18 +350,18 @@ rider_mark = {
 }
 
 ## A line of words on the grass along the picture's bottom edge.
-caption : List(Shapes.Shape)
-caption = [ScrubWidget.label({ text: "from above, stretched x2 across the road", x: 10.0, y: 213.0 })]
+caption_shapes : List(Shapes.Shape)
+caption_shapes = [ScrubWidget.label({ text: "from above, stretched x2 across the road", x: 10.0, y: 213.0 })]
 
 ## The road and the arcs so far. The newest try is drawn bold, and once the
 ## tries are over the arc that was chosen is.
-picture : U64 -> List(Shapes.Shape)
-picture = |tries_shown|
+picture_shapes : U64 -> List(Shapes.Shape)
+picture_shapes = |tries_shown|
 	[
-		road,
+		road_shapes,
 		arcs_shown(tries_shown),
 		[rider_mark],
-		caption,
+		caption_shapes,
 	].join()
 
 ## The arcs with `tries_shown` tries on show, the boldest last.
@@ -370,7 +370,7 @@ arcs_shown = |tries_shown|
 	if tries_shown == 0 {
 		[]
 	} else if is_past_the_tries(tries_shown) {
-		tries_shapes(rehearsals, 1.0).concat(arc_shapes(chosen_path, { color: kept_color, width: 4.0 }))
+		tries_shapes(rehearsals, 1.0).concat(arc_shapes(chosen_points, { color: kept_color, width: 4.0 }))
 	} else {
 		earlier = rehearsals.take_first(tries_shown - 1)
 		newest = rehearsals.drop_first(tries_shown - 1).take_first(1)
@@ -414,8 +414,8 @@ across_text = |across| {
 
 ## What a rehearsal found, in words.
 outcome_text : Rehearsal -> Str
-outcome_text = |{ outcome, path, .. }| {
-	steps = path.len().to_str()
+outcome_text = |{ outcome, path_points, .. }| {
+	steps = path_points.len().to_str()
 	match outcome.exit {
 		Leaves({ side: Left, .. }) => "Off the left edge in ${steps} steps"
 		Leaves({ side: Right, .. }) => "Off the right edge in ${steps} steps"
@@ -434,7 +434,7 @@ verdict_text = |{ wants_more_right, .. }|
 
 ## How many steps of physics all the tries ran.
 steps_rehearsed : U64
-steps_rehearsed = rehearsals.fold(0, |sum, { path, .. }| sum + path.len())
+steps_rehearsed = rehearsals.fold(0, |sum, { path_points, .. }| sum + path_points.len())
 
 ## What the search has done so far, a line each.
 status_lines : U64 -> List(Str)
@@ -558,11 +558,11 @@ marks = |tries_shown|
 		.append(hint)
 
 ## Everything on the canvas with `tries_shown` tries on show.
-frame_at : U64 -> List(Shapes.Shape)
-frame_at = |tries_shown|
+shapes_at : U64 -> List(Shapes.Shape)
+shapes_at = |tries_shown|
 	ScrubWidget.frame_shapes({
-		picture: picture(tries_shown),
-		status: status_lines(tries_shown),
+		picture_shapes: picture_shapes(tries_shown),
+		status_lines: status_lines(tries_shown),
 	}).concat(marks(tries_shown))
 
 ## The ride at `step`, played from its start.
@@ -593,8 +593,8 @@ expect chosen_lean.to_radians() == LeanSearch.best_lean(rider).to_radians()
 # Each path ends where the game's own arc says that arc ends.
 expect
 	rehearsals.all(
-		|{ path, outcome, .. }|
-			match path.last() {
+		|{ path_points, outcome, .. }|
+			match path_points.last() {
 				Ok(point) => point.across == outcome.end_across.to_metres()
 				Err(_) => False
 			},
@@ -662,9 +662,9 @@ expect is_past_the_tries(13)
 # An arc is drawn by fewer points than it has, and it still ends at its end.
 expect
 	rehearsals.all(
-		|{ path, .. }| {
-			drawn = drawn_points(path)
-			drawn.len() < path.len() and drawn.last() == path.last()
+		|{ path_points, .. }| {
+			drawn = drawn_points(path_points)
+			drawn.len() < path_points.len() and drawn.last() == path_points.last()
 		},
 	)
 
@@ -693,6 +693,6 @@ rehearsal_one : Rehearsal
 rehearsal_one = rehearsals.first() ?? crash "RehearsalWidgetApp.rehearsal_one: the search has tries"
 
 # The picture changes with every stop along the ruler.
-expect picture(0) != picture(1)
-expect picture(1) != picture(2)
-expect picture(12) != picture(13)
+expect picture_shapes(0) != picture_shapes(1)
+expect picture_shapes(1) != picture_shapes(2)
+expect picture_shapes(12) != picture_shapes(13)

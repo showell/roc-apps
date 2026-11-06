@@ -33,11 +33,11 @@ WorkshopDraw :: [].{
 	frame : Rules.World -> List(Shapes.Shape)
 	frame = |world| {
 		var $out = [Rect({ x: 0.0, y: 0.0, w: 800.0, h: 600.0, fill: Flat(theme.bg) })]
-		$out = List.concat($out, Font.text("Pixel Workshop", 72.0, 12.0, 20.0, theme.ink))
-		$out = List.concat($out, Font.text("Canvas, palette and brush sound all generated at startup", 72.0, 44.0, 12.0, theme.muted))
+		$out = List.concat($out, Font.text_shapes("Pixel Workshop", 72.0, 12.0, 20.0, theme.ink))
+		$out = List.concat($out, Font.text_shapes("Canvas, palette and brush sound all generated at startup", 72.0, 44.0, 12.0, theme.muted))
 		$out = List.concat($out, canvas(world))
 		$out = List.concat($out, palette(world))
-		List.concat($out, Font.text("Drag to paint  |  1-4 pick a colour  |  C restores the design", 72.0, 562.0, 11.0, theme.faint))
+		List.concat($out, Font.text_shapes("Drag to paint  |  1-4 pick a colour  |  C restores the design", 72.0, 562.0, 11.0, theme.faint))
 	}
 
 	# ── the canvas ─────────────────────────────────────────────────────────
@@ -89,7 +89,7 @@ WorkshopDraw :: [].{
 	palette : Rules.World -> List(Shapes.Shape)
 	palette = |world| {
 		var $out = card(594.0, 108.0, 150.0, 348.0, 12.0)
-		$out = List.concat($out, Font.text("Palette", 610.0, 126.0, 16.0, theme.ink))
+		$out = List.concat($out, Font.text_shapes("Palette", 610.0, 126.0, 16.0, theme.ink))
 		var $i = 0
 		while $i < 4 {
 			$out = List.concat($out, swatch($i, world.palette, world.mouse))
@@ -141,7 +141,7 @@ WorkshopDraw :: [].{
 		} else {
 			theme.faint
 		}
-		List.concat($out, Font.text(digit, 752.0 - Font.width_of(digit, 18.0) / 2.0, y + 25.0 - 9.0, 18.0, ink))
+		List.concat($out, Font.text_shapes(digit, 752.0 - Font.width_of(digit, 18.0) / 2.0, y + 25.0 - 9.0, 18.0, ink))
 	}
 
 	# ── the small arithmetic ───────────────────────────────────────────────

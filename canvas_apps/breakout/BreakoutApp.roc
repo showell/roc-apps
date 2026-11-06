@@ -22,7 +22,7 @@ BreakoutApp :: [].{
 		fps: 60,
 		init: { world: Rules.new_world(), elapsed: 0.0, sounds: 0 },
 		advance: |m, keys, dt| step(m, keys, dt),
-		frame: |m| BreakoutDraw.frame(m.world, m.elapsed),
+		frame_shapes: |m| BreakoutDraw.frame(m.world, m.elapsed),
 		sounds: |m| m.sounds,
 		# Start, wall, paddle, brick, lost -- the five tones upstream generates.
 		tones: [{ freq: 360, ms: 80 }, { freq: 220, ms: 50 }, { freq: 440, ms: 60 }, { freq: 660, ms: 45 }, { freq: 120, ms: 180 }],

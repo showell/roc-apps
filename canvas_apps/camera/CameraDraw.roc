@@ -69,7 +69,7 @@ CameraDraw :: [].{
 
 		$out = List.concat($out, marker(f(player.x), f(player.y)))
 		# The pointer, where it actually is in the world.
-		List.concat($out, Shapes.ring(f(mouse_world.x), f(mouse_world.y), 10.0, 2.0, 20, Flat(hex(0xffd166))))
+		List.concat($out, Shapes.ring_shapes(f(mouse_world.x), f(mouse_world.y), 10.0, 2.0, 20, Flat(hex(0xffd166))))
 	}
 
 	# A world landmark: a soft shadow, the slab, and a lighter cap so the world
@@ -91,7 +91,7 @@ CameraDraw :: [].{
 			Disc({ x, y: y + 6.0, r: 26.0, fill: Flat({ r: 0.0, g: 0.0, b: 0.0, a: 110.0 / 255.0 }), clip: Anywhere }),
 			Disc({ x, y, r: 26.0, fill: Flat(hex(0xef476f)), clip: Anywhere }),
 		]
-		$out = List.concat($out, Shapes.ring(x, y, 26.0, 4.0, 28, Flat(white)))
+		$out = List.concat($out, Shapes.ring_shapes(x, y, 26.0, 4.0, 28, Flat(white)))
 		$out = List.append($out, Shapes.line(x - 42.0, y, x + 42.0, y, 3.0, Flat(white)))
 		List.append($out, Shapes.line(x, y - 42.0, x, y + 42.0, 3.0, Flat(white)))
 	}
@@ -139,7 +139,7 @@ CameraDraw :: [].{
 		x = f(at.x)
 		y = f(at.y)
 		arm = Flat(dim(0xffd166, 140))
-		var $out = Shapes.ring(x, y, 7.0, 2.0, 16, Flat(hex(0xffd166)))
+		var $out = Shapes.ring_shapes(x, y, 7.0, 2.0, 16, Flat(hex(0xffd166)))
 		$out = List.append($out, Shapes.line(x - 14.0, y, x + 14.0, y, 1.0, arm))
 		List.append($out, Shapes.line(x, y - 14.0, x, y + 14.0, 1.0, arm))
 	}
@@ -150,12 +150,12 @@ CameraDraw :: [].{
 			Shapes.rounded_rect(15.0, 15.0, 462.0, 128.0, 13.0, 8, Flat(dim(0xffffff, 40))),
 			Shapes.rounded_rect(16.0, 16.0, 460.0, 126.0, 12.0, 8, Flat(dim(0x0b1219, 215))),
 		]
-		$out = List.concat($out, Font.text("Camera world", 32.0, 28.0, 20.0, hex(0xffffff)))
-		$out = List.concat($out, Font.text("world-space draw, screen-space HUD", 32.0, 58.0, 12.0, hex(0x8fa3b8)))
+		$out = List.concat($out, Font.text_shapes("Camera world", 32.0, 28.0, 20.0, hex(0xffffff)))
+		$out = List.concat($out, Font.text_shapes("world-space draw, screen-space HUD", 32.0, 58.0, 12.0, hex(0x8fa3b8)))
 		$out = List.append($out, Shapes.line(32.0, 80.0, 460.0, 80.0, 1.0, Flat(dim(0xffffff, 30))))
 		# The pointer in both spaces at once, which is the whole demonstration.
-		$out = List.concat($out, Font.text(readout(world, mouse_world), 32.0, 88.0, 13.0, hex(0xffd166)))
-		List.concat($out, Font.text("WASD move, wheel zoom, Q/E rotate, R reset", 32.0, 112.0, 10.0, hex(0x8fa3b8)))
+		$out = List.concat($out, Font.text_shapes(readout(world, mouse_world), 32.0, 88.0, 13.0, hex(0xffd166)))
+		List.concat($out, Font.text_shapes("WASD move, wheel zoom, Q/E rotate, R reset", 32.0, 112.0, 10.0, hex(0x8fa3b8)))
 	}
 
 	readout : Rules.World, Math.Vec2 -> Str

@@ -46,7 +46,9 @@ Chain :: [].{
 		## Every position in `chain_indices`, the rider's own first.
 		positions_in : List(World.SegmentIndex) -> List(Chain.Position)
 		positions_in = |chain_indices|
-			List.from_iter(U32.until(0, chain_indices.len().to_u32_wrap())).map(Chain.Position.number)
+			List.from_iter(
+				U32.until(0, chain_indices.len().to_u32_wrap()),
+			).map(Chain.Position.number)
 
 		## The segment at this position in `chain_indices`.
 		index_in : Chain.Position, List(World.SegmentIndex) -> World.SegmentIndex
@@ -100,7 +102,10 @@ Chain :: [].{
 	## The chain from the segment at `start`: as far as the rider can see, or
 	## to the route's end.
 	indices_ahead : List(World.Segment), World.SegmentIndex -> List(World.SegmentIndex)
-	indices_ahead = |route_segments, start| indices_onto(route_segments, { index: start, chain_indices: [] })
+	indices_ahead = |route_segments, start| indices_onto(
+		route_segments,
+		{ index: start, chain_indices: [] },
+	)
 
 	## The bend at the end of `segment`.
 	bend_out_of : World.Segment -> Geom.Bend
@@ -171,7 +176,10 @@ indices_onto = |route_segments, { index, chain_indices }|
 	} else {
 		longer_chain = chain_indices.append(index)
 		match index.segment_in(route_segments).ending {
-			Continues({ next }) => indices_onto(route_segments, { index: next, chain_indices: longer_chain })
+			Continues({ next }) => indices_onto(
+				route_segments,
+				{ index: next, chain_indices: longer_chain },
+			)
 			Terminates => longer_chain
 		}
 	}

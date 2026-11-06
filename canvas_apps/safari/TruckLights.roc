@@ -90,7 +90,10 @@ TruckLights :: [].{
 	## How far a brake light's glow reaches from `center`, the lamp's
 	## center.
 	glow_radius : List(Screen.Point), Screen.Point -> Pixels
-	glow_radius = |lamp_points, center| TruckLights.farthest_from(lamp_points, center).times(glow_reach)
+	glow_radius = |
+		lamp_points,
+		center,
+	| TruckLights.farthest_from(lamp_points, center).times(glow_reach)
 
 	## A circle round `center`, as a polygon of `glow_sides` corners.
 	outline_points : { center : Screen.Point, outline_radius : Pixels } -> List(Screen.Point)
@@ -183,7 +186,7 @@ beam_shapes = |truck, across| {
 		[]
 	} else {
 		on_screen = Camera.projected_points(corners, truck.view.cam_focal)
-		lamp_points = Camera.project(
+		lamp = Camera.project(
 			TruckLights.midpoint({ from: lamp_bottom, to: lamp_top }),
 			truck.view.cam_focal,
 		)
@@ -192,8 +195,8 @@ beam_shapes = |truck, across| {
 			{
 				center_rgba: beam_core,
 				edge_rgba: beam_edge,
-				gradient_center: lamp_points,
-				gradient_radius: TruckLights.farthest_from(on_screen, lamp_points),
+				gradient_center: lamp,
+				gradient_radius: TruckLights.farthest_from(on_screen, lamp),
 			},
 		)
 		match beam_polygon {
@@ -208,7 +211,7 @@ beam_shapes = |truck, across| {
 brake_shapes : TruckShape.TruckInView, { left : Across, right : Across } -> List(Shapes.Shape)
 brake_shapes = |truck, { left, right }| {
 	rear = truck.box.rear
-	lamp_points =
+	lamp =
 		[
 			{
 				along: rear,
@@ -231,7 +234,9 @@ brake_shapes = |truck, { left, right }| {
 				height: brake_lamp_top,
 			},
 		].map(|corner| TruckShape.point(truck, corner))
-	glow_shapes(truck, lamp_points).concat(TruckShape.polygon_shapes(truck, { color: brake_color, corners: lamp_points }))
+	glow_shapes(truck, lamp).concat(
+		TruckShape.polygon_shapes(truck, { color: brake_color, corners: lamp }),
+	)
 }
 
 ## The glow round a brake lamp. A lamp with a corner behind the camera has

@@ -36,11 +36,11 @@ Font :: [].{
 	# A string, as shapes, with its top-left at (x, y). `size` is the height of
 	# a capital letter; the stroke is a fourteenth of it, which is about what a
 	# plotter would give you.
-	text : Str, F64, F64, F64, Brush.Rgba -> List(Shapes.Shape)
-	text = |str, x, y, size, color| {
+	text_shapes : Str, F64, F64, F64, Brush.Rgba -> List(Shapes.Shape)
+	text_shapes = |str, x, y, size, color| {
 		u = size / units
 		w = (size / 14.0).max(1.0)
-		str.to_utf8().map_with_index(|b, i| glyph(b, x + i.to_f64() * advance * u, y, u, w, color)).join()
+		str.to_utf8().map_with_index(|b, i| glyph_shapes(b, x + i.to_f64() * advance * u, y, u, w, color)).join()
 	}
 
 	# How wide a string is, for a caller that wants to place one.
@@ -50,7 +50,7 @@ Font :: [].{
 	## A string centred on `mid`, which is what a title, a banner and a hint
 	## all want and each game was working out for itself.
 	centered : Str, F64, F64, F64, Brush.Rgba -> List(Shapes.Shape)
-	centered = |str, mid, y, size, colour| text(str, mid - width_of(str, size) / 2.0, y, size, colour)
+	centered = |str, mid, y, size, colour| text_shapes(str, mid - width_of(str, size) / 2.0, y, size, colour)
 
 	## A line of type as strokes. The strokes' capitals stand as tall as a real
 	## typeface's do at the line's size.
@@ -59,7 +59,7 @@ Font :: [].{
 		cap_height = size * cap_height_share
 		top = y - cap_height
 		match align {
-			Left => text(words, x, top, cap_height, color)
+			Left => text_shapes(words, x, top, cap_height, color)
 			Center => centered(words, x, top, cap_height, color)
 		}
 	}
@@ -78,18 +78,18 @@ Font :: [].{
 	cap_height_share = 0.72
 
 	# One glyph's strokes, placed and thickened.
-	glyph : U8, F64, F64, F64, F64, Brush.Rgba -> List(Shapes.Shape)
-	glyph = |b, x, y, u, w, color| {
+	glyph_shapes : U8, F64, F64, F64, F64, Brush.Rgba -> List(Shapes.Shape)
+	glyph_shapes = |b, x, y, u, w, color| {
 		strokes = strokes_for(b)
 		var $out = List.with_capacity(strokes.len())
-		for pts in strokes {
-			for j in 1..<(pts.len() // 2) {
+		for points in strokes {
+			for j in 1..<(points.len() // 2) {
 				$out = $out.append(
 					Shapes.line(
-						x + at(pts, 2 * (j - 1)) * u,
-						y + at(pts, 2 * (j - 1) + 1) * u,
-						x + at(pts, 2 * j) * u,
-						y + at(pts, 2 * j + 1) * u,
+						x + at(points, 2 * (j - 1)) * u,
+						y + at(points, 2 * (j - 1) + 1) * u,
+						x + at(points, 2 * j) * u,
+						y + at(points, 2 * j + 1) * u,
 						w,
 						Flat(color),
 					),
@@ -351,7 +351,7 @@ sample_line = {
 
 expect
 	Font.plotted(sample_line)
-		== Font.text("Hi", 100.0, 164.0, 36.0, Brush.opaque(0x202020))
+		== Font.text_shapes("Hi", 100.0, 164.0, 36.0, Brush.opaque(0x202020))
 expect
 	Font.plotted({ ..sample_line, align: Center })
 		== Font.centered("Hi", 100.0, 164.0, 36.0, Brush.opaque(0x202020))

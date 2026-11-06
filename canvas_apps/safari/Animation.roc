@@ -113,11 +113,11 @@ Animation :: [].{
 frame_number : Fraction, U64 -> U64
 frame_number = |progress, count| (progress.to_f64() * count.to_f64() + 0.000000001).to_u64_wrap()
 
-## Whether each of `got` is within a billionth of its `want`.
+## Whether each of `got` is within a billionth of its `expected`.
 is_near : List(F64), List(F64) -> Bool
-is_near = |got, want| {
-	closeness = got.map2(want, |one, wanted| (one - wanted).abs() <= 0.000000001)
-	got.len() == want.len() and closeness.all(|is_close| is_close)
+is_near = |got, expected| {
+	closeness = got.map2(expected, |one, wanted| (one - wanted).abs() <= 0.000000001)
+	got.len() == expected.len() and closeness.all(|is_close| is_close)
 }
 
 ## A stage as numbers, so a table can hold each tag beside its payload: 0 for

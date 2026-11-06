@@ -223,7 +223,11 @@ Tower :: [].{
 	## A rod between two points in the rider's view. A rod with one end
 	## behind the near plane is cut there; one with both ends behind it is
 	## not drawn.
-	rod_shapes : Tower.RodView, { from : Geom.RaisedPoint, to : Geom.RaisedPoint } -> List(Shapes.Shape)
+	rod_shapes : Tower.RodView,
+	{
+		from : Geom.RaisedPoint,
+		to : Geom.RaisedPoint,
+	} -> List(Shapes.Shape)
 	rod_shapes = |view, { from, to }|
 		match (sight_of(from), sight_of(to)) {
 			(InView, InView) => [rod_on_screen(view, { from, to })]
@@ -339,7 +343,10 @@ Tower :: [].{
 			hidden_height = storey_bottom.max(tower.sunk).minus(storey_bottom)
 			hidden_fraction = Fraction.of(hidden_height.ratio_to(storey_height))
 			corners.join_map(
-				|corner| brace_shapes(tower, { corner, storey_bottom, storey_top, hidden_fraction }),
+				|corner| brace_shapes(
+					tower,
+					{ corner, storey_bottom, storey_top, hidden_fraction },
+				),
 			)
 		}
 	}
@@ -618,7 +625,7 @@ expect
 		width_px: Pixels.of(10.0),
 	})
 		== Poly({
-			pts: [-4.0, 3.0, 26.0, 43.0, 34.0, 37.0, 4.0, -3.0],
+			points: [-4.0, 3.0, 26.0, 43.0, 34.0, 37.0, 4.0, -3.0],
 			fill: Flat(Brush.opaque(Tower.tower_metal)),
 		})
 
@@ -630,7 +637,7 @@ expect
 		width_px: Pixels.of(10.0),
 	})
 		== Poly({
-			pts: [5.0, 6.0, 5.0, 6.0, 5.0, 6.0, 5.0, 6.0],
+			points: [5.0, 6.0, 5.0, 6.0, 5.0, 6.0, 5.0, 6.0],
 			fill: Flat(Brush.opaque(Tower.tower_metal)),
 		})
 

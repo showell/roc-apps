@@ -30,7 +30,7 @@ CanvasApp :: [].{
 		advance : model, Input.Snapshot, F32 -> model,
 
 		# What to draw.
-		frame : model -> List(Shapes.Shape),
+		frame_shapes : model -> List(Shapes.Shape),
 
 		# Which of `tones` the last step set off, as a bit per tone. A game
 		# reports that a sound HAPPENED; whether that is a speaker or a widget

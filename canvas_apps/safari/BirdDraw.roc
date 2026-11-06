@@ -64,7 +64,7 @@ expect
 expect {
 	first_corner = |bird|
 		match BirdDraw.draw(bird, Pixels.of(500.0)) {
-			[Poly(polygon), ..] => polygon.pts.take_first(2)
+			[Poly(polygon), ..] => polygon.points.take_first(2)
 			_ => crash "a bird draws polygons"
 		}
 	moved_bird = {

@@ -62,8 +62,14 @@ expect Pond.bank_color == 0xC2B280
 expect Pond.duck_codepoint == 129414
 expect Pond.duck_height.to_metres() == 0.9
 
-expect Pond.water_outline_points.get(0) == Ok({ along: Along.metres(3.0), across: Across.metres(-4.0) })
-expect Pond.water_outline_points.get(4) == Ok({ along: Along.metres(32.0), across: Across.metres(-17.0) })
+expect Pond.water_outline_points.get(0) == Ok({
+	along: Along.metres(3.0),
+	across: Across.metres(-4.0),
+})
+expect Pond.water_outline_points.get(4) == Ok({
+	along: Along.metres(32.0),
+	across: Across.metres(-17.0),
+})
 expect Pond.bank_points.get(0) == Ok({ along: Along.metres(29.0), across: Across.metres(-7.0) })
 
 is_on_water : Pond.Duck -> Bool

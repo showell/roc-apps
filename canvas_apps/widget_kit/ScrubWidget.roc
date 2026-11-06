@@ -41,14 +41,14 @@ ScrubWidget :: [].{
 		title : Str,
 		init : model,
 		advance : model, Input.Snapshot -> model,
-		frame : model -> List(Shapes.Shape),
+		frame_shapes : model -> List(Shapes.Shape),
 	} -> CanvasApp.CanvasApp(model)
-	canvas_app = |{ title, init, advance, frame }| {
+	canvas_app = |{ title, init, advance, frame_shapes }| {
 		size: { width: canvas_width, height: canvas_height },
 		fps: 60,
 		init,
 		advance: |model, input, _seconds| advance(model, input),
-		frame,
+		frame_shapes,
 		sounds: |_model| 0,
 		tones: [],
 		title,
@@ -100,16 +100,16 @@ ScrubWidget :: [].{
 		})
 
 	## The picture, and the panel with the lines of text on it.
-	frame_shapes : { picture : List(Shapes.Shape), status : List(Str) } -> List(Shapes.Shape)
-	frame_shapes = |{ picture, status }|
-		[picture, [panel], status.map_with_index(status_line)].join()
+	frame_shapes : { picture_shapes : List(Shapes.Shape), status_lines : List(Str) } -> List(Shapes.Shape)
+	frame_shapes = |{ picture_shapes, status_lines }|
+		[picture_shapes, [panel], status_lines.map_with_index(status_line)].join()
 
 	## The ride's sky and grass with `shapes` over them, at two thirds of
 	## Safari's screen, so a widget's picture is what the ride's frame shows.
 	## The sky is `clock`'s, and `sun` is where the sun stands in it.
-	ride_picture : List(Shapes.Shape), { clock : Clock, sun : Sun.Sighting } -> List(Shapes.Shape)
-	ride_picture = |shapes, { clock, sun }|
-		ride_picture_in(
+	ride_shapes : List(Shapes.Shape), { clock : Clock, sun : Sun.Sighting } -> List(Shapes.Shape)
+	ride_shapes = |shapes, { clock, sun }|
+		ride_shapes_in(
 			shapes,
 			{
 				sky_top_color: Sky.sky_top_color(clock),
@@ -119,13 +119,13 @@ ScrubWidget :: [].{
 		)
 
 	## The same picture under any sky, for a widget that shows part of a sunset.
-	ride_picture_in : List(Shapes.Shape),
+	ride_shapes_in : List(Shapes.Shape),
 	{
 		sky_top_color : Sky.Rgb,
 		sky_horizon_color : Sky.Rgb,
 		sun_sighting : Sun.Sighting,
 	} -> List(Shapes.Shape)
-	ride_picture_in = |shapes, sky| {
+	ride_shapes_in = |shapes, sky| {
 		corner = { x: 0.0, y: 0.0 }
 		ride = Backdrop.frame_shapes(shapes, sky)
 		[
@@ -207,7 +207,7 @@ expect ScrubWidget.stage_text(Past(Distance.metres(1.0))) == "Past"
 # The first view mark, the sky, the grass, the shapes, and the mark back to the
 # screen.
 expect
-	ScrubWidget.ride_picture(
+	ScrubWidget.ride_shapes(
 		[
 			Rect({
 				x: 0.0,
@@ -240,8 +240,8 @@ expect ScrubWidget.count_text(2198) == "2,198"
 expect ScrubWidget.count_text(1000000) == "1,000,000"
 
 # A page is the panel and its text.
-expect ScrubWidget.frame_shapes({ picture: [], status: [] }).len() == 1
-expect ScrubWidget.frame_shapes({ picture: [], status: ["I"] }).len() == 2
+expect ScrubWidget.frame_shapes({ picture_shapes: [], status_lines: [] }).len() == 1
+expect ScrubWidget.frame_shapes({ picture_shapes: [], status_lines: ["I"] }).len() == 2
 
 # Each row of the readout sits under the last, in monospace.
 expect

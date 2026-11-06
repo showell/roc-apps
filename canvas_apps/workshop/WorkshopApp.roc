@@ -21,7 +21,7 @@ WorkshopApp :: [].{
 		fps: 60,
 		init: { world: Rules.start, sounds: 0 },
 		advance: |m, input, _dt| step(m, input),
-		frame: |m| WorkshopDraw.frame(m.world),
+		frame_shapes: |m| WorkshopDraw.frame(m.world),
 		sounds: |m| m.sounds,
 		tones: [
 			{ freq: 364, ms: 35 },

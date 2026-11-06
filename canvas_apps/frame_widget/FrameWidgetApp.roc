@@ -41,7 +41,7 @@ FrameWidgetApp :: [].{
 		fps: frames_a_second,
 		init: { layers_on: 1, opening: Opening },
 		advance: |model, input, _seconds| next_model(model, input),
-		frame: frame_at,
+		frame_shapes: shapes_at,
 		sounds: |_model| 0,
 		tones: [],
 		title: "One frame of the ride",
@@ -166,10 +166,10 @@ ride_pieces = |tour| {
 	)
 	[
 		[{ layer: Mountains, shapes: skyline }, { layer: Road, shapes: ground }],
-		scene.order.map(
+		scene.order_keys.map(
 			|depth_key| {
 				layer: subject_layer(depth_key.subject),
-				shapes: SceneDraw.draw({ ..scene, order: [depth_key] }, view),
+				shapes: SceneDraw.draw({ ..scene, order_keys: [depth_key] }, view),
 			},
 		),
 	].join()
@@ -181,24 +181,24 @@ ride_parts = ride_pieces(paused_tour)
 frame_parts : List(Piece)
 frame_parts = backdrop_pieces(paused_tour).concat(ride_parts)
 
-## The camera's roll, which `SafariApp.frame` puts first.
+## The camera's roll, which `SafariApp.frame_shapes` puts first.
 lean_mark : Shapes.Shape
 lean_mark =
-	SafariApp.frame(paused_tour).first()
+	SafariApp.frame_shapes(paused_tour).first()
 		?? crash "FrameWidgetApp.lean_mark: a frame starts with its lean"
 
 ## The first `count` of the layers.
 layers_up_to : U64 -> List(Layer)
 layers_up_to = |count| layers.take_first(count)
 
-## The shapes of `parts` in `on`, in paint order.
+## The shapes of `parts` in `on_layers`, in paint order.
 shapes_in : List(Piece), List(Layer) -> List(Shapes.Shape)
-shapes_in = |parts, on|
-	parts.keep_if(|piece| on.contains(piece.layer)).join_map(|piece| piece.shapes)
+shapes_in = |parts, on_layers|
+	parts.keep_if(|piece| on_layers.contains(piece.layer)).join_map(|piece| piece.shapes)
 
-## How many of the ride's shapes are in `on`.
+## How many of the ride's shapes are in `on_layers`.
 ride_count : List(Layer) -> U64
-ride_count = |on| shapes_in(ride_parts, on).len()
+ride_count = |on_layers| shapes_in(ride_parts, on_layers).len()
 
 ## The real frame's size in pixels, and the panel's below it.
 picture_width : F64
@@ -286,9 +286,9 @@ layer_name = |layer|
 ## The two lines under the picture.
 status_lines : FrameWidgetApp.Model -> List(Str)
 status_lines = |{ layers_on, .. }| {
-	on = layers_up_to(layers_on)
-	added = on.last() ?? crash "FrameWidgetApp.status_lines: a layer is always on"
-	so_far = ScrubWidget.count_text(ride_count(on))
+	on_layers = layers_up_to(layers_on)
+	added = on_layers.last() ?? crash "FrameWidgetApp.status_lines: a layer is always on"
+	so_far = ScrubWidget.count_text(ride_count(on_layers))
 	total = ScrubWidget.count_text(ride_count(layers))
 	["Shapes so far: ${so_far} of ${total}", "Added: ${layer_name(added)}"]
 }
@@ -306,15 +306,15 @@ status_line = |text, row|
 	})
 
 ## The layers on, in the game's paint order.
-picture : List(Layer) -> List(Shapes.Shape)
-picture = |on| shapes_in(frame_parts, on).prepend(lean_mark)
+picture_shapes : List(Layer) -> List(Shapes.Shape)
+picture_shapes = |on_layers| shapes_in(frame_parts, on_layers).prepend(lean_mark)
 
 ## Everything on the canvas.
-frame_at : FrameWidgetApp.Model -> List(Shapes.Shape)
-frame_at = |model|
+shapes_at : FrameWidgetApp.Model -> List(Shapes.Shape)
+shapes_at = |model|
 	[
 		[plain_background],
-		picture(layers_up_to(model.layers_on)),
+		picture_shapes(layers_up_to(model.layers_on)),
 		[View(Screen), panel],
 		status_lines(model).map_with_index(status_line),
 	].join()
@@ -324,7 +324,7 @@ expect paused_tour.instant.clock == Clock.at_step(frame_step)
 expect frame_step == 1570
 
 # All the layers on is the game's own frame, shape for shape and in its order.
-expect picture(layers) == SafariApp.frame(paused_tour)
+expect picture_shapes(layers) == SafariApp.frame_shapes(paused_tour)
 
 # The ride's parts are the game's own shapes, in the game's order.
 expect ride_parts.join_map(|piece| piece.shapes) == Tour.shapes(paused_tour)
@@ -345,13 +345,13 @@ expect
 		== [1656, 1656, 1656, 1656, 1660, 1809, 2111, 2298, 2650, 2713]
 
 # A layer with shapes of its own always changes the picture, and the sun doesn't.
-expect picture(layers_up_to(1)) != picture(layers_up_to(2))
-expect picture(layers_up_to(2)) == picture(layers_up_to(3))
-expect picture(layers_up_to(3)) != picture(layers_up_to(4))
-expect picture(layers_up_to(9)) != picture(layers_up_to(10))
+expect picture_shapes(layers_up_to(1)) != picture_shapes(layers_up_to(2))
+expect picture_shapes(layers_up_to(2)) == picture_shapes(layers_up_to(3))
+expect picture_shapes(layers_up_to(3)) != picture_shapes(layers_up_to(4))
+expect picture_shapes(layers_up_to(9)) != picture_shapes(layers_up_to(10))
 
 # The first layer alone is the lean and the trees, in the game's order.
-expect picture([Trees]) == shapes_in(ride_parts, [Trees]).prepend(lean_mark)
+expect picture_shapes([Trees]) == shapes_in(ride_parts, [Trees]).prepend(lean_mark)
 
 # Sky is painted before grass, whichever the book comes to first.
 expect shapes_in(frame_parts, [Grass, Sky]) == shapes_in(frame_parts, [Sky, Grass])
@@ -448,8 +448,8 @@ expect
 		]
 
 # The canvas answers the layers, and the panel stays over whatever leans past it.
-expect frame_at(start) != frame_at(all_on)
+expect shapes_at(start) != shapes_at(all_on)
 expect
-	frame_at(all_on).first() == Ok(plain_background)
-		and frame_at(all_on).contains(panel)
-		and frame_at(all_on).contains(View(Screen))
+	shapes_at(all_on).first() == Ok(plain_background)
+		and shapes_at(all_on).contains(panel)
+		and shapes_at(all_on).contains(View(Screen))

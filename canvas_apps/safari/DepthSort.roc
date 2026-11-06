@@ -30,8 +30,8 @@ DepthSort :: [].{
 		} else {
 			half = items.len() // 2
 			merge({
-				first: DepthSort.sort_by(items.take_first(half), depth_of),
-				second: DepthSort.sort_by(items.drop_first(half), depth_of),
+				first_items: DepthSort.sort_by(items.take_first(half), depth_of),
+				second_items: DepthSort.sort_by(items.drop_first(half), depth_of),
 				depth_of,
 			})
 		}
@@ -51,43 +51,43 @@ tie_slack : F64
 tie_slack = F64.from_bits(4499125899939309867)
 
 ## Two lists, each far to near, merged into one. Of two items about as far
-## away, the one from `first` goes first.
+## away, the one from `first_items` goes first.
 merge : {
-	first : List(item),
-	second : List(item),
+	first_items : List(item),
+	second_items : List(item),
 	depth_of : (item -> Distance),
 } -> List(item)
-merge = |{ first, second, depth_of }|
+merge = |{ first_items, second_items, depth_of }|
 	merge_onto(
 		[],
 		{
-			first,
-			second,
+			first_items,
+			second_items,
 			depth_of,
 			at_first: 0,
 			at_second: 0,
 		},
 	)
 
-## The merge carried on from `merged`, with `first` taken up to `at_first`
-## and `second` up to `at_second`.
+## The merge carried on from `merged`, with `first_items` taken up to `at_first`
+## and `second_items` up to `at_second`.
 merge_onto : List(item),
 {
-	first : List(item),
-	second : List(item),
+	first_items : List(item),
+	second_items : List(item),
 	depth_of : (item -> Distance),
 	at_first : U64,
 	at_second : U64,
 } -> List(item)
-merge_onto = |merged, { first, second, depth_of, at_first, at_second }|
-	match (first.get(at_first), second.get(at_second)) {
+merge_onto = |merged, { first_items, second_items, depth_of, at_first, at_second }|
+	match (first_items.get(at_first), second_items.get(at_second)) {
 		(Ok(from_first), Ok(from_second)) =>
 			if DepthSort.is_farther({ this: depth_of(from_second), that: depth_of(from_first) }) {
 				merge_onto(
 					merged.append(from_second),
 					{
-						first,
-						second,
+						first_items,
+						second_items,
 						depth_of,
 						at_first,
 						at_second: at_second + 1,
@@ -97,16 +97,16 @@ merge_onto = |merged, { first, second, depth_of, at_first, at_second }|
 				merge_onto(
 					merged.append(from_first),
 					{
-						first,
-						second,
+						first_items,
+						second_items,
 						depth_of,
 						at_first: at_first + 1,
 						at_second,
 					},
 				)
 			}
-		(Ok(_), Err(OutOfBounds)) => merged.concat(first.drop_first(at_first))
-		(Err(OutOfBounds), Ok(_)) => merged.concat(second.drop_first(at_second))
+		(Ok(_), Err(OutOfBounds)) => merged.concat(first_items.drop_first(at_first))
+		(Err(OutOfBounds), Ok(_)) => merged.concat(second_items.drop_first(at_second))
 		(Err(OutOfBounds), Err(OutOfBounds)) => merged
 	}
 

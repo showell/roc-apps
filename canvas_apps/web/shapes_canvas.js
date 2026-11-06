@@ -156,7 +156,7 @@ function paintFrame(ctx, shapes, scale = 1) {
         paintText(ctx, p);
         break;
       case "Poly":
-        tracePoly(ctx, p.pts);
+        tracePoly(ctx, p.points);
         fillShape(ctx, p.fill);
         break;
       case "Rect":

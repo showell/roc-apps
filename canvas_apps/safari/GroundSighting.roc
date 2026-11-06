@@ -137,7 +137,10 @@ patches_behind = |road, index| {
 
 ## A bend's paving: the road just before it, then the corner it cuts.
 bend_patches : Chain.RoadView, BendView -> List(Ground.Patch)
-bend_patches = |road, bend| [road_patch(lead_points(road, bend)), road_patch(bend_corners(road, bend))]
+bend_patches = |road, bend| [
+	road_patch(lead_points(road, bend)),
+	road_patch(bend_corners(road, bend)),
+]
 
 ## The last `lead_in_length` of the road before a bend.
 lead_points : Chain.RoadView, BendView -> List(Geom.RiderPoint)

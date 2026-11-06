@@ -50,7 +50,7 @@ compare = |tour| {
 		sky_horizon_color: Tour.sky_horizon_color(tour),
 		sun: Tour.sun(tour),
 	}
-	cut_shapes = Shapes.cut(instant_shapes)
+	cut_shapes = Shapes.cut_shapes(instant_shapes)
 	a = SafariFrame.paint(scene)
 	backdrop = SafariFrame.paint({ ..scene, shapes: [] })
 	b = ShapesPixels.paint(backdrop, { roll: SafariFrame.screen_roll(roll), shapes: cut_shapes })

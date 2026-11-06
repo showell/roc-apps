@@ -57,7 +57,7 @@ StillDraw :: [].{
 	draw_polygon : StillDraw.Anchor, Stills.StillPolygon -> Shapes.Shape
 	draw_polygon = |anchor, poly| {
 		points = StillDraw.screen_points(anchor, poly.points)
-		match poly.gradient.first() {
+		match poly.gradients.first() {
 			Ok(gradient) => draw_gradient_polygon(anchor, { gradient, points })
 			Err(ListWasEmpty) => Polygon.flat_polygon(poly.color, points)
 		}
@@ -202,13 +202,13 @@ expect
 flat_polygon : U64 -> Stills.StillPolygon
 flat_polygon = |count| {
 	color: 7,
-	gradient: [],
+	gradients: [],
 	points: List.repeat({ x: 0.0, y: 0.0 }, count),
 }
 
 expect
 	StillDraw.draw_polygon(upright, flat_polygon(3))
-		== Poly({ pts: [100.0, 200.0, 100.0, 200.0, 100.0, 200.0], fill: Flat(Brush.opaque(7)) })
+		== Poly({ points: [100.0, 200.0, 100.0, 200.0, 100.0, 200.0], fill: Flat(Brush.opaque(7)) })
 
 # How many shapes draw a critter of `height` metres, `forward` metres ahead.
 shape_count : {

@@ -101,8 +101,8 @@ Cat :: [].{
 	## middle of the road to the far verge it has come, and how high its feet are.
 	## These are set by eye, not measured off the stills. A rider at a steady
 	## speed sees every one of these frames.
-	leap_steps : List({ pose : Cat.Pose, place : { share : Fraction, lift : Distance } })
-	leap_steps = [
+	leap_frames : List({ pose : Cat.Pose, place : { share : Fraction, lift : Distance } })
+	leap_frames = [
 		{ pose: Coil, place: { share: Fraction.zero, lift: Distance.zero } },
 		{ pose: Flight, place: { share: Fraction.of(0.4), lift: Distance.metres(0.27) } },
 		{ pose: Flight, place: { share: Fraction.of(0.85), lift: Distance.metres(0.17) } },
@@ -112,7 +112,7 @@ Cat :: [].{
 	## How long a crossing takes, at a frame a step.
 	crossing_steps : Steps
 	crossing_steps = {
-		frames = walking_poses.len() + frozen_frames + leap_steps.len()
+		frames = walking_poses.len() + frozen_frames + leap_frames.len()
 		Steps.of(frames.to_u32_wrap())
 	}
 
@@ -123,7 +123,7 @@ Cat :: [].{
 	## Where the crossing has got to. A cat has to finish before the rider
 	## reaches it however fast the rider comes, so it plays over steps. The rider
 	## may not speed up while it plays, so a step moves it on by one frame at
-	## most, and every pose in `leap_steps` has a frame of its own: none can be skipped.
+	## most, and every pose in `leap_frames` has a frame of its own: none can be skipped.
 	crossing_stage : Animation.Approach -> Animation.Stage
 	crossing_stage = |approach|
 		Animation.stage_over_step_span({ length: crossing_steps, ends_at: clear_gap }, approach)
@@ -178,7 +178,7 @@ Cat :: [].{
 			},
 		)
 		frozen = List.repeat({ pose: Frozen, spot: middle }, frozen_frames)
-		leaping = leap_steps.map(
+		leaping = leap_frames.map(
 			|{ pose, place }| {
 				on_the_way = Animation.spot_between({
 					from: middle,

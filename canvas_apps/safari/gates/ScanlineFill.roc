@@ -18,11 +18,11 @@ ScanlineFill :: [].{
 	polygon_pixels : List(U32),
 	{
 		roll : ScreenRoll,
-		pts : List(F64),
+		points : List(F64),
 		fill : Brush.Fill,
 	} -> List(U32)
-	polygon_pixels = |pixels, { roll, pts, fill }| {
-		corners = pts.chunks_of(2).map(
+	polygon_pixels = |pixels, { roll, points, fill }| {
+		corners = points.chunks_of(2).map(
 			|pair|
 				match pair {
 					[x, y] => roll.to_screen(ScreenRoll.ScenePoint.({ x, y }))
@@ -107,7 +107,7 @@ WindingWalk : { winding : I64, spans : List(RowSpan) }
 ## holds its upper end and not its lower.
 row_edge_crossings : List(Edge), F64 -> List(EdgeCrossing)
 row_edge_crossings = |edges, y|
-	edges.join_map(|edge| edge_crossings(edge, y)).sort_with(
+	edges.keep_oks(|edge| edge_crossing(edge, y)).sort_with(
 		|a, b|
 			if a.x < b.x {
 				Before
@@ -119,14 +119,14 @@ row_edge_crossings = |edges, y|
 	)
 
 ## Where the row at `y` crosses this one edge, if it does.
-edge_crossings : Edge, F64 -> List(EdgeCrossing)
-edge_crossings = |edge, y|
+edge_crossing : Edge, F64 -> Try(EdgeCrossing, [RowMissesEdge])
+edge_crossing = |edge, y|
 	if edge.from.y <= y and y < edge.to.y {
-		[{ x: edge_x_at(edge, y), direction: Down }]
+		Ok({ x: edge_x_at(edge, y), direction: Down })
 	} else if edge.to.y <= y and y < edge.from.y {
-		[{ x: edge_x_at(edge, y), direction: Up }]
+		Ok({ x: edge_x_at(edge, y), direction: Up })
 	} else {
-		[]
+		Err(RowMissesEdge)
 	}
 
 ## Where the edge is across the screen at the height `y`, which is between

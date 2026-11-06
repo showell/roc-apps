@@ -53,9 +53,9 @@ BreakoutDraw :: [].{
 		score = Str.concat("SCORE ", U64.to_str(world.score))
 		lives = Str.concat("LIVES ", U64.to_str(world.lives))
 		hint = "LEFT / RIGHT MOVE    SPACE LAUNCH"
-		var $out = Font.text("BREAKOUT", 44.0, 22.0, 26.0, Color.brush(paddle_neon))
-		$out = List.concat($out, Font.text(score, 330.0, 26.0, 22.0, Color.brush(hud_color)))
-		$out = List.concat($out, Font.text(lives, 560.0, 26.0, 22.0, Color.brush(hud_color)))
+		var $out = Font.text_shapes("BREAKOUT", 44.0, 22.0, 26.0, Color.brush(paddle_neon))
+		$out = List.concat($out, Font.text_shapes(score, 330.0, 26.0, 22.0, Color.brush(hud_color)))
+		$out = List.concat($out, Font.text_shapes(lives, 560.0, 26.0, 22.0, Color.brush(hud_color)))
 		$out = List.append($out, Shapes.line(44.0, 58.0, 756.0, 58.0, 2.0, Flat(Color.brush(rule_color))))
 		List.concat($out, Font.centered(hint, w / 2.0, 572.0, 17.0, Color.brush(hint_color)))
 	}

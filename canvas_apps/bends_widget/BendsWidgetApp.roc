@@ -29,7 +29,7 @@ BendsWidgetApp :: [].{
 		title: "Three bends in the road",
 		init: {},
 		advance: |model, _input| model,
-		frame: |_model| still_frame,
+		frame_shapes: |_model| still_shapes,
 	})
 }
 
@@ -152,7 +152,7 @@ ground = Rect({
 patch_shape : ShownBend, List(Geom.RiderPoint) -> Shapes.Shape
 patch_shape = |bend, corners|
 	Poly({
-		pts: corners.join_map(
+		points: corners.join_map(
 			|corner| {
 				{ x, y } = canvas_point(bend, corner)
 				[x, y]
@@ -162,8 +162,8 @@ patch_shape = |bend, corners|
 	})
 
 ## The first two corners of a rail's quad, which lie along the ground.
-rail_foot : ShownBend, List(Geom.RaisedPoint) -> List(Shapes.Shape)
-rail_foot = |bend, corners|
+foot_shapes : ShownBend, List(Geom.RaisedPoint) -> List(Shapes.Shape)
+foot_shapes = |bend, corners|
 	match corners {
 		[a, b, ..] => {
 			from = canvas_point(bend, { right: a.right, forward: a.forward })
@@ -202,7 +202,7 @@ bend_shapes = |bend| {
 	road = road_with(bend.turn)
 	[
 		GroundSighting.patches_in_view(road).map(|patch| patch_shape(bend, patch.corners)),
-		RailSighting.rails_in_view(road).join_map(|rail| rail_foot(bend, rail.corners)),
+		RailSighting.rails_in_view(road).join_map(|rail| foot_shapes(bend, rail.corners)),
 		[
 			spot(bend, { at: apex_of(bend.turn), color: apex_color }),
 			spot(bend, { at: rider, color: rider_color }),
@@ -260,14 +260,14 @@ caption_line = |bend, { text, row }|
 		color: Brush.opaque(0x202020),
 	})
 
-caption : ShownBend -> List(Shapes.Shape)
-caption = |bend|
+caption_shapes : ShownBend -> List(Shapes.Shape)
+caption_shapes = |bend|
 	caption_lines(bend.turn).map_with_index(|text, row| caption_line(bend, { text, row }))
 
-still_frame : List(Shapes.Shape)
-still_frame = {
-	picture = [ground].concat(shown_bends.join_map(bend_shapes))
-	ScrubWidget.frame_shapes({ picture, status: [] }).concat(shown_bends.join_map(caption))
+still_shapes : List(Shapes.Shape)
+still_shapes = {
+	picture_shapes = [ground].concat(shown_bends.join_map(bend_shapes))
+	ScrubWidget.frame_shapes({ picture_shapes, status_lines: [] }).concat(shown_bends.join_map(caption_shapes))
 }
 
 # The captions read what the modules say: the rail swaps sides with the turn, the
@@ -319,4 +319,4 @@ expect
 	)
 
 # The captions go down last, so they show over the panel.
-expect still_frame.ends_with(shown_bends.join_map(caption))
+expect still_shapes.ends_with(shown_bends.join_map(caption_shapes))

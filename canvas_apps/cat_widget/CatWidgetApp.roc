@@ -28,7 +28,7 @@ CatWidgetApp :: [].{
 		title: "The cat crossing",
 		range: closing_gap,
 		opens_at: closing_gap.first,
-		frame: frame_at,
+		frame_shapes: shapes_at,
 	})
 }
 
@@ -59,14 +59,14 @@ crossing : Cat.Crossing
 crossing = cat_crossing(cat_segment) ?? crash "CatWidgetApp.crossing: this segment has a cat"
 
 ## Everything on the canvas.
-frame_at : CatWidgetApp.Model -> List(Shapes.Shape)
-frame_at = |transport|
+shapes_at : CatWidgetApp.Model -> List(Shapes.Shape)
+shapes_at = |transport|
 	VcrButtons.frame_shapes(
 		transport,
 		{
 			range: closing_gap,
-			picture: road.concat(cat_shapes(transport.at)),
-			status: status_lines(transport.at),
+			picture_shapes: road_shapes.concat(cat_shapes(transport.at)),
+			status_lines: status_lines(transport.at),
 		},
 	)
 
@@ -89,8 +89,8 @@ feet_y : F64
 feet_y = 190.0
 
 ## The sky, the grass, and the road between the verges.
-road : List(Shapes.Shape)
-road = {
+road_shapes : List(Shapes.Shape)
+road_shapes = {
 	road_width_px = Scenery.road_width.to_metres() * pixels_a_metre
 	ground_height = ground_bottom_y - ground_top_y
 	[

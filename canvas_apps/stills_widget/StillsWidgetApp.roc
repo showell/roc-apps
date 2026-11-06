@@ -34,7 +34,7 @@ StillsWidgetApp :: [].{
 		fps: frames_a_second,
 		init: { large_still: cat_still(Rest), outlines: Hidden },
 		advance: |model, input, _seconds| next_model(model, input),
-		frame: frame_at,
+		frame_shapes: shapes_at,
 		sounds: |_model| 0,
 		tones: [],
 		title: "The stills",
@@ -311,8 +311,8 @@ point_count : List(Stills.StillPolygon) -> U64
 point_count = |polygons| polygons.fold(0, |sum, polygon| sum + polygon.points.len())
 
 ## What a still is made of, a line each.
-read_out : StillsWidgetApp.PoseStill -> List(Str)
-read_out = |still| [
+read_out_lines : StillsWidgetApp.PoseStill -> List(Str)
+read_out_lines = |still| [
 	still.name,
 	"${ScrubWidget.count_text(still.polygons.len())} polygons",
 	"${ScrubWidget.count_text(point_count(still.polygons))} points",
@@ -346,8 +346,8 @@ hint_line = |text, row|
 
 ## The lines round one polygon. A still repeats a point here and there, and the
 ## line between two such points is empty.
-polygon_outline : StillDraw.Anchor, Stills.StillPolygon -> List(Shapes.Shape)
-polygon_outline = |anchor, polygon| {
+outline_shapes : StillDraw.Anchor, Stills.StillPolygon -> List(Shapes.Shape)
+outline_shapes = |anchor, polygon| {
 	corners = StillDraw.screen_points(anchor, polygon.points)
 	corners.map2(
 		corners.drop_first(1).concat(corners.take_first(1)),
@@ -371,15 +371,15 @@ large_shapes = |{ large_still, outlines }| {
 	match outlines {
 		Hidden => drawn
 		Shown => {
-			outline = large_still.polygons.join_map(|polygon| polygon_outline(anchor, polygon))
+			outline = large_still.polygons.join_map(|polygon| outline_shapes(anchor, polygon))
 			drawn.concat(outline)
 		}
 	}
 }
 
 ## The words and the large still, above the panel.
-picture : StillsWidgetApp.Model -> List(Shapes.Shape)
-picture = |model|
+picture_shapes : StillsWidgetApp.Model -> List(Shapes.Shape)
+picture_shapes = |model|
 	[
 		[
 			Rect({
@@ -390,7 +390,7 @@ picture = |model|
 				fill: ScrubWidget.flat(picture_color),
 			}),
 		],
-		read_out(model.large_still).map_with_index(read_out_line),
+		read_out_lines(model.large_still).map_with_index(read_out_line),
 		hint_lines.map_with_index(hint_line),
 		large_shapes(model),
 	].join()
@@ -411,12 +411,12 @@ cell_shapes = |{ still, area, anchor }|
 	)
 
 ## The grid never changes, so it's worked out once, when the widget is built.
-grid : List(Shapes.Shape)
-grid = cells.join_map(cell_shapes)
+grid_shapes : List(Shapes.Shape)
+grid_shapes = cells.join_map(cell_shapes)
 
 ## The cell of the still shown large, lit as the picture above it is.
-large_still_mark : StillsWidgetApp.PoseStill -> List(Shapes.Shape)
-large_still_mark = |large_still|
+mark_shapes : StillsWidgetApp.PoseStill -> List(Shapes.Shape)
+mark_shapes = |large_still|
 	cells.keep_if(|cell| cell.still.name == large_still.name).map(
 		|{ area, .. }|
 			Rect({
@@ -429,11 +429,11 @@ large_still_mark = |large_still|
 	)
 
 ## Everything on the canvas.
-frame_at : StillsWidgetApp.Model -> List(Shapes.Shape)
-frame_at = |model|
-	ScrubWidget.frame_shapes({ picture: picture(model), status: [] })
-		.concat(large_still_mark(model.large_still))
-		.concat(grid)
+shapes_at : StillsWidgetApp.Model -> List(Shapes.Shape)
+shapes_at = |model|
+	ScrubWidget.frame_shapes({ picture_shapes: picture_shapes(model), status_lines: [] })
+		.concat(mark_shapes(model.large_still))
+		.concat(grid_shapes)
 
 ## Where a point of a still lands, as plain numbers.
 landing_spot : StillDraw.Anchor, Stills.StillPt -> { x : F64, y : F64 }
@@ -561,7 +561,7 @@ expect Font.room_for("Collapse, and then some", name_size) > first_cell.area.wid
 expect
 	cells.all(
 		|{ still, .. }|
-			read_out(still).all(
+			read_out_lines(still).all(
 				|line| {
 					line_end = ScrubWidget.side_margin + Font.room_for(line, read_out_size)
 					line_end <= large_area.left
@@ -625,12 +625,12 @@ expect
 	extent_of([
 		{
 			color: 0,
-			gradient: [],
+			gradients: [],
 			points: [{ x: 0.5, y: 0.25 }, { x: -1.0, y: 2.0 }],
 		},
 		{
 			color: 0,
-			gradient: [],
+			gradients: [],
 			points: [{ x: 3.0, y: -4.0 }],
 		},
 	])
@@ -725,12 +725,12 @@ expect toggled_outlines(Hidden) == Shown
 expect toggled_outlines(Shown) == Hidden
 
 # The read-out is the data's, as CatStills and BirdStills hold their own counts.
-expect read_out(cat_still(Rest)) == ["Rest", "46 polygons", "2,198 points"]
-expect read_out(cat_still(Frozen)) == ["Frozen", "47 polygons", "2,197 points"]
-expect read_out(cat_still(Coil)) == ["Coil", "34 polygons", "1,715 points"]
-expect read_out(bird_still(Side(WingsUp))) == ["Side up", "6 polygons", "21 points"]
-expect read_out(bird_still(Away(WingsDown))) == ["Away down", "4 polygons", "17 points"]
-expect read_out(bird_still(Diving)) == ["Diving", "6 polygons", "22 points"]
+expect read_out_lines(cat_still(Rest)) == ["Rest", "46 polygons", "2,198 points"]
+expect read_out_lines(cat_still(Frozen)) == ["Frozen", "47 polygons", "2,197 points"]
+expect read_out_lines(cat_still(Coil)) == ["Coil", "34 polygons", "1,715 points"]
+expect read_out_lines(bird_still(Side(WingsUp))) == ["Side up", "6 polygons", "21 points"]
+expect read_out_lines(bird_still(Away(WingsDown))) == ["Away down", "4 polygons", "17 points"]
+expect read_out_lines(bird_still(Diving)) == ["Diving", "6 polygons", "22 points"]
 
 # StillDraw leaves out what it won't draw, so the counts would lie if it left
 # out a polygon of these. It draws every one.
@@ -752,7 +752,7 @@ expect
 expect {
 	square = {
 		color: 0,
-		gradient: [],
+		gradients: [],
 		points: [
 			{ x: 0.0, y: 0.0 },
 			{ x: 1.0, y: 0.0 },
@@ -765,8 +765,8 @@ expect {
 		flip: AsDrawn,
 		height_px: Pixels.of(10.0),
 	}
-	match polygon_outline(anchor, square) {
-		[_, _, _, Poly({ pts, .. })] => pts == [-0.5, 0.0, -0.5, 10.0, 0.5, 10.0, 0.5, 0.0]
+	match outline_shapes(anchor, square) {
+		[_, _, _, Poly({ points, .. })] => points == [-0.5, 0.0, -0.5, 10.0, 0.5, 10.0, 0.5, 0.0]
 		_ => False
 	}
 }
@@ -778,24 +778,24 @@ expect {
 		flip: AsDrawn,
 		height_px: Pixels.of(10.0),
 	}
-	polygon_outline(
+	outline_shapes(
 		anchor,
 		{
 			color: 0,
-			gradient: [],
+			gradients: [],
 			points: [{ x: 1.0, y: 1.0 }],
 		},
 	)
-		== [Poly({ pts: [], fill: Flat(ink) })]
+		== [Poly({ points: [], fill: Flat(ink) })]
 }
 
 # The picture answers each click.
-expect frame_at(start) != frame_at(left_click(start, middle_of(last_cell.area)))
-expect frame_at(start) != frame_at(left_click(start, middle_of(large_area)))
-expect frame_at(start) == frame_at(left_click(start, { x: 100.0, y: 60.0 }))
+expect shapes_at(start) != shapes_at(left_click(start, middle_of(last_cell.area)))
+expect shapes_at(start) != shapes_at(left_click(start, middle_of(large_area)))
+expect shapes_at(start) == shapes_at(left_click(start, { x: 100.0, y: 60.0 }))
 
 # One cell is lit, the one shown large, and a still not in the grid lights none.
-expect large_still_mark(cat_still(Land)).len() == 1
-expect large_still_mark(bird_still(Diving)).len() == 1
-expect large_still_mark(cat_still(Land)) != large_still_mark(bird_still(Diving))
-expect large_still_mark({ name: "None", polygons: [] }).len() == 0
+expect mark_shapes(cat_still(Land)).len() == 1
+expect mark_shapes(bird_still(Diving)).len() == 1
+expect mark_shapes(cat_still(Land)) != mark_shapes(bird_still(Diving))
+expect mark_shapes({ name: "None", polygons: [] }).len() == 0

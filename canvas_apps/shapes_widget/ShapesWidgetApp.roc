@@ -15,7 +15,7 @@ ShapesWidgetApp :: [].{
 		title: "Two shapes",
 		init: {},
 		advance: |model, _input| model,
-		frame: |_model| [background].concat(TwoShapes.shapes),
+		frame_shapes: |_model| [background].concat(TwoShapes.shapes),
 	})
 }
 
@@ -29,4 +29,4 @@ background = Rect({
 })
 
 # The background goes down first, so the shapes show over it.
-expect (ShapesWidgetApp.canvas_app.frame)({}) == [background].concat(TwoShapes.shapes)
+expect (ShapesWidgetApp.canvas_app.frame_shapes)({}) == [background].concat(TwoShapes.shapes)

@@ -20,7 +20,7 @@ CameraApp :: [].{
 		fps: 60,
 		init: Rules.start,
 		advance: |m, input, dt| Rules.step(m, input, dt),
-		frame: |m| CameraDraw.frame(m),
+		frame_shapes: |m| CameraDraw.frame(m),
 		sounds: |_m| 0,
 		tones: [],
 		title: "Camera world",

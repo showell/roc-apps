@@ -31,26 +31,26 @@ Stills :: [].{
 	## One polygon of a still: its colour, and its gradient if it has one.
 	StillPolygon : {
 		color : I64,
-		gradient : List(Stills.StillGradient),
+		gradients : List(Stills.StillGradient),
 		points : List(Stills.StillPt),
 	}
 
 	## Whether a polygon can be drawn: it has three corners, and a linear
 	## gradient of its has a length. StillDraw crashes on anything less.
 	is_drawable : Stills.StillPolygon -> Bool
-	is_drawable = |polygon| polygon.points.len() >= 3 and !polygon.gradient.any(has_no_length)
+	is_drawable = |polygon| polygon.points.len() >= 3 and !polygon.gradients.any(has_no_length)
 }
 
 ## Whether a gradient is a linear one that starts where it ends.
 has_no_length : Stills.StillGradient -> Bool
-has_no_length = |gradient|
-	gradient.kind == 1 and gradient.ax == gradient.bx and gradient.ay == gradient.by
+has_no_length = |gradients|
+	gradients.kind == 1 and gradients.ax == gradients.bx and gradients.ay == gradients.by
 
 # A flat polygon of `count` corners, all at one point.
 polygon_of : U64 -> Stills.StillPolygon
 polygon_of = |count| {
 	color: 7,
-	gradient: [],
+	gradients: [],
 	points: List.repeat({ x: 0.0, y: 0.0 }, count),
 }
 
@@ -93,19 +93,19 @@ expect has_no_length(gradient_in_place)
 expect !has_no_length({ ..gradient_in_place, bx: 4.5 })
 expect !has_no_length({ ..gradient_in_place, by: 5.5 })
 expect !has_no_length({ ..gradient_in_place, kind: 2 })
-expect !Stills.is_drawable({ ..polygon_of(3), gradient: [gradient_in_place] })
+expect !Stills.is_drawable({ ..polygon_of(3), gradients: [gradient_in_place] })
 
 solid_polygon : Stills.StillPolygon
 solid_polygon = {
 	color: 9066271,
-	gradient: [],
+	gradients: [],
 	points: [sample_point, { x: 12.5, y: 13.5 }],
 }
 
 shaded_polygon : Stills.StillPolygon
 shaded_polygon = {
 	color: 4989733,
-	gradient: [sample_gradient],
+	gradients: [sample_gradient],
 	points: [sample_point],
 }
 
@@ -128,11 +128,11 @@ expect sample_gradient.rgba1 == 255
 
 expect solid_polygon.color == 9066271
 expect shaded_polygon.color == 4989733
-expect solid_polygon.gradient.len() == 0
-expect shaded_polygon.gradient.len() == 1
+expect solid_polygon.gradients.len() == 0
+expect shaded_polygon.gradients.len() == 1
 expect solid_polygon.points.len() == 2
 expect shaded_polygon.points.len() == 1
 
-expect shaded_polygon.gradient.map(|gradient| gradient.ax) == [2.5]
+expect shaded_polygon.gradients.map(|gradients| gradients.ax) == [2.5]
 expect shaded_polygon.points.map(|point| point.x) == [0.5]
 expect solid_polygon.points.map(|point| point.y) == [1.5, 13.5]

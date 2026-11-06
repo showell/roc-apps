@@ -43,7 +43,10 @@ RideInstant := {
 	next : List(World.Segment), RideInstant -> RideInstant
 	next = |route_segments, instant| {
 		nx = Rider.advance(instant.rider, route_segments)
-		dist = World.distance_along_route(route_segments, { index: nx.segment_index, along: nx.along })
+		dist = World.distance_along_route(
+			route_segments,
+			{ index: nx.segment_index, along: nx.along },
+		)
 		{
 			rider: nx,
 			truck: Truck.advance(

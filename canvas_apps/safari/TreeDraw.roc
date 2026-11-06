@@ -286,8 +286,8 @@ is_before = |a, b| a.x < b.x or (a.x == b.x and a.y < b.y)
 ## the way to `point`. The screen's y grows downward, so a positive `turn` is
 ## clockwise as the eye sees it.
 trim_hull : List(Screen.Point), Screen.Point -> List(Screen.Point)
-trim_hull = |hull, point|
-	match hull {
+trim_hull = |hull_corners, point|
+	match hull_corners {
 		[.., a, b] => {
 			edge_x = b.x.minus(a.x).to_f64()
 			edge_y = b.y.minus(a.y).to_f64()
@@ -295,12 +295,12 @@ trim_hull = |hull, point|
 			reach_y = point.y.minus(a.y).to_f64()
 			turn = edge_x * reach_y - edge_y * reach_x
 			if turn <= 0.0 {
-				trim_hull(hull.drop_last(1), point)
+				trim_hull(hull_corners.drop_last(1), point)
 			} else {
-				hull
+				hull_corners
 			}
 		}
-		_ => hull
+		_ => hull_corners
 	}
 
 ## The angles of a cone's ring, from 0 round a whole turn. Each is the one
@@ -408,8 +408,11 @@ sample_on_screen = TreeDraw.tree_on_screen(
 
 ## Whether two lists of coordinates agree, past rounding.
 is_near : List(F64), List(F64) -> Bool
-is_near = |got, want|
-	got.len() == want.len() and got.map2(want, |x, y| (x - y).abs()).all(|miss| miss <= 0.000000001)
+is_near = |got, expected|
+	got.len() == expected.len() and got.map2(
+		expected,
+		|x, y| (x - y).abs(),
+	).all(|miss| miss <= 0.000000001)
 
 expect
 	is_near(
@@ -434,25 +437,37 @@ expect
 	match draw_trunk(sample_on_screen, Flat) {
 		Poly(polygon) =>
 			polygon.fill == Flat(Brush.opaque(0x5A3E22))
-				and is_near(polygon.pts, [440.0, 110.0, 520.0, 110.0, 520.0, 600.0, 440.0, 600.0])
+				and is_near(
+					polygon.points,
+					[
+						440.0,
+						110.0,
+						520.0,
+						110.0,
+						520.0,
+						600.0,
+						440.0,
+						600.0,
+					],
+				)
 		_ => False
 	}
 
 # A shaded trunk is the same colour, lighter in the middle of its width.
 expect
 	match draw_trunk(sample_on_screen, Shaded) {
-		Poly({ pts, fill: Span({ edge, middle, x0, x1 }) }) =>
+		Poly({ points, fill: Span({ edge, middle, x0, x1 }) }) =>
 			edge == Brush.opaque(0x362514)
 				and middle == Brush.opaque(0x714E2B)
 				and is_near([x0, x1], [440.0, 520.0])
-				and is_near(pts, [440.0, 110.0, 520.0, 110.0, 520.0, 600.0, 440.0, 600.0])
+				and is_near(points, [440.0, 110.0, 520.0, 110.0, 520.0, 600.0, 440.0, 600.0])
 		_ => False
 	}
 
 expect {
 	corners_of = |tier|
 		match tier_triangle(sample_on_screen, { tier, color: 7 }) {
-			Poly(polygon) => polygon.pts
+			Poly(polygon) => polygon.points
 			_ => crash "a tier is one polygon"
 		}
 	top_tier = tiers.first() ?? crash "a tree has tiers"

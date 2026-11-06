@@ -73,8 +73,8 @@ SnakeDraw :: [].{
 		score = Str.concat("SCORE ", U64.to_str(world.score))
 
 		hint = "ARROWS / WASD TURN    SPACE RESTART"
-		var $out = Font.text("SNAKE", left, 26.0, 30.0, snake_head)
-		$out = List.concat($out, Font.text(score, w - left - Font.width_of(score, 24.0), 30.0, 24.0, hud_color))
+		var $out = Font.text_shapes("SNAKE", left, 26.0, 30.0, snake_head)
+		$out = List.concat($out, Font.text_shapes(score, w - left - Font.width_of(score, 24.0), 30.0, 24.0, hud_color))
 		List.concat($out, Font.centered(hint, w / 2.0, 572.0, 17.0, hint_color))
 	}
 

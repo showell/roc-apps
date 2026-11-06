@@ -72,14 +72,14 @@ VcrButtons :: [].{
 		title : Str,
 		range : VcrButtons.NumberRange(number),
 		opens_at : number,
-		frame : VcrButtons.Transport(number) -> List(Shapes.Shape),
+		frame_shapes : VcrButtons.Transport(number) -> List(Shapes.Shape),
 	} -> CanvasApp.CanvasApp(VcrButtons.Transport(number))
-	canvas_app = |{ title, range, opens_at, frame }|
+	canvas_app = |{ title, range, opens_at, frame_shapes }|
 		ScrubWidget.canvas_app({
 			title,
 			init: VcrButtons.transport_at(opens_at),
 			advance: |transport, input| VcrButtons.next_transport(transport, { input, range }),
-			frame,
+			frame_shapes,
 		})
 
 	## The buttons after one frame: a press, then the number's own run.
@@ -127,14 +127,14 @@ VcrButtons :: [].{
 	frame_shapes : VcrButtons.Transport(number),
 	{
 		range : VcrButtons.NumberRange(number),
-		picture : List(Shapes.Shape),
-		status : List(Str),
+		picture_shapes : List(Shapes.Shape),
+		status_lines : List(Str),
 	} -> List(Shapes.Shape)
-	frame_shapes = |transport, { range, picture, status }|
+	frame_shapes = |transport, { range, picture_shapes, status_lines }|
 		[
-			ScrubWidget.frame_shapes({ picture, status }),
+			ScrubWidget.frame_shapes({ picture_shapes, status_lines }),
 			buttons.join_map(|button| button_shapes(button, transport.motion)),
-			hint(transport, range),
+			hint_shapes(transport, range),
 		].join()
 }
 
@@ -274,7 +274,7 @@ icon_color = 0xf7f5f0
 triangle : F64, F64 -> Shapes.Shape
 triangle = |tip_x, reach|
 	Poly({
-		pts: [
+		points: [
 			tip_x - reach,
 			button_middle_y - 7.0,
 			tip_x,
@@ -297,8 +297,8 @@ bar = |x|
 	})
 
 ## What a button shows, around `middle`. A lit play button shows a pause.
-icon : VcrButtons.Control, { middle : F64, lit : Bool } -> List(Shapes.Shape)
-icon = |control, { middle, lit }|
+icon_shapes : VcrButtons.Control, { middle : F64, lit : Bool } -> List(Shapes.Shape)
+icon_shapes = |control, { middle, lit }|
 	if lit {
 		[bar(middle - 5.0), bar(middle + 2.0)]
 	} else {
@@ -330,12 +330,12 @@ button_shapes = |button, motion| {
 			h: button_height,
 			fill: ScrubWidget.flat(color),
 		}),
-	].concat(icon(button.control, { middle: button.left + button_width / 2.0, lit }))
+	].concat(icon_shapes(button.control, { middle: button.left + button_width / 2.0, lit }))
 }
 
 ## A word for a reader who hasn't touched the widget yet, right of the buttons.
-hint : VcrButtons.Transport(number), VcrButtons.NumberRange(number) -> List(Shapes.Shape)
-hint = |transport, range|
+hint_shapes : VcrButtons.Transport(number), VcrButtons.NumberRange(number) -> List(Shapes.Shape)
+hint_shapes = |transport, range|
 	if transport.motion == Stopped and place_in(
 		range,
 		transport.at,
@@ -536,25 +536,25 @@ expect caught_up_to_forty(
 ) == stopped_at(6000)
 
 # The hint shows until the number has moved or started to.
-expect hint(stopped_at(0), sample_clock_run).len() == 1
-expect hint(running_at(0, Forward), sample_clock_run).len() == 0
-expect hint(stopped_at(1), sample_clock_run).len() == 0
+expect hint_shapes(stopped_at(0), sample_clock_run).len() == 1
+expect hint_shapes(running_at(0, Forward), sample_clock_run).len() == 0
+expect hint_shapes(stopped_at(1), sample_clock_run).len() == 0
 
 # The page is the panel, then each button's square and icon, then the hint.
 expect
 	VcrButtons.frame_shapes(
 		stopped_at(1),
-		{ range: sample_clock_run, picture: [], status: [] },
+		{ range: sample_clock_run, picture_shapes: [], status_lines: [] },
 	).len()
-		> ScrubWidget.frame_shapes({ picture: [], status: [] }).len()
+		> ScrubWidget.frame_shapes({ picture_shapes: [], status_lines: [] }).len()
 expect
 	VcrButtons.frame_shapes(
 		stopped_at(0),
-		{ range: sample_clock_run, picture: [], status: [] },
+		{ range: sample_clock_run, picture_shapes: [], status_lines: [] },
 	).len()
 		== VcrButtons.frame_shapes(
 			stopped_at(1),
-			{ range: sample_clock_run, picture: [], status: [] },
+			{ range: sample_clock_run, picture_shapes: [], status_lines: [] },
 		).len() + 1
 
 # A canvas app opens where the widget says, at rest.
@@ -563,6 +563,6 @@ expect
 		title: "I",
 		range: sample_clock_run,
 		opens_at: Clock.at_step(7),
-		frame: |_transport| [],
+		frame_shapes: |_transport| [],
 	}).init
 		== stopped_at(7)

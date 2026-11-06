@@ -94,7 +94,8 @@ expect
 
 expect {
 	match patch_shapes(patch_corners_ahead) {
-		[Poly(polygon)] => polygon.fill == Flat(Brush.opaque(0x2F7E8C)) and polygon.pts.len() == 8
+		[Poly(polygon)] =>
+			polygon.fill == Flat(Brush.opaque(0x2F7E8C)) and polygon.points.len() == 8
 		_ => False
 	}
 }

@@ -66,7 +66,7 @@ road = {
 	vantage: origin,
 }
 
-polygon_of : Shapes.Shape -> { pts : List(F64), fill : Brush.Fill }
+polygon_of : Shapes.Shape -> { points : List(F64), fill : Brush.Fill }
 polygon_of = |shape|
 	match shape {
 		Poly(polygon) => polygon
@@ -76,7 +76,7 @@ polygon_of = |shape|
 
 ## A polygon's points, flat as x0, y0, x1, y1, ...
 points_of : Shapes.Shape -> List(F64)
-points_of = |shape| polygon_of(shape).pts
+points_of = |shape| polygon_of(shape).points
 
 ## A flat polygon's colour, as 0xRRGGBB.
 flat_color_of : Shapes.Shape -> I64
@@ -516,14 +516,14 @@ expect {
 		RailSighting.depth_keys(scene.rails).len(),
 		BirdSighting.depth_keys(scene.birds).len(),
 	]
-	scene.order.len() == kind_counts.sum()
+	scene.order_keys.len() == kind_counts.sum()
 }
 
 expect scene.trees.len() > 0
 expect scene.towers.len() > 0
 expect scene.cutouts.len() > 0
 expect scene.rails.len() > 0
-expect scene.order.len() > 0
+expect scene.order_keys.len() > 0
 expect scene.towers.len().to_i64_wrap() <= TowerSighting.max_visible_towers
 expect scene.cutouts.len().to_i64_wrap() <= CutoutSighting.max_visible_cutouts
 
@@ -536,7 +536,7 @@ is_far_to_near = |keys|
 	)
 		.all(|is_out_of_order| !is_out_of_order)
 
-expect is_far_to_near(scene.order)
+expect is_far_to_near(scene.order_keys)
 expect is_far_to_near([])
 
 # GroundSighting's road, chunk by chunk.

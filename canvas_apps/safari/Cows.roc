@@ -120,7 +120,10 @@ expect Cows.herd_cows(WithBull).len() == 15
 expect Cows.herd_cows(NoBull).len() == 14
 
 # The bull faces left and the cows right.
-expect Cows.herd_cows(WithBull).take_first(2).map(|critter| critter.facing) == [FacesLeft, FacesRight]
+expect Cows.herd_cows(WithBull).take_first(2).map(|critter| critter.facing) == [
+	FacesLeft,
+	FacesRight,
+]
 
 expect Cows.bull_of(WithBull).map_ok(|bull| bull.along) == Ok(Along.metres(24.0))
 expect Cows.bull_of(WithBull).map_ok(|bull| bull.across) == Ok(Across.metres(-4.805))

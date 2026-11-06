@@ -230,10 +230,10 @@ CanvasAppRunner :: [].{
 
 	draw! : CanvasApp.CanvasApp(model), CanvasAppRunner.Model(model), Draw.Frame => Try({}, [ScopeLimit, ScopeUnavailable])
 	draw! = |game, model, frame| {
-		the_frame = game.frame
+		the_frame = game.frame_shapes
 		# roc-ray fills convex polygons only, so a concave one is cut here. A
 		# game does not know or care; a canvas does not ask.
-		shapes = Shapes.cut(the_frame(model.state))
+		shapes = Shapes.cut_shapes(the_frame(model.state))
 		frame.with_render_texture!(
 			model.target,
 			|big| {
@@ -368,7 +368,7 @@ CanvasAppRunner :: [].{
 	draw_shape! : Shader(CanvasAppRunner.BrushUniforms), Draw.Frame, Shapes.Shape => {}
 	draw_shape! = |shader, frame, shape|
 		match shape {
-			Poly(p) => with_fill!(shader, frame, p.fill, Anywhere, |f, col| f.convex_polygon!({ points: points(p.pts), style: Draw.filled(col) }))
+			Poly(p) => with_fill!(shader, frame, p.fill, Anywhere, |f, col| f.convex_polygon!({ points: points(p.points), style: Draw.filled(col) }))
 			Pieces(p) => with_fill!(shader, frame, p.fill, Anywhere, |f, col| draw_triangles!(f, p.tris, col))
 			Disc(d) => with_fill!(shader, frame, d.fill, d.clip, |f, col| f.circle!({ center: point(d.x, d.y), radius: F64.to_f32_wrap(d.r), style: Draw.filled(col) }))
 			Rect(r) => with_fill!(shader, frame, r.fill, Anywhere, |f, col| f.rectangle!({ x: F64.to_f32_wrap(r.x), y: F64.to_f32_wrap(r.y), width: F64.to_f32_wrap(r.w), height: F64.to_f32_wrap(r.h), style: Draw.filled(col) }))

@@ -25,7 +25,7 @@ SnakeApp :: [].{
 		fps: 60,
 		init: { world: Rules.new_world(Random.seed(1)), elapsed: 0.0, sounds: 0 },
 		advance: |m, keys, dt| step(m, keys, dt),
-		frame: |m| SnakeDraw.frame(m.world, m.elapsed),
+		frame_shapes: |m| SnakeDraw.frame(m.world, m.elapsed),
 		sounds: |m| m.sounds,
 		# Eaten, crashed, started -- the three tones upstream generates.
 		tones: [{ freq: 620, ms: 70 }, { freq: 120, ms: 180 }, { freq: 360, ms: 80 }],

@@ -11,7 +11,7 @@ import Mouse
 import Shapes
 
 WasmApp :: [].{
-	# Roc reads `game.frame(m)` as a method call, so each of a game's
+	# Roc reads `game.frame_shapes(m)` as a method call, so each of a game's
 	# functions is bound before it is used, under its own name.
 	#
 	# The seven numbers a tick carries are one Input.Snapshot, flattened: the
@@ -19,7 +19,7 @@ WasmApp :: [].{
 	program : CanvasApp.CanvasApp(model) -> {
 		init : {} -> Box(model),
 		advance : Box(model), U32, U32, U32, U32, F32, F32, F32 -> Box(model),
-		frame : Box(model) -> List(Shapes.Shape),
+		frame_shapes : Box(model) -> List(Shapes.Shape),
 		release : List(Shapes.Shape) -> {},
 		sounds : Box(model) -> U32,
 		tone_count : Box(model) -> U32,
@@ -33,13 +33,13 @@ WasmApp :: [].{
 		# The step a tick covers, which is the rate the game asked to be run at.
 		dt = 1.0 / game.fps.to_f32()
 		advance = game.advance
-		frame_of = game.frame
+		frame_of = game.frame_shapes
 		sounds = game.sounds
 		{
 			init: |{}| Box.box(game.init),
 			advance: |b, held, struck, buttons, clicks, x, y, wheel|
 				Box.box(advance(Box.unbox(b), Input.of(held, struck, Mouse.of(buttons, clicks, x, y, wheel)), dt)),
-			frame: |b| frame_of(Box.unbox(b)),
+			frame_shapes: |b| frame_of(Box.unbox(b)),
 			# **THE HOST HANDS THE FRAME BACK AND ROC DROPS IT.** Releasing a
 			# List(Shape) means decrementing each element's inner lists, which
 			# needs the tag union's layout. Roc already has that layout; the

@@ -35,7 +35,7 @@ TrickOrTreatApp :: [].{
 		fps: 60,
 		init: { tick: 0, paused: Bool.False },
 		advance: |m, input, _dt| step(m, input),
-		frame: |m| Halloween.shapes({ tick: m.tick }),
+		frame_shapes: |m| Halloween.shapes({ tick: m.tick }),
 		# A movie makes no sound. This is the second program here with none,
 		# and the page draws no speaker for it.
 		sounds: |_m| 0,

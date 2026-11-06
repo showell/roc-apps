@@ -17,17 +17,17 @@ Panels :: [].{
 	# A polygon whose corners are wherever they are: the door leaf turns out of
 	# its own plane on its hinge, and a floor lies flat.
 	world : View.View, List(View.At), Brush.Fill -> List(Shapes.Shape)
-	world = |v, ats, fill| Shapes.polygon(View.seen(v, ats), fill)
+	world = |v, ats, fill| Shapes.polygon_shapes(View.seen(v, ats), fill)
 
 	# A polygon given as metres on one plane `fwd` away: right, height, right,
 	# height. Everything on the house's face is one of these.
 	face : View.View, F64, List(F64), Brush.Fill -> List(Shapes.Shape)
-	face = |v, fwd, pts, fill| {
-		n = List.len(pts)
+	face = |v, fwd, points, fill| {
+		n = List.len(points)
 		var $ats = List.with_capacity(n // 2)
 		var $i = 0
 		while $i + 1 < n {
-			$ats = List.append($ats, { right: List.get(pts, $i) ?? 0.0, forward: fwd, height: List.get(pts, $i + 1) ?? 0.0 })
+			$ats = List.append($ats, { right: List.get(points, $i) ?? 0.0, forward: fwd, height: List.get(points, $i + 1) ?? 0.0 })
 			$i = $i + 2
 		}
 		world(v, $ats, fill)

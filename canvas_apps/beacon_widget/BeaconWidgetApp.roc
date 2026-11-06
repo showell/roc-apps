@@ -25,7 +25,7 @@ BeaconWidgetApp :: [].{
 		title: "Two beacons",
 		range: blinks,
 		opens_at: blinks.first,
-		frame: frame_at,
+		frame_shapes: shapes_at,
 	})
 }
 
@@ -62,31 +62,31 @@ tower_right : Distance
 tower_right = Distance.metres(70.0)
 
 ## Everything on the canvas.
-frame_at : BeaconWidgetApp.Model -> List(Shapes.Shape)
-frame_at = |transport|
+shapes_at : BeaconWidgetApp.Model -> List(Shapes.Shape)
+shapes_at = |transport|
 	VcrButtons.frame_shapes(
 		transport,
 		{
 			range: blinks,
-			picture: picture(transport.at),
-			status: status_lines(transport.at),
+			picture_shapes: picture_shapes(transport.at),
+			status_lines: status_lines(transport.at),
 		},
 	)
 
 ## The two towers in the ride's sky at `clock`.
-picture : Clock -> List(Shapes.Shape)
-picture = |clock|
-	ScrubWidget.ride_picture(
+picture_shapes : Clock -> List(Shapes.Shape)
+picture_shapes = |clock|
+	ScrubWidget.ride_shapes(
 		[
-			tower(tower_right.opposite(), brightness_at(clock, first_tower_key)),
-			tower(tower_right, brightness_at(clock, second_tower_key)),
+			tower_shapes(tower_right.opposite(), brightness_at(clock, first_tower_key)),
+			tower_shapes(tower_right, brightness_at(clock, second_tower_key)),
 		].join(),
 		{ clock, sun: OutOfView },
 	)
 
 ## A tower standing `right` of the road, its beacon at `brightness`.
-tower : Distance, Fraction -> List(Shapes.Shape)
-tower = |right, brightness| {
+tower_shapes : Distance, Fraction -> List(Shapes.Shape)
+tower_shapes = |right, brightness| {
 	center = { right, forward: tower_forward }
 	corner_point = |corner| {
 		offset = Tower.corner_offset(corner)
@@ -165,10 +165,10 @@ is_near = |share, want| (share.to_f64() - want).abs() <= 0.0000001
 
 # The picture depends on the clock. A beacon comes back after a whole blink,
 # though the sky goes on darkening.
-expect picture(Clock.at_step(5430)) != picture(Clock.at_step(5431))
+expect picture_shapes(Clock.at_step(5430)) != picture_shapes(Clock.at_step(5431))
 expect brightness_at(Clock.at_step(5430), 0) == brightness_at(Clock.at_step(5550), 0)
 
 # The picture follows the buttons' clock.
 expect
-	frame_at(VcrButtons.transport_at(Clock.at_step(5430)))
-		!= frame_at(VcrButtons.transport_at(Clock.at_step(5431)))
+	shapes_at(VcrButtons.transport_at(Clock.at_step(5430)))
+		!= shapes_at(VcrButtons.transport_at(Clock.at_step(5431)))

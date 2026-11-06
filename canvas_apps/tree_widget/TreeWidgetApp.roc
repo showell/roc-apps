@@ -25,7 +25,7 @@ TreeWidgetApp :: [].{
 		title: "Three conifers",
 		init: {},
 		advance: |model, _input| model,
-		frame: |_model| still_frame,
+		frame_shapes: |_model| still_shapes,
 	})
 }
 
@@ -103,15 +103,15 @@ caption_line = |stand, { text, row }|
 		color: Brush.opaque(0x202020),
 	})
 
-caption : Stand -> List(Shapes.Shape)
-caption = |stand|
+caption_shapes : Stand -> List(Shapes.Shape)
+caption_shapes = |stand|
 	caption_lines(stand.forward).map_with_index(|text, row| caption_line(stand, { text, row }))
 
-still_frame : List(Shapes.Shape)
-still_frame = {
+still_shapes : List(Shapes.Shape)
+still_shapes = {
 	trees = stands.join_map(tree_shapes)
-	picture = ScrubWidget.ride_picture(trees, { clock: Clock.start, sun: OutOfView })
-	ScrubWidget.frame_shapes({ picture, status: [] }).concat(stands.join_map(caption))
+	picture_shapes = ScrubWidget.ride_shapes(trees, { clock: Clock.start, sun: OutOfView })
+	ScrubWidget.frame_shapes({ picture_shapes, status_lines: [] }).concat(stands.join_map(caption_shapes))
 }
 
 ## Whether a stand's tree is all in the picture, on its `canvas_x`, and at least
@@ -150,4 +150,4 @@ expect !is_plain_to_see({ ..near_stand, forward: Distance.metres(30.0) })
 expect !is_plain_to_see({ ..far_stand, forward: Distance.metres(300.0) })
 
 # The captions go down last, so they show over the panel.
-expect still_frame.ends_with(stands.join_map(caption))
+expect still_shapes.ends_with(stands.join_map(caption_shapes))

@@ -167,10 +167,10 @@ Geom :: [].{
 
 	## The polygon cut to what lies at or past the near plane.
 	near_points : List(Geom.RaisedPoint) -> List(Geom.RaisedPoint)
-	near_points = |polygon| {
-		next_corners = polygon.drop_first(1).concat(polygon.take_first(1))
-		edges = polygon.map2(next_corners, |from, to| { from, to })
-		edges.fold(List.with_capacity(2 * polygon.len()), edge_points_onto)
+	near_points = |polygon_points| {
+		next_corners = polygon_points.drop_first(1).concat(polygon_points.take_first(1))
+		edges = polygon_points.map2(next_corners, |from, to| { from, to })
+		edges.fold(List.with_capacity(2 * polygon_points.len()), edge_points_onto)
 	}
 }
 

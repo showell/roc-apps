@@ -30,7 +30,7 @@ StepWidgetApp :: [].{
 		title: "Three stored fields",
 		init: heading_for_step(0),
 		advance: |model, input| moved(aimed(model, input)),
-		frame: frame_at,
+		frame_shapes: shapes_at,
 	})
 }
 
@@ -96,14 +96,14 @@ moved = |model| {
 }
 
 ## Everything on the canvas.
-frame_at : StepWidgetApp.Model -> List(Shapes.Shape)
-frame_at = |model|
+shapes_at : StepWidgetApp.Model -> List(Shapes.Shape)
+shapes_at = |model|
 	VcrButtons.frame_shapes(
 		model.transport,
 		{
 			range: journey,
-			picture: picture(model.tour),
-			status: status_lines(model),
+			picture_shapes: picture_shapes(model.tour),
+			status_lines: status_lines(model),
 		},
 	)
 
@@ -153,8 +153,8 @@ ground = Rect({
 })
 
 ## The route as a straight bar, with a mark where each segment ends.
-route_bar : List(Shapes.Shape)
-route_bar = {
+bar_shapes : List(Shapes.Shape)
+bar_shapes = {
 	ends = World.segments.fold(
 		{ reached: Distance.zero, marks: [] },
 		|{ reached, marks }, segment| {
@@ -185,13 +185,13 @@ route_bar = {
 }
 
 ## A disc on the bar with its name above or below it.
-marker : {
+marker_shapes : {
 	at : Distance,
 	color : I64,
 	name : Str,
 	name_y : F64,
 } -> List(Shapes.Shape)
-marker = |{ at, color, name, name_y }|
+marker_shapes = |{ at, color, name, name_y }|
 	[
 		Disc({
 			x: route_x(at),
@@ -225,8 +225,8 @@ lean_shown_at : F64
 lean_shown_at = 3.0
 
 ## The road from behind, with the rider at `across`, leaning by `lean` radians.
-view_from_behind_rider : { across : Across, lean : F64 } -> List(Shapes.Shape)
-view_from_behind_rider = |{ across, lean }| {
+shapes_from_behind_rider : { across : Across, lean : F64 } -> List(Shapes.Shape)
+shapes_from_behind_rider = |{ across, lean }| {
 	road = Scenery.road_half_width.to_metres() * pixels_a_metre
 	middle = ScrubWidget.canvas_width / 2.0
 	foot = middle + across.to_metres() * pixels_a_metre
@@ -268,26 +268,26 @@ view_from_behind_rider = |{ across, lean }| {
 }
 
 ## Where the rider and the truck are on the route, and the rider from behind.
-picture : Tour -> List(Shapes.Shape)
-picture = |tour| {
+picture_shapes : Tour -> List(Shapes.Shape)
+picture_shapes = |tour| {
 	rider = tour.instant.rider
 	truck = tour.instant.truck
 	[
 		[ground],
-		route_bar,
-		marker({
+		bar_shapes,
+		marker_shapes({
 			at: truck.route_position,
 			color: truck_color,
 			name: "truck",
 			name_y: route_y - 28.0,
 		}),
-		marker({
+		marker_shapes({
 			at: rider_distance(tour),
 			color: rider_color,
 			name: "rider",
 			name_y: route_y + 16.0,
 		}),
-		view_from_behind_rider({ across: rider.across, lean: rider.lean.to_radians() }),
+		shapes_from_behind_rider({ across: rider.across, lean: rider.lean.to_radians() }),
 	].join()
 }
 

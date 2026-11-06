@@ -30,7 +30,7 @@ SkyWidgetApp :: [].{
 		title: "The sun going down",
 		init: at_start,
 		advance: next_model,
-		frame: frame_at,
+		frame_shapes: shapes_at,
 	})
 }
 
@@ -69,21 +69,21 @@ next_job = |job|
 	}
 
 ## Everything on the canvas.
-frame_at : SkyWidgetApp.Model -> List(Shapes.Shape)
-frame_at = |{ transport, job }| {
+shapes_at : SkyWidgetApp.Model -> List(Shapes.Shape)
+shapes_at = |{ transport, job }| {
 	clock = transport.at
 	[
 		VcrButtons.frame_shapes(
 			transport,
 			{
 				range: sunset,
-				picture: picture(job, clock),
-				status: [],
+				picture_shapes: picture_shapes(job, clock),
+				status_lines: [],
 			},
 		),
 		call_lines(job, clock),
-		chart(job),
-		chart_cursor(job, clock),
+		chart_shapes(job),
+		cursor_shapes(job, clock),
 	].join()
 }
 
@@ -103,10 +103,10 @@ sky_colors = |job, clock|
 	}
 
 ## The ride's sky at `clock`, for a rider facing the sun.
-picture : SkyWidgetApp.Job, Clock -> List(Shapes.Shape)
-picture = |job, clock| {
+picture_shapes : SkyWidgetApp.Job, Clock -> List(Shapes.Shape)
+picture_shapes = |job, clock| {
 	colors = sky_colors(job, clock)
-	ScrubWidget.ride_picture_in(
+	ScrubWidget.ride_shapes_in(
 		[],
 		{
 			sky_top_color: colors.top,
@@ -210,8 +210,8 @@ chart_clocks : List(Clock)
 chart_clocks = List.from_iter(U32.until(0, 61)).map(|i| Clock.at_step(i * 100))
 
 ## One curve of the chart.
-curve : (Clock -> F64), I64 -> List(Shapes.Shape)
-curve = |level_at, color| {
+curve_shapes : (Clock -> F64), I64 -> List(Shapes.Shape)
+curve_shapes = |level_at, color| {
 	points = chart_clocks.map(|clock| chart_point(clock, level_at))
 	List.map2(
 		points,
@@ -230,18 +230,18 @@ curve = |level_at, color| {
 ## The chart's curves, which are the same at every clock.
 all_curves : List(List(Shapes.Shape))
 all_curves = [
-	curve(sun_level, sun_color),
-	curve(dusk_level, dusk_color),
-	curve(warmth_level, warmth_color),
+	curve_shapes(sun_level, sun_color),
+	curve_shapes(dusk_level, dusk_color),
+	curve_shapes(warmth_level, warmth_color),
 ]
 
 ## The curves `job` has got to.
-chart : SkyWidgetApp.Job -> List(Shapes.Shape)
-chart = |job| all_curves.take_first(curves_of(job)).join()
+chart_shapes : SkyWidgetApp.Job -> List(Shapes.Shape)
+chart_shapes = |job| all_curves.take_first(curves_of(job)).join()
 
 ## A line down the chart at `clock`, with a dot on each curve.
-chart_cursor : SkyWidgetApp.Job, Clock -> List(Shapes.Shape)
-chart_cursor = |job, clock| {
+cursor_shapes : SkyWidgetApp.Job, Clock -> List(Shapes.Shape)
+cursor_shapes = |job, clock| {
 	x = chart_point(clock, dusk_level).x
 	[
 		[
@@ -303,9 +303,9 @@ expect
 expect sun_level(Clock.start) == 1.0
 expect sun_level(Clock.at_step(6000)) == 0.0
 expect chart_clocks.len() == 61
-expect chart(HorizonWarms).len() == 180
-expect chart(SkyDarkens).len() == 120
-expect chart(SunSets).len() == 60
+expect chart_shapes(HorizonWarms).len() == 180
+expect chart_shapes(SkyDarkens).len() == 120
+expect chart_shapes(SunSets).len() == 60
 
 # Each job adds a call to the lines under the picture.
 expect status_lines(SunSets, Clock.start).len() == 2
@@ -355,15 +355,15 @@ expect chart_point(Clock.start, dusk_level).y == chart_bottom
 expect chart_point(Clock.start, sun_level).y == chart_top
 
 # The cursor is a line and three dots.
-expect chart_cursor(HorizonWarms, Clock.at_step(3000)).len() == 4
-expect chart_cursor(SunSets, Clock.at_step(3000)).len() == 2
+expect cursor_shapes(HorizonWarms, Clock.at_step(3000)).len() == 4
+expect cursor_shapes(SunSets, Clock.at_step(3000)).len() == 2
 
 # The hint goes once the clock has moved.
-expect frame_at(at_start).len() > frame_at(stopped_at(1)).len()
+expect shapes_at(at_start).len() > shapes_at(stopped_at(1)).len()
 
 # Two view marks around the sky, the grass, the glow and the sun.
-expect picture(HorizonWarms, Clock.start).len() == 6
+expect picture_shapes(HorizonWarms, Clock.start).len() == 6
 
 # The picture depends on the clock and on nothing else.
-expect picture(HorizonWarms, Clock.at_step(3000)) == picture(HorizonWarms, Clock.at_step(3000))
-expect picture(HorizonWarms, Clock.at_step(3000)) != picture(HorizonWarms, Clock.at_step(3001))
+expect picture_shapes(HorizonWarms, Clock.at_step(3000)) == picture_shapes(HorizonWarms, Clock.at_step(3000))
+expect picture_shapes(HorizonWarms, Clock.at_step(3000)) != picture_shapes(HorizonWarms, Clock.at_step(3001))

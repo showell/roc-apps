@@ -16,7 +16,7 @@ ParticlesApp :: [].{
 		fps: 60,
 		init: Particles.start,
 		advance: |m, input, _dt| step(m, input),
-		frame: |m| Particles.shapes(m),
+		frame_shapes: |m| Particles.shapes(m),
 		sounds: |_m| 0,
 		tones: [],
 		title: "Particles",

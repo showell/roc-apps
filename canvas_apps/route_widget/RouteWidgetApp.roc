@@ -21,7 +21,7 @@ RouteWidgetApp :: [].{
 		title: "The route",
 		init: {},
 		advance: |model, _input| model,
-		frame: |_model| still_frame,
+		frame_shapes: |_model| still_shapes,
 	})
 }
 
@@ -160,8 +160,8 @@ spot = |point, { r, color }| {
 }
 
 ## One segment of road, `width` pixels wide with a round end at each corner.
-road_piece : LaidSegment, { width : F64, color : I64 } -> List(Shapes.Shape)
-road_piece = |{ start, end, .. }, { width, color }| {
+piece_shapes : LaidSegment, { width : F64, color : I64 } -> List(Shapes.Shape)
+piece_shapes = |{ start, end, .. }, { width, color }| {
 	a = canvas_point(start)
 	b = canvas_point(end)
 	[
@@ -195,20 +195,20 @@ crossing_color = |plan|
 	}
 
 ## A mark on the map where something crosses a segment.
-crossing_mark : LaidSegment -> List(Shapes.Shape)
-crossing_mark = |segment|
+mark_shapes : LaidSegment -> List(Shapes.Shape)
+mark_shapes = |segment|
 	match crossing_color(segment.plan) {
 		Ok(color) => [spot(middle_of(segment), { r: 6.0, color })]
 		Err(NothingCrosses) => []
 	}
 
 ## A coloured spot and the word for it, in the picture's empty corner.
-legend_row : {
+row_shapes : {
 	y : F64,
 	color : I64,
 	word : Str,
 } -> List(Shapes.Shape)
-legend_row = |{ y, color, word }|
+row_shapes = |{ y, color, word }|
 	[
 		Disc({
 			x: 470.0,
@@ -224,41 +224,41 @@ legend_row = |{ y, color, word }|
 		}),
 	]
 
-legend : List(Shapes.Shape)
-legend =
+legend_shapes : List(Shapes.Shape)
+legend_shapes =
 	[
-		legend_row({
+		row_shapes({
 			y: 160.0,
 			color: read_out_color,
 			word: "segment ${read_out_number.to_str()}",
 		}),
-		legend_row({
+		row_shapes({
 			y: 178.0,
 			color: cat_color,
 			word: "a cat crosses",
 		}),
-		legend_row({
+		row_shapes({
 			y: 196.0,
 			color: bird_color,
 			word: "a bird flies",
 		}),
 	].join()
 
-road : List(Shapes.Shape)
-road = segments.join_map(|each| road_piece(each, { width: 5.0, color: road_color }))
+road_shapes : List(Shapes.Shape)
+road_shapes = segments.join_map(|each| piece_shapes(each, { width: 5.0, color: road_color }))
 
 ## The stretch that the lines under the map read out.
-read_out_road : List(Shapes.Shape)
-read_out_road = road_piece(read_out_segment, { width: 7.0, color: read_out_color })
+read_out_shapes : List(Shapes.Shape)
+read_out_shapes = piece_shapes(read_out_segment, { width: 7.0, color: read_out_color })
 
-picture : List(Shapes.Shape)
-picture =
+picture_shapes : List(Shapes.Shape)
+picture_shapes =
 	[
 		[ground],
-		road,
-		read_out_road,
-		segments.join_map(crossing_mark),
-		legend,
+		road_shapes,
+		read_out_shapes,
+		segments.join_map(mark_shapes),
+		legend_shapes,
 	].join()
 
 ## A turn in words.
@@ -286,8 +286,8 @@ status_lines = {
 	]
 }
 
-still_frame : List(Shapes.Shape)
-still_frame = ScrubWidget.frame_shapes({ picture, status: status_lines })
+still_shapes : List(Shapes.Shape)
+still_shapes = ScrubWidget.frame_shapes({ picture_shapes, status_lines: status_lines })
 
 expect segments.len() == World.plans.len()
 
@@ -322,11 +322,11 @@ expect
 expect segments.all(|segment| segment.plan.length.to_metres() <= read_out_segment.plan.length.to_metres())
 
 # The stretch that's read out goes down over the road.
-expect picture.drop_first(1 + road.len()).starts_with(read_out_road)
+expect picture_shapes.drop_first(1 + road_shapes.len()).starts_with(read_out_shapes)
 
 # Only the segments that something crosses are marked on the map.
 expect segments.keep_if(|segment| crossing_color(segment.plan).is_ok()).len() == 6
 
 # The lines go on the panel, over the picture.
-expect still_frame.starts_with(picture)
-expect still_frame.len() == picture.len() + 5
+expect still_shapes.starts_with(picture_shapes)
+expect still_shapes.len() == picture_shapes.len() + 5

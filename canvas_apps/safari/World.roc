@@ -320,7 +320,10 @@ World :: [].{
 	## the first: a float sum's rounding depends on its order, and another
 	## order can move a pixel.
 	route_length : List(World.Segment) -> Distance
-	route_length = |route_segments| route_segments.fold_rev(Distance.zero, |segment, sum| segment.length.plus(sum))
+	route_length = |route_segments| route_segments.fold_rev(
+		Distance.zero,
+		|segment, sum| segment.length.plus(sum),
+	)
 
 	## How far along the route the point at `along` on the segment at `index`
 	## is.

@@ -17,13 +17,19 @@ RideFocal :: [].{
 	## How strongly the crossing on the rider's segment holds their attention.
 	crossing_attention : List(World.Segment), RiderState -> Attention
 	crossing_attention = |route_segments, rider|
-		CrossingReaction.reaction_to(rider.segment_index.segment_in(route_segments), rider).attention
+		CrossingReaction.reaction_to(
+			rider.segment_index.segment_in(route_segments),
+			rider,
+		).attention
 
 	## The camera's focal length for where the rider is and how they ride.
 	ride_focal : List(World.Segment), RiderState -> Pixels
 	ride_focal = |route_segments, rider| {
 		lean_fraction = Fraction.clamp(rider.lean.to_radians().abs() / Bike.max_lean.to_radians())
-		attention = crossing_attention(route_segments, rider).max(Gaze.gaze_attention(rider.look_depth))
+		attention = crossing_attention(
+			route_segments,
+			rider,
+		).max(Gaze.gaze_attention(rider.look_depth))
 		Lens.cam_focal({ lean_fraction, attention })
 	}
 }
@@ -110,7 +116,10 @@ expect RideFocal.ride_focal(
 expect Gaze.gaze_attention(Fraction.whole).to_f64() > Gaze.gaze_attention(Fraction.zero).to_f64()
 
 both : Pixels
-both = RideFocal.ride_focal(route_segments, { ..upright, lean: Bike.max_lean, look_depth: Fraction.whole })
+both = RideFocal.ride_focal(
+	route_segments,
+	{ ..upright, lean: Bike.max_lean, look_depth: Fraction.whole },
+)
 
 lean_only : Pixels
 lean_only = RideFocal.ride_focal(route_segments, { ..upright, lean: Bike.max_lean })
