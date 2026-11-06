@@ -35,8 +35,8 @@ const LINTS = {
   {recipe = "nest_depth", args = {"min=4"}, budget = {}, counts = {{"nested", 0}}},
   {recipe = "parens", args = {}, budget = {}, counts = {{"paren_if", 0}, {"wrapped_body", 0}, {"else_block", 0}}},
   {recipe = "boundaries", args = {}, budget = {}, counts = {
-    {"single", 0}, {"fixed", 0}, {"entry", 0}, {"constant", 0}, {"bool_param", 0},
-  }, whole_tree = {"single", "fixed", "entry", "constant", "bool_param"}},
+    {"single", 0}, {"fixed", 0}, {"entry", 0}, {"constant", 0}, {"bool_param", 0}, {"dead", 0},
+  }, whole_tree = {"single", "fixed", "entry", "constant", "bool_param", "dead"}},
   {recipe = "stack", args = {}, budget = {"--budget", "steps=4000000000"}, counts = {{"to stack", 0}, {"to unstack", 0}, {"long", 0}},
     skip = {"BirdStills.roc", "CatStills.roc", "EmojiStills.roc"}},
   {recipe = "vocabulary", args = {"words=vocabulary.txt"}, budget = {}, counts = {{"retired_name", 172}, {"retired_comment", 46}}},

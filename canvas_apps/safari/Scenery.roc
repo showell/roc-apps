@@ -46,61 +46,6 @@ Scenery :: [].{
 			Zebra => False
 			Rhino => False
 		}
-
-	eq_Scheme : Scenery.Scheme, Scenery.Scheme -> Bool
-	eq_Scheme = |ex, ey|
-		match ex {
-			AllGreen =>
-				match ey {
-					AllGreen => True
-					_ => False
-				}
-			YellowGreen =>
-				match ey {
-					YellowGreen => True
-					_ => False
-				}
-			RedGreen =>
-				match ey {
-					RedGreen => True
-					_ => False
-				}
-		}
-
-	eq_Creature : Scenery.Creature, Scenery.Creature -> Bool
-	eq_Creature = |ex, ey|
-		match ex {
-			NoCreature =>
-				match ey {
-					NoCreature => True
-					_ => False
-				}
-			Elephant =>
-				match ey {
-					Elephant => True
-					_ => False
-				}
-			Giraffe =>
-				match ey {
-					Giraffe => True
-					_ => False
-				}
-			Zebra =>
-				match ey {
-					Zebra => True
-					_ => False
-				}
-			Rhino =>
-				match ey {
-					Rhino => True
-					_ => False
-				}
-			DuckPond =>
-				match ey {
-					DuckPond => True
-					_ => False
-				}
-		}
 }
 
 expect Scenery.lane_width.to_metres() == 4.0
