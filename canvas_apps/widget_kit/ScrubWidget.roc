@@ -60,22 +60,11 @@ ScrubWidget :: [].{
 		model_at : Fraction -> model,
 		frame : model -> List(Shapes.Shape),
 	} -> CanvasApp.CanvasApp(model)
-	canvas_app = |
-		{
-			title,
-			init,
-			model_at,
-			frame,
-		},
-	| {
+	canvas_app = |{ title, init, model_at, frame }| {
 		size: { width: canvas_width, height: canvas_height },
 		fps: 60,
 		init,
-		advance: |
-			model,
-			input,
-			_seconds,
-		| followed_pointer(model, { input, model_at }),
+		advance: |model, input, _seconds| followed_pointer(model, { input, model_at }),
 		frame,
 		sounds: |_model| 0,
 		tones: [],
@@ -124,14 +113,7 @@ ScrubWidget :: [].{
 
 	## Everything on the canvas.
 	frame_shapes : ScrubWidget.Page -> List(Shapes.Shape)
-	frame_shapes = |
-		{
-			picture,
-			dot_at,
-			marked,
-			status,
-		},
-	|
+	frame_shapes = |{ picture, dot_at, marked, status }|
 		[
 			picture,
 			[panel],
@@ -142,19 +124,18 @@ ScrubWidget :: [].{
 	## A page with no ruler, for a widget that isn't dragged.
 	still_frame_shapes : { picture : List(Shapes.Shape), status : List(Str) } -> List(Shapes.Shape)
 	still_frame_shapes = |{ picture, status }|
-		[
-			picture,
-			[panel],
-			status.map_with_index(status_line).join(),
-		].join()
+		[picture, [panel], status.map_with_index(status_line).join()].join()
 
 	## The ride's sky and grass with `shapes` over them, at two thirds of
 	## Safari's screen, so a widget's picture is what the ride's frame shows.
 	## The sky is `clock`'s, and `sun` is where the sun stands in it.
-	ride_picture : List(Shapes.Shape), { clock : Clock, sun : Sky.SunSighting } -> List(Shapes.Shape)
-	ride_picture = |shapes, { clock, sun }| {
-		corner = { x: 0.0, y: 0.0 }
-		ride = Backdrop.behind(
+	ride_picture : List(Shapes.Shape),
+	{
+		clock : Clock,
+		sun : Sky.SunSighting,
+	} -> List(Shapes.Shape)
+	ride_picture = |shapes, { clock, sun }|
+		ride_picture_in(
 			shapes,
 			{
 				sky_top_color: Sky.sky_top_color(clock),
@@ -162,6 +143,17 @@ ScrubWidget :: [].{
 				sun_sighting: sun,
 			},
 		)
+
+	## The same picture under any sky, for a widget that shows part of a sunset.
+	ride_picture_in : List(Shapes.Shape),
+	{
+		sky_top_color : I64,
+		sky_horizon_color : I64,
+		sun_sighting : Sky.SunSighting,
+	} -> List(Shapes.Shape)
+	ride_picture_in = |shapes, sky| {
+		corner = { x: 0.0, y: 0.0 }
+		ride = Backdrop.behind(shapes, sky)
 		[
 			[
 				View(
@@ -241,13 +233,7 @@ bar : {
 	width : F64,
 	color : I64,
 } -> Shapes.Shape
-bar = |
-	{
-		x,
-		width,
-		color,
-	},
-|
+bar = |{ x, width, color }|
 	Rect({
 		x,
 		y: ruler_y - 3.0,
@@ -322,25 +308,14 @@ expect ruler_x(ScrubWidget.share_under(172.0)) == 172.0
 
 ## A snapshot with the left button held or not, the pointer mid-canvas.
 pointer_at_middle : U32 -> Input.Snapshot
-pointer_at_middle = |held| Input.none.with_mouse(
-	Mouse.of(
-		held,
-		0,
-		320.0,
-		0.0,
-		0.0,
-	),
-)
+pointer_at_middle = |held| Input.none.with_mouse(Mouse.of(held, 0, 320.0, 0.0, 0.0))
 
 ## The model after a step from 0.7, with the left button held or not.
 stepped_from_seven_tenths : U32 -> F64
 stepped_from_seven_tenths = |held|
 	ScrubWidget.followed_pointer(
 		0.7,
-		{
-			input: pointer_at_middle(held),
-			model_at: |share| share.to_f64(),
-		},
+		{ input: pointer_at_middle(held), model_at: |share| share.to_f64() },
 	)
 
 expect stepped_from_seven_tenths(1) == 0.5
@@ -429,9 +404,6 @@ expect ScrubWidget.still_frame_shapes({ picture: [], status: ["I"] }).len() > 1
 # The panel, the bar, the dot; then a shape for each stretch, and more for text.
 expect page_of({ lines: [], stretches: [] }).len() == 3
 expect
-	page_of({
-		lines: [],
-		stretches: [{ from: Fraction.zero, to: Fraction.whole }],
-	}).len()
+	page_of({ lines: [], stretches: [{ from: Fraction.zero, to: Fraction.whole }] }).len()
 		== 4
 expect page_of({ lines: ["I"], stretches: [] }).len() > 3

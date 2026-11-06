@@ -3,7 +3,8 @@
 ## the sun sets and rises again under the pointer. The picture is the ride's own
 ## sky, looking straight at the sun, drawn by Backdrop at two thirds of its
 ## size. Below it, a ruler shows the clock, four lines of text read out the calls
-## to Sky, and a small chart plots their answers over the whole sunset.
+## to Sky, and a small chart plots their answers over the whole sunset. The
+## book opens it at one of three jobs, and each job adds a call.
 import game.Clock
 import game.Lens
 import game.Pixels
@@ -11,53 +12,112 @@ import game.Sky
 import lib.Brush
 import lib.CanvasApp
 import lib.Font
+import lib.Input
 import lib.Shapes
 import widget.ScrubWidget
 
 SkyWidgetApp :: [].{
 
-	## The whole state of the widget: the ride's clock.
-	Model : { clock : Clock }
+	## How much of the sunset the widget does.
+	Job : [SunSets, SkyDarkens, HorizonWarms]
+
+	## The whole state of the widget: the ride's clock, and the job.
+	Model : { clock : Clock, job : SkyWidgetApp.Job }
 
 	canvas_app : CanvasApp.CanvasApp(SkyWidgetApp.Model)
-	canvas_app = ScrubWidget.canvas_app({
-		title: "The sun going down",
-		init: { clock: Clock.start },
-		model_at: |share| { clock: ScrubWidget.clock_at(share, clock_range) },
-		frame: |model| frame_at(model.clock),
-	})
+	canvas_app = {
+		..ScrubWidget.canvas_app({
+			title: "The sun going down",
+			init: { clock: Clock.start, job: SunSets },
+			model_at: |share| { clock: ScrubWidget.clock_at(share, clock_range), job: SunSets },
+			frame: |model| frame_at(model.job, model.clock),
+		}),
+		advance: |model, input, _seconds| next_model(model, input),
+	}
 }
+
+## The model after one step: a pointer held down sets the clock, and the Right
+## key, which is how the page opens at a job, moves on to the next job.
+next_model : SkyWidgetApp.Model, Input.Snapshot -> SkyWidgetApp.Model
+next_model = |model, input| {
+	clock: ScrubWidget.followed_pointer(
+		model.clock,
+		{ input, model_at: |share| ScrubWidget.clock_at(share, clock_range) },
+	),
+	job: if input.key_pressed(KeyRight) {
+		next_job(model.job)
+	} else {
+		model.job
+	},
+}
+
+next_job : SkyWidgetApp.Job -> SkyWidgetApp.Job
+next_job = |job|
+	match job {
+		SunSets => SkyDarkens
+		SkyDarkens => HorizonWarms
+		HorizonWarms => SunSets
+	}
 
 ## The ruler runs from the ride's start to a little after full dusk.
 clock_range : ScrubWidget.ClockRange
 clock_range = { first_step: 0.0, last_step: 6000.0 }
 
 ## Everything on the canvas at `clock`.
-frame_at : Clock -> List(Shapes.Shape)
-frame_at = |clock|
+frame_at : SkyWidgetApp.Job, Clock -> List(Shapes.Shape)
+frame_at = |job, clock|
 	[
 		ScrubWidget.frame_shapes({
-			picture: picture(clock),
+			picture: picture(job, clock),
 			dot_at: ScrubWidget.step_share(clock.to_f64(), clock_range),
-			marked: [warmth_stretch],
+			marked: marked_stretches(job),
 			status: [],
 		}),
-		call_lines(clock),
-		chart,
-		chart_cursor(clock),
+		call_lines(job, clock),
+		chart(job),
+		chart_cursor(job, clock),
 		hint(clock),
 	].join()
 
+marked_stretches : SkyWidgetApp.Job -> List(ScrubWidget.Stretch)
+marked_stretches = |job|
+	match job {
+		SunSets | SkyDarkens => []
+		HorizonWarms => [warmth_stretch]
+	}
+
+## The two colors of the sky, as far as `job` goes.
+sky_colors : SkyWidgetApp.Job, Clock -> { top : I64, horizon : I64 }
+sky_colors = |job, clock|
+	match job {
+		SunSets => {
+			day = Sky.sky_top_color(Clock.start)
+			{ top: day, horizon: day }
+		}
+		SkyDarkens => {
+			now = Sky.sky_top_color(clock)
+			{ top: now, horizon: now }
+		}
+		HorizonWarms => { top: Sky.sky_top_color(clock), horizon: Sky.sky_horizon_color(clock) }
+	}
+
 ## The ride's sky at `clock`, for a rider facing the sun.
-picture : Clock -> List(Shapes.Shape)
-picture = |clock|
-	ScrubWidget.ride_picture(
+picture : SkyWidgetApp.Job, Clock -> List(Shapes.Shape)
+picture = |job, clock| {
+	colors = sky_colors(job, clock)
+	ScrubWidget.ride_picture_in(
 		[],
 		{
-			clock,
-			sun: Sky.sun_sighting({ heading: Sky.sun_bearing, clock, cam_focal: Lens.focal }),
+			sky_top_color: colors.top,
+			sky_horizon_color: colors.horizon,
+			sun_sighting: Sky.sun_sighting({
+				heading: Sky.sun_bearing,
+				clock,
+				cam_focal: Lens.focal,
+			}),
 		},
 	)
+}
 
 ## The step at which the sun stands `height` pixels up.
 step_at_height : Pixels -> F64
@@ -71,14 +131,23 @@ warmth_stretch = {
 }
 
 ## The calls this widget makes at `clock`, and their answers, a line each.
-status_lines : Clock -> List(Str)
-status_lines = |clock|
+status_lines : SkyWidgetApp.Job, Clock -> List(Str)
+status_lines = |job, clock|
 	[
 		"clock = step ${clock.to_str()}",
 		"Sky.sun_height_px(clock) = ${height_text(Sky.sun_height_px(clock))}",
 		"Sky.dusk_at(clock) = ${ScrubWidget.percent_text(Sky.dusk_at(clock))}",
 		"Sky.sunset_warmth(clock) = ${ScrubWidget.percent_text(Sky.sunset_warmth(clock))}",
-	]
+	].take_first(curves_of(job) + 1)
+
+## How many curves `job` has on its chart.
+curves_of : SkyWidgetApp.Job -> U64
+curves_of = |job|
+	match job {
+		SunSets => 1
+		SkyDarkens => 2
+		HorizonWarms => 3
+	}
 
 ## How high the sun stands, with a minus sign below the horizon.
 height_text : Pixels -> Str
@@ -102,10 +171,10 @@ warmth_color : I64
 warmth_color = 0xc0392b
 
 ## The status lines, each in the color of its curve on the chart.
-call_lines : Clock -> List(Shapes.Shape)
-call_lines = |clock|
+call_lines : SkyWidgetApp.Job, Clock -> List(Shapes.Shape)
+call_lines = |job, clock|
 	List.map2(
-		status_lines(clock),
+		status_lines(job, clock),
 		[clock_color, sun_color, dusk_color, warmth_color],
 		|text, color| { text, color },
 	).map_with_index(call_line).join()
@@ -182,17 +251,21 @@ curve = |level_at, color| {
 	)
 }
 
-## The whole chart, which is the same at every clock.
-chart : List(Shapes.Shape)
-chart = [
+## The chart's curves, which are the same at every clock.
+all_curves : List(List(Shapes.Shape))
+all_curves = [
 	curve(sun_level, sun_color),
 	curve(dusk_level, dusk_color),
 	curve(warmth_level, warmth_color),
-].join()
+]
+
+## The curves `job` has got to.
+chart : SkyWidgetApp.Job -> List(Shapes.Shape)
+chart = |job| all_curves.take_first(curves_of(job)).join()
 
 ## A line down the chart at `clock`, with a dot on each curve.
-chart_cursor : Clock -> List(Shapes.Shape)
-chart_cursor = |clock| {
+chart_cursor : SkyWidgetApp.Job, Clock -> List(Shapes.Shape)
+chart_cursor = |job, clock| {
 	x = chart_point(clock, dusk_level).x
 	[
 		[
@@ -209,7 +282,7 @@ chart_cursor = |clock| {
 			curve_dot(chart_point(clock, sun_level), sun_color),
 			curve_dot(chart_point(clock, dusk_level), dusk_color),
 			curve_dot(chart_point(clock, warmth_level), warmth_color),
-		],
+		].take_first(curves_of(job)),
 	].join()
 }
 
@@ -247,7 +320,7 @@ expect {
 }
 
 expect
-	status_lines(Clock.start)
+	status_lines(HorizonWarms, Clock.start)
 		== [
 			"clock = step 0",
 			"Sky.sun_height_px(clock) = 244.0 px",
@@ -256,7 +329,7 @@ expect
 		]
 
 expect
-	status_lines(Clock.at_step(3000))
+	status_lines(HorizonWarms, Clock.at_step(3000))
 		== [
 			"clock = step 3000",
 			"Sky.sun_height_px(clock) = 60.2 px",
@@ -265,7 +338,7 @@ expect
 		]
 
 expect
-	status_lines(Clock.at_step(6000))
+	status_lines(HorizonWarms, Clock.at_step(6000))
 		== [
 			"clock = step 6000",
 			"Sky.sun_height_px(clock) = -123.6 px",
@@ -277,7 +350,42 @@ expect
 expect sun_level(Clock.start) == 1.0
 expect sun_level(Clock.at_step(6000)) == 0.0
 expect chart_clocks.len() == 61
-expect chart.len() == 180
+expect chart(HorizonWarms).len() == 180
+expect chart(SkyDarkens).len() == 120
+expect chart(SunSets).len() == 60
+
+# Each job adds a call to the lines under the picture.
+expect status_lines(SunSets, Clock.start).len() == 2
+expect status_lines(SkyDarkens, Clock.start).len() == 3
+expect status_lines(HorizonWarms, Clock.start).len() == 4
+
+# The sky holds at day for the first job, darkens evenly for the second, and
+# warms at the horizon only for the third.
+expect sky_colors(SunSets, Clock.at_step(3980)) == sky_colors(SunSets, Clock.start)
+expect sky_colors(SkyDarkens, Clock.at_step(3980)) != sky_colors(SkyDarkens, Clock.start)
+expect {
+	even = sky_colors(SkyDarkens, Clock.at_step(3980))
+	even.top == even.horizon
+}
+expect {
+	warm = sky_colors(HorizonWarms, Clock.at_step(3980))
+	warm.top != warm.horizon
+}
+
+# The warmth is marked on the ruler only once it's a job.
+expect marked_stretches(HorizonWarms).len() == 1
+expect marked_stretches(SunSets).len() == 0
+expect marked_stretches(SkyDarkens).len() == 0
+
+# The Right key moves through the jobs, and the pointer leaves them alone.
+expect next_job(SunSets) == SkyDarkens
+expect next_job(SkyDarkens) == HorizonWarms
+expect next_job(HorizonWarms) == SunSets
+expect next_model(
+	{ clock: Clock.start, job: SunSets },
+	Input.none.with_key_pressed(KeyRight),
+).job == SkyDarkens
+expect next_model({ clock: Clock.start, job: SkyDarkens }, Input.none).job == SkyDarkens
 
 # The chart's two ends are the ruler's two ends.
 expect chart_point(Clock.start, dusk_level).x == chart_left
@@ -286,16 +394,17 @@ expect chart_point(Clock.start, dusk_level).y == chart_bottom
 expect chart_point(Clock.start, sun_level).y == chart_top
 
 # The cursor is a line and three dots.
-expect chart_cursor(Clock.at_step(3000)).len() == 4
+expect chart_cursor(HorizonWarms, Clock.at_step(3000)).len() == 4
+expect chart_cursor(SunSets, Clock.at_step(3000)).len() == 2
 
 # The hint shows until the clock has moved, and the frame carries it.
 expect hint(Clock.start).len() > 0
 expect hint(Clock.at_step(1)).len() == 0
-expect frame_at(Clock.start).len() > frame_at(Clock.at_step(1)).len()
+expect frame_at(HorizonWarms, Clock.start).len() > frame_at(HorizonWarms, Clock.at_step(1)).len()
 
 # Two view marks around the sky, the grass, the glow and the sun.
-expect picture(Clock.start).len() == 6
+expect picture(HorizonWarms, Clock.start).len() == 6
 
 # The picture depends on the clock and on nothing else.
-expect picture(Clock.at_step(3000)) == picture(Clock.at_step(3000))
-expect picture(Clock.at_step(3000)) != picture(Clock.at_step(3001))
+expect picture(HorizonWarms, Clock.at_step(3000)) == picture(HorizonWarms, Clock.at_step(3000))
+expect picture(HorizonWarms, Clock.at_step(3000)) != picture(HorizonWarms, Clock.at_step(3001))
