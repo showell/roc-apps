@@ -109,7 +109,7 @@ Animation :: [].{
 			{
 				up : pose,
 				down : pose,
-				count : F64,
+				count : U32,
 				over : Beats,
 			},
 		),
@@ -204,7 +204,7 @@ pose_of = |looks, beat|
 	match looks {
 		Holds(pose) => pose
 		Alternates({ up, down, count, over }) =>
-			if Trig.r_sin(beat.ratio_to(over) * count * Trig.two_pi) > 0.0 {
+			if Trig.r_sin(beat.ratio_to(over) * count.to_f64() * Trig.two_pi) > 0.0 {
 				up
 			} else {
 				down
@@ -398,7 +398,7 @@ alternating_timeline = {
 		Alternates({
 			up,
 			down,
-			count: 2.0,
+			count: 2,
 			over: Beats.of(8.0),
 		})
 	Animation.Timeline.(

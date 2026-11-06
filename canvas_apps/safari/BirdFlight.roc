@@ -52,8 +52,8 @@ BirdFlight :: [].{
 	flight_arc = Distance.metres(5.0)
 
 	## How many times the wings flap in a flight.
-	wing_flaps : F64
-	wing_flaps = 9.0
+	wing_flaps : U32
+	wing_flaps = 9
 
 	## The share of a flight spent side on, taking off.
 	takeoff_share : Fraction

@@ -167,13 +167,13 @@ Cat :: [].{
 
 	## How many strides a cat walking for `length` takes: a whole number, at
 	## least one.
-	strides_in : Beats -> F64
+	strides_in : Beats -> U32
 	strides_in = |length| {
 		strides = Num_.round_real(length.ratio_to(stride_beats))
 		if strides < 1.0 {
-			1.0
+			1
 		} else {
-			strides
+			strides.to_u32_wrap()
 		}
 	}
 
@@ -346,7 +346,7 @@ expect Cat.attention_fade.to_f64() == 83.0
 
 ## How many strides of a walk `length` beats long are done `progress` through it.
 turns : F64, F64 -> F64
-turns = |progress, length| progress * Cat.strides_in(Beats.of(length))
+turns = |progress, length| progress * Cat.strides_in(Beats.of(length)).to_f64()
 
 expect turns(0.0, 10.0) == 0.0
 expect turns(1.0, 10.0) == 2.0
