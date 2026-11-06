@@ -159,8 +159,8 @@ At step 1,570 of the ride, a cat is frozen in the lane. This is what `CatSightin
 
 | Field | Value |
 |---|---|
-| `right` | 0.75 metres |
-| `forward` | 25.39 metres |
+| `right` | 0.36 metres |
+| `forward` | 25.38 metres |
 | `pose` | `Frozen` |
 | `lift` | 0 |
 
