@@ -287,7 +287,7 @@ A `match` on a closed union has to cover it: leaving out a tag is a compile-time
 
 {{code Trees.accent}}
 
-Here's where it's called, picking the colour for a pair of small trees:
+Here's where it's called, picking the color for a pair of small trees:
 
 {{code Trees.plant_onto from "conifer =" to "Small => Trees.accent(scheme)"}}
 
@@ -371,7 +371,7 @@ The road is 4 metres wide, so at a turn of 45 degrees the apex lies 4 × tan(22.
 
 ### Paving a corner
 
-A piece of ground is a list of corners and a colour.
+A piece of ground is a list of corners and a color.
 
 🐾 🍃 {{code GroundSighting.road_patch}}
 
@@ -432,14 +432,14 @@ The sky is the simplest thing that moves, because it depends only on the clock.
 Drag the clock and watch the sun set.
 ```
 
-Drag across it from left to right, and the clock runs from step 0 to step 6,000. The sun sinks steadily, and near step 3,980 its centre meets the horizon: the sun line reads 0.0 px, and the warmth line tops out at 99%, since it rounds down. The marked stretch of the ruler is where the horizon has any warmth at all. The disc is gone near step 4,730, and the dusk line reaches 100% near step 5,490, before the marked stretch ends. Dragging back raises the sun along the same path.
+Drag across it from left to right, and the clock runs from step 0 to step 6,000. The sun sinks steadily, and near step 3,980 its center meets the horizon: the sun line reads 0.0 px, and the warmth line tops out at 99%, since it rounds down. The marked stretch of the ruler is where the horizon has any warmth at all. The disc is gone near step 4,730, and the dusk line reaches 100% near step 5,490, before the marked stretch ends. Dragging back raises the sun along the same path.
 
 New in this chapter:
 
 - Roc: `->` as a promise, privacy without a keyword, records destructured in a parameter list, tags in place of `null`, code that doesn't compile
 - Modules: `Sky`, `Fraction`, `Angle`
 
-`Sky` is a set of functions that each take a clock and answer with a colour or the sun's place.
+`Sky` is a set of functions that each take a clock and answer with a color or the sun's place.
 
 🔭 The modules around `Sky`
 ```dot
@@ -459,7 +459,7 @@ digraph sky {
 }
 ```
 
-`Sky` sits near the bottom of the system. Leaving out small math helpers, it imports only the angle and fraction types and the lens and screen geometry, and it knows nothing of the rider, the road or the drawing. Those above it each ask for a colour or a sun at a given clock.
+`Sky` sits near the bottom of the system. Leaving out small math helpers, it imports only the angle and fraction types and the lens and screen geometry, and it knows nothing of the rider, the road or the drawing. Those above it each ask for a color or a sun at a given clock.
 
 Every function in this chapter has a `->` arrow, not `=>`. That tells you the function has no effects, and the compiler holds it to that. So the same clock always gives the same sky. If you don't see a `=>`, you only have to think about what the function is given.
 
@@ -489,9 +489,9 @@ digraph sky_calls {
 }
 ```
 
-Everything on this diagram that changes with the clock comes down to the box in bold, which is the only one that turns the clock into a number. The rest is colour on one side and the sun's place on the other.
+Everything on this diagram that changes with the clock comes down to the box in bold, which is the only one that turns the clock into a number. The rest is color on one side and the sun's place on the other.
 
-The rest of this chapter reads those calls from the bottom up, from where the clock becomes a number to the colours at the top. Together the calls form a tree. A function that calls none of Safari Ride's own is a leaf, and a walk through the tree is a trail.
+The rest of this chapter reads those calls from the bottom up, from where the clock becomes a number to the colors at the top. Together the calls form a tree. A function that calls none of Safari Ride's own is a leaf, and a walk through the tree is a trail.
 
 ### A function of the clock
 
@@ -533,13 +533,13 @@ And here's the walk up the stack: each frame, `RideInstant.shapes` hands the ans
 
 🌳 {{code RideInstant.shapes from "Mountains.draw({" to "}),"}}
 
-The horizon's warmth is a third shape, a tent centred on the instant the sun touches the horizon. That makes three curves from one number. They're plain functions, because nothing else in the game needs them. Here's `sunset_warmth`:
+The horizon's warmth is a third shape, a tent centerd on the instant the sun touches the horizon. That makes three curves from one number. They're plain functions, because nothing else in the game needs them. Here's `sunset_warmth`:
 
 🌳 {{code Sky.sunset_warmth}}
 
-### From curves to colours
+### From curves to colors
 
-The numbers above become two colours, the top of the sky and the horizon:
+The numbers above become two colors, the top of the sky and the horizon:
 
 | Step | Top of the sky | Horizon |
 |---|---|---|
@@ -549,7 +549,7 @@ The numbers above become two colours, the top of the sky and the horizon:
 | 4,730 | `0x4f7595` | `0x966765` |
 | 6,000 | `0x243a5e` | `0x243a5e` |
 
-A colour ends up as one integer. `pack` gets there with method calls on plain numbers. Static dispatch finds `to_i64_wrap`, `shl_wrap` and `bitwise_or` on Roc's own types. That makes `pack` a leaf, the only one on the diagram.
+A color ends up as one integer. `pack` gets there with method calls on plain numbers. Static dispatch finds `to_i64_wrap`, `shl_wrap` and `bitwise_or` on Roc's own types. That makes `pack` a leaf, the only one on the diagram.
 
 🍃 {{code Sky.pack}}
 
@@ -591,13 +591,13 @@ Its caller, `RideInstant.sun`, is short enough to read whole:
 
 `turn_from_view.abs() >= visible_turn_limit` compares two `Turn`s. The code never touches radians until `sun_place` has to do trigonometry.
 
-That's every box on the diagram: one number goes in, and colours and a place for the sun come out, with nothing kept from one frame to the next.
+That's every box on the diagram: one number goes in, and colors and a place for the sun come out, with nothing kept from one frame to the next.
 
 With the sunset, we compute a value based on the clock alone. In the next chapter we will explore a more nuanced rule: the timing of a cat's crossing depends on the rider's position.
 
 ## The cat
 
-A cat walks out into the lane, freezes as the rider bears down on it, and leaps clear at the last possible instant. It's the best scene in Safari Ride. Unlike the sun, which follows the clock alone, the cat reacts to the rider.
+A cat walks out into the lane, freezes as the rider bears down on it, and leaps clear at the last possible instant. It's one of the most elaborate effects in Safari Ride, and this is the book's longest chapter. Unlike the sun, which follows the clock alone, the cat reacts to the rider.
 
 ```widget cat
 Drag the rider's gap and watch the crossing play.
@@ -706,7 +706,7 @@ A faster rider sets the cat off sooner, so it's clear of the lane in time.
 
 The bottom of this half is arithmetic on opaque types. Neither field of an `Approach` is a plain number: like `Clock` and `Angle`, `Distance` and `Speed` are opaque types. An animation is measured in beats, its own unit of progress, and `Beats` is an opaque type too: fractional, and tied to no clock, so a place in an animation can't be passed as a step of the ride.
 
-The leaves are the doors in and out of these types. `Beats.to_f64` unwraps in its parameter list, and `Distance.metres` wraps in its body.
+The leaves wrap and unwrap these types. `Beats.to_f64` unwraps in its parameter list, and `Distance.metres` wraps in its body.
 
 🐾 🍃 {{code Beats.to_f64}}
 
@@ -995,7 +995,7 @@ Lamps are to the truck what a pose is to a cat. The sighting carries them, and t
 
 {{code TruckDraw.draw from "beams =" to "].join()"}}
 
-`TruckDraw` leaves the painting to two modules. `TruckBody` paints the trailer, the cab and the tyres, far to near, and `TruckLights` paints the beams and the brake lights, each with its glow.
+`TruckDraw` leaves the painting to two modules. `TruckBody` paints the trailer, the cab and the tires, far to near, and `TruckLights` paints the beams and the brake lights, each with its glow.
 
 That covers the clock-driven things. Each is a function with a `Clock` in its arguments, and nothing about them outlives the frame.
 
@@ -1051,7 +1051,7 @@ A rule turns where the rider is into a `Stage`. The cat's rule was `over_beats`,
 | It's for | Something that reacts to how close the rider is | Something that has to finish in time |
 | A stopped rider | Leaves the bird hanging where the gap puts it | Holds the cat at the start of its crossing |
 
-The first argument of each is destructured in place, and both answer the same tag union. `over_gap` has a shorter job, so here it is first. `Fraction.clamp` is the right door because a rider far off gives a ratio well outside 0 to 1, and `<=` works on a `Fraction` because `Fraction` defines `is_lte`:
+The first argument of each is destructured in place, and both answer the same tag union. `over_gap` has a shorter job, so here it is first. `Fraction.clamp` fits here because a rider far off gives a ratio well outside 0 to 1, and `<=` works on a `Fraction` because `Fraction` defines `is_lte`:
 
 {{code Animation.over_gap}}
 
@@ -1478,7 +1478,7 @@ The bug these prevent is the most common one in this kind of code: a correct for
 
 The price is a long list of short methods, and a certain amount of `.to_radians()`. The headers of the float ones all say the same thing: "Each operation does the plain float arithmetic its name says." We'll see why that sentence matters in the proving chapter.
 
-The units run from the road to the screen. Once a point is measured from the rider, its `right` and `forward` are `Distance`s, and a length on screen is `Pixels`. `Pixels` is signed, because a place on screen is measured from the corner, so a point off the left of the screen is negative, and so is the height of a sun below the horizon. It stops at the edge of `lib.Shapes`, which takes plain numbers. A formula wants floats, so `.to_metres()` is the door out, used at the top of a function that's about to do trigonometry, and the answer goes back in at the end. `Along` can't be passed as `Across`, which rules out the classic swap in a function with both.
+The units run from the road to the screen. Once a point is measured from the rider, its `right` and `forward` are `Distance`s, and a length on screen is `Pixels`. `Pixels` is signed, because a place on screen is measured from the corner, so a point off the left of the screen is negative, and so is the height of a sun below the horizon. It stops at the edge of `lib.Shapes`, which takes plain numbers. A formula wants floats, so `.to_metres()` unwraps one at the top of a function that's about to do trigonometry, and the answer is wrapped again at the end. `Along` can't be passed as `Across`, which rules out the classic swap in a function with both.
 
 ### One record per space
 
