@@ -898,6 +898,8 @@ is the base; these rules sharpen it.
   both of an emitter's habits, and adds the parentheses to a braceless `if`
   itself, so `if (x) a else b` is the layout it gives a form we don't write.
   Parentheses that group an operand stay: a float's order rests on them.
+  This is our taste, not Roc's: other guides keep a short `if (x) a else b`
+  on one line, and we find the stacked branches easier to read.
   Safari holds this at zero; older trees still carry the braceless form.
 
   ```roc
