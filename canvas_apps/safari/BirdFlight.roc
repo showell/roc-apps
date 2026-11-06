@@ -60,11 +60,11 @@ BirdFlight :: [].{
 	## How the bird looks through a flight, a frame at a time: a flap side on as
 	## it takes off, seven flaps seen from behind, and a flap's length of diving.
 	##
-	## A flight follows the gap, so how many steps it takes depends on the rider,
-	## and a frame can't land a step. So a flight has more frames than anyone sees,
-	## eight for each metre of the gap it plays over, the finest the book's widget
-	## steps through it. However a rider comes, each step lands on a frame close
-	## to where the bird really is, and it moves smoothly.
+	## A flight follows the gap, so how many steps it lasts depends on the rider,
+	## and its frames can't land one a step as a cat's do. So it has more frames
+	## than any rider sees: eight for each metre of the gap it plays over, the
+	## finest the book's widget steps through it. However a rider comes, a step
+	## lands within an eighth of a metre of where the bird should be.
 	flight_poses : List(BirdFlight.Pose)
 	flight_poses = [
 		flap(Side(WingsUp), Side(WingsDown)),
