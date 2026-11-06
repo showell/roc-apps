@@ -52,7 +52,7 @@ Animation :: [].{
 
 	## An animation `length` long, played at a beat a step at the rider's
 	## speed, that ends with the rider `buffer` short, however fast the rider
-	## comes. It is playing from the moment the rider is that far away,
+	## comes. It is playing from the instant the rider is that far away,
 	## and a rider standing still inside that stretch holds it at its start.
 	over_beats : { length : Beats, buffer : Distance }, Animation.Approach -> Animation.Stage
 	over_beats = |{ length, buffer }, { gap, speed }| {

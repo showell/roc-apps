@@ -19,22 +19,22 @@ Each chapter zooms too, on a smaller scale. A title line sits above each block o
 
 ## The problem
 
-The problem is simple to state. Design a world once. Then, each time the clock ticks, move what moves, find everything near enough to see, and draw it against the backdrop.
+The problem is simple to state. Design a world once. Then, each time the clock steps, move what moves, find everything near enough to see, and draw it against the backdrop.
 
 The problem, as a loop
 ```dot
 digraph problem {
   node [shape=box, fontname="Helvetica"];
   world [label="design the world\n(once)"];
-  tick [label="the clock ticks"];
+  step [label="the clock steps"];
   move [label="move the rider and the truck"];
   look [label="look around:\nwhat's near enough to see?"];
   draw [label="draw it against the backdrop"];
-  world -> tick;
-  tick -> move;
+  world -> step;
+  step -> move;
   move -> look;
   look -> draw;
-  draw -> tick [label="  next step"];
+  draw -> step [label="  next step"];
 }
 ```
 
@@ -116,7 +116,7 @@ There are two halves. The ride is `Rider`, `Truck` and `World`, with `World` com
 
 ### The part that isn't Roc
 
-Safari Ride runs in a browser, and that takes a thin layer of JavaScript. The Roc compiles to wasm. Each tick, the JS keeps the clock, gathers the keys, and calls into Roc. Roc answers with a list of shapes, and the JS paints them on a canvas. The JS knows nothing of cats, and the Roc knows nothing of canvases. The whole game is on the Roc side of that line, and the same app also runs natively. `canvas_apps/ARCHITECTURE.md` has the details, and the platform chapter comes back to it.
+Safari Ride runs in a browser, and that takes a thin layer of JavaScript. The Roc compiles to wasm. Each step, the JS keeps the clock, gathers the keys, and calls into Roc. Roc answers with a list of shapes, and the JS paints them on a canvas. The JS knows nothing of cats, and the Roc knows nothing of canvases. The whole game is on the Roc side of that line, and the same app also runs natively. `canvas_apps/ARCHITECTURE.md` has the details, and the platform chapter comes back to it.
 
 ### What's a sighting?
 
@@ -126,7 +126,7 @@ A sighting answers one question each frame: which of these can the rider see rig
 
 {{code CatSighting.CatSighting}}
 
-`Scene` gathers every sighting's items, a depth sort puts them in order, and `SceneDraw` hands each one to the module that paints it. Because a sighting's answer is plain data, it can be checked with numbers, without drawing anything. The rule is simple: a sighting decides, and drawing paints.
+`Scene` gathers every sighting's answer, a depth sort puts them in order, and `SceneDraw` hands each one to the module that paints it. Because a sighting's answer is plain data, it can be checked with numbers, without drawing anything. The rule is simple: a sighting decides, and drawing paints.
 
 All of that is about one frame, and a frame is gone by the next one. What lasts from one step to the next hasn't come up yet.
 
@@ -1437,7 +1437,7 @@ Early on, the tour said the game has no effectful functions. It's fair to ask wh
 
 `init`, `advance`, `frame`, `release`, `sounds`, `width`, `height` and `fps`, with the tones' `tone_count`, `tone_freq` and `tone_ms`. Every one has a thin arrow, `->`. The host in `web/platform/host.zig` keeps the box, and all that crosses is numbers and a list of shapes. Wasm's edge has no records, so the input is flattened into seven numbers, and `Input.of` rebuilds it. `roc glue` generates `roc_glue.js`, which knows the layout of a frame in wasm memory, from `Chain.roc`, so that file is never edited.
 
-Each tick goes like this. `canvas_app_runner.js` paces the clock and gathers the keys. It calls `advance`, then `frame`, in Roc. It reads the shapes back through the generated glue, and `shapes_canvas.js` paints them on a canvas. The host keeps the list until the next frame, then hands it back so that Roc can drop it. That's `release`, a function whose body is `{}`: Roc knows the layout of what it's dropping, and the host shouldn't have to.
+Each step goes like this. `canvas_app_runner.js` paces the clock and gathers the keys. It calls `advance`, then `frame`, in Roc. It reads the shapes back through the generated glue, and `shapes_canvas.js` paints them on a canvas. The host keeps the list until the next frame, then hands it back so that Roc can drop it. That's `release`, a function whose body is `{}`: Roc knows the layout of what it's dropping, and the host shouldn't have to.
 
 The JS is about 490 lines for every canvas app there is. It knows nothing of cats. The only `!` names near Safari Ride are the `main!` and `echo!` of the gate programs, which are ordinary command-line apps, and the proof tools need them to print a hash.
 
@@ -1449,7 +1449,7 @@ That's the last of the parts. Each has been seen alone, and the first diagram ha
 
 Every box on the first diagram has now been opened.
 
-*[This chapter ties the tour together once the stepped things, the proof and the platform are written. It returns to the flipbook and the first diagram: the clock ticks, and everything composes from three stored fields.]*
+*[This chapter ties the tour together once the stepped things, the proof and the platform are written. It returns to the flipbook and the first diagram: the clock steps, and everything composes from three stored fields.]*
 
 ## Appendix: the patterns
 

@@ -5,7 +5,7 @@
 # the answer used to be no: `advance` stopped recording once its list was full,
 # so the history was the FIRST 2048 frames and a step back from frame 3000
 # landed on 2047. Pressing J -- which advances until the segment changes --
-# fills that list in a moment, which is how it was found.
+# fills that list quickly, which is how it was found.
 #
 #   roc build --opt=dev StepBack.roc --output=<bin>; <bin>
 app [main!] { game: "../game.roc", lib: "../../lib/main.roc" }
