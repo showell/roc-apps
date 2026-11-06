@@ -56,7 +56,7 @@ end
 
 -- What the lints' verdicts rest on, beside the file judged.
 function rule_files()
-  local rules = {LINTS, SAFARI .. "/vocabulary.txt", SAFARI .. "/name_types.txt"}
+  local rules = {LINTS, SAFARI .. "/vocabulary.txt", SAFARI .. "/name_types.txt", SAFARI .. "/bare_floats.txt"}
   for f in glob("cookbook:roc/*.shale") do push(rules, real(f)) end
   return rules
 end

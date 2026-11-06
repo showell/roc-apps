@@ -315,6 +315,10 @@ Roc's own rules are in the langref's
   that was right-nested stays a `fold_rev`, and a value stepped by
   `+ step` stays an accumulation, never `i * step`: each rounds
   differently, and a picture or a hash changes.
+- **A float lives inside a unit type or the trigonometry.** Anywhere else, a
+  bare `F64` in a signature or a type is named with its reason in a table,
+  safari's `bare_floats.txt`, which `cookbook:roc/bare_floats.shale` holds at
+  zero: a real ratio has no unit, so it goes there.
 - **A closed set that needs no checking is nominal, not opaque.** Every
   value of `Script := [Palette, Chrome, Compose, Feed]` is valid, so there
   is nothing to guard, and callers write `Script.Chrome`. Opaque is for
