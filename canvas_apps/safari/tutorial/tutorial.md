@@ -919,7 +919,7 @@ All three come from the clock, and the game stores none of them.
 
 ### Get the types right
 
-Most of Safari Ride is plain functions, so there's no new Roc in this chapter. The types do the work, and a sunset needs four:
+The types do the work, and a sunset needs four:
 
 | Type | What it is | Under it |
 |---|---|---|
@@ -928,7 +928,7 @@ Most of Safari Ride is plain functions, so there's no new Roc in this chapter. T
 | `Fraction` | A ratio from 0 to 1, like how far toward dusk we are | An `F64` |
 | `Sky.Rgb` | A color | A record of three floats |
 
-The first three are opaque, so none of them can be mixed up with a plain number, or with each other. With those in hand, each job is a signature:
+The first three are opaque. Each is still a number, and the type gives it a name, so a height can't be passed where a dusk is wanted. With those in hand, each job is a signature:
 
 | Job | Function | Its type |
 |---|---|---|
@@ -963,7 +963,7 @@ digraph sunset {
 }
 ```
 
-A box is a function, and an arrow is a call. The three boxes under the frame are the three jobs: the sun, the top of the sky and the horizon. They all end at `sun_height_px`. That's the one number in the sunset.
+A box is a function, and an arrow is a call. The three boxes under the frame are the three jobs: the sun, the top of the sky and the horizon. They all end at `sun_height_px`, because everything in a sunset comes down to how high the sun is.
 
 Here's the top of that diagram in code. Each frame, the game asks for three things and hands them to `Backdrop`:
 
@@ -1023,11 +1023,9 @@ The horizon is the same sky, warmed toward red:
 
 {{code Sky.sky_horizon_color}}
 
-Guess what `sunset_warmth` takes.
+`sunset_warmth` asks for the sun's height, just as dusk did:
 
 {{code Sky.sunset_warmth}}
-
-Yes, `sunset_warmth` takes a clock, like everything else in this chapter. Then it asks for the sun's height, just as dusk did.
 
 The horizon is warmest when the sun's height is zero. `ratio_to` says how far away the sun is, as a share of 110 pixels, and `abs` makes the two sides match, which gives the red line its tent. `Fraction.clamp` holds everything past 110 pixels at no warmth at all.
 
