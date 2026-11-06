@@ -1,17 +1,16 @@
-## The widget for the Safari tutorial's chapter on the Roc bird. Dragging across
-## the canvas sets how far the rider is from the tree the bird starts on, and
-## each frame is worked out from that gap alone, so the flight plays forward and
-## backward under the pointer. The picture stays still, looking up the road from
-## a place short of the first tree, so the bird shrinks as it flies off. It is
-## drawn by Safari's own Tree and BirdDraw. Below it, a ruler shows the gap, and
-## four lines of text say what BirdFlight makes of it.
+## The widget for the Safari tutorial's chapter on the Roc bird. Video recorder
+## buttons run how far the rider is from the tree the bird starts on, and each
+## frame is worked out from that gap alone, so the flight plays forward and
+## backward. The picture stays still, looking up the road from a place short of
+## the first tree, so the bird shrinks as it flies off. It is drawn by Safari's own
+## Tree and BirdDraw. Below it, the buttons and four lines of text that say what
+## BirdFlight makes of the gap.
 import game.Along
 import game.Animation
 import game.BirdFlight
 import game.Camera
 import game.Clock
 import game.Distance
-import game.Fraction
 import game.SceneDraw
 import game.Lens
 import game.Paint
@@ -23,26 +22,27 @@ import game.World
 import lib.CanvasApp
 import lib.Shapes
 import widget.ScrubWidget
+import widget.VcrButtons
 
 BirdWidgetApp :: [].{
 
-	## The whole state of the widget: the gap from the rider to the bird's first
-	## tree.
-	Model : { gap : Distance }
+	## The whole state of the widget: the buttons, which hold the gap from the
+	## rider to the bird's first tree.
+	Model : VcrButtons.Transport(Distance)
 
 	canvas_app : CanvasApp.CanvasApp(BirdWidgetApp.Model)
-	canvas_app = ScrubWidget.canvas_app({
+	canvas_app = VcrButtons.canvas_app({
 		title: "The bird taking off",
-		init: { gap: farthest_gap },
-		model_at: |share| { gap: ScrubWidget.gap_at(share, { farthest: farthest_gap }) },
-		frame: |model| frame_at(model.gap),
+		range: closing_gap,
+		opens_at: closing_gap.first,
+		frame: frame_at,
 	})
 }
 
-## The gap at the canvas's left edge, past where the bird takes off. At its right
-## edge the gap is zero.
-farthest_gap : Distance
-farthest_gap = Distance.metres(75.0)
+## The rider's approach, from a gap past where the bird takes off down to zero, in
+## ten seconds.
+closing_gap : VcrButtons.NumberRange(Distance)
+closing_gap = VcrButtons.gap_range({ farthest: Distance.metres(75.0), metres_a_frame: 0.125 })
 
 ## The bird's flight on a segment that has one.
 segment_flight : World.Segment -> Try(BirdFlight.Flight, [NoFlight])
@@ -76,15 +76,13 @@ forward_of = |along| {
 road_end_forward : Distance
 road_end_forward = Distance.metres(2000.0)
 
-## Everything on the canvas at `gap`.
-frame_at : Distance -> List(Shapes.Shape)
-frame_at = |gap|
-	ScrubWidget.frame_shapes({
-		picture: picture(gap),
-		dot_at: ScrubWidget.gap_share(gap, { farthest: farthest_gap }),
-		marked: [flight_stretch],
-		status: status_lines(gap),
-	})
+## Everything on the canvas.
+frame_at : BirdWidgetApp.Model -> List(Shapes.Shape)
+frame_at = |transport|
+	VcrButtons.frame_shapes(
+		transport,
+		{ range: closing_gap, picture: picture(transport.at), status: status_lines(transport.at) },
+	)
 
 ## The road and the two trees, far things first, and the bird at `gap`.
 picture : Distance -> List(Shapes.Shape)
@@ -154,13 +152,6 @@ bird_shapes = |gap| {
 	)
 }
 
-## The stretch of the ruler where the bird is in the air.
-flight_stretch : ScrubWidget.Stretch
-flight_stretch = {
-	from: ScrubWidget.gap_share(BirdFlight.takeoff_gap, { farthest: farthest_gap }),
-	to: ScrubWidget.gap_share(BirdFlight.landing_gap, { farthest: farthest_gap }),
-}
-
 ## What BirdFlight says at `gap`, a line each.
 status_lines : Distance -> List(Str)
 status_lines = |gap| {
@@ -192,11 +183,9 @@ beat_name = |beat|
 expect forward_of(flight.from.along).to_metres() == 18.0
 expect forward_of(flight.to.along).to_metres() == 48.0
 
-expect
-	[
-		(flight_stretch.from, 0.2),
-		(flight_stretch.to, 0.8),
-	].all(|(share, want)| (share.to_f64() - want).abs() <= 0.0000001)
+# The whole flight is on the range, with some road to spare at the far end.
+expect BirdFlight.takeoff_gap < closing_gap.first
+expect BirdFlight.landing_gap > closing_gap.last
 
 expect
 	status_lines(Distance.metres(61.0))

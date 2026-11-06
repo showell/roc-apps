@@ -560,7 +560,7 @@ marks = |tries_shown|
 ## Everything on the canvas with `tries_shown` tries on show.
 frame_at : U64 -> List(Shapes.Shape)
 frame_at = |tries_shown|
-	ScrubWidget.still_frame_shapes({
+	ScrubWidget.frame_shapes({
 		picture: picture(tries_shown),
 		status: status_lines(tries_shown),
 	}).concat(marks(tries_shown))

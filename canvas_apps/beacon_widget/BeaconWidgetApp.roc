@@ -1,9 +1,8 @@
-## The widget for the Safari tutorial's beacons. Dragging across the canvas sets
-## the ride's clock, and each frame is worked out from that clock alone, so two
-## towers blink opposite each other under the pointer, at dusk, where a beacon
-## shows up. The towers are drawn by Safari's own Tower, and how bright each is
-## comes from TowerSighting. Below them, a ruler shows the clock, with the first
-## tower's bright stretches marked, and four lines of text read it out.
+## The widget for the Safari tutorial's beacons. Video recorder buttons run the
+## ride's clock, and each frame is worked out from that clock alone, so two towers
+## blink opposite each other at dusk, where a beacon shows up. The towers are drawn
+## by Safari's own Tower, and how bright each is comes from TowerSighting. Below
+## them, the buttons and four lines of text that read out the clock.
 import game.Clock
 import game.Distance
 import game.Fraction
@@ -14,28 +13,30 @@ import game.TowerSighting
 import lib.CanvasApp
 import lib.Shapes
 import widget.ScrubWidget
+import widget.VcrButtons
 
 BeaconWidgetApp :: [].{
 
-	## The whole state of the widget: the ride's clock.
-	Model : { clock : Clock }
+	## The whole state of the widget: the buttons, which hold the ride's clock.
+	Model : VcrButtons.Transport(Clock)
 
 	canvas_app : CanvasApp.CanvasApp(BeaconWidgetApp.Model)
-	canvas_app = ScrubWidget.canvas_app({
+	canvas_app = VcrButtons.canvas_app({
 		title: "Two beacons",
-		init: { clock: ScrubWidget.clock_at(Fraction.zero, clock_range) },
-		model_at: |share| { clock: ScrubWidget.clock_at(share, clock_range) },
-		frame: |model| frame_at(model.clock),
+		range: blinks,
+		opens_at: blinks.first,
+		frame: frame_at,
 	})
 }
 
-## Two whole blinks, late in the ride. The first step is a whole number of blinks
-## in, so the ruler starts where a blink starts.
-clock_range : ScrubWidget.ClockRange
-clock_range = {
-	first_step: 5400.0,
-	last_step: 5640.0,
-}
+## Two whole blinks, late in the ride, a blink in two seconds. The first step is a
+## whole number of blinks in, so the range starts where a blink starts.
+blinks : VcrButtons.NumberRange(Clock)
+blinks = VcrButtons.clock_range({
+	first_step: 5400,
+	last_step: 5640,
+	steps_a_frame: 1.0,
+})
 
 ## The beacon keys of a tower past a segment's end, and of the tower halfway along
 ## the same segment, which blinks opposite it.
@@ -60,15 +61,17 @@ tower_forward = Distance.metres(200.0)
 tower_right : Distance
 tower_right = Distance.metres(70.0)
 
-## Everything on the canvas at `clock`.
-frame_at : Clock -> List(Shapes.Shape)
-frame_at = |clock|
-	ScrubWidget.frame_shapes({
-		picture: picture(clock),
-		dot_at: ScrubWidget.step_share(clock.to_f64(), clock_range),
-		marked: bright_stretches,
-		status: status_lines(clock),
-	})
+## Everything on the canvas.
+frame_at : BeaconWidgetApp.Model -> List(Shapes.Shape)
+frame_at = |transport|
+	VcrButtons.frame_shapes(
+		transport,
+		{
+			range: blinks,
+			picture: picture(transport.at),
+			status: status_lines(transport.at),
+		},
+	)
 
 ## The two towers in the ride's sky at `clock`.
 picture : Clock -> List(Shapes.Shape)
@@ -103,22 +106,6 @@ tower = |right, brightness| {
 		cam_focal: Lens.focal,
 		beacon_brightness: brightness,
 	})
-}
-
-## The steps of a blink that the first tower is more than half bright, one
-## stretch each: the middle half of the blink.
-bright_stretches : List(ScrubWidget.Stretch)
-bright_stretches = {
-	period = TowerSighting.beacon_period.to_f64()
-	bright_in_blink = |first_blink_step|
-		{
-			from: ScrubWidget.step_share(first_blink_step + period / 4.0, clock_range),
-			to: ScrubWidget.step_share(first_blink_step + period * 3.0 / 4.0, clock_range),
-		}
-	[
-		bright_in_blink(clock_range.first_step),
-		bright_in_blink(clock_range.first_step + period),
-	]
 }
 
 ## What the clock and the beacons say at `clock`, a line each.
@@ -157,50 +144,31 @@ expect
 
 expect
 	status_lines(Clock.at_step(5400))
-		== [
-			"Clock: step 5400",
-			"Blink: 0 of 120 steps",
-			"First tower: 0%",
-			"Second tower: 100%",
-		]
+		== ["Clock: step 5400", "Blink: 0 of 120 steps", "First tower: 0%", "Second tower: 100%"]
 
 expect
 	status_lines(Clock.at_step(5415))
-		== [
-			"Clock: step 5415",
-			"Blink: 15 of 120 steps",
-			"First tower: 14%",
-			"Second tower: 85%",
-		]
+		== ["Clock: step 5415", "Blink: 15 of 120 steps", "First tower: 14%", "Second tower: 85%"]
 
 expect
 	status_lines(Clock.at_step(5520))
-		== [
-			"Clock: step 5520",
-			"Blink: 0 of 120 steps",
-			"First tower: 0%",
-			"Second tower: 100%",
-		]
+		== ["Clock: step 5520", "Blink: 0 of 120 steps", "First tower: 0%", "Second tower: 100%"]
 
-expect ScrubWidget.clock_at(Fraction.zero, clock_range) == Clock.at_step(5400)
-expect ScrubWidget.clock_at(Fraction.whole, clock_range) == Clock.at_step(5640)
+# The range opens at the start of a blink and ends at the end of the second.
+expect blinks.first == Clock.at_step(5400)
+expect blinks.last == Clock.at_step(5640)
+expect blinks.last.minus(blinks.first).to_f64() == 2.0 * TowerSighting.beacon_period.to_f64()
 
 ## Whether a share is `want`, to within rounding.
 is_near : Fraction, F64 -> Bool
 is_near = |share, want| (share.to_f64() - want).abs() <= 0.0000001
 
-# A stretch for each of the two blinks: the middle half of each.
-expect bright_stretches.len() == 2
-expect {
-	first_blink = bright_stretches.first() ?? crash "the blink has a stretch"
-	is_near(first_blink.from, 0.125) and is_near(first_blink.to, 0.375)
-}
-expect {
-	second_blink = bright_stretches.last() ?? crash "the blink has a stretch"
-	is_near(second_blink.from, 0.625) and is_near(second_blink.to, 0.875)
-}
-
 # The picture depends on the clock. A beacon comes back after a whole blink,
 # though the sky goes on darkening.
 expect picture(Clock.at_step(5430)) != picture(Clock.at_step(5431))
 expect brightness_at(Clock.at_step(5430), 0) == brightness_at(Clock.at_step(5550), 0)
+
+# The picture follows the buttons' clock.
+expect
+	frame_at(VcrButtons.transport_at(Clock.at_step(5430)))
+		!= frame_at(VcrButtons.transport_at(Clock.at_step(5431)))
