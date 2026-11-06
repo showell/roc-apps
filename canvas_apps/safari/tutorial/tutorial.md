@@ -491,7 +491,7 @@ digraph sky_calls {
 
 Everything on this diagram that changes with the clock comes down to the box in bold, which is the only one that turns the clock into a number. The rest is colour on one side and the sun's place on the other.
 
-The rest of this chapter reads those calls from the bottom up, from where the clock becomes a number to the colours at the top. Taken together the calls form a tree, a function that calls none of Safari Ride's own is a leaf, and a walk through them is a trail.
+The rest of this chapter reads those calls from the bottom up, from where the clock becomes a number to the colours at the top. Together the calls form a tree. A function that calls none of Safari Ride's own is a leaf, and a walk through the tree is a trail.
 
 ### A function of the clock
 
@@ -533,7 +533,7 @@ And here's the walk up the stack: each frame, `RideInstant.shapes` hands the ans
 
 🌳 {{code RideInstant.shapes from "Mountains.draw({" to "}),"}}
 
-The horizon's warmth is a third shape, a tent centred on the instant the sun touches the horizon. Three curves come off one number, and they're plain functions rather than anything more general. Nothing else in the game needs them. Here's `sunset_warmth`:
+The horizon's warmth is a third shape, a tent centred on the instant the sun touches the horizon. That makes three curves from one number. They're plain functions, because nothing else in the game needs them. Here's `sunset_warmth`:
 
 🌳 {{code Sky.sunset_warmth}}
 
@@ -549,11 +549,11 @@ The numbers above become two colours, the top of the sky and the horizon:
 | 4,730 | `0x4f7595` | `0x966765` |
 | 6,000 | `0x243a5e` | `0x243a5e` |
 
-A colour ends up as one integer. `pack` gets there with method calls on plain numbers, and static dispatch finds `to_i64_wrap`, `shl_wrap` and `bitwise_or` on Roc's own types, so this is a leaf, the only one on the diagram.
+A colour ends up as one integer. `pack` gets there with method calls on plain numbers. Static dispatch finds `to_i64_wrap`, `shl_wrap` and `bitwise_or` on Roc's own types. That makes `pack` a leaf, the only one on the diagram.
 
 🍃 {{code Sky.pack}}
 
-`color_between` takes one record argument, destructured in its parameter list, so callers name every field. Each channel moves the same share of the way, and `Sky.Rgb` is a plain record alias, three floats with nothing to guard.
+`color_between` takes one record argument, destructured in its parameter list, so callers name every field. Each channel moves the same share of the way. `Sky.Rgb` is a plain record alias: three floats with nothing to guard.
 
 🌳 {{code Sky.color_between}}
 
@@ -569,7 +569,7 @@ The top of the tree is two calls. `sky_top_color` is the one `Tour.sky_top_color
 
 ### Angles that can't be mixed up
 
-One trail on the diagram is left, the sun's place, and it needs angles. `Angle.Bearing` is a direction in the world and `Angle.Turn` is a change of direction. Here we pass a `Turn` where a `Bearing` is wanted:
+One trail on the diagram is left: the sun's place. It needs angles. `Angle.Bearing` is a direction in the world and `Angle.Turn` is a change of direction. Here we pass a `Turn` where a `Bearing` is wanted:
 
 {{fails turn_as_bearing}}
 
@@ -577,7 +577,7 @@ The sun is the one thing here that also depends on where the rider is looking. T
 
 🐾 {{code Sky.SunSighting}}
 
-Opaque types do the most work from here on. A `Bearing` and a `Turn` are both floats underneath, but only the `Angle` module can build or open one. `sun_place` is the first code to want a plain number, because `r_tan` takes a float, and it's another caller of `sun_height_px`.
+Opaque types do the most work from here on. A `Bearing` and a `Turn` are both floats underneath, but only the `Angle` module can build or open one. `sun_place` also calls `sun_height_px`. It's the first code to want a plain number, because `r_tan` takes a float.
 
 🌳 {{code Sky.sun_place from "scale =" to "y: Screen.horizon_y"}}
 
@@ -653,7 +653,7 @@ What `Cat` gets from `Animation` comes down to three types. The first and last a
 
 `Stage` is the type where the function's two jobs meet. It's a tag union, and two of its tags carry a payload. You might expect `Waiting` and `Past` to be the same as progress of 0 and 1, but a critter can rest somewhere its animation never goes. If `Waiting` were just 0, a perched bird would show the first frame of its flight.
 
-The two halves meet at that type. A rule turns an `Approach` into a `Stage`, and a timeline turns a `Stage` into an `Instant`. `crossing_stage` decides how far along things are, and `crossing_timeline` decides what that looks like. They know nothing of each other.
+A rule turns an `Approach` into a `Stage`, and a timeline turns a `Stage` into an `Instant`. `crossing_stage` decides how far along things are, and `crossing_timeline` decides what that looks like. They know nothing of each other.
 
 Here are the calls. In this diagram a box is a function, not a module, and an arrow is a call.
 
@@ -742,7 +742,7 @@ digraph score {
 
 A timeline is data, so the cat's whole performance reads in one place, like a score. This half has two strands: the score, which is `Cat`'s, and the code that plays it, which is `Animation`'s. The score comes first, from its smallest function up.
 
-`spot_across` sits below `Cat`'s block, so it's private, and it's a single record. `Along.start`, the first place on a segment, is a value rather than a call, which leaves nothing of Safari Ride's being called.
+`spot_across` sits below `Cat`'s block, so it's private, and it's a single record. `Along.start`, the first place on a segment, is a value and not a call, so this function calls nothing of Safari Ride's.
 
 🍃 {{code Cat.spot_across}}
 
@@ -847,7 +847,7 @@ A cat in the lane stops the rider opening the throttle, without braking, and wid
 
 🌳 {{code RideFocal.ride_focal}}
 
-This is the only loop in the design. The rider's speed decides where the cat has got to, and the cat holds the rider's speed down. It settles, and it's also why `over_beats` has to stay the cat's rule. A bird asks nothing of the rider, so it falls through to the same answer as an empty road.
+This is the only feedback loop in the design. The rider's speed decides where the cat has got to, and the cat holds the rider's speed down. The loop settles, and it's why `over_beats` has to stay the cat's rule. A bird asks nothing of the rider, so it falls through to the same answer as an empty road.
 
 Each stretch of road has exactly one `crossing`: `CatCrosses`, `BirdHere` or `QuietRoad`. A cat and a bird in the same place can't be written down.
 
@@ -926,7 +926,7 @@ digraph beacon {
 
 A beacon is the only thing in Safari Ride that repeats on the clock, so it's the first thing that needs to ask how far into a cycle it is. That question isn't about an instant of the ride. It's about a length of time, and Safari Ride keeps those two apart.
 
-`Clock` says which step it is. `Steps` says how long something lasts. Both are opaque `U32`s, and `Clock.minus` turns two clocks into `Steps`, the same way two `Angle.Bearing`s make an `Angle.Turn`. Adding two clocks means nothing, so `Clock` has no `plus`, and no code can. Call this *places and distances*: one opaque type for where something is, a second for how far apart two of them are, and only the sums that make sense.
+`Clock` says which step it is. `Steps` says how long something lasts. Both are opaque `U32`s, and `Clock.minus` turns two clocks into `Steps`, the same way two `Angle.Bearing`s make an `Angle.Turn`. Adding two clocks means nothing, so `Clock` has no `plus`, and no other code can add one. Call this *places and distances*: one opaque type for where something is, a second for how far apart two of them are, and only the sums that make sense.
 
 Here, `wrapped_to` is `Steps`'s one way to reach `%`. The result is a `Fraction` built with `of`, because `(1 - cos) / 2` can only be in range:
 
@@ -946,7 +946,7 @@ Its caller gives each tower its key, the segment's index. Records with named fie
 
 A tower halfway along a segment takes the key plus 60. That's a small piece of number theory hiding in a constant: 60 staggers of 37 steps come to 2,220, which is 18 periods of 120 and 60 left over, so the mid-tower blinks exactly opposite the end tower.
 
-Notice where the clock stops. `beacon_brightness` on a `TowerSighting` is a `Fraction`, and neither `Tower` nor `SceneDraw` imports `Clock`. A sighting decides, and drawing paints. A beacon's blink is decided in the same place as whether the tower is in view at all.
+Notice where the clock stops. `beacon_brightness` on a `TowerSighting` is a `Fraction`, and neither `Tower` nor `SceneDraw` imports `Clock`. A beacon's blink is decided in the same place as whether the tower is in view at all.
 
 There's no blink abstraction. `Animation.Alternates` also follows a wave, and the resemblance ends there: it picks a pose, and this picks a brightness. Nothing else in the game blinks.
 
@@ -987,7 +987,7 @@ The truck's headlights come on once the sun has gone behind the mountains, at st
 
 {{code Truck.Lights}}
 
-`RideInstant` puts it together. It has to be up here. `Truck` is in the ride half of the system and `Mountains` is in the view, and no arrow goes from the first to the second. `RideInstant` imports both.
+`RideInstant` puts it together. It's the only place that can. `Truck` is in the ride half of the system and `Mountains` is in the view, and no arrow goes from the first to the second. `RideInstant` imports both.
 
 {{code RideInstant.truck_lights}}
 
@@ -997,7 +997,7 @@ Lamps are to the truck what a pose is to a cat. The sighting carries them, and t
 
 `TruckDraw` leaves the painting to two modules. `TruckBody` paints the trailer, the cab and the tyres, far to near, and `TruckLights` paints the beams and the brake lights, each with its glow.
 
-That's the clock-driven things. Each is a function with a `Clock` in its arguments, and nothing about them outlives the frame.
+That covers the clock-driven things. Each is a function with a `Clock` in its arguments, and nothing about them outlives the frame.
 
 The rider-driven kind still has only one member, and one cat can't say whether `Animation` was written for critters or just for cats.
 
@@ -1071,7 +1071,7 @@ Now the one-liners, side by side. A bird's and a cat's `instant_at` have the sam
 
 {{code Cat.instant_at}}
 
-Each is a rule's `Stage` handed to a timeline's `instant`. Neither half knows which other half it's been paired with. Call this *rule and score*: one function says how far along things are, and one piece of data says what that looks like. It's composable in the plain sense, because a third critter can take either rule with a timeline of its own, and a new rule would work with both timelines already written.
+Each is a rule's `Stage` handed to a timeline's `instant`. Neither half knows which other half it's been paired with. Call this *rule and score*: one function says how far along things are, and one piece of data says what that looks like. A third critter can take either rule with a timeline of its own, and a new rule would work with both timelines already written.
 
 ### A score one beat long
 
@@ -1203,7 +1203,7 @@ A nominal record holds the rider, and `RideInstant` stores one. Count the opaque
 
 {{code RiderState.RiderState}}
 
-The step is four things in order, which is close to how it reads. Static dispatch finds `segment_in` on the `SegmentIndex`. The `match` on `seg.ending` has two tags, and `Continues(_)` ignores its payload:
+The step does four things in order, and the code reads that way. Static dispatch finds `segment_in` on the `SegmentIndex`. The `match` on `seg.ending` has two tags, and `Continues(_)` ignores its payload:
 
 {{code Rider.advance}}
 
@@ -1375,7 +1375,7 @@ Then the two ways to take a step. Both sit below the block, private, and both ar
 
 `brake_lights` is state because it's a fact about the last step. Headlights aren't, and they stay out of `TruckState`. That's three of the four kinds in one vehicle: the place and speed are stepped, the headlights are clock-driven, and the tires don't change.
 
-The truck has no `Animation`, and it's worth saying why. A timeline has a known length and can answer for any point along it. The truck has neither. Its next step depends on its last, and its route depends on the rider. `TruckSighting` calls the distance to the truck `lead`, the same quantity as an `Approach`'s `gap`, because the truck is being chased.
+The truck has no `Animation`. A timeline has a known length and can answer for any point along it. The truck has neither. Its next step depends on its last, and its route depends on the rider. `TruckSighting` calls the distance to the truck `lead`, the same quantity as an `Approach`'s `gap`, because the truck is being chased.
 
 One question about the rider is still open: how `Rider.decide` picks a lean. The module that answers it is `LeanSearch`, and it rests on the geometry and physics in the next chapter.
 
@@ -1476,7 +1476,7 @@ This is the opaque type doing the job of a unit. The block after each type is a 
 
 The bug these prevent is the most common one in this kind of code: a correct formula with the wrong number in it. Most physics bugs type-check in a language where everything's a float.
 
-The price is a long list of short methods, and a certain amount of `.to_radians()`. The headers of the float ones all say the same thing: "Each operation does the plain float arithmetic its name says." That sentence is there for a reason that belongs to the proving chapter.
+The price is a long list of short methods, and a certain amount of `.to_radians()`. The headers of the float ones all say the same thing: "Each operation does the plain float arithmetic its name says." We'll see why that sentence matters in the proving chapter.
 
 The units run from the road to the screen. Once a point is measured from the rider, its `right` and `forward` are `Distance`s, and a length on screen is `Pixels`. `Pixels` is signed, because a place on screen is measured from the corner, so a point off the left of the screen is negative, and so is the height of a sun below the horizon. It stops at the edge of `lib.Shapes`, which takes plain numbers. A formula wants floats, so `.to_metres()` is the door out, used at the top of a function that's about to do trigonometry, and the answer goes back in at the end. `Along` can't be passed as `Across`, which rules out the classic swap in a function with both.
 
@@ -1496,7 +1496,7 @@ The points are plain records. They don't need to be opaque, since a record's typ
 
 {{code Screen.Point}}
 
-Structural records give *one record per space* for nothing: `along` and `across` are on the road, `right` and `forward` are from the rider, and `x` and `y` are pixels. Reading any function, the field names say where it is.
+Structural records give us *one record per space* at no cost: `along` and `across` are on the road, `right` and `forward` are from the rider, and `x` and `y` are pixels. Reading any function, the field names say where it is.
 
 Going from the road to the rider is a translation and a rotation, and this is the function where the opaque places give way to floats. `distance_from` makes the translation, and the rotation is written the way it would be on paper:
 
@@ -1638,7 +1638,7 @@ Safari Ride computes even its basic math functions itself. `lib/DeviceMath.roc` 
 
 `Throttle.shoulder_brake_at` is the caller, so a rehearsed coast's length decays into a braking force through this. [check: why these are hand-written rather than builtins. They came with the Codex port, and the reason is probably that the same bits come out on every target. Ask Steve before saying so.]
 
-Top to bottom, then: a rider chooses a lean by simulating physics, and the physics is plain arithmetic on opaque numbers, from the frame down to the polynomial. There's no effect anywhere in that sentence. What that's worth when the program has to change is still an open question.
+So from top to bottom, a rider chooses a lean by simulating physics, and the physics is plain arithmetic on opaque numbers. None of it has any effects. In the next chapter, we'll see what that's worth when the program has to change.
 
 ## Proving it
 
@@ -1697,7 +1697,7 @@ Testing here is just calling a function. There are no mocks, no fakes, no browse
 
 ### The frame hash
 
-`RasterFrame` rides to a step, paints the frame into 576,000 exact pixels, and prints an FNV-1a hash of them. The painter is `SafariFrame`, in pure Roc. Its `ShapesPixels` does what `shapes_canvas.js`, the JavaScript that paints the page, does on a canvas. The gate holds each hash to a line of `gates/proof.expected`, exactly. No tolerance. One different pixel in one frame fails it.
+`RasterFrame` rides to a step, paints the frame into 576,000 exact pixels, and prints an FNV-1a hash of them. The painter is `SafariFrame`, in pure Roc. Its `ShapesPixels` does what `shapes_canvas.js`, the JavaScript that paints the page, does on a canvas. The gate holds each hash to a line of `gates/proof.expected`, exactly. There's no tolerance: one different pixel in one frame fails it.
 
 A frame is only evidence for what's in it, so the steps in the table at the top of this chapter aren't arbitrary. The ride lasts 7,040 steps, so the clock at step 9,000 reads 1,959. [check: what 3,000 and 9,000 are there for; the gate's header doesn't say.]
 
@@ -1711,7 +1711,7 @@ That's also what the sentence in the headers of `Speed`, `Beats`, `Fraction`, `A
 
 This is how the code in this tour got its shape. About fifty modules were renamed, retyped and reorganized, many of them in parallel, and each merge had to leave the frames alone. Roc's types caught what they catch, the hashes caught the rest, and the picture didn't change. [check: the number, and whether "many" should say how many at once.] A language with no hidden state doesn't make a refactor safe by itself. It makes it possible to write a test strict enough to be trusted.
 
-The limit, stated flatly: the hash proves `ShapesPixels`'s pixels, and the page's pixels come from the browser's canvas, with anti-aliasing. What the two share is the list of shapes. `web/page_check.mjs` runs each built page against a stand-in canvas, and past that the JS has only its own checks.
+There's one limit to all this. The hash proves `ShapesPixels`'s pixels, and the page's pixels come from the browser's canvas, with anti-aliasing. What the two share is the list of shapes. `web/page_check.mjs` runs each built page against a stand-in canvas, and past that the JS has only its own checks.
 
 ### Two more proofs
 
@@ -1873,7 +1873,7 @@ The JS is about 490 lines for every canvas app there is. It knows nothing of cat
 
 The same modules are compiled three ways, which shows how cleanly the game is separated from the platform. The page builds them to wasm. The gates build them natively. And `main.roc` hands the same `SafariApp.canvas_app` to `native/CanvasAppRunner.roc` on roc-ray, a Roc platform for native graphics. That third one is the spike that proved the idea and it isn't kept current, as Safari Ride's README says, so the page is the maintained side. The first two run on every gate.
 
-That's the last of the parts. Each has been seen alone, and the loop from the start of the tour hasn't been looked at since.
+That's the last of the parts. Next, we'll put them back together by returning to the loop from the start of the tour.
 
 ## Zooming back out
 
