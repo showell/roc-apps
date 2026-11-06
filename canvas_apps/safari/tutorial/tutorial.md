@@ -1438,6 +1438,20 @@ New in this chapter:
 
 The answer rests on one fact from the ride instant chapter. Three fields decide a frame, and a frame is a value. So a frame can be compared, exactly, with the same frame from an hour ago.
 
+| Step | What the frame shows | Hash of its pixels | Shapes |
+|---|---|---|---|
+{{proof row 0 The start of the ride}}
+{{proof row 100 A bird in flight}}
+{{proof row 1570 A cat frozen in the lane}}
+{{proof row 1586 The same cat in mid-leap}}
+{{proof row 3000 The ride under way}}
+{{proof row 3742 A distant truck, its glow too small to draw}}
+{{proof row 5700 The truck at dusk, lights on}}
+{{proof row 6520 The truck braking in plain view}}
+{{proof row 9000 Past the end, on the second lap}}
+
+Each row is one frame of the ride. Run the ride to that step today and you get that hash and that many shapes, and a change to the program has to leave every row as it is. This page's numbers come from the same file the check reads, `gates/proof.expected`.
+
 The proof tools and what they read
 ```dot
 digraph proving {
@@ -1456,8 +1470,6 @@ digraph proving {
 
 Everything here lives in `gates/`, and the game never runs any of it. The merge gate is the check a change has to pass before it lands. It runs the lints, every `expect`, the tutorial's build and the proof tools. Its programs reach the game through `game.roc`, a package whose only job is to list the modules they read. [check: the builder's includes can't reach `gates/`, `lib/` or `web.roc`, which is why these chapters describe those and don't quote them. Decide whether the builder should.]
 
-*[The proof widget goes here: ride to a step, ride there again, and see the same shapes both times.]*
-
 ### A fixture is a value
 
 Getting a test to step 1,570 of a game normally takes some doing. Here it takes a loop. `Tour.initial` is a value, and `Tour.step_forward` is the outermost step function. It wraps `RideInstant.next_or_restart`, quoted below, and it also trims the list of past instants. An `if` chain does the trimming, and its comment says why half of the list goes at once:
@@ -1474,21 +1486,7 @@ There's nothing to mock, because nothing was injected. No clock has to be faked,
 
 `RasterFrame` rides to a step, paints the frame into 576,000 exact pixels, and prints an FNV-1a hash of them. The painter is `SafariFrame`, in pure Roc. Its `ShapesPixels` does what `shapes_canvas.js`, the JavaScript that paints the page, does on a canvas. The gate holds each hash to a line of `gates/proof.expected`, exactly. No tolerance. One different pixel in one frame fails it.
 
-A frame is only evidence for what's in it, so the steps aren't arbitrary:
-
-| Step | What the frame shows |
-|---|---|
-| 0 | The start of the ride |
-| 100 | A bird in flight |
-| 1,570 | A cat frozen in the lane |
-| 1,586 | The same cat in mid-leap |
-| 3,000 | The ride under way |
-| 3,742 | A distant truck, its glow too small to draw |
-| 5,700 | The truck at dusk, lights on |
-| 6,520 | The truck braking in plain view |
-| 9,000 | Past the end, on the second lap |
-
-The ride lasts 7,040 steps, so the clock at step 9,000 reads 1,959. [check: what 3,000 and 9,000 are there for; the gate's header doesn't say.]
+A frame is only evidence for what's in it, so the steps in the table at the top of this chapter aren't arbitrary. The ride lasts 7,040 steps, so the clock at step 9,000 reads 1,959. [check: what 3,000 and 9,000 are there for; the gate's header doesn't say.]
 
 The list grows by a rule: if a thing can be wrong without any listed frame changing, the gate is blind to it. A brake light wired to `Off` would pass every hash until 6,520 was added. A green hash means nothing for what no frame shows.
 
