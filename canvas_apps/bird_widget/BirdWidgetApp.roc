@@ -17,6 +17,7 @@ import game.Lens
 import game.Paint
 import game.BirdDraw
 import game.Scenery
+import game.Trees
 import game.Screen
 import game.TreeDraw
 import game.World
@@ -124,14 +125,14 @@ lane = {
 	)
 }
 
-tree_shapes : Scenery.Tree -> List(Shapes.Shape)
+tree_shapes : Trees.Tree -> List(Shapes.Shape)
 tree_shapes = |tree| {
 	forward = forward_of(tree.along)
 	TreeDraw.draw({
 		right: Distance.metres(tree.across.to_metres()),
 		forward,
-		height: tree.height,
-		color: tree.color,
+		height: tree.conifer.height(),
+		color: TreeDraw.conifer_color(tree.conifer),
 		cam_focal: Lens.focal,
 		trunk: RoundCorners,
 		crown: Cones,

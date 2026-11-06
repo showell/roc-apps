@@ -15,6 +15,7 @@ import game.BirdSighting
 import game.Cat
 import game.CatSighting
 import game.Clock
+import game.Conifer
 import game.CutoutSighting
 import game.DepthSort
 import game.Distance
@@ -32,6 +33,7 @@ import game.Scenery
 import game.Speed
 import game.TowerSighting
 import game.TreeSighting
+import game.Trees
 import game.Truck
 import game.TruckSighting
 import game.VehicleLimits
@@ -93,22 +95,28 @@ flat_color_of = |shape|
 # sits, flies and lands as the rider comes, stays where no tree is far enough to
 # fly to, and is left out with no tree for it, behind the near plane or too small
 # to draw.
-tree_at : F64, F64 -> Scenery.Tree
+tree_at : F64, F64 -> Trees.Tree
 tree_at = |along, across| {
 	along: Along.metres(along),
 	across: Across.metres(across),
-	color: 0,
-	height: Distance.metres(10.0),
+	conifer: Conifer.Red,
 }
 
-left_trees : List(Scenery.Tree)
+left_trees : List(Trees.Tree)
 left_trees = [20.0, 40.0, 60.0, 80.0, 100.0].map(|along| tree_at(along, -6.0))
 
-far_tree : Scenery.Tree
-far_tree = { ..tree_at(130.0, 6.0), height: Distance.metres(14.0) }
+far_tree : Trees.Tree
+far_tree = { ..tree_at(130.0, 6.0), conifer: Conifer.Gold }
+
+## How high a bird perches on a left tree, and on the far tree.
+left_top : F64
+left_top = Conifer.Red.height().to_metres()
+
+far_top : F64
+far_top = Conifer.Gold.height().to_metres()
 
 ## A straight segment 200 m long holding only `trees`.
-segment_of : List(Scenery.Tree) -> World.Segment
+segment_of : List(Trees.Tree) -> World.Segment
 segment_of = |trees| {
 	..World.route_segment(0),
 	length: Distance.metres(200.0),
@@ -119,7 +127,7 @@ segment_of = |trees| {
 
 ## The birds on one segment of `trees`, for a rider `rider_along` metres into
 ## it, seen through a focal length of `cam_focal`.
-birds_on : List(Scenery.Tree), { rider_along : F64, cam_focal : Pixels } -> List(BirdSighting)
+birds_on : List(Trees.Tree), { rider_along : F64, cam_focal : Pixels } -> List(BirdSighting)
 birds_on = |trees, seen_from| birds_on_segment(segment_of(trees), seen_from)
 
 ## The birds on `segment_index`, for a rider `rider_along` metres into it.
@@ -145,8 +153,8 @@ bird_at = |rider_along|
 place_of : BirdSighting -> List(F64)
 place_of = |bird| [bird.right.to_metres(), bird.forward.to_metres(), bird.lift.to_metres()]
 
-expect place_of(bird_at(0.0)) == [-6.0, 100.0, 10.0]
-expect place_of(bird_at(40.0)) == [-6.0, 60.0, 10.0]
+expect place_of(bird_at(0.0)) == [-6.0, 100.0, left_top]
+expect place_of(bird_at(40.0)) == [-6.0, 60.0, left_top]
 
 # Halfway through its flight, with the rider 37.5 m from the tree it left.
 expect {
@@ -154,11 +162,11 @@ expect {
 	[
 		(bird.right.to_metres(), 0.0),
 		(bird.forward.to_metres(), 52.5),
-		(bird.lift.to_metres(), 17.0),
+		(bird.lift.to_metres(), (left_top + far_top) / 2.0 + BirdFlight.flight_arc.to_metres()),
 	].all(|(got, want)| (got - want).abs() <= 0.000000001)
 }
 
-expect place_of(bird_at(85.0)) == [6.0, 45.0, 14.0]
+expect place_of(bird_at(85.0)) == [6.0, 45.0, far_top]
 expect bird_at(40.0).pose == Perched
 expect bird_at(62.5).pose != Perched
 expect bird_at(85.0).pose == Perched
@@ -167,11 +175,11 @@ expect bird_at(85.0).pose == Perched
 # the rider is.
 expect {
 	stays = birds_on(left_trees, { rider_along: 62.5, cam_focal: Pixels.of(500.0) })
-	stays.join_map(place_of) == [-6.0, 37.5, 10.0]
+	stays.join_map(place_of) == [-6.0, 37.5, left_top]
 }
 
 ## How many birds there are on `trees` for each rider and focal length.
-bird_count : List(Scenery.Tree), { rider_along : F64, cam_focal : Pixels } -> I64
+bird_count : List(Trees.Tree), { rider_along : F64, cam_focal : Pixels } -> I64
 bird_count = |trees, seen_from| birds_on(trees, seen_from).len().to_i64_wrap()
 
 ## A segment where a cat crosses, with the same trees: it has no bird.

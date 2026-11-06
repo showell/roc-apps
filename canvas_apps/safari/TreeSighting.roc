@@ -1,21 +1,21 @@
 ## TreeSighting finds the roadside trees the rider can see in a frame: those
 ## planted along the chain of segments ahead that stand in front of the
 ## camera and are tall enough on screen to draw.
+import Conifer
 import DepthSort
 import Distance
 import Chain
 import Geom
 import Detail
-import Scenery
+import Trees
 
-## A tree to draw: where it stands in the rider's view, its height and
-## its colour. A tree in view is ahead of the rider, so of its lengths only
-## `right` can be negative.
+## A tree to draw: where it stands in the rider's view, and its kind. A tree
+## in view is ahead of the rider, so of its lengths only `right` can be
+## negative.
 TreeSighting := {
 	right : Distance,
 	forward : Distance,
-	height : Distance,
-	color : I64,
+	conifer : Conifer,
 }.{
 
 	## The trees in view, the nearest segment's first, and each segment's in
@@ -38,14 +38,14 @@ TreeSighting := {
 	tree_in_view : Chain.Viewpoint,
 	{
 		position : Chain.Position,
-		tree : Scenery.Tree,
+		tree : Trees.Tree,
 	} -> List(TreeSighting)
 	tree_in_view = |view, { position, tree }| {
 		seen = Chain.rider_point_ahead(
 			view.road,
 			{ position, along: tree.along, across: tree.across },
 		)
-		height_px = view.cam_focal.times(tree.height.ratio_to(seen.forward))
+		height_px = view.cam_focal.times(tree.conifer.height().ratio_to(seen.forward))
 		if seen.forward <= Geom.near_plane {
 			[]
 		} else if height_px < Detail.min_scenery_px {
@@ -55,8 +55,7 @@ TreeSighting := {
 				{
 					right: seen.right,
 					forward: seen.forward,
-					height: tree.height,
-					color: tree.color,
+					conifer: tree.conifer,
 				},
 			]
 		}

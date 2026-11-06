@@ -230,7 +230,7 @@ A `match` on a closed union has to cover it: leaving out a tag is a compile-time
 
 Here's where it's called, picking the color for a pair of small trees:
 
-{{code Trees.plant_onto from "conifer =" to "Small => Trees.accent(scheme)"}}
+{{code Trees.plant_onto from "next_conifer =" to "BigGreen => Trees.accent(scheme)"}}
 
 `SegmentIndex` is another small opaque type, a `U32` for a segment's place in the route. A place in the route can't be confused with a count of trees, because nothing outside can do arithmetic on it. `crash` appears here too. It isn't for error handling: an index that isn't in the world is a bug in Safari Ride, not a case to handle.
 
@@ -251,19 +251,19 @@ Trees are the easiest thing to put in a frame, so we'll use them to see how anyt
 New in this chapter:
 
 - Roc: a function that calls itself, `|` in a `match` branch
-- Modules: `Scenery`, `Distance`, `Along`, `Across`, `TreeSighting`, `TreeDraw`
+- Modules: `Scenery`, `Conifer`, `Distance`, `Along`, `Across`, `TreeSighting`, `TreeDraw`
 
 ### Planting a tree
 
 A tree is a plain record:
 
-{{code Scenery.Tree}}
+{{code Trees.Tree}}
 
 `along` says how far along its segment a tree stands, and `across` says how far it is from the middle of the road. `height` is a `Distance`, a length in metres. All three are opaque types, like `Clock`. A place along the road can't be passed as a place across it, and neither can be passed as a plain length.
 
 Trees stand in pairs, one each side of the road, every 30 metres. The pairs take turns, big and small. A big pair is green, and a small pair takes the accent color we saw in the last chapter. Gold and red trees are much taller than green ones:
 
-{{code Trees.height}}
+{{code Conifer.height}}
 
 A gold tree also stands further from the road. `Green | Red` is one branch for two tags:
 

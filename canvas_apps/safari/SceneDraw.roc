@@ -13,6 +13,7 @@ import StillDraw
 import DepthSort
 import Fraction
 import Chain
+import Conifer
 import GuardRail
 import Scene
 import Detail
@@ -59,8 +60,8 @@ SceneDraw :: [].{
 		TreeDraw.draw({
 			right: tree.right,
 			forward: tree.forward,
-			height: tree.height,
-			color: tree.color,
+			height: tree.conifer.height(),
+			color: TreeDraw.conifer_color(tree.conifer),
 			cam_focal,
 			trunk: if nearer_trees < SceneDraw.round_trunk_limit {
 				RoundCorners
@@ -182,8 +183,7 @@ tree_at : F64 -> TreeSighting
 tree_at = |forward| {
 	right: Distance.metres(0.0),
 	forward: Distance.metres(forward),
-	height: Distance.metres(5.85),
-	color: 0x1C5A22,
+	conifer: Conifer.BigGreen,
 }
 
 spread_trees : List(TreeSighting)
@@ -316,8 +316,7 @@ green_tree_at = |along| {
 	tree: {
 		along: Along.metres(along),
 		across: Across.metres(3.5),
-		color: 0x1C5A22,
-		height: Distance.metres(5.85),
+		conifer: Conifer.BigGreen,
 	},
 }
 
@@ -331,11 +330,10 @@ expect
 	[
 		(lone_tree.right.to_metres(), 3.5),
 		(lone_tree.forward.to_metres(), 120.0),
-		(lone_tree.height.to_metres(), 5.85),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 expect TreeSighting.tree_in_view(from_origin, green_tree_at(120.0)).len() == 1
-expect lone_tree.color == 0x1C5A22
+expect lone_tree.conifer == Conifer.BigGreen
 expect
 	[
 		(TreeSighting.tree_in_view(from_origin, green_tree_at(0.4)), 0),
@@ -373,11 +371,8 @@ expect
 		(planted_tree(1).right.to_metres(), 3.5),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
-expect
-	[
-		(planted_tree(0).height.to_metres(), 5.85),
-		(planted_tree(2).height.to_metres(), 4.5),
-	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
+expect planted_tree(0).conifer == Conifer.BigGreen
+expect planted_tree(2).conifer == Conifer.SmallGreen
 
 keys : List(DepthSort.DepthKey)
 keys = TreeSighting.depth_keys(first_segment)

@@ -4,6 +4,7 @@
 ## apex, so the tiers fatten as the rider passes under them.
 import Pixels
 import Camera
+import Conifer
 import Distance
 import Fraction
 import Paint
@@ -94,6 +95,24 @@ TreeDraw :: [].{
 
 	trunk_color : I64
 	trunk_color = 0x5A3E22
+
+	green_color : I64
+	green_color = 0x1C5A22
+
+	gold_color : I64
+	gold_color = 0xCF9A18
+
+	red_color : I64
+	red_color = 0xB23A2A
+
+	## A conifer's foliage colour.
+	conifer_color : Conifer -> I64
+	conifer_color = |conifer|
+		match conifer {
+			BigGreen | SmallGreen => green_color
+			Gold => gold_color
+			Red => red_color
+		}
 
 	## How much of the tree's height is trunk below the crown.
 	visible_trunk : Fraction
@@ -346,6 +365,10 @@ expect TreeDraw.tiers.map(|tier| tier.width.to_f64()) == [
 expect TreeDraw.tiers.len() == 8
 expect TreeDraw.ring_n == 16
 expect TreeDraw.trunk_color == 0x5A3E22
+expect TreeDraw.conifer_color(Conifer.BigGreen) == 0x1C5A22
+expect TreeDraw.conifer_color(Conifer.SmallGreen) == 0x1C5A22
+expect TreeDraw.conifer_color(Conifer.Gold) == 0xCF9A18
+expect TreeDraw.conifer_color(Conifer.Red) == 0xB23A2A
 
 expect TreeDraw.visible_trunk.to_f64() == 0.44
 expect TreeDraw.crown_height.to_f64() == 0.648

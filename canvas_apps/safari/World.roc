@@ -76,7 +76,7 @@ World :: [].{
 	## One segment of road, built from its plan.
 	Segment : {
 		length : Distance,
-		trees : List(Scenery.Tree),
+		trees : List(Trees.Tree),
 		cows : List(Scenery.Critter),
 		pigs : List(Scenery.Critter),
 		pig_attention : Pigs.PigInterest,
@@ -133,7 +133,7 @@ World :: [].{
 		},
 		{
 			length: Distance.metres(300.0),
-			scheme: YellowGreen,
+			scheme: GoldGreen,
 			turn: Angle.Turn.degrees(20.0),
 			crossing: CatCrosses,
 			pigs: NoPigs,
@@ -388,7 +388,7 @@ built_segment = |plan, index| {
 
 ## The nearest tree along the road at or past `along`, on the right; `along`
 ## itself when there is none. A segment's cat waits by it.
-nearest_tree_ahead : List(Scenery.Tree), Along -> Along
+nearest_tree_ahead : List(Trees.Tree), Along -> Along
 nearest_tree_ahead = |trees, along| {
 	nearest = trees.fold(
 		NoTreeYet,
